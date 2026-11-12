@@ -54,13 +54,13 @@ and gives `mₙ₊₂ = δψₙ₊₁` there.  The exponential is where division
 * `TauCeti.AInfinityAlgebra.IsMinimal.exists_linearPart_eq_id_of_isIso`: an `A∞` isomorphism from
   `𝒜` to the graded algebra `ℋ` can be normalized to have linear part the identity.
 * `TauCeti.AInfinityAlgebra.IsMinimal.exists_hochschildDifferential_eq_obstruction_four_of_isIso`:
-  when `2` is invertible, the quartic obstruction of a minimal `A∞` structure with `m₃ = 0` which
+  when `2` is invertible, the quartic obstruction of an `A∞` structure with `m₃ = 0` which
   is `A∞` isomorphic to the graded algebra `ℋ` is a Hochschild coboundary.
 * `IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four`:
   when `2` is invertible, a quartic obstruction which is not a Hochschild coboundary obstructs
   formality.
 * `TauCeti.AInfinityAlgebra.IsMinimal.exists_hochschildDifferential_eq_obstruction_of_isIso`:
-  over a `ℚ`-algebra, the first obstruction `mₙ₊₂` of a minimal `A∞` structure with
+  over a `ℚ`-algebra, the first obstruction `mₙ₊₂` of an `A∞` structure with
   `m₃ = ⋯ = mₙ₊₁ = 0` which is `A∞` isomorphic to the graded algebra `ℋ` is a Hochschild
   coboundary.
 * `IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction`: over a
@@ -265,7 +265,7 @@ private theorem IsMinimal.taylor_apply_eq_of_forall_m_eq_zero (h𝒜 : 𝒜.IsMi
     · rw [hlow k hk₃ hkn, hm k hk₃]) hz
 
 /-- **Normalizing an isomorphism to a graded algebra.**  Let `ℋ` be a graded algebra, presented as
-a minimal `A∞` algebra without operations above arity two, and let `𝒜` be a minimal `A∞` structure
+a minimal `A∞` algebra without operations above arity two, and let `𝒜` be an `A∞` structure
 with the grading and the binary operation of `ℋ`.  If `𝒜` is `A∞` isomorphic to `ℋ`, then there is
 an `A∞` morphism `𝒜 ⟶ ℋ` whose linear part is the identity: the linear part of an isomorphism is a
 graded algebra automorphism of `ℋ`, and composing with its inverse, a strict `A∞` automorphism of
@@ -274,7 +274,7 @@ theorem IsMinimal.exists_linearPart_eq_id_of_isIso (hℋ : ℋ.IsMinimal)
     (hm : ∀ n, 3 ≤ n → ℋ.m n = 0) (hG : 𝒜.grading = ℋ.grading) (h₂ : 𝒜.m 2 = ℋ.m 2)
     {f : AInfinityHom 𝒜 ℋ} (hf : f.IsIso) :
     ∃ g : AInfinityHom 𝒜 ℋ, g.linearPart = LinearMap.id := by
-  have h𝒜 := AInfinityHom.isMinimal_of_isIso hℋ hf
+  have h𝒜 := hf.isMinimal_iff.2 hℋ
   -- The linear part `θ` of `f` is a graded algebra automorphism of `ℋ`, and so is its inverse.
   let θ := LinearEquiv.ofBijective f.linearPart hf.linearPart_bijective
   have hθ : LinearMap.IsHomogeneous θ.toLinearMap ℋ.grading.piece ℋ.grading.piece 0 := by
@@ -298,7 +298,7 @@ theorem IsMinimal.exists_linearPart_eq_id_of_isIso (hℋ : ℋ.IsMinimal)
 
 /-- **The quartic obstruction of an `A∞` structure isomorphic to a graded algebra is a Hochschild
 coboundary**, when `2` is invertible.  Let `ℋ` be a graded algebra, presented as a minimal `A∞`
-algebra without operations above arity two, and let `𝒜` be a minimal `A∞` structure with the
+algebra without operations above arity two, and let `𝒜` be an `A∞` structure with the
 grading and the binary operation of `ℋ` and with `m₃ = 0`.  If `𝒜` is `A∞` isomorphic to `ℋ`,
 then its obstruction `m₄` is the Hochschild differential of a degree-zero cochain concentrated on
 the words of length three: its class in `HH^{4, -2}(H, H)` vanishes. -/
@@ -311,7 +311,7 @@ theorem IsMinimal.exists_hochschildDifferential_eq_obstruction_four_of_isIso
         (ℋ.grading.shift 1).piece 0 ∧
       φ ∘ₗ lengthProj R A ⟨3, by norm_num⟩ = φ ∧
       ℋ.hochschildDifferential 0 φ = 𝒜.obstruction ℋ ⟨4, by norm_num⟩ := by
-  have h𝒜 := AInfinityHom.isMinimal_of_isIso hℋ hf
+  have h𝒜 := hf.isMinimal_iff.2 hℋ
   obtain ⟨g, hg⟩ := hℋ.exists_linearPart_eq_id_of_isIso hm hG h₂ hf
   -- On the words of length at most three, `𝒜` agrees with `ℋ`.
   have h : ∀ z ∈ filtration R A 3, 𝒜.taylor z = ℋ.taylor z := fun z hz ↦
@@ -491,7 +491,7 @@ private theorem exists_hochschildDifferential_eq_obstruction_of_linearPart_eq_id
 
 /-- **The first obstruction of an `A∞` structure isomorphic to a graded algebra is a Hochschild
 coboundary**, over a `ℚ`-algebra.  Let `ℋ` be a graded algebra, presented as a minimal `A∞`
-algebra without operations above arity two, and let `𝒜` be a minimal `A∞` structure with the
+algebra without operations above arity two, and let `𝒜` be an `A∞` structure with the
 grading and the binary operation of `ℋ` and with `m₃ = ⋯ = mₙ₊₁ = 0`.  If `𝒜` is `A∞` isomorphic
 to `ℋ`, then its obstruction `mₙ₊₂` is the Hochschild differential of a degree-zero cochain
 concentrated on the words of length `n + 1`: its class in `HH^{n+2, -n}(H, H)` vanishes. -/
@@ -504,7 +504,7 @@ theorem IsMinimal.exists_hochschildDifferential_eq_obstruction_of_isIso
         (ℋ.grading.shift 1).piece 0 ∧
       φ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = φ ∧
       ℋ.hochschildDifferential 0 φ = 𝒜.obstruction ℋ ⟨n + 2, by omega⟩ := by
-  have h𝒜 := AInfinityHom.isMinimal_of_isIso hℋ hf
+  have h𝒜 := hf.isMinimal_iff.2 hℋ
   -- On the words of length at most `n + 1`, `𝒜` agrees with `ℋ`.
   have h : ∀ z ∈ filtration R A (n + 1), 𝒜.taylor z = ℋ.taylor z := fun z hz ↦
     h𝒜.taylor_apply_eq_of_forall_m_eq_zero hℋ hm hG h₂ hlow hz
