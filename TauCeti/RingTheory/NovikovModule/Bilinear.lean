@@ -73,11 +73,12 @@ the product is linear in the kernel (`NovikovModule.kernelProduct_add`,
 `d (a ⋆ b) = d a ⋆ b ± a ⋆ d b` for differentials given by kernels follows from the corresponding
 identity between kernels, which is what counting the ends of one-dimensional moduli spaces gives.
 For the product of a matrix composed with the map of a matrix
-(`TauCeti.RingTheory.NovikovModule.MapOfMatrix`), on either input or on the output, the reference
-coordinates are given by the corresponding products of the matrices
+(`TauCeti.RingTheory.NovikovModule.MapOfMatrix`), on either input, on both inputs or on the output,
+the reference coordinates are given by the corresponding products of the matrices
 (`NovikovModule.coordinates_novikovMapOfMatrix_novikovProductOfMatrix`,
 `NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left`,
-`NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`).
+`NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`,
+`NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix`).
 
 ## Main definitions
 
@@ -121,8 +122,9 @@ coordinates are given by the corresponding products of the matrices
   matrix.
 * `TauCeti.NovikovModule.coordinates_novikovMapOfMatrix_novikovProductOfMatrix`,
   `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left`,
-  `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`: the matrix
-  formulas for a map of a matrix composed with a product of a matrix, on either side.
+  `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right`,
+  `TauCeti.NovikovModule.coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix`:
+  the matrix formulas for a map of a matrix composed with a product of a matrix, on either side.
 
 ## References
 
@@ -997,16 +999,18 @@ end OfMatrix
 
 section MapOfMatrix
 
-variable {R H ι₁ ι₂ ι₀ ι₃ : Type*} [CommSemiring R] [AddCommGroup H] {N : H →+ ℝ}
-  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*} {P₃ : ι₃ → Type*}
+variable {R H ι₁ ι₂ ι₀ ι₃ ι₄ : Type*} [CommSemiring R] [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*} {P₃ : ι₃ → Type*} {P₄ : ι₄ → Type*}
   [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
-  [∀ m, AddTorsor H (P₃ m)]
+  [∀ m, AddTorsor H (P₃ m)] [∀ m, AddTorsor H (P₄ m)]
   {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ} {F₃ : (Σ m, P₃ m) → ℝ}
+  {F₄ : (Σ m, P₄ m) → ℝ}
   (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
   (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
   (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
   (hF₃ : ∀ m h (p : P₃ m), F₃ ⟨m, h +ᵥ p⟩ = F₃ ⟨m, p⟩ - N h)
-  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k) (r₃ : ∀ m, P₃ m)
+  (hF₄ : ∀ m h (p : P₄ m), F₄ ⟨m, h +ᵥ p⟩ = F₄ ⟨m, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k) (r₃ : ∀ m, P₃ m) (r₄ : ∀ m, P₄ m)
   [Fintype ι₁] [Fintype ι₂]
 
 /-- **The matrix formula for a map after a product.** In reference coordinates, the image of
@@ -1056,6 +1060,26 @@ theorem coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right [Finite ι�
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+
+/-- **The matrix formula for a product after maps in both inputs.** In reference coordinates, the
+product of the images of `a` and `b` under the maps of matrices `D₁` and `D₂` is
+`∑ᵢ ∑ⱼ aᵢ bⱼ ∑ₛ ∑ₜ D₁ᵢₛ D₂ⱼₜ Qₛₜₗ`. -/
+theorem coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix [Finite ι₀]
+    [Fintype ι₃] [Fintype ι₄] (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+    (D₁ : Matrix ι₃ ι₁ (NovikovSeries R H N)) (D₂ : Matrix ι₄ ι₂ (NovikovSeries R H N))
+    (a : NovikovModule R F₃) (b : NovikovModule R F₄) (l : ι₀) :
+    coordinates hF₀ r₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q
+        (novikovMapOfMatrix hF₃ hF₁ r₃ r₁ D₁ a) (novikovMapOfMatrix hF₄ hF₂ r₄ r₂ D₂ b)) l =
+      ∑ i, ∑ j, coordinates hF₃ r₃ a i * coordinates hF₄ r₄ b j *
+        ∑ s, ∑ t, D₁ i s * D₂ j t * Q s t l := by
+  simp only [coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left,
+    coordinates_novikovMapOfMatrix, Finset.sum_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Finset.sum_comm]
+  refine (Finset.sum_congr rfl fun s _ => Finset.sum_comm).trans ?_
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun s _ =>
+    Finset.sum_congr rfl fun t _ => by ring
 
 end MapOfMatrix
 

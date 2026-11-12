@@ -361,28 +361,16 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_sub_novikovProductOfMatrix_eq_
         negOnePowCast R e • novikovProductOfMatrix hF₁ hF₂ hG₀ r₁ r₂ s₀ K a
           (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
   refine (coordinates hG₀ s₀).injective (funext fun l => ?_)
-  simp only [map_add, map_sub, map_smul, Pi.add_apply, Pi.sub_apply, Pi.smul_apply,
+  -- Each of the five terms has reference coordinates of the form `∑ᵢ ∑ⱼ aᵢ bⱼ cᵢⱼₗ`.
+  rw [map_sub, Pi.sub_apply,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_novikovMapOfMatrix]
+  simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply,
     coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
     coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left,
     coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right]
-  simp only [coordinates_novikovMapOfMatrix]
   have hs := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₁ r₁ hd₁ ha
-  set x := coordinates hF₁ r₁ a
-  set y := coordinates hF₂ r₂ b
-  -- The product of the two maps is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₛ ∑ₜ Φ₁ᵢₛ Φ₂ⱼₜ Q'ₛₜₗ` by
-  -- expanding the first map and interchanging the sums.
-  have h₂ : ∑ s, ∑ j, (∑ i, x i * Φ₁ i s) * y j * ∑ t, Φ₂ j t * Q' s t l =
-      ∑ i, ∑ j, x i * y j * ∑ s, ∑ t, Φ₁ i s * Φ₂ j t * Q' s t l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    refine (Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun j _ =>
-      Finset.sum_comm).trans ?_
-    refine (Finset.sum_congr rfl fun s _ => Finset.sum_comm).trans ?_
-    refine Finset.sum_comm.trans (Finset.sum_congr rfl fun i _ => Finset.sum_comm.trans ?_)
-    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun s _ =>
-      Finset.sum_congr rfl fun t _ => by ring
   -- Termwise, this is the continuation identity, with the sign of the orbit of `i` replaced by
   -- the sign of the degree of `a` on its nonzero coordinates.
-  rw [h₂]
   simp only [Finset.smul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← mul_sub, hC, mul_add, mul_add, mul_smul_comm, ← smul_mul_assoc, ← smul_mul_assoc, hs,
