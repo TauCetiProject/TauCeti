@@ -143,8 +143,8 @@ private theorem exists_eq_smul_of_isGlHighestWeightVector_sub_single
     (hv : IsGlHighestWeightVector mu v) {t : Fin n} {x y : Module.Dual K (Fin n → K) ⊗[K] M}
     (hx : IsGlHighestWeightVector (mu - Pi.single t 1) x)
     (hy : IsGlHighestWeightVector (mu - Pi.single t 1) y) : ∃ c : K, y = c • x := by
-  obtain ⟨hx0, a, ha, hxa⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hx
-  obtain ⟨hy0, b, hb, hyb⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hy
+  obtain ⟨_, a, ha, hxa⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hx
+  obtain ⟨_, b, hb, hyb⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hy
   refine ⟨b / a, ?_⟩
   by_contra hne
   have hx' := hx.smul (div_ne_zero hb ha)

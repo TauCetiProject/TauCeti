@@ -612,7 +612,7 @@ private theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
     · simp [closedBall_eq_empty.2 hr]
     have hQ (q : ℤ × (ι → ℤ)) : dyadicCube q.1 q.2 = closedBall c r := by
       ext x
-      simp [dyadicCube_eq_pi, mem_closedBall, Subsingleton.elim x c, hr]
+      simp [mem_closedBall, Subsingleton.elim x c, hr]
     simpa only [hQ (0, 0)] using volume_lt_norm_sub_setAverage_le (q₀ := (0, 0)) (f := f)
       (by simpa only [hQ (0, 0)] using hf)
       (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) s
@@ -663,7 +663,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le [C
     · simp [closedBall_eq_empty.2 hr]
     have hQ (q : ℤ × (ι → ℤ)) : dyadicCube q.1 q.2 = closedBall c r := by
       ext x
-      simp [dyadicCube_eq_pi, mem_closedBall, Subsingleton.elim x c, hr]
+      simp [mem_closedBall, Subsingleton.elim x c, hr]
     simpa only [hQ (0, 0)] using setLIntegral_exp_mul_norm_sub_setAverage_volume_le
       (q₀ := (0, 0)) (f := f) (by simpa only [hQ (0, 0)] using hf)
       (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) hρ
@@ -841,7 +841,7 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
   set e := (MeasurableEquiv.toLp 2 (ι → ℝ)).symm
   set r₀ := R / (2 * √(Fintype.card ι : ℝ))
   have hs : 0 < √(Fintype.card ι : ℝ) := sqrt_card_pos
-  have hr₀ : 0 < r₀ := by positivity
+  have _ : 0 < r₀ := by positivity
   -- `f` read in the coordinates `ι → ℝ`.
   set g : (ι → ℝ) → E := fun y => f (toLp 2 y) with hg_def
   have hge : ∀ x, g (e x) = f x := fun x => by
@@ -959,7 +959,6 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_nonneg [None
   set n := Fintype.card ι
   set s := √(n : ℝ)
   set r₀ := R / (2 * s)
-  have hr₀ : 0 < r₀ := by positivity
   set Q := ofLp ⁻¹' closedBall (ofLp x₀) r₀
   set B := ball x₀ r₀
   set ρ := Real.exp (σ * (2 ^ (n + 1) * M'))
@@ -970,9 +969,6 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_nonneg [None
   -- The averages of `f` over `B` and over `Q` differ by at most `sⁿ M'`.
   have hd : ‖(⨍ y in Q, f y ∂μ) - ⨍ y in B, f y ∂μ‖ ≤ s ^ n * M' :=
     norm_setAverage_preimage_closedBall_sub_setAverage_ball_le he hR hf hM hM'
-  have hC₁ : 0 ≤ 1 + 2 * ρ / (2 - ρ) := by
-    have : 0 < 2 - ρ := by linarith
-    positivity
   calc ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in B, f y ∂μ‖)) ∂μ
       ≤ ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * (s ^ n * M'))) *
           ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in Q, f y ∂μ‖)) ∂μ := by
@@ -1101,7 +1097,7 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
           C * μ (ball x₀ r) := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · -- `ℝⁿ` is a point, so the oscillation vanishes and `C = 1` works.
-    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
+    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ _ _ _ x₀ r => ?_⟩
     have hsub : Subsingleton (EuclideanSpace ℝ ι) := inferInstance
     by_cases h0 : μ (ball x₀ r) = 0
     · simp [Measure.restrict_eq_zero.2 h0]
@@ -1112,9 +1108,6 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
     simp
   obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   refine ⟨A, hA, C, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
-  have hn : 0 < 2 * √(Fintype.card ι : ℝ) := by
-    have : (0 : ℝ) < Fintype.card ι := by exact_mod_cast Fintype.card_pos
-    positivity
   have hR : 2 * √(Fintype.card ι : ℝ) * r / (2 * √(Fintype.card ι : ℝ)) = r := by
     field_simp
   have := h (x₀ := x₀) (R := 2 * √(Fintype.card ι : ℝ) * r)
