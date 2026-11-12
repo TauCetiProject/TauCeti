@@ -93,7 +93,7 @@ private theorem multiplicity_relNorm_prime (p : Ideal A) [p.IsMaximal] (hp : p �
 end Prime
 
 /-- **The coefficients of a relative norm at a nonzero maximal ideal.** This is
-`multiplicity_relNorm` away from the zero ideal, by induction on the prime factorization of `I`. -/
+`multiplicity_relNorm` away from the zero ideal. -/
 private theorem multiplicity_relNorm_of_ne_bot (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥)
     {I : Ideal B} (hI : I ≠ ⊥) :
     multiplicity p (relNorm A I) =
@@ -133,13 +133,18 @@ private theorem multiplicity_relNorm_of_ne_bot (p : Ideal A) [p.IsMaximal] (hp :
         (mul_ne_zero hP0 hJ)), Nat.mul_add]
 
 variable (B) in
-/-- **The coefficients of a relative norm.** For a nonzero ideal `I` of `B` and a maximal
+/-- **The coefficients of a relative norm.** For an ideal `I` of `B` and a maximal
 ideal `p` of `A`, the coefficient of `relNorm A I` at `p` is the sum, over the primes
 `P` of `B` above `p`, of the coefficient of `I` at `P` weighted by the residue degree of `P`
 over `p`. -/
-theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] {I : Ideal B} (hI : I ≠ ⊥) :
+theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] {I : Ideal B} :
     multiplicity p (relNorm A I) =
       ∑ P ∈ (p.primesOver B).toFinset, P.inertiaDeg A * multiplicity P I := by
+  rcases eq_or_ne I ⊥ with rfl | hI
+  · -- Both sides vanish: the zero ideal has coefficient `0` everywhere.
+    rw [Ideal.relNorm_bot, show multiplicity p (⊥ : Ideal A) = 0 from multiplicity_zero_right _]
+    exact (Finset.sum_eq_zero fun P _ ↦ by
+      rw [show multiplicity P (⊥ : Ideal B) = 0 from multiplicity_zero_right _, Nat.mul_zero]).symm
   by_cases hp : p = ⊥
   · subst hp
     -- The zero ideal has coefficient `0` everywhere, and every prime above `⊥` is `⊥`.

@@ -74,10 +74,9 @@ private lemma valuation_norm_algebraMap {r : B} (hr : r ≠ 0) :
     rw [h, map_zero, eq_comm, Algebra.norm_eq_zero_iff, map_eq_zero_iff _
       (IsFractionRing.injective B L)] at h'
     exact hr h'
-  have hspan : Ideal.span {r} ≠ ⊥ := by simpa using hr
   rw [← Algebra.algebraMap_intNorm (A := R) (K := K), valuation_of_algebraMap,
     intValuation_eq_exp_neg_multiplicity v hN, ← Ideal.relNorm_singleton,
-    TauCeti.multiplicity_relNorm B v.asIdeal hspan]
+    TauCeti.multiplicity_relNorm B v.asIdeal]
   have hexp (s : Finset {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal})
       (g : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} → ℤ) :
       ∏ i ∈ s, exp (g i) = exp (∑ i ∈ s, g i) := by

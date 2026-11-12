@@ -18,9 +18,8 @@ different at the primes of `B` above `p`, each weighted by a residue degree:
 `mult_p(relDiscr A B) = Σ_{P ∣ p} f(P / p) · mult_P(𝔇(B / A))`.
 
 This is the coefficient formula for `relDiscr` specifically: it is `TauCeti.multiplicity_relNorm`
-applied to the different, through `relDiscr_def`. The hypotheses are that `p` is a maximal
-ideal of `A` and that the different is nonzero, the latter holding whenever the extension is
-separable.
+applied to the different, through `relDiscr_def`. The only hypothesis is that `p` is a maximal
+ideal of `A`.
 
 The coefficient `mult_p(I)` is Mathlib's `multiplicity`, the normalization in which
 `Ideal.finprod_heightOneSpectrum_pow_multiplicity` recovers an ideal from its coefficients.
@@ -49,13 +48,12 @@ variable (B) in
 /-- **The coefficients of the relative discriminant.** At a maximal ideal `p` of `A`,
 the coefficient of `relDiscr A B` is the sum of the coefficients of the different at the primes
 above `p`, each weighted by its residue degree. -/
-theorem multiplicity_relDiscr (p : Ideal A) [p.IsMaximal]
-    (hd : differentIdeal A B ≠ ⊥) :
+theorem multiplicity_relDiscr (p : Ideal A) [p.IsMaximal] :
     multiplicity p (relDiscr A B) =
       ∑ P ∈ (p.primesOver B).toFinset,
         P.inertiaDeg A * multiplicity P (differentIdeal A B) := by
   rw [relDiscr_def]
-  exact multiplicity_relNorm B p hd
+  exact multiplicity_relNorm B p
 
 end TauCeti
 
