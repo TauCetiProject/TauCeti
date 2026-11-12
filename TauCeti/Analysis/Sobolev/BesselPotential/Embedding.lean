@@ -245,6 +245,17 @@ theorem tendsto_cocompact_of_mem_realSobolevFunctions {s : ℝ} (hs : finrank �
   have hg0 : Tendsto (fun x ↦ (f x : ℂ)) (cocompact E) (𝓝 0) := heq ▸ g.zero_at_infty'
   simpa [Function.comp_def] using (Complex.continuous_re.tendsto 0).comp hg0
 
+/-- **Continuous representatives of Sobolev functions.** A real function in `H^s`,
+`s > dim E / 2`, agrees almost everywhere with a continuous function. -/
+theorem exists_continuous_ae_eq_of_mem_realSobolevFunctions {s : ℝ}
+    (hs : finrank ℝ E < 2 * s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) :
+    ∃ g : E → ℝ, Continuous g ∧ f =ᵐ[volume] g := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨g, hg⟩ := hS.exists_zeroAtInftyContinuousMap_ae_eq hs
+  refine ⟨fun x ↦ (g x).re, Complex.continuous_re.comp g.continuous, ?_⟩
+  filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hg] with x h₁ h₂ h₃
+  rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply, Complex.ofReal_re]
+
 /-- **Sobolev embedding into `C^k`.** An `L²` function on `E` lying in the Bessel-potential space
 `H^s` with `s > dim E / 2 + k` agrees almost everywhere with a `C^k` function. -/
 theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
