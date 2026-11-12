@@ -59,8 +59,8 @@ theorem exists_stableSet_isManifold (h : IsNondegenerateCriticalPoint f x) {n : 
   exact exists_isManifold_of_linearSubspaceCharts
     (Submodule.IsCompl.isTopCompl_of_isClosed
       h.isCompl_unstableLinearSubspace_stableLinearSubspace.symm
-      h.contDiffAt.stableLinearSubspace.closed_of_finiteDimensional
-      h.contDiffAt.unstableLinearSubspace.closed_of_finiteDimensional)
+      h.contDiffAt.stableLinearSubspace.isClosed_of_finiteDimensional
+      h.contDiffAt.unstableLinearSubspace.isClosed_of_finiteDimensional)
     (fun y ↦ (h.exists_stableSet_chart hfs hf y.property).imp fun _ ⟨hy, hq, hqs, hmem⟩ ↦
       ⟨hy, fun z hz ↦ (hq z hz).contMDiffAt, fun z hz ↦ (hqs z hz).contMDiffAt, hmem⟩)
 
@@ -78,8 +78,8 @@ theorem exists_unstableSet_isManifold (h : IsNondegenerateCriticalPoint f x) {n 
   exact exists_isManifold_of_linearSubspaceCharts
     (Submodule.IsCompl.isTopCompl_of_isClosed
       h.isCompl_unstableLinearSubspace_stableLinearSubspace
-      h.contDiffAt.unstableLinearSubspace.closed_of_finiteDimensional
-      h.contDiffAt.stableLinearSubspace.closed_of_finiteDimensional)
+      h.contDiffAt.unstableLinearSubspace.isClosed_of_finiteDimensional
+      h.contDiffAt.stableLinearSubspace.isClosed_of_finiteDimensional)
     (fun y ↦ (h.exists_unstableSet_chart hfs hf y.property).imp fun _ ⟨hy, hq, hqs, hmem⟩ ↦
       ⟨hy, fun z hz ↦ (hq z hz).contMDiffAt, fun z hz ↦ (hqs z hz).contMDiffAt, hmem⟩)
 

@@ -86,13 +86,9 @@ underlying permutation and immediately splices it into an existing orbit.
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 1
   (printed p. 10) and Proposition 16.10 (Chapter 16).
 
-This advances Layer 4 ("knot theory, done properly") of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), which asks for framed and oriented presentations,
-the forgetful maps between them, the equivalence attached to each presentation -- "Markov moves
-(braids)" -- and "braid-to-diagram via Markov" as an edge of the spanning tree of presentations.
-The relation in this file is specifically the ordinary unframed relation after applying
-`TauCeti.FramedMarkovBraid.forgetFraming`; framing-preserving Markov equivalence is developed
-in `TauCeti.KnotTheory.Markov.Framed`.
+The relation in this file is the ordinary unframed relation after applying
+`TauCeti.FramedMarkovBraid.forgetFraming`; framing-preserving Markov equivalence is developed in
+`TauCeti.KnotTheory.Markov.Framed`.
 -/
 
 public section
