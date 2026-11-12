@@ -92,10 +92,7 @@ private theorem exists_finset_realize_comp_iff (c : A → G)
       refine ⟨fun hfx => ?_, fun hx => by rw [hx]⟩
       by_contra hx
       exact hf x (by simpa [x, mul_inv_eq_one] using hx) (by simp [x, hfx])
-    | rel R _ =>
-      -- The coefficient extension has two empty relation-symbol summands.
-      change Empty ⊕ Empty at R
-      rcases R with r | r <;> exact isEmptyElim r
+    | rel R _ => exact isEmptyElim R
   | imp _ _ ih₁ ih₂ =>
     obtain ⟨s₁, hs₁, h₁⟩ := ih₁
     obtain ⟨s₂, hs₂, h₂⟩ := ih₂
