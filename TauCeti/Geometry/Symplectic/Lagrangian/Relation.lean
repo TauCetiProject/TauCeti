@@ -26,8 +26,8 @@ The matching-space quotient and its excess are defined for arbitrary linear rela
 `TauCeti.LinearAlgebra.Submodule.Relation.FiberProduct`. For Lagrangian relations the excess is
 the symplectic orthogonal of the sum of the middle projections
 (`TauCeti.SymplecticForm.IsLagrangian.orthogonal_middle_eq_relCompExcess`). Consequently the
-endpoint projection is injective exactly when those projections span the middle space. In the
-clean case with excess, the matching dimension is half the outer dimension plus the excess
+endpoint projection is injective exactly when those projections span the middle space. The
+matching dimension is half the outer dimension plus the excess
 dimension; its quotient is the Lagrangian composite.
 
 The proof intersects the product relation with the matching subspace, then
@@ -64,25 +64,17 @@ theorem IsIsotropic.relComp (hL : (ω₁.twistedProd ω₂).IsIsotropic L)
   simp only [twistedProd_apply] at h₁ h₂ ⊢
   linarith
 
-variable (V W U) in
-/-- The matching subspace of `(V × W) × (W × U)`: pairs of pairs whose middle coordinates
-agree. Intersecting a product relation with it is the first step of relational composition. -/
-private def matching : Submodule ℝ ((V × W) × (W × U)) :=
-  LinearMap.ker ((LinearMap.snd ℝ V W).comp (LinearMap.fst ℝ (V × W) (W × U)) -
-    (LinearMap.fst ℝ W U).comp (LinearMap.snd ℝ (V × W) (W × U)))
-
-private lemma mem_matching {z : (V × W) × (W × U)} : z ∈ matching V W U ↔ z.1.2 = z.2.1 := by
-  simp [matching, sub_eq_zero]
-
-/-- The characteristic directions of the matching subspace have zero outer coordinates and
-equal middle coordinates. -/
-private lemma eq_of_mem_orthogonal_matching {z : (V × W) × (W × U)}
-    (hz : z ∈ ((ω₁.twistedProd ω₂).prod (ω₂.twistedProd ω₃)).orthogonal (matching V W U)) :
+/-- The characteristic directions of the middle-coordinate equalizer used by
+`Submodule.relCompFiberProduct` have zero outer coordinates and equal middle coordinates. -/
+private lemma eq_of_mem_orthogonal_eqLocus {z : (V × W) × (W × U)}
+    (hz : z ∈ ((ω₁.twistedProd ω₂).prod (ω₂.twistedProd ω₃)).orthogonal
+      (LinearMap.eqLocus ((LinearMap.snd ℝ V W).comp (LinearMap.fst ℝ (V × W) (W × U)))
+        ((LinearMap.fst ℝ W U).comp (LinearMap.snd ℝ (V × W) (W × U))))) :
     z.1.1 = 0 ∧ z.1.2 = z.2.1 ∧ z.2.2 = 0 := by
   rw [mem_orthogonal_iff] at hz
   have h (y : (V × W) × (W × U)) (hy : y.1.2 = y.2.1) :
       ω₁ y.1.1 z.1.1 - ω₂ y.1.2 z.1.2 + (ω₂ y.2.1 z.2.1 - ω₃ y.2.2 z.2.2) = 0 :=
-    by simpa only [prod_apply, twistedProd_apply] using hz y (mem_matching.mpr hy)
+    by simpa only [prod_apply, twistedProd_apply] using hz y (LinearMap.mem_eqLocus.mpr hy)
   refine ⟨ω₁.separatingRight _ fun v ↦ ?_, sub_eq_zero.mp <| ω₂.separatingRight _ fun w ↦ ?_,
     ω₃.separatingRight _ fun u ↦ ?_⟩
   · simpa using h ((v, 0), (0, 0)) rfl
@@ -103,21 +95,26 @@ theorem IsLagrangian.relComp [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
   rw [isCoisotropic_iff]
   intro x hx
   let z : (V × W) × (W × U) := ((x.1, 0), (0, x.2))
-  have hz : z ∈ Ω.orthogonal (L.prod K ⊓ matching V W U) := by
+  have hz : z ∈ Ω.orthogonal (L.relCompFiberProduct K) := by
     rw [mem_orthogonal_iff]
     intro y hy
-    have hmatch := mem_matching.mp hy.2
+    obtain ⟨hyL, hyK, hmatch⟩ := Submodule.mem_relCompFiberProduct.mp hy
     have hcomp : (y.1.1, y.2.2) ∈ L.relComp K :=
-      Submodule.mem_relComp.mpr ⟨y.1.2, hy.1.1, hmatch ▸ hy.1.2⟩
+      Submodule.mem_relComp.mpr ⟨y.1.2, hyL, hmatch ▸ hyK⟩
     have hzero := (mem_orthogonal_iff.mp hx) _ hcomp
     simpa [Ω, z, sub_eq_add_neg] using hzero
   -- Orthogonality puts the lift in the product relation plus a characteristic direction.
   have hprod : Ω.orthogonal (L.prod K) = L.prod K :=
     le_antisymm (isCoisotropic_iff_le.mp (hL.prod hK).isCoisotropic)
       (isIsotropic_iff_le.mp (hL.prod hK).isIsotropic)
-  rw [Ω.orthogonal_inf, hprod] at hz
+  have hfib : L.relCompFiberProduct K = L.prod K ⊓ LinearMap.eqLocus
+      ((LinearMap.snd ℝ V W).comp (LinearMap.fst ℝ (V × W) (W × U)))
+      ((LinearMap.fst ℝ W U).comp (LinearMap.snd ℝ (V × W) (W × U))) := by
+    ext y
+    simp [and_assoc]
+  rw [hfib, Ω.orthogonal_inf, hprod] at hz
   obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp hz
-  obtain ⟨hbv, hbw, hbu⟩ := eq_of_mem_orthogonal_matching hb
+  obtain ⟨hbv, hbw, hbu⟩ := eq_of_mem_orthogonal_eqLocus hb
   have hav : a.1.1 = x.1 := by
     simpa [z, hbv] using congrArg (fun p : (V × W) × (W × U) ↦ p.1.1) hab
   have hau : a.2.2 = x.2 := by
@@ -191,7 +188,7 @@ theorem IsLagrangian.relCompProjection_injective_iff [FiniteDimensional ℝ W]
   rw [Submodule.relCompProjection_injective_iff,
     hL.middle_eq_top_iff_relCompExcess_eq_bot hK]
 
-/-- The dimension of a clean matching space is half the outer symplectic dimension plus
+/-- The dimension of the matching space is half the outer symplectic dimension plus
 the excess dimension. Quotienting the excess leaves precisely a Lagrangian dimension. -/
 theorem IsLagrangian.two_mul_finrank_relCompFiberProduct [FiniteDimensional ℝ V]
     [FiniteDimensional ℝ W] [FiniteDimensional ℝ U]
@@ -199,7 +196,7 @@ theorem IsLagrangian.two_mul_finrank_relCompFiberProduct [FiniteDimensional ℝ 
     (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
     2 * Module.finrank ℝ (L.relCompFiberProduct K) =
       Module.finrank ℝ V + Module.finrank ℝ U + 2 * Module.finrank ℝ (L.relCompExcess K) := by
-  have hdim := L.finrank_relComp_add_finrank_excess K
+  have hdim := L.finrank_relComp_add_finrank_relCompExcess K
   have hlag := (hL.relComp hK).two_mul_finrank
   rw [Module.finrank_prod] at hlag
   omega

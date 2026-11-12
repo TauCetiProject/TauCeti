@@ -141,7 +141,8 @@ noncomputable def relCompExcessEquivKer (L : Submodule R (M × N))
 theorem relCompExcessEquivKer_apply (L : Submodule R (M × N)) (K : Submodule R (N × P))
     (n : L.relCompExcess K) :
     (L.relCompExcessEquivKer K n : L.relCompFiberProduct K) =
-      L.relCompExcessInclusion K n := (rfl)
+      L.relCompExcessInclusion K n := by
+  simp [relCompExcessEquivKer]
 
 end Semiring
 
@@ -161,8 +162,10 @@ theorem relCompProjection_injective_iff (L : Submodule R (M × N))
   · intro h
     apply eq_bot_iff.mpr
     intro n hn
-    have hz := LinearMap.congr_fun h ⟨n, hn⟩
-    exact congrArg (fun z : L.relCompFiberProduct K ↦ z.1.1.2) hz
+    have hz : L.relCompExcessInclusion K ⟨n, hn⟩ = L.relCompExcessInclusion K 0 := by
+      rw [h, map_zero, LinearMap.zero_apply]
+    exact (Submodule.mem_bot R).mpr
+      (congrArg Subtype.val (L.relCompExcessInclusion_injective K hz))
   · intro h
     apply LinearMap.ext
     intro n
@@ -170,7 +173,7 @@ theorem relCompProjection_injective_iff (L : Submodule R (M × N))
     ext <;> simp [hn]
 
 /-- Eliminating the middle coordinate identifies the matching space modulo its embedded
-excess with the composite relation. This uses Mathlib's first isomorphism theorem. -/
+excess with the composite relation. -/
 noncomputable def relCompQuotientEquiv (L : Submodule R (M × N))
     (K : Submodule R (N × P)) :
     (↥(L.relCompFiberProduct K) ⧸
@@ -183,7 +186,8 @@ noncomputable def relCompQuotientEquiv (L : Submodule R (M × N))
 theorem relCompQuotientEquiv_mk (L : Submodule R (M × N)) (K : Submodule R (N × P))
     (z : L.relCompFiberProduct K) :
     (L.relCompQuotientEquiv K (Submodule.Quotient.mk z) : M × P) =
-      (z.1.1.1, z.1.2.2) := (rfl)
+      (z.1.1.1, z.1.2.2) := by
+  simp [relCompQuotientEquiv]
 
 end Ring
 
@@ -194,7 +198,7 @@ variable {R M N P : Type*} [DivisionRing R]
   [AddCommGroup P] [Module R P]
 
 /-- The dimension of the matching space is the dimension of the composite plus the excess. -/
-theorem finrank_relComp_add_finrank_excess (L : Submodule R (M × N))
+theorem finrank_relComp_add_finrank_relCompExcess (L : Submodule R (M × N))
     (K : Submodule R (N × P)) [FiniteDimensional R (L.relCompFiberProduct K)] :
     Module.finrank R (L.relComp K) + Module.finrank R (L.relCompExcess K) =
       Module.finrank R (L.relCompFiberProduct K) := by
