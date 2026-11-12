@@ -70,7 +70,7 @@ private def multiplySection {D E : WeilDivisor X} {U : Opens X} (h : X → ℂ)
     comp_val_mem_divisorSections fun x hx ↦ isDivisorSectionAt_toDivisorSection_mul
       (hh x hx) (ho x hx) (isDivisorSectionAt_extend f.property ⟨x, hx⟩)⟩
 
-omit [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X] in
+omit [ChartedSpace ℂ X] in
 /-- The inclusion of an open set maps punctured neighbourhoods to punctured neighbourhoods. -/
 private theorem tendsto_val_nhdsNE {U : Opens X} (x : U) :
     Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
@@ -379,7 +379,6 @@ theorem divisorSheafGlobalMulIso_inv_app_eventuallyEq {D E : WeilDivisor X} (h :
   rw [divisorSheafGlobalMulIso_inv_hom_app, multiplyComponent_inv_apply]
   exact multiplySection_eventuallyEq h⁻¹ _ _ _ x
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- Two morphisms of divisor sheaves are equal if, for every section, their values agree on a
 punctured neighbourhood of each point. -/
 private theorem divisorSheaf_hom_ext_nhdsNE {D E : WeilDivisor X}
