@@ -54,6 +54,9 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
+* `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
+  specialization giving factorial decay of the reciprocal Gamma function along natural-number
+  shifts on `[1, ∞)`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -257,6 +260,25 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
         ≤ ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ * (‖s + k‖ * k !) := by gcongr
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
+
+end Complex
+
+namespace Real
+
+/-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
+`(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of
+`Complex.norm_inv_Gamma_add_natCast_le`. -/
+theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
+    (Gamma (s + k))⁻¹ ≤ (Gamma s)⁻¹ / k ! := by
+  have hnorm (t : ℝ) (ht : 0 < t) : ‖(Complex.Gamma t)⁻¹‖ = (Gamma t)⁻¹ := by
+    rw [Complex.Gamma_ofReal, norm_inv, Complex.norm_of_nonneg (Gamma_pos_of_pos ht).le]
+  have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
+  have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
+  rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
+
+end Real
+
+namespace Complex
 
 open Finset in
 /-- A finite alternating sum of reciprocal Gamma values: for `a ∉ −ℕ`,
