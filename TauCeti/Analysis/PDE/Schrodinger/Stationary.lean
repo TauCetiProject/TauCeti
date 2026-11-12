@@ -390,7 +390,7 @@ private noncomputable def schrodingerForm (hP : MemLp P ⊤ (volume : Measure E)
       have hvv := W1p.norm_value_le v
       rw [Real.norm_eq_abs]
       refine (abs_add_le _ _).trans ?_
-      have hM := norm_nonneg (potentialMul hP)
+      have _ := norm_nonneg (potentialMul hP)
       calc _ ≤ ‖W1p.gradient u‖ * ‖W1p.gradient v‖ +
             ‖W1p.value u‖ * (‖potentialMul hP‖ * ‖W1p.value v‖) := by
             gcongr
@@ -457,7 +457,7 @@ theorem exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq [No
     integral_nonneg_of_ae (hP₀.mono fun z hz ↦ by positivity)
   have h1 : min 1 c ≤ 1 := min_le_left _ _
   have h2 : min 1 c ≤ c := min_le_right _ _
-  have h0 : 0 ≤ min 1 c := le_min zero_le_one hc.le
+  have _ : 0 ≤ min 1 c := le_min zero_le_one hc.le
   rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
   nlinarith [sq_nonneg ‖W1p.value u‖, sq_nonneg ‖W1p.gradient u‖,
     mul_le_mul_of_nonneg_right h2 (sq_nonneg ‖W1p.value u‖),

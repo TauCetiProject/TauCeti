@@ -81,8 +81,8 @@ private theorem potential_bounds {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldS
       ∃ R, ∀ z, R < ‖z‖ → 1 / 8 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
   have hlim := tendsto_normSq_of_mem_framedFieldSpace hs hx hcont
   have hVc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have h2 : Continuous fun z ↦ x z 2 := by fun_prop
-    have h3 : Continuous fun z ↦ x z 3 := by fun_prop
+    have _ : Continuous fun z ↦ x z 2 := by fun_prop
+    have _ : Continuous fun z ↦ x z 3 := by fun_prop
     fun_prop
   obtain ⟨R₁, -, hR₁⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
   refine ⟨?_, R₁, fun z hz ↦ (hR₁ z hz).le⟩
