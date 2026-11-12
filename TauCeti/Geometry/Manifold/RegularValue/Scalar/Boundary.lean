@@ -334,7 +334,7 @@ theorem euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary_eq_chartAt
   · -- On the upper level, the face chart only sees points of the upper level.
     have hqb : f q.1.1 = b := (hmem q).resolve_left fun hqa ↦ by
       have := hq
-      rw [scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hab hp] at this
+      rw [scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hp] at this
       exact (mem_Ioi.1 this.2).ne' hqa
     rw [scalarRegularBandBoundaryHomeomorph_apply_of_eq_right hf hn ha hb hab p hp,
       scalarRegularBandBoundaryHomeomorph_apply_of_eq_right hf hn ha hb hab q hqb,
@@ -343,7 +343,7 @@ theorem euclideanSpaceEquiv_chartAt_scalarRegularBandBoundary_eq_chartAt
     ext i
     simp only [EuclideanSpace.equiv, PiLp.continuousLinearEquiv_apply,
       EuclideanHalfSpace.boundaryProj_apply]
-    rw [scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_right hf hn ha hb hab hp hq
+    rw [scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_right hf hn ha hb hp hq
       hqb, Fin.cast_eq_self]
 
 /-- **The boundary of a band is diffeomorphic to the disjoint union of its levels.** The identity

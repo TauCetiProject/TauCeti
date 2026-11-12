@@ -274,7 +274,7 @@ coefficients are deleted, is a lower bound for the number of occurrences of `x` 
 theorem countP_toWord_snd_le_occurrences [DecidableEq X] (x : X) (w : GX G X) :
     ((snd w).toWord.countP fun p => p.1 = x) ≤ occurrences x w := by
   refine le_occurrences x (fun u => (snd u).toWord.countP fun p => p.1 = x) (fun u v => ?_)
-    (fun g => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
+    (fun _ => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
   · rw [map_mul, ← List.countP_append]
     exact (FreeGroup.toWord_mul_sublist _ _).countP_le
   · simp [FreeGroup.toWord_inv, FreeGroup.toWord_of, FreeGroup.invRev]

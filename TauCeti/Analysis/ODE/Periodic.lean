@@ -8,9 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.ODE.DysonSeries
+public import TauCeti.LinearAlgebra.Determinant.Endomorphism
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Data.SignType.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.Instances.Real.TwistedExtension
 
@@ -72,12 +74,26 @@ and `ε` (`TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq`). For
 linearized Hamiltonian equation along a nondegenerate orbit, this is the `L²` lower bound of the
 asymptotic operator of Floer theory.
 
+The two identifications together identify the determinant line
+`det L = det (ker L) ⊗ (det (coker L))^*` with the determinant line of `ε - P`
+(`TauCeti.detLineTwistedLinearOperatorEquiv`), with no assumption on the kernel: when `ε - P` is
+not invertible the whole determinant line of its kernel and cokernel is retained. In finite
+dimension the determinant line of the endomorphism `ε - P` has a canonical trivialization
+(`LinearMap.detLineEndEquiv`), so `det L` is canonically trivialized as well. When `L` is
+bijective, this trivialization is `(det (ε - P))⁻¹` times the one given by bijectivity
+(`TauCeti.detLineEndEquiv_detLineTwistedLinearOperatorEquiv`), so the two orientations of `det L`
+differ by the sign of `det (ε - P)`
+(`TauCeti.sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv`). For the orbit-torus operators
+this is the sign of `det (1 - P)` or `det (-1 - P)`.
+
 ## Main definitions
 
 * `TauCeti.twistedContinuous X d ε`, `TauCeti.twistedContDiff X d ε`: the continuous and the `C¹`
   maps `ℝ → X` twisted by `ε` along `d`.
 * `TauCeti.twistedLinearOperator hM hper ε`: the operator `w ↦ w' - M w` between them.
 * `TauCeti.twistedEndpoint hM d ε`: the endpoint map `f ↦ Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)`.
+* `TauCeti.detLineTwistedLinearOperatorEquiv`: `det L ≃ det (ε - Ψ(d))`, computed on pure
+  tensors by `TauCeti.detLineTwistedLinearOperatorEquiv_tmul`.
 
 ## Main results
 
@@ -91,7 +107,13 @@ asymptotic operator of Floer theory.
   `TauCeti.finiteDimensional_quotient_range_twistedLinearOperator`: in finite dimension, the kernel
   and cokernel of `L` are finite-dimensional.
 * `TauCeti.range_twistedLinearOperator_eq_top_iff_det_ne_zero`,
-  `TauCeti.ker_twistedLinearOperator_eq_bot_iff_det_ne_zero`: the Fredholm alternative.
+  `TauCeti.ker_twistedLinearOperator_eq_bot_iff_det_ne_zero`,
+  `TauCeti.bijective_twistedLinearOperator_iff_det_ne_zero`: the Fredholm alternative.
+* `TauCeti.detLineEndEquiv_detLineTwistedLinearOperatorEquiv`,
+  `TauCeti.sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv`: for bijective `L`, the
+  canonical trivialization of `det L` through `ε - Ψ(d)` is `(det (ε - Ψ(d)))⁻¹` times the
+  trivialization given by bijectivity, so the two orientations differ by the sign of
+  `det (ε - Ψ(d))`.
 * `TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq`: the `L²` estimate for twisted
   solutions when `ε - Ψ(d)` is invertible.
 
@@ -306,11 +328,10 @@ theorem exists_forall_integral_norm_sq_le_mul_integral_norm_sq (hM : Continuous 
     (hP : IsUnit (ε • 1 - dysonSeriesLeft M d)) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
       w d = ε • w 0 → ∫ t in 0..d, ‖w t‖ ^ 2 ≤ C * ∫ t in 0..d, ‖f t‖ ^ 2 := by
-  obtain ⟨B, hB, hle⟩ := exists_forall_norm_le_mul_integral_norm hM hd hP
+  obtain ⟨B, _, hle⟩ := exists_forall_norm_le_mul_integral_norm hM hd hP
   refine ⟨d ^ 2 * B ^ 2, by positivity, fun w f hf hw hwd ↦ ?_⟩
   have hwc : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
   set F := ∫ s in 0..d, ‖f s‖
-  have hF : 0 ≤ F := integral_nonneg hd fun _ _ ↦ norm_nonneg _
   -- Cauchy–Schwarz on `[0, d]`: `F² ≤ d ∫₀ᵈ ‖f‖²`.
   have hCS : F ^ 2 ≤ d * ∫ s in 0..d, ‖f s‖ ^ 2 := by
     have h := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
@@ -522,6 +543,17 @@ theorem range_twistedLinearOperator_eq_top_iff (hM : Continuous M)
   rw [← Submodule.Quotient.subsingleton_iff, ← Submodule.Quotient.subsingleton_iff,
     (quotientRangeTwistedLinearOperatorEquiv hM hper hd hε).subsingleton_congr]
 
+/-- For `d > 0` and `ε ≠ 0`, `L` is bijective exactly when `ε - Ψ(d)` is. -/
+theorem bijective_twistedLinearOperator_iff (hM : Continuous M)
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) :
+    Function.Bijective (twistedLinearOperator hM hper ε) ↔
+      Function.Bijective ⇑(ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) :=
+  and_congr
+    (LinearMap.ker_eq_bot.symm.trans
+      ((ker_twistedLinearOperator_eq_bot_iff hM hper).trans LinearMap.ker_eq_bot))
+    (LinearMap.range_eq_top.symm.trans
+      ((range_twistedLinearOperator_eq_top_iff hM hper hd hε).trans LinearMap.range_eq_top))
+
 end KernelCokernel
 
 section FiniteDimensional
@@ -577,6 +609,81 @@ theorem range_twistedLinearOperator_eq_top_iff_det_ne_zero (hM : Continuous M)
     LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, LinearMap.range_eq_top, LinearMap.ker_eq_bot,
     LinearMap.injective_iff_surjective]
 
+/-- **Fredholm alternative, bijectivity.** In finite dimension, for `d > 0` and `ε ≠ 0`, `L` is
+bijective exactly when `det (ε - Ψ(d)) ≠ 0`. -/
+theorem bijective_twistedLinearOperator_iff_det_ne_zero (hM : Continuous M)
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) :
+    Function.Bijective (twistedLinearOperator hM hper ε) ↔
+      LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) ≠ 0 := by
+  rw [bijective_twistedLinearOperator_iff hM hper hd hε, ← Module.End.isUnit_iff,
+    LinearMap.isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
+
 end FiniteDimensional
+
+section DeterminantLine
+
+/-- **The determinant line of `L` is that of `ε - Ψ(d)`.** For `d > 0` and `ε ≠ 0`, evaluation at
+`0` on the kernel (`TauCeti.kerTwistedLinearOperatorEquiv`) and the endpoint map on the cokernel
+(`TauCeti.quotientRangeTwistedLinearOperatorEquiv`) identify the determinant line
+`det (ker L) ⊗ (det (coker L))^*` of `L = d/dt - M` on maps twisted by `ε` with the determinant
+line of the operator `ε - Ψ(d)` on `X`. -/
+def detLineTwistedLinearOperatorEquiv (hM : Continuous M) (hper : Function.Periodic M d)
+    (hd : 0 < d) (hε : ε ≠ 0) :
+    (twistedLinearOperator hM hper ε).detLine ≃ₗ[ℝ]
+      (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)).detLine :=
+  LinearMap.detLineCongrKerCoker (kerTwistedLinearOperatorEquiv hM hper ε)
+    (quotientRangeTwistedLinearOperatorEquiv hM hper hd hε)
+
+open TensorProduct in
+/-- On pure tensors, `TauCeti.detLineTwistedLinearOperatorEquiv` transports the kernel factor along
+evaluation at `0` and the cokernel functional along the inverse of the endpoint map. -/
+@[simp]
+theorem detLineTwistedLinearOperatorEquiv_tmul (hM : Continuous M) (hper : Function.Periodic M d)
+    (hd : 0 < d) (hε : ε ≠ 0)
+    (x : detLine ℝ (LinearMap.ker (twistedLinearOperator hM hper ε)))
+    (φ : Module.Dual ℝ
+      (detLine ℝ (twistedContinuous X d ε ⧸ LinearMap.range (twistedLinearOperator hM hper ε)))) :
+    detLineTwistedLinearOperatorEquiv hM hper hd hε (x ⊗ₜ φ) =
+      LinearEquiv.detLineCongr (kerTwistedLinearOperatorEquiv hM hper ε) x ⊗ₜ
+        (φ ∘ₗ (LinearEquiv.detLineCongr
+          (quotientRangeTwistedLinearOperatorEquiv hM hper hd hε)).symm.toLinearMap) :=
+  LinearMap.detLineCongrKerCoker_tmul _ _ x φ
+
+variable [FiniteDimensional ℝ X]
+
+/-- **The determinant line of a nondegenerate twisted problem.** In finite dimension, for `d > 0`
+and `ε ≠ 0`, let `L = d/dt - M` on maps twisted by `ε` be bijective, equivalently
+`det (ε - Ψ(d)) ≠ 0`. Transporting the determinant line of `L` to that of `ε - Ψ(d)` and applying
+the canonical trivialization of the determinant line of an endomorphism
+(`LinearMap.detLineEndEquiv`) gives `(det (ε - Ψ(d)))⁻¹` times the trivialization of the
+determinant line of the bijective operator `L` (`LinearMap.detLineEquivOfBijective`). -/
+theorem detLineEndEquiv_detLineTwistedLinearOperatorEquiv (hM : Continuous M)
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0)
+    (hL : Function.Bijective (twistedLinearOperator hM hper ε))
+    (x : (twistedLinearOperator hM hper ε).detLine) :
+    (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)).detLineEndEquiv
+        (detLineTwistedLinearOperatorEquiv hM hper hd hε x) =
+      (LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)))⁻¹ *
+        (twistedLinearOperator hM hper ε).detLineEquivOfBijective hL x := by
+  have hP := (bijective_twistedLinearOperator_iff hM hper hd hε).1 hL
+  rw [LinearMap.detLineEndEquiv_eq_inv_det_mul _ hP, detLineTwistedLinearOperatorEquiv,
+    LinearMap.detLineEquivOfBijective_detLineCongrKerCoker hL hP]
+
+/-- **The orientation sign of a nondegenerate twisted problem.** In the situation of
+`TauCeti.detLineEndEquiv_detLineTwistedLinearOperatorEquiv`, the orientation of the determinant
+line of `L` induced by the canonical trivialization for `ε - Ψ(d)` and the orientation given by
+bijectivity of `L` differ by the sign of `det (ε - Ψ(d))`. -/
+theorem sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv (hM : Continuous M)
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0)
+    (hL : Function.Bijective (twistedLinearOperator hM hper ε))
+    (x : (twistedLinearOperator hM hper ε).detLine) :
+    SignType.sign ((ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)).detLineEndEquiv
+        (detLineTwistedLinearOperatorEquiv hM hper hd hε x)) =
+      SignType.sign (LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X))) *
+        SignType.sign ((twistedLinearOperator hM hper ε).detLineEquivOfBijective hL x) := by
+  rw [detLineEndEquiv_detLineTwistedLinearOperatorEquiv hM hper hd hε hL, sign_mul,
+    TauCeti.sign_inv]
+
+end DeterminantLine
 
 end TauCeti
