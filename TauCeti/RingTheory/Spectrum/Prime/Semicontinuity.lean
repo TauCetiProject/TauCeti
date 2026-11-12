@@ -11,6 +11,7 @@ public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.RingTheory.Spectrum.Prime.Topology
 import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.Finsupp.Supported
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.RingTheory.FittingIdeal.BaseChange
 
@@ -23,7 +24,7 @@ fibrewise homology of a complex, jump up only on closed subsets of `Spec R`.
 
 * If `M` is finite, `p ↦ dim κ(p) ⊗[R] M` is upper semicontinuous: the primes where it exceeds
   `k` form the zero locus of the Fitting ideal `Fitt_k(M)`.
-* If `M₁ → M₂ → M₃` is a complex with `M₂` finite and `M₃` finite projective, then the
+* If `M₁ → M₂ → M₃` is a complex with `M₂` finite and `M₃` projective, then the
   dimension of the homology of `κ(p) ⊗ M₁ → κ(p) ⊗ M₂ → κ(p) ⊗ M₃` is upper semicontinuous in `p`.
 
 The second statement is the algebraic core of the semicontinuity theorem for the cohomology of
@@ -32,14 +33,15 @@ projective modules, upper semicontinuity of `s ↦ dim Hⁱ(X_s, F_s)` follows. 
 dimension of the fibre homology at `M₂` plus `dim κ(p) ⊗ M₃` equals the sum of the fibre
 dimensions of `coker(M₁ → M₂)` and `coker(M₂ → M₃)` (`LinearMap.finrank_map_mkQ_ker_add_finrank`
 together with `LinearMap.cokernelBaseChangeEquiv`). The cokernels are finite modules, and
-`dim κ(p) ⊗ M₃` is locally constant because `M₃` is finite projective.
+`dim κ(p) ⊗ M₃` is locally constant because `M₃` is finite projective. A projective `M₃` is
+reduced to this case, since `g` factors through a finite free summand.
 
 ## Main declarations
 
 * `Module.upperSemicontinuous_finrank_fiber`: fibre dimensions of a finite module are upper
   semicontinuous on `Spec R`.
 * `LinearMap.upperSemicontinuous_finrank_fiber_homology`: dimensions of the fibrewise homology of
-  a complex `M₁ → M₂ → M₃` with `M₂` finite and `M₃` finite projective are upper semicontinuous.
+  a complex `M₁ → M₂ → M₃` with `M₂` finite and `M₃` projective are upper semicontinuous.
 
 ## References
 
@@ -76,11 +78,10 @@ namespace LinearMap
 variable {R M₁ M₂ M₃ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
   [Module R M₂] [AddCommGroup M₃] [Module R M₃]
 
-/-- For a complex `M₁ → M₂ → M₃` of `R`-modules with `M₂` finite and `M₃` finite projective, the
-dimension of the homology of the fibre `κ(p) ⊗ M₁ → κ(p) ⊗ M₂ → κ(p) ⊗ M₃` is an upper
-semicontinuous function of `p ∈ Spec R`. The homology is written as the image of the cycles
-`ker (κ(p) ⊗ g)` in the cokernel of `κ(p) ⊗ f`. -/
-theorem upperSemicontinuous_finrank_fiber_homology [Module.Finite R M₂] [Module.Finite R M₃]
+/-- The case of `upperSemicontinuous_finrank_fiber_homology` with `M₃` finite projective. -/
+private theorem upperSemicontinuous_finrank_fiber_homology_of_finite
+    {R M₁ M₂ M₃ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+    [Module R M₂] [AddCommGroup M₃] [Module R M₃] [Module.Finite R M₂] [Module.Finite R M₃]
     [Module.Projective R M₃] (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃) (hfg : g ∘ₗ f = 0) :
     UpperSemicontinuous fun p : PrimeSpectrum R ↦
       finrank p.asIdeal.ResidueField
@@ -108,5 +109,49 @@ theorem upperSemicontinuous_finrank_fiber_homology [Module.Finite R M₂] [Modul
   have := key q
   dsimp only at hy hf hg
   omega
+
+/-- For a complex `M₁ → M₂ → M₃` of `R`-modules with `M₂` finite and `M₃` projective, the
+dimension of the homology of the fibre `κ(p) ⊗ M₁ → κ(p) ⊗ M₂ → κ(p) ⊗ M₃` is an upper
+semicontinuous function of `p ∈ Spec R`. The homology is written as the image of the cycles
+`ker (κ(p) ⊗ g)` in the cokernel of `κ(p) ⊗ f`. -/
+theorem upperSemicontinuous_finrank_fiber_homology [Module.Finite R M₂]
+    [Module.Projective R M₃] (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃) (hfg : g ∘ₗ f = 0) :
+    UpperSemicontinuous fun p : PrimeSpectrum R ↦
+      finrank p.asIdeal.ResidueField
+        ((ker (g.baseChange p.asIdeal.ResidueField)).map
+          (range (f.baseChange p.asIdeal.ResidueField)).mkQ) := by
+  classical
+  -- `M₃` is a retract of the free module `M₃ →₀ R`, and `g` takes values in a finite free summand
+  obtain ⟨s, hs⟩ := (Module.projective_def' (R := R) (P := M₃)).mp inferInstance
+  obtain ⟨π, hπ⟩ : ∃ π : (M₃ →₀ R) →ₗ[R] M₃, π ∘ₗ s = .id := ⟨_, hs⟩
+  obtain ⟨S, hS⟩ := (s ∘ₗ g).exists_finset_support_subset
+  have hrange : ∀ x, s (g x) ∈ Finsupp.supported R R (S : Set M₃) := fun x ↦
+    (Finsupp.mem_supported R _).mpr (hS x)
+  let L := Finsupp.supported R R (S : Set M₃)
+  have : Module.Finite R L :=
+    Module.Finite.equiv (Finsupp.supportedEquivFinsupp (M := R) (R := R) (S : Set M₃)).symm
+  have : Module.Projective R L :=
+    Module.Projective.of_equiv (Finsupp.supportedEquivFinsupp (M := R) (R := R) (S : Set M₃)).symm
+  let a : L →ₗ[R] M₃ := π ∘ₗ L.subtype
+  let b : M₃ →ₗ[R] L := Finsupp.restrictDom R R (S : Set M₃) ∘ₗ s
+  have hab : (a ∘ₗ b) ∘ₗ g = g := LinearMap.ext fun x ↦ by
+    have : (Finsupp.restrictDom R R (S : Set M₃) (s (g x)) : M₃ →₀ R) = s (g x) :=
+      congrArg Subtype.val (LinearMap.congr_fun (Finsupp.restrictDom_comp_subtype (S : Set M₃))
+        ⟨s (g x), hrange x⟩)
+    simp only [LinearMap.comp_apply, a, b, Submodule.subtype_apply, this]
+    exact LinearMap.congr_fun hπ (g x)
+  have hker (q : PrimeSpectrum R) : ker ((b ∘ₗ g).baseChange q.asIdeal.ResidueField) =
+      ker (g.baseChange q.asIdeal.ResidueField) := by
+    refine le_antisymm (fun x hx ↦ ?_) (fun x hx ↦ ?_)
+    · have h := congrArg (a.baseChange q.asIdeal.ResidueField)
+        (LinearMap.mem_ker.mp hx)
+      rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, ← LinearMap.comp_assoc, hab] at h
+      simpa using h
+    · rw [LinearMap.mem_ker] at hx ⊢
+      rw [LinearMap.baseChange_comp, LinearMap.comp_apply, hx, map_zero]
+  have := upperSemicontinuous_finrank_fiber_homology_of_finite (M₃ := L) f (b ∘ₗ g)
+    (by rw [LinearMap.comp_assoc, hfg, LinearMap.comp_zero])
+  convert this using 3 with q
+  rw [hker q]
 
 end LinearMap
