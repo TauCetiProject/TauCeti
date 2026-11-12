@@ -131,16 +131,16 @@ theorem ofReal_kFunctional_l1Linfty {u : L1AddLinfty 𝕜 E μ} {f : α → E}
     have hgh' : ⇑g + ⇑h =ᵐ[μ] f := (L1AddLinfty.fstToSum_add_sndToSum_eq_iff.1 hgh).trans hu
     calc ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s
         ≤ ∫⁻ y, ‖g y‖ₑ ∂μ + ENNReal.ofReal t * essSup (‖h ·‖ₑ) μ :=
-          μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.enorm t
+          μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.eNorm t
             (hgh'.mono fun y hy => by
               simp only [Pi.add_apply] at hy ⊢
               rw [← hy]
-              exact enorm_add_le (g y) (h y))
+              exact eNorm_add_le (g y) (h y))
       _ = ENNReal.ofReal (‖g‖ + t * ‖h‖) := by
           rw [ofReal_norm_add_mul_norm _ _ ht.le,
-            eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable g),
+            eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable g),
             eLpNorm_exponent_top (Lp.aestronglyMeasurable h),
-            eLpNormEssSup_eq_essSup_enorm]
+            eLpNormEssSup_eq_essSup_eNorm]
       _ ≤ ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u + ε) :=
           ENNReal.ofReal_le_ofReal hlt.le
       _ = ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) + ε := by
@@ -196,7 +196,7 @@ theorem ofReal_kFunctional_l1Linfty_indicator {u : L1AddLinfty 𝕜 E μ} {A : S
     (ht : 0 < t) :
     ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) = ‖c‖ₑ * min (ENNReal.ofReal t) (μ A) := by
   rw [ofReal_kFunctional_l1Linfty hu ht]
-  simp_rw [enorm_indicator_eq_indicator_enorm, μ.decreasingRearrangement_indicator]
+  simp_rw [eNorm_indicator_eq_indicator_eNorm, μ.decreasingRearrangement_indicator]
   have hS : MeasurableSet {s : ℝ | ENNReal.ofReal s < μ A} :=
     measurableSet_lt ENNReal.measurable_ofReal measurable_const
   have hind : (fun s : ℝ => if ENNReal.ofReal s < μ A then ‖c‖ₑ else 0) =
