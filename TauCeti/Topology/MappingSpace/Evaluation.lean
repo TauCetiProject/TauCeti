@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.Maps.Basic
 public import TauCeti.Topology.MappingSpace.Based
 
@@ -28,6 +29,8 @@ either space. That the constant maps embed `X` in `Map(B, X)` for nonempty `B` i
 * `TauCeti.isQuotientMap_mappingSpaceEval`: evaluation is a quotient map.
 * `TauCeti.mappingSpaceEval_comp_subtypeVal`: evaluation is constant on the based mapping space,
   the fibre over `x`; its universal lift is `TauCeti.BasedMap.lift`.
+* `TauCeti.mappingSpaceEvalHomotopy`: for a locally compact source, evaluations at the two ends
+  of a path are homotopic.
 
 ## References
 
@@ -82,5 +85,22 @@ theorem mappingSpaceEval_comp_subtypeVal (b : B) (x : X) :
   simp only [ContinuousMap.comp_apply, mappingSpaceEval_apply, ContinuousMap.subtypeVal_apply,
     ContinuousMap.const_apply]
   exact f.2
+
+/-- **Evaluations at joined points are homotopic.** For a locally compact space `B` and a path
+`γ` from `b₀` to `b₁` in `B`, evaluation along `γ` is a homotopy from evaluation at `b₀` to
+evaluation at `b₁`. -/
+def mappingSpaceEvalHomotopy [LocallyCompactSpace B] {b₀ b₁ : B} (γ : Path b₀ b₁) :
+    ContinuousMap.Homotopy (mappingSpaceEval (X := X) b₀) (mappingSpaceEval b₁) where
+  toFun p := p.2 (γ p.1)
+  continuous_toFun := by fun_prop
+  map_zero_left f := by simp
+  map_one_left f := by simp
+
+/-- At time `t`, the homotopy `mappingSpaceEvalHomotopy γ` evaluates at `γ t`. -/
+@[simp]
+theorem mappingSpaceEvalHomotopy_apply [LocallyCompactSpace B] {b₀ b₁ : B} (γ : Path b₀ b₁)
+    (p : unitInterval × C(B, X)) :
+    mappingSpaceEvalHomotopy γ p = p.2 (γ p.1) :=
+  (rfl)
 
 end TauCeti
