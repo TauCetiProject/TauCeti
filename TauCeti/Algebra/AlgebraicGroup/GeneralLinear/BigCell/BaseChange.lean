@@ -41,23 +41,12 @@ universe u v
 variable {n α : Type*} [Fintype n] [DecidableEq n] [LinearOrder α]
 variable (R : Type u) (S : Type v) [CommRing R] [CommRing S] [Algebra R S] (b : n → α)
 
-private theorem map_blockBigCellDenominator :
-    MvPolynomial.map (algebraMap R S) (blockBigCellDenominator R b) =
-      blockBigCellDenominator S b := by
-  classical
-  simp only [blockBigCellDenominator_def, map_prod, RingHom.map_det]
-  congr 1
-  funext i
-  congr 1
-  ext j k
-  simp [Matrix.mvPolynomialX, Matrix.toSquareBlockProp_def]
-
 private noncomputable def localizedBlockPolynomialBaseChangeEquiv :
     Localization.Away ((1 : S) ⊗ₜ[R] blockBigCellDenominator R b) ≃ₐ[S]
       BlockBigCellCoordinateAlgebra S b :=
   IsLocalization.algEquivOfAlgEquiv _ _ (MvPolynomial.algebraTensorAlgEquiv R S) (by
     rw [Submonoid.map_powers, MvPolynomial.algebraTensorAlgEquiv_tmul, one_smul,
-      map_blockBigCellDenominator R S b])
+      map_blockBigCellDenominator R b (algebraMap R S)])
 
 /-- Scalar extension of the block big-cell coordinate algebra is the block big-cell
 coordinate algebra over the new base ring. No flatness hypothesis is required. -/
@@ -69,7 +58,8 @@ noncomputable def blockBigCellBaseChangeAlgEquiv :
 
 /-- On polynomial coordinates, scalar extension changes the coefficients and multiplies by
 the tensor's scalar factor. -/
-@[simp]
+-- Prefer the polynomial normal form over the general pure-tensor rule.
+@[simp high]
 theorem blockBigCellBaseChangeAlgEquiv_tmul_algebraMap (s : S)
     (p : MvPolynomial (n × n) R) :
     blockBigCellBaseChangeAlgEquiv R S b (s ⊗ₜ[R] algebraMap _ _ p) =
@@ -101,13 +91,27 @@ noncomputable def blockBigCellBaseChangeMap :
   ((blockBigCellBaseChangeAlgEquiv R S b).toAlgHom.restrictScalars R).comp
     Algebra.TensorProduct.includeRight
 
+/-- On arbitrary regular coordinates, scalar extension multiplies the coefficient-change
+map by the tensor's scalar factor. -/
+@[simp]
+theorem blockBigCellBaseChangeAlgEquiv_tmul (s : S)
+    (x : BlockBigCellCoordinateAlgebra R b) :
+    blockBigCellBaseChangeAlgEquiv R S b (s ⊗ₜ[R] x) =
+      s • blockBigCellBaseChangeMap R S b x := by
+  simpa only [TensorProduct.smul_tmul', smul_eq_mul, mul_one,
+    blockBigCellBaseChangeMap, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
+    Algebra.TensorProduct.includeRight_apply, AlgEquiv.coe_toAlgHom] using
+    (map_smul (blockBigCellBaseChangeAlgEquiv R S b) s (1 ⊗ₜ[R] x))
+
 /-- The coefficient-change map agrees with polynomial coefficient extension. -/
 @[simp]
 theorem blockBigCellBaseChangeMap_algebraMap (p : MvPolynomial (n × n) R) :
     blockBigCellBaseChangeMap R S b (algebraMap _ _ p) =
       algebraMap (MvPolynomial (n × n) S) (BlockBigCellCoordinateAlgebra S b)
         (MvPolynomial.map (algebraMap R S) p) := by
-  simp [blockBigCellBaseChangeMap]
+  simp only [blockBigCellBaseChangeMap, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
+    Algebra.TensorProduct.includeRight_apply, AlgEquiv.coe_toAlgHom,
+    blockBigCellBaseChangeAlgEquiv_tmul_algebraMap, one_smul]
 
 /-- Coefficient change preserves the universal matrix. -/
 @[simp]
@@ -124,38 +128,36 @@ theorem blockBigCellBaseChangeMap_eq_eval :
   apply blockBigCell_algHom_ext
   rw [map_blockBigCellMatrix_baseChange, map_blockBigCellMatrix]
 
+private theorem map_blockBigCell_factors_baseChange :
+    (blockBigCellLower R b).map (blockBigCellBaseChangeMap R S b) = blockBigCellLower S b ∧
+    (blockBigCellDiag R b).map (blockBigCellBaseChangeMap R S b) = blockBigCellDiag S b ∧
+    (blockBigCellUpper R b).map (blockBigCellBaseChangeMap R S b) = blockBigCellUpper S b := by
+  rw [blockBigCellBaseChangeMap_eq_eval]
+  exact map_blockBigCell_factors _ _ (blockUnitriangular_blockBigCellLower S b)
+    (blockTriangular_blockBigCellDiag S b) (blockTriangular_blockBigCellDiag_toDual S b)
+    (blockUnitriangular_blockBigCellUpper S b)
+    (blockBigCellMatrix_eq_blockBigCellLower_mul_blockBigCellDiag_mul_blockBigCellUpper S b)
+
 /-- Coefficient change preserves the regular lower LDU factor. -/
 @[simp]
 theorem map_blockBigCellLower_baseChange :
     (blockBigCellLower R b).map (blockBigCellBaseChangeMap R S b) =
-      blockBigCellLower S b := by
-  rw [blockBigCellBaseChangeMap_eq_eval]
-  exact map_blockBigCellLower _ _ (blockUnitriangular_blockBigCellLower S b)
-    (blockTriangular_blockBigCellDiag S b) (blockTriangular_blockBigCellDiag_toDual S b)
-    (blockUnitriangular_blockBigCellUpper S b)
-    (blockBigCellMatrix_eq_blockBigCellLower_mul_blockBigCellDiag_mul_blockBigCellUpper S b)
+      blockBigCellLower S b :=
+  (map_blockBigCell_factors_baseChange R S b).1
 
 /-- Coefficient change preserves the regular diagonal LDU factor. -/
 @[simp]
 theorem map_blockBigCellDiag_baseChange :
     (blockBigCellDiag R b).map (blockBigCellBaseChangeMap R S b) =
-      blockBigCellDiag S b := by
-  rw [blockBigCellBaseChangeMap_eq_eval]
-  exact map_blockBigCellDiag _ _ (blockUnitriangular_blockBigCellLower S b)
-    (blockTriangular_blockBigCellDiag S b) (blockTriangular_blockBigCellDiag_toDual S b)
-    (blockUnitriangular_blockBigCellUpper S b)
-    (blockBigCellMatrix_eq_blockBigCellLower_mul_blockBigCellDiag_mul_blockBigCellUpper S b)
+      blockBigCellDiag S b :=
+  (map_blockBigCell_factors_baseChange R S b).2.1
 
 /-- Coefficient change preserves the regular upper LDU factor. -/
 @[simp]
 theorem map_blockBigCellUpper_baseChange :
     (blockBigCellUpper R b).map (blockBigCellBaseChangeMap R S b) =
-      blockBigCellUpper S b := by
-  rw [blockBigCellBaseChangeMap_eq_eval]
-  exact map_blockBigCellUpper _ _ (blockUnitriangular_blockBigCellLower S b)
-    (blockTriangular_blockBigCellDiag S b) (blockTriangular_blockBigCellDiag_toDual S b)
-    (blockUnitriangular_blockBigCellUpper S b)
-    (blockBigCellMatrix_eq_blockBigCellLower_mul_blockBigCellDiag_mul_blockBigCellUpper S b)
+      blockBigCellUpper S b :=
+  (map_blockBigCell_factors_baseChange R S b).2.2
 
 /-- Changing coefficients along the identity leaves every regular coordinate unchanged. -/
 @[simp]
