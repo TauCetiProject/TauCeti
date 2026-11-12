@@ -71,7 +71,11 @@ open Height IntermediateField Module NumberField
 namespace TauCeti
 
 variable {F F' : Type*} [Field F] [CharZero F] [Field F'] [CharZero F']
-variable {ι : Type*} [Finite ι]
+variable {ι : Type*}
+
+section Finite
+
+variable [Finite ι]
 
 open Classical in
 /-- The absolute multiplicative height of a finite tuple `x` in a field of characteristic zero.
@@ -176,6 +180,8 @@ theorem one_le_absoluteProjectiveTupleHeight (x : ι → F) :
 theorem absoluteProjectiveTupleHeight_pos (x : ι → F) : 0 < absoluteProjectiveTupleHeight x :=
   zero_lt_one.trans_le (one_le_absoluteProjectiveTupleHeight x)
 
+end Finite
+
 /-- A tuple with at most one coordinate has absolute projective height one, including the
 empty tuple and the transcendental junk branch. -/
 @[simp]
@@ -187,6 +193,8 @@ theorem absoluteProjectiveTupleHeight_eq_one_of_subsingleton [Subsingleton ι] (
       Height.mulHeight_eq_one_of_subsingleton, Real.one_rpow]
   · obtain ⟨i, hi⟩ := not_forall.mp hx
     exact absoluteProjectiveTupleHeight_of_not_isIntegral hi
+
+variable [Finite ι]
 
 /-- The absolute height is invariant under reordering the coordinates. -/
 @[simp]

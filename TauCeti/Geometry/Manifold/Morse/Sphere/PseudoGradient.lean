@@ -56,17 +56,13 @@ variable [FiniteDimensional ℝ E] {v : sphere (0 : E) 1}
 @[simp]
 theorem stableSet_sphereHeight_self (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.stableSet v = {v} :=
-  hX.stableSet_eq_singleton_of_lt
-    ((contMDiff_sphereHeight (n := n) (m := 1) v).mdifferentiable one_ne_zero)
-    fun _ ↦ sphereHeight_lt_self
+  hX.stableSet_eq_singleton_of_lt fun _ ↦ sphereHeight_lt_self
 
 /-- **Nothing flows out of the south pole.** The unstable set of the south pole `-v` is `{-v}`. -/
 @[simp]
 theorem unstableSet_sphereHeight_neg (hX : IsAdaptedPseudoGradient (sphereHeight v) X) :
     hX.flow.unstableSet (-v) = {-v} :=
-  hX.unstableSet_eq_singleton_of_lt
-    ((contMDiff_sphereHeight (n := n) (m := 1) v).mdifferentiable one_ne_zero)
-    fun _ ↦ sphereHeight_neg_lt
+  hX.unstableSet_eq_singleton_of_lt fun _ ↦ sphereHeight_neg_lt
 
 /-- **Everything except the south pole flows out of the north pole.** The unstable set of the
 north pole `v` is the complement of the south pole `-v`. -/

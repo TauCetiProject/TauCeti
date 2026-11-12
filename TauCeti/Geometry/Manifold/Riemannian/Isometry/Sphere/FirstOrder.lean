@@ -122,8 +122,7 @@ theorem eq_extendSphereTangent
         mfderiv (𝓡 k) 𝓘(ℝ, F) ((↑) : sphere (0 : F) 1 → F) y (e v)) :
     f = e.extendSphereTangent.toLinearIsometry := by
   rw [extendSphereTangent]
-  apply eq_extendOrthogonalComplement _ _ _ f hfx
-  intro v
+  refine (eq_extendOrthogonalComplement_iff _ _ _ f).mpr ⟨hfx, fun v ↦ ?_⟩
   obtain ⟨w, rfl⟩ := (TauCeti.sphereTangentEquiv (n := n) x).surjective v
   simpa only [trans_apply, symm_apply_apply, TauCeti.coe_sphereTangentEquiv_apply] using hf w
 

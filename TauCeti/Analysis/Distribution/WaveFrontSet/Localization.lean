@@ -62,7 +62,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   `Distribution.isMicrolocallySmoothAt_smulLeftCLM_iff`,
   `Distribution.waveFrontSet_smulLeftCLM_subset`, `Distribution.mem_waveFrontSet_smulLeftCLM_iff`:
   the wave front set of a smooth multiple `g T` lies in that of `T` over `tsupport g`, with
-  equality at the points where `g ≠ 0`.
+  equality at the points where `g ≠ 0`, and everywhere when `g` vanishes nowhere on `Ω`
+  (`Distribution.waveFrontSet_smulLeftCLM_of_ne_zero`).
 * `Distribution.isMicrolocallySmoothAt_restrictCLM_iff`, `Distribution.waveFrontSet_restrictCLM`:
   for an open subset `Ω' ≤ Ω`, `WF(T|_{Ω'}) = WF(T) ∩ (Ω' × E)`.
 * `Distribution.waveFrontSet_inter_eq_of_restrictCLM_eq`: distributions with the same restriction
@@ -250,29 +251,12 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
         ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C := by
   obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
   obtain ⟨Γ', hΓ'o, hξ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξ
-  -- A cutoff `χ` equal to one near `x`, supported where `φ ≠ 0`.
-  obtain ⟨χ, hχ, -, hχ1, -, hχs⟩ := (isCompact_singleton (x := x)).exists_contDiff_cutoff
-    (isOpen_ne_fun φ.continuous continuous_const) (singleton_subset_iff.2 hφx)
-  refine ⟨interior (χ ⁻¹' {1}), isOpen_interior.mem_nhds (hχ1 rfl), Γ', hΓ'o, hξ', hcone',
-    fun ψ hψ N ↦ ?_⟩
-  -- Write `ψ = φ (θ ψ)` with the smooth function `θ = χ / φ`.
-  let θ : E → ℂ := fun y ↦ (χ y : ℂ) * (φ y)⁻¹
-  have hθ : ContDiff ℝ ∞ θ := by
-    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-    by_cases hy : φ y = 0
-    · have hy' : y ∉ tsupport χ := fun h ↦ hχs h hy
-      refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy'] with z hz
-      simp [θ, hz]
-    · exact (ofRealCLM.contDiff.comp hχ).contDiffAt.mul (φ.contDiff.contDiffAt.fun_inv hy)
-  refine exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul (hθ.mul ψ.contDiff).contDiffOn
-    (fun y ↦ ?_) hc hΓ' (hdecay N)
-  by_cases hψy : ψ y = 0
-  · simp [hψy]
-  · have hχy : χ y = 1 := interior_subset (hψ (subset_tsupport _ hψy))
-    have hφy : φ y ≠ 0 := hχs (subset_tsupport _ (by simp [hχy]))
-    simp only [θ, hχy, ofReal_one]
-    field_simp
+  -- Near `x` every cutoff is a smooth multiple of `φ`.
+  obtain ⟨U, hU, hUφ⟩ := exists_mem_nhds_forall_exists_contDiff_eq_mul hφx
+  refine ⟨U, hU, Γ', hΓ'o, hξ', hcone', fun ψ hψ N ↦ ?_⟩
+  obtain ⟨g, hg, hψg⟩ := hUφ ψ hψ
+  exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul hg.contDiffOn hψg hc hΓ'
+    (hdecay N)
 
 /-- The sum of two distributions microlocally smooth at `(x, ξ)` is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.add {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
@@ -369,6 +353,15 @@ as `T`. -/
 theorem mem_waveFrontSet_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hg : ContDiff ℝ ∞ g)
     (hx : g x ≠ 0) : (x, ξ) ∈ (smulLeftCLM hg T).waveFrontSet ↔ (x, ξ) ∈ T.waveFrontSet := by
   simp [isMicrolocallySmoothAt_smulLeftCLM_iff hg hx]
+
+/-- Multiplying by a smooth function that vanishes nowhere on `Ω` does not change the wave front
+set. -/
+theorem waveFrontSet_smulLeftCLM_of_ne_zero (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g)
+    (hg0 : ∀ x ∈ Ω, g x ≠ 0) : (smulLeftCLM hg T).waveFrontSet = T.waveFrontSet := by
+  ext ⟨x, ξ⟩
+  by_cases hx : x ∈ Ω
+  · exact mem_waveFrontSet_smulLeftCLM_iff hg (hg0 x hx)
+  · simp [hx]
 
 end SmulLeft
 

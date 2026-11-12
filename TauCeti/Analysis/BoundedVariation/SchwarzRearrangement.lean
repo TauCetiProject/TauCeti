@@ -75,7 +75,7 @@ theorem _root_.MeasureTheory.NullMeasurableSet.perimeter_setOf_lt_schwarzRearran
     exact (measure_ball_pos volume 0 hrpos).ne'
   apply (ENNReal.pow_le_pow_left_iff (n := finrank ℝ E) finrank_pos.ne').mp
   rw [perimeter_ball_pow finrank_pos.ne' hrpos, hr]
-  exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hfin finrank_pos.ne' hs0
+  exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hfin hs0
 
 variable {u : E → ℝ}
 

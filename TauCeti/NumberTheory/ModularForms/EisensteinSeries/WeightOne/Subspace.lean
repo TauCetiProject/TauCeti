@@ -58,6 +58,8 @@ independence of the sequences `σ₀^{ψ,φ}` over distinct unordered pairs of c
   free of exchanged pairs are linearly independent.
 * `TauCeti.EisensteinSeries.CharIndex.weightOneForm_eq_weightOneForm_iff`: two indices have the
   same series exactly when they are equal or exchanged.
+* `TauCeti.map_subtype_weightOneEisensteinSubspace`: the weight-one Eisenstein subspace of
+  `M₁(N, χ)`, viewed in `M₁(Γ₁(N))`.
 * `TauCeti.two_mul_finrank_weightOneEisensteinSubspace`: twice the dimension of the weight-one
   Eisenstein subspace of `M₁(N, χ)` is the number of indices of nebentypus `χ`.
 * `TauCeti.EisensteinSeries.two_mul_finrank_span_range_weightOneForm_eq_card_cuspOrbit_Gamma1`:
@@ -118,8 +120,7 @@ change its weight-one series, `E₁^{φ,ψ,t} = E₁^{ψ,φ,t}`. -/
 @[simp]
 theorem weightOneForm_swap : a.swap.weightOneForm = a.weightOneForm := by
   rw [weightOneForm_def, weightOneForm_def]
-  exact (normalizedCharE1MFRaise_comm a.psi a.phi a.level_dvd a.parity_one a.psi_primitive
-    a.phi_primitive).symm
+  exact (normalizedCharE1MFRaise_comm a.psi a.phi a.level_dvd a.psi_primitive a.phi_primitive).symm
 
 /-- **Linear independence of the weight-one Eisenstein series**: the series `E₁^{ψ,φ,t}` of a set
 of indices containing no index together with its exchange `(φ, ψ, t)` are linearly
@@ -269,20 +270,25 @@ theorem weightOneEisensteinSubspace_le {V : Submodule ℂ (modFormCharSpace 1 χ
   rintro _ ⟨⟨a, hχ⟩, rfl⟩
   exact hV a hχ
 
+/-- Inside `M₁(Γ₁(N))`, the weight-one Eisenstein subspace of `M₁(N, χ)` is the span of the
+weight-one series of the indices of nebentypus `χ`. -/
+theorem map_subtype_weightOneEisensteinSubspace :
+    (weightOneEisensteinSubspace χ).map (modFormCharSpace 1 χ).subtype =
+      Submodule.span ℂ (CharIndex.weightOneForm '' {a | a.nebentypus = χ}) := by
+  rw [weightOneEisensteinSubspace_def, Submodule.map_span, ← Set.range_comp]
+  congr 1
+  ext f
+  simp [Set.mem_image]
+
 /-- **The dimension of the weight-one Eisenstein subspace**: twice the dimension of the weight-one
 Eisenstein subspace of `M₁(N, χ)` is the number of indices of nebentypus `χ`, each series being
 attached to exactly two indices, `(ψ, φ, t)` and `(φ, ψ, t)`. -/
 theorem two_mul_finrank_weightOneEisensteinSubspace :
     2 * Module.finrank ℂ (weightOneEisensteinSubspace χ) =
       Nat.card {a : CharIndex N 1 // a.nebentypus = χ} := by
-  have hmap : (weightOneEisensteinSubspace χ).map (modFormCharSpace 1 χ).subtype =
-      Submodule.span ℂ (CharIndex.weightOneForm '' {a | a.nebentypus = χ}) := by
-    rw [weightOneEisensteinSubspace_def, Submodule.map_span, ← Set.range_comp]
-    congr 1
-    ext f
-    simp [Set.mem_image]
   rw [(Submodule.equivMapOfInjective _ (modFormCharSpace 1 χ).injective_subtype _).finrank_eq,
-    hmap, CharIndex.two_mul_finrank_span_image_weightOneForm fun a ha ↦ by
+    map_subtype_weightOneEisensteinSubspace,
+    CharIndex.two_mul_finrank_span_image_weightOneForm fun a ha ↦ by
       simpa using ha, Set.coe_ofPred]
 
 end TauCeti
