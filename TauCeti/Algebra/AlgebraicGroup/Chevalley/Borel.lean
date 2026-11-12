@@ -115,33 +115,59 @@ theorem map_borelSubgroup_le {B : Type w} [CommRing B] (f : A →+* B) :
       D.range_torusPoints_le_borelSubgroup B
         ⟨fun i => Units.map f.toMonoidHom (s i), rfl⟩
 
-/-- A negative root element belonging to the positive Borel-type subgroup is the identity.
-This does not assume that the root parameter is injective. -/
-theorem rootSubgroupPoints_eq_one_of_mem_borelSubgroup {γ : Fin t.numRoots}
+/-- A negative root element belongs to the positive Borel-type subgroup exactly when it is
+the identity. This does not assume that the root parameter is injective. -/
+@[simp]
+theorem rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots {γ : Fin t.numRoots}
     (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (a : Multiplicative A) (ha : D.rootSubgroupPoints γ A a ∈ D.borelSubgroup A) :
-    D.rootSubgroupPoints γ A a = 1 := by
-  obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff A).mp ha
-  obtain ⟨v, hv, hvu⟩ := (D.mem_positivePoints_iff.mp hu)
-  let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
-  have hm : Function.Injective m :=
-    Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
-  let x := chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-    D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) a
-  have hx : x = v * kostantTorusPoints D.lattice D.basis D.coordinateWeight
-      (CommAlgCat.of ℤ A) s := by
-    apply hm
-    simpa only [m, x, MulEquiv.toMonoidHom_eq_coe, map_mul,
-      D.coe_rootSubgroupPoints, Subgroup.coe_mul,
-      basisMatrix_kostantTorusPoints, hvu, D.coe_torusPoints,
-      kostantTorusMatrix_apply] using congrArg Subtype.val hs.symm
-  have hxbot : x ∈ (⊥ : Subgroup _) := by
-    rw [← D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A]
-    refine ⟨D.chevalleyRootSubgroup_mem_negativeSubgroup (CommAlgCat.of ℤ A) hγ a, ?_⟩
-    rw [hx]
-    exact Subgroup.mul_mem _ (Subgroup.mem_sup_left hv) (Subgroup.mem_sup_right ⟨s, rfl⟩)
-  apply Subtype.ext
-  exact (D.coe_rootSubgroupPoints γ A a).trans
-    ((congrArg m (Subgroup.mem_bot.mp hxbot)).trans m.map_one)
+    (a : Multiplicative A) :
+    D.rootSubgroupPoints γ A a ∈ D.borelSubgroup A ↔ D.rootSubgroupPoints γ A a = 1 := by
+  constructor
+  · intro ha
+    obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff A).mp ha
+    obtain ⟨v, hv, hvu⟩ := (D.mem_positivePoints_iff.mp hu)
+    let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
+    have hm : Function.Injective m :=
+      Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
+    let x := chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+      D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) a
+    have hx : x = v * kostantTorusPoints D.lattice D.basis D.coordinateWeight
+        (CommAlgCat.of ℤ A) s := by
+      apply hm
+      simpa only [m, x, MulEquiv.toMonoidHom_eq_coe, map_mul,
+        D.coe_rootSubgroupPoints, Subgroup.coe_mul,
+        basisMatrix_kostantTorusPoints, hvu, D.coe_torusPoints,
+        kostantTorusMatrix_apply] using congrArg Subtype.val hs.symm
+    have hxbot : x ∈ (⊥ : Subgroup _) := by
+      rw [← D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A]
+      refine ⟨D.chevalleyRootSubgroup_mem_negativeSubgroup (CommAlgCat.of ℤ A) hγ a, ?_⟩
+      rw [hx]
+      exact Subgroup.mul_mem _ (Subgroup.mem_sup_left hv) (Subgroup.mem_sup_right ⟨s, rfl⟩)
+    apply Subtype.ext
+    exact (D.coe_rootSubgroupPoints γ A a).trans
+      ((congrArg m (Subgroup.mem_bot.mp hxbot)).trans m.map_one)
+  · intro ha
+    rw [ha]
+    exact (D.borelSubgroup A).one_mem
+
+/-- Conjugating a positive simple-root element by its pinned Weyl representative lands
+in the positive Borel-type subgroup exactly when that root element is trivial. -/
+@[simp]
+theorem weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff
+    (i : Fin t.rank) (u : Multiplicative A) :
+    D.weylElement (t.simpleIndex ht i) A 1 *
+        D.rootSubgroupPoints (t.simpleIndex ht i) A u *
+        (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ ∈ D.borelSubgroup A ↔
+      D.rootSubgroupPoints (t.simpleIndex ht i) A u = 1 := by
+  rw [← ofAdd_toAdd u]
+  have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm
+      (t.simpleIndex ht i) (t.simpleIndex ht i) ∈
+      negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [← t.reflectionPerm_rationalRootSystem ht]
+    exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr
+      (support_subset_posRoots _ _ (t.simpleIndex_mem_support i))
+  rw [D.weylElement_conj_rootSubgroupPoints,
+    D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg,
+    ← D.weylElement_conj_rootSubgroupPoints, conj_eq_one_iff]
 
 end TauCeti.DynkinType.ChevalleyDatum
