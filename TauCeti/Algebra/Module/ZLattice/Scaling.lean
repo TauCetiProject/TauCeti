@@ -325,14 +325,8 @@ theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [
     · have hE : 0 < finrank ℝ E := by
         rw [Module.finrank_eq_card_basis b.toBasis]
         exact Fintype.card_pos_iff.mpr ⟨i⟩
-      have hx (t : ℝ) : t • b i ∈ dual (⊥ : Submodule ℤ E) := mem_dual.2 fun y hy ↦ by
-        rw [Submodule.mem_bot] at hy
-        exact ⟨0, by simp [hy]⟩
-      have : Infinite (DiscriminantGroup (⊥ : Submodule ℤ E)) :=
-        Infinite.of_injective (fun t : ℝ ↦ (Submodule.Quotient.mk ⟨t • b i, hx t⟩ :
-          DiscriminantGroup (⊥ : Submodule ℤ E))) fun t u htu ↦ by
-          rw [discriminantGroup_mk_eq_mk_iff, Submodule.mem_bot, ← sub_smul] at htu
-          exact sub_eq_zero.mp ((smul_eq_zero.mp htu).resolve_right (b.orthonormal.ne_zero i))
+      have : Nontrivial E := Module.finrank_pos_iff.mp hE
+      have := infinite_discriminantGroup_bot (E := E)
       rw [Nat.card_eq_zero_of_infinite, zero_pow hE.ne']
   borelize E
   have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (by positivity)⟩
