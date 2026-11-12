@@ -7,9 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.PartitionTable
 import TauCeti.GroupTheory.FreeGroup.Basic
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Fin.VecNotation
-import Mathlib.Data.Set.Card
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -39,8 +37,9 @@ solutions of their generalised equations.
 * `TauCeti.GenEq.IsSolutionTable.eval_eq_one`: an assignment with a table is a solution.
 * `TauCeti.GenEq.IsSolutionTable.exists_fin_systemSize`: at most `|S|` letters occur in a table,
   so the letters may be taken in `Fin |S|`.
-* `TauCeti.GenEq.IsSolutionTable.exists_solution`: the words of the letters give a solution of
-  `Ω_T` whose image under the word maps is `W`.
+* `TauCeti.GenEq.IsSolutionTable.exists_solution`: the words of the letters give a solution `U`
+  of `Ω_T` whose word maps `P_x(U)` spell the reduced word of `W x` for every variable `x`
+  occurring in `r`.
 
 ## Implementation notes
 
@@ -125,9 +124,11 @@ private theorem eval_mk_map_fst (R : List (((X ⊕ A) × Bool) × List ((Z ⊕ A
   induction R with
   | nil => simp [← FreeGroup.one_eq_mk]
   | cons e R ih =>
-    rw [List.map_cons, List.flatMap_cons, FreeGroup.substituteVars_append,
-      ← List.singleton_append, ← FreeGroup.mul_mk, ← FreeGroup.mul_mk, map_mul,
-      hR e List.mem_cons_self, ih fun e he => hR e (List.mem_cons_of_mem _ he)]
+    have hmk : FreeGroup.mk (e.1 :: R.map Prod.fst) =
+        FreeGroup.mk [e.1] * FreeGroup.mk (R.map Prod.fst) := by
+      rw [FreeGroup.mul_mk, List.singleton_append]
+    simp [hmk, ← FreeGroup.mul_mk, hR e List.mem_cons_self,
+      ih fun e he => hR e (List.mem_cons_of_mem _ he)]
 
 /-- An assignment with a table solves the system. -/
 theorem IsSolutionTable.eval_eq_one (h : IsSolutionTable r W T u) {w : List ((X ⊕ A) × Bool)}
@@ -159,39 +160,14 @@ private theorem IsSolutionTable.of_forall_eq_nil (h : IsSolutionTable r W T u) (
   mk_substituteVars o := by simpa [hT o] using h.mk_substituteVars o
   ne_nil_of_mem _ _ _ hz := by simp at hz
 
-/-- The letters of `Z` occurring in a partition table of a system of positive size `|S|` can be
-renamed injectively by elements of `Fin |S|`. -/
-private theorem IsPartitionTable.exists_injOn_fin (hT : IsPartitionTable r T)
-    (hn : 0 < systemSize r) :
-    ∃ f : Z → Fin (systemSize r), Set.InjOn f {z | ∃ o b, (Sum.inl z, b) ∈ T o} := by
-  classical
-  have : Nonempty (Fin (systemSize r)) := ⟨⟨0, hn⟩⟩
-  let F : Finset Z := Finset.univ.biUnion fun o : Occurrence r =>
-    ((T o).filterMap fun y => y.1.getLeft?).toFinset
-  have hF : {z | ∃ o b, (Sum.inl z, b) ∈ T o} ⊆ F := by
-    rintro z ⟨o, b, hz⟩
-    exact Finset.mem_coe.2 (Finset.mem_biUnion.2 ⟨o, Finset.mem_univ o,
-      List.mem_toFinset.2 (List.mem_filterMap.2 ⟨_, hz, rfl⟩)⟩)
-  have hcard : F.card ≤ systemSize r := by
-    rw [← sum_occurrence_length_sub_one]
-    refine Finset.card_biUnion_le.trans (Finset.sum_le_sum fun o _ => ?_)
-    exact (List.toFinset_card_le _).trans ((List.length_filterMap_le _ _).trans (hT.length_le o))
-  obtain ⟨f, -, hf⟩ := F.finite_toSet.exists_injOn_of_encard_le
-    (t := (Set.univ : Set (Fin (systemSize r)))) (by simpa using hcard)
-  exact ⟨f, hf.mono hF⟩
-
 /-- **Kharlampovich–Myasnikov, §4.2.** At most `|S|` letters occur in a partition table, so a table
 of an assignment may be taken with its letters in `Fin |S|`. -/
 theorem IsSolutionTable.exists_fin_systemSize (h : IsSolutionTable r W T u) :
     ∃ (T' : Occurrence r → List ((Fin (systemSize r) ⊕ A) × Bool))
       (u' : Fin (systemSize r) → List (A × Bool)), IsSolutionTable r W T' u' := by
   rcases Nat.eq_zero_or_pos (systemSize r) with hn | hn
-  · refine ⟨fun _ => [], fun _ => [], h.of_forall_eq_nil (fun o => ?_) _⟩
-    have hsum := sum_occurrence_length_sub_one r
-    rw [hn, Finset.sum_eq_zero_iff] at hsum
-    have := h.isPartitionTable.length_le o
-    rw [hsum o (Finset.mem_univ o)] at this
-    exact List.length_eq_zero_iff.1 (Nat.le_zero.1 this)
+  · exact ⟨fun _ => [], fun _ => [],
+      h.of_forall_eq_nil (h.isPartitionTable.eq_nil_of_systemSize_eq_zero hn) _⟩
   · obtain ⟨f, hf⟩ := h.isPartitionTable.exists_injOn_fin hn
     have hf' (o : Occurrence r) : Set.InjOn f {z | ∃ b, (Sum.inl z, b) ∈ T o} :=
       fun _ hz _ hz' hzz' => hf ⟨o, hz⟩ ⟨o, hz'⟩ hzz'
@@ -278,15 +254,48 @@ example {X A : Type*} (x : X) (W : X → FreeGroup A) (hW : W x = 1) :
 private abbrev xyEqAB : List (List ((Fin 2 ⊕ Fin 2) × Bool)) :=
   [[(Sum.inl 0, true), (Sum.inl 1, true), (Sum.inr 1, false), (Sum.inr 0, false)]]
 
+/-- The partition table `(a, b, b⁻¹, a⁻¹)` of `x y = a b`, without cancellation. -/
+private def xyTable (o : Occurrence xyEqAB) : List ((Fin (systemSize xyEqAB) ⊕ Fin 2) × Bool) :=
+  [[(Sum.inr 0, true)], [(Sum.inr 1, true)], [(Sum.inr 1, false)], [(Sum.inr 0, false)]].getD
+    o.2.val []
+
+/-- The solution `x = a`, `y = b` of `x y = a b` has the table without cancellation. -/
+private theorem isSolutionTable_xyTable :
+    IsSolutionTable xyEqAB ![FreeGroup.of 0, FreeGroup.of 1] xyTable fun _ => [] := by
+  refine ⟨⟨by unfold FreeGroup.IsReduced; decide, by decide, by decide, by decide, by decide⟩,
+    fun o => ?_, fun o => ?_, fun o _ _ hz => ?_⟩
+  all_goals
+    obtain ⟨i, j⟩ := o
+    fin_cases i
+    fin_cases j <;>
+      simp_all [xyTable, FreeGroup.substituteVars, EqIneqSystem.eval_eq_lift, ← FreeGroup.inv_mk,
+        FreeGroup.of]
+
+/-- The solution `x = a`, `y = b` of `x y = a b` comes from the table without cancellation. -/
+example : xyTable ∈ cancellationFamily xyEqAB ∧
+    ∃ U : (ofEntries (tableEntries xyEqAB xyTable)).Solution,
+      substituteVars U.word (wordMap (tableEntries xyEqAB xyTable) 0) = [(0, true)] ∧
+        substituteVars U.word (wordMap (tableEntries xyEqAB xyTable) 1) = [(1, true)] := by
+  obtain ⟨U, hU⟩ := isSolutionTable_xyTable.exists_solution
+  exact ⟨mem_cancellationFamily.2 isSolutionTable_xyTable.isPartitionTable, U,
+    by simpa using hU ⟨0, 0, by decide⟩ 0 rfl, by simpa using hU ⟨0, 1, by decide⟩ 1 rfl⟩
+
+/-- The letter `z` of the cancelling segment, the first of the `|S| = 12` letters of a table of
+`x y = a b`. -/
+private def xyLetter : Fin (systemSize xyEqAB) :=
+  ⟨0, by rw [← sum_occurrence_length_sub_one]; decide⟩
+
 /-- The partition table `(a z, z⁻¹ b, b⁻¹, a⁻¹)` of `x y = a b`, with a cancelling segment `z`. -/
-private def xyCancelTable (o : Occurrence xyEqAB) : List ((Unit ⊕ Fin 2) × Bool) :=
-  [[(Sum.inr 0, true), (Sum.inl (), true)], [(Sum.inl (), false), (Sum.inr 1, true)],
+private def xyCancelTable (o : Occurrence xyEqAB) :
+    List ((Fin (systemSize xyEqAB) ⊕ Fin 2) × Bool) :=
+  [[(Sum.inr 0, true), (Sum.inl xyLetter, true)], [(Sum.inl xyLetter, false), (Sum.inr 1, true)],
     [(Sum.inr 1, false)], [(Sum.inr 0, false)]].getD o.2.val []
 
 /-- Every solution `x = a c`, `y = c⁻¹ b` of `x y = a b`, for a nonempty word `c` such that `a c`
 and `c⁻¹ b` are reduced, has the table `(a z, z⁻¹ b, b⁻¹, a⁻¹)` with the word `c` for the letter
 `z`. -/
-example (c : List (Fin 2 × Bool)) (hc₀ : c ≠ []) (hx : FreeGroup.IsReduced ((0, true) :: c))
+private theorem isSolutionTable_xyCancelTable (c : List (Fin 2 × Bool)) (hc₀ : c ≠ [])
+    (hx : FreeGroup.IsReduced ((0, true) :: c))
     (hy : FreeGroup.IsReduced (FreeGroup.invRev c ++ [(1, true)])) :
     IsSolutionTable xyEqAB
       ![FreeGroup.mk ((0, true) :: c), FreeGroup.mk (FreeGroup.invRev c ++ [(1, true)])]
@@ -301,6 +310,21 @@ example (c : List (Fin 2 × Bool)) (hc₀ : c ≠ []) (hx : FreeGroup.IsReduced 
     fin_cases j <;>
       simp [xyCancelTable, FreeGroup.substituteVars, EqIneqSystem.eval_eq_lift,
         ← FreeGroup.inv_mk, FreeGroup.of]
+
+/-- Such a solution `x = a c`, `y = c⁻¹ b` comes from the table with a cancelling segment, whose
+word maps preserve `c`. -/
+example (c : List (Fin 2 × Bool)) (hc₀ : c ≠ []) (hx : FreeGroup.IsReduced ((0, true) :: c))
+    (hy : FreeGroup.IsReduced (FreeGroup.invRev c ++ [(1, true)])) :
+    xyCancelTable ∈ cancellationFamily xyEqAB ∧
+    ∃ U : (ofEntries (tableEntries xyEqAB xyCancelTable)).Solution,
+      substituteVars U.word (wordMap (tableEntries xyEqAB xyCancelTable) 0) = (0, true) :: c ∧
+      substituteVars U.word (wordMap (tableEntries xyEqAB xyCancelTable) 1) =
+        FreeGroup.invRev c ++ [(1, true)] := by
+  have h := isSolutionTable_xyCancelTable c hc₀ hx hy
+  obtain ⟨U, hU⟩ := h.exists_solution
+  refine ⟨mem_cancellationFamily.2 h.isPartitionTable, U, ?_, ?_⟩
+  · simpa [FreeGroup.toWord_mk, hx.reduce_eq] using hU ⟨0, 0, by decide⟩ 0 rfl
+  · simpa [FreeGroup.toWord_mk, hy.reduce_eq] using hU ⟨0, 1, by decide⟩ 1 rfl
 
 end Examples
 
