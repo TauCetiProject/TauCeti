@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
-public import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
 # The manifold structure on an open ball
 
-An open ball in a normed vector space inherits the open-subset atlas. In particular a complex
-disc, written with its usual subtype rather than as a bundled open set, is a complex manifold.
+An open ball in a pseudometric charted space inherits the open-subset atlas and any manifold
+structure. In particular a complex disc, written with its usual subtype rather than as a bundled
+open set, is a complex manifold.
 -/
 
 public section
@@ -21,21 +21,18 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E]
+variable {H M : Type*} [TopologicalSpace H] [PseudoMetricSpace M] [ChartedSpace H M]
 
-/-- An open ball has the atlas induced from its ambient normed space. -/
-noncomputable instance instChartedSpaceBall (c : E) (r : ℝ) : ChartedSpace E (Metric.ball c r) :=
-  inferInstanceAs (ChartedSpace E
-    (⟨Metric.ball c r, Metric.isOpen_ball⟩ : TopologicalSpace.Opens E))
+/-- An open ball has the atlas induced from its ambient charted space. -/
+noncomputable instance instChartedSpaceBall (c : M) (r : ℝ) : ChartedSpace H (Metric.ball c r) :=
+  inferInstanceAs (ChartedSpace H
+    (⟨Metric.ball c r, Metric.isOpen_ball⟩ : TopologicalSpace.Opens M))
 
-/-- The induced atlas makes an open ball a manifold over the ambient scalar field. -/
-instance instIsManifoldBall {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
-    (c : E) (r : ℝ) (n : ℕ∞ω) : IsManifold 𝓘(𝕜, E) n (Metric.ball c r) :=
-  inferInstanceAs (IsManifold 𝓘(𝕜, E) n
-    (⟨Metric.ball c r, Metric.isOpen_ball⟩ : TopologicalSpace.Opens E))
-
-/-- Open balls in a locally compact normed group are locally compact. -/
-instance instLocallyCompactSpaceBall [LocallyCompactSpace E] (c : E) (r : ℝ) :
-    LocallyCompactSpace (Metric.ball c r) := Metric.isOpen_ball.locallyCompactSpace
+/-- The induced atlas makes an open ball in a manifold a manifold with the same model. -/
+instance instIsManifoldBall {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω} [IsManifold I n M]
+    (c : M) (r : ℝ) : IsManifold I n (Metric.ball c r) :=
+  inferInstanceAs (IsManifold I n
+    (⟨Metric.ball c r, Metric.isOpen_ball⟩ : TopologicalSpace.Opens M))
 
 end TauCeti

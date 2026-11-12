@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
+public import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
-# Frontiers of annuli in pseudo-metric spaces
+# Open balls and frontiers of annuli in pseudo-metric spaces
 
-The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two boundary spheres
+Open balls in locally compact pseudometric spaces are locally compact. The frontier of the closed
+annulus `closedBall y R \ ball y r` lies on its two boundary spheres
 (`TauCeti.frontier_closedBall_sdiff_ball_subset`).
 -/
 
@@ -21,6 +23,10 @@ namespace TauCeti
 open Metric Set
 
 variable {X : Type*} [PseudoMetricSpace X]
+
+/-- Open balls in a locally compact pseudometric space are locally compact. -/
+instance instLocallyCompactSpaceBall [LocallyCompactSpace X] (c : X) (r : ℝ) :
+    LocallyCompactSpace (Metric.ball c r) := Metric.isOpen_ball.locallyCompactSpace
 
 /-- The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two boundary
 spheres. -/

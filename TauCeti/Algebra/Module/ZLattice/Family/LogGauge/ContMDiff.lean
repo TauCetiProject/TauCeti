@@ -7,17 +7,24 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Basic
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
+public import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
-# Holomorphy of the logarithmic gauge
+# Regularity of the upstairs logarithmic gauge
 
-The logarithmic gauge of a varying period family is holomorphic off the central fibre.
-Although its formula uses the principal logarithm, near any nonzero point it agrees modulo
-periods with a formula using a holomorphic branch. No constancy of the period family is needed.
+`contMDiff_powPullbackPeriod` preserves `C^n` regularity over `𝓘(ℂ)` under pullback along the
+power map. For a `C^n` varying period family, `contMDiffAt_torusFamilyLogGauge` proves `C^n`
+regularity of the upstairs map `TauCeti.torusFamilyLogGauge` from
+`(rootsOfUnityBall m r × E)/Λ` to `(Metric.ball 0 (r ^ m) × E)/Λ` off the central fibre
+(`z ≠ 0`), hence holomorphy there when `n ≠ 0`. Although its formula uses the principal
+logarithm, near any nonzero point it agrees modulo periods with a formula using a holomorphic
+branch. No constancy of the period family is needed.
 
-Both discs carry their inherited open-subset complex atlases.
+Both discs carry their inherited open-subset complex atlases. This is the upstairs regularity
+step for descent to the punctured cyclic quotient, not a downstairs biholomorphism theorem for
+`TauCeti.torusFamilyLogGaugeEquiv`.
 
 ## References
 
@@ -35,22 +42,23 @@ namespace TauCeti
 variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   (P : Metric.ball (0 : ℂ) (r ^ m) → Λ →ₗ[ℤ] E) {n : ℕ∞ω}
-  (hP : ∀ l, ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun t ↦ P t l)
 
-include hP in
-/-- Pulling back holomorphic periods through the power map preserves holomorphy. -/
-theorem contMDiff_powPullbackPeriod (l : Λ) :
+/-- Pullback along `rootsOfUnityBall.powMap` preserves `C^n` regularity of each period. -/
+theorem contMDiff_powPullbackPeriod {l : Λ}
+    (hP : ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun t ↦ P t l) :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun z ↦ powPullbackPeriod m r P z l := by
   simpa only [powPullbackPeriod_apply, Function.comp_def] using
-    (hP l).comp rootsOfUnityBall.contMDiff_powMap
+    hP.comp rootsOfUnityBall.contMDiff_powMap
 
-variable [FiniteDimensional ℂ E]
+variable (hP : ∀ l, ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun t ↦ P t l)
+  [FiniteDimensional ℂ E]
   [∀ t, DiscreteTopology (LinearMap.range (P t))]
   [∀ t, IsZLattice ℝ (LinearMap.range (P t))]
   (hinj : ∀ t, Function.Injective (P t))
 
-/-- The logarithmic gauge is `C^n` over the punctured disc. In particular holomorphic periods
-give a holomorphic gauge, including at points on the branch cut of the principal logarithm. -/
+/-- The upstairs map `torusFamilyLogGauge` from `(rootsOfUnityBall m r × E)/Λ` to
+`(Metric.ball 0 (r ^ m) × E)/Λ` is `C^n` off the central fibre (`z ≠ 0`), hence holomorphic
+there when `n ≠ 0`, including on the branch cut of the principal logarithm. -/
 theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
     {x : letI := periodAddAction (powPullbackPeriod m r P)
       AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)}
@@ -59,7 +67,7 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-      (fun l ↦ (contMDiff_powPullbackPeriod P hP l).continuous)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
       (fun z ↦ by simpa only [powPullbackPeriod_apply] using
         (hinj (rootsOfUnityBall.powMap m r z)))
     ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
@@ -68,7 +76,7 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-    (fun l ↦ (contMDiff_powPullbackPeriod P hP l).continuous)
+    (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
     (fun z ↦ by simpa only [powPullbackPeriod_apply] using
       (hinj (rootsOfUnityBall.powMap m r z)))
   obtain ⟨⟨z₀, e₀⟩, rfl⟩ := Quotient.exists_rep x
@@ -76,7 +84,7 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
   rw [← (isLocalDiffeomorph_torusFamily_mk (powPullbackPeriod m r P)
     (fun z ↦ by simpa only [powPullbackPeriod_apply] using
       (hinj (rootsOfUnityBall.powMap m r z)))
-    (contMDiff_powPullbackPeriod P hP) (z₀, e₀)).contMDiffAt_comp_iff le_rfl]
+    (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (z₀, e₀)).contMDiffAt_comp_iff le_rfl]
   -- A branch centred at `z₀` is holomorphic even if `z₀` lies on the principal branch cut.
   let L : ℂ → ℂ := fun z ↦ log z₀ + log (z / z₀)
   have hL {z : ℂ} (hz : z ≠ 0) : exp (L z) = z := by
@@ -95,7 +103,7 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
   have hs := hq.contMDiffAt.comp (z₀, e₀)
     ((hpow.comp contMDiff_fst).contMDiffAt.prodMk
       (contMDiffAt_snd.sub ((hLc.div_const (2 * π * I)).smul
-        ((contMDiff_powPullbackPeriod P hP l).comp contMDiff_fst).contMDiffAt)))
+        ((contMDiff_powPullbackPeriod P (hP l)).comp contMDiff_fst).contMDiffAt)))
   apply hs.congr_of_eventuallyEq
   have hopen : IsOpen {p : rootsOfUnityBall m r × E | (p.1 : ℂ) ≠ 0} :=
     isOpen_ne_fun (continuous_subtype_val.comp continuous_fst) continuous_const
