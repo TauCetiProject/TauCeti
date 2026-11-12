@@ -151,18 +151,14 @@ theorem isWeakCauchyRiemannOn_I_smul_id_zero_iff :
 
 /-- **Holomorphic maps are weak solutions.** A holomorphic map on an open set `Ω`, with values
 in a complete complex normed space, solves the homogeneous weak equation for the structure
-`J = i` with every exponent: its real derivative is complex-linear, so `D(i) = i D(1)` and
-`D(1) + i D(i) = 0`. -/
+`J = i` with every exponent: it is `C¹`, hence `W^{1,p}_loc`, and satisfies `\bar∂w = 0`, so
+`TauCeti.isWeakCauchyRiemannOn_I_smul_id_zero_iff` applies. -/
 theorem _root_.DifferentiableOn.isWeakCauchyRiemannOn [CompleteSpace F]
     (hw : DifferentiableOn ℂ w Ω) :
-    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) (fun _ _ => 0) w := by
-  refine isWeakCauchyRiemannOn_of_contDiffOn
-    ((hw.contDiffOn (n := 1) Ω.isOpen).restrict_scalars ℝ) fun z hz => ?_
-  have hd := hw.differentiableAt (Ω.isOpen.mem_nhds hz)
-  rw [hd.fderiv_restrictScalars ℝ]
-  have hI : fderiv ℂ w z I = I • fderiv ℂ w z 1 := by
-    rw [← (fderiv ℂ w z).map_smul, smul_eq_mul, mul_one]
-  simp [hI, smul_smul]
+    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) (fun _ _ => 0) w :=
+  isWeakCauchyRiemannOn_I_smul_id_zero_iff.2 ⟨hw.continuousOn,
+    ((hw.contDiffOn (n := 1) Ω.isOpen).restrict_scalars ℝ).memWkpLoc subset_rfl,
+    hw.hasWeakConjWirtingerDerivOn_zero⟩
 
 end Wirtinger
 

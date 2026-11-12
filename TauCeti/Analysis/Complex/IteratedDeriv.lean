@@ -71,17 +71,16 @@ field `𝕜` below `ℂ`; for `𝕜 = ℝ`, the convergence is `C^∞` on compac
 theorem TendstoLocallyUniformlyOn.iteratedFDeriv (𝕜 : Type*) [NontriviallyNormedField 𝕜]
     [NormedAlgebra 𝕜 ℂ] [NormedSpace 𝕜 E] [IsScalarTower 𝕜 ℂ E] {ι : Type*} {l : Filter ι}
     [l.NeBot] {F : ι → ℂ → E} {f : ℂ → E} {U : Set ℂ} (hf : TendstoLocallyUniformlyOn F f l U)
-    (hF : ∀ n, DifferentiableOn ℂ (F n) U) (hU : IsOpen U) (k : ℕ) :
+    (hF : ∀ᶠ n in l, DifferentiableOn ℂ (F n) U) (hU : IsOpen U) (k : ℕ) :
     TendstoLocallyUniformlyOn (fun n => iteratedFDeriv 𝕜 k (F n)) (iteratedFDeriv 𝕜 k f) l U := by
   have hT : UniformContinuous fun x : E =>
       (ContinuousMultilinearMap.piFieldEquiv ℂ (Fin k) E x).restrictScalars 𝕜 :=
     ((ContinuousMultilinearMap.restrictScalarsₗᵢ 𝕜).isometry.comp
       (ContinuousMultilinearMap.piFieldEquiv ℂ (Fin k) E).isometry).uniformContinuous
-  have hf' := hf.differentiableOn (Filter.Eventually.of_forall hF) hU
-  refine ((hT.comp_tendstoLocallyUniformlyOn
-    (hf.iteratedDeriv (Filter.Eventually.of_forall hF) hU k)).congr fun n z hz => ?_).congr_right
-      fun z hz => ?_
-  · exact ((hF n).iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
+  have hf' := hf.differentiableOn hF hU
+  refine ((hT.comp_tendstoLocallyUniformlyOn (hf.iteratedDeriv hF hU k)).congr_inseparable
+    (hF.mono fun n hn z hz => .of_eq ?_)).congr_right fun z hz => ?_
+  · exact (hn.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
   · exact (hf'.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
 
 namespace TauCeti.Complex

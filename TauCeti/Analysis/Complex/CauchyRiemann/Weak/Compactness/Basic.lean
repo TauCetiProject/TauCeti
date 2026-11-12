@@ -71,6 +71,6 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn_I_smul_
     exact ⟨C, fun m z hz => hC _ (huK m hz)⟩
   obtain ⟨φ, v, hφ, hv, hconv⟩ := montel Ω.isOpen hd hb
   exact ⟨φ, v, hφ, hv.isWeakCauchyRiemannOn,
-    hconv.iteratedFDeriv ℝ (fun m => hd (φ m)) Ω.isOpen⟩
+    hconv.iteratedFDeriv ℝ (.of_forall fun m => hd (φ m)) Ω.isOpen⟩
 
 end TauCeti

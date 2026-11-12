@@ -163,7 +163,8 @@ theorem tendstoLocallyUniformly_iteratedFDeriv_div_natCast (k : ℕ) :
   simp only [iteratedDeriv_zero] at h
   rw [← tendstoLocallyUniformlyOn_univ] at h ⊢
   simpa [Pi.zero_def] using
-    h.iteratedFDeriv ℝ (fun m => (differentiable_id.div_const _).differentiableOn) isOpen_univ k
+    h.iteratedFDeriv ℝ (.of_forall fun m => (differentiable_id.div_const _).differentiableOn)
+      isOpen_univ k
 
 /-! ### The image bound -/
 
