@@ -10,7 +10,7 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
 import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -89,9 +89,8 @@ private theorem simpleClass_liftable (hs : t.IsSimplyLaced) :
   simp only [e, Equiv.symm_apply_apply]
   have hm : coxeterMatrixOfBase (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
       (e i) (e j) = coxeterOrder (t.cartanMatrix i j * t.cartanMatrix j i) := by
-    simp only [coxeterMatrixOfBase_apply, RootPairing.Base.cartanMatrix,
-      RootPairing.Base.cartanMatrixIn, Matrix.of_apply, e,
-      coe_simpleSupportEquivSimplyConnectedBase, pairingIn_simpleIndex]
+    rw [coxeterMatrixOfBase_apply, cartanMatrix_simplyConnectedBase_apply,
+      cartanMatrix_simplyConnectedBase_apply]
   rw [hm]
   by_cases h : i = j
   · subst j
@@ -154,6 +153,8 @@ private theorem quotientSection_weylProjection (hs : t.IsSimplyLaced) (g : Nₖ)
       exact ((QuotientGroup.eq_one_iff (N := Hₖ) _).mpr ⟨s, rfl⟩).symm
     · simp only [MonoidHom.comp_apply, D.weylProjection_weylElement,
         D.quotientSection_simple]
+      rw [simpleClass, QuotientGroup.mk'_apply]
+      -- Both lifts have the same underlying Weyl element; membership proofs are irrelevant.
       rfl
   exact DFunLike.congr_fun hf g
 
@@ -167,9 +168,9 @@ theorem ker_weylProjection_of_isSimplyLaced (hs : t.IsSimplyLaced) :
     apply (QuotientGroup.eq_one_iff g).mp
     rw [← QuotientGroup.mk'_apply, ← D.quotientSection_weylProjection K hs g,
       MonoidHom.mem_ker.mp hg, map_one]
-  · rintro ⟨s, hs⟩
+  · rintro ⟨s, hsg⟩
     have hg : g = ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ :=
-      Subtype.ext hs.symm
+      Subtype.ext hsg.symm
     rw [hg, MonoidHom.mem_ker, D.weylProjection_torusPoints]
 
 /-- The quotient of a simply-laced Chevalley datum's Weyl subgroup by its actual torus
