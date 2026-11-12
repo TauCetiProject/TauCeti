@@ -42,8 +42,9 @@ boundary points.
 * `ContMDiffAt.contMDiffAt_curveVelocity_snd`: for a jointly `C^n` map `f : 𝕜 → 𝕜 → M`, the
   velocities of the curves `f q`, as a map of both parameters to the tangent bundle, are `C^m`
   for `m + 1 ≤ n`. `ContMDiffAt.contMDiffAt_curveVelocity_fst` is the same statement for the
-  curves `q ↦ f q r`, and `ContMDiffAt.contMDiffAt_curveVelocity_snd_slice` is its restriction
-  to a fixed time.
+  curves `q ↦ f q r`. `ContMDiffAt.contMDiffAt_curveVelocity_snd_slice` and
+  `ContMDiffAt.contMDiffAt_curveVelocity_fst_slice` restrict these fields to a fixed time and
+  a fixed first parameter, respectively.
 * `ContMDiffAt.contMDiffAt_variationField`: the variation field of a jointly `C^n` family
   is a `C^m` field along its central curve for `m + 1 ≤ n`.
 * `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`: the parameter derivative of the differential of a
@@ -167,6 +168,15 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd_slice {f : 𝕜 → �
       (fun s ↦ TotalSpace.mk' E (f s t) (curveVelocity I (f s) t)) u :=
   (hf.contMDiffAt_curveVelocity_snd hmn).comp u (contDiff_prodMk_left t).contMDiff.contMDiffAt
 
+/-- At a fixed first parameter `u`, the transverse velocities of a family `f : 𝕜 → 𝕜 → M`
+which is jointly `C^n` at `(u, v)` form a `C^m` map along `f u` at `v`, for every `m` with
+`m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_fst_slice {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun r ↦ TotalSpace.mk' E (f u r) (curveVelocity I (fun q ↦ f q r) u)) v :=
+  (hf.contMDiffAt_curveVelocity_fst hmn).comp v (contDiff_prodMk_right u).contMDiff.contMDiffAt
+
 /-- **Regularity of the variation field.** The variation field of a family `f : 𝕜 → 𝕜 → M` which
 is jointly `C^n` at `(0, v)` is a `C^m` field along the central curve `f 0` at `v`, for every `m`
 with `m + 1 ≤ n`. -/
@@ -174,9 +184,7 @@ theorem _root_.ContMDiffAt.contMDiffAt_variationField {f : 𝕜 → 𝕜 → M} 
     (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (0, v)) (hmn : m + 1 ≤ n) :
     ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
       (fun r ↦ TotalSpace.mk' E (f 0 r) (variationField I f r)) v := by
-  simpa only [Function.comp_def, variationField_apply] using
-    (hf.contMDiffAt_curveVelocity_fst hmn).comp v
-      (contDiff_prodMk_right (0 : 𝕜)).contMDiff.contMDiffAt
+  simpa only [variationField_apply] using hf.contMDiffAt_curveVelocity_fst_slice hmn
 
 /-- **Mixed derivatives on a manifold.** If a family `F : 𝕜 → M → F'` is jointly `C²` at `(t, x)`
 (analytic, over a field other than `ℝ` or `ℂ`), then the parameter derivative at `t` of the

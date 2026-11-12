@@ -19,6 +19,10 @@ For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 along a graph over the parameter (`ContDiffAt.eventually_contDiffAt_graph`), and the vertical part
 of the derivative of a `C¹` map is continuous along a continuous graph
 (`ContDiffAt.continuousAt_fderiv_comp_inr`).
+
+For a scalar factor, `ContDiffAt.contDiffAt_deriv_snd` and
+`ContDiffAt.contDiffAt_deriv_fst` give joint `C^m` regularity of the corresponding partial
+derivative of a `C^n` map, for `m + 1 ≤ n`.
 -/
 
 public section
@@ -56,6 +60,23 @@ theorem fderiv_slice {n m : WithTop ℕ∞} {F : P × E → X}
   · exact hF.comp ((p, x), x) (by fun_prop)
   · fun_prop
   · exact hmn
+
+/-- For a `C^n` map on a product with a scalar second factor, the partial derivative in the
+second variable is jointly `C^m` for `m + 1 ≤ n`. -/
+theorem contDiffAt_deriv_snd {m n : WithTop ℕ∞} {g : E × 𝕜 → X} {z : E × 𝕜}
+    (hg : ContDiffAt 𝕜 n g z) (hmn : m + 1 ≤ n) :
+    ContDiffAt 𝕜 m (fun w : E × 𝕜 ↦ deriv (fun r ↦ g (w.1, r)) w.2) z := by
+  exact ((hg.fderiv_slice hmn).clm_apply (contDiffAt_const (c := (1 : 𝕜))))
+    |>.congr_of_eventuallyEq (Filter.Eventually.of_forall fun _ ↦ fderiv_apply_one_eq_deriv.symm)
+
+/-- For a `C^n` map on a product with a scalar first factor, the partial derivative in the
+first variable is jointly `C^m` for `m + 1 ≤ n`. -/
+theorem contDiffAt_deriv_fst {m n : WithTop ℕ∞} {g : 𝕜 × E → X} {z : 𝕜 × E}
+    (hg : ContDiffAt 𝕜 n g z) (hmn : m + 1 ≤ n) :
+    ContDiffAt 𝕜 m (fun w : 𝕜 × E ↦ deriv (fun r ↦ g (r, w.2)) w.1) z := by
+  have hswap : ContDiffAt 𝕜 n (fun w : E × 𝕜 ↦ g (w.2, w.1)) (z.2, z.1) :=
+    hg.comp (z.2, z.1) (contDiffAt_snd.prodMk contDiffAt_fst)
+  exact (hswap.contDiffAt_deriv_snd hmn).comp z (contDiffAt_snd.prodMk contDiffAt_fst)
 
 /-- A function that is `C^n` at `(p, ψ p)` is `C^n` at `(q, ψ q)` for `q` near `p`, when `ψ` is
 continuous at `p`. -/
