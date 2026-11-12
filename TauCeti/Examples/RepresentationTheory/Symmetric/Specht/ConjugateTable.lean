@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Enumerative.Partition.ColumnSquares
-public import TauCeti.Combinatorics.Enumerative.Partition.Small
+public import TauCeti.Combinatorics.Enumerative.Partition.Conjugate
 public import TauCeti.RepresentationTheory.Symmetric.Specht.ConjugateTable
 public import TauCeti.RepresentationTheory.Symmetric.Specht.SingletonSecondRow
 
@@ -23,9 +22,8 @@ Checks of `TauCeti.spechtChar_conjugate` and its consequences in
   `1, (0 1), (0 1)(2 3), (0 1 2), (0 1 2 3)` of the classes `1⁴, 2·1², 2², 3·1, 4`, the row of
   `(2, 1, 1)` is the row of `(3, 1)` times the signs `1, -1, 1, 1, -1`.
 
-Both conjugates are computed from the column squares of a partition: the sum of the squares of the
-parts of `μᵗ` is `n + 2` exactly when `μ = (n - 1, 1)`
-(`Nat.Partition.sum_sq_conjugate_parts_eq_add_two_iff`).
+Both conjugates are read off the conjugate `(2, 1ⁿ)` of the shape `(n + 1, 1)`, whose columns are
+counted by `Nat.Partition.sum_map_conjugate_parts`.
 -/
 
 public section
@@ -34,15 +32,38 @@ namespace TauCeti.Examples
 
 open TauCeti.Nat.Partition (singletonSecondRow singletonSecondRow_parts)
 
+/-- **The conjugate of the shape `(n + 1, 1)` is `(2, 1ⁿ)`**: the first column of `(n + 1, 1)` has
+two cells and each of the next `n` columns has one. -/
+theorem conjugate_parts_singletonSecondRow (n : ℕ) :
+    (singletonSecondRow n).conjugate.parts = 2 ::ₘ Multiset.replicate n 1 := by
+  ext j
+  rcases eq_or_ne j 0 with rfl | hj
+  · rw [Multiset.count_eq_zero.mpr fun h ↦ (Nat.Partition.parts_pos _ h).ne' rfl,
+      Multiset.count_eq_zero.mpr (by simp [Multiset.mem_replicate])]
+  -- Count the multiplicity of `j` as the sum of its indicator, the form of a column count.
+  have hcount (s : Multiset ℕ) : s.count j = (s.map fun x ↦ if x = j then 1 else 0).sum := by
+    induction s using Multiset.induction_on with
+    | empty => simp
+    | cons a s ih =>
+      rcases eq_or_ne a j with rfl | h
+      · simp [ih, add_comm]
+      · simp [h, h.symm, ih]
+  rw [hcount, hcount, Nat.Partition.sum_map_conjugate_parts _ _ (by simp [hj.symm]) (m := n + 1)
+    (by simp [singletonSecondRow_parts]), Finset.sum_range_succ']
+  have hk (k : ℕ) (hk : k ∈ Finset.range n) :
+      ((singletonSecondRow n).parts.filter (k + 1 < ·)).card = 1 := by
+    simp [singletonSecondRow_parts, Finset.mem_range.mp hk]
+  rw [Finset.sum_congr rfl fun k hk' ↦ by rw [hk k hk']]
+  simp [singletonSecondRow_parts, Multiset.filter_singleton, add_comm]
+
 /-! ### Three letters -/
 
 /-- The shape `(2, 1)` of `3` is its own conjugate. -/
 theorem conjugate_singletonSecondRow_one :
     (singletonSecondRow 1).conjugate = singletonSecondRow 1 := by
   ext1
-  rw [(Nat.Partition.sum_sq_conjugate_parts_eq_add_two_iff (singletonSecondRow 1).conjugate).mp
-    (by rw [Nat.Partition.conjugate_conjugate, singletonSecondRow_parts]; decide),
-    singletonSecondRow_parts]
+  rw [conjugate_parts_singletonSecondRow, singletonSecondRow_parts]
+  rfl
 
 /-- The character of `S^((2,1))` vanishes on the transposition `(0 1)`. -/
 example : spechtChar (singletonSecondRow 1) (Equiv.swap 0 1) = 0 :=
@@ -65,18 +86,8 @@ example :
 /-- The conjugate of the shape `(3, 1)` of `4` is `(2, 1, 1)`. -/
 theorem conjugate_singletonSecondRow_two_parts :
     (singletonSecondRow 2).conjugate.parts = {2, 1, 1} := by
-  have h := (Nat.Partition.sum_sq_conjugate_parts_eq_add_two_iff (singletonSecondRow 2)).mpr
-    (by simp)
-  have hs : ((singletonSecondRow 2).conjugate.parts.sort (· ≥ ·) : Multiset ℕ) =
-      (singletonSecondRow 2).conjugate.parts :=
-    Multiset.sort_eq _ _
-  -- Of the five partitions of `4`, only `(2, 1, 1)` has squares summing to `6`.
-  rcases Nat.Partition.sort_parts_four (singletonSecondRow 2).conjugate with h' | h' | h' | h' | h'
-  all_goals
-    rw [h'] at hs
-    rw [← hs] at h ⊢
-    revert h
-    decide
+  rw [conjugate_parts_singletonSecondRow]
+  rfl
 
 /-- The degree of `S^((2,1,1))` is `3`, that of `S^((3,1))`. -/
 example : spechtChar (singletonSecondRow 2).conjugate 1 = 3 := by

@@ -39,11 +39,15 @@ complex character table of `Sₙ` and satisfies the character-table specificatio
 
 * `TauCeti.spechtCharValue_conjugate`, `TauCeti.symmetricCharacterTable_conjugate`:
   `X(μᵗ, ν) = (-1) ^ (n + ℓ(ν)) X(μ, ν)`.
-* `TauCeti.spechtChar_eq_zero_of_conjugate_eq`, `TauCeti.spechtCharValue_eq_zero_of_conjugate_eq`:
-  the character of a self-conjugate shape vanishes on the odd permutations.
+* `TauCeti.spechtCharValue_eq_zero_of_conjugate_eq`: the character value of a self-conjugate shape
+  vanishes on the odd classes.
 * `TauCeti.irreducibleCharacter_conjugateIrreducibleIndex`,
-  `TauCeti.symmetricCharacterTableℂ_conjugateIrreducibleIndex`: the same identity on the complex
-  character table of `Sₙ`.
+  `TauCeti.symmetricCharacterTableℂ_conjugateIrreducibleIndex`,
+  `TauCeti.characterTable_conjugateIrreducibleIndex`: the same identity on the complex character
+  table of `Sₙ`.
+* `TauCeti.IsCharacterTableSpec.exists_involutive_apply_eq_neg_one_pow_mul`: the same identity for
+  every matrix satisfying the character-table specification of `Sₙ`, along an involution of its
+  rows.
 
 ## References
 
@@ -81,14 +85,6 @@ theorem symmetricCharacterTable_conjugate (μ ν : n.Partition) :
       (-1) ^ (n + Multiset.card ν.parts) * symmetricCharacterTable n μ ν := by
   rw [symmetricCharacterTable_apply, symmetricCharacterTable_apply, spechtCharValue_conjugate]
 
-/-- **The character of a self-conjugate shape vanishes on the odd permutations**: if `μᵗ = μ` and
-`sgn σ = -1`, then `χ^μ(σ) = 0`. -/
-theorem spechtChar_eq_zero_of_conjugate_eq {μ : n.Partition} (hμ : μ.conjugate = μ)
-    {σ : Equiv.Perm (Fin n)} (hσ : Equiv.Perm.sign σ = -1) : spechtChar μ σ = 0 := by
-  have h := spechtChar_conjugate μ σ
-  rw [hμ, hσ, Units.val_neg, Units.val_one] at h
-  omega
-
 /-- **The character value of a self-conjugate shape vanishes on the odd classes**: if `μᵗ = μ`
 and `n + ℓ(ν)` is odd, then `χ^μ(ν) = 0`. -/
 theorem spechtCharValue_eq_zero_of_conjugate_eq {μ : n.Partition} (hμ : μ.conjugate = μ)
@@ -122,6 +118,14 @@ theorem conjugateIrreducibleIndex_apply (i : Fin (Nat.card (ConjClasses (Equiv.P
       partitionEquivIrreducibleIndex n ((partitionEquivIrreducibleIndex n).symm i).conjugate := by
   rw [← conjugateIrreducibleIndex_partitionEquivIrreducibleIndex, Equiv.apply_symm_apply]
 
+/-- The row involution conjugates the partition labelling a row. -/
+@[simp]
+theorem partitionEquivIrreducibleIndex_symm_conjugateIrreducibleIndex
+    (i : Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n))))) :
+    (partitionEquivIrreducibleIndex n).symm (conjugateIrreducibleIndex n i) =
+      ((partitionEquivIrreducibleIndex n).symm i).conjugate := by
+  rw [conjugateIrreducibleIndex_apply, Equiv.symm_apply_apply]
+
 /-- The row involution is an involution. -/
 @[simp]
 theorem conjugateIrreducibleIndex_conjugateIrreducibleIndex
@@ -149,6 +153,16 @@ theorem irreducibleCharacter_conjugateIrreducibleIndex
     irreducibleCharacter_partitionEquivIrreducibleIndex, spechtChar_conjugate]
   norm_cast
 
+/-- The row involution preserves the degrees of the irreducible characters of `Sₙ`. -/
+@[simp]
+theorem characterDegree_conjugateIrreducibleIndex
+    (i : Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n))))) :
+    characterDegree ℂ (conjugateIrreducibleIndex n i) = characterDegree ℂ i := by
+  have h := irreducibleCharacter_conjugateIrreducibleIndex i 1
+  rw [irreducibleCharacter_one, irreducibleCharacter_one, Equiv.Perm.sign_one, Units.val_one,
+    Int.cast_one, one_mul] at h
+  exact_mod_cast h
+
 /-- **The sign-transpose identity on the character table of `Sₙ` in the shape of the
 specification**: in `TauCeti.symmetricCharacterTableℂ n`, the row `conjugateIrreducibleIndex n i`
 is the row `i` multiplied by the sign `(-1) ^ (n + ℓ(ν))` of each class, `ν` being the cycle type
@@ -161,5 +175,33 @@ theorem symmetricCharacterTableℂ_conjugateIrreducibleIndex
   rw [symmetricCharacterTableℂ_apply, symmetricCharacterTableℂ_apply,
     conjugateIrreducibleIndex_apply, Equiv.symm_apply_apply, symmetricCharacterTable_conjugate]
   norm_cast
+
+/-- **The sign-transpose identity on the complex character table of `Sₙ`**: in
+`TauCeti.characterTable ℂ (Equiv.Perm (Fin n))`, the row `conjugateIrreducibleIndex n i` is the row
+`i` multiplied by the sign `(-1) ^ (n + ℓ(ν))` of each class, `ν` being the cycle type of the
+class. -/
+theorem characterTable_conjugateIrreducibleIndex
+    (i : Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n))))) (C : ConjClasses (Equiv.Perm (Fin n))) :
+    characterTable ℂ (Equiv.Perm (Fin n)) (conjugateIrreducibleIndex n i) C =
+      (-1) ^ (n + Multiset.card ((partitionEquivConjClasses n).symm C).parts) *
+        characterTable ℂ (Equiv.Perm (Fin n)) i C := by
+  rw [← symmetricCharacterTableℂ_eq_characterTable,
+    symmetricCharacterTableℂ_conjugateIrreducibleIndex]
+
+/-- **The sign-transpose identity for every matrix satisfying the character-table specification
+of `Sₙ`**: an involution `τ` of its rows multiplies each row by the sign `(-1) ^ (n + ℓ(ν))` of
+each class, `ν` being the cycle type of the class. Such a matrix is the character table up to a
+permutation `σ` of its rows (`TauCeti.characterTable_unique_rows`), and `τ` is
+`conjugateIrreducibleIndex n` conjugated by `σ`. -/
+theorem IsCharacterTableSpec.exists_involutive_apply_eq_neg_one_pow_mul
+    {M : Matrix (Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n)))))
+      (ConjClasses (Equiv.Perm (Fin n))) ℂ}
+    (hM : IsCharacterTableSpec (Equiv.Perm (Fin n)) M) :
+    ∃ τ : Equiv.Perm (Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n))))),
+      Function.Involutive τ ∧ ∀ i C, M (τ i) C =
+        (-1) ^ (n + Multiset.card ((partitionEquivConjClasses n).symm C).parts) * M i C := by
+  obtain ⟨σ, rfl⟩ := characterTable_unique_rows hM
+  refine ⟨(σ.trans (conjugateIrreducibleIndex n)).trans σ.symm, fun i ↦ by simp, fun i C ↦ ?_⟩
+  simp [characterTable_conjugateIrreducibleIndex]
 
 end TauCeti
