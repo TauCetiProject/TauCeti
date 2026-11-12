@@ -118,6 +118,17 @@ theorem range_projectiveOrbitMap_mk_one_basePointsRepresentation
     (Module.isUnimodular_mk_one v) ?_
   rw [basePointsRepresentation_prodTrivial, Representation.inv_self_apply]
 
+omit [Module.Finite k M] in
+/-- A rational point carrying the line through `(v, 1)` to the line through `(w, 1)` carries `v`
+to `w`: it cannot rescale the trivial coordinate. -/
+theorem basePointsRepresentation_eq_of_span_eq {g : WithConv (H →ₐ[k] k)} {v w : M}
+    (h : k ∙ basePointsRepresentation (M × k) g ((v, 1) : M × k) = k ∙ ((w, 1) : M × k)) :
+    basePointsRepresentation M g v = w := by
+  rw [basePointsRepresentation_prodTrivial] at h
+  obtain ⟨c, hc⟩ := Submodule.span_singleton_eq_span_singleton.mp h
+  have h1 : (c : k) = 1 := by simpa [Units.smul_def] using congrArg Prod.snd hc
+  simpa [Units.smul_def, h1] using congrArg Prod.fst hc
+
 end Chart
 
 section Coset
@@ -275,13 +286,7 @@ theorem exists_basePointsRepresentation_eq_of_finrank_le (v w : M)
     ∃ g : WithConv (H →ₐ[k] k), basePointsRepresentation M g v = w := by
   obtain ⟨g, hg⟩ := exists_span_basePointsRepresentation_eq _ _ _ _
     (finrank_prod_le_of_finrank_le v hv) (finrank_prod_le_of_finrank_le w hw)
-  refine ⟨g, ?_⟩
-  -- The line through `(g v, 1)` is the line through `(w, 1)`; comparing the trivial coordinates
-  -- shows that the scalar relating them is `1`.
-  rw [basePointsRepresentation_prodTrivial] at hg
-  obtain ⟨c, hc⟩ := Submodule.span_singleton_eq_span_singleton.mp hg
-  have h1 : (c : k) = 1 := by simpa [Units.smul_def] using congrArg Prod.snd hc
-  simpa [Units.smul_def, h1] using congrArg Prod.fst hc
+  exact ⟨g, basePointsRepresentation_eq_of_span_eq hg⟩
 
 /-- **Two orbits of full dimension coincide.** If the orbits of `v` and `w` both have dimension
 `dim M`, their topological orbit images in `P(M × k)`, including nonclosed points, are equal. -/
