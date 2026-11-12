@@ -91,6 +91,7 @@ theorem mem_commutatorPair {w : GX G (Fin 3)} : w ∈ commutatorPair G ↔
 
 /-- A triple `(u, v, x)` solves the system `[u, v] = 1`, `[u, x] = 1` exactly when `u` commutes
 with `v` and with `x`. -/
+@[simp high]
 theorem mem_V_commutatorPair {p : Fin 3 → H} :
     p ∈ V ι (commutatorPair G) ↔ Commute (p 0) (p 1) ∧ Commute (p 0) (p 2) := by
   simp [commutatorElement_eq_one_iff_commute]
@@ -98,7 +99,7 @@ theorem mem_V_commutatorPair {p : Fin 3 → H} :
 private theorem mem_V_insert_commutatorPair {p : Fin 3 → H} :
     p ∈ V ι (insert ⁅(inr (of 1) : GX G (Fin 3)), inr (of 2)⁆ (commutatorPair G)) ↔
       Commute (p 1) (p 2) ∧ p ∈ V ι (commutatorPair G) := by
-  simp [-mem_commutatorPair, commutatorElement_eq_one_iff_commute]
+  simp [commutatorElement_eq_one_iff_commute]
 
 /-- Over a commutative transitive group, a solution of `[u, v] = 1`, `[u, x] = 1` either has
 `u = 1` or solves `[v, x] = 1` as well. -/
@@ -117,8 +118,8 @@ proper subset of the solution set. -/
 theorem V_singleton_ssubset_V_commutatorPair [Nontrivial H] :
     V ι {(inr (of 0) : GX G (Fin 3))} ⊂ V ι (commutatorPair G) := by
   obtain ⟨h, hh⟩ := exists_ne (1 : H)
-  exact (Set.ssubset_iff_of_subset fun p hp => mem_V_commutatorPair.2 (by simp_all)).2
-    ⟨![h, 1, 1], mem_V_commutatorPair.2 (by simp), by simpa using hh⟩
+  exact (Set.ssubset_iff_of_subset fun p hp => by simp_all).2
+    ⟨![h, 1, 1], by simp, by simpa using hh⟩
 
 /-- Over a group that is not commutative, the solutions of `[u, v] = 1`, `[u, x] = 1` with
 `[v, x] = 1` form a proper subset of the solution set. -/
@@ -128,8 +129,7 @@ theorem V_insert_ssubset_V_commutatorPair (hH : ¬IsMulCommutative H) :
   obtain ⟨a, b, hab⟩ : ∃ a b : H, ¬Commute a b := by
     simpa [isMulCommutative_iff, Commute, SemiconjBy] using hH
   refine (Set.ssubset_iff_of_subset (V_antitone ι (Set.subset_insert _ _))).2
-    ⟨![1, a, b], mem_V_commutatorPair.2 (by simp),
-      fun h => hab (mem_V_insert_commutatorPair.1 h).1⟩
+    ⟨![1, a, b], by simp, fun h => hab (mem_V_insert_commutatorPair.1 h).1⟩
 
 /-- Over a commutative transitive group that is not commutative, the solution set of
 `[u, v] = 1`, `[u, x] = 1` is reducible in the Zariski topology. -/
