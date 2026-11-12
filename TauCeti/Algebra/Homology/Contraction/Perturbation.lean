@@ -152,13 +152,18 @@ theorem perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero {z : M} {k : ℕ}
         rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hU, one_apply_eq_self]
     _ = ∑ j ∈ Finset.range k, ((-u) ^ j) (δ z) := LinearMap.sum_apply _ _ _
 
+omit hU in
 /-- **The perturbation operator preserves invariant subgroups.**  If `δ` and `h` preserve an
 additive subgroup `S`, such as a submodule, then the perturbation operator sends every `z ∈ S` with
 `(δ h)^k δ z = 0` back into `S`, being the finite geometric series `∑_{j < k} (-1)^j (δ h)^j δ`
-on `z`. -/
+on `z` when `1 + δ h` is a unit, and `0` otherwise. -/
 theorem perturbationSeries_mem {S : AddSubgroup M} (hδ : ∀ z ∈ S, δ z ∈ S)
     (hh : ∀ z ∈ S, c.homotopy z ∈ S) {z : M} (hz : z ∈ S) {k : ℕ}
     (hk : ((δ * c.homotopy) ^ k) (δ z) = 0) : c.perturbationSeries δ z ∈ S := by
+  by_cases hU : IsUnit (1 + δ * c.homotopy)
+  swap
+  · rw [perturbationSeries_def, Ring.inverse_non_unit _ hU, zero_mul]
+    exact S.zero_mem
   rw [c.perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero δ hU hk]
   have key (j : ℕ) : ((-(δ * c.homotopy)) ^ j) (δ z) ∈ S := by
     induction j with

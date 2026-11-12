@@ -11,9 +11,11 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 /-!
 # Smooth paths of orientation-preserving linear maps
 
-Transport the smooth positive-determinant matrix path through a finite basis. The resulting
-family of continuous linear maps starts at the identity, ends at the given map, and remains
-invertible for every real parameter. It supplies linear isotopies fixing the origin.
+In finite dimension, transport the smooth positive-determinant matrix path through a finite
+basis. The resulting family of continuous linear maps starts at the identity, ends at the given
+map, and remains invertible for every real parameter. It supplies linear isotopies fixing the
+origin. In infinite dimensions every determinant is `1` by convention, so the positive-determinant
+conclusion is trivial there and the maps of the path need not be invertible.
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 4, §6, Theorem 6.6.
 -/
@@ -24,14 +26,21 @@ open scoped ContDiff Matrix.Norms.Elementwise
 
 namespace ContinuousLinearMap
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A real continuous linear map of positive determinant admits a smooth path from the identity
-through linear maps of positive determinant, on the whole real parameter line. -/
+through linear maps of positive determinant, on the whole real parameter line. In an
+infinite-dimensional space every determinant is `1` by convention, so the conclusion is trivial
+there and the maps `γ t` need not be invertible. -/
 theorem exists_contDiff_det_pos (L : E →L[ℝ] E) (hL : 0 < L.det) :
     ∃ γ : ℝ → E →L[ℝ] E, ContDiff ℝ ∞ γ ∧ γ 0 = ContinuousLinearMap.id ℝ E ∧
       γ 1 = L ∧ ∀ t, 0 < (γ t).det := by
   classical
+  by_cases hfin : FiniteDimensional ℝ E
+  swap
+  · refine ⟨fun t => (1 - t) • ContinuousLinearMap.id ℝ E + t • L, by fun_prop, by simp, by simp,
+      fun t => ?_⟩
+    simp [ContinuousLinearMap.det, LinearMap.det_eq_one_of_not_module_finite hfin]
   let b := Module.finBasis ℝ E
   let T := ((Matrix.toLin b b).trans LinearMap.toContinuousLinearMap).toContinuousLinearEquiv
   -- Compute the locally constructed transport through the chosen finite basis.

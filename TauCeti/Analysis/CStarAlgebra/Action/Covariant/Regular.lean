@@ -176,7 +176,6 @@ private theorem tendsto_regular_coefficient_indicatorConstLp [PartialOrder A] {l
       (𝓝 (indicatorConstLp 2 ht hμt (ρ b w))) := by
   set ξ := indicatorConstLp 2 ht hμt (ρ b w)
   set C := μ.real t ^ (1 / (2 : ℝ≥0∞).toReal) * ‖w‖
-  have hC : 0 ≤ C := by positivity
   have hunif := Metric.tendstoUniformlyOn_iff.1 <|
     hl.tendstoUniformlyOn_mul_right (htc.image (α.continuous_orbit b))
   refine Metric.tendsto_nhds.2 fun ε hε => ?_

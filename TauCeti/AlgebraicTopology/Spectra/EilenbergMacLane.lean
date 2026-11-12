@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Spectra.SymmetricSpectrum
 public import TauCeti.CategoryTheory.Monoidal.Mod.Algebra
 
 /-!
-# The Eilenberg–MacLane symmetric spectrum `HR`
+# The Eilenberg–MacLane symmetric spectra `HR` and `HM`
 
 For a commutative ring `R`, the Eilenberg–MacLane symmetric spectrum `HR` has as `n`-th level the
 reduced free module `R~[Sⁿ]` on the simplicial sphere `Sⁿ = (S¹)^∧n`, with `Σ_n` permuting the
@@ -30,6 +30,17 @@ descends to the smash product over the sphere, making `HR` a commutative ring sp
 commutative monoid object of symmetric spectra (`Mod.monObjComapRegular`,
 `Mod.isCommMonObjComapRegular`).
 
+For an `R`-module `M`, the Eilenberg–MacLane spectrum `HM` has as `n`-th level the reduced free
+module `M~[Sⁿ] = R~[Sⁿ] ⊗_R M` with coefficients in `M`, with `Σ_n` permuting the sphere
+coordinates. It is a module over the commutative monoid `HR` of symmetric sequences
+(`SymmetricSequence.eilenbergMacLaneModule R M`), with structure maps
+`R~[S^p] ∧ M~[S^q] ⟶ M~[S^(p+q)]` the bilinear extension of `[x] ∧ ([y] ⊗ m) ↦ [x ∧ y] ⊗ m`.
+A linear map `M ⟶ N` induces a morphism of `HR`-modules `HM ⟶ HN`, functorially. Restricting
+scalars along the unit `S ⟶ HR` makes `HM` a symmetric spectrum
+(`SymmetricSpectrum.eilenbergMacLaneModule R M`), functorial in `M`, with structure maps
+`S^p ∧ M~[S^q] ⟶ M~[S^(p+q)]` sending `x ∧ Σ yᵢ ⊗ mᵢ` to `Σ (x ∧ yᵢ) ⊗ mᵢ`. The action of the
+ring spectrum `HR` on `HM` through the smash product over the sphere is not constructed here.
+
 ## Main definitions
 
 * `SymmetricSequence.eilenbergMacLane R`: the commutative monoid `n ↦ R~[Sⁿ]` of symmetric
@@ -37,6 +48,12 @@ commutative monoid object of symmetric spectra (`Mod.monObjComapRegular`,
 * `SymmetricSequence.sphereToEilenbergMacLane R`: the unit morphism of monoids `S ⟶ HR`.
 * `SymmetricSpectrum.eilenbergMacLane R`: the Eilenberg–MacLane symmetric spectrum `HR`, a
   commutative ring spectrum.
+* `SymmetricSequence.eilenbergMacLaneModule R M`: the `HR`-module `n ↦ M~[Sⁿ]` of an `R`-module
+  `M`, and `SymmetricSequence.eilenbergMacLaneModuleMap R g`: the morphism `HM ⟶ HN` induced by a
+  linear map `g`.
+* `SymmetricSpectrum.eilenbergMacLaneModule R M`: the Eilenberg–MacLane symmetric spectrum `HM`,
+  and `SymmetricSpectrum.eilenbergMacLaneModuleMap R g`: the map `HM ⟶ HN` induced by a linear
+  map `g`.
 
 ## Main statements
 
@@ -47,6 +64,13 @@ commutative monoid object of symmetric spectra (`Mod.monObjComapRegular`,
 * `SymmetricSpectrum.tensorπ_eilenbergMacLane_mul_hom`,
   `SymmetricSpectrum.eilenbergMacLane_one_hom`: the multiplication and unit of the ring spectrum
   `HR`.
+* `SymmetricSequence.eilenbergMacLaneModule_dayStructureMap_app_smashMk`,
+  `SymmetricSpectrum.eilenbergMacLaneModule_dayStructureMap_app_smashMk`: the structure maps of
+  `HM`, as an `HR`-module and as a symmetric spectrum, on simplices.
+* `SymmetricSequence.eilenbergMacLaneModuleMap_id`,
+  `SymmetricSequence.eilenbergMacLaneModuleMap_comp`,
+  `SymmetricSpectrum.eilenbergMacLaneModuleMap_id`,
+  `SymmetricSpectrum.eilenbergMacLaneModuleMap_comp`: functoriality of `HM` in `M`.
 
 ## References
 
@@ -181,6 +205,164 @@ lemma eilenbergMacLane_dayStructureMap_app_smashMk {p q : FiniteBijection}
   simp
 
 end SymmetricSpectrum
+
+section Module
+
+variable (M : Type) [AddCommGroup M] [Module R M]
+
+namespace SymmetricSequence
+
+/-- The Eilenberg–MacLane symmetric sequence `n ↦ M~[Sⁿ] = R~[Sⁿ] ⊗_R M` of an `R`-module `M`,
+with `Σ_n` permuting the sphere coordinates, as a module over the commutative monoid `HR`. Its
+structure maps `R~[S^p] ∧ M~[S^q] ⟶ M~[S^(p+q)]` are the bilinear extension of
+`[x] ∧ ([y] ⊗ m) ↦ [x ∧ y] ⊗ m`, concatenating sphere coordinates
+(`SymmetricSequence.eilenbergMacLaneModule_dayStructureMap_app_smashMk`). -/
+-- An abbreviation, so that the levels of `HM` are the reduced free modules `M~[Sⁿ]`.
+abbrev eilenbergMacLaneModule : Mod SymmetricSequence.{0} (eilenbergMacLane R) :=
+  Mod.dayMk (.mk (PointedSSet.smashPowFunctor PointedSSet.circle ⋙
+      PointedSSet.reducedFreeTensor R M))
+    (PointedSSet.reducedFreeTensorCompAct R M _)
+    (PointedSSet.reducedFreeTensorCompAct_unit _) (PointedSSet.reducedFreeTensorCompAct_assoc _)
+
+/-- The structure maps `R~[S^p] ∧ M~[S^q] ⟶ M~[S^(p+q)]` of the `HR`-module `HM` are the action
+of reduced free `R`-modules followed by the concatenation of sphere coordinates. -/
+lemma eilenbergMacLaneModule_dayStructureMap (p q : FiniteBijection) :
+    (eilenbergMacLaneModule R M).dayStructureMap p q =
+      PointedSSet.reducedFreeTensorAct R M _ _ ≫ (PointedSSet.reducedFreeTensor R M).map
+        (Functor.LaxMonoidal.μ (PointedSSet.smashPowFunctor PointedSSet.circle) p q) :=
+  (Mod.dayStructureMap_dayMk _ _ _ _ p q).trans (PointedSSet.reducedFreeTensorCompAct_app _ p q)
+
+/-- The structure map `R~[S^p] ∧ M~[S^q] ⟶ M~[S^(p+q)]` of `HM` sends `v ∧ Σ yᵢ ⊗ mᵢ` to
+`Σ (v ∧ yᵢ) ⊗ mᵢ`, where `x ∧ y ∈ S^(p+q)` concatenates the sphere coordinates. -/
+lemma eilenbergMacLaneModule_dayStructureMap_app_smashMk {p q : FiniteBijection}
+    {n : SimplexCategoryᵒᵖ} (v : ((PointedSSet.reducedFree R).obj
+      (PointedSSet.circle.smashPow (Fin p.len))).right.obj n)
+    (t : ((PointedSSet.reducedFreeTensor R M).obj
+      (PointedSSet.circle.smashPow (Fin q.len))).right.obj n) :
+    ((eilenbergMacLaneModule R M).dayStructureMap p q).right.app n (PointedSSet.smashMk v t) =
+      LinearMap.rTensor M (ReducedFreeModule.map₂ R (fun x y ↦ (Functor.LaxMonoidal.μ
+        (PointedSSet.smashPowFunctor PointedSSet.circle) p q).right.app n
+          (PointedSSet.smashMk x y)) (by simp) (by simp) v) t := by
+  rw [Mod.dayStructureMap_dayMk, PointedSSet.reducedFreeTensorCompAct_app_app_smashMk]
+
+variable {M} {N P : Type} [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
+
+/-- The morphism of `HR`-modules `HM ⟶ HN` induced by a linear map `g : M →ₗ[R] N`, applying `g`
+to the coefficients in every level. -/
+def eilenbergMacLaneModuleMap (g : M →ₗ[R] N) :
+    eilenbergMacLaneModule R M ⟶ eilenbergMacLaneModule R N :=
+  Mod.dayHomMk (.mk (Functor.whiskerLeft _ (PointedSSet.reducedFreeTensorMap R g))) fun p q ↦ by
+    rw [Mod.dayStructureMap_dayMk, Mod.dayStructureMap_dayMk]
+    exact PointedSSet.reducedFreeTensorCompAct_app_comp_reducedFreeTensorMap_app _ g p q
+
+@[simp]
+lemma eilenbergMacLaneModuleMap_hom_natTrans_app (g : M →ₗ[R] N) (k : FiniteBijection) :
+    (eilenbergMacLaneModuleMap R g).hom.natTrans.app k =
+      (PointedSSet.reducedFreeTensorMap R g).app (PointedSSet.circle.smashPow (Fin k.len)) := by
+  simp [eilenbergMacLaneModuleMap]
+
+@[simp]
+lemma eilenbergMacLaneModuleMap_id :
+    eilenbergMacLaneModuleMap R (LinearMap.id : M →ₗ[R] M) = 𝟙 _ := by
+  apply Mod.Hom.ext
+  apply DayFunctor.hom_ext
+  ext k : 2
+  simp
+
+lemma eilenbergMacLaneModuleMap_comp (g : M →ₗ[R] N) (h : N →ₗ[R] P) :
+    eilenbergMacLaneModuleMap R (h ∘ₗ g) =
+      eilenbergMacLaneModuleMap R g ≫ eilenbergMacLaneModuleMap R h := by
+  apply Mod.Hom.ext
+  apply DayFunctor.hom_ext
+  ext k : 2
+  simp [PointedSSet.reducedFreeTensorMap_comp]
+
+end SymmetricSequence
+
+namespace SymmetricSpectrum
+
+/-- The Eilenberg–MacLane symmetric spectrum `HM` of an `R`-module `M`: the `HR`-module
+`n ↦ M~[Sⁿ]` of symmetric sequences, regarded as a symmetric spectrum by restricting scalars along
+the unit `S ⟶ HR`. -/
+-- Written as a structure with an explicit underlying object, exposed and implicitly reducible, so
+-- that its levels are those of the symmetric sequence `n ↦ M~[Sⁿ]`.
+@[expose, implicit_reducible]
+def eilenbergMacLaneModule : SymmetricSpectrum :=
+  letI := (SymmetricSequence.eilenbergMacLaneModule R M).mod
+  letI := Mod.scalarRestriction (SymmetricSequence.sphereToEilenbergMacLane R)
+    (SymmetricSequence.eilenbergMacLaneModule R M).X
+  ⟨(SymmetricSequence.eilenbergMacLaneModule R M).X⟩
+
+/-- `HM` is the restriction of scalars of the `HR`-module `n ↦ M~[Sⁿ]` along the unit `S ⟶ HR`. -/
+lemma eilenbergMacLaneModule_eq : eilenbergMacLaneModule R M =
+    (Mod.comap (SymmetricSequence.sphereToEilenbergMacLane R)).obj
+      (SymmetricSequence.eilenbergMacLaneModule R M) :=
+  (rfl)
+
+/-- The structure maps `S^p ∧ M~[S^q] ⟶ M~[S^(p+q)]` of `HM` are the generator map on the sphere
+factor followed by the action of reduced free `R`-modules and the concatenation of sphere
+coordinates. -/
+lemma eilenbergMacLaneModule_dayStructureMap (p q : FiniteBijection) :
+    (eilenbergMacLaneModule R M).dayStructureMap p q =
+      PointedSSet.reducedFreeι R ((PointedSSet.smashPowFunctor PointedSSet.circle).obj p) ▷
+          (PointedSSet.reducedFreeTensor R M).obj
+            ((PointedSSet.smashPowFunctor PointedSSet.circle).obj q) ≫
+        (PointedSSet.reducedFreeTensorCompAct R M
+          (PointedSSet.smashPowFunctor PointedSSet.circle)).app (p, q) := by
+  refine (Mod.dayStructureMap_comap (SymmetricSequence.sphereToEilenbergMacLane R)
+    (SymmetricSequence.eilenbergMacLaneModule R M) p q).trans ?_
+  rw [SymmetricSequence.sphereToEilenbergMacLane_natTrans_app, Mod.dayStructureMap_dayMk]
+  -- The two sides differ only in how the levels of the spheres and of `M~[S^q]` are written.
+  rfl
+
+/-- The structure map `S^p ∧ M~[S^q] ⟶ M~[S^(p+q)]` of `HM` sends `x ∧ Σ yᵢ ⊗ mᵢ` to
+`Σ (x ∧ yᵢ) ⊗ mᵢ`, where `x ∧ yᵢ ∈ S^(p+q)` concatenates the sphere coordinates. -/
+@[simp]
+lemma eilenbergMacLaneModule_dayStructureMap_app_smashMk {p q : FiniteBijection}
+    {n : SimplexCategoryᵒᵖ} (x : (PointedSSet.circle.smashPow (Fin p.len)).right.obj n)
+    (t : ((PointedSSet.reducedFreeTensor R M).obj
+      (PointedSSet.circle.smashPow (Fin q.len))).right.obj n) :
+    ((eilenbergMacLaneModule R M).dayStructureMap p q).right.app n (PointedSSet.smashMk x t) =
+      LinearMap.rTensor M (ReducedFreeModule.map R (fun y ↦ (Functor.LaxMonoidal.μ
+        (PointedSSet.smashPowFunctor PointedSSet.circle) p q).right.app n
+          (PointedSSet.smashMk x y)) (by simp)) t := by
+  rw [eilenbergMacLaneModule_dayStructureMap,
+    PointedSSet.reducedFreeι_whiskerRight_comp_reducedFreeTensorCompAct_app_app_smashMk
+      (PointedSSet.smashPowFunctor PointedSSet.circle) p q]
+
+variable {M} {N P : Type} [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
+
+/-- The map of symmetric spectra `HM ⟶ HN` induced by a linear map `g : M →ₗ[R] N`, applying `g`
+to the coefficients in every level: the morphism of `HR`-modules
+`SymmetricSequence.eilenbergMacLaneModuleMap R g` after restricting scalars to the sphere. -/
+def eilenbergMacLaneModuleMap (g : M →ₗ[R] N) :
+    eilenbergMacLaneModule R M ⟶ eilenbergMacLaneModule R N :=
+  (Mod.comap (SymmetricSequence.sphereToEilenbergMacLane R)).map
+    (SymmetricSequence.eilenbergMacLaneModuleMap R g)
+
+@[simp]
+lemma eilenbergMacLaneModuleMap_hom (g : M →ₗ[R] N) :
+    (eilenbergMacLaneModuleMap R g).hom = (SymmetricSequence.eilenbergMacLaneModuleMap R g).hom :=
+  (rfl)
+
+@[simp]
+lemma eilenbergMacLaneModuleMap_id :
+    eilenbergMacLaneModuleMap R (LinearMap.id : M →ₗ[R] M) = 𝟙 _ := by
+  ext : 1
+  -- The identity of `HM` is that of the `HR`-module `n ↦ M~[Sⁿ]` after unfolding the restriction
+  -- of scalars.
+  rw [eilenbergMacLaneModuleMap_hom, SymmetricSequence.eilenbergMacLaneModuleMap_id]
+  rfl
+
+lemma eilenbergMacLaneModuleMap_comp (g : M →ₗ[R] N) (h : N →ₗ[R] P) :
+    eilenbergMacLaneModuleMap R (h ∘ₗ g) =
+      eilenbergMacLaneModuleMap R g ≫ eilenbergMacLaneModuleMap R h := by
+  ext : 1
+  simp [SymmetricSequence.eilenbergMacLaneModuleMap_comp]
+
+end SymmetricSpectrum
+
+end Module
 
 end
 

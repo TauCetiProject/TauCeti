@@ -78,94 +78,6 @@ variable {X : Scheme.{u}} (M : X.Modules)
 
 section MayerVietoris
 
-/-- The difference `Hⁿ(U, M) × Hⁿ(V, M) ⟶ Hⁿ(U ⊓ V, M)` of the two restriction maps. -/
-private noncomputable abbrev resDiff (U V : X.Opens) (n : ℕ) :
-    cohomologyOn M n U × cohomologyOn M n V →ₗ[Γ(X, ⊤)] cohomologyOn M n (U ⊓ V) :=
-  (cohomologyOnResLinear M n inf_le_left).coprod (-cohomologyOnResLinear M n inf_le_right)
-
-/-- The pair `Hⁿ(U ⊔ V, M) ⟶ Hⁿ(U, M) × Hⁿ(V, M)` of the two restriction maps. -/
-private noncomputable abbrev resPair (U V : X.Opens) (n : ℕ) :
-    cohomologyOn M n (U ⊔ V) →ₗ[Γ(X, ⊤)] cohomologyOn M n U × cohomologyOn M n V :=
-  (cohomologyOnResLinear M n le_sup_left).prod (cohomologyOnResLinear M n le_sup_right)
-
-private lemma resDiff_apply (U V : X.Opens) (n : ℕ) (p : cohomologyOn M n U × cohomologyOn M n V) :
-    resDiff M U V n p = (Opens.mayerVietorisSquare U V).fromBiprod
-      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n
-        ((AddCommGrpCat.biprodIsoProd _ _).inv p) := by
-  obtain ⟨a, b⟩ := p
-  rw [LinearMap.coprod_apply, LinearMap.neg_apply, cohomologyOnResLinear_apply,
-    cohomologyOnResLinear_apply, ← sub_eq_add_neg]
-  exact ((Opens.mayerVietorisSquare U V).fromBiprod_biprodIsoProd_inv_apply _ a b).symm
-
-private lemma toBiprod_apply_eq (U V : X.Opens) (n : ℕ) (y : cohomologyOn M n (U ⊔ V)) :
-    (Opens.mayerVietorisSquare U V).toBiprod
-      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n y =
-        (AddCommGrpCat.biprodIsoProd _ _).inv (resPair M U V n y) := by
-  have hp : resPair M U V n y =
-      (cohomologyOnRes M n le_sup_left y, cohomologyOnRes M n le_sup_right y) :=
-    Prod.ext (cohomologyOnResLinear_apply M n _ y) (cohomologyOnResLinear_apply M n _ y)
-  rw [hp]
-  exact (Opens.mayerVietorisSquare U V).toBiprod_apply _ y
-
-/-- Under `AddCommGrpCat.biprodIsoProd`, the Mayer-Vietoris map out of the biproduct is
-`resDiff`. -/
-private lemma resDiff_comp_biprodIsoProd (U V : X.Opens) (n : ℕ) :
-    (resDiff M U V n).toAddMonoidHom.comp
-        (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv.toAddMonoidHom =
-      ((Opens.mayerVietorisSquare U V).fromBiprod
-        ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n).hom :=
-  AddMonoidHom.ext fun z ↦ (resDiff_apply M U V n _).trans
-    (congrArg _ (Iso.hom_inv_id_apply (AddCommGrpCat.biprodIsoProd _ _) z))
-
-/-- Under `AddCommGrpCat.biprodIsoProd`, the Mayer-Vietoris map into the biproduct is
-`resPair`. -/
-private lemma biprodIsoProd_comp_toBiprod (U V : X.Opens) (n : ℕ) :
-    (resPair M U V n).toAddMonoidHom =
-      (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv.toAddMonoidHom.comp
-        ((Opens.mayerVietorisSquare U V).toBiprod
-          ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n).hom :=
-  AddMonoidHom.ext fun y ↦ (Iso.inv_hom_id_apply (AddCommGrpCat.biprodIsoProd _ _) _).symm.trans
-    (congrArg _ (toBiprod_apply_eq M U V n y).symm)
-
-private lemma exact_resDiff_mayerVietorisδLinear (U V : X.Opens) (n : ℕ) :
-    Function.Exact (resDiff M U V n) (mayerVietorisδLinear M U V n (n + 1) rfl) :=
-  Function.Exact.of_ladder_addEquiv_of_exact
-    (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv (.refl _) (.refl _)
-    (g₁₂ := (resDiff M U V n).toAddMonoidHom)
-    (g₂₃ := (mayerVietorisδLinear M U V n (n + 1) rfl).toAddMonoidHom)
-    (resDiff_comp_biprodIsoProd M U V n)
-    (AddMonoidHom.ext fun x ↦ by exact mayerVietorisδLinear_apply M U V n (n + 1) rfl x)
-    ((ShortComplex.ab_exact_iff_function_exact _).mp
-      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 1 2 3))
-
-private lemma exact_mayerVietorisδLinear_resPair (U V : X.Opens) (n : ℕ) :
-    Function.Exact (mayerVietorisδLinear M U V n (n + 1) rfl) (resPair M U V (n + 1)) :=
-  Function.Exact.of_ladder_addEquiv_of_exact
-    (.refl _) (.refl _) (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv
-    (g₁₂ := (mayerVietorisδLinear M U V n (n + 1) rfl).toAddMonoidHom)
-    (g₂₃ := (resPair M U V (n + 1)).toAddMonoidHom)
-    (AddMonoidHom.ext fun x ↦ by exact mayerVietorisδLinear_apply M U V n (n + 1) rfl x)
-    (biprodIsoProd_comp_toBiprod M U V (n + 1))
-    ((ShortComplex.ab_exact_iff_function_exact _).mp
-      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 2 3 4))
-
-private lemma exact_resPair_resDiff (U V : X.Opens) (n : ℕ) :
-    Function.Exact (resPair M U V n) (resDiff M U V n) :=
-  Function.Exact.of_ladder_addEquiv_of_exact
-    (.refl _) (AddCommGrpCat.biprodIsoProd _ _).addCommGroupIsoToAddEquiv (.refl _)
-    (g₁₂ := (resPair M U V n).toAddMonoidHom) (g₂₃ := (resDiff M U V n).toAddMonoidHom)
-    -- Elaborating the squares after the equivalences avoids a costly unification.
-    (by exact biprodIsoProd_comp_toBiprod M U V n) (by exact resDiff_comp_biprodIsoProd M U V n)
-    ((ShortComplex.ab_exact_iff_function_exact _).mp
-      ((mayerVietorisSequence_exact M U V n (n + 1) rfl).exact' 0 1 2))
-
-private lemma resDiff_comp_prodMap (n : ℕ) {U V U' V' : X.Opens} (hU : U' ≤ U) (hV : V' ≤ V) :
-    resDiff M U' V' n ∘ₗ (cohomologyOnResLinear M n hU).prodMap (cohomologyOnResLinear M n hV) =
-      cohomologyOnResLinear M n (inf_le_inf hU hV) ∘ₗ resDiff M U V n := by
-  refine LinearMap.ext fun p ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.prodMap_apply, LinearMap.coprod_apply,
-    LinearMap.neg_apply, cohomologyOnResLinear_apply, map_add, map_neg, cohomologyOnRes_comp_apply]
-
 /-- **Localization propagates along the Mayer-Vietoris sequence.** Let `U' ≤ U` and `V' ≤ V` be
 open subsets and `S` a submonoid of the global functions. If the restriction maps from `U`, `V`
 and `U ⊓ V` to `U'`, `V'` and `U' ⊓ V'` are localizations at `S` in degrees `n` and `n + 1`, then
@@ -189,11 +101,14 @@ theorem isLocalizedModule_cohomologyOnResLinear_sup_succ (S : Submonoid Γ(X, �
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) φ n (n + 1) rfl
   refine IsLocalizedModule.of_exact S (i₁ := (cohomologyOnResLinear M n hU).prodMap
       (cohomologyOnResLinear M n hV)) (i₄ := (cohomologyOnResLinear M (n + 1) hU).prodMap
-      (cohomologyOnResLinear M (n + 1) hV)) (resDiff_comp_prodMap M n hU hV) ?_ ?_
-    (resDiff_comp_prodMap M (n + 1) hU hV) (exact_resDiff_mayerVietorisδLinear M U V n)
-    (exact_mayerVietorisδLinear_resPair M U V n) (exact_resPair_resDiff M U V (n + 1))
-    (exact_resDiff_mayerVietorisδLinear M U' V' n) (exact_mayerVietorisδLinear_resPair M U' V' n)
-    (exact_resPair_resDiff M U' V' (n + 1))
+      (cohomologyOnResLinear M (n + 1) hV)) (mayerVietorisFromProdLinear_comp_prodMap M n hU hV)
+    ?_ ?_ (mayerVietorisFromProdLinear_comp_prodMap M (n + 1) hU hV)
+    (exact_mayerVietorisFromProdLinear_mayerVietorisδLinear M U V n)
+    (exact_mayerVietorisδLinear_mayerVietorisToProdLinear M U V n)
+    (exact_mayerVietorisToProdLinear_mayerVietorisFromProdLinear M U V (n + 1))
+    (exact_mayerVietorisFromProdLinear_mayerVietorisδLinear M U' V' n)
+    (exact_mayerVietorisδLinear_mayerVietorisToProdLinear M U' V' n)
+    (exact_mayerVietorisToProdLinear_mayerVietorisFromProdLinear M U' V' (n + 1))
   · ext x
     simp only [LinearMap.comp_apply, mayerVietorisδLinear_apply, cohomologyOnResLinear_apply]
     exact (ConcreteCategory.congr_hom hδ x).symm

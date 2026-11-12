@@ -35,39 +35,31 @@ public section
 
 namespace Int
 
+variable {m n x y : ℤ}
+
 /-- **Compatible integer congruences have a common solution.** If `x` and `y` agree modulo
 `gcd(m, n)`, then some integer agrees with `x` modulo `m` and with `y` modulo `n`.
 
-The formula from Bézout coefficients works without sign or nonzero hypotheses on the moduli. -/
-theorem exists_modEq_and_modEq_of_modEq_gcd {m n x y : ℤ}
-    (h : x ≡ y [ZMOD ↑(Int.gcd m n)]) :
+No sign or nonzero hypotheses on the moduli are needed. -/
+theorem exists_modEq_and_modEq_of_modEq_gcd (h : x ≡ y [ZMOD ↑(Int.gcd m n)]) :
     ∃ z : ℤ, z ≡ x [ZMOD m] ∧ z ≡ y [ZMOD n] := by
-  rw [Int.modEq_iff_dvd] at h
-  obtain ⟨k, hk⟩ := h
-  refine ⟨x + m * (Int.gcdA m n * k), ?_, ?_⟩
-  · exact Int.modEq_iff_dvd.mpr ⟨-(Int.gcdA m n * k), by ring⟩
-  · refine Int.modEq_iff_dvd.mpr ⟨Int.gcdB m n * k, ?_⟩
-    have hy : y = x + (↑(Int.gcd m n) : ℤ) * k := by
-      calc
-        y = (y - x) + x := by ring
-        _ = (↑(Int.gcd m n) : ℤ) * k + x := by rw [hk]
-        _ = x + (↑(Int.gcd m n) : ℤ) * k := by ring
-    rw [hy, Int.gcd_eq_gcd_ab]
-    ring
+  obtain ⟨k, hk⟩ := Int.modEq_iff_dvd.mp h
+  refine ⟨x + m * (Int.gcdA m n * k), Int.modEq_add_fac_self,
+    Int.modEq_iff_dvd.mpr ⟨Int.gcdB m n * k, ?_⟩⟩
+  -- `y = x + gcd(m, n) * k`, and Bézout writes `gcd(m, n) = m * gcdA m n + n * gcdB m n`.
+  rw [eq_add_of_sub_eq' hk, Int.gcd_eq_gcd_ab]
+  ring
 
 /-- **The compatibility criterion for two integer congruences.** Congruences to `x` modulo `m`
 and to `y` modulo `n` have a simultaneous solution exactly when `x` and `y` agree modulo
 `gcd(m, n)`.
 
 There are no sign or nonzero assumptions: a zero modulus imposes equality. -/
-theorem exists_modEq_and_modEq_iff_modEq_gcd {m n x y : ℤ} :
-    (∃ z : ℤ, z ≡ x [ZMOD m] ∧ z ≡ y [ZMOD n]) ↔
-      x ≡ y [ZMOD ↑(Int.gcd m n)] := by
-  constructor
-  · rintro ⟨z, hzx, hzy⟩
-    exact (hzx.of_dvd (Int.gcd_dvd_left m n)).symm.trans
-      (hzy.of_dvd (Int.gcd_dvd_right m n))
-  · exact exists_modEq_and_modEq_of_modEq_gcd
+theorem exists_modEq_and_modEq_iff_modEq_gcd :
+    (∃ z : ℤ, z ≡ x [ZMOD m] ∧ z ≡ y [ZMOD n]) ↔ x ≡ y [ZMOD ↑(Int.gcd m n)] :=
+  ⟨fun ⟨_, hzx, hzy⟩ ↦
+    (hzx.of_dvd (Int.gcd_dvd_left m n)).symm.trans (hzy.of_dvd (Int.gcd_dvd_right m n)),
+    exists_modEq_and_modEq_of_modEq_gcd⟩
 
 end Int
 
