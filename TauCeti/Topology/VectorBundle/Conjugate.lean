@@ -25,7 +25,7 @@ complex-linear for the conjugated actions, and the coordinate changes become the
 The identity of total spaces is a homeomorphism `TotalSpace F E ≃ₜ TotalSpace (Conjugate F) _`
 covering the identity of the base, conjugate-linear on each fibre
 (`TauCeti.ConjugateBundle.toConjHomeomorph`). Conjugating twice gives back `E`, by a homeomorphism
-that is complex-linear on each fibre (`TauCeti.ConjugateBundle.conjugateConjugateHomeomorph`), and
+that is complex-linear on each fibre (`TauCeti.ConjugateBundle.doubleConjugateHomeomorph`), and
 the conjugate of a direct sum is the direct sum of the conjugates
 (`TauCeti.ConjugateBundle.prodHomeomorph`).
 
@@ -166,9 +166,11 @@ end ConjugateBundle
 
 namespace ConjugateBundle
 
-variable [TopologicalSpace B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)]
+variable [TopologicalSpace B] {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)]
+
+section TopologicalModule
+
+variable {F : Type*} [AddCommGroup F] [Module ℂ F] [TopologicalSpace F]
   [TopologicalSpace (TotalSpace F E)]
 
 /-- A complex-linear trivialization of `E` is complex-linear for the conjugated actions. -/
@@ -192,7 +194,10 @@ theorem _root_.Bundle.Trivialization.coordChangeL_conjugate (e e' : Trivializati
     Trivialization.coordChangeL_apply _ _ hb]
   rfl
 
-variable [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
+end TopologicalModule
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 
 variable (F E) in
 /-- The conjugate of a complex vector bundle is a complex vector bundle. -/
@@ -230,7 +235,7 @@ section DoubleConjugate
 variable (F : Type*) (E : B → Type*) [TopologicalSpace (TotalSpace F E)]
 
 /-- Conjugating a bundle twice gives back the bundle. -/
-def conjugateConjugateHomeomorph :
+def doubleConjugateHomeomorph :
     TotalSpace (Conjugate (Conjugate F)) (ConjugateBundle (ConjugateBundle E)) ≃ₜ
       TotalSpace F E where
   toFun p := ⟨p.proj, ofConj (ofConj p.2)⟩
@@ -242,19 +247,19 @@ def conjugateConjugateHomeomorph :
 
 variable {F E}
 
-@[simp] theorem conjugateConjugateHomeomorph_apply
+@[simp] theorem doubleConjugateHomeomorph_apply
     (p : TotalSpace (Conjugate (Conjugate F)) (ConjugateBundle (ConjugateBundle E))) :
-    conjugateConjugateHomeomorph F E p = ⟨p.proj, ofConj (ofConj p.2)⟩ := (rfl)
+    doubleConjugateHomeomorph F E p = ⟨p.proj, ofConj (ofConj p.2)⟩ := (rfl)
 
-@[simp] theorem conjugateConjugateHomeomorph_symm_apply (p : TotalSpace F E) :
-    (conjugateConjugateHomeomorph F E).symm p = ⟨p.proj, toConj (toConj p.2)⟩ := (rfl)
+@[simp] theorem doubleConjugateHomeomorph_symm_apply (p : TotalSpace F E) :
+    (doubleConjugateHomeomorph F E).symm p = ⟨p.proj, toConj (toConj p.2)⟩ := (rfl)
 
 /-- On each fibre, the identification of the double conjugate with `E` is the complex-linear
-equivalence `TauCeti.Conjugate.conjugateConjugateL`. -/
-theorem conjugateConjugateHomeomorph_mk [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)]
+equivalence `TauCeti.Conjugate.doubleConjugateL`. -/
+theorem doubleConjugateHomeomorph_mk [∀ x, AddCommGroup (E x)] [∀ x, Module ℂ (E x)]
     [∀ x, TopologicalSpace (E x)] (x : B) (v : Conjugate (Conjugate (E x))) :
-    conjugateConjugateHomeomorph F E ⟨x, v⟩ = ⟨x, conjugateConjugateL v⟩ := by
-  rw [conjugateConjugateHomeomorph_apply, conjugateConjugateL_apply]
+    doubleConjugateHomeomorph F E ⟨x, v⟩ = ⟨x, doubleConjugateL v⟩ := by
+  rw [doubleConjugateHomeomorph_apply, doubleConjugateL_apply]
 
 end DoubleConjugate
 

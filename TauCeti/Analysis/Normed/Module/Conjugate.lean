@@ -26,7 +26,7 @@ conjugating twice gives back `V`, and conjugation commutes with products.
 * `ContinuousLinearMap.conjugate`: the conjugate of a continuous complex-linear map, an isometry.
 * `ContinuousLinearMap.toConjugate`: continuous conjugate-linear maps `V → W` are equivalent to
   continuous complex-linear maps `V → Conjugate W`.
-* `TauCeti.Conjugate.conjugateConjugateL`: `Conjugate (Conjugate V) ≃L[ℂ] V`.
+* `TauCeti.Conjugate.doubleConjugateL`: `Conjugate (Conjugate V) ≃L[ℂ] V`.
 * `TauCeti.Conjugate.prodL`: `Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W`.
 * `TauCeti.Conjugate.complexConjL`: complex conjugation is a complex-linear isomorphism
   `ℂ ≃L[ℂ] Conjugate ℂ`; it agrees with the identity exactly on the real line.
@@ -267,7 +267,7 @@ variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [TopologicalSpace V]
 /-! ### Double conjugates and products -/
 
 /-- Conjugating twice gives back the original space. -/
-def conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V where
+def doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V where
   toFun v := ofConj (ofConj v)
   invFun v := toConj (toConj v)
   left_inv _ := rfl
@@ -277,17 +277,17 @@ def conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V where
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
-@[simp] theorem conjugateConjugateL_apply (v : Conjugate (Conjugate V)) :
-    conjugateConjugateL v = ofConj (ofConj v) := (rfl)
+@[simp] theorem doubleConjugateL_apply (v : Conjugate (Conjugate V)) :
+    doubleConjugateL v = ofConj (ofConj v) := (rfl)
 
-@[simp] theorem conjugateConjugateL_symm_apply (v : V) :
-    (conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V).symm v = toConj (toConj v) := (rfl)
+@[simp] theorem doubleConjugateL_symm_apply (v : V) :
+    (doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V).symm v = toConj (toConj v) := (rfl)
 
-/-- Conjugating a map twice gives back the map, up to `conjugateConjugateL`. -/
+/-- Conjugating a map twice gives back the map, up to `doubleConjugateL`. -/
 theorem _root_.ContinuousLinearMap.conjugate_conjugate (f : V →L[ℂ] W) :
-    f.conjugate.conjugate = ((conjugateConjugateL : Conjugate (Conjugate W) ≃L[ℂ] W).symm :
+    f.conjugate.conjugate = ((doubleConjugateL : Conjugate (Conjugate W) ≃L[ℂ] W).symm :
       W →L[ℂ] Conjugate (Conjugate W)) ∘L f ∘L
-        (conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V) :=
+        (doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V) :=
   (rfl)
 
 /-- The conjugate of a product is the product of the conjugates. -/
