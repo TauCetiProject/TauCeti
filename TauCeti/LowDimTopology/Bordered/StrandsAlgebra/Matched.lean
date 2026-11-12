@@ -122,7 +122,8 @@ spanning the matched subalgebra are generators.
   `a(ρ, h)` is the matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the algebra of a matching is closed
   under the differential.
-* `TauCeti.StrandsAlgebra.repr_matchedIdem_mul_apply`: the coefficients of `I(s) x`.
+* `TauCeti.StrandsAlgebra.repr_matchedIdem_mul_apply`,
+  `TauCeti.StrandsAlgebra.repr_mul_matchedIdem_apply`: the coefficients of `I(s) x` and `x I(s)`.
 * `TauCeti.StrandsAlgebra.repr_apply_idOn_eq`: an element of the matched subalgebra takes the same
   value at the identity diagrams of any two sets of points over the same pairs.
 
@@ -1258,6 +1259,32 @@ theorem repr_matchedIdem_mul_apply (x : StrandsAlgebra R α) (φ : StrandDiagram
     split_ifs <;> simp
   | smul_of r ψ =>
     rw [mul_smul_comm, matchedIdem_mul_of]
+    by_cases hψφ : ψ = φ
+    · subst hψφ
+      split_ifs <;> simp
+    · split_ifs <;> simp [hψφ]
+
+/-- Multiplying a basis element `φ` on the right by `I(s)` keeps it when its end points lie over
+the pairs of `s`, one over each, and gives zero otherwise. -/
+theorem of_mul_matchedIdem (φ : StrandDiagram α) :
+    of φ * matchedIdem R M s = if φ.target ∈ matchedChoices M s then of φ else 0 := by
+  simp only [matchedIdem_def, mul_sum, of_mul_idem, sum_ite_eq, mem_filter, mem_univ, true_and]
+  refine if_congr ?_ rfl rfl
+  rw [mem_matchedChoices]
+  exact and_congr_right fun h ↦ by rw [← card_image_iff, h, eq_comm]
+
+/-- The coefficients of `x I(s)` are those of `x` at the diagrams whose end points lie over the
+pairs of `s`, one over each, and zero elsewhere. -/
+theorem repr_mul_matchedIdem_apply (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
+    (basis R α).repr (x * matchedIdem R M s) φ =
+      if φ.target ∈ matchedChoices M s then (basis R α).repr x φ else 0 := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy =>
+    rw [add_mul, map_add, Finsupp.add_apply, hx, hy, map_add, Finsupp.add_apply]
+    split_ifs <;> simp
+  | smul_of r ψ =>
+    rw [smul_mul_assoc, of_mul_matchedIdem]
     by_cases hψφ : ψ = φ
     · subst hψφ
       split_ifs <;> simp

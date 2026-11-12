@@ -17,7 +17,9 @@ passed by its strands, counted with multiplicity. It adds under concatenation an
 on the identity diagrams `I(S)`. The elements of the strands algebra supported on the diagrams of
 length at least `k` form a filtration (`TauCeti.StrandsAlgebra.lengthFiltration`) with
 `F_a F_b ⊆ F_{a+b}`. Since lengths are bounded, every element of `F_1`, which consists of the
-elements with no identity diagram in their support, is nilpotent.
+elements with no identity diagram in their support, is nilpotent. Since a composite of diagrams is
+an identity diagram only when both factors are, the coefficient at an identity diagram is
+multiplicative.
 
 ## Main definitions
 
@@ -31,6 +33,8 @@ elements with no identity diagram in their support, is nilpotent.
   coefficients at the identity diagrams vanish.
 * `TauCeti.StrandsAlgebra.isNilpotent_of_mem_lengthFiltration_one`: the elements of `F_1` are
   nilpotent.
+* `TauCeti.StrandsAlgebra.repr_mul_apply_idOn`: the coefficient at an identity diagram is
+  multiplicative.
 -/
 
 public section
@@ -118,6 +122,51 @@ theorem mul_mem_lengthFiltration {a b : ℕ} {x y : StrandsAlgebra R α}
     rw [length_trans hφψ.target_eq]
     exact Nat.add_le_add hφ hψ
   · exact zero_mem _
+
+/-- A composite of two diagrams is the identity diagram `I(S)` exactly when both diagrams are
+`I(S)`: lengths add, so both have length zero. -/
+theorem composable_and_trans_eq_idOn_iff {φ ψ : StrandDiagram α} {S : Finset α} :
+    φ.Composable ψ ∧ φ.trans ψ = idOn S ↔ φ = idOn S ∧ ψ = idOn S := by
+  refine ⟨fun ⟨h, hφψ⟩ ↦ ?_, fun ⟨hφ, hψ⟩ ↦ ?_⟩
+  · have hlen := length_trans h.target_eq
+    rw [hφψ, length_idOn, eq_comm, Nat.add_eq_zero_iff] at hlen
+    have hφ := length_eq_zero_iff.1 hlen.1
+    have hψ := length_eq_zero_iff.1 hlen.2
+    have hS : φ.source = S := by
+      rw [← source_trans_of_target_eq h.target_eq, hφψ, source_idOn]
+    rw [hφ, hS] at h
+    rw [hψ, ← h.target_eq, target_idOn]
+    exact ⟨hS ▸ hφ, rfl⟩
+  · subst hφ hψ
+    exact ⟨composable_idOn_left_iff.2 (source_idOn S).symm,
+      idOn_trans_of_eq_source (source_idOn S).symm⟩
+
+/-- **The coefficient at an identity diagram is multiplicative**: the coefficient of `x y` at
+`I(S)` is the product of those of `x` and `y`, since a composite of diagrams is `I(S)` only when
+both factors are. -/
+theorem repr_mul_apply_idOn (x y : StrandsAlgebra R α) (S : Finset α) :
+    (basis R α).repr (x * y) (idOn S) =
+      (basis R α).repr x (idOn S) * (basis R α).repr y (idOn S) := by
+  induction x using induction_on with
+  | zero => simp
+  | add x x' hx hx' => rw [add_mul, map_add, Finsupp.add_apply, hx, hx', map_add,
+      Finsupp.add_apply, add_mul]
+  | smul_of r φ =>
+    induction y using induction_on with
+    | zero => simp
+    | add y y' hy hy' => rw [mul_add, map_add, Finsupp.add_apply, hy, hy', map_add,
+        Finsupp.add_apply, mul_add]
+    | smul_of t ψ =>
+      have key : (basis R α).repr (of φ * of ψ) (idOn S) =
+          if φ = idOn S ∧ ψ = idOn S then 1 else 0 := by
+        have hiff := composable_and_trans_eq_idOn_iff (φ := φ) (ψ := ψ) (S := S)
+        rw [of_mul_of]
+        by_cases h : φ.Composable ψ <;> by_cases h' : φ.trans ψ = idOn S <;>
+          simp_all
+      rw [smul_mul_smul_comm, map_smul, map_smul, map_smul, Finsupp.smul_apply,
+        Finsupp.smul_apply, Finsupp.smul_apply, key, basis_repr_of, basis_repr_of,
+        Finsupp.single_apply, Finsupp.single_apply]
+      by_cases hφ : φ = idOn S <;> by_cases hψ : ψ = idOn S <;> simp [hφ, hψ]
 
 /-- The `n`-th power of an element of `F_1` lies in `F_n`. -/
 theorem pow_mem_lengthFiltration {x : StrandsAlgebra R α} (hx : x ∈ lengthFiltration R 1)
