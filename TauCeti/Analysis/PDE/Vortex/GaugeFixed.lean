@@ -52,9 +52,10 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
+* `gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`: `L_x` is the vacuum operator plus
+  multiplication by `gaugeFixedZerothOrder (x z - vacuumField z)`.
 * `inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder`: `L_x*` is the vacuum adjoint plus
-  the transpose of `L_x - L₀`, which is multiplication by
-  `gaugeFixedZerothOrder (x z - vacuumField z)`.
+  the transpose of `L_x - L₀`.
 
 These are smooth differential expressions; no completed field space, Fredholm property or
 cokernel statement is asserted.
@@ -506,7 +507,7 @@ section ZerothOrder
 
 /-- The coefficient matrix of the zeroth-order part of the gauge-fixed operator at a field with
 value `w`. It is linear in `w`, and `L_x - L₀` is multiplication by the matrix at
-`x z - vacuumField z` (`inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder`). -/
+`x z - vacuumField z` (`gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`). -/
 @[expose] def gaugeFixedZerothOrderMatrix (w : EuclideanSpace ℝ (Fin 4)) :
     Matrix (Fin 4) (Fin 4) ℝ :=
   !![0, 0, -w 3, w 2; 0, 0, w 2, w 3; -w 3, -w 2, -w 1, -w 0; w 2, -w 3, w 0, -w 1]
@@ -516,6 +517,21 @@ variation with value `v`: the matrix `gaugeFixedZerothOrderMatrix w` applied to 
 `L_x - L₀` is multiplication by `gaugeFixedZerothOrder (x z - vacuumField z)`. -/
 @[expose] def gaugeFixedZerothOrder (w v : EuclideanSpace ℝ (Fin 4)) : EuclideanSpace ℝ (Fin 4) :=
   WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j
+
+/-- The gauge-fixed operator `L_x` is the vacuum operator plus multiplication by the zeroth-order
+part `gaugeFixedZerothOrder (x z - vacuumField z)`, pointwise and without any regularity of the
+variation. -/
+theorem gaugeFixedOperator_eq_add_gaugeFixedZerothOrder
+    (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    gaugeFixedOperator x y z =
+      gaugeFixedOperator vacuumField y z + gaugeFixedZerothOrder (x z - vacuumField z) (y z) := by
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedOperator_apply_zero, gaugeFixedOperator_apply_one,
+      gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three, gaugeAdjoint_def,
+      linearizedEquation_apply_zero, linearizedEquation_apply_one, linearizedEquation_apply_two,
+      gaugeFixedZerothOrder, gaugeFixedZerothOrderMatrix, vacuumField_apply, Fin.sum_univ_four] <;>
+    ring
 
 /-- The formal adjoint `L_x*` differs from the vacuum adjoint by the transpose of the zeroth-order
 part of `L_x`, pointwise and without any regularity of the test field. -/

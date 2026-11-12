@@ -94,19 +94,25 @@ private def zerothOrder (A : EuclideanSpace ℝ (Fin 4) → Matrix (Fin 4) (Fin 
     (w v : EuclideanSpace ℝ (Fin 4)) : EuclideanSpace ℝ (Fin 4) :=
   WithLp.toLp 2 fun i ↦ ∑ j, A w i j * v j
 
-/-- The operator `L_x` is `L₀` plus multiplication by `gaugeFixedZerothOrder (x z - vacuumField z)`.
-Tested against a value `v`, this zeroth-order term moves to `v` with the transposed matrix, which
-is the difference `L_x* - L₀*`. -/
+/-- For the matrix of `gaugeFixedZerothOrder`, `zerothOrder` is `gaugeFixedZerothOrder`. -/
+private theorem zerothOrder_gaugeFixedZerothOrderMatrix :
+    zerothOrder gaugeFixedZerothOrderMatrix = gaugeFixedZerothOrder :=
+  rfl
+
+/-- The operator `L_x` is `L₀` plus multiplication by `gaugeFixedZerothOrder (x z - vacuumField z)`
+(`gaugeFixedOperator_eq_add_gaugeFixedZerothOrder`). Tested against a value `v`, this zeroth-order
+term moves to `v` with the transposed matrix, which is the difference `L_x* - L₀*`. -/
 private theorem inner_gaugeFixedOperator_eq_add_inner_zerothOrder
     (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
     ⟪v, gaugeFixedOperator x η z⟫ = ⟪v, gaugeFixedOperator vacuumField η z⟫ +
       ⟪zerothOrder (fun w ↦ (gaugeFixedZerothOrderMatrix w).transpose) (x z - vacuumField z) v,
         η z⟫ := by
-  simp [gaugeFixedOperator_apply_zero, gaugeFixedOperator_apply_one, gaugeFixedOperator_apply_two,
-    gaugeFixedOperator_apply_three, gaugeAdjoint_def, linearizedEquation_apply_zero,
-    linearizedEquation_apply_one, linearizedEquation_apply_two, zerothOrder,
-    gaugeFixedZerothOrderMatrix, vacuumField_apply, PiLp.inner_apply, Fin.sum_univ_four]
-  ring
+  rw [gaugeFixedOperator_eq_add_gaugeFixedZerothOrder, inner_add_right]
+  congr 1
+  simp only [zerothOrder, gaugeFixedZerothOrder, PiLp.inner_apply, RCLike.inner_apply,
+    conj_trivial, Matrix.transpose_apply, Finset.mul_sum, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-! ### Real `L²` fields as tempered fields -/
 
@@ -385,7 +391,8 @@ theorem mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq
   mem_sobolevFields_one_of_integral_inner_eq (A := gaugeFixedZerothOrderMatrix)
     sum_temperedVacuumOperator_apply gaugeFixedAdjoint_vacuumField
     memSobolev_add_one_of_temperedVacuumOperator (fun i j ↦ ⟨i, j, fun _ ↦ rfl⟩)
-    inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder hx hC hy hf hweak
+    (zerothOrder_gaugeFixedZerothOrderMatrix ▸
+      inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder) hx hC hy hf hweak
 
 /-- **The elliptic bootstrap for the gauge-fixed operator.** Let `x` be a smooth field whose
 coordinates have bounded derivatives through order `k`, and let `y` be a square-integrable weak
@@ -401,7 +408,8 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
   mem_sobolevFields_natCast_add_one_of_integral_inner_eq k (A := gaugeFixedZerothOrderMatrix)
     sum_temperedVacuumOperator_apply gaugeFixedAdjoint_vacuumField
     memSobolev_add_one_of_temperedVacuumOperator (fun i j ↦ ⟨i, j, fun _ ↦ rfl⟩)
-    inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder hx hbound hy hf hweak
+    (zerothOrder_gaugeFixedZerothOrderMatrix ▸
+      inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder) hx hbound hy hf hweak
 
 /-! ### Weak solutions of `L_x* η = g` -/
 
