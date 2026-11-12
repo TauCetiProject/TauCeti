@@ -103,7 +103,7 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
   have hdisj : (Z : Set X).Pairwise (Disjoint on fun z ↦ ball z ε ∩ Ω) :=
     fun z hz z' hz' hne ↦ (ball_disjoint_ball (by linarith [hsep z hz z' hz' hne])).mono
       inter_subset_left inter_subset_left
-  calc Z.card * δ = ∑ z ∈ Z, δ := by simp
+  calc Z.card * δ = ∑ _ ∈ Z, δ := by simp
     _ ≤ ∑ z ∈ Z, ∫ y in ball z ε ∩ Ω, e i y ∂μ := Finset.sum_le_sum hi
     _ = ∫ y in ⋃ z ∈ Z, ball z ε ∩ Ω, e i y ∂μ :=
       (integral_biUnion_finset Z (fun _ _ ↦ measurableSet_ball.inter hΩ) hdisj

@@ -192,11 +192,13 @@ theorem wassersteinEDist_eq_lintegral_rpow_enorm_quantile_sub {p : ℝ≥0∞} (
 
 /-- **The quantile formula for the transport cost.** For `1 ≤ p < ∞`, the `p`-th power of the
 `p`-Wasserstein distance of two probability laws on `ℝ` is
-`∫₀¹ |μ.quantile t - ν.quantile t| ^ p dt`. -/
+`∫₀¹ |μ.quantile t - ν.quantile t| ^ p dt`. At `p = ∞`, where `p.toReal = 0`, both sides are `1`. -/
 theorem wassersteinEDist_rpow_eq_lintegral_rpow_enorm_quantile_sub {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (hp_top : p ≠ ∞) (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     wassersteinEDist p μ ν ^ p.toReal
       = ∫⁻ t in Ioo (0 : ℝ) 1, ‖μ.quantile t - ν.quantile t‖ₑ ^ p.toReal := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · simp
   rw [wassersteinEDist_eq_lintegral_rpow_enorm_quantile_sub hp hp_top, one_div,
     ENNReal.rpow_inv_rpow (ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp_top).ne']
 

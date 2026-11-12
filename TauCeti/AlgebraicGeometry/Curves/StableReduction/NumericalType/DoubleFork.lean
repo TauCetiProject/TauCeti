@@ -99,7 +99,7 @@ private lemma doubleForkEmbedding_injective
 private lemma doubleForkExtra_comm (left right : T.Component) (n : ℕ)
     (k l : DoubleForkIndex n) :
     doubleForkExtra T left right n k l = doubleForkExtra T left right n l k := by
-  rcases k with k | k | k <;> rcases l with l | l | l
+  rcases k with k | k | k <;> rcases l with l | _ | l
   all_goals simp only [doubleForkExtra]
   case inl.inr.inr =>
     by_cases hk : k = 1
