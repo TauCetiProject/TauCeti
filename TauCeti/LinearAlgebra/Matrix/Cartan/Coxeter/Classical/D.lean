@@ -309,7 +309,7 @@ theorem epsD_mul_left_cancel {X Y : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ}
   ext c j
   let v : ℕ → ℤ := fun t => if ht : t < m + 3 then (X - Y) ⟨t, ht⟩ j else 0
   have hv : ∀ c : Fin (m + 3), (X - Y) c j = v c.val := fun c => by simp [v, c.isLt]
-  have row : ∀ t (ht : t < m + 3),
+  have row : ∀ t, t < m + 3 →
       (if t < m + 2 then v t else 0) - (if 1 ≤ t then v (t - 1) else 0) +
         (if t = m + 1 ∨ t = m + 2 then v (m + 2) else 0) = 0 := by
     intro t ht
