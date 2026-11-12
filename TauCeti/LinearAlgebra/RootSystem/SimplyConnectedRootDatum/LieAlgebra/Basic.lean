@@ -93,13 +93,11 @@ and `f` are nilpotent as matrices. Their generation of the whole Lie algebra is 
 * R. W. Carter, *Simple Groups of Lie Type*, §4.2, for the Chevalley basis of a split semisimple
   Lie algebra.
 
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for the split reductive group scheme
-over `ℤ` to be constructed "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping
-algebra", from the root data `DynkinType.simplyConnectedRootDatum` of Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. This file supplies the Lie algebra and
-the numbered Chevalley generators that the Kostant `ℤ`-form of `TauCeti/Algebra/Lie/`
-`UniversalEnveloping/Kostant/` is formed from, whose consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`.
+Chevalley's construction builds the split reductive group scheme over `ℤ` with root datum
+`DynkinType.simplyConnectedRootDatum` from a Chevalley basis and the Kostant `ℤ`-form of the
+enveloping algebra; the group scheme itself is not formalised here. This file supplies the Lie
+algebra and the numbered Chevalley generators that the Kostant `ℤ`-form of
+`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/` is formed from.
 -/
 
 public section

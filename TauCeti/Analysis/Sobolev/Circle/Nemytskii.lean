@@ -178,7 +178,7 @@ private theorem exists_toContinuousMap_eq_comp_sum_single (hs : 1 / 2 < s) (S : 
       (∀ x, toContinuousMap T hs w x = G (toContinuousMap T hs (∑ n ∈ S, single n (c n)) x)) ∧
       ‖w‖ ≤ M * √(∑' n, weight (2 * s) n * Real.exp (-(4 * π * δ / T * |(n : ℝ)|))) := by
   set p : CircleSobolev s ℂ := ∑ n ∈ S, single n (c n)
-  set P : ℂ → ℂ := fun z ↦ ∑ n ∈ S, c n * cexp (2 * π * I * n * z / T) with hP
+  set P : ℂ → ℂ := fun z ↦ ∑ n ∈ S, c n * cexp (2 * π * I * n * z / T)
   have hPx (x : ℝ) : toContinuousMap T hs p x = P x := toContinuousMap_sum_single_coe T hs S c x
   have hrange (y : AddCircle T) : toContinuousMap T hs p y ∈ K := by
     obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
@@ -296,8 +296,8 @@ private theorem exists_local_expansion {F : ℂ → ℂ} {U : Set ℂ} (hU : IsO
       ∀ y : CircleSobolev s ℂ, ‖y‖ < ρ → ∀ x, toContinuousMap T hs.out (p + y) x ∈ U ∧
         HasSum (fun k ↦ (k.factorial : ℂ)⁻¹ * toContinuousMap T hs.out (w k) x *
           toContinuousMap T hs.out y x ^ k) (F (toContinuousMap T hs.out (p + y) x)) := by
-  set C := mulConst s with hC
-  set K := √(∑' n, weight (-(2 * s)) n) with hK
+  set C := mulConst s
+  set K := √(∑' n, weight (-(2 * s)) n)
   have hC1 : 1 ≤ C := one_le_mulConst
   have hK0 : 0 ≤ K := Real.sqrt_nonneg _
   have hsup (a : CircleSobolev s ℂ) (x : AddCircle T) :
@@ -359,9 +359,8 @@ omit hT in
 private theorem le_radius_factorialInvSeries {w : ℕ → CircleSobolev s ℂ} {ρ B : ℝ}
     (hρ : 0 < ρ) (hw : ∀ k, ‖w k‖ ≤ k.factorial * B / (mulConst s * ρ) ^ k) :
     (ρ.toNNReal : ENNReal) ≤ (factorialInvSeries w).radius := by
-  set C := mulConst s with hC
+  set C := mulConst s
   have hC0 : 0 < C := one_pos.trans_le one_le_mulConst
-  have hB : 0 ≤ B := by simpa using (norm_nonneg _).trans (hw 0)
   refine FormalMultilinearSeries.le_radius_of_bound _ (C * B) fun k ↦ ?_
   have hL : ‖convolution hs.out (.mul ℂ ℂ) (w k)‖ ≤ C * ‖w k‖ :=
     ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun b ↦ by

@@ -59,6 +59,8 @@ maps valued in an arbitrary module.
   torsion-free values sees each argument only modulo elements of finite additive order.
 * `LinearMap.BilinForm.apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub`: `x · x = 2ac` for
   `x = a v + c t` modulo torsion, where `v, t` is a hyperbolic pair of a `ℤ`-valued form.
+* `LinearMap.IsRefl.apply_eq_zero_of_mem_ker`: a vector in the kernel of a reflexive form is
+  orthogonal to every vector on either side.
 * `LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`: a `ℤ`-valued form spanned modulo
   torsion by a hyperbolic pair is even.
 * `LinearMap.IsAlt.eq_zero_of_smul_apply_basis_eq_zero`: the value of a left-separating
@@ -203,6 +205,14 @@ theorem apply_eq_apply_of_isOfFinAddOrder_sub_right [AddCommMonoid M] [Module R 
     B x y = B x y' := by
   have := ((B x).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
   simpa [sub_eq_zero] using this
+
+/-- A vector in the kernel of a reflexive sesquilinear form is orthogonal to every vector on
+either side; in particular `B y x = 0`. -/
+theorem IsRefl.apply_eq_zero_of_mem_ker {R₁ M₁ : Type*} [CommSemiring R₁] [AddCommMonoid M₁]
+    [Module R₁ M₁] [AddCommMonoid M] [Module R M] {I₁ I₂ : R₁ →+* R}
+    {B : M₁ →ₛₗ[I₁] M₁ →ₛₗ[I₂] M} (hB : B.IsRefl) (y : M₁) {x : M₁} (hx : x ∈ ker B) :
+    B y x = 0 :=
+  hB x y <| LinearMap.congr_fun (mem_ker.1 hx) y
 
 end LinearMap
 
