@@ -22,7 +22,7 @@ For arbitrary linear maps `H : E → F`, orthogonal projections `P_U` on `E`
 and `P_V` on `F`, the checkerboard operator `H P_U - P_V H` has seminorm at most
 that of `H`.
 The bound holds for every unitarily invariant seminorm, without spectral-gap
-assumptions. It is proved with two subspace reflections in `FanDominance.lean`, which also derives
+assumptions. It is proved with two subspace reflections in `Basic.lean`, which also derives
 from it that composing with an orthogonal projection does not increase the seminorm.
 
 The sine-angle operator `|P_U - P_V|` and the projector difference have the

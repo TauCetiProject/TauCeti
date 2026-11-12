@@ -35,9 +35,9 @@ multiple of `∑ᵢ σᵢ(A) wᵢ ⊗ vᵢ`.
 
 Consequences follow. If `‖B x‖ ≤ c ‖A x‖` for every `x`, then `σᵢ(B) ≤ c σᵢ(A)`, so Fan
 dominance gives the **pointwise comparison** `N B ≤ c N A`. Taking `B = C A` gives the **ideal
-inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`; in particular
-orthogonal projections do not increase `N`. Applied to the inverse of a map `C` bounded below by
-`c > 0`, they give the reverse inequalities `c N A ≤ N (C A)` and `c N A ≤ N (A C)`. For a
+inequalities** `N (C A) ≤ ‖C‖ N A` and, through adjoints, `N (A C) ≤ ‖C‖ N A`. Applied to the
+inverse of a map `C` bounded below by `c > 0`, they give the reverse inequalities
+`c N A ≤ N (C A)` and `c N A ≤ N (A C)`. For a
 symmetric right factor `C` and a map `A` vanishing on `Tᗮ`, the right ideal inequalities only
 need the bounds on `C` along `T`, since `(A C)† = C A†` and `A†` takes values in `T`.
 
@@ -66,15 +66,6 @@ need the bounds on `C` along `T`, since `(A C)† = C A†` and `A†` takes val
   (Fan dominance) and Proposition IV.2.4 (ideal inequalities).
 * L. Mirsky, *Symmetric gauge functions and unitarily invariant norms*, Quart. J. Math. Oxford
   Ser. (2) **11** (1960), 50–59.
-
-## Provenance
-
-The checkerboard contraction
-`TauCeti.UnitarilyInvariantSeminorm.map_comp_starProjection_sub_starProjection_comp_le`
-is moved here from `TauCeti/Analysis/InnerProductSpace/UnitarilyInvariantSeminorm/Projection.lean`,
-where it was factored from the symmetric two-orientation proof adapted from
-`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the AIQ-Kitware DKPS
-formalization (Apache-2.0; copyright 2026 Kitware, Inc.; Jon Crall, GPT-6).
 -/
 
 public section
@@ -231,64 +222,6 @@ theorem mul_map_le_map_comp_right (N : UnitarilyInvariantSeminorm 𝕜 E F) (A :
   have h := N.map_comp_le_right (A ∘ₗ C) G hG
   rw [LinearMap.comp_assoc, hCG, LinearMap.comp_id] at h
   rwa [le_inv_mul_iff₀ hc] at h
-
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
-/-- **Checkerboard contraction.** For any `H`, the off-diagonal difference
-`H P_U - P_V H` has no larger unitarily invariant seminorm than `H`.
-No symmetry, invariance or spectral-gap hypotheses on `H` are needed. -/
-theorem map_comp_starProjection_sub_starProjection_comp_le
-    (N : UnitarilyInvariantSeminorm 𝕜 E F)
-    (U : Submodule 𝕜 E) (V : Submodule 𝕜 F)
-    [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
-    (H : E →ₗ[𝕜] F) :
-    N (H ∘ₗ (U.starProjection : E →ₗ[𝕜] E) -
-      (V.starProjection : F →ₗ[𝕜] F) ∘ₗ H) ≤ N H := by
-  let JU : E ≃ₗᵢ[𝕜] E := U.reflection
-  let JV : F ≃ₗᵢ[𝕜] F := V.reflection
-  -- Two reflections turn the checkerboard into a difference of isometric multiples.
-  have hdouble :
-      (2 : 𝕜) • (H ∘ₗ (U.starProjection : E →ₗ[𝕜] E) -
-          (V.starProjection : F →ₗ[𝕜] F) ∘ₗ H) =
-        H ∘ₗ (JU : E →ₗ[𝕜] E) - (JV : F →ₗ[𝕜] F) ∘ₗ H := by
-    ext x
-    simp [JU, JV, Submodule.reflection_apply, LinearMap.comp_apply]
-    module
-  have hscaled :
-      2 * N (H ∘ₗ (U.starProjection : E →ₗ[𝕜] E) -
-          (V.starProjection : F →ₗ[𝕜] F) ∘ₗ H) ≤ 2 * N H := by
-    calc
-      _ = N ((2 : 𝕜) • (H ∘ₗ (U.starProjection : E →ₗ[𝕜] E) -
-          (V.starProjection : F →ₗ[𝕜] F) ∘ₗ H)) := by
-        simp only [map_smul_eq_mul, RCLike.norm_ofNat]
-      _ = N (H ∘ₗ (JU : E →ₗ[𝕜] E) - (JV : F →ₗ[𝕜] F) ∘ₗ H) := by
-        rw [hdouble]
-      _ ≤ N (H ∘ₗ (JU : E →ₗ[𝕜] E)) + N (-((JV : F →ₗ[𝕜] F) ∘ₗ H)) := by
-        simpa [sub_eq_add_neg] using
-          map_add_le_add N (H ∘ₗ (JU : E →ₗ[𝕜] E))
-            (-((JV : F →ₗ[𝕜] F) ∘ₗ H))
-      _ = N H + N H := by
-        rw [map_neg_eq_map N, N.map_comp_linearIsometryEquiv JU H,
-          N.map_linearIsometryEquiv_comp JV H]
-      _ = 2 * N H := by ring
-  exact le_of_mul_le_mul_left hscaled (by norm_num : (0 : ℝ) < 2)
-
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
-/-- Composing with an orthogonal projection on the left does not increase a unitarily invariant
-seminorm. -/
-theorem map_starProjection_comp_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 F)
-    [U.HasOrthogonalProjection] (A : E →L[𝕜] F) : N (U.starProjection ∘L A) ≤ N A := by
-  have h := N.map_comp_starProjection_sub_starProjection_comp_le (⊥ : Submodule 𝕜 E) U
-    (A : E →ₗ[𝕜] F)
-  simpa [Submodule.starProjection_bot, map_neg_eq_map] using h
-
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
-/-- Composing with an orthogonal projection on the right does not increase a unitarily invariant
-seminorm. -/
-theorem map_comp_starProjection_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 E)
-    [U.HasOrthogonalProjection] (A : E →L[𝕜] F) : N (A ∘L U.starProjection) ≤ N A := by
-  have h := N.map_comp_starProjection_sub_starProjection_comp_le U (⊥ : Submodule 𝕜 F)
-    (A : E →ₗ[𝕜] F)
-  simpa [Submodule.starProjection_bot] using h
 
 /-! ### Ideal inequalities for a symmetric right factor bounded on a subspace -/
 
