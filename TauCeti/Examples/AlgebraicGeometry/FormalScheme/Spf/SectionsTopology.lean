@@ -11,6 +11,8 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.SectionsTopology
 public import TauCeti.RingTheory.Huber.Padic.Basic
 
+import TauCeti.Topology.Constructions.Pi
+
 /-!
 # Examples and counterexamples for the topology on sections of `Spf A`
 
@@ -117,24 +119,6 @@ example (p : ℕ) [Fact p.Prime] :
   exact pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) hn
 
 /-! ### 4. Infinite product of a field `ℕ → k` (Stacks Project, Tag 0AHY) -/
-
-/-- The product of countably many copies of a field `k`, each with the discrete topology, is not
-discrete. -/
-private theorem not_discreteTopology_pi_bot (k : Type u) [Field k] :
-    ¬ @DiscreteTopology (ℕ → k) (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) := by
-  classical
-  let _ : TopologicalSpace k := ⊥
-  have : DiscreteTopology k := discreteTopology_bot k
-  intro hdisc
-  have htend : Filter.Tendsto (fun m : ℕ ↦ Pi.single m (1 : k)) Filter.atTop (𝓝 0) := by
-    refine tendsto_pi_nhds.mpr fun i ↦ ?_
-    rw [nhds_discrete, Filter.tendsto_pure]
-    exact (Filter.eventually_ge_atTop (i + 1)).mono fun m hm ↦ by
-      simp [Pi.single_eq_of_ne (Nat.ne_of_lt hm)]
-  rw [nhds_discrete, Filter.tendsto_pure] at htend
-  obtain ⟨m, hm⟩ := htend.exists
-  have h10 : (1 : k) = 0 := by simpa using congrFun hm m
-  exact one_ne_zero h10
 
 namespace SpfInfiniteProductChecks
 
@@ -388,7 +372,7 @@ example :
     have hhomeo := @IsHomeomorph.homeomorph _ _
       (quotientSectionsTopology hI U)
       (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) _ he_homeo
-    exact not_discreteTopology_pi_bot k
+    exact @not_discreteTopology_pi ℕ (fun _ ↦ k) (fun _ ↦ ⊥) _ _
       (@Homeomorph.discreteTopology_iff _ _
         (quotientSectionsTopology hI U)
         (@Pi.topologicalSpace ℕ (fun _ ↦ k) fun _ ↦ ⊥) hhomeo |>.mp hd)
