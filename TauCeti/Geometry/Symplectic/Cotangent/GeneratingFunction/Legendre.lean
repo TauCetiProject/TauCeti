@@ -110,7 +110,7 @@ theorem hasFDerivAt_cotangentLegendreProjection_of_isInvertible
     -- and then the `P`-component of the projection is constant.
     have hzero : (0 : W →L[ℝ] StrongDual ℝ W).IsInvertible := by
       simpa [cotangentLegendreHessian, fderiv_zero_of_not_differentiableAt hS] using hM
-    obtain ⟨hW, hP⟩ := ContinuousLinearMap.isInvertible_zero_iff.1 hzero
+    obtain ⟨_, hP⟩ := ContinuousLinearMap.isInvertible_zero_iff.1 hzero
     have h2 : HasFDerivAt (fun y => (cotangentGeneratingTarget S y).2)
         (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x)) x := by
       have hf : (fun y => (cotangentGeneratingTarget S y).2) = fun _ => (0 : StrongDual ℝ W) :=
