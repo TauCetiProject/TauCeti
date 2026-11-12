@@ -60,7 +60,6 @@ variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 private theorem integrable_weightGradientError (hw : ContDiff ℝ 1 w)
     (hη : Continuous η) (hc : HasCompactSupport η) :
     Integrable (fun z ↦ ‖fderiv ℝ w z‖ ^ 2 * ‖η z‖ ^ 2) μ := by
-  have hd : Continuous (fderiv ℝ w) := hw.continuous_fderiv one_ne_zero
   exact (by fun_prop : Continuous (fun z ↦
     ‖fderiv ℝ w z‖ ^ 2 * ‖η z‖ ^ 2)).integrable_of_hasCompactSupport
       (hc.mono fun z hz hzero ↦ hz (by simp [hzero]))

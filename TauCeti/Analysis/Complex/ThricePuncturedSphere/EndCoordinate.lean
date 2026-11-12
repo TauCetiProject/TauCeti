@@ -396,7 +396,6 @@ theorem im_endCoord_mem_Ico (q : Puncture) (w : ℂ) :
     (q.endCoord w).im ∈ Ico (-1 / 2 : ℝ) (1 / 2) := by
   have h₁ := Complex.neg_pi_lt_arg ((w - q.endCenter) / q.endScale)
   have h₂ := Complex.arg_le_pi ((w - q.endCenter) / q.endScale)
-  have hπ := Real.pi_pos
   rw [im_endCoord, mem_Ico, le_div_iff₀ (by positivity), div_lt_iff₀ (by positivity)]
   constructor <;> linarith
 
