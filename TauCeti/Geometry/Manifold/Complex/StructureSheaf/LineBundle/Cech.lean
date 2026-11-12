@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Basic
 public import TauCeti.Topology.Sheaves.Cech.Colimit
 
 /-!
@@ -17,16 +17,17 @@ Let `V` be a complex vector bundle with model fibre `F` over a complex manifold 
 takes the cover-colimit Čech cohomology `Hⁿ(X, 𝒪(V))` of its sheaf of holomorphic sections
 `TauCeti.holomorphicSectionSheaf I F V`, with complex vector space coefficients. For `F = ℂ` and
 holomorphic coordinate changes this is the Čech cohomology `Hⁿ(X, 𝒪(L))` of a holomorphic line
-bundle `L` (Forster, *Lectures on Riemann Surfaces*, §29), which the compact-Riemann-surface
-cohomology of the ModularForms roadmap computes.
+bundle `L` (Forster, *Lectures on Riemann Surfaces*, §29), the cohomology of line bundles on
+compact Riemann surfaces.
 
 The results are the cohomological form of the sheaf-level API of
-`TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle`: degree zero is the space of global
-holomorphic sections, isomorphic bundles have isomorphic cohomology, the trivial line bundle has
-the cohomology of the holomorphic structure sheaf, and the cohomology of a direct sum is the
-direct sum of the cohomologies. No hypothesis is made on `X` beyond its charted space structure,
-except for the dimension count of global sections of the trivial bundle, which needs `X` compact,
-connected and nonempty.
+`TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Basic`: degree zero is the space of
+global holomorphic sections, isomorphic bundles have isomorphic cohomology, the trivial line
+bundle has the cohomology of the holomorphic structure sheaf, and the cohomology of a direct sum
+is the direct sum of the cohomologies. No hypothesis is made on `X` beyond its charted space
+structure, except for the dimension count of global sections of the trivial bundle, which needs
+`X` to be a nonempty compact connected complex manifold without boundary (`IsManifold I 1 X`,
+`I.Boundaryless`).
 
 ## Main definitions
 
@@ -96,6 +97,10 @@ def zeroLinearEquiv :
 @[simp]
 theorem zeroLinearEquiv_apply (s : (holomorphicSectionSheaf I F V).obj.obj (op ⊤)) :
     zeroLinearEquiv I F V s = (zeroIso I F V).hom s := (rfl)
+
+@[simp]
+theorem zeroLinearEquiv_symm_apply (c : holomorphicSectionCechCohomology I F V 0) :
+    (zeroLinearEquiv I F V).symm c = (zeroIso I F V).inv c := (rfl)
 
 variable {I}
 variable {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℂ F₁]
@@ -243,37 +248,50 @@ variable (I F₁ V₁ F₂ V₂)
 
 /-- The Čech cohomology of the sheaf of holomorphic sections of a direct sum `V₁ ×ᵇ V₂`, with
 the maps induced by the fibrewise projections and inclusions, as a bicone over the two
-cohomologies. -/
--- Exposed so that the cone point and legs are visibly the cohomology of the direct sum and the
--- induced maps, which the simp lemmas and `prodIso_hom` state.
-@[expose, simps]
+cohomologies: the image of `TauCeti.holomorphicSectionSheaf.prodBicone` under Čech cohomology. -/
+-- Exposed so that the cone point is visibly the cohomology of the direct sum: otherwise the legs
+-- cannot be stated as the maps induced by the sheaf-level projections and inclusions below.
+@[expose]
 def prodBicone (n : ℕ) :
     BinaryBicone (holomorphicSectionCechCohomology I F₁ V₁ n)
-      (holomorphicSectionCechCohomology I F₂ V₂ n) where
-  pt := holomorphicSectionCechCohomology I (F₁ × F₂) (V₁ ×ᵇ V₂) n
-  fst := map (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂) n
-  snd := map (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂) n
-  inl := map (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂) n
-  inr := map (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂) n
-  inl_fst := by rw [map_comp, holomorphicSectionSheaf.prodInl_prodFst, map_id]
-  inl_snd := by rw [map_comp, holomorphicSectionSheaf.prodInl_prodSnd, map_zero]
-  inr_fst := by rw [map_comp, holomorphicSectionSheaf.prodInr_prodFst, map_zero]
-  inr_snd := by rw [map_comp, holomorphicSectionSheaf.prodInr_prodSnd, map_id]
+      (holomorphicSectionCechCohomology I F₂ V₂ n) :=
+  (sheafToPresheaf _ _ ⋙ Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).mapBinaryBicone
+    (holomorphicSectionSheaf.prodBicone I F₁ V₁ F₂ V₂)
+
+@[simp]
+theorem prodBicone_pt (n : ℕ) :
+    (prodBicone I F₁ V₁ F₂ V₂ n).pt = holomorphicSectionCechCohomology I (F₁ × F₂) (V₁ ×ᵇ V₂) n :=
+  (rfl)
+
+@[simp]
+theorem prodBicone_fst (n : ℕ) :
+    (prodBicone I F₁ V₁ F₂ V₂ n).fst = map (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂) n :=
+  (rfl)
+
+@[simp]
+theorem prodBicone_snd (n : ℕ) :
+    (prodBicone I F₁ V₁ F₂ V₂ n).snd = map (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂) n :=
+  (rfl)
+
+@[simp]
+theorem prodBicone_inl (n : ℕ) :
+    (prodBicone I F₁ V₁ F₂ V₂ n).inl = map (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂) n :=
+  (rfl)
+
+@[simp]
+theorem prodBicone_inr (n : ℕ) :
+    (prodBicone I F₁ V₁ F₂ V₂ n).inr = map (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂) n :=
+  (rfl)
 
 /-- **Additivity.** The Čech cohomology of the sheaf of holomorphic sections of a direct sum
 `V₁ ×ᵇ V₂` is the biproduct of the two cohomologies, since Čech cohomology is an additive
-functor of the sheaf. -/
+functor of the sheaf and so preserves the biproduct
+`TauCeti.holomorphicSectionSheaf.prodBiconeIsBilimit`. -/
 def prodBiconeIsBilimit (n : ℕ) : (prodBicone I F₁ V₁ F₂ V₂ n).IsBilimit :=
-  isBinaryBilimitOfTotal _ <| by
-    change map (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂) n ≫
-        map (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂) n +
-          map (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂) n ≫
-            map (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂) n =
-              𝟙 (holomorphicSectionCechCohomology I (F₁ × F₂) (V₁ ×ᵇ V₂) n)
-    rw [holomorphicSectionCechCohomology.map_comp, holomorphicSectionCechCohomology.map_comp,
-      ← holomorphicSectionCechCohomology.map_add,
-      holomorphicSectionSheaf.prodFst_prodInl_add_prodSnd_prodInr,
-      holomorphicSectionCechCohomology.map_id]
+  have := preservesBinaryBiproduct_of_preservesBiproduct
+    (sheafToPresheaf _ _ ⋙ Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n)
+    (holomorphicSectionSheaf I F₁ V₁) (holomorphicSectionSheaf I F₂ V₂)
+  isBinaryBilimitOfPreserves _ (holomorphicSectionSheaf.prodBiconeIsBilimit I F₁ V₁ F₂ V₂)
 
 /-- The Čech cohomology of the sheaf of holomorphic sections of a direct sum `V₁ ×ᵇ V₂` is
 isomorphic to the biproduct `⊞` of the two cohomologies. -/
@@ -327,6 +345,17 @@ theorem prodLinearEquiv_apply (n : ℕ)
   · have := ConcreteCategory.congr_hom ((prodIso I F₁ V₁ F₂ V₂ n).hom ≫= h₂) c
     rw [prodIso_hom, biprod.lift_snd] at this
     exact this.symm
+
+/-- The inverse of the linear equivalence with the product sends a pair of classes to the sum of
+their images under the maps induced by the two inclusions. -/
+@[simp]
+theorem prodLinearEquiv_symm_apply (n : ℕ) (a : holomorphicSectionCechCohomology I F₁ V₁ n)
+    (b : holomorphicSectionCechCohomology I F₂ V₂ n) :
+    (prodLinearEquiv I F₁ V₁ F₂ V₂ n).symm (a, b) =
+      map (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂) n a +
+        map (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂) n b := by
+  rw [LinearEquiv.symm_apply_eq, prodLinearEquiv_apply]
+  simp [← ConcreteCategory.comp_apply]
 
 /-- The cohomology of a direct sum is finite-dimensional when both summands' are. -/
 instance finiteDimensional_prod (n : ℕ)
