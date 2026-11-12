@@ -43,7 +43,9 @@ reductions (`FreeGroup.mk_eq_one_of_mk_append_cons_append_cons_eq_one`).
 * `TauCeti.CancellationPieces ws Z`: pieces indexed by `Z` and the words `Vⱼ` for the list
   `ws` of blocks.
 * `TauCeti.exists_cancellationPieces`: a list of reduced words with trivial product has
-  cancellation pieces indexed by some `Fin p`.
+  cancellation pieces indexed by some `Fin p`. Conversely, a list with cancellation pieces has
+  trivial product (`TauCeti.CancellationPieces.mk_flatten`); `TauCeti.exists_cancellationPieces_iff`
+  combines the two.
 * `TauCeti.CancellationPieces.length_le_of_mem_patterns`: `|Vⱼ| ≤ l - 1`.
 * `TauCeti.CancellationPieces.card_le`: at most `l (l - 1) / 2` pieces.
 
@@ -68,6 +70,7 @@ and words `patterns = [V₀, …, V_{l-1}]` over `Z^{±1}`, such that each `wⱼ
 the pieces into `Vⱼ` without free reduction, every signed letter of `Z^{±1}` occurs exactly once in
 `V₀ ⋯ V_{l-1}`, no letter of `Z` occurs twice in one `Vⱼ`, the product `V₀ ⋯ V_{l-1}` is trivial
 in `FreeGroup Z`, and two distinct `Vⱼ` share at most one letter of `Z`. -/
+@[ext]
 structure CancellationPieces (ws : List (List (α × Bool))) (Z : Type*) where
   /-- The word over `α^{±1}` named by a letter of `Z`. -/
   piece : Z → List (α × Bool)
@@ -89,7 +92,8 @@ structure CancellationPieces (ws : List (List (α × Bool))) (Z : Type*) where
   pairwise_subsingleton : patterns.Pairwise fun v v' =>
     {z | z ∈ v.map Prod.fst ∧ z ∈ v'.map Prod.fst}.Subsingleton
 
-attribute [simp] CancellationPieces.map_flatMap_patterns CancellationPieces.mk_flatten_patterns
+attribute [simp] CancellationPieces.piece_ne_nil CancellationPieces.map_flatMap_patterns
+  CancellationPieces.nodup_flatten_patterns CancellationPieces.mk_flatten_patterns
 
 namespace CancellationPieces
 
@@ -108,15 +112,29 @@ theorem flatMap_getElem_patterns {j : ℕ} (hj : j < P.patterns.length) :
     simpa using hj
   exact (List.getElem_map _ (h := h)).symm.trans (List.getElem_of_eq P.map_flatMap_patterns h)
 
+/-- The product `w₀ ⋯ w_{l-1}` of the blocks is the substitution of the pieces into
+`V₀ ⋯ V_{l-1}`. -/
+@[simp]
+theorem flatMap_flatten_patterns :
+    P.patterns.flatten.flatMap (substituteLetter P.piece) = ws.flatten := by
+  conv_rhs => rw [← P.map_flatMap_patterns]
+  simp only [List.flatMap_def, List.map_flatten, List.flatten_flatten, List.map_map,
+    Function.comp_def]
+
+/-- The product `w₀ ⋯ w_{l-1}` of the blocks is trivial in the free group. -/
+theorem mk_flatten (P : CancellationPieces ws Z) : FreeGroup.mk ws.flatten = 1 := by
+  rw [← P.flatMap_flatten_patterns, mk_flatMap_substituteLetter, P.mk_flatten_patterns,
+    _root_.map_one]
+
 /-- Each word over `Z^{±1}` is reduced. -/
 theorem isReduced_of_mem_patterns {v : List (Z × Bool)} (hv : v ∈ P.patterns) : IsReduced v :=
   isReduced_of_nodup_map_fst (P.nodup_map_fst v hv)
 
 /-- Every signed letter of `Z^{±1}` occurs exactly once in `V₀ ⋯ V_{l-1}`. -/
 @[simp]
-theorem count_flatten_patterns [BEq Z] [LawfulBEq Z] (z : Z) (b : Bool) :
-    P.patterns.flatten.count (z, b) = 1 :=
-  List.count_eq_one_of_mem P.nodup_flatten_patterns (P.mem_flatten_patterns z b)
+theorem count_flatten_patterns [BEq Z] [LawfulBEq Z] (a : Z × Bool) :
+    P.patterns.flatten.count a = 1 :=
+  List.count_eq_one_of_mem P.nodup_flatten_patterns (P.mem_flatten_patterns a.1 a.2)
 
 /-- The pieces of a list of reduced words are reduced. -/
 theorem isReduced_piece (hws : ∀ w ∈ ws, IsReduced w) (z : Z) : IsReduced (P.piece z) := by
@@ -244,7 +262,7 @@ private theorem nonempty_of_continue {ws : List (List (α × Bool))} (P : Cancel
   · by_cases hz : z = y
     · subst hz
       cases c <;> simp [hu, ht, hx]
-    · simpa [hu, Function.update_of_ne hz] using P.piece_ne_nil z
+    · simp [hu, Function.update_of_ne hz]
   · -- The letter `y` occurs nowhere else, so only the two displayed letters change.
     have hy := List.notMem_map_fst_of_nodup_append_cons_append_cons (L₁ := Vpre.flatten ++ A)
       (L₂ := Vmid.flatten) (L₃ := C ++ Vpost.flatten) (y := y) (c := c)
@@ -463,7 +481,7 @@ private theorem nonempty_of_new {p : ℕ} {ws : List (List (α × Bool))}
       Fin.castSucc_ne_last (hP ▸ P.pairwise_subsingleton) hdisj }⟩
   · induction z using Fin.lastCases with
     | last => simp [hu]
-    | cast z => simpa [hu] using P.piece_ne_nil z
+    | cast z => simp [hu]
 
 /-- **One step of the reduction process.** Cancelling the last letter of a block against the
 first letter of the next nonempty block either lengthens a piece or starts a new one. -/
@@ -529,6 +547,13 @@ theorem exists_cancellationPieces {ws : List (List (α × Bool))} (hws : ∀ w �
       · exact hws w (by simp [hw]))
     (by rw [hflat', ← (Red.Step.not (x := x) (b := e)).mk_eq, ← hflat, h]) rfl
   exact exists_of_cancel hmid P x e
+
+/-- **Makanin; Kharlampovich–Myasnikov, §4.2.** A list of reduced words has cancellation pieces
+exactly when its product is trivial in the free group. -/
+theorem exists_cancellationPieces_iff {ws : List (List (α × Bool))}
+    (hws : ∀ w ∈ ws, IsReduced w) :
+    (∃ p, Nonempty (CancellationPieces ws (Fin p))) ↔ mk ws.flatten = 1 :=
+  ⟨fun ⟨_, ⟨P⟩⟩ => P.mk_flatten, exists_cancellationPieces hws⟩
 
 section Examples
 
