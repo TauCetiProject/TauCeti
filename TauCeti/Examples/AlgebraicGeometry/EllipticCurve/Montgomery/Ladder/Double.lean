@@ -47,7 +47,7 @@ example (P : (model (0 : ZMod 2) 1).toAffine.Point) (k : ℕ) :
         (coordinates 0 1 ((2 * k) • P)) = 0 := by
   simpa only [mul_nsmul, two_nsmul, nsmul_add] using
     double_coordinates_of_cross_eq_zero (N := 1) (D := 1) (by decide) (by decide)
-      (coordinates_ne_zero_of_isReduced (k • P)) (by simp)
+      (coordinates_ne_zero_of_nontrivial (k • P)) (by simp)
 
 -- Track actual raw outputs rather than assuming the group order or the intermediate multiples.
 example [Fact (Nat.Prime 7)] :
