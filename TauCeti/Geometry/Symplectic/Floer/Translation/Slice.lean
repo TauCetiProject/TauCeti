@@ -78,14 +78,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {H : ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
-/-- The energy density of a translate of a map, for the cylindrical perturbation `K = H_t dt`, is
-the translate of its energy density. -/
-private theorem floerEnergyDensity_cylindrical_comp_add_right (c : ℝ) :
-    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) =
-      fun z ↦ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) :=
-  funext fun z ↦ by
-    simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (c, 0) z
-
 /-- **Translation equivariance of the energy center.** For the cylindrical perturbation
 `K = H_t dt` and a map `u` of finite nonzero energy over the strip, the arctan center of the energy
 measure of the translate `(s, t) ↦ u(s + c, t)` is that of `u` minus `c`. -/
@@ -97,7 +89,7 @@ theorem arctanCenter_stripMeasure_floerEnergyDensity_cylindrical_comp_add_right
     (stripMeasure (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
         fun w ↦ u (w + (c, 0)))).arctanCenter =
       (stripMeasure (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u)).arctanCenter - c := by
-  rw [floerEnergyDensity_cylindrical_comp_add_right]
+  rw [funext (ω.floerEnergyDensity_cylindrical_comp_add_right H u c)]
   exact arctanCenter_stripMeasure_comp_add_right hfin hE c
 
 /-- **The slice for nonstationary Floer cylinders.** Let `u` be `C¹` on a neighbourhood of the
@@ -123,7 +115,7 @@ theorem existsUnique_arctanCenter_stripMeasure_floerEnergyDensity_comp_add_right
     intro hE
     obtain ⟨s, t, ht, hne⟩ := hns
     exact hne ((ω.lintegral_floerEnergyDensity_eq_zero_iff hH hU hu hRU hJ hfloer).1 hE s t ht)
-  simp_rw [floerEnergyDensity_cylindrical_comp_add_right]
+  simp_rw [fun c ↦ funext (ω.floerEnergyDensity_cylindrical_comp_add_right H u c)]
   exact existsUnique_arctanCenter_stripMeasure_comp_add_right_eq_zero hfin hE
 
 /-- **Recentering is constant on translation orbits.** For the cylindrical perturbation `K = H_t dt`

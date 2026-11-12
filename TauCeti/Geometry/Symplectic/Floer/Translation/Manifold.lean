@@ -25,10 +25,10 @@ nonstationary finite-energy cylinders exactly once.
 The energy density `e = ω.floerEnergyDensity Ks Kt u` of a map into `M` is intrinsic: it is the
 two-form `ω` evaluated on the two components of the perturbed derivative `du - X_K`, and needs no
 metric on `M`. Its strip measure `TauCeti.stripMeasure e` gives each set `A` of `s`-values the
-Floer energy of `u` over `A × [0, 1]`. Translating a differentiable `u` by `(c, 0)` translates
-`e`, since the cylindrical perturbation is translation invariant
-(`TauCeti.SmoothTwoForm.floerEnergyDensity_comp_add_right`), and therefore translates the strip
-measure by `-c`. The center of `u` is the arctan center of this measure
+Floer energy of `u` over `A × [0, 1]`. Translating `u` by `(c, 0)` translates `e`, since the
+cylindrical perturbation is translation invariant
+(`TauCeti.SmoothTwoForm.floerEnergyDensity_cylindrical_comp_add_right`), and therefore
+translates the strip measure by `-c`. The center of `u` is the arctan center of this measure
 (`MeasureTheory.Measure.arctanCenter`), the unique `m` with `∫ arctan (s - m) dE(s) = 0`, defined
 when the energy is finite and nonzero. For a Floer cylinder with tamed almost complex structures,
 zero energy means stationary
@@ -72,21 +72,10 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
   [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {u : ℝ × ℝ → M}
 
-/-- The energy density of a translate of a differentiable map, for the cylindrical perturbation
-`K = H_t dt`, is the translate of its energy density. -/
-private theorem floerEnergyDensity_cylindrical_comp_add_right
-    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) (c : ℝ) :
-    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) =
-      fun z ↦ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) :=
-  funext fun z ↦ by
-    simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2)
-      (hu (z + (c, 0)))
-
 /-- **Translation equivariance of the energy center.** For the cylindrical perturbation
-`K = H_t dt` and a differentiable map `u` of finite nonzero energy over the strip, the arctan
-center of the energy measure of the translate `(s, t) ↦ u(s + c, t)` is that of `u` minus `c`. -/
+`K = H_t dt` and a map `u` of finite nonzero energy over the strip, the arctan center of the
+energy measure of the translate `(s, t) ↦ u(s + c, t)` is that of `u` minus `c`. -/
 theorem arctanCenter_stripMeasure_floerEnergyDensity_cylindrical_comp_add_right
-    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u)
     (hfin : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
     (hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
@@ -94,16 +83,15 @@ theorem arctanCenter_stripMeasure_floerEnergyDensity_cylindrical_comp_add_right
     (stripMeasure (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
         fun w ↦ u (w + (c, 0)))).arctanCenter =
       (stripMeasure (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u)).arctanCenter - c := by
-  rw [floerEnergyDensity_cylindrical_comp_add_right hu]
+  rw [funext (ω.floerEnergyDensity_cylindrical_comp_add_right H u c)]
   exact arctanCenter_stripMeasure_comp_add_right hfin hE c
 
 /-- **Recentering is constant on translation orbits.** For the cylindrical perturbation
-`K = H_t dt` and a differentiable map `u` of finite nonzero energy over the strip, translate any
-translate `v = u(· + (c, 0))` of `u` by the arctan center of its energy measure: the result is the
-translate of `u` by its own center. So recentering is a section of the quotient by translations,
-with values in the slice of center zero. -/
+`K = H_t dt` and a map `u` of finite nonzero energy over the strip, translate any translate
+`v = u(· + (c, 0))` of `u` by the arctan center of its energy measure: the result is the translate
+of `u` by its own center. So recentering is a section of the quotient by translations, with values
+in the slice of center zero. -/
 theorem comp_add_arctanCenter_stripMeasure_floerEnergyDensity_comp_add_right
-    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u)
     (hfin : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
     (hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
@@ -112,7 +100,7 @@ theorem comp_add_arctanCenter_stripMeasure_floerEnergyDensity_comp_add_right
         fun w ↦ u (w + (c, 0)))).arctanCenter, 0) + (c, 0))) =
       fun w ↦ u (w + ((stripMeasure
         (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u)).arctanCenter, 0)) := by
-  rw [arctanCenter_stripMeasure_floerEnergyDensity_cylindrical_comp_add_right hu hfin hE]
+  rw [arctanCenter_stripMeasure_floerEnergyDensity_cylindrical_comp_add_right hfin hE]
   simp_rw [add_assoc, Prod.mk_add_mk, sub_add_cancel, add_zero]
 
 variable [FiniteDimensional ℝ E] {J : (z : ℝ × ℝ) → AlmostComplexStructure (TangentSpace I (u z))}
@@ -141,7 +129,7 @@ theorem
     intro hE
     obtain ⟨s, t, ht, hne⟩ := hns
     exact hne ((hω.lintegral_floerEnergyDensity_eq_zero_iff hH hu hJ hfloer).1 hE s t ht)
-  simp_rw [floerEnergyDensity_cylindrical_comp_add_right (hu.mdifferentiable one_ne_zero)]
+  simp_rw [fun c ↦ funext (ω.floerEnergyDensity_cylindrical_comp_add_right H u c)]
   exact existsUnique_arctanCenter_stripMeasure_comp_add_right_eq_zero hfin hE
 
 end TauCeti.SmoothTwoForm

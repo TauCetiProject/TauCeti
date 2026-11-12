@@ -101,7 +101,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   (`SymplecticForm.perturbedFDeriv_congr_of_eventuallyEq`,
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
-  `SymplecticForm.floerEnergyDensity_comp_add_right`); hence translations preserve the energy
+  `SymplecticForm.floerEnergyDensity_comp_add_right`,
+  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`); hence translations preserve the
+  energy
   (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
 
 ## References
@@ -417,6 +419,14 @@ theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ �
     ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
       ω.floerEnergyDensity Ks Kt u (z + v) := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_comp_add_right]
+
+/-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
+`(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
+theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SymplecticForm V) (H : ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (c : ℝ) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z =
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) := by
+  simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (c, 0) z
 
 /-- The Floer energy density at `z` only depends on the germ of the map at `z`. -/
 theorem floerEnergyDensity_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)

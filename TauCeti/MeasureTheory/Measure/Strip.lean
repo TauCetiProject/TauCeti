@@ -66,6 +66,7 @@ theorem stripMeasure_def :
 variable (f) in
 /-- The strip measure of a measurable set `A` is the integral of the positive part of `f` over
 `A × [0, 1]`. -/
+@[simp]
 theorem stripMeasure_apply {A : Set ℝ} (hA : MeasurableSet A) :
     stripMeasure f A = ∫⁻ z in A ×ˢ Icc 0 1, ENNReal.ofReal (f z) := by
   rw [stripMeasure, Measure.map_apply measurable_fst hA,
