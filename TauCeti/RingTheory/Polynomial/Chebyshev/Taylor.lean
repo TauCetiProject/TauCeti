@@ -49,25 +49,22 @@ private theorem taylor_two_C_coeff_eq_intCast (n : ℤ) (k : ℕ) :
     (taylor 2 (C R n)).coeff k = ((taylor 2 (C ℤ n)).coeff k : ℤ) := by
   rw [← eq_intCast (Int.castRingHom R), ← coeff_map, map_taylor, map_C, map_ofNat]
 
-/-- The `k`-th derivative of `p(2X)` at `1` is `2ᵏ` times the `k`-th derivative of `p` at `2`:
-the chain rule `iterate_derivative_comp_C_mul_X` at `a = 2`, evaluated at `1`. -/
-private theorem iterate_derivative_comp_two_mul_X_eval_one (p : R[X]) (k : ℕ) :
-    (derivative^[k] (p.comp (2 * X))).eval 1 = 2 ^ k * (derivative^[k] p).eval 2 := by
-  -- Write the polynomial `2` as the constant `Polynomial.C 2`, the form the chain rule expects.
-  rw [← map_ofNat Polynomial.C 2, iterate_derivative_comp_C_mul_X]
-  simp only [eval_mul, eval_C, eval_comp, eval_X, mul_one]
-
 /-- Differentiating `Cₙ(2X) = 2Tₙ(X)` `k` times at `X = 1` gives `2ᵏ Cₙ⁽ᵏ⁾(2) = 2 Tₙ⁽ᵏ⁾(1)`. -/
 private theorem two_pow_mul_iterate_derivative_C_eval_two (n : ℤ) (k : ℕ) :
     2 ^ k * (derivative^[k] (C R n)).eval 2 = 2 * (derivative^[k] (T R n)).eval 1 := by
-  -- After `C_comp_two_mul_X`, write the factor `2` of `2Tₙ` as `Polynomial.C 2` to pull it out.
-  rw [← iterate_derivative_comp_two_mul_X_eval_one, C_comp_two_mul_X, ← map_ofNat Polynomial.C 2,
-    iterate_derivative_C_mul, eval_C_mul]
+  -- The chain rule at `X = 1`, with the constant `Polynomial.C 2` written as the polynomial `2`.
+  have h := eval_iterate_derivative_comp_C_mul_X (C R n) 2 1 k
+  rw [map_ofNat Polynomial.C 2, mul_one, C_comp_two_mul_X] at h
+  -- Write the factor `2` of `2Tₙ` as `Polynomial.C 2` to pull it out of the derivative.
+  rw [← h, ← map_ofNat Polynomial.C 2, iterate_derivative_C_mul, eval_C_mul]
 
 /-- Differentiating `Sₙ(2X) = Uₙ(X)` `k` times at `X = 1` gives `2ᵏ Sₙ⁽ᵏ⁾(2) = Uₙ⁽ᵏ⁾(1)`. -/
 private theorem two_pow_mul_iterate_derivative_S_eval_two (n : ℤ) (k : ℕ) :
     2 ^ k * (derivative^[k] (S R n)).eval 2 = (derivative^[k] (U R n)).eval 1 := by
-  rw [← iterate_derivative_comp_two_mul_X_eval_one, S_comp_two_mul_X]
+  -- The chain rule at `X = 1`, with the constant `Polynomial.C 2` written as the polynomial `2`.
+  have h := eval_iterate_derivative_comp_C_mul_X (S R n) 2 1 k
+  rw [map_ofNat Polynomial.C 2, mul_one, S_comp_two_mul_X] at h
+  exact h.symm
 
 /-- The linear Taylor coefficient of `Cₙ` at `2`. -/
 theorem taylor_two_C_coeff_one (n : ℤ) : (taylor 2 (C R n)).coeff 1 = (n : R) ^ 2 := by
