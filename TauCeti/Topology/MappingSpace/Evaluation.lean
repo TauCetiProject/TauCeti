@@ -28,6 +28,7 @@ either space. That the constant maps embed `X` in `Map(B, X)` for nonempty `B` i
 * `TauCeti.isQuotientMap_mappingSpaceEval`: evaluation is a quotient map.
 * `TauCeti.mappingSpaceEval_comp_subtypeVal`: evaluation is constant on the based mapping space,
   the fibre over `x`; its universal lift is `TauCeti.BasedMap.lift`.
+* `TauCeti.mappingSpaceEval_homotopic`: evaluations at two points joined by a path are homotopic.
 
 ## References
 
@@ -82,5 +83,16 @@ theorem mappingSpaceEval_comp_subtypeVal (b : B) (x : X) :
   simp only [ContinuousMap.comp_apply, mappingSpaceEval_apply, ContinuousMap.subtypeVal_apply,
     ContinuousMap.const_apply]
   exact f.2
+
+/-- **Evaluations along a path are homotopic.** If `B` is locally compact and `b₀` and `b₁` are
+joined by a path `γ`, evaluation of `Map(B, X)` at `b₀` is homotopic to evaluation at `b₁`,
+through the evaluations `f ↦ f (γ t)`. -/
+theorem mappingSpaceEval_homotopic [LocallyCompactPair B X] {b₀ b₁ : B} (h : Joined b₀ b₁) :
+    (mappingSpaceEval (X := X) b₀).Homotopic (mappingSpaceEval b₁) :=
+  ⟨{ toFun x := x.2 (h.somePath x.1)
+     continuous_toFun := continuous_eval.comp
+       (continuous_snd.prodMk (h.somePath.continuous.comp continuous_fst))
+     map_zero_left f := by simp
+     map_one_left f := by simp }⟩
 
 end TauCeti
