@@ -7,17 +7,19 @@ module
 
 public import TauCeti.Analysis.Normed.Interpolation.WeightedSequence
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
+public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Real interpolation of Bessel-potential spaces
 
 Let `E` be a finite-dimensional real inner product space, `1 ≤ p ≤ ∞`, and let `s₀ ≠ s₁` be real
 smoothness indices. The Bessel-potential spaces `H^{s₀,p}` and `H^{s₁,p}` both embed continuously
-and injectively into the tempered distributions, so they form a compatible couple
-(`TauCeti.CompatibleCouple.besselPotentialSpace`). For `0 < θ < 1` and `1 ≤ q ≤ ∞` its real
-interpolation space is a Besov space:
+and injectively into the tempered distributions (`BesselPotentialSpace.toDistrCLM`), so they form
+a compatible couple (`TauCeti.CompatibleCouple.besselPotentialSpace`). For `0 < θ < 1` and
+`1 ≤ q ≤ ∞` its real interpolation space is a Besov space:
 
 `(H^{s₀,p}, H^{s₁,p})_{θ,q} = B^{s_θ}_{p,q}`, where `s_θ = (1 - θ) s₀ + θ s₁`,
 
@@ -32,7 +34,7 @@ functions, whose real interpolation spaces are known
   `H^{s,p} ⊆ B^s_{p,∞}` (`BesselPotentialSpace.toBesovSpace`). By the exactness of the real method,
   the blocks of an element of `(H^{s₀,p}, H^{s₁,p})_{θ,q}` lie in
   `(ℓ^∞_{s₀}(Lᵖ), ℓ^∞_{s₁}(Lᵖ))_{θ,q} = ℓ^q_{s_θ}(Lᵖ)`, which is the Besov condition.
-* **Synthesis.** Every block `Δⱼ` meets only the blocks `Δₖ` with `|j - k| < L`, for some `L`
+* **Synthesis.** Every block `Δⱼ` meets only the blocks `Δₖ` with `j - L ≤ k < j + L`, for some `L`
   depending on `φ` (`TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`), so the window
   `Wⱼ = ∑_{j - L ≤ k < j + L} Δₖ` satisfies `Wⱼ Δⱼ = Δⱼ`. The window is localized in frequency
   near `2ʲ`, so `‖J^s Wⱼ f‖_p ≤ C 2^{js} ‖f‖_p` for the Bessel potential `J^s`, and the synthesis
@@ -42,7 +44,6 @@ functions, whose real interpolation spaces are known
 
 ## Main declarations
 
-* `BesselPotentialSpace.toDistrCLM`: the inclusion `H^{s,p} → 𝓢'` as a continuous linear map.
 * `TauCeti.CompatibleCouple.besselPotentialSpace E F p s₀ s₁`: the couple `(H^{s₀,p}, H^{s₁,p})`.
 * `TauCeti.CompatibleCouple.besselPotentialSpaceKMethodEquiv`: the isomorphism
   `(H^{s₀,p}, H^{s₁,p})_{θ,q} ≃L[ℂ] B^{s_θ}_{p,q}`, which keeps the underlying tempered
@@ -70,27 +71,6 @@ open scoped ENNReal SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-
-namespace BesselPotentialSpace
-
-variable {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-variable (E F s p) in
-/-- The inclusion of the Bessel-potential space `H^{s,p}` into the tempered distributions, as a
-continuous linear map: an element is the tempered distribution `J^{-s} f` of its `Lᵖ`
-function `f`. -/
-def toDistrCLM : H^{s, p}(E, F) →L[ℂ] 𝓢'(E, F) :=
-  TemperedDistribution.besselPotential E F (-s) ∘L Lp.toTemperedDistributionCLM F volume p ∘L
-    (toLpₗᵢ E F s p).toContinuousLinearEquiv.toContinuousLinearMap
-
-@[simp]
-theorem toDistrCLM_apply (u : H^{s, p}(E, F)) : toDistrCLM E F s p u = u.toDistr := by
-  simp [toDistrCLM]
-
-theorem toDistrCLM_injective : Function.Injective (toDistrCLM E F s p) := fun u v h ↦
-  ext (by simpa using h)
-
-end BesselPotentialSpace
 
 namespace TauCeti
 
@@ -134,14 +114,14 @@ variable (F p) in
 /-- The weighted blocks `(2^{js} Δⱼ u)ⱼ` of an element of `H^{s,p}`, as an `ℓ^∞` sequence. -/
 private def weightedBlocksCLM (s : ℝ) :
     H^{s, p}(E, F) →L[ℂ] lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) ∞ :=
-  ((BesovSpace.weightedBlocksₗ F φ s p ∞).mkContinuous 1 fun u ↦ by simp) ∘L toBesovSpace φ
+  (BesovSpace.weightedBlocksₗᵢ F φ s p ∞).toContinuousLinearMap ∘L toBesovSpace φ
 
 /-- The `j`-th weighted block, rescaled by `2^{-js}`, is the block `Δⱼ u`. -/
 private theorem inv_smul_weightedBlocksCLM_apply (u : H^{s, p}(E, F)) (j : ℕ) :
     (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)⁻¹ • weightedBlocksCLM F p φ s u j =
       (toBesovSpace φ u).block j := by
-  simp only [weightedBlocksCLM, ContinuousLinearMap.comp_apply, LinearMap.mkContinuous_apply,
-    BesovSpace.weightedBlocksₗ_apply]
+  simp only [weightedBlocksCLM, ContinuousLinearMap.comp_apply,
+    LinearIsometry.coe_toContinuousLinearMap, BesovSpace.weightedBlocksₗᵢ_apply]
   rw [BesovSpace.weightedBlocks_apply]
   exact inv_smul_smul₀ (Complex.ofReal_ne_zero.2 (by positivity)) _
 
@@ -227,20 +207,9 @@ private theorem exists_besselPotential_window_eq_and_norm_le (s : ℝ) :
       ‖g k‖ ≤ C₂ * max C₁ 0 * 2 ^ (|s| * L) * 2 ^ (s * j) * ‖f‖ := by
     intro k hk
     rw [Finset.mem_Ico] at hk
-    have hkj : |(k : ℝ) - j| ≤ L := by
-      rw [abs_le]
-      constructor
-      · have : j ≤ k + L := by omega
-        have : (j : ℝ) ≤ k + L := by exact_mod_cast this
-        linarith
-      · have : (k : ℝ) < j + L := by exact_mod_cast hk.2
-        linarith
     have hpow : (2 : ℝ) ^ (s * k) ≤ 2 ^ (|s| * L) * 2 ^ (s * j) := by
-      rw [← Real.rpow_add two_pos]
-      refine Real.rpow_le_rpow_of_exponent_le one_le_two ?_
-      have := (le_abs_self (s * ((k : ℝ) - j))).trans
-        ((abs_mul s _).le.trans (mul_le_mul_of_nonneg_left hkj (abs_nonneg s)))
-      nlinarith
+      refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
+      all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
     calc ‖g k‖ ≤ C₂ * 2 ^ (s * k) * ‖f' k‖ := hgf k
       _ ≤ C₂ * (2 ^ (|s| * L) * 2 ^ (s * j)) * (max C₁ 0 * ‖f‖) := by
         gcongr
@@ -410,7 +379,7 @@ private def besovToKMethod :
       (fun _ ↦ by simp [synthesisMap]) ∘L
     ((weightedLpKMethodEquiv (𝕜 := ℂ) (A := Lp F p (volume : Measure E)) (q₀ := 1) (q₁ := 1)
       (q := q) hs hθ).symm : _ →L[ℂ] _) ∘L
-    (BesovSpace.weightedBlocksₗ F φ _ p q).mkContinuous 1 fun v ↦ by simp
+    (BesovSpace.weightedBlocksₗᵢ F φ _ p q).toContinuousLinearMap
 
 private theorem sumSpaceEmbed_toSumₗ_besovToKMethod
     (v : BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q) :
@@ -425,8 +394,8 @@ private theorem sumSpaceEmbed_toSumₗ_besovToKMethod
     exact inv_smul_smul₀ (Complex.ofReal_ne_zero.2 (by positivity)) _
   simp only [hb, BesovSpace.coe_block, window_littlewoodPaleyBlock] at h
   simp only [besovToKMethod, ContinuousLinearMap.comp_apply, toSumₗ_map,
-    ContinuousLinearMap.coe_coe, LinearMap.mkContinuous_apply, BesovSpace.weightedBlocksₗ_apply,
-    ContinuousLinearEquiv.coe_coe]
+    ContinuousLinearMap.coe_coe, LinearIsometry.coe_toContinuousLinearMap,
+    BesovSpace.weightedBlocksₗᵢ_apply, ContinuousLinearEquiv.coe_coe]
   exact tendsto_nhds_unique h.tendsto_sum_nat (tendsto_sum_littlewoodPaleyBlock φ v.toDistr)
 
 /-- **Real interpolation of Bessel-potential spaces.** For `s₀ ≠ s₁`, `0 < θ < 1`,

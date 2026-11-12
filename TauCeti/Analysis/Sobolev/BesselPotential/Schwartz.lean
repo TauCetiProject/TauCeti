@@ -33,6 +33,8 @@ normed complex `F`.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
 * `SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero`,
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
+* `BesselPotentialSpace.toDistrCLM`: the injective inclusion `H^{s,p} → 𝓢'` as a continuous
+  linear map.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
@@ -149,6 +151,23 @@ theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp F p (volume : Measure E)) :
     ((toLpₗᵢ E F 0 p).symm f).toDistr = (f : 𝓢'(E, F)) := by
   rw [toLpₗᵢ_symm_apply, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply]
+
+variable (E F) in
+/-- The inclusion of the Bessel-potential space `H^{s,p}` into the tempered distributions, as a
+continuous linear map: an element is the tempered distribution `J^{-s} f` of its `Lᵖ`
+function `f`. -/
+def toDistrCLM (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] : H^{s, p}(E, F) →L[ℂ] 𝓢'(E, F) :=
+  besselPotential E F (-s) ∘L Lp.toTemperedDistributionCLM F volume p ∘L
+    (toLpₗᵢ E F s p).toContinuousLinearEquiv.toContinuousLinearMap
+
+@[simp]
+theorem toDistrCLM_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, p}(E, F)) :
+    toDistrCLM E F s p u = u.toDistr := by
+  simp [toDistrCLM]
+
+theorem toDistrCLM_injective {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+    Function.Injective (toDistrCLM E F s p) := fun u v h ↦
+  ext (by simpa using h)
 
 /-- The `H^s` norm is the `L²` norm of the weighted Fourier transform: if `⟨ξ⟩ ^ s 𝓕 u` is the
 tempered distribution of `G ∈ L²`, then `‖u‖ = ‖G‖`. -/

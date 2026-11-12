@@ -45,7 +45,8 @@ both its tempered distribution and this `Lᵖ` data.
 * `TemperedDistribution.MemBesov φ s p q u`: the unbundled predicate `u ∈ B^s_{p,q}`, and its
   characterisation `TemperedDistribution.memBesov_iff` by `Lᵖ` blocks with weighted `ℓ^q` norms.
 * `TauCeti.BesovSpace F φ s p q`: the bundled space, a complex normed space whose elements carry
-  their tempered distribution `toDistr` and weighted blocks `weightedBlocks`.
+  their tempered distribution `toDistr` and weighted blocks `weightedBlocks`. The weighted blocks
+  form a linear isometry `TauCeti.BesovSpace.weightedBlocksₗᵢ` into `ℓ^q(ℕ, Lᵖ)`.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
   `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
   (`q = ∞`) expressing the norm through the blocks, and the single-block bound
@@ -430,6 +431,18 @@ theorem norm_weightedBlocks (u : BesovSpace F φ s p q) : ‖u.weightedBlocks‖
 
 instance : NormedSpace ℂ (BesovSpace F φ s p q) where
   norm_smul_le c u := by simp [← norm_weightedBlocks, norm_smul]
+
+variable (F φ s p q) in
+/-- The weighted Littlewood–Paley blocks `u ↦ (2^{js} Δⱼ u)ⱼ`, as a linear isometry into
+`ℓ^q(ℕ, Lᵖ)`: the Besov norm is the norm induced by the weighted blocks. -/
+def weightedBlocksₗᵢ :
+    BesovSpace F φ s p q →ₗᵢ[ℂ] lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q where
+  toLinearMap := weightedBlocksₗ F φ s p q
+  norm_map' := norm_weightedBlocks
+
+@[simp]
+theorem weightedBlocksₗᵢ_apply (u : BesovSpace F φ s p q) :
+    weightedBlocksₗᵢ F φ s p q u = u.weightedBlocks := (rfl)
 
 /-- **The single-block bound.** Each weighted block `2^{js} ‖Δⱼ u‖_p` is at most `‖u‖`. -/
 theorem rpow_mul_norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
