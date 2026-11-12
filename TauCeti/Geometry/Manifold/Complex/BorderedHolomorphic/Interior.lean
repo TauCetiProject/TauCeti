@@ -43,7 +43,8 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
 * `TauCeti.mem_borderedInterior_iff_im_pos`: a point is in the interior exactly when one, or any,
   chart of the atlas sends it to a point of positive imaginary part.
 * `TauCeti.im_eq_zero_iff_notMem_borderedInterior`: a chart of the atlas is real exactly at the
-  boundary points of its source.
+  boundary points of its source; `TauCeti.conj_apply_eq_of_notMem_borderedInterior` restates this
+  as invariance under complex conjugation.
 * `TauCeti.chartAt_borderedInterior_source`, `TauCeti.chartAt_borderedInterior_target` and
   `TauCeti.chartAt_borderedInterior_symm_apply`: the domain, image and inverse of the chart of the
   interior, in terms of the chart of `M`.
@@ -62,7 +63,7 @@ public section
 noncomputable section
 
 open Set Complex Filter TopologicalSpace
-open scoped Manifold ContDiff Topology
+open scoped Manifold ContDiff Topology ComplexConjugate
 
 namespace TauCeti
 
@@ -137,10 +138,12 @@ theorem im_eq_zero_iff_notMem_borderedInterior {e : OpenPartialHomeomorph M Clos
   rw [mem_borderedInterior_iff_im_pos he hx, not_lt]
   exact ⟨le_of_eq, fun h ↦ le_antisymm h (e x).property⟩
 
-variable (M) in
-/-- The boundary of `M`, the complement of its interior, is closed. -/
-theorem isClosed_compl_borderedInterior : IsClosed (borderedInterior M : Set M)ᶜ :=
-  (borderedInterior M).isOpen.isClosed_compl
+/-- A chart of the atlas is fixed by complex conjugation at the boundary points of its source. -/
+theorem conj_apply_eq_of_notMem_borderedInterior
+    {e : OpenPartialHomeomorph M ClosedUpperHalfPlane} (he : e ∈ atlas ClosedUpperHalfPlane M)
+    {x : M} (hx : x ∈ e.source) (hA : x ∉ borderedInterior M) :
+    conj (e x : ℂ) = e x :=
+  conj_eq_iff_im.2 ((im_eq_zero_iff_notMem_borderedInterior he hx).2 hA)
 
 /-- The interior of a `C^1` manifold modelled on the closed upper half-plane is a charted space
 modelled on `ℂ`: the chart at `x` restricts the chart of `M` at `x` to the interior and reads it
