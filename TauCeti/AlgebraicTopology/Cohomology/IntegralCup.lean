@@ -72,12 +72,7 @@ noncomputable section
 
 open CategoryTheory MonoidalCategory
 
-/-- Mathlib's `MonoidalLinear ℤ` instance on `ModuleCat ℤ` is stated for its `ℤ`-linear structure
-as a category of modules, while instance search finds the `ℤ`-linear structure of a preadditive
-category; whiskering commutes with the integer multiples of the latter as well. -/
-local instance : MonoidalLinear ℤ (ModuleCat.{0} ℤ) where
-  whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
-  smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 
 namespace TauCeti
 
