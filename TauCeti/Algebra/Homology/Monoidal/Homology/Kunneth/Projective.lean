@@ -33,6 +33,10 @@ A typical `K` is the relative chain complex of a topological pair with free rela
 as a cube modulo its boundary; the theorem then computes the relative homology of the product of
 the pair with an arbitrary space.
 
+The same splitting makes a quasi-isomorphism `φ : K ⟶ K'` between complexes of projective modules
+indexed by `ℕ`, with `K` of projective homology, a homotopy equivalence. So tensoring with any
+complex `L` keeps it a quasi-isomorphism (`HomologicalComplex.quasiIso_whiskerLeft_of_projective`).
+
 ## References
 
 * C. Weibel, *An Introduction to Homological Algebra*, Section 3.6, the Künneth formula.
@@ -42,7 +46,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
 
 namespace HomologicalComplex
 
@@ -67,5 +71,30 @@ theorem isIso_homologyKunneth_of_projective (n : ℕ) : IsIso (homologyKunneth K
     inferInstance
   rw [isIso_homologyKunneth_iff_of_homotopyEquiv n e (HomotopyEquiv.refl L)]
   exact isIso_homologyKunneth_of_d_eq_zero_of_flat K' L hK' n
+
+variable {K} {K' : ChainComplex (ModuleCat.{u} R) ℕ} [∀ p, Module.Projective R (K'.X p)]
+
+/-- **Tensoring preserves quasi-isomorphisms of projective complexes with projective homology.**
+A quasi-isomorphism `φ : K ⟶ K'` of complexes of projective modules indexed by `ℕ`, where `K` has
+projective homology, is a homotopy equivalence (`HomotopyEquiv.ofQuasiIso`). Hence for every
+complex `L` the map `L ◁ φ : L ⊗ K ⟶ L ⊗ K'` is a quasi-isomorphism. No condition is imposed on
+`L` or on `R`. -/
+theorem quasiIso_whiskerLeft_of_projective (φ : K ⟶ K') [QuasiIso φ] : QuasiIso (L ◁ φ) := by
+  have (p : ℕ) : Projective (K.homology p) := ModuleCat.projective_of_categoryTheory_projective _
+  have (p : ℕ) : Projective (K'.homology p) :=
+    Projective.of_iso (asIso (homologyMap φ p)) inferInstance
+  have (p : ℕ) : Projective (K.X p) := ModuleCat.projective_of_categoryTheory_projective _
+  have (p : ℕ) : Projective (K'.X p) := ModuleCat.projective_of_categoryTheory_projective _
+  have := K.isSplitMono_iCycles_of_projective_homology
+  have := K'.isSplitMono_iCycles_of_projective_homology
+  -- `φ` is a homotopy equivalence, and the tensor product preserves homotopy equivalences
+  have e := HomotopyEquiv.mapBifunctor_hom (F := curriedTensor (ModuleCat.{u} R))
+    (c := ComplexShape.down ℕ) (HomotopyEquiv.refl L) (HomotopyEquiv.ofQuasiIso φ)
+  have : QuasiIso (HomotopyEquiv.mapBifunctor (curriedTensor (ModuleCat.{u} R))
+      (ComplexShape.down ℕ) (HomotopyEquiv.refl L) (HomotopyEquiv.ofQuasiIso φ)).hom :=
+    inferInstance
+  rw [e, HomotopyEquiv.refl_hom, HomotopyEquiv.ofQuasiIso_hom] at this
+  rw [← id_tensorHom, tensorHom_eq_mapBifunctorMap]
+  exact this
 
 end HomologicalComplex
