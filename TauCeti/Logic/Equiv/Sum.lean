@@ -56,4 +56,10 @@ theorem inr_complRangeSymmInl_apply {α β γ : Type*} (e : α ≃ β ⊕ γ)
   · exact absurd ⟨b, by rw [Function.comp_apply, ← hex, Equiv.symm_apply_apply]⟩ x.2
   · simp [complRangeSymmInl, Equiv.Set.rangeInr, hex]
 
+/-- The inverse of `Equiv.complRangeSymmInl e` sends `c` to `e.symm (Sum.inr c)`. -/
+@[simp]
+theorem coe_complRangeSymmInl_symm_apply {α β γ : Type*} (e : α ≃ β ⊕ γ) (c : γ) :
+    (e.complRangeSymmInl.symm c : α) = e.symm (Sum.inr c) :=
+  (e.symm_apply_eq.2 (by rw [← inr_complRangeSymmInl_apply, apply_symm_apply])).symm
+
 end Equiv

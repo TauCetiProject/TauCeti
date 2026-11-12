@@ -272,11 +272,12 @@ theorem hasHomotopyExtensionProperty_preimage_range_ι [∀ k, T2Space (F.obj k)
   have hw (x : F.obj k) :
       (c.ι.app (k + 1) (F.map (homOfLE k.le_succ) x) : c.pt) = (c.ι.app k x : c.pt) := by
     rw [← ConcreteCategory.comp_apply, c.w]
-  simp only [mem_preimage, mem_range, mem_image, IsEmbedding.toHomeomorph, Subtype.ext_iff]
+  simp only [mem_preimage, mem_range, mem_image, Subtype.ext_iff,
+    IsEmbedding.toHomeomorph_apply_coe]
   constructor
   · rintro ⟨x, hx⟩
-    exact ⟨_, ⟨x, rfl⟩, by simpa [hw] using hx⟩
+    exact ⟨_, ⟨x, rfl⟩, (hw x).trans hx⟩
   · rintro ⟨_, ⟨x, rfl⟩, hx⟩
-    exact ⟨x, by simpa [hw] using hx⟩
+    exact ⟨x, (hw x).symm.trans hx⟩
 
 end TauCeti

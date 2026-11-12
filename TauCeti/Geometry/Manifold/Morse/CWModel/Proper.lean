@@ -31,7 +31,8 @@ CW complex. Each band `f⁻¹[a k, a (k + 1)]` is compact, so a CW model `W k �
 CW model `W (k + 1) ≃ₕ M_{a (k + 1)}` containing `W k` as a subcomplex, with one new `λ`-cell for
 each critical point of index `λ` with value in `(a k, a (k + 1)]`
 (`TauCeti.IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel`). Every stage is a finite CW
-complex, since a compact band holds finitely many critical points.
+complex, since a compact band holds finitely many critical points
+(`TauCeti.IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel`).
 
 The colimit `X` of the stages `W k` is a CW complex whose cells are the new cells of all the stages
 (`TauCeti.cwComplexOfIsColimit`), so its `λ`-cells correspond to the critical points of index `λ`:
@@ -105,22 +106,8 @@ private theorem IsMorse.exists_sublevelCWModel_extension (hf : IsMorse I f) {a b
       ∃ e : ∀ m, cell (univ : Set S'.W) m ≃ cell (univ : Set S.W) m ⊕
           ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
         ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
-  obtain ⟨W', _, _, _, ι, h', hι, hh, e, he⟩ :=
-    hf.exists_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb S.W S.h
-  -- Only finitely many critical points lie in the compact band, so `W'` is finite.
-  have hS : (criticalPoints I f ∩ f ⁻¹' Ioc a b).Finite :=
-    (hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
-  have := RelCWComplex.finite_cells_of_finite (C := (univ : Set S.W))
-  have := hS.to_subtype
-  have : Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) :=
-    .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ f ⁻¹' Ioc a b)))
-      fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
-        cases Subtype.ext_iff.1 hxy
-        cases hx.2.symm.trans hy.2
-        rfl
-  have := RelCWComplex.finite_of_finite_cells (C := (univ : Set W'))
-    (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight e).symm))
+  obtain ⟨W', _, _, _, ι, h', _, hι, hh, e, he⟩ :=
+    hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb S.W S.h
   exact ⟨⟨W', h'⟩, ι, hι, hh, e, he⟩
 
 /-- The critical points of index `m` are the disjoint union, over `k`, of those with value in
@@ -231,8 +218,7 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
     refine monotone_nat_of_le_succ fun k ↦ ?_
     rintro _ ⟨w, rfl⟩
     exact ⟨F.map (homOfLE k.le_succ) w, by rw [← ConcreteCategory.comp_apply, c.w]⟩
-  have hB : Monotone fun k ↦ {x | f x ≤ a k} :=
-    monotone_nat_of_le_succ fun k x hx ↦ (show f x ≤ a k from hx).trans (hmono k.lt_succ_self).le
+  have hB : Monotone fun k ↦ {x | f x ≤ a k} := (sublevel_mono f).comp hmono.monotone
   have hBM : ⋃ k, {x | f x ≤ a k} = univ := eq_univ_of_forall fun x ↦
     mem_iUnion.2 (htop.eventually_ge_atTop (f x)).exists
   have hBc : IsCoherentWith (range fun k ↦ {x | f x ≤ a k}) := .of_nhds fun x ↦ by
@@ -241,14 +227,9 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
       ((isOpen_lt hf.contMDiff.continuous continuous_const).mem_nhds hk) fun y hy ↦ le_of_lt hy⟩
   have hBH (k : ℕ) : HasHomotopyExtensionProperty
       ((↑) ⁻¹' {x | f x ≤ a k} : Set {x | f x ≤ a (k + 1)}) := by
-    have h := hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
+    rw [← range_sublevelInclusion f (hmono k.lt_succ_self).le]
+    exact hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
       hf.contMDiff (hmono k.lt_succ_self) (hcompact k) (hreg k) (hmono k.lt_succ_self).le
-    convert h using 1
-    ext x
-    refine ⟨fun hx ↦ ⟨⟨x, hx⟩, Subtype.ext (coe_sublevelInclusion_apply f _ _)⟩, ?_⟩
-    rintro ⟨y, rfl⟩
-    exact (show f (sublevelInclusion f _ _ _ y : M) ≤ a k by
-      rw [coe_sublevelInclusion_apply]; exact y.2)
   obtain ⟨h, -, -⟩ := exists_homotopyEquiv_of_isCoherentWith hA hB
     (TopCat.iUnion_range_ι_of_isColimit hc) hBM (TopCat.isCoherentWith_range_ι_of_isColimit hc)
     hBc (hasHomotopyExtensionProperty_preimage_range_ι hF hιc hc) hBH g eA heA

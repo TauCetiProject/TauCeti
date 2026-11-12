@@ -27,8 +27,8 @@ and homotopies can be modified on the base or on a skeleton and extended over th
   property inside the complex.
 * `TauCeti.hasHomotopyExtensionProperty_base`: **the base of a relative CW complex has the
   homotopy extension property inside the complex.**
-* `TauCeti.hasHomotopyExtensionProperty_subcomplex`: a subcomplex has the homotopy extension
-  property inside the complex, since the complex is a CW complex relative to it.
+* `Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty`: a subcomplex has the homotopy
+  extension property inside the complex, since the complex is a CW complex relative to it.
 * `TauCeti.hasHomotopyExtensionProperty_range_of_coe_map_eq`: the range of a map between CW
   complexes carrying every cell onto a cell, characteristic maps included, has the homotopy
   extension property, being a subcomplex.
@@ -154,8 +154,8 @@ theorem hasHomotopyExtensionProperty_base :
 complex.** The complex is a CW complex relative to the subcomplex
 (`Topology.RelCWComplex.Subcomplex.relCWComplex`), whose base has the homotopy extension property.
 -/
-theorem hasHomotopyExtensionProperty_subcomplex (E : Subcomplex C) :
-    HasHomotopyExtensionProperty (Subtype.val ⁻¹' (E : Set X) : Set C) :=
+theorem _root_.Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty
+    (E : Subcomplex C) : HasHomotopyExtensionProperty (Subtype.val ⁻¹' (E : Set X) : Set C) :=
   @hasHomotopyExtensionProperty_base X _ _ C E E.relCWComplex
 
 /-- **The range of a cellular embedding has the homotopy extension property.** Let `X` and `Y`
@@ -188,7 +188,7 @@ theorem hasHomotopyExtensionProperty_range_of_coe_map_eq {W Y : Type*} [Topologi
         refine mem_iUnion₂.2 ⟨n, ⟨ι n i, i, rfl⟩, ?_⟩
         rw [openCell, himage]
         exact mem_image_of_mem g hw)
-  have h := (hasHomotopyExtensionProperty_subcomplex E).image (Homeomorph.Set.univ Y)
+  have h := E.hasHomotopyExtensionProperty.image (Homeomorph.Set.univ Y)
   rwa [Homeomorph.Set.univ_apply, image_preimage_eq_range_inter, Subtype.range_coe, univ_inter]
     at h
 
