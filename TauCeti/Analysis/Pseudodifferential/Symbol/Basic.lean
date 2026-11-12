@@ -1377,6 +1377,26 @@ theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : 
     (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
   (rfl)
 
+theorem coefficient_map_eq_comp (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) :
+    (a.map Φ).coefficient = Φ ∘ a.coefficient :=
+  funext (coefficient_map Φ a)
+
+/-- Mixed derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem mixedDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
+    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (a.map Φ).coefficient x ξ = Φ (mixedDeriv α β a.coefficient x ξ) := by
+  rw [coefficient_map_eq_comp, Φ.mixedDeriv_comp_left a.contDiff_coefficient]
+
+/-- Iterated derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem iteratedFDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) (k : ℕ)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    iteratedFDeriv ℝ k (a.map Φ).coefficient p =
+      Φ.compContinuousMultilinearMap (iteratedFDeriv ℝ k a.coefficient p) := by
+  rw [coefficient_map_eq_comp]
+  exact Φ.iteratedFDeriv_comp_left a.contDiff_coefficient.contDiffAt (by exact_mod_cast le_top)
+
 /-- The coefficient of the symbol transported by conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` along
 isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'` is the conjugated coefficient. -/
 theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W') (a : Symbol n V W m) :
@@ -1413,8 +1433,7 @@ theorem IsUniform.map {a : Symbol n V W m} (ha : a.IsUniform)
   intro α β
   obtain ⟨C, hC0, hC⟩ := ha α β
   refine ⟨‖Φ‖ * C, by positivity, fun x ξ ↦ ?_⟩
-  rw [show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
-    Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
+  rw [mixedDeriv_map, mul_assoc]
   exact Φ.le_opNorm_of_le (hC x ξ)
 
 end Map

@@ -83,10 +83,6 @@ private theorem coefficient_conj (a : Symbol n V W m) (g : G)
     (conj σV σW a g).coefficient p = σW g ∘L a.coefficient p ∘L σV g⁻¹ := by
   rw [conj, coefficient_map, ContinuousLinearMap.coe_restrictScalars', conjCLM_apply]
 
-private theorem coefficient_conj_eq_comp (a : Symbol n V W m) (g : G) :
-    (conj σV σW a g).coefficient = (conjCLM (σW g) (σV g⁻¹)).restrictScalars ℝ ∘ a.coefficient :=
-  funext fun p => coefficient_map _ a p
-
 /-- The spatial jets of the conjugates are jointly continuous in the group element and the
 position-frequency variables. -/
 private theorem continuous_iteratedFDeriv_conj [IsTopologicalGroup G] (a : Symbol n V W m) (k : ℕ) :
@@ -96,9 +92,7 @@ private theorem continuous_iteratedFDeriv_conj [IsTopologicalGroup G] (a : Symbo
       iteratedFDeriv ℝ k (conj σV σW a q.1).coefficient q.2 =
         ((conjCLM (σW q.1) (σV q.1⁻¹)).restrictScalars ℝ).compContinuousMultilinearMap
           (iteratedFDeriv ℝ k a.coefficient q.2) := by
-    rw [coefficient_conj_eq_comp]
-    exact ContinuousLinearMap.iteratedFDeriv_comp_left _ a.contDiff_coefficient.contDiffAt
-      (by exact_mod_cast le_top)
+    rw [conj, iteratedFDeriv_map]
   refine Continuous.congr ?_ fun q => (h q).symm
   exact (isBoundedBilinearMap_compMultilinear (𝕜 := ℝ)
     (E := fun _ : Fin k => CoordinateSpace n × CoordinateSpace n)).continuous.comp
@@ -113,9 +107,7 @@ private theorem norm_mixedDeriv_conj_le (a : Symbol n V W m) (g : G) (α β : Li
       ‖σW g‖ * ‖σV g⁻¹‖ * ‖mixedDeriv α β a.coefficient x ξ‖ := by
   calc ‖mixedDeriv α β (conj σV σW a g).coefficient x ξ‖
       = ‖σW g ∘L mixedDeriv α β a.coefficient x ξ ∘L σV g⁻¹‖ := by
-        rw [coefficient_conj_eq_comp, ContinuousLinearMap.mixedDeriv_comp_left _
-          a.contDiff_coefficient, ContinuousLinearMap.coe_restrictScalars',
-          conjCLM_apply]
+        rw [conj, mixedDeriv_map, ContinuousLinearMap.coe_restrictScalars', conjCLM_apply]
     _ ≤ ‖σW g‖ * (‖mixedDeriv α β a.coefficient x ξ‖ * ‖σV g⁻¹‖) :=
         (ContinuousLinearMap.opNorm_comp_le _ _).trans
           (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
