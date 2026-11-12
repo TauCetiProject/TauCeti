@@ -40,7 +40,7 @@ namespace Function
 negative integers. -/
 theorem extend_natCast_of_neg {α : Sort*} (a : ℕ → α) (e : ℤ → α) {n : ℤ} (hn : n < 0) :
     extend ((↑) : ℕ → ℤ) a e n = e n :=
-  extend_apply' _ _ _ fun ⟨m, hm⟩ => by omega
+  extend_apply' _ _ _ fun ⟨_, _⟩ => by omega
 
 /-- To prove a property of a translated natural-number extension, it suffices to check
 integers below the anchor and natural-number offsets from it. -/

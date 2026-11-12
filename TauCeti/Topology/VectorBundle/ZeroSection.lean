@@ -8,16 +8,14 @@ module
 public import Mathlib.Topology.VectorBundle.Basic
 
 /-!
-# The zero section of a bundle and the graphs of sections
+# The zero section and the zeros of a section
 
 The zero section `Bundle.zeroSection F E : B → TotalSpace F E` of a bundle whose fibres have a
-zero sends `x` to the zero of the fibre over `x`. It is injective
-(`Bundle.zeroSection_injective`), a point `(x, v)` of the total space lies on it exactly when
-`v = 0` (`Bundle.mk_mem_range_zeroSection_iff`), and so the graph of a section `s` meets the zero
-section exactly over the zeros of `s` (`Bundle.range_section_inter_range_zeroSection`). These
-are the set-theoretic facts used to count the intersection points of the graph of a section with
-the zero section, for instance the intersections of the graph of a one-form with the zero section
-of a cotangent bundle. No topology or linear structure is involved.
+zero is injective (`Bundle.zeroSection_injective`). The image of a section `s` meets the image of
+the zero section exactly over the zeros of `s` (`Bundle.range_mk_inter_range_zeroSection`): two
+sections of a bundle meet only over the points where they agree. No topology or linear structure
+is used. A point of the total space lies on the zero section exactly when its fibre component
+is zero (`Bundle.mk_mem_range_zeroSection_iff`).
 -/
 
 public section
@@ -29,9 +27,9 @@ namespace Bundle
 variable {B F : Type*} {E : B → Type*} [∀ x, Zero (E x)]
 
 variable (F E) in
-/-- The zero section of a bundle is injective. -/
+/-- The zero section of a bundle is injective, since the projection is a left inverse of it. -/
 theorem zeroSection_injective : Function.Injective (zeroSection F E) :=
-  Function.LeftInverse.injective (g := TotalSpace.proj) (zeroSection_proj F E)
+  Function.LeftInverse.injective (g := TotalSpace.proj) fun _ ↦ rfl
 
 /-- A point `(x, v)` of the total space lies on the zero section exactly when `v = 0`. -/
 -- The priority lets this fire before `Set.mem_range` unfolds the membership.
@@ -43,17 +41,20 @@ theorem mk_mem_range_zeroSection_iff {x : B} {v : E x} :
   obtain rfl : y = x := congrArg TotalSpace.proj hy
   exact (TotalSpace.mk_inj.mp hy).symm
 
-/-- **The graph of a section meets the zero section over its zeros.** The graph of a section `s`
-of a bundle meets the zero section in the zeros of the fibres over the zeros of `s`. -/
-theorem range_section_inter_range_zeroSection (s : ∀ x, E x) :
+/-- **A section meets the zero section over its zeros.** The image of a section `s` of a bundle
+meets the image of the zero section exactly in the zero vectors over the points where `s`
+vanishes. -/
+theorem range_mk_inter_range_zeroSection (s : ∀ x, E x) :
     range (fun x ↦ TotalSpace.mk' F x (s x)) ∩ range (zeroSection F E) =
       zeroSection F E '' {x | s x = 0} := by
-  ext z
+  ext v
+  simp only [mem_inter_iff, mem_range, mem_image, mem_ofPred_eq]
   constructor
-  · rintro ⟨⟨x, rfl⟩, hz⟩
-    have hx : s x = 0 := mk_mem_range_zeroSection_iff.mp hz
-    exact ⟨x, hx, by simp [zeroSection, hx]⟩
-  · rintro ⟨x, hx : s x = 0, rfl⟩
-    exact ⟨⟨x, by simp [zeroSection, hx]⟩, mem_range_self x⟩
+  · rintro ⟨⟨x, rfl⟩, y, hy⟩
+    -- Both sections pass through `v`, so they lie over the same point and agree there.
+    obtain rfl : y = x := congrArg TotalSpace.proj hy
+    exact ⟨y, (TotalSpace.mk_inj.mp hy).symm, hy⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨⟨x, by rw [zeroSection, hx]⟩, x, rfl⟩
 
 end Bundle

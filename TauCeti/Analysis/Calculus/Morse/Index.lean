@@ -395,17 +395,17 @@ theorem morseIndex_neg_add_morseIndex_eq_finrank
     QuadraticForm.sigPos_add_sigNeg_of_nondegenerate (hessianQuadraticForm f x) h
 
 /-- At a nondegenerate critical point, the positive index of the Hessian and the Morse index add
-to the dimension of the ambient space. -/
+to the dimension of the ambient space. For a space that is not finite both sides are `0` by
+convention. -/
 theorem IsNondegenerateCriticalPoint.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
-    [FiniteDimensional ℝ E] (h : IsNondegenerateCriticalPoint f x) :
+    (h : IsNondegenerateCriticalPoint f x) :
     sigPos (hessianQuadraticForm f x) + morseIndex f x = Module.finrank ℝ E := by
-  have hsig := QuadraticForm.sigPos_add_sigNeg_add_radical
-    (Q := hessianQuadraticForm f x)
-  rw [h.hessianQuadraticForm_nondegenerate.radical_eq_bot, finrank_bot, add_zero] at hsig
-  simpa only [morseIndex_def] using hsig
+  simpa only [morseIndex_def] using
+    QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _ h.hessianQuadraticForm_nondegenerate
 
 /-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
-the dimension of the ambient space. -/
+the dimension of the ambient space. For a space that is not finite both sides are `0` by
+convention. -/
 theorem IsNondegenerateCriticalPoint.morseIndex_neg_add_morseIndex_eq_finrank
     (h : IsNondegenerateCriticalPoint f x) :
     morseIndex (-f) x + morseIndex f x = Module.finrank ℝ E := by

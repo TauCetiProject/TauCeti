@@ -6,45 +6,49 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
+public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-import TauCeti.Topology.VectorBundle.ZeroSection
+public import TauCeti.Topology.VectorBundle.ZeroSection
 
 /-!
-# Intersections of the zero section with the graph of a differential
+# Intersections of the zero section with graphs of differentials
 
-A smooth one-form `α` on a manifold `M` is a section `x ↦ α_x` of the cotangent bundle
-`T*M = TauCeti.CotangentBundle I M`, and its graph meets the zero section exactly over the zeros of
-`α` (`Bundle.range_section_inter_range_zeroSection`). For the differential `df` of a smooth function
-`f`, whose value at `x` is the manifold derivative of `f`
-(`TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`), these zeros are the critical points of `f`
-(`TauCeti.criticalPoints`). So the zero section of `T*M` meets the graph of `df` exactly in the
-zero covectors over the critical points of `f`
-(`TauCeti.CotangentBundle.range_section_mextDerivₗ_inter_range_zeroSection`), and the number of
-intersection points, in `ℕ∞`, is the number of critical points of `f`
-(`TauCeti.CotangentBundle.encard_range_section_mextDerivₗ_inter_range_zeroSection`).
+A smooth one-form `α` on a manifold `M` is a section `s_α : x ↦ α_x` of the cotangent bundle
+`T*M`, whose image is the graph of `α`. Two sections of a bundle meet only over the points where
+they agree, so the graph of `α` meets the zero section of `T*M` exactly over the zeros of `α`
+(`Bundle.range_mk_inter_range_zeroSection`). For the differential `df` of a smooth function these
+zeros are the critical points of `f`
+(`TauCeti.CotangentBundle.range_section_mextDerivₗ_inter_range_zeroSection`), and since the zero
+section is injective, the number of intersection points, in `ℕ∞`, is the number of critical
+points of `f` (`TauCeti.CotangentBundle.encard_range_section_mextDerivₗ_inter_range_zeroSection`).
 
-The zero section and the graph of `df` are both exact Lagrangian maps into `T*M`
+On a finite-dimensional manifold the zero section and the graph of `df` are both exact Lagrangian
 (`TauCeti.CotangentBundle.isExactLagrangianMap_zeroSection`,
-`TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`), and the graph of `df` is a Hamiltonian
-deformation of the zero section. When `M` is compact and boundaryless with at least two points,
-`f` attains its maximum and its minimum, both critical, and if these coincide then `f` is constant
-and every point is critical. So the graph of `df` meets the zero section in at least two distinct
-points (`TauCeti.CotangentBundle.two_le_encard_range_section_mextDerivₗ_inter_range_zeroSection`).
+`TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`). When `M` is compact, boundaryless
+and has at least two points, they meet in at least two distinct points
+(`TauCeti.CotangentBundle.two_le_encard_range_section_mextDerivₗ_inter_range_zeroSection`): if `f`
+is not constant, over a point of maximum and a different point of minimum, and if `f` is constant,
+over every point of `M`. This is the elementary lower bound for the intersections of the zero
+section with the graph of an exact one-form. It needs neither finite dimension nor
+nondegeneracy of the critical points, and it fails on manifolds with boundary: the graph of
+`d(t)` on `[0, 1]` misses the zero section.
 
 ## Main results
 
 * `TauCeti.CotangentBundle.range_section_mextDerivₗ_inter_range_zeroSection`: the graph of `df`
-  meets the zero section exactly over the critical points of `f`.
+  meets the zero section over the critical points of `f`.
 * `TauCeti.CotangentBundle.encard_range_section_mextDerivₗ_inter_range_zeroSection`: the number
-  of intersection points is the number of critical points of `f`.
+  of these intersection points is the number of critical points of `f`.
 * `TauCeti.CotangentBundle.two_le_encard_range_section_mextDerivₗ_inter_range_zeroSection`: on a
-  compact boundaryless manifold with at least two points, the graph of `df` meets the zero section
-  in at least two distinct points.
+  compact boundaryless manifold with at least two points there are at least two of them.
 
 ## References
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
-  Springer, 2001, Section 3 (Lagrangian graphs of closed one-forms and the zero section).
+  Springer, 2001, Section 3 (Lagrangian graphs of one-forms in cotangent bundles).
+* D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
+  Chapter 9 (the intersections of the graph of `df` with the zero section are the critical points
+  of `f`).
 -/
 
 public section
@@ -60,46 +64,46 @@ namespace CotangentBundle
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 2 M]
 
-/-- **The intersection of the graph of `df` with the zero section.** The graph of the differential
-of a smooth function `f` meets the zero section of the cotangent bundle in the zero covectors over
-the critical points of `f`. -/
+variable [IsManifold I 2 M]
+
+/-- **The graph of `df` meets the zero section over the critical points of `f`.** The image of the
+section of the cotangent bundle defined by the differential of a smooth function `f` meets the
+image of the zero section exactly in the zero covectors over the critical points of `f`. -/
 theorem range_section_mextDerivₗ_inter_range_zeroSection (f : SmoothForm I M ℝ 0) :
-    range (fun x ↦
-        TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) ∩
+    range (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x
+          (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) ∩
         range (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) =
       zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ''
         criticalPoints I (fun y ↦ f.1 y 0) := by
-  rw [range_section_inter_range_zeroSection]
+  rw [range_mk_inter_range_zeroSection]
   simp_rw [SmoothForm.degreeOneEquiv_mextDerivₗ, ← mem_criticalPoints, ofPred_mem_eq]
 
-/-- **Counting the intersections of the graph of `df` with the zero section.** The number of
-points in which the graph of the differential of a smooth function `f` meets the zero section of
-the cotangent bundle, in `ℕ∞`, is the number of critical points of `f`. -/
+/-- **The graph of `df` meets the zero section once for each critical point of `f`.** The
+extended number of intersection points of the graph of the differential of a smooth function `f`
+with the zero section of the cotangent bundle is the number of critical points of `f`. -/
 theorem encard_range_section_mextDerivₗ_inter_range_zeroSection (f : SmoothForm I M ℝ 0) :
-    (range (fun x ↦
-        TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) ∩
+    (range (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x
+          (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) ∩
         range (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))).encard =
       totalCriticalCount I (fun y ↦ f.1 y 0) := by
-  rw [range_section_mextDerivₗ_inter_range_zeroSection, totalCriticalCount_def,
-    (zeroSection_injective _ _).encard_image]
+  rw [range_section_mextDerivₗ_inter_range_zeroSection, totalCriticalCount_def]
+  exact (zeroSection_injective _ _).encard_image _
 
-/-- **The graph of `df` meets the zero section twice.** On a compact boundaryless manifold with at
-least two points, the graph of the differential of a smooth function `f` meets the zero section of
-the cotangent bundle in at least two distinct points: over a maximum and a minimum of `f`, or over
-any two points when `f` is constant. -/
+/-- **The graph of `df` meets the zero section at least twice.** On a compact boundaryless
+manifold with at least two points, the graph of the differential of a smooth function `f` meets
+the zero section of the cotangent bundle in at least two distinct points: over a maximum and a
+minimum of `f` when `f` is not constant, and over every point when it is. -/
 theorem two_le_encard_range_section_mextDerivₗ_inter_range_zeroSection [I.Boundaryless]
     [CompactSpace M] [Nontrivial M] (f : SmoothForm I M ℝ 0) :
-    2 ≤ (range (fun x ↦
-        TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) ∩
+    2 ≤ (range (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x
+          (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) ∩
         range (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))).encard := by
   rw [encard_range_section_mextDerivₗ_inter_range_zeroSection]
-  refine two_le_totalCriticalCount ?_
-  -- A smooth `0`-form is a smooth function.
-  have hf := SmoothForm.isSmoothForm f
-  rw [RoughForm.eq_ofFunction f.1, isSmoothForm_ofFunction_iff] at hf
-  exact hf.continuous
+  refine two_le_totalCriticalCount (ContMDiff.continuous (I := I) (I' := 𝓘(ℝ)) (n := ∞) ?_)
+  -- The function of a smooth `0`-form is smooth.
+  rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
+  exact f.isSmoothForm
 
 end CotangentBundle
 

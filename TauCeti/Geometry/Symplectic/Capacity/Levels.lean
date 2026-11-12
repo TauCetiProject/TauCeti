@@ -100,7 +100,7 @@ private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegen
     hamiltonianVectorField_comp (hφ _) (hF x)
   -- `F` is constant along `γ`, since `dF(X_{φ ∘ F}) = φ'(F) dF(X_F) = 0`.
   have hlev (t : ℝ) : F (γ t) = F (γ 0) :=
-    (hγ.isMIntegralCurveOn univ).apply_eq_of_mvfderiv_apply_eq_zero isOpen_univ
+    (hγ.isMIntegralCurveOn univ).apply_eq_of_mvfderiv_apply_eq_zero
       isPreconnected_univ (fun u _ ↦ hF _) (fun u _ ↦ by
         rw [hX, map_smul,
           (hσ.isHamiltonianVectorField_hamiltonianVectorField F).mvfderiv_apply_self, smul_zero])
