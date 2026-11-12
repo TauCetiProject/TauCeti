@@ -18,7 +18,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
-import TauCeti.Analysis.SpecialFunctions.Pow.NormSqAdd
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
@@ -86,7 +86,7 @@ theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
 /-! ### Polynomials -/
 
 /-- Every complex polynomial is in every local Sobolev class on every set. -/
-theorem _root_.Polynomial.memWkpLoc_eval (P : Polynomial ℂ) (U : Set ℂ) (k : ℕ) :
+protected theorem _root_.Polynomial.memWkpLoc (P : Polynomial ℂ) (U : Set ℂ) (k : ℕ) :
     MemWkpLoc p U k (fun z => P.eval z) :=
   P.differentiable.differentiableOn.memWkpLoc (Ω := ⊤) (subset_univ U) k
 
@@ -179,10 +179,11 @@ private theorem hasFDerivAt_unitRadialCoord {c : ℝ} (e : ℂ) {z : ℂ} (hz : 
     (Or.inl hz.ne')
   convert hr.mul (innerSL ℝ e).hasFDerivAt using 1
   · rfl
+  have h32 : (-(1 / 2) - 1 : ℝ) = -(3 / 2) := by norm_num
   ext v
   simp only [unitRadialCoordDeriv, sub_apply, add_apply, smul_apply, smul_eq_mul, id,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, innerSL_apply_apply]
-  norm_num [nsmul_eq_mul]
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, innerSL_apply_apply, h32,
+    nsmul_eq_mul]
   ring
 
 private theorem norm_unitRadialCoord_le {c : ℝ} (hc : 0 ≤ c) (e z : ℂ) :
@@ -193,7 +194,7 @@ private theorem norm_unitRadialCoord_le {c : ℝ} (hc : 0 ≤ c) (e z : ℂ) :
   calc _ ≤ ‖z‖⁻¹ * (‖e‖ * ‖z‖) := by
         gcongr
         · exact rpow_norm_sq_add_neg_half_le hc hz
-        · exact (innerSL ℝ e).le_of_opNorm_le (innerSL_apply_norm ℝ e).le z
+        · simpa only [innerSL_apply_apply] using norm_inner_le_norm (𝕜 := ℝ) e z
     _ = ‖e‖ := by field_simp [norm_ne_zero_iff.2 hz]
 
 private theorem norm_unitRadialCoordDeriv_le {c : ℝ} (hc : 0 ≤ c) (e : ℂ) {z : ℂ} (hz : z ≠ 0) :
@@ -203,8 +204,8 @@ private theorem norm_unitRadialCoordDeriv_le {c : ℝ} (hc : 0 ≤ c) (e : ℂ) 
     calc _ ≤ (‖z‖ ^ 2 + c) ^ (-(3 / 2) : ℝ) * (‖z‖ ^ 2 + c) := by gcongr; linarith
       _ = _ := by rw [← Real.rpow_add_one hs.ne']; norm_num
   have h1 := rpow_norm_sq_add_neg_half_le hc hz
-  have hez : ‖innerSL ℝ e z‖ ≤ ‖e‖ * ‖z‖ :=
-    (innerSL ℝ e).le_of_opNorm_le (innerSL_apply_norm ℝ e).le z
+  have hez : ‖innerSL ℝ e z‖ ≤ ‖e‖ * ‖z‖ := by
+    simpa only [innerSL_apply_apply] using norm_inner_le_norm (𝕜 := ℝ) e z
   refine (norm_sub_le _ _).trans ?_
   rw [norm_smul, norm_smul, norm_mul, innerSL_apply_norm, innerSL_apply_norm,
     Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
@@ -237,12 +238,12 @@ private theorem measurable_unitRadialCoordDeriv (c : ℝ) (e : ℂ) :
 
 private theorem tendsto_unitRadialCoord (e : ℂ) {z : ℂ} (hz : z ≠ 0) :
     Tendsto (fun c => unitRadialCoord c e z) (𝓝 0) (𝓝 (unitRadialCoord 0 e z)) :=
-  ((continuousAt_rpow_norm_sq_add hz _).mul continuousAt_const).tendsto
+  ((continuousAt_zero_rpow_norm_sq_add_right hz _).mul continuousAt_const).tendsto
 
 private theorem tendsto_unitRadialCoordDeriv (e : ℂ) {z : ℂ} (hz : z ≠ 0) :
     Tendsto (fun c => unitRadialCoordDeriv c e z) (𝓝 0) (𝓝 (unitRadialCoordDeriv 0 e z)) :=
-  (((continuousAt_rpow_norm_sq_add hz _).smul continuousAt_const).sub
-    (((continuousAt_rpow_norm_sq_add hz _).mul continuousAt_const).smul
+  (((continuousAt_zero_rpow_norm_sq_add_right hz _).smul continuousAt_const).sub
+    (((continuousAt_zero_rpow_norm_sq_add_right hz _).mul continuousAt_const).smul
       continuousAt_const)).tendsto
 
 private theorem locallyIntegrable_unitRadialCoord {c : ℝ} (hc : 0 ≤ c) (e : ℂ) :
@@ -352,12 +353,12 @@ private def normDeriv (z : ℂ) : ℂ →L[ℝ] ℝ :=
 private theorem hasFDerivAt_norm_normDeriv {z : ℂ} (hz : z ≠ 0) :
     HasFDerivAt (fun y : ℂ => ‖y‖) (normDeriv z) z := by
   convert hasFDerivAt_norm_of_ne hz using 1
-  have h : (‖z‖ ^ 2 + 0) ^ (-(1 / 2) : ℝ) = ‖z‖⁻¹ := by
-    rw [add_zero, Real.rpow_neg (sq_nonneg _), ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _)]
+  have h : (‖z‖ ^ 2 + 0) ^ (-(1 / 2) : ℝ) = ‖z‖⁻¹ := by rw [add_zero, rpow_norm_sq_neg_half]
   ext v
   simp only [normDeriv, unitRadialCoord, h, add_apply, smul_apply, smul_eq_mul,
-    innerSL_apply_apply, Complex.reCLM_apply, Complex.imCLM_apply, Complex.inner]
-  simp
+    innerSL_apply_apply, Complex.reCLM_apply, Complex.imCLM_apply, Complex.inner, map_one,
+    Complex.conj_I, Complex.conj_re, Complex.conj_im, Complex.mul_re, Complex.neg_re,
+    Complex.neg_im, Complex.one_re, Complex.one_im, Complex.I_re, Complex.I_im]
   ring
 
 private theorem memWkpLoc_one_normDeriv (hp : p < 2) : MemWkpLoc p U 1 normDeriv := by
@@ -652,7 +653,7 @@ theorem not_memWkpLoc_two_abs_im {z₀ : ℂ} (hz₀ : z₀ ∈ interior U) (him
   -- Rotate by a quarter turn, so that the axis becomes the imaginary axis.
   let A : ℂ ≃L[ℝ] ℂ := ((LinearEquiv.smulOfNeZero ℂ ℂ Complex.I Complex.I_ne_zero).restrictScalars
     ℝ).toContinuousLinearEquiv
-  have hA : ∀ z, A z = Complex.I * z := fun z => rfl
+  have hA : ∀ z, A z = Complex.I * z := fun z => by simp [A]
   have hmaps : MapsTo (fun z => A z + z₀) (ball 0 r) U := fun z hz => by
     refine interior_subset (hrU ?_)
     rw [mem_ball, dist_eq_norm, add_sub_cancel_right, hA, norm_mul, Complex.norm_I, one_mul]

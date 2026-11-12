@@ -14,7 +14,6 @@ public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.Complex.ReImTopology
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
