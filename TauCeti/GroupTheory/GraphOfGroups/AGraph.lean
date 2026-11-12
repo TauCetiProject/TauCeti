@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Serre.Tree
 public import TauCeti.GroupTheory.GraphOfGroups.Path
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.Rank
@@ -174,19 +175,6 @@ abbrev toGraphOfGroups : GraphOfGroups.{u', v', w, 0} B.graph where
 
 /-! ### The path map -/
 
-/-- The type `[f] : [a] ⟶ [b]` of an arrow `f : a ⟶ b` of the underlying graph: the image of `f`
-under the type map, as an arrow between the types of its endpoints. -/
-def typeArrow {a b : B.graph.V} (f : a ⟶ b) : B.typ.mapV a ⟶ B.typ.mapV b :=
-  B.typ.toPrefunctor.map f
-
-@[simp] theorem typeArrow_val {a b : B.graph.V} (f : a ⟶ b) :
-    (B.typeArrow f).1 = B.typ.mapE f.1 :=
-  (rfl)
-
-theorem typeArrow_reverse {a b : B.graph.V} (f : a ⟶ b) :
-    B.typeArrow (Quiver.reverse f) = Quiver.reverse (B.typeArrow f) :=
-  Prefunctor.map_reverse ..
-
 /-- The `𝔸`-path read along a letter of a `𝔹`-path: an element `b ∈ B_u` is read as the letter
 `b ∈ A_[u]`, and a dart `f` as the letters `f_α, [f], f_ω`. -/
 def letterPath : ∀ {x y : B.toGraphOfGroups.LetterVertex}, B.toGraphOfGroups.Letter x y →
@@ -195,7 +183,7 @@ def letterPath : ∀ {x y : B.toGraphOfGroups.LetterVertex}, B.toGraphOfGroups.L
   | _, _, .dart f =>
     ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
         ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1))).comp
-      (Path.ofDart (B.typeArrow f))).comp
+      (Path.ofDart (a := B.typ.mapV _) (b := B.typ.mapV _) (B.typ.toPrefunctor.map f))).comp
       (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
         ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2)) (B.labelω f.1)))
 
@@ -207,7 +195,8 @@ def letterPath : ∀ {x y : B.toGraphOfGroups.LetterVertex}, B.toGraphOfGroups.L
 @[simp] theorem letterPath_dart (e : B.graph.E) :
     B.letterPath (Letter.dart (𝔸 := B.toGraphOfGroups) (B.graph.dart e)) =
       ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src e) (B.labelα e))).comp
-        (Path.ofDart (B.typeArrow (B.graph.dart e)))).comp
+        (Path.ofDart (a := B.typ.mapV _) (b := B.typ.mapV _)
+          (B.typ.toPrefunctor.map (B.graph.dart e)))).comp
         (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ e) (B.labelω e))) := by
   rw [letterPath, B.cast_labelα_congr (B.graph.dart_val e) _ (B.typ.map_src e),
     B.cast_labelω_congr (B.graph.dart_val e) _ (B.typ.map_tgt _ e)]
@@ -246,7 +235,8 @@ variable {x y z : B.toGraphOfGroups.LetterVertex}
 @[simp] theorem pathMap_ofDart (e : B.graph.E) :
     B.pathMap (Path.ofDart (𝔸 := B.toGraphOfGroups) (B.graph.dart e)) =
       ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src e) (B.labelα e))).comp
-        (Path.ofDart (B.typeArrow (B.graph.dart e)))).comp
+        (Path.ofDart (a := B.typ.mapV _) (b := B.typ.mapV _)
+          (B.typ.toPrefunctor.map (B.graph.dart e)))).comp
         (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ e) (B.labelω e))) := by
   have h := Path.comp_ofDart (𝔸 := B.toGraphOfGroups) Quiver.Path.nil (B.graph.dart e)
   rw [Quiver.Path.nil_comp] at h
@@ -288,9 +278,12 @@ theorem letterPath_reverse (l : B.toGraphOfGroups.Letter x y) :
     rfl
   | dart f =>
     rw [Letter.reverse_dart, letterPath, letterPath, cast_labelα_reverse, cast_labelω_reverse,
-      typeArrow_reverse]
-    simp only [Quiver.Path.reverse_comp, Path.reverse_ofVertex, Path.reverse_ofDart,
-      Quiver.Path.comp_assoc]
+      Prefunctor.map_reverse]
+    simp only [Quiver.Path.reverse_comp, Path.reverse_ofVertex, Quiver.Path.comp_assoc,
+      Path.reverse_ofDart (a := B.typ.mapV _) (b := B.typ.mapV _) (B.typ.toPrefunctor.map f)]
+    -- The endpoints of `Quiver.reverse (B.typ.toPrefunctor.map f)` are `obj b, obj a` on the left
+    -- and `mapV b, mapV a` on the right; they agree only after unfolding `Hom.toPrefunctor`.
+    rfl
 
 /-- The path map commutes with reversal. -/
 @[simp] theorem pathMap_reverse (p : B.toGraphOfGroups.Path x y) :
@@ -677,9 +670,7 @@ generated. -/
 theorem segment_isFinite_iff : (segment f g hf hg P₀ Q₀ a b).IsFinite ↔ P₀.FG ∧ Q₀.FG :=
   ⟨fun h => ⟨h.fg false, h.fg true⟩, fun h =>
     { finite_E := inferInstanceAs (Finite Bool)
-      connected := (SerreGraph.connected_iff _).2 ⟨⟨false⟩,
-        SerreGraph.preconnected_of_forall_nonempty_path _ false fun u =>
-          u.rec ⟨.nil⟩ ⟨(SerreGraph.segment.dart false).toPath⟩⟩
+      connected := SerreGraph.IsTree.connected _ SerreGraph.segment_isTree
       fg := fun u => Bool.rec h.1 h.2 u }⟩
 
 /-- The complexity of the single edge is `rank P₀ + rank Q₀`: its underlying graph is a tree. -/
