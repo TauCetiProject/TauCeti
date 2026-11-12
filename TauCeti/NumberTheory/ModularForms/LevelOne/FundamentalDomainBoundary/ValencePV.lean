@@ -817,9 +817,8 @@ closed domain's boundary identifications are exactly what the left-representativ
 already quotient by.
 
 ⚠ The sum here runs over the orbits *met by the divisor set* `S`, **not** over the whole
-non-elliptic orbit space, which is what the roadmap's Layer-1 target states. Reaching that
-needs the further step that an orbit missed by `S` contributes `0`
-(`orderOfVanishingOnOrbit_eq_zero_of_notMem`).
+non-elliptic orbit space. Reaching that needs the further step that an orbit missed by `S`
+contributes `0` (`orderOfVanishingOnOrbit_eq_zero_of_notMem`).
 
 Level one is forced: `orderOfVanishingOnOrbit` is defined for `𝒮ℒ`-invariant forms, so this
 theorem takes the level-one class rather than a general `Γ`. -/
