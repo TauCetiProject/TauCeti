@@ -38,29 +38,33 @@ public section
 open scoped FourierTransform SchwartzMap LineDeriv ContDiff
 open FourierTransform MeasureTheory Metric Module
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
+variable {E H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+  [CompleteSpace H]
 
 namespace TauCeti
 
-/-- **Kernels of dyadic pieces of symbols.** Let `g` be a smooth complex function with the symbol
-estimates `‖D^i g ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m`, and let `2N > n = dim E`,
+/-- **Kernels of dyadic pieces of symbols.** Let `g` be a smooth function, valued in a complex
+Hilbert space, with the symbol estimates `‖D^i g ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order
+`m` for `i ≤ N`, and let `2N > n = dim E`,
 `a > 0`, `b` and `B : ℕ → ℝ`. There is a constant `C` with the following property. Let `R > 0` and
 let `χ` be a smooth real function such that `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the support of `χ`
 and `‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`. Then the kernel of the dyadic piece `χ g` satisfies
 
 `∫ ‖𝓕⁻ (χ g) x‖ dx ≤ C R ^ m`. -/
-theorem exists_integral_norm_fourierInv_cutoff_smul_le {g : E → ℂ} (hg : ContDiff ℝ ∞ g) {m : ℝ}
-    (hgm : ∀ i : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i g ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2))
-    {a b : ℝ} (ha : 0 < a) {N : ℕ} (hN : finrank ℝ E < 2 * N) (B : ℕ → ℝ) :
+theorem exists_integral_norm_fourierInv_cutoff_smul_le {g : E → H} (hg : ContDiff ℝ ∞ g) {m : ℝ}
+    {N : ℕ} (hN : finrank ℝ E < 2 * N)
+    (hgm : ∀ i ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i g ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2))
+    {a b : ℝ} (ha : 0 < a) (B : ℕ → ℝ) :
     ∃ C, ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ ∞ χ →
       (∀ ξ ∈ tsupport χ, a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) →
       (∀ k ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ k χ ξ‖ ≤ B k / R ^ k) →
       ∫ x, ‖𝓕⁻ (fun ξ ↦ χ ξ • g ξ) x‖ ≤ C * R ^ m := by
   set e := stdOrthonormalBasis ℝ E
   obtain ⟨C₀, -, hC₀⟩ :=
-    SchwartzMap.exists_integral_norm_fourierInv_le_of_support_subset (H := ℂ) e hN
-  obtain ⟨K, hK, hKχ⟩ := exists_norm_iteratedFDeriv_cutoff_smul_le hg hgm (b := b) ha N B
+    SchwartzMap.exists_integral_norm_fourierInv_le_of_support_subset (H := H) e hN
+  obtain ⟨K, hK, hKχ⟩ :=
+    exists_norm_iteratedFDeriv_cutoff_smul_le (hg.of_le (mod_cast le_top)) hgm (b := b) ha B
   -- The dyadic piece is a band-limited Schwartz function at the scale `t = (√b + 1) R`, with
   -- constant `A = K (√b + 1) ^ N R ^ m`.
   refine ⟨C₀ * (K * (√b + 1) ^ N), fun R χ hR hχ hsupp hB ↦ ?_⟩
@@ -79,7 +83,7 @@ theorem exists_integral_norm_fourierInv_cutoff_smul_le {g : E → ℂ} (hg : Con
     nlinarith
   have hcs : HasCompactSupport χ :=
     (isCompact_closedBall (0 : E) t).of_isClosed_subset (isClosed_tsupport χ) hball
-  set σ : 𝓢(E, ℂ) := (hcs.smul_right (f' := g)).toSchwartzMap (hχ.smul hg)
+  set σ : 𝓢(E, H) := (hcs.smul_right (f' := g)).toSchwartzMap (hχ.smul hg)
   have hσ : ⇑σ = fun ξ ↦ χ ξ • g ξ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   have hσt : Function.support σ ⊆ closedBall 0 t := fun ξ hξ ↦ by
     refine hball (subset_tsupport _ ?_)

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
-import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
+import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
@@ -44,10 +44,11 @@ instance the mapping properties of operators of order `m` to those of order `0`.
   `g(D) : B^s_{p,q} → B^{s'}_{p,q}` for `s' = s - m`, with its tempered distribution
   `TauCeti.BesovSpace.toDistr_fourierMultiplierCLM`.
 * `TemperedDistribution.MemBesov.besselPotential`,
-  `TemperedDistribution.memBesov_besselPotential_iff`: `J^t u ∈ B^{s-t}_{p,q}` exactly when
-  `u ∈ B^s_{p,q}`.
+  `TemperedDistribution.memBesov_besselPotential_iff`: `J^t u ∈ B^s_{p,q}` exactly when
+  `u ∈ B^{t+s}_{p,q}`.
 * `TauCeti.BesovSpace.besselPotentialEquiv`: the lifting isomorphism
-  `J^t : B^s_{p,q} ≃L[ℂ] B^{s-t}_{p,q}`, with inverse `J^{-t}`.
+  `J^t : B^s_{p,q} ≃L[ℂ] B^{s'}_{p,q}` for `s' = s - t`, with inverse `J^{-t}`
+  (`TauCeti.BesovSpace.besselPotentialEquiv_symm`).
 
 ## References
 
@@ -116,15 +117,16 @@ theorem MemBesov.fourierMultiplierCLM (hg : ContDiff ℝ ∞ g)
 theorem MemBesov.besselPotential {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (t : ℝ) :
     (besselPotential E F t u).MemBesov φ (s - t) p q :=
   hu.fourierMultiplierCLM
-    (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow t)
-    (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_le t)
+    (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow (t / 2))
+    (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le t)
 
-/-- **The lifting property of Besov spaces.** `J^t u ∈ B^{s-t}_{p,q}` exactly when
-`u ∈ B^s_{p,q}`. -/
-theorem memBesov_besselPotential_iff {u : 𝓢'(E, F)} (t : ℝ) :
-    (besselPotential E F t u).MemBesov φ (s - t) p q ↔ u.MemBesov φ s p q := by
-  refine ⟨fun h ↦ ?_, fun hu ↦ hu.besselPotential t⟩
-  simpa using h.besselPotential (-t)
+/-- **The lifting property of Besov spaces.** `J^t u ∈ B^s_{p,q}` exactly when
+`u ∈ B^{t+s}_{p,q}`. -/
+@[simp]
+theorem memBesov_besselPotential_iff {u : 𝓢'(E, F)} {t : ℝ} :
+    (besselPotential E F t u).MemBesov φ s p q ↔ u.MemBesov φ (t + s) p q := by
+  refine ⟨fun h ↦ ?_, fun hu ↦ by simpa using hu.besselPotential t⟩
+  simpa [add_comm s t] using h.besselPotential (-t)
 
 end TemperedDistribution
 
@@ -184,13 +186,15 @@ theorem toDistr_fourierMultiplierCLM (hg : ContDiff ℝ ∞ g)
 
 variable (F φ p q) in
 /-- **The lifting property of Besov spaces.** The Bessel potential `J^t` of order `t` is an
-isomorphism of normed spaces `B^s_{p,q} ≃L[ℂ] B^{s-t}_{p,q}`, with inverse `J^{-t}`. -/
-def besselPotentialEquiv (s t : ℝ) : BesovSpace F φ s p q ≃L[ℂ] BesovSpace F φ (s - t) p q :=
+isomorphism of normed spaces `B^s_{p,q} ≃L[ℂ] B^{s'}_{p,q}` for `s' = s - t`, with inverse
+`J^{-t}`. -/
+def besselPotentialEquiv (t : ℝ) {s s' : ℝ} (hs : s' = s - t) :
+    BesovSpace F φ s p q ≃L[ℂ] BesovSpace F φ s' p q :=
   ContinuousLinearEquiv.equivOfInverse
-    (fourierMultiplierCLM F φ p q (contDiff_ofReal_one_add_norm_sq_rpow t)
-      (exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_le t) rfl)
-    (fourierMultiplierCLM F φ p q (contDiff_ofReal_one_add_norm_sq_rpow (-t))
-      (exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_le (-t)) (by ring))
+    (fourierMultiplierCLM F φ p q (contDiff_ofReal_one_add_norm_sq_rpow (t / 2))
+      (exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le t) hs)
+    (fourierMultiplierCLM F φ p q (contDiff_ofReal_one_add_norm_sq_rpow (-t / 2))
+      (exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (-t)) (by rw [hs]; ring))
     (fun u ↦ ext <| by
       rw [toDistr_fourierMultiplierCLM, toDistr_fourierMultiplierCLM, ← besselPotential,
         ← besselPotential, besselPotential_besselPotential_apply, add_neg_cancel,
@@ -201,15 +205,20 @@ def besselPotentialEquiv (s t : ℝ) : BesovSpace F φ s p q ≃L[ℂ] BesovSpac
         besselPotential_zero, ContinuousLinearMap.id_apply])
 
 @[simp]
-theorem toDistr_besselPotentialEquiv (t : ℝ) (u : BesovSpace F φ s p q) :
-    (besselPotentialEquiv F φ p q s t u).toDistr = besselPotential E F t u.toDistr := by
+theorem toDistr_besselPotentialEquiv (t : ℝ) {s' : ℝ} (hs : s' = s - t)
+    (u : BesovSpace F φ s p q) :
+    (besselPotentialEquiv F φ p q t hs u).toDistr = besselPotential E F t u.toDistr := by
   rw [besselPotentialEquiv, ContinuousLinearEquiv.equivOfInverse_apply,
     toDistr_fourierMultiplierCLM, besselPotential]
 
+/-- The inverse of the lifting isomorphism `J^t` is the lifting isomorphism `J^{-t}`. -/
 @[simp]
-theorem toDistr_besselPotentialEquiv_symm (t : ℝ) (v : BesovSpace F φ (s - t) p q) :
-    ((besselPotentialEquiv F φ p q s t).symm v).toDistr = besselPotential E F (-t) v.toDistr := by
-  rw [besselPotentialEquiv, ContinuousLinearEquiv.symm_equivOfInverse,
-    ContinuousLinearEquiv.equivOfInverse_apply, toDistr_fourierMultiplierCLM, besselPotential]
+theorem besselPotentialEquiv_symm (t : ℝ) {s' : ℝ} (hs : s' = s - t) :
+    (besselPotentialEquiv F φ p q t hs).symm =
+      besselPotentialEquiv F φ p q (-t) (by rw [hs, sub_neg_eq_add, sub_add_cancel]) :=
+  ContinuousLinearEquiv.ext <| funext fun v ↦ ext <| by
+    rw [toDistr_besselPotentialEquiv, besselPotentialEquiv,
+      ContinuousLinearEquiv.symm_equivOfInverse,
+      ContinuousLinearEquiv.equivOfInverse_apply, toDistr_fourierMultiplierCLM, besselPotential]
 
 end TauCeti.BesovSpace

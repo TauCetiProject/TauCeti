@@ -40,7 +40,7 @@ smoothness by `m`.
 * `TemperedDistribution.exists_besselPotential_compL_littlewoodPaleyBlock_eq` and
   `TemperedDistribution.exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le`: the two
   statements for the Bessel potential `J^s`, whose symbol is of order `s`
-  (`TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_le`).
+  (`TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`).
 
 ## References
 
@@ -80,8 +80,8 @@ theorem exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq {g : E → ℂ
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   choose B hB0 hB using fun k : ℕ ↦ φ.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le L k
   obtain ⟨a, b, ha, hab⟩ := φ.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley L
-  obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le (E := E) hg hgm
-    (b := b) ha (N := finrank ℝ E + 1) (by omega) B
+  obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le (E := E) hg
+    (N := finrank ℝ E + 1) (by omega) (fun i _ ↦ hgm i) (b := b) ha B
   refine ⟨C, fun j ↦ ?_⟩
   -- The symbol `σⱼ = Ψⱼ g`.
   set χ : E → ℝ := φ.enlargedLittlewoodPaley L j
@@ -146,8 +146,8 @@ theorem exists_besselPotential_compL_littlewoodPaleyBlock_eq (s : ℝ) :
           fourierMultiplierCLM F σ ∘L littlewoodPaleyBlock F φ j ∧
         ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * (2 ^ j) ^ s :=
   exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq φ
-    (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow s)
-    (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_le s)
+    (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow (s / 2))
+    (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s)
 
 /-- **Bessel potentials of Littlewood–Paley blocks in `Lᵖ`.** There is a constant `C ≥ 0`,
 depending only on `s` and `φ`, such that for every `1 ≤ p ≤ ∞` and every `j`: if the block
@@ -162,7 +162,7 @@ theorem exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpac
         besselPotential E F s (littlewoodPaleyBlock F φ j u) = g ∧
           ‖g‖ ≤ C * 2 ^ (s * j) * ‖f‖ :=
   exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le φ
-    (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow s)
-    (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_le s)
+    (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow (s / 2))
+    (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s)
 
 end TemperedDistribution
