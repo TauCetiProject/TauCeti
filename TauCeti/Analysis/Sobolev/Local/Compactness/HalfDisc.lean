@@ -96,7 +96,7 @@ private theorem exists_wkp_planarReflection_norm_le_of_wkp {V W : Opens ℂ} {u 
       (Opens.upperHalf_mono V.reflectionHull_le)
   have hT : MemWkpLoc p T (k + 1) u := by
     refine ((Wkp.memWkpLoc_value_of_ae_le (Opens.interior_inter_setOf_im_nonneg_eq_upperHalf V)
-      hVae.le v).congr_ae ?_).mono hTH
+      hVae.subset v).congr_ae ?_).mono hTH
     rw [Measure.restrict_congr_set hVae]
     exact hv
   -- Reflect, and compare the iterated gradients of the reflection with those of `v`.
@@ -116,7 +116,7 @@ private theorem exists_wkp_planarReflection_norm_le_of_wkp {V W : Opens ℂ} {u 
     (eLpNorm_mono_measure _ hTV).trans (hGn i hi)
   have huT : eLpNorm u p (volume.restrict T) ≤ ENNReal.ofReal ‖v‖ := by
     refine (eLpNorm_mono_measure _ hTV).trans ?_
-    rw [← eLpNorm_congr_ae hv, ← Lp.enorm_def, ← ofReal_norm]
+    rw [← eLpNorm_congr_ae hv, ← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (Wkp.norm_value_le _ v)
   -- Assemble the representative on `W` from the reflected chain.
   have hWH : W ≤ H := SetLike.coe_subset_coe.1 (subset_closure.trans hWV)
