@@ -34,7 +34,7 @@ which holds whenever the untruncated operator `f ↦ ∫ K(·, s) f(s) ds` is bo
 `1 ≤ r` and `1 / p + 1 / r > 1`, that is `p < r'`, then the truncation to `s < t` is bounded too:
 
 `‖∫_{s < t} β‖ ≤ (1 - 2^{-δ})⁻¹ A ‖f‖_p ‖g‖_r`, where `δ = 1 / p + 1 / r - 1`
-(`TauCeti.enorm_setIntegral_fst_lt_snd_le`).
+(`TauCeti.eNorm_setIntegral_fst_lt_snd_le`).
 
 This is how retarded (Duhamel) estimates `‖∫_{s < t} K(t, s) F(s) ds‖_{L^q_t} ≲ ‖F‖_{L^{p}_t}` are
 deduced from bounds on the corresponding untruncated operators, for instance the inhomogeneous
@@ -60,7 +60,7 @@ for the `2ⁿ` disjoint pieces `J_k` gives `∑_k ‖1_{J_k} g‖_r ≤ 2^{n (1 
 
 ## Main declarations
 
-* `TauCeti.enorm_setIntegral_fst_lt_snd_le`: the Christ–Kiselev lemma, in bilinear form.
+* `TauCeti.eNorm_setIntegral_fst_lt_snd_le`: the Christ–Kiselev lemma, in bilinear form.
 
 ## References
 
@@ -146,7 +146,7 @@ private theorem hasSum_setIntegral_box {G : Type*} [NormedAddCommGroup G] [Norme
 
 /-- **The Whitney bound.** The rectangle bounds of the Christ–Kiselev lemma, summed over the
 Whitney rectangles of a strictly increasing `φ : ℝ → [0, 1)`. -/
-private theorem enorm_setIntegral_fst_lt_snd_le_tsum {E F G : Type*} [NormedAddCommGroup E]
+private theorem eNorm_setIntegral_fst_lt_snd_le_tsum {E F G : Type*} [NormedAddCommGroup E]
     [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace ℝ G] {p r : ℝ≥0∞}
     (hφ : StrictMono φ) (h0 : ∀ s, 0 ≤ φ s) (h1 : ∀ s, φ s < 1) {β : ℝ × ℝ → G}
     (hβ : IntegrableOn β {z : ℝ × ℝ | z.1 < z.2}) (f : ℝ → E) (g : ℝ → F) {A : ℝ≥0∞}
@@ -156,7 +156,7 @@ private theorem enorm_setIntegral_fst_lt_snd_le_tsum {E F G : Type*} [NormedAddC
       ∑' n : ℕ, ∑ k ∈ Finset.range (2 ^ n), A * eLpNorm ((level φ (n + 1) (2 * k)).indicator f) p *
         eLpNorm ((level φ (n + 1) (2 * k + 1)).indicator g) r := by
   rw [← (hasSum_setIntegral_box hφ h0 h1 hβ).tsum_eq]
-  refine enorm_tsum_le_tsum_enorm.trans ?_
+  refine eNorm_tsum_le_tsum_eNorm.trans ?_
   rw [tsum_prod']
   refine tsum_le_tsum fun n => ?_
   rw [tsum_eq_sum (s := Finset.range (2 ^ n)) fun k hk => ?_]
@@ -261,7 +261,7 @@ private theorem sum_mul_eLpNorm_level_le {E F : Type*} [NormedAddCommGroup E] [N
   have hpiece (k : ℕ) : eLpNorm ((level φ (n + 1) k).indicator f) p ≤
       (X / 2 ^ (n + 1)) ^ p.toReal⁻¹ := by
     rw [eLpNorm_indicator_eq_eLpNorm_restrict (measurableSet_level hφ _ _).nullMeasurableSet,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp hp_top hf.restrict, one_div]
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp hp_top hf.restrict, one_div]
     gcongr
     exact hX _ _
   -- The pieces of `g` are disjoint, so Hölder's inequality sums their norms.
@@ -287,7 +287,7 @@ private theorem sum_mul_eLpNorm_level_le {E F : Type*} [NormedAddCommGroup E] [N
 
 /-- The Christ–Kiselev bound with `‖f‖_p^p` replaced by `‖f‖_p^p + ε`, from the Whitney
 decomposition along the cumulative mass of `f`. -/
-private theorem enorm_setIntegral_fst_lt_snd_le_add {E F G : Type*} [NormedAddCommGroup E]
+private theorem eNorm_setIntegral_fst_lt_snd_le_add {E F G : Type*} [NormedAddCommGroup E]
     [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace ℝ G] {p r : ℝ≥0∞}
     (hp : p ≠ 0) (hp_top : p ≠ ∞) (hr : 1 ≤ r) {β : ℝ × ℝ → G}
     (hβ : IntegrableOn β {z : ℝ × ℝ | z.1 < z.2}) {f : ℝ → E} (hf : AEStronglyMeasurable f)
@@ -299,7 +299,7 @@ private theorem enorm_setIntegral_fst_lt_snd_le_add {E F G : Type*} [NormedAddCo
       (1 - 2 ^ (1 - p.toReal⁻¹ - r.toReal⁻¹))⁻¹ * A *
         ((∫⁻ x, ‖f x‖ₑ ^ p.toReal) + ENNReal.ofReal ε) ^ p.toReal⁻¹ * eLpNorm g r := by
   obtain ⟨φ, hφ, hφ0, hφ1, hmass⟩ := exists_strictMono_setLIntegral_level_le hm hε
-  refine (enorm_setIntegral_fst_lt_snd_le_tsum hφ hφ0 hφ1 hβ f g hA).trans ?_
+  refine (eNorm_setIntegral_fst_lt_snd_le_tsum hφ hφ0 hφ1 hβ f g hA).trans ?_
   refine (tsum_le_tsum fun n =>
     sum_mul_eLpNorm_level_le hp hp_top hr hφ.monotone hf hmass g A n).trans_eq ?_
   rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
@@ -327,7 +327,7 @@ private theorem ne_top_and_toReal_inv_add_inv_sub_one {p r : ℝ≥0∞} (hp : p
 
 /-- If the bound of the Christ–Kiselev lemma vanishes, so does the integral over `{s < t}`: the
 integral over every Whitney rectangle vanishes. -/
-private theorem enorm_setIntegral_fst_lt_snd_eq_zero {E F G : Type*} [NormedAddCommGroup E]
+private theorem eNorm_setIntegral_fst_lt_snd_eq_zero {E F G : Type*} [NormedAddCommGroup E]
     [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace ℝ G] {p r : ℝ≥0∞} {β : ℝ × ℝ → G}
     (hβ : IntegrableOn β {z : ℝ × ℝ | z.1 < z.2}) (f : ℝ → E) (g : ℝ → F) {A : ℝ≥0∞}
     (hA : ∀ I J : Set ℝ, I.OrdConnected → J.OrdConnected → (∀ s ∈ I, ∀ t ∈ J, s < t) →
@@ -342,7 +342,7 @@ private theorem enorm_setIntegral_fst_lt_snd_eq_zero {E F G : Type*} [NormedAddC
     gcongr
     exacts [eLpNorm_indicator_le f hI.nullMeasurableSet,
       eLpNorm_indicator_le g hJ.nullMeasurableSet]
-  refine le_antisymm ((enorm_setIntegral_fst_lt_snd_le_tsum hσ (fun s => (hσ01 s).1.le)
+  refine le_antisymm ((eNorm_setIntegral_fst_lt_snd_le_tsum hσ (fun s => (hσ01 s).1.le)
     (fun s => (hσ01 s).2) hβ f g hA).trans_eq ?_) bot_le
   exact tsum_eq_zero_iff.2 fun n => Finset.sum_eq_zero fun k _ =>
     hterm _ _ (measurableSet_level hσ.monotone _ _) (measurableSet_level hσ.monotone _ _)
@@ -358,7 +358,7 @@ Then `‖∫_{s < t} β‖ ≤ (1 - 2^{-δ})⁻¹ A ‖f‖_p ‖g‖_r`, where 
 For `β (s, t) = ⟪K(t, s) f(s), g(t)⟫`, the hypothesis follows from boundedness of the operator
 `f ↦ ∫ K(·, s) f(s) ds` from `Lᵖ` to `L^{r'}`, and the conclusion is the boundedness of its
 truncation `f ↦ ∫_{s < ·} K(·, s) f(s) ds` in weak form. -/
-theorem enorm_setIntegral_fst_lt_snd_le {E F G : Type*} [NormedAddCommGroup E]
+theorem eNorm_setIntegral_fst_lt_snd_le {E F G : Type*} [NormedAddCommGroup E]
     [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedSpace ℝ G] {p r : ℝ≥0∞}
     (hr : 1 ≤ r) (hpr : 1 < p⁻¹ + r⁻¹) {β : ℝ × ℝ → G}
     (hβ : IntegrableOn β {z : ℝ × ℝ | z.1 < z.2}) (f : ℝ → E) (g : ℝ → F) {A : ℝ≥0∞}
@@ -368,7 +368,7 @@ theorem enorm_setIntegral_fst_lt_snd_le {E F G : Type*} [NormedAddCommGroup E]
       (1 - 2 ^ (-(p⁻¹ + r⁻¹ - 1).toReal))⁻¹ * A * eLpNorm f p * eLpNorm g r := by
   -- If the right side vanishes, so does the integral. This includes the degenerate case `p = 0`.
   rcases eq_or_ne (A * eLpNorm f p * eLpNorm g r) 0 with h0 | h0
-  · rw [enorm_setIntegral_fst_lt_snd_eq_zero hβ f g hA h0]
+  · rw [eNorm_setIntegral_fst_lt_snd_eq_zero hβ f g hA h0]
     exact bot_le
   -- If the right side is infinite there is nothing to prove.
   set C : ℝ≥0∞ := (1 - 2 ^ (-(p⁻¹ + r⁻¹ - 1).toReal))⁻¹
@@ -393,7 +393,7 @@ theorem enorm_setIntegral_fst_lt_snd_le {E F G : Type*} [NormedAddCommGroup E]
   have hCtop : C ≠ ∞ := ENNReal.inv_ne_top.2 (tsub_pos_of_lt
     (ENNReal.rpow_lt_one_of_one_lt_of_neg (by norm_num) (hδ ▸ hδ0))).ne'
   have hf_eq : eLpNorm f p = (∫⁻ x, ‖f x‖ₑ ^ p.toReal) ^ p.toReal⁻¹ := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp hp_top hfm, one_div]
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp hp_top hfm, one_div]
   have hp₀ : 0 < p.toReal := ENNReal.toReal_pos hp hp_top
   have hm : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ≠ ∞ := by
     intro h
@@ -413,7 +413,7 @@ theorem enorm_setIntegral_fst_lt_snd_le {E F G : Type*} [NormedAddCommGroup E]
   calc ‖∫ z in {z : ℝ × ℝ | z.1 < z.2}, β z‖ₑ ≤ C * A * eLpNorm g r * eLpNorm f p := by
         refine ge_of_tendsto hlim ?_
         filter_upwards [self_mem_nhdsWithin] with ε hε
-        refine (enorm_setIntegral_fst_lt_snd_le_add hp hp_top hr hβ hfm hm g hA hε).trans_eq ?_
+        refine (eNorm_setIntegral_fst_lt_snd_le_add hp hp_top hr hβ hfm hm g hA hε).trans_eq ?_
         rw [← hδ]
         ring
     _ = _ := by ring

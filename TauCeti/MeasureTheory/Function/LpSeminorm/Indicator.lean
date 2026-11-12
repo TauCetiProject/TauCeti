@@ -58,9 +58,9 @@ theorem sum_eLpNorm_indicator_le {α ι F : Type*} [MeasurableSpace α] [NormedA
   have hnorm (K : Set α) (hK : MeasurableSet K) :
       eLpNorm (K.indicator g) r μ = (∫⁻ x in K, ‖g x‖ₑ ^ r₀ ∂μ) ^ (1 / r₀) := by
     rw [eLpNorm_indicator_eq_eLpNorm_restrict hK.nullMeasurableSet,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hr0 hr_top hgm.restrict]
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hr0 hr_top hgm.restrict]
   have hg_eq : eLpNorm g r μ = (∫⁻ x, ‖g x‖ₑ ^ r₀ ∂μ) ^ (1 / r₀) :=
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hr0 hr_top hgm
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hr0 hr_top hgm
   rw [Finset.sum_congr rfl fun i hi => hnorm _ (hJ i hi), hg_eq]
   set x : ι → ℝ≥0∞ := fun i => (∫⁻ y in J i, ‖g y‖ₑ ^ r₀ ∂μ) ^ (1 / r₀)
   -- The `r₀`-th power of the sum is controlled by the sum of the `r₀`-th powers.
