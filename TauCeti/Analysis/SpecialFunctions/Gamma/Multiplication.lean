@@ -150,16 +150,7 @@ private theorem multiplicationGamma_add_one {m : ℕ} (hm : 0 < m) {s : ℝ} (hs
   have h0 :
       ∏ k ∈ range m, Gamma ((s + k) / m) =
         Gamma (s / m) * ∏ k ∈ Ico 1 m, Gamma ((s + k) / m) := by
-    have hsucc' := prod_range_succ' (fun k : ℕ => Gamma ((s + k) / m)) (m - 1)
-    rw [Nat.sub_one_add_one_eq_of_pos hm] at hsucc'
-    have hIco :
-        ∏ k ∈ range (m - 1), Gamma ((s + (k + 1 : ℕ)) / m) =
-          ∏ k ∈ Ico 1 m, Gamma ((s + k) / m) := by
-      simpa [add_comm, add_left_comm, add_assoc] using
-        (prod_Ico_eq_prod_range (fun k : ℕ => Gamma ((s + k) / m)) 1 m).symm
-    simp_rw [Nat.cast_succ] at hsucc' hIco
-    rw [hIco] at hsucc'
-    simpa [mul_comm] using hsucc'
+    simpa using prod_eq_prod_Ico_succ_bot hm (fun k : ℕ => Gamma ((s + k) / m))
   have hadd : Gamma ((s + m) / m) = Gamma (s / m + 1) := by
     congr 1
     field
