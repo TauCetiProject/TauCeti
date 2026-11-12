@@ -35,6 +35,8 @@ their restrictions to the module.
 * `IsPrecomplete.of_finite`: a finite module over an adically precomplete ring is precomplete.
 * `IsAdicComplete.of_finite`: a finite module over an adically complete Noetherian ring is
   complete.
+* `IsPrecomplete.of_finite_of_isLocalRing`: a finite local algebra over a precomplete local ring
+  is precomplete at its own maximal ideal, without a Noetherian hypothesis.
 * `IsAdicComplete.of_finite_of_isLocalRing`: a finite local algebra over a complete Noetherian
   local ring is complete at its own maximal ideal.
 * `AdicCompletion.linearMap_ext_of_finite`: a linear map over the completion out of the completion
@@ -75,6 +77,21 @@ theorem IsAdicComplete.of_finite [IsNoetherianRing R] [IsAdicComplete I R] [Modu
   toIsHausdorff := IsHausdorff.of_le_jacobson I M (IsAdicComplete.le_jacobson I)
   toIsPrecomplete := IsPrecomplete.of_finite I M
 
+/-- A finite local algebra over a precomplete local ring is precomplete for its own maximal
+ideal, without a Noetherian hypothesis. The two maximal-ideal-adic filtrations are cofinal. -/
+theorem IsPrecomplete.of_finite_of_isLocalRing (R S : Type*) [CommRing R] [IsLocalRing R]
+    [IsPrecomplete (IsLocalRing.maximalIdeal R) R]
+    [CommRing S] [IsLocalRing S] [Algebra R S] [Module.Finite R S] :
+    IsPrecomplete (IsLocalRing.maximalIdeal S) S := by
+  have : IsPrecomplete (IsLocalRing.maximalIdeal R) S := .of_finite _ _
+  have : IsPrecomplete ((IsLocalRing.maximalIdeal R).map (algebraMap R S)) S :=
+    IsPrecomplete.map_algebraMap_iff.mpr inferInstance
+  obtain ⟨n, hn⟩ := TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
+  exact IsPrecomplete.of_pow_le_of_pow_le (l := 1) hn (by
+    rw [pow_one]
+    exact Ideal.map_le_iff_le_comap.mpr
+      (Ideal.comap_eq_maximalIdeal_of_isIntegral (IsLocalRing.maximalIdeal S)).ge)
+
 /-- A finite local algebra over a complete Noetherian local ring is complete for its own
 maximal ideal. The two maximal-ideal-adic filtrations are cofinal, even when the extension is
 ramified. -/
@@ -86,10 +103,9 @@ theorem IsAdicComplete.of_finite_of_isLocalRing (R S : Type*) [CommRing R] [IsLo
   have : IsAdicComplete ((IsLocalRing.maximalIdeal R).map (algebraMap R S)) S :=
     (IsAdicComplete.map_algebraMap_iff _ _).mpr inferInstance
   obtain ⟨n, hn⟩ := TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
-  exact IsAdicComplete.of_pow_le_of_pow_le (l := 1) hn (by
-    rw [pow_one]
-    exact Ideal.map_le_iff_le_comap.mpr
-      (Ideal.comap_eq_maximalIdeal_of_isIntegral (IsLocalRing.maximalIdeal S)).ge)
+  exact {
+    toIsHausdorff := IsHausdorff.of_pow_le hn
+    toIsPrecomplete := IsPrecomplete.of_finite_of_isLocalRing R S }
 
 variable {M} in
 /-- Linear maps over the completion out of the completion of a finite module are determined by

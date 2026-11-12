@@ -25,8 +25,10 @@ to the finite local algebra by `IsAdicComplete.of_finite_of_isLocalRing`.
 
 * `TauCeti.IsIntegralClosure.isAdicComplete`: completeness for any local model of the integral
   closure and any chosen fraction field.
-* `TauCeti.integralClosure.isAdicComplete`: the instance for `integralClosure A L`, using
-  `FractionRing A` as in Mathlib's integral-closure instances.
+* `TauCeti.integralClosure.isAdicComplete`: completeness for `integralClosure A L` and any chosen
+  fraction field.
+* `TauCeti.integralClosure.isAdicComplete_fractionRing`: the instance using `FractionRing A`,
+  as in Mathlib's integral-closure instances.
 
 ## References
 
@@ -51,13 +53,26 @@ theorem IsIntegralClosure.isAdicComplete
   exact _root_.IsAdicComplete.of_finite_of_isLocalRing A B
 
 /-- The integral closure of a complete integrally closed Noetherian local domain in a finite
-separable field extension is complete at its own maximal ideal. -/
-instance integralClosure.isAdicComplete (A L : Type*) [CommRing A] [IsDomain A]
+separable extension of a chosen fraction field is complete at its own maximal ideal. This is not
+an instance because `K` cannot be inferred; see `integralClosure.isAdicComplete_fractionRing` for
+the instance using `FractionRing A`. -/
+theorem integralClosure.isAdicComplete (A K L : Type*) [CommRing A] [IsDomain A]
+    [IsIntegrallyClosed A] [IsNoetherianRing A] [IsLocalRing A]
+    [IsAdicComplete (IsLocalRing.maximalIdeal A) A]
+    [Field K] [Algebra A K] [IsFractionRing A K]
+    [Field L] [Algebra A L] [Algebra K L] [IsScalarTower A K L]
+    [FiniteDimensional K L] [Algebra.IsSeparable K L] :
+    IsAdicComplete (IsLocalRing.maximalIdeal (integralClosure A L)) (integralClosure A L) :=
+  IsIntegralClosure.isAdicComplete A K L _
+
+/-- The integral closure of a complete integrally closed Noetherian local domain in a finite
+separable extension of `FractionRing A` is complete at its own maximal ideal. -/
+instance integralClosure.isAdicComplete_fractionRing (A L : Type*) [CommRing A] [IsDomain A]
     [Field L] [Algebra A L] [Algebra (FractionRing A) L]
     [IsScalarTower A (FractionRing A) L] [FiniteDimensional (FractionRing A) L]
     [IsIntegrallyClosed A] [IsNoetherianRing A] [IsLocalRing A]
     [IsAdicComplete (IsLocalRing.maximalIdeal A) A] [Algebra.IsSeparable (FractionRing A) L] :
     IsAdicComplete (IsLocalRing.maximalIdeal (integralClosure A L)) (integralClosure A L) :=
-  IsIntegralClosure.isAdicComplete A (FractionRing A) L _
+  integralClosure.isAdicComplete A (FractionRing A) L
 
 end TauCeti

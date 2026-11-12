@@ -26,8 +26,10 @@ field is a DVR.
 Krull–Akizuki supplies Dedekindness even without separability.
 
 `TauCeti.IsIntegralClosure.isDiscreteValuationRing` allows any model of the integral closure
-and any chosen fraction field. The instance for `integralClosure A L` uses `FractionRing A`,
-as do Mathlib's integral-closure instances.
+and any chosen fraction field. `TauCeti.integralClosure.isDiscreteValuationRing` specializes to
+`integralClosure A L`, still allowing a chosen fraction field. The instance
+`TauCeti.integralClosure.isDiscreteValuationRing_fractionRing` uses `FractionRing A`, as do
+Mathlib's integral-closure instances.
 
 ## References
 
@@ -57,16 +59,26 @@ theorem IsIntegralClosure.isDiscreteValuationRing
 
 namespace integralClosure
 
+/-- The integral closure of a henselian DVR in a finite extension of a chosen fraction field is
+a DVR, without a separability assumption. This is not an instance because `K` cannot be inferred;
+see `isDiscreteValuationRing_fractionRing` for the instance using `FractionRing A`. -/
+theorem isDiscreteValuationRing (A K L : Type*) [CommRing A] [IsDomain A]
+    [IsDiscreteValuationRing A] [HenselianRing A (IsLocalRing.maximalIdeal A)]
+    [Field K] [Algebra A K] [IsFractionRing A K]
+    [Field L] [Algebra A L] [Algebra K L] [IsScalarTower A K L] [FiniteDimensional K L] :
+    IsDiscreteValuationRing (integralClosure A L) :=
+  IsIntegralClosure.isDiscreteValuationRing A K L _
+
 variable (A L : Type*) [CommRing A] [IsDomain A]
   [Field L] [Algebra A L] [Algebra (FractionRing A) L]
   [IsScalarTower A (FractionRing A) L] [FiniteDimensional (FractionRing A) L]
 
 /-- The integral closure of a henselian DVR in a finite field extension is a DVR, without a
 separability assumption. -/
-instance isDiscreteValuationRing [IsDiscreteValuationRing A]
+instance isDiscreteValuationRing_fractionRing [IsDiscreteValuationRing A]
     [HenselianRing A (IsLocalRing.maximalIdeal A)] :
     IsDiscreteValuationRing (integralClosure A L) :=
-  IsIntegralClosure.isDiscreteValuationRing A (FractionRing A) L _
+  isDiscreteValuationRing A (FractionRing A) L
 
 end integralClosure
 
