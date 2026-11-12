@@ -173,7 +173,7 @@ satisfying the seam identity in `t`, and tamed by `σ`. Let `u` be an injective 
 oriented so that the frames `(e, j e)` are positive. If the vertical area `∫_C u^* ω_v` vanishes,
 then for every value `(s, [t, x])` of `u`, the `Ω`-area `∫_C u^* Ω` is the least period of `x`. -/
 theorem integralTopForm_mpullback_suspensionForm_of_suspensionAlmostComplexStructure
-    [ConnectedSpace C] {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
+    [PreconnectedSpace C] {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
     (htame : ∀ (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2), v ≠ 0 →
       0 < SmoothBundleForm.eval₂ σ p.2 v (K p v))
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hu₁ : Injective u)
@@ -186,6 +186,7 @@ theorem integralTopForm_mpullback_suspensionForm_of_suspensionAlmostComplexStruc
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
     integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
       minimalPeriod φ x :=
+  haveI : ConnectedSpace C := { toNonempty := ⟨c⟩ }
   integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero hu hu₁ ho hhol
     (fun c ↦ suspensionAlmostComplexStructure_apply_symm_one_zero φ hK hs ht (u c))
     (fun c _ hv ↦
@@ -266,7 +267,8 @@ injective smooth `J`-holomorphic map with injective differential from a compact 
 boundaryless surface `C`, oriented so that the frames `(e, j e)` are positive. If the vertical area
 `∫_C u^* ω_v` vanishes, then for every value `(s, [t, x])` of `u`, the `Ω`-area `∫_C u^* Ω` is the
 least period of `x`. -/
-theorem integralTopForm_mpullback_suspensionForm_of_seamAlmostComplexStructure [ConnectedSpace C]
+theorem integralTopForm_mpullback_suspensionForm_of_seamAlmostComplexStructure
+    [PreconnectedSpace C]
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hu₁ : Injective u)
     (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
