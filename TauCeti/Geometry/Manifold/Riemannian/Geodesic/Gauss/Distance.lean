@@ -293,7 +293,8 @@ theorem IsNormalDomain.dist_eq_norm_riemannianLog (h : IsNormalDomain I M p U)
     (hU : Metric.ball 0 r ⊆ U) (hq : q ∈ Metric.ball p r) :
     dist p q = ‖riemannianLog I M p U q‖ := by
   rw [← h.image_riemannianExp_ball_eq_ball hU] at hq
-  rw [dist_edist, h.edist_eq_enorm_riemannianLog_of_mem_ball hU hq, toReal_enorm]
+  rw [dist_edist, h.edist_eq_enorm_riemannianLog_of_mem_ball hU hq]
+  simp
 
 /-- If the closed tangent ball of radius `r` lies in a normal domain at `p`, then the distance
 from `p` to `exp_p v` is `‖v‖` for every `v` in that ball; see `edist_riemannianExp_eq`. -/
