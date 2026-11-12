@@ -199,7 +199,7 @@ def firstHomologyEquiv :
   ((hurewiczHomologyAddEquiv (X := TopCat.of (AddCircle p)) ((0 : ℝ) : AddCircle p)).symm.trans
     (AddEquiv.toMultiplicativeRight.symm
       ((windingNumberIso ((0 : ℝ) : AddCircle p)).abelianizationCongr.trans
-        Abelianization.equivOfComm.symm))).toIntLinearEquiv
+        Group.Abelianization.equivOfComm.symm))).toIntLinearEquiv
 
 /-- The circuit class corresponds to `1` under `H₁(S¹; ℤ) ≃ ℤ`. -/
 @[simp]
