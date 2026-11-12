@@ -113,7 +113,7 @@ theorem ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_n
     rw [← hlevel s hs.le]
     refine measure_congr ?_
     filter_upwards [measure_eq_zero_iff_ae_notMem.1 htop] with x hx
-    exact propext (ENNReal.ofReal_lt_iff_lt_toReal hs.le hx).symm
+    exact (ENNReal.ofReal_lt_iff_lt_toReal hs.le hx).symm
   have hv := TauCeti.lipschitzWith_toReal_schwarzRearrangement volume hh
   filter_upwards [ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv
     hv.continuous.measurable.aemeasurable (fun t ht ↦ hdist t ht ▸ hfin t ht)
