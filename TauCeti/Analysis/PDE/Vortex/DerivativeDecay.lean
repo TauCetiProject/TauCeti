@@ -354,7 +354,6 @@ theorem exists_energyDensity_le_mul_exp
 /-- The hypotheses of `TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one` for
 `ℓ = log |α|²` and `κ = 1 / 4`, at a rate `0 < c < 1 / 2`. -/
 private theorem laplacian_log_normSq_hypotheses
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
@@ -370,7 +369,7 @@ private theorem laplacian_log_normSq_hypotheses
   have hp2 : ContDiff ℝ 2 (fun w ↦ x w 2) := hp.of_le (by simp)
   have hq2 : ContDiff ℝ 2 (fun w ↦ x w 3) := hq.of_le (by simp)
   have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < s z := hlim.eventually (lt_mem_nhds (by norm_num))
-  have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hb₁ hb₂ hp2 hq2 hsol hlim
+  have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hp2 hq2 hsol hlim
   refine ⟨?_, ?_, ?_, ?_⟩
   · filter_upwards [hpos] with z hz
     exact (contDiff_normSq hp hq).contDiffAt.log (by positivity)
@@ -379,11 +378,11 @@ private theorem laplacian_log_normSq_hypotheses
       intro h
       simp only [hs, h, mul_zero] at hz
       norm_num at hz
-    rw [laplacian_log_normSq_of_equation_eq_zero (hb₁ z) (hb₂ z) hp2.contDiffAt hq2.contDiffAt hα
+    rw [laplacian_log_normSq_of_equation_eq_zero hp2.contDiffAt hq2.contDiffAt hα
       (Eventually.of_forall hsol), Real.exp_log (by positivity)]
     ring
   · -- `|log |α|²| ≤ 2 (1 - |α|²)` where `|α|² ≥ 1 / 2`.
-    obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp2 hq2 hsol hlim hc
+    obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hp2 hq2 hsol hlim hc
     refine IsBigO.of_bound (2 * K) ?_
     filter_upwards [hpos] with z hz
     have hz₀ : 0 < s z := (by norm_num : (0 : ℝ) < 1 / 2).trans hz
@@ -392,14 +391,13 @@ private theorem laplacian_log_normSq_hypotheses
     rw [Real.log_inv] at hinv
     have hbound : -Real.log (s z) ≤ 2 * (1 - s z) := by
       have : (s z)⁻¹ - 1 ≤ 2 * (1 - s z) := by
-        have hz' : (1 : ℝ) / 2 < s z := hz
         rw [inv_eq_one_div, div_sub_one hz₀.ne', div_le_iff₀ hz₀]
         nlinarith [mul_nonneg (sub_nonneg.2 (hs₁ z)) (by linarith : (0 : ℝ) ≤ 2 * s z - 1)]
       linarith
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonpos hlog, abs_of_pos (Real.exp_pos _)]
     have := hK z
     nlinarith
-  · obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hb₁ hb₂ hp2 hq2 hsol hlim
+  · obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hp2 hq2 hsol hlim
       (c := 0) (by norm_num)
     refine IsBigO.of_bound K ?_
     filter_upwards [hK] with z hz
@@ -409,7 +407,6 @@ private theorem laplacian_log_normSq_hypotheses
 whose section satisfies `|α| → 1` at infinity, every iterated derivative of `log |α|²` is
 `O(exp (-c |z|))` at infinity, for every rate `c < 1 / 2`. -/
 theorem isBigO_iteratedFDeriv_log_normSq
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
@@ -417,11 +414,11 @@ theorem isBigO_iteratedFDeriv_log_normSq
     iteratedFDeriv ℝ n (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖)) := by
   -- It suffices to treat a positive rate `c' ≥ c`.
-  set c' := max c (1 / 4) with hc'
+  set c' := max c (1 / 4)
   have hc'pos : 0 < c' := lt_max_of_lt_right (by norm_num)
   have hc'lt : c' < 1 / 2 := max_lt hc (by norm_num)
   obtain ⟨hsmooth, heq, hℓd, hℓ'⟩ :=
-    laplacian_log_normSq_hypotheses hb₁ hb₂ hp hq hsol hlim hc'lt
+    laplacian_log_normSq_hypotheses hp hq hsol hlim hc'lt
   refine (isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one hc'pos (by nlinarith) hsmooth heq
     hℓd hℓ' n).trans (isBigO_of_le _ fun z ↦ ?_)
   simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp, neg_le_neg_iff]
@@ -432,18 +429,17 @@ whose section satisfies `|α| → 1` at infinity, every iterated derivative of `
 `O(exp (-c |z|))` at infinity, for every rate `c < 1 / 2`. Equivalently, by the curvature equation,
 every derivative of the curvature decays at that rate. -/
 theorem isBigO_iteratedFDeriv_normSq_sub_one
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1 / 2) (n : ℕ) :
     iteratedFDeriv ℝ n (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2) - 1) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  set c' := max c (1 / 4) with hc'
+  set c' := max c (1 / 4)
   have hc'pos : 0 < c' := lt_max_of_lt_right (by norm_num)
   have hc'lt : c' < 1 / 2 := max_lt hc (by norm_num)
   obtain ⟨hsmooth, heq, hℓd, hℓ'⟩ :=
-    laplacian_log_normSq_hypotheses hb₁ hb₂ hp hq hsol hlim hc'lt
+    laplacian_log_normSq_hypotheses hp hq hsol hlim hc'lt
   have h := isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one hc'pos (by nlinarith)
     hsmooth heq hℓd hℓ' n
   -- Near infinity `exp (log |α|²) = |α|²`.
