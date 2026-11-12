@@ -85,6 +85,7 @@ theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint (hφ : ContDiff ℝ 1 φ)
         fderiv ℝ J z I (ξ z)⟫_ℝ) - ∫ s : ℝ, ⟪φ s, J s (ξ s)⟫_ℝ := by
   have hφd := hφ.differentiable one_ne_zero
   have hJξ : ContDiffOn ℝ 1 (fun z ↦ J z (ξ z)) U := hJ.clm_apply hξ
+  -- The pairings `h = ⟪ξ, φ⟫` and `g = ⟪J ξ, φ⟫` are compactly supported and `C¹` on `ℂ`.
   set h : ℂ → ℝ := fun z ↦ innerSL ℝ (ξ z) (φ z)
   set g : ℂ → ℝ := fun z ↦ innerSL ℝ (J z (ξ z)) (φ z)
   have hh : ContDiff ℝ 1 h := (innerSL ℝ).contDiff_of_tsupport_subset_right hξ hφ.contDiffOn hU hφU
@@ -94,11 +95,16 @@ theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint (hφ : ContDiff ℝ 1 φ)
   have hgc : HasCompactSupport g := hφc.mono fun z hz h0 ↦ hz (by simp [g, h0])
   have hh' (z v : ℂ) : fderiv ℝ h z v = ⟪ξ z, fderiv ℝ φ z v⟫_ℝ + ⟪fderiv ℝ ξ z v, φ z⟫_ℝ := by
     rw [(innerSL ℝ).fderiv_of_tsupport_subset_right (hξ.differentiableOn one_ne_zero) hφd hU hφU]
-    rfl
+    simp only [add_apply, ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
+      ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply]
+    exact congrArg₂ (· + ·) (innerSL_apply_apply (𝕜 := ℝ) _ _) (innerSL_apply_apply (𝕜 := ℝ) _ _)
   have hg' (z v : ℂ) : fderiv ℝ g z v =
       ⟪J z (ξ z), fderiv ℝ φ z v⟫_ℝ + ⟪fderiv ℝ (fun z ↦ J z (ξ z)) z v, φ z⟫_ℝ := by
     rw [(innerSL ℝ).fderiv_of_tsupport_subset_right (hJξ.differentiableOn one_ne_zero) hφd hU hφU]
-    rfl
+    simp only [add_apply, ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
+      ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply]
+    exact congrArg₂ (· + ·) (innerSL_apply_apply (𝕜 := ℝ) _ _) (innerSL_apply_apply (𝕜 := ℝ) _ _)
+  -- Pointwise, the left integrand is `∂_s h + ∂_t g` minus the right volume integrand `F`.
   set F : ℂ → ℝ := fun z ↦
     ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) + fderiv ℝ J z I (ξ z)⟫_ℝ
   have hpt (z : ℂ) : ⟪fderiv ℝ φ z 1 + ContinuousLinearMap.adjoint (J z) (fderiv ℝ φ z I) -
@@ -117,6 +123,7 @@ theorem setIntegral_im_pos_inner_cauchyRiemann_adjoint (hφ : ContDiff ℝ 1 φ)
         real_inner_comm (φ z) (fderiv ℝ J z I (ξ z))]
       ring
     · simp [hh', hg', F, fderiv_of_notMem_tsupport ℝ hz, image_eq_zero_of_notMem_tsupport hz]
+  -- The three terms are integrable, and the directional Green identities apply to `h` and `g`.
   have hA : Integrable fun z ↦ fderiv ℝ h z 1 :=
     ((hh.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
       (hhc.fderiv_apply (𝕜 := ℝ) 1)
@@ -154,32 +161,15 @@ theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint {r : ℝ} (hφ : ContDi
         (fderiv ℝ φ z I) - ContinuousLinearMap.adjoint (S z) (φ z), ξ z⟫_ℝ =
       -(∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) +
         S z (ξ z) + fderiv ℝ J z I (ξ z)⟫_ℝ) - ∫ s in Ioo (-r) r, ⟪φ s, J s (ξ s)⟫_ℝ := by
-  have hH : MeasurableSet {z : ℂ | 0 < z.im} :=
-    measurableSet_lt measurable_const Complex.measurable_im
   have hout {z : ℂ} (hz : z ∉ ball 0 r) : z ∉ tsupport φ := fun h ↦ hz (hφr h)
-  have h₁ : ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, ⟪fderiv ℝ φ z 1 +
-      ContinuousLinearMap.adjoint (J z) (fderiv ℝ φ z I) -
-        ContinuousLinearMap.adjoint (S z) (φ z), ξ z⟫_ℝ =
-      ∫ z in {z : ℂ | 0 < z.im}, ⟪fderiv ℝ φ z 1 +
-        ContinuousLinearMap.adjoint (J z) (fderiv ℝ φ z I) -
-          ContinuousLinearMap.adjoint (S z) (φ z), ξ z⟫_ℝ :=
-    (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hH inter_subset_right fun z hz ↦ by
-      have hz' := hout fun h ↦ hz.2 ⟨h, hz.1⟩
-      simp [fderiv_of_notMem_tsupport ℝ hz', image_eq_zero_of_notMem_tsupport hz']).symm
-  have h₂ : ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) +
-      S z (ξ z) + fderiv ℝ J z I (ξ z)⟫_ℝ =
-      ∫ z in {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) +
-        S z (ξ z) + fderiv ℝ J z I (ξ z)⟫_ℝ :=
-    (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hH inter_subset_right fun z hz ↦ by
-      simp [image_eq_zero_of_notMem_tsupport (hout fun h ↦ hz.2 ⟨h, hz.1⟩)]).symm
-  have h₃ : ∫ s in Ioo (-r) r, ⟪φ s, J s (ξ s)⟫_ℝ = ∫ s : ℝ, ⟪φ s, J s (ξ s)⟫_ℝ := by
-    refine setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦ ?_
-    have hs' : (s : ℂ) ∉ ball 0 r := fun h ↦ hs (by
-      rwa [mem_ball_zero_iff, Complex.norm_real, Real.norm_eq_abs, abs_lt] at h)
-    simp [image_eq_zero_of_notMem_tsupport (hout hs')]
   have hφc : HasCompactSupport φ := (isCompact_closedBall (0 : ℂ) r).of_isClosed_subset
     (isClosed_tsupport φ) (hφr.trans ball_subset_closedBall)
-  rw [h₁, h₂, h₃]
+  rw [setIntegral_halfDisc_eq_setIntegral_im_pos fun z hz ↦ by
+      simp [fderiv_of_notMem_tsupport ℝ (hout hz), image_eq_zero_of_notMem_tsupport (hout hz)],
+    setIntegral_halfDisc_eq_setIntegral_im_pos fun z hz ↦ by
+      simp [image_eq_zero_of_notMem_tsupport (hout hz)],
+    setIntegral_Ioo_eq_integral_of_ofReal_notMem_ball fun s hs ↦ by
+      simp [image_eq_zero_of_notMem_tsupport (hout hs)]]
   exact setIntegral_im_pos_inner_cauchyRiemann_adjoint hφ hφc isOpen_ball hξ hJ hS hφr
 
 /-- **The weak equation (B.4.3) on the half-plane.** If the boundary integrand
