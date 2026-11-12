@@ -86,6 +86,12 @@ theorem zerothHomotopyEquivFundamentalGroup_mk (γ : MooreLoopSpace X x) :
   exact congrArg (Inv.inv (α := FundamentalGroup X x))
     (HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ.toPath)
 
+/-- Moore loops in the same path component have the same class. -/
+theorem fundamentalGroupHom_eq_of_joined {γ δ : MooreLoopSpace X x} (h : Joined γ δ) :
+    fundamentalGroupHom x γ = fundamentalGroupHom x δ := by
+  rw [← zerothHomotopyEquivFundamentalGroup_mk, ← zerothHomotopyEquivFundamentalGroup_mk]
+  exact congrArg _ (Quotient.sound h)
+
 /-- Every element of the fundamental group is the multiplicative class of a Moore loop. -/
 theorem fundamentalGroupHom_surjective (x : X) : Function.Surjective (fundamentalGroupHom x) :=
   fun g ↦ by
