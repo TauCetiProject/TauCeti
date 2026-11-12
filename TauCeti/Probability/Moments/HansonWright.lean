@@ -12,7 +12,7 @@ public import TauCeti.Probability.Moments.SubGaussian
 import TauCeti.Analysis.Complex.Euclidean.Matrix
 import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Probability.Independence.Integration
-import TauCeti.Probability.Moments.Basic
+import TauCeti.Probability.Moments.SubExponential
 
 /-!
 # The Hanson–Wright inequality for sub-Gaussian quadratic forms

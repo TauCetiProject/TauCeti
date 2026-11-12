@@ -12,7 +12,8 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 /-!
 # Basic properties of sub-Gaussian moment-generating functions
 
-The quadratic MGF bound forces a sub-Gaussian random variable to have mean zero.
+The quadratic MGF bound forces a sub-Gaussian random variable to have mean zero, and is monotone in
+the variance proxy.
 -/
 
 public section
@@ -21,6 +22,11 @@ open MeasureTheory ProbabilityTheory Real
 open scoped NNReal
 
 namespace ProbabilityTheory.HasSubgaussianMGF
+
+/-- Monotonicity of `HasSubgaussianMGF` in the variance proxy. -/
+theorem mono {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ} {c₁ c₂ : ℝ≥0}
+    (h : HasSubgaussianMGF X c₁ μ) (hle : c₁ ≤ c₂) : HasSubgaussianMGF X c₂ μ :=
+  ⟨h.integrable_exp_mul, fun t ↦ (h.mgf_le t).trans <| by gcongr⟩
 
 /-- Under a zero or probability measure, a sub-Gaussian MGF bound forces the expectation to
 vanish. -/

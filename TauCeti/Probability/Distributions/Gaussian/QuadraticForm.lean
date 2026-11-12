@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.Matrix.Sqrt
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
+import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
 
 /-!
@@ -205,19 +206,11 @@ theorem integral_exp_mul_sum_mulVec_sq_pi_gaussianReal_le {ι κ : Type*} [Finty
       _ = ∑ i, ((M *ᵥ g) i) ^ 2 := by
           rw [dotProduct_mulVec, vecMul_transpose]; simp [dotProduct, sq]
   have h2s_eig (j : κ) : 2 * s * hΘ.eigenvalues j ≤ 1 / 2 := by
-    let e : EuclideanSpace ℝ κ := hΘ.eigenvectorBasis j
     have heig : hΘ.eigenvalues j ≤ ‖M‖ ^ 2 := by
-      calc hΘ.eigenvalues j = ⟪e, (toEuclideanCLM (𝕜 := ℝ) Θ) e⟫ := by
-            rw [hΘ.eigenvalues_eq j]
-            simp only [e, PiLp.inner_apply, RCLike.inner_apply, conj_trivial, RCLike.re_to_real,
-              dotProduct, Pi.star_apply, star_trivial]
-            exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
-        _ ≤ ‖e‖ * (‖toEuclideanCLM (𝕜 := ℝ) Θ‖ * ‖e‖) :=
-            (real_inner_le_norm _ _).trans
-              (mul_le_mul_of_nonneg_left ((toEuclideanCLM (𝕜 := ℝ) Θ).le_opNorm e) (norm_nonneg e))
-        _ = ‖M‖ ^ 2 := by
-            rw [hΘ.eigenvectorBasis.orthonormal.1 j, l2_opNorm_toEuclideanCLM, sq,
-              ← l2_opNorm_conjTranspose_mul_self M]; ring
+      calc hΘ.eigenvalues j ≤ ‖hΘ.eigenvalues j‖ := Real.le_norm_self _
+        _ ≤ ‖hΘ.eigenvalues‖ := norm_le_pi_norm hΘ.eigenvalues j
+        _ = ‖Θ‖ := hΘ.l2_opNorm_eq_norm_eigenvalues.symm
+        _ = ‖M‖ ^ 2 := by rw [l2_opNorm_conjTranspose_mul_self, sq]
     exact (mul_le_mul_of_nonneg_left heig (by positivity)).trans hs_bound
   have h2s_lt (j : κ) : 2 * s * hΘ.eigenvalues j < 1 := by linarith [h2s_eig j]
   have htoLp_meas : Measurable (WithLp.toLp 2 : (κ → ℝ) → EuclideanSpace ℝ κ) := by fun_prop

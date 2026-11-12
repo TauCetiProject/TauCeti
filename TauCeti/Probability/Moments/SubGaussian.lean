@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
-import TauCeti.Probability.Moments.Basic
+import TauCeti.Probability.Moments.SubExponential
 
 /-!
 # Sub-Gaussian linear forms and squared and directional exponential moments
@@ -48,11 +48,6 @@ theorem HasLaw.hasSubgaussianMGF {Ω : Type*} [MeasurableSpace Ω] {μ : Measure
 namespace HasSubgaussianMGF
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ} {c : ℝ≥0}
-
-/-- Monotonicity of `HasSubgaussianMGF` in the variance proxy. -/
-theorem mono {c₁ c₂ : ℝ≥0} (h : HasSubgaussianMGF X c₁ μ) (hle : c₁ ≤ c₂) :
-    HasSubgaussianMGF X c₂ μ :=
-  ⟨h.integrable_exp_mul, fun t ↦ (h.mgf_le t).trans <| by gcongr⟩
 
 private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s : ℝ}
     (hs0 : 0 ≤ s) (hs : 2 * (c : ℝ) * s < 1) :
