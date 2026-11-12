@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.Positive
@@ -261,41 +260,6 @@ theorem hasCartanType_rationalRootSystem :
 which over a field of characteristic zero forces irreducibility. -/
 instance instIsIrreducibleRationalRootSystem : (t.rationalRootSystem ht).IsIrreducible :=
   (hasCartanType_rationalRootSystem t ht).isIrreducible ht
-
-/-- An absolute bound of two on the integral pairings excludes G₂ root strings after
-rational base change. -/
-theorem isNotG2_rationalRootSystem_of_abs_pairing_le_two
-    (hbound : ∀ a c, |(t.simplyConnectedRootDatum ht).pairing a c| ≤ 2) :
-    (t.rationalRootSystem ht).IsNotG2 := by
-  refine ⟨fun a c => ?_⟩
-  have h := hbound a c
-  rw [abs_le] at h
-  have heq : (t.rationalRootSystem ht).pairingIn ℤ a c =
-      (t.simplyConnectedRootDatum ht).pairing a c := by
-    rw [pairingIn_rationalRootSystem]
-    exact (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ a c
-  rw [heq]
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-  omega
-
-/-- The rational root systems of types B and C have no G₂ root strings. -/
-theorem isNotG2_rationalRootSystem_of_typeBC (hBC : ∃ n, t = B n ∨ t = C n) :
-    (t.rationalRootSystem ht).IsNotG2 := by
-  apply t.isNotG2_rationalRootSystem_of_abs_pairing_le_two ht
-  intro a c
-  obtain ⟨n, rfl | rfl⟩ := hBC
-  · rw [simplyConnectedRootDatum_B]
-    exact abs_pairing_typeBSimplyConnectedRootDatum_le_two a c
-  · rw [simplyConnectedRootDatum_C]
-    exact abs_pairing_typeCSimplyConnectedRootDatum_le_two a c
-
-/-- The rational root system of type F₄ has no G₂ root strings. -/
-theorem isNotG2_rationalRootSystem_F4 (ht : F4.Valid) :
-    (F4.rationalRootSystem ht).IsNotG2 := by
-  apply F4.isNotG2_rationalRootSystem_of_abs_pairing_le_two ht
-  intro a c
-  rw [simplyConnectedRootDatum_F4]
-  exact abs_pairing_f4SimplyConnectedRootDatum_le_two a c
 
 /-! ## The Bourbaki numbering of the base support -/
 
