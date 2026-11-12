@@ -44,21 +44,8 @@ theorem SatisfiesSerreS.le_depth_of_isLocalizedModule (h : SatisfiesSerreS n R M
     [IsLocalization.AtPrime B p] {N : Type w'} [AddCommGroup N] [Module R N] [Module B N]
     [IsScalarTower R B N] [Small.{w'} B] (f : M →ₗ[R] N) [IsLocalizedModule p.primeCompl f] :
     min (n : WithBot ℕ∞) (supportDim B N) ≤ (depth (ModuleCat.of B N) : WithBot ℕ∞) := by
-  let A := Localization.AtPrime p
-  let e : A ≃ₐ[R] B := IsLocalization.algEquiv p.primeCompl A B
-  -- Transport scalars through the canonical isomorphism of the two local rings.
-  let : Algebra A B := e.toRingHom.toAlgebra
-  let : Module A N := .compHom N (algebraMap A B)
-  have : IsScalarTower A B N := .of_compHom A B N
-  have : IsScalarTower R A N := .of_algebraMap_smul fun r x ↦ by
-    rw [MulAction.compHom_smul_def, RingHom.algebraMap_toAlgebra]
-    exact (congrArg (· • x) (e.commutes r)).trans (algebraMap_smul B r x)
-  have : Module.Finite B N := .of_isLocalizedModule p.primeCompl f
-  have : Small.{w'} A := small_map e.toEquiv
-  let l := (IsLocalizedModule.iso p.primeCompl f).extendScalarsOfIsLocalization p.primeCompl A
-  rw [← depth_eq_depth_of_surjective (R := A) e.surjective,
-    ← supportDim_eq_of_surjective (R := A) e.surjective,
-    ← depth_eq_of_linearEquiv l, ← supportDim_eq_of_equiv l]
+  rw [depth_eq_of_isLocalizedModule p B f,
+    supportDim_eq_of_isLocalizedModule p.primeCompl B f]
   exact (satisfiesSerreS_iff.mp h) p
 
 /-- Serre's condition `(S_n)` for a finite module over a Noetherian ring passes to every

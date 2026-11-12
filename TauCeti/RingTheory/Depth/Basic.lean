@@ -662,6 +662,28 @@ theorem mem_range_algebraMap_of_two_le_depth {R : Type u} [CommRing R] [IsLocalR
   refine ⟨y, (IsLocalization.map_units K b).mul_left_injective ?_⟩
   simp only [← map_mul, hy, one_mul, hcb]
 
+/-- The depth of a finite module localized at a prime is independent of the presentations of
+both the local ring and the localized module. -/
+theorem depth_eq_of_isLocalizedModule {R : Type u} [CommRing R] [IsNoetherianRing R]
+    {M : Type v} [AddCommGroup M] [Module R M] [Module.Finite R M]
+    (p : Ideal R) [p.IsPrime] (B : Type*) [CommRing B] [IsLocalRing B] [Algebra R B]
+    [IsLocalization.AtPrime B p] {N : Type w} [AddCommGroup N] [Module R N] [Module B N]
+    [IsScalarTower R B N] [Small.{w} B] (f : M →ₗ[R] N) [IsLocalizedModule p.primeCompl f] :
+    depth (ModuleCat.of B N) =
+      depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) := by
+  let A := Localization.AtPrime p
+  let e : A ≃ₐ[R] B := IsLocalization.algEquiv p.primeCompl A B
+  let : Algebra A B := e.toRingHom.toAlgebra
+  let : Module A N := .compHom N (algebraMap A B)
+  have : IsScalarTower A B N := .of_compHom A B N
+  have : IsScalarTower R A B := .of_algHom e.toAlgHom
+  have : IsScalarTower R A N := .to₁₂₄ R A B N
+  have : Module.Finite B N := .of_isLocalizedModule p.primeCompl f
+  have : Small.{w} A := small_map e.toEquiv
+  rw [← depth_eq_depth_of_surjective (R := A) e.surjective]
+  exact (depth_eq_of_linearEquiv
+    ((IsLocalizedModule.iso p.primeCompl f).extendScalarsOfIsLocalization p.primeCompl A)).symm
+
 end IsLocalRing
 
 namespace RingEquiv

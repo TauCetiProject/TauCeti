@@ -84,21 +84,10 @@ theorem isCohenMacaulay_iff_of_isLocalizedModule (f : M →ₗ[R] N)
     [IsLocalizedModule p.primeCompl f] :
     IsCohenMacaulay B N ↔
       IsCohenMacaulay (Localization.AtPrime p) (LocalizedModule p.primeCompl M) := by
-  let A := Localization.AtPrime p
-  let e : A ≃ₐ[R] B := IsLocalization.algEquiv p.primeCompl A B
-  -- Make `N` an `A`-module through the isomorphism `e : A ≃ B`.
-  let : Algebra A B := e.toRingHom.toAlgebra
-  let : Module A N := .compHom N (algebraMap A B)
-  have : IsScalarTower A B N := .of_compHom A B N
-  have : IsScalarTower R A N := .of_algebraMap_smul fun r n ↦ by
-    -- `A` acts on `N` through `e`, which commutes with the maps from `R`.
-    rw [MulAction.compHom_smul_def, RingHom.algebraMap_toAlgebra]
-    exact (congrArg (· • n) (e.commutes r)).trans (algebraMap_smul B r n)
-  have : Module.Finite B N := .of_isLocalizedModule p.primeCompl f
-  have : Small.{w} A := small_map e.toEquiv
-  rw [← isCohenMacaulay_iff_isCohenMacaulay_of_surjective (R := A) e.surjective]
-  exact ((IsLocalizedModule.iso p.primeCompl f).extendScalarsOfIsLocalization p.primeCompl A
-    ).isCohenMacaulay_iff.symm
+  rw [isCohenMacaulay_iff, isCohenMacaulay_iff,
+    ← (IsLocalizedModule.iso p.primeCompl f).toEquiv.subsingleton_congr,
+    depth_eq_of_isLocalizedModule p B f,
+    supportDim_eq_of_isLocalizedModule p.primeCompl B f]
 
 end NoetherianRing
 

@@ -62,6 +62,25 @@ theorem supportDim_eq_of_surjective {S : Type*} [CommRing S] [Algebra R S]
     supportDim_eq_ringKrullDim_quotient_annihilator S M, ← hker]
   exact ringKrullDim_eq_of_ringEquiv (RingHom.quotientKerEquivOfSurjective hf)
 
+/-- The support dimension of a localized finite module is independent of the presentations of
+both the localized ring and the localized module. -/
+theorem supportDim_eq_of_isLocalizedModule [Module.Finite R M] (T : Submonoid R)
+    (B : Type*) [CommRing B] [Algebra R B] [IsLocalization T B]
+    {N : Type*} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
+    (f : M →ₗ[R] N) [IsLocalizedModule T f] :
+    supportDim B N = supportDim (Localization T) (LocalizedModule T M) := by
+  let A := Localization T
+  let e : A ≃ₐ[R] B := IsLocalization.algEquiv T A B
+  let : Algebra A B := e.toRingHom.toAlgebra
+  let : Module A N := .compHom N (algebraMap A B)
+  have : IsScalarTower A B N := .of_compHom A B N
+  have : IsScalarTower R A B := .of_algHom e.toAlgHom
+  have : IsScalarTower R A N := .to₁₂₄ R A B N
+  have : Module.Finite B N := .of_isLocalizedModule T f
+  rw [← supportDim_eq_of_surjective (R := A) e.surjective]
+  exact (supportDim_eq_of_equiv
+    ((IsLocalizedModule.iso T f).extendScalarsOfIsLocalization T A)).symm
+
 /-- The support of a nonzero module over a ring of finite Krull dimension, such as a Noetherian
 local ring, has finite dimension: it is neither `⊥` nor `⊤`. -/
 theorem exists_supportDim_eq_natCast [FiniteRingKrullDim R] [Nontrivial M] :
