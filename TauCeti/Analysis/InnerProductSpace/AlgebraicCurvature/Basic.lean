@@ -228,7 +228,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 `ofLinearMap₄ T ![a, b, c, d] = T a b c d`. Continuity is automatic in finite dimension. -/
 def ofLinearMap₄ : (V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) →ₗ[ℝ] FourTensor V where
   toFun T :=
-    let f : MultilinearMap ℝ (fun _ : Fin 4 ↦ V) ℝ :=
+    let f : MultilinearMap (RingHom.id ℝ) (fun _ : Fin 4 ↦ V) ℝ :=
       MultilinearMap.mk' (fun m ↦ T (m 0) (m 1) (m 2) (m 3))
         (fun m i x y ↦ by fin_cases i <;> simp)
         (fun m i c x ↦ by fin_cases i <;> simp)
