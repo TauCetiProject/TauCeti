@@ -125,9 +125,9 @@ variable [Fintype (G ⧸ H)]
 
 /-- The function induced from a function `φ` on a subgroup `H` of finite index along a map
 `s : G ⧸ H → G`, normally a section of the projection `G → G ⧸ H`: its value at `g` is the average
-over the cosets `x` of the extension by zero of `φ` at `(s (g • x))⁻¹ * g * s x`. This is the
-formula for the coefficient of an induced unitary representation at a unit vector spread evenly
-over the cosets. -/
+over the cosets `x` of the extension by zero of `φ` at `(s (g • x))⁻¹ * g * s x`. When `s` is a
+section and `φ` is positive definite with `φ 1 = 1`, this is the coefficient of the induced unitary
+representation at a unit vector spread evenly over the cosets. -/
 def inducedFun (s : G ⧸ H → G) (φ : H → 𝕜) (g : G) : 𝕜 :=
   (Fintype.card (G ⧸ H) : 𝕜)⁻¹ * ∑ x, Function.extend Subtype.val φ 0 ((s (g • x))⁻¹ * g * s x)
 
