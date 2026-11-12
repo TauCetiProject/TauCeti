@@ -117,7 +117,7 @@ theorem W1p0.exists_isCompactOperator_value_smul {G : Type*} [NormedAddCommGroup
     rw [W1p0.valueL_apply]
     simp only [T, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
     rw [W1p0.value_extendByZeroL]
-    exact coeFn_extendByZeroLpₗᵢ_restrict ℝ Ω.isOpen.measurableSet
+    exact coeFn_extendByZeroLpₗᵢ_restrict ℝ Ω.isOpen.nullMeasurableSet
       (SetLike.coe_subset_coe.mpr (le_top : Ω ≤ ⊤)) (W1p.value (u : W1p μ Ω q))
   obtain ⟨M, hM, hMc⟩ := exists_isCompactOperator_value_smul_of_extensionL hΩ hnp hqp T
     (W1p0.isCompactOperator_valueL ENNReal.coe_ne_top hΩ) hT α
