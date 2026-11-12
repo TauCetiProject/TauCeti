@@ -176,7 +176,6 @@ theorem level_eq_zero_of_span_ne_top [FiniteDimensional ℝ E] (h : span ℝ (L 
   obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     (mt Submodule.orthogonal_eq_bot_iff.mp h)
   have hN' : (0 : ℝ) < level L := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hN)
-  have hw' : 0 < ‖w‖ := norm_pos_iff.mpr hw0
   have hx : ((√(level L : ℝ) * ‖w‖)⁻¹ : ℝ) • w ∈ dual L := mem_dual.mpr fun y hy ↦
     ⟨0, by
       rw [real_inner_smul_left, real_inner_comm,
