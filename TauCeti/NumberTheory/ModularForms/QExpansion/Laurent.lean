@@ -239,7 +239,7 @@ theorem laurentQExpansion_congr (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFu
       (cuspFunction_eventuallyEq_const_of_nonpos hh f).filter_mono nhdsWithin_le_nhds
     have hg0 : cuspFunction h g =ᶠ[𝓝[≠] 0] _ :=
       (cuspFunction_eventuallyEq_const_of_nonpos hh g).filter_mono nhdsWithin_le_nhds
-    obtain ⟨q, hq⟩ := (hf0.symm.trans (hfg.trans hg0)).exists
+    obtain ⟨_, hq⟩ := (hf0.symm.trans (hfg.trans hg0)).exists
     rw [laurentQExpansion_of_nonpos hh, laurentQExpansion_of_nonpos hh]
     exact congrArg HahnSeries.C hq
   rw [laurentQExpansion, laurentQExpansion, cuspPoleOrder_congr hfg, qExpansion_congr]
