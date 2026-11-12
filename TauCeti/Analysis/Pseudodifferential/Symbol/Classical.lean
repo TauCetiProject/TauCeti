@@ -843,7 +843,7 @@ theorem term_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) (k : ℕ) :
 @[simp]
 theorem principal_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
     (spatialDeriv j a).principal = a.principal.spatialDeriv (EuclideanSpace.single j 1) :=
-  HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ => by simp [hξ]
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ _ => by simp
 
 /-- The remainder of the frequency derivative of a classical symbol after `N` terms has order
 `m - 1 - N`. -/
