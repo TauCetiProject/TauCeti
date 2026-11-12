@@ -126,27 +126,6 @@ theorem coe_levelSubMulAction (h : σ.IsEquivariantMomentMap μ) :
 
 /-! ### Orbits -/
 
-/-- **The `G_c`-orbits on the level are the `G`-orbits.** Two points of the level `μ⁻¹(c)` lie in
-the same orbit of the coadjoint stabilizer `G_c` exactly when they lie in the same `G`-orbit. -/
-theorem orbitRel_levelSubMulAction_iff (h : σ.IsEquivariantMomentMap μ)
-    {z z' : h.levelSubMulAction c} :
-    MulAction.orbitRel ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
-        (h.levelSubMulAction c) z z' ↔
-      MulAction.orbitRel G M z z' := by
-  rw [MulAction.orbitRel_apply, MulAction.orbitRel_apply, SubMulAction.mem_orbit_subMul_iff,
-    MulAction.mem_orbit_iff, MulAction.mem_orbit_iff]
-  constructor
-  · rintro ⟨g, hg⟩
-    exact ⟨g, (Subgroup.smul_def g _).symm.trans hg⟩
-  · rintro ⟨g, hg⟩
-    have hgz : μ (g • (z' : M)) = c := by
-      rw [hg]
-      exact h.mem_levelSubMulAction.1 z.2
-    refine ⟨⟨g, h.mem_stabilizer_coadjointRepresentation_of_apply_eq
-      (h.mem_levelSubMulAction.1 z'.2) hgz⟩, ?_⟩
-    rw [Subgroup.smul_def]
-    exact hg
-
 /-- **The reduced space is a space of `G`-orbits.** The map `μ⁻¹(c) / G_c → M / G` sending the
 `G_c`-orbit of a point of the level to its `G`-orbit is injective. Its image consists of the
 `G`-orbits meeting the level (`SubMulAction.range_orbitRelQuotientMap`). -/
@@ -155,6 +134,16 @@ theorem orbitRelQuotientMap_levelSubMulAction_injective (h : σ.IsEquivariantMom
   SubMulAction.orbitRelQuotientMap_injective _ fun _ _ hy hgy ↦
     h.mem_stabilizer_coadjointRepresentation_of_apply_eq (h.mem_levelSubMulAction.1 hy)
       (h.mem_levelSubMulAction.1 hgy)
+
+/-- **The `G_c`-orbits on the level are the `G`-orbits.** Two points of the level `μ⁻¹(c)` lie in
+the same orbit of the coadjoint stabilizer `G_c` exactly when they lie in the same `G`-orbit. -/
+theorem orbitRel_levelSubMulAction_iff (h : σ.IsEquivariantMomentMap μ)
+    {z z' : h.levelSubMulAction c} :
+    MulAction.orbitRel ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+        (h.levelSubMulAction c) z z' ↔
+      MulAction.orbitRel G M z z' := by
+  rw [← Quotient.eq, ← Quotient.eq, ← SubMulAction.orbitRelQuotientMap_mk,
+    ← SubMulAction.orbitRelQuotientMap_mk, h.orbitRelQuotientMap_levelSubMulAction_injective.eq_iff]
 
 /-! ### Freeness -/
 

@@ -64,11 +64,8 @@ theorem Topology.IsClosedEmbedding.properSMul {G X Y : Type*} [Group G] [Topolog
     have hcomp : (Prod.map f f ∘ fun p : G × Y ↦ (p.1 • p.2, p.2)) =
         (fun p : G × X ↦ (p.1 • p.2, p.2)) ∘ Prod.map id f :=
       funext fun p ↦ by simp [hsmul]
-    have hcont : Continuous fun p : G × Y ↦ p.1 • p.2 := by
-      refine hf.isEmbedding.continuous_iff.2 ?_
-      rw [show (f ∘ fun p : G × Y ↦ p.1 • p.2) = fun p ↦ p.1 • f p.2 from
-        funext fun p ↦ hsmul p.1 p.2]
-      exact continuous_fst.smul (hf.continuous.comp continuous_snd)
+    have hcont : Continuous fun p : G × Y ↦ p.1 • p.2 :=
+      (hf.isInducing.continuousSMul continuous_id (hsmul _ _)).continuous_smul
     refine isProperMap_of_comp_of_inj (hcont.prodMk continuous_snd)
       (hf.continuous.prodMap hf.continuous) ?_ (hf.injective.prodMap hf.injective)
     rw [hcomp]
