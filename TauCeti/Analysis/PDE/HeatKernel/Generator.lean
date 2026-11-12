@@ -109,11 +109,10 @@ theorem heatSemigroup_sub_eq_integral (hp : p ≠ ∞) (hφ : ContDiff ℝ 2 φ)
   have hrep : ∀ {s : ℝ} (hs : 0 < s) {h : Lp F p (volume : Measure E)} {ψ : E → F},
       h =ᵐ[volume] ψ → S.realOperator s h =ᵐ[volume] heatKernel s ⋆ ψ := by
     intro s hs h ψ hψ
-    have hs' : s.toNNReal ≠ 0 := (Real.toNNReal_pos.2 hs).ne'
-    rw [S.realOperator_def, ContractionSemigroup.toStronglyContinuousSemigroup_apply]
-    refine (heatSemigroup_ae_eq_convolution_coeFn hp hs' h).trans (EventuallyEq.of_eq ?_)
-    rw [Real.coe_toNNReal _ hs.le]
-    exact convolution_congr _ EventuallyEq.rfl hψ
+    rw [heatSemigroup_realOperator hp hs]
+    conv_lhs => rw [← Lp.toLp_coeFn h (Lp.memLp h)]
+    exact (convolutionLp_ae_eq_convolution hp (integrable_heatKernel hs) (Lp.memLp h)).trans
+      (EventuallyEq.of_eq (convolution_congr _ EventuallyEq.rfl hψ))
   have hint : IntegrableOn (fun s => S.realOperator s g) (Ioc 0 t) :=
     (S.continuous_realOperator_apply g).integrableOn_Ioc
   refine Lp.ext (ae_eq_of_forall_setIntegral_eq_of_sigmaFinite (fun A _ hA => ?_)
@@ -183,14 +182,6 @@ theorem generator_heatSemigroup (hp : p ≠ ∞) (hφ : ContDiff ℝ 2 φ) (hc :
 
 /-! ### The full domain of the generator -/
 
-/-- At a positive time the heat semigroup is convolution with the heat kernel. -/
-private theorem realOperator_heatSemigroup (hp : p ≠ ∞) {t : ℝ} (ht : 0 < t) :
-    (heatSemigroup (E := E) (F := F) hp).realOperator t =
-      convolutionLp hp (heatKernel t) volume := by
-  rw [StronglyContinuousSemigroup.realOperator_def,
-    ContractionSemigroup.toStronglyContinuousSemigroup_apply,
-    heatSemigroup_apply hp (Real.toNNReal_pos.2 ht).ne', Real.coe_toNNReal _ ht.le]
-
 /-- **The heat semigroup differentiates mollified `Lᵖ` functions.** Let `ρ` be of class `C²` with
 compact support and `f ∈ Lᵖ`. Then `(e^{tΔ} (ρ ⋆ f) - ρ ⋆ f) / t → Δρ ⋆ f` in `Lᵖ` as `t → 0⁺`. -/
 theorem tendsto_heatSemigroup_convolutionLp_sub (hp : p ≠ ∞) {ρ : E → ℝ} (hρ : ContDiff ℝ 2 ρ)
@@ -210,7 +201,7 @@ theorem tendsto_heatSemigroup_convolutionLp_sub (hp : p ≠ ∞) {ρ : E → ℝ
       (integrable_heatKernel ht).integrable_convolution (lsmul ℝ ℝ) hρi
     rw [convolutionLp_sub hp ((hKρ.sub hρi).smul _) hΔi, convolutionLp_smul,
       convolutionLp_sub hp hKρ hρi, convolutionLp_convolution hp (integrable_heatKernel ht) hρi,
-      realOperator_heatSemigroup hp ht]
+      heatSemigroup_realOperator hp ht]
     simp only [sub_apply, smul_apply, comp_apply]
   -- The kernels `k t` tend to `0` in `L¹`: this is the generator on `L¹` applied to `ρ`.
   have hL1 : Tendsto (fun t => ∫ x, ‖k t x‖) (𝓝[>] 0) (𝓝 0) := by
@@ -224,7 +215,7 @@ theorem tendsto_heatSemigroup_convolutionLp_sub (hp : p ≠ ∞) {ρ : E → ℝ
     rw [L1.norm_eq_integral_norm]
     refine integral_congr_ae ?_
     have hrep := convolutionLp_ae_eq_convolution ENNReal.one_ne_top (integrable_heatKernel ht) hρL
-    rw [← realOperator_heatSemigroup ENNReal.one_ne_top ht] at hrep
+    rw [← heatSemigroup_realOperator ENNReal.one_ne_top ht] at hrep
     filter_upwards [Lp.coeFn_sub ((1 / t) • ((heatSemigroup ENNReal.one_ne_top).realOperator t
       (hρL.toLp ρ) - hρL.toLp ρ)) (hΔL.toLp (Δ ρ)), Lp.coeFn_smul (1 / t)
       ((heatSemigroup ENNReal.one_ne_top).realOperator t (hρL.toLp ρ) - hρL.toLp ρ),
@@ -270,7 +261,7 @@ private theorem convolutionLp_laplacian_eq_of_tendsto (hp : p ≠ ∞) {ρ : E �
   refine (((convolutionLp hp ρ volume).continuous.tendsto _).comp hfg).congr'
     (eventually_mem_nhdsWithin.mono fun t (ht : 0 < t) => ?_)
   beta_reduce
-  rw [Function.comp_apply, map_smul, map_sub, realOperator_heatSemigroup hp ht,
+  rw [Function.comp_apply, map_smul, map_sub, heatSemigroup_realOperator hp ht,
     ← comp_apply (convolutionLp hp ρ volume),
     convolutionLp_comp_comm hp hρi (integrable_heatKernel ht), comp_apply]
 
@@ -285,12 +276,8 @@ private theorem integral_laplacian_smul_eq_of_tendsto (hp : p ≠ ∞)
   set ρ : E → ℝ := fun z => φ (-z) with hρ_def
   have hρ : ContDiff ℝ 2 ρ := (φ.contDiff.comp contDiff_neg).of_le (WithTop.coe_le_coe.2 le_top)
   have hρc : HasCompactSupport ρ := φ.hasCompactSupport.comp_homeomorph (Homeomorph.neg E)
-  have hΔρ : ∀ z, Δ ρ z = Δ (φ : E → ℝ) (-z) := fun z => by
-    have hcomp : ρ = (φ : E → ℝ) ∘ (LinearIsometryEquiv.neg ℝ (E := E)) := by
-      ext
-      simp [hρ_def]
-    rw [hcomp, laplacian_comp_linearIsometryEquiv_right, Function.comp_apply,
-      LinearIsometryEquiv.coe_neg]
+  have hΔρ : Δ ρ = fun z => Δ (φ : E → ℝ) (-z) := by
+    simpa only [zero_sub] using laplacian_comp_sub_left (φ : E → ℝ) 0
   -- Both sides of `Δρ ⋆ f = ρ ⋆ g` have continuous representatives, which therefore agree.
   have hrep : ∀ {k : E → ℝ}, Continuous k → HasCompactSupport k →
       ∀ h : Lp F p (volume : Measure E),
@@ -308,9 +295,8 @@ private theorem integral_laplacian_smul_eq_of_tendsto (hp : p ≠ ∞)
     rw [convolutionLp_laplacian_eq_of_tendsto hp hρ hρc hfg]
     exact hrep hρ.continuous hρc g
   have h0 := congrFun heq 0
-  rw [convolution_lsmul_swap, convolution_lsmul_swap] at h0
-  simp only [zero_sub, hΔρ, neg_neg] at h0
-  simpa only [hρ_def, neg_neg] using h0
+  rwa [hΔρ, hρ_def, convolution_lsmul_comp_neg_apply_zero,
+    convolution_lsmul_comp_neg_apply_zero] at h0
 
 /-- **The generator of the heat semigroup on `Lᵖ` is the Laplacian in the sense of
 distributions.** For `1 ≤ p < ∞` its domain is `{f ∈ Lᵖ : Δf ∈ Lᵖ}`, the `f ∈ Lᵖ` whose

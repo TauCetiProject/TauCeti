@@ -40,6 +40,7 @@ semigroup is not strongly continuous at `0`.
 * `TauCeti.heatSemigroup`: the heat semigroup on `Lᵖ`, as a `ContractionSemigroup`.
 * `TauCeti.heatSemigroup_apply`, `TauCeti.heatSemigroup_apply_apply`: for `t ≠ 0`, the operator
   at time `t` is convolution with `K_t`.
+* `TauCeti.heatSemigroup_realOperator`: the same for the real-time extension at `t > 0`.
 * `TauCeti.heatSemigroup_zero`: the operator at time `0` is the identity.
 * `TauCeti.heatSemigroup_ae_eq_convolution`: for `t ≠ 0`, `e^{tΔ} f` is represented almost
   everywhere by the classical convolution `K_t ⋆ f`.
@@ -131,6 +132,15 @@ theorem heatSemigroup_zero (hp : p ≠ ∞) :
 theorem heatSemigroup_apply (hp : p ≠ ∞) {t : ℝ≥0} (ht : t ≠ 0) :
     heatSemigroup (E := E) (F := F) hp t = convolutionLp hp (heatKernel t) volume :=
   ite_eq_right ht
+
+/-- At a positive real time `t` the real-time extension of the heat semigroup is convolution with
+the heat kernel `K_t`. -/
+theorem heatSemigroup_realOperator (hp : p ≠ ∞) {t : ℝ} (ht : 0 < t) :
+    (heatSemigroup (E := E) (F := F) hp).realOperator t =
+      convolutionLp hp (heatKernel t) volume := by
+  rw [StronglyContinuousSemigroup.realOperator_def,
+    ContractionSemigroup.toStronglyContinuousSemigroup_apply,
+    heatSemigroup_apply hp (Real.toNNReal_pos.2 ht).ne', Real.coe_toNNReal _ ht.le]
 
 /-- At a positive time `t` the heat semigroup sends `f` to the `Lᵖ`-valued integral
 `∫ y, K_t(y) • f(· - y) dy`. -/

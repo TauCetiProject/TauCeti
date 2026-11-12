@@ -257,14 +257,8 @@ private theorem laplacian_normed_convolution_eq_zero
     (isCompact_closedBall y φ.rOut).of_isClosed_subset (isClosed_tsupport _) hg_supp,
     hg_supp.trans hyΩ⟩
   have hψ : (ψ : E → ℝ) = g := rfl
-  -- `Δψ t = Δρ (y - t)`, by invariance of the Laplacian under `t ↦ -t` and translations.
-  have hΔg : ∀ t, Δ g t = Δ ρ (y - t) := by
-    have hcomp : g = (fun s ↦ ρ (s + y)) ∘ (LinearIsometryEquiv.neg ℝ (E := E)) := by
-      ext t
-      simp [hg_def, neg_add_eq_sub]
-    intro t
-    rw [hcomp, laplacian_comp_linearIsometryEquiv_right, laplacian_comp_add_right]
-    simp [neg_add_eq_sub]
+  -- `Δψ t = Δρ (y - t)`, by invariance of the Laplacian under the point reflection `t ↦ y - t`.
+  have hΔg : ∀ t, Δ g t = Δ ρ (y - t) := fun t ↦ congrFun (laplacian_comp_sub_left ρ y) t
   -- Move the Laplacian onto the bump, then recognize the pairing of `u` with `Δψ`.
   rw [← convolution_flip, HasCompactSupport.laplacian_convolution_right _ φ.hasCompactSupport_normed
     hf.locallyIntegrable φ.contDiff_normed, convolution_def, ← hΔ ψ]

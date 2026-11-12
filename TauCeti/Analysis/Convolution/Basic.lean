@@ -68,6 +68,8 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   factor is integrable and the other essentially bounded.
 * `MeasureTheory.isBounded_range_convolution_of_memLp`: the convolution of `f ∈ Lᵖ` with
   `g ∈ L^q`, for Hölder conjugate `p` and `q`, is bounded.
+* `MeasureTheory.convolution_lsmul_comp_neg_apply_zero`: convolving with the reflection
+  `t ↦ f (-t)` and evaluating at `0` gives the pairing `∫ f • g`.
 * `MeasureTheory.norm_convolution_lsmul_le_integral_norm_mul_norm` and
   `MeasureTheory.norm_convolution_lsmul_add_sub_le`: the sup bound and the increment bound of the
   convolution of an `L^∞` function with an integrable kernel.
@@ -549,5 +551,19 @@ theorem enorm_sub_convolution_lsmul_le_mul_lintegral [CompleteSpace F] (hψ : Co
     simp [h0]
 
 end Increments
+
+section Reflection
+
+variable {𝕜 G F : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup G] [MeasurableSpace G]
+  [MeasurableAdd G] [MeasurableNeg G] {μ : Measure G} [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F]
+
+/-- Convolving `g` with the reflection `t ↦ f (-t)` of a scalar kernel and evaluating at `0`
+gives the pairing `∫ f • g`. -/
+theorem convolution_lsmul_comp_neg_apply_zero (f : G → 𝕜) (g : G → F) :
+    ((fun t ↦ f (-t)) ⋆[lsmul 𝕜 𝕜, μ] g) 0 = ∫ t, f t • g t ∂μ := by
+  simp [convolution_lsmul_swap]
+
+end Reflection
 
 end MeasureTheory

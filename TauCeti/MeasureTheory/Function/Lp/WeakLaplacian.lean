@@ -193,13 +193,7 @@ private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c
       simpa [Function.comp_def, g, ← sub_eq_add_neg] using
         hρc.comp_homeomorph ((Homeomorph.neg E).trans (Homeomorph.addLeft y))
     let ψ : 𝓓((⊤ : Opens E), ℝ) := ⟨g, hgd, hgc, by simp⟩
-    have hΔg : ∀ t, Δ g t = Δ ρ (y - t) := by
-      have hcomp : g = (fun s ↦ ρ (s + y)) ∘ (LinearIsometryEquiv.neg ℝ (E := E)) := by
-        ext t
-        simp [hg_def, neg_add_eq_sub]
-      intro t
-      rw [hcomp, laplacian_comp_linearIsometryEquiv_right, laplacian_comp_add_right]
-      simp [neg_add_eq_sub]
+    have hΔg : ∀ t, Δ g t = Δ ρ (y - t) := fun t ↦ congrFun (laplacian_comp_sub_left ρ y) t
     have hlap : Δ u y = ∫ t, Δ ρ (y - t) • v t := by
       rw [hu_def, ← convolution_flip, HasCompactSupport.laplacian_convolution_right _ hρc hvl hρ2,
         convolution_def]
@@ -216,8 +210,7 @@ private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c
       (hρ.continuous.memLp_of_hasCompactSupport hρc) hv
   -- The maximum principle makes `u` vanish, and `u 0` is the pairing of `v` with `φ`.
   have hu0 := congrFun (eq_zero_of_laplacian_eq_mul_of_isBounded hc hu hub hΔu) 0
-  rw [hu_def, convolution_lsmul_swap, Pi.zero_apply] at hu0
-  simpa [hρ_def] using hu0
+  rwa [hu_def, hρ_def, convolution_lsmul_comp_neg_apply_zero, Pi.zero_apply] at hu0
 
 /-- **An `Lᵖ` solution of `Δf = c f`, `c > 0`, vanishes.** If the distributional Laplacian of
 `f ∈ Lᵖ` is `c f` for a positive constant `c`, then `f = 0`. -/
