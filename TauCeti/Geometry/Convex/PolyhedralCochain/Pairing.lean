@@ -30,8 +30,8 @@ intersection pairing of a test with finite formal sums of oriented cells, with v
 coefficient module, natural in the coefficients.
 
 Complementary nondegenerate simplices are transverse when they avoid the cell frontier
-and their proper parameter faces avoid its support,
-using `Affine.Simplex.conormal_apply_ne_zero` on the normal quotient.
+and their proper parameter faces avoid its support
+(`OrientedCell.isTransverse_of_isCompl`).
 
 The cochain relations preserve the pairing whenever the test is transverse to both
 representatives (`PolyhedralCochain.intersectionPairing_eq_of_ofFinsupp_eq`), although the cells
@@ -55,11 +55,11 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 
 namespace OrientedCell
 
-/-- The affine test simplex with vertices `v` is transverse to the oriented cell `σ` of the same
-codimension: its image avoids the relative boundary of `σ` and, if it meets `σ`, its edge frame
-`(v 1 - v 0, …, v k - v 0)` is linearly independent modulo the direction of `σ`, so that the
-linear part of the test is an isomorphism onto the normal quotient. Its proper parameter faces
-avoid the support of the cell. -/
+/-- The `k`-dimensional affine test simplex with vertices `v` is transverse to the oriented cell
+`σ` of codimension `k`: its image avoids the relative boundary of `σ` and, if it meets `σ`, its
+edge frame `(v 1 - v 0, …, v k - v 0)` is linearly independent modulo the direction of `σ`, so the
+linear part of the test projects via `mkQ` to an isomorphism onto the normal quotient.
+Its proper parameter faces avoid the support of the cell. -/
 structure IsTransverse (σ : OrientedCell h k) (v : Fin (k + 1) → V) : Prop where
   /-- The test avoids the relative boundary of the cell. -/
   disjoint_intrinsicFrontier :
@@ -97,7 +97,7 @@ theorem isTransverse_of_isCompl (σ : OrientedCell h k) (s : Affine.Simplex ℝ 
     (fun j : Fin k => s.points j.succ - s.points 0)
   rw [Module.Ray.someVector_ray] at he
   rw [he, sign_ne_zero]
-  exact s.conormal_apply_ne_zero hc
+  exact s.apply_vsub_ne_zero_of_isCompl_of_mem_conormalForms hc
     (Module.Ray.isConormal_iff.mp σ.isConormal) σ.orientation.someVector_ne_zero
 
 /-- Reversing a cell's orientation preserves transversality of an affine test simplex. -/
@@ -113,25 +113,26 @@ theorem isTransverse_reverse_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V)
   · rw [reverse_carrier]
     exact hv.linearIndependent
 
-/-- Restricting a transverse segment to a nontrivial parameter interval preserves
-transversality when the new endpoints avoid the cell. The parameters may occur in either
-order, and disjoint stationary tests are allowed. -/
-theorem IsTransverse.subsegment {σ : OrientedCell h 1} {x y a b : V}
-    (hv : σ.IsTransverse ![x, y]) {s u : ℝ}
-    (hs : s ∈ Icc (0 : ℝ) 1) (hu : u ∈ Icc (0 : ℝ) 1) (hsu : s ≠ u)
-    (ha : a = AffineMap.lineMap x y s) (hb : b = AffineMap.lineMap x y u)
+/-- A segment inside a transverse segment is transverse when its endpoints avoid the cell.
+The endpoints may occur in either order or coincide. -/
+theorem IsTransverse.pair_of_mem_segment {σ : OrientedCell h 1} {x y a b : V}
+    (hv : σ.IsTransverse ![x, y]) (ha : a ∈ segment ℝ x y) (hb : b ∈ segment ℝ x y)
     (haσ : a ∉ σ.carrier) (hbσ : b ∉ σ.carrier) :
     σ.IsTransverse ![a, b] := by
-  have hseg : segment ℝ a b ⊆ segment ℝ x y := by
-    apply (convex_segment x y).segment_subset
-    · rw [ha, segment_eq_image_lineMap]
-      exact ⟨s, hs, rfl⟩
-    · rw [hb, segment_eq_image_lineMap]
-      exact ⟨u, hu, rfl⟩
+  by_cases hab : a = b
+  · subst b
+    apply σ.isTransverse_of_disjoint
+    simpa [Matrix.range_cons_cons_empty] using haσ
+  have hseg : segment ℝ a b ⊆ segment ℝ x y :=
+    (convex_segment x y).segment_subset ha hb
   have hhull : convexHull ℝ (range ![a, b]) ⊆ convexHull ℝ (range ![x, y]) := by
     simpa only [Matrix.range_cons_cons_empty, convexHull_pair] using hseg
+  rw [segment_eq_image_lineMap] at ha hb
+  obtain ⟨s, -, ha⟩ := ha
+  obtain ⟨u, -, hb⟩ := hb
+  have hsu : s ≠ u := fun he => hab (ha.symm.trans (he ▸ hb))
   have hdiff : b - a = (u - s) • (y - x) := by
-    rw [ha, hb, AffineMap.lineMap_apply_module', AffineMap.lineMap_apply_module']
+    rw [← ha, ← hb, AffineMap.lineMap_apply_module', AffineMap.lineMap_apply_module']
     module
   refine ⟨hv.disjoint_intrinsicFrontier.mono_left hhull, ?_, fun hm => ?_⟩
   · intro j
@@ -145,6 +146,40 @@ theorem IsTransverse.subsegment {σ : OrientedCell h 1} {x y a b : V}
       Matrix.cons_val_one, Matrix.cons_val_zero] at hlin ⊢
     rw [hdiff, map_smul, smul_ne_zero_iff]
     exact ⟨sub_ne_zero.mpr hsu.symm, hlin⟩
+
+/-- A point test is transverse to a full-dimensional cell exactly off its relative frontier. -/
+@[simp]
+theorem isTransverse_singleton_iff (σ : OrientedCell h 0) (x : V) :
+    σ.IsTransverse ![x] ↔ x ∉ intrinsicFrontier ℝ σ.carrier := by
+  constructor
+  · intro hv
+    simpa [Matrix.range_cons] using hv.disjoint_intrinsicFrontier
+  · intro hx
+    refine ⟨by simpa [Matrix.range_cons] using hx, ?_, fun _ => linearIndependent_empty_type⟩
+    intro j
+    simp
+
+/-- Swapping the endpoints of a transverse segment preserves transversality. -/
+theorem IsTransverse.pair_swap {σ : OrientedCell h 1} {a b : V}
+    (hv : σ.IsTransverse ![a, b]) : σ.IsTransverse ![b, a] := by
+  have hhull : convexHull ℝ (range ![b, a]) = convexHull ℝ (range ![a, b]) := by
+    rw [Matrix.range_cons_cons_empty, Matrix.range_cons_cons_empty, Set.pair_comm]
+  refine ⟨by rw [hhull]; exact hv.disjoint_intrinsicFrontier, ?_, fun hm => ?_⟩
+  · intro j
+    fin_cases j
+    · simpa [Set.range_unique] using hv.disjoint_faces 1
+    · simpa [Set.range_unique] using hv.disjoint_faces 0
+  · rw [hhull] at hm
+    have hlin := hv.linearIndependent hm
+    rw [linearIndependent_unique_iff] at hlin ⊢
+    simp only [Function.comp_apply, Fin.default_eq_zero, Fin.succ_zero_eq_one,
+      Matrix.cons_val_one, Matrix.cons_val_zero] at hlin ⊢
+    simpa only [← neg_sub b a, map_neg, neg_ne_zero] using hlin
+
+/-- Transversality of a segment is independent of the order of its endpoints. -/
+theorem isTransverse_pair_comm (σ : OrientedCell h 1) (a b : V) :
+    σ.IsTransverse ![b, a] ↔ σ.IsTransverse ![a, b] :=
+  ⟨IsTransverse.pair_swap, IsTransverse.pair_swap⟩
 
 /-- A transverse test meeting a cell meets its affine span in only one point. -/
 theorem IsTransverse.subsingleton_convexHull_inter_affineSpan (hv : σ.IsTransverse v)
@@ -169,6 +204,13 @@ def intersectionIndex (σ : OrientedCell h k) (v : Fin (k + 1) → V) : ℤ :=
   if (convexHull ℝ (range v) ∩ σ.carrier).Nonempty then
     σ.orientation.evalSign (fun j : Fin k => v j.succ - v 0)
   else 0
+
+open Classical in
+/-- The intersection index is the orientation sign on the edge frame when the test meets the cell,
+and zero otherwise. -/
+theorem intersectionIndex_def (σ : OrientedCell h k) (v : Fin (k + 1) → V) :
+    σ.intersectionIndex v = if (convexHull ℝ (range v) ∩ σ.carrier).Nonempty then
+      (σ.orientation.evalSign (fun j : Fin k => v j.succ - v 0) : ℤ) else 0 := (rfl)
 
 /-- A test meeting a cell has the orientation sign on its edge frame as intersection index. -/
 theorem intersectionIndex_of_nonempty
@@ -232,8 +274,7 @@ theorem intersectionIndex_reverse (σ : OrientedCell h k) (v : Fin (k + 1) → V
     rw [intersectionIndex_of_disjoint hdisj,
       intersectionIndex_of_disjoint (σ := σ.reverse) (by rwa [reverse_carrier]), neg_zero]
 
-/-- The intersection index of a transverse test vanishes exactly when the test misses the cell;
-otherwise it is `±1`. -/
+/-- The intersection index of a transverse test vanishes exactly when the test misses the cell. -/
 theorem IsTransverse.intersectionIndex_eq_zero_iff (hv : σ.IsTransverse v) :
     σ.intersectionIndex v = 0 ↔ Disjoint (convexHull ℝ (range v)) σ.carrier := by
   have := h.finiteDimensional
@@ -262,36 +303,49 @@ variable {R : Type*} [Ring R] {E : Type*} [AddCommGroup E] [Module R E]
 
 /-- The intersection pairing of the affine test simplex with vertices `v` with finite formal sums
 of oriented cells: the sum of the coefficients weighted by the local intersection indices. -/
-def intersectionPairing (v : Fin (k + 1) → V) : (OrientedCell h k →₀ E) →ₗ[R] E :=
+def intersectionPairing (R : Type*) [Ring R] [Module R E]
+    (v : Fin (k + 1) → V) : (OrientedCell h k →₀ E) →ₗ[R] E :=
   Finsupp.lsum ℕ fun σ => σ.intersectionIndex v • LinearMap.id
 
 /-- Pairing with one generator multiplies its coefficient by the intersection sign. -/
 @[simp]
 theorem intersectionPairing_single (v : Fin (k + 1) → V) (σ : OrientedCell h k) (c : E) :
-    intersectionPairing (R := R) v (Finsupp.single σ c) = σ.intersectionIndex v • c := by
+    intersectionPairing R v (Finsupp.single σ c) = σ.intersectionIndex v • c := by
   simp [intersectionPairing]
 
 /-- The pairing is the finite sum of coefficients weighted by their intersection signs. -/
 theorem intersectionPairing_apply (v : Fin (k + 1) → V) (x : OrientedCell h k →₀ E) :
-    intersectionPairing (R := R) v x = x.sum fun σ c => σ.intersectionIndex v • c := by
+    intersectionPairing R v x = x.sum fun σ c => σ.intersectionIndex v • c := by
   rw [intersectionPairing, Finsupp.lsum_apply]
   exact Finsupp.sum_congr fun σ _ => by rw [LinearMap.smul_apply, LinearMap.id_apply]
 
 /-- Reversing a segment negates its pairing with a finite wall presentation. -/
 theorem intersectionPairing_pair_swap (a b : V) (f : OrientedCell h 1 →₀ E) :
-    intersectionPairing (R := R) ![b, a] f = -intersectionPairing (R := R) ![a, b] f := by
+    intersectionPairing R ![b, a] f = -intersectionPairing R ![a, b] f := by
   simp only [intersectionPairing_apply, Finsupp.sum, ← Finset.sum_neg_distrib]
   apply Finset.sum_congr rfl
   intro σ _
   rw [σ.intersectionIndex_pair_swap, neg_smul]
 
+/-- The intersection pairing commutes with additive maps of coefficients. -/
+@[simp]
+theorem intersectionPairing_mapRange {E' F : Type*} [AddCommGroup E'] [Module R E']
+    [FunLike F E E'] [AddMonoidHomClass F E E'] (f : F) (hf : f 0 = 0)
+    (v : Fin (k + 1) → V) (x : OrientedCell h k →₀ E) :
+    intersectionPairing R v (Finsupp.mapRange f hf x) = f (intersectionPairing R v x) := by
+  rw [intersectionPairing_apply, intersectionPairing_apply,
+    Finsupp.sum_mapRange_index (fun _ => smul_zero _)]
+  simp only [Finsupp.sum, map_sum, map_zsmul]
+
 /-- The intersection pairing commutes with linear maps of coefficients. -/
 theorem intersectionPairing_comp_mapRange {E' : Type*} [AddCommGroup E'] [Module R E']
     (f : E →ₗ[R] E') (v : Fin (k + 1) → V) :
-    intersectionPairing v ∘ₗ Finsupp.mapRange.linearMap f =
-      f ∘ₗ intersectionPairing (R := R) (h := h) v := by
-  ext σ c
-  simp
+    intersectionPairing R v ∘ₗ Finsupp.mapRange.linearMap f =
+      f ∘ₗ intersectionPairing R (h := h) v := by
+  apply LinearMap.ext
+  intro x
+  simpa only [LinearMap.comp_apply, Finsupp.mapRange.linearMap_apply] using
+    intersectionPairing_mapRange f (map_zero f) v x
 
 section relations
 
@@ -430,7 +484,7 @@ the relation may be generated by cells to which the test is not transverse. -/
 theorem intersectionPairing_eq_zero_of_mem_cochainRelations {v : Fin (k + 1) → V}
     {z : OrientedCell h k →₀ E} (hz : z ∈ cochainRelations R h E k)
     (hv : ∀ σ ∈ z.support, σ.IsTransverse v) :
-    intersectionPairing (R := R) v z = 0 := by
+    intersectionPairing R v z = 0 := by
   classical
   -- The test meets each relevant span in a single point. Near that point in the span, the
   -- local coefficient is constant, while every relation vanishes off a nowhere dense set.
@@ -487,7 +541,7 @@ every test transverse to all of their cells. -/
 theorem intersectionPairing_eq_of_ofFinsupp_eq {v : Fin (k + 1) → V}
     {x y : OrientedCell h k →₀ E} (hxy : ofFinsupp (R := R) x = ofFinsupp y)
     (hx : ∀ σ ∈ x.support, σ.IsTransverse v) (hy : ∀ σ ∈ y.support, σ.IsTransverse v) :
-    intersectionPairing (R := R) v x = intersectionPairing (R := R) v y := by
+    intersectionPairing R v x = intersectionPairing R v y := by
   classical
   rw [← sub_eq_zero, ← map_sub]
   refine intersectionPairing_eq_zero_of_mem_cochainRelations ?_ fun σ hσ => ?_

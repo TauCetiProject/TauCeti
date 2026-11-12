@@ -86,6 +86,13 @@ theorem direction_eq_of_subset (σ τ : OrientedCell h k) (hστ : σ.carrier �
   have hτ := τ.finrank_direction_add
   omega
 
+/-- Containment between cells of the same codimension forces their affine spans to agree. -/
+theorem affineSpan_eq_of_subset (σ τ : OrientedCell h k) (hστ : σ.carrier ⊆ τ.carrier) :
+    affineSpan ℝ σ.carrier = affineSpan ℝ τ.carrier := by
+  obtain ⟨x, hx⟩ := σ.nonempty
+  exact AffineSubspace.ext_of_direction_eq (σ.direction_eq_of_subset τ hστ)
+    ⟨x, subset_affineSpan ℝ _ hx, subset_affineSpan ℝ _ (hστ hx)⟩
+
 /-- The degree of a cell's conormal orientation is the dimension of its normal quotient. -/
 theorem finrank_quotient_direction (σ : OrientedCell h k) :
     finrank ℝ (V ⧸ (affineSpan ℝ σ.carrier).direction) = k := by
@@ -198,10 +205,8 @@ theorem direction_eq (hQ : IsOrientedSubdivision σ Q) (hτ : τ ∈ Q) :
 
 /-- Every piece has the affine span of the subdivided cell. -/
 theorem affineSpan_eq (hQ : IsOrientedSubdivision σ Q) (hτ : τ ∈ Q) :
-    affineSpan ℝ τ.carrier = affineSpan ℝ σ.carrier := by
-  obtain ⟨x, hx⟩ := τ.nonempty
-  exact AffineSubspace.ext_of_direction_eq (hQ.direction_eq hτ)
-    ⟨x, subset_affineSpan ℝ _ hx, subset_affineSpan ℝ _ (hQ.carrier_subset hτ hx)⟩
+    affineSpan ℝ τ.carrier = affineSpan ℝ σ.carrier :=
+  τ.affineSpan_eq_of_subset σ (hQ.carrier_subset hτ)
 
 /-- A subdivision has at least one piece. -/
 theorem nonempty (hQ : IsOrientedSubdivision σ Q) : Q.Nonempty := by

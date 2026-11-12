@@ -136,14 +136,17 @@ theorem conormalFormsEquiv_apply (W : Submodule R M) (α : (M ⧸ W) [⋀^ι]→
 @[simp]
 theorem conormalFormsEquiv_symm_apply_mk (W : Submodule R M)
     (α : W.conormalForms ι) (v : ι → M) :
-    W.conormalFormsEquiv.symm α (fun j => Submodule.Quotient.mk (v j)) = α.val v :=
-  AlternatingMap.congr_fun (congrArg Subtype.val (W.conormalFormsEquiv.apply_symm_apply α)) v
+    W.conormalFormsEquiv.symm α (fun j => Submodule.Quotient.mk (v j)) = α.val v := by
+  simpa only [conormalFormsEquiv_apply, AlternatingMap.compLinearMap_apply, mkQ_apply] using
+    AlternatingMap.congr_fun (congrArg Subtype.val (W.conormalFormsEquiv.apply_symm_apply α)) v
 
 end CommRing
 
 end Submodule
 
 namespace Module.Ray
+
+section Field
 
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
 
@@ -200,20 +203,30 @@ theorem IsConormal.exists_eq_rayOfNeZero_conormalPullback [Finite ι]
   congr
   exact hα.symm
 
+end Field
+
+section CommRing
+
+variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
+
 /-- The sign of a ray of alternating forms on a tuple of vectors: the sign of the value of any
 representing form, by `Module.Ray.evalSign_rayOfNeZero`. -/
 noncomputable def evalSign (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (v : ι → M) : SignType :=
   SignType.sign (o.someVector v)
+
+/-- The evaluation sign is the sign of the chosen representative's value. -/
+theorem evalSign_def (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (v : ι → M) :
+    o.evalSign v = SignType.sign (o.someVector v) := (rfl)
 
 /-- The sign of a ray can be computed using any nonzero representing form. -/
 @[simp]
 theorem evalSign_rayOfNeZero {α : M [⋀^ι]→ₗ[R] R} (hα : α ≠ 0) (v : ι → M) :
     (rayOfNeZero R α hα).evalSign v = SignType.sign (α v) := by
   have hβ := (rayOfNeZero R α hα).someVector_ne_zero
-  obtain ⟨r, hr, he⟩ := ((ray_eq_iff hβ hα).mp (someVector_ray _)).exists_pos_left hβ hα
-  have hv : α v = r * (rayOfNeZero R α hα).someVector v := by
-    rw [← smul_eq_mul, ← smul_apply, he]
-  rw [evalSign, hv, sign_mul, sign_pos hr, one_mul]
+  obtain ⟨r, s, hr, hs, he⟩ := ((ray_eq_iff hβ hα).mp (someVector_ray _)).exists_pos hβ hα
+  have hv := congrArg (fun β : M [⋀^ι]→ₗ[R] R => SignType.sign (β v)) he
+  simpa only [smul_apply, smul_eq_mul, sign_mul, sign_pos hr, sign_pos hs, one_mul,
+    evalSign_def] using hv
 
 /- The scaling formula uses Mathlib's `AlternatingMap.map_smul_univ` and `signHom`. -/
 /-- Scaling the arguments multiplies the evaluation sign by the product of
@@ -234,6 +247,25 @@ theorem evalSign_neg (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) (v : ι → M) :
   | h α hα =>
     rw [neg_rayOfNeZero, evalSign_rayOfNeZero, evalSign_rayOfNeZero, neg_apply, Left.sign_neg]
 
+/-- A basis orientation evaluates with the sign of its determinant. -/
+@[simp]
+theorem _root_.Module.Basis.evalSign_orientation [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) (v : ι → M) :
+    b.orientation.evalSign v = SignType.sign (b.det v) := by
+  rw [Module.Basis.orientation, evalSign_rayOfNeZero]
+
+end CommRing
+
+section Field
+
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
+
+/-- A conormal ray's evaluation sign depends only on the arguments modulo the submodule. -/
+theorem IsConormal.evalSign_eq_of_sub_mem [Finite ι] {o : Module.Ray R (M [⋀^ι]→ₗ[R] R)}
+    {W : Submodule R M} (ho : o.IsConormal W) {x y : ι → M}
+    (hxy : ∀ j, x j - y j ∈ W) : o.evalSign x = o.evalSign y := by
+  rw [evalSign_def, evalSign_def, Submodule.conormalForms_apply_eq_of_sub_mem ho hxy]
+
 /-- A conormal ray whose degree is the dimension of the quotient has nonzero sign on a tuple
 exactly when the tuple is linearly independent modulo `W`, that is, when it maps to a basis
 of `M ⧸ W`. -/
@@ -245,8 +277,9 @@ theorem IsConormal.evalSign_ne_zero_iff [Fintype ι] {o : Module.Ray R (M [⋀^�
   have hβ : β ≠ 0 := by
     rw [ne_eq, LinearEquiv.map_eq_zero_iff, Subtype.ext_iff]
     exact o.someVector_ne_zero
-  have hv : o.someVector v = β (W.mkQ ∘ v) :=
-    (W.conormalFormsEquiv_symm_apply_mk ⟨o.someVector, ho⟩ v).symm
+  have hv : o.someVector v = β (W.mkQ ∘ v) := by
+    simp only [β, Function.comp_def, Submodule.mkQ_apply,
+      Submodule.conormalFormsEquiv_symm_apply_mk]
   rw [evalSign, hv, sign_ne_zero]
   refine ⟨fun hne => by_contra fun hli => hne (β.map_linearDependent _ hli), fun hli => ?_⟩
   have hb := (β.map_basis_ne_zero_iff (basisOfLinearIndependentOfCardEqFinrank' _ hli hk.symm)).mpr
@@ -270,5 +303,7 @@ theorem IsConormal.eq_or_eq_neg [Fintype ι] {o p : Module.Ray R (M [⋀^ι]→�
     rw [neg_rayOfNeZero, ray_eq_iff]
     simpa only [map_neg] using
       ((ray_eq_iff hα (neg_ne_zero.mpr hβ)).mp he).map W.conormalPullback
+
+end Field
 
 end Module.Ray

@@ -12,14 +12,11 @@ public import Mathlib.LinearAlgebra.Projection
 /-!
 # Conormal forms on transverse simplices
 
-The edge frame of a nondegenerate simplex evaluates nontrivially under a nonzero
-conormal form when its direction complements the tangent subspace. In dimension
-two this allows a transverse triangular boundary to be ordered positively for a
-prescribed conormal orientation.
-
-The proof uses Mathlib's basis of a linearly independent span and
-`Submodule.quotientEquivOfIsCompl`, together with
-`Submodule.conormalFormsEquiv` to descend the form to the normal quotient.
+The edge frame of a nondegenerate `n`-simplex evaluates nontrivially under a nonzero
+conormal `n`-form when its direction complements the tangent submodule. This gives
+transversality of complementary test simplices. For `n = 2`, over an ordered ring,
+it also allows a triangular boundary transverse to a codimension-two subspace to be
+ordered positively for a prescribed conormal orientation.
 
 Adapted from `Mei/Geometry/Affine/Simplex/Conormal.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
@@ -37,7 +34,8 @@ variable {R V P : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
 /-- A nonzero conormal form evaluates nontrivially on the edge frame of a
 simplex whose direction complements the tangent subspace. -/
-theorem conormal_apply_ne_zero (s : Simplex R P n) {W : Submodule R V}
+theorem apply_vsub_ne_zero_of_isCompl_of_mem_conormalForms
+    (s : Simplex R P n) {W : Submodule R V}
     (hW : IsCompl W (vectorSpan R (range s.points)))
     {α : V [⋀^Fin n]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin n)) (hα0 : α ≠ 0) :
     α (fun j : Fin n => s.points j.succ -ᵥ s.points 0) ≠ 0 := by
@@ -72,7 +70,7 @@ theorem conormal_apply_ne_zero (s : Simplex R P n) {W : Submodule R V}
       LinearMap.comp_apply, Submodule.subtype_apply]
   have hefun : (b : Fin n → V ⧸ W) = fun j => Submodule.Quotient.mk (v j) := by
     funext j
-    exact he j
+    rw [he j, Submodule.mkQ_apply]
   rw [hefun] at hb
   simpa only [β, Submodule.conormalFormsEquiv_symm_apply_mk] using hb
 
