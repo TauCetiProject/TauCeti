@@ -68,7 +68,7 @@ intersection with `interior s` by a null set, since the frontier of `s` is null 
 Haar measure. -/
 theorem Convex.inter_interior_ae_eq (hs : Convex ℝ s) {t : Set E} (ht : t ⊆ s) :
     t ∩ interior s =ᵐ[μ] t := by
-  simpa [inter_eq_left.2 ht] using ae_eq_set_inter (Filter.EventuallyEq.rfl : t =ᵐ[μ] t)
+  simpa [inter_eq_left.2 ht] using ae_eq_set_inter (Filter.EventuallyEqSet.rfl : t =ᵐ[μ] t)
     (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ))
 
 /-- If a convex set in a finite-dimensional real normed space meets a set `t` in positive additive
