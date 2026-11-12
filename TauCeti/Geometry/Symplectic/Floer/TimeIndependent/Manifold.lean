@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Geometry.Manifold.IntegralCurve.Velocity
 public import TauCeti.Geometry.Symplectic.Floer.CylinderAction
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Gradient
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy

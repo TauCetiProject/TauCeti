@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
@@ -67,8 +66,6 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.hasMFDerivWithinAt_curveVelocityWithin` and
   `TauCeti.Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt`: the two directions relating the
   named velocity to a `HasMFDerivWithinAt` witness.
-* `TauCeti.Manifold.isMIntegralCurve_iff_curveVelocity_eq`: a curve is an integral curve of a
-  vector field exactly when it is differentiable with velocity given by the field at every time.
 * `TauCeti.Manifold.curveVelocityWithin_subset` and
   `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction and obeys the
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
@@ -997,24 +994,5 @@ theorem exists_contMDiffAt_curveVelocity_eq (hn : 1 ≤ n) (p : M)
     (hasMFDerivAt_curveVelocity (hγ.mdifferentiableAt (by positivity)))
   rw [hγt] at hchart
   exact hchart.unique (hderiv.congr_of_eventuallyEq heq)
-
-end TauCeti.Manifold
-
-namespace TauCeti.Manifold
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- **Integral curves through their velocity.** A curve is an integral curve of `v` exactly when
-it is differentiable at every time `t` with velocity `v (γ t)`. -/
-theorem isMIntegralCurve_iff_curveVelocity_eq {γ : ℝ → M} {v : (x : M) → TangentSpace I x} :
-    IsMIntegralCurve γ v ↔ ∀ t, MDifferentiableAt 𝓘(ℝ) I γ t ∧ curveVelocity I γ t = v (γ t) := by
-  refine ⟨fun hγ t ↦ ⟨(hγ t).mdifferentiableAt, ?_⟩, fun h t ↦ ?_⟩
-  · simpa only [curveVelocityWithin_univ] using
-      curveVelocityWithin_eq_of_hasMFDerivWithinAt (hγ t).hasMFDerivWithinAt
-        uniqueDiffWithinAt_univ
-  · rw [← (h t).2]
-    exact hasMFDerivAt_curveVelocity (h t).1
 
 end TauCeti.Manifold
