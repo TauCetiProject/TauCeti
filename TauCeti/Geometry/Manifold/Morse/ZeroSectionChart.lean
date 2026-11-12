@@ -93,9 +93,9 @@ private theorem exists_extChartAt_parametricMorseCoord_prod_ball (hW : IsOpen W)
           fderiv ℝ (fderiv ℝ (fun v ↦ F ((extChartAt I b₀).symm z.1, v))) 0
             (parametricMorseCoord (fun z ↦ F ((extChartAt I b₀).symm z.1, z.2)) z)
             (parametricMorseCoord (fun z ↦ F ((extChartAt I b₀).symm z.1, z.2)) z) := by
-  set φ := extChartAt I b₀ with hφ
+  set φ := extChartAt I b₀
   set Fc : EB × E → ℝ := fun z ↦ F (φ.symm z.1, z.2) with hFc
-  set Wc : Set (EB × E) := (interior φ.target ×ˢ univ) ∩ {z | (φ.symm z.1, z.2) ∈ W} with hWc
+  set Wc : Set (EB × E) := (interior φ.target ×ˢ univ) ∩ {z | (φ.symm z.1, z.2) ∈ W}
   have hsymm : ContMDiffOn (𝓘(ℝ, EB).prod 𝓘(ℝ, E)) (I.prod 𝓘(ℝ, E)) (n + 2)
       (fun z : EB × E ↦ (φ.symm z.1, z.2)) (interior φ.target ×ˢ univ) :=
     (((contMDiffOn_extChartAt_symm b₀).mono interior_subset).comp contMDiffOn_fst
@@ -148,7 +148,7 @@ private theorem exists_partialDiffeomorph_parametricMorseCoord_prod_ball (hW : I
   have : IsManifold I n S := IsManifold.of_le (le_self_add : (n : ℕ∞ω) ≤ n + 2)
   obtain ⟨U₀, r, Θ, hU₀, hbU₀, hr, hΘsource, hΘW, hΘeq, hnf⟩ :=
     exists_extChartAt_parametricMorseCoord_prod_ball hW hF hU hb₀ hb₀W hcrit hH hn
-  set φ := extChartAt I b₀ with hφ
+  set φ := extChartAt I b₀
   -- The canonical coordinate only reads the family along the fibres.
   have hcoord {b : S} (hb : b ∈ φ.source) (v : E) :
       parametricMorseCoord (fun z ↦ F (φ.symm z.1, z.2)) (φ b, v) =
@@ -181,7 +181,7 @@ private theorem exists_partialDiffeomorph_parametricMorseCoord_prod_ball (hW : I
       mem_preimage, Function.comp_apply, and_assoc]
   have heapply (z : S × E) : e z = C.symm (Θ (C z)) := by
     simp only [he, PartialDiffeomorph.coe_trans, Function.comp_apply]
-  set V : Set S := φ.source ∩ φ ⁻¹' U₀ with hV
+  set V : Set S := φ.source ∩ φ ⁻¹' U₀
   have hVopen : IsOpen V := isOpen_extChartAt_preimage' b₀ hU₀
   have hΘmem {z : S × E} (hz : z ∈ V ×ˢ Metric.ball (0 : E) r) : C z ∈ Θ.source := by
     rw [hCapply, hΘsource]
