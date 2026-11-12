@@ -51,7 +51,7 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   homeomorphism from a complete normed space whose derivative is invertible on its source has a
   `C^n` inverse on its target.
 * `ApproximatesLinearOn.contDiffOn_toOpenPartialHomeomorph_symm`: the same for the homeomorphism
-  of a `C^n` map approximating `L` on an open set with a constant at most `‖L⁻¹‖⁻¹ / 2`.
+  of a `C^n` map approximating `L` on an open set with a constant less than `‖L⁻¹‖⁻¹`.
 * `TauCeti.ContDiffOn.exists_openPartialHomeomorph`: a `C^n` map (`1 ≤ n`) on an open set with
   invertible derivative at a point restricts to an `OpenPartialHomeomorph` around that point whose
   inverse is `C^n` on the whole target.

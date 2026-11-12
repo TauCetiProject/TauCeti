@@ -52,9 +52,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable (𝕜) in
 /-- **`C^n` convergence of a family of maps at a point.** `f i → f₀` in `C^n` at `x₀` along `l`
 when, for every order `k ≤ n`, the derivative `D^k f i x` tends to `D^k f₀ x₀` as `i → l` and
-`x → x₀` jointly. Holding at every point of an open set, this is locally uniform convergence of
-the derivatives of order at most `n` there
-(`TauCeti.tendstoContDiffAt_iff_tendstoLocallyUniformlyOn`). -/
+`x → x₀` jointly. Holding at every point of an open set on which the derivatives of `f₀` of order
+at most `n` are continuous, this is locally uniform convergence of the derivatives of order at
+most `n` there (`TauCeti.tendstoContDiffAt_iff_tendstoLocallyUniformlyOn`). -/
 def TendstoContDiffAt (n : ℕ) (f : ι → E → F) (f₀ : E → F) (l : Filter ι) (x₀ : E) :
     Prop :=
   ∀ k ≤ n, Tendsto (fun p : ι × E ↦ iteratedFDeriv 𝕜 k (f p.1) p.2) (l ×ˢ 𝓝 x₀)
