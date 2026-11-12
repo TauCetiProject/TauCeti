@@ -16,14 +16,18 @@ Clifford multiplication. Given a finite orthogonal basis of vectors squaring to 
 any positive-definite symmetric form over the finite group of signed monomials produces such
 a metric. Neither irreducibility nor faithfulness of the module is required.
 
-`AlgHom.exists_posDef_isSymm_isSkewAdjoint_clifford` performs this construction over an ordered
-field. Its conclusion applies to every vector, not just to the chosen basis. The companion
-scaling identity says that multiplication by `v` multiplies the metric by `-Q v`. Over the
-reals, these are the metric ingredients for constructing orthonormal tangent fields on unit
-spheres from Clifford modules.
+`AlgHom.exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι` proves existence of a
+positive-definite symmetric form making every Clifford vector skew-adjoint, given a starting
+positive-definite symmetric form. It works over a partially ordered commutative ring with
+order-compatible addition and invertible `2`. Its proof uses
+`CliffordAlgebra.finite_monomialGroup` and `Representation.sumOfConjugatesForm` to sum the
+starting form over the signed monomial group.
 
-The averaging uses `CliffordAlgebra.finite_monomialGroup` and
-`Representation.sumOfConjugatesForm`; no new finite-group averaging construction is needed.
+`AlgHom.bilinForm_apply_cliffordAlgebraι_apply_eq_neg_mul` says that applying the Clifford
+action of a vector `v` to both arguments scales any bilinear form by `-Q v`, provided that
+vector acts skew-adjointly. It works over any commutative ring. Over the reals, these are
+the metric ingredients for constructing orthonormal tangent fields on unit spheres from
+Clifford modules.
 
 ## References
 
@@ -44,9 +48,10 @@ section Scaling
 variable [CommRing K] [AddCommGroup M] [Module K M]
   [AddCommGroup W] [Module K W] {Q : QuadraticForm K M}
 
-/-- In a Clifford module with skew-adjoint vector action, multiplication by `v` scales the
-bilinear form by `-Q v`. No symmetry or positivity assumption on the form is needed. -/
-theorem bilinForm_clifford_ι_apply_apply
+/-- For a vector `v` whose Clifford action is skew-adjoint with respect to `B`, applying
+`ρ (ι Q v)` to both arguments scales `B` by `-Q v`.
+No symmetry or positivity assumption on the form is needed. -/
+theorem bilinForm_apply_cliffordAlgebraι_apply_eq_neg_mul
     (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W) (B : BilinForm K W)
     (v : M) (hρ : B.IsSkewAdjoint (ρ (ι Q v))) (x y : W) :
     B (ρ (ι Q v) x) (ρ (ι Q v) y) = -Q v * B x y := by
@@ -57,15 +62,15 @@ theorem bilinForm_clifford_ι_apply_apply
 
 end Scaling
 
-section OrderedField
+section OrderedRing
 
-variable [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable [CommRing K] [PartialOrder K] [IsOrderedAddMonoid K] [Invertible (2 : K)]
   [AddCommGroup M] [Module K M] [AddCommGroup W] [Module K W] {Q : QuadraticForm K M}
 
-/-- A Clifford module whose quadratic space has a finite orthogonal basis squaring to `-1`
-admits a positive-definite symmetric form making every Clifford vector skew-adjoint.
-The new form is obtained by summing the supplied form over the signed monomial group. -/
-theorem exists_posDef_isSymm_isSkewAdjoint_clifford
+/-- A Clifford module equipped with a positive-definite symmetric form, whose quadratic space
+has a finite orthogonal basis squaring to `-1`, admits a positive-definite symmetric form
+making every Clifford vector skew-adjoint. -/
+theorem exists_posDef_isSymm_isSkewAdjoint_map_cliffordAlgebraι
     (ρ : CliffordAlgebra Q →ₐ[K] Module.End K W)
     {I : Type*} [_root_.Finite I] (b : Module.Basis I K M)
     (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j)) (hQ : ∀ i, Q (b i) = -1)
@@ -73,9 +78,6 @@ theorem exists_posDef_isSymm_isSkewAdjoint_clifford
     ∃ B : BilinForm K W, B.toQuadraticMap.PosDef ∧ B.IsSymm ∧
       ∀ v, B.IsSkewAdjoint (ρ (ι Q v)) := by
   classical
-  let : Invertible (2 : K) := invertibleOfNonzero (by positivity)
-  -- The signed-monomial normal form uses an ordering of the finite basis.
-  let : LinearOrder I := WellOrderingRel.isWellOrder.linearOrder
   have hortho : (QuadraticMap.associated Q).IsOrthoᵢ b :=
     fun i j hij ↦ QuadraticMap.associated_isOrtho.mpr (hb i j hij)
   have : _root_.Finite (monomialGroup Q b) :=
@@ -93,10 +95,11 @@ theorem exists_posDef_isSymm_isSkewAdjoint_clifford
     rw [← b.span_eq]
     refine Submodule.span_le.mpr ?_
     rintro _ ⟨i, rfl⟩
-    apply (LinearMap.mem_skewAdjointSubmodule _).mpr
+    simp only [SetLike.mem_coe, Submodule.mem_comap, LinearMap.comp_apply,
+      AlgHom.toLinearMap_apply, LinearMap.mem_skewAdjointSubmodule]
     obtain ⟨g, hg⟩ := exists_monomialGroup_val_eq_ι b (i := i)
       (by rw [hQ]; exact isUnit_neg_one)
-    have hact : σ g = ρ (ι Q (b i)) := congrArg ρ hg
+    have hact : σ g = ρ (ι Q (b i)) := by simp [σ, hg]
     have hsq (y : W) : ρ (ι Q (b i)) (ρ (ι Q (b i)) y) = -y := by
       rw [← mul_apply_eq_comp, comp_ι_sq_scalar, hQ, map_neg, map_one,
         LinearMap.neg_apply, one_apply_eq_self]
@@ -105,9 +108,9 @@ theorem exists_posDef_isSymm_isSkewAdjoint_clifford
     simpa only [B, LinearMap.comp_apply, AlgHom.toLinearMap_apply, hact, map_neg, hsq,
       neg_neg, Pi.neg_apply] using h
   intro v
-  exact (LinearMap.mem_skewAdjointSubmodule _).mp
-    (hspan (Submodule.mem_top : v ∈ (⊤ : Submodule K M)))
+  simpa only [Submodule.mem_comap, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    LinearMap.mem_skewAdjointSubmodule] using hspan (Submodule.mem_top : v ∈ ⊤)
 
-end OrderedField
+end OrderedRing
 
 end AlgHom
