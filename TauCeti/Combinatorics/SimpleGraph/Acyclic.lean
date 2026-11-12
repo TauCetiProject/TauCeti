@@ -28,6 +28,11 @@ one-degenerate order by peeling off leaves, and gives a height criterion for acy
   induces a forest can be rearranged into a one-degenerate order for the graph.
 * `SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt`: nonconsecutive vertices of a path
   in an acyclic graph are not adjacent.
+* `SimpleGraph.IsAcyclic.adj_getVert_iff_succ`: two vertices of a path in an acyclic graph are
+  adjacent exactly when their indices are consecutive.
+* `SimpleGraph.IsAcyclic.not_adj_getVert_of_adj_start`, `…_of_adj_end`: an off-path neighbour of an
+  end of a path is not adjacent to the other path vertices; `adj_getVert_iff_eq_zero`,
+  `adj_getVert_iff_eq_length` restate this as an adjacency characterization.
 * `SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end`: an off-path neighbour of a path's start
   differs from every neighbour of its end.
 * `SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end`: when both lie off the path, such a
@@ -75,6 +80,24 @@ theorem IsAcyclic.not_adj_getVert_of_add_one_lt {V : Type*}
   have := hp.getVert_injOn (by omega : i + 1 ≤ p.length) hj heq.symm
   omega
 
+/-- In a path of an acyclic graph, two vertices are adjacent exactly when their indices are
+consecutive. -/
+theorem _root_.SimpleGraph.IsAcyclic.adj_getVert_iff_succ {V : Type*} {G : SimpleGraph V}
+    {u v : V} {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) {i j : ℕ}
+    (hi : i ≤ p.length) (hj : j ≤ p.length) :
+    G.Adj (p.getVert i) (p.getVert j) ↔ i + 1 = j ∨ j + 1 = i := by
+  constructor
+  · intro hadj
+    rcases lt_trichotomy i j with hij' | rfl | hji'
+    · have : ¬i + 1 < j := fun hlt ↦ hG.not_adj_getVert_of_add_one_lt hp hlt hj hadj
+      exact Or.inl (by omega)
+    · exact (hadj.ne rfl).elim
+    · have : ¬j + 1 < i := fun hlt ↦ hG.not_adj_getVert_of_add_one_lt hp hlt hi hadj.symm
+      exact Or.inr (by omega)
+  · rintro (rfl | rfl)
+    · exact p.adj_getVert_succ (by omega)
+    · exact (p.adj_getVert_succ (by omega)).symm
+
 /-- **An off-path neighbour of a path's start differs from every neighbour of its end.** In an
 acyclic graph, for a path with distinct endpoints. Only the start-side vertex is required to lie
 off the path; the end-side one is unconstrained. -/
@@ -115,6 +138,51 @@ theorem _root_.SimpleGraph.IsAcyclic.exists_degree_le_one {V : Type*} {G : Simpl
   have hle : ∑ _v : V, 2 ≤ ∑ v, G.degree v := Finset.sum_le_sum fun v _ ↦ h v
   simp only [Finset.sum_const, Finset.card_univ, smul_eq_mul, Fintype.card_eq_nat_card] at hle
   omega
+
+/-- In an acyclic graph, an off-path neighbour `x` of the start of a path is not adjacent to any
+later vertex of the path. -/
+theorem _root_.SimpleGraph.IsAcyclic.not_adj_getVert_of_adj_start {V : Type*} {G : SimpleGraph V}
+    {u v x : V} {p : G.Walk u v} (hG : G.IsAcyclic)
+    (hp : p.IsPath) (hux : G.Adj u x) (hx : x ≠ p.snd) {i : ℕ} (hi0 : 0 < i) (hi : i ≤ p.length) :
+    ¬G.Adj x (p.getVert i) := by
+  have hx_support : x ∉ p.support := fun hxmem ↦ hx (hG.eq_snd_of_adj_start hp hux hxmem)
+  intro hxy
+  have h := hG.not_adj_getVert_of_add_one_lt (hp.cons hx_support (h := hux.symm)) (i := 0)
+    (j := i + 1) (by omega) (by simpa using hi)
+  exact h (by simpa using hxy)
+
+/-- In an acyclic graph, an off-path neighbour `x` of the end of a path is not adjacent to any
+earlier vertex of the path. -/
+theorem _root_.SimpleGraph.IsAcyclic.not_adj_getVert_of_adj_end {V : Type*} {G : SimpleGraph V}
+    {u v x : V} {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hvx : G.Adj v x)
+    (hx : x ≠ p.penultimate) {i : ℕ} (hi : i < p.length) :
+    ¬G.Adj x (p.getVert i) := by
+  have hget : p.reverse.getVert (p.length - i) = p.getVert i := by
+    rw [p.getVert_reverse, Nat.sub_sub_self hi.le]
+  rw [← hget]
+  exact hG.not_adj_getVert_of_adj_start hp.reverse hvx
+    (by simpa using hx) (Nat.sub_pos_of_lt hi) (by simp)
+
+/-- In an acyclic graph, an off-path neighbour `x` of the start of a path (other than the path's
+second vertex) is adjacent to the vertex `j` of the path exactly when `j = 0`. -/
+theorem _root_.SimpleGraph.IsAcyclic.adj_getVert_iff_eq_zero {V : Type*}
+    {G : SimpleGraph V} {u v x : V} {p : G.Walk u v} (hG : G.IsAcyclic)
+    (hp : p.IsPath) (hux : G.Adj u x) (hx : x ≠ p.snd) {j : ℕ} (hj : j ≤ p.length) :
+    G.Adj x (p.getVert j) ↔ j = 0 := by
+  rcases Nat.eq_zero_or_pos j with rfl | hj0
+  · simpa using hux.symm
+  · exact iff_of_false (hG.not_adj_getVert_of_adj_start hp hux hx hj0 hj) hj0.ne'
+
+/-- In an acyclic graph, an off-path neighbour `x` of the end of a path (other than the path's
+penultimate vertex) is adjacent to the vertex `j` of the path exactly when `j` is the last
+index. -/
+theorem _root_.SimpleGraph.IsAcyclic.adj_getVert_iff_eq_length {V : Type*}
+    {G : SimpleGraph V} {u v x : V} {p : G.Walk u v} (hG : G.IsAcyclic)
+    (hp : p.IsPath) (hvx : G.Adj v x) (hx : x ≠ p.penultimate) {j : ℕ} (hj : j ≤ p.length) :
+    G.Adj x (p.getVert j) ↔ j = p.length := by
+  rcases hj.eq_or_lt with rfl | hlt
+  · simpa using hvx.symm
+  · exact iff_of_false (hG.not_adj_getVert_of_adj_end hp hvx hx hlt) hlt.ne
 
 /-- A nonempty finite regular forest has degree at most one. -/
 theorem IsAcyclic.degree_le_one_of_isRegularOfDegree

@@ -57,10 +57,9 @@ the root-system case is irreducibility, which Mathlib packages as
 ## References
 
 This file supplies the "no cycles" and "`n - 1` edges" steps of the classification of finite-type
-Cartan matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, where the shape of
-an admissible diagram is deduced from exactly these two facts, and Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, Ch. VI §4.
+Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+§11.4, where the shape of an admissible diagram is deduced from exactly these two facts, and
+Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
