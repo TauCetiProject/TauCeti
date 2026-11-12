@@ -11,9 +11,10 @@ public import Mathlib.GroupTheory.Submonoid.Center
 /-!
 # Products along lists in a noncommutative monoid
 
-Along a word of labelled letters whose consecutive labels differ, the product of the letters lies
-in a set attached to the label of the first letter, as soon as each letter carries the sets
-attached to the other labels into the set attached to its own.
+Along a nonempty list `x :: l` forming a chain for a relation `r`, attach a set `V y` to each
+entry `y`. If every entry `y` has `f y ∈ V y`, and multiplying `f y` onto `V z` lands in `V y`
+whenever `z` is an entry of `l` with `r y z`, then the product of the `f y` along the list lies in
+the set `V x` attached to its first entry.
 
 `List.prod_map_mul` splits the product of a list of pairwise products `f i * g i` into the product
 of the `f i` times the product of the `g i`, in a commutative monoid. The same splitting holds in
@@ -24,9 +25,8 @@ entries whose relative order differs has commuting images.
 
 ## Main results
 
-* `List.prod_map_snd_mem_of_isChain`: the product of the second components of a list of labelled
-  letters with no two consecutive equal labels lies in a set determined by the first label, when
-  each admissible letter carries the sets of the other labels into it.
+* `List.prod_map_mem_of_isChain`: along a nonempty `r`-chain `x :: l`, the product of the `f y`
+  lies in `V x`, when each `f y` lies in `V y` and `f y * V z ⊆ V y` for entries with `r y z`.
 * `List.prod_map_mul_of_mem_center`: `∏ (f i * g i) = (∏ f i) * (∏ g i)` along a list, when
   `g i` lies in the center for every entry `i` of the list.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
@@ -40,25 +40,24 @@ namespace List
 
 section IsChain
 
-variable {κ M : Type*} [Mul M] [One M]
+variable {ι M : Type*} [MulOneClass M]
 
-/-- **Induction along a word with no two consecutive equal labels.** Let `P` single out the
-admissible labelled letters `(k, a)`. If multiplying an admissible letter with label `k` onto an
-element of `T k` lands in `V k`, each `T k` contains `1`, and `V k' ⊆ T k` for `k ≠ k'`, then the
-product of the letters of every admissible word whose consecutive labels differ lies in `V k`,
-where `k` is the label of its first letter. -/
-theorem prod_map_snd_mem_of_isChain (P : κ × M → Prop) (V T : κ → Set M)
-    (hcons : ∀ x : κ × M, P x → ∀ q ∈ T x.1, x.2 * q ∈ V x.1) (h1 : ∀ k, (1 : M) ∈ T k)
-    (hVT : ∀ k k', k ≠ k' → V k' ⊆ T k) (x : κ × M) (W : List (κ × M))
-    (hW : ((x :: W).map Prod.fst).IsChain (· ≠ ·)) (hP : ∀ y ∈ x :: W, P y) :
-    ((x :: W).map Prod.snd).prod ∈ V x.1 := by
-  induction W generalizing x with
-  | nil => simpa using hcons x (hP x mem_cons_self) 1 (h1 x.1)
-  | cons x' W ih =>
-    simp only [map_cons, isChain_cons_cons] at hW
+/-- **Induction along a chain.** Let `x :: l` be a chain for a relation `r`, and attach a set
+`V y` to each entry `y`. If every entry `y` has `f y ∈ V y`, and multiplying `f y` onto an element
+of `V z` lands in `V y` whenever `z` is an entry of `l` with `r y z`, then the product of the `f y`
+along `x :: l` lies in `V x`. -/
+theorem prod_map_mem_of_isChain {r : ι → ι → Prop} (f : ι → M) (V : ι → Set M) {x : ι}
+    {l : List ι} (hl : (x :: l).IsChain r) (hbase : ∀ y ∈ x :: l, f y ∈ V y)
+    (hstep : ∀ ⦃y z⦄, y ∈ x :: l → z ∈ l → r y z → ∀ q ∈ V z, f y * q ∈ V y) :
+    ((x :: l).map f).prod ∈ V x := by
+  induction l generalizing x with
+  | nil => simpa using hbase x mem_cons_self
+  | cons z l ih =>
+    rw [isChain_cons_cons] at hl
     rw [map_cons, prod_cons]
-    exact hcons x (hP x mem_cons_self) _ (hVT _ _ hW.1
-      (ih x' (by simpa using hW.2) fun y hy ↦ hP y (.tail _ hy)))
+    exact hstep mem_cons_self mem_cons_self hl.1 _
+      (ih hl.2 (fun y hy ↦ hbase y (.tail _ hy))
+        fun _ _ hy hw hyw ↦ hstep (.tail _ hy) (.tail _ hw) hyw)
 
 end IsChain
 
