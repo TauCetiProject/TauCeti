@@ -27,7 +27,7 @@ fixed-locus theorem for groups of symplectomorphisms when no invariant metric is
   Lagrangian (`TauCeti.isLagrangian_fixedSubmodule_planeShear`), not symplectic;
 * it preserves no positive definite form: since `(S - 1)² = 0` and `S ≠ 1`, a form preserved by
   `S` has an isotropic vector (`TauCeti.not_isIsometry_planeShear`, from
-  `TauCeti.BilinForm.IsIsometry.eq_one_of_sub_one_sq_eq_zero`);
+  `TauCeti.BilinForm.IsIsometry.eq_one_of_isNilpotent_sub_one`);
 * hence, reading the derivative of `S` at its fixed point `0`, it preserves no Riemannian metric
   on `ℝ²`, smooth or not (`TauCeti.not_forall_inner_mfderiv_planeShear`).
 
@@ -55,13 +55,16 @@ namespace TauCeti
 /-- The shear `(q, p) ↦ (q + p, p)` of the plane: the transvection `x ↦ x + x.2 • (1, 0)`. -/
 def planeShear : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
   (LinearEquiv.transvection (f := LinearMap.snd ℝ ℝ ℝ) (v := ((1 : ℝ), (0 : ℝ)))
-    rfl).toContinuousLinearEquiv
+    (LinearMap.snd_apply _)).toContinuousLinearEquiv
 
 @[simp]
 theorem planeShear_apply (x : ℝ × ℝ) : planeShear x = (x.1 + x.2, x.2) := by
-  have h : planeShear x = x + x.2 • ((1 : ℝ), (0 : ℝ)) :=
-    LinearEquiv.transvection.apply (f := LinearMap.snd ℝ ℝ ℝ) rfl x
-  simp [h, Prod.ext_iff]
+  simp [planeShear, LinearMap.transvection.apply, Prod.ext_iff]
+
+@[simp]
+theorem planeShear_symm_apply (x : ℝ × ℝ) : planeShear.symm x = (x.1 - x.2, x.2) := by
+  rw [ContinuousLinearEquiv.symm_apply_eq, planeShear_apply]
+  simp
 
 /-- The shear preserves the standard symplectic form `ω = dq ∧ dp` of the plane. -/
 theorem isSymplectomorphism_planeShear :
@@ -73,10 +76,10 @@ theorem isSymplectomorphism_planeShear :
     RCLike.inner_apply, conj_trivial]
   ring
 
-/-- The fixed points of the shear form the line `p = 0`. -/
+/-- The fixed points of the shear form the line `p = 0`, that is `ℝ × {0}`. -/
 theorem fixedSubmodule_planeShear :
     LinearMap.fixedSubmodule (planeShear : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) =
-      LinearMap.ker (LinearMap.snd ℝ ℝ ℝ) := by
+      (⊤ : Submodule ℝ ℝ).prod ⊥ := by
   ext x
   simp [LinearMap.mem_fixedSubmodule_iff, Prod.ext_iff]
 
@@ -85,31 +88,23 @@ theorem isLagrangian_fixedSubmodule_planeShear :
     (stdSymplecticForm (V := ℝ)).IsLagrangian
       (LinearMap.fixedSubmodule (planeShear : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ)) := by
   rw [fixedSubmodule_planeShear]
-  refine SymplecticForm.IsIsotropic.isLagrangian_of_finrank ?_ ?_
-  · rw [SymplecticForm.isIsotropic_iff]
-    intro v hv w hw
-    simp_all
-  · have := (LinearMap.snd ℝ ℝ ℝ).finrank_range_add_finrank_ker
-    rw [Submodule.range_snd, finrank_top, Module.finrank_prod, Module.finrank_self] at this
-    rw [Module.finrank_prod, Module.finrank_self]
-    omega
+  exact SymplecticForm.isLagrangian_prod_top_bot
 
 /-- The shear preserves no anisotropic bilinear form, in particular no inner product of the plane:
 it is unipotent, `(S - 1)² = 0`, and not the identity. -/
 theorem not_isIsometry_planeShear {B : LinearMap.BilinForm ℝ (ℝ × ℝ)}
-    (hB : ∀ v, B v v = 0 → v = 0) :
+    (hB : B.toQuadraticMap.Anisotropic) :
     ¬ BilinForm.IsIsometry B (planeShear : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) := by
   intro h
   have hN : ((planeShear : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) - 1) ^ 2 = 0 := by
     refine LinearMap.ext fun x ↦ ?_
     simp [pow_two, Prod.ext_iff]
-  have h1 := LinearMap.congr_fun (h.eq_one_of_sub_one_sq_eq_zero hB hN) (0, 1)
+  have h1 := LinearMap.congr_fun (h.eq_one_of_isNilpotent_sub_one hB ⟨2, hN⟩) (0, 1)
   simp at h1
 
 /-- **The shear preserves no Riemannian metric.** For every family `g` of inner products on the
 tangent spaces of the plane, the differential of the shear `(q, p) ↦ (q + p, p)` fails to carry
-`g` to itself; it fails already at the fixed point `0`. No continuity or smoothness of `g` is
-used. -/
+`g` to itself. No continuity or smoothness of `g` is used. -/
 theorem not_forall_inner_mfderiv_planeShear
     (g : Bundle.RiemannianMetric (fun x : ℝ × ℝ ↦ TangentSpace 𝓘(ℝ, ℝ × ℝ) x)) :
     ¬ ∀ (x : ℝ × ℝ) (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ) x),
@@ -129,12 +124,9 @@ theorem not_forall_inner_mfderiv_planeShear
     rw [map_zero] at hy
     subst hy
     exact this
-  -- The tangent space at `0` is `ℝ × ℝ` by definition, so `g₀` is a bilinear form on `ℝ × ℝ`;
-  -- `toLinearMap₁₂_apply_apply_apply` does not match syntactically across that identification,
-  -- and the evaluations of `(g.inner 0).toLinearMap₁₂` are used through their unfolding.
-  refine not_isIsometry_planeShear (B := (g.inner 0).toLinearMap₁₂) (fun v hv ↦ ?_)
-    (BilinForm.isIsometry_iff.2 h0)
-  by_contra hne
-  exact (g.pos 0 v hne).ne' hv
+  -- The tangent space at `0` is `ℝ × ℝ` by definition, so `g₀` is a bilinear form on `ℝ × ℝ`,
+  -- anisotropic because it is positive definite.
+  exact not_isIsometry_planeShear (B := (g.inner 0).toBilinForm)
+    (QuadraticMap.PosDef.anisotropic (g.pos 0)) (BilinForm.isIsometry_iff.2 h0)
 
 end TauCeti

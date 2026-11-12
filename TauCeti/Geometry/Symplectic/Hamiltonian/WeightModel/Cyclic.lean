@@ -15,7 +15,7 @@ public import Mathlib.LinearAlgebra.FixedSubmodule
 A single rotation `R = TauCeti.weightRotation θ`, `z_i ↦ exp(i θ_i) z_i`, of `ℂ^ι` generates the
 cyclic group of rotations `R^n = weightRotation (n • θ)`, `n : ℤ`, which preserve the standard
 symplectic form (`TauCeti.stdSymplecticForm_weightRotation`) and the Euclidean metric. This file
-computes its fixed locus and its order.
+computes its fixed locus and characterizes when it has infinite order.
 
 * A point is fixed by every `R^n` exactly when it is fixed by `R`
   (`TauCeti.forall_weightRotation_zsmul_apply_eq_self_iff`), exactly when it vanishes in every
@@ -147,6 +147,12 @@ section Irrational
 
 variable {a : ℝ}
 
+/-- For irrational `a`, the angle `2πa` is not a multiple of `2π`. -/
+private theorem not_exists_int_mul_two_pi_eq_of_irrational (ha : Irrational a) :
+    ¬ ∃ k : ℤ, k * (2 * π) = 2 * π * a := by
+  rintro ⟨k, hk⟩
+  exact ha.ne_int k (mul_left_cancel₀ two_pi_pos.ne' (by linarith))
+
 /-- An irrational rotation `(z₁, z₂) ↦ (exp(2πia) z₁, z₂)` of `ℂ²` generates an infinite cyclic
 group. -/
 theorem weightRotation_zsmul_injective_of_irrational (ha : Irrational a) :
@@ -163,11 +169,8 @@ theorem forall_weightRotation_zsmul_apply_eq_self_iff_of_irrational (ha : Irrati
   rw [forall_weightRotation_zsmul_apply_eq_self_iff, ← ContinuousLinearMap.coe_coe,
     ← LinearMap.mem_fixedSubmodule_iff, mem_fixedSubmodule_weightRotation_iff, Fin.forall_fin_two]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  refine ⟨fun h ↦ h.1 fun ⟨k, hk⟩ ↦ ha ⟨k, ?_⟩,
+  exact ⟨fun h ↦ h.1 (not_exists_int_mul_two_pi_eq_of_irrational ha),
     fun h ↦ ⟨fun _ ↦ h, fun h0 ↦ (h0 ⟨0, by simp⟩).elim⟩⟩
-  have hπ : π ≠ 0 := pi_ne_zero
-  field_simp at hk
-  exact_mod_cast hk
 
 /-- The fixed locus `{0} × ℂ` of an irrational rotation of the first factor of `ℂ²` has real
 dimension `2`. -/
@@ -178,13 +181,7 @@ theorem finrank_fixedSubmodule_weightRotation_of_irrational (ha : Irrational a) 
   have hset : {i : Fin 2 | ∃ k : ℤ, k * (2 * π) = ![2 * π * a, 0] i} = {1} := by
     ext i
     fin_cases i
-    · simp only [Fin.zero_eta, Fin.isValue, Matrix.cons_val_zero, Set.mem_ofPred_eq,
-        Set.mem_singleton_iff, zero_ne_one, iff_false, not_exists]
-      intro k hk
-      refine ha ⟨k, ?_⟩
-      have hπ : π ≠ 0 := pi_ne_zero
-      field_simp at hk
-      exact_mod_cast hk
+    · simpa using not_exists_int_mul_two_pi_eq_of_irrational ha
     · simp
   rw [hset, Set.ncard_singleton]
 
