@@ -76,20 +76,22 @@ theorem eLpNormWkp_one_comp_le {u : ℂ → F} {g : F → G} {W : Set F} {C₀ C
     eLpNormWkp p K 1 (fun z => g (u z)) ≤
       C₀ * volume K ^ p.toReal⁻¹ + C₁ * eLpNormWkp p K 1 u := by
   -- The weak derivative of `g ∘ u` on `interior K` is `Dg(u) ∘ Du`.
-  refine eLpNormWkp_one_le_add_mul_of_forall_hasWeakFDerivOn ENNReal.coe_ne_top hu
-    fun D hD hDm => ?_
+  refine le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn ENNReal.coe_ne_top hu
+    fun D hD hDp => ?_
+  rw [eLpNormWkp_zero] at hDp
   refine (eLpNormWkp_succ_le (hD.contDiffOn_comp (huc.mono interior_subset) hW hg
     (huW.mono_left interior_subset))).trans ?_
-  rw [eLpNormWkp_zero]
+  simp only [eLpNormWkp_zero]
   gcongr ?_ + ?_
   · have := eLpNorm_le_of_ae_nnnorm_bound (p := p) (μ := volume.restrict K)
       ((hg.continuousOn.comp huc huW).aestronglyMeasurable hK)
       ((ae_restrict_mem hK).mono fun z hz => hC₀ z hz)
     simpa [Measure.restrict_apply_univ, ENNReal.smul_def, smul_eq_mul, Function.comp_def] using this
-  · refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
+  · refine (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
       ((ContinuousLinearMap.compL ℝ ℂ F G).aestronglyMeasurable_comp₂
-        (((hg.continuousOn_fderiv_of_isOpen hW le_rfl).comp huc huW).aestronglyMeasurable hK) hDm)
-      ((ae_restrict_mem hK).mono fun z hz => ?_) p
+        (((hg.continuousOn_fderiv_of_isOpen hW le_rfl).comp huc huW).aestronglyMeasurable hK)
+        (aestronglyMeasurable_of_eLpNorm_ne_top hDp))
+      ((ae_restrict_mem hK).mono fun z hz => ?_) p).trans (mul_le_mul_right le_add_self _)
     exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans (by gcongr; exact hC₁ z hz)
 
 /-- **A uniform `W^{1,p}` bound for composition with a `C¹` map.** Let `g` be `C¹` on an open set
@@ -131,9 +133,10 @@ theorem eLpNormWkp_one_comp_sub_le {v u : ℂ → F} {g : F → G} {W : Set F} {
           eLpNorm (fun z => (fderiv ℝ g (v z) - fderiv ℝ g (u z)).comp (Du z))
             p (volume.restrict K) +
         ENNReal.LpAddConst p * C * eLpNormWkp p K 1 (v - u) := by
-  refine eLpNormWkp_one_le_add_mul_of_forall_hasWeakFDerivOn
+  refine le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn
     (ENNReal.mul_ne_top (ENNReal.LpAddConst_lt_top p).ne ENNReal.coe_ne_top) hfin
-    fun D hD hDm => ?_
+    fun D hD hDp => ?_
+  rw [eLpNormWkp_zero] at hDp
   -- The weak derivative of `g ∘ v - g ∘ u` is `(Dg(v) - Dg(u)) ∘ Du + Dg(v) ∘ D`.
   have hDv : HasWeakFDerivOn volume (Opens.interior K) v (D + Du) := by
     simpa using hD.add hDu
@@ -150,12 +153,13 @@ theorem eLpNormWkp_one_comp_sub_le {v u : ℂ → F} {g : F → G} {W : Set F} {
     simp only [Pi.sub_apply, Pi.add_apply, ContinuousLinearMap.comp_add,
       ContinuousLinearMap.sub_comp]
     abel
-  rw [hsplit]
+  rw [hsplit, eLpNormWkp_zero]
   refine (eLpNorm_add_le' p).trans (mul_le_mul' le_rfl (add_le_add le_rfl ?_))
-  refine eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
+  refine (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
     ((ContinuousLinearMap.compL ℝ ℂ F G).aestronglyMeasurable_comp₂
-      (((hg.continuousOn_fderiv_of_isOpen hW le_rfl).comp hvc hvW).aestronglyMeasurable hK) hDm)
-    ((ae_restrict_mem hK).mono fun z hz => ?_) p
+      (((hg.continuousOn_fderiv_of_isOpen hW le_rfl).comp hvc hvW).aestronglyMeasurable hK)
+      (aestronglyMeasurable_of_eLpNorm_ne_top hDp))
+    ((ae_restrict_mem hK).mono fun z hz => ?_) p).trans (mul_le_mul_right le_add_self _)
   exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans (by gcongr; exact hC z hz)
 
 /-- **Continuity of composition with a `C¹` map in `W^{1,p}`.** Let `g` be `C¹` on an open set `W`
@@ -178,7 +182,7 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
   have hDgc : ContinuousOn (fderiv ℝ g) W := hg.continuousOn_fderiv_of_isOpen hW le_rfl
   have hcpt : IsCompact (u₀ '' K) := hK.image_of_continuousOn hu₀c
   have hu₀KW : u₀ '' K ⊆ W := image_subset_iff.2 hu₀W
-  have hmaps := hunif.eventually_mapsTo_of_isCompact_image hcpt hW hu₀W
+  have hmaps := hunif.eventually_mapsTo_of_isCompact_image hcpt (hW.mem_nhdsSet.2 hu₀KW)
   -- `g ∘ u n` and `Dg ∘ u n` converge uniformly on `K`.
   have hgu := hcpt.comp_tendstoUniformlyOn
     (fun y hy => hg.continuousOn.continuousAt (hW.mem_nhds (hu₀KW hy))) hunif
