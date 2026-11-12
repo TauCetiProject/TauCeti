@@ -13,7 +13,7 @@ import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
 For a finite reduced crystallographic root pairing whose Cartan integers lie in
 `{-2, -1, 0, 1, 2}`, a double chain `β, α + β, 2α + β` determines its descending
-coefficients, pairings, and the non-root sums needed in the Chevalley commutator formula.
+coefficients and the non-root sums needed in the Chevalley commutator formula.
 
 The pairing bound is explicit rather than bundled in `RootPairing.IsNotG2`, since that
 Mathlib class also requires irreducibility. Thus these results apply to reducible pairings
@@ -78,47 +78,40 @@ theorem chainTopCoeff_eq_two_of_double_chain {α β γ δ : ι}
   have htotal := P.chainBotCoeff_add_chainTopCoeff_le_two_of_pairing_bound hbound α β
   omega
 
-/-- In a double chain with Cartan integers bounded by two, the descending coefficient
-at the middle root is one. -/
-theorem chainBotCoeff_eq_one_of_double_chain {α β γ δ : ι}
+omit hbound [Finite ι] [P.IsCrystallographic] in
+/-- The sum `α + δ` is nonzero whenever `γ = α + β` and `δ = α + γ` are roots.
+No bound on Cartan integers or root-string coefficients is needed. -/
+theorem root_add_last_ne_zero_of_double_chain {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
-    (hδ : P.root δ = P.root α + P.root γ) : P.chainBotCoeff α γ = 1 := by
+    (hδ : P.root δ = P.root α + P.root γ) : P.root α + P.root δ ≠ 0 := by
   have hli := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
-  rw [P.chainBotCoeff_of_add hli (hγ.trans (add_comm _ _)),
-    P.chainBotCoeff_eq_zero_of_double_chain hbound hγ hδ]
+  have hind := LinearIndependent.pair_iff.mp hli
+  intro hz
+  have hz' : (3 : R) • P.root α + (1 : R) • P.root β = 0 := calc
+    _ = P.root α + P.root δ := by rw [hδ, hγ]; module
+    _ = 0 := hz
+  have := (hind 3 1 hz').1
+  norm_num at this
 
-/-- The Cartan pairings along a double chain with Cartan integers bounded by two are
-`⟨β, α∨⟩ = -2` and `⟨α, β∨⟩ = -1`. -/
-theorem pairing_eq_neg_two_and_pairing_eq_neg_one_of_double_chain {α β γ δ : ι}
-    (hγ : P.root γ = P.root α + P.root β)
-    (hδ : P.root δ = P.root α + P.root γ) :
-    P.pairing β α = -2 ∧ P.pairing α β = -1 := by
+omit hbound [Finite ι] [P.IsCrystallographic] in
+/-- If `γ = α + β` is a root, the sum `β + γ` is nonzero. -/
+theorem root_initial_add_middle_ne_zero_of_double_chain {α β γ : ι}
+    (hγ : P.root γ = P.root α + P.root β) : P.root β + P.root γ ≠ 0 := by
   have hli := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
-  have hbot := P.chainBotCoeff_eq_zero_of_double_chain hbound hγ hδ
-  have htop := P.chainTopCoeff_eq_two_of_double_chain hbound hγ hδ
-  have hβα : P.pairingIn ℤ β α = -2 := by
-    have := P.chainBotCoeff_sub_chainTopCoeff hli
-    simpa [hbot, htop] using this.symm
-  have hne : P.root α ≠ P.root β := hli.injective.ne (by decide : (0 : Fin 2) ≠ 1)
-  have hneg : P.root α ≠ -P.root β := by
-    intro heq
-    apply P.zero_notMem_range_root
-    exact ⟨γ, by rw [hγ, heq, neg_add_cancel]⟩
-  have hp := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' α β hne hneg
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk_zero_zero, Prod.mk_one_one,
-    Prod.mk_eq_zero, Prod.mk_eq_one, Prod.mk.injEq] at hp
-  have hαβ : P.pairingIn ℤ α β = -1 := by omega
-  constructor
-  · simpa using (P.algebraMap_pairingIn ℤ β α).symm.trans
-      (congrArg (algebraMap ℤ R) hβα)
-  · simpa using (P.algebraMap_pairingIn ℤ α β).symm.trans
-      (congrArg (algebraMap ℤ R) hαβ)
+  have hind := LinearIndependent.pair_iff.mp hli
+  intro hz
+  have hz' : (1 : R) • P.root α + (2 : R) • P.root β = 0 := calc
+    _ = P.root β + P.root γ := by rw [hγ]; module
+    _ = 0 := hz
+  have := (hind 1 2 hz').1
+  norm_num at this
 
 omit hbound in
 /-- If the `α`-string through `β` starts at `β` and has top coefficient two, then
 `α + δ = 3α + β` and `β + γ = α + 2β` are neither roots nor zero, where
 `γ = α + β` and `δ = 2α + β`. No bound on Cartan integers is needed. -/
-theorem root_add_last_and_root_initial_add_middle_notMem_of_doubleString {α β γ δ : ι}
+theorem root_add_last_and_initial_add_middle_notMem_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+    {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ)
     (hbot : P.chainBotCoeff α β = 0) (htop : P.chainTopCoeff α β = 2) :
@@ -140,19 +133,8 @@ theorem root_add_last_and_root_initial_add_middle_notMem_of_doubleString {α β 
   have hbg : P.root β + P.root γ = P.root α + 2 • P.root β := by
     rw [hγ]
     module
-  have hind := LinearIndependent.pair_iff.mp hli
-  refine ⟨⟨by simpa only [had] using hthree, fun hz => ?_⟩,
-    ⟨by simpa only [hbg] using htwo, fun hz => ?_⟩⟩
-  · have hz' : (3 : R) • P.root α + (1 : R) • P.root β = 0 := calc
-      _ = P.root α + P.root δ := by rw [hδ, hγ]; module
-      _ = 0 := hz
-    have := (hind 3 1 hz').1
-    norm_num at this
-  · have hz' : (1 : R) • P.root α + (2 : R) • P.root β = 0 := calc
-      _ = P.root β + P.root γ := by rw [hγ]; module
-      _ = 0 := hz
-    have := (hind 1 2 hz').1
-    norm_num at this
+  exact ⟨⟨by simpa only [had] using hthree, P.root_add_last_ne_zero_of_double_chain hγ hδ⟩,
+    ⟨by simpa only [hbg] using htwo, P.root_initial_add_middle_ne_zero_of_double_chain hγ⟩⟩
 
 /-- The sum `α + δ`, where `δ = 2α + β` is the last root of a double chain with
 Cartan integers bounded by two, is neither a root nor zero. -/
@@ -160,9 +142,10 @@ theorem root_add_last_notMem_of_double_chain {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.root α + P.root δ ∉ Set.range P.root ∧ P.root α + P.root δ ≠ 0 := by
-  exact (P.root_add_last_and_root_initial_add_middle_notMem_of_doubleString hγ hδ
-    (P.chainBotCoeff_eq_zero_of_double_chain hbound hγ hδ)
-    (P.chainTopCoeff_eq_two_of_double_chain hbound hγ hδ)).1
+  exact
+    (root_add_last_and_initial_add_middle_notMem_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+      P hγ hδ (P.chainBotCoeff_eq_zero_of_double_chain hbound hγ hδ)
+      (P.chainTopCoeff_eq_two_of_double_chain hbound hγ hδ)).1
 
 /-- The sum `β + γ` of the initial and middle roots of a double chain with Cartan
 integers bounded by two is neither a root nor zero. -/
@@ -170,9 +153,10 @@ theorem root_initial_add_middle_notMem_of_double_chain {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.root β + P.root γ ∉ Set.range P.root ∧ P.root β + P.root γ ≠ 0 := by
-  exact (P.root_add_last_and_root_initial_add_middle_notMem_of_doubleString hγ hδ
-    (P.chainBotCoeff_eq_zero_of_double_chain hbound hγ hδ)
-    (P.chainTopCoeff_eq_two_of_double_chain hbound hγ hδ)).2
+  exact
+    (root_add_last_and_initial_add_middle_notMem_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+      P hγ hδ (P.chainBotCoeff_eq_zero_of_double_chain hbound hγ hδ)
+      (P.chainTopCoeff_eq_two_of_double_chain hbound hγ hδ)).2
 
 omit hbound [Finite ι] [P.IsCrystallographic] in
 /-- The sum of the initial and last roots of a double chain is twice its middle root,
