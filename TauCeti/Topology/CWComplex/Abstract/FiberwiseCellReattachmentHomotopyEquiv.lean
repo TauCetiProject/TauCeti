@@ -444,14 +444,14 @@ discs. -/
 private def castHomotopy (i : ι) :
     (χ₁ i).Homotopy (((χ₀ i).comp (ContinuousMap.fst.prodMk (h i))).comp
       (ContinuousMap.fst.prodMk ContinuousMap.snd)) :=
-  (K i).cast rfl (ContinuousMap.ext fun _ ↦ rfl)
+  (K i).cast rfl (ContinuousMap.ext fun _ ↦ by simp)
 
 /-- The reverse of `K i`, read as a homotopy from `χ₀ i ∘ (p, h i)` to `χ₁ i` composed with the
 identity of the discs. -/
 private def symmHomotopy (i : ι) :
     ((χ₀ i).comp (ContinuousMap.fst.prodMk (h i))).Homotopy
       ((χ₁ i).comp (ContinuousMap.fst.prodMk ContinuousMap.snd)) :=
-  (K i).symm.cast rfl (ContinuousMap.ext fun _ ↦ rfl)
+  (K i).symm.cast rfl (ContinuousMap.ext fun _ ↦ by simp)
 
 include hK in
 private theorem castHomotopy_mem (i : ι) (t : I) (p : P) (s : TopCat.diskBoundary.{u} (k i)) :
@@ -549,7 +549,9 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp
       hh' hh'h hhh'
   obtain ⟨F₁, hF₁⟩ := exists_homotopyRel_reattachment_comp_symm
     α α₁ χ χ₁ hχ hχ₁ (castHomotopy χ₀ χ₁ h K) hKc (symmHomotopy χ₀ χ₁ h K) hKs
-    fun _ _ _ _ ↦ rfl
+    fun i t p s ↦ by
+      simp only [castHomotopy, symmHomotopy, ContinuousMap.Homotopy.cast_apply,
+        ContinuousMap.Homotopy.symm_apply]
   obtain ⟨F₀, hF₀⟩ := exists_homotopyRel_reattachment_comp_symm
     α₁ α χ₁ χ hχ₁ hχ (symmHomotopy χ₀ χ₁ h K) hKs (castHomotopy χ₀ χ₁ h K) hKc
     fun i t p s ↦ by

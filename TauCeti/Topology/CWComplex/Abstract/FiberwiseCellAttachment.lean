@@ -981,6 +981,34 @@ def fiberwiseCellAttachmentIso : fiberwiseCellAttachment α' ≅ fiberwiseCellAt
         ConcreteCategory.id_apply]
       exact congrArg (fun w ↦ fiberwiseCellAttachmentCell α i (x.1, w)) (hhh' i x.1 x.2)
 
+@[reassoc (attr := simp)]
+theorem fiberwiseCellAttachmentIncl_fiberwiseCellAttachmentIso_hom :
+    fiberwiseCellAttachmentIncl α' ≫
+        (fiberwiseCellAttachmentIso α α' h h' hh hh' hh'h hhh' hα).hom =
+      fiberwiseCellAttachmentIncl α :=
+  by simp only [fiberwiseCellAttachmentIso, fiberwiseCellAttachmentIncl_desc]
+
+@[reassoc (attr := simp)]
+theorem fiberwiseCellAttachmentCell_fiberwiseCellAttachmentIso_hom (i : ι) :
+    fiberwiseCellAttachmentCell α' i ≫
+        (fiberwiseCellAttachmentIso α α' h h' hh hh' hh'h hhh' hα).hom =
+      TopCat.ofHom (ContinuousMap.fst.prodMk (h i)) ≫ fiberwiseCellAttachmentCell α i :=
+  by simp only [fiberwiseCellAttachmentIso, fiberwiseCellAttachmentCell_desc]
+
+@[reassoc (attr := simp)]
+theorem fiberwiseCellAttachmentIncl_fiberwiseCellAttachmentIso_inv :
+    fiberwiseCellAttachmentIncl α ≫
+        (fiberwiseCellAttachmentIso α α' h h' hh hh' hh'h hhh' hα).inv =
+      fiberwiseCellAttachmentIncl α' :=
+  by simp only [fiberwiseCellAttachmentIso, fiberwiseCellAttachmentIncl_desc]
+
+@[reassoc (attr := simp)]
+theorem fiberwiseCellAttachmentCell_fiberwiseCellAttachmentIso_inv (i : ι) :
+    fiberwiseCellAttachmentCell α i ≫
+        (fiberwiseCellAttachmentIso α α' h h' hh hh' hh'h hhh' hα).inv =
+      TopCat.ofHom (ContinuousMap.fst.prodMk (h' i)) ≫ fiberwiseCellAttachmentCell α' i :=
+  by simp only [fiberwiseCellAttachmentIso, fiberwiseCellAttachmentCell_desc]
+
 @[simp]
 theorem fiberwiseCellAttachmentIso_hom_fiberwiseCellAttachmentIncl (x : P × A) :
     (fiberwiseCellAttachmentIso α α' h h' hh hh' hh'h hhh' hα).hom
@@ -1036,6 +1064,25 @@ theorem fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIso_inv
     (fun i x ↦ by rw [fiberwiseCellAttachmentIso_inv_fiberwiseCellAttachmentCell,
       fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell,
       fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell]) y
+
+/-- The reparametrization of the discs lies over `P`, as a composite of morphisms. -/
+@[reassoc (attr := simp)]
+theorem fiberwiseCellAttachmentIso_hom_fiberwiseCellAttachmentProj :
+    (fiberwiseCellAttachmentIso α α' h h' hh hh' hh'h hhh' hα).hom ≫
+        fiberwiseCellAttachmentProj α =
+      fiberwiseCellAttachmentProj α' := by
+  ext y
+  exact fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIso_hom ..
+
+/-- The inverse of the reparametrization of the discs lies over `P`, as a composite of
+morphisms. -/
+@[reassoc (attr := simp)]
+theorem fiberwiseCellAttachmentIso_inv_fiberwiseCellAttachmentProj :
+    (fiberwiseCellAttachmentIso α α' h h' hh hh' hh'h hhh' hα).inv ≫
+        fiberwiseCellAttachmentProj α' =
+      fiberwiseCellAttachmentProj α := by
+  ext y
+  exact fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIso_inv ..
 
 end Iso
 
