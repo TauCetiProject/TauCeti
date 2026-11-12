@@ -452,8 +452,8 @@ private theorem leftRightOverlapPartner_injective :
   have hD := G.leftRightOverlapPartner_isRecut C D
   have hE := G.leftRightOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨honeD, hfD, hsD⟩ := G.leftRightOverlapSource_recut_data C D.val D.property
-  obtain ⟨honeE, hfE, hsE⟩ := G.leftRightOverlapSource_recut_data C E.val E.property
+  obtain ⟨_, hfD, hsD⟩ := G.leftRightOverlapSource_recut_data C D.val D.property
+  obtain ⟨_, hfE, hsE⟩ := G.leftRightOverlapSource_recut_data C E.val E.property
   have hbackD := hD.symm hfD hsD
   have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD

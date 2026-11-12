@@ -641,7 +641,7 @@ theorem surjective_map_incl : Function.Surjective (FundamentalGroup.map (incl γ
       exact (isPathConnected_Ioo_prod_Ioo_diff_singleton squareCentre).image
         (cell γ i).continuous)
     (fun i j hij => by
-      rintro _ ⟨⟨q, hq, rfl⟩, ⟨q', hq', h⟩⟩
+      rintro _ ⟨⟨q, hq, rfl⟩, ⟨q', _, h⟩⟩
       exact absurd ((cell_eq_cell_iff hq).1 h).1 (Ne.symm hij))
     hxU hxU p
   -- Retract the pushed-off loop onto `X`.
