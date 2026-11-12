@@ -46,6 +46,7 @@ constraint in `s` is active.
 ## Main results
 
 * `TauCeti.convex_polyhedron`: a polyhedron is convex.
+* `TauCeti.activeSet_comp`: relabelling the constraints pulls back the active constraints.
 * `TauCeti.isExtreme_polyhedron_inter_setOf_subset_activeSet`: the face where a set of
   constraints is active is an extreme subset.
 * `TauCeti.exists_pos_forall_add_smul_mem_polyhedron`: the inactive constraints leave room to move
@@ -73,6 +74,12 @@ def activeSet (f : ι → Module.Dual 𝕜 E) (c : ι → 𝕜) (x : E) : Set ι
 @[simp]
 theorem mem_activeSet {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} {x : E} {j : ι} :
     j ∈ activeSet f c x ↔ f j x = c j := Iff.rfl
+
+/-- Listing the constraints along `e` pulls the active constraints back along `e`. -/
+@[simp]
+theorem activeSet_comp {ι' : Type*} {f : ι → Module.Dual 𝕜 E} {c : ι → 𝕜} (e : ι' → ι)
+    (x : E) : activeSet (f ∘ e) (c ∘ e) x = e ⁻¹' activeSet f c x :=
+  (rfl)
 
 variable [LinearOrder 𝕜]
 
