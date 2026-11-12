@@ -466,7 +466,7 @@ theorem isForcedMildSolution_realOperator_add_duhamel (hF : LocallyIntegrableOn 
     (x : X) :
     IsForcedMildSolution S.generator F x (fun t => S.realOperator t x + S.duhamel F t) := by
   refine ⟨inferInstance, hF, (S.realOperator_continuousOn_Ici x).add
-    (S.continuous_duhamel hF).continuousOn, by simp, fun t ht => ?_⟩
+    (S.continuous_duhamel hF).continuousOn, by simp, fun t _ => ?_⟩
   have hFt : IntegrableOn F (Ioc 0 t) :=
     (hF.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
       Ioc_subset_Icc_self
@@ -498,7 +498,7 @@ generator `A` of `S`, is given by Duhamel's formula at every nonnegative time. -
 theorem eq_realOperator_add_duhamel (hu : IsForcedMildSolution S.generator F x u) {t : ℝ}
     (ht : 0 ≤ t) : u t = S.realOperator t x + S.duhamel F t := by
   have hv := S.isForcedMildSolution_realOperator_add_duhamel hu.locallyIntegrableOn x
-  set v : ℝ → X := fun t => S.realOperator t x + S.duhamel F t with hv_def
+  set v : ℝ → X := fun t => S.realOperator t x + S.duhamel F t
   have hint {w : ℝ → X} (hw : ContinuousOn w (Ici 0)) (t : ℝ) : IntegrableOn w (Ioc 0 t) :=
     ((hw.mono Icc_subset_Ici_self).integrableOn_Icc).mono_set Ioc_subset_Icc_self
   -- The difference of the two solutions is a mild solution of `w' = A w`, `w(0) = 0`.
