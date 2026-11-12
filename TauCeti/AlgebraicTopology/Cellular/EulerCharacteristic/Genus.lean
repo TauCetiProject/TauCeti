@@ -56,8 +56,8 @@ is not asserted here.
   `(-χ / 2).toNat` would give `1`.
 * `TauCeti.RiemannSurface.genus_realProjectiveSpace_two` and
   `TauCeti.RiemannSurface.eulerChar_realProjectiveSpace_two_ne_two_sub_two_mul_genus`: the real
-  projective plane has `χ = 1` and genus `0`, and `χ = 2 - 2 · genus` fails, since `RP²` carries no
-  orientation.
+  projective plane has `χ = 1` and genus `0`, and `χ = 2 - 2 · genus` fails, since `χ(RP²) = 1` is
+  odd.
 
 The Riemann sphere and the level-one modular curve have genus `0`: see
 `TauCeti.RiemannSurface.genus_onePoint_complex` and
@@ -149,8 +149,7 @@ theorem genus_realProjectiveSpace_two : genus (RealProjectiveSpace 2) = 0 := by
   decide
 
 /-- **`χ = 2 - 2 · genus` fails on the real projective plane**: `χ(RP²) = 1` while `genus RP² = 0`.
-The identity needs the oriented surface underlying a complex structure, which `RP²` does not
-carry. -/
+The identity fails because `χ(RP²) = 1` is odd; see `eulerChar_eq_two_sub_two_mul_genus_iff`. -/
 theorem eulerChar_realProjectiveSpace_two_ne_two_sub_two_mul_genus :
     eulerChar (RealProjectiveSpace 2) ≠ 2 - 2 * genus (RealProjectiveSpace 2) := by
   rw [eulerChar_realProjectiveSpace, genus_realProjectiveSpace_two]
