@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
+public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
 
@@ -50,7 +51,6 @@ determinant character with the complex determinant of the unitary rotation is no
 
 ## Main definitions
 
-* `TauCeti.AlmostComplexStructure.unitaryGroup J Q`: the rotations of `SO(Q)` commuting with `J`.
 * `TauCeti.SeibergWitten.canonicalLineFixingSubgroup o ρ J hQ₀`: the elements of `Spinᶜ(4)`
   acting trivially on the canonical line.
 * `TauCeti.SeibergWitten.canonicalLineFixingSubgroupEquiv`: the rotation homomorphism, as an
@@ -59,9 +59,6 @@ determinant character with the complex determinant of the unitary rotation is no
 
 ## Main results
 
-* `TauCeti.SeibergWitten.cliffordProjection_kahlerForm_apply_eq_self_iff` and
-  `TauCeti.SeibergWitten.cliffordProjection_kahlerForm_apply_eq_zero_iff`: the canonical line and
-  its complement are the positive half-spinors on which `c(J v) = ± i c(v)`.
 * `TauCeti.SeibergWitten.toSpecialOrthogonal_mem_unitaryGroup`,
   `TauCeti.SeibergWitten.eq_one_of_mem_canonicalLineFixingSubgroup` and
   `TauCeti.SeibergWitten.exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq`: the
@@ -91,29 +88,7 @@ noncomputable section
 open CliffordAlgebra Module Module.End
 open scoped RealInnerProductSpace InnerProductSpace
 
-namespace TauCeti
-
-namespace AlmostComplexStructure
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- **The unitary group** `U(V, J)` of an almost complex structure `J`, inside the special
-orthogonal group of a quadratic form `Q`: the rotations commuting with `J`. -/
-def unitaryGroup (J : AlmostComplexStructure V) (Q : QuadraticForm ℝ V) :
-    Subgroup (QuadraticMap.specialOrthogonalGroup Q) :=
-  (Subgroup.centralizer {J.linearEquiv}).comap (QuadraticMap.specialOrthogonalGroup Q).subtype
-
-/-- A rotation lies in `U(V, J)` exactly when it commutes with `J`. -/
-theorem mem_unitaryGroup_iff {J : AlmostComplexStructure V} {Q : QuadraticForm ℝ V}
-    {A : QuadraticMap.specialOrthogonalGroup Q} :
-    A ∈ J.unitaryGroup Q ↔ ∀ v, (A : V ≃ₗ[ℝ] V) (J v) = J ((A : V ≃ₗ[ℝ] V) v) := by
-  simp only [unitaryGroup, Subgroup.mem_comap, Subgroup.coe_subtype,
-    Subgroup.mem_centralizer_singleton_iff, LinearEquiv.ext_iff, mul_apply_eq_comp,
-    linearEquiv_apply]
-
-end AlmostComplexStructure
-
-namespace SeibergWitten
+namespace TauCeti.SeibergWitten
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
@@ -124,105 +99,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
 
 attribute [local instance] finiteDimensional_of_finrank_four
-
-/-! ### The canonical line and its complement are cut out by `J` -/
-
-section Characterization
-
-include hQ hkl he h₀ h₂ in
-/-- **The canonical line is cut out by `J`**: a positive half-spinor `ψ` is fixed by `P_α` exactly
-when Clifford multiplication turns `J` into `i` on it, `c(J v) ψ = i c(v) ψ` for every `v`. -/
-theorem cliffordProjection_kahlerForm_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
-    cliffordProjection o ρ J.kahlerForm ψ = ψ ↔
-      ∀ v, ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
-  refine ⟨fun hψ ↦ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ,
-    fun h ↦ ?_⟩
-  set P := cliffordProjection o ρ J.kahlerForm
-  have hP : IsIdempotentElem P := isIdempotentElem_cliffordProjection o ρ hQ hkl
-    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
-    (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂))
-  have hφ : P (P ψ) = P ψ := by rw [← mul_apply_eq_comp, hP.eq]
-  have hβ : P (ψ - P ψ) = 0 := by rw [map_sub, hφ, sub_self]
-  -- `ψ - P ψ` lies in the complementary eigenspace, where `J` acts as `-i`, so `c(e₀)` kills it.
-  have hc : ρ (ι Q (e 0)) (ψ - P ψ : positiveHalfSpinors o ρ) = 0 := by
-    have h₁ := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hφ (e 0)
-    have h₂' := ι_apply_apply_of_cliffordProjection_apply_eq_zero hQ hkl he h₀ h₂ hβ (e 0)
-    have h₃ := h (e 0)
-    simp only [Submodule.coe_sub, map_sub] at h₂' ⊢
-    have h₄ : (2 * Complex.I) • (ρ (ι Q (e 0)) ψ - ρ (ι Q (e 0)) (P ψ)) = 0 := by
-      linear_combination (norm := module) h₁ + h₂' - h₃
-    exact (smul_eq_zero.1 h₄).resolve_left (by simp)
-  have h0 := (injective_iff_map_eq_zero _).1 (map_ι_injective ρ (Q := Q) (v := e 0)
-    (by simp [hQ, e.orthonormal.1 0])) _ hc
-  rw [Submodule.coe_eq_zero, sub_eq_zero] at h0
-  exact h0.symm
-
-include hQ hkl he h₀ h₂ in
-/-- **The complementary line is cut out by `J`**: a positive half-spinor `β` is killed by `P_α`
-exactly when Clifford multiplication turns `J` into `-i` on it, `c(J v) β = -i c(v) β` for every
-`v`. -/
-theorem cliffordProjection_kahlerForm_apply_eq_zero_iff {β : positiveHalfSpinors o ρ} :
-    cliffordProjection o ρ J.kahlerForm β = 0 ↔
-      ∀ v, ρ (ι Q (J v)) β = -Complex.I • ρ (ι Q v) β := by
-  refine ⟨fun hβ ↦ ι_apply_apply_of_cliffordProjection_apply_eq_zero hQ hkl he h₀ h₂ hβ,
-    fun h ↦ ?_⟩
-  set P := cliffordProjection o ρ J.kahlerForm
-  have hP : IsIdempotentElem P := isIdempotentElem_cliffordProjection o ρ hQ hkl
-    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
-    (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂))
-  have hφ : P (P β) = P β := by rw [← mul_apply_eq_comp, hP.eq]
-  have hβ : P (β - P β) = 0 := by rw [map_sub, hφ, sub_self]
-  -- `P β` lies in the canonical line, where `J` acts as `i`, so `c(e₀)` kills it.
-  have hc : ρ (ι Q (e 0)) (P β : positiveHalfSpinors o ρ) = 0 := by
-    have h₁ := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hφ (e 0)
-    have h₂' := ι_apply_apply_of_cliffordProjection_apply_eq_zero hQ hkl he h₀ h₂ hβ (e 0)
-    have h₃ := h (e 0)
-    simp only [Submodule.coe_sub, map_sub] at h₂'
-    have h₄ : (2 * Complex.I) • ρ (ι Q (e 0)) (P β) = 0 := by
-      linear_combination (norm := module) h₃ - h₁ - h₂'
-    exact (smul_eq_zero.1 h₄).resolve_left (by simp)
-  exact Submodule.coe_eq_zero.1 ((injective_iff_map_eq_zero _).1
-    (map_ι_injective ρ (Q := Q) (v := e 0) (by simp [hQ, e.orthonormal.1 0])) _ hc)
-
-include hQ in
-/-- In complex dimension two, the fixed vectors of `P_ω` form a line: there is a nonzero `u` with
-`P_ω u = u`, and every fixed vector is a multiple of it. -/
-private theorem exists_ne_zero_forall_eq_smul (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
-    {ω : ⋀[ℝ]^2 V} (hω : o.hodgeStar hkl ω = ω) (hω₂ : ‖ω‖ ^ 2 = 2) :
-    ∃ u : positiveHalfSpinors o ρ, u ≠ 0 ∧ cliffordProjection o ρ ω u = u ∧
-      ∀ ψ, cliffordProjection o ρ ω ψ = ψ → ∃ c : ℂ, ψ = c • u := by
-  set P := cliffordProjection o ρ ω
-  have hP : IsIdempotentElem P := isIdempotentElem_cliffordProjection o ρ hQ hkl hω hω₂
-  have h1 := finrank_range_cliffordProjection o ρ hQ hkl hω hω₂ hW
-  have : Nontrivial (LinearMap.range (P : Module.End ℂ (positiveHalfSpinors o ρ))) :=
-    Module.nontrivial_of_finrank_eq_succ h1
-  obtain ⟨⟨_, ψ', rfl⟩, hr⟩ := exists_ne (0 : LinearMap.range
-    (P : Module.End ℂ (positiveHalfSpinors o ρ)))
-  have hPP : P (P ψ') = P ψ' := by rw [← mul_apply_eq_comp, hP.eq]
-  refine ⟨P ψ', fun h ↦ hr (Subtype.ext h), hPP, fun ψ hψ ↦ ?_⟩
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hr).1 h1 ⟨ψ, ψ, hψ⟩
-  exact ⟨c, (congrArg Subtype.val hc).symm⟩
-
-include hQ hkl he h₀ h₂ in
-/-- In complex dimension two, the kernel of `P_α`, the complementary line, is a line. -/
-private theorem exists_ne_zero_forall_eq_smul_of_eq_zero
-    (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
-    ∃ u : positiveHalfSpinors o ρ, u ≠ 0 ∧ cliffordProjection o ρ J.kahlerForm u = 0 ∧
-      ∀ ψ, cliffordProjection o ρ J.kahlerForm ψ = 0 → ∃ c : ℂ, ψ = c • u := by
-  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he
-  have hω₂ := AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)
-  have hP {ψ : positiveHalfSpinors o ρ} :
-      cliffordProjection o ρ (-J.kahlerForm) ψ = ψ ↔
-        cliffordProjection o ρ J.kahlerForm ψ = 0 := by
-    rw [cliffordProjection_neg_apply, sub_eq_self]
-  obtain ⟨u, hu₀, hu, hspan⟩ := exists_ne_zero_forall_eq_smul hQ hkl hW
-    (by rw [map_neg, hω]) (by rwa [norm_neg])
-  exact ⟨u, hu₀, hP.1 hu, fun ψ hψ ↦ hspan ψ (hP.2 hψ)⟩
-
-end Characterization
 
 /-! ### The subgroup of `Spinᶜ(4)` fixing the canonical line -/
 
@@ -301,6 +177,14 @@ private theorem ι_apply_spinCGroupHalfSpinRep (x : spinCGroup Q hQ₀) (v : V)
   rw [h, coe_halfSpinCliffordMul_apply_apply]
 
 omit [FiniteDimensional ℂ W] in
+/-- A relation `c(w) ψ = μ c(v) ψ` in `W` on a positive half-spinor `ψ` is the same relation
+between the half-spin Clifford multiplications `W⁺ → W⁻` by `w` and `v`. -/
+private theorem halfSpinCliffordMul_apply_eq_smul {ψ : eigenspace (ρ (chirality Q o)) 1} {μ : ℂ}
+    {v w : V} (h : ρ (ι Q w) ψ = μ • ρ (ι Q v) ψ) :
+    halfSpinCliffordMul o ρ 1 w ψ = μ • halfSpinCliffordMul o ρ 1 v ψ :=
+  Subtype.ext (by simpa using h)
+
+omit [FiniteDimensional ℂ W] in
 /-- An element of `Spinᶜ(4)` whose rotation commutes with `J` preserves each relation
 `c(J v) ψ = μ c(v) ψ`. -/
 private theorem ι_apply_apply_spinCGroupHalfSpinRep {x : spinCGroup Q hQ₀}
@@ -311,9 +195,8 @@ private theorem ι_apply_apply_spinCGroupHalfSpinRep {x : spinCGroup Q hQ₀}
       μ • ρ (ι Q v) (spinCGroupHalfSpinRep o ρ 1 hQ₀ x ψ) := by
   obtain ⟨w, rfl⟩ := (spinCGroup.toSpecialOrthogonal Q hQ₀ x : V ≃ₗ[ℝ] V).surjective v
   rw [← AlmostComplexStructure.mem_unitaryGroup_iff.1 hx w, ι_apply_spinCGroupHalfSpinRep,
-    ι_apply_spinCGroupHalfSpinRep,
-    show halfSpinCliffordMul o ρ 1 (J w) ψ = μ • halfSpinCliffordMul o ρ 1 w ψ from
-      Subtype.ext (by simpa using hψ w), map_smul, Submodule.coe_smul]
+    ι_apply_spinCGroupHalfSpinRep, halfSpinCliffordMul_apply_eq_smul (hψ w), map_smul,
+    Submodule.coe_smul]
 
 variable (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
 
@@ -323,10 +206,11 @@ with `J`. -/
 theorem toSpecialOrthogonal_mem_unitaryGroup {x : spinCGroup Q hQ₀}
     (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀) :
     spinCGroup.toSpecialOrthogonal Q hQ₀ x ∈ J.unitaryGroup Q := by
-  obtain ⟨u, hu₀, hu, -⟩ := exists_ne_zero_forall_eq_smul hQ hkl hW
-    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
-    (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂))
+  obtain ⟨u, hu₀, hu, -⟩ := 
+    exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul o ρ hQ hkl
+      (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
+      (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)) hW
   set u' : eigenspace (ρ (chirality Q o)) 1 := ⟨u, mem_eigenspace_coe u⟩
   have hxu : spinCGroupHalfSpinRep o ρ 1 hQ₀ x u' = u' :=
     hx u' (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu)
@@ -338,8 +222,8 @@ theorem toSpecialOrthogonal_mem_unitaryGroup {x : spinCGroup Q hQ₀}
   have h1 := ι_apply_spinCGroupHalfSpinRep hQ₀ x (J v) u'
   have h2 := ι_apply_spinCGroupHalfSpinRep hQ₀ x v u'
   rw [hxu] at h1 h2
-  rw [show halfSpinCliffordMul o ρ 1 (J v) u' = Complex.I • halfSpinCliffordMul o ρ 1 v u' from
-    Subtype.ext (by simpa using hcl v), map_smul, Submodule.coe_smul, ← h2] at h1
+  rw [halfSpinCliffordMul_apply_eq_smul (ψ := u') (hcl v), map_smul, Submodule.coe_smul,
+    ← h2] at h1
   rw [← hcl (A v)] at h1
   exact map_ι_apply_left_injective ρ (fun w hw ↦ by simpa [hQ] using hw)
     (by simpa using hu₀ : (u : W) ≠ 0) h1
@@ -361,10 +245,11 @@ theorem eq_one_of_mem_canonicalLineFixingSubgroup {x : spinCGroup Q hQ₀}
     · exact ⟨z, by rw [← spinCGroup.ofSpin_mul_ofCircle, map_one, one_mul]⟩
     · exact ⟨-1 * z, by rw [← spinCGroup.ofSpin_mul_ofCircle, spinCGroup.ofSpin_negOne, map_mul]⟩
   -- It acts on a nonzero vector of the canonical line by `w`.
-  obtain ⟨u, hu₀, hu, -⟩ := exists_ne_zero_forall_eq_smul hQ hkl hW
-    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
-    (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂))
+  obtain ⟨u, hu₀, hu, -⟩ := 
+    exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul o ρ hQ hkl
+      (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
+      (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)) hW
   have h := congrArg Subtype.val (hx ⟨u, mem_eigenspace_coe u⟩
     (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu))
   rw [spinCGroupHalfSpinRep_ofCircle, LinearMap.smul_apply, one_apply_eq_self,
@@ -372,7 +257,7 @@ theorem eq_one_of_mem_canonicalLineFixingSubgroup {x : spinCGroup Q hQ₀}
   have hw : (w : ℂ) = 1 := by
     have h' : ((w : ℂ) - 1) • (u : W) = 0 := by rw [sub_smul, h, one_smul, sub_self]
     exact sub_eq_zero.1 ((smul_eq_zero.1 h').resolve_right (by simpa using hu₀))
-  rw [show w = 1 from Circle.ext hw, map_one]
+  rw [Circle.coe_eq_one.1 hw, map_one]
 
 include hQ hkl he h₀ h₂ hW in
 /-- **Every unitary rotation lifts to the stabilizer of the canonical line.** A Spin lift `s` of
@@ -387,10 +272,11 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq
   obtain ⟨s, hs⟩ := spinToSpecialOrthogonal_surjective_of_isSquare Q hQn (fun v _ ↦ by
     rw [invOf_eq_inv, hQ]
     exact ⟨‖v‖⁻¹, by ring⟩) A
-  obtain ⟨u, hu₀, hu, hspan⟩ := exists_ne_zero_forall_eq_smul hQ hkl hW
-    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
-    (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂))
+  obtain ⟨u, hu₀, hu, hspan⟩ := 
+    exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul o ρ hQ hkl
+      (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
+      (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)) hW
   set x₀ := spinCGroup.ofSpin Q hQ₀ s
   set u' : eigenspace (ρ (chirality Q o)) 1 := ⟨u, mem_eigenspace_coe u⟩
   have hx₀ : spinCGroup.toSpecialOrthogonal Q hQ₀ x₀ ∈ J.unitaryGroup Q := by
@@ -414,6 +300,8 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq
     rw [hc', norm_smul] at hn
     exact (mul_eq_right₀ (by simpa using hu₀)).1 hn
   set z : Circle := ⟨c, mem_sphere_zero_iff_norm.2 hnorm⟩
+  -- The coercion of `z` to `ℂ` is the scalar `c` it was built from.
+  have hz : (z : ℂ) = c := rfl
   refine ⟨x₀ * spinCGroup.ofCircle Q hQ₀ z⁻¹, fun ψ hψ ↦ ?_, by
     rw [map_mul, spinCGroup.toSpecialOrthogonal_ofCircle, mul_one,
       spinCGroup.toSpecialOrthogonal_ofSpin, hs]⟩
@@ -423,7 +311,7 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq
   rw [map_mul, mul_apply_eq_comp, spinCGroupHalfSpinRep_ofCircle, LinearMap.smul_apply,
     one_apply_eq_self, hd', map_smul, map_smul, Subtype.ext_iff]
   simp only [Submodule.coe_smul, hc', smul_smul, Circle.coe_inv]
-  rw [show (z : ℂ) = c from rfl, mul_comm c⁻¹ d, mul_assoc, inv_mul_cancel₀ hc0, mul_one]
+  rw [hz, mul_comm c⁻¹ d, mul_assoc, inv_mul_cancel₀ hc0, mul_one]
 
 include hQ hkl he h₀ h₂ hW in
 /-- The rotation homomorphism maps the stabilizer of the canonical line bijectively onto the
@@ -476,6 +364,7 @@ def unitaryLift (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) :
 variable (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 
 /-- The canonical lift fixes the canonical line. -/
+@[simp]
 theorem unitaryLift_mem_canonicalLineFixingSubgroup (A : J.unitaryGroup Q) :
     unitaryLift hQ hkl he h₀ h₂ hQ₀ hW hρ A ∈ canonicalLineFixingSubgroup o ρ J hQ₀ :=
   ((canonicalLineFixingSubgroupEquiv hQ hkl he h₀ h₂ hQ₀ hW hρ).symm A).2
@@ -496,11 +385,13 @@ theorem eq_unitaryLift_iff {x : spinCGroup Q hQ₀} {A : J.unitaryGroup Q} :
   refine ⟨fun h ↦ h ▸ ⟨unitaryLift_mem_canonicalLineFixingSubgroup hQ hkl he h₀ h₂ hQ₀ hW hρ A,
     toSpecialOrthogonal_unitaryLift hQ hkl he h₀ h₂ hQ₀ hW hρ A⟩, fun ⟨hx, hxA⟩ ↦ ?_⟩
   have h := (canonicalLineFixingSubgroupEquiv hQ hkl he h₀ h₂ hQ₀ hW hρ).symm_apply_apply ⟨x, hx⟩
-  rw [show canonicalLineFixingSubgroupEquiv hQ hkl he h₀ h₂ hQ₀ hW hρ ⟨x, hx⟩ = A from
-    Subtype.ext hxA] at h
+  have hA : canonicalLineFixingSubgroupEquiv hQ hkl he h₀ h₂ hQ₀ hW hρ ⟨x, hx⟩ = A :=
+    Subtype.ext hxA
+  rw [hA] at h
   exact (congrArg Subtype.val h).symm
 
 /-- An element fixing the canonical line is the canonical lift of its rotation. -/
+@[simp]
 theorem unitaryLift_toSpecialOrthogonal {x : spinCGroup Q hQ₀}
     (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀) :
     unitaryLift hQ hkl he h₀ h₂ hQ₀ hW hρ
@@ -525,11 +416,13 @@ theorem spinCGroupHalfSpinRep_apply_eq_det_smul
     {β : eigenspace (ρ (chirality Q o)) 1}
     (hβ : ρ (bivectorExterior Q J.kahlerForm) β = (2 * Complex.I) • (β : W)) :
     spinCGroupHalfSpinRep o ρ 1 hQ₀ x β = (spinCGroup.det Q hQ₀ x : ℂ) • β := by
-  obtain ⟨u, hu₀, hu, -⟩ := exists_ne_zero_forall_eq_smul hQ hkl hW
-    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
-    (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂))
-  obtain ⟨u', hu'₀, hu', hspan'⟩ := exists_ne_zero_forall_eq_smul_of_eq_zero hQ hkl he h₀ h₂ hW
+  obtain ⟨u, hu₀, hu, -⟩ := 
+    exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul o ρ hQ hkl
+      (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
+      (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)) hW
+  obtain ⟨u', hu'₀, hu', hspan'⟩ := 
+    exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_zero_forall_eq_smul hQ hkl he h₀ h₂ hW
   set v : eigenspace (ρ (chirality Q o)) 1 := ⟨u, mem_eigenspace_coe u⟩
   set v' : eigenspace (ρ (chirality Q o)) 1 := ⟨u', mem_eigenspace_coe u'⟩
   have hxA := toSpecialOrthogonal_mem_unitaryGroup hQ hkl he h₀ h₂ hQ₀ hW hx
@@ -578,6 +471,7 @@ include hQ hkl he h₀ h₂ in
 /-- **The `Spinᶜ` lift of the rotations of the complex line `⟨e₂, e₃⟩` fixes the canonical line.**
 On the canonical line `c(e₀) c(e₁) = c(e₀) c(J e₀)` acts by `-i`, where `spinCCircle` has weight
 one. -/
+@[simp]
 theorem spinCCircle_mem_canonicalLineFixingSubgroup (z : Circle) :
     spinCCircle Q hQ₀ (e 2) (e 3) (e.isOrtho_apply hQ (by decide))
       (e.map_apply_mul_map_apply hQ 2 3) z ∈ canonicalLineFixingSubgroup o ρ J hQ₀ := by
@@ -611,6 +505,4 @@ theorem unitaryLift_toSpecialOrthogonal_spinCCircle (z : Circle) :
 
 end Circle
 
-end SeibergWitten
-
-end TauCeti
+end TauCeti.SeibergWitten

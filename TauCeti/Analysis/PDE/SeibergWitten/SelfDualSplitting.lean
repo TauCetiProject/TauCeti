@@ -46,6 +46,8 @@ imaginary form `i q(ψ)`, so `q(u₀) = ω / 4` is the identity `q(u₀) = i ω 
   `bivectorExterior_apply_of_cliffordProjection_apply_eq_self`: the fixed vectors of `P_α` are
   the `2`-eigenvectors of `C(iω)`, on which `c₂(ω)` acts by `-2i`.
 * `finrank_range_cliffordProjection`: in complex dimension two, the range of `P_α` is a line.
+* `exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul`: a nonzero spanning vector of
+  that line.
 * `rankOne_eq_smul_cliffordProjection`: `ψψ* = ‖ψ‖² P_α` for `ψ` in that line.
 * `coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self`,
   `coe_quadraticTwoForm_of_cliffordProjection_apply_eq_zero`: `q(ψ) = (‖ψ‖² / 4) ω` on the range
@@ -278,6 +280,23 @@ theorem finrank_range_cliffordProjection :
   have h := (LinearMap.IsIdempotentElem.isProj_range _ hP).trace
   rw [trace_cliffordProjection_of_finrank_eq_two o ρ hQ h₂] at h
   exact_mod_cast h.symm
+
+/-- **The fixed vectors of `P_α` form a line** when `W⁺` has complex dimension two: there is a
+nonzero `u` with `P_α u = u`, and every fixed vector is a multiple of it. -/
+theorem exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul :
+    ∃ u : positiveHalfSpinors o ρ, u ≠ 0 ∧ cliffordProjection o ρ ω u = u ∧
+      ∀ ψ, cliffordProjection o ρ ω ψ = ψ → ∃ c : ℂ, ψ = c • u := by
+  set P := cliffordProjection o ρ ω
+  have hP : IsIdempotentElem P := isIdempotentElem_cliffordProjection o ρ hQ hkl hω hω₂
+  have h1 := finrank_range_cliffordProjection o ρ hQ hkl hω hω₂ h₂
+  have : Nontrivial (LinearMap.range (P : Module.End ℂ (positiveHalfSpinors o ρ))) :=
+    Module.nontrivial_of_finrank_eq_succ h1
+  obtain ⟨⟨_, ψ', rfl⟩, hr⟩ := exists_ne (0 : LinearMap.range
+    (P : Module.End ℂ (positiveHalfSpinors o ρ)))
+  have hPP : P (P ψ') = P ψ' := by rw [← mul_apply_eq_comp, hP.eq]
+  refine ⟨P ψ', fun h ↦ hr (Subtype.ext h), hPP, fun ψ hψ ↦ ?_⟩
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hr).1 h1 ⟨ψ, ψ, hψ⟩
+  exact ⟨c, (congrArg Subtype.val hc).symm⟩
 
 variable {ρ} (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 include hρ
