@@ -108,9 +108,6 @@ identifies its kernel in one step.
   `Mathlib/Algebra/Homology/ShortComplex/ShortExact.lean`, whose
   `CategoryTheory.ShortComplex.ShortExact.splittingOfProjective` is the balanced-category
   ancestor of `TauCeti.ExactStructure.splittingOfProjective`.
-* [The Tau Ceti Grothendieck groups, Cartan maps, and Euler forms roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/README.md),
-  Layer 3, whose projective-resolution calculus requires the horseshoe lemma and whose subsequent
-  finite-resolution applications require the resulting extension-closed object property.
 -/
 
 public section

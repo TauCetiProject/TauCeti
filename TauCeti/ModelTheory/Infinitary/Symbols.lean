@@ -235,9 +235,9 @@ theorem functionsIn_countable [Countable ι] (φ : L.BoundedFormulaInf ι α n) 
   | falsum => simp
   | equal t₁ t₂ =>
     exact t₁.functionsIn_finite.countable.union t₂.functionsIn_finite.countable
-  | rel R ts => exact Set.countable_iUnion fun i => (ts i).functionsIn_finite.countable
+  | rel _ ts => exact Set.countable_iUnion fun i => (ts i).functionsIn_finite.countable
   | imp φ ψ ihφ ihψ => exact ihφ.union ihψ
-  | all φ ih => exact ih
+  | all _ ih => exact ih
   | iSup φs ih => exact Set.countable_iUnion ih
   | iInf φs ih => exact Set.countable_iUnion ih
 
@@ -295,7 +295,7 @@ theorem relationsIn_countable [Countable ι] (φ : L.BoundedFormulaInf ι α n) 
   | equal t₁ t₂ => simp
   | rel R ts => simp
   | imp φ ψ ihφ ihψ => exact ihφ.union ihψ
-  | all φ ih => exact ih
+  | all _ ih => exact ih
   | iSup φs ih => exact Set.countable_iUnion ih
   | iInf φs ih => exact Set.countable_iUnion ih
 

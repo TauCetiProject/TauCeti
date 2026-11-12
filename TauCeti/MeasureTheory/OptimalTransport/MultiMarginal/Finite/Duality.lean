@@ -391,7 +391,7 @@ omit [∀ i, Fintype (X i)] in
 /-- A bound `B` dominating `(card ι + 2) * M` for `M ≥ 0` also dominates `M`. -/
 private theorem le_of_card_add_two_mul_le {M B : ℝ} (hM0 : 0 ≤ M)
     (hD : (Fintype.card ι + 2 : ℝ) * M ≤ B) : M ≤ B := by
-  have hcard : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
+  have _ : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
     Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
   nlinarith
 
@@ -429,7 +429,6 @@ private theorem neg_le_of_toReal_ne_zero {M B : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i
   have hw : 0 < ((μ i) x).toReal := lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hx)
   have hothers := PMF.sum_toReal_mul_le (μ i) (Finset.univ.erase x) hM0 fun y _ ↦ hψ_le i y
   rw [← Finset.add_sum_erase _ _ (Finset.mem_univ x)] at hE
-  have hprod : -((Fintype.card ι + 2 : ℝ) * M) ≤ ((μ i) x).toReal * ψ i x := by linarith
   have := (div_le_iff₀ hw).1 hquot
   nlinarith
 
