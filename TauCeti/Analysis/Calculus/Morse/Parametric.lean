@@ -407,7 +407,7 @@ theorem parametricMorseCoord_eq_of_isParametricMorseCongruencePoint {f₀ f₁ :
   set k₁ : E → ℝ := fun w ↦ f₁ (x₁, w) with hk₁def
   -- The fibres correspond on the convex open set `D` of points of the first ball sent into the
   -- second ball, which contains the segment from `0` to `w₀`.
-  set D : Set E := Metric.ball (0 : E) r₀ ∩ T ⁻¹' Metric.ball (0 : E) r₁ with hD
+  set D : Set E := Metric.ball (0 : E) r₀ ∩ T ⁻¹' Metric.ball (0 : E) r₁
   have hDo : IsOpen D := Metric.isOpen_ball.inter (Metric.isOpen_ball.preimage T.continuous)
   have hDc : Convex ℝ D :=
     (convex_ball 0 r₀).inter ((convex_ball 0 r₁).linear_preimage (T : E →ₗ[ℝ] E))
