@@ -21,14 +21,13 @@ Since `a` has every real order `m'`, the same operator also maps `H^s` into `H^{
 `m'`: the Sobolev extension of `Op(a)` depends only on the coefficient of `a`
 (`TauCeti.Symbol.toDistr_quantizeSobolev_congr`), because two continuous extensions that agree on
 the dense subspace of Schwartz functions agree everywhere. Hence `Op(a) u` lies in `H^t` for every
-real `t`, and the Sobolev embedding `H^t ⊆ C^k`, `t > k + n / 2`
+real `t` (`TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`), and the Sobolev
+embedding `H^t ⊆ C^k`, `t > k + n / 2`
 (`TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev`), makes it a smooth
 function.
 
 ## Main results
 
-* `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: for a smoothing symbol with
-  compact spatial support, `Op(a) u ∈ H^t` for every `u ∈ H^s` and all real `s` and `t`.
 * `TauCeti.Symbol.IsSmoothing.exists_contDiff_quantizeSobolev`: `Op(a) u` is a smooth function.
 
 ## References
@@ -53,17 +52,6 @@ namespace Symbol
 variable {n : ℕ} {m : ℝ}
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-
-/-- **Smoothing operators gain every order of regularity.** For a smoothing symbol `a` with compact
-spatial support, the quantization `Op(a) u` of any `u ∈ H^s` lies in `H^t` for every real `t`. -/
-theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev {a : Symbol n V W m} (ha : a.IsSmoothing)
-    (hc : a.HasCompactSpatialSupport) (s t : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
-    MemSobolev t 2 (a.quantizeSobolev hc s u).toDistr := by
-  -- A symbol of order `s - t` with the same coefficient maps `H^s` into `H^t`.
-  obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - t)
-  have hbc := hc.of_coefficient_eq hb
-  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
-  simpa only [sub_sub_cancel] using (b.quantizeSobolev hbc s u).memSobolev_toDistr
 
 /-- **Smoothing operators produce smooth functions.** For a smoothing symbol `a` with compact
 spatial support and every `u ∈ H^s`, `s` real, the quantization `Op(a) u` is a smooth function
