@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
+import TauCeti.Analysis.SpecialFunctions.Exp.Overlap
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -31,6 +32,9 @@ after integration over the plane.
 * The energy densities satisfy the same two bounds for every rate `c < 1`
   (`TauCeti.Vortex.exists_energyDensity_mul_energyDensity_le_mul_exp`,
   `TauCeti.Vortex.exists_integral_energyDensity_mul_energyDensity_le_mul_exp`).
+* Both overlaps are integrable for every separation `a`
+  (`TauCeti.Vortex.integrable_one_sub_normSq_mul_one_sub_normSq`,
+  `TauCeti.Vortex.integrable_energyDensity_mul_energyDensity`).
 
 The rates are those of the decay of a single vortex
 (`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp`,
@@ -53,7 +57,33 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Filter MeasureTheory Topology
+open Complex Filter MeasureTheory Topology
+
+/-- On a vortex whose `b₁` is continuous and whose section is `C²`, the energy density is
+measurable: the equation gives `|d_a α (i)| = |d_a α (1)|`, which does not involve `b₂`. -/
+private theorem aestronglyMeasurable_energyDensity {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hb : Continuous (fun w ↦ x w 0)) (hp : ContDiff ℝ 2 (fun w ↦ x w 2))
+    (hq : ContDiff ℝ 2 (fun w ↦ x w 3)) (hsol : ∀ z, equation x z = 0) (μ : Measure ℂ) :
+    AEStronglyMeasurable (energyDensity x) μ := by
+  have hαcd : ContDiff ℝ 2 (sectionValue x) := contDiff_sectionValue hp hq
+  have h₁ : Continuous fun z ↦ covariantDerivative x z 1 := by
+    have h : Continuous fun z ↦ fderiv ℝ (sectionValue x) z 1 :=
+      (hαcd.continuous_fderiv (by norm_num)).clm_apply continuous_const
+    simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
+    exact h.add ((continuous_const.mul (continuous_ofReal.comp hb)).mul hαcd.continuous)
+  have heq : energyDensity x = fun z ↦ curvature x z ^ 2 +
+      2 * ‖covariantDerivative x z 1‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2 := by
+    funext z
+    rw [energyDensity_apply, covariantDerivative_eq_mul_of_equation_eq_zero
+      (hp.differentiable (by norm_num) z) (hq.differentiable (by norm_num) z)
+      (by simp [hsol z]) (by simp [hsol z]) I, norm_mul, norm_I, one_mul]
+    ring
+  have hcurv : Measurable (curvature x) := by
+    simp only [funext (curvature_apply x)]
+    fun_prop
+  rw [heq]
+  exact (((hcurv.pow_const 2).add ((h₁.norm.pow 2).measurable.const_mul 2)).add
+    ((continuous_const.sub (hαcd.continuous.norm.pow 2)).pow 2).measurable).aestronglyMeasurable
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
   (hpx : ContDiff ℝ 2 (fun w ↦ x w 2)) (hqx : ContDiff ℝ 2 (fun w ↦ x w 3))
@@ -93,6 +123,27 @@ theorem exists_integral_one_sub_normSq_mul_one_sub_normSq_le_mul_exp (μ : Measu
     (fun _ hc ↦ exists_one_sub_normSq_le_mul_exp hpx hqx hsolx hlimx hc)
     (fun _ hc ↦ exists_one_sub_normSq_le_mul_exp hpy hqy hsoly hlimy hc) (by norm_num) hc
 
+/-- **Integrability of the overlap of the modulus defects of separated vortices.** For vortices
+`x` and `y` on the whole plane with `|α| → 1` at infinity, the overlap
+`(1 - |α_x(z)|²) (1 - |α_y(z + a)|²)` of the modulus defects of `x` and of the translate
+`y (· + a)` is integrable for every additive Haar measure on the plane. -/
+theorem integrable_one_sub_normSq_mul_one_sub_normSq (μ : Measure ℂ) [μ.IsAddHaarMeasure]
+    (a : ℂ) :
+    Integrable (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) *
+      (1 - 4 * (y (z + a) 2 ^ 2 + y (z + a) 3 ^ 2))) μ := by
+  have hx₀ (z : ℂ) := sub_nonneg.2 (normSq_le_one_of_tendsto hpx hqx hsolx hlimx z)
+  have hy₀ (z : ℂ) := sub_nonneg.2 (normSq_le_one_of_tendsto hpy hqy hsoly hlimy z)
+  obtain ⟨Kx, hKx⟩ := exists_one_sub_normSq_le_mul_exp hpx hqx hsolx hlimx
+    (by norm_num : (1 / 4 : ℝ) < 1 / 2)
+  obtain ⟨Ky, hKy⟩ := exists_one_sub_normSq_le_mul_exp hpy hqy hsoly hlimy
+    (by norm_num : (1 / 4 : ℝ) < 1 / 2)
+  refine (TauCeti.integrable_norm_mul_norm_comp_add μ (by norm_num : (0 : ℝ) < 1 / 4)
+    (integrable_one_sub_normSq μ hpx hqx hsolx hlimx).aestronglyMeasurable
+    (integrable_one_sub_normSq μ hpy hqy hsoly hlimy).aestronglyMeasurable
+    (fun z ↦ (Real.norm_of_nonneg (hx₀ z)).trans_le (hKx z))
+    (fun z ↦ (Real.norm_of_nonneg (hy₀ z)).trans_le (hKy z)) a).congr (.of_forall fun z ↦ ?_)
+  simp only [Real.norm_of_nonneg (hx₀ z), Real.norm_of_nonneg (hy₀ (z + a))]
+
 variable (hbx : Continuous (fun w ↦ x w 0)) (hby : Continuous (fun w ↦ y w 0))
 
 include hbx hby
@@ -122,5 +173,24 @@ theorem exists_integral_energyDensity_mul_energyDensity_le_mul_exp (μ : Measure
     (fun z ↦ by rw [energyDensity_apply]; positivity)
     (fun _ hc ↦ exists_energyDensity_le_mul_exp hbx hpx hqx hsolx hlimx hc)
     (fun _ hc ↦ exists_energyDensity_le_mul_exp hby hpy hqy hsoly hlimy hc) one_pos hc
+
+/-- **Integrability of the overlap of the energy densities of separated vortices.** For vortices
+`x` and `y` on the whole plane with `|α| → 1` at infinity, the overlap `e_x(z) e_y(z + a)` of the
+energy densities of `x` and of the translate `y (· + a)` is integrable for every additive Haar
+measure on the plane. -/
+theorem integrable_energyDensity_mul_energyDensity (μ : Measure ℂ) [μ.IsAddHaarMeasure] (a : ℂ) :
+    Integrable (fun z ↦ energyDensity x z * energyDensity y (z + a)) μ := by
+  have hx₀ (z : ℂ) : 0 ≤ energyDensity x z := by rw [energyDensity_apply]; positivity
+  have hy₀ (z : ℂ) : 0 ≤ energyDensity y z := by rw [energyDensity_apply]; positivity
+  obtain ⟨Kx, hKx⟩ := exists_energyDensity_le_mul_exp hbx hpx hqx hsolx hlimx
+    (by norm_num : (1 / 2 : ℝ) < 1)
+  obtain ⟨Ky, hKy⟩ := exists_energyDensity_le_mul_exp hby hpy hqy hsoly hlimy
+    (by norm_num : (1 / 2 : ℝ) < 1)
+  refine (TauCeti.integrable_norm_mul_norm_comp_add μ (by norm_num : (0 : ℝ) < 1 / 2)
+    (aestronglyMeasurable_energyDensity hbx hpx hqx hsolx μ)
+    (aestronglyMeasurable_energyDensity hby hpy hqy hsoly μ)
+    (fun z ↦ (Real.norm_of_nonneg (hx₀ z)).trans_le (hKx z))
+    (fun z ↦ (Real.norm_of_nonneg (hy₀ z)).trans_le (hKy z)) a).congr (.of_forall fun z ↦ ?_)
+  simp only [Real.norm_of_nonneg (hx₀ z), Real.norm_of_nonneg (hy₀ (z + a))]
 
 end TauCeti.Vortex
