@@ -24,8 +24,12 @@ function `φ` supported in `U`. It is a relatively closed subset of `Ω` contain
 * `Distribution.singularSupport_subset_dsupport`: it lies in the support.
 * `Distribution.singularSupport_ofFun_eq_empty`: a function smooth on `Ω` has empty singular
   support.
-* `Distribution.singularSupport_add_subset`, `Distribution.singularSupport_smul_subset`: the
-  singular support of a sum or scalar multiple lies in those of the summands.
+* `Distribution.singularSupport_add_subset`, `Distribution.singularSupport_sum_subset`: the
+  singular support of a sum lies in the union of the singular supports of the summands.
+* `Distribution.singularSupport_smul_subset`: scalar multiplication does not enlarge the singular
+  support.
+* `IsUnit.singularSupport_smul`, `Distribution.singularSupport_smul`: multiplication by a unit,
+  in particular by a nonzero scalar, preserves the singular support.
 
 ## References
 
@@ -116,21 +120,55 @@ theorem singularSupport_add_subset (S T : 𝓓'(Ω, F)) :
     (hgV.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφV)]
   simp [smul_add]
 
+/-- The singular support of a finite sum lies in the union of the singular supports. -/
+theorem singularSupport_sum_subset {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, F)) :
+    (∑ i ∈ s, T i).singularSupport ⊆ ⋃ i ∈ s, (T i).singularSupport := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.set_biUnion_insert]
+    exact (singularSupport_add_subset _ _).trans (union_subset_union_right _ ih)
+
+section SMul
+
+variable {M : Type*} [Monoid M] [DistribMulAction M F] [SMulCommClass ℝ M F]
+  [ContinuousConstSMul M F]
+
 /-- A scalar multiple of a distribution has no larger singular support. -/
-theorem singularSupport_smul_subset {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F]
-    [SMulCommClass ℝ 𝕜 F] (c : 𝕜) (T : 𝓓'(Ω, F)) :
+theorem singularSupport_smul_subset (c : M) (T : 𝓓'(Ω, F)) :
     (c • T).singularSupport ⊆ T.singularSupport := by
-  refine fun x hx ↦ ⟨hx.1, fun ⟨U, hU, hxU, f, hf, hT⟩ ↦ hx.2 ⟨U, hU, hxU, c • f,
+  refine fun x hx ↦ ⟨hx.1, fun ⟨U, hU, hxU, f, hf, hT⟩ ↦ hx.2 ⟨U, hU, hxU, fun y ↦ c • f y,
     hf.const_smul c, fun φ hφ ↦ ?_⟩⟩
-  rw [smul_apply, hT φ hφ, ← integral_smul]
-  exact integral_congr_ae (.of_forall fun y ↦ (smul_comm (φ y) c (f y)).symm)
+  have hcv : ∀ v : F, (c • ContinuousLinearMap.id ℝ F) v = c • v := fun _ ↦ rfl
+  rw [smul_apply, hT φ hφ]
+  by_cases hF : CompleteSpace F
+  · have hfU := hf.continuousOn.locallyIntegrableOn (μ := volume) hU.measurableSet
+    simp_rw [← hcv, ← map_smul]
+    exact (ContinuousLinearMap.integral_comp_comm _
+      (hfU.integrable_smul_left_of_hasCompactSupport φ.continuous φ.hasCompactSupport hφ)).symm
+  · simp [integral_of_not_completeSpace hF]
+
+/-- Multiplication by a unit does not change the singular support. -/
+theorem _root_.IsUnit.singularSupport_smul {c : M} (hc : IsUnit c) (T : 𝓓'(Ω, F)) :
+    (c • T).singularSupport = T.singularSupport := by
+  obtain ⟨u, rfl⟩ := hc
+  refine (singularSupport_smul_subset _ T).antisymm ?_
+  simpa [smul_smul] using singularSupport_smul_subset (↑u⁻¹ : M) ((u : M) • T)
+
+end SMul
+
+/-- Multiplication by a nonzero scalar does not change the singular support. -/
+@[simp]
+theorem singularSupport_smul {G₀ : Type*} [GroupWithZero G₀] [DistribMulAction G₀ F]
+    [SMulCommClass ℝ G₀ F] [ContinuousConstSMul G₀ F] {c : G₀} (hc : c ≠ 0)
+    (T : 𝓓'(Ω, F)) : (c • T).singularSupport = T.singularSupport :=
+  hc.isUnit.singularSupport_smul T
 
 /-- Negation does not change the singular support. -/
 @[simp]
 theorem singularSupport_neg (T : 𝓓'(Ω, F)) : (-T).singularSupport = T.singularSupport := by
-  refine subset_antisymm ?_ ?_
-  · simpa using singularSupport_smul_subset (-1 : ℝ) T
-  · simpa using singularSupport_smul_subset (-1 : ℝ) (-T)
+  rw [← neg_one_smul ℝ T, singularSupport_smul (neg_ne_zero.2 one_ne_zero)]
 
 /-- The singular support of a difference lies in the union of the singular supports. -/
 theorem singularSupport_sub_subset (S T : 𝓓'(Ω, F)) :

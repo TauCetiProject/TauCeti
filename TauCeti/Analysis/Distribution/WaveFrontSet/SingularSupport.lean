@@ -51,8 +51,8 @@ of the wave front set of a complex distribution onto the base is exactly its sin
   point of `Ω` exactly when it is microlocally smooth there in every nonzero direction.
 * `Distribution.fst_image_waveFrontSet`: the projection of the wave front set is the singular
   support.
-* `Distribution.singularSupport_eq_empty_iff`: a complex distribution has empty singular support
-  exactly when it has empty wave front set.
+* `Distribution.singularSupport_eq_empty_iff_waveFrontSet_eq_empty`: a complex distribution has
+  empty singular support exactly when it has empty wave front set.
 * `Distribution.singularSupport_delta`: the singular support of the point mass at `x₀` is `{x₀}`.
 
 ## References
@@ -257,7 +257,7 @@ theorem fst_image_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
 
 /-- A complex distribution has empty singular support exactly when it has empty wave front
 set. -/
-theorem singularSupport_eq_empty_iff {T : 𝓓'(Ω, ℂ)} :
+theorem singularSupport_eq_empty_iff_waveFrontSet_eq_empty {T : 𝓓'(Ω, ℂ)} :
     T.singularSupport = ∅ ↔ T.waveFrontSet = ∅ := by
   rw [← fst_image_waveFrontSet, image_eq_empty]
 
