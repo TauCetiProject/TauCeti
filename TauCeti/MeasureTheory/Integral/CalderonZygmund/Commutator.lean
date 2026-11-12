@@ -796,7 +796,7 @@ private theorem setLIntegral_compl_ball_ofReal_mul_le {b : V → ℝ} (hb : AESt
         uncenteredMaximalFunction μ (fun y => ψ y ^ r) x ^ (1 / r) := by
   set n := finrank ℝ V
   have hR : 0 < R := pos_of_mem_ball hx
-  set ρ := 2 * R with hρdef
+  set ρ := 2 * R
   have hρ : 0 < ρ := by positivity
   set a₀ := ⨍ z in ball c ρ, b z ∂μ
   set Φ : V → ℝ≥0∞ := fun y => ‖b y - a₀‖ₑ * ψ y
