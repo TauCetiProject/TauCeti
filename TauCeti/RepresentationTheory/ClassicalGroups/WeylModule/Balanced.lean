@@ -124,13 +124,8 @@ theorem balancedSchurRelations_le_comap_rTensor (g : GL (Fin d) ℂ) :
       ((tensorPowerRep ℂ d n g).rTensor (spechtModuleℂ μ)) := by
   rw [balancedSchurRelations_def, Submodule.span_le]
   rintro _ ⟨v, s, σ, rfl⟩
-  have h := commute_permTensorActionAlgHom_tensorPowerRep ℂ d n
-    (MonoidAlgebra.of ℂ (Equiv.Perm (Fin n)) σ⁻¹) g
-  rw [permTensorActionAlgHom_of] at h
-  have hv : tensorPowerRep ℂ d n g (permTensorAction ℂ d n σ⁻¹ v) =
-      permTensorAction ℂ d n σ⁻¹ (tensorPowerRep ℂ d n g v) := by
-    simpa only [mul_apply_eq_comp] using congr($(h.eq) v).symm
-  simp only [SetLike.mem_coe, Submodule.mem_comap, map_sub, LinearMap.rTensor_tmul, hv]
+  simp only [SetLike.mem_coe, Submodule.mem_comap, map_sub, LinearMap.rTensor_tmul,
+    tensorPowerRep_permTensorAction_apply]
   exact sub_mem_balancedSchurRelations d n μ _ s σ
 
 /-- **The balanced tensor presentation of the Schur functor.** There is a surjective linear map
@@ -159,18 +154,15 @@ theorem balancedSchurPresentation :
       coinvariantsKer_tprod_eq_balancedSchurRelations]
   · intro g v s
     have hF : F (tensorPowerRep ℂ d n g v ⊗ₜ s) = tensorPowerRep ℂ d n g (F (v ⊗ₜ s)) := by
-      have h := commute_permTensorActionAlgHom_tensorPowerRep ℂ d n
-        (HopfAlgebra.antipode ℂ (i s)) g
-      rw [permTensorActionAlgHom_def] at h
-      simpa only [F, IntertwiningMap.tprodContraction_tmul, mul_apply_eq_comp] using
-        congr($(h.eq) v)
+      simp only [F, IntertwiningMap.tprodContraction_tmul,
+        tensorPowerRep_asAlgebraHom_permTensorAction_apply]
     -- `LinearEquiv.ofEq`, `rangeRestrict` and the action on the subrepresentation all act on the
     -- underlying vectors, so after coercion this is `hF`
     have hr : LinearEquiv.ofEq _ _ hrange (F.rangeRestrict (tensorPowerRep ℂ d n g v ⊗ₜ s)) =
         (tensorPowerRep ℂ d n).subrepresentation _
           (range_asAlgebraHom_permTensorAction_le_comap ℂ d n _) g
           (LinearEquiv.ofEq _ _ hrange (F.rangeRestrict (v ⊗ₜ s))) :=
-      Subtype.ext hF
+      Subtype.ext (by simpa using hF)
     have hW := LinearMap.congr_fun (W.symm.toIntertwiningMap.isIntertwining' g)
       (LinearEquiv.ofEq _ _ hrange (F.rangeRestrict (v ⊗ₜ s)))
     simp only [LinearMap.coe_comp, Function.comp_apply] at hW

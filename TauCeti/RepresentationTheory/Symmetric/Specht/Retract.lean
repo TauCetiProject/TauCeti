@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Symmetric.Specht.Complex
 -- Non-public: the retract is built from the ideal presentation of the Specht module and from
 -- base-change and transport identities; the statement only mentions the complex Specht module,
 -- the regular representation and the Young symmetrizer.
-import TauCeti.Algebra.MonoidAlgebra.DomCongr
 import TauCeti.RepresentationTheory.BaseChange.LeftRegular
 import TauCeti.RepresentationTheory.OfMulAction.LeftRegular
 import TauCeti.RepresentationTheory.Symmetric.Specht.Comparison
@@ -236,12 +235,10 @@ private theorem antipode_iC_pC :
       map_one]
   rw [h1, h2, baseChangeOfMulActionEquiv_one_tmul, MonoidAlgebra.antipode_mapAlgHom,
     MonoidAlgebra.antipode_domCongr, antipode_spechtToRegular_regularToSpecht]
-  simp only [Equiv.permCongrHom_symm, finCongr_symm, map_smul, map_inv₀, eq_ratCast,
-    MonoidAlgebra.mapAlgHom_domCongr]
-  rw [← Rat.cast_inv, Rat.cast_smul_eq_qsmul, Nat.Partition.youngSymmetrizer_def,
-    youngSymmetrizerOver_def]
-  -- `domCongr ℚ ℂ` and `domCongr ℂ ℂ` differ only in the scalars they are linear over
-  rfl
+  simp only [Equiv.permCongrHom_symm, finCongr_symm, map_smul, map_inv₀, eq_ratCast]
+  rw [Nat.Partition.youngSymmetrizer_def, youngSymmetrizerOver_def]
+  ext g
+  simp [Rat.smul_def]
 
 /-- **The complex Specht module is a retract of the regular representation**, through
 intertwining maps `i` and `p` with `p ∘ i = id` whose idempotent `i (p 1)` has antipode a
