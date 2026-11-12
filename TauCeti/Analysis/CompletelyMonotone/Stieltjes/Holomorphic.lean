@@ -146,12 +146,18 @@ theorem hasDerivAt_stieltjesExtension (hμ : Integrable stieltjesWeight μ) (hz 
   refine hsum.congr_of_eventuallyEq (Eventually.of_forall fun w => ?_)
   rw [stieltjesExtension, Pi.add_apply]
 
-/-- Without integrability of the Stieltjes weight every kernel integral is junk, so on the slit
-plane the transform is that of the zero measure. -/
+/-- The complex Stieltjes transform of the zero measure is `a / z + b`. -/
+@[simp]
+theorem stieltjesExtension_zero_measure (a b : ℝ≥0) (z : ℂ) :
+    stieltjesExtension 0 a b z = ((a : ℝ) : ℂ) / z + ((b : ℝ) : ℂ) := by
+  rw [stieltjesExtension, integral_zero_measure, add_zero]
+
+/-- On the slit plane, if the Stieltjes weight is not `μ`-integrable then the complex Stieltjes
+transform of `μ` is `a / z + b`, that of the zero measure. -/
 theorem stieltjesExtension_of_not_integrable (hμ : ¬Integrable stieltjesWeight μ)
     (hz : z ∈ slitPlane) :
-    stieltjesExtension μ a b z = stieltjesExtension 0 a b z := by
-  rw [stieltjesExtension, stieltjesExtension,
+    stieltjesExtension μ a b z = ((a : ℝ) : ℂ) / z + ((b : ℝ) : ℂ) := by
+  rw [← stieltjesExtension_zero_measure, stieltjesExtension, stieltjesExtension,
     integral_undef fun h => hμ ((integrable_inv_add_iff hz).mp h), integral_zero_measure]
 
 /-- The complex Stieltjes transform is complex differentiable on the slit plane. -/
@@ -162,7 +168,8 @@ theorem differentiableOn_stieltjesExtension :
       (hasDerivAt_stieltjesExtension hμ hz).differentiableAt.differentiableWithinAt
   · -- Without integrability the transform agrees with that of the zero measure.
     refine DifferentiableOn.congr (f := stieltjesExtension 0 a b) (fun w hw => ?_)
-      fun w hw => stieltjesExtension_of_not_integrable hμ hw
+      fun w hw => by
+        rw [stieltjesExtension_of_not_integrable hμ hw, stieltjesExtension_zero_measure]
     exact (hasDerivAt_stieltjesExtension integrable_zero_measure hw).differentiableAt
       |>.differentiableWithinAt
 
@@ -170,10 +177,6 @@ theorem differentiableOn_stieltjesExtension :
 theorem analyticOnNhd_stieltjesExtension :
     AnalyticOnNhd ℂ (stieltjesExtension μ a b) slitPlane :=
   differentiableOn_stieltjesExtension.analyticOnNhd isOpen_slitPlane
-
-/-- A point off the slit plane is real. -/
-theorem im_eq_zero_of_notMem_slitPlane (hz : z ∉ slitPlane) : z.im = 0 :=
-  by_contra fun h => hz (mem_slitPlane_iff.mpr (Or.inr h))
 
 /-- The complex Stieltjes transform commutes with complex conjugation. -/
 @[simp]
@@ -188,7 +191,8 @@ theorem im_stieltjesExtension_eq_zero_of_im_eq_zero (him : z.im = 0) :
   conj_eq_iff_im.mp (by rw [← stieltjesExtension_conj, conj_eq_iff_im.mpr him])
 
 /-- **The imaginary part of the complex Stieltjes transform**:
-`Im F(z) = -Im z * (a / |z|² + ∫ x, |z + x|⁻² ∂μ)` on the slit plane. -/
+`Im F(z) = -Im z * (a / |z|² + ∫ x, |z + x|⁻² ∂μ)` when the Stieltjes weight is
+`μ`-integrable. -/
 theorem im_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
     (stieltjesExtension μ a b z).im =
       -z.im * ((a : ℝ) / normSq z + ∫ x, (normSq (z + ((x : ℝ) : ℂ)))⁻¹ ∂μ) := by
@@ -224,11 +228,12 @@ theorem im_mul_im_stieltjesExtension_nonpos (μ : Measure ℝ≥0) (a b : ℝ≥
     nlinarith [mul_nonneg (sq_nonneg z.im) hP]
   by_cases hμ : Integrable stieltjesWeight μ
   · exact key μ hμ
-  · rw [stieltjesExtension_of_not_integrable hμ hz]
+  · rw [stieltjesExtension_of_not_integrable hμ hz, ← stieltjesExtension_zero_measure]
     exact key 0 integrable_zero_measure
 
 /-- The imaginary part of `z` times the complex Stieltjes transform:
-`Im (z F(z)) = Im z * (b + ∫ x, x / |z + x|² ∂μ)` on the slit plane. -/
+`Im (z F(z)) = Im z * (b + ∫ x, x / |z + x|² ∂μ)` when the Stieltjes weight is
+`μ`-integrable. -/
 theorem im_mul_stieltjesExtension (hμ : Integrable stieltjesWeight μ) :
     (z * stieltjesExtension μ a b z).im =
       z.im * ((b : ℝ) + ∫ x, (x : ℝ) / normSq (z + ((x : ℝ) : ℂ)) ∂μ) := by
@@ -273,7 +278,7 @@ theorem im_mul_im_mul_stieltjesExtension_nonneg (μ : Measure ℝ≥0) (a b : �
     exact mul_nonneg (mul_self_nonneg _) hP
   by_cases hμ : Integrable stieltjesWeight μ
   · exact key μ hμ
-  · rw [stieltjesExtension_of_not_integrable hμ hz]
+  · rw [stieltjesExtension_of_not_integrable hμ hz, ← stieltjesExtension_zero_measure]
     exact key 0 integrable_zero_measure
 
 /-- **The complex Stieltjes transform vanishes only for zero data.**  At a point of the slit
