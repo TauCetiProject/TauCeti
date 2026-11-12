@@ -112,12 +112,12 @@ theorem comp_eq_comp (f : X ⟶ Y) (g : Y ⟶ Z) : f ≫ g = g.comp f := (rfl)
 /-- The categorical dagger is Mathlib's Hilbert-space adjoint. -/
 theorem dagger_eq_adjoint (f : X ⟶ Y) : dagger f = ContinuousLinearMap.adjoint f := (rfl)
 
-/-- The dagger is characterized by the inner product identity. -/
+/-- The dagger satisfies the adjoint inner-product identity. -/
 theorem inner_dagger_left (f : X ⟶ Y) (x : X) (y : Y) :
     inner 𝕜 (dagger f y) x = inner 𝕜 y (f x) :=
   ContinuousLinearMap.adjoint_inner_left f x y
 
-/-- Composition is contractive for the operator norm. -/
+/-- The operator norm is submultiplicative under composition. -/
 theorem norm_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) : ‖f ≫ g‖ ≤ ‖g‖ * ‖f‖ :=
   ContinuousLinearMap.opNorm_comp_le g f
 
