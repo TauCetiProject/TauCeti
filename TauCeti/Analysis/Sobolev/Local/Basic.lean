@@ -28,6 +28,7 @@ the usual local Sobolev class. Derivatives take values in iterated continuous li
 rather than scalar jets.
 These predicates concern actual functions; almost-everywhere changes do not affect membership.
 They impose no global integrability condition on the possibly unbounded domain.
+Global `Lᵖ` membership on a set implies local membership there (`MeasureTheory.MemLp.memLpLoc`).
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
 pairing of fields of continuous linear maps into product maps,
@@ -92,6 +93,11 @@ contained in `U`. -/
 theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (closure V))
     (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
   (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
+
+/-- A function that is `Lᵖ` on `U` is locally `Lᵖ` there. -/
+theorem _root_.MeasureTheory.MemLp.memLpLoc (hf : MemLp f p (volume.restrict U)) :
+    MemLpLoc p U f :=
+  fun _ hK _ => hf.mono_measure (Measure.restrict_mono hK le_rfl)
 
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
 theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
