@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Beltrami.Holder
 public import TauCeti.Analysis.Complex.Beltrami.Linear
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Planar `J`-holomorphic charts from the Beltrami equation
@@ -33,6 +34,8 @@ The pointwise statements are `TauCeti.Beltrami.isComplexLinear_iff_conjWirtinger
 
 * `TauCeti.Beltrami.wirtingerDeriv_normalizedChart_self`: normalizing at `c` gives holomorphic
   derivative `1` at `c` whenever `∂ψ(c) ≠ 0`.
+* `TauCeti.Beltrami.isInvertible_fderiv_normalizedChart`: the normalized chart has invertible real
+  derivative wherever that of `ψ` is within distance `1` of the identity.
 * `TauCeti.Beltrami.exists_isComplexLinear_chart`: the normalized Beltrami solution is a
   `C¹` local chart at `c`, `J`-holomorphic on its source, with value `0` and holomorphic derivative
   `1` at `c`.
@@ -126,6 +129,20 @@ derivative `1` at `c`. -/
 theorem wirtingerDeriv_normalizedChart_self {ψ : ℂ → ℂ} {c : ℂ} (hc : wirtingerDeriv ψ c 1 ≠ 0) :
     wirtingerDeriv (normalizedChart ψ c) c 1 = 1 := by
   rw [wirtingerDeriv_normalizedChart, inv_mul_cancel₀ hc]
+
+/-- **Invertibility of the normalized differential.** If `∂ψ(c) ≠ 0` and the real derivative of
+`ψ` at `z` is within distance `1` of the identity, then the normalized chart has invertible real
+derivative at `z`. -/
+theorem isInvertible_fderiv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} (hc : wirtingerDeriv ψ c 1 ≠ 0)
+    (hψ : ‖fderiv ℝ ψ z - ContinuousLinearMap.id ℝ ℂ‖ < 1) :
+    (fderiv ℝ (normalizedChart ψ c) z).IsInvertible := by
+  obtain ⟨L, hL⟩ := ContinuousLinearMap.isInvertible_of_norm_sub_lt
+    (ContinuousLinearEquiv.refl ℝ ℂ) (A := fderiv ℝ ψ z) (by
+      rw [← NNReal.coe_lt_coe]
+      simpa using hψ)
+  refine ⟨L.trans (ContinuousLinearEquiv.smulLeft (Units.mk0 _ (inv_ne_zero hc))), ?_⟩
+  ext v
+  simp [fderiv_normalizedChart, Units.smul_def, ← hL]
 
 /-- **The planar Beltrami chart.** Let `0 < α < 1` and `0 < r`. There are `δ > 0` and `C` such
 that the following holds. Let `J` be a field of almost complex structures on the plane, tame on
