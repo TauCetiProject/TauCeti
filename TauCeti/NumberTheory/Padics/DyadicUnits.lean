@@ -560,4 +560,10 @@ theorem isSquare_mul_iff_toZModPow_three_eq {a c : ℤ_[2]} (ha : IsUnit a) (hc 
   · obtain ⟨s, -, hs⟩ := exists_eq_sq_mul_of_toZModPow_three_eq hc h
     exact ⟨s * a, by rw [hs]; ring⟩
 
+/-- An element of `ℤ_[2]` that is `1` modulo `8` is a square. -/
+theorem isSquare_of_toZModPow_three_eq_one {z : ℤ_[2]} (h : toZModPow 3 z = 1) : IsSquare z := by
+  obtain ⟨s, -, hs⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (a := 1)
+    (isUnit_iff_toZModPow_three_mul_self.mpr (by rw [h, one_mul])) (by rw [map_one, h])
+  exact ⟨s, by rw [hs, mul_one, sq]⟩
+
 end PadicInt
