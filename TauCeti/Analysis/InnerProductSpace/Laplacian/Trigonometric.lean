@@ -11,19 +11,20 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 /-!
 # The Laplacian of the sine function
 
-On the real line the Laplacian is the second derivative, so the sine function and its rescalings
-are eigenfunctions of `Δ`:
+On the real line the Laplacian is the second derivative, so for every `a : ℝ`
 
 `Δ (fun y ↦ sin (a y)) x = -a ^ 2 * sin (a x)`.
 
-These identities are not `@[simp]`: Mathlib's simp lemma
+For `a ≠ 0` this says that `y ↦ sin (a y)` is an eigenfunction of `Δ` with eigenvalue `-a ^ 2`;
+for `a = 0` both sides vanish.
+
+This identity is not `@[simp]`: Mathlib's simp lemma
 `InnerProductSpace.laplacian_eq_iteratedDeriv_real` rewrites `Δ` on `ℝ` to `iteratedDeriv 2`, so
-their left-hand sides are not in simp normal form.
+its left-hand side is not in simp normal form.
 
 ## Main declarations
 
 * `TauCeti.laplacian_sin_const_mul`: `Δ (sin (a ·)) x = -a ^ 2 * sin (a x)`.
-* `TauCeti.laplacian_sin`: `Δ sin x = -sin x`.
 -/
 
 public section
@@ -32,16 +33,11 @@ namespace TauCeti
 
 open InnerProductSpace Laplacian
 
-/-- On the real line, `x ↦ sin (a * x)` is an eigenfunction of the Laplacian with eigenvalue
-`-a ^ 2`. -/
+/-- On the real line, the Laplacian of `x ↦ sin (a * x)` is `-a ^ 2 * sin (a * x)`. For `a ≠ 0`,
+this makes `x ↦ sin (a * x)` an eigenfunction of `Δ` with eigenvalue `-a ^ 2`. -/
 theorem laplacian_sin_const_mul (a x : ℝ) :
     Δ (fun y => Real.sin (a * y)) x = -a ^ 2 * Real.sin (a * x) := by
   rw [laplacian_eq_iteratedDeriv_real, iteratedDeriv_comp_const_mul Real.contDiff_sin]
-  simp
-
-/-- On the real line, `sin` is an eigenfunction of the Laplacian with eigenvalue `-1`. -/
-theorem laplacian_sin (x : ℝ) : Δ Real.sin x = -Real.sin x := by
-  rw [laplacian_eq_iteratedDeriv_real]
   simp
 
 end TauCeti

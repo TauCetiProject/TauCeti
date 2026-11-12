@@ -30,9 +30,9 @@ coefficient. Here `u` is the first Dirichlet eigenfunction of `-Δ` on `[0, π /
 
 ## Main declarations
 
-* `TauCeti.exists_laplacian_eq_mul_eqOn_frontier_pos_of_neg`: for every negative constant `c`, a
-  fully quantified counterexample to dropping the nonnegativity assumption from the zeroth-order
-  maximum principle.
+* `TauCeti.exists_laplacian_eq_mul_eqOn_zero_frontier_pos_of_neg`: for every negative constant
+  `c`, a fully quantified counterexample to dropping the nonnegativity assumption from the
+  zeroth-order maximum principle.
 -/
 
 public section
@@ -54,7 +54,7 @@ Consequently, the nonnegativity hypothesis on `c` in
 `TauCeti.le_of_mul_le_laplacian_le_frontier` and
 `TauCeti.eqOn_of_laplacian_sub_mul_eq_of_eqOn_frontier` cannot be weakened to allow any negative
 constant. -/
-theorem exists_laplacian_eq_mul_eqOn_frontier_pos_of_neg {c : ℝ} (hc : c < 0) :
+theorem exists_laplacian_eq_mul_eqOn_zero_frontier_pos_of_neg {c : ℝ} (hc : c < 0) :
     ∃ (K : Set ℝ) (f : ℝ → ℝ), IsCompact K ∧ ContinuousOn f K ∧
       (∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x) ∧
       (∀ ⦃x⦄, x ∈ interior K → Δ f x = c * f x) ∧ Set.EqOn f 0 (frontier K) ∧
