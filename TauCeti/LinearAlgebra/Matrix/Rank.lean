@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
 # Matrix rank
@@ -28,8 +29,6 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 
 * `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
   rows are linearly independent exactly when some maximal minor is nonzero.
-* `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
-  is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
 * `Matrix.linearIndependent_row_of_map`: row independence over a domain lifts along every ring
   homomorphism of domains, such as a reduction `ℤ → ZMod ℓ`.
 * `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
@@ -112,24 +111,6 @@ theorem linearIndependent_map_algebraMap_row_iff {S : Type*} [CommRing R] [CommR
     LinearIndependent S (A.map (algebraMap R S)).row ↔ LinearIndependent R A.row :=
   -- The rows of `A.map (algebraMap R S)` are the rows of `A` mapped entrywise (`row_map`).
   linearIndependent_algebraMap_comp_iff
-
-omit [Fintype m] [DecidableEq m] [Finite n] in
-/-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
-columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`
-is needed: the image of the minor of `A` is the minor of `A.map f` (`RingHom.map_det_submatrix`). -/
-theorem det_submatrix_ne_zero_of_map {S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
-    [CommRing S] (f : R →+* S) {A : Matrix m n R} {r : l → m} {c : l → n}
-    (h : ((A.map f).submatrix r c).det ≠ 0) : (A.submatrix r c).det ≠ 0 := by
-  rw [← f.map_det_submatrix] at h
-  exact ne_of_apply_ne f (by rwa [map_zero])
-
-omit [Fintype m] [DecidableEq m] [Finite n] in
-/-- Along an injective ring homomorphism `f`, a minor of `A.map f` is nonzero exactly when the
-minor of `A` on the same rows and columns is nonzero. -/
-theorem det_submatrix_map_ne_zero_iff {S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
-    [CommRing S] {f : R →+* S} (hf : Function.Injective f) {A : Matrix m n R} {r : l → m}
-    {c : l → n} : ((A.map f).submatrix r c).det ≠ 0 ↔ (A.submatrix r c).det ≠ 0 := by
-  rw [← f.map_det_submatrix, map_ne_zero_iff f hf]
 
 /-- Over an integral domain, the rows of a matrix are linearly independent exactly when some
 maximal minor is nonzero. -/

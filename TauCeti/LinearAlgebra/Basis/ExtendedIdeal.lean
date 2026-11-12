@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Quotient
+import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.RingTheory.Ideal.Operations
 
@@ -18,9 +19,10 @@ Let `A` be an `R`-algebra with a finite basis `b`, and let `φ : V →ₗ[R] A` 
 module with a finite basis `v`. The coefficient matrix of `φ` is Mathlib's
 `LinearMap.toMatrix v b φ`, with rows indexed by the basis of `A`: its entry at `(i, j)` is the
 coordinate `b.repr (φ (v j)) i`. The coordinate `i` of `φ (∑ j, x j • v j)` is the `i`-th row of
-this matrix applied to `x`, and since membership in an extended ideal `J A` is read off the
-coordinates (`Ideal.mem_map_algebraMap_iff` with `Module.Basis.mem_smul_top_iff`), the value
-`φ (∑ j, x j • v j)` lies in `J A` exactly when every row applied to `x` lies in `J`.
+this matrix applied to `x` (`LinearMap.toMatrix_mulVec_eq_repr`), and since membership in an
+extended ideal `J A` is read off the coordinates (`Ideal.mem_map_algebraMap_iff` with
+`Module.Basis.mem_smul_top_iff`), the value `φ (∑ j, x j • v j)` lies in `J A` exactly when every
+row applied to `x` lies in `J`.
 
 For a commutative `A` and an arbitrary ideal `J` of `R`, the quotient `A ⧸ J A` is free over
 `R ⧸ J` on the classes of the basis vectors (`Module.Basis.quotient`): this is the base change of
@@ -39,8 +41,6 @@ determinant of an `A`-valued matrix coordinatewise.
 
 ## Main results
 
-* `LinearMap.toMatrix_mulVec_eq_repr`: the coefficient matrix applied to `x` is the coordinate
-  vector of `φ (∑ j, x j • v j)`.
 * `LinearMap.apply_sum_smul_mem_map_algebraMap_iff`: `φ (∑ j, x j • v j) ∈ J A` exactly when every
   row of the coefficient matrix applied to `x` lies in `J`.
 * `Module.Basis.quotient_repr_mk`: the coordinates of a class are the classes of the coordinates.
@@ -65,14 +65,6 @@ section Coordinates
 
 variable [CommSemiring R] [Semiring A] [Algebra R A] [AddCommMonoid V] [Module R V]
   [Fintype κ] [DecidableEq κ] [Finite ι]
-
-/-- **Coordinates through the coefficient matrix.** The coordinate vector of
-`φ (∑ j, x j • v j)` in the basis `b` is the coefficient matrix `LinearMap.toMatrix v b φ` applied
-to `x`. -/
-theorem toMatrix_mulVec_eq_repr (v : Basis κ R V) (b : Basis ι R A) (φ : V →ₗ[R] A)
-    (x : κ → R) : toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
-  rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
-    LinearEquiv.apply_symm_apply]
 
 /-- **Extended-ideal membership through the coefficient matrix.** For an ideal `J` of `R`, the
 value `φ (∑ j, x j • v j)` lies in the extended ideal `J A` exactly when every row of the
