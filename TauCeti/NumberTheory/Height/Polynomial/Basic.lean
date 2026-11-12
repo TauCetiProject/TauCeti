@@ -205,7 +205,7 @@ private theorem coeff_mul_eq_convolution (f g : K[X]) :
   rw [Fin.sum_univ_eq_sum_range (fun i ↦
     (if i ≤ j.val then g.coeff (j.val - i) else 0) * f.coeff i)]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   split_ifs <;> ring
 
 private theorem mulHeight_convolutionMatrix_le (f g : K[X]) :
