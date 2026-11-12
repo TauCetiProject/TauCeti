@@ -60,7 +60,7 @@ interval covers. -/
 private theorem setLAverage_ball_indicator_Icc (x r : ℝ) :
     ⨍⁻ y in ball x r, ‖(Icc a b).indicator (1 : ℝ → ℝ) y‖ₑ =
       volume (Icc a b ∩ ball x r) / ENNReal.ofReal (2 * r) := by
-  simp_rw [enorm_indicator_eq_indicator_enorm, Pi.one_apply, enorm_one]
+  simp_rw [eNorm_indicator_eq_indicator_eNorm, Pi.one_apply, eNorm_one]
   rw [setLAverage_eq, lintegral_indicator_const measurableSet_Icc, one_mul,
     Measure.restrict_apply measurableSet_Icc, Real.volume_ball]
 
@@ -98,7 +98,7 @@ theorem maximalFunction_indicator_Icc_of_right_le (hab : a ≤ b) {x : ℝ} (hx 
     rw [setLAverage_ball_indicator_Icc, Icc_self,
       measure_mono_null inter_subset_left (Real.volume_singleton), ENNReal.zero_div]
   have hxa : 0 < x - a := by linarith
-  refine le_antisymm (maximalFunction_le fun r hr => ?_) ?_
+  refine le_antisymm (maximalFunction_le fun r _ => ?_) ?_
   · rw [setLAverage_ball_indicator_Icc]
     refine ENNReal.div_le_of_le_mul ?_
     rw [← ENNReal.ofReal_mul (by positivity)]
