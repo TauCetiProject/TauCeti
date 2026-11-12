@@ -14,19 +14,20 @@ public import TauCeti.GroupTheory.FreeGroup.FiniteIndex
 A subgroup `H` of a free group has finite index if and only if its subgroup graph `Γ(H)` has
 finitely many vertices and is complete, and then the index of `H` is the number of vertices
 of `Γ(H)`. More generally the same holds for every folded graph all of whose vertices are
-reachable from its base vertex and the subgroup it accepts, and the index of the subgroup
-accepted by a connected folded complete graph is its number of vertices, finite or not. A
-complete graph with finitely many vertices accepts a subgroup of finite index at each of its
-vertices.
+reachable from a vertex `a` and the subgroup it accepts at `a`, and the index of the subgroup
+accepted at `a` by a folded complete graph all of whose vertices are reachable from `a` is its
+number of vertices, finite or not. A complete graph with finitely many vertices accepts a
+subgroup of finite index at each of its vertices.
 
-The comparison is made in the coset graph. A based morphism from a complete graph to a coset
-graph is surjective on vertices, so the vertices of a connected folded complete graph
-correspond to the cosets of the subgroup it accepts. Conversely, in a connected folded complete
-graph accepting a subgroup of finite index every reduced path from the base vertex extends
-to a reduced closed path, so such a graph is a core; this applies to the coset graph of a
-subgroup of finite index, which is therefore isomorphic to its subgroup graph. Hence the core
-of a folded graph accepting a subgroup of finite index is complete, so every dart leaving a
-core vertex is a core dart, and every vertex reachable from the base vertex is a core vertex.
+The comparison is made in the coset graph, after moving the base vertex to `a`. A based
+morphism from a complete graph to a coset graph is surjective on vertices, so the vertices of a
+connected folded complete graph correspond to the cosets of the subgroup it accepts.
+Conversely, in a connected folded complete graph accepting a subgroup of finite index every
+reduced path from the base vertex extends to a reduced closed path, so such a graph is a core;
+this applies to the coset graph of a subgroup of finite index, which is therefore isomorphic to
+its subgroup graph. Hence the core at `a` of a folded graph accepting a subgroup of finite
+index at `a` is complete, so every dart leaving a core vertex is a core dart, and every vertex
+reachable from `a` is a core vertex.
 
 No finiteness assumption on the alphabet is needed. Over a finite alphabet the subgroup graph
 of a subgroup of finite index also has finitely many darts.
@@ -43,25 +44,38 @@ namespace TauCeti.StallingsGraph
 
 variable {α : Type*} {S : StallingsGraph α} {H : Subgroup (FreeGroup α)}
 
+/-- Moving the base vertex does not change the subgroup read at a vertex. -/
+private theorem subgroup_mk (a b : S.graph.V) :
+    ({ S with base := a } : StallingsGraph α).subgroup b = S.subgroup b := by
+  ext
+  simp only [mem_subgroup_iff, read_eq_weight]
+
+/-- Moving the base vertex does not change foldedness. -/
+private theorem isFolded_mk_iff (a : S.graph.V) :
+    ({ S with base := a } : StallingsGraph α).IsFolded ↔ S.IsFolded := by
+  rw [isFolded_def, isFolded_def]
+
+/-- Moving the base vertex does not change completeness. -/
+private theorem isComplete_mk_iff (a : S.graph.V) :
+    ({ S with base := a } : StallingsGraph α).IsComplete ↔ S.IsComplete := by
+  rw [isComplete_def, isComplete_def]
+
 /-- A based morphism from a complete graph to a coset graph is surjective on vertices. -/
 theorem IsComplete.surjective_mapV_cosetGraph (hS : S.IsComplete) (f : S.Hom H.cosetGraph) :
-    Function.Surjective f.graphHom.mapV := by
-  intro q
-  induction q using QuotientGroup.induction_on with
-  | H x =>
-    obtain ⟨b, p, hp⟩ := hS.exists_path_read S.base x⁻¹
-    exact ⟨b, by rw [f.mapV_eq_coset p, hp, inv_inv]⟩
+    Function.Surjective f.graphHom.mapV :=
+  hS.surjective_mapV f H.cosetGraph_isFolded H.cosetGraph_base_reachable
 
-/-- The vertices of a connected folded complete graph correspond to the cosets of the
-subgroup it accepts: its number of vertices is the index of that subgroup. Both are zero when
-there are infinitely many vertices. -/
-theorem IsComplete.index_subgroup (hS : S.IsComplete) (hfold : S.IsFolded)
-    (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path S.base v)) :
-    (S.subgroup S.base).index = Nat.card S.graph.V := by
-  obtain ⟨f⟩ := (nonempty_hom_cosetGraph_iff hreach).mpr (le_refl (S.subgroup S.base))
-  rw [Subgroup.index_eq_card]
+/-- The vertices of a folded complete graph, all reachable from a vertex `a`, correspond to the
+cosets of the subgroup it accepts at `a`: its number of vertices is the index of that subgroup.
+Both are zero when there are infinitely many vertices. -/
+theorem IsComplete.index_subgroup {a : S.graph.V} (hS : S.IsComplete) (hfold : S.IsFolded)
+    (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path a v)) :
+    (S.subgroup a).index = Nat.card S.graph.V := by
+  obtain ⟨f⟩ := (nonempty_hom_cosetGraph_iff (S := { S with base := a }) hreach).mpr le_rfl
+  rw [← subgroup_mk a a, Subgroup.index_eq_card]
   exact (Nat.card_congr (Equiv.ofBijective _
-    ⟨(f.injective_cosetGraph hfold hreach).1, hS.surjective_mapV_cosetGraph f⟩)).symm
+    ⟨(f.injective_cosetGraph ((isFolded_mk_iff a).mpr hfold) hreach).1,
+      ((isComplete_mk_iff a).mpr hS).surjective_mapV_cosetGraph f⟩)).symm
 
 /-- A complete graph with finitely many vertices accepts a subgroup of finite index at each of
 its vertices; no connectedness is needed. -/
@@ -80,27 +94,27 @@ theorem IsComplete.finiteIndex_subgroup [Finite S.graph.V] (hS : S.IsComplete) (
   rw [← QuotientGroup.out_eq' q, ← QuotientGroup.out_eq' r]
   exact QuotientGroup.eq.mpr (by simpa using key _ _ h)
 
-/-- In a folded complete graph accepting a subgroup of finite index, every reduced path from
-the base vertex extends to a reduced closed path, so all its darts are core darts. -/
-private theorem IsComplete.mem_coreDarts_of_isReduced [(S.subgroup S.base).FiniteIndex]
-    (hS : S.IsComplete) (hfold : S.IsFolded) {v : S.graph.V} (p : S.graph.Path S.base v)
-    (hp : SerreGraph.Path.IsReduced S.graph p) {e : S.graph.E}
-    (he : e ∈ SerreGraph.Path.darts S.graph p) : e ∈ S.graph.coreDarts S.base := by
-  obtain ⟨w, hw, hmem⟩ := (hfold.isReduced_word S p hp).exists_append_mem (S.subgroup S.base)
+/-- In a folded complete graph accepting a subgroup of finite index at a vertex `a`, every
+reduced path from `a` extends to a reduced closed path, so all its darts are core darts. -/
+private theorem IsComplete.mem_coreDarts_of_isReduced {a v : S.graph.V}
+    [(S.subgroup a).FiniteIndex] (hS : S.IsComplete) (hfold : S.IsFolded)
+    (p : S.graph.Path a v) (hp : SerreGraph.Path.IsReduced S.graph p) {e : S.graph.E}
+    (he : e ∈ SerreGraph.Path.darts S.graph p) : e ∈ S.graph.coreDarts a := by
+  obtain ⟨w, hw, hmem⟩ := (hfold.isReduced_word S p hp).exists_append_mem (S.subgroup a)
   obtain ⟨c, r, rfl⟩ := hS.exists_path_word v w
   rw [← S.word_comp, ← S.read_eq_mk_word] at hmem
   rw [← S.word_comp] at hw
-  obtain rfl : c = S.base :=
+  obtain rfl : c = a :=
     (hfold.eq_tgt_iff_read_mul_inv_mem S (p.comp r) .nil).mpr (by simpa using hmem)
-  exact (S.graph.mem_coreDarts_iff S.base e).mpr
+  exact (S.graph.mem_coreDarts_iff c e).mpr
     ⟨p.comp r, S.isReduced_of_isReduced_word _ hw, by simp [he]⟩
 
-/-- In a folded complete graph accepting a subgroup of finite index, every dart leaving the
-end of a reduced path from the base vertex is a core dart. -/
-private theorem IsComplete.mem_coreDarts_of_src_eq [(S.subgroup S.base).FiniteIndex]
-    (hS : S.IsComplete) (hfold : S.IsFolded) {v : S.graph.V} (q : S.graph.Path S.base v)
-    (hq : SerreGraph.Path.IsReduced S.graph q) {e : S.graph.E} (he : S.graph.src e = v) :
-    e ∈ S.graph.coreDarts S.base := by
+/-- In a folded complete graph accepting a subgroup of finite index at a vertex `a`, every dart
+leaving the end of a reduced path from `a` is a core dart. -/
+private theorem IsComplete.mem_coreDarts_of_src_eq {a v : S.graph.V}
+    [(S.subgroup a).FiniteIndex] (hS : S.IsComplete) (hfold : S.IsFolded)
+    (q : S.graph.Path a v) (hq : SerreGraph.Path.IsReduced S.graph q) {e : S.graph.E}
+    (he : S.graph.src e = v) : e ∈ S.graph.coreDarts a := by
   by_cases h : SerreGraph.Path.IsReduced S.graph
       (q.cons (⟨e, he, rfl⟩ : Quiver.Hom v (S.graph.tgt e)))
   · exact hS.mem_coreDarts_of_isReduced hfold _ h (by simp)
@@ -114,15 +128,15 @@ private theorem IsComplete.mem_coreDarts_of_src_eq [(S.subgroup S.base).FiniteIn
       rw [← S.graph.rev_mem_coreDarts_iff, hf, S.graph.rev_rev]
       exact hS.mem_coreDarts_of_isReduced hfold _ hq (by simp)
 
-/-- A connected folded complete graph accepting a subgroup of finite index is a core at its
-base vertex. -/
-private theorem IsComplete.isCore [(S.subgroup S.base).FiniteIndex] (hS : S.IsComplete)
-    (hfold : S.IsFolded) (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path S.base v)) :
-    S.graph.IsCore S.base := by
-  refine (S.graph.isCore_iff S.base).mpr ⟨hreach, fun e => ?_⟩
+/-- A folded complete graph accepting a subgroup of finite index at a vertex `a`, all of whose
+vertices are reachable from `a`, is a core at `a`. -/
+private theorem IsComplete.isCore {a : S.graph.V} [(S.subgroup a).FiniteIndex]
+    (hS : S.IsComplete) (hfold : S.IsFolded)
+    (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path a v)) : S.graph.IsCore a := by
+  refine (S.graph.isCore_iff a).mpr ⟨hreach, fun e => ?_⟩
   obtain ⟨p⟩ := hreach (S.graph.src e)
   obtain ⟨q, hq, -⟩ := S.exists_reduced_path_read_eq p
-  exact (S.graph.mem_coreDarts_iff S.base e).mp (hS.mem_coreDarts_of_src_eq hfold q hq rfl)
+  exact (S.graph.mem_coreDarts_iff a e).mp (hS.mem_coreDarts_of_src_eq hfold q hq rfl)
 
 end TauCeti.StallingsGraph
 
@@ -152,43 +166,47 @@ private theorem nonempty_iso_cosetGraph_of_isCore [(S.subgroup S.base).FiniteInd
   (nonempty_iso_iff_subgroup_eq hfold (S.subgroup S.base).cosetGraph_isFolded hcore
     (S.subgroup S.base).cosetGraph_isCore).mpr (S.subgroup S.base).cosetGraph_subgroup.symm
 
-/-- In a folded graph accepting a subgroup of finite index, every dart leaving a core vertex is
-a core dart. -/
-private theorem IsFolded.mem_coreDarts_of_src_mem [(S.subgroup S.base).FiniteIndex]
-    (hfold : S.IsFolded) {e : S.graph.E} (he : S.graph.src e ∈ S.graph.coreVertices S.base) :
-    e ∈ S.graph.coreDarts S.base := by
-  have : (S.core.subgroup S.core.base).FiniteIndex := by rwa [core_base, core_subgroup]
-  obtain ⟨f⟩ := nonempty_iso_cosetGraph_of_isCore hfold.core S.core_isCore
+/-- In a folded graph accepting a subgroup of finite index at a vertex `a`, every dart leaving a
+core vertex at `a` is a core dart at `a`. -/
+private theorem IsFolded.mem_coreDarts_of_src_mem {a : S.graph.V} [(S.subgroup a).FiniteIndex]
+    (hfold : S.IsFolded) {e : S.graph.E} (he : S.graph.src e ∈ S.graph.coreVertices a) :
+    e ∈ S.graph.coreDarts a := by
+  have : (({ S with base := a } : StallingsGraph α).core.subgroup
+      ({ S with base := a } : StallingsGraph α).core.base).FiniteIndex := by
+    rwa [core_base, core_subgroup, subgroup_mk]
+  obtain ⟨f⟩ := nonempty_iso_cosetGraph_of_isCore ((isFolded_mk_iff a).mpr hfold).core
+    (core_isCore _)
   obtain ⟨e', hs, hl⟩ :=
     (f.isComplete_iff.mpr (Subgroup.cosetGraph_isComplete _)).exists_dart ⟨_, he⟩ (S.label e)
   obtain rfl : e'.1 = e := S.isFolded_def.mp hfold e'.1 e (congrArg Subtype.val hs) hl
   exact e'.2
 
-/-- In a folded graph accepting a subgroup of finite index, every vertex reachable from the base
-vertex is a core vertex. -/
-private theorem IsFolded.mem_coreVertices [(S.subgroup S.base).FiniteIndex] (hfold : S.IsFolded)
-    {v : S.graph.V} (p : S.graph.Path S.base v) : v ∈ S.graph.coreVertices S.base := by
+/-- In a folded graph accepting a subgroup of finite index at a vertex `a`, every vertex
+reachable from `a` is a core vertex at `a`. -/
+private theorem IsFolded.mem_coreVertices {a v : S.graph.V} [(S.subgroup a).FiniteIndex]
+    (hfold : S.IsFolded) (p : S.graph.Path a v) : v ∈ S.graph.coreVertices a := by
   induction p with
   | nil => exact (S.graph.mem_coreVertices_iff _ _).mpr (Or.inl rfl)
   | cons q e ih =>
     obtain ⟨e, rfl, rfl⟩ := e
-    exact S.graph.tgt_mem_coreVertices S.base (hfold.mem_coreDarts_of_src_mem ih)
+    exact S.graph.tgt_mem_coreVertices a (hfold.mem_coreDarts_of_src_mem ih)
 
-/-- In a folded graph accepting a subgroup of finite index, every dart of a path from the base
-vertex lies on a reduced closed path at the base vertex. -/
-theorem IsFolded.mem_coreDarts_of_mem_darts [(S.subgroup S.base).FiniteIndex]
-    (hfold : S.IsFolded) {v : S.graph.V} (p : S.graph.Path S.base v) {e : S.graph.E}
-    (he : e ∈ SerreGraph.Path.darts S.graph p) : e ∈ S.graph.coreDarts S.base := by
+/-- In a folded graph accepting a subgroup of finite index at a vertex `a`, every dart of a path
+from `a` lies on a reduced closed path at `a`. -/
+theorem IsFolded.mem_coreDarts_of_mem_darts {a v : S.graph.V} [(S.subgroup a).FiniteIndex]
+    (hfold : S.IsFolded) (p : S.graph.Path a v) {e : S.graph.E}
+    (he : e ∈ SerreGraph.Path.darts S.graph p) : e ∈ S.graph.coreDarts a := by
   obtain ⟨q, r, rfl⟩ := SerreGraph.Path.exists_eq_cons_comp_of_mem_darts S.graph p he
   exact hfold.mem_coreDarts_of_src_mem (hfold.mem_coreVertices q)
 
-/-- A folded graph accepting a subgroup of finite index, all of whose vertices are reachable
-from the base vertex, is a core at its base vertex. -/
-theorem IsFolded.isCore_of_finiteIndex [(S.subgroup S.base).FiniteIndex] (hfold : S.IsFolded)
-    (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path S.base v)) : S.graph.IsCore S.base := by
-  refine (S.graph.isCore_iff S.base).mpr ⟨hreach, fun e => ?_⟩
+/-- A folded graph accepting a subgroup of finite index at a vertex `a`, all of whose vertices
+are reachable from `a`, is a core at `a`. -/
+theorem IsFolded.isCore_of_finiteIndex {a : S.graph.V} [(S.subgroup a).FiniteIndex]
+    (hfold : S.IsFolded) (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path a v)) :
+    S.graph.IsCore a := by
+  refine (S.graph.isCore_iff a).mpr ⟨hreach, fun e => ?_⟩
   obtain ⟨q⟩ := hreach (S.graph.src e)
-  exact (S.graph.mem_coreDarts_iff S.base e).mp
+  exact (S.graph.mem_coreDarts_iff a e).mp
     (hfold.mem_coreDarts_of_mem_darts (q.cons (S.graph.dart e)) (by simp))
 
 /-- A folded graph accepting a subgroup of finite index, all of whose vertices are reachable
@@ -198,22 +216,24 @@ theorem nonempty_iso_cosetGraph [(S.subgroup S.base).FiniteIndex] (hfold : S.IsF
     Nonempty (Iso S (S.subgroup S.base).cosetGraph) :=
   nonempty_iso_cosetGraph_of_isCore hfold (hfold.isCore_of_finiteIndex hreach)
 
-/-- The subgroup accepted by a folded graph all of whose vertices are reachable from the base
-vertex has finite index if and only if the graph has finitely many vertices and is complete. -/
-theorem finiteIndex_subgroup_iff (hfold : S.IsFolded)
-    (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path S.base v)) :
-    (S.subgroup S.base).FiniteIndex ↔ Finite S.graph.V ∧ S.IsComplete := by
-  refine ⟨fun h => ?_, fun ⟨_, hS⟩ => hS.finiteIndex_subgroup S.base⟩
-  obtain ⟨f⟩ := nonempty_iso_cosetGraph hfold hreach
-  have : Finite (FreeGroup α ⧸ S.subgroup S.base) := Subgroup.finiteIndex_iff_finite_quotient.mp h
+/-- The subgroup accepted at a vertex `a` by a folded graph all of whose vertices are reachable
+from `a` has finite index if and only if the graph has finitely many vertices and is
+complete. -/
+theorem finiteIndex_subgroup_iff {a : S.graph.V} (hfold : S.IsFolded)
+    (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path a v)) :
+    (S.subgroup a).FiniteIndex ↔ Finite S.graph.V ∧ S.IsComplete := by
+  refine ⟨fun h => ?_, fun ⟨_, hS⟩ => hS.finiteIndex_subgroup a⟩
+  rw [← subgroup_mk a a] at h
+  obtain ⟨f⟩ := nonempty_iso_cosetGraph ((isFolded_mk_iff a).mpr hfold) hreach
+  have := Subgroup.finiteIndex_iff_finite_quotient.mp h
   exact ⟨Finite.of_equiv _ f.vertexEquiv.symm,
-    f.isComplete_iff.mpr (S.subgroup S.base).cosetGraph_isComplete⟩
+    (isComplete_mk_iff a).mp (f.isComplete_iff.mpr (Subgroup.cosetGraph_isComplete _))⟩
 
-/-- A folded graph with finitely many vertices, all reachable from the base vertex, is complete
-if and only if the subgroup it accepts has finite index. -/
-theorem isComplete_iff_finiteIndex_subgroup [Finite S.graph.V] (hfold : S.IsFolded)
-    (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path S.base v)) :
-    S.IsComplete ↔ (S.subgroup S.base).FiniteIndex := by
+/-- A folded graph with finitely many vertices, all reachable from a vertex `a`, is complete
+if and only if the subgroup it accepts at `a` has finite index. -/
+theorem isComplete_iff_finiteIndex_subgroup [Finite S.graph.V] {a : S.graph.V}
+    (hfold : S.IsFolded) (hreach : ∀ v : S.graph.V, Nonempty (S.graph.Path a v)) :
+    S.IsComplete ↔ (S.subgroup a).FiniteIndex := by
   rw [finiteIndex_subgroup_iff hfold hreach, and_iff_right ‹_›]
 
 end TauCeti.StallingsGraph

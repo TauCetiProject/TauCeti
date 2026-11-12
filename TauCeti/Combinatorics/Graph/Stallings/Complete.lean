@@ -14,8 +14,10 @@ A labelled graph is complete when every vertex has an outgoing dart with each si
 as its label. A folded complete graph is what Kapovich and Myasnikov call a regular graph:
 every vertex has exactly one outgoing dart with each label. In a complete graph every word
 labels a path from every vertex, so every element of the free group is read along a path
-from the base vertex. Completeness passes to the target of a labelled morphism which is
-surjective on vertices, and is invariant under isomorphism.
+from the base vertex. A labelled morphism from a complete graph to a folded graph all of
+whose vertices are reachable from its base vertex is surjective on vertices. Completeness
+passes to the target of a labelled morphism which is surjective on vertices, and is invariant
+under isomorphism.
 
 ## References
 
@@ -68,6 +70,18 @@ theorem IsComplete.exists_path_read (hS : S.IsComplete) (a : S.graph.V) (g : Fre
   classical
   obtain ⟨b, p, hp⟩ := hS.exists_path_word a g.toWord
   exact ⟨b, p, by rw [S.read_eq_mk_word, hp, FreeGroup.mk_toWord]⟩
+
+/-- A labelled morphism from a complete graph to a folded graph all of whose vertices are
+reachable from its base vertex is surjective on vertices. -/
+theorem IsComplete.surjective_mapV (hS : S.IsComplete) (f : S.Hom T) (hT : T.IsFolded)
+    (hreach : ∀ v : T.graph.V, Nonempty (T.graph.Path T.base v)) :
+    Function.Surjective f.graphHom.mapV := by
+  intro v
+  obtain ⟨q⟩ := hreach v
+  rw [← f.map_base] at q
+  obtain ⟨b, p, hp⟩ := hS.exists_path_word S.base (T.word q)
+  exact ⟨b, hT.eq_tgt_of_word_eq T (f.graphHom.toPrefunctor.mapPath p) q
+    ((f.word_mapPath p).trans hp)⟩
 
 /-- The target of a labelled morphism which is surjective on vertices is complete if the
 source is. -/
