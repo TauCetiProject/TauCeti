@@ -45,6 +45,12 @@ theorem rose_isComplete (α : Type*) : (rose α).IsComplete :=
 
 variable {S}
 
+/-- In a complete graph every vertex has an outgoing dart with each signed letter as its
+label. -/
+theorem IsComplete.exists_dart (hS : S.IsComplete) (v : S.graph.V) (l : α × Bool) :
+    ∃ e : S.graph.E, S.graph.src e = v ∧ S.label e = l :=
+  hS v l
+
 /-- In a complete graph every word labels a path starting at any given vertex. -/
 theorem IsComplete.exists_path_word (hS : S.IsComplete) (a : S.graph.V)
     (w : List (α × Bool)) : ∃ (b : S.graph.V) (p : S.graph.Path a b), S.word p = w := by
@@ -52,7 +58,7 @@ theorem IsComplete.exists_path_word (hS : S.IsComplete) (a : S.graph.V)
   | nil => exact ⟨a, .nil, S.word_nil a⟩
   | append_singleton w l ih =>
     obtain ⟨b, p, rfl⟩ := ih
-    obtain ⟨e, rfl, rfl⟩ := hS b l
+    obtain ⟨e, rfl, rfl⟩ := hS.exists_dart b l
     exact ⟨S.graph.tgt e, p.cons (S.graph.dart e), by simp⟩
 
 /-- In a complete graph every element of the free group is read along a path starting at any
@@ -65,16 +71,16 @@ theorem IsComplete.exists_path_read (hS : S.IsComplete) (a : S.graph.V) (g : Fre
 
 /-- The target of a labelled morphism which is surjective on vertices is complete if the
 source is. -/
-theorem IsComplete.of_hom (hS : S.IsComplete) (f : S.Hom T)
+theorem IsComplete.of_surjective (hS : S.IsComplete) (f : S.Hom T)
     (hf : Function.Surjective f.graphHom.mapV) : T.IsComplete := by
   intro v l
   obtain ⟨v, rfl⟩ := hf v
-  obtain ⟨e, rfl, rfl⟩ := hS v l
+  obtain ⟨e, rfl, rfl⟩ := hS.exists_dart v l
   exact ⟨f.graphHom.mapE e, f.graphHom.map_src e, f.map_label e⟩
 
 /-- Isomorphic labelled graphs are complete together. -/
 theorem Iso.isComplete_iff (f : Iso S T) : S.IsComplete ↔ T.IsComplete :=
-  ⟨fun h => h.of_hom f.toHom fun v => ⟨f.vertexEquiv.symm v, by simp⟩,
-    fun h => h.of_hom f.symm.toHom fun v => ⟨f.vertexEquiv v, by simp⟩⟩
+  ⟨fun h => h.of_surjective f.toHom fun v => ⟨f.vertexEquiv.symm v, by simp⟩,
+    fun h => h.of_surjective f.symm.toHom fun v => ⟨f.vertexEquiv v, by simp⟩⟩
 
 end TauCeti.StallingsGraph
