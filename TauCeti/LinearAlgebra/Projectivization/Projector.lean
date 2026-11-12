@@ -56,7 +56,7 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
   `Projectivization.projector_apply_self_pos_iff`: the diagonal entries of a projector are
   nonnegative, and the `i`-th one is positive exactly on the standard affine open `{x_i ≠ 0}`.
 * `Projectivization.exists_projector_eq_vecMulVec`: the projector of a real line is the outer
-  product `x xᵀ` of a unit vector spanning it.
+  product `x xᵀ` of a unit vector.
 
 ## References
 
@@ -284,8 +284,8 @@ theorem affineChart_eq_projector_div {n : ℕ} (i : Fin (n + 1)) (p : ℙ K (Fin
     · simp [hi]
     · field_simp
 
-/-- Every line of `ι → ℝ` is spanned by a vector `x` with `x ⬝ᵥ x = 1`, and its projector is then
-the outer product `x xᵀ`. -/
+/-- The projector of a real line is the outer product `x xᵀ` of some vector `x` with
+`x ⬝ᵥ x = 1`. -/
 theorem exists_projector_eq_vecMulVec (p : ℙ ℝ (ι → ℝ)) :
     ∃ x : ι → ℝ, x ⬝ᵥ x = 1 ∧ projector p = Matrix.vecMulVec x x := by
   induction p using Projectivization.ind with | h v hv => ?_

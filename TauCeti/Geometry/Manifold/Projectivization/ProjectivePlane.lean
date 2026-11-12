@@ -33,7 +33,8 @@ so the inverse stereographic projection recovers `Q`.
 That gives a smooth map from `ℝ⁴` back to the matrix entries which sends the image of a line to its
 projector. Since the projector map is an immersion, so is the composite map to `ℝ⁴`
 (`ContMDiff.isImmersion_of_isImmersion_comp`), and since projective space is compact it is a closed
-smooth embedding `ℝP² → ℝ⁴` (`Projectivization.isSmoothEmbedding_projectivePlaneEmbedding`).
+smooth embedding `ℝP² → ℝ⁴` (`Projectivization.isSmoothEmbedding_projectivePlaneEmbedding` and
+`Projectivization.isClosedEmbedding_projectivePlaneEmbedding`).
 Projective space carries its standard atlas of affine charts, modelled on `Fin 2 → ℝ`.
 
 ## Main definitions
@@ -140,6 +141,22 @@ its entries. It is not a value of the normalized trace-free projector
 def traceFreePole : EuclideanSpace ℝ (Fin 3 × Fin 3) :=
   WithLp.toLp 2 fun q ↦ (√2)⁻¹ * !![1, 0, 0; 0, 0, 0; 0, 0, -1] q.1 q.2
 
+/-- The entry formula for the pole. -/
+theorem traceFreePole_def :
+    traceFreePole = WithLp.toLp 2 fun q ↦
+      (√2)⁻¹ * !![1, 0, 0; 0, 0, 0; 0, 0, -1] q.1 q.2 :=
+  (rfl)
+
+/-- The pole is a symmetric matrix. -/
+theorem traceFreePole_apply_swap (i j : Fin 3) :
+    traceFreePole (j, i) = traceFreePole (i, j) := by
+  fin_cases i <;> fin_cases j <;> simp [traceFreePole]
+
+/-- The pole has trace zero. -/
+@[simp]
+theorem sum_traceFreePole_apply_self : ∑ i, traceFreePole (i, i) = 0 := by
+  simp [traceFreePole, Fin.sum_univ_three]
+
 /-- The **frame** `diag(1, -2, 1) / √6`, `(E₀₁ + E₁₀) / √2`, `(E₀₂ + E₂₀) / √2`, `(E₁₂ + E₂₁) / √2`,
 read in matrix entries: an orthonormal basis of the symmetric trace-free matrices orthogonal to
 `TauCeti.traceFreePole`. -/
@@ -148,6 +165,35 @@ def traceFreeFrame : Fin 4 → EuclideanSpace ℝ (Fin 3 × Fin 3) :=
     WithLp.toLp 2 fun q ↦ (√2)⁻¹ * !![0, 1, 0; 1, 0, 0; 0, 0, 0] q.1 q.2,
     WithLp.toLp 2 fun q ↦ (√2)⁻¹ * !![0, 0, 1; 0, 0, 0; 1, 0, 0] q.1 q.2,
     WithLp.toLp 2 fun q ↦ (√2)⁻¹ * !![0, 0, 0; 0, 0, 1; 0, 1, 0] q.1 q.2]
+
+/-- The entry formulas for the four frame vectors. -/
+theorem traceFreeFrame_def :
+    traceFreeFrame =
+      ![WithLp.toLp 2 fun q ↦ (√6)⁻¹ * !![1, 0, 0; 0, -2, 0; 0, 0, 1] q.1 q.2,
+        WithLp.toLp 2 fun q ↦ (√2)⁻¹ * !![0, 1, 0; 1, 0, 0; 0, 0, 0] q.1 q.2,
+        WithLp.toLp 2 fun q ↦ (√2)⁻¹ * !![0, 0, 1; 0, 0, 0; 1, 0, 0] q.1 q.2,
+        WithLp.toLp 2 fun q ↦ (√2)⁻¹ * !![0, 0, 0; 0, 0, 1; 0, 1, 0] q.1 q.2] :=
+  (rfl)
+
+/-- Each frame vector is a symmetric matrix. -/
+theorem traceFreeFrame_apply_swap (k : Fin 4) (i j : Fin 3) :
+    traceFreeFrame k (j, i) = traceFreeFrame k (i, j) := by
+  fin_cases k <;> fin_cases i <;> fin_cases j <;> simp [traceFreeFrame]
+
+/-- Each frame vector has trace zero. -/
+@[simp]
+theorem sum_traceFreeFrame_apply_self (i : Fin 4) : ∑ j, traceFreeFrame i (j, j) = 0 := by
+  fin_cases i <;> simp [traceFreeFrame, Fin.sum_univ_three]; ring
+
+/-- Inner products with the frame give its four explicit matrix coordinates. -/
+theorem inner_traceFreeFrame (i : Fin 4) (X : EuclideanSpace ℝ (Fin 3 × Fin 3)) :
+    ⟪traceFreeFrame i, X⟫ =
+      ![(√6)⁻¹ * (X (0, 0) - 2 * X (1, 1) + X (2, 2)),
+        (√2)⁻¹ * (X (0, 1) + X (1, 0)),
+        (√2)⁻¹ * (X (0, 2) + X (2, 0)),
+        (√2)⁻¹ * (X (1, 2) + X (2, 1))] i := by
+  fin_cases i <;>
+    simp [traceFreeFrame, PiLp.inner_apply, Fintype.sum_prod_type, Fin.sum_univ_three] <;> ring
 
 /-- The inner product with the pole reads off the difference of two diagonal entries. -/
 theorem inner_traceFreePole (X : EuclideanSpace ℝ (Fin 3 × Fin 3)) :
@@ -191,12 +237,17 @@ theorem eq_inner_traceFreePole_smul_add_sum {X : EuclideanSpace ℝ (Fin 3 × Fi
   have h01 := hX 0 1
   have h02 := hX 0 2
   have h12 := hX 1 2
+  have h2 : (√2)⁻¹ * (√2)⁻¹ = (1 / 2 : ℝ) := by norm_num [← mul_inv, ← sq]
+  have h6 : (√6)⁻¹ * (√6)⁻¹ = (1 / 6 : ℝ) := by norm_num [← mul_inv, ← sq]
+  have h6_two : (√6)⁻¹ * ((√6)⁻¹ * 2) = (1 / 3 : ℝ) := by
+    rw [← mul_assoc, h6]
+    norm_num
   -- Compare the nine entries; each reduces to a linear identity in the entries of `X`.
   ext ⟨a, b⟩
   fin_cases a <;> fin_cases b <;>
     simp [traceFreeFrame, traceFreePole, PiLp.inner_apply, Fintype.sum_prod_type,
-      Fin.sum_univ_three, Fin.sum_univ_four] <;>
-    ring_nf <;> simp [inv_pow] <;> linarith
+      Fin.sum_univ_three, Fin.sum_univ_four, add_mul, neg_mul, mul_assoc,
+      mul_left_comm _ (2 : ℝ), h2, h6, h6_two] <;> linarith
 
 end TauCeti
 
@@ -226,7 +277,8 @@ theorem traceFreeProjector_ne_traceFreePole (p : ℙ ℝ (Fin 3 → ℝ)) :
 `TauCeti.traceFreePole` of the normalized trace-free projector, read in the coordinates of the
 orthonormal frame `TauCeti.traceFreeFrame`
 (see `Projectivization.sum_projectivePlaneEmbedding_smul`). It is a closed smooth embedding
-(`Projectivization.isSmoothEmbedding_projectivePlaneEmbedding`). -/
+(`Projectivization.isSmoothEmbedding_projectivePlaneEmbedding` and
+`Projectivization.isClosedEmbedding_projectivePlaneEmbedding`). -/
 def projectivePlaneEmbedding (p : ℙ ℝ (Fin 3 → ℝ)) : EuclideanSpace ℝ (Fin 4) :=
   WithLp.toLp 2 fun i ↦ ⟪traceFreeFrame i,
     (stereoToFun traceFreePole (traceFreeProjector p) : EuclideanSpace ℝ (Fin 3 × Fin 3))⟫
@@ -251,8 +303,7 @@ theorem sum_projectivePlaneEmbedding_smul (p : ℙ ℝ (Fin 3 → ℝ)) :
     Submodule.coe_smul, Submodule.orthogonalProjectionOnto_orthogonal,
     Submodule.starProjection_unit_singleton ℝ norm_traceFreePole, innerSL_apply_apply]
   congr 1
-  nth_rw 2 [h]
-  abel
+  exact eq_sub_iff_add_eq.mpr (by simpa only [add_comm] using h.symm)
 
 /-- The affine identification of matrix entries with the trace-free coordinates of `Q`. -/
 private def ofProjectorEntries (a : Fin 3 × Fin 3 → ℝ) : EuclideanSpace ℝ (Fin 3 × Fin 3) :=
@@ -304,7 +355,7 @@ theorem contMDiff_traceFreeProjector (r : ℕ∞ω) :
   rw [← funext ofProjectorEntries_projector]
   exact contDiff_ofProjectorEntries.comp_contMDiff (contMDiff_projector r)
 
-/-- **The Veronese surface.** The normalized trace-free projector is a closed `C^r` embedding of the
+/-- **The Veronese surface.** The normalized trace-free projector is a `C^r` embedding of the
 real projective plane in the space of `3 × 3` matrices, for every `r ≥ 1`. -/
 theorem isSmoothEmbedding_traceFreeProjector {r : ℕ∞ω} (hr : 1 ≤ r) :
     IsSmoothEmbedding 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3 × Fin 3)) r
@@ -317,30 +368,11 @@ theorem isSmoothEmbedding_traceFreeProjector {r : ℕ∞ω} (hr : 1 ≤ r) :
   rw [toProjectorEntries_comp_traceFreeProjector]
   exact isImmersion_projector hr
 
-/-- The left inverse of `projectivePlaneEmbedding`, valued in the projector entries. -/
-private def projectivePlaneEmbeddingInv (y : EuclideanSpace ℝ (Fin 4)) : Fin 3 × Fin 3 → ℝ :=
-  toProjectorEntries (stereoInvFunAux traceFreePole (∑ i, y i • traceFreeFrame i))
-
-private theorem contDiff_projectivePlaneEmbeddingInv {r : ℕ∞ω} :
-    ContDiff ℝ r projectivePlaneEmbeddingInv :=
-  contDiff_toProjectorEntries.comp (contDiff_stereoInvFunAux.comp
-    (by fun_prop))
-
-private theorem projectivePlaneEmbeddingInv_projectivePlaneEmbedding (p : ℙ ℝ (Fin 3 → ℝ)) :
-    projectivePlaneEmbeddingInv (projectivePlaneEmbedding p) = fun q ↦ projector p q.1 q.2 := by
-  rw [projectivePlaneEmbeddingInv, stereoInvFunAux_sum_projectivePlaneEmbedding_smul,
-    toProjectorEntries_traceFreeProjector]
-
-private theorem projectivePlaneEmbeddingInv_comp_projectivePlaneEmbedding :
-    projectivePlaneEmbeddingInv ∘ projectivePlaneEmbedding = fun p q ↦ projector p q.1 q.2 :=
-  funext projectivePlaneEmbeddingInv_projectivePlaneEmbedding
-
 /-- The embedding of the real projective plane in `ℝ⁴` is injective. -/
 theorem projectivePlaneEmbedding_injective : Injective projectivePlaneEmbedding := fun p p' h ↦
-  projector_injective (Matrix.ext fun i j ↦ congr_fun
-    (projectivePlaneEmbeddingInv_projectivePlaneEmbedding p ▸
-      projectivePlaneEmbeddingInv_projectivePlaneEmbedding p' ▸
-        congrArg projectivePlaneEmbeddingInv h) (i, j))
+  traceFreeProjector_injective (by
+    rw [← stereoInvFunAux_sum_projectivePlaneEmbedding_smul p, h,
+      stereoInvFunAux_sum_projectivePlaneEmbedding_smul])
 
 /-- The embedding of the real projective plane in `ℝ⁴` is `C^r` for every `r`, including the
 analytic order. -/
@@ -367,11 +399,11 @@ theorem isSmoothEmbedding_projectivePlaneEmbedding {r : ℕ∞ω} (hr : 1 ≤ r)
     IsSmoothEmbedding 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 4)) r
       projectivePlaneEmbedding := by
   refine ⟨(contMDiff_projectivePlaneEmbedding r).isImmersion_of_isImmersion_comp hr
-    (g := projectivePlaneEmbeddingInv)
-    (fun _ ↦ (contDiff_projectivePlaneEmbeddingInv (r := 1)).contMDiff.mdifferentiableAt
+    (g := fun y ↦ stereoInvFunAux traceFreePole (∑ i, y i • traceFreeFrame i))
+    (fun _ ↦ (contDiff_stereoInvFunAux.comp (by fun_prop)).contMDiff.mdifferentiableAt
       one_ne_zero) ?_,
     isClosedEmbedding_projectivePlaneEmbedding.isEmbedding⟩
-  rw [projectivePlaneEmbeddingInv_comp_projectivePlaneEmbedding]
-  exact isImmersion_projector hr
+  simpa only [Function.comp_def, stereoInvFunAux_sum_projectivePlaneEmbedding_smul] using
+    (isSmoothEmbedding_traceFreeProjector hr).1
 
 end Projectivization

@@ -40,8 +40,9 @@ example after exchanging the factors of a product.
 In particular, a `C^n` map with a left inverse near a point, differentiable at the image of that
 point, is an immersion there (`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`), and a `C^n`
 map with a global left inverse differentiable along its image is an immersion
-(`ContMDiff.isImmersion_of_leftInverse`). More generally, a `C^n` map is an immersion when its
-composite with a map differentiable along its image is one
+(`ContMDiff.isImmersion_of_leftInverse`). More generally, a `C^n` map into a manifold with
+finite-dimensional model is an immersion when its composite with a map differentiable along its
+image is one
 (`ContMDiff.isImmersion_of_isImmersion_comp`). Pairing an immersion with any `C^n` map into a
 finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
 
@@ -315,9 +316,9 @@ theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] {g : N 
       (Filter.Eventually.of_forall hgf)
 
 omit [CompleteSpace E'] in
-/-- A `C^n` map between boundaryless manifolds, with `1 ≤ n`, is an immersion when its composite
-with some map differentiable along its image is an immersion: the differential of the composite
-factors through that of the map. -/
+/-- A `C^n` map between boundaryless manifolds, with finite-dimensional target model and `1 ≤ n`,
+is an immersion when its composite with some map differentiable along its image is an immersion:
+the differential of the composite factors through that of the map. -/
 theorem ContMDiff.isImmersion_of_isImmersion_comp [FiniteDimensional 𝕜 E'] {EP HP P : Type*}
     [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [TopologicalSpace HP]
     {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P] {g : N → P}
