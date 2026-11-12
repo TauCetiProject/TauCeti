@@ -129,8 +129,7 @@ theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [IsAddTor
   simp [coeff_sum, coeff_single, Finsupp.single_apply, hcoeff, hγ1]
 
 /-- An element of a group algebra invariant under right multiplication by an element `g` of
-infinite order is zero: its coefficients are constant along the right translates `h * g ^ n`,
-which are pairwise distinct, and only finitely many coefficients are nonzero. -/
+infinite order is zero. -/
 theorem eq_zero_of_mul_single_eq_self {R G : Type*} [Semiring R] [Group G] {g : G}
     (hg : ¬IsOfFinOrder g) {γ : MonoidAlgebra R G} (hγ : γ * single g 1 = γ) : γ = 0 := by
   have hcoeff (h : G) (n : ℕ) : γ.coeff (h * g ^ n) = γ.coeff h := by
