@@ -272,7 +272,6 @@ theorem projectivePlaneHeight_eq_of_mem_projectivePlaneTopChart_source {y : ℙ 
   simp only [Fin.sum_univ_two, Fin.val_zero, Fin.val_one, Nat.ofNat_pos, ↓reduceIte,
     Nat.one_lt_ofNat, projectivePlaneTopChart_apply, neg_one_mul, projectivePlaneHeight_mk]
   rw [← neg_add, ← sub_eq_add_neg, key]
-  have hs : 0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by positivity
   field_simp
   ring
 
@@ -553,14 +552,10 @@ private theorem projectivePlaneHeight_flatten_le {v : Fin 3 → ℝ} (hv : v ≠
     have h := (projectivePlaneHeight_mk_lt_two_iff v hv).2 hd
     rw [projectivePlaneHeight_mk, div_lt_iff₀ (sum_sq_pos hv)] at h
     linarith
-  have hs₀ : 0 ≤ (1 - t) ^ 2 := sq_nonneg _
   have hs₁ : (1 - t) ^ 2 ≤ 1 := by nlinarith
   simp only [projectivePlaneHeight_mk, flatten_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, mul_pow]
   rw [div_le_div_iff₀ (by nlinarith [sq_nonneg (v 0), sq_nonneg (v 1)]) (sum_sq_pos hv)]
-  have key : (v 1 ^ 2 + 2 * v 2 ^ 2) * (v 0 ^ 2 + v 1 ^ 2 + (1 - t) ^ 2 * v 2 ^ 2) -
-      (v 1 ^ 2 + 2 * ((1 - t) ^ 2 * v 2 ^ 2)) * (v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2) =
-      (1 - (1 - t) ^ 2) * v 2 ^ 2 * (2 * v 0 ^ 2 + v 1 ^ 2) := by ring
   nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hs₁) (sq_nonneg (v 2))) hd'.le]
 
 /-- The family of projections `[v] ↦ [x : y : (1 - t) z]` is jointly continuous off the
@@ -872,7 +867,7 @@ theorem degree_projectivePlaneAttachingMap (hε : 0 < ε) (hε1 : ε < 1) :
       (projectivePlaneAttachingMap hε.le hε1).hom.continuous).map
       (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)).continuous) =
       2 := by
-  refine Circle.degree_eq_of_forall_eq_pow _ (a := (√2)⁻¹) (by positivity) one_pos 2 fun t ↦ ?_
+  refine Circle.degree_eq_of_forall_eq_pow _ (a := (√2)⁻¹) (b := 1) (by positivity) 2 fun t ↦ ?_
   simp only [Path.map_coe, Function.comp_apply, one_mul, div_pow, ← Complex.ofReal_pow,
     Complex.sq_norm, Complex.normSq_add_mul_I]
   rw [coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,
