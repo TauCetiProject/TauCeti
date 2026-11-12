@@ -21,6 +21,7 @@ space. The carrier is a submodule of bounded continuous maps, using Mathlib's ex
 * `TauCeti.holderSubmodule`: the `𝕜`-submodule of bounded continuous Hölder functions;
 * `TauCeti.holderNorm_nonneg`, `TauCeti.norm_le_holderNorm`, and
   `TauCeti.nnHolderNorm_le_holderNorm`: basic bounds;
+* `TauCeti.nnHolderNorm_smul`: unconditional scalar homogeneity of Mathlib's `nnHolderNorm`;
 * `TauCeti.holderNorm_add_le`, `TauCeti.holderNorm_smul`, and
   `TauCeti.holderNorm_sub_le_holderNorm_sub_add_holderNorm_sub`: norm estimates.
 -/
@@ -76,13 +77,23 @@ theorem holderNorm_add_le {α : ℝ≥0} (f g : X →ᵇ Y)
     _ = (‖f‖ + (nnHolderNorm α (f : X → Y) : ℝ)) +
           (‖g‖ + (nnHolderNorm α (g : X → Y) : ℝ)) := add_add_add_comm _ _ _ _
 
+/-- Scalar homogeneity of the Hölder seminorm, for every map, whether or not it is `α`-Hölder.
+Mathlib's `MemHolder.nnHolderNorm_smul` assumes `MemHolder`; without it, both sides take the junk
+value `0` when `c ≠ 0`. -/
+theorem nnHolderNorm_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 Y] [NormSMulClass 𝕜 Y]
+    {α : ℝ≥0} (c : 𝕜) (f : X → Y) :
+    nnHolderNorm α (c • f) = ‖c‖₊ * nnHolderNorm α f := by
+  -- `nnHolderNorm` is the truncation of `eHolderNorm`, which is unconditionally homogeneous.
+  rw [nnHolderNorm, nnHolderNorm, eHolderNorm_smul, ENNReal.toNNReal_mul, ENNReal.toNNReal_coe]
+
 /-- Scalar homogeneity of the supremum-plus-Hölder norm, for every bounded continuous map, whether
 or not it is `α`-Hölder. -/
 @[simp]
 theorem holderNorm_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 Y]
     {α : ℝ≥0} (c : 𝕜) (f : X →ᵇ Y) :
     holderNorm α (c • f) = ‖c‖ * holderNorm α f := by
-  simp [holderNorm_def, norm_smul, nnHolderNorm, eHolderNorm_smul, mul_add]
+  simp only [holderNorm_def, norm_smul, FunLike.coe_smul, nnHolderNorm_smul, NNReal.coe_mul,
+    coe_nnNorm, mul_add]
 
 variable (𝕜 : Type*) [SeminormedRing 𝕜] [Module 𝕜 Y] [IsBoundedSMul 𝕜 Y]
 
