@@ -24,10 +24,9 @@ Diffeotopies coerce to their spatial component, so `Φ (t, x)` is the point of `
 Diffeotopies compose and invert, and forgetting smoothness gives the existing
 `TauCeti.AmbientIsotopy`.
 
-This supplies the smooth ambient-isotopy half of the geometric-topology roadmap's requirement
-that isotopy notions be defined generally before they are specialized to knots.  The non-ambient
-smooth isotopy of arbitrary maps is separate and is not defined here.  The specialization to
-bundled smooth embeddings, used for geometric knot presentations, is in
+The notion is defined for an arbitrary manifold `M`, before any specialization to knots.  The
+non-ambient smooth isotopy of arbitrary maps is separate and is not defined here.  The
+specialization to bundled smooth embeddings, used for geometric knot presentations, is in
 `TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic`.
 
 ## Main definitions

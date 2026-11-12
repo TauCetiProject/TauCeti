@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
+import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # The universal coefficient theorem for singular cohomology
@@ -67,6 +68,8 @@ free in that degree and zero above it, while in the top degree it need not be to
   `TopCat.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt`: the Kronecker map
   is bijective in degree `n` when the homology is projective below `n`, so that an injective map
   of coefficient modules is injective on cohomology in degree `n`.
+* `TopCat.injective_homologyMap_linearYonedaObjMap_one`: an injective map of coefficient modules
+  is injective on `H¹` of every space.
 * `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
   bijective in degree `n` when the relative homology is projective below `n`, for instance when it
   vanishes there.
@@ -138,6 +141,19 @@ theorem injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt
   intro α β hαβ
   refine (X.singularKronecker_bijective_of_projective_homology_lt M n h).1 ((cancel_mono g).1 ?_)
   rw [← singularKronecker_coefficient_naturality, ← singularKronecker_coefficient_naturality, hαβ]
+
+/-- **Injective coefficient maps are injective on `H¹`**: for a free coefficient module `R`, an
+injective map `g : M ⟶ M'` of coefficient modules induces an injective map
+`H¹(X; R, M) → H¹(X; R, M')` for every space `X`, because `H₀(X; R)` is free
+(`ModuleCat.free_singularHomology_zero`). For instance `H¹(X; ℤ) → H¹(X; ℝ)` is injective. -/
+theorem injective_homologyMap_linearYonedaObjMap_one [Module.Free k R] {M M' : ModuleCat.{w} k}
+    (g : M ⟶ M') (hg : Function.Injective g) :
+    Function.Injective
+      (HomologicalComplex.homologyMap
+        (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) 1) :=
+  X.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt g hg 1 fun j hj ↦ by
+    obtain rfl : j = 0 := by omega
+    exact ModuleCat.projective_of_free (Module.Free.chooseBasis k _)
 
 end ProjectiveHomologyBelow
 
