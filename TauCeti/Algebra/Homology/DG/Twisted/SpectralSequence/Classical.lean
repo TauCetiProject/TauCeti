@@ -78,22 +78,6 @@ theorem indexClassicalClass_def {x y : P} (hxy : ind x = ind y + 1) :
       ⟨m.m x y, h.mem_cycles.mpr (m.d_m_eq_zero_of_eq_add_one hxy)⟩ :=
   (rfl)
 
-/-- The entry `indexClassicalEntry` is the action `shiftedModuleComplexActHomology` of `m x y`. -/
-private theorem indexClassicalEntry_eq_shiftedModuleComplexActHomology (q : ℤ)
-    (x : {x : P // ind x = q + 1}) (y : {y : P // ind y = q}) :
-    m.indexClassicalEntry hM k q x y = shiftedModuleComplexActHomology hM
-      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-      (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (k - (q + 1))
-      (k - q) (by ring) := by
-  refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
-  obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
-    (q + 1)).exists_homologyπ_moduleCatCyclesMk_eq (k - (q + 1) + 1) (by simp) c
-  obtain ⟨β, hβ', hβ, hπ⟩ := exists_shiftedModuleComplexActHomology_homologyπ hM
-    (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-    (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (k - (q + 1))
-    (k - q) (by ring) α hα
-  rw [hπ, m.indexClassicalEntry_homologyπ hM k q x y α hα β hβ hβ']
-
 /-- **The entries of the classical complex are the actions of the classes of the entries of the
 twisting cocycle**: under the identifications `shiftedModuleComplexHomologyEquiv` of its terms
 with `H^k(ℳ)`, the entry of the classical complex in coefficient degree `k` between a generator `x`
@@ -107,8 +91,7 @@ theorem shiftedModuleComplexHomologyEquiv_indexClassicalEntry (q : ℤ)
       k.negOnePow • (hM.cohomologyAction
         (m.indexClassicalClass (x := x.1) (y := y.1) (by rw [x.2, y.2]))).unop
           (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM (q + 1) (k - (q + 1)) c) := by
-  rw [indexClassicalEntry_eq_shiftedModuleComplexActHomology,
-    shiftedModuleComplexHomologyEquiv_shiftedModuleComplexActHomology,
+  rw [indexClassicalEntry_def, shiftedModuleComplexHomologyEquiv_shiftedModuleComplexActHomology,
     congrArg Int.negOnePow (sub_add_cancel k (q + 1))]
   rfl
 
