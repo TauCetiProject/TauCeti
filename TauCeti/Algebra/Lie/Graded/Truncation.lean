@@ -237,9 +237,13 @@ order `k`. -/
 theorem ker_truncationMap_eq_iSup {k l : ℕ} (h : k ≤ l) :
     (d.truncationMap ℒ h).ker.toSubmodule =
       ⨆ n : {n : N // (k : ℤ) < d.degree n ∧ d.degree n ≤ l}, d.truncatedGrading ℒ l n := by
+  have hle : d.degreeIdeal ℒ l ≤ (d.degreeIdeal ℒ k).mkQ.ker := by
+    simpa only [LieIdeal.mkQ_ker] using d.degreeIdeal_antitone ℒ h
+  have hlift := (d.degreeIdeal ℒ l).eq_liftQ (g := d.truncationMap ℒ h) (h := hle)
+    (d.truncationMap_mk ℒ h)
   have hpieces : (d.truncationMap ℒ h).ker.toSubmodule =
       ⨆ n : {n : N // (k : ℤ) < d.degree n}, d.truncatedGrading ℒ l n := by
-    rw [truncationMap, LieIdeal.ker_factor,
+    rw [hlift, LieIdeal.ker_liftQ_mkQ,
       LieIdeal.coe_map_of_surjective (d.degreeIdeal ℒ l).surjective_mkQ,
       degreeIdeal_toSubmodule, degreeSubmodule_def, Submodule.map_iSup]
     simp only [truncatedGrading_eq]
@@ -281,17 +285,8 @@ theorem ker_truncationMap_succ (k : ℕ) :
 to order `k` is central. -/
 theorem ker_truncationMap_succ_le_center (k : ℕ) :
     (d.truncationMap ℒ (Nat.le_succ k)).ker ≤ LieAlgebra.center R (d.truncatedLie ℒ (k + 1)) := by
-  rw [truncationMap, LieIdeal.ker_factor]
-  intro y hy
-  obtain ⟨⟨z, hz⟩, rfl⟩ :=
-    LieIdeal.mem_map_of_surjective (d.degreeIdeal ℒ (k + 1)).surjective_mkQ hy
-  rw [LieModule.mem_maxTrivSubmodule]
-  intro x
-  obtain ⟨w, rfl⟩ := (d.degreeIdeal ℒ (k + 1)).surjective_mkQ x
-  rw [← LieHom.map_lie, LieIdeal.mkQ_apply, LieSubmodule.Quotient.mk_eq_zero']
-  have h := d.lie_degreeIdeal_le ℒ 0 k
-  rw [degreeIdeal_zero, zero_add] at h
-  exact h (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top w) hz)
+  rw [truncationMap, LieIdeal.ker_factor_le_center_iff]
+  simpa only [degreeIdeal_zero, zero_add] using d.lie_degreeIdeal_le ℒ 0 k
 
 /-- The kernel of the transition from order `k + 1` to order `k` is abelian. -/
 instance isLieAbelian_ker_truncationMap_succ (k : ℕ) :

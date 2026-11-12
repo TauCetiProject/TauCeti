@@ -53,7 +53,7 @@ variable {R : Type uR} [CommRing R] {ι : Type*} [Fintype ι]
 The input modules and twist parameters may vary from slot to slot. -/
 @[simp]
 theorem isHomogeneous_comp_koszulTwist_iff (t : ι → ℤ) (q : ℤ)
-    (f : MultilinearMap R M N) :
+    (f : MultilinearMap (RingHom.id R) M N) :
     TauCeti.MultilinearMap.IsHomogeneous
         (f.compLinearMap fun i ↦ (G i).koszulTwist (t i)) (fun i ↦ (G i).piece) ℬ q ↔
       TauCeti.MultilinearMap.IsHomogeneous f (fun i ↦ (G i).piece) ℬ q := by
@@ -146,7 +146,9 @@ theorem suspensionEquiv_apply_of_mem (q : ℤ)
       fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i) • x i := by
     funext i
     rw [(G i).koszulTwist_apply_of_mem (hx i), negOnePowCast_eq_intCast]
-  rw [ht, MultilinearMap.map_smul_univ, ← negOnePowCast_sum]
+  rw [ht, MultilinearMap.map_smul_univ]
+  simp only [RingHom.id_apply]
+  rw [← negOnePowCast_sum]
 
 /-- On homogeneous inputs, unsuspension has the identical sign when degrees are measured in
 the original gradings. -/

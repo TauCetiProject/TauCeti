@@ -46,6 +46,7 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F] [Algebra (RatFunc k) F]
   [IsScalarTower k (RatFunc k) F] [Algebra.IsSeparable (RatFunc k) F]
   [FiniteDimensional (RatFunc k) F]
 
+omit [FiniteDimensional (RatFunc k) F] in
 /-- **The genus of a smooth plane curve**, doubled: under the hypotheses of
 `TauCeti.Divisor.different_eq_principal_add_zsmul_poles`, if `k` is the exact constant field of
 `F`, then a smooth plane curve of degree `n` has `2g = (n - 1)(n - 2)`. -/
@@ -59,11 +60,15 @@ theorem two_mul_genus_eq_of_aeval_eq_zero (hex : IsIntegrallyClosedIn k F)
     {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : MvPolynomial.aeval ![algebraMap (RatFunc k) F RatFunc.X, y] g = 0) :
     2 * (genus k F : ℤ) = ((g.totalDegree : ℤ) - 1) * ((g.totalDegree : ℤ) - 2) := by
+  have : FiniteDimensional (RatFunc k) F := FiniteDimensional.of_finrank_pos (by
+    rw [finrank_ratFunc_eq_totalDegree_of_aeval_eq_zero hirr hlead hgen hy]
+    exact MvPolynomial.totalDegree_pos_of_aeval_eq_zero hlead hy)
   have h := hurwitz_genus_formula_ratFunc (F := F) hex
   rw [Divisor.degree_different_eq_totalDegree_mul hirr hlead hsm hsm' hgen hy,
     finrank_ratFunc_eq_totalDegree_of_aeval_eq_zero hirr hlead hgen hy] at h
   linear_combination h
 
+omit [FiniteDimensional (RatFunc k) F] in
 /-- **The genus of a smooth plane curve** (Fulton, Section 8.3): let `k` be the exact constant
 field of `F`, let `g ∈ k[X, Y]` be irreducible of total degree `n`, with the coefficient of `Yⁿ`
 equal to `1`, such that the projective closure of `g = 0` is smooth in both affine charts
@@ -79,8 +84,8 @@ theorem genus_eq_of_aeval_eq_zero (hex : IsIntegrallyClosedIn k F)
     {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : MvPolynomial.aeval ![algebraMap (RatFunc k) F RatFunc.X, y] g = 0) :
     genus k F = (g.totalDegree - 1) * (g.totalDegree - 2) / 2 := by
-  have h := two_mul_genus_eq_of_aeval_eq_zero hex hirr hlead hsm hsm' hgen hy
   have hn : 1 ≤ g.totalDegree := MvPolynomial.totalDegree_pos_of_aeval_eq_zero hlead hy
+  have h := two_mul_genus_eq_of_aeval_eq_zero hex hirr hlead hsm hsm' hgen hy
   rcases Nat.lt_or_ge g.totalDegree 2 with h2 | h2
   · rw [show g.totalDegree = 1 by omega] at h ⊢
     norm_num at h ⊢

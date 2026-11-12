@@ -151,8 +151,8 @@ private theorem eLpNorm_indicator_compl_le_of_approx_of_bound
   have hmeas : AEStronglyMeasurable ((Kᶜ ∩ sᶜ).indicator f) mu :=
     hf.indicator (hK.compl.inter hs.compl)
   have hfirst : eLpNorm ((Kᶜ ∩ sᶜ).indicator f) p mu ≤ ε :=
-    (eLpNorm_mono_enorm hmeas fun x =>
-      enorm_indicator_le_of_subset inter_subset_right _ x).trans htail
+    (eLpNorm_mono_eNorm hmeas fun x =>
+      eNorm_indicator_le_of_subset inter_subset_right _ x).trans htail
   have hsecond : eLpNorm ((Kᶜ ∩ s).indicator f) p mu ≤ ε + ε := by
     have hsplit' : (Kᶜ ∩ s).indicator f =
         (Kᶜ ∩ s).indicator (f - A) + (Kᶜ ∩ s).indicator A := by

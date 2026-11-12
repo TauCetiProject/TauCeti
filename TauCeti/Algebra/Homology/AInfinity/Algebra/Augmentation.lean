@@ -182,7 +182,7 @@ theorem m_mem_augmentationIdeal (ε : 𝒜.Augmentation) (n : ℕ)
 
 /-- The arity-`n` operation restricted to the reduced augmentation ideal. -/
 noncomputable def reducedOperation (ε : 𝒜.Augmentation) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ ε.augmentationIdeal) ε.augmentationIdeal :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ ε.augmentationIdeal) ε.augmentationIdeal :=
   ((𝒜.m n).compLinearMap fun _ ↦ ε.augmentationIdeal.subtype).codRestrict
     ε.augmentationIdeal (ε.m_mem_augmentationIdeal n)
 
