@@ -22,10 +22,11 @@ That identification is `TauCeti.Multiquadratic.ncard_ramifiedPrimes_eq_card`, so
 here is the substitution. Its point is that the exponents no longer depend on the choice made by
 `genusPrimeDiscriminants`, and that the relative degree now reads as the classical `2 ^ (t - 1)` —
 the field-theoretic half of the genus-theory `2`-rank formula, whose remaining half is the
-isomorphism `Gal(K_gen/K) ≅ Cl⁺(K)/Cl⁺(K)²` with the *narrow* class group (not yet available). The
-narrow class group is the right object here because `candidateGenusField` is unramified only at the
-finite places; for imaginary `d` it agrees with `Cl(K)`, while for real `d` the ordinary quotient
-can be smaller.
+isomorphism `Gal(K_gen/K) ≅ Cl⁺(K)/Cl⁺(K)²` with the *narrow* class group. For `d` not a rational
+square, that isomorphism is `autCandidateGenusFieldEquivNarrowElementaryTwoQuotient` in
+`CandidateGenusField/Relative/GenusCharacter.lean`. The narrow class group is the right object
+here because `candidateGenusField` is unramified only at the finite places; for imaginary `d` it
+agrees with `Cl(K)`, while for real `d` the ordinary quotient can be smaller.
 
 The `2 ^ (t - 1)` count for the genus field is classical; see D. A. Cox, *Primes of the Form
 x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.
