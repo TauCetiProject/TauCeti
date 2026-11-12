@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import Mathlib.Topology.Sets.Opens
@@ -35,6 +36,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: the same identities evaluated at a
   vector.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
+* `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable together with its
+  inverse, the Jacobian determinants are reciprocal, `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`.
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
 
@@ -124,6 +127,25 @@ theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn 𝕜 Φ U) (hm
   exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
 
 end TauCeti
+
+namespace Equiv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] (φ : E ≃ E)
+
+/-- If a bijection `φ` and its inverse are differentiable, the Jacobian determinants of `φ⁻¹` at
+`y` and of `φ` at `φ⁻¹ y` are reciprocal. -/
+theorem det_fderiv_symm_mul_det_fderiv (hφ : Differentiable 𝕜 φ)
+    (hψ : Differentiable 𝕜 φ.symm) (y : E) :
+    (fderiv 𝕜 φ.symm y).det * (fderiv 𝕜 φ (φ.symm y)).det = 1 := by
+  have h := TauCeti.fderiv_comp_fderiv_eq_id_of_invOn (U := ⊤) (V := ⊤) hφ.differentiableOn
+    (mapsTo_univ _ _) hψ.differentiableOn (fun x _ ↦ φ.apply_symm_apply x)
+    (fun x _ ↦ φ.symm_apply_apply x) (y := φ.symm y) trivial
+  rw [φ.apply_symm_apply] at h
+  rw [mul_comm, ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp,
+    ← ContinuousLinearMap.toLinearMap_comp, h, ContinuousLinearMap.coe_id, LinearMap.det_id]
+
+end Equiv
 
 /-- Precomposition by a continuous linear equivalence preserves the image of the locus where
 the totalized Fréchet derivative vanishes. No differentiability hypothesis is needed. -/
