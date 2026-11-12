@@ -23,7 +23,8 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
 and a cutoff `β(s)` contributes the zeroth-order term `β' ξ` (`floerLinearization_smul_fst`).
 For `C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
-are `C¹` (`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
+are `C¹` (`continuousAt_floerLinearization`, `continuous_floerLinearization`), so its `L²` norms
+over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
@@ -147,24 +148,6 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
 
-/-- **Conjugating the linearization by an exponential weight.** On maps of the form
-`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
-differentiates in the `s` direction, where the operator has the leading term `∂s`. -/
-theorem floerLinearization_exp_smul (ω : SymplecticForm V)
-    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
-    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
-      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
-  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
-      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
-    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
-  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
-  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
-  module
-
 /-- **The Leibniz rule for a cutoff in `s`.** Multiplying a direction `ξ` by a function `β(s)` of
 the first coordinate multiplies its linearized Floer operator by `β` and adds `β'(s) ξ`:
 `D_u (β ξ) = β D_u ξ + β' ξ`. -/
@@ -181,6 +164,19 @@ theorem floerLinearization_smul_fst (ω : SymplecticForm V) (J : ℝ × ℝ → 
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
     smul_eq_mul, mul_zero, mul_one, zero_smul, add_zero, map_sub]
+  module
+
+/-- **Conjugating the linearization by an exponential weight.** On maps of the form
+`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
+differentiates in the `s` direction, where the operator has the leading term `∂s`. -/
+theorem floerLinearization_exp_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
+      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
+  have hβ : HasDerivAt (fun s ↦ Real.exp (-(δ * s))) (Real.exp (-(δ * z.1)) * -(δ * 1)) z.1 :=
+    ((hasDerivAt_id z.1).const_mul δ).neg.exp
+  rw [ω.floerLinearization_smul_fst J Ks Kt u ξ hβ.differentiableAt hξ, hβ.deriv]
   module
 
 /-- The zeroth-order part `ξ ↦ (dJ(u) ξ)(∂t u - X_Kt(u)) - dX_Ks(u) ξ - J(u) dX_Kt(u) ξ` of the
@@ -273,6 +269,17 @@ theorem continuousAt_floerLinearization (ω : SymplecticForm V)
     funext (ω.floerLinearization_eq_add J Ks Kt u ξ)]
   exact ((hdξ _).add (hJu.clm_apply (hdξ _))).add
     ((ω.continuousAt_floerLinearizationCoeff hJ hKs hKt hu).clm_apply hξ.continuousAt)
+
+/-- The linearized Floer operator along a `C¹` map `u` in a `C¹` direction `ξ` is continuous when
+the coefficients `J` are `C¹` and the Hamiltonians `K_s`, `K_t` are `C²`, jointly in the domain and
+target point. -/
+theorem continuous_floerLinearization (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
+    (hJ : ContDiff ℝ 1 (Function.uncurry J)) (hKs : ContDiff ℝ 2 (Function.uncurry Ks))
+    (hKt : ContDiff ℝ 2 (Function.uncurry Kt)) (hu : ContDiff ℝ 1 u) (hξ : ContDiff ℝ 1 ξ) :
+    Continuous (ω.floerLinearization J Ks Kt u ξ) :=
+  continuous_iff_continuousAt.2 fun _ ↦ ω.continuousAt_floerLinearization hJ.contDiffAt
+    hKs.contDiffAt hKt.contDiffAt hu.contDiffAt hξ.contDiffAt
 
 section Families
 
