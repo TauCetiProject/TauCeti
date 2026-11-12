@@ -64,11 +64,12 @@ variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E�
 /-- Canonical fibrewise contraction `StrongDual 𝕜 (E₁ x) ⊗[𝕜] E₂ x →L[𝕜] (E₁ x →L[𝕜] E₂ x)`,
 sending `φ ⊗ₜ w` to `v ↦ φ v • w`. -/
 def bundleDualTensorHom (x : B) : StrongDual 𝕜 (E₁ x) ⊗[𝕜] E₂ x →L[𝕜] (E₁ x →L[𝕜] E₂ x) :=
-  ⟨_root_.TensorProduct.lift <| LinearMap.mk₂ 𝕜 ContinuousLinearMap.smulRight
-    (fun _ _ _ ↦ by ext; simp [add_smul]) (fun _ _ _ ↦ by ext; simp [mul_smul])
-    (fun _ _ _ ↦ by ext; simp) (fun _ _ _ ↦ by
-      ext; simp only [ContinuousLinearMap.smulRight_apply, FunLike.coe_smul, Pi.smul_apply]
-      exact smul_comm ..), IsModuleTopology.continuous_of_linearMap _⟩
+  -- `ContinuousLinearMap.smulRightLₗ` assumes `[IsNormableSpace 𝕜 (E₂ x)]`.
+  ⟨_root_.TensorProduct.lift
+    { toFun := ContinuousLinearMap.smulRightₗ
+      map_add' := fun _ _ ↦ by ext; simp [add_smul]
+      map_smul' := fun _ _ ↦ by ext; simp [mul_smul] },
+    IsModuleTopology.continuous_of_linearMap _⟩
 @[simp] theorem bundleDualTensorHom_tmul (x : B) (φ : StrongDual 𝕜 (E₁ x)) (w : E₂ x) :
     bundleDualTensorHom (E₁ := E₁) (E₂ := E₂) x (φ ⊗ₜ[𝕜] w) = φ.smulRight w := by
   simp [bundleDualTensorHom]
