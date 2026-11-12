@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Partial
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Families of operators that are smooth pointwise with bounded derivatives
@@ -42,7 +42,7 @@ differentiability comes from the criterion of continuous partial derivatives,
 for the operator norm by the first statement one order lower, and the partial derivative in `y`
 is the derivative family, jointly continuous by the second statement applied to it.
 Operator-norm estimates come from the mean value inequality applied to each `y ↦ Φ y f`
-separately (`TauCeti.norm_sub_sub_flip_le_of_hasFDerivAt`).
+separately (`Convex.norm_sub_sub_flip_le_of_norm_hasFDerivWithin_sub_le`).
 
 ## References
 
@@ -153,29 +153,6 @@ private theorem PointwiseContDiffOn.continuousOn_apply {U : Set E} {Φ : E → �
 
 variable [IsRCLikeNormedField 𝕜]
 
-/-- **The mean value inequality for the operator norm.** Let `Φ : E → Λ →L[𝕜] F` be a family of
-operators such that each `w ↦ Φ w f` has derivative `D w f` on a ball, where `D w` stays within
-`C` of `L` in operator norm there. Then on the ball, `Φ` stays within `C ‖z - y‖` of its
-first-order approximation `Φ y + L.flip (z - y)`, for the operator norm. -/
-theorem norm_sub_sub_flip_le_of_hasFDerivAt {Φ : E → Λ →L[𝕜] F}
-    {D : E → Λ →L[𝕜] E →L[𝕜] F} {L : Λ →L[𝕜] E →L[𝕜] F} {y : E} {r C : ℝ}
-    (hD : ∀ w ∈ Metric.ball y r, ∀ f, HasFDerivAt (fun w ↦ Φ w f) (D w f) w)
-    (hC : ∀ w ∈ Metric.ball y r, ‖D w - L‖ ≤ C) {z : E} (hz : z ∈ Metric.ball y r) :
-    ‖Φ z - Φ y - L.flip (z - y)‖ ≤ C * ‖z - y‖ := by
-  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-  let : NormedSpace ℝ E := RestrictScalars.normedSpace ℝ 𝕜 E
-  have hy : y ∈ Metric.ball y r := Metric.mem_ball_self (dist_nonneg.trans_lt hz)
-  have hC0 : 0 ≤ C := (norm_nonneg (D y - L)).trans (hC y hy)
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun f ↦ ?_
-  have key := Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := fun w ↦ Φ w f)
-    (f' := fun w ↦ D w f) (φ := L f) (C := C * ‖f‖)
-    (fun w hw ↦ (hD w hw f).hasFDerivWithinAt)
-    (fun w hw ↦ ((D w - L).le_opNorm f).trans (mul_le_mul_of_nonneg_right (hC w hw)
-      (norm_nonneg f))) (convex_ball y r) hy hz
-  calc ‖(Φ z - Φ y - L.flip (z - y)) f‖ = ‖Φ z f - Φ y f - L f (z - y)‖ := by simp
-    _ ≤ C * ‖f‖ * ‖z - y‖ := key
-    _ = C * ‖z - y‖ * ‖f‖ := by ring
-
 /-- Order zero of `contDiffOn_of_forall_norm_iteratedFDeriv_le`: the family is continuous for the
 operator norm. -/
 private theorem PointwiseContDiffOn.continuousOn {U : Set E} {Φ : E → Λ →L[𝕜] F}
@@ -192,8 +169,11 @@ private theorem PointwiseContDiffOn.continuousOn {U : Set E} {Φ : E → Λ →L
       exact ((hball w hw).1 f).trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
         (norm_nonneg f))
   have hlip : ∀ z ∈ Metric.ball y r, ‖Φ z - Φ y‖ ≤ max C 0 * ‖z - y‖ := fun z hz ↦ by
-    simpa using norm_sub_sub_flip_le_of_hasFDerivAt (L := 0)
-      (fun w hw f ↦ h.hasFDerivAt (k := 0) hU (hball w hw).2 f) (by simpa using hD) hz
+    let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+    let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+    simpa using (convex_ball y r).norm_sub_sub_flip_le_of_norm_hasFDerivWithin_sub_le (L := 0)
+      (fun w hw f ↦ (h.hasFDerivAt (k := 0) hU (hball w hw).2 f).hasFDerivWithinAt)
+      (by simpa using hD) (Metric.mem_ball_self hr) hz
   rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _)
     (eventually_of_mem (Metric.ball_mem_nhds y hr) hlip) ?_
@@ -222,8 +202,11 @@ private theorem PointwiseContDiffOn.contDiffOn {k : ℕ} {U : Set E}
           ((hΨc y hy).continuousAt (hU.mem_nhds hy))).eventually (ge_mem_nhds hε))
       obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1 hnear
       filter_upwards [Metric.ball_mem_nhds y hr] with z hz
-      exact norm_sub_sub_flip_le_of_hasFDerivAt (fun w hw f ↦ h.hasFDerivAt hU (hball w hw).1 f)
-        (fun w hw ↦ (hball w hw).2) hz
+      let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+      let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+      exact (convex_ball y r).norm_sub_sub_flip_le_of_norm_hasFDerivWithin_sub_le
+        (fun w hw f ↦ (h.hasFDerivAt hU (hball w hw).1 f).hasFDerivWithinAt)
+        (fun w hw ↦ (hball w hw).2) (Metric.mem_ball_self hr) hz
     rw [Nat.cast_succ, contDiffOn_succ_iff_fderiv_of_isOpen hU]
     refine ⟨fun y hy ↦ (hderiv y hy).differentiableAt.differentiableWithinAt, by simp, ?_⟩
     refine ((ContinuousLinearMap.flipₗᵢ 𝕜 Λ E G).contDiff.comp_contDiffOn (ih hΨ)).congr
