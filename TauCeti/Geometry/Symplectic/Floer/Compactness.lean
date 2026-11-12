@@ -85,9 +85,12 @@ which leaves the energy density unchanged. The same reduction gives the mean-val
 a threshold uniform over the window
 (`TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_parametric`).
 
-The limit is only shown to be continuous; its regularity, the rescaled bubbles at the points of
-`Z` (spheres for the structure `J(z, ·)` frozen at the bubbling point), and breaking along
-cylindrical ends are not treated here.
+The limit is only shown to be continuous here. For smooth solutions,
+`TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence` upgrades the convergence off `Z` to
+convergence in `C¹` to a `C¹` solution
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`). The rescaled
+bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling point) and
+breaking along cylindrical ends are not treated here.
 
 ## References
 
