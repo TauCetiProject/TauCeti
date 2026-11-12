@@ -61,7 +61,7 @@ theorem memWkpLocMapOn_iff_locally :
 has a neighbourhood on which it is one. -/
 theorem memWkpLocMap_iff_locally :
     MemWkpLocMap I p k u ↔ ∀ x, ∃ t ∈ 𝓝 x, MemWkpLocMapOn I p k u t := by
-  simp [← memWkpLocMapOn_univ, memWkpLocMapOn_iff_locally (s := univ)]
+  simp [← memWkpLocMapOnGroupoid_univ, memWkpLocMapOn_iff_locally (s := univ)]
 
 /-- **The sheaf property.** A map is a local Sobolev map on a union of open sets exactly when it
 is one on each of them. -/

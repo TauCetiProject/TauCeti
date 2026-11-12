@@ -160,8 +160,8 @@ theorem isWeakPseudoholomorphic_iff : IsWeakPseudoholomorphic J ν p u ↔
 @[simp]
 theorem isWeakPseudoholomorphicOn_univ :
     IsWeakPseudoholomorphicOn J ν p u univ ↔ IsWeakPseudoholomorphic J ν p u := by
-  rw [isWeakPseudoholomorphicOn_iff, isWeakPseudoholomorphic_iff, memWkpLocMapOn_univ]
-  simp only [univ_inter]
+  simp only [isWeakPseudoholomorphicOn_iff, isWeakPseudoholomorphic_iff,
+    memWkpLocMapOnGroupoid_univ, univ_inter]
 
 namespace IsWeakPseudoholomorphicOn
 
@@ -425,7 +425,7 @@ variable [CompleteSpace E]
 structure. -/
 theorem isWeakPseudoholomorphicOn_const (y : M) :
     IsWeakPseudoholomorphicOn J 0 p (fun _ ↦ y) s := by
-  refine ⟨(contMDiff_const.memWkpLocMap (n := 1) le_rfl).memWkpLocMapOn, fun φ _ ψ _ ↦ ?_⟩
+  refine ⟨(contMDiff_const.memWkpLocMap (n := 1) le_rfl).memWkpLocMapOnGroupoid, fun φ _ ψ _ ↦ ?_⟩
   rw [InhomogeneousTerm.chartTerm_zero]
   exact isWeakCauchyRiemannOn_const (ψ.extendTrans I (Homeomorph.refl E) y)
 
@@ -508,7 +508,8 @@ theorem isWeakPseudoholomorphicOn_const_iff_complex
     -- The identity of the tangent space at `z` sends `1` to `1`.
     exact this
   · intro hae
-    refine ⟨(contMDiff_const.memWkpLocMap (n := 1) le_rfl).memWkpLocMapOn, fun φ hφ ψ hψ ↦ ?_⟩
+    refine ⟨(contMDiff_const.memWkpLocMap (n := 1) le_rfl).memWkpLocMapOnGroupoid,
+      fun φ hφ ψ hψ ↦ ?_⟩
     have hD : IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ (fun _ : ℂ ↦ y) ⁻¹' ψ.source)) :=
       φ.isOpen_inter_preimage_symm (continuousOn_const.isOpen_inter_preimage hs ψ.open_source)
     refine (isWeakCauchyRiemannOn_const_iff (ψ.extendTrans I (Homeomorph.refl E) y)).2 ?_
