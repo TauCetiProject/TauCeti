@@ -222,19 +222,13 @@ theorem isLocalDiffeomorphAt_flowOf_comp_of_nondegenerate [FiniteDimensional ℝ
     (hβ : ((mextDerivₗ J 1 (SmoothForm.mpullback ι hι α)).bilinFormAt p.1).Nondegenerate)
     (hp : (p.2, ι p.1) ∈ flowDomain Z) :
     IsLocalDiffeomorphAt (J.prod 𝓘(ℝ)) I ∞ (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) p := by
-  have hdim' : finrank ℝ (TangentSpace (J.prod 𝓘(ℝ)) p) = finrank ℝ (TangentSpace I
-      (flowOf Z p.2 (ι p.1))) := by
-    -- The tangent spaces are the model spaces `E' × ℝ` and `E`.
-    change finrank ℝ (E' × ℝ) = finrank ℝ E
-    rw [← hdim, Module.finrank_prod, Module.finrank_self]
-  have hinj := injective_mfderiv_flowOf_comp_of_nondegenerate hZ hι hαZ hZα hβ hp
-  exact isLocalDiffeomorphAt_of_mfderiv_eq
+  exact isLocalDiffeomorphAt_of_injective_mfderiv
     (fun q hq ↦ (contMDiffAt_flowOf_comp le_top hZ contMDiffAt_snd
       (hι.contMDiffAt.comp q contMDiffAt_fst) hq).contMDiffWithinAt)
     (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_snd
       (hι.continuous.comp continuous_fst)) hp BoundarylessManifold.isInteriorPoint (by simp)
-    (e := (LinearMap.linearEquivOfInjective _ hinj hdim').toContinuousLinearEquiv)
-    (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim' w)
+    (injective_mfderiv_flowOf_comp_of_nondegenerate hZ hι hαZ hZα hβ hp)
+    (by rw [← hdim, Module.finrank_prod, Module.finrank_self])
 
 /-! ### Hypersurfaces transverse to the Reeb vector field -/
 
