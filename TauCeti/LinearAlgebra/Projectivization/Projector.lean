@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
@@ -54,6 +55,8 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
 * `Projectivization.projector_apply_self_nonneg` and
   `Projectivization.projector_apply_self_pos_iff`: the diagonal entries of a projector are
   nonnegative, and the `i`-th one is positive exactly on the standard affine open `{x_i ≠ 0}`.
+* `Projectivization.exists_projector_eq_vecMulVec`: the projector of a real line is the outer
+  product `x xᵀ` of a unit vector.
 
 ## References
 
@@ -280,5 +283,21 @@ theorem affineChart_eq_projector_div {n : ℕ} (i : Fin (n + 1)) (p : ℙ K (Fin
     rcases eq_or_ne (x i) 0 with hi | hi
     · simp [hi]
     · field_simp
+
+/-- The projector of a real line is the outer product `x xᵀ` of some vector `x` with
+`x ⬝ᵥ x = 1`. -/
+theorem exists_projector_eq_vecMulVec (p : ℙ ℝ (ι → ℝ)) :
+    ∃ x : ι → ℝ, x ⬝ᵥ x = 1 ∧ projector p = Matrix.vecMulVec x x := by
+  induction p using Projectivization.ind with | h v hv => ?_
+  have hs : 0 < v ⬝ᵥ v :=
+    lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (v i))
+      (Ne.symm (dotProduct_self_eq_zero.not.mpr hv))
+  have hc : (√(v ⬝ᵥ v))⁻¹ ≠ 0 := inv_ne_zero (Real.sqrt_pos.2 hs).ne'
+  have h1 : ((√(v ⬝ᵥ v))⁻¹ • v) ⬝ᵥ ((√(v ⬝ᵥ v))⁻¹ • v) = 1 := by
+    simp only [dotProduct_smul, smul_dotProduct, smul_eq_mul]
+    field_simp
+    exact (Real.sq_sqrt hs.le).symm
+  refine ⟨_, h1, ?_⟩
+  rw [projector_mk, ← rankOneProjector_smul hc v, rankOneProjector_def, h1, inv_one, one_smul]
 
 end Projectivization
