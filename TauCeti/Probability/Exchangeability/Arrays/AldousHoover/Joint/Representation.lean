@@ -724,7 +724,7 @@ theorem jointlyExchangeable_iff_exists_map_jointArray_eq
   rw [← jointlyExchangeable_map_iff hX, ← hcode]
   exact (jointlyExchangeable_map_iff fun p =>
     ((measurable_pi_apply p).comp (measurable_jointArray F hF)).aemeasurable).2
-      (jointlyExchangeable_jointArray F hF)
+      (jointlyExchangeable_jointArray F)
 
 end TauCeti.Probability
 
