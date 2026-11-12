@@ -52,8 +52,8 @@ term vanishes.
 `c n` of `φ` vanish for `k < n < 0` (`TauCeti.exists_diffContOnCl_sub_zpow_mul_conj_eq_iff`). With
 `a n` the Fourier coefficients of `T f` on the circle, `c n = conj (a (k - n)) - a n`. For
 `k < n < 0` put `i = -1 - n` and `m = -k - 2`; the adjoint solution
-`g z = -I (b zⁱ + conj b z^(m - i))` pairs with `f` to `π Im (b a n + conj b a (k - n))`, which is
-`-π |c n|²` for `b = I conj (c n)`.
+`g z = -I (b z ^ i + conj b z ^ (m - i))` pairs with `f` to
+`π Im (b a n + conj b a (k - n))`, which is `-π |c n|²` for `b = I conj (c n)`.
 
 **The cokernel.** On the real vector space `TauCeti.unitDiscCauchyRiemannData` of compactly
 supported `C²` functions, the pairing `f ↦ (g ↦ ∫_{|z| < 1} Re (g f))` with the adjoint kernel
@@ -280,7 +280,7 @@ private theorem exists_of_fourierCoeffOn_eq_zero (hc : HasCompactSupport f) (hf 
     simp only [Pi.add_apply, map_add, mul_add]
     linear_combination this
 
-/-- The test adjoint solution `-I (b zⁱ + conj b z^(m - i))` for the index `k = -m - 2`. -/
+/-- The test adjoint solution `-I (b z ^ i + conj b z ^ (m - i))` for the index `k = -m - 2`. -/
 private theorem domRestrict_mem_unitDiscAdjointKernel_neg_sub_two {m i : ℕ} (hi : i ≤ m) (b : ℂ) :
     (closedBall (0 : ℂ) 1).domRestrict (fun z ↦ -I * (b * z ^ i + conj b * z ^ (m - i))) ∈
       unitDiscAdjointKernel (-(m : ℤ) - 2) := by
