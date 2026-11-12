@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Prepend
 
 /-!

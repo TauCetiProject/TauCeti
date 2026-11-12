@@ -28,6 +28,11 @@ with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫
 `[-n, n] × T` of a strip `ℝ × T` this is
 `TauCeti.integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add`.
 
+A nonnegative function whose integrals over the preimages of the balls `closedBall x₀ (r i)`
+under a continuous map converge as the radii `r i` tend to infinity has the limit as its integral
+over the whole space (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). For
+example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ ≤ r}` of `ℂ`.
+
 ## References
 
 * Mathlib's `intervalIntegral.integral_Ioi_sub_Ioi'`,
@@ -165,5 +170,21 @@ theorem integrableOn_univ_prod_and_setIntegral_le_of_setIntegral_Icc_prod_le_add
     exact hfi n
   · simpa only [hres] using hle n
 
-end TauCeti
+/-- **Exhausting a space by balls.** If a nonnegative function is integrable on the preimages of
+the balls `closedBall x₀ (r i)` under a continuous map `g`, and its integrals over them converge
+to `c` as the radii `r i` tend to infinity, then its integral over the whole space is `c`. -/
+theorem lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall {α X ι : Type*}
+    [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α] [PseudoMetricSpace X]
+    {μ : Measure α} {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {g : α → X} {x₀ : X}
+    (hg : Continuous g) {r : ι → ℝ} (hr : Tendsto r l atTop) {f : α → ℝ} (hf : 0 ≤ᵐ[μ] f)
+    (hfi : ∀ i, IntegrableOn f (g ⁻¹' Metric.closedBall x₀ (r i)) μ)
+    {c : ℝ} (hc : Tendsto (fun i ↦ ∫ z in g ⁻¹' Metric.closedBall x₀ (r i), f z ∂μ) l (𝓝 c)) :
+    ∫⁻ z, ENNReal.ofReal (f z) ∂μ = ENNReal.ofReal c := by
+  have hφ : AECover μ l fun i ↦ g ⁻¹' Metric.closedBall x₀ (r i) :=
+    ⟨ae_of_all _ fun z ↦ hr.eventually_ge_atTop (dist (g z) x₀),
+      fun _ ↦ (Metric.isClosed_closedBall.preimage hg).measurableSet⟩
+  rw [← ofReal_integral_eq_lintegral_ofReal
+    (hφ.integrable_of_integral_tendsto_of_nonneg_ae c hfi hf hc) hf,
+    hφ.integral_eq_of_tendsto_of_nonneg_ae c hf hfi hc]
 
+end TauCeti

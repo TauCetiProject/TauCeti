@@ -207,7 +207,7 @@ variable (n) in
 /-- The invertible continuous linear maps from `E` to `F`, an open subset of `E →L[ℝ] F`. -/
 private def invertibleOpens : Opens (E →L[ℝ] F) :=
   haveI := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
-  haveI := FiniteDimensional.complete ℝ E
+  haveI := FiniteDimensional.completeSpace ℝ E
   ⟨{T | T.IsInvertible}, ContinuousLinearMap.isOpen_setOfPred_isInvertible⟩
 
 /-- Membership in `invertibleOpens` is invertibility. -/
