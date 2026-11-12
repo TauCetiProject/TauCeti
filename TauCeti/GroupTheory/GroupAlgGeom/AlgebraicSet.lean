@@ -871,11 +871,8 @@ normal closure: the quotient `G[x] ⧸ ncl(x b)` is `G` itself. -/
 theorem Rad_inr_of_mul_inl [Subsingleton X] (hι : Function.Injective ι) (x : X) (b : G) :
     Rad ι {(inr (of x) : GX G X) * inl b} = normalClosure {inr (of x) * inl b} := by
   have := uniqueOfSubsingleton x
-  have hV : V ι {(inr (of x) : GX G X) * inl b} = {ι ∘ fun _ => b⁻¹} := by
-    ext v
-    simp [funext_iff, Unique.forall_iff, Subsingleton.elim default x, mul_eq_one_iff_eq_inv]
-  rw [Rad_def, hV, I_singleton_comp hι]
-  simp [Set.range_unique, Subsingleton.elim default x]
+  simpa [Set.range_unique, Subsingleton.elim default x] using
+    Rad_range_inr_of_mul_inv_inl hι fun _ : X => b⁻¹
 
 /-- Over a group `H` with unique roots and injective coefficients, the radical of the
 one-variable equation `x ^ n * b ^ n = 1` (`n ≠ 0`) is the normal closure of `x * b`. -/
