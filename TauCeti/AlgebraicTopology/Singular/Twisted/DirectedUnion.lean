@@ -199,19 +199,11 @@ def isColimitSubsetTwistedChainComplexCocone :
       (Types.FilteredColimit.isColimitOf' _ _ (fun z ↦ ?_) fun j y y' h ↦ ⟨j, 𝟙 j, ?_⟩)
     · obtain ⟨j, y, hy⟩ := exists_subsetTwistedChainComplexMap_f_eq L hUV hK z
       exact ⟨j, y, hy.symm⟩
-    · -- The legs are injective: followed by the injective map to the chains of `X`, they give
-      -- the injective map from the chains of `U j`.
-      have hinj : Function.Injective ((twistedChainComplexMap
-          (TopCat.ofHom (ContinuousMap.subtypeVal (U j))) L).f n).hom :=
-        (ModuleCat.mono_iff_injective _).1 (IsSplitMono.mono _)
-      refine congrArg _ (hinj ?_)
-      -- `h` says that `y` and `y'` have the same image under the leg at `j`.
-      have h' : ((subsetTwistedChainComplexMap L (hUV j)).f n).hom y =
-          ((subsetTwistedChainComplexMap L (hUV j)).f n).hom y' := h
-      have hV := congrArg ((twistedChainComplexMap
-        (TopCat.ofHom (ContinuousMap.subtypeVal V)) L).f n).hom h'
-      exact (twistedChainComplexMap_f_subsetTwistedChainComplexMap_f_apply L (hUV j) y).symm.trans
-        (hV.trans (twistedChainComplexMap_f_subsetTwistedChainComplexMap_f_apply L (hUV j) y'))
+    · -- The legs are injective: followed by the split mono to the chains of `X`, they give the
+      -- split mono from the chains of `U j`.
+      have : Mono ((subsetTwistedChainComplexMap L (hUV j)).f n) := mono_of_mono_fac (by
+        rw [← HomologicalComplex.comp_f, subsetTwistedChainComplexMap_twistedChainComplexMap])
+      exact congrArg _ ((ModuleCat.mono_iff_injective _).1 this h)
 
 include hK in
 /-- **Twisted singular homology has compact supports.** For a monotone directed family `U` of

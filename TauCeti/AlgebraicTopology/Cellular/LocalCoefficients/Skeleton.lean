@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients
 public import TauCeti.AlgebraicTopology.Singular.Twisted.DirectedUnion
+public import TauCeti.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 
 /-!
@@ -99,13 +99,12 @@ theorem isIso_homologyMap_subsetTwistedChainComplexMap_skeletonLT_succ {n k : �
   let e := (pullbackCompIso
     (TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_subset_skeletonLT_succ C n))).hom
     (TopCat.ofHom (ContinuousMap.subtypeVal _)).hom).app L
-  have he : IsIso (HomologicalComplex.homologyMap (twistedChainComplexCoefficientMap e.hom) k) := by
-    rw [← twistedChainComplexCoefficientIso_hom]
-    exact (HomologicalComplex.homologyMapIso (twistedChainComplexCoefficientIso e) k).isIso_hom
+  -- The two factors meet only up to unfolding the pulled-back coefficient systems, so their
+  -- quasi-isomorphism instances are supplied by name.
   rw [subsetTwistedChainComplexMap_def]
-  exact (HomologicalComplex.homologyMap_comp (twistedChainComplexCoefficientMap e.hom)
-    (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion
-      (skeletonLT_subset_skeletonLT_succ C n))) L') k).symm ▸ IsIso.comp_isIso' he hP
+  exact (quasiIsoAt_iff_isIso_homologyMap _ k).1 (quasiIsoAt_comp _ _ k
+    (hφ := quasiIsoAt_of_isIso (twistedChainComplexCoefficientMap e.hom) k)
+    (hφ' := (quasiIsoAt_iff_isIso_homologyMap _ k).2 hP))
 
 /-- **Twisted homology of a relative CW complex from a skeleton.** For `k + 2 ≤ m`, the inclusion
 of the skeleton `skeletonLT C m` into the complex induces an isomorphism
@@ -117,20 +116,10 @@ theorem isIso_homologyMap_subsetTwistedChainComplexMap_skeletonLT {m k : ℕ} (h
   -- constant, so the colimit over the skeleta is attained there.
   have hconst : (subsetTwistedChainComplexDiagram L
       (U := fun n : ℕ ↦ (skeletonLT C (n : ℕ∞) : Set X)) (fun _ _ h ↦ skeletonLT_mono (mod_cast h))
-      ⋙ HomologicalComplex.homologyFunctor _ _ k).IsEventuallyConstantFrom m := by
-    intro j φ
-    induction j, φ.le using Nat.le_induction with
-    | base => rw [Subsingleton.elim φ (𝟙 _), CategoryTheory.Functor.map_id]; infer_instance
-    | succ j hj ih =>
-      rw [Subsingleton.elim φ (homOfLE hj ≫ homOfLE j.le_succ), Functor.map_comp]
-      have := ih (homOfLE hj)
-      -- The diagram sends `j ≤ j + 1` to the map induced by the inclusion of consecutive skeleta.
-      have : IsIso ((subsetTwistedChainComplexDiagram L
-          (U := fun n : ℕ ↦ (skeletonLT C (n : ℕ∞) : Set X))
-          (fun _ _ h ↦ skeletonLT_mono (mod_cast h)) ⋙
-            HomologicalComplex.homologyFunctor _ _ k).map (homOfLE j.le_succ)) :=
-        isIso_homologyMap_subsetTwistedChainComplexMap_skeletonLT_succ C L (by lia) (by lia)
-      infer_instance
+      ⋙ HomologicalComplex.homologyFunctor _ _ k).IsEventuallyConstantFrom m :=
+    -- The diagram sends `j ≤ j + 1` to the map induced by the inclusion of consecutive skeleta.
+    Functor.isEventuallyConstantFrom_of_isIso_map_succ fun j hj ↦
+      isIso_homologyMap_subsetTwistedChainComplexMap_skeletonLT_succ C L (by lia) (by lia)
   exact hconst.isIso_ι_of_isColimit (isColimitSkeletonTwistedHomologyCocone C L k)
 
 end TauCeti
