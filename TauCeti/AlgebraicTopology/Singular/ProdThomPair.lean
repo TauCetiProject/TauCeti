@@ -49,6 +49,8 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.prodThomPairFiberMap`: the inclusion of the fibre pair `(F, F ∖ {0})` over a point.
 * `TauCeti.prodThomPairSnd`: the projection onto the fibre pair, a retraction of each fibre
   inclusion (`TauCeti.prodThomPairFiberMap_comp_prodThomPairSnd`).
+* `TauCeti.complZeroPairIsoProdThomPair`: over a point, the fibre inclusion is an isomorphism of
+  pairs.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
@@ -145,6 +147,16 @@ theorem prodThomPairSnd_comp_prodThomPairFiberMap :
   TopPair.hom_ext_of_fst _ (TopCat.ext fun p ↦
     (prodThomPairFiberMap_fst_apply F _ _).trans
       (congrArg (Prod.mk PUnit.unit) (prodThomPairSnd_fst_apply F p)))
+
+/-- Over a point, the fibre inclusion is an isomorphism from the pair `(F, F ∖ {0})` onto the Thom
+pair of the product bundle, with inverse the projection to the fibre. -/
+@[expose, simps]
+def complZeroPairIsoProdThomPair :
+    TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) ≅ prodThomPair PUnit.{w + 1} F where
+  hom := prodThomPairFiberMap F PUnit.unit
+  inv := prodThomPairSnd PUnit.{w + 1} F
+  hom_inv_id := prodThomPairFiberMap_comp_prodThomPairSnd F _
+  inv_hom_id := prodThomPairSnd_comp_prodThomPairFiberMap F
 
 end Defs
 

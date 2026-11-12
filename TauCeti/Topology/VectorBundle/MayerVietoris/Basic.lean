@@ -435,6 +435,28 @@ theorem singularHomology_thomPairOver_mayerVietoris_zero (n : ℕ) :
       0 := by
   simp [← TopPair.singularHomologyMap_comp]
 
+/-- The second map of the Mayer–Vietoris sequence of the Thom pairs over `U` and `V` in homology is
+that of the pairs `(E|_U, E₀|_U)` and `(E|_V, E₀|_V)` of subspaces of `E`, followed by the
+identification of their union pair with the Thom pair over `U ∪ V`. -/
+private theorem biprod_desc_singularHomologyMap_thomPairOverMap (n : ℕ) :
+    biprod.desc
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R n) =
+      TopCat.pairMayerVietorisFromBiprod R (X := TopCat.of (TotalSpace F E))
+          (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
+          (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n ≫
+        TopPair.singularHomologyMap (thomPairOverUnionIso F E U V).hom R n := by
+  refine biprod.hom_ext' _ _ ?_ ?_
+  · simp only [biprod.inl_desc, TopCat.inl_pairMayerVietorisFromBiprod_assoc,
+      ← TopPair.singularHomologyMap_comp]
+    exact congrArg (TopPair.singularHomologyMap · R n)
+      (ofInclusionMap_comp_thomPairOverUnionIso_hom_left (F := F) (E := E) (U := U) (V := V)).symm
+  · simp only [biprod.inr_desc, TopCat.inr_pairMayerVietorisFromBiprod_assoc,
+      ← TopPair.singularHomologyMap_comp]
+    exact congrArg (TopPair.singularHomologyMap · R n)
+      (ofInclusionMap_comp_thomPairOverUnionIso_hom_right (F := F) (E := E) (U := U)
+        (V := V)).symm
+
 variable [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
 
 /-- **Exactness of the Mayer–Vietoris sequence of Thom pairs in homology** at
@@ -446,10 +468,8 @@ theorem singularHomology_thomPairOver_mayerVietoris_exact (hU : IsOpen U) (hV : 
     (ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_zero (F := F) (E := E)
       (U := U) (V := V) R n)).Exact := by
   obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
-  let hCA : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U := inter_subset_left
-  let hDB : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V := inter_subset_left
-  refine (ShortComplex.exact_iff_of_iso ?_).2
-    (TopCat.pairMayerVietoris_exact₂ R (X := TopCat.of (TotalSpace F E)) hCA hDB hA hB hC hD n)
+  refine (ShortComplex.exact_iff_of_iso ?_).2 (TopCat.pairMayerVietoris_exact₂ R
+    (X := TopCat.of (TotalSpace F E)) inter_subset_left inter_subset_left hA hB hC hD n)
   refine ShortComplex.isoMk (asIso (TopPair.singularHomologyMap
       (thomPairOverInterIso F E U V).hom R n)) (Iso.refl _)
     (asIso (TopPair.singularHomologyMap (thomPairOverUnionIso F E U V).inv R n)) ?_ ?_
@@ -463,17 +483,10 @@ theorem singularHomology_thomPairOver_mayerVietoris_exact (hU : IsOpen U) (hV : 
         ← TopPair.singularHomologyMap_comp, asIso_hom]
       exact congrArg (fun f ↦ -TopPair.singularHomologyMap f R n)
         (thomPairOverInterIso_hom_comp_ofInclusionMap_right (F := F) (E := E) (U := U) (V := V))
-  · refine biprod.hom_ext' _ _ ?_ ?_
-    · simp only [Iso.refl_hom, Category.id_comp, TopCat.inl_pairMayerVietorisFromBiprod,
-        biprod.inl_desc_assoc, asIso_hom, ← TopPair.singularHomologyMap_comp]
-      exact congrArg (TopPair.singularHomologyMap · R n)
-        ((Iso.eq_comp_inv _).2 (ofInclusionMap_comp_thomPairOverUnionIso_hom_left (F := F)
-          (E := E) (U := U) (V := V)))
-    · simp only [Iso.refl_hom, Category.id_comp, TopCat.inr_pairMayerVietorisFromBiprod,
-        biprod.inr_desc_assoc, asIso_hom, ← TopPair.singularHomologyMap_comp]
-      exact congrArg (TopPair.singularHomologyMap · R n)
-        ((Iso.eq_comp_inv _).2 (ofInclusionMap_comp_thomPairOverUnionIso_hom_right (F := F)
-          (E := E) (U := U) (V := V)))
+  · simp only [Iso.refl_hom, Category.id_comp, asIso_hom,
+      biprod_desc_singularHomologyMap_thomPairOverMap, Category.assoc,
+      ← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id,
+      Category.comp_id]
 
 /-- **The end of the Mayer–Vietoris sequence of Thom pairs in homology**: for open sets `U` and `V`
 of the base, if `Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (or `n = 0`), every class over `U ∪ V` is
@@ -485,37 +498,15 @@ theorem epi_singularHomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpen V) 
       (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R
         n)) := by
   obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
-  let hCA : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U := inter_subset_left
-  let hDB : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V := inter_subset_left
-  have hepi : Epi (TopCat.pairMayerVietorisFromBiprod R (X := TopCat.of (TotalSpace F E))
-      hCA hDB n) := by
-    cases n with
-    | zero => exact TopCat.epi_pairMayerVietorisFromBiprod_zero R hCA hDB hA hB hC hD
-    | succ m =>
-      refine (TopCat.pairMayerVietoris_exact₃ R hCA hDB hA hB hC hD (m + 1) m).epi_f
-        (IsZero.eq_of_tgt ?_ _ _)
-      exact (hUV m rfl).of_iso
-        (asIso (TopPair.singularHomologyMap (thomPairOverInterIso F E U V).inv R m))
-  -- The second map of the sequence of the Thom pairs is that of the pairs `(E|_U ∪ E|_V, …)`,
-  -- followed by the identification of that pair with the Thom pair over `U ∪ V`.
-  have h : biprod.desc
-      (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
-      (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R n) =
-        TopCat.pairMayerVietorisFromBiprod R (X := TopCat.of (TotalSpace F E)) hCA hDB n ≫
-          TopPair.singularHomologyMap (thomPairOverUnionIso F E U V).hom R n := by
-    refine biprod.hom_ext' _ _ ?_ ?_
-    · simp only [biprod.inl_desc, TopCat.inl_pairMayerVietorisFromBiprod_assoc,
-        ← TopPair.singularHomologyMap_comp]
-      exact congrArg (TopPair.singularHomologyMap · R n)
-        (ofInclusionMap_comp_thomPairOverUnionIso_hom_left (F := F) (E := E) (U := U)
-          (V := V)).symm
-    · simp only [biprod.inr_desc, TopCat.inr_pairMayerVietorisFromBiprod_assoc,
-        ← TopPair.singularHomologyMap_comp]
-      exact congrArg (TopPair.singularHomologyMap · R n)
-        (ofInclusionMap_comp_thomPairOverUnionIso_hom_right (F := F) (E := E) (U := U)
-          (V := V)).symm
-  rw [h]
-  exact epi_comp _ _
+  rw [biprod_desc_singularHomologyMap_thomPairOverMap]
+  refine epi_comp' ?_ inferInstance
+  cases n with
+  | zero => exact TopCat.epi_pairMayerVietorisFromBiprod_zero R _ _ hA hB hC hD
+  | succ m =>
+    refine (TopCat.pairMayerVietoris_exact₃ R _ _ hA hB hC hD (m + 1) m).epi_f
+      (IsZero.eq_of_tgt ?_ _ _)
+    exact (hUV m rfl).of_iso
+      (asIso (TopPair.singularHomologyMap (thomPairOverInterIso F E U V).inv R m))
 
 end HomologyGluing
 
