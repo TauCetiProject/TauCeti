@@ -109,16 +109,13 @@ lemma homologyMap_biprod_map_comp_homologyBiprodIso_hom {A' B' : HomologicalComp
     (g₁ : A ⟶ A') (g₂ : B ⟶ B') (i : ι) :
     homologyMap (biprod.map g₁ g₂) i ≫ (homologyBiprodIso A' B' i).hom =
       (homologyBiprodIso A B i).hom ≫ biprod.map (homologyMap g₁ i) (homologyMap g₂ i) := by
-  -- Write both biproduct isomorphisms and `biprod.map` through `biprod.lift`.
-  have hA : (homologyBiprodIso A B i).hom =
-      biprod.lift (homologyMap biprod.fst i) (homologyMap biprod.snd i) := by
-    rw [← homologyMap_biprod_lift_comp_homologyBiprodIso_hom,
-      show biprod.lift biprod.fst biprod.snd = 𝟙 (A ⊞ B) by apply biprod.hom_ext <;> simp,
-      homologyMap_id, Category.id_comp]
-  have hmap : biprod.map g₁ g₂ = biprod.lift (biprod.fst ≫ g₁) (biprod.snd ≫ g₂) := by
-    apply biprod.hom_ext <;> simp
-  rw [hmap, homologyMap_biprod_lift_comp_homologyBiprodIso_hom, hA]
-  apply biprod.hom_ext <;> simp [homologyMap_comp]
+  -- `Functor.mapBiprod_hom`, restated so that the lift lands in the biproduct of the homologies
+  -- with its default instance rather than `Functor.hasBinaryBiproduct_of_preserves`.
+  have hA (X Y : HomologicalComplex C c) : (homologyBiprodIso X Y i).hom =
+      biprod.lift (homologyMap biprod.fst i) (homologyMap biprod.snd i) :=
+    Functor.mapBiprod_hom _ _ _
+  rw [hA, hA]
+  apply biprod.hom_ext <;> simp [← homologyMap_comp]
 
 /-- A biproduct of quasi-isomorphisms is a quasi-isomorphism. -/
 instance quasiIso_biprod_map {A' B' : HomologicalComplex C c} (g₁ : A ⟶ A') (g₂ : B ⟶ B')
