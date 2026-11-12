@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Local.W1p
-import TauCeti.Analysis.Sobolev.MorreyExponent
+import TauCeti.Analysis.Sobolev.Morrey.Exponent
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
@@ -75,43 +75,26 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {q s : ℝ≥0}
   [Fact (1 ≤ (q : ℝ≥0∞))] {Ω W : Opens ℂ} {V : Set ℂ} {k : ℕ} {u : ℂ → F}
 
-/-- A bound for the values of `W1p volume W q` in `L^t(V)` passes to real members of
-`W^{1,q}_loc(W)`, with their `W^{1,q}(W)` norm on the right. -/
+/-- A bound for the values of `W1p volume W q` in `L^t(V)` passes to real functions, with their
+`W^{1,q}(W)` norm on the right. -/
 private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_real {t : ℝ≥0∞} (hVW : closure V ⊆ W)
     (hW1p : ∃ C : ℝ≥0, ∀ v : W1p volume W (q : ℝ≥0∞),
       eLpNorm (W1p.value v) t (volume.restrict V) ≤ C * ‖v‖ₑ) :
-    ∃ C : ℝ≥0, ∀ u : ℂ → ℝ, MemWkpLoc q W 1 u →
-      eLpNorm u t (volume.restrict V) ≤ C * eLpNormWkp q W 1 u := by
+    ∃ C : ℝ≥0, ∀ u : ℂ → ℝ, eLpNorm u t (volume.restrict V) ≤ C * eLpNormWkp q W 1 u := by
   obtain ⟨C, hC⟩ := hW1p
-  refine ⟨C + 1, fun u hu => ?_⟩
-  obtain ⟨D, hD, -⟩ := hu.exists_weakFDeriv_of_isOpen
-  rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD, eLpNormWkp_zero]
-  by_cases hfin : eLpNorm u q (volume.restrict W) + eLpNorm D q (volume.restrict W) = ∞
+  refine ⟨C + 1, fun u => ?_⟩
+  by_cases hfin : eLpNormWkp q W 1 u = ∞
   · rw [hfin, ENNReal.mul_top (by simp)]
     exact le_top
-  have hu1 : MemLp u q (volume.restrict W) :=
-    lt_of_le_of_lt le_self_add (lt_top_iff_ne_top.2 hfin)
-  have hD1 : MemLp D q (volume.restrict W) :=
-    lt_of_le_of_lt le_add_self (lt_top_iff_ne_top.2 hfin)
-  obtain ⟨v, hv, hg⟩ := W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn hu1 hD1 hD
-  have hnorm : ‖v‖ₑ ≤ eLpNorm u q (volume.restrict W) + eLpNorm D q (volume.restrict W) := by
-    have h1 : ‖v‖ₑ ≤ ‖W1p.value v‖ₑ + ‖W1p.gradient v‖ₑ := by
-      rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
-        ← ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _)]
-      exact ENNReal.ofReal_le_ofReal (W1p.norm_le_norm_value_add_norm_gradient v)
-    refine h1.trans (add_le_add (le_of_eq ?_) (le_of_eq ?_))
-    · rw [Lp.enorm_def, eLpNorm_congr_ae hv]
-    · rw [Lp.enorm_def]
-      exact eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hD1.aestronglyMeasurable
-        (hg.mono fun z hz => by rw [hz, LinearIsometryEquiv.norm_map])
+  obtain ⟨v, hv, hnorm⟩ := exists_w1p_enorm_le_eLpNormWkp hfin
   calc eLpNorm u t (volume.restrict V)
       = eLpNorm (W1p.value v) t (volume.restrict V) :=
         eLpNorm_congr_ae (Filter.EventuallyEq.symm
           (ae_restrict_of_ae_restrict_of_subset (subset_closure.trans hVW) hv))
     _ ≤ C * ‖v‖ₑ := hC v
-    _ ≤ (C + 1 : ℝ≥0) * (eLpNorm u q (volume.restrict W) + eLpNorm D q (volume.restrict W)) := by
+    _ ≤ (C + 1 : ℝ≥0) * eLpNormWkp q W 1 u := by
         gcongr
-        · exact_mod_cast le_self_add
+        exact_mod_cast le_self_add
 
 variable [FiniteDimensional ℝ F]
 
@@ -126,7 +109,7 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p {t : ℝ≥0∞} (ht
   set b := Module.finBasis ℝ F
   set ℓ : Fin (finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
   set A : Fin (finrank ℝ F) → ℝ →L[ℝ] F := fun i => (ContinuousLinearMap.id ℝ ℝ).smulRight (b i)
-  refine ⟨∑ i, ‖A i‖₊ * C * ‖ℓ i‖₊, fun u hu => ?_⟩
+  refine ⟨∑ i, ‖A i‖₊ * C * ‖ℓ i‖₊, fun u _ => ?_⟩
   have hsum : u = ∑ i, fun z => A i (ℓ i (u z)) := by
     funext z
     simp only [Finset.sum_apply, A, ℓ, ContinuousLinearMap.smulRight_apply,
@@ -141,7 +124,7 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p {t : ℝ≥0∞} (ht
         exact eLpNorm_clm_comp_le (A i)
     _ ≤ ∑ i, ‖A i‖ₑ * (C * (‖ℓ i‖ₑ * eLpNormWkp q W 1 u)) := by
         gcongr with i
-        exact (hC _ (hu.clm_comp (ℓ i))).trans (by gcongr; exact eLpNormWkp_clm_comp_le (ℓ i))
+        exact (hC _).trans (by gcongr; exact eLpNormWkp_clm_comp_le (ℓ i))
     _ = (∑ i, ‖A i‖₊ * C * ‖ℓ i‖₊ : ℝ≥0) * eLpNormWkp q W 1 u := by
         push_cast
         rw [Finset.sum_mul]

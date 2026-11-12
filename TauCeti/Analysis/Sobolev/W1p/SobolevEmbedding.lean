@@ -332,9 +332,7 @@ theorem W1p.exists_eLpNorm_value_le_of_gain_le
     calc eLpNorm (W1p.value u) q (μ.restrict V)
         ≤ ‖W1p.value u‖ₑ := (eLpNorm_mono_measure _
           (Measure.restrict_mono_set μ (subset_closure.trans hVΩ))).trans_eq (Lp.enorm_def _).symm
-      _ ≤ ‖u‖ₑ := by
-        rw [← ofReal_norm, ← ofReal_norm]
-        exact ENNReal.ofReal_le_ofReal (W1p.norm_value_le u)
+      _ ≤ ‖u‖ₑ := W1p.enorm_value_le u
   rcases hgap.lt_or_eq with hlt | heq
   · exact W1p.exists_eLpNorm_value_le_of_subcritical_gain hqs hlt hVc hVΩ
   have hq : (1 : ℝ≥0) ≤ q := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ q)
