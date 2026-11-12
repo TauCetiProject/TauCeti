@@ -429,18 +429,8 @@ correspond `k`-linearly to `k`-linear maps `M_0 →ₗ[k] V`. -/
 def coinducedSingleHomEquiv (M : GradedModuleCat.{max uA v} 𝒜)
     (V : Type v) [AddCommGroup V] [Module k V] :
     (M ⟶ coinducedSingle 𝒜 V) ≃ₗ[k] (M.grading.piece 0 →ₗ[k] V) :=
-  let e : coinducedSingle 𝒜 V ≅ (coinducedSingle 𝒜 V).shiftObj 0 :=
-    isoMk (LinearEquiv.refl A _) fun p x ↦ by simp
-  { toFun := fun Ψ ↦ coinducedSingleShiftHomEquiv M V 0 (Ψ ≫ e.hom)
-    invFun := fun f ↦ (coinducedSingleShiftHomEquiv M V 0).symm f ≫ e.inv
-    left_inv := fun Ψ ↦ by
-      dsimp only
-      rw [LinearEquiv.symm_apply_apply, Category.assoc, Iso.hom_inv_id, Category.comp_id]
-    right_inv := fun f ↦ by
-      dsimp only
-      rw [Category.assoc, Iso.inv_hom_id, Category.comp_id, LinearEquiv.apply_symm_apply]
-    map_add' := fun Ψ₁ Ψ₂ ↦ by simp [Preadditive.add_comp]
-    map_smul' := fun c Ψ ↦ by simp [Linear.smul_comp] }
+  (Linear.homCongr k (Iso.refl M) ((shiftFunctorZeroIso 𝒜).app (coinducedSingle 𝒜 V)).symm).trans
+    (coinducedSingleShiftHomEquiv M V 0)
 
 /-- Evaluating a degree-zero coinduced morphism reads its values on `M_0` at `1 : A`. -/
 @[simp]
@@ -448,8 +438,7 @@ theorem coinducedSingleHomEquiv_apply (M : GradedModuleCat.{max uA v} 𝒜)
     (V : Type v) [AddCommGroup V] [Module k V]
     (Ψ : M ⟶ coinducedSingle 𝒜 V) (x : M.grading.piece 0) :
     coinducedSingleHomEquiv M V Ψ x = coinducedSingleApply (Ψ.hom x) 1 := by
-  rw [coinducedSingleHomEquiv]
-  simp
+  simp [coinducedSingleHomEquiv, Linear.homCongr_apply]
 
 /-- Precomposing a morphism into `coinducedSingle 𝒜 V` restricts the degree-zero map along the
 source morphism. -/
@@ -548,33 +537,20 @@ instance enoughInjectives [Small.{max uA v} k] :
       (fun j : ULift.{max uA v} ℤ ↦ P j.down)
     let f : M ⟶ Q := (coinducedHomEquiv M).symm fun j ↦ (ι j.down).hom
     have hf : Function.Injective f.hom := by
-      intro x y hxy
-      suffices hzero : x - y = 0 from sub_eq_zero.mp hzero
-      have hx : f.hom (x - y) = 0 := by rw [map_sub, hxy, sub_self]
-      set z := x - y
+      rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+      intro z hz
       apply (DirectSum.decompose M.grading.piece).injective
       rw [DirectSum.decompose_zero]
-      apply DirectSum.ext
-      intro s
-      have hinj : Function.Injective (ι s).hom :=
-        (ModuleCat.mono_iff_injective (ι s)).mp inferInstance
-      apply hinj
+      refine DirectSum.ext fun s ↦ ((ModuleCat.mono_iff_injective (ι s)).mp inferInstance) ?_
+      have hfac : f ≫ productπ _ (ULift.up s) = coinducedSingleShiftLift s (ι s).hom :=
+        productLift_π (fun j : ULift.{max uA v} ℤ ↦ (coinducedSingle 𝒜 (P j.down)).shiftObj j.down)
+          _ (ULift.up s)
+      have heval := congrArg
+        (fun g : M ⟶ (coinducedSingle 𝒜 (P s)).shiftObj s ↦ coinducedSingleApply (g.hom z) 1) hfac
+      rw [hom_comp, LinearMap.comp_apply, LinearMap.mem_ker.mp hz, map_zero, map_zero,
+        LinearMap.zero_apply, coinducedSingleApply_coinducedSingleShiftLift, one_smul] at heval
       rw [DirectSum.zero_apply, map_zero]
-      have hproj : (f ≫ productπ _ (ULift.up s)).hom z = 0 := by
-        rw [hom_comp, LinearMap.comp_apply, hx, map_zero]
-      have h1 : coinducedSingleApply ((f ≫ productπ _ (ULift.up s)).hom z) 1 = 0 := by
-        rw [hproj, map_zero, LinearMap.zero_apply]
-      have hfac : f ≫ productπ _ (ULift.up s) = coinducedSingleShiftLift s (ι s).hom := by
-        simpa only [f, coinducedHomEquiv, LinearEquiv.coe_symm_mk,
-          coinducedSingleShiftHomEquiv_symm_apply] using
-          productLift_π
-            (fun j : ULift.{max uA v} ℤ ↦ (coinducedSingle 𝒜 (P j.down)).shiftObj j.down)
-            (fun j ↦ (coinducedSingleShiftHomEquiv M (P j.down) j.down).symm (ι j.down).hom)
-            (ULift.up s)
-      have h2 : coinducedSingleApply ((f ≫ productπ _ (ULift.up s)).hom z) 1 =
-          (ι s).hom (DirectSum.decompose M.grading.piece z s) := by
-        rw [hfac, coinducedSingleApply_coinducedSingleShiftLift, one_smul]
-      exact h2.symm.trans h1
+      exact heval.symm
     have : Mono f := (mono_iff_injective f).mpr hf
     exact ⟨{ J := Q, f := f }⟩
 

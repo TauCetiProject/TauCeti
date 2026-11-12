@@ -87,14 +87,9 @@ private structure InducedCarrier (d : A →ₗ[R] A) (N : Type uN) where
 
 namespace InducedCarrier
 
-section AddGroup
+section ModuleBase
 
-variable {N : Type uN}
-
-private theorem val_injective : Function.Injective (InducedCarrier.val (d := d) (N := N)) :=
-  fun _ _ ↦ InducedCarrier.ext
-
-variable [AddCommGroup N]
+variable {N : Type uN} [AddCommGroup N]
 
 private instance : Zero (InducedCarrier d N) := ⟨⟨0⟩⟩
 private instance : Add (InducedCarrier d N) := ⟨fun z₁ z₂ ↦ ⟨z₁.val + z₂.val⟩⟩
@@ -106,28 +101,18 @@ private instance : SMul ℤ (InducedCarrier d N) := ⟨fun n z ↦ ⟨n • z.va
 @[simp] private theorem val_zero : (0 : InducedCarrier d N).val = 0 := rfl
 @[simp] private theorem val_add (z₁ z₂ : InducedCarrier d N) :
     (z₁ + z₂).val = z₁.val + z₂.val := rfl
-@[simp] private theorem val_neg (z : InducedCarrier d N) : (-z).val = -z.val := rfl
-@[simp] private theorem val_sub (z₁ z₂ : InducedCarrier d N) :
-    (z₁ - z₂).val = z₁.val - z₂.val := rfl
-@[simp] private theorem val_nsmul (z : InducedCarrier d N) (n : ℕ) : (n • z).val = n • z.val := rfl
-@[simp] private theorem val_zsmul (z : InducedCarrier d N) (n : ℤ) : (n • z).val = n • z.val := rfl
 
 private instance : AddCommGroup (InducedCarrier d N) :=
-  val_injective.addCommGroup _ val_zero val_add val_neg val_sub val_nsmul val_zsmul
+  Function.Injective.addCommGroup InducedCarrier.val (fun _ _ ↦ InducedCarrier.ext)
+    rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
-end AddGroup
-
-section ModuleBase
-
-variable {N : Type uN} [AddCommGroup N] [Module R N]
+variable [Module R N]
 
 private instance : SMul R (InducedCarrier d N) := ⟨fun r z ↦ ⟨r • z.val⟩⟩
 
-@[simp] private theorem val_smul_base (r : R) (z : InducedCarrier d N) :
-    (r • z).val = r • z.val := rfl
-
 private instance : Module R (InducedCarrier d N) :=
-  val_injective.module R ⟨⟨InducedCarrier.val, val_zero⟩, val_add⟩ val_smul_base
+  Function.Injective.module R ⟨⟨InducedCarrier.val, rfl⟩, fun _ _ ↦ rfl⟩
+    (fun _ _ ↦ InducedCarrier.ext) (fun _ _ ↦ rfl)
 
 /-- The `R`-linear equivalence unwrapping `InducedCarrier`. -/
 private def valEquiv : InducedCarrier d N ≃ₗ[R] N × N where
@@ -139,8 +124,6 @@ private def valEquiv : InducedCarrier d N ≃ₗ[R] N × N where
   map_smul' _ _ := rfl
 
 @[simp] private theorem valEquiv_apply (z : InducedCarrier d N) : valEquiv (d := d) z = z.val := rfl
-@[simp] private theorem valEquiv_symm_apply (z : N × N) :
-    (valEquiv (d := d)).symm z = ⟨z⟩ := rfl
 
 end ModuleBase
 
@@ -421,26 +404,17 @@ theorem inducedEquiv_differential (h : IsCurvedDGAlgebra 𝒜 d w)
 
 open CategoryTheory
 
-/-- Underlying right-linear map `x ↦ (x, 0)` into `inducedObj h N`. -/
-private noncomputable def inducedInlLinear (h : IsCurvedDGAlgebra 𝒜 d w)
-    (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
-    N →ₗ[Aᵐᵒᵖ] inducedObj h N where
-  toFun x := (inducedEquiv h N).symm (x, 0)
-  map_add' x₁ x₂ := by
-    apply (inducedEquiv h N).injective
-    simp
-  map_smul' a x := by
-    apply (inducedEquiv h N).injective
-    simp
-
 /-- The natural graded right-module inclusion `N ⟶ U(G⁺ N)` sending `x` to `(x, 0)`. -/
 noncomputable def inducedInl (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
     N ⟶ toGradedModuleCat (inducedObj h N) :=
-  GradedModuleCat.ofHom (inducedInlLinear h N)
+  GradedModuleCat.ofHom
+    ({ toFun x := (inducedEquiv h N).symm (x, 0)
+       map_add' _ _ := (inducedEquiv h N).injective (by simp)
+       map_smul' _ _ := (inducedEquiv h N).injective (by simp) } : N →ₗ[Aᵐᵒᵖ] inducedObj h N)
     (LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
       rw [toGradedModuleCat_piece, mem_inducedObj_grading_iff]
-      simpa [inducedInlLinear] using hx)
+      simpa using hx)
 
 /-- The graded inclusion `inducedInl` sends `x` to `(x, 0)` in `N × N`. -/
 @[simp]
@@ -450,19 +424,14 @@ theorem inducedEquiv_inducedInl_apply (h : IsCurvedDGAlgebra 𝒜 d w)
   rw [inducedInl]
   exact (inducedEquiv h N).apply_symm_apply (x, 0)
 
-/-- Underlying right-linear map `(x, y) ↦ y` out of `inducedObj h N`. -/
-private noncomputable def inducedSndLinear (h : IsCurvedDGAlgebra 𝒜 d w)
-    (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
-    inducedObj h N →ₗ[Aᵐᵒᵖ] N where
-  toFun z := (inducedEquiv h N z).2
-  map_add' z₁ z₂ := by simp
-  map_smul' a z := by simp
-
 /-- The natural graded right-module projection `U(G⁺ N) ⟶ N{1}` sending `(x, y)` to `y`. -/
 noncomputable def inducedSnd (h : IsCurvedDGAlgebra 𝒜 d w)
     (N : GradedModuleCat.{uN} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
     toGradedModuleCat (inducedObj h N) ⟶ N.shiftObj 1 :=
-  GradedModuleCat.ofHom (inducedSndLinear h N)
+  GradedModuleCat.ofHom
+    ({ toFun z := (inducedEquiv h N z).2
+       map_add' _ _ := by simp
+       map_smul' _ _ := by simp } : inducedObj h N →ₗ[Aᵐᵒᵖ] N)
     (LinearMap.isHomogeneous_def.2 fun p z hz ↦ by
       rw [toGradedModuleCat_piece, mem_inducedObj_grading_iff] at hz
       rw [GradedModuleCat.mem_shiftObj_piece_iff, add_zero]
@@ -493,8 +462,7 @@ theorem inducedShortComplex_shortExact (h : IsCurvedDGAlgebra 𝒜 d w)
     (ShortComplex.mk (inducedInl h N) (inducedSnd h N)
       (inducedInl_comp_inducedSnd h N)).ShortExact where
   mono_f := (GradedModuleCat.mono_iff_injective _).2 fun x₁ x₂ hx ↦ by
-    have h₁ := congrArg (fun z : inducedObj h N ↦ (inducedEquiv h N z).1) hx
-    simpa using h₁
+    simpa using congrArg (fun z : inducedObj h N ↦ (inducedEquiv h N z).1) hx
   epi_g := (GradedModuleCat.epi_iff_surjective _).2 fun y ↦
     ⟨(inducedEquiv h N).symm (0, y), by
       change (inducedSnd h N).hom ((inducedEquiv h N).symm (0, y)) = y
@@ -502,13 +470,10 @@ theorem inducedShortComplex_shortExact (h : IsCurvedDGAlgebra 𝒜 d w)
   exact := GradedModuleCat.exact_iff.2 fun z ↦ by
     change (inducedSnd h N).hom z = 0 ↔ _
     rw [inducedSnd_apply]
-    refine ⟨fun hz ↦ ⟨(inducedEquiv h N z).1, ?_⟩, ?_⟩
-    · apply inducedObj_ext
-      · rw [inducedEquiv_inducedInl_apply]
-      · rw [inducedEquiv_inducedInl_apply]
-        exact hz.symm
-    · rintro ⟨x, rfl⟩
-      rw [inducedEquiv_inducedInl_apply]
+    refine ⟨fun hz ↦ ⟨(inducedEquiv h N z).1, ?_⟩, fun ⟨x, hx⟩ ↦ ?_⟩
+    · exact inducedObj_ext (by rw [inducedEquiv_inducedInl_apply])
+        (by rw [inducedEquiv_inducedInl_apply]; exact hz.symm)
+    · rw [← hx, inducedEquiv_inducedInl_apply]
 
 /-- If `P` is a projective graded right module, the underlying graded right module of `G⁺ P` is
 projective. -/
@@ -534,40 +499,30 @@ attribute [local implicit_reducible] ForgetEnrichment dgClosedToHomotopy
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
 
-/-- Underlying `Aᵐᵒᵖ`-linear map `(x, y) ↦ (f x, f y)` induced on `G⁺` by a graded morphism `f`. -/
-private noncomputable def inducedMapLinear (h : IsCurvedDGAlgebra 𝒜 d w)
-    {N₁ N₂ : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
-    (f : N₁ ⟶ N₂) : inducedObj h N₁ →ₗ[Aᵐᵒᵖ] inducedObj h N₂ where
-  toFun z := (inducedEquiv h N₂).symm (f.hom (inducedEquiv h N₁ z).1, f.hom (inducedEquiv h N₁ z).2)
-  map_add' z₁ z₂ := by
-    apply (inducedEquiv h N₂).injective
-    simp
-  map_smul' a z := by
-    apply (inducedEquiv h N₂).injective
-    have hfR : LinearMap.IsHomogeneous (f.hom.restrictScalars R) N₁.grading.piece
-        N₂.grading.piece 0 :=
-      LinearMap.isHomogeneous_def.2 fun p x hx ↦ f.isHomogeneous.map_mem hx
-    have htw := hfR.koszulTwist_apply 1 (inducedEquiv h N₁ z).2
-    simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-      LinearMap.restrictScalars_apply] at htw
-    simp [htw]
-
 /-- Closed morphism `G⁺ N₁ ⟶ G⁺ N₂` induced by a morphism `f : N₁ ⟶ N₂` of graded right modules. -/
 noncomputable def inducedMap (h : IsCurvedDGAlgebra 𝒜 d w)
     {N₁ N₂ : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
     (f : N₁ ⟶ N₂) :
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (inducedObj h N₁) ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (inducedObj h N₂) :=
-  closedHomOf (inducedMapLinear h f)
+  closedHomOf
+    { toFun z :=
+        (inducedEquiv h N₂).symm (f.hom (inducedEquiv h N₁ z).1, f.hom (inducedEquiv h N₁ z).2)
+      map_add' _ _ := (inducedEquiv h N₂).injective (by simp)
+      map_smul' a z := (inducedEquiv h N₂).injective <| by
+        have hfR : LinearMap.IsHomogeneous (f.hom.restrictScalars R) N₁.grading.piece
+            N₂.grading.piece 0 :=
+          LinearMap.isHomogeneous_def.2 fun p x hx ↦ f.isHomogeneous.map_mem hx
+        have htw := hfR.koszulTwist_apply 1 (inducedEquiv h N₁ z).2
+        simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
+          LinearMap.restrictScalars_apply] at htw
+        simp [htw] }
     (fun p z hz ↦ by
       rw [mem_inducedObj_grading_iff] at hz ⊢
-      simp only [inducedMapLinear, LinearMap.coe_mk, AddHom.coe_mk,
-        LinearEquiv.apply_symm_apply]
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply]
       exact ⟨by simpa using f.isHomogeneous.map_mem hz.1,
         by simpa using f.isHomogeneous.map_mem hz.2⟩)
-    (fun z ↦ by
-      apply (inducedEquiv h N₂).injective
-      simp [inducedMapLinear])
+    (fun z ↦ (inducedEquiv h N₂).injective (by simp))
 
 /-- On underlying pairs in `N × N`, `inducedMap h f` applies `f` componentwise. -/
 @[simp]
@@ -587,16 +542,8 @@ noncomputable def induced (h : IsCurvedDGAlgebra 𝒜 d w) :
       ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h) where
   obj N := ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (inducedObj h N)
   map f := inducedMap h f
-  map_id N := by
-    apply closedHom_ext
-    intro z
-    apply (inducedEquiv h N).injective
-    simp
-  map_comp f g := by
-    apply closedHom_ext
-    intro z
-    apply (inducedEquiv h _).injective
-    simp
+  map_id N := closedHom_ext fun z ↦ (inducedEquiv h N).injective (by simp)
+  map_comp f g := closedHom_ext fun z ↦ (inducedEquiv h _).injective (by simp)
 
 /-- The induction functor sends a graded right module `N` to `inducedObj h N`. -/
 @[simp]
@@ -613,49 +560,6 @@ theorem induced_map (h : IsCurvedDGAlgebra 𝒜 d w)
     (induced h).map f = inducedMap h f :=
   (rfl)
 
-/-- Underlying `Aᵐᵒᵖ`-linear map `(x, y) ↦ f x + d_M (f y)` adjunct to a degree-zero right-linear
-map `f : N →ₗ[Aᵐᵒᵖ] M`. -/
-private noncomputable def inducedDescLinear {h : IsCurvedDGAlgebra 𝒜 d w}
-    {N : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
-    {M : CurvedDGRightModuleCat.{u, u, u} h} (f : N →ₗ[Aᵐᵒᵖ] M)
-    (hf : LinearMap.IsHomogeneous f N.grading.piece M.grading 0) :
-    inducedObj h N →ₗ[Aᵐᵒᵖ] M where
-  toFun z := f (inducedEquiv h N z).1 + M.differential (f (inducedEquiv h N z).2)
-  map_add' z₁ z₂ := by
-    simp only [map_add, Prod.fst_add, Prod.snd_add]
-    abel
-  map_smul' a z := by
-    have hkey : ∀ y : N,
-        M.differential (a • f y) =
-          a • M.differential (f y) + op (d a.unop) • f (N.grading.koszulTwist 1 y) := by
-      intro y
-      induction y using DirectSum.Decomposition.inductionOn N.grading.piece with
-      | zero => simp
-      | @homogeneous q y =>
-        rcases y with ⟨y, hy⟩
-        have hfy : f y ∈ M.grading q := by
-          simpa using hf.map_mem hy
-        have ha_eq : a = op a.unop := (MulOpposite.op_unop a).symm
-        conv_lhs => rw [ha_eq]
-        rw [N.grading.koszulTwist_one_apply_of_mem hy,
-          M.isCurvedDGRightModule.leibniz hfy a.unop, ← ha_eq,
-          LinearMap.map_smul_of_tower f]
-        simp only [Int.cast_smul_eq_zsmul, Units.smul_def, smul_comm (op _)]
-      | add y₁ y₂ hy₁ hy₂ =>
-        simp only [map_add, smul_add, hy₁, hy₂]
-        abel
-    simp only [RingHom.id_apply, inducedEquiv_smul, map_sub, LinearMap.map_smul, hkey, smul_add]
-    abel
-
-@[simp]
-private theorem inducedDescLinear_apply {h : IsCurvedDGAlgebra 𝒜 d w}
-    {N : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece}
-    {M : CurvedDGRightModuleCat.{u, u, u} h} (f : N →ₗ[Aᵐᵒᵖ] M)
-    (hf : LinearMap.IsHomogeneous f N.grading.piece M.grading 0) (z : inducedObj h N) :
-    inducedDescLinear f hf z =
-      f (inducedEquiv h N z).1 + M.differential (f (inducedEquiv h N z).2) :=
-  rfl
-
 /-- The closed morphism `G⁺ N ⟶ M` adjunct to a degree-zero right-linear map `f : N →ₗ[Aᵐᵒᵖ] M`,
 sending `(x, y)` to `f x + d_M (f y)`. -/
 noncomputable def inducedDesc {h : IsCurvedDGAlgebra 𝒜 d w}
@@ -664,20 +568,34 @@ noncomputable def inducedDesc {h : IsCurvedDGAlgebra 𝒜 d w}
     (hf : LinearMap.IsHomogeneous f N.grading.piece M.grading 0) :
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (inducedObj h N) ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M :=
-  closedHomOf (inducedDescLinear f hf)
+  closedHomOf
+    { toFun z := f (inducedEquiv h N z).1 + M.differential (f (inducedEquiv h N z).2)
+      map_add' z₁ z₂ := by simp only [map_add, Prod.fst_add, Prod.snd_add]; abel
+      map_smul' a z := by
+        have hkey (y : N) : M.differential (a • f y) =
+            a • M.differential (f y) + op (d a.unop) • f (N.grading.koszulTwist 1 y) := by
+          induction y using DirectSum.Decomposition.inductionOn N.grading.piece with
+          | zero => simp
+          | @homogeneous q y =>
+            rcases y with ⟨y, hy⟩
+            have hfy : f y ∈ M.grading q := by simpa using hf.map_mem hy
+            have ha_eq : a = op a.unop := (MulOpposite.op_unop a).symm
+            conv_lhs => rw [ha_eq]
+            rw [N.grading.koszulTwist_one_apply_of_mem hy,
+              M.isCurvedDGRightModule.leibniz hfy a.unop, ← ha_eq, LinearMap.map_smul_of_tower f]
+            simp only [Int.cast_smul_eq_zsmul, Units.smul_def, smul_comm (op _)]
+          | add y₁ y₂ hy₁ hy₂ => simp only [map_add, smul_add, hy₁, hy₂]; abel
+        simp only [RingHom.id_apply, inducedEquiv_smul, map_sub, LinearMap.map_smul, hkey, smul_add]
+        abel }
     (fun p z hz ↦ by
       rw [mem_inducedObj_grading_iff] at hz
-      rw [inducedDescLinear_apply]
-      have hx : f (inducedEquiv h N z).1 ∈ M.grading p := by
-        simpa using hf.map_mem hz.1
-      have hy : f (inducedEquiv h N z).2 ∈ M.grading (p - 1) := by
-        simpa using hf.map_mem hz.2
+      have hx : f (inducedEquiv h N z).1 ∈ M.grading p := by simpa using hf.map_mem hz.1
+      have hy : f (inducedEquiv h N z).2 ∈ M.grading (p - 1) := by simpa using hf.map_mem hz.2
       exact Submodule.add_mem _ hx
         (by simpa [sub_add_cancel] using M.isCurvedDGRightModule.isHomogeneous.map_mem hy))
     (fun z ↦ by
-      rw [inducedDescLinear_apply, inducedDescLinear_apply, map_add,
-        M.isCurvedDGRightModule.sq_eq, inducedEquiv_differential, f.map_smul]
-      exact add_comm _ _)
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, map_add, M.isCurvedDGRightModule.sq_eq,
+        inducedEquiv_differential, f.map_smul, add_comm])
 
 /-- Evaluating the adjunct closed morphism `inducedDesc f hf` sends `(x, y)` to
 `f x + d_M (f y)`. -/
@@ -688,8 +606,8 @@ theorem closedHom_inducedDesc_apply {h : IsCurvedDGAlgebra 𝒜 d w}
     (hf : LinearMap.IsHomogeneous f N.grading.piece M.grading 0) (z : inducedObj h N) :
     closedHom (inducedDesc f hf) z =
       f (inducedEquiv h N z).1 + M.differential (f (inducedEquiv h N z).2) := by
-  unfold inducedDesc
-  rw [closedHom_closedHomOf, inducedDescLinear_apply]
+  rw [inducedDesc, closedHom_closedHomOf]
+  rfl
 
 /-- If `f : N →ₗ[Aᵐᵒᵖ] M` is a surjective degree-zero right-linear map, its adjunct closed
 morphism `inducedDesc f hf : G⁺ N ⟶ M` is an epimorphism in the closed category of curved right
@@ -703,8 +621,7 @@ theorem epi_inducedDesc_of_surjective {h : IsCurvedDGAlgebra 𝒜 d w}
   ⟨fun {K} u₁ u₂ hu ↦ closedHom_ext fun m ↦ by
     obtain ⟨x, rfl⟩ := hsurj m
     let z : inducedObj h N := (inducedEquiv h N).symm (x, 0)
-    have hz : closedHom (inducedDesc f hf) z = f x := by
-      simp [z]
+    have hz : closedHom (inducedDesc f hf) z = f x := by simp [z]
     have h₁₂ := congrArg (fun k ↦ closedHom k z) hu
     rwa [closedHom_comp, closedHom_comp, LinearMap.comp_apply, LinearMap.comp_apply, hz] at h₁₂⟩
 
@@ -726,24 +643,24 @@ noncomputable def inducedForgetDifferentialAdj (h : IsCurvedDGAlgebra 𝒜 d w) 
           left_inv g := by
             let g' : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (inducedObj h N) ⟶
                 ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (ForgetEnrichment.to _ M) := g
+            let i (x : N) : inducedObj h N := (inducedEquiv h N).symm (x, 0)
             apply closedHom_ext
             intro z
-            have hz : z = inducedInlLinear h N (inducedEquiv h N z).1 +
-                (inducedObj h N).differential (inducedInlLinear h N (inducedEquiv h N z).2) := by
-              apply inducedObj_ext <;> simp [inducedInlLinear]
+            have hz : z = i (inducedEquiv h N z).1 +
+                (inducedObj h N).differential (i (inducedEquiv h N z).2) :=
+              inducedObj_ext (by simp [i]) (by simp [i])
             have hstep : closedHom g' z =
-                closedHom g' (inducedInlLinear h N (inducedEquiv h N z).1) +
+                closedHom g' (i (inducedEquiv h N z).1) +
                   (ForgetEnrichment.to _ M).differential
-                    (closedHom g' (inducedInlLinear h N (inducedEquiv h N z).2)) := by
+                    (closedHom g' (i (inducedEquiv h N z).2)) := by
               conv_lhs => rw [hz]
               rw [map_add, ← differential_closedHom g']
             exact (closedHom_inducedDesc_apply _ _ z).trans hstep.symm
           right_inv f := by
             ext x
             change closedHom (inducedDesc (M := ForgetEnrichment.to _ M) f.hom
-              (isHomogeneous_of_gradedHom f)) (inducedInlLinear h N x) = f.hom x
-            rw [closedHom_inducedDesc_apply]
-            simp [inducedInlLinear] }
+              (isHomogeneous_of_gradedHom f)) ((inducedEquiv h N).symm (x, 0)) = f.hom x
+            simp }
       homEquiv_naturality_left_symm {N₁ N₂ M} f g := by
         apply closedHom_ext
         intro z
