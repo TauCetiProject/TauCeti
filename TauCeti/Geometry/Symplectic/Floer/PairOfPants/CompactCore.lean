@@ -57,7 +57,7 @@ namespace TauCeti.SmoothTwoForm
 open Floer
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I (⊤ : ℕ∞) M]
   {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ} {B : Puncture → ℝ}
 
 /-- Adding a perturbation supported in the core adds its curvature allowance to that of the
@@ -81,30 +81,11 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le
       (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v) = 0 := by
     funext x
     simp [pairOfPantsPerturbation_eq_zero_of_forall_le (hcore z hz) x]
-  have heq (z : ℝ × ℝ) := ω.hamiltonianCurvature_add_of_eq_zero_on hD hU hDU
-    (hzero 1) (hzero Complex.I) hs ht z (u z)
   have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
-  calc
-    _ ≤ (∫⁻ z, ‖ω.hamiltonianCurvature
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z)‖ₑ) + ∫⁻ z, ‖ω.hamiltonianCurvature δs δt z (u z)‖ₑ := by
-      -- Split over the measurable core support: the map need not be measurable, so
-      -- additivity for arbitrary sums of densities is not available.
-      rw [← lintegral_add_compl _ hD.measurableSet, add_comm]
-      apply add_le_add
-      · refine (setLIntegral_mono' hD.measurableSet.compl fun z hz ↦ ?_).trans
-          (setLIntegral_le_lintegral _ _)
-        rw [heq, ω.hamiltonianCurvature_eq_zero_of_notMem hD hs ht hz (u z), add_zero]
-      · refine (setLIntegral_mono' hD.measurableSet fun z hz ↦ ?_).trans
-          (setLIntegral_le_lintegral _ _)
-        rw [heq, ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero
-          (Filter.eventually_of_mem (hU.mem_nhds (hDU hz)) (hzero 1))
-          (Filter.eventually_of_mem (hU.mem_nhds (hDU hz)) (hzero Complex.I)) (u z), zero_add]
-    _ ≤ _ := by
-      rw [ENNReal.ofReal_sum_of_nonneg fun q _ ↦ hB₀ q]
-      exact add_le_add_left
-        (ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB u) _
+  rw [ω.lintegral_enorm_hamiltonianCurvature_add_of_eq_zero_on hD hU hDU (hzero 1)
+    (hzero Complex.I) hs ht u, ENNReal.ofReal_sum_of_nonneg fun q _ ↦ hB₀ q]
+  exact add_le_add_left
+    (ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB u) _
 
 variable [FiniteDimensional ℝ E]
   {E' G' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace G']
@@ -170,14 +151,12 @@ theorem exists_lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 + δs p z x)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I +
           δt p z x) z (u z)‖ₑ ≤ ENNReal.ofReal ((∑ q, B q) + C) := by
-  obtain ⟨C, hC, hbound⟩ :=
-    ω.exists_lintegral_enorm_hamiltonianCurvature_le_of_isCompact hδs hδt hA hD hQ hs ht
-  refine ⟨C, hC, fun p hp u hu ↦ ?_⟩
-  have h := ω.constSmooth.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le hH
-    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hB hD.isClosed hU hDU
-    hcore (hs p hp) (ht p hp) u
-  simp only [hamiltonianCurvature_constSmooth] at h
-  rw [ENNReal.ofReal_add (Finset.sum_nonneg fun q _ ↦ (abs_nonneg _).trans (hB q 0 0)) hC]
-  exact h.trans (add_le_add le_rfl (hbound p hp u hu))
+  simpa only [hamiltonianCurvature_constSmooth] using (isNondegenerate_constSmooth ω)
+    |>.exists_lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le hH
+      (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hB
+      (contMDiff_prod_prod_modelWithCornersSelf_iff.2
+        (contMDiff_prod_modelWithCornersSelf_iff.2 hδs.contMDiff))
+      (contMDiff_prod_prod_modelWithCornersSelf_iff.2
+        (contMDiff_prod_modelWithCornersSelf_iff.2 hδt.contMDiff)) hA hD hQ hU hDU hcore hs ht
 
 end TauCeti.SymplecticForm

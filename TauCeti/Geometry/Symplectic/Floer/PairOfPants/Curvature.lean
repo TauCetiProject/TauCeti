@@ -265,7 +265,7 @@ private theorem mdifferentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Pe
       (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
     one_ne_zero
 
-variable [IsManifold I ⊤ M]
+variable [IsManifold I (⊤ : ℕ∞) M]
 
 /-- **The curvature in the coordinates of an end.** On the end `q`, where `±s > 0`, the curvature
 of the pulled-back perturbation `β(±s) H_q(t) dt` is `±β'(±s - 1) H_q(t)`. -/
@@ -413,7 +413,7 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
 
 /-! ### The energy identity on the truncated pair of pants -/
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- Along a map continuous on a set `U`, the curvature of the pair-of-pants perturbation in the
 coordinates of the end `q`, multiplied by the Jacobian of the end chart, is
 `±β'(±s - 1) H_q(t, u)`, a continuous function on the preimage of `U` under the end chart. -/
