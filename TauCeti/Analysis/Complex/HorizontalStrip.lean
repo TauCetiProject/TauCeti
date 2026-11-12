@@ -15,8 +15,8 @@ onto the strips whose endpoints undergo the corresponding real affine map. These
 maps rescale logarithmic strip coordinates to arbitrary boundary heights.
 
 A map recovered up to integer multiples of `i`, such as an exponential end lift of a
-cylindrical end, is injective on every horizontal strip of height one
-(`TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I`).
+cylindrical end, is injective on every set whose imaginary parts vary by less than one, such as a
+horizontal strip of height one (`TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I`).
 -/
 
 public section
@@ -39,18 +39,19 @@ namespace TauCeti.Complex
 
 open Set
 
-/-- A map `f` on `ℂ` whose composite with some `g` recovers every point up to an integer multiple
-of `i` is injective on every horizontal strip `t₀ ≤ Im z < t₀ + 1` of height one: two points with
-the same image differ by an integer multiple of `i`. This is the injectivity of the exponential
-end lifts of cylindrical ends, with `g` a logarithmic end coordinate. -/
-theorem injOn_of_exists_eq_add_intCast_mul_I {α : Type*} {f : ℂ → α} {g : α → ℂ}
-    (h : ∀ z, ∃ k : ℤ, g (f z) = z + k * Complex.I) (t₀ : ℝ) :
-    InjOn f {z | z.im ∈ Ico t₀ (t₀ + 1)} := by
+/-- A map `f` on `ℂ` whose composite with some `g` recovers every point of a set `s` up to an
+integer multiple of `i` is injective on `s` if the imaginary parts of any two points of `s` differ
+by less than one: two points with the same image differ by an integer multiple of `i`. This is the
+injectivity of the exponential end lifts of cylindrical ends on horizontal strips of height one,
+with `g` a logarithmic end coordinate. -/
+theorem injOn_of_exists_eq_add_intCast_mul_I {α : Type*} {f : ℂ → α} {g : α → ℂ} {s : Set ℂ}
+    (h : ∀ z ∈ s, ∃ k : ℤ, g (f z) = z + k * Complex.I)
+    (hs : ∀ a ∈ s, ∀ b ∈ s, a.im - b.im ∈ Ioo (-1) 1) :
+    InjOn f s := by
   intro a ha b hb hab
-  replace ha : t₀ ≤ a.im ∧ a.im < t₀ + 1 := ha
-  replace hb : t₀ ≤ b.im ∧ b.im < t₀ + 1 := hb
-  obtain ⟨k, hk⟩ := h a
-  obtain ⟨l, hl⟩ := h b
+  obtain ⟨hlo, hhi⟩ := hs a ha b hb
+  obtain ⟨k, hk⟩ := h a ha
+  obtain ⟨l, hl⟩ := h b hb
   rw [hab, hl] at hk
   -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
   have hre := congrArg Complex.re hk

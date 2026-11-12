@@ -240,7 +240,10 @@ theorem exists_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
 with the same image differ by an integer multiple of `i`. -/
 theorem injOn_cylindricalEndLift (p : PSSPlane) (t₀ : ℝ) :
     InjOn p.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} :=
-  TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I p.exists_endCoord_cylindricalEndLift t₀
+  TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I
+    (fun z _ ↦ p.exists_endCoord_cylindricalEndLift z) fun _ ha _ hb ↦ by
+      simp only [mem_ofPred_eq, mem_Ico] at ha hb
+      exact ⟨by linarith, by linarith⟩
 
 /-- The longitudinal coordinate of the image of a cylinder point is its real part. -/
 @[simp]
@@ -537,6 +540,18 @@ theorem mdifferentiableAt_perturbation_target (hH : Function.Periodic H 1)
     MDifferentiableAt I 𝓘(ℝ) (fun y ↦ p.perturbation H w y v) x :=
   ((((contMDiff_perturbation hH hHs).comp (contMDiff_const.prodMk contMDiff_id)).clm_apply
     contMDiff_const) x).mdifferentiableAt one_ne_zero
+
+/-- The component of the perturbation of a PSS plane along a tangent vector `v` is differentiable
+in the target point of a normed space, for a period-one `C¹` Hamiltonian. -/
+theorem differentiableAt_perturbation_target {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H : ℝ → V → ℝ} (hH : Function.Periodic H 1) (hHs : ContDiff ℝ 1 (Function.uncurry H))
+    (w : ℂ) (x : V) (v : ℂ) :
+    DifferentiableAt ℝ (fun y ↦ p.perturbation H w y v) x := by
+  have h := ((contDiff_uncurry_perturbation (p := p) hH hHs v).comp
+    ((contDiff_const (c := Complex.equivRealProdCLM w)).prodMk contDiff_id)).differentiable
+      one_ne_zero x
+  simpa only [Function.comp_def, Function.uncurry_apply_pair,
+    ContinuousLinearEquiv.symm_apply_apply, id_eq] using h
 
 end PSSPlane
 

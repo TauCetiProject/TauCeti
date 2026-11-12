@@ -405,7 +405,10 @@ theorem im_endCoord_mem_Ico (q : Puncture) (w : ℂ) :
 points with the same image differ by an integer multiple of `i`. -/
 theorem injOn_cylindricalEndLift (q : Puncture) (t₀ : ℝ) :
     InjOn q.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} :=
-  TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I q.exists_endCoord_cylindricalEndLift t₀
+  TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I
+    (fun z _ ↦ q.exists_endCoord_cylindricalEndLift z) fun _ ha _ hb ↦ by
+      simp only [mem_ofPred_eq, mem_Ico] at ha hb
+      exact ⟨by linarith, by linarith⟩
 
 /-- The longitudinal coordinate is smooth away from the center of the end. -/
 theorem contDiffAt_re_endCoord (q : Puncture) {w : ℂ} (hw : w ≠ q.endCenter)
