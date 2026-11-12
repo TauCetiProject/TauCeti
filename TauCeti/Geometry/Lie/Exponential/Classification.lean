@@ -94,7 +94,7 @@ private theorem eventually_continuousOneParameterLog_eq_two_smul_succ [FiniteDim
     (φ : ContinuousMonoidHom (Multiplicative ℝ) G) :
     ∀ᶠ n in atTop, continuousOneParameterLog (I := I) (G := G) φ n =
       (2 : ℝ) • continuousOneParameterLog (I := I) (G := G) φ (n + 1) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   let v : ℕ → E := continuousOneParameterLog (I := I) (G := G) φ
   obtain ⟨U, hU, hinj⟩ := exists_injOn_mulInvariantExp_modelSpace (I := I) (G := G)
   have hv : Tendsto v atTop (𝓝 0) := by
@@ -187,7 +187,7 @@ theorem exists_eq_mulInvariantOneParameterSubgroup [FiniteDimensional ℝ E] [Li
     [T2Space G] [BoundarylessManifold I G]
     (φ : ContinuousMonoidHom (Multiplicative ℝ) G) :
     ∃ v : GroupLieAlgebra I G, φ = mulInvariantOneParameterSubgroup v := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   let log : ℕ → E := continuousOneParameterLog (I := I) (G := G) φ
   obtain ⟨X, hlogX⟩ :=
     exists_eventually_continuousOneParameterLog_eq_dyadicStep_smul (I := I) (G := G) φ
@@ -246,7 +246,7 @@ theorem mulInvariantOneParameterSubgroup_injective [FiniteDimensional ℝ E] [Li
     Function.Injective
       (mulInvariantOneParameterSubgroup (I := I) (G := G) :
         GroupLieAlgebra I G → ContinuousMonoidHom (Multiplicative ℝ) G) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   intro v w hvw
   let vE : E := v
   let wE : E := w

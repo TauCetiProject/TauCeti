@@ -435,7 +435,7 @@ theorem sum_aeval_natCast_mul_lazardCocycle {p : ℕ} (hp : p.Prime) {A : Type*}
     have hy : ![(j : A), 1] = algebraMap ℤ A ∘ ![(j : ℤ), 1] := by
       ext i
       fin_cases i <;> simp
-    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul,
+    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul_of_algebra,
       ← map_lazardCocycle (Int.castRingHom R), ← algebraMap_int_eq, aeval_map_algebraMap, hy,
       aeval_algebraMap_apply, smul_eq_mul, mul_comm, eq_intCast]
   -- `p ∑_{j < p} C_n(j, 1) = pⁿ - p`

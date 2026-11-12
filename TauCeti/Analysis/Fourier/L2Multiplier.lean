@@ -327,7 +327,7 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
   refine ((fourierInvCLM ℂ (Lp F 2 (volume : Measure E))).continuous.tendsto _).comp ?_
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   have hmb : ∀ g : Lp ℂ ∞ (volume : Measure E), ∀ᵐ ξ, ‖g ξ‖ₑ ≤ ‖g‖ₑ := fun g ↦ by
-    rw [Lp.enorm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable g)]
+    rw [Lp.eNorm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable g)]
     exact ae_le_eLpNormEssSup
   -- Dominated convergence on the Fourier side, with dominating function `‖𝓕 f‖`.
   refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp)
@@ -335,10 +335,10 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
     (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
   · filter_upwards [coeFn_lpSMul (r := 2) (m (s n)) (𝓕 f), coeFn_lpSMul (r := 2) m₀ (𝓕 f),
       hmb (m (s n)), hmb m₀] with ξ h₁ h₂ h₃ h₄
-    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', ← sub_smul, enorm_smul, ENNReal.coe_add,
-      ← enorm_eq_nnnorm]
+    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', ← sub_smul, eNorm_smul, ENNReal.coe_add,
+      ← eNorm_eq_nnNorm]
     gcongr
-    exact enorm_sub_le.trans (add_le_add (h₃.trans ((ofReal_norm (m (s n))).symm.trans_le
+    exact eNorm_sub_le.trans (add_le_add (h₃.trans ((ofReal_norm (m (s n))).symm.trans_le
       (ENNReal.ofReal_le_ofReal hn))) h₄)
   · filter_upwards [ae_all_iff.2 fun n ↦ coeFn_lpSMul (r := 2) (m (s n)) (𝓕 f),
       coeFn_lpSMul (r := 2) m₀ (𝓕 f), hm] with ξ h₁ h₂ h₃

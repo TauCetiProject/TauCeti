@@ -111,7 +111,7 @@ theorem infiniteSemilocalHom_surjective : Function.Surjective (infiniteSemilocal
     rintro _ ⟨x, rfl⟩
     exact ⟨1 ⊗ₜ x, funext fun w ↦ by simp⟩
   intro y
-  exact s.closed_of_finiteDimensional.closure_subset_iff.mpr hs
+  exact s.isClosed_of_finiteDimensional.closure_subset_iff.mpr hs
     (denseRange_algebraMap_pi_infinitePlaceLiesOver L v y)
 
 /-- The semilocal map is injective: the local degrees account for the whole scalar extension. -/

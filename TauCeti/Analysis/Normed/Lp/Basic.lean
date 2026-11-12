@@ -109,7 +109,7 @@ theorem norm_le_tsum_norm [Fact (1 ≤ p)] (f : lp E p)
 
 /-- The extended ℓ¹ norm is the sum of the extended norms of the coordinates. -/
 theorem hasSum_enorm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖ₑ) ‖y‖ₑ := by
-  simp only [enorm_eq_nnnorm]
+  simp only [eNorm_eq_nnNorm]
   exact ENNReal.hasSum_coe.2 (NNReal.hasSum_coe.1 (hasSum_norm_one y))
 
 /-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.

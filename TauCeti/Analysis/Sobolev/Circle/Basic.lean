@@ -725,7 +725,7 @@ end RestrictEquiv
 `t < s` when `E` is finite-dimensional. -/
 theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     IsCompactOperator (inclusion (E := E) h.le) := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   have := FiniteDimensional.proper ℂ E
   -- The inclusion is the operator-norm limit of the truncations `F N` of the Fourier series to the
   -- frequencies `|n| ≤ N`, which factor through finitely many copies of `E`.

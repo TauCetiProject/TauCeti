@@ -63,7 +63,7 @@ theorem exists_generator_heatSemigroupBUC_eq_laplacian
     exact hC₂ x
   -- The third derivative makes the second derivative uniformly continuous; the trace then
   -- gives a bounded uniformly continuous Laplacian.
-  have hLip := lipschitzWith_of_nnnorm_fderiv_le
+  have hLip := lipschitzWith_of_nnNorm_fderiv_le
     (hs.differentiable_iteratedFDeriv (m := 2)
       (WithTop.coe_lt_coe.mpr (ENat.natCast_lt_top 2)))
     (C := ‖C₃‖₊) (fun x => by

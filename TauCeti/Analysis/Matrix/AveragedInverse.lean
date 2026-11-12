@@ -111,7 +111,7 @@ theorem holderWith_segmentAveragedInverse_apply (P Q : X → Matrix ι ι ℝ) (
     exact holderWith_matrix_inv_apply (fun x => (1 - t) • P x + t • Q x) C r L
       (fun x => ((hp x).one_sub_smul_add_smul (hq x) ht').isUnit) (hb t ht')
       (holderWith_one_sub_smul_add_smul_apply P Q C r hP hQ ht') i j
-  simpa only [sub_zero, nnnorm_one, one_mul] using
+  simpa only [sub_zero, nnNorm_one, one_mul] using
     holderWith_intervalIntegral (fun t x => ((1 - t) • P x + t • Q x)⁻¹ i j)
       ((Fintype.card ι : ℝ≥0) ^ 2 * L ^ 2 * C) r
       (fun x => (hp x).intervalIntegrable_inv_segment_apply (hq x) i j) hh

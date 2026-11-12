@@ -167,7 +167,8 @@ private theorem coeff_reflect_prod_X_sub_C_sub_sum (μ : n → K) (r : ℕ) :
     ring
   have hcoe (c : n → K) : ((reflect (Fintype.card n) (∏ i, (X - C (c i))) : K[X]) :
       PowerSeries K) = ∏ i, (1 - PowerSeries.C (c i) * PowerSeries.X) := by
-    rw [← card_univ, card_eq_sum_ones, reflect_prod _ _ _ fun i _ => natDegree_X_sub_C_le _,
+    rw [← card_univ, card_eq_sum_ones,
+      reflect_prod _ (fun i => X - C (c i)) _ fun i _ => natDegree_X_sub_C_le _,
       ← coeToPowerSeries.ringHom_apply, map_prod]
     simp [reflect_sub, reflect_C]
   have h := congrArg (PowerSeries.coeff (r + 1)) (prod_mul_one_sub_X_mul_mk_gelfandEigenvalue μ)

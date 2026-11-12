@@ -83,7 +83,7 @@ private theorem exists_vectorField_remainder_data (hn : 1 ≤ n) (hV : ContDiffA
     rw [div_mul_eq_mul_div, ← mul_div_assoc, div_lt_iff₀ (by positivity)]
     nlinarith [mul_nonneg α.coe_nonneg K.coe_nonneg]
   have hN1 : ContDiffAt ℝ 1 N 0 := hN.of_le (by exact_mod_cast hn)
-  obtain ⟨s, hs, hNs⟩ := (hN1.hasStrictFDerivAt hN' one_ne_zero).exists_lipschitzOnWith_of_nnnorm_lt
+  obtain ⟨s, hs, hNs⟩ := (hN1.hasStrictFDerivAt hN' one_ne_zero).exists_lipschitzOnWith_of_nnNorm_lt
     ε (by simpa using hε)
   obtain ⟨r₁, hr₁, hr₁s⟩ := Metric.mem_nhds_iff.1 hs
   obtain ⟨r₂, hr₂, hNn⟩ := hN.exists_uniformContDiffOn_closedBall

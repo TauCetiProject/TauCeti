@@ -660,8 +660,8 @@ private theorem exists_radial_solution_family [FiniteDimensional ℝ E] [FiniteD
           DifferentiableAt ℝ (fun x ↦ α (x, q.2)) (x₀ + t • q.1) →
             fderiv ℝ (fun x ↦ α (x, q.2)) (x₀ + t • q.1) q.1 =
               g (x₀ + t • q.1, α (x₀ + t • q.1, q.2)) q.1 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
-  let _ : CompleteSpace F := FiniteDimensional.complete ℝ F
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  let _ : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   obtain ⟨c, r, hr, hc1, hc01, hcont, hc⟩ := exists_rayFamily_of_initial hg x₀ y₀
   let α : E × F → F := fun q ↦ (c (q.1 - x₀, q.2) 1).2
   let V : Set (E × F) :=
@@ -726,7 +726,7 @@ private theorem eventually_hasFDerivAt_of_radial_solution_family
     (hgint : ∀ᶠ p in 𝓝 (x₀, y₀), IsFrobeniusIntegrableAt g p ∧ g p = f p) :
     ∀ᶠ p in 𝓝 (x₀, y₀),
       HasFDerivAt (fun x ↦ α (x, p.2)) (f (p.1, α p)) p.1 := by
-  let _ : CompleteSpace F := FiniteDimensional.complete ℝ F
+  let _ : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
   -- Choose one product ball where the family is `C¹`, integrability holds, and `g = f`.
   obtain ⟨V, hV, hαV⟩ := (hαsmooth.of_le le_add_self).contDiffOn le_rfl (by simp)
   have hgraph : Tendsto (fun p : E × F ↦ (p.1, α p)) (𝓝 (x₀, y₀)) (𝓝 (x₀, y₀)) := by

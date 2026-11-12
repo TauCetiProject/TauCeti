@@ -42,23 +42,23 @@ variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCom
 variable (R A M n) in
 /-- Averaging over cyclic rotations projects onto the cyclic cochains. -/
 noncomputable def cyclicAverage :
-    Module.End R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
+    Module.End R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :=
   ⅟(n + 1 : R) • cyclicNorm R A M n
 
 /-- The cyclic average is the cyclic norm divided by the number of arguments. -/
 -- Keep averaging intact under simplification so its projection identities remain normal forms.
-theorem cyclicAverage_apply (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+theorem cyclicAverage_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicAverage R A M n φ = ⅟(n + 1 : R) • cyclicNorm R A M n φ := (rfl)
 
 /-- Averaging takes values in the cyclic cochains. -/
 theorem cyclicAverage_mem_cyclicCochains
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicAverage R A M n φ ∈ cyclicCochains R A M n :=
   (cyclicCochains R A M n).smul_mem _ (cyclicNorm_mem_cyclicCochains φ)
 
 /-- Averaging fixes every cyclic cochain. -/
 theorem cyclicAverage_apply_of_mem_cyclicCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ cyclicCochains R A M n) : cyclicAverage R A M n φ = φ := by
   rw [cyclicAverage_apply, cyclicNorm_apply_of_mem_cyclicCochains hφ,
     invOf_smul_smul]
@@ -66,7 +66,7 @@ theorem cyclicAverage_apply_of_mem_cyclicCochains
 /-- The cyclic average is idempotent. -/
 @[simp]
 theorem cyclicAverage_cyclicAverage
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicAverage R A M n (cyclicAverage R A M n φ) = cyclicAverage R A M n φ :=
   cyclicAverage_apply_of_mem_cyclicCochains
     (cyclicAverage_mem_cyclicCochains φ)
@@ -110,7 +110,7 @@ variable (R A M n) in
 /-- The cyclic row homotopy. Its product with `1 - λ` on either side is `1 - P`,
 where `P` is cyclic averaging. -/
 noncomputable def cyclicRowHomotopy :
-    Module.End R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
+    Module.End R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :=
   ⅟(n + 1 : R) • ∑ j ∈ Finset.range (n + 1),
     ∑ k ∈ Finset.range j, cyclicOperator R A M n ^ k
 
@@ -141,7 +141,7 @@ theorem cyclicRowHomotopy_mul_one_sub_cyclicOperator :
 
 /-- Applying the row homotopy gives a preimage of `φ - P φ` under `1 - λ`. -/
 theorem one_sub_cyclicOperator_apply_cyclicRowHomotopy
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     (1 - cyclicOperator R A M n) (cyclicRowHomotopy R A M n φ) =
       φ - cyclicAverage R A M n φ := by
   simpa only [mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self] using

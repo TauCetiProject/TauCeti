@@ -129,7 +129,7 @@ theorem frechetRadius_sum_smul_dirac_le_add (hp : 1 ≤ p) (hw : ∑ j, w j = 1)
   rw [hR, hR, ← hconst]
   calc eLpNorm (fun j ↦ edist x (y j)) p ν ≤
         eLpNorm ((fun j ↦ edist x (y' j)) + fun _ ↦ edist y y') p ν :=
-      eLpNorm_mono_enorm measurable_from_top.aestronglyMeasurable fun j ↦ by
+      eLpNorm_mono_eNorm measurable_from_top.aestronglyMeasurable fun j ↦ by
         have h := edist_le_pi_edist y' y j
         rw [edist_comm y' y] at h
         simpa using (edist_triangle x (y' j) (y j)).trans (add_le_add_right h _)

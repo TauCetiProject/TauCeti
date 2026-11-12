@@ -517,7 +517,7 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
     setIntegral_mono_set ((hint k hk0).mono_set
       ((Metric.ball_subset_ball hr₀R).trans hball))
       (Eventually.of_forall fun x => hnn k x)
-      ((inter_subset_right.trans (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallyLE)
+      (inter_subset_right.trans (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallySubset
   -- The cutoff and zeroth-order terms are both at most a multiple of `4ʲ R⁻²`.
   have hG := one_add_mul_div_div_two_pow_sq_add_le (A := A) (c := c) hB hR j
   refine hlhs.trans (hstep.trans ?_)
@@ -594,7 +594,7 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
                 le_rfl) 2
       _ ≤ Y j := setIntegral_mono_set ((hint _ (hlev j)).mono_set
             ((Metric.ball_subset_ball hr).trans hball))
-          (Eventually.of_forall (hnn _)) hsub.eventuallyLE
+          (Eventually.of_forall (hnn _)) hsub.eventuallySubset
   have hZ0 : ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - (k₀ + K)) 0 ^ 2 ∂mu = 0 :=
     le_antisymm (ge_of_tendsto' hlim hZ) (integral_nonneg (hnn _))
   exact MeasureTheory.ae_le_of_setIntegral_max_sub_sq_eq_zero
@@ -1104,7 +1104,7 @@ private theorem ae_le_mul_sub_rpow_mul_sqrt_setIntegral {w : EuclideanSpace ℝ 
   -- The `L²` norm over the smaller ball is at most that over `B(x₀, ρ)`.
   exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (setIntegral_mono_set
     (hint.mono_set (Metric.ball_subset_ball hρR)) (Eventually.of_forall fun x => sq_nonneg (w x))
-    hsub.eventuallyLE)) (mul_nonneg hD (Real.rpow_nonneg (sub_pos.2 hrρ).le e))
+    hsub.eventuallySubset)) (mul_nonneg hD (Real.rpow_nonneg (sub_pos.2 hrρ).le e))
 
 /-- In the setting of `ae_le_mul_sub_rpow_mul_sqrt_setIntegral`, for `w ≥ 0` and `r < ρ ≤ R`,
 the essential supremum of `w` on `B(x₀, r)` is a real number at most
@@ -1128,7 +1128,7 @@ private theorem toReal_eLpNormEssSup_le_and_ae_le {w : EuclideanSpace ℝ ι →
       hρR).mono fun x hx => by rwa [Real.norm_of_nonneg (hw0 x)])
   refine ⟨ENNReal.toReal_le_of_le_ofReal hb h1, ?_⟩
   filter_upwards [ae_le_eLpNormEssSup (f := w) (μ := mu.restrict (Metric.ball x₀ r))] with x hx
-  calc w x = ‖w x‖ₑ.toReal := by rw [toReal_enorm, Real.norm_of_nonneg (hw0 x)]
+  calc w x = ‖w x‖ₑ.toReal := by rw [toReal_eNorm, Real.norm_of_nonneg (hw0 x)]
     _ ≤ _ := ENNReal.toReal_mono (ne_top_of_le_ne_top ENNReal.ofReal_ne_top h1) hx
 
 /-- **The absorption step.** In the setting of `ae_le_mul_sub_rpow_mul_sqrt_setIntegral`, let

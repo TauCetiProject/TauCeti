@@ -117,7 +117,7 @@ private theorem exists_hasStrictFDerivAt_splitCoord {G : Type*} [NormedAddCommGr
       (fun z hz hzε ↦ (hs₂ z hz hzε).trans (by simp [π])) hyφ hyε
   obtain ⟨ψ, ψ', hψ, hπψ, hψ0, hψs⟩ :=
     exists_hasStrictFDerivAt_comp_eq_id_of_span_mtangentConeAt_sup_eq_top (by simp)
-      φ.mem_maximalAtlas hq hs₁ L.closed_of_finiteDimensional hyφ hyq hys₁ hπs hs₂' hys₂ htr
+      φ.mem_maximalAtlas hq hs₁ L.isClosed_of_finiteDimensional hyφ hyq hys₁ hπs hs₂' hys₂ htr
   refine ⟨fun z ↦ φ.splitCoordL (ψ z), (φ.splitCoordL : E →L[ℝ] _) ∘L ψ',
     φ.splitCoordL.hasStrictFDerivAt.comp 0 hψ, ?_, ?_, ?_⟩
   · rw [← hπψ, hπ, ContinuousLinearMap.comp_assoc]

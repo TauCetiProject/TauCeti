@@ -87,7 +87,7 @@ theorem exists_strictMono_enorm_pow_le_and_ae_tendsto_of_tendsto_lintegral
   set D : ℕ → α → ℝ≥0∞ := fun k ↦ (U k).indicator fun y ↦ ‖F k y - H y‖ₑ ^ p
   have hD (k : ℕ) : AEMeasurable (D k) μ :=
     (aemeasurable_indicator_iff (hU k)).2
-      ((((hF k).sub (hHm.mono_measure (Measure.restrict_mono (hUΩ k) le_rfl))).enorm).pow_const p)
+      ((((hF k).sub (hHm.mono_measure (Measure.restrict_mono (hUΩ k) le_rfl))).eNorm).pow_const p)
   obtain ⟨φ, hφ, hS⟩ := exists_strictMono_lintegral_tsum_ne_top_of_tendsto_lintegral hD
     (by simpa only [D, lintegral_indicator (hU _)] using hFH)
   refine ⟨φ, hφ, ?_, ?_⟩
@@ -95,14 +95,14 @@ theorem exists_strictMono_enorm_pow_le_and_ae_tendsto_of_tendsto_lintegral
   · have hC : (2 : ℝ≥0∞) ^ (p - 1) ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
     have hle (x a : E) : ‖x‖ₑ ^ p ≤ 2 ^ (p - 1) * (‖a‖ₑ ^ p + ‖x - a‖ₑ ^ p) := by
       have h : ‖x‖₊ ^ p ≤ 2 ^ (p - 1) * (‖a‖₊ ^ p + ‖x - a‖₊ ^ p) :=
-        (pow_le_pow_left₀ zero_le (by simpa using nnnorm_add_le a (x - a)) p).trans
+        (pow_le_pow_left₀ zero_le (by simpa using nnNorm_add_le a (x - a)) p).trans
           (add_pow_le zero_le zero_le p)
-      simpa only [enorm, ENNReal.coe_pow, ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_ofNat]
+      simpa only [eNorm, ENNReal.coe_pow, ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_ofNat]
         using ENNReal.coe_le_coe.2 h
     refine ⟨fun y ↦ 2 ^ (p - 1) * (Ω.indicator (fun y ↦ ‖H y‖ₑ ^ p) y + ∑' j, D (φ j) y), ?_,
       fun j y hy ↦ (hle (F (φ j) y) (H y)).trans (mul_le_mul_right (add_le_add ?_ ?_) _)⟩
     · rw [lintegral_const_mul' _ _ hC, lintegral_add_left'
-        ((aemeasurable_indicator_iff hΩ).2 (hHm.enorm.pow_const p)), lintegral_indicator hΩ]
+        ((aemeasurable_indicator_iff hΩ).2 (hHm.eNorm.pow_const p)), lintegral_indicator hΩ]
       exact ENNReal.mul_ne_top hC (ENNReal.add_ne_top.2 ⟨hH, hS⟩)
     · rw [indicator_of_mem (hUΩ _ hy)]
     · exact le_trans (le_of_eq (by simp only [D, indicator_of_mem hy]))
@@ -117,6 +117,6 @@ theorem exists_strictMono_enorm_pow_le_and_ae_tendsto_of_tendsto_lintegral
     simp only [Function.comp_def, ENNReal.pow_rpow_inv_natCast hp,
       ENNReal.zero_rpow_of_pos (inv_pos.2 (Nat.cast_pos.2 (Nat.pos_of_ne_zero hp)))] at h2
     rw [tendsto_iff_edist_tendsto_0]
-    simpa only [edist_eq_enorm_sub] using h2
+    simpa only [eDist_eq_eNorm_sub] using h2
 
 end TauCeti

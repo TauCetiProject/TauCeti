@@ -302,7 +302,7 @@ theorem exists_isWeakSolutionDirichlet_laplacian_of_contDiffOn
     refine lt_of_le_of_lt (le_of_eq (lintegral_congr fun x => ?_))
       ((setLIntegral_enorm_gradient_sq_le_add hb hw hwc hw0 hΔ1 hS (le_max_right S₀ 0)).trans_lt
         (ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, ENNReal.ofReal_lt_top⟩))
-    rw [enorm_pow, enorm_norm]
+    rw [eNorm_pow, eNorm_norm]
   have hv : MemLp w 2 (mu.restrict Omega) :=
     MemLp.of_bound (hw.continuousOn.aestronglyMeasurable hOm) (max S₀ 0)
       ((ae_restrict_iff' hOm).2 (ae_of_all _ fun x hx => by rw [Real.norm_eq_abs]; exact hS x hx))

@@ -20,7 +20,8 @@ import TauCeti.Data.Fin.Tuple.Basic
 Let `(A, d)` be an algebra with a linear map `d`, thought of as an ungraded differential algebra
 (`TauCeti.IsUngradedDGAlgebra`). An **ungraded `A∞` right module** over it is a module `M` with
 operations `m_{n+1} : M ⊗ A^{⊗ n} → M` for every `n ≥ 0`, here
-`act n : MultilinearMap R (Fin n → A) (M →ₗ[R] M)`, satisfying for every `m` and `a₁, …, aₙ` the
+`act n : MultilinearMap (RingHom.id R) (Fin n → A) (M →ₗ[R]
+M)`, satisfying for every `m` and `a₁, …, aₙ` the
 relation
 
 `∑_{i + j = n} m_{j+1}(m_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`
@@ -120,7 +121,7 @@ variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [M
 
 section Stasheff
 
-variable (act : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M))
+variable (act : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M))
 
 /-- The **composite terms** of the `A∞` relation of length `n`:
 `∑_{i + j = n} m_{j+1}(m_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, where `act i` is `m_{i+1}`. -/
@@ -171,7 +172,7 @@ definition itself. The relation of length zero says that `m₁ = act 0` squares 
 structure UngradedAInfinityRightModule (d : A →ₗ[R] A) (M : Type*) [AddCommGroup M]
     [Module R M] where
   /-- The operation `m_{n+1}`, with `n` algebra inputs. -/
-  act : (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M)
+  act : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M)
   /-- The `A∞` relation of length `n`. -/
   stasheff (n : ℕ) (a : Fin n → A) (m : M) :
     ungradedStasheffComp act n a m + ungradedStasheffDiff act d n a m +
@@ -326,7 +327,7 @@ variable (X : Type*) [Fintype X] [DecidableEq X]
 `x₀ → x₁ → ⋯ → xₙ = z` in `X`, of `m_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`
 (`TauCeti.UngradedAInfinityRightModule.matrixAct_apply`). -/
 noncomputable def matrixAct (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n => Matrix X X A) ((X → M) →ₗ[R] X → M) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => Matrix X X A) ((X → M) →ₗ[R] X → M) :=
   ∑ x : Fin (n + 1) → X,
     (LinearMap.llcomp R (X → M) M (X → M) (LinearMap.single R (fun _ => M) (x (Fin.last n))) ∘ₗ
       LinearMap.lcomp R M (LinearMap.proj (x 0))).compMultilinearMap
@@ -676,9 +677,9 @@ variable [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
 /-- The operations of a differential right module: `m₁ = dM`, `m₂` is the right action and
 `m_{n+1} = 0` for `n ≥ 2`. -/
 private noncomputable def dgAct (dM : M →ₗ[R] M) :
-    (n : ℕ) → MultilinearMap R (fun _ : Fin n => A) (M →ₗ[R] M)
-  | 0 => MultilinearMap.constOfIsEmpty R _ dM
-  | 1 => MultilinearMap.ofSubsingleton R A (M →ₗ[R] M) 0
+    (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M)
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id R) _ dM
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id R) A (M →ₗ[R] M) 0
     ((Algebra.lsmul R R M).toLinearMap ∘ₗ (opLinearEquiv R).toLinearMap)
   | _ + 2 => 0
 

@@ -256,7 +256,7 @@ agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/
 theorem ofReal_inv_sqrt_le_enorm_rpow (x : ℝ) : ENNReal.ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹ : ℝ) := by
   rcases le_or_gt x 0 with hx | hx
   · simp [Real.sqrt_eq_zero'.mpr hx]
-  rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.enorm_of_nonneg hx.le]
+  rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.eNorm_of_nonneg hx.le]
   norm_num
 
 /-- If `y > 0` and `y³ ≤ 2 |d|`, then `1 / √d ≤ √2 y^(-3/2)`, as values in `ℝ≥0∞`. This is the
@@ -445,7 +445,7 @@ at `0`. -/
 theorem tendsto_const_mul_nnnorm_rpow_nhds_zero {E : Type*} [SeminormedAddGroup E] (c : ℝ≥0)
     {a : ℝ} (ha : 0 < a) : Filter.Tendsto (fun x : E ↦ c * ‖x‖₊ ^ a) (𝓝 0) (𝓝 0) := by
   have h : Continuous fun x : E ↦ c * ‖x‖₊ ^ a :=
-    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnnorm)
+    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnNorm)
   simpa [NNReal.zero_rpow ha.ne'] using h.tendsto 0
 
 end TauCeti

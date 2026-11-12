@@ -313,8 +313,8 @@ private theorem dist_setAverage_ball_le_of_harmonicOnNhd {U f : E → ℝ} {y : 
           (integral_congr_ae (ae_of_all _ fun z ↦ by simp [norm_sub_rev]))
     _ ≤ ∫ z, ‖(U - f) z‖ ∂μ := setIntegral_le_integral hUf.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
     _ = (eLpNorm (U - f) 1 μ).toReal := by
-        rw [eLpNorm_one_eq_lintegral_enorm hUf.aestronglyMeasurable]
-        exact integral_norm_eq_lintegral_enorm hUf.aestronglyMeasurable
+        rw [eLpNorm_one_eq_lintegral_eNorm hUf.aestronglyMeasurable]
+        exact integral_norm_eq_lintegral_eNorm hUf.aestronglyMeasurable
 
 /-- **Weyl's lemma near a point.** If `u` is weakly harmonic on `Ω` and
 `closedBall x (3 * R) ⊆ Ω`, then `u` agrees almost everywhere on `ball x R` with a function

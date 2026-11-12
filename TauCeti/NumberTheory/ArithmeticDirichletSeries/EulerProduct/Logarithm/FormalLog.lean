@@ -61,7 +61,7 @@ theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
     (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
   · intro z hz'
     apply hne z
-    rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
+    rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] at hz'
     exact_mod_cast hz'
   · exact hz
 
@@ -91,7 +91,7 @@ theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
         (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
       · intro z hz'
         apply hne z
-        rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
+        rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] at hz'
         exact_mod_cast hz'
       · exact hz
     _ = D.eulerFactor P s := by

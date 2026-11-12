@@ -241,7 +241,7 @@ theorem tendsto_setLIntegral_enorm_sub_of_tendsto_Lp
   have hmeas : AEStronglyMeasurable (⇑(A n) - ⇑A₀) (μ.restrict W) :=
     ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _)).mono_measure
       Measure.restrict_le_self
-  rw [eLpNorm_one_eq_lintegral_enorm hmeas]
+  rw [eLpNorm_one_eq_lintegral_eNorm hmeas]
   refine lintegral_congr_ae ?_
   filter_upwards [ae_restrict_of_ae (ha n), ha₀] with x h₁ h₂
   rw [Pi.sub_apply, h₁, h₂]
@@ -256,8 +256,8 @@ theorem setIntegral_norm_le_toReal_eLpNorm_restrict (hp : 1 ≤ p) {s : Set α} 
     · simp
     · rw [ENNReal.toReal_one, div_one, sub_nonneg]
       exact div_le_one_of_le₀ (by simpa using ENNReal.toReal_mono hp_top hp) (by positivity)
-  rw [integral_norm_eq_lintegral_enorm hg.aestronglyMeasurable,
-    ← eLpNorm_one_eq_lintegral_enorm hg.aestronglyMeasurable]
+  rw [integral_norm_eq_lintegral_eNorm hg.aestronglyMeasurable,
+    ← eLpNorm_one_eq_lintegral_eNorm hg.aestronglyMeasurable]
   refine ENNReal.toReal_mono hg.eLpNorm_ne_top <|
     (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hg.aestronglyMeasurable).trans ?_
   refine mul_le_of_le_one_right' (ENNReal.rpow_le_one ?_ hr)

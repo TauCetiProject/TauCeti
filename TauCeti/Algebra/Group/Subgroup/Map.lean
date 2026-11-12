@@ -270,7 +270,7 @@ theorem _root_.MulEquiv.coe_commutatorCongr_symm_apply (e : G ≃* H) (y : ↥(c
 The derived-subgroup instance of `Subgroup.congrOfMapEq_refl`, and a `simp` lemma in its own
 right: `MulEquiv.commutatorCongr` does not unfold, so that general lemma never fires on this
 left-hand side. `MulEquiv.commutatorCongr_trans` and `MulEquiv.commutatorCongr_symm` are the
-companion composition and inverse statements; Mathlib's `abelianizationCongr_refl` is the same
+companion composition and inverse statements; Mathlib's `Group.abelianizationCongr_refl` is the same
 coherence for the abelianization. -/
 @[simp]
 theorem _root_.MulEquiv.commutatorCongr_refl :
@@ -284,8 +284,8 @@ The derived-subgroup instance of `Subgroup.congrOfMapEq_trans`, and a `simp` lem
 right: `MulEquiv.commutatorCongr` does not unfold, so that general lemma never fires on this
 left-hand side. Both map equalities are supplied internally, so a use site names only `e` and
 `f`. `MulEquiv.commutatorCongr_refl` and `MulEquiv.commutatorCongr_symm` are the companion
-identity and inverse statements; Mathlib's `abelianizationCongr_trans` is the same coherence for
-the abelianization. -/
+identity and inverse statements; Mathlib's `Group.abelianizationCongr_trans` is the same
+coherence for the abelianization. -/
 @[simp]
 theorem _root_.MulEquiv.commutatorCongr_trans (e : G ≃* H) (f : H ≃* K) :
     (MulEquiv.commutatorCongr e).trans (MulEquiv.commutatorCongr f) =
@@ -299,8 +299,8 @@ The derived-subgroup instance of `Subgroup.congrOfMapEq_symm`, whose map-equalit
 supplied internally, so a use site names only `e`. This is the whole-isomorphism form, for when the
 inverse occurs as a map rather than applied to a point; `MulEquiv.coe_commutatorCongr_symm_apply`
 is the pointwise companion, and `MulEquiv.commutatorCongr_refl` and `MulEquiv.commutatorCongr_trans`
-are the identity and composition ones. Mathlib's `abelianizationCongr_symm` says the same for the
-abelianization. -/
+are the identity and composition ones. Mathlib's `Group.abelianizationCongr_symm` says the same
+for the abelianization. -/
 theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
     (MulEquiv.commutatorCongr e).symm = MulEquiv.commutatorCongr e.symm :=
   Subgroup.congrOfMapEq_symm e _

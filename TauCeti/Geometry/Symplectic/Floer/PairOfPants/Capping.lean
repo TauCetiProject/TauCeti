@@ -742,8 +742,8 @@ theorem abs_integral_floerEnergyDensity_negativePlanePerturbation_closedBall_sub
   rw [integral_floerEnergyDensity_negativePlanePerturbation_closedBall ω hH hHs hu hR, hsub,
     abs_neg]
   have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le ω hH hHs hB u))
 
 /-- **The integrated curvature of the capping family is bounded uniformly in the neck length.**
@@ -946,8 +946,8 @@ theorem abs_integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdi
   rw [integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball ω hH hHs hu hR
     hρ, hsub, abs_neg]
   have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le ω hH hHs hB u))
 
 /-- **The integrated curvature of the output-capping family is bounded uniformly in the neck

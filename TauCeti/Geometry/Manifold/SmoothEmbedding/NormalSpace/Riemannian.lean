@@ -176,7 +176,7 @@ theorem normalRepresentative_normalClass_eq_sub_mfderiv_inverse
   let d := mfderiv I J f x
   let a := (ContinuousLinearMap.precomp ℝ d).comp
     ((RiemannianBundle.g.inner (f x)).comp d)
-  let : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos (E := E) fun w hw0 ↦
     RiemannianBundle.g.pos (f x) (d w)
       ((map_ne_zero_iff d (f.isImmersion.mfderiv_injective hn x)).mpr hw0)

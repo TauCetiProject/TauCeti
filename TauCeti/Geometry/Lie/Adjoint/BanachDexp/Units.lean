@@ -37,7 +37,7 @@ namespace TauCeti.Lie
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
 local instance finiteDimensionalCompleteSpaceUnitsDexp : CompleteSpace R :=
-  FiniteDimensional.complete ℝ R
+  FiniteDimensional.completeSpace ℝ R
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 

@@ -54,7 +54,7 @@ variable [Finite ι]
 
 /-- A multilinear map on total modules takes its values in a submodule as soon as it does on
 homogeneous tuples.  The modules and gradings may depend on the input slot. -/
-theorem multilinearMap_apply_mem {f : MultilinearMap R M N} {S : Submodule R N}
+theorem multilinearMap_apply_mem {f : MultilinearMap (RingHom.id R) M N} {S : Submodule R N}
     (h : ∀ (d : ι → ℤ) (x : ∀ i, M i), (∀ i, x i ∈ (G i).piece (d i)) → f x ∈ S)
     (x : ∀ i, M i) : f x ∈ S := by
   classical
@@ -68,7 +68,7 @@ theorem multilinearMap_apply_mem {f : MultilinearMap R M N} {S : Submodule R N}
 
 /-- Multilinear maps on total modules are determined by their values on homogeneous tuples.
 The modules and gradings may depend on the input slot. -/
-theorem multilinearMap_ext {f g : MultilinearMap R M N}
+theorem multilinearMap_ext {f g : MultilinearMap (RingHom.id R) M N}
     (h : ∀ (d : ι → ℤ) (x : ∀ i, M i),
       (∀ i, x i ∈ (G i).piece (d i)) → f x = g x) : f = g := by
   -- Equality is membership in the diagonal submodule of `N × N`.
@@ -83,7 +83,7 @@ theorem multilinearMap_ext {f g : MultilinearMap R M N}
 on homogeneous tuples whose degrees are recorded by a family indexed by the naturals, as for
 operations whose inputs are indexed by `ℕ`. -/
 theorem multilinearMap_ext_nat {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R P]
-    (G : InternalGrading R P) {f g : MultilinearMap R (fun _ : Fin n ↦ P) N}
+    (G : InternalGrading R P) {f g : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ P) N}
     (h : ∀ (d : ℕ → ℤ) (x : Fin n → P), (∀ i : Fin n, x i ∈ G.piece (d i)) → f x = g x) :
     f = g := by
   refine multilinearMap_ext (fun _ : Fin n ↦ G) fun d x hx ↦ ?_
@@ -92,8 +92,8 @@ theorem multilinearMap_ext_nat {n : ℕ} {P : Type*} [AddCommMonoid P] [Module R
 /-- Extend multilinear maps on every tuple of homogeneous pieces to the total modules.
 No homogeneity condition on the outputs is required for this construction. -/
 noncomputable def multilinearFromPieces
-    (f : ∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i)) N) :
-    MultilinearMap R M N := by
+    (f : ∀ d : ι → ℤ, MultilinearMap (RingHom.id R) (fun i ↦ (G i).piece (d i)) N) :
+    MultilinearMap (RingHom.id R) M N := by
   classical
   letI := Fintype.ofFinite ι
   exact (DFinsupp.lsum ℕ fun _ ↦ LinearMap.id).compMultilinearMap
@@ -103,7 +103,7 @@ noncomputable def multilinearFromPieces
 /-- On homogeneous inputs, extension evaluates the specified component. -/
 @[simp]
 theorem multilinearFromPieces_apply
-    (f : ∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i)) N)
+    (f : ∀ d : ι → ℤ, MultilinearMap (RingHom.id R) (fun i ↦ (G i).piece (d i)) N)
     (d : ι → ℤ) (x : ∀ i, (G i).piece (d i)) :
     multilinearFromPieces G f (fun i ↦ (x i : M i)) = f d x := by
   classical
@@ -111,7 +111,7 @@ theorem multilinearFromPieces_apply
 
 /-- Extending the restrictions of a multilinear map recovers the map. -/
 @[simp]
-theorem multilinearFromPieces_comp_subtype (f : MultilinearMap R M N) :
+theorem multilinearFromPieces_comp_subtype (f : MultilinearMap (RingHom.id R) M N) :
     multilinearFromPieces G (fun d ↦ f.compLinearMap fun i ↦ ((G i).piece (d i)).subtype)
       = f := by
   apply multilinearMap_ext G
@@ -124,7 +124,7 @@ variable [Fintype ι] (ℬ : ℤ → Submodule R N)
 
 /-- An extension is homogeneous exactly when each component has the required output degree. -/
 theorem isHomogeneous_multilinearFromPieces_iff
-    (f : ∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i)) N) (q : ℤ) :
+    (f : ∀ d : ι → ℤ, MultilinearMap (RingHom.id R) (fun i ↦ (G i).piece (d i)) N) (q : ℤ) :
     TauCeti.MultilinearMap.IsHomogeneous (multilinearFromPieces G f)
         (fun i ↦ (G i).piece) ℬ q ↔
       ∀ d x, f d x ∈ ℬ ((∑ i, d i) + q) := by
@@ -157,7 +157,7 @@ degree tuples is needed. -/
 noncomputable def homogeneousMultilinearEquiv (q : ℤ) :
     (TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ (G i).piece) ℬ q) ≃ₗ[R]
-    (∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i))
+    (∀ d : ι → ℤ, MultilinearMap (RingHom.id R) (fun i ↦ (G i).piece (d i))
       (ℬ ((∑ i, d i) + q))) where
   toFun f d :=
     (f.val.compLinearMap fun i ↦ ((G i).piece (d i)).subtype).codRestrict
@@ -199,7 +199,7 @@ theorem coe_homogeneousMultilinearEquiv_apply (q : ℤ)
 /-- The inverse equivalence extends the component family with its prescribed values. -/
 @[simp]
 theorem homogeneousMultilinearEquiv_symm_apply (q : ℤ)
-    (f : ∀ d : ι → ℤ, MultilinearMap R (fun i ↦ (G i).piece (d i))
+    (f : ∀ d : ι → ℤ, MultilinearMap (RingHom.id R) (fun i ↦ (G i).piece (d i))
       (ℬ ((∑ i, d i) + q)))
     (d : ι → ℤ) (x : ∀ i, (G i).piece (d i)) :
     ((homogeneousMultilinearEquiv G ℬ q).symm f).val (fun i ↦ (x i : M i)) =

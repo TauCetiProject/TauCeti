@@ -247,7 +247,7 @@ theorem _root_.Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ
     TauCeti.contMDiffWithinAt_clm_apply.mpr fun w ↦ ?_
   have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := G) (E₃ := Bundle.Trivial B G)
     (b := id) (hβ y hy) (hs v) (hs w)
-  exact (contMDiffWithinAt_totalSpace.mp h).2.congr
+  exact (contMDiffWithinAt_totalSpace_iff.mp h).2.congr
     (fun z hz ↦ by simp [e.symmₗ_apply hz]) (by simp [e.symmₗ_apply hy])
 
 end TrivializationForm
@@ -527,13 +527,13 @@ theorem contMDiffAt_hom_bundle_prod_iff [CompleteSpace 𝕜] [FiniteDimensional 
     -- The section `y ↦ e₁.symm y w` is `C^n` near `q.2`: read in `e₁`, it is constant.
     have hs : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁)) n
         (fun y ↦ TotalSpace.mk' F₁ y (e₁.symm y w)) q.2 := by
-      rw [contMDiffAt_section]
+      rw [contMDiffAt_section_iff]
       refine (contMDiffAt_const (c := w)).congr_of_eventuallyEq ?_
       filter_upwards [e₁.open_baseSet.mem_nhds h₁] with y hy
       exact congr(Prod.snd $(e₁.apply_mk_symm hy w))
     -- Applying the total-space map to this section, with the parameter, and reading the result
     -- in `e₂` gives the coordinate expression of `ϕ` applied to `w`.
-    have ht := (contMDiffAt_totalSpace.1 ((hϕ (e₁.symm q.2 w)).comp q
+    have ht := (contMDiffAt_totalSpace_iff.1 ((hϕ (e₁.symm q.2 w)).comp q
       (contMDiffAt_fst.prodMk (hs.comp q contMDiffAt_snd)))).2
     refine ht.congr_of_eventuallyEq ?_
     filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
@@ -598,7 +598,7 @@ theorem contMDiff_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
       (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
     ContMDiff (IB.prod 𝓘(𝕜, F₂)) (IB.prod 𝓘(𝕜, F₁)) n
       (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.2)) := by
-  let := FiniteDimensional.complete 𝕜 F₁
+  let := FiniteDimensional.completeSpace 𝕜 F₁
   have h := (contMDiff_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).2 he
   have hi := h.clm_bundle_inverse fun x ↦ ContinuousLinearMap.isInvertible_equiv
   have ha := (hi.comp (contMDiff_proj E₂)).clm_bundle_apply contMDiff_id

@@ -279,8 +279,8 @@ theorem holderWith_zero_of_nnnorm_le {X Y : Type*} [PseudoEMetricSpace X]
     [SeminormedAddCommGroup Y] {f : X → Y} {M : ℝ≥0} (hf : ∀ x, ‖f x‖₊ ≤ M) :
     HolderWith (2 * M) 0 f := fun x y ↦ by
   rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_nndist, ENNReal.coe_le_coe,
-    nndist_eq_nnnorm, two_mul]
-  exact (nnnorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
+    nnDist_eq_nnNorm, two_mul]
+  exact (nnNorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
 
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
 a ball around each point of a compact set `K`, with radii and constants depending on the point, then
@@ -318,7 +318,7 @@ theorem IsCompact.exists_holderOnWith_thickening_and_norm_le {X Y : Type*} [Pseu
           exact (hL z (htK z hzt)).dist_le_mul_rpow_of_mem_ball hyz
       _ = ((‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ) : ℝ≥0) : ℝ) := by
           rw [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow,
-            Real.coe_toNNReal _ (hr z (htK z hzt)).le, coe_nnnorm]
+            Real.coe_toNNReal _ (hr z (htK z hzt)).le, coe_nnNorm]
       _ ≤ M := by
           exact_mod_cast Finset.single_le_sum
             (f := fun z => ‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ)) (fun _ _ => zero_le) hzt

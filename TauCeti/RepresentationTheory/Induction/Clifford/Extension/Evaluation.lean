@@ -61,7 +61,7 @@ implementing operator, since inverse precomposition cancels its action on the ve
 noncomputable def cliffordTensorRepresentation : Representation k (inertia A) E :=
   cliffordBalancedTensorRepresentation A (cliffordMultiplicityRepresentation A W)
     (cliffordMultiplicityRepresentation_smul A W)
-    (fun d f => by simp)
+    (fun d f => by simp [cliffordMultiplicityRepresentation_mk_kernelLift])
 
 /-- Any implementing operator computes the inertia action on pure tensors. -/
 theorem cliffordTensorRepresentation_projection_tmul (p : implementers A) (f : M) (x : V) :

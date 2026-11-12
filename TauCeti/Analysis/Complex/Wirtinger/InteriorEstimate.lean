@@ -159,9 +159,9 @@ private theorem eLpNorm_conjWirtingerDeriv_smul_le {χ : ℂ → ℝ} {u g : ℂ
   rw [hsplit]
   refine (eLpNorm_add_le hp).trans (add_le_add ((eLpNorm_add_le hp).trans
     (add_le_add (eLpNorm_norm _ hgm).le ?_)) ?_)
-  · rw [eLpNorm_const_smul, NNReal.enorm_eq, eLpNorm_norm _ hDv.aestronglyMeasurable]
+  · rw [eLpNorm_const_smul, NNReal.eNorm_eq, eLpNorm_norm _ hDv.aestronglyMeasurable]
     exact mul_le_mul_right (eLpNorm_mono_measure (fderiv ℝ v) Measure.restrict_le_self) _
-  · rw [eLpNorm_const_smul, NNReal.enorm_eq,
+  · rw [eLpNorm_const_smul, NNReal.eNorm_eq,
       eLpNorm_norm _ (hu.continuousOn.aestronglyMeasurable hU.measurableSet)]
 
 /-- **The Calderón–Zygmund inequality for the cut-off map.** If `C` is a Calderón–Zygmund

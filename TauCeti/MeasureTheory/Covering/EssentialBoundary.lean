@@ -98,7 +98,7 @@ theorem le_one (h : HasDensityAt μ s x d) : d ≤ 1 :=
 /-- Densities only depend on the set up to `μ`-null sets. -/
 theorem congr_ae (h : HasDensityAt μ s x d) (hst : s =ᵐ[μ] t) : HasDensityAt μ t x d := by
   have hm (r : ℝ) : μ (s ∩ closedBall x r) = μ (t ∩ closedBall x r) :=
-    measure_congr (hst.inter EventuallyEq.rfl)
+    measure_congr (hst.inter Filter.EventuallyEqSet.rfl)
   simpa only [HasDensityAt, hm] using h
 
 /-- A positive density forces closed balls of small positive radius around the point to have
@@ -189,23 +189,23 @@ theorem essentialInterior_mono_ae (h : s ≤ᵐ[μ] t) :
     essentialInterior μ s ⊆ essentialInterior μ t := fun x hx => by
   rw [mem_essentialInterior, hasDensityAt_iff] at hx ⊢
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le hx tendsto_const_nhds
-    (fun _ => ENNReal.div_le_div_right (measure_mono_ae (h.inter EventuallyLE.rfl)) _)
+    (fun _ => ENNReal.div_le_div_right (measure_mono_ae (h.inter Filter.EventuallySubset.rfl)) _)
     fun r => measure_inter_div_le_one t (closedBall x r)
 
 /-- The essential interior is monotone. -/
 theorem essentialInterior_mono (h : s ⊆ t) : essentialInterior μ s ⊆ essentialInterior μ t :=
-  essentialInterior_mono_ae h.eventuallyLE
+  essentialInterior_mono_ae h.eventuallySubset
 
 /-- The essential exterior is antitone, up to null sets. -/
 theorem essentialExterior_anti_ae (h : s ≤ᵐ[μ] t) :
     essentialExterior μ t ⊆ essentialExterior μ s := fun _ hx => by
   rw [mem_essentialExterior, hasDensityAt_iff] at hx ⊢
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hx (fun _ => zero_le)
-    fun _ => ENNReal.div_le_div_right (measure_mono_ae (h.inter EventuallyLE.rfl)) _
+    fun _ => ENNReal.div_le_div_right (measure_mono_ae (h.inter Filter.EventuallySubset.rfl)) _
 
 /-- The essential exterior is antitone. -/
 theorem essentialExterior_anti (h : s ⊆ t) : essentialExterior μ t ⊆ essentialExterior μ s :=
-  essentialExterior_anti_ae h.eventuallyLE
+  essentialExterior_anti_ae h.eventuallySubset
 
 /-- A point is in the essential exterior of a union exactly when it is in the essential exterior
 of both sets. -/

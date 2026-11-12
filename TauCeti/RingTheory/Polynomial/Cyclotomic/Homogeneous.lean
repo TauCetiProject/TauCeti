@@ -125,7 +125,7 @@ theorem _root_.Int.cast_homogeneousCyclotomic (n : ℕ) (a b : ℤ) :
 /-- `Φ_n` is homogeneous of degree `φ(n)`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`. -/
 theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
     homogeneousCyclotomic n (c * a) (c * b) = c ^ n.totient * homogeneousCyclotomic n a b := by
-  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← smul_eq_mul (c ^ _),
+  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def,
     ← (isHomogeneous_homogenize _).eval_smul]
   simp [Matrix.smul_cons]
 
@@ -216,7 +216,9 @@ empty while `a ^ 0 - b ^ 0 = 0`. -/
 theorem prod_homogeneousCyclotomic_eq_pow_sub_pow {n : ℕ} (hn : 0 < n) (a b : R) :
     ∏ d ∈ n.divisors, homogeneousCyclotomic d a b = a ^ n - b ^ n := by
   simp_rw [homogeneousCyclotomic_def]
-  rw [← map_prod, ← homogenize_finsetProd fun d _ => natDegree_cyclotomic_le, Nat.sum_totient,
+  rw [← map_prod, ← homogenize_finsetProd (s := n.divisors)
+      (p := fun d ↦ cyclotomic d R) (n := Nat.totient) (fun d _ ↦ natDegree_cyclotomic_le),
+    Nat.sum_totient,
     prod_cyclotomic_eq_X_pow_sub_one hn, homogenize_sub, homogenize_X_pow le_rfl, homogenize_one]
   simp
 

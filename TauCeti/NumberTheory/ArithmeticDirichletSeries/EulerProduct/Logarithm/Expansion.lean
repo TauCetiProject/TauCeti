@@ -110,7 +110,7 @@ theorem tsum_coeff_localLogSeries_eq_log_eulerFactor (D : EulerProductData K)
   have hslit (z : ℂ) (hz : ‖z‖ₑ < ‖q‖₊) :
       FormalMultilinearSeries.ofScalarsSum (E := ℂ) a z ∈ Complex.slitPlane := by
     have hzq : ‖z‖ ≤ ‖q‖ := by
-      rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz
+      rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] at hz
       exact hz.le
     have hbound (e : ℕ) : ‖a e * z ^ e‖ ≤
         ‖idealTerm K D.toIdealArithmeticFunction σ (P.primeIdealPow e)‖ := by
@@ -130,7 +130,7 @@ theorem tsum_coeff_localLogSeries_eq_log_eulerFactor (D : EulerProductData K)
           hsz'.tsum_le_tsum (fun e ↦ hbound (e + 1)) ((summable_nat_add_iff 1).mpr hσ.norm)
       _ < 1 := hP
   have hx : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < ‖q‖₊ := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
+    rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe]
     exact P.norm_absNorm_cpow_neg_lt (by simpa using hs)
   have h := PowerSeries.hasSum_coeff_logOf_mul_pow_of_slitPlane (D.localPowerSeries P)
     (D.constantCoeff_localPowerSeries P) hr hslit hx
@@ -156,13 +156,13 @@ theorem differentiableOn_tsum_coeff_localLogSeries_of_zeroFree (D : EulerProduct
     (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P)
     (D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ) fun z hz ↦ by
       apply hne z
-      rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz
+      rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] at hz
       exact_mod_cast hz
   rw [D.localLogSeries_def]
   refine hΛ.comp (fun s _ ↦ ?_) fun s hs ↦ ?_
   · exact (differentiableAt_id.neg.const_cpow
       (Or.inl P.natCast_absNorm_ne_zero)).differentiableWithinAt
-  · rw [Metric.mem_eball, edist_zero_right, enorm_eq_nnnorm, ENNReal.coe_lt_coe]
+  · rw [Metric.mem_eball, edist_zero_right, eNorm_eq_nnNorm, ENNReal.coe_lt_coe]
     exact P.norm_absNorm_cpow_neg_lt (by simpa using hs)
 
 /-! ### All primes -/

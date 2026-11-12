@@ -175,7 +175,7 @@ private theorem ofReal_sum_mul_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ
     _ ≤ ‖(1 : ℝ)‖ₑ * ‖(T : ℝ →ᵇ ℝ)‖ₑ * totalVariationOn volume Ω u :=
         ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn T 1
     _ ≤ totalVariationOn volume Ω u := by
-        rw [enorm_one, one_mul]
+        rw [eNorm_one, one_mul]
         exact mul_le_of_le_one_left zero_le hTnorm
 
 /-- **The variation along Lebesgue points is bounded by the total variation.** Let

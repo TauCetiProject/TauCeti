@@ -132,7 +132,7 @@ theorem hasWeakConjWirtingerDerivOn_zero_iff_exists_differentiableOn_ae_eq
     [FiniteDimensional ℂ F] [μ.IsAddHaarMeasure] :
     HasWeakConjWirtingerDerivOn μ Ω u 0 ↔
       ∃ v : ℂ → F, DifferentiableOn ℂ v Ω ∧ u =ᵐ[μ.restrict Ω] v := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   refine ⟨HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq, ?_⟩
   rintro ⟨v, hv, huv⟩
   exact hv.hasWeakConjWirtingerDerivOn_zero.congr_ae huv.symm
@@ -142,7 +142,7 @@ precisely holomorphy. -/
 theorem hasWeakConjWirtingerDerivOn_zero_iff_of_continuousOn
     [FiniteDimensional ℂ F] [μ.IsAddHaarMeasure] (hu : ContinuousOn u Ω) :
     HasWeakConjWirtingerDerivOn μ Ω u 0 ↔ DifferentiableOn ℂ u Ω := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   exact ⟨fun h ↦ h.differentiableOn hu, DifferentiableOn.hasWeakConjWirtingerDerivOn_zero⟩
 
 

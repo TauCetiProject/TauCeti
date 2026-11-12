@@ -121,7 +121,6 @@ theorem IsLatticeSpan.measure_Ioc_mul_eq_measure_singleton (h : μ.IsLatticeSpan
   apply measure_congr
   filter_upwards [h.ae_mem_range] with x hx
   obtain ⟨k, rfl⟩ := hx
-  apply propext
   simp only [mem_Ioc, mem_singleton_iff]
   have hle : (k : ℝ≥0) * a ≤ ((n + 1 : ℕ) : ℝ≥0) * a ↔ k ≤ n + 1 := by
     rw [mul_le_mul_iff_left₀ h.pos]
@@ -142,7 +141,6 @@ theorem IsLatticeSpan.measure_Iic_eq_of_mem_Ico (h : μ.IsLatticeSpan a) {t : �
   apply measure_congr
   filter_upwards [h.ae_mem_range] with x hx
   obtain ⟨k, rfl⟩ := hx
-  apply propext
   simp only [mem_Iic]
   constructor
   · intro hk

@@ -160,7 +160,7 @@ theorem ContDiffOn.isImmersionAt_iff_injective_fderiv [FiniteDimensional 𝕜 F]
     exact (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm.injective h'
   · have : FiniteDimensional 𝕜 E :=
       FiniteDimensional.of_injective (fderiv 𝕜 f x).toLinearMap hdf
-    have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+    have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
     exact hf.isImmersionAt_of_hasLeftInverse hs hx hn
       (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
 
@@ -275,7 +275,7 @@ theorem ContMDiffOn.isImmersionAt_iff_injective_mfderiv [FiniteDimensional 𝕜 
   refine ⟨fun h => h.mfderiv_injective hn0, fun hdf => ?_⟩
   have : FiniteDimensional 𝕜 E :=
     FiniteDimensional.of_injective (mfderiv I J f x).toLinearMap hdf
-  have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
+  have : CompleteSpace E' := FiniteDimensional.completeSpace 𝕜 E'
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn
     (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
 
@@ -307,7 +307,7 @@ differentiable along its image is an immersion. -/
 theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] {g : N → M}
     (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hg : ∀ x, MDifferentiableAt J I g (f x))
     (hgf : LeftInverse g f) : IsImmersion I J n f :=
-  have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
+  have : CompleteSpace E' := FiniteDimensional.completeSpace 𝕜 E'
   TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun x ↦
     hf.contMDiffOn.isImmersionAt_of_comp_eventuallyEq_id isOpen_univ (mem_univ x) hn (hg x)
       (Filter.Eventually.of_forall hgf)

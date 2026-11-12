@@ -290,7 +290,7 @@ theorem smul (hc : IsLipschitzChart Ω e γ K h r) {c : ℝ} (hc0 : 0 < c) :
     IsLipschitzChart (c • Ω) (dilateConj c e) (fun y => c * γ (c⁻¹ • y)) K (c * h) (c * r) := by
   refine ⟨mul_pos hc0 hc.height_pos, mul_pos hc0 hc.radius_pos, ?_, ?_⟩
   · have hK : ‖c‖₊ * K * ‖c⁻¹‖₊ = K := by
-      rw [mul_comm, ← mul_assoc, ← nnnorm_mul, inv_mul_cancel₀ hc0.ne', nnnorm_one, one_mul]
+      rw [mul_comm, ← mul_assoc, ← nnNorm_mul, inv_mul_cancel₀ hc0.ne', nnNorm_one, one_mul]
     simpa only [hK, Function.comp_def, smul_eq_mul] using
       ((lipschitzWith_smul c).comp hc.lipschitzWith).comp (lipschitzWith_smul c⁻¹)
   · have himage : dilateConj c e '' (c • Ω) = c • (e '' Ω) := by

@@ -58,7 +58,7 @@ theorem enorm_cauchyTransform_le [p.HolderConjugate q] (hf : AEStronglyMeasurabl
     (hs : support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) :
     ‖cauchyTransform f w‖ₑ ≤ ENNReal.ofReal Real.pi⁻¹ *
       eLpNorm (truncatedCauchyKernel (r + R)) q volume * eLpNorm f p volume := by
-  rw [cauchyTransform_eq_truncatedCauchyKernel_convolution hs hw, enorm_smul]
+  rw [cauchyTransform_eq_truncatedCauchyKernel_convolution hs hw, eNorm_smul]
   have hπ : ‖(Real.pi : ℂ)⁻¹‖ₑ = ENNReal.ofReal Real.pi⁻¹ := by
     rw [← ofReal_norm, norm_inv, Complex.norm_real, Real.norm_eq_abs,
       abs_of_pos Real.pi_pos]
@@ -68,7 +68,7 @@ theorem enorm_cauchyTransform_le [p.HolderConjugate q] (hf : AEStronglyMeasurabl
         (‖(ContinuousLinearMap.lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F)‖ₑ *
           eLpNorm (truncatedCauchyKernel (r + R)) q volume * eLpNorm f p volume) := by
       gcongr
-      exact enorm_convolution_le (ContinuousLinearMap.lsmul ℝ ℂ)
+      exact eNorm_convolution_le (ContinuousLinearMap.lsmul ℝ ℂ)
         (measurable_truncatedCauchyKernel _).aestronglyMeasurable hf w
     _ ≤ ENNReal.ofReal Real.pi⁻¹ *
         (1 * eLpNorm (truncatedCauchyKernel (r + R)) q volume * eLpNorm f p volume) := by
@@ -89,6 +89,6 @@ theorem norm_cauchyTransform_le [p.HolderConjugate q] (hq : q < 2)
       eLpNorm (truncatedCauchyKernel (r + R)) q volume * eLpNorm f p volume ≠ ⊤ := by
     finiteness
   simpa only [ENNReal.toReal_mul, ENNReal.toReal_ofReal (inv_nonneg.mpr Real.pi_pos.le),
-    toReal_enorm] using ENNReal.toReal_mono hfin hb
+    toReal_eNorm] using ENNReal.toReal_mono hfin hb
 
 end TauCeti

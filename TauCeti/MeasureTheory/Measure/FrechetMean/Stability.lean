@@ -91,7 +91,7 @@ theorem IsCoupling.frechetRadius_le_add {π : Measure (X × X)} {μ ν : Measure
     eLpNorm_map_measure hx.aestronglyMeasurable measurable_snd.aemeasurable]
   calc eLpNorm ((fun y ↦ edist x y) ∘ Prod.fst) p π
       ≤ eLpNorm ((fun y ↦ edist x y) ∘ Prod.snd + fun z : X × X ↦ edist z.1 z.2) p π :=
-        eLpNorm_mono_enorm (hx.comp measurable_fst).aestronglyMeasurable fun z ↦ by
+        eLpNorm_mono_eNorm (hx.comp measurable_fst).aestronglyMeasurable fun z ↦ by
           simpa [edist_comm z.2 z.1] using edist_triangle x z.2 z.1
     _ ≤ _ := eLpNorm_add_le hp
 
@@ -107,7 +107,7 @@ theorem IsCoupling.frechetRadius_le_add' {π : Measure (X × X)} {μ ν : Measur
     eLpNorm_map_measure hx.aestronglyMeasurable measurable_snd.aemeasurable]
   calc eLpNorm ((fun y ↦ edist x y) ∘ Prod.snd) p π
       ≤ eLpNorm ((fun y ↦ edist x y) ∘ Prod.fst + fun z : X × X ↦ edist z.1 z.2) p π :=
-        eLpNorm_mono_enorm (hx.comp measurable_snd).aestronglyMeasurable fun z ↦ by
+        eLpNorm_mono_eNorm (hx.comp measurable_snd).aestronglyMeasurable fun z ↦ by
           simpa using edist_triangle x z.1 z.2
     _ ≤ _ := eLpNorm_add_le hp
 

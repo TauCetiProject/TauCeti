@@ -92,7 +92,7 @@ since `ApproximatesLinearOn.injOn` only uses the approximation estimate. -/
 theorem exists_mem_nhds_injOn {f : E → F} {L : E ≃L[𝕜] F} {a : E}
     (hf : HasStrictFDerivAt f (L : E →L[𝕜] F) a) : ∃ s ∈ 𝓝 a, InjOn f s := by
   obtain ⟨s, has, hso, happ⟩ := hf.approximates_deriv_on_open_nhds
-  exact ⟨s, hso.mem_nhds has, happ.injOn (L.subsingleton_or_nnnorm_symm_pos.imp id
+  exact ⟨s, hso.mem_nhds has, happ.injOn (L.subsingleton_or_nnNorm_symm_pos.imp id
     fun h => NNReal.half_lt_self (inv_pos.2 h).ne')⟩
 
 variable [CompleteSpace E] {f : E → F} {L : E ≃L[𝕜] F} {a : E}
@@ -117,7 +117,7 @@ theorem isInvertible_of_mem_toOpenPartialHomeomorph_source
   refine ContinuousLinearMap.isInvertible_of_norm_sub_le_half L ?_
   have hbound := hf.approximatesLinearOn_toOpenPartialHomeomorph_source.norm_sub_le_of_hasFDerivAt
     ((hf.toOpenPartialHomeomorph f).open_source.mem_nhds hx) hA
-  rwa [← NNReal.coe_le_coe, coe_nnnorm]
+  rwa [← NNReal.coe_le_coe, coe_nnNorm]
 
 /-- **The local inverse of the inverse function theorem is `C^n` at every point of its target.**
 The original inverse-function hypotheses provide an invertible derivative only at the base point.

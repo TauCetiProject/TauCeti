@@ -240,7 +240,7 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_zero
       (fun v : E => extChartAt I (1 : G)
         (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)))
       (ContinuousLinearMap.id ℝ E) 0 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hFdiff := differentiableAt_extChartAt_mulInvariantExp_zero (I := I) (G := G)
   apply hFdiff.hasFDerivAt.congr_fderiv
   apply ContinuousLinearMap.ext

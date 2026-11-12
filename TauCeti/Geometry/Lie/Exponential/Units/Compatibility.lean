@@ -93,7 +93,7 @@ section FiniteDimensional
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
 noncomputable local instance finiteDimensionalCompleteSpace : CompleteSpace R :=
-  FiniteDimensional.complete ℝ R
+  FiniteDimensional.completeSpace ℝ R
 
 /-- The canonical identification of the Lie algebra of `Rˣ` with the ambient real algebra. -/
 noncomputable def unitsLieAlgebraEquiv :

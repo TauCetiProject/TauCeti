@@ -109,7 +109,7 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_
     exact setIntegral_mono_on_ae (hI.integrableOn.const_mul a) hQ.integrableOn hT
       (haT.mono fun z h hz ↦ mul_le_mul_of_nonneg_right (h hz) (by positivity))
   have hYS := (hpot hS haS).trans (setIntegral_mono_set hQ.integrableOn (ae_restrict_of_ae hQ₀)
-    hSΩ.eventuallyLE)
+    hSΩ.eventuallySubset)
   have hYC := hpot measurableSet_ball.compl haΩ
   have hQΩ : 0 ≤ ∫ z in Ω, P z * ‖u z‖ ^ 2 ∂μ := integral_nonneg_of_ae (ae_restrict_of_ae hQ₀)
   have hQC : 0 ≤ ∫ z in Ωᶜ, P z * ‖u z‖ ^ 2 ∂μ := integral_nonneg_of_ae (ae_restrict_of_ae hQ₀)

@@ -98,7 +98,7 @@ theorem localAbelianArtinHom_apply (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
 formation. -/
 @[simp]
 theorem of_localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
-    Additive.ofMul (Abelianization.of (localAbelianArtinHom K hV x)) =
+    Additive.ofMul (Group.Abelianization.of (localAbelianArtinHom K hV x)) =
       (localClassFormation K).artinMap (ofOpenNormal V)
         (localGroundEquiv K V (Additive.ofMul x)) := by
   rw [localAbelianArtinHom_apply, ClassFormation.ofMul_of_abelianArtinMap,
@@ -141,10 +141,10 @@ theorem localAbelianGaloisEquiv_mk (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
     QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- **`localAbelianGaloisEquiv` is the Artin map of the local class formation**: composed with
-`Abelianization.of`, which is injective because the layer is abelian, it is
+`Group.Abelianization.of`, which is injective because the layer is abelian, it is
 `ClassFormation.artinMap`. -/
 theorem localAbelianGaloisEquiv_artinMap (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
-    Additive.ofMul (Abelianization.of (localAbelianGaloisEquiv K hV (QuotientGroup.mk x))) =
+    Additive.ofMul (Group.Abelianization.of (localAbelianGaloisEquiv K hV (QuotientGroup.mk x))) =
       (localClassFormation K).artinMap (ofOpenNormal V)
         (localGroundEquiv K V (Additive.ofMul x)) := by
   rw [localAbelianGaloisEquiv_mk, of_localAbelianArtinHom]

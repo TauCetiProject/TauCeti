@@ -170,7 +170,7 @@ null set, including on compact subsets of `U` that leave `W`. -/
 theorem _root_.MeasureTheory.MemLp.memLpLoc_of_ae_le {W : Set ℂ}
     (hf : MemLp f p (volume.restrict W)) (hUW : U ≤ᵐ[volume] W) : MemLpLoc p U f :=
   memLpLoc_iff.2 fun _ hK _ => hf.mono_measure
-    (Measure.restrict_mono_ae (Filter.EventuallyLE.trans (Filter.Eventually.of_forall hK) hUW))
+    (Measure.restrict_mono_ae ((Filter.EventuallySubset.of_subset hK).trans hUW))
 
 /-- **Local `Lᵖ` on a half-disc through upper halves.** A function is locally `Lᵖ` on
 `Ω ∩ {0 ≤ im}`, up to the real axis, exactly when it is `Lᵖ` on the upper half `W ∩ {0 < im}` of
@@ -191,7 +191,7 @@ theorem memLpLoc_inter_setOf_im_nonneg_iff {Ω : Opens ℂ} :
   · obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen
       (hKU.trans Set.inter_subset_left)
     refine (h ⟨W, hWo⟩ hWc hWΩ).mono_measure (Measure.restrict_mono_ae ?_)
-    filter_upwards [(Complex.setOf_le_im_ae_eq 0).le] with z hz hzK
+    filter_upwards [(Complex.setOf_le_im_ae_eq 0).subset] with z hz hzK
     exact Opens.mem_upperHalf.2 ⟨hKW hzK, hz (hKU hzK).2⟩
 
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]

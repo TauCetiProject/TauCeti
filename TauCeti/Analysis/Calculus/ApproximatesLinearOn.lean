@@ -125,7 +125,7 @@ theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : 
   -- A right inverse of `f'` with the bound `C` in place of `‖f'⁻¹‖`, which may vanish.
   let R : (f' : E →L[𝕜] F).NonlinearRightInverse :=
     { toFun := f'.symm
-      nnnorm := ⟨C, hC.le⟩
+      nnNorm := ⟨C, hC.le⟩
       bound' := hbound
       right_inv' := f'.apply_symm_apply }
   have hsub := Metric.closedBall_subset_closedBall (x := b) hr
@@ -136,7 +136,7 @@ theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : 
   obtain ⟨a, ha, hfa⟩ := (hf.mono_set hsub).surjOn_closedBall_of_nonlinearRightInverse R
     (by positivity) le_rfl hzero
   have hinj : InjOn f (Metric.closedBall b r) :=
-    hf.injOn <| f'.subsingleton_or_nnnorm_symm_pos.imp id fun hpos ↦ by
+    hf.injOn <| f'.subsingleton_or_nnNorm_symm_pos.imp id fun hpos ↦ by
       -- `c * ‖f'⁻¹‖ ≤ c * C ≤ 1 / 2`.
       rw [NNReal.lt_inv_iff_mul_lt hpos.ne', ← NNReal.coe_lt_coe]
       push_cast
@@ -192,7 +192,7 @@ theorem lipschitzOnWith_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ) (M 
     LipschitzOnWith (1 + δ * ‖M‖₊) (fun x ↦ x + M (f x - L x)) s := by
   refine lipschitzOnWith_iff_restrict.2 ((hf.id_add_comp_sub M).lipschitzWith.weaken ?_)
   gcongr
-  rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
+  rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
   exact ContinuousLinearMap.norm_id_le
 
 /-- If `f` approximates `L` on `s` up to `δ` and `δ ‖M‖ < 1`, then `x ↦ x + M (f x - L x)` expands
@@ -266,7 +266,7 @@ theorem Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le {𝕜 E F : Ty
         (fun v hv => (hclose v hv).trans_eq (by simp)) hy hx
     refine InjOn.of_comp (g := ⇑P) <| happ.injOn <|
       (subsingleton_or_nontrivial E).imp id fun (_ : Nontrivial E) ↦ ?_
-    simpa [ContinuousLinearMap.nnnorm_id] using NNReal.half_lt_self one_ne_zero
+    simpa [ContinuousLinearMap.nnNorm_id] using NNReal.half_lt_self one_ne_zero
   · -- `P ∘ h' u - id` sends `w` to `-w` and has norm at most `1 / 2`, so `w = 0`.
     have h1 := (P.comp (h' u) - ContinuousLinearMap.id 𝕜 E).le_of_opNorm_le (hclose u hu) w
     have hw' : (P.comp (h' u) - ContinuousLinearMap.id 𝕜 E) w = -w := by simp [hw]

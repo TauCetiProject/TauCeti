@@ -32,7 +32,7 @@ later shows that a layer and this maximal abelian sublayer have the same norm su
 
 Under the profinite hypotheses used for finite normal layers, the final part of the file removes
 the algebraic abelianization from the quotient group. It supplies the canonical equivalence
-`Abelianization (G ⧸ V) ≃* G ⧸ V` used, when `G` is a Galois group, to state local and global
+`Group.Abelianization (G ⧸ V) ≃* G ⧸ V` used, when `G` is a Galois group, to state local and global
 class-field correspondences directly in terms of their abelian Galois groups.
 
 ## Main definitions
@@ -261,27 +261,27 @@ isomorphism. This equivalence removes the redundant abelianization from the targ
 equivalence. -/
 noncomputable def abelianizationGalEquiv {V : OpenNormalSubgroup G}
     (hV : V.IsAbelianClassFieldLayer) :
-    Abelianization (NormalLayer.ofOpenNormal V).Gal ≃*
+    Group.Abelianization (NormalLayer.ofOpenNormal V).Gal ≃*
       (NormalLayer.ofOpenNormal V).Gal :=
   letI := isMulCommutative_gal_ofOpenNormal hV
-  Abelianization.equivOfComm.symm
+  Group.Abelianization.equivOfComm.symm
 
 open scoped IsMulCommutative in
 /-- The inverse of `abelianizationGalEquiv` is the canonical abelianization map. -/
 @[simp]
 theorem abelianizationGalEquiv_symm_apply {V : OpenNormalSubgroup G}
     (hV : V.IsAbelianClassFieldLayer) (x : (NormalLayer.ofOpenNormal V).Gal) :
-    (abelianizationGalEquiv hV).symm x = Abelianization.of x := by
+    (abelianizationGalEquiv hV).symm x = Group.Abelianization.of x := by
   let := isMulCommutative_gal_ofOpenNormal hV
   simp only [abelianizationGalEquiv, MulEquiv.symm_symm,
-    Abelianization.equivOfComm_apply]
+    Group.Abelianization.equivOfComm_apply]
 
 open scoped IsMulCommutative in
 /-- The abelianization equivalence sends the canonical class of an element back to that element. -/
 @[simp]
 theorem abelianizationGalEquiv_of {V : OpenNormalSubgroup G}
     (hV : V.IsAbelianClassFieldLayer) (x : (NormalLayer.ofOpenNormal V).Gal) :
-    abelianizationGalEquiv hV (Abelianization.of x) = x := by
+    abelianizationGalEquiv hV (Group.Abelianization.of x) = x := by
   rw [← abelianizationGalEquiv_symm_apply hV x]
   exact (abelianizationGalEquiv hV).apply_symm_apply x
 
@@ -300,7 +300,7 @@ variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 abelian sublayer**: `(G ⧸ V)^ab` has `[G : V · closure [G, G]]` elements. This is the counting
 input to norm limitation. -/
 theorem natCard_abelianization_gal_eq_degree_maximalAbelianLayer (V : OpenNormalSubgroup G) :
-    Nat.card (Abelianization (NormalLayer.ofOpenNormal V).Gal) =
+    Nat.card (Group.Abelianization (NormalLayer.ofOpenNormal V).Gal) =
       (NormalLayer.ofOpenNormal V.maximalAbelianLayer).degree := by
   -- The commutator subgroup of `G ⧸ V` is the image of that of `G`, and closing the commutator
   -- subgroup adds nothing to the open, hence closed, subgroup `V · [G, G]`.
@@ -312,7 +312,7 @@ theorem natCard_abelianization_gal_eq_degree_maximalAbelianLayer (V : OpenNormal
     Nat.card_congr (NormalLayer.galOfOpenNormalEquiv V.maximalAbelianLayer).toEquiv,
     ← Subgroup.index_eq_card, V.toSubgroup_maximalAbelianLayer_eq_commutator_sup,
     ← Subgroup.index_map_mk'_eq_index_sup, ← hcomm]
-  -- `Abelianization H` is by definition the quotient `H ⧸ commutator H`.
+  -- `Group.Abelianization H` is by definition the quotient `H ⧸ commutator H`.
   exact (Subgroup.index_eq_card _).symm
 
 end OpenNormalSubgroup

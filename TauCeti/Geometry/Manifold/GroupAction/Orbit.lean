@@ -137,7 +137,7 @@ omit [CompleteSpace E] [CompleteSpace E'] in
 orbit map `g ↦ g • x` of a smooth action on a Hausdorff manifold is an immersion. -/
 theorem isImmersion_smul_const_of_stabilizer_eq_bot [T2Space M] {x : M}
     (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) := by
-  have : CompleteSpace E' := FiniteDimensional.complete ℝ E'
+  have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : Subsingleton (MulAction.stabilizer G x) := by
     rw [hx]
