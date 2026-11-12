@@ -375,10 +375,8 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
     rw [hL, Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu.2.2,
       Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu.2.1, map_add, neg_add,
       Complex.exp_add, Complex.exp_neg (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)), hexp]
-    have h₁ : exp (2 * π * θ₁ * I) ^ m 0 ≠ 0 := zpow_ne_zero _ (exp_ne_zero _)
-    have h₂ : exp (2 * π * θ₂ * I) ^ m 1 ≠ 0 := zpow_ne_zero _ (exp_ne_zero _)
     field_simp
-  obtain ⟨g, hg, hgG⟩ := TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq hGc.continuous hper
+  obtain ⟨g, -, hgG⟩ := TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq hGc.continuous hper
   have hlift : (fun x : Fin 2 → ℝ ↦ g fun i ↦ (x i : UnitAddCircle)) = G := funext hgG
   refine ⟨g, mem_smoothFunctions.2 (hlift ▸ hGc), funext fun z ↦ ?_⟩
   obtain ⟨p, rfl⟩ := L.surjective z
