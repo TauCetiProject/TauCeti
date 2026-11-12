@@ -75,7 +75,6 @@ private theorem norm_transportedCauchyL_le (hT : 0 < T)
       (K ^ 2 * K ^ (α : ℝ)) *
         ((1 + Module.finrank ℝ (EuclideanSpace ℝ ι)) *
           (1 + (heatKernelMoment (EuclideanSpace ℝ ι) α : ℝ))) * (K ^ 2 * K ^ (α : ℝ)) := by
-  have hK₀ : 0 ≤ K := zero_le_one.trans hK
   have hJ : ‖CkHolderSpace.compLinearL (k := 2) (α := α) (F := ℝ) e.toContinuousLinearMap‖ ≤
       K ^ 2 * K ^ (α : ℝ) := by
     refine (CkHolderSpace.norm_compLinearL_le _).trans ?_
@@ -114,7 +113,6 @@ theorem exists_solutionOperator_euclideanParabolicOperatorL_const [DecidableEq �
   let H := (1 + Module.finrank ℝ (EuclideanSpace ℝ ι)) *
     (1 + (heatKernelMoment (EuclideanSpace ℝ ι) α : ℝ))
   have hK : 1 ≤ K := le_max_left _ _
-  have hK₀ : 0 ≤ K := zero_le_one.trans hK
   refine ⟨D * H * D, by positivity, fun A hA hA' T hT ↦ ?_⟩
   obtain ⟨e, hen, hein, he⟩ :=
     exists_continuousLinearEquiv_norm_le_euclideanParabolicOperatorL_compSpatialL_eq

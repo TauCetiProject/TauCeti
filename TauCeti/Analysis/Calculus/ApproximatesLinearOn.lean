@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
-# A priori estimates for maps approximating linear maps
+# A priori estimates and straightening for maps approximating linear maps
 
 An estimate controlling a vector by its image under a continuous linear map and an auxiliary
 additive map persists under a nonlinear approximation, with a loss proportional to the
@@ -32,6 +32,16 @@ If the derivative of a function `g` is approximated by a bilinear map `L` near `
 `y` of `g` near `x` has a value within `(‖L‖ + κ) * (2 * ρ) * ρ` of that at `x`
 (`ApproximatesLinearOn.norm_sub_le_of_fderiv_eq_zero`).
 
+When `f` approximates a continuous linear map `L` on `s` up to `δ` and `M` is a continuous linear
+operator in the opposite direction, the map `h x = x + M (f x - L x)` approximates the identity up
+to `δ ‖M‖` (`ApproximatesLinearOn.id_add_comp_sub`). When `δ ‖M‖ < 1`, `h` is bi-Lipschitz on `s`
+with a `(1 - δ ‖M‖)⁻¹`-Lipschitz left inverse on `h '' s`
+(`ApproximatesLinearOn.exists_lipschitzOnWith_leftInvOn_id_add_comp_sub`), and when `M` is a right
+inverse of `L` (`Function.RightInverse.preimage_id_add_comp_sub`,
+`Function.RightInverse.image_id_add_comp_sub_inter_preimage`) this left inverse carries the linear
+slices `h '' s ∩ L ⁻¹' {y}` onto the fibres `s ∩ f ⁻¹' {y}`
+(`ApproximatesLinearOn.exists_lipschitzOnWith_eq_image_inter_preimage`).
+
 A map `Φ` on a product `E × F` which vanishes on the zero section near `(a, 0)` and has, at
 `(a, 0)`, a strict derivative injective on the fibre directions `{0} × F`, with `F`
 finite-dimensional, has no other zeros near `(a, 0)`
@@ -44,8 +54,30 @@ submanifold.
 
 public section
 
-open Filter Set Topology
+open Filter Function Set Topology
 open scoped NNReal Pointwise
+
+namespace Function.RightInverse
+
+/-- If `M` is a right inverse of an additive homomorphism `L`, then preimages under `f` agree with
+preimages of `L`-preimages under the straightening map `x ↦ x + M (f x - L x)`. -/
+theorem preimage_id_add_comp_sub {E F 𝓕 : Type*} [AddMonoid E] [AddCommGroup F] [FunLike 𝓕 E F]
+    [AddMonoidHomClass 𝓕 E F] {L : 𝓕} {M : F → E} (hM : RightInverse M L) (f : E → F)
+    (u : Set F) :
+    f ⁻¹' u = (fun x ↦ x + M (f x - L x)) ⁻¹' (L ⁻¹' u) := by
+  ext x
+  simp [map_add, hM (f x - L x), add_sub_cancel]
+
+/-- If `M` is a right inverse of an additive homomorphism `L`, then the straightening map
+`h x = x + M (f x - L x)` maps `s ∩ f ⁻¹' u` onto `h '' s ∩ L ⁻¹' u`. -/
+theorem image_id_add_comp_sub_inter_preimage {E F 𝓕 : Type*} [AddMonoid E] [AddCommGroup F]
+    [FunLike 𝓕 E F] [AddMonoidHomClass 𝓕 E F] {L : 𝓕} {M : F → E} (hM : RightInverse M L)
+    (s : Set E) (f : E → F) (u : Set F) :
+    (fun x ↦ x + M (f x - L x)) '' (s ∩ f ⁻¹' u) =
+      (fun x ↦ x + M (f x - L x)) '' s ∩ L ⁻¹' u := by
+  rw [hM.preimage_id_add_comp_sub f u, image_inter_preimage]
+
+end Function.RightInverse
 
 namespace ApproximatesLinearOn
 
@@ -145,6 +177,74 @@ theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜]
     _ ≤ (‖L‖ + κ) * (2 * ρ) * dist y x := hval
     _ ≤ (‖L‖ + κ) * (2 * ρ) * ρ := by gcongr; exact mem_closedBall.1 hy
 
+/-! ### Straightening a map along a continuous linear operator -/
+
+section Straightening
+
+variable {f : E → F} {L : E →L[𝕜] F} {M : F →L[𝕜] E} {s : Set E} {δ : ℝ≥0}
+
+/-- If `f` approximates `L` on `s` up to `δ`, then `x ↦ x + M (f x - L x)` approximates the
+identity on `s` up to `δ ‖M‖`. -/
+theorem id_add_comp_sub (hf : ApproximatesLinearOn f L s δ) (M : F →L[𝕜] E) :
+    ApproximatesLinearOn (fun x ↦ x + M (f x - L x)) (ContinuousLinearMap.id 𝕜 E) s
+      (δ * ‖M‖₊) := by
+  refine LipschitzOnWith.approximatesLinearOn ?_
+  have h : (fun x ↦ x + M (f x - L x)) - ⇑(ContinuousLinearMap.id 𝕜 E) = M ∘ (f - ⇑L) := by
+    ext x
+    simp
+  rw [h, mul_comm]
+  exact M.lipschitzWith.comp_lipschitzOnWith hf.lipschitzOnWith
+
+/-- If `f` approximates `L` on `s` up to `δ`, then `x ↦ x + M (f x - L x)` is
+`(1 + δ ‖M‖)`-Lipschitz on `s`. -/
+theorem lipschitzOnWith_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ) (M : F →L[𝕜] E) :
+    LipschitzOnWith (1 + δ * ‖M‖₊) (fun x ↦ x + M (f x - L x)) s := by
+  refine lipschitzOnWith_iff_restrict.2 ((hf.id_add_comp_sub M).lipschitzWith.weaken ?_)
+  gcongr
+  rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
+  exact ContinuousLinearMap.norm_id_le
+
+/-- If `f` approximates `L` on `s` up to `δ` and `δ ‖M‖ < 1`, then `x ↦ x + M (f x - L x)` expands
+distances on `s` by at least the factor `1 - δ ‖M‖`. -/
+theorem antilipschitzWith_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ)
+    (hδ : δ * ‖M‖₊ < 1) :
+    AntilipschitzWith (1 - δ * ‖M‖₊)⁻¹ (s.domRestrict fun x ↦ x + M (f x - L x)) := by
+  cases subsingleton_or_nontrivial E
+  · exact AntilipschitzWith.of_subsingleton
+  have hf' : ApproximatesLinearOn (fun x ↦ x + M (f x - L x))
+      (ContinuousLinearEquiv.refl 𝕜 E : E →L[𝕜] E) s (δ * ‖M‖₊) := hf.id_add_comp_sub M
+  simpa using hf'.antilipschitzWith (Or.inr (by simpa using hδ))
+
+/-- If `f` approximates `L` on `s` up to `δ` and `δ ‖M‖ < 1`, then `x ↦ x + M (f x - L x)` is
+injective on `s`. -/
+theorem injOn_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) :
+    InjOn (fun x ↦ x + M (f x - L x)) s :=
+  injOn_iff_injective.2 (hf.antilipschitzWith_id_add_comp_sub hδ).injective
+
+/-- If `f` approximates `L` on `s` up to `δ` and `δ ‖M‖ < 1`, then the map
+`h x = x + M (f x - L x)` admits a `(1 - δ ‖M‖)⁻¹`-Lipschitz left inverse on `h '' s`. -/
+theorem exists_lipschitzOnWith_leftInvOn_id_add_comp_sub (hf : ApproximatesLinearOn f L s δ)
+    (hδ : δ * ‖M‖₊ < 1) :
+    ∃ g : E → E, LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g ((fun x ↦ x + M (f x - L x)) '' s) ∧
+      LeftInvOn g (fun x ↦ x + M (f x - L x)) s :=
+  ⟨invFunOn (fun x ↦ x + M (f x - L x)) s,
+    lipschitzOnWith_iff_restrict.2 ((hf.antilipschitzWith_id_add_comp_sub hδ).to_rightInvOn'
+      (surjOn_image _ s).mapsTo_invFunOn (surjOn_image _ s).rightInvOn_invFunOn),
+    (hf.injOn_id_add_comp_sub hδ).leftInvOn_invFunOn⟩
+
+/-- If `f` is approximated on `s` up to `δ` by a continuous linear map `L` with a continuous linear
+right inverse `M` satisfying `δ ‖M‖ < 1`, then there are a set `t` and a `(1 - δ ‖M‖)⁻¹`-Lipschitz
+map `g` on `t` that maps each linear slice `t ∩ L ⁻¹' {y}` onto the fibre `s ∩ f ⁻¹' {y}`. -/
+theorem exists_lipschitzOnWith_eq_image_inter_preimage (hf : ApproximatesLinearOn f L s δ)
+    (hM : RightInverse M L) (hδ : δ * ‖M‖₊ < 1) :
+    ∃ (t : Set E) (g : E → E), LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g t ∧
+      ∀ y, s ∩ f ⁻¹' {y} = g '' (t ∩ L ⁻¹' {y}) := by
+  obtain ⟨g, hlip, hg⟩ := hf.exists_lipschitzOnWith_leftInvOn_id_add_comp_sub hδ
+  refine ⟨(fun x ↦ x + M (f x - L x)) '' s, g, hlip, fun y ↦ ?_⟩
+  rw [← hM.image_id_add_comp_sub_inter_preimage, hg.image_image' inter_subset_left]
+
+end Straightening
+
 end ApproximatesLinearOn
 
 /-- **A map whose derivative is close to an injective linear map is injective on a convex set.**
@@ -208,7 +308,6 @@ theorem HasStrictFDerivAt.eventually_apply_eq_zero_iff_snd_eq_zero {𝕜 : Type*
   have hnorm : ‖ContinuousLinearMap.inr 𝕜 E F z.2‖ = ‖z.2‖ := by simp
   rw [hz, hz0, sub_zero, zero_sub, norm_neg, hsub, hnorm] at happ
   have hbound := ContinuousLinearMap.bound_of_antilipschitz _ hKD z.2
-  have hK' : (0 : ℝ) < K := NNReal.coe_pos.2 hK
   have hhalf : (K : ℝ) * ((2 * K : ℝ≥0)⁻¹ * ‖z.2‖) = ‖z.2‖ / 2 := by
     push_cast
     field_simp
