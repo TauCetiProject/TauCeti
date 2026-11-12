@@ -46,7 +46,8 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
   of a cutoff Caccioppoli inequality to concentric balls, with a nonnegative datum density or
   with a zeroth-order term.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1`:
-  the common testing step against `ψ² u`, for any right-hand side.
+  the common testing step against `ψ² u`, for any right-hand side; for `u ∈ H¹₀(Ω)` the cutoff
+  `ψ` need not be supported in `Ω`.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le`: the Caccioppoli
   inequality.
 
@@ -340,17 +341,19 @@ variable [DecidableEq ι]
 
 /-- **The testing step of the Caccioppoli inequality**, for any right-hand side. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `u ∈ H¹(Ω)`, and let `ψ` be
-smooth and compactly supported in `Ω`. The test function `v = ψ² u` lies in `H¹₀(Ω)`, has
-`∇v = ψ (ψ ∇u + u ∇ψ) + ψ u ∇ψ` almost everywhere, and
+smooth and compactly supported. Suppose that `ψ` is supported in `Ω`, or that `u ∈ H¹₀(Ω)`. Then
+the test function `v = ψ² u` lies in `H¹₀(Ω)`, has `∇v = ψ (ψ ∇u + u ∇ψ) + ψ u ∇ψ` almost
+everywhere, and
 
 `∫_Ω ψ² ‖∇u‖² ≤ (2Λ/λ)² ∫_Ω ‖∇ψ‖² u² + (2/λ) a(u, v)`.
 
-The caller evaluates `a(u, v)` through the weak form of its equation. -/
+The caller evaluates `a(u, v)` through the weak form of its equation. The second alternative is
+the one used near the boundary: for `u ∈ H¹₀(Ω)` the cutoff may be centred anywhere. -/
 theorem UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (u : W1p mu Omega 2)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) ∨ u ∈ w1p0Submodule mu Omega 2) :
     ∃ v : W1p0 mu Omega 2,
       (∀ᵐ x ∂mu.restrict Omega, W1p.value (v : W1p mu Omega 2) x = ψ x ^ 2 * W1p.value u x) ∧
       (∀ᵐ x ∂mu.restrict Omega, W1p.gradient (v : W1p mu Omega 2) x =
@@ -365,9 +368,12 @@ theorem UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energy
   -- The test function `ψ² u = ψ (ψ u)`, which lies in `H¹₀(Ω)`.
   set w := W1p.contDiffSMul ψ hψ hM hψM' hgradM' u
   set v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
-  have hv : v ∈ w1p0Submodule mu Omega 2 :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM' hcpt
-      hts w
+  have hv : v ∈ w1p0Submodule mu Omega 2 := by
+    rcases hts with hts | hu0
+    · exact W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM'
+        hcpt hts w
+    · exact W1p.contDiffSMul_mem_w1p0Submodule hψ hM hψM' hgradM'
+        (W1p.contDiffSMul_mem_w1p0Submodule hψ hM hψM' hgradM' hu0)
   have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
     ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u v
@@ -422,7 +428,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
       (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu
         + 2 / lam * ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu := by
   obtain ⟨v, hvalue, -, hstep⟩ :=
-    h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt hts
+    h.exists_setIntegral_sq_mul_norm_gradient_sq_le_energyFormH1 ha u hψ hcpt (.inl hts)
   -- The energy is `∫_Ω ψ² f u`, by the weak equation.
   have hF : energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu := by

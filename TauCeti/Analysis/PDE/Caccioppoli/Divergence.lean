@@ -37,7 +37,8 @@ reverse Hölder inequality for `‖∇u‖` behind Meyers' higher integrability 
 ## Main declarations
 
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence`: the
-  Caccioppoli inequality for a datum in divergence form.
+  Caccioppoli inequality for a datum in divergence form, with cutoffs centred anywhere when
+  `u ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_divergence`: its form on concentric
   balls.
 * `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence`: the form
@@ -116,7 +117,10 @@ a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` in `Ω`, in the sense 
 every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`. Then for every smooth `ψ` compactly
 supported in `Ω`,
 
-`∫_Ω ψ² ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) ∫_Ω ‖∇ψ‖² u² + (12/λ²) ∫_Ω ψ² ‖F‖²`. -/
+`∫_Ω ψ² ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) ∫_Ω ‖∇ψ‖² u² + (12/λ²) ∫_Ω ψ² ‖F‖²`.
+
+If moreover `u ∈ H¹₀(Ω)`, the same holds for every smooth compactly supported `ψ`, whether or not
+it is supported in `Ω`. -/
 theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hF : MemLp F 2 (mu.restrict Omega))
@@ -124,7 +128,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) ∨ u ∈ w1p0Submodule mu Omega 2) :
     ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
       2 * ((2 * Lam / lam) ^ 2 + 1) * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu
         + 12 / lam ^ 2 * ∫ x in Omega, ψ x ^ 2 * ‖F x‖ ^ 2 ∂mu := by
@@ -201,7 +205,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_divergence :
     (by positivity) (hF.norm.integrable_sq.const_mul _)
     (Eventually.of_forall fun x => by positivity) hrR hball fun ψ hψ hcpt hts => by
       simp_rw [mul_left_comm (ψ _ ^ 2), integral_const_mul]
-      exact h.setIntegral_sq_mul_norm_gradient_sq_le_divergence ha hF hu hψ hcpt hts
+      exact h.setIntegral_sq_mul_norm_gradient_sq_le_divergence ha hF hu hψ hcpt (.inl hts)
   rwa [integral_const_mul] at hloc
 
 open Filter Metric in
