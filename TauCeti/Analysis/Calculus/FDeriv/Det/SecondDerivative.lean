@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Analysis.Calculus.Deriv.Pi
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
@@ -44,12 +43,13 @@ theorem hasDerivAt_deriv_det_of_eq_one {A : ℝ → Matrix ι ι ℝ} {a : ℝ}
   have hi' : HasDerivAt (fun t ↦ (A t)⁻¹) (-deriv A a) a := by
     simpa [nonsing_inv_eq_ringInverse, ContinuousLinearMap.mulLeftRight_apply] using! hi
   let tr := (traceLinearMap ι ℝ ℝ).toContinuousLinearMap
-  have htr := tr.hasFDerivAt.comp_hasDerivAt a (hi'.mul hdA')
+  have htr : HasDerivAt (fun t ↦ ((A t)⁻¹ * deriv A t).trace)
+      (-deriv A a * deriv A a + (A a)⁻¹ * deriv (deriv A) a).trace a := by
+    simpa only [tr, LinearMap.coe_toContinuousLinearMap', traceLinearMap_apply] using!
+      tr.hasFDerivAt.comp_hasDerivAt a (hi'.mul hdA')
   have hd : HasDerivAt (fun t ↦ (A t).det) (deriv A a).trace a := by
     have h := (hasFDerivAt_det_one (n := ι) (𝕜 := ℝ)).comp_hasDerivAt_of_eq a hdA hA_one.symm
     simpa only [ContinuousLinearMap.coe_mk', traceLinearMap_apply] using! h
-  change HasDerivAt (fun t ↦ ((A t)⁻¹ * deriv A t).trace)
-    (-deriv A a * deriv A a + (A a)⁻¹ * deriv (deriv A) a).trace a at htr
   have hprod := hd.mul htr
   have heq : deriv (fun t ↦ (A t).det) =ᶠ[𝓝 a]
       fun t ↦ (A t).det * ((A t)⁻¹ * deriv A t).trace := by
