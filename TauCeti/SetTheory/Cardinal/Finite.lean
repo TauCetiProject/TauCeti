@@ -11,6 +11,9 @@ import Mathlib.Basic.Denumerable
 /-!
 # Finite and extended cardinalities
 
+A type whose natural cardinality has nonzero cast in an additive monoid with one is finite,
+since an infinite type has `Nat.card` equal to `0`.
+
 Mathlib's `Nat.card_pi` computes the cardinality of a product `∀ i, X i` over a finite index type.
 This file allows an arbitrary index type, provided that all factors outside a finite set `s` have
 exactly one element: the product then has the cardinality of its factors over `s`. Such products
@@ -38,6 +41,15 @@ including when both types are infinite.
 -/
 
 public section
+
+namespace TauCeti
+
+/-- A type whose natural cardinality has nonzero cast in an additive monoid with one is finite. -/
+theorem finite_of_neZero_natCard (k : Type*) [AddMonoidWithOne k] (G : Type*)
+    [NeZero (Nat.card G : k)] : Finite G :=
+  Nat.finite_of_card_ne_zero (NeZero.of_neZero_natCast k).out
+
+end TauCeti
 
 namespace Nat
 
