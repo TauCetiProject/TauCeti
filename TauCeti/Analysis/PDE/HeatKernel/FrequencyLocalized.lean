@@ -430,8 +430,8 @@ theorem exists_norm_heatSemigroup_toLp_fourierMultiplierCLM_inhomogeneousLittlew
   rw [mem_ball_zero_iff, not_lt]
   exact h₁
 
-/-- **The heat flow of a Littlewood–Paley block.** There is a constant `C`, depending only on `φ`
-and `E`, such that for every `1 ≤ p ≤ ∞`, every `j`, every time `t ≥ 0` and every tempered
+/-- **The heat flow of a Littlewood–Paley block.** There is a constant `C`, depending only on `φ`,
+`E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j`, every time `t ≥ 0` and every tempered
 distribution `u` whose block `Δ_{j+1} u`, with frequencies of size `2^j`, is an `Lᵖ` function `f`,
 the heat flow `e^{tΔ} Δ_{j+1} u` is an `Lᵖ` function `g` with
 
@@ -513,8 +513,8 @@ theorem littlewoodPaleyBlock_heatSemigroup_comm (j : ℕ) (t : ℝ≥0) (u : �
 variable [CompleteSpace F]
 
 /-- **The heat flow of every Littlewood–Paley block.** There are constants `C ≥ 1` and `c > 0`,
-depending only on `φ` and `E`, such that for every `1 ≤ p ≤ ∞`, every `j`, every `t ≥ 0` and
-every tempered distribution `u` whose block `Δⱼ u` is an `Lᵖ` function `f`, the block
+depending only on `φ`, `E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j`, every `t ≥ 0`
+and every tempered distribution `u` whose block `Δⱼ u` is an `Lᵖ` function `f`, the block
 `Δⱼ e^{tΔ} u` is an `Lᵖ` function `g` with `‖g‖_p ≤ C exp(-c (4^j - 1) t) ‖f‖_p`. The factor
 `exp(-c (4^j - 1) t)` is `1` for the low-frequency block `j = 0`. -/
 theorem exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le :

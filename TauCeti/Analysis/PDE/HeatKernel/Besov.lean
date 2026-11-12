@@ -17,7 +17,7 @@ Let `B^s_{p,q}` be the inhomogeneous Besov space built from the Littlewood–Pal
 bump function `φ` (`TauCeti.BesovSpace`), and let `e^{tΔ}` be the heat semigroup on tempered
 distributions (`TemperedDistribution.heatSemigroup`). This file proves that `e^{tΔ}` acts on every
 `B^s_{p,q}`, `1 ≤ p, q ≤ ∞`, by contractions, and that for `t > 0` it gains any amount of
-smoothness: for `σ ≥ 0` there is a constant `C`, depending only on `φ`, `σ` and the dimension,
+smoothness: for `σ ≥ 0` there is a constant `C`, depending only on `φ`, `σ`, `E` and `F`,
 such that
 
 `‖e^{tΔ} u‖_{B^{s + 2σ}_{p,q}} ≤ C t^{-σ} ‖u‖_{B^s_{p,q}}` for `0 < t ≤ 1`
@@ -166,8 +166,8 @@ private theorem exists_toDistr_eq_heatSemigroup_of_block [Fact (1 ≤ q)] {s' B 
     _ = B * ‖u.weightedBlocks‖ := by rw [norm_smul, Complex.norm_of_nonneg hB]
 
 /-- **The heat semigroup on a Besov space gains smoothness.** For `σ ≥ 0` there is a constant
-`C`, depending only on `φ`, `σ` and `E`, such that for every `1 ≤ p, q ≤ ∞`, every `s`, every
-`t > 0` and every `u ∈ B^s_{p,q}`, the heat flow `e^{tΔ} u` lies in `B^{s + 2σ}_{p,q}` with
+`C`, depending only on `φ`, `σ`, `E` and `F`, such that for every `1 ≤ p, q ≤ ∞`, every `s`,
+every `t > 0` and every `u ∈ B^s_{p,q}`, the heat flow `e^{tΔ} u` lies in `B^{s + 2σ}_{p,q}` with
 
 `‖e^{tΔ} u‖_{B^{s + 2σ}_{p,q}} ≤ C max 1 (t^{-σ}) ‖u‖_{B^s_{p,q}}`. -/
 theorem exists_toDistr_eq_heatSemigroup_and_norm_le {σ : ℝ} (hσ : 0 ≤ σ) :
@@ -200,8 +200,8 @@ theorem exists_toDistr_eq_heatSemigroup_and_norm_le {σ : ℝ} (hσ : 0 ≤ σ) 
   exact exists_toDistr_eq_heatSemigroup_of_block (by positivity) t u g hg hgn
 
 /-- **The smoothing estimate of the heat semigroup on Besov spaces.** For `σ ≥ 0` there is a
-constant `C`, depending only on `φ`, `σ` and `E`, such that for every `1 ≤ p, q ≤ ∞`, every `s`,
-every `0 < t ≤ 1` and every `u ∈ B^s_{p,q}`,
+constant `C`, depending only on `φ`, `σ`, `E` and `F`, such that for every `1 ≤ p, q ≤ ∞`,
+every `s`, every `0 < t ≤ 1` and every `u ∈ B^s_{p,q}`,
 
 `‖e^{tΔ} u‖_{B^{s + 2σ}_{p,q}} ≤ C t^{-σ} ‖u‖_{B^s_{p,q}}`.
 
@@ -275,14 +275,14 @@ theorem heatSemigroup_zero :
   ext1 u
   exact ext (by simp)
 
-/-- **The semigroup law** `e^{tΔ} e^{sΔ} = e^{(s+t)Δ}` on `B^s_{p,q}`. -/
+/-- **The semigroup law** `e^{t₂Δ} e^{t₁Δ} = e^{(t₁+t₂)Δ}` on `B^s_{p,q}`. -/
 @[simp]
 theorem heatSemigroup_heatSemigroup_apply (t₁ t₂ : ℝ≥0) (u : BesovSpace F φ s p q) :
     heatSemigroup F φ s p q t₂ (heatSemigroup F φ s p q t₁ u) =
       heatSemigroup F φ s p q (t₁ + t₂) u :=
   ext (by simp)
 
-/-- The semigroup law `e^{tΔ} ∘ e^{sΔ} = e^{(s+t)Δ}` on `B^s_{p,q}` as an identity of
+/-- The semigroup law `e^{t₂Δ} ∘ e^{t₁Δ} = e^{(t₁+t₂)Δ}` on `B^s_{p,q}` as an identity of
 operators. -/
 theorem heatSemigroup_compL_heatSemigroup (t₁ t₂ : ℝ≥0) :
     heatSemigroup F φ s p q t₂ ∘L heatSemigroup F φ s p q t₁ =

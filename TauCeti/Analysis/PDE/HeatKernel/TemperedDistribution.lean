@@ -23,8 +23,9 @@ identity `exp(-4π² s ‖ξ‖²) exp(-4π² t ‖ξ‖²) = exp(-4π² (s + t)
 
 For `t > 0` the symbol is a Schwartz function whose inverse Fourier transform is the heat kernel
 `K_t(x) = (4πt)^(-n/2) exp(-‖x‖² / (4t))` (`TauCeti.fourierInv_exp_neg_mul_norm_sq`), so on the
-tempered distribution of an `Lᵖ` function `f` the operator is convolution with `K_t`. Two
-consequences are recorded:
+tempered distribution of an `Lᵖ` function `f`, `1 ≤ p ≤ ∞`, the operator is convolution with
+`K_t` (`TemperedDistribution.exists_heatSemigroup_eq_and_ae_eq_convolution`). Two consequences
+are recorded:
 
 * for `1 ≤ p < ∞` this operator extends the heat semigroup `TauCeti.heatSemigroup` on `Lᵖ`
   (`TemperedDistribution.heatSemigroup_toTemperedDistribution`);
@@ -41,6 +42,8 @@ Working on `𝓢'` lets the heat semigroup act on spaces of distributions, such 
 * `TemperedDistribution.heatSemigroup_zero`,
   `TemperedDistribution.heatSemigroup_heatSemigroup_apply`:
   `e^{0Δ} = 1` and `e^{tΔ} e^{sΔ} = e^{(s+t)Δ}`.
+* `TemperedDistribution.exists_heatSemigroup_eq_and_ae_eq_convolution`: for `t > 0`, `e^{tΔ}` is
+  convolution with the heat kernel on every `Lᵖ`, `1 ≤ p ≤ ∞`.
 * `TemperedDistribution.heatSemigroup_toTemperedDistribution`: agreement with the heat semigroup on
   `Lᵖ`, `p < ∞`.
 * `TemperedDistribution.exists_heatSemigroup_eq_and_norm_le`: `e^{tΔ}` is a contraction on every
@@ -72,8 +75,10 @@ variable [NormedAddCommGroup F] [NormedSpace ℂ F]
 
 variable (E F) in
 /-- **The heat semigroup** `e^{tΔ}` on tempered distributions: the Fourier multiplier with symbol
-`exp(-4π² t ‖ξ‖²)`, `t ≥ 0`. On the tempered distribution of an `Lᵖ` function it is convolution
-with the heat kernel (`TemperedDistribution.heatSemigroup_toTemperedDistribution`). -/
+`exp(-4π² t ‖ξ‖²)`, `t ≥ 0`. For `t > 0`, on the tempered distribution of an `Lᵖ` function,
+`1 ≤ p ≤ ∞`, it is convolution with the heat kernel `heatKernel t`
+(`TemperedDistribution.exists_heatSemigroup_eq_and_ae_eq_convolution`); for `1 ≤ p < ∞` it
+extends `TauCeti.heatSemigroup` (`TemperedDistribution.heatSemigroup_toTemperedDistribution`). -/
 def heatSemigroup (t : ℝ≥0) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
   fourierMultiplierCLM F fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
 
@@ -123,9 +128,10 @@ private theorem heatSemigroup_eq_fourierMultiplierCLM_gaussian {t : ℝ≥0}
 
 variable [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- At a positive time, the heat semigroup sends the tempered distribution of `f ∈ Lᵖ` to the
-`Lᵖ` function `K_t ⋆ f`, `1 ≤ p ≤ ∞`, whose norm is at most `‖f‖_p`. -/
-private theorem exists_heatSemigroup_eq_and_ae_eq_convolution {t : ℝ≥0} (ht : t ≠ 0)
+/-- **The heat semigroup is convolution with the heat kernel.** At a time `t > 0`, the heat
+semigroup sends the tempered distribution of `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, to an `Lᵖ` function `g`
+equal almost everywhere to `K_t ⋆ f`, with `‖g‖_p ≤ ‖f‖_p`. -/
+theorem exists_heatSemigroup_eq_and_ae_eq_convolution {t : ℝ≥0} (ht : t ≠ 0)
     (f : Lp F p (volume : Measure E)) :
     ∃ g : Lp F p (volume : Measure E), heatSemigroup E F t (f : 𝓢'(E, F)) = g ∧
       g =ᵐ[volume] heatKernel t ⋆ (f : E → F) ∧ ‖g‖ ≤ ‖f‖ := by
