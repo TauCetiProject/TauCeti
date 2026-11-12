@@ -58,22 +58,21 @@ The file also identifies any height-one prime of a discrete valuation ring with 
 (`IsDedekindDomain.HeightOneSpectrum.eq_maximalIdeal`), which is what lets a condition stated at
 the height-one primes of such a ring be read as a condition on its valuation. It was split out of
 material adapted from Michael Stoll's elliptic-curves formalisation
-(`EllipticCurves/Mathlib/AdicCompletionExtension.lean` at the roadmap's pin `66889eada51a`,
+(`EllipticCurves/Mathlib/AdicCompletionExtension.lean` at commit `66889eada51a`,
 Apache 2.0, by Michael Stoll), where it is the step behind `valuation_adicCompletion_algebraMap`.
 
 The theorem `IsDedekindDomain.HeightOneSpectrum.exists_mem_notMem` was split out of material
 adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll); following this repository's
-convention for adapted material, the upstream authorship is credited here rather than in the
-copyright header.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll); following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
 
 `IsDedekindDomain.HeightOneSpectrum.comapOfNeBot` and its projection are likewise adapted from that
 formalisation (`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/Basic.lean`
-line 539, at the roadmap's pin `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`, Apache 2.0, by Michael
-Stoll). The construction is the source's; what changed is the hypothesis — the source and this
-version take the nonvanishing of the contraction as a hypothesis, where Mathlib's
-`HeightOneSpectrum.comap` instead derives it from surjectivity of the map.
+line 539, at commit `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`, Apache 2.0, by Michael Stoll).
+The construction is the source's; what changed is the hypothesis — the source and this version
+take the nonvanishing of the contraction as a hypothesis, where Mathlib's `HeightOneSpectrum.comap`
+instead derives it from surjectivity of the map.
 
 `Ideal.ne_bot_of_comap_ne_bot` plays the role of the source's
 `comap_ne_bot_of_comap_comap_ne_bot` (`EllipticCurves/Mathlib/Basic.lean` line 270): it is what
@@ -257,8 +256,8 @@ apply, nor integral `Algebra` maps, so `HeightOneSpectrum.under` does not either
 flat, not integral.) The `ne_bot` hypothesis has to be supplied by hand.
 
 Adapted from Michael Stoll's `EllipticCurves` (`EllipticCurves/Mathlib/Basic.lean` line 539, Apache
-2.0, at the roadmap's pin `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`); the `ne_bot`-as-hypothesis
-formulation is the source's. -/
+2.0, at commit `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`); the `ne_bot`-as-hypothesis formulation
+is the source's. -/
 def comapOfNeBot (ψ : B →+* C) (w : HeightOneSpectrum C) (hne : w.asIdeal.comap ψ ≠ ⊥) :
     HeightOneSpectrum B where
   asIdeal := w.asIdeal.comap ψ
