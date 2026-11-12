@@ -92,7 +92,7 @@ theorem apply_smul_eq_of_mem_stabilizer (h : σ.IsEquivariantMomentMap μ) {g : 
     (hg : g ∈ (Lie.coadjointRepresentation ℝ I G).stabilizer c) {x : M} (hx : μ x = c) :
     μ (g • x) = c := by
   rw [h.apply_smul, hx]
-  exact hg
+  exact Representation.mem_stabilizer.1 hg
 
 /-- **Only the coadjoint stabilizer preserves the level.** If `g` carries a point of the level
 `μ⁻¹(c)` into the same level, then `g` fixes `c` under the coadjoint action. -/
@@ -195,7 +195,9 @@ theorem contMDiffSMul_levelSubMulAction (h : σ.IsEquivariantMomentMap μ)
     (hZ : Manifold.IsSmoothEmbedding IZ I' ∞ (Subtype.val : h.levelSubMulAction c → M)) :
     ContMDiffSMul J IZ ∞ ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
       (h.levelSubMulAction c) :=
-  have := ContMDiffSMul.of_contMDiff_subtypeVal (I' := I') (M := M) hGc
+  have : ContMDiffSMul J I' ∞ ((Lie.coadjointRepresentation ℝ I G).stabilizer c) M :=
+    MulAction.contMDiffSMul_compHom
+      (f := ((Lie.coadjointRepresentation ℝ I G).stabilizer c).subtype) hGc
   ContMDiffSMul.of_isSmoothEmbedding hZ fun g z ↦ SubMulAction.val_smul g z
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
