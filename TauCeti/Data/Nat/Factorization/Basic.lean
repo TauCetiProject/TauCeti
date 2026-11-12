@@ -17,7 +17,9 @@ divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
 of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
 same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
-factors of `n` divides `n`.
+factors of `n` divides `n`, and monomial products of an injective family of primes (or fixed
+positive powers of their casts in characteristic zero) are injective on finitely supported
+exponent tuples.
 -/
 
 public section
@@ -81,3 +83,42 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
   simp [hp.factorization_self, Nat.div_self hp.pos]
 
 end Nat
+
+namespace TauCeti
+
+/-- Monomial products of an injective family of prime natural numbers are injective on finitely
+supported exponent tuples. -/
+theorem finsuppProd_prime_pow_injective {ι : Type*} {p : ι → ℕ}
+    (hp : ∀ i, Nat.Prime (p i)) (hinj : Function.Injective p) :
+    Function.Injective fun d : ι →₀ ℕ ↦ d.prod fun i k ↦ p i ^ k := by
+  classical
+  intro d₁ d₂ h
+  have hmap (d : ι →₀ ℕ) : (d.prod fun i k ↦ p i ^ k).factorization = d.mapDomain p := by
+    rw [← Finsupp.prod_mapDomain_index_inj hinj]
+    exact Nat.factorization_prod_pow_eq_self fun q hq ↦ by
+      obtain ⟨i, -, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support hq)
+      exact hp i
+  exact Finsupp.mapDomain_injective hinj
+    ((hmap d₁).symm.trans ((congrArg Nat.factorization h).trans (hmap d₂)))
+
+/-- In a characteristic-zero commutative semiring `R`, monomial products of fixed positive powers
+`(p i : R) ^ m` (`m ≠ 0`) of an injective family of primes are injective on finitely supported
+exponent tuples. -/
+theorem finsuppProd_natCast_prime_pow_injective {R ι : Type*} [CommSemiring R] [CharZero R]
+    {p : ι → ℕ} (hp : ∀ i, Nat.Prime (p i)) (hinj : Function.Injective p) {m : ℕ}
+    (hm : m ≠ 0) :
+    Function.Injective fun d : ι →₀ ℕ ↦ d.prod fun i k ↦ ((p i : R) ^ m) ^ k := by
+  have hcast (d : ι →₀ ℕ) :
+      (d.prod fun i k ↦ ((p i : R) ^ m) ^ k) =
+        (((d.mapRange (m * ·) (mul_zero m)).prod fun i k ↦ p i ^ k : ℕ) : R) := by
+    have hhom := map_finsuppProd (Nat.castRingHom R) d fun i k ↦ p i ^ (m * k)
+    simp only [Nat.coe_castRingHom] at hhom
+    rw [Finsupp.prod_mapRange_index (fun _ ↦ rfl), hhom]
+    exact Finsupp.prod_congr fun i _ ↦ by simp [pow_mul]
+  intro d₁ d₂ h
+  have hmap := finsuppProd_prime_pow_injective hp hinj
+    (Nat.cast_injective ((hcast d₁).symm.trans (h.trans (hcast d₂))))
+  ext i
+  exact mul_left_cancel₀ hm (DFunLike.congr_fun hmap i)
+
+end TauCeti
