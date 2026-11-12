@@ -260,8 +260,8 @@ theorem PassportRecord.hasValidLabel_cyclicThreePassportRecord :
 theorem BelyiRecord.parseMapLabel_cyclicThreeBelyiRecord :
     parseMapLabel 3 cyclicThreeBelyiRecord.label = some (⟨⟨0, by simp⟩, {3}, {3}, {3}⟩, "a") := by
   rw [parseMapLabel_eq_some_iff_append]
-  exact ⟨cyclicThreePassportRecord.plabel, by decide +kernel, by decide, by decide,
-    PassportRecord.parsePassportLabel_cyclicThreePassportRecord⟩
+  exact ⟨cyclicThreePassportRecord.plabel, by decide +kernel, by decide +kernel,
+    by simp, PassportRecord.parsePassportLabel_cyclicThreePassportRecord⟩
 
 /-- The stored label of the map row `3T1-3_3_3-a` extends its passport label and agrees with its
 stored partitions. -/

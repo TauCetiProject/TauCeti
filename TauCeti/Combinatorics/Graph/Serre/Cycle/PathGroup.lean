@@ -255,7 +255,8 @@ private noncomputable def loopClass : (O →₀ ℤ) →+ Additive (Group.Abelia
     zmultiplesHom _ (Additive.ofMul (Group.Abelianization.of (T.loop v e.1)))
 
 private theorem loopClass_single (e : O) (n : ℤ) :
-    T.loopClass v (Finsupp.single e n) = n • Additive.ofMul (Group.Abelianization.of (T.loop v e.1)) := by
+    T.loopClass v (Finsupp.single e n) =
+      n • Additive.ofMul (Group.Abelianization.of (T.loop v e.1)) := by
   simp [loopClass]
 
 private theorem loopClass_dartChain (hO : Γ.IsOrientation O) (e : Γ.E) :
@@ -265,7 +266,8 @@ private theorem loopClass_dartChain (hO : Γ.IsOrientation O) (e : Γ.E) :
   · simp [dartChain_of_rev_mem ℤ hO ((hO.mem_rev_iff Γ e).mpr he), loopClass_single]
 
 private theorem loopClass_chain (hO : Γ.IsOrientation O) {a b : Γ.V} (p : Γ.Path a b) :
-    T.loopClass v (Path.chain Γ O ℤ p) = Additive.ofMul (Group.Abelianization.of (T.basedPath v p)) := by
+    T.loopClass v (Path.chain Γ O ℤ p) =
+      Additive.ofMul (Group.Abelianization.of (T.basedPath v p)) := by
   induction p with
   | nil => simp
   | cons p e ih =>
