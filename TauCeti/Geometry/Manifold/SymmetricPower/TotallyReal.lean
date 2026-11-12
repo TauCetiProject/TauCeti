@@ -42,7 +42,8 @@ pairwise disjoint embedded circles is a totally real embedding of the torus, is
 
 * `TauCeti.differentiableAt_symChartAt_ofFn`: the product of the curves, read in a chart of the
   symmetric power, is real-differentiable.
-* `TauCeti.contDiffAt_symChartAt_ofFn`: it is as smooth as the curves.
+* `TauCeti.contDiffAt_symChartAt_ofFn`: it is as smooth as the curves, and more generally the
+  product of maps out of real normed spaces is as smooth as the maps.
 * `TauCeti.fderiv_symChartAt_ofFn_injective`: it is an immersion.
 * `TauCeti.isMaximalTotallyReal_range_fderiv_symChartAt_ofFn`: its tangent space is maximal
   totally real.
@@ -191,6 +192,26 @@ private theorem injective_and_isTotallyReal_comp_pi_smulRight
     refine LinearMap.ext fun c => ?_
     simp
 
+/-- The product of maps `γ i : E i → α` from real normed spaces into a complex curve, such as real
+curves, read in a chart of the symmetric power, is `C^k` at a parameter where the maps, read in
+charts of `α`, are `C^k` and pass through pairwise distinct points: near such a tuple the chart is
+an analytic function of the coordinates of the points. -/
+theorem contDiffAt_symChartAt_ofFn {E : Fin n → Type*} [∀ i, NormedAddCommGroup (E i)]
+    [∀ i, NormedSpace ℝ (E i)] {γ : ∀ i, E i → α} {t₀ : ∀ i, E i} {k : ℕ∞ω}
+    (hinj : Function.Injective fun i => γ i (t₀ i)) (hγ : ∀ i, ContinuousAt (γ i) (t₀ i))
+    (hk : ∀ i, ContDiffAt ℝ k (fun t => chartAt ℂ (γ i (t₀ i)) (γ i t)) (t₀ i)) (s : Sym α n)
+    (hs : Sym.ofFn (fun i => γ i (t₀ i)) ∈ (symChartAt (K := ℂ) s).source) :
+    ContDiffAt ℝ k (fun t : ∀ i, E i => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i)))
+      t₀ := by
+  obtain ⟨T, -, hTa, -, -, hT⟩ := exists_injective_hasFDerivAt_symChartAt_ofFn hinj s hs
+  -- the product coordinates of the maps are `C^k`, and the chart is analytic in them
+  have hG : ContDiffAt ℝ k (fun t : ∀ i, E i => fun j => chartAt ℂ (γ j (t₀ j)) (γ j (t j))) t₀ :=
+    contDiffAt_pi.2 fun j => ContDiffAt.comp (g := fun t => chartAt ℂ (γ j (t₀ j)) (γ j t)) t₀
+      (hk j) (contDiffAt_apply ℝ E j t₀)
+  refine ((hTa.contDiffAt.restrict_scalars ℝ).comp t₀ hG).congr_of_eventuallyEq ?_
+  exact Tendsto.eventually (continuousAt_pi.2 fun i =>
+    ContinuousAt.comp (f := fun t : ∀ i, E i => t i) (hγ i) (continuous_apply i).continuousAt) hT
+
 variable {γ : Fin n → ℝ → α} {t₀ : Fin n → ℝ} {v : Fin n → ℂ}
 
 /-- The product of real curves in a complex curve, read in a chart of the symmetric power, is
@@ -203,25 +224,6 @@ theorem differentiableAt_symChartAt_ofFn (hinj : Function.Injective fun i => γ 
     DifferentiableAt ℝ (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i))) t₀ :=
   let ⟨_, _, hD⟩ := exists_hasFDerivAt_symChartAt_ofFn hinj hγ hv s hs
   hD.differentiableAt
-
-/-- The product of real curves in a complex curve, read in a chart of the symmetric power, is `C^k`
-at a parameter where the curves, read in charts of `α`, are `C^k` and pass through pairwise
-distinct points: near such a tuple the chart is an analytic function of the coordinates of the
-points. -/
-theorem contDiffAt_symChartAt_ofFn {k : ℕ∞ω} (hinj : Function.Injective fun i => γ i (t₀ i))
-    (hγ : ∀ i, ContinuousAt (γ i) (t₀ i))
-    (hk : ∀ i, ContDiffAt ℝ k (fun t => chartAt ℂ (γ i (t₀ i)) (γ i t)) (t₀ i)) (s : Sym α n)
-    (hs : Sym.ofFn (fun i => γ i (t₀ i)) ∈ (symChartAt (K := ℂ) s).source) :
-    ContDiffAt ℝ k (fun t => symChartAt (K := ℂ) s (Sym.ofFn fun i => γ i (t i))) t₀ := by
-  obtain ⟨T, -, hTa, -, -, hT⟩ := exists_injective_hasFDerivAt_symChartAt_ofFn hinj s hs
-  -- the product coordinates of the curves are `C^k`, and the chart is analytic in them
-  have hG : ContDiffAt ℝ k (fun t : Fin n → ℝ => fun j => chartAt ℂ (γ j (t₀ j)) (γ j (t j)))
-      t₀ :=
-    contDiffAt_pi.2 fun j => ContDiffAt.comp (g := fun t => chartAt ℂ (γ j (t₀ j)) (γ j t)) t₀
-      (hk j) (contDiffAt_apply ℝ (fun _ : Fin n => ℝ) j t₀)
-  refine ((hTa.contDiffAt.restrict_scalars ℝ).comp t₀ hG).congr_of_eventuallyEq ?_
-  exact Tendsto.eventually (continuousAt_pi.2 fun i =>
-    ContinuousAt.comp (f := fun t : Fin n → ℝ => t i) (hγ i) (continuous_apply i).continuousAt) hT
 
 /-- **The product of immersed curves is an immersion into the symmetric power.** If real curves
 `γ i` in a complex curve have nonzero velocity at `t₀ i` and pass there through pairwise distinct

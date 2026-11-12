@@ -220,8 +220,8 @@ theorem _root_.Sym.isTotallyRealEmbedding_ofFn_map {k : ℕ∞ω} (hk : 1 ≤ k)
     exact absurd hk (by simp)
   refine isTotallyRealEmbedding_of_contMDiff hk
     (Sym.contMDiff_ofFn_map (fun i => (hγ i).isImmersion.contMDiff) hdisj)
-    (Sym.isClosedEmbedding_ofFn_map (fun i => (hγ i).isEmbedding.continuous)
-      (fun i => (hγ i).isEmbedding.injective) hdisj).isEmbedding ?_
+    (Sym.isClosedEmbedding_ofFn_map (fun i => (hγ i).isEmbedding.continuous.isClosedEmbedding
+      (hγ i).isEmbedding.injective) hdisj).isEmbedding ?_
     (Sym.isMaximalTotallyRealMap_ofFn_map
       (fun i y => (hγ i).isImmersion.mfderiv_injective hk0 y) hdisj)
   simp [Module.finrank_pi_fintype, mul_comm]
