@@ -98,18 +98,17 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_real {t : ℝ≥0∞} (hVW 
 
 variable [FiniteDimensional ℝ F]
 
-/-- A bound for the values of `W1p volume W q` in `L^t(V)`, with `1 ≤ t`, passes to members of
-`W^{1,q}_loc(W, F)` coordinatewise in a basis of `F`. -/
+/-- A bound for the values of `W1p volume W q` in `L^t(V)`, with `1 ≤ t`, passes to functions
+valued in `F` coordinatewise in a basis of `F`. -/
 private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p {t : ℝ≥0∞} (ht : 1 ≤ t)
     (hVW : closure V ⊆ W) (hW1p : ∃ C : ℝ≥0, ∀ v : W1p volume W (q : ℝ≥0∞),
       eLpNorm (W1p.value v) t (volume.restrict V) ≤ C * ‖v‖ₑ) :
-    ∃ C : ℝ≥0, ∀ u : ℂ → F, MemWkpLoc q W 1 u →
-      eLpNorm u t (volume.restrict V) ≤ C * eLpNormWkp q W 1 u := by
+    ∃ C : ℝ≥0, ∀ u : ℂ → F, eLpNorm u t (volume.restrict V) ≤ C * eLpNormWkp q W 1 u := by
   obtain ⟨C, hC⟩ := exists_eLpNorm_le_mul_eLpNormWkp_one_real hVW hW1p
   set b := Module.finBasis ℝ F
   set ℓ : Fin (finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
   set A : Fin (finrank ℝ F) → ℝ →L[ℝ] F := fun i => (ContinuousLinearMap.id ℝ ℝ).smulRight (b i)
-  refine ⟨∑ i, ‖A i‖₊ * C * ‖ℓ i‖₊, fun u _ => ?_⟩
+  refine ⟨∑ i, ‖A i‖₊ * C * ‖ℓ i‖₊, fun u => ?_⟩
   have hsum : u = ∑ i, fun z => A i (ℓ i (u z)) := by
     funext z
     simp only [Finset.sum_apply, A, ℓ, ContinuousLinearMap.smulRight_apply,
@@ -134,25 +133,22 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p {t : ℝ≥0∞} (ht
 
 /-- **The local Sobolev inequality.** Let `1 ≤ q ≤ s < ∞` with `1/q - 1/s ≤ 1/2`, and let `V` have
 compact closure inside the open set `W ⊆ ℂ`. There is a constant `C` such that every
-`u ∈ W^{1,q}_loc(W, F)` satisfies `‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(W)}`. The case
-`1/s = 1/q - 1/2` is the critical Sobolev embedding for `q < 2`; for `q ≥ 2` every finite `s ≥ q`
-is allowed. -/
+`u : ℂ → F` satisfies `‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(W)}`. The case `1/s = 1/q - 1/2` is the
+critical Sobolev embedding for `q < 2`; for `q ≥ 2` every finite `s ≥ q` is allowed. -/
 theorem exists_eLpNorm_le_mul_eLpNormWkp_one (hqs : q ≤ s)
     (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 2⁻¹) (hVc : IsCompact (closure V)) (hVW : closure V ⊆ W) :
-    ∃ C : ℝ≥0, ∀ u : ℂ → F, MemWkpLoc q W 1 u →
-      eLpNorm u s (volume.restrict V) ≤ C * eLpNormWkp q W 1 u :=
+    ∃ C : ℝ≥0, ∀ u : ℂ → F, eLpNorm u s (volume.restrict V) ≤ C * eLpNormWkp q W 1 u :=
   exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p
     ((Fact.out : (1 : ℝ≥0∞) ≤ q).trans (ENNReal.coe_le_coe.2 hqs)) hVW
     (W1p.exists_eLpNorm_value_le_of_gain_le (μ := volume) hqs
       (by rwa [Complex.finrank_real_complex, Nat.cast_ofNat]) hVc hVW)
 
 /-- **The local `L^∞` bound for `q > 2`.** Let `2 < q < ∞`, and let `V` have compact closure
-inside the open set `W ⊆ ℂ`. There is a constant `C` such that every `u ∈ W^{1,q}_loc(W, F)`
-satisfies `‖u‖_{L^∞(V)} ≤ C ‖u‖_{W^{1,q}(W)}`. -/
+inside the open set `W ⊆ ℂ`. There is a constant `C` such that every `u : ℂ → F` satisfies
+`‖u‖_{L^∞(V)} ≤ C ‖u‖_{W^{1,q}(W)}`. -/
 theorem exists_eLpNorm_top_le_mul_eLpNormWkp_one (hq : 2 < q) (hVc : IsCompact (closure V))
     (hVW : closure V ⊆ W) :
-    ∃ C : ℝ≥0, ∀ u : ℂ → F, MemWkpLoc q W 1 u →
-      eLpNorm u ∞ (volume.restrict V) ≤ C * eLpNormWkp q W 1 u := by
+    ∃ C : ℝ≥0, ∀ u : ℂ → F, eLpNorm u ∞ (volume.restrict V) ≤ C * eLpNormWkp q W 1 u := by
   refine exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p le_top hVW ?_
   obtain ⟨S, hS⟩ := W1p.exists_lpInftyEmbeddingL_of_isCompact_closure (μ := volume) (Ω := W)
     (q := q) (by rwa [Complex.finrank_real_complex, Nat.cast_ofNat]) hVc hVW
@@ -170,7 +166,7 @@ theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le (hu : MemWkpLoc q Ω 1 u) (hqs : q 
   have hKc : closure K = K := hK.isClosed.closure_eq
   obtain ⟨C, hC⟩ := exists_eLpNorm_le_mul_eLpNormWkp_one (F := F) (W := W) hqs hgap
     (by rwa [hKc]) (by rwa [hKc])
-  refine (hC u (hu.mono (subset_closure.trans hWΩ))).trans_lt ?_
+  refine (hC u).trans_lt ?_
   exact ENNReal.mul_lt_top ENNReal.coe_lt_top
     (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top hWc hWΩ))
 
@@ -197,7 +193,7 @@ theorem exists_eLpNormWkp_le_mul_eLpNormWkp_succ (hqs : q ≤ s)
   induction k generalizing F with
   | zero =>
     obtain ⟨C, hC⟩ := exists_eLpNorm_le_mul_eLpNormWkp_one (F := F) hqs hgap hVc hVW
-    exact ⟨C, fun u hu => by simpa only [eLpNormWkp_zero] using hC u hu⟩
+    exact ⟨C, fun u _ => by simpa only [eLpNormWkp_zero] using hC u⟩
   | succ k ih =>
     obtain ⟨C₀, hC₀⟩ := exists_eLpNorm_le_mul_eLpNormWkp_one (F := F) hqs hgap hVc hVW
     obtain ⟨C₁, hC₁⟩ := ih (F := ℂ →L[ℝ] F)
@@ -214,7 +210,7 @@ theorem exists_eLpNormWkp_le_mul_eLpNormWkp_succ (hqs : q ≤ s)
     calc eLpNormWkp s V (k + 1) u
         ≤ eLpNorm u s (volume.restrict V) + eLpNormWkp s V k D := eLpNormWkp_succ_le hDV
       _ ≤ C₀ * eLpNormWkp q W 1 u + C₁ * eLpNormWkp q W (k + 1) D :=
-          add_le_add (hC₀ u (hu.of_le (by omega))) (hC₁ D hDk)
+          add_le_add (hC₀ u) (hC₁ D hDk)
       _ ≤ C₀ * eLpNormWkp q W (k + 1 + 1) u + C₁ * eLpNormWkp q W (k + 1 + 1) u := by
           gcongr
       _ = (C₀ + C₁ : ℝ≥0) * eLpNormWkp q W (k + 1 + 1) u := by
@@ -270,7 +266,7 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul {p : ℝ≥0} [Fact (
   | succ k ih =>
     by_cases hp : 2 < p
     · obtain ⟨C, hC⟩ := exists_eLpNorm_top_le_mul_eLpNormWkp_one (F := F) hp hVc hVW
-      exact ⟨C, fun u hu => (hC u (hu.of_le (by omega))).trans
+      exact ⟨C, fun u _ => (hC u).trans
         (by gcongr; exact eLpNormWkp_mono_order (by omega))⟩
     have hp1 : 1 ≤ p := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ p)
     obtain ⟨s, hps, hgap, hks⟩ := exists_sobolev_exponent_step hp1 (not_lt.1 hp) hkp
