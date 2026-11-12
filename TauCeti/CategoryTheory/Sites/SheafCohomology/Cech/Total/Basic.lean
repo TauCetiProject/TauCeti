@@ -165,4 +165,69 @@ lemma homologyMap_cechTotalComplexMap_eq
       HomologicalComplex.homologyMap (cechTotalComplexMap P ψ) n :=
   (cechTotalComplexMapHomotopy P φ ψ).homologyMap_eq n
 
+/-- An empty family has zero total Čech complex, without requiring any value of the
+coefficient presheaf to vanish. -/
+lemma isZero_cechTotalComplexFunctor_obj [IsEmpty ι] :
+    IsZero ((cechTotalComplexFunctor U).obj P) := by
+  have hK : IsZero ((cechComplexFunctor U).obj P) := by
+    refine (IsZero.iff_id_eq_zero _).2 ?_
+    apply HomologicalComplex.hom_ext
+    intro p
+    exact Pi.hom_ext _ _ fun a ↦ isEmptyElim (a 0)
+  have hL := (ComplexShape.embeddingUpNat.extendFunctor (CochainComplex A ℤ)).map_isZero hK
+  refine (IsZero.iff_id_eq_zero _).2 ?_
+  ext n
+  apply total.hom_ext
+  intro p q hpq
+  exact ((HomologicalComplex.eval A _ q).map_isZero
+    ((HomologicalComplex.eval (CochainComplex A ℤ) _ p).map_isZero hL)).eq_of_src _ _
+
+section Homology
+
+variable (A) [CategoryWithHomology A] (n : ℤ)
+
+/-- Refinement on total Čech cohomology, natural in the presheaf of complexes. -/
+def cechTotalComplexHomologyMap
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    cechTotalComplexFunctor V ⋙ HomologicalComplex.homologyFunctor A _ n ⟶
+      cechTotalComplexFunctor U ⋙ HomologicalComplex.homologyFunctor A _ n where
+  app P := (HomologicalComplex.homologyFunctor A _ n).map (cechTotalComplexMap P φ)
+  naturality P _ α := by
+    rw [Functor.comp_map, Functor.comp_map, ← Functor.map_comp, ← Functor.map_comp,
+      cechTotalComplexMap_naturality]
+
+@[simp]
+lemma cechTotalComplexHomologyMap_app
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
+    (cechTotalComplexHomologyMap A n φ).app P =
+      HomologicalComplex.homologyMap (cechTotalComplexMap P φ) n :=
+  (rfl)
+
+/-- The total cohomology transformation does not depend on the raw refinement. -/
+lemma cechTotalComplexHomologyMap_eq
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    cechTotalComplexHomologyMap A n φ = cechTotalComplexHomologyMap A n ψ := by
+  ext P
+  exact homologyMap_cechTotalComplexMap_eq P φ ψ n
+
+@[simp]
+lemma cechTotalComplexHomologyMap_id :
+    cechTotalComplexHomologyMap A n (𝟙 (FormalCoproduct.mk _ U)) = 𝟙 _ := by
+  ext P
+  rw [cechTotalComplexHomologyMap_app, cechTotalComplexMap_id]
+  exact HomologicalComplex.homologyMap_id _ n
+
+@[simp]
+lemma cechTotalComplexHomologyMap_comp {ν : Type w} {W : ν → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ W) :
+    cechTotalComplexHomologyMap A n (φ ≫ ψ) =
+      cechTotalComplexHomologyMap A n ψ ≫ cechTotalComplexHomologyMap A n φ := by
+  ext P
+  rw [cechTotalComplexHomologyMap_app, cechTotalComplexMap_comp]
+  exact HomologicalComplex.homologyMap_comp _ _ n
+
+end Homology
+
 end TauCeti.CategoryTheory

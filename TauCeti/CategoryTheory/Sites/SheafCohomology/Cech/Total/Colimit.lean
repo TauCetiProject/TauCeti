@@ -1,0 +1,153 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Total.Basic
+
+/-!
+# Cover-colimit Čech hypercohomology
+
+For a preorder of indexed families, ordered towards refinements, total Čech cohomology
+forms a diagram even though no coherent choice of raw refinement functions is given.
+The total refinement prism makes the transition maps independent of these choices.
+The colimit of this diagram is Čech hypercohomology for the system of families.
+
+The construction is functorial in presheaves of integer-graded complexes. It uses the native
+direct-sum total with differential `δ + (-1)^p d`. It does not require a lower bound;
+no convergence or derived comparison for unbounded complexes is asserted.
+
+The descent map and its uniqueness allow comparison maps to be constructed from compatible
+fixed-family cohomology maps. The specialization to small systems of open covers is in
+`TauCeti.Topology.Sheaves.Hypercohomology`.
+
+## References
+
+* The Stacks Project, Cohomology of Sheaves, §20.25, especially equation (20.25.0.2),
+  for refinement independence, and §20.15 for the cover-colimit construction.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits
+
+universe w t v v' u u'
+
+namespace TauCeti.CategoryTheory
+
+variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+  (A : Type u') [Category.{v'} A] [Preadditive A] [HasZeroObject A]
+  [HasProducts.{w} A] [HasCoproducts.{0} A] [CategoryWithHomology A]
+  {J : Type t} [Preorder J] (E : J → FormalCoproduct.{w} C)
+  (hE : ∀ ⦃i j : J⦄, i ≤ j → Nonempty (E j ⟶ E i)) (n : ℤ)
+
+/-- Total Čech cohomology of the families in `E`, as a diagram of functors of the
+coefficient complex. Transition maps are induced by any raw refinement.
+The body is exposed so that its objects compute to fixed-family total cohomology functors. -/
+@[expose, simps obj]
+def cechHypercohomologyDiagram : J ⥤ (Cᵒᵖ ⥤ CochainComplex A ℤ) ⥤ A where
+  obj j := cechTotalComplexFunctor (E j).obj ⋙ HomologicalComplex.homologyFunctor A _ n
+  map f := cechTotalComplexHomologyMap A n (hE (leOfHom f)).some
+  map_id _ := (cechTotalComplexHomologyMap_eq A n _ _).trans
+    (cechTotalComplexHomologyMap_id A n)
+  map_comp _ _ := (cechTotalComplexHomologyMap_eq A n _ _).trans
+    (cechTotalComplexHomologyMap_comp A n _ _)
+
+/-- Any refinement between comparable families computes the transition map. -/
+lemma cechHypercohomologyDiagram_map {i j : J} (f : i ⟶ j) (φ : E j ⟶ E i) :
+    (cechHypercohomologyDiagram A E hE n).map f = cechTotalComplexHomologyMap A n φ :=
+  cechTotalComplexHomologyMap_eq A n _ φ
+
+variable [HasColimitsOfShape J A]
+
+/-- Čech hypercohomology for a system of families is the colimit of fixed-family total
+cohomology, functorially in the presheaf of complexes. The body is exposed so that its objects
+compute to colimits, as required by the structure and descent maps. -/
+@[expose]
+def cechHypercohomology : (Cᵒᵖ ⥤ CochainComplex A ℤ) ⥤ A :=
+  (cechHypercohomologyDiagram A E hE n).flip ⋙ colim
+
+/-- The hypercohomology object is the colimit of the fixed-family total cohomology diagram. -/
+lemma cechHypercohomology_obj (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
+    (cechHypercohomology A E hE n).obj P =
+      colimit ((cechHypercohomologyDiagram A E hE n).flip.obj P) :=
+  (rfl)
+
+variable {A}
+
+/-- The structure map from a family's total cohomology, natural in the coefficient complex. -/
+def cechHypercohomologyι (j : J) :
+    (cechHypercohomologyDiagram A E hE n).obj j ⟶ cechHypercohomology A E hE n where
+  app P := colimit.ι ((cechHypercohomologyDiagram A E hE n).flip.obj P) j
+  naturality _ _ α := (colimit.ι_map
+    ((cechHypercohomologyDiagram A E hE n).flip.map α) j).symm
+
+/-- The structure maps are the insertions into the colimit. -/
+lemma cechHypercohomologyι_app (j : J) (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
+    (cechHypercohomologyι E hE n j).app P =
+      colimit.ι ((cechHypercohomologyDiagram A E hE n).flip.obj P) j :=
+  (rfl)
+
+/-- Structure maps respect the transition maps of the diagram. -/
+@[reassoc (attr := simp)]
+lemma cechHypercohomologyDiagram_map_comp_ι {i j : J} (f : i ⟶ j) :
+    (cechHypercohomologyDiagram A E hE n).map f ≫ cechHypercohomologyι E hE n j =
+      cechHypercohomologyι E hE n i := by
+  ext P
+  exact colimit.w ((cechHypercohomologyDiagram A E hE n).flip.obj P) f
+
+/-- Structure maps respect every raw refinement between comparable families. -/
+@[reassoc]
+lemma cechTotalComplexHomologyMap_comp_ι {i j : J} (h : i ≤ j) (φ : E j ⟶ E i) :
+    cechTotalComplexHomologyMap A n φ ≫ cechHypercohomologyι E hE n j =
+      cechHypercohomologyι E hE n i := by
+  rw [← cechHypercohomologyDiagram_map A E hE n (homOfLE h) φ]
+  exact cechHypercohomologyDiagram_map_comp_ι E hE n (homOfLE h)
+
+/-- Maps out of hypercohomology are determined by their composites with all structure maps. -/
+@[ext]
+lemma cechHypercohomology_obj_hom_ext {P : Cᵒᵖ ⥤ CochainComplex A ℤ} {Y : A}
+    {f g : (cechHypercohomology A E hE n).obj P ⟶ Y}
+    (h : ∀ j, (cechHypercohomologyι E hE n j).app P ≫ f =
+      (cechHypercohomologyι E hE n j).app P ≫ g) : f = g :=
+  colimit.hom_ext h
+
+/-- A compatible family of maps out of fixed-family total cohomology descends uniquely to
+hypercohomology. Compatibility is stated for arbitrary raw refinements, not chosen ones. -/
+def cechHypercohomologyDesc {P : Cᵒᵖ ⥤ CochainComplex A ℤ} {Y : A}
+    (f : ∀ j, ((cechTotalComplexFunctor (E j).obj).obj P).homology n ⟶ Y)
+    (hf : ∀ ⦃i j : J⦄, i ≤ j → ∀ φ : E j ⟶ E i,
+      HomologicalComplex.homologyMap (cechTotalComplexMap P φ) n ≫ f j = f i) :
+    (cechHypercohomology A E hE n).obj P ⟶ Y :=
+  colimit.desc ((cechHypercohomologyDiagram A E hE n).flip.obj P)
+    { pt := Y
+      ι :=
+        { app := f
+          naturality _ j h := by
+            rw [Functor.flip_obj_map, cechHypercohomologyDiagram_map A E hE n h
+              (hE (leOfHom h)).some, cechTotalComplexHomologyMap_app]
+            exact (hf (leOfHom h) _).trans (Category.comp_id _).symm } }
+
+/-- The descended map has the prescribed composite with each structure map. -/
+@[reassoc (attr := simp)]
+lemma cechHypercohomologyι_app_desc {P : Cᵒᵖ ⥤ CochainComplex A ℤ} {Y : A}
+    (f : ∀ j, ((cechTotalComplexFunctor (E j).obj).obj P).homology n ⟶ Y)
+    (hf : ∀ ⦃i j : J⦄, i ≤ j → ∀ φ : E j ⟶ E i,
+      HomologicalComplex.homologyMap (cechTotalComplexMap P φ) n ≫ f j = f i) (j : J) :
+    (cechHypercohomologyι E hE n j).app P ≫ cechHypercohomologyDesc E hE n f hf = f j :=
+  colimit.ι_desc _ j
+
+/-- A system consisting of empty families has zero hypercohomology in every integer degree. -/
+lemma isZero_cechHypercohomology_obj (hE₀ : ∀ j, IsEmpty (E j).I)
+    (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
+    IsZero ((cechHypercohomology A E hE n).obj P) := by
+  refine (IsZero.iff_id_eq_zero _).2 (cechHypercohomology_obj_hom_ext E hE n fun j ↦ ?_)
+  let := hE₀ j
+  exact ((HomologicalComplex.homologyFunctor A _ n).map_isZero
+    (isZero_cechTotalComplexFunctor_obj P)).eq_of_src _ _
+
+end TauCeti.CategoryTheory
