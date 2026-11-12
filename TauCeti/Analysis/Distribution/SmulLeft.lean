@@ -29,6 +29,7 @@ functions the product pairs as `(g T) ψ = T (g ψ)` (`Distribution.complexPairi
 * `Distribution.smulLeftCLM_const`: a constant `c` acts as the scalar `c`.
 * `Distribution.smulLeftCLM_smulLeftCLM`: multiplying by `h` and then by `g` is multiplying by
   `g h`.
+* `Distribution.mapCLM_smulLeftCLM`: multiplying by `g` commutes with a linear map of the values.
 * `Distribution.dsupport_smulLeftCLM_subset_inter`: the support of `g T` lies in the supports of `g`
   and of `T`.
 * `Distribution.complexPairing_smulLeftCLM`: the pairing of `g T` with a complex test function.
@@ -86,6 +87,14 @@ theorem smulLeftCLM_smulLeftCLM (hg : ContDiff ℝ n g) (hh : ContDiff ℝ n h)
   congr 1
   ext x
   simp [mul_comm]
+
+/-- Multiplication by a smooth function commutes with applying a continuous linear map to the
+values. -/
+theorem mapCLM_smulLeftCLM {F' : Type*} [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F']
+    [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F'] (A : F →L[ℝ] F') (hg : ContDiff ℝ n g)
+    (T : 𝓓'^{n}(Ω, F)) : mapCLM A (smulLeftCLM hg T) = smulLeftCLM hg (mapCLM A T) := by
+  ext φ
+  simp
 
 /-- The support of `g T` lies both in the support of `g` and in the support of `T`. -/
 theorem dsupport_smulLeftCLM_subset_inter (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :

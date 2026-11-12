@@ -177,6 +177,12 @@ theorem dsupport_comp_smulLeftCLM_subset {g : E → ℝ} (hg : ContDiff ℝ n g)
       (((TestFunction.tsupport_smulLeftCLM_subset hg φ).trans inter_subset_right).trans hφ),
       hs, hxs⟩
 
+/-- Composing a map on test functions with a map that fixes zero does not enlarge its support. In
+particular `dsupport (mapCLM A T) ⊆ dsupport T` for a distribution `T`. -/
+theorem dsupport_comp_subset {W : Type*} [Zero W] (f : 𝓓^{n}(Ω, F) → V) {g : V → W}
+    (hg : g 0 = 0) : dsupport (g ∘ f) ⊆ dsupport f :=
+  sInter_subset_sInter fun _ hs ↦ ⟨fun φ hφ ↦ by simp [hs.1 φ hφ, hg], hs.2⟩
+
 end SmoothMultiple
 
 section Augmentation
