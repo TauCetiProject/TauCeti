@@ -53,23 +53,22 @@ namespace LinearIndependent
 
 open TauCeti
 
+/-- Restricting the right block of a concatenation along an injection preserves independence. -/
+theorem fin_append_comp_right [Semiring R] [AddCommMonoid V] [Module R V] {s : ℕ}
+    {x : Fin p → V} {y : Fin q → V} {g : Fin s → Fin q} (hg : Function.Injective g)
+    (h : LinearIndependent R (Fin.append x y)) :
+    LinearIndependent R (Fin.append x (y ∘ g)) := by
+  rw [← linearIndependent_equiv' finSumFinEquiv Fin.append_comp_sumElim] at h ⊢
+  simpa only [Sum.elim_comp_map, Function.comp_id] using
+    h.comp (Sum.map id g) (Function.injective_id.sumMap hg)
+
 /-- Removing the last block of an independent three-block concatenation
 preserves independence. -/
 theorem fin_append_left_append [Semiring R] [AddCommMonoid V] [Module R V] {r : ℕ}
     {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
     (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
     LinearIndependent R (Fin.append x y) := by
-  have hinj : Function.Injective (Fin.append (Fin.castAdd (q + r))
-      (fun j : Fin q ↦ Fin.natAdd p (Fin.castAdd r j))) := by
-    refine Fin.append_injective_iff.2 ⟨Fin.castAdd_injective _ _,
-      (Fin.natAdd_injective _ _).comp (Fin.castAdd_injective _ _), ?_⟩
-    intro i j
-    simp [Fin.ext_iff]
-    omega
-  convert h.comp _ hinj using 1
-  refine funext (Fin.addCases (fun i ↦ ?_) fun j ↦ ?_)
-  · simp
-  · simp
+  simpa [Function.comp_def] using h.fin_append_comp_right (Fin.castAdd_injective q r)
 
 /-- Removing the middle block of an independent three-block concatenation
 preserves independence. -/
@@ -77,16 +76,6 @@ theorem fin_append_right_append [Semiring R] [AddCommMonoid V] [Module R V] {r :
     {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
     (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
     LinearIndependent R (Fin.append x z) := by
-  have hinj : Function.Injective (Fin.append (Fin.castAdd (q + r))
-      (fun j : Fin r ↦ Fin.natAdd p (Fin.natAdd q j))) := by
-    refine Fin.append_injective_iff.2 ⟨Fin.castAdd_injective _ _,
-      (Fin.natAdd_injective _ _).comp (Fin.natAdd_injective _ _), ?_⟩
-    intro i j
-    simp [Fin.ext_iff]
-    omega
-  convert h.comp _ hinj using 1
-  refine funext (Fin.addCases (fun i ↦ ?_) fun j ↦ ?_)
-  · simp
-  · simp
+  simpa [Function.comp_def] using h.fin_append_comp_right (Fin.natAdd_injective r q)
 
 end LinearIndependent
