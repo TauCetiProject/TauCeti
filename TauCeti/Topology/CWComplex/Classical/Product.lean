@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Prod
 public import Mathlib.Topology.MetricSpace.Isometry
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.PiCurry
+import TauCeti.Topology.MetricSpace.Isometry.Basic
 
 /-!
 # The product of two finite CW complexes
@@ -85,8 +86,8 @@ private theorem prodCellMap_apply {n : ℕ} (c : ProdCell C D n) (x : Fin n → 
   (rfl)
 
 private theorem prodCellIsometry_zero {n : ℕ} (c : ProdCell C D n) :
-    prodCellIsometry c 0 = 0 := by
-  ext <;> simp
+    prodCellIsometry c 0 = 0 :=
+  Fin.appendIsometryOfEq_symm_zero _
 
 private theorem image_prodCellMap {n : ℕ} (c : ProdCell C D n) (s : Set (Fin n → ℝ)) :
     prodCellMap c '' s = Prod.map (map _ c.2.1) (map _ c.2.2) '' (prodCellIsometry c '' s) := by
@@ -139,9 +140,8 @@ private theorem pairwiseDisjoint_prodCellMap :
   rfl
 
 private theorem prodCellIsometry_mem_closedBall {n : ℕ} (c : ProdCell C D n) {x : Fin n → ℝ}
-    (hx : x ∈ closedBall 0 1) : prodCellIsometry c x ∈ closedBall 0 1 ×ˢ closedBall 0 1 := by
-  rwa [closedBall_prod_same, ← Prod.zero_eq_mk, ← prodCellIsometry_zero c, mem_closedBall,
-    IsometryEquiv.dist_eq]
+    (hx : x ∈ closedBall 0 1) : prodCellIsometry c x ∈ closedBall 0 1 ×ˢ closedBall 0 1 :=
+  (Fin.mem_closedBall_iff_appendIsometryOfEq_symm _).1 hx
 
 /-- The boundary of a product cell lies in the product cells of smaller dimension. -/
 private theorem mapsTo_prodCellMap (n : ℕ) (c : ProdCell C D n) :

@@ -26,6 +26,9 @@ splits off the interval coordinate.
 * `Fin.image_ball_initLastIsometry`, `Fin.image_closedBall_initLastIsometry`,
   `Fin.image_sphere_initLastIsometry`, `Fin.preimage_ball_prod_initLastIsometry`: its images of
   balls, closed balls and spheres around the origin, and its preimage of a product of balls.
+* `Fin.mem_ball_iff_appendIsometryOfEq_symm`, `Fin.mem_closedBall_iff_appendIsometryOfEq_symm`,
+  `Fin.mem_sphere_iff_appendIsometryOfEq_symm`: the same splitting for Mathlib's
+  `Fin.appendIsometryOfEq`, which cuts a tuple into an initial and a final block of coordinates.
 -/
 
 public section
@@ -101,6 +104,44 @@ theorem preimage_ball_prod_initLastIsometry (n : ℕ) (r : ℝ) :
     initLastIsometry α n ⁻¹' (ball 0 r ×ˢ ball 0 r) = ball 0 r :=
   ((initLastIsometry α n).toEquiv.preimage_eq_iff_eq_image _ _).2
     (image_ball_initLastIsometry n r).symm
+
+/-- Splitting the coordinates of a tuple with `Fin.appendIsometryOfEq` sends the origin to the
+origin. -/
+theorem appendIsometryOfEq_symm_zero {m l n : ℕ} (h : m + l = n) :
+    (appendIsometryOfEq (α := α) h).symm 0 = 0 := by
+  ext <;> simp
+
+/-- A tuple lies in the ball of radius `r` around the origin exactly when both parts of its
+splitting by `Fin.appendIsometryOfEq` do. -/
+theorem mem_ball_iff_appendIsometryOfEq_symm {m l n : ℕ} (h : m + l = n) {x : Fin n → α}
+    {r : ℝ} :
+    x ∈ ball 0 r ↔ ((appendIsometryOfEq h).symm x).1 ∈ ball 0 r ∧
+      ((appendIsometryOfEq h).symm x).2 ∈ ball 0 r := by
+  rw [← mem_prod, ball_prod_same, ← Prod.zero_eq_mk, ← appendIsometryOfEq_symm_zero h, mem_ball,
+    mem_ball, IsometryEquiv.dist_eq]
+
+/-- A tuple lies in the closed ball of radius `r` around the origin exactly when both parts of its
+splitting by `Fin.appendIsometryOfEq` do. -/
+theorem mem_closedBall_iff_appendIsometryOfEq_symm {m l n : ℕ} (h : m + l = n) {x : Fin n → α}
+    {r : ℝ} :
+    x ∈ closedBall 0 r ↔ ((appendIsometryOfEq h).symm x).1 ∈ closedBall 0 r ∧
+      ((appendIsometryOfEq h).symm x).2 ∈ closedBall 0 r := by
+  rw [← mem_prod, closedBall_prod_same, ← Prod.zero_eq_mk, ← appendIsometryOfEq_symm_zero h,
+    mem_closedBall, mem_closedBall, IsometryEquiv.dist_eq]
+
+/-- A tuple lies in the sphere of radius `r` around the origin exactly when one part of its
+splitting by `Fin.appendIsometryOfEq` lies in the sphere and the other in the closed ball. -/
+theorem mem_sphere_iff_appendIsometryOfEq_symm {m l n : ℕ} (h : m + l = n) {x : Fin n → α}
+    {r : ℝ} :
+    x ∈ sphere 0 r ↔
+      ((appendIsometryOfEq h).symm x).1 ∈ sphere 0 r ∧
+          ((appendIsometryOfEq h).symm x).2 ∈ closedBall 0 r ∨
+        ((appendIsometryOfEq h).symm x).1 ∈ closedBall 0 r ∧
+          ((appendIsometryOfEq h).symm x).2 ∈ sphere 0 r := by
+  have hs := sphere_prod (0 : (Fin m → α) × (Fin l → α)) r
+  rw [Prod.fst_zero, Prod.snd_zero] at hs
+  rw [← mem_prod, ← mem_prod, ← mem_union, ← hs, mem_sphere, mem_sphere,
+    ← appendIsometryOfEq_symm_zero h, IsometryEquiv.dist_eq]
 
 end PseudoMetricSpace
 

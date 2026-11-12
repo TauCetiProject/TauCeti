@@ -12,6 +12,7 @@ public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 public import TauCeti.Topology.VectorBundle.SphereBundle
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.GramSchmidt
+import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
@@ -40,12 +41,11 @@ closed unit ball of `F`, by a homeomorphism carrying the unit sphere bundle `S(E
 
 These are the product structures used to build cells of disc bundles over a CW complex: pulled
 back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle becomes
-`Dᵠ × (Dʳ, Sʳ⁻¹)`. Read in `E` itself, without a fibre metric on the pullback, this is an
-orthonormal frame along a map `φ : K → B` from a contractible paracompact R₁ space: linear
-isometries `ℝʳ ≃ₗᵢ E (φ y)` depending continuously on `y`, for any finite-rank real bundle whose
-fibre norm is continuous on the total space
+`Dᵠ × (Dʳ, Sʳ⁻¹)`. Read in `E` itself, this is an orthonormal frame along a map `φ : K → B` from
+a contractible paracompact R₁ space: linear isometries `ℝʳ ≃ₗᵢ E (φ y)` depending continuously on
+`y`, for any finite-rank real bundle whose fibre norm is continuous on the total space
 (`TauCeti.exists_continuous_linearIsometryEquiv_of_contractibleSpace`). It is Gram–Schmidt applied
-to a global trivialization of the pullback.
+to a global trivialization of the pullback, read in `E`.
 
 ## Main results
 
@@ -220,7 +220,7 @@ open InnerProductSpace Module
 
 variable {K : Type*} [TopologicalSpace K] [R1Space K] [ParacompactSpace K] [ContractibleSpace K]
   {B : Type*} [TopologicalSpace B]
-  {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {E : B → Type*} [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace ℝ (E b)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
   [ContinuousFiberNorm F E]
@@ -250,8 +250,10 @@ theorem exists_continuous_linearIsometryEquiv_of_contractibleSpace (φ : C(K, B)
       (continuousOn_univ.1 (he ▸ e.continuousOn_symm_prodMk_left)).congr fun y ↦
         (e.mk_symm (hmem y) _).symm
     refine ((Pullback.continuous_lift F E φ).comp H).congr fun y ↦ ?_
-    simp only [d]
-    rfl
+    -- Both sides are `⟨φ y, e.symm y (finBasis ℝ F k)⟩`. The lemmas `Pullback.lift_mk`,
+    -- `Module.Basis.map_apply` and `Trivialization.linearEquivAt_symm_apply` hold by `rfl` but do
+    -- not rewrite here: `d` reads the fibre `(φ *ᵖ E) y` of `e` as its unfolding `E (φ y)`.
+    exact rfl
   -- Gram–Schmidt makes it orthonormal, continuously in `y`.
   let u : ∀ y : K, OrthonormalBasis (Fin (finrank ℝ F)) ℝ (E (φ y)) := fun y ↦
     OrthonormalBasis.mk (gramSchmidtNormed_orthonormal (d y).linearIndependent)
@@ -259,30 +261,8 @@ theorem exists_continuous_linearIsometryEquiv_of_contractibleSpace (φ : C(K, B)
   have hu (k : Fin (finrank ℝ F)) : Continuous fun y : K ↦ (u y k : TotalSpace F E) := by
     simpa [u] using Continuous.gramSchmidtNormed_bundle (b := fun y : K ↦ φ y) hd
       (fun y ↦ (d y).linearIndependent) k
-  refine ⟨fun y ↦ (u y).repr.symm, continuous_iff_continuousAt.2 fun p₀ ↦ ?_⟩
-  -- In a trivialization of `E` near `φ p₀.1`, the coordinates of `∑ₖ wₖ • u y k` are the
-  -- corresponding combinations of the coordinates of the frame vectors.
-  let t := trivializationAt F E (φ p₀.1)
-  have hφ : Continuous fun p : K × EuclideanSpace ℝ (Fin (finrank ℝ F)) ↦ φ p.1 :=
-    φ.continuous.comp continuous_fst
-  rw [FiberBundle.continuousAt_totalSpace]
-  refine ⟨hφ.continuousAt, ?_⟩
-  have hk (k : Fin (finrank ℝ F)) :
-      ContinuousAt (fun p : K × EuclideanSpace ℝ (Fin (finrank ℝ F)) ↦
-        (t ⟨φ p.1, u p.1 k⟩).2) p₀ :=
-    ((FiberBundle.continuousAt_totalSpace F _).1 (hu k).continuousAt).2.comp
-      continuous_fst.continuousAt
-  have hsum : ContinuousAt (fun p : K × EuclideanSpace ℝ (Fin (finrank ℝ F)) ↦
-      ∑ k, p.2 k • (t ⟨φ p.1, u p.1 k⟩).2) p₀ :=
-    tendsto_finsetSum _ fun k _ ↦
-      ((EuclideanSpace.proj k).continuous.comp continuous_snd).continuousAt.smul (hk k)
-  refine hsum.congr ?_
-  filter_upwards [hφ.continuousAt.preimage_mem_nhds
-    (t.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E _))] with p hp
-  have hlin (v : E (φ p.1)) : (t ⟨φ p.1, v⟩).2 = t.linearMapAt ℝ (φ p.1) v := by
-    rw [t.coe_linearMapAt_of_mem hp]
-  simp only [← OrthonormalBasis.sum_repr_symm]
-  exact ((hlin _).trans (by simp only [map_sum, map_smul, hlin])).symm
+  exact ⟨fun y ↦ (u y).repr.symm, OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp
+    ((OrthonormalFrameBundle.continuous_mk_repr_symm φ.continuous hu).prodMap continuous_id)⟩
 
 end Frame
 
