@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+public import TauCeti.Analysis.SpecialFunctions.Gamma.LogConvex
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 
 /-!
@@ -198,42 +199,6 @@ private theorem multiplicationGamma_one {m : ℕ} (hm : 0 < m) : multiplicationG
   simp_rw [multiplicationGamma, hprod, hrpow, prod_Gamma_div hm]
   field
 
-/-- `x ↦ log Γ((x + k)/m)` is convex on `(0, ∞)`. -/
-private theorem convexOn_log_Gamma_comp_add_div {m : ℕ} (hm : 0 < m) (k : ℕ) :
-    ConvexOn ℝ (Set.Ioi 0) (fun x : ℝ => log (Gamma ((x + k) / m))) := by
-  refine ⟨convex_Ioi 0, ?_⟩
-  intro x hx y hy a b ha hb hab
-  have hm0 : (0 : ℝ) < m := Nat.cast_pos.mpr hm
-  have hx' : (x + k) / m ∈ Set.Ioi 0 :=
-    Set.mem_Ioi.mpr <| div_pos (add_pos_of_pos_of_nonneg hx (Nat.cast_nonneg _)) hm0
-  have hy' : (y + k) / m ∈ Set.Ioi 0 :=
-    Set.mem_Ioi.mpr <| div_pos (add_pos_of_pos_of_nonneg hy (Nat.cast_nonneg _)) hm0
-  have hcombo :
-      a * ((x + k) / m) + b * ((y + k) / m) = (a * x + b * y + k) / m := by
-    calc
-      a * ((x + k) / m) + b * ((y + k) / m)
-        = (a * (x + k) + b * (y + k)) / m := by
-          rw [← mul_div_assoc, ← mul_div_assoc, ← add_div]
-      _ = (a * x + b * y + (a + b) * k) / m := by ring
-      _ = (a * x + b * y + k) / m := by rw [hab, one_mul]
-  have h := convexOn_log_Gamma.2 hx' hy' ha hb hab
-  simpa [Function.comp_apply, hcombo] using h
-
-/-- `x ↦ ∑_{k<m} log Γ((x + k)/m)` is convex on `(0, ∞)`. -/
-private theorem convexOn_sum_log_Gamma_div {m : ℕ} (hm : 0 < m) :
-    ConvexOn ℝ (Set.Ioi 0)
-      (fun x : ℝ => ∑ k ∈ range m, log (Gamma ((x + k) / m))) := by
-  suffices ∀ s : Finset ℕ,
-      ConvexOn ℝ (Set.Ioi 0)
-        (fun x : ℝ => ∑ k ∈ s, log (Gamma ((x + k) / m))) from this _
-  intro s
-  induction s using Finset.induction_on with
-  | empty =>
-    simpa using convexOn_const (0 : ℝ) (convex_Ioi 0)
-  | insert k s hk ih =>
-    simp_rw [sum_insert hk]
-    exact (convexOn_log_Gamma_comp_add_div hm k).add ih
-
 /-- On `(0, ∞)`, `log` of `multiplicationGamma m s` is `∑_{k<m} log Γ((s + k)/m) + (s - 1/2) log m -
 log((2π)^((m-1)/2))`. -/
 private theorem log_multiplicationGamma_eq {m : ℕ} (hm : 0 < m) :
@@ -258,7 +223,8 @@ private theorem log_multiplicationGamma_eq {m : ℕ} (hm : 0 < m) :
 /-- `multiplicationGamma m` is log-convex on `(0, ∞)`. -/
 private theorem multiplicationGamma_log_convex_Ioi {m : ℕ} (hm : 0 < m) :
     ConvexOn ℝ (Set.Ioi (0 : ℝ)) (log ∘ multiplicationGamma m) := by
-  have hsum := convexOn_sum_log_Gamma_div hm
+  have hsum := convexOn_sum_log_Gamma_add_div (range m) (fun k _ => Nat.cast_nonneg (α := ℝ) k)
+    (Nat.cast_pos.mpr hm)
   have hlin : ConvexOn ℝ (Set.Ioi 0) (fun s : ℝ => s * log m) := by
     simpa [mul_comm] using (convexOn_id (convex_Ioi (0 : ℝ))).smul (log_natCast_nonneg m)
   have hconst : ConvexOn ℝ (Set.Ioi 0)
