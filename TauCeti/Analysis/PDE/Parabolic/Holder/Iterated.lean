@@ -160,10 +160,10 @@ uniform bounded temporal Hölder norms of those one order below (`ParabolicCkHol
   -- projections, applied to them, rather than with `let`s: the graph only uses that the
   -- projections are linear, and this keeps the definition cheap to elaborate.
   ↥((fun (V : Type _) [NormedAddCommGroup V] [NormedSpace ℝ V]
-      (field : ∀ r m : ℕ, V →L[ℝ] (slab (E := E) a b →ᵇ (E [×m]→L[ℝ] F)))
-      (slices : ∀ r m : ℕ, V →L[ℝ]
+      (field : ℕ → ∀ m : ℕ, V →L[ℝ] (slab (E := E) a b →ᵇ (E [×m]→L[ℝ] F)))
+      (slices : ℕ → ∀ m : ℕ, V →L[ℝ]
         lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) (E [×m]→L[ℝ] F)) ∞)
-      (holder : ∀ r m : ℕ, V →L[ℝ] HolderSpace α (slab (E := E) a b) (E [×m]→L[ℝ] F)) ↦
+      (holder : ℕ → ∀ m : ℕ, V →L[ℝ] HolderSpace α (slab (E := E) a b) (E [×m]→L[ℝ] F)) ↦
     ({ carrier := {J |
         (∀ r m, 2 * r + m + 1 ≤ k → ∀ (t : Icc a b) (x : E),
           HasFDerivAt (fun y ↦ field r m J (slabMk y t))
