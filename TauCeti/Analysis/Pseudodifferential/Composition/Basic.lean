@@ -62,6 +62,8 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   for the test function `w = Op(b) u`, and
   `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
   symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_sharp`: `Op(a # b) = Op(a) ∘ Op(b)` also as operators on
+  Bessel-potential spaces, when both symbols have compact spatial support.
 
 The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
 `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
@@ -92,7 +94,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform
-open scoped ContDiff RealInnerProductSpace SchwartzMap
+open scoped ContDiff RealInnerProductSpace SchwartzMap BesselPotentialSpace
 
 namespace TauCeti
 
@@ -685,6 +687,18 @@ theorem coefficient_sharp (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSp
       (a.coefficient (x, ξ + (2 * π) • η)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) :=
   (rfl)
 
+/-- At a position `x`, the composition symbol `a # b` only involves the left factor `a` at `x`: if
+`a'(x, ·) = t a(x, ·)` for a scalar `t`, then `(a' # b)(x, ·) = t (a # b)(x, ·)`. Taking `t = φ(x)`
+for a function `φ` of the position, multiplying the left factor by `φ` multiplies `a # b` by `φ`. -/
+theorem coefficient_sharp_of_coefficient_eq_smul {a' : Symbol n W U m'}
+    (hb : b.HasCompactSpatialSupport) {x : CoordinateSpace n} {t : ℂ}
+    (h : ∀ ξ, a'.coefficient (x, ξ) = t • a.coefficient (x, ξ)) (ξ : CoordinateSpace n) :
+    (a'.sharp b hb).coefficient (x, ξ) = t • (a.sharp b hb).coefficient (x, ξ) := by
+  rw [coefficient_sharp, coefficient_sharp, ← integral_smul]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [h, ContinuousLinearMap.smul_comp]
+  exact smul_comm _ _ _
+
 /-- **Leibniz rule in the position** for the composition symbol. -/
 theorem spatialDeriv_sharp (hb : b.HasCompactSpatialSupport) (j : Fin n) :
     Symbol.spatialDeriv j (a.sharp b hb) =
@@ -982,6 +996,35 @@ theorem coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq [CompleteSpace V
     (h u hu x).trans (quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u x).symm
 
 end Operator
+
+/-! ### Composition on Bessel-potential spaces -/
+
+section Sobolev
+
+variable {V W U : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+  [NormedAddCommGroup U] [InnerProductSpace ℂ U] [CompleteSpace U]
+  {a : Symbol n W U m'} {b : Symbol n V W m}
+
+/-- **Composition of quantizations on Bessel-potential spaces.** For symbols `a` and `b` with
+compact spatial support and `u ∈ H^s`, the operator `Op(a # b) : H^s → H^{s - (m' + m)}` gives the
+same tempered distribution as `Op(a) : H^{s - m} → H^{s - m - m'}` applied to `Op(b) u`. -/
+theorem toDistr_quantizeSobolev_sharp (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    ((a.sharp b hb).quantizeSobolev (ha.sharp hb) s u).toDistr =
+      (a.quantizeSobolev ha (s - m) (b.quantizeSobolev hb s u)).toDistr := by
+  have key : BesselPotentialSpace.inclusion (le_of_eq (by ring)) ∘L
+      (a.sharp b hb).quantizeSobolev (ha.sharp hb) s =
+      a.quantizeSobolev ha (s - m) ∘L b.quantizeSobolev hb s := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦ ?_
+    simp only [ContinuousLinearMap.comp_apply, quantizeSobolev_toBesselPotentialSpaceCLM,
+      BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
+    congr 1
+    ext x
+    simp [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb]
+  simpa using congrArg (fun T ↦ (T u).toDistr) key
+
+end Sobolev
 
 end Symbol
 

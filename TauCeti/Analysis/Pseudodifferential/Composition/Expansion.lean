@@ -43,8 +43,9 @@ the position and the frequency.
   `TauCeti.Symbol.coefficient_sharpTerm_one` (`-i ∑ⱼ ∂_{ξⱼ} a ∘ ∂_{xⱼ} b`) and the Leibniz rules
   `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`.
   The coefficients of the terms only depend on the coefficients of the two symbols
-  (`TauCeti.Symbol.coefficient_sharpTerm_congr`) and depend linearly on each of them, also for
-  linear combinations of symbols of different orders
+  (`TauCeti.Symbol.coefficient_sharpTerm_congr`), at a position only on the right factor near that
+  position (`TauCeti.Symbol.coefficient_sharpTerm_congr_of_eventually`), and depend linearly on
+  each of them, also for linear combinations of symbols of different orders
   (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions). For a constant symbol
   only the pointwise composition survives (`TauCeti.Symbol.const_sharpTerm_succ`,
   `TauCeti.Symbol.sharpTerm_const_succ`).
@@ -104,7 +105,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform Finset
-open scoped ContDiff RealInnerProductSpace SchwartzMap
+open scoped ContDiff RealInnerProductSpace SchwartzMap Topology
 
 namespace TauCeti
 
@@ -188,6 +189,17 @@ theorem coefficient_sharpTerm_congr {μ μ' : ℝ} {a : Symbol n W U m'} {a' : S
     (a.sharpTerm b k).coefficient = (a'.sharpTerm b' k).coefficient := by
   funext ⟨x, ξ⟩
   simp only [coefficient_sharpTerm, ha, hb]
+
+/-- **Locality of the composition expansion.** At a position `x`, the terms of the expansion only
+depend on the right factor near `x`, through its position derivatives at `x`. The composition
+symbol `a # b` itself involves the Fourier transform of `b` in the position, so it does not have
+this property. -/
+theorem coefficient_sharpTerm_congr_of_eventually {μ : ℝ} (a : Symbol n W U m')
+    {b : Symbol n V W m} {b' : Symbol n V W μ} {x : CoordinateSpace n}
+    (h : ∀ᶠ y in 𝓝 x, ∀ η, b.coefficient (y, η) = b'.coefficient (y, η)) (k : ℕ)
+    (ξ : CoordinateSpace n) :
+    (a.sharpTerm b k).coefficient (x, ξ) = (a.sharpTerm b' k).coefficient (x, ξ) := by
+  simp only [coefficient_sharpTerm, mixedDeriv_congr_of_eventually h]
 
 /-- The terms of the composition expansion are linear in the first symbol: a linear relation
 `a₀ = ∑ᵢ cᵢ aᵢ` between the coefficients of symbols `aᵢ` of possibly different orders gives the

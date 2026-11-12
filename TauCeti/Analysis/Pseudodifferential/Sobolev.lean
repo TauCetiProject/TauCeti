@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -87,6 +89,10 @@ families of operators.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
   `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` identifying its values
   on Schwartz functions.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the operators `Op(a) : H^s → H^{s - m}` for
+  different `s` agree on their common domain, and only depend on the coefficient of `a`.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_ofSpatial`: for the symbol `φ(x) id` of a compactly
+  supported smooth function, `Op(a)` is multiplication by `φ`.
 * `TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: Sobolev
   extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
@@ -887,6 +893,89 @@ theorem continuous_quantizeSobolev {X : Type*} [TopologicalSpace X] {a : X → S
         ((withSeminorms.continuous_seminorm (K, α, [])).comp
           (hcont.sub continuous_const)).tendsto' t₀ 0 (by simp)
     simpa using h.const_mul C
+
+/-- On a Schwartz function `u`, the operator `Op(a) : H^s → H^{s - m}` gives the Schwartz function
+`Op(a) u`, which is compactly supported. -/
+theorem quantizeSobolev_toBesselPotentialSpaceCLM (ha : a.HasCompactSpatialSupport) (s : ℝ)
+    (u : 𝓢(CoordinateSpace n, V)) :
+    a.quantizeSobolev ha s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+      SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
+        ((ha.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (a.contDiff_quantizeSchwartzValue u)) := by
+  refine BesselPotentialSpace.ext ?_
+  ext ψ
+  rw [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+  simp
+
+/-- Lowering the Sobolev exponent of the input does not change the distribution `Op(a) u`, also
+when `a` is replaced by a symbol with the same coefficient. -/
+private theorem toDistr_quantizeSobolev_inclusion {m' : ℝ} {a' : Symbol n V W m'}
+    (ha : a.HasCompactSpatialSupport) (ha' : a'.HasCompactSpatialSupport)
+    (h : a.coefficient = a'.coefficient) {s t : ℝ} (hts : t ≤ s)
+    (u : H^{s}(CoordinateSpace n, V)) :
+    (a'.quantizeSobolev ha' t (BesselPotentialSpace.inclusion hts u)).toDistr =
+      (a.quantizeSobolev ha s u).toDistr := by
+  have key : BesselPotentialSpace.inclusion (min_le_right (s - m) (t - m')) ∘L
+      a'.quantizeSobolev ha' t ∘L BesselPotentialSpace.inclusion hts =
+      BesselPotentialSpace.inclusion (min_le_left (s - m) (t - m')) ∘L a.quantizeSobolev ha s := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦ ?_
+    simp only [ContinuousLinearMap.comp_apply,
+      BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
+      quantizeSobolev_toBesselPotentialSpaceCLM]
+    congr 1
+    ext x
+    simp [h]
+  simpa using congrArg (fun T ↦ (T u).toDistr) key
+
+/-- **The Sobolev extensions of `Op(a)` are compatible.** The distribution `Op(a) u` only depends
+on the distribution `u` and on the coefficient of `a`: it is the same for `u ∈ H^s` and
+`u' ∈ H^{s'}` with the same underlying distribution, and for symbols of different orders with the
+same coefficient. -/
+theorem toDistr_quantizeSobolev_congr {m' : ℝ} {a' : Symbol n V W m'}
+    (ha : a.HasCompactSpatialSupport) (ha' : a'.HasCompactSpatialSupport)
+    (h : a.coefficient = a'.coefficient) {s s' : ℝ} {u : H^{s}(CoordinateSpace n, V)}
+    {u' : H^{s'}(CoordinateSpace n, V)} (hu : u.toDistr = u'.toDistr) :
+    (a.quantizeSobolev ha s u).toDistr = (a'.quantizeSobolev ha' s' u').toDistr := by
+  have hinc : BesselPotentialSpace.inclusion (min_le_left s s') u =
+      BesselPotentialSpace.inclusion (min_le_right s s') u' :=
+    BesselPotentialSpace.ext (by simp [hu])
+  rw [← toDistr_quantizeSobolev_inclusion ha ha rfl (min_le_left s s') u, hinc,
+    toDistr_quantizeSobolev_inclusion ha' ha h.symm]
+
+/-- **Multiplication operators.** For a smooth compactly supported function `φ`, the quantization
+of the symbol `φ(x) id`, of order `0`, is multiplication by `φ` on every `H^s`. -/
+theorem toDistr_quantizeSobolev_ofSpatial {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ)
+    (hφc : HasCompactSupport φ)
+    (h : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+      (hφ.smul contDiff_const)).HasCompactSpatialSupport) (s : ℝ)
+    (u : H^{s}(CoordinateSpace n, V)) :
+    ((ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+      (hφ.smul contDiff_const)).quantizeSobolev h s u).toDistr =
+        TemperedDistribution.smulLeftCLM V φ u.toDistr := by
+  have hφS : ⇑(hφc.toSchwartzMap hφ) = φ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  have key : BesselPotentialSpace.inclusion (sub_zero s).ge ∘L
+      (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+        (hφ.smul contDiff_const)).quantizeSobolev h s =
+      BesselPotentialSpace.smulLeftCLM s (hφc.toSchwartzMap hφ) := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
+      BesselPotentialSpace.ext ?_
+    ext ψ
+    rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
+      BesselPotentialSpace.toDistr_smulLeftCLM, TemperedDistribution.smulLeftCLM_apply_apply,
+      toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+    have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+        (hφ.smul contDiff_const)).coefficient = fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
+      funext (coefficient_ofSpatial _ _)
+    have hφT : φ.HasTemperateGrowth := hφS ▸ (hφc.toSchwartzMap hφ).hasTemperateGrowth
+    simp only [hc, hφS, SchwartzMap.toTemperedDistributionCLM_apply_apply,
+      SchwartzMap.smulLeftCLM_apply_apply hφT]
+    refine integral_congr_ae (.of_forall fun x ↦ ?_)
+    dsimp only
+    rw [quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)]
+    simp [smul_smul, mul_comm]
+  simpa [hφS] using congrArg (fun T ↦ (T u).toDistr) key
 
 end Sobolev
 
