@@ -12,11 +12,10 @@ public import TauCeti.Analysis.Contour.Residue.SimplePole
 # The residue of the logarithmic derivative is the meromorphic order
 
 For `f : ℂ → ℂ` meromorphic at `z₀` of order `n = meromorphicOrderAt f z₀`, the residue of the
-logarithmic derivative there is exactly that order:
-`TauCeti.Contour.residue (logDeriv f) z₀ = n`. This is the residue-form of the argument principle,
-the identity `Res_{z₀}(f'/f) = ord_{z₀} f` that the roadmap names as the local statement its
-contour form (`TauCeti.Contour.argumentPrinciple`) integrates: a zero of order `k` contributes
-`+k` and a pole of order `k` contributes `−k`.
+logarithmic derivative there is exactly that order: `TauCeti.Contour.residue (logDeriv f) z₀ = n`.
+This is the residue-form of the argument principle, the identity `Res_{z₀}(f'/f) = ord_{z₀} f`, the
+local statement that its contour form (`TauCeti.Contour.argumentPrinciple`) integrates: a zero of
+order `k` contributes `+k` and a pole of order `k` contributes `−k`.
 
 The mechanism is the simple-pole splitting of the logarithmic derivative
 (`TauCeti.Contour.logDeriv_eventuallyEq_principalPart`): near `z₀` there is `g` analytic and
@@ -31,17 +30,13 @@ analytic tail `logDeriv g` contributes no residue, so only the simple-pole princ
 * `TauCeti.Contour.residue_logDeriv_eq_meromorphicOrderAt` — `residue (logDeriv f) z₀ = n` when
   `meromorphicOrderAt f z₀ = n`: the residue of `f'/f` is the order of `f` at `z₀`.
 
-These are Layer 2 targets of the contour-integration roadmap, feeding the argument principle and,
-ultimately, the valence formula's interior-orbit sum.
-
 ## Provenance
 
 The simple-pole splitting `logDeriv_eventuallyEq_principalPart` and the residue API are adapted from
 the AINTLIB `LeanModularForms` project (the argument-principle and residue material of
 `ForMathlib/GeneralizedResidueTheory/Residue.lean` and
 `.../Residue/GeneralizedTheoremBase.lean`, where the residue theorem is applied to `logDeriv f`),
-here specialised to Mathlib's `meromorphicOrderAt` API and the raw-function design of the
-contour-integration roadmap.
+here specialised to Mathlib's `meromorphicOrderAt` API.
 
 ## References
 

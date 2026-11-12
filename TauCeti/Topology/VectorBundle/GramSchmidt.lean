@@ -177,12 +177,18 @@ namespace Module.Basis
 
 variable [Fintype ι]
 
+omit [LinearOrder ι] [LocallyFiniteOrderBot ι] in
 /-- A finite-rank vector bundle with continuous fibre metric has continuous local orthonormal
 bases near each point. The index type and model basis are supplied by the caller. -/
 theorem exists_continuous_local_orthonormalBasis (c : Module.Basis ι 𝕜 F) (x : B) :
     ∃ U : Set B, IsOpen U ∧ x ∈ U ∧
       ∃ d : ∀ y : U, OrthonormalBasis ι 𝕜 (E y),
         ∀ i, Continuous (fun y : U ↦ TotalSpace.mk' F (y : B) (d y i)) := by
+  let : LinearOrder ι :=
+    LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
+  classical
+  let : LocallyFiniteOrderBot ι := LocallyFiniteOrderBot.ofIic ι
+    (fun i ↦ Finset.univ.filter (· ≤ i)) (fun i j ↦ by simp)
   let e := trivializationAt F E x
   exact ⟨e.baseSet, e.open_baseSet, mem_baseSet_trivializationAt F E x,
     e.orthonormalBasis c, e.continuous_orthonormalBasis c⟩
