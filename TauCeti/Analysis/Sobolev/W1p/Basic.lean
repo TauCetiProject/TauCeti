@@ -75,6 +75,9 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   weak derivative is an element of `W^{1,p}(Ω)` whose weak gradient is dual to that derivative.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn`: a `C¹` function on `Ω` with `u` and
   `∇u` in `Lᵖ(Ω)` is an element of `W^{1,p}(Ω)`.
+* `TauCeti.W1p.gradient_ae_eq_of_contDiffOn`: conversely, the weak gradient of an element of
+  `W^{1,p}(Ω)` with a `C¹` representative is the classical gradient of the representative;
+  `TauCeti.W1p.memLp_fderiv_of_contDiffOn`: in particular its derivative lies in `Lᵖ(Ω)`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact`: a function of class
   `C¹` on an open set `U` is an element of `W^{1,p}(Ω)` for every `Ω` inside a compact subset
   of `U`.
@@ -808,6 +811,28 @@ theorem W1p.exists_value_gradient_ae_eq_of_contDiffOn {u : E → ℝ} (hu : Cont
     exact hv.coeFn_toLp
   · rw [W1p.gradient_mk]
     exact hg.coeFn_toLp
+
+open scoped Gradient in
+/-- **The weak gradient of a `C¹` representative is its classical gradient.** If the value of
+`u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with a function `v` that is `C¹` on `Ω`, then the
+weak gradient of `u` is `∇v` almost everywhere on `Ω`. In particular `∇v ∈ Lᵖ(Ω)`. -/
+theorem W1p.gradient_ae_eq_of_contDiffOn (u : W1p mu Omega p) {v : E → ℝ}
+    (hv : ContDiffOn ℝ 1 v Omega) (huv : W1p.value u =ᵐ[mu.restrict Omega] v) :
+    W1p.gradient u =ᵐ[mu.restrict Omega] ∇ v := by
+  have h := ((W1p.hasWeakFDerivOn u).congr_ae huv).ae_eq
+    (hasWeakFDerivOn_gradient_of_contDiffOn hv)
+  filter_upwards [h] with x hx
+  exact innerSL_inj.mp hx
+
+open scoped Gradient in
+/-- **A `C¹` representative has an `Lᵖ` derivative.** If the value of `u ∈ W^{1,p}(Ω)` agrees
+almost everywhere on `Ω` with a function `v` that is `C¹` on `Ω`, then `Dv ∈ Lᵖ(Ω)`. -/
+theorem W1p.memLp_fderiv_of_contDiffOn (u : W1p mu Omega p) {v : E → ℝ}
+    (hv : ContDiffOn ℝ 1 v Omega) (huv : W1p.value u =ᵐ[mu.restrict Omega] v) :
+    MemLp (fderiv ℝ v) p (mu.restrict Omega) :=
+  ((InnerProductSpace.toDual ℝ E).toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp'
+    ((Lp.memLp (W1p.gradient u)).ae_eq (W1p.gradient_ae_eq_of_contDiffOn u hv huv))).ae_eq
+    (ae_of_all _ fun _ ↦ toDual_gradient)
 
 open scoped Gradient in
 /-- **A `C¹` function is a Sobolev function on compactly contained subdomains.** If `u` is `C¹`
