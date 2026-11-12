@@ -788,10 +788,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   set C := T \ ⋃ q, A q
   have hT : IsCompact T := isCompact_preimage_truncation R
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hVo hu
-    stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono hTV).integrableOn_compact (μ := volume) hT
+  have harea := ω.integrableOn_eval₂_mfderiv hVo hu hT hTV stdComplexLineReal stdComplexLineImag
   have hcurv := integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation ω hH hHs
     (hu.continuousOn.mono hTV)
   have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt

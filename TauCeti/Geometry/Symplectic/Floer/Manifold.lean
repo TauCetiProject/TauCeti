@@ -100,6 +100,9 @@ form they recover the vector-space definitions.
   `SymplecticForm.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`.
 * `SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity`: over a compact set where `u`
   and `K` are `C¹`, the energy density is integrable whenever the curvature is.
+* `SmoothTwoForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`: where the
+  perturbation data vanish the energy is the area, so energy minus area plus integrated curvature
+  does not change when a region is shrunk to the part where the data live.
 * `IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn`:
   changing the perturbation data inside a compact region `D` does not change the energy plus the
   integrated curvature over `D`; the vector-space case is
@@ -940,6 +943,17 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
   rw [setIntegral_congr_fun hD fun z _ ↦ hpt z, integral_sub hsum hR,
     integral_add harea hdi.integrableOn, hdD, add_zero]
 
+/-- **The area density is integrable over compact sets.** If `u` is `C¹` on an open set `U`, then
+over a compact set `C ⊆ U` the two-form evaluated on the derivatives of `u` along two fixed
+vectors, `z ↦ ω_{u(z)}(du_z a, du_z b)`, is integrable. -/
+theorem integrableOn_eval₂_mfderiv (ω : SmoothTwoForm I M) {U C : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hC : IsCompact C) (hCU : C ⊆ U) (a b : ℝ × ℝ) :
+    IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z a)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z b) : ℝ)) C := by
+  have h := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu a b
+  simp only [← SmoothBundleForm.eval₂_apply] at h
+  exact (h.mono hCU).integrableOn_compact hC
+
 /-- **Integrability of the energy density, for a manifold target.** Let `u` and the perturbation
 datum `K = K_s ds + K_t dt` be `C¹` over an open set `U` of the domain, for a nondegenerate
 two-form on a finite-dimensional manifold, and let `T ⊆ U` be compact. If the curvature `R_K(u)` is
@@ -955,10 +969,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E
     (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) T) :
     IntegrableOn (ω.floerEnergyDensity Ks Kt u) T := by
   have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ univ) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu
-    stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono hTU).integrableOn_compact (μ := volume) hT
+  have harea := ω.integrableOn_eval₂_mfderiv hU hu hT hTU stdComplexLineReal stdComplexLineImag
   -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
   have hd {K : ℝ × ℝ → M → ℝ}
       (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
@@ -1080,6 +1091,44 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
   rw [← integral_add hE hR, ← integral_add hE' hR', setIntegral_congr_fun hD.measurableSet hpt,
     integral_add (f := fun z ↦ ω.floerEnergyDensity Ks' Kt' u z +
       ω.hamiltonianCurvature Ks' Kt' z (u z)) (hE'.add hR') hdi.integrableOn, hdD, add_zero]
+
+/-- **Shrinking to where the datum lives, for a manifold target.** Let `T ⊆ D` with `D`
+measurable, and let `K_s` and `K_t` vanish near every point of `D \ T`. If the energy density, the
+symplectic area density and the curvature `R_K(u)` are integrable over `D`, then the Floer energy
+minus the symplectic area plus the integrated curvature is the same over `D` as over `T`. -/
+theorem integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero {D T : Set (ℝ × ℝ)}
+    (hD : MeasurableSet D) (hTD : T ⊆ D) (hKsD : ∀ z ∈ D \ T, Ks =ᶠ[𝓝 z] 0)
+    (hKtD : ∀ z ∈ D \ T, Kt =ᶠ[𝓝 z] 0) (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) D)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) D)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) D) :
+    (∫ z in D, ω.floerEnergyDensity Ks Kt u z) -
+      (∫ z in D, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+      (∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z)) =
+    (∫ z in T, ω.floerEnergyDensity Ks Kt u z) -
+      (∫ z in T, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+      ∫ z in T, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- Off `T` the datum vanishes, so the energy is the area and the curvature vanishes.
+  have hzero (z : ℝ × ℝ) (hz : z ∈ D \ T) :
+      ω.floerEnergyDensity Ks Kt u z -
+        (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
+        ω.hamiltonianCurvature Ks Kt z (u z) = 0 := by
+    have hKs' : Ks =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKsD z hz
+    have hKt' : Kt =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKtD z hz
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hKs' hKt', hamiltonianCurvature_zero]
+    simp [floerEnergyDensity_def, hKs'.self_of_nhds, hKt'.self_of_nhds,
+      hamiltonianVectorField_const]
+  have h := setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (μ := volume) hD hTD hzero
+  have e₁ := integral_add (hE.sub hA) hR
+  have e₂ := integral_sub hE hA
+  have e₃ := integral_add ((hE.mono_set hTD).sub (hA.mono_set hTD)) (hR.mono_set hTD)
+  have e₄ := integral_sub (hE.mono_set hTD) (hA.mono_set hTD)
+  simp only [Pi.sub_apply] at e₁ e₃
+  linarith
 
 end Integral
 
