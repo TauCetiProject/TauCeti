@@ -271,6 +271,21 @@ theorem d_m_eq_zero_of_eq_add_one (m : RowFiniteTwistingCocycle 𝒜 d P ind)
     rw [m.m_mul_m_eq_zero_of_not_lt_lt hm (by omega), smul_zero]
 
 omit [GradedAlgebra 𝒜] in
+/-- `m_mem_zero_of_eq_add_one` for generators given as elements of the subtypes of index `q + 1`
+and `q`. -/
+theorem m_mem_zero_of_subtype (m : RowFiniteTwistingCocycle 𝒜 d P ind) {q : ℤ}
+    (x : {x : P // ind x = q + 1}) (y : {y : P // ind y = q}) : m.m x y ∈ 𝒜 0 :=
+  m.m_mem_zero_of_eq_add_one (by rw [x.2, y.2])
+
+omit [GradedAlgebra 𝒜] in
+/-- `d_m_eq_zero_of_eq_add_one` for generators given as elements of the subtypes of index `q + 1`
+and `q`. -/
+theorem d_m_eq_zero_of_subtype (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {q : ℤ} (x : {x : P // ind x = q + 1})
+    (y : {y : P // ind y = q}) : d (m.m x y) = 0 :=
+  m.d_m_eq_zero_of_eq_add_one hm (by rw [x.2, y.2])
+
+omit [GradedAlgebra 𝒜] in
 /-- **The twisting equation at index difference two**, for a one-sided cocycle: between
 generators `x` and `z` whose indices differ by two, the sum of the products `m x y * m y z` over
 any finite set of generators `y` of the intermediate index containing those occurring in the row

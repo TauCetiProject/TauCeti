@@ -210,8 +210,7 @@ theorem indexGradedPieceD1X_single {b : ℤ} (x : {x // ind x = b + 1}) (n : ℤ
     m.indexGradedPieceD1X hM b (b + 1) n (((rowFiniteIndexGradedPieceSingle hM ind x).f n).hom α) =
       ∑ y ∈ m.indexRowSupport b x,
         ((rowFiniteIndexGradedPieceSingle hM ind y).f (n + 1)).hom
-          (shiftedModuleComplexActX hM
-            (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) b n α) := by
+          (shiftedModuleComplexActX hM (m.m_mem_zero_of_subtype x y) b n α) := by
   classical
   refine (rowFiniteIndexGradedPieceComplexXEquiv hM b (n + 1)).injective
     (Subtype.ext (Finsupp.ext fun y ↦ ?_))

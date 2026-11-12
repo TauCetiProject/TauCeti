@@ -94,10 +94,8 @@ noncomputable def indexClassicalEntry (q : ℤ) (x : {x : P // ind x = q + 1})
     (y : {y : P // ind y = q}) :
     (shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).homology (k - (q + 1)) ⟶
       (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q) :=
-  shiftedModuleComplexActHomology hM
-    (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-    (m.d_m_eq_zero_of_eq_add_one hm (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (k - (q + 1))
-    (k - q) (by ring)
+  shiftedModuleComplexActHomology hM (m.m_mem_zero_of_subtype x y)
+    (m.d_m_eq_zero_of_subtype hm x y) q (k - (q + 1)) (k - q) (by ring)
 
 /-- **The entries of the classical differential, on classes**: the entry between generators `x` of
 index `q + 1` and `y` of index `q` sends the class of a cycle `α` of `ℳ` to the class of
@@ -119,6 +117,26 @@ theorem indexClassicalEntry_homologyπ (q : ℤ) (x : {x : P // ind x = q + 1})
         ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).moduleCatCyclesMk β _ (by simp) hβ') :=
   shiftedModuleComplexActHomology_homologyπ hM _ _ q _ _ _ α hα β hβ hβ'
 
+/-- **Representatives for the entries of the classical differential**: the image of the class of a
+cycle `α` of `ℳ` under the entry between generators `x` of index `q + 1` and `y` of index `q` is
+the class of a cycle `β` given by `op (m x y) • ε α`, with `ε` the Koszul sign. -/
+theorem exists_indexClassicalEntry_homologyπ (q : ℤ) (x : {x : P // ind x = q + 1})
+    (y : {y : P // ind y = q})
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).X (k - (q + 1)))
+    (hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).d _ (k - (q + 1) + 1)).hom α = 0) :
+    ∃ (β : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X (k - q))
+      (hβ' : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d (k - q) (k - q + 1)).hom β = 0),
+      (shiftedModuleComplexXEquiv hM q (k - q) β : M) =
+        op (m.m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
+          (shiftedModuleComplexXEquiv hM (q + 1) _ α : M) ∧
+      (indexClassicalEntry hM hm k q x y).hom
+          (((shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).homologyπ _).hom
+            ((shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).moduleCatCyclesMk α _
+              (by simp) hα)) =
+        ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).homologyπ _).hom
+          ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).moduleCatCyclesMk β _ (by simp) hβ') :=
+  exists_shiftedModuleComplexActHomology_homologyπ hM _ _ q _ _ _ α hα
+
 /-- An entry of the classical complex vanishes when the corresponding entry of the cocycle
 does. -/
 theorem indexClassicalEntry_eq_zero (q : ℤ) (x : {x : P // ind x = q + 1})
@@ -126,11 +144,8 @@ theorem indexClassicalEntry_eq_zero (q : ℤ) (x : {x : P // ind x = q + 1})
   refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
   obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
     (q + 1)).exists_homologyπ_moduleCatCyclesMk_eq (k - (q + 1) + 1) (by simp) c
-  obtain ⟨β, hβ', hβ, hβπ⟩ := exists_shiftedModuleComplexActHomology_homologyπ hM
-    (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-    (m.d_m_eq_zero_of_eq_add_one hm (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (k - (q + 1))
-    (k - q) (by ring) α hα
-  rw [indexClassicalEntry, hβπ, ModuleCat.hom_zero, LinearMap.zero_apply]
+  obtain ⟨β, hβ', hβ, hβπ⟩ := exists_indexClassicalEntry_homologyπ hM hm k q x y α hα
+  rw [hβπ, ModuleCat.hom_zero, LinearMap.zero_apply]
   refine shiftedModuleComplex_homologyπ_eq_zero hM q (k - q) β hβ' 0 ?_
   simp [hβ, hxy]
 
@@ -185,19 +200,11 @@ theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1}
   refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
   obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
     (q + 1 + 1)).exists_homologyπ_moduleCatCyclesMk_eq (k - (q + 1 + 1) + 1) (by simp) c
-  have h1 := fun y : {y : P // ind y = q + 1} ↦ exists_shiftedModuleComplexActHomology_homologyπ hM
-    (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-    (m.d_m_eq_zero_of_eq_add_one hm (x := x.1) (y := y.1) (by rw [x.2, y.2])) (q + 1)
-    (k - (q + 1 + 1)) (k - (q + 1)) (by ring) α hα
-  choose β hβ' hβ hβπ using h1
-  have h2 := fun y : {y : P // ind y = q + 1} ↦ exists_shiftedModuleComplexActHomology_homologyπ hM
-    (m.m_mem_zero_of_eq_add_one (x := y.1) (y := z.1) (by rw [y.2, z.2]))
-    (m.d_m_eq_zero_of_eq_add_one hm (x := y.1) (y := z.1) (by rw [y.2, z.2])) q
-    (k - (q + 1)) (k - q) (by ring) (β y) (hβ' y)
-  choose γ hγ' hγ hγπ using h2
+  choose β hβ' hβ hβπ using fun y ↦ exists_indexClassicalEntry_homologyπ hM hm k (q + 1) x y α hα
+  choose γ hγ' hγ hγπ using fun y ↦
+    exists_indexClassicalEntry_homologyπ hM hm k q y z (β y) (hβ' y)
   simp only [ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_comp,
-    LinearMap.comp_apply, ModuleCat.hom_zero, LinearMap.zero_apply, indexClassicalEntry, hβπ,
-    hγπ]
+    LinearMap.comp_apply, ModuleCat.hom_zero, LinearMap.zero_apply, hβπ, hγπ]
   rw [← map_sum, HomologicalComplex.sum_moduleCatCyclesMk]
   -- Reduction to representatives is done; `α₀` is the underlying cycle of `ℳ` of degree `k`.
   set α₀ := (shiftedModuleComplexXEquiv hM (q + 1 + 1) _ α : M)
@@ -215,7 +222,7 @@ theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1}
   simp only [hγ, hβ]
   -- The twisting equation at index difference two: the double action is by `∑ y, m x y * m y z`.
   rw [Finset.sum_congr rfl fun y _ ↦ op_smul_koszulTwist_op_smul_koszulTwist
-      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) hα₀ 1,
+      (m.m_mem_zero_of_subtype x y) hα₀ 1,
     ← Finset.sum_smul, ← Finset.op_sum, m.sum_subtype_m_mul_m_of_eq_add_two hm q x.2 z.2 T hT]
   -- The Leibniz rule for the cycle `α₀` and the entry `m x z` of degree `-1`.
   have hl := hM.leibniz hα₀ (m.m x z)
@@ -271,9 +278,9 @@ private theorem indexClassicalComplex_d_eq (q : ℤ) :
     (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q)) (indexClassicalD hM hm k) q
 
 /-- **The differential of the classical complex is `indexClassicalD`**, under the identification
-`indexClassicalComplexXIso` of its terms with direct sums of cohomology. (A plain equation
-`d = indexClassicalD` is not available as a public statement, since the complex is not exposed and
-its terms are only propositionally the direct sums.) -/
+`indexClassicalComplexXIso` of its terms with direct sums of cohomology. (The plain equation
+`d (q + 1) q = indexClassicalD` typechecks only by unfolding the terms of `ChainComplex.of`, so
+the statement is phrased through `indexClassicalComplexXIso`.) -/
 theorem indexClassicalComplexXIso_inv_comp_d_comp_hom (q : ℤ) :
     (indexClassicalComplexXIso hM hm k (q + 1)).inv ≫ (indexClassicalComplex hM hm k).d (q + 1) q ≫
       (indexClassicalComplexXIso hM hm k q).hom = indexClassicalD hM hm k q := by
@@ -298,9 +305,8 @@ theorem homologyMap_single_comp_page_two_d (pq pq' : ℤ × ℤ) (hpq' : pq' = (
         ((m.indexSpectralSequence hM hm).page 2).d pq pq' ≫
         (m.indexSpectralSequenceFirstPageXIsoOfEq hM hm pq' i₁ q hi₁ hq' n' hn').hom =
       ∑ y ∈ m.indexRowSupport q x,
-        shiftedModuleComplexActHomology hM
-          (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-          (m.d_m_eq_zero_of_eq_add_one hm (x := x.1) (y := y.1) (by rw [x.2, y.2])) q n n'
+        shiftedModuleComplexActHomology hM (m.m_mem_zero_of_subtype x y)
+          (m.d_m_eq_zero_of_subtype hm x y) q n n'
           (by rw [hn, hn', hpq']; dsimp only; ring) ≫
         HomologicalComplex.homologyMap (rowFiniteIndexGradedPieceSingle hM ind y) n' := by
   obtain ⟨a, b⟩ := pq
@@ -312,13 +318,11 @@ theorem homologyMap_single_comp_page_two_d (pq pq' : ℤ × ℤ) (hpq' : pq' = (
   obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
     (q + 1)).exists_homologyπ_moduleCatCyclesMk_eq (a + q + 1) (by simp) c
   have h1 := fun y : {y : P // ind y = q} ↦ exists_shiftedModuleComplexActHomology_homologyπ hM
-    (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-    (m.d_m_eq_zero_of_eq_add_one hm (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (a + q)
-    (a + q + 1) (by ring) α hα
+    (m.m_mem_zero_of_subtype x y) (m.d_m_eq_zero_of_subtype hm x y) q (a + q) (a + q + 1)
+    (by ring) α hα
   choose β hβ' hβ hβπ using h1
   -- Each representative `β y` is the action of `m x y` on `α`.
-  have hβeq : ∀ y, β y = shiftedModuleComplexActX hM
-      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (a + q) α :=
+  have hβeq : ∀ y, β y = shiftedModuleComplexActX hM (m.m_mem_zero_of_subtype x y) q (a + q) α :=
     fun y ↦ (shiftedModuleComplexXEquiv hM q _).injective (Subtype.ext (by
       rw [hβ y, shiftedModuleComplexXEquiv_shiftedModuleComplexActX]))
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_sum, LinearMap.sum_apply]
