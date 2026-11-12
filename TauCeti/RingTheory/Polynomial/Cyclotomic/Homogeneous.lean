@@ -144,7 +144,7 @@ theorem homogeneousCyclotomic_mul_prime_of_dvd {p n : ℕ} (hp : p.Prime) (hpn :
     (a b : R) :
     homogeneousCyclotomic (n * p) a b = homogeneousCyclotomic n (a ^ p) (b ^ p) := by
   rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def,
-    ← cyclotomic_expand_eq_cyclotomic hp hpn, mul_comm n, Nat.totient_mul_of_prime_of_dvd hp hpn,
+    ← cyclotomic_expand_eq_cyclotomic hp hpn, mul_comm n, Nat.totient_mul_of_dvd hpn,
     homogenize_expand hp.ne_zero, MvPolynomial.eval_expand]
   congr 2
   ext i
