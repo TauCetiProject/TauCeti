@@ -350,7 +350,7 @@ theorem IsRegularPoint.surjective_fderiv_comp_extChartAt_symm {g : M → E'}
   · -- Without differentiability the manifold derivative is `0`, so `E'` is the zero space.
     rw [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hg] at h
     intro v
-    obtain ⟨u, hu⟩ := h v
+    obtain ⟨_, hu⟩ := h v
     exact ⟨0, by rw [map_zero]; exact hu⟩
 
 /-- At a regular point of a map into a normed space on a boundaryless manifold, the kernel of the

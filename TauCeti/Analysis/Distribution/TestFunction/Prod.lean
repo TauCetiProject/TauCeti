@@ -193,7 +193,7 @@ theorem sliceRight_smul (c : ℝ) (φ : 𝓓(V, F)) (x : E) :
 `‖Dⁱ (y ↦ φ (x, y)) y‖ ≤ ‖Dⁱ φ (x, y)‖`. -/
 theorem norm_iteratedFDeriv_sliceRight_le (φ : 𝓓(V, F)) (i : ℕ) (x : E) (y : D) :
     ‖iteratedFDeriv ℝ i (sliceRight hO φ x) y‖ ≤ ‖iteratedFDeriv ℝ i φ (x, y)‖ :=
-  _root_.ContDiff.norm_iteratedFDeriv_prod_right_le φ.contDiff i (mod_cast le_top) x y
+  φ.contDiff.contDiffAt.norm_iteratedFDeriv_prod_right_le i (mod_cast le_top)
 
 /-- Differentiating in the second variable commutes with taking slices:
 `∂_{(0, w)} φ (x, ·) = ∂_{w} (φ (x, ·))`. -/

@@ -23,9 +23,8 @@ of `Gal(M/K)`; transporting along the isomorphism `Gal(M/K) ≃ (ℤ/2)ⁿ` land
 `𝔽₂`-subspace. Composing these identifications gives an order-reversing bijection between the
 intermediate fields of `M/K` and the `𝔽₂`-subspaces of `ι → ℤ/2`.
 
-This is the lattice-of-subfields layer of the multiquadratic roadmap: the dictionary
-"subfields ↔ subspaces of `𝔽₂ⁿ`" that organises, for instance, the quadratic subfields and the
-genus-field constructions.
+This is the dictionary "subfields ↔ subspaces of `𝔽₂ⁿ`" that organises, for instance, the
+quadratic subfields and the genus-field constructions.
 
 ## Main results
 
@@ -39,8 +38,7 @@ genus-field constructions.
 
 ## Provenance
 
-The Galois-group identification this builds on is migrated, with the rest of the multiquadratic
-Layer 0, from
+The Galois-group identification this builds on is migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The subfield/subspace
 dictionary itself assembles Mathlib's Galois correspondence
