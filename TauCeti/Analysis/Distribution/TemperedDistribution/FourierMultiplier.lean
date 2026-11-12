@@ -21,9 +21,10 @@ It also records how multipliers interact with frequency localization. A tempered
 `u` is localized in frequency to the complement of a set `s` when its Fourier transform vanishes
 on `s` (`Distribution.IsVanishingOn (𝓕 u) s`). Every multiplier whose symbol vanishes on `s`
 produces such a distribution. A multiplier whose symbol equals one away from a closed subset of
-`s` fixes `u`, and directional derivatives, which are the multipliers with symbols `2πi ⟪ξ, m⟫`,
-preserve the localization. This is how band-limited functions are reproduced by a multiplier with
-a smooth compactly supported symbol, the starting point of Bernstein's inequalities.
+`s` fixes `u`, one whose symbol is supported in `s` annihilates `u`, and directional derivatives,
+which are the multipliers with symbols `2πi ⟪ξ, m⟫`, preserve the localization. This is how
+band-limited functions are reproduced by a multiplier with a smooth compactly supported symbol,
+the starting point of Bernstein's inequalities.
 
 ## Main results
 
@@ -32,6 +33,8 @@ a smooth compactly supported symbol, the starting point of Bernstein's inequalit
   a symbol without temperate growth is the junk value `0`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`: a multiplier whose symbol
   is one outside the set where `𝓕 u` vanishes fixes `u`.
+* `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_isVanishingOn`: a multiplier whose symbol
+  is supported in the set where `𝓕 u` vanishes annihilates `u`.
 * `TemperedDistribution.isVanishingOn_fourier_fourierMultiplierCLM`: the Fourier transform of a
   multiplier vanishes wherever its symbol does.
 * `TemperedDistribution.isVanishingOn_fourier_lineDerivOp`,
@@ -122,5 +125,24 @@ theorem fourierMultiplierCLM_eq_self_of_isVanishingOn {u : 𝓢'(E, F)} {s : Set
     rw [this]
     exact tsupport_smul_subset_left _ _
   rw [fourierMultiplierCLM_apply, h, FourierTransform.fourierInv_fourier_eq]
+
+/-- **A multiplier supported off the spectrum annihilates.** If the Fourier transform of a
+tempered distribution `u` vanishes on `s` and the symbol `g` is supported in `s`
+(`tsupport g ⊆ s`), then the Fourier multiplier with symbol `g` annihilates `u`. -/
+theorem fourierMultiplierCLM_eq_zero_of_isVanishingOn {u : 𝓢'(E, F)} {s : Set E}
+    (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) s) {g : E → ℂ} (hgs : tsupport g ⊆ s) :
+    fourierMultiplierCLM F g u = 0 := by
+  by_cases hg : g.HasTemperateGrowth
+  · have h : smulLeftCLM F g (𝓕 u) = 0 := by
+      ext ψ
+      rw [smulLeftCLM_apply_apply, zero_apply]
+      refine hu _ (subset_trans ?_ hgs)
+      have : ⇑(SchwartzMap.smulLeftCLM ℂ g ψ) = fun ξ ↦ g ξ • ψ ξ := by
+        ext ξ
+        simp [SchwartzMap.smulLeftCLM_apply_apply hg]
+      rw [this]
+      exact tsupport_smul_subset_left _ _
+    rw [fourierMultiplierCLM_apply, h, FourierTransform.fourierInv_zero]
+  · rw [fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth hg, zero_apply]
 
 end TemperedDistribution
