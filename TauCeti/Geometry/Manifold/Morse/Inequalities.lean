@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.BigOperators.Ring.Finset
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Sublevel
-public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 import TauCeti.Algebra.BigOperators.AlternatingSum
