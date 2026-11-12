@@ -52,7 +52,7 @@ namespace TauCeti.InternalGrading
 universe u
 
 variable {k : Type*} {M : Type u} [Field k] [AddCommGroup M] [Module k M] [Module k[X] M]
-  [IsScalarTower k k[X] M] [Module.Finite k[X] M] {G : InternalGrading k M} {d : ℕ}
+  [IsScalarTower k k[X] M] [Module.Finite k[X] M] {G : InternalGrading k M ℤ} {d : ℕ}
 
 omit [Module.Finite k[X] M] in
 /-- The union over all degrees `p` of `k`-bases `s p` of complements `C p` to `X` times the

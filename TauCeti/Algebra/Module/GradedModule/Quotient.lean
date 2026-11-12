@@ -60,7 +60,7 @@ open DirectSum
 
 namespace TauCeti.InternalGrading
 
-variable {R M : Type*} {ι : Type} [DecidableEq ι]
+variable {R M : Type*} {ι : Type*} [DecidableEq ι]
 
 section Span
 
