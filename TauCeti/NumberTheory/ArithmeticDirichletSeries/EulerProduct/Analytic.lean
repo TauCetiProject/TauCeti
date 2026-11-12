@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Data
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 
 /-!
 # The analytic Euler product of an ideal arithmetic function
@@ -96,16 +97,17 @@ theorem absNorm_cpow_sub_one_ne_zero (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
   simpa [sub_eq_zero.mp h] using P.one_lt_norm_absNorm_cpow hs
 
 /-- The logarithmic derivative of a deleted Euler factor `1 - N(𝔭) ^ (-s)`. -/
-theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
-    (hs : 0 < s.re) :
+theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : ℂ} :
     logDeriv (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s =
       Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
   have h0 := P.natCast_absNorm_ne_zero
-  have hderiv := (((hasDerivAt_neg s).const_cpow (Or.inl h0)).const_sub 1).deriv
   have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
-  have hsub := P.absNorm_cpow_sub_one_ne_zero hs
-  rw [logDeriv_apply, hderiv, Complex.cpow_neg]
-  field_simp
+  have h := Complex.logDeriv_one_sub_mul_cpow_neg h0 1 s
+  simp only [one_mul] at h
+  rw [h, Complex.cpow_neg]
+  by_cases hsub : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 = 0
+  · simp [sub_eq_zero.mp hsub]
+  · field_simp
 
 end IsDedekindDomain.HeightOneSpectrum
 

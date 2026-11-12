@@ -20,10 +20,6 @@ algebra and then with the quadratic elements of the Clifford algebra.
 The standard diagonal matrix indexed by `i` acts by `1` on the `i`-th isotropic basis vector and
 by `-1` on its dual. Under the comparison it is therefore the diagonal Clifford bivector used to
 compute the spin weights.
-
-## References
-
-* [Tau Ceti Roadmap, Spin Representations, Layer 5](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md#layer-5-the-fundamental-representations-of-b%E2%82%97-and-d%E2%82%97)
 -/
 
 public section

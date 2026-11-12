@@ -88,7 +88,7 @@ theorem eventually_norm_curvatureTensor_le (x₀ : M) :
   -- Compare the fibre norms with the model norms near `x₀`.
   obtain ⟨C₁, hC₁, h₁⟩ := eventually_norm_symmL_trivializationAt_lt F V x₀
   obtain ⟨C₂, hC₂, h₂⟩ := eventually_norm_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) x₀
-  obtain ⟨C₃, hC₃, h₃⟩ := eventually_norm_trivializationAt_lt F V x₀
+  obtain ⟨C₃, _, h₃⟩ := eventually_norm_trivializationAt_lt F V x₀
   refine ⟨C₁ * (‖φ x₀‖ + 1) * C₂ * C₂ * C₃, ?_⟩
   filter_upwards [h₁, h₂, h₃, hφ.norm.eventually (gt_mem_nhds (lt_add_one ‖φ x₀‖)),
     ((trivializationAt E (TangentSpace I : M → Type _) x₀).open_baseSet.inter
@@ -108,11 +108,6 @@ theorem eventually_norm_curvatureTensor_le (x₀ : M) :
     (le_opNorm _ v).trans (mul_le_mul_of_nonneg_right h₂.le (norm_nonneg _))
   have hw : ‖eV.continuousLinearMapAt ℝ x w‖ ≤ C₃ * ‖w‖ :=
     (le_opNorm _ w).trans (mul_le_mul_of_nonneg_right h₃.le (norm_nonneg _))
-  have h₁' := h₁.le
-  have h₄' := h₄.le
-  have hC₁' := hC₁.le
-  have hC₂' := hC₂.le
-  have hC₃' := hC₃.le
   rw [hR]
   calc _ ≤ ‖eV.symmL ℝ x‖ * (‖φ x‖ * ‖e.continuousLinearMapAt ℝ x u‖ *
         ‖e.continuousLinearMapAt ℝ x v‖ * ‖eV.continuousLinearMapAt ℝ x w‖) := by

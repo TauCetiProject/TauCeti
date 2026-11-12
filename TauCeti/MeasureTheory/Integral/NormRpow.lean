@@ -46,6 +46,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
+* `IsCompact.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`: `‖x‖⁻¹` is
+  `Lʳ` on compact sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -285,6 +287,66 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
     with y hy
   have hxy : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hy (h ▸ rfl))
   rw [← ENNReal.ofReal_rpow_of_pos hxy, ofReal_norm]
+
+/-- On a bounded set `Ω` containing `x`, the Riesz kernel `‖x - y‖ ^ (1 - n)` has integral over
+`Ω` at most `n μ(B(0, 1)) diam Ω`, since `Ω` lies in the closed ball of radius `diam Ω` about
+`x`. -/
+theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
+    (hb : Bornology.IsBounded Ω) (hx : x ∈ Ω) :
+    ∫⁻ y in Ω, ‖x - y‖ₑ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
+      ENNReal.ofReal (Module.finrank ℝ E * mu.real (ball 0 1) * diam Ω) := by
+  calc
+    _ ≤ ∫⁻ y in closedBall x (diam Ω), ‖x - y‖ₑ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu :=
+      lintegral_mono_set fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)
+    _ = _ := by
+      rw [setLIntegral_closedBall_enorm_sub_rpow (by linarith) diam_nonneg, add_sub_cancel,
+        Real.rpow_one, div_one]
+
+section Inverse
+
+open scoped ENNReal
+
+/-- On a compact set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
+theorem _root_.IsCompact.memLp_norm_inv_restrict {K : Set E} (hK : IsCompact K) {r : ℝ≥0∞}
+    (hr : r < Module.finrank ℝ E) : MemLp (fun x : E => ‖x‖⁻¹) r (mu.restrict K) := by
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 (by fun_prop)
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_ball 0
+  have hrtop : r ≠ ∞ := (hr.trans_le le_top).ne
+  refine MemLp.mono_measure (Measure.restrict_mono hR le_rfl) ?_
+  rw [← integrable_norm_rpow_iff (by fun_prop) hr0 hrtop]
+  have heq : (fun x : E => ‖‖x‖⁻¹‖ ^ r.toReal) = fun x => ‖x‖ ^ (-r.toReal) := by
+    funext x
+    rw [Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg x)), Real.inv_rpow (norm_nonneg x),
+      Real.rpow_neg (norm_nonneg x)]
+  rw [heq]
+  refine integrableOn_norm_rpow_ball ?_
+  have : r.toReal < Module.finrank ℝ E := by
+    simpa using (ENNReal.toReal_lt_toReal hrtop (by simp)).2 hr
+  linarith
+
+/-- On a nontrivial space, `‖x‖⁻¹` is not `Lʳ` on a closed ball of positive radius about the
+origin when `dim E ≤ r`. -/
+theorem not_memLp_norm_inv_closedBall [Nontrivial E] {ε : ℝ} (hε : 0 < ε) {r : ℝ≥0∞}
+    (hr : Module.finrank ℝ E ≤ r) :
+    ¬ MemLp (fun x : E => ‖x‖⁻¹) r (mu.restrict (closedBall 0 ε)) := by
+  intro h
+  have : IsFiniteMeasure (mu.restrict (closedBall (0 : E) ε)) :=
+    isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
+  have h2 := h.mono_exponent hr
+  rw [← integrable_norm_rpow_iff (by fun_prop) (by simp [Module.finrank_pos.ne'])
+    (by simp)] at h2
+  have heq : (fun x : E => ‖‖x‖⁻¹‖ ^ (Module.finrank ℝ E : ℝ≥0∞).toReal) =
+      fun x => ‖x‖ ^ (-(Module.finrank ℝ E : ℝ)) := by
+    funext x
+    rw [Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg x)), Real.inv_rpow (norm_nonneg x),
+      Real.rpow_neg (norm_nonneg x), ENNReal.toReal_natCast]
+  rw [heq] at h2
+  have h3 : IntegrableOn (fun x : E => ‖x‖ ^ (-(Module.finrank ℝ E : ℝ))) (ball 0 ε) mu :=
+    IntegrableOn.mono_set h2 ball_subset_closedBall
+  exact lt_irrefl _ ((integrableOn_norm_rpow_ball_iff hε).1 h3)
+
+end Inverse
 
 end TauCeti
 

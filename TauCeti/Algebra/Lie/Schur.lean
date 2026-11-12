@@ -53,6 +53,7 @@ two-irreducible dimension count.
   `TauCeti.LieModule.finrank_lieModuleHom_le_one`: the dimension of the morphism space is `1` when
   the two irreducible modules are equivalent and `0` when they are not, packaged as
   `TauCeti.LieModule.finrank_lieModuleHom`.
+  The vanishing criterion `finrank_lieModuleHom_eq_zero_iff` holds over any field.
 
 ## Implementation notes
 
@@ -138,21 +139,46 @@ theorem finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv (h : IsEmpty (M �
   have := Module.nontrivial R M
   exact Module.finrank_zero_of_subsingleton
 
-variable [_root_.LieModule R L M]
-
 /-- The morphism space from an irreducible Lie module that is Noetherian over the base ring to
 any irreducible Lie module is finitely generated. In particular, this applies to a finitely
 generated source over a Noetherian commutative ring. -/
 theorem finite_lieModuleHom_of_isIrreducible [IsNoetherian R M] :
     Module.Finite R (M →ₗ⁅R,L⁆ N) := by
   by_cases h : Nonempty (M ≃ₗ⁅R,L⁆ N)
-  · exact Module.Finite.equiv (LieModuleEquiv.congrRight (M := M) h.some)
+  · have : IsNoetherian R N := isNoetherian_of_linearEquiv h.some.toLinearEquiv
+    exact Module.Finite.equiv (h.some.congrLeft (P := N)).symm
   · have : Subsingleton (M →ₗ⁅R,L⁆ N) :=
       subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (not_nonempty_iff.mp h)
     exact Module.Finite.of_surjective (0 : R →ₗ[R] (M →ₗ⁅R,L⁆ N))
       fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
 
 end CommRing
+
+/-! ### Over an arbitrary field -/
+
+section Field
+
+variable {K : Type u} {L : Type v} {M : Type w} {N : Type w₁}
+variable [Field K] [LieRing L] [LieAlgebra K L]
+variable [AddCommGroup M] [Module K M] [LieRingModule L M]
+variable [AddCommGroup N] [Module K N] [LieRingModule L N] [_root_.LieModule K L N]
+variable [FiniteDimensional K M]
+variable [_root_.LieModule.IsIrreducible K L M] [_root_.LieModule.IsIrreducible K L N]
+
+/-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
+module vanishes exactly when they are inequivalent**, over any field: a nonzero morphism, which
+exists exactly for equivalent modules, makes the finite-dimensional morphism space nonzero. -/
+theorem finrank_lieModuleHom_eq_zero_iff :
+    finrank K (M →ₗ⁅K,L⁆ N) = 0 ↔ IsEmpty (M ≃ₗ⁅K,L⁆ N) := by
+  refine ⟨fun h ↦ ?_, finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv⟩
+  rw [← not_nonempty_iff]
+  intro hne
+  obtain ⟨f, hf⟩ := nonempty_lieModuleEquiv_iff_exists_ne_zero.1 hne
+  have := finite_lieModuleHom_of_isIrreducible (R := K) (L := L) (M := M) (N := N)
+  have := Module.finrank_zero_iff.1 h
+  exact hf (Subsingleton.elim _ _)
+
+end Field
 
 /-! ### Over an algebraically closed field -/
 
@@ -183,7 +209,7 @@ variable {M}
 postcomposing with the equivalence identifies it with the endomorphism space. -/
 theorem finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv (h : Nonempty (M ≃ₗ⁅K,L⁆ N)) :
     finrank K (M →ₗ⁅K,L⁆ N) = 1 := by
-  rw [← (LieModuleEquiv.congrRight (M := M) h.some).finrank_eq]
+  rw [← (h.some.congrRight (M := M)).finrank_eq]
   exact finrank_lieModuleHom_self K L M
 
 variable [_root_.LieModule.IsIrreducible K L N]
@@ -197,16 +223,6 @@ theorem finrank_lieModuleHom_eq_one_iff :
   intro hempty
   rw [finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv hempty] at h
   exact zero_ne_one h
-
-/-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
-module vanishes exactly when they are inequivalent.** -/
-theorem finrank_lieModuleHom_eq_zero_iff :
-    finrank K (M →ₗ⁅K,L⁆ N) = 0 ↔ IsEmpty (M ≃ₗ⁅K,L⁆ N) := by
-  refine ⟨fun h ↦ ?_, finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv⟩
-  rw [← not_nonempty_iff]
-  intro hne
-  rw [finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv K L hne] at h
-  exact one_ne_zero h
 
 /-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
 module is at most a line.** -/
@@ -231,3 +247,25 @@ theorem finrank_lieModuleHom :
 end IsAlgClosed
 
 end TauCeti.LieModule
+
+namespace LieModule
+
+variable {R : Type u} {L : Type v} {M : Type w} {S : Type w₁} [CommRing R] [LieRing L]
+variable [AddCommGroup M] [Module R M] [LieRingModule L M] [IsNoetherian R M]
+variable [AddCommGroup S] [Module R S] [LieRingModule L S] [IsIrreducible R L S]
+
+/-- **A Noetherian module has no morphism from an irreducible module that is not finitely
+generated.** A morphism out of an irreducible `S` has kernel `⊥` or `⊤`, so it is either zero or
+injective, and an injective one would make `S` finitely generated. -/
+theorem subsingleton_lieModuleHom_of_not_finite (hS : ¬ Module.Finite R S) :
+    Subsingleton (S →ₗ⁅R,L⁆ M) := by
+  have h0 : ∀ f : S →ₗ⁅R,L⁆ M, f = 0 := fun f ↦ by
+    rcases eq_bot_or_eq_top f.ker with h | h
+    · exact absurd (Module.Finite.of_injective f.toLinearMap
+        ((LieModuleHom.ker_eq_bot f).mp h)) hS
+    · exact LieModuleHom.ext fun x ↦ by
+        have : x ∈ f.ker := h ▸ LieSubmodule.mem_top x
+        simpa using this
+  exact ⟨fun f g ↦ (h0 f).trans (h0 g).symm⟩
+
+end LieModule

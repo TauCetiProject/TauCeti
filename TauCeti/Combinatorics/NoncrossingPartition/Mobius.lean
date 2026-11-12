@@ -194,7 +194,7 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
     exact splitPartition_mem_erase_top_sup_pairPartition hpair _ (hCs y)
       (Finset.convex_filter_erase_le hmin₁ y) (hm₂C hy) (hm₁C y)
   · -- The last position of the part through `m₂` is not `m₁`.
-    obtain ⟨hu, hne⟩ := hX x hx
+    obtain ⟨_, hne⟩ := hX x hx
     have hmax := max'_mem (x.1.part m₂) ⟨m₂, x.1.mem_part_self.2 hm₂s⟩
     refine mem_erase.2 ⟨fun h => hne ?_, x.1.part_subset m₂ hmax⟩
     exact (x.1.mem_part_iff_part_eq_part hm₁ hm₂s).1 (h ▸ hmax)
@@ -211,7 +211,7 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
     · rw [part_splitPartition_of_mem (hCx.symm ▸ hzC), hCx,
         (x.1.mem_part_iff_part_eq_part hz hm₂s).1 hzC]
     · rw [part_splitPartition_of_notMem hz (hCx.symm ▸ hzC), hCx,
-        ← x.1.part_eq_sdiff_part hm₁ hm₂s hu hne,
+        ← x.1.part_eq_sdiff_part hu hne,
         (x.1.mem_part_iff_part_eq_part hz hm₁).1
           ((mem_union.1 (hu.symm ▸ hz)).resolve_right hzC)]
   · -- The Möbius function at the split partition is a product over its two parts.

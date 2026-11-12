@@ -75,6 +75,10 @@ space by them.
   disjoint closed cover is clopen.
 * `TauCeti.natCard_connectedComponents_eq_of_iUnion_eq_univ`: a space covered by finitely many
   pairwise disjoint closed connected sets has exactly as many connected components as sets.
+* `TauCeti.connectedComponentIn_eq_of_natCard_eq_two`: if a set with exactly two connected
+  components is split into two disjoint nonempty open sets, these are its components.
+* `IsPreconnected.connectedComponentIn_union_eq_left`: a preconnected open set `u`, separated by a
+  disjoint open set `v`, is a connected component of `u ∪ v`.
 -/
 
 public section
@@ -658,5 +662,41 @@ theorem natCard_connectedComponents_eq_of_iUnion_eq_univ {ι : Type*} [Finite ι
     uniqueOfSubsingleton (ConnectedComponents.mk (Classical.arbitrary _))
   exact Nat.card_congr ((ConnectedComponents.equivOfIsClopen hclopen hdisj hunion).trans
     (Equiv.sigmaUnique ι _))
+
+/-- If a set `s` has exactly two connected components and is the union of two disjoint nonempty
+open sets `u` and `v`, then `u` is one of these components: it is the connected component in `s`
+of each of its points. -/
+theorem connectedComponentIn_eq_of_natCard_eq_two {s u v : Set X}
+    (hs : Nat.card (ConnectedComponents s) = 2) (hu : IsOpen u) (hv : IsOpen v)
+    (huv : Disjoint u v) (hsuv : u ∪ v = s) (hv' : v.Nonempty) {x : X} (hx : x ∈ u) :
+    connectedComponentIn s x = u := by
+  -- The component of a point of `u` lies in `u`.
+  have hsu {z : X} (hz : z ∈ u) : connectedComponentIn s z ⊆ u :=
+    isPreconnected_connectedComponentIn.subset_left_of_subset_union hu hv huv
+      (hsuv ▸ connectedComponentIn_subset s z)
+      ⟨z, mem_connectedComponentIn (hsuv ▸ Or.inl hz), hz⟩
+  obtain ⟨y, hy⟩ := hv'
+  have hxs : x ∈ s := hsuv ▸ Or.inl hx
+  have hys : y ∈ s := hsuv ▸ Or.inr hy
+  -- Points of `u` and `v` lie in different components, which are therefore the only two.
+  have hne (z : X) (hz : z ∈ u) (hzs : z ∈ s) :
+      ((⟨z, hzs⟩ : s) : ConnectedComponents s) ≠ (⟨y, hys⟩ : s) := fun h ↦ by
+    rw [ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq] at h
+    exact huv.notMem_of_mem_left (hsu hz (h ▸ mem_connectedComponentIn hys)) hy
+  obtain ⟨c, -, hc⟩ := (Nat.card_eq_two_iff' ((⟨y, hys⟩ : s) : ConnectedComponents s)).1 hs
+  refine (hsu hx).antisymm fun z hz ↦ ?_
+  have hzs : z ∈ s := hsuv ▸ Or.inl hz
+  have hzx := (hc _ (hne z hz hzs)).trans (hc _ (hne x hx hxs)).symm
+  rw [ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq] at hzx
+  exact hzx ▸ mem_connectedComponentIn hzs
+
+/-- A preconnected open set `u`, disjoint from an open set `v`, is a connected component of
+`u ∪ v`: it is the component in `u ∪ v` of each of its points. -/
+theorem _root_.IsPreconnected.connectedComponentIn_union_eq_left {u v : Set X}
+    (hu' : IsPreconnected u) (hu : IsOpen u) (hv : IsOpen v) (huv : Disjoint u v) {x : X}
+    (hx : x ∈ u) : connectedComponentIn (u ∪ v) x = u :=
+  (isPreconnected_connectedComponentIn.subset_left_of_subset_union hu hv huv
+      (connectedComponentIn_subset _ x) ⟨x, mem_connectedComponentIn (Or.inl hx), hx⟩).antisymm
+    (hu'.subset_connectedComponentIn hx subset_union_left)
 
 end TauCeti

@@ -7,9 +7,15 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+public import TauCeti.Analysis.Calculus.DifferentialForm.DiscMollification
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
+import TauCeti.Topology.Discrete
+import TauCeti.Analysis.Contour.Winding.Number.Homotopy
 import TauCeti.Analysis.Contour.Winding.RealIntegral.Basic
 
 /-!
@@ -37,11 +43,40 @@ arbitrary real normed space to the case of a disc in the plane
 If instead `χ = 1` near `|α|²` on the whole disc, the cutoff current vanishes there and the charge
 is zero (`integral_cutoffCurrent_comp_closedBall_eq_zero`).
 
+Since the charge is the winding number of the boundary loop, it is controlled by the zeros of
+`α ∘ σ` and by the boundary circle:
+
+* it vanishes as soon as `α ∘ σ` has no zero on the closed disc, even where `χ(|α|²) < 1`
+  (`integral_cutoffCurrent_comp_closedBall_eq_zero_of_ne_zero`), because the boundary loop then
+  contracts through `ℂ \ {0}`; so a disc of nonzero charge contains a zero of `α ∘ σ` in its
+  interior (`exists_mem_ball_eq_zero_of_integral_cutoffCurrent_comp_ne_zero`);
+* it is unchanged when the disc is shrunk to a concentric subdisc containing all the zeros of
+  `α ∘ σ`, provided the smaller boundary circle also lies in `{χ(|α|²) = 1}`
+  (`integral_cutoffCurrent_comp_closedBall_eq_of_annulus`);
+* it is invariant under homotopies of discs whose boundary circles stay in `{χ(|α|²) = 1}`
+  (`integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn`); the interiors of the discs may
+  cross the zeros of `α` along the homotopy.
+
 In Taubes's passage from Seiberg–Witten solutions to pseudoholomorphic curves, `α` is the
 component of the rescaled spinor along the canonical unit spinor and the cutoff currents converge
 to the current of the limiting curve. The integer charges of discs whose boundary stays where
 `|α|` is bounded below are the quantities whose limits are compared there with the local
 intersection numbers of discs with the limiting curve; that comparison is not part of this file.
+
+What this file does prove is that these integers stabilize along a family of cutoff currents
+whose coefficients `Θ(y)(v, w)` converge as distributions. If the boundary circles of all the
+translated discs `σ + p`, `‖p‖ ≤ δ`, lie in `{χ(|α|²) = 1}`, homotopy invariance makes their
+charges equal, so averaging over `p` against a weight `ρ` of integral one supported in that ball
+does not change the charge of `σ`. By the
+averaging identity for mollified discs
+(`TauCeti.integral_mul_setIntegral_add_eq_sum_integral_discMollification_mul`), the averaged
+charge is a finite sum of pairings of the coefficients `Θ(y)(e i, e j)` of the cutoff current
+with fixed test functions, the coefficients of the mollified disc
+(`integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification_mul`). For a smooth
+compactly supported `ρ` these test functions are smooth and compactly supported. So when the
+coefficients of a family of cutoff currents converge as distributions, the charges of `σ`
+converge, and being integers they are eventually constant
+(`exists_int_eventually_integral_cutoffCurrent_comp_closedBall_eq`).
 
 ## Main results
 
@@ -53,6 +88,19 @@ intersection numbers of discs with the limiting curve; that comparison is not pa
   `α ∘ σ`.
 * `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_zero`: the charge of a disc on
   which `χ = 1` near `|α|²` vanishes.
+* `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_zero_of_ne_zero` and
+  `TauCeti.SeibergWitten.exists_mem_ball_eq_zero_of_integral_cutoffCurrent_comp_ne_zero`: a disc
+  on which `α` does not vanish has charge zero, so a disc of nonzero charge meets the zeros of `α`.
+* `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_of_annulus`: the charge does
+  not change on passing to a concentric subdisc containing the zeros of `α ∘ σ`.
+* `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn`: the charge is
+  invariant under homotopies keeping the boundary circle in `{χ(|α|²) = 1}`.
+* `integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification_mul`:
+  the charge of a disc whose translates have boundary in `{χ(|α|²) = 1}` is a pairing of the
+  cutoff current with the mollified disc.
+* `TauCeti.SeibergWitten.exists_int_eventually_integral_cutoffCurrent_comp_closedBall_eq`: along a
+  family of cutoff currents whose coefficients converge as distributions, the integer charges of
+  such a disc are eventually constant.
 
 ## References
 
@@ -65,7 +113,7 @@ public section
 noncomputable section
 
 open ContinuousAlternatingMap Complex Filter Set MeasureTheory
-open scoped Topology Real
+open scoped Topology Real ContDiff
 
 namespace TauCeti.SeibergWitten
 
@@ -105,7 +153,7 @@ theorem exists_int_integral_cutoffCurrent_closedBall {α : ℂ → ℂ}
   have hdiff (θ : ℝ) (_ : θ ∈ Ioo (min (-π) π) (max (-π) π) \ ∅) : DifferentiableAt ℝ γ θ :=
     (hα.differentiable two_ne_zero).differentiableAt.comp θ (differentiable_circleMap z₀ r θ)
   obtain ⟨n, hn⟩ := Contour.exists_int_windingNumber_of_closed hclosed countable_empty
-    hγc.continuousOn hdiff (fun θ _ ↦ hγ₀ θ) hint
+    hγc.continuousOn hdiff (fun θ _ ↦ hγ₀ θ)
   refine ⟨n, hn, ?_⟩
   -- The winding number of the boundary loop is `(2π)⁻¹` times its real winding integral.
   have hreal := Contour.windingNumber_eq_real_integral_of_closed hclosed countable_empty
@@ -145,13 +193,215 @@ is zero. -/
 theorem integral_cutoffCurrent_comp_closedBall_eq_zero {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {σ : ℂ → E} {z₀ : ℂ} {r : ℝ}
     (hα : ∀ z ∈ Metric.closedBall z₀ r, ContDiffAt ℝ 2 α (σ z))
-    (hb : ∀ z ∈ Metric.closedBall z₀ r, DifferentiableAt ℝ b (σ z)) (hχ₀ : χ =ᶠ[𝓝 0] 0)
+    (hχ₀ : χ =ᶠ[𝓝 0] 0)
     (hvac : ∀ z ∈ Metric.closedBall z₀ r, χ =ᶠ[𝓝 (normSq (α (σ z)))] 1) :
     ∫ z in Metric.closedBall z₀ r,
       (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] = 0 := by
   refine setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ ?_
   rw [cutoffCurrent_eq_zero (hα z hz)
-    (ne_zero_of_cutoff_eq_one hχ₀ (hvac z hz).eq_of_nhds) (hb z hz) (hvac z hz)]
+    (ne_zero_of_cutoff_eq_one hχ₀ (hvac z hz).eq_of_nhds) (hvac z hz)]
   simp
+
+/-- **A disc on which `α` does not vanish has charge zero.** Let `σ : ℂ → E` be a `C²` disc such
+that `χ(|α|²) = 1` along `σ` of the boundary circle of a closed disc, and such that `α ∘ σ` has
+no zero on the closed disc. Then the integral over the disc of the pullback by `σ` of the cutoff
+current vanishes. Unlike `integral_cutoffCurrent_comp_closedBall_eq_zero`, the cutoff `χ(|α|²)`
+may be smaller than `1` inside the disc. -/
+theorem integral_cutoffCurrent_comp_closedBall_eq_zero_of_ne_zero {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    {σ : ℂ → E} {z₀ : ℂ} {r : ℝ} (hr : 0 ≤ r) (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ContDiff ℝ 2 σ)
+    (hbd : ∀ θ, χ (normSq (α (σ (circleMap z₀ r θ)))) = 1)
+    (hne : ∀ z ∈ Metric.closedBall z₀ r, α (σ z) ≠ 0) :
+    ∫ z in Metric.closedBall z₀ r,
+      (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] = 0 := by
+  obtain ⟨n, hn, hI⟩ := exists_int_integral_cutoffCurrent_comp_closedBall hr hα hb hχ hχ₀ hσ hbd
+  have h0 := Contour.windingNumber_comp_circleMap_eq_zero hr
+    ((hα.comp hσ).contDiffOn.of_le one_le_two) hne (-π)
+  rw [show -π + 2 * π = π by ring, Function.comp_assoc, hn, Int.cast_eq_zero] at h0
+  rw [hI, h0, Int.cast_zero, mul_zero]
+
+/-- **A disc of nonzero charge meets the zeros of `α`.** Let `σ : ℂ → E` be a `C²` disc such that
+`χ(|α|²) = 1` along `σ` of the boundary circle of a closed disc. If the integral over the disc of
+the pullback by `σ` of the cutoff current is nonzero, then `α ∘ σ` vanishes at some point of the
+open disc. -/
+theorem exists_mem_ball_eq_zero_of_integral_cutoffCurrent_comp_ne_zero {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    {σ : ℂ → E} {z₀ : ℂ} {r : ℝ} (hr : 0 ≤ r) (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ContDiff ℝ 2 σ)
+    (hbd : ∀ θ, χ (normSq (α (σ (circleMap z₀ r θ)))) = 1)
+    (hI : ∫ z in Metric.closedBall z₀ r,
+      (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] ≠ 0) :
+    ∃ z ∈ Metric.ball z₀ r, α (σ z) = 0 := by
+  by_contra! h
+  refine hI (integral_cutoffCurrent_comp_closedBall_eq_zero_of_ne_zero hr hα hb hχ hχ₀ hσ hbd
+    fun z hz ↦ ?_)
+  rcases (Metric.mem_closedBall.1 hz).lt_or_eq with hlt | heq
+  · exact h z (Metric.mem_ball.2 hlt)
+  -- A point of the boundary circle is `circleMap z₀ r θ`, where `χ(|α|²) = 1`.
+  obtain ⟨θ, rfl⟩ : z ∈ range (circleMap z₀ r) := by
+    rw [range_circleMap, abs_of_nonneg hr]
+    exact Metric.mem_sphere.2 heq
+  exact ne_zero_of_cutoff_eq_one hχ₀ (hbd θ)
+
+/-- **The disc charge only sees the zeros of `α`.** Let `σ : ℂ → E` be a `C²` disc, and let
+`0 ≤ r₁ ≤ r₂` be radii such that `χ(|α|²) = 1` along `σ` of both circles of radii `r₁` and `r₂`
+about `z₀`, and such that `α ∘ σ` has no zero on the closed annulus between them. Then the discs
+of radii `r₁` and `r₂` carry the same charge. -/
+theorem integral_cutoffCurrent_comp_closedBall_eq_of_annulus {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    {σ : ℂ → E} {z₀ : ℂ} {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁) (hr : r₁ ≤ r₂) (hα : ContDiff ℝ 2 α)
+    (hb : ContDiff ℝ 1 b) (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ContDiff ℝ 2 σ)
+    (hbd₁ : ∀ θ, χ (normSq (α (σ (circleMap z₀ r₁ θ)))) = 1)
+    (hbd₂ : ∀ θ, χ (normSq (α (σ (circleMap z₀ r₂ θ)))) = 1)
+    (hne : ∀ z ∈ Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁, α (σ z) ≠ 0) :
+    ∫ z in Metric.closedBall z₀ r₁,
+        (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] =
+      ∫ z in Metric.closedBall z₀ r₂,
+        (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] := by
+  obtain ⟨m, hm, hI₁⟩ := exists_int_integral_cutoffCurrent_comp_closedBall hr₁ hα hb hχ hχ₀ hσ hbd₁
+  obtain ⟨n, hn, hI₂⟩ :=
+    exists_int_integral_cutoffCurrent_comp_closedBall (hr₁.trans hr) hα hb hχ hχ₀ hσ hbd₂
+  have h := Contour.windingNumber_comp_circleMap_eq_of_annulus hr₁ hr
+    ((hα.comp hσ).contDiffOn.of_le one_le_two) hne (-π)
+  rw [show -π + 2 * π = π by ring, Function.comp_assoc, Function.comp_assoc, hm, hn,
+    Int.cast_inj] at h
+  rw [hI₁, hI₂, h]
+
+/-- **Homotopy invariance of the disc charge.** Let `σ p`, for `p` in a preconnected set `S` of
+parameters, be `C²` discs such that `σ p z` depends jointly continuously on `p ∈ S` and on `z` in
+the boundary circle of a closed disc, and such that `χ(|α|²) = 1` along each `σ p` of that circle.
+Then all the discs `σ p` carry the same charge. Only the boundary circles enter: along the family,
+the interiors of the discs may cross the zeros of `α`, and need not vary continuously. -/
+theorem integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    {P : Type*} [TopologicalSpace P] {S : Set P} (hS : IsPreconnected S) {σ : P → ℂ → E}
+    {z₀ : ℂ} {r : ℝ} (hr : 0 ≤ r) (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ∀ p ∈ S, ContDiff ℝ 2 (σ p))
+    (hσc : ContinuousOn (Function.uncurry σ) (S ×ˢ Metric.sphere z₀ r))
+    (hbd : ∀ p ∈ S, ∀ θ, χ (normSq (α (σ p (circleMap z₀ r θ)))) = 1) {p q : P} (hp : p ∈ S)
+    (hq : q ∈ S) :
+    ∫ z in Metric.closedBall z₀ r,
+        (cutoffCurrent χ b α (σ p z)).compContinuousLinearMap (fderiv ℝ (σ p) z) ![1, I] =
+      ∫ z in Metric.closedBall z₀ r,
+        (cutoffCurrent χ b α (σ q z)).compContinuousLinearMap (fderiv ℝ (σ q) z) ![1, I] := by
+  obtain ⟨m, hm, hI₁⟩ := exists_int_integral_cutoffCurrent_comp_closedBall hr hα hb hχ hχ₀
+    (hσ p hp) (hbd p hp)
+  obtain ⟨n, hn, hI₂⟩ := exists_int_integral_cutoffCurrent_comp_closedBall hr hα hb hχ hχ₀
+    (hσ q hq) (hbd q hq)
+  -- The boundary loops `α ∘ σ p ∘ circleMap z₀ r` form a continuous family of closed curves
+  -- avoiding `0`.
+  have h := Contour.windingNumber_eq_of_continuousOn_uncurry
+    (H := fun p ↦ α ∘ σ p ∘ circleMap z₀ r) (a := -π) (b := π) (w := 0) hS
+    (hα.continuous.comp_continuousOn (hσc.comp
+      (continuousOn_fst.prodMk ((continuous_circleMap z₀ r).comp_continuousOn continuousOn_snd))
+      fun x hx ↦ ⟨hx.1, circleMap_mem_sphere z₀ hr x.2⟩))
+    (fun p hp ↦ IsPiecewiseC1On.of_contDiffOn
+      ((hα.comp ((hσ p hp).comp (contDiff_circleMap z₀ r))).contDiffOn.of_le one_le_two))
+    (fun p _ ↦ by simp only [Function.comp_apply, ← periodic_circleMap z₀ r (-π)]; ring_nf)
+    (fun p hp θ _ ↦ ne_zero_of_cutoff_eq_one hχ₀ (hbd p hp θ)) hp hq
+  rw [hm, hn, Int.cast_inj] at h
+  rw [hI₁, hI₂, h]
+
+/-! ### Mollified charges and their limits -/
+
+/-- **The disc charge as a pairing with a test field.** Let `σ` be a `C²` disc such that the
+boundary circle of every translated disc `σ + p`, `‖p‖ ≤ δ`, lies in `{χ(|α|²) = 1}`, and let `ρ`
+be a continuous weight of integral one supported in the closed ball of radius `δ` about `0`.
+Then the charge of `σ` is the pairing of the cutoff current `Θ` with the mollified disc: on a
+basis `e`,
+
+`∫_D σ^* Θ = ∑ s, ∫ ξ_s(y) Θ(y)(e (s 0), e (s 1)) dμ(y)`,
+
+where `ξ_s` are the coefficients `TauCeti.discMollification e ρ σ z₀ r s`, smooth and compactly
+supported when `ρ` is. -/
+theorem integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification_mul
+    {E κ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [Fintype κ] {μ : Measure E} [μ.IsAddHaarMeasure]
+    {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {σ : ℂ → E} {z₀ : ℂ} {r δ : ℝ} {ρ : E → ℝ}
+    (e : Module.Basis κ ℝ E) (hr : 0 ≤ r) (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ContDiff ℝ 2 σ) (hρ : Continuous ρ)
+    (hρδ : tsupport ρ ⊆ Metric.closedBall 0 δ) (hρ₁ : ∫ p, ρ p ∂μ = 1)
+    (hbd : ∀ p ∈ Metric.closedBall (0 : E) δ, ∀ θ,
+      χ (normSq (α (σ (circleMap z₀ r θ) + p))) = 1) :
+    ∫ z in Metric.closedBall z₀ r,
+        (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] =
+      ∑ s : Fin 2 → κ, ∫ y, discMollification e ρ σ z₀ r s y *
+        cutoffCurrent χ b α y (fun i ↦ e (s i)) ∂μ := by
+  have hΘ : Continuous (cutoffCurrent χ b α) :=
+    (contDiff_cutoffCurrent (m := 0) (n := 1) hα hb hχ hχ₀ (by norm_num)).continuous
+  have hρc : HasCompactSupport ρ :=
+    (isCompact_closedBall 0 δ).of_isClosed_subset (isClosed_tsupport ρ) hρδ
+  -- A weight of integral one is nonzero, so `δ ≥ 0`.
+  have hδ : 0 ≤ δ := by
+    by_contra h
+    have h₀ : tsupport ρ = ∅ :=
+      subset_empty_iff.1 (hρδ.trans (Metric.closedBall_eq_empty.2 (not_le.1 h)).subset)
+    rw [tsupport_eq_empty_iff] at h₀
+    simp [h₀] at hρ₁
+  -- All the translated discs `σ + p`, `‖p‖ ≤ δ`, carry the charge of `σ`.
+  have hconst (p : E) (hp : p ∈ Metric.closedBall 0 δ) :
+      ∫ z in Metric.closedBall z₀ r,
+          cutoffCurrent χ b α (σ z + p) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] =
+        ∫ z in Metric.closedBall z₀ r,
+          cutoffCurrent χ b α (σ z) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] := by
+    have h := integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn
+      (convex_closedBall (0 : E) δ).isPreconnected (σ := fun p z ↦ σ z + p) hr hα hb hχ hχ₀
+      (fun _ _ ↦ hσ.add contDiff_const)
+      ((hσ.continuous.comp continuous_snd).add continuous_fst).continuousOn hbd hp
+      (Metric.mem_closedBall_self hδ)
+    simpa only [fderiv_add_const, compContinuousLinearMap_apply_vecCons_two, add_zero] using h
+  have hρc' (p : E) : ρ p * ∫ z in Metric.closedBall z₀ r,
+        cutoffCurrent χ b α (σ z + p) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] =
+      ρ p * ∫ z in Metric.closedBall z₀ r,
+        cutoffCurrent χ b α (σ z) ![fderiv ℝ σ z 1, fderiv ℝ σ z I] := by
+    by_cases hp : p ∈ tsupport ρ
+    · rw [hconst p (hρδ hp)]
+    · rw [image_eq_zero_of_notMem_tsupport hp, zero_mul, zero_mul]
+  rw [← integral_mul_setIntegral_add_eq_sum_integral_discMollification_mul (b := e) hΘ hρ hρc
+    (hσ.of_le one_le_two)]
+  simp_rw [hρc', integral_mul_const, hρ₁, one_mul, compContinuousLinearMap_apply_vecCons_two]
+
+/-- **Stabilization of the disc charges.** Let `(bₖ, αₖ)` be a family of abelian Higgs pairs along
+a filter `l`, with cutoff currents `Θₖ`, and let `σ` be a `C²` disc. Suppose that eventually
+along `l` the boundary circles of all the translated discs `σ + p`, `‖p‖ ≤ δ`, lie in
+`{χ(|αₖ|²) = 1}`, and that the coefficients of `Θₖ` converge as distributions: for every smooth
+compactly supported `φ` and every pair of vectors `m`, the pairings `∫ φ(y) Θₖ(y)(m) dμ(y)`
+converge. Then the integer charges of `σ` are eventually constant: there is an integer `n` with
+`∫_D σ^* Θₖ = 2π n` eventually along `l`. -/
+theorem exists_int_eventually_integral_cutoffCurrent_comp_closedBall_eq {ι E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {l : Filter ι} [l.NeBot]
+    {α : ι → E → ℂ} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} {σ : ℂ → E} {z₀ : ℂ} {r δ : ℝ}
+    (hr : 0 ≤ r) (hδ : 0 < δ) (hα : ∀ k, ContDiff ℝ 2 (α k)) (hb : ∀ k, ContDiff ℝ 1 (b k))
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ContDiff ℝ 2 σ)
+    (hbd : ∀ᶠ k in l, ∀ p ∈ Metric.closedBall (0 : E) δ, ∀ θ,
+      χ (normSq (α k (σ (circleMap z₀ r θ) + p))) = 1)
+    (hlim : ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ → ∀ m : Fin 2 → E,
+      ∃ L, Tendsto (fun k ↦ ∫ y, φ y * cutoffCurrent χ (b k) (α k) y m ∂μ) l (𝓝 L)) :
+    ∃ n : ℤ, ∀ᶠ k in l, ∫ z in Metric.closedBall z₀ r,
+      (cutoffCurrent χ (b k) (α k) (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] =
+        2 * π * n := by
+  set e := Module.finBasis ℝ E
+  let f : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
+  set c := fun k ↦ ∫ z in Metric.closedBall z₀ r,
+    (cutoffCurrent χ (b k) (α k) (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I]
+  -- The charges converge, to the limit of the pairings with the mollified disc.
+  choose L hL using fun s : Fin 2 → Fin (Module.finrank ℝ E) ↦
+    hlim (discMollification e (f.normed μ) σ z₀ r s)
+      (contDiff_discMollification f.contDiff_normed (hσ.of_le one_le_two) s)
+      (hasCompactSupport_discMollification f.hasCompactSupport_normed hσ.continuous s)
+      fun i ↦ e (s i)
+  have hc : Tendsto c l (𝓝 (∑ s, L s)) :=
+    (tendsto_finsetSum _ fun s _ ↦ hL s).congr' (hbd.mono fun k hk ↦
+      (integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification_mul e hr (hα k)
+        (hb k) hχ hχ₀ hσ f.continuous_normed f.tsupport_normed_eq.subset f.integral_normed
+        hk).symm)
+  -- Eventually the charges lie in `2πℤ`.
+  have hint : ∀ᶠ k in l, ∃ n : ℤ, c k = 2 * π * n := hbd.mono fun k hk ↦ by
+    obtain ⟨n, -, hn⟩ := exists_int_integral_cutoffCurrent_comp_closedBall hr (hα k) (hb k) hχ
+      hχ₀ hσ fun θ ↦ by simpa using hk 0 (Metric.mem_closedBall_self hδ.le) θ
+    exact ⟨n, hn⟩
+  exact hc.exists_eventually_eq_mul_intCast (by positivity) hint
 
 end TauCeti.SeibergWitten

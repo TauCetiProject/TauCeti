@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.GroupTheory.Perm.List
@@ -22,6 +23,9 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   are stated on natural numbers, ready for `omega`.
 * `List.formPerm_finRange`, `Fin.formPerm_sort_univ`: the cycle through the points of `Fin n` in
   increasing order is the rotation `finRotate n`, that is `i ↦ i + 1` modulo `n`.
+* `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
+* `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
+  `Fin (n + 1)` counts each value `n!` times.
 -/
 
 public section
@@ -34,11 +38,9 @@ theorem coe_cycleRange {n : ℕ} (i j : Fin n) :
     (cycleRange i j : ℕ) = if (j : ℕ) < i then (j : ℕ) + 1 else if (j : ℕ) = i then 0 else j := by
   rcases le_or_gt j i with h | h
   · rw [coe_cycleRange_of_le h]
-    have h' : (j : ℕ) ≤ i := h
     simp only [Fin.ext_iff]
     split_ifs <;> omega
   · rw [cycleRange_of_gt h]
-    have h' : (i : ℕ) < j := h
     split_ifs <;> omega
 
 /-- The cycle through the points of `Fin n` in increasing order is the rotation `i ↦ i + 1`
@@ -63,3 +65,32 @@ theorem formPerm_sort_univ (n : ℕ) :
   rw [sort_univ, List.formPerm_finRange]
 
 end Fin
+
+namespace TauCeti
+
+/-- The rotation `i ↦ i + 1` of `Fin n` is a single cycle on all of `Fin n`. -/
+theorem isCycleOn_finRotate : ∀ {n : ℕ}, (finRotate n).IsCycleOn Set.univ
+  | 0 => Equiv.Perm.isCycleOn_of_subsingleton _ _
+  | 1 => Equiv.Perm.isCycleOn_of_subsingleton _ _
+  | _ + 2 => by
+    convert isCycle_finRotate.isCycleOn using 1
+    ext x
+    simp
+
+end TauCeti
+
+namespace Equiv.Perm
+
+/-- A product over all permutations of `Fin (n + 1)` of a function of `σ⁻¹ 0` takes each value
+`n!` times. -/
+@[to_additive /-- A sum over all permutations of `Fin (n + 1)` of a function of `σ⁻¹ 0` takes each
+value `n!` times. -/]
+theorem prod_comp_symm_apply_zero {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
+    ∏ σ : Perm (Fin (n + 1)), f (σ.symm 0) = (∏ p, f p) ^ n.factorial := by
+  rw [← Fintype.prod_equiv (Equiv.inv (Perm (Fin (n + 1)))) (fun σ ↦ f (σ 0))
+    (fun σ ↦ f (σ.symm 0)) fun σ ↦ rfl,
+    ← Fintype.prod_equiv (decomposeFin.symm : Fin (n + 1) × Perm (Fin n) ≃ _)
+      (fun pe ↦ f pe.1) (fun σ ↦ f (σ 0)) fun pe ↦ by rw [decomposeFin_symm_apply_zero]]
+  simp [Fintype.prod_prod_type, Finset.prod_const, Fintype.card_perm, Finset.prod_pow]
+
+end Equiv.Perm

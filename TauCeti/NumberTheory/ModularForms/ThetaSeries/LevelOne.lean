@@ -32,9 +32,9 @@ Once `8 ∣ n`, the factor `(-i)^k` is `1`, so `Θ_L` is invariant under both ge
 `T` of `SL(2, ℤ)`; with holomorphy and boundedness at `i∞` this makes `Θ_L` a level-one modular
 form, `ZLattice.thetaForm`, built as Mathlib builds `CuspForm.discriminant`. Its `q`-expansion
 coefficients are the representation numbers `r_L(2m)` (`ZLattice.qExpansion_thetaForm_coeff`),
-it is nonzero since `Θ_L(i) ≠ 0`, it is invariant under linear isometries, and the theta form of
-an orthogonal direct sum `L ⊕ M` is the product of the theta forms of `L` and `M`, in weight
-`k + k'`.
+it is nonzero since `Θ_L(i) ≠ 0`, it is not a cusp form since its value at `∞` is `1`, it is
+invariant under linear isometries, and the theta form of an orthogonal direct sum `L ⊕ M` is the
+product of the theta forms of `L` and `M`, in weight `k + k'`.
 
 Since `4 ∣ k`, the theta series is then a unique combination of the products `E₄ ^ a * Δ ^ b`
 with `4 a + 12 b = k`. Its `q`-expansion coefficients are the representation numbers `r_L(2m)`,
@@ -54,6 +54,7 @@ inside the ring of level-one modular forms.
 * `ZLattice.qExpansion_thetaForm_coeff`: the `m`-th `q`-expansion coefficient of `Θ_L` is
   `r_L(2m)`.
 * `ZLattice.thetaForm_ne_zero`: `Θ_L` is a nonzero modular form.
+* `ZLattice.not_isCuspForm_thetaForm`: `Θ_L` is not a cusp form.
 * `ZLattice.thetaForm_comap`: `Θ_L` is invariant under linear isometries.
 * `ZLattice.thetaForm_orthSum`: `Θ_{L ⊕ M} = Θ_L Θ_M` as modular forms of weight `k + k'`.
 * `ZLattice.IsEven.existsUnique_finsupp_thetaSeries_eq_E₄_discriminant`: for even unimodular `L`
@@ -104,8 +105,13 @@ private theorem finrank_mod_eight_ne_four (hL : IsEven L) (hU : IsUnimodular L) 
   exact thetaSeries_ne_zero_of_re_eq_zero L UpperHalfPlane.I_re
     (by linear_combination (-1 / 2 : ℂ) * hi)
 
+omit [FiniteDimensional ℝ E] in
 /-- **The rank of an even unimodular lattice is divisible by `8`.** -/
 theorem eight_dvd_finrank (hL : IsEven L) (hU : IsUnimodular L) : 8 ∣ finrank ℝ E := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · rw [Module.finrank_of_not_finite hE]
+    exact dvd_zero 8
   have hL₂ : IsEven (orthSum L L) := isEven_orthSum_iff.2 ⟨hL, hL⟩
   have hU₂ : IsUnimodular (orthSum L L) := isUnimodular_orthSum_iff.2 ⟨hU, hU⟩
   have h₁ := hL.finrank_mod_eight_ne_four hU
@@ -160,6 +166,12 @@ theorem thetaForm_ne_zero (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank �
     thetaForm hL hU hk ≠ 0 := fun h ↦
   thetaSeries_ne_zero_of_re_eq_zero L UpperHalfPlane.I_re (by
     rw [← coe_thetaForm hL hU hk, h, zero_apply])
+
+/-- The theta series of an even unimodular lattice is not a cusp form: its value at `∞` is `1`. -/
+@[simp]
+theorem not_isCuspForm_thetaForm (hL : IsEven L) (hU : IsUnimodular L)
+    (hk : finrank ℝ E = 2 * k) : ¬ ModularForm.IsCuspForm (thetaForm hL hU hk) :=
+  not_isCuspForm_of_coe_eq_thetaSeries L (coe_thetaForm hL hU hk)
 
 section Functoriality
 

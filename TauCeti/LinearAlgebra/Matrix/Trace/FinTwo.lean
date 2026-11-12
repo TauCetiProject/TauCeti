@@ -40,7 +40,7 @@ trace of a commutator differs from `2` by minus the determinant of the additive 
 
 These are the matrix inputs for reading off the order of an element of `SL(2, R)` or `PSL(2, R)`
 from its trace, and for recognizing a commutator as hyperbolic. The real elliptic case, where the
-trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo`.
+trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic`.
 
 ## Main results
 
@@ -56,6 +56,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.det_one_sub_eq_two_sub_trace_of_det_eq_one`,
   `Matrix.det_one_add_eq_two_add_trace_of_det_eq_one`: `det (1 ∓ A) = 2 ∓ trace A` for a
   determinant-one matrix `A`.
+* `Matrix.trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two`: a determinant-one matrix is not
+  both traceless and symmetric.
 * `Matrix.abs_trace_pow_le_two`: the powers of a determinant-one matrix of trace at most `2` in
   absolute value again have this property.
 * `Matrix.det_one_sub_pow_neg_of_two_lt_trace`, `Matrix.det_one_sub_pow_neg_of_trace_lt_neg_two`,
@@ -128,6 +130,20 @@ theorem discr_smul_sub_smul_one_fin_two (A : Matrix (Fin 2) (Fin 2) R) (a b : R)
   push_cast
   ring
 
+/-- Multiplying a parabolic matrix by a unit scalar gives a parabolic matrix. -/
+theorem isParabolic_smul_of_isUnit {r : R} (hr : IsUnit r)
+    {m : Matrix (Fin 2) (Fin 2) R}
+    (h : m.IsParabolic) : (r • m).IsParabolic := by
+  obtain ⟨u, rfl⟩ := hr
+  refine ⟨?_, ?_⟩
+  · rintro ⟨s, hs⟩
+    refine h.1 ⟨↑u⁻¹ * s, ?_⟩
+    have hm : m = (↑u⁻¹ : R) • ((u : R) • m) := by rw [smul_smul, Units.inv_mul, one_smul]
+    rw [hm, ← hs]
+    ext i j
+    by_cases hij : i = j <;> simp [Matrix.scalar_apply, hij]
+  · simpa [h.2] using discr_smul_sub_smul_one_fin_two m u 0
+
 /-- The discriminant of a power of a `2 × 2` matrix `A` is a square multiple of the discriminant
 of `A`. In particular a power of an elliptic matrix is not hyperbolic, and a power of a hyperbolic
 matrix is not elliptic. -/
@@ -153,6 +169,16 @@ end CommRing
 section Ordered
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- A `2 × 2` matrix `A` of determinant one is not both traceless and symmetric:
+`trace A ≠ 0` or `A₁₀ - A₀₁ ≠ 0`. Otherwise its determinant would be `-A₀₀² - A₀₁² ≤ 0`. -/
+theorem trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) : A.trace ≠ 0 ∨ A 1 0 - A 0 1 ≠ 0 := by
+  by_contra! h
+  rw [trace_fin_two] at h
+  rw [det_fin_two] at hdet
+  rw [show A 1 1 = -A 0 0 by linarith [h.1], show A 1 0 = A 0 1 by linarith [h.2]] at hdet
+  nlinarith [sq_nonneg (A 0 0), sq_nonneg (A 0 1)]
 
 /-- If a `2 × 2` matrix of determinant one has trace greater than `2`, then so does every nonzero
 power of it: the traces of the powers increase strictly. -/

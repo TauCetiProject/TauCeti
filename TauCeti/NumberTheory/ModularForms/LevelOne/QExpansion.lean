@@ -184,16 +184,19 @@ theorem qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
   rw [qExpansion_add_smul_discriminant, coe_mcast,
     ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL]
 
-/-- The `q`-expansion of a normalised Eisenstein series of even weight `k ≥ 3` has rational
+/-- The `q`-expansion of a normalised Eisenstein series of weight `k ≥ 3` has rational
 coefficients, so it is the image of a power series over `K` under every ring homomorphism
-`φ : K →+* ℂ`. -/
-theorem qExpansion_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℕ} (hk : 3 ≤ k)
-    (hk2 : Even k) : qExpansion 1 (E hk) ∈ (PowerSeries.map φ).range := by
-  refine RingHom.mem_range.2 ⟨PowerSeries.mk fun m ↦
-    ((if m = 0 then 1 else -(2 * k / bernoulli k) * σ (k - 1) m : ℚ) : K), ?_⟩
-  ext m
-  rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, map_ratCast, E_qExpansion_coeff hk hk2]
-  split_ifs <;> simp
+`φ : K →+* ℂ`. For odd `k` the series vanishes. -/
+theorem qExpansion_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℕ} (hk : 3 ≤ k) :
+    qExpansion 1 (E hk) ∈ (PowerSeries.map φ).range := by
+  rcases Nat.even_or_odd k with hk2 | hk2
+  · refine RingHom.mem_range.2 ⟨PowerSeries.mk fun m ↦
+      ((if m = 0 then 1 else -(2 * k / bernoulli k) * σ (k - 1) m : ℚ) : K), ?_⟩
+    ext m
+    rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, map_ratCast, E_qExpansion_coeff hk hk2]
+    split_ifs <;> simp
+  · rw [levelOne_odd_weight_eq_zero hk2.natCast (E hk), FunLike.coe_zero, qExpansion_zero]
+    exact zero_mem _
 
 /-- The `q`-expansion of the discriminant is `(E₄³ - E₆²) / 1728`, the image of Mathlib's
 `ModularForm.discriminant_eq_E₄_cube_sub_E₆_sq_graded` under the `q`-expansion algebra
@@ -270,10 +273,12 @@ theorem qExpansion_natCast_discriminant :
     (ModularFormClass.analyticAt_cuspFunction_zero CuspForm.discriminant one_pos
       one_mem_strictPeriods_SL)
 
+omit [NeZero N] in
 /-- The coefficients of `Δ` at period `N` vanish below `N`. -/
 @[simp]
 theorem qExpansion_natCast_discriminant_coeff_of_lt {i : ℕ} (hi : i < N) :
     (qExpansion N discriminant).coeff i = 0 := by
+  have : NeZero N := ⟨by omega⟩
   rw [qExpansion_natCast_discriminant, PowerSeries.coeff_expand]
   split_ifs with h
   · obtain rfl : i = 0 := Nat.eq_zero_of_dvd_of_lt h hi

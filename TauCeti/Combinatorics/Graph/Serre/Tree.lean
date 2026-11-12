@@ -81,7 +81,7 @@ theorem IsAcyclic.eq_of_isReduced (h : Γ.IsAcyclic) {a b : Γ.V} {p q : Γ.Path
 variable {Γ} in
 /-- An acyclic graph has no loop: a loop dart is a nonempty reduced closed path. -/
 theorem IsAcyclic.src_ne_tgt (h : Γ.IsAcyclic) (e : Γ.E) : Γ.src e ≠ Γ.tgt e := by
-  have key : ∀ {a b : Γ.V} (f : Quiver.Hom a b), a ≠ b := by
+  have key : ∀ {a b : Γ.V} (_ : Quiver.Hom a b), a ≠ b := by
     rintro a _ f rfl
     cases h a f.toPath (Path.isReduced_toPath Γ f)
   exact key (Γ.dart e)
@@ -93,10 +93,15 @@ theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔
     fun h u p hp => h p .nil hp (Path.isReduced_nil Γ u)⟩
 
 variable {Γ} in
+/-- In a tree, any two vertices are joined by a path. -/
+theorem IsTree.nonempty_path (h : Γ.IsTree) (a b : Γ.V) : Nonempty (Γ.Path a b) :=
+  Γ.preconnected_iff.mp (Γ.connected_iff.mp h.connected).2 a b
+
+variable {Γ} in
 /-- In a tree, any two vertices are joined by exactly one reduced path. -/
 theorem IsTree.existsUnique_isReduced (h : Γ.IsTree) (a b : Γ.V) :
     ∃! p : Γ.Path a b, Path.IsReduced Γ p := by
-  obtain ⟨p⟩ := Γ.preconnected_iff.mp (Γ.connected_iff.mp h.connected).2 a b
+  obtain ⟨p⟩ := h.nonempty_path a b
   exact ⟨Path.reduce Γ p, Path.isReduced_reduce Γ p,
     fun q hq => h.isAcyclic.eq_of_isReduced hq (Path.isReduced_reduce Γ p)⟩
 

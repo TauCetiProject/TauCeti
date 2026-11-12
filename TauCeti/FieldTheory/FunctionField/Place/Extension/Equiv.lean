@@ -75,15 +75,16 @@ theorem restrict_equivOfRingEquiv [Algebra k K] [Algebra k' K'] [IsScalarTower k
 
 include hK in
 /-- **The relative degree is invariant under a commutative square of semilinear isomorphisms**:
-if `τ : L ≃+* L'` carries the image of `K` onto the image of `K'` along `σK : K ≃+* K'`, which
-carries the constants along `σ`, then transporting a place of `L` along `τ` does not change its
-relative degree over the place below. The residue fields above and below are matched by `τ` and
-by `σK`. -/
+if `τ : L ≃+* L'` carries the constants along `σ` and the image of `K` onto the image of `K'`
+along `σK : K ≃+* K'`, then transporting a place of `L` along `τ` does not change its relative
+degree over the place below. The residue fields above and below are matched by `τ` and by `σK`. -/
 theorem relativeDegree_equivOfRingEquiv_of_comm [Algebra k K] [Algebra k' K']
     [IsScalarTower k K L] [IsScalarTower k' K' L'] [Algebra.IsIntegral K L]
-    [Algebra.IsIntegral K' L'] (hσK : ∀ c, σK (algebraMap k K c) = algebraMap k' K' (σ c))
-    (Q : Place k L) :
+    [Algebra.IsIntegral K' L'] (Q : Place k L) :
     relativeDegree k' K' (equivOfRingEquiv σ τ h Q) = relativeDegree k K Q := by
+  have hσK : ∀ c, σK (algebraMap k K c) = algebraMap k' K' (σ c) := fun c ↦
+    (algebraMap K' L').injective (by
+      rw [← hK, ← IsScalarTower.algebraMap_apply k K L, h, IsScalarTower.algebraMap_apply k' K' L'])
   have hr := restrict_equivOfRingEquiv σ τ h σK hK hσK Q
   -- `σK` matches the valuation rings of the two places below.
   let i : (Q.restrict k K).integers ≃+* ((equivOfRingEquiv σ τ h Q).restrict k' K').integers :=
@@ -142,14 +143,14 @@ theorem restrict_map [Algebra k K] [Algebra k K'] [IsScalarTower k K L] [IsScala
   exact restrict_equivOfRingEquiv _ _ _ σ.toRingEquiv he _ Q
 
 /-- **The relative degree is invariant under a commutative square of isomorphisms**: if
-`e : L ≃ₐ[k] L'` carries the image of `K` onto the image of `K'` along a `k`-algebra isomorphism
-`σ`, then transporting a place of `L` along `e` does not change its relative degree. -/
+`e : L ≃ₐ[k] L'` carries the image of `K` onto the image of `K'` along `σ : K ≃+* K'`, then
+transporting a place of `L` along `e` does not change its relative degree. -/
 theorem relativeDegree_map [Algebra k K] [Algebra k K'] [IsScalarTower k K L]
-    [IsScalarTower k K' L'] [Algebra.IsIntegral K L] [Algebra.IsIntegral K' L'] (σ : K ≃ₐ[k] K')
+    [IsScalarTower k K' L'] [Algebra.IsIntegral K L] [Algebra.IsIntegral K' L'] (σ : K ≃+* K')
     (he : ∀ x, e (algebraMap K L x) = algebraMap K' L' (σ x)) (Q : Place k L) :
     relativeDegree k K' (Q.map e) = relativeDegree k K Q := by
   rw [map_eq_equivOfRingEquiv]
-  exact relativeDegree_equivOfRingEquiv_of_comm _ _ _ σ.toRingEquiv he σ.commutes Q
+  exact relativeDegree_equivOfRingEquiv_of_comm _ _ _ σ he Q
 
 end Commute
 

@@ -129,9 +129,9 @@ theorem exists_tendsto_eLpNorm_edist_of_tendsto_bound [CompleteSpace Z] (hp : 1 
   obtain ⟨N, hN⟩ := (ENNReal.tendsto_atTop_zero.1 hB) ε hε
   refine ⟨N, fun n hn ↦ (eLpNorm_ennreal_le_of_ae_tendsto (u := atTop)
     (fun m ↦ (hf n).edist (hf (φ m)))
-    (hlim.mono fun x hx ↦ tendsto_const_nhds.edist hx) ?_).trans (hN N le_rfl)⟩
-  filter_upwards [hφ.tendsto_atTop (eventually_ge_atTop N)] with m hm
-  exact h_cau N n (φ m) hn hm
+    (hlim.mono fun x hx ↦ tendsto_const_nhds.edist hx)
+    ((hφ.tendsto_atTop.eventually_ge_atTop N).frequently.mono fun m hm ↦
+      h_cau N n (φ m) hn hm)).trans (hN N le_rfl)⟩
 
 end PseudoEMetricSpace
 
@@ -154,5 +154,18 @@ theorem exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound [NormedAddCommGroup E] [
   obtain ⟨g, hg, hlim⟩ := exists_tendsto_eLpNorm_edist_of_tendsto_bound hp hf hB
     fun N n m hn hm ↦ (hnorm (hf n) (hf m)).trans_le (h_cau N n m hn hm)
   exact ⟨g, hg, (tendsto_congr fun n ↦ hnorm (hf n) hg.aestronglyMeasurable).1 hlim⟩
+
+/-- **Fatou's lemma for `Lᵖ` approximation.** If `g n → g₀` almost everywhere and the `Lᵖ`
+seminorms of `g n` are bounded by a sequence tending to `0`, then `g₀ = 0` almost everywhere. -/
+theorem ae_eq_zero_of_tendsto_of_eLpNorm_le [NormedAddCommGroup E] {g : ℕ → α → E} {g₀ : α → E}
+    {c : ℕ → ℝ≥0∞} (hp : p ≠ 0) (hg : ∀ n, AEStronglyMeasurable (g n) μ)
+    (hg₀ : AEStronglyMeasurable g₀ μ)
+    (hlim : ∀ᵐ x ∂μ, Filter.Tendsto (fun n ↦ g n x) Filter.atTop (nhds (g₀ x)))
+    (hgc : ∀ n, eLpNorm (g n) p μ ≤ c n) (hc : Filter.Tendsto c Filter.atTop (nhds 0)) :
+    g₀ =ᵐ[μ] 0 := by
+  have hfatou := Lp.eLpNorm_lim_le_liminf_eLpNorm (p := p) hg g₀ hg₀ hlim
+  refine (eLpNorm_eq_zero_iff hp).1 (le_antisymm (hfatou.trans ?_) (by positivity))
+  rw [← hc.liminf_eq]
+  exact Filter.liminf_le_liminf (.of_forall hgc)
 
 end TauCeti

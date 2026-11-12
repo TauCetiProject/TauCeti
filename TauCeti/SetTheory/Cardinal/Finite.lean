@@ -26,6 +26,9 @@ have ranges of the same cardinality; this is a counting step of exact-sequence a
 
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
   factor outside `s` has cardinality one.
+* `Nat.card_sigma_of_forall_card_eq`: `Nat.card (Sigma β) = d * Nat.card α` when every fibre has
+  `Nat.card` equal to `d`, for arbitrary (possibly infinite) types, where `Nat.card` of an infinite
+  type is `0`.
 * `Nat.card_range_eq_card_range_of_comp_eq`: `Nat.card (Set.range f) = Nat.card (Set.range f')`
   when `e' ∘ f = f' ∘ e` with `e` surjective and `e'` injective on the range of `f`.
 -/
@@ -47,6 +50,35 @@ theorem card_pi_eq_prod_of_card_eq_one {ι : Type*} {X : ι → Type*} (s : Fins
   rw [Nat.card_congr (Equiv.piEquivPiSubtypeProd (· ∈ s) X), Nat.card_prod,
     Nat.card_unique (α := ∀ i : {i // i ∉ s}, X i), mul_one, Nat.card_pi]
   exact Finset.prod_coe_sort s fun i ↦ Nat.card (X i)
+
+/-- **A sigma type with constant fibre cardinality.** If every fibre `β a` has `Nat.card` equal to
+`d`, then `Nat.card (Sigma β) = d * Nat.card α`. This holds for arbitrary types, with `Nat.card` of
+an infinite type equal to `0`: an infinite fibre forces `d = 0`, and with `d = 0` the fibres are
+empty or infinite, while with `d > 0` an infinite base makes the sigma type infinite. -/
+theorem card_sigma_of_forall_card_eq {α : Type*} {β : α → Type*} {d : ℕ}
+    (h : ∀ a, Nat.card (β a) = d) : Nat.card (Sigma β) = d * Nat.card α := by
+  by_cases hfib : ∀ a, Finite (β a)
+  · by_cases hα : Finite α
+    · have := Fintype.ofFinite α
+      rw [Nat.card_sigma]
+      simp [h, mul_comm]
+    · have := not_finite_iff_infinite.1 hα
+      rw [Nat.card_eq_zero_of_infinite (α := α), mul_zero]
+      rcases Nat.eq_zero_or_pos d with rfl | hpos
+      · have hempty (a : α) : IsEmpty (β a) :=
+          (Nat.card_eq_zero.1 (h a)).resolve_right (not_infinite_iff_finite.2 (hfib a))
+        have : IsEmpty (Sigma β) := ⟨fun c ↦ (hempty c.1).false c.2⟩
+        exact Nat.card_of_isEmpty
+      · have hne (a : α) : Nonempty (β a) := (Nat.card_pos_iff.1 (h a ▸ hpos)).1
+        have : Infinite (Sigma β) :=
+          Infinite.of_surjective Sigma.fst fun a ↦ ⟨⟨a, (hne a).some⟩, rfl⟩
+        exact Nat.card_eq_zero_of_infinite
+  · obtain ⟨a, ha⟩ := not_forall.1 hfib
+    have := not_finite_iff_infinite.1 ha
+    have hd0 : d = 0 := (h a).symm.trans Nat.card_eq_zero_of_infinite
+    have : Infinite (Sigma β) := Infinite.of_injective (Sigma.mk a) sigma_mk_injective
+    rw [hd0, zero_mul]
+    exact Nat.card_eq_zero_of_infinite
 
 /-- Two maps `f` and `f'` with `e' ∘ f = f' ∘ e`, where `e` is surjective and `e'` is injective
 on the range of `f`, have ranges of the same cardinality. -/

@@ -14,6 +14,8 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -25,10 +27,13 @@ bounds.
 
 * `TauCeti.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
+* `TauCeti.exists_eLpNorm_le_mul_enorm_of_ae_eq`: on a finite measure space, a bounded linear map
+  into `L^{p⋆}` representing `v` gives `‖v u‖_q ≤ C ‖u‖` for every `q ≤ p⋆`.
 * `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
   its integral.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
 * `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
   convergence of the integral of the squared norm.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
@@ -46,6 +51,7 @@ bounds.
   exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
+* `MeasureTheory.MemLp.integral_norm_le_mul_eLpNorm`: the same bound for a function in `Lᵖ`.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
   function dominated pointwise by a multiple of the norm of an `Lᵖ` function.
 * `MeasureTheory.Lp.setIntegral_norm_sq_le_norm_sq`: so its integral over a subset of the set it
@@ -56,6 +62,9 @@ bounds.
   to any constant.
 * `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
   function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
+* `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
+  sets with a common representative glue to a class on any set they cover, with norm at most the
+  sum of their norms.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
 -/
@@ -65,7 +74,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 /-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
 `Lᵖ` functions obeys the same bound in norm. -/
@@ -94,6 +103,41 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
     _ ≤ ‖a • A‖ + ‖b • B‖ := norm_add_le _ _
     _ = a * ‖g‖ + b * ‖h‖ := by
         rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, hAnorm, hBnorm]
+
+/-- **Lower exponents on a finite measure space.** If a bounded linear map `S : X → L^{p⋆}(μ)`
+represents `v`, that is `S u = v u` almost everywhere, and `μ` is finite, then
+`‖v u‖_{L^q(μ)} ≤ C ‖u‖` for every `q ≤ p⋆`, by Hölder's inequality. -/
+theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [SeminormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {pstar q : ℝ≥0∞} [Fact (1 ≤ pstar)] (hm : m Set.univ ≠ ∞)
+    (hq : q ≤ pstar) (S : X →L[ℝ] Lp F pstar m) {v : X → alpha → F}
+    (hS : ∀ u, S u =ᵐ[m] v u) :
+    ∃ C : ℝ≥0, ∀ u, eLpNorm (v u) q m ≤ C * ‖u‖ₑ := by
+  rcases eq_or_ne q 0 with rfl | hq0
+  · refine ⟨0, fun u => ?_⟩
+    rw [eLpNorm_exponent_zero ((Lp.aestronglyMeasurable (S u)).congr (hS u))]
+    exact zero_le
+  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal := by
+    rw [sub_nonneg]
+    rcases eq_or_ne pstar ∞ with h | h
+    · simp only [h, ENNReal.toReal_top, div_zero]
+      positivity
+    · exact one_div_le_one_div_of_le (ENNReal.toReal_pos hq0 (ne_top_of_le_ne_top h hq))
+        (ENNReal.toReal_mono h hq)
+  have hc : m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_nonneg hexp hm
+  refine ⟨‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal, fun u => ?_⟩
+  calc eLpNorm (v u) q m
+      ≤ eLpNorm (v u) pstar m * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) :=
+        eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hq (pos_iff_ne_zero.2 hq0)
+    _ = ‖S u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
+        rw [Lp.enorm_def, eLpNorm_congr_ae (hS u)]
+    _ ≤ ‖S‖ₑ * ‖u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
+        gcongr
+        exact S.le_opENorm u
+    _ = ↑(‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal) * ‖u‖ₑ := by
+        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc, enorm_eq_nnnorm]
+        ring
 
 end TauCeti
 
@@ -179,6 +223,16 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
 
+/-- The squared `L²` norm of the class of a square-integrable function is the integral of its
+squared pointwise norm. -/
+theorem MemLp.norm_toLp_sq {alpha F : Type*} [MeasurableSpace alpha] {m : Measure alpha}
+    [NormedAddCommGroup F] {f : alpha → F} (hf : MemLp f 2 m) :
+    ‖hf.toLp f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂m := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp] with x hx
+  rw [hx]
+
 /-- L² convergence implies convergence of the integral of the squared norm, for any measure
 and any normed additive group of values. -/
 theorem tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub {α F ι : Type*}
@@ -189,11 +243,7 @@ theorem tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub {α F ι : Type*}
   have hLp : Tendsto (fun i ↦ (hg i).toLp (g i)) l (𝓝 (hf.toLp f)) := by
     rw [tendsto_iff_edist_tendsto_0]
     simpa only [Lp.edist_toLp_toLp] using ht
-  have hnorm (u : α → F) (hu : MemLp u 2 μ) :
-      ‖hu.toLp u‖ ^ 2 = ∫ x, ‖u x‖ ^ 2 ∂μ := by
-    rw [← Lp.integral_norm_sq_eq_norm_sq]
-    exact integral_congr_ae (hu.coeFn_toLp.fun_comp fun y ↦ ‖y‖ ^ 2)
-  simpa only [hnorm] using hLp.norm.pow 2
+  simpa only [MemLp.norm_toLp_sq] using hLp.norm.pow 2
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/
@@ -201,12 +251,7 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp F p m) :
     ∫ x, ‖f x‖ ∂m ≤ (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := by
-  have hexp : 0 ≤ 1 - 1 / p.toReal := by
-    rcases eq_or_ne p ∞ with rfl | hp
-    · simp
-    · have h1p : 1 ≤ p.toReal := by
-        simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
-      exact sub_nonneg.2 (div_le_one_of_le₀ h1p (zero_le_one.trans h1p))
+  have hexp := ENNReal.one_sub_one_div_toReal_nonneg (Fact.out : 1 ≤ p)
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := p) (μ := m) Fact.out
     (Lp.aestronglyMeasurable f)
   rw [ENNReal.toReal_one, div_one] at h
@@ -216,20 +261,43 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f)
     (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top m _))) h
 
+/-- On a finite measure space, the `L¹` norm of a function in `Lᵖ`, `1 ≤ p`, is at most
+`μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. This is `MeasureTheory.Lp.integral_norm_le_mul_norm`
+for a representative. -/
+theorem MemLp.integral_norm_le_mul_eLpNorm {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] {p : ℝ≥0∞} (hp : 1 ≤ p)
+    {f : alpha → F} (hf : MemLp f p m) :
+    ∫ x, ‖f x‖ ∂m ≤ (m Set.univ ^ (1 - 1 / p.toReal)).toReal * (eLpNorm f p m).toReal := by
+  have : Fact (1 ≤ p) := ⟨hp⟩
+  have h := Lp.integral_norm_le_mul_norm (hf.toLp f)
+  rwa [integral_congr_ae (hf.coeFn_toLp.mono fun x hx => by rw [hx]), Lp.norm_toLp] at h
+
 /-- On a finite measure space, a function dominated pointwise by `K ‖f‖` for an `Lᵖ` function
 `f`, `1 ≤ p`, has norm of its integral at most `K μ(univ)^{1 - 1/p} ‖f‖`. -/
 theorem Lp.norm_integral_le_of_ae_norm_le_mul {alpha F G : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] [NormedAddCommGroup G]
     [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : Lp F p m) {g : alpha → G} {K : ℝ}
-    (hK : 0 ≤ K) (hg : ∀ᵐ x ∂m, ‖g x‖ ≤ K * ‖f x‖) :
+    (hg : ∀ᵐ x ∂m, ‖g x‖ ≤ K * ‖f x‖) :
     ‖∫ x, g x ∂m‖ ≤ K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := by
-  calc ‖∫ x, g x ∂m‖ ≤ ∫ x, K * ‖f x‖ ∂m :=
-        norm_integral_le_of_norm_le (((Lp.memLp f).integrable Fact.out).norm.const_mul K) hg
-    _ = K * ∫ x, ‖f x‖ ∂m := integral_const_mul _ _
-    _ ≤ K * ((m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖) := by
-        gcongr
-        exact Lp.integral_norm_le_mul_norm f
-    _ = K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := (mul_assoc _ _ _).symm
+  rcases le_or_gt 0 K with hK | hK
+  · calc ‖∫ x, g x ∂m‖ ≤ ∫ x, K * ‖f x‖ ∂m :=
+          norm_integral_le_of_norm_le (((Lp.memLp f).integrable Fact.out).norm.const_mul K) hg
+      _ = K * ∫ x, ‖f x‖ ∂m := integral_const_mul _ _
+      _ ≤ K * ((m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖) := by
+          gcongr
+          exact Lp.integral_norm_le_mul_norm f
+      _ = K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := (mul_assoc _ _ _).symm
+  · -- a negative constant forces `f` and `g` to vanish almost everywhere
+    have hf : ∀ᵐ x ∂m, ‖f x‖ = 0 := hg.mono fun x hx ↦ by
+      nlinarith [norm_nonneg (g x), norm_nonneg (f x)]
+    have hf0 : ‖f‖ = 0 := by
+      rw [norm_eq_zero, Lp.eq_zero_iff_ae_eq_zero]
+      exact hf.mono fun x hx ↦ norm_eq_zero.1 hx
+    have hg0 : ∀ᵐ x ∂m, g x = 0 := hg.mp (hf.mono fun x hx hgx ↦ by
+      rw [hx, mul_zero] at hgx
+      exact norm_le_zero_iff.1 hgx)
+    rw [hf0, mul_zero, integral_eq_zero_of_ae hg0]
+    simp
 
 /-- For an `L²` function `f` on `t`, the integral of `‖f‖²` over a subset `s ⊆ t` is at most the
 squared `L²` norm of `f`. -/
@@ -285,6 +353,24 @@ theorem MemLp.norm_toLp_le_measureReal_rpow_mul {p : ℝ≥0∞} [Fact (1 ≤ p)
       filter_upwards [hg.coeFn_toLp, hgM] with y hy hyM
       rwa [hy])
     rwa [← measureReal_restrict_apply_univ]
+
+/-- **Gluing `Lᵖ` classes along a finite cover.** For `1 ≤ p`, let finitely many sets `u i` cover
+`s`. If each `f i ∈ Lᵖ(u i)` agrees almost everywhere on `u i` with one function `g`, then some
+class in `Lᵖ(s)` agrees almost everywhere on `s` with `g` and has norm at most `∑ᵢ ‖f i‖`. -/
+theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {u : ι → Set X} (hs : s ⊆ ⋃ i, u i) (f : ∀ i, Lp F p (μ.restrict (u i)))
+    (hf : ∀ i, f i =ᵐ[μ.restrict (u i)] g) :
+    ∃ G : Lp F p (μ.restrict s), G =ᵐ[μ.restrict s] g ∧ ‖G‖ ≤ ∑ i, ‖f i‖ := by
+  have hg : ∀ i, MemLp g p (μ.restrict (u i)) := fun i => (Lp.memLp (f i)).ae_eq (hf i)
+  have hgs := MemLp.restrict_of_subset_iUnion hs hg
+  refine ⟨hgs.toLp g, hgs.coeFn_toLp, ?_⟩
+  have hfi : ∀ i, ‖f i‖ = (eLpNorm g p (μ.restrict (u i))).toReal :=
+    fun i => by rw [Lp.norm_def, eLpNorm_congr_ae (hf i)]
+  rw [Lp.norm_toLp]
+  simp only [hfi]
+  rw [← ENNReal.toReal_sum fun i _ => (hg i).eLpNorm_ne_top]
+  exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 fun i _ => (hg i).eLpNorm_ne_top)
+    (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
 
 end Restrict
 

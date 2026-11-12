@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.Order.Interval.Finset.Nat
 
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Rat.Floor
 
 /-!
@@ -27,6 +30,11 @@ jet conditions on an integer interval of radius `B`.
 
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
 * `TauCeti.mem_Ico_ceil_div_iff`: `n ∈ [⌈s / τ⌉₊, ⌈t / τ⌉₊)` if and only if `n τ ∈ [s, t)`.
+* `TauCeti.exists_pos_nat_mul_bounds`: a positive multiple `N a` lies in `(t, t + a]`.
+* `TauCeti.pairwiseDisjoint_Ico_ceil_div`: the index sets `[⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` are pairwise
+  disjoint whenever the intervals `(sᵢ, tᵢ]` are.
+* `TauCeti.card_biUnion_Ico_ceil_div_le`: the union of these index sets over `k` intervals has at
+  most `(∑ᵢ (tᵢ - sᵢ)) / τ + k` elements.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
@@ -41,8 +49,7 @@ variable {K : Type*} [DivisionSemiring K] [LinearOrder K] [IsStrictOrderedRing K
 
 /-- For a nonnegative step `τ` and `s ≤ t`, the indices in `[⌈s / τ⌉₊, ⌈t / τ⌉₊)` number
 strictly less than `(t - s) / τ + 1`. This holds for both ordinary and truncated subtraction. -/
-theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] [ExistsAddOfLE K]
-    (hτ : 0 ≤ τ) (hst : s ≤ t) :
+theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] (hτ : 0 ≤ τ) (hst : s ≤ t) :
     ((⌈t / τ⌉₊ - ⌈s / τ⌉₊ : ℕ) : K) < (t - s) / τ + 1 := by
   -- For `t < 0` both ceilings vanish.
   rcases lt_or_ge t 0 with ht | ht
@@ -51,15 +58,17 @@ theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] [ExistsAddOfLE K
     exact add_pos_of_nonneg_of_pos
       (div_nonneg (le_tsub_of_add_le_left ((add_zero s).trans_le hst)) hτ) zero_lt_one
   have hle : ⌈s / τ⌉₊ ≤ ⌈t / τ⌉₊ := Nat.ceil_mono (div_le_div_of_nonneg_right hst hτ)
-  have hdiv : (t - s) / τ + s / τ = t / τ := by
-    rw [← add_div, tsub_add_cancel_of_le hst]
+  have hdiv : t / τ ≤ (t - s) / τ + s / τ := by
+    rw [← add_div]
+    exact div_le_div_of_nonneg_right le_tsub_add hτ
   apply (add_lt_add_iff_right (⌈s / τ⌉₊ : K)).mp
   calc
     ((⌈t / τ⌉₊ - ⌈s / τ⌉₊ : ℕ) : K) + ⌈s / τ⌉₊ = (⌈t / τ⌉₊ : K) := by
       rw [← Nat.cast_add, Nat.sub_add_cancel hle]
     _ < t / τ + 1 := Nat.ceil_lt_add_one (div_nonneg ht hτ)
+    _ ≤ (t - s) / τ + s / τ + 1 := by gcongr
     _ ≤ (t - s) / τ + 1 + ⌈s / τ⌉₊ := by
-      rw [← hdiv, add_right_comm]
+      rw [add_right_comm]
       gcongr
       exact Nat.le_ceil _
 
@@ -69,22 +78,42 @@ theorem mem_Ico_ceil_div_iff (hτ : 0 < τ) {n : ℕ} :
     n ∈ Finset.Ico ⌈s / τ⌉₊ ⌈t / τ⌉₊ ↔ n * τ ∈ Set.Ico s t := by
   rw [Finset.mem_Ico, Nat.ceil_le, Nat.lt_ceil, div_le_iff₀ hτ, lt_div_iff₀ hτ, Set.mem_Ico]
 
+/-- For a step `τ > 0`, the index sets `[⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` of the multiples of `τ` in
+`[sᵢ, tᵢ)` are pairwise disjoint whenever the intervals `(sᵢ, tᵢ]` are. -/
+theorem pairwiseDisjoint_Ico_ceil_div (hτ : 0 < τ) {ι : Type*} {s t : ι → K} {S : Set ι}
+    (h : S.PairwiseDisjoint fun i ↦ Set.Ioc (s i) (t i)) :
+    S.PairwiseDisjoint fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊ := by
+  intro i hi j hj hij
+  refine Finset.disjoint_left.2 fun n hni hnj ↦ ?_
+  rw [mem_Ico_ceil_div_iff hτ] at hni hnj
+  exact Set.disjoint_left.1 (h hi hj hij)
+    ⟨lt_of_le_of_lt hni.1 (lt_min hni.2 hnj.2), min_le_left _ _⟩
+    ⟨lt_of_le_of_lt hnj.1 (lt_min hni.2 hnj.2), min_le_right _ _⟩
+
+/-- For `0 ≤ τ` and `sᵢ ≤ tᵢ` for `k` indices `i`, the union `⋃ᵢ [⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` has at
+most `(∑ᵢ (tᵢ - sᵢ)) / τ + k` elements. The intervals need not be disjoint. -/
+theorem card_biUnion_Ico_ceil_div_le [Sub K] [OrderedSub K] (hτ : 0 ≤ τ)
+    {ι : Type*} (I : Finset ι) {s t : ι → K} (hst : ∀ i ∈ I, s i ≤ t i) :
+    ((I.biUnion fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊).card : K) ≤
+      (∑ i ∈ I, (t i - s i)) / τ + I.card := by
+  calc ((I.biUnion fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊).card : K)
+      ≤ ((∑ i ∈ I, (Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊).card : ℕ) : K) :=
+        Nat.cast_le.2 Finset.card_biUnion_le
+    _ = ∑ i ∈ I, ((⌈t i / τ⌉₊ - ⌈s i / τ⌉₊ : ℕ) : K) := by simp
+    _ ≤ ∑ i ∈ I, ((t i - s i) / τ + 1) :=
+        Finset.sum_le_sum fun i hi ↦ (natCast_ceil_div_sub_ceil_div_lt hτ (hst i hi)).le
+    _ = _ := by rw [Finset.sum_add_distrib, Finset.sum_div]; simp
+
 /-- For `B > 0` and any `n : ℕ`, `(⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` strictly exceeds `n`, including
 when `n = 0` or `B < 1`. -/
 theorem lt_floor_add_one_mul_floor_div_add_one (hB : 0 < B) (n : ℕ) :
     n < (⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) := by
-  have h1 : (n : K) / B < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) := by
-    simpa using Nat.lt_floor_add_one ((n : K) / B)
-  have h2 : B < ((⌊B⌋₊ + 1 : ℕ) : K) := by
-    simpa using Nat.lt_floor_add_one B
-  refine Nat.cast_lt (α := K).1 ?_
-  calc (n : K)
-      = (n : K) / B * B := (div_mul_cancel₀ (n : K) hB.ne').symm
-    _ < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) * B := mul_lt_mul_of_pos_right h1 hB
-    _ < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) * ((⌊B⌋₊ + 1 : ℕ) : K) :=
-        mul_lt_mul_of_pos_left h2 (Nat.cast_pos.2 (Nat.succ_pos _))
-    _ = (((⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) : ℕ) : K) := by
-        rw [← Nat.cast_mul, Nat.mul_comm]
+  -- Multiply `n / B < ⌊n / B⌋₊ + 1` by `B < ⌊B⌋₊ + 1`; the left side is `n / B * B = n`.
+  have h := mul_lt_mul'' (Nat.lt_floor_add_one ((n : K) / B)) (Nat.lt_floor_add_one B)
+    (div_nonneg n.cast_nonneg hB.le) hB.le
+  rw [div_mul_cancel₀ (n : K) hB.ne'] at h
+  rw [Nat.mul_comm]
+  exact_mod_cast h
 
 /-- For `B > 0` and any `n : ℕ`, `(2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` strictly exceeds `n`: an
 integer interval `[-⌊B⌋₊, ⌊B⌋₊]` with derivative orders up to `⌊n / B⌋₊` has more than `n`
@@ -92,6 +121,17 @@ point-order pairs, also when `n = 0` or `B < 1`. -/
 theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (hB : 0 < B) (n : ℕ) :
     n < (2 * ⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) :=
   (lt_floor_add_one_mul_floor_div_add_one hB n).trans_le (Nat.mul_le_mul_right _ (by omega))
+
+/-- For a nonnegative `t` and positive `a`, some positive multiple `N a` lies in `(t, t + a]`. -/
+theorem exists_pos_nat_mul_bounds {t a : K} (ht : 0 ≤ t) (ha : 0 < a) :
+    ∃ N : ℕ, 1 ≤ N ∧ t < N * a ∧ N * a ≤ t + a := by
+  have htdiv : 0 ≤ t / a := div_nonneg ht ha.le
+  refine ⟨⌊t / a⌋₊ + 1, by omega, ?_, ?_⟩
+  · have h := Nat.lt_floor_add_one (t / a)
+    exact (div_lt_iff₀ ha).mp (by simpa only [Nat.cast_add, Nat.cast_one] using h)
+  · push_cast
+    rw [add_mul, one_mul]
+    exact add_le_add_left ((le_div_iff₀ ha).mp (Nat.floor_le htdiv)) a
 
 /-- For `n = 3` and `B = 1 / 2`, `⌊B⌋₊ = 0` and `⌊n / B⌋₊ = 6`, giving `1 * 7 > 3`; for `n = 2`
 and `B = 3`, `⌊B⌋₊ = 3` and `⌊n / B⌋₊ = 0`, giving `7 * 1 > 2`. -/

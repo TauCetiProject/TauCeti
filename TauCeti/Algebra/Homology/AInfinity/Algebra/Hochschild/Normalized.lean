@@ -105,9 +105,9 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
         ite_eq_right, add_zero]
     by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
     · -- The collapsed block contains the unit, so `F` kills it.
-      simp (disch := omega) only [LinearMap.mem_ker.mp (hFe (subword_mem_degenerateWords x hfit.2
+      simp (disch := omega) only [LinearMap.mem_ker.mp (hFe (subword_mem_degenerateWords x
         ⟨j, hblock.1, hblock.2, hj⟩)), splice_zero, map_zero, smul_zero, ite_eq_right, add_zero]
-    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.1 hfit.2
+    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.2
       (F (subword R x p d)) hblock
     by_cases hlen : n + 1 + 1 - d = 2
     swap
@@ -166,7 +166,7 @@ private theorem sign_smul_apply_splice_taylor_subword (h : 𝒜.StrictUnit e)
   by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
   swap
   · -- The unit survives in the spliced word, which `F` kills.
-    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.1 hfit.2
+    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.2
       (𝒜.taylor (subword R x p d)) hblock
     simp (disch := omega) only [hy,
       LinearMap.mem_ker.mp
@@ -235,7 +235,7 @@ private theorem apply_subword_mem_piece
     F (subword R x 0 n) ∈
       𝒜.grading.piece ((∑ i ∈ Finset.range n, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) + q + 1) := by
   have hsub := subword_mem_gradedPiece x (fun i ↦ if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0)
-    (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n (by omega)
+    (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n
   simpa [InternalGrading.shift_piece] using hF.map_mem hsub
 
 /-- The Hochschild differential of a normalized cochain vanishes on a homogeneous word containing
@@ -284,9 +284,8 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
     simp only [hS] at hsign
     rw [hsign, zero_smul, smul_zero, sub_zero]
   · -- A unit in the last position: the collapse `m₂(F(⋯), e)` cancels that of `[a, e]`.
-    obtain hjn' : j.1 = n := by omega
     have hW : splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) = subword R x 0 n :=
-      splice_two_pred_eq_subword R hn (by omega) x
+      splice_two_pred_eq_subword R (by omega) x
     -- The value of `F` on the first `n` letters has degree `S n + q` after suspension.
     have hdeg : F (subword R x 0 n) ∈ 𝒜.grading.piece (S n + q + 1) :=
       apply_subword_mem_piece hF x 𝒟 hx
