@@ -122,22 +122,6 @@ private theorem symm_ne_zero {b : B} (hb : b ∈ e.baseSet) (w : sphere (0 : F) 
     e.symm b w ≠ 0 :=
   (e.linearEquivAt ℝ b hb).symm.map_ne_zero_iff.2 (ne_zero_of_mem_unit_sphere w)
 
-/-- A linear chart commutes with scalar multiplication in the fibres over its base set. -/
-private theorem apply_mk_smul {b : B} (hb : b ∈ e.baseSet) (c : ℝ) (y : E b) :
-    (e ⟨b, c • y⟩).2 = c • (e ⟨b, y⟩).2 :=
-  (e.linearEquivAt ℝ b hb).map_smul c y
-
-/-- The inverse of a linear chart commutes with scalar multiplication over its base set. -/
-private theorem symm_smul {b : B} (hb : b ∈ e.baseSet) (c : ℝ) (y : F) :
-    e.symm b (c • y) = c • e.symm b y :=
-  (e.linearEquivAt ℝ b hb).symm.map_smul c y
-
-omit [NormedSpace ℝ F] [∀ b, NormedSpace ℝ (E b)] [e.IsLinear ℝ] in
-/-- Over its base set, the norm of a vector read through the inverse of `e`. -/
-private theorem norm_symm_apply_snd {b : B} (hb : b ∈ e.baseSet) (y : F) :
-    ‖(e.toOpenPartialHomeomorph.symm (b, y)).2‖ = ‖e.symm b y‖ :=
-  congrArg (fun z : TotalSpace F E ↦ ‖z.2‖) (e.mk_symm hb y).symm
-
 variable [FiberBundle F E] [VectorBundle ℝ F E]
 
 open scoped Classical in
@@ -182,15 +166,16 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     rw [mem_preimage, sphereBundleProj_apply, e.coe_sphereBundleInv hp.1]
     exact hp.1
   left_inv' v hv := by
-    have hv' : (v : TotalSpace F E).proj ∈ e.baseSet := hv
+    have hv' : (v : TotalSpace F E).proj ∈ e.baseSet := by simpa using hv
     have hpos : 0 < ‖(e v).2‖⁻¹ :=
       inv_pos.2 (norm_pos_iff.2 (e.apply_snd_ne_zero_of_mem_sphereBundle hv'))
     apply Subtype.ext
-    rw [e.coe_sphereBundleInv hv', e.coe_sphereBundleCoord hv', sphereBundleProj_apply]
+    rw [sphereBundleProj_apply, e.coe_sphereBundleInv hv', e.coe_sphereBundleCoord hv']
     -- The inverse of `e` is linear on the fibre, so it undoes `e` up to a positive factor.
     have hsymm : e.symm (v : TotalSpace F E).proj (‖(e v).2‖⁻¹ • (e v).2) =
         ‖(e v).2‖⁻¹ • (v : TotalSpace F E).2 := by
-      rw [e.symm_smul hv', e.symm_proj_apply _ hv']
+      rw [← e.linearEquivAt_symm_apply (R := ℝ) _ hv', map_smul, e.linearEquivAt_symm_apply,
+        e.symm_proj_apply _ hv']
     rw [hsymm]
     exact congrArg (TotalSpace.mk (F := F) (v : TotalSpace F E).proj)
       ((NormedSpace.normalize_smul_of_pos hpos _).trans
@@ -200,12 +185,13 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     have hpos : 0 < ‖e.symm p.1 p.2‖⁻¹ := inv_pos.2 (norm_pos_iff.2 (e.symm_ne_zero hp' p.2))
     have hsymm := e.coe_sphereBundleInv hp'
     have hz : (e.sphereBundleInv p : TotalSpace F E).proj = p.1 := by rw [hsymm]
-    refine Prod.ext hz (Subtype.ext ?_)
+    refine Prod.ext ((sphereBundleProj_apply F E _).trans hz) (Subtype.ext ?_)
     rw [e.coe_sphereBundleCoord (by rwa [hz]), hsymm]
     -- The chart `e` is linear on the fibre, so it undoes its inverse up to a positive factor.
     have happly : (e ⟨p.1, ‖e.symm p.1 p.2‖⁻¹ • e.symm p.1 p.2⟩).2 =
         ‖e.symm p.1 p.2‖⁻¹ • (p.2 : F) := by
-      rw [e.apply_mk_smul hp', e.apply_mk_symm hp']
+      rw [← e.linearEquivAt_apply (R := ℝ) _ hp', map_smul, e.linearEquivAt_apply,
+        e.apply_mk_symm hp']
     rw [happly]
     exact (NormedSpace.normalize_smul_of_pos hpos _).trans
       (NormedSpace.normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere p.2))
@@ -217,12 +203,15 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     rw [(IsInducing.id.prodMap IsInducing.subtypeVal).continuousOn_iff]
     have he : ContinuousOn (fun v : TauCeti.sphereBundle F E ↦ e v)
         (sphereBundleProj F E ⁻¹' e.baseSet) :=
-      e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦ e.mem_source.2 hv
+      e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦
+        e.mem_source.2 (by simpa using hv)
     refine (he.fst.prodMk (((continuous_norm.comp_continuousOn he.snd).inv₀ fun v hv ↦
-      norm_ne_zero_iff.2 (e.apply_snd_ne_zero_of_mem_sphereBundle hv)).smul he.snd)).congr
+      norm_ne_zero_iff.2 (e.apply_snd_ne_zero_of_mem_sphereBundle (by simpa using hv))).smul
+        he.snd)).congr
       fun v hv ↦ ?_
-    have hv' : (v : TotalSpace F E).proj ∈ e.baseSet := hv
-    exact Prod.ext (e.coe_fst (e.mem_source.2 hv')).symm (e.coe_sphereBundleCoord hv')
+    have hv' : (v : TotalSpace F E).proj ∈ e.baseSet := by simpa using hv
+    exact Prod.ext ((sphereBundleProj_apply F E v).trans (e.coe_fst (e.mem_source.2 hv')).symm)
+      (e.coe_sphereBundleCoord hv')
   continuousOn_invFun := by
     -- Read the value in the total space of `E`, where the map is the inverse of `e` applied to a
     -- rescaled unit vector; the rescaling factor is continuous because the fibre norm is.
@@ -235,17 +224,17 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
     have hn : ContinuousOn (fun p : B × sphere (0 : F) 1 ↦
         ‖(e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))).2‖⁻¹) (e.baseSet ×ˢ univ) :=
       (hnorm.comp_continuousOn hs).inv₀ fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ by
-        rw [Function.comp_apply, e.norm_symm_apply_snd hp.1]
+        rw [Function.comp_apply, ← e.mk_symm hp.1]
         exact norm_ne_zero_iff.2 (e.symm_ne_zero hp.1 p.2)
     refine (e.toOpenPartialHomeomorph.continuousOn_symm.comp
       (continuous_fst.continuousOn.prodMk
         (hn.smul (continuous_subtype_val.comp continuous_snd).continuousOn))
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mk_mem_target.2 hp.1).congr
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ?_
-    change (e.sphereBundleInv p : TotalSpace F E) = e.toOpenPartialHomeomorph.symm
-      (p.1, ‖(e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))).2‖⁻¹ • (p.2 : F))
-    rw [e.coe_sphereBundleInv hp.1, e.norm_symm_apply_snd hp.1,
-      ← e.mk_symm hp.1, e.symm_smul hp.1]
+    simp only [Function.comp_apply, Pi.smul_apply']
+    -- Over the base set the inverse of `e` is `e.symm p.1` in the fibre, which is linear.
+    rw [e.coe_sphereBundleInv hp.1, ← e.mk_symm hp.1, ← e.mk_symm hp.1,
+      ← e.linearEquivAt_symm_apply (R := ℝ) _ hp.1 (_ • _), map_smul, e.linearEquivAt_symm_apply]
   baseSet := e.baseSet
   open_baseSet := e.open_baseSet
   source_eq := rfl

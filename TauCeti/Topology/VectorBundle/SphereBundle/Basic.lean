@@ -120,7 +120,7 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F]
   [FiberBundle F E]
 
 /-- The projection `S(E) → B` of the unit sphere bundle of a bundle with normed fibres. -/
-@[expose] def sphereBundleProj : C(sphereBundle F E, B) :=
+def sphereBundleProj : C(sphereBundle F E, B) :=
   ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
 
 @[simp]
