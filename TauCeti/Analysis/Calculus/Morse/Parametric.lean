@@ -46,9 +46,10 @@ slice of `g` over the base point is `C²`
 (`Bundle.Trivialization.symm_parametricMorseCoord_eq_symm_parametricMorseCoord`), because the
 two families differ by the fibrewise linear coordinate change. So the canonical coordinate is a
 well-defined fibre-preserving map of the total space, `TauCeti.bundleMorseCoord g`, computed in
-any trivialization of the atlas (`TauCeti.bundleMorseCoord_eq`). This is the coordinate change
-that patches the local normal forms of a Morse–Bott function along its critical submanifold into
-a normal form on a neighbourhood of the zero section of the normal bundle.
+any linear trivialization (`TauCeti.bundleMorseCoord_eq`). It is a single trivialization-independent
+fibre coordinate on the total space that vanishes on the zero section
+(`TauCeti.bundleMorseCoord_zeroSection`), the candidate for patching the local normal forms near
+the zero section.
 
 ## Main declarations
 
@@ -72,7 +73,7 @@ a normal form on a neighbourhood of the zero section of the normal bundle.
 * `Bundle.Trivialization.symm_parametricMorseCoord_eq_symm_parametricMorseCoord`: the canonical
   coordinates read in two trivializations of a vector bundle agree.
 * `TauCeti.bundleMorseCoord`: the canonical Morse coordinate on the total space of a vector
-  bundle, with `TauCeti.bundleMorseCoord_eq` (it is computed in any trivialization of the atlas)
+  bundle, with `TauCeti.bundleMorseCoord_eq` (it is computed in any linear trivialization)
   and `TauCeti.bundleMorseCoord_zeroSection` (it vanishes on the zero section).
 
 ## References
@@ -458,10 +459,20 @@ noncomputable def bundleMorseCoord (g : TotalSpace F V → ℝ) (v : TotalSpace 
     (parametricMorseCoord (fun z ↦ g ⟨z.1, (trivializationAt F V v.proj).symm z.1 z.2⟩)
       (v.proj, (trivializationAt F V v.proj v).2))
 
-/-- **The canonical Morse coordinate of a function on a vector bundle is computed in any
-trivialization** of the atlas whose base set contains the base point, provided the function read
-in it is `C²` along the fibre. -/
-theorem bundleMorseCoord_eq (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
+omit [∀ b, Module ℝ (V b)] [VectorBundle ℝ F V] in
+/-- The canonical Morse coordinate of a function on a vector bundle is the canonical parametric
+Morse coordinate of the function read in the trivialization at the base point, transported back to
+the fibre. -/
+theorem bundleMorseCoord_def (g : TotalSpace F V → ℝ) (v : TotalSpace F V) :
+    bundleMorseCoord F g v = (trivializationAt F V v.proj).symm v.proj
+      (parametricMorseCoord (fun z ↦ g ⟨z.1, (trivializationAt F V v.proj).symm z.1 z.2⟩)
+        (v.proj, (trivializationAt F V v.proj v).2)) :=
+  (rfl)
+
+/-- **The canonical Morse coordinate of a function on a vector bundle is computed in any linear
+trivialization** whose base set contains the base point, provided the function read in it is `C²`
+along the fibre. -/
+theorem bundleMorseCoord_eq (e : Trivialization F (π F V)) [e.IsLinear ℝ]
     {v : TotalSpace F V} (hv : v.proj ∈ e.baseSet)
     (hg : ContDiff ℝ 2 fun w ↦ g ⟨v.proj, e.symm v.proj w⟩) :
     bundleMorseCoord F g v =
@@ -475,7 +486,7 @@ section. -/
 theorem bundleMorseCoord_zeroSection (b : B) :
     bundleMorseCoord F g (zeroSection F V b) = 0 := by
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := V) b
-  rw [bundleMorseCoord, zeroSection_proj, Trivialization.zeroSection ℝ _ hb,
+  rw [bundleMorseCoord_def, zeroSection_proj, Trivialization.zeroSection ℝ _ hb,
     parametricMorseCoord_mk_zero, ← Trivialization.symmₗ_apply (R := ℝ) _ hb, map_zero]
 
 end VectorBundle

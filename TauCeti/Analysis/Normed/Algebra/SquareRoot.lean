@@ -18,7 +18,7 @@ binomial series of `(1 + y) ^ (1 / 2)` (Mathlib's `binomialSeries`) at `y = x - 
 `√x = ∑ₙ (1/2 choose n) (x - 1)ⁿ`.
 
 This file packages it as `TauCeti.sqrtNearOne`. It is a square root on the whole open unit ball
-about `1` (`TauCeti.sqrtNearOne_mul_self`), analytic there (`TauCeti.analyticOnNhd_sqrtNearOne`),
+about `1` (`TauCeti.mul_self_sqrtNearOne`), analytic there (`TauCeti.analyticOnNhd_sqrtNearOne`),
 and it fixes `1`. It is the *only* square root near `1`: two elements whose distances to `1` add up
 to less than `2` and which have the same square are equal
 (`TauCeti.eq_of_mul_self_eq_mul_self`), so near `1` it is a two-sided inverse of squaring. These
@@ -44,7 +44,7 @@ square root near `1` in a bare Banach algebra, with smooth dependence on the ele
 ## Main declarations
 
 * `TauCeti.sqrtNearOne`: the binomial-series square root near the identity.
-* `TauCeti.sqrtNearOne_mul_self`: it is a square root on the open unit ball about `1`.
+* `TauCeti.mul_self_sqrtNearOne`: it is a square root on the open unit ball about `1`.
 * `TauCeti.analyticOnNhd_sqrtNearOne`: it is analytic on the open unit ball about `1`.
 * `TauCeti.eq_of_mul_self_eq_mul_self`: uniqueness of square roots near `1`.
 * `TauCeti.eventually_mul_self_sqrtNearOne`, `TauCeti.eventually_sqrtNearOne_mul_self`: near `1`
@@ -69,7 +69,7 @@ variable (A : Type*) [NormedRing A] [NormedAlgebra ℝ A]
 
 /-- The **square root near the identity** of a normed algebra over `ℝ`: the sum of the binomial
 series of `(1 + y) ^ (1 / 2)` at `y = x - 1`, that is `∑ₙ (1/2 choose n) (x - 1)ⁿ`. In a Banach
-algebra it is a square root of `x` whenever `‖x - 1‖ < 1` (`TauCeti.sqrtNearOne_mul_self`); outside
+algebra it is a square root of `x` whenever `‖x - 1‖ < 1` (`TauCeti.mul_self_sqrtNearOne`); outside
 the open unit ball about `1` it has no meaning. -/
 noncomputable def sqrtNearOne (x : A) : A :=
   (binomialSeries A (2⁻¹ : ℝ)).sum (x - 1)
@@ -128,7 +128,7 @@ theorem hasSum_sqrtNearOne {x : A} (hx : ‖x - 1‖ < 1) :
 
 /-- **The square root near the identity is a square root** of every element of the open unit ball
 about `1`. -/
-theorem sqrtNearOne_mul_self {x : A} (hx : ‖x - 1‖ < 1) :
+theorem mul_self_sqrtNearOne {x : A} (hx : ‖x - 1‖ < 1) :
     sqrtNearOne A x * sqrtNearOne A x = x := by
   rw [sqrtNearOne_def, binomialSeries_sum_mul_binomialSeries_sum _ _ hx,
     show (2⁻¹ + 2⁻¹ : ℝ) = ((1 : ℕ) : ℝ) by norm_num, binomialSeries_sum_natCast, pow_one,
@@ -161,7 +161,7 @@ theorem continuousAt_sqrtNearOne : ContinuousAt (sqrtNearOne A) 1 :=
 theorem eventually_mul_self_sqrtNearOne :
     ∀ᶠ a in 𝓝 (1 : A), sqrtNearOne A a * sqrtNearOne A a = a := by
   filter_upwards [eventually_norm_sub_one_lt (tendsto_id (x := 𝓝 (1 : A)))] with a ha
-  exact sqrtNearOne_mul_self ha
+  exact mul_self_sqrtNearOne ha
 
 /-- Near the identity, an element is recovered from its square by `TauCeti.sqrtNearOne`.  This is
 the uniqueness half: two elements close to `1` with the same square are equal. -/
@@ -173,7 +173,7 @@ theorem eventually_sqrtNearOne_mul_self :
     simpa only [Function.comp_def, sqrtNearOne_one] using continuousAt_sqrtNearOne.tendsto.comp hsq
   filter_upwards [eventually_norm_sub_one_lt hsq, eventually_norm_sub_one_lt hroot,
     eventually_norm_sub_one_lt (tendsto_id (x := 𝓝 (1 : A)))] with b hb hroot hb'
-  exact eq_of_mul_self_eq_mul_self (sqrtNearOne_mul_self hb) (by simp only [id] at hb'; linarith)
+  exact eq_of_mul_self_eq_mul_self (mul_self_sqrtNearOne hb) (by simp only [id] at hb'; linarith)
 
 /-- **Uniqueness of the square root near the identity, along a filter.** If `r` tends to `1` and
 eventually squares to `x`, then `TauCeti.sqrtNearOne` eventually recovers `r` from `x`. -/
