@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
 # Regression examples: embeddings into prescribed cells
