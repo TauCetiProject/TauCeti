@@ -79,13 +79,12 @@ theorem continuous_equivariantKernelMap [CompactSpace N] :
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
   [IsTopologicalGroup M] [ContinuousSMul G M] [CompactSpace M]
   [IsTopologicalGroup N] [ContinuousSMul G N] [CompactSpace N]
-  [TotallyDisconnectedSpace N]
 
 omit [IsTopologicalGroup M] [ContinuousSMul G M] in
 /-- The kernel restriction of a weak comparison carries the source extension class to the
 target extension class. -/
 @[simp]
-theorem contCohomologyClass_map_equivariantKernelMap :
+theorem contCohomologyClass_map_equivariantKernelMap [TotallyDisconnectedSpace N] :
     (X.map (X.equivariantKernelMap Y φ hright)
       (X.continuous_equivariantKernelMap Y φ hright)).contCohomologyClass =
         Y.contCohomologyClass :=
@@ -94,7 +93,6 @@ theorem contCohomologyClass_map_equivariantKernelMap :
 
 include φ hright
 
-omit [TotallyDisconnectedSpace N] in
 /-- A weak comparison of extensions detects a generating source class when the two second
 cohomology groups have the same finite order and the target class generates. No surjectivity
 of the comparison or its restriction to the kernels is assumed. -/
@@ -137,6 +135,10 @@ theorem exists_surjective_continuousMonoidHom_of_comparison
     ∃ (n : ℕ) (ψ : X.E →ₜ* Y.E), p.Coprime n ∧ Function.Surjective ψ ∧
       (∀ m, ψ (X.toGroupExtension.inl m) = Y.toGroupExtension.inl ((f m) ^ n)) ∧
       Y.toGroupExtension.rightHom.comp ψ.toMonoidHom = X.toGroupExtension.rightHom := by
+  -- The kernel `N` embeds in the totally disconnected `Y.E`.
+  have : TotallyDisconnectedSpace N :=
+    (Y.continuous_inl.isClosedEmbedding Y.toGroupExtension.inl_injective).isEmbedding
+      |>.isTotallyDisconnected_range.mp (isTotallyDisconnected_of_totallyDisconnectedSpace _)
   let c := explicitCoeff2 G (Additive M) f.toAdditive (f.continuous_toAdditive hf)
   let e := AddEquiv.ofBijective c hc
   have horder : Nat.card (H2 G (Additive M)) = Nat.card (H2 G (Additive N)) :=
