@@ -716,6 +716,25 @@ section InnerProductSpace
 variable [InnerProductSpace ℂ V] [CompleteSpace V] [InnerProductSpace ℂ W] [CompleteSpace W]
 
 open ContinuousLinearMap in
+/-- **The kernel of `Op(b)†`.** The adjoint `K_b(z, y)†` of the kernel of `b` is
+`∫ exp(2πi ⟪ζ, y - z⟫) b(z, 2πζ)† dζ`, whenever the frequency slice `ξ ↦ b(z, ξ)` is
+integrable. -/
+theorem adjoint_quantizationKernel {b : E × E → V →L[ℂ] W} {z : E}
+    (hb : Integrable fun ξ ↦ b (z, ξ)) (y : E) :
+    adjoint (quantizationKernel b z y) = ∫ ζ, 𝐞 ⟪ζ, y - z⟫ • adjoint (b (z, (2 * π) • ζ)) := by
+  have hb' : Integrable fun ζ ↦ 𝐞 ⟪ζ, z - y⟫ • b (z, (2 * π) • ζ) := by
+    simpa only [inner_neg_right, neg_neg] using
+      (Real.fourierIntegral_convergent_iff (-(z - y))).2 (hb.comp_smul two_pi_pos.ne')
+  have h := integral_comp_commSL (X := E) (μ := volume) (σ := starRingEnd ℂ) (by simp)
+    ((adjoint : (V →L[ℂ] W) ≃ₗᵢ⋆[ℂ] (W →L[ℂ] V)).toContinuousLinearEquiv :
+      (V →L[ℂ] W) →SL[starRingEnd ℂ] (W →L[ℂ] V)) hb'
+  simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv] at h
+  rw [quantizationKernel_def, ← h]
+  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+  simp only [Circle.smul_def, map_smulₛₗ, ← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv,
+    ← inner_neg_right, neg_sub]
+
+open ContinuousLinearMap in
 /-- **The kernel of `Op(a) Op(b)†`.** The kernel `∫ K_a(x, y) K_b(z, y)† dy` of `Op(a) Op(b)†` is
 `∫ exp(2πi ⟪ζ, x - z⟫) a(x, 2πζ) b(z, 2πζ)† dζ`, whenever the frequency slices `ξ ↦ a(x, ξ)` and
 `ξ ↦ b(z, ξ)` are integrable, the first one continuous, and the kernel row `y ↦ K_a(x, y)` is
@@ -735,19 +754,6 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
   have hb' : Integrable fun ζ ↦ b (z, (2 * π) • ζ) := hb.comp_smul two_pi_pos.ne'
   have hB : Integrable B :=
     (LinearIsometryEquiv.integrable_comp_iff (adjoint : (V →L[ℂ] W) ≃ₗᵢ⋆[ℂ] (W →L[ℂ] V))).2 hb'
-  -- The adjoint of the kernel of `b` is an integral of adjoints.
-  have hadj (y : E) :
-      adjoint (quantizationKernel b z y) = ∫ ζ, 𝐞 ⟪ζ, y - z⟫ • B ζ := by
-    have h := integral_comp_commSL (X := E) (μ := volume) (σ := starRingEnd ℂ) (by simp)
-      ((adjoint : (V →L[ℂ] W) ≃ₗᵢ⋆[ℂ] (W →L[ℂ] V)).toContinuousLinearEquiv :
-        (V →L[ℂ] W) →SL[starRingEnd ℂ] (W →L[ℂ] V))
-      (hchar hb' (z - y))
-    simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-      at h
-    rw [quantizationKernel_def, ← h]
-    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-    simp only [Circle.smul_def, map_smulₛₗ, B, ← Circle.coe_inv_eq_conj,
-      ← AddChar.map_neg_eq_inv, ← inner_neg_right, neg_sub]
   -- Fubini's theorem applies to `(y, ζ) ↦ exp(2πi ⟪ζ, y - z⟫) K(y) B(ζ)`, dominated by
   -- `‖K(y)‖ ‖B(ζ)‖`.
   have hKc : Continuous K := continuous_quantizationKernel_right ha
@@ -769,7 +775,7 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
         dsimp only
         have h := (compL ℂ W V W (K y)).integral_comp_comm (hchar hB (y - z))
         simp only [compL_apply] at h
-        rw [hadj y, ← h]
+        rw [adjoint_quantizationKernel hb y, ← h]
         simp only [Circle.smul_def, comp_smul]
     _ = ∫ ζ, ∫ y, 𝐞 ⟪ζ, y - z⟫ • (K y ∘L B ζ) := integral_integral_swap hF
     _ = ∫ ζ, 𝐞 ⟪ζ, x - z⟫ • (A ζ ∘L B ζ) := by
