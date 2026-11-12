@@ -17,7 +17,7 @@ are reduced by `TauCeti.isReduced_of_smooth`. After base change to a field, this
 that a smooth morphism has geometrically reduced fibres.
 
 The main results are `AlgebraicGeometry.Scheme.Hom.isReduced_of_smooth` and the instance
-`AlgebraicGeometry.Smooth.geometricallyReduced`. Smooth,
+`TauCeti.AlgebraicGeometry.Smooth.geometricallyReduced`. Smooth,
 geometrically connected morphisms are also shown to be geometrically integral in
 `TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral`.
 

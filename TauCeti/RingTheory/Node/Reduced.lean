@@ -16,7 +16,8 @@ import TauCeti.RingTheory.Node.BaseChange
 Every smoothing `xy = a` over a reduced ring is reduced. Over a field, the case `a = 0`
 embeds in the product of its polynomial branch algebras, while for nonzero `a` the algebra
 is smooth. The free module structure then detects nilpotents over a reduced base by passing
-to all residue fields. This supplies reduced geometric fibres for the standard nodal chart.
+to all residue fields. The instance `TauCeti.NodeAlgebra.isReduced` thus supplies reducedness
+of the standard nodal chart over any reduced base ring.
 
 ## References
 

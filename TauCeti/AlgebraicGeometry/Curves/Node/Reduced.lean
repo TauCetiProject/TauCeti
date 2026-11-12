@@ -7,18 +7,17 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.LocalNormalForm
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
-import TauCeti.AlgebraicGeometry.Curves.Node.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Reduced
 import TauCeti.RingTheory.Node.Reduced
 
 /-!
 # Nodal curves have geometrically reduced fibres
 
-The scheme-theoretic nodal criterion implies that every geometric fibre is reduced. On the
-smooth locus this follows from smoothness. At every remaining point, an étale neighbourhood
-maps étale to a standard node `xy = a`; these charts are reduced over a reduced base, and
-reducedness descends to the original stalk by faithful flatness. Thus a nodal relative curve
-over a reduced base is reduced.
+A nodal relative curve over a reduced base is reduced. On the smooth locus this follows
+from smoothness. At every remaining point, an étale neighbourhood maps étale to a standard
+node `xy = a`; these charts are reduced over a reduced base, and reducedness descends to the
+original stalk by faithful flatness. Base change to fields then shows that a nodal relative
+curve over an arbitrary base has geometrically reduced fibres.
 
 The standard node is geometrically reduced over any base ring. The general nodal result
 requires no Noetherian or perfectness assumption on the base. Reducedness is needed when
