@@ -5,13 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.Perm.Subgroup
+import Mathlib.GroupTheory.Perm.Finite
 
 /-!
-# The permutation subgroup of a faithful group action
+# Subgroups of permutation groups
 
 These formulas describe how the permutation associated by Mathlib's
 `Equiv.Perm.subgroupOfMulAction`, and its inverse permutation, act on points of a faithful action.
+
+The transpositions `swap (inl ()) x` of `Unit ⊕ κ` form a left transversal of the subgroup
+`Perm Unit × Perm κ`, the range of `Equiv.Perm.sumCongrHom`
+(`Equiv.Perm.isComplement_image_swap_inl_sumCongrHom_range`).
 -/
 
 public section
@@ -34,3 +40,25 @@ theorem subgroupOfMulAction_inv_apply {G H : Type*} [Group G] [MulAction G H]
   simpa only [map_inv, Subgroup.coe_inv] using subgroupOfMulAction_apply g⁻¹ x
 
 end TauCeti
+
+namespace Equiv.Perm
+
+/-- The transpositions of `inl ()` with the elements of `Unit ⊕ κ` (including the identity) form a
+left transversal of `Perm Unit × Perm κ` in `Perm (Unit ⊕ κ)`. -/
+theorem isComplement_image_swap_inl_sumCongrHom_range (κ : Type*) [Fintype κ] [DecidableEq κ] :
+    Subgroup.IsComplement
+      ((Finset.univ.image fun x : Unit ⊕ κ => swap (.inl ()) x : Finset _) :
+        Set (Perm (Unit ⊕ κ))) (sumCongrHom Unit κ).range := by
+  rw [Subgroup.isComplement_iff_existsUnique_inv_mul_mem]
+  intro g
+  refine ⟨⟨swap (.inl ()) (g (.inl ())), by simp⟩, ?_, ?_⟩
+  · apply mem_sumCongrHom_range_of_perm_mapsTo_inl
+    rintro _ ⟨⟨⟩, rfl⟩
+    simp
+  · rintro ⟨_, hx⟩ ⟨⟨p, q⟩, hpq⟩
+    obtain ⟨a, -, rfl⟩ := Finset.mem_image.mp (Finset.mem_coe.mp hx)
+    have h : swap (.inl ()) a (g (.inl ())) = .inl () := by
+      simpa using congr($hpq (Sum.inl ())).symm
+    simp [(swap_apply_eq_iff.mp h).trans (swap_apply_left _ _)]
+
+end Equiv.Perm

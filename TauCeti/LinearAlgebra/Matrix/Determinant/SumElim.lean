@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import Mathlib.LinearAlgebra.Multilinear.Curry
 
 /-!
 # Determinants of a fixed family followed by a varying one
@@ -24,6 +25,14 @@ expresses the matrix of `x` followed by `z` as a block lower triangular matrix t
 
 This is the linear algebra behind complementary minors: taking `z` to be standard basis vectors
 compares the Plücker coordinates of a subspace with those of its orthogonal complement.
+
+Fixing the rows `x` placed along `e : t ≃ ι ⊕ κ`, the determinant is an alternating map of the
+remaining rows. The exterior product of two such maps gives the Plücker relations among minors.
+
+## Main definitions
+
+* `Matrix.detRowAlternatingSumElim e x`: the determinant of the square matrix with the fixed
+  rows `x` inserted along `e : t ≃ ι ⊕ κ`, as an alternating map of the remaining rows.
 
 ## Main results
 
@@ -73,3 +82,27 @@ theorem det_sumElim_eq_det_mul (e : m ⊕ n ≃ ι) {x : m → ι → R} {y w : 
     Matrix.det_transpose]
 
 end TauCeti.Matrix
+
+namespace Matrix
+
+variable {R : Type*} [CommRing R] {t ι κ : Type*} [Fintype t] [DecidableEq t]
+
+/-- The determinant of the square matrix whose row at `k` is `x i` if `e k = inl i` and `v j` if
+`e k = inr j`, as an alternating map of the rows `v`. -/
+noncomputable def detRowAlternatingSumElim (e : t ≃ ι ⊕ κ) (x : ι → t → R) :
+    (t → R) [⋀^κ]→ₗ[R] R where
+  toMultilinearMap :=
+    ((detRowAlternating : (t → R) [⋀^t]→ₗ[R] R).toMultilinearMap.domDomCongr e).currySum x
+  map_eq_zero_of_eq' v i j hv hij :=
+    (detRowAlternating : (t → R) [⋀^t]→ₗ[R] R).map_eq_zero_of_eq _
+      (i := e.symm (.inr i)) (j := e.symm (.inr j)) (by simpa using hv) (by simpa using hij)
+
+/-- `Matrix.detRowAlternatingSumElim e x` is the determinant with the rows `x` inserted along
+`e`. -/
+@[simp]
+theorem detRowAlternatingSumElim_apply (e : t ≃ ι ⊕ κ) (x : ι → t → R) (v : κ → t → R) :
+    detRowAlternatingSumElim e x v = (of fun k => Sum.elim x v (e k)).det :=
+  -- `Matrix.det` is defined as `Matrix.detRowAlternating`.
+  (rfl)
+
+end Matrix

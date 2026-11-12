@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Complement
-public import Mathlib.LinearAlgebra.Alternating.DomCoprod
-public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Algebra.Algebra.Bilinear
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.LinearAlgebra.Multilinear.Curry
+import Mathlib.LinearAlgebra.Alternating.DomCoprod
 import Mathlib.LinearAlgebra.StdBasis
+import TauCeti.GroupTheory.Perm.Subgroup
+import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
 
 /-!
 # Plücker relations among minors
@@ -35,32 +35,21 @@ the same term, so the sum runs over a left transversal of the subgroup `Perm κ�
 Moving a single row gives the exchange relation: for row families `r` and `s` and a position `i`,
 `[r] * [s] = ∑ j, [r with s j at i] * [s with r i at j]`.
 
-These identities hold over every commutative ring. For the generic matrix
-`Matrix.mvPolynomialX` they are polynomial identities among the generic minors
-`Matrix.mvPolynomialMinor`, compatible with every change of coefficients through
-`Matrix.map_mvPolynomialMinor`. They are the quadratic relations used to straighten products of
-maximal minors into standard monomials.
-
-## Main definitions
-
-* `Matrix.detRowAlternatingSumElim e x`: the determinant of the square matrix with the fixed
-  rows `x` inserted along `e : t ≃ ι ⊕ κ`, as an alternating map of the remaining rows.
+These identities hold over every commutative ring. They are the quadratic relations used to
+straighten products of maximal minors into standard monomials.
 
 ## Main results
 
 * `Matrix.sum_sign_smul_det_submatrix_mul_det_submatrix_eq_zero`: the shuffle relation among
   minors of a matrix, summed over a left transversal of `Perm κ₁ × Perm κ₂`.
 * `Matrix.det_submatrix_mul_det_submatrix_eq_sum`: the exchange relation.
-* `Matrix.sum_sign_smul_mvPolynomialMinor_mul_mvPolynomialMinor_eq_zero` and
-  `Matrix.mvPolynomialMinor_mul_mvPolynomialMinor_eq_sum`: the same relations among minors of the
-  generic matrix.
 
 ## Implementation notes
 
 The shuffle relation is Mathlib's exterior product `AlternatingMap.domCoprod`, whose summands are
 indexed by the cosets of `Perm κ₁ × Perm κ₂`, applied to the two determinants with their fixed
-rows inserted: it is an alternating map in more vectors than the rank of the free module, hence
-zero.
+rows inserted (`Matrix.detRowAlternatingSumElim`): it is an alternating map in more vectors than
+the rank of the free module, hence zero.
 
 ## References
 
@@ -81,24 +70,6 @@ variable {R : Type*} [CommRing R] {m n t : Type*} [Fintype t] [DecidableEq t]
 section AlternatingSumElim
 
 variable {ι κ : Type*}
-
-/-- The determinant of the square matrix whose row at `k` is `x i` if `e k = inl i` and `v j` if
-`e k = inr j`, as an alternating map of the rows `v`. -/
-noncomputable def detRowAlternatingSumElim (e : t ≃ ι ⊕ κ) (x : ι → t → R) :
-    (t → R) [⋀^κ]→ₗ[R] R where
-  toMultilinearMap :=
-    ((detRowAlternating : (t → R) [⋀^t]→ₗ[R] R).toMultilinearMap.domDomCongr e).currySum x
-  map_eq_zero_of_eq' v i j hv hij :=
-    (detRowAlternating : (t → R) [⋀^t]→ₗ[R] R).map_eq_zero_of_eq _
-      (i := e.symm (.inr i)) (j := e.symm (.inr j)) (by simpa using hv) (by simpa using hij)
-
-/-- `Matrix.detRowAlternatingSumElim e x` is the determinant with the rows `x` inserted along
-`e`. -/
-@[simp]
-theorem detRowAlternatingSumElim_apply (e : t ≃ ι ⊕ κ) (x : ι → t → R) (v : κ → t → R) :
-    detRowAlternatingSumElim e x v = (of fun k => Sum.elim x v (e k)).det :=
-  -- `Matrix.det` is defined as `Matrix.detRowAlternating`.
-  (rfl)
 
 /-- Inserting rows of `A.submatrix id c` along `e` gives a minor of `A` on the columns `c`. -/
 private theorem det_of_sumElim_submatrix (e : t ≃ ι ⊕ κ) (A : Matrix m n R) (c : t → n)
@@ -153,24 +124,6 @@ theorem sum_sign_smul_det_submatrix_mul_det_submatrix_eq_zero (A : Matrix m n R)
     det_of_sumElim_submatrix]
   simp only [Function.comp_def]
 
-/-- The transpositions of `inl ()` with the elements of `Unit ⊕ κ` (including the identity) form a
-left transversal of `Perm Unit × Perm κ` in `Perm (Unit ⊕ κ)`. -/
-private theorem isComplement_image_swap_inl (κ : Type*) [Fintype κ] [DecidableEq κ] :
-    Subgroup.IsComplement
-      ((Finset.univ.image fun x : Unit ⊕ κ => swap (.inl ()) x : Finset _) :
-        Set (Perm (Unit ⊕ κ))) (Perm.sumCongrHom Unit κ).range := by
-  rw [Subgroup.isComplement_iff_existsUnique_inv_mul_mem]
-  intro g
-  refine ⟨⟨swap (.inl ()) (g (.inl ())), by simp⟩, ?_, ?_⟩
-  · apply Perm.mem_sumCongrHom_range_of_perm_mapsTo_inl
-    rintro _ ⟨⟨⟩, rfl⟩
-    simp
-  · rintro ⟨_, hx⟩ ⟨⟨p, q⟩, hpq⟩
-    obtain ⟨a, -, rfl⟩ := Finset.mem_image.mp (Finset.mem_coe.mp hx)
-    have h : swap (.inl ()) a (g (.inl ())) = .inl () := by
-      simpa using congr($hpq (Sum.inl ())).symm
-    simp [(swap_apply_eq_iff.mp h).trans (swap_apply_left _ _)]
-
 /-- **The exchange relation** among minors on the columns `c`: the product of the minors on the
 rows `r` and `s` is the sum, over the positions `j`, of the products obtained by exchanging the row
 of `r` at `i` with the row of `s` at `j`. -/
@@ -184,7 +137,7 @@ theorem det_submatrix_mul_det_submatrix_eq_sum (A : Matrix m n R) (r s : t → m
   let e₁ : t ≃ {k // k ≠ i} ⊕ Unit := (optionSubtypeNe i).symm.trans (optionEquivSumPUnit.{0} _)
   let γ : Unit ⊕ t → m := Sum.elim (fun _ => r i) s
   have h := sum_sign_smul_det_submatrix_mul_det_submatrix_eq_zero A c e₁ (emptySum Empty t).symm
-    (fun k => r k) Empty.elim γ (by simp) (isComplement_image_swap_inl t)
+    (fun k => r k) Empty.elim γ (by simp) (Perm.isComplement_image_swap_inl_sumCongrHom_range t)
   have h₁ (σ : Perm (Unit ⊕ t)) : Sum.elim (fun k : {k // k ≠ i} => r k) (γ ∘ σ ∘ Sum.inl) ∘ e₁ =
       Function.update r i (γ (σ (.inl ()))) := by
     ext k
@@ -208,28 +161,6 @@ theorem det_submatrix_mul_det_submatrix_eq_sum (A : Matrix m n R) (r s : t → m
   simp only [coe_refl, id_eq, CompTriple.comp_eq, swap_apply_left, γ, Sum.elim_inl, Sum.elim_inr,
     Function.update_eq_self, Sum.elim_comp_inr] at h
   rwa [← sub_eq_add_neg, sub_eq_zero] at h
-
-/-- **The shuffle relation** among minors of the generic matrix `Matrix.mvPolynomialX`; see
-`Matrix.sum_sign_smul_det_submatrix_mul_det_submatrix_eq_zero`. -/
-theorem sum_sign_smul_mvPolynomialMinor_mul_mvPolynomialMinor_eq_zero (c : t → n)
-    (e₁ : t ≃ ι₁ ⊕ κ₁) (e₂ : t ≃ ι₂ ⊕ κ₂) (α : ι₁ → m) (β : ι₂ → m) (γ : κ₁ ⊕ κ₂ → m)
-    (hcard : Fintype.card t < Fintype.card κ₁ + Fintype.card κ₂)
-    {T : Finset (Perm (κ₁ ⊕ κ₂))}
-    (hT : Subgroup.IsComplement (T : Set (Perm (κ₁ ⊕ κ₂))) (Perm.sumCongrHom κ₁ κ₂).range) :
-    ∑ σ ∈ T, Perm.sign σ •
-      (mvPolynomialMinor R (Sum.elim α (γ ∘ σ ∘ Sum.inl) ∘ e₁) c *
-        mvPolynomialMinor R (Sum.elim β (γ ∘ σ ∘ Sum.inr) ∘ e₂) c) = 0 := by
-  simp only [mvPolynomialMinor_eq_det_submatrix]
-  exact sum_sign_smul_det_submatrix_mul_det_submatrix_eq_zero _ c e₁ e₂ α β γ hcard hT
-
-/-- **The exchange relation** among minors of the generic matrix `Matrix.mvPolynomialX`; see
-`Matrix.det_submatrix_mul_det_submatrix_eq_sum`. -/
-theorem mvPolynomialMinor_mul_mvPolynomialMinor_eq_sum (r s : t → m) (c : t → n) (i : t) :
-    mvPolynomialMinor R r c * mvPolynomialMinor R s c =
-      ∑ j, mvPolynomialMinor R (Function.update r i (s j)) c *
-        mvPolynomialMinor R (Function.update s j (r i)) c := by
-  simp only [mvPolynomialMinor_eq_det_submatrix]
-  exact det_submatrix_mul_det_submatrix_eq_sum _ r s c i
 
 end Shuffle
 
