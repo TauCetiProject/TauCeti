@@ -70,11 +70,11 @@ theorem smulLeftCLM_comp_inv_smul_apply (hχ : χ.HasTemperateGrowth) (R : ℝ) 
   smulLeftCLM_apply_apply (hχ.comp (R⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth) f x
 
 /-- A truncation of a Schwartz function by a compactly supported cutoff is compactly supported. -/
-theorem hasCompactSupport_smulLeftCLM_comp_inv_smul (hχ : ContDiff ℝ ∞ χ)
+theorem hasCompactSupport_smulLeftCLM_comp_inv_smul
     (hsupp : HasCompactSupport χ) {R : ℝ} (hR : R ≠ 0) (f : 𝓢(E, F)) :
-    HasCompactSupport (smulLeftCLM F (fun y ↦ χ (R⁻¹ • y)) f) := by
-  rw [funext (smulLeftCLM_comp_inv_smul_apply (hsupp.hasTemperateGrowth hχ) R f)]
-  exact (hsupp.comp_smul (inv_ne_zero hR)).smul_right
+    HasCompactSupport (smulLeftCLM F (fun y ↦ χ (R⁻¹ • y)) f) :=
+  (hsupp.comp_smul (inv_ne_zero hR)).isCompact.of_isClosed_subset (isClosed_tsupport _)
+    ((tsupport_smulLeftCLM_subset _ f).trans Set.inter_subset_right)
 
 /-- Where `‖x‖ ≥ ρ > 0`, one power of `‖x‖` can be traded for `ρ⁻¹` against the next seminorm. -/
 private lemma pow_mul_norm_iteratedFDeriv_le_div (f : 𝓢(E, F)) (k j : ℕ) {ρ : ℝ} (hρ : 0 < ρ)

@@ -60,6 +60,7 @@ solve the second estimate for `Y` and substitute it into the first.
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
 `[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
+Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`.
 
 ## Main results
 
@@ -89,6 +90,7 @@ elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each recip
 * `TauCeti.sub_div_sub_mem_Icc`: `(c - a) / (b - a) ∈ [0, 1]` for `c ∈ [a, b]`.
 * `TauCeti.one_add_sum_inv_pos`, `TauCeti.inv_le_one_add_sum_inv`: for nonnegative `x i`,
   `0 < 1 + ∑ i ∈ s, (x i)⁻¹` and `(x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹` for `j ∈ s`.
+* `TauCeti.nonneg_of_le_div_pow`: `0 ≤ A` from `0 ≤ a` and `a ≤ A / t ^ k` with `0 < t`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
 * `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
@@ -376,6 +378,11 @@ theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
   have hCγ : C * (K + γ * N) ≤ C * ((1 + γ) * (K + N)) :=
     mul_le_mul_of_nonneg_left hγN hC
   linarith
+
+/-- A nonnegative quantity bounded by `A / t ^ k` with `t > 0` forces `0 ≤ A`. -/
+theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a A t : α} {k : ℕ} (ht : 0 < t) (h : a ≤ A / t ^ k) (ha : 0 ≤ a) : 0 ≤ A := by
+  simpa using (le_div_iff₀ (pow_pos ht k)).1 (ha.trans h)
 
 end TauCeti
 
