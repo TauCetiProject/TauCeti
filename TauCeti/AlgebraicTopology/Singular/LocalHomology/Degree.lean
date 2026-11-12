@@ -391,10 +391,14 @@ theorem localDegree_comap {M' : Type} [TopologicalSpace M'] [T2Space M'] [Charte
   by_cases hc : IsCompact (f ⁻¹' {y})
   · have hc' : IsCompact ((f.comp ⟨j, hj.continuous⟩) ⁻¹' {y}) :=
       hS ▸ (hj.isInducing.isCompact_preimage_iff hy).2 hc
-    -- The fundamental class of `M` along the fibre is the image of that of `M'`.
+    -- The fundamental class of `M` along the fibre is the image of that of `M'`: both restrict to
+    -- the local orientation at every point of the fibre.
     rw [localDegree_eq_iff (o.comap hj) o' hE hF _ hc',
       ← o.localHomologyMap_fundamentalClassOn_preimage_singleton o' hE f hc,
-      ← o.localHomologyMap_fundamentalClassOn_comap hE hj hc' hc hS hy,
+      ← o.eq_fundamentalClassOn hE hc fun x hx ↦ by
+        obtain ⟨a, rfl⟩ := hy hx
+        exact o.localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap hE hj hc'
+          hS.subset hx,
       ← ConcreteCategory.comp_apply, localHomologyMap_comp]
   · -- Both fibres fail to be compact, the second being the image of the first under `j`.
     have hc' : ¬IsCompact ((f.comp ⟨j, hj.continuous⟩) ⁻¹' {y}) := fun h ↦
