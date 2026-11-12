@@ -49,6 +49,8 @@ single orientation of the model, and transport preserves them.
   preserves oriented-chart local orientations along a path in a compact convex set of a chart.
 * `OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul`: changing the chart
   multiplies the selected local orientation by the sign of the Jacobian of the transition map.
+* `OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart`: a continuous map which
+  reads as the identity in two charts carries the local orientations they select to each other.
 * `TauCeti.Manifold.Orientation.toHomologicalOrientation`: the homological orientation of a smooth
   orientation, with `toHomologicalOrientation_apply`, `toHomologicalOrientation_neg` and
   `toHomologicalOrientation_injective`.
@@ -521,9 +523,10 @@ variable {M N : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T
   {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
 
-/-- **Naturality of oriented-chart local orientations.** Let `j : M → N` be continuous, and let
-`φ` and `ψ` be charts of `M` and `N` with `j` mapping the source of `φ` into that of `ψ` and
-`ψ ∘ j = φ` there. Then the map of local homology induced by `j` carries the local orientation at
+/-- **Naturality of oriented-chart local orientations.** Let `j : M → N` be continuous with
+`j ⁻¹' {j a} ⊆ {a}`, so that `a` is the only point of `M` sent to `j a`, and let `φ` and `ψ` be
+charts of `M` and `N` with `j` mapping the source of `φ` into that of `ψ` and `ψ ∘ j = φ` there.
+Then the map of local homology induced by `j` carries the local orientation at
 `a` selected by an orientation `ω` of the model in `φ` to the one at `j a` selected by `ω` in
 `ψ`. -/
 theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart

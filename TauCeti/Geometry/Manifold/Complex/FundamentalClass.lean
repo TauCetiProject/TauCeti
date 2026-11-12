@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # The fundamental class of a compact Riemann surface
@@ -26,7 +27,8 @@ number of an oriented real plane bundle is the sum of the local indices of a sec
 many zeros (`TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex`).
 
 The local orientation at `x` may be read in *any* holomorphic chart `e` at `x`, not only in the
-preferred one: it is the local orientation selected in `e` by `complexOrientation ℂ`
+preferred one: it is the local orientation selected in `e` by the standard orientation
+`Complex.orientation` of `ℂ`, which is `complexOrientation ℂ` reindexed to `Fin 2`
 (`TauCeti.complexHomologicalOrientation_apply_of_mem_maximalAtlas`). Two holomorphic charts
 differ by a holomorphic transition map, whose real Jacobian determinant is the squared modulus of
 its complex derivative, hence positive, and a change of oriented chart multiplies the selected
@@ -54,8 +56,8 @@ surfaces carries fundamental class to fundamental class
 
 * `TauCeti.complexHomologicalOrientation_apply_of_mem_maximalAtlas`: the canonical local
   orientations, read in any holomorphic chart.
-* `TauCeti.comap_complexHomologicalOrientation`: open local biholomorphisms pull canonical
-  homological orientations back to canonical homological orientations.
+* `TauCeti.comap_complexHomologicalOrientation`: local biholomorphisms that are open embeddings
+  pull canonical homological orientations back to canonical homological orientations.
 * `Diffeomorph.mapFundamentalClass_complexHomologicalOrientation`: biholomorphisms carry
   fundamental classes to fundamental classes.
 
@@ -120,23 +122,23 @@ private theorem reindex_complexManifoldOrientation_eq_mk :
 
 /-- **The canonical local orientations, read in any holomorphic chart.** At every point `x`, the
 canonical homological orientation of a Riemann surface is the local orientation selected in any
-holomorphic chart `e` at `x` by the canonical real orientation `complexOrientation ℂ` of the
-model. -/
-theorem complexHomologicalOrientation_apply_of_mem_maximalAtlas
-    {e : OpenPartialHomeomorph M ℂ} (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, ℂ) 1 M) {x : M}
+`C^k` holomorphic chart `e` at `x`, for `k ≠ 0`, by the standard orientation `Complex.orientation`
+of the model. -/
+theorem complexHomologicalOrientation_apply_of_mem_maximalAtlas {k : ℕ∞ω} [NeZero k]
+    {e : OpenPartialHomeomorph M ℂ} (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, ℂ) k M) {x : M}
     (hx : x ∈ e.source) :
     complexHomologicalOrientation M x =
-      e.localOrientationOfOrientedChart hx (Orientation.reindex ℝ ℂ
-        (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex))
-        (complexOrientation ℂ)) (n := 1) Complex.finrank_real_complex := by
-  rw [complexHomologicalOrientation_def, Manifold.Orientation.toHomologicalOrientation_apply,
-    reindex_complexManifoldOrientation_eq_mk, localOrientationOfManifoldOrientation_mk,
-    Manifold.OrientationLift.chartOrientation_eq_ite]
+      e.localOrientationOfOrientedChart hx Complex.orientation (n := 1)
+        Complex.finrank_real_complex := by
+  rw [← reindex_complexOrientation_complex, complexHomologicalOrientation_def,
+    Manifold.Orientation.toHomologicalOrientation_apply, reindex_complexManifoldOrientation_eq_mk,
+    localOrientationOfManifoldOrientation_mk, Manifold.OrientationLift.chartOrientation_eq_ite]
   simp only [Manifold.OrientationLift.reindex_sign, complexOrientationLift_sign, ite_true,
     Manifold.OrientationLift.reindex_modelOrientation, complexOrientationLift_modelOrientation,
     ← Orientation.reindex_trans]
   -- The holomorphic transition from the preferred chart to `e` preserves orientation.
-  have hmem := IsManifold.compatible_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x) he
+  have hmem := IsManifold.compatible_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x)
+    (IsManifold.maximalAtlas_subset_of_le (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne k)) he)
   have hy : chartAt ℂ x x ∈ ((chartAt ℂ x).symm.trans e).source := by
     simp [mem_chart_source, hx]
   obtain ⟨hd, hdet⟩ := orientationPreservingOn_iff.1 (mem_orientationPreservingGroupoid_iff.1
@@ -155,8 +157,8 @@ variable {N : Type} [TopologicalSpace N] [T2Space N] [ChartedSpace ℂ N] [IsMan
 /-- **Naturality of the canonical homological orientation.** Pulling the canonical homological
 orientation of `N` back along an open embedding `j : M → N` which is a `C^k` local
 biholomorphism, for `k ≠ 0`, gives the canonical homological orientation of `M`. -/
-theorem comap_complexHomologicalOrientation (k : ℕ∞ω) [NeZero k] [IsManifold 𝓘(ℂ, ℂ) k M]
-    [IsManifold 𝓘(ℂ, ℂ) k N] {j : M → N} (hj : IsOpenEmbedding j)
+theorem comap_complexHomologicalOrientation (k : ℕ∞ω) [NeZero k] {j : M → N}
+    (hj : IsOpenEmbedding j)
     (hf : IsLocalDiffeomorph 𝓘(ℂ, ℂ) 𝓘(ℂ, ℂ) k j) :
     (complexHomologicalOrientation N).comap hj = complexHomologicalOrientation M := by
   ext x : 1
@@ -165,20 +167,31 @@ theorem comap_complexHomologicalOrientation (k : ℕ∞ω) [NeZero k] [IsManifol
   -- A holomorphic chart `φ` of `M` at `x` with `φ = ψ ∘ j` on its source, for the preferred chart
   -- `ψ` of `N` at `j x`.
   set ψ := chartAt ℂ (j x)
-  obtain ⟨e', he', hxe', hcomp⟩ := (hf x).exists_mem_maximalAtlas_eventuallyEq
+  have hk : (1 : ℕ∞ω) ≤ k := ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne k)
+  -- `j` is in particular a `C^1` local biholomorphism at `x`: it agrees near `x` with the inverse
+  -- of its local inverse.
+  have hf1 : IsLocalDiffeomorphAt 𝓘(ℂ, ℂ) 𝓘(ℂ, ℂ) 1 j x := by
+    set L := (hf x).localInverse
+    have hL : (L.ofLE hk).symm.toPartialEquiv = L.symm.toPartialEquiv := by simp
+    have hsrc : (L.ofLE hk).symm.source = L.target := congrArg PartialEquiv.source hL
+    refine isLocalDiffeomorphAt_of_eqOn (Φ := (L.ofLE hk).symm)
+      (hsrc ▸ (hf x).localInverse_mem_target) fun y hy ↦ ?_
+    rw [hsrc] at hy
+    rw [show (L.ofLE hk).symm y = L.symm y from congrFun (congrArg PartialEquiv.toFun hL) y]
+    exact (congrArg j (L.right_inv hy)).symm.trans
+      ((hf x).localInverse_right_inv (L.symm.map_source hy))
+  obtain ⟨e', he', hxe', hcomp⟩ := hf1.exists_mem_maximalAtlas_eventuallyEq
     (IsManifold.chart_mem_maximalAtlas (j x)) (mem_chart_source ℂ (j x))
   obtain ⟨W, hWsub, hWo, hxW⟩ := mem_nhds_iff.1 (Filter.inter_mem hcomp
     (hj.continuous.continuousAt.preimage_mem_nhds (ψ.open_source.mem_nhds
       (mem_chart_source ℂ (j x)))))
-  have hk : (1 : ℕ∞ω) ≤ k := ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne k)
   have hφ : e'.restr W ∈ IsManifold.maximalAtlas 𝓘(ℂ, ℂ) 1 M :=
-    restr_mem_maximalAtlas (contDiffGroupoid 1 𝓘(ℂ, ℂ))
-      (IsManifold.maximalAtlas_subset_of_le hk he') hWo
+    restr_mem_maximalAtlas (contDiffGroupoid 1 𝓘(ℂ, ℂ)) he' hWo
   have hsrc : (e'.restr W).source = e'.source ∩ W := e'.restr_source' W hWo
   have hxφ : x ∈ (e'.restr W).source := hsrc ▸ ⟨hxe', hxW⟩
   apply Subtype.ext
   rw [complexHomologicalOrientation_apply_of_mem_maximalAtlas hφ hxφ,
-    complexHomologicalOrientation_apply_of_mem_maximalAtlas
+    complexHomologicalOrientation_apply_of_mem_maximalAtlas (k := 1)
       (IsManifold.chart_mem_maximalAtlas (j x)) (mem_chart_source ℂ (j x)),
     IsOpenEmbedding.coe_localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_hom]
   exact (OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart _ _
@@ -208,8 +221,7 @@ theorem complexFundamentalClass_def :
 /-- **Biholomorphisms preserve fundamental classes.** A `C^k` biholomorphism `Φ : M ≃ N` of
 compact Riemann surfaces, for `k ≠ 0`, carries the fundamental class of `M` to that of `N`. -/
 theorem _root_.Diffeomorph.mapFundamentalClass_complexHomologicalOrientation [CompactSpace N]
-    (k : ℕ∞ω) [NeZero k] [IsManifold 𝓘(ℂ, ℂ) k M] [IsManifold 𝓘(ℂ, ℂ) k N]
-    (Φ : M ≃ₘ^k⟮𝓘(ℂ, ℂ), 𝓘(ℂ, ℂ)⟯ N) :
+    (k : ℕ∞ω) [NeZero k] (Φ : M ≃ₘ^k⟮𝓘(ℂ, ℂ), 𝓘(ℂ, ℂ)⟯ N) :
     (complexHomologicalOrientation M).mapFundamentalClass Complex.finrank_real_complex
       (Φ.toHomeomorph : C(M, N)) = complexFundamentalClass N := by
   rw [← comap_complexHomologicalOrientation k Φ.toHomeomorph.isOpenEmbedding
