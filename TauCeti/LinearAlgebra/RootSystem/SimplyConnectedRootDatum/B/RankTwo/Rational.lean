@@ -41,6 +41,25 @@ theorem range_root_simplyConnectedRootDatum_B_two (ht : (B 2).Valid) :
   simpa +instances only [simplyConnectedRootDatum_B, rank_B, numRoots_B] using
     range_root_typeBSimplyConnectedRootDatum_two
 
+/-- A root-sum equation in the B₂ table gives the same equation in the assembled datum. -/
+lemma b2_root_eq_nsmul_add {ht : (B 2).Valid} (a b c : Fin 8) (n : ℕ)
+    (h : b2Root c = n • b2Root a + b2Root b) :
+    ((B 2).simplyConnectedRootDatum ht).root (b2Index c) =
+      n • ((B 2).simplyConnectedRootDatum ht).root (b2Index a) +
+        ((B 2).simplyConnectedRootDatum ht).root (b2Index b) := by
+  simp only [root_simplyConnectedRootDatum_B_two_b2Index]
+  simpa +instances only [rank_B] using h
+
+/-- A sum excluded from the B₂ table is not a root of the assembled datum. -/
+lemma b2_nsmul_add_nsmul_not_mem_range {ht : (B 2).Valid} (a b : Fin 8) (m n : ℕ)
+    (h : m • b2Root a + n • b2Root b ∉ Set.range b2Root) :
+    m • ((B 2).simplyConnectedRootDatum ht).root (b2Index a) +
+        n • ((B 2).simplyConnectedRootDatum ht).root (b2Index b) ∉
+      Set.range ((B 2).simplyConnectedRootDatum ht).root := by
+  simp only [root_simplyConnectedRootDatum_B_two_b2Index,
+    range_root_simplyConnectedRootDatum_B_two]
+  simpa +instances only [rank_B] using h
+
 /-- Rationalization identifies B₂ positivity with the pinned integral table. -/
 theorem posRoots_rationalRootSystem_B_two (ht : (B 2).Valid) :
     posRoots ((B 2).rationalRootSystem ht) ((B 2).rationalBase ht) =

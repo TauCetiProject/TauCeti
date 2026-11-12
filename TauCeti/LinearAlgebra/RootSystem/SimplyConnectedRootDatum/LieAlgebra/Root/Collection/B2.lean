@@ -51,23 +51,6 @@ variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ ((B 2).lieAlgebra ht) →�
 
 attribute [local instance high] Algebra.toModule
 
-private lemma b2_root_eq_nsmul_add (a b c : Fin 8) (n : ℕ)
-    (h : b2Root c = n • b2Root a + b2Root b) :
-    ((B 2).simplyConnectedRootDatum ht).root (b2Index c) =
-      n • ((B 2).simplyConnectedRootDatum ht).root (b2Index a) +
-        ((B 2).simplyConnectedRootDatum ht).root (b2Index b) := by
-  simp only [root_simplyConnectedRootDatum_B_two_b2Index]
-  simpa +instances only [rank_B] using h
-
-private lemma b2_nsmul_add_nsmul_not_mem_range (a b : Fin 8) (m n : ℕ)
-    (h : m • b2Root a + n • b2Root b ∉ Set.range b2Root) :
-    m • ((B 2).simplyConnectedRootDatum ht).root (b2Index a) +
-        n • ((B 2).simplyConnectedRootDatum ht).root (b2Index b) ∉
-      Set.range ((B 2).simplyConnectedRootDatum ht).root := by
-  simp only [root_simplyConnectedRootDatum_B_two_b2Index,
-    range_root_simplyConnectedRootDatum_B_two]
-  simpa +instances only [rank_B] using h
-
 private theorem b2_positive_commutator_mem (A : CommAlgCat ℤ) (P : Subgroup
     (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)))
     (i j : Fin 4) (hij : i < j)

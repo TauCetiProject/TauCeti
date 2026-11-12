@@ -85,19 +85,21 @@ private theorem b2_parabolic_commutator_mem (i : Fin 2) (k l : Fin 8)
       (chevalleyRootSubgroup ρ M hM hnil (b2Index m) A).range ≤ H) (u v : A) :
     ⁅chevalleyRootSubgroup ρ M hM hnil (b2Index k) A (Multiplicative.ofAdd u),
       chevalleyRootSubgroup ρ M hM hnil (b2Index l) A (Multiplicative.ofAdd v)⁆ ∈ H := by
-  have hroot := root_simplyConnectedRootDatum_B_two_b2Index ht
-  have hrange := range_root_simplyConnectedRootDatum_B_two ht
-  -- The commutator hypotheses retain the Dynkin rank inside vector addition and scalar actions.
-  -- `using!` lets the coordinate bridges normalize these implicit types at default transparency.
+  -- Transport the one- and two-root strings through the shared coordinate lemmas.
   have hone (m : Fin 8)
       (heq : b2Root m = b2Root k + b2Root l)
       (ha : 2 • b2Root k + b2Root l ∉ Set.range b2Root)
       (hb : b2Root k + 2 • b2Root l ∉ Set.range b2Root) :=
     commutatorElement_chevalleyRootSubgroup_of_root_eq_add ρ M hM hnil
       (t := B 2) (ht := ht) (α := b2Index k) (β := b2Index l) (γ := b2Index m)
-      (by simpa only [hroot] using! heq)
-      (by simpa only [hroot, hrange] using! ha)
-      (by simpa only [hroot, hrange] using! hb) A u v
+      (by simpa only [one_smul] using
+        (b2_root_eq_nsmul_add (ht := ht) k l m 1 (by simpa only [one_smul] using heq)))
+      (by simpa only [one_smul] using
+        (b2_nsmul_add_nsmul_not_mem_range (ht := ht) k l 2 1
+          (by simpa only [one_smul] using ha)))
+      (by simpa only [one_smul] using
+        (b2_nsmul_add_nsmul_not_mem_range (ht := ht) k l 1 2
+          (by simpa only [one_smul] using hb))) A u v
   have htwo (k l m n : Fin 8)
       (hm : m.val < 4 ∧ m.val ≠ i.val) (hn : n.val < 4 ∧ n.val ≠ i.val)
       (heq : b2Root m = b2Root k + b2Root l)
@@ -108,17 +110,30 @@ private theorem b2_parabolic_commutator_mem (i : Fin 2) (k l : Fin 8)
         chevalleyRootSubgroup ρ M hM hnil (b2Index l) A (Multiplicative.ofAdd v)⁆ ∈ H := by
     rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add ρ M hM hnil
       (t := B 2) (ht := ht) (α := b2Index k) (β := b2Index l) (γ := b2Index m) (δ := b2Index n)
-      (by simpa only [hroot] using! heq)
-      (by simpa only [hroot] using! heq')
-      (by simpa only [hroot, hrange] using! ha)
-      (by simpa only [hroot, hrange] using! hb)]
+      (by simpa only [one_smul] using
+        (b2_root_eq_nsmul_add (ht := ht) k l m 1 (by simpa only [one_smul] using heq)))
+      (b2_root_eq_nsmul_add k l n 2 heq')
+      (by simpa only [one_smul] using
+        (b2_nsmul_add_nsmul_not_mem_range (ht := ht) k l 3 1
+          (by simpa only [one_smul] using ha)))
+      (by simpa only [one_smul] using
+        (b2_nsmul_add_nsmul_not_mem_range (ht := ht) k l 1 2
+          (by simpa only [one_smul] using hb)))]
     exact H.mul_mem (hH m hm ⟨_, rfl⟩) (hH n hn ⟨_, rfl⟩)
+  -- The table selects commuting, one-factor, two-factor, or reversed two-factor pairs.
   rcases b2_parabolic_pairs i k l hk hl with ⟨ha, hb⟩ | ⟨m, hm, heq, ha, hb⟩ |
       ⟨m, n, hm, hn, heq, heq', ha, hb⟩ | ⟨m, n, hm, hn, heq, heq', ha, hb⟩
   · rw [(commute_chevalleyRootSubgroup ρ M hM hnil
       (t := B 2) (ht := ht) (α := b2Index k) (β := b2Index l)
-      (by simpa only [hroot, hrange] using! ha)
-      (by simpa only [hroot] using! hb) A u v).commutator_eq]
+      (by simpa only [one_smul] using
+        (b2_nsmul_add_nsmul_not_mem_range (ht := ht) k l 1 1
+          (by simpa only [one_smul] using ha)))
+      (by
+        simp only [root_simplyConnectedRootDatum_B_two_b2Index]
+        intro hzero
+        apply hb
+        funext j
+        exact congrFun hzero j) A u v).commutator_eq]
     exact H.one_mem
   · rw [hone m heq ha hb]
     exact hH m hm ⟨_, rfl⟩
