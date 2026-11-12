@@ -866,15 +866,13 @@ theorem IsNondegenerate.integrableOn_truncation_inter_pairOfPantsPerturbation
     preimage_truncation_subset_thricePuncturedSphereReal R hz.1
   have hcurv := integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation_inter ω hH
     hHs q hc hcR (hu.continuousOn.mono hTV)
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hVo hu
-    stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  have harea := ω.integrableOn_eval₂_mfderiv hVo hu hT hTV stdComplexLineReal stdComplexLineImag
   have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
     (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs)
   exact ⟨hω.integrableOn_floerEnergyDensity (hVo.inter isOpen_thricePuncturedSphereReal)
     (hu.mono inter_subset_left) ((hKp 1).mono (prod_mono inter_subset_right subset_rfl))
     ((hKp Complex.I).mono (prod_mono inter_subset_right subset_rfl)) hT (subset_inter hTV hTS)
-    hcurv, (harea.mono hTV).integrableOn_compact (μ := volume) hT, hcurv⟩
+    hcurv, harea, hcurv⟩
 
 /-- **The energy identity on a truncated pair of pants with one end cut short, for a manifold
 target.** Let `K` be the pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_r` on a

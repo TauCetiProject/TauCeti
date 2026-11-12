@@ -307,13 +307,11 @@ theorem IsNondegenerate.integrableOn_plumbedTruncation (hω : ω.IsNondegenerate
     hω.integral_floerEnergyDensity_plumbedPerturbation_receiving hq hHb hHbs hab hL hR hu
   obtain ⟨⟨hEB, hRB⟩, -⟩ :=
     hω.integral_floerEnergyDensity_plumbedPerturbation_inserted hq hHa hHb hHas hHbs hab hL hR hu
-  -- The area density is continuous on the four-punctured sphere, which contains the compact set
-  -- `Σ_R`, so it is integrable over `Σ_R`.
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
-    (isOpen_plumbedSphere q L) hu stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  refine ⟨?_, (harea.mono fun z hz ↦ plumbedTruncation_subset hq (by linarith) R
-    hz).integrableOn_compact (isCompact_preimage_plumbedTruncation q L R), ?_⟩ <;>
+  -- The area density is integrable over the compact set `Σ_R`, which lies in the four-punctured
+  -- sphere where `u` is `C¹`.
+  refine ⟨?_, ω.integrableOn_eval₂_mfderiv (isOpen_plumbedSphere q L) hu
+    (isCompact_preimage_plumbedTruncation q L R)
+    (fun z hz ↦ plumbedTruncation_subset hq (by linarith) R hz) _ _, ?_⟩ <;>
     rw [preimage_plumbedTruncation hq L R]
   exacts [hEA.union hEB, hRA.union hRB]
 
