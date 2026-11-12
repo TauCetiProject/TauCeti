@@ -20,8 +20,8 @@ Sobolev space `W^{k,p}(V)` of `TauCeti.SobolevSection A volume p k` with the loc
 trivialization of chart `i` as a map in the local class `MemWkpLoc p (A.image i) k`, and conversely.
 
 An element `w` of `W^{k,p}(V)` consists of the components of a section `s`
-(`TauCeti.SobolevSection.exists_section`). In chart `i` the components of `A.coord i s` in the basis
-`Module.finBasis ℝ F` are, almost everywhere on `A.image i`, the values of the scalar Sobolev
+(`TauCeti.SectionChartData.exists_section`). In chart `i` the components of `A.coord i s` in the
+basis `Module.finBasis ℝ F` are, almost everywhere on `A.image i`, the values of the scalar Sobolev
 functions `w i j ∈ W^{k,p}(A.image i)`. Restricting these to relatively compact open subsets of
 `A.image i` and applying the comparison `TauCeti.memWkpLoc_iff_forall_wkp` componentwise, through
 the coordinate criterion `Module.Basis.memWkpLoc_iff`, shows that `A.coord i s` lies in
@@ -34,7 +34,7 @@ an open neighbourhood `O` of the compact closure of `A.image i`, for every chart
 components restrict to elements of `W^{k,p}(A.image i)` (`TauCeti.MemWkpLoc.exists_wkp`) and these
 form an element of `W^{k,p}(V)` with section `s`
 (`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc`, through
-`TauCeti.FiniteBundleAtlas.chartValueL_ae_eq_coord_of_value_ae_eq`). That element is unique
+`TauCeti.SectionChartData.chartValueL_ae_eq_coord`). That element is unique
 (`TauCeti.SobolevSection.eq_of_ae_eq_coord`). The chart expressions of a `Cᵏ` section satisfy this
 hypothesis for every exponent (`TauCeti.FiniteBundleAtlas.memWkpLoc_coord_of_contMDiff`); the
 corresponding element of `W^{k,p}(V)` is `TauCeti.SobolevSection.ofContMDiffSection`.
@@ -103,14 +103,18 @@ variable {A} {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
 the section `s`, then in every chart `i` the chart expression `A.coord i s` lies in the local
 Sobolev class `MemWkpLoc p (A.image i) k`. -/
 theorem memWkpLoc_coord (w : SobolevSection A volume p k) {s : ∀ x, V x}
-    (hs : ∀ i, A.chartValueL volume p k i w =ᵐ[volume.restrict (A.image i)] A.coord i s)
+    (hs : ∀ i, A.sectionChartData.chartValueL volume p k i w
+      =ᵐ[volume.restrict (A.image i)] A.coord i s)
     (i : Fin A.n) : MemWkpLoc p (A.image i) k (A.coord i s) := by
   refine (finBasis ℝ F).memWkpLoc_iff.2 fun j ↦
     memWkpLoc_of_forall_wkp (Ω := A.image i) fun W _ hWΩ ↦ ?_
   have hW : W ≤ A.image i := SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)
-  exact ⟨Wkp.restrictL hW k ((w : SobolevData A volume p k) i j),
+  have hcs := A.sectionChartData_coord_ae_eq volume i s
+  have hrepr := (SectionChartData.value_ae_eq_repr_coord ((hs i).trans hcs.symm) j).trans
+    (hcs.fun_comp fun v ↦ (finBasis ℝ F).repr v j)
+  exact ⟨Wkp.restrictL hW k ((w : A.sectionChartData.SobolevData volume p k) i j),
     (Wkp.value_restrictL_ae hW k _).trans (ae_restrict_of_ae_restrict_of_subset
-      (SetLike.coe_subset_coe.2 hW) (value_ae_eq_repr_coord (hs i) j))⟩
+      (SetLike.coe_subset_coe.2 hW) hrepr)⟩
 
 /-- **Sobolev sections from local classes.** Let `s` be a section of `V` whose chart expression
 `A.coord i s` lies, for every chart `i`, in the local Sobolev class `MemWkpLoc p O k` on some open
@@ -121,18 +125,23 @@ theorem exists_ae_eq_coord_of_memWkpLoc {s : ∀ x, V x}
     (hs : ∀ i, ∃ O : Set ℂ, IsOpen O ∧ closure (A.image i : Set ℂ) ⊆ O ∧
       MemWkpLoc p O k (A.coord i s)) :
     ∃ w : SobolevSection A volume p k,
-      ∀ i, A.chartValueL volume p k i w =ᵐ[volume.restrict (A.image i)] A.coord i s := by
+      ∀ i, A.sectionChartData.chartValueL volume p k i w
+        =ᵐ[volume.restrict (A.image i)] A.coord i s := by
   have hv (i : Fin A.n) (j : Fin (finrank ℝ F)) : ∃ v : Wkp volume (A.image i) p k,
       (Wkp.value k v : ℂ → ℝ) =ᵐ[volume.restrict (A.image i)]
-        fun y ↦ (finBasis ℝ F).repr (A.coord i s y) j := by
+        fun y ↦ (finBasis ℝ F).coord j (A.sectionChartData.coord i s y) := by
     obtain ⟨O, hO, hcl, hsO⟩ := hs i
-    exact ((finBasis ℝ F).memWkpLoc_iff.1 hsO j).exists_wkp (Ω := ⟨O, hO⟩)
+    obtain ⟨v, hv⟩ := ((finBasis ℝ F).memWkpLoc_iff.1 hsO j).exists_wkp (Ω := ⟨O, hO⟩)
       (A.isCompact_closure_image i) hcl
+    refine ⟨v, hv.trans ?_⟩
+    filter_upwards [A.sectionChartData_coord_ae_eq volume i s] with y hy
+    rw [hy, Basis.coord_apply]
   choose v hv using hv
-  have hcoord (i : Fin A.n) :
-      A.chartValueL volume p k i v =ᵐ[volume.restrict (A.image i)] A.coord i s :=
-    chartValueL_ae_eq_coord_of_value_ae_eq (hv i)
-  exact ⟨⟨v, (mem_sobolevSections_iff A volume p k).2 ⟨s, hcoord⟩⟩, hcoord⟩
+  have hcoord (i : Fin A.n) : A.sectionChartData.chartValueL volume p k i v
+      =ᵐ[volume.restrict (A.image i)] A.sectionChartData.coord i s :=
+    A.sectionChartData.chartValueL_ae_eq_coord volume p k (hv i)
+  exact ⟨⟨v, (A.sectionChartData.mem_sobolevSections_iff volume p k).2 ⟨s, hcoord⟩⟩,
+    fun i ↦ (hcoord i).trans (A.sectionChartData_coord_ae_eq volume i s)⟩
 
 end SobolevSection
 

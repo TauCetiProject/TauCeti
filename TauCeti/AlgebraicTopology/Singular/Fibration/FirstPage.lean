@@ -9,30 +9,28 @@ public import TauCeti.AlgebraicTopology.Singular.Fibration.CellFiber
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Convergence
 
 /-!
-# The first page of the Serre spectral sequence over a CW complex
+# The first page of the Serre spectral sequence
 
 Let `p : E ⟶ B` be a Serre fibration and `C ⊆ B` a relative CW complex. The first page of the
-Serre spectral sequence `TauCeti.TopCat.serreSpectralSequence C p R` of `p` over `C` is the direct
-sum, over the cells of `C`, of the homology of the fibres over their centres:
+Serre spectral sequence `TauCeti.TopCat.serreSpectralSequence C p R`, the spectral sequence of the
+filtration of `E` by the preimages of the skeleta of `C`, is the direct sum, over the cells of `C`,
+of the homology of the fibres over their centres. In the classical homological indexing,
 
-`E¹_{d,t} ≅ ⨁ⱼ H_t(p⁻¹(χⱼ(0)); R)`,
+`E¹_{k,q} ≅ ⨁ⱼ Hq(p⁻¹(χⱼ(0)); R)`,
 
-the sum running over the `d`-cells `j` of `C`, with characteristic maps `χⱼ`
-(`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`). No finiteness or dimension assumption
-is made on `C` or on the fibres.
+the sum running over the `k`-cells `j` of `C`, with `χⱼ(0)` the centre of the cell `j`
+(`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`). On the summand of `j` the inverse is
+induced by the pullback of `p` along the characteristic map of `j`
+(`TauCeti.TopCat.ι_serreSpectralSequenceFirstPageXIsoSigma_inv`). For the identity fibration these
+are the cellular chain groups.
 
-In the cohomological indexing of `CochainComplex.spectralSequence` the first page is numbered `2`,
-and the object at `(a, b)` is the relative homology `Hₙ(E_{b+1}, E_b; R)`, with `a + b = -n`, of
-consecutive stages `E_i = p⁻¹(C^(i))` of the skeletal filtration
-(`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso`). So the classical bidegree `(d, t)` is
-`d = b + 1` and `t = n - d`. The pair `(E_d, E_{d-1})` is
-`TauCeti.TopCat.preimageSkeletonPair p C d`, whose homology is the sum over the `d`-cells
-(`TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma`).
-
-## Main definitions
-
-* `TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`: the first page of the Serre spectral
-  sequence as a sum over the cells of the homology of the fibres.
+The spectral sequence of a filtered space lives in cohomological indexing: the object at
+`(a, b)` of its first page (numbered `2`) is `Hₙ(E_{b+1}, E_b; R)` with `a + b = -n`
+(`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso`). With `E_b = p⁻¹(C^(b))`, the classical
+position `(k, q)` is `(a, b) = (1 - q - 2k, k - 1)`. The relative homology of consecutive preimages
+of the skeleta is computed cell by cell in `TauCeti.AlgebraicTopology.Singular.Fibration.CellFiber`
+(`TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma`); this file reads that computation
+on the first page.
 
 ## References
 
@@ -40,6 +38,8 @@ consecutive stages `E_i = p⁻¹(C^(i))` of the skeletal filtration
   425–505, Chapter II.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
   Section 5.1.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Section 5.1, the proof of Theorem 5.15.
 -/
 
 public section
@@ -57,54 +57,40 @@ namespace TopCat
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} [T2Space B] {C D : Set B} [RelCWComplex C D]
   (hp : serreFibrations p) (R : Type u) [Ring R]
 
-/-- The pair `(E_d, E_{d-1})` of consecutive stages of the skeletal filtration, as it appears on the
-first page of `TauCeti.TopCat.serreSpectralSequence`, is `TauCeti.TopCat.preimageSkeletonPair`. -/
-lemma ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (d : ℕ)
-    (h : preimageSkeleton C p ((d : ℤ) - 1) ⊆ preimageSkeleton C p d) :
-    TopPair.ofInclusion h = preimageSkeletonPair p C d := by
-  have h₁ : preimageSkeleton C p ((d : ℤ) - 1) = p ⁻¹' skeletonLT C (d : ℕ∞) := by
-    rw [preimageSkeleton_def, sub_add_cancel, Int.toNat_natCast]
-  have h₂ : preimageSkeleton C p d = p ⁻¹' skeletonLT C ((d : ℕ∞) + 1) := by
-    rw [preimageSkeleton_def, ← Nat.cast_add_one (R := ℤ), Int.toNat_natCast, Nat.cast_add_one]
-  revert h
-  rw [h₁, h₂]
-  intro h
-  rfl
+include hp
 
-include hp in
 variable (C) in
-/-- **The first page of the Serre spectral sequence over a relative CW complex.** For a Serre
-fibration `p : E ⟶ B` and a relative CW complex `C ⊆ B`, the object of the first page (numbered `2`)
-of `TauCeti.TopCat.serreSpectralSequence C p R` at `pq = (a, b)` is
-`⨁ⱼ H_t(p⁻¹(χⱼ(0)); R)`, the sum running over the `d`-cells `j` of `C` and `χⱼ(0)` being the centre
-of the cell `j`, where `d = b + 1` and `a + b = -(t + d)`. In the classical homological indexing
-this is `E¹_{d,t} ≅ ⨁ⱼ H_t(Fⱼ; R)`. On the summand of `j` the inverse is induced by the pullback of
-`p` along the characteristic map of `j`
-(`TauCeti.TopCat.ι_serreSpectralSequenceFirstPageXIsoSigma_inv`). -/
-def serreSpectralSequenceFirstPageXIsoSigma (pq : ℤ × ℤ) (d t : ℕ) (hd : pq.2 + 1 = d)
-    (ht : pq.1 + pq.2 = -((t + d : ℕ) : ℤ)) :
+/-- **The first page of the Serre spectral sequence.** For a Serre fibration `p : E ⟶ B` and a
+relative CW complex `C ⊆ B`, the object of the first page (numbered `2`) of the spectral sequence of
+the filtration of `E` by the preimages of the skeleta at `pq = (a, b)`, with `b = k - 1` and
+`a + b = -(q + k)`, is the direct sum `⨁ⱼ Hq(p⁻¹(χⱼ(0)); R)` over the `k`-cells `j` of `C`. In the
+classical indexing this is `E¹_{k,q}`. -/
+def serreSpectralSequenceFirstPageXIsoSigma (k q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
     ((serreSpectralSequence C p R).page 2).X pq ≅
-      ∐ fun j : cell C d ↦ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) t).obj
-        (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {map d j 0} : Set E)) :=
+      ∐ fun j : cell C k ↦ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {map k j 0} : Set E)) :=
   filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_preimageSkeleton p) pq
-      ((d : ℤ) - 1) d (by lia) (by lia) (pq.1 + pq.2) rfl (t + d) ht ≪≫
-    eqToIso (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) (t + d))
-      (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair d _)) ≪≫
-    preimageSkeletonPairSingularHomologyIsoSigma C hp R d t
+      pq.2 (pq.2 + 1) rfl rfl _ rfl (q + k) ha ≪≫
+    eqToIso (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) (q + k))
+      (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair k pq.2 hb)) ≪≫
+    preimageSkeletonPairSingularHomologyIsoSigma C hp R k q
 
+/-- On the summand of the `k`-cell `j`, the inverse of
+`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma` is induced by the pullback of `p` along the
+characteristic map of `j`, `Hq(p⁻¹(χⱼ(0))) ≅ Hq+k(Pⱼ, ∂Pⱼ) ⟶ Hq+k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))`. -/
 @[reassoc (attr := simp)]
-lemma ι_serreSpectralSequenceFirstPageXIsoSigma_inv (pq : ℤ × ℤ) (d t : ℕ) (hd : pq.2 + 1 = d)
-    (ht : pq.1 + pq.2 = -((t + d : ℕ) : ℤ)) (j : cell C d) :
-    Sigma.ι _ j ≫ (serreSpectralSequenceFirstPageXIsoSigma C hp R pq d t hd ht).inv =
-      (cellDiskPullbackPairSingularHomologyIso hp R d t j).inv ≫
-        (cellDiskPullbackPair p C d j).singularHomologyMap (cellDiskPullbackPairMap p C d j)
-          (ModuleCat.of R R) (t + d) ≫
-        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) (t + d))
-          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair d
-            (monotone_preimageSkeleton p (by lia)))).symm ≫
+lemma ι_serreSpectralSequenceFirstPageXIsoSigma_inv (k q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = k - 1)
+    (ha : pq.1 + pq.2 = -(q + k : ℕ)) (j : cell C k) :
+    Sigma.ι _ j ≫ (serreSpectralSequenceFirstPageXIsoSigma C hp R k q pq hb ha).inv =
+      (cellDiskPullbackPairSingularHomologyIso hp R k q j).inv ≫
+        (cellDiskPullbackPair p C k j).singularHomologyMap (cellDiskPullbackPairMap p C k j)
+          (ModuleCat.of R R) (q + k) ≫
+        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) (q + k))
+          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair k pq.2 hb)).symm ≫
         (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
-          (monotone_preimageSkeleton p) pq ((d : ℤ) - 1) d (by lia) (by lia) (pq.1 + pq.2) rfl
-          (t + d) ht).inv := by
+          (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl (q + k)
+          ha).inv := by
   simp [serreSpectralSequenceFirstPageXIsoSigma]
 
 end TopCat

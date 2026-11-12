@@ -11,10 +11,9 @@ public import TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient
 /-!
 # Class-number bounds from the elementary-2 quotient
 
-For a number field `K`, the genus-theory layer of the multiquadratic roadmap uses the
-maximal elementary-2 quotient of the class group of its ring of integers,
-`Cl(𝓞 K) / Cl(𝓞 K)²`. The generic construction and its class-group specialization live in
-`TauCeti.Algebra.Group.ElementaryTwoQuotient.Basic` and
+For a number field `K`, genus theory uses the maximal elementary-2 quotient of the class group
+of its ring of integers, `Cl(𝓞 K) / Cl(𝓞 K)²`. The generic construction and its class-group
+specialization live in `TauCeti.Algebra.Group.ElementaryTwoQuotient.Basic` and
 `TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient`; this file records the number-field
 class-number consequences where Mathlib's class-number theorem supplies finiteness
 automatically.

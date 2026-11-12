@@ -59,13 +59,13 @@ theorem orbitColumnSum_eq_sum {M : Type*} [AddCommMonoid M] (A : Matrix I I M)
   · intro i hi
     simpa only [Finset.mem_filter, Finset.mem_univ, true_and,
       orbitRel.Quotient.quotient_smul_eq] using hi
-  · intro i hi k hk h
+  · intro i _ k _ h
     exact MulAction.injective g h
   · intro i hi
     refine ⟨g⁻¹ • i, ?_, by simp⟩
     simpa only [Finset.mem_filter, Finset.mem_univ, true_and,
       orbitRel.Quotient.quotient_smul_eq] using hi
-  · intro i hi
+  · intro i _
     exact (hact g i j).symm
 
 open Classical in

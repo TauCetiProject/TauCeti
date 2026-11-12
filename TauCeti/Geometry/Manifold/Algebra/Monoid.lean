@@ -10,9 +10,14 @@ public import TauCeti.Geometry.Manifold.Algebra.SMul
 /-!
 # Smooth monoid morphisms
 
-Identity, composition, and their laws for bundled smooth multiplicative and additive monoid
-morphisms. It also propagates the regularity of multiplicative and additive maps from a group
-at any one point to the whole group.
+Identity, composition, product projections, and their laws for bundled smooth multiplicative and
+additive monoid morphisms. It also propagates the regularity of multiplicative and additive maps
+from a group at any one point to the whole group.
+
+The projections `ContMDiffMonoidMorphism.fst` and `ContMDiffMonoidMorphism.snd` have coercion
+formulas `ContMDiffMonoidMorphism.coe_fst` and `ContMDiffMonoidMorphism.coe_snd`. The corresponding
+additive declarations are `ContMDiffAddMonoidMorphism.fst`, `ContMDiffAddMonoidMorphism.snd`,
+`ContMDiffAddMonoidMorphism.coe_fst`, and `ContMDiffAddMonoidMorphism.coe_snd`.
 -/
 
 public section
@@ -38,6 +43,26 @@ def id : ContMDiffMonoidMorphism I I n G G where
 
 @[to_additive (attr := simp)]
 theorem coe_id : ⇑(id (n := n) (I := I) (G := G)) = _root_.id := (rfl)
+
+/-- The first projection as a smooth monoid morphism. -/
+@[to_additive /-- The first projection as a smooth additive monoid morphism. -/]
+def fst : ContMDiffMonoidMorphism (I.prod I') I n (G × G') G where
+  toMonoidHom := MonoidHom.fst G G'
+  contMDiff_toFun := contMDiff_fst
+
+@[to_additive (attr := simp)]
+theorem coe_fst : ⇑(fst (I := I) (I' := I') (n := n) (G := G) (G' := G')) = Prod.fst := by
+  rfl
+
+/-- The second projection as a smooth monoid morphism. -/
+@[to_additive /-- The second projection as a smooth additive monoid morphism. -/]
+def snd : ContMDiffMonoidMorphism (I.prod I') I' n (G × G') G' where
+  toMonoidHom := MonoidHom.snd G G'
+  contMDiff_toFun := contMDiff_snd
+
+@[to_additive (attr := simp)]
+theorem coe_snd : ⇑(snd (I := I) (I' := I') (n := n) (G := G) (G' := G')) = Prod.snd := by
+  rfl
 
 /-- Composition of smooth monoid morphisms. -/
 @[to_additive /-- Composition of smooth additive monoid morphisms. -/]

@@ -60,7 +60,8 @@ compactness.
 
 Without nondegeneracy the orbit `y_q` is obtained along a sequence `s_n`, while the convergence of
 the actions holds along the whole end. Convergence of the whole end to a single orbit, which needs
-nondegenerate orbits and a bound on the derivative, is not treated here.
+nondegenerate orbits and a bound on the derivative, is proved in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence`.
 
 ## References
 

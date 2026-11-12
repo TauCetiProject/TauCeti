@@ -11,11 +11,10 @@ public import TauCeti.Analysis.CompletelyMonotone.OpenClosure
 /-!
 # Composing completely monotone and Bernstein functions
 
-This file proves the composition closure property called for by the `OneParameterSemigroups`
-roadmap, Part B: if `g` is completely monotone and `f` is a Bernstein function, then `g ∘ f` is
-again completely monotone. Two companions come out of the same argument: Bernstein functions are
-closed under composition, and the prototype `t ↦ e^{-x f(t)}` is completely monotone for every
-`x ≥ 0` and every Bernstein `f`.
+This file proves the composition closure property of completely monotone functions: if `g` is
+completely monotone and `f` is a Bernstein function, then `g ∘ f` is again completely monotone. Two
+companions come out of the same argument: Bernstein functions are closed under composition, and the
+prototype `t ↦ e^{-x f(t)}` is completely monotone for every `x ≥ 0` and every Bernstein `f`.
 
 ## The induction
 
@@ -206,7 +205,7 @@ theorem IsCompletelyMonotoneOnIoi.comp_isBernsteinFunction (hg : IsCompletelyMon
   simp [Function.comp_apply]
 
 /-- **A completely monotone function composed with a Bernstein function is completely
-monotone.** This is the closure property the `OneParameterSemigroups` roadmap asks for in Part B.
+monotone.**
 
 The conclusion is the closed-half-line predicate `IsContinuousCompletelyMonotoneOnIoi`, not the
 stronger `IsCompletelyMonotone`: a Bernstein function such as `t ↦ √t` has no finite right

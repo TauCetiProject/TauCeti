@@ -107,7 +107,7 @@ theorem lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub (μ ν : Measure
     (measurableSet_le (Measure.measurable_quantile μ) measurable_const).symmDiff
       (measurableSet_le (Measure.measurable_quantile ν) measurable_const)
   rw [Measure.restrict_apply hmeas, hset,
-    volume_Ioc_inter_Ioo_zero_one (le_min (cdf_nonneg μ s) (cdf_nonneg ν s))
+    volume_Ioc_inter_Ioo_of_le_of_le (le_min (cdf_nonneg μ s) (cdf_nonneg ν s))
       (max_le (cdf_le_one μ s) (cdf_le_one ν s)),
     max_sub_min_eq_abs, abs_sub_comm, Real.enorm_eq_ofReal_abs]
 

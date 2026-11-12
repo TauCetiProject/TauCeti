@@ -147,10 +147,11 @@ section Absolute
 
 variable {K : Set B} [CWComplex K]
 
-variable (p K) in
-/-- **The filtration of the abutment of the Serre spectral sequence over a CW complex vanishes in
-negative degrees**: for `b < 0` the preimage of the `b`-skeleton is empty, so the piece
-`F_b Hₙ(E; R)` is zero. -/
+omit hp in
+variable (K p) in
+/-- **The filtration of the abutment of the Serre spectral sequence starts at `0`.** Over a CW
+complex `K ⊆ B`, the piece `F_b Hₙ(E; R)` of the filtration of the abutment vanishes for `b < 0`,
+since the preimage of the `b`-skeleton is empty. -/
 theorem isZero_serreSpectralObject_abutmentFiltration {b : ℤ} (hb : b < 0) (n : ℤ) :
     IsZero ((serreSpectralObject K p R).abutmentFiltration b n) :=
   CochainComplex.isZero_filtrationAbutmentFiltration _ _

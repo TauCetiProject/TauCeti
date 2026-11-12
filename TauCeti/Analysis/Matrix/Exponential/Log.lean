@@ -34,6 +34,7 @@ topology is the native matrix topology.
 * `Matrix.IsHermitian.cfc_log_exp`, `Matrix.PosDef.exp_cfc_log`: the logarithm inverts the
   exponential on the Hermitian matrices, and the exponential inverts the logarithm on the positive
   definite matrices.
+* `Matrix.PosDef.cfc_log_inv`: `log P⁻¹ = -log P` for positive definite `P`.
 * `Matrix.PosDef.rpow_eq_exp_smul_cfc_log`: `P ^ s = exp (s • log P)` for positive definite `P`.
 * `Matrix.contDiffOn_cfc_log`, `Matrix.contDiffOn_rpow`, `Matrix.contDiffOn_sqrt`: the logarithm,
   every real power and the square root are `C^n` on the positive definite matrices.
@@ -73,6 +74,15 @@ theorem IsHermitian.cfc_log_exp {X : Matrix n n 𝕜} (hX : X.IsHermitian) :
 theorem PosDef.exp_cfc_log {P : Matrix n n 𝕜} (hP : P.PosDef) : exp (cfc Real.log P) = P := by
   let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   exact CFC.exp_log P (isStrictlyPositive_iff_posDef.2 hP)
+
+/-- The logarithm of the inverse of a positive definite matrix is minus its logarithm. -/
+theorem PosDef.cfc_log_inv {P : Matrix n n 𝕜} (hP : P.PosDef) :
+    cfc Real.log P⁻¹ = -cfc Real.log P := by
+  rw [nonsing_inv_eq_ringInverse, ← cfc_ringInverse_id (R := ℝ) P hP.isUnit hP.1.isSelfAdjoint,
+    ← cfc_comp' Real.log (fun x : ℝ ↦ x⁻¹) P
+      ((P.finite_real_spectrum.image _).continuousOn _) (P.finite_real_spectrum.continuousOn _)
+      hP.1.isSelfAdjoint, ← cfc_neg]
+  exact cfc_congr fun x _ ↦ Real.log_inv x
 
 /-- **Smoothness of the matrix logarithm.** The logarithm is `C^n` on the positive definite
 matrices for every `n : ℕ∞ω`, including `n = ω`, over either the real or the complex scalars. -/
