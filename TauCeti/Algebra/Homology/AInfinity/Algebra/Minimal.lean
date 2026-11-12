@@ -32,6 +32,8 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
   minimal.
 * `TauCeti.AInfinityAlgebra.IsMinimal.taylor_coalgHom_of_tprod`: after a coalgebra morphism, the
   Taylor map of a graded algebra only sees the cuts of a word into two blocks.
+* `TauCeti.AInfinityHom.isMinimal_of_isIso`: an algebra with an `A∞` isomorphism to a minimal
+  algebra is minimal.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_linearPart_bijective`: between minimal algebras, a
   quasi-isomorphism has bijective linear part.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_isIso`: between minimal algebras, the quasi-isomorphisms
@@ -184,6 +186,14 @@ end AInfinityAlgebra
 namespace AInfinityHom
 
 variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+
+/-- An `A∞` algebra with an `A∞` isomorphism to a minimal one is minimal: the linear part of the
+isomorphism is an injective chain map. -/
+theorem isMinimal_of_isIso (hB : BB.IsMinimal) {f : AInfinityHom AA BB} (hf : f.IsIso) :
+    AA.IsMinimal :=
+  (AInfinityAlgebra.isMinimal_iff_m_one_eq_zero AA).2 fun x ↦
+    hf.linearPart_bijective.1 <| by
+      rw [f.linearPart_m_one, (AInfinityAlgebra.isMinimal_iff_m_one_eq_zero BB).1 hB, map_zero]
 
 /-- Between minimal algebras, the map induced on cohomology is the linear part, transported along
 the identifications of the algebras with their cohomology. -/
