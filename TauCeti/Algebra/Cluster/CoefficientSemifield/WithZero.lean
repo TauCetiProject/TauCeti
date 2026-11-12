@@ -28,7 +28,27 @@ instance : Semifield (WithZero P) where
   nnqsmul := _
   nnqsmul_def := fun _ _ => rfl
 
+/-- Adjoining zero makes every additively invertible element zero. -/
+instance : Subsingleton (AddUnits (WithZero P)) :=
+  Subsingleton.addUnits_of_isAddUnit fun a ha => by
+    obtain ⟨b, hb⟩ := ha.exists_neg
+    induction a using WithZero.recZeroCoe <;> induction b using WithZero.recZeroCoe
+    all_goals simp [← WithZero.coe_add] at *
+
 end TauCeti.CoefficientSemifield
+
+namespace WithZero
+
+variable {P : Type*} [TauCeti.CoefficientSemifield P]
+
+/-- A natural number vanishes in the adjoined-zero semifield exactly when it is zero. -/
+@[simp]
+theorem natCast_eq_zero_iff (n : ℕ) : (n : WithZero P) = 0 ↔ n = 0 := by
+  cases n with
+  | zero => simp
+  | succ n => simp [Nat.cast_succ, add_eq_zero]
+
+end WithZero
 
 namespace TauCeti.CoefficientSemifieldHom
 

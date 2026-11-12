@@ -22,7 +22,7 @@ ones with idempotent addition. Evaluation is defined only on positive fractions;
 it does not require a map from the ambient rational-function field.
 
 The construction uses Mathlib's `IsFractionRing` inclusion, `MvPolynomial.eval₂Hom`
-and the multiplicative extension `WithZero.lift'`.
+and the localization universal property `IsLocalization.lift`.
 
 The construction follows Fomin and Zelevinsky, *Cluster algebras IV: Coefficients*,
 Definition 2.1 and the universal semifield of §2.
@@ -124,17 +124,30 @@ theorem ofFraction_eq_iff (p q r s : MvPolynomial K ℕ)
     div_eq_div_iff (by simpa using hq) (by simpa using hs), ← map_mul, ← map_mul]
   exact (polynomialMap_injective K).eq_iff
 
-private theorem exists_ofFraction (f : Qsf K) :
+/-- Every subtraction-free function is represented by `ofFraction`. -/
+theorem exists_ofFraction (f : Qsf K) :
     ∃ (p q : MvPolynomial K ℕ) (hp : p ≠ 0) (hq : q ≠ 0), ofFraction p q hp hq = f := by
   obtain ⟨p, q, hp, hq, hf⟩ := exists_fraction f
   exact ⟨p, q, hp, hq, coe_injective hf.symm⟩
 
-private theorem ofFraction_mul (p q r s : MvPolynomial K ℕ)
+@[simp]
+theorem ofFraction_mul (p q r s : MvPolynomial K ℕ)
     (hp : p ≠ 0) (hq : q ≠ 0) (hr : r ≠ 0) (hs : s ≠ 0) :
     ofFraction p q hp hq * ofFraction r s hr hs =
       ofFraction (p * r) (q * s) (mul_ne_zero hp hr) (mul_ne_zero hq hs) := by
   apply coe_injective
   simp only [coe_mul, coe_ofFraction, map_mul, div_mul_div_comm]
+
+@[simp]
+theorem ofFraction_one_one : ofFraction (K := K) 1 1 one_ne_zero one_ne_zero = 1 := by
+  apply coe_injective
+  simp
+
+@[simp]
+theorem inv_ofFraction (p q : MvPolynomial K ℕ) (hp : p ≠ 0) (hq : q ≠ 0) :
+    (ofFraction p q hp hq)⁻¹ = ofFraction q p hq hp := by
+  apply coe_injective
+  simp
 
 private theorem map_add_fraction {F : Type*} [Semifield F] (φ : MvPolynomial K ℕ →+* F)
     (p q r s : MvPolynomial K ℕ) (hq : φ q ≠ 0) (hs : φ s ≠ 0) :
@@ -173,10 +186,11 @@ theorem coe_add (f g : Qsf K) :
     ((f + g : Qsf K) : FractionRing (MvPolynomial K ℤ)) = f + g :=
   (rfl)
 
-private theorem ofFraction_add (p q r s : MvPolynomial K ℕ)
+theorem ofFraction_add (p q r s : MvPolynomial K ℕ)
     (hp : p ≠ 0) (hq : q ≠ 0) (hr : r ≠ 0) (hs : s ≠ 0) :
     ofFraction p q hp hq + ofFraction r s hr hs =
-      ofFraction (p * s + q * r) (q * s) (add_numerator_ne_zero hp hs) (mul_ne_zero hq hs) := by
+      ofFraction (p * s + q * r) (q * s) (by exact add_numerator_ne_zero hp hs)
+        (mul_ne_zero hq hs) := by
   apply coe_injective
   simp only [coe_add, coe_ofFraction]
   exact map_add_fraction (polynomialMap K) p q r s (by simpa) (by simpa)
@@ -238,98 +252,20 @@ theorem polynomialEval_X (y : K → P) (i : K) :
 @[simp]
 theorem polynomialEval_eq_zero_iff (y : K → P) (p : MvPolynomial K ℕ) :
     polynomialEval y p = 0 ↔ p = 0 := by
-  have hadd (a b : WithZero P) : a + b = 0 ↔ a = 0 ∧ b = 0 := by
-    induction a using WithZero.recZeroCoe <;> induction b using WithZero.recZeroCoe
-    all_goals simp [← WithZero.coe_add]
-  have hn (n : ℕ) : (n : WithZero P) = 0 ↔ n = 0 := by
-    cases n with
-    | zero => simp
-    | succ n => simp [Nat.cast_succ, hadd]
   refine ⟨?_, fun h => by simp [h]⟩
   induction p using MvPolynomial.induction_on with
   | C n =>
     intro h
-    have hz : n = 0 := (hn n).mp (by simpa [polynomialEval] using h)
+    have hz : n = 0 := (WithZero.natCast_eq_zero_iff (P := P) n).mp (by simpa using h)
     simp [hz]
   | add p q hp hq =>
-    rw [map_add, hadd]
+    rw [map_add, add_eq_zero]
     intro h
     simp [hp h.1, hq h.2]
   | mul_X p i hp =>
     intro h
     have hzero : polynomialEval y p = 0 := by simpa using h
     simp [hp hzero]
-
-private abbrev PolynomialFraction (K : Type*) :=
-  {p : MvPolynomial K ℕ // p ≠ 0} × {q : MvPolynomial K ℕ // q ≠ 0}
-
-private def fractionValue (a : PolynomialFraction K) : Qsf K :=
-  ofFraction a.1.val a.2.val a.1.property a.2.property
-
-private theorem fractionValue_surjective : Function.Surjective (fractionValue (K := K)) := by
-  intro f
-  obtain ⟨p, q, hp, hq, rfl⟩ := exists_ofFraction f
-  exact ⟨⟨⟨p, hp⟩, ⟨q, hq⟩⟩, rfl⟩
-
-private def evalFraction (y : K → P) (a : PolynomialFraction K) : P :=
-  WithZero.unzero (x := polynomialEval y a.1.val / polynomialEval y a.2.val)
-    (div_ne_zero (by simpa using a.1.property) (by simpa using a.2.property))
-
-private theorem evalFraction_factorsThrough (y : K → P) :
-    (evalFraction y).FactorsThrough (fractionValue (K := K)) := by
-  intro a b hab
-  have hcross := (ofFraction_eq_iff _ _ _ _ a.1.property a.2.property
-    b.1.property b.2.property).mp hab
-  apply WithZero.coe_injective
-  simp only [evalFraction, WithZero.coe_unzero]
-  apply (div_eq_div_iff (by simpa using a.2.property) (by simpa using b.2.property)).mpr
-  simpa only [map_mul] using congrArg (polynomialEval y) hcross
-
--- Choose a fraction presentation for evaluation. Cross multiplication gives the same value
--- for every presentation.
-private def evalValue (y : K → P) : Qsf K → P :=
-  evalFraction y ∘ Function.surjInv fractionValue_surjective
-
-private theorem evalValue_ofFraction (y : K → P) (p q : MvPolynomial K ℕ)
-    (hp : p ≠ 0) (hq : q ≠ 0) :
-    WithZero.coe (evalValue y (ofFraction p q hp hq)) =
-      polynomialEval y p / polynomialEval y q := by
-  let a : PolynomialFraction K := ⟨⟨p, hp⟩, ⟨q, hq⟩⟩
-  have h : evalValue y (fractionValue a) = evalFraction y a :=
-    evalFraction_factorsThrough y (Function.surjInv_eq fractionValue_surjective (fractionValue a))
-  simpa only [a, fractionValue, evalFraction, WithZero.coe_unzero] using
-    congrArg WithZero.coe h
-
-/-- The homomorphism that substitutes `y i` for each universal variable, using auxiliary sums. -/
-def eval (y : K → P) : CoefficientSemifieldHom (Qsf K) P where
-  toFun := evalValue y
-  map_one' := by
-    have h : ofFraction (K := K) 1 1 one_ne_zero one_ne_zero = 1 :=
-      coe_injective (by simp)
-    apply WithZero.coe_injective
-    simpa [h] using evalValue_ofFraction y 1 1 one_ne_zero one_ne_zero
-  map_mul' f g := by
-    obtain ⟨p, q, hp, hq, rfl⟩ := exists_ofFraction f
-    obtain ⟨r, s, hr, hs, rfl⟩ := exists_ofFraction g
-    apply WithZero.coe_injective
-    simp only [ofFraction_mul, WithZero.coe_mul, evalValue_ofFraction, map_mul, div_mul_div_comm]
-  map_add' f g := by
-    obtain ⟨p, q, hp, hq, rfl⟩ := exists_ofFraction f
-    obtain ⟨r, s, hr, hs, rfl⟩ := exists_ofFraction g
-    apply WithZero.coe_injective
-    simp only [ofFraction_add, WithZero.coe_add, evalValue_ofFraction]
-    exact (map_add_fraction (polynomialEval y) p q r s (by simpa) (by simpa)).symm
-
-/-- Evaluation of a positive fraction is the ratio of the two auxiliary polynomial values. -/
-@[simp]
-theorem eval_ofFraction (y : K → P) (p q : MvPolynomial K ℕ) (hp : p ≠ 0) (hq : q ≠ 0) :
-    (eval y (ofFraction p q hp hq) : WithZero P) = polynomialEval y p / polynomialEval y q :=
-  evalValue_ofFraction y p q hp hq
-
-@[simp]
-theorem eval_X (y : K → P) (i : K) : eval y (X i) = y i := by
-  apply WithZero.coe_injective
-  simp only [X, eval_ofFraction, polynomialEval_X, map_one, div_one]
 
 end Evaluation
 
@@ -340,10 +276,93 @@ theorem toFractionRing_polynomialEval (p : MvPolynomial K ℕ) :
   have h : (toFractionRing K).comp (polynomialEval (X : K → Qsf K)) = polynomialMap K := by
     apply MvPolynomial.ringHom_ext
     · intro n
-      simp [polynomialEval]
+      simp
     · intro i
       simp
   exact DFunLike.congr_fun h p
+
+/-- The polynomial algebra structure substitutes the universal variables. -/
+instance : Algebra (MvPolynomial K ℕ) (WithZero (Qsf K)) :=
+  (polynomialEval (X : K → Qsf K)).toAlgebra
+
+/-- Adjoining zero gives the localization at all nonzero natural-coefficient polynomials. -/
+instance : IsLocalization (nonZeroDivisors (MvPolynomial K ℕ)) (WithZero (Qsf K)) where
+  map_units q := by
+    simpa only [RingHom.algebraMap_toAlgebra, isUnit_iff_ne_zero, ne_eq,
+      polynomialEval_eq_zero_iff] using mem_nonZeroDivisors_iff_ne_zero.mp q.property
+  surj f := by
+    induction f using WithZero.recZeroCoe with
+    | zero => exact ⟨⟨0, 1⟩, by simp⟩
+    | coe f =>
+      obtain ⟨p, q, hp, hq, hf⟩ := exists_fraction f
+      refine ⟨⟨p, ⟨q, mem_nonZeroDivisors_iff_ne_zero.mpr hq⟩⟩, ?_⟩
+      apply toFractionRing_injective K
+      simp only [map_mul, toFractionRing_coe, RingHom.algebraMap_toAlgebra,
+        toFractionRing_polynomialEval]
+      rw [hf, div_mul_cancel₀ _ (by simpa using hq)]
+  exists_of_eq {p q} h := by
+    refine ⟨1, ?_⟩
+    have hmap := congrArg (toFractionRing K) h
+    simpa using (polynomialMap_injective K) (by simpa only [RingHom.algebraMap_toAlgebra,
+      toFractionRing_polynomialEval] using hmap)
+
+/-- The localization fraction agrees with the positive fraction constructor. -/
+theorem mk'_eq_ofFraction (p q : MvPolynomial K ℕ) (hp : p ≠ 0) (hq : q ≠ 0) :
+    IsLocalization.mk' (WithZero (Qsf K)) p
+      ⟨q, mem_nonZeroDivisors_iff_ne_zero.mpr hq⟩ = (ofFraction p q hp hq : WithZero (Qsf K)) := by
+  symm
+  apply IsLocalization.eq_mk'_iff_mul_eq.mpr
+  apply toFractionRing_injective K
+  simp [RingHom.algebraMap_toAlgebra, hq]
+
+section Evaluation
+
+variable {P : Type*} [CoefficientSemifield P]
+
+/-- Polynomial evaluation extends uniquely across the localization by nonzero polynomials. -/
+def evalWithZero (y : K → P) : WithZero (Qsf K) →+* WithZero P :=
+  IsLocalization.lift (M := nonZeroDivisors (MvPolynomial K ℕ))
+    (g := polynomialEval y) fun q =>
+    isUnit_iff_ne_zero.mpr (by
+      simpa only [ne_eq, polynomialEval_eq_zero_iff] using
+        mem_nonZeroDivisors_iff_ne_zero.mp q.property)
+
+@[simp]
+theorem evalWithZero_polynomialEval (y : K → P) (p : MvPolynomial K ℕ) :
+    evalWithZero y (polynomialEval (X : K → Qsf K) p) = polynomialEval y p :=
+  IsLocalization.lift_eq _ p
+
+/-- The homomorphism that substitutes `y i` for each universal variable, using auxiliary sums. -/
+def eval (y : K → P) : CoefficientSemifieldHom (Qsf K) P where
+  toFun f := WithZero.unzero (x := evalWithZero y (f : WithZero (Qsf K))) (by simp)
+  map_one' := by
+    apply WithZero.coe_injective
+    simp only [WithZero.coe_unzero, WithZero.coe_one, map_one]
+  map_mul' f g := by
+    apply WithZero.coe_injective
+    simp
+  map_add' f g := by
+    apply WithZero.coe_injective
+    simp
+
+theorem coe_eval (y : K → P) (f : Qsf K) :
+    (eval y f : WithZero P) = evalWithZero y (f : WithZero (Qsf K)) :=
+  WithZero.coe_unzero _
+
+/-- Evaluation of a positive fraction is the ratio of the two auxiliary polynomial values. -/
+@[simp]
+theorem eval_ofFraction (y : K → P) (p q : MvPolynomial K ℕ) (hp : p ≠ 0) (hq : q ≠ 0) :
+    (eval y (ofFraction p q hp hq) : WithZero P) = polynomialEval y p / polynomialEval y q := by
+  rw [coe_eval, ← mk'_eq_ofFraction p q hp hq]
+  apply (IsLocalization.lift_mk'_spec _ _ _ _).mpr
+  exact (mul_div_cancel₀ (polynomialEval y p) (by simpa using hq)).symm
+
+@[simp]
+theorem eval_X (y : K → P) (i : K) : eval y (X i) = y i := by
+  apply WithZero.coe_injective
+  simp only [X, eval_ofFraction, polynomialEval_X, map_one, div_one]
+
+end Evaluation
 
 section UniversalProperty
 
@@ -353,30 +372,20 @@ variable {P Q : Type*} [CoefficientSemifield P] [CoefficientSemifield Q]
 @[ext]
 theorem hom_ext {f g : CoefficientSemifieldHom (Qsf K) P}
     (h : ∀ i, f (X i) = g (X i)) : f = g := by
-  have hpoly (p : MvPolynomial K ℕ) (hp : p ≠ 0) :
-      polynomialEval (X : K → Qsf K) p = (ofFraction p 1 hp one_ne_zero : WithZero (Qsf K)) := by
-    apply toFractionRing_injective K
-    simp
   have hcomp : f.withZeroMap.comp (polynomialEval (X : K → Qsf K)) =
       g.withZeroMap.comp (polynomialEval (X : K → Qsf K)) := by
     apply MvPolynomial.ringHom_ext
     · intro n
-      simp [polynomialEval]
+      simp
     · intro i
       simp [h i]
-  have heq (p : MvPolynomial K ℕ) (hp : p ≠ 0) :
-      f (ofFraction p 1 hp one_ne_zero) = g (ofFraction p 1 hp one_ne_zero) := by
-    apply WithZero.coe_injective
-    simpa only [RingHom.comp_apply, hpoly p hp, CoefficientSemifieldHom.withZeroMap_coe] using
-      DFunLike.congr_fun hcomp p
+  have heq : f.withZeroMap = g.withZeroMap :=
+    IsLocalization.ringHom_ext (nonZeroDivisors (MvPolynomial K ℕ)) hcomp
   apply CoefficientSemifieldHom.ext
   intro a
-  obtain ⟨p, q, hp, hq, rfl⟩ := exists_ofFraction a
-  have hfrac : ofFraction p q hp hq =
-      ofFraction p 1 hp one_ne_zero / ofFraction q 1 hq one_ne_zero := by
-    apply coe_injective
-    simp [div_eq_mul_inv]
-  simp [hfrac, heq p hp, heq q hq]
+  apply WithZero.coe_injective
+  simpa only [CoefficientSemifieldHom.withZeroMap_coe] using
+    DFunLike.congr_fun heq (a : WithZero (Qsf K))
 
 /-- The universal property: assigning variables is equivalent to a coefficient homomorphism. -/
 def evalEquiv : (K → P) ≃ CoefficientSemifieldHom (Qsf K) P where
