@@ -287,24 +287,6 @@ theorem posRoots_eq_diff_union_simpleIndex (i : Fin t.rank) :
     (Set.singleton_subset_iff.mpr (simpleIndex_mem_posRoots i))).symm
 
 variable {t ht} in
-/-- A root that is the sum of two positive roots is positive and differs from every simple
-root of the pinned base. -/
-theorem root_add_mem_posRoots_diff_singleton (i : Fin t.rank) {α β γ : Fin t.numRoots}
-    (hα : α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (hβ : β ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
-    γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i} := by
-  have hrat := (t.root_rationalRootSystem_eq_add_zsmul_iff ht β α γ 1).mpr
-    (by simpa only [one_smul] using hγ)
-  simp only [Int.cast_one, one_smul] at hrat
-  refine ⟨(mem_posRoots _ _ _).mpr
-    (((mem_posRoots _ _ _).mp hα).add ((mem_posRoots _ _ _).mp hβ) hrat), ?_⟩
-  intro heq
-  exact root_ne_add_of_mem_support (simpleIndex_mem_support i)
-    ((mem_posRoots _ _ _).mp hα) ((mem_posRoots _ _ _).mp hβ) (heq ▸ hrat)
-
-variable {t ht} in
 /-- Every element of the support of the pinned base is a Bourbaki-numbered simple root
 `t.simpleIndex ht i`. -/
 theorem exists_simpleIndex_eq_of_mem_support {k : Fin t.numRoots}
