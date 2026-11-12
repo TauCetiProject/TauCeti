@@ -54,7 +54,6 @@ variable
 /-- Near a parameter where the curve and section lift are `C¹`, the reading of the native
 covariant derivative in any fixed chart is its defining fixed-chart coordinate formula. -/
 theorem eventuallyEq_sectionCoord_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
-    (hs : UniqueDiffOn 𝕜 s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hV : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t) :
@@ -72,8 +71,8 @@ theorem eventuallyEq_sectionCoord_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x 
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s r := by
     exact ((contMDiffWithinAt_iff_contMDiffWithinAt_nhdsWithin (by norm_num)).1 hV).filter_mono
       (nhdsWithin_mono t (subset_insert t s))
-  filter_upwards [self_mem_nhdsWithin, hbase, hγ', hV'] with r hr hxr hγr hVr
-  have hread := symmL_alongCurveInChartWithin cov γ V hxr (hs r hr)
+  filter_upwards [hbase, hγ', hV'] with r hxr hγr hVr
+  have hread := symmL_alongCurveInChartWithin cov γ V hxr
     (hγr.mdifferentiableWithinAt (by norm_num))
     (differentiableWithinAt_sectionCoord γ V
       (hVr.mdifferentiableWithinAt (by norm_num))
@@ -123,7 +122,7 @@ theorem contMDiffWithinAt_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
   apply (contDiffWithinAt_sectionCoord_iff γ (alongCurveWithin cov γ V s)
     (hγ.of_le hn) hx).1
   exact hcoord.congr_of_eventuallyEq_of_mem
-    (eventuallyEq_sectionCoord_alongCurveWithin cov γ V hs hx
+    (eventuallyEq_sectionCoord_alongCurveWithin cov γ V hx
       (hV.of_le h1)) ht
 
 /-- On a parameter set with unique derivatives, differentiating a `C^(n + 1)` section lift

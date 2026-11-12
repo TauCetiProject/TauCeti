@@ -343,11 +343,9 @@ both sides are `0`. -/
 @[simp]
 theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜} :
     alongCurveWithin cov (fun _ : 𝕜 ↦ x) W s t = derivWithin W s t := by
-  have hx := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x
-  set L : E ≃L[𝕜] E := (trivializationAt E (TangentSpace I) x).continuousLinearEquivAt 𝕜 x hx
-  have hcoord : sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = L ∘ W :=
+  have hcoord : sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = W :=
     funext fun r ↦ (sectionCoord_apply (F := E) (V := TangentSpace I) _ W x r).trans
-      (congrFun (Trivialization.coe_continuousLinearEquivAt_eq (R := 𝕜) _ hx) (W r)).symm
+      (continuousLinearMapAt_trivializationAt_self (I := I) x (W r))
   -- Unfold the candidate by `change`: `W` is `E`-valued, so rewriting with the defining lemmas
   -- would have to see through the identification `TangentSpace I x = E`.
   change (trivializationAt E (TangentSpace I) x).symmL 𝕜 x
@@ -356,20 +354,10 @@ theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜
           (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) x).baseSet)) x
             (sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x t)
             (derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t)) = _
-  by_cases hs : UniqueDiffWithinAt 𝕜 s t
-  swap
-  · simp only [derivWithin_zero_of_not_uniqueDiffWithinAt hs, map_zero, add_zero]
-    rfl
-  -- `L` is an equivalence, so it commutes with `derivWithin` even where `W` is not
-  -- differentiable.
-  have hderiv : derivWithin (L ∘ W) s t = L (derivWithin W s t) := by
-    simp only [derivWithin, L.comp_fderivWithin hs]
-    rfl
   have hchart : derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t = 0 := by
     rw [Function.comp_def, derivWithin_fun_const, Pi.zero_apply]
-  rw [hcoord, hderiv, hchart, map_zero, add_zero,
-    ← Trivialization.symm_continuousLinearEquivAt_eq _ hx]
-  exact L.symm_apply_apply _
+  rw [hcoord, hchart, map_zero, add_zero]
+  exact symmL_trivializationAt_self (I := I) x (derivWithin W s t)
 
 /-- Along a constant curve at `x`, the unrestricted moving-chart candidate is the ordinary
 derivative of the field, read in the model space `E = T_x M`. -/
