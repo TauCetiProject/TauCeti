@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Uniform.Finite
+public import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 public import TauCeti.Probability.GeneratingFunction
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.IntegrableExpMul
@@ -17,13 +17,12 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 Assigning real labels to a uniform sample from a finite set gives a finitely supported law,
 with repeated labels counted with their multiplicities. Its moments and transforms are averages
 over the sampling set, and every real exponential moment exists. The variance is the average
-squared label minus the square of the average label, for a nonempty sampling set.
+squared label minus the square of the average label.
 
-The integration results in `Uniform.Finite` apply even to labels and observables that are not
-globally measurable. The results here include the empty-set convention: all integrals and
-transforms of that zero measure vanish, while its exponential-integrability domain is still all
-of `ℝ`. Only the variance formulas require a nonempty sampling set; the `HasLaw` corollaries
-allow any source measure with the stated law.
+The integration results in `Uniform.Finite.Basic` apply even to labels and observables that are
+not globally measurable. All formulas, including variance, hold for the empty sampling set:
+all integrals and transforms of that zero measure vanish, while its exponential-integrability
+domain is still all of `ℝ`. The `HasLaw` corollaries allow any source measure with the stated law.
 -/
 
 public section
@@ -49,11 +48,13 @@ theorem integral_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) :
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i := by
   simpa only [id_eq, smul_eq_mul] using s.integral_map_uniformOn_finset f id
 
-/-- The variance of a nonempty finite uniform sample is its average squared label minus the
-square of its average label. -/
-theorem variance_id_map_uniformOn_finset (s : Finset α) (hs : s.Nonempty) (f : α → ℝ) :
+/-- The variance of a finite uniform sample is its average squared label minus the square of
+its average label, including for the empty sampling set. -/
+theorem variance_id_map_uniformOn_finset (s : Finset α) (f : α → ℝ) :
     variance id ((uniformOn (s : Set α)).map f) =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ 2 - ((s.card : ℝ)⁻¹ * ∑ i ∈ s, f i) ^ 2 := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp [uniformOn_empty_meas]
   let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
   have hL : MemLp (id : ℝ → ℝ) 2 ((uniformOn (s : Set α)).map f) :=
     (memLp_two_iff_integrable_sq (by fun_prop)).2
@@ -134,12 +135,21 @@ theorem integral_pow_map_uniformOn_finset
     (s.integrable_map_uniformOn_finset f (fun x : ℝ ↦ x ^ n)).aestronglyMeasurable).trans
       (s.integral_pow_map_uniformOn_finset f n)
 
-/-- Variance of a random variable with a nonempty finitely labelled uniform law. -/
+/-- The mean of a random variable with a finitely labelled uniform law is the average label. -/
+theorem integral_id_map_uniformOn_finset
+    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) :
+    ∫ ω, X ω ∂P = (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i := by
+  exact (hX.integral_comp
+    (s.integrable_map_uniformOn_finset f id).aestronglyMeasurable).trans
+      (s.integral_id_map_uniformOn_finset f)
+
+/-- Variance of a random variable with a finitely labelled uniform law, including the empty
+sampling set. -/
 theorem variance_map_uniformOn_finset
-    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) (hs : s.Nonempty) :
+    (hX : HasLaw X ((uniformOn (s : Set α)).map f) P) :
     variance X P =
       (s.card : ℝ)⁻¹ * ∑ i ∈ s, f i ^ 2 - ((s.card : ℝ)⁻¹ * ∑ i ∈ s, f i) ^ 2 := by
   rw [hX.variance_eq]
-  exact s.variance_id_map_uniformOn_finset hs f
+  exact s.variance_id_map_uniformOn_finset f
 
 end ProbabilityTheory.HasLaw
