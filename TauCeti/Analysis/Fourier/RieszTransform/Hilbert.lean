@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.RieszTransform.Kernel
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
+import TauCeti.Analysis.SpecialFunctions.Log.DivSub
 public import Mathlib.Basic.Real.Sign
 
 /-!
@@ -67,10 +68,10 @@ theorem rieszSymbol_real (v ξ : ℝ) :
   rw [rieszSymbol_apply]
   congr 2
   rcases lt_trichotomy ξ 0 with h | rfl | h
-  · rw [Real.sign_of_neg h, Real.norm_eq_abs, abs_of_neg h, RCLike.inner_apply, conj_trivial]
+  · simp [Real.sign_of_neg h, abs_of_neg h]
     field_simp [h.ne]
   · simp
-  · rw [Real.sign_of_pos h, Real.norm_eq_abs, abs_of_pos h, RCLike.inner_apply, conj_trivial]
+  · simp [Real.sign_of_pos h, abs_of_pos h]
     field_simp [h.ne']
 
 /-- On the real line the Riesz kernel in the direction `v` is `z ↦ v / (π z)`. For `v = 1` this is
@@ -96,8 +97,11 @@ theorem norm_rieszTransform_real_apply (v : ℝ) (f : Lp F 2 (volume : Measure �
     have := sum_norm_rieszTransform_apply_sq (F := F) (OrthonormalBasis.singleton (Fin 1) ℝ) f
     simp only [Finset.univ_unique, Finset.sum_singleton, OrthonormalBasis.singleton_apply] at this
     exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 this
-  rw [show v = v • (1 : ℝ) by simp, rieszTransform_smul, smul_apply,
-    norm_smul, h1, Complex.norm_real, Real.norm_eq_abs, smul_eq_mul, mul_one]
+  -- On `ℝ` the direction `v` is the scalar multiple `v • 1` of the unit direction.
+  have hv : rieszTransform F v = (v : ℂ) • rieszTransform F (1 : ℝ) := by
+    simpa using rieszTransform_smul (F := F) v (1 : ℝ)
+  rw [hv, smul_apply, norm_smul, h1]
+  simp
 
 /-- On the real line the Riesz transform in the direction `v` has operator norm `|v|` on
 `L²(ℝ, F)` for nonzero `F`. In particular the Hilbert transform has norm `1`. -/
@@ -146,17 +150,6 @@ theorem ae_rieszTransform_indicatorConstLp_eq_log_smul (v : ℝ) {a b : ℝ} (ha
   rw [uIcc_of_le (by linarith)]
   exact fun h ↦ hxs ⟨by linarith [h.2], by linarith [h.1]⟩
 
-/-- For `a < b` and `x > max b |a|`, the logarithm `log ((x - a) / (x - b))` is at least
-`(b - a) / (2 x)`. -/
-private theorem div_two_mul_le_log_div {a b x : ℝ} (hab : a < b) (hx : max b |a| < x) :
-    (b - a) / (2 * x) ≤ Real.log ((x - a) / (x - b)) := by
-  have hxb : 0 < x - b := by linarith [le_max_left b |a|]
-  have hxa : 0 < x - a := by linarith [neg_abs_le a, le_max_right b |a|, abs_nonneg a]
-  have hxa' : x - a ≤ 2 * x := by linarith [neg_abs_le a, le_max_right b |a|]
-  calc (b - a) / (2 * x) ≤ (b - a) / (x - a) := by gcongr
-    _ = 1 - ((x - a) / (x - b))⁻¹ := by field_simp; ring
-    _ ≤ _ := Real.one_sub_inv_le_log_of_pos (div_pos hxa hxb)
-
 /-- **The Hilbert transform of an interval is not integrable.** On the real line, for `v ≠ 0`,
 `a < b` and `c ≠ 0`, the Riesz transform `R_v (c 1_{[a, b]})` is not integrable: for large `x` its
 norm is at least `|v| (b - a) ‖c‖ / (2 π x)`. -/
@@ -180,15 +173,20 @@ theorem not_integrable_rieszTransform_indicatorConstLp {v : ℝ} (hv : v ≠ 0) 
       (ae_rieszTransform_indicatorConstLp_eq_log_smul (F := F) v hab.le c),
     ae_restrict_mem measurableSet_Ioi] with x hx hxm
   have hxm : m < x := hxm
-  have hx0 : 0 < x := lt_of_le_of_lt ((abs_nonneg a).trans (le_max_right _ _)) hxm
-  have hxs : x ∉ Icc a b := fun h ↦ (lt_of_le_of_lt (le_max_left _ _) hxm).not_ge h.2
-  have hlog := div_two_mul_le_log_div hab hxm
+  have hxb : b < x := (le_max_left _ _).trans_lt hxm
+  have hax : |a| < x := (le_max_right _ _).trans_lt hxm
+  have hx0 : 0 < x := (abs_nonneg a).trans_lt hax
+  have hxs : x ∉ Icc a b := fun h ↦ hxb.not_ge h.2
+  -- For `x > max b |a|`, `log ((x - a) / (x - b)) ≥ (b - a) / (x - a) ≥ (b - a) / (2 x)`.
+  have hlog : (b - a) / (2 * x) ≤ Real.log ((x - a) / (x - b)) :=
+    calc (b - a) / (2 * x) ≤ (b - a) / (x - a) := by gcongr <;> linarith [neg_abs_le a]
+      _ ≤ _ := Real.sub_div_sub_le_log_div_sub (by linarith [neg_abs_le a]) hxb
   have hlog0 : 0 ≤ Real.log ((x - a) / (x - b)) :=
     (div_nonneg (by linarith) (by linarith)).trans hlog
   have hg : ‖g x‖ = |v| / π * Real.log ((x - a) / (x - b)) * ‖c‖ := by
-    rw [hx hxs, norm_smul, Real.norm_eq_abs, abs_mul, abs_div, abs_of_pos Real.pi_pos,
-      abs_of_nonneg hlog0]
-  rw [hg, Real.norm_eq_abs, abs_inv, abs_of_pos hx0, le_inv_mul_iff₀ hC]
+    rw [hx hxs, norm_smul]
+    simp [abs_of_nonneg hlog0, abs_of_pos Real.pi_pos]
+  rw [hg, norm_inv, Real.norm_of_nonneg hx0.le, le_inv_mul_iff₀ hC]
   calc C * x⁻¹ = |v| / π * ((b - a) / (2 * x)) * ‖c‖ := by
         simp only [C]; field_simp
     _ ≤ |v| / π * Real.log ((x - a) / (x - b)) * ‖c‖ := by gcongr
