@@ -371,11 +371,11 @@ def pretrivializationAt (b₀ : B) : Pretrivialization G (π G J.Fiber) where
       J.inverse_complexLinearPart_complexLinearPart_apply hb.1,
       ContinuousLinearEquiv.symm_apply_apply]
   open_target :=
-    have := FiniteDimensional.complete ℝ F
+    have := FiniteDimensional.completeSpace ℝ F
     (J.isOpen_unitSet b₀).prod isOpen_univ
   baseSet := J.unitSet b₀
   open_baseSet :=
-    have := FiniteDimensional.complete ℝ F
+    have := FiniteDimensional.completeSpace ℝ F
     J.isOpen_unitSet b₀
   source_eq := rfl
   target_eq := rfl
@@ -425,7 +425,7 @@ private theorem realCoordChange_apply {b₀ b₁ b : B} (hb : b ∈ J.unitSet b�
 
 private theorem continuousOn_realCoordChange (b₀ b₁ : B) :
     ContinuousOn (J.realCoordChange G b₀ b₁) (J.unitSet b₀ ∩ J.unitSet b₁) := by
-  have := FiniteDimensional.complete ℝ F
+  have := FiniteDimensional.completeSpace ℝ F
   have hsub : J.unitSet b₀ ∩ J.unitSet b₁ ⊆
       (trivializationAt F V b₀).baseSet ∩ (trivializationAt F V b₁).baseSet :=
     inter_subset_inter (J.unitSet_subset b₀) (J.unitSet_subset b₁)
@@ -511,7 +511,7 @@ theorem trivializationAt_symm_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀) (z 
 private theorem continuous_ofTotalSpace :
     Continuous fun p : TotalSpace F V ↦
       (⟨p.1, (J.fiberEquiv p.1).symm p.2⟩ : TotalSpace G J.Fiber) := by
-  have := FiniteDimensional.complete ℝ F
+  have := FiniteDimensional.completeSpace ℝ F
   refine continuous_iff_continuousAt.mpr fun q₀ ↦ ?_
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨(FiberBundle.continuous_proj F V).continuousAt, ?_⟩
