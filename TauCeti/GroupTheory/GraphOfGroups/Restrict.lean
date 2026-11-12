@@ -8,11 +8,11 @@ module
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
 
 /-!
-# Restricting a graph of groups to a subgraph
+# The fundamental group of a restriction of a graph of groups
 
 For a graph of groups `𝔸` over a Serre graph `Γ` and a reversal-closed set `S` of darts, the
-restriction `𝔸.restrict S hS` is the graph of groups over the subgraph `Γ.restrict S hS`: it keeps
-every vertex group of `𝔸`, and the edge groups and boundary monomorphisms of the darts in `S`.
+restriction `𝔸.restrict S hS` over the subgraph `Γ.restrict S hS` keeps every vertex group of `𝔸`,
+and the edge groups and boundary monomorphisms of the darts in `S`.
 
 The inclusion of the subgraph induces a homomorphism of fundamental groups. In the presented
 model, if `T'` is a set of darts of the subgraph each of which lies in a set `T` of darts of `Γ` up
@@ -28,7 +28,6 @@ every vertex.
 
 ## Main definitions
 
-* `TauCeti.GraphOfGroups.restrict`: the restriction of a graph of groups to a subgraph.
 * `TauCeti.GraphOfGroups.π₁Tree.restrictInclusion`: the homomorphism `π₁(𝔸|_S, T') →* π₁(𝔸, T)`.
 * `TauCeti.GraphOfGroups.π₁Tree.restrictUnivEquiv`: restricting to all darts does not change
   `π₁(𝔸, T)`.
@@ -53,47 +52,10 @@ namespace TauCeti
 
 namespace GraphOfGroups
 
-variable {Γ : SerreGraph.{u, v}} (𝔸 : GraphOfGroups.{u, v, w, x} Γ)
-  (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
-
-/-- The restriction of a graph of groups `𝔸` over `Γ` to the subgraph `Γ.restrict S hS`, which has
-all vertices of `Γ` and the darts of a reversal-closed set `S`: the vertex groups are those of `𝔸`,
-and a dart of `S` keeps its edge group and its boundary monomorphism `ω_e`. The body is exposed and
-unfolds at instance transparency, so that an element of a vertex group of `𝔸` is accepted as an
-element of the corresponding vertex group of the restriction by rewriting and simplification. -/
-@[expose, instance_reducible] def restrict : GraphOfGroups.{u, v, w, x} (Γ.restrict S hS) where
-  vertexGroup := 𝔸.vertexGroup
-  edgeGroup y := 𝔸.edgeGroup
-    (SerreGraph.GeomEdge.lift (Γ.restrict S hS) (fun e : S => Γ.toGeomEdge e.1)
-      (fun e => Γ.toGeomEdge_rev e.1) y)
-  ω e := (𝔸.ω e.1).comp
-    (MulEquiv.cast (M := 𝔸.edgeGroup) (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e)).toMonoidHom
-  ω_injective e := (𝔸.ω_injective e.1).comp (MulEquiv.injective _)
-
-/-- The boundary monomorphism `ω_e` of a dart of the restriction is `ω_e` of `𝔸`, read through the
-identification of the edge groups. -/
-@[simp] theorem restrict_ω_apply (e : (Γ.restrict S hS).E)
-    (c : (𝔸.restrict S hS).edgeGroup ((Γ.restrict S hS).toGeomEdge e)) :
-    (𝔸.restrict S hS).ω e c =
-      𝔸.ω e.1 (MulEquiv.cast (M := 𝔸.edgeGroup) (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e) c) :=
-  (rfl)
-
-/-- The boundary monomorphism `α_e` of a dart of the restriction is `α_e` of `𝔸`, read through the
-identification of the edge groups. -/
-@[simp] theorem restrict_α_apply (e : (Γ.restrict S hS).E)
-    (c : (𝔸.restrict S hS).edgeGroup ((Γ.restrict S hS).toGeomEdge e)) :
-    (𝔸.restrict S hS).α e c =
-      𝔸.α e.1 (MulEquiv.cast (M := 𝔸.edgeGroup)
-        (SerreGraph.GeomEdge.lift_toGeomEdge _ _ _ e) c) := by
-  rw [α_apply, α_apply, restrict_ω_apply]
-  simp only [MulEquiv.cast_apply, cast_cast]
-  -- The cast into the vertex group of the restriction is `cast` by `MulEquiv.cast_apply`, and the
-  -- two transports of `c` agree by proof irrelevance.
-  rfl
-
 namespace π₁Tree
 
-variable {𝔸 S hS} {T : Set Γ.E} {T' : Set (Γ.restrict S hS).E}
+variable {Γ : SerreGraph.{u, v}} {𝔸 : GraphOfGroups.{u, v, w, x} Γ}
+  {S : Set Γ.E} {hS : ∀ e ∈ S, Γ.rev e ∈ S} {T : Set Γ.E} {T' : Set (Γ.restrict S hS).E}
 
 variable (𝔸) in
 /-- The homomorphism `π₁(𝔸|_S, T') →* π₁(𝔸, T)` induced by the inclusion of the subgraph
@@ -172,6 +134,17 @@ def restrictUnivEquiv :
     (g : π₁Tree (𝔸.restrict Set.univ fun e _ => Set.mem_univ (Γ.rev e)) (Subtype.val ⁻¹' T)) :
     restrictUnivEquiv 𝔸 T g = restrictInclusion 𝔸 (fun _ he => Or.inl he) g :=
   (rfl)
+
+@[simp] theorem restrictUnivEquiv_symm_of (v : Γ.V) (a : 𝔸.vertexGroup v) :
+    (restrictUnivEquiv 𝔸 T).symm (of T v a) =
+      of (𝔸 := 𝔸.restrict Set.univ fun e _ => Set.mem_univ (Γ.rev e)) (Subtype.val ⁻¹' T) v a :=
+  lift_of ..
+
+@[simp] theorem restrictUnivEquiv_symm_edge (e : Γ.E) :
+    (restrictUnivEquiv 𝔸 T).symm (edge T e) =
+      edge (𝔸 := 𝔸.restrict Set.univ fun e _ => Set.mem_univ (Γ.rev e)) (Subtype.val ⁻¹' T)
+        ⟨e, Set.mem_univ e⟩ :=
+  lift_edge ..
 
 end π₁Tree
 
