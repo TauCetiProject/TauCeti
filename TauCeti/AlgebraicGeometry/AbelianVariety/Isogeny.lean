@@ -28,11 +28,10 @@ a homomorphism.
   ground field;
 * `AbelianVariety.isIsogeny_mulBy_neg_one` supplies the multiplication-by-negative-one isogeny.
 
-This is the property-level prerequisite for `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E,
-item "`[n]` as an isogeny". The general theorem for nonzero `n` requires the later torsion theory
-and is not asserted here. No external formalization is vendored. The definition and closure proofs
-reuse Mathlib's `AlgebraicGeometry.IsFinite` and `AlgebraicGeometry.Surjective` morphism properties,
-including their stability under composition, isomorphism, and base change.
+That multiplication by every nonzero integer `n` is an isogeny requires torsion theory that is
+not formalized here, and is not asserted. No external formalization is vendored. The definition
+and closure proofs reuse Mathlib's `AlgebraicGeometry.IsFinite` and `AlgebraicGeometry.Surjective`
+morphism properties, including their stability under composition, isomorphism, and base change.
 -/
 
 public section

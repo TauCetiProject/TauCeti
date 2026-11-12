@@ -42,7 +42,7 @@ theorem hasDerivAt_mulInvariantLog_mulInvariantExp_smul_mul_mulInvariantExp_smul
         (mulInvariantExp (I := I) (G := G) (t • X) *
           mulInvariantExp (I := I) (G := G) (t • Y))))
       ((show E from X) + (show E from Y)) 0 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hlog := hasFDerivAt_mulInvariantLogChart_one (I := I) (G := G)
   have hcurve :=
     hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zero
