@@ -256,8 +256,6 @@ local coefficients** in a local coefficient system `L` on `Y` whose fibres are p
 theorem homotopyEquivalences_twistedChainComplexMap (hf : f.IsWeakHomotopyEquivalence)
     (L : LocalCoefficientSystem.{u, v, v} A (TopCat.of Y)) [∀ y, Projective (L.obj y)] :
     HomologicalComplex.homotopyEquivalences _ _ (twistedChainComplexMap (TopCat.ofHom f) L) :=
-  have : ∀ x, Projective (((pullback (TopCat.ofHom f).hom).obj L).obj x) :=
-    fun _ ↦ inferInstanceAs (Projective (L.obj _))
   (ChainComplex.quasiIso_iff_of_projective _).1 (hf.quasiIso_twistedChainComplexMap L)
 
 end ContinuousMap.IsWeakHomotopyEquivalence
@@ -318,15 +316,7 @@ theorem quasiIso_twistedChainComplexMap_of_isWeakHomotopyEquivalence
       (P'.subspaceSystem L)) := hsnd.quasiIso_twistedChainComplexMap (P'.subspaceSystem L)
   have hfst' : QuasiIso (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L) :=
     hfst.quasiIso_twistedChainComplexMap L
-  have hsnd' : QuasiIso (twistedSubspaceChainComplexMap f L) := by
-    rw [twistedSubspaceChainComplexMap_def]
-    infer_instance
-  have := HomologicalComplex.HomologySequence.quasiIso_τ₃
-    (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
-    (P'.shortExact_twistedChainComplexShortComplex L)
-    (by rwa [twistedChainComplexShortComplexMap_τ₁])
-    (by rwa [twistedChainComplexShortComplexMap_τ₂])
-  rwa [twistedChainComplexShortComplexMap_τ₃] at this
+  exact quasiIso_twistedChainComplexMap_of_quasiIso f L
 
 /-- **A map of pairs which is a weak homotopy equivalence on the ambient spaces and on the
 subspaces induces isomorphisms on relative singular homology with local coefficients**: for every
@@ -348,8 +338,6 @@ theorem homotopyEquivalences_twistedChainComplexMap_of_isWeakHomotopyEquivalence
     (hsnd : (Hom.snd f).hom.IsWeakHomotopyEquivalence)
     (L : LocalCoefficientSystem.{u, v, v} A P'.fst) [∀ y, Projective (L.obj y)] :
     HomologicalComplex.homotopyEquivalences _ _ (TopPair.twistedChainComplexMap f L) :=
-  have : ∀ x, Projective (((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L).obj x) :=
-    fun _ ↦ inferInstanceAs (Projective (L.obj _))
   (ChainComplex.quasiIso_iff_of_projective _).1
     (quasiIso_twistedChainComplexMap_of_isWeakHomotopyEquivalence f hfst hsnd L)
 
