@@ -118,27 +118,22 @@ theorem eventuallyEq_zeroCount_reProdIm_Ioc (T : ℝ) (hT : T < t₃)
     · filter_upwards [eventually_lt_nhds (lt_of_not_ge hz) |>.filter_mono nhdsWithin_le_nhds]
         with t ht
       exact iff_of_false (not_le.mpr ht) hz
-  filter_upwards [hheight,
-    (eventually_lt_nhds hT).filter_mono nhdsWithin_le_nhds] with t ht htop
-  simp only [zeroCount_def, finsum_mem_def]
-  apply finsum_congr
-  intro z
-  by_cases hz : (MeromorphicOn.divisor f U z).toNat = 0
-  · simp [indicator_apply, hz]
+  filter_upwards [hheight, self_mem_nhdsWithin,
+    (eventually_lt_nhds hT).filter_mono nhdsWithin_le_nhds] with t ht hbottom htop
+  have hsub : Icc σ₁ σ₂ ×ℂ Ioc t₁ T ⊆ Icc σ₁ σ₂ ×ℂ Ioc t₁ t :=
+    fun z hz ↦ ⟨hz.1, hz.2.1, hz.2.2.trans hbottom⟩
+  have hfin' : ((Icc σ₁ σ₂ ×ℂ Ioc t₁ t) ∩
+      Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite :=
+    zeroCount_support_finite (hfin.subset fun z hz ↦
+      ⟨⟨hz.1.1, hz.1.2.1.le, hz.1.2.2.trans htop.le⟩, hz.2⟩)
+  refine ((zeroCount_eq_iff_of_subset hsub hfin').2 ?_).symm
+  intro z hz
+  by_contra hne
   have hd : z ∈ Function.support (MeromorphicOn.divisor f U) := by
     intro heq
-    exact hz (by simp [heq])
-  by_cases hK : z ∈ K
-  · have him := ht z ⟨hK, hd⟩
-    have hmem : z ∈ Icc σ₁ σ₂ ×ℂ Ioc t₁ t ↔ z ∈ Icc σ₁ σ₂ ×ℂ Ioc t₁ T := by
-      simp only [mem_reProdIm, mem_Icc, mem_Ioc]
-      tauto
-    simp only [indicator_apply, hmem]
-  · have hzt : z ∉ Icc σ₁ σ₂ ×ℂ Ioc t₁ t :=
-      fun h ↦ hK ⟨h.1, h.2.1.le, h.2.2.trans htop.le⟩
-    have hzT : z ∉ Icc σ₁ σ₂ ×ℂ Ioc t₁ T :=
-      fun h ↦ hK ⟨h.1, h.2.1.le, h.2.2.trans hT.le⟩
-    simp [hzt, hzT]
+    exact hne (by simp [heq])
+  have him := ht z ⟨⟨hz.1.1, hz.1.2.1.le, hz.1.2.2.trans htop.le⟩, hd⟩
+  exact hz.2 ⟨hz.1.1, hz.1.2.1, him.mp hz.1.2.2⟩
 
 /-- The natural zero count with its top edge included is right-continuous in height. -/
 theorem continuousWithinAt_zeroCount_reProdIm_Ioc (T : ℝ) (hT : T < t₃)

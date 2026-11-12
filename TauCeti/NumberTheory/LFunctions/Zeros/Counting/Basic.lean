@@ -20,7 +20,7 @@ completion, not of the uncompleted function's trivial zeros.
 Both functions are monotone. The one-sided count is zero at nonpositive heights and is
 locally constant from the right at every height, hence right-continuous even at ordinates
 of zeros. Splitting in height gives exact increments without double-counting the shared edge.
-The finite-support theorem justifies the finite sum at every height.
+Compactness of the containing rectangles ensures finite divisor support at every height.
 
 The definitions use Mathlib's divisor convention: a function not meromorphic on its stated
 domain has divisor zero, as does an infinite-order germ. To interpret these as actual zero
@@ -59,13 +59,6 @@ theorem symmetricZeroCountingFunction_def :
     d.symmetricZeroCountingFunction =
       fun T ↦ zeroCount d.completed univ (Icc 0 1 ×ℂ Icc (-T) T) := (rfl)
 
-/-- The completed divisor has finite support in every bounded height range.
-This also supplies finiteness of the support of positive multiplicities in either count. -/
-theorem finite_divisor_completed_rectangle (a b : ℝ) :
-    ((Icc 0 1 ×ℂ Icc a b) ∩ Function.support (MeromorphicOn.divisor d.completed univ)).Finite :=
-  MeromorphicOn.divisor_finite_inter_support_of_isCompact
-    (isCompact_Icc.reProdIm isCompact_Icc) (subset_univ _) Subset.rfl
-
 /-- At nonpositive heights the one-sided counting region is empty. -/
 @[simp] theorem zeroCountingFunction_of_nonpos {T : ℝ} (hT : T ≤ 0) :
     d.zeroCountingFunction T = 0 := by
@@ -96,7 +89,8 @@ theorem monotone_symmetricZeroCountingFunction : Monotone d.symmetricZeroCountin
   simp only [symmetricZeroCountingFunction_def]
   refine zeroCount_mono (S := Icc 0 1 ×ℂ Icc (-T) T)
     (fun z hz ↦ ⟨hz.1, (neg_le_neg hST).trans hz.2.1, hz.2.2.trans hST⟩) ?_
-  exact zeroCount_support_finite (d.finite_divisor_completed_rectangle (-T) T)
+  exact zeroCount_support_finite (MeromorphicOn.divisor_finite_inter_support_of_isCompact
+    (isCompact_Icc.reProdIm isCompact_Icc) (subset_univ _) Subset.rfl)
 
 /-- Exact splitting of the positive-height count. Zeros on the splitting edge belong to
 the lower piece, so no nonvanishing assumption is needed at that height. -/
