@@ -16,7 +16,8 @@ of the `f i` times the product of the `g i`, in a commutative monoid. The same s
 any monoid as soon as the second factors are central, since each `g i` can then be moved past the
 remaining first factors. Erasing an entry whose image is `1` does not change the product of the
 images, in any monoid. Two orderings of a list have the same product of images when every pair of
-entries whose relative order differs has commuting images.
+entries whose relative order differs has commuting images. The product of the images over the first
+`k + 1` entries is that over the first `k` entries times the image of entry `k`, in any monoid.
 
 ## Main results
 
@@ -25,6 +26,8 @@ entries whose relative order differs has commuting images.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
 * `List.prod_map_eq_of_perm`: two orderings of the same entries have the same product of images if
   the images of every inverted pair commute.
+* `List.prod_take_succ_map_get`: the product of the images over the first `k + 1` entries is that
+  over the first `k` entries times the image of entry `k`.
 -/
 
 public section
@@ -77,5 +80,14 @@ theorem prod_map_eq_of_perm (f : ι → M) {l l' : List ι} (hp : l.Perm l')
     rw [map_cons, prod_cons, key,
       ih hp' fun x y hxy hyx => h x y (hxy.trans (sublist_cons_self a t))
         (hyx.trans ((sublist_cons_self a v).append_left u))]
+
+/-- The product of the images over the first `k + 1` entries is the product over the first `k`
+entries times the image of entry `k`. -/
+@[to_additive /-- The sum of the images over the first `k + 1` entries is the sum over the first
+`k` entries plus the image of entry `k`. -/]
+theorem prod_take_succ_map_get (g : ι → M) (D : List ι) {k : ℕ} (hk : k < D.length) :
+    ((D.take (k + 1)).map g).prod = ((D.take k).map g).prod * g D[k] := by
+  rw [List.map_take, List.map_take, List.prod_take_succ _ _ (by simpa using hk),
+    List.getElem_map]
 
 end List
