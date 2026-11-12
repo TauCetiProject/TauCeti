@@ -58,6 +58,8 @@ AINTLIB `LeanModularForms` project
 
 * `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
   at `s • τ`, is `denom s τ ^ k * f τ`.
+* `MDifferentiableAt.slash_of_det_pos`: the slash of a positive-determinant matrix preserves
+  holomorphy at a point.
 * `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
   under the weight-`k` slash action.
 * `SlashAction.slash_eq_of_rightCoset_eq`: slashing a `H₁`-invariant element by `x` depends
@@ -90,7 +92,7 @@ public section
 
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane
 
-open scoped MatrixGroups ModularForm Pointwise
+open scoped Manifold MatrixGroups ModularForm Pointwise
 
 /-- **Every element of `𝒮ℒ` has positive determinant**: it is the image of a matrix of
 determinant `1`.
@@ -267,6 +269,17 @@ theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul (s : SL(2, �
   rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp),
     Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
   simp [mul_comm]
+
+/-- **The slash of a positive-determinant matrix preserves holomorphy at a point**: `f ∣[k] g` is
+holomorphic at `τ` if `f` is holomorphic at `g • τ`. This is the pointwise form, on the
+positive-determinant branch, of Mathlib's `MDifferentiable.slash`. -/
+theorem _root_.MDifferentiableAt.slash_of_det_pos (k : ℤ) {g : GL (Fin 2) ℝ}
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) {f : ℍ → ℂ} {τ : ℍ}
+    (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (g • τ)) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (f ∣[k] g) τ := by
+  rw [ModularForm.slash_def_of_det_pos k hg]
+  exact ((hf.comp τ (mdifferentiable_smul hg τ)).mul mdifferentiableAt_const).mul
+    (mdifferentiable_denom_zpow g _ τ)
 
 /-- **Scalars pass through the slash of a positive-determinant matrix.** Mathlib's
 `ModularForm.smul_slash` carries the twist `σ A c`, which is complex conjugation when the
