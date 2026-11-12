@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Disk
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.Topology.OpenPartialHomeomorph.Ball
 
 /-!
 # Local homology of a Serre fibration along a fibre
@@ -37,8 +38,9 @@ fundamental class are exactly the nonzero multiples of the fundamental class
 (`TauCeti.HomologicalOrientation.livesAboveFundamentalClass_id_iff`), which motivates the name.
 
 The relative group, rather than the shriek map itself, is used in the definition because it does
-not depend on the chart: the identification `Hₙ₊ᵣ(E, E ∖ F) ≅ Hₙ(F)` depends on the chart and on a
-ball in it.
+not depend on the chart: the identification `Hₙ₊ᵣ(E, E ∖ F) ≅ Hₙ(F)` depends on the chart. Its
+construction `TauCeti.TopCat.singularHomologyComplFiberIso` takes a ball in the target of the
+chart as an explicit argument.
 
 ## The computation
 
@@ -48,21 +50,22 @@ Excision onto the open set `p⁻¹(U)`, which contains the closed fibre `F`, ide
 `Hₖ(E, E ∖ F)` with `Hₖ(p⁻¹(U), p⁻¹(U) ∖ F)`
 (`TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset`). The restriction of `p` over
 `U`, followed by the homeomorphism `x ↦ e x - e b` of `U` with the ball `K` of radius `ε` about
-`0`, is a Serre fibration over the convex neighbourhood `K` of `0`
-(`OpenPartialHomeomorph.chartFibration`) whose fibre over `0` is `F`
-(`OpenPartialHomeomorph.fiberHomeomorph`), and the part of `p⁻¹(U)` over `K ∖ {0}` is
-`p⁻¹(U) ∖ F` (`OpenPartialHomeomorph.interPairIso`). The homology of a Serre fibration over a
-convex neighbourhood of `0` modulo the part over the punctured base is the shifted homology of the
-fibre (`TauCeti.TopCat.singularHomologyPreimageNeZeroIso`), and vanishes below the dimension
+`0` (`OpenPartialHomeomorph.chartBallHomeomorph`), is a Serre fibration over the convex
+neighbourhood `K` of `0` (`OpenPartialHomeomorph.chartBallProj`) whose fibre over `0` is `F`
+(`OpenPartialHomeomorph.chartBallProjFiberHomeomorph`), and the part of `p⁻¹(U)` over `K ∖ {0}` is
+`p⁻¹(U) ∖ F` (`OpenPartialHomeomorph.chartBallComplFiberPairIso`). The homology of a Serre
+fibration over a convex neighbourhood of `0` modulo the part over the punctured base is the shifted
+homology of the fibre (`TauCeti.TopCat.singularHomologyPreimageNeZeroIso`), and vanishes below the
+dimension
 (`TauCeti.TopCat.isZero_singularHomology_preimage_ne_zero`).
 
 ## Main definitions and results
 
-* `TauCeti.TopCat.singularHomologyComplFiberIso`: `Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))`, for a
-  chosen ball about `e b` inside the target of `e`. After excision onto the part of `E` over the
-  ball, it is `TauCeti.TopCat.singularHomologyPreimageNeZeroIso` for the restricted fibration
-  (`TauCeti.TopCat.singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom` and
-  `TauCeti.TopCat.map_fiberHomeomorph_comp_singularHomologyComplFiberIso_inv`).
+* `TauCeti.TopCat.singularHomologyComplFiberIso`: `Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))`,
+  constructed from a ball about `e b` inside the target of `e`. After excision onto the part of `E`
+  over the ball, it is `TauCeti.TopCat.singularHomologyPreimageNeZeroIso` for the restricted
+  fibration (`TauCeti.TopCat.singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom`
+  and `TauCeti.TopCat.singularHomologyComplFiberIso_inv`).
 * `TauCeti.TopCat.isZero_singularHomology_complFiber`: `Hₘ(E, E ∖ p⁻¹(b)) = 0` for `m < r`.
 * `TauCeti.TopCat.LivesAboveFundamentalClass`: classes of `Hₖ(E)` with nonzero image in
   `Hₖ(E, E ∖ p⁻¹(b))`.
@@ -94,123 +97,89 @@ namespace OpenPartialHomeomorph
 
 open TauCeti.TopCat
 
-variable {V : Type u} [NormedAddCommGroup V] {E B : _root_.TopCat.{u}}
-  {p : E ⟶ B} (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
+variable {V : Type u} [SeminormedAddCommGroup V] {E B : _root_.TopCat.{u}}
+  (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
   {ε : ℝ} (hε : ball (e b) ε ⊆ e.target)
 
-/-- The open set `e.source ∩ e⁻¹(D)`, for the ball `D` about `e b` of radius `ε`. It is a
-neighbourhood of `b` when `b ∈ e.source` and `0 < ε` (`OpenPartialHomeomorph.mem_chartBall_self`).
--/
-def chartBall (b : B) (ε : ℝ) : Set B :=
-  e.source ∩ e ⁻¹' ball (e b) ε
-
-@[simp]
-lemma mem_chartBall {b x : B} {ε : ℝ} :
-    x ∈ chartBall e b ε ↔ x ∈ e.source ∧ e x ∈ ball (e b) ε :=
-  Iff.rfl
-
-lemma isOpen_chartBall (b : B) (ε : ℝ) : IsOpen (chartBall e b ε) :=
-  e.isOpen_inter_preimage isOpen_ball
-
-include hb in
-lemma mem_chartBall_self (hε₀ : 0 < ε) : b ∈ chartBall e b ε :=
-  ⟨hb, mem_ball_self hε₀⟩
-
-/-- The chart `e` followed by the translation `v ↦ v - e b`, which sends `b` to `0`. -/
-private def translatedChart (b : B) : OpenPartialHomeomorph B V :=
-  e.trans (Homeomorph.addRight (-e b)).toOpenPartialHomeomorph
-
-private lemma translatedChart_apply (b x : B) : translatedChart e b x = e x - e b :=
-  (sub_eq_add_neg _ _).symm
-
-include hε in
-private lemma image_translatedChart_chartBall :
-    translatedChart e b '' chartBall e b ε = ball (0 : V) ε := by
-  ext v
-  refine ⟨?_, fun hv ↦ ?_⟩
-  · rintro ⟨x, hx, rfl⟩
-    rw [translatedChart_apply, mem_ball_zero_iff, ← dist_eq_norm]
-    exact hx.2
-  · have hv' : v + e b ∈ ball (e b) ε := by
-      rwa [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff]
-    exact ⟨e.symm (v + e b), ⟨e.map_target (hε hv'), by rwa [mem_preimage, e.right_inv (hε hv')]⟩,
-      by rw [translatedChart_apply, e.right_inv (hε hv'), add_sub_cancel_right]⟩
-
 /-- The restriction of `p` over `chartBall e b ε`, read in the ball about `0` through
-`x ↦ e x - e b`. -/
-def chartFibration (p : E ⟶ B) :
+`x ↦ e x - e b` (`OpenPartialHomeomorph.chartBallHomeomorph`). -/
+def chartBallProj (p : E ⟶ B) :
     _root_.TopCat.of (p ⁻¹' chartBall e b ε) ⟶ _root_.TopCat.of (ball (0 : V) ε) :=
   _root_.TopCat.ofHom (p.hom.restrictPreimage (chartBall e b ε)) ≫
     (_root_.TopCat.isoOfHomeo (X := _root_.TopCat.of (chartBall e b ε))
-      ((translatedChart e b).homeomorphOfImageSubsetSource
-        (fun _ hx ↦ ⟨(hx : _ ∈ chartBall e b ε).1, trivial⟩)
-        (image_translatedChart_chartBall e hε))).hom
+      (e.chartBallHomeomorph hε)).hom
 
-lemma coe_chartFibration_apply (z : _root_.TopCat.of (p ⁻¹' chartBall e b ε)) :
-    (chartFibration e hε p z : V) = e (p z) - e b :=
-  translatedChart_apply e b (p z)
+/-- `chartBallProj e hε p` is the restriction of `p` over `chartBall e b ε` followed by
+`OpenPartialHomeomorph.chartBallHomeomorph`. -/
+lemma chartBallProj_def (p : E ⟶ B) :
+    chartBallProj e hε p =
+      _root_.TopCat.ofHom (p.hom.restrictPreimage (chartBall e b ε)) ≫
+        (_root_.TopCat.isoOfHomeo (X := _root_.TopCat.of (chartBall e b ε))
+          (e.chartBallHomeomorph hε)).hom :=
+  chartBallProj.eq_1 e hε p
+
+@[simp]
+lemma coe_chartBallProj_apply {p : E ⟶ B} (z : _root_.TopCat.of (p ⁻¹' chartBall e b ε)) :
+    (chartBallProj e hε p z : V) = e (p z) - e b := by
+  simp [chartBallProj]
 
 include hb in
 /-- A point over `chartBall e b ε` lies over `0` in the ball exactly when it lies over `b`. -/
-lemma coe_chartFibration_eq_zero_iff (z : _root_.TopCat.of (p ⁻¹' chartBall e b ε)) :
-    (chartFibration e hε p z : V) = 0 ↔ p z = b := by
-  rw [coe_chartFibration_apply, sub_eq_zero]
-  exact e.injOn.eq_iff z.2.1 hb
+lemma coe_chartBallProj_eq_zero_iff {p : E ⟶ B} (z : _root_.TopCat.of (p ⁻¹' chartBall e b ε)) :
+    (chartBallProj e hε p z : V) = 0 ↔ p z = b := by
+  rw [coe_chartBallProj_apply, sub_eq_zero]
+  exact e.injOn.eq_iff (e.chartBall_subset_source b ε z.2) hb
 
-lemma mem_serreFibrations_chartFibration (hp : serreFibrations p) :
-    serreFibrations (chartFibration e hε p) :=
+lemma mem_serreFibrations_chartBallProj {p : E ⟶ B} (hp : serreFibrations p) :
+    serreFibrations (chartBallProj e hε p) :=
   serreFibrations.comp_mem _ _ (mem_serreFibrations_restrictPreimage hp _)
     (serreFibrations.of_isIso _)
 
-/-- Over `chartBall e b ε`, the complement of the fibre over `b` is the part over the punctured
-ball. -/
-def interPairIso :
+/-- Over `chartBall e b ε`, the complement of the fibre of `p` over `b` is the part over the
+punctured ball of `chartBallProj e hε p`. -/
+def chartBallComplFiberPairIso (p : E ⟶ B) :
     TopPair.interPair (X := E) (p ⁻¹' chartBall e b ε) (p ⁻¹' {b})ᶜ ≅
-      TopPair.ofSubset (chartFibration e hε p ⁻¹' {x | (x : V) ≠ 0}) :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun z ↦ by
-    exact (coe_chartFibration_eq_zero_iff e hb hε z).not.symm
+      TopPair.ofSubset (chartBallProj e hε p ⁻¹' {x | (x : V) ≠ 0}) :=
+  TopPair.ofSubsetIso (Homeomorph.refl _) fun z ↦
+    (coe_chartBallProj_eq_zero_iff e hb hε z).not.symm
 
-/-- The forward map of `interPairIso` is induced by the identity of `p⁻¹(chartBall e b ε)`. -/
-lemma interPairIso_hom :
-    (interPairIso (p := p) e hb hε).hom =
+/-- The forward map of `chartBallComplFiberPairIso` is induced by the identity of
+`p⁻¹(chartBall e b ε)`. -/
+lemma chartBallComplFiberPairIso_hom (p : E ⟶ B) :
+    (chartBallComplFiberPairIso e hb hε p).hom =
       TopPair.ofSubsetMap (_root_.TopCat.ofHom (Homeomorph.refl (p ⁻¹' chartBall e b ε)))
-        fun z hz ↦ by exact (coe_chartFibration_eq_zero_iff e hb hε z).not.2 hz := by
-  unfold interPairIso
-  exact TopPair.ofSubsetIso_hom _ _
+        fun z hz ↦ (coe_chartBallProj_eq_zero_iff e hb hε z).not.2 hz :=
+  TopPair.ofSubsetIso_hom _ _
 
-/-- The inverse map of `interPairIso` is induced by the identity of `p⁻¹(chartBall e b ε)`. -/
-lemma interPairIso_inv :
-    (interPairIso (p := p) e hb hε).inv =
+/-- The inverse map of `chartBallComplFiberPairIso` is induced by the identity of
+`p⁻¹(chartBall e b ε)`. -/
+lemma chartBallComplFiberPairIso_inv (p : E ⟶ B) :
+    (chartBallComplFiberPairIso e hb hε p).inv =
       TopPair.ofSubsetMap (_root_.TopCat.ofHom (Homeomorph.refl (p ⁻¹' chartBall e b ε)))
-        fun z hz ↦ by exact (coe_chartFibration_eq_zero_iff e hb hε z).not.1 hz := by
-  unfold interPairIso
-  exact TopPair.ofSubsetIso_inv _ _
+        fun z hz ↦ (coe_chartBallProj_eq_zero_iff e hb hε z).not.1 hz :=
+  TopPair.ofSubsetIso_inv _ _
 
-/-- The fibre over `0` of `chartFibration e hε p` is the fibre of `p` over `b`. -/
-def fiberHomeomorph (hε₀ : 0 < ε) :
-    (chartFibration e hε p ⁻¹' {x | (x : V) = 0}) ≃ₜ (p ⁻¹' {b}) where
-  toFun z := ⟨z.1.1, (e.injOn.eq_iff z.1.2.1 hb).1 <|
-    sub_eq_zero.1 <| by
-      rw [← coe_chartFibration_apply e hε]
-      exact z.2⟩
+/-- The fibre over `0` of `chartBallProj e hε p` is the fibre of `p` over `b`. -/
+def chartBallProjFiberHomeomorph (p : E ⟶ B) (hε₀ : 0 < ε) :
+    (chartBallProj e hε p ⁻¹' {x | (x : V) = 0}) ≃ₜ (p ⁻¹' {b}) where
+  toFun z := ⟨z.1.1, (coe_chartBallProj_eq_zero_iff e hb hε z.1).1 z.2⟩
   invFun y :=
-    have hy : p y.1 = b := y.2
+    have hy : p y.1 = b := mem_singleton_iff.1 y.2
     ⟨⟨y.1, by
       rw [mem_preimage, hy]
-      exact mem_chartBall_self e hb hε₀⟩, by
-      rw [mem_preimage, mem_ofPred_eq, coe_chartFibration_apply]
-      exact sub_eq_zero.2 (congrArg e hy)⟩
+      exact mem_chartBall_self e hb hε₀⟩, (coe_chartBallProj_eq_zero_iff e hb hε _).2 hy⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
   continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
 
-lemma coe_fiberHomeomorph_apply (hε₀ : 0 < ε) (z : chartFibration e hε p ⁻¹' {x | (x : V) = 0}) :
-    (fiberHomeomorph e hb hε hε₀ z : E) = z.1.1 :=
+lemma coe_chartBallProjFiberHomeomorph_apply (p : E ⟶ B) (hε₀ : 0 < ε)
+    (z : chartBallProj e hε p ⁻¹' {x | (x : V) = 0}) :
+    (chartBallProjFiberHomeomorph e hb hε p hε₀ z : E) = z.1.1 :=
   (rfl)
 
-lemma coe_fiberHomeomorph_symm_apply (hε₀ : 0 < ε) (y : p ⁻¹' {b}) :
-    ((fiberHomeomorph e hb hε hε₀).symm y).1.1 = y.1 :=
+lemma coe_chartBallProjFiberHomeomorph_symm_apply (p : E ⟶ B) (hε₀ : 0 < ε) (y : p ⁻¹' {b}) :
+    ((chartBallProjFiberHomeomorph e hb hε p hε₀).symm y).1.1 = y.1 :=
   (rfl)
 
 end OpenPartialHomeomorph
@@ -227,10 +196,11 @@ variable {V : Type u} [NormedAddCommGroup V] {E B : _root_.TopCat.{u}}
 
 variable [T1Space B]
 
-/-- Excision onto the part of `E` over `e.chartBall b ε`, followed by `interPairIso`. -/
+/-- Excision onto the part of `E` over `e.chartBall b ε`, followed by
+`OpenPartialHomeomorph.chartBallComplFiberPairIso`. -/
 private def excisionIso (hε₀ : 0 < ε) (m : ℕ) :
     (TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology (ModuleCat.of R R) m ≅
-      (TopPair.ofSubset (e.chartFibration hε p ⁻¹' {x | (x : V) ≠ 0})).singularHomology
+      (TopPair.ofSubset (e.chartBallProj hε p ⁻¹' {x | (x : V) ≠ 0})).singularHomology
         (ModuleCat.of R R) m :=
   haveI := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
     (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
@@ -238,7 +208,7 @@ private def excisionIso (hε₀ : 0 < ε) (m : ℕ) :
     (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
   (asIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) _ m)).symm ≪≫
-    asIso (TopPair.singularHomologyMap (e.interPairIso hb hε).hom _ m)
+    asIso (TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom _ m)
 
 variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -251,7 +221,7 @@ theorem isZero_singularHomology_complFiber (hp : serreFibrations p) {m : ℕ}
     (hm : m < finrank ℝ V) :
     IsZero ((TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology (ModuleCat.of R R) m) := by
   obtain ⟨ε, hε₀, hε⟩ := Metric.isOpen_iff.1 e.open_target (e b) (e.map_source hb)
-  exact (isZero_singularHomology_preimage_ne_zero R (e.mem_serreFibrations_chartFibration hε hp)
+  exact (isZero_singularHomology_preimage_ne_zero R (e.mem_serreFibrations_chartBallProj hε hp)
     (convex_ball 0 _) (ball_mem_nhds 0 hε₀) hm).of_iso (excisionIso R e hb hε hε₀ m)
 
 /-- **The homology of a Serre fibration modulo the complement of a fibre is the shifted homology
@@ -260,8 +230,9 @@ source of an open partial homeomorphism `e : B → V` to a real normed space of 
 such as the chart `chartAt V b` of a topological manifold modelled on `V`. Then
 `Hₘ(E, E ∖ p⁻¹(b); R) ≅ Hₙ(p⁻¹(b); R)` for `m = n + r`.
 
-The isomorphism depends on a ball of radius `ε` about `e b` inside the target of `e`: it is
-excision onto the part of `E` over `OpenPartialHomeomorph.chartBall e b ε`, followed by
+The isomorphism depends on `e`, and is constructed from a ball of radius `ε` about `e b` inside
+the target of `e`: it is excision onto the part of `E` over
+`OpenPartialHomeomorph.chartBall e b ε`, followed by
 `TauCeti.TopCat.singularHomologyPreimageNeZeroIso` for the restriction of `p` over that set
 (`TauCeti.TopCat.singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom`). -/
 def singularHomologyComplFiberIso (hε₀ : 0 < ε) (hp : serreFibrations p) (n m : ℕ)
@@ -270,10 +241,11 @@ def singularHomologyComplFiberIso (hε₀ : 0 < ε) (hp : serreFibrations p) (n 
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
         (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {b})) :=
   excisionIso R e hb hε hε₀ m ≪≫
-    singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartFibration hε hp)
+    singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartBallProj hε hp)
       (convex_ball 0 _) (ball_mem_nhds 0 hε₀) n m h ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (e.fiberHomeomorph hb hε hε₀))
+      (ModuleCat.of R R)).mapIso
+        (_root_.TopCat.isoOfHomeo (e.chartBallProjFiberHomeomorph hb hε p hε₀))
 
 /-- The isomorphism `TauCeti.TopCat.singularHomologyComplFiberIso` commutes with excision
 onto the part of `E` over `OpenPartialHomeomorph.chartBall e b ε`: after excision it is
@@ -286,31 +258,40 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom
         (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)
         (ModuleCat.of R R) m ≫
         (singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom =
-      TopPair.singularHomologyMap (e.interPairIso hb hε).hom (ModuleCat.of R R) m ≫
-        (singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartFibration hε hp)
+      TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom
+          (ModuleCat.of R R) m ≫
+        (singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartBallProj hε hp)
           (convex_ball 0 _) (ball_mem_nhds 0 hε₀) n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-          (ModuleCat.of R R)).map (_root_.TopCat.isoOfHomeo (e.fiberHomeomorph hb hε hε₀)).hom := by
+          (ModuleCat.of R R)).map
+          (_root_.TopCat.isoOfHomeo (e.chartBallProjFiberHomeomorph hb hε p hε₀)).hom := by
   simp [singularHomologyComplFiberIso, excisionIso]
 
-/-- The inverse of `TauCeti.TopCat.singularHomologyComplFiberIso`, after the identification
-of the fibre over `b` with the fibre over `0` of the restricted fibration, is the inverse of
-`TauCeti.TopCat.singularHomologyPreimageNeZeroIso` followed by excision. -/
+/-- The inverse of `TauCeti.TopCat.singularHomologyComplFiberIso` is the inverse of the
+identification `OpenPartialHomeomorph.chartBallProjFiberHomeomorph` of the fibre over `0` of the
+restricted fibration with the fibre over `b`, followed by the inverse of
+`TauCeti.TopCat.singularHomologyPreimageNeZeroIso`, the inverse of
+`OpenPartialHomeomorph.chartBallComplFiberPairIso` and the excision inclusion. -/
 @[reassoc]
-lemma map_fiberHomeomorph_comp_singularHomologyComplFiberIso_inv
+lemma singularHomologyComplFiberIso_inv
     (hε₀ : 0 < ε) (hp : serreFibrations p) (n m : ℕ) (h : n + finrank ℝ V = m) :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-          (ModuleCat.of R R)).map (_root_.TopCat.isoOfHomeo (e.fiberHomeomorph hb hε hε₀)).hom ≫
-        (singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).inv =
-      (singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartFibration hε hp)
+    (singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).inv =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map
+          (_root_.TopCat.isoOfHomeo (e.chartBallProjFiberHomeomorph hb hε p hε₀)).inv ≫
+        (singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartBallProj hε hp)
           (convex_ball 0 _) (ball_mem_nhds 0 hε₀) n m h).inv ≫
-        TopPair.singularHomologyMap (e.interPairIso hb hε).inv (ModuleCat.of R R) m ≫
+        TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).inv
+          (ModuleCat.of R R) m ≫
         TopPair.singularHomologyMap
           (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)
           (ModuleCat.of R R) m := by
-  rw [Iso.comp_inv_eq]
-  simp [singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom,
-    ← TopPair.singularHomologyMap_comp_assoc]
+  have hinv : inv (TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom
+      (ModuleCat.of R R) m) =
+      TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).inv (ModuleCat.of R R) m :=
+    IsIso.inv_eq_of_hom_inv_id (by
+      rw [← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id])
+  simp [singularHomologyComplFiberIso, excisionIso, hinv]
 
 end Chart
 
