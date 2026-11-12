@@ -170,7 +170,7 @@ private theorem initialPentagon_disjoint_partners_of_disjoint_sources
   exact Finset.disjoint_left.mp hST hD hE
 
 open scoped Classical in
-private theorem initialPentagon_disjoint_cross_partners (hzx : z ≠ x) :
+private theorem initialPentagon_disjoint_cross_partners :
     Disjoint (G.initialPentagonInitialCrossOverlapPartners C x z ∪
       G.initialPentagonTerminalOverlapPartners C x z ∪
         G.initialPentagonLeftRightOverlapPartners C x z)
@@ -180,7 +180,7 @@ private theorem initialPentagon_disjoint_cross_partners (hzx : z ≠ x) :
         (G.initialPentagonLeftRightOverlapPartners C x z) ∧
       Disjoint (G.initialPentagonInitialCrossOverlapPartners C x z)
         (G.initialPentagonTerminalOverlapPartners C x z) := by
-  obtain ⟨-, -, h₁, h₂, h₃⟩ := G.disjoint_initialPentagon_overlap_families C hzx
+  obtain ⟨-, -, h₁, h₂, h₃⟩ := G.disjoint_initialPentagon_overlap_families C
   refine ⟨?_, ?_, ?_⟩
   · apply G.initialPentagon_disjoint_partners_of_disjoint_sources C _ _ _ _
       (Finset.union_subset
@@ -237,14 +237,14 @@ theorem mem_initialPentagonCrossOverlapPartners (F : GridInitialPentagonRectangl
 
 /-- Summing over the recut partner union counts each domain once. -/
 theorem sum_initialPentagonCrossOverlapPartners {M : Type*} [AddCommMonoid M]
-    (w : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z → M) (hzx : z ≠ x) :
+    (w : GridInitialPentagonRectangleDecomposition C.column C.turnRow x z → M) :
     ∑ F ∈ G.initialPentagonCrossOverlapPartners C x z, w F =
       (∑ F ∈ G.initialPentagonInitialCrossOverlapPartners C x z, w F) +
         (∑ F ∈ G.initialPentagonTerminalOverlapPartners C x z, w F) +
         (∑ F ∈ G.initialPentagonLeftRightOverlapPartners C x z, w F) +
         ∑ F ∈ G.initialPentagonRightLeftOverlapPartners C x z, w F := by
   classical
-  obtain ⟨h₁, h₂, h₃⟩ := G.initialPentagon_disjoint_cross_partners C hzx
+  obtain ⟨h₁, h₂, h₃⟩ := G.initialPentagon_disjoint_cross_partners C
   rw [initialPentagonCrossOverlapPartners, Finset.sum_union h₁, Finset.sum_union h₂,
     Finset.sum_union h₃]
 
@@ -345,7 +345,7 @@ theorem sum_commutation_overlap_eq_iff_sdiff_crossOverlapPartners (hzx : z ≠ x
   rw [G.sum_rectanglePentagonWeight_overlap_eq_sum_partners C R hzx,
     G.sum_rectangleInitialPentagonWeight_overlap_eq_sum_partners C R hzx,
     ← G.sum_crossOverlapPartners C (G.pentagonRectangleWeight C R) hzx,
-    ← G.sum_initialPentagonCrossOverlapPartners C (G.initialPentagonRectangleWeight C R) hzx,
+    ← G.sum_initialPentagonCrossOverlapPartners C (G.initialPentagonRectangleWeight C R),
     ← Finset.sum_sdiff (G.crossOverlapPartners_subset_filter C)
       (f := G.pentagonRectangleWeight C R),
     ← Finset.sum_sdiff (G.initialPentagonCrossOverlapPartners_subset_filter C)

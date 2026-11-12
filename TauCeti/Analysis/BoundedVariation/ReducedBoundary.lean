@@ -378,7 +378,7 @@ theorem tendsto_setLIntegral_enorm_outerNormal_sub_div (hx : x ∈ reducedBounda
   refine ENNReal.div_le_of_le_mul ?_
   have hi : IntegrableOn (fun y : Ω => outerNormal μ Ω s y - outerNormal μ Ω s x) S lam :=
     (integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)
-  rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm hi]
   calc ENNReal.ofReal (∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖ ∂lam)
       ≤ ENNReal.ofReal (2 * (δ.toReal / 2) * lam.real S) := ENNReal.ofReal_le_ofReal hr
     _ = δ * lam S := by
@@ -411,7 +411,7 @@ theorem reducedBoundary_congr_ae (h : s =ᵐ[μ.restrict Ω] t) :
 theorem reducedBoundary_inter_opens : reducedBoundary μ Ω (s ∩ Ω) = reducedBoundary μ Ω s := by
   refine reducedBoundary_congr_ae ?_
   filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with y hy
-  exact propext ⟨fun h => h.1, fun h => ⟨h, hy⟩⟩
+  exact ⟨fun h => h.1, fun h => ⟨h, hy⟩⟩
 
 /-- **Locality of the outer normal.** If `s = t` almost everywhere on `Ω`, they have the same
 outer normal. -/

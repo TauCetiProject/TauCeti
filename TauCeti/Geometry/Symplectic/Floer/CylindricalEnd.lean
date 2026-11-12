@@ -344,11 +344,11 @@ theorem exists_lipschitzOnWith_of_lintegral_ne_top
   obtain ⟨M, hM⟩ := exists_forall_norm_fderiv_le_of_lintegral_ne_top hW hJ hX hK hKW hJsq hJ1 hJI
     hX1 hXI hab hu hper hCR huK hfin
   have hU : IsOpen {z : ℂ | a < z.re} := isOpen_lt continuous_const continuous_re
-  refine ⟨Real.toNNReal M, (convex_halfSpace_re_ge b).lipschitzOnWith_of_nnnorm_fderiv_le (𝕜 := ℝ)
+  refine ⟨Real.toNNReal M, (convex_halfSpace_re_ge b).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
     (fun z hz ↦ ?_) (fun z hz ↦ ?_)⟩
   · have hz' : z ∈ {z : ℂ | a < z.re} := hab.trans_le hz
     exact (hu.differentiableOn (by norm_num) z hz').differentiableAt (hU.mem_nhds hz')
-  · rw [← NNReal.coe_le_coe, coe_nnnorm]
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hM z hz).trans (Real.le_coe_toNNReal M)
 
 end TauCeti.Floer
@@ -636,12 +636,12 @@ theorem exists_lipschitzOnWith_of_floer (hH : ContDiff ℝ 3 (uncurry H))
     ∃ L : ℝ≥0, LipschitzOnWith L u (Ici b ×ˢ univ) := by
   obtain ⟨M, hM⟩ := exists_forall_norm_fderiv_le_of_floer hH hHper hW hJ hJper hK hKW hJt hu hper
     huK hfloer hE hab
-  refine ⟨Real.toNNReal M, ((convex_Ici b).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le
+  refine ⟨Real.toNNReal M, ((convex_Ici b).prod convex_univ).lipschitzOnWith_of_nnNorm_fderiv_le
     (𝕜 := ℝ) (fun z hz ↦ ?_) (fun z hz ↦ ?_)⟩
   · have hz' : z ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hab.trans_le hz.1, mem_univ _⟩
     exact (hu.differentiableOn (by norm_num) z hz').differentiableAt
       ((isOpen_Ioi.prod isOpen_univ).mem_nhds hz')
-  · rw [← NNReal.coe_le_coe, coe_nnnorm]
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hM z hz.1).trans (Real.le_coe_toNNReal M)
 
 /-- Under the hypotheses of
@@ -684,10 +684,10 @@ private theorem exists_forall_eventually_lipschitzOnWith_comp_add
       DifferentiableAt ℝ (u k) (z + (σ k, 0)) :=
     ((hu k).differentiableOn (by norm_num) _ ⟨hzS hz, mem_univ _⟩).differentiableAt
       ((hS.prod isOpen_univ).mem_nhds ⟨hzS hz, mem_univ _⟩)
-  refine ⟨((convex_Icc _ _).prod convex_univ).lipschitzOnWith_of_nnnorm_fderiv_le (𝕜 := ℝ)
+  refine ⟨((convex_Icc _ _).prod convex_univ).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
     (fun z hz ↦ (hdiff hz).comp z (differentiableAt_id.add_const _)) fun z hz ↦ ?_,
     fun z hz ↦ by simpa only [hzσ] using huK k _ (hzS hz) z.2⟩
-  rw [fderiv_comp_add_right, ← NNReal.coe_le_coe, coe_nnnorm]
+  rw [fderiv_comp_add_right, ← NNReal.coe_le_coe, coe_nnNorm]
   exact (hB hS ((hwin hz).trans hkS) (hu k) (hper k) (huK k) (hfloer k)
     ((lintegral_mono_set (Set.prod_mono (hwin hz) le_rfl)).trans hkE)).trans
     (Real.le_coe_toNNReal B)

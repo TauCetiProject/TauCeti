@@ -106,7 +106,7 @@ theorem eLpNorm_deriv_natCast_mul (m : ℕ) {p : ENNReal} (hp : p ≠ 0) :
   have hμ : volume.restrict (ball (0 : ℂ) (1 / 2)) ≠ 0 := by
     simpa [Measure.restrict_eq_zero] using (measure_ball_pos volume (0 : ℂ) one_half_pos).ne'
   rw [deriv_const_mul_id' (m : ℂ), eLpNorm_const _ hp hμ, Measure.restrict_apply_univ]
-  simp [enorm_eq_nnnorm]
+  simp [eNorm_eq_nnNorm]
 
 /-- The `L^p` norms on `D_{1/2}` of the derivatives of `z ↦ m z` admit no finite bound, so this
 sequence violates the gradient bound. -/

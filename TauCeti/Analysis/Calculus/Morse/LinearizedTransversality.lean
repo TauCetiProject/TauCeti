@@ -177,7 +177,7 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
     obtain ⟨e, hqe, hed, heC, heCs, heS⟩ :=
       hq.exists_stableSet_chart_hasFDerivAt_id (n := 1) hfs hf
     have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
-      (Submodule.closed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc hcs
+      (Submodule.isClosed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc hcs
     refine memLp_restrict_Ici_of_eventually_inner_nonneg hA hBsym hα hBα (hw v) ?_ 0
     filter_upwards [(Flow.mem_stableSet.1 hy).eventually hcone] with s hs
     rw [real_inner_comm]
@@ -224,7 +224,7 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
     obtain ⟨e, hpe, hed, heC, heCs, heS⟩ :=
       hp.exists_unstableSet_chart_hasFDerivAt_id (n := 1) hfs hf
     have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
-      (Submodule.closed_of_finiteDimensional _) (B := -B) hpe hed heC heCs hc fun u hu ↦ by
+      (Submodule.isClosed_of_finiteDimensional _) (B := -B) hpe hed heC heCs hc fun u hu ↦ by
         rw [neg_apply, inner_neg_left]
         linarith [hcu u hu]
     refine memLp_restrict_Iic_of_eventually_inner_nonpos hA hBsym hα hBα (hw v) ?_ 0

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
