@@ -136,12 +136,13 @@ theorem mass_cone_le_of_subset_closedBall (x₀ : E) {r : ℝ}
       rw [htop, ENNReal.mul_top hne0]
       exact le_top
     · exact absurd htop hne
-  have hcont : Continuous fun s : ℝ ↦ ENNReal.ofReal (s / (k + 1)) * mass T :=
-    (ENNReal.continuous_mul_const hM).comp
-      (ENNReal.continuous_ofReal.comp (continuous_id.div_const _))
-  refine ge_of_tendsto (hcont.continuousWithinAt (s := Ioi r)) ?_
-  filter_upwards [self_mem_nhdsWithin] with s hs
-  exact mass_cone_le_of_subset_ball x₀ (hT.trans (Metric.closedBall_subset_ball hs))
+  rcases lt_or_ge r 0 with hr | hr
+  · rw [Metric.closedBall_eq_empty.2 hr] at hT
+    simp [eq_zero_of_dsupport_subset_empty hT]
+  · refine (mass_cone_le T (r := ⟨r, hr⟩) hT hM).trans_eq ?_
+    congr 1
+    rw [← ENNReal.ofReal_coe_nnreal]
+    congr 1
 
 /-- **Closed-ball cone mass bound for currents of locally finite mass.** Whenever `T` has locally
 finite mass and `dsupport T ⊆ Metric.closedBall x₀ r`,
