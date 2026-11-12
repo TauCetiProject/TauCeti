@@ -21,7 +21,7 @@ bound at every radius `ρ ∈ [0, ρ₀)`
 (`MeasureTheory.FiniteMeasure.measure_closedBall_le_of_tendsto`).
 Indeed, for `ρ < ρ' ≤ ρ₀` a bounded continuous function `φ` with `1` on `closedBall x ρ` and
 `0` outside `closedBall x ρ'` gives `ν (closedBall x ρ) ≤ ∫ φ dν = lim ∫ φ dμ i ≤ c ρ' ^ d`;
-finally `ρ' → ρ`. At `ρ = 0` the bound says that `ν` has no atom at `x`.
+finally `ρ' → ρ`. When `0 < d`, the bound at `ρ = 0` says that `ν` has no atom at `x`.
 
 Combined with the comparison of upper densities with Hausdorff measure
 (`MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`), a uniform upper bound at every point of
@@ -126,9 +126,10 @@ theorem measure_le_mul_hausdorffMeasure_of_tendsto [l.NeBot] (hμ : Tendsto μ l
   filter_upwards [Ioo_mem_nhdsGT hρ₀] with ρ hρ
   have hrw : ENNReal.ofReal c / 2 ^ (d : ℝ) * ENNReal.ofReal (2 * ρ) ^ (d : ℝ) =
       ENNReal.ofReal (c * ρ ^ d) := by
-    rw [ENNReal.rpow_natCast, ENNReal.rpow_natCast, ENNReal.ofReal_mul zero_le_two,
-      ENNReal.ofReal_ofNat, mul_pow, ← mul_assoc, ENNReal.div_mul_cancel (by simp) (by simp),
-      ENNReal.ofReal_mul hc.le, ENNReal.ofReal_pow hρ.1.le]
+    -- Normalize coercions and powers, then cancel the factor `2 ^ d`.
+    simp only [ENNReal.rpow_natCast, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
+      ENNReal.ofReal_mul hc.le, ENNReal.ofReal_pow hρ.1.le, mul_pow]
+    rw [← mul_assoc, ENNReal.div_mul_cancel (by simp) (by simp)]
   rw [hrw]
   exact measure_closedBall_le_of_tendsto hμ hh (hdens x hx) hρ.1.le hρ.2
 
