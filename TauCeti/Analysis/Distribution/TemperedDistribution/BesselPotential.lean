@@ -176,10 +176,7 @@ theorem exists_besselPotential_eq_and_norm_le_of_isVanishingOn [CompleteSpace F]
     calc ‖g k‖ ≤ C₁ * 2 ^ (t * k) * ‖f k‖ := hgC k
       _ ≤ C₁ * (2 ^ (|t| * L) * 2 ^ (t * j)) * (max C₀ 0 * ‖v‖) := by
         gcongr
-        · rw [Finset.mem_Ico] at hk
-          refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two t
-            (abs_sub_le_iff.2 ⟨?_, ?_⟩)
-          all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
+        · exact Real.rpow_mul_natCast_le_of_mem_Ico one_le_two t hk
         · exact (hfC k).trans (by gcongr; exact le_max_left C₀ 0)
       _ = K * 2 ^ (t * j) * ‖v‖ := by ring
   calc ‖∑ k ∈ Finset.Ico (j - L) (j + L), g k‖

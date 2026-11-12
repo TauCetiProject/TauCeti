@@ -9,7 +9,6 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Reindex
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Reconstruction from pieces with spectra in dyadic annuli
@@ -109,19 +108,6 @@ private theorem exists_hasSum_of_annulus (s : ℝ) {a : ℝ} (ha : 0 < a) (b : �
 
 variable (φ : ContDiffBump (0 : E))
 
-omit [CompleteSpace F] in
-/-- The block `Δₖ` of a series of distributions `uⱼ` with `Δₖ uⱼ = 0` unless
-`k - L ≤ j < k + L` is the finite sum of the `Δₖ uⱼ` over that window. -/
-private theorem littlewoodPaleyBlock_eq_sum_Ico_of_hasSum {u : ℕ → 𝓢'(E, F)} {U : 𝓢'(E, F)}
-    (hU : HasSum u U) {L : ℕ}
-    (hL : ∀ j k, k + L ≤ j ∨ j + L ≤ k → littlewoodPaleyBlock F φ k (u j) = 0) (k : ℕ) :
-    littlewoodPaleyBlock F φ k U =
-      ∑ j ∈ Finset.Ico (k - L) (k + L), littlewoodPaleyBlock F φ k (u j) := by
-  refine (hU.map (littlewoodPaleyBlock F φ k) (map_continuous _)).unique
-    (hasSum_sum_of_ne_finset_zero fun j hj ↦ hL j k ?_)
-  rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hj
-  omega
-
 /-- **The blocks of a series of annular pieces.** There are `K ≥ 0` and `L`, depending only on
 `φ`, `a`, `b` and `s`, with the following property. If `uⱼ ∈ Lᵖ` has spectrum in the dyadic annulus
 of radii `2^j a` and `2^j b` and `∑ⱼ uⱼ = U` in the tempered distributions, then the blocks `Δₖ U`
@@ -144,17 +130,7 @@ private theorem exists_littlewoodPaleyBlock_eq_and_le_of_hasSum (s : ℝ) {a : �
   · rw [littlewoodPaleyBlock_eq_sum_Ico_of_hasSum φ hU (fun j k ↦ hL j k _ (hb j) (ha' j)) k,
       Lp.toTemperedDistribution_sum]
     exact Finset.sum_congr rfl fun j _ ↦ hg k j
-  · refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
-    rw [Finset.mul_sum, Finset.mul_sum]
-    refine Finset.sum_le_sum fun j hj ↦ ?_
-    calc 2 ^ (s * k) * ‖g k j‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * j) * (max C₀ 0 * ‖u j‖) := by
-          gcongr
-          · rw [Finset.mem_Ico] at hj
-            refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
-              (abs_sub_le_iff.2 ⟨?_, ?_⟩)
-            all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
-          · exact (hgC k j).trans (by gcongr; exact le_max_left C₀ 0)
-      _ = _ := by ring
+  · exact two_rpow_mul_norm_sum_Ico_le s (hgC k) k L
 
 /-- **Reconstruction from pieces with spectra in dyadic annuli** (Bahouri–Chemin–Danchin,
 Lemma 2.69). Let `s : ℝ`, `a > 0` and `b : ℝ`. There is `C`, depending only on `φ`, `a`, `b` and

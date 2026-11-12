@@ -64,11 +64,13 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
   `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`.
 * `TemperedDistribution.littlewoodPaleyBlock_eq_zero_of_isVanishingOn`,
-  `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn`,
+  `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_annulus`: the blocks
   away from the spectrum vanish, and `TemperedDistribution.sum_littlewoodPaleyBlock_eq_self`: a
   distribution with finitely many nonzero blocks is their sum.
+* `TemperedDistribution.littlewoodPaleyBlock_eq_sum_Ico_of_hasSum`: the block `Δₖ` of a series
+  whose terms have `Δₖ uⱼ = 0` unless `k - L ≤ j < k + L` is the finite sum over that window.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, also
   between the blocks of two bump functions.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`: each block of one bump function
@@ -191,6 +193,18 @@ theorem sum_littlewoodPaleyBlock_eq_self {u : 𝓢'(E, F)} (s : Finset ℕ)
   refine Finset.sum_subset (fun k hk ↦ Finset.mem_range.2 ?_) fun k _ hk ↦ hs k hk
   exact (Nat.lt_succ_of_le (Finset.le_sup (f := id) hk)).trans_le hN
 
+/-- The block `Δₖ` of a series of tempered distributions `uⱼ` with `Δₖ uⱼ = 0` unless
+`k - L ≤ j < k + L` is the finite sum of the `Δₖ uⱼ` over that window. -/
+theorem littlewoodPaleyBlock_eq_sum_Ico_of_hasSum {u : ℕ → 𝓢'(E, F)} {U : 𝓢'(E, F)}
+    (hU : HasSum u U) {L : ℕ}
+    (hL : ∀ j k, k + L ≤ j ∨ j + L ≤ k → littlewoodPaleyBlock F φ k (u j) = 0) (k : ℕ) :
+    littlewoodPaleyBlock F φ k U =
+      ∑ j ∈ Finset.Ico (k - L) (k + L), littlewoodPaleyBlock F φ k (u j) := by
+  refine (hU.map (littlewoodPaleyBlock F φ k) (map_continuous _)).unique
+    (hasSum_sum_of_ne_finset_zero fun j hj ↦ hL j k ?_)
+  rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hj
+  omega
+
 open Distribution in
 /-- **Blocks off the spectrum vanish.** If the Fourier transform of `u` vanishes on a set
 containing the support of the piece `ψₖ`, then `Δₖ u = 0`. -/
@@ -204,7 +218,7 @@ open Distribution in
 /-- **Blocks far above the spectrum vanish.** For every `R` there is `L`, depending only on `φ`
 and `R`, such that if the Fourier transform of `u` vanishes outside the closed ball of radius
 `2^j R`, then `Δₖ u = 0` for every `k ≥ j + L`. -/
-theorem exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn (R : ℝ) :
+theorem exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall (R : ℝ) :
     ∃ L : ℕ, ∀ (j k : ℕ) (u : 𝓢'(E, F)),
       IsVanishingOn (𝓕 u : 𝓢'(E, F)) (Metric.closedBall 0 (2 ^ j * R))ᶜ →
         j + L ≤ k → littlewoodPaleyBlock F φ k u = 0 := by
@@ -253,7 +267,8 @@ theorem exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_annulus {a : ℝ} (
         (0 < j → IsVanishingOn (𝓕 u : 𝓢'(E, F)) (Metric.ball 0 (2 ^ j * a))) →
           k + L ≤ j ∨ j + L ≤ k → littlewoodPaleyBlock F φ k u = 0 := by
   obtain ⟨L₁, hL₁⟩ := exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball (F := F) φ ha
-  obtain ⟨L₂, hL₂⟩ := exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn (F := F) φ b
+  obtain ⟨L₂, hL₂⟩ :=
+    exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall (F := F) φ b
   refine ⟨max L₁ L₂ + 1, fun j k u hb ha hjk ↦ ?_⟩
   rcases hjk with hjk | hjk
   · exact hL₁ j k u (ha (by omega)) (by omega)
