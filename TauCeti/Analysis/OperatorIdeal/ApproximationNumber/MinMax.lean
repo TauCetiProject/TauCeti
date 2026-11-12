@@ -463,7 +463,7 @@ theorem HasMinMaxLowerBound.of_completeSpace [CompleteSpace E] : HasMinMaxLowerB
   -- `aₙ(T) ≤ c`, so `T` is `c`-coercive on an `(n + 1)`-dimensional span.
   set c : ℝ := (r + T.singularValue n) / 2 with hc
   have hrc : r < c := by rw [hc]; linarith
-  have hca : c < T.singularValue n := by rw [hc]; linarith
+  have _ : c < T.singularValue n := by rw [hc]; linarith
   obtain ⟨v, hv, hvc⟩ | ⟨U, hU, hUc⟩ :=
     T.exists_linearIndependent_or_exists_rank_le n (c := c) (by positivity)
   · exact ⟨c, hrc, v, hv, hvc⟩

@@ -107,10 +107,10 @@ theorem coeff_eval₂_C_add_C_mul_X_of_totalDegree_le (p : MvPolynomial σ R)
     rw [Finsupp.degree_apply, Finsupp.prod,
       Polynomial.coeff_prod_sum_eq_of_natDegree_le]
     · apply Finset.prod_congr rfl
-      intro i hi
+      intro i _
       simpa [add_comm] using (Polynomial.coeff_pow_of_natDegree_le (m := d i)
         (Polynomial.natDegree_linear_le (a := v i) (b := a i)))
-    · intro i hi
+    · intro i _
       exact Polynomial.natDegree_pow_le.trans (by
         simpa only [add_comm, mul_one] using
           Nat.mul_le_mul_left (d i)

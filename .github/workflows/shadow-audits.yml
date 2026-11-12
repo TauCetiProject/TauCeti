@@ -48,10 +48,10 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
     - name: Prepare pinned shared tools
-      uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
+      uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
       with:
         tools-repository: TauCetiProject/TauCetiTools
-        tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
+        tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
         project-directory: .
     - name: Restore the project-owned toolchain-pin contract
       # Match infrastructure-tests: the older shared overlay must not replace
@@ -100,43 +100,10 @@ jobs:
         # in every pass. The harness resolves bind paths before building its sandbox.
         # This workflow's inline probe mounts only system paths; it has no .lake overlay.
         deb="bubblewrap_${BWRAP_VER}_amd64.deb"
-        if ! curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb \
-           && ! curl -sSL --fail "https://security.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
-          echo "::error::bubblewrap ${BWRAP_VER} is gone from the Ubuntu pool. The research sandbox cannot be installed; this optional run will fail without affecting production checks."
-          printf '%s\n' \
-            '' \
-            "WHAT HAPPENED: BWRAP_VER is pinned to ${BWRAP_VER} from noble's release pocket," \
-            'which Ubuntu does not rewrite for the life of the release. Reaching this is' \
-            'unexpected: an archive outage, a runner image no longer on 24.04, or 24.04 gone' \
-            'end of life.' \
-            '' \
-            'HOW TO FIX IT. Take the version from a RELEASE pocket, never from -updates,' \
-            '-security or a development suite: those are superseded and deleted, so a pin' \
-            'to one can expire unexpectedly.' \
-            '' \
-            '  suite=noble        # or the release pocket of whatever image CI runs on' \
-            '  curl -s "https://archive.ubuntu.com/ubuntu/dists/$suite/main/binary-amd64/Packages.gz" \' \
-            "    | gunzip | awk '/^Package: bubblewrap\$/{f=1} f&&/^Version:/{print \$2; exit}'" \
-            '' \
-            'Download it and take both hashes:' \
-            '' \
-            '  curl -sSLO "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${ver}_amd64.deb"' \
-            '  sha256sum "bubblewrap_${ver}_amd64.deb"   # BWRAP_DEB_SHA256' \
-            '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
-            '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
-            '' \
-            'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all five of' \
-            '.github/workflows/{pr-build,pr-profile,nightly-verify,shadow-audits,warm-dependencies}.yml. They must agree;' \
-            'scripts/test_bwrap_pin.py fails if they do not.' \
-            '' \
-            'ON VERSIONS: review the symlink protections of every sandbox before moving' \
-            'the shared pin. This research harness resolves read-only bind paths and uses' \
-            'private copies for comparison passes; its inline probe mounts system paths only.' \
-            '' >&2
-          exit 1
-        fi
+        # The pinned tools bundle this exact Ubuntu package; no archive DNS is needed.
+        cp "$RUNNER_TEMP/tauceti-shared-scripts/vendor/$deb" bwrap.deb
         if ! echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -; then
-          echo "::error::bubblewrap ${BWRAP_VER} downloaded but does not match BWRAP_DEB_SHA256. Ubuntu does not rewrite published packages, so either the pin is wrong or the download was tampered with. Re-derive the hashes rather than relaxing this check."
+          echo "::error::Bundled bubblewrap ${BWRAP_VER} does not match BWRAP_DEB_SHA256; refusing to install it. Update the bundled package and both pins together."
           exit 1
         fi
         sudo dpkg -i bwrap.deb >/dev/null
