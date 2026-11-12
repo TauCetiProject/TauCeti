@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.ContinuationChainSystem
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.RepresentingChainSystem
 import TauCeti.Algebra.Ring.NegOnePow
-import TauCeti.Logic.Function.LevelInduction
+import TauCeti.Order.WellFounded.Basic
 
 /-!
 # Homotopies of twisting chain systems
@@ -34,7 +34,7 @@ differential graded algebra `C^□_*(G; R)`. For the Moore loops of the base, th
 Barraud–Cornea cocycles of the two representing chain systems.
 
 Any two representing chain systems of the same classes are joined by a homotopy
-(`TauCeti.TwistingChainSystem.IsRepresenting.exists_homotopy`), provided that the composition
+(`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`), provided that the composition
 maps are associative and take values in the subspaces `A x y`, and that the maps
 `H_{ind x - ind y - 1}(M x y) → H_{ind x - ind y - 1}(M x y, A x y)` are injective. For a compact
 manifold `M x y` of dimension `ind x - ind y - 1` with boundary `A x y` the last condition holds
@@ -55,7 +55,7 @@ makes it a boundary.
 
 * `TauCeti.TwistingChainSystem.cubicalChainDifferential_sub_add_continuationChainSum`: the
   right-hand side of the homotopy equation is a cycle.
-* `TauCeti.TwistingChainSystem.IsRepresenting.exists_homotopy`: two representing chain systems of
+* `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`: two representing chain systems of
   the same classes are joined by a homotopy.
 
 ## References
@@ -258,6 +258,17 @@ private theorem exists_continuationChainSum_eq_cubicalChainSumMap
   · simp only [map_add, map_sum, map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing, hιA,
       continuationChainSum_def]
 
+/-- The homotopy equation holds at the pairs `(x, y)` with `ind x ≤ ind y`, where all its terms
+vanish for degree reasons. -/
+private theorem homotopy_of_le {h : ∀ x y, normalizedCubicalChainAlgebra (M x y) k}
+    (hh : ∀ x y, h x y ∈ cubicalChainGrading (M x y) k (ind y - ind x)) {x y : P}
+    (hxy : ind x ≤ ind y) :
+    cubicalChainDifferential (M x y) k (h x y) =
+      S.chain x y - S'.chain x y + continuationChainSum ind ind ι ι k S.chain S'.chain h x y := by
+  rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) (hh x y),
+    S.chain_eq_zero_of_le hxy, S'.chain_eq_zero_of_le hxy,
+    continuationChainSum_eq_zero_of_le S.mem_graded S'.mem_graded hh hxy, sub_self, add_zero]
+
 /-- The chain of a pair `(x, y)` of index difference `d + 1` in the inductive construction of a
 homotopy: a chain whose boundary is the right-hand side of the homotopy equation, which is a
 cycle with vanishing relative class. -/
@@ -301,7 +312,8 @@ corners of dimension `ind x - ind y - 1` and boundary `A x y`, which has no homo
 degree, so the injectivity holds. The push-forwards of the homotopy then relate the
 Barraud–Cornea cocycles of `S` and `S'` by a continuation cocycle
 (`TauCeti.TwistingChainSystem.Homotopy.continuationCocycle`). -/
-theorem IsRepresenting.exists_homotopy (hS : S.IsRepresenting A μ) (hS' : S'.IsRepresenting A μ)
+theorem IsRepresenting.nonempty_homotopy (hS : S.IsRepresenting A μ)
+    (hS' : S'.IsRepresenting A μ)
     (hι : ∀ x w z y (a : M x w) (b : M w z) (c : M z y),
       ι x z y (ι x w z (a, b), c) = ι x w y (a, ι w z y (b, c)))
     (hA : ∀ x z y p, ι x z y p ∈ A x y)
@@ -309,24 +321,53 @@ theorem IsRepresenting.exists_homotopy (hS : S.IsRepresenting A μ) (hS' : S'.Is
       (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (A x y)).map))
         (ind x - ind y - 1).toNat).hom) :
     Nonempty (S.Homotopy S') := by
-  -- Induction on the index difference.
-  refine (exists_forall_of_forall_level_lt (fun x y ↦ (ind x - ind y).toNat)
-    (fun x y a ↦ a ∈ cubicalChainGrading (M x y) k (ind y - ind x))
-    (fun h x y ↦ cubicalChainDifferential (M x y) k (h x y) =
-      S.chain x y - S'.chain x y + continuationChainSum ind ind ι ι k S.chain S'.chain h x y)
-    ⟨0, fun _ _ ↦ zero_mem _⟩ fun h hh x y hlt ↦ ?_).elim fun h ⟨hh, hd⟩ ↦ ⟨⟨h, hh, hd⟩⟩
-  by_cases hxy : ind x ≤ ind y
-  · -- At the pairs with `ind x ≤ ind y` all terms vanish for degree reasons.
-    refine ⟨0, zero_mem _, fun h' hh' _ hh'0 ↦ ?_⟩
-    rw [hh'0, S.chain_eq_zero_of_le hxy, S'.chain_eq_zero_of_le hxy,
-      continuationChainSum_eq_zero_of_le S.mem_graded S'.mem_graded hh' hxy]
-    simp
-  · obtain ⟨e, he, hde⟩ := exists_chain_of_sub_eq hS hS' hι hA hinj hh (x := x) (y := y)
-      (d := (ind x - ind y - 1).toNat) (by omega) fun x' y' h ↦ hlt x' y' (by omega)
-    -- The continuation sum only depends on the chains of the pairs of smaller index difference.
-    refine ⟨e, he, fun h' _ hhh' hh'e ↦ ?_⟩
-    rw [hh'e, hde, continuationChainSum_congr S.mem_graded S'.mem_graded
-      (fun z hzx ↦ (hhh' z y (by omega)).symm) fun z hyz ↦ (hhh' x z (by omega)).symm]
+  classical
+  -- Recursion on the index difference: at a pair `(x, y)` with `ind y < ind x`, the homotopy
+  -- equation only involves the chains of the pairs of smaller index difference.
+  let r : P × P → P × P → Prop := InvImage (· < ·) fun p ↦ (ind p.1 - ind p.2).toNat
+  have hr {x y x' y' : P} (h : (ind x' - ind y').toNat < (ind x - ind y).toNat) :
+      r (x', y') (x, y) := h
+  refine ((InvImage.wf _ wellFounded_lt : WellFounded r).exists_forall_of_forall_exists
+    (X := fun p ↦ normalizedCubicalChainAlgebra (M p.1 p.2) k)
+    (fun h p a ↦ a ∈ cubicalChainGrading (M p.1 p.2) k (ind p.2 - ind p.1) ∧
+      (ind p.2 < ind p.1 → cubicalChainDifferential (M p.1 p.2) k a = S.chain p.1 p.2 -
+        S'.chain p.1 p.2 + continuationChainSum ind ind ι ι k S.chain S'.chain
+          (fun x y ↦ h (x, y)) p.1 p.2)) ?_ ?_).elim fun h hh ↦
+    ⟨⟨fun x y ↦ h (x, y), fun x y ↦ (hh (x, y)).1, fun x y ↦ if hxy : ind y < ind x
+      then (hh (x, y)).2 hxy else homotopy_of_le (fun x y ↦ (hh (x, y)).1) (not_lt.1 hxy)⟩⟩
+  · -- The condition at `(x, y)` only depends on the chains of the pairs of smaller index
+    -- difference.
+    rintro ⟨x, y⟩ a h h' hhh' ⟨ha, hd⟩
+    dsimp only at ha hd ⊢
+    refine ⟨ha, fun hyx ↦ (hd hyx).trans ?_⟩
+    rw [continuationChainSum_congr (ν' := fun x y ↦ h' (x, y)) S.mem_graded S'.mem_graded
+      (fun z _ ↦ hhh' (z, y) (hr (by omega))) fun z _ ↦ hhh' (x, z) (hr (by omega))]
+  · rintro ⟨x, y⟩ h hlt
+    dsimp only
+    by_cases hyx : ind y < ind x
+    · -- Extend the chains of the pairs of smaller index difference by zero.
+      let h' : ∀ x y, normalizedCubicalChainAlgebra (M x y) k := fun x' y' ↦
+        if r (x', y') (x, y) then h (x', y') else 0
+      have hh'r {x' y' : P} (h₁ : r (x', y') (x, y)) : h' x' y' = h (x', y') := by simp [h', h₁]
+      have hh' (x' y' : P) : h' x' y' ∈ cubicalChainGrading (M x' y') k (ind y' - ind x') := by
+        by_cases h₁ : r (x', y') (x, y)
+        · exact hh'r h₁ ▸ (hlt _ h₁).1
+        · rw [show h' x' y' = 0 by simp [h', h₁]]
+          exact zero_mem _
+      have hcongr {x' y' : P} (h₁ : ind x' - ind y' ≤ ind x - ind y) :
+          continuationChainSum ind ind ι ι k S.chain S'.chain h' x' y' =
+            continuationChainSum ind ind ι ι k S.chain S'.chain (fun x y ↦ h (x, y)) x' y' :=
+        continuationChainSum_congr S.mem_graded S'.mem_graded
+          (fun _ _ ↦ hh'r (hr (by omega))) fun _ _ ↦ hh'r (hr (by omega))
+      obtain ⟨e, he, hde⟩ := exists_chain_of_sub_eq hS hS' hι hA hinj hh' (x := x) (y := y)
+        (d := (ind x - ind y - 1).toNat) (by omega) fun x' y' h₁ ↦ by
+          by_cases h₂ : ind x' ≤ ind y'
+          · exact homotopy_of_le hh' h₂
+          · rw [hh'r (hr (by omega)), (hlt (x', y') (hr (by omega))).2
+              (show ind y' < ind x' by omega), hcongr (by omega)]
+      exact ⟨e, he, fun _ ↦ hde.trans (by rw [hcongr le_rfl])⟩
+    · -- At the pairs with `ind x ≤ ind y` only the degree condition is imposed.
+      exact ⟨0, zero_mem _, fun h ↦ absurd h hyx⟩
 
 end TwistingChainSystem
 

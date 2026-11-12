@@ -67,8 +67,9 @@ relating the Barraud–Cornea cocycles of two choices of data.
 
 * `TauCeti.continuationChainSum_eq_zero_of_le` and `TauCeti.parametrizedChainSum_eq_zero_of_lt`:
   the continuation and parametrized sums of graded families vanish for degree reasons.
-* `TauCeti.continuationChainSum_congr`: the continuation sum of a pair only depends on the chains
-  of the pairs of smaller index difference.
+* `TauCeti.continuationChainSum_congr` and `TauCeti.parametrizedChainSum_congr`: the continuation
+  and parametrized sums of `(x, y)` only depend on the continuation, respectively parametrized,
+  chains of the pairs of smaller dimension.
 * `TauCeti.cubicalChainDifferential_continuationChainSum` and
   `TauCeti.cubicalChainDifferential_parametrizedChainSum`: the continuation and parametrized sums
   are cycles.
@@ -151,8 +152,7 @@ theorem continuationChainSum_eq_zero_of_le
   simp [continuationChainSum_def, h₁, h₂]
 
 /-- The continuation sum of `(x, y)` only depends on the chains `ν z y` with `ind z < ind x` and
-`ν x z` with `indQ y < indQ z`, that is, on the chains of the pairs of smaller index difference,
-when `s` and `s'` have cohomological degrees `ind y - ind x + 1` and `indQ y - indQ x + 1`. -/
+`ν x z` with `indQ y < indQ z`. -/
 theorem continuationChainSum_congr {ν' : ∀ x y, normalizedCubicalChainAlgebra (N x y) R}
     (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1))
     (hs' : ∀ x y, s' x y ∈ cubicalChainGrading (M' x y) R (indQ y - indQ x + 1)) {x : P} {y : Q}
@@ -160,17 +160,15 @@ theorem continuationChainSum_congr {ν' : ∀ x y, normalizedCubicalChainAlgebra
     continuationChainSum ind indQ κ κ' R s s' ν x y =
       continuationChainSum ind indQ κ κ' R s s' ν' x y := by
   rw [continuationChainSum_def, continuationChainSum_def]
-  congr 1
-  · refine Finset.sum_congr rfl fun z _ ↦ ?_
-    by_cases hzx : ind z < ind x
+  -- Outside the ranges, the chain `s x z` or `s' z y` of the other factor vanishes.
+  refine congrArg₂ (· + ·) (Finset.sum_congr rfl fun z _ ↦ ?_) (Finset.sum_congr rfl fun z _ ↦ ?_)
+  · by_cases hzx : ind z < ind x
     · rw [hl z hzx]
     · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
         LinearMap.zero_apply, LinearMap.zero_apply]
-  · refine Finset.sum_congr rfl fun z _ ↦ ?_
-    by_cases hyz : indQ y < indQ z
+  · by_cases hyz : indQ y < indQ z
     · rw [hr z hyz]
-    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' z y), map_zero,
-        map_zero]
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' z y), map_zero, map_zero]
 
 end Graded
 
@@ -335,9 +333,8 @@ associative, `κ (ι (a, b), c) = κ (a, κ (b, c))`, `κ' (κ (a, b), c) = κ (
 `κ' (κ' (a, b), c) = κ' (a, ι' (b, c))`, and let `ν` be a family of chains of cohomological degrees
 `indQ y - ind x` satisfying the continuation equation up to a family `e` of chains of cohomological
 degrees `indQ y - ind x + 1`, that is, `∂ ν z y = e z y + c z y` for the continuation sum `c`,
-at the pairs `(z, y)` with `indQ y < ind z < ind x` and `(x, z)` with `indQ y < indQ z < ind x`
-(elsewhere it holds automatically for degree reasons). Then the boundary of the continuation sum
-of `(x, y)` is
+at the pairs `(z, y)` with `indQ y < ind z < ind x` and `(x, z)` with `indQ y < indQ z < ind x`.
+Then the boundary of the continuation sum of `(x, y)` is
 
 `Σ_z (-1) ^ (ind z - ind x + 1) • κ_* (s x z × e z y)
   + Σ_z (-1) ^ (ind x - indQ z - 1) • κ'_* (e x z × s' z y)`.
@@ -566,6 +563,26 @@ theorem parametrizedChainSum_eq_zero_of_lt
   simp [parametrizedChainSum_def, h₁, h₂,
     eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν₀ x y),
     eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hν₁ x y)]
+
+/-- The parametrized sum of `(x, y)` only depends on the chains `ν₀ x y` and `ν₁ x y`, and on the
+chains `h z y` with `ind z < ind x` and `h x z` with `indQ y < indQ z`. -/
+theorem parametrizedChainSum_congr {h' : ∀ x y, normalizedCubicalChainAlgebra (H x y) R}
+    (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1))
+    (hs' : ∀ x y, s' x y ∈ cubicalChainGrading (M' x y) R (indQ y - indQ x + 1)) {x : P} {y : Q}
+    (hl : ∀ z, ind z < ind x → h z y = h' z y) (hr : ∀ z, indQ y < indQ z → h x z = h' x z) :
+    parametrizedChainSum ind indQ κH κH' j₀ j₁ R s s' ν₀ ν₁ h x y =
+      parametrizedChainSum ind indQ κH κH' j₀ j₁ R s s' ν₀ ν₁ h' x y := by
+  rw [parametrizedChainSum_def, parametrizedChainSum_def]
+  -- Outside the ranges, the chain `s x z` or `s' z y` of the other factor vanishes.
+  refine congrArg₂ (· + ·) (congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun z _ ↦ ?_))
+    (Finset.sum_congr rfl fun z _ ↦ ?_)
+  · by_cases hzx : ind z < ind x
+    · rw [hl z hzx]
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
+        LinearMap.zero_apply, LinearMap.zero_apply]
+  · by_cases hyz : indQ y < indQ z
+    · rw [hr z hyz]
+    · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs' z y), map_zero, map_zero]
 
 end Graded
 

@@ -183,7 +183,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
   | singleton a =>
     exact quasiIso_cechAugmentation_prod_of_hom _ isTerminalTop _ Y
       (i₀ := ⟨a, Finset.mem_singleton_self a⟩) (homOfLE (by simpa using hYs))
-  | cons a s ha hs ih =>
+  | cons a s ha _ ih =>
     obtain ⟨V₁, hV₁, hYV₁, hV₁s⟩ := hU.exists_mem_range_basicOpen_le_sup hY (hV a) V hV s
       (by simpa [Finset.sup_cons] using hYs)
     let F := (SheafOfModules.toSheaf X.ringCatSheaf).obj M

@@ -63,6 +63,8 @@ elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each recip
 
 ## Main results
 
+* `TauCeti.mul_le_iff_bounds`: characterize `a * t ≤ b` by the lower or upper bound on `t`
+  determined by the sign of `a`, including the zero-coefficient case.
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
   `a ≤ m`.
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
@@ -99,6 +101,24 @@ elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each recip
 public section
 
 namespace TauCeti
+
+/-- A scalar inequality is equivalent to its sign-dependent bounds: a negative coefficient
+gives a lower bound, a positive coefficient gives an upper bound, and a zero coefficient
+requires a nonnegative right-hand side. -/
+theorem mul_le_iff_bounds {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {a b t : K} :
+    a * t ≤ b ↔ (a = 0 → 0 ≤ b) ∧ (a < 0 → b / a ≤ t) ∧ (0 < a → t ≤ b / a) := by
+  constructor
+  · intro h
+    refine ⟨?_, fun ha => (div_le_iff_of_neg' ha).mpr h,
+      fun ha => (le_div_iff₀' ha).mpr h⟩
+    intro ha
+    simpa only [ha, zero_mul] using h
+  · rintro ⟨hz, hlow, hupp⟩
+    rcases lt_trichotomy a 0 with ha | ha | ha
+    · exact (div_le_iff_of_neg' ha).mp (hlow ha)
+    · simpa only [ha, zero_mul] using hz ha
+    · exact (le_div_iff₀' ha).mp (hupp ha)
 
 /-- If `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then `a ≤ m`. No sign assumption on `C` is
 needed. -/
@@ -353,7 +373,6 @@ theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
   have hsplit : C * (K + γ * N + 2 * β * e * H) = C * (K + γ * N) + 2 * C * β * e * H := by
     ring
   rw [hsplit] at hHle ⊢
-  have hH2 : H ≤ 2 * (C * (K + γ * N)) := by linarith
   have hCγ : C * (K + γ * N) ≤ C * ((1 + γ) * (K + N)) :=
     mul_le_mul_of_nonneg_left hγN hC
   linarith
