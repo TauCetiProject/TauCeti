@@ -245,11 +245,11 @@ variable [FiniteDimensional ℝ E]
 
 section Commuting
 
-variable {ι : Type*} [Finite ι]
+variable {ι : Type*}
 
 /-- **The canonical form for commuting vector fields** (simultaneous flow-box theorem). Let
-`w i`, for `i` in a finite index set, be `C^n` vector fields, `1 ≤ n`, defined near a point `a` of
-a finite-dimensional real normed space, with linearly independent values `w i a`, and whose
+`w i` be `C^n` vector fields, `1 ≤ n`, defined near a point `a` of a finite-dimensional real
+normed space, with linearly independent values `w i a` (so the index type is finite), and whose
 pairwise Lie brackets vanish near `a`. Then the fields are simultaneously constant in suitable
 `C^n` coordinates: there is an open partial homeomorphism `φ`, `C^n` on its source with `C^n`
 inverse on its target, such that `a ∈ φ.source` and `dφ_y (w i y) = w i a` for every
@@ -266,6 +266,7 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero {n : 
   -- satisfy `dψ_z (u i) = g i (ψ z)` near `0` and `dψ_0 = id`; their local inverse is the
   -- required chart.
   classical
+  have := hli.finite
   have := Fintype.ofFinite ι
   let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   set u : ι → E := fun i ↦ w i a

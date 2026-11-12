@@ -67,14 +67,14 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M]
 
-/-- **The canonical form for commuting vector fields** [Lee, Thm. 9.46]. Let `V i`, for `i` in a
-finite index set, be vector fields on a `C^n` manifold with finite-dimensional boundaryless model,
-`C^m` on a neighbourhood of `x`, with `1 ≤ m` and `m + 1 ≤ n`, whose values at `x` are linearly
-independent and whose pairwise Lie brackets vanish near `x`. Then some chart `e` of the `C^m`
+/-- **The canonical form for commuting vector fields** [Lee, Thm. 9.46]. Let `V i` be vector
+fields on a `C^n` manifold with finite-dimensional boundaryless model, `C^m` on a neighbourhood of
+`x`, with `1 ≤ m` and `m + 1 ≤ n`, whose values at `x` are linearly independent (so the index
+type is finite) and whose pairwise Lie brackets vanish near `x`. Then some chart `e` of the `C^m`
 maximal atlas whose domain contains `x` carries all of them to constant vector fields: the
 differential of `I ∘ e` sends `V i y` to the same vector `u i` at every point `y` of the domain of
 `e`, and the vectors `u i` are linearly independent. -/
-theorem exists_chart_mfderiv_eq_const_of_mlieBracket_eq_zero {ι : Type*} [Finite ι] {m : ℕ∞}
+theorem exists_chart_mfderiv_eq_const_of_mlieBracket_eq_zero {ι : Type*} {m : ℕ∞}
     {n : ℕ∞ω} (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) [IsManifold I 1 M] [IsManifold I n M]
     {V : ι → (y : M) → TangentSpace I y} {U : Set M} {x : M}
     (hV : ∀ i, ContMDiffOn I I.tangent m (fun y ↦ (⟨y, V i y⟩ : TangentBundle I M)) U)
