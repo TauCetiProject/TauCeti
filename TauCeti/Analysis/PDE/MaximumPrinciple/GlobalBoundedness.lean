@@ -191,7 +191,7 @@ private theorem toReal_eLpNorm_posPartAbove_le
   have hwLp : MemLp (W1p.value w) s ν := lt_of_le_of_lt hsob (by finiteness)
   have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ := by
     have := ENNReal.toReal_mono (by finiteness) hsob
-    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] at this
+    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
   -- Hölder's inequality on the superlevel set `{u > l}`, off which `w` vanishes.
   set A := {x | l < W1p.value u x}
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
@@ -263,7 +263,7 @@ private theorem ae_value_le_add_of_toReal_eLpNorm_posPartAbove_le (hOmega : mu O
         ν {x | ENNReal.ofReal (t - l) ≤ ‖W1p.value w x‖ₑ} := by
       refine measure_mono_ae ?_
       filter_upwards [W1p.value_posPartAbove_ae (by norm_num) (hk.trans hkl) u] with x hx hxt
-      rw [hx, Real.enorm_of_nonneg (le_max_right _ _)]
+      rw [hx, Real.eNorm_of_nonneg (le_max_right _ _)]
       exact ENNReal.ofReal_le_ofReal (le_max_of_le_left (by linarith))
     have hfin' : eLpNorm (W1p.value w) s ν ^ ((s : ℝ≥0∞).toReal) ≠ ∞ :=
       ENNReal.rpow_ne_top_of_nonneg (by positivity) (hfin l hkl)
@@ -673,7 +673,7 @@ private theorem toReal_eLpNorm_posPartAbove_le_divergence
   -- The Sobolev inequality, in real form.
   have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ := by
     have := ENNReal.toReal_mono (by finiteness) (hS w hw0)
-    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] at this
+    rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] at this
   -- Absorb one factor of `‖∇w‖`.
   set Fq := (eLpNorm F q ν).toReal
   set m := ν.real A ^ (2⁻¹ - (q : ℝ)⁻¹)

@@ -102,7 +102,7 @@ formation. -/
 @[simp]
 theorem of_globalAbelianArtinHom (hV : V.IsAbelianClassFieldLayer)
     (c : IdeleClassGroup (𝓞 K) K) :
-    Additive.ofMul (Abelianization.of (globalAbelianArtinHom K hV c)) =
+    Additive.ofMul (Group.Abelianization.of (globalAbelianArtinHom K hV c)) =
       (globalClassFormation K).artinMap (ofOpenNormal V)
         (groundEquivOfOpenNormal (globalFormation K) V (globalGroundEquiv K (.ofMul c))) := by
   rw [globalAbelianArtinHom_apply, ClassFormation.ofMul_of_abelianArtinMap]
@@ -144,12 +144,12 @@ theorem globalAbelianGaloisEquiv_mk (hV : V.IsAbelianClassFieldLayer)
     QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- **`globalAbelianGaloisEquiv` is the Artin map of the global class formation**: composed with
-`Abelianization.of`, which is injective because the layer is abelian, it is
+`Group.Abelianization.of`, which is injective because the layer is abelian, it is
 `ClassFormation.artinMap`. So it is reciprocity, not an arbitrary isomorphism between two finite
 groups of the same order. -/
 theorem globalAbelianGaloisEquiv_artinMap (hV : V.IsAbelianClassFieldLayer)
     (c : IdeleClassGroup (𝓞 K) K) :
-    Additive.ofMul (Abelianization.of (globalAbelianGaloisEquiv K hV (QuotientGroup.mk c))) =
+    Additive.ofMul (Group.Abelianization.of (globalAbelianGaloisEquiv K hV (QuotientGroup.mk c))) =
       (globalClassFormation K).artinMap (ofOpenNormal V)
         (groundEquivOfOpenNormal (globalFormation K) V (globalGroundEquiv K (.ofMul c))) := by
   rw [globalAbelianGaloisEquiv_mk, of_globalAbelianArtinHom]
