@@ -148,8 +148,8 @@ private theorem integral_floerEnergyDensity_cappedExchangePerturbation_ball (ω 
     hu.contDiffAt (hUo.mem_nhds fun h ↦ by
       have h' : ‖e.symm z‖ ≤ Real.exp (-(2 * π * R)) / 2 := by simpa using hz
       rw [h, norm_one] at h'
-      have hR₁ : 0 ≤ R := by linarith
-      linarith [Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos] : -(2 * π * R) ≤ 0)])
+      linarith [Real.exp_le_one_iff.2
+        (by nlinarith [Real.pi_pos, (by linarith : (0 : ℝ) ≤ R)] : -(2 * π * R) ≤ 0)])
 
 /-- **The energy identity along the input-exchange family capped at `0`.** Let `K_c` be the member
 `c ∈ [0, 1]` of the input-exchange family capped at `0` along a neck of length `L > 4`, for
