@@ -104,7 +104,7 @@ theorem lieIdeal_solvableRadicalDefiningIdeal_eq_radical
     ext x
     simp only [LieSubalgebra.mem_map, hLie', LieSubalgebra.mem_comap,
       LieEquiv.coe_toLieHom]
-    exact ⟨fun ⟨d, hd, hdx⟩ ↦ hdx ▸ hd,
+    exact ⟨fun ⟨_, hd, hdx⟩ ↦ hdx ▸ hd,
       fun hx ↦ ⟨e x, by simpa only [LieEquiv.symm_apply_apply] using hx,
         e.symm_apply_apply x⟩⟩
   have : LieAlgebra.IsSolvable (LieAlgebra.radical k L).toLieSubalgebra := by

@@ -48,7 +48,6 @@ noncomputable def indHomMackeyLinearEquiv (A : Rep.{u} k H) (B : Rep.{u} k K) :
         Rep.res ((mackeySubgroup D.out K H).subgroupOf H).subtype A ⟶
           Rep.res (mackeyToH D.out K H) B) := by
   classical
-  let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
   -- In each Mackey summand, the finite-index biadjunction moves induction out of the target.
   let e (s : G) :
       (A ⟶ Rep.mackeySummand K H s B) ≃ₗ[k]
@@ -74,7 +73,6 @@ theorem indHomMackeyLinearEquiv_apply (A : Rep.{u} k H) (B : Rep.{u} k K)
     (φ : Rep.ind H.subtype A ⟶ Rep.ind K.subtype B)
     (D : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
     indHomMackeyLinearEquiv A B φ D =
-      letI := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
       (Rep.resCoindHomEquiv ((mackeySubgroup D.out K H).subgroupOf H).subtype A
         (Rep.res (mackeyToH D.out K H) B)).symm
           ((Rep.homDirectSumLinearEquiv A
@@ -84,7 +82,6 @@ theorem indHomMackeyLinearEquiv_apply (A : Rep.{u} k H) (B : Rep.{u} k K)
               (Rep.mackeyDecomposition (K := H) B).hom) D) ≫
             (Rep.indCoindIso (Rep.res (mackeyToH D.out K H) B)).hom) := by
   classical
-  let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
   simp only [indHomMackeyLinearEquiv, LinearEquiv.trans_apply,
     LinearEquiv.piCongrRight_apply, Linear.homCongr_apply, Iso.refl_inv, Category.id_comp]
 

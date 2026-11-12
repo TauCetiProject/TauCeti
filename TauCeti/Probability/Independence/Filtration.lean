@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Process.Adapted
+import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.Probability.Independence.Sup
 
 /-!
@@ -39,11 +40,12 @@ variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorde
 /-- If the increment of an adapted process over `[s, u]` is independent of `ℱ s` and its
 increment over `[u, t]` is independent of `ℱ u`, then its increment over `[s, t]` is independent
 of `ℱ s`. -/
-theorem indep_comap_sub_of_indep_comap_sub [AddGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+theorem indep_comap_sub_of_indep_comap_sub [AddGroup E] [MeasurableSub₂ E]
     [IsZeroOrProbabilityMeasure μ] (hX : Adapted ℱ X) {s u t : ι} (hsu : s ≤ u)
     (h₁ : Indep (.comap (X u - X s) inferInstance) (ℱ s) μ)
     (h₂ : Indep (.comap (X t - X u) inferInstance) (ℱ u) μ) :
     Indep (.comap (X t - X s) inferInstance) (ℱ s) μ := by
+  have : MeasurableAdd₂ E := TauCeti.measurableAdd₂_of_measurableSub₂
   have hm₁ : MeasurableSpace.comap (X u - X s) inferInstance ≤ ℱ u :=
     ((hX u).sub (hX.measurable_le hsu)).comap_le
   have hsup := h₁.sup_left (indep_of_indep_of_le_right h₂ (sup_le hm₁ (ℱ.mono hsu)))

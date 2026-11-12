@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
@@ -41,6 +42,9 @@ glued at their endpoints `±1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.exp_pow_eq_one_iff`: `exp (i θ)` is an `n`-th root of unity exactly when `θ` is an
+  integer multiple of `2π / n`.
+* `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
@@ -135,6 +139,23 @@ theorem mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
 theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle, y ^ n = z :=
   ⟨exp (Complex.arg z / n), by
     rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
+
+/-- **The `n`-th roots of unity among the exponentials.** For `n ≠ 0`, `exp (i θ) ^ n = 1` exactly
+when `θ` is an integer multiple of `2π / n`. -/
+theorem exp_pow_eq_one_iff {n : ℕ} (hn : n ≠ 0) {θ : ℝ} :
+    exp θ ^ n = 1 ↔ ∃ m : ℤ, θ = m * (2 * Real.pi / n) := by
+  have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn
+  rw [← exp_natCast_mul, exp_eq_one]
+  refine exists_congr fun m ↦ ?_
+  rw [mul_div_assoc', eq_div_iff hn', mul_comm θ]
+
+/-- Rotating a complex number by minus its argument puts it on the nonnegative real axis. -/
+theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x‖ := by
+  rw [coe_exp]
+  nth_rewrite 2 [← Complex.norm_mul_exp_arg_mul_I x]
+  rw [mul_left_comm, ← Complex.exp_add]
+  push_cast
+  rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/

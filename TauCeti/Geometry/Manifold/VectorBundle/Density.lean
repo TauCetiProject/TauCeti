@@ -70,7 +70,7 @@ theorem contMDiffOn_densityCoordChange :
         (f := fun y : B ↦ ((e'.coordChangeL ℝ e y : F →L[ℝ] F) : F →ₗ[ℝ] F).det)
         (hd x hx)
   refine (ha.smul (contMDiffOn_const (c := ContinuousLinearMap.id ℝ ℝ))).congr ?_
-  intro x hx
+  intro x _
   apply ContinuousLinearMap.ext
   intro c
   exact e.densityCoordChange_apply e' x c
