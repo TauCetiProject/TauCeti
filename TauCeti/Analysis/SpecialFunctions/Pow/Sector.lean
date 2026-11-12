@@ -79,7 +79,7 @@ theorem cos_mul_norm_le_re_exp_mul_cpow {z : ℂ} {β : ℝ} (hβ : 0 ≤ β) (h
   have huim : u.im = -Real.sin θ := by
     simpa only [Real.sin_neg] using exp_ofReal_mul_I_im (-θ)
   have hre : (u * P).re = ‖P‖ * Real.cos (z.arg * β - θ) := by
-    rcases eq_or_ne z 0 with rfl | hz0
+    rcases eq_or_ne z 0 with rfl | _
     · simp [P, hβ.ne']
     have hPn : ‖P‖ = ‖z‖ ^ β := by
       simp [P]

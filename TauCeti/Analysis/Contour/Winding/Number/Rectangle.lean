@@ -45,26 +45,21 @@ namespace TauCeti.Contour
 
 variable {z w p : ℂ}
 
-/-- The rectangle boundary over `[0, 4]` lies in the closed rectangle. -/
-private theorem rectBoundary_mem_rectangle_of_mem_uIcc {t : ℝ} (ht : t ∈ uIcc (0 : ℝ) 4) :
-    rectBoundary z w t ∈ Rectangle z w :=
-  rectBoundary_mem_rectangle (by rwa [uIcc_of_le (by norm_num)] at ht)
-
 /-- **The winding number of a rectangle boundary vanishes outside the closed rectangle.** -/
 theorem windingNumber_rectBoundary_eq_zero (hp : p ∉ Rectangle z w) :
     windingNumber (rectBoundary z w) 0 4 p = 0 :=
   windingNumber_eq_zero_of_starConvex
-    ((convex_rectangle z w).starConvex (rectBoundary_mem_rectangle ⟨le_rfl, by norm_num⟩))
-    (isPiecewiseC1On_rectBoundary z w) (by simp) (fun _ ↦ rectBoundary_mem_rectangle_of_mem_uIcc)
+    ((convex_rectangle z w).starConvex (rectBoundary_mem_rectangle 0))
+    (isPiecewiseC1On_rectBoundary z w) (by simp) (fun t _ ↦ rectBoundary_mem_rectangle t)
     hp
 
 /-- **The boundary of a rectangle is null-homologous in every set containing the rectangle.** -/
 theorem isNullHomologous_rectBoundary {U : Set ℂ} (hU : Rectangle z w ⊆ U) :
     IsNullHomologous (rectBoundary z w) 0 4 U :=
   (isNullHomologous_of_starConvex
-    ((convex_rectangle z w).starConvex (rectBoundary_mem_rectangle ⟨le_rfl, by norm_num⟩))
+    ((convex_rectangle z w).starConvex (rectBoundary_mem_rectangle 0))
     (isPiecewiseC1On_rectBoundary z w) (by simp)
-    (fun _ ↦ rectBoundary_mem_rectangle_of_mem_uIcc)).mono hU
+    (fun t _ ↦ rectBoundary_mem_rectangle t)).mono hU
 
 /-- **The boundary of a rectangle winds once around every point of the open rectangle.** The
 hypothesis forces `z` to be the lower left corner, so that the boundary is traversed
@@ -100,8 +95,8 @@ theorem windingNumber_rectBoundary_eq_one (hp : p ∈ Ioo z.re w.re ×ℂ Ioo z.
     simp [Green.triangleDet_def, finRotate_apply]; nlinarith))
   -- The winding number of the closed curve is an integer, which must be `1`.
   obtain ⟨n, hn⟩ := (isPiecewiseC1On_rectBoundary z w).exists_int_windingNumber (by simp)
-    fun t ht (h : rectBoundary z w t = p) ↦
-      hfr (h ▸ rectBoundary_mem_frontier (by rwa [uIcc_of_le (by norm_num)] at ht))
+    fun t _ (h : rectBoundary z w t = p) ↦
+      hfr (h ▸ rectBoundary_mem_frontier t)
   have hre := congrArg re hsum
   simp only [add_re, hn, intCast_re] at hre
   have hpos : (0 : ℤ) < n := by

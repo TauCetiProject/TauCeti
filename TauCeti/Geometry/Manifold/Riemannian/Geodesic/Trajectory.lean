@@ -53,8 +53,6 @@ to define the Riemannian exponential map by evaluation at time one.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5.
 -/
 
--- Roadmap: HopfRinow
-
 public section
 
 open Bundle CovariantDerivative Function Manifold Set
@@ -164,10 +162,8 @@ theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
     (I := I) (M := M) (s := geodesicInterval I M p v) (t := (0 : ℝ))
     (isOpen_geodesicInterval.uniqueDiffOn 0 h0) hz h0
   have hz0 : maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) 0 =
-      TotalSpace.mk' E p v := by
-    apply maximalIntegralCurve_zero
-    rw [hdomains]
-    exact h0
+      TotalSpace.mk' E p v :=
+    maximalIntegralCurve_zero
   refine ⟨hgeo, h0, ?_⟩
   unfold maximalGeodesic
   simpa only [curveVelocityLiftWithin_apply] using hlift.symm.trans hz0
@@ -176,9 +172,7 @@ omit [I.Boundaryless] [T2Space M] in
 /-- The maximal geodesic starts at its prescribed base point. -/
 @[simp] theorem maximalGeodesic_zero (p : M) (v : TangentSpace I p) :
     maximalGeodesic I M p v 0 = p := by
-  by_cases h : (0 : ℝ) ∈ maximalIntegralCurveInterval (geodesicSpray I M) (TotalSpace.mk' E p v)
-  · rw [maximalGeodesic, maximalIntegralCurve_zero h]
-  · rw [maximalGeodesic, maximalIntegralCurve_eq_of_not_mem h]
+  rw [maximalGeodesic, maximalIntegralCurve_zero]
 
 /-- Every geodesic with initial data `(p, v)` on an open interval around zero agrees there with
 the maximal geodesic. -/
@@ -233,7 +227,7 @@ theorem IsGeodesicCurveOn.maximalGeodesic_sub_eq {γ : ℝ → M} {a b τ t : �
       (contMDiff_one_geodesicSpray (I := I) (M := M)) hdomain
   have heq := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless
     (contMDiff_one_geodesicSpray (I := I) (M := M)) hmax hconst
-    (maximalIntegralCurve_zero (hdomain ▸ mem_univ 0))
+    maximalIntegralCurve_zero
   funext t
   exact congrArg TotalSpace.proj (congrFun heq t)
 

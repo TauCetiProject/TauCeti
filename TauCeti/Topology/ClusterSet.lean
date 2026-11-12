@@ -34,10 +34,11 @@ extension theorem over an arbitrary `T3` codomain, into a compact subset of whic
 assumed to take its values; a proper metric codomain with a bounded image is the special case in
 which that compact set is supplied by the boundedness. The complex-analytic consequences — that the
 boundary cluster set of a conformal map lies on the frontier of the image — are in
-`TauCeti/Analysis/Complex/Conformal/ClusterSet.lean`, the consumer this file was written for:
-Carathéodory's boundary correspondence, layer **L5** of the conformal-mapping roadmap, is applied
-by checking that the boundary cluster sets of a Riemann map are singletons and feeding that into
-`TauCeti.exists_continuousOn_closure_eqOn`.
+`TauCeti/Analysis/Complex/Conformal/ClusterSet.lean`, the consumer this file was written for.
+Carathéodory's continuity theorem, in `TauCeti/Analysis/Complex/Conformal/Caratheodory.lean`, is
+proved by checking that the boundary cluster sets of a conformal map of a disc are singletons and
+feeding that into the bounded form `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` of the
+extension theorem `TauCeti.exists_continuousOn_closure_eqOn`.
 
 The cluster set is `{v | MapClusterPt v (𝓝[U] w) f}`; Mathlib has the `ClusterPt`/`MapClusterPt`
 API, on which everything below is built, but no name for this set. The extension itself is

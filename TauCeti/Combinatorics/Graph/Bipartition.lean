@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
-public import TauCeti.Combinatorics.Graph.VertexCover
+public import TauCeti.Combinatorics.Graph.VertexCover.Basic
 
 /-!
 # Bipartitions of multigraphs
@@ -28,6 +28,7 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.IsBipartition G L R`: the finite sets `L` and `R` of actual vertices form a bipartition of
   `G`.
 * `Graph.BipartiteHom G L`: one arrow for every actual edge, directed from `L` to its other end.
+* `Graph.BipartiteHom.arrowEquiv`: the equivalence between all such arrows and actual edges.
 
 ## Main results
 
@@ -41,6 +42,9 @@ usage of either side by edge multiplicities equals their sum.
   similarly for `R`.
 * `Graph.IsBipartition.sum_sum_incidentEdges_left`: summing over `L` the values of the edges
   incident with each vertex sums every actual edge once, and similarly for `R`.
+* `Graph.BipartiteHom.sum_outgoing_eq_sum_incidentEdges` and
+  `Graph.BipartiteHom.sum_incoming_eq_sum_incidentEdges`: sums over arrows at a vertex agree with
+  sums over its incident edges.
 -/
 
 public section
@@ -229,74 +233,107 @@ theorem edge_in_injective {x : V(G)} :
   subst z
   exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
 
-end BipartiteHom
-
-/-- Orienting each edge from the left side gives exactly one bipartite arrow per actual edge. -/
-noncomputable def IsBipartition.bipartiteEdgeEquiv (hLR : G.IsBipartition L R) :
-    (Σ x, Σ y, G.BipartiteHom L x y) ≃ E(G) :=
-  Equiv.ofBijective (fun a ↦ a.2.2.edge) ⟨by
-    rintro ⟨x, y, a⟩ ⟨z, w, b⟩ hab
-    have hab' : a.edge = b.edge := hab
-    have hxz : x = z := by
-      obtain ⟨v, hv, hvu⟩ := hLR.existsUnique_mem_left_inc a.edge
-      exact (hvu x ⟨a.source_mem, a.isLink.inc_left⟩).trans
-        (hvu z ⟨b.source_mem, hab' ▸ b.isLink.inc_left⟩).symm
-    subst z
-    exact congrArg (Sigma.mk x) (BipartiteHom.edge_out_injective hab'), by
+/-- The arrows leaving a vertex on the left side of a bipartition are in bijection with the
+actual edges incident with that vertex. -/
+noncomputable def outgoingEquiv {L : Finset V(G)} (x : V(G)) (hx : x ∈ L) :
+    (Σ y, G.BipartiteHom L x y) ≃ {e : E(G) // G.Inc e x} :=
+  Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_left⟩) ⟨by
+    intro e f h
+    exact edge_out_injective (congrArg Subtype.val h), by
     intro e
-    obtain ⟨x, hx, -⟩ := hLR.existsUnique_mem_left_inc e
-    exact ⟨⟨x, ⟨hx.2.other, hx.2.isLink_other.right_mem⟩,
-      ⟨e, hx.2.isLink_other, hx.1⟩⟩, rfl⟩⟩
+    let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
+    refine ⟨⟨y, ⟨e.1, e.2.isLink_other, hx⟩⟩, ?_⟩
+    apply Subtype.ext
+    rfl⟩
 
 @[simp]
-theorem IsBipartition.bipartiteEdgeEquiv_apply (hLR : G.IsBipartition L R)
-    (a : Σ x, Σ y, G.BipartiteHom L x y) :
-    hLR.bipartiteEdgeEquiv a = a.2.2.edge :=
+theorem outgoingEquiv_apply {L : Finset V(G)} (x : V(G)) (hx : x ∈ L)
+    (e : Σ y, G.BipartiteHom L x y) :
+    outgoingEquiv x hx e = ⟨e.2.edge, e.2.isLink.inc_left⟩ :=
+  (rfl)
+
+/-- The arrows entering a vertex on the right side of a bipartition are in bijection with the
+actual edges incident with that vertex. -/
+noncomputable def incomingEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (x : V(G)) (hx : x ∈ R) :
+    (Σ y, G.BipartiteHom L y x) ≃ {e : E(G) // G.Inc e x} :=
+  Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_right⟩) ⟨by
+    intro e f h
+    exact edge_in_injective (congrArg Subtype.val h), by
+    intro e
+    let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
+    refine ⟨⟨y, ⟨e.1, e.2.isLink_other.symm,
+      hLR.mem_left_of_isLink e.2.isLink_other hx⟩⟩, ?_⟩
+    apply Subtype.ext
+    rfl⟩
+
+@[simp]
+theorem incomingEquiv_apply {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (x : V(G)) (hx : x ∈ R) (e : Σ y, G.BipartiteHom L y x) :
+    incomingEquiv hLR x hx e = ⟨e.2.edge, e.2.isLink.inc_right⟩ :=
+  (rfl)
+
+/-- In a bipartite graph, directing an edge from the left side to the right side gives a
+bijection from all bipartite arrows to the actual edges. -/
+noncomputable def arrowEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R) :
+    (Σ x, Σ y, G.BipartiteHom L x y) ≃ E(G) :=
+  Equiv.ofBijective (fun e ↦ e.2.2.edge) ⟨by
+    rintro ⟨x, y, e⟩ ⟨x', y', f⟩ h
+    have hef : e.edge = f.edge := h
+    rcases e.isLink.eq_and_eq_or_eq_and_eq (hef ▸ f.isLink) with hxy | hxy
+    · rcases hxy with ⟨hxx, hyy⟩
+      have hxx' : x = x' := Subtype.ext hxx
+      have hyy' : y = y' := Subtype.ext hyy
+      subst x' y'
+      exact congrArg (fun a : G.BipartiteHom L x y ↦
+        (⟨x, y, a⟩ : Σ x, Σ y, G.BipartiteHom L x y)) (BipartiteHom.ext hef)
+    · have hxy' : x = y' := Subtype.ext hxy.1
+      exact (disjoint_left.1 hLR.disjoint e.source_mem
+        (hxy' ▸ f.target_mem hLR)).elim, by
+    intro e
+    obtain ⟨x, hxL, hx⟩ := (hLR.existsUnique_mem_left_inc e).exists
+    let y : V(G) := ⟨hx.other, hx.isLink_other.right_mem⟩
+    refine ⟨⟨x, y, ⟨e, hx.isLink_other, hxL⟩⟩, ?_⟩
+    apply Subtype.ext
+    rfl⟩
+
+@[simp]
+theorem arrowEquiv_apply {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (e : Σ x, Σ y, G.BipartiteHom L x y) : (arrowEquiv hLR e) = e.2.2.edge :=
   (rfl)
 
 @[simp]
-theorem IsBipartition.bipartiteEdgeEquiv_symm_apply_edge (hLR : G.IsBipartition L R)
+theorem arrowEquiv_symm_edge {L R : Finset V(G)} (hLR : G.IsBipartition L R)
     {x y : V(G)} (e : G.BipartiteHom L x y) :
-    hLR.bipartiteEdgeEquiv.symm e.edge = ⟨x, y, e⟩ :=
-  hLR.bipartiteEdgeEquiv.symm_apply_apply ⟨x, y, e⟩
+    (arrowEquiv hLR).symm e.edge = ⟨x, y, e⟩ := by
+  apply (arrowEquiv hLR).injective
+  simp
 
-section Sums
-
-variable [Fintype V(G)] [Fintype E(G)] {M : Type*} [AddCommMonoid M]
-
-/-- At a vertex in the left side, the outgoing bipartite arrows count each incident edge once. -/
-theorem sum_bipartiteHom_out (f : E(G) → M) {x : V(G)} (hx : x ∈ L) :
-    ∑ y, ∑ e : G.BipartiteHom L x y, f e.edge =
-      ∑ e ∈ G.incidentEdges {x}, f e := by
+/-- Summing an edge weight over the arrows leaving a left-side vertex is the sum over the
+actual edges incident with that vertex. -/
+theorem sum_outgoing_eq_sum_incidentEdges [Fintype V(G)] [Fintype E(G)]
+    {M : Type*} [AddCommMonoid M] {L : Finset V(G)} (x : V(G)) (hx : x ∈ L)
+    (f : E(G) → M) :
+    ∑ y, ∑ e : G.BipartiteHom L x y, f e.edge = ∑ e ∈ G.incidentEdges {x}, f e := by
   classical
-  rw [← Fintype.sum_sigma (fun a : Σ y, G.BipartiteHom L x y ↦ f a.2.edge)]
-  refine sum_bij (fun a _ ↦ a.2.edge) (fun a _ ↦ ?_) (fun a _ b _ hab ↦ ?_)
-    (fun e he ↦ ?_) (fun _ _ ↦ rfl)
-  · exact (mem_incidentEdges G).2 ⟨x, by simp, a.2.isLink.inc_left⟩
-  · exact BipartiteHom.edge_out_injective hab
-  · obtain ⟨v, hv, hev⟩ := (mem_incidentEdges G).1 he
-    obtain rfl := mem_singleton.1 hv
-    exact ⟨⟨⟨hev.other, hev.isLink_other.right_mem⟩, ⟨e, hev.isLink_other, hx⟩⟩,
-      mem_univ _, rfl⟩
+  rw [← Fintype.sum_sigma']
+  refine (Fintype.sum_equiv (outgoingEquiv x hx)
+    (fun e ↦ f e.2.edge) (fun e ↦ f e.1) fun e ↦ rfl).trans ?_
+  exact (Finset.sum_subtype (G.incidentEdges {x}) (by simp [mem_incidentEdges]) f).symm
 
-/-- At a vertex in the right side, the incoming bipartite arrows count each incident edge once. -/
-theorem IsBipartition.sum_bipartiteHom_in (hLR : G.IsBipartition L R) (f : E(G) → M)
-    {x : V(G)} (hx : x ∈ R) :
-    ∑ y, ∑ e : G.BipartiteHom L y x, f e.edge =
-      ∑ e ∈ G.incidentEdges {x}, f e := by
+/-- Summing an edge weight over the arrows entering a right-side vertex is the sum over the
+actual edges incident with that vertex. -/
+theorem sum_incoming_eq_sum_incidentEdges [Fintype V(G)] [Fintype E(G)]
+    {M : Type*} [AddCommMonoid M] {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (x : V(G)) (hx : x ∈ R) (f : E(G) → M) :
+    ∑ y, ∑ e : G.BipartiteHom L y x, f e.edge = ∑ e ∈ G.incidentEdges {x}, f e := by
   classical
-  rw [← Fintype.sum_sigma (fun a : Σ y, G.BipartiteHom L y x ↦ f a.2.edge)]
-  refine sum_bij (fun a _ ↦ a.2.edge) (fun a _ ↦ ?_) (fun a _ b _ hab ↦ ?_)
-    (fun e he ↦ ?_) (fun _ _ ↦ rfl)
-  · exact (mem_incidentEdges G).2 ⟨x, by simp, a.2.isLink.inc_right⟩
-  · exact BipartiteHom.edge_in_injective hab
-  · obtain ⟨v, hv, hev⟩ := (mem_incidentEdges G).1 he
-    obtain rfl := mem_singleton.1 hv
-    let y : V(G) := ⟨hev.other, hev.isLink_other.right_mem⟩
-    have hy : y ∈ L := hLR.mem_left_of_isLink hev.isLink_other hx
-    exact ⟨⟨y, ⟨e, hev.isLink_other.symm, hy⟩⟩, mem_univ _, rfl⟩
+  rw [← Fintype.sum_sigma']
+  refine (Fintype.sum_equiv (incomingEquiv hLR x hx)
+    (fun e ↦ f e.2.edge) (fun e ↦ f e.1) fun e ↦ rfl).trans ?_
+  exact (Finset.sum_subtype (G.incidentEdges {x}) (by simp [mem_incidentEdges]) f).symm
 
-end Sums
+end BipartiteHom
 
 end Graph
 
