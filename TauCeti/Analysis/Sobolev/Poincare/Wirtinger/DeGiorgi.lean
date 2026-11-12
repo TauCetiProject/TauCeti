@@ -166,7 +166,6 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_convex
   set nu := mu.restrict (Omega : Set E) with hnu
   set K : ℝ := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
   set I : ℝ := ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖ ∂nu
-    with hI
   have hK0 : 0 ≤ K := by positivity
   have hI0 : 0 ≤ I := integral_nonneg fun x ↦ norm_nonneg _
   -- The sets involved are measurable, as `W1p.value u` has a measurable representative.

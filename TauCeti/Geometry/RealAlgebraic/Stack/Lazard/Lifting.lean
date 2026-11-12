@@ -172,6 +172,6 @@ theorem nonempty_lazardDelineation_of_lazardValuation_eq
     exact WithTop.add_right_cancel WithTop.coe_ne_top h
   obtain ⟨D⟩ := nonempty_lazardDelineation_of_coeff_zero_ne_zero q hS hconn
     (leadingCoeff_ne_zero.2 hq) hq0 hdq.1 hlead_eq htrail_eq hdq.2
-  exact TauCeti.nonempty_lazardDelineation_X_mul hq D hconn htrail_eq
+  exact TauCeti.nonempty_lazardDelineation_X_mul D hconn htrail_eq
 
 end Polynomial

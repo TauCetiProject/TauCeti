@@ -76,7 +76,7 @@ namespace StarPositiveFunctional
 section NonUnital
 
 variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule ℂ A]
-  [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] (φ : StarPositiveFunctional A)
+  [IsScalarTower ℂ A A] (φ : StarPositiveFunctional A)
 
 /-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
 abbrev HilbertGNS : Type _ := Completion φ.GNS
@@ -504,6 +504,16 @@ theorem boundedRepresentation_hilbertCyclicVector (hA : ∀ a : A, Continuous (�
     (a : A) :
     φ.boundedRepresentation hA a φ.hilbertCyclicVector = φ.hilbertClassMap a :=
   φ.hilbertLeftMul_hilbertCyclicVector (hA a)
+
+/-- A positive functional with trivial null space gives a faithful bounded GNS representation.
+No finite-dimensionality or traciality is needed. -/
+theorem boundedRepresentation_injective_of_nullSubmodule_eq_bot
+    (hA : ∀ a : A, Continuous (φ.leftMul a)) (hφ : φ.nullSubmodule = ⊥) :
+    Function.Injective (φ.boundedRepresentation hA) := by
+  refine (injective_iff_map_eq_zero (φ.boundedRepresentation hA)).mpr fun a ha => ?_
+  have hz := congrArg (fun T => T φ.hilbertCyclicVector) ha
+  have hsq : φ (star a * a) = 0 := (φ.hilbertClassMap_eq_zero_iff a).mp (by simpa using hz)
+  exact (φ.apply_star_mul_self_eq_zero_iff_of_nullSubmodule_eq_bot hφ a).mp hsq
 
 /-- The canonical cyclic vector has dense orbit under `φ.boundedRepresentation hA`. -/
 theorem denseRange_boundedRepresentation_hilbertCyclicVector

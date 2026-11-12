@@ -135,7 +135,7 @@ private theorem exists_mem_forall_add_inner_le (hv : ConvexOn ℝ Ω v) {G : Set
     ∃ x ∈ G, ∃ p, ∀ x' ∈ Ω, v x + inner ℝ (x' - x) p ≤ v x' := by
   classical
   have hae := ae_eventually_ne_top_and_differentiableAt_toReal (μ := addHaar)
-    (convex_epigraph_ite hv) ite_ne_bot
+    (convexOn_iff_convex_epigraph_ite.1 hv) ite_ne_bot
   have : (ae (addHaar.restrict G)).NeBot := ae_restrict_neBot.2 (hGo.measure_ne_zero _ hG)
   have hae' : ∀ᵐ y ∂addHaar.restrict G, y ∈ G ∧
       DifferentiableAt ℝ (fun x' => (if x' ∈ Ω then (v x' : EReal) else ⊤).toReal) y := by
@@ -143,7 +143,8 @@ private theorem exists_mem_forall_add_inner_le (hv : ConvexOn ℝ Ω v) {G : Set
     exact ⟨hyG, (h (by simp [hGΩ hyG])).2⟩
   obtain ⟨x, hx, hd⟩ := hae'.exists
   have hp := (mem_subdifferential_ite_iff (innerₗ E) (hGΩ hx)).1
-    (gradient_toReal_mem_subdifferential (convex_epigraph_ite hv) ite_ne_bot (by simp [hGΩ hx]) hd)
+    (gradient_toReal_mem_subdifferential (convexOn_iff_convex_epigraph_ite.1 hv) ite_ne_bot
+      (by simp [hGΩ hx]) hd)
   exact ⟨x, hx, _, by simpa only [innerₗ_apply_apply] using hp⟩
 
 variable [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
@@ -203,7 +204,7 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
   -- Replace `v` by `w = (1 + ε) v + b`: then `u < w` at `x₀` and `w < u` on the frontier of `Ω`.
   obtain ⟨ε, hε, b, hwc, hwconv, hfrw, hx₀w⟩ :=
     exists_convexOn_lt_frontier_of_lt hΩ.isCompact_closure hv hvc hfr hx₀ hlt
-  set w : E → ℝ := fun y => (1 + ε) * v y + b with hw
+  set w : E → ℝ := fun y => (1 + ε) * v y + b
   -- The open set `G = {u < w}` contains `x₀`, and `w ≤ u` on its frontier.
   obtain ⟨G, hGo, hGΩ, hGc, hx₀G, hpos, hfrG⟩ :=
     exists_isOpen_subset_pos_forall_frontier_le hΩo huc hwc hfrw hx₀ hx₀w
@@ -219,7 +220,7 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
   · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]
     exact one_lt_pow₀ (by linarith) finrank_pos.ne'
   · refine ((measure_mono subset_closure).trans_lt ?_).ne
-    refine mongeAmpereMeasure_lt_top μ (convex_epigraph_ite hv) ite_ne_bot
+    refine mongeAmpereMeasure_lt_top μ (convexOn_iff_convex_epigraph_ite.1 hv) ite_ne_bot
       AbsolutelyContinuous.rfl hGb.isCompact_closure ?_
     rwa [setOf_ite_ne_top, hΩo.interior_eq]
 

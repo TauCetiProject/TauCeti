@@ -38,6 +38,11 @@ of positive (negative) square has at most as many members as the positive (negat
   vanishing negative index of inertia.
 * `QuadraticForm.forall_nonpos_iff_sigPos_eq_zero`: nonpositivity is characterized by
   vanishing positive index of inertia.
+* `QuadraticForm.exists_submodule_finrank_eq_sigPos_and_posDef` and
+  `QuadraticForm.exists_submodule_finrank_eq_sigNeg_and_negDef`: a definite subspace of dimension
+  the corresponding index of inertia exists, without finite-dimensionality.
+* `QuadraticForm.sigPos_eq_zero_of_not_finite` and `QuadraticForm.sigNeg_eq_zero_of_not_finite`:
+  both indices of inertia vanish when the space is not finite.
 * `QuadraticForm.sigPos_restrict_le`: restriction to a subspace cannot increase the
   positive index of inertia.
 * `QuadraticForm.sigNeg_restrict_le`: restriction to a subspace cannot increase the
@@ -114,6 +119,20 @@ theorem sigNeg_eq_sigPos_of_isCompl (Q : _root_.QuadraticForm R M) {A B : Submod
   rw [QuadraticMap.map_add Q, QuadraticMap.map_add Q, QuadraticMap.map_neg, polar_neg_right]
   simp [hA.apply_eq_zero a.2, hB.apply_eq_zero b.2]
 
+/-- **A positive-definite subspace of dimension the positive index of inertia exists.** This is
+Mathlib's `exists_finrank_eq_sigPos_and_posDef` without the finite-dimensionality assumption. -/
+theorem exists_submodule_finrank_eq_sigPos_and_posDef (Q : _root_.QuadraticForm R M) :
+    ∃ V : Submodule R M, Module.finrank R V = sigPos Q ∧ (Q.restrict V).PosDef := by
+  classical
+  unfold sigPos
+  generalize_proofs h
+  exact (Finset.mem_filter.mp (Finset.max'_mem _ h)).2
+
+/-- **A negative-definite subspace of dimension the negative index of inertia exists.** -/
+theorem exists_submodule_finrank_eq_sigNeg_and_negDef (Q : _root_.QuadraticForm R M) :
+    ∃ V : Submodule R M, Module.finrank R V = sigNeg Q ∧ ((-Q).restrict V).PosDef :=
+  exists_submodule_finrank_eq_sigPos_and_posDef (-Q)
+
 variable [IsStrictOrderedRing R]
 
 /-- Multiplication by a positive scalar preserves the positive index of inertia. -/
@@ -160,6 +179,24 @@ theorem sigNeg_smul_of_neg (Q : _root_.QuadraticForm R M) {a : R} (ha : a < 0) :
     _ = sigPos Q := sigPos_smul_of_pos Q hpos
 
 end CommRing
+
+section Field
+
+variable {K M : Type*} [Field K] [LinearOrder K] [AddCommGroup M] [Module K M]
+
+/-- In a space that is not finite, the positive index of inertia is `0`, since it is at most the
+dimension, which is `0` by convention. -/
+theorem sigPos_eq_zero_of_not_finite (Q : _root_.QuadraticForm K M)
+    (h : ¬Module.Finite K M) : sigPos Q = 0 :=
+  Nat.le_zero.mp ((sigPos_le_finrank Q).trans_eq (Module.finrank_of_not_finite h))
+
+/-- In a space that is not finite, the negative index of inertia is `0`. -/
+theorem sigNeg_eq_zero_of_not_finite (Q : _root_.QuadraticForm K M)
+    (h : ¬Module.Finite K M) : sigNeg Q = 0 :=
+  sigPos_eq_zero_of_not_finite (-Q) h
+
+end Field
+
 
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]
@@ -391,10 +428,16 @@ theorem posDef_iff_sigNeg_eq_zero_and_radical_eq_bot (Q : _root_.QuadraticForm K
     have hxW : x ∈ W := hWtop.symm ▸ Submodule.mem_top
     exact hWpos ⟨x, hxW⟩ (by simpa only [ne_eq, Submodule.mk_eq_zero])
 
+omit [FiniteDimensional K M] in
 /-- The positive and negative indices of inertia of a nondegenerate quadratic form add up to the
-dimension of the space. -/
+dimension of the space. For a space that is not finite both sides are `0` by convention. -/
 theorem sigPos_add_sigNeg_of_nondegenerate (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate) :
     sigPos Q + sigNeg Q = Module.finrank K M := by
+  by_cases hM : Module.Finite K M
+  swap
+  · rw [sigPos_eq_zero_of_not_finite Q hM, sigNeg_eq_zero_of_not_finite Q hM,
+      Module.finrank_of_not_finite hM]
+  have := hM
   have hsig := sigPos_add_sigNeg_add_radical (Q := Q)
   rw [hQ.radical_eq_bot] at hsig
   simpa only [finrank_bot, add_zero] using hsig

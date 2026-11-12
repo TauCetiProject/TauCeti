@@ -9,6 +9,7 @@ public import TauCeti.Algebra.CentralSimple.Degree
 public import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.Algebra.Subalgebra.Center
 import Mathlib.RingTheory.SimpleRing.Congr
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
@@ -53,8 +54,8 @@ open _root_.CliffordAlgebra
 
 open Module _root_.QuadraticMap
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] [NeZero (2 : K)] {Q : QuadraticForm K V}
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [NeZero (2 : K)]
+  {Q : QuadraticForm K V}
 
 /-- In positive dimension, dimension reduction carries the even Clifford algebra to a regular
 full Clifford algebra in one lower dimension and carries reversal to Clifford conjugation. -/
@@ -64,6 +65,7 @@ theorem exists_reversalEquiv_even_of_finrank_pos (hQ : Q.Nondegenerate)
       n + 1 = finrank K V ∧ ∃ e : even Q ≃ₐ[K] CliffordAlgebra P,
         ∀ x, e (reverseEven Q x) = star (e x) := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  have := Module.finite_of_finrank_pos hV
   obtain ⟨⟨n, w⟩, ⟨e⟩⟩ := exists_presentedForm_equivalent Q hQ
   have he : finrank K V = n := by simpa using e.toLinearEquiv.finrank_eq
   cases n with
@@ -119,24 +121,22 @@ theorem isCentral_even_of_odd_finrank (hQ : Q.Nondegenerate) (hV : Odd (finrank 
     Algebra.IsCentral K (even Q) := by
   obtain ⟨n, P, hP, hn, ⟨e⟩⟩ := exists_nonempty_algEquiv_even_of_odd_finrank hQ hV
   have hC := isCentral_of_even_finrank hP (by simpa using hn)
-  -- `Algebra.IsCentral.of_algEquiv` needs both algebras in one universe, while `even Q` lives in
-  -- that of `V`; its two-line proof is repeated for the universe-heterogeneous `e`.
-  refine ⟨fun x hx => ?_⟩
-  obtain ⟨k, hk⟩ := hC.1 ((MulEquivClass.apply_mem_center_iff e).mpr hx)
-  exact ⟨k, by simpa [Algebra.ofId] using congr(e.symm $hk)⟩
+  exact Algebra.IsCentral.of_algEquiv' K e.symm
 
+omit [NeZero (2 : K)] in
 /-- **The degree of the even Clifford algebra in odd dimension.** For a quadratic form on a
 space of dimension `2m + 1`, the even Clifford algebra has dimension `2 ^ (2m)`, hence degree
 `2 ^ m`. When the form is regular, the preceding results also make this algebra central simple. -/
 theorem deg_even_of_odd_finrank (hV : Odd (finrank K V)) :
     Algebra.deg K (even Q) = 2 ^ ((finrank K V - 1) / 2) := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  have := Module.finite_of_finrank_pos hV.pos
   let _ : Nontrivial V := Module.nontrivial_of_finrank_pos hV.pos
   apply Algebra.deg_eq_of_finrank_eq_sq
   rw [CliffordAlgebra.finrank_even Q]
   obtain ⟨m, hm⟩ := hV
   simp [hm, pow_mul, Nat.mul_comm]
 
+omit [NeZero (2 : K)] in
 /-- **A five-dimensional even Clifford algebra has degree four.** For a regular form, this is the
 algebra-size part of the description of `Spin₅` as the unitary group of a degree-four central
 simple algebra with its canonical symplectic involution. -/
