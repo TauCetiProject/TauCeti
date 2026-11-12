@@ -340,9 +340,7 @@ theorem exists_homotopyEquiv_of_isColimit_of_isCoherentWith {F : ℕ ⥤ TopCat.
     ∃ h : c.pt ≃ₕ Y, ∀ n x, h (c.ι.app n x) = e n x := by
   -- The maps to the colimit are closed embeddings, so the colimit is the union of their images,
   -- each homeomorphic to its stage.
-  have hι (n : ℕ) : IsClosedEmbedding (c.ι.app n) :=
-    TopCat.isClosedEmbedding_ι_of_isColimit
-      (fun _ _ ↦ TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F fun n _ ↦ hF n) hc n
+  have hι := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc
   have hw (n : ℕ) (x : F.obj n) : c.ι.app (n + 1) (F.map (homOfLE n.le_succ) x) = c.ι.app n x := by
     rw [← ConcreteCategory.comp_apply, c.w]
   let A (n : ℕ) : Set c.pt := range (c.ι.app n)
@@ -350,13 +348,8 @@ theorem exists_homotopyEquiv_of_isColimit_of_isCoherentWith {F : ℕ ⥤ TopCat.
   have hA : Monotone A := monotone_nat_of_le_succ fun n ↦ by
     rintro _ ⟨x, rfl⟩
     exact ⟨_, hw n x⟩
-  have hAX : ⋃ n, A n = univ := eq_univ_of_forall fun y ↦ by
-    obtain ⟨n, x, hx⟩ :=
-      Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) y
-    exact mem_iUnion.2 ⟨n, x, hx⟩
-  have hAc : IsCoherentWith (range A) := IsCoherentWith.of_isClosed fun t ht ↦
-    (TopCat.isClosed_iff_of_isColimit _ hc t).2 fun n ↦
-      (ht _ (mem_range_self n)).preimage (φ n).continuous
+  have hAX : ⋃ n, A n = univ := TopCat.iUnion_range_ι_eq_univ_of_isColimit hc
+  have hAc : IsCoherentWith (range A) := TopCat.isCoherentWith_range_ι_of_isColimit hc
   have hAH (n : ℕ) : HasHomotopyExtensionProperty ((↑) ⁻¹' A n : Set (A (n + 1))) := by
     have hrange : φ (n + 1) '' range (F.map (homOfLE n.le_succ)) = (↑) ⁻¹' A n := by
       ext p
@@ -378,6 +371,8 @@ theorem exists_homotopyEquiv_of_isColimit_of_isCoherentWith {F : ℕ ⥤ TopCat.
   let e' (n : ℕ) : A n ≃ₕ B n := (φ n).symm.toHomotopyEquiv.trans (e n)
   have he' (n : ℕ) (a : A n) : (e' n a : Y) = (hc.desc s).hom a := by
     obtain ⟨x, rfl⟩ := (φ n).surjective a
+    -- The underlying map of `HomotopyEquiv.trans` is the composite, so `e' n` is
+    -- `e n ∘ (φ n).symm` by definition.
     have h : e' n (φ n x) = e n x := congrArg (e n) ((φ n).symm_apply_apply x)
     rw [h]
     exact (hfac n x).symm

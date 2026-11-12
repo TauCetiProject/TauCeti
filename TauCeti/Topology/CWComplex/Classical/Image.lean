@@ -27,6 +27,11 @@ image of `Set.univ` is the range of `f` only up to `Set.image_univ`.
 The two spaces lie in a common universe, since the cells of a CW complex are indexed by types in
 the universe of its ambient space.
 
+The characteristic maps of a CW structure can also be replaced by other partial equivalences with
+the same values and sources (`Topology.RelCWComplex.replaceMap`), for instance by the canonical
+partial equivalences `Set.InjOn.toPartialEquiv` determined by their values. Two CW structures whose
+characteristic maps agree as functions then have literally the same characteristic maps.
+
 The axioms transfer because `f` is a homeomorphism onto its image: the inverse of a
 characteristic map on its open cell is continuous because `f` is an embedding, and the weak
 topology transfers because `f` is a closed map.
@@ -157,3 +162,56 @@ lemma cellFrontier_relCWComplex (n : ℕ) (i : @cell Y _ C' D' (hf.relCWComplex 
   hf.image_imageCellMap n _ _
 
 end Topology.IsClosedEmbedding
+
+namespace Topology.RelCWComplex
+
+universe u
+
+variable {X : Type u} [TopologicalSpace X] {C D : Set X} [RelCWComplex C D]
+
+/-- The CW structure on `C` relative to `D` with the cells of a given one, whose characteristic
+maps are replaced by partial equivalences `φ n i` with the same values and the same sources. Such a
+partial equivalence has the same image of the source, and its inverse agrees there with the old
+one, so all the axioms transfer. This is used to make characteristic maps depend only on their
+values, for instance through `Set.InjOn.toPartialEquiv`. -/
+@[instance_reducible]
+def replaceMap (φ : ∀ n, cell C n → PartialEquiv (Fin n → ℝ) X)
+    (hφ : ∀ n i, ⇑(φ n i) = map n i) (hsource : ∀ n i, (φ n i).source = (map n i).source) :
+    RelCWComplex C D where
+  cell := cell C
+  map := φ
+  source_eq n i := (hsource n i).trans (source_eq n i)
+  continuousOn n i := hφ n i ▸ RelCWComplex.continuousOn n i
+  continuousOn_symm n i := by
+    have htarget : (φ n i).target = (map n i).target := by
+      rw [← (φ n i).image_source_eq_target, ← (map n i).image_source_eq_target, hφ, hsource]
+    rw [htarget]
+    refine (RelCWComplex.continuousOn_symm n i).congr fun y hy ↦ ?_
+    rw [← (map n i).image_source_eq_target] at hy
+    obtain ⟨x, hx, rfl⟩ := hy
+    rw [(map n i).left_inv hx, ← hφ, (φ n i).left_inv (hsource n i ▸ hx)]
+  pairwiseDisjoint' := by
+    simpa only [hφ] using RelCWComplex.pairwiseDisjoint' (C := C) (D := D)
+  disjointBase' n i := by
+    simpa only [hφ] using RelCWComplex.disjointBase' (C := C) n i
+  mapsTo n i := by
+    simpa only [hφ] using RelCWComplex.mapsTo (C := C) n i
+  closed' A hAC hA := RelCWComplex.closed' (C := C) A hAC (by simpa only [hφ] using hA)
+  isClosedBase := isClosedBase C
+  union' := by
+    simpa only [hφ] using RelCWComplex.union' (C := C) (D := D)
+
+variable (φ : ∀ n, cell C n → PartialEquiv (Fin n → ℝ) X) (hφ : ∀ n i, ⇑(φ n i) = map n i)
+  (hsource : ∀ n i, (φ n i).source = (map n i).source)
+
+/-- The cells of `Topology.RelCWComplex.replaceMap` are the cells of the original structure. -/
+def replaceMapCellEquiv (n : ℕ) : @cell X _ C D (replaceMap φ hφ hsource) n ≃ cell C n :=
+  Equiv.refl _
+
+/-- The characteristic maps of `Topology.RelCWComplex.replaceMap` are the given partial
+equivalences. -/
+lemma map_replaceMap (n : ℕ) (i : @cell X _ C D (replaceMap φ hφ hsource) n) :
+    @map X _ C D (replaceMap φ hφ hsource) n i = φ n (replaceMapCellEquiv φ hφ hsource n i) :=
+  (rfl)
+
+end Topology.RelCWComplex

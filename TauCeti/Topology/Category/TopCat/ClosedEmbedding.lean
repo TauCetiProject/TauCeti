@@ -33,7 +33,9 @@ complexes:
 The last point comes from a statement about directed colimits: if all transition maps of a
 directed diagram are closed embeddings, so are the maps to its colimit
 (`TauCeti.TopCat.isClosedEmbedding_ι_of_isColimit`), refining the corresponding statement for
-injective maps (`TauCeti.TopCat.injective_ι_of_isColimit`).
+injective maps (`TauCeti.TopCat.injective_ι_of_isColimit`). For a sequence, it suffices that each
+map to the next stage is a closed embedding
+(`TauCeti.TopCat.isClosedEmbedding_ι_of_isColimit_of_succ`).
 
 With Mathlib's description of a relative cell complex as a transfinite composition of pushouts of
 coproducts of its basic cells, these stability properties show that a relative cell complex in
@@ -196,6 +198,14 @@ theorem isClosedEmbedding_map_of_isWellOrderContinuous (F : J ⥤ TopCat.{u})
     · exact isClosedEmbedding_ι_of_isColimit (fun a b hab ↦ ih b.1 b.2 _)
         (F.isColimitOfIsWellOrderContinuous j hj) ⟨i, hij⟩
     · simpa using IsClosedEmbedding.id
+
+/-- If every map `F.obj n ⟶ F.obj (n + 1)` of a sequence in `TopCat` is a closed embedding, then
+so are the maps from the stages to its colimit. -/
+theorem isClosedEmbedding_ι_of_isColimit_of_succ {F : ℕ ⥤ TopCat.{u}}
+    (hF : ∀ n : ℕ, IsClosedEmbedding (F.map (homOfLE n.le_succ))) {c : Cocone F}
+    (hc : IsColimit c) (n : ℕ) : IsClosedEmbedding (c.ι.app n) :=
+  isClosedEmbedding_ι_of_isColimit
+    (fun _ _ ↦ isClosedEmbedding_map_of_isWellOrderContinuous F fun n _ ↦ hF n) hc n
 
 /-- In a transfinite composition of closed embeddings in `TopCat`, the map from each stage to the
 composite is a closed embedding. Once the `IsStableUnderTransfiniteComposition` instance below is

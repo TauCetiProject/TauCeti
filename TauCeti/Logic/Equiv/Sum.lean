@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Basic
+public import Mathlib.Logic.Equiv.Set
 public import Mathlib.Logic.Equiv.Sum
 
 /-!
@@ -15,6 +16,9 @@ For `a : α`, the elements of `α ⊕ β` other than `Sum.inl a` are the disjoin
 elements of `α` other than `a` and of `β`. This file records this equivalence,
 `Equiv.sumSubtypeNe`, which identifies the columns left after deleting the column `Sum.inl a` of a
 matrix whose columns are indexed by `α ⊕ β`.
+
+Similarly, for an equivalence `e : γ ≃ α ⊕ β`, the elements of `γ` outside the image of `α` are
+the elements of `β` (`Equiv.complRangeSymmInl`).
 -/
 
 public section
@@ -33,5 +37,17 @@ def sumSubtypeNe {α β : Type*} (a : α) : ({x // x ≠ a} ⊕ β) ≃ {j : α 
 theorem coe_sumSubtypeNe_apply {α β : Type*} (a : α) (x : {x // x ≠ a} ⊕ β) :
     (sumSubtypeNe a x : α ⊕ β) = Sum.map Subtype.val id x := by
   rcases x with x | y <;> simp [sumSubtypeNe, Equiv.subtypeSum]
+
+/-- For an equivalence `e : γ ≃ α ⊕ β`, the elements of `γ` which do not come from `α` are the
+elements of `β`. -/
+def complRangeSymmInl {α β γ : Type*} (e : γ ≃ α ⊕ β) : ↥(Set.range (e.symm ∘ Sum.inl))ᶜ ≃ β :=
+  (Set.equivOfEq (by rw [Set.range_comp, ← e.symm.image_compl, Set.compl_range_inl])).trans <|
+    (e.symm.image _).symm.trans (Equiv.Set.rangeInr α β)
+
+/-- `(Equiv.complRangeSymmInl e).symm` sends `b` to `e.symm (Sum.inr b)`. -/
+@[simp]
+theorem coe_complRangeSymmInl_symm_apply {α β γ : Type*} (e : γ ≃ α ⊕ β) (b : β) :
+    ((complRangeSymmInl e).symm b : γ) = e.symm (Sum.inr b) := by
+  simp [complRangeSymmInl]
 
 end Equiv

@@ -93,10 +93,8 @@ theorem exists_subset_range_ι_of_isCompact
   have hmono {m n : ℕ} (hmn : m ≤ n) : range (c.ι.app m) ⊆ range (c.ι.app n) := by
     rw [← c.w (homOfLE hmn), TopCat.coe_comp]
     exact range_comp_subset_range _ _
-  have hcover (p : c.pt) : ∃ n, p ∈ range (c.ι.app n) := by
-    obtain ⟨n, y, rfl⟩ :=
-      Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) p
-    exact ⟨n, y, rfl⟩
+  have hcover (p : c.pt) : ∃ n, p ∈ range (c.ι.app n) :=
+    mem_iUnion.1 (iUnion_range_ι_eq_univ_of_isColimit hc ▸ mem_univ p)
   -- For each stage `n`, a point `pt n` of `K` outside stage `n`, and a stage `next n` containing
   -- it; necessarily `n < next n`.
   choose pt hptK hpt using fun n ↦ not_subset.1 (h n)
