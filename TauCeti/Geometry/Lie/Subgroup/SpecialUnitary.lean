@@ -51,7 +51,6 @@ recorded below.
 
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary`:
   the matrix-coordinate image of the subgroup Lie algebra.
-
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_GLSpecialUnitary`: the Lie algebra of the special unitary
   group is the intersection of the Lie algebras of the unitary and special linear groups.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff`: **the Lie

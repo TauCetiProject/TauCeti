@@ -21,8 +21,10 @@ as scalars then recovers `so`.
 ## Main declarations
 
 * `TauCeti.Lie.specialUnitaryMatrixLieAlgebra`: the trace-free skew-Hermitian Lie subalgebra.
-* `TauCeti.Lie.mem_specialUnitaryMatrixLieAlgebra_iff`: the skew-Hermitian and trace-zero membership condition.
-* `TauCeti.Lie.specialUnitaryMatrixLieAlgebra_self_eq_so`: the trivial-star case over the coefficient ring itself.
+* `TauCeti.Lie.mem_specialUnitaryMatrixLieAlgebra_iff`:
+  the skew-Hermitian and trace-zero membership condition.
+* `TauCeti.Lie.specialUnitaryMatrixLieAlgebra_self_eq_so`:
+  the trivial-star case over the coefficient ring itself.
 
 ## References
 
