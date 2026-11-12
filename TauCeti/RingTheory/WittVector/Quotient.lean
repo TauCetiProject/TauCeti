@@ -46,7 +46,8 @@ noncomputable def wittVectorQuotientPEquiv (I : Ideal (WittVector p S)) :
     ((DoubleQuot.quotQuotEquivComm I (span {(p : WittVector p S)})).trans
       (Ideal.quotientEquiv _ _ WittVector.quotientPEquiv (by
         rw [Ideal.map_map]
-        rfl)))
+        exact congrArg (fun f : WittVector p S →+* S ↦ I.map f)
+          (RingHom.ext fun x ↦ (WittVector.quotientPEquiv_mk x).symm))))
 
 /-- The reduction isomorphism sends a Witt vector to its zeroth coordinate. -/
 @[simp]
@@ -69,7 +70,7 @@ theorem wittVectorQuotientPEquiv_symm_mk (I : Ideal (WittVector p S)) (s : S) :
 
 /-- **Frobenius on the reduction of a Witt quotient is surjective.** This applies, in
 particular, to the quotient by any primitive ideal used to construct an untilt. -/
-theorem surjective_frobenius_wittVectorQuotientP (I : Ideal (WittVector p S)) :
+theorem surjective_pow_wittVector_quotient_span_natCast (I : Ideal (WittVector p S)) :
     Function.Surjective (fun x : (WittVector p S ⧸ I) ⧸ span {(p : WittVector p S ⧸ I)} ↦
       x ^ p) := by
   intro x

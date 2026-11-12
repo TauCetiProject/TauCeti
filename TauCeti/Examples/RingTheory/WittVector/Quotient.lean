@@ -35,11 +35,10 @@ example (a : S) :
         S ⧸ span {a} :=
   (wittVectorQuotientPEquiv (span {(p : WittVector p S) - teichmuller p a})).trans
     (Ideal.quotEquivOfEq (by
-      rw [Ideal.map_span, Set.image_singleton, map_sub, map_natCast,
-        constantCoeff_apply, teichmuller_coeff_zero, CharP.cast_eq_zero, zero_sub,
-        span_singleton_neg]))
+      simp only [Ideal.map_span, Set.image_singleton, map_sub, map_natCast]
+      simp [Ideal.span_singleton_neg]))
 
--- The inverse sends each residue class to a Teichmüller representative.
+-- The forward equivalence sends a Teichmüller representative to its scalar residue class.
 example (I : Ideal (WittVector p S)) (s : S) :
     I.wittVectorQuotientPEquiv
       (Ideal.Quotient.mk _ (Ideal.Quotient.mk I (teichmuller p s))) =
@@ -71,4 +70,4 @@ example :
 example (I : Ideal (WittVector p (ZMod p))) :
     Function.Surjective
       (fun x : (WittVector p (ZMod p) ⧸ I) ⧸ span {(p : WittVector p (ZMod p) ⧸ I)} ↦ x ^ p) :=
-  I.surjective_frobenius_wittVectorQuotientP
+  I.surjective_pow_wittVector_quotient_span_natCast
