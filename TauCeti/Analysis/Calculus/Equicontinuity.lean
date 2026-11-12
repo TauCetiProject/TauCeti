@@ -10,8 +10,6 @@ public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.Topology.Sequences
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
@@ -83,33 +81,16 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_fderiv [FiniteDimensional �
     (hlim : ∀ x ∈ Ω, Tendsto (fun n ↦ u n x) atTop (𝓝 (v x))) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ContDiffOn ℝ 1 v Ω ∧
       TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) (fderiv ℝ v) atTop Ω := by
-  classical
-  let : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  let U : ℕ → C(Ω, E →L[ℝ] F) := fun n ↦
-    ⟨Ω.domRestrict (fderiv ℝ (u n)), (hequi.continuousOn n).domRestrict⟩
-  have hcompact : IsCompact (closure (range U)) :=
-    ArzelaAscoli.isCompact_closure_range_of_equicontinuous
-      ((equicontinuous_restrict_iff _).mpr hequi) fun x ↦
-        ⟨closedBall 0 (hbd x x.2).choose, isCompact_closedBall _ _,
-          fun n ↦ mem_closedBall_zero_iff.2 ((hbd x x.2).choose_spec n)⟩
-  obtain ⟨a, -, φ, hφ, hlimU⟩ := hcompact.tendsto_subseq (x := U)
-    (fun n ↦ subset_closure (mem_range_self n))
-  -- Extend the limit of the derivatives by zero off `Ω`.
-  let G : E → E →L[ℝ] F := fun z ↦ if hz : z ∈ Ω then a ⟨z, hz⟩ else 0
-  have hG : G ∘ (Subtype.val : Ω → E) = fun x : Ω ↦ a x := by
-    funext x
-    simp [G, x.2]
-  have hconv : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) G atTop Ω := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hG]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hlimU
+  obtain ⟨φ, hφ, G, hGc, hconv⟩ :=
+    exists_subseq_tendstoLocallyUniformlyOn_of_equicontinuousOn hΩ hequi fun x hx ↦
+      ⟨closedBall 0 (hbd x hx).choose, isCompact_closedBall _ _,
+        fun n ↦ mem_closedBall_zero_iff.2 ((hbd x hx).choose_spec n)⟩
   -- The limit of the derivatives is the derivative of the limit.
   have hderiv : ∀ x ∈ Ω, HasFDerivAt v (G x) x := fun x hx ↦
     hasFDerivAt_of_tendstoLocallyUniformlyOn hΩ hconv
       (fun n y hy ↦ ((hu (φ n)) y hy).differentiableAt (hΩ.mem_nhds hy) |>.hasFDerivAt)
       (fun y hy ↦ (hlim y hy).comp hφ.tendsto_atTop) hx
   have hfd : EqOn (fderiv ℝ v) G Ω := fun x hx ↦ (hderiv x hx).fderiv
-  have hGc : ContinuousOn G Ω := hconv.continuousOn (Eventually.of_forall fun n ↦
-    (hequi.comp φ).continuousOn n).frequently
   refine ⟨φ, hφ, ?_, hconv.congr_right fun x hx ↦ (hfd hx).symm⟩
   exact (contDiffOn_succ_iff_fderiv_of_isOpen (n := 0) hΩ).2
     ⟨fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt, by simp,
