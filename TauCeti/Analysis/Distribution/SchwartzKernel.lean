@@ -44,9 +44,10 @@ on compact sets applies to it.
   (`AddMonoidHom.eq_zero_of_locally_vanishing`).
 * **Existence.** On each open box `ball x (r / 2) ×ˢ ball y (s / 2)` the kernel on the compact
   half-size box is a kernel of `B`. By uniqueness these local kernels agree on overlaps, so they
-  glue to a continuous linear map on `Ω × O` (`Distribution.existsUnique_gluing`), which is again
-  complex linear by localization. To evaluate it on `φ ⊗ ψ`, split `φ` and `ψ` into finite sums of
-  test functions supported in small balls (`TestFunction.exists_sum_subordinate`); then
+  glue to a continuous complex-linear map on `Ω × O`
+  (`Distribution.existsUnique_gluing_of_isScalarTower`). To evaluate it on `φ ⊗ ψ`, split `φ` and
+  `ψ` into finite sums of test functions supported in small balls
+  (`TestFunction.exists_sum_subordinate`); then
   `φ ⊗ ψ = ∑ᵢ ∑ⱼ φᵢ ⊗ ψⱼ`, each term lies in one of the boxes, and bilinearity of `B` gives
   `∑ᵢ ∑ⱼ B φᵢ ψⱼ = B φ ψ`.
 
@@ -126,6 +127,31 @@ private theorem ball_smallBall_subset {d : Type*} [Fintype d] {U : Set (d → �
 /-- The products of two small balls, in `Ω` and in `O`. -/
 private abbrev SmallBox (Ω : Opens (a → ℝ)) (O : Opens (b → ℝ)) : Type _ :=
   SmallBall (Ω : Set (a → ℝ)) × SmallBall (O : Set (b → ℝ))
+
+omit [CompleteSpace F] in
+/-- A map on tests on `V = Ω × O` which takes the value `B φ ψ` on `φ ⊗ ψ` whenever `φ` and `ψ` are
+supported in open balls of half the radius of small balls takes this value on every `φ ⊗ ψ`: split
+`φ` and `ψ` into tests supported in such balls and use bilinearity. -/
+private theorem apply_tensor_of_forall_smallBall {V : Opens ((a → ℝ) × (b → ℝ))}
+    (hV : (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ)) ⊆ V) (S : 𝓓(V, ℂ) →L[ℂ] F)
+    (hS : ∀ (i : SmallBall (Ω : Set (a → ℝ))) (j : SmallBall (O : Set (b → ℝ))) (φ : 𝓓(Ω, ℂ))
+      (ψ : 𝓓(O, ℂ)), tsupport φ ⊆ ball i.1.1 (i.1.2 / 2) → tsupport ψ ⊆ ball j.1.1 (j.1.2 / 2) →
+        S (φ.tensor ψ hV) = B φ ψ)
+    (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)) : S (φ.tensor ψ hV) = B φ ψ := by
+  obtain ⟨s₁, φs, hφs, hφsum, -⟩ := φ.exists_sum_subordinate _ (fun _ ↦ isOpen_ball)
+    (φ.tsupport_subset.trans (subset_iUnion_ball_smallBall Ω.isOpen))
+  obtain ⟨s₂, ψs, hψs, hψsum, -⟩ := ψ.exists_sum_subordinate _ (fun _ ↦ isOpen_ball)
+    (ψ.tsupport_subset.trans (subset_iUnion_ball_smallBall O.isOpen))
+  have hsplit : φ.tensor ψ hV = ∑ i, ∑ j, (φs i).tensor (ψs j) hV := by
+    ext p
+    simp [← hφsum, ← hψsum, Finset.sum_mul_sum]
+  have hterm (i : s₁) (j : s₂) : S ((φs i).tensor (ψs j) hV) = B (φs i) (ψs j) :=
+    hS i.1 j.1 (φs i) (ψs j) (hφs i) (hψs j)
+  rw [hsplit, map_sum]
+  simp only [map_sum, hterm]
+  conv_rhs => rw [← hφsum, ← hψsum]
+  simp only [map_sum, LinearMap.sum_apply]
+  exact Finset.sum_comm
 
 section Kernel
 
@@ -267,9 +293,9 @@ private theorem exists_isKernelOn_box {x : a → ℝ} {y : b → ℝ} {r s : ℝ
     ext p
     simp [hχ]
   rw [hT, hχK, hT₀]
-  -- The arguments are `φ` and `ψ`, repackaged as tests supported in the balls.
-  congr 2
+  exact congrArg₂ (B · ·) (TestFunction.ext fun _ ↦ by simp) (TestFunction.ext fun _ ↦ by simp)
 
+variable (B) in
 /-- **The Schwartz kernel theorem on open sets.** Let `B` be a complex bilinear map on the complex
 test functions on open sets `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b`, with values in a complex Banach space, such
 that for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C` and `k` give
@@ -281,8 +307,8 @@ theorem existsUnique_schwartzKernel_testFunction {V : Opens ((a → ℝ) × (b �
     ∃! T : 𝓓(V, ℂ) →L[ℂ] F, ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
       T (φ.tensor ψ hV.symm.subset) = B φ ψ := by
   -- Uniqueness is `eq_of_isKernelOn`. For existence, the kernels on the open boxes of the small
-  -- boxes agree on overlaps and glue to a real-linear map `S`; `S` is complex linear because the
-  -- local kernels are, and it represents `B` on tensor products by a partition of unity.
+  -- boxes agree on overlaps and glue to a complex-linear map `S`, which represents `B` on tensor
+  -- products by a partition of unity.
   -- A kernel on `V` in the sense of tensor products is a kernel in the sense of `IsKernelOn`.
   have hker {T : 𝓓(V, ℂ) →L[ℂ] F} (hT : ∀ φ ψ, T (φ.tensor ψ hV.symm.subset) = B φ ψ) :
       IsKernelOn B T := fun φ ψ χ hχ ↦ by
@@ -306,7 +332,7 @@ theorem existsUnique_schwartzKernel_testFunction {V : Opens ((a → ℝ) × (b �
     ij.2.2.2.1 ij.1.2.2.2 ij.2.2.2.2 (U := U ij) rfl
   -- The local kernels agree on overlaps, since both restrict to kernels of `B` there.
   have hcompat (ij kl : SmallBox Ω O) (θ : 𝓓(U ij ⊓ U kl, ℂ)) :
-      (T ij).restrictScalars ℝ (monoCLM ℝ θ) = (T kl).restrictScalars ℝ (monoCLM ℝ θ) := by
+      T ij (monoCLM ℂ θ) = T kl (monoCLM ℂ θ) := by
     have hres (mn : SmallBox Ω O) (h : U ij ⊓ U kl ≤ U mn) :
         IsKernelOn B (T mn ∘L (monoCLM ℂ : 𝓓(U ij ⊓ U kl, ℂ) →L[ℂ] 𝓓(U mn, ℂ))) :=
       fun φ ψ χ hχ ↦ hT mn φ ψ _ fun p ↦ by simp [h, hχ]
@@ -315,57 +341,19 @@ theorem existsUnique_schwartzKernel_testFunction {V : Opens ((a → ℝ) × (b �
       exact inter_subset_left.trans (hUV ij)
     exact DFunLike.congr_fun (eq_of_isKernelOn hB hW
       (hres ij inf_le_left) (hres kl inf_le_right)) θ
-  obtain ⟨S, hS, -⟩ := Distribution.existsUnique_gluing hU hcompat
+  obtain ⟨S, hS, -⟩ := Distribution.existsUnique_gluing_of_isScalarTower hU hcompat
   have hUle (ij : SmallBox Ω O) : U ij ≤ V := hU ▸ le_iSup U ij
-  -- On a test `Φ` supported in a box `U ij`, the glued map is the local kernel.
-  have hlift (ij : SmallBox Ω O) {Φ : 𝓓(V, ℂ)} (hΦ : tsupport Φ ⊆ U ij) :
-      ∃ θ : 𝓓(U ij, ℂ), (∀ p, θ p = Φ p) ∧ S Φ = T ij θ := by
-    let θ : 𝓓(U ij, ℂ) := ⟨Φ, Φ.contDiff, Φ.hasCompactSupport, hΦ⟩
-    have hθ : monoCLM ℝ θ = Φ := TestFunction.ext fun p ↦ by simp [θ, hUle ij]
-    exact ⟨θ, fun _ ↦ rfl, by rw [← hθ]; exact DFunLike.congr_fun (hS ij) θ⟩
-  -- The glued map is complex linear, since each local kernel is.
-  have hsmul (c : ℂ) (Φ : 𝓓(V, ℂ)) : S (c • Φ) = c • S Φ := by
-    have h := AddMonoidHom.eq_zero_of_locally_vanishing
-      (AddMonoidHom.mk' (fun Ψ : 𝓓(V, ℂ) ↦ S (c • Ψ) - c • S Ψ) fun Ψ Ψ' ↦ by
-        simp only [smul_add, map_add]
-        abel) fun p hp ↦ ?_
-    · simpa [sub_eq_zero] using DFunLike.congr_fun h Φ
-    obtain ⟨ij, hij⟩ : ∃ ij, p ∈ U ij := by
-      rw [← hU] at hp
-      simpa only [Opens.mem_iSup] using hp
-    refine ⟨U ij, (U ij).isOpen, hij, fun Ψ hΨ ↦ ?_⟩
-    obtain ⟨θ, hθ, hSθ⟩ := hlift ij hΨ
-    obtain ⟨θ', hθ', hSθ'⟩ := hlift ij (Φ := c • Ψ)
-      ((tsupport_smul_subset_right (fun _ ↦ c) Ψ).trans hΨ)
-    have hθθ' : θ' = c • θ := TestFunction.ext fun p ↦ by simp [hθ, hθ']
-    simp [hSθ, hSθ', hθθ']
-  let Sℂ : 𝓓(V, ℂ) →L[ℂ] F :=
-    { toFun := S
-      map_add' := map_add S
-      map_smul' := hsmul
-      cont := S.continuous }
-  -- On `φ ⊗ ψ`, split `φ` and `ψ` into tests supported in small balls; each term of the resulting
-  -- double sum lies in a box, where the glued map is a local kernel of `B`.
-  have hkernel (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)) : Sℂ (φ.tensor ψ hV.symm.subset) = B φ ψ := by
-    obtain ⟨s₁, φs, hφs, hφsum, -⟩ := φ.exists_sum_subordinate _ (fun _ ↦ isOpen_ball)
-      (φ.tsupport_subset.trans (subset_iUnion_ball_smallBall Ω.isOpen))
-    obtain ⟨s₂, ψs, hψs, hψsum, -⟩ := ψ.exists_sum_subordinate _ (fun _ ↦ isOpen_ball)
-      (ψ.tsupport_subset.trans (subset_iUnion_ball_smallBall O.isOpen))
-    have hsplit : φ.tensor ψ hV.symm.subset =
-        ∑ i, ∑ j, (φs i).tensor (ψs j) hV.symm.subset := by
-      ext p
-      simp [← hφsum, ← hψsum, Finset.sum_mul_sum]
-    have hterm (i : s₁) (j : s₂) :
-        Sℂ ((φs i).tensor (ψs j) hV.symm.subset) = B (φs i) (ψs j) := by
-      obtain ⟨θ, hθ, hSθ⟩ := hlift (i.1, j.1)
-        ((tsupport_tensor_subset _ _ _).trans (prod_mono (hφs i) (hψs j)))
-      exact hSθ.trans (hT _ _ _ θ fun p ↦ by simp [hθ])
-    rw [hsplit, map_sum]
-    simp only [map_sum, hterm]
-    conv_rhs => rw [← hφsum, ← hψsum]
-    simp only [map_sum, LinearMap.sum_apply]
-    exact Finset.sum_comm
-  exact ⟨Sℂ, hkernel, fun T' hT' ↦ eq_of_isKernelOn hB hV.subset (hker hT') (hker hkernel)⟩
+  -- On `φ ⊗ ψ` with `φ` and `ψ` supported in the balls of a box `U ij`, the glued map is the local
+  -- kernel on `U ij`.
+  have hkernel : ∀ φ ψ, S (φ.tensor ψ hV.symm.subset) = B φ ψ :=
+    apply_tensor_of_forall_smallBall _ S fun i j φ ψ hφ hψ ↦ by
+      have hΦ := (tsupport_tensor_subset hV.symm.subset φ ψ).trans (prod_mono hφ hψ)
+      let θ : 𝓓(U (i, j), ℂ) := ⟨_, (φ.tensor ψ _).contDiff, (φ.tensor ψ _).hasCompactSupport, hΦ⟩
+      have hθ : monoCLM ℂ θ = φ.tensor ψ hV.symm.subset :=
+        TestFunction.ext fun p ↦ by simp [θ, hUle (i, j)]
+      rw [← hθ, ← ContinuousLinearMap.comp_apply, hS]
+      exact hT _ _ _ θ fun p ↦ by simp [θ]
+  exact ⟨S, hkernel, fun T' hT' ↦ eq_of_isKernelOn hB hV.subset (hker hT') (hker hkernel)⟩
 
 end Kernel
 
@@ -374,7 +362,7 @@ form on the complex test functions on open sets `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b`
 compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C` and `k` give `|B φ ψ| ≤ C N_k(φ) N_k(ψ)` for `φ`
 supported in `K₁` and `ψ` supported in `K₂`. Then there is a unique complex-valued distribution
 `K` on `V = Ω × O` whose complex-linear extension takes the value `B φ ψ` on `φ ⊗ ψ`. -/
-theorem existsUnique_schwartzKernel_distribution {B : 𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] ℂ}
+theorem existsUnique_schwartzKernel_distribution (B : 𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] ℂ)
     (hB : ∀ (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ)) (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω)
       (hK₂ : (K₂ : Set (b → ℝ)) ⊆ O), ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
         ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
@@ -384,7 +372,7 @@ theorem existsUnique_schwartzKernel_distribution {B : 𝓓(Ω, ℂ) →ₗ[ℂ] 
     (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
     ∃! K : 𝓓'(V, ℂ), ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
       K.complexPairing (φ.tensor ψ hV.symm.subset) = B φ ψ := by
-  obtain ⟨T, hT, hTuniq⟩ := existsUnique_schwartzKernel_testFunction hB hV
+  obtain ⟨T, hT, hTuniq⟩ := existsUnique_schwartzKernel_testFunction B hB hV
   -- The restriction of `T` to real test functions, whose complex-linear extension is `T`.
   let K : 𝓓'(V, ℂ) := T.restrictScalars ℝ ∘L postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
   have hK : K.complexPairing = T := by

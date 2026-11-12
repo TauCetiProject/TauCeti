@@ -277,8 +277,8 @@ theorem tensor_apply (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) (p : E × 
 /-- The tensor product `φ ⊗ ψ` is supported in `tsupport φ ×ˢ tsupport ψ`. -/
 theorem tsupport_tensor_subset (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
     tsupport (φ.tensor ψ hV) ⊆ tsupport φ ×ˢ tsupport ψ := by
-  rw [show ⇑(φ.tensor ψ hV) = fun p ↦ ψ p.2 • φ p.1 from funext fun p ↦ mul_comm (φ p.1) (ψ p.2)]
-  exact tsupport_snd_smul_fst_subset _ _
+  simpa only [smul_eq_mul, mul_comm (ψ _), ← tensor_apply hV] using
+    tsupport_snd_smul_fst_subset (ψ : D → ℂ) (φ : E → ℂ)
 
 theorem tensor_add_left (φ φ' : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
     (φ + φ').tensor ψ hV = φ.tensor ψ hV + φ'.tensor ψ hV := by
