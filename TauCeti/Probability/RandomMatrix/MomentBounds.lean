@@ -20,7 +20,7 @@ with fewer than the leading number of vertices in the normalized trace expansion
 
 For independent centered entries, the singleton-edge reduction then gives a bound of order
 `n⁻¹` for the even-moment remainder after removing the words visiting `m + 1` vertices, and
-of order `n⁻¹ᐟ²` for the entire expected odd moment. The bounds are uniform over position
+of order `n^(-1/2)` for the entire expected odd moment. The bounds are uniform over position
 and do not require identical distributions or any second-moment normalization.
 
 ## References
