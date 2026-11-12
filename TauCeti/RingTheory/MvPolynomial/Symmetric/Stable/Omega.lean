@@ -165,13 +165,8 @@ private theorem omegaAlgHom_of_stableHsymm (n : ℕ) :
   rw [ih p.1 (by omega)]
 
 private theorem omegaAlgHom_comp_omegaAlgHom :
-    (omegaAlgHom R).comp (omegaAlgHom R) = AlgHom.id R (SymmetricFunction R) := by
-  have h : ((omegaAlgHom R).comp (omegaAlgHom R)).comp (esymmAlgHom R) = esymmAlgHom R :=
-    MvPolynomial.algHom_ext fun r => by
-      simp [omegaAlgHom_of_stableEsymm, omegaAlgHom_of_stableHsymm]
-  refine AlgHom.ext fun x => ?_
-  obtain ⟨p, rfl⟩ := esymmAlgHom_surjective R x
-  exact DFunLike.congr_fun h p
+    (omegaAlgHom R).comp (omegaAlgHom R) = AlgHom.id R (SymmetricFunction R) :=
+  algHom_ext fun r => by simp [omegaAlgHom_of_stableEsymm, omegaAlgHom_of_stableHsymm]
 
 /-- **The involution `ω` of the symmetric functions**: the algebra automorphism of `Λ_R` sending
 each elementary symmetric function `e_r` to the complete homogeneous symmetric function `h_r`

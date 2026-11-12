@@ -63,6 +63,10 @@ theorem powerSeries_X_mul_derivative_mk_pow {R : Type*} [CommSemiring R] (a : R)
       (PowerSeries.mk fun n => a ^ n) *
         (PowerSeries.C a * PowerSeries.X * PowerSeries.mk fun n => a ^ n) := by
   set g : PowerSeries R := PowerSeries.mk fun n => a ^ n
+  -- Pull the factor `X` of the right side to the front, as on the left side, so that
+  -- `PowerSeries.coeff_succ_X_mul` strips it from both sides at once; the remaining factor
+  -- `C a * (g * g)` then has its coefficients given by `PowerSeries.coeff_C_mul` and
+  -- `PowerSeries.coeff_mul`.
   rw [show g * (PowerSeries.C a * PowerSeries.X * g) = PowerSeries.X * (PowerSeries.C a * (g * g))
     by ring]
   -- Both sides have `(m + 1)`-th coefficient `(m + 1) aᵐ⁺¹`: the `m`-th coefficient of `g²` is a
