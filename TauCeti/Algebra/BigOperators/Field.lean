@@ -24,6 +24,7 @@ values `∏ (1 - q^{-k})` of local densities.
 
 ## Main results
 
+* `Finset.sum_range_natCast`, `Finset.sum_range_natCast_sq`: sums of naturals and their squares.
 * `Finset.prod_pow_sub_one`: factoring `q ^ (∑ i ∈ s, f i)` out of `∏ i ∈ s, (q ^ f i - 1)`.
 * `Finset.sum_range_add_mul_add_div_two`: the increments of a quadratic along a uniform grid sum to
   the increment of the quadratic from `0` to the end of the grid.
@@ -51,5 +52,19 @@ theorem sum_range_add_mul_add_div_two {K : Type*} [Field K] [CharZero K] (a u X 
   induction n with
   | zero => simp
   | succ n ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
+
+/-- The sum of the natural numbers below `n`, cast into a field of characteristic zero. -/
+theorem sum_range_natCast {K : Type*} [Field K] [CharZero K] (n : ℕ) :
+    ∑ r ∈ range n, (r : K) = n * (n - 1) / 2 := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [sum_range_succ, ih]; push_cast; ring
+
+/-- The sum of the squares of natural numbers below `n`, in a field of characteristic zero. -/
+theorem sum_range_natCast_sq {K : Type*} [Field K] [CharZero K] (n : ℕ) :
+    ∑ r ∈ range n, (r : K) ^ 2 = n * (n - 1) * (2 * n - 1) / 6 := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [sum_range_succ, ih]; push_cast; ring
 
 end Finset
