@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.LinearAlgebra.BilinearForm.Contact.NormalForm
+import TauCeti.Analysis.Normed.Module.Alternating.ContactNormalForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
@@ -336,24 +337,13 @@ theorem isContactFormAt_modelSpace_iff_isContact {α : E → E [⋀^Fin 1]→L[�
     IsContactFormAt (I := 𝓘(ℝ, E)) α x ↔
       Module.Dual.IsContact (ContinuousAlternatingMap.toDual (α x) : E →ₗ[ℝ] ℝ)
         (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ := by
-  rw [Module.Dual.isContact_iff_of_isRefl
-    (ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL (extDeriv α x)).isRefl]
-  have hB (v w : E) :
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ v w =
-        extDeriv α x ![v, w] :=
-    ContinuousAlternatingMap.flatL_apply_apply _ v w
-  simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply, hB]
+  rw [ContinuousAlternatingMap.isContact_toDual_flatL_iff]
   have hd (v w : E) : mextDeriv α x ![v, w] = extDeriv α x ![v, w] :=
     DFunLike.congr_fun (mextDeriv_eq_extDeriv α x) _
-  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
-    RoughForm.mem_ker.2 <| (ContinuousAlternatingMap.toDual_apply (α x) v).symm.trans
-      (LinearMap.congr_fun h0 v),
-    fun v hv hvw ↦ h.nondegenerate v (RoughForm.mem_ker.2 hv) fun w hw ↦
-      (hd v w).trans (hvw w (RoughForm.mem_ker.1 hw))⟩,
-    fun ⟨h0, h⟩ ↦ ⟨fun hz ↦ h0 <| LinearMap.ext fun v ↦
-      (ContinuousAlternatingMap.toDual_apply (α x) v).trans (by rw [hz]; rfl),
-      fun v hv hvw ↦ h v (RoughForm.mem_ker.1 hv) fun w hw ↦
-        (hd v w).symm.trans (hvw w (RoughForm.mem_ker.2 hw))⟩⟩
+  refine ⟨fun h ↦ ⟨h.ne_zero, fun v hv hvw ↦ h.nondegenerate v (RoughForm.mem_ker.2 hv)
+      fun w hw ↦ (hd v w).trans (hvw w (RoughForm.mem_ker.1 hw))⟩,
+    fun ⟨h0, h⟩ ↦ ⟨h0, fun v hv hvw ↦ h v (RoughForm.mem_ker.1 hv) fun w hw ↦
+      (hd v w).symm.trans (hvw w (RoughForm.mem_ker.2 hw))⟩⟩
 
 end ModelSpace
 

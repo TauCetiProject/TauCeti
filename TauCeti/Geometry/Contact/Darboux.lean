@@ -356,10 +356,8 @@ theorem exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mu
       ∀ᶠ x in 𝓝 x₀, 0 < g x ∧ ∀ v : V,
         (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (Φ x) ![fderiv ℝ Φ x v] =
           g x * α x ![v] := by
-  obtain ⟨n, e, hae, hωe⟩ := exists_continuousLinearEquiv_stdContact hc.ne_zero
-    fun v hv hvw ↦ hc.nondegenerate v (RoughForm.mem_ker.2 hv) fun (w : V) hw ↦
-      (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv (E := V) (F := ℝ) (k := 1) α x₀)).trans
-        (hvw w (RoughForm.mem_ker.1 hw))
+  obtain ⟨n, e, hae, hωe⟩ :=
+    exists_continuousLinearEquiv_stdContact (isContactFormAt_modelSpace_iff_isContact.1 hc)
   set P := EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ
   set σ : P → P [⋀^Fin 1]→L[ℝ] ℝ := (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1
   have hσ : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) σ :=
