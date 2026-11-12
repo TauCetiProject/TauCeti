@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
+public import TauCeti.Data.Fin.VecNotation
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -61,10 +62,13 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
   curvature tensors.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
   `TauCeti.FourTensor.scalar_apply_orthonormalBasis`: the contractions in an orthonormal basis.
+* `TauCeti.FourTensor.ricci_eq_sum_inv_gram`: the Ricci contraction in an arbitrary basis.
 * `TauCeti.FourTensor.ricci_compContinuousLinearMap_linearIsometryEquiv` and
   `TauCeti.FourTensor.scalar_compContinuousLinearMap_linearIsometryEquiv`: the contractions are
   equivariant under linear isometric equivalences.
 * `TauCeti.FourTensor.ricci_kulkarniNomizu_innerₗ`: `Ric(h ⊙ g) = (n - 2) h + (tr h) g`.
+* `TauCeti.FourTensor.kulkarniNomizu_innerₗ_eq_zero_iff`: in dimension at least `3`, `h ⊙ g`
+  vanishes only for `h = 0`.
 * `TauCeti.FourTensor.constantCurvature_apply_self_pos`: `r(u, v, u, v) > 0` for the
   constant-curvature tensor on a linearly independent pair.
 * `TauCeti.FourTensor.ricci_constantCurvature` and `TauCeti.FourTensor.scalar_constantCurvature`.
@@ -95,30 +99,14 @@ namespace FourTensor
 
 section NormedSpace
 
-section Update
-
-variable {V : Type*}
-
-private theorem update_zero (a b c d x : V) :
-    Function.update ![a, b, c, d] 0 x = ![x, b, c, d] := by
-  funext i; fin_cases i <;> rfl
-
-private theorem update_one (a b c d x : V) :
-    Function.update ![a, b, c, d] 1 x = ![a, x, c, d] := by
-  funext i; fin_cases i <;> rfl
-
-private theorem update_two (a b c d x : V) :
-    Function.update ![a, b, c, d] 2 x = ![a, b, x, d] := by
-  funext i; fin_cases i <;> rfl
-
-private theorem update_three (a b c d x : V) :
-    Function.update ![a, b, c, d] 3 x = ![a, b, c, x] := by
-  funext i; fin_cases i <;> rfl
-
-end Update
-
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
   [NormedSpace ℝ W]
+
+/-- Two four-tensors are equal if they agree on every tuple `![u, v, z, w]`. -/
+theorem ext {r q : FourTensor V} (h : ∀ u v z w, r ![u, v, z, w] = q ![u, v, z, w]) : r = q :=
+  ContinuousMultilinearMap.ext fun m ↦ by
+    rw [← FinVec.etaExpand_eq m]
+    exact h _ _ _ _
 
 /-- The algebraic symmetries of a curvature four-tensor `r(u, v, z, w) = g(R(u, v)w, z)`:
 antisymmetry in the first and in the last pair of arguments, symmetry under interchanging the two
@@ -158,6 +146,42 @@ def algebraicCurvatureSubmodule : Submodule ℝ (FourTensor V) where
 theorem mem_algebraicCurvatureSubmodule {r : FourTensor V} :
     r ∈ algebraicCurvatureSubmodule V ↔ IsAlgebraicCurvature r :=
   Iff.rfl
+
+/-- The zero four-tensor is an algebraic curvature tensor. -/
+@[simp]
+theorem isAlgebraicCurvature_zero : IsAlgebraicCurvature (0 : FourTensor V) :=
+  (algebraicCurvatureSubmodule V).zero_mem
+
+/-- `-r` is an algebraic curvature tensor exactly when `r` is. -/
+@[simp]
+theorem isAlgebraicCurvature_neg {r : FourTensor V} :
+    IsAlgebraicCurvature (-r) ↔ IsAlgebraicCurvature r :=
+  (algebraicCurvatureSubmodule V).neg_mem_iff
+
+/-- The sum of two algebraic curvature tensors is an algebraic curvature tensor. -/
+theorem IsAlgebraicCurvature.add {r q : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (hq : IsAlgebraicCurvature q) : IsAlgebraicCurvature (r + q) :=
+  (algebraicCurvatureSubmodule V).add_mem hr hq
+
+/-- The difference of two algebraic curvature tensors is an algebraic curvature tensor. -/
+theorem IsAlgebraicCurvature.sub {r q : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (hq : IsAlgebraicCurvature q) : IsAlgebraicCurvature (r - q) :=
+  (algebraicCurvatureSubmodule V).sub_mem hr hq
+
+/-- A scalar multiple of an algebraic curvature tensor is an algebraic curvature tensor. -/
+theorem IsAlgebraicCurvature.smul {r : FourTensor V} (hr : IsAlgebraicCurvature r) (c : ℝ) :
+    IsAlgebraicCurvature (c • r) :=
+  (algebraicCurvatureSubmodule V).smul_mem c hr
+
+/-- An algebraic curvature tensor vanishes when its first two arguments are equal. -/
+theorem IsAlgebraicCurvature.self_first {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u z w : V) : r ![u, u, z, w] = 0 := by
+  linarith [hr.antisymm_first u u z w]
+
+/-- An algebraic curvature tensor vanishes when its last two arguments are equal. -/
+theorem IsAlgebraicCurvature.self_last {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u v z : V) : r ![u, v, z, z] = 0 := by
+  linarith [hr.antisymm_last u v z z]
 
 /-- The algebraic curvature tensors form a closed subspace: each of their defining identities is
 the vanishing of a continuous linear functional of the tensor. -/
@@ -209,10 +233,16 @@ theorem compContinuousLinearMap_mem_algebraicCurvatureSubmodule {r : FourTensor 
 /-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction. -/
 private def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
   LinearMap.mk₂ ℝ (fun x y ↦ r ![x, u, y, v])
-    (fun x x' y ↦ by simpa only [update_zero] using r.map_update_add ![x, u, y, v] 0 x x')
-    (fun c x y ↦ by simpa only [update_zero] using r.map_update_smul ![x, u, y, v] 0 c x)
-    (fun x y y' ↦ by simpa only [update_two] using r.map_update_add ![x, u, y, v] 2 y y')
-    (fun c x y ↦ by simpa only [update_two] using r.map_update_smul ![x, u, y, v] 2 c y)
+    (fun x x' y ↦ by
+      simpa only [Matrix.update_vecCons_zero] using r.map_update_add ![x, u, y, v] 0 x x')
+    (fun c x y ↦ by
+      simpa only [Matrix.update_vecCons_zero] using r.map_update_smul ![x, u, y, v] 0 c x)
+    (fun x y y' ↦ by
+      simpa only [Matrix.update_vecCons_two, Matrix.update_vecCons_one,
+        Matrix.update_vecCons_zero] using r.map_update_add ![x, u, y, v] 2 y y')
+    (fun c x y ↦ by
+      simpa only [Matrix.update_vecCons_two, Matrix.update_vecCons_one,
+        Matrix.update_vecCons_zero] using r.map_update_smul ![x, u, y, v] 2 c y)
 
 private theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
     ricciSlice r u v x y = r ![x, u, y, v] :=
@@ -242,6 +272,13 @@ theorem ofLinearMap₄_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V �
     ofLinearMap₄ T m = T (m 0) (m 1) (m 2) (m 3) :=
   (rfl)
 
+/-- A curried four-linear form is determined by its four-tensor. -/
+theorem ofLinearMap₄_injective :
+    Function.Injective (ofLinearMap₄ : (V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) →ₗ[ℝ] FourTensor V) :=
+  fun T S h ↦ by
+    ext a b c d
+    simpa using DFunLike.congr_fun h ![a, b, c, d]
+
 /-- The Kulkarni–Nomizu product of two bilinear forms as a four-tensor, in the curvature
 convention `r(u, v, z, w) = g(R(u, v)w, z)`:
 `(h ⊙ k)(u, v, z, w) = h(u, z) k(v, w) + h(v, w) k(u, z) - h(u, w) k(v, z) - h(v, z) k(u, w)`.
@@ -264,6 +301,11 @@ theorem kulkarniNomizu_apply (h k : BilinForm ℝ V) (u v z w : V) :
 theorem kulkarniNomizu_apply_eq (h k : BilinForm ℝ V) (u v z w : V) :
     kulkarniNomizu h k ![u, v, z, w] = LinearMap.BilinForm.kulkarniNomizu h k u v w z := by
   rw [kulkarniNomizu_apply, LinearMap.BilinForm.kulkarniNomizu_apply]
+
+/-- The Kulkarni–Nomizu four-tensor is commutative. -/
+theorem kulkarniNomizu_comm (h k : BilinForm ℝ V) : kulkarniNomizu h k = kulkarniNomizu k h := by
+  rw [kulkarniNomizu, LinearMap.compr₂_apply, LinearMap.compr₂_apply,
+    LinearMap.BilinForm.kulkarniNomizu_comm]
 
 /-- The Kulkarni–Nomizu product of two symmetric bilinear forms is an algebraic curvature
 tensor. -/
@@ -294,19 +336,25 @@ def ricci : FourTensor V →ₗ[ℝ] BilinForm ℝ V where
   toFun r := LinearMap.mk₂ ℝ (fun u v ↦ bilinFormTrace (ricciSlice r u v))
     (fun u u' v ↦ by
       rw [← map_add]; congr 1; ext x y
-      simpa only [LinearMap.add_apply, ricciSlice_apply, update_one] using
+      simpa only [LinearMap.add_apply, ricciSlice_apply,
+          Matrix.update_vecCons_one, Matrix.update_vecCons_zero] using
         r.map_update_add ![x, u, y, v] 1 u u')
     (fun c u v ↦ by
       rw [← map_smul]; congr 1; ext x y
-      simpa only [LinearMap.smul_apply, smul_eq_mul, ricciSlice_apply, update_one] using
+      simpa only [LinearMap.smul_apply, smul_eq_mul, ricciSlice_apply,
+          Matrix.update_vecCons_one, Matrix.update_vecCons_zero] using
         r.map_update_smul ![x, u, y, v] 1 c u)
     (fun u v v' ↦ by
       rw [← map_add]; congr 1; ext x y
-      simpa only [LinearMap.add_apply, ricciSlice_apply, update_three] using
+      simpa only [LinearMap.add_apply, ricciSlice_apply,
+          Matrix.update_vecCons_three, Matrix.update_vecCons_two, Matrix.update_vecCons_one,
+          Matrix.update_vecCons_zero] using
         r.map_update_add ![x, u, y, v] 3 v v')
     (fun c u v ↦ by
       rw [← map_smul]; congr 1; ext x y
-      simpa only [LinearMap.smul_apply, smul_eq_mul, ricciSlice_apply, update_three] using
+      simpa only [LinearMap.smul_apply, smul_eq_mul, ricciSlice_apply,
+          Matrix.update_vecCons_three, Matrix.update_vecCons_two, Matrix.update_vecCons_one,
+          Matrix.update_vecCons_zero] using
         r.map_update_smul ![x, u, y, v] 3 c v)
   map_add' r q := by
     ext u v
@@ -326,6 +374,13 @@ theorem ricci_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalB
     (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] :=
   bilinFormTrace_eq_sum (ricciSlice r u v) b
 
+/-- In an arbitrary basis `b` with Gram matrix `G`, the Ricci contraction is
+`∑ᵢ ∑ⱼ (G⁻¹)ᵢⱼ r(bᵢ, u, bⱼ, v)`. -/
+theorem ricci_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ V)
+    (r : FourTensor V) (u v : V) :
+    ricci r u v = ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j * r ![b i, u, b j, v] :=
+  bilinFormTrace_eq_sum_inv_gram (ricciSlice r u v) b
+
 /-- The Ricci contraction of an algebraic curvature tensor is symmetric. -/
 theorem IsAlgebraicCurvature.isSymm_ricci {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     (ricci r).IsSymm := by
@@ -335,15 +390,16 @@ theorem IsAlgebraicCurvature.isSymm_ricci {r : FourTensor V} (hr : IsAlgebraicCu
 
 /-- The Ricci contraction is equivariant under linear isometric equivalences: the Ricci contraction
 of the pullback of `r` by `e` is the pullback of the Ricci contraction of `r`. -/
+@[simp]
 theorem ricci_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAddCommGroup W]
     [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V)
     (u v : W) :
-    ricci (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) u v =
+    ricci (r.compContinuousLinearMap fun _ ↦ (e : W →L[ℝ] V)) u v =
       ricci r (e u) (e v) := by
   let b := stdOrthonormalBasis ℝ W
   rw [ricci_apply_orthonormalBasis b, ricci_apply_orthonormalBasis (b.map e)]
   simp only [compContinuousLinearMap_apply_vec, OrthonormalBasis.map_apply,
-    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The scalar contraction of a four-tensor: the metric trace of its Ricci contraction. -/
 def scalar : FourTensor V →ₗ[ℝ] ℝ :=
@@ -359,17 +415,19 @@ theorem scalar_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : Orthonormal
   simp only [scalar_apply, bilinFormTrace_eq_sum _ b, ricci_apply_orthonormalBasis b]
 
 /-- The scalar contraction is invariant under linear isometric equivalences. -/
+@[simp]
 theorem scalar_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAddCommGroup W]
     [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
-    scalar (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
+    scalar (r.compContinuousLinearMap fun _ ↦ (e : W →L[ℝ] V)) =
       scalar r := by
   let b := stdOrthonormalBasis ℝ W
   rw [scalar_apply_orthonormalBasis b, scalar_apply_orthonormalBasis (b.map e)]
   simp only [compContinuousLinearMap_apply_vec, OrthonormalBasis.map_apply,
-    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The Ricci contraction of the Kulkarni–Nomizu product of `h` with the inner product:
 `Ric(h ⊙ g) = (n - 2) h + (tr h) g`. -/
+@[simp]
 theorem ricci_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
     ricci (kulkarniNomizu h (innerₗ V)) =
       ((Module.finrank ℝ V : ℝ) - 2) • h + bilinFormTrace h • innerₗ V := by
@@ -379,8 +437,18 @@ theorem ricci_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
     innerₗ_apply_apply]
   exact LinearMap.BilinForm.sum_kulkarniNomizu_innerₗ h _ u v
 
+/-- In dimension at least `3`, the Kulkarni–Nomizu four-tensor `h ⊙ g` with the inner product
+vanishes only for `h = 0`. -/
+@[simp]
+theorem kulkarniNomizu_innerₗ_eq_zero_iff (hV : 3 ≤ Module.finrank ℝ V) {h : BilinForm ℝ V} :
+    kulkarniNomizu h (innerₗ V) = 0 ↔ h = 0 := by
+  rw [← LinearMap.BilinForm.kulkarniNomizu_innerₗ_eq_zero_iff hV, kulkarniNomizu,
+    LinearMap.compr₂_apply, LinearMap.neg_apply, neg_eq_zero, ← map_zero ofLinearMap₄]
+  exact ofLinearMap₄_injective.eq_iff
+
 /-- The scalar contraction of the Kulkarni–Nomizu product of `h` with the inner product:
 `Scal(h ⊙ g) = 2 (n - 1) tr h`. -/
+@[simp]
 theorem scalar_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
     scalar (kulkarniNomizu h (innerₗ V)) =
       2 * ((Module.finrank ℝ V : ℝ) - 1) * bilinFormTrace h := by
@@ -405,10 +473,21 @@ theorem constantCurvature_apply (u v z w : V) :
   ring
 
 /-- The constant-curvature tensor is an algebraic curvature tensor. -/
+@[simp]
 theorem isAlgebraicCurvature_constantCurvature : IsAlgebraicCurvature (constantCurvature V) :=
   have hg : LinearMap.BilinForm.IsSymm (innerₗ V) := ⟨fun v w ↦ real_inner_comm w v⟩
   Submodule.smul_mem (algebraicCurvatureSubmodule V) _
     (isAlgebraicCurvature_kulkarniNomizu hg hg)
+
+/-- The constant-curvature tensor is invariant under pullback by linear isometries. -/
+@[simp]
+theorem constantCurvature_compContinuousLinearMap_linearIsometry {W : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (f : W →ₗᵢ[ℝ] V) :
+    (constantCurvature V).compContinuousLinearMap (fun _ ↦ f.toContinuousLinearMap) =
+      constantCurvature W :=
+  ext fun u v z w ↦ by
+    simp only [compContinuousLinearMap_apply_vec, constantCurvature_apply,
+      LinearIsometry.coe_toContinuousLinearMap, LinearIsometry.inner_map_map]
 
 /-- On a pair `(u, v)`, the constant-curvature tensor is the Gram determinant
 `‖u‖² ‖v‖² - ⟪u, v⟫²`. -/
@@ -427,6 +506,7 @@ theorem constantCurvature_apply_self_pos {u v : V} (h : LinearIndependent ℝ ![
   simpa [Matrix.gram_apply] using this
 
 /-- The Ricci contraction of the constant-curvature tensor is `(n - 1) g`. -/
+@[simp]
 theorem ricci_constantCurvature :
     ricci (constantCurvature V) = ((Module.finrank ℝ V : ℝ) - 1) • innerₗ V := by
   rw [constantCurvature, map_smul, ricci_kulkarniNomizu_innerₗ, bilinFormTrace_inner, ← add_smul,
@@ -435,6 +515,7 @@ theorem ricci_constantCurvature :
   ring
 
 /-- The scalar contraction of the constant-curvature tensor is `n (n - 1)`. -/
+@[simp]
 theorem scalar_constantCurvature :
     scalar (constantCurvature V) = Module.finrank ℝ V * ((Module.finrank ℝ V : ℝ) - 1) := by
   rw [constantCurvature, map_smul, scalar_kulkarniNomizu_innerₗ, bilinFormTrace_inner,
