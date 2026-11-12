@@ -428,6 +428,24 @@ lemma singularCochainComplexShortComplexMap_τ₃ {P P' : TopPair.{w}} (f : P �
     (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₃ =
       TopCat.singularCochainComplexMap (Hom.snd f) := (rfl)
 
+/-- On cohomology, the ambient component of the morphism of cochain sequences induced by a map of
+pairs `f` is the singular cohomology map of `Hom.fst f`. -/
+lemma homologyMap_singularCochainComplexShortComplexMap_τ₂ {P P' : TopPair.{w}} (f : P ⟶ P')
+    (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₂ n =
+      TopCat.singularCohomologyMap (Hom.fst f) n := by
+  rw [singularCochainComplexShortComplexMap_τ₂]
+
+/-- On cohomology, the subspace component of the morphism of cochain sequences induced by a map of
+pairs `f` is the singular cohomology map of `Hom.snd f`. -/
+lemma homologyMap_singularCochainComplexShortComplexMap_τ₃ {P P' : TopPair.{w}} (f : P ⟶ P')
+    (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₃ n =
+      TopCat.singularCohomologyMap (Hom.snd f) n := by
+  rw [singularCochainComplexShortComplexMap_τ₃]
+
 /-- The map from relative to absolute cohomology is natural in the pair. -/
 @[reassoc]
 lemma singularCohomologyπ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :

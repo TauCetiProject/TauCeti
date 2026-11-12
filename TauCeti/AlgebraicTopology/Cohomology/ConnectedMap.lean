@@ -41,10 +41,10 @@ complex of relative singular cochains `Hom(C(M_f, X; R), M)` is exact in the sam
 theorem is involved. The long exact cohomology sequence of the pair `(M_f, X)` then makes
 restriction to the bottom face injective in degrees `≤ n` and surjective in degrees `< n`.
 
-For a map of pairs `(X, A) → (Y, B)` which is `n`-connected on the ambient spaces and on the
-subspaces, the five lemma in the long exact cohomology sequences of the two pairs gives isomorphisms
-`H^m(Y, B; M) ≅ H^m(X, A; M)` for `m < n` and a monomorphism for `m = n`
-(`TopPair.isIso_singularCohomologyMap_of_isNConnected`,
+For a map of pairs `(X, A) → (Y, B)` which is `n`-connected on the ambient spaces and
+`(n - 1)`-connected on the subspaces, the five lemma in the long exact cohomology sequences of the
+two pairs gives isomorphisms `H^m(Y, B; M) ≅ H^m(X, A; M)` for `m < n` and a monomorphism for
+`m = n` (`TopPair.isIso_singularCohomologyMap_of_isNConnected`,
 `TopPair.mono_singularCohomologyMap_of_isNConnected`).
 
 Applied to the inclusion of the `n`-skeleton of a CW complex, which is `n`-connected
@@ -62,7 +62,8 @@ the complex below degree `n`.
   monomorphisms on singular cohomology up to degree `n`.
 * `TopPair.isIso_singularCohomologyMap_of_isNConnected`,
   `TopPair.mono_singularCohomologyMap_of_isNConnected`: the same for relative singular cohomology,
-  along a map of pairs which is `n`-connected on the ambient spaces and on the subspaces.
+  along a map of pairs which is `n`-connected on the ambient spaces and `(n - 1)`-connected on the
+  subspaces.
 
 ## References
 
@@ -176,33 +177,17 @@ namespace TopPair
 variable {P P' : TopPair.{u}} (f : P ⟶ P') {n : ℕ} {R : Type u} [Ring R] {k : Type*} [Ring k]
   [Linear k (ModuleCat.{u} R)] {M : ModuleCat.{u} R}
 
-/-- On cohomology, the ambient component of the morphism of cochain sequences induced by `f` is the
-singular cohomology map of `Hom.fst f`. -/
-private lemma homologyMap_singularCochainComplexShortComplexMap_τ₂ (j : ℕ) :
-    HomologicalComplex.homologyMap
-        (singularCochainComplexShortComplexMap (R := ModuleCat.of R R) (k := k) (M := M) f).τ₂ j =
-      TopCat.singularCohomologyMap (TopCat.ofHom (Hom.fst f).hom) j := by
-  rw [singularCochainComplexShortComplexMap_τ₂, TopCat.ofHom_hom]
-
-/-- On cohomology, the subspace component of the morphism of cochain sequences induced by `f` is
-the singular cohomology map of `Hom.snd f`. -/
-private lemma homologyMap_singularCochainComplexShortComplexMap_τ₃ (j : ℕ) :
-    HomologicalComplex.homologyMap
-        (singularCochainComplexShortComplexMap (R := ModuleCat.of R R) (k := k) (M := M) f).τ₃ j =
-      TopCat.singularCohomologyMap (TopCat.ofHom (Hom.snd f).hom) j := by
-  rw [singularCochainComplexShortComplexMap_τ₃, TopCat.ofHom_hom]
-
 variable (R k M)
 
-/-- **A map of pairs which is `n`-connected on the ambient spaces and on the subspaces induces
-isomorphisms on relative singular cohomology below degree `n`**: the map
+/-- **A map of pairs which is `n`-connected on the ambient spaces and `(n - 1)`-connected on the
+subspaces induces isomorphisms on relative singular cohomology below degree `n`**: the map
 `H^m(Y, B; M) → H^m(X, A; M)` is an isomorphism for every `m < n`, by the five lemma in the long
 exact cohomology sequences of the two pairs. -/
 theorem isIso_singularCohomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
-    (hsnd : (Hom.snd f).hom.IsNConnected n) {m : ℕ} (hm : m < n) :
+    (hsnd : (Hom.snd f).hom.IsNConnected (n - 1)) {m : ℕ} (hm : m < n) :
     IsIso (TopPair.singularCohomologyMap (R := ModuleCat.of R R) (k := k) (M := M) f m) := by
   have h := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₁
-    (singularCochainComplexShortComplexMap f)
+    (singularCochainComplexShortComplexMap (R := ModuleCat.of R R) (k := k) (M := M) f)
     (P'.shortExact_singularCochainComplexShortComplex _ k M)
     (P.shortExact_singularCochainComplexShortComplex _ k M) m
     (fun j hj ↦ by
@@ -217,17 +202,17 @@ theorem isIso_singularCohomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNC
       exact hfst.isIso_singularCohomologyMap R k M hm)
     (by
       rw [homologyMap_singularCochainComplexShortComplexMap_τ₃]
-      exact hsnd.mono_singularCohomologyMap R k M hm.le)
+      exact hsnd.mono_singularCohomologyMap R k M (by lia))
   rwa [singularCochainComplexShortComplexMap_τ₁] at h
 
-/-- **A map of pairs which is `n`-connected on the ambient spaces and on the subspaces induces
-monomorphisms on relative singular cohomology up to degree `n`**: the map
+/-- **A map of pairs which is `n`-connected on the ambient spaces and `(n - 1)`-connected on the
+subspaces induces monomorphisms on relative singular cohomology up to degree `n`**: the map
 `H^m(Y, B; M) → H^m(X, A; M)` is a monomorphism for every `m ≤ n`. -/
 theorem mono_singularCohomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
-    (hsnd : (Hom.snd f).hom.IsNConnected n) {m : ℕ} (hm : m ≤ n) :
+    (hsnd : (Hom.snd f).hom.IsNConnected (n - 1)) {m : ℕ} (hm : m ≤ n) :
     Mono (TopPair.singularCohomologyMap (R := ModuleCat.of R R) (k := k) (M := M) f m) := by
   have h := HomologicalComplex.HomologySequence.mono_homologyMap_τ₁
-    (singularCochainComplexShortComplexMap f)
+    (singularCochainComplexShortComplexMap (R := ModuleCat.of R R) (k := k) (M := M) f)
     (P'.shortExact_singularCochainComplexShortComplex _ k M)
     (P.shortExact_singularCochainComplexShortComplex _ k M) m
     (fun j hj ↦ by
