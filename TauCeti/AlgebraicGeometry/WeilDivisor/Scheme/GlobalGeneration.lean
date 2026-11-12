@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration
+public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Interpolation
 
 /-!
