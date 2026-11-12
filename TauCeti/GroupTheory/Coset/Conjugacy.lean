@@ -29,7 +29,7 @@ ambient-group equality.
 ## References
 
 * D. F. Holt, B. Eick, E. A. O'Brien, *Handbook of Computational Group Theory*,
-  Chapman & Hall/CRC, 2005, Chapter 5 (coset enumeration and conjugacy).
+  Chapman & Hall/CRC, 2005, Chapter 5 (coset enumeration).
 -/
 
 public section
@@ -65,13 +65,9 @@ theorem isConj_iff_exists_of_check (hg : Subgroup.closure (Set.range g) = ⊤)
   constructor
   · intro hxy
     obtain ⟨c, hc⟩ := isConj_iff.mp hxy
-    obtain ⟨i, hi⟩ := T.surjective_point hg hT hrels
+    obtain ⟨i, hmem⟩ := T.exists_inv_word_mul_mem hg hT hrels
       (H := Subgroup.centralizer {x})
-      (fun r hr ↦ Subgroup.mem_centralizer_singleton_iff.mpr (hstab r hr))
-      (c : G ⧸ Subgroup.centralizer {x})
-    have hmem : (((T.word i).map g).prod)⁻¹ * c ∈ Subgroup.centralizer {x} := by
-      apply QuotientGroup.eq.mp
-      simpa [point_def, MulAction.Quotient.smul_mk] using hi
+      (fun r hr ↦ Subgroup.mem_centralizer_singleton_iff.mpr (hstab r hr)) c
     have hcomm := Subgroup.mem_centralizer_singleton_iff.mp hmem
     have heq := congrArg (fun z ↦ ((T.word i).map g).prod * z * c⁻¹) hcomm
     refine ⟨i, ?_⟩
