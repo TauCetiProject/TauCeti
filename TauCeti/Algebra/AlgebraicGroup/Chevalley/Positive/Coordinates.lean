@@ -156,6 +156,22 @@ theorem positiveRootEquiv_apply (hs : t.IsSimplyLaced) (l : List PositiveRoot)
     t.positiveRootEquiv ht hs l hl hcover A u = (D).positiveRootProduct l A u :=
   (rfl)
 
+/-- Extracting coordinates from an ordered positive-root product recovers its parameters. -/
+@[simp]
+theorem positiveRootEquiv_symm_positiveRootProduct (hs : t.IsSimplyLaced)
+    (l : List PositiveRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    (A : Type v) [CommRing A] (u : PositiveRoot → A) :
+    (t.positiveRootEquiv ht hs l hl hcover A).symm ((D).positiveRootProduct l A u) = u :=
+  (t.positiveRootEquiv ht hs l hl hcover A).symm_apply_apply u
+
+/-- Multiplying the extracted positive-root coordinates reproduces the original positive point. -/
+@[simp]
+theorem positiveRootProduct_positiveRootEquiv_symm (hs : t.IsSimplyLaced)
+    (l : List PositiveRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    (A : Type v) [CommRing A] (g : (D).positivePoints A) :
+    (D).positiveRootProduct l A ((t.positiveRootEquiv ht hs l hl hcover A).symm g) = g :=
+  (t.positiveRootEquiv ht hs l hl hcover A).apply_symm_apply g
+
 /-- Extracting coordinates after scalar change applies the ring map coordinatewise. In
 particular, coordinates are natural even under reduction modulo a prime. -/
 @[simp]
