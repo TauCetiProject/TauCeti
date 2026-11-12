@@ -25,10 +25,11 @@ identities on a rectangle containing the support of `g` in the closed half-plane
 
 * `TauCeti.setIntegral_im_pos_fderiv_one_eq_zero`: `∫_{0 < t} ∂_s g = 0`.
 * `TauCeti.setIntegral_im_pos_fderiv_I_eq_neg_integral`: `∫_{0 < t} ∂_t g = -∫_ℝ g`.
-* `TauCeti.setIntegral_halfDisc_eq_setIntegral_im_pos` and
-  `TauCeti.setIntegral_Ioo_eq_integral_of_ofReal_notMem_ball`: for a function vanishing outside
-  the disc of radius `r`, the integrals over the half-disc and over `(-r, r)` are those over the
-  half-plane and over `ℝ`.
+* `TauCeti.setIntegral_inter_im_pos_eq_setIntegral_im_pos`: for a function vanishing at the
+  points of the half-plane outside `s`, the integral over `s ∩ {0 < t}` is that over the
+  half-plane.
+* `TauCeti.setIntegral_Ioo_eq_integral_of_ofReal_notMem_ball`: for a function vanishing at the
+  real points outside the disc of radius `r`, the integral over `(-r, r)` is that over `ℝ`.
 -/
 
 public section
@@ -77,21 +78,21 @@ private theorem setIntegral_im_pos_eq_verticalRegion {f : ℂ → G} {R : ℝ}
       ⟨⟨by linarith, by linarith⟩, le_of_lt hzS, by linarith⟩⟩
 
 omit [CompleteSpace G] in
-/-- A function vanishing outside the disc of radius `r` has the same integral over the half-disc
-`ball 0 r ∩ {0 < t}` as over the half-plane. -/
-theorem setIntegral_halfDisc_eq_setIntegral_im_pos {f : ℂ → G} {r : ℝ}
-    (hf : ∀ z ∉ ball (0 : ℂ) r, f z = 0) :
-    ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, f z = ∫ z in {z : ℂ | 0 < z.im}, f z :=
+/-- A function vanishing at the points of the half-plane outside `s` has the same integral over
+`s ∩ {0 < t}` as over the half-plane, for any measure. -/
+theorem setIntegral_inter_im_pos_eq_setIntegral_im_pos {μ : Measure ℂ} {f : ℂ → G} {s : Set ℂ}
+    (hf : ∀ z : ℂ, 0 < z.im → z ∉ s → f z = 0) :
+    ∫ z in s ∩ {z : ℂ | 0 < z.im}, f z ∂μ = ∫ z in {z : ℂ | 0 < z.im}, f z ∂μ :=
   (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
     (measurableSet_lt measurable_const Complex.measurable_im) inter_subset_right
-    fun z hz ↦ hf z fun h ↦ hz.2 ⟨h, hz.1⟩).symm
+    fun z hz ↦ hf z hz.1 fun h ↦ hz.2 ⟨h, hz.1⟩).symm
 
 omit [CompleteSpace G] in
 /-- A function on `ℝ` vanishing at the real points outside the disc of radius `r` has the same
-integral over `(-r, r)` as over `ℝ`. -/
-theorem setIntegral_Ioo_eq_integral_of_ofReal_notMem_ball {f : ℝ → G} {r : ℝ}
+integral over `(-r, r)` as over `ℝ`, for any measure. -/
+theorem setIntegral_Ioo_eq_integral_of_ofReal_notMem_ball {μ : Measure ℝ} {f : ℝ → G} {r : ℝ}
     (hf : ∀ s : ℝ, (s : ℂ) ∉ ball 0 r → f s = 0) :
-    ∫ s in Ioo (-r) r, f s = ∫ s : ℝ, f s :=
+    ∫ s in Ioo (-r) r, f s ∂μ = ∫ s : ℝ, f s ∂μ :=
   setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦ hf s fun h ↦ hs (by
     rwa [mem_ball_zero_iff, Complex.norm_real, Real.norm_eq_abs, abs_lt] at h)
 

@@ -165,9 +165,9 @@ theorem setIntegral_halfDisc_re_inner_cauchyRiemann {r : ℝ} (hξ : ContDiff �
   have hout {z : ℂ} (hz : z ∉ ball 0 r) : z ∉ tsupport ξ := fun h ↦ hz (hξr h)
   have hξc : HasCompactSupport ξ := (isCompact_closedBall (0 : ℂ) r).of_isClosed_subset
     (isClosed_tsupport ξ) (hξr.trans ball_subset_closedBall)
-  rw [setIntegral_halfDisc_eq_setIntegral_im_pos fun z hz ↦ by
+  rw [setIntegral_inter_im_pos_eq_setIntegral_im_pos fun z _ hz ↦ by
       simp [fderiv_of_notMem_tsupport ℝ (hout hz)],
-    setIntegral_halfDisc_eq_setIntegral_im_pos fun z hz ↦ by
+    setIntegral_inter_im_pos_eq_setIntegral_im_pos fun z _ hz ↦ by
       simp [image_eq_zero_of_notMem_tsupport (hout hz)],
     setIntegral_Ioo_eq_integral_of_ofReal_notMem_ball fun s hs ↦ by
       simp [image_eq_zero_of_notMem_tsupport (hout hs)]]
