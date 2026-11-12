@@ -27,10 +27,11 @@ then apply to scalar solutions:
   the domain (`TauCeti.eqOn_zero_of_conjWirtingerDeriv_apply_one_eq_mul_of_forall_isBigO`);
 * at each zero `z₀` of a solution not vanishing near `z₀`, the exponent `m` of the scalar power
   factorization `f w = (w - z₀) ^ m * v w`
-  (`TauCeti.exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul`) is positive,
-  `‖f w‖` is comparable to `‖w - z₀‖ ^ m`, and `m` is the analytic order of the holomorphic factor
-  `σ` of every similarity factorization `f = Φ σ` at `z₀`
-  (`TauCeti.isTheta_pow_of_eventually_eq_pow_mul`).
+  (`TauCeti.exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul`) is positive
+  (`TauCeti.pos_of_eventually_eq_pow_mul`), `‖f w‖` is comparable to `‖w - z₀‖ ^ m`
+  (`TauCeti.isTheta_pow_of_eventually_eq_pow_mul`), and `m` is the analytic order of the
+  holomorphic factor `σ` of every similarity factorization `f = Φ σ` at `z₀`
+  (`TauCeti.analyticOrderAt_eq_of_eventually_eq_pow_mul`).
 
 The comparison of exponents needs no hypothesis on the equation, so it lives with the other
 consequences of a factorization in `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation`: a

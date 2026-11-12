@@ -147,9 +147,11 @@ variable {R S M : Type*} [Semiring R] [GroupWithZero S] [TopologicalSpace M] [Ad
 /-- Scaling the identity by a nonzero scalar `c` is invertible, with inverse scaling by `c⁻¹`. The
 scalars need not commute with operators: for example, multiplication by a nonzero complex number
 is an invertible real-linear map of `ℂ`. -/
-theorem isUnit_smul_id_of_ne_zero {c : S} (hc : c ≠ 0) : IsUnit (c • ContinuousLinearMap.id R M) :=
-  ⟨⟨c • ContinuousLinearMap.id R M, c⁻¹ • ContinuousLinearMap.id R M,
-    by ext; simp [hc], by ext; simp [hc]⟩, rfl⟩
+theorem isUnit_smul_id_of_ne_zero {c : S} (hc : c ≠ 0) :
+    IsUnit (c • ContinuousLinearMap.id R M) := by
+  have := SMulCommClass.symm R S M
+  convert (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc) : M ≃L[R] M).toUnit.isUnit
+  ext; simp [ContinuousLinearEquiv.toUnit]
 
 end SMulId
 
