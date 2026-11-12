@@ -292,6 +292,18 @@ theorem isSolution_iff_toWord {B : Type*} [DecidableEq B]
       (∀ w ∈ S.ineqs, (eval v c w).toWord ≠ []) := by
   simp only [IsSolution, FreeGroup.toWord_eq_nil_iff, ne_eq]
 
+/-- Over a trivial group every equation holds and every inequation fails: a system has a solution
+exactly when it has no inequations, and then every assignment solves it. -/
+theorem isSolution_iff_of_subsingleton [Subsingleton G] (S : EqIneqSystem X A) (v : X → G)
+    (c : A → G) : S.IsSolution v c ↔ S.ineqs = [] := by
+  simp [IsSolution, Subsingleton.elim (_ : G) 1, List.eq_nil_iff_forall_not_mem]
+
+/-- Over the free group of rank zero every inequation fails: a system has a solution exactly when
+it has no inequations. -/
+example [IsEmpty A] (S : EqIneqSystem X A) (v : X → FreeGroup A) :
+    S.IsSolution v FreeGroup.of ↔ S.ineqs = [] :=
+  S.isSolution_iff_of_subsingleton v FreeGroup.of
+
 /-- A single variable inequation is satisfied exactly when that variable is nontrivial. -/
 theorem isSolution_singleton_ineq_iff (x : X) (v : X → G) (c : A → G) :
     (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).IsSolution v c ↔
@@ -311,6 +323,31 @@ theorem isSolution_commutator_ineq_iff (x y : X) (v : X → G) (c : A → G) :
       [FreeGroup.of (Sum.inl x : X ⊕ A)]⟩ : EqIneqSystem X A).IsSolution v c ↔
       Commute (v x) (v y) ∧ v x ≠ 1 := by
   simp [IsSolution, map_commutatorElement, commutatorElement_eq_one_iff_commute]
+
+/-- An assignment taking `x` to `c a` and `y` to `c b` solves the equation `[x, y] = [a, b]`. -/
+theorem isSolution_commutator_eq_commutator {x y : X} {a b : A} {v : X → G} {c : A → G}
+    (hx : v x = c a) (hy : v y = c b) :
+    (⟨[⁅(FreeGroup.of (Sum.inl x) : FreeGroup (X ⊕ A)), FreeGroup.of (Sum.inl y)⁆ *
+        ⁅(FreeGroup.of (Sum.inr a) : FreeGroup (X ⊕ A)), FreeGroup.of (Sum.inr b)⁆⁻¹], []⟩ :
+      EqIneqSystem X A).IsSolution v c := by
+  simp [IsSolution, map_commutatorElement, hx, hy, -commutatorElement_inv]
+
+/-- Over a free group of rank at most one the commutativity equation `[x, y] = 1` is solved by
+every assignment. -/
+example [Subsingleton A] (x y : X) (v : X → FreeGroup A) :
+    (⟨[⁅(FreeGroup.of (Sum.inl x) : FreeGroup (X ⊕ A)), FreeGroup.of (Sum.inl y)⁆], []⟩ :
+      EqIneqSystem X A).IsSolution v FreeGroup.of := by
+  have := FreeGroup.isMulCommutative_iff_subsingleton.2 ‹Subsingleton A›
+  simpa [IsSolution, map_commutatorElement, commutatorElement_eq_one_iff_commute,
+    commute_iff_eq] using mul_comm' (v x) (v y)
+
+/-- In a group with unique roots, the equation `y ^ n = a ^ n` with a natural-number exponent
+`n ≠ 0` says that `y = a`. -/
+theorem isSolution_pow_eq_pow_iff [HasUniqueRoots G] {n : ℕ} (hn : n ≠ 0) (y : X) (a : A)
+    (v : X → G) (c : A → G) :
+    (⟨[FreeGroup.of (Sum.inl y) ^ n * (FreeGroup.of (Sum.inr a) ^ n)⁻¹], []⟩ :
+      EqIneqSystem X A).IsSolution v c ↔ v y = c a := by
+  simp [IsSolution, mul_inv_eq_one, (pow_left_injective (M := G) hn).eq_iff]
 
 /-- In a free group on two generators, `x = a` and `y = a²` solve the commutator
 equation with the inequation `x ≠ 1`. -/
