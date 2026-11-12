@@ -151,8 +151,8 @@ theorem smul_algebraMap_integerRing {K' : Type*} [Field K'] [ValuativeRel K']
     [Module.Finite K K'] [Normal K K'] (σ : L ≃ₐ[K] L) (w : 𝒪[K']) :
     σ • algebraMap 𝒪[K'] 𝒪[L] w = algebraMap 𝒪[K'] 𝒪[L] (σ.restrictNormal K' • w) :=
   Subtype.ext (by
-    rw [coe_smul_integerRing, coe_algebraMap_integerRing, coe_algebraMap_integerRing,
-      coe_smul_integerRing, restrictNormal_commutes])
+    rw [coe_smul_integerRing, Valuation.HasExtension.val_algebraMap,
+      Valuation.HasExtension.val_algebraMap, coe_smul_integerRing, restrictNormal_commutes])
 
 /-- The automorphism induced on the maximal ideal of the ring of integers. -/
 noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+* 𝓂[L] where

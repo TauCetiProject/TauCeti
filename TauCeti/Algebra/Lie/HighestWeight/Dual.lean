@@ -101,7 +101,7 @@ theorem exists_isHighestWeightVector_dual (hv : IsHighestWeightVector b lam v) :
   -- the span of the other weight spaces is a proper submodule
   set N : LieSubmodule K H M := genWeightSpaceSpan H M {chi | chi ≠ ⇑mu}
   have hdisj : Disjoint (genWeightSpace M ⇑mu) N :=
-    disjoint_genWeightSpace_genWeightSpaceSpan_ne H M mu
+    disjoint_genWeightSpace_genWeightSpaceSpan H M (by simp)
   have hNtop : N ≠ ⊤ := fun h => hmu_ne (by simpa [h] using hdisj)
   have hlt : N.toSubmodule < ⊤ := by
     rw [lt_top_iff_ne_top]
