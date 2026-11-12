@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.DifferentialForm.Complex
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 
@@ -37,10 +38,10 @@ namespace TauCeti
 
 namespace SmoothForm
 
-/-- The complex-valued coordinate one-form `dz` on the real manifold `ℂ`. -/
+/-- The complex-valued coordinate one-form `dz` on the real manifold `ℂ`: the constant form
+with value the flat covector `TauCeti.dzForm`. -/
 def complexDz : SmoothForm 𝓘(ℝ, ℂ) ℂ ℂ 1 :=
-  const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℂ (0 : Fin 1)
-    (ContinuousLinearMap.id ℝ ℂ))
+  const dzForm
 
 /-- The complex-valued coordinate one-form `dbar z` on the real manifold `ℂ`. -/
 def complexDzBar : SmoothForm 𝓘(ℝ, ℂ) ℂ ℂ 1 :=
