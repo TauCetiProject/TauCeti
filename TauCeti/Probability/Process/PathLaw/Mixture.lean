@@ -89,7 +89,7 @@ of a probability measure has mass one. -/
 @[simp]
 theorem deFinettiBarycenter_univ (π : Measure (ProbabilityMeasure α)) :
     deFinettiBarycenter π Set.univ = π Set.univ :=
-  TauCeti.MeasureTheory.bind_infinitePi_univ π
+  π.bind_infinitePi_univ
 
 /-- The barycenter of a mixing law is a probability measure if and only if the mixing law is. -/
 @[simp]

@@ -142,7 +142,7 @@ theorem Measure.ext_of_bind_infinitePi_eq [IsFiniteMeasure π₁]
     π₁ = π₂ := by
   have : IsFiniteMeasure π₂ := by
     constructor
-    rw [← bind_infinitePi_univ π₂, ← h, bind_infinitePi_univ π₁]
+    rw [← π₂.bind_infinitePi_univ, ← h, π₁.bind_infinitePi_univ]
     exact measure_lt_top π₁ _
   refine TauCeti.MeasureTheory.Measure.ext_of_forall_map_probabilityMeasure_eval_eq
     fun k B hB => ?_
