@@ -61,17 +61,11 @@ theorem mem_annulusBoundary {r₁ r₂ : ℝ} {z : closedAnnulus r₁ r₂} :
 
 variable {r₁ r₂ : ℝ}
 
-private theorem le_norm (z : closedAnnulus r₁ r₂) : r₁ ≤ ‖(z : ℂ)‖ :=
-  (mem_closedAnnulus.1 z.2).1
-
-private theorem norm_le (z : closedAnnulus r₁ r₂) : ‖(z : ℂ)‖ ≤ r₂ :=
-  (mem_closedAnnulus.1 z.2).2
-
 /-! ### The coordinates of the torus model -/
 
 /-- A point of the annulus, as a nonzero complex number. -/
 private def toNonzero (h₀ : 0 < r₁) (z : closedAnnulus r₁ r₂) : ({0}ᶜ : Set ℂ) :=
-  ⟨z, norm_pos_iff.1 (h₀.trans_le (le_norm z))⟩
+  ⟨z, norm_pos_iff.1 (h₀.trans_le (closedAnnulus.le_norm_coe z))⟩
 
 /-- The direction `z / ‖z‖` of a point of the annulus, its first polar coordinate. -/
 private noncomputable def direction (h₀ : 0 < r₁) (z : closedAnnulus r₁ r₂) : Circle :=
@@ -99,9 +93,9 @@ private theorem coe_height (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
   rw [height, projIcc_of_mem]
   constructor
   · rw [le_sub_comm, sub_neg_eq_add, div_le_iff₀ hr]
-    linarith [norm_le z]
+    linarith [closedAnnulus.norm_coe_le z]
   · rw [sub_le_self_iff]
-    exact div_nonneg (by linarith [le_norm z]) hr.le
+    exact div_nonneg (by linarith [closedAnnulus.le_norm_coe z]) hr.le
 
 private theorem norm_eq_of_height_eq (h : r₁ < r₂) {z w : closedAnnulus r₁ r₂}
     (hzw : height z = height w) : ‖(z : ℂ)‖ = ‖(w : ℂ)‖ := by

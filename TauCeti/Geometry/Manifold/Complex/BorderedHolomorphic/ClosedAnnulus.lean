@@ -80,14 +80,6 @@ variable {r₁ r₂ : ℝ}
 
 /-! ### Elementary estimates -/
 
-/-- A point of the closed annulus has norm at least `r₁`. -/
-theorem le_norm_coe (z : closedAnnulus r₁ r₂) : r₁ ≤ ‖(z : ℂ)‖ :=
-  (mem_closedAnnulus.1 z.2).1
-
-/-- A point of the closed annulus has norm at most `r₂`. -/
-theorem norm_coe_le (z : closedAnnulus r₁ r₂) : ‖(z : ℂ)‖ ≤ r₂ :=
-  (mem_closedAnnulus.1 z.2).2
-
 /-- The point `w` with its imaginary part capped at `L`. It is used to make the inverse charts
 total; it does not change `w` on the chart targets. -/
 private def capIm (L : ℝ) (w : ℂ) : ℂ :=
@@ -123,11 +115,52 @@ private theorem im_neg_I_mul_log (u : ℂ) : (-I * log u).im = -Real.log ‖u‖
 private theorem re_neg_I_mul_log (u : ℂ) : (-I * log u).re = arg u := by
   simp [log_im]
 
-private theorem neg_I_mul_I_mul (x : ℂ) : -I * (I * x) = x := by
-  rw [← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
+private theorem norm_ofReal_mul_mul_exp {ρ : ℝ} (hρ : 0 ≤ ρ) {ζ : ℂ} (hζ : ‖ζ‖ = 1) (x : ℂ) :
+    ‖(ρ : ℂ) * ζ * exp x‖ = ρ * Real.exp x.re := by
+  rw [norm_mul, norm_mul, hζ, mul_one, Complex.norm_real, Real.norm_of_nonneg hρ, norm_exp]
 
-private theorem I_mul_neg_I_mul (x : ℂ) : I * (-I * x) = x := by
-  rw [← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul]
+/-! The two logarithmic charts differ only in the radius `ρ` and in the factors `c = ∓I` and
+`d = ±I` of `w ↦ ρ ζ exp (c w)` and `z ↦ d log (z / (ρ ζ))`, with `c * d = 1`. The following
+lemmas prove their common properties once. -/
+
+/-- The left inverse identity of a logarithmic chart. -/
+private theorem mul_exp_mul_mul_log {ρ : ℂ} (hρ : ρ ≠ 0) {c d : ℂ} (hcd : c * d = 1) {z : ℂ}
+    (hz : z / ρ ∈ slitPlane) : ρ * exp (c * (d * log (z / ρ))) = z := by
+  rw [← mul_assoc, hcd, one_mul, exp_log (slitPlane_ne_zero hz), mul_div_cancel₀ _ hρ]
+
+/-- The right inverse identity of a logarithmic chart. -/
+private theorem mul_log_mul_exp_div {ρ : ℂ} (hρ : ρ ≠ 0) {c d : ℂ} (hcd : c * d = 1) {w : ℂ}
+    (hw : |(c * w).im| < π) : d * log (ρ * exp (c * w) / ρ) = w := by
+  rw [mul_div_cancel_left₀ _ hρ, log_exp (abs_lt.1 hw).1 (abs_lt.1 hw).2.le, ← mul_assoc,
+    mul_comm d c, hcd, one_mul]
+
+/-- The inverse of a logarithmic chart takes values where the chart is defined by the
+principal logarithm. -/
+private theorem mul_exp_div_mem_slitPlane {ρ : ℂ} (hρ : ρ ≠ 0) {c w : ℂ}
+    (hw : |(c * w).im| < π) : ρ * exp (c * w) / ρ ∈ slitPlane := by
+  rw [mul_div_cancel_left₀ _ hρ]
+  exact exp_mem_slitPlane_of_abs_im_lt hw
+
+/-- A logarithmic chart is continuous on the points `z` with `z / ρ` in the slit plane. -/
+private theorem continuousOn_log_chart {ρ d : ℂ}
+    (h : ∀ z : closedAnnulus r₁ r₂, 0 ≤ (d * log ((z : ℂ) / ρ)).im) {s : Set (closedAnnulus r₁ r₂)}
+    (hs : ∀ z ∈ s, (z : ℂ) / ρ ∈ slitPlane) :
+    ContinuousOn
+      (fun z : closedAnnulus r₁ r₂ ↦ (⟨d * log ((z : ℂ) / ρ), h z⟩ : ClosedUpperHalfPlane)) s := by
+  refine ((Topology.IsEmbedding.subtypeVal (p := fun w : ℂ ↦ 0 ≤ w.im)).isInducing
+    |>.continuousOn_iff).2 fun z hz ↦ ?_
+  exact (continuousAt_const.mul (ContinuousAt.comp
+    (f := fun x : closedAnnulus r₁ r₂ ↦ (x : ℂ) / ρ) (continuousAt_clog (hs z hz))
+    (continuous_subtype_val.div_const _).continuousAt)).continuousWithinAt
+
+/-- The inverse of a logarithmic chart, with `im w` capped at `L`, is continuous. -/
+private theorem continuous_exp_chart {ρ c : ℂ} {L : ℝ}
+    (h : ∀ w : ClosedUpperHalfPlane, ρ * exp (c * capIm L w) ∈ closedAnnulus r₁ r₂) :
+    Continuous
+      (fun w : ClosedUpperHalfPlane ↦ (⟨ρ * exp (c * capIm L w), h w⟩ : closedAnnulus r₁ r₂)) :=
+  Topology.IsInducing.subtypeVal.continuous_iff.2
+    (continuous_const.mul (continuous_const.mul ((continuous_capIm _).comp
+      continuous_subtype_val)).cexp)
 
 /-! ### The logarithmic charts -/
 
@@ -143,9 +176,17 @@ private theorem zero_lt_r₂ : 0 < r₂ :=
 private theorem zero_lt_log : 0 < Real.log (r₂ / r₁) :=
   Real.log_pos ((one_lt_div hr₁.out).2 hr₁₂.out)
 
+private theorem mul_exp_log_div : r₁ * Real.exp (Real.log (r₂ / r₁)) = r₂ := by
+  rw [Real.exp_log (div_pos (zero_lt_r₂ r₁ r₂) hr₁.out)]
+  field_simp [hr₁.out.ne']
+
+private theorem mul_exp_neg_log_div : r₂ * Real.exp (-Real.log (r₂ / r₁)) = r₁ := by
+  rw [Real.exp_neg, Real.exp_log (div_pos (zero_lt_r₂ r₁ r₂) hr₁.out)]
+  field_simp [hr₁.out.ne', (zero_lt_r₂ r₁ r₂).ne']
+
 omit hr₁₂ in
 private theorem norm_coe_pos (z : closedAnnulus r₁ r₂) : 0 < ‖(z : ℂ)‖ :=
-  hr₁.out.trans_le (le_norm_coe z)
+  hr₁.out.trans_le (closedAnnulus.le_norm_coe z)
 
 /-- The open set of the closed upper half-plane on which the logarithmic charts take values: the
 points with `|re w| < π` and `im w < log (r₂ / r₁)`. -/
@@ -164,22 +205,29 @@ private theorem isOpen_chartTarget : IsOpen (chartTarget r₁ r₂) :=
   ((continuous_abs.comp (continuous_re.comp continuous_subtype_val)).isOpen_preimage _
     isOpen_Iio).inter ((continuous_im.comp continuous_subtype_val).isOpen_preimage _ isOpen_Iio)
 
+omit hr₁ hr₁₂ in
+private theorem abs_im_neg_I_mul_lt {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
+    |(-I * (w : ℂ)).im| < π := by
+  simpa using hw.1
+
+omit hr₁ hr₁₂ in
+private theorem abs_im_I_mul_lt {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
+    |(I * (w : ℂ)).im| < π := by
+  simpa using hw.1
+
 /-- The inverse of the inner chart lands in the closed annulus. -/
 private theorem mem_closedAnnulus_inner {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : ClosedUpperHalfPlane) :
     (r₁ : ℂ) * ζ * exp (-I * capIm (Real.log (r₂ / r₁)) w) ∈ closedAnnulus r₁ r₂ := by
   have hL := (zero_lt_log (r₁ := r₁) (r₂ := r₂)).le
   have him : (-I * capIm (Real.log (r₂ / r₁)) w).re = min (w : ℂ).im (Real.log (r₂ / r₁)) := by
     simp [im_capIm]
-  rw [mem_closedAnnulus, norm_mul, norm_mul, hζ, mul_one, Complex.norm_real,
-    Real.norm_of_nonneg hr₁.out.le, norm_exp, him]
+  rw [mem_closedAnnulus, norm_ofReal_mul_mul_exp hr₁.out.le hζ, him]
   constructor
   · exact le_mul_of_one_le_right hr₁.out.le (Real.one_le_exp (le_min w.2 hL))
   · calc r₁ * Real.exp (min (w : ℂ).im (Real.log (r₂ / r₁)))
         ≤ r₁ * Real.exp (Real.log (r₂ / r₁)) :=
           mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (min_le_right _ _)) hr₁.out.le
-      _ = r₂ := by
-          rw [Real.exp_log (div_pos (zero_lt_r₂ r₁ r₂) hr₁.out)]
-          field_simp [hr₁.out.ne']
+      _ = r₂ := mul_exp_log_div
 
 /-- The inverse of the outer chart lands in the closed annulus. -/
 private theorem mem_closedAnnulus_outer {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : ClosedUpperHalfPlane) :
@@ -188,12 +236,9 @@ private theorem mem_closedAnnulus_outer {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : Clo
   have him : (I * capIm (Real.log (r₂ / r₁)) w).re = -min (w : ℂ).im (Real.log (r₂ / r₁)) := by
     simp [im_capIm]
   have hr₂ := zero_lt_r₂ r₁ r₂
-  rw [mem_closedAnnulus, norm_mul, norm_mul, hζ, mul_one, Complex.norm_real,
-    Real.norm_of_nonneg hr₂.le, norm_exp, him]
+  rw [mem_closedAnnulus, norm_ofReal_mul_mul_exp hr₂.le hζ, him]
   constructor
-  · calc r₁ = r₂ * Real.exp (-Real.log (r₂ / r₁)) := by
-          rw [Real.exp_neg, Real.exp_log (div_pos hr₂ hr₁.out)]
-          field_simp [hr₁.out.ne', hr₂.ne']
+  · calc r₁ = r₂ * Real.exp (-Real.log (r₂ / r₁)) := mul_exp_neg_log_div.symm
       _ ≤ r₂ * Real.exp (-min (w : ℂ).im (Real.log (r₂ / r₁))) :=
           mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (neg_le_neg (min_le_right _ _))) hr₂.le
   · exact mul_le_of_le_one_right hr₂.le
@@ -204,14 +249,14 @@ omit hr₁₂ in
 private theorem im_inner_nonneg {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnulus r₁ r₂) :
     0 ≤ (I * log ((z : ℂ) / (r₁ * ζ))).im := by
   rw [im_I_mul_log, norm_div_ofReal_mul hr₁.out hζ]
-  exact Real.log_nonneg ((one_le_div hr₁.out).2 (le_norm_coe z))
+  exact Real.log_nonneg ((one_le_div hr₁.out).2 (closedAnnulus.le_norm_coe z))
 
 /-- The outer chart has nonnegative imaginary part on the closed annulus. -/
 private theorem im_outer_nonneg {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnulus r₁ r₂) :
     0 ≤ (-I * log ((z : ℂ) / (r₂ * ζ))).im := by
   rw [im_neg_I_mul_log, norm_div_ofReal_mul (zero_lt_r₂ r₁ r₂) hζ, neg_nonneg]
   exact Real.log_nonpos (div_nonneg (norm_nonneg _) (zero_lt_r₂ r₁ r₂).le)
-    ((div_le_one (zero_lt_r₂ r₁ r₂)).2 (norm_coe_le z))
+    ((div_le_one (zero_lt_r₂ r₁ r₂)).2 (closedAnnulus.norm_coe_le z))
 
 omit hr₁₂ in
 /-- On the points with `‖z‖ < r₂`, the inner chart has imaginary part below `log (r₂ / r₁)`. -/
@@ -235,48 +280,29 @@ def innerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     rw [re_I_mul_log, abs_neg]
     exact ⟨abs_arg_lt_pi_of_mem_slitPlane hz.2, im_inner_lt hζ z hz.1⟩
   map_target' w hw := by
-    have hρ := ofReal_mul_ne_zero hr₁.out hζ
-    have hc : capIm (Real.log (r₂ / r₁)) w = w := capIm_of_im_le hw.2.le
-    have hre : |(-I * (w : ℂ)).im| < π := by simpa using hw.1
-    simp only [mem_ofPred_eq, hc]
-    refine ⟨?_, ?_⟩
-    · rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg hr₁.out.le, hζ, mul_one,
-        norm_exp]
-      calc r₁ * Real.exp (-I * (w : ℂ)).re < r₁ * Real.exp (Real.log (r₂ / r₁)) := by
-            refine mul_lt_mul_of_pos_left (Real.exp_lt_exp.2 ?_) hr₁.out
-            simpa using hw.2
-        _ = r₂ := by
-            rw [Real.exp_log (div_pos (zero_lt_r₂ r₁ r₂) hr₁.out)]
-            field_simp [hr₁.out.ne']
-    · rw [mul_div_cancel_left₀ _ hρ]
-      exact exp_mem_slitPlane_of_abs_im_lt hre
+    simp only [mem_ofPred_eq, capIm_of_im_le hw.2.le]
+    refine ⟨?_, mul_exp_div_mem_slitPlane (ofReal_mul_ne_zero hr₁.out hζ)
+      (abs_im_neg_I_mul_lt hw)⟩
+    rw [norm_ofReal_mul_mul_exp hr₁.out.le hζ, ← mul_exp_log_div (r₁ := r₁) (r₂ := r₂)]
+    refine mul_lt_mul_of_pos_left (Real.exp_lt_exp.2 ?_) hr₁.out
+    simpa using hw.2
   left_inv' z hz := by
-    have hρ := ofReal_mul_ne_zero hr₁.out hζ
     apply Subtype.ext
     dsimp only
-    rw [capIm_of_im_le (im_inner_lt hζ z hz.1).le, neg_I_mul_I_mul,
-      exp_log (slitPlane_ne_zero hz.2), mul_div_cancel₀ _ hρ]
+    rw [capIm_of_im_le (im_inner_lt hζ z hz.1).le]
+    exact mul_exp_mul_mul_log (ofReal_mul_ne_zero hr₁.out hζ) (by rw [neg_mul, I_mul_I, neg_neg])
+      hz.2
   right_inv' w hw := by
-    have hρ := ofReal_mul_ne_zero hr₁.out hζ
-    have hc : capIm (Real.log (r₂ / r₁)) w = w := capIm_of_im_le hw.2.le
-    have hre : |(-I * (w : ℂ)).im| < π := by simpa using hw.1
     apply Subtype.ext
     dsimp only
-    rw [hc, mul_div_cancel_left₀ _ hρ, log_exp (abs_lt.1 hre).1 (abs_lt.1 hre).2.le,
-      I_mul_neg_I_mul]
+    rw [capIm_of_im_le hw.2.le]
+    exact mul_log_mul_exp_div (ofReal_mul_ne_zero hr₁.out hζ)
+      (by rw [neg_mul, I_mul_I, neg_neg]) (abs_im_neg_I_mul_lt hw)
   open_source := (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).inter
     (isOpen_slitPlane.preimage (continuous_subtype_val.div_const _))
   open_target := isOpen_chartTarget
-  continuousOn_toFun := by
-    refine ((Topology.IsEmbedding.subtypeVal (p := fun w : ℂ ↦ 0 ≤ w.im)).isInducing
-      |>.continuousOn_iff).2 fun z hz ↦ ?_
-    exact (continuousAt_const.mul (ContinuousAt.comp
-      (f := fun x : closedAnnulus r₁ r₂ ↦ (x : ℂ) / (r₁ * ζ)) (continuousAt_clog hz.2)
-      (continuous_subtype_val.div_const _).continuousAt)).continuousWithinAt
-  continuousOn_invFun := by
-    refine Continuous.continuousOn (Topology.IsInducing.subtypeVal.continuous_iff.2 ?_)
-    exact continuous_const.mul
-      (continuous_const.mul ((continuous_capIm _).comp continuous_subtype_val)).cexp
+  continuousOn_toFun := by exact continuousOn_log_chart _ fun _ hz ↦ hz.2
+  continuousOn_invFun := (continuous_exp_chart _).continuousOn
 
 /-- On the points with `‖z‖ > r₁`, the outer chart has imaginary part below `log (r₂ / r₁)`. -/
 private theorem im_outer_lt {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnulus r₁ r₂)
@@ -300,48 +326,30 @@ def outerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     rw [re_neg_I_mul_log]
     exact ⟨abs_arg_lt_pi_of_mem_slitPlane hz.2, im_outer_lt hζ z hz.1⟩
   map_target' w hw := by
-    have hρ := ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ
-    have hc : capIm (Real.log (r₂ / r₁)) w = w := capIm_of_im_le hw.2.le
-    have hre : |(I * (w : ℂ)).im| < π := by simpa using hw.1
-    simp only [mem_ofPred_eq, hc]
-    refine ⟨?_, ?_⟩
-    · rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg (zero_lt_r₂ r₁ r₂).le, hζ,
-        mul_one, norm_exp]
-      calc r₁ = r₂ * Real.exp (-Real.log (r₂ / r₁)) := by
-            rw [Real.exp_neg, Real.exp_log (div_pos (zero_lt_r₂ r₁ r₂) hr₁.out)]
-            field_simp [hr₁.out.ne', (zero_lt_r₂ r₁ r₂).ne']
-        _ < r₂ * Real.exp (I * (w : ℂ)).re := by
-            refine mul_lt_mul_of_pos_left (Real.exp_lt_exp.2 ?_) (zero_lt_r₂ r₁ r₂)
-            simpa using hw.2
-    · rw [mul_div_cancel_left₀ _ hρ]
-      exact exp_mem_slitPlane_of_abs_im_lt hre
+    simp only [mem_ofPred_eq, capIm_of_im_le hw.2.le]
+    refine ⟨?_, mul_exp_div_mem_slitPlane (ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ)
+      (abs_im_I_mul_lt hw)⟩
+    rw [norm_ofReal_mul_mul_exp (zero_lt_r₂ r₁ r₂).le hζ,
+      ← mul_exp_neg_log_div (r₁ := r₁) (r₂ := r₂)]
+    refine mul_lt_mul_of_pos_left (Real.exp_lt_exp.2 ?_) (zero_lt_r₂ r₁ r₂)
+    simpa using hw.2
   left_inv' z hz := by
-    have hρ := ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ
     apply Subtype.ext
     dsimp only
-    rw [capIm_of_im_le (im_outer_lt hζ z hz.1).le, I_mul_neg_I_mul,
-      exp_log (slitPlane_ne_zero hz.2), mul_div_cancel₀ _ hρ]
+    rw [capIm_of_im_le (im_outer_lt hζ z hz.1).le]
+    exact mul_exp_mul_mul_log (ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ)
+      (by rw [mul_neg, I_mul_I, neg_neg]) hz.2
   right_inv' w hw := by
-    have hρ := ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ
-    have hc : capIm (Real.log (r₂ / r₁)) w = w := capIm_of_im_le hw.2.le
-    have hre : |(I * (w : ℂ)).im| < π := by simpa using hw.1
     apply Subtype.ext
     dsimp only
-    rw [hc, mul_div_cancel_left₀ _ hρ, log_exp (abs_lt.1 hre).1 (abs_lt.1 hre).2.le,
-      neg_I_mul_I_mul]
+    rw [capIm_of_im_le hw.2.le]
+    exact mul_log_mul_exp_div (ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ)
+      (by rw [mul_neg, I_mul_I, neg_neg]) (abs_im_I_mul_lt hw)
   open_source := (isOpen_lt continuous_const (continuous_norm.comp continuous_subtype_val)).inter
     (isOpen_slitPlane.preimage (continuous_subtype_val.div_const _))
   open_target := isOpen_chartTarget
-  continuousOn_toFun := by
-    refine ((Topology.IsEmbedding.subtypeVal (p := fun w : ℂ ↦ 0 ≤ w.im)).isInducing
-      |>.continuousOn_iff).2 fun z hz ↦ ?_
-    exact (continuousAt_const.mul (ContinuousAt.comp
-      (f := fun x : closedAnnulus r₁ r₂ ↦ (x : ℂ) / (r₂ * ζ)) (continuousAt_clog hz.2)
-      (continuous_subtype_val.div_const _).continuousAt)).continuousWithinAt
-  continuousOn_invFun := by
-    refine Continuous.continuousOn (Topology.IsInducing.subtypeVal.continuous_iff.2 ?_)
-    exact continuous_const.mul
-      (continuous_const.mul ((continuous_capIm _).comp continuous_subtype_val)).cexp
+  continuousOn_toFun := by exact continuousOn_log_chart _ fun _ hz ↦ hz.2
+  continuousOn_invFun := (continuous_exp_chart _).continuousOn
 
 variable {ζ : ℂ} {hζ : ‖ζ‖ = 1}
 
@@ -549,7 +557,7 @@ theorem mem_borderedInterior_iff {z : closedAnnulus r₁ r₂} :
   · rw [im_innerChart_apply, Real.log_pos_iff (div_nonneg (norm_nonneg _) hr₁.out.le),
       one_lt_div hr₁.out]
     exact ⟨fun h' ↦ ⟨h', h⟩, And.left⟩
-  · have hz : ‖(z : ℂ)‖ = r₂ := le_antisymm (norm_coe_le z) (not_lt.1 h)
+  · have hz : ‖(z : ℂ)‖ = r₂ := le_antisymm (closedAnnulus.norm_coe_le z) (not_lt.1 h)
     rw [im_outerChart_apply, hz, div_self (zero_lt_r₂ r₁ r₂).ne', Real.log_one]
     exact ⟨fun h' ↦ (lt_irrefl _ h').elim, fun h' ↦ (lt_irrefl _ h'.2).elim⟩
 
@@ -569,8 +577,8 @@ theorem compl_borderedInterior :
     not_and_or, not_lt, not_lt]
   constructor
   · rintro (h | h)
-    · exact Or.inl (le_antisymm h (le_norm_coe z))
-    · exact Or.inr (le_antisymm (norm_coe_le z) h)
+    · exact Or.inl (le_antisymm h (closedAnnulus.le_norm_coe z))
+    · exact Or.inr (le_antisymm (closedAnnulus.norm_coe_le z) h)
   · rintro (h | h)
     · exact Or.inl h.le
     · exact Or.inr h.ge
