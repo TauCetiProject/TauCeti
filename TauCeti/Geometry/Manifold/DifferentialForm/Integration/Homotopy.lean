@@ -59,17 +59,17 @@ Stokes' formula: the integral of an exact form `dα` over a map of a rectangle i
 the line integrals of `α` along the images of the four edges
 (`TauCeti.rectangleIntegral_mextDeriv`).
 
-The homotopy operator `h` of the cylinder `M × [0, 1]` (`TauCeti.homotopyOperator`) is related to
-these integrals by the rectangle swept out by a curve: for a continuous two-form `β` on the
-cylinder and a curve `γ`, the line integral of `h β` along `γ` is minus the integral of `β` over
-`(s, t) ↦ (γ s, t)` (`TauCeti.pathIntegral_homotopyOperator`), the sign recording that `h`
-contracts with `∂ₜ` first.
-
 The proof pulls `φ` back to the flat form `ψ = Φ^* φ` on `(ℝ × ℝ) × ℝ`, which is closed because
 pullback commutes with the exterior derivative, and expresses the integral over each face of the
 cube as an iterated integral of `ψ` by the chain rule. The flat statement is Stokes' formula on the
 boundary of a cube (`TauCeti.integral2_slice_sub_eq_sides`), proved with the cylinder homotopy
 operator and Stokes' formula on a rectangle; no Stokes theorem on a manifold with corners is used.
+
+The homotopy operator `h` of the cylinder `M × [0, 1]` (`TauCeti.homotopyOperator`) is related to
+these integrals by the rectangle swept out by a curve: for a continuous two-form `β` on the
+cylinder and a curve `γ`, the line integral of `h β` along `γ` is minus the integral of `β` over
+`(s, t) ↦ (γ s, t)` (`TauCeti.pathIntegral_homotopyOperator`), the sign recording that `h`
+contracts with `∂ₜ` first.
 
 ## Main definitions
 
@@ -165,20 +165,11 @@ open rectangle, since its boundary is a null set. -/
 theorem rectangleIntegral_mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
     [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
     [ChartedSpace H' M'] {f : M → M'} (φ : RoughForm I' M' F 2) {u : ℝ × ℝ → M} {a b : ℝ × ℝ}
-    (hf : ∀ z ∈ Ioo (min a.1 b.1) (max a.1 b.1) ×ˢ Ioo (min a.2 b.2) (max a.2 b.2),
-      MDifferentiableAt I I' f (u z))
-    (hu : ∀ z ∈ Ioo (min a.1 b.1) (max a.1 b.1) ×ˢ Ioo (min a.2 b.2) (max a.2 b.2),
-      MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) :
-    rectangleIntegral (mpullback I I' f φ) u a b = rectangleIntegral φ (f ∘ u) a b := by
-  have hne (x y : ℝ) : ∀ᵐ r ∂volume, r ≠ max x y := by
-    simpa using (countable_singleton (max x y)).ae_notMem volume
-  refine intervalIntegral.integral_congr_ae ?_
-  filter_upwards [hne a.1 b.1] with s hs₁ hs₂
-  refine intervalIntegral.integral_congr_ae ?_
-  filter_upwards [hne a.2 b.2] with t ht₁ ht₂
-  have hmem : (s, t) ∈ Ioo (min a.1 b.1) (max a.1 b.1) ×ˢ Ioo (min a.2 b.2) (max a.2 b.2) :=
-    ⟨⟨hs₂.1, lt_of_le_of_ne hs₂.2 hs₁⟩, ⟨ht₂.1, lt_of_le_of_ne ht₂.2 ht₁⟩⟩
-  rw [mpullback_comp_at (hu _ hmem) (hf _ hmem)]
+    (hf : ∀ z ∈ uIoo a.1 b.1 ×ˢ uIoo a.2 b.2, MDifferentiableAt I I' f (u z))
+    (hu : ∀ z ∈ uIoo a.1 b.1 ×ˢ uIoo a.2 b.2, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) :
+    rectangleIntegral (mpullback I I' f φ) u a b = rectangleIntegral φ (f ∘ u) a b :=
+  intervalIntegral.integral_congr_uIoo fun s hs ↦ intervalIntegral.integral_congr_uIoo fun t ht ↦
+    by rw [mpullback_comp_at (hu _ ⟨hs, ht⟩) (hf _ ⟨hs, ht⟩)]
 
 /-- The integral only depends on the map on the closed rectangle. -/
 theorem rectangleIntegral_congr {φ : RoughForm I M F 2} {u v : ℝ × ℝ → M} {a b : ℝ × ℝ}
@@ -364,6 +355,22 @@ end Continuous
 
 section HomotopyOperator
 
+/-- At an interior time, the derivative of the map `(s, t) ↦ (γ s, t)` from the plane to the
+cylinder `M × [0, 1]` is the product of the derivatives of `γ` and of the projection of the real
+line onto the interval. -/
+theorem hasMFDerivAt_prodMk_projIcc {γ : ℝ → M} {s t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ s)
+    (ht : t ∈ Ioo (0 : ℝ) 1) :
+    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (I.prod (𝓡∂ 1)) (fun p ↦ (γ p.1, projIcc 0 1 zero_le_one p.2))
+      (s, t) (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
+        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ))) := by
+  have h₁ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.fst) (s, t)
+      ((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)) :=
+    hγ.hasMFDerivAt.comp (s, t) hasFDerivAt_fst.hasMFDerivAt
+  have h₂ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one ∘ Prod.snd) (s, t)
+      ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ)) :=
+    (mdifferentiableAt_projIcc ht).hasMFDerivAt.comp (s, t) hasFDerivAt_snd.hasMFDerivAt
+  exact h₁.prodMk h₂
+
 variable [IsManifold I 1 M]
 
 /-- **The homotopy operator integrated along a curve.** For a continuous two-form `β` on the
@@ -378,30 +385,12 @@ theorem pathIntegral_homotopyOperator [CompleteSpace F]
     (hγ : ∀ s ∈ [[a, b]], MDifferentiableAt 𝓘(ℝ) I γ s) :
     pathIntegral (homotopyOperator β) γ a b =
       -rectangleIntegral β (fun p ↦ (γ p.1, projIcc 0 1 zero_le_one p.2)) (a, 0) (b, 1) := by
-  have hne : ∀ᵐ t ∂volume, t ≠ (1 : ℝ) := by
-    simpa using (countable_singleton (1 : ℝ)).ae_notMem volume
   rw [pathIntegral_def, rectangleIntegral_eq, ← intervalIntegral.integral_neg]
   refine intervalIntegral.integral_congr fun s hs ↦
     (homotopyOperator_apply_apply hβ (γ s) _).trans ?_
   rw [← intervalIntegral.integral_neg]
-  refine intervalIntegral.integral_congr_ae ?_
-  filter_upwards [hne] with t ht₁ ht
-  rw [uIoc_of_le zero_le_one] at ht
-  have ht' : t ∈ Ioo (0 : ℝ) 1 := ⟨ht.1, lt_of_le_of_ne ht.2 ht₁⟩
-  -- At an interior time the derivative of `(s, t) ↦ (γ s, t)` is the product of those of `γ` and
-  -- of the projection onto the interval.
-  have h₁ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.fst) (s, t)
-      ((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)) :=
-    (hγ s hs).hasMFDerivAt.comp (s, t) hasFDerivAt_fst.hasMFDerivAt
-  have h₂ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one ∘ Prod.snd) (s, t)
-      ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ)) :=
-    (mdifferentiableAt_projIcc ht').hasMFDerivAt.comp (s, t) hasFDerivAt_snd.hasMFDerivAt
-  have h : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (I.prod (𝓡∂ 1))
-      (fun p ↦ (γ p.1, projIcc 0 1 zero_le_one p.2)) (s, t)
-      (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
-        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ))) :=
-    h₁.prodMk h₂
-  rw [h.mfderiv]
+  refine intervalIntegral.integral_congr_Ioo_of_le zero_le_one fun t ht' ↦ ?_
+  rw [(hasMFDerivAt_prodMk_projIcc (hγ s hs) ht').mfderiv]
   -- The rectangle is evaluated on `(γ' s, 0)` and `∂ₜ`, and exchanging these two vectors changes
   -- the sign of the alternating form.
   let v : Fin 2 → E × EuclideanSpace ℝ (Fin 1) :=

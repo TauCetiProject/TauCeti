@@ -83,13 +83,10 @@ theorem pathIntegral_fluxForm (σ : SmoothForm J M ℝ 2) {γ : ℝ → M} {a b 
       -rectangleIntegral σ.1 (fun p ↦ Φ (projIcc 0 1 zero_le_one p.2, γ p.1)) (a, 0) (b, 1) := by
   have hβ := (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).isSmoothForm
   -- On the open rectangle, the curve and the interval coordinate are both differentiable.
-  have hu : ∀ z ∈ Ioo (min a b) (max a b) ×ˢ Ioo (min (0 : ℝ) 1) (max 0 1),
-      MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) (J.prod (𝓡∂ 1))
-        (fun p ↦ (γ p.1, projIcc 0 1 zero_le_one p.2)) z := fun z hz ↦
-    ((hγ z.1 (Ioo_subset_Icc_self hz.1)).comp z
-        hasFDerivAt_fst.hasMFDerivAt.mdifferentiableAt).prodMk
-      ((mdifferentiableAt_projIcc (by simpa using hz.2)).comp z
-        hasFDerivAt_snd.hasMFDerivAt.mdifferentiableAt)
+  have hu : ∀ z ∈ uIoo a b ×ˢ uIoo (0 : ℝ) 1, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) (J.prod (𝓡∂ 1))
+      (fun p ↦ (γ p.1, projIcc 0 1 zero_le_one p.2)) z := fun z hz ↦
+    (hasMFDerivAt_prodMk_projIcc (hγ z.1 (uIoo_subset_uIcc_self hz.1))
+      (uIoo_of_le (zero_le_one (α := ℝ)) ▸ hz.2)).mdifferentiableAt
   rw [coe_fluxForm, pathIntegral_homotopyOperator (hβ.of_le (by simp)) hγ,
     SmoothForm.coe_mpullback, rectangleIntegral_mpullback σ.1
       (fun _ _ ↦ Φ.contMDiff_cylinderMap.mdifferentiableAt (by simp)) hu, Function.comp_def]
