@@ -93,10 +93,13 @@ theorem norm_fdBoundary_sub_rho_segment1 (H : ℝ) (ht : t ≤ 1) :
 differ by exactly `H - √3/2`. The absolute value is what the height difference actually
 gives, and it is the only form with content below the corner row, where `H - √3/2 < 0`
 makes the signed bound vacuous. -/
-theorem norm_fdBoundary_sub_rho_segment5 (ht : t ∈ Icc (4 : ℝ) 5) :
+theorem norm_fdBoundary_sub_rho_segment5 (ht : 4 ≤ t) :
     |H - Real.sqrt 3 / 2| ≤ ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ := by
   have him : (fdBoundary H t - (UpperHalfPlane.ρ : ℂ)).im = H - Real.sqrt 3 / 2 := by
-    rw [Complex.sub_im, im_fdBoundarySegment5 H ht, rho_im]
+    rcases ht.eq_or_lt with rfl | h4
+    · rw [Complex.sub_im, fdBoundary_apply_four, rho_im]
+      simp
+    · rw [Complex.sub_im, im_fdBoundary_of_gt_four h4, rho_im]
   have h1 : |(fdBoundary H t - (UpperHalfPlane.ρ : ℂ)).im| ≤
       ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ := Complex.abs_im_le_norm _
   exact him ▸ h1
@@ -124,22 +127,22 @@ theorem fdBoundary_sub_rho_mem_slitPlane_of_lt_three (H : ℝ) (ht3 : t < 3) :
   rw [hrho]
   linarith
 
-/-- Above the corner the left vertical is purely imaginary of positive height, and the ceiling
-has positive height `H - √3/2`: slit plane. -/
-theorem fdBoundary_sub_rho_mem_slitPlane_of_three_lt (hH : Real.sqrt 3 / 2 < H)
+/-- Above the corner the left vertical is purely imaginary of nonzero height, and the ceiling
+has nonzero height `H - √3/2`: slit plane. -/
+theorem fdBoundary_sub_rho_mem_slitPlane_of_three_lt (hH : H ≠ Real.sqrt 3 / 2)
     (ht3 : 3 < t) :
     fdBoundary H t - (UpperHalfPlane.ρ : ℂ) ∈ Complex.slitPlane := by
   refine Complex.mem_slitPlane_iff.mpr (Or.inr ?_)
   rcases le_or_gt t 4 with ht4 | ht4
   swap
   · rw [Complex.sub_im, im_fdBoundary_of_gt_four ht4, rho_im]
-    linarith
+    exact sub_ne_zero.mpr hH
   rw [fdBoundary_sub_rho_of_mem_Icc_three_four H ⟨ht3.le, ht4⟩]
   have him : ((((t - 3) * (H - Real.sqrt 3 / 2) : ℝ) : ℂ) * Complex.I).im =
       (t - 3) * (H - Real.sqrt 3 / 2) := by
     simp
   rw [him]
-  positivity
+  exact mul_ne_zero (sub_ne_zero.mpr ht3.ne') (sub_ne_zero.mpr hH)
 
 /-- The polar form of the shifted contour just before the corner. -/
 private lemma fdBoundary_three_sub_sub_rho_eq (H : ℝ) (hδ : 0 < δ) (hδ2 : δ ≤ 2) :
@@ -199,34 +202,12 @@ theorem log_fdBoundary_three_add_sub_rho (hH : Real.sqrt 3 / 2 < H) (hδ : 0 < �
 /-- The contour passes through `ρ` only at the corner `t = 3`. -/
 theorem eq_three_of_fdBoundary_eq_rho (hH : H ≠ Real.sqrt 3 / 2)
     (heq : fdBoundary H t = (UpperHalfPlane.ρ : ℂ)) : t = 3 := by
-  have h0 : ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ = 0 := by
-    rw [heq]
-    simp
-  rcases le_or_gt t 1 with h1 | h1
+  rcases lt_trichotomy t 3 with h3 | h3 | h3
   · exact absurd (sub_eq_zero.mpr heq)
-      (Complex.slitPlane_ne_zero (fdBoundary_sub_rho_mem_slitPlane_of_lt_three H (by linarith)))
-  · rcases le_or_gt t 3 with h3 | h3
-    · rw [norm_fdBoundary_sub_rho_arc H ⟨h1.le, h3⟩] at h0
-      have hsin : Real.sin ((t - 3) * (Real.pi / 12)) = 0 :=
-        abs_eq_zero.mp (by linarith)
-      have habs : |t - 3| ≤ 2 := abs_le.mpr ⟨by linarith, by linarith⟩
-      obtain ⟨_, _⟩ := abs_le.mp habs
-      have harg : (t - 3) * (Real.pi / 12) = 0 :=
-        (Real.sin_eq_zero_iff_of_lt_of_lt (by nlinarith [Real.pi_pos])
-          (by nlinarith [Real.pi_pos])).mp hsin
-      rcases mul_eq_zero.mp harg with h | h
-      · linarith
-      · exact absurd h (by positivity)
-    · rcases le_or_gt t 4 with h4 | h4
-      · rw [fdBoundary_sub_rho_of_mem_Icc_three_four H ⟨h3.le, h4⟩, norm_mul,
-          Complex.norm_real, Complex.norm_I, mul_one, Real.norm_eq_abs, abs_eq_zero] at h0
-        rcases mul_eq_zero.mp h0 with h | h
-        · linarith
-        · exact absurd (by linarith) hH
-      · have hz : fdBoundary H t - (UpperHalfPlane.ρ : ℂ) = 0 := norm_eq_zero.mp h0
-        have him := congrArg Complex.im hz
-        rw [Complex.sub_im, im_fdBoundary_of_gt_four h4, rho_im, Complex.zero_im] at him
-        exact absurd (by linarith) hH
+      (Complex.slitPlane_ne_zero (fdBoundary_sub_rho_mem_slitPlane_of_lt_three H h3))
+  · exact h3
+  · exact absurd (sub_eq_zero.mpr heq)
+      (Complex.slitPlane_ne_zero (fdBoundary_sub_rho_mem_slitPlane_of_three_lt hH h3))
 
 end ModularForm
 

@@ -175,7 +175,7 @@ private lemma telescope_rho_piece_left_vertical (hH : Real.sqrt 3 / 2 < H) (hδR
     (fun t _ ↦ (hasDerivAt_fdBoundarySegment4 H t).differentiableAt.sub_const _)
     (by rw [hd]; exact continuousOn_const)
     (fun t ht ↦ heval t ht ▸
-      fdBoundary_sub_rho_mem_slitPlane_of_three_lt hH (by linarith [ht.1]))
+      fdBoundary_sub_rho_mem_slitPlane_of_three_lt hH.ne' (by linarith [ht.1]))
     (fun t ht ↦ congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval t ⟨ht.1.le, ht.2.le⟩))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval (3 + δR) (left_mem_Icc.mpr hab)))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval 4 (right_mem_Icc.mpr hab)))
@@ -202,7 +202,8 @@ private lemma telescope_rho_piece_ceiling (hH : Real.sqrt 3 / 2 < H) :
       (hasDerivAt_fdBoundarySegment5 H s).differentiableAt.sub_const _).continuousOn
     (fun t _ ↦ (hasDerivAt_fdBoundarySegment5 H t).differentiableAt.sub_const _)
     (by rw [hd]; exact continuousOn_const)
-    (fun t ht ↦ heval t ht ▸ fdBoundary_sub_rho_mem_slitPlane_of_three_lt hH (by linarith [ht.1]))
+    (fun t ht ↦ heval t ht ▸
+      fdBoundary_sub_rho_mem_slitPlane_of_three_lt hH.ne' (by linarith [ht.1]))
     (fun t ht ↦ congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval t ⟨ht.1.le, ht.2.le⟩))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval 4 (left_mem_Icc.mpr (by norm_num))))
     (congrArg (· - (UpperHalfPlane.ρ : ℂ)) (heval 5 (right_mem_Icc.mpr (by norm_num))))
@@ -308,7 +309,7 @@ private lemma lt_norm_of_far_right_rho (hH : Real.sqrt 3 / 2 < H) (hεH : ε < H
     linarith
   · calc ε < H - Real.sqrt 3 / 2 := hεH
       _ ≤ ‖fdBoundary H t - (UpperHalfPlane.ρ : ℂ)‖ :=
-        (le_abs_self _).trans (norm_fdBoundary_sub_rho_segment5 (H := H) ⟨ht4.le, ht.2⟩)
+        (le_abs_self _).trans (norm_fdBoundary_sub_rho_segment5 (H := H) ht4.le)
 
 /-- Over the excised corner, the contour stays within distance `ε` of `ρ`. -/
 private lemma norm_le_of_near_rho {δL δR : ℝ} (hH : Real.sqrt 3 / 2 < H) (hδL : 0 ≤ δL)
