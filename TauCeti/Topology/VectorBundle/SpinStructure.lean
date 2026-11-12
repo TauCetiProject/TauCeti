@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.FiberBundle.Principal.Basic
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Pullback
 
@@ -72,7 +71,7 @@ orthonormal frame bundle of `E` over the identity, equivariant along the vector 
 Each fibre of `P` is a `Spin(n)`-torsor, so its image is one `SO(n)`-orbit of frames, and the
 orientation of `E` is the one for which these frames are positive. Positive rank is required: the
 native `Spin(0)` is trivial. -/
-structure SpinStructure {X : Type w} [TopologicalSpace X] (F : Type*) (E : X → Type w)
+structure SpinStructure {X : Type*} [TopologicalSpace X] (F : Type*) (E : X → Type w)
     [TopologicalSpace (TotalSpace F E)]
     [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] (n : ℕ) [NeZero n] where
   /-- The fibres of the principal `Spin(n)`-bundle. -/
@@ -105,7 +104,9 @@ namespace SpinStructure
 
 attribute [instance] topTotal topFiber act fiberBundle principal
 
-variable {X : Type w} [TopologicalSpace X] {F : Type*} {E : X → Type w}
+attribute [simp] proj_toFrame
+
+variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
   [TopologicalSpace (TotalSpace F E)]
   [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] {n : ℕ} [NeZero n]
 
@@ -138,6 +139,20 @@ structure Equiv (s t : SpinStructure F E n) where
 namespace Equiv
 
 variable {s t u : SpinStructure F E n}
+
+attribute [simp] map_smul toFrame_map
+
+/-- The inverse of the bijection of an equivalence is equivariant. -/
+@[simp]
+theorem map_smul_symm (φ : s.Equiv t) (x : X) (p : t.P x) (g : realCliffordSpinGroupZero n) :
+    (φ.toEquiv x).symm (op g • p) = op g • (φ.toEquiv x).symm p := by
+  rw [_root_.Equiv.symm_apply_eq, φ.map_smul, _root_.Equiv.apply_symm_apply]
+
+/-- The inverse of the bijection of an equivalence commutes with the maps to frames. -/
+@[simp]
+theorem toFrame_map_symm (φ : s.Equiv t) (x : X) (p : t.P x) :
+    s.toFrame ⟨x, (φ.toEquiv x).symm p⟩ = t.toFrame ⟨x, p⟩ := by
+  rw [← φ.toFrame_map x ((φ.toEquiv x).symm p), _root_.Equiv.apply_symm_apply]
 
 /-- Two equivalences of Spin structures are equal when their bijections agree pointwise. -/
 @[ext]
@@ -182,7 +197,33 @@ theorem toFrame_toHomeomorph (φ : s.Equiv t) (p : TotalSpace (realCliffordSpinG
     t.toFrame (φ.toHomeomorph p) = s.toFrame p :=
   φ.toFrame_map p.proj p.2
 
+/-- The homeomorphism of total spaces induced by an equivalence is equivariant. -/
+theorem toHomeomorph_smul (φ : s.Equiv t) (g : (realCliffordSpinGroupZero n)ᵐᵒᵖ)
+    (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
+    φ.toHomeomorph (g • p) = g • φ.toHomeomorph p :=
+  congrArg (TotalSpace.mk p.proj) (φ.map_smul p.proj p.2 g.unop)
+
+/-- The inverse homeomorphism of total spaces induced by an equivalence covers the identity of the
+base. -/
+theorem proj_toHomeomorph_symm (φ : s.Equiv t) (p : TotalSpace (realCliffordSpinGroupZero n) t.P) :
+    (φ.toHomeomorph.symm p).proj = p.proj :=
+  (rfl)
+
+/-- The inverse homeomorphism of total spaces induced by an equivalence commutes with the maps to
+frames. -/
+theorem toFrame_toHomeomorph_symm (φ : s.Equiv t)
+    (p : TotalSpace (realCliffordSpinGroupZero n) t.P) :
+    s.toFrame (φ.toHomeomorph.symm p) = t.toFrame p :=
+  φ.toFrame_map_symm p.proj p.2
+
+/-- The inverse homeomorphism of total spaces induced by an equivalence is equivariant. -/
+theorem toHomeomorph_symm_smul (φ : s.Equiv t) (g : (realCliffordSpinGroupZero n)ᵐᵒᵖ)
+    (p : TotalSpace (realCliffordSpinGroupZero n) t.P) :
+    φ.toHomeomorph.symm (g • p) = g • φ.toHomeomorph.symm p :=
+  congrArg (TotalSpace.mk p.proj) (φ.map_smul_symm p.proj p.2 g.unop)
+
 /-- The identity equivalence of a Spin structure. -/
+@[refl]
 def refl (s : SpinStructure F E n) : s.Equiv s where
   toEquiv _ := _root_.Equiv.refl _
   continuous_toFun := continuous_id
@@ -191,16 +232,16 @@ def refl (s : SpinStructure F E n) : s.Equiv s where
   toFrame_map _ _ := rfl
 
 /-- The inverse of an equivalence of Spin structures. -/
+@[symm]
 def symm (φ : s.Equiv t) : t.Equiv s where
   toEquiv x := (φ.toEquiv x).symm
   continuous_toFun := φ.continuous_invFun
   continuous_invFun := φ.continuous_toFun
-  map_smul x p g := by
-    rw [_root_.Equiv.symm_apply_eq, φ.map_smul, _root_.Equiv.apply_symm_apply]
-  toFrame_map x p := by
-    rw [← φ.toFrame_map x ((φ.toEquiv x).symm p), _root_.Equiv.apply_symm_apply]
+  map_smul := φ.map_smul_symm
+  toFrame_map := φ.toFrame_map_symm
 
 /-- The composite of two equivalences of Spin structures. -/
+@[trans]
 def trans (φ : s.Equiv t) (ψ : t.Equiv u) : s.Equiv u where
   toEquiv x := (φ.toEquiv x).trans (ψ.toEquiv x)
   continuous_toFun := ψ.continuous_toFun.comp φ.continuous_toFun
@@ -248,6 +289,23 @@ theorem self_trans_symm (φ : s.Equiv t) : φ.trans φ.symm = refl s :=
 theorem symm_trans_self (φ : s.Equiv t) : φ.symm.trans φ = refl t :=
   ext fun x p ↦ (φ.toEquiv x).apply_symm_apply p
 
+@[simp]
+theorem symm_trans (φ : s.Equiv t) (ψ : t.Equiv u) : (φ.trans ψ).symm = ψ.symm.trans φ.symm :=
+  (rfl)
+
+@[simp]
+theorem refl_toHomeomorph (s : SpinStructure F E n) : (refl s).toHomeomorph = Homeomorph.refl _ :=
+  (rfl)
+
+@[simp]
+theorem symm_toHomeomorph (φ : s.Equiv t) : φ.symm.toHomeomorph = φ.toHomeomorph.symm :=
+  (rfl)
+
+@[simp]
+theorem trans_toHomeomorph (φ : s.Equiv t) (ψ : t.Equiv u) :
+    (φ.trans ψ).toHomeomorph = φ.toHomeomorph.trans ψ.toHomeomorph :=
+  (rfl)
+
 theorem trans_assoc (φ : s.Equiv t) (ψ : t.Equiv u) {v : SpinStructure F E n}
     (χ : u.Equiv v) : (φ.trans ψ).trans χ = φ.trans (ψ.trans χ) :=
   (rfl)
@@ -258,7 +316,7 @@ end Equiv
 
 section Pullback
 
-variable {Y : Type w} [TopologicalSpace Y]
+variable {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
 
 /-- The map to frames of the pullback of a Spin structure: the frame of `E` at `f y` of the
 underlying point of `P`, read as a frame of `f *ᵖ E` at `y`. -/
@@ -294,7 +352,7 @@ principal bundle `f *ᵖ P`, with the frame of a point over `y` the frame of `E`
 underlying point of `P`, read as a frame of `f *ᵖ E` at `y`. Its body is exposed so that the
 fibre `(s.pullback f).P y` unfolds to `s.P (f y)` downstream. -/
 @[expose]
-noncomputable def pullback (s : SpinStructure F E n) (f : C(Y, X)) :
+noncomputable def pullback (s : SpinStructure F E n) (f : K) :
     SpinStructure F ((f : Y → X) *ᵖ E) n where
   P := (f : Y → X) *ᵖ s.P
   toFrame := s.pullbackToFrame f
@@ -311,18 +369,26 @@ noncomputable def pullback (s : SpinStructure F E n) (f : C(Y, X)) :
     exact h
 
 @[simp]
-theorem pullback_P (s : SpinStructure F E n) (f : C(Y, X)) :
+theorem pullback_P (s : SpinStructure F E n) (f : K) :
     (s.pullback f).P = (f : Y → X) *ᵖ s.P :=
   rfl
 
-@[simp]
-theorem pullback_toFrame (s : SpinStructure F E n) (f : C(Y, X)) :
+theorem pullback_toFrame (s : SpinStructure F E n) (f : K) :
     (s.pullback f).toFrame = s.pullbackToFrame f :=
   rfl
 
+/-- The frame of a point of the pullback of a Spin structure, viewed as a frame of `E`, is the frame
+of its lift. -/
+@[simp]
+theorem pullbackLift_toFrame_pullback (s : SpinStructure F E n) (f : K)
+    (p : TotalSpace (realCliffordSpinGroupZero n) (s.pullback f).P) :
+    OrthonormalFrameBundle.pullbackLift f ((s.pullback f).toFrame p) =
+      s.toFrame (Pullback.lift f p) :=
+  s.pullbackLift_pullbackToFrame f p
+
 /-- The **pullback of an equivalence** of Spin structures along a continuous map: equivalences
 commute with pullback. -/
-noncomputable def Equiv.pullback {s t : SpinStructure F E n} (φ : s.Equiv t) (f : C(Y, X)) :
+noncomputable def Equiv.pullback {s t : SpinStructure F E n} (φ : s.Equiv t) (f : K) :
     (s.pullback f).Equiv (t.pullback f) where
   toEquiv y := φ.toEquiv (f y)
   continuous_toFun := (Pullback.continuous_iff (f := (f : Y → X))
@@ -340,8 +406,42 @@ noncomputable def Equiv.pullback {s t : SpinStructure F E n} (φ : s.Equiv t) (f
     exact Prod.ext rfl (φ.toFrame_map (f y) p)
 
 @[simp]
-theorem Equiv.pullback_toEquiv {s t : SpinStructure F E n} (φ : s.Equiv t) (f : C(Y, X)) (y : Y) :
+theorem Equiv.pullback_toEquiv {s t : SpinStructure F E n} (φ : s.Equiv t) (f : K) (y : Y) :
     (φ.pullback f).toEquiv y = φ.toEquiv (f y) :=
+  (rfl)
+
+@[simp]
+theorem Equiv.toFrame_pullback_toEquiv {s t : SpinStructure F E n} (φ : s.Equiv t) (f : K) (y : Y)
+    (p : s.P (f y)) :
+    (t.pullback f).toFrame ⟨y, φ.toEquiv (f y) p⟩ = (s.pullback f).toFrame ⟨y, p⟩ :=
+  (φ.pullback f).toFrame_map y p
+
+@[simp]
+theorem Equiv.toFrame_pullback_toEquiv_symm {s t : SpinStructure F E n} (φ : s.Equiv t) (f : K)
+    (y : Y) (p : t.P (f y)) :
+    (s.pullback f).toFrame ⟨y, (φ.toEquiv (f y)).symm p⟩ = (t.pullback f).toFrame ⟨y, p⟩ :=
+  (φ.pullback f).toFrame_map_symm y p
+
+@[simp]
+theorem Equiv.pullback_refl (s : SpinStructure F E n) (f : K) :
+    (refl s).pullback f = refl (s.pullback f) :=
+  (rfl)
+
+@[simp]
+theorem Equiv.pullback_symm {s t : SpinStructure F E n} (φ : s.Equiv t) (f : K) :
+    φ.symm.pullback f = (φ.pullback f).symm :=
+  (rfl)
+
+@[simp]
+theorem Equiv.pullback_trans {s t u : SpinStructure F E n} (φ : s.Equiv t) (ψ : t.Equiv u)
+    (f : K) : (φ.trans ψ).pullback f = (φ.pullback f).trans (ψ.pullback f) :=
+  (rfl)
+
+/-- The homeomorphism of total spaces induced by the pullback of an equivalence lifts to the one
+induced by the equivalence. -/
+theorem Equiv.lift_pullback_toHomeomorph {s t : SpinStructure F E n} (φ : s.Equiv t) (f : K)
+    (p : TotalSpace (realCliffordSpinGroupZero n) (s.pullback f).P) :
+    Pullback.lift f ((φ.pullback f).toHomeomorph p) = φ.toHomeomorph (Pullback.lift f p) :=
   (rfl)
 
 end Pullback
