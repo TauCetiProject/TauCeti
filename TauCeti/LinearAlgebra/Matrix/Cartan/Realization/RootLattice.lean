@@ -131,6 +131,11 @@ unique natural coordinates in the simple roots. -/
 noncomputable def height : R.posRootCone →+ ℕ :=
   R.linearIndependent_nat_root.natSpanHeight
 
+/-- The height is the `LinearIndependent.natSpanHeight` of the simple roots. -/
+theorem height_apply (x : R.posRootCone) :
+    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.2⟩ :=
+  (rfl)
+
 /-- The height of a natural combination of the simple roots is the sum of its coefficients. -/
 theorem height_eq_sum [Fintype I] (x : R.posRootCone) (c : I → ℕ)
     (hc : ∑ i, c i • R.root i = x) : R.height x = ∑ i, c i := by
@@ -189,7 +194,9 @@ instance [CharZero K] : IsPartialOrder (Dual K H) R.RootLE where
 /-- The order on weights is the partial order on `Dual K H` with positive cone `Q₊`. It is kept
 as a named relation because one dual space carries the orders of several realizations. -/
 theorem rootLE_eq_ofAddSubmonoid_le [CharZero K] :
-    R.RootLE = (PartialOrder.ofAddSubmonoid R.isPointed_posRootCone).le := (rfl)
+    R.RootLE = (PartialOrder.ofAddSubmonoid R.isPointed_posRootCone).le := by
+  ext μ lam
+  simp [rootLE_iff]
 
 /-- The order on weights is invariant under translation. -/
 @[simp]
