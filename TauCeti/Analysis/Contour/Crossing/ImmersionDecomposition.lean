@@ -41,10 +41,9 @@ the canonical equal-radius windows and their local principal-value calculation f
 ## Provenance
 
 Independently reconstructed from Tau Ceti's exit-window and finite-excision APIs.  No external
-formalization is vendored.  The `ContourIntegration` roadmap designates the AINTLIB
-`LeanModularForms` development (Apache-2.0) as the existing source for this area; its
-`ForMathlib/HungerbuhlerWasem/Crossing.lean` was consulted at revision `340875a` for the
-mathematical decomposition statement.
+formalization is vendored.  The AINTLIB `LeanModularForms` development (Apache-2.0) is the existing
+source for this area; its `ForMathlib/HungerbuhlerWasem/Crossing.lean` was consulted at revision
+`340875a` for the mathematical decomposition statement.
 -/
 
 public section
@@ -216,7 +215,7 @@ theorem IsPwC1ImmersionOn.exists_crossingDecomposition
     hsep hγ_window hεends hcrossing_inside
   obtain ⟨hpv_exists, hlocal_sum⟩ := exitCapWindows_localContribution_sum hδ hε hat hγ_window
     hεends hlim hpv (fun W hW => (hinside W hW).2.1) hradius
-  set windows := exitCapWindows γ s T δ ε L_R L_L with hwindows
+  set windows := exitCapWindows γ s T δ ε L_R L_L
   have hεL : ∀ t ∈ T, ε ≤ ‖γ (t - δ) - s‖ := fun t ht => (hεends t ht).1
   have hεR : ∀ t ∈ T, ε ≤ ‖γ (t + δ) - s‖ := fun t ht => (hεends t ht).2
   have hregular : IsPiecewiseC1On (exciseCrossings γ s windows) a b :=

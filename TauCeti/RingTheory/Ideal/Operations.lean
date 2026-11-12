@@ -114,6 +114,15 @@ the ideal. -/
 theorem mul_pow_mem_pow {ϖ : R} (hϖ : ϖ ∈ I) (n : ℕ) (c : R) : c * ϖ ^ n ∈ I ^ n :=
   (I ^ n).mul_mem_left c (pow_mem_pow hϖ n)
 
+/-- A product of elements of a left ideal lies in the power indexed by the number of factors. -/
+theorem list_prod_mem_pow {l : List R} (h : ∀ a ∈ l, a ∈ I) : l.prod ∈ I ^ l.length := by
+  induction l using List.reverseRecOn with
+  | nil => simp [Submodule.pow_zero]
+  | append_singleton l a ih =>
+    rw [List.prod_append, List.prod_singleton, List.length_append, List.length_singleton,
+      Submodule.pow_succ]
+    exact Ideal.mul_mem_mul (ih fun b hb ↦ h b (by simp [hb])) (h a (by simp))
+
 end Mul
 
 section CommSemiring

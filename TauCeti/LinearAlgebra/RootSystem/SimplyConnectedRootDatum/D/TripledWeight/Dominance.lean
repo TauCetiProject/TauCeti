@@ -66,7 +66,7 @@ theorem d4Tripled_raisingPath_iff_mem_posRootCone (a b : Fin 24) :
   · intro h
     induction h with
     | refl => simp
-    | @tail b c h hbc ih =>
+    | @tail b c _ hbc ih =>
       obtain ⟨i, hi, rfl⟩ := (d4TripledRaisingStep_iff _ _).mp hbc
       have heq : μ (d4TripledReflection i b) - μ a =
           (μ b - μ a) + (P).root (typeDSimpleIndex 4 le_rfl i) := by

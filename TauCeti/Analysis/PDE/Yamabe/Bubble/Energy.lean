@@ -114,7 +114,7 @@ private theorem sub_two_mul_integral_radial_bubble (hn : 2 < finrank ℝ E) {t :
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   set n := finrank ℝ E with hn_def
   set ψ : ℝ → ℝ := fun r ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ n
-  set C : ℝ := (((n : ℝ) - 2) / (2 * t)) ^ 2 with hC
+  set C : ℝ := (((n : ℝ) - 2) / (2 * t)) ^ 2
   set φ : ℝ → ℝ := fun r ↦ C * (r ^ 2 * ψ r) with hφ
   have hC0 : C ≠ 0 := by
     have : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn.ne')
@@ -194,7 +194,6 @@ theorem integral_bubble_rpow_criticalExponent (hn₀ : 0 < finrank ℝ E) (hn : 
   have hmoment := integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent volume hn le_rfl hn0 ht b
   simp only [Real.rpow_zero, one_mul, add_zero, sub_zero, mul_one] at hmoment
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) hn₀
-  have hΓhalf := Gamma_pos_of_pos (half_pos hn0)
   rw [hmoment, volume_real_unitBall, ProbabilityTheory.beta, ← hn_def, add_halves,
     Gamma_add_one (half_pos hn0).ne']
   -- Legendre's duplication formula at `n / 2`.

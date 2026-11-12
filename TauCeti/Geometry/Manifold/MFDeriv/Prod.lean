@@ -34,6 +34,8 @@ fields on a product manifold.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
+* `TauCeti.mfderiv_inr_eq_zero_of_forall_apply_eq`: a map constant on a slice `{p} × N` has
+  differential vanishing on the vectors tangent to that slice.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
   `𝕜 × N`.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
@@ -187,6 +189,24 @@ theorem mvfderiv_curry_right {f : M × N → F} (p : M) (x : N)
   -- The product tangent synonym and the product of tangent synonyms have the same vectors;
   -- their `inr` maps agree pointwise. Composing with `y ↦ (p, y)` is currying at `p`.
   exact hd.trans (by ext v; rfl)
+
+/-- A map on a product that is constant on the slice `{p} × N` through `(p, x)` has differential
+at `(p, x)` vanishing on the vectors `(0, v)` tangent to that slice. No differentiability is
+needed: the differential is zero where the map is not differentiable. -/
+theorem mfderiv_inr_eq_zero_of_forall_apply_eq {f : M × N → M''} {p : M} {x : N}
+    (hc : ∀ y, f (p, y) = f (p, x)) (v : TangentSpace J x) :
+    mfderiv (I.prod J) I'' f (p, x) ((0 : TangentSpace I p), v) = 0 := by
+  by_cases hf : MDifferentiableAt (I.prod J) I'' f (p, x)
+  · have hd := mfderiv_comp_of_eq hf
+      (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (rfl : (p, x) = (p, x))
+    dsimp only [id_eq] at hd
+    -- The composite with the slice inclusion `y ↦ (p, y)` is constant.
+    rw [show (f ∘ fun y : N ↦ (p, y)) = fun _ ↦ f (p, x) from funext hc, mfderiv_const,
+      mfderiv_prod_right] at hd
+    exact (DFunLike.congr_fun hd v).symm
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf]
+    -- The zero map evaluates to zero; the product tangent space is the product of the factors.
+    rfl
 
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/

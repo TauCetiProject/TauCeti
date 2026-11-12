@@ -75,12 +75,12 @@ theorem algebraMap_integer_of_surjective_mapValueGroupWithZero {π : (valuation 
   let π' := algebraMap (valuation K).integer (valuation L).integer π
   have he := ValuativeRel.isEquiv ((valuation L).comap (algebraMap K L)) (valuation K)
   have hπ' : valuation L (π' : L) < 1 := by
-    rw [TauCeti.coe_algebraMap_integerRing]
+    rw [Valuation.HasExtension.val_algebraMap]
     exact he.lt_one_iff_lt_one.mpr (Valuation.integer.v_irreducible_lt_one hπ)
   apply IsDiscreteValuationRing.irreducible_of_span_eq_maximalIdeal π'
   · intro hz
     have hz' : algebraMap K L (π : K) = 0 := by
-      simpa [π', TauCeti.coe_algebraMap_integerRing] using congrArg Subtype.val hz
+      simpa [π', Valuation.HasExtension.val_algebraMap] using congrArg Subtype.val hz
     exact hπ.ne_zero (Subtype.ext <| (algebraMap K L).injective (by simpa using hz'))
   · apply le_antisymm
     · intro x hx
@@ -99,7 +99,7 @@ theorem algebraMap_integer_of_surjective_mapValueGroupWithZero {π : (valuation 
         exact (Valuation.integer.integers (valuation K)).dvd_iff_le.mp
           (((hπ.dvd_iff.mp hd).resolve_left hn).dvd)
       have hxπ : valuation L (x : L) ≤ valuation L (π' : L) := by
-        rw [TauCeti.coe_algebraMap_integerRing, ← hγ]
+        rw [Valuation.HasExtension.val_algebraMap, ← hγ]
         simpa only [Valuation.comap_apply] using (he r (π : K)).mpr hle
       rw [Ideal.mem_span_singleton]
       exact (Valuation.integer.integers (valuation L)).dvd_iff_le.mpr hxπ
