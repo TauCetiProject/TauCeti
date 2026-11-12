@@ -197,16 +197,17 @@ def isColimitSubsetTwistedHomologyCocone [IsDirectedOrder ι]
     (fun i j xi xj hij ↦ by
       obtain ⟨l, hil, hjl⟩ := exists_ge_ge i j
       let F := subsetTwistedHomologyFunctor L hU k
-      let t := subsetTwistedHomologyCocone L hU k
       -- the difference of the two images at a common upper bound vanishes in `X`
-      have hl : (t.ι.app l).hom ((F.map (homOfLE hil)).hom xi - (F.map (homOfLE hjl)).hom xj) =
-          0 := by
-        rw [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, t.w,
-          ← ConcreteCategory.comp_apply, t.w]
-        exact hij
+      have hl : ((subsetTwistedHomologyCocone L hU k).ι.app l).hom
+          ((F.map (homOfLE hil)).hom xi - (F.map (homOfLE hjl)).hom xj) = 0 := by
+        rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, Cocone.w,
+          ← ConcreteCategory.comp_apply, Cocone.w]
+      rw [subsetTwistedHomologyCocone_ι_app] at hl
       obtain ⟨m, hlm, hm⟩ := exists_homologyMap_subsetTwistedChainComplexMap_eq_zero L hU hK _ hl
       refine ⟨m, homOfLE (hil.trans hlm), homOfLE (hjl.trans hlm), ?_⟩
-      -- so it already vanishes in `U m`
+      -- so it already vanishes in `U m`: `hm` is this statement by
+      -- `subsetTwistedHomologyFunctor_map`; it is stated on the carriers of the homology modules,
+      -- which agree with `F.obj` only by unfolding, so the exposed definition is used directly
       have hm' : (F.map (homOfLE hlm)).hom
           ((F.map (homOfLE hil)).hom xi - (F.map (homOfLE hjl)).hom xj) = 0 := hm
       rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,

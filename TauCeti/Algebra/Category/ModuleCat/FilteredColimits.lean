@@ -17,10 +17,11 @@ universe. This file exports preservation by the forgetful functor for that unive
 It also records a recognition criterion with no universe constraints at all: a cocone of modules
 is colimiting as soon as its legs are jointly surjective and any two elements with the same image
 in the apex already have a common image somewhere deeper in the diagram
-(`TauCeti.ModuleCat.isColimitOfJointlySurjective`). Mathlib's reflection of filtered colimits by
-the forgetful functor needs the modules to live in the universe of the ring; the criterion does
-not, which is the situation of modules of chains with local coefficients, whose universe is that
-of the space rather than that of the ring.
+(`TauCeti.ModuleCat.isColimitOfJointlySurjective`). It is the criterion for abelian groups,
+`TauCeti.AddCommGrpCat.isColimitOfJointlySurjective`, reflected along the forgetful functor to
+`AddCommGrpCat`, which reflects colimits whatever the universes of the ring and the modules. This
+covers modules of chains with local coefficients, whose universe is that of the space rather than
+that of the ring.
 -/
 
 public noncomputable section
@@ -68,25 +69,7 @@ def isColimitOfJointlySurjective (t : Cocone F)
   let Φ := forget₂ (_root_.ModuleCat.{v} R) _root_.AddCommGrpCat.{v}
   let hc : IsColimit (Φ.mapCocone t) :=
     AddCommGrpCat.isColimitOfJointlySurjective (Φ.mapCocone t) hsurj hinj
-  -- the descended additive map, which agrees with the legs of `s` on the legs of `t`
-  have hfac (s : Cocone F) (j : J) (y : F.obj j) :
-      (hc.desc (Φ.mapCocone s)).hom ((t.ι.app j).hom y) = (s.ι.app j).hom y :=
-    ConcreteCategory.congr_hom (hc.fac (Φ.mapCocone s) j) y
-  exact
-    { desc s := _root_.ModuleCat.ofHom
-        { toFun := (hc.desc (Φ.mapCocone s)).hom
-          map_add' := map_add _
-          -- every element of the apex comes from a stage, where the legs are linear
-          map_smul' r x := by
-            obtain ⟨j, y, rfl⟩ := hsurj x
-            rw [← map_smul, hfac, hfac, map_smul]
-            rfl }
-      fac s j := by
-        ext y
-        exact hfac s j y
-      uniq s m hm := by
-        ext x
-        obtain ⟨j, y, rfl⟩ := hsurj x
-        exact (ConcreteCategory.congr_hom (hm j) y).trans (hfac s j y).symm }
+  have : HasColimit (F ⋙ Φ) := ⟨⟨_, hc⟩⟩
+  exact isColimitOfReflects Φ hc
 
 end TauCeti.ModuleCat
