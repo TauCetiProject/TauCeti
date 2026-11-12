@@ -43,9 +43,7 @@ invariant. The automorphism therefore descends to the quotient.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * R. Steinberg, *Lectures on Chevalley Groups*, §10.
 
-This advances the Pinnings and Chevalley--Demazure construction targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. It supplies the graph part of the Steinberg map needed
-by milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md` for the twisted family `²A_r(q)`.
+This supplies the graph part of the Steinberg map of the twisted family `²A_r(q)`.
 -/
 
 public section
@@ -90,27 +88,26 @@ private theorem typeAGraphAutomorphism_kostantRootSubgroupMatrix
     TauCeti.typeAGraphAutomorphism r A
         (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
           (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+          (rep_kostantForm_mem_lattice r) k
           (isNilpotent_rep_rootGenerator r k) (latticeBasis r) q) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+        (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
         (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r) q := by
   have hk :=
     TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+      (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r) (rootSource r k)
       (rootTarget r k) (rootTarget_ne_rootSource r k)
-      (nilpotencyClass_rep_rootGenerator r k) (rep_rootGenerator_latticeBasis_apply r k) q
+      (rep_rootGenerator_latticeBasis_apply r k) q
   have hgraph :=
     TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+      (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
       (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
       (rootSource r (graphRootPerm r k)) (rootTarget r (graphRootPerm r k))
       (rootTarget_ne_rootSource r (graphRootPerm r k))
-      (nilpotencyClass_rep_rootGenerator r (graphRootPerm r k))
       (rep_rootGenerator_latticeBasis_apply r (graphRootPerm r k)) q
   rw [hk, hgraph]
   cases k with
@@ -167,19 +164,19 @@ private theorem ambientGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap
     (GeneralLinear.typeAGraphCoordinateIso r).hom ≫
         TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
           (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+          (rep_kostantForm_mem_lattice r) k
           (isNilpotent_rep_rootGenerator r k) (latticeBasis r) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+        (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
         (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r) := by
   let x := TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
     (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+    (rep_kostantForm_mem_lattice r) k
     (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
   let y := TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
     (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+    (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
     (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
   apply typeAGraphCoordinateIso_hom_comp_eq_of_universalPoint
   let q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ]
@@ -189,22 +186,22 @@ private theorem ambientGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap
       (toConv (q.ofConv.comp x.hom.toAlgHom)) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+        (rep_kostantForm_mem_lattice r) k
         (isNilpotent_rep_rootGenerator r k) (latticeBasis r) q :=
     TauCeti.UniversalEnvelopingAlgebra.pointsMulEquiv_kostantRootSubgroupCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+      (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
       (A := AdditiveGroup.coordinateHopfAlgebra ℤ) q
   have hy : GeneralLinear.pointToGeneralLinear (r + 1)
       (toConv (q.ofConv.comp y.hom.toAlgHom)) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+        (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
         (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r) q :=
     TauCeti.UniversalEnvelopingAlgebra.pointsMulEquiv_kostantRootSubgroupCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+      (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
       (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
       (A := AdditiveGroup.coordinateHopfAlgebra ℤ) q
   rw [hx, hy]
@@ -276,7 +273,7 @@ private theorem definingIdeal_comap_ambientGraphCoordinateIso_hom_le :
       definingIdeal r := by
   refine kostantToralDefiningIdeal_comapOfSurjective_le_of_comp_eq
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
       (GeneralLinear.typeAGraphCoordinateIso r).hom _ (graphRootPerm r)
       (SplitTorus.relabelCoordinateMap ℤ Fin.revPerm)
@@ -292,7 +289,7 @@ private theorem definingIdeal_comap_ambientGraphCoordinateIso_inv_le :
   let c := GeneralLinear.typeAGraphCoordinateIso r
   refine kostantToralDefiningIdeal_comapOfSurjective_le_of_comp_eq
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
       c.inv _ (graphRootPerm r) (SplitTorus.relabelCoordinateMap ℤ Fin.revPerm)
       (SplitTorus.relabelCoordinateMap_injective ℤ Fin.revPerm) (fun k => ?_) ?_
@@ -340,27 +337,27 @@ private theorem graphCoordinateIso_hom_comp_rootMap (k : Fin r ⊕ Fin r) :
     (graphCoordinateIso r).hom ≫
         TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
           (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (graphRootPerm r k) := by
   let J := definingIdeal r
   let y := TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+    (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
     (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
   have hy : J.toIdeal ≤ RingHom.ker y.hom.toAlgHom.toRingHom :=
     TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal_toIdeal_le_root_ker
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (graphRootPerm r k)
   have hleft := CommHopfAlgCat.liftQuotient_unique J y hy
     ((graphCoordinateIso r).hom ≫
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k) (by
       rw [← Category.assoc, mkQuotient_comp_graphCoordinateIso_hom, Category.assoc,
         TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
@@ -368,11 +365,11 @@ private theorem graphCoordinateIso_hom_comp_rootMap (k : Fin r ⊕ Fin r) :
   have hright := CommHopfAlgCat.liftQuotient_unique J y hy
     (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (graphRootPerm r k))
     (TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (graphRootPerm r k))
   exact hleft.trans hright.symm
 
@@ -380,11 +377,11 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
     (graphCoordinateIso r).hom ≫
         TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToralCoordinateMap
           (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) =
       TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToralCoordinateMap
           (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) ≫
         SplitTorus.relabelCoordinateMap ℤ Fin.revPerm := by
   let J := definingIdeal r
@@ -396,7 +393,7 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
       simpa using RingHom.mem_ker.mp
         (TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal_toIdeal_le_torus_ker
           (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) hz)
     rw [RingHom.mem_ker]
     -- The composite Hopf morphism acts by the underlying composed bialgebra homomorphism.
@@ -407,7 +404,7 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
     ((graphCoordinateIso r).hom ≫
       TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToralCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)) (by
       rw [← Category.assoc, mkQuotient_comp_graphCoordinateIso_hom, Category.assoc,
         TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantWeightTorusToralCoordinateMap,
@@ -415,7 +412,7 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
   have hright := CommHopfAlgCat.liftQuotient_unique J y hy
     (TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToralCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) ≫
         SplitTorus.relabelCoordinateMap ℤ Fin.revPerm) (by
       rw [← Category.assoc,
@@ -641,7 +638,7 @@ theorem rootSubgroup_comp_graphAutomorphism_hom (k : Fin r ⊕ Fin r) :
   rw [rootSubgroup_def]
   exact (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToToral_def
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
     (graphRootPerm r k)).symm
 
@@ -681,7 +678,7 @@ theorem graphAutomorphism_hom_comp_self :
     (graphAutomorphism r).asIso.hom ≫ (graphAutomorphism r).asIso.hom = 𝟙 (groupScheme r) := by
   apply TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme_hom_ext
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
   · intro k
     rw [← rootSubgroup_def]

@@ -111,13 +111,15 @@ the comodule unipotent. -/
 theorem isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq
     {k : Type u} [Field k] {H : Type v} [CommRing H] [HopfAlgebra k H]
     {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
-    [Module.Free k M] [Module.Finite k M] {L : Type x} [CommRing L] [Algebra k L]
+    {L : Type x} [CommRing L] [Algebra k L]
     (g : WithConv (H →ₐ[k] L)) {ι : Type y} [Fintype ι] [DecidableEq ι] (b : Basis ι k M)
     (hCcharpoly : (coefficientMatrix (C := H) b).charpoly =
       ((Polynomial.X - (1 : Polynomial k)) ^ Module.finrank k M).map
         (algebraMap k H)) :
     LinearMap.GeneralLinearGroup.IsUnipotent
       (LinearMap.GeneralLinearGroup.ofLinearEquiv (pointsAction M g)) := by
+  have := Module.Free.of_basis b
+  have := Module.Finite.of_basis b
   let C := coefficientMatrix (C := H) b
   let d := Module.finrank k M
   let P : Polynomial k := (Polynomial.X - 1) ^ d

@@ -9,6 +9,7 @@ public import TauCeti.Probability.Density
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Distributions.Exponential
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.Gamma
 
@@ -266,7 +267,6 @@ private lemma not_integrable_weibullPDFReal_mul_rpow_of_le
     (hk : 0 < k) (hlam : 0 < lam) (hq : q ≤ -k) :
     ¬ Integrable (fun y ↦ weibullPDFReal k lam y * y ^ q) := by
   intro hint
-  have hkq : k + q ≤ 0 := by linarith
   have hsmall : IntegrableOn (fun y ↦ weibullPDFReal k lam y * y ^ q) (Ioo 0 1) :=
     hint.integrableOn
   have hscaled : IntegrableOn

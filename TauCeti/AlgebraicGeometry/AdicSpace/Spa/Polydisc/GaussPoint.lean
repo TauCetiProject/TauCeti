@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.Basic
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
+import TauCeti.RingTheory.Valuation.LtAddSubgroup
 import Mathlib.RingTheory.Valuation.RankOne
 import Mathlib.Analysis.SpecificLimits.Normed
 
@@ -391,8 +392,9 @@ theorem isContinuous_closedDiscGaussValuation (hr₀ : 0 < r) (hr₁ : r ≤ 1) 
   have hγ₀ : (0 : ℝ) < γ := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hγ)
   obtain ⟨U, hU⟩ := NonarchimedeanAddGroup.is_nonarchimedean _
     (Metric.ball_mem_nhds (0 : R) (half_pos hγ₀))
-  refine AddSubgroup.isOpen_mono (H₂ := (closedDiscGaussValuation hr₀ hr₁).ltAddSubgroup
-    (Units.mk0 γ hγ)) (fun f hf ↦ ?_) (isOpen_weightedNhd isWeightFamily_one_weight U.isOpen)
+  rw [← Valuation.coe_ltAddSubgroupOfNeZero hγ]
+  refine AddSubgroup.isOpen_mono (fun f hf ↦ (Valuation.mem_ltAddSubgroupOfNeZero hγ).mpr ?_)
+    (isOpen_weightedNhd isWeightFamily_one_weight U.isOpen)
   have hle := closedDiscGaussValuation_le_of_forall_norm_coeff_le hr₀ hr₁ (f := f) fun ν ↦
     (mem_ball_zero_iff.mp (hU (by simpa using mem_weightedNhd.mp hf ν))).le
   exact NNReal.coe_lt_coe.mp (hle.trans_lt (half_lt_self hγ₀))
@@ -542,8 +544,9 @@ theorem closedDiscGaussValuationBelow_weightedX_add_weightedC (hr₀ : 0 < r) (h
       closedDiscGaussValuationBelow hr₀ hr₁
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) := by
   have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
-  have h₁ := TauCeti.PowerSeries.isLowestDominant_X_sub_C hr₀ (b := -c) (by rwa [norm_neg])
-  have h₂ := TauCeti.PowerSeries.isLowestDominant_X_sub_C hr₀ (b := (0 : R)) (by simpa using hr₀)
+  have h₁ := TauCeti.PowerSeries.isLowestDominant_X_sub_C (c := r) (b := -c) (by rwa [norm_neg])
+  have h₂ := TauCeti.PowerSeries.isLowestDominant_X_sub_C (c := r) (b := (0 : R))
+    (by simpa using hr₀)
   rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
   rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
   -- both Gauss norms are the norm `r` of the leading coefficient in degree `1`

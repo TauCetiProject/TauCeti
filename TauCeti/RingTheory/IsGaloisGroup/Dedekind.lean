@@ -20,6 +20,9 @@ group `Gal(M/K)`, and `C` is a Dedekind domain, finite and flat over `A`. Togeth
 `TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul`, these are the instances
 needed to specialize statements about invariant rings to integral closures.
 
+The statement for `C` only requires that `M ^ H` be finite and separable over `K`; the ambient
+extension `M / K` need not be finite or Galois.
+
 ## Main results
 
 * `TauCeti.IsIntegralClosure.isDomain_and_finite_and_flat_and_isGaloisGroup`: `B` is a domain,
@@ -35,12 +38,13 @@ open IntermediateField
 namespace TauCeti.IsIntegralClosure
 
 variable {A K M : Type*} [CommRing A] [IsDedekindDomain A] [Field K] [Algebra A K]
-  [IsFractionRing A K] [Field M] [Algebra K M] [FiniteDimensional K M] [IsGalois K M]
+  [IsFractionRing A K] [Field M] [Algebra K M]
 
 section Top
 
-variable {B : Type*} [Algebra A M] [IsScalarTower A K M] [CommRing B] [Algebra A B] [Algebra B M]
-  [IsScalarTower A B M] [IsIntegralClosure B A M]
+variable [FiniteDimensional K M] [IsGalois K M] {B : Type*} [Algebra A M]
+  [IsScalarTower A K M] [CommRing B] [Algebra A B] [Algebra B M] [IsScalarTower A B M]
+  [IsIntegralClosure B A M]
   [MulSemiringAction Gal(M/K) B] [SMulDistribClass Gal(M/K) B M]
 
 include K M in
@@ -57,21 +61,20 @@ end Top
 
 section FixedField
 
-variable (H : Subgroup Gal(M/K)) [Algebra A (fixedField H)] [IsScalarTower A K (fixedField H)]
+variable (H : Subgroup Gal(M/K)) [Module.Finite K (fixedField H)]
+  [Algebra.IsSeparable K (fixedField H)] [Algebra A (fixedField H)]
+  [IsScalarTower A K (fixedField H)]
   (C : Type*) [CommRing C] [Algebra A C] [Algebra C (fixedField H)]
   [IsScalarTower A C (fixedField H)] [IsIntegralClosure C A (fixedField H)]
 
 include K M H in
-/-- Over a Dedekind base, `C` is a Dedekind domain and a finite flat `A`-algebra. -/
+/-- Over a Dedekind base, the integral closure in a finite separable fixed field is a Dedekind
+domain and a finite flat `A`-algebra. The ambient extension need not be finite or Galois. -/
 theorem isDedekindDomain_and_finite_and_flat_fixedField :
     IsDedekindDomain C ∧ Module.Finite A C ∧ Module.Flat A C := by
-  have : IsDomain C :=
-    (_root_.IsIntegralClosure.algebraMap_injective C A (fixedField H)).isDomain _
-  have : Algebra.IsSeparable K (fixedField H) :=
-    Algebra.isSeparable_tower_bot_of_isSeparable K (fixedField H) M
-  have : IsDedekindDomain C := _root_.IsIntegralClosure.isDedekindDomain A K (fixedField H) C
   have : FaithfulSMul A (fixedField H) := .trans A K (fixedField H)
-  exact ⟨inferInstance, _root_.IsIntegralClosure.finite A K (fixedField H) C,
+  exact ⟨IsIntegralClosure.isDedekindDomain A K (fixedField H) C,
+    _root_.IsIntegralClosure.finite A K (fixedField H) C,
     IsIntegralClosure.flat A (fixedField H) C⟩
 
 end FixedField

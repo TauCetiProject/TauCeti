@@ -151,6 +151,54 @@ theorem isMinimum_iff_value_eq (hAB : Disjoint A B) {S : Finset V} :
 
 end Value
 
+section Truncation
+
+variable [LinearOrder K] {f g : Finset V → K} {A B S₀ : Finset V} {b : K}
+
+/-- Suppose that `g ≤ f` and that `g` is at least `min f b` everywhere. Then `f` and `g` agree on
+every set whose `f`-value is below `b`. -/
+theorem eq_of_le_of_min_le_of_lt (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
+    {T : Finset V} (hT : f T < b) : g T = f T :=
+  le_antisymm (hgf T) ((min_eq_left hT.le).symm.trans_le (hfg T))
+
+/-- Suppose that `g ≤ f`, that `g` is at least `min f b` everywhere, and that some admissible side
+has `f`-value below `b`. Then `f` and `g` agree on every minimum side of `f`. -/
+theorem IsMinimum.eq_of_le_of_min_le (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
+    (hS₀ : IsAdmissible A B S₀) (hb : f S₀ < b) {S : Finset V} (hS : IsMinimum f A B S) :
+    g S = f S :=
+  eq_of_le_of_min_le_of_lt hgf hfg ((hS.le hS₀).trans_lt hb)
+
+/-- Suppose that `g ≤ f`, that `g` is at least `min f b` everywhere, and that some admissible side
+has `f`-value below `b`. Then `f` and `g` have the same minimum sides. This is the effect on
+minimum cuts of truncating all values above `b`. -/
+theorem isMinimum_iff_of_le_of_min_le (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S)
+    (hS₀ : IsAdmissible A B S₀) (hb : f S₀ < b) {S : Finset V} :
+    IsMinimum g A B S ↔ IsMinimum f A B S := by
+  constructor
+  · intro hS
+    have hgS : g S < b := (hS.le hS₀).trans_lt ((eq_of_le_of_min_le_of_lt hgf hfg hb).trans_lt hb)
+    have hfS : f S < b := (min_lt_iff.mp ((hfg S).trans_lt hgS)).resolve_right (lt_irrefl b)
+    refine isMinimum_iff.mpr ⟨hS.admissible, fun T hT ↦ ?_⟩
+    rw [← eq_of_le_of_min_le_of_lt hgf hfg hfS]
+    exact (hS.le hT).trans (hgf T)
+  · intro hS
+    have hfS : f S < b := (hS.le hS₀).trans_lt hb
+    refine isMinimum_iff.mpr ⟨hS.admissible, fun T hT ↦ ?_⟩
+    rw [eq_of_le_of_min_le_of_lt hgf hfg hfS]
+    exact (le_min (hS.le hT) hfS.le).trans (hfg T)
+
+/-- Under the hypotheses of `TauCeti.TerminalCut.isMinimum_iff_of_le_of_min_le`, the set
+functions `f` and `g` have the same minimum value. -/
+theorem minimumValue_eq_of_le_of_min_le [Finite V] (hAB : Disjoint A B)
+    (hgf : ∀ S, g S ≤ f S) (hfg : ∀ S, min (f S) b ≤ g S) (hS₀ : IsAdmissible A B S₀)
+    (hb : f S₀ < b) : minimumValue g hAB = minimumValue f hAB := by
+  obtain ⟨S, hS⟩ := exists_minimum f hAB
+  rw [((isMinimum_iff_value_eq f hAB).mp hS).2.symm, ← hS.eq_of_le_of_min_le hgf hfg hS₀ hb]
+  exact (((isMinimum_iff_value_eq g hAB).mp
+    ((isMinimum_iff_of_le_of_min_le hgf hfg hS₀ hb).mpr hS)).2).symm
+
+end Truncation
+
 /-- An injective relabeling preserves the conditions on terminal cuts. -/
 @[simp] theorem isAdmissible_map_iff (e : V ↪ W) {A B S : Finset V} :
     IsAdmissible (A.map e) (B.map e) (S.map e) ↔ IsAdmissible A B S := by
@@ -393,6 +441,10 @@ end Extremal
   classical
   simp [isAdmissible_iff]
 
+/-- A side admissible for a pair of singleton terminal sets separates distinct terminals. -/
+theorem IsAdmissible.ne {s t : V} {S : Finset V} (hS : IsAdmissible {s} {t} S) : s ≠ t :=
+  ne_of_mem_of_not_mem (isAdmissible_singleton.1 hS).1 (isAdmissible_singleton.1 hS).2
+
 /-- A minimum cut for a pair of singleton terminal sets has the usual source-membership,
 sink-exclusion, and optimality characterization. -/
 theorem isMinimum_singleton_iff [Preorder K] {f : Finset V → K} {s t : V}
@@ -432,9 +484,7 @@ theorem pairMinimumValue_le {s t : V} {S : Finset V} (hs : s ∈ S) (ht : t ∉ 
 /-- A minimum cut between two vertices attains their minimum cut value. -/
 theorem IsMinimum.pairMinimumValue_eq {f : Finset V → K} {s t : V} {S : Finset V}
     (hS : IsMinimum f {s} {t} S) : pairMinimumValue f s t = f S := by
-  obtain ⟨hs, ht⟩ := isAdmissible_singleton.mp hS.admissible
-  have hst : s ≠ t := fun h ↦ ht (h ▸ hs)
-  rw [pairMinimumValue_of_ne f hst]
+  rw [pairMinimumValue_of_ne f hS.admissible.ne]
   exact (((isMinimum_iff_value_eq f _).mp hS).2).symm
 
 /-- A cut separating two vertices is minimum exactly when it attains their minimum cut value. -/

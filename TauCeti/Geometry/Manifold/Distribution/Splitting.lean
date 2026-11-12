@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 
 /-!
 # Linear splitting coordinates for distributions
@@ -42,6 +43,49 @@ section Splitting
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- In splitting coordinates, the pulled-back distribution has fibre `⊤ × ⊥` at the image of the
+base point `p`. -/
+private lemma distributionModelFiber_comap_prodEquivOfIsCompl
+    {D : (x : E) → Submodule 𝕜 (TangentSpace 𝓘(𝕜, E) x)} (p : E) (T : Submodule 𝕜 E)
+    (hT : IsCompl (distributionModelFiber D p) T) :
+    let e : (distributionModelFiber D p × T) ≃L[𝕜] E :=
+      (Submodule.prodEquivOfIsCompl (distributionModelFiber D p) T hT).toContinuousLinearEquiv
+    distributionModelFiber (fun q : distributionModelFiber D p × T ↦
+        (D (e.toDiffeomorph q)).comap
+          (mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
+            e.toDiffeomorph q).toLinearMap) (e.symm p) = Submodule.prod ⊤ ⊥ := by
+  intro e
+  ext q
+  rw [mem_distributionModelFiber]
+  simp only [Submodule.mem_comap, Submodule.mem_prod, Submodule.mem_top, true_and,
+    Submodule.mem_bot]
+  have heq :
+      mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
+        e.toDiffeomorph (e.symm p)
+          ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.symm p)).symm q) =
+        (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.toDiffeomorph (e.symm p))).symm
+          (e q) := by
+    rw [ContinuousLinearEquiv.coe_toDiffeomorph, e.mfderiv_eq]
+    -- On model normed spaces, `fromTangentSpace` is Mathlib's definitional identity.
+    change e q = e q
+    rfl
+  -- Unfold the two model-fibre memberships to expose their canonical tangent-space
+  -- identifications; no interface lemma rewrites both dependent fibres at once.
+  change mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
+      e.toDiffeomorph (e.symm p)
+        ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.symm p)).symm q) ∈
+      D (e.toDiffeomorph (e.symm p)) ↔
+      q.2 = 0
+  rw [heq, ContinuousLinearEquiv.coe_toDiffeomorph, e.apply_symm_apply]
+  have hmap (x : E) :
+      (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).symm x ∈ D p ↔
+        x ∈ distributionModelFiber D p := mem_distributionModelFiber.symm
+  rw [hmap]
+  simpa only [e, LinearEquiv.coe_toContinuousLinearEquiv',
+    LinearEquiv.symm_apply_apply] using
+    (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero
+      (distributionModelFiber D p) T hT (x := e q)).symm
 
 /-- A `C^m` involutive distribution on a finite-dimensional normed space admits linear product
 coordinates at any chosen point in which its fibre is the horizontal subspace.
@@ -87,51 +131,22 @@ theorem IsContMDiffDistribution.exists_splitCoordinates {m : ℕ∞ω} {k : ℕ}
   have hD'eq : D' = Dt := by
     funext q
     exact distributionModelFiber_eq q
-  let eω : Diffeomorph 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
-      (distributionModelFiber D p × T) E ω :=
-    { contMDiff_toFun := e.contDiff.contMDiff
-      contMDiff_invFun := e.symm.contDiff.contMDiff
-      toEquiv := e.toLinearEquiv.toEquiv }
+  let eω := e.toContDiffDiffeomorph ω
+  have hcoe : ⇑eω = ⇑e.toDiffeomorph :=
+    (e.coe_toContDiffDiffeomorph ω).trans e.coe_toDiffeomorph.symm
   have hsmooth : IsContMDiffDistribution 𝓘(𝕜, distributionModelFiber D p × T) m k D' := by
     rw [hD'eq]
-    exact hD.comap_mfderiv eω (by simp)
+    simp only [Dt]
+    exact hcoe ▸ hD.comap_mfderiv eω (by simp)
   have hinv' : IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' := by
     rw [hD'eq]
-    exact (eω.isInvolutiveDistribution_comap_mfderiv_iff le_top D).2 hinv
+    simp only [Dt]
+    exact hcoe ▸ (eω.isInvolutiveDistribution_comap_mfderiv_iff le_top D).2 hinv
   have hfinrank : Module.finrank 𝕜 (distributionModelFiber D p) = k := by
     exact (congrArg (fun S : Submodule 𝕜 E => Module.finrank 𝕜 S)
       (distributionModelFiber_eq p)).trans (hD.finrank_eq p)
   refine ⟨hfinrank, hsmooth, hinv', ?_⟩
-  ext q
-  rw [mem_distributionModelFiber]
-  simp only [Submodule.mem_comap, Submodule.mem_prod, Submodule.mem_top, true_and,
-    Submodule.mem_bot]
-  have heq :
-      mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
-        e.toDiffeomorph (e.symm p)
-          ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.symm p)).symm q) =
-        (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.toDiffeomorph (e.symm p))).symm
-          (e q) := by
-    rw [ContinuousLinearEquiv.coe_toDiffeomorph, e.mfderiv_eq]
-    -- On model normed spaces, `fromTangentSpace` is Mathlib's definitional identity.
-    change e q = e q
-    rfl
-  -- Unfold the two model-fibre memberships to expose their canonical tangent-space
-  -- identifications; no interface lemma rewrites both dependent fibres at once.
-  change mfderiv 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
-      e.toDiffeomorph (e.symm p)
-        ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) (e.symm p)).symm q) ∈
-      D (e.toDiffeomorph (e.symm p)) ↔
-      q.2 = 0
-  rw [heq, ContinuousLinearEquiv.coe_toDiffeomorph, e.apply_symm_apply]
-  have hmap (x : E) :
-      (NormedSpace.fromTangentSpace (𝕜 := 𝕜) p).symm x ∈ D p ↔
-        x ∈ distributionModelFiber D p := mem_distributionModelFiber.symm
-  rw [hmap]
-  simpa only [e, LinearEquiv.coe_toContinuousLinearEquiv',
-    LinearEquiv.symm_apply_apply] using
-    (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero
-      (distributionModelFiber D p) T hT (x := e q)).symm
+  exact distributionModelFiber_comap_prodEquivOfIsCompl p T hT
 
 end Splitting
 

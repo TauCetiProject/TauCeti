@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
+import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -18,11 +19,17 @@ map. This identifies quotient spectra with closed subsets without any connectedn
 
 An injective homomorphism of commutative semirings induces a dense map on prime spectra.
 For a reduced source ring, the converse holds. These facts supply the coordinate-ring criterion for
-dominance used in dominant affine group quotients.
+dominance used in dominant affine group quotients. Since a continuous map with dense range
+carries preconnectedness to its target, connectedness of prime spectra descends along a
+homomorphism with nil kernel, and in particular along an injective one.
 
 A subset of the prime spectrum containing every minimal prime is dense. This is how
 generic properties, such as freeness of a module at the minimal primes of a reduced ring, are
-turned into dense subsets of the spectrum.
+turned into dense subsets of the spectrum. In particular the basic open set `D(a)` of a
+nonzerodivisor `a` is dense, since minimal primes consist of zero divisors.
+
+A bijection on minimal primes induces a bijection on irreducible components by taking closures
+of images under the spectral map.
 
 An open subset of the prime spectrum of a commutative ring containing the zero locus of an ideal
 contained in the Jacobson radical is the whole spectrum: every prime ideal is contained in a
@@ -51,6 +58,48 @@ theorem denseRange_comap_iff_injective [CommRing R] [CommSemiring S] [IsReduced 
     DenseRange (PrimeSpectrum.comap f) ↔ Function.Injective f := by
   rw [PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical, RingHom.injective_iff_ker_eq_bot,
     nilradical_eq_zero, Ideal.zero_eq_bot, le_bot_iff]
+
+/-- Connectedness of prime spectra descends along a homomorphism of commutative semirings whose
+kernel consists of nilpotent elements, i.e. one for which `Spec S → Spec R` has dense range. -/
+theorem connectedSpace_primeSpectrum_of_ker_le_nilradical [CommSemiring R] [CommSemiring S]
+    [ConnectedSpace (PrimeSpectrum S)] (f : R →+* S) (hf : RingHom.ker f ≤ nilradical R) :
+    ConnectedSpace (PrimeSpectrum R) :=
+  have := ((PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical f).mpr hf).preconnectedSpace
+    (PrimeSpectrum.continuous_comap f)
+  { toNonempty := .map (PrimeSpectrum.comap f) inferInstance }
+
+/-- Connectedness of prime spectra descends along injective homomorphisms of commutative
+semirings. -/
+theorem connectedSpace_primeSpectrum_of_injective [CommSemiring R] [CommSemiring S]
+    [ConnectedSpace (PrimeSpectrum S)] (f : R →+* S) (hf : Function.Injective f) :
+    ConnectedSpace (PrimeSpectrum R) :=
+  f.connectedSpace_primeSpectrum_of_ker_le_nilradical fun x hx ↦ by
+    rw [hf ((RingHom.mem_ker.mp hx).trans f.map_zero.symm)]
+    exact zero_mem _
+
+open PrimeSpectrum in
+/-- A bijection on minimal primes gives a bijection on irreducible components, sending each
+component to the closure of its image under the spectral map. -/
+theorem bijOn_closure_image_comap_irreducibleComponents
+    {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    (h : Set.BijOn (Ideal.comap f) (minimalPrimes S) (minimalPrimes R)) :
+    Set.BijOn (fun Z ↦ closure (comap f '' Z))
+      (irreducibleComponents (PrimeSpectrum S)) (irreducibleComponents (PrimeSpectrum R)) := by
+  rw [← zeroLocus_minimalPrimes, ← zeroLocus_minimalPrimes]
+  refine ⟨?_, ?_, ?_⟩
+  · rintro _ ⟨P, hP, rfl⟩
+    refine ⟨P.comap f, h.mapsTo hP, ?_⟩
+    exact (closure_image_comap_zeroLocus f P).symm
+  · rintro _ ⟨P, hP, rfl⟩ _ ⟨Q, hQ, rfl⟩ heq
+    have : P.IsPrime := hP.isPrime
+    have : Q.IsPrime := hQ.isPrime
+    simp only [Function.comp_apply, closure_image_comap_zeroLocus, zeroLocus_eq_iff,
+      Ideal.IsPrime.isRadical, Ideal.IsRadical.radical] at heq
+    rw [h.injOn hP hQ heq]
+  · rintro _ ⟨P, hP, rfl⟩
+    obtain ⟨Q, hQ, rfl⟩ := h.surjOn hP
+    refine ⟨zeroLocus Q, Set.mem_image_of_mem _ hQ, ?_⟩
+    exact closure_image_comap_zeroLocus f Q
 
 end RingHom
 
@@ -96,6 +145,13 @@ theorem dense_of_forall_mem_minimalPrimes {s : Set (PrimeSpectrum R)}
   obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (J := x.asIdeal) bot_le
   have hspec : (⟨q, hq.1.1⟩ : PrimeSpectrum R) ⤳ x := (le_iff_specializes _ _).mp hqx
   exact ⟨_, hspec.mem_open hU hx, hs q hq⟩
+
+/-- The basic open set `D(a)` of a nonzerodivisor `a` is dense: it contains every minimal prime,
+since minimal primes consist of zero divisors. -/
+theorem dense_basicOpen_of_mem_nonZeroDivisors {a : R} (ha : a ∈ nonZeroDivisors R) :
+    Dense (basicOpen a : Set (PrimeSpectrum R)) :=
+  dense_of_forall_mem_minimalPrimes fun _ hp ↦
+    Set.disjoint_right.mp (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp) ha
 
 /-- For an ideal `I` of a commutative ring `S` contained in the Jacobson radical of `S`, an open
 subset of the prime spectrum of `S` contains the zero locus of `I` exactly when it is the whole

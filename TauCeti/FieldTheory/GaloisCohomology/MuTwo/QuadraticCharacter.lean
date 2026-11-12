@@ -114,16 +114,14 @@ end Universe
 
 /-! ### The norm of a Kummer class from the base -/
 
-section TypeZero
+section Base
 
-variable {K : Type} [Field K] [Invertible (2 : K)] {L : Type} [Field L] [Algebra K L]
+variable {K : Type u} [Field K] [Invertible (2 : K)] {L : Type u} [Field L] [Algebra K L]
   [FiniteDimensional K L] [Invertible (2 : L)] (σ : L →ₐ[K] SeparableClosure K)
   (hL : Module.finrank K L = 2) {d : Kˣ} {x : L}
 
 /-- **The Evens norm of the Kummer class of an element of the base.** If `L = K(x)` with `x ∉ K`
-and `x² = d`, then for `b ∈ Kˣ`, viewed in `L`, `N^{Ev}((b)) = (-d) ∪ (b)`. This is stated for
-`K : Type`, the universe of the comparison of cup products of Kummer classes with quaternion
-symbols (`TauCeti.cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq`). -/
+and `x² = d`, then for `b ∈ Kˣ`, viewed in `L`, `N^{Ev}((b)) = (-d) ∪ (b)`. -/
 theorem galoisEvens2_kummerClass_algebraMap (hx : x ∉ Set.range (algebraMap K L))
     (hx2 : x ^ 2 = algebraMap K L (d : K)) (b : Kˣ) :
     galoisEvens K L σ hL (kummerClass (Units.map (algebraMap K L).toMonoidHom b)) =
@@ -140,6 +138,6 @@ theorem galoisEvens2_kummerClass_algebraMap (hx : x ∉ Set.range (algebraMap K 
   rw [← galoisRes_kummerClass, galoisEvens2_galoisRes1 σ hL hx hx2, hself, hd, kummerClass_mul,
     map_add, LinearMap.add_apply]
 
-end TypeZero
+end Base
 
 end TauCeti

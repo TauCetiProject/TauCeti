@@ -21,7 +21,7 @@ The result that the family is a neighbourhood basis at `0` says nothing about `�
 for an arbitrary `SubmodulesBasis` in
 `TauCeti/Topology/Algebra/Nonarchimedean/SubmodulesBasis.lean`, and
 `hasBasis_nhds_zero_pow_smul` specializes it to this family. The abstract result that mutually
-cofinal families induce the same topology is `SubmodulesBasis.topology_eq`;
+cofinal families induce the same topology is `SubmodulesBasis.topology_eq_iff`;
 `submodulesBasis_pow_smul_topology_eq` combines it with the lattice- and
 pseudouniformiser-cofinality lemmas for open subrings.
 
@@ -111,7 +111,7 @@ theorem eventually_smul_mem_pow_smul (P : PairOfDefinition A) {s : A} (hs : IsPs
     (hm : m ∈ Submodule.span A (M₀ : Set M)) (n : ℕ) :
     ∀ᶠ a in 𝓝 (0 : P.ringOfDefinition), a • m ∈ (⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀ := by
   obtain ⟨k, hk⟩ := P.ringOfDefinition.exists_pow_smul_mem P.isOpen_ringOfDefinition
-    hs.isTopologicallyNilpotent hs0 M₀ hm
+    hs.isTopologicallyNilpotent M₀ hm
   have hnhd : ∀ᶠ a : P.ringOfDefinition in 𝓝 0,
       (a : A) ∈ (s ^ (n + k)) • (P.ringOfDefinition : Set A) :=
     continuous_subtype_val.continuousAt.preimage_mem_nhds
@@ -176,7 +176,7 @@ def powSmulModuleFilterBasis (P : PairOfDefinition A) {s : A} (hs : IsPseudoUnif
   smul_right' := by
     rintro m _ ⟨n, rfl⟩
     obtain ⟨k, hk⟩ := P.ringOfDefinition.exists_pow_smul_mem P.isOpen_ringOfDefinition
-      hs.isTopologicallyNilpotent hs0 M₀
+      hs.isTopologicallyNilpotent M₀
       (hspan ▸ Submodule.mem_top)
     filter_upwards [(hs.hasBasis_nhds_zero P).mem_of_mem (i := n + k) trivial] with c hc
     obtain ⟨b, hb, hcb⟩ := hc
@@ -243,12 +243,12 @@ theorem submodulesBasis_pow_smul_topology_eq_of_isPseudoUniformizer (P : PairOfD
     (M₀ : Submodule P.ringOfDefinition M) (hspan : Submodule.span A (M₀ : Set M) = ⊤) :
     (P.submodulesBasis_pow_smul hs hs0 M₀ hspan).topology
       = (P.submodulesBasis_pow_smul ht ht0 M₀ hspan).topology :=
-  (P.submodulesBasis_pow_smul hs hs0 M₀ hspan).topology_eq
-    (P.submodulesBasis_pow_smul ht ht0 M₀ hspan)
-    (P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
-      hs.isUnit ht.isTopologicallyNilpotent hs0 ht0 M₀)
-    (P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
-      ht.isUnit hs.isTopologicallyNilpotent ht0 hs0 M₀)
+  ((P.submodulesBasis_pow_smul hs hs0 M₀ hspan).topology_eq_iff
+    (P.submodulesBasis_pow_smul ht ht0 M₀ hspan)).2
+    ⟨fun n ↦ (P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
+      ht.isUnit hs.isTopologicallyNilpotent ht0 hs0 M₀ n).imp fun _ ↦ SetLike.coe_subset_coe.2,
+    fun n ↦ (P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
+      hs.isUnit ht.isTopologicallyNilpotent hs0 ht0 M₀ n).imp fun _ ↦ SetLike.coe_subset_coe.2⟩
 
 /-- **The induced topology does not depend on the lattice or the pseudouniformiser.** Two finitely
 generated `A₀`-submodules that each span `M` over `A`, filtered by any two pseudouniformisers in
@@ -274,23 +274,21 @@ theorem submodulesBasis_pow_smul_topology_eq (P : PairOfDefinition A) {s t : A}
     (hspan₁ : Submodule.span A (M₁ : Set M) = ⊤) (hfg₀ : M₀.FG) (hfg₁ : M₁.FG) :
     (P.submodulesBasis_pow_smul hs hs0 M₀ hspan₀).topology
       = (P.submodulesBasis_pow_smul ht ht0 M₁ hspan₁).topology := by
-  apply (P.submodulesBasis_pow_smul hs hs0 M₀ hspan₀).topology_eq
-    (P.submodulesBasis_pow_smul ht ht0 M₁ hspan₁)
-  · intro n
-    obtain ⟨j, hj⟩ := P.ringOfDefinition.exists_pow_smul_le_pow_smul P.isOpen_ringOfDefinition
-      hs.isTopologicallyNilpotent hs0 M₀ M₁
-      (by rw [hspan₀]; exact fun _ _ ↦ Submodule.mem_top) hfg₁ n
-    obtain ⟨k, hk⟩ :=
-      P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
-        hs.isUnit ht.isTopologicallyNilpotent hs0 ht0 M₁ j
-    exact ⟨k, hk.trans hj⟩
-  · intro n
-    obtain ⟨j, hj⟩ := P.ringOfDefinition.exists_pow_smul_le_pow_smul P.isOpen_ringOfDefinition
+  refine ((P.submodulesBasis_pow_smul hs hs0 M₀ hspan₀).topology_eq_iff
+    (P.submodulesBasis_pow_smul ht ht0 M₁ hspan₁)).2 ⟨fun n ↦ ?_, fun n ↦ ?_⟩
+  · obtain ⟨j, hj⟩ := P.ringOfDefinition.exists_pow_smul_le_pow_smul P.isOpen_ringOfDefinition
       ht.isTopologicallyNilpotent ht0 M₁ M₀
       (by rw [hspan₁]; exact fun _ _ ↦ Submodule.mem_top) hfg₀ n
     obtain ⟨k, hk⟩ :=
       P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
         ht.isUnit hs.isTopologicallyNilpotent ht0 hs0 M₀ j
-    exact ⟨k, hk.trans hj⟩
+    exact ⟨k, SetLike.coe_subset_coe.2 (hk.trans hj)⟩
+  · obtain ⟨j, hj⟩ := P.ringOfDefinition.exists_pow_smul_le_pow_smul P.isOpen_ringOfDefinition
+      hs.isTopologicallyNilpotent hs0 M₀ M₁
+      (by rw [hspan₀]; exact fun _ _ ↦ Submodule.mem_top) hfg₁ n
+    obtain ⟨k, hk⟩ :=
+      P.ringOfDefinition.exists_pow_smul_le_pow_smul_of_isUnit P.isOpen_ringOfDefinition
+        hs.isUnit ht.isTopologicallyNilpotent hs0 ht0 M₁ j
+    exact ⟨k, SetLike.coe_subset_coe.2 (hk.trans hj)⟩
 
 end TauCeti.Huber.PairOfDefinition

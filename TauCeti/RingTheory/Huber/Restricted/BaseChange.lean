@@ -77,8 +77,8 @@ type `M ⊗[A] MvPowerSeries (Fin k) A →ₗ[A] MvPowerSeries (Fin k) M`.
   that is where the Tate, noetherian and completeness hypotheses on `A` enter, and the only place
   they do. Nothing beyond the module topology is asked of `M`.
 * `restrictedMvPowerSeriesBaseChangeEquiv`: the same, packaged as
-  `M ⊗[A] A⟨T₁, …, Tₖ⟩ ≃ₗ[A] M⟨T₁, …, Tₖ⟩` — the form the Layer 4.1 consequences consume — with
-  `restrictedMvPowerSeriesBaseChangeEquiv_apply` identifying it with the comparison map.
+  `M ⊗[A] A⟨T₁, …, Tₖ⟩ ≃ₗ[A] M⟨T₁, …, Tₖ⟩`, with `restrictedMvPowerSeriesBaseChangeEquiv_apply`
+  identifying it with the comparison map.
 
 The two presentation-level statements hypothesise the topological properties of the presentation,
 `hmap` and `hstrict`, rather than deriving them, and so carry no Tate, noetherian or completeness
@@ -114,16 +114,11 @@ finite free case runs through Mathlib's `TensorProduct.comm` and `TensorProduct.
 everything else — the restricted comparison map, its coefficient lemmas, and the identification
 `restrictedMvPowerSeriesFinPiEquiv` — is this repository's own.
 
-AINTLIB (`github.com/CBirkbeck/AINTLIB` @ `37bbdaeb9`, Apache-2.0), the roadmap's designated prior
-formalisation for this layer, **does** have counterparts, and they were consulted rather than
-ported: `Adic spaces/RestrictedModule.lean` defines `restrictedModule` and `restrictedModule.map`
-at module coefficients with `restrictedModule_map_surjective`, and
-`Adic spaces/Wedhorn828.lean` proves `muMap_bijective_of_finite` — Remark 8.29 in full, both
-halves, for `Module.Finite A M`.
-
-An earlier revision of this section claimed the opposite. That claim came from grepping this
-repository's vocabulary (`restrictedMvPowerSeries`) against a source that names the same objects
-`restrictedModule` and `muMap`, and it was wrong.
+AINTLIB (`github.com/CBirkbeck/AINTLIB` @ `37bbdaeb9`, Apache-2.0), a prior formalisation of this
+material, **does** have counterparts, and they were consulted rather than ported:
+`Adic spaces/RestrictedModule.lean` defines `restrictedModule` and `restrictedModule.map` at
+module coefficients with `restrictedModule_map_surjective`, and `Adic spaces/Wedhorn828.lean`
+proves `muMap_bijective_of_finite` — Remark 8.29 in full, both halves, for `Module.Finite A M`.
 
 The hypotheses differ, which is why this is a separate development rather than a port. AINTLIB
 fixes `M` to carry the *module topology* and assumes `Module.Finite A M`, deriving openness of
@@ -417,7 +412,7 @@ and is `restrictedMvPowerSeriesBaseChange_injective_of_presentation`.
 strictly stronger: `M` carries `ContinuousAdd` rather than `IsTopologicalAddGroup`, so without
 translation invariance global openness does not follow from openness at `0`. A caller holding
 `IsOpenMap p` passes `map_zero p ▸ hopen.nhds_le 0`; over a complete Tate ring that open map is
-`TauCeti.Huber.IsTateRing.isOpenMap`. -/
+`LinearMap.isOpenMap_of_isTateRing`. -/
 theorem restrictedMvPowerSeriesBaseChange_surjective_of_presentation {m : ℕ} {M : Type*}
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousSMul A M] [(nhds (0 : Fin m → A)).IsCountablyGenerated]
@@ -534,8 +529,8 @@ theorem restrictedMvPowerSeriesBaseChange_bijective :
 
 variable (k A M) in
 /-- **Remark 8.29**, packaged: `M ⊗[A] A⟨T₁, …, Tₖ⟩ ≃ₗ[A] M⟨T₁, …, Tₖ⟩` for a finite module `M`
-with its module topology over a complete noetherian Tate ring. This is the form the Layer 4.1
-consequences consume; `restrictedMvPowerSeriesBaseChange_bijective` is the content. -/
+with its module topology over a complete noetherian Tate ring.
+`restrictedMvPowerSeriesBaseChange_bijective` is the content. -/
 noncomputable def restrictedMvPowerSeriesBaseChangeEquiv :
     TensorProduct A M (restrictedMvPowerSeriesSubring k A) ≃ₗ[A]
       restrictedMvPowerSeriesSubmodule k A M :=

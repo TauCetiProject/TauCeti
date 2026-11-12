@@ -35,6 +35,11 @@ compatible with extracting scalar actions from the outside of a loop; and both a
 `R`-linear in an `R`-linear monoidal category. The zero object has both dimensions zero in a
 preadditive monoidal category.
 
+The traces depend on the pivotal structure only through an automorphism of `X`: if `φ` and `ψ`
+are the pivotal isomorphisms of two pivotal structures on `C`, the left trace of `f` for `φ` is
+the left trace for `ψ` of `ψ_X ≫ φ_X⁻¹ ≫ f`, and the right trace of `f` for `φ` is the right trace
+for `ψ` of `f ≫ φ_X ≫ ψ_X⁻¹`.
+
 ## Main declarations
 
 * `TauCeti.leftTrace` and `TauCeti.rightTrace`: the two traces of an endomorphism, with their
@@ -53,7 +58,10 @@ preadditive monoidal category.
 * `TauCeti.leftTrace_unit` and `TauCeti.rightTrace_unit`: the trace of a scalar is itself, and
   `TauCeti.leftDim_unit`, `TauCeti.rightDim_unit`;
 * `TauCeti.leftTrace_add`, `TauCeti.leftTrace_smul` and their right-handed versions: additivity
-  in a preadditive monoidal category, and `R`-linearity in an `R`-linear one.
+  in a preadditive monoidal category, and `R`-linearity in an `R`-linear one;
+* `TauCeti.leftTrace_eq_leftTrace_comp` and `TauCeti.rightTrace_eq_rightTrace_comp`: changing
+  the pivotal structure, with the corollaries `TauCeti.leftDim_eq_leftTrace` and
+  `TauCeti.rightDim_eq_rightTrace` for the dimensions.
 
 ## References
 
@@ -247,14 +255,9 @@ theorem rightTrace_unit (a : 𝟙_ C ⟶ 𝟙_ C) : rightTrace a = a := by
 
 end Unit
 
-section Linear
+section Zero
 
-variable [Preadditive C] [MonoidalPreadditive C]
-
-/-- The left trace is additive. -/
-@[simp]
-theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f + leftTrace g := by
-  simp [leftTrace_def]
+variable [HasZeroMorphisms C]
 
 /-- The left trace of zero is zero. -/
 @[simp]
@@ -265,6 +268,27 @@ theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
 @[simp]
 theorem leftDim_zero [HasZeroObject C] : leftDim (0 : C) = 0 := by
   rw [← leftTrace_id, id_zero, leftTrace_zero]
+
+/-- The right trace of zero is zero. -/
+@[simp]
+theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
+  simp [rightTrace_def]
+
+/-- The zero object has right pivotal dimension zero. -/
+@[simp]
+theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
+  rw [← rightTrace_id, id_zero, rightTrace_zero]
+
+end Zero
+
+section Linear
+
+variable [Preadditive C] [MonoidalPreadditive C]
+
+/-- The left trace is additive. -/
+@[simp]
+theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f + leftTrace g := by
+  simp [leftTrace_def]
 
 /-- The left trace commutes with finite sums. -/
 @[simp]
@@ -290,16 +314,6 @@ theorem leftTrace_sub {X : C} (f g : X ⟶ X) : leftTrace (f - g) = leftTrace f 
 theorem rightTrace_add {X : C} (f g : X ⟶ X) :
     rightTrace (f + g) = rightTrace f + rightTrace g := by
   simp [rightTrace_def]
-
-/-- The right trace of zero is zero. -/
-@[simp]
-theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
-  simp [rightTrace_def]
-
-/-- The zero object has right pivotal dimension zero. -/
-@[simp]
-theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
-  rw [← rightTrace_id, id_zero, rightTrace_zero]
 
 /-- The right trace commutes with finite sums. -/
 @[simp]
@@ -334,5 +348,52 @@ theorem rightTrace_smul {X : C} (r : R) (f : X ⟶ X) : rightTrace (r • f) = r
   simp [rightTrace_def]
 
 end Linear
+
+section ChangeOfPivotal
+
+/-! Two pivotal structures `P` and `Q` on the same rigid category are compared here, so the
+pivotal structure of each trace is passed explicitly. -/
+
+omit [PivotalCategory C]
+
+variable (P Q : PivotalCategory C)
+
+/-- Changing the pivotal structure in the left trace: the left trace of `f` for `P` is the left
+trace for `Q` of `f` precomposed with the automorphism `ψ_X ≫ φ_X⁻¹` of `X`, where `φ` and `ψ`
+are the pivotal isomorphisms of `P` and `Q`. -/
+theorem leftTrace_eq_leftTrace_comp {X : C} (f : X ⟶ X) :
+    @leftTrace C _ _ _ P X f =
+      @leftTrace C _ _ _ Q X
+        ((@pivotalIsoApp C _ _ _ Q X).hom ≫ (@pivotalIsoApp C _ _ _ P X).inv ≫ f) := by
+  rw [@leftTrace_eq_pivotalIsoApp C _ _ _ P, @leftTrace_eq_pivotalIsoApp C _ _ _ Q]
+  simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc, whiskerLeft_inv_hom_assoc]
+
+/-- Changing the pivotal structure in the right trace: the right trace of `f` for `P` is the
+right trace for `Q` of `f` followed by the automorphism `φ_X ≫ ψ_X⁻¹` of `X`, where `φ` and `ψ`
+are the pivotal isomorphisms of `P` and `Q`. -/
+theorem rightTrace_eq_rightTrace_comp {X : C} (f : X ⟶ X) :
+    @rightTrace C _ _ _ P X f =
+      @rightTrace C _ _ _ Q X
+        (f ≫ (@pivotalIsoApp C _ _ _ P X).hom ≫ (@pivotalIsoApp C _ _ _ Q X).inv) := by
+  rw [@rightTrace_eq_pivotalIsoApp C _ _ _ P, @rightTrace_eq_pivotalIsoApp C _ _ _ Q]
+  simp only [comp_whiskerRight, Category.assoc, inv_hom_whiskerRight_assoc]
+
+/-- The left dimension of `X` for `P` is the left trace for `Q` of the automorphism
+`ψ_X ≫ φ_X⁻¹` of `X`, where `φ` and `ψ` are the pivotal isomorphisms of `P` and `Q`. -/
+theorem leftDim_eq_leftTrace (X : C) :
+    @leftDim C _ _ _ P X =
+      @leftTrace C _ _ _ Q X
+        ((@pivotalIsoApp C _ _ _ Q X).hom ≫ (@pivotalIsoApp C _ _ _ P X).inv) :=
+  (leftTrace_eq_leftTrace_comp P Q (𝟙 X)).trans (by rw [Category.comp_id])
+
+/-- The right dimension of `X` for `P` is the right trace for `Q` of the automorphism
+`φ_X ≫ ψ_X⁻¹` of `X`, where `φ` and `ψ` are the pivotal isomorphisms of `P` and `Q`. -/
+theorem rightDim_eq_rightTrace (X : C) :
+    @rightDim C _ _ _ P X =
+      @rightTrace C _ _ _ Q X
+        ((@pivotalIsoApp C _ _ _ P X).hom ≫ (@pivotalIsoApp C _ _ _ Q X).inv) :=
+  (rightTrace_eq_rightTrace_comp P Q (𝟙 X)).trans (by rw [Category.id_comp])
+
+end ChangeOfPivotal
 
 end TauCeti

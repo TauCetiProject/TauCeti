@@ -141,6 +141,15 @@ theorem trans_apply_of_mem_Icc (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy 
       Real.smoothTransition.le_one _⟩ : unitInterval) = 0 := secondTime_eq_zero ht.2
   simp only [trans_apply, hfirst, hsecond, apply_one, apply_zero, ite_self]
 
+/-- At each source point, the concatenation only takes values that one of the two isotopies takes
+at that point. -/
+theorem trans_apply_mem (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy f₁ f₂) (hn : n ≤ ∞)
+    {x : M} {s : Set N} (hF : ∀ t, F (t, x) ∈ s) (hG : ∀ t, G (t, x) ∈ s) (t : unitInterval) :
+    F.trans G hn (t, x) ∈ s := by
+  rw [trans_apply]
+  split_ifs
+  exacts [hF _, hG _]
+
 end TauCeti.SmoothIsotopy
 
 namespace TauCeti.SmoothIsotopic

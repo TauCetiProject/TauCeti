@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import TauCeti.Algebra.GroupWithZero.Basic
+public import TauCeti.RingTheory.Perfection
 
 /-!
 # Roots of elements of perfect rings
@@ -24,9 +25,17 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
   of `x` is its `p ^ n`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_dvd_of_le`: deeper roots of `x` divide shallower ones.
 * `TauCeti.isReduced_of_perfectRing`: a perfect ring of prime characteristic is reduced.
-* `TauCeti.mul_eq_zero_of_mul_pow_expChar_eq_zero`: `a * b ^ p = 0` implies `a * b = 0`.
+* `TauCeti.mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing`: `a * b ^ p = 0` implies `a * b = 0`.
 * `TauCeti.mul_iterateFrobeniusEquiv_symm_succ_eq_zero`: an element killing the `p ^ n`-th root
   of `x` also kills its `p ^ (n + 1)`-th root.
+* `TauCeti.frobeniusEquiv_symm_smul`: over a perfect ring of scalars, `p`-th roots are semilinear
+  along the `p`-th root of the scalars.
+* `TauCeti.isRadical_iff_frobeniusEquiv_symm_mem`: an ideal is radical exactly when it contains
+  the `p`-th roots of its elements.
+* `Ideal.IsRadical.sup`, `Ideal.IsRadical.map`, `Ideal.IsRadical.map_inf`: sums of radical ideals
+  are radical, and extension along a homomorphism of perfect rings preserves radical ideals and
+  their intersections. The first fails for general rings: in `ℚ[x, y]` the sum of the radical
+  ideals `(x)` and `(x - y ^ 2)` is `(x, y ^ 2)`, which is not radical.
 -/
 
 public section
@@ -51,10 +60,9 @@ theorem iterateFrobeniusEquiv_symm_succ_pow (x : R) (n : ℕ) :
 /-- Deeper roots of `x` divide shallower ones: the `p ^ n`-th root of `x` divides its
 `p ^ m`-th root when `m ≤ n`. -/
 theorem iterateFrobeniusEquiv_symm_dvd_of_le (x : R) {m n : ℕ} (h : m ≤ n) :
-    (iterateFrobeniusEquiv R p n).symm x ∣ (iterateFrobeniusEquiv R p m).symm x := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [← iterateFrobeniusEquiv_symm_add_pow x m k]
-  exact dvd_pow_self _ (pow_ne_zero _ (expChar_ne_zero R p))
+    (iterateFrobeniusEquiv R p n).symm x ∣ (iterateFrobeniusEquiv R p m).symm x :=
+  dvd_of_compatible_roots (r := fun n ↦ (iterateFrobeniusEquiv R p n).symm x)
+    (iterateFrobeniusEquiv_symm_succ_pow x) h
 
 variable (R p) in
 /-- A perfect ring of prime characteristic `p` is reduced. -/
@@ -64,15 +72,19 @@ theorem isReduced_of_perfectRing [hp : Fact p.Prime] : IsReduced R :=
     rw [map_zero, iterateFrobeniusEquiv_def,
       pow_eq_zero_of_le (Nat.lt_pow_self hp.out.one_lt).le hn]⟩
 
-/-- In a perfect ring of exponential characteristic `p`, if `a` kills `b ^ p` then `a` kills
+omit [ExpChar R p] in
+/-- In a perfect ring for the exponent `p`, if `a` kills `b ^ p` then `a` kills
 `b`. -/
-theorem mul_eq_zero_of_mul_pow_expChar_eq_zero {a b : R} (h : a * b ^ p = 0) : a * b = 0 := by
-  -- In exponential characteristic `1` there is nothing to prove; otherwise `R` is reduced.
-  obtain hp | rfl := expChar_is_prime_or_one R p
-  · have := Fact.mk hp
-    have := isReduced_of_perfectRing R p
-    exact mul_eq_zero_of_mul_pow_eq_zero h
-  · simpa using h
+theorem mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing {a b : R} (h : a * b ^ p = 0) :
+    a * b = 0 := by
+  -- Frobenius is injective; for `p = 0` it is constant, so `R` is trivial.
+  have hinj := (PerfectRing.bijective_frobenius (R := R) (p := p)).1
+  cases p with
+  | zero => exact hinj (by simp : (a * b) ^ 0 = (0 : R) ^ 0)
+  | succ q =>
+    refine hinj (show (a * b) ^ (q + 1) = (0 : R) ^ (q + 1) by
+      rw [mul_pow, zero_pow q.succ_ne_zero,
+        show a ^ (q + 1) * b ^ (q + 1) = a ^ q * (a * b ^ (q + 1)) by ring, h, mul_zero])
 
 /-- If `c` kills the `p ^ n`-th root of `x`, then it kills the `p ^ (n + 1)`-th root of `x`. -/
 theorem mul_iterateFrobeniusEquiv_symm_succ_eq_zero {x c : R} {n : ℕ}
@@ -80,7 +92,7 @@ theorem mul_iterateFrobeniusEquiv_symm_succ_eq_zero {x c : R} {n : ℕ}
     c * (iterateFrobeniusEquiv R p (n + 1)).symm x = 0 := by
   -- The `p ^ n`-th root is the `p`-th power of the `p ^ (n + 1)`-th root.
   rw [← iterateFrobeniusEquiv_symm_succ_pow x n] at h
-  exact mul_eq_zero_of_mul_pow_expChar_eq_zero h
+  exact mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing h
 
 /-- If `c` kills the `p ^ n`-th root of `x`, then it kills every positive power of the
 `p ^ (n + 1)`-th root of `x`. -/
@@ -90,4 +102,66 @@ theorem mul_iterateFrobeniusEquiv_symm_succ_pow_eq_zero {x c : R} {n k : ℕ} (h
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
   rw [pow_succ', ← mul_assoc, mul_iterateFrobeniusEquiv_symm_succ_eq_zero h, zero_mul]
 
+/-- Over a perfect ring of scalars `A`, the `p`-th root of `R` is semilinear along the `p`-th root
+of `A`: `(a • x) ^ (1 / p) = a ^ (1 / p) • x ^ (1 / p)`. -/
+theorem frobeniusEquiv_symm_smul {A : Type*} [CommSemiring A] [ExpChar A p] [PerfectRing A p]
+    [Algebra A R] (a : A) (x : R) :
+    (frobeniusEquiv R p).symm (a • x) =
+      (frobeniusEquiv A p).symm a • (frobeniusEquiv R p).symm x := by
+  rw [Algebra.smul_def, Algebra.smul_def, map_mul, RingHom.map_frobeniusEquiv_symm]
+
+variable (p) [Fact p.Prime]
+
+/-- In a perfect ring of prime characteristic `p`, an ideal is radical exactly when it contains
+the `p`-th roots of its elements. -/
+theorem isRadical_iff_frobeniusEquiv_symm_mem {I : Ideal R} :
+    I.IsRadical ↔ ∀ x ∈ I, (frobeniusEquiv R p).symm x ∈ I := by
+  rw [Ideal.isRadical_iff_pow_one_lt p (Fact.out : p.Prime).one_lt]
+  refine ⟨fun h x hx ↦ h _ ?_, fun h x hx ↦ ?_⟩
+  · rwa [← frobenius_def, frobenius_apply_frobeniusEquiv_symm]
+  · simpa using h _ hx
+
 end TauCeti
+
+namespace Ideal.IsRadical
+
+open TauCeti
+
+variable {R S F : Type*} [CommSemiring R] [CommSemiring S] {I J : Ideal R}
+
+/-- In a perfect ring of prime characteristic, the sum of two radical ideals is radical: taking
+`p`-th roots is additive. -/
+theorem sup (p : ℕ) [Fact p.Prime] [ExpChar R p] [PerfectRing R p] (hI : I.IsRadical)
+    (hJ : J.IsRadical) : (I ⊔ J).IsRadical := by
+  refine (isRadical_iff_frobeniusEquiv_symm_mem p).mpr fun x hx ↦ ?_
+  obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.mp hx
+  rw [map_add]
+  exact add_mem (mem_sup_left ((isRadical_iff_frobeniusEquiv_symm_mem p).mp hI a ha))
+    (mem_sup_right ((isRadical_iff_frobeniusEquiv_symm_mem p).mp hJ b hb))
+
+variable [FunLike F R S] [RingHomClass F R S]
+
+/-- The extension of a radical ideal along a homomorphism of perfect rings of prime
+characteristic is radical. -/
+theorem map (p : ℕ) [Fact p.Prime] [ExpChar R p] [PerfectRing R p] [ExpChar S p]
+    [PerfectRing S p] (hI : I.IsRadical) (φ : F) : (I.map φ).IsRadical := by
+  refine (isRadical_iff_frobeniusEquiv_symm_mem p).mpr fun y hy ↦ ?_
+  -- Taking `p`-th roots commutes with `φ` and preserves `I`, hence preserves `I.map φ`.
+  refine (map_le_iff_le_comap.mpr fun x hx ↦ ?_ : I.map φ ≤ (I.map φ).comap
+    (frobeniusEquiv S p).symm) hy
+  rw [mem_comap, mem_comap, ← RingHom.coe_coe φ, ← RingHom.map_frobeniusEquiv_symm]
+  exact mem_map_of_mem _ ((isRadical_iff_frobeniusEquiv_symm_mem p).mp hI x hx)
+
+/-- Extension along a homomorphism of perfect rings of prime characteristic commutes with
+intersections of radical ideals. -/
+theorem map_inf (p : ℕ) [Fact p.Prime] [ExpChar R p] [PerfectRing R p] [ExpChar S p]
+    [PerfectRing S p] (hI : I.IsRadical) (hJ : J.IsRadical) (φ : F) :
+    (I ⊓ J).map φ = I.map φ ⊓ J.map φ := by
+  refine le_antisymm (map_inf_le φ) ?_
+  calc I.map φ ⊓ J.map φ ≤ ((I * J).map φ).radical := by
+        rw [Ideal.map_mul, radical_mul]
+        exact inf_le_inf le_radical le_radical
+    _ ≤ ((I ⊓ J).map φ).radical := radical_mono (map_mono mul_le_inf)
+    _ = (I ⊓ J).map φ := ((hI.inf hJ).map p φ).radical
+
+end Ideal.IsRadical

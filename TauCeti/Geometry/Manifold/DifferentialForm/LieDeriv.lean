@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.LieDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -34,14 +36,23 @@ The two characterizations below show that the definition is intrinsic.
 
 * `TauCeti.mlieDerivFormWithin`, `TauCeti.mlieDerivForm`: the Lie derivative of a rough form.
 * `TauCeti.mlieDerivFormWithin_add`, `TauCeti.mlieDerivFormWithin_smul`: linearity in the form.
+* `TauCeti.mlieDerivFormWithin_add_left`, `TauCeti.mlieDerivForm_add_left`: additivity in the
+  vector field.
 * `TauCeti.mlieDerivFormWithin_apply_vectorField`, `TauCeti.mlieDerivForm_apply_vectorField`:
   the bracket formula.
+* `TauCeti.mlieDerivForm_apply_one`: the bracket formula for a one-form.
 * `TauCeti.mlieDerivFormWithin_eq_interior_mextDerivWithin_add`,
   `TauCeti.mlieDerivForm_eq_interior_mextDeriv_add`: Cartan's magic formula.
+* `TauCeti.mlieDerivForm_apply_eq_mextDeriv_add`: Cartan's magic formula for a one-form,
+  evaluated on a tangent vector.
 * `TauCeti.mlieDerivFormWithin_eq_mextDerivWithin_interior`,
   `TauCeti.mlieDerivForm_eq_mextDeriv_interior`: on closed forms, `L_V φ = d (ι_V φ)`.
 * `TauCeti.mlieDerivFormWithin_eq_lieDerivFormWithin`: over the model space, the manifold Lie
   derivative is the flat one.
+* `TauCeti.SmoothForm.mlieDerivForm_eq_interior_mextDeriv_add`,
+  `TauCeti.SmoothForm.mlieDerivForm_eq_mextDeriv_interior`: bundled smooth-form entry points.
+* `TauCeti.SmoothForm.mlieDerivForm_mem_smoothBundleForms`: the Lie derivative of a smooth form
+  along a smooth vector field is smooth.
 
 ## References
 
@@ -53,7 +64,7 @@ public section
 noncomputable section
 
 open Set Filter Bundle VectorField
-open scoped Manifold Topology
+open scoped Manifold Topology ContDiff
 
 namespace TauCeti
 
@@ -169,6 +180,32 @@ theorem mlieDerivForm_eq_lieDerivForm (V : (x : E) → TangentSpace 𝓘(ℝ, E)
 
 variable [IsManifold I 1 M]
 
+/-! ### Linearity in the vector field -/
+
+/-- The Lie derivative within a set is additive in the vector field, at a point where both fields
+are differentiable within the set and derivatives within it are unique. No differentiability of
+the form is needed. -/
+theorem mlieDerivFormWithin_add_left {W : (x : M) → TangentSpace I x} (φ : RoughForm I M F k)
+    (hs : UniqueMDiffWithinAt I s x)
+    (hV : MDifferentiableWithinAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) s x)
+    (hW : MDifferentiableWithinAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) s x) :
+    mlieDerivFormWithin (V + W) φ s x =
+      mlieDerivFormWithin V φ s x + mlieDerivFormWithin W φ s x := by
+  simp only [mlieDerivFormWithin_def, VectorField.mpullbackWithin_add]
+  exact lieDerivFormWithin_add_left _ hs
+    hV.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+    hW.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+
+/-- The Lie derivative is additive in the vector field, at a point where both fields are
+differentiable. No differentiability of the form is needed. -/
+theorem mlieDerivForm_add_left {W : (x : M) → TangentSpace I x} (φ : RoughForm I M F k)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
+    mlieDerivForm (V + W) φ x = mlieDerivForm V φ x + mlieDerivForm W φ x := by
+  simpa only [mlieDerivFormWithin_univ] using
+    mlieDerivFormWithin_add_left φ (uniqueMDiffWithinAt_univ I) hV.mdifferentiableWithinAt
+      hW.mdifferentiableWithinAt
+
 /-! ### The bracket formula -/
 
 /-- **The bracket formula** within a set: evaluated on differentiable vector fields
@@ -215,6 +252,27 @@ theorem mlieDerivForm_apply_vectorField {φ : RoughForm I M F k}
     mlieDerivFormWithin_apply_vectorField (V := V) hφ.mdifferentiableWithinAt
       (fun i ↦ (hX i).mdifferentiableWithinAt) (uniqueMDiffWithinAt_univ I)
 
+/-- **The bracket formula** for a one-form `φ` and a differentiable vector field `W`:
+`L_V φ (W) = V (φ (W)) - φ ([V, W])`. -/
+theorem mlieDerivForm_apply_one {φ : RoughForm I M F 1} {W : (y : M) → TangentSpace I y}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
+    mlieDerivForm V φ x ![W x] =
+      mvfderiv I (fun y ↦ φ y ![W y]) x (V x) - φ x ![mlieBracket I V W x] := by
+  have h := mlieDerivForm_apply_vectorField (V := V) (X := ![W]) hφ
+    (fun i ↦ by fin_cases i; exact hW)
+  -- Normalize the one-element tuples, which the general formula leaves as functions of `Fin 1`.
+  have htuple (y : M) : (![W] · y) = ![W y] := by
+    funext i
+    fin_cases i
+    rfl
+  have hupd : Function.update ![W x] 0 (mlieBracket I V W x) = ![mlieBracket I V W x] := by
+    funext i
+    fin_cases i
+    rfl
+  simpa only [htuple, Fin.sum_univ_one, Matrix.cons_val_zero, hupd] using h
+
 /-! ### Cartan's magic formula -/
 
 /-- **Cartan's magic formula** within a set, `L_V φ = ι_V dφ + d (ι_V φ)`, for a form and a vector
@@ -248,6 +306,28 @@ theorem mlieDerivForm_eq_interior_mextDeriv_add_apply {φ : RoughForm I M F (k +
   simpa only [mlieDerivFormWithin_univ, mextDerivWithin_univ] using
     mlieDerivFormWithin_eq_interior_mextDerivWithin_add hφ.mdifferentiableWithinAt
       hV.mdifferentiableWithinAt (uniqueMDiffWithinAt_univ I)
+
+/-- **Cartan's magic formula** for a one-form `φ`, evaluated on a tangent vector:
+`L_V φ (v) = dφ (V, v) + df (v)`, where the function `f = φ(V)` is the contraction `ι_V φ`. -/
+theorem mlieDerivForm_apply_eq_mextDeriv_add {φ : RoughForm I M F 1} {f : M → F}
+    (hf : ∀ y, φ y ![V y] = f y)
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (v : TangentSpace I x) :
+    mlieDerivForm V φ x ![v] = mextDeriv φ x ![V x, v] + mvfderiv I f x v := by
+  -- The contraction `ι_V φ` is the `0`-form of `f`.
+  have hι : RoughForm.interior V φ = RoughForm.ofFunction I f := by
+    rw [RoughForm.eq_ofFunction (RoughForm.interior V φ)]
+    congr 1
+    funext y
+    rw [RoughForm.interior_apply, ← hf y]
+    congr 1
+    ext i
+    fin_cases i
+    rfl
+  rw [mlieDerivForm_eq_interior_mextDeriv_add_apply hφ hV, hι]
+  simp [mextDeriv_ofFunction]
 
 /-- **Cartan's magic formula** `L_V = ι_V ∘ d + d ∘ ι_V` on differentiable forms, along a
 differentiable vector field. -/
@@ -292,6 +372,7 @@ theorem mlieDerivForm_eq_mextDeriv_interior {φ : RoughForm I M F (k + 1)}
     mlieDerivForm V φ = mextDeriv (φ.interior V) :=
   funext fun x ↦ mlieDerivForm_eq_mextDeriv_interior_apply (hφ x) (hV x) (congrFun hdφ x)
 
+omit [IsManifold I 1 M] in
 /-- Cartan's formula in degree zero within a set, `L_V f = ι_V df`, holds for every rough
 `0`-form and every vector field. -/
 theorem mlieDerivFormWithin_eq_interior_mextDerivWithin (V : (x : M) → TangentSpace I x)
@@ -302,6 +383,7 @@ theorem mlieDerivFormWithin_eq_interior_mextDerivWithin (V : (x : M) → Tangent
   rw [VectorField.mpullbackWithin_extChartAt_symm_self, RoughForm.interior_apply_eq_curryLeft,
     mextDerivWithin_def]
 
+omit [IsManifold I 1 M] in
 /-- Cartan's formula in degree zero, `L_V f = ι_V df`, holds for every rough `0`-form and every
 vector field. -/
 theorem mlieDerivForm_eq_interior_mextDeriv (V : (x : M) → TangentSpace I x)
@@ -309,5 +391,40 @@ theorem mlieDerivForm_eq_interior_mextDeriv (V : (x : M) → TangentSpace I x)
   funext x
   simpa only [mlieDerivFormWithin_univ, mextDerivWithin_univ] using
     mlieDerivFormWithin_eq_interior_mextDerivWithin V φ univ x
+
+namespace SmoothForm
+
+/-- Cartan's magic formula for a smooth fixed-coefficient form, exposed through the bundled
+`SmoothForm` carrier. The vector field is supplied as a differentiable tangent-valued map. -/
+theorem mlieDerivForm_eq_interior_mextDeriv_add {φ : SmoothForm I M F (k + 1)}
+    {V : (x : M) → TangentSpace I x}
+    (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M))) :
+    mlieDerivForm V φ.1 = (mextDeriv φ.1).interior V + mextDeriv (RoughForm.interior V φ.1) := by
+  exact TauCeti.mlieDerivForm_eq_interior_mextDeriv_add φ.mdifferentiable hV
+
+/-- On a smooth closed form, along a differentiable vector field, the Lie derivative is the exterior
+derivative of its contraction. -/
+theorem mlieDerivForm_eq_mextDeriv_interior {φ : SmoothForm I M F (k + 1)}
+    {V : (x : M) → TangentSpace I x}
+    (hV : MDifferentiable I I.tangent (fun y ↦ (V y : TangentBundle I M)))
+    (hφ : φ.IsClosed) :
+    mlieDerivForm V φ.1 = mextDeriv (RoughForm.interior V φ.1) := by
+  exact TauCeti.mlieDerivForm_eq_mextDeriv_interior φ.mdifferentiable hV
+    ((SmoothForm.isClosed_def φ).mp hφ)
+
+/-- The Lie derivative of a smooth fixed-coefficient form along a smooth vector field is smooth. -/
+theorem mlieDerivForm_mem_smoothBundleForms [IsManifold I 2 M] {k : ℕ} (φ : SmoothForm I M F k)
+    {V : (x : M) → TangentSpace I x}
+    (hV : ContMDiff I I.tangent ∞ (fun y ↦ (V y : TangentBundle I M))) :
+    mlieDerivForm V φ.1 ∈ smoothBundleForms I F (Bundle.Trivial M F) k := by
+  have hdφ := (isSmoothForm_mextDeriv φ.isSmoothForm (n := ∞) (by simp)).interior hV
+  cases k with
+  | zero => exact (mlieDerivForm_eq_interior_mextDeriv V φ.1).symm ▸ hdφ.mem_smoothBundleForms
+  | succ k =>
+    rw [mlieDerivForm_eq_interior_mextDeriv_add (hV.mdifferentiable (by simp))]
+    exact add_mem hdφ.mem_smoothBundleForms
+      (mextDeriv_mem_smoothBundleForms (φ.isSmoothForm.interior hV).mem_smoothBundleForms)
+
+end SmoothForm
 
 end TauCeti

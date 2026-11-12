@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Height.NumberField
-public import TauCeti.NumberTheory.NumberField.FinitePlace
+public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
 import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.NumberTheory.Height.NumberField
 
 /-!
 # Heights of S-integers
@@ -18,8 +19,11 @@ import Mathlib.Algebra.FiniteSupport.Basic
 The height of an S-integer is supported on the primes in S and the infinite places.
 This file translates membership in Mathlib's S-integers and S-units into finite-place
 absolute values, proves the resulting multiplicative and logarithmic height identities,
-and shows that the multiplicative identity characterizes S-integers.
+shows that the multiplicative identity characterizes S-integers, and records the product formula
+for an S-unit as a product over the infinite places and S
+(`NumberField.prod_abs_eq_one_of_mem_unit`).
 The set S may be arbitrary; finset versions give ordinary products and sums.
+At `S = ∅` the element `1 / 2` shows that the S-integer hypothesis cannot be dropped.
 
 Adapted from Ralf Stephan's `ArithmeticHeights/SUnit.lean` in `rwst/Subspace-Theorems`,
 commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0), using Mathlib's height API.
@@ -48,6 +52,15 @@ theorem _root_.Set.mem_unit_iff_finitePlace (S : Set (HeightOneSpectrum (𝓞 K)
     x ∈ S.unit K ↔ ∀ v ∉ S, FinitePlace.mk v (x : K) = 1 :=
   (Set.mem_unit_iff S K).trans <|
     forall₂_congr fun v _ ↦ (FinitePlace.mk_apply_eq_one_iff v (x : K)).symm
+
+/-- A nonzero element of `K` which has absolute value `1` at every finite place outside `S` is
+an `S`-unit. -/
+theorem exists_sUnit_coe_eq {S : Set (HeightOneSpectrum (𝓞 K))} {x : K} (hx0 : x ≠ 0)
+    (hx : ∀ v ∉ S, HeightOneSpectrum.adicAbv K v x = 1) :
+    ∃ y : S.unit K, ((y : Kˣ) : K) = x :=
+  ⟨⟨Units.mk0 x hx0, (Set.mem_unit_iff_finitePlace _ _).mpr fun v hv ↦ by
+    rw [FinitePlace.mk_apply, FinitePlace.norm_embedding, Units.val_mk0]
+    exact hx v hv⟩, rfl⟩
 
 section Height
 
@@ -126,6 +139,19 @@ theorem logHeight₁_eq_sum_of_mem_integer (S : Finset (HeightOneSpectrum (𝓞 
       + ∑ v ∈ S, log⁺ (FinitePlace.mk v x) := by
   rw [logHeight₁_eq_of_mem_integer _ hx, finsum_mem_coe_finset]
 
+/-- **The product formula for an `S`-unit**: its absolute values at the infinite places, with
+multiplicities, and at the places of `S` multiply to `1`. This is Mathlib's `prod_abs_eq_one` with
+the factors at the finite places outside `S`, all equal to `1`, removed. -/
+theorem prod_abs_eq_one_of_mem_unit (S : Finset (HeightOneSpectrum (𝓞 K))) {u : Kˣ}
+    (hu : u ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K) :
+    (∏ w : InfinitePlace K, w (u : K) ^ w.mult) * ∏ v ∈ S, FinitePlace.mk v (u : K) = 1 := by
+  rw [← prod_abs_eq_one u.ne_zero,
+    ← finprod_comp_equiv (FinitePlace.equivHeightOneSpectrum (K := K)).symm]
+  congr 1
+  refine (finprod_eq_finsetProd_of_mulSupport_subset _ fun v hv ↦ ?_).symm
+  by_contra hvS
+  exact hv ((Set.mem_unit_iff_finitePlace _ u).mp hu v hvS)
+
 /-!
 ### The identity characterizes the `S`-integers
 -/
@@ -184,5 +210,24 @@ theorem mulHeight₁_eq_iff_mem_integer (S : Set (HeightOneSpectrum (𝓞 K))) {
   have key := mul_le_mul_of_nonneg_left hrest (le_trans zero_le_one (hone v))
   rw [mul_one, hsing] at key
   exact le_of_max_le_left key
+
+/-!
+### The `S`-integer hypothesis cannot be dropped
+
+At `S = ∅` the identity says that the height of an algebraic integer is carried by the infinite
+places. The element `1 / 2` is not an algebraic integer: its infinite factor is `1`, while its
+height is `2 ^ [K : ℚ]`, all of it carried by the finite places above `2`.
+-/
+
+-- `1 / 2` has absolute value `1 / 2` at every infinite place, so its infinite factor is `1`.
+example : ∏ w : InfinitePlace K, max (w (2⁻¹ : K)) 1 ^ w.mult = 1 := by
+  refine Finset.prod_eq_one fun w _ ↦ ?_
+  have h : w (2 : K) = 2 := by simpa using w.map_natCast 2
+  rw [map_inv₀, h, max_eq_right (by norm_num), one_pow]
+
+-- The height of `1 / 2` is that of `2`, which is `2 ^ [K : ℚ]`.
+example : mulHeight₁ (2⁻¹ : K) = 2 ^ Module.finrank ℚ K := by
+  rw [mulHeight₁_inv]
+  exact_mod_cast mulHeight₁_natCast (K := K) 2
 
 end NumberField

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.StudentT.Cdf
 public import TauCeti.Probability.Quantile
-public import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
 # Quantiles of Student's t laws
@@ -49,10 +48,13 @@ private theorem studentT_betaArgument_sqrt (hν : 0 < ν) {b : ℝ} (hb : b ∈ 
   field_simp [hb.1.ne', hν.ne']
   ring
 
-/-- The median quantile of a positive-degree Student t law is zero. -/
+/-- The median quantile of a Student t law is zero (for `ν ≤ 0` the law is the zero measure). -/
 @[simp]
-theorem quantile_studentTMeasure_half (hν : 0 < ν) :
+theorem quantile_studentTMeasure_half :
     (studentTMeasure ν).quantile (2⁻¹) = 0 := by
+  by_cases hν : 0 < ν
+  swap
+  · rw [studentTMeasure_of_nonpos (not_lt.1 hν), Measure.quantile_zero]
   have hF : cdf (studentTMeasure ν) 0 = 2⁻¹ := by
     have harg : ν / (ν + (0 : ℝ) ^ 2) = 1 := by simp [hν.ne']
     rw [cdf_studentTMeasure_eq hν, ite_eq_right (by norm_num), harg,
@@ -68,7 +70,7 @@ theorem quantile_studentTMeasure_pos (hν : 0 < ν) (hu : u ∈ Ioo 2⁻¹ 1) :
   have h := Measure.strictMonoOn_quantile _ (continuous_cdf_studentTMeasure hν)
     (by norm_num : (2⁻¹ : ℝ) ∈ Ioo 0 1)
     (by constructor <;> linarith [hu.1, hu.2] : u ∈ Ioo 0 1) hu.1
-  simpa only [quantile_studentTMeasure_half hν] using h
+  simpa only [quantile_studentTMeasure_half] using h
 
 private theorem quantile_studentTMeasure_of_lt_half (hν : 0 < ν) (hu0 : 0 < u)
     (huHalf : u < 1 / 2) :
@@ -117,29 +119,19 @@ theorem quantile_studentTMeasure (hν : 0 < ν) (hu : u ∈ Ioo 0 1) :
         sqrt (ν * (1 / inverseRegularizedIncompleteBeta (ν / 2) (1 / 2) (2 * (1 - u)) - 1)) := by
   split_ifs with hlt heq
   · exact quantile_studentTMeasure_of_lt_half hν hu.1 hlt
-  · rw [heq, one_div, quantile_studentTMeasure_half hν]
+  · rw [heq, one_div, quantile_studentTMeasure_half]
   · exact quantile_studentTMeasure_of_half_lt hν hu.2 (lt_of_le_of_ne (not_lt.1 hlt) (Ne.symm heq))
 
 /-- Student t quantiles tend to minus infinity as the probability level tends to zero from above. -/
 theorem tendsto_quantile_studentTMeasure_nhdsGT_zero (hν : 0 < ν) :
-    Tendsto (fun u ↦ ((studentTMeasure ν).quantile u : EReal)) (𝓝[>] 0) (𝓝 ⊥) := by
-  apply EReal.tendsto_coe_nhds_bot_iff.2
-  refine tendsto_atBot.2 fun b ↦ ?_
-  have hb : 0 < cdf (studentTMeasure ν) b :=
-    (cdf_nonneg _ (b - 1)).trans_lt (strictMono_cdf_studentTMeasure hν (by linarith))
-  filter_upwards [Ioo_mem_nhdsGT hb] with u hu
-  exact (Measure.quantile_le_iff _ hu.1
-    (hu.2.trans_le (cdf_le_one (studentTMeasure ν) b))).2 hu.2.le
+    Tendsto (fun u ↦ ((studentTMeasure ν).quantile u : EReal)) (𝓝[>] 0) (𝓝 ⊥) :=
+  Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos _ fun x ↦
+    (cdf_nonneg _ (x - 1)).trans_lt (strictMono_cdf_studentTMeasure hν (by linarith))
 
 /-- Student t quantiles tend to plus infinity as the probability level tends to one from below. -/
 theorem tendsto_quantile_studentTMeasure_nhdsLT_one (hν : 0 < ν) :
-    Tendsto (fun u ↦ ((studentTMeasure ν).quantile u : EReal)) (𝓝[<] 1) (𝓝 ⊤) := by
-  apply EReal.tendsto_coe_nhds_top_iff.2
-  refine tendsto_atTop.2 fun b ↦ ?_
-  have hb : cdf (studentTMeasure ν) b < 1 :=
-    (strictMono_cdf_studentTMeasure hν (by linarith : b < b + 1)).trans_le (cdf_le_one _ (b + 1))
-  filter_upwards [Ioo_mem_nhdsLT hb] with u hu
-  exact ((Measure.lt_quantile_iff _
-    ((cdf_nonneg (studentTMeasure ν) b).trans_lt hu.1) hu.2).2 hu.1).le
+    Tendsto (fun u ↦ ((studentTMeasure ν).quantile u : EReal)) (𝓝[<] 1) (𝓝 ⊤) :=
+  Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one _ fun x ↦
+    (strictMono_cdf_studentTMeasure hν (by linarith : x < x + 1)).trans_le (cdf_le_one _ (x + 1))
 
 end TauCeti.Probability

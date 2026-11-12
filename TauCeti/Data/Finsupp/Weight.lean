@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
@@ -35,6 +36,7 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
   the summand `n • c none` from the weighted sum.
@@ -47,12 +49,23 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
 * `Finsupp.weight_filter_lt_add_smul_add_weight_filter_gt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
+* `Finsupp.weight_comp_eq_apply_linearCombination`: the weight of `u` for the weights `f ∘ w` is
+  `f (∑ i, u i • w i)`, for an additive map `f`.
 * `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block sums its coefficients; for
   natural-valued exponents, this is the degree in that block.
 * `Finsupp.weight_ite_eq_mapDomain_apply`: the indicator weight of a fibre of `b : σ → τ` is the
   corresponding value of `Finsupp.mapDomain b`.
 * `Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply`: for the block map `Sum.elim id b` on
   `τ ⊕ σ`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`.
+* `Finsupp.natCast_weight_eq_of_support_subset`: on monomials supported in a finite set `s`, the
+  weight `weight w` agrees with any additive functional on `s → ℤ` taking the value `w i` on the
+  `i`-th coordinate vector.
+* `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
+  finitely many exponent vectors of each degree, and of degree at most `n`.
+* `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
+  vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
+* `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
+  `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
 -/
 
 public section
@@ -94,6 +107,21 @@ theorem prod_pow_optionElim {α N : Type*} [CommMonoid N] (c : Option α → N) 
     (f.optionElim n).prod (c · ^ ·) = c none ^ n * f.prod (fun i k ↦ c (Option.some i) ^ k) := by
   rw [prod_option_index _ _ (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _,
     optionElim_apply_none, some_optionElim]
+
+/-- The weighted product on a disjoint union of variables is the product of the weights
+on each set of variables. -/
+theorem prod_pow_sumElim {α β N : Type*} [CommMonoid N] (a : α →₀ ℕ) (b : β →₀ ℕ)
+    (c : α → N) (d : β → N) :
+    (a.sumElim b).prod (Sum.elim c d · ^ ·) = a.prod (c · ^ ·) * b.prod (d · ^ ·) := by
+  simp only [prod_sumElim, Function.comp_def, Sum.elim_inl, Sum.elim_inr]
+
+/-- A weighted product on disjoint variables, multiplied by `x`, can be evaluated with the
+inner weight first and the outer weight last. -/
+theorem mul_prod_pow_sumElim {α β N : Type*} [CommMonoid N] (x : N)
+    (a : α →₀ ℕ) (b : β →₀ ℕ) (c : α → N) (d : β → N) :
+    x * (a.sumElim b).prod (Sum.elim c d · ^ ·) =
+      x * b.prod (d · ^ ·) * a.prod (c · ^ ·) := by
+  rw [prod_pow_sumElim, mul_comm (a.prod (c · ^ ·)) (b.prod (d · ^ ·)), ← mul_assoc]
 
 /-- A power `a ^ degree f` is bounded by the power `b ^ degree (f.optionElim m)` of a larger
 base `b ≥ 1`, for any value `m` at `none`. -/
@@ -151,6 +179,12 @@ theorem weight_smul_left {R S : Type*} [Semiring R] [AddCommMonoid M] [Module R 
   simp only [weight_apply, smul_sum, Pi.smul_apply]
   exact sum_congr fun _ _ ↦ smul_comm _ s _
 
+/-- The weight of `u` for the weights `f ∘ w` is the image under `f` of `∑ i, u i • w i`. -/
+theorem weight_comp_eq_apply_linearCombination {D : Type*} [AddCommMonoid M] [AddCommMonoid D]
+    (f : M →+ D) (w : σ → M) (u : σ →₀ ℕ) :
+    weight (f ∘ w) u = f (linearCombination ℕ w u) := by
+  simp [weight_apply, linearCombination_apply, map_finsuppSum]
+
 end Finsupp
 
 namespace Finsupp
@@ -198,5 +232,70 @@ theorem weight_ite_sumElim_eq_add_mapDomain_apply {σ τ R : Type*} [DecidableEq
   rw [weight_ite_eq_mapDomain_apply, sumElim_eq_add, mapDomain_add, ← mapDomain_comp,
     ← mapDomain_comp]
   simp
+
+end Finsupp
+
+namespace Finsupp
+
+/-- If an additive functional `μ` on the integer vectors indexed by a finite set `s` takes the
+value `w i` on the `i`-th coordinate vector, then `μ` agrees with the weight `weight w` on every
+monomial supported in `s`. -/
+theorem natCast_weight_eq_of_support_subset {σ : Type*} [DecidableEq σ] {s : Finset σ}
+    (μ : (s → ℤ) →+ ℤ) {w : σ → ℕ} (hμ : ∀ i : s, μ (Pi.single i 1) = w i) {a : σ →₀ ℕ}
+    (ha : a.support ⊆ s) : (weight w a : ℤ) = μ fun i ↦ (a i : ℤ) := by
+  rw [weight_apply, Finsupp.sum_of_support_subset a ha _ (by simp), Nat.cast_sum,
+    ← Finset.sum_coe_sort s]
+  conv_rhs => rw [← Finset.univ_sum_single fun i : s ↦ (a i : ℤ)]
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hc : (Pi.single i (a i : ℤ) : s → ℤ) = a i • Pi.single i 1 := by
+    rw [← Pi.single_smul', Nat.smul_one_eq_cast]
+  rw [hc, map_nsmul, hμ]
+  simp
+
+end Finsupp
+
+namespace Finsupp
+
+/-- In finitely many variables there are finitely many exponent vectors of each degree. -/
+instance finite_degree_eq {σ : Type*} [Finite σ] (n : ℕ) :
+    Finite {s : σ →₀ ℕ // s.degree = n} :=
+  (finite_of_degree_eq n).to_subtype
+
+/-- In finitely many variables there are finitely many exponent vectors of degree at most `n`. -/
+instance finite_degree_le {σ : Type*} [Finite σ] (n : ℕ) :
+    Finite {s : σ →₀ ℕ // s.degree ≤ n} :=
+  (finite_of_degree_le n).to_subtype
+
+/-- For a fintype of variables with decidable equality, the exponent vectors of degree `n` form a
+fintype, enumerated by `Finset.finsuppAntidiag`. -/
+instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
+    Fintype {s : σ →₀ ℕ // s.degree = n} :=
+  Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+
+end Finsupp
+
+namespace Finsupp
+
+/-- The weight `![1, B]` sends the exponent `μ` of `Z ^ μ 0 W ^ μ 1` to `μ 0 + B * μ 1`. -/
+theorem weight_vecCons_one (B : ℕ) (μ : Fin 2 →₀ ℕ) : weight ![1, B] μ = μ 0 + B * μ 1 := by
+  simp [weight_apply, Finsupp.sum_fintype, mul_comm]
+
+/-- The weight `![1, B]` is injective on the exponents `μ` with `μ 0 < B`: `μ 0` and `μ 1` are the
+remainder and the quotient of `μ 0 + B * μ 1` on division by `B`. -/
+theorem injOn_weight_vecCons_one (B : ℕ) :
+    Set.InjOn (weight ![1, B]) {μ : Fin 2 →₀ ℕ | μ 0 < B} := by
+  intro μ hμ ν hν h
+  simp only [Set.mem_ofPred_eq] at hμ hν
+  rw [weight_vecCons_one, weight_vecCons_one] at h
+  have hB : 0 < B := (Nat.zero_le _).trans_lt hμ
+  have h0 : μ 0 = ν 0 := by
+    simpa [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hμ, Nat.mod_eq_of_lt hν] using
+      congrArg (· % B) h
+  have h1 : μ 1 = ν 1 := by
+    simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
+      congrArg (· / B) h
+  exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
 
 end Finsupp

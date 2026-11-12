@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 
 /-!
 # The diagonal split torus of the projective general linear group
@@ -42,6 +43,7 @@ universe u v
 
 noncomputable section
 
+/-- The coordinate weight of the normalized diagonal lift, with its last coordinate zero. -/
 private def diagonalLiftWeight (r : ℕ) (k : Fin (r + 1)) : ULift.{u} (Fin r) → ℤ :=
   fun i ↦ if k = i.down.castSucc then 1 else 0
 
@@ -83,25 +85,31 @@ def diagonalTorusCoordinateMap :
   conjugationMap (r + 1) R ≫
     GeneralLinear.weightTorusCoordinateMap (diagonalLiftWeight r)
 
-private theorem map_genericMatrix_diagonalLift :
-    (GeneralLinear.genericMatrix R (r + 1)).map
-        (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalLiftWeight r)).hom =
-      Matrix.diagonal (fun i ↦ MonoidAlgebra.single
-        (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (diagonalLiftWeight r i))) 1) := by
-  apply Matrix.ext
-  intro i j
-  rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply,
-    GeneralLinear.weightTorusCoordinateMap_X, Matrix.diagonal_apply]
+/-- A projective coordinate whose conjugation coordinate vanishes on upper-triangular
+matrices also vanishes on the normalized diagonal torus. -/
+theorem comap_upperTriangularIdeal_le_ker_diagonalTorusCoordinateMap :
+    Ideal.comap (conjugationMap (r + 1) R).hom.toAlgHom
+        (GeneralLinear.UpperTriangular.definingHopfIdeal R (r + 1)).toIdeal ≤
+      RingHom.ker (diagonalTorusCoordinateMap r R).hom.toAlgHom := by
+  intro x hx
+  exact GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker R (r + 1)
+    (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalLiftWeight r)).hom.toAlgHom.toRingHom
+    (fun i j hji ↦ by
+      rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.coe_toAlgHom,
+        GeneralLinear.weightTorusCoordinateMap_X]
+      simp [ne_of_gt hji]) hx
 
 private theorem map_inv_genericMatrix_diagonalLift :
     ((GeneralLinear.genericMatrix R (r + 1))⁻¹).map
         (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalLiftWeight r)).hom =
       Matrix.diagonal (fun i ↦ MonoidAlgebra.single
-        (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (diagonalLiftWeight r i)))⁻¹ 1) := by
+        (SplitTorus.weightCharacter (diagonalLiftWeight r i))⁻¹ 1) := by
   have h := GeneralLinear.map_inv_genericMatrix R (r + 1)
     (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalLiftWeight r)).hom.toAlgHom
-  simp only [BialgHom.coe_toAlgHom] at h
-  rw [h, map_genericMatrix_diagonalLift]
+  have hdiag := GeneralLinear.map_genericMatrix_weightTorusCoordinateMap (R := R)
+    (diagonalLiftWeight r)
+  simp only [BialgHom.coe_toAlgHom] at h hdiag
+  rw [h, hdiag]
   apply Matrix.inv_eq_left_inv
   simp [Matrix.diagonal_mul_diagonal, ← MonoidAlgebra.one_def]
 
@@ -127,7 +135,10 @@ theorem mkQuotient_comp_diagonalTorusCoordinateMap :
     rw [diagonalTorusCoordinateMap, ← Category.assoc, CommHopfAlgCat.hom_comp,
       BialgHom.coe_comp, ← Matrix.map_map, map_genericMatrix_conjugationMap,
       conjugationMatrix_map]
-  rw [map_genericMatrix_diagonalLift, map_inv_genericMatrix_diagonalLift] at hmatrix
+  have hdiag := GeneralLinear.map_genericMatrix_weightTorusCoordinateMap (R := R)
+    (diagonalLiftWeight r)
+  simp only [BialgHom.coe_toAlgHom] at hdiag
+  rw [hdiag, map_inv_genericMatrix_diagonalLift] at hmatrix
   have hentry := congrArg (fun M ↦ M a b) hmatrix
   simp only [Matrix.map_apply, GeneralLinear.genericMatrix_apply] at hentry
   rw [hentry, GeneralLinear.weightTorusCoordinateMap_X, conjugationMatrix_apply]

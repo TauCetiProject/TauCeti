@@ -18,7 +18,9 @@ taking the ordinary Lazard valuation.
 `MvPolynomial.lazardValuationReindex` packages this simultaneous reindexing.  It preserves
 evaluation at the original point, so its zero and top cases have the same intrinsic
 characterizations as the ordinary valuation.  Reindexings compose, renaming by the
-inverse equivalence cancels the reindexing, and the basic product law continues to hold.  The
+inverse equivalence cancels the reindexing, and the basic product law continues to hold.
+Reindexing along an order isomorphism only relabels the exponent, so the elimination order
+matters only through the order it induces on the variables.  The
 finite rotation formula identifies the coordinate order used when a cylindrical stack moves its
 distinguished coordinate from the front to the end.
 
@@ -128,6 +130,18 @@ theorem lazardValuationReindex_neg [CommRing R]
     (-p).lazardValuationReindex e a = p.lazardValuationReindex e a := by
   rw [lazardValuationReindex_def, lazardValuationReindex_def, map_neg,
     lazardValuation_neg]
+
+/-- Reindexing along an order isomorphism only relabels the Lazard valuation: an elimination
+order that agrees with the given order of the variables gives the same valuation, with its
+exponent transported along the isomorphism. -/
+theorem lazardValuationReindex_toEquiv [CommSemiring R] [LinearOrder σ] [WellFoundedGT σ]
+    [LinearOrder τ] [WellFoundedGT τ] (p : MvPolynomial σ R) (e : σ ≃o τ) (a : σ → R) :
+    p.lazardValuationReindex e.toEquiv a =
+      (p.lazardValuation a).map fun v ↦ toLex (Finsupp.mapDomain e (ofLex v)) := by
+  rw [lazardValuationReindex_def, OrderIso.coe_toEquiv, lazardValuation_rename e.strictMono]
+  congr 2
+  ext i
+  simp
 
 /-- A polynomial has only finitely many Lazard valuations in any fixed reindexed coordinate
 order. -/

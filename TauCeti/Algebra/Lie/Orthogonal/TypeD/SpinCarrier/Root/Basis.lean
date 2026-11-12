@@ -19,7 +19,16 @@ characteristic two.
 
 These formulas transfer the polarized spin-basis calculations to the integral matrix carrier.
 Together with the two parity orbits of `typeDSpinReflection`, they provide the root moves
-needed to propagate an invariant coordinate line throughout its half-spin summand.
+needed to propagate an invariant coordinate line throughout its half-spin summand. Conversely, a
+positive numbered root matrix has no entries other than these moves, since spin weights pair with
+simple coroots in `{-1, 0, 1}`.
+
+## Main declarations
+
+* `TauCeti.TypeDSpinCarrier.exists_rootSubgroupPoints_inl_mulVec_single_sub` and its negative
+  counterpart: the root subgroup move of a coordinate vector.
+* `TauCeti.TypeDSpinCarrier.rootIntMatrix_inl_eq_zero_of_ne_basisReflection`: a positive numbered
+  root matrix is supported on the raising moves.
 
 ## References
 
@@ -38,6 +47,37 @@ namespace TauCeti.TypeDSpinCarrier
 universe v
 
 variable (n : ℕ) (hn : 4 ≤ n)
+
+include hn in
+/-- Two spin weights differ by a positive numbered simple root exactly when their basis
+indices are related by the corresponding raising step. -/
+theorem basisWeight_sub_eq_rootGeneratorWeight_iff (i : Fin n)
+    (a b : Fin (dimension n)) :
+    basisWeight n b - basisWeight n a = TypeDStd.rootGeneratorWeight n (.inl i) ↔
+      basisWeight n a i = -1 ∧ b = basisReflection n i a := by
+  have href : basisWeight n (basisReflection n i a) =
+      basisWeight n a - basisWeight n a i • TypeDStd.rootGeneratorWeight n (.inl i) := by
+    funext j
+    simpa only [basisWeight, signSet_basisReflection, Pi.sub_apply, Pi.smul_apply,
+      smul_eq_mul, TypeDStd.rootGeneratorWeight_inl] using
+      DynkinType.typeDSpinWeight_typeDSpinReflection_apply hn i j (signSet n a)
+  constructor
+  · intro h
+    have hi := congrFun h i
+    rw [Pi.sub_apply, TypeDStd.rootGeneratorWeight_inl, CartanMatrix.D_diag] at hi
+    have ha : basisWeight n a i = -1 ∨ basisWeight n a i = 0 ∨ basisWeight n a i = 1 :=
+      DynkinType.typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n a) i
+    have hb : basisWeight n b i = -1 ∨ basisWeight n b i = 0 ∨ basisWeight n b i = 1 :=
+      DynkinType.typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n b) i
+    have hneg : basisWeight n a i = -1 := by omega
+    refine ⟨hneg, ?_⟩
+    have hw : basisWeight n b = basisWeight n (basisReflection n i a) := by
+      rw [href, hneg]
+      simpa only [neg_one_smul, sub_neg_eq_add, add_comm] using (sub_eq_iff_eq_add.mp h)
+    exact (Fintype.equivFin (Finset (Fin n))).symm.injective
+      (DynkinType.typeDSpinWeight_injective hw)
+  · rintro ⟨ha, rfl⟩
+    simp only [href, ha, neg_one_smul, sub_neg_eq_add, add_sub_cancel_left]
 
 /-- A signed root-generator column gives the root subgroup's displacement of the corresponding
 coordinate vector, at every parameter over every commutative ring. -/
@@ -91,5 +131,33 @@ theorem exists_rootSubgroupPoints_inr_mulVec_single_sub (i : Fin n)
   simpa only [TauCeti.serreRootGenerator_inr, coe_latticeBasis, ha', one_smul] using
     (polarization n).typeDSpinRep_serreF_exteriorBasis
       (polarizationBasis n) hn i (signSet n a) ha
+
+/-- **A positive numbered root matrix only raises along simple reflections.** Its column at a
+spin-basis index whose weight pairs to `-1` with the simple coroot is supported at the reflected
+index, and every other column vanishes, since spin weights pair with simple coroots in
+`{-1, 0, 1}`. -/
+theorem rootIntMatrix_inl_eq_zero_of_ne_basisReflection (i : Fin n)
+    {a b : Fin (dimension n)} (h : basisWeight n b i = -1 → a ≠ basisReflection n i b) :
+    rootIntMatrix n hn (.inl i) a b = 0 := by
+  have hpair (c : Fin (dimension n)) :
+      basisWeight n c i = -1 ∨ basisWeight n c i = 0 ∨ basisWeight n c i = 1 :=
+    DynkinType.typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (signSet n c) i
+  rcases hpair b with hneg | hb | hb
+  · have hc : rep n hn (_root_.UniversalEnvelopingAlgebra.ι ℚ
+          (TauCeti.serreRootGenerator (CartanMatrix.D n) (.inl i)))
+          (latticeBasis n b : ExteriorAlgebra ℚ (polarization n).W) =
+        (1 : ℤˣ) • (latticeBasis n (basisReflection n i b) :
+          ExteriorAlgebra ℚ (polarization n).W) := by
+      simpa only [TauCeti.serreRootGenerator_inl, coe_latticeBasis, signSet_basisReflection,
+        one_smul] using
+        (polarization n).typeDSpinRep_serreE_exteriorBasis
+          (polarizationBasis n) hn i (signSet n b) hneg
+    rw [rootIntMatrix_apply_of_eq n hn (.inl i) hc a, ite_eq_right (h hneg)]
+  all_goals
+    apply rootIntMatrix_eq_zero_of_weight_ne
+    intro hw
+    have hi := congrFun hw i
+    rw [Pi.sub_apply, TypeDStd.rootGeneratorWeight_inl, CartanMatrix.D_diag] at hi
+    rcases hpair a with ha | ha | ha <;> omega
 
 end TauCeti.TypeDSpinCarrier

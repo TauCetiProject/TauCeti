@@ -12,81 +12,80 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 /-!
 # Substitution in symmetric multivariate polynomials
 
-Substituting the same univariate polynomial into every variable of a symmetric multivariate
-polynomial preserves symmetry. For finitely many variables over a commutative ring, the fundamental
-theorem of symmetric polynomials then expresses the substituted polynomial in the elementary
-symmetric polynomials.
+Substituting into a symmetric multivariate polynomial a family of polynomials that is permuted
+along with the variables, for instance the same univariate polynomial in every variable,
+preserves symmetry. For finitely many variables over a commutative ring, Mathlib's fundamental
+theorem of symmetric polynomials (`MvPolynomial.esymmAlgHom_surjective`) then expresses the
+substituted polynomial in the elementary symmetric polynomials.
+
+In the other direction, substituting the elementary symmetric polynomials for the variables
+gives the ring endomorphism `TauCeti.esymmSubst` of `MvPolynomial (Fin n) R`. It agrees with
+Mathlib's `MvPolynomial.esymmAlgHom`, so over a commutative ring it is injective: an expression of
+a symmetric polynomial in the elementary symmetric polynomials is unique.
 
 ## Main declarations
 
-* `MvPolynomial.IsSymmetric.exists_aeval_esymm`: the fundamental theorem of symmetric polynomials,
-  unbundled: a symmetric polynomial is a polynomial in the elementary symmetric polynomials.
+* `MvPolynomial.IsSymmetric.bind₁`: substituting an equivariant family of polynomials preserves
+  symmetry.
 * `MvPolynomial.IsSymmetric.bind₁_aeval_X`: uniform univariate substitution preserves
   symmetry.
-* `MvPolynomial.IsSymmetric.exists_aeval_esymm_eq_bind₁_aeval_X`: the substituted
-  polynomial is a polynomial in the elementary symmetric polynomials.
+* `TauCeti.esymmSubst`: the substitution of the elementary symmetric polynomials
+  `e_1, …, e_n` for the variables `X_0, …, X_(n-1)`.
+* `TauCeti.esymmSubst_injective`: over a commutative ring, elementary-symmetric substitution is
+  injective, by the fundamental theorem of symmetric polynomials.
 -/
 
 public section
 
-open Polynomial
+namespace MvPolynomial
 
-namespace TauCeti
+variable {σ R : Type*} [CommSemiring R] {p : MvPolynomial σ R}
+
+/-- Substituting into a symmetric polynomial a family of polynomials `f` that is equivariant
+under permutations of the variables, `rename e (f i) = f (e i)`, yields a symmetric
+polynomial. -/
+protected theorem IsSymmetric.bind₁ (hp : p.IsSymmetric) {f : σ → MvPolynomial σ R}
+    (hf : ∀ (e : Equiv.Perm σ) (i : σ), rename e (f i) = f (e i)) :
+    (bind₁ f p).IsSymmetric := fun e => by
+  conv_rhs => rw [← hp e, bind₁_rename, Function.comp_def]
+  simp_rw [rename_bind₁, hf]
 
 /-- Substituting the same univariate polynomial into every variable of a symmetric multivariate
 polynomial preserves symmetry. -/
-theorem _root_.MvPolynomial.IsSymmetric.bind₁_aeval_X
-    {σ R : Type*} [CommSemiring R] {p : MvPolynomial σ R}
-    (hp : p.IsSymmetric) (q : R[X]) :
-    (MvPolynomial.bind₁ (fun i => Polynomial.aeval (MvPolynomial.X i) q) p).IsSymmetric := by
-  intro e
-  calc
-    MvPolynomial.rename e
-        (MvPolynomial.bind₁ (fun i => Polynomial.aeval (MvPolynomial.X i) q) p) =
-        MvPolynomial.bind₁
-          (fun i => MvPolynomial.rename e (Polynomial.aeval (MvPolynomial.X i) q)) p := by
-      rw [MvPolynomial.rename_bind₁]
-    _ = MvPolynomial.bind₁
-          ((fun i => Polynomial.aeval (MvPolynomial.X i) q) ∘ e) p := by
-      apply congrArg (fun f => MvPolynomial.bind₁ f p)
-      funext i
-      calc
-        MvPolynomial.rename e (Polynomial.aeval (MvPolynomial.X i) q) =
-            Polynomial.aeval (MvPolynomial.rename e (MvPolynomial.X i)) q :=
-          (Polynomial.aeval_algHom_apply (MvPolynomial.rename e) (MvPolynomial.X i) q).symm
-        _ = Polynomial.aeval (MvPolynomial.X (e i)) q := by rw [MvPolynomial.rename_X]
-    _ = MvPolynomial.bind₁ (fun i => Polynomial.aeval (MvPolynomial.X i) q)
-          (MvPolynomial.rename e p) := by
-      rw [MvPolynomial.bind₁_rename]
-    _ = MvPolynomial.bind₁ (fun i => Polynomial.aeval (MvPolynomial.X i) q) p := by
-      rw [hp e]
+theorem IsSymmetric.bind₁_aeval_X (hp : p.IsSymmetric) (q : Polynomial R) :
+    (bind₁ (fun i => Polynomial.aeval (X i) q) p).IsSymmetric :=
+  hp.bind₁ fun e i => by rw [← Polynomial.aeval_algHom_apply, rename_X]
 
-/-- **The fundamental theorem of symmetric polynomials**, unbundled: a symmetric polynomial in `n`
-variables over a commutative ring is a polynomial in the first `n` elementary symmetric
-polynomials. -/
-theorem _root_.MvPolynomial.IsSymmetric.exists_aeval_esymm
-    {R : Type*} [CommRing R] {n : ℕ} {p : MvPolynomial (Fin n) R}
-    (hp : p.IsSymmetric) :
-    ∃ W : MvPolynomial (Fin n) R,
-      MvPolynomial.aeval (fun j : Fin n => MvPolynomial.esymm (Fin n) R ((j : ℕ) + 1)) W = p := by
-  obtain ⟨W, hW⟩ := (MvPolynomial.esymmAlgHom_fin_bijective R n).surjective
-    (⟨p, hp⟩ : MvPolynomial.symmetricSubalgebra (Fin n) R)
-  refine ⟨W, ?_⟩
-  rw [← MvPolynomial.esymmAlgHom_apply]
-  exact congrArg Subtype.val hW
+end MvPolynomial
 
-/-- Over a commutative ring, uniformly substituting a univariate polynomial into a symmetric
-polynomial in `n` variables yields a polynomial in the first `n` elementary symmetric
-polynomials: the substituted polynomial is symmetric by
-`MvPolynomial.IsSymmetric.bind₁_aeval_X`, so the fundamental theorem
-(`MvPolynomial.IsSymmetric.exists_aeval_esymm`) applies to it. -/
-theorem _root_.MvPolynomial.IsSymmetric.exists_aeval_esymm_eq_bind₁_aeval_X
-    {R : Type*} [CommRing R] {n : ℕ}
-    {p : MvPolynomial (Fin n) R} (hp : p.IsSymmetric) (q : R[X]) :
-    ∃ W : MvPolynomial (Fin n) R,
-      MvPolynomial.aeval
-          (fun j : Fin n => MvPolynomial.esymm (Fin n) R ((j : ℕ) + 1)) W =
-        MvPolynomial.bind₁ (fun i => Polynomial.aeval (MvPolynomial.X i) q) p :=
-  (hp.bind₁_aeval_X q).exists_aeval_esymm
+namespace TauCeti
+
+section esymmSubst
+
+variable {R : Type*}
+
+/-- The substitution sending variable `i` to the elementary symmetric polynomial `e_(i+1)`. -/
+noncomputable def esymmSubst [CommSemiring R] (n : ℕ) :
+    MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R :=
+  (MvPolynomial.aeval fun i : Fin n => MvPolynomial.esymm (Fin n) R ((i : ℕ) + 1)).toRingHom
+
+/-- Elementary-symmetric substitution sends `X i` to `e_(i+1)`. -/
+@[simp]
+theorem esymmSubst_X [CommSemiring R] (n : ℕ) (i : Fin n) :
+    esymmSubst n (MvPolynomial.X i) = MvPolynomial.esymm (Fin n) R ((i : ℕ) + 1) := by
+  simp [esymmSubst]
+
+/-- Elementary-symmetric substitution agrees with Mathlib's fundamental-theorem map. -/
+theorem esymmSubst_apply [CommSemiring R] (n : ℕ) (p : MvPolynomial (Fin n) R) :
+    esymmSubst n p = (MvPolynomial.esymmAlgHom (Fin n) R n p).1 :=
+  (MvPolynomial.esymmAlgHom_apply p).symm
+
+/-- Substitution by the elementary symmetric polynomials is injective. -/
+lemma esymmSubst_injective [CommRing R] (n : ℕ) :
+    Function.Injective (esymmSubst (R := R) n) := fun p q hpq =>
+  (MvPolynomial.esymmAlgHom_fin_bijective R n).1 <| Subtype.ext <| by
+    simpa only [← esymmSubst_apply] using hpq
+
+end esymmSubst
 
 end TauCeti

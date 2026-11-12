@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Eigenvalues
+public import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 public import TauCeti.Probability.Moments.Chebyshev
@@ -23,7 +23,7 @@ Suppose every squared entrywise deviation is integrable with
 
 On a probability space, every deterministic consequence of entrywise `η`-closeness therefore holds
 with probability at least `1 - card m * card n * v / η²`. For square matrices over `ℝ` or `ℂ` the
-entrywise-to-spectral comparison of `TauCeti.Analysis.Matrix.Eigenvalues` turns this into
+entrywise-to-spectral comparison of `TauCeti.Analysis.Matrix.Eigenvalues.Basic` turns this into
 simultaneous high-probability control of every sorted eigenvalue, up to the dimension factor
 `card n`. For rectangular matrices over `ℝ` or `ℂ` the entrywise-to-operator comparison of
 `TauCeti.Analysis.Matrix.EntrywiseOpNorm` bounds the operator norm of the Euclidean action of
@@ -102,9 +102,9 @@ theorem measure_exists_lt_norm_sub_le [Norm E] [Sub E]
           ENNReal.ofReal_natCast, ENNReal.ofReal_natCast]
 
 omit [Fintype m] [Fintype n] in
-/-- The event that some entry of a random matrix deviates from a fixed matrix by more than `η` is
-measurable when every entry is measurable. -/
-theorem measurableSet_exists_lt_norm_sub [SeminormedAddGroup E] [Finite m] [Finite n]
+/-- For countable row and column index types, the event that some entry of a random matrix deviates
+from a fixed matrix by more than `η` is measurable when every entry is measurable. -/
+theorem measurableSet_exists_lt_norm_sub [SeminormedAddGroup E] [Countable m] [Countable n]
     [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableSub E]
     (hS : ∀ k l, Measurable fun ω ↦ S ω k l) (η : ℝ) :
     MeasurableSet {ω | ∃ k l, η < ‖S ω k l - A k l‖} := by
@@ -242,8 +242,7 @@ theorem one_sub_le_measure_forall_half_le_eigenvalues₀_sampleSecondMoment (hM 
       Set.eq_univ_of_forall fun _ k ↦ (Fin.cast hd k).elim0
     rw [huniv, measure_univ]
     exact tsub_le_self
-  have hdR : (0 : ℝ) < d := Nat.cast_pos.2 hd
-  have hr : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
+  have _ : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
   -- Each entry of the empirical matrix is a square-integrable sample mean with mean-square
   -- error at most `v / r`.
   have hmemLp (k l : n) : MemLp (fun ω ↦ sampleSecondMoment (V · ω) k l - M k l) 2 μ := by

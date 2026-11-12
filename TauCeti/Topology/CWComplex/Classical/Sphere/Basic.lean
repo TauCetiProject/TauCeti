@@ -30,6 +30,8 @@ the two points of `S⁰`.
   `(k - 1)`-skeleton) is the pole (`TauCeti.skeletonLT_sphereCWComplex`).
 * `TauCeti.finiteCWType_sphere`: the unit sphere of every finite-dimensional real normed space has
   finite CW type.
+* `TauCeti.finiteCWType_onePoint`: so has the one-point compactification of every
+  finite-dimensional real vector space, for instance the Riemann sphere `OnePoint ℂ`.
 
 ## References
 
@@ -134,8 +136,8 @@ theorem sphereTopCellMap_apply_of_norm_eq_one {x : Fin n → ℝ} (hx : ‖x‖ 
 /-- The characteristic map of the top cell of `Sⁿ` is continuous on the closed unit ball, as a
 CW characteristic map must be. -/
 theorem continuousOn_sphereTopCellMap : ContinuousOn (sphereTopCellMap h) (closedBall 0 1) :=
-  (continuous_subtype_val.comp (sphereOnePointEquiv h).continuous).comp_continuousOn
-    continuousOn_unitBallToOnePoint
+  (continuous_subtype_val.comp ((sphereOnePointEquiv h).continuous.comp
+    continuous_unitBallToOnePoint)).continuousOn
 
 /-- The inverse of the characteristic map of the top cell of `Sⁿ` is continuous on the open
 cell `Sⁿ \ {pole}`. -/
@@ -299,5 +301,14 @@ instance finiteCWType_sphere {E : Type u} [NormedAddCommGroup E] [NormedSpace �
   have := finite_sphereCWComplex h
   exact (sphereHomeomorphOfFinrankEq (F := EuclideanSpace ℝ (ULift.{u} (Fin (n + 1))))
     (by simp [hn])).finiteCWType
+
+/-- The one-point compactification of a finite-dimensional real vector space `V` has finite CW
+type: it is homeomorphic to the unit sphere of dimension `dim V`. In particular the Riemann sphere
+`OnePoint ℂ` has finite CW type. -/
+instance finiteCWType_onePoint {V : Type u} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+    [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] :
+    FiniteCWType (OnePoint V) :=
+  (onePointEquivSphereOfFinrankEq
+    (ι := ULift.{u} (Fin (finrank ℝ V + 1))) (by simp)).finiteCWType
 
 end TauCeti

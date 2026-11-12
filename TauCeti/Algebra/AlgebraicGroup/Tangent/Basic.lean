@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Algebra.Module.TransferInstance
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Convolution
 import TauCeti.Algebra.DualNumber.Convolution
-public import TauCeti.RingTheory.Derivation.DualNumber
+public import TauCeti.RingTheory.Derivation.TrivSqZeroExt
 
 /-!
 # The tangent space at the identity point
@@ -18,10 +19,10 @@ public import TauCeti.RingTheory.Derivation.DualNumber
 For a bialgebra `A` over `R`, the identity `B`-point of the functor of points is the
 counit followed by the structure map — the unit of the convolution
 monoid whenever the latter exists. This file packages `B` as an `A`-algebra through that point
-(`Bialgebra.CounitAlgebra`), so that the dual-number dictionary
-`TauCeti.derivationToDualNumberEquivLift` applies verbatim: derivations of `A` at the
-identity point are the dual-number points lying over the identity
-(the dictionary applied at `Bialgebra.CounitAlgebra`).
+(`Bialgebra.CounitAlgebra`), so that the derivation dictionary
+`TauCeti.derivationToTrivSqZeroExtEquivLift` applies verbatim at
+`DualNumber B = TrivSqZeroExt B B`: derivations of `A` at the identity point are the
+dual-number points lying over the identity (the dictionary applied at `Bialgebra.CounitAlgebra`).
 
 For `A` a Hopf algebra and `B` commutative, the dual-number points form a convolution
 group, reduction of the infinitesimal part is a group homomorphism
@@ -255,6 +256,20 @@ lemma Bialgebra.CounitAlgebra.algEquivSelf_apply_mul
         algebraMap R B (Coalgebra.counit b) * Bialgebra.CounitAlgebra.algEquivSelf R A B (d a) := by
   simp only [d.leibniz, map_add, Bialgebra.CounitAlgebra.algEquivSelf_smul]
 
+/-- The Leibniz rule of a counit-valued derivation with coefficients in the base ring, for the
+linear functional `δ = algEquivSelf ∘ d`: `δ (a * b) = δ a * ε b + ε a * δ b`. This is the
+splitting hypothesis of the contraction lemmas for tensor products and products. -/
+lemma Bialgebra.CounitAlgebra.algEquivSelf_comp_apply_mul
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A R)) (a b : A) :
+    ((Bialgebra.CounitAlgebra.algEquivSelf R A R).toLinearMap ∘ₗ d.toLinearMap) (a * b) =
+      ((Bialgebra.CounitAlgebra.algEquivSelf R A R).toLinearMap ∘ₗ d.toLinearMap) a *
+          Coalgebra.counit (R := R) b +
+        Coalgebra.counit (R := R) a *
+          ((Bialgebra.CounitAlgebra.algEquivSelf R A R).toLinearMap ∘ₗ d.toLinearMap) b := by
+  simp only [LinearMap.comp_apply, Derivation.coeFn_coe, AlgEquiv.toLinearMap_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply_mul, Algebra.algebraMap_self, RingHom.id_apply]
+  ring
+
 end DerivationCoefficients
 
 section CounitAlgebraMap
@@ -446,6 +461,28 @@ lemma Bialgebra.CounitAlgebra.toAlgHom_eq_one_ofConv :
 
 end BialgebraCommTargetPoint
 
+section InclusionComponents
+
+variable {R A C : Type*} [CommSemiring R] [Semiring A] [Bialgebra R A] [CommSemiring C]
+  [Algebra R C]
+
+/-- The first component of the inclusion of a point `g` into the dual-number points is `g`. -/
+lemma _root_.WithConv.fstHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.fstHom R C C).toLinearMap ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap =
+      g.ofConv.toLinearMap := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+/-- The second component of the inclusion of a point into the dual-number points is `0`. -/
+lemma _root_.WithConv.sndHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.sndHom C C).restrictScalars R ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap = 0 := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+end InclusionComponents
+
 section Hopf
 
 open TrivSqZeroExt WithConv _root_.Bialgebra Bialgebra.CounitAlgebra
@@ -526,27 +563,30 @@ noncomputable def derivationMulEquivTangentKer :
     Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B)) ≃*
       tangentKer R A B where
   toFun d := ⟨toConv
-      (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).1,
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).1,
     toConv_mem_ker_iff.mpr
-      (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).2⟩
-  invFun ψ := .ofAdd <| (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B)).symm
-    ⟨ψ.1.ofConv, toConv_mem_ker_iff.mp ψ.2⟩
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).2⟩
+  invFun ψ := .ofAdd <|
+    (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)).symm
+      ⟨ψ.1.ofConv, toConv_mem_ker_iff.mp ψ.2⟩
   left_inv d :=
     congrArg Multiplicative.ofAdd <|
-      (derivationToDualNumberEquivLift R A
+      (derivationToTrivSqZeroExtEquivLift R A
         (Bialgebra.CounitAlgebra R A B)).symm_apply_apply d.toAdd
   right_inv ψ := by
-    have h := (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B)).apply_symm_apply
-      ⟨ψ.1.ofConv, toConv_mem_ker_iff.mp ψ.2⟩
+    have h :=
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)).apply_symm_apply
+        ⟨ψ.1.ofConv, toConv_mem_ker_iff.mp ψ.2⟩
     rw [Subtype.ext_iff] at h
     exact Subtype.ext ((congrArg toConv h).trans (toConv_ofConv ψ.1))
   map_mul' d₁ d₂ := by
     have h₁ := toConv_mem_ker_iff.mpr
-      (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B) d₁.toAdd).2
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₁.toAdd).2
     have h₂ := toConv_mem_ker_iff.mpr
-      (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B) d₂.toAdd).2
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d₂.toAdd).2
     have hprod := toConv_mem_ker_iff.mpr
-      (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B) (d₁.toAdd + d₂.toAdd)).2
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)
+        (d₁.toAdd + d₂.toAdd)).2
     refine Subtype.ext (ofConv_injective (AlgHom.ext fun a => TrivSqZeroExt.ext ?_ ?_))
     · exact (fst_apply_of_mem_tangentKer hprod a).trans
         (fst_apply_of_mem_tangentKer (mul_mem h₁ h₂) a).symm
@@ -569,7 +609,7 @@ This is a named rewriting lemma; the component evaluation lemmas supply simp nor
 lemma derivationMulEquivTangentKer_apply_ofConv
     (d : Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B))) :
     ((derivationMulEquivTangentKer R A B d).val).ofConv =
-      (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).val := (rfl)
+      (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).val := (rfl)
 
 /- Not a `simp` lemma: the general `fst_apply_of_mem_tangentKer` (with `SetLike.coe_mem`)
 already rewrites this left-hand side. -/
@@ -579,7 +619,7 @@ lemma derivationMulEquivTangentKer_apply_fst
         ((derivationMulEquivTangentKer R A B d).val.ofConv a) =
       algebraMap A (CounitAlgebra R A B) a := by
   simp only [derivationMulEquivTangentKer, MulEquiv.coe_mk, Equiv.coe_fn_mk,
-    WithConv.ofConv_toConv, derivationToDualNumberEquivLift_apply_fst]
+    WithConv.ofConv_toConv, derivationToTrivSqZeroExtEquivLift_apply_fst]
 
 @[simp]
 lemma derivationMulEquivTangentKer_apply_snd
@@ -587,14 +627,39 @@ lemma derivationMulEquivTangentKer_apply_snd
     snd (R := CounitAlgebra R A B)
         ((derivationMulEquivTangentKer R A B d).val.ofConv a) = d.toAdd a := by
   simp [derivationMulEquivTangentKer,
-    derivationToDualNumberEquivLift_apply_snd]
+    derivationToTrivSqZeroExtEquivLift_apply_snd]
 
 @[simp]
 lemma derivationMulEquivTangentKer_symm_apply
     (ψ : tangentKer R A B) (a : A) :
     ((derivationMulEquivTangentKer R A B).symm ψ).toAdd a = snd (ψ.val.ofConv a) := by
   simp [derivationMulEquivTangentKer,
-    derivationToDualNumberEquivLift_symm_apply]
+    derivationToTrivSqZeroExtEquivLift_symm_apply]
+
+/-- The counit coefficient of the dual-number point of a tangent vector `d` is the counit. -/
+@[simp]
+theorem _root_.Derivation.fstHom_comp_derivationMulEquivTangentKer
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    (fstHom R (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).toLinearMap ∘ₗ
+        (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
+      (1 : WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)).ofConv := by
+  ext x
+  simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, fstHom_apply,
+    LinearMap.convOne_apply, Bialgebra.CounitAlgebra.algebraMap_apply,
+    Bialgebra.CounitAlgebra.algebraMap_base] using
+      derivationMulEquivTangentKer_apply_fst (Multiplicative.ofAdd d) x
+
+/-- The infinitesimal coefficient of the dual-number point of a tangent vector `d` is `d`. -/
+@[simp]
+theorem _root_.Derivation.sndHom_comp_derivationMulEquivTangentKer
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    ((sndHom (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).restrictScalars
+        R) ∘ₗ
+        (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
+      d.toLinearMap := by
+  ext x
+  dsimp
+  exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
 
 /-- The tangent subgroup is abelian: first-order infinitesimal points commute, because
 multiplication corresponds to addition of derivations under
@@ -684,6 +749,23 @@ lemma tangentKer_smul_apply_snd
     _ = _ := (Bialgebra.CounitAlgebra.algEquivSelf R A B).apply_symm_apply _ |>.symm
 
 end Hopf
+
+section HopfRing
+
+open WithConv
+
+variable {R A B : Type*} [CommRing R] [CommRing A] [HopfAlgebra R A] [CommRing B]
+  [Algebra R B]
+
+/-- The inverse of the dual-number point of `d` is the dual-number point of `-d`. -/
+theorem _root_.Derivation.derivationMulEquivTangentKer_val_inv
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val⁻¹ =
+      (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd (-d))).val := by
+  simpa only [← Subgroup.coe_inv, ← ofAdd_neg] using congrArg Subtype.val
+    (map_inv (derivationMulEquivTangentKer R A B) (Multiplicative.ofAdd d)).symm
+
+end HopfRing
 
 end TauCeti
 

@@ -100,14 +100,6 @@ section Restrict
 
 variable (k F) (P' : Place k' F')
 
-/-- A function of `F` has a zero at a place of `F'` exactly when it has a zero at the restriction
-of that place, because the ramification index is a positive factor. -/
-private theorem ord_algebraMap_pos_iff (x : F) :
-    0 < P'.ord (algebraMap F F' x) ↔ 0 < (P'.restrict k F).ord x := by
-  have he : (0 : ℤ) < ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
-  rw [ord_algebraMap_restrict k F P' x]
-  exact mul_pos_iff_of_pos_left he
-
 section FiniteOnModel
 
 variable (hS : ∀ s : S, algebraMap S F' s ∈ P'.integers)
@@ -168,8 +160,6 @@ theorem ramificationIdx_eq_ramificationIdx_center :
 
 section ResidueDegree
 
-variable [Algebra k R] [IsScalarTower k R F] [Algebra k' S] [IsScalarTower k' S F']
-
 /-- **The relative degree of a place over its restriction is the residue degree of the centres**
 (Stichtenoth, Definition 3.1.5): the residue field of a place finite on a model is the model modulo
 the centre of the place, and the two identifications are compatible with `R → S`. -/
@@ -180,12 +170,12 @@ theorem relativeDegree_eq_inertiaDeg_center :
   rw [Ideal.inertiaDeg_eq_of_isMaximal ((P'.restrict k F).center hR).asIdeal
     (P'.center hS).asIdeal, relativeDegree_def]
   refine (Algebra.finrank_eq_of_equiv_equiv
-    ((P'.restrict k F).quotientAlgEquivResidueField hR).toRingEquiv
-    (P'.quotientAlgEquivResidueField hS).toRingEquiv ?_).symm
+    ((P'.restrict k F).quotientRingEquivResidueField hR)
+    (P'.quotientRingEquivResidueField hS) ?_).symm
   refine Ideal.Quotient.ringHom_ext (RingHom.ext fun r ↦ ?_)
   simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, Ideal.Quotient.algebraMap_mk_of_liesOver,
-    quotientAlgEquivResidueField_mk, residueHom_apply,
+    RingHom.coe_coe, Ideal.Quotient.algebraMap_mk_of_liesOver,
+    quotientRingEquivResidueField_mk, residueRingHom_apply,
     IsLocalRing.ResidueField.algebraMap_residue]
   refine congrArg _ (Subtype.ext ?_)
   rw [coe_algebraMap_integers, ← IsScalarTower.algebraMap_apply R F F',
@@ -265,6 +255,7 @@ theorem restrict_ofPrime (𝔓 : HeightOneSpectrum S) [𝔓.asIdeal.LiesOver �
     HeightOneSpectrum.ext (hlies.over.trans (Ideal.over_def 𝔓.asIdeal 𝔭.asIdeal).symm)
   rw [← h𝔭, ofPrime_center]
 
+omit [Algebra k R] [IsScalarTower k R F] in
 /-- **The relative degree over `F` of the place of a height one prime `𝔓` of `S` is the residue
 degree of `𝔓` over `R`.** -/
 theorem relativeDegree_ofPrime (𝔓 : HeightOneSpectrum S) :

@@ -142,13 +142,12 @@ theorem primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq {P Q n x y 
   rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, hp, hodd, rfl⟩
   · exact primeDiscriminantCharFun_eq_one_of_isEvenPrimeDiscriminant_of_four_mul_eq_sq_sub_mul_sq
       hP (hQ hP) ((isCoprime_evenPrimeDiscriminant_iff_not_two_dvd hP).mp hcop) h
-  · have hp2 : p ≠ 2 := by have := Nat.odd_iff.mp hodd; omega
-    have hpd : (p : ℤ) ∣ oddPrimeDiscriminant p * Q :=
+  · have hpd : (p : ℤ) ∣ oddPrimeDiscriminant p * Q :=
       (dvd_oddPrimeDiscriminant_iff.mpr dvd_rfl).mul_right Q
     rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd]
-    exact jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq hp hp2 hpd
+    exact jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq hp hpd
       (oddPrimeDiscriminant_dvd_iff.mpr.mt
-        ((prime_oddPrimeDiscriminant hp).coprime_iff_not_dvd.mp hcop.symm)) h
+        ((prime_oddPrimeDiscriminant_iff.mpr hp).coprime_iff_not_dvd.mp hcop.symm)) h
 
 /-! ### The genus characters of a fundamental discriminant -/
 
@@ -182,7 +181,7 @@ theorem primeDiscriminantCharFun_eq_one_of_mem_of_four_mul_eq_sq_sub_mul_sq {s :
   have hmem : P' ∈ s := Finset.mem_of_mem_erase hP'
   rcases isPrimeDiscriminant_iff.mp (hs P' hmem) with hev | ⟨p, _, hodd, rfl⟩
   · exact absurd (heven P hP P' hmem hPeven hev).symm (Finset.ne_of_mem_erase hP')
-  · exact oddPrimeDiscriminant_mod_four_eq_one hodd
+  · exact oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd
 
 /-- The genus character indexed by a finite set `s` of prime discriminants: the product of the
 characters they carry. The genus characters of a fundamental discriminant `D` are those indexed by

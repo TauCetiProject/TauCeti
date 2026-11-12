@@ -11,13 +11,13 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 /-!
 # Restricting induced morphisms over rational subsets
 
-Let `φ : (A, A⁺) → (B, B⁺)` be a morphism of Huber pairs carrying open ideals to ideals generating
-open ideals, with `Spa(B, B⁺)` sheafy, so that it induces a morphism of pre-adic spaces
-`Spa(φ) : Spa(B, B⁺) ⟶ Spa(A, A⁺)`. For a rational subset `R(T/s)` of `Spa(A, A⁺)`, its preimage
-under `Spa(φ)` is `R(φ(T)/φ(s))` (Wedhorn, Lemma 7.46(3)). By Wedhorn's Remark 8.8 the two
-rational subsets are the adic spectra of `(A⟨T/s⟩, A_U⁺)` and `(B⟨φ(T)/φ(s)⟩, B_V⁺)`, and under
-these identifications the restriction of `Spa(φ)` over `R(T/s)` is the morphism induced by the
-base change `(A⟨T/s⟩, A_U⁺) → (B⟨φ(T)/φ(s)⟩, B_V⁺)` of `φ`
+Let `φ : (A, A⁺) → (B, B⁺)` be a morphism of Huber pairs with `Spa(B, B⁺)` sheafy, so that it
+induces a morphism of pre-adic spaces `Spa(φ) : Spa(B, B⁺) ⟶ Spa(A, A⁺)`. For a rational subset
+`R(T/s)` of `Spa(A, A⁺)`, its preimage under `Spa(φ)` is `R(φ(T)/φ(s))` (Wedhorn, Lemma 7.46(3)),
+which is again a rational subset when `φ` carries open ideals to ideals generating open ideals.
+By Wedhorn's Remark 8.8 the two rational subsets are then the adic spectra of `(A⟨T/s⟩, A_U⁺)` and
+`(B⟨φ(T)/φ(s)⟩, B_V⁺)`, and under these identifications the restriction of `Spa(φ)` over `R(T/s)`
+is the morphism induced by the base change `(A⟨T/s⟩, A_U⁺) → (B⟨φ(T)/φ(s)⟩, B_V⁺)` of `φ`
 (`TauCeti.Huber.PairOfDefinition.completionLocPairMap`).
 
 The precise statement is that the square of pre-adic spaces
@@ -113,10 +113,6 @@ theorem presentationLimitPreAdicSpaceComap_completionLocPairMap_comp
           L' hden' rfl fun _ ht ↦ Finset.mem_image_of_mem _ ht).toRingHom
         (P.completionLocPairMap U hP T s L hden P' U' hP' φ (T.image φ.toRingHom) (φ.toRingHom s)
           L' hden' rfl fun _ ht ↦ Finset.mem_image_of_mem _ ht).continuous_toRingHom
-        (fun _ hJ ↦ by
-          rw [toRingHom_completionLocPairMap]
-          exact P.isOpen_map_completionLocMap T s L hden P' φ.toRingHom
-            φ.continuous_toRingHom.continuousAt _ _ L' hden' rfl _ hopen hJ)
         (P.completionLocPairMap U hP T s L hden P' U' hP' φ (T.image φ.toRingHom) (φ.toRingHom s)
           L' hden' rfl fun _ ht ↦ Finset.mem_image_of_mem _ ht).map_mem_plus
         (P.rationalLocalizationPair U hP T s L hden).isRingOfIntegralElements.isPowerBounded_of_mem
@@ -132,9 +128,6 @@ theorem presentationLimitPreAdicSpaceComap_completionLocPairMap_comp
       presentationLimitPreAdicSpaceComap (P' := P.completionLocalization T s L hden)
         (P.toCompletionLocHom U hP T s L hden).toRingHom
         (P.toCompletionLocHom U hP T s L hden).continuous_toRingHom
-        (fun _ hJ ↦ by
-          rw [toRingHom_toCompletionLocHom]
-          exact P.isOpen_map_toCompletionLoc T s L hden hJ)
         (P.toCompletionLocHom U hP T s L hden).map_mem_plus
         U.isRingOfIntegralElements.isPowerBounded_of_mem
         (P.rationalLocalizationPair U hP T s L hden).isRingOfIntegralElements.isPowerBounded_of_mem
@@ -148,9 +141,6 @@ theorem presentationLimitPreAdicSpaceComap_completionLocPairMap_comp
         (P'.toCompletionLocHom U' hP' (T.image φ.toRingHom) (φ.toRingHom s) L' hden').toRingHom
         (P'.toCompletionLocHom U' hP' (T.image φ.toRingHom) (φ.toRingHom s) L'
           hden').continuous_toRingHom
-        (fun _ hJ ↦ by
-          rw [toRingHom_toCompletionLocHom]
-          exact P'.isOpen_map_toCompletionLoc _ _ L' hden' hJ)
         (P'.toCompletionLocHom U' hP' (T.image φ.toRingHom) (φ.toRingHom s) L' hden').map_mem_plus
         U'.isRingOfIntegralElements.isPowerBounded_of_mem
         (P'.rationalLocalizationPair U' hP' (T.image φ.toRingHom) (φ.toRingHom s) L'
@@ -160,7 +150,7 @@ theorem presentationLimitPreAdicSpaceComap_completionLocPairMap_comp
             exact P'.completionLocalization_ringOfDefinition_le_completedPlusSubring U'.plus hP' _
               _ L' hden')
         hsheafU' ≫
-      presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom hopen φ.map_mem_plus
+      presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus
         U.isRingOfIntegralElements.isPowerBounded_of_mem
         U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf := by
   let _ := P.locUniformSpace T s L hden
@@ -206,7 +196,7 @@ theorem prop_restrictPreimage_presentationLimitPreAdicSpaceComap_iff
     letI := P'.isUniformAddGroup_locUniformSpace (T.image φ.toRingHom) (φ.toRingHom s) L' hden'
     letI := P'.isTopologicalRing_locUniformSpace (T.image φ.toRingHom) (φ.toRingHom s) L' hden'
     letI := P'.isHuberRing_completion_locTopology (T.image φ.toRingHom) (φ.toRingHom s) L' hden'
-    MP ((presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom hopen
+    MP ((presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
         φ.map_mem_plus U.isRingOfIntegralElements.isPowerBounded_of_mem
         U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf).restrictPreimage
           (spaBasicOpen U.plus T s)) ↔
@@ -217,10 +207,6 @@ theorem prop_restrictPreimage_presentationLimitPreAdicSpaceComap_iff
           L' hden' rfl fun _ ht ↦ Finset.mem_image_of_mem _ ht).toRingHom
         (P.completionLocPairMap U hP T s L hden P' U' hP' φ (T.image φ.toRingHom) (φ.toRingHom s)
           L' hden' rfl fun _ ht ↦ Finset.mem_image_of_mem _ ht).continuous_toRingHom
-        (fun _ hJ ↦ by
-          rw [toRingHom_completionLocPairMap]
-          exact P.isOpen_map_completionLocMap T s L hden P' φ.toRingHom
-            φ.continuous_toRingHom.continuousAt _ _ L' hden' rfl _ hopen hJ)
         (P.completionLocPairMap U hP T s L hden P' U' hP' φ (T.image φ.toRingHom) (φ.toRingHom s)
           L' hden' rfl fun _ ht ↦ Finset.mem_image_of_mem _ ht).map_mem_plus
         (P.rationalLocalizationPair U hP T s L hden).isRingOfIntegralElements.isPowerBounded_of_mem
@@ -232,10 +218,8 @@ theorem prop_restrictPreimage_presentationLimitPreAdicSpaceComap_iff
         (by rw [rationalLocalizationPair_plus]
             exact P'.completionLocalization_ringOfDefinition_le_completedPlusSubring U'.plus hP' _
               _ L' hden')
-        (by rw [rationalLocalizationPair_plus]
-            exact isSheaf_presentationLimitPresheaf_completionLocalization P' U'.plus
-              U'.isRingOfIntegralElements.isPowerBounded_of_mem hP' _ _ L' hden'
-              (by rw [Finset.coe_image, ← Ideal.map_span]; exact hopen hT) hsheaf)) := by
+        (isSheaf_presentationLimitPresheaf_rationalLocalizationPair P' U' hP' _ _ L' hden'
+          (by rw [Finset.coe_image, ← Ideal.map_span]; exact hopen hT) hsheaf)) := by
   let _ := P.locUniformSpace T s L hden
   have _ := P.isUniformAddGroup_locUniformSpace T s L hden
   have _ := P.isTopologicalRing_locUniformSpace T s L hden
@@ -247,16 +231,8 @@ theorem prop_restrictPreimage_presentationLimitPreAdicSpaceComap_iff
   have hT' : IsOpen (Ideal.span ((T.image φ.toRingHom : Finset B) : Set B) : Set B) := by
     rw [Finset.coe_image, ← Ideal.map_span]
     exact hopen hT
-  have hsheafU' : Presheaf.IsSheaf (Opens.grothendieckTopology
-      ↥(spa (P'.rationalLocalizationPair U' hP' (T.image φ.toRingHom) (φ.toRingHom s) L'
-        hden').plus))
-      (presentationLimitPresheaf
-        (P'.completionLocalization (T.image φ.toRingHom) (φ.toRingHom s) L' hden')
-        (P'.rationalLocalizationPair U' hP' (T.image φ.toRingHom) (φ.toRingHom s) L'
-          hden').plus) := by
-    rw [rationalLocalizationPair_plus]
-    exact isSheaf_presentationLimitPresheaf_completionLocalization P' U'.plus
-      U'.isRingOfIntegralElements.isPowerBounded_of_mem hP' _ _ L' hden' hT' hsheaf
+  have hsheafU' := isSheaf_presentationLimitPresheaf_rationalLocalizationPair P' U' hP' _ _ L'
+    hden' hT' hsheaf
   -- the vertical sides of the square are open immersions onto `R(T/s)` and `R(φ(T)/φ(s))`
   have := isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom P hP T s L hden hT
     hsheafU
@@ -264,7 +240,7 @@ theorem prop_restrictPreimage_presentationLimitPreAdicSpaceComap_iff
     (T.image φ.toRingHom) (φ.toRingHom s) L' hden' hT' hsheafU'
   refine (Hom.prop_restrictPreimage_iff_of_isOpenImmersion _ _ MP _ _ _
     (range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base P hP T s L hden hsheafU) ?_
-    (presentationLimitPreAdicSpaceComap_completionLocPairMap_comp P P' hP hP' φ hopen hsheaf T s L
+    (presentationLimitPreAdicSpaceComap_completionLocPairMap_comp P P' hP hP' φ hsheaf T s L
       hden L' hden' hsheafU hsheafU'))
   -- the preimage of `R(T/s)` under `Spa(φ)` is `R(φ(T)/φ(s))`
   rw [range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base P' hP'

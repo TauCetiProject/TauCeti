@@ -340,9 +340,6 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
   -- the radius `v(ϖ) ^ (1 / r)` of the interval matching the radius bound `r`
   have hρ {r : ℚ≥0} (hr : r ≠ 0) : v (algebraMap O K ϖ) ^ ((r : ℝ)⁻¹) ∈ Set.Ioo 0 1 :=
     ⟨NNReal.rpow_pos hϖ₀, NNReal.rpow_lt_one hϖ' (inv_pos.mpr (by positivity))⟩
-  have hpow {r : ℚ≥0} (hr : r ≠ 0) :
-      (v (algebraMap O K ϖ) ^ ((r : ℝ)⁻¹)) ^ r.num = v (algebraMap O K ϖ) ^ r.den := by
-    rw [NNReal.rpow_inv_nnratCast, NNReal.rpow_inv_natCast_pow _ (NNRat.num_ne_zero.mpr hr)]
   have h₁₂ : v (algebraMap O K ϖ) ^ ((q : ℝ)⁻¹) ≤ v (algebraMap O K ϖ) ^ ((q' : ℝ)⁻¹) :=
     NNReal.rpow_le_rpow_of_exponent_ge hϖ₀ hϖ'.le
       (inv_anti₀ (by positivity) (by exact_mod_cast hqq'))
@@ -352,9 +349,10 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
     (B := IntervalLocalization p hv hϖ hϖ' (hρ hq) (hρ hq')) hI P
   let P' : PairOfDefinition (IntervalRing p hv hϖ hϖ' (hρ hq) (hρ hq')) :=
     IsHuberRing.nonempty_pairOfDefinition.some
-  let f := spaXWindowChart hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY (hpow hq) (hpow hq') h₁₂ P'
-  have := isOpenImmersion_spaXWindowChart hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY (hpow hq)
-    (hpow hq') h₁₂ P' hW
+  let f := spaXWindowChart hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY
+    (NNReal.rpow_inv_nnratCast_pow_num _ hq) (NNReal.rpow_inv_nnratCast_pow_num _ hq') h₁₂ P'
+  have := isOpenImmersion_spaXWindowChart hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY
+    (NNReal.rpow_inv_nnratCast_pow_num _ hq) (NNReal.rpow_inv_nnratCast_pow_num _ hq') h₁₂ P' hW
   -- `𝒳` restricted to the image of the chart is `Spa(B^I, B^{I,+})`
   have hA := ObjectProperty.prop_of_iso PreAdicSpace.isAffinoid
     (PreAdicSpace.IsOpenImmersion.isoRestrict f)
@@ -362,8 +360,9 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
       ⟨_, Pair.powerBounded_plus (A := IntervalRing p hv hϖ hϖ' (hρ hq) (hρ hq')) ▸
         (Pair.powerBounded _).isRingOfIntegralElements⟩ P'
       P'.le_powerBoundedSubring)
-  have hmem := (PreAdicSpace.mem_affinoidOpens_restrict_iff _ f.isOpenEmbedding ⊤).mp
-    ((PreAdicSpace.top_mem_affinoidOpens_iff _).mpr hA)
+  have hmem := (PreAdicSpace.mem_propOpens_restrict_iff _ f.isOpenEmbedding
+    PreAdicSpace.isAffinoid ⊤).mp
+    ((PreAdicSpace.top_mem_propOpens_iff _ PreAdicSpace.isAffinoid).mpr hA)
   -- the image of the chart is `q(W)`
   have hU : f.isOpenEmbedding.isOpenMap.functor.obj ⊤ = ⟨quotientMap hI '' (Subtype.val ⁻¹'
       {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v}),
@@ -371,8 +370,8 @@ theorem quotientMap_image_window_mem_affinoidOpens (hq : q ≠ 0) (hqq' : q ≤ 
           (isOpen_val_preimage_setOf_isRadiusLowerBound_isRadiusUpperBound hI hq)⟩ := by
     -- the open `functor.obj ⊤` is the image of `Set.univ` by definition
     refine Opens.ext (Set.image_univ.trans ?_)
-    exact range_spaXWindowChart_base hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY (hpow hq) (hpow hq')
-      h₁₂ P'
+    exact range_spaXWindowChart_base hv hϖ hϖ' (hρ hq) (hρ hq') hI P hden hY
+      (NNReal.rpow_inv_nnratCast_pow_num _ hq) (NNReal.rpow_inv_nnratCast_pow_num _ hq') h₁₂ P'
   exact hU ▸ hmem
 
 include hv hϖ hϖ' in

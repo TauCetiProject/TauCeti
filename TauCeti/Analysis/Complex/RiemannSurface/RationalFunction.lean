@@ -54,11 +54,11 @@ nonconstant holomorphic map to the sphere are studied algebraically.
 
 * `TauCeti.RiemannSurface.MeromorphicFunction.aeval_coordinate_apply_coe`: a polynomial evaluated
   at the coordinate takes the value `p(z)` at a finite point `z`.
-* `TauCeti.RiemannSurface.MeromorphicFunction.exists_algebraMap_eq_of_forall_coe_ne`: a
-  meromorphic function on the Riemann sphere with neither zeros nor poles in `ℂ` is constant.
 * `TauCeti.RiemannSurface.MeromorphicFunction.ratFuncEquiv_apply_coe`: the meromorphic function of
   a rational function `r` takes the value `r(z)` at every finite point `z` at which the denominator
   of `r` does not vanish.
+* `TauCeti.RiemannSurface.MeromorphicFunction.exists_ne_zero_apply_eq_zero`: every point of the
+  Riemann sphere is a zero of a nonzero meromorphic function.
 
 ## References
 
@@ -90,18 +90,25 @@ def coordinate : MeromorphicFunction (OnePoint ℂ) where
 theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x := by
   simp [coordinate]
 
+/-- The sphere coordinate is not the zero meromorphic function. -/
+@[simp]
+theorem coordinate_ne_zero : coordinate ≠ 0 := by
+  intro h
+  have := congrArg (fun g : MeromorphicFunction (OnePoint ℂ) ↦ g (1 : ℂ)) h
+  simp at this
+
+/-- The finite part of the sphere coordinate is the affine chart. -/
+@[simp]
+theorem finitePart_coordinate : coordinate.finitePart = (affineChart : OnePoint ℂ → ℂ) := by
+  funext x
+  simp [finitePart_def]
+
 /-- A polynomial `p` evaluated at the coordinate of the Riemann sphere takes the value `p(z)` at a
 finite point `z`. -/
 @[simp]
 theorem aeval_coordinate_apply_coe (p : ℂ[X]) (z : ℂ) :
-    aeval coordinate p (z : OnePoint ℂ) = ↑(p.eval z) := by
-  induction p using Polynomial.induction_on with
-  | C a => simp
-  | add p q hp hq =>
-    rw [map_add, add_apply_of_eq_coe hp hq, eval_add]
-  | monomial n a h =>
-    rw [pow_succ, ← mul_assoc, map_mul, aeval_X, mul_apply_of_eq_coe h (coordinate_apply _)]
-    simp [mul_assoc]
+    aeval coordinate p (z : OnePoint ℂ) = ↑(p.eval z) :=
+  aeval_apply_of_eq_coe (coordinate_apply _) p
 
 /-- Evaluation of polynomials at the coordinate of the Riemann sphere is injective: a nonzero
 polynomial does not vanish at every point of `ℂ`. -/
@@ -133,23 +140,6 @@ private theorem prod_coordinate_sub_zpow_apply (s : Finset ℂ) (n : ℂ → ℤ
   prod_apply_of_eq_coe fun u hu ↦ zpow_apply_of_eq_coe
     (sub_apply_of_eq_coe (coordinate_apply _) (congrFun (coe_algebraMap u) _))
     (sub_ne_zero.2 fun h : y = u ↦ hy (h ▸ hu)) _
-
-/-- **A meromorphic function on the Riemann sphere with neither zeros nor poles in `ℂ` is
-constant.** -/
-theorem exists_algebraMap_eq_of_forall_coe_ne {f : MeromorphicFunction (OnePoint ℂ)}
-    (hinf : ∀ z : ℂ, f z ≠ ∞) (h0 : ∀ z : ℂ, f z ≠ ((0 : ℂ) : OnePoint ℂ)) :
-    ∃ c : ℂ, algebraMap ℂ _ c = f := by
-  by_cases hf : f ∞ = ∞
-  · -- At a pole at `∞`, the inverse of `f` has no poles, so it is constant.
-    obtain ⟨c, hc⟩ := exists_algebraMap_eq_of_forall_ne_infty (f := f⁻¹) fun x ↦ by
-      induction x using OnePoint.rec with
-      | infty => simp [inv_apply_of_eq_infty hf]
-      | coe z => simp [inv_apply (hinf z) (h0 z)]
-    exact ⟨c⁻¹, by rw [map_inv₀, hc, inv_inv]⟩
-  · exact exists_algebraMap_eq_of_forall_ne_infty fun x ↦ by
-      induction x using OnePoint.rec with
-      | infty => exact hf
-      | coe z => exact hinf z
 
 /-- The finite part of a meromorphic function on the Riemann sphere, read on `ℂ`. -/
 private abbrev finitePartCoe (f : MeromorphicFunction (OnePoint ℂ)) : ℂ → ℂ :=
@@ -262,8 +252,9 @@ private theorem ofRatFunc_surjective : Surjective ofRatFunc := by
   -- constant, and `f = G * φ` is rational.
   set G := f * φ⁻¹
   have hG : ∀ z : ℂ, G z = ↑(g z) := mul_inv_prod_coordinate_sub_zpow_apply hfin hg hfg
-  obtain ⟨c, hc⟩ := exists_algebraMap_eq_of_forall_coe_ne (f := G) (fun z ↦ by simp [hG])
-    fun z ↦ by simpa [hG] using hg0 ⟨z, mem_univ z⟩
+  obtain ⟨c, hc⟩ := exists_algebraMap_eq_of_forall_ne_ne_infty_of_forall_ne_ne_zero (f := G) ∞
+    (fun x hx ↦ by lift x to ℂ using hx; simp [hG])
+    fun x hx ↦ by lift x to ℂ using hx; simpa [hG] using hg0 ⟨x, mem_univ x⟩
   have hGS : G ∈ S := hc ▸ algebraMap_mem S c
   simpa [G, mul_assoc, inv_mul_cancel₀ hφne] using mul_mem hGS hφS
 
@@ -296,5 +287,24 @@ theorem ratFuncEquiv_apply_coe (r : RatFunc ℂ) {z : ℂ} (hz : r.denom.eval z 
   rw [ratFuncEquiv_apply, ofRatFunc, RatFunc.liftAlgHom_apply, div_eq_mul_inv,
     mul_apply_of_eq_coe hnum (inv_apply_of_eq_coe hden hz), RatFunc.eval, eval₂_id, eval₂_id,
     div_eq_mul_inv]
+
+/-! ### Zeros -/
+
+/-- Every point of the Riemann sphere is a zero of a nonzero meromorphic function: a finite point
+`t` is a zero of `z - t`, and `∞` is a zero of `1 / z`. -/
+theorem exists_ne_zero_apply_eq_zero (y : OnePoint ℂ) :
+    ∃ u : MeromorphicFunction (OnePoint ℂ), u ≠ 0 ∧ u y = ((0 : ℂ) : OnePoint ℂ) := by
+  induction y using OnePoint.rec with
+  | infty =>
+    refine ⟨coordinate⁻¹, inv_ne_zero fun h ↦ ?_, inv_apply_of_eq_infty (coordinate_apply ∞)⟩
+    have hinf := congrArg (fun g : MeromorphicFunction (OnePoint ℂ) ↦ g ∞) h
+    simp at hinf
+  | coe t =>
+    have hval (z : ℂ) : (coordinate - algebraMap ℂ _ t) (z : OnePoint ℂ) = ↑(z - t) :=
+      sub_apply_of_eq_coe (coordinate_apply _) (by simp)
+    refine ⟨coordinate - algebraMap ℂ _ t, fun h ↦ ?_, by rw [hval, sub_self]⟩
+    have h₁ := hval (t + 1)
+    rw [h] at h₁
+    simp at h₁
 
 end TauCeti.RiemannSurface.MeromorphicFunction

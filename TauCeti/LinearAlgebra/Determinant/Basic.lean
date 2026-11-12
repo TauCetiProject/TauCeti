@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.LinearAlgebra.Multilinear.Span
-import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
@@ -42,7 +42,8 @@ results over the rows multiplies the determinant by the total of the factors.
 
 It also records facts used to compute ideals of maximal minors: the determinant in a product
 basis of a block-diagonal family, and of a family that becomes block diagonal after a permutation,
-and Cramer's rule for an endomorphism of a free module of finite rank.
+and Cramer's rule for an endomorphism of a free module of finite rank. On a free module of rank
+one, every endomorphism is multiplication by its determinant.
 
 Finally, it records the Weinstein–Aronszajn identity `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for
 linear maps `X` and `Y` between two free modules of finite rank, possibly of different ranks.
@@ -70,13 +71,23 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
 * `LinearMap.det_one_add_comp_comm`: the Weinstein–Aronszajn identity
   `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
+* `LinearEquiv.det_eq_pow_of_forall_eq_smul`: an automorphism acting as multiplication by a unit
+  `c` has determinant `c ^ finrank R V`.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
   as many members in the first factor as the rank of the first factor.
+* `Module.Basis.det_smul_smul_vecCons`: rescaling the first two of three vectors by `r` and `r'`
+  multiplies their determinant by `r * r'`.
+* `Module.Basis.det_equivFun_symm_trans_equivFun`: the coordinate change from a basis `b` to a
+  basis `b'` has determinant `b'.det b`.
+* `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
+  under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
+* `LinearMap.apply_eq_det_smul_of_finrank_eq_one`: on a free module of rank one, an endomorphism
+  is multiplication by its determinant.
 
 ## Implementation notes
 
@@ -194,6 +205,33 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   rw [hσ, prod_det_sumElim] at h
   rw [h, smul_smul, Int.units_mul_self, one_smul]
 
+/-- Rescaling the first two of three vectors by `r` and `r'` multiplies their determinant in a
+basis by `r * r'`. -/
+theorem det_smul_smul_vecCons (b : Basis (Fin 3) R M) (r r' : R) (u w d : M) :
+    b.det ![r • u, r' • w, d] = r * r' * b.det ![u, w, d] := by
+  have hv : ![r • u, r' • w, d] = fun k ↦ ![r, r', 1] k • ![u, w, d] k := by
+    ext k
+    fin_cases k <;> simp
+  rw [hv, AlternatingMap.map_smul_univ, Fin.prod_univ_three]
+  simp
+
+/-- The coordinate change from the basis `b` to the basis `b'`, which sends the coordinates `x` of
+`∑ i, x i • b i` in `b` to its coordinates in `b'`, has determinant `b'.det b`. -/
+theorem det_equivFun_symm_trans_equivFun (b b' : Basis ι R M) :
+    (LinearEquiv.det (b.equivFun.symm.trans b'.equivFun) : R) = b'.det b := by
+  -- The coordinate change is the change of basis `b' i ↦ b i`, written in the coordinates of `b'`.
+  have h : b.equivFun.symm.trans b'.equivFun =
+      (b'.equivFun.symm.trans (b'.equiv b (Equiv.refl ι))).trans b'.equivFun := by
+    ext x : 1
+    simp [map_sum, map_smul]
+  rw [h, LinearEquiv.det_conj, LinearEquiv.coe_det, det_basis]
+
+/-- Evaluating the determinant form of a basis `b'` on the image `b.map e` of a basis `b` under a
+linear equivalence `e` gives the determinant of the matrix of `e` with respect to `b` and `b'`. -/
+theorem det_map_eq_det_toMatrix (b : Basis ι R M) (b' : Basis ι R M') (e : M ≃ₗ[R] M') :
+    b'.det (b.map e) = (LinearMap.toMatrix b b' (e : M →ₗ[R] M')).det := by
+  rw [det_apply, coe_map, ← LinearEquiv.coe_toLinearMap, ← LinearMap.toMatrix_eq_basisToMatrix]
+
 end Module.Basis
 
 namespace LinearMap
@@ -219,7 +257,7 @@ conclusion, which is an equality of bilinear maps. -/
 theorem IsAlt.compl₁₂_self_eq_det_smul (b : Basis (Fin 2) R M) {ω : M →ₗ[R] M →ₗ[R] N}
     (halt : ω.IsAlt) (φ : M →ₗ[R] M) : ω.compl₁₂ φ φ = LinearMap.det φ • ω := by
   ext x y
-  simpa only [compl₁₂_apply, smul_apply, AlternatingMap.compLinearMap_apply,
+  simpa only [compl₁₂_apply, LinearMap.smul_apply, AlternatingMap.compLinearMap_apply,
     IsAlt.toAlternatingMap_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, _root_.smul_apply] using
     congr($(AlternatingMap.compLinearMap_eq_det_smul b halt.toAlternatingMap φ) ![x, y])
@@ -276,9 +314,29 @@ theorem det_smul_mem_range {F : Type*} [AddCommGroup F] [Module R F] [Module.Fre
     det_toMatrix] at h
   simpa using h
 
+/-- An endomorphism of a free module of rank one is multiplication by its determinant. -/
+theorem apply_eq_det_smul_of_finrank_eq_one [Module.Free R M] (hM : Module.finrank R M = 1)
+    (f : M →ₗ[R] M) (x : M) : f x = LinearMap.det f • x := by
+  cases subsingleton_or_nontrivial R
+  · have := Module.subsingleton R M
+    exact Subsingleton.elim _ _
+  obtain ⟨c, rfl, -⟩ := f.existsUnique_eq_smul_id_of_finrank_eq_one hM
+  rw [det_smul, det_id, mul_one, hM, pow_one, LinearMap.smul_apply, id_apply]
+
 end LinearMap
 
 namespace LinearEquiv
+
+/-- An automorphism of a free module acting as multiplication by a unit `c` has determinant
+`c ^ finrank R V`. -/
+theorem det_eq_pow_of_forall_eq_smul {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    [Module.Free R V] (e : V ≃ₗ[R] V) (c : Rˣ) (h : ∀ x, e x = c • x) :
+    LinearEquiv.det e = c ^ Module.finrank R V := by
+  have he : (e : V →ₗ[R] V) = (c : R) • LinearMap.id :=
+    LinearMap.ext fun x ↦ by simp [h, Units.smul_def]
+  ext
+  rw [LinearEquiv.coe_det, he, LinearMap.det_smul, LinearMap.det_id, mul_one,
+    Units.val_pow_eq_pow_val]
 
 /-- The determinant kernel on a finite free module of rank at most one is trivial. -/
 @[simp]

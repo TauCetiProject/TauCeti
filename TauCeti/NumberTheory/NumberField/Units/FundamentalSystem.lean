@@ -157,8 +157,7 @@ theorem exists_fundSystem_prod_logHeight₁_le_of_isMaxRank {u : Fin (rank K) �
   rw [← Equiv.prod_comp (Tuple.sort n) n, ← prod_max_one_add_one_div_two,
     ← Finset.prod_mul_distrib]
   refine Finset.prod_le_prod₀ (fun i _ ↦ zero_le_logHeight₁ _) fun i _ ↦ ?_
-  exact (le_of_mul_le_mul_left (two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (ε i))
-    two_pos).trans (hle i)
+  exact (logHeight₁_le_sum_abs_logEmbedding (ε i)).trans (hle i)
 
 open Classical in
 /-- **A fundamental system of controlled absolute height.** If the logarithmic embeddings of
@@ -200,7 +199,7 @@ theorem exists_isMaxRank_prod_sum_abs_logEmbedding_le :
   obtain ⟨a, ha, haL⟩ := ZLattice.exists_linearIndependent_gauge_eq_successiveMin
     (unitLattice K) hB
   have hmink := ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume
-    (unitLattice K) (hK := hB) (hKs := fun x hx ↦ by
+    (unitLattice K) (K := B) (hKs := fun x hx ↦ by
       rw [← SetLike.mem_coe, hBc] at hx ⊢
       exact (neg_mem_logBall K x).2 hx)
   -- Reindex the minima by `Fin (rank K)` and lift their witnesses to units.

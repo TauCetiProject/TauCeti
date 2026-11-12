@@ -33,6 +33,8 @@ from the diamond operator and is not part of the diagonal slash.
   scaling matrix used by `V_d`.
 * `TauCeti.slash_natDiagGL_d_one_eq_smul_levelRaise`: the rational diagonal slash is
   `d ^ (k - 1)` times the degeneracy map.
+* `TauCeti.hasSum_slash_natDiagGL_d_one`: the expansion of the slash at any period `N`, for a
+  raw `N`-periodic function.
 * `ModularForm.qExpansion_slash_natDiagGL_d_one`: the resulting power-series identity.
 * The corresponding `_coeff` lemmas give the divisibility-conditional coefficient formula.
 
@@ -56,7 +58,7 @@ public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane Function HeckeRing.GLn CongruenceSubgroup
 
-open scoped MatrixGroups ModularForm Pointwise
+open scoped MatrixGroups ModularForm Pointwise Manifold
 
 namespace TauCeti
 
@@ -83,6 +85,28 @@ lemma slash_natDiagGL_d_one_apply [NeZero d] (k : ℤ) (f : ℍ → ℂ) (τ : �
       (d : ℂ) ^ (k - 1) * f (scaleGL d • τ) := by
   rw [ModularForm.rat_slash, map_natDiagGL_d_one_eq_scaleGL, slash_scaleGL_apply]
 
+/-- **The expansion of the rational diagonal slash at any period.** Slashing an `N`-periodic `f`
+by `diag(d, 1)` spreads its expansion at period `N` along `d ℕ`, scaled by `d ^ (k - 1)`. Unlike
+`ModularForm.qExpansion_slash_natDiagGL_d_one`, this needs no group containing the translate,
+only the analytic hypotheses on `f`. -/
+theorem hasSum_slash_natDiagGL_d_one [NeZero d] (k : ℤ) {N : ℕ} (hN : 0 < N) {f : ℍ → ℂ}
+    (hfper : Periodic (f ∘ ofComplex) N) (hfhol : MDiff f) (hfbdd : IsBoundedAtImInfty f)
+    (τ : ℍ) :
+    HasSum (fun j : ℕ ↦ (if d ∣ j then (d : ℂ) ^ (k - 1) * (qExpansion N f).coeff (j / d)
+        else 0) • Function.Periodic.qParam N (τ : ℂ) ^ j)
+      ((f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ)) τ) := by
+  have hd : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
+  have hN' : (0 : ℝ) < N := Nat.cast_pos.mpr hN
+  rw [slash_natDiagGL_d_one_apply]
+  have hs := (UpperHalfPlane.hasSum_qExpansion hN' hfper hfhol hfbdd (scaleGL d • τ)).mul_left
+    ((d : ℂ) ^ (k - 1))
+  rw [qParam_scaleGL_smul] at hs
+  have hinj : Injective fun j : ℕ ↦ d * j := fun _ _ h ↦ Nat.eq_of_mul_eq_mul_left hd h
+  refine (hinj.hasSum_iff fun x hx ↦ ?_).mp (hs.congr_fun fun j ↦ ?_)
+  · have hnd : ¬d ∣ x := fun ⟨j, hj⟩ ↦ hx ⟨j, hj.symm⟩
+    simp [hnd]
+  · simp [Dvd.intro j rfl, pow_mul, hd.ne', mul_assoc]
+
 /-- **The rational diagonal slash is a scaled degeneracy map.** The target group hypothesis is
 exactly the one needed to package `τ ↦ f (dτ)` as `V_d f`; the equality itself is pointwise and
 contains no group-theoretic argument. -/
@@ -98,40 +122,40 @@ lemma slash_natDiagGL_d_one_eq_smul_levelRaise {𝒢 𝒢' : Subgroup (GL (Fin 2
 the level-raised expansion by `d ^ (k - 1)`, so the result is
 `d ^ (k - 1) • (qExpansion f).expand d`. -/
 theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one
-    {𝒢 𝒢' : Subgroup (GL (Fin 2) ℝ)} [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
-    (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
+    {𝒢 : Subgroup (GL (Fin 2) ℝ)} [NeZero d]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (f : ModularForm 𝒢 k) :
     qExpansion 1 (⇑f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ)) =
       (d : ℂ) ^ (k - 1) • (qExpansion 1 f).expand d (NeZero.ne d) := by
+  -- the trivial group is a target group for the level raise
+  have hle : (⊥ : Subgroup SL(2, ℤ)).map (mapGL ℝ) ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢 := by
+    rw [Subgroup.map_bot]
+    exact bot_le
   rw [slash_natDiagGL_d_one_eq_smul_levelRaise hle f,
     UpperHalfPlane.qExpansion_smul
-      (ModularFormClass.analyticAt_cuspFunction_zero
-        (ModularForm.levelRaise d hle f) one_pos h𝒢'),
-    ModularForm.qExpansion_levelRaise h𝒢 h𝒢' hle]
+      (ModularForm.analyticAt_cuspFunction_levelRaise (by simpa using nsmul_mem h𝒢 d) hle f),
+    ModularForm.qExpansion_levelRaise h𝒢 hle]
 
 /-- The coefficient form of `qExpansion_slash_natDiagGL_d_one`: the diagonal term contributes
 `d ^ (k - 1) a_(n / d)` on indices divisible by `d`, and zero elsewhere. -/
 theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one_coeff
-    {𝒢 𝒢' : Subgroup (GL (Fin 2) ℝ)} [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
-    (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) (n : ℕ) :
+    {𝒢 : Subgroup (GL (Fin 2) ℝ)} [NeZero d]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (f : ModularForm 𝒢 k) (n : ℕ) :
     (qExpansion 1 (⇑f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ))).coeff n =
       if d ∣ n then (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (n / d) else 0 := by
-  rw [ModularForm.qExpansion_slash_natDiagGL_d_one h𝒢 h𝒢' hle f, PowerSeries.coeff_smul,
+  rw [ModularForm.qExpansion_slash_natDiagGL_d_one h𝒢 f, PowerSeries.coeff_smul,
     PowerSeries.coeff_expand]
   split_ifs <;> simp
 
-/-- **The diagonal-slash coefficient formula at `Γ₁`.** The source form has level `M`, while
-`Gamma1_map_le_conjAct_scaleGL` packages its scaled translate at level `dM`; this specialization
-is the form needed by the coprime Hecke recurrence. -/
+/-- **The diagonal-slash coefficient formula at `Γ₁`.** For a form of level `M`, the period `1`
+lies in the strict periods of `Γ₁(M)`, so the coefficient formula holds with no further hypothesis;
+this is the form needed by the coprime Hecke recurrence. -/
 theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one_coeff_Gamma1
     (M d : ℕ) [NeZero d]
     (f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k) (n : ℕ) :
     (qExpansion 1 (⇑f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ))).coeff n =
       if d ∣ n then (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (n / d) else 0 := by
-  refine ModularForm.qExpansion_slash_natDiagGL_d_one_coeff ?_ ?_
-    (Gamma1_map_le_conjAct_scaleGL M d) f n <;>
-    exact one_mem_strictPeriods_Gamma1_map _
+  exact ModularForm.qExpansion_slash_natDiagGL_d_one_coeff
+    (one_mem_strictPeriods_Gamma1_map _) f n
 
 end TauCeti
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Descent
 public import TauCeti.CategoryTheory.Exact.Projective
+public import TauCeti.CategoryTheory.Exact.Resolution.HasFiniteResolution
 
 /-!
 # The Ext-Euler characteristic from a finite projective resolution
@@ -108,23 +109,13 @@ theorem homEuler_step {K Q : C} (hQ : P Q) (i : K ⟶ Q) (p : Q ⟶ X) (zero : i
 
 omit [HasExt.{w} C] in
 /-- A finite resolution by projectives bounds the projective dimension of the resolved object by
-its length: the resolving terms have projective dimension `< 1`, and each conflation of the chain
-raises the bound by one through
-`CategoryTheory.ShortComplex.ShortExact.hasProjectiveDimensionLT_X₃`. -/
+its length. -/
 theorem hasProjectiveDimensionLT (r : (ExactStructure.abelian C).FiniteResolution P X)
     (hproj : P ≤ (ExactStructure.abelian C).isProjective) :
-    HasProjectiveDimensionLT X (r.length + 1) := by
-  induction r with
-  | @base X hX =>
-      have : Projective X := (ExactStructure.abelian_isProjective_iff X).mp (hproj X hX)
-      exact hasProjectiveDimensionLT_of_ge X 1 _ (by omega)
-  | @step K Q X hQ i p zero hp r ih =>
-      have : Projective Q := (ExactStructure.abelian_isProjective_iff Q).mp (hproj Q hQ)
-      have hQ' : HasProjectiveDimensionLT Q (r.length + 1 + 1) :=
-        hasProjectiveDimensionLT_of_ge Q 1 _ (by omega)
-      rw [length_step]
-      exact ((ExactStructure.abelian_conflation _).mp hp).hasProjectiveDimensionLT_X₃
-        (r.length + 1) ih hQ'
+    HasProjectiveDimensionLT X (r.length + 1) :=
+  (ObjectProperty.hasFiniteResolutionOfLength.monotone
+    (fun Y hY ↦ (ExactStructure.abelian_isProjective_iff Y).1 (hproj Y hY)) X
+    r.hasFiniteResolutionOfLength).hasProjectiveDimensionLE
 
 /-- The `Ext` groups out of an object with a finite projective resolution vanish from degree
 `r.length + 1` on. Only projectivity of the `P`-objects is used; no Hom-finiteness is needed. -/
@@ -182,6 +173,7 @@ theorem extEuler_eq_homEuler
       rw [homEuler_step, ← ih]
       omega
 
+omit [HasExt.{w} C] in
 /-- The alternating Hom dimension is the same along any two finite resolutions of `X` taken along
 object properties whose objects are projective and have finite-dimensional Hom spaces into `Y`. -/
 theorem homEuler_eq_homEuler {P' : ObjectProperty C}
@@ -192,6 +184,7 @@ theorem homEuler_eq_homEuler {P' : ObjectProperty C}
     (hproj' : P' ≤ (ExactStructure.abelian C).isProjective)
     (hHom' : ∀ Z, P' Z → FiniteDimensional k (Z ⟶ Y)) :
     r.homEuler k Y = s.homEuler k Y := by
+  have : HasExt.{max u v} C := HasExt.standard C
   rw [← r.extEuler_eq_homEuler hproj hHom, ← s.extEuler_eq_homEuler hproj' hHom']
 
 end ExactStructure.FiniteResolution

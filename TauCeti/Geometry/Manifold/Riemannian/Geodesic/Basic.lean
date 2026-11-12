@@ -62,11 +62,11 @@ with the rest of the acceleration API in
 * `TauCeti.Manifold.isGeodesicCurveOn_iff_of_isOpen`: on an open parameter set the equation is
   the unrestricted one.
 * `TauCeti.Manifold.isGeodesicCurveOn_const`: a constant curve is a geodesic.
+* `TauCeti.Manifold.IsGeodesicCurveOn.alongCurveWithin_smul_curveVelocityWithin`: the covariant
+  derivative of `f γ'` along a geodesic is `f' γ'`.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "`IsGeodesicCurveOn γ s`" and "Initial data".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §2.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Ch. 4.
 -/
@@ -84,7 +84,6 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {s : Set ℝ} {t : ℝ}
@@ -193,11 +192,11 @@ theorem isGeodesicCurveOn_iff_chart (hs : UniqueDiffOn ℝ s) :
   constructor
   · intro h
     exact ⟨h.contMDiffOn, fun r hr ↦ (accelerationWithin_eq_zero_iff
-      (leviCivitaConnection I M) γ h.uniqueDiffOn h.mdifferentiableOn hr).mp
+      (leviCivitaConnection I M) γ h.mdifferentiableOn hr).mp
       (h.accelerationWithin_eq_zero r hr)⟩
   · rintro ⟨hc, hchart⟩
     exact ⟨hs, hc, fun r hr ↦ (accelerationWithin_eq_zero_iff
-      (leviCivitaConnection I M) γ hs (hc.mdifferentiableOn (by norm_num)) hr).mpr (hchart r hr)⟩
+      (leviCivitaConnection I M) γ (hc.mdifferentiableOn (by norm_num)) hr).mpr (hchart r hr)⟩
 
 /-- Being a geodesic on a parameter set depends only on the values of the curve on that set. -/
 theorem IsGeodesicCurveOn.congr {γ' : ℝ → M} (h : IsGeodesicCurveOn I γ s) (hγ : EqOn γ' γ s) :
@@ -246,6 +245,21 @@ theorem isGeodesicCurveOn_const (hs : UniqueDiffOn ℝ s) (x : M) :
 /-- A constant curve is an all-time geodesic. -/
 theorem isGeodesicCurve_const (x : M) : IsGeodesicCurve I (fun _ : ℝ ↦ x) :=
   isGeodesicCurveOn_const uniqueDiffOn_univ x
+
+/-! ### Scalar multiples of the velocity -/
+
+/-- The covariant derivative of a scalar multiple of the velocity of a geodesic is the derivative
+of the scalar times the velocity, since the velocity field of a geodesic is parallel. -/
+theorem IsGeodesicCurveOn.alongCurveWithin_smul_curveVelocityWithin
+    (h : IsGeodesicCurveOn I γ s) {f : ℝ → ℝ} (ht : t ∈ s)
+    (hf : DifferentiableWithinAt ℝ f s t) :
+    alongCurveWithin (leviCivitaConnection I M) γ
+        (fun r ↦ f r • curveVelocityWithin I γ s r) s t =
+      derivWithin f s t • curveVelocityWithin I γ s t := by
+  rw [alongCurveWithin_smul _ γ _ f s hf
+      (differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn h.contMDiffOn ht
+        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))),
+    ← accelerationWithin_def, h.accelerationWithin_eq_zero t ht, smul_zero, add_zero]
 
 end TauCeti.Manifold
 

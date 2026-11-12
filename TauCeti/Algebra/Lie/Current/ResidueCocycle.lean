@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
+public import TauCeti.Algebra.Lie.Cochain
 public import TauCeti.Algebra.Lie.Current.Basic
 public import TauCeti.RingTheory.LaurentSeries.ResiduePairing
 
@@ -28,7 +29,8 @@ restricts to Mathlib's `LieAlgebra.LoopAlgebra.twoCochainOfBilinear`.
 The pairing vanishes on currents of orders at least `M` and `N` with `M + N > 0`, and on two
 currents of nonnegative order. In particular every current pairs to zero with all currents of
 sufficiently high order, and the pairing vanishes on the positive currents, those of order at
-least zero.
+least zero. Dually, it vanishes on polynomial currents of orders below `M` and `N` with
+`M + N ≤ 1`, in particular on the negative currents `t⁻¹ L[t⁻¹]`.
 
 The sign convention is Mathlib's: on modes `x_m = Xᵐ ⊗ x`, the pairing is
 `(x_m, y_n) ↦ n Φ(x, y) δ_{m + n, 0}`. The central extension cocycle `c_κ = -κ(x, y) Res(f dg)`
@@ -39,11 +41,18 @@ of an invariant symmetric form `κ` is the cocycle attached here to `Φ = -κ`.
 * `TauCeti.CurrentAlgebra.residuePairing`: the residue pairing on formal currents.
 * `TauCeti.CurrentAlgebra.residuePairing_eq_sum`: its finite coefficient formula.
 * `TauCeti.CurrentAlgebra.residuePairing_ofLoop`: its restriction to polynomial currents.
+* `TauCeti.CurrentAlgebra.residuePairing_ofLoop_trunc`: truncating both currents far enough out
+  preserves their pairing.
 * `TauCeti.CurrentAlgebra.residuePairing_eq_zero_of_mem_orderSubmodule`: vanishing on currents of
   orders summing to a positive integer.
+* `TauCeti.CurrentAlgebra.residuePairing_eq_zero_of_mem_truncSubmodule`: vanishing on polynomial
+  currents of orders below `M` and `N` with `M + N ≤ 1`.
 * `TauCeti.CurrentAlgebra.residuePairing_lie`: the 2-cocycle identity for an invariant form.
 * `TauCeti.CurrentAlgebra.twoCochainOfBilinear`: the alternating 2-cochain of a symmetric form.
 * `TauCeti.CurrentAlgebra.twoCocycleOfBilinear`: the 2-cocycle of an invariant symmetric form.
+* `TauCeti.CurrentAlgebra.twoCochainOfBilinearSMulRight`: the residue 2-cochain
+  `(u, v) ↦ Res(f dg) Φ(x, y) • z` with coefficients in a module `Z` with trivial action, linear
+  in `z` and natural in `Z`.
 
 ## References
 
@@ -82,10 +91,29 @@ theorem residuePairing_tmul (f g : R⸨X⸩) (x y : L) :
     residuePairing R L Φ (f ⊗ₜ x) (g ⊗ₜ y) = LaurentSeries.residuePairing R f g * Φ x y := by
   rw [residuePairing, LinearMap.BilinForm.tensorDistrib_tmul, smul_eq_mul, mul_comm]
 
+variable {R L} in
+/-- The residue pairing of `X⁻¹ ⊗ x` with `X ⊗ y` exceeds that of `1 ⊗ x` with `1 ⊗ y` by
+`Φ(x, y)`. -/
+lemma residuePairing_single_neg_one_sub (x y : L) :
+    residuePairing R L Φ (HahnSeries.single (-1) 1 ⊗ₜ x) (HahnSeries.single 1 1 ⊗ₜ y) -
+      residuePairing R L Φ (HahnSeries.single 0 1 ⊗ₜ x) (HahnSeries.single 0 1 ⊗ₜ y) = Φ x y := by
+  simp [residuePairing_tmul, LaurentSeries.residuePairing_single]
+
 /-- The residue pairing of the zero form is zero. -/
 @[simp]
 theorem residuePairing_zero : residuePairing R L 0 = 0 := by
   simp [residuePairing, LinearMap.BilinForm.tmul]
+
+/-- The residue pairing is linear in the form: rescaling the form rescales the pairing. -/
+@[simp]
+theorem residuePairing_smul (r : R) : residuePairing R L (r • Φ) = r • residuePairing R L Φ := by
+  simp [residuePairing, LinearMap.BilinForm.tmul]
+
+/-- The residue pairing is additive in the form. -/
+@[simp]
+theorem residuePairing_add (Ψ : LinearMap.BilinForm R L) :
+    residuePairing R L (Φ + Ψ) = residuePairing R L Φ + residuePairing R L Ψ := by
+  simp [residuePairing, LinearMap.BilinForm.tmul, TensorProduct.tmul_add]
 
 /-- The finite coefficient formula for the residue pairing: if `u` has order at least `M` and `v`
 has order at least `N`, then the pairing is `∑_{N ≤ n ≤ -M} n Φ(u₋ₙ, vₙ)`. -/
@@ -124,6 +152,18 @@ theorem residuePairing_eq_zero_of_mem_orderSubmodule_zero {u v : currentAlgebra 
     residuePairing R L Φ u v = 0 := by
   rw [residuePairing_eq_sum R L Φ hu hv, neg_zero, Finset.Icc_self, Finset.sum_singleton,
     zero_smul]
+
+/-- The residue pairing vanishes on polynomial currents of orders below `M` and `N` when
+`M + N ≤ 1`. In particular it vanishes on two negative currents. -/
+theorem residuePairing_eq_zero_of_mem_truncSubmodule {M N : ℤ} {u v : currentAlgebra R L}
+    (hu : u ∈ truncSubmodule R L M) (hv : v ∈ truncSubmodule R L N) (hMN : M + N ≤ 1) :
+    residuePairing R L Φ u v = 0 := by
+  rw [truncSubmodule_def] at hu hv
+  rw [← Submodule.mem_bot R]
+  refine LinearMap.BilinMap.apply_apply_mem_of_mem_span ⊥ _ _ (residuePairing R L Φ) ?_ u v hu hv
+  rintro _ ⟨m, hm, x, rfl⟩ _ ⟨n, hn, y, rfl⟩
+  rw [residuePairing_tmul, LaurentSeries.residuePairing_single, ite_eq_right (by omega), zero_mul]
+  exact zero_mem _
 
 /-- Every current pairs to zero with all currents of sufficiently high order. -/
 theorem exists_orderSubmodule_le_ker_residuePairing (u : currentAlgebra R L) :
@@ -215,6 +255,21 @@ theorem residuePairing_ofLoop (Φ : LinearMap.BilinForm R L)
   · have hm : m ≠ -n := by omega
     simp [h, hm]
 
+/-- Truncating both currents preserves their residue pairing, provided each cutoff exceeds minus
+the lower order of the other current. -/
+theorem residuePairing_ofLoop_trunc (Φ : LinearMap.BilinForm R L) {M N P Q : ℤ}
+    {u v : currentAlgebra R L} (hu : u ∈ orderSubmodule R L M) (hv : v ∈ orderSubmodule R L N)
+    (hPN : 0 < P + N) (hMQ : 0 < M + Q) :
+    residuePairing R L Φ (ofLoop R L (trunc R L P u)) (ofLoop R L (trunc R L Q v)) =
+      residuePairing R L Φ u v := by
+  have h₁ := residuePairing_eq_zero_of_mem_orderSubmodule R L Φ
+    (ofLoop_trunc_sub_mem_orderSubmodule R L P u) (ofLoop_trunc_mem_orderSubmodule R L Q hv) hPN
+  have h₂ := residuePairing_eq_zero_of_mem_orderSubmodule R L Φ hu
+    (ofLoop_trunc_sub_mem_orderSubmodule R L Q v) hMQ
+  rw [map_sub, LinearMap.sub_apply, sub_eq_zero] at h₁
+  rw [map_sub, sub_eq_zero] at h₂
+  rw [h₁, h₂]
+
 /-- The alternating residue 2-cochain with trivial coefficients attached to a symmetric bilinear
 form on `L`: `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y)`. -/
 def twoCochainOfBilinear (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm) :
@@ -239,6 +294,14 @@ theorem twoCochainOfBilinear_ofLoop [HasUniqueDiv R] (Φ : LinearMap.BilinForm R
         (_root_.LieAlgebra.LoopAlgebra.twoCochainOfBilinear R ℤ L Φ hΦ u v) := by
   simp
 
+/-- Rescaling the form rescales the residue cochain. -/
+theorem twoCochainOfBilinear_smul (r : R) (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm)
+    (hrΦ : (r • Φ).IsSymm) :
+    twoCochainOfBilinear R L (r • Φ) hrΦ = r • twoCochainOfBilinear R L Φ hΦ := by
+  refine Subtype.ext <| LinearMap.ext₂ fun u v ↦ ?_
+  simpa using map_smul (TrivialLieModule.equiv R (currentAlgebra R L) R).symm r
+    (residuePairing R L Φ u v)
+
 /-- The residue 2-cocycle with trivial coefficients attached to an invariant symmetric bilinear
 form on `L`. For `Φ = -κ` it is the cocycle `-κ(x, y) Res(f dg)` defining the affine central
 extension of level `κ`. -/
@@ -256,6 +319,79 @@ theorem twoCocycleOfBilinear_coe (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInv
     (twoCocycleOfBilinear R L Φ hΦ hΦs : twoCochain R (currentAlgebra R L)
       (TrivialLieModule R (currentAlgebra R L) R)) = twoCochainOfBilinear R L Φ hΦs :=
   (rfl)
+
+/-- Rescaling the form rescales the residue cocycle. -/
+theorem twoCocycleOfBilinear_smul (r : R) (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
+    (hΦs : Φ.IsSymm) (hrΦ : (r • Φ).lieInvariant L) (hrΦs : (r • Φ).IsSymm) :
+    twoCocycleOfBilinear R L (r • Φ) hrΦ hrΦs = r • twoCocycleOfBilinear R L Φ hΦ hΦs :=
+  Subtype.ext (twoCochainOfBilinear_smul R L r Φ hΦs hrΦs)
+
+section Coefficients
+
+variable {Z Z' : Type*} [AddCommGroup Z] [Module R Z] [AddCommGroup Z'] [Module R Z']
+
+/-- The residue 2-cochain with coefficients in a module `Z` with trivial action, attached to a
+symmetric bilinear form `Φ` on `L` and a vector `z : Z`:
+`(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y) • z`. It is linear in `z`; for `Z = R` and `z = 1` it is
+`twoCochainOfBilinear`. -/
+def twoCochainOfBilinearSMulRight (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm) :
+    Z →ₗ[R] twoCochain R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) Z) where
+  toFun z :=
+    ⟨(residuePairing R L Φ).compr₂ ((TrivialLieModule.equiv R (currentAlgebra R L) Z).symm ∘ₗ
+      LinearMap.toSpanSingleton R Z z), mem_twoCochain_iff.mpr fun u ↦ by
+        simp [residuePairing_self R L hΦ u]⟩
+  map_add' _ _ := Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp)
+  map_smul' _ _ := Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp [smul_smul, mul_comm])
+
+/-- The values of the residue cochain with coefficients in `Z` are the values of the residue
+pairing times `z`. -/
+@[simp]
+theorem twoCochainOfBilinearSMulRight_apply_apply (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm)
+    (z : Z) (u v : currentAlgebra R L) :
+    twoCochainOfBilinearSMulRight R L Φ hΦ z u v =
+      (TrivialLieModule.equiv R (currentAlgebra R L) Z).symm (residuePairing R L Φ u v • z) :=
+  (rfl)
+
+/-- For `Z = R`, the residue cochain with coefficient `1` is the scalar residue cochain. -/
+@[simp]
+theorem twoCochainOfBilinearSMulRight_one (Φ : LinearMap.BilinForm R L) (hΦ : Φ.IsSymm) :
+    twoCochainOfBilinearSMulRight R L Φ hΦ (1 : R) = twoCochainOfBilinear R L Φ hΦ :=
+  Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp)
+
+/-- **Naturality of the residue cochain in its coefficients.** Pushing the residue cochain with
+coefficient `z` forward along a linear map `g : Z → Z'` gives the residue cochain with coefficient
+`g z`. -/
+theorem twoCochainMap_twoCochainOfBilinearSMulRight (Φ : LinearMap.BilinForm R L)
+    (hΦ : Φ.IsSymm) (g : Z →ₗ[R] Z') (z : Z) :
+    twoCochainMap ((TrivialLieModule.equiv R (currentAlgebra R L) Z').symm.toLinearMap ∘ₗ g ∘ₗ
+        (TrivialLieModule.equiv R (currentAlgebra R L) Z).toLinearMap)
+        (LieHom.id : currentAlgebra R L →ₗ⁅R⁆ currentAlgebra R L)
+        (twoCochainOfBilinearSMulRight R L Φ hΦ z) =
+      twoCochainOfBilinearSMulRight R L Φ hΦ (g z) :=
+  Subtype.ext (LinearMap.ext₂ fun _ _ ↦ by simp)
+
+/-- The residue cochain with coefficients in `Z` of an invariant symmetric form is a 2-cocycle. -/
+theorem twoCochainOfBilinearSMulRight_mem_twoCocycle (Φ : LinearMap.BilinForm R L)
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (z : Z) :
+    twoCochainOfBilinearSMulRight R L Φ hΦs z ∈
+      twoCocycle R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) Z) :=
+  (mem_twoCocycle_iff_of_trivial _ _ _ _).mpr fun u v w ↦ by
+    simp only [twoCochainOfBilinearSMulRight_apply_apply, residuePairing_lie R L hΦ u v w,
+      add_smul, map_add]
+
+end Coefficients
+
+variable {R L} in
+/-- **A trivial-coefficient coboundary cannot equal a residue cocycle.** If `-F [u, v]` is
+`Res(u, v) • z` for all currents `u, v`, then `Φ(x, y) • z = 0`: the coboundary takes equal values
+on `(X⁻¹ ⊗ x, X ⊗ y)` and `(1 ⊗ x, 1 ⊗ y)`, whose brackets agree, while the residue cocycle takes
+the values `Φ(x, y) • z` and `0` there. -/
+lemma smul_eq_zero_of_neg_apply_lie_eq {Z : Type*} [AddCommGroup Z] [Module R Z]
+    (Φ : LinearMap.BilinForm R L) (F : currentAlgebra R L → Z) (z : Z)
+    (hF : ∀ u v, -F ⁅u, v⁆ = residuePairing R L Φ u v • z) (x y : L) : Φ x y • z = 0 := by
+  have h₁ := hF (HahnSeries.single (-1) 1 ⊗ₜ x) (HahnSeries.single 1 1 ⊗ₜ y)
+  rw [lie_single_neg_one_eq_lie_single_zero, hF] at h₁
+  rw [← residuePairing_single_neg_one_sub, sub_smul, ← h₁, sub_self]
 
 end Lie
 

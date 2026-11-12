@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.ClassEquation
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.MultiplicationMatrix
 import Mathlib.Data.List.GetD
 
@@ -27,6 +28,14 @@ numbering data itself asks only for `[Group G]`, the searches computed from it f
 conjugacy relation, the classes as `Finset`s for `[Fintype G]`, and `TauCeti.ClassData.ofList`
 builds class data from any list that meets every conjugacy class.
 
+For a group too large to enumerate, `TauCeti.ClassData.ofSumIndexCentralizer` builds class data
+from a pairwise nonconjugate list by the class equation instead: the list meets every class as soon
+as the centralizer indices of its entries sum to the order of the group. `TauCeti.ClassData.map`
+transports class data along a multiplicative equivalence, keeping the numbering, so that class data
+computed in a concrete model of a group applies to any group identified with it. Its
+representatives, numbering and classes are the images under the equivalence, and its
+`equivConjClasses` is that of the original followed by `MulEquiv.conjClassesEquiv`.
+
 On top of the numbering the file gives the two computational objects the algorithm consumes: the
 structure constants `d.structureConstant i j k`, counted by a single scan of the `i`-th class rather
 than by the double scan of the definition, and the class-multiplication matrices
@@ -42,6 +51,9 @@ order `8` as a closed instance of everything here.
 
 * `TauCeti.ClassData`: a numbered list of conjugacy-class representatives of a group.
 * `TauCeti.ClassData.ofList`: such a list, extracted from any list meeting every conjugacy class.
+* `TauCeti.ClassData.ofSumIndexCentralizer`: a pairwise nonconjugate list whose centralizer indices
+  sum to the order of the group, as class data.
+* `TauCeti.ClassData.map`: class data transported along a multiplicative equivalence.
 * `TauCeti.ClassData.index`, `TauCeti.ClassData.rep`: the numbering and its representatives.
 * `TauCeti.ClassData.equivConjClasses`: the numbering as an equivalence with `ConjClasses G`.
 * `TauCeti.ClassData.rowsOfMap`: the rows of a numbered matrix, mapped entrywise into another type.
@@ -56,6 +68,10 @@ order `8` as a closed instance of everything here.
 ## Main results
 
 * `TauCeti.ClassData.numClasses_eq_card_conjClasses`: the numbering has the expected length.
+* `TauCeti.ClassData.sum_index_centralizer_reps`: the class equation, read on the representatives.
+* `TauCeti.ClassData.index_map`, `TauCeti.ClassData.equivConjClasses_map`,
+  `TauCeti.ClassData.classFinset_map`: transported class data numbers the image of an element, and
+  of a class, as the original numbers the element and the class.
 * `TauCeti.ClassData.exists_mem_classes`, `TauCeti.ClassData.pairwise_disjoint_classes`: the
   executable list covers the group and its entries are pairwise disjoint.
 * `TauCeti.ClassData.sum_card_classFinset`: the numbered classes partition the group.
@@ -143,7 +159,36 @@ noncomputable instance [Finite G] : Inhabited (ClassData G) := by
   exact ⟨ofList (Finset.univ : Finset G).toList fun g =>
     ⟨g, Finset.mem_toList.mpr (Finset.mem_univ g), IsConj.refl g⟩⟩
 
+/-- **Class data certified by the class equation.** A list of pairwise nonconjugate elements of a
+finite group whose centralizer indices sum to the order of the group meets every conjugacy class,
+by `List.sum_index_centralizer_eq_card_iff`, so it lists class representatives as it stands.
+
+Unlike `TauCeti.ClassData.ofList`, this keeps the list unchanged and decides no conjugacy: both
+hypotheses can be certified without enumerating `G`, for instance from separately computed orders
+of the group and of the centralizers (`Subgroup.index_mul_card` converts these into indices). -/
+@[expose] def ofSumIndexCentralizer [Finite G] (l : List G)
+    (hl : l.Pairwise fun x y => ¬ IsConj x y)
+    (hsum : (l.map fun x => (Subgroup.centralizer {x}).index).sum = Nat.card G) :
+    ClassData G where
+  reps := l
+  pairwise_not_isConj := hl
+  exists_isConj := (l.sum_index_centralizer_eq_card_iff hl).mp hsum
+
+@[simp]
+theorem reps_ofSumIndexCentralizer [Finite G] (l : List G)
+    (hl : l.Pairwise fun x y => ¬ IsConj x y)
+    (hsum : (l.map fun x => (Subgroup.centralizer {x}).index).sum = Nat.card G) :
+    (ofSumIndexCentralizer l hl hsum).reps = l := (rfl)
+
 variable (d : ClassData G)
+
+/-- **The class equation, read on the representatives**: the centralizer indices of the
+representatives of a finite group sum to its order. This is the converse of
+`TauCeti.ClassData.ofSumIndexCentralizer`, so that construction applies to every list of class
+representatives. -/
+theorem sum_index_centralizer_reps [Finite G] :
+    (d.reps.map fun x => (Subgroup.centralizer {x}).index).sum = Nat.card G :=
+  (d.reps.sum_index_centralizer_eq_card_iff d.pairwise_not_isConj).mpr d.exists_isConj
 
 /-- The number of conjugacy classes of `G`, as numbered by `d`. -/
 @[expose] def numClasses : ℕ := d.reps.length
@@ -490,6 +535,101 @@ theorem classMultMatrix_commute (i j : Fin d.numClasses) :
     (TauCeti.classMultMatrix_commute (d.classOf i) (d.classOf j)).eq]
 
 end ClassIndexed
+
+/-! ### Transport along a multiplicative equivalence -/
+
+section Map
+
+variable {H K : Type*} [Group H] [Group K]
+
+/-- **Class data transported along a multiplicative equivalence**: the images of the
+representatives represent the classes of `H`, numbered in the same order. -/
+@[expose] def map (e : G ≃* H) (d : ClassData G) : ClassData H where
+  reps := d.reps.map e
+  pairwise_not_isConj :=
+    d.pairwise_not_isConj.map e fun _ _ hxy h => hxy (e.isConj_apply_iff.mp h)
+  exists_isConj h := by
+    obtain ⟨x, hx, hxh⟩ := d.exists_isConj (e.symm h)
+    exact ⟨e x, List.mem_map_of_mem hx, by simpa using e.toMonoidHom.map_isConj hxh⟩
+
+variable (e : G ≃* H) (d : ClassData G)
+
+@[simp]
+theorem reps_map : (d.map e).reps = d.reps.map e := (rfl)
+
+/-- Transported class data numbers as many classes as the original. -/
+@[simp]
+theorem numClasses_map : (d.map e).numClasses = d.numClasses :=
+  List.length_map _
+
+/-- **The transported representatives are the images of the original ones**, in the same
+order. -/
+@[simp]
+theorem rep_map (i : Fin (d.map e).numClasses) :
+    (d.map e).rep i = e (d.rep (Fin.cast (d.numClasses_map e) i)) :=
+  List.getElem_map _
+
+/-- The class numbered `i` by the transported data is the image of the class numbered `i` by `d`
+under the equivalence `MulEquiv.conjClassesEquiv` that `e` induces on conjugacy classes. -/
+theorem classOf_map (i : Fin (d.map e).numClasses) :
+    (d.map e).classOf i = e.conjClassesEquiv (d.classOf (Fin.cast (d.numClasses_map e) i)) := by
+  rw [classOf_eq_mk, classOf_eq_mk, rep_map, MulEquiv.conjClassesEquiv_mk]
+
+@[simp]
+theorem map_refl : d.map (MulEquiv.refl G) = d :=
+  ClassData.ext (List.map_id _)
+
+/-- Transporting class data twice is transporting it along the composite equivalence. -/
+@[simp]
+theorem map_map (f : H ≃* K) : (d.map e).map f = d.map (e.trans f) :=
+  ClassData.ext (List.map_map ..)
+
+section Executable
+
+variable [DecidableRel (IsConj : G → G → Prop)] [DecidableRel (IsConj : H → H → Prop)]
+
+/-- **Transported class data numbers the image of an element as `d` numbers the element.** -/
+@[simp]
+theorem index_map (g : G) :
+    (d.map e).index (e g) = Fin.cast (d.numClasses_map e).symm (d.index g) := by
+  rw [index_eq_iff, rep_map, Fin.cast_cast, Fin.cast_eq_self, e.isConj_apply_iff]
+  exact d.isConj_rep_index g
+
+/-- The power map of transported class data is that of `d`: the image of `g ^ n` is numbered as
+`g ^ n` is. Stated for `e g ^ n`, the `simp` normal form of `e (g ^ n)`. -/
+@[simp]
+theorem index_map_pow (g : G) (n : ℕ) :
+    (d.map e).index (e g ^ n) = Fin.cast (d.numClasses_map e).symm (d.index (g ^ n)) := by
+  rw [← map_pow, index_map]
+
+/-- The inverse map of transported class data is that of `d`: the image of `g⁻¹` is numbered as
+`g⁻¹` is. Stated for `(e g)⁻¹`, the `simp` normal form of `e g⁻¹`. -/
+@[simp]
+theorem index_map_inv (g : G) :
+    (d.map e).index (e g)⁻¹ = Fin.cast (d.numClasses_map e).symm (d.index g⁻¹) := by
+  rw [← map_inv, index_map]
+
+/-- **The numbering of the classes of `H` by transported class data** is the numbering by `d`
+followed by the equivalence `MulEquiv.conjClassesEquiv` that `e` induces on conjugacy classes. -/
+theorem equivConjClasses_map :
+    (d.map e).equivConjClasses =
+      (finCongr (d.numClasses_map e)).trans (d.equivConjClasses.trans e.conjClassesEquiv) := by
+  ext i
+  simp [classOf_map]
+
+/-- **The classes of transported class data are the images of the classes of `d`.** In
+particular they have the same sizes, by `Finset.card_map`. -/
+@[simp]
+theorem classFinset_map [Fintype G] [Fintype H] (i : Fin (d.map e).numClasses) :
+    (d.map e).classFinset i =
+      (d.classFinset (Fin.cast (d.numClasses_map e) i)).map (e : G ≃ H).toEmbedding := by
+  ext h
+  obtain ⟨g, rfl⟩ := e.surjective h
+  simp [Fin.ext_iff]
+
+end Executable
+
+end Map
 
 end ClassData
 

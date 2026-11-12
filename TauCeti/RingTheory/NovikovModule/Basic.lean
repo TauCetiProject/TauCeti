@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import Mathlib.Algebra.Torsor.Basic
+public import Mathlib.Basic.Finite.Sigma
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.Algebra.Module.TransferInstance
 public import Mathlib.Tactic.Linarith
@@ -16,7 +17,10 @@ public import Mathlib.Tactic.Linarith
 
 For a potential `F : S → ℝ`, `NovikovModule R F` consists of coefficient functions on `S`
 with finite support above every potential threshold. It is a submodule of `S → R`, with the
-usual pointwise addition and ground-ring scalar multiplication.
+usual pointwise addition and ground-ring scalar multiplication. Finite combinations embed by
+`NovikovModule.ofFinsupp`, and `NovikovModule.trunc C a` is the finite combination keeping the
+coefficients of `a` at generators of potential `> C`. These two constructions adapt the
+approach of the unmerged TauCeti PR https://github.com/TauCetiProject/TauCeti/pull/20410.
 
 Suppose `S` is a finite disjoint union of torsors `P i` under an additive group `H`, and
 `F (h +ᵥ p) = F p - N h`. Choosing one lift in each torsor identifies this completion with
@@ -25,6 +29,9 @@ the monomial of the old lift minus the new lift. In particular the completion re
 lifted generators, while the coordinate description depends on the chosen lifts. The transported
 Novikov scalar action is independent of those lifts. Its module laws and basis use Mathlib's
 `AddEquiv.module` and `Pi.basisFun`.
+
+If `H` is trivial, each torsor is a single generator and no completion is needed
+(`NovikovModule.eq_top_of_subsingleton`).
 
 The cutoff formulas include the potential of each chosen lift; they do not require an
 injective or discrete period map. These are the coefficient coordinates used for completed
@@ -66,6 +73,30 @@ threshold. -/
 theorem mem_iff {a : S → R} : a ∈ NovikovModule R F ↔
     ∀ C : ℝ, {s | a s ≠ 0 ∧ C < F s}.Finite := Iff.rfl
 
+/-- A coefficient function with finite support is a completed combination. -/
+theorem mem_of_finite_support {a : S → R} (ha : (Function.support a).Finite) :
+    a ∈ NovikovModule R F :=
+  fun _ => ha.subset fun _ hs => hs.1
+
+/-- With finitely many generators no completion is needed: every coefficient function is a
+completed combination. -/
+theorem eq_top_of_finite [Finite S] : NovikovModule R F = ⊤ :=
+  eq_top_iff.2 fun _ _ => mem_of_finite_support (Set.toFinite _)
+
+/-- A point mass at a generator is a completed combination. -/
+theorem pi_single_mem [DecidableEq S] (s : S) (r : R) : Pi.single s r ∈ NovikovModule R F :=
+  mem_of_finite_support ((Set.finite_singleton s).subset Pi.support_single_subset)
+
+/-- The point mass `r` at a generator `s`, as a completed combination. -/
+def single [DecidableEq S] (s : S) (r : R) : NovikovModule R F :=
+  ⟨Pi.single s r, pi_single_mem s r⟩
+
+/-- The coefficients of a point mass. -/
+@[simp]
+theorem single_val [DecidableEq S] (s : S) (r : R) :
+    (single s r : NovikovModule R F).val = Pi.single s r :=
+  (rfl)
+
 /-- Only finitely many nonzero coefficients occur above any fixed potential threshold. -/
 theorem finite_gt (a : NovikovModule R F) (C : ℝ) :
     {s | a.val s ≠ 0 ∧ C < F s}.Finite := a.property C
@@ -94,11 +125,99 @@ theorem bddAbove_image_support (a : NovikovModule R F) :
   · exact (hm ⟨s, ⟨hs, h⟩, rfl⟩).trans (le_max_left _ _)
   · exact h.trans (le_max_right _ _)
 
+variable (F) in
+/-- Finite combinations, viewed as completed combinations with the same coefficients. -/
+def ofFinsupp : (S →₀ R) →ₗ[R] NovikovModule R F where
+  toFun a := ⟨a, mem_iff.2 fun _ => a.hasFiniteSupport.subset fun _ hs => hs.1⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem ofFinsupp_apply_val (a : S →₀ R) (s : S) : (ofFinsupp F a).val s = a s :=
+  (rfl)
+
+theorem ofFinsupp_injective : Function.Injective (ofFinsupp (R := R) F) :=
+  fun _ _ h => DFunLike.coe_injective (congrArg Subtype.val h)
+
+/-- A completed combination is a finite combination exactly when it has finitely many nonzero
+coefficients. -/
+theorem mem_range_ofFinsupp_iff {a : NovikovModule R F} :
+    a ∈ LinearMap.range (ofFinsupp F) ↔ (Function.support a.val).Finite := by
+  refine ⟨?_, fun ha => ⟨Finsupp.ofSupportFinite a.val ha, Subtype.ext ?_⟩⟩
+  · rintro ⟨x, rfl⟩
+    exact x.hasFiniteSupport
+  · ext s
+    simp [Finsupp.ofSupportFinite_coe]
+
+/-- The truncation of a completed combination above the potential cutoff `C`: the finite
+combination keeping the coefficients of the generators of potential `> C`. -/
+def trunc (C : ℝ) (a : NovikovModule R F) : S →₀ R :=
+  Finsupp.ofSupportFinite ({s | C < F s}.indicator a.val) <| by
+    rw [Set.support_indicator]
+    exact (finite_gt a C).subset fun _ hs => ⟨hs.2, hs.1⟩
+
+@[simp]
+theorem trunc_apply (C : ℝ) (a : NovikovModule R F) (s : S) :
+    trunc C a s = if C < F s then a.val s else 0 := by
+  simp [trunc, Finsupp.ofSupportFinite_coe, Set.indicator_apply]
+
+theorem trunc_apply_of_lt {C : ℝ} {a : NovikovModule R F} {s : S} (hs : C < F s) :
+    trunc C a s = a.val s := by
+  simp [trunc_apply, hs]
+
+theorem trunc_apply_of_le {C : ℝ} {a : NovikovModule R F} {s : S} (hs : F s ≤ C) :
+    trunc C a s = 0 := by
+  simp [trunc_apply, hs.not_gt]
+
+@[simp]
+theorem trunc_zero (C : ℝ) : trunc C (0 : NovikovModule R F) = 0 := by
+  ext s
+  simp
+
+@[simp]
+theorem trunc_add (C : ℝ) (a b : NovikovModule R F) :
+    trunc C (a + b) = trunc C a + trunc C b := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+@[simp]
+theorem trunc_smul (C : ℝ) (c : R) (a : NovikovModule R F) :
+    trunc C (c • a) = c • trunc C a := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+@[simp]
+theorem trunc_neg (C : ℝ) (a : NovikovModule R F) : trunc C (-a) = -trunc C a := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+@[simp]
+theorem trunc_sub (C : ℝ) (a b : NovikovModule R F) :
+    trunc C (a - b) = trunc C a - trunc C b := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+end Ring
+
 section Coordinates
 
 variable {H ι : Type*} [AddGroup H] [Finite ι] {P : ι → Type*}
     [∀ i, AddTorsor H (P i)] {N : H →+ ℝ} {F : (Σ i, P i) → ℝ}
     (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - N h)
+
+variable (H) in
+/-- **No completion is needed over a trivial group.** With finitely many orbits, each a torsor
+under a trivial group and so a single generator, every coefficient function is a completed
+combination, whatever the potential `F`. -/
+theorem eq_top_of_subsingleton [Subsingleton H] : NovikovModule R F = ⊤ :=
+  have (i : ι) : Finite (P i) :=
+    have := (AddTorsor.subsingleton_iff H (P i)).1 inferInstance
+    Finite.of_subsingleton
+  eq_top_of_finite
 
 include hF
 

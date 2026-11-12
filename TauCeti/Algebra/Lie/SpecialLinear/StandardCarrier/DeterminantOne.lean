@@ -32,11 +32,6 @@ asserted here.
 * `TauCeti.SlStd.toSpecialLinear_comp_groupSchemeι`: composing with `SL_{r+1} → GL_{r+1}`
   recovers the carrier inclusion.
 
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: the full-weight type `A` carrier is now proved to lie
-in the expected pinned ambient group.  Identifying it with that group remains the generation
-step.
-
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
@@ -62,17 +57,17 @@ theorem kostantRootSubgroupMatrix_eq_transvection {A : Type*} [CommRing A]
     (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)) :
     TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+        (rep_kostantForm_mem_lattice r) k
         (isNilpotent_rep_rootGenerator r k) (latticeBasis r) q =
       TauCeti.transvectionUnit (rootTarget_ne_rootSource r k)
         (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q)) := by
   exact
     TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+        (rep_kostantForm_mem_lattice r) k
         (isNilpotent_rep_rootGenerator r k) (latticeBasis r) (rootSource r k)
         (rootTarget r k) (rootTarget_ne_rootSource r k)
-        (nilpotencyClass_rep_rootGenerator r k) (rep_rootGenerator_latticeBasis_apply r k) q
+        (rep_rootGenerator_latticeBasis_apply r k) q
 
 /-- A numbered root subgroup point is the elementary transvection from the root source to the root
 target. -/
@@ -88,13 +83,13 @@ theorem coe_rootSubgroupPoints_eq_transvectionUnit (k : Fin r ⊕ Fin r) (A : Ty
 private theorem rootCoordinateMap_determinantGroupLike (k : Fin r ⊕ Fin r) :
     (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+        (rep_kostantForm_mem_lattice r) k
         (isNilpotent_rep_rootGenerator r k) (latticeBasis r)).hom
       (GeneralLinear.determinantGroupLike ℤ (r + 1) :
         GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) = 1 := by
   let f := TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+    (rep_kostantForm_mem_lattice r) k
     (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
   let q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ]
       AdditiveGroup.coordinateHopfAlgebra ℤ) :=
@@ -103,13 +98,13 @@ private theorem rootCoordinateMap_determinantGroupLike (k : Fin r ⊕ Fin r) :
     WithConv.ofConv_toConv _
   let m := TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
     (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+    (rep_kostantForm_mem_lattice r) k
     (isNilpotent_rep_rootGenerator r k) (latticeBasis r) q
   have hpoint : GeneralLinear.pointToGeneralLinear (r + 1)
       (toConv (q.ofConv.comp f.hom.toAlgHom)) = m :=
     TauCeti.UniversalEnvelopingAlgebra.pointsMulEquiv_kostantRootSubgroupCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+      (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
       (AdditiveGroup.coordinateHopfAlgebra ℤ) q
   have hpoint' : GeneralLinear.pointToGeneralLinear (r + 1)
@@ -138,7 +133,7 @@ theorem specialLinearDefiningHopfIdeal_le_kostantToralDefiningIdeal :
     SpecialLinear.definingHopfIdeal ℤ (r + 1) ≤
       TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) := by
   rw [TauCeti.UniversalEnvelopingAlgebra.le_kostantToralDefiningIdeal_iff]
   constructor

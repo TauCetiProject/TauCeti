@@ -10,50 +10,41 @@ public import Mathlib.Data.Matrix.Basic
 public import Mathlib.Algebra.Polynomial.Coeff
 
 /-!
-# Linear coefficient of a polynomial matrix exponential
+# Coefficients of a polynomial matrix exponential
 
-For a nilpotent matrix `M`, the polynomial curve `exp(tM)` has velocity `M` at zero.
+For a nilpotent matrix `M`, the coefficient of degree `m` in `exp(tM)` is `Mᵐ / m!`.
+In particular, the curve has velocity `M` at zero.
 This entrywise coefficient calculation uses the finite exponential `IsNilpotent.exp` and
-works over every commutative rational algebra, including nonreduced ones.
+works over every commutative ring with a rational module structure, including nonreduced rings.
 -/
 
 public section
 
-namespace Matrix
+open scoped Polynomial
 
-open Polynomial
+/-- The coefficient of `tᵐ` in the polynomial exponential `exp(tX)` is `Xᵐ / m!`. -/
+theorem Matrix.coeff_exp_X_smul_C_mapMatrix
+    {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Module ℚ R]
+    {X : Matrix ι ι R} (hX : IsNilpotent X) (m : ℕ) (i j : ι) :
+    (IsNilpotent.exp ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) i j).coeff m =
+      ((m.factorial : ℚ)⁻¹ • X ^ m) i j := by
+  obtain ⟨k, hk⟩ := hX
+  have hk' : ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) ^ (k + (m + 1)) = 0 := by
+    rw [smul_pow, ← map_pow, pow_add X, hk, zero_mul, map_zero, smul_zero]
+  rw [IsNilpotent.exp_eq_sum hk', Matrix.sum_apply, Polynomial.finsetSum_coeff,
+    Finset.sum_eq_single_of_mem m (Finset.mem_range.mpr (by omega)) fun l _ hl ↦ ?_] <;>
+    rw [smul_pow, ← map_pow, Matrix.smul_apply, Matrix.smul_apply, RingHom.mapMatrix_apply,
+      Matrix.map_apply, smul_eq_mul, Polynomial.coeff_smul, Polynomial.coeff_X_pow_mul']
+  · simp
+  · split_ifs with h
+    · rw [Polynomial.coeff_C_of_ne_zero (by omega), smul_zero]
+    · exact smul_zero _
 
-variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Module ℚ R]
-
-/-- The linear coefficient of `exp(tM)` is `M`. -/
-@[simp]
-theorem coeff_one_exp_X_smul_map_C {M : Matrix ι ι R} (hM : IsNilpotent M) (i j : ι) :
-    (IsNilpotent.exp ((X : R[X]) • M.map C) i j).coeff 1 = M i j := by
-  classical
-  -- Bundle the entrywise coefficient map so its homomorphism laws can transport matrix powers.
-  change (IsNilpotent.exp ((X : R[X]) • C.mapMatrix M) i j).coeff 1 = M i j
-  obtain ⟨n, hn⟩ := hM
-  have hn' : ((X : R[X]) • C.mapMatrix M) ^ (n + 2) = 0 := by
-    rw [smul_pow, ← map_pow, pow_eq_zero_of_le (by omega) hn, map_zero, smul_zero]
-  rw [IsNilpotent.exp_eq_sum hn']
-  simp only [Matrix.sum_apply, Matrix.smul_apply, finsetSum_coeff]
-  have hterm (k : ℕ) :
-      (((k.factorial : ℚ)⁻¹ • (((X : R[X]) • C.mapMatrix M) ^ k)) i j).coeff 1 =
-        if k = 1 then M i j else 0 := by
-    rw [smul_pow, ← map_pow]
-    simp only [Matrix.smul_apply, RingHom.mapMatrix_apply, Matrix.map_apply]
-    -- Entrywise matrix scalar actions reduce to polynomial multiplication, while the
-    -- outer scalar remains rational; state those actions explicitly before extracting coefficients.
-    change (((k.factorial : ℚ)⁻¹ • (X ^ k * C ((M ^ k) i j)) : R[X])).coeff 1 = _
-    calc
-      _ = (k.factorial : ℚ)⁻¹ • ((X ^ k * C ((M ^ k) i j) : R[X]).coeff 1) :=
-        map_rat_smul (lcoeff R 1).toAddMonoidHom _ _
-      _ = _ := by
-        by_cases hk : k = 1
-        · simp [hk]
-        · simp [coeff_X_pow, hk, Ne.symm hk]
-  simp only [Matrix.smul_apply] at hterm
-  simp_rw [hterm]
-  simp
-
-end Matrix
+/-- The linear coefficient of the polynomial exponential `exp(tX)` is `X`. -/
+theorem Matrix.coeff_one_exp_X_smul_C_mapMatrix
+    {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Module ℚ R]
+    {X : Matrix ι ι R} (hX : IsNilpotent X) (i j : ι) :
+    (IsNilpotent.exp ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) i j).coeff 1 =
+      X i j := by
+  rw [Matrix.coeff_exp_X_smul_C_mapMatrix hX, Nat.factorial_one, Nat.cast_one, inv_one, one_smul,
+    pow_one]

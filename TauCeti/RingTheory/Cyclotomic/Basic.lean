@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+public import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Computable
 
 /-!
@@ -509,12 +509,27 @@ theorem reduce_eq_sum (p : ℕ) (r : ZMod p) (x : Cyclotomic e) :
     reduce p r x = ∑ j : Fin e.totient, ((x.coeff j : ℤ) : ZMod p) * r ^ (j : ℕ) :=
   evalCoeffs_eq_sum _ _ _
 
+/-- Reduction of `0` is `0`, for every residue. -/
+@[simp]
+theorem reduce_zero (p : ℕ) (r : ZMod p) : reduce p r (0 : Cyclotomic e) = 0 := by
+  simp [reduce_eq_sum]
+
+/-- Reduction is additive, for every residue: it is additive in the coordinates. -/
+@[simp]
+theorem reduce_add (p : ℕ) (r : ZMod p) (x y : Cyclotomic e) :
+    reduce p r (x + y) = reduce p r x + reduce p r y := by
+  simp [reduce_eq_sum, coeff_add, Finset.sum_add_distrib, add_mul]
+
+/-- Reduction commutes with negation, for every residue. -/
+@[simp]
+theorem reduce_neg (p : ℕ) (r : ZMod p) (x : Cyclotomic e) :
+    reduce p r (-x) = -reduce p r x := by
+  simp [reduce_eq_sum, coeff_neg]
+
 /-- Reduction at an `e`-th primitive root in a prime field is a ring homomorphism. -/
 noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e]
     (r : ZMod p) (hr : IsPrimitiveRoot r e) : Cyclotomic e →+* ZMod p :=
-  evalRingHom (Int.castRingHom (ZMod p)) r <| by
-    rw [← eval_map, map_cyclotomic]
-    exact hr.isRoot_cyclotomic (NeZero.pos e)
+  evalRingHom (Int.castRingHom (ZMod p)) r (hr.eval₂_cyclotomic _)
 
 -- Not `@[simp]`: `reduce p r` is multiplicative only when `r` is a root of the cyclotomic
 -- polynomial, so it has no `simp` API of its own, and rewriting `reduceRingHom` to it would stop
@@ -524,18 +539,23 @@ theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
     reduceRingHom p r hr x = reduce p r x := by
   rw [reduceRingHom, evalRingHom_eq_evalCoeffs, reduce]
 
-/-- For a prime `p`, reduction at a primitive `e`-th root in `ZMod p` sends the distinguished
+/-- Reduction at a root of the cyclotomic polynomial, over any modulus, sends the distinguished
 generator `ζ` to that root. -/
 @[simp]
-theorem reduce_zeta (p : ℕ) [Fact p.Prime] [NeZero e] (r : ZMod p) (hr : IsPrimitiveRoot r e) :
+theorem reduce_zeta {p : ℕ} {r : ZMod p}
+    (hr : (cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) r = 0) :
     reduce p r (zeta e) = r := by
-  rw [← reduceRingHom_apply p r hr, reduceRingHom, evalRingHom_zeta]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, evalRingHom_zeta]
 
 /-! ## The distinguished complex embedding -/
 
 /-- The distinguished complex `e`-th root of unity `exp (2πi/e)`.  It is primitive for `e ≠ 0`
 (`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`); at `e = 0` it is `exp 0 = 1`. -/
 noncomputable def complexRoot (e : ℕ) : ℂ := Complex.exp (2 * Real.pi * Complex.I / e)
+
+/-- The defining equation `complexRoot e = exp (2πi/e)` of the distinguished complex root. -/
+theorem complexRoot_def (e : ℕ) : complexRoot e = Complex.exp (2 * Real.pi * Complex.I / e) :=
+  (rfl)
 
 /-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e` is a primitive
 `e`-th root of unity.  Which primitive root it is, and hence which embedding
@@ -567,16 +587,10 @@ theorem conj_complexRoot_eq_pow_sub_one :
   rw [← pow_succ', Nat.sub_add_cancel (NeZero.pos e)]
   exact isPrimitiveRoot_complexRoot.pow_eq_one
 
-/-- The distinguished complex root annihilates the integral cyclotomic polynomial. -/
-theorem eval₂_cyclotomic_complexRoot [NeZero e] :
-    (cyclotomic e ℤ).eval₂ (Int.castRingHom ℂ) (complexRoot e) = 0 := by
-  rw [← eval_map, map_cyclotomic]
-  exact (isPrimitiveRoot_complexRoot (e := e)).isRoot_cyclotomic (NeZero.pos e)
-
 /-- The pinned embedding of exact cyclotomic integers into `ℂ`, sending `ζ` to
 `exp (2πi/e)`. -/
 noncomputable def complexEmbedding [NeZero e] : Cyclotomic e →+* ℂ :=
-  evalRingHom (Int.castRingHom ℂ) (complexRoot e) eval₂_cyclotomic_complexRoot
+  evalRingHom (Int.castRingHom ℂ) (complexRoot e) (isPrimitiveRoot_complexRoot.eval₂_cyclotomic _)
 
 /-- The pinned embedding evaluates the canonical polynomial representative at `exp (2πi/e)`. -/
 theorem complexEmbedding_apply [NeZero e] (x : Cyclotomic e) :

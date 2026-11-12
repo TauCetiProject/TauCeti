@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.ModuleTopology.Basic
+public import TauCeti.RingTheory.Huber.PowerBounded
+public import TauCeti.Topology.Algebra.Ring.Subring
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Algebra.Module.Submodule.MultiplierRing
+import TauCeti.RingTheory.Huber.RingOfDefinition
 
 /-!
 # Finite algebras over a Huber ring
@@ -33,10 +36,17 @@ Tate, the image of a pseudouniformiser of `A` is one of `B`.
 
 ## Main results
 
+* `TauCeti.Huber.PairOfDefinition.exists_pairOfDefinition_isIntegral`: every pair of definition
+  `(A₀, I)` of `A` gives a pair of definition of `B` whose ring of definition contains the image
+  of `A₀` and is integral over `A₀`.
 * `TauCeti.Huber.IsHuberRing.of_isModuleTopology`: a finite algebra over a Huber ring, with its
   natural topology, is a Huber ring.
 * `TauCeti.Huber.IsTateRing.of_isModuleTopology`: a finite algebra over a Tate ring, with its
   natural topology, is a Tate ring.
+* `TauCeti.Huber.IsPowerBounded.algebraMap_of_isModuleTopology`: the structure map `A → B`
+  preserves power-boundedness.
+* `TauCeti.Huber.isOpen_integralClosure_map_algebraMap`: the integral closure in `B` of the image
+  of an open subring of `A` is open.
 
 ## References
 
@@ -60,11 +70,14 @@ namespace PairOfDefinition
 
 variable [IsTopologicalRing A] [TopologicalSpace B] [IsModuleTopology A B] [Module.Finite A B]
 
-/-- **A finite algebra over a Huber ring has a pair of definition**, given by the multiplier ring of
-a finitely generated spanning lattice containing `1` and the extension of `I` to it. -/
-private theorem nonempty_pairOfDefinition (P : PairOfDefinition A) :
-    haveI : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
-    Nonempty (PairOfDefinition B) := by
+/-- **Pairs of definition of a finite algebra.** For every pair of definition `(A₀, I)` of `A`, a
+finite `A`-algebra `B` with its natural topology has a pair of definition `(B₀, J)` whose ring of
+definition contains the image of `A₀` and is integral over `A₀`. It is the multiplier ring of a
+finitely generated spanning lattice containing `1`, with the extension of `I` to it. -/
+theorem exists_pairOfDefinition_isIntegral (P : PairOfDefinition A) :
+    ∃ Q : PairOfDefinition B,
+      (∀ a ∈ P.ringOfDefinition, algebraMap A B a ∈ Q.ringOfDefinition) ∧
+        ∀ b ∈ Q.ringOfDefinition, IsIntegral P.ringOfDefinition b := by
   have : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := B)
   -- the lattice `M₀`: the `A₀`-span of `1` and a finite set spanning `B` over `A`
@@ -89,7 +102,9 @@ private theorem nonempty_pairOfDefinition (P : PairOfDefinition A) :
               (mem_of_superset (hbasis.mem_of_mem (i := j) trivial) hjB₀)
             idealOfDefinition := J
             fg_idealOfDefinition := P.fg_idealOfDefinition.map _
-            isAdic_idealOfDefinition := isAdic_iff.mpr ⟨fun n ↦ ?_, fun U hU ↦ ?_⟩ }⟩
+            isAdic_idealOfDefinition := isAdic_iff.mpr ⟨fun n ↦ ?_, fun U hU ↦ ?_⟩ },
+    fun a ha ↦ M₀.algebraMap_mem_multiplierRing ⟨a, ha⟩,
+    fun b hb ↦ Submodule.isIntegral_of_mem_multiplierRing (Submodule.fg_span hT) h1 hb⟩
   · -- `Jⁿ` contains the neighbourhood `I^(n + j) • M₀` of `0`
     refine (J ^ n).toAddSubgroup.isOpen_of_mem_nhds (g := 0) ?_
     have hmem := continuous_subtype_val.continuousAt.preimage_mem_nhds
@@ -114,7 +129,7 @@ theorem IsHuberRing.of_isModuleTopology [IsHuberRing A] :
     IsHuberRing B :=
   haveI : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
   ⟨IsHuberRing.nonempty_pairOfDefinition.elim fun P : PairOfDefinition A ↦
-    P.nonempty_pairOfDefinition (B := B)⟩
+    let ⟨Q, _⟩ := P.exists_pairOfDefinition_isIntegral (B := B); ⟨Q⟩⟩
 
 /-- **A finite algebra over a Tate ring is a Tate ring.** If `B` is a commutative `A`-algebra,
 finite as an `A`-module and carrying its natural topology, then `B` is a Tate ring; the image of a
@@ -125,6 +140,38 @@ theorem IsTateRing.of_isModuleTopology [IsTateRing A] :
   haveI : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
   haveI : IsHuberRing B := IsHuberRing.of_isModuleTopology (A := A)
   IsTateRing.of_continuous (A := A) (φ := algebraMap A B) (continuous_algebraMap A B)
+
+/-! ### Power-bounded and integral elements -/
+
+/-- **The structure map of a finite algebra preserves power-boundedness.** A power-bounded `a`
+lies in a ring of definition `A₀` of `A`, and `algebraMap A B` carries `A₀` into a ring of
+definition of `B`. -/
+theorem IsPowerBounded.algebraMap_of_isModuleTopology [IsHuberRing A] {a : A}
+    (ha : IsPowerBounded a) : IsPowerBounded (algebraMap A B a) := by
+  have : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
+  have : IsHuberRing B := IsHuberRing.of_isModuleTopology (A := A)
+  obtain ⟨P, haP⟩ := isPowerBounded_iff_exists_mem_ringOfDefinition.mp ha
+  obtain ⟨Q, hQ, -⟩ := P.exists_pairOfDefinition_isIntegral (B := B)
+  exact isPowerBounded_iff_exists_mem_ringOfDefinition.mpr ⟨Q, hQ a haP⟩
+
+/-- **The integral closure of the image of an open subring is open.** If `C` is an open subring
+of a Huber ring `A`, the integral closure of its image in a finite `A`-algebra `B` with its natural
+topology is open: it contains a ring of definition of `B` that is integral over a ring of
+definition `A₀ ⊆ C` of `A`. -/
+theorem isOpen_integralClosure_map_algebraMap [IsHuberRing A] {C : Subring A}
+    (hC : IsOpen (C : Set A)) :
+    IsOpen ((integralClosure (C.map (algebraMap A B)) B).toSubring : Set B) := by
+  have : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
+  obtain ⟨P, hP⟩ := exists_pairOfDefinition_ringOfDefinition_le hC
+  obtain ⟨Q, -, hQ⟩ := P.exists_pairOfDefinition_isIntegral (B := B)
+  refine AddSubgroup.isOpen_mono (H₁ := Q.ringOfDefinition.toAddSubgroup)
+    (H₂ := (integralClosure (C.map (algebraMap A B)) B).toSubring.toAddSubgroup)
+    (fun b hb ↦ ?_) Q.isOpen_ringOfDefinition
+  -- `b` is integral over `A₀`, hence over the image of `C ⊇ A₀`
+  let φ : P.ringOfDefinition →+* C.map (algebraMap A B) :=
+    ((algebraMap A B).comp P.ringOfDefinition.subtype).codRestrict _
+      fun a ↦ Subring.mem_map.mpr ⟨a, hP a.2, rfl⟩
+  exact (hQ b hb).map_of_comp_eq φ (RingHom.id B) (RingHom.ext fun _ ↦ rfl)
 
 end TauCeti.Huber
 

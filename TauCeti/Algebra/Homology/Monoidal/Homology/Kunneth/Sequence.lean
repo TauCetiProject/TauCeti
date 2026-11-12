@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
-public import TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveDimension
+public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
@@ -313,13 +313,12 @@ private instance (n : ℕ) : IsIso (homologyKunneth K L.cyclesComplexShortComple
   isIso_homologyKunneth_of_d_eq_zero_of_flat_right _ _ (by simp) n
 
 private instance (q : ℕ) : Projective (L.homologyPresentation q).X₁ :=
-  Projective.of_iso ((L.cyclesComplexShortComplex.X₃.iCyclesIso (q + 1) _ rfl (by simp)).symm ≪≫
-    L.cyclesComplexShortComplex.X₃.isoHomologyπ _ (q + 1) rfl (by simp))
+  Projective.of_iso
+    (L.cyclesComplexShortComplex.X₃.XIsoHomologyOfDEqZero (q + 1) (by simp) (by simp))
     (by simpa using (inferInstance : Projective (cokernel (L.iCycles (q + 1)))))
 
 private instance (q : ℕ) : Projective (L.homologyPresentation q).X₂ :=
-  Projective.of_iso ((L.cyclesComplexShortComplex.X₁.iCyclesIso q _ rfl (by simp)).symm ≪≫
-    L.cyclesComplexShortComplex.X₁.isoHomologyπ _ q rfl (by simp))
+  Projective.of_iso (L.cyclesComplexShortComplex.X₁.XIsoHomologyOfDEqZero q (by simp) (by simp))
     (by simpa using (inferInstance : Projective (L.cycles q)))
 
 /-- The connecting morphism of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))` is `tensorδ`, read through

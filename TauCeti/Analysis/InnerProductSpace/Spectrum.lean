@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.StrictPositivity
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
@@ -48,7 +50,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 ## Main declarations
 
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces`:
-  a symmetric operator whose eigenspaces have dense span admits a Hilbert basis of eigenvectors.
+  an operator whose eigenspaces are mutually orthogonal with dense span admits a Hilbert basis of
+  eigenvectors.
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector`: the compact symmetric
   specialization of the preceding result.
 * `ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_ne_zero`: for an injective compact
@@ -70,8 +73,11 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   dimension.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
+* `LinearMap.IsPositive.abs_det_neg`: on a real space, `|det (-S)| = det S` for positive `S`.
 * `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
   positive determinant.
+* `IsStrictlyPositive.det_pos`: a strictly positive continuous linear operator on a
+  finite-dimensional inner product space has positive determinant.
 * `LinearMap.IsPositive.exists_pos_mul_norm_sq_le_re_inner`: an injective positive operator on a
   finite-dimensional space is coercive.
 * `ContinuousLinearMap.IsPositive.det_one_sub_smul_id_add_smul_pos`: interpolating the identity
@@ -102,11 +108,14 @@ namespace ContinuousLinearMap
 
 variable [CompleteSpace E] {T : E →L[𝕜] E}
 
-/-- **A symmetric operator whose eigenspaces have dense span has an orthonormal basis of
-eigenvectors.**  The basis is indexed by a set of vectors of `E`, as in `exists_hilbertBasis`,
-and no separability is assumed. -/
+/-- **An operator whose eigenspaces are mutually orthogonal and have dense span has an
+orthonormal basis of eigenvectors.**  The basis is indexed by a set of vectors of `E`, as in
+`exists_hilbertBasis`, and no separability is assumed. The orthogonality holds for symmetric
+operators (`LinearMap.IsSymmetric.orthogonalFamily_eigenspaces`) and, more generally, for normal
+ones. -/
 theorem exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces
-    (hT' : (T : E →ₗ[𝕜] E).IsSymmetric)
+    (hT' : OrthogonalFamily 𝕜 (fun mu ↦ eigenspace (T : Module.End 𝕜 E) mu)
+      fun mu ↦ (eigenspace (T : Module.End 𝕜 E) mu).subtypeₗᵢ)
     (hspan : (⨆ mu, eigenspace (T : Module.End 𝕜 E) mu)ᗮ = ⊥) :
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (nu : s → 𝕜), ⇑b = ((↑) : s → E) ∧
       ∀ x : s, HasEigenvector (T : Module.End 𝕜 E) (nu x) (x : E) := by
@@ -122,7 +131,7 @@ theorem exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces
   set v : (Σ mu : 𝕜, w mu) → E := fun p =>
     (eigenspace (T : Module.End 𝕜 E) p.1).subtypeₗᵢ (bw p.1 p.2)
   have hv : Orthonormal 𝕜 v :=
-    hT'.orthogonalFamily_eigenspaces.orthonormal_sigma_orthonormal fun mu => (bw mu).orthonormal
+    hT'.orthonormal_sigma_orthonormal fun mu => (bw mu).orthonormal
   have hinj : Function.Injective v := hv.linearIndependent.injective
   have hmem : ∀ p, v p ∈ eigenspace (T : Module.End 𝕜 E) p.1 := fun p => (bw p.1 p.2).2
   have hvspan : (Submodule.span 𝕜 (Set.range v))ᗮ = ⊥ := by
@@ -152,13 +161,14 @@ theorem exists_hilbertBasis_forall_hasEigenvector (hT : IsCompactOperator T)
     (hT' : (T : E →ₗ[𝕜] E).IsSymmetric) :
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (nu : s → 𝕜), ⇑b = ((↑) : s → E) ∧
       ∀ x : s, HasEigenvector (T : Module.End 𝕜 E) (nu x) (x : E) :=
-  exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces hT'
+  exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces hT'.orthogonalFamily_eigenspaces
     (ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot hT hT')
 
-/-- **An injective symmetric operator whose eigenspaces have dense span has an orthonormal basis
-of eigenvectors with nonzero eigenvalues.** -/
+/-- **An injective operator whose eigenspaces are mutually orthogonal and have dense span has an
+orthonormal basis of eigenvectors with nonzero eigenvalues.** -/
 theorem exists_hilbertBasis_forall_hasEigenvector_ne_zero_of_dense_eigenspaces
-    (hT' : (T : E →ₗ[𝕜] E).IsSymmetric)
+    (hT' : OrthogonalFamily 𝕜 (fun mu ↦ eigenspace (T : Module.End 𝕜 E) mu)
+      fun mu ↦ (eigenspace (T : Module.End 𝕜 E) mu).subtypeₗᵢ)
     (hspan : (⨆ mu, eigenspace (T : Module.End 𝕜 E) mu)ᗮ = ⊥)
     (hker : LinearMap.ker (T : E →ₗ[𝕜] E) = ⊥) :
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (nu : s → 𝕜), ⇑b = ((↑) : s → E) ∧
@@ -179,7 +189,8 @@ theorem exists_hilbertBasis_forall_hasEigenvector_ne_zero (hT : IsCompactOperato
     ∃ (s : Set E) (b : HilbertBasis s 𝕜 E) (nu : s → 𝕜), ⇑b = ((↑) : s → E) ∧
       (∀ x : s, nu x ≠ 0) ∧ ∀ x : s, HasEigenvector (T : Module.End 𝕜 E) (nu x) (x : E) :=
   exists_hilbertBasis_forall_hasEigenvector_ne_zero_of_dense_eigenspaces
-    hT' (ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot hT hT') hker
+    hT'.orthogonalFamily_eigenspaces
+    (ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot hT hT') hker
 
 omit [CompleteSpace E] in
 /-- **The spectral expansion of an operator diagonal in a Hilbert basis.**  Applying `T` term by
@@ -231,6 +242,12 @@ subsets cut out by inequalities on the corresponding eigenvalues. -/
 noncomputable def eigenvectorSpan (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (s : Set (Fin n)) : Submodule 𝕜 E :=
   Submodule.span 𝕜 (hT.eigenvectorBasis hn '' s)
+
+/-- The selected eigenvector span is the span of the same indices in the orthonormal basis. -/
+theorem eigenvectorSpan_eq_spanIndices (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) (s : Set (Fin n)) :
+    hT.eigenvectorSpan hn s = (hT.eigenvectorBasis hn).spanIndices s := by
+  rw [eigenvectorSpan, OrthonormalBasis.spanIndices_eq_span]
 
 /-- The span of the eigenvectors at embedded indices equals their canonical eigenvector span. -/
 theorem span_range_eigenvectorBasis_apply_eq_eigenvectorSpan (hT : T.IsSymmetric)
@@ -503,7 +520,30 @@ theorem exists_pos_mul_norm_sq_le_re_inner (hT : T.IsPositive) (hker : LinearMap
       exact div_nonneg (hT.re_inner_nonneg_left x) (by positivity)⟩ (⟨w, hw⟩ : {x : E // x ≠ 0})
   rwa [le_div_iff₀ (pow_pos (norm_pos_iff.2 hw) 2)] at hle
 
+omit [FiniteDimensional 𝕜 E] in
+/-- The determinant of a positive operator on a finite-dimensional real inner product space is the
+absolute value of the determinant of its negative. -/
+theorem abs_det_neg {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] {S : F →ₗ[ℝ] F} (hS : S.IsPositive) :
+    |LinearMap.det (-S)| = LinearMap.det S := by
+  rw [← neg_one_smul ℝ S, LinearMap.det_smul]
+  simp [abs_of_nonneg hS.det_nonneg]
+
 end LinearMap.IsPositive
+
+namespace IsStrictlyPositive
+
+open scoped ComplexOrder
+
+/-- A strictly positive operator on a finite-dimensional inner product space has positive
+determinant. -/
+theorem det_pos [FiniteDimensional 𝕜 E] {T : E →L[𝕜] E} (hT : IsStrictlyPositive T) :
+    0 < T.det :=
+  (ContinuousLinearMap.nonneg_iff_isPositive.mp hT.nonneg).toLinearMap.det_pos
+    ((T : E →ₗ[𝕜] E).isUnit_iff_ker_eq_bot.mp
+      (hT.isUnit.map ContinuousLinearMap.toLinearMapRingHom))
+
+end IsStrictlyPositive
 
 namespace ContinuousLinearMap.IsPositive
 

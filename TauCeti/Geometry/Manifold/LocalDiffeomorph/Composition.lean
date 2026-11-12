@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+
 /-!
 # Cancelling local diffeomorphisms from compositions
 
@@ -17,7 +19,18 @@ principle.
 Dually, a map out of a manifold is `C^m` at the image of a point at which `p` is a `C^n` local
 diffeomorphism, for `m ≤ n`, exactly when its precomposite with `p` is `C^m` at that point. For a
 surjective local diffeomorphism, such as the orbit projection of a free properly discontinuous
-action, this characterises the `C^m` maps out of its target.
+action, this characterises the `C^m` maps out of its target. The same holds for maps out of a
+product `A × B` whose second factor is the target of `p`, precomposed with `Prod.map id p`; this
+characterises the `C^m` maps `A × B → N`, such as flows on a quotient manifold.
+
+Precomposing a `C^n` local diffeomorphism out of a normed space `E` with a continuous linear
+automorphism of `E` gives again a `C^n` local diffeomorphism
+(`IsLocalDiffeomorph.comp_continuousLinearEquiv`); for open embeddings this is Mathlib's
+`Homeomorph.isOpenEmbedding_comp_iff`. For a linear isometry `R`, both facts are also stated for
+`e ∘ R` itself (`Topology.IsOpenEmbedding.comp_linearIsometryEquiv`,
+`IsLocalDiffeomorph.comp_linearIsometryEquiv`): the coercion of `R` to a continuous linear
+equivalence is not reducibly equal to `R`, so instances built from the general statements would not
+apply to `e ∘ R`.
 
 ## Main results
 
@@ -25,8 +38,12 @@ action, this characterises the `C^m` maps out of its target.
 * `ContMDiffOn.of_comp_isLocalDiffeomorph`: on-set cancellation.
 * `ContMDiff.of_comp_isLocalDiffeomorph`: global cancellation.
 * `IsLocalDiffeomorphAt.contMDiffAt_comp_iff`: pointwise cancellation on the source side.
+* `IsLocalDiffeomorphAt.mdifferentiableAt_comp_iff`: the same for differentiability.
 * `IsLocalDiffeomorph.contMDiff_comp_iff`: global cancellation on the source side, for a
   surjective local diffeomorphism.
+* `IsLocalDiffeomorphAt.contMDiffAt_comp_prodMap_iff`,
+  `IsLocalDiffeomorph.contMDiff_comp_prodMap_iff`: the same cancellation for maps out of a
+  product, along the second factor.
 -/
 
 public section
@@ -86,6 +103,18 @@ theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_comp_iff {m : ℕ∞ω} {x : M} 
       (hp.localInverse_left_inv hp.localInverse_mem_target)
   exact hcomp.congr_of_eventuallyEq (hp.localInverse_eventuallyEq_right.fun_comp g).symm
 
+/-- If `p` is a `C^n` local diffeomorphism at `x` with `n ≠ 0`, a map `g` is differentiable at
+`p x` exactly when `g ∘ p` is differentiable at `x`. -/
+theorem _root_.IsLocalDiffeomorphAt.mdifferentiableAt_comp_iff {x : M} {g : B → N}
+    (hp : IsLocalDiffeomorphAt I J n p x) (hn : n ≠ 0) :
+    MDifferentiableAt I I' (g ∘ p) x ↔ MDifferentiableAt J I' g (p x) := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ hg.comp x (hp.mdifferentiableAt hn)⟩
+  -- near `p x`, the map `g` agrees with `(g ∘ p) ∘ q` for the local inverse `q` of `p`
+  have hcomp : MDifferentiableAt J I' ((g ∘ p) ∘ hp.localInverse) (p x) :=
+    hg.comp_of_eq (p x) (hp.mdifferentiableAt_localInverse hn)
+      (hp.localInverse_left_inv hp.localInverse_mem_target)
+  exact hcomp.congr_of_eventuallyEq (hp.localInverse_eventuallyEq_right.fun_comp g).symm
+
 /-- If `p` is a surjective `C^n` local diffeomorphism and `m ≤ n`, a map `g` out of its target is
 `C^m` exactly when `g ∘ p` is `C^m`. -/
 theorem _root_.IsLocalDiffeomorph.contMDiff_comp_iff {m : ℕ∞ω} {g : B → N}
@@ -94,5 +123,71 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_comp_iff {m : ℕ∞ω} {g : B → N
   refine ⟨fun hg y ↦ ?_, fun hg ↦ hg.comp (hp.contMDiff.of_le hm)⟩
   obtain ⟨x, rfl⟩ := hsurj y
   exact ((hp x).contMDiffAt_comp_iff hm).1 (hg x)
+
+section Prod
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {H'' : Type*}
+  [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+
+/-- If `p` is a `C^n` local diffeomorphism at `x` and `m ≤ n`, a map `g` out of a product is `C^m`
+at `(a, p x)` exactly when `g ∘ Prod.map id p` is `C^m` at `(a, x)`. -/
+theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_comp_prodMap_iff {m : ℕ∞ω} {x : M} {a : N}
+    {g : N × B → P} (hp : IsLocalDiffeomorphAt I J n p x) (hm : m ≤ n) :
+    ContMDiffAt (I'.prod I) I'' m (g ∘ Prod.map id p) (a, x) ↔
+      ContMDiffAt (I'.prod J) I'' m g (a, p x) := by
+  refine ⟨fun hg ↦ ?_,
+    fun hg ↦ hg.comp (a, x) (contMDiffAt_id.prodMap (hp.contMDiffAt.of_le hm))⟩
+  -- near `(a, p x)`, the map `g` agrees with `(g ∘ Prod.map id p) ∘ Prod.map id q` for the local
+  -- inverse `q` of `p`
+  have hcomp : ContMDiffAt (I'.prod J) I'' m
+      ((g ∘ Prod.map id p) ∘ Prod.map id hp.localInverse) (a, p x) :=
+    hg.comp_of_eq (contMDiffAt_id.prodMap (hp.contMDiffAt_localInverse.of_le hm))
+      (by simp [hp.localInverse_left_inv hp.localInverse_mem_target])
+  refine hcomp.congr_of_eventuallyEq ?_
+  filter_upwards [hp.localInverse_eventuallyEq_right.comp_tendsto
+    (continuous_snd.tendsto (a, p x))] with ⟨b, y⟩ hy
+  simp only [Function.comp_apply, Prod.map_apply, id_eq] at hy ⊢
+  rw [hy]
+
+/-- If `p` is a surjective `C^n` local diffeomorphism and `m ≤ n`, a map `g` out of a product with
+second factor the target of `p` is `C^m` exactly when `g ∘ Prod.map id p` is `C^m`. -/
+theorem _root_.IsLocalDiffeomorph.contMDiff_comp_prodMap_iff {m : ℕ∞ω} {g : N × B → P}
+    (hp : IsLocalDiffeomorph I J n p) (hsurj : Function.Surjective p) (hm : m ≤ n) :
+    ContMDiff (I'.prod I) I'' m (g ∘ Prod.map id p) ↔ ContMDiff (I'.prod J) I'' m g := by
+  refine ⟨fun hg y ↦ ?_,
+    fun hg ↦ hg.comp (contMDiff_id.prodMap (hp.contMDiff.of_le hm))⟩
+  obtain ⟨x, hx⟩ := hsurj y.2
+  rw [← Prod.mk.eta (p := y), ← hx]
+  exact ((hp x).contMDiffAt_comp_prodMap_iff hm).1 (hg (y.1, x))
+
+end Prod
+
+section ContinuousLinearEquiv
+
+/-- A `C^n` local diffeomorphism out of a normed space `E` remains one when precomposed with a
+continuous linear automorphism of `E`. -/
+theorem _root_.IsLocalDiffeomorph.comp_continuousLinearEquiv {e : E → M}
+    (d : IsLocalDiffeomorph 𝓘(𝕜, E) I n e) (L : E ≃L[𝕜] E) :
+    IsLocalDiffeomorph 𝓘(𝕜, E) I n (e ∘ L) := fun v ↦ by
+  have hL := (L.toContDiffDiffeomorph n).isLocalDiffeomorph v
+  rw [ContinuousLinearEquiv.coe_toContDiffDiffeomorph] at hL
+  exact hL.comp (hg := d (L v))
+
+/-- A map out of a normed space `E` which is an open embedding remains one when precomposed with
+a linear isometry `R` of `E`, stated for `e ∘ R` itself. -/
+theorem _root_.Topology.IsOpenEmbedding.comp_linearIsometryEquiv {X : Type*}
+    [TopologicalSpace X] {e : E → X} (h : Topology.IsOpenEmbedding e) (R : E ≃ₗᵢ[𝕜] E) :
+    Topology.IsOpenEmbedding (e ∘ R) :=
+  R.toHomeomorph.isOpenEmbedding_comp_iff.2 h
+
+/-- The special case of `IsLocalDiffeomorph.comp_continuousLinearEquiv` for a linear isometry `R`,
+stated for `e ∘ R` itself rather than for its continuous linear equivalence. -/
+theorem _root_.IsLocalDiffeomorph.comp_linearIsometryEquiv {e : E → M}
+    (d : IsLocalDiffeomorph 𝓘(𝕜, E) I n e) (R : E ≃ₗᵢ[𝕜] E) :
+    IsLocalDiffeomorph 𝓘(𝕜, E) I n (e ∘ R) :=
+  d.comp_continuousLinearEquiv R.toContinuousLinearEquiv
+
+end ContinuousLinearEquiv
 
 end TauCeti

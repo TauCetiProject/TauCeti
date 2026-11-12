@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.HomotopyClass
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
 # The cubical Hurewicz isomorphism
@@ -21,10 +22,16 @@ This file carries out that last step when `m ≥ 2`. Retraction onto based cubes
 surjectivity, while applying the based-cube class map to a bounding chain proves injectivity.
 The resulting bijection is packaged as an additive equivalence.
 
+The inductive Hurewicz criterion
+`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex` shows
+that a simply connected space with vanishing integral normalized cubical homology in degrees
+at least two has trivial homotopy groups in every degree.
+
 ## References
 
 * S. Eilenberg, *Singular homology theory*, Ann. of Math. (2) 45 (1944), 407--447.
 * W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapter II.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Theorem 4.32.
 -/
 
 public section
@@ -190,7 +197,7 @@ private theorem cubicalHurewiczHom_surjective
     apply (K X).moduleCat_iCycles_injective
     apply chainEquiv.injective
     refine (iCycles_basedCycle g hg).trans ?_
-    rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
     exact (D.normalizedCubicalChainComplexXEquiv_retractChainMap_f_apply ℤ (n + 2)
       ((K X).iCycles (n + 2) z)).symm
   rw [hcycle]
@@ -208,6 +215,54 @@ private theorem cubicalHurewiczHom_surjective
         (n + 2)
       simpa only [HomologicalComplex.homologyMap_id, ModuleCat.id_apply] using
         (ConcreteCategory.congr_hom hm ((K X).homologyπ (n + 2) z)).symm
+
+/-- A based chain that is the cycle underlying a boundary in the complex `K X` is the boundary
+of the corresponding normalized cubical chain. -/
+private theorem boundary_chainTo_eq_of_toCycles_eq
+    {g : NormalizedCubicalChain X ℤ (n + 2)}
+    (hg : g ∈ Submodule.span ℤ
+      (NormalizedCubicalChain.ofCube X ℤ '' {c | c.IsBased (n + 2) x}))
+    {b : (K X).X (n + 3)} (hb : (K X).toCycles (n + 3) (n + 2) b = basedCycle g hg) :
+    NormalizedCubicalChain.boundary X ℤ (n + 2) (chainTo b) = g := by
+  have hi := congrArg (fun z ↦ (K X).iCycles (n + 2) z) hb
+  have hi' := congrArg chainTo hi
+  calc
+    NormalizedCubicalChain.boundary X ℤ (n + 2) (chainTo b) =
+        chainTo ((K X).d (n + 3) (n + 2) b) :=
+      (normalizedCubicalChainComplexXEquiv_d_apply (TopCat.of X) (n + 2) b).symm
+    _ = chainTo ((K X).iCycles (n + 2)
+          ((K X).toCycles (n + 3) (n + 2) b)) := by
+      exact congrArg chainTo
+        (ConcreteCategory.congr_hom
+          (HomologicalComplex.toCycles_i (K X) (n + 3) (n + 2)) b).symm
+    _ = g := by
+      exact hi'.trans (iCycles_basedCycle g hg)
+
+/-- If the dimensions below `n + 2` have trivial homotopy groups, a based cube whose chain is a
+boundary has trivial based class. -/
+private theorem basedClassHom_ofCube_eq_zero_of_boundary_eq
+    (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
+    {c : SingularCube X (n + 2)} (hp : SingularCube.IsBased (n + 2) x c)
+    {b : (K X).X (n + 3)}
+    (hboundary : NormalizedCubicalChain.boundary X ℤ (n + 2) (chainTo b) =
+      NormalizedCubicalChain.ofCube X ℤ c) :
+    NormalizedCubicalChain.basedClassHom x n (NormalizedCubicalChain.ofCube X ℤ c) = 0 := by
+  let D := basedCubeDeformation hX
+  calc
+    NormalizedCubicalChain.basedClassHom x n (NormalizedCubicalChain.ofCube X ℤ c) =
+        NormalizedCubicalChain.basedClassHom x n
+          (D.retractChain ℤ (n + 2) (NormalizedCubicalChain.ofCube X ℤ c)) := by
+            simp only [D.retractChain_ofCube, D.retract_of_isBased hp]
+    _ = NormalizedCubicalChain.basedClassHom x n
+          (D.retractChain ℤ (n + 2)
+            (NormalizedCubicalChain.boundary X ℤ (n + 2) (chainTo b))) := by
+              rw [hboundary]
+    _ = NormalizedCubicalChain.basedClassHom x n
+          (NormalizedCubicalChain.boundary X ℤ (n + 2)
+            (D.retractChain ℤ (n + 3) (chainTo b))) := by
+              rw [D.boundary_retractChain]
+    _ = 0 := NormalizedCubicalChain.basedClassHom_boundary_of_mem_span
+      (D.retractChain_mem_span ℤ (chainTo b))
 
 private theorem cubicalHurewiczHom_injective
     (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x)) :
@@ -235,37 +290,8 @@ private theorem cubicalHurewiczHom_injective
         exact (iCycles_basedCycle g hg).trans (chainTo_chainOf g).symm)] at ha
       obtain ⟨b, hb⟩ := ((K X).moduleCat_homologyπ_eq_zero_iff (m := n + 3) (by simp)
         (basedCycle g hg)).1 ha
-      have hboundary : NormalizedCubicalChain.boundary X ℤ (n + 2) (chainTo b) = g := by
-        have hi := congrArg (fun z ↦ (K X).iCycles (n + 2) z) hb
-        have hi' := congrArg chainTo hi
-        calc
-          NormalizedCubicalChain.boundary X ℤ (n + 2) (chainTo b) =
-              chainTo ((K X).d (n + 3) (n + 2) b) :=
-            (normalizedCubicalChainComplexXEquiv_d_apply (TopCat.of X) (n + 2) b).symm
-          _ = chainTo ((K X).iCycles (n + 2)
-                ((K X).toCycles (n + 3) (n + 2) b)) := by
-            exact congrArg chainTo
-              (ConcreteCategory.congr_hom
-                (HomologicalComplex.toCycles_i (K X) (n + 3) (n + 2)) b).symm
-          _ = g := by
-            exact hi'.trans (iCycles_basedCycle g hg)
-      let D := basedCubeDeformation hX
-      have hclass : NormalizedCubicalChain.basedClassHom x n g = 0 := by
-        calc
-          NormalizedCubicalChain.basedClassHom x n g =
-              NormalizedCubicalChain.basedClassHom x n
-                (D.retractChain ℤ (n + 2) g) := by
-                  simp only [g, D.retractChain_ofCube, D.retract_of_isBased hp]
-          _ = NormalizedCubicalChain.basedClassHom x n
-                (D.retractChain ℤ (n + 2)
-                  (NormalizedCubicalChain.boundary X ℤ (n + 2) (chainTo b))) := by
-                    rw [hboundary]
-          _ = NormalizedCubicalChain.basedClassHom x n
-                (NormalizedCubicalChain.boundary X ℤ (n + 2)
-                  (D.retractChain ℤ (n + 3) (chainTo b))) := by
-                    rw [D.boundary_retractChain]
-          _ = 0 := NormalizedCubicalChain.basedClassHom_boundary_of_mem_span
-            (D.retractChain_mem_span ℤ (chainTo b))
+      have hclass := basedClassHom_ofCube_eq_zero_of_boundary_eq hX hp
+        (boundary_chainTo_eq_of_toCycles_eq hg hb)
       simpa only [g, NormalizedCubicalChain.basedClassHom_ofCube,
         SingularCube.basedClass_coe, p'] using hclass
 
@@ -288,3 +314,31 @@ theorem cubicalHurewiczAddEquiv_apply
   exact AddEquiv.ofBijective_apply _ _ _
 
 end HomotopyGroup
+
+namespace TauCeti
+
+open HomotopyGroup CategoryTheory.Limits
+
+variable {X : Type} [TopologicalSpace X]
+
+/-- **Inductive Hurewicz vanishing criterion (normalized cubical homology).** If `X` is path
+connected with trivial `π_ 1 X x` and its integral normalized cubical homology vanishes in every
+degree `n + 2`, then all homotopy groups `π_ k X x` are trivial. -/
+theorem subsingleton_homotopyGroup_of_isZero_homology_normalizedCubicalChainComplex (x : X)
+    [PathConnectedSpace X] [Subsingleton (π_ 1 X x)]
+    (hH : ∀ n : ℕ,
+      IsZero (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)))
+    (k : ℕ) : Subsingleton (π_ k X x) := by
+  induction k using Nat.strong_induction_on with
+  | ind k ih =>
+    match k with
+    | 0 => exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).mp inferInstance
+    | 1 => exact inferInstance
+    | n + 2 =>
+      let hHomology : Subsingleton
+          (((normalizedCubicalChainComplex ℤ).obj (TopCat.of X)).homology (n + 2)) :=
+        ModuleCat.subsingleton_of_isZero (hH n)
+      exact (Additive.ofMul.trans (cubicalHurewiczAddEquiv ih).toEquiv).subsingleton_congr.mpr
+        hHomology
+
+end TauCeti

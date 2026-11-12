@@ -58,6 +58,8 @@ a dominant top row `λ₁ ≤ λ₀` is `λ₀ - λ₁ + 1`, the dimension of th
   decreasing, so the top row is a dominant weight.
 * `TauCeti.GTPattern.entry_nonneg`: a pattern with a nonnegative top row has nonnegative entries,
   so the polynomial patterns are cut out by the top row alone.
+* `TauCeti.GTPattern.abs_le_sum_abs`: every entry is bounded in absolute value by the sum of the
+  absolute values of the finitely many informative entries.
 * `TauCeti.Interlaces.antitone`: an interlacing sequence is weakly decreasing, so a sequence
   interlacing a dominant weight is dominant.
 * `TauCeti.GTPattern.truncateEquiv`: patterns with `n + 1` rows and top row `l` correspond to
@@ -136,21 +138,23 @@ theorem entry_succ_succ_le_entry (P : GTPattern n) {i j : ℕ} (hj : j < n) :
   · exact (P.interlacing' hij hj).2
   · rw [P.entry_eq_zero_of_le hij, P.entry_eq_zero_of_le (Nat.succ_le_succ hij)]
 
-/-- Rows decrease weakly, in adjacent form. -/
-theorem entry_succ_le_entry (P : GTPattern n) {i j : ℕ} (hij : i + 1 < j) (hj : j ≤ n) :
+/-- Rows decrease weakly, in adjacent form. Beyond the last row both sides vanish. -/
+theorem entry_succ_le_entry (P : GTPattern n) {i j : ℕ} (hij : i + 1 < j) :
     P (i + 1) j ≤ P i j := by
+  rcases Nat.lt_or_ge n j with hj | hj
+  · rw [P.entry_eq_zero_of_lt hj, P.entry_eq_zero_of_lt hj]
   obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := ⟨j - 1, by omega⟩
   exact (P.entry_succ_succ_le_entry (by omega)).trans
     (P.entry_le_entry_succ_row (by omega) (by omega))
 
-/-- Rows decrease weakly: `λᵢ,ⱼ ≥ λᵢ',ⱼ` for `i ≤ i' < j ≤ n`.  This is a consequence of the
+/-- Rows decrease weakly: `λᵢ,ⱼ ≥ λᵢ',ⱼ` for `i ≤ i' < j`.  This is a consequence of the
 interlacing inequalities, not a separate hypothesis on a pattern. -/
-theorem entry_anti (P : GTPattern n) {i j : ℕ} (hj : j ≤ n) :
+theorem entry_anti (P : GTPattern n) {i j : ℕ} :
     ∀ {i' : ℕ}, i ≤ i' → i' < j → P i' j ≤ P i j := by
   intro i' h
   induction i', h using Nat.le_induction with
   | base => exact fun _ => le_rfl
-  | succ k _ ih => exact fun hkj => (P.entry_succ_le_entry hkj hj).trans (ih (by omega))
+  | succ k _ ih => exact fun hkj => (P.entry_succ_le_entry hkj).trans (ih (by omega))
 
 /-- Entries increase weakly with the row index: `λᵢ,ⱼ ≤ λᵢ,ⱼ'` for `i < j ≤ j' ≤ n`. -/
 theorem entry_le_entry_of_le (P : GTPattern n) {i j : ℕ} (hij : i < j) :
@@ -199,7 +203,7 @@ theorem topRow_apply (P : GTPattern n) (i : Fin n) : P.topRow i = P i n := (rfl)
 the top row is one of them, so it is a dominant weight of `GL n`; `TauCeti.GTPattern.topWeight`
 packages it as one. -/
 theorem topRow_antitone (P : GTPattern n) : Antitone P.topRow :=
-  fun _ i' h => P.entry_anti le_rfl h i'.2
+  fun _ i' h => P.entry_anti h i'.2
 
 /-- The top row of a Gelfand-Tsetlin pattern, as a dominant weight of `GL n`. -/
 def topWeight (P : GTPattern n) : DominantWeight n := ⟨P.topRow, P.topRow_antitone⟩
@@ -241,10 +245,32 @@ theorem entry_mem_Icc (P : GTPattern n) {i j : ℕ} (hij : i < j) (hj : j ≤ n)
   exact ⟨(P.topRow_antitone hlast).trans (P.topRow_le_entry hij hj),
     (P.entry_le_topRow hij hj).trans (P.topRow_antitone hfirst)⟩
 
+/-- Every entry of a pattern is bounded in absolute value by the sum of the absolute values of
+the entries `λ_{i,j}` with `i, j ≤ n`, which contain all the informative ones. -/
+theorem abs_le_sum_abs (P : GTPattern n) (i j : ℕ) :
+    |P i j| ≤ ∑ i' ∈ Finset.range (n + 1), ∑ j' ∈ Finset.range (n + 1), |P i' j'| := by
+  have hnn : ∀ i', 0 ≤ ∑ j' ∈ Finset.range (n + 1), |P i' j'| := fun _ =>
+    Finset.sum_nonneg fun _ _ => abs_nonneg _
+  by_cases h : i < j ∧ j ≤ n
+  · calc |P i j| ≤ ∑ j' ∈ Finset.range (n + 1), |P i j'| :=
+          Finset.single_le_sum (f := fun j' => |P i j'|) (fun _ _ => abs_nonneg _)
+            (Finset.mem_range.2 (by omega))
+      _ ≤ _ := Finset.single_le_sum (f := fun i' => ∑ j' ∈ Finset.range (n + 1), |P i' j'|)
+            (fun i' _ => hnn i') (Finset.mem_range.2 (by omega))
+  · rw [P.entry_eq_zero (by omega), abs_zero]
+    exact Finset.sum_nonneg fun i' _ => hnn i'
+
 /-- There is exactly one empty pattern. -/
 instance : Unique (GTPattern 0) where
   default := ⟨fun _ _ => 0, fun _ => rfl, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
   uniq P := by ext i j; exact P.entry_eq_zero (by omega)
+
+/-- There is exactly one pattern for `GL 0`, and it has every dominant weight of `GL 0` as top
+weight. -/
+instance uniqueTopWeightZero (l : DominantWeight 0) :
+    Unique {P : GTPattern 0 // P.topWeight = l} where
+  default := ⟨default, Subsingleton.elim _ _⟩
+  uniq _ := Subtype.ext (Subsingleton.elim _ _)
 
 end GTPattern
 

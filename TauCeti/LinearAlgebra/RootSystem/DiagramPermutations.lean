@@ -42,7 +42,8 @@ The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, p
   `TauCeti.trialityPermD4_apply_apply_apply` the pointwise form of that order relation.
 * `TauCeti.cartanMatrix_A_graphPermA`, `TauCeti.cartanMatrix_D_graphPermD`,
   `TauCeti.cartanMatrix_E6_graphPermE6` and `TauCeti.cartanMatrix_D4_trialityPermD4`: each graph
-  permutation is an automorphism of the corresponding Cartan matrix.
+  permutation is an automorphism of the corresponding Cartan matrix, and
+  `TauCeti.reindex_cartanMatrix_A_graphPermA` restates the type-`A` case in `Matrix.reindex` form.
 * `TauCeti.cartanMatrix_B2_lengthPermRankTwo`, `TauCeti.cartanMatrix_G2_lengthPermRankTwo` and
   `TauCeti.cartanMatrix_F4_lengthPermF4`: each length permutation instead carries its Cartan matrix
   to the transposed matrix, and `TauCeti.cartanMatrix_B2_submatrix_lengthPermRankTwo_ne` and its
@@ -51,6 +52,7 @@ The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, p
 * `TauCeti.lengthPermRankTwo_lengthPermRankTwo` and `TauCeti.lengthPermF4_lengthPermF4`: the length
   permutations are involutions, and `TauCeti.lengthPermRankTwo_apply`,
   `TauCeti.graphPermA_apply` and `TauCeti.lengthPermF4_apply` evaluate them as reversals.
+* `TauCeti.DynkinType.diagramSymmetry_E8_eq_bot`: the diagram of `E₈` has no nontrivial symmetry.
 -/
 
 public section
@@ -96,6 +98,10 @@ theorem graphPermA_ne_one {n : ℕ} (hn : 2 ≤ n) : graphPermA n ≠ 1 := by
 @[simp] theorem graphPermA_sq (n : ℕ) : graphPermA n ^ 2 = 1 := by
   ext i
   simp [graphPermA, pow_two, Equiv.Perm.mul_apply]
+
+/-- Reversal of a chain is its own inverse. -/
+@[simp] lemma graphPermA_symm (n : ℕ) : (graphPermA n).symm = graphPermA n :=
+  Fin.revPerm_symm
 
 /-- Reversal of a chain of at least two nodes has order exactly two. -/
 @[simp] theorem orderOf_graphPermA {n : ℕ} (hn : 2 ≤ n) : orderOf (graphPermA n) = 2 :=
@@ -237,6 +243,13 @@ lemma lengthPermF4_apply (i : Fin 4) : lengthPermF4 i = i.rev :=
   simp only [DynkinType.cartanMatrix_A, CartanMatrix.A, Matrix.of_apply, graphPermA,
     Fin.revPerm_apply, Fin.ext_iff, Fin.val_rev]
   split_ifs <;> omega
+
+/-- Reversal is an automorphism of the type-`A` Cartan matrix, in `Matrix.reindex` form. -/
+theorem reindex_cartanMatrix_A_graphPermA (n : ℕ) :
+    (CartanMatrix.A n).reindex (graphPermA n) (graphPermA n) = CartanMatrix.A n := by
+  ext i j
+  rw [Matrix.reindex_apply, Matrix.submatrix_apply, graphPermA_symm, ← DynkinType.cartanMatrix_A]
+  exact cartanMatrix_A_graphPermA n i j
 
 -- Every defining condition of `CartanMatrix.D n` is invariant under exchanging the two fork
 -- indices, hence so is the whole `if`-chain; `key` records that exchange on index values.
@@ -386,6 +399,29 @@ theorem mem_diagramSymmetry_iff :
     σ ∈ t.diagramSymmetry ↔ ∀ i j, t.cartanMatrix (σ i) (σ j) = t.cartanMatrix i j :=
   mem_diagramSymmetry_iff_submatrix.trans
     ⟨fun h i j => congrFun₂ h i j, fun h => by ext i j; exact h i j⟩
+
+open _root_.Matrix in
+/-- A permutation of the nodes of `E₈` preserving the Cartan matrix is the identity. -/
+private theorem eq_one_of_submatrix_cartanMatrix_E8 {σ : Equiv.Perm (Fin 8)}
+    (hσ : (CartanMatrix.E 8).submatrix σ σ = CartanMatrix.E 8) : σ = 1 := by
+  -- `σ` fixes every vector obtained from the constant vector `1` by repeated multiplication by the
+  -- Cartan matrix, and four multiplications already give pairwise distinct entries.
+  have hinv (v : Fin 8 → ℤ) (hv : v ∘ σ = v) :
+      (CartanMatrix.E 8 *ᵥ v) ∘ σ = CartanMatrix.E 8 *ᵥ v := by
+    conv_rhs => rw [← hσ, ← hv]
+    rw [Matrix.submatrix_mulVec_equiv, Function.comp_assoc, Equiv.self_comp_symm,
+      Function.comp_id]
+  have hfix := hinv _ (hinv _ (hinv _ (hinv (fun _ ↦ 1) rfl)))
+  have hinj : Function.Injective (CartanMatrix.E 8 *ᵥ (CartanMatrix.E 8 *ᵥ
+      (CartanMatrix.E 8 *ᵥ (CartanMatrix.E 8 *ᵥ fun _ ↦ (1 : ℤ))))) := by
+    decide +kernel
+  ext i
+  exact congrArg Fin.val (hinj (congrFun hfix i))
+
+/-- **The Dynkin diagram of `E₈` has no nontrivial symmetry.** -/
+theorem diagramSymmetry_E8_eq_bot : E8.diagramSymmetry = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
+    eq_one_of_submatrix_cartanMatrix_E8 (cartanMatrix_E8 ▸ mem_diagramSymmetry_iff_submatrix.mp hσ)
 
 end DynkinType
 

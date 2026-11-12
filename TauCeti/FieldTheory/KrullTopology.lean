@@ -13,12 +13,14 @@ public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
 import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
-# Openness and local constancy for the Krull topology
+# Openness, local constancy and conjugation for the Krull topology
 
 `Mathlib/FieldTheory/KrullTopology.lean` supplies the Krull topology on `Gal(L/K)`. For an element
 `x` integral over `K`, the orbit map `σ ↦ σ x` is locally constant. Consequently, a unit whose
 underlying element is integral over `K` has an open stabilizer. Both results apply to arbitrary
-field extensions `L/K`, including transcendental extensions.
+field extensions `L/K`, including transcendental extensions. An isomorphism of extensions
+`L ≃ₐ[K] L'` conjugates `Gal(L/K)` onto `Gal(L'/K)` continuously, so Galois groups of isomorphic
+extensions are isomorphic as topological groups.
 
 Through Mathlib's `continuousSMul_iff_stabilizer_isOpen` this is what makes the units of an
 algebraic extension a *discrete module* over the Galois group, in the sense continuous cohomology
@@ -32,10 +34,16 @@ the discrete topology imposed by `TauCeti.ForcedDiscrete`, is a discrete `Gal(L/
   `σ ↦ σ x` on `Gal(L/K)` is locally constant.
 * `Matrix.isLocallyConstant_map`: the orbit map of a finite matrix with integral entries is
   locally constant.
+* `IsLocallyConstant.of_mul_eq_of_fixes`: a function on `Gal(L/K)` invariant under right
+  multiplication by the automorphisms fixing a finite set of integral elements is locally constant.
 * `Units.stabilizer_isOpen_of_isIntegral`: the stabilizer of a unit of `L` whose underlying
   element is integral over `K` is open in `Gal(L/K)`.
 * `AlgHom.stabilizer_isOpen`: the stabilizer of a point `A →ₐ[K] L` of a finite-dimensional
   `K`-algebra, under the postcomposition action of `Gal(L/K)`, is open.
+* `AlgEquiv.autCongr_mem_fixingSubgroup_iff`: conjugation by `e : L ≃ₐ[K] L'` carries the
+  subgroup fixing `e⁻¹(E)` onto the subgroup fixing `E`.
+* `AlgEquiv.continuous_autCongr`: an isomorphism of field extensions `L ≃ₐ[K] L'` induces a
+  continuous isomorphism `Gal(L/K) ≃* Gal(L'/K)` by conjugation.
 * `IntermediateField.isOpen_ker_comp_restrictNormalHom`: an additive homomorphism from
   `Gal(E/K)` for a finite normal intermediate field `E`, read on `Gal(L/K)` through restriction,
   has open kernel.
@@ -70,6 +78,21 @@ theorem Matrix.isLocallyConstant_map {m n : Type*} [Finite m] [Finite n]
   filter_upwards [Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦
     (IsLocallyConstant.iff_eventually_eq _).1 (hM i j).isLocallyConstant_apply σ₀] with σ hσ
   exact Matrix.ext fun i j ↦ hσ i j
+
+/-- **A function invariant under the subgroup fixing a finite set is locally constant** for the
+Krull topology: if `f (σ * u) = f σ` whenever `u` fixes every element of a finite set `s` of
+elements integral over `K`, then `f` is locally constant on `Gal(L/K)`. The extension `L/K` may be
+transcendental. -/
+theorem IsLocallyConstant.of_mul_eq_of_fixes {X : Type*} {f : Gal(L/K) → X} (s : Finset L)
+    (hs : ∀ x ∈ s, IsIntegral K x)
+    (hf : ∀ σ u : Gal(L/K), (∀ x ∈ s, u x = x) → f (σ * u) = f σ) : IsLocallyConstant f := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun σ₀ ↦ ?_
+  filter_upwards [(Filter.eventually_all_finset s).2 fun x hx ↦
+    (IsLocallyConstant.iff_eventually_eq _).1 (hs x hx).isLocallyConstant_apply σ₀] with σ hσ
+  -- `σ = σ₀ * u`, where `u = σ₀⁻¹ * σ` fixes `s`
+  have h := hf σ₀ (σ₀⁻¹ * σ) fun x hx ↦ by
+    rw [AlgEquiv.mul_apply, hσ x hx, ← AlgEquiv.mul_apply, inv_mul_cancel, AlgEquiv.one_apply]
+  rwa [mul_inv_cancel_left] at h
 
 /-- The stabilizer of a unit whose underlying element is integral over `K` is open for the
 Krull topology. The extension `L/K` may be transcendental. -/
@@ -110,6 +133,37 @@ theorem IntermediateField.isOpen_ker_comp_restrictNormalHom {A : Type*} [AddZero
   rw [Additive.mem_toAddSubgroup, ← IntermediateField.restrictNormalHom_ker,
     MonoidHom.mem_ker] at hx
   simp [hx]
+
+/-- **Conjugation transports fixing subgroups.** For an isomorphism `e : L ≃ₐ[K] L'` of field
+extensions of `K`, the conjugate `e ∘ σ ∘ e⁻¹` of `σ ∈ Gal(L/K)` fixes an intermediate field `E`
+of `L'` exactly when `σ` fixes `e⁻¹(E)`. -/
+theorem AlgEquiv.autCongr_mem_fixingSubgroup_iff {L' : Type*} [Field L'] [Algebra K L']
+    (e : L ≃ₐ[K] L') (E : IntermediateField K L') {σ : Gal(L/K)} :
+    e.autCongr σ ∈ E.fixingSubgroup ↔ σ ∈ (E.map e.symm.toAlgHom).fixingSubgroup := by
+  rw [IntermediateField.mem_fixingSubgroup_iff, IntermediateField.mem_fixingSubgroup_iff]
+  refine ⟨fun h _ ⟨x, hx, hxy⟩ ↦ ?_, fun h x hx ↦ ?_⟩
+  · have hσ := h x hx
+    rw [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+      ← AlgEquiv.eq_symm_apply] at hσ
+    rwa [← hxy]
+  · rw [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+      h (e.symm x) ⟨x, hx, rfl⟩, AlgEquiv.apply_symm_apply]
+
+/-- **Conjugation by an isomorphism of extensions is continuous for the Krull topologies.** For an
+isomorphism `e : L ≃ₐ[K] L'` of field extensions of `K`, the isomorphism of Galois groups
+`e.autCongr : σ ↦ e ∘ σ ∘ e⁻¹` maps the subgroup fixing `e⁻¹(E)` into the subgroup fixing `E`,
+for every finite-dimensional intermediate field `E` of `L'`. The extensions may be
+transcendental. -/
+theorem AlgEquiv.continuous_autCongr {L' : Type*} [Field L'] [Algebra K L'] (e : L ≃ₐ[K] L') :
+    Continuous e.autCongr := by
+  refine continuous_of_continuousAt_one e.autCongr fun s hs ↦ ?_
+  rw [map_one, krullTopology_mem_nhds_one_iff] at hs
+  obtain ⟨E, _, hEs⟩ := hs
+  have : FiniteDimensional K (E.map e.symm.toAlgHom) :=
+    (IntermediateField.intermediateFieldMap e.symm E).toLinearEquiv.finiteDimensional
+  refine Filter.mem_map.2 <| (krullTopology_mem_nhds_one_iff K L _).2
+    ⟨E.map e.symm.toAlgHom, inferInstance,
+      fun σ hσ ↦ hEs ((e.autCongr_mem_fixingSubgroup_iff E).2 hσ)⟩
 
 namespace TauCeti
 

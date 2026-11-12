@@ -45,7 +45,7 @@ variable {R : Type*} [Ring R] (f : B ⊗[A] C →+* R)
 
 /-- Splitting a base-ideal power between the two factors controls the image of an entire
 tensor neighbourhood by the images of pure tensors. -/
-private theorem map_idealImage_le (H : AddSubgroup R) (n m : ℕ)
+theorem map_idealImage_le (H : AddSubgroup R) (n m : ℕ)
     (h : ∀ b : D.left.ringOfDefinition, b ∈ D.left.idealOfDefinition ^ n →
       ∀ c : D.right.ringOfDefinition, c ∈ D.right.idealOfDefinition ^ m →
         f ((b : B) ⊗ₜ[A] (c : C)) ∈ H) :
@@ -82,7 +82,7 @@ private theorem map_idealImage_le (H : AddSubgroup R) (n m : ℕ)
   obtain ⟨y, hy, rfl⟩ := D.mem_idealImage.mp hx
   have haux := D.idealOfDefinition_pow_induction
     (p := fun y ↦ ∀ r ∈ D.ringOfDefinition, f (r * (y : B ⊗[A] C)) ∈ H)
-    (by simp) (fun y z hy hz r hr ↦ by simpa [mul_add] using H.add_mem (hy r hr) (hz r hr))
+    (fun y z hy hz r hr ↦ by simpa [mul_add] using H.add_mem (hy r hr) (hz r hr))
     (fun s y hy r hr ↦ by simpa [mul_assoc] using hy (r * s) (mul_mem hr s.2))
     (fun a ha r hr ↦ by simpa [mul_comm] using hbase a ha r hr) hy
   simpa using haux 1 (one_mem _)

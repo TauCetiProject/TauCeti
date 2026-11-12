@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
@@ -29,22 +30,17 @@ H⁰_cont(G, X) --map φ f 0--> H⁰_cont(H, Y)
 commutes (`TauCeti.ContinuousCohomology.map_comp_zeroIso_hom`), and the three named instances of
 `ContinuousCohomology.map` — coefficient maps, restriction and inflation — inherit it.
 
-Two consequences are recorded because later layers use them rather than the square itself. First,
-`H⁰_cont(G, -)` and the invariants functor are naturally isomorphic
-(`TauCeti.ContinuousCohomology.zeroIsoNatIso`). Second, inflation is an isomorphism in degree zero
-(`TauCeti.ContinuousCohomology.isIso_infl_zero`): `(X^N)^{G/N}` and `X^G` are canonically
-isomorphic by explicit mutually inverse maps that preserve the underlying vector. Restriction is
-injective in degree zero (`TauCeti.ContinuousCohomology.res_zero_injective`), and so a
-monomorphism (`TauCeti.ContinuousCohomology.mono_res_zero`), because `X^G ⊆ X^S`.
+Two consequences are recorded alongside the square. First, `H⁰_cont(G, -)` and the invariants
+functor are naturally isomorphic (`TauCeti.ContinuousCohomology.zeroIsoNatIso`). Second, inflation
+is an isomorphism in degree zero (`TauCeti.ContinuousCohomology.isIso_infl_zero`): `(X^N)^{G/N}`
+and `X^G` are canonically isomorphic by explicit mutually inverse maps that preserve the underlying
+vector. Restriction is injective in degree zero (`TauCeti.ContinuousCohomology.res_zero_injective`),
+and so a monomorphism (`TauCeti.ContinuousCohomology.mono_res_zero`), because `X^G ⊆ X^S`.
 
 The route to the square is the explicit evaluation formula
 `TauCeti.ContinuousCohomology.coe_zeroIso_hom_π`: a `0`-cocycle of the homogeneous complex is an
 invariant element of `C(G, X)`, and `zeroIso` reads off its value at `1`. Compatible-pair
 functoriality precomposes with `φ`, and `φ 1 = 1`, which is the whole content.
-
-This implements the "Degree 0" milestone of Layer 1, "the canonical carrier and its
-functoriality", of the human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`,
-together with the invariant-class constructor `degreeZeroClass` that the same layer names.
 
 ## Main definitions
 
@@ -62,6 +58,8 @@ together with the invariant-class constructor `degreeZeroClass` that the same la
   `TauCeti.ContinuousCohomology.infl_comp_zeroIso_hom`: the same for the three named instances.
 * `TauCeti.ContinuousCohomology.degreeZeroClass_eq_π`: the degree-zero class of an invariant
   vector is the class of any `0`-cocycle with that value at `1`.
+* `TopRep.cochainClass_eq_degreeZeroClass`: the class of a homogeneous `0`-cocycle is the
+  degree-zero class of its value at `1`.
 * `TauCeti.ContinuousCohomology.map_degreeZeroClass`: compatible-pair functoriality on classes of
   invariant vectors.
 * `TauCeti.ContinuousCohomology.isIso_infl_zero`, `TauCeti.ContinuousCohomology.res_zero_injective`,
@@ -126,8 +124,7 @@ section CompatiblePair
 
 /-- **Degree zero is compatible with compatible pairs.** For a continuous homomorphism
 `φ : H →ₜ* G` and a morphism `f : TopRep.res φ X ⟶ Y`, the map `ContinuousCohomology.map φ f 0`
-becomes, under `ContinuousCohomology.zeroIso`, the map `X^G ⟶ Y^H` induced by `f`. This is what
-makes Layer 3's low-degree comparisons checkable at `n = 0`. -/
+becomes, under `ContinuousCohomology.zeroIso`, the map `X^G ⟶ Y^H` induced by `f`. -/
 @[reassoc]
 theorem map_comp_zeroIso_hom (φ : H →ₜ* G) {X : TopRep R G} {Y : TopRep R H}
     (f : TopRep.res (φ : H →* G) X ⟶ Y) :
@@ -329,3 +326,19 @@ end Edge
 end ContinuousCohomology
 
 end TauCeti
+
+namespace TopRep
+
+variable {R G : Type*} [Ring R] [TopologicalSpace R] [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G]
+
+/-- **The class of a homogeneous `0`-cocycle is the degree-zero class of its value at `1`.** -/
+theorem cochainClass_eq_degreeZeroClass (X : TopRep R G)
+    (a : (homogeneousCochains X).X 0) (ha : ((homogeneousCochains X).d 0 (0 + 1)).hom a = 0)
+    (u : X.V) (hu : ∀ g : G, X.ρ g u = u) (h : a.1 1 = u) :
+    X.cochainClass 0 a ha = TauCeti.ContinuousCohomology.degreeZeroClass X u hu :=
+  (cochainClass_def X 0 a ha).trans (TauCeti.ContinuousCohomology.degreeZeroClass_eq_π
+    ((homogeneousCochains X).cyclesMkOfEq a (0 + 1) (CochainComplex.next ℕ 0) ha) u hu
+    (by rw [HomologicalComplex.iCycles_cyclesMkOfEq]; exact h)).symm
+
+end TopRep

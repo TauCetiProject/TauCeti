@@ -66,10 +66,8 @@ nonnegativity is stated with the scoped `ComplexOrder` instance on an `RCLike` f
 
 ## References
 
-This is `approx_identity_exists` from Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), the last input to the
-uniform density of the matrix coefficients in `C(G)` that the roadmap's non-circular route to the
-Peter-Weyl theorem requires.
+This is the approximate-identity half of the uniform density of the matrix coefficients in `C(G)`
+(`TauCeti.dense_representativeSubmodule`), the analytic core of the Peter-Weyl theorem.
 
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC (2016), Chapter 5.
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 2.
@@ -324,18 +322,18 @@ function.** There is a kernel `k U` for each neighbourhood `U` of the identity, 
 supported in `U`, such that for *every* continuous `f` the convolutions `k U * f` converge
 uniformly to `f` as `U` shrinks to the identity.
 
-The index filter is the one of `TauCeti.comap_val_smallSets_neBot` at `𝓝 1`, which is nontrivial,
-so the convergence has content. Unlike
+The neighbourhoods of `1` are ordered by inclusion and the limit is taken along `atBot`, which is
+nontrivial since they are directed downward, so the convergence has content. Unlike
 `TauCeti.exists_isMollifier_norm_convolutionCLM_toLp_sub_le`, where the kernel may depend on the
 function being approximated, the family here is chosen once and for all. -/
 theorem exists_isMollifier_tendsto_convolutionCLM_toLp :
     ∃ k : {U : Set G // U ∈ 𝓝 (1 : G)} → C(G, 𝕜), (∀ U, IsMollifier U.1 (k U)) ∧
       ∀ f : C(G, 𝕜),
         Tendsto (fun U => convolutionCLM (k U) (ContinuousMap.toLp 2 (haarProb G) 𝕜 f))
-          (comap Subtype.val (𝓝 (1 : G)).smallSets) (𝓝 f) := by
+          atBot (𝓝 f) := by
   choose k hk using fun U : {U : Set G // U ∈ 𝓝 (1 : G)} => exists_isMollifier 𝕜 U.2
   refine ⟨k, hk, fun f => tendsto_convolutionCLM_toLp (Eventually.of_forall hk) ?_ f⟩
-  exact fun V hV => (eventually_smallSets_subset.2 hV).comap Subtype.val
+  exact fun V hV => eventually_le_atBot (⟨V, hV⟩ : {U : Set G // U ∈ 𝓝 (1 : G)})
 
 end CompactGroup
 

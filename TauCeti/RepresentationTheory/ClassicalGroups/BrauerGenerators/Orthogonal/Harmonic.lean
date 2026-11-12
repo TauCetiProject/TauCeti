@@ -197,7 +197,7 @@ theorem permTensorAction_mem_harmonicTensors (σ : Equiv.Perm (Fin d))
     (σ.symm i) (σ.symm j)
   rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply] at h
   have h2 := LinearMap.congr_fun h x
-  rw [Module.End.mul_apply, Module.End.mul_apply] at h2
+  rw [mul_apply_eq_comp, mul_apply_eq_comp] at h2
   rw [← h2, orthogonalCupCapAt_apply_eq_zero_of_mem_harmonicTensors hx hinv, map_zero]
 
 /-- The harmonic tensors are a submodule stable under permutations of the strands. -/
@@ -207,21 +207,23 @@ theorem map_permTensorAction_harmonicTensors (σ : Equiv.Perm (Fin d)) :
   · rintro y ⟨z, hz, rfl⟩
     exact permTensorAction_mem_harmonicTensors σ hz
   · refine ⟨permTensorAction k n d σ⁻¹ x, permTensorAction_mem_harmonicTensors σ⁻¹ hx, ?_⟩
-    rw [← Module.End.mul_apply, ← map_mul, mul_inv_cancel, map_one, Module.End.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
 
 /-! ### The harmonic tensors against the image of an arc -/
 
 /-- **At an invertible loop value the harmonic tensors avoid the image of an arc.** An arc acts on
 its own image by the loop value `n`, so a harmonic tensor in that image is `n⁻¹` times zero. This
 is the easy half of the statement that the trace filtration of `V^{⊗d}` splits off its harmonic
-part in the semisimple range. -/
+part, which over a star-ordered field is
+`TauCeti.isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt`. -/
 theorem harmonicTensors_inf_range_orthogonalCupCapAt [Invertible (n : k)] {i j : Fin d}
     (hij : i ≠ j) :
     harmonicTensors k n d ⊓ LinearMap.range (orthogonalCupCapAt k n d i j) = ⊥ := by
   refine le_antisymm (fun x hx => ?_) bot_le
   obtain ⟨hharm, y, rfl⟩ := hx
-  have hself := LinearMap.congr_fun (orthogonalCupCapAt_mul_self (k := k) (n := n) (d := d) hij) y
-  rw [Module.End.mul_apply, LinearMap.smul_apply] at hself
+  have hself := LinearMap.congr_fun
+    (orthogonalCupCapAt_mul_self (k := k) (n := n) (d := d) (i := i) (j := j)) y
+  rw [mul_apply_eq_comp, LinearMap.smul_apply] at hself
   have hzero : (n : k) • orthogonalCupCapAt k n d i j y = 0 := by
     rw [← hself]
     exact orthogonalCupCapAt_apply_eq_zero_of_mem_harmonicTensors hharm hij
@@ -249,7 +251,7 @@ theorem mem_harmonicTensors_of_forall_swap_eq_neg [Invertible (2 : k)]
   refine mem_harmonicTensors.mpr fun i j hij => ?_
   have habsorb := LinearMap.congr_fun
     (orthogonalCupCapAt_mul_permTensorAction_swap (k := k) (n := n) (d := d) i j) x
-  rw [Module.End.mul_apply, hx i j hij, map_neg] at habsorb
+  rw [mul_apply_eq_comp, hx i j hij, map_neg] at habsorb
   have hsum : (2 : k) • orthogonalCupCapAt k n d i j x = 0 := by
     have hdouble : orthogonalCupCapAt k n d i j x + orthogonalCupCapAt k n d i j x = 0 := by
       nth_rewrite 1 [← habsorb]
@@ -268,7 +270,7 @@ theorem tensorPower_mem_harmonicTensors (g : Matrix.orthogonalGroup (Fin n) k)
   refine mem_harmonicTensors.mpr fun i j hij => ?_
   have h := LinearMap.congr_fun
     (commute_orthogonalCupCapAt_tensorPower k n d g hij) x
-  rw [Module.End.mul_apply, Module.End.mul_apply] at h
+  rw [mul_apply_eq_comp, mul_apply_eq_comp] at h
   rw [h, orthogonalCupCapAt_apply_eq_zero_of_mem_harmonicTensors hx hij, map_zero]
 
 /-- The harmonic tensors are a submodule stable under the diagonal action of the orthogonal
@@ -281,7 +283,7 @@ theorem map_tensorPower_harmonicTensors (g : Matrix.orthogonalGroup (Fin n) k) :
     exact tensorPower_mem_harmonicTensors g hz
   · refine ⟨(stdOrthogonalRep k n).tensorPower d g⁻¹ x,
       tensorPower_mem_harmonicTensors g⁻¹ hx, ?_⟩
-    rw [← Module.End.mul_apply, ← map_mul, mul_inv_cancel, map_one, Module.End.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
 
 variable (k n d)
 

@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Combinatorics.Quiver.PathWeight
+public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 public import TauCeti.RepresentationTheory.Quiver.Radical
 
@@ -61,6 +63,8 @@ algebra and equips it with a differential, neither of which is part of `gradeBy`
   `TauCeti.PathAlgebra.ofArrow_mem_gradeBy_iff` and
   `TauCeti.PathAlgebra.vertexIdempotent_mem_gradeBy_iff` read off the degree of an arrow and of a
   vertex idempotent.
+* `TauCeti.PathAlgebra.koszulTwist_vertexIdempotent`: the Koszul twist of the grading by an
+  integer arrow weight fixes the vertex idempotents.
 * `TauCeti.PathAlgebra.gradedAlgebra`: **the path-length grading**, the `GradedAlgebra` instance
   on `TauCeti.PathAlgebra.grade`, with `TauCeti.PathAlgebra.grade_mul_grade_le` and
   `TauCeti.PathAlgebra.isInternal_grade` its two halves.
@@ -99,7 +103,7 @@ public section
 
 namespace TauCeti
 
-open DirectSum
+open _root_.DirectSum
 
 universe u v w
 
@@ -145,6 +149,16 @@ theorem mem_gradeBy_iff {m : M} {f : pathAlgebra k Q} :
       ∀ x ∈ ((pathAlgebraBasis k Q).repr f).support, x.2.2.addWeight wt = m := by
   rw [gradeBy_eq_span_image_basis, Module.Basis.mem_span_image]
   exact ⟨fun h _ hx => h hx, fun h _ hx => h _ hx⟩
+
+/-- A nonzero element homogeneous for two arrow weights has a path carrying both weights. -/
+theorem exists_path_of_ne_zero_mem_gradeBy_inf {M' : Type*} [AddMonoid M']
+    {wt' : ∀ {a b : Q}, (a ⟶ b) → M'} {m : M} {n : M'} {f : pathAlgebra k Q}
+    (hf : f ≠ 0) (hmem : f ∈ gradeBy k wt m ⊓ gradeBy k wt' n) :
+    ∃ x : Quiver.TotalPath Q, x.2.2.addWeight wt = m ∧ x.2.2.addWeight wt' = n := by
+  classical
+  obtain ⟨x, hx⟩ := Finsupp.support_nonempty_iff.mpr
+    (fun h => hf ((pathAlgebraBasis k Q).repr.map_eq_zero_iff.mp h))
+  exact ⟨x, mem_gradeBy_iff.mp hmem.1 x hx, mem_gradeBy_iff.mp hmem.2 x hx⟩
 
 variable (wt) in
 /-- A basis path is homogeneous of its own weight. -/
@@ -221,6 +235,16 @@ theorem coe_gradeByBasis_apply {m : M}
     (x : {x : Quiver.TotalPath Q // x.2.2.addWeight wt = m}) :
     (gradeByBasis k wt m x : pathAlgebra k Q) = ofPath x.1 := by
   rw [gradeByBasis, Module.Basis.map_apply, Module.Basis.span_apply, LinearEquiv.coe_ofEq_apply]
+
+variable (k wt) [DecidableEq M] in
+/-- **The path algebra is the internal direct sum of its weight pieces**: the pieces are the spans
+of the fibers of the weight map on the path basis, so this holds for every quiver. -/
+theorem isInternal_gradeBy : DirectSum.IsInternal (gradeBy k wt) := by
+  have h := (pathAlgebraBasis k Q).isInternal_span_image_fiber
+    fun x : Quiver.TotalPath Q => x.2.2.addWeight wt
+  convert h using 1
+  funext m
+  exact gradeBy_eq_span_image_basis k wt m
 
 end GradeBy
 
@@ -394,11 +418,6 @@ noncomputable instance gradeBy.gradedAlgebra : GradedAlgebra (gradeBy k wt) :=
         DirectSum.coeAlgHom_of, AlgHom.coe_id, id_eq])
     fun _ f => decomposeAlgHom_of_mem k wt f.2
 
-/-- **The path algebra is the internal direct sum of its weight pieces**: the direct-sum graded
-algebra is compared with `kQ` itself, not with a separate graded copy. -/
-theorem isInternal_gradeBy : DirectSum.IsInternal (gradeBy k wt) :=
-  DirectSum.Decomposition.isInternal _
-
 /-- The decomposition sends a basis path to the summand its weight names. -/
 @[simp]
 theorem decompose_ofPath_gradeBy (x : Quiver.TotalPath Q) :
@@ -433,6 +452,22 @@ theorem isHomogeneous_gradeBy_gradeBy {M' : Type*} [AddMonoid M']
     exact Submodule.smul_mem _ r hy
 
 end GradedAlgebra
+
+section KoszulTwist
+
+variable {k : Type w} {Q : Type u} [CommRing k] [Quiver.{v} Q] [Finite Q]
+  {wt : ∀ {a b : Q}, (a ⟶ b) → ℤ}
+
+/-- The Koszul twist `x ↦ (-1) ^ (q |x|) x` of the grading by an integer arrow weight fixes the
+vertex idempotents, which have degree zero. -/
+@[simp]
+theorem koszulTwist_vertexIdempotent (q : ℤ) (v : Q) :
+    (InternalGrading.ofDecomposition (gradeBy k wt)).koszulTwist q (vertexIdempotent k v) =
+      vertexIdempotent k v :=
+  InternalGrading.koszulTwist_apply_of_mem_zero _
+    (by rw [InternalGrading.ofDecomposition_piece]; exact vertexIdempotent_mem_gradeBy_zero wt v) q
+
+end KoszulTwist
 
 /-! ### The path-length grading -/
 
@@ -608,6 +643,11 @@ theorem pathSpan_eq_grade_sup_pathSpan_succ (n : ℕ) :
   simp only [Set.mem_ofPred_eq, Set.mem_union]
   omega
 
+/-- **The path algebra is the internal direct sum of its graded pieces**: the case of the constant
+weight `1` of `TauCeti.PathAlgebra.isInternal_gradeBy`. -/
+theorem isInternal_grade : DirectSum.IsInternal (grade k Q) :=
+  isInternal_gradeBy k (Q := Q) fun _ => 1
+
 end Grade
 
 section GradeComm
@@ -636,11 +676,6 @@ with the span of the paths of length `n` in degree `n`. It is the grading by the
 noncomputable instance gradedAlgebra : GradedAlgebra (grade k Q) :=
   gradeBy_const_one k Q ▸ gradeBy.gradedAlgebra k (Q := Q) fun _ => 1
 
-/-- **The path algebra is the internal direct sum of its graded pieces**: the direct-sum graded
-algebra is compared with `kQ` itself, not with a separate graded copy. -/
-theorem isInternal_grade : DirectSum.IsInternal (grade k Q) :=
-  DirectSum.Decomposition.isInternal _
-
 /-- The decomposition sends a basis path to the summand indexed by its length. -/
 @[simp]
 theorem decompose_ofPath (x : Quiver.TotalPath Q) :
@@ -654,7 +689,7 @@ end GradedAlgebra
 
 section IntegerGrade
 
-variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
+variable (k : Type w) (Q : Type u) [Semiring k] [Quiver.{v} Q]
 
 /-- The path-length grading of `kQ`, extended by zero from natural to integer degrees. This is the
 indexing used by graded-module shifts. -/
@@ -684,8 +719,14 @@ theorem integerGrade_zero_eq_span_range_vertexIdempotent :
   rw [← Nat.cast_zero, integerGrade_ofNat, grade_zero_eq_span_range_vertexIdempotent]
 
 /-- The integer-indexed path-length pieces form an internal direct sum. -/
-theorem isInternal_integerGrade [Finite Q] : DirectSum.IsInternal (integerGrade k Q) :=
-  Graded.isInternal_extendByZero (isInternal_grade k Q)
+theorem isInternal_integerGrade : DirectSum.IsInternal (integerGrade k Q) :=
+  Graded.isInternal_extendByZero_iff.2 (isInternal_grade k Q)
+
+end IntegerGrade
+
+section IntegerGradedAlgebra
+
+variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
 
 /-- The path algebra is integer graded by path length, with zero pieces in negative degrees. -/
 @[instance_reducible]
@@ -693,11 +734,11 @@ noncomputable def integerGradedAlgebra [Finite Q] : GradedAlgebra (integerGrade 
   let _ := gradedAlgebra k Q
   Graded.gradedAlgebraExtendByZero (grade k Q)
 
-end IntegerGrade
+end IntegerGradedAlgebra
 
 section OppositeGrade
 
-variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
+variable (k : Type w) (Q : Type u) [Semiring k] [Quiver.{v} Q]
 
 /-- Path length on the ordinary opposite path algebra. Reversing multiplication does not
 change degree, and introduces no Koszul sign. -/
@@ -710,6 +751,16 @@ theorem mem_opGrade_iff {n : ℕ} {x : (pathAlgebra k Q)ᵐᵒᵖ} :
     x ∈ opGrade k Q n ↔ x.unop ∈ grade k Q n := by
   simp [opGrade]
 
+/-- The opposite path-length pieces form an internal direct sum. -/
+theorem isInternal_opGrade : DirectSum.IsInternal (opGrade k Q) :=
+  (isInternal_grade k Q).map_linearEquiv (MulOpposite.opLinearEquiv k)
+
+end OppositeGrade
+
+section OppositeGradedAlgebra
+
+variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
+
 /-- Multiplication in the ordinary opposite adds path lengths. -/
 instance opGrade.gradedMonoid [Finite Q] : SetLike.GradedMonoid (opGrade k Q) where
   one_mem := (mem_opGrade_iff k Q).2 (SetLike.one_mem_graded (grade k Q))
@@ -718,22 +769,6 @@ instance opGrade.gradedMonoid [Finite Q] : SetLike.GradedMonoid (opGrade k Q) wh
     rw [mem_opGrade_iff, MulOpposite.unop_mul, add_comm]
     exact SetLike.mul_mem_graded ((mem_opGrade_iff k Q).1 hy)
       ((mem_opGrade_iff k Q).1 hx)
-
-end OppositeGrade
-
-section OppositeGradedAlgebra
-
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
-
-/-- The opposite path-length pieces form an internal direct sum. -/
-theorem isInternal_opGrade [Finite Q] : DirectSum.IsInternal (opGrade k Q) := by
-  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-  · exact LinearMap.iSupIndep_map _ (MulOpposite.opLinearEquiv k).injective
-      (isInternal_grade k Q).submodule_iSupIndep
-  · unfold opGrade
-    rw [← Submodule.map_iSup,
-      (isInternal_grade k Q).submodule_iSup_eq_top, Submodule.map_top]
-    exact LinearMap.range_eq_top.2 (MulOpposite.opLinearEquiv k).surjective
 
 /-- The ordinary opposite path algebra is graded by path length. -/
 noncomputable instance opGrade.gradedAlgebra [Finite Q] : GradedAlgebra (opGrade k Q) :=

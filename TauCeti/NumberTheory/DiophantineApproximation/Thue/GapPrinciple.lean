@@ -78,10 +78,10 @@ private theorem thue_key_inequality {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natD
 
 /-- The exponent comparison in the second case of the gap principle: if `(κ - 1) t ≤ a (r + 1)`
 and `B r - (κ - 1) d ≤ t`, then `t (B (κ - 1) - a) ≤ a (B + (κ - 1) d)`. -/
-private theorem thue_gap_exponent_le {κ a B d t r : ℝ} (ha : 0 < a) (hB : 0 < B)
+private theorem thue_gap_exponent_le {κ a B d t r : ℝ} (ha : 0 ≤ a) (hB : 0 ≤ B)
     (hxr : (κ - 1) * t ≤ a * (r + 1)) (hBr : B * r - (κ - 1) * d ≤ t) :
     t * (B * (κ - 1) - a) ≤ a * (B + (κ - 1) * d) := by
-  nlinarith [mul_le_mul_of_nonneg_left hBr ha.le, mul_le_mul_of_nonneg_left hxr hB.le]
+  nlinarith [mul_le_mul_of_nonneg_left hBr ha, mul_le_mul_of_nonneg_left hxr hB]
 
 /-- **Thue's gap principle** (Evertse, Theorem 6.14). Let `α` be a complex algebraic number of
 degree `d ≥ 2` and let `κ > d / 2 + 1`. There are constants `C ≥ 1` and `λ ≥ 1` such that for
@@ -122,7 +122,7 @@ theorem thue_gap_principle {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
     simpa [nsmul_eq_mul] using Algebra.isIntegral_natDenominator_smul α
   set C₂ := 2 ^ ((1 / 2 + ε) * d) * (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * d) *
     (48 * b * max 1 (house α)) ^ (d * (1 + 1 / ε))
-  have hC₂ : 0 < C₂ := by positivity
+  have _ : 0 < C₂ := by positivity
   -- The exponents `a = (1 / 2 + 2 ε) d` and `B = κ - 2 ε d (κ - 1) - a = (κ - d / 2 + 1) / 2`.
   set a := (1 / 2 + ε) * d + ε * d with ha_def
   have ha : 0 < a := by positivity
@@ -226,7 +226,7 @@ theorem thue_gap_principle {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
     have : (B * r - (κ - 1) * d) * ℓ₁ ≤ t * ℓ₁ := by
       rw [hB_def, ha_def]
       linarith
-    have hle := thue_gap_exponent_le ha hB hxr (le_of_mul_le_mul_right this hℓ₁₀)
+    have hle := thue_gap_exponent_le ha.le hB.le hxr (le_of_mul_le_mul_right this hℓ₁₀)
     rw [← le_div_iff₀ hBa] at hle
     linarith
 

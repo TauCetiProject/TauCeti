@@ -128,11 +128,6 @@ open CategoryTheory Representation
 
 namespace TauCeti.ClassFieldTheory
 
--- Provenance: the signatures of the formation type and normal-layer structure below, and of
--- `level`, `rep`, `norm` and the
--- cohomology carriers, follow the blueprint `Suggested.lean` of the Tau Ceti `ClassFieldTheory`
--- roadmap (`TauCetiRoadmap/ClassFieldTheory/README.md` and `Suggested.lean`).
-
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-! ### Formations and their levels -/
@@ -378,9 +373,9 @@ theorem level_top_le_comap (u : L.ground) :
     simpa using L.conj_mem_top (L.ground.toSubgroup.inv_mem u.2) hv
   have hvu : v * (u : G) = (u : G) * ((u : G)⁻¹ * v * (u : G)) := by group
   calc F.toRep.ρ v (F.toRep.ρ (u : G) x)
-      = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, Module.End.mul_apply]
+      = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, mul_apply_eq_comp]
     _ = F.toRep.ρ (u : G) (F.toRep.ρ ((u : G)⁻¹ * v * (u : G)) x) := by
-        rw [hvu, map_mul, Module.End.mul_apply]
+        rw [hvu, map_mul, mul_apply_eq_comp]
     _ = F.toRep.ρ (u : G) x := by rw [(F.mem_level.1 hx) _ hconj]
 
 /-- The action of the ground subgroup `U` on the top level `A^V`. -/
@@ -692,7 +687,6 @@ theorem tateHZeroEquivNormQuotient_H0π (x : (L.rep F).ρ.invariants) :
   have h := TateCohomology.H0π_comp_H0IsoNormQuotient_hom_apply (L.rep F) x
   simp [tateHZeroEquivNormQuotient, h]
 
--- Specified by the class field theory roadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
 /-- The **zero-dimensional Tate class** `a₀` of an element `a` of the ground level `A^U`: the class
 of `a` in the degree-zero Tate group `H^0(U/V, A^V)`, reading `a` as an invariant of the
 coefficient module `A^V`. -/

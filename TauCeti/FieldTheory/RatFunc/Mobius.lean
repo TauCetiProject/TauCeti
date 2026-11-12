@@ -12,7 +12,7 @@ public import TauCeti.FieldTheory.RatFunc.Automorphism
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
 -- Non-public: finiteness and order of `PGL₂` over a finite field, read through
 -- `RatFunc.pglEquivAlgEquiv` in the proofs only.
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.Card
 
 /-!
 # Linear fractional transformations of the rational function field
@@ -36,6 +36,10 @@ invertible `2 × 2` matrix over `k` has nonzero determinant, so the construction
 * `RatFunc.pglEquivAlgEquiv`: the isomorphism `PGL₂(k) ≃* Aut(k(X)/k)`, evaluated on a class of
   matrices by `Matrix.GeneralLinearGroup.pglEquivAlgEquiv_mk`.
 * `RatFunc.translationAut`: the translation `X ↦ X + c`.
+* `RatFunc.branchPointAut`: the homomorphism `Perm (Fin 3) →* Aut(k(X)/k)` of the six
+  substitutions `X`, `1 - X`, `X / (X - 1)`, `1 / X`, `(X - 1) / X` and `1 / (1 - X)` permuting
+  `0, 1, ∞`, with its values at `X` on the five nonidentity permutations
+  (`RatFunc.branchPointAut_swap_zero_one_X` and its siblings).
 
 ## Main results
 
@@ -55,6 +59,10 @@ invertible `2 × 2` matrix over `k` has nonzero determinant, so the construction
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Exercise 1.2.
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, LMS Student Texts 79, Cambridge University Press, 2012, §4.4, and S. K. Lando and
+  A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of Mathematical
+  Sciences 141, Springer, 2004, §1.5, for the six transformations permuting `0, 1, ∞`.
 -/
 
 public section
@@ -373,45 +381,32 @@ theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
   have hnum := Polynomial.eq_X_add_C_of_natDegree_le_one hnumle
   have hden := Polynomial.eq_X_add_C_of_natDegree_le_one hdenle
   set a := f.num.coeff 1 with ha
-  set b := f.num.coeff 0 with hb
+  set b := f.num.coeff 0
   set c := f.denom.coeff 1 with hc
-  set d := f.denom.coeff 0 with hd
+  set d := f.denom.coeff 0
   have hdet : a * d - b * c ≠ 0 := by
-    by_cases hc0 : c = 0
-    · -- the denominator is the constant `d ≠ 0`, so the numerator has degree one and `a ≠ 0`
-      have hdeg : f.denom.natDegree = 0 := by
-        refine Polynomial.natDegree_eq_zero_iff_degree_le_zero.mpr ?_
-        rw [hden, hc0, map_zero, zero_mul, zero_add]
-        exact Polynomial.degree_C_le
-      have hnum1 : f.num.natDegree = 1 := by
-        rw [hdeg] at hmax
-        simpa using hmax
-      have hane : a ≠ 0 := by
-        rw [ha, ← hnum1]
-        exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at hnum1
-      have hdne : d ≠ 0 := by
-        intro h0
-        refine f.denom_ne_zero ?_
-        rw [hden, hc0, h0, map_zero, zero_mul, zero_add]
-      rw [hc0, mul_zero, sub_zero]
-      exact mul_ne_zero hane hdne
-    · -- otherwise the denominator would divide the numerator, against their coprimality
-      intro hzero
-      have hca : (Polynomial.C c * Polynomial.C (a * c⁻¹) : Polynomial K) = Polynomial.C a := by
-        rw [← Polynomial.C_mul]
-        congr 1
-        field_simp
-      have hcb : (Polynomial.C d * Polynomial.C (a * c⁻¹) : Polynomial K) = Polynomial.C b := by
-        rw [← Polynomial.C_mul]
-        congr 1
-        field_simp
-        linear_combination hzero
-      have hdvd : f.denom ∣ f.num := ⟨Polynomial.C (a * c⁻¹), by
-        rw [hnum, hden]
-        linear_combination (-(Polynomial.X : Polynomial K)) * hca - hcb⟩
-      have hunit := (isCoprime_num_denom f).isUnit_of_dvd' hdvd dvd_rfl
-      have hdeg0 := Polynomial.natDegree_eq_zero_of_isUnit hunit
-      have hle : 1 ≤ f.denom.natDegree := Polynomial.le_natDegree_of_ne_zero (hc ▸ hc0)
+    -- `a * d = b * c` gives `C c * num = C a * denom`, and coprimality then forces whichever of
+    -- `num`, `denom` has degree one to divide a nonzero constant
+    intro hzero
+    have hCz := congrArg Polynomial.C hzero
+    simp only [map_sub, map_mul, map_zero] at hCz
+    have hkey : Polynomial.C c * f.num = Polynomial.C a * f.denom := by
+      rw [hnum, hden]
+      linear_combination -hCz
+    rcases max_eq_iff.mp hmax with ⟨h1, -⟩ | ⟨h1, -⟩
+    · have hane : a ≠ 0 := by
+        rw [ha, ← h1]
+        exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at h1
+      have := Polynomial.natDegree_eq_zero_of_isUnit
+        ((isCoprime_num_denom f).isUnit_of_dvd' dvd_rfl
+          ((Polynomial.dvd_C_mul hane).mp ⟨Polynomial.C c, by rw [← hkey, mul_comm]⟩))
+      omega
+    · have hcne : c ≠ 0 := by
+        rw [hc, ← h1]
+        exact Polynomial.leadingCoeff_ne_zero.mpr f.denom_ne_zero
+      have := Polynomial.natDegree_eq_zero_of_isUnit
+        ((isCoprime_num_denom f).symm.isUnit_of_dvd' dvd_rfl
+          ((Polynomial.dvd_C_mul hcne).mp ⟨Polynomial.C a, by rw [hkey, mul_comm]⟩))
       omega
   refine ⟨a, b, c, d, hdet, ?_⟩
   rw [mobiusOf_def, ← num_div_denom f]
@@ -507,5 +502,138 @@ theorem card_algEquiv [Fintype K] :
   rw [← Nat.card_congr pglEquivAlgEquiv.toEquiv, TauCeti.natCard_PGL_fin_two]
 
 end Finite
+
+section BranchPoints
+
+open Equiv
+
+/-- The integer coefficient matrices `!![a, b; c, d]` of the six transformations
+`(a t + b) / (c t + d)` permuting `0, 1, ∞`, normalized so that they form a subgroup of
+`GL₂(ℤ)` isomorphic to the symmetric group. A permutation of `Fin 3` is determined by its values
+at `0` and `1`. -/
+private def branchPointMatrix (ρ : Perm (Fin 3)) : Matrix (Fin 2) (Fin 2) ℤ :=
+  match ρ 0, ρ 1 with
+  | 1, 0 => !![-1, 1; 0, 1]
+  | 0, 2 => !![1, 0; 1, -1]
+  | 2, 1 => !![0, -1; -1, 0]
+  | 1, 2 => !![-1, 1; -1, 0]
+  | 2, 0 => !![0, -1; 1, -1]
+  | _, _ => 1
+
+/-- Substitution composes the matrices in the opposite order. -/
+private theorem branchPointMatrix_mul (ρ ρ' : Perm (Fin 3)) :
+    branchPointMatrix (ρ * ρ') = branchPointMatrix ρ' * branchPointMatrix ρ := by
+  revert ρ ρ'
+  decide
+
+/-- The six coefficient matrices have determinant `±1`, so they are invertible over any field. -/
+private theorem det_branchPointMatrix_ne_zero (ρ : Perm (Fin 3)) :
+    ((branchPointMatrix ρ 0 0 : ℤ) : K) * (branchPointMatrix ρ 1 1 : ℤ) -
+      (branchPointMatrix ρ 0 1 : ℤ) * (branchPointMatrix ρ 1 0 : ℤ) ≠ 0 := by
+  have h : ∀ ρ : Perm (Fin 3), branchPointMatrix ρ 0 0 * branchPointMatrix ρ 1 1 -
+      branchPointMatrix ρ 0 1 * branchPointMatrix ρ 1 0 = 1 ∨
+    branchPointMatrix ρ 0 0 * branchPointMatrix ρ 1 1 -
+      branchPointMatrix ρ 0 1 * branchPointMatrix ρ 1 0 = -1 := by decide
+  rw [← Int.cast_mul, ← Int.cast_mul, ← Int.cast_sub]
+  rcases h ρ with h | h <;> simp [h]
+
+/-- The coefficient matrix of `t ↦ 1 - t`. -/
+private theorem branchPointMatrix_swap_zero_one :
+    branchPointMatrix (swap 0 1) = !![-1, 1; 0, 1] := by decide
+
+/-- The coefficient matrix of `t ↦ t / (t - 1)`. -/
+private theorem branchPointMatrix_swap_one_two :
+    branchPointMatrix (swap 1 2) = !![1, 0; 1, -1] := by decide
+
+/-- The coefficient matrix of `t ↦ 1 / t`. -/
+private theorem branchPointMatrix_swap_zero_two :
+    branchPointMatrix (swap 0 2) = !![0, -1; -1, 0] := by decide
+
+/-- The coefficient matrix of `t ↦ (t - 1) / t`. -/
+private theorem branchPointMatrix_finRotate :
+    branchPointMatrix (finRotate 3) = !![-1, 1; -1, 0] := by decide
+
+/-- The coefficient matrix of `t ↦ 1 / (1 - t)`. -/
+private theorem branchPointMatrix_finRotate_inv :
+    branchPointMatrix (finRotate 3)⁻¹ = !![0, -1; 1, -1] := by decide
+
+/-- The substitution attached to `ρ`, before it is bundled as a homomorphism. -/
+private noncomputable def branchPointAutFun (ρ : Perm (Fin 3)) : RatFunc K ≃ₐ[K] RatFunc K :=
+  mobiusAutOf (det_branchPointMatrix_ne_zero ρ)
+
+/-- The defining value of the substitution attached to `ρ`. -/
+private theorem branchPointAutFun_X (ρ : Perm (Fin 3)) :
+    branchPointAutFun ρ X = mobiusOf ((branchPointMatrix ρ 0 0 : ℤ) : K)
+      (branchPointMatrix ρ 0 1 : ℤ) (branchPointMatrix ρ 1 0 : ℤ) (branchPointMatrix ρ 1 1 : ℤ) :=
+  mobiusAutOf_X _
+
+variable (K) in
+/-- **The automorphisms of `k(t)` permuting the branch points `0, 1, ∞`**: for
+`ρ : Perm (Fin 3)`, the substitution `t ↦ m(t)` by the linear fractional transformation `m` that
+sends the point numbered `ρ i` to the point numbered `i`, where `0, 1, 2` number `0, 1, ∞`. The
+five nonidentity substitutions are `1 - t`, `t / (t - 1)`, `1 / t`, `(t - 1) / t` and
+`1 / (1 - t)` (`RatFunc.branchPointAut_swap_zero_one_X` and its siblings, the last one for
+the inverse of `finRotate 3`), and they act on the
+marked places through `ρ` (`TauCeti.Place.map_branchPointAut_markedPlace`). -/
+noncomputable def branchPointAut : Perm (Fin 3) →* (RatFunc K ≃ₐ[K] RatFunc K) where
+  toFun := branchPointAutFun
+  map_one' := algEquiv_ext (by
+    rw [branchPointAutFun_X, AlgEquiv.one_apply]
+    simp [branchPointMatrix, mobiusOf_def])
+  map_mul' ρ ρ' := algEquiv_ext (by
+    rw [AlgEquiv.mul_apply, branchPointAutFun_X, branchPointAutFun_X, branchPointAutFun,
+      mobiusAutOf_mobiusOf, branchPointMatrix_mul]
+    simp [Matrix.mul_apply, Fin.sum_univ_two])
+
+/-- The value of `RatFunc.branchPointAut ρ` at `X`, read off the coefficient matrix. -/
+private theorem branchPointAut_X (ρ : Perm (Fin 3)) :
+    branchPointAut K ρ X = mobiusOf ((branchPointMatrix ρ 0 0 : ℤ) : K)
+      (branchPointMatrix ρ 0 1 : ℤ) (branchPointMatrix ρ 1 0 : ℤ) (branchPointMatrix ρ 1 1 : ℤ) :=
+  branchPointAutFun_X ρ
+
+/-- The substitution exchanging `0` and `1` is `t ↦ 1 - t`. -/
+@[simp]
+theorem branchPointAut_swap_zero_one_X : branchPointAut K (swap 0 1) X = 1 - X := by
+  rw [branchPointAut_X, branchPointMatrix_swap_zero_one]
+  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
+    map_one, map_zero, zero_mul, zero_add, div_one]
+  ring
+
+/-- The substitution exchanging `1` and `∞` is `t ↦ t / (t - 1)`. -/
+@[simp]
+theorem branchPointAut_swap_one_two_X : branchPointAut K (swap 1 2) X = X / (X - 1) := by
+  rw [branchPointAut_X, branchPointMatrix_swap_one_two]
+  simp [mobiusOf_def, sub_eq_add_neg]
+
+/-- The substitution exchanging `0` and `∞` is `t ↦ 1 / t`. -/
+@[simp]
+theorem branchPointAut_swap_zero_two_X : branchPointAut K (swap 0 2) X = X⁻¹ := by
+  rw [branchPointAut_X, branchPointMatrix_swap_zero_two]
+  simp [mobiusOf_def]
+
+/-- The substitution reordering the branch points along `0 → 1 → ∞ → 0` is
+`t ↦ (t - 1) / t`. -/
+@[simp]
+theorem branchPointAut_finRotate_X : branchPointAut K (finRotate 3) X = (X - 1) / X := by
+  rw [branchPointAut_X, branchPointMatrix_finRotate]
+  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
+    map_one, map_zero, add_zero]
+  ring
+
+/-- The substitution reordering the branch points along `0 → ∞ → 1 → 0`, the inverse of
+`RatFunc.branchPointAut (finRotate 3)`, is `t ↦ 1 / (1 - t)`. It is stated for the inverse
+automorphism, the simp-normal form of `branchPointAut K (finRotate 3)⁻¹`. -/
+@[simp]
+theorem branchPointAut_finRotate_symm_X : (branchPointAut K (finRotate 3)).symm X = (1 - X)⁻¹ := by
+  rw [← AlgEquiv.aut_inv, ← map_inv, branchPointAut_X, branchPointMatrix_finRotate_inv]
+  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_one, Int.cast_zero, mobiusOf_def, map_neg,
+    map_one, map_zero, zero_mul, zero_add, one_mul]
+  rw [neg_div, one_div, ← inv_neg]
+  ring
+
+end BranchPoints
 
 end RatFunc

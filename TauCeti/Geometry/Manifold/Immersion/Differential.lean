@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Immersion.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.Prod
+public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -13,8 +15,8 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 /-!
 # Immersion normal forms from split differentials
 
-A map between real or complex Banach spaces with a continuous left inverse to its
-derivative has the local normal form of an immersion. The map need only be `C^n` on
+A map from a real or complex normed space to a Banach space with a continuous left inverse to
+its derivative has the local normal form of an immersion. The map need only be `C^n` on
 an open neighbourhood, with `1 ≤ n`. This turns a differential splitting into
 actual slice charts, as needed to extend data from the image of an embedded map.
 
@@ -23,6 +25,23 @@ function theorem to the resulting map. It uses Mathlib's
 `ContinuousLinearMap.HasLeftInverse.complement` and
 `ContinuousLinearMap.coprodSubtypeLEquivOfIsCompl`, and Tau Ceti's smooth inverse
 function theorem on an open neighbourhood.
+
+The same criterion holds for maps between manifolds without boundary. A normal form of a map read
+in the preferred extended charts is carried back to the manifolds by composing its charts with the
+preferred charts (`Manifold.IsImmersionAtOfComplement.of_writtenInExtChartAt`); on a boundaryless
+model the manifold derivative is the derivative of the map read in these charts. So, for a
+finite-dimensional target model, a smooth map with injective differential everywhere is an
+immersion (`ContMDiff.isImmersion_of_injective_mfderiv`). A parameter-preserving map
+`(p, x) ↦ (p, G (p, x))` is then an immersion at every point where its slice `x ↦ G (p, x)` is
+one in the sense of differentials, as for the space-time track of a moving embedded submanifold.
+Likewise, postcomposing an immersion with a diffeomorphism onto a manifold
+with a different finite-dimensional model gives an immersion (`Diffeomorph.isImmersion_comp`), for
+example after exchanging the factors of a product.
+In particular, a `C^n` map with a left inverse near a point, differentiable at the image of that
+point, is an immersion there (`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`), and a `C^n`
+map with a global left inverse differentiable along its image is an immersion
+(`ContMDiff.isImmersion_of_leftInverse`). Pairing an immersion with any `C^n` map into a
+finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -33,10 +52,12 @@ public section
 noncomputable section
 
 open Set Function Topology Manifold
-open scoped ContDiff
+open scoped ContDiff Manifold
+
+section Euclidean
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
   {n : ℕ∞ω} {f : E → F} {s : Set E} {x : E}
 
@@ -46,6 +67,16 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
     (hdf : (fderiv 𝕜 f x).HasLeftInverse) :
     IsImmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f x := by
+  -- `E` is complete: the derivative is a uniform embedding onto a closed subset of `F`.
+  have : CompleteSpace E :=
+    (completeSpace_iff_isComplete_range
+      (IsUniformInducing.of_comp (fderiv 𝕜 f x).uniformContinuous
+        hdf.leftInverse.uniformContinuous
+        (by
+          rw [show hdf.leftInverse ∘ fderiv 𝕜 f x = id from
+            funext hdf.leftInverse_leftInverse]
+          exact IsUniformInducing.id))).2
+      hdf.isClosed_range.isComplete
   -- Adjoin the closed complement so that the augmented derivative is invertible.
   let G := hdf.complement
   have : CompleteSpace G := hdf.isClosed_complement.completeSpace_coe
@@ -93,8 +124,8 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     have h := Θ.left_inv (hφtarget ▸ hy)
     simpa [φ, ψ, hΘ, g, mfld_simps] using congrArg e h
 
-/-- For a `C^n` map on an open subset of a Banach space, the immersion normal form
-is equivalent to the derivative having a continuous linear left inverse. -/
+/-- For a `C^n` map on an open subset of a normed space with values in a Banach space, the
+immersion normal form is equivalent to the derivative having a continuous linear left inverse. -/
 theorem ContDiffOn.isImmersionAt_iff_hasLeftInverse
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n) :
     IsImmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f x ↔ (fderiv 𝕜 f x).HasLeftInverse := by
@@ -113,7 +144,7 @@ theorem ContDiffOn.isImmersionAt_iff_hasLeftInverse
     ContinuousLinearEquiv.apply_symm_apply] using
     congrArg (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x) hleft
 
-omit [CompleteSpace E] [CompleteSpace F] in
+omit [CompleteSpace F] in
 /-- For a finite-dimensional target, a `C^n` map on an open set has the immersion
 normal form exactly when its derivative is injective. -/
 theorem ContDiffOn.isImmersionAt_iff_injective_fderiv [FiniteDimensional 𝕜 F]
@@ -129,9 +160,200 @@ theorem ContDiffOn.isImmersionAt_iff_injective_fderiv [FiniteDimensional 𝕜 F]
     exact (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm.injective h'
   · have : FiniteDimensional 𝕜 E :=
       FiniteDimensional.of_injective (fderiv 𝕜 f x).toLinearMap hdf
-    have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
     have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
     exact hf.isImmersionAt_of_hasLeftInverse hs hx hn
       (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
+
+end Euclidean
+
+namespace Manifold.IsImmersionAtOfComplement
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E' F H G M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G}
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
+  {n : ℕ∞ω} {f : M → N} {x : M}
+
+/-- An immersion normal form of a map between boundaryless manifolds, read in the preferred
+extended charts, is an immersion normal form of the map itself, with the same complement. -/
+theorem of_writtenInExtChartAt [I.Boundaryless] [J.Boundaryless]
+    [IsManifold I n M] [IsManifold J n N] (hf : ContinuousAt f x)
+    (h : IsImmersionAtOfComplement F 𝓘(𝕜, E) 𝓘(𝕜, E') n (writtenInExtChartAt I J x f)
+      (extChartAt I x x)) :
+    IsImmersionAtOfComplement F I J n f x := by
+  -- The charts of the normal form in the model spaces, read through the preferred charts.
+  let φ : OpenPartialHomeomorph M H :=
+    (((chartAt H x).transHomeomorph I.toHomeomorph).trans h.domChart).transHomeomorph
+      I.toHomeomorph.symm
+  let ψ : OpenPartialHomeomorph N G :=
+    (((chartAt G (f x)).transHomeomorph J.toHomeomorph).trans h.codChart).transHomeomorph
+      J.toHomeomorph.symm
+  refine mk_of_continuousAt hf h.equiv φ ψ ?_ ?_ ?_ ?_ ?_
+  · simpa [φ] using h.mem_domChart_source
+  · simpa [ψ, writtenInExtChartAt] using h.mem_codChart_source
+  · exact TauCeti.conj_chartAt_mem_maximalAtlas x h.domChart_mem_maximalAtlas
+  · exact TauCeti.conj_chartAt_mem_maximalAtlas (f x) h.codChart_mem_maximalAtlas
+  · intro u hu
+    have hI : ∀ u, I (I.symm u) = u := fun u => I.right_inv (by simp [I.range_eq_univ])
+    have hJ : ∀ u, J (J.symm u) = u := fun u => J.right_inv (by simp [J.range_eq_univ])
+    have k1 : (φ.extend I).symm u = (chartAt H x).symm (I.symm (h.domChart.symm u)) := by
+      simp [φ, hI, OpenPartialHomeomorph.extend]
+    have k2 : ∀ z, ψ.extend J z = h.codChart (J (chartAt G (f x) z)) := by
+      intro z
+      simp [ψ, hJ, OpenPartialHomeomorph.extend]
+    have hu' : (∃ y, I y = u) ∧ u ∈ h.domChart.target ∧
+        I.symm (h.domChart.symm u) ∈ (chartAt H x).target := by
+      simpa [φ, hI, OpenPartialHomeomorph.extend] using hu
+    have := h.writtenInCharts (by simpa [OpenPartialHomeomorph.extend] using hu'.2.1)
+    simp only [Function.comp_apply, k1, k2] at this ⊢
+    simpa [OpenPartialHomeomorph.extend, writtenInExtChartAt, extChartAt] using this
+
+end Manifold.IsImmersionAtOfComplement
+
+section Manifold
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+  {E E' H G M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [CompleteSpace E']
+  [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G}
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
+  {n : ℕ∞ω} [I.Boundaryless] [J.Boundaryless] [IsManifold I n M] [IsManifold J n N]
+  {f : M → N} {s : Set M} {x : M}
+
+/-- A `C^n` map on an open subset of a boundaryless manifold, with values in a boundaryless
+manifold, is an immersion at any point where its manifold derivative admits a continuous linear
+left inverse. -/
+theorem ContMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv
+    (hf : ContMDiffOn I J n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
+    (hdf : (mfderiv I J f x).HasLeftInverse) :
+    IsImmersionAt I J n f x := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hfx : ContMDiffAt I J n f x := hf.contMDiffAt (hs.mem_nhds hx)
+  -- Read `f` in the preferred extended charts, on an open set around the chart image of `x`.
+  let t := (extChartAt I x).target ∩
+    (extChartAt I x).symm ⁻¹' (s ∩ f ⁻¹' (extChartAt J (f x)).source)
+  have ht : IsOpen t :=
+    (continuousOn_extChartAt_symm x).isOpen_inter_preimage (isOpen_extChartAt_target x)
+      (hf.continuousOn.isOpen_inter_preimage hs (isOpen_extChartAt_source (f x)))
+  have hxt : extChartAt I x x ∈ t := by
+    refine ⟨mem_extChartAt_target x, ?_⟩
+    simp [hx]
+  have hft : ContDiffOn 𝕜 n (writtenInExtChartAt I J x f) t :=
+    (contMDiffOn_iff.mp hf).2 x (f x)
+  -- On a boundaryless model the manifold derivative is literally the derivative in charts.
+  have hderiv : fderiv 𝕜 (writtenInExtChartAt I J x f) (extChartAt I x x) =
+      mfderiv I J f x := by
+    rw [(hfx.mdifferentiableAt hn0).mfderiv_abuse, I.range_eq_univ, fderivWithin_univ]
+  have h := hft.isImmersionAt_of_hasLeftInverse ht hxt hn (hderiv ▸ hdf)
+  exact (IsImmersionAtOfComplement.of_writtenInExtChartAt hfx.continuousAt
+    h.isImmersionAtOfComplement_complement).isImmersionAt
+
+/-- For a `C^n` map on an open subset of a boundaryless manifold, with values in a boundaryless
+manifold, the immersion normal form is equivalent to the manifold derivative having a continuous
+linear left inverse. -/
+theorem ContMDiffOn.isImmersionAt_iff_hasLeftInverse_mfderiv
+    (hf : ContMDiffOn I J n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n) :
+    IsImmersionAt I J n f x ↔ (mfderiv I J f x).HasLeftInverse := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  exact ⟨fun h => isDiffImmersionAt_iff.mp (h.isDiffImmersionAt hn0),
+    hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn⟩
+
+omit [CompleteSpace E'] in
+/-- For a finite-dimensional target model, a `C^n` map on an open subset of a boundaryless
+manifold, with values in a boundaryless manifold, has the immersion normal form exactly when its
+manifold derivative is injective. -/
+theorem ContMDiffOn.isImmersionAt_iff_injective_mfderiv [FiniteDimensional 𝕜 E']
+    (hf : ContMDiffOn I J n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n) :
+    IsImmersionAt I J n f x ↔ Injective (mfderiv I J f x) := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  refine ⟨fun h => h.mfderiv_injective hn0, fun hdf => ?_⟩
+  have : FiniteDimensional 𝕜 E :=
+    FiniteDimensional.of_injective (mfderiv I J f x).toLinearMap hdf
+  have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
+  exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn
+    (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
+
+omit [CompleteSpace E'] in
+/-- A `C^n` map between boundaryless manifolds, with a finite-dimensional target model, is an
+immersion when its manifold derivative is injective at every point. -/
+theorem ContMDiff.isImmersion_of_injective_mfderiv [FiniteDimensional 𝕜 E']
+    (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hdf : ∀ x, Injective (mfderiv I J f x)) :
+    IsImmersion I J n f :=
+  TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x =>
+    (hf.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (mem_univ x) hn).mpr (hdf x)
+
+/-- A `C^n` map on an open subset of a boundaryless manifold, with values in a boundaryless
+manifold, is an immersion at any point `x` near which it has a left inverse `g` differentiable at
+`f x`: the manifold derivative of `g` at `f x` is then a continuous linear left inverse of that of
+`f` at `x`. -/
+theorem ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id {g : N → M}
+    (hf : ContMDiffOn I J n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
+    (hg : MDifferentiableAt J I g (f x)) (hgf : g ∘ f =ᶠ[𝓝 x] id) :
+    IsImmersionAt I J n f x := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hcomp := mfderiv_comp x hg ((hf.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt hn0)
+  rw [hgf.mfderiv_eq, mfderiv_id] at hcomp
+  exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn ⟨_, fun u ↦ congr($hcomp u).symm⟩
+
+omit [CompleteSpace E'] in
+/-- A `C^n` map between boundaryless manifolds, with `1 ≤ n`, which has a left inverse
+differentiable along its image is an immersion. -/
+theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] {g : N → M}
+    (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hg : ∀ x, MDifferentiableAt J I g (f x))
+    (hgf : LeftInverse g f) : IsImmersion I J n f :=
+  have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
+  TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun x ↦
+    hf.contMDiffOn.isImmersionAt_of_comp_eventuallyEq_id isOpen_univ (mem_univ x) hn (hg x)
+      (Filter.Eventually.of_forall hgf)
+
+variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [CompleteSpace EP]
+  [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+  [IP.Boundaryless] [IsManifold IP n P]
+
+/-- A `C^n` parameter-preserving map `(p, x) ↦ (p, G (p, x))` between boundaryless manifolds is an
+immersion at every point where its slice at the fixed parameter is an immersion in the sense of
+differentials. -/
+theorem ContMDiff.isImmersionAt_fst_prod {G : P × M → N} (hG : ContMDiff (IP.prod I) J n G)
+    (hn : 1 ≤ n) {q : P × M} (hq : IsDiffImmersionAt I J (fun x => G (q.1, x)) q.2) :
+    IsImmersionAt (IP.prod I) (IP.prod J) n (fun q => (q.1, G q)) q := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  refine (contMDiff_fst.prodMk hG).contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv
+    isOpen_univ (mem_univ q) hn ?_
+  exact ((hG q).mdifferentiableAt hn0).hasLeftInverse_mfderiv_fst_prod_iff.mpr
+    (isDiffImmersionAt_iff.mp hq)
+
+omit [CompleteSpace E'] [CompleteSpace EP] [J.Boundaryless] [IsManifold J n N] in
+/-- Postcomposing an immersion from a boundaryless manifold with a diffeomorphism of the target
+onto a boundaryless manifold gives an immersion, also when the new target has a different model,
+provided that model is finite dimensional. -/
+theorem Diffeomorph.isImmersion_comp [FiniteDimensional 𝕜 EP] (Φ : N ≃ₘ^n⟮J, IP⟯ P)
+    (hn : 1 ≤ n) (hf : IsImmersion I J n f) : IsImmersion I IP n (Φ ∘ f) := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  refine (Φ.contMDiff.comp hf.contMDiff).isImmersion_of_injective_mfderiv hn fun x => ?_
+  rw [mfderiv_comp x (Φ.mdifferentiable hn0 _) (hf.contMDiff.mdifferentiableAt hn0),
+    ContinuousLinearMap.coe_comp, ← Φ.mfderivToContinuousLinearEquiv_coe hn0]
+  exact (Φ.mfderivToContinuousLinearEquiv hn0 (f x)).injective.comp (hf.mfderiv_injective hn0 x)
+
+omit [CompleteSpace E'] [CompleteSpace EP] in
+/-- Pairing an immersion from a boundaryless manifold with a `C^n` map, both with values in
+boundaryless manifolds with finite-dimensional models, gives an immersion
+`x ↦ (f x, g x)`. -/
+theorem Manifold.IsImmersion.prodMk [FiniteDimensional 𝕜 E'] [FiniteDimensional 𝕜 EP]
+    {g : M → P} (hf : IsImmersion I J n f) (hg : ContMDiff I IP n g) (hn : 1 ≤ n) :
+    IsImmersion I (J.prod IP) n (fun x ↦ (f x, g x)) := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  refine TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x => ?_
+  refine ((hf.contMDiff.prodMk hg).contMDiffOn.isImmersionAt_iff_injective_mfderiv
+    isOpen_univ (mem_univ x) hn).mpr ?_
+  rw [mfderiv_prodMk (hf.contMDiff.mdifferentiableAt hn0) (hg.mdifferentiableAt hn0)]
+  exact fun u v huv ↦ hf.mfderiv_injective hn0 x congr(($huv).1)
+
+end Manifold
 
 end

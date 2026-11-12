@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ShortComplex.Splice
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
+public import TauCeti.CategoryTheory.Exact.Acyclic
 
 /-!
 # Complete resolutions
@@ -26,7 +27,10 @@ maps are spliced. Uniqueness up to homotopy is the comparison theorem in
 
 * `TauCeti.ExactStructure.CompleteResolution`: a complete resolution, as the data of its
   conflations.
-* `TauCeti.ExactStructure.CompleteResolution.complex`: the spliced cochain complex.
+* `TauCeti.ExactStructure.CompleteResolution.complex`: the spliced cochain complex, acyclic by
+  `TauCeti.ExactStructure.CompleteResolution.acyclicData`.
+* `TauCeti.ExactStructure.CompleteResolution.cyclesMap`: the morphism of the objects of cycles in
+  degree zero induced by a map of the spliced complexes.
 * `TauCeti.ExactStructure.IsFrobenius.completeResolution`: a complete resolution of an object of
   a Frobenius exact category, with `TauCeti.ExactStructure.IsFrobenius.completeResolutionIso`.
 
@@ -124,6 +128,16 @@ of the form `n + 1`. -/
 theorem complex_d_negSucc_zero : r.complex.d (Int.negSucc 0) 0 = r.d (Int.negSucc 0) :=
   r.complex_d _
 
+/-- The spliced complex of a complete resolution is acyclic, with objects of cycles `Zⁿ`. -/
+@[expose, simps]
+def acyclicData : E.AcyclicData r.complex where
+  Z := r.Z
+  i := r.ι
+  p := r.π
+  zero := r.ι_π
+  conflation := r.conflation
+  fac n := by rw [complex_d, d_def]
+
 /-- A map of the spliced complexes commutes with the differentials of the resolutions. -/
 @[reassoc]
 theorem f_comp_d {r' : E.CompleteResolution} (φ : r.complex ⟶ r'.complex) (n : ℤ) :
@@ -168,6 +182,44 @@ noncomputable def descZ {A : C} (n : ℤ) (k : r.X n ⟶ A) (hk : r.ι n ≫ k =
 theorem π_descZ {A : C} (n : ℤ) (k : r.X n ⟶ A) (hk : r.ι n ≫ k = 0) :
     r.π n ≫ r.descZ n k hk = k :=
   (E.isKernelCokernelPair _ (r.conflation n)).g_desc k hk
+
+section CyclesMap
+
+variable {r} {r' r'' : E.CompleteResolution}
+
+/-- The morphism of the objects of cycles in degree zero induced by a map of the spliced
+complexes: the restriction of the degree-zero component to `Z⁰ ↪ X⁰`, which lands in `Z'⁰`. -/
+noncomputable def cyclesMap (φ : r.complex ⟶ r'.complex) : r.Z 0 ⟶ r'.Z 0 :=
+  r'.liftZ 0 (r.ι 0 ≫ φ.f 0) (by
+    rw [← cancel_mono (r'.ι (0 + 1))]
+    -- Group the target differential before using chain-map commutativity.
+    simp only [Category.assoc, zero_comp]
+    rw [← r'.d_def 0, r.f_comp_d φ 0, r.ι_d_assoc, zero_comp])
+
+/-- The map of complexes extends the induced morphism of the objects of cycles. -/
+@[reassoc (attr := simp)]
+theorem cyclesMap_ι (φ : r.complex ⟶ r'.complex) : cyclesMap φ ≫ r'.ι 0 = r.ι 0 ≫ φ.f 0 :=
+  r'.liftZ_ι _ _ _
+
+@[simp]
+theorem cyclesMap_id : cyclesMap (𝟙 r.complex) = 𝟙 (r.Z 0) := by
+  simp [← cancel_mono (r.ι 0)]
+
+@[simp]
+theorem cyclesMap_comp (φ : r.complex ⟶ r'.complex) (ψ : r'.complex ⟶ r''.complex) :
+    cyclesMap (φ ≫ ψ) = cyclesMap φ ≫ cyclesMap ψ := by
+  simp [← cancel_mono (r''.ι 0)]
+
+@[simp]
+theorem cyclesMap_zero : cyclesMap (0 : r.complex ⟶ r'.complex) = 0 := by
+  simp [← cancel_mono (r'.ι 0)]
+
+@[simp]
+theorem cyclesMap_add (φ ψ : r.complex ⟶ r'.complex) :
+    cyclesMap (φ + ψ) = cyclesMap φ + cyclesMap ψ := by
+  simp [← cancel_mono (r'.ι 0), Preadditive.add_comp, Preadditive.comp_add]
+
+end CyclesMap
 
 end CompleteResolution
 

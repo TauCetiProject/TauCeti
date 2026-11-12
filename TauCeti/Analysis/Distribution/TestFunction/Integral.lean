@@ -7,9 +7,15 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Measure.WithDensity
+import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 
 /-!
 # Integrals of test functions against measures finite on compact sets
@@ -21,7 +27,16 @@ sets, the integral of `φ` against `ν` is bounded by the sup norm:
 `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞`.
 
 This is the estimate showing that integration against such a measure is a distribution of order
-zero.
+zero. Through a continuous bilinear map, a test function also pairs integrably with every
+function that is locally integrable for a measure on `Ω`.
+
+Every nonempty open subset of the domain also contains a nonnegative integral-one test, for any
+locally finite measure positive on nonempty open sets. The construction normalizes Mathlib's
+`exists_contDiff_tsupport_subset` by its positive integral. These tests recover the coefficient
+of a constant distribution, including on arbitrarily small overlap neighborhoods.
+
+Against an additive Haar measure, the directional derivative of a test function has integral
+zero, by Mathlib's integration by parts against the constant function `1`.
 
 ## Main definitions
 
@@ -30,14 +45,31 @@ zero.
 
 ## Main results
 
+* `TestFunction.exists_nonneg_integral_eq_one`: a nonnegative integral-one test supported in any
+  nonempty open subset of the domain.
+
 * `TestFunction.norm_integral_le_measureReal_mul_norm`: `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞` for a test
   function `φ` supported in a compact `K ⊆ Ω`.
+
+* `TestFunction.integrable_bilin_subtype`: `x ↦ B (φ x) (g x)` is integrable for `g` locally
+  integrable for a measure on `Ω`.
+
+* `TestFunction.neg_integral_smul_neg_add_eq`: the integral of a test function against the
+  right-hand side `-(f + ∑ᵢⱼ Gᵢⱼ)` of a weak derivative equation.
+
+* `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
+  locally integrable field is integrable.
+
+* `TestFunction.enorm_integral_inner_le_withDensity`: the pairing of a test field supported in `U`
+  and bounded by `1` with `v` is at most the mass of `|v| m` on `U`.
+
+* `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
 -/
 
 public section
 
 open MeasureTheory TopologicalSpace
-open scoped Distributions BoundedContinuousFunction CompactlySupported
+open scoped Distributions BoundedContinuousFunction CompactlySupported RealInnerProductSpace ENNReal
 
 namespace TestFunction
 
@@ -92,5 +124,127 @@ theorem norm_integral_le_measureReal_mul_norm (φ : 𝓓(Ω, F)) {K : Set E} (hK
     mul_comm]
   exact norm_setIntegral_le_of_norm_le_const hK'.measure_lt_top fun x _ => by
     simpa using (φ : E →ᵇ F).norm_coe_le_norm x
+
+/-- A test function on `Ω` pairs integrably, through a continuous bilinear map `B`, with every
+function `g` that is locally integrable for a measure on the subspace `Ω`. -/
+theorem integrable_bilin_subtype [OpensMeasurableSpace E] {F₂ F₃ : Type*} [NormedAddCommGroup F₂]
+    [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] (B : F →L[ℝ] F₂ →L[ℝ] F₃)
+    {ν : Measure Ω} {g : Ω → F₂} (hg : LocallyIntegrable g ν) (φ : 𝓓^{n}(Ω, F)) :
+    Integrable (fun x : Ω => B (φ x) (g x)) ν := by
+  set f := φ.toCompactlySupportedContinuousMap
+  have hf : (f : Ω → F) = fun x : Ω => φ x := funext (toCompactlySupportedContinuousMap_apply φ)
+  have hK : IsCompact (tsupport f) := f.hasCompactSupport
+  have hon : IntegrableOn (fun x => B (f x) (g x)) (tsupport f) ν := by
+    rw [IntegrableOn, ← memLp_one_iff_integrable]
+    exact B.memLp_of_bilin 1 (f.continuous.memLp_top_of_hasCompactSupport f.hasCompactSupport _)
+      (memLp_one_iff_integrable.2 (hg.integrableOn_isCompact hK))
+  rw [hf] at hon
+  refine (integrableOn_iff_integrable_of_support_subset fun x hx => ?_).1 hon
+  exact subset_tsupport _ fun hφx => hx (by simp [(congrFun hf x).symm.trans hφx])
+
+/-- The right-hand side `-(f + ∑ᵢⱼ Gᵢⱼ)` of a weak derivative equation, with `f` locally integrable
+on `Ω` and each `φ Gᵢⱼ` integrable, tests against a real test function `φ` as follows:
+`-∫ φ · -(f + ∑ᵢⱼ Gᵢⱼ) = ∫_Ω f φ + ∑ᵢⱼ ∫ φ Gᵢⱼ`. The two index types of the finite sum are
+independent. -/
+theorem neg_integral_smul_neg_add_eq [OpensMeasurableSpace E] {κ κ' : Type*} [Fintype κ]
+    [Fintype κ'] {μ : Measure E} {f : E → ℝ} {G : κ → κ' → E → ℝ} (φ : 𝓓(Ω, ℝ))
+    (hfloc : LocallyIntegrableOn f Ω μ)
+    (hIG : ∀ i j, Integrable (fun x => (φ : E → ℝ) x • G i j x) μ) :
+    -∫ x, (φ : E → ℝ) x • -(f x + ∑ i, ∑ j, G i j x) ∂μ =
+      (∫ x in Ω, f x * φ x ∂μ) + ∑ i, ∑ j, ∫ x, (φ : E → ℝ) x • G i j x ∂μ := by
+  simp only [smul_neg, integral_neg, neg_neg, smul_add, Finset.smul_sum]
+  rw [integral_add (φ.integrable_smul hfloc)
+    (integrable_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j),
+    integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j]
+  congr 1
+  · rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+      simp [φ.zero_on_compl hx]]
+    simp only [smul_eq_mul, mul_comm]
+  · exact Finset.sum_congr rfl fun i _ => integral_finsetSum _ fun j _ => hIG i j
+
+section InnerPairing
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [OpensMeasurableSpace E]
+
+/-- The pairing of a test vector field with a locally integrable field is integrable. -/
+theorem integrable_inner_subtype {m : Measure Ω} {v : Ω → G} (φ : 𝓓^{n}(Ω, G))
+    (hv : LocallyIntegrable v m) : Integrable (fun x : Ω => ⟪φ x, v x⟫) m :=
+  (φ.integrable_bilin_subtype (innerSL ℝ) hv).congr
+    (ae_of_all _ fun _ => innerSL_apply_apply ℝ _ _)
+
+omit [OpensMeasurableSpace E] in
+/-- The pairing of a test vector field supported in `U` and bounded by `1` with a field `v` is
+bounded by the mass of the measure `|v| m` on `U`. -/
+theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
+    {φ : 𝓓^{n}(Ω, G)} (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → G) :
+    ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
+      m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
+  rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
+    ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
+  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
+  · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
+  · have hzero : φ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx (hφU hx')
+    simp [hx, hzero]
+
+end InnerPairing
+
+section IntegralOne
+
+open Set
+open scoped Topology
+
+variable [FiniteDimensional ℝ E] [OpensMeasurableSpace E] {μ : Measure E}
+  [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+
+/-- There is a nonnegative integral-one test supported in any nonempty open subset of the
+domain. The measure need not be translation invariant. -/
+theorem exists_nonneg_integral_eq_one {U : Set E} (hU : IsOpen U) (hne : U.Nonempty)
+    (hUΩ : U ⊆ Ω) :
+    ∃ φ : 𝓓^{n}(Ω, ℝ), tsupport φ ⊆ U ∧ (∀ x, 0 ≤ φ x) ∧ ∫ x, φ x ∂μ = 1 := by
+  obtain ⟨x, hx⟩ := hne
+  obtain ⟨f, hfs, hfc, hfd, hf01, hfx⟩ :=
+    exists_contDiff_tsupport_subset (n := n) (hU.mem_nhds hx)
+  have hfi : Integrable f μ := hfd.continuous.integrable_of_hasCompactSupport hfc
+  have hf0 : ∀ y, 0 ≤ f y := fun y ↦ (hf01 (mem_range_self y)).1
+  have hpos : 0 < ∫ y, f y ∂μ :=
+    MeasureTheory.integral_pos_of_integrable_nonneg_ne_zero (x := x) hfd.continuous hfi hf0
+      (by rw [hfx]; exact one_ne_zero)
+  let φ : 𝓓^{n}(Ω, ℝ) := ⟨f, hfd, hfc, hfs.trans hUΩ⟩
+  refine ⟨(∫ y, f y ∂μ)⁻¹ • φ, ?_, ?_, ?_⟩
+  · simpa only [FunLike.coe_smul, Pi.smul_def, φ, coe_mk] using
+      (tsupport_smul_subset_right (fun _ : E ↦ (∫ y, f y ∂μ)⁻¹) f).trans hfs
+  · exact fun y ↦ mul_nonneg (inv_nonneg.mpr hpos.le) (hf0 y)
+  · simp only [_root_.smul_apply, smul_eq_mul, φ, coe_mk, integral_const_mul]
+    exact inv_mul_cancel₀ hpos.ne'
+
+end IntegralOne
+
+section LineDeriv
+
+variable [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- The directional derivative of a test function has integral zero against an additive Haar
+measure: `∫ ∂_w φ = 0`. -/
+theorem integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
+    ∫ x, lineDeriv ℝ (φ : E → ℝ) x w ∂μ = 0 := by
+  rcases φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous with h | hE
+  · simp [h, lineDeriv]
+  have hd := φ.contDiff.differentiable (by simp)
+  have hint (ψ : 𝓓(Ω, ℝ)) : Integrable ψ μ :=
+    ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport
+  have hφ' : ⇑(lineDerivCLM ℝ w φ : 𝓓(Ω, ℝ)) = fun x ↦ lineDeriv ℝ φ x w :=
+    funext fun _ ↦ lineDerivCLM_apply_of_le le_top
+  -- Integrating by parts against the constant function `1`.
+  simpa using integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable (μ := μ)
+    (f := fun _ ↦ (1 : ℝ)) (f' := fun _ ↦ 0) (g := φ) (g' := fun x ↦ lineDeriv ℝ φ x w)
+    (B := ContinuousLinearMap.lsmul ℝ ℝ) (by simp)
+    (by simpa [hφ'] using hint (lineDerivCLM ℝ w φ)) (by simpa using hint φ)
+    (fun x _ ↦ by simpa using (hasFDerivAt_const (1 : ℝ) x).hasLineDerivAt w)
+    fun x _ ↦ (hd x).lineDifferentiableAt.hasLineDerivAt
+
+end LineDeriv
 
 end TestFunction

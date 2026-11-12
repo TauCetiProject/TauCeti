@@ -17,12 +17,12 @@ with coefficients in `M` in positive degrees (a *Leray cover*). Then `Hⁿ(U₁ 
 for every `n ≥ r`. The proof is by induction on `r` through the Mayer–Vietoris sequence of
 `U₁` and `U₂ ⊔ ⋯ ⊔ U_r`, whose intersection is covered by the `r - 1` opens `U₁ ⊓ Uᵢ`.
 
-The main application is to quasi-coherent sheaves: on a locally Noetherian scheme with affine
-diagonal (for instance a separated one), finite intersections of affine opens are affine, and
-quasi-coherent sheaves have no higher cohomology on Noetherian affine opens. So if such a scheme
-is covered by `r` affine opens, every quasi-coherent sheaf on it has vanishing cohomology in
-degrees `n ≥ r`. This is the bound used for projective space `ℙᵈ_A` over a Noetherian ring `A`,
-which is covered by its `d + 1` standard affine charts. The case of two opens is
+The main application is to quasi-coherent sheaves: on a scheme with affine diagonal (for instance
+a separated one), finite intersections of affine opens are affine, and quasi-coherent sheaves have
+no higher cohomology on affine opens. So if such a scheme is covered by `r` affine opens, every
+quasi-coherent sheaf on it has vanishing cohomology in degrees `n ≥ r`. This is the bound used for
+projective space `ℙᵈ_A` over a ring `A`, which is covered by its `d + 1` standard affine charts.
+The case of two opens is
 `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom`.
 
 ## Main declarations
@@ -33,8 +33,8 @@ which is covered by its `d + 1` standard affine charts. The case of two opens is
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_card_le`: the same for a finite
   Leray cover of `X`;
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_isAffineOpen_of_card_le`: a
-  quasi-coherent sheaf on a locally Noetherian scheme with affine diagonal covered by `r` affine
-  opens has no cohomology in degrees `n ≥ r`.
+  quasi-coherent sheaf on a scheme with affine diagonal covered by `r` affine opens has no
+  cohomology in degrees `n ≥ r`.
 
 ## References
 
@@ -94,10 +94,10 @@ theorem subsingleton_cohomology_of_card_le {s : Finset ι} (hs : s.Nonempty) (U 
   rw [hcover] at h
   exact (cohomologyOnTopIso M n).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
-/-- **Vanishing above the size of an affine cover.** A quasi-coherent sheaf of modules on a
-locally Noetherian scheme with affine diagonal (for instance a separated one) which is covered by
-`r` affine opens has no cohomology in degrees `n ≥ r`. -/
-theorem subsingleton_cohomology_of_isAffineOpen_of_card_le [IsLocallyNoetherian X]
+/-- **Vanishing above the size of an affine cover.** A quasi-coherent sheaf of modules on a scheme
+with affine diagonal (for instance a separated one) which is covered by `r` affine opens has no
+cohomology in degrees `n ≥ r`. -/
+theorem subsingleton_cohomology_of_isAffineOpen_of_card_le
     [IsAffineHom (pullback.diagonal (terminal.from X))] [M.IsQuasicoherent]
     {s : Finset ι} (hs : s.Nonempty) (U : ι → X.Opens) (hU : ∀ i ∈ s, IsAffineOpen (U i))
     (hcover : s.sup U = ⊤) (n : ℕ) (hn : s.card ≤ n) : Subsingleton (Cohomology M n) := by
@@ -105,7 +105,6 @@ theorem subsingleton_cohomology_of_isAffineOpen_of_card_le [IsLocallyNoetherian 
   have hW : IsAffineOpen (t.inf U) := by
     rw [Finset.inf_eq_iInf]
     exact IsAffineOpen.biInf _ t.finite_toSet ht' fun j hj ↦ hU j (ht hj)
-  have : IsNoetherianRing Γ(X, t.inf U) := IsLocallyNoetherian.component_noetherian ⟨_, hW⟩
   exact subsingleton_cohomologyOn_succ_of_isAffineOpen M hW i
 
 end AlgebraicGeometry.Scheme.Modules

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import Mathlib.GroupTheory.Commutator.Basic
+public import Mathlib.Data.List.ProdSigma
+public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 
 /-!
 # Finite systems of equations and inequations over a free group
@@ -15,6 +17,8 @@ An equation or inequation with variables `X` and coefficient letters `A` is a wo
 `FreeGroup (X ⊕ A)`. A solution assigns group elements to the variables and coefficients,
 then evaluates each word by `FreeGroup.lift`. Keeping the two finite lists separate makes
 their conjunction available to normal forms for quantifier-free group formulas.
+Read with coefficients in `F(A)`, such a word is an equation of algebraic geometry over `F(A)`,
+an element of `F(A)[X]` (`TauCeti.EqIneqSystem.toGX`).
 
 The equation–inequation viewpoint follows Kharlampovich and Myasnikov, *Implicit function
 theorem over free groups*, §2.3.
@@ -49,6 +53,34 @@ theorem eval_eq_lift (v : X → G) (c : A → G) :
 @[simp] theorem eval_of (v : X → G) (c : A → G) (i : X ⊕ A) :
     eval v c (FreeGroup.of i) = Sum.elim v c i := by
   simp [eval]
+
+variable (X A) in
+/-- Words in variables `X` and letters of `A` as elements of `F(A)[X] = F(A) ∗ F(X)`, the
+equations of algebraic geometry over `F(A)`. -/
+def toGX : FreeGroup (X ⊕ A) →* GroupAlgGeom.GX (FreeGroup A) X :=
+  FreeGroup.lift (Sum.elim (fun x => Monoid.Coprod.inr (FreeGroup.of x))
+    (fun a => Monoid.Coprod.inl (FreeGroup.of a)))
+
+/-- A variable is sent to the corresponding generator of `F(X)`. -/
+@[simp]
+theorem toGX_of_inl (x : X) :
+    toGX X A (FreeGroup.of (Sum.inl x)) = Monoid.Coprod.inr (FreeGroup.of x) := by
+  simp [toGX]
+
+/-- A coefficient letter is sent to the corresponding generator of `F(A)`. -/
+@[simp]
+theorem toGX_of_inr (a : A) :
+    toGX X A (FreeGroup.of (Sum.inr a)) = Monoid.Coprod.inl (FreeGroup.of a) := by
+  simp [toGX]
+
+/-- Evaluating the image of a word in `F(A)[X]` at `v` evaluates the word at `v` and at the
+coefficients. -/
+@[simp]
+theorem eval_toGX (ι : FreeGroup A →* H) (v : X → H) (w : FreeGroup (X ⊕ A)) :
+    GroupAlgGeom.eval ι v (toGX X A w) = eval v (ι ∘ FreeGroup.of) w := by
+  rw [← MonoidHom.comp_apply]
+  congr 1
+  ext (x | a) <;> simp
 
 /-- A variable assignment solves a system when all equations vanish and all inequations
 remain nontrivial after evaluation. -/
@@ -107,6 +139,109 @@ def append (S T : EqIneqSystem X A) : EqIneqSystem X A :=
     (S.append T).IsSolution v c ↔ S.IsSolution v c ∧ T.IsSolution v c := by
   simp [IsSolution, append, List.mem_append, or_imp, forall_and, and_assoc,
     and_left_comm]
+
+/-- Appending the empty system leaves a system unchanged. -/
+@[simp] theorem append_empty (S : EqIneqSystem X A) : S.append (empty X A) = S := by
+  simp [append, empty]
+
+/-- Appending a system to the empty system gives that system. -/
+@[simp] theorem empty_append (S : EqIneqSystem X A) : (empty X A).append S = S := by
+  simp [append, empty]
+
+/-- Distribute conjunction over two finite disjunctions of word systems. -/
+def disjunctionProduct (S T : List (EqIneqSystem X A)) : List (EqIneqSystem X A) :=
+  (S.product T).map fun st => st.1.append st.2
+
+/-- A system occurs in the distributed product exactly when it appends a system from each
+input family. -/
+@[simp] theorem mem_disjunctionProduct_iff (S T : List (EqIneqSystem X A))
+    (U : EqIneqSystem X A) :
+    U ∈ disjunctionProduct S T ↔ ∃ s ∈ S, ∃ t ∈ T, s.append t = U := by
+  simp only [disjunctionProduct, List.mem_map]
+  constructor
+  · rintro ⟨⟨s, t⟩, hst, heq⟩
+    obtain ⟨hs, ht⟩ := List.mem_product.mp hst
+    exact ⟨s, hs, t, ht, heq⟩
+  · rintro ⟨s, hs, t, ht, heq⟩
+    exact ⟨(s, t), List.mem_product.mpr ⟨hs, ht⟩, heq⟩
+
+/-- Distributing conjunction against a single system appends that system to every member of
+the other family. -/
+@[simp] theorem disjunctionProduct_singleton (S : List (EqIneqSystem X A)) (T : EqIneqSystem X A) :
+    disjunctionProduct S [T] = S.map fun s => s.append T := by
+  simp [disjunctionProduct, List.product, ← List.map_eq_flatMap]
+
+/-- Solving a system in a distributed conjunction is equivalent to solving one system
+from each input family. -/
+theorem exists_isSolution_disjunctionProduct (S T : List (EqIneqSystem X A))
+    (v : X → G) (c : A → G) :
+    (∃ U ∈ disjunctionProduct S T, U.IsSolution v c) ↔
+      (∃ s ∈ S, s.IsSolution v c) ∧ (∃ t ∈ T, t.IsSolution v c) := by
+  simp only [mem_disjunctionProduct_iff]
+  constructor
+  · rintro ⟨U, ⟨s, hs, t, ht, rfl⟩, hU⟩
+    exact ⟨⟨s, hs, (isSolution_append s t v c).mp hU |>.1⟩,
+      ⟨t, ht, (isSolution_append s t v c).mp hU |>.2⟩⟩
+  · rintro ⟨⟨s, hs, hS⟩, ⟨t, ht, hT⟩⟩
+    exact ⟨s.append t, ⟨s, hs, t, ht, rfl⟩,
+      (isSolution_append s t v c).mpr ⟨hS, hT⟩⟩
+
+/-- Evaluating a word after renaming its variable letters along `f` evaluates the original
+word at the composite assignment. -/
+@[simp] theorem eval_map_sumMap {Y : Type*} (f : X → Y) (v : Y → G) (c : A → G)
+    (w : FreeGroup (X ⊕ A)) :
+    eval v c (FreeGroup.map (Sum.map f id) w) = eval (v ∘ f) c w := by
+  rw [← MonoidHom.comp_apply]
+  congr 1
+  apply FreeGroup.ext_hom
+  intro i
+  cases i <;> simp
+
+/-- Rename the variables of a system along `f : X → Y`, keeping its coefficient letters.
+Several variables may be identified, and variables outside the range of `f` stay unused. -/
+def relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) : EqIneqSystem Y A :=
+  ⟨S.eqs.map (FreeGroup.map (Sum.map f id)), S.ineqs.map (FreeGroup.map (Sum.map f id))⟩
+
+/-- The equations of a relabelled system are the relabelled equations. -/
+@[simp] theorem eqs_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) :
+    (S.relabel f).eqs = S.eqs.map (FreeGroup.map (Sum.map f id)) := by rfl
+
+/-- The inequations of a relabelled system are the relabelled inequations. -/
+@[simp] theorem ineqs_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A) :
+    (S.relabel f).ineqs = S.ineqs.map (FreeGroup.map (Sum.map f id)) := by rfl
+
+/-- An assignment solves a relabelled system exactly when its composite with the relabelling
+solves the original system. -/
+@[simp] theorem isSolution_relabel {Y : Type*} (f : X → Y) (S : EqIneqSystem X A)
+    (v : Y → G) (c : A → G) :
+    (S.relabel f).IsSolution v c ↔ S.IsSolution (v ∘ f) c := by
+  simp [IsSolution]
+
+/-- Relabelling along the identity leaves a system unchanged. -/
+@[simp] theorem relabel_id (S : EqIneqSystem X A) : S.relabel id = S := by
+  ext1 <;> simp [List.map_id'', FreeGroup.map.id]
+
+/-- Relabelling twice is relabelling along the composite. -/
+@[simp] theorem relabel_relabel {Y Z : Type*} (f : X → Y) (g : Y → Z)
+    (S : EqIneqSystem X A) : (S.relabel f).relabel g = S.relabel (g ∘ f) := by
+  ext1 <;> simp [FreeGroup.map.comp, Sum.map_comp_map]
+
+/-- Relabelling the empty system gives the empty system. -/
+@[simp] theorem relabel_empty {Y : Type*} (f : X → Y) :
+    (empty X A).relabel f = empty Y A := by rfl
+
+/-- Relabelling distributes over appending systems. -/
+@[simp] theorem relabel_append {Y : Type*} (f : X → Y) (S T : EqIneqSystem X A) :
+    (S.append T).relabel f = (S.relabel f).append (T.relabel f) := by
+  ext1 <;> simp
+
+/-- Relabelling every system of a distributed conjunction distributes over the product. -/
+theorem map_relabel_disjunctionProduct {Y : Type*} (f : X → Y)
+    (S T : List (EqIneqSystem X A)) :
+    (disjunctionProduct S T).map (relabel f) =
+      disjunctionProduct (S.map (relabel f)) (T.map (relabel f)) := by
+  simp [disjunctionProduct, List.product, List.map_flatMap, List.flatMap_map,
+    Function.comp_def]
 
 /-- Evaluation commutes with a group homomorphism when the variables and coefficients are
 mapped along that homomorphism. -/

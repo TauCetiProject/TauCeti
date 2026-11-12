@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
-import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Algebra.Polynomial.Depressed
 import TauCeti.RingTheory.LaurentSeries.SlopeNormalization
 import TauCeti.RingTheory.PowerSeries.Hensel
 
@@ -24,7 +24,7 @@ The proof is the classical Newton–Puiseux algorithm, by induction on the degre
 which may be assumed monic.
 
 1. Translating the variable by `-a / m`, where `a` is the coefficient of `Y ^ (m - 1)`, removes
-   that coefficient (`Polynomial.nextCoeff_taylor`).
+   that coefficient (`Polynomial.nextCoeff_taylor_neg_div_eq_zero`).
 2. If the translated polynomial is `Y ^ m`, then `0` is a root. Otherwise choose the smallest
    slope `ord (P.coeff j) / (m - j)` over the nonzero coefficients with `j < m`, attained at
    `j₀`, and put `q = m - j₀` and `v = ord (P.coeff j₀)`. Ramifying `X ↦ X ^ q` and rescaling
@@ -45,8 +45,8 @@ single ramified level. It is the input for the algebraic closedness of the Puise
 
 * `TauCeti.LaurentSeries.exists_isRoot_map_expand`: a nonconstant polynomial over `K⸨X⸩` has a
   root after a finite ramification `X ↦ X ^ n`.
-* `TauCeti.puiseuxField.exists_isRoot_levelEmbedding`: a nonconstant polynomial over `K⸨X⸩` has
-  a root in the Puiseux field lying in a single ramified level.
+* `TauCeti.puiseuxField.exists_isRoot_map_levelEmbedding`: a nonconstant polynomial over `K⸨X⸩`,
+  embedded at any level, has a root in the Puiseux field lying in a single ramified level.
 
 ## References
 
@@ -94,13 +94,11 @@ private theorem exists_isRoot_map_expand_of_monic (m : ℕ) :
   have : CharZero K⸨X⸩ := charZero_of_injective_algebraMap (algebraMap K K⸨X⸩).injective
   have hm' : (m : K⸨X⸩) ≠ 0 := Nat.cast_ne_zero.2 hm.ne'
   -- Translate the variable to remove the term of degree `m - 1`.
-  set c := -(P.nextCoeff / m)
+  set c := -P.nextCoeff / (P.natDegree * P.leadingCoeff)
   set P₁ := taylor c P
   have hP₁ : P₁.Monic := by rw [Monic, leadingCoeff_taylor, hP.leadingCoeff]
   have hP₁m : P₁.natDegree = m := by rw [natDegree_taylor, hPm]
-  have hnext : P₁.nextCoeff = 0 := by
-    rw [nextCoeff_taylor, hPm, hP.leadingCoeff, mul_one, mul_neg, mul_div_cancel₀ _ hm',
-      add_neg_cancel]
+  have hnext : P₁.nextCoeff = 0 := nextCoeff_taylor_neg_div_eq_zero (hPm ▸ hm')
   suffices ∃ (n : ℕ+) (y : K⸨X⸩), (P₁.map (expand K n)).IsRoot y by
     obtain ⟨n, y, hy⟩ := this
     refine ⟨n, y + expand K n c, ?_⟩
@@ -151,18 +149,22 @@ open _root_.LaurentSeries
 
 variable {K : Type*} [Field K] [IsAlgClosed K] [CharZero K]
 
-/-- Over an algebraically closed field `K` of characteristic zero, every nonconstant polynomial
-over `K⸨X⸩` has a root in the Puiseux field, lying in a single ramified level. -/
-theorem exists_isRoot_levelEmbedding {P : K⸨X⸩[X]} (hP : P.degree ≠ 0) :
-    ∃ (n : ℕ+) (y : K⸨X⸩),
-      (P.map (algebraMap K⸨X⸩ (puiseuxField K))).IsRoot (levelEmbedding K n y) := by
-  obtain ⟨n, y, hy⟩ := LaurentSeries.exists_isRoot_map_expand hP
-  refine ⟨n, y, ?_⟩
-  have hmap : P.map (algebraMap K⸨X⸩ (puiseuxField K)) =
-      (P.map (expand K n : K⸨X⸩ →+* K⸨X⸩)).map (levelEmbedding K n : K⸨X⸩ →+* puiseuxField K) := by
+/-- Over an algebraically closed field `K` of characteristic zero, the image of a nonconstant
+polynomial over `K⸨X⸩` under the level-`n` embedding `X ↦ t ^ (1 / n)` has a root in the Puiseux
+field lying in a single level `n * m`. For `n = 1` the image is the polynomial over the Puiseux
+field obtained through the `K⸨X⸩`-algebra structure. -/
+theorem exists_isRoot_map_levelEmbedding (n : ℕ+) {P : K⸨X⸩[X]} (hP : P.degree ≠ 0) :
+    ∃ (m : ℕ+) (y : K⸨X⸩),
+      (P.map (levelEmbedding K n : K⸨X⸩ →+* puiseuxField K)).IsRoot
+        (levelEmbedding K (n * m) y) := by
+  obtain ⟨m, y, hy⟩ := LaurentSeries.exists_isRoot_map_expand hP
+  refine ⟨m, y, ?_⟩
+  have hmap : P.map (levelEmbedding K n : K⸨X⸩ →+* puiseuxField K) =
+      (P.map (expand K m : K⸨X⸩ →+* K⸨X⸩)).map
+        (levelEmbedding K (n * m) : K⸨X⸩ →+* puiseuxField K) := by
     rw [Polynomial.map_map]
     congr 1
-    exact RingHom.ext fun f ↦ (levelEmbedding_expand_self n f).symm
+    exact RingHom.ext fun f ↦ (levelEmbedding_expand n m f).symm
   rw [hmap]
   exact hy.map _
 

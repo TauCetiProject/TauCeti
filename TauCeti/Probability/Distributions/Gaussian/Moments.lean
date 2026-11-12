@@ -24,6 +24,9 @@ Distributions*, volume 1, Chapter 13.
 * `integral_abs_sub_pow_gaussianReal` evaluates every absolute centered moment.
 * `centralMoment_id_two_mul_gaussianReal` evaluates the even centered moments.
 * `centralMoment_id_two_mul_add_one_gaussianReal` says that every odd centered moment vanishes.
+* `integral_sq_gaussianReal` evaluates the second raw moment.
+* `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
+  first-moment integrability for one or two Gaussian coordinates.
 -/
 
 public section
@@ -33,6 +36,23 @@ open scoped Nat NNReal Real
 namespace TauCeti.Probability
 
 open MeasureTheory ProbabilityTheory Real Set
+
+/-- The absolute value is integrable under every real Gaussian law. -/
+theorem integrable_abs_gaussianReal (μ : ℝ) (v : ℝ≥0) :
+    Integrable (fun x : ℝ => |x|) (gaussianReal μ v) := by
+  have h := ((memLp_id_gaussianReal' (μ := μ) (v := v) 1 (by simp)).integrable le_rfl).norm
+  simpa using h
+
+/-- The sum of the absolute coordinate values is integrable under two real Gaussian laws. -/
+theorem integrable_abs_add_abs_gaussianReal (μ₁ μ₂ : ℝ) (v₁ v₂ : ℝ≥0) :
+    Integrable (fun p : ℝ × ℝ => |p.1| + |p.2|)
+      (Measure.prod (gaussianReal μ₁ v₁) (gaussianReal μ₂ v₂)) := by
+  have h₁ := integrable_abs_gaussianReal μ₁ v₁
+  have h₂ := integrable_abs_gaussianReal μ₂ v₂
+  exact ((measurePreserving_fst (μ := gaussianReal μ₁ v₁) (ν := gaussianReal μ₂ v₂)).integrable_comp
+    h₁.aestronglyMeasurable |>.2 h₁).add
+      ((measurePreserving_snd (μ := gaussianReal μ₁ v₁) (ν := gaussianReal μ₂ v₂)).integrable_comp
+        h₂.aestronglyMeasurable |>.2 h₂)
 
 private lemma integral_abs_pow_mul_exp_neg_mul_sq (n : ℕ) {b : ℝ} (hb : 0 < b) :
     ∫ x : ℝ, |x| ^ n * exp (-b * x ^ 2) =
@@ -112,6 +132,14 @@ theorem integral_abs_sub_pow_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
       rw [integral_abs_pow_mul_exp_neg_mul_sq n (inv_pos.mpr (mul_pos two_pos hv'))]
     _ = _ := gaussian_absolute_moment_algebra n hv'
 
+/-- The mean of the absolute value of a centered real Gaussian, the half-normal mean:
+`E|X| = √(2 * v / π)` for `X ∼ N(0, v)`. -/
+theorem integral_abs_gaussianReal (v : ℝ≥0) : ∫ x, |x| ∂gaussianReal 0 v = √(2 * v / π) := by
+  have h := integral_abs_sub_pow_gaussianReal 0 v 1
+  simp only [sub_zero, pow_one, Nat.cast_one] at h
+  rw [h, show ((1 : ℝ) + 1) / 2 = 1 by norm_num, Gamma_one, mul_one, ← sqrt_eq_rpow,
+    sqrt_div' _ pi_pos.le]
+
 /-- The integral of the `2n`th power about the mean of a real Gaussian distribution is
 `vⁿ (2n - 1)‼`. -/
 @[simp]
@@ -140,6 +168,22 @@ theorem centralMoment_id_two_mul_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) 
       (v : ℝ) ^ n * (2 * n - 1 : ℕ)‼ := by
   simpa only [centralMoment, Pi.sub_apply, Pi.pow_apply, id_eq, integral_id_gaussianReal]
     using integral_sub_pow_two_mul_gaussianReal m v n
+
+/-- The second moment of a real Gaussian distribution is its variance plus its squared mean. -/
+theorem integral_sq_gaussianReal (m : ℝ) (v : ℝ≥0) :
+    ∫ x, x ^ 2 ∂gaussianReal m v = v + m ^ 2 := by
+  have h := variance_eq_sub (memLp_id_gaussianReal' (μ := m) (v := v) 2 ENNReal.ofNat_ne_top)
+  rw [variance_id_gaussianReal] at h
+  simp only [id_eq, Pi.pow_apply, integral_id_gaussianReal] at h
+  linarith
+
+/-- The fourth centered moment of a real Gaussian distribution is three times its
+squared variance. -/
+theorem integral_sub_pow_four_gaussianReal (m : ℝ) (v : ℝ≥0) :
+    ∫ x, (x - m) ^ 4 ∂gaussianReal m v = 3 * (v : ℝ) ^ 2 := by
+  have hfour : (2 * 2 - 1 : ℕ)‼ = 3 := by norm_num [Nat.doubleFactorial]
+  simpa only [hfour, Nat.reduceMul, Nat.cast_ofNat, mul_comm] using
+    integral_sub_pow_two_mul_gaussianReal m v 2
 
 /-- Every odd centered moment of a real Gaussian distribution vanishes. -/
 @[simp]

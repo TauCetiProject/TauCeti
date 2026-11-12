@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # The node polynomial of a Weierstrass curve
@@ -18,7 +19,8 @@ distinguishes split from nonsplit multiplicative reduction.
 This file defines `WeierstrassCurve.nodePolynomial` over a commutative ring and proves:
 
 * its discriminant is `-c₄ c₆`;
-* for a model singular at the origin, it is `c₄` times the tangent quadratic `T² + a₁ T - a₂`;
+* for a model singular at the origin, it is `c₄` times the tangent quadratic `T² + a₁ T - a₂`,
+  and at a singular point `(x₀, y₀)` it is `c₄` times `T² + a₁ T - (3 x₀ + a₂)`;
 * it commutes with base change;
 * a change of variables `(u, r, s, t)` acts by the substitution `T ↦ u T + s` and the
   scalar `u⁻⁶`, preserving splitting over a field;
@@ -162,6 +164,23 @@ lemma variableChange_nodePolynomial (W : WeierstrassCurve A) (C : VariableChange
         * Polynomial.X * Polynomial.C (↑C.u⁻¹ : A) ^ 5) * hu
     + (-3 * Polynomial.C (↑C.u⁻¹ : A) ^ 6 * Polynomial.C C.r) * hc₄
 
+/-- **The node polynomial at an arbitrary singular point.** If `(x₀, y₀)` is a singular point,
+the node polynomial is `c₄` times the tangent quadratic `T² + a₁ T - (3 x₀ + a₂)`, whose roots are
+the slopes of the tangent lines there. -/
+theorem nodePolynomial_eq_of_isSingular (W : WeierstrassCurve A) {x₀ y₀ : A}
+    (h : W.toAffine.IsSingular x₀ y₀) :
+    W.nodePolynomial = .C W.c₄ * (.C 1 * .X ^ 2 + .C W.a₁ * .X + .C (-(3 * x₀ + W.a₂))) := by
+  -- translating the singular point to the origin changes neither the node polynomial nor `c₄`
+  have hW := variableChange_nodePolynomial W ⟨1, x₀, 0, y₀⟩
+  simp only [inv_one, Units.val_one, one_pow, map_one, one_mul, map_zero, add_zero,
+    Polynomial.comp_X] at hW
+  rw [← hW,
+    nodePolynomial_eq_of_isSingular_zero _ ((Affine.isSingular_iff_variableChange _ _ _).1 h),
+    variableChange_translate_c₄]
+  simp only [variableChange_a₁, variableChange_a₂, inv_one, Units.val_one, one_pow, one_mul,
+    mul_zero, add_zero, zero_mul, sub_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
+    zero_pow, add_comm _ (3 * x₀)]
+
 /-- **Invariance of the node polynomial's splitting under change of variables.** Since a change of
 variables transforms the node polynomial by an affine substitution and a unit scalar
 (`variableChange_nodePolynomial`), whether it splits over a field `k` is unchanged. This is what
@@ -179,29 +198,43 @@ lemma splits_variableChange_nodePolynomial_map_iff (φ : A →+* k) (W : Weierst
   exact (Polynomial.splits_iff_comp_splits_of_natDegree_eq_one
     (Polynomial.natDegree_linear hu)).symm
 
-/-- **Split criterion away from residue characteristic two.** Over a field `k` with `2 ≠ 0`, and
-provided `c₄` does not die under `φ` — the condition that makes the reduced polynomial genuinely
-quadratic, and which multiplicative reduction supplies — the node polynomial splits, i.e. the two
-tangent directions at the node are `k`-rational, exactly when `φ (-(c₄ * c₆))`, the image of its
-discriminant (`discrim_nodePolynomial`), is a square in `k`. Applied to a quadratic twist via
+/-- **Split criterion away from residue characteristic two.** Over a field `k` with `2 ≠ 0`, the
+node polynomial splits exactly when `φ (-(c₄ * c₆))`, the image of its discriminant
+(`discrim_nodePolynomial`), is a square in `k`. For a nodal reduction (`φ c₄ ≠ 0`) this says that
+the two tangent directions at the node are `k`-rational; when `φ c₄ = 0` the polynomial is constant
+and both sides hold. Applied to a quadratic twist via
 `-c₄' c₆' = (t² - 4n)⁵ · (-c₄ c₆)`, this criterion identifies the square class of twists that
 turns nonsplit reduction into split reduction. -/
-lemma splits_nodePolynomial_map_iff_isSquare [NeZero (2 : k)] (φ : A →+* k) (W : WeierstrassCurve A)
-    (hc₄ : φ W.c₄ ≠ 0) :
+lemma splits_nodePolynomial_map_iff_isSquare [NeZero (2 : k)] (φ : A →+* k)
+    (W : WeierstrassCurve A) :
     (W.nodePolynomial.map φ).Splits ↔ IsSquare (φ (-(W.c₄ * W.c₆))) := by
-  rw [nodePolynomial_map_eq_quadratic, Polynomial.splits_quadratic_iff_isSquare hc₄,
-    discrim_map_nodePolynomial]
+  by_cases hc₄ : φ W.c₄ = 0
+  · have hsplit : (W.nodePolynomial.map φ).Splits := by
+      rw [nodePolynomial_map_eq_quadratic]
+      simp only [map_mul, hc₄, mul_zero, Polynomial.C_0, zero_mul, zero_add]
+      exact Polynomial.Splits.C _
+    refine iff_of_true hsplit ?_
+    rw [map_neg, map_mul, hc₄, zero_mul, neg_zero]
+    exact IsSquare.zero
+  · rw [nodePolynomial_map_eq_quadratic, Polynomial.splits_quadratic_iff_isSquare hc₄,
+      discrim_map_nodePolynomial]
 
 /-- **Split criterion in residue characteristic two.** Over a field `k` of characteristic `2`,
 where the square-class criterion `splits_nodePolynomial_map_iff_isSquare` says nothing, the node
 polynomial splits exactly when its Artin-Schreier invariant lies in the image of `z ↦ z² + z`.
-Only `c₄` need be assumed nonzero: in characteristic two `c₄ = a₁⁴`, so the linear coefficient
-`a₁ c₄` is also nonzero. -/
+When `φ c₄ = 0` the polynomial is constant and both sides hold. -/
 lemma splits_nodePolynomial_map_iff_exists_artinSchreier_of_two_eq_zero (h2 : (2 : k) = 0)
-    (φ : A →+* k) (W : WeierstrassCurve A) (hc₄ : φ W.c₄ ≠ 0) :
+    (φ : A →+* k) (W : WeierstrassCurve A) :
     (W.nodePolynomial.map φ).Splits ↔ ∃ z, φ (W.a₁ * W.c₄) ^ 2 * (z ^ 2 + z)
       = φ W.c₄ * (-φ (54 * W.b₆ - 3 * W.b₂ * W.b₄ + W.a₂ * W.c₄)) := by
   let : CharP k 2 := (CharP.charP_iff_prime_eq_zero Nat.prime_two).2 h2
+  by_cases hc₄ : φ W.c₄ = 0
+  · have hsplit : (W.nodePolynomial.map φ).Splits := by
+      rw [nodePolynomial_map_eq_quadratic]
+      simp only [map_mul, hc₄, mul_zero, Polynomial.C_0, zero_mul, zero_add]
+      exact Polynomial.Splits.C _
+    refine iff_of_true hsplit ⟨0, ?_⟩
+    simp [map_mul, hc₄]
   have ha₁ : φ W.a₁ ≠ 0 := by
     have h := (W.map φ).c₄_of_char_two
     rw [map_c₄, map_a₁] at h

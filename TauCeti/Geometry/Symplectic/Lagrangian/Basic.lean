@@ -41,14 +41,21 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.orthogonal`: the symplectic complement `L^ω`.
 * `TauCeti.SymplecticForm.IsIsotropic`, `IsCoisotropic`, `IsLagrangian`, `IsSymplectic`: the four
   predicates on subspaces.
-* `TauCeti.SymplecticForm.isIsotropic_iff`: isotropy is the vanishing of `ω` on `L × L`.
+* `TauCeti.SymplecticForm.isIsotropic_iff`: isotropy is the vanishing of `ω` on `L × L`, and
+  `isIsotropic_span_iff` tests it on spanning vectors.
 * `TauCeti.SymplecticForm.isLagrangian_iff`: Lagrangian is isotropic and coisotropic.
 * `TauCeti.SymplecticForm.isLagrangian_iff_maximal_isIsotropic`: Lagrangian subspaces are exactly
   the maximal isotropic subspaces, in any dimension.
 * `TauCeti.SymplecticForm.isSymplectic_iff_nondegenerate_restrict`: a subspace is symplectic exactly
   when `ω` restricts to it nondegenerately, and in finite dimension
   `isSymplectic_iff_isCompl` identifies this with the splitting `V = L ⊕ L^ω`.
+* `TauCeti.SymplecticForm.Tames.isSymplectic_of_mem_invtSubmodule`: a subspace invariant under
+  an almost complex structure tamed by `ω` is symplectic.
 * `TauCeti.SymplecticForm.finrank_add_finrank_orthogonal`: `dim L + dim L^ω = dim V`.
+* `TauCeti.SymplecticForm.ker_eq_comap_orthogonal_range`: the kernel of the form `B` pulled back
+  along a linear map `ι` is the preimage of the symplectic orthogonal of the image of `ι`, and
+  `finrank_ker_add_finrank_of_isCoisotropic` gives `dim ker B + dim W = dim V` when `ι` is
+  injective with coisotropic image.
 * `TauCeti.SymplecticForm.IsLagrangian.two_mul_finrank`: a Lagrangian subspace is half-dimensional,
   `2 · dim L = dim V`, and `IsIsotropic.isLagrangian_of_finrank` and
   `IsCoisotropic.isLagrangian_of_finrank` are the converses for an isotropic or coisotropic subspace
@@ -136,6 +143,19 @@ lemma isIsotropic_iff : ω.IsIsotropic L ↔ ∀ v ∈ L, ∀ w ∈ L, ω v w = 
 /-- Coisotropy is containment of the symplectic complement. -/
 lemma isCoisotropic_iff : ω.IsCoisotropic L ↔ ∀ v, v ∈ ω.orthogonal L → v ∈ L :=
   Iff.rfl
+
+/-- The symplectic complement of a span is tested on the spanning vectors. -/
+lemma mem_orthogonal_span_iff {s : Set V} {x : V} :
+    x ∈ ω.orthogonal (Submodule.span ℝ s) ↔ ∀ y ∈ s, ω y x = 0 :=
+  -- Both sides say that the span, respectively `s`, lies in the kernel of `ω (·, x)`.
+  (Submodule.span_le (p := LinearMap.ker (ω.toBilinForm.flip x)))
+
+/-- A span is isotropic exactly when `ω` vanishes on pairs of spanning vectors. -/
+lemma isIsotropic_span_iff {s : Set V} :
+    ω.IsIsotropic (Submodule.span ℝ s) ↔ ∀ v ∈ s, ∀ w ∈ s, ω v w = 0 := by
+  rw [isIsotropic_iff_le, Submodule.span_le]
+  exact ⟨fun h v hv w hw ↦ mem_orthogonal_span_iff.1 (h hw) v hv,
+    fun h w hw ↦ mem_orthogonal_span_iff.2 fun v hv ↦ h v hv w hw⟩
 
 /-- A subspace of an isotropic subspace is isotropic. -/
 lemma IsIsotropic.mono (h : ω.IsIsotropic L') (hL : L ≤ L') : ω.IsIsotropic L :=
@@ -241,6 +261,15 @@ lemma isSymplectic_top : ω.IsSymplectic (⊤ : Submodule ℝ V) := by
   rw [isSymplectic_iff_disjoint, orthogonal_top]
   exact disjoint_bot_right
 
+/-- A subspace invariant under an almost complex structure `J` tamed by `ω` is symplectic: a
+nonzero vector `v` of it pairs positively with `J v`, which lies in it too. -/
+lemma Tames.isSymplectic_of_mem_invtSubmodule {J : AlmostComplexStructure V} (hJ : ω.Tames J)
+    (hL : L ∈ Module.End.invtSubmodule J.toLinearMap) : ω.IsSymplectic L := by
+  rw [isSymplectic_iff_disjoint, Submodule.disjoint_def]
+  intro v hv hvo
+  by_contra h
+  exact (hJ v h).ne' ((mem_orthogonal_iff'.1 hvo) (J v) ((Module.End.mem_invtSubmodule _).1 hL hv))
+
 /-- A subspace that is both isotropic and symplectic is zero. -/
 lemma IsIsotropic.eq_bot_of_isSymplectic (h : ω.IsIsotropic L) (hs : ω.IsSymplectic L) : L = ⊥ :=
   disjoint_self.1 (hs.mono_right h)
@@ -280,6 +309,31 @@ theorem isLagrangian_graph_iff_of_pairing
         linarith
       simpa using congrArg Prod.snd h0
 
+section Pullback
+
+variable {W : Type*} [AddCommGroup W] [Module ℝ W] {B : LinearMap.BilinForm ℝ W}
+  {ι : W →ₗ[ℝ] V}
+
+/-- If `ι` pulls `ω` back to `B`, the kernel of `B` is the preimage under `ι` of the symplectic
+orthogonal of the image of `ι`. -/
+theorem ker_eq_comap_orthogonal_range (ω : SymplecticForm V)
+    (hω : ∀ w w', ω (ι w) (ι w') = B w w') :
+    LinearMap.ker B = (ω.orthogonal (LinearMap.range ι)).comap ι := by
+  ext w
+  simp only [LinearMap.mem_ker, Submodule.mem_comap, mem_orthogonal_iff', LinearMap.mem_range,
+    forall_exists_index, forall_apply_eq_imp_iff, hω]
+  exact LinearMap.ext_iff
+
+/-- If `ι` pulls `ω` back to `B` and has coisotropic image, `ι` carries the kernel of `B` onto the
+symplectic orthogonal of its image. -/
+theorem map_ker_eq_orthogonal_range (ω : SymplecticForm V)
+    (hω : ∀ w w', ω (ι w) (ι w') = B w w') (hC : ω.IsCoisotropic (LinearMap.range ι)) :
+    (LinearMap.ker B).map ι = ω.orthogonal (LinearMap.range ι) := by
+  rw [ker_eq_comap_orthogonal_range ω hω, Submodule.map_comap_eq,
+    inf_eq_right.2 (isCoisotropic_iff_le.1 hC)]
+
+end Pullback
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ V]
@@ -294,13 +348,15 @@ lemma orthogonal_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
     ω.orthogonal (ω.orthogonal L) = L :=
   ω.toBilinForm.orthogonal_orthogonal ω.nondegenerate ω.isRefl L
 
+/-- The complement of an intersection is the sum of the complements. -/
+lemma orthogonal_inf (ω : SymplecticForm V) (L L' : Submodule ℝ V) :
+    ω.orthogonal (L ⊓ L') = ω.orthogonal L ⊔ ω.orthogonal L' :=
+  ω.toBilinForm.orthogonal_inf ω.nondegenerate L L'
+
 /-- An isotropic subspace has at most half the dimension of the ambient space. -/
 lemma IsIsotropic.two_mul_finrank_le (h : ω.IsIsotropic L) :
-    2 * finrank ℝ L ≤ finrank ℝ V := by
-  have hle : finrank ℝ L ≤ finrank ℝ (ω.orthogonal L) := Submodule.finrank_mono h
-  rw [finrank_orthogonal] at hle
-  have := L.finrank_le
-  omega
+    2 * finrank ℝ L ≤ finrank ℝ V :=
+  ω.toBilinForm.two_mul_finrank_le_finrank_of_le_orthogonal ω.nondegenerate h
 
 /-- A Lagrangian subspace is exactly half-dimensional: `2 · dim L = dim V`. -/
 lemma IsLagrangian.two_mul_finrank (h : ω.IsLagrangian L) :
@@ -324,6 +380,19 @@ lemma finrank_add_finrank_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ 
   rw [finrank_orthogonal]
   have := L.finrank_le
   omega
+
+/-- **The kernel of the form induced on a coisotropic subspace has its codimension.** If an
+injective `ι : W → V` pulls `ω` back to `B` and has coisotropic image, then
+`dim ker B + dim W = dim V`. -/
+theorem finrank_ker_add_finrank_of_isCoisotropic {W : Type*} [AddCommGroup W] [Module ℝ W]
+    {B : LinearMap.BilinForm ℝ W} {ι : W →ₗ[ℝ] V} (ω : SymplecticForm V)
+    (hι : Function.Injective ι) (hω : ∀ w w', ω (ι w) (ι w') = B w w')
+    (hC : ω.IsCoisotropic (LinearMap.range ι)) :
+    finrank ℝ (LinearMap.ker B) + finrank ℝ W = finrank ℝ V := by
+  have : FiniteDimensional ℝ W := .of_injective ι hι
+  rw [(Submodule.equivMapOfInjective ι hι _).finrank_eq, map_ker_eq_orthogonal_range ω hω hC,
+    ← LinearMap.finrank_range_of_inj hι, add_comm]
+  exact ω.finrank_add_finrank_orthogonal _
 
 /-- A coisotropic subspace has at least half the dimension of the ambient space. -/
 lemma IsCoisotropic.finrank_le_two_mul_finrank (h : ω.IsCoisotropic L) :

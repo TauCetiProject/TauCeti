@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Huber.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 
 import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.Order.Filter.Pi
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # The natural topology of a finite module over a Huber ring
@@ -36,6 +38,9 @@ finitely generated `A₀`-submodule lying in the `A`-span of `K` into `K`.
   finitely generated and lies in the `A`-span of `K`. This is the ideal-of-definition analogue
   of `Subring.exists_pow_smul_le`, which uses the powers of a single topologically nilpotent
   element.
+* `TauCeti.Huber.exists_span_range_eq_top_of_mem_nhds_zero`: a finite module over a Tate ring,
+  with any topology making scalar multiplication continuous, is spanned by finitely many elements
+  of any neighbourhood of zero.
 
 ## References
 
@@ -51,15 +56,6 @@ namespace TauCeti.Huber.PairOfDefinition
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] {M : Type*} [AddCommGroup M] [Module A M]
 
-/-- The cubes `(Iⁿ)ᵏ` form a neighbourhood basis of `0` in a finite power of `A`. -/
-private theorem hasBasis_nhds_zero_pi (P : PairOfDefinition A) (ι : Type*) [Finite ι] :
-    (𝓝 (0 : ι → A)).HasBasis (fun _ : ℕ ↦ True)
-      fun n ↦ Set.univ.pi fun _ ↦ (P.idealImage n : Set A) := by
-  rw [nhds_pi]
-  exact P.hasBasis_nhds_zero.pi_self.to_hasBasis
-    (fun Ik _ ↦ ⟨Ik.2, trivial, fun x hx i _ ↦ hx i trivial⟩)
-    fun n _ ↦ ⟨(Set.univ, n), ⟨Set.finite_univ, trivial⟩, subset_rfl⟩
-
 /-- The linear-combination map of a finite family `v` carries the cube `(Iⁿ)ᵏ` onto
 `Iⁿ • span A₀ (range v)`. -/
 private theorem image_linearCombination_pi_idealImage (P : PairOfDefinition A) {ι : Type*}
@@ -67,20 +63,18 @@ private theorem image_linearCombination_pi_idealImage (P : PairOfDefinition A) {
     Fintype.linearCombination A v '' Set.univ.pi (fun _ ↦ (P.idealImage n : Set A)) =
       ((P.idealOfDefinition ^ n • Submodule.span P.ringOfDefinition (Set.range v) :
         Submodule P.ringOfDefinition M) : Set M) := by
-  ext x
-  constructor
-  · rintro ⟨c, hc, rfl⟩
-    rw [Fintype.linearCombination_apply]
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    obtain ⟨y, hy, hyc⟩ := (P.mem_idealImage n).mp (hc i trivial)
-    rw [← hyc, ← Subring.smul_def]
-    exact Submodule.smul_mem_smul hy (Submodule.subset_span ⟨i, rfl⟩)
-  · intro hx
-    obtain ⟨a, ha, rfl⟩ := (Submodule.mem_ideal_smul_span_iff_exists_sum _ v x).mp hx
-    refine ⟨fun i ↦ (a i : A), fun i _ ↦ (P.mem_idealImage n).mpr ⟨a i, ha i, rfl⟩, ?_⟩
-    rw [Fintype.linearCombination_apply,
-      Finsupp.sum_fintype a (fun i c ↦ c • v i) fun _ ↦ zero_smul _ _]
-    simp_rw [Subring.smul_def]
+  have hI : (P.idealImage n : Set A) =
+      Subtype.val '' ((P.idealOfDefinition ^ n : Ideal P.ringOfDefinition) :
+        Set P.ringOfDefinition) := by
+    ext x
+    exact P.mem_idealImage n
+  rw [hI, ← Set.piMap_image_univ_pi, Set.image_image]
+  have hcomb : (fun c ↦ Fintype.linearCombination A v
+      (Pi.map (fun _ : ι ↦ (Subtype.val : P.ringOfDefinition → A)) c)) =
+      Fintype.linearCombination P.ringOfDefinition v := by
+    ext c
+    simp only [Pi.map_apply, Fintype.linearCombination_apply, Subring.smul_def]
+  rw [hcomb, Ideal.image_fintypeLinearCombination_pi]
 
 section IsTopologicalRing
 
@@ -103,8 +97,8 @@ theorem hasBasis_nhds_zero_idealOfDefinition_pow_smul (P : PairOfDefinition A)
       Submodule.span_span_of_tower]
   have hq := IsModuleTopology.isOpenQuotientMap_of_surjective hsurj
   rw [← map_zero (Fintype.linearCombination A v), ← hq.map_nhds_eq]
-  simpa only [image_linearCombination_pi_idealImage, hv] using
-    (P.hasBasis_nhds_zero_pi s).map (Fintype.linearCombination A v)
+  simpa only [nhds_pi, Pi.zero_apply, image_linearCombination_pi_idealImage, hv] using
+    (P.hasBasis_nhds_zero.pi_self_of_finite (ι := s)).map (Fintype.linearCombination A v)
 
 /-- **A spanning lattice is open.** If `M` is a finite `A`-module with its natural topology, every
 `A₀`-submodule of `M` spanning `M` over `A` is open in `M`. -/
@@ -178,3 +172,28 @@ theorem exists_pow_smul_le (P : PairOfDefinition A) (K : Submodule P.ringOfDefin
 end SeparatelyContinuousMul
 
 end TauCeti.Huber.PairOfDefinition
+
+namespace TauCeti.Huber
+
+open Pointwise
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- **A finite module over a Tate ring is spanned by finitely many elements of any neighbourhood
+of zero**, for any topology making scalar multiplication continuous: scaling a finite generating
+family by a high power of a pseudouniformiser moves it into the neighbourhood without changing
+its span. -/
+theorem exists_span_range_eq_top_of_mem_nhds_zero [IsTateRing A] {M : Type*} [AddCommGroup M]
+    [Module A M] [TopologicalSpace M] [ContinuousSMul A M] [Module.Finite A M] {W : Set M}
+    (hW : W ∈ 𝓝 0) :
+    ∃ (n : ℕ) (b : Fin n → M), (∀ j, b j ∈ W) ∧ Submodule.span A (Set.range b) = ⊤ := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨hϖu, hϖn⟩ := isPseudoUniformizer_iff.mp hϖ
+  obtain ⟨n, c, hc⟩ := Module.Finite.exists_fin (R := A) (M := M)
+  have hlim (j : Fin n) : Tendsto (fun N : ℕ ↦ ϖ ^ N • c j) atTop (𝓝 0) := by
+    simpa using hϖn.smul_const (c j)
+  obtain ⟨N, hN⟩ := (eventually_all.mpr fun j ↦ hlim j hW).exists
+  refine ⟨n, fun j ↦ ϖ ^ N • c j, hN, ?_⟩
+  rw [← Set.smul_set_range, Submodule.span_smul_eq_of_isUnit _ _ (hϖu.pow N), hc]
+
+end TauCeti.Huber

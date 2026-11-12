@@ -53,9 +53,13 @@ The contraction and decomposition API follows the design proposed in
 * `TauCeti.puiseuxField.isAlgebraic_laurentSeries`: every Puiseux series is algebraic over
   `K⸨X⸩`.
 * `TauCeti.puiseuxField.level_le_level_iff`: level `n` lies in level `m` exactly when `n ∣ m`.
+* `TauCeti.puiseuxField.finrank_restrict_level`: level `n` has degree `n` over `K⸨X⸩` as an
+  intermediate field of level `m`.
 * `TauCeti.puiseuxField.level_inf_level`: levels `n` and `m` intersect in level `gcd n m`.
 * `TauCeti.puiseuxField.level_sup_level`: levels `n` and `m` generate level `lcm n m`.
 * `TauCeti.puiseuxField.iSup_level`: the levels exhaust the Puiseux field.
+* `IntermediateField.exists_le_level`: a finite-dimensional intermediate field of the Puiseux
+  field lies in a single level.
 -/
 
 public section
@@ -393,8 +397,8 @@ theorem coe_levelPowerBasis_gen_pow (K : Type*) [Field K] {e L : ℕ+} {k : ℕ}
     (h : (L : ℕ) = e * k) :
     ((levelPowerBasis K L).gen : TauCeti.puiseuxField K) ^ k = (levelPowerBasis K e).gen := by
   apply Subtype.ext
-  rw [SubmonoidClass.coe_pow, coe_levelPowerBasis_gen, coe_levelPowerBasis_gen, single_pow,
-    one_pow]
+  rw [SubmonoidClass.coe_pow, coe_levelPowerBasis_gen, coe_levelPowerBasis_gen,
+    HahnSeries.single_pow, one_pow]
   have hk : (k : ℚ) ≠ 0 := by
     have := L.ne_zero
     rw [h] at this
@@ -437,6 +441,25 @@ theorem level_le_level_iff (K : Type*) [Field K] {n m : ℕ+} :
   obtain ⟨f, rfl⟩ := (AlgHom.mem_range _).mp hx
   have hf := h ((mem_level_iff K n (levelEmbedding K n f)).mpr ⟨f, rfl⟩)
   rwa [mem_level_iff, mem_range_levelEmbedding_iff, coe_levelEmbedding] at hf
+
+/-- For `n ∣ m`, level `n` has degree `n` over `K⸨X⸩`, as an intermediate field of level `m`. -/
+theorem finrank_restrict_level (K : Type*) [Field K] {n m : ℕ+} (h : n ∣ m) :
+    Module.finrank K⸨X⸩ (IntermediateField.restrict (level_le_level_of_dvd K h)) = n := by
+  rw [← (IntermediateField.restrictAlgEquiv _).toLinearEquiv.finrank_eq, level_finrank]
+
+/-- For `n ∣ m` and `n' ∣ m`, level `n` is contained in level `n'`, as intermediate fields of
+level `m`, exactly when `n ∣ n'`. -/
+@[simp]
+theorem restrict_level_le_restrict_level_iff (K : Type*) [Field K] {n n' m : ℕ+} (h : n ∣ m)
+    (h' : n' ∣ m) :
+    IntermediateField.restrict (level_le_level_of_dvd K h) ≤
+      IntermediateField.restrict (level_le_level_of_dvd K h') ↔ n ∣ n' := by
+  rw [← level_le_level_iff K]
+  refine ⟨fun hle x hx ↦ ?_, fun hle x hx ↦ ?_⟩
+  · exact (IntermediateField.mem_restrict _ ⟨x, level_le_level_of_dvd K h hx⟩).mp
+      (hle ((IntermediateField.mem_restrict _ _).mpr hx))
+  · exact (IntermediateField.mem_restrict _ x).mpr
+      (hle ((IntermediateField.mem_restrict _ x).mp hx))
 
 /-- Level one is the base field `K⸨X⸩`. -/
 @[simp]
@@ -484,3 +507,21 @@ theorem iSup_level (K : Type*) [Field K] : ⨆ d : ℕ+, level K d = ⊤ := by
   exact le_iSup (level K) d ((mem_level_iff K d x).mpr hd)
 
 end TauCeti.puiseuxField
+
+namespace IntermediateField
+
+open TauCeti.puiseuxField
+
+/-- A finite-dimensional intermediate field of the Puiseux field over `K⸨X⸩` lies in a single
+ramified level. -/
+theorem exists_le_level {K : Type*} [Field K]
+    (E : IntermediateField K⸨X⸩ (TauCeti.puiseuxField K)) [FiniteDimensional K⸨X⸩ E] :
+    ∃ n : ℕ+, E ≤ level K n := by
+  let b := Module.finBasis K⸨X⸩ E
+  obtain ⟨n, hn⟩ := exists_forall_mem_range_levelEmbedding fun i ↦ (b i : TauCeti.puiseuxField K)
+  refine ⟨n, fun x hx ↦ ?_⟩
+  lift x to E using hx
+  rw [← b.sum_repr x, coe_sum]
+  exact sum_mem fun i _ ↦ smul_mem _ ((mem_level_iff K n _).mpr (hn i))
+
+end IntermediateField

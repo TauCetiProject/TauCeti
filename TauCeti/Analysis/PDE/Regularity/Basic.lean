@@ -18,7 +18,7 @@ Let `a` be a uniformly elliptic coefficient field on `ℝⁿ`, with lower ellipt
 which is Lipschitz: `‖a(x) - a(y)‖ ≤ K ‖x - y‖` in the operator norm of the attached bilinear
 forms. Let `u ∈ H¹(ℝⁿ)` be a weak solution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` on `ℝⁿ`, with `f ∈ L²(ℝⁿ)`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` on `ℝⁿ`, with `f ∈ L²(ℝⁿ)`,
 
 meaning `∫ ⟨a ∇u, ∇v⟩ = ∫ f v` for every `v ∈ H¹(ℝⁿ)`. This file proves that `u` then has
 second-order weak derivatives in `L²(ℝⁿ)`, that is `u ∈ H²(ℝⁿ)`, with the estimate
@@ -202,7 +202,7 @@ theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : Eucli
 bounded.** Let `Ω` be mapped onto itself by every translation along `w`, as a half-space is by
 every translation parallel to its boundary. Let `a` be uniformly elliptic on `Ω` with lower
 constant `λ`, and let its bilinear forms be `K`-Lipschitz on `Ω` in the operator norm. For a weak
-solution `u ∈ H¹₀(Ω)` of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` with `u = 0` on `∂Ω`,
+solution `u ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `u = 0` on `∂Ω`,
 
 `‖∇Dᵗ u‖_{L²(Ω)} ≤ ‖w‖ (‖f‖_{L²(Ω)} + K ‖∇u‖_{L²(Ω)}) / λ`
 
@@ -232,10 +232,10 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWi
   -- The difference quotient `g = Dᵗ u` and the test function `v = D⁻ᵗ g`, both in `H¹₀(Ω)`.
   obtain ⟨g, hg0⟩ : ∃ g : W1p0 mu Omega 2,
       (g : W1p mu Omega 2) = W1p.differenceQuotient le_rfl w t (hw t) (u : W1p mu Omega 2) :=
-    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (by norm_num) (hw t) (hrev t) u.2⟩, rfl⟩
+    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (hw t) (hrev t) u.2⟩, rfl⟩
   obtain ⟨v, hv0⟩ : ∃ v : W1p0 mu Omega 2,
       (v : W1p mu Omega 2) = W1p.differenceQuotient le_rfl w (-t) (hw (-t)) (g : W1p mu Omega 2) :=
-    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (by norm_num) (hw (-t)) (hrev (-t)) g.2⟩, rfl⟩
+    ⟨⟨_, W1p.differenceQuotient_mem_w1p0Submodule (hw (-t)) (hrev (-t)) g.2⟩, rfl⟩
   -- Discrete integration by parts is performed on the invariant domain itself.
   have hDQ := abs_energyFormH1_differenceQuotient_add_le hw hcoeff hK t
     (u : W1p mu Omega 2) (g : W1p mu Omega 2)
@@ -274,7 +274,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWi
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** Let
 `a` be uniformly elliptic on the whole space with lower constant `λ`, and let `x ↦ a(x)` be
 `K`-Lipschitz in the operator norm of its bilinear forms. For a weak solution `u ∈ H¹(ℝⁿ)` of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f`,
 
 `‖∇Dᵗ u‖_{L²} ≤ ‖w‖ (‖f‖_{L²} + K ‖∇u‖_{L²}) / λ`
 
@@ -299,7 +299,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzWith
     hK.lipschitzOnWith hu t
 
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** For a
-constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`,
+constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f`,
 
 `‖∇Dᵗ u‖_{L²} ≤ ‖w‖ ‖f‖_{L²} / λ`
 
@@ -322,7 +322,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le
 every translation along `w`, as a half-space is by every translation parallel to its boundary.
 Let `a` be uniformly elliptic on `Ω` with lower constant `λ`, and let its bilinear forms be
 `K`-Lipschitz on `Ω` in the operator norm. For a weak solution `u ∈ H¹₀(Ω)` of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` with
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` with
 `u = 0` on `∂Ω`, every first derivative `∂_y u = ⟪∇u, y⟫` has a weak derivative in the direction
 `w` in `L²(Ω)`, with
 
@@ -390,7 +390,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipsch
 /-- **The second-order weak directional derivatives of a whole-space weak solution.** Let `a` be
 uniformly elliptic on the whole space with lower constant `λ`, and let `x ↦ a(x)` be
 `K`-Lipschitz in the operator norm of its bilinear forms. For a weak solution `u ∈ H¹(ℝⁿ)` of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f`, the derivative `∂_y u = ⟪∇u, y⟫` is again weakly differentiable in every
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f`, the derivative `∂_y u = ⟪∇u, y⟫` is again weakly differentiable in every
 direction `w`, with
 
 `‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ (‖f‖_{L²} + K ‖∇u‖_{L²}) / λ`.
@@ -413,7 +413,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipsch
     hK.lipschitzOnWith hu y
 
 /-- **The second-order weak directional derivatives of a whole-space weak solution.** For a
-constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f`, the
+constant, uniformly elliptic `A` and a weak solution `u ∈ H¹(ℝⁿ)` of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f`, the
 derivative `∂_y u = ⟪∇u, y⟫` is again weakly differentiable in every direction `w`, with
 
 `‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ ‖f‖_{L²} / λ`.
@@ -438,7 +438,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
 
 /-- **A whole-space weak solution with Lipschitz coefficients lies in `H²(ℝⁿ)`.** Let `a` be
 uniformly elliptic on the whole space, with `x ↦ a(x)` Lipschitz in the operator norm of its
-bilinear forms. A weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` with `f ∈ L²(ℝⁿ)` is the
+bilinear forms. A weak solution `u ∈ H¹(ℝⁿ)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ L²(ℝⁿ)` is the
 first-order part of an element of `W^{2,2}(ℝⁿ)`: its weak gradient is again weakly
 differentiable, with `L²` derivative. The quantitative form of the statement is
 `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith`. -/
@@ -455,7 +455,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_lipschitzWith
       exact ⟨G, hG⟩
 
 /-- **A whole-space weak solution lies in `H²(ℝⁿ)`.** For a constant, uniformly elliptic `A`, a
-weak solution `u ∈ H¹(ℝⁿ)` of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(ℝⁿ)` is the first-order part of an
+weak solution `u ∈ H¹(ℝⁿ)` of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f` with `f ∈ L²(ℝⁿ)` is the first-order part of an
 element of `W^{2,2}(ℝⁿ)`. This is the constant-coefficient case of
 `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_lipschitzWith`; the quantitative form,
 with the ellipticity constant made explicit, is

@@ -55,6 +55,13 @@ private theorem simplexCharacteristicFun_apply_symm
   rw [simplexCharacteristicFun_apply K f hf ((simplexClosedBallHomeomorph K f hf).symm y).2,
     Subtype.coe_eta, Homeomorph.apply_symm_apply]
 
+private theorem injOn_simplexCharacteristicFun_closedBall :
+    InjOn (simplexCharacteristicFun K f hf) (closedBall 0 1) := by
+  intro x hx y hy hxy
+  rw [simplexCharacteristicFun_apply K f hf hx,
+    simplexCharacteristicFun_apply K f hf hy] at hxy
+  exact congrArg Subtype.val ((simplexClosedBallHomeomorph K f hf).injective (Subtype.ext hxy))
+
 private theorem bijOn_simplexCharacteristicFun :
     BijOn (simplexCharacteristicFun K f hf) (ball 0 1)
       {x : Realization K | x.1.support = Finset.univ.image f} := by
@@ -63,11 +70,7 @@ private theorem bijOn_simplexCharacteristicFun :
     rw [mem_ofPred_eq, simplexCharacteristicFun_apply K f hf (ball_subset_closedBall hx)]
     exact (simplexClosedBallHomeomorph_support_eq_iff K f hf _).mpr
       (mem_ball_zero_iff.mp hx)
-  · intro x hx y hy hxy
-    rw [simplexCharacteristicFun_apply K f hf (ball_subset_closedBall hx),
-      simplexCharacteristicFun_apply K f hf (ball_subset_closedBall hy)] at hxy
-    exact congrArg Subtype.val ((simplexClosedBallHomeomorph K f hf).injective
-      (Subtype.ext hxy))
+  · exact (injOn_simplexCharacteristicFun_closedBall K f hf).mono ball_subset_closedBall
   · intro y hy
     exact ⟨_, mem_ball_zero_iff.mpr
       ((norm_simplexClosedBallHomeomorph_symm_lt_one_iff K f hf ⟨y, hy.le⟩).mpr hy),
@@ -96,6 +99,11 @@ theorem simplexCharacteristicMap_target :
 theorem simplexCharacteristicMap_apply {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
     simplexCharacteristicMap K f hf x = (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1 :=
   simplexCharacteristicFun_apply K f hf hx
+
+/-- The characteristic map is injective on the closed ball. -/
+theorem injOn_simplexCharacteristicMap_closedBall :
+    InjOn (simplexCharacteristicMap K f hf) (closedBall 0 1) :=
+  injOn_simplexCharacteristicFun_closedBall K f hf
 
 /-- The characteristic map sends the inverse closed-simplex homeomorphism of a point back to
 that point. -/

@@ -8,7 +8,8 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Function.Lp.OperatorLocalBound
+import TauCeti.MeasureTheory.Function.Lp.Operator.LocalBound
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Singular integral operators map bounded functions to functions of bounded mean oscillation
@@ -20,7 +21,7 @@ oscillation**: there is a constant `C` with
 `⨍_Q ‖T f - (T f)_Q‖ ≤ C ‖f‖_∞`, where `(T f)_Q = ⨍_Q T f`,
 
 for every ball `Q`. Such a function need not be bounded, but by the John–Nirenberg inequality
-(`TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`) it is exponentially integrable on every
+(`TauCeti.measure_lt_norm_sub_setAverage_closedBall_le`) it is exponentially integrable on every
 cube of `ℝⁿ`.
 
 Let `T` be a bounded linear operator on `L²`, given away from the support of its argument by a
@@ -77,7 +78,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set
+open _root_.MeasureTheory Metric Set
 open scoped ENNReal
 
 section Kernel
@@ -116,20 +117,12 @@ theorem enorm_integral_sub_integral_le_of_hormander {K : X → X → E →L[ℝ]
       _ = (∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ ∂μ) * M :=
           lintegral_mul_const'' _ hKd.enorm.restrict
       _ ≤ B * M := by gcongr
-  rcases eq_or_ne (B * M) ∞ with hBM | hBM
-  · simp [hBM]
-  have hint : Integrable (fun y => (K x y - K x' y) (b y)) μ :=
-    ⟨(ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKd,
-      hlint.trans_lt hBM.lt_top⟩
-  by_cases hx' : Integrable (fun y => K x' y (b y)) μ
-  · have hx : Integrable (fun y => K x y (b y)) μ :=
-      (hint.add hx').congr (.of_forall fun y => by simp)
-    rw [← integral_sub hx hx']
-    refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq_of_le ?_ hlint)
-    simp
-  · have hx : ¬Integrable (fun y => K x y (b y)) μ := fun hx =>
-      hx' ((hx.sub hint).congr (.of_forall fun y => by simp))
-    simp [integral_undef hx, integral_undef hx']
+  have hmeas (z : X) (hKz : AEStronglyMeasurable (K z) μ) :
+      AEStronglyMeasurable (fun y => K z y (b y)) μ := by
+    simpa using (ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKz
+  refine (MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub (hmeas x hKx)
+    (hmeas x' hKx')).trans (le_of_eq_of_le ?_ hlint)
+  simp
 
 end Kernel
 
@@ -223,23 +216,9 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
     filter_upwards [hf₂] with y h hy
     rw [h, indicator_of_notMem (notMem_compl_iff.2 hy)]
   obtain ⟨a, ha⟩ := exists_ae_enorm_apply_sub_le_of_hormander T hK hB hrep hM₂ hr hvan h0
-  -- The local part has `∫_Q ‖T f₁‖ ≤ √D ‖T‖ M μ Q`.
   have hloc : ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ ≤
-      D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) := by
-    have hsq : μ (closedBall c r) ^ (2⁻¹ : ℝ) * μ (closedBall c r) ^ (2⁻¹ : ℝ) =
-        μ (closedBall c r) := by
-      rw [← ENNReal.rpow_add _ _ h0 htop]
-      norm_num
-    calc ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ
-        ≤ ‖T‖ₑ * (M * μ (closedBall c (5 * r)) ^ (2⁻¹ : ℝ)) * μ (closedBall c r) ^ (2⁻¹ : ℝ) :=
-          (setLIntegral_enorm_apply_le_of_ae_eq_indicator T h5 hf₁ _).trans_eq (by norm_num [M])
-      _ ≤ ‖T‖ₑ * (M * (D * μ (closedBall c r)) ^ (2⁻¹ : ℝ)) *
-            μ (closedBall c r) ^ (2⁻¹ : ℝ) := by gcongr
-      _ = D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M *
-            (μ (closedBall c r) ^ (2⁻¹ : ℝ) * μ (closedBall c r) ^ (2⁻¹ : ℝ)) := by
-          rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
-          ring
-      _ = D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) := by rw [hsq]
+      D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) :=
+    by simpa using T.setLIntegral_enorm_apply_le_of_ae_eq_indicator_of_measure_le h5 hf₁ hD htop
   -- Comparing `T f = T f₁ + T f₂` with the constant `a` bounds its mean oscillation.
   have hconst : ⨍⁻ x in closedBall c r, ‖T f x - a‖ₑ ∂μ ≤ (D ^ (2⁻¹ : ℝ) * ‖T‖ₑ + B) * M := by
     rw [setLAverage_eq, ENNReal.div_le_iff h0 htop]

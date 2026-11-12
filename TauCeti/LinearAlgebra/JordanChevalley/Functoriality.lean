@@ -19,10 +19,9 @@ every linear map between finite-dimensional modules over a perfect field that in
 automorphisms also intertwines their canonical semisimple and unipotent factors; no injectivity or
 surjectivity assumption is needed.
 
-This is the first functoriality step for the Jordan decomposition requested in Layer 4 of the
-ReductiveGroups roadmap.  In particular, it makes the general-linear decomposition invariant
-under a change of basis, as required before it can be transported through a faithful
-representation of an affine algebraic group.
+In particular, the general-linear decomposition is invariant under a change of basis, as is
+needed before it can be transported through a faithful representation of an affine algebraic
+group.
 
 ## Main declarations
 
@@ -87,7 +86,7 @@ theorem isSemisimple_conj_iff (g h : GeneralLinearGroup K V) :
         _ = h.toLinearEquiv.symm.toLinearMap := congrArg LinearEquiv.toLinearMap
           (LinearMap.GeneralLinearGroup.toLinearEquiv_inv h)
     ext v
-    simp only [Units.val_mul, End.mul_apply,
+    simp only [Units.val_mul, mul_apply_eq_comp,
       LinearMap.GeneralLinearGroup.congrLinearEquiv_apply,
       LinearMap.GeneralLinearGroup.coe_ofLinearEquiv, LinearEquiv.trans_apply,
       LinearMap.GeneralLinearGroup.coe_toLinearEquiv]
@@ -191,7 +190,7 @@ theorem comp_unipotentPart_eq_of_comp_eq
     f.comp (unipotentPart g : Module.End K V) =
       (unipotentPart h : Module.End K W).comp f := by
   have hs := comp_semisimplePart_eq_of_comp_eq f g h hfg
-  have hs_inv := comp_inv_eq_of_comp_eq f (semisimplePart g) (semisimplePart h) hs
+  have hs_inv := comp_inv_eq_inv_comp_iff.2 hs
   rw [unipotentPart_eq_semisimplePart_inv_mul,
     unipotentPart_eq_semisimplePart_inv_mul]
   apply LinearMap.ext

@@ -71,7 +71,7 @@ by `3` over an arbitrary base ring
 
 The change-of-variables formula for `Ψ₂Sq` is what the real period of a Weierstrass curve over `ℝ`,
 an integral of `Ψ₂Sq(x)^(-1/2)`, needs in order to scale by `|u|` under a change of variables
-(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod.lean`). The one for `Ψ₃` transports the
+(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod/Basic.lean`). The one for `Ψ₃` transports the
 condition that a point has order `3` along a change of variables
 (`TauCeti/AlgebraicGeometry/EllipticCurve/LevelThreeNormalForm.lean`).
 
@@ -81,24 +81,22 @@ division-polynomial API and mention nothing of this repository's — the same ca
 `DivisionPolynomial/Invariant.lean` makes for `invar`, `C_Ψ₃` and `preΨ₄_add_Ψ₂Sq_sq`, and what
 `scripts/lint-dot-notation.py` requires so that `W.Φ_two_eq_X_mul_Ψ₂Sq_sub_Ψ₃` elaborates.
 
-## Roadmap
+## Use in Nagell–Lutz
 
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6, item "The torsion subgroup and Nagell–Lutz",
-names the discriminant half of the theorem twice: at `:827` as
-"`lutz_nagell_integrality_general`, with its discriminant companion", and in the Layer 6 note at
-`:1163`–`:1170` as "the `κ² ∣ 4Δ` discriminant form". The `Φ 2` identity is the step that turns the
-doubling formula for the `x`-coordinate into the factorisation `Ψ₃(x) = (x - x')·Ψ₂Sq(x)` that
-argument runs on, and `evalEval_ψ₂_of_isCharNeTwoNF` is what turns `ψ₂` into `2y` once the model
-is short. The rest of that route has since landed — the point-level doubling formula in
-`DivisionPolynomial/Descent.lean` and the integrality theorem as
-`isInteger_or_order_two_of_torsion` — so the consumers named above now exist. Nothing in this file
-assumes them: every declaration here is an identity among polynomials, their evaluations, or
-Mathlib's projective formulas.
+The discriminant half of the Nagell–Lutz theorem is its `κ² ∣ 4Δ` form,
+`evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ` in `DivisionPolynomial/Torsion/Discriminant.lean`. The
+`Φ 2` identity is the step that turns the doubling formula for the `x`-coordinate into the
+factorisation `Ψ₃(x) = (x - x')·Ψ₂Sq(x)` that argument runs on, and
+`evalEval_ψ₂_of_isCharNeTwoNF` is what turns `ψ₂` into `2y` once the model is short
+(`DivisionPolynomial/ShortNagellLutz.lean`). The rest of that route is the point-level doubling
+formula in `DivisionPolynomial/Descent.lean` and the integrality theorem
+`isInteger_or_order_two_of_torsion`. Nothing in this file assumes them: every declaration here is
+an identity among polynomials, their evaluations, or Mathlib's projective formulas.
 
 ## Provenance
 
 Ported from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at `dev/modular-curves @
-9fec8eba7652`, the revision that roadmap pins for `projects/NagellLutz` (`:1071`).
+9fec8eba7652`, from its `projects/NagellLutz`.
 
 The `Φ 2` identity is **unnamed** in the source. It appears only as the inner `show` of the
 `eval`-level wrapper `Phi2_eval_eq`, in two files and with byte-identical proofs:

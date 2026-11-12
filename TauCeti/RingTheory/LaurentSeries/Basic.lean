@@ -43,7 +43,9 @@ it is `(φ.order.toNat : k)` for `n = -1` and `0` otherwise. For `n ≠ -1` in c
 `p ∣ n + 1`, and the proof uses
 `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative` instead. By linearity
 this extends to every Laurent series: a substitution `X ↦ φ` multiplies the residue of `f(X) dX`
-by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`.
+by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`. Writing a nonzero
+Laurent series as `X ^ (ord f)` times a unit power series shows that the residue of the logarithmic
+derivative `f' / f` is the order of `f`.
 
 ## Main results
 
@@ -58,13 +60,15 @@ by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`
   `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
 * `TauCeti.LaurentSeries.valuation_mapRingHom`: applying a field embedding to the coefficients
   preserves the valuation.
-* `PowerSeries.order_coe` and `PowerSeries.orderTop_coe_of_ne_zero`: the order of a power series in
-  `R⸨X⸩` agrees with its power series order.
+* `PowerSeries.order_coe`, `PowerSeries.orderTop_coe` and `PowerSeries.orderTop_coe_of_ne_zero`:
+  the order of a power series in `R⸨X⸩` agrees with its power series order.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
   derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
   `m`, so does `f' - m X⁻¹ f`.
+* `LaurentSeries.valuation_le_one_iff`: a Laurent series is integral exactly when it has no
+  negative exponents.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative_eq_ite` and
   `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
   series `φ` is `φ.order.toNat` if `n = -1` and `0` otherwise (in particular `1` vs `0` when
@@ -72,6 +76,7 @@ by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`
 * `LaurentSeries.coeff_neg_one_map_mul_derivative_eq_nsmul` and
   `LaurentSeries.coeff_neg_one_map_mul_derivative`: for a substitution `X ↦ φ`, the residue of
   `f(φ) φ'` is `φ.order.toNat • f.coeff (-1)` (and `f.coeff (-1)` when `φ.order = 1`).
+* `LaurentSeries.coeff_neg_one_derivative_mul_inv`: the residue of `f' / f` is the order of `f`.
 
 ## References
 
@@ -103,6 +108,16 @@ theorem orderTop_coe_of_ne_zero {R : Type*} [Semiring R] {f : R⟦X⟧} (hf : f 
         rw [← Nat.cast_le (α := ℕ∞), ← hord]
         exact order_le g.natAbs hg
       omega
+
+/-- The `WithTop ℤ`-valued order of a power series coerced to `R⸨X⸩` is its order, read in
+`WithTop ℤ`; both are `⊤` exactly for the zero series. -/
+@[simp]
+theorem orderTop_coe {R : Type*} [Semiring R] (f : R⟦X⟧) :
+    (f : R⸨X⸩).orderTop = f.order.map ((↑) : ℕ → ℤ) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (order_eq_top.not.mpr hf)
+  rw [orderTop_coe_of_ne_zero hf, ← hn, ENat.map_natCast, ENat.toNat_natCast]
 
 /-- The integer order of a power series coerced to `R⸨X⸩` is `(f.order.toNat : ℤ)`. -/
 @[simp]
@@ -152,6 +167,21 @@ in `K⸨X⸩`. -/
 theorem valuation_coe_of_isUnit {h : K⟦X⟧} (hh : IsUnit h) : Valued.v (h : K⸨X⸩) = 1 :=
   Valuation.Integers.one_of_isUnit' hh fun g ↦ (_root_.LaurentSeries.val_le_one_iff_eq_coe K _).mpr
     ⟨g, rfl⟩
+
+/-- A power series has Laurent valuation strictly below one exactly when its constant
+coefficient vanishes. -/
+@[simp]
+theorem valuation_coe_lt_one_iff {g : K⟦X⟧} :
+    Valued.v (g : K⸨X⸩) < 1 ↔ PowerSeries.constantCoeff g = 0 := by
+  refine ⟨fun h ↦ ?_, fun hg ↦ ?_⟩
+  · by_contra hg
+    have hunit := PowerSeries.isUnit_iff_constantCoeff.mpr (isUnit_iff_ne_zero.mpr hg)
+    exact h.ne (valuation_coe_of_isUnit hunit)
+  · have hle : Valued.v (g : K⸨X⸩) ≤ exp (-1) := by
+      apply (_root_.LaurentSeries.intValuation_le_iff_coeff_lt_eq_zero K g).mpr
+      intro n hn
+      simpa only [Nat.lt_one_iff.mp hn, coeff_zero_eq_constantCoeff_apply] using hg
+    exact hle.trans_lt (by rw [← exp_zero]; exact exp_lt_exp.mpr (by norm_num))
 
 /-- The power series part of a nonzero Laurent series over a division ring is a unit: its constant
 coefficient is the leading coefficient. -/
@@ -323,6 +353,11 @@ theorem valuation_derivative_sub_zsmul_single_mul_le {K : Type*} [Field K] {m : 
   · rw [hf _ h, mul_zero]
   · simp [h]
 
+/-- A Laurent series lies in the valuation ring exactly when it has no negative exponents. -/
+theorem valuation_le_one_iff {K : Type*} [Field K] {f : K⸨X⸩} :
+    Valued.v f ≤ 1 ↔ ∀ n : ℤ, n < 0 → f.coeff n = 0 := by
+  simpa using valuation_le_iff_coeff_lt_eq_zero (D := 0) (f := f)
+
 end LaurentSeries
 
 namespace TauCeti
@@ -429,6 +464,34 @@ end PowerSeries
 namespace LaurentSeries
 
 open HahnSeries
+
+/-- **The residue of a logarithmic derivative is the order.** Over a field, the coefficient of
+`X⁻¹` in `f' / f` is the order of `f`. -/
+theorem coeff_neg_one_derivative_mul_inv {K : Type*} [Field K] (f : K⸨X⸩) :
+    (derivative K f * f⁻¹).coeff (-1) = f.order := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  -- Write `f = X ^ r * φ` with `r = ord f` and `φ` a power series with nonzero constant term, so
+  -- that `f' / f = r X⁻¹ + φ' / φ`, and `φ' / φ` is a power series.
+  set φ := f.powerSeriesPart
+  have hφ : (φ : K⸨X⸩) ≠ 0 :=
+    (map_ne_zero_iff _ HahnSeries.ofPowerSeries_injective).mpr
+      ((powerSeriesPart_eq_zero f).not.mpr hf)
+  have hlog : derivative K f * f⁻¹ =
+      single (-1) (f.order : K) + (φ : K⸨X⸩) ^ (-1 : ℤ) * derivative K (φ : K⸨X⸩) := by
+    conv_lhs => rw [← single_order_mul_powerSeriesPart f]
+    rw [derivative_single_mul, mul_inv, inv_single, zpow_neg_one, add_mul]
+    congr 1
+    · rw [mul_mul_mul_comm, single_mul_single, mul_inv_cancel₀ hφ,
+        show f.order - 1 + -f.order = -1 by ring]
+      simp
+    · rw [mul_mul_mul_comm, single_mul_single]
+      simp [φ, mul_comm]
+  have hφ0 : φ.order = 0 :=
+    PowerSeries.order_zero_of_isUnit (TauCeti.LaurentSeries.isUnit_powerSeriesPart hf)
+  rw [hlog, coeff_add, coeff_single_same,
+    PowerSeries.coeff_neg_one_coe_zpow_mul_derivative_eq_ite, ite_eq_left rfl, hφ0]
+  simp
 
 /-- **The residue under a general-order substitution.** Let `ψ` be a ring endomorphism of `K⸨X⸩`
 fixing the constants, sending power series to power series, and sending `X` to a power series `φ`,

@@ -16,8 +16,8 @@ Let `x`, `y`, `z`, and `w` belong to an associative algebra over `ℚ`, with
 x * y = y * x + z,   x * z = z * x + 2 • w,
 ```
 
-`w` commuting with `x`, `y` commuting with `z`, and `z` commuting with `w`. This is the situation
-of two roots
+`w` commuting with `x` and `y` commuting with `z`. These relations also imply that `z` commutes
+with `w`. This is the situation of two roots
 `α`, `β` for which `α + β` and `2α + β` are roots while `3α + β` and `α + 2β` are not: with `x` and
 `y` the root vectors of `α` and `β` in a Chevalley basis, `z` is `N_{α β}` times the root vector of
 `α + β`, and the second divided power `(ad x)² y / 2` of the inner derivation is again an *integral*
@@ -120,6 +120,60 @@ private theorem rootStringSeries_zero (n : ℕ) : rootStringSeries y z w n 0 = d
   rw [rootStringSeries, hindex]
   simp
 
+/-- Reindexing the summands released by `y`-powers: the pairs with positive `z`-exponent in the
+next term. -/
+private theorem sum_shift_z (n k : ℕ) :
+    ∑ p ∈ {p ∈ rootStringIndex n k | 0 < n - p.1 - p.2},
+      (p.1 + 1) • (dividedPower (n - (p.1 + 1) - p.2) y *
+        dividedPower (p.1 + 1) z * dividedPower p.2 w) =
+    ∑ q ∈ {q ∈ rootStringIndex n (k + 1) | 0 < q.1},
+      q.1 • (dividedPower (n - q.1 - q.2) y * dividedPower q.1 z * dividedPower q.2 w) := by
+  refine Finset.sum_nbij' (fun p => (p.1 + 1, p.2)) (fun q => (q.1 - 1, q.2)) ?_ ?_ ?_ ?_ ?_
+  · rintro ⟨b, c⟩ hp
+    simp only [Finset.mem_filter, mem_rootStringIndex] at hp ⊢
+    omega
+  · rintro ⟨b, c⟩ hq
+    simp only [Finset.mem_filter, mem_rootStringIndex] at hq ⊢
+    omega
+  · rintro ⟨b, c⟩ _
+    simp
+  · rintro ⟨b, c⟩ hq
+    have hb : 0 < b := by
+      simp only [Finset.mem_filter, mem_rootStringIndex] at hq
+      omega
+    simp [Nat.sub_add_cancel hb]
+  · rintro ⟨b, c⟩ _
+    simp
+
+/-- Reindexing the summands released by `z`-powers: the pairs with positive `w`-exponent in the
+next term. -/
+private theorem sum_shift_w (n k : ℕ) :
+    ∑ p ∈ {p ∈ rootStringIndex n k | 0 < p.1},
+      (2 * (p.2 + 1)) • (dividedPower (n - (p.1 - 1) - (p.2 + 1)) y *
+        dividedPower (p.1 - 1) z * dividedPower (p.2 + 1) w) =
+    ∑ q ∈ {q ∈ rootStringIndex n (k + 1) | 0 < q.2},
+      (2 * q.2) • (dividedPower (n - q.1 - q.2) y * dividedPower q.1 z * dividedPower q.2 w) := by
+  refine Finset.sum_nbij' (fun p => (p.1 - 1, p.2 + 1)) (fun q => (q.1 + 1, q.2 - 1))
+    ?_ ?_ ?_ ?_ ?_
+  · rintro ⟨b, c⟩ hp
+    simp only [Finset.mem_filter, mem_rootStringIndex] at hp ⊢
+    omega
+  · rintro ⟨b, c⟩ hq
+    simp only [Finset.mem_filter, mem_rootStringIndex] at hq ⊢
+    omega
+  · rintro ⟨b, c⟩ hp
+    have hb : 0 < b := by
+      simp only [Finset.mem_filter, mem_rootStringIndex] at hp
+      omega
+    simp [Nat.sub_add_cancel hb]
+  · rintro ⟨b, c⟩ hq
+    have hc : 0 < c := by
+      simp only [Finset.mem_filter, mem_rootStringIndex] at hq
+      omega
+    simp [Nat.sub_add_cancel hc]
+  · rintro ⟨b, c⟩ _
+    simp
+
 -- The defining recurrence of the sequence: it is what `dividedPower_mul_of_ad_dividedPower_series`
 -- consumes. Each summand of `rootStringSeries n (k + 1)` is reached in two ways, from a longer
 -- `y`-power with coefficient `b` and from a longer `z`-power with coefficient `2c`, and
@@ -145,53 +199,6 @@ private theorem mul_rootStringSeries (hxy : x * y = y * x + z) (hxz : x * z = z 
     rcases Nat.eq_zero_or_pos p.1 with hb | hb
     · simp [hb]
     · rw [h2 hb]
-  -- The reindexings that identify the two released families with the summands of the next term.
-  have hshiftz : ∑ p ∈ {p ∈ rootStringIndex n k | 0 < n - p.1 - p.2},
-        (p.1 + 1) • (dividedPower (n - (p.1 + 1) - p.2) y *
-          dividedPower (p.1 + 1) z * dividedPower p.2 w) =
-      ∑ q ∈ {q ∈ rootStringIndex n (k + 1) | 0 < q.1},
-        q.1 • (dividedPower (n - q.1 - q.2) y * dividedPower q.1 z * dividedPower q.2 w) := by
-    refine Finset.sum_nbij' (fun p => (p.1 + 1, p.2)) (fun q => (q.1 - 1, q.2)) ?_ ?_ ?_ ?_ ?_
-    · rintro ⟨b, c⟩ hp
-      simp only [Finset.mem_filter, mem_rootStringIndex] at hp ⊢
-      omega
-    · rintro ⟨b, c⟩ hq
-      simp only [Finset.mem_filter, mem_rootStringIndex] at hq ⊢
-      omega
-    · rintro ⟨b, c⟩ _
-      simp
-    · rintro ⟨b, c⟩ hq
-      have hb : 0 < b := by
-        simp only [Finset.mem_filter, mem_rootStringIndex] at hq
-        omega
-      simp [Nat.sub_add_cancel hb]
-    · rintro ⟨b, c⟩ _
-      simp
-  have hshiftw : ∑ p ∈ {p ∈ rootStringIndex n k | 0 < p.1},
-        (2 * (p.2 + 1)) • (dividedPower (n - (p.1 - 1) - (p.2 + 1)) y *
-          dividedPower (p.1 - 1) z * dividedPower (p.2 + 1) w) =
-      ∑ q ∈ {q ∈ rootStringIndex n (k + 1) | 0 < q.2},
-        (2 * q.2) • (dividedPower (n - q.1 - q.2) y * dividedPower q.1 z * dividedPower q.2 w) := by
-    refine Finset.sum_nbij' (fun p => (p.1 - 1, p.2 + 1)) (fun q => (q.1 + 1, q.2 - 1))
-      ?_ ?_ ?_ ?_ ?_
-    · rintro ⟨b, c⟩ hp
-      simp only [Finset.mem_filter, mem_rootStringIndex] at hp ⊢
-      omega
-    · rintro ⟨b, c⟩ hq
-      simp only [Finset.mem_filter, mem_rootStringIndex] at hq ⊢
-      omega
-    · rintro ⟨b, c⟩ hp
-      have hb : 0 < b := by
-        simp only [Finset.mem_filter, mem_rootStringIndex] at hp
-        omega
-      simp [Nat.sub_add_cancel hb]
-    · rintro ⟨b, c⟩ hq
-      have hc : 0 < c := by
-        simp only [Finset.mem_filter, mem_rootStringIndex] at hq
-        omega
-      simp [Nat.sub_add_cancel hc]
-    · rintro ⟨b, c⟩ _
-      simp
   -- Every summand of the next term is reached with total coefficient `b + 2c = k + 1`.
   have hcombine : ∑ q ∈ {q ∈ rootStringIndex n (k + 1) | 0 < q.1},
         q.1 • (dividedPower (n - q.1 - q.2) y * dividedPower q.1 z * dividedPower q.2 w) +
@@ -210,7 +217,7 @@ private theorem mul_rootStringSeries (hxy : x * y = y * x + z) (hxz : x * z = z 
     omega
   rw [rootStringSeries, Finset.mul_sum, Finset.sum_mul, Finset.sum_congr rfl hterm,
     Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.sum_filter, ← Finset.sum_filter,
-    hshiftz, hshiftw, add_assoc, hcombine]
+    sum_shift_z n k, sum_shift_w n k, add_assoc, hcombine]
 
 /-! ## The straightening rule -/
 
@@ -232,7 +239,7 @@ theorem mem_chainLeTwoIndex {m n : ℕ} {p : ℕ × ℕ} :
 x * y = y * x + z,   x * z = z * x + 2 • w,
 ```
 
-that `w` commutes with `x`, `y` commutes with `z`, and `z` commutes with `w`. Then
+that `w` commutes with `x` and `y` commutes with `z`. Then
 
 ```text
 x⁽ᵐ⁾ y⁽ⁿ⁾ = ∑ b + c ≤ n, b + 2c ≤ m,  y⁽ⁿ⁻ᵇ⁻ᶜ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ x⁽ᵐ⁻ᵇ⁻²ᶜ⁾.
@@ -243,13 +250,16 @@ Kostant integral lattice and base change to a ring of arbitrary characteristic. 
 and discarding the terms with `c ≠ 0` recovers the class-two rule
 `dividedPower_mul_dividedPower_of_commutator_eq`. -/
 theorem dividedPower_mul_dividedPower_of_commutator_eq_two_nsmul (hxy : x * y = y * x + z)
-    (hxz : x * z = z * x + 2 • w) (hxw : Commute x w) (hyz : Commute y z) (hzw : Commute z w)
+    (hxz : x * z = z * x + 2 • w) (hxw : Commute x w) (hyz : Commute y z)
     (m n : ℕ) :
     dividedPower m x * dividedPower n y =
       ∑ p ∈ chainLeTwoIndex m n,
         dividedPower (n - p.1 - p.2) y * dividedPower p.1 z * dividedPower p.2 w *
           dividedPower (m - p.1 - 2 * p.2) x := by
   classical
+  have hzw := hxw.of_commutator_eq_of_commutator_eq_smul
+    (R := ℚ) (c := 2) hxy (by simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat] using hxz)
+    hyz (isUnit_iff_ne_zero.mpr (by norm_num))
   set S : Finset (ℕ × ℕ) := chainLeTwoIndex m n with hS
   have hmemS : ∀ p : ℕ × ℕ, p ∈ S ↔ p.1 + p.2 ≤ n ∧ p.1 + 2 * p.2 ≤ m := by
     intro p

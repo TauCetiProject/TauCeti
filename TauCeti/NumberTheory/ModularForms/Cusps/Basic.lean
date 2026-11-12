@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.Basic
 public import Mathlib.GroupTheory.GroupAction.Period
 public import Mathlib.NumberTheory.ModularForms.Cusps
 public import Mathlib.NumberTheory.ModularForms.SlashActions
@@ -17,6 +18,8 @@ shift matrices; a subgroup `𝒢` of finite relative index in `𝒮ℒ` contains
 power of `T`, and `Subgroup.integerCuspWidth 𝒢` is the least such exponent. The cosets of the
 first `Subgroup.integerCuspWidth 𝒢` powers of `T` are pairwise distinct in `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`, and
 the integer cusp width is a positive integer multiple of the strict width at `∞`.
+At an irregular cusp the negative shift by the projective width lies in the group;
+its slash action gives the weight-parity sign under translation.
 
 ## Main declarations
 
@@ -28,19 +31,28 @@ the integer cusp width is a positive integer multiple of the strict width at `�
   `integerCuspWidth 𝒢` powers of `T` are pairwise distinct.
 * `TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty`: the integer cusp
   width is a positive integer multiple of the strict width at `∞`.
+* `TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex`: the strict width at `∞` is
+  positive.
 * `TauCeti.ModularForm.slash_T_zpow_apply`: slashing by a power of `T` is an integer shift.
+* `Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty`: the negative shift
+  belonging to the group at an irregular cusp.
+* `TauCeti.SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem`: a negative
+  shift in the group gives translation by the weight-parity sign.
+* `TauCeti.natCast_mem_strictPeriods_conjAct_of_Gamma_le`: a level `N` with `Γ(N) ≤ Γ` is a
+  strict period of `Γ` at every cusp.
 
 ## References
 
 * [Mathlib PR #39087](https://github.com/leanprover-community/mathlib4/pull/39087)
   (Chris Birkbeck).
+* F. Diamond and J. Shurman, *A First Course in Modular Forms*, §2.4.
 -/
 
 public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup Subgroup UpperHalfPlane
 
-open scoped MatrixGroups ModularForm
+open scoped MatrixGroups ModularForm Pointwise
 
 namespace TauCeti
 
@@ -87,6 +99,19 @@ lemma ModularForm.slash_T_zpow_apply (k j : ℤ) (g : ℍ → ℂ) (τ : ℍ) :
   rw [_root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     ModularGroup.mapGL_T_zpow_eq_upperRightHom, ModularForm.slash_upperRightHom_apply]
 
+
+/-- A negative translation in the group gives the weight-parity transformation
+law under translation by `h`. -/
+theorem SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem
+    {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ} {h : ℝ}
+    [SlashInvariantFormClass F Γ k] (f : F)
+    (hΓ : -Matrix.GeneralLinearGroup.upperRightHom h ∈ Γ) (z : ℍ) :
+    f (h +ᵥ z) = (-1 : ℂ) ^ k * f z := by
+  have hs := congrFun (SlashInvariantFormClass.slash_action_eq f _ hΓ) z
+  simp only [_root_.ModularForm.slash_neg, Pi.mul_apply,
+    ModularForm.slash_upperRightHom_apply] at hs
+  simpa only [← _root_.inv_zpow, inv_neg_one] using
+    (eq_inv_mul_iff_mul_eq₀ (zpow_ne_zero k (by norm_num : (-1 : ℂ) ≠ 0))).mpr hs
 
 section IntegerCuspWidth
 
@@ -145,41 +170,6 @@ def Subgroup.integerCuspWidth (𝒢 : Subgroup (GL (Fin 2) ℝ)) : ℕ :=
   MulAction.period ((mapGL ℝ).rangeRestrict (ModularGroup.T : SL(2, ℤ)))
     (⟦1⟧ : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ))
 
-/-- The integer cusp width is positive. -/
-lemma Subgroup.integerCuspWidth_pos [𝒢.IsFiniteRelIndex 𝒮ℒ] : 0 < Subgroup.integerCuspWidth 𝒢 := by
-  obtain ⟨n, hn_pos, hn_mem⟩ := Subgroup.exists_pos_nat_mem_strictPeriods (𝒢 := 𝒢)
-  let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
-  exact MulAction.period_pos_of_fixed hn_pos
-    ((quotientTAction_pow_smul_mk_one n).trans (Subgroup.mk_T_pow_eq_iff.mpr hn_mem))
-
-/-- The integer cusp width is a strict period. -/
-lemma Subgroup.integerCuspWidth_mem_strictPeriods :
-    (Subgroup.integerCuspWidth 𝒢 : ℝ) ∈ 𝒢.strictPeriods := by
-  let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
-  exact Subgroup.mk_T_pow_eq_iff.mp
-    ((quotientTAction_pow_smul_mk_one _).symm.trans (MulAction.pow_period_smul _ _))
-
-/-- `∞` is a cusp of a subgroup of finite relative index in `𝒮ℒ`, since its integer cusp width is
-a positive strict period. -/
-lemma Subgroup.isCusp_infty_of_finiteRelIndex [𝒢.IsFiniteRelIndex 𝒮ℒ] :
-    IsCusp OnePoint.infty 𝒢 :=
-  Subgroup.isCusp_of_mem_strictPeriods (Nat.cast_pos.mpr Subgroup.integerCuspWidth_pos)
-    Subgroup.integerCuspWidth_mem_strictPeriods
-
-/-- The integer cusp width is minimal among positive integer strict periods. -/
-lemma Subgroup.integerCuspWidth_le {n : ℕ} (hpos : 0 < n)
-    (hmem : (n : ℝ) ∈ 𝒢.strictPeriods) : Subgroup.integerCuspWidth 𝒢 ≤ n := by
-  let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
-  exact MulAction.period_le_of_fixed hpos
-    ((quotientTAction_pow_smul_mk_one n).trans (Subgroup.mk_T_pow_eq_iff.mpr hmem))
-
-/-- The `integerCuspWidth 𝒢`-th power of `T` lies in `𝒢`. -/
-lemma Subgroup.T_pow_integerCuspWidth_mem :
-    ((ModularGroup.T : SL(2, ℤ)) ^ Subgroup.integerCuspWidth 𝒢 : GL (Fin 2) ℝ) ∈ 𝒢 := by
-  rw [Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← map_pow,
-    ModularGroup.mapGL_T_pow_eq_upperRightHom, ← mem_strictPeriods_iff]
-  exact Subgroup.integerCuspWidth_mem_strictPeriods
-
 /-- The natural numbers among the strict periods are exactly the multiples of the
 integer cusp width. -/
 -- Not a `simp` lemma: `simpNF` rejects it because the left-hand side already simplifies
@@ -190,6 +180,28 @@ lemma Subgroup.natCast_mem_strictPeriods_iff {n : ℕ} :
   rw [← Subgroup.mk_T_pow_eq_iff, ← quotientTAction_pow_smul_mk_one n,
     Subgroup.integerCuspWidth, MulAction.pow_smul_eq_iff_period_dvd]
 
+/-- The integer cusp width is positive. -/
+lemma Subgroup.integerCuspWidth_pos [𝒢.IsFiniteRelIndex 𝒮ℒ] : 0 < Subgroup.integerCuspWidth 𝒢 := by
+  obtain ⟨n, hn_pos, hn_mem⟩ := Subgroup.exists_pos_nat_mem_strictPeriods (𝒢 := 𝒢)
+  exact Nat.pos_of_dvd_of_pos (Subgroup.natCast_mem_strictPeriods_iff.mp hn_mem) hn_pos
+
+/-- The integer cusp width is a strict period. -/
+lemma Subgroup.integerCuspWidth_mem_strictPeriods :
+    (Subgroup.integerCuspWidth 𝒢 : ℝ) ∈ 𝒢.strictPeriods :=
+  Subgroup.natCast_mem_strictPeriods_iff.mpr dvd_rfl
+
+/-- `∞` is a cusp of a subgroup of finite relative index in `𝒮ℒ`, since its integer cusp width is
+a positive strict period. -/
+lemma Subgroup.isCusp_infty_of_finiteRelIndex [𝒢.IsFiniteRelIndex 𝒮ℒ] :
+    IsCusp OnePoint.infty 𝒢 :=
+  Subgroup.isCusp_of_mem_strictPeriods (Nat.cast_pos.mpr Subgroup.integerCuspWidth_pos)
+    Subgroup.integerCuspWidth_mem_strictPeriods
+
+/-- The integer cusp width is minimal among positive integer strict periods. -/
+lemma Subgroup.integerCuspWidth_le {n : ℕ} (hpos : 0 < n)
+    (hmem : (n : ℝ) ∈ 𝒢.strictPeriods) : Subgroup.integerCuspWidth 𝒢 ≤ n :=
+  Nat.le_of_dvd hpos (Subgroup.natCast_mem_strictPeriods_iff.mp hmem)
+
 /-- The powers of `T` lying in `𝒢` are exactly those with exponent divisible by the
 integer cusp width. -/
 @[simp]
@@ -199,6 +211,11 @@ lemma Subgroup.T_pow_mem_iff {n : ℕ} :
   rw [Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← map_pow,
     ModularGroup.mapGL_T_pow_eq_upperRightHom, ← mem_strictPeriods_iff,
     Subgroup.natCast_mem_strictPeriods_iff]
+
+/-- The `integerCuspWidth 𝒢`-th power of `T` lies in `𝒢`. -/
+lemma Subgroup.T_pow_integerCuspWidth_mem :
+    ((ModularGroup.T : SL(2, ℤ)) ^ Subgroup.integerCuspWidth 𝒢 : GL (Fin 2) ℝ) ∈ 𝒢 :=
+  Subgroup.T_pow_mem_iff.mpr dvd_rfl
 
 /-- The cosets `T ^ j • (𝒢 ⊓ 𝒮ℒ)` for `j < integerCuspWidth 𝒢` are pairwise distinct in
 `𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ`. -/
@@ -235,7 +252,26 @@ lemma Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
     exact_mod_cast this
   exact ⟨m.toNat, by lia, by rw [← hm, ← Int.cast_natCast, Int.toNat_of_nonneg hm_pos.le]⟩
 
+/-- The strict width at `∞` of a subgroup of `GL(2, ℝ)` of finite relative index in `𝒮ℒ`
+with discrete strict periods is positive. -/
+lemma Subgroup.strictWidthInfty_pos_of_finiteRelIndex [𝒢.IsFiniteRelIndex 𝒮ℒ]
+    [DiscreteTopology 𝒢.strictPeriods] : 0 < 𝒢.strictWidthInfty := by
+  obtain ⟨m, -, hm⟩ := Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty (𝒢 := 𝒢)
+  exact pos_of_mul_pos_right (hm ▸ Nat.cast_pos.mpr Subgroup.integerCuspWidth_pos) m.cast_nonneg
+
 end IntegerCuspWidth
+
+/-- At an irregular cusp the negative translation by the projective width belongs
+to the group. -/
+theorem _root_.Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty
+    (Γ : Subgroup (GL (Fin 2) ℝ)) [DiscreteTopology Γ.periods]
+    (hΓ : ¬Γ.IsRegularAtInfty) :
+    -Matrix.GeneralLinearGroup.upperRightHom Γ.widthInfty ∈ Γ := by
+  have hmem := Γ.widthInfty_mem_periods
+  simp only [Subgroup.periods, Subgroup.mem_strictPeriods_iff,
+    Subgroup.mem_adjoinNegOne_iff] at hmem
+  exact hmem.resolve_left fun h ↦ hΓ (Γ.isRegularAtInfty_iff.mpr
+    (Subgroup.mem_strictPeriods_iff.mpr h))
 
 /-! ### The strict period `1` of `Γ₀(N)` and `Γ₁(N)` -/
 
@@ -248,6 +284,16 @@ theorem one_mem_strictPeriods_Gamma0_map (N : ℕ) :
 theorem one_mem_strictPeriods_Gamma1_map (N : ℕ) :
     (1 : ℝ) ∈ ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)).strictPeriods := by
   simp [CongruenceSubgroup.strictPeriods_Gamma1]
+
+/-- If `Γ` contains `Γ(N)`, then `N` is a strict period of `Γ` at every cusp: conjugating
+`T ^ N ∈ Γ(N)` by `γ ∈ SL₂(ℤ)` stays in the normal subgroup `Γ(N)`. -/
+theorem natCast_mem_strictPeriods_conjAct_of_Gamma_le {Γ : Subgroup (GL (Fin 2) ℝ)} {N : ℕ}
+    (hΓ : (CongruenceSubgroup.Gamma N : Subgroup (GL (Fin 2) ℝ)) ≤ Γ) (γ : SL(2, ℤ)) :
+    (N : ℝ) ∈ (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).strictPeriods := by
+  have hT : ModularGroup.T ^ N ∈ CongruenceSubgroup.Gamma N := by
+    simpa using CongruenceSubgroup.ModularGroup_T_pow_mem_Gamma N N dvd_rfl
+  simpa [mem_strictPeriods_iff, mem_pointwise_smul_iff_inv_smul_mem, ConjAct.toConjAct_smul]
+    using hΓ (mem_map_of_mem _ ((CongruenceSubgroup.Gamma_normal N).conj_mem _ hT γ))
 
 end TauCeti
 

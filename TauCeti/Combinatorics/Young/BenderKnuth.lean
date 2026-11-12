@@ -126,6 +126,16 @@ theorem rowCountLt_succ_le (T : SemistandardYoungTableau μ) (i x : ℕ) :
   exact ⟨lt_of_lt_of_le hj.1 (μ.rowLen_anti i (i + 1) (Nat.le_succ i)),
     lt_of_lt_of_le (T.col_strict (Nat.lt_succ_self i) hcell) (Nat.lt_succ_iff.mp hj.2)⟩
 
+/-- A letter at least `i` in a row above row `k` lies in a column at least the number of letters
+at most `i` in row `k`: by column strictness, the letter below it is larger than `i`. -/
+theorem rowCountLt_le_of_lt (T : SemistandardYoungTableau μ) {r k c i : ℕ} (hr : r < k)
+    (hi : i ≤ T r c) : rowCountLt T k (i + 1) ≤ c := by
+  refine not_lt.mp fun hlt => ?_
+  have hck := hlt.trans_le (T.rowCountLt_le_rowLen k (i + 1))
+  have := T.col_strict_of_lt_rowLen hr hck
+  have := (T.lt_rowCountLt_iff hck).mp hlt
+  omega
+
 /-- A row past the height of the shape has no entries at all. -/
 theorem rowCountLt_eq_zero_of_colLen_le (T : SemistandardYoungTableau μ) {i : ℕ}
     (hi : μ.colLen 0 ≤ i) (x : ℕ) : rowCountLt T i x = 0 :=
@@ -138,19 +148,26 @@ involution at `v` may move. -/
 def InBlock (T : SemistandardYoungTableau μ) (v i j : ℕ) : Prop :=
   (i, j) ∈ μ ∧ v ≤ T i j ∧ T i j ≤ v + 1
 
+/-- A cell is in the block of `v` when it carries `v` or `v + 1`. -/
+theorem inBlock_def (T : SemistandardYoungTableau μ) (v i j : ℕ) :
+    T.InBlock v i j ↔ (i, j) ∈ μ ∧ v ≤ T i j ∧ T i j ≤ v + 1 :=
+  Iff.rfl
+
 instance (T : SemistandardYoungTableau μ) (v i j : ℕ) : Decidable (T.InBlock v i j) :=
   inferInstanceAs (Decidable ((i, j) ∈ μ ∧ v ≤ T i j ∧ T i j ≤ v + 1))
 
 /-- The block of a row is the interval of columns from `rowCountLt T i v` to
 `rowCountLt T i (v + 2)`. -/
-theorem inBlock_iff (T : SemistandardYoungTableau μ) {i j : ℕ} (v : ℕ)
-    (hj : ((i, j) : ℕ × ℕ) ∈ μ) :
+theorem inBlock_iff (T : SemistandardYoungTableau μ) {i j : ℕ} (v : ℕ) :
     T.InBlock v i j ↔ (rowCountLt T i v ≤ j ∧ j < rowCountLt T i (v + 2)) := by
-  have hlt := YoungDiagram.mem_iff_lt_rowLen.mp hj
-  have h1 := T.lt_rowCountLt_iff (x := v) hlt
-  have h2 := T.lt_rowCountLt_iff (x := v + 2) hlt
-  rw [InBlock, and_iff_right hj]
-  omega
+  by_cases hj : ((i, j) : ℕ × ℕ) ∈ μ
+  · have hlt := YoungDiagram.mem_iff_lt_rowLen.mp hj
+    have h1 := T.lt_rowCountLt_iff (x := v) hlt
+    have h2 := T.lt_rowCountLt_iff (x := v + 2) hlt
+    rw [InBlock, and_iff_right hj]
+    omega
+  · exact iff_of_false (fun h => hj h.1) fun h =>
+      hj (YoungDiagram.mem_iff_lt_rowLen.mpr (h.2.trans_le (T.rowCountLt_le_rowLen i (v + 2))))
 
 /-- A cell outside the shape is outside the block. -/
 theorem not_inBlock_of_notMem {T : SemistandardYoungTableau μ} {v i j : ℕ}
@@ -227,8 +244,8 @@ private theorem recutEntry_lt_succ (hcut : IsCut T v cut) {i j : ℕ}
   have hlt : T i j < T (i + 1) j := T.col_strict (Nat.lt_succ_self i) hcell
   by_cases h₁ : T.InBlock v i j <;> by_cases h₂ : T.InBlock v (i + 1) j
   · -- both cells lie in the block, so they carry `v` above `v + 1`
-    have hb₁ := (T.inBlock_iff v hcell').mp h₁
-    have hb₂ := (T.inBlock_iff v hcell).mp h₂
+    have hb₁ := (T.inBlock_iff v).mp h₁
+    have hb₂ := (T.inBlock_iff v).mp h₂
     rw [recutEntry_of_inBlock T v cut h₁, recutEntry_of_inBlock T v cut h₂,
       ite_eq_left (lt_of_lt_of_le hb₂.2 (hcut.succ_le_cut i)),
       ite_eq_right (Nat.not_lt.mpr (le_trans (hcut.cut_succ_le i) hb₁.1))]
@@ -435,7 +452,7 @@ theorem filter_recut_eq (hcut : IsCut T v cut) (i : ℕ) :
     have hcell : ((i, j) : ℕ × ℕ) ∈ μ := YoungDiagram.mem_iff_lt_rowLen.mpr hj
     by_cases h : T.InBlock v i j
     · rw [recut_apply_of_inBlock hcut h] at hv
-      refine ⟨((T.inBlock_iff v hcell).mp h).1, ?_⟩
+      refine ⟨((T.inBlock_iff v).mp h).1, ?_⟩
       by_contra hc
       rw [ite_eq_right hc] at hv
       omega
@@ -443,9 +460,8 @@ theorem filter_recut_eq (hcut : IsCut T v cut) (i : ℕ) :
       exact absurd ⟨hcell, hv.ge, hv.le.trans (Nat.le_succ v)⟩ h
   · rintro ⟨hlow, hhigh⟩
     have hj : j < μ.rowLen i := lt_of_lt_of_le hhigh hcl
-    have hcell : ((i, j) : ℕ × ℕ) ∈ μ := YoungDiagram.mem_iff_lt_rowLen.mpr hj
     have h : T.InBlock v i j :=
-      (T.inBlock_iff v hcell).mpr ⟨hlow, lt_of_lt_of_le hhigh (hcut.cut_le i)⟩
+      (T.inBlock_iff v).mpr ⟨hlow, lt_of_lt_of_le hhigh (hcut.cut_le i)⟩
     exact ⟨hj, by rw [recut_apply_of_inBlock hcut h, ite_eq_left hhigh]⟩
 
 /-- Inside a row, the cells of a recut tableau carrying the letter `v + 1` are those from the
@@ -461,7 +477,7 @@ theorem filter_recut_eq_succ (hcut : IsCut T v cut) (i : ℕ) :
     have hcell : ((i, j) : ℕ × ℕ) ∈ μ := YoungDiagram.mem_iff_lt_rowLen.mpr hj
     by_cases h : T.InBlock v i j
     · rw [recut_apply_of_inBlock hcut h] at hv
-      refine ⟨?_, ((T.inBlock_iff v hcell).mp h).2⟩
+      refine ⟨?_, ((T.inBlock_iff v).mp h).2⟩
       by_contra hc
       rw [ite_eq_left (Nat.lt_of_not_le (fun hd => hc (Nat.le_of_not_lt fun he => hd.not_gt he)))]
         at hv
@@ -470,9 +486,8 @@ theorem filter_recut_eq_succ (hcut : IsCut T v cut) (i : ℕ) :
       exact absurd ⟨hcell, by omega, by omega⟩ h
   · rintro ⟨hlow, hhigh⟩
     have hj : j < μ.rowLen i := lt_of_lt_of_le hhigh hbl
-    have hcell : ((i, j) : ℕ × ℕ) ∈ μ := YoungDiagram.mem_iff_lt_rowLen.mpr hj
     have h : T.InBlock v i j :=
-      (T.inBlock_iff v hcell).mpr ⟨le_trans (hcut.le_cut i) hlow, hhigh⟩
+      (T.inBlock_iff v).mpr ⟨le_trans (hcut.le_cut i) hlow, hhigh⟩
     exact ⟨hj, by rw [recut_apply_of_inBlock hcut h, ite_eq_right (Nat.not_lt.mpr hlow)]⟩
 
 /-- A recut moves no letter other than `v` and `v + 1`. -/

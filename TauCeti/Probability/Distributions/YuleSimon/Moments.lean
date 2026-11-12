@@ -12,7 +12,7 @@ public import TauCeti.Probability.Distributions.YuleSimon.Basic
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
@@ -116,13 +116,7 @@ theorem integrableExpSet_id_map_cast_yuleSimonMeasure (hρ : 0 < ρ) :
   have := isProbabilityMeasure_yuleSimonMeasure hρ
   have hnonneg : ∀ᵐ x ∂((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)), (0 : ℝ) ≤ id x :=
     MeasurableEmbedding.natCast.ae_map_iff.2 (Eventually.of_forall fun k => Nat.cast_nonneg k)
-  ext t
-  simp only [integrableExpSet, mem_ofPred_eq, mem_Iic]
-  refine ⟨fun h => ?_, fun ht => integrable_exp_mul_of_ge t 0 ht aemeasurable_id hnonneg⟩
-  by_contra ht
-  push Not at ht
-  -- A positive exponential moment would give the infinite moment of order `⌈ρ⌉₊`.
-  refine not_integrable_exp_mul_of_not_integrable_pow ⌈ρ⌉₊ aemeasurable_id hnonneg ?_ ht h
+  refine integrableExpSet_eq_Iic_of_not_integrable_pow aemeasurable_id hnonneg ⌈ρ⌉₊ ?_
   exact fun hi => (Nat.le_ceil ρ).not_gt ((integrable_pow_map_cast_yuleSimonMeasure_iff hρ _).1 hi)
 
 /-! ### Rising-factorial moments -/
@@ -140,7 +134,6 @@ private theorem yuleSimonWeightReal_mul_ascPochhammer_eq {m : ℕ} (hm : (m : �
   have hasc : (ascPochhammer ℝ m).eval (k : ℝ) * Gamma k = Gamma (k + m) := by
     have hk_ne (j : ℕ) : (k : ℝ) ≠ -j := by linarith [(j.cast_nonneg : (0 : ℝ) ≤ j)]
     rw [← Gamma_add_nat_div_Gamma_eq _ hk_ne, div_mul_cancel₀ _ hΓk.ne']
-  have hΓρ := Gamma_pos_of_pos (show 0 < (k : ℝ) + ρ by positivity)
   have hsub : ρ - m ≠ 0 := (sub_pos.mpr hm).ne'
   have h1 : Gamma (k + (ρ + 1)) = (k + ρ) * Gamma (k + ρ) := by
     rw [← add_assoc, Gamma_add_one (by positivity)]

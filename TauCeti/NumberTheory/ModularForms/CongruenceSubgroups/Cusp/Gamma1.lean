@@ -26,6 +26,11 @@ detected by the *label* of `γ`. The label is the divisor `g = gcd(c, N)` of `N`
 modulo `N / g`, and the unit `d` modulo `g`. Every label occurs. When `N ∉ {1, 2, 4}`, the
 matrices `γ` and `-γ` have different labels. So each cusp then has exactly two labels.
 
+At the three exceptional levels the criterion is a finite check modulo `N`. Every cusp of `Γ₁(1)`
+is `∞`, and every cusp of `Γ₁(2)` is `∞` or `0`. Every cusp of `Γ₁(4)` is `∞`, `0`, or one with
+`c ≡ 2` modulo `4`, and the last ones are all equivalent (to `1/2`). That cusp is irregular:
+`Γ₁(4)` contains `γ (-T) γ⁻¹`, the matrix `-T` being the negative of the translation `T`.
+
 ## Main definitions
 
 * `TauCeti.gamma1CuspLabel`: the label `(g, u, v)` of `γ ∈ SL(2, ℤ)`.
@@ -38,6 +43,11 @@ matrices `γ` and `-γ` have different labels. So each cusp then has exactly two
 * `TauCeti.card_cuspOrbit_Gamma1`: the cusp count `2 ε∞ = ∑_{g ∣ N} φ(g) φ(N / g)` for
   `N ∉ {1, 2, 4}`.
 * `TauCeti.card_cuspOrbit_Gamma1_of_prime`: `Γ₁(p)` has `p - 1` cusps for an odd prime `p`.
+* `TauCeti.cuspOrbitOfSL2Z_Gamma1_one`, `TauCeti.cuspOrbitOfSL2Z_Gamma1_two`,
+  `TauCeti.cuspOrbitOfSL2Z_Gamma1_four`: cusp representatives at the levels `1`, `2` and `4`.
+* `TauCeti.cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two`,
+  `TauCeti.mul_neg_T_mul_inv_mem_Gamma1_four`: the cusps of `Γ₁(4)` with `c ≡ 2` modulo `4` form
+  one irregular cusp.
 
 ## References
 
@@ -55,6 +65,29 @@ variable {N : ℕ} [NeZero N]
 
 /-! ### Equivalence of cusps -/
 
+/-- Without the sign: `(c', d') ≡ (δ₁₀, δ₁₁ + j δ₁₀)` modulo `N` makes `δ • ∞` and `γ' • ∞`
+equivalent cusps of `Γ₁(N)`, via `δ T^j γ'⁻¹ ∈ Γ₁(N)`. -/
+private theorem cuspOrbitOfSL2Z_Gamma1_eq_of_intCast_eq {δ γ' : SL(2, ℤ)} (j : ℤ)
+    (hc : ((γ' 1 0 : ℤ) : ZMod N) = δ 1 0)
+    (hd : ((γ' 1 1 : ℤ) : ZMod N) = δ 1 1 + j * δ 1 0) :
+    (Gamma1 N).cuspOrbitOfSL2Z δ = (Gamma1 N).cuspOrbitOfSL2Z γ' := by
+  have h10 : (δ * T ^ j) 1 0 = δ 1 0 := by
+    simp [coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+  have h11 : (δ * T ^ j) 1 1 = δ 1 1 + j * δ 1 0 := by
+    simp [coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+    ring
+  refine (Subgroup.cuspOrbitOfSL2Z_eq_iff _ _ _).mpr
+    ⟨δ * T ^ j * γ'⁻¹, mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨?_, ?_⟩, ?_⟩
+  · rw [h10, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    push_cast
+    exact sub_eq_zero.mpr hc.symm
+  · rw [h11, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    push_cast
+    exact sub_eq_zero.mpr hd.symm
+  · have hT : δ⁻¹ * (δ * T ^ j * γ'⁻¹) * γ' = T ^ j := by group
+    rw [hT, coe_T_zpow]
+    rfl
+
 /-- **The criterion for equivalence of cusps of `Γ₁(N)`.** For `γ` and `γ'` with bottom rows
 `(c, d)` and `(c', d')`, the cusps `γ • ∞` and `γ' • ∞` are `Γ₁(N)`-equivalent exactly when
 `(c', d') ≡ ±(c, d + j c)` modulo `N` for some integer `j`. -/
@@ -64,29 +97,6 @@ theorem cuspOrbitOfSL2Z_Gamma1_eq_iff (γ γ' : SL(2, ℤ)) :
           ((γ' 1 1 : ℤ) : ZMod N) = γ 1 1 + j * γ 1 0) ∨
         (((γ' 1 0 : ℤ) : ZMod N) = -γ 1 0 ∧
           ((γ' 1 1 : ℤ) : ZMod N) = -γ 1 1 - j * γ 1 0) := by
-  -- Without the sign: `(c', d') ≡ (δ₁₀, δ₁₁ + j δ₁₀)` makes `δ • ∞` and `γ' • ∞` equivalent,
-  -- via `δ T^j γ'⁻¹ ∈ Γ₁(N)`.
-  have key (δ : SL(2, ℤ)) (j : ℤ) (hc : ((γ' 1 0 : ℤ) : ZMod N) = δ 1 0)
-      (hd : ((γ' 1 1 : ℤ) : ZMod N) = δ 1 1 + j * δ 1 0) :
-      (Gamma1 N).cuspOrbitOfSL2Z δ = (Gamma1 N).cuspOrbitOfSL2Z γ' := by
-    have hdet := congrArg (Int.cast : ℤ → ZMod N) γ'.det_coe
-    rw [det_fin_two] at hdet
-    push_cast at hdet
-    refine (Subgroup.cuspOrbitOfSL2Z_eq_iff _ _ _).mpr
-      ⟨δ * T ^ j * γ'⁻¹, mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩, ?_⟩
-    · simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two,
-        of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one,
-        coe_T_zpow]
-      push_cast
-      linear_combination (δ 1 0 : ZMod N) * hd - (δ 1 0 * j + δ 1 1 : ZMod N) * hc
-    · simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two,
-        of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one,
-        coe_T_zpow]
-      push_cast
-      linear_combination (γ' 0 1 : ZMod N) * hc - (γ' 0 0 : ZMod N) * hd + hdet
-    · have hT : δ⁻¹ * (δ * T ^ j * γ'⁻¹) * γ' = T ^ j := by group
-      rw [hT, coe_T_zpow]
-      rfl
   constructor
   · rw [Subgroup.cuspOrbitOfSL2Z_eq_iff]
     rintro ⟨h, hh, hM⟩
@@ -117,9 +127,10 @@ theorem cuspOrbitOfSL2Z_Gamma1_eq_iff (γ γ' : SL(2, ℤ)) :
         push_cast at e11 ⊢
         linear_combination e11
   · rintro ⟨j, ⟨hc, hd⟩ | ⟨hc, hd⟩⟩
-    · exact key γ j hc hd
+    · exact cuspOrbitOfSL2Z_Gamma1_eq_of_intCast_eq j hc hd
     · rw [← Subgroup.cuspOrbitOfSL2Z_neg]
-      refine key (-γ) j ?_ ?_ <;> simp only [coe_neg, Matrix.neg_apply, Int.cast_neg]
+      refine cuspOrbitOfSL2Z_Gamma1_eq_of_intCast_eq (δ := -γ) j ?_ ?_ <;>
+        simp only [coe_neg, Matrix.neg_apply, Int.cast_neg]
       · exact hc
       · linear_combination hd
 
@@ -369,9 +380,6 @@ theorem card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
         Set.mem_singleton_iff, eq_comm, eq_comm (b := x)]
     rw [← Set.coe_ofPred, Nat.card_coe_set_eq, h,
       Set.ncard_pair (gamma1CuspLabel_neg_ne hN hN4 γ).symm]
-  have : Finite ((Gamma1 N).map sl2zToPSL2R).CuspOrbit :=
-    Finite.of_surjective f fun C ↦
-      (Nat.card_pos_iff.mp (hfib C ▸ two_pos)).1.elim fun x ↦ ⟨x.1, x.2⟩
   have := Fintype.ofFinite ((Gamma1 N).map sl2zToPSL2R).CuspOrbit
   calc 2 * Nat.card ((Gamma1 N).map sl2zToPSL2R).CuspOrbit
       = ∑ C, Nat.card {x // f x = C} := by
@@ -397,5 +405,81 @@ theorem card_cuspOrbit_Gamma1_of_prime {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
   rw [hp'.divisors, Finset.sum_pair hp'.one_lt.ne, Nat.div_self hp'.pos, Nat.div_one,
     Nat.totient_one, Nat.totient_prime hp'] at h
   omega
+
+/-! ### The cusps at the levels `1`, `2` and `4` -/
+
+/-- The criterion `cuspOrbitOfSL2Z_Gamma1_eq_iff` with the translation `j` read modulo `N`, which
+makes it decidable on residues. -/
+private theorem cuspOrbitOfSL2Z_Gamma1_eq_iff_zmod {γ γ' : SL(2, ℤ)} :
+    (Gamma1 N).cuspOrbitOfSL2Z γ = (Gamma1 N).cuspOrbitOfSL2Z γ' ↔
+      ∃ x : ZMod N, (((γ' 1 0 : ℤ) : ZMod N) = γ 1 0 ∧
+          ((γ' 1 1 : ℤ) : ZMod N) = γ 1 1 + x * γ 1 0) ∨
+        (((γ' 1 0 : ℤ) : ZMod N) = -γ 1 0 ∧
+          ((γ' 1 1 : ℤ) : ZMod N) = -γ 1 1 - x * γ 1 0) := by
+  rw [cuspOrbitOfSL2Z_Gamma1_eq_iff]
+  exact ⟨fun ⟨j, hj⟩ ↦ ⟨j, hj⟩, fun ⟨x, hx⟩ ↦ ⟨x.val, by simpa using hx⟩⟩
+
+/-- `Γ₁(1) = SL(2, ℤ)` has the single cusp `∞`. -/
+theorem cuspOrbitOfSL2Z_Gamma1_one (γ : SL(2, ℤ)) :
+    (Gamma1 1).cuspOrbitOfSL2Z 1 = (Gamma1 1).cuspOrbitOfSL2Z γ :=
+  (cuspOrbitOfSL2Z_Gamma1_eq_iff _ _).mpr ⟨0, .inl ⟨Subsingleton.elim _ _, Subsingleton.elim _ _⟩⟩
+
+/-- Every cusp of `Γ₁(2)` is `∞ = 1 • ∞` or `0 = S • ∞`. -/
+theorem cuspOrbitOfSL2Z_Gamma1_two (γ : SL(2, ℤ)) :
+    (Gamma1 2).cuspOrbitOfSL2Z 1 = (Gamma1 2).cuspOrbitOfSL2Z γ ∨
+      (Gamma1 2).cuspOrbitOfSL2Z S = (Gamma1 2).cuspOrbitOfSL2Z γ := by
+  have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod 2) γ
+  simp only [cuspOrbitOfSL2Z_Gamma1_eq_iff_zmod, coe_S, of_apply, cons_val', cons_val_zero,
+    cons_val_one, empty_val', cons_val_fin_one, Int.cast_zero, Int.cast_one]
+  generalize ((γ 0 0 : ℤ) : ZMod 2) = a, ((γ 0 1 : ℤ) : ZMod 2) = b,
+    ((γ 1 0 : ℤ) : ZMod 2) = c, ((γ 1 1 : ℤ) : ZMod 2) = d at hdet ⊢
+  revert a b c d
+  decide
+
+/-- Every cusp of `Γ₁(4)` is `∞ = 1 • ∞`, or `0 = S • ∞`, or `γ • ∞` with `c ≡ 2` modulo `4`
+for the lower-left entry `c` of `γ`. -/
+theorem cuspOrbitOfSL2Z_Gamma1_four (γ : SL(2, ℤ)) :
+    (Gamma1 4).cuspOrbitOfSL2Z 1 = (Gamma1 4).cuspOrbitOfSL2Z γ ∨
+      (Gamma1 4).cuspOrbitOfSL2Z S = (Gamma1 4).cuspOrbitOfSL2Z γ ∨
+        ((γ 1 0 : ℤ) : ZMod 4) = 2 := by
+  have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod 4) γ
+  simp only [cuspOrbitOfSL2Z_Gamma1_eq_iff_zmod, coe_S, of_apply, cons_val', cons_val_zero,
+    cons_val_one, empty_val', cons_val_fin_one, Int.cast_zero, Int.cast_one]
+  generalize ((γ 0 0 : ℤ) : ZMod 4) = a, ((γ 0 1 : ℤ) : ZMod 4) = b,
+    ((γ 1 0 : ℤ) : ZMod 4) = c, ((γ 1 1 : ℤ) : ZMod 4) = d at hdet ⊢
+  revert a b c d
+  decide
+
+/-- The cusps `γ • ∞` of `Γ₁(4)` whose lower-left entry is `2` modulo `4` are all equivalent. -/
+theorem cuspOrbitOfSL2Z_Gamma1_four_eq_of_intCast_eq_two {γ γ' : SL(2, ℤ)}
+    (hγ : ((γ 1 0 : ℤ) : ZMod 4) = 2) (hγ' : ((γ' 1 0 : ℤ) : ZMod 4) = 2) :
+    (Gamma1 4).cuspOrbitOfSL2Z γ = (Gamma1 4).cuspOrbitOfSL2Z γ' := by
+  have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod 4) γ
+  have hdet' := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod 4) γ'
+  rw [cuspOrbitOfSL2Z_Gamma1_eq_iff_zmod]
+  generalize ((γ 0 0 : ℤ) : ZMod 4) = a, ((γ 0 1 : ℤ) : ZMod 4) = b,
+    ((γ 1 0 : ℤ) : ZMod 4) = c, ((γ 1 1 : ℤ) : ZMod 4) = d at hdet hγ ⊢
+  generalize ((γ' 0 0 : ℤ) : ZMod 4) = a', ((γ' 0 1 : ℤ) : ZMod 4) = b',
+    ((γ' 1 0 : ℤ) : ZMod 4) = c', ((γ' 1 1 : ℤ) : ZMod 4) = d' at hdet' hγ' ⊢
+  subst hγ hγ'
+  revert a b d a' b' d'
+  decide
+
+/-- **The cusp of `Γ₁(4)` with `c ≡ 2` modulo `4` is irregular**: if the lower-left entry of `γ`
+is `2` modulo `4`, then `Γ₁(4)` contains the conjugate `γ (-T) γ⁻¹` of the negative translation. -/
+theorem mul_neg_T_mul_inv_mem_Gamma1_four {γ : SL(2, ℤ)} (hγ : ((γ 1 0 : ℤ) : ZMod 4) = 2) :
+    γ * -T * γ⁻¹ ∈ Gamma1 4 := by
+  have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod 4) γ
+  refine mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩ <;>
+  · simp only [coe_mul, coe_inv, coe_neg, coe_T, adjugate_fin_two, Matrix.mul_apply,
+      Fin.sum_univ_two, Matrix.neg_apply, of_apply, cons_val', cons_val_zero, cons_val_one,
+        empty_val',
+      cons_val_fin_one]
+    push_cast
+    generalize ((γ 0 0 : ℤ) : ZMod 4) = a, ((γ 0 1 : ℤ) : ZMod 4) = b,
+      ((γ 1 0 : ℤ) : ZMod 4) = c, ((γ 1 1 : ℤ) : ZMod 4) = d at hdet hγ ⊢
+    subst hγ
+    revert a b d
+    decide
 
 end TauCeti

@@ -62,11 +62,13 @@ Hamilton's quaternions.
 
 public section
 
+universe u
+
 namespace TauCeti
 
 open _root_.ContinuousCohomology RegularFormClass BrauerGroup
 
-variable {K : Type} [Field K] [Invertible (2 : K)]
+variable {K : Type u} [Field K] [Invertible (2 : K)]
 
 /-- The comparison with multiplicative coefficients sends the Clifford invariant of a regular form
 class `q` of rank `n` to the image under the Kummer injection of

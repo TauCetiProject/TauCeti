@@ -14,7 +14,10 @@ public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 
 /-!
 # The second derivative as a derivative
@@ -37,15 +40,22 @@ function vanishes the first-order term drops out, so the second derivative of a 
 second derivative of the outer function evaluated on the images of the differential of the inner
 one, i.e. the second derivative transforms as a bilinear form. The second derivative of a
 separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` on a product is the block-diagonal map built from the
-second derivatives of the summands. Finally, the second derivative of a directional derivative
+second derivatives of the summands, and the second derivative of a separated sum
+`z ↦ ∑ i, φ i (z i)` of functions of one variable on `ι → 𝕜` is diagonal, while the second
+partial derivative of a separated product `z ↦ ∏ i, φ i (z i)` in its `i`-th variable replaces the
+factor `φ i` by its second derivative. Finally, the
+second derivative of a directional derivative
 `y ↦ Dg(y) v` is the third derivative of `g` evaluated at `v`, and differentiating the symmetry
 of the second derivative shows that the third derivative is symmetric in its last two
 directions. The file also gives the second-order product rule for scalar-valued maps, together
 with a form valid at every point when both factors are `C²` on an open set containing the support
 of one of them (a cutoff), the second-order chain rule through a function of one variable, and
-the comparison of second derivatives over a field and over a larger field. No statement here
-mentions critical points as such, so all of them belong here rather than with the Morse theory
-that uses them.
+the comparison of second derivatives over a field and over a larger field. Along a curve the
+second-order chain rule reads `(f ∘ γ)'' = D²f(γ', γ') + Df(γ'')`, so a line along which a map is
+affine is isotropic for its second derivative. For scalar-valued `f` and `φ`, post-composition
+with `φ` preserves vanishing of the differential when `φ′ ≠ 0`; at a point where `Df = 0`, it
+multiplies the second derivative by `φ′`. These derivative identities are independent of the
+Morse-theoretic definitions that use them.
 
 ## Main results
 
@@ -61,20 +71,42 @@ that uses them.
 * `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`: for `C²` maps, where the differential of
   the outer function vanishes, the second derivative of a composition is the pullback of the
   second derivative along the differential of the inner function.
+* `TauCeti.fderiv_fderiv_slice_right_apply`: the second derivative of the restriction of a map on
+  a product to a fibre is its second derivative on fibre directions.
+* `TauCeti.contDiffAt_fderiv_fderiv_slice_right`: the fibre second derivatives of a `C^{n+2}`
+  map on a product form a `C^n` family over the base.
+* `TauCeti.fderiv_fderiv_apply_inl_eq_zero`: along a critical zero section of a map on a
+  product, the second derivative vanishes on base directions.
 * `TauCeti.fderiv_fderiv_comp_fst_add_comp_snd`: the second derivative of a separated sum on a
   product is block diagonal.
+* `TauCeti.fderiv_fderiv_sum_comp_eval_apply`: the second derivative of a separated sum of
+  functions of one variable is diagonal.
+* `TauCeti.fderiv_fderiv_prod_comp_eval_apply_single_single`: the second partial derivative of a
+  separated product `z ↦ ∏ j, φ j (z j)` in its `i`-th variable replaces `φ i` by `φ i''`.
 * `TauCeti.fderiv_fderiv_fderiv_apply`: the second derivative of a directional derivative of a
   `C³` map is its third derivative.
+* `TauCeti.fderiv_fderiv_apply_comm`: mixed directional derivatives of a `C²` map commute.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
+* `TauCeti.fderiv_fderiv_smul_const_apply`: the second derivative of `y ↦ P y • v` is that of the
+  scalar function `P`, times `v`.
+* `TauCeti.fderiv_fderiv_sub_clm`: subtracting a continuous linear map does not change the second
+  derivative.
 * `TauCeti.fderiv_fderiv_mul_apply`: the second-order product rule.
 * `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
   cutoff, at every point.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
   the second iterated derivative.
+* `TauCeti.fderiv_scalar_comp_eq_zero_iff`: post-composition with a scalar function whose
+  derivative is nonzero preserves vanishing of the differential.
 * `TauCeti.fderiv_fderiv_scalar_comp_apply`: the second-order chain rule through a function of
   one variable.
+* `TauCeti.fderiv_fderiv_scalar_comp_of_fderiv_eq_zero`: where the inner differential vanishes,
+  scalar post-composition multiplies the second derivative by the outer derivative.
+* `TauCeti.iteratedDeriv_two_comp`: the second derivative of a map along a curve.
+* `TauCeti.fderiv_fderiv_apply_self_eq_zero_of_eventually_eq_add_smul`: a line along which a map
+  is affine is isotropic for its second derivative.
 * `ContDiffAt.fderiv_fderiv_restrictScalars_apply`: the second derivative of a map which is `C²`
   over a larger field does not depend on the field.
 * `TauCeti.fderiv_fderiv_re_apply`: the real second derivative of the real part of a holomorphic
@@ -161,6 +193,44 @@ theorem fderiv_fderiv_comp_apply_of_fderiv_eq_zero {f : E → G} {φ : F → E} 
       fderiv 𝕜 (fderiv 𝕜 f) (φ b) (fderiv 𝕜 φ b v) (fderiv 𝕜 φ b w) := by
   simp [fderiv_fderiv_comp_apply hf hφ, hc]
 
+/-- The second derivative of the restriction `y ↦ f (a, y)` of a `C²` map on a product to a fibre
+is the second derivative of `f` evaluated on fibre directions. -/
+theorem fderiv_fderiv_slice_right_apply {f : E × F → G} {a : E} {b : F}
+    (hf : ContDiffAt 𝕜 2 f (a, b)) (v w : F) :
+    fderiv 𝕜 (fderiv 𝕜 (fun y ↦ f (a, y))) b v w =
+      fderiv 𝕜 (fderiv 𝕜 f) (a, b) (0, v) (0, w) := by
+  have hD : fderiv 𝕜 (fun y : F ↦ (a, y)) = fun _ ↦ ContinuousLinearMap.inr 𝕜 E F :=
+    funext fun y ↦ (hasFDerivAt_prodMk_right a y).fderiv
+  simpa [Function.comp_def, hD] using fderiv_fderiv_comp_apply (φ := fun y : F ↦ (a, y)) hf
+    (contDiffAt_const.prodMk contDiffAt_id) v w
+
+/-- **The fibre second derivatives of a `C^{n+2}` map form a `C^n` family.** If `f` is `C^{n+2}`
+at `(a, b)`, then `x ↦ D²(f (x, ·))(b)`, the second derivative at `b` of the restriction of `f`
+to the fibre over `x`, is `C^n` at `a`. -/
+theorem contDiffAt_fderiv_fderiv_slice_right {n : WithTop ℕ∞} {f : E × F → G} {a : E} {b : F}
+    (hf : ContDiffAt 𝕜 (n + 2) f (a, b)) :
+    ContDiffAt 𝕜 n (fun x ↦ fderiv 𝕜 (fderiv 𝕜 (fun y ↦ f (x, y))) b) a := by
+  -- Differentiate the fibre restrictions in the fibre variable twice, as smooth families.
+  have h1 : ContDiffAt 𝕜 (n + 1) (fun p : E × F ↦ fderiv 𝕜 (fun y ↦ f (p.1, y)) p.2) (a, b) :=
+    ContDiffAt.fderiv (f := fun p y ↦ f (p.1, y))
+      (hf.comp ((a, b), b) ((contDiffAt_fst.comp _ contDiffAt_fst).prodMk contDiffAt_snd))
+      contDiffAt_snd (by rw [add_assoc]; rfl)
+  exact ContDiffAt.fderiv (f := fun x y ↦ fderiv 𝕜 (fun v ↦ f (x, v)) y) h1 contDiffAt_const le_rfl
+
+/-- **Base directions of a critical zero section are null for the second derivative.** If `f` is
+`C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is a critical point of `f`, then the
+second derivative of `f` at `(a, 0)` vanishes on every base direction `(u, 0)`. -/
+theorem fderiv_fderiv_apply_inl_eq_zero {f : E × F → G} {a : E} (hf : ContDiffAt 𝕜 2 f (a, 0))
+    (hcrit : ∀ᶠ b in 𝓝 a, fderiv 𝕜 f (b, 0) = 0) (u : E) :
+    fderiv 𝕜 (fderiv 𝕜 f) (a, 0) (u, 0) = 0 := by
+  -- The map `b ↦ Df(b, 0)` vanishes near `a`, so its derivative `D²f(a, 0) ∘ inl` vanishes.
+  have hd : HasFDerivAt (fun b ↦ fderiv 𝕜 f (b, 0))
+      ((fderiv 𝕜 (fderiv 𝕜 f) (a, 0)).comp (ContinuousLinearMap.inl 𝕜 E F)) a :=
+    (hf.hasFDerivAt_fderiv le_rfl).comp a (hasFDerivAt_prodMk_left a 0)
+  have hzero :=
+    hd.unique ((hasFDerivAt_const (0 : E × F →L[𝕜] G) a).congr_of_eventuallyEq hcrit)
+  simpa using congr($hzero u)
+
 /-- The second derivative of a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` at `(a, b)` is block
 diagonal: it sends `(v, w)` to the coproduct of `D²φ a v` and `D²ψ b w`, i.e. to the functional
 `(v', w') ↦ D²φ a v v' + D²ψ b w w'`. -/
@@ -193,6 +263,65 @@ theorem fderiv_fderiv_comp_fst_add_comp_snd {φ : E → G} {ψ : F → G} {a : E
   exact ((ContinuousLinearMap.coprodEquivL 𝕜 :
     ((E →L[𝕜] G) × (F →L[𝕜] G)) ≃L[𝕜] (E × F →L[𝕜] G)).hasFDerivAt.comp (a, b) hD).fderiv
 
+section SumCompEval
+
+variable {ι : Type*} [Fintype ι] {φ : ι → 𝕜 → 𝕜} {y : ι → 𝕜}
+
+open ContinuousLinearMap in
+/-- **The second derivative of a separated sum is diagonal**: at a point at which every summand is
+twice continuously differentiable, it sends `v` and `w` to `∑ i, φ i'' (y i) * v i * w i`. -/
+theorem fderiv_fderiv_sum_comp_eval_apply (hφ : ∀ i, ContDiffAt 𝕜 2 (φ i) (y i))
+    (v w : ι → 𝕜) :
+    fderiv 𝕜 (fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∑ i, φ i (z i))) y v w =
+      ∑ i, deriv (deriv (φ i)) (y i) * v i * w i := by
+  have hd : HasFDerivAt (fun z : ι → 𝕜 ↦ ∑ i, deriv (φ i) (z i) • (proj i : (ι → 𝕜) →L[𝕜] 𝕜))
+      (∑ i, (deriv (deriv (φ i)) (y i) • (proj i : (ι → 𝕜) →L[𝕜] 𝕜)).smulRight
+        (proj i : (ι → 𝕜) →L[𝕜] 𝕜)) y := by
+    refine HasFDerivAt.fun_sum fun i _ ↦ ?_
+    have h := ((hφ i).derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero
+    have h' : HasFDerivAt (fun z : ι → 𝕜 ↦ deriv (φ i) (z i))
+        (deriv (deriv (φ i)) (y i) • (proj i : (ι → 𝕜) →L[𝕜] 𝕜)) y :=
+      -- The inner function is named, since unification cannot split the composite itself.
+      HasDerivAt.comp_hasFDerivAt (f := fun z : ι → 𝕜 ↦ z i) y h.hasDerivAt
+        (hasFDerivAt_apply i y)
+    exact h'.smul_const (proj i : (ι → 𝕜) →L[𝕜] 𝕜)
+  rw [(fderiv_sum_comp_eval_eventuallyEq fun i ↦ (hφ i).of_le one_le_two).fderiv_eq, hd.fderiv]
+  simp [mul_comm, mul_left_comm]
+
+end SumCompEval
+
+section ProdCompEval
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {φ : ι → 𝕜 → 𝕜} {y : ι → 𝕜}
+
+/-- **The second partial derivative of a separated product.** At a point at which every factor is
+twice continuously differentiable, differentiating `z ↦ ∏ j, φ j (z j)` twice in the `i`-th variable
+replaces the factor `φ i` by its second derivative. -/
+theorem fderiv_fderiv_prod_comp_eval_apply_single_single (hφ : ∀ j, ContDiffAt 𝕜 2 (φ j) (y j))
+    (i : ι) :
+    fderiv 𝕜 (fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j))) y (Pi.single i 1) (Pi.single i 1) =
+      ∏ j, Function.update φ i (deriv (deriv (φ i))) j (y j) := by
+  have hP : ContDiffAt 𝕜 2 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) y :=
+    contDiffAt_prod fun j _ ↦ (hφ j).comp y (contDiffAt_apply 𝕜 (fun _ : ι ↦ 𝕜) j y)
+  have hdiff : ∀ j, ∀ᶠ z : ι → 𝕜 in 𝓝 y, DifferentiableAt 𝕜 (φ j) (z j) := fun j ↦
+    (continuous_apply j).continuousAt.eventually
+      (((hφ j).eventually (by simp)).mono fun t ht ↦ ht.differentiableAt (by simp))
+  -- Near `y` the partial derivative in the `i`-th variable is again a separated product.
+  have hpartial : (fun z ↦ fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) z (Pi.single i 1)) =ᶠ[𝓝 y]
+      fun z ↦ ∏ j, Function.update φ i (deriv (φ i)) j (z j) := by
+    filter_upwards [eventually_all.2 hdiff] with z hz
+    exact fderiv_prod_comp_eval_apply_single hz i
+  have hd : ∀ j, DifferentiableAt 𝕜 (Function.update φ i (deriv (φ i)) j) (y j) := by
+    intro j
+    rcases eq_or_ne j i with rfl | hj
+    · simpa using ((hφ j).derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero
+    · simpa [Function.update_of_ne hj] using (hφ j).differentiableAt (by norm_num)
+  rw [← fderiv_clm_apply_const_apply (hP.hasFDerivAt_fderiv le_rfl).differentiableAt,
+    hpartial.fderiv_eq, fderiv_prod_comp_eval_apply_single hd i]
+  simp
+
+end ProdCompEval
+
 /-- The second derivative of the directional derivative `y ↦ Dg(y) v` of a `C³` map `g` is the
 third derivative of `g`, evaluated at `v`. -/
 theorem fderiv_fderiv_fderiv_apply {g : E → F} {x : E} (hg : ContDiffAt 𝕜 3 g x) (v a b : E) :
@@ -211,6 +340,18 @@ theorem fderiv_fderiv_fderiv_apply {g : E → F} {x : E} (hg : ContDiffAt 𝕜 3
     (by norm_num)), hfirst.fderiv_eq, fderiv_clm_apply (hD2.clm_apply (differentiableAt_const b))
     (differentiableAt_const v)]
   simp [fderiv_clm_apply_const_apply hD2]
+
+/-- **Mixed directional derivatives commute.** For a map that is `C^{minSmoothness 𝕜 2}` at `x`
+(so `C²` over `ℝ` or `ℂ`), the derivative in the direction `w` of `y ↦ Dg(y) v` equals the
+derivative in the direction `v` of `y ↦ Dg(y) w`. -/
+theorem fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : E}
+    (hg : ContDiffAt 𝕜 n g x) (hn : minSmoothness 𝕜 2 ≤ n) (v w : E) :
+    fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y v) x w = fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y w) x v := by
+  have hD : DifferentiableAt 𝕜 (fderiv 𝕜 g) x :=
+    (hg.fderiv_right (m := 1) ((by norm_num : ((1 : ℕ) : WithTop ℕ∞) + 1 ≤ 2).trans
+      (le_minSmoothness.trans hn))).differentiableAt one_ne_zero
+  rw [fderiv_clm_apply_const_apply hD, fderiv_clm_apply_const_apply hD]
+  exact (hg.isSymmSndFDerivAt hn).eq w v
 
 /-- **The third derivative is symmetric in its last two directions.** For a map that is
 `C^{minSmoothness 𝕜 3}` at `x` (so `C³` over `ℝ` or `ℂ`), differentiating the symmetry of the
@@ -240,6 +381,28 @@ theorem fderiv_fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : 
 theorem fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
     fderiv 𝕜 (fderiv 𝕜 (c • g)) x = c • fderiv 𝕜 (fderiv 𝕜 g) x := by
   rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 g), Pi.smul_apply]
+
+/-- The second derivative of `y ↦ P y • v` is that of the scalar function `P`, times `v`. -/
+theorem fderiv_fderiv_smul_const_apply {P : E → 𝕜} {x : E} (hP : ContDiffAt 𝕜 2 P x) (v : F)
+    (u w : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun y ↦ P y • v) x u w = fderiv 𝕜 (fderiv 𝕜 P) x u w • v := by
+  have hfd : fderiv 𝕜 (fun y ↦ P y • v) =ᶠ[𝓝 x]
+      fun y ↦ (ContinuousLinearMap.smulRightL 𝕜 E F).flip v (fderiv 𝕜 P y) := by
+    filter_upwards [hP.eventually (by simp)] with y hy
+    exact fderiv_smul_const (hy.differentiableAt (by simp)) v
+  rw [hfd.fderiv_eq, fderiv_fun_comp x
+    ((ContinuousLinearMap.smulRightL 𝕜 E F).flip v).differentiableAt
+    (hP.hasFDerivAt_fderiv le_rfl).differentiableAt]
+  simp
+
+/-- Subtracting a continuous linear map does not change the second derivative, at a point near
+which `g` is differentiable. -/
+theorem fderiv_fderiv_sub_clm {g : E → F} {x : E} (hg : ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 g y)
+    (L : E →L[𝕜] F) :
+    fderiv 𝕜 (fderiv 𝕜 fun y => g y - L y) x = fderiv 𝕜 (fderiv 𝕜 g) x := by
+  have h : (fderiv 𝕜 fun y => g y - L y) =ᶠ[𝓝 x] fun y => fderiv 𝕜 g y - L :=
+    hg.mono fun y hy => by rw [fderiv_fun_sub hy L.differentiableAt, L.fderiv]
+  rw [h.fderiv_eq, fderiv_sub_const]
 
 /-- **The second-order product rule.** For scalar-valued maps `f` and `g` which are `C²` at `x`,
 `D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)`. -/
@@ -286,6 +449,22 @@ theorem fderiv_fderiv_apply_eq_smul_iteratedDeriv (φ : 𝕜 → F) (t a b : �
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
   simpa [Fin.prod_univ_two] using h.symm
 
+/-- Scalar post-composition with nonzero derivative preserves criticality. -/
+@[simp]
+theorem fderiv_scalar_comp_eq_zero_iff {f : E → 𝕜} {φ : 𝕜 → 𝕜} {x : E}
+    (hf : DifferentiableAt 𝕜 f x) (hφ' : deriv φ (f x) ≠ 0) :
+    fderiv 𝕜 (φ ∘ f) x = 0 ↔ fderiv 𝕜 f x = 0 := by
+  have hφ := differentiableAt_of_deriv_ne_zero hφ'
+  rw [(hφ.hasDerivAt.comp_hasFDerivAt x hf.hasFDerivAt).fderiv]
+  constructor
+  · intro h
+    ext v
+    have hv := congrArg (fun L : E →L[𝕜] 𝕜 ↦ L v) h
+    simpa [hφ'] using hv
+  · intro h
+    ext v
+    simp [h]
+
 /-- **The second-order chain rule through a scalar.** If `f : E → 𝕜` is `C²` at `x` and
 `φ : 𝕜 → F` is `C²` at `f x`, then
 `D²(φ ∘ f)(v, w) = (Df(v) Df(w)) • φ''(f x) + D²f(v, w) • φ'(f x)`. -/
@@ -296,6 +475,38 @@ theorem fderiv_fderiv_scalar_comp_apply {f : E → 𝕜} {φ : 𝕜 → F} {x : 
         fderiv 𝕜 (fderiv 𝕜 f) x v w • deriv φ (f x) := by
   rw [fderiv_fderiv_comp_apply hφ hf, fderiv_fderiv_apply_eq_smul_iteratedDeriv,
     fderiv_eq_smul_deriv]
+
+/-- At a critical point, scalar post-composition scales the second derivative by the
+first derivative of the outer function. -/
+theorem fderiv_fderiv_scalar_comp_of_fderiv_eq_zero {f : E → 𝕜} {φ : 𝕜 → 𝕜} {x : E}
+    (hφ : ContDiffAt 𝕜 2 φ (f x)) (hf : ContDiffAt 𝕜 2 f x)
+    (hc : fderiv 𝕜 f x = 0) :
+    fderiv 𝕜 (fderiv 𝕜 (φ ∘ f)) x = deriv φ (f x) • fderiv 𝕜 (fderiv 𝕜 f) x := by
+  ext v w
+  simp [fderiv_fderiv_scalar_comp_apply hφ hf, hc, mul_comm]
+
+/-- **The second derivative along a curve.** If `f` is `C²` at `γ t` and the curve `γ` is `C²` at
+`t`, then `(f ∘ γ)''(t) = D²f(γ t)(γ'(t), γ'(t)) + Df(γ t)(γ''(t))`. -/
+theorem iteratedDeriv_two_comp {f : E → F} {γ : 𝕜 → E} {t : 𝕜}
+    (hf : ContDiffAt 𝕜 2 f (γ t)) (hγ : ContDiffAt 𝕜 2 γ t) :
+    iteratedDeriv 2 (f ∘ γ) t =
+      fderiv 𝕜 (fderiv 𝕜 f) (γ t) (deriv γ t) (deriv γ t) +
+        fderiv 𝕜 f (γ t) (iteratedDeriv 2 γ t) := by
+  have h := fderiv_fderiv_comp_apply hf hγ 1 1
+  rw [fderiv_fderiv_apply_eq_smul_iteratedDeriv, fderiv_fderiv_apply_eq_smul_iteratedDeriv] at h
+  simpa [fderiv_apply_one_eq_deriv] using h
+
+/-- **A line along which a map is affine is isotropic for its second derivative.** If `f` is `C²`
+at `x` and `f (x + t • v) = f x + t • z` for all `t` near `0`, then `D²f(x)(v, v) = 0`. -/
+theorem fderiv_fderiv_apply_self_eq_zero_of_eventually_eq_add_smul {f : E → F} {x v : E} {z : F}
+    (hf : ContDiffAt 𝕜 2 f x) (hv : ∀ᶠ t in 𝓝 (0 : 𝕜), f (x + t • v) = f x + t • z) :
+    fderiv 𝕜 (fderiv 𝕜 f) x v v = 0 := by
+  have h := iteratedDeriv_two_comp (f := f) (γ := fun t : 𝕜 ↦ x + t • v) (t := 0)
+    (by simpa using hf) (contDiffAt_const.add (contDiffAt_id.smul contDiffAt_const))
+  rw [(show f ∘ (fun t : 𝕜 ↦ x + t • v) =ᶠ[𝓝 0] fun t ↦ f x + t • z from hv).iteratedDeriv_eq]
+    at h
+  simp only [iteratedDeriv_two_const_add_smul, deriv_const_add_smul] at h
+  simpa using h.symm
 
 section RestrictScalars
 

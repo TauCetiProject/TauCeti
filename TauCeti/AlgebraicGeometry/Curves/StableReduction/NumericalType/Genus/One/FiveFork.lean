@@ -46,6 +46,48 @@ universe u
 
 variable {T : NumericalType.{u}}
 
+/-- The two numerical patterns of a genus-one five-component fork, including an indexing
+equivalence and the complete weight, multiplicity, and intersection data.
+Component genera are imposed separately in the minimal classification. -/
+def IsGenusOneFiveForkShape (T : NumericalType.{u}) : Prop :=
+  ∃ e : Fin 5 ≃ T.Component, ∃ w m : ℕ+,
+  ((∀ i, (T.weight (e i) : ℤ) = ![2 * (w : ℤ), w, w, w, w] i) ∧
+    (∀ i, (T.multiplicity (e i) : ℤ) = ![(m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+    (∀ i j, T.intersection (e i) (e j) =
+      !![-4 * (w : ℤ), 2 * w, 0, 0, 0;
+         2 * w, -2 * w, w, 0, 0;
+         0, w, -2 * w, w, w;
+         0, 0, w, -2 * w, 0;
+         0, 0, w, 0, -2 * w] i j)) ∨
+  ((∀ i, (T.weight (e i) : ℤ) = ![(w : ℤ), 2 * w, 2 * w, 2 * w, 2 * w] i) ∧
+    (∀ i, (T.multiplicity (e i) : ℤ) = ![2 * (m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+    (∀ i j, T.intersection (e i) (e j) =
+      !![-2 * (w : ℤ), 2 * w, 0, 0, 0;
+         2 * w, -4 * w, 2 * w, 0, 0;
+         0, 2 * w, -4 * w, 2 * w, 2 * w;
+         0, 0, 2 * w, -4 * w, 0;
+         0, 0, 2 * w, 0, -4 * w] i j))
+
+/-- The complete numerical data recorded by `IsGenusOneFiveForkShape`. -/
+theorem isGenusOneFiveForkShape_iff : T.IsGenusOneFiveForkShape ↔
+  ∃ e : Fin 5 ≃ T.Component, ∃ w m : ℕ+,
+  ((∀ i, (T.weight (e i) : ℤ) = ![2 * (w : ℤ), w, w, w, w] i) ∧
+    (∀ i, (T.multiplicity (e i) : ℤ) = ![(m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+    (∀ i j, T.intersection (e i) (e j) =
+      !![-4 * (w : ℤ), 2 * w, 0, 0, 0;
+         2 * w, -2 * w, w, 0, 0;
+         0, w, -2 * w, w, w;
+         0, 0, w, -2 * w, 0;
+         0, 0, w, 0, -2 * w] i j)) ∨
+  ((∀ i, (T.weight (e i) : ℤ) = ![(w : ℤ), 2 * w, 2 * w, 2 * w, 2 * w] i) ∧
+    (∀ i, (T.multiplicity (e i) : ℤ) = ![2 * (m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+    (∀ i j, T.intersection (e i) (e j) =
+      !![-2 * (w : ℤ), 2 * w, 0, 0, 0;
+         2 * w, -4 * w, 2 * w, 0, 0;
+         0, 2 * w, -4 * w, 2 * w, 2 * w;
+         0, 0, 2 * w, -4 * w, 0;
+         0, 0, 2 * w, 0, -4 * w] i j)) := Iff.rfl
+
 /-- Fibre relations for a five-component fork, after identifying its four equal weights
 and its three simply laced edges. -/
 private lemma fiveFork_multiplicity_relations (e : Fin 5 ≃ T.Component)
@@ -98,6 +140,123 @@ private lemma fiveFork_multiplicity_relations (e : Fin 5 ≃ T.Component)
   · rw [hm₁] at h₁
     linear_combination h₁
   · linear_combination h₀
+
+/-- The endpoint of a five-component fork has one of two weight ratios: the fibre relations on
+the path `0 - 1 - 2` leave only two of the five possible weight triples of the edge `0 - 1`. -/
+private lemma fiveFork_endpoint_cases (e : Fin 5 ≃ T.Component)
+    (hcard : Fintype.card T.Component = 5)
+    (hself : ∀ i, T.intersection (e i) (e i) = -(2 * (T.weight (e i) : ℤ)))
+    (h01 : 0 < T.intersection (e 0) (e 1)) (w : ℕ+)
+    (hw₂ : (T.weight (e 2) : ℤ) = w) (hw₁ : (T.weight (e 1) : ℤ) = w)
+    (hm₁ : (T.multiplicity (e 1) : ℤ) = T.multiplicity (e 2))
+    (hm₂ : (T.multiplicity (e 2) : ℤ) = 2 * T.multiplicity (e 3))
+    (he₁ : (T.multiplicity (e 0) : ℤ) * T.intersection (e 0) (e 1) =
+      T.multiplicity (e 2) * T.weight (e 2))
+    (he₀ : (T.multiplicity (e 1) : ℤ) * T.intersection (e 0) (e 1) =
+      2 * T.multiplicity (e 0) * T.weight (e 0)) :
+    ((T.weight (e 0) : ℤ) = 2 * w ∧ T.intersection (e 0) (e 1) = 2 * w ∧
+        (T.multiplicity (e 0) : ℤ) = T.multiplicity (e 3)) ∨
+      ((w : ℤ) = 2 * T.weight (e 0) ∧ T.intersection (e 0) (e 1) = w ∧
+        (T.multiplicity (e 0) : ℤ) = T.multiplicity (e 2)) := by
+  obtain ⟨v, hv⟩ := T.exists_weight_intersection_triple_mem (by omega)
+    (hself 0) (hself 1) h01
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hv
+  have hmpos : (0 : ℤ) < T.multiplicity (e 2) := by simp
+  have hvpos : (0 : ℤ) < v := by simp
+  rcases hv with ⟨hv₀, hv₁, hvₐ⟩ | ⟨hv₀, hv₁, hvₐ⟩ | ⟨hv₀, hv₁, hvₐ⟩ |
+    ⟨hv₀, hv₁, hvₐ⟩ | ⟨hv₀, hv₁, hvₐ⟩
+  · exfalso
+    nlinarith only [he₀, he₁, hm₁, hw₂, hw₁, hv₀, hv₁, hvₐ, hmpos, hvpos]
+  · right
+    refine ⟨by omega, by omega, ?_⟩
+    nlinarith only [he₁, hw₂, hw₁, hv₁, hvₐ, hvpos, hm₂]
+  · left
+    refine ⟨by omega, by omega, ?_⟩
+    nlinarith only [he₁, hw₂, hw₁, hv₁, hvₐ, hvpos, hm₂]
+  · exfalso
+    nlinarith only [he₀, he₁, hm₁, hw₂, hw₁, hv₀, hv₁, hvₐ, hmpos, hvpos]
+  · exfalso
+    nlinarith only [he₀, he₁, hm₁, hw₂, hw₁, hv₀, hv₁, hvₐ, hmpos, hvpos]
+
+/-- The first five-fork pattern, when the endpoint has twice the common weight. -/
+private lemma fiveFork_pattern_left (e : Fin 5 ≃ T.Component) (w m : ℕ+)
+    (hself : ∀ i, T.intersection (e i) (e i) = -(2 * (T.weight (e i) : ℤ)))
+    (ha : T.intersection (e 2) (e 1) = w) (hb : T.intersection (e 2) (e 3) = w)
+    (hc : T.intersection (e 2) (e 4) = w)
+    (hz02 : T.intersection (e 0) (e 2) = 0) (hz03 : T.intersection (e 0) (e 3) = 0)
+    (hz04 : T.intersection (e 0) (e 4) = 0) (hz13 : T.intersection (e 1) (e 3) = 0)
+    (hz14 : T.intersection (e 1) (e 4) = 0) (hz34 : T.intersection (e 3) (e 4) = 0)
+    (hw₁ : (T.weight (e 1) : ℤ) = w) (hw₂ : (T.weight (e 2) : ℤ) = w)
+    (hw₃ : (T.weight (e 3) : ℤ) = w) (hw₄ : (T.weight (e 4) : ℤ) = w)
+    (hm₁ : (T.multiplicity (e 1) : ℤ) = T.multiplicity (e 2))
+    (hm₂ : (T.multiplicity (e 2) : ℤ) = 2 * T.multiplicity (e 3))
+    (hm₄ : (T.multiplicity (e 4) : ℤ) = T.multiplicity (e 3))
+    (hm₃ : T.multiplicity (e 3) = m)
+    (hw₀ : (T.weight (e 0) : ℤ) = 2 * w) (ha₀ : T.intersection (e 0) (e 1) = 2 * w)
+    (hm₀ : (T.multiplicity (e 0) : ℤ) = T.multiplicity (e 3)) :
+    (∀ i, (T.weight (e i) : ℤ) = ![2 * (w : ℤ), w, w, w, w] i) ∧
+      (∀ i, (T.multiplicity (e i) : ℤ) = ![(m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+      (∀ i j, T.intersection (e i) (e j) =
+        !![-4 * (w : ℤ), 2 * w, 0, 0, 0;
+           2 * w, -2 * w, w, 0, 0;
+           0, w, -2 * w, w, w;
+           0, 0, w, -2 * w, 0;
+           0, 0, w, 0, -2 * w] i j) := by
+  subst hm₃
+  refine ⟨fun i ↦ ?_, fun i ↦ ?_, fun i j ↦ ?_⟩
+  · fin_cases i <;> first | exact hw₀ | exact hw₁ | exact hw₂ | exact hw₃ | exact hw₄
+  · fin_cases i
+    · exact hm₀
+    · exact hm₁.trans hm₂
+    · exact hm₂
+    · rfl
+    · exact hm₄
+  · fin_cases i <;> fin_cases j <;>
+      norm_num [hself, hw₁, hw₂, hw₃, hw₄] <;>
+      first | omega | rw [T.intersection_comm]; omega
+
+/-- The second five-fork pattern, when the common weight `w` is twice that of the endpoint. -/
+private lemma fiveFork_pattern_right (e : Fin 5 ≃ T.Component) (w u m : ℕ+)
+    (hself : ∀ i, T.intersection (e i) (e i) = -(2 * (T.weight (e i) : ℤ)))
+    (ha : T.intersection (e 2) (e 1) = w) (hb : T.intersection (e 2) (e 3) = w)
+    (hc : T.intersection (e 2) (e 4) = w)
+    (hz02 : T.intersection (e 0) (e 2) = 0) (hz03 : T.intersection (e 0) (e 3) = 0)
+    (hz04 : T.intersection (e 0) (e 4) = 0) (hz13 : T.intersection (e 1) (e 3) = 0)
+    (hz14 : T.intersection (e 1) (e 4) = 0) (hz34 : T.intersection (e 3) (e 4) = 0)
+    (hw₁ : (T.weight (e 1) : ℤ) = w) (hw₂ : (T.weight (e 2) : ℤ) = w)
+    (hw₃ : (T.weight (e 3) : ℤ) = w) (hw₄ : (T.weight (e 4) : ℤ) = w)
+    (hm₁ : (T.multiplicity (e 1) : ℤ) = T.multiplicity (e 2))
+    (hm₂ : (T.multiplicity (e 2) : ℤ) = 2 * T.multiplicity (e 3))
+    (hm₄ : (T.multiplicity (e 4) : ℤ) = T.multiplicity (e 3))
+    (hm₃ : T.multiplicity (e 3) = m)
+    (hw₀ : (w : ℤ) = 2 * u) (hu : T.weight (e 0) = u)
+    (ha₀ : T.intersection (e 0) (e 1) = w)
+    (hm₀ : (T.multiplicity (e 0) : ℤ) = T.multiplicity (e 2)) :
+    (∀ i, (T.weight (e i) : ℤ) = ![(u : ℤ), 2 * u, 2 * u, 2 * u, 2 * u] i) ∧
+      (∀ i, (T.multiplicity (e i) : ℤ) = ![2 * (m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+      (∀ i j, T.intersection (e i) (e j) =
+        !![-2 * (u : ℤ), 2 * u, 0, 0, 0;
+           2 * u, -4 * u, 2 * u, 0, 0;
+           0, 2 * u, -4 * u, 2 * u, 2 * u;
+           0, 0, 2 * u, -4 * u, 0;
+           0, 0, 2 * u, 0, -4 * u] i j) := by
+  subst hm₃ hu
+  refine ⟨fun i ↦ ?_, fun i ↦ ?_, fun i j ↦ ?_⟩
+  · fin_cases i
+    · rfl
+    · exact hw₁.trans hw₀
+    · exact hw₂.trans hw₀
+    · exact hw₃.trans hw₀
+    · exact hw₄.trans hw₀
+  · fin_cases i
+    · exact hm₀.trans hm₂
+    · exact hm₁.trans hm₂
+    · exact hm₂
+    · rfl
+    · exact hm₄
+  · fin_cases i <;> fin_cases j <;>
+      norm_num [hself, hw₁, hw₂, hw₃, hw₄] <;>
+      first | omega | rw [T.intersection_comm]; omega
 
 /-- **The five-component fork classification.** For a minimal genus-one numerical type,
 the fork `0 - 1 - 2` with leaves `3, 4` at `2` has exactly the numerical data of cases
@@ -154,69 +313,40 @@ theorem IsMinimal.exists_weight_multiplicity_intersection_eq_fiveFork
   obtain ⟨hm₂, hm₄, hm₁, he₁, he₀⟩ := fiveFork_multiplicity_relations e hself hw ha'
     (hb.trans hw₂.symm) (hc.trans hw₂.symm) hz02 hz03 hz04 hz13 hz14 hz34
   -- Of the five possible endpoint weight ratios, the fibre relations leave only two.
-  obtain ⟨v, hv⟩ := T.exists_weight_intersection_triple_mem (by omega)
-    (hself 0) (hself 1) h01
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hv
-  have hmpos : (0 : ℤ) < T.multiplicity (e 2) := by simp
-  have hvpos : (0 : ℤ) < v := by simp
-  have hcases :
-      ((T.weight (e 0) : ℤ) = 2 * w ∧ T.intersection (e 0) (e 1) = 2 * w ∧
-        (T.multiplicity (e 0) : ℤ) = T.multiplicity (e 3)) ∨
-      ((w : ℤ) = 2 * T.weight (e 0) ∧ T.intersection (e 0) (e 1) = w ∧
-        (T.multiplicity (e 0) : ℤ) = T.multiplicity (e 2)) := by
-    rcases hv with ⟨hv₀, hv₁, hvₐ⟩ | ⟨hv₀, hv₁, hvₐ⟩ | ⟨hv₀, hv₁, hvₐ⟩ |
-      ⟨hv₀, hv₁, hvₐ⟩ | ⟨hv₀, hv₁, hvₐ⟩
-    · exfalso
-      nlinarith only [he₀, he₁, hm₁, hw₂, hw₁, hv₀, hv₁, hvₐ, hmpos, hvpos]
-    · right
-      refine ⟨by omega, by omega, ?_⟩
-      nlinarith only [he₁, hw₂, hw₁, hv₁, hvₐ, hvpos, hm₂]
-    · left
-      refine ⟨by omega, by omega, ?_⟩
-      nlinarith only [he₁, hw₂, hw₁, hv₁, hvₐ, hvpos, hm₂]
-    · exfalso
-      nlinarith only [he₀, he₁, hm₁, hw₂, hw₁, hv₀, hv₁, hvₐ, hmpos, hvpos]
-    · exfalso
-      nlinarith only [he₀, he₁, hm₁, hw₂, hw₁, hv₀, hv₁, hvₐ, hmpos, hvpos]
-  -- Assemble the full numerical data in each case, retaining the given labels.
-  rcases hcases with ⟨hw₀, ha₀, hm₀⟩ | ⟨hw₀, ha₀, hm₀⟩
-  · refine ⟨w, T.multiplicity (e 3), Or.inl ⟨?_, ?_, ?_⟩⟩
-    · intro i
-      fin_cases i
-      · exact hw₀
-      · exact hw₁
-      · exact hw₂
-      · exact hw₃
-      · exact hw₄
-    · intro i
-      fin_cases i
-      · exact hm₀
-      · exact hm₁.trans hm₂
-      · exact hm₂
-      · rfl
-      · exact hm₄
-    · intro i j
-      fin_cases i <;> fin_cases j <;>
-        norm_num [hself, hw₁, hw₂, hw₃, hw₄] <;>
-        first | omega | rw [T.intersection_comm]; omega
-  · refine ⟨T.weight (e 0), T.multiplicity (e 3), Or.inr ⟨?_, ?_, ?_⟩⟩
-    · intro i
-      fin_cases i
-      · rfl
-      · exact hw₁.trans hw₀
-      · exact hw₂.trans hw₀
-      · exact hw₃.trans hw₀
-      · exact hw₄.trans hw₀
-    · intro i
-      fin_cases i
-      · exact hm₀.trans hm₂
-      · exact hm₁.trans hm₂
-      · exact hm₂
-      · rfl
-      · exact hm₄
-    · intro i j
-      fin_cases i <;> fin_cases j <;>
-        norm_num [hself, hw₁, hw₂, hw₃, hw₄] <;>
-        first | omega | rw [T.intersection_comm]; omega
+  rcases fiveFork_endpoint_cases e hcard hself h01 w hw₂ hw₁ hm₁ hm₂ he₁ he₀ with
+    ⟨hw₀, ha₀, hm₀⟩ | ⟨hw₀, ha₀, hm₀⟩
+  · exact ⟨w, T.multiplicity (e 3), Or.inl <| fiveFork_pattern_left e w _ hself ha hb hc
+      hz02 hz03 hz04 hz13 hz14 hz34 hw₁ hw₂ hw₃ hw₄ hm₁ hm₂ hm₄ rfl hw₀ ha₀ hm₀⟩
+  · exact ⟨T.weight (e 0), T.multiplicity (e 3), Or.inr <| fiveFork_pattern_right e w _ _
+      hself ha hb hc hz02 hz03 hz04 hz13 hz14 hz34 hw₁ hw₂ hw₃ hw₄ hm₁ hm₂ hm₄ rfl hw₀ rfl
+      ha₀ hm₀⟩
+
+/-- In the five-component fork shape, a component weight divides all weights with quotient at most
+four, and a component multiplicity divides all multiplicities with quotient at most six. -/
+lemma IsGenusOneFiveForkShape.exists_weight_and_multiplicity_dvd_and_le
+    (hshape : T.IsGenusOneFiveForkShape) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  rcases isGenusOneFiveForkShape_iff.mp hshape with
+    ⟨e, w, m, ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩⟩
+  · -- In the first five-fork vector, indices one and zero have the minimum weight and
+    -- multiplicity respectively. Each coefficient is one or two.
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+      e 1 0 (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · rw [hw i, hw 1]
+      fin_cases i <;> simp
+    · rw [hm i, hm 0]
+      fin_cases i <;> simp
+  · -- The second five-fork vector has its minima at indices zero and three.
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+      e 0 3 (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · rw [hw i, hw 0]
+      fin_cases i <;> simp
+    · rw [hm i, hm 3]
+      fin_cases i <;> simp
 
 end TauCeti.NumericalType

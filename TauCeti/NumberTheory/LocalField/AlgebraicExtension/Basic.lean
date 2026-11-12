@@ -148,7 +148,7 @@ theorem algebraicExtension_valuativeExtension :
     letI := algebraicExtensionValuativeRel K M
     ValuativeExtension K M := by
   let _ := algebraicExtensionValuativeRel K M
-  refine ⟨fun a b => ?_⟩
+  refine ⟨fun {a b} => ?_⟩
   rw [algebraicExtensionValuativeRel_vle_iff, algebraicExtensionNormedField_norm_algebraMap,
     algebraicExtensionNormedField_norm_algebraMap, NNRat.cast_le,
     normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff, (valuation K).vle_iff_le]
@@ -322,7 +322,21 @@ theorem _root_.AlgHom.valuativeExtension {N : Type*} [CommRing N] [ValuativeRel 
   rw [← ι.comp_algebraMap, Valuation.comap_comp] at hN
   have h := algebraicExtensionValuation_isEquiv hN
     (ValuativeRel.isEquiv ((valuation M).comap (algebraMap K M)) (valuation K))
-  exact ⟨fun a b ↦ (valuation N).vle_iff_le.trans ((h a b).trans (valuation M).vle_iff_le.symm)⟩
+  exact ⟨fun {a b} ↦ (valuation N).vle_iff_le.trans ((h a b).trans (valuation M).vle_iff_le.symm)⟩
+
+/-- **Valuative extensions in a tower.** Let `M` be an algebraic extension of a nonarchimedean
+local field `K`, and `N` a commutative ring that is an `M`-algebra and a `K`-algebra in a scalar
+tower. If the valuative relations on `M` and `N` both extend that of `K`, then the valuative
+relation of `N` extends that of `M`, for the ambient algebra structure.
+
+`AlgHom.valuativeExtension` states this for the algebra structure `ι.toAlgebra` of an algebra map
+`ι : M →ₐ[K] N`. `ValuativeExtension M N` only involves `algebraMap M N`, and for
+`ι = IsScalarTower.toAlgHom K M N` the `algebraMap` of `ι.toAlgebra` is `algebraMap M N` by
+definition, so the field transfers to the ambient `[Algebra M N]` without change. -/
+theorem _root_.ValuativeExtension.of_isScalarTower {N : Type*} [CommRing N] [ValuativeRel N]
+    [Algebra K N] [ValuativeExtension K N] [ValuativeRel M] [ValuativeExtension K M]
+    [Algebra M N] [IsScalarTower K M N] : ValuativeExtension M N :=
+  ⟨fun {_ _} ↦ (IsScalarTower.toAlgHom K M N).valuativeExtension.vle_iff_vle⟩
 
 end Uniqueness
 
@@ -477,7 +491,7 @@ instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerR
   have := ι.valuativeExtension
   have hmap : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) = algebraMap 𝒪[L] 𝒪[M] := by
     ext x
-    rw [TauCeti.coe_algebraMap_integerRing]
+    rw [Valuation.HasExtension.val_algebraMap]
     rfl
   have hlocal : IsLocalHom (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) :=
     hmap.symm ▸ (inferInstance : IsLocalHom (algebraMap 𝒪[L] 𝒪[M]))

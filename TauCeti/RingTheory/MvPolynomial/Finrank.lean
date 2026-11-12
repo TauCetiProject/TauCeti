@@ -8,16 +8,20 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
+public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
+import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
-# Dimension of homogeneous polynomials
+# Dimension of homogeneous and bounded-degree polynomials
 
 The monomial basis of a homogeneous component is indexed by exponent vectors of its degree.
 For two variables this gives dimension `w + 1`, used for the scalar-matrix trace on binary forms.
 Changing the coefficients along a ring homomorphism, `TauCeti.mapHomogeneousSubmodule`, is
 semilinear and sends this basis to the monomial basis over the new ring.
+Summing over the degrees, the polynomials of total degree at most `m` in `d` variables have
+dimension `(m + d choose d)`, the number of rows of an interpolation matrix built from them.
 -/
 
 public section
@@ -38,22 +42,6 @@ instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R]
   rw [homogeneousSubmodule_eq_finsupp_supported]
   exact Module.Free.of_basis (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})
 
-/-- The restricted-support basis vector is the monomial indexed by its support element. -/
-@[simp]
-theorem coe_basisRestrictSupport_apply {σ R : Type*} [CommSemiring R]
-    (s : Set (σ →₀ ℕ)) (m : s) :
-    ((basisRestrictSupport R s m : restrictSupport R s) : MvPolynomial σ R) =
-      monomial m.1 1 := by
-  classical
-  rw [← (basisRestrictSupport R s).repr_symm_single_one m]
-  -- Mathlib defines this basis through `AddMonoidAlgebra.supportedEquivFinsupp`.
-  -- Its first equivalence wraps `Finsupp.supportedEquivFinsupp` in `ofCoeff`,
-  -- so we expose that representation before simplifying the single basis vector.
-  change (((AddMonoidAlgebra.supportedEquivFinsupp (R := R) (S := R) s).symm
-    (Finsupp.single m (1 : R)) : restrictSupport R s) : MvPolynomial σ R) = monomial m.1 1
-  simp only [AddMonoidAlgebra.supportedEquivFinsupp, LinearEquiv.symm_trans_apply]
-  simp [AddMonoidAlgebra.ofCoeff_single, single_eq_monomial]
-
 /-- The monomial basis of a homogeneous component, indexed by exponent vectors of its degree. -/
 noncomputable def homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : ℕ) :
     Module.Basis {s : σ →₀ ℕ // s.degree = n} R (homogeneousSubmodule σ R n) :=
@@ -67,7 +55,7 @@ theorem coe_homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : ℕ)
     ((homogeneousMonomialBasis (R := R) n s : homogeneousSubmodule σ R n) :
       MvPolynomial σ R) = monomial s.1 1 := by
   simp only [homogeneousMonomialBasis, Module.Basis.map_apply]
-  exact coe_basisRestrictSupport_apply {d : σ →₀ ℕ | d.degree = n} s
+  exact basisRestrictSupport_apply_coe (s := {d : σ →₀ ℕ | d.degree = n}) s
 
 /-- The coordinate of a homogeneous polynomial in the monomial basis is its corresponding
 coefficient. -/
@@ -118,6 +106,12 @@ noncomputable def finsuppDegreeFinTwoEquiv (w : ℕ) :
     · simp; omega
   right_inv j := by ext; simp
 
+/-- The equivalence sends an exponent vector of degree `w` to its value at `0`. -/
+@[simp]
+theorem coe_finsuppDegreeFinTwoEquiv_apply (w : ℕ) (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
+    (finsuppDegreeFinTwoEquiv w s : ℕ) = s.1 0 :=
+  (rfl)
+
 @[simp]
 theorem coe_finsuppDegreeFinTwoEquiv_symm (w : ℕ) (j : Fin (w + 1)) :
     ((finsuppDegreeFinTwoEquiv w).symm j).1 =
@@ -152,6 +146,25 @@ theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
       rw [Nat.card_eq_fintype_card, Fintype.card_coe,
         Finset.card_finsuppAntidiag_nat_eq_multichoose]
       simp
+
+/-- The polynomials of total degree at most `m` in `d = card σ` variables have dimension
+`(m + d choose d)`. -/
+theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
+    [StrongRankCondition R] (m : ℕ) :
+    Module.finrank R (restrictTotalDegree σ R m) =
+      (m + Fintype.card σ).choose (Fintype.card σ) := by
+  classical
+  have hset : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} =
+      ↑((Finset.range (m + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·)) := by
+    ext s
+    simp [Finset.mem_finsuppAntidiag, Finsupp.sum_fintype]
+  rw [restrictTotalDegree, Module.finrank_eq_nat_card_basis (basisRestrictSupport R _), hset,
+    Nat.card_coe_set_eq, Set.ncard_coe_finset, Finset.card_biUnion]
+  · simp [Finset.card_finsuppAntidiag_nat_eq_multichoose, Nat.sum_range_multichoose]
+  · intro k _ l _ hkl
+    refine Finset.disjoint_left.2 fun s hk hl ↦ hkl ?_
+    rw [Finset.mem_finsuppAntidiag] at hk hl
+    exact hk.1.symm.trans hl.1
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
 theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]

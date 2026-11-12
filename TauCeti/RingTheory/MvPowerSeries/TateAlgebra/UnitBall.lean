@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
+public import TauCeti.Topology.Algebra.Valued.Integer
 public import TauCeti.RingTheory.Huber.Normed
+public import TauCeti.Analysis.Normed.Ring.UnitBall
+public import Mathlib.Algebra.MvPolynomial.Nilpotent
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 
 /-!
@@ -19,10 +23,22 @@ coefficients, and is identified isometrically with the ring `𝒪[K]⟨X⟩` of 
 `𝒪[K]`. Reducing coefficients modulo the maximal ideal of `𝒪[K]` sends a series in `T°` to a
 polynomial, because only finitely many of its coefficients have norm one. This gives a surjective
 ring homomorphism `T° → 𝓀[K][X]` whose kernel is `T°° = {f | ‖f‖ < 1}`, hence
-`T° ⧸ T°° ≃ 𝓀[K][X]`. The unit ball is also the subring of power-bounded elements of `T`.
+`T° ⧸ T°° ≃ 𝓀[K][X]`. The unit ball is also the subring of power-bounded elements of `T`, and
+`T°°` is the set of topologically nilpotent elements of `T`.
 
 Reduction is the basic tool for transferring statements about polynomials over the residue field
-to Tate algebras: a series has norm one exactly when its reduction is nonzero.
+to Tate algebras: a series has norm one exactly when its reduction is nonzero. Over a complete
+field it also detects units: the kernel `T°°` lies in the Jacobson radical of `T°`, so a series of
+`T°` is a unit exactly when its reduction is, that is, when its constant coefficient has norm one
+and all other coefficients have norm less than one. Units of `T°` are the units of `T` of norm
+one; a nonzero constant of norm less than one is a unit of `T` but not of `T°`.
+
+Reduction is natural. A norm-nonincreasing homomorphism `φ : K →+* L` of nonarchimedean fields
+maps `T°` into the Gauss unit ball of `L⟨X⟩`, and reducing the image of `f` is mapping the
+reduction of `f` along the induced homomorphism `𝓀[K] →+* 𝓀[L]` of residue fields. In finitely
+many variables and for complete `L`, evaluation at a point `x` with coordinates in `𝒪[L]` sends
+`T°` to `𝒪[L]`, and the residue of `f(x)` is the value of the reduction of `f` at the residue of
+`x`. In particular `‖f(x)‖ < 1` exactly when the reduction of `f` vanishes at the residue of `x`.
 
 ## Main definitions
 
@@ -40,12 +56,27 @@ to Tate algebras: a series has norm one exactly when its reduction is nonzero.
   when `‖f‖ < 1`.
 * `TauCeti.MvPowerSeries.restrictedReduction_surjective`: every polynomial over `𝓀[K]` is a
   reduction.
+* `TauCeti.MvPowerSeries.ker_restrictedReduction`: the kernel of reduction is the open-ball ideal
+  `TauCeti.unitBallIdeal T`.
+* `TauCeti.MvPowerSeries.restrictedReduction_restrictedMap`: reduction commutes with coefficient
+  maps of nonarchimedean fields.
+* `TauCeti.MvPowerSeries.residue_restrictedEval₂`: reduction commutes with evaluation at integral
+  points; `TauCeti.MvPowerSeries.norm_restrictedEval₂_lt_one_iff` is the resulting criterion for
+  a value of norm less than one.
+* `TauCeti.MvPowerSeries.isLocalHom_restrictedReduction`: over a complete field, a series whose
+  reduction is a unit is a unit of `T°`.
+* `TauCeti.MvPowerSeries.isUnit_iff_norm_constantCoeff_eq_one_and_norm_coeff_lt_one`: the
+  coefficient criterion for the units of `T°`.
+* `TauCeti.MvPowerSeries.not_isUnit_algebraMap_of_norm_lt_one`: a constant of norm less than
+  one is not a unit of `T°`, although a nonzero one is a unit of `T`.
 * `TauCeti.MvPowerSeries.powerBoundedSubring_eq_unitClosedBall`: the power-bounded elements of
   `T` form its Gauss unit ball.
+* `TauCeti.MvPowerSeries.isTopologicallyNilpotent_iff_norm_lt_one`: the topologically nilpotent
+  elements of `T` are the series of Gauss norm less than one.
 
 ## References
 
-* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §5.1.2.
+* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§5.1.2–5.1.3.
 -/
 
 public section
@@ -65,7 +96,7 @@ theorem mem_unitClosedBall_iff [NormOneClass R]
     {f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)} :
     f ∈ Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) ↔
       ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ 1 := by
-  simp [norm_le_iff zero_le_one]
+  simp [norm_le_iff]
 
 /-- **Coefficient criterion for the open Gauss unit ball.** A unit-radius restricted series has
 norm less than one exactly when all its coefficients do. -/
@@ -78,6 +109,17 @@ theorem norm_coeff_le_one [NormOneClass R]
     (f : Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1))) (t : σ →₀ ℕ) :
     ‖coeff t ((f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : MvPowerSeries σ R)‖ ≤ 1 :=
   mem_unitClosedBall_iff.mp f.2 t
+
+/-- A norm-nonincreasing coefficient map sends the Gauss unit ball into the Gauss unit ball. -/
+theorem restrictedMap_mem_unitClosedBall [NormOneClass R] {S : Type*} [NormedRing S]
+    [IsUltrametricDist S] [NormOneClass S] (φ : R →+* S) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖)
+    (f : Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1))) :
+    restrictedMap φ (C := 1) (fun a ↦ (hφ a).trans (one_mul ‖a‖).ge)
+        (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) ∈
+      Subring.unitClosedBall (IsRestricted.subring (R := S) (fun _ : σ ↦ 1)) :=
+  mem_unitClosedBall_iff.mpr fun t ↦ by
+    rw [coeff_restrictedMap]
+    exact (hφ _).trans (norm_coeff_le_one f t)
 
 end UnitBall
 
@@ -143,8 +185,8 @@ theorem coeff_restrictedIntegerEquiv_symm (f : T°) (t : σ →₀ ℕ) :
 /-- `restrictedIntegerEquiv` preserves the Gauss norm. -/
 @[simp]
 theorem norm_restrictedIntegerEquiv (f : Tint) : ‖(restrictedIntegerEquiv f : T)‖ = ‖f‖ := by
-  refine le_antisymm ((norm_le_iff (norm_nonneg f)).mpr fun t ↦ ?_)
-    ((norm_le_iff (norm_nonneg _)).mpr fun t ↦ ?_)
+  refine le_antisymm (norm_le_iff.mpr fun t ↦ ?_)
+    (norm_le_iff.mpr fun t ↦ ?_)
   · simpa using norm_coeff_mul_prod_le f t
   · simpa using norm_coeff_mul_prod_le (restrictedIntegerEquiv f : T) t
 
@@ -196,15 +238,22 @@ theorem coeff_restrictedReduction (f : T°) (t : σ →₀ ℕ) :
     MonoidHom.coe_mk, OneHom.coe_mk, coe_integerReduction, coeff_map]
   exact congrArg _ (Subtype.ext (by simp))
 
+/-- A coefficient of the reduction vanishes exactly when the corresponding coefficient of the
+series has norm less than one. -/
+theorem coeff_restrictedReduction_eq_zero_iff {f : T°} {t : σ →₀ ℕ} :
+    (restrictedReduction f).coeff t = 0 ↔ ‖coeff t ((f : T) : MvPowerSeries σ K)‖ < 1 := by
+  rw [coeff_restrictedReduction, residue_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff,
+    Valued.integer.isUnit_iff_norm_eq_one]
+  exact ⟨fun h ↦ (norm_coeff_le_one f t).lt_of_ne h, ne_of_lt⟩
+
 /-- The reduction of a series vanishes exactly when its Gauss norm is less than one: the kernel
 of `restrictedReduction` is the open unit ball `T°°`. -/
 theorem restrictedReduction_eq_zero_iff {f : T°} :
     restrictedReduction f = 0 ↔ ‖(f : T)‖ < 1 := by
   rw [norm_lt_one_iff, MvPolynomial.ext_iff]
-  refine forall_congr' fun t ↦ ?_
-  rw [coeff_restrictedReduction, AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply,
-    residue_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff, Valued.integer.isUnit_iff_norm_eq_one]
-  exact ⟨fun h ↦ (norm_coeff_le_one f t).lt_of_ne h, ne_of_lt⟩
+  exact forall_congr' fun t ↦ by
+    rw [AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply,
+      coeff_restrictedReduction_eq_zero_iff]
 
 /-- A series in the Gauss unit ball has norm one exactly when its reduction is nonzero. -/
 theorem restrictedReduction_ne_zero_iff {f : T°} :
@@ -216,6 +265,13 @@ theorem restrictedReduction_ne_zero_iff {f : T°} :
 theorem mem_ker_restrictedReduction {f : T°} :
     f ∈ RingHom.ker restrictedReduction ↔ ‖(f : T)‖ < 1 := by
   rw [RingHom.mem_ker, restrictedReduction_eq_zero_iff]
+
+/-- **The kernel of reduction is the open-ball ideal** `T°° = TauCeti.unitBallIdeal T` of the
+Gauss unit ball. -/
+theorem ker_restrictedReduction :
+    RingHom.ker (restrictedReduction (σ := σ) (K := K)) = unitBallIdeal T := by
+  ext f
+  rw [mem_ker_restrictedReduction, mem_unitBallIdeal]
 
 /-- The reduction of a polynomial with integral coefficients is its coefficientwise reduction. -/
 @[simp]
@@ -279,6 +335,148 @@ theorem restrictedReduction_X (i : σ) (h : (⟨X i, isRestricted_X _ i⟩ : T) 
 
 end Reduction
 
+section Functoriality
+
+variable {L : Type*} [NontriviallyNormedField L] [IsUltrametricDist L] (φ : K →+* L)
+  (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖)
+
+/-- **Reduction commutes with coefficient maps.** For a norm-nonincreasing homomorphism
+`φ : K →+* L` of nonarchimedean fields, reducing the coefficientwise image of a series of the
+Gauss unit ball is mapping its reduction along the induced homomorphism `𝓀[K] →+* 𝓀[L]` of
+residue fields. -/
+@[simp]
+theorem restrictedReduction_restrictedMap (f : T°)
+    (h : restrictedMap φ (C := 1) (fun a ↦ (hφ a).trans (one_mul ‖a‖).ge) (f : T) ∈
+      Subring.unitClosedBall (IsRestricted.subring (R := L) (fun _ : σ ↦ 1))) :
+    restrictedReduction ⟨_, h⟩ =
+      (restrictedReduction f).map (ResidueField.map (φ.integerRestrict hφ)) := by
+  refine MvPolynomial.ext _ _ fun t ↦ ?_
+  rw [MvPolynomial.coeff_map, coeff_restrictedReduction, coeff_restrictedReduction,
+    ResidueField.map_residue]
+  exact congrArg _ (Subtype.ext (by simp))
+
+end Functoriality
+
+section Eval
+
+variable {k : ℕ} {L : Type*} [NontriviallyNormedField L] [IsUltrametricDist L] [CompleteSpace L]
+  (φ : K →+* L) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : Fin k → 𝒪[L])
+
+local notation "Tₖ" => IsRestricted.subring (R := K) (fun _ : Fin k ↦ 1)
+local notation "Tₖ°" => Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin k ↦ 1))
+
+/-- A series of the Gauss unit ball takes integral values at integral points. -/
+theorem restrictedEval₂_mem_integer (f : Tₖ°) :
+    restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).2)
+      (f : Tₖ) ∈ 𝒪[L] :=
+  Valued.integer.mem_iff.2 ((norm_restrictedEval₂_le _ _ _ _ _).trans
+    (Subring.mem_unitClosedBall.mp f.2))
+
+/-- **Reduction commutes with evaluation at integral points.** Let `φ : K →+* L` be a
+norm-nonincreasing homomorphism into a complete nonarchimedean field and let `x` be a point with
+coordinates in `𝒪[L]`. For a series `f` of Gauss norm at most one, the residue of the value
+`f(x)` is the value of the reduction of `f` at the residue of `x`, with coefficients mapped along
+the induced homomorphism `𝓀[K] →+* 𝓀[L]` of residue fields. -/
+@[simp]
+theorem residue_restrictedEval₂ (f : Tₖ°)
+    (h : restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).2)
+      (f : Tₖ) ∈ 𝒪[L]) :
+    residue 𝒪[L] ⟨_, h⟩ = (restrictedReduction f).eval₂ (ResidueField.map (φ.integerRestrict hφ))
+      (fun i ↦ residue 𝒪[L] (x i)) := by
+  classical
+  -- Truncate `f` to the finitely many exponents where its reduction is nonzero; this gives a
+  -- polynomial `q` with integral coefficients whose image `P` in `T°` satisfies `‖f - P‖ < 1`.
+  let s := (restrictedReduction f).support
+  let q : MvPolynomial (Fin k) 𝒪[K] :=
+    truncFinset 𝒪[K] s (restrictedIntegerEquiv.symm f : MvPowerSeries (Fin k) 𝒪[K])
+  let P : Tₖ° := restrictedIntegerEquiv ⟨q, MvPolynomial.isRestricted _ q⟩
+  have hfP : ‖((f - P : Tₖ°) : Tₖ)‖ < 1 := by
+    refine norm_lt_one_iff.mpr fun t ↦ ?_
+    by_cases ht : t ∈ s
+    · simp [P, q, coeff_truncFinset_of_mem _ ht]
+    · simpa [P, q, coeff_truncFinset_eq_zero _ ht] using
+        coeff_restrictedReduction_eq_zero_iff.mp (MvPolynomial.notMem_support_iff.mp ht)
+  have hred : restrictedReduction f = q.map (residue 𝒪[K]) := by
+    rw [← restrictedReduction_restrictedIntegerEquiv q, ← sub_eq_zero, ← map_sub,
+      restrictedReduction_eq_zero_iff]
+    exact hfP
+  -- The value of `P` at `x` is the integral polynomial value `q(x)`.
+  have hP : restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).2)
+      (P : Tₖ) = ((MvPolynomial.eval₂ (φ.integerRestrict hφ) x q : 𝒪[L]) : L) := by
+    have : (P : Tₖ) = ⟨(q.map (𝒪[K]).subtype : MvPolynomial (Fin k) K),
+        MvPolynomial.isRestricted _ _⟩ :=
+      Subtype.ext <| MvPowerSeries.ext fun t ↦ by simp [P, MvPolynomial.coeff_map]
+    rw [this, restrictedEval₂_polynomial, MvPolynomial.eval₂_map, ← Subring.coe_subtype,
+      MvPolynomial.eval₂_comp_left]
+    congr 1
+    exact RingHom.ext fun a ↦ by simp
+  -- So `f(x)` and `q(x)` have the same residue, since `‖(f - P)(x)‖ ≤ ‖f - P‖ < 1`.
+  have hres : residue 𝒪[L] ⟨_, h⟩ =
+      residue 𝒪[L] (MvPolynomial.eval₂ (φ.integerRestrict hφ) x q) := by
+    refine Valued.integer.residue_eq_residue_iff_norm_sub_lt_one.mpr ?_
+    rw [← hP, ← map_sub, ← AddSubgroupClass.coe_sub]
+    exact (norm_restrictedEval₂_le _ _ _ _ _).trans_lt hfP
+  rw [hres, hred, MvPolynomial.eval₂_map, ResidueField.map_comp_residue,
+    MvPolynomial.eval₂_comp_left, Function.comp_def]
+
+/-- A series of the Gauss unit ball has a value of norm less than one at an integral point `x`
+exactly when its reduction vanishes at the residue of `x`. -/
+theorem norm_restrictedEval₂_lt_one_iff (f : Tₖ°) :
+    ‖restrictedEval₂ φ (fun i ↦ (x i : L)) hφ (fun i ↦ Valued.integer.mem_iff.1 (x i).2)
+      (f : Tₖ)‖ < 1 ↔ (restrictedReduction f).eval₂ (ResidueField.map (φ.integerRestrict hφ))
+        (fun i ↦ residue 𝒪[L] (x i)) = 0 := by
+  rw [← residue_restrictedEval₂ φ hφ x f (restrictedEval₂_mem_integer φ hφ x f),
+    Valued.integer.residue_eq_zero_iff_norm_lt_one]
+
+end Eval
+
+section Units
+
+/-- **Small constants are not units of `T°`.** A constant of norm less than one is not a unit of
+the Gauss unit ball `T°`. When it is nonzero it is nevertheless a unit of the Tate algebra `T`,
+as the image of a unit of `K` under `algebraMap`. -/
+theorem not_isUnit_algebraMap_of_norm_lt_one {a : K} (ha : ‖a‖ < 1) :
+    ¬IsUnit (⟨algebraMap K T a, Subring.mem_unitClosedBall.mpr
+      ((norm_algebraMap_isRestrictedSubring a).trans_le ha.le)⟩ : T°) := fun hu ↦ ha.ne <|
+  (norm_algebraMap_isRestrictedSubring a).symm.trans (isUnit_unitClosedBall_iff.mp hu).2
+
+variable [CompleteSpace K]
+
+/-- **Units lift along reduction.** Over a complete field, reduction `T° → 𝓀[K][X]` is a local
+homomorphism: a series of Gauss norm at most one whose reduction is a unit is a unit of `T°`.
+Together with `isUnit_map_iff`, a series of `T°` is a unit exactly when its reduction is a
+unit. -/
+instance isLocalHom_restrictedReduction :
+    IsLocalHom (restrictedReduction (σ := σ) (K := K)) := by
+  have hker :
+      IsLocalHom (Ideal.Quotient.mk (RingHom.ker (restrictedReduction (σ := σ) (K := K)))) :=
+    isLocalHom_of_le_jacobson (by
+      simpa only [Ideal.jacobson_bot] using
+        ker_restrictedReduction.le.trans (unitBallIdeal_le_jacobson_bot T))
+  have h : restrictedReduction (σ := σ) (K := K) =
+      (restrictedReductionQuotientEquiv (σ := σ) (K := K) : _ →+* _).comp
+        (Ideal.Quotient.mk (RingHom.ker (restrictedReduction (σ := σ) (K := K)))) :=
+    RingHom.ext fun f ↦ (restrictedReductionQuotientEquiv_mk f).symm
+  rw [h]
+  infer_instance
+
+/-- **The units of the Gauss unit ball.** Over a complete field, a series of Gauss norm at most
+one is a unit of `T°` exactly when its constant coefficient has norm one and every other
+coefficient has norm less than one, that is, when its reduction is a nonzero constant. Such a
+series is in particular a unit of `T` of norm one; conversely, by
+`TauCeti.isUnit_unitClosedBall_iff`, a unit of `T` lies in the units of `T°` only if it has
+norm one, so a nonzero constant of norm less than one is a unit of `T` but not of `T°`
+(`not_isUnit_algebraMap_of_norm_lt_one`). -/
+theorem isUnit_iff_norm_constantCoeff_eq_one_and_norm_coeff_lt_one {f : T°} :
+    IsUnit f ↔ ‖constantCoeff ((f : T) : MvPowerSeries σ K)‖ = 1 ∧
+      ∀ t ≠ 0, ‖coeff t ((f : T) : MvPowerSeries σ K)‖ < 1 := by
+  rw [← isUnit_map_iff restrictedReduction, MvPolynomial.isUnit_iff, isUnit_iff_ne_zero,
+    ← coeff_zero_eq_constantCoeff_apply, ne_eq, coeff_restrictedReduction_eq_zero_iff, not_lt,
+    (norm_coeff_le_one f 0).ge_iff_eq]
+  simp_rw [isNilpotent_iff_eq_zero, coeff_restrictedReduction_eq_zero_iff]
+
+end Units
+
 section PowerBounded
 
 /-- **The power-bounded subring of `K⟨X⟩` is its Gauss unit ball.** The Gauss norm is
@@ -291,6 +489,12 @@ theorem powerBoundedSubring_eq_unitClosedBall :
       (by rwa [norm_algebraMap_isRestrictedSubring])
   exact SetLike.coe_injective <| (hϖ.coe_powerBoundedSubring_eq_closedBall
     fun f n _ ↦ norm_pow f n).trans (Subring.coe_unitClosedBall T).symm
+
+/-- **The topologically nilpotent elements of `K⟨X⟩`** are the series of Gauss norm less than
+one, since the Gauss norm is multiplicative. Within the unit ball `T°` they form the kernel `T°°`
+of reduction (`mem_ker_restrictedReduction`). -/
+theorem isTopologicallyNilpotent_iff_norm_lt_one {f : T} : IsTopologicallyNilpotent f ↔ ‖f‖ < 1 :=
+  isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun f n _ ↦ norm_pow f n
 
 end PowerBounded
 

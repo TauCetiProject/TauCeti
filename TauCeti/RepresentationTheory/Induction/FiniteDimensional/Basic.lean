@@ -7,8 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RepresentationTheory.FiniteIndex
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Induction.Basic
+import TauCeti.RepresentationTheory.FiniteIndex
 
 /-!
 # Finite-dimensional induced representations
@@ -26,7 +28,8 @@ That functor is additive (`indFDRepMap_add`); the general fact it rests on, addi
 intertwiners along an arbitrary group homomorphism, is `Rep.indMap_add` of
 `TauCeti.RepresentationTheory.Induction.Basic`. Read through the functor, induction sends an
 isomorphism of representations to an isomorphism of the induced ones
-(`nonempty_iso_indFDRep`).
+(`nonempty_iso_indFDRep`). The induced map on native endomorphism algebras is
+`FDRep.indEndAlgHom`; it is injective for every finite-index subgroup.
 
 Over any commutative ring, the coset model also shows that induction from a finite-index subgroup
 preserves finiteness of the underlying module (`Rep.finite_ind`) and gives the cardinality formula
@@ -40,10 +43,6 @@ category retain a common universe because that category is indexed by one carrie
 corresponding character formula is in `TauCeti.RepresentationTheory.Induction.Character`.
 
 ## References
-
-This implements the first item of Layer 2, “Induction preserves finite-dimensionality, via an
-explicit coset model”, in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`.
 
 The coset-representative construction below — `rightCosetFactor` together with the two rewriting
 lemmas `rightCoset_mk_mul` and `rightCosetFactor_mul` that make it `S`-equivariant, and the proof
@@ -121,7 +120,7 @@ noncomputable def coindSubtypeEquivPi (A : Rep.{w} k S) :
         change A.ρ (rightCosetFactor (S := S) ((s : G) * g))
           (x (Quotient.mk'' ((s : G) * g))) =
             A.ρ s (A.ρ (rightCosetFactor (S := S) g) (x (Quotient.mk'' g)))
-        rw [rightCoset_mk_mul, rightCosetFactor_mul, ← Module.End.mul_apply, ← map_mul]⟩
+        rw [rightCoset_mk_mul, rightCosetFactor_mul, ← mul_apply_eq_comp, ← map_mul]⟩
   left_inv f := by
     ext g
     have h := f.2 (rightCosetFactor (S := S) g)
@@ -214,6 +213,25 @@ theorem indSubtypeEquivPi_apply [S.FiniteIndex] (A : Rep.{max w u} k S)
   rw [indSubtypeEquivPi]
   rfl
 
+/-- The coset model of induction sends the generator `⟦g ⊗ a⟧` to Mathlib's auxiliary function
+supported on the right coset of `g`, evaluated at the chosen representatives.
+
+Not a `simp` lemma: like `TauCeti.indToCoind_mk`, it exposes a decidability instance and Mathlib's
+auxiliary function, so it is kept for explicit rewriting. -/
+theorem indSubtypeEquivPi_mk [S.FiniteIndex] [DecidableRel (QuotientGroup.rightRel S)]
+    (A : Rep.{max w u} k S) (g : G) (a : A) (q : Quotient (QuotientGroup.rightRel S)) :
+    indSubtypeEquivPi A (Representation.IndV.mk S.subtype A.ρ g a) q =
+      _root_.Rep.indToCoindAux A g a q.out := by
+  obtain rfl : ‹DecidableRel (QuotientGroup.rightRel S)› = Classical.decRel _ :=
+    Subsingleton.elim _ _
+  let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
+  rw [indSubtypeEquivPi_apply]
+  -- Pass to the underlying linear map to use Mathlib's comparison-map equation.
+  change (((Rep.indCoindIso.{w, u, v} A).hom.hom.toLinearMap
+    (Representation.IndV.mk S.subtype A.ρ g a))).1 q.out = _
+  rw [_root_.Rep.indCoindIso_hom_hom_toLinearMap]
+  exact congrFun (TauCeti.indToCoind_mk g a) q.out
+
 /-- The inverse coset model of induction extends by `S`-equivariance and then transports back
 along `Rep.indCoindIso`.
 
@@ -292,21 +310,28 @@ noncomputable instance finiteDimensional_ind [S.FiniteIndex] (A : Rep.{max w u} 
   exact (indSubtypeEquivPi A).symm.finiteDimensional
 
 /-- The dimension of induction from a finite-index subgroup is the index times the original
-dimension.
+dimension. Both sides are `0` when `A` is infinite-dimensional.
 
 Not a `simp` lemma: `A` lives in the universe `max w u`, and when `simp` unifies the left-hand side
 with a goal it cannot recover `w` from that universe, so in a universe-polymorphic context the lemma
 fires only with its universes given, as `simp [finrank_ind.{u, v, w}]`. The left-hand side is still
 stated through `dsimp% only`, so that `simp [finrank_ind]` fires when the universes are concrete. -/
-theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) [FiniteDimensional k A] :
+theorem finrank_ind [S.FiniteIndex] (A : Rep.{max w u} k S) :
     (dsimp% only (Module.finrank k (Rep.ind S.subtype A))) = S.index * Module.finrank k A := by
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
   let := S.fintypeQuotientOfFiniteIndex
   let : Fintype (Quotient (QuotientGroup.rightRel S)) :=
     QuotientGroup.fintypeQuotientRightRel
   -- Transfer the computation to the explicit finite product supplied by the coset model.
-  rw [LinearEquiv.finrank_eq (indSubtypeEquivPi A), Module.finrank_pi_fintype]
-  simp [QuotientGroup.card_quotient_rightRel, Subgroup.index_eq_card]
+  rw [LinearEquiv.finrank_eq (indSubtypeEquivPi A)]
+  by_cases hA : FiniteDimensional k A
+  · rw [Module.finrank_pi_fintype]
+    simp [QuotientGroup.card_quotient_rightRel, Subgroup.index_eq_card]
+  · -- An infinite-dimensional factor makes the product infinite-dimensional, so both sides are `0`.
+    let q : Quotient (QuotientGroup.rightRel S) := Quotient.mk _ 1
+    have hpi : ¬FiniteDimensional k (Quotient (QuotientGroup.rightRel S) → A) := fun _ ↦
+      hA (.of_surjective (LinearMap.proj (R := k) (φ := fun _ ↦ A) q) (LinearMap.proj_surjective q))
+    rw [Module.finrank_of_not_finite hpi, Module.finrank_of_not_finite hA, mul_zero]
 
 end Dimension
 
@@ -433,8 +458,21 @@ theorem indFDRepMap_add {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgr
     Representation.IntertwiningMap.toLinearMap_apply, Representation.IntertwiningMap.coe_add,
     Pi.add_apply, map_add]
 
+/-- Induction of finite-dimensional intertwiners commutes with scalar multiplication. -/
+@[simp]
+theorem indFDRepMap_smul {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] {A B : FDRep k S} (r : k) (f : A ⟶ B) :
+    indFDRepMap (r • f) = r • indFDRepMap f := by
+  apply (forget₂ (FDRep k G) (Rep k G)).map_injective
+  apply Rep.hom_ext
+  ext x
+  simp only [Functor.map_smul, _root_.Rep.smul_hom, forget₂_map_indFDRepMap_apply,
+    _root_.Rep.indMap_smul, Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.smul_apply, map_smul]
+
 /-- Induction of intertwiners preserves identities. -/
-private theorem indFDRepMap_id {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+@[simp]
+theorem indFDRepMap_id {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] (A : FDRep k S) : indFDRepMap (𝟙 A) = 𝟙 (indFDRep A) := by
   let A' := (forget₂ (FDRep k S) (Rep k S)).obj A
   have hInd : Rep.indMap S.subtype (𝟙 A') = 𝟙 (Rep.ind S.subtype A') := by
@@ -446,7 +484,8 @@ private theorem indFDRepMap_id {k : Type u} {G : Type v} [Field k] [Group G] {S 
   simp [A', hInd]
 
 /-- Induction of intertwiners preserves composition. -/
-private theorem indFDRepMap_comp {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+@[simp]
+theorem indFDRepMap_comp {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] {A B C : FDRep k S} (f : A ⟶ B) (g : B ⟶ C) :
     indFDRepMap (f ≫ g) = indFDRepMap f ≫ indFDRepMap g := by
   let f' := (forget₂ (FDRep k S) (Rep k S)).map f
@@ -501,6 +540,67 @@ passed to the split Grothendieck group in
 instance indFDRepFunctor_additive {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
     [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Additive where
   map_add {_ _} f g := indFDRepMap_add f g
+
+/-- Induction from a finite-index subgroup is linear over the coefficient field. -/
+instance indFDRepFunctor_linear {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Linear k where
+  map_smul f r := indFDRepMap_smul r f
+
+/-- Induction from a finite-index subgroup is faithful on finite-dimensional intertwiners. -/
+theorem indFDRepMap_injective {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] {A B : FDRep k S} :
+    Function.Injective (indFDRepMap : (A ⟶ B) → _) := by
+  intro f g h
+  apply (forget₂ (FDRep k S) (Rep k S)).map_injective
+  apply _root_.Rep.indMap_injective (S := S)
+  apply Rep.hom_ext
+  refine Representation.IntertwiningMap.ext (LinearMap.ext fun x ↦ ?_)
+  have hx := congrArg (fun m : indFDRep A ⟶ indFDRep B ↦ indFDRepForgetEquiv B
+    (((forget₂ (FDRep k G) (Rep k G)).map m).hom ((indFDRepForgetEquiv A).symm x))) h
+  simpa only [forget₂_map_indFDRepMap_apply, Representation.Equiv.apply_symm_apply,
+    Representation.IntertwiningMap.toLinearMap_apply] using hx
+
+/-- Induction from a finite-index subgroup is a faithful functor on finite-dimensional
+representations, the functorial form of `indFDRepMap_injective`. -/
+instance indFDRepFunctor_faithful {k : Type u} {G : Type v} [Field k] [Group G] {S : Subgroup G}
+    [S.FiniteIndex] : (indFDRepFunctor (k := k) (S := S)).Faithful where
+  map_injective h := indFDRepMap_injective h
+
+end TauCeti
+
+namespace FDRep
+
+universe u v
+
+open CategoryTheory TauCeti
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] {H : Subgroup G}
+
+/-- The algebra homomorphism on endomorphisms given by induction from a finite-index subgroup.
+Multiplication on both native endomorphism algebras is reverse categorical composition. -/
+noncomputable def indEndAlgHom [H.FiniteIndex] (A : FDRep k H) :
+    CategoryTheory.End A →ₐ[k] CategoryTheory.End (indFDRep A) :=
+  indFDRepFunctor.mapEndAlgHom k A
+
+/-- The endomorphism algebra map acts by the native induction map on intertwiners. -/
+@[simp]
+theorem indEndAlgHom_asHom [H.FiniteIndex] (A : FDRep k H) (f : CategoryTheory.End A) :
+    (A.indEndAlgHom f).asHom = indFDRepMap f.asHom := by
+  -- The defining object and map fields of induction identify the functorial map with this model.
+  exact indFDRepFunctor.mapEndAlgHom_asHom k A f
+
+/-- Induction from a finite-index subgroup embeds the endomorphism algebra. -/
+theorem indEndAlgHom_injective [H.FiniteIndex] (A : FDRep k H) :
+    Function.Injective A.indEndAlgHom :=
+  indFDRepFunctor.mapEndAlgHom_injective k A
+
+end FDRep
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe u v
 
 /-- Under the forgetful functor to `Rep k G`, `indFDRepFunctor` is naturally isomorphic to
 Mathlib's induction functor, componentwise by `indFDRepForgetIso`. -/

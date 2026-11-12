@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Group.Finsupp
 public import Mathlib.Algebra.Group.Support
 public import Mathlib.Algebra.Module.Basic
@@ -16,6 +17,7 @@ public import Mathlib.Data.Finsupp.SMulWithZero
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Finite.Lemmas
+public import TauCeti.Algebra.Order.Hom.Basic
 
 /-!
 # Novikov series
@@ -54,6 +56,8 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
 * `TauCeti.NovikovSeries.bddBelow_image_support` and
   `TauCeti.NovikovSeries.exists_isLeast_image_support`: the periods of the support are bounded
   below, and a nonzero series attains a least period on its support.
+* `TauCeti.NovikovSeries.finite_support_of_bddAbove_image`: a Novikov series whose periods are
+  bounded above on its support has finite support.
 * `TauCeti.NovikovSeries.isLeast_order`: the order of a nonzero series is the least period of its
   support.
 * `TauCeti.NovikovSeries.min_order_le_order_add`: the order of a nonzero sum is at least the
@@ -126,6 +130,13 @@ theorem forall_finite_lt_iff_forall_finite_le (f : H → R) :
 theorem finite_le (a : NovikovSeries R H N) (C : ℝ) :
     {h | a.coeff h ≠ 0 ∧ N h ≤ C}.Finite :=
   (forall_finite_lt_iff_forall_finite_le a.coeff).1 a.finite_lt C
+
+/-- If the periods are bounded above on the support of a Novikov series, for instance if they
+vanish, the series has finite support: a single period cutoff lies above all of its exponents. -/
+theorem finite_support_of_bddAbove_image {a : NovikovSeries R H N}
+    (h : BddAbove (N '' a.support)) : a.support.Finite := by
+  obtain ⟨C, hC⟩ := h
+  exact (a.finite_le C).subset fun h hh => ⟨hh, hC ⟨h, hh, rfl⟩⟩
 
 /-- The periods of the support of a Novikov series are bounded below. -/
 theorem bddBelow_image_support (a : NovikovSeries R H N) : BddBelow (N '' a.support) := by
@@ -380,6 +391,17 @@ theorem coeffAddMonoidHom_apply [AddMonoid R] (a : NovikovSeries R H N) :
     coeffAddMonoidHom a = a.coeff := by
   rfl
 
+/-- Novikov series inherit the absence of additive torsion from their coefficients. -/
+instance [AddMonoid R] [IsAddTorsionFree R] : IsAddTorsionFree (NovikovSeries R H N) :=
+  Function.Injective.isAddTorsionFree coeffAddMonoidHom coeff_injective
+
+/-- A coefficient of a finite sum of Novikov series is the sum of the coefficients. -/
+@[simp]
+theorem coeff_sum [AddCommMonoid R] {ι : Type*} (s : Finset ι) (f : ι → NovikovSeries R H N)
+    (h : H) : (∑ i ∈ s, f i).coeff h = ∑ i ∈ s, (f i).coeff h := by
+  have hs := congrFun (map_sum (coeffAddMonoidHom (R := R) (N := N)) f s) h
+  simpa only [coeffAddMonoidHom_apply, Finset.sum_apply] using hs
+
 instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S (NovikovSeries R H N) :=
   (funext (coeffAddMonoidHom_apply (R := R) (N := N)) ▸ coeff_injective).module S coeffAddMonoidHom
     fun _ _ => by simp
@@ -484,6 +506,13 @@ theorem single_eq_zero_iff {h : H} {r : R} : (single h r : NovikovSeries R H N) 
 instance [Nontrivial R] : Nontrivial (NovikovSeries R H N) := by
   obtain ⟨r, hr⟩ := exists_ne (0 : R)
   exact ⟨⟨single 0 r, 0, single_eq_zero_iff.not.2 hr⟩⟩
+
+/-- Over a trivial exponent group every Novikov series is the constant monomial of its
+coefficient at `0`. -/
+@[simp]
+theorem single_zero_coeff_zero [Subsingleton H] (a : NovikovSeries R H N) :
+    single 0 (a.coeff 0) = a :=
+  ext fun h => by rw [Subsingleton.elim h 0, coeff_single_same]
 
 end Zero
 
@@ -686,12 +715,7 @@ theorem ofFinsupp_surjective_iff [AddMonoid R] [Nontrivial R] :
     Surjective (ofFinsupp (R := R) (N := N)) ↔ N = 0 := by
   refine ⟨fun hsurj => ?_, fun hN a => ?_⟩
   · by_contra hN
-    obtain ⟨h, hh⟩ : ∃ h, 0 < N h := by
-      obtain ⟨g, hg⟩ := DFunLike.ne_iff.1 hN
-      simp only [AddMonoidHom.zero_apply] at hg
-      rcases hg.lt_or_gt with hg | hg
-      · exact ⟨-g, by simpa using hg⟩
-      · exact ⟨g, hg⟩
+    obtain ⟨h, hh⟩ := N.exists_pos_of_ne_zero hN
     obtain ⟨r, hr⟩ := exists_ne (0 : R)
     exact infinite_support_geometric hh hr
       (mem_range_ofFinsupp_iff.1 (hsurj (geometric N hh r)))

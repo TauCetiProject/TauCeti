@@ -19,12 +19,13 @@ root datum `TauCeti.DynkinType.e6SimplyConnectedRootDatum`. The twenty-seven wei
 in the fundamental-weight basis `Fin 6 → ℤ`. The first weight is `ϖ₁`, and the table is closed under
 the six Bourbaki-numbered simple reflections through explicit permutations of `Fin 27`.
 
-The reflection equation is the key interface for the future 27-dimensional minuscule module: a
-simple root operator can move a coordinate basis vector only when the corresponding weight pairs
-to `1` or `-1`. The table records that every such pairing lies in `{-1, 0, 1}`, identifies the table
-with the full Weyl orbit, and proves that its weights span the complete character lattice. The last
-property is what lets the represented weight torus of an admissible minuscule lattice be a closed
-immersion, rather than seeing only the index-three root lattice of the adjoint representation.
+The reflection equation is the key interface for the 27-dimensional minuscule representation
+`TauCeti.E6Minuscule.serreRepresentation`: a simple root operator can move a coordinate basis
+vector only when the corresponding weight pairs to `1` or `-1`. The table records that every such
+pairing lies in `{-1, 0, 1}`, identifies the table with the full Weyl orbit, and proves that its
+weights span the complete character lattice. The last property is what lets the represented weight
+torus of an admissible minuscule lattice be a closed immersion, rather than seeing only the
+index-three root lattice of the adjoint representation.
 
 The table is *not* stable under the pinned diagram symmetry `TauCeti.graphPermE6`, which exchanges
 `ϖ₁` and `ϖ₆` and so carries the weights of `V(ϖ₁)` to those of `V(ϖ₆) = V(ϖ₁)ˣ`, their negatives.
@@ -36,10 +37,15 @@ a symmetry of its numbered data only when its weight family is equivariant, the 
 `TauCeti.UniversalEnvelopingAlgebra.kostantToralNumberedSymmetryIso`, which the doubled family
 meets and the minuscule family alone does not.
 
+Three times the inverse Cartan matrix defines an integral quadratic form on the weight lattice.
+Every weight with coordinates in `[-1, 1]` and quadratic value `4` under this form is one of the
+fifty-four doubled weights; this is the finite input identifying the shortest dual vectors of the
+`E₆` root lattice.
+
 No representation or group scheme is constructed here. This is the pinned weight-diagram input
-for the type-`E₆` full-weight Chevalley--Demazure carrier in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the CFSG statement roadmap,
-the doubled family being what its graph-twisted family `²E₆(q)` needs where `E₆(q)` does not.
+for the type-`E₆` full-weight Chevalley--Demazure carriers `TauCeti.E6Minuscule.groupScheme` and
+`TauCeti.E6DoubledMinuscule.groupScheme`, the doubled family being what the graph-twisted family
+`²E₆(q)` needs where `E₆(q)` does not.
 
 ## Main declarations
 
@@ -60,6 +66,10 @@ the doubled family being what its graph-twisted family `²E₆(q)` needs where `
   `TauCeti.DynkinType.span_range_e6DoubledMinusculeWeight_eq_top` and
   `TauCeti.DynkinType.e6DoubledMinusculeWeight_e6DoubledMinusculeGraphPerm`, its equivariance for
   the diagram symmetry.
+* `TauCeti.DynkinType.e6ThriceInverse`: the integral thrice-inverse Cartan matrix, with
+  `TauCeti.DynkinType.cartanMatrix_E6_mul_e6ThriceInverse` its product with the Cartan matrix.
+* `TauCeti.DynkinType.mem_range_e6DoubledMinusculeWeight_of_bounded_of_quadratic_eq_four`: weights
+  with coordinates in `[-1, 1]` and quadratic value `4` are doubled minuscule weights.
 
 ## References
 
@@ -86,7 +96,7 @@ open Set
 Coordinates are pairings with the six Bourbaki-numbered simple coroots. The ordering begins at
 `ϖ₁ = (1, 0, 0, 0, 0, 0)` and then lists weights reached successively by simple reflections; no
 mathematical structure depends on the ordering. -/
-def e6MinusculeWeight : Fin 27 → Fin 6 → ℤ := ![
+@[expose] def e6MinusculeWeight : Fin 27 → Fin 6 → ℤ := ![
   ![1, 0, 0, 0, 0, 0], ![-1, 0, 1, 0, 0, 0], ![0, 0, -1, 1, 0, 0],
   ![0, 1, 0, -1, 1, 0], ![0, -1, 0, 0, 1, 0], ![0, 1, 0, 0, -1, 1],
   ![0, -1, 0, 1, -1, 1], ![0, 1, 0, 0, 0, -1], ![0, 0, 1, -1, 0, 1],
@@ -112,43 +122,61 @@ theorem e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (a : Fin 27) (i 
       e6MinusculeWeight a i = 1 := by
   fin_cases a <;> fin_cases i <;> decide
 
+/-- For each node `i`, the first index `a` of the weight table with `e6MinusculeWeight a i = -1`,
+an explicit witness for `exists_e6MinusculeWeight_apply_eq_neg_one`. By
+`e6MinusculeWeight_reflection`, the `i`-th simple reflection adds the `i`-th simple root to this
+weight, so `e6MinusculeNegOneIndex i` and `e6MinusculeReflection i (e6MinusculeNegOneIndex i)` are
+the two ends of an edge of the minuscule weight graph labelled by the `i`-th simple root. -/
+def e6MinusculeNegOneIndex : Fin 6 → Fin 27 := ![1, 4, 2, 3, 5, 7]
+
+/-- The weight indexed by `e6MinusculeNegOneIndex i` pairs to `-1` with the `i`-th simple coroot. -/
+@[simp]
+theorem e6MinusculeWeight_e6MinusculeNegOneIndex (i : Fin 6) :
+    e6MinusculeWeight (e6MinusculeNegOneIndex i) i = -1 := by
+  decide +kernel +revert
+
 /-- Every simple-coroot coordinate takes the value `-1` on some weight of the type-`E₆`
 minuscule representation. Equivalently, every positive simple-root operator has a nonzero step
 on the minuscule weight graph. -/
 theorem exists_e6MinusculeWeight_apply_eq_neg_one (i : Fin 6) :
-    ∃ a : Fin 27, e6MinusculeWeight a i = -1 := by
-  fin_cases i <;> decide +kernel
+    ∃ a : Fin 27, e6MinusculeWeight a i = -1 :=
+  ⟨e6MinusculeNegOneIndex i, e6MinusculeWeight_e6MinusculeNegOneIndex i⟩
+
+/-- At distinct nodes `i`, `j`, some minuscule weight has coordinates `0`, `-1` respectively. At
+adjacent nodes, raising first at `j` and then at `i` gives a nonzero height-two root operator. -/
+theorem exists_e6MinusculeWeight_apply_eq_zero_and_eq_neg_one {i j : Fin 6} (hij : i ≠ j) :
+    ∃ b : Fin 27, e6MinusculeWeight b i = 0 ∧ e6MinusculeWeight b j = -1 := by
+  revert i j
+  decide +kernel
 
 /-! ## Simple reflections -/
 
-private def e6MinusculeReflectionIndex : Fin 6 → Fin 27 → Fin 27 := ![
-  ![1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 12, 11, 10, 15, 14, 13, 17, 16, 19, 18, 21, 20, 22, 23,
-    24, 25, 26],
-  ![0, 1, 2, 4, 3, 6, 5, 9, 8, 7, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 18, 19, 23, 22,
-    24, 25, 26],
-  ![0, 2, 1, 3, 4, 5, 6, 7, 10, 9, 8, 13, 12, 11, 16, 15, 14, 17, 18, 22, 20, 23, 19, 21,
-    24, 25, 26],
-  ![0, 1, 3, 2, 4, 5, 8, 7, 6, 11, 10, 9, 12, 13, 14, 15, 18, 19, 16, 17, 20, 21, 22, 24,
-    23, 25, 26],
-  ![0, 1, 2, 5, 6, 3, 4, 7, 8, 9, 10, 14, 12, 16, 11, 17, 13, 15, 18, 19, 20, 21, 22, 23,
-    25, 24, 26],
-  ![0, 1, 2, 3, 4, 7, 9, 5, 11, 6, 13, 8, 15, 10, 14, 12, 16, 17, 18, 19, 20, 21, 22, 23,
-    24, 26, 25]]
-
-private theorem e6MinusculeReflectionIndex_involutive (i : Fin 6) :
-    Function.Involutive (e6MinusculeReflectionIndex i) := by
-  fin_cases i <;> intro a <;> fin_cases a <;> decide
-
 /-- **The permutation of the twenty-seven minuscule weights induced by the `i`-th simple
 reflection.** -/
-def e6MinusculeReflection (i : Fin 6) : Equiv.Perm (Fin 27) :=
-  (e6MinusculeReflectionIndex_involutive i).toPerm
+@[expose] def e6MinusculeReflection (i : Fin 6) : Equiv.Perm (Fin 27) :=
+  let reflectionIndex : Fin 6 → Fin 27 → Fin 27 := ![
+    ![1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 12, 11, 10, 15, 14, 13, 17, 16, 19, 18, 21, 20, 22, 23,
+      24, 25, 26],
+    ![0, 1, 2, 4, 3, 6, 5, 9, 8, 7, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 18, 19, 23, 22,
+      24, 25, 26],
+    ![0, 2, 1, 3, 4, 5, 6, 7, 10, 9, 8, 13, 12, 11, 16, 15, 14, 17, 18, 22, 20, 23, 19, 21,
+      24, 25, 26],
+    ![0, 1, 3, 2, 4, 5, 8, 7, 6, 11, 10, 9, 12, 13, 14, 15, 18, 19, 16, 17, 20, 21, 22, 24,
+      23, 25, 26],
+    ![0, 1, 2, 5, 6, 3, 4, 7, 8, 9, 10, 14, 12, 16, 11, 17, 13, 15, 18, 19, 20, 21, 22, 23,
+      25, 24, 26],
+    ![0, 1, 2, 3, 4, 7, 9, 5, 11, 6, 13, 8, 15, 10, 14, 12, 16, 17, 18, 19, 20, 21, 22, 23,
+      24, 26, 25]]
+  Function.Involutive.toPerm (reflectionIndex i) (by
+    intro a
+    fin_cases i <;> fin_cases a <;> decide)
 
 /-- Applying the same simple reflection twice fixes every index in the weight table. -/
 @[simp]
 theorem e6MinusculeReflection_apply_apply (i : Fin 6) (a : Fin 27) :
-    e6MinusculeReflection i (e6MinusculeReflection i a) = a :=
-  e6MinusculeReflectionIndex_involutive i a
+    e6MinusculeReflection i (e6MinusculeReflection i a) = a := by
+  revert i a
+  decide +kernel
 
 private theorem e6MinusculeWeight_reflection_table (i : Fin 6) (a : Fin 27) :
     e6MinusculeWeight (e6MinusculeReflection i a) =
@@ -439,6 +467,16 @@ theorem neg_e6DoubledMinusculeWeight (x : Fin 27 ⊕ Fin 27) :
     -e6DoubledMinusculeWeight x = e6DoubledMinusculeWeight (Equiv.sumComm _ _ x) := by
   cases x <;> simp
 
+/-- Every pairing of a doubled weight with a simple coroot is `-1`, `0`, or `1`: both summands
+are minuscule. -/
+theorem e6DoubledMinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (x : Fin 27 ⊕ Fin 27)
+    (i : Fin 6) :
+    e6DoubledMinusculeWeight x i = -1 ∨ e6DoubledMinusculeWeight x i = 0 ∨
+      e6DoubledMinusculeWeight x i = 1 := by
+  rcases x with a | a <;>
+    rcases e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;>
+    simp [h]
+
 /-- **The fifty-four weights of `V(ϖ₁) ⊕ V(ϖ₆)` are pairwise distinct.** No minuscule weight is
 the negative of another, all twenty-seven of them lying in one nontrivial coset of the root
 lattice. -/
@@ -503,5 +541,46 @@ theorem e6DoubledMinusculeWeight_e6DoubledMinusculeGraphPerm (x : Fin 27 ⊕ Fin
     e6DoubledMinusculeWeight (e6DoubledMinusculeGraphPerm x) i =
       e6DoubledMinusculeWeight x (graphPermE6 i) := by
   cases x <;> simp [e6MinusculeWeight_e6MinusculeGraphDualPerm_apply]
+
+/-! ## The weight-lattice quadratic form -/
+
+/-- Three times the inverse of the type-`E₆` Cartan matrix in Bourbaki node order (Plate V).
+Its rows are the simple-root coordinates of `3ϖ₁, …, 3ϖ₆`, so its integral entries allow finite
+checks of the weight-lattice quadratic form. -/
+def e6ThriceInverse : Matrix (Fin 6) (Fin 6) ℤ := !![
+  4, 3, 5, 6, 4, 2;
+  3, 6, 6, 9, 6, 3;
+  5, 6, 10, 12, 8, 4;
+  6, 9, 12, 18, 12, 6;
+  4, 6, 8, 12, 10, 5;
+  2, 3, 4, 6, 5, 4]
+
+/-- The E₆ Cartan matrix times its integral thrice-inverse is three times the identity. -/
+theorem cartanMatrix_E6_mul_e6ThriceInverse : CartanMatrix.E 6 * e6ThriceInverse = 3 := by
+  rw [CartanMatrix.E_six_eq]
+  decide
+
+private theorem bounded_weights_exhaustion : ∀ w : Fin 6 → Fin 3,
+    (∑ i, (∑ j, e6ThriceInverse i j * ((w j : ℤ) - 1)) * ((w i : ℤ) - 1)) = 4 →
+      ∃ x, e6DoubledMinusculeWeight x = fun j ↦ (w j : ℤ) - 1 := by
+  unfold e6ThriceInverse
+  simp only [Fin.forall_fin_succ_pi, Fin.forall_fin_zero_pi]
+  decide +kernel
+
+/-- An integral weight with simple-coroot coordinates in `[-1, 1]` and quadratic value `4`
+under three times the inverse Cartan matrix is one of the fifty-four doubled minuscule weights,
+that is, a minuscule weight or the negative of one. -/
+theorem mem_range_e6DoubledMinusculeWeight_of_bounded_of_quadratic_eq_four (w : Fin 6 → ℤ)
+    (hw : ∀ i, -1 ≤ w i ∧ w i ≤ 1)
+    (hn : (∑ i, (∑ j, e6ThriceInverse i j * w j) * w i) = 4) :
+    w ∈ range e6DoubledMinusculeWeight := by
+  let v : Fin 6 → Fin 3 := fun i ↦ ⟨(w i + 1).toNat, by have := hw i; omega⟩
+  have hv : (fun i ↦ (v i : ℤ) - 1) = w := by
+    funext i
+    have := hw i
+    simp only [v]
+    omega
+  obtain ⟨x, hx⟩ := bounded_weights_exhaustion v (by simpa only [← hv] using hn)
+  exact ⟨x, hx.trans hv⟩
 
 end TauCeti.DynkinType

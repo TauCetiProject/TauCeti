@@ -45,6 +45,8 @@ defined, it agrees with Mathlib's multipliers.
   `MeasureTheory.Lp.fourierMultiplierCLM_toTemperedDistribution_eq`: for a bounded symbol of
   temperate growth, `T_m` agrees with Mathlib's multipliers on Schwartz functions and, as a
   tempered distribution, on every `f ∈ L²`.
+* `SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul`: for any bounded symbol `m`, a
+  Schwartz function `g` with `𝓕 g = m • 𝓕 f` is `T_m f` in `L²`.
 * `SchwartzMap.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
   convolution with the Schwartz kernel `𝓕⁻ σ`, that is `T_σ f x = ∫ 𝓕⁻ σ (x - y) • f y` for
   almost every `x`. On Schwartz functions this is `SchwartzMap.fourierMultiplierCLM_eq_convolution`.
@@ -137,6 +139,12 @@ theorem fourierMultiplierCLM_add :
   ext1 f
   simp [fourierMultiplierCLM_apply, Lp.smul_add]
 
+/-- The multiplier of a finite sum of symbols is the sum of the multipliers. -/
+theorem fourierMultiplierCLM_sum {ι : Type*} (s : Finset ι)
+    (m : ι → Lp ℂ ∞ (volume : Measure E)) :
+    fourierMultiplierCLM F (∑ i ∈ s, m i) = ∑ i ∈ s, fourierMultiplierCLM F (m i) :=
+  map_sum (AddMonoidHom.mk' (fourierMultiplierCLM F) fourierMultiplierCLM_add) m s
+
 theorem fourierMultiplierCLM_smul (c : ℂ) :
     fourierMultiplierCLM F (c • m) = c • fourierMultiplierCLM F m := by
   ext1 f
@@ -182,6 +190,17 @@ theorem adjoint_fourierMultiplierCLM :
     Lp.coeFn_star m] with x h₁ h₂ h₃
   simp [h₁, h₂, h₃, inner_smul_left, inner_smul_right]
 
+/-- The pairing of `g` with the multiplier `T_m f`, computed on the Fourier side:
+`⟪g, T_m f⟫ = ∫ m ξ ⟪𝓕 g ξ, 𝓕 f ξ⟫ dξ`. -/
+theorem inner_fourierMultiplierCLM_apply (g : Lp F 2 (volume : Measure E)) :
+    inner ℂ g (fourierMultiplierCLM F m f) =
+      ∫ ξ, m ξ * inner ℂ ((𝓕 g : Lp F 2 (volume : Measure E)) ξ)
+        ((𝓕 f : Lp F 2 (volume : Measure E)) ξ) := by
+  rw [← inner_fourier_eq, fourier_fourierMultiplierCLM, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_lpSMul (r := 2) m (𝓕 f)] with ξ h
+  rw [h, Pi.smul_apply', inner_smul_right]
+
 /-! ### Comparison with multipliers on Schwartz functions and tempered distributions -/
 
 variable {g : E → ℂ}
@@ -201,6 +220,20 @@ theorem _root_.SchwartzMap.toLp_fourierMultiplierCLM_eq (hg : g.HasTemperateGrow
     simp [h₁, h₂, h₃, h₄, SchwartzMap.smulLeftCLM_apply_apply hg]
   rw [fourierMultiplierCLM_apply, this, SchwartzMap.toLp_fourierInv_eq,
     SchwartzMap.fourierMultiplierCLM_apply]
+
+/-- A Schwartz function `g` whose Fourier transform is `m • 𝓕 f` is, in `L²`, the multiplier with
+symbol `m` applied to `f`. Here `m` need not have temperate growth: any bounded symbol works, so
+this also covers symbols that are discontinuous at the origin. -/
+theorem _root_.SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul {f g : 𝓢(E, F)}
+    {m' : E → ℂ} (hm : m =ᵐ[volume] m') (h : ∀ ξ, 𝓕 g ξ = m' ξ • 𝓕 f ξ) :
+    g.toLp 2 = fourierMultiplierCLM F m (f.toLp 2) := by
+  refine (fourierInv_fourier_eq (F := Lp F 2 (volume : Measure E)) _).symm.trans ?_
+  rw [fourierMultiplierCLM_apply, SchwartzMap.toLp_fourier_eq, SchwartzMap.toLp_fourier_eq]
+  congr 1
+  apply Lp.ext
+  filter_upwards [(𝓕 g).coeFn_toLp 2, coeFn_lpSMul (r := 2) m ((𝓕 f).toLp 2), hm,
+    (𝓕 f).coeFn_toLp 2] with ξ h₁ h₂ h₃ h₄
+  rw [h₁, h₂, Pi.smul_apply', h₃, h₄, h]
 
 /-- For a bounded symbol `g` of temperate growth, the `L²` multiplier agrees with the multiplier
 `TemperedDistribution.fourierMultiplierCLM F g` on tempered distributions: for every `f ∈ L²`,
@@ -297,9 +330,9 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
     rw [Lp.enorm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable g)]
     exact ae_le_eLpNormEssSup
   -- Dominated convergence on the Fourier side, with dominating function `‖𝓕 f‖`.
-  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp) (by simp)
-    (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
-    (Lp.memLp (𝓕 f)) (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp)
+    (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _) (Lp.memLp (𝓕 f))
+    (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
   · filter_upwards [coeFn_lpSMul (r := 2) (m (s n)) (𝓕 f), coeFn_lpSMul (r := 2) m₀ (𝓕 f),
       hmb (m (s n)), hmb m₀] with ξ h₁ h₂ h₃ h₄
     rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', ← sub_smul, enorm_smul, ENNReal.coe_add,

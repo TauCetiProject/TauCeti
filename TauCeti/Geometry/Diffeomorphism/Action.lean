@@ -31,6 +31,13 @@ each diffeomorphism acts by a homeomorphism.
 * `Diffeomorph.applyContinuousConstSMul`: each diffeomorphism acts continuously.
 * `Diffeomorph.applySubgroupContinuousConstSMul`: subgroups inherit continuity in the
   point.
+
+## Main statements
+
+* `Diffeomorph.isFixedPt_zpow_iff_minimalPeriod_dvd`: a point is fixed by `f ^ k` exactly when
+  its minimal period under `f` divides `k`.
+* `Diffeomorph.exists_zpow_apply_eq_iff`: the orbit of a periodic point under the integer powers
+  of `f` consists of its iterates below the minimal period.
 -/
 
 public section
@@ -62,6 +69,32 @@ theorem toPermHom_eq_toPerm :
   ext f x
   simp only [MulAction.toPermHom_apply, MulAction.toPerm_apply, smul_def, toPerm_apply,
     coe_toEquiv]
+
+/-- A point `x` is a fixed point of the power `f ^ k` of a self-diffeomorphism exactly when the
+minimal period of `x` under `f` divides `k`. -/
+theorem isFixedPt_zpow_iff_minimalPeriod_dvd (f : M ≃ₘ^n⟮I, I⟯ M) (x : M) (k : ℤ) :
+    Function.IsFixedPt (f ^ k) x ↔ (Function.minimalPeriod f x : ℤ) ∣ k := by
+  simpa [Function.IsFixedPt] using MulAction.zpow_smul_eq_iff_minimalPeriod_dvd (a := f) (b := x)
+    (n := k)
+
+/-- For a periodic point `x` of a self-diffeomorphism `f`, the points `(f ^ k) x` with `k ∈ ℤ` are
+the iterates `f^[j] x` with `j` below the least period of `x`. -/
+theorem exists_zpow_apply_eq_iff {f : M ≃ₘ^n⟮I, I⟯ M} {x : M} (hx : x ∈ Function.periodicPts f)
+    {y : M} : (∃ k : ℤ, (f ^ k) x = y) ↔ ∃ j < Function.minimalPeriod f x, f^[j] x = y := by
+  have hm := Function.minimalPeriod_pos_of_mem_periodicPts hx
+  have hiter (j : ℕ) : (f ^ (j : ℤ)) x = f^[j] x := by rw [zpow_natCast, coe_pow]
+  constructor
+  · rintro ⟨k, rfl⟩
+    -- Reduce the exponent modulo the least period.
+    have hk := MulAction.zpow_smul_mod_minimalPeriod f x k
+    simp only [smul_def] at hk
+    have hnn : 0 ≤ k % (Function.minimalPeriod f x : ℤ) := Int.emod_nonneg _ (by omega)
+    have hlt : k % (Function.minimalPeriod f x : ℤ) < Function.minimalPeriod f x :=
+      Int.emod_lt_of_pos _ (by omega)
+    refine ⟨(k % (Function.minimalPeriod f x : ℤ)).toNat, by omega, ?_⟩
+    rw [← hiter, Int.toNat_of_nonneg hnn, hk]
+  · rintro ⟨j, -, rfl⟩
+    exact ⟨j, hiter j⟩
 
 /-- The tautological action of `M ≃ₘ^n⟮I, I⟯ M` on `M` is faithful. -/
 instance applyFaithfulSMul : FaithfulSMul (M ≃ₘ^n⟮I, I⟯ M) M :=

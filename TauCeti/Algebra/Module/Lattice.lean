@@ -9,8 +9,13 @@ public import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Algebra.Module.Lattice
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 import Mathlib.Algebra.Module.LocalizedModule.Int
+import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import Mathlib.RingTheory.Localization.Finiteness
+import Mathlib.RingTheory.Localization.Submodule
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
 # Full submodule lattices
@@ -18,9 +23,9 @@ import Mathlib.Algebra.Module.LocalizedModule.Int
 This file provides generic results about full submodules over fraction fields. It relates bases and
 ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
 between full submodules to rational linear equivalences of their ambient spaces, and proves that
-surjective linear maps preserve full lattices over commutative-ring algebras. Finally, a free
-full lattice over an integral domain rationalizes to its ambient vector space over the fraction
-field.
+surjective linear maps preserve full lattices over commutative-ring algebras, as do finite
+products. Finally, a free full lattice over an integral domain rationalizes to its ambient vector
+space over the fraction field.
 
 ## Main declarations
 
@@ -29,24 +34,37 @@ field.
 * `Module.Basis.toAddSubgroup_eq_closure_range_extendOfIsLattice`: the additive
   closure of an extended lattice basis is the lattice's underlying additive subgroup.
 * `TauCeti.Submodule.IsLattice.relIndex_ne_zero`: a full `ℤ`-lattice has finite index in every
-  full `ℤ`-lattice containing it.
+  full `ℤ`-lattice.
+* `TauCeti.Submodule.IsLattice.relIndex_span_eq_abs_det_mul`: the indices of a full `ℤ`-lattice
+  in the `ℤ`-spans of two `ℚ`-bases differ by the determinant of the change of basis.
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
+* `Submodule.isLattice_span`: the span of a finite set spanning the ambient module is a full
+  lattice.
+* `Module.Finite.of_isLattice`: a module containing a full lattice is finite.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
+* `Submodule.IsLattice.pi`: the product of a finite family of full lattices is a full lattice.
 * `LinearEquiv.extendOfIsLattice`: extension of an `R`-linear equivalence between
   full submodules to their ambient `K`-vector spaces.
 * `Submodule.isBaseChange_subtype`: the inclusion of a free full lattice
   submodule into its ambient vector space over the fraction field is a base change.
+* `LinearMap.det_eq_algebraMap_det_of_isLattice`: an endomorphism of the ambient space which
+  restricts to an endomorphism of a free full lattice has the determinant of that restriction.
 * `Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
   of a free full lattice submodule to its ambient vector space.
-* `Submodule.IsLattice.isLocalizedModule_subtype`: the inclusion of a free full lattice
-  submodule is a localization at the nonzero divisors.
-* `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient
-  vector lies in a free full lattice submodule.
+* `Submodule.IsLattice.isLocalizedModule_subtype`: the inclusion of a submodule spanning the
+  ambient space over the fraction field, such as a full lattice, is a localization at the nonzero
+  divisors.
+* `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient vector
+  lies in such a submodule.
+* `Submodule.exists_ne_zero_smul_mem_baseChange`: the same holds for every element of a scalar
+  extension and the base change of such a submodule.
 * `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
-  finitely generated submodule into a free full lattice submodule.
-* `TauCeti.TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
+  finitely generated submodule into a submodule spanning the ambient space over `K`.
+* `Submodule.IsLattice.exists_maximalIdeal_pow_smul_le`: over a discrete valuation ring, a power
+  of the maximal ideal multiplies a finitely generated submodule into a full lattice.
+* `TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
   unit-tensor lattice returns the scalar extension one started from.
 
 ## References
@@ -87,16 +105,18 @@ theorem _root_.Module.Basis.toAddSubgroup_eq_closure_range_extendOfIsLattice
   rw [AddSubgroup.toIntSubmodule_closure, Module.Basis.span_range_extendOfIsLattice,
     Submodule.toIntSubmodule_toAddSubgroup, Submodule.restrictScalars_self]
 
-/-- The `R`-finrank of a free full lattice in `V` equals the `K`-finrank of the ambient space. -/
-theorem _root_.Submodule.finrank_eq_finrank
-    (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
-    Module.finrank R N = Module.finrank K V := by
-  -- `R` embeds in the field `K`, so it is nontrivial, and a nontrivial commutative ring satisfies
-  -- the strong rank condition that comparing the two bases needs.
-  have : Nontrivial R := (algebraMap R K).domain_nontrivial
-  let b := Module.Free.chooseBasis R N
-  exact congr_arg Cardinal.toNat
-    (b.mk_eq_rank''.symm.trans (b.extendOfIsLattice K).mk_eq_rank'')
+end
+
+section
+
+variable {R A V : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+
+/-- A module containing a full lattice is finite: the generators of the lattice span it. -/
+theorem _root_.Module.Finite.of_isLattice (M : Submodule R V) [M.IsLattice A] :
+    Module.Finite A V := by
+  obtain ⟨s, hs⟩ := Submodule.IsLattice.fg (A := A) (M := M)
+  exact ⟨⟨s, by rw [← Submodule.span_span_of_tower R, hs, Submodule.IsLattice.span_eq_top]⟩⟩
 
 end
 
@@ -110,20 +130,43 @@ theorem _root_.Submodule.toAddSubgroup_submoduleOf {R V : Type*} [Ring R] [AddCo
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 
-/-- A full `ℤ`-submodule contained in another full `ℤ`-submodule has finite index in it. -/
+/-- A full `ℤ`-submodule has finite index in every full `ℤ`-submodule: its index is that of its
+intersection with it. -/
 theorem Submodule.IsLattice.relIndex_ne_zero {N M : Submodule ℤ V} [N.IsLattice ℚ]
-    [M.IsLattice ℚ] (hle : N ≤ M) : N.toAddSubgroup.relIndex M.toAddSubgroup ≠ 0 := by
+    [M.IsLattice ℚ] : N.toAddSubgroup.relIndex M.toAddSubgroup ≠ 0 := by
   classical
-  let bM := Module.Free.chooseBasis ℤ M
-  let eM := bM.extendOfIsLattice ℚ
+  -- needed for the `IsLattice.inf` instance on `N ⊓ M`
+  have := Module.Finite.of_isLattice (R := ℤ) (A := ℚ) N
+  have key {P : Submodule ℤ V} [P.IsLattice ℚ] (hle : P ≤ M) :
+      P.toAddSubgroup.relIndex M.toAddSubgroup ≠ 0 := by
+    let bM := Module.Free.chooseBasis ℤ M
+    let eM := bM.extendOfIsLattice ℚ
+    let bP := (Module.Free.chooseBasis ℤ P).reindex
+      (((Module.Free.chooseBasis ℤ P).extendOfIsLattice ℚ).indexEquiv eM)
+    have hidx := AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hle)
+      (bP.extendOfIsLattice ℚ) eM bP.toAddSubgroup_eq_closure_range_extendOfIsLattice
+      bM.toAddSubgroup_eq_closure_range_extendOfIsLattice
+    intro h
+    rw [h, Nat.cast_zero, eq_comm, abs_eq_zero] at hidx
+    exact (eM.isUnit_det _).ne_zero hidx
+  rw [← AddSubgroup.inf_relIndex_right]
+  exact key (P := N ⊓ M) inf_le_right
+
+/-- **Indices of a common full sublattice differ by a determinant.** If a full `ℤ`-submodule `N`
+lies in the `ℤ`-spans of two `ℚ`-bases `b` and `c`, then its index in the span of `b` is
+`|b.det c|` times its index in the span of `c`. -/
+theorem Submodule.IsLattice.relIndex_span_eq_abs_det_mul {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {N : Submodule ℤ V} [N.IsLattice ℚ] (b c : Basis ι ℚ V)
+    (hb : N ≤ Submodule.span ℤ (Set.range b)) (hc : N ≤ Submodule.span ℤ (Set.range c)) :
+    (N.toAddSubgroup.relIndex (Submodule.span ℤ (Set.range b)).toAddSubgroup : ℚ) =
+      |b.det c| * N.toAddSubgroup.relIndex (Submodule.span ℤ (Set.range c)).toAddSubgroup := by
   let bN := (Module.Free.chooseBasis ℤ N).reindex
-    (((Module.Free.chooseBasis ℤ N).extendOfIsLattice ℚ).indexEquiv eM)
-  have hidx := AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hle)
-    (bN.extendOfIsLattice ℚ) eM bN.toAddSubgroup_eq_closure_range_extendOfIsLattice
-    bM.toAddSubgroup_eq_closure_range_extendOfIsLattice
-  intro h
-  rw [h, Nat.cast_zero, eq_comm, abs_eq_zero] at hidx
-  exact (eM.isUnit_det _).ne_zero hidx
+    (((Module.Free.chooseBasis ℤ N).extendOfIsLattice ℚ).indexEquiv b)
+  have hN := bN.toAddSubgroup_eq_closure_range_extendOfIsLattice
+  rw [AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hb) _ b hN
+      (Submodule.span_int_eq_addSubgroupClosure _),
+    AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hc) _ c hN
+      (Submodule.span_int_eq_addSubgroupClosure _), ← abs_mul, Basis.det_mul_det]
 
 end
 
@@ -197,14 +240,16 @@ namespace Submodule
 section Rationalization
 
 variable {R : Type u} {K : Type v} {V' : Type w}
-variable [CommRing R] [IsDomain R]
+variable [CommRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
 
-/-- The inclusion of a free full lattice submodule over an integral domain into its ambient vector
-space over the fraction field exhibits that space as base change from `R` to `K`. -/
+/-- The inclusion of a free full lattice submodule into its ambient vector space over the fraction
+field exhibits that space as base change from `R` to `K`. (`R` is a domain anyway, embedding in
+the field `K`, so no domain hypothesis is needed.) -/
 theorem isBaseChange_subtype (S : Submodule R V') [Module.Free R S] [S.IsLattice K] :
     IsBaseChange K S.subtype := by
+  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
   have : Module.IsTorsionFree R K :=
     Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective R K)
   let b := Module.Free.chooseBasis R S
@@ -240,6 +285,20 @@ theorem rationalizationEquiv_symm_coe (S : Submodule R V') [Module.Free R S] [S.
     (x : S) : (rationalizationEquiv S).symm (x : V') = 1 ⊗ₜ[R] x :=
   (isBaseChange_subtype S).equiv_symm_apply x
 
+/-- A `K`-linear endomorphism of the ambient space which restricts to an endomorphism `g` of a
+free full lattice `S` has the determinant of `g`, read in `K`. -/
+theorem _root_.LinearMap.det_eq_algebraMap_det_of_isLattice {S : Submodule R V'}
+    [Module.Free R S] [S.IsLattice K] (f : V' →ₗ[K] V') (g : S →ₗ[R] S)
+    (h : ∀ x : S, f x = g x) : LinearMap.det f = algebraMap R K (LinearMap.det g) := by
+  -- Rationalization identifies `f` with the base change of `g`.
+  have := IsDomain.of_faithfulSMul R K
+  have hconj : f = (rationalizationEquiv S).toLinearMap ∘ₗ g.baseChange K ∘ₗ
+      (rationalizationEquiv S).symm.toLinearMap := by
+    rw [← LinearMap.comp_assoc, LinearEquiv.eq_comp_toLinearMap_symm]
+    ext x
+    simp [h]
+  rw [hconj, LinearMap.det_conj, LinearMap.det_baseChange]
+
 end Rationalization
 
 section Map
@@ -261,9 +320,75 @@ theorem isLattice_map (S : Submodule R V) [S.IsLattice A] (f : V →ₗ[A] W)
 
 end Map
 
+section Pi
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)] [∀ i, Module R (V i)]
+  [∀ i, Module A (V i)] [∀ i, IsScalarTower R A (V i)]
+
+/-- The families all of whose values lie in full lattices form a full lattice of the product. -/
+instance IsLattice.pi (M : ∀ i, Submodule R (V i)) [∀ i, (M i).IsLattice A] :
+    (Submodule.pi Set.univ M).IsLattice A where
+  fg := Submodule.fg_pi fun _ ↦ _root_.Submodule.IsLattice.fg
+  span_eq_top := by
+    classical
+    cases nonempty_fintype ι
+    rw [eq_top_iff]
+    intro x _
+    rw [← Finset.univ_sum_single x]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    have hx : x i ∈ Submodule.span A (M i : Set (V i)) := by
+      rw [_root_.Submodule.IsLattice.span_eq_top]
+      exact Submodule.mem_top
+    have hmap : Submodule.map (LinearMap.single A V i) (Submodule.span A (M i : Set (V i))) ≤
+        Submodule.span A (Submodule.pi Set.univ M : Set (∀ i, V i)) := by
+      rw [Submodule.map_span, Submodule.span_le]
+      rintro _ ⟨v, hv, rfl⟩
+      exact Submodule.subset_span (Submodule.le_comap_single_pi M hv)
+    exact hmap (Submodule.mem_map_of_mem hx)
+
+end Pi
+
+section Span
+
+variable {R A V : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+
+/-- The `R`-span of a finite set spanning `V` over `A` is a full lattice. In particular every
+finite-dimensional vector space contains a lattice, the span of a basis. -/
+theorem isLattice_span {s : Set V} (hs : s.Finite) (hspan : span A s = ⊤) :
+    (span R s).IsLattice A where
+  fg := ⟨hs.toFinset, by simp⟩
+  span_eq_top := by rw [span_span_of_tower, hspan]
+
+end Span
+
+section Squeeze
+
+variable {V : Type*} [AddCommGroup V] [Module ℚ V]
+
+open scoped Pointwise in
+/-- A submodule `M` of `V` squeezed between `D⁻¹ • N` and `D • N` for a nonzero integer `D` is a
+full lattice when `N` is. -/
+theorem IsLattice.of_nsmul_mem_of_nsmul_mem {N M : Submodule ℤ V} [N.IsLattice ℚ]
+    {D : ℕ} (hD0 : D ≠ 0) (hNM : ∀ v ∈ N, D • v ∈ M) (hMN : ∀ v ∈ M, D • v ∈ N) :
+    M.IsLattice ℚ := by
+  have hinj : Function.Injective (DistribSMul.toLinearMap ℤ V (D : ℤ)) := fun x y h ↦ by
+    simp only [DistribSMul.toLinearMap_apply, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ] at h
+    exact smul_right_injective V (Nat.cast_ne_zero.mpr hD0) h
+  have hfg : M.FG := fg_of_fg_map_injective _ hinj
+    (FG.of_le_of_isNoetherian (T := N) (map_le_iff_le_comap.mpr fun v hv ↦ by
+      simpa using hMN v hv))
+  let a : ℚˣ := Units.mk0 (D : ℚ) (Nat.cast_ne_zero.mpr hD0)
+  refine IsLattice.of_le_of_isLattice_of_fg ℚ (M := a • N) (fun x hx ↦ ?_) hfg
+  obtain ⟨v, hv, rfl⟩ := mem_smul_pointwise_iff_exists _ _ _ |>.mp hx
+  simpa [a, Units.smul_def, Nat.cast_smul_eq_nsmul] using hNM v hv
+
+end Squeeze
+
 end Submodule
 
-namespace TauCeti.TensorProduct
+namespace TensorProduct
 
 variable {R : Type u} {K : Type v} {M : Type w}
 
@@ -289,7 +414,7 @@ instance isLattice_range_mk_one [AddCommMonoid M] [Module R M] [Module.Finite R 
 end CommRing
 
 variable [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
-variable [AddCommGroup M] [Module R M] [Module.Free R M] [IsDomain R] [Module.Finite R M]
+variable [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
 
 /-- Rationalizing the unit-tensor lattice recovers the scalar extension it sits in: base-changing
 the unit-tensor equivalence and then rationalizing is the identity. -/
@@ -311,7 +436,7 @@ theorem unitTmulEquiv_baseChange_trans_rationalizationEquiv :
       LinearEquiv.refl K (K ⊗[R] M) :=
   LinearEquiv.ext rationalizationEquiv_baseChange_unitTmulEquiv
 
-end TauCeti.TensorProduct
+end TensorProduct
 
 namespace Submodule.IsLattice
 
@@ -323,37 +448,96 @@ variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
 
 variable (K) in
-/-- The inclusion of a free full lattice submodule localizes it at the nonzero divisors of `R`. -/
-theorem isLocalizedModule_subtype (S : Submodule R V') [Module.Free R S] [S.IsLattice K] :
-    IsLocalizedModule (nonZeroDivisors R) S.subtype :=
-  (isLocalizedModule_iff_isBaseChange (nonZeroDivisors R) K _).mpr
-    (Submodule.isBaseChange_subtype S)
-
-variable (K) in
-/-- Some nonzero multiple of every ambient vector lies in a free full lattice submodule. -/
-theorem exists_ne_zero_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLattice K]
+omit [IsDomain R] in
+/-- Some nonzero multiple of every ambient vector lies in a submodule spanning the ambient space
+over the fraction field `K`, in particular in a full lattice submodule. -/
+theorem exists_ne_zero_smul_mem (S : Submodule R V') (hS : Submodule.span K (S : Set V') = ⊤)
     (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
-  have hS := isLocalizedModule_subtype K S
-  obtain ⟨⟨x, r⟩, hr⟩ := hS.surj v
-  refine ⟨r, nonZeroDivisors.coe_ne_zero r, ?_⟩
-  rw [Submonoid.smul_def] at hr
-  rw [hr]
-  exact x.2
+  have := IsDomain.of_faithfulSMul R K
+  have hv : v ∈ Submodule.span K (S : Set V') := by
+    rw [hS]
+    trivial
+  obtain ⟨r, hr⟩ := multiple_mem_span_of_mem_localization_span (nonZeroDivisors R) K
+    (S : Set V') v hv
+  rw [Submodule.span_eq] at hr
+  exact ⟨r, nonZeroDivisors.coe_ne_zero r, hr⟩
 
 variable (K) in
-/-- A single nonzero scalar multiplies a whole finitely generated submodule into a free full
-lattice submodule. -/
-theorem exists_ne_zero_forall_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLattice K]
-    {N : Submodule R V'} (hN : N.FG) : ∃ r : R, r ≠ 0 ∧ ∀ v ∈ N, r • v ∈ S := by
-  obtain ⟨t, rfl⟩ := hN
-  have := isLocalizedModule_subtype K S
-  obtain ⟨b, hb⟩ := IsLocalizedModule.exist_integer_multiples_of_finset (nonZeroDivisors R)
-    S.subtype t
-  refine ⟨b, nonZeroDivisors.coe_ne_zero b, fun v hv ↦ ?_⟩
-  induction hv using Submodule.span_induction with
-  | mem x hx => simpa only [IsLocalizedModule.IsInteger, Submodule.range_subtype] using hb x hx
-  | zero => simp
-  | add x y _ _ hx hy => simpa only [smul_add] using add_mem hx hy
-  | smul a x _ hx => simpa only [smul_comm _ a x] using S.smul_mem a hx
+/-- Every element of a scalar extension `T ⊗[R] V'` has a nonzero multiple in the base change of a
+submodule spanning `V'` over the fraction field `K`. -/
+theorem _root_.Submodule.exists_ne_zero_smul_mem_baseChange {T : Type*} [CommSemiring T]
+    [Algebra R T] (S : Submodule R V') (hS : Submodule.span K (S : Set V') = ⊤) (z : T ⊗[R] V') :
+    ∃ r : R, r ≠ 0 ∧ r • z ∈ S.baseChange T := by
+  induction z using TensorProduct.inductionOn with
+  | tmul t x =>
+    obtain ⟨r, hr, hrx⟩ := exists_ne_zero_smul_mem K S hS x
+    refine ⟨r, hr, ?_⟩
+    rw [← TensorProduct.tmul_smul]
+    exact Submodule.tmul_mem_baseChange_of_mem t hrx
+  | add z₁ z₂ h₁ h₂ =>
+    obtain ⟨r₁, hr₁, h₁⟩ := h₁
+    obtain ⟨r₂, hr₂, h₂⟩ := h₂
+    refine ⟨r₂ * r₁, mul_ne_zero hr₂ hr₁, ?_⟩
+    rw [smul_add, mul_smul, mul_comm, mul_smul]
+    exact add_mem ((S.baseChange T).smul_of_tower_mem r₂ h₁)
+      ((S.baseChange T).smul_of_tower_mem r₁ h₂)
+
+variable (K) in
+omit [IsDomain R] in
+/-- The inclusion of a submodule spanning the ambient space over the fraction field `K`, in
+particular of a full lattice submodule, localizes it at the nonzero divisors of `R`. -/
+theorem isLocalizedModule_subtype (S : Submodule R V') (hS : Submodule.span K (S : Set V') = ⊤) :
+    IsLocalizedModule (nonZeroDivisors R) S.subtype := by
+  have := IsDomain.of_faithfulSMul R K
+  have := isLocalizedModule_id (nonZeroDivisors R) V' K
+  refine ⟨IsLocalizedModule.map_units (LinearMap.id : V' →ₗ[R] V'), ?_, ?_⟩
+  · intro v
+    obtain ⟨r, hr, hv⟩ := exists_ne_zero_smul_mem K S hS v
+    exact ⟨⟨⟨r • v, hv⟩, ⟨r, mem_nonZeroDivisors_of_ne_zero hr⟩⟩, rfl⟩
+  · intro x y h
+    exact ⟨1, by simpa using Subtype.ext h⟩
+
+variable (K) in
+omit [IsDomain R] in
+/-- The `R`-finrank of a submodule spanning the ambient space over the fraction field `K`, in
+particular of a full lattice, equals the `K`-finrank of the ambient space. -/
+theorem _root_.Submodule.finrank_eq_finrank (N : Submodule R V')
+    (hN : Submodule.span K (N : Set V') = ⊤) :
+    Module.finrank R N = Module.finrank K V' := by
+  have := IsDomain.of_faithfulSMul R K
+  have := isLocalizedModule_subtype K N hN
+  rw [IsFractionRing.finrank_right_eq (R := R) (S := K) (N := V'),
+    IsLocalizedModule.finrank_eq (nonZeroDivisors R) N.subtype le_rfl]
+
+variable (K) in
+omit [IsDomain R] in
+/-- **Clearing denominators.** A single nonzero scalar multiplies a finitely generated submodule
+into a submodule spanning the ambient space over `K`, such as a full lattice. -/
+theorem exists_ne_zero_forall_smul_mem (S : Submodule R V')
+    (hS : Submodule.span K (S : Set V') = ⊤) {M : Submodule R V'} (hM : M.FG) :
+    ∃ r : R, r ≠ 0 ∧ ∀ x ∈ M, r • x ∈ S := by
+  have := IsDomain.of_faithfulSMul R K
+  obtain ⟨r, hr, h⟩ := hM.exists_smul_mem_of_le_span (F := K) (nonZeroDivisors R) (M := S)
+    (by rw [hS]; exact fun _ _ ↦ Submodule.mem_top)
+  exact ⟨r, nonZeroDivisors.ne_zero hr, h⟩
+
+variable (K) in
+/-- **Commensurability over a discrete valuation ring.** A power of the maximal ideal multiplies a
+finitely generated submodule into a full lattice. -/
+theorem exists_maximalIdeal_pow_smul_le [IsDiscreteValuationRing R] (S : Submodule R V')
+    [S.IsLattice K] {M : Submodule R V'} (hM : M.FG) :
+    ∃ n : ℕ, IsLocalRing.maximalIdeal R ^ n • M ≤ S := by
+  obtain ⟨r, hr0, hr⟩ :=
+    exists_ne_zero_forall_smul_mem K S (IsLattice.span_eq_top (A := K) (M := S)) hM
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  -- The ideal `(r)` is a power `(ϖ ^ n) = 𝔪 ^ n` of the maximal ideal.
+  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+    (Ideal.span_singleton_eq_bot.not.mpr hr0) hϖ
+  have hm : IsLocalRing.maximalIdeal R ^ n = Ideal.span {r} := by
+    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, hn]
+  refine ⟨n, Submodule.smul_le.mpr fun s hs x hx ↦ ?_⟩
+  obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp (hm ▸ hs)
+  rw [mul_smul]
+  exact S.smul_mem c (hr x hx)
 
 end Submodule.IsLattice

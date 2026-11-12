@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Integral orders in rational quadratic algebras
@@ -41,13 +42,43 @@ def generator (D : ℤ) : QuadraticAlgebra ℚ (D : ℚ) 0 :=
 /-- The square-root coefficient of the half-integral generator. -/
 @[simp] theorem generator_im (D : ℤ) : (generator D).im = 1 / 2 := (rfl)
 
+/-- Mutual integral expressions for a positive-imaginary generator and a positive multiple
+of `τ` force the latter to have the canonical half-integral imaginary coefficient. -/
+theorem mul_im_eq_half_of_mutual_generators (D a : ℤ) (ha : 0 < a)
+    (τ : QuadraticAlgebra ℚ (D : ℚ) 0) (hτim : 0 < τ.im) (m n r s : ℤ)
+    (hθrep : (a : QuadraticAlgebra ℚ (D : ℚ) 0) * τ =
+      m • 1 + n • generator D)
+    (hgenrep : generator D =
+      r • 1 + s • ((a : QuadraticAlgebra ℚ (D : ℚ) 0) * τ)) :
+    (a : ℚ) * τ.im = 1 / 2 := by
+  have hθim : (a : ℚ) * τ.im = (n : ℚ) / 2 := by
+    have h := congrArg QuadraticAlgebra.im hθrep
+    simpa [zsmul_eq_mul, div_eq_mul_inv] using h
+  have hgenim : 1 / 2 = (s : ℚ) * ((a : ℚ) * τ.im) := by
+    have h := congrArg QuadraticAlgebra.im hgenrep
+    simpa [zsmul_eq_mul] using h
+  have hsn : s * n = 1 := by
+    apply Int.cast_injective (α := ℚ)
+    push_cast
+    linear_combination -2 * hgenim - 2 * (s : ℚ) * hθim
+  have hn : n = 1 := by
+    have hnpos : 0 < n := by
+      have hpos : 0 < (n : ℚ) := by
+        have h : (n : ℚ) = 2 * (a : ℚ) * τ.im := by linear_combination -2 * hθim
+        rw [h]
+        exact mul_pos (mul_pos (by norm_num) (by exact_mod_cast ha)) hτim
+      exact_mod_cast hpos
+    rcases Int.eq_one_or_neg_one_of_mul_eq_one (by simpa only [mul_comm] using hsn) with h | h
+    · exact h
+    · omega
+  simpa only [hn, Int.cast_one] using hθim
+
 /-- The integral parameter has quadratic discriminant `D` for a valid discriminant. -/
 theorem parameter_discr (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
     QuadraticAlgebra.discr ((D - D ^ 2) / 4) D = D := by
   have hdiv : (4 : ℤ) ∣ D - D ^ 2 := by
     rw [Int.dvd_iff_emod_eq_zero, Int.sub_emod, pow_two, Int.mul_emod]
     rcases hD with hD | hD <;> simp [hD]
-  have hmul := Int.mul_ediv_cancel' hdiv
   rw [QuadraticAlgebra.discr_def]
   omega
 

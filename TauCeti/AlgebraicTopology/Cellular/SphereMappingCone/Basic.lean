@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.End
 public import TauCeti.AlgebraicTopology.Cellular.LocalDegree
 public import TauCeti.Topology.CWComplex.Classical.Sphere.MappingCone
 
@@ -315,10 +316,8 @@ theorem exists_cellularIncidence_sphereMappingCone_eq_mul (R : Type u) [Ring R]
   set g := sphereLocalGenerator h (ModuleCat.of R R) b x
   have := isIso_sphereLocalGenerator h (ModuleCat.of R R) b x
   have hu : IsUnit (inv (cellLocalClass _ (ModuleCat.of R R) x hx) (g 1)) := by
-    -- An automorphism of `R` as a module over itself is right multiplication by a unit.
-    have hbij := ConcreteCategory.bijective_of_isIso
+    exact ModuleCat.isUnit_apply_one_of_isIso
       (g ≫ inv (cellLocalClass _ (ModuleCat.of R R) x hx))
-    exact (((Module.End.isUnit_iff _).2 hbij).map (RingEquiv.moduleEndSelf R).symm).unop
   set u := inv (cellLocalClass _ (ModuleCat.of R R) x hx) (g 1)
   refine ⟨hu.unit, fun f m hf ↦ ?_⟩
   let _ := sphereMappingConeCWComplex h f

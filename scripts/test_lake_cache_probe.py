@@ -147,7 +147,6 @@ class MainWorkflowFallback(unittest.TestCase):
         self.assertIn('echo "staged=true"', block)
         self.assertIn(
             "if: ${{ needs.build.result == 'success' && "
-            "needs['duplicate-audit-tests'].result == 'success' && "
             "needs.build.outputs.staged == 'true' }}", self.workflow)
 
 
@@ -182,7 +181,8 @@ class SharedPublicationContract(unittest.TestCase):
 
     def test_toolchain_tag_audit_uses_the_same_url_function(self):
         source = TOOLCHAIN_TAGS.read_text()
-        probe = source[source.index("def cache_published"):source.index("def mathlib_releases")]
+        start = source.index("def cache_published")
+        probe = source[start:source.index("\ndef ", start + 1)]
         self.assertIn("exact_map_url(", probe)
         self.assertNotIn('.replace("/", "--")', probe)
 

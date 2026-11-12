@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Functor.OfSequence
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
-public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
+public import TauCeti.Topology.CWComplex.Abstract.Trans
 public import TauCeti.Topology.CWComplex.Classical.CWType
-public import TauCeti.Topology.CWComplex.Classical.Image
-public import TauCeti.Topology.CWComplex.Classical.Trans
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 
 /-!
 # Killing the homotopy groups of a space from a given dimension on
@@ -26,12 +26,22 @@ dimension `k + 1` along every generalized loop of dimension `k` at the image of 
 * the inclusion `X ⟶ killHomotopyGroups n X x` induces a bijection on `πₖ` for `k < n`
   (`TauCeti.bijective_homotopyGroupMap_killHomotopyGroupsIncl`);
 * `πₖ` of `killHomotopyGroups n X x` at the image of `x` vanishes for `k ≥ n`
-  (`TauCeti.subsingleton_homotopyGroup_killHomotopyGroups`).
+  (`TauCeti.subsingleton_homotopyGroup_killHomotopyGroups`);
+* so the inclusion is surjective on every homotopy group
+  (`TauCeti.surjective_homotopyGroupMap_killHomotopyGroupsIncl`).
 
 For `n = 2` and a path-connected `X` this makes `killHomotopyGroups 2 X x` an Eilenberg--Mac Lane
 space of type `K(π₁(X, x), 1)` containing `X`
 (`TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`). This is Hatcher's construction of a
 `K(G, 1)` from a presentation complex of `G`, carried out here for an arbitrary Hausdorff space.
+More generally, for `n ≥ 1` and a Hausdorff, path-connected `X` whose homotopy groups `πₖ(X, x)`
+vanish for `0 < k < n`, the space `killHomotopyGroups (n + 1) X x` is an Eilenberg--Mac Lane space
+of type `K(πₙ(X, x), n)` containing `X` (`TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`),
+the inclusion inducing the isomorphism on `πₙ`
+(`TauCeti.killHomotopyGroupsHomotopyGroupMulEquiv`).
+If the homotopy groups of a path-connected `X` already vanish from dimension `n` on, the inclusion
+of `X` is a weak homotopy equivalence (`TauCeti.isWeakHomotopyEquivalence_killHomotopyGroupsIncl`):
+the attached cells change no homotopy group.
 
 The cells attached at step `m` of the tower have dimension `m`, so the tower is a categorical
 relative CW complex in Mathlib's sense, relative to `X`
@@ -44,10 +54,11 @@ colimit in each dimension with those of a finite stage
 
 When `X` is itself a Hausdorff CW complex with no cells of dimension greater than `n`, this
 relative CW structure, read classically, composes with the CW structure of `X`
-(`TauCeti.relCWComplexTrans`): the cells of the tower have dimension greater than `n`, so their
-boundaries meet `X` inside its skeleton below their dimension. So `killHomotopyGroups n X x` is
-then a CW complex (`TauCeti.killHomotopyGroupsCWComplex`), whose cells are those of `X` and those of
-the tower, and in particular it has CW type (`TauCeti.cwType_killHomotopyGroups`).
+(`TopCat.RelativeCWComplex.cwComplexTrans`): the cells of the tower have dimension greater than
+`n`, so their boundaries meet `X` inside its skeleton below their dimension. So
+`killHomotopyGroups n X x` is then a CW complex (`TauCeti.killHomotopyGroupsCWComplex`), whose
+cells are those of `X` and those of the tower, and in particular it has CW type
+(`TauCeti.cwType_killHomotopyGroups`).
 
 Maps out of the colimit are built in the same way, stage by stage. Every cell of the tower is
 attached along a based map, so a map `f : X ⟶ Z` into a space whose homotopy groups `πₖ(Z, f x)`
@@ -57,7 +68,12 @@ extends over `killHomotopyGroups n X x`
 map induced by `f` (`TauCeti.exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv`). In
 particular, for `n = 2` every map from `X` into a `K(H, 1)` space extends over
 `killHomotopyGroups 2 X x`, realizing the same homomorphism of fundamental groups; for a Hausdorff,
-path-connected `X` that space is a `K(π₁(X, x), 1)`.
+path-connected `X` that space is a `K(π₁(X, x), 1)`. In every degree `n ≥ 1`, a map from an
+`(n - 1)`-connected `X` into a `K(G, n)` space that is bijective on `πₙ` extends to a weak homotopy
+equivalence out of `killHomotopyGroups (n + 1) X x`
+(`TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence`): this
+`K(πₙ(X, x), n)` is unique up to weak homotopy equivalence among the `K(G, n)` spaces receiving
+such a map from `X`.
 
 ## Main definitions
 
@@ -68,6 +84,8 @@ path-connected `X` that space is a `K(π₁(X, x), 1)`.
 * `TauCeti.killHomotopyGroupsRelativeCWComplex n X x`: the relative CW structure.
 * `TauCeti.killHomotopyGroupsFundamentalGroupMulEquiv n X x`: for `n ≥ 2`, the isomorphism of
   fundamental groups induced by the inclusion.
+* `TauCeti.killHomotopyGroupsHomotopyGroupMulEquiv n X x k`: for `0 < k < n`, the isomorphism of
+  `πₖ` induced by the inclusion.
 * `TauCeti.killHomotopyGroupsCWComplex n X x hX`: for a Hausdorff CW complex `X` without cells of
   dimension greater than `n`, the CW structure on the colimit, with its cells described by
   `TauCeti.killHomotopyGroupsCWComplexCellEquiv`.
@@ -80,12 +98,22 @@ path-connected `X` that space is a `K(π₁(X, x), 1)`.
   on vanish.
 * `TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`: for `n = 2` and path-connected `X`,
   the colimit is a `K(π₁(X, x), 1)`.
+* `TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`: for an `(n - 1)`-connected `X`, the space
+  `killHomotopyGroups (n + 1) X x` is a `K(πₙ(X, x), n)`.
+* `TauCeti.isNConnected_killHomotopyGroupsIncl`: for a path-connected `X`, the inclusion is an
+  `n`-connected map.
+* `TauCeti.isWeakHomotopyEquivalence_killHomotopyGroupsIncl`: if the homotopy groups of a
+  path-connected `X` already vanish from dimension `n` on, the inclusion is a weak homotopy
+  equivalence.
 * `TauCeti.cwType_killHomotopyGroups`: for a Hausdorff CW complex `X` without cells of dimension
   greater than `n`, the colimit has CW type.
 * `TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq`: maps into a space whose homotopy groups
   vanish from dimension `n` on extend over the colimit.
 * `TauCeti.exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv`: for `n ≥ 2`, the
   extension induces the given map on fundamental groups.
+* `TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence`: a map from an
+  `(n - 1)`-connected `X` into a `K(G, n)` space that is bijective on `πₙ` extends to a weak
+  homotopy equivalence out of `killHomotopyGroups (n + 1) X x`.
 
 ## References
 
@@ -276,6 +304,19 @@ theorem subsingleton_homotopyGroup_killHomotopyGroups [T2Space X] {k : ℕ} (hk 
   rw [← colimit_ι_killingStage_basepoint n X x (k + 2)]
   exact Function.Surjective.subsingleton (α := π_ k (killingStage n X x (k + 2)).1 _) hsurj
 
+/-- The inclusion `X ⟶ killHomotopyGroups n X x` of a Hausdorff space `X` is surjective on every
+homotopy group at `x`: it is bijective in dimensions below `n`, and the homotopy groups of the
+target vanish from dimension `n` on. -/
+theorem surjective_homotopyGroupMap_killHomotopyGroupsIncl [T2Space X] {N : Type v} [Finite N] :
+    Function.Surjective
+      (HomotopyGroup.map (N := N) (x := x) (killHomotopyGroupsIncl n X x).hom rfl) := by
+  rcases lt_or_ge (Nat.card N) n with hN | hN
+  · exact (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x hN).2
+  · have := subsingleton_homotopyGroup_killHomotopyGroups n X x hN
+    have := (HomotopyGroup.congrEquiv (X := killHomotopyGroups n X x)
+      (x := killHomotopyGroupsIncl n X x x) (Finite.equivFin N)).subsingleton
+    exact fun _ ↦ ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩
+
 /-- `TauCeti.killHomotopyGroups n X x` is path-connected when `X` is Hausdorff and path-connected:
 attaching cells of positive dimension creates no new path components. -/
 instance instPathConnectedSpaceKillHomotopyGroups [T2Space X] [PathConnectedSpace X] :
@@ -306,6 +347,42 @@ lemma killHomotopyGroupsFundamentalGroupMulEquiv_apply [T2Space X] (hn : 1 < n)
       FundamentalGroup.mapOfEq (killHomotopyGroupsIncl n X x).hom rfl g :=
   (rfl)
 
+
+/-- For `0 < k < n`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` induces an
+isomorphism of `πₖ` at `x`. -/
+def killHomotopyGroupsHomotopyGroupMulEquiv [T2Space X] (k : ℕ) [NeZero k] (hk : k < n) :
+    π_ k X x ≃* π_ k (killHomotopyGroups n X x) (killHomotopyGroupsIncl n X x x) :=
+  MulEquiv.ofBijective (HomotopyGroup.mapHom (killHomotopyGroupsIncl n X x).hom rfl)
+    (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (N := Fin k) (by simpa using hk))
+
+/-- The isomorphism of `πₖ` is the map induced by the inclusion of `X`. -/
+@[simp]
+lemma killHomotopyGroupsHomotopyGroupMulEquiv_apply [T2Space X] (k : ℕ) [NeZero k] (hk : k < n)
+    (a : π_ k X x) :
+    killHomotopyGroupsHomotopyGroupMulEquiv n X x k hk a =
+      HomotopyGroup.map (killHomotopyGroupsIncl n X x).hom rfl a :=
+  HomotopyGroup.mapHom_apply _ _ a
+
+/-- **Killing the homotopy groups above dimension `n` of an `(n - 1)`-connected space gives a
+`K(πₙ, n)`.** For `n ≥ 1` and a Hausdorff, path-connected space `X` whose homotopy groups
+`πₖ(X, x)` vanish for `0 < k < n`, the space `TauCeti.killHomotopyGroups (n + 1) X x`, obtained by
+attaching cells of dimension at least `n + 2`, is an Eilenberg--Mac Lane space of type
+`K(πₙ(X, x), n)`, the isomorphism on `πₙ` being induced by the inclusion of `X`
+(`TauCeti.killHomotopyGroupsHomotopyGroupMulEquiv`). -/
+theorem isEilenbergMacLaneSpace_killHomotopyGroups [T2Space X] [PathConnectedSpace X]
+    (hX : ∀ k, k ≠ 0 → k < n → Subsingleton (π_ k X x)) :
+    IsEilenbergMacLaneSpace (π_ n X x) n (killHomotopyGroups (n + 1) X x)
+      (killHomotopyGroupsIncl (n + 1) X x x) := by
+  refine .mk inferInstance (fun k hk0 hk ↦ ?_)
+    ⟨(killHomotopyGroupsHomotopyGroupMulEquiv (n + 1) X x n n.lt_succ_self).symm⟩
+  rcases hk.lt_or_gt with hk | hk
+  · -- Below dimension `n` the inclusion of `X` is an isomorphism of trivial groups.
+    have : NeZero k := ⟨hk0⟩
+    have := hX k hk0 hk
+    exact (killHomotopyGroupsHomotopyGroupMulEquiv (n + 1) X x k
+      (hk.trans n.lt_succ_self)).toEquiv.subsingleton_congr.mp inferInstance
+  · exact subsingleton_homotopyGroup_killHomotopyGroups (n + 1) X x hk
+
 /-- **Killing the higher homotopy groups of a path-connected space gives a `K(π₁, 1)`.** For a
 Hausdorff, path-connected space `X`, the space `TauCeti.killHomotopyGroups 2 X x` obtained by
 attaching cells of dimension at least `3` is aspherical, and the inclusion of `X` identifies its
@@ -313,9 +390,44 @@ fundamental group with `π₁(X, x)`. -/
 theorem isEilenbergMacLaneSpaceOne_killHomotopyGroups [T2Space X] [PathConnectedSpace X] :
     IsEilenbergMacLaneSpaceOne (FundamentalGroup X x) (killHomotopyGroups 2 X x)
       (killHomotopyGroupsIncl 2 X x x) :=
-  isEilenbergMacLaneSpaceOne_iff.2
-    ⟨.mk inferInstance fun k ↦ subsingleton_homotopyGroup_killHomotopyGroups 2 X x (by omega),
-      ⟨(killHomotopyGroupsFundamentalGroupMulEquiv 2 X x one_lt_two).symm⟩⟩
+  -- The degree-one case: there are no homotopy groups strictly between `0` and `1`.
+  isEilenbergMacLaneSpace_one_iff.1 <|
+    (isEilenbergMacLaneSpace_killHomotopyGroups 1 X x fun _ hk0 hk ↦ absurd hk (by omega))
+      |>.of_mulEquiv HomotopyGroup.pi1MulEquivFundamentalGroup
+
+/-- **The inclusion into `TauCeti.killHomotopyGroups n X x` is `n`-connected.** For a Hausdorff,
+path-connected space `X`, the inclusion `X ⟶ killHomotopyGroups n X x` induces a bijection on `πₖ`
+for `k < n` and a surjection for `k ≤ n`, at every point of `X`: below dimension `n` the homotopy
+groups are unchanged, and in dimension `n` the target group is trivial. -/
+theorem isNConnected_killHomotopyGroupsIncl [T2Space X] [PathConnectedSpace X] :
+    (killHomotopyGroupsIncl n X x).hom.IsNConnected n := by
+  refine ⟨fun y ↦ ⟨x, PathConnectedSpace.joined _ y⟩, fun k hk y ↦ ?_, fun k hk y ↦ ?_⟩
+  · -- Move the base point from `x`, where the map is bijective, to `y`.
+    exact ((killHomotopyGroupsIncl n X x).hom.injective_map_iff_of_path
+      (PathConnectedSpace.somePath x y)).1
+      (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (by simpa using hk)).1
+  · refine ((killHomotopyGroupsIncl n X x).hom.surjective_map_iff_of_path
+      (PathConnectedSpace.somePath x y)).1 ?_
+    rcases hk.lt_or_eq with hk | hk
+    · exact (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (by simpa using hk)).2
+    · -- In dimension `n` the target group is trivial.
+      have := subsingleton_homotopyGroup_killHomotopyGroups n X x hk.ge
+      exact fun _ ↦ ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩
+
+/-- **Killing homotopy groups which already vanish changes nothing up to weak homotopy
+equivalence.** If the homotopy groups `πₖ(X, x)` of a Hausdorff, path-connected space `X` vanish
+for `k ≥ n`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` is a weak homotopy
+equivalence. -/
+theorem isWeakHomotopyEquivalence_killHomotopyGroupsIncl [T2Space X] [PathConnectedSpace X]
+    (hX : ∀ k, n ≤ k → Subsingleton (π_ k X x)) :
+    (killHomotopyGroupsIncl n X x).hom.IsWeakHomotopyEquivalence := by
+  refine (ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective x).2 fun k ↦ ?_
+  rcases lt_or_ge k n with hk | hk
+  · exact bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (by simpa using hk)
+  · -- From dimension `n` on, both homotopy groups are trivial.
+    have := hX k hk
+    have := subsingleton_homotopyGroup_killHomotopyGroups n X x hk
+    exact Function.bijective_of_subsingleton' _
 
 /-! ### The CW structure on the colimit -/
 
@@ -326,39 +438,6 @@ open Topology Topology.RelCWComplex
 variable [T2Space X] [CWComplex (Set.univ : Set X)]
   (hX : ∀ m, n < m → IsEmpty (cell (Set.univ : Set X) m))
 
-/-- The CW structure on `X`, carried to the range of `TauCeti.killHomotopyGroupsIncl n X x`. -/
-private abbrev rangeInclRelCWComplex :
-    RelCWComplex (Set.range (killHomotopyGroupsIncl n X x)) ∅ :=
-  (isClosedEmbedding_killHomotopyGroupsIncl n X x).relCWComplex Set.image_univ (Set.image_empty _)
-
-/-- The relative CW structure of the tower, as a classical relative CW complex. -/
-private abbrev towerRelCWComplex :
-    RelCWComplex (Set.univ : Set (killHomotopyGroups n X x))
-      (Set.range (killHomotopyGroupsIncl n X x)) :=
-  (killHomotopyGroupsRelativeCWComplex n X x).toRelCWComplex
-
-include hX in
-/-- Every cell of the tower has dimension greater than `n`, and `X` has no cells of dimension
-greater than `n`, so the part in `X` of the boundary of an `m`-cell of the tower lies in the
-skeleton of `X` below dimension `m`, which is all of `X`, viewed in the colimit via the
-inclusion. -/
-private lemma cellFrontier_inter_range_subset_skeletonLT :
-    letI := rangeInclRelCWComplex n X x
-    letI := towerRelCWComplex n X x
-    ∀ m (i : cell (Set.univ : Set (killHomotopyGroups n X x)) m),
-      cellFrontier m i ∩ Set.range (killHomotopyGroupsIncl n X x) ⊆
-        skeletonLT (Set.range (killHomotopyGroupsIncl n X x)) m := by
-  let := rangeInclRelCWComplex n X x
-  let := towerRelCWComplex n X x
-  intro m i
-  have hm : n < m := by
-    by_contra hm
-    exact (isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x
-      (Nat.le_of_not_gt hm)).false ((TopCat.RelativeCWComplex.toRelCWComplexCellEquiv _ m) i)
-  refine Set.inter_subset_right.trans
-    (TauCeti.skeletonLT_eq_complex_of_isEmpty_cell _ m fun k hk ↦ ?_).superset
-  exact (IsClosedEmbedding.relCWComplexCellEquiv _ _ _ k).isEmpty_congr.2 (hX k (hm.trans_le hk))
-
 include hX in
 /-- **The colimit of the tower is a CW complex.** If `X` is a Hausdorff CW complex all of whose
 cells have dimension at most `n`, then `TauCeti.killHomotopyGroups n X x` is a CW complex. Its
@@ -367,11 +446,8 @@ cells attached at step `m` of the tower, which all have dimension greater than `
 (`TauCeti.killHomotopyGroupsCWComplexCellEquiv`). -/
 @[instance_reducible]
 def killHomotopyGroupsCWComplex : CWComplex (Set.univ : Set (killHomotopyGroups n X x)) :=
-  letI := rangeInclRelCWComplex n X x
-  letI := towerRelCWComplex n X x
-  letI := relCWComplexTrans Set.univ (Set.range (killHomotopyGroupsIncl n X x)) ∅
-    (cellFrontier_inter_range_subset_skeletonLT n X x hX)
-  RelCWComplex.toCWComplex _
+  (killHomotopyGroupsRelativeCWComplex n X x).cwComplexTrans hX fun _ hm ↦
+    isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (Nat.le_of_lt_succ hm)
 
 /-- The `m`-cells of `TauCeti.killHomotopyGroupsCWComplex` are the `m`-cells of `X` together with
 the cells attached at step `m` of the tower. -/
@@ -380,11 +456,7 @@ def killHomotopyGroupsCWComplexCellEquiv (m : ℕ) :
       (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m ≃
       cell (Set.univ : Set X) m ⊕
         ((killHomotopyGroupsRelativeCWComplex n X x).attachCells m (not_isMax m)).ι :=
-  letI := rangeInclRelCWComplex n X x
-  letI := towerRelCWComplex n X x
-  (relCWComplexTransCellEquiv (cellFrontier_inter_range_subset_skeletonLT n X x hX) m).trans <|
-    Equiv.sumCongr (IsClosedEmbedding.relCWComplexCellEquiv _ _ _ m)
-      ((killHomotopyGroupsRelativeCWComplex n X x).toRelCWComplexCellEquiv m)
+  TopCat.RelativeCWComplex.cwComplexTransCellEquiv _ _ _ m
 
 /-- The characteristic map of an `m`-cell of `X`, as a cell of
 `TauCeti.killHomotopyGroupsCWComplex`, is its characteristic map in `X` followed by the inclusion
@@ -395,13 +467,8 @@ lemma coe_map_killHomotopyGroupsCWComplexCellEquiv_symm_inl (m : ℕ)
     ⇑(@map _ _ (Set.univ : Set (killHomotopyGroups n X x)) ∅
       (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m
         ((killHomotopyGroupsCWComplexCellEquiv n X x hX m).symm (.inl i))) =
-      killHomotopyGroupsIncl n X x ∘ map m i := by
-  let := rangeInclRelCWComplex n X x
-  let := towerRelCWComplex n X x
-  refine (congrArg (fun e : PartialEquiv _ _ ↦ ⇑e) (map_relCWComplexTrans_inl
-    (cellFrontier_inter_range_subset_skeletonLT n X x hX) m
-      ((IsClosedEmbedding.relCWComplexCellEquiv _ _ _ m).symm i))).trans ?_
-  rw [IsClosedEmbedding.coe_map_relCWComplex, Equiv.apply_symm_apply]
+      killHomotopyGroupsIncl n X x ∘ map m i :=
+  TopCat.RelativeCWComplex.coe_map_cwComplexTransCellEquiv_symm_inl _ _ _ m i
 
 /-- The characteristic map of a cell attached at step `m` of the tower, as a cell of
 `TauCeti.killHomotopyGroupsCWComplex`, is the inclusion of the attached disk, read on the closed
@@ -414,13 +481,8 @@ lemma map_killHomotopyGroupsCWComplexCellEquiv_symm_inr (m : ℕ)
       (killHomotopyGroupsCWComplex n X x hX).instRelCWComplex m
         ((killHomotopyGroupsCWComplexCellEquiv n X x hX m).symm (.inr i)) y =
       (⟨m, not_isMax m, i⟩ : (killHomotopyGroupsRelativeCWComplex n X x).Cells).ι
-        ((diskHomeomorphClosedBall m).symm y) := by
-  let := rangeInclRelCWComplex n X x
-  let := towerRelCWComplex n X x
-  refine (congrArg (fun e : PartialEquiv (Fin m → ℝ) (killHomotopyGroups n X x) ↦ e y)
-    (map_relCWComplexTrans_inr (cellFrontier_inter_range_subset_skeletonLT n X x hX) m
-      (((killHomotopyGroupsRelativeCWComplex n X x).toRelCWComplexCellEquiv m).symm i))).trans ?_
-  rw [TopCat.RelativeCWComplex.toRelCWComplex_map_apply, Equiv.apply_symm_apply]
+        ((diskHomeomorphClosedBall m).symm y) :=
+  TopCat.RelativeCWComplex.map_cwComplexTransCellEquiv_symm_inr _ _ _ m i y
 
 include hX in
 /-- If `X` is a Hausdorff CW complex all of whose cells have dimension at most `n`, then
@@ -515,8 +577,31 @@ theorem exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv [T2Space 
     rw [← ConcreteCategory.comp_apply, hF]
   refine ⟨F, hFx, MonoidHom.ext fun g ↦ ?_⟩
   rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    killHomotopyGroupsFundamentalGroupMulEquiv_apply, TauCeti.FundamentalGroup.mapOfEq_comp]
-  exact TauCeti.FundamentalGroup.mapOfEq_congr (congrArg TopCat.Hom.hom hF) _ _ g
+    killHomotopyGroupsFundamentalGroupMulEquiv_apply, FundamentalGroup.mapOfEq_comp]
+  exact FundamentalGroup.mapOfEq_congr (congrArg TopCat.Hom.hom hF) _ _ g
+
+/-- **The `K(πₙ, n)` of an `(n - 1)`-connected space is unique up to weak homotopy equivalence.**
+Let `n ≥ 1` and let `X` be a Hausdorff, path-connected space whose homotopy groups `πₖ(X, x)`
+vanish for `0 < k < n`. A map `f : X ⟶ Z` into a `K(G, n)` space that induces a bijection on `πₙ`
+extends along the inclusion of `X` to a weak homotopy equivalence from the `K(πₙ(X, x), n)` space
+`TauCeti.killHomotopyGroups (n + 1) X x`. -/
+theorem _root_.TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence
+    [T2Space X] [PathConnectedSpace X] (hX : ∀ k, k ≠ 0 → k < n → Subsingleton (π_ k X x))
+    {G : Type*} [Group G] (f : X ⟶ Z) (hZ : IsEilenbergMacLaneSpace G n Z (f x))
+    (hf : Function.Bijective (HomotopyGroup.map (N := Fin n) (x := x) f.hom rfl)) :
+    ∃ F : killHomotopyGroups (n + 1) X x ⟶ Z,
+      killHomotopyGroupsIncl (n + 1) X x ≫ F = f ∧ F.hom.IsWeakHomotopyEquivalence := by
+  obtain ⟨F, hF⟩ := f.exists_killHomotopyGroupsIncl_comp_eq (n := n + 1) fun k hk ↦
+    hZ.subsingleton_homotopyGroup (by omega)
+  have hFx : F (killHomotopyGroupsIncl (n + 1) X x x) = f x := by
+    rw [← ConcreteCategory.comp_apply, hF]
+  have hK := isEilenbergMacLaneSpace_killHomotopyGroups n X x hX
+  refine ⟨F, hF, (hK.isWeakHomotopyEquivalence_iff hZ hFx).2 ?_⟩
+  -- On `πₙ`, the map induced by `F` after the bijection induced by the inclusion is the map
+  -- induced by `f`.
+  rw [← HomotopyGroup.map_comp_map_of_comp_eq (by rw [← TopCat.hom_comp, hF]) hFx rfl] at hf
+  exact (Function.Bijective.of_comp_iff _
+    (bijective_homotopyGroupMap_killHomotopyGroupsIncl (n + 1) X x (N := Fin n) (by simp))).1 hf
 
 end Extension
 

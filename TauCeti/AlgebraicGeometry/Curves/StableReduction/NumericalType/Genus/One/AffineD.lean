@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.One.Basic
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.DoubleFork
 import TauCeti.Algebra.Group.AffineSequence
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Linarith
 
 /-!
 # Affine D numerical types
@@ -128,6 +129,36 @@ private lemma sum_add_add_eq_zero (hr : T.IsSelfIntersectionMinusTwoFork t c rig
     (by rw [card_pair hleftRight]; exact hcard) x
   rwa [sum_pair hleftRight] at h
 
+/-- The fibre relations at the last chain component and at the extra leaf `right` of one fork of a
+double fork exhausting the numerical type, with the weights and edges evaluated: the multiplicity
+doubles from `c (t - 1)` to `c (t - 2)`, and the leaf relation involves the other leaf `left` only
+through `right · left`. -/
+private lemma end_and_branch_fiber_relations (hr : T.IsSelfIntersectionMinusTwoFork t c right)
+    (hleft_ne : ∀ i < t, left ≠ c i) (hleftRight : left ≠ right)
+    (hcard : Fintype.card T.Component = t + 2) (hlast : T.intersection (c (t - 1)) left = 0)
+    {w : ℕ+} (hw : ∀ i < t, (T.weight (c i) : ℤ) = w) (hwr : (T.weight right : ℤ) = w)
+    (hedge : ∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = w)
+    (hredge : T.intersection (c (t - 2)) right = w) :
+    (T.multiplicity (c (t - 2)) : ℤ) = 2 * T.multiplicity (c (t - 1)) ∧
+      w * T.multiplicity (c (t - 2)) + T.intersection right left * T.multiplicity left =
+        2 * w * T.multiplicity right := by
+  have ht := hr.two_lt
+  have hfib := hr.sum_add_add_eq_zero hleft_ne hleftRight hcard
+  have hlastEdge := hedge (t - 2) (by omega)
+  rw [show t - 2 + 1 = t - 1 by omega] at hlastEdge
+  have h := hfib (c (t - 1))
+  rw [hr.right_sum_eq (by omega) (by omega), hlast,
+    hr.branch_intersection_eq_zero (i := t - 1) (by omega) (by omega),
+    hr.intersection_self (t - 1) (by omega), hw (t - 1) (by omega), T.intersection_comm,
+    hlastEdge] at h
+  have hR := hfib right
+  rw [sum_eq_single_of_mem (t - 2) (mem_range.mpr (by omega)) (fun j hj hne ↦ by
+      rw [T.intersection_comm, hr.branch_intersection_eq_zero (mem_range.mp hj) hne,
+        zero_mul]),
+    T.intersection_comm right (c (t - 2)), hredge, hr.branch_intersection_self, hwr] at hR
+  exact ⟨mul_left_cancel₀ (by simp : (w : ℤ) ≠ 0) (by linear_combination h),
+    by linear_combination hR⟩
+
 /-- A double fork of at least six components exhausting a numerical type, all of
 self-intersection `-2w`, is the affine `D` configuration: all weights and displayed intersection
 numbers agree, the two extra leaves do not meet, and the multiplicities are `m` at the four ends
@@ -137,114 +168,64 @@ theorem isGenusOneAffineDShape (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left)
     (hcard : Fintype.card T.Component = t + 2) (ht : 4 ≤ t) :
     T.IsGenusOneAffineDShape t c left right := by
-  have hchainCard : t < Fintype.card T.Component := by omega
-  have hleft_ne (i : ℕ) (hi : i < t) : left ≠ c i := by
-    simpa only [show t - 1 - (t - 1 - i) = i by omega] using hl.branch_ne (t - 1 - i) (by omega)
   have hl0 (i : ℕ) (hi : i < t) (hi1 : i ≠ 1) : T.intersection (c i) left = 0 := by
     simpa only [show t - 1 - (t - 1 - i) = i by omega] using
       hl.branch_intersection_eq_zero (i := t - 1 - i) (by omega) (by omega)
-  have hr0 (i : ℕ) (hi : i < t) (hne : i ≠ t - 2) : T.intersection (c i) right = 0 :=
-    hr.branch_intersection_eq_zero hi hne
-  have hleftRight : left ≠ right := by
-    rintro rfl
-    have hpos : 0 < T.intersection (c 1) left := by
-      simpa only [show t - 1 - (t - 2) = 1 by omega] using hl.branch_intersection_pos
-    rw [hr0 1 (by omega) (by omega)] at hpos
-    exact lt_irrefl 0 hpos
+  have hr0 (i : ℕ) (hi : i < t) (hne : i ≠ t - 2) := hr.branch_intersection_eq_zero hi hne
+  have hleft_ne : ∀ i < t, left ≠ c i := fun _ hi ↦ hl.branch_ne_reverse hi
+  have hleftRight := hr.opposite_branch_ne hl (by omega)
   -- Deleting either extra leaf leaves a proper fork, which is simply laced.
   obtain ⟨w, hw, hwr, hedge, hredge⟩ := hr.exists_weight_intersection_eq (by omega)
-  obtain ⟨w', hw', hwl, -, hledge⟩ := hl.exists_weight_intersection_eq (by omega)
-  have hww : (w' : ℤ) = w := by
-    have h := hw' 0 (by omega)
-    simp only [Nat.sub_zero] at h
-    exact h.symm.trans (hw (t - 1) (by omega))
-  rw [hww] at hwl hledge
-  rw [show t - 1 - (t - 2) = 1 by omega] at hledge
-  have hwpos : (0 : ℤ) < w := by simp
-  have hedge' (i : ℕ) (hi : 0 < i) (hit : i < t) : T.intersection (c i) (c (i - 1)) = w := by
-    rw [T.intersection_comm]
-    simpa only [Nat.sub_add_cancel (by omega : 1 ≤ i)] using hedge (i - 1) (by omega)
+  obtain ⟨w', hw', hwl, hedge', hledge⟩ := hl.exists_weight_intersection_eq (by omega)
+  obtain rfl : w = w' := by exact_mod_cast (hw (t - 1) (by omega)).symm.trans (hw' 0 (by omega))
+  -- The fibre relations at the four ends, read on the fork of each leaf.
+  obtain ⟨hm₂, hR⟩ := hr.end_and_branch_fiber_relations hleft_ne hleftRight hcard
+    (hl0 (t - 1) (by omega) (by omega)) hw hwr hedge hredge
+  obtain ⟨hm₁, hL⟩ := hl.end_and_branch_fiber_relations
+    (fun i _ ↦ hr.branch_ne (t - 1 - i) (by omega)) hleftRight.symm hcard
+    (by simpa using hr0 0 (by omega) (by omega)) hw' hwl hedge' hledge
+  simp only [show t - 1 - (t - 2) = 1 by omega, Nat.sub_self, T.intersection_comm right left]
+    at hm₁ hL hR hledge
+  -- The interior fibre relations, with the common weight cancelled by the chain API; away from
+  -- the two branch points they make the multiplicities affine along `c 1, …, c (t - 2)`.
   have hfib := hr.sum_add_add_eq_zero hleft_ne hleftRight hcard
-  -- The fibre relation at an interior chain component, with the chain terms evaluated.
-  have hrow (i : ℕ) (hi : 0 < i) (hit : i + 1 < t) :
-      (w : ℤ) * T.multiplicity (c (i - 1)) + w * T.multiplicity (c (i + 1)) +
-          (T.intersection (c i) left * T.multiplicity left +
-            T.intersection (c i) right * T.multiplicity right) =
-        2 * w * T.multiplicity (c i) := by
-    have h := hfib (c i)
-    rw [hr.interior_sum_eq hchainCard _ hi hit] at h
-    rw [hedge' i hi (by omega), hr.intersection_self i (by omega), hw i (by omega),
-      hedge i hit] at h
-    linear_combination h
-  -- The interior fibre relations away from the two branch points make the multiplicities affine
-  -- along `c 1, …, c (t - 2)`.
-  have hrec (i : ℕ) (hi : 1 < i) (hit : i + 2 < t) :
-      (T.multiplicity (c (i - 1)) : ℤ) + T.multiplicity (c (i + 1)) =
-        2 * T.multiplicity (c i) := by
-    have h := hrow i (by omega) (by omega)
-    simp only [hl0 i (by omega) (by omega), hr0 i (by omega) (by omega), zero_mul,
-      add_zero] at h
-    exact mul_left_cancel₀ hwpos.ne' (by linear_combination h)
-  obtain ⟨hdiff, hprog⟩ := multiplicity_eq_add_of_add_eq_two_mul ht hrec
-  -- The fibre relations at the four ends and at the two branch points then force the leaves not
-  -- to meet and the common difference to vanish.
-  have h₀ := hfib (c 0)
-  rw [hr.left_sum_eq hchainCard (by omega)] at h₀
-  simp only [hl0 0 (by omega) (by omega), hr0 0 (by omega) (by omega),
-    hr.intersection_self 0 (by omega), hw 0 (by omega), hedge 0 (by omega), zero_mul,
-    add_zero] at h₀
-  have h₁ := hrow 1 (by omega) (by omega)
-  simp only [hledge, hr0 1 (by omega) (by omega), zero_mul, add_zero] at h₁
-  have h₂ := hrow (t - 2) (by omega) (by omega)
-  simp only [hredge, hl0 (t - 2) (by omega) (by omega), zero_mul, zero_add,
-    show t - 2 - 1 = t - 3 by omega, show t - 2 + 1 = t - 1 by omega] at h₂
-  have hlastEdge : T.intersection (c (t - 1)) (c (t - 2)) = w := by
-    simpa only [show t - 1 - 1 = t - 2 by omega] using hedge' (t - 1) (by omega) (by omega)
-  have h₃ := hfib (c (t - 1))
-  rw [hr.right_sum_eq hchainCard (by omega)] at h₃
-  simp only [hl0 (t - 1) (by omega) (by omega), hr0 (t - 1) (by omega) (by omega), hlastEdge,
-    hr.intersection_self (t - 1) (by omega), hw (t - 1) (by omega), zero_mul, add_zero] at h₃
-  have hL := hfib left
-  rw [sum_eq_single_of_mem 1 (mem_range.mpr (by omega)) (fun j hj hne ↦ by
-      rw [T.intersection_comm, hl0 j (mem_range.mp hj) hne, zero_mul]),
-    T.intersection_comm left (c 1), hledge, hl.branch_intersection_self, hwl] at hL
-  have hR := hfib right
-  rw [sum_eq_single_of_mem (t - 2) (mem_range.mpr (by omega)) (fun j hj hne ↦ by
-      rw [T.intersection_comm, hr0 j (mem_range.mp hj) hne, zero_mul]),
-    T.intersection_comm right (c (t - 2)), hredge, T.intersection_comm right left,
-    hr.branch_intersection_self, hwr] at hR
-  -- The two leaves do not meet, so the multiplicities are those of affine `D`.
-  have hmL : (0 : ℤ) < T.multiplicity left := by simp
-  have hmR : (0 : ℤ) < T.multiplicity right := by simp
-  have hx : T.intersection left right *
-      ((T.multiplicity left : ℤ) + T.multiplicity right) = 0 := by
-    linear_combination hL + hR + h₀ + 2 * h₁ + 2 * h₂ + h₃ - 2 * (w : ℤ) * hdiff
-  have hx₀ : T.intersection left right = 0 :=
-    (mul_eq_zero.mp hx).resolve_right (by omega)
-  rw [hx₀] at hL hR
-  have hm₁ : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) :=
-    mul_left_cancel₀ hwpos.ne' (by linear_combination h₀)
-  have hmL₀ : (T.multiplicity left : ℤ) = T.multiplicity (c 0) :=
-    mul_left_cancel₀ (mul_ne_zero two_ne_zero hwpos.ne') (by linear_combination -hL + w * hm₁)
-  have hd : (T.multiplicity (c 2) : ℤ) - T.multiplicity (c 1) = 0 :=
-    mul_left_cancel₀ hwpos.ne' (by linear_combination h₁ + w * hm₁ - w * hmL₀)
-  have hconst (i : ℕ) (hi : 0 < i) (hit : i + 1 < t) :
-      (T.multiplicity (c i) : ℤ) = T.multiplicity (c 1) := by
-    rw [hprog i hi hit, hd, smul_zero, add_zero]
-  have hm₂ := hconst (t - 2) (by omega) (by omega)
-  have hlast : (T.multiplicity (c (t - 1)) : ℤ) = T.multiplicity (c 0) :=
-    mul_left_cancel₀ (mul_ne_zero two_ne_zero hwpos.ne')
-      (by linear_combination -h₃ + w * hm₂ + w * hm₁)
-  have hmR₀ : (T.multiplicity right : ℤ) = T.multiplicity (c 0) :=
-    mul_left_cancel₀ (mul_ne_zero two_ne_zero hwpos.ne')
-      (by linear_combination -hR + w * hm₂ + w * hm₁)
-  refine ⟨w, T.multiplicity (c 0), hwpos, by simp, hw, hwl, hwr, fun i hi ↦ ?_, hmL₀, hmR₀,
-    hedge, hledge, hredge, hx₀⟩
+  obtain ⟨hdiff, hprog⟩ := multiplicity_eq_add_of_add_eq_two_mul ht fun i hi hit ↦ by
+    simpa using hr.interior_relation_of_weight_eq (by omega) (by omega) (by omega)
+      (hw (i - 1) (by omega)) (hw i (by omega)) (hw (i + 1) (by omega))
+      (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := 0) (by
+        simpa [hl0 i (by omega) (by omega), hr0 i (by omega) (by omega)] using hfib (c i))
+  have h₁ := hr.interior_relation_of_weight_eq (by omega) (i := 1) (by omega) (by omega)
+    (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega))
+    (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := T.multiplicity left)
+    (by simpa [hledge, hr0 1 (by omega) (by omega)] using hfib (c 1))
+  have h₂ := hr.interior_relation_of_weight_eq (by omega) (i := t - 2) (by omega) (by omega)
+    (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega))
+    (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := T.multiplicity right)
+    (by simpa [hredge, hl0 (t - 2) (by omega) (by omega)] using hfib (c (t - 2)))
+  simp only [Nat.sub_self, Nat.reduceAdd, show t - 2 - 1 = t - 3 by omega,
+    show t - 2 + 1 = t - 1 by omega] at h₁ h₂
+  -- The leaves do not meet, so the multiplicities are those of affine `D`.
+  have hx₀ : T.intersection left right = 0 := mul_right_cancel₀
+    (b := (T.multiplicity left : ℤ) + T.multiplicity right) (by norm_cast; simp)
+    (by linear_combination hL + hR + w * (2 * h₁ + 2 * h₂ - 2 * hdiff + hm₁ + hm₂))
+  have hmL : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity left :=
+    mul_left_cancel₀ (by simp : (w : ℤ) ≠ 0) (by linear_combination hL - T.multiplicity right * hx₀)
+  have hd : (T.multiplicity (c 2) : ℤ) - T.multiplicity (c 1) = 0 := by
+    linarith only [h₁, hm₁, hmL]
+  simp only [hd, smul_zero, add_zero] at hprog
+  have hp₂ := hprog (t - 2) (by omega) (by omega)
+  have hm₀ : (T.multiplicity (c (t - 1)) : ℤ) = T.multiplicity (c 0) := by
+    linarith only [hm₂, hp₂, hm₁]
+  have hmL₀ : (T.multiplicity left : ℤ) = T.multiplicity (c 0) := by linarith only [hm₁, hmL]
+  have hmR₀ : (T.multiplicity right : ℤ) = T.multiplicity (c 0) := by
+    linarith only [h₂, hm₂, hdiff, hd, hm₀]
+  refine ⟨w, T.multiplicity (c 0), by simp, by simp, hw, hwl, hwr, fun i hi ↦ ?_,
+    by exact_mod_cast hmL₀, by exact_mod_cast hmR₀, hedge, hledge, hredge, hx₀⟩
   split_ifs with hend
-  · rcases hend with rfl | hend
+  · rcases (by omega : i = 0 ∨ i = t - 1) with rfl | rfl
     · rfl
-    · rw [show i = t - 1 by omega, hlast]
-  · rw [hconst i (by omega) (by omega), hm₁]
+    · exact_mod_cast hm₀
+  · linear_combination hprog i (by omega) (by omega) + hm₁
 
 end IsSelfIntersectionMinusTwoFork
 
@@ -268,5 +249,33 @@ theorem IsMinimal.isGenusOneAffineDShape (hT : T.IsMinimal) (hg : T.arithmeticGe
     ⟨hc.reverse, by omega, fun i hi ↦ hleft_ne (t - 1 - i) (by omega), hself left, by
       simpa only [show t - 1 - (t - 2) = 1 by omega] using hleft_pos⟩
     hcard ht
+
+/-- For a genus-one affine `D` shape whose chain and two branch vertices exhaust all components,
+some component's weight divides every weight with quotient at most four, and some component's
+multiplicity divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneAffineDShape.exists_weight_and_multiplicity_dvd_and_le
+    {t : ℕ} {c : ℕ → T.Component} {left right : T.Component}
+    (hD : T.IsGenusOneAffineDShape t c left right) (ht : 4 ≤ t)
+    (hcard : Fintype.card T.Component = t + 2)
+    (hr : T.IsSelfIntersectionMinusTwoFork t c right)
+    (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  obtain ⟨w, m, _, _, hw, hwl, hwr, hm, hml, hmr, -⟩ := isGenusOneAffineDShape_iff.mp hD
+  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+    left left (fun i ↦ ?_) (fun i ↦ ?_)
+  all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+  · rcases hr.eq_or_eq_or_exists_lt_eq_of_card_eq hl ht hcard i with rfl | rfl | ⟨k, hk, rfl⟩
+    · omega
+    · omega
+    · have hwk := hw k hk
+      omega
+  · rcases hr.eq_or_eq_or_exists_lt_eq_of_card_eq hl ht hcard i with rfl | rfl | ⟨k, hk, rfl⟩
+    · omega
+    · omega
+    · have hmk := hm k hk
+      split_ifs at hmk <;> omega
 
 end TauCeti.NumericalType

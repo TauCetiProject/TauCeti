@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.ProductFormula
 public import TauCeti.Algebra.BigOperators.Finprod
 
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Places of a number field and their normalized absolute values
@@ -276,6 +276,13 @@ theorem normAbs_inr (w : InfinitePlace K) (x : K) :
   rw [normAbs_apply, normalizedAbsValue_inr, ← Real.rpow_natCast,
     ← Real.rpow_mul (apply_nonneg w x), mul_one_div]
 
+/-- Negation does not change a degree-normalized absolute value. -/
+@[simp]
+theorem normAbs_neg (v : Place K) (x : K) : normAbs v (-x) = normAbs v x := by
+  cases v with
+  | inl v => simp
+  | inr w => simp [← InfinitePlace.norm_embedding_eq]
+
 theorem normAbs_nonneg (v : Place K) (x : K) : 0 ≤ normAbs v x :=
   Real.rpow_nonneg (normalizedAbsValue_nonneg v x) _
 
@@ -289,15 +296,12 @@ theorem normAbs_pow_finrank (v : Place K) (x : K) :
   rw [normAbs_apply, one_div,
     Real.rpow_inv_natCast_pow (normalizedAbsValue_nonneg v x) Module.finrank_pos.ne']
 
-/-- The `[K : ℚ]`-th power of the largest degree-normalized absolute value of a finite tuple is
+/-- The `[K : ℚ]`-th power of the largest degree-normalized absolute value of a tuple is
 its largest normalized absolute value. -/
-theorem iSup_normAbs_pow_finrank {ι : Type*} [Finite ι] (v : Place K) (y : ι → K) :
+theorem iSup_normAbs_pow_finrank {ι : Type*} (v : Place K) (y : ι → K) :
     (⨆ i, normAbs v (y i)) ^ Module.finrank ℚ K = ⨆ i, normalizedAbsValue v (y i) := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · simp [Module.finrank_pos.ne']
-  · rw [Finite.map_iSup_of_monotoneOn (pow_left_monotoneOn (M₀ := ℝ)) fun i ↦
-      Set.mem_Ici.mpr (normAbs_nonneg v (y i))]
-    simp_rw [normAbs_pow_finrank]
+  rw [Real.iSup_pow_of_ne_zero (fun i ↦ normAbs_nonneg v (y i)) Module.finrank_pos.ne']
+  simp_rw [normAbs_pow_finrank]
 
 /-- A tuple of elements of a number field which is not identically zero has, at all but finitely
 many places, largest degree-normalized absolute value `1`. -/

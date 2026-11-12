@@ -14,7 +14,10 @@ public import Mathlib.Topology.CompactOpen
 Continuous-map constructions that use the multiplication of a topological magma, next to
 Mathlib's `ContinuousMap.mulLeft` and `ContinuousMap.mulRight`, and the convergence of the
 coordinate embeddings `Pi.mulSingle` of a product of pointed topological spaces, next to Mathlib's
-`continuous_mulSingle`.
+`continuous_mulSingle`. The continuous family of right multiplications, viewed as a map into the
+compact-open topology, also shows that the right translations carrying a compact set into an open
+set form an open set. In a topological monoid, the pointwise powers of a compact set are compact,
+next to Mathlib's `IsCompact.mul`.
 
 ## Main definitions
 
@@ -25,6 +28,10 @@ coordinate embeddings `Pi.mulSingle` of a product of pointed topological spaces,
 
 ## Main results
 
+* `IsCompact.isOpen_setOf_mapsTo_mul`: the right translations carrying a compact set into an open
+  set form an open set, with additive version `IsCompact.isOpen_setOf_mapsTo_add`.
+* `IsCompact.pow`: the powers of a compact subset of a topological monoid are compact, with
+  additive version `IsCompact.nsmul`.
 * `TauCeti.tendsto_mulSingle_cofinite`: in a product `∀ i, M i` of pointed topological spaces, the
   elements `Pi.mulSingle i (x i)` supported at a single coordinate tend to `1` along the cofinite
   filter on the index type.
@@ -51,6 +58,34 @@ theorem compSwapShearMulRight_apply_apply (Ψ : C(X, C(X, Z))) (x y : X) :
     compSwapShearMulRight Ψ x y = Ψ y (y * x) := (rfl)
 
 end ContinuousMap
+
+namespace IsCompact
+
+open Set
+
+variable {X : Type*} [TopologicalSpace X] [Mul X] [ContinuousMul X] {K U : Set X}
+
+/-- **Right translations carrying a compact set into an open set form an open set.** This is the
+preimage of a subbasic open set of the compact-open topology under the continuous family of right
+multiplications. -/
+@[to_additive /-- **Right translations carrying a compact set into an open set form an open
+set.** This is the preimage of a subbasic open set of the compact-open topology under the
+continuous family of right additions. -/]
+theorem isOpen_setOf_mapsTo_mul (hK : IsCompact K) (hU : IsOpen U) :
+    IsOpen {x : X | MapsTo (· * x) K U} :=
+  (ContinuousMap.isOpen_setOfPred_mapsTo hK hU).preimage
+    (ContinuousMap.curry ⟨fun p : X × X => p.2 * p.1, continuous_snd.mul continuous_fst⟩).continuous
+
+open scoped Pointwise in
+/-- Every power of a compact subset of a topological monoid is compact. -/
+@[to_additive /-- Every multiple of a compact subset of a topological additive monoid is
+compact. -/]
+theorem pow {M : Type*} [Monoid M] [TopologicalSpace M] [ContinuousMul M] {s : Set M}
+    (hs : IsCompact s) : ∀ n : ℕ, IsCompact (s ^ n)
+  | 0 => by simpa only [pow_zero, ← singleton_one] using isCompact_singleton
+  | n + 1 => by simpa only [pow_succ] using (hs.pow n).mul hs
+
+end IsCompact
 
 namespace TauCeti
 

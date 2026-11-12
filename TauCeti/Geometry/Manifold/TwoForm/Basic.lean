@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 
+import TauCeti.LinearAlgebra.BilinearForm.Basic
+
 /-!
 # Smooth differential two-forms on manifolds
 
@@ -60,9 +62,11 @@ theorem const_eq {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x : V)
     (v w : TangentSpace (modelWithCornersSelf ℝ V) x) :
-    SmoothForm.eval₂ (const B) x v w =
+    SmoothBundleForm.eval₂
+      (const B) x v w =
       B (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w) := by
-  rw [const_eq, SmoothForm.eval₂_apply, SmoothForm.const_apply]
+  rw [SmoothBundleForm.eval₂_apply]
+  rw [const_eq, SmoothForm.const_apply]
   simp only [ContinuousAlternatingMap.smul_apply]
   rw [ContinuousAlternatingMap.alternatizeBilinCLM_apply]
   have hAlt : LinearMap.IsAlt B.toBilinForm := fun z ↦ by
@@ -79,12 +83,33 @@ theorem const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- The model-space evaluation of a constant smooth two-form. -/
 theorem const_model_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) (x v w : V) :
-    SmoothForm.eval₂ (const B) x ((NormedSpace.fromTangentSpace x).symm v)
+    SmoothBundleForm.eval₂
+      (const B) x
+      ((NormedSpace.fromTangentSpace x).symm v)
       ((NormedSpace.fromTangentSpace x).symm w) = B v w := by
   simpa only [ContinuousLinearEquiv.apply_symm_apply] using
     (const_apply B hB x ((NormedSpace.fromTangentSpace x).symm v)
       ((NormedSpace.fromTangentSpace x).symm w))
 
+
+/-- The bilinear expansion of a two-form on a pair of combinations of two tangent vectors: the
+coefficient is the determinant `a d - b c` of the coefficient matrix. -/
+theorem eval₂_smul_add_smul (form : SmoothTwoForm I M) (x : M) (v w : TangentSpace I x)
+    (a b c d : ℝ) :
+    SmoothBundleForm.eval₂ form x (a • v + b • w) (c • v + d • w) =
+      (a * d - b * c) * SmoothBundleForm.eval₂ form x v w := by
+  simpa only [SmoothForm.bilinFormAt_apply, smul_eq_mul] using
+    (SmoothForm.isAlt_bilinFormAt form x).apply_smul_add_smul v w a b c d
+
+/-- `SmoothTwoForm.eval₂_smul_add_smul` with coefficients the images of the coordinate
+directions under an endomorphism `B` of `ℝ × ℝ`: the coefficient is `det B`. -/
+theorem eval₂_smul_add_smul_det (form : SmoothTwoForm I M) (x : M) (B : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ)
+    (v w : TangentSpace I x) :
+    SmoothBundleForm.eval₂ form x ((B (1, 0)).1 • v + (B (1, 0)).2 • w)
+        ((B (0, 1)).1 • v + (B (0, 1)).2 • w) =
+      LinearMap.det B * SmoothBundleForm.eval₂ form x v w := by
+  simpa only [SmoothForm.bilinFormAt_apply, smul_eq_mul] using
+    (SmoothForm.isAlt_bilinFormAt form x).apply_smul_add_smul_det B v w
 
 end SmoothTwoForm
 

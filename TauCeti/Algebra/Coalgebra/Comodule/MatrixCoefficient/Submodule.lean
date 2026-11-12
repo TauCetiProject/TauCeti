@@ -30,6 +30,14 @@ These are the coordinate descriptions of subcomodules and of the stabilizer of a
 * `Submodule.coact_mem_range_iff_forall_matrixCoefficient_eq_zero`: over a field, the coaction
   of `m` lies in `W ⊗ C` exactly when `m` has no matrix coefficient against a functional
   vanishing on `W`.
+* `Submodule.coact_mem_range_of_forall_coactComponent_mem`: a subspace stable under every
+  contraction of the coaction contains the full coaction in its tensor-product image.
+* `Submodule.matrixCoefficient_eq_zero_of_mem_dualAnnihilator`: over any commutative semiring, if
+  the coaction of `m` lies in `W ⊗ C`, then `m` has no matrix coefficient against a functional
+  vanishing on `W`.
+* `Submodule.apply_matrixCoefficient_comp_mkQ_eq_zero_of_endOfPoint_mem_baseChange`: over any
+  commutative ring, if a point carries `1 ⊗ m` into `A ⊗ W`, it kills the matrix coefficients of
+  `m` against functionals vanishing on `W`.
 * `Submodule.mapsTo_endOfPoint_baseChange_iff`: a point preserves `A ⊗ W` exactly when it
   kills those matrix coefficients.
 
@@ -46,6 +54,26 @@ open TauCeti
 universe u v w
 
 namespace Submodule
+
+section Semiring
+
+variable {R : Type u} {C : Type v} {M : Type w} [CommSemiring R]
+variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommMonoid M] [Module R M] [Comodule R C M]
+
+/-- If the coaction of `m` lies in `W ⊗ C`, then every matrix coefficient pairing `m` with a
+functional vanishing on `W` is zero. -/
+theorem matrixCoefficient_eq_zero_of_mem_dualAnnihilator (W : Submodule R M) {m : M}
+    (hm : Comodule.coact (R := R) (C := C) (M := M) m ∈
+      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : C →ₗ[R] C)))
+    {φ : Module.Dual R M} (hφ : φ ∈ W.dualAnnihilator) :
+    Comodule.matrixCoefficient (R := R) (C := C) φ m = 0 := by
+  obtain ⟨t, ht⟩ := hm
+  have hzero : φ ∘ₗ W.subtype = 0 := LinearMap.ext fun w ↦ (mem_dualAnnihilator φ).mp hφ w w.2
+  rw [Comodule.matrixCoefficient_def, ← ht, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
+    LinearMap.id_comp, hzero, TensorProduct.map_zero_left, LinearMap.zero_apply, map_zero]
+
+end Semiring
 
 section Coalgebra
 
@@ -76,7 +104,45 @@ theorem coact_mem_range_iff_forall_matrixCoefficient_eq_zero (W : Submodule k M)
     apply (TensorProduct.lid k C).injective
     simpa only [map_zero, hcontract] using h ψ
 
+/-- A subspace stable under every contraction of the coaction is a subcomodule. -/
+theorem coact_mem_range_of_forall_coactComponent_mem (W : Submodule k M)
+    (hW : ∀ (f : Module.Dual k C) {m : M}, m ∈ W →
+      Comodule.coactComponent (R := k) (C := C) f m ∈ W)
+    {m : M} (hm : m ∈ W) :
+    Comodule.coact (R := k) (C := C) m ∈
+      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : C →ₗ[k] C)) := by
+  rw [W.coact_mem_range_iff_forall_matrixCoefficient_eq_zero]
+  intro ψ
+  apply (Module.forall_dual_apply_eq_zero_iff k _).mp
+  intro f
+  rw [LinearMap.apply_matrixCoefficient, LinearMap.comp_apply, W.mkQ_apply,
+    (Submodule.Quotient.mk_eq_zero W).mpr (hW f hm), map_zero]
+
 end Coalgebra
+
+section PointRing
+
+variable {k : Type u} {C : Type v} {M : Type w} {A : Type*} [CommRing k]
+variable [Ring C] [Algebra k C] [Coalgebra k C]
+variable [AddCommGroup M] [Module k M] [Comodule k C M] [CommRing A] [Algebra k A]
+
+/-- If an algebra-valued point carries `1 ⊗ m` into the scalar extension of `W`, it kills the
+matrix coefficient of `m` against every functional vanishing on `W`. -/
+theorem apply_matrixCoefficient_comp_mkQ_eq_zero_of_endOfPoint_mem_baseChange (W : Submodule k M)
+    (g : C →ₐ[k] A) {m : M} (hg : Comodule.endOfPoint M g (1 ⊗ₜ[k] m) ∈ W.baseChange A)
+    (ψ : Module.Dual k (M ⧸ W)) :
+    g (Comodule.matrixCoefficient (R := k) (C := C) (ψ ∘ₗ W.mkQ) m) = 0 := by
+  have hyq : W.mkQ.baseChange A (Comodule.endOfPoint M g (1 ⊗ₜ[k] m)) = 0 := by
+    rw [LinearMap.baseChange_eq_lTensor, ← LinearMap.mem_ker, lTensor_mkQ]
+    obtain ⟨y, hy⟩ := hg
+    exact ⟨y, by rw [← LinearMap.baseChange_eq_lTensor]; exact hy⟩
+  have heval := congrArg
+    (fun t ↦ TauCeti.Module.Dual.baseChangeEvaluation
+      (R := k) (M := M ⧸ W) (A := A) (1 ⊗ₜ[k] ψ) t) hyq
+  rw [map_zero, Module.Dual.baseChangeEvaluation_one_tmul_baseChange] at heval
+  simpa only [Comodule.baseChangeEvaluation_endOfPoint_tmul, one_mul] using heval
+
+end PointRing
 
 section Point
 
@@ -108,12 +174,8 @@ theorem mapsTo_endOfPoint_baseChange_iff (W : Submodule k M) (g : C →ₐ[k] A)
       LinearMap.baseChange_eq_lTensor]
   constructor
   · intro h ψ w hw
-    have hz := h (tmul_mem_baseChange_of_mem (1 : A) hw)
-    rw [hrange, SetLike.mem_coe, LinearMap.mem_ker] at hz
-    have h0 := LinearMap.tensorComponent_map ψ (LinearMap.id : A →ₗ[k] A) W.mkQ
-      (Comodule.endOfPoint M g (1 ⊗ₜ[k] w))
-    rw [← LinearMap.lTensor_def, hz, map_zero, LinearMap.id_apply] at h0
-    rw [← hpoint, h0]
+    exact apply_matrixCoefficient_comp_mkQ_eq_zero_of_endOfPoint_mem_baseChange W g
+      (h (tmul_mem_baseChange_of_mem (1 : A) hw)) ψ
   · intro h
     have hgen (w : M) (hw : w ∈ W) :
         Comodule.endOfPoint M g (1 ⊗ₜ[k] w) ∈ W.baseChange A := by

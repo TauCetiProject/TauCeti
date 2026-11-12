@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
+public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 
 import Mathlib.FieldTheory.Finite.GaloisField
@@ -53,6 +54,7 @@ With the Hilbert symbol this reads `(Δ, b)_K = (-1)^{v_K(b)}`.
 * `TauCeti.not_isSquare_of_unramified_class`: every class with this norm criterion is nonsquare.
 * `TauCeti.unramified_class_of_isSquare_mul`: the criterion is invariant under square classes.
 * `TauCeti.hilbertSymbol_unramified`: for such a `Δ`, `(Δ, b)_K = (-1)^{v_K(b)}`.
+* `TauCeti.hilbertSymbol_two_unramified`: for such a `Δ`, `(2, Δ)_K = (-1)^{v_K(2)}`.
 
 ## References
 
@@ -234,17 +236,34 @@ theorem exists_unramified_class (h2 : (2 : K) ≠ 0) :
 
 /-- If the norms from `K(√a)` are exactly the elements of even normalized valuation, then
 `a` is not a square. -/
-theorem not_isSquare_of_unramified_class (h2 : (2 : K) ≠ 0) {a : Kˣ}
+theorem not_isSquare_of_unramified_class {a : Kˣ}
     (ha : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2) ↔
       Even (normalizedValuation K b).toAdd) :
     ¬IsSquare a := by
-  intro hsq
-  have : Invertible (2 : K) := invertibleOfNonzero h2
+  rintro ⟨c, hc⟩
   obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
-  have h := (ha ϖ).mp ((hilbertSymbol_eq_one_iff a ϖ).mp
-    (hilbertSymbol_eq_one_of_isSquare_left hsq ϖ))
-  rw [(isUniformizer_def ϖ).mp hϖ, toAdd_ofAdd] at h
-  exact Int.not_even_one h
+  by_cases h2 : (2 : K) = 0
+  · -- in characteristic two the norms `x ^ 2 - c ^ 2 * y ^ 2 = (x + c * y) ^ 2` are squares, so
+    -- the unit `1 - ϖ` of even valuation would be a square and `ϖ = (1 + (x + c * y)) ^ 2` too
+    obtain ⟨ϖ', hϖ', hϖ'K⟩ := (isUniformizer_iff_exists_irreducible K ϖ).mp hϖ
+    have hu : IsUnit (1 - ϖ') := IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _ hϖ'.not_isUnit
+    have hb0 : ((1 - ϖ' : 𝒪[K]) : K) ≠ 0 := fun h ↦ hu.ne_zero (Subtype.ext h)
+    have hbv : normalizedValuation K (Units.mk0 _ hb0) = 1 := by
+      have := isUnit_iff_normalizedValuationWithZero_eq_one.mp hu
+      have h := normalizedValuationWithZero_coe (Units.mk0 _ hb0)
+      rw [Units.val_mk0, this] at h
+      exact_mod_cast h.symm
+    obtain ⟨x, y, hxy⟩ := (ha (Units.mk0 _ hb0)).mpr (by rw [hbv]; simp)
+    have hc' : (a : K) = c * c := by rw [hc, Units.val_mul]
+    have he : ((1 - ϖ' : 𝒪[K]) : K) = 1 - (ϖ : K) := by rw [← hϖ'K]; simp
+    simp only [Units.val_mk0, he, hc'] at hxy
+    exact not_isSquare_of_isUniformizer hϖ (Units.isSquare_coe_iff.mp ⟨1 + (x + c * y), by
+      linear_combination (-1) * hxy + (-x - c * y - x ^ 2 - c * x * y) * h2⟩)
+  · have : Invertible (2 : K) := invertibleOfNonzero h2
+    have h := (ha ϖ).mp ((hilbertSymbol_eq_one_iff a ϖ).mp
+      (hilbertSymbol_eq_one_of_isSquare_left ⟨c, hc⟩ ϖ))
+    rw [(isUniformizer_def ϖ).mp hϖ, toAdd_ofAdd] at h
+    exact Int.not_even_one h
 
 /-- The norm criterion only depends on the square class of `a`. -/
 theorem unramified_class_of_isSquare_mul {a Δ : Kˣ} (h : IsSquare (a * Δ))
@@ -265,5 +284,24 @@ theorem hilbertSymbol_unramified {Δ : Kˣ}
   split_ifs with h
   · exact (hilbertSymbol_eq_one_iff Δ b).mpr ((hΔ b).mpr h)
   · exact (hilbertSymbol_eq_neg_one_iff Δ b).mpr (mt (hΔ b).mp h)
+
+/-- **The Hilbert symbol of `2` against the unramified class** is `(2, Δ)_K = (-1)^{v_K(2)}`,
+where `v_K(2)` is the dyadic level `TauCeti.dyadicLevel`. In odd residue characteristic it is
+`1`; over a finite extension of `ℚ₂` it is `-1` exactly when the absolute ramification index is
+odd. -/
+theorem hilbertSymbol_two_unramified [Invertible (2 : K)] {Δ : Kˣ}
+    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) :
+    hilbertSymbol (unitOfInvertible (2 : K)) Δ =
+      (-1) ^ dyadicLevel K (isUnit_of_invertible (2 : K)).ne_zero := by
+  have h2 : (2 : K) ≠ 0 := (isUnit_of_invertible (2 : K)).ne_zero
+  have hunit : unitOfInvertible (2 : K) = Units.mk0 ((2 : ℕ) : K) (by exact_mod_cast h2) :=
+    Units.ext (by simp)
+  rw [hilbertSymbol_comm, hilbertSymbol_unramified hΔ, hunit, normalizedValuation_natCast,
+    toAdd_ofAdd]
+  simp only [Int.even_natCast, dyadicLevel_def]
+  rcases Nat.even_or_odd (natCastValuation K 2 (by exact_mod_cast h2)) with h | h
+  · simp [h, h.neg_one_pow]
+  · simp [Nat.not_even_iff_odd.2 h, h.neg_one_pow]
 
 end TauCeti

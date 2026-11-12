@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Coxeter.Bruhat
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 public import TauCeti.LinearAlgebra.RootSystem.BraidRelation
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 import all TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
@@ -54,6 +54,9 @@ its simple root is an inversion of the word, and the reflection in it deletes a 
   inversions.
 * `TauCeti.isReduced_weylCoxeterSystem_iff`: a word is reduced exactly when the element it spells
   has as many inversions as the word has letters.
+* `RootPairing.exists_isReduced_forall_isLeftDescent`: some reduced word spells an element of which
+  every simple reflection is a left descent (a reduced word of the longest element of the Weyl
+  group).
 * `RootPairing.weylCoxeterSystem_isReflection_ofIdx`: the reflection in every root, simple or not,
   is a reflection of the Coxeter system.
 * `RootPairing.bruhatStep_ofIdx_mul_iff_mem_inversions`: for a positive root `β`, `s_β w → w` is an
@@ -155,7 +158,8 @@ The canonical homomorphism from the Coxeter group of a base to the Weyl group is
 theorem weylCoxeterHom_injective : Function.Injective (weylCoxeterHom P b) :=
   (coxeterMatrixOfBase P b).toCoxeterSystem.injective_of_exchange (weylCoxeterHom P b)
     (fun w ↦ (inversions P b w).ncard) (orderOf_weylCoxeterHom_simple_mul_simple P b)
-    (isLeast_ncard_inversions_weylCoxeterHom P b) (exchange_weylCoxeterHom P b)
+    (fun w ↦ isLeast_ncard_inversions_weylCoxeterHom P b (weylCoxeterHom P b w))
+    (exchange_weylCoxeterHom P b)
 
 /-- **The Weyl group is a Coxeter system.** For a base `b` of a finite reduced crystallographic
 root system, the Weyl group with the simple reflections of `b` is a Coxeter system for the Coxeter
@@ -193,6 +197,16 @@ inversions as the word has letters. -/
 theorem isReduced_weylCoxeterSystem_iff (l : List b.support) :
     (weylCoxeterSystem P b).IsReduced l ↔ (inversions P b (wordProd P b l)).ncard = l.length := by
   rw [CoxeterSystem.IsReduced, weylCoxeterSystem_wordProd, length_weylCoxeterSystem_eq]
+
+/-- **A reduced word for the longest element**: some reduced word in the simple reflections spells
+an element of which every simple reflection is a left descent. -/
+theorem _root_.RootPairing.exists_isReduced_forall_isLeftDescent :
+    ∃ ω : List b.support, (weylCoxeterSystem P b).IsReduced ω ∧
+      ∀ i, (weylCoxeterSystem P b).IsLeftDescent ((weylCoxeterSystem P b).wordProd ω) i := by
+  have := P.finite_weylGroup_of_base b
+  obtain ⟨w, hw⟩ := (weylCoxeterSystem P b).exists_forall_isLeftDescent
+  obtain ⟨ω, hω, rfl⟩ := (weylCoxeterSystem P b).exists_isReduced w
+  exact ⟨ω, hω, hw⟩
 
 /-- **Root reflections are Coxeter reflections.** The reflection in any root, simple or not, is a
 conjugate of a simple reflection of the Coxeter system of the Weyl group, because every root is

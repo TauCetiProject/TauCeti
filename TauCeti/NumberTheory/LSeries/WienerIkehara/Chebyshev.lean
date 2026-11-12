@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.BoundaryGrowth
-import TauCeti.Analysis.Asymptotics.SumWindow
+import TauCeti.Analysis.Asymptotics.Sum.Window
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.NonnegTestFunction
 import TauCeti.NumberTheory.LSeries.Positivity
@@ -108,8 +108,8 @@ private theorem exists_eventually_sum_Ioc_norm_le_of_boundary (ha : 0 ≤ a)
   set c : ℝ := (𝓕 psi 0).re / 2 with hc
   have hc0 : 0 < c := half_pos (Complex.pos_iff.1 hpos).1
   have hcont : Continuous fun v : ℝ ↦ (𝓕 psi v).re :=
-    Complex.continuous_re.comp (TauCeti.continuous_fourier_of_integrable
-      (hpsi.continuous.integrable_of_hasCompactSupport hsupp))
+    Complex.continuous_re.comp
+      (hpsi.continuous.integrable_of_hasCompactSupport hsupp).continuous_fourier
   obtain ⟨η, hη, hηc⟩ := Metric.eventually_nhds_iff.1
     (hcont.continuousAt.eventually (lt_mem_nhds (by linarith : c < (𝓕 psi 0).re)))
   -- The smoothed series is eventually bounded by `M`.
@@ -164,7 +164,7 @@ theorem isBigO_sum_Icc_norm_id_of_boundary (ha : 0 ≤ a)
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
     (hsum : ∀ sigma : ℝ, 1 < sigma → LSeriesSummable a sigma) :
     (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, ‖a n‖) =O[atTop] fun t ↦ t := by
-  obtain ⟨q, K, hq0, hq1, h⟩ := exists_eventually_sum_Ioc_norm_le_of_boundary ha hG hG' hsum
-  exact isBigO_sum_Icc_of_sum_Ioc_floor_mul_le (fun n ↦ norm_nonneg (a n)) hq0.le hq1 h
+  obtain ⟨q, K, -, hq1, h⟩ := exists_eventually_sum_Ioc_norm_le_of_boundary ha hG hG' hsum
+  exact isBigO_sum_Icc_of_sum_Ioc_floor_mul_le (fun n ↦ norm_nonneg (a n)) hq1 h
 
 end TauCeti.LSeries

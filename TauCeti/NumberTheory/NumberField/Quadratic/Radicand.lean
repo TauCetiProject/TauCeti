@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 public import TauCeti.NumberTheory.QuadraticOrder.Embedding
-import TauCeti.Algebra.QuadraticAlgebra.Discriminant
+import Mathlib.Algebra.QuadraticAlgebra.Rat
 
 /-!
 # The squarefree radicand of a quadratic field
@@ -22,7 +22,7 @@ quadratic fields up to isomorphism are in bijection with the negative squarefree
 statements about imaginary quadratic fields up to isomorphism may be read off their radicands.
 
 The comparison of models reuses the classification of the models themselves,
-`QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree`: for squarefree integers `d` and `e`,
+`QuadraticAlgebra.Rat.nonempty_algEquiv_iff`: for squarefree integers `d` and `e`,
 `ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` exactly when `d = e`. A presented field is identified with its model by
 `TauCeti.QuadraticOrder.algEquivOfSqrt`, evaluation at the chosen square root.
 
@@ -32,6 +32,8 @@ The comparison of models reuses the classification of the models themselves,
   of `d` is isomorphic to `QuadraticAlgebra ℚ d 0`.
 * `NumberField.nonempty_algEquiv_iff_of_squarefree`: two quadratic fields presented by squarefree
   radicands `d` and `e` are isomorphic exactly when `d = e`.
+* `NumberField.eq_of_sq_eq_intCast_of_squarefree`: the squarefree radicand is the only
+  squarefree integer other than `1` with a square root in `K`.
 * `NumberField.existsUnique_squarefree_algEquiv`: every quadratic field is isomorphic to
   `QuadraticAlgebra ℚ d 0` for exactly one squarefree integer `d`.
 * `NumberField.existsUnique_neg_squarefree_algEquiv`: every imaginary quadratic field is
@@ -65,8 +67,27 @@ theorem nonempty_algEquiv_iff_of_squarefree (hK : finrank ℚ K = 2) (hL : finra
     (hd : Squarefree d) (he : Squarefree e) : Nonempty (K ≃ₐ[ℚ] L) ↔ d = e := by
   obtain ⟨φ⟩ := nonempty_algEquiv_quadraticAlgebra hK hθ
   obtain ⟨ψ⟩ := nonempty_algEquiv_quadraticAlgebra hL hη
-  rw [← QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree hd he]
+  rw [← QuadraticAlgebra.Rat.nonempty_algEquiv_iff hd he]
   exact ⟨fun ⟨σ⟩ => ⟨(φ.symm.trans σ).trans ψ⟩, fun ⟨τ⟩ => ⟨(φ.trans τ).trans ψ.symm⟩⟩
+
+/-- **The radicand is the only squarefree square class in `K`.** If `K` is presented by a square
+root of the squarefree integer `d`, and `z ∈ K` squares to a squarefree integer `n ≠ 1`, then
+`n = d`. Such a `z` is irrational, so it presents `K` with radicand `n`, and the radicand does not
+depend on the presentation. -/
+theorem eq_of_sq_eq_intCast_of_squarefree (hK : finrank ℚ K = 2) {θ : 𝓞 K}
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd : Squarefree d) {z : K} {n : ℤ}
+    (hz : z ^ 2 = (n : K)) (hn : Squarefree n) (hn1 : n ≠ 1) : n = d := by
+  have : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  -- A rational square root would make `n` a square, hence `1` since it is squarefree.
+  have hzQ : z ∉ Set.range (algebraMap ℚ K) := by
+    rintro ⟨q, rfl⟩
+    have hq : (n : ℚ) = q * q := by
+      rw [← sq]
+      exact_mod_cast ((algebraMap ℚ K).injective (by simpa using hz)).symm
+    obtain ⟨m, rfl⟩ := Rat.isSquare_intCast_iff.1 ⟨q, hq⟩
+    rcases Int.isUnit_iff.1 (hn m dvd_rfl) with rfl | rfl <;> exact hn1 rfl
+  obtain ⟨η, hη, -⟩ := exists_gen_of_sq_eq_intCast hz hzQ
+  exact (nonempty_algEquiv_iff_of_squarefree hK hK hη hmin hn hd).1 ⟨AlgEquiv.refl⟩
 
 /-- **The squarefree model of a quadratic field.** Every number field of degree `2` over `ℚ` is
 isomorphic to `QuadraticAlgebra ℚ d 0` for exactly one squarefree integer `d`. -/
@@ -75,7 +96,7 @@ theorem existsUnique_squarefree_algEquiv (hK : finrank ℚ K = 2) :
   obtain ⟨θ, d, hmin, -, hd⟩ := exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
   refine ⟨d, ⟨hd, nonempty_algEquiv_quadraticAlgebra hK hmin⟩, fun e ⟨he, ⟨ψ⟩⟩ => ?_⟩
   obtain ⟨φ⟩ := nonempty_algEquiv_quadraticAlgebra hK hmin
-  exact ((QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree hd he).mp
+  exact ((QuadraticAlgebra.Rat.nonempty_algEquiv_iff hd he).mp
     ⟨φ.symm.trans ψ⟩).symm
 
 /-- **The radicand classification of imaginary quadratic fields.** Every totally complex number

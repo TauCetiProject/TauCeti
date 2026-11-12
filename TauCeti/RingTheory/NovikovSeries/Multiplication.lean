@@ -40,6 +40,8 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   (commutative) (semi)ring structures, with unit the monomial `single 0 1`.
 * `TauCeti.NovikovSeries.instAlgebra`: for an `S`-algebra `R`, Novikov series over `R` form an
   `S`-algebra, with `algebraMap S _ s = single 0 (algebraMap S R s)`.
+* `TauCeti.NovikovSeries.coeffZeroRingEquiv`: over a trivial exponent group, Novikov series are
+  identified with their constant coefficients.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra`: the group ring `R[H]` as a subring of Novikov
   series, by its coefficient map.
 
@@ -53,7 +55,9 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   multiply by adding exponents.
 * `TauCeti.NovikovSeries.unitsSingle`, `TauCeti.NovikovSeries.isUnit_single`: over an additive
   group, a monomial `u e^g` with unit coefficient is a unit, with inverse `u⁻¹ e^(-g)`.
-* `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series.
+* `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series,
+  and `TauCeti.NovikovSeries.mem_range_ofAddMonoidAlgebra_iff` identifies its image as the series
+  of finite support.
   Over an additive group `H` and for nontrivial `R`, by
   `TauCeti.NovikovSeries.ofFinsupp_surjective_iff` this embedding is onto exactly when `N = 0`.
 
@@ -133,7 +137,7 @@ theorem support_mul_subset (a b : NovikovSeries R H N) :
 
 /-- A coefficient of a product as a sum over a finite set `F`, mapped injectively by `f` onto a set
 of pairs adding up to `h` which contains every pair of support exponents. -/
-private theorem coeff_mul_eq_sum_of_injOn {ι : Type*} {a b : NovikovSeries R H N} {h : H}
+theorem coeff_mul_eq_sum_of_injOn {ι : Type*} {a b : NovikovSeries R H N} {h : H}
     {F : Finset ι} {f : ι → H × H} (hf : ∀ t ∈ F, (f t).1 + (f t).2 = h)
     (hab : ∀ u v, u + v = h → a.coeff u ≠ 0 → b.coeff v ≠ 0 → ∃ t ∈ F, f t = (u, v))
     (hinj : Set.InjOn f F) :
@@ -318,7 +322,7 @@ variable [AddMonoid H] {N : H →+ ℝ}
 /-- The coefficient at `h` of a triple product `a * b * c` is the sum of
 `a.coeff u * b.coeff v * c.coeff w` over the finitely many triples of support exponents with
 `u + v + w = h`. -/
-private theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
+theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N) (h : H) :
     (a * b * c).coeff h = ∑ t ∈ (finite_setOf_add_add_eq a b c h).toFinset,
       a.coeff t.1 * b.coeff t.2.1 * c.coeff t.2.2 := by
   classical
@@ -546,7 +550,42 @@ theorem ofAddMonoidAlgebra_injective :
     Injective (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) :=
   fun _ _ hxy => AddMonoidAlgebra.coeff_injective (ofFinsupp_injective hxy)
 
+/-- A Novikov series comes from the group ring exactly when its support is finite. -/
+theorem mem_range_ofAddMonoidAlgebra_iff {a : NovikovSeries R H N} :
+    a ∈ Set.range (ofAddMonoidAlgebra : AddMonoidAlgebra R H → NovikovSeries R H N) ↔
+      a.support.Finite := by
+  rw [← mem_range_ofFinsupp_iff]
+  exact ⟨fun ⟨x, hx⟩ => ⟨x.coeff, hx⟩, fun ⟨f, hf⟩ => ⟨.ofCoeff f, hf⟩⟩
+
 end AddMonoidAlgebra
+
+section Subsingleton
+
+variable [AddZeroClass H] [Subsingleton H] {N : H →+ ℝ}
+
+/-- **Novikov series over a trivial exponent group are their constant coefficients.** Taking the
+coefficient at `0` is a ring isomorphism onto `R`, with inverse `r ↦ single 0 r`. -/
+def coeffZeroRingEquiv [NonUnitalNonAssocSemiring R] : NovikovSeries R H N ≃+* R where
+  toFun a := a.coeff 0
+  invFun r := single 0 r
+  left_inv := single_zero_coeff_zero
+  right_inv := coeff_single_same 0
+  map_mul' a b := by
+    conv_lhs => rw [← single_zero_coeff_zero a, ← single_zero_coeff_zero b]
+    rw [single_mul_single, add_zero, coeff_single_same]
+  map_add' a b := coeff_add a b 0
+
+@[simp]
+theorem coeffZeroRingEquiv_apply [NonUnitalNonAssocSemiring R] (a : NovikovSeries R H N) :
+    coeffZeroRingEquiv a = a.coeff 0 :=
+  (rfl)
+
+@[simp]
+theorem coeffZeroRingEquiv_symm_apply [NonUnitalNonAssocSemiring R] (r : R) :
+    (coeffZeroRingEquiv (N := N)).symm r = single (0 : H) r :=
+  (rfl)
+
+end Subsingleton
 
 end NovikovSeries
 

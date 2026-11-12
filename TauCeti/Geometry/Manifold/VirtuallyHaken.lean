@@ -92,15 +92,13 @@ theorem of_isFiniteCover {N : Type u} [TopologicalSpace N] (h : IsVirtuallyHaken
 /-- A virtually Haken space is compact, as the image of a closed 3-manifold. -/
 theorem compactSpace (h : IsVirtuallyHaken M) : CompactSpace M := by
   obtain ⟨N, _, _, p, hp, hN⟩ := h
-  obtain ⟨-, -, -, hN, -⟩ := isClosedConnectedThreeManifold_iff.mp hN.isClosedConnectedThreeManifold
-  have : CompactSpace N := isCompact_univ_iff.mp hN
+  obtain ⟨-, -, _, -⟩ := isClosedConnectedThreeManifold_iff.mp hN.isClosedConnectedThreeManifold
   exact hp.surjective.compactSpace hp.isCoveringMap.continuous
 
 /-- A virtually Haken space is connected, as the image of a connected 3-manifold. -/
 theorem connectedSpace (h : IsVirtuallyHaken M) : ConnectedSpace M := by
   obtain ⟨N, _, _, p, hp, hN⟩ := h
-  obtain ⟨-, -, -, -, hN⟩ := isClosedConnectedThreeManifold_iff.mp hN.isClosedConnectedThreeManifold
-  have : ConnectedSpace N := connectedSpace_iff_univ.mpr hN
+  obtain ⟨-, -, -, _⟩ := isClosedConnectedThreeManifold_iff.mp hN.isClosedConnectedThreeManifold
   exact hp.connectedSpace
 
 end IsVirtuallyHaken

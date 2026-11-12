@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Basic
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 
 /-!
 # Finitely generated adic rings are Huber rings
@@ -66,10 +65,7 @@ noncomputable def adic (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) : PairOfDefini
   fg_idealOfDefinition := by
     rw [← Ideal.map_symm]
     exact hfg.map (Subring.topEquiv : (⊤ : Subring A) ≃+* A).symm.toRingHom
-  isAdic_idealOfDefinition := by
-    -- An adic topology is a ring topology, so `IsAdic.comap` applies without assuming it.
-    have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
-    exact IsAdic.comap _ Topology.IsInducing.subtypeVal hI
+  isAdic_idealOfDefinition := hI.comap _ Topology.IsInducing.subtypeVal
 
 @[simp]
 theorem adic_ringOfDefinition (I : Ideal A) (hI : IsAdic I) (hfg : I.FG) :

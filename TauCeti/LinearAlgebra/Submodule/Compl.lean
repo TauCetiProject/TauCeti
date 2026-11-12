@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.LocalRing.Module
+import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.Projection
 
 /-!
@@ -17,10 +18,10 @@ Complementarity under restriction, quotients and products, and finite free compl
 local rings.
 
 **Restriction to a subspace.** Mathlib's `Submodule.isCompl_comap_subtype_of_isCompl_of_le`
-restricts a complementary pair to a subspace that contains one of the two. This file records the
-variant that applies when neither member of the pair lies in the subspace: a disjoint pair cuts a
-subspace `U` into a complementary pair as soon as the two intersections with `U` span `U` — for a
-general `U` a genuine hypothesis, not a consequence of spanning the ambient module.
+restricts a complementary pair to a subspace that contains one of the two. This file characterises
+complementarity of the restrictions of an arbitrary pair to a subspace `U`: the two intersections
+with `U` must be disjoint and span `U`. For a general `U` spanning is a genuine condition, not a
+consequence of the pair spanning the ambient module.
 
 **Quotients.** The images of two submodules `A` and `B` in `M ⧸ p` are complementary exactly when
 `A ⊔ p` and `B ⊔ p` meet in `p` and `A`, `B` and `p` together span `M`. This is the form in which
@@ -36,42 +37,34 @@ A complement in a finite flat module over a local ring is finite free
 
 ## Main results
 
-* `TauCeti.Submodule.isCompl_comap_subtype`: a disjoint pair of submodules whose intersections with
-  `U` span `U` restricts to a complementary pair of submodules of `U`.
+* `Submodule.isCompl_comap_subtype_iff`: two submodules restrict to a complementary pair of
+  submodules of `U` exactly when their intersections with `U` are disjoint and span `U`.
 * `Submodule.isCompl_map_mkQ_iff`: complementarity of images in a quotient, read in the
   ambient module.
 * `IsCompl.prod`: a product of complementary pairs is complementary.
 * `Submodule.finite_free_of_isCompl`: a direct summand of a finite flat module over a local ring
   is finite free.
+* `Submodule.finrank_lt_of_isCompl_of_ne_bot`: over a domain satisfying rank-nullity, a nonzero
+  summand of a finite torsion-free module has a complement of strictly smaller rank.
 -/
 
 public section
-
-namespace TauCeti
 
 universe u v
 
 namespace Submodule
 
-variable {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
-
-/-- A disjoint pair of submodules whose intersections with a subspace `U` span `U` cuts `U` into a
-complementary pair of submodules. -/
-theorem isCompl_comap_subtype {U A B : Submodule R M} (hAB : Disjoint A B)
-    (hU : U ≤ U ⊓ A ⊔ U ⊓ B) :
-    IsCompl (A.comap U.subtype) (B.comap U.subtype) := by
-  constructor
-  · rw [disjoint_iff, ← Submodule.comap_inf, disjoint_iff.mp hAB, Submodule.comap_bot,
-      Submodule.ker_subtype]
-  · rw [codisjoint_iff]
-    refine Submodule.map_injective_of_injective U.subtype_injective ?_
-    rw [Submodule.map_sup, Submodule.map_comap_subtype, Submodule.map_comap_subtype,
-      Submodule.map_subtype_top]
-    exact le_antisymm (sup_le inf_le_left inf_le_left) hU
+/-- The traces of `A` and `B` on a subspace `U` are complementary in `U` exactly when the two
+intersections with `U` are disjoint and together span `U`. -/
+theorem isCompl_comap_subtype_iff {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M]
+    [Module R M] {U A B : Submodule R M} :
+    IsCompl (A.comap U.subtype) (B.comap U.subtype) ↔
+      Disjoint (U ⊓ A) (U ⊓ B) ∧ U ≤ U ⊓ A ⊔ U ⊓ B := by
+  simp [U.mapIic.isCompl_iff, Set.Iic.isCompl_iff, le_antisymm_iff]
 
 /-- The images of two submodules in the quotient by `p` are complementary exactly when, after
 adding `p`, they meet in `p`, and together with `p` they span the whole module. -/
-theorem _root_.Submodule.isCompl_map_mkQ_iff {R : Type u} {M : Type v} [Ring R]
+theorem isCompl_map_mkQ_iff {R : Type u} {M : Type v} [Ring R]
     [AddCommGroup M] [Module R M]
     {p A B : Submodule R M} :
     IsCompl (A.map p.mkQ) (B.map p.mkQ) ↔ (p ⊔ A) ⊓ (p ⊔ B) ≤ p ∧ p ⊔ (A ⊔ B) = ⊤ := by
@@ -88,15 +81,13 @@ variable {R E F : Type*} [Semiring R] [AddCommMonoid E] [Module R E] [AddCommMon
 variable {L₁ L₂ : Submodule R E} {M₁ M₂ : Submodule R F}
 
 /-- Products of complementary submodules are complementary. -/
-theorem _root_.IsCompl.prod (hL : IsCompl L₁ L₂) (hM : IsCompl M₁ M₂) :
+theorem IsCompl.prod (hL : IsCompl L₁ L₂) (hM : IsCompl M₁ M₂) :
     IsCompl (L₁.prod M₁) (L₂.prod M₂) := by
   refine IsCompl.of_eq ?_ ?_
   · rw [Submodule.prod_inf_prod, hL.inf_eq_bot, hM.inf_eq_bot, Submodule.prod_bot]
   · rw [Submodule.prod_sup_prod, hL.sup_eq_top, hM.sup_eq_top, Submodule.prod_top]
 
 end Prod
-
-end TauCeti
 
 namespace Submodule
 
@@ -109,5 +100,20 @@ theorem finite_free_of_isCompl {R M : Type*} [CommRing R] [IsLocalRing R]
   have : Module.Flat R S := Module.Flat.of_retract S.subtype
     (S.projectionOnto T h) (by ext; simp)
   exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
+
+/-- Over a domain satisfying rank-nullity (for instance a commutative domain or a division ring), a
+nonzero summand of a finite torsion-free module has a complement of strictly smaller rank. -/
+theorem finrank_lt_of_isCompl_of_ne_bot {R : Type u} {M : Type v} [Ring R] [IsDomain R]
+    [StrongRankCondition R] [HasRankNullity.{v} R]
+    [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M] [Module.Finite R M]
+    {S T : Submodule R M} (h : IsCompl S T) (hS : S ≠ ⊥) :
+    Module.finrank R T < Module.finrank R M := by
+  have : Nontrivial S := Submodule.nontrivial_iff_ne_bot.mpr hS
+  have : Module.Finite R S := .equiv (Submodule.quotientEquivOfIsCompl _ _ h.symm)
+  have : Module.Finite R T := .equiv (Submodule.quotientEquivOfIsCompl _ _ h)
+  have hr := S.finrank_quotient_add_finrank
+  rw [(Submodule.quotientEquivOfIsCompl _ _ h).finrank_eq] at hr
+  have hs : 0 < Module.finrank R S := Module.finrank_pos
+  omega
 
 end Submodule

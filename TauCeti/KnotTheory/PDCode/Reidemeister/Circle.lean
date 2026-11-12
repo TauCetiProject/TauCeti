@@ -105,33 +105,6 @@ theorem adjoinKink_edgePair_val (D : PDCode n) (b : Bool) :
       halfEdgeSuccEquiv n (.inr (slotSmoothing true s)) := by
   simp [adjoinKink_edgePair_val, Equiv.permCongr_apply]
 
-private theorem orbitCount_opposite_mul_smoothing :
-    orbitCount (oppositeCrossingSlot * slotSmoothing true) = 2 := by
-  have h : IsPerfectMatching (oppositeCrossingSlot * slotSmoothing true) := by
-    rw [isPerfectMatching_iff]
-    simp only [oppositeCrossingSlot_apply, slotSmoothing_true,
-      Perm.mul_apply]
-    decide
-  have hcount := h.two_mul_orbitCount
-  simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hcount
-  omega
-
-private theorem orbitCount_smoothing_mul_smoothing (b : Bool) :
-    orbitCount (slotSmoothing b * slotSmoothing true) = if b then 4 else 2 := by
-  cases b
-  · have h : IsPerfectMatching (slotSmoothing false * slotSmoothing true) := by
-      rw [isPerfectMatching_iff]
-      simp only [slotSmoothing_false, slotSmoothing_true, Perm.mul_apply]
-      decide
-    have hcount := h.two_mul_orbitCount
-    simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hcount
-    simp only [Bool.false_eq_true, ↓reduceIte]
-    omega
-  · have h : slotSmoothing true * slotSmoothing true = 1 :=
-      Equiv.ext (slotSmoothing_apply_apply true)
-    rw [h, orbitCount_one]
-    simp
-
 private theorem orbitCount_mul_adjoinKink_edgePair (D : PDCode n) (b : Bool)
     (σ : Perm (Fin (4 * n))) (τ : Perm (Fin 4)) :
     orbitCount ((halfEdgeSuccEquiv n).permCongr (Perm.sumCongr σ τ) *
@@ -140,12 +113,21 @@ private theorem orbitCount_mul_adjoinKink_edgePair (D : PDCode n) (b : Bool)
   rw [adjoinKink_edgePair_val, ← Equiv.permCongr_mul, Perm.sumCongr_mul,
     orbitCount_permCongr, orbitCount_sumCongr]
 
+/-- Component traversal separates into the old traversal and the two directed traversals of
+the isolated kink. -/
+theorem componentPerm_adjoinKink (D : PDCode n) (b : Bool) :
+    (D.adjoinKink b).componentPerm = (halfEdgeSuccEquiv n).permCongr
+      (Perm.sumCongr D.componentPerm (oppositeCrossingSlot * slotSmoothing true)) := by
+  rw [componentPerm_def, crossingTurn_eq_permCongr_sumCongr (adjoinKink_halfEdge D b),
+    adjoinKink_edgePair_val, ← Equiv.permCongr_mul, Perm.sumCongr_mul, componentPerm_def]
+
 /-- Adjoining an isolated kink adds one crossing-bearing component. -/
 @[simp] theorem crossingComponentCount_adjoinKink (D : PDCode n) (b : Bool) :
     (D.adjoinKink b).crossingComponentCount = D.crossingComponentCount + 1 := by
   rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_def,
     componentPerm_def, crossingTurn_eq_permCongr_sumCongr (adjoinKink_halfEdge D b),
-    orbitCount_mul_adjoinKink_edgePair, orbitCount_opposite_mul_smoothing]
+    orbitCount_mul_adjoinKink_edgePair,
+    orbitCount_oppositeCrossingSlot_mul_slotSmoothing]
   omega
 
 /-- A kink and a crossing-free circle contribute the same number of components. -/
@@ -163,9 +145,12 @@ and one circle otherwise. -/
     smoothingTurn_eq_permCongr_sumCongr (adjoinKink_halfEdge D b),
     init_smoothingChoice_of_overPair_eq (adjoinKink_overPair D b),
     smoothingChoice_last_of_overPair_eq (adjoinKink_overPair D b),
-    orbitCount_mul_adjoinKink_edgePair, orbitCount_smoothing_mul_smoothing,
+    orbitCount_mul_adjoinKink_edgePair,
+    (isPerfectMatching_slotSmoothing _).orbitCount_mul_fin_four
+      (isPerfectMatching_slotSmoothing true),
     adjoinKink_crossinglessComponentCount]
-  by_cases h : s (Fin.last n) = b <;> simp [h] <;> omega
+  by_cases h : s (Fin.last n) = b <;>
+    simp [Bool.beq_eq_decide_eq, h, -slotSmoothing_true, -slotSmoothing_false] <;> omega
 
 /-- The first Reidemeister factor for a kink on a crossing-free circle. The surrounding
 diagram may be empty. -/

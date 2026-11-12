@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Wishart.Basic
 public import TauCeti.Probability.Distributions.Wishart.Nonsingular
 public import TauCeti.Probability.Distributions.ChiSquared.Basic
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 import TauCeti.Probability.Distributions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
@@ -105,7 +106,7 @@ theorem map_symmetricFinOneEquiv_nonsingularWishartMeasure {n : ℝ} (hn : 0 < n
   have hchi : (Probability.chiSquaredMeasure n).map (S 0 0 * ·) =
       gammaMeasure (n / 2) (1 / 2 / S 0 0) := by
     rw [Probability.chiSquaredMeasure_eq_gammaMeasure hn,
-      gammaMeasure_map_const_mul (by positivity) (by norm_num) hS]
+      gammaMeasure_map_const_mul hS]
   -- the Wishart law, read through the identification, is its density against Lebesgue measure
   have hwishart : (nonsingularWishartMeasure n S).map symmetricFinOneEquiv =
       volume.withDensity fun y => nonsingularWishartPDF n S (e.symm y) := by

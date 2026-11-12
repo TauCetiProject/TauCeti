@@ -49,6 +49,8 @@ compared with its real extension.
 * `IsBaseChange.bilinForm`: extension to an abstract base change, characterized by its values
   on the original module.
 * `IsBaseChange.bilinForm_tmul`: extension commutes with tensor products of bilinear forms.
+* `LinearMap.BilinForm.baseChange_rTensor_rTensor`: the canonical base change is natural along
+  algebra maps of the scalars.
 * `LinearMap.SeparatingLeft.baseChange`: a free scalar extension preserves left separation.
 * `LinearMap.BilinForm.Nondegenerate.baseChange`: a free scalar extension preserves
   nondegeneracy, without a finite-dimensionality assumption.
@@ -61,6 +63,8 @@ compared with its real extension.
   canonical base change of the second form.
 * `IsBaseChange.bilinFormIsometryEquiv`: in that situation the base-change equivalence is an
   isometric equivalence from the canonical base change of the second form.
+* `LinearMap.BilinForm.baseChange_baseChange_baseChange`: base-changed maps preserving a bilinear
+  form preserve its base change.
 * `LinearMap.BilinForm.toMatrix_baseChange`: the Gram matrix of a base-changed form, in the
   base-changed basis, is the entrywise image of the original Gram matrix.
 * `LinearMap.BilinForm.det_toMatrix_baseChange`: the determinant of that Gram matrix is the image of
@@ -96,6 +100,21 @@ theorem baseChange_flip (B : LinearMap.BilinForm R M) :
     B.flip.baseChange A = (B.baseChange A).flip := by
   ext x y
   simp
+
+/-- **Scalar extension of a bilinear form is natural in the scalars.** Along an `R`-algebra map
+`f : A → A'`, the base change of `B` to `A'`, evaluated on the images of `x y : A ⊗[R] M`, is the
+image under `f` of its base change to `A`, evaluated on `x` and `y`. -/
+@[simp]
+theorem baseChange_rTensor_rTensor {A' : Type*} [CommSemiring A'] [Algebra R A'] (f : A →ₐ[R] A')
+    (B : LinearMap.BilinForm R M) (x y : A ⊗[R] M) :
+    B.baseChange A' (f.toLinearMap.rTensor M x) (f.toLinearMap.rTensor M y) =
+      f (B.baseChange A x y) := by
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ hx₁ hx₂ => simp only [map_add, LinearMap.add_apply, hx₁, hx₂]
+  | tmul a m =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ hy₁ hy₂ => simp only [map_add, hy₁, hy₂]
+    | tmul a' m' => simp [map_mul]
 
 variable (A) in
 /-- A free scalar extension preserves left separation of a bilinear form, with no finiteness
@@ -351,6 +370,20 @@ theorem _root_.IsBaseChange.bilinFormIsometryEquiv_apply (h : IsBaseChange A f)
     h.bilinFormIsometryEquiv B' B hB x = h.equiv x :=
   (rfl)
 
+/-- **Base-changed maps preserving a bilinear form preserve its base change**: if `g` carries `B`
+to `B'`, then `g.baseChange A` carries `B.baseChange A` to `B'.baseChange A`. -/
+theorem _root_.LinearMap.BilinForm.baseChange_baseChange_baseChange {M' : Type*}
+    [AddCommMonoid M'] [Module R M'] {B : LinearMap.BilinForm R M}
+    {B' : LinearMap.BilinForm R M'} {g : M →ₗ[R] M'} (hg : ∀ v w, B' (g v) (g w) = B v w)
+    (x y : A ⊗[R] M) :
+    B'.baseChange A (g.baseChange A x) (g.baseChange A y) = B.baseChange A x y := by
+  have hlift : (TensorProduct.mk R A M' 1 ∘ₗ g).liftBaseChange A = g.baseChange A := by
+    ext
+    simp
+  rw [← hlift]
+  exact B.liftBaseChange (B'.baseChange A)
+    (fun v w => by simp [hg, Algebra.algebraMap_eq_smul_one]) x y
+
 end
 
 end TauCeti
@@ -441,14 +474,8 @@ linear equivalence is an isometric equivalence of the base-changed forms. -/
 def _root_.LinearMap.BilinForm.IsometryEquiv.baseChange (f : B₁.IsometryEquiv B₂) :
     (B₁.baseChange A).IsometryEquiv (B₂.baseChange A) where
   toLinearEquiv := (f : M₁ ≃ₗ[R] M₂).baseChange R A M₁ M₂
-  map_app' x y := by
-    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
-    induction x using TensorProduct.inductionOn with
-    | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-    | tmul a m =>
-      induction y using TensorProduct.inductionOn with
-      | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-      | tmul b n => simp
+  map_app' := LinearMap.BilinForm.baseChange_baseChange_baseChange (g := (f : M₁ →ₗ[R] M₂))
+    fun v w => f.map_app w v
 
 /-- On pure tensors, a base-changed isometric equivalence applies the original equivalence to the
 vector. -/

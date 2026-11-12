@@ -10,16 +10,21 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 /-!
 # Two-vector quadratic-form identities in real or complex inner-product spaces
 
-Three elementary lemmas useful for block-operator perturbation estimates:
+Five elementary lemmas useful for block-operator perturbation estimates and planar motions:
 
 * `LinearMap.IsSymmetric.re_inner_map_symm`: the real mixed coefficients agree for symmetric maps;
 * `LinearMap.re_inner_smul_add_smul_map`: expand the real quadratic form of a two-vector
   real-linear combination;
+* `TauCeti.abs_re_inner_le_of_norm_le`: `‖w‖ ≤ ε * ‖v‖` bounds `|re ⟪u, w⟫|` by `‖u‖ * ‖v‖ * ε`,
+  so an operator bound `‖H v‖ ≤ ε * ‖v‖` bounds the real part of every coefficient `⟪u, H v⟫`;
 * `TauCeti.norm_smul_add_smul_sq`: the Pythagorean norm formula for a two-vector
-  real-linear combination when the real part of the mixed inner product vanishes.
+  real-linear combination when the real part of the mixed inner product vanishes;
+* `TauCeti.norm_smul_add_smul_eq_one_iff`: its unit-circle case: for unit vectors `y, z` with
+  `re ⟪y, z⟫ = 0`, `‖γ y + σ z‖ = 1` exactly when `γ² + σ² = 1`.
 
 No finite-dimensionality, spectral-gap, or eigenvector assumptions are needed. The results
-are used by the per-eigenvector double-angle estimates in `DoubleAngle.Vector`.
+are used by the per-eigenvector double-angle estimates in `DoubleAngle.Vector` and by the
+circular motions of the central-force radial reduction.
 
 Adapted from the Apache-2.0 DKPS formalization (Kitware, Inc.).
 -/
@@ -44,7 +49,7 @@ end LinearMap.IsSymmetric
 namespace LinearMap
 
 /-- Quadratic form of an operator at a real linear combination of two vectors,
-expanded into the four scalar entries.  Pure sesquilinear algebra. -/
+expanded into the four scalar entries. -/
 theorem re_inner_smul_add_smul_map (H : E →ₗ[𝕜] E) (y z : E) (γ σ : ℝ) :
     RCLike.re ⟪(γ : 𝕜) • y + (σ : 𝕜) • z, H ((γ : 𝕜) • y + (σ : 𝕜) • z)⟫_𝕜
       = γ ^ 2 * RCLike.re ⟪y, H y⟫_𝕜 + σ ^ 2 * RCLike.re ⟪z, H z⟫_𝕜
@@ -57,11 +62,29 @@ end LinearMap
 
 namespace TauCeti
 
+/-- If `‖w‖ ≤ ε * ‖v‖`, then `|re ⟪u, w⟫| ≤ ‖u‖ * ‖v‖ * ε`. For `w = H v` this says that an
+operator bound `‖H v‖ ≤ ε * ‖v‖` bounds the real part of every coefficient `⟪u, H v⟫`. -/
+theorem abs_re_inner_le_of_norm_le (u : E) {v w : E} {ε : ℝ} (hw : ‖w‖ ≤ ε * ‖v‖) :
+    |RCLike.re ⟪u, w⟫_𝕜| ≤ ‖u‖ * ‖v‖ * ε :=
+  calc |RCLike.re ⟪u, w⟫_𝕜| ≤ ‖⟪u, w⟫_𝕜‖ := RCLike.abs_re_le_norm _
+    _ ≤ ‖u‖ * ‖w‖ := norm_inner_le_norm _ _
+    _ ≤ ‖u‖ * (ε * ‖v‖) := by gcongr
+    _ = ‖u‖ * ‖v‖ * ε := by ring
+
 /-- Squared norm of a real linear combination of two vectors orthogonal with respect
 to the real part of the inner product. -/
 theorem norm_smul_add_smul_sq {y z : E} (hyz : RCLike.re ⟪y, z⟫_𝕜 = 0) (γ σ : ℝ) :
     ‖(γ : 𝕜) • y + (σ : 𝕜) • z‖ ^ 2 = γ ^ 2 * ‖y‖ ^ 2 + σ ^ 2 * ‖z‖ ^ 2 := by
   rw [norm_add_sq (𝕜 := 𝕜)]
   simp [inner_smul_left, inner_smul_right, hyz, norm_smul, mul_pow, sq_abs]
+
+/-- For unit vectors `y, z` orthogonal with respect to the real part of the inner product, the
+real linear combination `γ y + σ z` is a unit vector exactly when `γ² + σ² = 1`; this is
+`norm_smul_add_smul_sq` read on the unit circle. -/
+theorem norm_smul_add_smul_eq_one_iff {y z : E} (hy : ‖y‖ = 1) (hz : ‖z‖ = 1)
+    (hyz : RCLike.re ⟪y, z⟫_𝕜 = 0) {γ σ : ℝ} :
+    ‖(γ : 𝕜) • y + (σ : 𝕜) • z‖ = 1 ↔ γ ^ 2 + σ ^ 2 = 1 := by
+  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, norm_smul_add_smul_sq hyz, hy, hz]
+  simp only [one_pow, mul_one]
 
 end TauCeti

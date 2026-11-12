@@ -5,10 +5,12 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import TauCeti.Probability.Distributions.StudentT.Basic
 public import TauCeti.Probability.Cdf
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.MeasureTheory.Measure.Interval
+import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.StudentT.WeightedIntegral
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
@@ -76,7 +78,7 @@ private lemma integral_Ioi_studentTPDFReal_eq_betaKernel_tail (hν : 0 < ν) {y 
     refine setIntegral_congr_fun measurableSet_Ioi fun z hz => ?_
     -- The chart lemma at `q = 0`: its `z ^ (0 : ℝ)` factor disappears, and the beta kernel
     -- abbreviation unfolds to the explicit powers that `g1` is written with.
-    have h := abs_deriv_smul_studentTPDFReal hν 0 (hy.trans_lt hz)
+    have h := abs_deriv_smul_studentTPDFReal (ν := ν) 0 (hy.trans_lt hz)
     rw [Real.rpow_zero, mul_one] at h
     dsimp only [g1]
     rw [hC, hs, ← h, studentTBetaKernel]
@@ -169,7 +171,7 @@ theorem cdf_studentTMeasure_eq (hν : 0 < ν) (x : ℝ) :
         (1 / 2 : ℝ) * (1 - regularizedIncompleteBeta (1 / 2) (ν / 2) (y ^ 2 / (ν + y ^ 2))) := by
     intro y hy
     have hreal : (studentTMeasure ν).real (Ioi y) = ∫ z in Ioi y, studentTPDFReal ν z := by
-      exact measureReal_studentTMeasure measurableSet_Ioi
+      exact measureReal_studentTMeasure (Ioi y)
     rw [hreal, integral_Ioi_studentTPDFReal_tail hν hy]
   by_cases hx : 0 ≤ x
   · -- nonnegative branch: `cdf = 1 - tail`, and the reflection formula swaps the beta parameters
@@ -193,38 +195,8 @@ theorem cdf_studentTMeasure_eq (hν : 0 < ν) (x : ℝ) :
   · -- negative branch: reflection in the origin gives `cdf(x) = tail(-x)`
     have hxneg : x < 0 := by linarith
     have hmy : 0 ≤ -x := by linarith
-    have hpre : (fun w : ℝ => -w) ⁻¹' (Iic x) = Ici (-x) := by
-      ext w
-      simp [le_iff_eq_or_lt]
-    have hnull : (studentTMeasure ν) ({-x} : Set ℝ) = 0 := by
-      exact (studentTMeasure_absolutelyContinuous ν) (measure_singleton (-x))
-    have h5 : Ici (-x) = Ioi (-x) ∪ ({-x} : Set ℝ) := by
-      ext w
-      simp [le_iff_eq_or_lt]
-    have hdis : Disjoint (Ioi (-x)) ({-x} : Set ℝ) := by
-      rw [Set.disjoint_left]
-      intro w hw1 hw2
-      have heq : w = -x := hw2
-      rw [heq] at hw1
-      exact lt_irrefl (-x) hw1
-    have hcic : (studentTMeasure ν) (Ici (-x)) = (studentTMeasure ν) (Ioi (-x)) := by
-      rw [h5, measure_union hdis (measurableSet_singleton _), hnull, add_zero]
-    have hmap : (studentTMeasure ν).map (fun w : ℝ => -w) = studentTMeasure ν :=
-      studentTMeasure_map_neg ν
-    have hmap_apply : ∀ (t : Set ℝ), MeasurableSet t →
-        ((studentTMeasure ν).map (fun w : ℝ => -w)) t =
-          (studentTMeasure ν) ((fun w : ℝ => -w) ⁻¹' t) :=
-      fun t ht => Measure.map_apply measurable_neg ht
-    have h2 : (studentTMeasure ν) (Iic x) = (studentTMeasure ν) (Ici (-x)) := by
-      have h3 : ((studentTMeasure ν).map (fun w : ℝ => -w)) (Iic x) =
-          (studentTMeasure ν) (Ici (-x)) := by
-        rw [hmap_apply (Iic x) measurableSet_Iic, hpre]
-      have h4 : (studentTMeasure ν) (Iic x) =
-          ((studentTMeasure ν).map (fun w : ℝ => -w)) (Iic x) := by
-        rw [hmap]
-      rw [h4, h3]
-    have hreal : (studentTMeasure ν).real (Iic x) = (studentTMeasure ν).real (Ioi (-x)) := by
-      rw [Measure.real, Measure.real, h2, hcic]
+    have hreal := Measure.measureReal_Iic_eq_measureReal_Ioi_neg (studentTMeasure ν)
+      ((studentTMeasure_absolutelyContinuous ν) (measure_singleton (-x)))
     have h9 : (-x) ^ 2 / (ν + (-x) ^ 2) = 1 - z := by
       simp only [hz, neg_sq]; field_simp; ring
     have hsym : regularizedIncompleteBeta (1 / 2) (ν / 2) (1 - z) =
@@ -245,17 +217,9 @@ theorem cdf_studentTMeasure_eq (hν : 0 < ν) (x : ℝ) :
 theorem strictMono_cdf_studentTMeasure (hν : 0 < ν) :
     StrictMono (cdf (studentTMeasure ν)) := by
   let _ := isProbabilityMeasure_studentTMeasure hν
-  intro x y hxy
-  have hpos : 0 < ∫ z in Ioc x y, studentTPDFReal ν z := by
-    rw [setIntegral_pos_iff_support_of_nonneg_ae
-      (ae_of_all _ (studentTPDFReal_nonneg ν))
-      (integrable_studentTPDFReal ν).integrableOn]
-    have hs : Function.support (studentTPDFReal ν) = univ :=
-      eq_univ_iff_forall.2 fun z ↦ (studentTPDFReal_pos hν z).ne'
-    rw [hs, univ_inter, Real.volume_Ioc, ENNReal.ofReal_pos]
-    exact sub_pos.2 hxy
-  rwa [← measureReal_studentTMeasure measurableSet_Ioc,
-    Measure.measureReal_Ioc_eq_cdf_sub _ hxy.le, sub_pos] at hpos
+  exact strictMono_cdf_of_eq_withDensity
+    (by rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)])
+    (measurable_studentTPDFReal ν).aemeasurable (studentTPDFReal_pos hν)
 
 /-- A positive-degree Student t law has a continuous cdf. -/
 theorem continuous_cdf_studentTMeasure (hν : 0 < ν) :

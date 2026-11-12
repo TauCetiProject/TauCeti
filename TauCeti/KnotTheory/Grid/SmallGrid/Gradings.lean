@@ -39,10 +39,8 @@ gradings in this concrete diagram, and package the diagram with its odd-componen
 
 ## References
 
-This supplies a small prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane G.3, "The complexes and `∂² = 0`", and the acceptance criterion that grid homology
-compute on the `2 × 2` unknot grid with its bigradings. The grid and grading conventions
-follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.
+The grid and grading conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Chapters 3 and 4.
 -/
 
 public section
@@ -241,6 +239,19 @@ abbrev twoByTwo : OddComponentGridDiagram 2 :=
       GridDiagram.unknot_zero ▸ (GridDiagram.isKnot_def _).1 (GridDiagram.isKnot_unknot 0)
     rw [h]
     exact odd_one⟩
+
+/-- The identity generator in the standard two-by-two diagram has bidegree `(-1, -1)`. -/
+@[simp]
+theorem bidegree_twoByTwo_twoByTwoId :
+    twoByTwo.bidegree GridState.twoByTwoId = (-1, -1) := by
+  apply Prod.ext
+  · simpa only [bidegree_fst] using
+      GridDiagram.maslovOℤ_twoByTwo_twoByTwoId
+  · have h := twoByTwo.two_mul_alexanderℤ GridState.twoByTwoId
+    rw [GridDiagram.alexanderTwoℤ_twoByTwo_twoByTwoId] at h
+    have hA : twoByTwo.alexanderℤ GridState.twoByTwoId = -1 := by
+      omega
+    simpa only [bidegree_snd] using hA
 
 /-- The transposition generator in the standard two-by-two diagram has bidegree `(0, 0)`. -/
 @[simp]

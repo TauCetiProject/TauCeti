@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Symplectic.Cotangent.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
@@ -24,14 +26,24 @@ continuous dual into the algebraic dual, which is why the two models agree by co
 nondegeneracy is new, and it comes from Hahn--Banach rather than from a basis. In finite
 dimension the two models are moreover identified as symplectic vector spaces.
 
+A continuous linear equivalence `g : V ≃L[ℝ] W` lifts to the symplectomorphism
+`(q, p) ↦ (g q, p ∘ g⁻¹)` of the continuous-dual cotangent models, compatibly with identities,
+composition and inverses.
+
 ## Main declarations
 
 * `TauCeti.strongDualCotangentSymplecticForm`: the canonical symplectic form on
   `V × StrongDual ℝ V`.
 * `TauCeti.strongDualCotangentZeroSection`: the zero section of `V × StrongDual ℝ V`.
+* `TauCeti.strongDualCotangentFiber`: the vertical subspace `{0} × V*`, which is Lagrangian
+  (`TauCeti.isLagrangian_strongDualCotangentFiber`).
 * `TauCeti.strongDualCotangentEquiv`: the finite-dimensional identification with
   `V × Module.Dual ℝ V`.
 * `TauCeti.isSymplectomorphism_strongDualCotangentEquiv`: that identification is a
+  symplectomorphism.
+* `ContinuousLinearEquiv.cotangent`: the cotangent lift `(q, p) ↦ (g q, p ∘ g⁻¹)` of a continuous
+  linear equivalence `g : V ≃L[ℝ] W`.
+* `ContinuousLinearEquiv.isSymplectomorphism_cotangent`: the cotangent lift is a
   symplectomorphism.
 -/
 
@@ -101,6 +113,36 @@ coordinate vanishes. -/
     z ∈ strongDualCotangentZeroSection ↔ z.2 = 0 := by
   simp [strongDualCotangentZeroSection, LinearMap.range_inl]
 
+/-- The vertical subspace `{0} × V*` of the normed linear cotangent space `V × StrongDual ℝ V`:
+the kernel of the projection to `V`. -/
+def strongDualCotangentFiber : Submodule ℝ (V × StrongDual ℝ V) :=
+  LinearMap.range (LinearMap.inr ℝ V (StrongDual ℝ V))
+
+/-- A point of the normed cotangent space is vertical exactly when its base coordinate
+vanishes. -/
+@[simp] theorem mem_strongDualCotangentFiber_iff (z : V × StrongDual ℝ V) :
+    z ∈ strongDualCotangentFiber ↔ z.1 = 0 := by
+  simp [strongDualCotangentFiber, LinearMap.range_inr]
+
+/-- The vertical subspace is the kernel of the projection to `V`. -/
+theorem ker_fst_eq_strongDualCotangentFiber :
+    LinearMap.ker (LinearMap.fst ℝ V (StrongDual ℝ V)) = strongDualCotangentFiber :=
+  LinearMap.ker_fst ℝ V (StrongDual ℝ V)
+
+/-- The vertical subspace `{0} × V*` is Lagrangian for the canonical symplectic form on the
+continuous-dual model. A vector `ω`-orthogonal to every vertical vector has base coordinate killed
+by every continuous functional, so it vanishes by Hahn--Banach; no finite dimension is needed. -/
+theorem isLagrangian_strongDualCotangentFiber :
+    strongDualCotangentSymplecticForm.IsLagrangian (strongDualCotangentFiber (V := V)) := by
+  rw [SymplecticForm.isLagrangian_iff, SymplecticForm.isIsotropic_iff,
+    SymplecticForm.isCoisotropic_iff]
+  refine ⟨fun v hv w hw ↦ ?_, fun z hz ↦ ?_⟩
+  · simp [(mem_strongDualCotangentFiber_iff v).1 hv, (mem_strongDualCotangentFiber_iff w).1 hw]
+  · rw [SymplecticForm.mem_orthogonal_iff'] at hz
+    rw [mem_strongDualCotangentFiber_iff]
+    exact SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun β ↦ by
+      simpa using hz (0, β) (by simp)
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ V]
@@ -135,5 +177,61 @@ lemma isSymplectomorphism_strongDualCotangentEquiv :
 end FiniteDimensional
 
 end TauCeti
+
+namespace ContinuousLinearEquiv
+
+open TauCeti
+
+variable {V W X : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W] [NormedAddCommGroup X] [NormedSpace ℝ X]
+
+/-- The **cotangent lift** `(q, p) ↦ (g q, p ∘ g⁻¹)` of a continuous linear equivalence
+`g : V ≃L[ℝ] W`, as a continuous linear equivalence of the linear cotangent spaces
+`V × StrongDual ℝ V` and `W × StrongDual ℝ W`. -/
+def cotangent (g : V ≃L[ℝ] W) : (V × StrongDual ℝ V) ≃L[ℝ] (W × StrongDual ℝ W) :=
+  g.prodCongr (g.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ))
+
+@[simp]
+theorem cotangent_apply_fst (g : V ≃L[ℝ] W) (x : V × StrongDual ℝ V) :
+    (g.cotangent x).1 = g x.1 :=
+  (rfl)
+
+@[simp]
+theorem cotangent_apply_snd_apply (g : V ≃L[ℝ] W) (x : V × StrongDual ℝ V) (w : W) :
+    (g.cotangent x).2 w = x.2 (g.symm w) :=
+  (rfl)
+
+/-- The cotangent lift of the identity is the identity. -/
+@[simp]
+theorem cotangent_refl :
+    (ContinuousLinearEquiv.refl ℝ V).cotangent = ContinuousLinearEquiv.refl ℝ _ :=
+  (rfl)
+
+/-- The cotangent lift of a composite is the composite of the cotangent lifts. -/
+@[simp]
+theorem cotangent_trans (g : V ≃L[ℝ] W) (h : W ≃L[ℝ] X) :
+    (g.trans h).cotangent = g.cotangent.trans h.cotangent :=
+  (rfl)
+
+/-- The inverse of the cotangent lift is the cotangent lift of the inverse. -/
+@[simp]
+theorem cotangent_symm (g : V ≃L[ℝ] W) : g.cotangent.symm = g.symm.cotangent :=
+  (rfl)
+
+/-- The cotangent lift of a continuous linear equivalence preserves the canonical symplectic
+forms. -/
+theorem strongDualCotangentSymplecticForm_cotangent (g : V ≃L[ℝ] W) (x y : V × StrongDual ℝ V) :
+    strongDualCotangentSymplecticForm (g.cotangent x) (g.cotangent y) =
+      strongDualCotangentSymplecticForm x y := by
+  simp
+
+/-- The cotangent lift of a continuous linear equivalence is a symplectomorphism of the linear
+cotangent spaces. -/
+theorem isSymplectomorphism_cotangent (g : V ≃L[ℝ] W) :
+    SymplecticForm.IsSymplectomorphism strongDualCotangentSymplecticForm
+      strongDualCotangentSymplecticForm g.cotangent.toLinearEquiv :=
+  SymplecticForm.isSymplectomorphism_iff.2 g.strongDualCotangentSymplecticForm_cotangent
+
+end ContinuousLinearEquiv
 
 end

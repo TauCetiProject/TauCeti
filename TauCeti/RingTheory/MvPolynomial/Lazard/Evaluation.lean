@@ -43,7 +43,8 @@ of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq
 
 ## Main results
 
-* `MvPolynomial.lazardEval_ne_zero`: the Lazard evaluation of a nonzero polynomial is nonzero.
+* `MvPolynomial.lazardEval_ne_zero`, `MvPolynomial.lazardEval_eq_zero_iff`: the Lazard evaluation
+  of a nonzero polynomial is nonzero.
 * `MvPolynomial.lazardEval_eq_eval`, `MvPolynomial.lazardExponent_eq_zero_iff`: where `p` does
   not vanish, Lazard evaluation is ordinary evaluation, and these are exactly the points where
   no power is removed.
@@ -154,6 +155,12 @@ theorem lazardEval_ne_zero {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) (a : Fin 
     rw [lazardEval_fin_succ]
     exact ih (Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero _ (by simpa using hp)) _
 
+/-- The Lazard evaluation of `p` vanishes exactly when `p` does. -/
+@[simp]
+theorem lazardEval_eq_zero_iff {p : MvPolynomial (Fin n) S} (a : Fin n → S) :
+    p.lazardEval a = 0 ↔ p = 0 :=
+  ⟨not_imp_not.1 fun hp ↦ lazardEval_ne_zero hp a, fun hp ↦ hp ▸ lazardEval_zero a⟩
+
 /-- The Lazard evaluation of `p` at `a` is the Taylor coefficient of `p` at `a` whose exponent is
 the vector of removed exponents. -/
 theorem coeff_taylor_lazardExponent (p : MvPolynomial (Fin n) S) (a : Fin n → S) :
@@ -206,6 +213,16 @@ theorem lazardValuation_eq_lazardExponent {p : MvPolynomial (Fin n) S} (hp : p �
     (a : Fin n → S) : p.lazardValuation a = toLex (p.lazardExponent a) := by
   apply lazardValuation_eq_coe_iff.2
   simpa only [coeff_taylor_lazardExponent] using (lazardExponent_eq_iff hp).1 rfl
+
+/-- A nonzero polynomial whose Lazard valuation is constant on a set `A` has eventually constant
+Lazard valuation, equal to that of the exponent at `x ∈ A`, along any map `φ` that is eventually in
+`A`. -/
+theorem eventually_lazardValuation_eq {α : Type*} {l : Filter α} {A : Set (Fin n → S)}
+    {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) {φ : α → Fin n → S} (hφA : ∀ᶠ u in l, φ u ∈ A)
+    (heq : ∀ x ∈ A, ∀ y ∈ A, p.lazardValuation x = p.lazardValuation y) (x : A) :
+    ∀ᶠ u in l, p.lazardValuation (φ u) = toLex (p.lazardExponent x) := by
+  filter_upwards [hφA] with u hu
+  rw [heq (φ u) hu x x.2, lazardValuation_eq_lazardExponent hp x]
 
 /-- A fixed polynomial has only finitely many vectors of removed Lazard exponents. -/
 theorem finite_range_lazardExponent (p : MvPolynomial (Fin n) S) :
@@ -337,7 +354,7 @@ theorem lazardEvalHom_apply (a : Fin n → S) (p : MvPolynomial (Fin n) S) :
 /-- The exponents removed from a power of a nonzero polynomial are multiplied by the power. -/
 theorem lazardExponent_pow {p : MvPolynomial (Fin n) S} (hp : p ≠ 0)
     (a : Fin n → S) (k : ℕ) : (p ^ k).lazardExponent a = k • p.lazardExponent a := by
-  rcases subsingleton_or_nontrivial S with hS | hS
+  rcases subsingleton_or_nontrivial S with hS | _
   · exact False.elim (hp (by ext d; exact Subsingleton.elim _ _))
   induction k with
   | zero => simpa using lazardExponent_C (1 : S) a

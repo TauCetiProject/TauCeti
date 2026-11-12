@@ -72,8 +72,6 @@ the polynomial.
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", *Journal of
   Combinatorial Theory, Series A* 185 (2022), Section 2.2, for the bigraded Ext-Euler form and
   its q-antilinear/q-linear shift convention.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layers 5--6, "Graded Ext and graded descent"
-  and "q-Euler form".
 -/
 
 public section
@@ -165,6 +163,34 @@ theorem IsGradedEulerAdmissibleOn.mono {P P' Q Q' : ObjectProperty C}
     (hP : P' ≤ P) (hQ : Q' ≤ Q) :
     IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P' Q' :=
   ⟨fun _ _ hX hY ↦ h.isGradedEulerAdmissible (hP _ hX) (hQ _ hY)⟩
+
+/-- One cohomological bound for all pairs in `P × Q` and all internal degrees. This does not
+require finite-dimensional Ext or finite internal support. -/
+structure IsGradedExtBoundedOn (e : C ≌ C) (P Q : ObjectProperty C) (N : ℕ) : Prop where
+  /-- Every selected pair has the same cohomological bound. -/
+  isGradedExtBoundedBy ⦃X Y : C⦄ (hX : P X) (hY : Q Y) :
+    IsGradedExtBoundedBy.{w} e X Y N
+
+/-- A uniform bound restricts to smaller object properties and may be raised. -/
+theorem IsGradedExtBoundedOn.mono {P P' Q Q' : ObjectProperty C} {N M : ℕ}
+    (h : IsGradedExtBoundedOn.{w} e P Q N) (hP : P' ≤ P) (hQ : Q' ≤ Q) (hNM : N ≤ M) :
+    IsGradedExtBoundedOn.{w} e P' Q' M :=
+  ⟨fun _ _ hX hY ↦ (h.isGradedExtBoundedBy (hP _ hX) (hQ _ hY)).mono hNM⟩
+
+/-- A uniform bound gives eventual graded Ext-vanishing for every selected pair. -/
+theorem IsGradedExtBoundedOn.isGradedExtBounded {P Q : ObjectProperty C} {N : ℕ}
+    (h : IsGradedExtBoundedOn.{w} e P Q N) {X Y : C} (hX : P X) (hY : Q Y) :
+    IsGradedExtBounded.{w} e X Y :=
+  (h.isGradedExtBoundedBy hX hY).isGradedExtBounded
+
+/-- A uniform cohomological bound and pointwise finite internal support give graded
+Euler-admissibility. -/
+theorem IsGradedExtBoundedOn.isGradedEulerAdmissibleOn
+    {P Q : ObjectProperty C} {N : ℕ}
+    (h : IsGradedExtBoundedOn.{w} e P Q N)
+    (hfin : ∀ ⦃X Y : C⦄, P X → Q Y → IsGradedExtInternallyFinite.{w} k e X Y) :
+    IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P Q :=
+  ⟨fun _ _ hX hY ↦ ⟨hfin hX hY, h.isGradedExtBounded hX hY⟩⟩
 
 /-! ### Passage to one internal degree -/
 

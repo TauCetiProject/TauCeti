@@ -31,7 +31,7 @@ algebras. In particular, this is an identification of the chosen coordinate Hopf
 only an abstract algebra isomorphism.
 
 This is the general-linear compatibility needed by the base-change part of the explicit
-Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
+Chevalley--Demazure construction.
 
 ## Main declarations
 
@@ -80,7 +80,7 @@ private noncomputable abbrev genericDeterminant (S : Type*) [CommRing S] :=
 
 /-- The standard scalar-extension equivalence for the polynomial coordinate ring of matrices. -/
 private noncomputable abbrev polynomialBaseChangeEquiv :
-    K ⊗[R] MatrixMonoid.CoordinateRing R n ≃ₐ[K] MatrixMonoid.CoordinateRing K n :=
+    K ⊗[R] MatrixMonoid.CoordinateRing R (Fin n) ≃ₐ[K] MatrixMonoid.CoordinateRing K (Fin n) :=
   MvPolynomial.algebraTensorAlgEquiv R K
 
 private theorem polynomialBaseChangeEquiv_one_tmul_genericDeterminant :
@@ -112,7 +112,7 @@ noncomputable def coordinateRingBaseChangeAlgEquiv :
 same polynomial with its coefficients extended to the new base. -/
 @[simp]
 theorem coordinateRingBaseChangeAlgEquiv_tmul_coordinateRingMap
-    (s : K) (p : MatrixMonoid.CoordinateRing R n) :
+    (s : K) (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     coordinateRingBaseChangeAlgEquiv R K n (s ⊗ₜ[R] coordinateRingMap R n p) =
       s • coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p) := by
   rw [coordinateRingBaseChangeAlgEquiv, AlgEquiv.trans_apply, coordinateRingMap_apply,
@@ -132,7 +132,7 @@ theorem coordinateRingBaseChangeAlgEquiv_one_tmul_X (i j : Fin n) :
 extended coefficients back to the corresponding pure tensor. -/
 @[simp]
 theorem coordinateRingBaseChangeAlgEquiv_symm_coordinateRingMap
-    (p : MatrixMonoid.CoordinateRing R n) :
+    (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     (coordinateRingBaseChangeAlgEquiv R K n).symm
         (coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p)) =
       1 ⊗ₜ[R] coordinateRingMap R n p := by
@@ -159,18 +159,18 @@ private theorem bundledCoordinateBaseChangeAlgEquiv_tmul
 /-- Two `K`-algebra maps out of the base-changed coordinate Hopf algebra of `GLₙ` are equal if
 they agree on the pure tensors of localized generic entries. -/
 theorem coordinateHopfAlgebra_baseChange_algHom_ext
-    {C : Type*} [CommRing C] [Algebra R C] [Algebra K C] [IsScalarTower R K C]
+    {C : Type*} [Semiring C] [Algebra K C]
     {f g : K ⊗[R] coordinateHopfAlgebra R n →ₐ[K] C}
     (h : ∀ i j, f (1 ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
       g (1 ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j))))) :
     f = g := by
-  apply (Algebra.TensorProduct.liftEquivRight R K _ _).symm.injective
-  apply coordinateHopfAlgebra_algHom_ext R n
-  intro i j
-  simpa only [Algebra.TensorProduct.liftEquivRight_symm_apply, AlgHom.comp_apply,
-    AlgHom.coe_restrictScalars', Algebra.TensorProduct.includeRight_apply] using h i j
+  let _ : Algebra R C := Algebra.compHom C (algebraMap R K)
+  have : IsScalarTower R K C := IsScalarTower.of_algebraMap_eq' rfl
+  refine Algebra.TensorProduct.ext_ring (coordinateHopfAlgebra_algHom_ext R n fun i j ↦ ?_)
+  simpa only [AlgHom.comp_apply, AlgHom.coe_restrictScalars',
+    Algebra.TensorProduct.includeRight_apply] using h i j
 
 -- `CommHopfAlgCat.baseChange H` abbreviates `CommHopfAlgCat.of K (K ⊗[R] H)`, so its
 -- stored counit and comultiplication are definitionally Mathlib's tensor-product bialgebra
@@ -192,14 +192,6 @@ private theorem bundledCoordinateBaseChangeAlgEquiv_map_comp_comul :
             (CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra R n))) =
       (Bialgebra.comulAlgHom K (coordinateHopfAlgebra K n)).comp
         (bundledCoordinateBaseChangeAlgEquiv R K n).toAlgHom := by
-  -- The tensor target has no global `R`-algebra instance. `Algebra.compHom` supplies the one
-  -- needed by the extensionality lemma, and the scalar-tower law is definitionally `rfl`.
-  let _ : Algebra R
-      (coordinateHopfAlgebra K n ⊗[K] coordinateHopfAlgebra K n) :=
-    Algebra.compHom _ (algebraMap R K)
-  let _ : IsScalarTower R K
-      (coordinateHopfAlgebra K n ⊗[K] coordinateHopfAlgebra K n) :=
-    IsScalarTower.of_algebraMap_eq' rfl
   apply coordinateHopfAlgebra_baseChange_algHom_ext R K n
   intro i j
   simp only [AlgHom.coe_comp, Function.comp_apply, Bialgebra.comulAlgHom_apply,
@@ -233,7 +225,7 @@ theorem coordinateHopfAlgebraBaseChangeBialgEquiv_tmul
 multiplies by the scalar in the new base. -/
 @[simp]
 theorem coordinateHopfAlgebraBaseChangeBialgEquiv_tmul_coordinateRingMap
-    (s : K) (p : MatrixMonoid.CoordinateRing R n) :
+    (s : K) (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     coordinateHopfAlgebraBaseChangeBialgEquiv R K n
         (s ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p)) =
       coordinateHopfAlgebraAlgEquiv K n
@@ -245,7 +237,7 @@ theorem coordinateHopfAlgebraBaseChangeBialgEquiv_tmul_coordinateRingMap
 coefficients back to the corresponding pure tensor. -/
 @[simp]
 theorem coordinateHopfAlgebraBaseChangeBialgEquiv_symm_coordinateRingMap
-    (p : MatrixMonoid.CoordinateRing R n) :
+    (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     (coordinateHopfAlgebraBaseChangeBialgEquiv R K n).symm
         (coordinateHopfAlgebraAlgEquiv K n
           (coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p))) =
@@ -327,7 +319,7 @@ underlying bialgebra equivalence. -/
 @[simp]
 theorem coordinateHopfAlgebraBaseChangeIso_hom_apply
     (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
-    (n : ℕ) (s : K) (p : MatrixMonoid.CoordinateRing R n) :
+    (n : ℕ) (s : K) (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     (coordinateHopfAlgebraBaseChangeIso R K n).hom
         (s ⊗ₜ[R] coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p)) =
       coordinateHopfAlgebraAlgEquiv K n
@@ -398,7 +390,7 @@ to its scalar pure tensor. -/
 @[simp]
 theorem coordinateHopfAlgebraBaseChangeIso_inv_apply
     (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
-    (n : ℕ) (s : K) (p : MatrixMonoid.CoordinateRing R n) :
+    (n : ℕ) (s : K) (p : MatrixMonoid.CoordinateRing R (Fin n)) :
     s • (coordinateHopfAlgebraBaseChangeIso R K n).inv
         (coordinateHopfAlgebraAlgEquiv K n
           (coordinateRingMap K n (MvPolynomial.map (algebraMap R K) p))) =

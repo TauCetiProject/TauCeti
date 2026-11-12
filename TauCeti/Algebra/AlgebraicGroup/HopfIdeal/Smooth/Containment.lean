@@ -61,7 +61,7 @@ space at the identity vanishes.
 Equivalently, a smooth connected closed affine subgroup whose differential is surjective is the
 whole ambient group. -/
 theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
-    [Algebra.FiniteType k H] (f : H →ₐc[k] K) (hf : Function.Surjective f)
+    (f : H →ₐc[k] K) (hf : Function.Surjective f)
     (hH_smooth : smoothCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k H))
     (hH_connected : ConnectedSpace (PrimeSpectrum H))
     (hK_smooth : smoothCommHopfAlgProperty k (_root_.CommHopfAlgCat.of k K))
@@ -215,7 +215,7 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
   obtain ⟨e, he, hspan⟩ :=
     (Ideal.isIdempotentElem_iff_of_fg (HopfIdeal.ker f).toIdeal
       (HopfIdeal.ker f).toIdeal.fg_of_isNoetherianRing).mp hI_idempotent
-  rcases eq_zero_or_eq_one_of_isIdempotentElem he with rfl | rfl
+  rcases he.eq_zero_or_eq_one_of_preconnectedSpace with rfl | rfl
   · apply HopfIdeal.ext
     intro x
     rw [← mem_toIdeal, ← mem_toIdeal, bot_toIdeal]

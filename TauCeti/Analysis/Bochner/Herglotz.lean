@@ -169,8 +169,9 @@ private lemma integral_zpow_fejerMeasure (hφ : IsPositiveDefiniteSub φ) (N : �
     have h0 := circleAverage_sub_zpow (c := 0) (R := 1) k
     simp only [smul_eq_mul, sub_zero] at h h0
     rw [h, h0, mul_ite, mul_one, mul_zero]
-  rw [integral_circleDensityMeasure (continuous_fejerDensity N).continuousOn
-    (fun ζ _ ↦ fejerDensity_nonneg hφ N ζ) (hzpow m)]
+  rw [integral_circleDensityMeasure
+    ((continuous_fejerDensity N).comp (continuous_circleMap 0 1)).aestronglyMeasurable
+    (fun ζ _ ↦ fejerDensity_nonneg hφ N ζ) fun ζ ↦ ζ ^ m]
   have hsphere : EqOn (fun ζ : ℂ ↦ fejerDensity φ N ζ • ζ ^ m)
       (fun ζ ↦ ∑ p ∈ range N ×ˢ range N, ((N : ℂ)⁻¹ * φ (p.1 - p.2)) * ζ ^ (m + p.2 - p.1))
       (sphere 0 |1|) := fun ζ hζ ↦ by
@@ -201,7 +202,8 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
   -- The Fejér measures `ν N` at levels `N + 1`.
   set ν : ℕ → Measure Circle := fun N ↦ circleDensityMeasure (fejerDensity φ (N + 1))
   have hνfin (N : ℕ) : IsFiniteMeasure (ν N) :=
-    isFiniteMeasure_circleDensityMeasure (continuous_fejerDensity _).continuousOn
+    isFiniteMeasure_circleDensityMeasure
+      ((continuous_fejerDensity _).continuousOn.circleIntegrable zero_le_one)
   have hmoment (N : ℕ) (m : ℤ) : ∫ z : Circle, (z : ℂ) ^ m ∂ν N =
       ((fejerCount (N + 1) m / (N + 1) : ℝ) : ℂ) * φ m := by
     simpa using integral_zpow_fejerMeasure hφ (N + 1) m
@@ -210,7 +212,7 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
   have hmass (N : ℕ) : ν N univ ≤ C := by
     have h := hmoment N 0
     rw [hφ.map_zero_eq_ofReal_re] at h
-    simp only [zpow_zero, integral_const, Complex.real_smul, mul_one, ← ofReal_mul,
+    simp only [_root_.zpow_zero, integral_const, Complex.real_smul, mul_one, ← ofReal_mul,
       ofReal_inj] at h
     rw [← ofReal_measureReal (measure_ne_top _ _), h, ENNReal.ofReal_le_iff_le_toReal
       ENNReal.coe_ne_top, ENNReal.coe_toReal]
@@ -238,17 +240,18 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
 
 section Pontryagin
 
-variable [MeasurableSpace (PontryaginDual (Multiplicative ℤ))]
-  [BorelSpace (PontryaginDual (Multiplicative ℤ))]
-
 /-- The Fourier–Stieltjes transform of the image of a finite measure on the circle under
 `TauCeti.circleEquivPontryaginDualInt` is its moment sequence. -/
 @[simp]
 theorem
     _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt
+    {measurableDual : MeasurableSpace (PontryaginDual (Multiplicative ℤ))}
+    [borelDual : @BorelSpace (PontryaginDual (Multiplicative ℤ)) _ measurableDual]
     (μ : FiniteMeasure Circle) (n : ℤ) :
+    letI := measurableDual
     (μ.map circleEquivPontryaginDualInt).pontryaginMeasureTransform n =
       ∫ z : Circle, (z : ℂ) ^ n ∂μ.toMeasure := by
+  let := measurableDual
   rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
     integral_map (map_continuous circleEquivPontryaginDualInt).aemeasurable
       (PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable]
@@ -268,7 +271,8 @@ theorem isPositiveDefiniteSub_iff_exists_isFiniteMeasure_integral_zpow_eq (φ : 
   let μf : FiniteMeasure Circle := ⟨μ, hμ⟩
   have hφ : φ = (μf.map circleEquivPontryaginDualInt).pontryaginMeasureTransform := funext fun n ↦
     (hrep n).trans
-      (FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt μf n).symm
+      (FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt
+        μf n).symm
   exact hφ ▸ (μf.map circleEquivPontryaginDualInt).isPositiveDefiniteSub_pontryaginMeasureTransform
 
 end TauCeti

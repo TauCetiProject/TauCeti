@@ -7,9 +7,11 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 import TauCeti.Analysis.Contour.Residue.Quotient
+public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
 import Mathlib.NumberTheory.ModularForms.RamanujanFormula
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.NumberTheory.ModularForms.EllipticPoints
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
 /-!
 # The level-one modular invariant
@@ -27,7 +29,8 @@ in the coordinate of `ℂ`, as the analytic order of the composite with `ofCompl
 
 At the cusp `j` has a simple pole.  In the coordinate `q = e^{2πiτ}` the product `q j` is
 holomorphic, and its `q`-expansion is pinned down by `q j · Δ = q E₄³`; dividing by `q` gives
-the `q`-expansion of `j`, which begins `j = q⁻¹ + 744 + 196884 q + ⋯`.
+the `q`-expansion of `j`, which begins `j = q⁻¹ + 744 + 196884 q + ⋯`. The same coefficients
+form the Laurent `q`-expansion of `j` at `i∞`, a Laurent series of order `-1`.
 
 ## Implementation notes
 
@@ -43,8 +46,9 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 
 ## Main results
 
-* `TauCeti.ModularForm.j`, `TauCeti.ModularForm.j_smul`, `TauCeti.ModularForm.j_sub_1728`: the
-  invariant, its modular invariance, and the identity `j - 1728 = E₆² / Δ`.
+* `TauCeti.ModularForm.j`, `TauCeti.ModularForm.j_smul`, `TauCeti.ModularForm.j_smul_SL2Z`,
+  `TauCeti.ModularForm.j_sub_1728`: the invariant, its modular invariance, and the identity
+  `j - 1728 = E₆² / Δ`.
 * `TauCeti.ModularForm.E₄_ρ`, `TauCeti.ModularForm.E₆_I`: the elliptic zeros of `E₄` and `E₆`.
 * `TauCeti.ModularForm.j_ρ`, `TauCeti.ModularForm.j_I`: `j ρ = 0` and `j i = 1728`.
 * `TauCeti.ModularForm.analyticOrderAt_j_comp_ofComplex_ρ`: `j` vanishes to order `3` at `ρ`.
@@ -53,6 +57,7 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 * `TauCeti.ModularForm.tendsto_qParam_mul_j_atImInfty`,
   `TauCeti.ModularForm.analyticAt_cuspFunction_qParam_mul_j`: `q j → 1` at `i∞`, and `q j` is
   analytic in `q` at the cusp.
+* `TauCeti.ModularForm.infinite_range_j`: `j` takes infinitely many values.
 * `TauCeti.ModularForm.meromorphicAt_cuspFunction_j`,
   `TauCeti.ModularForm.meromorphicOrderAt_cuspFunction_j`: `j` is meromorphic in its width-one
   q-coordinate, with a simple pole at zero.
@@ -60,6 +65,16 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
   `cₘ` the coefficients of `q j`.
 * `TauCeti.ModularForm.qExpansion_qParam_mul_j_coeff_one`,
   `TauCeti.ModularForm.qExpansion_qParam_mul_j_coeff_two`: the coefficients `744` and `196884`.
+* `TauCeti.ModularForm.exists_qExpansion_qParam_mul_j_coeff_eq_intCast`,
+  `TauCeti.ModularForm.exists_laurentQExpansion_j_coeff_eq_intCast`: these coefficients are
+  integers.
+* `TauCeti.ModularForm.j_J_smul`: `j (-conj τ) = conj (j τ)`, from the integrality of these
+  coefficients.
+* `TauCeti.ModularForm.laurentQExpansion_j` and
+  `TauCeti.ModularForm.orderTop_laurentQExpansion_j`: the Laurent `q`-expansion of `j`, of
+  order `-1`, with first coefficients `TauCeti.ModularForm.laurentQExpansion_j_coeff_neg_one`,
+  `TauCeti.ModularForm.laurentQExpansion_j_coeff_zero` and
+  `TauCeti.ModularForm.laurentQExpansion_j_coeff_one`.
 
 ## References
 
@@ -87,12 +102,10 @@ theorem j_apply (z : ℍ) : j z = E₄ z ^ 3 / discriminant z := by rfl
 theorem j_mdifferentiable : MDiff j := by
   exact (ModularForm.holo' E₄).pow 3 |>.div (CuspForm.discriminant.holo') discriminant_ne_zero
 
--- A direct-action `@[simp]` variant fails `simpNF`:
--- `ModularGroup.sl_moeb` simplifies its left side.
-/-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`. -/
-@[simp]
-theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
-    j ((map (Int.castRingHom ℝ) γ) • z) = j z := by
+-- Not `@[simp]`: `ModularGroup.sl_moeb` simplifies its left side, so it fails `simpNF`.
+/-- The weight factors cancel, so `j` is invariant under the action of `SL₂(ℤ)` on the upper
+half-plane: `j (γ τ) = j τ`. -/
+theorem j_smul_SL2Z (γ : SL(2, ℤ)) (z : ℍ) : j (γ • z) = j z := by
   have hγ : mapGL ℝ γ ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨γ, rfl⟩
   have hE : (⇑(E₄.pow 3) ∣[(12 : ℤ)] (mapGL ℝ γ)) = ⇑(E₄.pow 3) := by
     simpa using SlashInvariantForm.slash_action_eqn (E₄.pow 3) _ hγ
@@ -108,9 +121,13 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
     rw [hE, hΔ]
   have hpow (w : ℍ) : (E₄.pow 3) w = E₄ w ^ 3 := by
     exact congrFun (ModularForm.coe_pow E₄ 3) w
-  have hz := congrFun h z
-  have hinv : j (γ • z) = j z := by
-    simpa [SL_slash_apply, j, hpow] using hz
+  simpa [SL_slash_apply, j, hpow] using congrFun h z
+
+/-- The weight factors cancel, so `j` is invariant under `SL₂(ℤ)`, acting through
+`SL₂(ℝ)`. -/
+@[simp]
+theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
+    j ((map (Int.castRingHom ℝ) γ) • z) = j z := by
   have hAction : (map (Int.castRingHom ℝ) γ) • z = γ • z := by
     rw [MulAction.compHom_smul_def, MulAction.compHom_smul_def]
     have hMap : mapGL ℝ (map (Int.castRingHom ℝ) γ) = mapGL ℝ γ := by
@@ -118,7 +135,7 @@ theorem j_smul (γ : SL(2, ℤ)) (z : ℍ) :
       simp [mapGL_coe_matrix]
     exact congrArg (· • z) hMap
   rw [hAction]
-  exact hinv
+  exact j_smul_SL2Z γ z
 
 /-- The identity `j - 1728 = E₆² / Δ`. -/
 theorem j_sub_1728 (z : ℍ) : j z - 1728 = E₆ z ^ 2 / discriminant z := by
@@ -258,7 +275,7 @@ theorem periodic_j_comp_ofComplex : Function.Periodic (j ∘ ofComplex) 1 :=
 /-- The function `q j` is `1`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem periodic_qParam_mul_j_comp_ofComplex :
     Function.Periodic ((fun τ : ℍ ↦ 𝕢 1 τ * j τ) ∘ ofComplex) 1 := by
-  simpa using (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex one_ne_zero).mul
+  simpa using (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex).mul
     periodic_j_comp_ofComplex
 
 /-- The function `q j` is holomorphic on the upper half-plane. -/
@@ -279,6 +296,18 @@ theorem tendsto_qParam_mul_j_atImInfty :
 /-- The function `q j` is bounded at `i∞`. -/
 theorem isBoundedAtImInfty_qParam_mul_j : IsBoundedAtImInfty (fun τ : ℍ ↦ 𝕢 1 τ * j τ) :=
   tendsto_qParam_mul_j_atImInfty.isBigO_one ℝ
+
+/-- The modular invariant takes infinitely many values: `q j → 1` at `i∞` while `q → 0`, so `j` is
+unbounded. -/
+theorem infinite_range_j : (Set.range j).Infinite := by
+  intro hfin
+  obtain ⟨B, hB⟩ := hfin.isBounded.exists_norm_le
+  have h0 : Tendsto (fun τ : ℍ ↦ 𝕢 1 τ * j τ) atImInfty (𝓝 0) :=
+    squeeze_zero_norm (a := fun τ : ℍ ↦ ‖𝕢 1 τ‖ * B) (fun τ ↦ by
+      rw [norm_mul]
+      exact mul_le_mul_of_nonneg_left (hB _ ⟨τ, rfl⟩) (norm_nonneg _))
+      (by simpa using (qParam_tendsto_atImInfty one_pos).norm.mul_const B)
+  exact one_ne_zero (tendsto_nhds_unique tendsto_qParam_mul_j_atImInfty h0)
 
 /-- The cusp function of `q j` is analytic at `q = 0`, so `j`, read in the coordinate `q`, is
 meromorphic at the cusp. -/
@@ -303,11 +332,7 @@ theorem qExpansion_qParam_mul_j_mul_qExpansion_discriminant :
     one_mem_strictPeriods_SL
   have hE := ModularFormClass.analyticAt_cuspFunction_zero (E₄.pow 3) one_pos
     one_mem_strictPeriods_SL
-  have hq : AnalyticAt ℂ (cuspFunction 1 (fun τ : ℍ ↦ 𝕢 1 τ)) 0 :=
-    analyticAt_cuspFunction_zero one_pos
-      (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex one_ne_zero)
-      (Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe)
-      ((qParam_tendsto_atImInfty one_pos).isBigO_one ℝ)
+  have hq := TauCeti.UpperHalfPlane.analyticAt_cuspFunction_qParam one_pos
   have hfun : (fun τ : ℍ ↦ 𝕢 1 τ * j τ) * ⇑CuspForm.discriminant =
       (fun τ : ℍ ↦ 𝕢 1 τ) * ⇑(E₄.pow 3) := by
     rw [ModularForm.coe_pow]
@@ -346,15 +371,10 @@ analytic cusp function of `q j` divided by `q`. -/
 theorem cuspFunction_j_eventuallyEq :
     cuspFunction 1 j =ᶠ[𝓝[≠] 0]
       fun q ↦ cuspFunction 1 (fun τ : ℍ ↦ Periodic.qParam 1 τ * j τ) q / q := by
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
-  simp only [mem_compl_iff, mem_singleton_iff] at hq
-  simp only [UpperHalfPlane.cuspFunction, Periodic.cuspFunction_eq_of_nonzero _ _ hq,
-    Function.comp_apply]
-  have hpos := Periodic.im_invQParam_pos_of_norm_lt_one one_pos
-    (mem_ball_zero_iff.mp hqn) hq
-  rw [ofComplex_apply_of_im_pos hpos, Periodic.qParam_right_inv one_ne_zero hq]
-  exact (mul_div_cancel_left₀ _ hq).symm
+  filter_upwards [TauCeti.UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq one_pos 1 j,
+    self_mem_nhdsWithin] with q h₁ hq
+  simp only [pow_one] at h₁
+  rw [h₁, mul_div_cancel_left₀ _ hq]
 
 /-- The modular invariant is meromorphic at zero in its width-one q-coordinate. -/
 theorem meromorphicAt_cuspFunction_j : _root_.MeromorphicAt (cuspFunction 1 j) 0 :=
@@ -419,5 +439,96 @@ theorem tendsto_j_sub_inv_qParam_atImInfty :
     Tendsto (fun τ : ℍ ↦ j τ - (𝕢 1 τ)⁻¹) atImInfty (𝓝 744) := by
   simpa [qExpansion_qParam_mul_j_coeff_one] using
     tendsto_atImInfty_of_hasSum_qExpansion one_pos hasSum_j_sub_inv_qParam
+
+/-- The Laurent `q`-expansion of `j` is `q⁻¹` times the `q`-expansion of `q j`. -/
+theorem laurentQExpansion_j :
+    UpperHalfPlane.laurentQExpansion 1 j =
+      HahnSeries.single (-1) 1 * (qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ) : LaurentSeries ℂ) := by
+  simpa using UpperHalfPlane.laurentQExpansion_eq one_pos meromorphicAt_cuspFunction_j (k := 1)
+    (by simp)
+
+/-- The Laurent `q`-expansion of `j` has order `-1`: `j` has a simple pole at `i∞`. -/
+@[simp]
+theorem orderTop_laurentQExpansion_j : (UpperHalfPlane.laurentQExpansion 1 j).orderTop = -1 := by
+  rw [UpperHalfPlane.orderTop_laurentQExpansion one_pos meromorphicAt_cuspFunction_j,
+    meromorphicOrderAt_cuspFunction_j]
+
+/-- The Laurent `q`-coefficients of `j` are those of `q j`, shifted down by one. -/
+theorem laurentQExpansion_j_coeff_natCast_sub_one (n : ℕ) :
+    (UpperHalfPlane.laurentQExpansion 1 j).coeff ((n : ℤ) - 1) =
+      (qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff n := by
+  simpa using UpperHalfPlane.laurentQExpansion_coeff_natCast_sub one_pos
+    meromorphicAt_cuspFunction_j (k := 1) (by simp) n
+
+/-- The leading Laurent `q`-coefficient of `j` is `1`, the coefficient of `q⁻¹`. -/
+@[simp]
+theorem laurentQExpansion_j_coeff_neg_one :
+    (UpperHalfPlane.laurentQExpansion 1 j).coeff (-1) = 1 := by
+  simpa [constantCoeff_qExpansion_qParam_mul_j] using laurentQExpansion_j_coeff_natCast_sub_one 0
+
+/-- The constant Laurent `q`-coefficient of `j` is `744`. -/
+@[simp]
+theorem laurentQExpansion_j_coeff_zero : (UpperHalfPlane.laurentQExpansion 1 j).coeff 0 = 744 := by
+  simpa [qExpansion_qParam_mul_j_coeff_one] using laurentQExpansion_j_coeff_natCast_sub_one 1
+
+/-- The Laurent `q`-coefficient of `q` in `j` is `196884`. -/
+@[simp]
+theorem laurentQExpansion_j_coeff_one :
+    (UpperHalfPlane.laurentQExpansion 1 j).coeff 1 = 196884 := by
+  simpa [qExpansion_qParam_mul_j_coeff_two] using laurentQExpansion_j_coeff_natCast_sub_one 2
+
+/-- **The `q`-expansion of `q j` has integer coefficients.** It is the quotient of `q E₄³` by
+`Δ = q + ⋯`, and both have integer coefficients. -/
+theorem exists_qExpansion_qParam_mul_j_coeff_eq_intCast (n : ℕ) :
+    ∃ m : ℤ, (qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff n = m := by
+  have hE : qExpansion 1 E₄ ∈ (PowerSeries.map (Int.castRingHom ℂ)).range :=
+    (PowerSeries.mem_map_range _).mpr fun n ↦ by
+      obtain ⟨m, hm⟩ := exists_E₄_qExpansion_coeff_eq_intCast n
+      exact ⟨m, hm.symm⟩
+  have hE₃ := (PowerSeries.mem_map_range _).mp (pow_mem hE 3)
+  have h := PowerSeries.coeff_mem_of_coeff_mul_mem (R := (Int.castRingHom ℂ).range) (m := 1)
+    (D := qExpansion 1 discriminant) (by simp [discriminant_qExpansion_coeff_zero])
+    discriminant_qExpansion_coeff_one
+    (fun i ↦ by
+      obtain ⟨m, hm⟩ := exists_discriminant_qExpansion_coeff_eq_intCast i
+      exact ⟨m, hm.symm⟩)
+    (fun i ↦ by
+      rw [qExpansion_qParam_mul_j_mul_qExpansion_discriminant]
+      cases i with
+      | zero => simp
+      | succ i => simpa [PowerSeries.coeff_succ_X_mul] using hE₃ i) n
+  obtain ⟨m, hm⟩ := h
+  exact ⟨m, hm.symm⟩
+
+/-- **The Laurent `q`-expansion of `j` has integer coefficients.** -/
+theorem exists_laurentQExpansion_j_coeff_eq_intCast (n : ℤ) :
+    ∃ m : ℤ, (UpperHalfPlane.laurentQExpansion 1 j).coeff n = m := by
+  rcases lt_or_ge n (-1) with hn | hn
+  · refine ⟨0, ?_⟩
+    have h : ((n : ℤ) : WithTop ℤ) < ((-1 : ℤ) : WithTop ℤ) := WithTop.coe_lt_coe.mpr hn
+    rw [HahnSeries.coeff_eq_zero_of_lt_orderTop (by simpa using h), Int.cast_zero]
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k - 1 := ⟨(n + 1).toNat, by omega⟩
+    rw [laurentQExpansion_j_coeff_natCast_sub_one]
+    exact exists_qExpansion_qParam_mul_j_coeff_eq_intCast k
+
+/-- **`j` commutes with complex conjugation**: `j (-conj τ) = conj (j τ)`, where
+`J • τ = -conj τ` is the reflection in the imaginary axis. The `q`-parameter of `-conj τ` is the
+conjugate of that of `τ`, and the `q`-expansion of `j` has integer coefficients. -/
+@[simp]
+theorem j_J_smul (τ : ℍ) : j (J • τ) = starRingEnd ℂ (j τ) := by
+  have hq : 𝕢 1 ((J • τ : ℍ) : ℂ) = starRingEnd ℂ (𝕢 1 τ) := by
+    rw [Function.Periodic.qParam, Function.Periodic.qParam, coe_J_smul, ← Complex.exp_conj]
+    simp [map_ofNat]
+  have hc (m : ℕ) : starRingEnd ℂ ((qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff (m + 1)) =
+      (qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff (m + 1) := by
+    obtain ⟨k, hk⟩ := exists_qExpansion_qParam_mul_j_coeff_eq_intCast (m + 1)
+    rw [hk, map_intCast]
+  have h₁ := hasSum_j_sub_inv_qParam (J • τ)
+  have h₂ := Complex.hasSum_conj'.2 (hasSum_j_sub_inv_qParam τ)
+  rw [hq] at h₁
+  simp only [smul_eq_mul, map_mul, map_pow, hc] at h₂
+  have h := h₁.unique h₂
+  rw [map_sub, map_inv₀] at h
+  simpa using h
 
 end TauCeti.ModularForm

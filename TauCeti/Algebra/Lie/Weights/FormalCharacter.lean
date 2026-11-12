@@ -115,7 +115,8 @@ omit [LinearWeights K L M] in
 /-- A generalized weight space is trivial exactly when its dimension is zero. -/
 private theorem genWeightSpace_eq_bot_iff_finrank_eq_zero (χ : L → K) :
     genWeightSpace M χ = ⊥ ↔ finrank K (genWeightSpace M χ) = 0 := by
-  rw [← LieSubmodule.toSubmodule_eq_bot, ← Submodule.finrank_eq_zero, finrank_toSubmodule]
+  rw [← LieSubmodule.toSubmodule_eq_bot, ← Submodule.finrank_eq_zero,
+    LieSubmodule.finrank_toSubmodule]
 
 omit [FiniteDimensional K M] in
 /-- A nonzero generalized weight space determines a bundled weight whose underlying linear form is
@@ -330,7 +331,7 @@ theorem formalCharacter_eq_sum_of_isInternal
     map_genWeightSpace_le (χ := (chi : H → K))
       ((h.lieModuleProjection i).restrictLie H)
       ⟨m, hm, h.lieModuleProjection_apply i m⟩
-  rw [← finrank_toSubmodule,
+  rw [← LieSubmodule.finrank_toSubmodule,
     ← h.iSup_inf_eq_of_component_mem
       (genWeightSpace M (chi : H → K)).toSubmodule hcomponent,
     finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
@@ -349,7 +350,7 @@ variable {K : Type u} {L : Type v} {M : Type w} {N : Type w₁} {P : Type*}
   [AddCommGroup P] [Module K P] [LieRingModule L P] [LieModule K L P]
   [LinearWeights K L M] [LinearWeights K L N] [LinearWeights K L P]
   [FiniteDimensional K M] [FiniteDimensional K N] [FiniteDimensional K P]
-  [IsTriangularizable K L N] [IsTriangularizable K L P]
+  [IsTriangularizable K L N]
 
 /-- **Formal characters are additive on short exact sequences.** If `M → N → P` is exact, the
 first map is injective and the second is surjective, then the character of `N` is the sum of the
@@ -357,6 +358,7 @@ characters of `M` and `P`. -/
 theorem formalCharacter_eq_add_of_exact (f : M →ₗ⁅K,L⁆ N) (g : N →ₗ⁅K,L⁆ P)
     (h : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     formalCharacter K L N = formalCharacter K L M + formalCharacter K L P := by
+  have : IsTriangularizable K L P := g.isTriangularizable_of_surjective hg
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ ↦ ?_)
   simp only [formalCharacter_coeff, AddMonoidAlgebra.coeff_add, Finsupp.add_apply]
   exact_mod_cast (finrank_genWeightSpace_add_finrank_genWeightSpace_eq f g h hf hg
@@ -423,7 +425,7 @@ theorem finrank_genWeightSpace_tensorProduct (χ : Dual K L) :
         exact congrArg (fun f : Dual K L ↦ (f : L → K)) p.property
       rw [← hp]
       simpa only [A] using map₂_mk_genWeightSpace_le M N p.1.1 p.1.2
-  rw [← finrank_toSubmodule]
+  rw [← LieSubmodule.finrank_toSubmodule]
   rw [hspace, finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
   rw [← Finset.sum_subtype
     (s := (Finset.univ : Finset (Weight K L M × Weight K L N)).filter fun p ↦

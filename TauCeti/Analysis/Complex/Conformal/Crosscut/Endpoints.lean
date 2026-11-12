@@ -27,12 +27,11 @@ then the open and closed arcs are the images under `circleMap ζ ρ` of `(α - �
 unimodal about any one of its points; that is what makes a crosscut *locally connected at its own
 endpoints*, the last statement below.
 
-This is the source-side endpoint interface needed by layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`, the Jordan-domain case of Carathéodory boundary
-correspondence. `Conformal/ShortCrosscut.lean` makes the image of the *open* arc arbitrarily short,
-and `Conformal/CutDiameter.lean` asks local connectedness of the image boundary to join the two
-ends by a small boundary set. The results here name those two ends and package the open arc together
-with its closure; they do not assert the continuous boundary extension itself.
+This is the source-side endpoint interface needed by the Jordan-domain case of the Carathéodory
+boundary correspondence. `Conformal/ShortCrosscut.lean` makes the image of the *open* arc
+arbitrarily short, and `Conformal/CutDiameter.lean` asks local connectedness of the image boundary
+to join the two ends by a small boundary set. The results here name those two ends and package the
+open arc together with its closure; they do not assert the continuous boundary extension itself.
 
 ## Main results
 
@@ -63,15 +62,9 @@ with its closure; they do not assert the continuous boundary extension itself.
 The half-width `arccos (ρ / (2 * r))` is read off the cosine criterion of
 `TauCeti/Topology/Circle/Metric.lean` through `Real.lt_cos_iff_mem_Ioo` and
 `Real.le_cos_iff_mem_Icc`, the arccosine description of the angles at which the cosine exceeds a
-threshold, in `TauCeti/Analysis/SpecialFunctions/Trigonometric/Arccos.lean`.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort. Mathlib supplies `circleMap`, its periodicity and
-injectivity on one period, inverse trigonometric functions, and the generic fact that two circles in
-the plane meet in at most two points; none of the crosscut descriptions below is present there.
+threshold, in `TauCeti/Analysis/SpecialFunctions/Trigonometric/Arccos.lean`. The remaining inputs
+are Mathlib's: `circleMap` with its periodicity and injectivity on one period, the inverse
+trigonometric functions, and the fact that two circles in the plane meet in at most two points.
 
 ## References
 
@@ -330,9 +323,24 @@ This is the local connectedness of a crosscut *at its own endpoints*, which is w
 of a map along a crosscut needs in order to be a continuum
 (`TauCeti.isConnected_clusterSetOn`). The radius `δ` is arbitrary: for large `δ` the trace is the
 whole crosscut. -/
-theorem isPreconnected_ball_inter_sphere_inter_ball (hζ : dist ζ c = r) (hρ : 0 < ρ)
-    (hρr : ρ < 2 * r) {e : ℂ} (he : e ∈ closedBall c r ∩ sphere ζ ρ) (δ : ℝ) :
+theorem isPreconnected_ball_inter_sphere_inter_ball (hζ : dist ζ c = r)
+    {e : ℂ} (he : e ∈ closedBall c r ∩ sphere ζ ρ) (δ : ℝ) :
     IsPreconnected (ball c r ∩ sphere ζ ρ ∩ ball e δ) := by
+  -- a degenerate crosscut (`ρ ≤ 0` or `2 * r ≤ ρ`) misses the disc
+  by_cases hρρ : 0 < ρ ∧ ρ < 2 * r
+  swap
+  · have : ball c r ∩ sphere ζ ρ = ∅ := by
+      refine eq_empty_of_forall_notMem fun w ⟨hw, hws⟩ => hρρ ?_
+      have h1 := dist_triangle w c ζ
+      rw [dist_comm c ζ, hζ] at h1
+      have h2 := mem_sphere.mp hws
+      have h3 := mem_ball.mp hw
+      refine ⟨lt_of_le_of_ne (h2 ▸ dist_nonneg) fun h0 => ?_, by linarith⟩
+      have : w = ζ := dist_le_zero.mp (by rw [h2, ← h0])
+      exact absurd (this ▸ h3) (by rw [hζ]; exact lt_irrefl _)
+    rw [this, empty_inter]
+    exact isPreconnected_empty
+  obtain ⟨hρ, hρr⟩ := hρρ
   have hφπ2 := arccos_div_two_mul_lt_pi_div_two hρ (show (0 : ℝ) < r by linarith)
   obtain ⟨θ₀, hθ₀, rfl⟩ := (closedBall_inter_sphere_eq_circleMap_image_Icc hζ hρ hρr).le he
   rw [ball_inter_sphere_eq_circleMap_image_Ioo hζ hρ hρr, ← image_inter_preimage]

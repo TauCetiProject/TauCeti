@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.Riemannian.Distance
 
 /-!
 # Coordinate displacement is bounded by Riemannian path length
@@ -37,6 +38,8 @@ corresponding constructions in Mathlib's `Geometry/Manifold/Riemannian/Basic.lea
   continuous linear map applied to chart coordinates, with a bound on chart distortion.
 * `TauCeti.Manifold.eventually_enorm_apply_extChartAt_sub_le`: the sharp local chart--distance
   estimate for continuous linear maps.
+* `TauCeti.Manifold.edist_le_mul_riemannianEDist`: a `C¹` map whose differential stretches tangent
+  vectors by at most `C ≠ 0` is `C`-Lipschitz from the Riemannian distance.
 
 ## References
 
@@ -171,6 +174,28 @@ theorem _root_.ContinuousLinearMap.enorm_apply_extChartAt_sub_le_mul_pathELength
     (map_sub ℓ _ _).symm
   rw [hsub, ENNReal.coe_mul] at key
   exact key
+
+/-- **A map with bounded differential is Lipschitz for the Riemannian distance.** If a `C¹` map
+`f` to a real normed space stretches every tangent vector by a factor at most `C ≠ 0`, then the
+distance between the images of two points is at most `C` times their Riemannian distance. The
+condition `C ≠ 0` cannot be dropped: a locally constant map has zero differential, while points of
+different components are at infinite Riemannian distance and `0 * ∞ = 0`. -/
+theorem edist_le_mul_riemannianEDist {f : M → F}
+    (hf : ContMDiff I 𝓘(ℝ, F) 1 f) {C : ℝ≥0} (hC0 : C ≠ 0)
+    (hC : ∀ x (v : TangentSpace I x), ‖mvfderiv I f x v‖ₑ ≤ C * ‖v‖ₑ) (x y : M) :
+    edist (f x) (f y) ≤ C * riemannianEDist I x y := by
+  have hC0' : (C : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 hC0
+  -- Every `C¹` path from `x` to `y` has length at least `edist (f x) (f y) / C`.
+  have key : edist (f x) (f y) / C ≤ riemannianEDist I x y := by
+    refine le_riemannianEDist_of_forall_le_pathELength fun γ hγ0 hγ1 hγ ↦ ?_
+    have h := enorm_sub_le_mul_pathELength zero_le_one (hγ.mdifferentiableOn one_ne_zero)
+      (hf.comp_contMDiffOn hγ) (fun t _ ↦ (hf (γ t)).mdifferentiableAt one_ne_zero)
+      fun t _ ↦ hC _ _
+    rw [hγ0, hγ1, ← edist_eq_enorm_sub, edist_comm] at h
+    exact ENNReal.div_le_of_le_mul' h
+  calc edist (f x) (f y) = C * (edist (f x) (f y) / C) :=
+        (ENNReal.mul_div_cancel hC0' ENNReal.coe_ne_top).symm
+    _ ≤ C * riemannianEDist I x y := by gcongr
 
 end Path
 

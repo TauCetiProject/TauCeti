@@ -31,6 +31,8 @@ that divides it produces a homogeneous polynomial of one degree less.
   an idempotent with zero degree-zero component is zero.
 * `TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular`: if `a ∈ 𝒜 i` is left regular and
   `a * b ∈ 𝒜 (i + j)`, then `b ∈ 𝒜 j`.
+* `TauCeti.GradedAlgebra.isScalarTower_gradeZero`: the scalars act on a graded algebra through its
+  degree-zero part.
 -/
 
 public section
@@ -144,5 +146,19 @@ theorem mem_of_mul_mem_add_of_isLeftRegular {a b : A} {i j : ι} (ha : a ∈ �
   exact (decompose 𝒜 b j).2
 
 end Regular
+
+section GradeZero
+
+variable {R A ι : Type*} [AddMonoid ι] [CommSemiring R] [CommSemiring A] [Algebra R A]
+  (𝒜 : ι → Submodule R A) [SetLike.GradedMonoid 𝒜]
+
+/-- The scalars of an algebra with a graded monoid of submodules act on it through its degree-zero
+part. Only the multiplicative structure of the grading is used, not a decomposition. -/
+instance isScalarTower_gradeZero : IsScalarTower R (𝒜 0) A :=
+  ⟨fun r a b ↦ by
+    simp only [Algebra.smul_def (A := A) (R := 𝒜 0), SetLike.GradeZero.algebraMap_apply,
+      Submodule.coe_smul, smul_mul_assoc]⟩
+
+end GradeZero
 
 end TauCeti.GradedAlgebra

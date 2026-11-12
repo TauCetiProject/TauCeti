@@ -34,8 +34,8 @@ separate. The definition involves no class groups, and it is a finite, decidable
 * `TauCeti.hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two`: `H D = 0` when
   `D ≡ 1, 2 (mod 4)`, since a discriminant `b² - 4 a c` is `0` or `1` modulo `4`
   (`Int.discrim_emod_four`).
-* The first values `H 3 = 1/3`, `H 4 = 1/2`, `H 7 = 1`, `H 8 = 1`, `H 12 = 4/3` and `H 16 = 3/2`,
-  the last two exercising the two weights on non-primitive forms.
+* The first values `H 3 = 1/3`, `H 4 = 1/2`, `H 7 = 1`, `H 8 = 1`, `H 12 = 4/3`, `H 15 = 2` and
+  `H 16 = 3/2`; `H 12` and `H 16` exercise the two weights on non-primitive forms.
 
 ## References
 
@@ -74,6 +74,12 @@ def reducedFormWeight (f : BinaryQuadraticForm ℤ) : ℚ :=
 @[simp] theorem reducedFormWeight_eq_one {f : BinaryQuadraticForm ℤ} (h₁ : ¬(f.b = 0 ∧ f.a = f.c))
     (h₂ : ¬(f.a = f.b ∧ f.b = f.c)) : reducedFormWeight f = 1 :=
   (ite_eq_right h₁).trans <| ite_eq_right h₂
+
+/-- Scaling by a nonzero integer does not change the weight of a form. -/
+@[simp] theorem reducedFormWeight_smul {r : ℤ} (hr : r ≠ 0) (f : BinaryQuadraticForm ℤ) :
+    reducedFormWeight (r • f) = reducedFormWeight f := by
+  simp only [reducedFormWeight, BinaryQuadraticForm.smul_a', BinaryQuadraticForm.smul_b',
+    BinaryQuadraticForm.smul_c', smul_eq_mul, mul_eq_zero, hr, false_or, mul_right_inj' hr]
 
 /-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `D ≠ 0` the number of reduced forms
 of discriminant `-D`, primitive or not, each counted with its `reducedFormWeight`.
@@ -118,6 +124,10 @@ theorem hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two {D : ℕ} (hD : D %
 /-- `H 12 = 4/3`: the reduced forms of discriminant `-12` are `x² + 3 y²` and the non-primitive
 `2 (x² + x y + y²)`, which counts `1/3`. -/
 @[simp] theorem hurwitzClassNumber_twelve : hurwitzClassNumber 12 = 4 / 3 := by decide +kernel
+
+/-- `H 15 = 2`: the reduced forms of discriminant `-15` are `x² + x y + 4 y²` and
+`2 x² + x y + 2 y²`. -/
+@[simp] theorem hurwitzClassNumber_fifteen : hurwitzClassNumber 15 = 2 := by decide +kernel
 
 /-- `H 16 = 3/2`: the reduced forms of discriminant `-16` are `x² + 4 y²` and the non-primitive
 `2 (x² + y²)`, which counts `1/2`. -/

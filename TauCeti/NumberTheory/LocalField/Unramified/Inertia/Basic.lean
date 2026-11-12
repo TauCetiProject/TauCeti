@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.NumberTheory.LocalField.Teichmuller
@@ -58,6 +59,8 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
 * `TauCeti.apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one`: `I_K` fixes the roots of unity of
   order prime to the residue characteristic.
 * `TauCeti.isClosed_inertiaSubgroup`, `TauCeti.inertiaSubgroup_normal`: `I_K` is closed and normal.
+* `TauCeti.maximalUnramifiedExtension_eq_fixedField_inf_separableClosure`: conversely, `K^{ur}` is
+  the separable part of the field fixed by `I_K`.
 * `TauCeti.not_isOpen_inertiaSubgroup`: `I_K` is not open in `G_K`.
 * `TauCeti.restrictMaximalUnramifiedHom_surjective`, `TauCeti.ker_restrictMaximalUnramifiedHom`:
   restriction `G_K → Gal(K^{ur}/K)` is surjective with kernel `I_K`.
@@ -161,6 +164,15 @@ theorem isClosed_inertiaSubgroup :
 /-- **The inertia subgroup is normal**, since `K^{ur}/K` is normal. -/
 instance inertiaSubgroup_normal : (inertiaSubgroup K).Normal :=
   (maximalUnramifiedExtension K (AlgebraicClosure K)).fixingSubgroup_normal
+
+/-- **The maximal unramified extension is cut out by inertia**: `K^{ur}` is the separable part of
+the field fixed by `I_K`. The intersection with the separable closure cannot be dropped: in
+positive characteristic every fixed field contains the purely inseparable closure of `K`, which is
+ramified. -/
+theorem maximalUnramifiedExtension_eq_fixedField_inf_separableClosure :
+    maximalUnramifiedExtension K (AlgebraicClosure K) =
+      fixedField (inertiaSubgroup K) ⊓ separableClosure K (AlgebraicClosure K) :=
+  (fixedField_fixingSubgroup_inf_separableClosure (le_separableClosure K _ _)).symm
 
 /-! ### The exact sequence `1 → I_K → G_K → Gal(K^{ur}/K) → 1` -/
 
@@ -277,14 +289,8 @@ theorem inertiaSubgroup_le_fixingSubgroup_iff (E : IntermediateField K (Algebrai
     inertiaSubgroup K ≤ E.fixingSubgroup ↔ IsUnramified K E := by
   rw [← E.le_maximalUnramifiedExtension_iff]
   refine ⟨fun h ↦ ?_, fixingSubgroup_le⟩
-  -- `K^{ur}` is separable, so it is the separable part of the field fixed by its fixing subgroup.
-  set M := maximalUnramifiedExtension K (AlgebraicClosure K)
-  have hM : M ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure K _ M
-  have hfix := fixedField_fixingSubgroup_lift_inf_separableClosure (restrict hM)
-  rw [lift_restrict] at hfix
-  rw [← hfix]
-  exact le_inf (((le_fixedField_iff_le_fixingSubgroup _ E).2 le_rfl).trans (fixedField_antitone h))
-    (le_separableClosure K _ E)
+  rw [maximalUnramifiedExtension_eq_fixedField_inf_separableClosure]
+  exact le_inf ((le_fixedField_iff_le_fixingSubgroup _ E).2 h) (le_separableClosure K _ E)
 
 /-! ### Inertia at finite level -/
 
@@ -430,11 +436,11 @@ theorem restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv
   rw [← coe_maximalUnramifiedFrobenius_apply_of_mem hx, ← isArithFrobeniusLift_def.1 hσ,
     restrictMaximalUnramifiedHom_coe_apply]
 
-/-- **A Frobenius lift generates the Galois group of each finite unramified level.** For `f ≠ 0`,
-the restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
-inside `K^{alg}` generates `Gal(K_f/K)`. -/
-theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ}
-    (hf : f ≠ 0) :
+/-- **A Frobenius lift generates the Galois group of each finite unramified level.** The
+restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
+inside `K^{alg}` generates `Gal(K_f/K)`; for `f = 0` the extension is `K` itself and the group is
+trivial. -/
+theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ} :
     Subgroup.zpowers
       (AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ) = ⊤ := by
   set F := unramifiedExtension K (AlgebraicClosure K) f
@@ -442,7 +448,7 @@ theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLif
   let := algebraicExtensionNormedFieldTopology K F
   have := finiteExtension_isNonarchimedeanLocalField K F
   have := algebraicExtension_valuativeExtension K F
-  have : IsUnramified K F := isUnramified_unramifiedExtension hf
+  have : IsUnramified K F := isUnramified_unramifiedExtension
   rw [hσ.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv, zpowers_frobeniusAlgEquiv]
 
 /-- **A Frobenius lift acts on finite residue fields as the `q`-th power map.** The restriction of

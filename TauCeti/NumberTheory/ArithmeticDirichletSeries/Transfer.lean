@@ -21,11 +21,14 @@ of a number field, taking the asymptotic for `ϑ` as given: if `ϑ(x) = δx + o(
 `TauCeti/Analysis/SpecialFunctions/LogIntegral.lean`.
 
 The bridge is the exact Abel-summation identity
-`TauCeti.primeCount_eq_primeTheta_div_log_add_integral` of Layer 6.1 together with the
+`TauCeti.primeCount_eq_primeTheta_div_log_add_integral` together with the
 antiderivative identity `TauCeti.Real.logIntegral_eq_div_log_sub_add` for `Li`.  Subtracting the two
 cancels the main terms and leaves
 `TauCeti.primeCount_sub_mul_logIntegral_eq`, an identity valid for every `x ≥ 2` and every `δ`,
 whose three remaining summands are each `o (x / log x)`.
+
+Nothing here uses an analytic continuation or a nonvanishing statement: the hypothesis on `ϑ` is
+taken as given, and the transfer covers the zero-density case `δ = 0` as well.
 
 ## Main results
 
@@ -34,15 +37,8 @@ whose three remaining summands are each `o (x / log x)`.
 * `TauCeti.primeCount_sub_mul_logIntegral_isLittleO`: the transfer itself, stated so that it covers
   the density `δ = 0` as well.
 * `TauCeti.primeCount_asymptotic_of_primeTheta`: the quotient form `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`
-  for `δ ≠ 0`, and `TauCeti.primeCount_isLittleO_logIntegral` for the zero-density case, where an
-  asymptotic equivalence would be false and the correct statement is `π(x) = o(Li x)`.
-
-## Roadmap role
-
-This is Layer **6.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, which asks for the
-transfer `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)` "including the zero-density and `δ = 0` cases"; Layer 10.3
-exports it as `primeCount_asymptotic_of_primeTheta`.  Nothing here uses an analytic continuation or
-a nonvanishing statement: the hypothesis on `ϑ` is taken as given here, and Layer 10 supplies it.
+  for every `δ`, and `TauCeti.primeCount_isLittleO_logIntegral` for the zero-density case, where
+  `π(x) = o(Li x)` is the meaningful statement.
 
 ## References
 
@@ -134,12 +130,17 @@ theorem primeCount_isLittleO_logIntegral (h : primeTheta K S =o[atTop] id) :
     primeCount_sub_mul_logIntegral_isLittleO (by simpa using h)
   simpa using h0.trans_isBigO Real.logIntegral_isEquivalent_div_log.isBigO_symm
 
-/-- **`ϑ(x) ∼ δx` implies `π(x) ∼ δ Li(x)`,** for a nonzero density `δ`.  This is the transfer the
-prime-number-theorem chain consumes: Layer 10 produces the asymptotic for `ϑ` from a Tauberian
-theorem, and this turns it into one for `π`. -/
-theorem primeCount_asymptotic_of_primeTheta (hδ : δ ≠ 0)
+/-- **`ϑ(x) ∼ δx` implies `π(x) ∼ δ Li(x)`.**  This is the transfer the prime-number-theorem chain
+consumes: it turns an asymptotic for `ϑ`, as produced by a Tauberian theorem, into one for `π`.
+For `δ = 0` both asymptotic equivalences say that the counts vanish eventually. -/
+theorem primeCount_asymptotic_of_primeTheta
     (h : primeTheta K S ~[atTop] fun x ↦ δ * x) :
     primeCount K S ~[atTop] fun x ↦ δ * Real.logIntegral x := by
+  rcases eq_or_ne δ 0 with rfl | hδ
+  · simp only [zero_mul] at h ⊢
+    exact isEquivalent_zero_iff_eventually_zero.2
+      ((isEquivalent_zero_iff_eventually_zero.1 h).mono
+        fun x hx ↦ primeCount_eq_zero_of_primeTheta_eq_zero hx)
   have hlin : (fun x : ℝ ↦ δ * x) =O[atTop] (id : ℝ → ℝ) :=
     (isBigO_refl (id : ℝ → ℝ) atTop).const_mul_left δ
   have h' : (fun x ↦ primeTheta K S x - δ * x) =o[atTop] id :=

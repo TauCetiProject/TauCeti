@@ -94,7 +94,7 @@ private theorem integrableOn_pow_mul_studentTPDFReal_Ioi_iff (hν : 0 < ν) (hq 
     have h_g_eq : ∀ z : ℝ, 0 < z → |2 * z / ν| • g (z ^ 2 / ν) =
         studentTPDFReal ν z * z ^ q := by
       intro z hz
-      simpa [g] using abs_deriv_smul_studentTPDFReal hν q hz
+      simpa [g] using abs_deriv_smul_studentTPDFReal (ν := ν) q hz
     have h_g_eq' : EqOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν))
         (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
       intro z hz
@@ -144,6 +144,18 @@ theorem integrable_pow_studentTMeasure_iff (hν : 0 < ν) (q : ℕ) :
     rw [← integrable_norm_iff (by fun_prop)]
     simpa only [studentTPDFReal_abs, Real.rpow_natCast, Real.norm_eq_abs, abs_mul,
       abs_of_nonneg (studentTPDFReal_nonneg ν _), abs_pow] using habs
+
+/-- A Student t variable belongs to `Lⁿ` exactly when its natural exponent is below the
+number of degrees of freedom. This includes the measurable exponent-zero case. -/
+@[simp]
+theorem memLp_id_natCast_studentTMeasure_iff (hν : 0 < ν) (n : ℕ) :
+    MemLp id n (studentTMeasure ν) ↔ (n : ℝ) < ν := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [memLp_zero_iff_aestronglyMeasurable, hν, aestronglyMeasurable_id]
+  rw [← integrable_norm_rpow_iff aestronglyMeasurable_id (by exact_mod_cast hn.ne')
+    (by simp)]
+  simpa only [ENNReal.toReal_natCast, Real.rpow_natCast, id_eq, ← norm_pow] using
+    (integrable_norm_iff (by fun_prop)).trans (integrable_pow_studentTMeasure_iff hν n)
 
 /-- The identity is integrable under a nondegenerate Student t law exactly when the number of
 degrees of freedom exceeds one. -/

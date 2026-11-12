@@ -8,10 +8,16 @@ module
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
-public import TauCeti.Analysis.Calculus.FDeriv.Det
+public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Analysis.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.Trace
+import Mathlib.Order.Interval.Set.OrdConnected
+public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+public import TauCeti.Analysis.Matrix.Normed
+public import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
-# The determinant of a matrix exponential
+# The matrix exponential
 
 For a square matrix `A` over `ℝ` or `ℂ` (any `RCLike` field),
 
@@ -20,6 +26,14 @@ For a square matrix `A` over `ℝ` or `ℂ` (any `RCLike` field),
 This is listed as a TODO in Mathlib's `Mathlib/Analysis/Normed/Algebra/MatrixExponential.lean`.
 No diagonalization is involved, so the identity holds for every matrix, including the real
 matrices that are not diagonalizable over `ℂ` either.
+
+The file also records the exponential identities that are specific to matrices: the reciprocal
+laws `exp A * exp (-A) = 1` and `exp (-A) * exp A = 1`, together with their forms against an
+arbitrary factor, for an arbitrary matrix over any complete normed entry ring; the invariance of
+the trace under conjugation by the two exponential weights in either order, which needs
+commutative entries; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
+Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`, and the
+criterion `det (exp K) = 1 ↔ trace K = 0`.
 
 ## The argument
 
@@ -31,12 +45,32 @@ velocity `A`, and the derivative of the determinant at the identity is the trace
 `f' = trace A • f`, and then `t ↦ f t * exp (-t • trace A)` has vanishing derivative and is the
 constant `1`. Evaluating at `t = 1` gives the identity.
 
+The rational exponential series converges entrywise over any complete normed rational-algebra
+coefficient ring. In particular, two matrices have the same indicated entry in their
+exponentials whenever all their powers agree at those entries.
+
 ## Main results
 
+* `Matrix.exp_series_hasSum_exp_apply`: the rational exponential series at a matrix entry.
+* `Matrix.IsUpperTriangular.exp_submatrix`: restriction to order-connected index sets.
+* `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
+* `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
+* `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
+  `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
+  in both orientations.
+* `Matrix.trace_exp_neg_mul_mul_exp`, `Matrix.trace_exp_mul_mul_exp_neg`: conjugating by the two
+  exponential weights preserves the trace, in both orientations.
+* `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
+* `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
+  the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
+* `Matrix.IsHermitian.det_exp_eq_one_iff`: the exponential of a Hermitian matrix has determinant
+  one exactly when the matrix is trace-free.
 
 ## References
 
+* Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
+  Section 5.3.1, for the exponential of a Hamiltonian as an unnormalised Gibbs weight.
 * B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, 2nd ed., Springer GTM 222 (2015),
   Chapter 2, where the identity is proved by triangularizing `A`; the differential argument used
   here avoids any normal form.
@@ -45,9 +79,68 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 public section
 
 open NormedSpace
-open scoped Matrix Matrix.Norms.Operator
+open scoped ComplexOrder Matrix Matrix.Norms.Operator MatrixOrder
 
 namespace Matrix
+
+section EntrySeries
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℚ R] [CompleteSpace R]
+
+/-- The rational exponential series converges to each entry of the matrix exponential. -/
+theorem exp_series_hasSum_exp_apply {l : Type*} [Fintype l] [DecidableEq l]
+    (M : Matrix l l R) (i j : l) :
+    HasSum (fun k : ℕ ↦ (k.factorial⁻¹ : ℚ) • (M^k) i j) (exp M i j) := by
+  let e := Matrix.entryLinearMap ℚ R i j
+  have he : Continuous e := continuous_id.matrix_elem i j
+  have h := (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℚ) M).map e.toAddMonoidHom he
+  refine h.congr (fun k ↦ ?_)
+  simp [e]
+
+/-- Equal entries in every power give equal entries in the matrix exponentials. -/
+theorem exp_apply_eq_of_forall_pow_apply_eq {p q : Type*}
+    [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
+    (M : Matrix p p R) (N : Matrix q q R) (i j : p) (u v : q)
+    (hp : ∀ k : ℕ, (M ^ k) i j = (N ^ k) u v) : exp M i j = exp N u v := by
+  have h := exp_series_hasSum_exp_apply M i j
+  simp only [hp] at h
+  exact h.unique (exp_series_hasSum_exp_apply N u v)
+
+/-- On the diagonal, exponentiating an upper-triangular matrix exponentiates each entry. -/
+@[simp]
+theorem IsUpperTriangular.exp_apply_diag {n : Type*} [Fintype n] [LinearOrder n]
+    {A : Matrix n n R} (hA : A.IsUpperTriangular) (i : n) : exp A i i = exp (A i i) := by
+  have h := exp_apply_eq_of_forall_pow_apply_eq A (diagonal (fun j ↦ A j j)) i i i i
+    (fun k ↦ by
+      simp only [pow_apply_diag_of_isUpperTriangular hA, diagonal_pow, diagonal_apply_eq,
+        Pi.pow_apply])
+  simpa only [exp_diagonal, diagonal_apply_eq, Pi.coe_exp] using h
+
+/-- The exponential of an upper-triangular matrix commutes with restriction to an
+order-connected set of indices. -/
+theorem IsUpperTriangular.exp_submatrix {ι κ : Type*} [LinearOrder ι]
+    [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    {A : Matrix ι ι R} (hA : A.IsUpperTriangular)
+    (e : κ ↪ ι) (he : Set.OrdConnected (Set.range e)) :
+    (NormedSpace.exp A).submatrix e e = NormedSpace.exp (A.submatrix e e) := by
+  ext i j
+  exact Matrix.exp_apply_eq_of_forall_pow_apply_eq A (A.submatrix e e) (e i) (e j) i j
+    (fun n ↦ congrArg (fun M : Matrix κ κ R ↦ M i j) (hA.submatrix_pow e he n))
+
+/-- Taking the leading principal block of an upper-triangular matrix commutes
+with exponentiation. -/
+theorem IsUpperTriangular.exp_submatrix_castSucc {n : ℕ}
+    {X : Matrix (Fin (n + 1)) (Fin (n + 1)) R} (hX : X.IsUpperTriangular) :
+    (exp X).submatrix Fin.castSucc Fin.castSucc =
+      exp (X.submatrix Fin.castSucc Fin.castSucc) := by
+  have he : Set.OrdConnected (Set.range (Fin.castSuccEmb : Fin n → Fin (n + 1))) := by
+    rw [Fin.coe_castSuccEmb, Fin.range_castSucc]
+    -- The range of `castSucc` is the initial segment below the final index.
+    exact Set.ordConnected_Iio (a := Fin.last n)
+  simpa only [Fin.coe_castSuccEmb] using hX.exp_submatrix Fin.castSuccEmb he
+
+end EntrySeries
+
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {𝕂 : Type*} [RCLike 𝕂]
 
@@ -82,5 +175,117 @@ theorem det_exp (A : Matrix n n 𝕂) : det (exp A) = exp (trace A) := by
         rw [← NormedSpace.exp_add_of_commute ((Commute.refl _).neg_left), neg_add_cancel,
           exp_zero, mul_one]
     _ = exp (trace A) := by rw [← mul_assoc, hconst, one_mul]
+
+end Matrix
+
+/-! ### Exponential identities for matrices
+
+These are the matrix restatements used by the Gibbs-state development. The reciprocal laws hold
+for an arbitrary matrix over a normed entry ring, not only for scalar multiples, and the trace
+identities likewise over a commutative entry ring. Each law is stated in both orientations, so the
+`@[simp]` set cancels the two exponential weights wherever `simp`'s normal form puts them. The half
+split and the Hermitian results need an `RCLike` field, and the positivity statements use the order
+on the entries.
+-/
+
+namespace Matrix
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- The exponential of a matrix is the square of the exponential of its half,
+`exp A = exp (A / 2) * exp (A / 2)`. -/
+theorem exp_eq_mul_exp_half {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m m 𝕜) :
+    NormedSpace.exp A =
+      NormedSpace.exp ((1 / 2 : ℝ) • A) * NormedSpace.exp ((1 / 2 : ℝ) • A) := by
+  conv_lhs => rw [← one_smul ℝ A, ← add_halves (1 : ℝ), add_smul]
+  exact Matrix.exp_add_of_commute _ _ (((Commute.refl A).smul_left _).smul_right _)
+
+section Ring
+
+variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+
+/-- The exponential weights of an arbitrary matrix are mutually inverse. -/
+@[simp]
+theorem exp_mul_exp_neg (A : Matrix m m 𝔸) :
+    NormedSpace.exp A * NormedSpace.exp (-A) = 1 := by
+  simpa using (Matrix.exp_add_of_commute (A := A) (B := -A) (Commute.refl A).neg_right).symm
+
+/-- The exponential weights of an arbitrary matrix are mutually inverse. -/
+@[simp]
+theorem exp_neg_mul_exp (A : Matrix m m 𝔸) :
+    NormedSpace.exp (-A) * NormedSpace.exp A = 1 := by
+  simpa using (Matrix.exp_add_of_commute (A := -A) (B := A) (Commute.refl A).neg_left).symm
+
+/-- The exponential of a negative matrix cancels against an arbitrary factor. -/
+@[simp]
+theorem exp_mul_exp_neg_mul (A x : Matrix m m 𝔸) :
+    NormedSpace.exp A * (NormedSpace.exp (-A) * x) = x := by
+  rw [← Matrix.mul_assoc, exp_mul_exp_neg, Matrix.one_mul]
+
+/-- The exponential of a matrix cancels against an arbitrary factor on the other side. -/
+@[simp]
+theorem exp_neg_mul_exp_mul (A x : Matrix m m 𝔸) :
+    NormedSpace.exp (-A) * (NormedSpace.exp A * x) = x := by
+  rw [← Matrix.mul_assoc, exp_neg_mul_exp, Matrix.one_mul]
+
+end Ring
+
+section CommutativeEntries
+
+variable {𝔸 : Type*} [NormedCommRing 𝔸] [NormedAlgebra ℚ 𝔸] [CompleteSpace 𝔸]
+
+/-- Conjugating by the two exponential weights preserves the trace. -/
+@[simp]
+theorem trace_exp_neg_mul_mul_exp (A x : Matrix m m 𝔸) :
+    (NormedSpace.exp (-A) * x * NormedSpace.exp A).trace = x.trace := by
+  rw [Matrix.trace_mul_comm (NormedSpace.exp (-A) * x) (NormedSpace.exp A),
+    exp_mul_exp_neg_mul]
+
+/-- Conjugating by the two exponential weights, in the other order, preserves the trace. -/
+@[simp]
+theorem trace_exp_mul_mul_exp_neg (A x : Matrix m m 𝔸) :
+    (NormedSpace.exp A * x * NormedSpace.exp (-A)).trace = x.trace := by
+  rw [Matrix.trace_mul_comm (NormedSpace.exp A * x) (NormedSpace.exp (-A)), exp_neg_mul_exp_mul]
+
+end CommutativeEntries
+
+namespace IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {K : Matrix m m 𝕜}
+
+/-- For a Hermitian matrix `K`, the functional `x ↦ Tr (exp K * x)` is positive. -/
+theorem trace_exp_mul_nonneg (hK : K.IsHermitian) {x : Matrix m m 𝕜}
+    (hx : 0 ≤ x) : 0 ≤ (NormedSpace.exp K * x).trace := by
+  have hP : (NormedSpace.exp ((1 / 2 : ℝ) • K)).IsHermitian :=
+    (hK.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp
+  have hF : star (NormedSpace.exp ((1 / 2 : ℝ) • K)) = NormedSpace.exp ((1 / 2 : ℝ) • K) :=
+    hP.eq
+  rw [exp_eq_mul_exp_half K, Matrix.mul_assoc, Matrix.trace_mul_comm, Matrix.mul_assoc]
+  refine Matrix.PosSemidef.trace_nonneg (Matrix.nonneg_iff_posSemidef.mp ?_)
+  simpa only [hF, Matrix.mul_assoc] using
+    star_left_conjugate_nonneg hx (NormedSpace.exp ((1 / 2 : ℝ) • K))
+
+/-- The exponential of a Hermitian matrix `K` has determinant one exactly when `K` is trace-free:
+`det (exp K) = exp (trace K)` and the trace of `K` is real. -/
+theorem det_exp_eq_one_iff (hK : K.IsHermitian) :
+    (NormedSpace.exp K).det = 1 ↔ K.trace = 0 := by
+  have hre : ((RCLike.re K.trace : ℝ) : 𝕜) = K.trace :=
+    RCLike.conj_eq_iff_re.1 (by rw [← RCLike.star_def, ← trace_conjTranspose, hK.eq])
+  rw [det_exp, ← hre, ← RCLike.algebraMap_eq_ofReal, ← NormedSpace.algebraMap_exp_comm,
+    ← Real.exp_eq_exp_ℝ, RCLike.algebraMap_eq_ofReal]
+  norm_cast
+  exact Real.exp_eq_one_iff _
+
+variable [Nonempty m]
+
+/-- For a Hermitian matrix `K` the exponential `exp K` has positive trace. -/
+theorem trace_exp_pos (hK : K.IsHermitian) :
+    0 < (NormedSpace.exp K).trace := by
+  have h := Matrix.PosDef.conjTranspose_mul_self (NormedSpace.exp ((1 / 2 : ℝ) • K))
+    (Matrix.mulVec_injective_iff_isUnit.mpr (Matrix.isUnit_exp _))
+  rw [(hK.smul (IsSelfAdjoint.all (1 / 2 : ℝ))).exp.eq, ← exp_eq_mul_exp_half K] at h
+  exact h.trace_pos
+
+end IsHermitian
 
 end Matrix

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
+import Mathlib.Data.Set.Finite.List
+
 /-!
 # Length equals inversions
 
@@ -40,8 +42,9 @@ length-function axioms in their inversion-count spelling.
 * `TauCeti.ncard_inversions_wordProd_modEq_length` and
   `TauCeti.length_modEq_length_of_wordProd_eq`: every word spelling a given element has the same
   length parity, namely that of the inversion count.
-* `TauCeti.ncard_inversions_inv` and `TauCeti.ncard_inversions_mul_le`: the inversion count is
-  invariant under inversion and subadditive.
+* `RootPairing.finite_weylGroup_of_base`: the Weyl group of a base with finitely many roots is
+  finite, whether or not the roots span.
+* `TauCeti.ncard_inversions_mul_le`: the inversion count is subadditive.
 * `TauCeti.ncard_inversions_mul_ofIdx_lt_of_mem`,
   `TauCeti.ncard_inversions_mul_ofIdx_lt_iff` and
   `TauCeti.lt_ncard_inversions_mul_ofIdx_iff`: right multiplication by the reflection in a
@@ -152,20 +155,16 @@ theorem isLeast_ncard_inversions (w : P.weylGroup) :
   rintro n ⟨l, rfl, rfl⟩
   exact ncard_inversions_wordProd_le_length P b l
 
-/-- **The inversion count is invariant under inversion**: reversing a word spelling `w` spells
-`w⁻¹`, since a simple reflection is its own inverse. -/
-@[simp]
-theorem ncard_inversions_inv (w : P.weylGroup) :
-    (inversions P b w⁻¹).ncard = (inversions P b w).ncard := by
-  have key : ∀ v : P.weylGroup, (inversions P b v⁻¹).ncard ≤ (inversions P b v).ncard := by
-    intro v
-    obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b v
-    have hrev : wordProd P b l.reverse = v⁻¹ := by rw [wordProd_reverse, hl]
-    calc
-      (inversions P b v⁻¹).ncard ≤ l.reverse.length := by
-        rw [← hrev]; exact ncard_inversions_wordProd_le_length P b l.reverse
-      _ = (inversions P b v).ncard := by rw [List.length_reverse, hlen]
-  exact le_antisymm (key w) (by simpa using key w⁻¹)
+include b in
+/-- **The Weyl group of a base with finitely many roots is finite.** Each element is spelled by a
+word in the finitely many simple reflections with as many letters as it has inversions, and there
+are at most as many inversions as positive roots. The roots need not span. -/
+theorem _root_.RootPairing.finite_weylGroup_of_base : Finite P.weylGroup := by
+  refine Set.finite_univ_iff.mp
+    (((List.finite_length_le b.support (posRoots P b).ncard).image (wordProd P b)).subset ?_)
+  rintro w -
+  obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b w
+  exact ⟨l, hlen.trans_le (ncard_inversions_le P b w), hl⟩
 
 /-- **The inversion count is subadditive**: concatenating shortest words for `v` and `w` spells
 `v * w`. -/
@@ -219,14 +218,6 @@ theorem lt_ncard_inversions_mul_ofIdx_iff (w : P.weylGroup) {i : ι} (hi : b.IsP
   · have hback := ncard_inversions_mul_ofIdx_lt_of_mem P b (w * RootPairing.weylGroup.ofIdx P i)
       ((mem_inversions_mul_ofIdx_iff_not_mem P w b hi).mpr h)
     rwa [mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, mul_one] at hback
-
-/-- Left multiplication by a reflection has the same inversion count as right multiplication by it
-on the inverse element; this is what turns the left criteria into the right ones. -/
-private theorem ncard_inversions_ofIdx_mul (w : P.weylGroup) (i : ι) :
-    (inversions P b (RootPairing.weylGroup.ofIdx P i * w)).ncard =
-      (inversions P b (w⁻¹ * RootPairing.weylGroup.ofIdx P i)).ncard := by
-  rw [← ncard_inversions_inv P b (w⁻¹ * RootPairing.weylGroup.ofIdx P i), mul_inv_rev,
-    RootPairing.weylGroup.ofIdx_inv_eq, inv_inv]
 
 /-- **Left descent criterion.** Left multiplication by the reflection in a positive root shortens
 an element exactly when that root is an inversion of the inverse element. -/

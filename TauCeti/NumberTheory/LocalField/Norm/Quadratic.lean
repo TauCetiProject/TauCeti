@@ -61,13 +61,20 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 open Polynomial in
-/-- If `x ∉ K` is a square root of `a`, `2b = s t` and `b² - a = s² c` with `s ≠ 0` and
-`t, c ∈ 𝒪[K]`, then `(x - b)/s` lies in `𝒪[L]`, with trace `-t` and norm `c`. -/
+/-- If `x ∉ K` is a square root of `a`, `2b = s t` and `b² - a = s² c` with `t, c ∈ 𝒪[K]`, then
+`(x - b)/s` lies in `𝒪[L]`, with trace `-t` and norm `c`. -/
 theorem exists_integerRing_eq_div_of_sq_eq {x : L} {a b s : K} {t c : 𝒪[K]}
-    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a) (hs : s ≠ 0)
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a)
     (ht : 2 * b = s * t) (hbc : b ^ 2 - a = s ^ 2 * c) :
     ∃ ω : 𝒪[L], (ω : L) = (x - algebraMap K L b) / algebraMap K L s ∧
       Algebra.trace K L (ω : L) = -(t : K) ∧ Algebra.norm K (ω : L) = c := by
+  have hs : s ≠ 0 := by
+    rintro rfl
+    have hab : a = b ^ 2 := by linear_combination -hbc
+    rw [hab, map_pow] at hx2
+    rcases sq_eq_sq_iff_eq_or_eq_neg.1 hx2 with h | h
+    · exact hx ⟨b, h.symm⟩
+    · exact hx ⟨-b, by rw [map_neg, h]⟩
   set y := (x - algebraMap K L b) / algebraMap K L s
   have hy : y = algebraMap K L (-b / s) + algebraMap K L s⁻¹ * x := by
     simp only [y, map_div₀, map_neg, map_inv₀]
@@ -146,12 +153,8 @@ theorem exists_norm_eq_iff_of_integerRing (B : Module.Basis (Fin 2) 𝒪[K] 𝒪
   constructor
   · rintro ⟨z, rfl⟩
     -- A norm of valuation zero is the norm of a unit `w` of `𝒪[L]`.
-    obtain ⟨w, rfl⟩ : ∃ w : 𝒪[L], (w : L) = z :=
-      ⟨⟨z, (Valuation.mem_integer_iff _ _).mpr (valuation_norm_eq_one_iff.mp hb).le⟩, rfl⟩
-    rw [← coe_norm_integerRing] at hb ⊢
-    have hunit : IsUnit (Algebra.norm 𝒪[K] w) :=
-      (Valuation.Integers.isUnit_iff_valuation_eq_one
-        (Valuation.integer.integers (valuation K))).mpr hb
+    obtain ⟨w, rfl, hunit⟩ := exists_integerRing_eq_and_isUnit_norm hb
+    rw [← coe_norm_integerRing]
     rw [B.norm_eq_of_apply_zero_eq_one hB w] at hunit ⊢
     obtain ⟨u, t, h | h⟩ := exists_eq_of_isUnit_normForm T N hunit
     exacts [⟨u, t, Or.inl (by exact_mod_cast h)⟩, ⟨u, t, Or.inr (by exact_mod_cast h)⟩]

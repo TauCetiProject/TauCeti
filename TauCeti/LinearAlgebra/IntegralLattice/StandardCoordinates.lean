@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
+import Mathlib.Algebra.BigOperators.Field
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
 # Gram-matrix lattices on the standard rational coordinate space
@@ -27,6 +29,10 @@ Cartan matrix computable from that matrix alone.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_apply`: the form in coordinates.
 * `TauCeti.IntegralLattice.norm_ofGramMatrix_basisFun_intCast`: the rational norm of an integer
   vector is its integral Gram-matrix norm.
+* `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_intCast`: the rational form of two integer
+  vectors is their integral Gram-matrix form.
+* `TauCeti.IntegralLattice.ofGramMatrixBasisFunEquiv`: the identification of `ι → ℤ` with the
+  lattice.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_right`: pairing against a standard
   coordinate vector is the corresponding row combination of `G`.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_basisFun`: the Gram matrix of the standard
@@ -34,6 +40,16 @@ Cartan matrix computable from that matrix alone.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff`: the carrier is `ℤⁿ`.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_iff`: the dual carrier consists of
   the vectors whose row combinations against `G` are integers.
+* `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_of_sum_eq_ite` and
+  `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite`: if the row
+  combinations of `G` against a rational vector `x` are `δ_{i, i₀}`, then `y` pairs with `x` to
+  `y i₀` for every `y`, and `x` is dual-integral. The hypothesis holds for `x = c / d` when
+  `G c = d • e_{i₀}` over `ℤ` (`Matrix.sum_mul_div_eq_ite`).
+* `TauCeti.IntegralLattice.apply_eq_sum_mul_form_ofGramMatrix_basisFun_div` and
+  `TauCeti.IntegralLattice.intCast_mul_form_ofGramMatrix_basisFun_self`: if `G M = d • 1` over
+  `ℤ`, a vector is recovered from its pairings `w` with the coordinate vectors as `M w / d`, and
+  `d` times its norm is the value of the integral quadratic form `M` on `w`. For a Cartan matrix
+  this computes in the weight lattice with an integral multiple of the inverse Cartan matrix.
 
 ## References
 
@@ -41,6 +57,28 @@ Cartan matrix computable from that matrix alone.
 -/
 
 public section
+
+namespace Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] (G : Matrix ι ι ℤ) (c : ι → ℤ) (d : ℤ)
+  (hd : d ≠ 0) (i₀ : ι)
+include hd
+
+/-- If `G c = d • e_{i₀}` over `ℤ`, the rational vector `c / d` has row combinations
+`δ_{i, i₀}` against `G`. -/
+theorem sum_mul_div_eq_ite (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) (i : ι) :
+    ∑ j, ((G i j : ℤ) : ℚ) * ((c j : ℚ) / d) = if i = i₀ then 1 else 0 := by
+  have hcast := congrArg (fun z : ℤ => (z : ℚ)) (h i)
+  simp only [Int.cast_sum, Int.cast_mul] at hcast
+  have hd' : (d : ℚ) ≠ 0 := by exact_mod_cast hd
+  have hsum : ∑ j, ((G i j : ℤ) : ℚ) * ((c j : ℚ) / d) =
+      (∑ j, ((G i j : ℤ) : ℚ) * (c j : ℚ)) / d := by
+    rw [Finset.sum_div]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
+  rw [hsum, hcast]
+  split_ifs <;> simp [hd']
+
+end Matrix
 
 namespace TauCeti
 
@@ -76,6 +114,29 @@ theorem norm_ofGramMatrix_basisFun_intCast (v : ι → ℤ) :
   push_cast
   simp_rw [Finset.sum_mul, Finset.mul_sum, mul_assoc]
   exact Finset.sum_comm
+
+open _root_.Matrix in
+/-- The rational form of two integer vectors in a standard-coordinate Gram-matrix lattice is their
+integral Gram-matrix form. -/
+theorem form_ofGramMatrix_basisFun_intCast (u w : ι → ℤ) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form (fun j ↦ (u j : ℚ)) (fun j ↦ (w j : ℚ)) =
+      (((u ᵥ* G) ⬝ᵥ w : ℤ) : ℚ) := by
+  rw [form_ofGramMatrix_basisFun_apply, ← dotProduct_mulVec]
+  simp [dotProduct, mulVec]
+
+/-- The identification of the integer coordinate vectors with a standard-coordinate Gram-matrix
+lattice, given by the coordinates in its canonical carrier basis. -/
+noncomputable def ofGramMatrixBasisFunEquiv :
+    (ι → ℤ) ≃ₗ[ℤ] ofGramMatrix (Pi.basisFun ℚ ι) G hG :=
+  (ofGramMatrix.basis (Pi.basisFun ℚ ι) G hG).equivFun.symm
+
+/-- An integer coordinate vector, viewed in the lattice, is its rational cast. -/
+@[simp]
+theorem coe_ofGramMatrixBasisFunEquiv_apply (v : ι → ℤ) :
+    (ofGramMatrixBasisFunEquiv G hG v : ι → ℚ) = fun j ↦ (v j : ℚ) := by
+  classical
+  funext j
+  simp [ofGramMatrixBasisFunEquiv, Module.Basis.equivFun_symm_apply, Pi.single_apply]
 
 /-- Pairing an arbitrary vector against the `i`-th standard coordinate vector collapses the double
 sum to the `i`-th row combination of the Gram matrix. -/
@@ -148,6 +209,88 @@ theorem mem_ofGramMatrix_basisFun_dualCarrier_iff (x : ι → ℚ) :
     | smul c a _ ha =>
         rw [map_zsmul]
         exact Submodule.smul_mem (1 : Submodule ℤ ℚ) c ha
+
+section Weight
+
+variable [DecidableEq ι] (x : ι → ℚ) (i₀ : ι)
+  (hx : ∀ i, ∑ j, ((G i j : ℤ) : ℚ) * x j = if i = i₀ then 1 else 0)
+include hx
+
+/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, then `x` is the dual vector of the
+`i₀`-th coordinate: `y` pairs with `x` to `y i₀`. -/
+theorem form_ofGramMatrix_basisFun_of_sum_eq_ite (y : ι → ℚ) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form y x = y i₀ := by
+  rw [form_ofGramMatrix_basisFun_apply]
+  simp_rw [hx]
+  simp
+
+/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, then `x` lies in the dual of the
+Gram-matrix lattice. -/
+theorem mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite :
+    x ∈ (ofGramMatrix (Pi.basisFun ℚ ι) G hG).dualCarrier := by
+  rw [mem_ofGramMatrix_basisFun_dualCarrier_iff]
+  intro i
+  rw [hx i]
+  exact ⟨if i = i₀ then 1 else 0, by split_ifs <;> simp⟩
+
+end Weight
+
+section Inverse
+
+variable [DecidableEq ι] {M : Matrix ι ι ℤ} {d : ℤ} (hM : G * M = d • 1)
+include hM
+
+/-- If `G M = d • 1` over `ℤ` with `d ≠ 0`, a vector is recovered from its pairings with the
+standard coordinate vectors by applying `M / d`. -/
+theorem apply_eq_sum_mul_form_ofGramMatrix_basisFun_div (hd : d ≠ 0) (x : ι → ℚ) (j : ι) :
+    x j = (∑ i, (M j i : ℚ) *
+      (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i)) / d := by
+  have hd' : (d : ℚ) ≠ 0 := by exact_mod_cast hd
+  let f := Int.castRingHom ℚ
+  have hMG : M.map f * G.map f = (d : ℚ) • 1 := by
+    rw [← Matrix.map_mul, (Matrix.mul_eq_smul_one_comm (mem_nonZeroDivisors_of_ne_zero hd)).mp hM]
+    ext i k
+    by_cases hik : i = k <;> simp [Matrix.intCast_apply, hik, f]
+  have hjk (k : ι) : ∑ i, (M j i : ℚ) * (G i k : ℚ) = if j = k then (d : ℚ) else 0 := by
+    have h := congrFun (congrFun hMG j) k
+    simpa only [Matrix.mul_apply, Matrix.map_apply, Matrix.smul_apply, Matrix.one_apply,
+      smul_eq_mul, mul_ite, mul_one, mul_zero, f, eq_intCast] using h
+  simp_rw [form_ofGramMatrix_basisFun_right, Finset.mul_sum, ← mul_assoc]
+  rw [Finset.sum_comm]
+  simp_rw [← Finset.sum_mul, hjk, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
+    ite_true]
+  field_simp
+
+open _root_.Matrix in
+/-- If `G M = d • 1` over `ℤ`, then `d` times the norm of a vector is the value of the
+quadratic form `M` on its pairings with the standard coordinate vectors. -/
+theorem intCast_mul_form_ofGramMatrix_basisFun_self (x : ι → ℚ) :
+    d * (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x x =
+      ∑ i, (∑ j, (M i j : ℚ) *
+        (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι j)) *
+          (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i) := by
+  let f := Int.castRingHom ℚ
+  have hw (i : ι) :
+      (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form x (Pi.basisFun ℚ ι i) = (G.map f *ᵥ x) i := by
+    rw [form_ofGramMatrix_basisFun_right]
+    simp [mulVec, dotProduct, f]
+  have hGM : G.map f * M.map f = (d : ℚ) • 1 := by
+    rw [← Matrix.map_mul, hM]
+    ext i k
+    by_cases hik : i = k <;> simp [Matrix.intCast_apply, hik, f]
+  -- The pairings are `w = G x`, and `(M w) ⬝ w = x ⬝ (G M G x) = d (x ⬝ G x)` by symmetry.
+  have hGMx : (G.map f *ᵥ x) ᵥ* M.map f = (d : ℚ) • x := by
+    rw [← vecMul_transpose, (hG.map f).eq, vecMul_vecMul, hGM, vecMul_smul, vecMul_one]
+  simp_rw [hw]
+  calc
+    _ = d * (x ⬝ᵥ (G.map f *ᵥ x)) := by
+      rw [form_ofGramMatrix_basisFun_apply]
+      simp [mulVec, dotProduct, f]
+    _ = (G.map f *ᵥ x) ⬝ᵥ (M.map f *ᵥ (G.map f *ᵥ x)) := by
+      rw [dotProduct_mulVec (G.map f *ᵥ x), hGMx, smul_dotProduct, smul_eq_mul]
+    _ = _ := by simp [mulVec, dotProduct, mul_comm]
+
+end Inverse
 
 end StandardCoordinates
 

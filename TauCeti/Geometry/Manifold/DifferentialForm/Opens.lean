@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.ExtChartAt
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Differential forms on nested open subsets
@@ -36,6 +36,10 @@ whenever the extension vanishes near every point of `W` outside `U`
 
 These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology, and
 the extension step of its compactly supported variant.
+
+On a product `U × M` with an open subset `U` of a normed space, the differential of the first
+coordinate reads the first coordinate of a tangent vector
+(`TauCeti.mextDeriv_ofFunction_coe_fst_apply`).
 
 ## References
 
@@ -233,6 +237,22 @@ theorem eventually_extendByZero_smul_eq_zero {U W : Opens M} (h : U ≤ W) (ω :
 
 end RoughForm
 
+/-- On a product `U × M` of an open subset `U` of a normed space `F` with a manifold `M`, the
+exterior derivative of the first coordinate, read in `F`, reads the first coordinate of a tangent
+vector. -/
+@[simp]
+theorem mextDeriv_ofFunction_coe_fst_apply {U : Opens F} (z : U × M)
+    (v : TangentSpace (𝓘(ℝ, F).prod I) z) :
+    mextDeriv (RoughForm.ofFunction (𝓘(ℝ, F).prod I) fun z : U × M ↦ (z.1 : F)) z ![v] =
+      v.1 := by
+  have h : (fun z : U × M ↦ (z.1 : F)) = Subtype.val ∘ Prod.fst := rfl
+  rw [mextDeriv_ofFunction_apply, h, mfderiv_comp z
+      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
+    ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+    Manifold.tangentSpaceOpenEquiv_apply, mfderiv_fst]
+  -- Tangent vectors of `U × M` are pairs.
+  rfl
+
 variable [IsManifold I 1 M]
 
 /-- Near the chart image of a point of an open subset `U ≤ W`, the coordinate expression of the
@@ -295,12 +315,11 @@ theorem contMDiffAt_mpullback_inclusion_iff {U W : Opens M} (h : U ≤ W) {n : W
   have hpt : extChartAt I x x ∈ range I := mem_range_self _
   refine ⟨fun hx ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_,
     fun hx ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_⟩
-  · have hc := RoughForm.contDiffWithinAt_inChartAt _ hx.contMDiffWithinAt (s := univ)
-    rw [preimage_univ, univ_inter] at hc
+  · have hc := RoughForm.contDiffWithinAt_range_inChartAt_of_contMDiffAt _ hx
     rw [extChartAt_inclusion_self]
     exact hc.congr_of_eventuallyEq heq.symm (heq.self_of_nhdsWithin hpt).symm
-  · have hc := RoughForm.contDiffWithinAt_inChartAt _ hx.contMDiffWithinAt (s := univ)
-    rw [preimage_univ, univ_inter, extChartAt_inclusion_self] at hc
+  · have hc := RoughForm.contDiffWithinAt_range_inChartAt_of_contMDiffAt _ hx
+    rw [extChartAt_inclusion_self] at hc
     exact hc.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin hpt)
 
 /-- A form on an open subset `W` is `C^n` when its restrictions to the members of a family of open

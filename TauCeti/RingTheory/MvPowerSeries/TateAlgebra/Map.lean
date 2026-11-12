@@ -33,12 +33,22 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 
 ## Main results
 
-* `MvPowerSeries.IsRestricted.map`: a bounded ring homomorphism preserves restrictedness, at
-  arbitrary polyradii.
 * `TauCeti.MvPowerSeries.restrictedMap_id` and `TauCeti.MvPowerSeries.restrictedMap_comp`:
   `restrictedMap` is functorial.
 * `TauCeti.MvPowerSeries.restrictedMap_algebraMap`: `restrictedMap` sends constants to constants.
+* `MvPowerSeries.restrictedMap_polynomialToRestricted`: `restrictedMap` sends polynomials to their
+  coefficientwise images.
+* `TauCeti.MvPowerSeries.restrictedMap_renameAlgEquiv`: `restrictedMap` commutes with renaming
+  the variables.
+* `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedMap`: `restrictedMap` commutes with the
+  iteration `R{X/c, Y/d} ≅ R{Y/d}{X/c}`.
 * `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
+* `TauCeti.MvPowerSeries.norm_restrictedMap` and `TauCeti.MvPowerSeries.isometry_restrictedMap`:
+  a norm-preserving `φ` induces an isometry for the Gauss norms.
+* `TauCeti.MvPowerSeries.restrictedMap_eq_zero_iff`: the coefficientwise kernel formula.
+* `TauCeti.MvPowerSeries.continuous_restrictedMap`: continuity for the Gauss norm topologies.
+* `TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le`: coefficientwise bounded
+  lifts.
 * `TauCeti.MvPowerSeries.restrictedMap_surjective`: a strictly surjective `φ` induces a
   surjection `R{X/c} → S{X/c}`.
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_surjective`: if `R{X/c}` is
@@ -55,25 +65,6 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 
 public section
 
-namespace MvPowerSeries
-
-open Filter
-
-variable {σ R S : Type*} [NormedRing R] [NormedRing S] {c : σ → ℝ}
-
-/-- A bounded ring homomorphism `φ`, `‖φ r‖ ≤ C ‖r‖`, maps restricted series to restricted series
-coefficientwise. -/
-theorem IsRestricted.map {f : MvPowerSeries σ R} (hf : IsRestricted c f) (φ : R →+* S) {C : ℝ}
-    (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) : IsRestricted c (MvPowerSeries.map φ f) := by
-  rw [← isRestricted_abs_iff] at hf ⊢
-  have h := hf.const_mul C
-  rw [mul_zero] at h
-  refine squeeze_zero (fun t ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg t)) (fun t ↦ ?_) h
-  rw [coeff_map, ← mul_assoc]
-  exact mul_le_mul_of_nonneg_right (hφ _) (prod_abs_pow_nonneg t)
-
-end MvPowerSeries
-
 namespace TauCeti.MvPowerSeries
 
 open Filter _root_.MvPowerSeries
@@ -89,7 +80,9 @@ variable {σ R S : Type*} [NormedRing R] [IsUltrametricDist R] [NormedRing S] [I
 noncomputable def restrictedMap :
     IsRestricted.subring (R := R) c →+* IsRestricted.subring (R := S) c :=
   ((MvPowerSeries.map φ).comp (IsRestricted.subring (R := R) c).subtype).codRestrict _
-    fun f ↦ f.2.map φ hφ
+    -- `MvPowerSeries.map φ f` is definitionally `fun t ↦ φ (coeff t f)`, which is the series
+    -- that `isRestricted_map` shows to be restricted.
+    fun f ↦ isRestricted_map c φ hφ f.2
 
 /-- `restrictedMap` acts as `MvPowerSeries.map` on the underlying series. -/
 theorem coe_restrictedMap (f : IsRestricted.subring (R := R) c) :
@@ -100,6 +93,22 @@ theorem coe_restrictedMap (f : IsRestricted.subring (R := R) c) :
 theorem coeff_restrictedMap (f : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
     coeff t (restrictedMap φ hφ f : MvPowerSeries σ S) = φ (coeff t (f : MvPowerSeries σ R)) := by
   rw [coe_restrictedMap, coeff_map]
+
+/-- The kernel of a bounded coefficient map consists exactly of the series with every
+coefficient in the coefficient kernel. -/
+@[simp]
+theorem restrictedMap_eq_zero_iff (f : IsRestricted.subring (R := R) c) :
+    restrictedMap φ hφ f = 0 ↔
+      ∀ t, φ (coeff t (f : MvPowerSeries σ R)) = 0 := by
+  constructor
+  · intro h t
+    have ht := congrArg (fun g : IsRestricted.subring (R := S) c ↦
+      coeff t (g : MvPowerSeries σ S)) h
+    simpa only [coeff_restrictedMap, ZeroMemClass.coe_zero, map_zero] using ht
+  · intro h
+    apply Subtype.ext
+    ext t
+    simpa only [coeff_restrictedMap, ZeroMemClass.coe_zero, map_zero] using h t
 
 /-- The identity induces the identity on restricted series. -/
 @[simp]
@@ -125,14 +134,53 @@ theorem restrictedMap_restrictedMap {T : Type*} [NormedRing T] [IsUltrametricDis
   Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
 
 /-- `restrictedMap` does not increase the Gauss norm by more than the bound on `φ`. -/
-theorem norm_restrictedMap_le [∀ i, Fact (0 < c i)] (hC : 0 ≤ C)
+theorem norm_restrictedMap_le [∀ i, Fact (0 < c i)]
     (f : IsRestricted.subring (R := R) c) :
     ‖restrictedMap φ hφ f‖ ≤ C * ‖f‖ := by
-  rw [norm_le_iff (mul_nonneg hC (norm_nonneg f))]
+  apply norm_le_mul_of_norm_coeff_le
   intro t
   rw [coeff_restrictedMap]
-  exact (mul_le_mul_of_nonneg_right (hφ _) (prod_pow_pos t).le).trans
-    (by rw [mul_assoc]; exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) hC)
+  exact hφ _
+
+/-- A norm-preserving coefficient map preserves the Gauss norm. -/
+@[simp]
+theorem norm_restrictedMap [∀ i, Fact (0 < c i)] (hφ' : ∀ r, ‖φ r‖ = ‖r‖)
+    (f : IsRestricted.subring (R := R) c) :
+    ‖restrictedMap φ hφ f‖ = ‖f‖ := by
+  simp only [norm_eq_gaussNorm, gaussNorm, coe_restrictedMap, coeff_map, hφ']
+
+/-- A norm-preserving coefficient map is an isometry for the Gauss norms. -/
+theorem isometry_restrictedMap [∀ i, Fact (0 < c i)] (hφ' : ∀ r, ‖φ r‖ = ‖r‖) :
+    Isometry (restrictedMap (c := c) φ hφ) :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_restrictedMap φ hφ hφ')
+
+/-- Bounded coefficient maps are Lipschitz for the Gauss norm. -/
+theorem lipschitzWith_restrictedMap [∀ i, Fact (0 < c i)] :
+    LipschitzWith (Real.toNNReal C) (restrictedMap (c := c) φ hφ) :=
+  AddMonoidHomClass.lipschitz_of_bound _ C (norm_restrictedMap_le φ hφ)
+
+/-- Bounded coefficient maps are continuous for the Gauss norm topologies. -/
+@[continuity]
+theorem continuous_restrictedMap [∀ i, Fact (0 < c i)] :
+    Continuous (restrictedMap (c := c) φ hφ) :=
+  (lipschitzWith_restrictedMap (c := c) φ hφ).continuous
+
+/-- A uniform bound for coefficient lifts gives a restricted lift with the same bound at
+each coefficient. This does not require positive radii or complete coefficient rings. -/
+theorem exists_restrictedMap_eq_and_norm_coeff_le {C' : ℝ}
+    (hlift : ∀ s, ∃ r, φ r = s ∧ ‖r‖ ≤ C' * ‖s‖)
+    (g : IsRestricted.subring (R := S) c) :
+    ∃ f, restrictedMap φ hφ f = g ∧ ∀ t,
+      ‖coeff t (f : MvPowerSeries σ R)‖ ≤ C' * ‖coeff t (g : MvPowerSeries σ S)‖ := by
+  choose r hr hrn using hlift
+  -- Mathlib's bounded coefficient-family construction allows a nonlinear choice of lifts.
+  let f : MvPowerSeries σ R := fun t ↦ r (coeff t (g : MvPowerSeries σ S))
+  have hcoeff (t : σ →₀ ℕ) : coeff t f = r (coeff t (g : MvPowerSeries σ S)) := (rfl)
+  have hf : IsRestricted c f := isRestricted_map c r hrn g.2
+  refine ⟨⟨f, hf⟩, Subtype.ext ?_, fun t ↦ by simpa only [hcoeff] using hrn _⟩
+  ext t
+  rw [coeff_restrictedMap, hcoeff]
+  exact hr _
 
 /-- **Restricted series along a strict surjection.** If every `s ∈ S` lifts along `φ` to some
 `r` with `‖r‖ ≤ C' ‖s‖`, then every restricted series over `S` lifts coefficientwise to a
@@ -140,22 +188,8 @@ restricted series over `R`, so `R{X/c} → S{X/c}` is surjective. -/
 theorem restrictedMap_surjective {C' : ℝ} (hlift : ∀ s, ∃ r, φ r = s ∧ ‖r‖ ≤ C' * ‖s‖) :
     Function.Surjective (restrictedMap (c := c) φ hφ) := by
   intro g
-  choose r hr hrn using hlift
-  have hg := ((isRestricted_abs_iff c _).mpr g.2).const_mul C'
-  rw [mul_zero] at hg
-  -- the coefficientwise lift of `g`
-  let f : MvPowerSeries σ R := fun t ↦ r (coeff t (g : MvPowerSeries σ S))
-  have hcoeff (t : σ →₀ ℕ) : coeff t f = r (coeff t (g : MvPowerSeries σ S)) := (rfl)
-  have hf : IsRestricted c f := by
-    rw [← isRestricted_abs_iff]
-    refine squeeze_zero (fun t ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg t))
-      (fun t ↦ ?_) hg
-    rw [hcoeff, ← mul_assoc]
-    exact mul_le_mul_of_nonneg_right (hrn _) (prod_abs_pow_nonneg t)
-  refine ⟨⟨f, hf⟩, Subtype.ext ?_⟩
-  ext t
-  rw [coeff_restrictedMap, hcoeff]
-  exact hr _
+  obtain ⟨f, hf, -⟩ := exists_restrictedMap_eq_and_norm_coeff_le φ hφ hlift g
+  exact ⟨f, hf⟩
 
 end Map
 
@@ -169,6 +203,33 @@ variable {σ R S : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormedCommRi
 theorem restrictedMap_algebraMap (r : R) :
     restrictedMap (c := c) φ hφ (algebraMap R _ r) = algebraMap S _ (φ r) :=
   Subtype.ext (by simp [coe_restrictedMap])
+
+/-- `restrictedMap` sends a polynomial to its coefficientwise image under `φ`. -/
+@[simp]
+theorem restrictedMap_polynomialToRestricted (p : MvPolynomial σ R) :
+    restrictedMap φ hφ (TauCeti.MvPowerSeries.polynomialToRestricted c p) =
+      TauCeti.MvPowerSeries.polynomialToRestricted c (MvPolynomial.map φ p) :=
+  Subtype.ext (by ext t; simp [coe_restrictedMap, MvPolynomial.coeff_map])
+
+/-- Bounded coefficient maps commute with renaming the variables along an equivalence. -/
+theorem restrictedMap_renameAlgEquiv {τ : Type*} (e : τ ≃ σ)
+    (f : IsRestricted.subring (R := R) (c ∘ e)) :
+    restrictedMap φ hφ (IsRestricted.renameAlgEquiv e c f) =
+      IsRestricted.renameAlgEquiv e c (restrictedMap φ hφ f) :=
+  Subtype.ext <| MvPowerSeries.ext fun t ↦ by
+    simp only [coeff_restrictedMap, IsRestricted.coeff_renameAlgEquiv]
+
+/-- Iteration commutes with bounded coefficient maps: the iterated series of the coefficientwise
+image of `f` under `φ : R →+* S` is the image of the iterated series of `f` under the
+coefficientwise map `R{Y/d} →+* S{Y/d}` induced by `φ`. -/
+theorem coe_restrictedSumEquiv_restrictedMap {τ : Type*} {d : τ → ℝ} [∀ i, Fact (0 < c i)]
+    [∀ j, Fact (0 < d j)] (f : IsRestricted.subring (R := R) (Sum.elim c d)) :
+    (restrictedSumEquiv (restrictedMap φ hφ f) :
+        MvPowerSeries σ (IsRestricted.subring (R := S) d)) =
+      map (restrictedMap φ hφ)
+        (restrictedSumEquiv f : MvPowerSeries σ (IsRestricted.subring (R := R) d)) := by
+  refine MvPowerSeries.ext fun a ↦ Subtype.ext <| MvPowerSeries.ext fun b ↦ ?_
+  simp [coeff_map]
 
 end Algebra
 

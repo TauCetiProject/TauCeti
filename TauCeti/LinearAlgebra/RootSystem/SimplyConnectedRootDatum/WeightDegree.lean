@@ -39,10 +39,6 @@ unitriangular matrices, the triangular input to the Borel component of a pinning
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 10 and 26.
 * R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 8.2.
-
-This advances the pinning and Chevalley--Demazure construction targets in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Their pinned ambient group is consumed by milestone L0
-of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
@@ -66,6 +62,28 @@ theorem weightDegree_apply (μ : Fin t.rank → ℤ) :
     t.weightDegree ht μ = heightLinearMap (t.rationalRootSystem ht) (t.rationalBase ht)
       (fun i ↦ (μ i : ℚ)) :=
   (rfl)
+
+/-- The degree of an integral root is its height relative to the pinned base. -/
+@[simp]
+theorem weightDegree_root (γ : Fin t.numRoots) :
+    t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) =
+      ((t.rationalBase ht).height γ : ℚ) := by
+  simp only [weightDegree_apply, ← root_rationalRootSystem, heightLinearMap_root]
+
+/-- Every positive root has strictly positive weight degree. -/
+theorem weightDegree_root_pos {γ : Fin t.numRoots}
+    (hγ : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    0 < t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) := by
+  rw [weightDegree_root]
+  exact_mod_cast lt_of_lt_of_le Int.zero_lt_one
+    (one_le_height_of_mem_posRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ)
+
+/-- Every negative root has strictly negative weight degree. -/
+theorem weightDegree_root_neg {γ : Fin t.numRoots}
+    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) < 0 := by
+  rw [weightDegree_root]
+  exact_mod_cast height_neg_of_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ
 
 /-- The integral weight of a root coordinate in Geck's representation, cast to `ℚ`, is the
 corresponding root of the pinned rational root system. -/
@@ -97,9 +115,8 @@ theorem weightDegree_geckWeight_inr (k : Fin t.numRoots) :
 theorem weightDegree_geckWeight_inr_pos {k : Fin t.numRoots}
     (hk : k ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
     0 < t.weightDegree ht (t.geckWeight ht (Sum.inr k)) := by
-  rw [weightDegree_geckWeight_inr]
-  exact_mod_cast lt_of_lt_of_le Int.zero_lt_one
-    (one_le_height_of_mem_posRoots (t.rationalRootSystem ht) (t.rationalBase ht) hk)
+  rw [weightDegree_geckWeight_inr, ← weightDegree_root]
+  exact t.weightDegree_root_pos ht hk
 
 /-- A Cartan-support coordinate in Geck's defining representation has weight zero, hence degree
 zero. -/

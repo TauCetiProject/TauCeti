@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.Deriv
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
@@ -96,8 +95,7 @@ theorem eulerFactor_restrictAway_of_mem {S : Set (HeightOneSpectrum (𝓞 K))}
     (D.restrictAway S).eulerFactor P s = 1 := by
   classical
   rw [eulerFactor_eq_tsum, tsum_eq_single 0 fun e he ↦ ?_]
-  · have h0 : P.primeIdealPow 0 = 1 := Subtype.ext (by simp)
-    simp [idealTerm_def, h0, Ideal.one_eq_top, Ideal.isPrimeTo_top, D.isMultiplicative.map_one]
+  · simp [idealTerm_def, Ideal.one_eq_top, Ideal.isPrimeTo_top]
   · have hnot : ¬ Ideal.IsPrimeTo (P.asIdeal ^ e) S := by
       rw [Ideal.isPrimeTo_pow_iff he, Ideal.isPrimeTo_asIdeal_iff]
       exact not_not_intro hP
@@ -244,10 +242,8 @@ theorem logDeriv_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) {
         ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) :=
     Filter.mem_of_superset ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
       fun z hz ↦ LSeries_ofBadPrimes S hz
-  have hζ : DifferentiableAt ℂ (NumberField.dedekindZeta K) s := by
-    rw [funext (dedekindZeta_eq_LSeries_dedekindZetaCoeff K)]
-    exact (LSeries_hasDerivAt (by rw [abscissaOfAbsConv_dedekindZetaCoeff]; exact_mod_cast hs))
-      |>.differentiableAt
+  have hζ : DifferentiableAt ℂ (NumberField.dedekindZeta K) s :=
+    (analyticOnNhd_dedekindZeta K s hs).differentiableAt
   have hfac : ∀ P ∈ S, DifferentiableAt ℂ
       (fun z : ℂ ↦ 1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) s := fun P _ ↦
     (differentiableAt_neg_iff.mpr differentiableAt_id).const_cpow
@@ -256,7 +252,7 @@ theorem logDeriv_LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) {
     logDeriv_fun_mul s (dedekindZeta_ne_zero_of_one_lt_re hs)
       (prod_one_sub_absNorm_cpow_neg_ne_zero S hs0) hζ (DifferentiableAt.fun_finsetProd hfac),
     logDeriv_fun_prod ?_ hfac]
-  · exact congrArg _ (Finset.sum_congr rfl fun P _ ↦ P.logDeriv_one_sub_absNorm_cpow_neg hs0)
+  · exact congrArg _ (Finset.sum_congr rfl fun P _ ↦ P.logDeriv_one_sub_absNorm_cpow_neg)
   · exact fun P hP ↦ Finset.prod_ne_zero_iff.mp (prod_one_sub_absNorm_cpow_neg_ne_zero S hs0) P hP
 
 /-- **The Euler-factor correction is holomorphic on `Re s > 0`.** The finite sum

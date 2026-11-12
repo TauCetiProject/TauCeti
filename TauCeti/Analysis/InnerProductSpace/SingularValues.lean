@@ -303,7 +303,8 @@ theorem singularValues_eq_single_of_finrank_eq_one (hE : finrank 𝕜 E = 1) {x 
   rcases Nat.eq_zero_or_pos i with rfl | hi
   · have h0 : 0 < finrank 𝕜 E := hE ▸ one_pos
     -- The right singular vector `v₀` is a unit multiple `c • x` of `x`.
-    obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' x (norm_ne_zero_iff.mp (by simp [hx]))).mp
+    obtain ⟨c,
+      hc⟩ := (_root_.finrank_eq_one_iff_of_ne_zero' x (norm_ne_zero_iff.mp (by simp [hx]))).mp
       hE (A.rightSingularBasis ⟨0, h0⟩)
     have hc1 : ‖c‖ = 1 := by
       simpa [← hc, norm_smul, hx] using A.rightSingularBasis.norm_eq_one ⟨0, h0⟩
@@ -324,7 +325,7 @@ least the `n`-th singular value: `σₙ ‖x‖ ≤ ‖A x‖`. -/
 theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
     (hx : x ∈ A.rightSingularBasis.spanIndices {i | (i : ℕ) ≤ n}) :
     A.singularValues n * ‖x‖ ≤ ‖A x‖ := by
-  have h := A.isSymmetric_adjoint_comp_self.le_re_inner_of_eigenbasis A.rightSingularBasis
+  have h := LinearMap.le_re_inner_of_eigenbasis _ A.rightSingularBasis
     A.adjoint_comp_self_rightSingularBasis (c := A.singularValues n ^ 2)
     (fun i hi ↦ A.sq_singularValues_antitone hi) hx
   rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
@@ -337,7 +338,7 @@ theorem norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis
     (he : ∀ i, (adjoint A ∘ₗ A) (e i) = (μ i : 𝕜) • e i)
     {s : Set (Fin m)} {c : ℝ} (hc : 0 ≤ c) (hμ : ∀ i ∈ s, μ i ≤ c ^ 2)
     {x : E} (hx : x ∈ e.spanIndices s) : ‖A x‖ ≤ c * ‖x‖ := by
-  have h := A.isSymmetric_adjoint_comp_self.re_inner_le_of_eigenbasis e he hμ hx
+  have h := LinearMap.re_inner_le_of_eigenbasis _ e he hμ hx
   rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
   exact (pow_le_pow_iff_left₀ (norm_nonneg _)
     (mul_nonneg hc (norm_nonneg x)) two_ne_zero).mp h

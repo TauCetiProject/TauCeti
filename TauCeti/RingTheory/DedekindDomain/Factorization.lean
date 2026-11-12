@@ -8,78 +8,62 @@ module
 public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import Mathlib.RingTheory.DedekindDomain.Factorization
+import Mathlib.RingTheory.UniqueFactorizationDomain.Finite
 
 /-!
 # Complements on Dedekind-domain factorization
 
 Facts about `Associates.count` and `FractionalIdeal.count` that Mathlib does not carry, together
-with unit-level factorization of invertible fractional ideals.
+with unit-level factorization of invertible fractional ideals and the finiteness, up to units, of
+the divisors of a nonzero element. All of them hold in an arbitrary Dedekind domain.
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.unitOfPrime`: a height-one prime regarded as an invertible
+  fractional ideal.
 * `IsDedekindDomain.HeightOneSpectrum.le_count_associates_iff_le_pow`: the multiplicity of `v` in
-  a nonzero `J` is at least `k` exactly when `v ^ k` contains `J`. The multiplicity here is
-  `Associates.count`, not `FractionalIdeal.count` — hence the `associates` token, matching
-  Mathlib's `Ideal.count_associates_factors_eq` for the same expression. Mathlib reads that
-  multiplicity as divisibility of `Associates`; a consumer comparing two multiplicities across a
-  ring extension wants a containment of *ideals*, and shows the two ideals contain the same prime
-  powers.
-* `FractionalIdeal.count_div`: the multiplicity of `I / J` is the difference of the multiplicities
-  of `I` and `J`. Mathlib's `count` API has `count_mul`, `count_inv`, `count_pow` and `count_zpow`
-  but no division form, so every consumer that clears a denominator repeats the same rewrites.
-* `FractionalIdeal.count_spanSingleton_div`: the same on principal fractional ideals. This is the
-  one the `S`-integer class-group computation in
-  `TauCeti/RingTheory/DedekindDomain/SInteger/ClassGroup.lean` uses, at both `R` and `𝒪_S` — which
-  is why the ring is a variable rather than fixed — advancing
-  `TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 (Mordell–Weil), whose weak-Mordell–Weil
-  argument needs the `S`-class group to be finite. It is also the step that carries
-  `count_toPrincipalIdeal_eq_neg_log_valuation` below. `count_div` is its general form and has no
-  consumer in this repository yet.
-* `FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation`: the multiplicity at `v` of the
-  principal fractional ideal of a nonzero rational function `u : Kˣ` is
-  `-WithZero.log (v.valuation K u)`. This is the passage between the two ways this library measures
-  a principal ideal at a height one prime — Mathlib's `count` and the adic valuation.
-* `FractionalIdeal.valuation_le_one_of_mem_of_count_nonneg`: nonnegative multiplicity makes
-  every element of a fractional ideal integral at that prime.
+  a nonzero ideal `J` is at least `k` exactly when `v ^ k` contains `J`. The multiplicity here is
+  `Associates.count`, as in Mathlib's `Ideal.count_associates_factors_eq`, and the statement turns
+  it into a containment of ideals rather than a divisibility of `Associates`.
+* `IsDedekindDomain.exists_finset_forall_dvd_exists_associated`: a nonzero element of a Dedekind
+  domain has finitely many divisors up to units, because its principal ideal has finitely many
+  ideal divisors.
 * `Ideal.hasFiniteMulSupport_asIdeal_pow_of_le_count`: a family of prime powers whose exponents
   are bounded by the multiplicities of a fixed nonzero ideal has finite multiplicative support.
-  Mathlib's `Ideal.hasFiniteMulSupport` is the case of the multiplicities themselves; a consumer
-  defining an ideal as `∏ᵥ 𝔭ᵥ ^ e v` for exponents it only knows to be dominated by an actual
-  factorisation — as the minimal discriminant ideal of an elliptic curve is dominated by the
-  discriminant of any integral model — needs the bounded form to see that the product is finite.
+  Mathlib's `Ideal.hasFiniteMulSupport` is the case of the multiplicities themselves; the bounded
+  form is what shows that an ideal `∏ᵥ 𝔭ᵥ ^ e v` is a finite product when the exponents are only
+  known to be dominated by an actual factorization.
 * `Ideal.count_finprod_asIdeal_pow`: an ideal defined as a finite product `∏ᵥ 𝔭ᵥ ^ e v` has
   multiplicity `e v` at `v`. Mathlib's `FractionalIdeal.count_finprod` is the fractional-ideal form
   with integer exponents.
-* `IsDedekindDomain.HeightOneSpectrum.unitOfPrime`: a height-one prime regarded as an invertible
-  fractional ideal.
 * `FractionalIdeal.hasFiniteMulSupport_zpow_count`: a family of powers indexed by the height one
   primes, with the multiplicities of a fixed fractional ideal as exponents, has finite
   multiplicative support. The bases are an arbitrary family in an arbitrary `DivInvMonoid`, since
-  nothing but the vanishing of almost all exponents is at stake; the unit-level factorization below
-  is the case of the primes themselves.
+  only the vanishing of almost all exponents matters.
 * `FractionalIdeal.finprod_unitOfPrime_zpow_count`: unique factorization of an invertible
-  fractional ideal, transported along `Units.coeHom`.
+  fractional ideal as a finite product of powers of the `unitOfPrime`s.
+* `FractionalIdeal.units_ext_count`: invertible fractional ideals with the same multiplicities at
+  every height one prime are equal.
 * `FractionalIdeal.mem_closure_unitOfPrime_of_count_eq_zero`: an invertible fractional ideal
   whose multiplicities vanish outside a set `T` of height one primes lies in the subgroup generated
   by the primes of `T`.
+* `FractionalIdeal.count_div`: the multiplicity of `I / J` is the difference of the multiplicities
+  of `I` and `J`, for nonzero `I` and `J`. Mathlib's `count` API has `count_mul`, `count_inv`,
+  `count_pow` and `count_zpow` but no division form.
+* `FractionalIdeal.count_spanSingleton_div`: the same for principal fractional ideals.
+* `FractionalIdeal.count_spanSingleton_algebraMap_eq_zero_of_notMem`: an element of `A` outside a
+  height one prime generates a principal fractional ideal of multiplicity zero at that prime.
+* `FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation`: the multiplicity at `v` of the
+  principal fractional ideal of `u : Kˣ` is `-WithZero.log (v.valuation K u)`. This links Mathlib's
+  `count` and the adic valuation.
+* `FractionalIdeal.valuation_le_one_of_mem_of_count_nonneg`: nonnegative multiplicity makes
+  every element of a fractional ideal integral at that prime.
 
-All these declarations are general facts about an arbitrary Dedekind domain, mentioning no
-particular ring extension.
-
-`le_count_associates_iff_le_pow` is adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/Basic.lean:381` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll); following this repository's convention
-for adapted material, the upstream authorship is credited here rather than in the copyright header.
-**`count_div` and `count_spanSingleton_div` are new here** — they have no counterpart in that
-source. `count_toPrincipalIdeal_eq_neg_log_valuation` is this repository's own, relocated here
-from `TauCeti/AlgebraicGeometry/WeilDivisor/Dedekind/Basic.lean`: nothing in its statement or
-proof mentions a Weil divisor, and stating it under `TauCeti.AlgebraicGeometry` put it out of
-reach of the `RingTheory` consumers that need it, which is exactly the boundary
-`TauCeti/RingTheory/ClassGroup/HeightOneSpectrum.lean` records in its module docstring.
-
-The unit-level prime factorization `FractionalIdeal.finprod_unitOfPrime_zpow_count` is adapted
-from Michael Stoll's `EllipticCurves/Mathlib/FractionalIdeal.lean` at commit `66889eada51a` of the
-`MichaelStollBayreuth/EllipticCurves` repository (Apache 2.0).
+`le_count_associates_iff_le_pow` is adapted from Michael Stoll's elliptic-curves formalization
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/Basic.lean:381` at
+commit `66889eada51a`, Apache 2.0), and the unit-level prime factorization
+`FractionalIdeal.finprod_unitOfPrime_zpow_count` from `EllipticCurves/Mathlib/FractionalIdeal.lean`
+at the same commit of that repository.
 -/
 public section
 
@@ -111,6 +95,33 @@ theorem le_count_associates_iff_le_pow {A : Type*} [CommRing A] [IsDedekindDomai
     ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd, Ideal.dvd_iff_le]
 
 end IsDedekindDomain.HeightOneSpectrum
+
+namespace IsDedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- A nonzero element `n` of a Dedekind domain has only finitely many divisors up to units: there
+is a finite set `M` of divisors of `n` such that every divisor of `n` is associated to an element
+of `M`. -/
+theorem exists_finset_forall_dvd_exists_associated {n : R} (hn : n ≠ 0) :
+    ∃ M : Finset R, (∀ μ ∈ M, μ ∣ n) ∧ ∀ μ, μ ∣ n → ∃ μ₀ ∈ M, Associated μ₀ μ := by
+  classical
+  have hn' : Ideal.span {n} ≠ 0 := by
+    rwa [Ideal.zero_eq_bot, ne_eq, Ideal.span_singleton_eq_bot]
+  -- The principal ideals of the divisors of `n` divide `(n)`, and `(n)` has finitely many divisors.
+  have : Fintype {I : Ideal R // I ∣ Ideal.span {n}} :=
+    UniqueFactorizationMonoid.fintypeSubtypeDvd _ hn'
+  have hfin : ((fun μ : R ↦ Ideal.span {μ}) '' {μ | μ ∣ n}).Finite := by
+    refine (Set.toFinite {I : Ideal R | I ∣ Ideal.span {n}}).subset ?_
+    rintro _ ⟨μ, hμ, rfl⟩
+    exact Ideal.span_singleton_dvd_span_singleton_iff_dvd.mpr hμ
+  obtain ⟨u, hus, hbij⟩ := Set.exists_subset_bijOn {μ : R | μ ∣ n} fun μ ↦ Ideal.span {μ}
+  have hu : u.Finite := Set.Finite.of_finite_image (hbij.image_eq ▸ hfin) hbij.injOn
+  refine ⟨hu.toFinset, fun μ hμ ↦ hus (hu.mem_toFinset.mp hμ), fun μ hμ ↦ ?_⟩
+  obtain ⟨μ₀, hμ₀, he⟩ := hbij.surjOn ⟨μ, hμ, rfl⟩
+  exact ⟨μ₀, hu.mem_toFinset.mpr hμ₀, Ideal.span_singleton_eq_span_singleton.mp he⟩
+
+end IsDedekindDomain
 
 namespace Ideal
 
@@ -167,34 +178,35 @@ has finite multiplicative support.** Only finitely many primes occur in a fracti
 only finitely many exponents are nonzero, whatever `DivInvMonoid` the bases live in. -/
 lemma hasFiniteMulSupport_zpow_count {G : Type*} [DivInvMonoid G] (I : FractionalIdeal R⁰ K)
     (f : HeightOneSpectrum R → G) :
-    (Function.mulSupport fun v : HeightOneSpectrum R ↦ f v ^ count K v I).Finite := by
+    Function.HasFiniteMulSupport fun v : HeightOneSpectrum R ↦ f v ^ count K v I := by
   refine (Filter.eventually_cofinite.mp (finite_factors I)).subset fun v hv hc ↦ ?_
   exact hv (by simp only [hc, zpow_zero])
-
-/-- Only finitely many factors in the unit-level prime factorization are nontrivial. -/
-lemma hasFiniteMulSupport_unitOfPrime_zpow (I : (FractionalIdeal R⁰ K)ˣ) :
-    (Function.mulSupport fun v : HeightOneSpectrum R ↦
-      v.unitOfPrime K ^ count K v (I : FractionalIdeal R⁰ K)).Finite :=
-  hasFiniteMulSupport_zpow_count (I : FractionalIdeal R⁰ K) (fun v ↦ v.unitOfPrime K)
 
 /-- Unique factorization of an invertible fractional ideal as a product of prime powers. -/
 lemma finprod_unitOfPrime_zpow_count (I : (FractionalIdeal R⁰ K)ˣ) :
     I = ∏ᶠ v : HeightOneSpectrum R,
       v.unitOfPrime K ^ count K v (I : FractionalIdeal R⁰ K) := by
-  -- State the map equation separately: rewriting would also affect the coercion inside `count`.
-  have hmap : ((∏ᶠ v : HeightOneSpectrum R,
-        v.unitOfPrime K ^ count K v (I : FractionalIdeal R⁰ K)) :
-        (FractionalIdeal R⁰ K)ˣ) =
-      ∏ᶠ v : HeightOneSpectrum R,
-        ((v.unitOfPrime K ^ count K v (I : FractionalIdeal R⁰ K) :
-          (FractionalIdeal R⁰ K)ˣ) : FractionalIdeal R⁰ K) :=
-    MonoidHom.map_finprod (Units.coeHom (FractionalIdeal R⁰ K))
-      (hasFiniteMulSupport_unitOfPrime_zpow I)
   refine Units.ext ?_
-  rw [hmap]
-  simp only [Units.val_zpow_eq_zpow_val, HeightOneSpectrum.coe_unitOfPrime]
+  -- Push the coercion to fractional ideals through the product. Only the right-hand side is
+  -- rewritten, since `count` also contains a coercion of `I`.
+  conv_rhs => rw [← Units.coeHom_apply,
+    MonoidHom.map_finprod _ (hasFiniteMulSupport_zpow_count _ _)]
+  simp only [Units.coeHom_apply, Units.val_zpow_eq_zpow_val, HeightOneSpectrum.coe_unitOfPrime]
   exact (finprod_heightOneSpectrum_factorization' (K := K)
     (I := (I : FractionalIdeal R⁰ K)) (Units.ne_zero I)).symm
+
+/-- Invertible fractional ideals are equal if their multiplicities agree at every prime. -/
+lemma units_ext_count {I J : (FractionalIdeal R⁰ K)ˣ}
+    (h : ∀ v, count K v (I : FractionalIdeal R⁰ K) = count K v (J : FractionalIdeal R⁰ K)) :
+    I = J := by
+  calc
+    I = ∏ᶠ v : HeightOneSpectrum R,
+        v.unitOfPrime K ^ count K v (I : FractionalIdeal R⁰ K) :=
+      finprod_unitOfPrime_zpow_count I
+    _ = ∏ᶠ v : HeightOneSpectrum R,
+        v.unitOfPrime K ^ count K v (J : FractionalIdeal R⁰ K) :=
+      finprod_congr fun v ↦ congrArg (fun n : ℤ ↦ v.unitOfPrime K ^ n) (h v)
+    _ = J := (finprod_unitOfPrime_zpow_count J).symm
 
 /-- **An invertible fractional ideal whose multiplicities vanish outside `T` lies in the subgroup
 generated by the primes of `T`.** -/
@@ -202,7 +214,7 @@ lemma mem_closure_unitOfPrime_of_count_eq_zero {T : Set (HeightOneSpectrum R)}
     {I : (FractionalIdeal R⁰ K)ˣ} (h : ∀ v ∉ T, count K v (I : FractionalIdeal R⁰ K) = 0) :
     I ∈ Subgroup.closure ((fun v : HeightOneSpectrum R ↦ v.unitOfPrime K) '' T) := by
   classical
-  have hfin := hasFiniteMulSupport_unitOfPrime_zpow I
+  have hfin := hasFiniteMulSupport_zpow_count (I : FractionalIdeal R⁰ K) (·.unitOfPrime K)
   rw [finprod_unitOfPrime_zpow_count I,
     finprod_eq_prod_of_mulSupport_toFinset_subset _ hfin subset_rfl]
   refine Subgroup.prod_mem _ fun v hv ↦
@@ -210,18 +222,17 @@ lemma mem_closure_unitOfPrime_of_count_eq_zero {T : Set (HeightOneSpectrum R)}
   by_contra hvT
   exact hfin.mem_toFinset.mp hv (by simp only [h v hvT, zpow_zero])
 
-/-- **The multiplicity of a quotient is the difference of the multiplicities.** Mathlib's `count`
-API has `count_mul`, `count_inv`, `count_pow` and `count_zpow` but no division form, so every
-consumer that clears a denominator repeats the same rewrites. -/
+/-- **The multiplicity of a quotient of nonzero fractional ideals is the difference of the
+multiplicities.** Mathlib's `count` API has `count_mul`, `count_inv`, `count_pow` and `count_zpow`
+but no division form. -/
 theorem count_div {A : Type*} [CommRing A] [IsDedekindDomain A] (K : Type*) [Field K] [Algebra A K]
     [IsFractionRing A K] (w : HeightOneSpectrum A) {I J : FractionalIdeal A⁰ K} (hI : I ≠ 0)
     (hJ : J ≠ 0) : count K w (I / J) = count K w I - count K w J := by
   rw [div_eq_mul_inv, count_mul K w hI (inv_ne_zero hJ), count_inv]
   ring
 
-/-- The multiplicity of `x / y` is the difference of the multiplicities of `x` and `y`: `count_div`
-read on principal fractional ideals, which is the form the `S`-integer class-group computation
-uses. -/
+/-- The multiplicity of `x / y` is the difference of the multiplicities of `x` and `y`, for nonzero
+`x` and `y`: `count_div` read on principal fractional ideals. -/
 theorem count_spanSingleton_div {A : Type*} [CommRing A] [IsDedekindDomain A] (K : Type*) [Field K]
     [Algebra A K] [IsFractionRing A K] (w : HeightOneSpectrum A) {x y : K} (hx : x ≠ 0)
     (hy : y ≠ 0) :

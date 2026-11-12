@@ -44,6 +44,9 @@ series is a power series expansion of the Nemytskii map around `p`.
   `u ∈ H^s` with values in `U`, the continuous representative of `nemytskii F u` is `F ∘ u`.
 * `TauCeti.CircleSobolev.analyticOnNhd_nemytskii`: the map `nemytskii F` is analytic on the open
   set of `u ∈ H^s` with values in `U`.
+* `TauCeti.CircleSobolev.hasFDerivAt_nemytskii`: its derivative at `u` is multiplication by
+  `F' ∘ u`; at `u = 0` it is multiplication by the scalar `F'(0)`
+  (`TauCeti.CircleSobolev.hasFDerivAt_nemytskii_zero`).
 
 ## References
 
@@ -61,7 +64,7 @@ public section
 noncomputable section
 
 open Complex
-open scoped Real
+open scoped Real Topology
 
 namespace TauCeti
 
@@ -175,7 +178,7 @@ private theorem exists_toContinuousMap_eq_comp_sum_single (hs : 1 / 2 < s) (S : 
       (∀ x, toContinuousMap T hs w x = G (toContinuousMap T hs (∑ n ∈ S, single n (c n)) x)) ∧
       ‖w‖ ≤ M * √(∑' n, weight (2 * s) n * Real.exp (-(4 * π * δ / T * |(n : ℝ)|))) := by
   set p : CircleSobolev s ℂ := ∑ n ∈ S, single n (c n)
-  set P : ℂ → ℂ := fun z ↦ ∑ n ∈ S, c n * cexp (2 * π * I * n * z / T) with hP
+  set P : ℂ → ℂ := fun z ↦ ∑ n ∈ S, c n * cexp (2 * π * I * n * z / T)
   have hPx (x : ℝ) : toContinuousMap T hs p x = P x := toContinuousMap_sum_single_coe T hs S c x
   have hrange (y : AddCircle T) : toContinuousMap T hs p y ∈ K := by
     obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
@@ -293,8 +296,8 @@ private theorem exists_local_expansion {F : ℂ → ℂ} {U : Set ℂ} (hU : IsO
       ∀ y : CircleSobolev s ℂ, ‖y‖ < ρ → ∀ x, toContinuousMap T hs.out (p + y) x ∈ U ∧
         HasSum (fun k ↦ (k.factorial : ℂ)⁻¹ * toContinuousMap T hs.out (w k) x *
           toContinuousMap T hs.out y x ^ k) (F (toContinuousMap T hs.out (p + y) x)) := by
-  set C := mulConst s with hC
-  set K := √(∑' n, weight (-(2 * s)) n) with hK
+  set C := mulConst s
+  set K := √(∑' n, weight (-(2 * s)) n)
   have hC1 : 1 ≤ C := one_le_mulConst
   have hK0 : 0 ≤ K := Real.sqrt_nonneg _
   have hsup (a : CircleSobolev s ℂ) (x : AddCircle T) :
@@ -356,16 +359,20 @@ omit hT in
 private theorem le_radius_factorialInvSeries {w : ℕ → CircleSobolev s ℂ} {ρ B : ℝ}
     (hρ : 0 < ρ) (hw : ∀ k, ‖w k‖ ≤ k.factorial * B / (mulConst s * ρ) ^ k) :
     (ρ.toNNReal : ENNReal) ≤ (factorialInvSeries w).radius := by
-  set C := mulConst s with hC
+  set C := mulConst s
   have hC0 : 0 < C := one_pos.trans_le one_le_mulConst
-  have hB : 0 ≤ B := by simpa using (norm_nonneg _).trans (hw 0)
   refine FormalMultilinearSeries.le_radius_of_bound _ (C * B) fun k ↦ ?_
   have hL : ‖convolution hs.out (.mul ℂ ℂ) (w k)‖ ≤ C * ‖w k‖ :=
     ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun b ↦ by
       simpa only [mul_def] using norm_mul_le_mulConst (w k) b
   have hm : ‖ContinuousMultilinearMap.mkPiAlgebraFin ℂ k (CircleSobolev s ℂ)‖ ≤ C ^ k :=
     ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ by
-      simpa [List.map_ofFn, List.prod_ofFn] using norm_list_prod_le (List.ofFn m)
+      simp only [ContinuousMultilinearMap.mkPiAlgebraFin_apply]
+      refine (norm_list_prod_le (List.ofFn m)).trans ?_
+      simp only [List.length_ofFn, List.map_ofFn, List.prod_ofFn]
+      exact mul_le_mul_of_nonneg_right
+        (pow_le_pow_right₀ one_le_mulConst (Nat.sub_le k 1))
+        (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)
   have hqn : ‖factorialInvSeries w k‖ ≤ (k.factorial : ℝ)⁻¹ * (C * ‖w k‖) * C ^ k := by
     rw [factorialInvSeries, norm_smul, norm_inv, Complex.norm_natCast, mul_assoc]
     gcongr
@@ -446,6 +453,65 @@ theorem analyticOnNhd_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
   exact hps.analyticAt_of_mem (by
     rw [Metric.eball_coe, mem_ball_iff_norm, Real.coe_toNNReal _ hρ.le]
     exact hp)
+
+/-- The Nemytskii map of an entire function is analytic on all of `H^s`, `s > 1/2`. -/
+theorem analyticAt_nemytskii {F : ℂ → ℂ} (hF : Differentiable ℂ F) (u : CircleSobolev s ℂ) :
+    AnalyticAt ℂ (nemytskii F) u := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  exact analyticOnNhd_nemytskii 1 isOpen_univ hF.differentiableOn u fun _ ↦ Set.mem_univ _
+
+/-- The Nemytskii map of any `F` sends the zero function to the constant function `F 0`. -/
+@[simp]
+theorem nemytskii_zero (F : ℂ → ℂ) : nemytskii F (0 : CircleSobolev s ℂ) = single 0 (F 0) := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  exact nemytskii_eq_of_forall_toContinuousMap_apply 1 fun x ↦ by simp
+
+/-- **The derivative of the holomorphic Nemytskii map.** If `F` is holomorphic on an open set `U`
+and `u ∈ H^s` takes values in `U`, then the derivative of `nemytskii F` at `u` is multiplication by
+`nemytskii (deriv F) u`, the element of `H^s` with continuous representative `F' ∘ u`. -/
+theorem hasFDerivAt_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
+    (hF : DifferentiableOn ℂ F U) {u : CircleSobolev s ℂ}
+    (hu : ∀ x, toContinuousMap T hs.out u x ∈ U) :
+    HasFDerivAt (nemytskii F) (convolution hs.out (.mul ℂ ℂ) (nemytskii (deriv F) u)) u := by
+  have hD := (analyticOnNhd_nemytskii T hU hF u hu).differentiableAt.hasFDerivAt
+  convert hD using 1
+  refine ContinuousLinearMap.ext fun v ↦ toContinuousMap_injective T hs.out <|
+    ContinuousMap.ext fun x ↦ ?_
+  -- Both sides are the derivative at `t = 0` of `t ↦ F (u x + t v x)`.
+  set ev : CircleSobolev s ℂ →L[ℂ] ℂ := (ContinuousMap.evalCLM ℂ x).comp (toContinuousMap T hs.out)
+  have hline : HasDerivAt (fun t : ℂ ↦ u + t • v) v 0 := by
+    simpa using ((hasDerivAt_id (0 : ℂ)).smul_const v).const_add u
+  have h₁ : HasDerivAt (ev ∘ nemytskii F ∘ fun t : ℂ ↦ u + t • v)
+      (ev (fderiv ℂ (nemytskii F) u v)) 0 :=
+    ev.hasFDerivAt.comp_hasDerivAt 0 (hD.comp_hasDerivAt_of_eq 0 hline (by simp))
+  have hmem : ∀ᶠ t : ℂ in 𝓝 0, ∀ y, toContinuousMap T hs.out (u + t • v) y ∈ U :=
+    hline.continuousAt.preimage_mem_nhds
+      ((isOpen_setOf_forall_toContinuousMap_mem T hs.out hU).mem_nhds (by simpa using hu))
+  have hl : HasDerivAt (fun t : ℂ ↦ toContinuousMap T hs.out u x + t * toContinuousMap T hs.out v x)
+      (toContinuousMap T hs.out v x) 0 := by
+    simpa using ((hasDerivAt_id (0 : ℂ)).mul_const (toContinuousMap T hs.out v x)).const_add
+      (toContinuousMap T hs.out u x)
+  have h₂ : HasDerivAt (ev ∘ nemytskii F ∘ fun t : ℂ ↦ u + t • v)
+      (deriv F (toContinuousMap T hs.out u x) * toContinuousMap T hs.out v x) 0 := by
+    refine ((hF.differentiableAt (hU.mem_nhds (hu x))).hasDerivAt.comp_of_eq 0 hl
+      (by simp)).congr_of_eventuallyEq ?_
+    filter_upwards [hmem] with t ht
+    simp [ev, toContinuousMap_nemytskii T hU hF ht]
+  have h := h₂.unique h₁
+  simp only [ev, ContinuousLinearMap.comp_apply, ContinuousMap.evalCLM_apply] at h
+  rw [← h, toContinuousMap_convolution_apply, toContinuousMap_nemytskii T hU (hF.deriv hU) hu,
+    ContinuousLinearMap.mul_apply']
+
+/-- At the zero function, the derivative of the Nemytskii map of `F` is multiplication by the
+scalar `F'(0)`. -/
+theorem hasFDerivAt_nemytskii_zero {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
+    (hF : DifferentiableOn ℂ F U) (h₀ : 0 ∈ U) :
+    HasFDerivAt (nemytskii F) (deriv F 0 • ContinuousLinearMap.id ℂ (CircleSobolev s ℂ)) 0 := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  refine (hasFDerivAt_nemytskii 1 hU hF (u := 0) fun _ ↦ by simpa using h₀).congr_fderiv
+    (ContinuousLinearMap.ext fun v ↦ ?_)
+  rw [nemytskii_zero, ← mul_def]
+  simpa [algebraMap_eq_single] using (Algebra.smul_def (deriv F 0) v).symm
 
 end CircleSobolev
 

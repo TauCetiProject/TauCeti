@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.LiesOver
-public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+public import TauCeti.RepresentationTheory.Induction.Mackey.Split
 public import TauCeti.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.Irreducible
@@ -92,7 +92,7 @@ theorem iSup_range_intertwiningMap_inertia_eq_top (V : FDRep k N) (U : FDRep k (
         (U.ρ t ∘ₗ g.toLinearMap ∘ₗ ε.toLinearMap) fun n v => by
           simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, IntertwiningMap.coe_toLinearMap,
             hε, IntertwiningMap.isIntertwining, MonoidHom.coe_comp, Function.comp_apply]
-          rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul]
+          rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul]
           congr 2
           exact Subtype.ext (by simp [mul_assoc])
     refine Submodule.iSup_induction _ (motive := fun x => U.ρ t x ∈ J) hx ?_ ?_ ?_
@@ -161,7 +161,7 @@ theorem mackey_hom_apply_inclusion {V : FDRep k N} {A B : FDRep k (inertia V)} {
 /-- **A nonzero intertwiner into a conjugate of a representation lying over `V`.**  If `B` is an
 irreducible representation of the inertia group of `V` lying over `V`, and some intertwiner from
 `V` to the conjugate by `s⁻¹` of the restriction of `B` to `N` is nonzero, then `s ∈ inertia V`. -/
-private theorem mem_inertia_of_intertwiningMap_conj_ne_zero [Finite N] [NeZero (Nat.card N : k)]
+private theorem mem_inertia_of_intertwiningMap_conj_ne_zero [NeZero (Nat.card N : k)]
     {V : FDRep k N} [Simple V] {B : FDRep k (inertia V)} [Simple B]
     (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V) {s : G}
     (h : IntertwiningMap V.ρ ((B.ρ.comp (Subgroup.inclusion (le_inertia V))).comp
@@ -183,8 +183,8 @@ private theorem mem_inertia_of_intertwiningMap_conj_ne_zero [Finite N] [NeZero (
 /-- **Off-inertia Mackey terms vanish.** If `A` and `B` are irreducible representations of the
 inertia group of `V`, both lying over `V`, then an intertwiner from the relevant restriction of
 `A` to the Mackey conjugate of `B` is zero whenever the representative is outside `inertia V`. -/
-theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [Finite N]
-    [NeZero (Nat.card N : k)] (V : FDRep k N) [Simple V]
+theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [NeZero (Nat.card N : k)]
+    (V : FDRep k N) [Simple V]
     (A B : FDRep k (inertia V)) [Simple A] [Simple B]
     (hA : A.LiesOver (Subgroup.inclusion (le_inertia V)) V)
     (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V)

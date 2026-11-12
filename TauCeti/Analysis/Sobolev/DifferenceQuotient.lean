@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.TestFunctionLp
+public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Rademacher
+import TauCeti.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.Topology.Algebra.Group.Order
-import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Bounded difference quotients give weak derivatives
@@ -47,8 +48,9 @@ represented by an element of `L²(Ω)`.
   paired with a test function.
 * `TauCeti.exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le`: the
   difference-quotient criterion.
-* `TauCeti.exists_integrable_eqOn_tsupport_add`: a locally integrable function agrees with a
-  globally integrable one on the support of a test function and on its small translates.
+
+The compact localization used here is
+`MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`.
 
 ## References
 
@@ -71,31 +73,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ
 
 variable [BorelSpace E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
 
-omit [μ.IsAddHaarMeasure] in
-/-- **Localization of a locally integrable function at a test function.** A function locally
-integrable on `Ω` agrees, on the support of a test function `φ` and on all small translates of
-that support in a direction `v`, with a function that is integrable on all of `E`: its truncation
-to a compact neighbourhood of `tsupport φ` inside `Ω`.
-
-This replaces local integrability by genuine integrability in any argument that only sees `u`
-through `φ` and its small translates, so that the global integral theorems apply. -/
-theorem exists_integrable_eqOn_tsupport_add {F : Type*} [NormedAddCommGroup F] {u : E → F}
-    (hu : LocallyIntegrableOn u Ω μ) (φ : 𝓓(Ω, ℝ)) (v : E) :
-    ∃ w : E → F, Integrable w μ ∧ EqOn w u (tsupport (φ : E → ℝ)) ∧
-      ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∀ x ∈ tsupport (φ : E → ℝ), w (x + t • v) = u (x + t • v) := by
-  obtain ⟨δ, hδ, hδΩ⟩ :=
-    φ.hasCompactSupport.isCompact.exists_cthickening_subset_open Ω.isOpen φ.tsupport_subset
-  have hK : IsCompact (cthickening δ (tsupport (φ : E → ℝ))) :=
-    φ.hasCompactSupport.isCompact.cthickening
-  refine ⟨(cthickening δ (tsupport (φ : E → ℝ))).indicator u,
-    (integrable_indicator_iff hK.measurableSet).2 (hu.integrableOn_compact_subset hδΩ hK),
-    fun x hx => indicator_of_mem (self_subset_cthickening _ hx) u, ?_⟩
-  have htend : Tendsto (fun t : ℝ => t • v) (𝓝 0) (𝓝 0) := by
-    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const v
-  filter_upwards [nhdsWithin_le_nhds (htend.eventually (closedBall_mem_nhds 0 hδ))] with t ht x hx
-  refine indicator_of_mem (mem_cthickening_of_dist_le _ x δ _ hx ?_) u
-  simpa [dist_eq_norm] using ht
-
 /-- **Difference quotients converge to the distributional derivative.** If `u` is locally
 integrable on `Ω` and `φ` is a test function on `Ω`, then as `t → 0` with `t ≠ 0`,
 
@@ -107,42 +84,39 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
     (hu : LocallyIntegrableOn u Ω μ) (φ : 𝓓(Ω, ℝ)) (v : E) :
     Tendsto (fun t : ℝ => ∫ x, t⁻¹ * (u (x + t • v) - u x) * φ x ∂μ) (𝓝[≠] 0)
       (𝓝 (-∫ x, lineDeriv ℝ (φ : E → ℝ) x v * u x ∂μ)) := by
-  obtain ⟨w, hw, hwS, hwt⟩ := exists_integrable_eqOn_tsupport_add hu φ v
+  obtain ⟨w, hw, hwadd⟩ := hu.exists_integrable_eqOn_add_of_isCompact Ω.isOpen
+    φ.hasCompactSupport φ.tsupport_subset
+  have hwS : EqOn w u (tsupport (φ : E → ℝ)) := fun x hx => by
+    simpa using hwadd.self_of_nhds x hx
+  have htend : Tendsto (fun t : ℝ => t • v) (𝓝 0) (𝓝 0) := by
+    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const v
+  have hwt := htend.eventually hwadd
   have hφw : ∀ x, lineDeriv ℝ (φ : E → ℝ) x v * u x = lineDeriv ℝ (φ : E → ℝ) x v * w x := by
     intro x
     by_cases hx : x ∈ tsupport (φ : E → ℝ)
     · rw [hwS hx]
     · simp [lineDeriv_of_notMem_tsupport hx]
   obtain ⟨L, hL⟩ := φ.contDiff.lipschitzWith_of_hasCompactSupport φ.hasCompactSupport (by simp)
+  obtain ⟨M, hφM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
   -- For small `t`, the translation moves onto the test function.
   have hEq : ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ =
       ∫ x, t⁻¹ * (u (x + t • v) - u x) * φ x ∂μ := by
-    filter_upwards [hwt] with t ht
+    filter_upwards [nhdsWithin_le_nhds hwt] with t ht
     have hpt : ∀ x, t⁻¹ * (u (x + t • v) - u x) * φ x = t⁻¹ * (w (x + t • v) - w x) * φ x := by
       intro x
       by_cases hx : x ∈ tsupport (φ : E → ℝ)
       · rw [ht x hx, hwS hx]
       · simp [image_eq_zero_of_notMem_tsupport hx]
-    obtain ⟨M, hM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
-    have h1 : Integrable (fun x => w (x + t • v) * φ x) μ :=
-      (hw.comp_add_right (t • v)).mul_bdd φ.aestronglyMeasurable (ae_of_all _ hM)
-    have h2 : Integrable (fun x => w x * φ x) μ :=
-      hw.mul_bdd φ.aestronglyMeasurable (ae_of_all _ hM)
-    have h3 : Integrable (fun x => w x * φ (x + t • -v)) μ :=
-      hw.mul_bdd (φ.continuous.comp (continuous_id.add continuous_const)).aestronglyMeasurable
-        (ae_of_all _ fun x => hM _)
     simp_rw [hpt]
+    have key := integral_comp_add_sub_mul_eq hw φ.continuous.measurable hφM (t • v)
     calc ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ
-        = t⁻¹ * (∫ y, w y * φ (y + t • -v) ∂μ - ∫ y, w y * φ y ∂μ) := by
-          rw [← integral_sub h3 h2, ← integral_const_mul]
+        = ∫ y, t⁻¹ * ((φ (y - t • v) - φ y) * w y) ∂μ := by
           congr 1 with y
-          simp only [smul_eq_mul]
+          simp only [smul_eq_mul, smul_neg, sub_eq_add_neg]
           ring
-      _ = t⁻¹ * (∫ x, w (x + t • v) * φ x ∂μ - ∫ y, w y * φ y ∂μ) := by
-          rw [← integral_add_right_eq_self (fun y => w y * φ (y + t • -v)) (t • v)]
-          simp
+      _ = t⁻¹ * ∫ x, (w (x + t • v) - w x) * φ x ∂μ := by rw [integral_const_mul, key]
       _ = ∫ x, t⁻¹ * (w (x + t • v) - w x) * φ x ∂μ := by
-          rw [← integral_sub h1 h2, ← integral_const_mul]
+          rw [← integral_const_mul]
           congr 1 with x
           ring
   refine Tendsto.congr' hEq ?_
@@ -177,11 +151,17 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le {
   refine exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le hu v hC fun φ => ?_
   set S := tsupport (φ : E → ℝ)
   have hS : IsCompact S := φ.hasCompactSupport
-  obtain ⟨w, hw, hwS, hwt⟩ := exists_integrable_eqOn_tsupport_add hu φ v
+  obtain ⟨w, hw, hwadd⟩ := hu.exists_integrable_eqOn_add_of_isCompact Ω.isOpen
+    hS φ.tsupport_subset
+  have hwS : EqOn w u S := fun x hx => by simpa using hwadd.self_of_nhds x hx
+  have htend : Tendsto (fun t : ℝ => t • v) (𝓝 0) (𝓝 0) := by
+    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const v
+  have hwt := htend.eventually hwadd
   have hlim := (integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul hu φ v).abs
   rw [abs_neg] at hlim
   refine le_of_tendsto_of_frequently hlim
-    (((hbound S φ.tsupport_subset hS).and_eventually hwt).mono fun t ⟨ht, htw⟩ => ?_)
+    (((hbound S φ.tsupport_subset hS).and_eventually (nhdsWithin_le_nhds hwt)).mono
+      fun t ⟨ht, htw⟩ => ?_)
   -- On `S`, the difference quotient of `u` is that of the integrable function `w`.
   set D := fun x => t⁻¹ * (w (x + t • v) - w x)
   have hD : ∀ x ∈ S, t⁻¹ * (u (x + t • v) - u x) = D x := by

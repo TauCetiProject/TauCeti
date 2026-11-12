@@ -59,7 +59,7 @@ private theorem nonempty_homeomorph_setOf_norm_fst_le_norm_snd_handlebody_one :
       ‖(x : WithLp 2 (ℂ × ℂ)).snd‖} ≃ₜ handlebody 1) :=
   nonempty_homeomorph_handlebody_one.map fun e ↦
     (sphereProdFstLeHomeomorph ℂ ℂ).trans <|
-      ((Homeomorph.refl _).prodCongr Circle.homeomorphSphere.symm).trans e.symm
+      SolidTorus.homeomorphBallSphere.symm.trans e.symm
 
 /-- The solid torus `‖w‖ ≤ ‖z‖` in the unit sphere of `ℂ²` is a genus-one handlebody. -/
 private theorem nonempty_homeomorph_setOf_norm_snd_le_norm_fst_handlebody_one :
@@ -67,7 +67,7 @@ private theorem nonempty_homeomorph_setOf_norm_snd_le_norm_fst_handlebody_one :
       ‖(x : WithLp 2 (ℂ × ℂ)).fst‖} ≃ₜ handlebody 1) :=
   nonempty_homeomorph_handlebody_one.map fun e ↦
     (sphereProdSndLeHomeomorph ℂ ℂ).trans <| (Homeomorph.prodComm _ _).trans <|
-      ((Homeomorph.refl _).prodCongr Circle.homeomorphSphere.symm).trans e.symm
+      SolidTorus.homeomorphBallSphere.symm.trans e.symm
 
 /-- The genus-one Heegaard splitting of the unit sphere of `ℂ²` into the solid tori `‖z‖ ≤ ‖w‖`
 and `‖w‖ ≤ ‖z‖`, meeting along the Clifford torus `‖z‖ = ‖w‖`. -/
@@ -81,11 +81,19 @@ def cliffordHeegaardSplitting : HeegaardSplitting (sphere (0 : WithLp 2 (ℂ × 
   inter_eq_frontier_left := by
     rw [frontier_setOf_norm_fst_le_norm_snd]
     ext x
-    simp [le_antisymm_iff]
+    constructor
+    · rintro ⟨h₁, h₂⟩
+      exact le_antisymm h₁ h₂
+    · intro h
+      exact ⟨h.le, h.ge⟩
   inter_eq_frontier_right := by
     rw [frontier_setOf_norm_snd_le_norm_fst]
     ext x
-    simp [le_antisymm_iff]
+    constructor
+    · rintro ⟨h₁, h₂⟩
+      exact le_antisymm h₁ h₂
+    · intro h
+      exact ⟨h.le, h.ge⟩
   nonempty_homeomorph_left := nonempty_homeomorph_setOf_norm_fst_le_norm_snd_handlebody_one
   nonempty_homeomorph_right := nonempty_homeomorph_setOf_norm_snd_le_norm_fst_handlebody_one
 

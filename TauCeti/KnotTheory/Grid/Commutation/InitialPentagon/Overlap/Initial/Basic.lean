@@ -307,14 +307,13 @@ private theorem initialPentagonInitialCrossOverlapPartner_injective :
   have hD := G.initialPentagonInitialCrossOverlapPartner_isRecut C D
   have hE := G.initialPentagonInitialCrossOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨-, -, honeD, hfD, hsD⟩ :=
+  obtain ⟨-, -, _, hfD, hsD⟩ :=
     G.initialPentagonInitialCrossOverlapSource_data C D.val D.property
-  obtain ⟨-, -, honeE, hfE, hsE⟩ :=
+  obtain ⟨-, -, _, hfE, hsE⟩ :=
     G.initialPentagonInitialCrossOverlapSource_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

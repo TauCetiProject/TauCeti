@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.Nilpotent.Lemmas
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
 import TauCeti.RingTheory.Derivation.Nilpotent
 import TauCeti.RingTheory.Derivation.Basic
 
@@ -49,7 +50,10 @@ tangent space as the ambient group. This is the infinitesimal input to Cartier's
 * `TauCeti.Bialgebra.eq_leftInvariantDerivation`: a left-invariant derivation is determined
   by its value at the identity.
 * `BialgHom.map_leftInvariantDerivation`: invariant derivations intertwine a
-  bialgebra morphism and its tangent map.
+  bialgebra morphism and its tangent map. The same holds for their iterates; local nilpotence
+  descends through surjective coordinate maps and is reflected by injective ones.
+* `BialgEquiv.exists_iterate_leftInvariantDerivation_eq_zero_iff`: local nilpotence
+  is invariant under a bialgebra isomorphism.
 * `Derivation.apply_eq_zero_of_isNilpotent`: in characteristic zero, tangent vectors at the
   identity vanish on nilpotent functions.
 * `TauCeti.Bialgebra.nilradical_le_augmentationIdeal_sq`: over a field of characteristic zero,
@@ -69,25 +73,6 @@ namespace TauCeti.Bialgebra
 
 variable {R H : Type*} [CommRing R] [CommRing H] [_root_.Bialgebra R H]
 
-/-- Contracting the right tensor factor against a tangent vector satisfies the Leibniz rule
-with respect to contraction against the counit. -/
-private theorem tensorComponent_mul (d : Derivation R H (CounitAlgebra R H R)) (X Y : H ⊗[R] H) :
-    tensorComponent ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) (X * Y) =
-      tensorComponent (Coalgebra.counit (R := R)) X *
-          tensorComponent ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) Y +
-        tensorComponent (Coalgebra.counit (R := R)) Y *
-          tensorComponent ((CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) X := by
-  induction X using TensorProduct.inductionOn with
-  | add X X' hX hX' => simp only [add_mul, map_add, hX, hX']; ring
-  | tmul a b =>
-    induction Y using TensorProduct.inductionOn with
-    | add Y Y' hY hY' => simp only [mul_add, map_add, hY, hY']; ring
-    | tmul a' b' =>
-      simp only [Algebra.TensorProduct.tmul_mul_tmul, tensorComponent_tmul, LinearMap.comp_apply,
-        AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe, CounitAlgebra.algEquivSelf_apply_mul,
-        Algebra.algebraMap_self, RingHom.id_apply, Algebra.smul_def, map_add, map_mul]
-      ring
-
 /-- **The left-invariant derivation extending a tangent vector at the identity**:
 `h ↦ ∑ h₍₁₎ d(h₍₂₎)`. This Lie algebra homomorphism is the differentiated regular
 representation with its values regarded as derivations. -/
@@ -95,9 +80,8 @@ noncomputable def leftInvariantDerivation :
     Derivation R H (CounitAlgebra R H R) →ₗ⁅R⁆ Derivation R H H where
   toFun d :=
     Derivation.mk' (Comodule.differential (R := R) (H := H) (M := H) d) fun a b ↦ by
-      simp only [Comodule.differential_apply, Comodule.instSelf_coact,
-        _root_.Bialgebra.comul_mul, tensorComponent_mul, smul_eq_mul]
-      simp [LinearMap.tensorComponent_def]
+      rw [ComoduleAlgebra.differential_mul, smul_eq_mul, smul_eq_mul]
+      ring
   map_add' d e := by
     ext h
     exact LinearMap.congr_fun (map_add (Comodule.differential (M := H)) d e) h
@@ -147,7 +131,7 @@ theorem comul_leftInvariantDerivation (d : Derivation R H (CounitAlgebra R H R))
     LinearMap.ext (leftInvariantDerivation_apply d)
   rw [leftInvariantDerivation_apply, hD, LinearMap.lTensor_comp, LinearMap.comp_apply,
     ← LinearMap.tensorComponent_assoc_symm,
-    Coalgebra.coassoc_symm_apply, LinearMap.rTensor_def, tensorComponent_map, LinearMap.comp_id]
+    Coalgebra.coassoc_symm_apply, tensorComponent_rTensor]
 
 /-- **Iterated invariant derivations commute with left translations**:
 `Δ ∘ Dⁿ = (id ⊗ Dⁿ) ∘ Δ`. -/
@@ -159,7 +143,7 @@ theorem comul_iterate_leftInvariantDerivation (d : Derivation R H (CounitAlgebra
   | zero => simp [Module.End.one_eq_id]
   | succ n ih =>
     rw [Function.iterate_succ_apply', comul_leftInvariantDerivation, ih, pow_succ',
-      LinearMap.lTensor_mul, Module.End.mul_apply]
+      LinearMap.lTensor_mul, mul_apply_eq_comp]
 
 /-- **Iterated invariant vector fields.** Applying `n` times the left-invariant derivation of a
 tangent vector contracts the comultiplication against `ε ∘ Dⁿ`: `Dⁿ h = ∑ h₍₁₎ ε(Dⁿ h₍₂₎)`. -/
@@ -186,7 +170,7 @@ theorem counit_iterate_add_leftInvariantDerivation
           Coalgebra.counit (R := R) ((leftInvariantDerivation d)^[j] (𝓡.right k)) := by
   rw [Function.iterate_add_apply, iterate_leftInvariantDerivation_apply d j h,
     ← 𝓡.eq, map_sum]
-  simp only [tensorComponent_tmul, LinearMap.comp_apply, Module.End.coe_pow,
+  simp only [tensorComponent_tmul, LinearMap.comp_apply, FunLike.coe_pow_eq_iterate,
     Derivation.coeFn_coe]
   rw [Derivation.iterate_sum_smul, map_sum]
   simp only [map_smul, smul_eq_mul, mul_comm]
@@ -231,7 +215,56 @@ theorem map_leftInvariantDerivation {K : Type*} [CommRing K] [_root_.Bialgebra R
   simpa only [CoalgHom.toComoduleHom_apply, BialgHom.toCoalgHom_apply] using
     f.toCoalgHom.toComoduleHom.map_differential d h
 
+/-- Iterated invariant vector fields intertwine a bialgebra morphism and its differential. -/
+@[simp]
+theorem map_iterate_leftInvariantDerivation {K : Type*} [CommRing K] [Bialgebra R K]
+    (f : H →ₐc[R] K) (d : Derivation R K (CounitAlgebra R K R)) (n : ℕ) (h : H) :
+    f ((leftInvariantDerivation (derivationComp f d))^[n] h) =
+      (leftInvariantDerivation d)^[n] (f h) :=
+  Function.Semiconj.iterate_right (f.map_leftInvariantDerivation d) n h
+
+/-- An injective coordinate map reflects local nilpotence of related invariant vector fields.
+Geometrically, this transports local nilpotence along a schematically dominant morphism. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_injective
+    {K : Type*} [CommRing K] [Bialgebra R K] (f : H →ₐc[R] K)
+    (hf : Function.Injective f) (d : Derivation R K (CounitAlgebra R K R))
+    (hd : ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0) :
+    ∀ x, ∃ n, (leftInvariantDerivation (derivationComp f d))^[n] x = 0 := by
+  intro x
+  obtain ⟨n, hn⟩ := hd (f x)
+  exact ⟨n, hf (by rw [map_iterate_leftInvariantDerivation, hn, map_zero])⟩
+
+/-- Local nilpotence descends through a surjective coordinate map. In particular it restricts
+to a closed subgroup whenever the tangent vector comes from that subgroup. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_surjective
+    {K : Type*} [CommRing K] [Bialgebra R K] (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) (d : Derivation R K (CounitAlgebra R K R))
+    (hd : ∀ x, ∃ n, (leftInvariantDerivation (derivationComp f d))^[n] x = 0) :
+    ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0 := by
+  intro x
+  obtain ⟨y, rfl⟩ := hf x
+  obtain ⟨n, hn⟩ := hd y
+  exact ⟨n, by rw [← map_iterate_leftInvariantDerivation, hn, map_zero]⟩
+
 end BialgHom
+
+namespace BialgEquiv
+
+open TauCeti TauCeti.Bialgebra
+
+variable {R H K : Type*} [CommRing R] [CommRing H] [CommRing K]
+  [Bialgebra R H] [Bialgebra R K]
+
+/-- A change of Hopf coordinates preserves and reflects local nilpotence of the invariant
+vector field. Neither smoothness nor an antipode is required. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_iff (e : H ≃ₐc[R] K)
+    (d : Derivation R K (CounitAlgebra R K R)) :
+    (∀ x, ∃ n, (leftInvariantDerivation (derivationComp e.toBialgHom d))^[n] x = 0) ↔
+      ∀ x, ∃ n, (leftInvariantDerivation d)^[n] x = 0 :=
+  ⟨e.toBialgHom.exists_iterate_leftInvariantDerivation_eq_zero_of_surjective e.surjective d,
+    e.toBialgHom.exists_iterate_leftInvariantDerivation_eq_zero_of_injective e.injective d⟩
+
+end BialgEquiv
 
 namespace Derivation
 

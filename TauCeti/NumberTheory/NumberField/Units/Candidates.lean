@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
-import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
-import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Analysis.Polynomial.CoeffBound
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
 import TauCeti.NumberTheory.NumberField.Minpoly
+import TauCeti.NumberTheory.NumberField.Units.Conjugate
 import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
 
 /-!
@@ -34,7 +34,7 @@ in the given field.
 * `TauCeti.NumberField.Units.unitCandidates`: the finite set of candidate minimal polynomials,
   characterised by `TauCeti.NumberField.Units.mem_unitCandidates_iff`.
 * `TauCeti.NumberField.Units.minpoly_mem_unitCandidates`: completeness of the candidate set at
-  unit rank one and prime degree.
+  unit rank one.
 
 ## References
 
@@ -133,87 +133,26 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
   have hdeg : (minpoly ℤ (v : 𝓞 K)).natDegree = n := by
     rw [← hdegQ, hQ, natDegree_map_eq_of_injective (algebraMap ℤ ℚ).injective_int]
   refine (mem_unitCandidates_iff _ B).mpr ⟨minpoly.monic (v : 𝓞 K).isIntegral, hdeg,
-    coeff_zero_minpoly_eq_one_or_neg_one v, fun k hk hkn => ?_⟩
+    coeff_zero_minpoly_eq_one_or_neg_one v, fun k _ hkn => ?_⟩
   -- Work over `ℂ`, where the minimal polynomial is the product over the embeddings.
   set p : ℂ[X] := (minpoly ℚ (v : K)).map (algebraMap ℚ ℂ) with hpdef
-  have hpmonic : p.Monic := (minpoly.monic hintQ).map _
-  have hp0 : p ≠ 0 := hpmonic.ne_zero
-  have hroots : ∀ z, z ∈ p.roots ↔ ∃ φ : K →+* ℂ, φ v = z := fun z => by
-    rw [mem_roots hp0, IsRoot.def, hpdef, eval_map, ← aeval_def]
-    have h := Set.ext_iff.mp (Embeddings.range_eval_eq_rootSet_minpoly K ℂ (v : K)) z
-    rw [Set.mem_range, mem_rootSet_of_ne (minpoly.ne_zero hintQ)] at h
-    exact h.symm
-  have hpcard : p.roots.card = n := by
-    rw [← (IsAlgClosed.splits p).natDegree_eq_card_roots, hpdef,
-      natDegree_map_eq_of_injective (algebraMap ℚ ℂ).injective, hdegQ]
-  have hnodup : p.roots.Nodup := nodup_roots ((minpoly.irreducible hintQ).separable.map)
-  -- The real root, and the factor it accounts for.
-  set r : ℂ := embedding w v
-  have hr_root : r ∈ p.roots := (hroots r).mpr ⟨embedding w, rfl⟩
-  have hr_norm : ‖r‖ = w v := norm_embedding_eq w _
-  set s : Multiset ℂ := p.roots.erase r with hs
-  set q : ℂ[X] := (s.map fun a => X - C a).prod
-  have hpq : p = (X - C r) * q := by
-    have h : p = ((r ::ₘ s).map fun a => X - C a).prod := by
-      rw [hs, Multiset.cons_erase hr_root, prod_multiset_X_sub_C_of_monic_of_roots_card_eq hpmonic
-        (by rw [hpcard, hpdef, natDegree_map_eq_of_injective (algebraMap ℚ ℂ).injective, hdegQ])]
-    rw [h, Multiset.map_cons, Multiset.prod_cons]
-  have hqmonic : q.Monic := monic_multiset_prod_of_monic _ _ fun a _ => monic_X_sub_C a
-  have hqroots : q.roots = s := roots_multiset_prod_X_sub_C s
-  have hqsplits : q.Splits := Splits.multisetProd fun f hf => by
-    obtain ⟨a, -, rfl⟩ := Multiset.mem_map.mp hf
-    exact Splits.X_sub_C a
-  have hqdeg : q.natDegree = n - 1 := by
-    rw [hqsplits.natDegree_eq_card_roots, hqroots, hs, Multiset.card_erase_of_mem hr_root, hpcard,
-      Nat.pred_eq_sub_one]
-  -- The other roots are the values of `v` at the other embeddings, of absolute value `< 1`.
-  have hqbound : ∀ z ∈ q.roots, ‖z‖ ≤ 1 := by
-    intro z hz
-    rw [hqroots, hs, hnodup.mem_erase_iff] at hz
-    obtain ⟨φ, rfl⟩ := (hroots z).mp hz.2
-    have hne : InfinitePlace.mk φ ≠ w := by
-      intro hφ
-      rw [← mk_embedding w, mk_eq_iff] at hφ
-      rcases hφ with hφ | hφ
-      · exact hz.1 (DFunLike.congr_fun hφ _)
-      · have hreal : ComplexEmbedding.conjugate (embedding w) = embedding w :=
-          ComplexEmbedding.isReal_iff.mp (isReal_iff.mp hw)
-        have hφ' : φ = embedding w := by
-          rw [← ComplexEmbedding.involutive_conjugate K φ, hφ, hreal]
-        exact hz.1 (DFunLike.congr_fun hφ' _)
-    exact (lt_one_of_rank_eq_one_of_ne_of_one_lt hr hne hw1).le
-  have hqcoeff : ∀ j, ‖q.coeff j‖ ≤ (n - 1).choose j := fun j => by
-    have h := coeff_le_of_roots_le (f := RingHom.id ℂ) (B := 1) j hqmonic
-      (by rwa [map_id]) (by rwa [map_id])
-    rwa [map_id, one_pow, one_mul, hqdeg] at h
-  -- Assemble the bound on the coefficient of `X ^ (n - k)`.
+  have hpdeg : p.natDegree = n := by
+    rw [hpdef, natDegree_map_eq_of_injective (algebraMap ℚ ℂ).injective, hdegQ]
   have hcoeff : ((minpoly ℤ (v : 𝓞 K)).coeff (n - k) : ℂ) = p.coeff (n - k) := by
     rw [hpdef, hQ, Polynomial.map_map, coeff_map, ← IsScalarTower.algebraMap_eq, eq_intCast]
-  have hsplit : p.coeff (n - k) = q.coeff (n - k - 1) - r * q.coeff (n - k) := by
-    obtain ⟨a, ha⟩ : ∃ a, n - k = a + 1 := ⟨n - k - 1, by omega⟩
-    rw [hpq, ha, Nat.add_sub_cancel, coeff_X_sub_C_mul]
-  have hidx1 : n - k - 1 = n - 1 - k := by omega
-  have hidx2 : n - k = n - 1 - (k - 1) := by omega
-  have hsym1 : (n - 1).choose (n - k - 1) = (n - 1).choose k := by
-    rw [hidx1, Nat.choose_symm (Nat.le_sub_one_of_lt hkn)]
-  have hsym2 : (n - 1).choose (n - k) = (n - 1).choose (k - 1) := by
-    rw [hidx2, Nat.choose_symm (Nat.sub_le_sub_right hkn.le 1)]
-  have hfinal : ‖p.coeff (n - k)‖ ≤ (n - 1).choose (k - 1) * B + (n - 1).choose k := by
-    rw [hsplit]
-    calc ‖q.coeff (n - k - 1) - r * q.coeff (n - k)‖
-        ≤ ‖q.coeff (n - k - 1)‖ + ‖r‖ * ‖q.coeff (n - k)‖ := by
-          rw [← norm_mul]; exact norm_sub_le _ _
-      _ ≤ (n - 1).choose k + B * (n - 1).choose (k - 1) := by
-          refine add_le_add (by rw [← hsym1]; exact hqcoeff _) (mul_le_mul (hr_norm ▸ hwB)
-            (by rw [← hsym2]; exact hqcoeff _) (norm_nonneg _) (by linarith))
-      _ = (n - 1).choose (k - 1) * B + (n - 1).choose k := by ring
+  have hpmonic : p.Monic := (minpoly.monic hintQ).map _
+  have hroot : p.IsRoot (embedding w v) :=
+    (mem_roots hpmonic.ne_zero).mp ((mem_roots_map_minpoly_iff _ _).mpr ⟨embedding w, rfl⟩)
+  have h := norm_coeff_le_of_roots_erase_le hpmonic (IsAlgClosed.splits p)
+    hroot ((norm_embedding_eq w _).trans_le hwB)
+    (fun z hz => norm_le_one_of_mem_roots_erase hr hw v hw1 hz) (by rw [hpdeg]; exact hkn)
+  rw [hpdeg] at h
   rw [← Complex.norm_intCast, hcoeff]
-  exact hfinal
+  exact h
 
 /-- Every unit whose value at a real infinite place lies in `(1, B]` has its minimal polynomial
-in `unitCandidates K B` when the unit rank is one and the field degree is prime. -/
-theorem minpoly_mem_unitCandidates (hr : rank K = 1)
-    (hp : Nat.Prime (Module.finrank ℚ K)) {w : InfinitePlace K} (hw : w.IsReal)
+in `unitCandidates K B` when the unit rank is one. -/
+theorem minpoly_mem_unitCandidates (hr : rank K = 1) {w : InfinitePlace K} (hw : w.IsReal)
     (v : (𝓞 K)ˣ) {B : ℝ}
     (hlo : 1 < w.embedding_of_isReal hw (v : K))
     (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
@@ -226,6 +165,7 @@ theorem minpoly_mem_unitCandidates (hr : rank K = 1)
         abs_of_pos (lt_trans zero_lt_one hlo)]
     exact (ne_of_gt hlo) (hval ▸ hvone)
   exact minpoly_mem_unitCandidates_of_adjoin_eq_top hr hw v
-    (adjoin_eq_top_of_finrank_prime hp hnot) hlo hhi
+    (adjoin_eq_top_of_finrank_prime (finrank_prime_of_rank_eq_one_of_isReal hr hw) hnot)
+    hlo hhi
 
 end TauCeti.NumberField.Units

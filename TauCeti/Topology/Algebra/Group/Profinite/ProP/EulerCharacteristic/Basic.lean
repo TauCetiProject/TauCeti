@@ -135,12 +135,12 @@ For `M` of order `p` with trivial action this is `|H¹(G, M)| = p ^ d(G)`; in ge
 additivity of the Euler characteristic `|H⁰| / |H¹|` along the trivial filtration of `M`. -/
 theorem natCard_H1_mul_natCard (M : Type v) [AddCommGroup M] [TopologicalSpace M]
     [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
-    (hM : IsPPrimaryTorsion p M) :
+    (hM : IsAddPGroup p M) :
     Nat.card (H1 G M) * Nat.card M =
       Nat.card (H0 G M) * Nat.card M ^ topologicalGeneratorRankNat G hfg := by
   -- strong induction on the order of the coefficient module
   suffices H : ∀ (k : ℕ) (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+      [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
       Nat.card M = k → Nat.card (H1 G M) * Nat.card M =
         Nat.card (H0 G M) * Nat.card M ^ topologicalGeneratorRankNat G hfg from
     H _ M hM rfl
@@ -153,7 +153,7 @@ theorem natCard_H1_mul_natCard (M : Type v) [AddCommGroup M] [TopologicalSpace M
       Nat.card_of_subsingleton (0 : H0 G M), one_pow]
   -- a `G`-stable subgroup `N` of order `p` with trivial action
   obtain ⟨N, hNcard, hNfix⟩ :=
-    exists_addSubgroup_natCard_eq_invariant_of_isProP hG (isPPrimaryTorsion_iff.1 hM)
+    exists_addSubgroup_natCard_eq_invariant_of_isProP hG hM
   have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := fun g x hx ↦ (hNfix g x hx).symm ▸ hx
   let := N.restrictDistribMulAction hN
   let := N.quotientDistribMulAction hN
@@ -235,8 +235,8 @@ theorem topologicalGeneratorRankNat_add_index (U : OpenSubgroup G) :
     ⟨continuous_snd.congr fun x ↦ (htriv x.1 x.2).symm⟩
   -- the Euler identity for `Coind_U^G 𝔽_p`, read through Shapiro's lemma in degrees `0` and `1`
   have key := hG.natCard_H1_mul_natCard hfg h2 (DiscreteCoind G U.toSubgroup (ZMod p))
-    (isPPrimaryTorsion_discreteCoind G U.toSubgroup (ZMod p)
-      (isPPrimaryTorsion_of_natCard_eq_pow ((Nat.card_zmod p).trans (pow_one p).symm)))
+    (isAddPGroup_discreteCoind G U.toSubgroup (ZMod p)
+      (IsAddPGroup.of_card ((Nat.card_zmod p).trans (pow_one p).symm)))
   rw [Nat.card_congr (explicitShapiro1 G U.toSubgroup (ZMod p) hUc).toEquiv,
     Nat.card_congr (explicitShapiro0 G U.toSubgroup (ZMod p)).toEquiv,
     DiscreteCoind.natCard_of_isOpen U.isOpen htriv, Nat.card_zmod,
@@ -269,11 +269,11 @@ topologically finitely generated profinite pro-`p` group `G` with `cd_p G ≤ 1`
 discrete `p`-primary `G`-module `M`, `|H¹(G, M)| * |M| = |H⁰(G, M)| * |M| ^ d(G)`. -/
 theorem natCard_H1_mul_natCard (M : Type u) [AddCommGroup M] [TopologicalSpace M]
     [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
-    (hM : IsPPrimaryTorsion p M) :
+    (hM : IsAddPGroup p M) :
     Nat.card (H1 G M) * Nat.card M =
       Nat.card (H0 G M) * Nat.card M ^ topologicalGeneratorRankNat G hfg :=
   hG.natCard_H1_mul_natCard hfg (fun A _ _ _ _ _ _ hA _ ↦ hcd.subsingleton_H2 A
-    (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))) M hM
+    (IsAddPGroup.of_card (hA.trans (pow_one p).symm))) M hM
 
 /-- **The two-term Euler formula under `cd_p G ≤ 1`.** For a topologically finitely generated
 profinite pro-`p` group `G` with `cd_p G ≤ 1` and an open subgroup `U`,
@@ -282,7 +282,7 @@ theorem topologicalGeneratorRankNat_add_index (U : OpenSubgroup G) :
     topologicalGeneratorRankNat U.toSubgroup (hfg.of_openSubgroup U) + U.toSubgroup.index =
       1 + U.toSubgroup.index * topologicalGeneratorRankNat G hfg :=
   hG.topologicalGeneratorRankNat_add_index hfg (fun A _ _ _ _ _ _ hA _ ↦ hcd.subsingleton_H2 A
-    (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))) U
+    (IsAddPGroup.of_card (hA.trans (pow_one p).symm))) U
 
 /-- **The two-term Euler formula under `cd_p G ≤ 1`, in `ℤ`:** `1 - d(U) = [G : U] * (1 - d(G))`
 for an open subgroup `U` of a topologically finitely generated profinite pro-`p` group with
@@ -291,7 +291,7 @@ theorem one_sub_topologicalGeneratorRankNat_eq (U : OpenSubgroup G) :
     (1 : ℤ) - topologicalGeneratorRankNat U.toSubgroup (hfg.of_openSubgroup U) =
       U.toSubgroup.index * (1 - topologicalGeneratorRankNat G hfg) :=
   hG.one_sub_topologicalGeneratorRankNat_eq hfg (fun A _ _ _ _ _ _ hA _ ↦ hcd.subsingleton_H2 A
-    (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))) U
+    (IsAddPGroup.of_card (hA.trans (pow_one p).symm))) U
 
 end CohomologicalDimensionLE
 

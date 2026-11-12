@@ -306,7 +306,7 @@ section Even
 
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
-  [Invertible (2 : K)] [FiniteDimensional K V]
+  [FiniteDimensional K V]
 
 
 /-! ### Invariant-subspace dichotomies and inequivalence of the two half-spin actions -/
@@ -381,7 +381,7 @@ section SpinGroup
 
 variable {K : Type u} [Field K]
   {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
-  [Invertible (2 : K)] [FiniteDimensional K V] (P : SpinPolarizationData Q)
+  [FiniteDimensional K V] (P : SpinPolarizationData Q)
 
 /-- **The even half-spin representation of the Spin group is irreducible** when the Spin group
 linearly spans the even Clifford algebra. -/
@@ -474,6 +474,8 @@ theorem isEmpty_equiv_spinPlusSubrep_spinMinusSubrep_of_span
       congrArg ((spinMinusSubrep P hline).toRepresentation g) (hef s)
     _ = eMinus ((spinGroupRepresentation (spinMinusAction Q P hline)) g (f s)) :=
       (hMinus (f s)).symm
+
+variable [Invertible (2 : K)]
 
 /-- **The even half-spin representation of the Spin group is irreducible** when anisotropic pairs
 admit the square normalization needed to span the even Clifford algebra. -/
@@ -602,7 +604,7 @@ theorem not_forall_map_spinRep_spinMinus_le_of_isIrreducible (hirr : (spinRep Q 
     ((isCompl_spinPlus_spinMinus P).disjoint.ne_top_of_ne_bot
       (Submodule.nontrivial_iff_ne_bot.1 (nontrivial_spinPlus P)))
 
-variable [NeZero (2 : K)] [FiniteDimensional K V]
+variable [NeZero (2 : K)]
 
 /-- **The spin representation is irreducible in odd dimension** when anisotropic pairs admit the
 square normalization needed to span the even Clifford algebra.
@@ -615,6 +617,7 @@ argument. -/
 theorem isIrreducible_spinRep_of_isSquare
     (hsq : ∀ v w, Q v ≠ 0 → Q w ≠ 0 → IsSquare ((Q v)⁻¹ * (Q w)⁻¹))
     (hodd : Odd (finrank K V)) : (spinRep Q P).IsIrreducible := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos hodd.pos
   have _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   exact isIrreducible_spinRep_of_span_of_surjective P
     (CliffordAlgebra.span_spinGroup_eq_even_of_isSquare Q

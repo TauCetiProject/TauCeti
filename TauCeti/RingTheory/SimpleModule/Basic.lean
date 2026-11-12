@@ -33,10 +33,12 @@ idempotents.
 
 * `TauCeti.forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero`: in a simple module, a natural number
   killing one nonzero element kills every element.
-* `TauCeti.IsSemisimpleModule.prod`: a product of two semisimple modules is semisimple.
-* `TauCeti.IsSemisimpleModule.exists_apply_eq_iff`: a linear map from a semisimple module
+* `IsSemisimpleModule.prod`: a product of two semisimple modules is semisimple.
+* `LinearMap.exists_isIdempotentElem_comp_eq_disjoint_ker`: a linear map out of a semisimple
+  module is unchanged by an idempotent endomorphism whose range meets the kernel trivially.
+* `IsSemisimpleModule.exists_apply_eq_iff`: a linear map from a semisimple module
   sends `w` to `x` if and only if the torsion ideal of `w` is contained in that of `x`.
-* `TauCeti.IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff`: over a semisimple ring,
+* `IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff`: over a semisimple ring,
   every cyclic submodule `R ∙ v` is isomorphic to `R f` for an idempotent `f` fixing `v`.
 -/
 
@@ -57,21 +59,35 @@ theorem forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero [IsSimpleModule R M] {n
 end SimpleModule
 
 /-- **A product of two semisimple modules is semisimple.** -/
-instance IsSemisimpleModule.prod [IsSemisimpleModule R M] [IsSemisimpleModule R N] :
+instance _root_.IsSemisimpleModule.prod [IsSemisimpleModule R M] [IsSemisimpleModule R N] :
     IsSemisimpleModule R (M × N) := by
   -- The plan is that of Mathlib's binary-product `IsSemisimpleRing` instance, one level down:
   -- `M × N` is the join of the two coordinate copies, each of which is a semisimple submodule.
-  have hsup := _root_.IsSemisimpleModule.sup
-    (_root_.IsSemisimpleModule.range (LinearMap.inl R M N))
-    (_root_.IsSemisimpleModule.range (LinearMap.inr R M N))
+  have hsup := IsSemisimpleModule.sup
+    (IsSemisimpleModule.range (LinearMap.inl R M N))
+    (IsSemisimpleModule.range (LinearMap.inr R M N))
   rw [LinearMap.sup_range_inl_inr] at hsup
   exact .congr Submodule.topEquiv.symm
+
+/-- **A semisimple module has an idempotent endomorphism cutting out a complement of a kernel.**
+For a linear map `q` out of a semisimple module `M`, there is an idempotent `e` with `q ∘ e = q`
+whose range meets `ker q` only in `0`: the projection onto a complement of `ker q`. -/
+theorem _root_.LinearMap.exists_isIdempotentElem_comp_eq_disjoint_ker [IsSemisimpleModule R M]
+    (q : M →ₗ[R] N) :
+    ∃ e : Module.End R M, IsIdempotentElem e ∧ q ∘ₗ e = q ∧
+      Disjoint (LinearMap.range e) (LinearMap.ker q) := by
+  obtain ⟨C, hC⟩ := exists_isCompl (LinearMap.ker q)
+  refine ⟨C.projection (LinearMap.ker q) hC.symm, Submodule.isIdempotentElem_projection _,
+    LinearMap.ext fun x ↦ ?_, by rw [Submodule.range_projection]; exact hC.symm.disjoint⟩
+  have hker := LinearMap.mem_ker.mp (Submodule.sub_projection_mem hC.symm x)
+  rw [map_sub, sub_eq_zero] at hker
+  exact hker.symm
 
 /-- **Linear maps from a semisimple module with a prescribed value.** Some `R`-linear map from
 the semisimple module `M` to an arbitrary module `N` sends `w` to `x` exactly when every scalar
 annihilating `w` annihilates `x`, that is, when
 `Ideal.torsionOf R M w ≤ Ideal.torsionOf R N x`. -/
-theorem IsSemisimpleModule.exists_apply_eq_iff [IsSemisimpleModule R M] {w : M} {x : N} :
+theorem _root_.IsSemisimpleModule.exists_apply_eq_iff [IsSemisimpleModule R M] {w : M} {x : N} :
     (∃ f : M →ₗ[R] N, f w = x) ↔ Ideal.torsionOf R M w ≤ Ideal.torsionOf R N x := by
   refine ⟨?_, fun h => ?_⟩
   · rintro ⟨f, rfl⟩ r hr
@@ -81,7 +97,7 @@ theorem IsSemisimpleModule.exists_apply_eq_iff [IsSemisimpleModule R M] {w : M} 
     let g : (R ∙ w) →ₗ[R] N :=
       (Ideal.torsionOf R M w).liftQ (LinearMap.toSpanSingleton R N x) h ∘ₗ
         (Ideal.quotTorsionOfEquivSpanSingleton R M w).symm.toLinearMap
-    obtain ⟨f, hf⟩ := _root_.IsSemisimpleModule.extension_property _
+    obtain ⟨f, hf⟩ := IsSemisimpleModule.extension_property _
       (R ∙ w).subtype_injective g
     refine ⟨f, ?_⟩
     have hw := Ideal.quotTorsionOfEquivSpanSingleton_apply_mk w (1 : R)
@@ -98,9 +114,10 @@ theorem IsSemisimpleModule.exists_apply_eq_iff [IsSemisimpleModule R M] {w : M} 
 every element `v` of a module is fixed by an idempotent `f` whose left multiples meet the
 annihilator `Ideal.torsionOf R M v` only in zero: `c • v = 0` exactly when `c * f = 0`. Thus
 `c * f ↦ c • v` identifies the projective left ideal `R f` with the cyclic submodule `R ∙ v`. -/
-theorem IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff [IsSemisimpleRing R] (v : M) :
+theorem _root_.IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff [IsSemisimpleRing R]
+    (v : M) :
     ∃ f : R, IsIdempotentElem f ∧ f • v = v ∧ ∀ c : R, c • v = 0 ↔ c * f = 0 := by
-  obtain ⟨u, hu, hL⟩ := _root_.IsSemisimpleRing.ideal_eq_span_idempotent (Ideal.torsionOf R M v)
+  obtain ⟨u, hu, hL⟩ := IsSemisimpleRing.ideal_eq_span_idempotent (Ideal.torsionOf R M v)
   have hmem (c : R) : c • v = 0 ↔ ∃ r, r * u = c := by
     rw [← Ideal.mem_torsionOf_iff, hL, Ideal.mem_span_singleton']
   have huv : u • v = 0 := (hmem u).2 ⟨1, one_mul u⟩

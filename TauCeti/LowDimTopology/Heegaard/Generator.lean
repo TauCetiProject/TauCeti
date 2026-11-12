@@ -13,7 +13,7 @@ public import TauCeti.Data.Sym.Pi
 The generators of a pointed Heegaard diagram choose one intersection point on each `α`-curve
 and each `β`-curve. This file records incidence data by assigning each intersection point its
 `α`- and `β`-curve labels. A generator is the matching datum in the domain of
-`TauCeti.Sym.matchingTuple`, specialized through `TauCeti.Sym.piInterEquiv` to the two label
+`Sym.matchingTuple`, specialized through `Sym.piInterEquiv` to the two label
 fibers: a permutation of the curve indices and an intersection point in each paired fiber.
 
 The curve count `n` is independent of surface genus. For a multi-pointed diagram of genus `g`
@@ -227,9 +227,10 @@ theorem generatorChain_eq_sum_single [DecidableEq Point] (g : D.Generator) :
   · simp
 
 /-- Pairing the `0`-chain of a generator with a function on intersection points sums the
-function over the points of the generator. -/
-theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommGroup M] (g : D.Generator)
-    (f : Point → M) :
+function over the points of the generator. Only the zero and one scalar laws are needed, so
+the values may lie in any commutative additive monoid with a zero-preserving `ℤ`-action. -/
+theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommMonoid M]
+    [MulActionWithZero ℤ M] (g : D.Generator) (f : Point → M) :
     ∑ q, D.generatorChain g q • f q = ∑ i, f (D.point g i) := by
   classical
   simp only [generatorChain_apply, ite_smul, one_smul, zero_smul]

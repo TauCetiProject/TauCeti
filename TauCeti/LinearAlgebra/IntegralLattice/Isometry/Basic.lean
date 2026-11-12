@@ -40,6 +40,9 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
 
 ## Main results
 
+* `TauCeti.IntegralLattice.Isometry.ambientEquiv_eq_of_forall_apply_eq` and
+  `TauCeti.IntegralLattice.Isometry.map_carrier_ambientEquiv`: ambient equivalences depend only on
+  pointwise action, and `ambientEquiv` maps the source carrier onto the target carrier.
 * `TauCeti.IntegralLattice.Isometry.carrierEquiv_ofCarrierEquiv` and
   `TauCeti.IntegralLattice.Isometry.ofCarrierEquiv_carrierEquiv`: the two round trips between
   ambient isometries and form-preserving carrier equivalences.
@@ -47,10 +50,12 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
   restriction to the carriers.
 * `TauCeti.IntegralLattice.Isometry.finrank_carrier_eq`: invariance of the carrier rank.
 * `TauCeti.IntegralLattice.transport_refl`: transporting along the identity changes no lattice.
+* `TauCeti.IntegralLattice.Isometry.transport_eq` and
+  `TauCeti.IntegralLattice.Isometry.transport_symm_eq`: transporting along an isometry moves its
+  source to its target, and back.
 
 ## References
 
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1
 * W. Ebeling, *Lattices and Codes*, Chapter 1
 -/
 
@@ -121,6 +126,20 @@ def ambientEquiv (e : Isometry L M) : V ≃ₗ[ℤ] W :=
 @[simp]
 theorem ambientEquiv_apply (e : Isometry L M) (x : V) : e.ambientEquiv x = e x := (rfl)
 
+/-- Two integral-lattice isometries between the same ambient spaces that agree pointwise have the
+same ambient integral equivalence, even when their source or target lattices differ. -/
+theorem ambientEquiv_eq_of_forall_apply_eq {L' : IntegralLattice V} {M' : IntegralLattice W}
+    {f : Isometry L M} {e : Isometry L' M'} (h : ∀ x, f x = e x) :
+    f.ambientEquiv = e.ambientEquiv :=
+  LinearEquiv.ext fun x ↦ by rw [ambientEquiv_apply, ambientEquiv_apply, h x]
+
+/-- The ambient integral equivalence of an isometry maps the source carrier onto the target
+carrier. -/
+@[simp]
+theorem map_carrier_ambientEquiv (e : Isometry L M) :
+    L.carrier.map e.ambientEquiv.toLinearMap = M.carrier :=
+  e.map_carrier
+
 /-- An ambient vector's image belongs to the target carrier if and only if the vector belongs
 to the source carrier. -/
 @[simp]
@@ -138,6 +157,10 @@ theorem apply_mem_carrier_iff (e : Isometry L M) (x : V) :
 @[ext]
 theorem ext {e f : Isometry L M} (h : ∀ x, e x = f x) : e = f :=
   DFunLike.coe_injective (funext h)
+
+/-- Into a trivial ambient space there is at most one isometry. -/
+instance [Subsingleton W] : Subsingleton (Isometry L M) :=
+  ⟨fun _ _ ↦ Isometry.ext fun _ ↦ Subsingleton.elim _ _⟩
 
 /-- The identity isometry of an integral lattice. -/
 @[refl]
@@ -162,6 +185,11 @@ theorem ofEq_apply {L M : IntegralLattice V} (h : L = M) (x : V) : ofEq h x = x 
   subst h
   rfl
 
+/-- Identifying a lattice with itself along `rfl` is the identity isometry. -/
+@[simp]
+theorem ofEq_rfl (L : IntegralLattice V) : ofEq (rfl : L = L) = refl L :=
+  ext fun x ↦ by rw [ofEq_apply, refl_apply]
+
 /-- The inverse of an integral-lattice isometry. -/
 @[symm]
 def symm (e : Isometry L M) : Isometry M L where
@@ -180,6 +208,14 @@ theorem apply_symm_apply (e : Isometry L M) (y : W) : e (e.symm y) = y :=
 /-- Inverting an isometry twice yields the original isometry. -/
 @[simp]
 theorem symm_symm (e : Isometry L M) : e.symm.symm = e := by
+  ext
+  rfl
+
+/-- The inverse of the identification of equal lattices is the identification along the reversed
+equality. -/
+@[simp]
+theorem symm_ofEq {L M : IntegralLattice V} (h : L = M) : (ofEq h).symm = ofEq h.symm := by
+  subst h
   ext
   rfl
 
@@ -416,6 +452,15 @@ theorem transportIsometry_apply (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) (x
   -- `isometryEquivOfCompLinearEquiv B f` has underlying equivalence `f.symm`.
   rfl
 
+/-- The inverse of the canonical isometry to a transported lattice is the inverse ambient
+equivalence. -/
+@[simp]
+theorem transportIsometry_symm_apply (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) (y : W) :
+    (L.transportIsometry e).symm y = e.symm y := by
+  obtain ⟨x, rfl⟩ := e.surjective y
+  rw [← L.transportIsometry_apply e x, Isometry.symm_apply_apply, transportIsometry_apply,
+    LinearEquiv.symm_apply_apply]
+
 @[simp]
 theorem transport_refl (L : IntegralLattice V) : L.transport (LinearEquiv.refl ℚ V) = L := by
   apply IntegralLattice.ext
@@ -424,6 +469,18 @@ theorem transport_refl (L : IntegralLattice V) : L.transport (LinearEquiv.refl �
       (Submodule.map_id (p := L.carrier))
   · ext x y
     simp
+
+/-- Transporting the source of an isometry along its ambient equivalence gives its target. -/
+theorem Isometry.transport_eq {L : IntegralLattice V} {M : IntegralLattice W} (e : Isometry L M) :
+    L.transport (e : V ≃ₗ[ℚ] W) = M := by
+  refine IntegralLattice.ext e.map_carrier (LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_)
+  rw [transport_form, LinearMap.BilinForm.comp_apply, LinearEquiv.coe_coe, ← e.coe_symm,
+    ← e.map_app, e.apply_symm_apply, e.apply_symm_apply]
+
+/-- Transporting the target of an isometry back along its ambient equivalence gives its source. -/
+theorem Isometry.transport_symm_eq {L : IntegralLattice V} {M : IntegralLattice W}
+    (e : Isometry L M) : M.transport (e : V ≃ₗ[ℚ] W).symm = L :=
+  e.symm.transport_eq
 
 end IntegralLattice
 

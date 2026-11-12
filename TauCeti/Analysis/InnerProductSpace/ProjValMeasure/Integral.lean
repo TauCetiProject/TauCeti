@@ -46,9 +46,15 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.eq_integral_of_continuous`: a continuous map agreeing with the integral on
   simple symbols is the integral.
 * `ProjValMeasure.integral_indicator`: the integral of a measurable indicator is the projection.
+* `ProjValMeasure.forall_commute_integral_iff`: an operator commutes with every integral iff it
+  commutes with every projection.
 * `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
   integrals against the diagonal measures.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
+* `ProjValMeasure.norm_sq_integral_apply`: the vector norm identity
+  `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
+* `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
+  for `P.diag ξ`.
 
 ## References
 
@@ -265,12 +271,24 @@ theorem integral_ofSimpleFunc (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
 @[simp]
 theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B) :
     P.integral (BoundedBorelFunction.indicator B hB 1) = P.proj B hB := by
-  have h : BoundedBorelFunction.indicator B hB 1 = BoundedBorelFunction.ofSimpleFunc
-      (SimpleFunc.piecewise B hB (SimpleFunc.const X 1) (SimpleFunc.const X 0)) := by
-    ext x
-    by_cases hx : x ∈ B <;> simp [SimpleFunc.piecewise_apply, hx]
-  rw [h, integral_ofSimpleFunc_eq_simpleIntegral]
+  rw [← one_smul ℂ (BoundedBorelFunction.indicator B hB 1),
+    ← BoundedBorelFunction.ofSimpleFunc_piecewise_const_zero,
+    integral_ofSimpleFunc_eq_simpleIntegral]
   exact (P.setToSimpleFunc_smulProj_piecewise 1 hB).trans (one_smul ℂ _)
+
+/-- An operator commutes with the integral of every bounded Borel symbol iff it commutes with the
+projection of every measurable set: integrals of simple symbols are linear combinations of
+projections, and simple symbols are dense. -/
+theorem forall_commute_integral_iff (P : ProjValMeasure X H) (A : H →L[ℂ] H) :
+    (∀ f, Commute A (P.integral f)) ↔ ∀ B hB, Commute A (P.proj B hB) := by
+  refine ⟨fun h B hB => P.integral_indicator hB ▸ h _, fun h f => ?_⟩
+  induction f using BoundedBorelFunction.denseRange_ofSimpleFunc.induction_on with
+  | hp =>
+    exact isClosed_eq (continuous_const.mul P.continuous_integral)
+      (P.continuous_integral.mul continuous_const)
+  | ih s =>
+    rw [integral_ofSimpleFunc]
+    exact Commute.sum_right _ _ _ fun c _ => (h _ _).smul_right c
 
 /-- Diagonal matrix elements of the integral are integrals against the diagonal measures:
 `∫ f d(P.diag ξ) = ⟪ξ, (∫ f dP) ξ⟫`. -/
@@ -297,6 +315,32 @@ theorem norm_integral_le (P : ProjValMeasure X H) {f : BoundedBorelFunction X} {
     (hM : 0 ≤ M) (hf : ∀ x, ‖f x‖ ≤ M) : ‖P.integral f‖ ≤ M :=
   (NonUnitalStarAlgHom.norm_apply_le P.integral f).trans
     ((BoundedBorelFunction.norm_le hM).2 hf)
+
+/-- **Vector norm identity** for the integral against a projection-valued measure:
+`‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`. -/
+theorem norm_sq_integral_apply (P : ProjValMeasure X H) (f : BoundedBorelFunction X) (ξ : H) :
+    ‖P.integral f ξ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂(P.diag ξ) := by
+  apply Complex.ofReal_injective
+  rw [← integral_complex_ofReal]
+  calc ((‖P.integral f ξ‖ ^ 2 : ℝ) : ℂ) = ⟪ξ, P.integral (star f * f) ξ⟫_ℂ := by
+        simp [map_star, ContinuousLinearMap.star_eq_adjoint,
+          ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
+    _ = ∫ x, ((‖f x‖ ^ 2 : ℝ) : ℂ) ∂(P.diag ξ) := by
+        rw [← integral_diag_eq_inner_integral]
+        simp [Complex.conj_mul']
+
+/-- The integral of `f` vanishes on `ξ` exactly when `f` vanishes almost everywhere for the
+diagonal measure `P.diag ξ`. -/
+theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFunction X)
+    (ξ : H) : P.integral f ξ = 0 ↔ ⇑f =ᵐ[P.diag ξ] 0 := by
+  have hint : Integrable (fun x => ‖f x‖ ^ 2) (P.diag ξ) :=
+    .of_bound (f.measurable.norm.pow_const 2).aestronglyMeasurable (‖f‖ ^ 2)
+      (Eventually.of_forall fun x => by
+        rw [Real.norm_of_nonneg (by positivity)]
+        exact pow_le_pow_left₀ (norm_nonneg _) (f.norm_coe_le_norm x) 2)
+  rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_sq_integral_apply,
+    integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
+  simp [EventuallyEq]
 
 end ProjValMeasure
 end TauCeti

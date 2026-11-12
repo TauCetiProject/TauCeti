@@ -37,6 +37,8 @@ maximal order itself is packaged as `maximalNumberFieldOrder K`.
   ring of integers.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.toSubalgebra_ne_top`: an order is a proper subring
   of its number field.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.toRingOfIntegers_injective`: an order is determined
+  by its copy inside the maximal order.
 * `Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one`:
   over `ℤ`, an ideal of an order times `𝓞 K` is its extension to `𝓞 K`.
 
@@ -121,8 +123,8 @@ theorem isIntegral (O : NumberFieldOrder K) (x : O.toSubalgebra) :
 
 /-- Every order in a number field is contained in its ring of integers. -/
 theorem le_ringOfIntegers (O : NumberFieldOrder K) :
-    O.toSubalgebra ≤ integralClosure ℤ K := fun x hx => by
-  exact (O.isIntegral ⟨x, hx⟩)
+    O.toSubalgebra ≤ integralClosure ℤ K :=
+  fun x hx ↦ O.isIntegral ⟨x, hx⟩
 
 /-- An order `O`, viewed as a `ℤ`-subalgebra of the maximal order `𝓞 K`. -/
 def toRingOfIntegers (O : NumberFieldOrder K) : Subalgebra ℤ (𝓞 K) :=
@@ -157,6 +159,19 @@ theorem coe_toRingOfIntegersEquiv_symm (O : NumberFieldOrder K) (y : O.toSubalge
     (((O.toRingOfIntegersEquiv.symm y : O.toRingOfIntegers) : 𝓞 K) : K) = y :=
   (rfl)
 
+/-- One order is contained in another exactly when their copies inside the maximal order are. -/
+@[simp]
+theorem toRingOfIntegers_le_toRingOfIntegers_iff {O O' : NumberFieldOrder K} :
+    O.toRingOfIntegers ≤ O'.toRingOfIntegers ↔ O.toSubalgebra ≤ O'.toSubalgebra :=
+  ⟨fun h x hx ↦ O'.mem_toRingOfIntegers (x := ⟨x, O.le_ringOfIntegers hx⟩) |>.mp
+    (h (O.mem_toRingOfIntegers.mpr hx)), fun h _ hx ↦ h hx⟩
+
+/-- An order is determined by its copy inside the maximal order. -/
+theorem toRingOfIntegers_injective :
+    Function.Injective (toRingOfIntegers : NumberFieldOrder K → Subalgebra ℤ (𝓞 K)) :=
+  fun _ _ h ↦ ext (le_antisymm (toRingOfIntegers_le_toRingOfIntegers_iff.mp h.le)
+    (toRingOfIntegers_le_toRingOfIntegers_iff.mp h.ge))
+
 /-- An order is a proper subring of its number field. -/
 theorem toSubalgebra_ne_top (O : NumberFieldOrder K) : O.toSubalgebra ≠ ⊤ := by
   intro h
@@ -165,41 +180,15 @@ theorem toSubalgebra_ne_top (O : NumberFieldOrder K) : O.toSubalgebra ≠ ⊤ :=
     ((Algebra.IsIntegral.isField_iff_isField (algebraMap ℤ K).injective_int).mpr
       (Field.toIsField K))
 
-private theorem exists_order_div (O : NumberFieldOrder K) (z : K) :
-    ∃ a b : O.toSubalgebra, (b : K) ≠ 0 ∧ z = (a : K) / (b : K) := by
-  have hz : z ∈ Submodule.span ℚ (O.toSubalgebra : Set K) := by
-    rw [O.spans]
-    exact Submodule.mem_top
-  induction hz using Submodule.span_induction with
-  | mem x hx =>
-      exact ⟨⟨x, hx⟩, 1, one_ne_zero, by simp⟩
-  | zero =>
-      exact ⟨0, 1, one_ne_zero, by simp⟩
-  | add x y _ _ hx hy =>
-      obtain ⟨a, b, hb, hxab⟩ := hx
-      obtain ⟨c, d, hd, hycd⟩ := hy
-      refine ⟨a * d + c * b, b * d, mul_ne_zero hb hd, ?_⟩
-      push_cast
-      rw [hxab, hycd]
-      field_simp
-  | smul q x _ hx =>
-      obtain ⟨a, b, hb, hxab⟩ := hx
-      obtain ⟨m, n, hn, hq⟩ := IsFractionRing.div_surjective ℤ q
-      have hnK : algebraMap ℤ K n ≠ 0 := by
-        simpa using (Int.cast_ne_zero.mpr (mem_nonZeroDivisors_iff_ne_zero.mp hn) : (n : K) ≠ 0)
-      refine ⟨algebraMap ℤ O.toSubalgebra m * a,
-        algebraMap ℤ O.toSubalgebra n * b, mul_ne_zero hnK hb, ?_⟩
-      push_cast
-      rw [Algebra.smul_def, hxab, ← hq]
-      rw [map_div₀ (algebraMap ℚ K), ← IsScalarTower.algebraMap_apply ℤ ℚ K m,
-        ← IsScalarTower.algebraMap_apply ℤ ℚ K n]
-      field_simp
-
 /-- The ambient number field is the fraction field of each of its orders. -/
 instance isFractionRing (O : NumberFieldOrder K) : IsFractionRing O.toSubalgebra K :=
   IsFractionRing.of_field O.toSubalgebra K fun z => by
-    obtain ⟨a, b, _, hz⟩ := O.exists_order_div z
-    exact ⟨a, b, hz⟩
+    -- Clearing denominators writes `z` as an element of `O` divided by a nonzero integer.
+    obtain ⟨y, hy, n, rfl⟩ := (IsLocalization.mem_span_iff ℤ⁰ (S := ℚ)).mp
+      (O.spans ▸ Submodule.mem_top : z ∈ Submodule.span ℚ (O.toSubalgebra : Set K))
+    rw [← Subalgebra.coe_toSubmodule, Submodule.span_eq] at hy
+    refine ⟨⟨y, hy⟩, algebraMap ℤ O.toSubalgebra n, ?_⟩
+    simp [IsFractionRing.mk'_eq_div, Algebra.smul_def, div_eq_inv_mul]
 
 /-! ### Ideals of an order and of the maximal order -/
 
@@ -264,14 +253,10 @@ end NumberFieldOrder
 def maximalNumberFieldOrder (K : Type u) [Field K] [NumberField K] : NumberFieldOrder K where
   toSubalgebra := integralClosure ℤ K
   finite := inferInstanceAs (Module.Finite ℤ (𝓞 K))
-  spans := by
-    apply top_unique
-    rw [← (integralBasis K).span_eq]
-    exact Submodule.span_mono fun x hx => by
-      obtain ⟨i, rfl⟩ := hx
-      rw [integralBasis_apply]
-      exact (RingOfIntegers.basis K i).property
+  spans := top_unique <| (integralBasis K).span_eq.ge.trans <| Submodule.span_mono <|
+    Set.range_subset_iff.mpr fun i ↦ integralBasis_apply K i ▸ (RingOfIntegers.basis K i).property
 
+/-- The maximal order has the integral closure of `ℤ` in `K` as its underlying subalgebra. -/
 @[simp]
 theorem maximalNumberFieldOrder_toSubalgebra
     (K : Type u) [Field K] [NumberField K] :

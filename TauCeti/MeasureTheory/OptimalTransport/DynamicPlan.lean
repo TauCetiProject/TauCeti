@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.Topology.MetricSpace.GeodesicPath
 import Mathlib.Topology.ContinuousMap.SecondCountableSpace
 import Mathlib.Topology.Metrizable.ContinuousMap
+import TauCeti.MeasureTheory.MeasurableSpace.Analytic
 
 /-!
 # Dynamic plans concentrated on geodesics
@@ -32,6 +33,9 @@ analytic in the Polish space `(X × X) × C(I, X)`, so the Jankov–von Neumann 
 chooses, measurably in the pair of endpoints and for `π`-almost every pair, a geodesic joining them.
 The pushforward of `π` along this choice is the required dynamic plan. No global Borel choice of
 geodesics is claimed: the choice depends on `π` and is only defined `π`-almost everywhere.
+When almost every pair of points under `π` is joined by only one geodesic path, this dynamic plan
+is the only one: every plan concentrated on geodesics with endpoint law `π` is the pushforward of
+`π` along the chosen geodesics.
 
 Applied to an optimal coupling `π` of `μ` and `ν` on a Polish geodesic space, for a finite nonzero
 exponent `p`, the laws at times `0 ≤ t ≤ 1` of this dynamic
@@ -54,6 +58,13 @@ Mathlib's `MeasureTheory.Measure`, where dot notation such as `η.timeMarginal t
   geodesic joining almost every pair can be chosen measurably in the pair.
 * `MeasureTheory.Measure.exists_ae_mem_geodesicPaths_endpointLaw_eq`: every such law of pairs of
   points is the endpoint law of a dynamic plan concentrated on geodesics.
+* `MeasureTheory.Measure.ae_exists_mem_geodesicPaths_endpointLaw`: on a Polish metric space, almost
+  every pair of endpoints of a dynamic plan concentrated on geodesics is joined by a geodesic path.
+* `MeasureTheory.Measure.eq_of_endpointLaw_eq_of_ae_subsingleton`: on a Polish metric space, two
+  dynamic plans concentrated on geodesics with the same endpoint law are equal when almost every
+  pair of endpoints is joined by at most one geodesic path.
+* `TauCeti.ae_timeMarginal_mem_closedBall`: if the laws at times `0` and `1` of a dynamic plan
+  concentrated on geodesics are carried by closed balls about a point, so is its law at every time.
 * `TauCeti.eLpNorm_edist_map_eq`: for a dynamic plan concentrated on geodesics, the `Lᵖ`
   displacement of its joint law at times `s` and `t` is `|s - t|` times that of its endpoint law.
 * `TauCeti.wassersteinEDist_timeMarginal_le`: the displacement bound between the laws at two times
@@ -122,6 +133,11 @@ instance isProbabilityMeasure_timeMarginal (η : Measure C(I, X)) [IsProbability
 /-- A probability dynamic plan has a probability endpoint law. -/
 instance isProbabilityMeasure_endpointLaw (η : Measure C(I, X)) [IsProbabilityMeasure η] :
     IsProbabilityMeasure (endpointLaw η) := by
+  rw [endpointLaw_def]
+  infer_instance
+
+/-- An s-finite dynamic plan has an s-finite endpoint law. -/
+instance sFinite_endpointLaw (η : Measure C(I, X)) [SFinite η] : SFinite (endpointLaw η) := by
   rw [endpointLaw_def]
   infer_instance
 
@@ -200,6 +216,39 @@ theorem timeMarginal_withDensity_apply_of_ae_eq {η : Measure C(I, X)} {w : C(I,
   rw [timeMarginal_apply _ t hs, withDensity_apply _ hS, setLIntegral_congr_fun_ae hS hw,
     setLIntegral_const]
 
+section Affine
+
+open TauCeti (segmentPath geodesicPaths isClosed_geodesicPaths segmentPath_mem_geodesicPaths)
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
+
+/-- Lifting a law of pairs of points to their affine segments gives a plan concentrated on
+constant-speed geodesics, without requiring completeness or strict convexity. -/
+theorem ae_mem_geodesicPaths_map_segmentPath (π : Measure (E × E)) :
+    ∀ᵐ c ∂π.map segmentPath, c ∈ geodesicPaths E :=
+  (ae_map_iff segmentPath.continuous.measurable.aemeasurable
+    isClosed_geodesicPaths.measurableSet).2 (.of_forall segmentPath_mem_geodesicPaths)
+
+/-- The endpoint law of the affine-segment lift is the original law of pairs of points. -/
+@[simp]
+theorem endpointLaw_map_segmentPath (π : Measure (E × E)) :
+    (π.map segmentPath).endpointLaw = π := by
+  rw [endpointLaw_def, map_map ContinuousMap.measurable_endpoints segmentPath.continuous.measurable]
+  convert Measure.map_id
+  ext z <;> simp
+
+/-- The law at time `t` of the affine-segment lift is affine interpolation of the endpoint law. -/
+theorem timeMarginal_map_segmentPath (π : Measure (E × E)) (t : I) :
+    (π.map segmentPath).timeMarginal t =
+      π.map fun z ↦ (1 - (t : ℝ)) • z.1 + (t : ℝ) • z.2 := by
+  rw [timeMarginal_map _ segmentPath.continuous.measurable]
+  congr 1
+  ext z
+  simp [AffineMap.lineMap_apply_module]
+
+end Affine
+
 section Polish
 
 open TauCeti (geodesicPaths isClosed_geodesicPaths isClosed_setOf_mem_geodesicPaths_endpoints)
@@ -242,6 +291,51 @@ theorem exists_ae_mem_geodesicPaths_endpointLaw_eq (π : Measure (X × X)) [SFin
     refine Measure.map_congr ?_
     filter_upwards [hGπ] with z hz
     simp [hz.2.1, hz.2.2]
+
+/-- **The endpoints of a plan on geodesics are joined by geodesics.** On a Polish metric space, if
+an s-finite dynamic plan `η` is concentrated on geodesic paths, then almost every pair of points
+under its endpoint law is joined by a geodesic path. -/
+theorem ae_exists_mem_geodesicPaths_endpointLaw (η : Measure C(I, X)) [SFinite η]
+    (hη : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X) :
+    ∀ᵐ z ∂η.endpointLaw, ∃ γ ∈ geodesicPaths X, γ 0 = z.1 ∧ γ 1 = z.2 := by
+  -- The pairs of endpoints of geodesic paths form an analytic set `S`, which is null-measurable
+  -- for the endpoint law, so the measure of its complement is computed on path space.
+  set S := (fun γ : C(I, X) ↦ (γ 0, γ 1)) '' geodesicPaths X
+  have hS : AnalyticSet S := isClosed_geodesicPaths.analyticSet.image_of_continuous (by fun_prop)
+  have hSc : η.endpointLaw Sᶜ = 0 := by
+    rw [endpointLaw_def, Measure.map_apply₀ ContinuousMap.measurable_endpoints.aemeasurable
+      (hS.nullMeasurableSet _).compl]
+    refine measure_mono_null ?_ (ae_iff.1 hη)
+    exact fun γ hγ hγg ↦ hγ ⟨γ, hγg, rfl⟩
+  refine measure_mono_null (fun z hz ↦ ?_) hSc
+  rintro ⟨γ, hγ, hγz⟩
+  exact hz ⟨γ, hγ, congr_arg Prod.fst hγz, congr_arg Prod.snd hγz⟩
+
+/-- **A plan on geodesics is determined by its endpoint law when geodesics are unique.** On a
+Polish metric space, let `η` and `η'` be dynamic plans concentrated on geodesic paths with the same
+endpoint law, and suppose that almost every pair of points under this law is joined by at most one
+geodesic path. Then `η = η'`. -/
+theorem eq_of_endpointLaw_eq_of_ae_subsingleton {η η' : Measure C(I, X)} [SFinite η]
+    (hη : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X) (hη' : ∀ᵐ γ ∂η', γ ∈ geodesicPaths X)
+    (h : η.endpointLaw = η'.endpointLaw)
+    (huniq : ∀ᵐ z ∂η.endpointLaw,
+      {γ | γ ∈ geodesicPaths X ∧ γ 0 = z.1 ∧ γ 1 = z.2}.Subsingleton) :
+    η = η' := by
+  obtain ⟨G, hG, hGπ⟩ := exists_measurable_ae_mem_geodesicPaths η.endpointLaw
+    (ae_exists_mem_geodesicPaths_endpointLaw η hη)
+  -- Every plan on geodesics with the endpoint law of `η` is its pushforward along `G`.
+  have key (ζ : Measure C(I, X)) (hζ : ∀ᵐ γ ∂ζ, γ ∈ geodesicPaths X)
+      (hζπ : ζ.endpointLaw = η.endpointLaw) : ζ = η.endpointLaw.map G := by
+    have hpair := hGπ.and huniq
+    rw [← hζπ, endpointLaw_def] at hpair
+    have hGe : ∀ᵐ γ ∂ζ, γ = G (γ 0, γ 1) := by
+      filter_upwards [ae_of_ae_map ContinuousMap.measurable_endpoints.aemeasurable hpair, hζ]
+        with γ ⟨hGγ, hu⟩ hγ
+      exact hu ⟨hγ, rfl, rfl⟩ hGγ
+    rw [← hζπ, endpointLaw_def, Measure.map_map hG ContinuousMap.measurable_endpoints]
+    conv_lhs => rw [← Measure.map_id (μ := ζ)]
+    exact Measure.map_congr hGe
+  rw [key η hη rfl, key η' hη' h.symm]
 
 end Polish
 
@@ -300,6 +394,30 @@ end QuadraticOptimal
 end MeasureTheory.Measure
 
 namespace TauCeti
+
+section Carrier
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+
+/-- **Geodesic plans stay near their endpoints.** If a dynamic plan `η` concentrated on geodesic
+paths has its laws at times `0` and `1` carried by the closed balls of radii `r₀` and `r₁` about
+`x`, then its law at time `t` is carried by the closed ball of radius `(1 - t) (r₀ + r₁) + r₁`
+about `x`: the point at time `t` is within `1 - t` times the endpoint distance of the endpoint at
+time `1`. -/
+theorem ae_timeMarginal_mem_closedBall {η : Measure C(I, X)} (hη : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X)
+    {x : X} {r₀ r₁ : ℝ} (h₀ : ∀ᵐ y ∂η.timeMarginal 0, y ∈ Metric.closedBall x r₀)
+    (h₁ : ∀ᵐ y ∂η.timeMarginal 1, y ∈ Metric.closedBall x r₁) (t : I) :
+    ∀ᵐ y ∂η.timeMarginal t, y ∈ Metric.closedBall x ((1 - t) * (r₀ + r₁) + r₁) := by
+  refine (Measure.ae_timeMarginal_iff measurableSet_closedBall).2 ?_
+  filter_upwards [hη, (Measure.ae_timeMarginal_iff measurableSet_closedBall).1 h₀,
+    (Measure.ae_timeMarginal_iff measurableSet_closedBall).1 h₁] with γ hγ hγ₀ hγ₁
+  have hγt := mem_geodesicPaths_iff.1 hγ t 1
+  rw [Icc.coe_one, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 t.2.2)] at hγt
+  have hd : dist (γ 0) (γ 1) ≤ r₀ + r₁ := by
+    linarith [dist_triangle (γ 0) x (γ 1), dist_comm x (γ 1)]
+  nlinarith [dist_triangle (γ t) (γ 1) x, mul_le_mul_of_nonneg_left hd (sub_nonneg.2 t.2.2)]
+
+end Carrier
 
 section Displacement
 

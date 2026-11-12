@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.InverseGamma.Moments
 public import TauCeti.Probability.Distributions.Wishart.Inverse.Basic
 
-import TauCeti.Analysis.Matrix.PosSemidef
+import TauCeti.Analysis.Matrix.PosSemidef.Basic
 import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Integrable
@@ -132,7 +132,7 @@ private theorem map_coe_apply_last_inverseWishartMeasure_one {q : ℕ} (hn : (q 
         Function.eval (⟨(Fin.last q, Fin.last q), le_rfl⟩ : lowerTriangle (q + 1)) := by
     have hpos : ∀ᵐ x ∂(Measure.pi (bartlettCoordinateMeasure (p := q + 1) n)),
         x ∈ posDiagLowerRegion (q + 1) :=
-      ae_iff.2 (pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion hn')
+      ae_iff.2 (pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion)
     filter_upwards [hpos] with x hx
     simpa using inv_coe_lowerTriangleGram_apply_last hx
   have heval : (Measure.pi (bartlettCoordinateMeasure (p := q + 1) n)).map

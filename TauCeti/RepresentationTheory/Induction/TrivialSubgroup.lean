@@ -361,7 +361,7 @@ theorem rightInverse_indBotCounit (A : Rep k G) :
     Function.RightInverse
       (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) A.V) 1)
       (indBotCounit A).hom := fun a ↦ by
-  rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
+  rw [indBotCounit_hom_mk, inv_one, map_one, one_apply_eq_self]
 
 /-- The projection from the induced representation is an epimorphism. -/
 instance indBotCounit_epi (A : Rep k G) : Epi (indBotCounit A) :=
@@ -464,7 +464,7 @@ def indBotEquivFinsupp (X : Type u) [AddCommGroup X] [Module k X] :
   (Submodule.quotEquivOfEqBot _ <| Submodule.span_eq_bot.2 fun _ hx ↦ by
     obtain ⟨⟨g, v⟩, rfl⟩ := hx
     obtain rfl : g = 1 := Subsingleton.elim g 1
-    simp).trans TauCeti.MonoidAlgebra.tensorEquivFinsupp
+    simp).trans (TauCeti.MonoidAlgebra.tensorEquivFinsupp k G X)
 
 /-- The underlying module of the induced representation on generators: `⟦g ⊗ₜ x⟧ ↦ single g x`. -/
 theorem indBotEquivFinsupp_mk (X : Type u) [AddCommGroup X] [Module k X] (g : G) (x : X) :
@@ -473,7 +473,7 @@ theorem indBotEquivFinsupp_mk (X : Type u) [AddCommGroup X] [Module k X] (g : G)
       Finsupp.single g x := by
   -- `quotEquivOfEqBot` is the identity on classes, so on a generator only `tensorEquivFinsupp`
   -- acts.
-  change TauCeti.MonoidAlgebra.tensorEquivFinsupp (MonoidAlgebra.single g (1 : k) ⊗ₜ[k] x) = _
+  change TauCeti.MonoidAlgebra.tensorEquivFinsupp k G X (MonoidAlgebra.single g (1 : k) ⊗ₜ[k] x) = _
   simp
 
 /-- `G` acts on the finitely supported functions underlying the representation induced from the

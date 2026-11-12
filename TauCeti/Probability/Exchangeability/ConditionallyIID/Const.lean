@@ -48,10 +48,6 @@ pushed forward by the same map, so the mixture identity already gives the joint 
 theorem conditionallyIIDWith_const_of_mixedIIDWith {μ : Measure Ω}
     {X : ι → Ω → α} {p : ProbabilityMeasure α} (h : MixedIIDWith μ X fun _ => p) :
     ConditionallyIIDWith μ X fun _ => p := by
-  by_cases hμ : μ = 0
-  · subst μ
-    refine ConditionallyIIDWith.intro h.aemeasurable measurable_const fun m k _ => ?_
-    simp
   refine ConditionallyIIDWith.intro h.aemeasurable measurable_const fun m k hk => ?_
   have hblock : AEMeasurable (fun ω (i : Fin m) => X (k i) ω) μ :=
     AEMeasurable.of_eval fun i => h.aemeasurable (k i)

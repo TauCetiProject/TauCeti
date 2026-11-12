@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Monomial
+public import TauCeti.Data.Finsupp.Multiset
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Symmetric
 
 /-!
@@ -110,18 +111,10 @@ private theorem exists_perm_comp_eq {β : Type*} {f g : σ → β}
 
 /-! ### The partition of the exponents of a monomial -/
 
-omit [Fintype σ] [DecidableEq σ] in
-/-- The number of letters of the monomial with exponent vector `d` is its total degree.  This is
-not a `simp` lemma: `Finsupp.card_toMultiset` already rewrites the left-hand side to
-`d.sum fun _ => id`, so tagging it would leave it out of simp-normal form. -/
-theorem card_toMultiset_eq_degree (d : σ →₀ ℕ) : Multiset.card d.toMultiset = d.degree := by
-  rw [Finsupp.card_toMultiset, Finsupp.degree_apply]
-  rfl
-
 /-- **The multiset of letters of a monomial** of total degree `n`, read as an element of
 `Sym σ n`: the letter `x` occurs as often as the exponent of `x` prescribes. -/
 noncomputable def weightSym (d : σ →₀ ℕ) (h : d.degree = n) : Sym σ n :=
-  ⟨d.toMultiset, (card_toMultiset_eq_degree d).trans h⟩
+  ⟨d.toMultiset, (Finsupp.card_toMultiset_eq_degree d).trans h⟩
 
 omit [Fintype σ] [DecidableEq σ] in
 @[simp]
@@ -240,7 +233,7 @@ theorem coeff_msymm_eq_zero_of_degree_ne (ν : n.Partition) {d : σ →₀ ℕ} 
   refine Finset.sum_eq_zero fun s _ => ?_
   rw [prod_map_X_eq_monomial, coeff_monomial, ite_eq_right]
   rintro rfl
-  exact h (by rw [← card_toMultiset_eq_degree, Multiset.toFinsupp_toMultiset]; exact s.1.2)
+  exact h (by rw [← Finsupp.card_toMultiset_eq_degree, Multiset.toFinsupp_toMultiset]; exact s.1.2)
 
 /-- **The coefficients of a monomial symmetric polynomial are `0` and `1`**: `m_ν` is the sum of
 the monomials of total degree `n` whose nonzero exponents are the parts of `ν`, each occurring
@@ -300,8 +293,19 @@ theorem degree_partWeight (ν : n.Partition) (hν : ν.parts.card ≤ Fintype.ca
 exponents of `TauCeti.partWeight σ ν` is `ν` itself.  Together with `TauCeti.coeff_msymm` this
 says that the monomial symmetric polynomials take the value `1` at their own sorted monomial and
 `0` at every other one. -/
-theorem weightPartition_partWeight (ν : n.Partition) (hν : ν.parts.card ≤ Fintype.card σ)
+theorem weightPartition_partWeight (ν : n.Partition)
     (h : (partWeight σ ν).degree = n) : weightPartition (partWeight σ ν) h = ν := by
+  -- The degree of `partWeight σ ν` is `n` only if no part is truncated.
+  have hν : ν.parts.card ≤ Fintype.card σ := by
+    by_contra hlt
+    have hlt' := degree_rowLenWeight_lt (N := Fintype.card σ) (μ := YoungDiagram.ofPartition ν)
+      (by rwa [YoungDiagram.colLen_zero_ofPartition, ← not_le])
+    have hdeg : (partWeight σ ν).degree = (rowLenWeight (Fintype.card σ)
+        (YoungDiagram.ofPartition ν)).degree := by
+      simpa only [partWeight_eq_mapDomain] using Finsupp.degree_mapDomain (Fintype.equivFin σ).symm
+        (rowLenWeight (Fintype.card σ) (YoungDiagram.ofPartition ν))
+    rw [YoungDiagram.card_ofPartition, ← hdeg] at hlt'
+    exact hlt'.ne h
   refine Nat.Partition.ext ?_
   rw [weightPartition_parts]
   have hkey := (map_univ_val (partWeight σ ν)).symm.trans (map_univ_val_partWeight ν hν)
@@ -324,7 +328,7 @@ monomials, and the reason they are linearly independent. -/
 @[simp]
 theorem coeff_msymm_partWeight (ν ξ : n.Partition) (hξ : ξ.parts.card ≤ Fintype.card σ) :
     (msymm σ R ν).coeff (partWeight σ ξ) = if ξ = ν then 1 else 0 := by
-  rw [coeff_msymm R ν (degree_partWeight ξ hξ), weightPartition_partWeight ξ hξ]
+  rw [coeff_msymm R ν (degree_partWeight ξ hξ), weightPartition_partWeight ξ]
 
 /-! ### The monomial expansion -/
 

@@ -84,7 +84,7 @@ level-supported indices and not only at powers of one prime.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups ModularForm
 
@@ -130,7 +130,7 @@ theorem heckeTNat_mul_of_primeFactors_subset {n m : ℕ} [NeZero n] [NeZero m]
     heckeTNat (N := N) k (n * m) = heckeTNat (N := N) k n * heckeTNat (N := N) k m :=
   LinearMap.ext fun f ↦ DFunLike.ext' <| by
     rw [coe_heckeTNat_of_primeFactors_subset k _ (primeFactors_mul_subset hn hm),
-      Module.End.mul_apply, coe_heckeTNat_of_primeFactors_subset k n hn,
+      mul_apply_eq_comp, coe_heckeTNat_of_primeFactors_subset k n hn,
       coe_heckeTNat_of_primeFactors_subset k m hm, heckeSlashUpperTri_heckeSlashUpperTri,
       mul_comm m n]
 
@@ -141,7 +141,7 @@ theorem heckeTCuspNat_mul_of_primeFactors_subset {n m : ℕ} [NeZero n] [NeZero 
     heckeTCuspNat (N := N) k (n * m) = heckeTCuspNat (N := N) k n * heckeTCuspNat (N := N) k m :=
   LinearMap.ext fun f ↦ DFunLike.ext' <| by
     rw [coe_heckeTCuspNat_of_primeFactors_subset k _ (primeFactors_mul_subset hn hm),
-      Module.End.mul_apply, coe_heckeTCuspNat_of_primeFactors_subset k n hn,
+      mul_apply_eq_comp, coe_heckeTCuspNat_of_primeFactors_subset k n hn,
       coe_heckeTCuspNat_of_primeFactors_subset k m hm, heckeSlashUpperTri_heckeSlashUpperTri,
       mul_comm m n]
 
@@ -231,7 +231,7 @@ theorem heckeTNat_mem_modFormCharSpace_of_primeFactors_subset (n : ℕ) [NeZero 
   intro g
   rw [coe_heckeTNat_of_primeFactors_subset k n hn, ← ModularForm.rat_slash_mapGL]
   exact heckeSlashUpperTri_slash_mapGL_of_nebentypus_of_primeFactors_subset k χ n
-    (NeZero.ne n) hn g fun δ ↦ by rw [ModularForm.rat_slash_mapGL]; exact hf δ
+    hn g fun δ ↦ by rw [ModularForm.rat_slash_mapGL]; exact hf δ
 
 /-- **`T_n` preserves the nebentypus on cusp forms**: it maps `S_k(N, χ)` into itself, at every
 index supported on the level. -/
@@ -243,7 +243,7 @@ theorem heckeTCuspNat_mem_cuspFormCharSpace_of_primeFactors_subset (n : ℕ) [Ne
   intro g
   rw [coe_heckeTCuspNat_of_primeFactors_subset k n hn, ← ModularForm.rat_slash_mapGL]
   exact heckeSlashUpperTri_slash_mapGL_of_nebentypus_of_primeFactors_subset k χ n
-    (NeZero.ne n) hn g fun δ ↦ by rw [ModularForm.rat_slash_mapGL]; exact hf δ
+    hn g fun δ ↦ by rw [ModularForm.rat_slash_mapGL]; exact hf δ
 
 end Nebentypus
 

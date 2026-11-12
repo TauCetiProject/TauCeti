@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.SemisimpleQuotient
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Multiplication
-public import TauCeti.RingTheory.Jacobson.MulOpposite
+public import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # The radical filtration of a zigzag algebra
@@ -314,6 +314,41 @@ theorem mul_mul_eq_zero_of_mem_zigzagPositiveSpan {x y z : nonisolatedZigzagQuot
     (hz : z ∈ zigzagPositiveSpan k G) : (x * y) * z = 0 :=
   mul_eq_zero_of_mem_zigzagVolumeSpan_of_mem_zigzagPositiveSpan
     (mul_mem_zigzagVolumeSpan hx hy) hz
+
+/-- Every left multiple of an arrow class has positive length. -/
+theorem mul_zigzagMk_ofArrow_mem_zigzagPositiveSpan (y : nonisolatedZigzagQuotient k G)
+    (d : G.Dart) : y * zigzagMk k G (ofArrow (arrow G d.adj)) ∈ zigzagPositiveSpan k G := by
+  have h : (⊤ : Submodule k (nonisolatedZigzagQuotient k G)) ≤
+      (zigzagPositiveSpan k G).comap
+        (LinearMap.mulRight k (zigzagMk k G (ofArrow (arrow G d.adj)))) := by
+    rw [← span_range_zigzagBasisFun_eq_top, Submodule.span_le]
+    rintro _ ⟨b, rfl⟩
+    rcases b with i | e | i
+    · rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulRight_apply, zigzagBasisFun_inl]
+      by_cases hi : i = d.snd
+      · subst hi
+        rw [zigzagMk_vertexIdempotent_mul_ofArrow]
+        exact zigzagMk_ofArrow_mem_zigzagPositiveSpan d
+      · rw [zigzagMk_vertexIdempotent_mul_ofArrow_of_ne k G d hi]
+        exact Submodule.zero_mem _
+    · rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulRight_apply,
+        zigzagBasisFun_inr_inl]
+      exact zigzagVolumeSpan_le_zigzagPositiveSpan
+        (mul_mem_zigzagVolumeSpan (zigzagMk_ofArrow_mem_zigzagPositiveSpan e)
+          (zigzagMk_ofArrow_mem_zigzagPositiveSpan d))
+    · rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulRight_apply,
+        zigzagBasisFun_inr_inr, zigzagVolume_mul_zigzagMk_ofArrow]
+      exact Submodule.zero_mem _
+  exact h (Submodule.mem_top (x := y))
+
+/-- **An arrow class lies in the Jacobson radical**, with no hypothesis on isolated vertices: every
+left multiple of it is nilpotent, since three positive-length elements multiply to zero. -/
+theorem zigzagMk_ofArrow_mem_jacobson (d : G.Dart) :
+    zigzagMk k G (ofArrow (arrow G d.adj)) ∈ Ring.jacobson (nonisolatedZigzagQuotient k G) := by
+  refine Ring.mem_jacobson_of_forall_isNilpotent_mul fun y => ⟨3, ?_⟩
+  have hy := mul_zigzagMk_ofArrow_mem_zigzagPositiveSpan y d
+  rw [pow_three']
+  exact mul_mul_eq_zero_of_mem_zigzagPositiveSpan hy hy hy
 
 end CommRing
 

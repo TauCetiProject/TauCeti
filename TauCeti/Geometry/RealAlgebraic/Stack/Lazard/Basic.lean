@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPolynomial.Lazard.Lift
 import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Topology.Algebra.MvPolynomial
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Lazard delineations
@@ -53,9 +54,19 @@ polynomial functions of the base point. So over an analytic submanifold of `ℝ�
 functions of a Lazard delineation are analytic: their multiplicities are constant and positive.
 In other words, every Lazard delineation over an analytic submanifold is an analytic one.
 
+The ordered list of root functions of a Lazard delineation is the increasing enumeration of the
+real roots of the Lazard evaluations of the nonzero members, so a family has at most one Lazard
+delineation over a given base. Lazard delineations restrict to nonempty subsets of the base.
+
 ## Main declarations
 
 * `TauCeti.LazardDelineation`: a common stack of the roots of the Lazard evaluations of a family.
+* `TauCeti.LazardDelineation.range_root`: the root functions enumerate the real roots of the
+  Lazard evaluations of the nonzero members.
+* `TauCeti.LazardDelineation.instSubsingleton`: a family has at most one Lazard delineation over
+  a given base.
+* `TauCeti.LazardDelineation.restrict`: restriction of a Lazard delineation to a nonempty subset
+  of its base.
 * `TauCeti.LazardDelineation.lazardValuation_snoc_of_mem_sectionSet`,
   `TauCeti.LazardDelineation.lazardValuation_snoc_of_mem_sectorSet`: the Lazard valuations of a
   nonzero member on a section and on a sector.
@@ -135,20 +146,106 @@ namespace LazardDelineation
 
 variable {F : ι → MvPolynomial (Fin (n + 1)) ℝ} {S : Set (Fin n → ℝ)} (D : LazardDelineation F S)
 
-/-- A Lazard delineation is determined by its root functions: the removed base exponents and the
-multiplicities can be read off at any point of the nonempty base. -/
-@[ext (iff := false)]
-theorem ext {D₁ D₂ : LazardDelineation F S} (hcount : D₁.count = D₂.count)
-    (hroot : ∀ i x, D₁.root i x = D₂.root (Fin.cast hcount i) x) : D₁ = D₂ := by
-  cases D₁ with | mk hS c r _ _ e he m hm _ _ =>
-  cases D₂ with | mk _ c' r' _ _ e' he' m' hm' _ _ =>
-  obtain ⟨x, hx⟩ := hS
-  dsimp only at hcount hroot
-  subst hcount
-  obtain rfl : r = r' := funext₂ hroot
-  obtain rfl : e = e' := funext fun k ↦ (he k ⟨x, hx⟩).symm.trans (he' k ⟨x, hx⟩)
-  obtain rfl : m = m' := funext₂ fun k i ↦ (hm k i ⟨x, hx⟩).symm.trans (hm' k i ⟨x, hx⟩)
-  rfl
+/-- A member of the family has positive multiplicity in a root function exactly when it is
+nonzero and the root function is a root of its Lazard evaluation, at any base point. -/
+theorem multiplicity_pos_iff {k : ι} {i : Fin D.count} (x : S) :
+    0 < D.multiplicity k i ↔ F k ≠ 0 ∧
+      ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
+        (Polynomial.C ∘ x.1)).IsRoot (D.root i x) := by
+  rw [← D.rootMultiplicity_root k i x, Polynomial.rootMultiplicity_pos', Ne,
+    lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_zero_iff]
+
+/-- A zero member of the family has multiplicity zero in every root function. -/
+theorem multiplicity_eq_zero {k : ι} (hk : F k = 0) (i : Fin D.count) : D.multiplicity k i = 0 :=
+  Nat.eq_zero_of_not_pos fun h ↦
+    ((D.multiplicity_pos_iff ⟨_, D.nonempty.some_mem⟩).1 h).1 hk
+
+/-- The roots of the Lazard evaluation of a nonzero member over a base point are exactly the
+values of the root functions in which it has positive multiplicity. -/
+theorem isRoot_iff {k : ι} (hk : F k ≠ 0) (x : S) (t : ℝ) :
+    ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
+        (Polynomial.C ∘ x.1)).IsRoot t ↔ ∃ i, D.root i x = t ∧ 0 < D.multiplicity k i :=
+  Polynomial.isRoot_iff_of_rootMultiplicity (fun i ↦ D.rootMultiplicity_root k i x)
+    (D.exists_root_eq k x hk)
+    ((lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_zero_iff _).not.2 hk) t
+
+/-- At every base point, the values of the root functions are exactly the real roots of the
+Lazard evaluations of the nonzero members of the family. -/
+theorem range_root (x : S) :
+    range (fun i ↦ D.root i x) = {t | ∃ k, F k ≠ 0 ∧
+      ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
+        (Polynomial.C ∘ x.1)).IsRoot t} := by
+  ext t
+  refine ⟨?_, fun ⟨k, hk, ht⟩ ↦ D.exists_root_eq k x hk t ht⟩
+  rintro ⟨i, rfl⟩
+  obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
+  exact ⟨k, (D.multiplicity_pos_iff x).1 hk⟩
+
+/-- A family has at most one Lazard delineation over a given base: the root functions are the
+increasing enumeration of the real roots of the Lazard evaluations of the nonzero members, and the
+removed base exponents and the multiplicities are then determined. -/
+instance instSubsingleton : Subsingleton (LazardDelineation F S) where
+  allEq D D' := by
+    obtain ⟨x, hx⟩ := D.nonempty
+    have hrange (y : S) : range (fun i ↦ D.root i y) = range fun i ↦ D'.root i y := by
+      rw [D.range_root, D'.range_root]
+    -- the two stacks have the same number of sections, the number of roots at `x`
+    have hcount : D.count = D'.count := by
+      have h := congrArg (fun s : Set ℝ ↦ Nat.card s) (hrange ⟨x, hx⟩)
+      simpa only [Nat.card_range_of_injective (D.strictMono_root _).injective,
+        Nat.card_range_of_injective (D'.strictMono_root _).injective, Nat.card_eq_fintype_card,
+        Fintype.card_fin] using h
+    revert hrange hcount
+    obtain ⟨_, c, r, _, hr, e, he, m, hm, _⟩ := D
+    obtain ⟨_, c', r', _, hr', e', he', m', hm', _⟩ := D'
+    rintro hrange (rfl : c = c')
+    obtain rfl : r = r' := funext₂ fun i y ↦
+      congrFun (((hr y).range_inj_of_wellFoundedLT (hr' y)).1 (hrange y)) i
+    -- the removed exponents and the multiplicities are read off at `x`
+    obtain rfl : e = e' := funext fun k ↦ (he k ⟨x, hx⟩).symm.trans (he' k ⟨x, hx⟩)
+    obtain rfl : m = m' := funext₂ fun k i ↦ (hm k i ⟨x, hx⟩).symm.trans (hm' k i ⟨x, hx⟩)
+    rfl
+
+section Restrict
+
+variable {T : Set (Fin n → ℝ)} (hT : T.Nonempty) (hTS : T ⊆ S)
+
+/-- Restriction of a Lazard delineation to a nonempty subset of its base. -/
+def restrict : LazardDelineation F T where
+  nonempty := hT
+  count := D.count
+  root i x := D.root i (inclusion hTS x)
+  continuous_root i := (D.continuous_root i).comp (continuous_inclusion hTS)
+  strictMono_root x := D.strictMono_root (inclusion hTS x)
+  exponent := D.exponent
+  lazardExponent_eq k x := D.lazardExponent_eq k (inclusion hTS x)
+  multiplicity := D.multiplicity
+  rootMultiplicity_root k i x := D.rootMultiplicity_root k i (inclusion hTS x)
+  exists_root_eq k x := D.exists_root_eq k (inclusion hTS x)
+  exists_multiplicity_pos := D.exists_multiplicity_pos
+
+/-- The restriction of a Lazard delineation has the same number of sections. -/
+@[simp]
+theorem restrict_count : (D.restrict hT hTS).count = D.count := (rfl)
+
+/-- The root functions of the restriction of a Lazard delineation are the original root
+functions on the smaller base. -/
+@[simp]
+theorem restrict_root (i : Fin (D.restrict hT hTS).count) (x : T) :
+    (D.restrict hT hTS).root i x =
+      D.root (Fin.cast (D.restrict_count hT hTS) i) (inclusion hTS x) := (rfl)
+
+/-- The restriction of a Lazard delineation has the same removed base exponents. -/
+@[simp]
+theorem restrict_exponent : (D.restrict hT hTS).exponent = D.exponent := (rfl)
+
+/-- The restriction of a Lazard delineation has the same multiplicities. -/
+@[simp]
+theorem restrict_multiplicity (k : ι) (i : Fin (D.restrict hT hTS).count) :
+    (D.restrict hT hTS).multiplicity k i =
+      D.multiplicity k (Fin.cast (D.restrict_count hT hTS) i) := (rfl)
+
+end Restrict
 
 /-- On a sector of a Lazard delineation, the fibre coordinate is not a root of the Lazard
 evaluation of any member over the base point. -/

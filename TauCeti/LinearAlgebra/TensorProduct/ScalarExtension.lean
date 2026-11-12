@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 
+import Mathlib.LinearAlgebra.Basis.VectorSpace
+
 /-!
 # Scalar extensions of modules
 
@@ -35,11 +37,17 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
 
 * `Module.Basis.range_mk_one_eq_span`: the unit pure tensors are the span over the original
   semiring of a base-changed basis.
-* `TauCeti.TensorProduct.unitTmulEquiv`: a flat module is equivalent to its unit-tensor image
+* `TensorProduct.unitTmulEquiv`: a flat module is equivalent to its unit-tensor image
   under a faithful scalar extension.
-* `TauCeti.TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
+* `TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
 * `TensorProduct.cancelBaseChangeRight` and `TensorProduct.cancelBaseChangeLeft`: cancelling
   a scalar-extended algebra identifies two iterated scalar extensions.
+* `TensorProduct.exists_rTensor_section`, `TensorProduct.exists_smul_linearMap_eq_self`: after
+  tensoring over `R` with a division ring `Q` that is an `R`-algebra, a surjection has an
+  `R`-linear section, and after tensoring with any `R`-algebra `Q`, multiplication by an element
+  whose image in `Q` is a unit has an `R`-linear right inverse.
+* `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
+  scalar-extended modules cancels both copies of the extended coefficient ring.
 -/
 
 public section
@@ -133,6 +141,42 @@ theorem cancelBaseChangeLeft_lTensor (f : N →ₗ[B] N') (z : (B ⊗[R] P) ⊗[
 
 namespace AlgebraTensorModule
 
+section CancelBaseChangeTensor
+
+variable {Q : Type*} [AddCommMonoid Q] [Module R Q]
+
+/-- Tensoring a module with two scalar-extended modules cancels both extended coefficient rings.
+The map sends `n ⊗ ((b ⊗ p) ⊗ (c ⊗ q))` to `(b * c) • n ⊗ (p ⊗ q)`. -/
+def cancelBaseChangeTensor (R B N P Q : Type*) [CommSemiring R] [CommSemiring B]
+    [Algebra R B] [AddCommMonoid N] [Module R N] [Module B N] [IsScalarTower R B N]
+    [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q] :
+    N ⊗[B] ((B ⊗[R] P) ⊗[B] (B ⊗[R] Q)) ≃ₗ[B] N ⊗[R] (P ⊗[R] Q) :=
+  TensorProduct.congr (LinearEquiv.refl B N) (distribBaseChange R B P Q).symm ≪≫ₗ
+    cancelBaseChange R B B N (P ⊗[R] Q)
+
+/-- Cancellation moves both scalar coefficients onto the unextended module factor. -/
+@[simp]
+theorem cancelBaseChangeTensor_tmul (n : N) (b c : B) (p : P) (q : Q) :
+    cancelBaseChangeTensor R B N P Q (n ⊗ₜ[B] ((b ⊗ₜ[R] p) ⊗ₜ[B] (c ⊗ₜ[R] q))) =
+      ((b * c) • n) ⊗ₜ[R] (p ⊗ₜ[R] q) := by
+  simp [cancelBaseChangeTensor]
+
+/-- The inverse cancellation inserts the unit scalar into each extended module factor. -/
+@[simp]
+theorem cancelBaseChangeTensor_symm_tmul (n : N) (p : P) (q : Q) :
+    (cancelBaseChangeTensor R B N P Q).symm (n ⊗ₜ[R] (p ⊗ₜ[R] q)) =
+      n ⊗ₜ[B] ((1 ⊗ₜ[R] p) ⊗ₜ[B] (1 ⊗ₜ[R] q)) := by
+  simp [cancelBaseChangeTensor]
+
+/-- Cancellation after distributing scalar extension recovers the original tensor factor. -/
+@[simp]
+theorem cancelBaseChangeTensor_tmul_distribBaseChange (n : N) (b : B) (z : P ⊗[R] Q) :
+    cancelBaseChangeTensor R B N P Q (n ⊗ₜ[B] distribBaseChange R B P Q (b ⊗ₜ[R] z)) =
+      (b • n) ⊗ₜ[R] z := by
+  simp [cancelBaseChangeTensor]
+
+end CancelBaseChangeTensor
+
 /-- Tensor cancellation commutes with tensoring the underlying linear map on the right. -/
 theorem cancelBaseChange_rTensor (f : N →ₗ[B] N') (z : N ⊗[B] (B ⊗[R] P)) :
     cancelBaseChange R B B N' P (f.rTensor (B ⊗[R] P) z) =
@@ -169,7 +213,7 @@ theorem injective_lTensor_iff_injective_lTensor_restrictScalars (f : N →ₗ[B]
 
 end LinearMap
 
-namespace TauCeti.TensorProduct
+namespace TensorProduct
 
 open Module
 
@@ -227,4 +271,51 @@ instance free_range_mk_one [Module.Free R M] :
 
 end CommSemiring
 
-end TauCeti.TensorProduct
+end TensorProduct
+
+namespace TensorProduct
+
+section FieldSections
+
+variable {R : Type*} [CommSemiring R] (Q : Type*) [DivisionRing Q] [Algebra R Q]
+
+/-- A surjection of `R`-modules has an `R`-linear section after tensoring with a division ring `Q`
+over `R`, because `P ⊗[R] Q` is a free `Q`-module. -/
+theorem exists_rTensor_section {N P : Type*} [AddCommMonoid N] [Module R N]
+    [AddCommMonoid P] [Module R P] {g : N →ₗ[R] P} (hg : Function.Surjective g) :
+    ∃ s : P ⊗[R] Q →ₗ[R] N ⊗[R] Q,
+      ∀ x, TensorProduct.AlgebraTensorModule.rTensor R Q g (s x) = x := by
+  obtain ⟨s₀, hs₀⟩ := Module.projective_lifting_property
+    (TensorProduct.AlgebraTensorModule.lTensor Q Q g) LinearMap.id
+    (LinearMap.lTensor_surjective Q hg)
+  refine ⟨(TensorProduct.comm R Q N).toLinearMap ∘ₗ
+    s₀.restrictScalars R ∘ₗ (TensorProduct.comm R P Q).toLinearMap, fun x ↦ ?_⟩
+  have hcomm (y : Q ⊗[R] N) : TensorProduct.AlgebraTensorModule.rTensor R Q g
+      (TensorProduct.comm R Q N y) = TensorProduct.comm R Q P
+        (TensorProduct.AlgebraTensorModule.lTensor Q Q g y) :=
+    LinearMap.rTensor_comm (g : N →ₗ[R] P) y
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, hcomm,
+    LinearMap.restrictScalars_apply, ← LinearMap.comp_apply, hs₀, LinearMap.id_apply,
+    LinearEquiv.coe_coe, TensorProduct.comm_comm]
+
+end FieldSections
+
+section Invertible
+
+variable {R : Type*} [CommSemiring R] (Q : Type*) [Semiring Q] [Algebra R Q]
+
+/-- If the image of `n : R` in `Q` is a unit, multiplication by `n` on `P ⊗[R] Q`
+has an `R`-linear right inverse. -/
+theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommMonoid P] [Module R P]
+    {n : R} (hn : IsUnit (algebraMap R Q n)) :
+    ∃ u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q, ∀ x, n • u x = x := by
+  refine ⟨(LinearMap.mulLeft R (↑hn.unit⁻¹ : Q)).lTensor P, fun x ↦ ?_⟩
+  induction x using TensorProduct.inductionOn with
+  | tmul p q =>
+    rw [LinearMap.lTensor_tmul, TensorProduct.smul_tmul', TensorProduct.smul_tmul,
+      LinearMap.mulLeft_apply, _root_.Algebra.smul_def, ← mul_assoc, hn.mul_val_inv, one_mul]
+  | add x y hx hy => simp_all
+
+end Invertible
+
+end TensorProduct

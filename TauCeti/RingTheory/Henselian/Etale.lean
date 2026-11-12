@@ -7,8 +7,9 @@ module
 
 public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.Unramified.LocalStructure
-public import TauCeti.RingTheory.Etale.FiniteEtaleSplit
+public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
@@ -30,26 +31,35 @@ uniquely to the localisation.
 Consequently a *strictly Henselian* local ring, one whose residue field is separably closed, has
 no nonsplit finite étale covers (`TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`): a faithfully
 flat finite étale algebra has a `k`-point because `k` is separably closed, and this lifts to a
-section. Such rings need be neither fields nor reduced.
+section. Such rings need be neither fields nor reduced. As the spectrum of a local ring is
+connected, every finite étale algebra over a strictly Henselian local ring is moreover a finite
+product of copies of the base (`Algebra.IsFiniteSplit.of_henselianLocalRing`).
 
 ## Main results
 
 * `TauCeti.HenselianLocalRing.comp_bijective`: over a Henselian local ring, `R`-points of an étale
   algebra are in bijection with its points over the residue field.
+* `TauCeti.HenselianLocalRing.comp_bijective_of_algebra`: the same for an étale algebra over an
+  arbitrary base `R` and a Henselian local `R`-algebra `S`.
 * `TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`: a Henselian local ring with separably
   closed residue field has no nonsplit finite étale covers.
+* `Algebra.IsFiniteSplit.of_henselianLocalRing`: over such a ring every finite étale algebra is a
+  finite product of copies of the base.
 
 ## References
 
 * [Stacks Project, Tag 04GG](https://stacks.math.columbia.edu/tag/04GG), characterisations of
   Henselian local rings by sections of étale algebras.
+* [Stacks Project, Lemma 10.153.11, Tag 08HQ](https://stacks.math.columbia.edu/tag/08HQ), unique
+  lifting of residue field points of an étale algebra to a Henselian local algebra over an
+  arbitrary base.
 * P. Scholze, *Étale cohomology of diamonds*, Lemma 15.3, for rings without nonsplit finite étale
   covers.
 -/
 
 public section
 
-open IsLocalRing Polynomial
+open IsLocalRing Polynomial TensorProduct
 
 universe u
 
@@ -111,6 +121,26 @@ theorem comp_bijective [Algebra.Etale R S] :
   refine ⟨φ.comp (IsScalarTower.toAlgHom R S _), AlgHom.ext fun s ↦ ?_⟩
   simpa [ψ'] using AlgHom.congr_fun hφ (algebraMap S _ s)
 
+section Relative
+
+variable {R S A : Type*} [CommRing R] [CommRing S] [HenselianLocalRing S] [Algebra R S]
+  [CommRing A] [Algebra R A] [Algebra.Etale R A]
+
+/-- The relative form of `comp_bijective`: for a Henselian local `R`-algebra `S` and an étale
+`R`-algebra `A`, reduction modulo the maximal ideal of `S` is a bijection from `R`-algebra maps
+`A → S` to `R`-algebra maps `A → κ(S)`. The base is arbitrary; `comp_bijective` is the case
+`S = R`. -/
+@[stacks 08HQ "relative form, over an arbitrary base"]
+theorem comp_bijective_of_algebra :
+    Function.Bijective
+      ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
+        (A →ₐ[R] S) → A →ₐ[R] ResidueField S) :=
+  -- Base change `A` to the étale `S`-algebra `S ⊗[R] A` and apply `comp_bijective` over `S`.
+  (AlgHom.restrictScalars_comp_bijective_iff R A (Algebra.ofId S (ResidueField S))).mpr
+    (comp_bijective (R := S) (S := S ⊗[R] A))
+
+end Relative
+
 end HenselianLocalRing
 
 /-- A Henselian local ring with separably closed residue field, that is, a strictly Henselian local
@@ -122,5 +152,13 @@ instance IsFiniteEtaleSplit.of_henselianLocalRing (R : Type u) [CommRing R] [Hen
     have ⟨ψ⟩ := IsFiniteEtaleSplit.nonempty_algHom (ResidueField R) T
     have ⟨φ, _⟩ := (HenselianLocalRing.comp_bijective (R := R) (S := T)).2 ψ
     ⟨φ⟩
+
+/-- **Finite étale algebras over a strictly Henselian local ring split**: over a Henselian local
+ring `R` with separably closed residue field, every finite étale `R`-algebra is `R`-isomorphic to
+a finite product `Fin n → R` of copies of `R`. -/
+theorem _root_.Algebra.IsFiniteSplit.of_henselianLocalRing (R : Type u) [CommRing R]
+    [HenselianLocalRing R] [IsSepClosed (ResidueField R)] (T : Type*) [CommRing T] [Algebra R T]
+    [Algebra.Etale R T] [Module.Finite R T] : Algebra.IsFiniteSplit R T :=
+  .of_isFiniteEtaleSplit T
 
 end TauCeti

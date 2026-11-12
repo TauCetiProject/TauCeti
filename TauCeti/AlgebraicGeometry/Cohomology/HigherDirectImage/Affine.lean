@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Basic
-public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.FinitePresentation
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.Flasque
+import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
 import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 import TauCeti.Topology.Sheaves.Exact
@@ -21,10 +23,9 @@ import TauCeti.Topology.Sheaves.Exact
 Let `f : X ⟶ Y` be a morphism of schemes and `M` a sheaf of modules on `X`. The higher direct
 image `R^{q+1} f_* M` vanishes as soon as the cohomology `H^{q+1}(f⁻¹ V, M)` vanishes for the
 members `V` of a basis of the topology of `Y`
-(`Scheme.Hom.isZero_higherDirectImage_succ_of_isBasis`). For an affine morphism `f` with locally
-Noetherian source and a quasi-coherent `M`, the preimages of the affine opens of `Y` are affine
-with Noetherian rings of sections, on which quasi-coherent sheaves have no higher cohomology. So
-all positive higher direct images vanish
+(`Scheme.Hom.isZero_higherDirectImage_succ_of_isBasis`). For an affine morphism `f` and a
+quasi-coherent `M`, the preimages of the affine opens of `Y` are affine, and quasi-coherent sheaves
+have no higher cohomology on them. So all positive higher direct images vanish
 (`Scheme.Hom.isZero_higherDirectImage_succ_of_isAffineHom`). Consequently the higher direct
 images of a coherent sheaf along a finite morphism to a locally Noetherian scheme are coherent:
 the direct image is, and the higher ones are zero
@@ -47,8 +48,7 @@ This is the vanishing half of the description of `R^q f_* M` as the sheaf associ
 * `AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_succ_of_isBasis`: `R^{q+1} f_* M = 0`
   when `H^{q+1}(f⁻¹ V, M) = 0` for the members `V` of a basis of `Y`;
 * `AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_succ_of_isAffineHom`: positive higher
-  direct images of quasi-coherent sheaves along affine morphisms with locally Noetherian source
-  vanish;
+  direct images of quasi-coherent sheaves along affine morphisms vanish;
 * `AlgebraicGeometry.Scheme.Hom.isFinitePresentation_higherDirectImage_of_isFinite`: higher
   direct images of coherent sheaves along finite morphisms to locally Noetherian schemes are
   coherent.
@@ -86,35 +86,25 @@ theorem isZero_higherDirectImage_succ_of_isBasis (M : X.Modules) (q : ℕ) {B : 
     HomologicalComplex.exactAt_iff' _ q (q + 1) (q + 2) (by simp) (by simp)]
   refine (toSheaf Y).reflects_exact_of_faithful _ (TopCat.Sheaf.exact_of_isBasis hB ?_)
   intro V hV s hs
-  -- the image `K` of the resolution `I^•` under `toSheaf X` resolves the abelian sheaf of `M`,
-  -- and its terms are flasque, hence acyclic on `f⁻¹ V`
-  let K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex
-  have hι : (toSheaf X).map (P.ι.f 0) ≫ K.d 0 1 = 0 := by
-    rw [Functor.mapHomologicalComplex_obj_d, ← Functor.map_comp, P.ι_f_zero_comp_complex_d,
-      Functor.map_zero]
-  have hι' : (ShortComplex.mk _ _ hι).Exact :=
-    (ShortComplex.exact_of_f_is_kernel (S := ShortComplex.mk _ _ P.ι_f_zero_comp_complex_d)
-      P.isLimitKernelFork).map (toSheaf X)
-  have hK (j : ℕ) : K.ExactAt (j + 1) :=
-    (K.exactAt_iff' j (j + 1) (j + 2) (by simp) (by simp)).2 ((P.exact_succ j).map (toSheaf X))
-  have hKV (j k : ℕ) : Subsingleton ((K.X j).H' (k + 1) (f ⁻¹ᵁ V)) :=
-    Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque (P.cocomplex.X j) k (f ⁻¹ᵁ V)
+  -- the image of the resolution `I^•` under `toSheaf X` resolves the abelian sheaf of `M`, and
+  -- its terms are flasque, hence acyclic on `f⁻¹ V`
   have : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
   -- the sections over `V` of `f_* I^•` are by definition the sections over `f⁻¹ V` of `I^•`
-  exact Sheaf.H'.exists_d_hom_app_eq_of_resolution (K := K) ((toSheaf X).map (P.ι.f 0)) hι hι' hK
-    (f ⁻¹ᵁ V) hKV q (hM V hV) s hs
+  exact Sheaf.H'.exists_d_hom_app_eq_of_resolution
+    (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
+    (P.map_ι_f_zero_comp_d (toSheaf X)) (P.exact₀_map (toSheaf X)) (P.exactAt_succ_map (toSheaf X))
+    (f ⁻¹ᵁ V) (fun j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
+      (P.cocomplex.X j) k (f ⁻¹ᵁ V)) q (hM V hV) s hs
 
 /-- **Higher direct images along affine morphisms vanish.** For an affine morphism `f : X ⟶ Y`
-with locally Noetherian source and a quasi-coherent sheaf `M` on `X`, every positive higher direct
-image `R^{q+1} f_* M` vanishes. -/
-theorem isZero_higherDirectImage_succ_of_isAffineHom [IsAffineHom f] [IsLocallyNoetherian X]
+and a quasi-coherent sheaf `M` on `X`, every positive higher direct image `R^{q+1} f_* M`
+vanishes. -/
+theorem isZero_higherDirectImage_succ_of_isAffineHom [IsAffineHom f]
     (M : X.Modules) [M.IsQuasicoherent] (q : ℕ) :
     IsZero ((f.higherDirectImage (q + 1)).obj M) :=
   f.isZero_higherDirectImage_succ_of_isBasis M q Y.isBasis_affineOpens fun V hV ↦ by
-    -- the preimage of an affine open is affine, with Noetherian ring of sections
-    have hW : IsAffineOpen (f ⁻¹ᵁ V) := IsAffineOpen.preimage hV f
-    have : IsNoetherianRing Γ(X, f ⁻¹ᵁ V) := IsLocallyNoetherian.component_noetherian ⟨_, hW⟩
-    exact Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen M hW q
+    -- the preimage of an affine open is affine
+    exact Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen M (hV.preimage f) q
 
 /-- **Higher direct images along finite morphisms are coherent.** For a finite morphism
 `f : X ⟶ Y` to a locally Noetherian scheme and a quasi-coherent sheaf `M` of finite type on `X`,
@@ -128,7 +118,6 @@ theorem isFinitePresentation_higherDirectImage_of_isFinite [IsFinite f] [IsLocal
     exact (SheafOfModules.isFinitePresentation Y.ringCatSheaf).prop_of_iso
       ((f.higherDirectImageZeroIso).app M).symm inferInstance
   | succ q =>
-    have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian f
     have hZ := TauCeti.SheafOfModules.isZero_free (S := Y.ringCatSheaf) PEmpty.{u + 1}
     exact (SheafOfModules.isFinitePresentation Y.ringCatSheaf).prop_of_iso
       (hZ.iso (f.isZero_higherDirectImage_succ_of_isAffineHom M q)) inferInstance

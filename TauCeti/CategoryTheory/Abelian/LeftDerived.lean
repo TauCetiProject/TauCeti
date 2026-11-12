@@ -33,6 +33,12 @@ Over a principal ideal domain every module has such a presentation, by a free mo
 kernel, which is again free; applied to the tensor product, this computes `Tor₁` in the Künneth
 and universal coefficient theorems.
 
+The file also records two general facts. The natural transformation `LₙF ⟶ LₙG` induced by
+`α : F ⟶ G` is additive in `α` (`CategoryTheory.NatTrans.leftDerived_add`), so that a derived
+functor depending on a parameter through a natural transformation, such as `Tor` in its underived
+variable, is an additive functor of that parameter. An exact additive functor has no positive left
+derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`).
+
 ## References
 
 * C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
@@ -243,5 +249,33 @@ lemma leftDerived_map_comp_leftDerivedOneIsoKernel_hom (φ : S ⟶ S') :
 end ShortExact
 
 end ShortComplex
+
+section Additive
+
+variable [HasProjectiveResolutions C] {D : Type*} [Category* D] [Abelian D]
+
+/-- The natural transformation between left derived functors induced by a natural transformation
+is additive in it. -/
+@[simp]
+theorem NatTrans.leftDerived_add {F G : C ⥤ D} [F.Additive] [G.Additive] (α β : F ⟶ G) (n : ℕ) :
+    NatTrans.leftDerived (α + β) n = NatTrans.leftDerived α n + NatTrans.leftDerived β n := by
+  ext X
+  have h : (NatTrans.mapHomologicalComplex (α + β) _).app (projectiveResolution X).complex =
+      (NatTrans.mapHomologicalComplex α _).app _ + (NatTrans.mapHomologicalComplex β _).app _ := by
+    ext
+    simp
+  simp only [NatTrans.app_add, (projectiveResolution X).leftDerived_app_eq, h, Functor.map_add,
+    Preadditive.add_comp, Preadditive.comp_add]
+
+/-- An exact additive functor has no positive left derived functors. -/
+theorem Functor.isZero_leftDerived_succ (F : C ⥤ D) [F.Additive] [F.PreservesHomology]
+    (X : C) (q : ℕ) : IsZero ((F.leftDerived (q + 1)).obj X) := by
+  let P := projectiveResolution X
+  refine IsZero.of_iso ?_ (P.isoLeftDerivedObj F (q + 1))
+  rw [HomologicalComplex.homologyFunctor_obj, ← HomologicalComplex.exactAt_iff_isZero_homology,
+    HomologicalComplex.exactAt_iff' _ (q + 2) (q + 1) q (by simp) (by simp)]
+  exact (P.exact_succ q).map F
+
+end Additive
 
 end CategoryTheory

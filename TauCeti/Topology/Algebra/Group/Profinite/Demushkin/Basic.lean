@@ -71,12 +71,15 @@ section Predicate
 variable (p : ℕ) [Fact p.Prime] (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
 
-/-- **The Demushkin predicate** (Labute, p. 106), for a prime `p` and a profinite group `G`: a
+/-- **The Demushkin predicate** (Labute, p. 106), for a prime `p` and a topological group `G`: a
 pro-`p` group whose `H¹(G, 𝔽_p)` is finite-dimensional, whose `H²(G, 𝔽_p)` is one-dimensional, and
 on which the cup product `H¹(G, 𝔽_p) × H¹(G, 𝔽_p) → H²(G, 𝔽_p)` is nondegenerate on both sides.
-The primality and profiniteness of the ambient data are hypotheses of the predicate, so that it is
-only stated on its mathematical domain, and the pro-`p` hypothesis is a field, so that no theorem
-about Demushkin groups applies to a group that satisfies only the cohomological clauses. Finite
+The primality of `p` is a hypothesis of the predicate. Profiniteness is not: no field mentions
+`CompactSpace G` or `TotallyDisconnectedSpace G`, so Lean leaves those section instances out of
+the structure, and the predicate is also defined for topological groups that are not profinite.
+The presentation results below assume both; on profinite groups, its intended mathematical
+domain, this is Labute's notion. The pro-`p` hypothesis is a field, so that no theorem about
+Demushkin groups applies to a group that satisfies only the cohomological clauses. Finite
 generation is a consequence, `IsDemushkin.isTopologicallyFinitelyGenerated`, and is not assumed. -/
 structure IsDemushkin : Prop where
   /-- `G` is a pro-`p` group. -/
@@ -121,9 +124,14 @@ theorem demushkinRank_def (hG : IsDemushkin p G) :
 
 /-- **The rank of a presented Demushkin group is the number of generators** when the relators lie
 in the Frattini subgroup: such a presentation is minimal. -/
-theorem demushkinRank_presentedProP {X : Type v} [Finite X] {rels : Set (freeProP p X)}
+theorem demushkinRank_presentedProP {X : Type v} {rels : Set (freeProP p X)}
     (hrels : rels ⊆ proPFrattini p (freeProP p X)) (hG : IsDemushkin p (presentedProP p X rels)) :
     demushkinRank hG = Nat.card X := by
+  -- the generators are linearly independent in the finite Frattini quotient, so `X` is finite
+  have : Finite X := by
+    have := hG.isTopologicallyFinitelyGenerated.finite_quotient_proPFrattini p
+    exact Finite.of_injective _
+      (presentedProP.linearIndependent_frattiniQuotient_of rels hrels).injective
   rw [demushkinRank_def]
   exact (presentedProP.topologicalGeneratorRankNat_eq_card_iff rels).mpr hrels
 
@@ -169,8 +177,8 @@ theorem exists_mem_proPFrattini_continuousMulEquiv_presentedProP (X : Type u) [F
     exact hG.finrank_cohomFp_two
   have hfin : Finite (H2 G (ZMod p)) :=
     (cohomFpLinearEquivH2 p G htriv).toEquiv.finite_iff.1 hG.finite_cohomFp_two
-  have hfg := (presentedProP.finite_H2_iff rels hrels e htriv).1 hfin
-  obtain ⟨s, hs, hsR⟩ := (presentedProP.finrank_H2_le_iff rels hrels e htriv hfg 1).1 h2.le
+  have hfg := (presentedProP.finite_H2_iff rels hrels e).1 hfin
+  obtain ⟨s, hs, hsR⟩ := (presentedProP.finrank_H2_le_iff rels hrels e hfg 1).1 h2.le
   obtain ⟨x, hx⟩ := Finset.card_le_one_iff_subset_singleton.1 hs
   -- The closed normal closure of the relators is that of the single relator `x`.
   have hR : (normalClosure rels).topologicalClosure =

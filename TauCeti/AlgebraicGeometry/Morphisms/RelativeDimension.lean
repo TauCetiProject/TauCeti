@@ -53,7 +53,8 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.of_isPullback`: stability under base change of
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field`: over a field, the condition bounds
-  the Krull dimension of the source.
+  the Krull dimension of the source, hence the coheight of every point
+  (`TauCeti.AlgebraicGeometry.coheight_le_of_relativeDimensionLE_of_field`).
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_SpecMap_iff`: for `Spec S ⟶ Spec R`, the
   condition bounds the Krull dimensions of the fibre rings `κ(p) ⊗[R] S`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE`: for a morphism of
@@ -121,16 +122,11 @@ theorem isOpenEmbedding_fiber (i : Z ⟶ X) [IsOpenImmersion i] (f : X ⟶ Y) (y
     IsOpenEmbedding ((f.fiberHomeo y).symm ∘ (f ⁻¹' {y}).restrictPreimage i) :=
   (f.fiberHomeo y).symm.isOpenEmbedding.comp (i.isOpenEmbedding.restrictPreimage _)
 
-private theorem preimage_comp (i : Z ⟶ X) (f : X ⟶ Y) (s : Set Y) :
-    (i ≫ f) ⁻¹' s = i ⁻¹' (f ⁻¹' s) := by
-  ext
-  simp
-
 /-- Precomposing with an embedding restricts a fibre to a subspace of that fibre. -/
 private theorem topologicalKrullDim_preimage_comp_le (i : Z ⟶ X) (hi : IsEmbedding i)
     (f : X ⟶ Y) (y : Y) :
     topologicalKrullDim ((i ≫ f) ⁻¹' {y}) ≤ topologicalKrullDim (f ⁻¹' {y}) := by
-  rw [preimage_comp]
+  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
   exact (hi.restrictPreimage (f ⁻¹' {y})).isInducing.topologicalKrullDim_le
 
 /-- Precomposing with an embedding whose range contains the fibre over `y` does not change that
@@ -138,7 +134,7 @@ fibre. -/
 private theorem topologicalKrullDim_preimage_comp_eq (i : Z ⟶ X) (hi : IsEmbedding i)
     (f : X ⟶ Y) (y : Y) (hy : f ⁻¹' {y} ⊆ Set.range i) :
     topologicalKrullDim ((i ≫ f) ⁻¹' {y}) = topologicalKrullDim (f ⁻¹' {y}) := by
-  rw [preimage_comp]
+  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
   refine IsHomeomorph.topologicalKrullDim_eq _ <| isHomeomorph_iff_isEmbedding_surjective.mpr
     ⟨hi.restrictPreimage (f ⁻¹' {y}), fun x ↦ ?_⟩
   obtain ⟨z, hz⟩ := hy x.2
@@ -206,7 +202,7 @@ instance RelativeDimensionLE.isZariskiLocalAtSource (d : ℕ) :
     (fun i ↦ (U i).ι.isOpenEmbedding.restrictPreimage _) hcover]
   refine iSup_le fun i ↦ ?_
   have := hf i
-  rw [← preimage_comp]
+  rw [← Set.preimage_comp, ← TopCat.coe_comp, ← Scheme.Hom.comp_base]
   exact topologicalKrullDim_preimage_le _ y
 
 /-- Having relative dimension at most `d` is local on the target. -/
@@ -355,6 +351,13 @@ theorem relativeDimensionLE_iff_of_field {K : Type u} [Field K] (f : X ⟶ Spec 
   simp_rw [relativeDimensionLE_iff_topologicalKrullDim_preimage_le, hdim]
   obtain ⟨y⟩ : Nonempty (PrimeSpectrum K) := inferInstance
   exact ⟨fun h ↦ h y, fun h _ ↦ h⟩
+
+/-- Every point of a scheme of relative dimension at most `d` over a field has coheight at most
+`d`. -/
+theorem coheight_le_of_relativeDimensionLE_of_field {K : Type u} [Field K]
+    (f : X ⟶ Spec (.of K)) [RelativeDimensionLE d f] (x : X) : Order.coheight x ≤ d := by
+  exact_mod_cast (coheight_le_topologicalKrullDim x).trans
+    ((relativeDimensionLE_iff_of_field f).mp inferInstance)
 
 end AlgebraicGeometry
 

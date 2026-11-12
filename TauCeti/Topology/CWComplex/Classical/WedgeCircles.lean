@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Topology.WedgeSum
+import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 import TauCeti.Topology.MetricSpace.Pseudo.Pi
 import TauCeti.Topology.Separation.InvFunOn
 
@@ -369,16 +370,7 @@ instance [Finite S] : RelCWComplex.Finite (univ : Set (WedgeSum fun _ : S ↦ (1
 theorem skeletonLT_one_circleCWComplex :
     (skeletonLT (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle))) 1 :
       Set (WedgeSum fun _ : S ↦ (1 : Circle))) = {base (fun _ : S ↦ (1 : Circle))} := by
-  refine subset_antisymm (fun y hy ↦ ?_) (singleton_subset_iff.2 ?_)
-  · obtain ⟨⟨⟩⟩ | ⟨m, hm, i, hy⟩ := mem_skeletonLT_iff.1 hy
-    have hm : m < 1 := by exact_mod_cast hm
-    obtain rfl : m = 0 := by omega
-    rwa [openCell_zero_eq_singleton, map_zero_circleCWComplex] at hy
-  · have hp : base (fun _ : S ↦ (1 : Circle)) ∈
-        closedCell (C := (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))) 0 default := by
-      rw [closedCell_zero_eq_singleton, map_zero_circleCWComplex]
-      exact mem_singleton _
-    exact closedCell_subset_skeletonLT _ _ hp
+  simp [skeletonLT_one_eq_insert]
 
 end WedgeSum
 

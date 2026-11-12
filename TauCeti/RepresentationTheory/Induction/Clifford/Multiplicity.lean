@@ -37,7 +37,7 @@ What makes the transport work is the one identity Clifford theory runs on, `ρ g
 ∘ ρ g` (`Representation.apply_conjNormal_inv`, read in the other direction).  On the
 restriction viewed as a module over `k[N]`, it says that translation by `ρ g`
 (`Representation.asModuleConjEquiv`) is not `k[N]`-linear but **semilinear over the conjugation
-automorphism** `MonoidAlgebra.conjNormalAlgAut k N g` of `k[N]`
+automorphism** `MonoidAlgebra.conjNormalAlgAut k k N g` of `k[N]`
 (`Representation.asModuleConjEquiv_smul`).  A single semilinear map would not act on hom
 spaces at all; but conjugating a map `f` -- precomposing with translation by `ρ g` and postcomposing
 with translation back by `ρ g⁻¹` -- twists it by `conjNormalAlgAut g` and then by
@@ -50,6 +50,11 @@ Combining the transport with the single-orbit theorem gives the common dimension
 dimension.  The same argument on the subspaces themselves, where the twist is invisible because only
 the `k`-action is retained, shows that all the constituents have the same **dimension** as well;
 there it is `TauCeti.Representation.conjSubrepEquiv` from `Clifford/Basic.lean` that does the work.
+
+The decomposition of the restriction itself, into `e` copies of each conjugate of one constituent
+indexed by the cosets of its inertia group, is not proved here: it is `FDRep.clifford_restrict_iso`
+in `Clifford/Equivalence.lean`, and its character form is `TauCeti.clifford_restrict_character` in
+`Clifford/Decomposition.lean`.
 
 ## Main definitions
 
@@ -97,12 +102,6 @@ an additive commutative monoid; a field enters only where the single-orbit theor
 
 ## References
 
-This proves the multiplicity half of the **Clifford's theorem** milestone of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`: "its irreducible
-`N`-constituents form a single `G`-orbit, all with the same multiplicity `e`".  The remaining part
-of that milestone, the packaged decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V` indexed by a transversal
-of the inertia group, is not proved here.
-
 The mathematics is the classical argument of C. W. Curtis and I. Reiner, *Representation Theory of
 Finite Groups and Associative Algebras*, §49.
 -/
@@ -125,7 +124,7 @@ variable {k G V : Type*} [CommSemiring k] [Group G] [AddCommMonoid V] [Module k 
 
 /-- **Translation by `ρ g`**, read on the restriction to `N` viewed as a module over `k[N]`.  As a
 map of `k`-modules it is an isomorphism, with inverse translation by `ρ g⁻¹`; it is *not*
-`k[N]`-linear, only semilinear over `MonoidAlgebra.conjNormalAlgAut k N g`
+`k[N]`-linear, only semilinear over `MonoidAlgebra.conjNormalAlgAut k k N g`
 (`Representation.asModuleConjEquiv_smul`). -/
 noncomputable def asModuleConjEquiv (g : G) :
     _root_.Representation.asModule (ρ.comp N.subtype) ≃ₗ[k]
@@ -161,7 +160,7 @@ basis to all of `k[N]` by linearity.  It is the reason a single translation does
 theorem asModuleConjEquiv_smul (g : G) (a : k[N])
     (v : _root_.Representation.asModule (ρ.comp N.subtype)) :
     asModuleConjEquiv ρ (N := N) g (a • v)
-      = conjNormalAlgAut k N g a • asModuleConjEquiv ρ (N := N) g v := by
+      = conjNormalAlgAut k k N g a • asModuleConjEquiv ρ (N := N) g v := by
   -- `apply_conjNormal_inv` read in the other direction: acting by `n` and then by `g` is acting by
   -- `g` and then by the conjugate `g n g⁻¹`.
   have hconj : ∀ (n : N) (w : V), ρ g (ρ (n : G) w) = ρ (MulAut.conjNormal g n : G) (ρ g w) :=
@@ -225,7 +224,7 @@ theorem conjSubrepMap_add (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (x y : σ.as
 /-- Translation on subrepresentations is semilinear over conjugation. -/
 @[simp]
 theorem conjSubrepMap_smul (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (a : k[N]) (x : σ.asSubmodule) :
-    conjSubrepMap ρ g h (a • x) = conjNormalAlgAut k N g a • conjSubrepMap ρ g h x :=
+    conjSubrepMap ρ g h (a • x) = conjNormalAlgAut k k N g a • conjSubrepMap ρ g h x :=
   Subtype.ext (by simp)
 
 omit [N.Normal] in

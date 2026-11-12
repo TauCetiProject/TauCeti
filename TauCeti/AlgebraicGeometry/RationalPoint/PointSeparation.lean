@@ -12,9 +12,8 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finitenes
 /-!
 # Rational points of a curve of positive genus are separated by their ideal sheaves
 
-Let `Y` be a smooth proper integral curve over a field `K`, with `K` algebraically closed in the
-function field `K(Y)` and with positive genus. Two rational points `s` and `t` of `Y` whose ideal
-line bundles `𝒪(-s)` and `𝒪(-t)` are isomorphic coincide.
+Let `Y` be a smooth proper integral curve over a field `K` with positive genus. Two rational
+points `s` and `t` of `Y` whose ideal line bundles `𝒪(-s)` and `𝒪(-t)` are isomorphic coincide.
 
 The ideal sheaf of a rational point `s` hitting the closed point `p` is `𝒪(-p)`
 (`AlgebraicGeometry.Scheme.Hom.kerSheafIsoNegPoint`), so isomorphic ideal sheaves make the two
@@ -50,10 +49,9 @@ variable {K : Type u} [Field K] {Y : Scheme.{u}} [Y.Over (Spec (.of K))] [IsInte
   [IsProper (Y ↘ Spec (.of K))] [SmoothOfRelativeDimension 1 (Y ↘ Spec (.of K))]
 
 /-- **Rational points of a curve of positive genus are separated by their ideal sheaves.** Let
-`Y` be a smooth proper integral curve over a field `K`, with `K` algebraically closed in the
-function field `K(Y)` and with positive genus. If two rational points `s` and `t` have isomorphic
-ideal line bundles `𝒪(-s) ≅ 𝒪(-t)`, then `s = t`. -/
-theorem eq_of_mk_toInvertibleSheaf_eq_of_genus_pos (hk : IsIntegrallyClosedIn K Y.functionField)
+`Y` be a smooth proper integral curve over a field `K` with positive genus. If two rational points
+`s` and `t` have isomorphic ideal line bundles `𝒪(-s) ≅ 𝒪(-t)`, then `s = t`. -/
+theorem eq_of_mk_toInvertibleSheaf_eq_of_genus_pos
     (hg : haveI := finiteDimensional_cohomology_one_trivial_of_smooth K Y; 0 < Y.genus K)
     {s t : Spec (.of K) ⟶ Y} (hs : s ≫ (Y ↘ Spec (.of K)) = 𝟙 (Spec (.of K)))
     (ht : t ≫ (Y ↘ Spec (.of K)) = 𝟙 (Spec (.of K)))
@@ -94,6 +92,8 @@ theorem eq_of_mk_toInvertibleSheaf_eq_of_genus_pos (hk : IsIntegrallyClosedIn K 
     ((hclass s x rfl _).trans (h.trans (hclass t y rfl _).symm))
   rw [WeilDivisor.OrderSystem.linearlyEquivalent_iff, neg_sub_neg,
     ← WeilDivisor.OrderSystem.linearlyEquivalent_iff] at hlin
+  have hk : IsIntegrallyClosedIn K Y.functionField :=
+    Y.isIntegrallyClosedIn_functionField_of_section hs (x := (x : Y)) rfl
   have hxy : x = y := SchemeWeilDivisor.eq_of_linearlyEquivalent_ofPoint_of_genus_pos K hk hg
     (residueDegree_eq_one_of_section hs _) hlin.symm
   have : IsIso ((Y ↘ Spec (.of K)).residueFieldMap (s (IsLocalRing.closedPoint K))) :=

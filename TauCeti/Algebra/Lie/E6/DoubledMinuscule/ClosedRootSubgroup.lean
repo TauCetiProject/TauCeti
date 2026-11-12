@@ -53,13 +53,11 @@ a pinned Chevalley--Demazure group scheme, or that the `E₆` diagram symmetry a
   `TauCeti/Algebra/Lie/E6/Minuscule/ClosedRootSubgroup.lean`, the same argument on the
   `27`-dimensional minuscule carrier.
 
-## Roadmap
+## Applications
 
 This supplies the closed-root-subgroup component of a pinning for the explicit full-weight
-doubled type-`E₆` carrier, in the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. That carrier is the one the graph-twisted family
-`²E₆(q)` of milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` needs, the `E₆` diagram
-symmetry not acting on the `27`-dimensional one.
+doubled type-`E₆` carrier. That carrier is the one the graph-twisted family `²E₆(q)` needs, the
+`E₆` diagram symmetry not acting on the `27`-dimensional one.
 -/
 
 public section
@@ -76,26 +74,17 @@ noncomputable section
 
 /-! ## A unit-coefficient edge at every simple root -/
 
-/-- A minuscule weight whose pairing with the given simple coroot is `-1`. The choice is internal
-to the coordinate proof; no public declaration depends on which suitable weight is selected. -/
-private noncomputable def negativeWeightIndex (i : Fin 6) : Fin 27 :=
-  (exists_e6MinusculeWeight_apply_eq_neg_one i).choose
-
-private theorem e6MinusculeWeight_negativeWeightIndex (i : Fin 6) :
-    e6MinusculeWeight (negativeWeightIndex i) i = -1 :=
-  (exists_e6MinusculeWeight_apply_eq_neg_one i).choose_spec
-
 /-- The block coordinate at which the selected edge of a raising or lowering root generator
 starts. It lies in the `V(ϖ₁)` block, where the structure constant is `1`. -/
 private def blockSource : Fin 6 ⊕ Fin 6 → Fin 27 ⊕ Fin 27
-  | .inl i => .inl (negativeWeightIndex i)
-  | .inr i => .inl (e6MinusculeReflection i (negativeWeightIndex i))
+  | .inl i => .inl (e6MinusculeNegOneIndex i)
+  | .inr i => .inl (e6MinusculeReflection i (e6MinusculeNegOneIndex i))
 
 /-- The block coordinate at which the selected edge of a raising or lowering root generator
 ends. -/
 private def blockTarget : Fin 6 ⊕ Fin 6 → Fin 27 ⊕ Fin 27
-  | .inl i => .inl (e6MinusculeReflection i (negativeWeightIndex i))
-  | .inr i => .inl (negativeWeightIndex i)
+  | .inl i => .inl (e6MinusculeReflection i (e6MinusculeNegOneIndex i))
+  | .inr i => .inl (e6MinusculeNegOneIndex i)
 
 /-- The source matrix coordinate of the selected edge, in the fifty-four coordinates the carrier
 is cut out in. -/
@@ -125,14 +114,13 @@ private theorem rep_serreRootGenerator_matrixBasis (k : Fin 6 ⊕ Fin 6) :
       rw [TauCeti.serreRootGenerator_inl, rep_ι_apply, rationalSerreRepresentation_serreE,
         Matrix.mulVec_single_one]
       ext a
-      simp [blockSource, blockTarget, raisingMatrixQ_apply, Pi.single_apply,
-        e6MinusculeWeight_negativeWeightIndex]
+      simp [blockSource, blockTarget, raisingMatrixQ_apply, Pi.single_apply]
   | inr i =>
       rw [TauCeti.serreRootGenerator_inr, rep_ι_apply, rationalSerreRepresentation_serreF,
         Matrix.mulVec_single_one]
       ext a
       simp [blockSource, blockTarget, loweringMatrixQ_apply, Pi.single_apply,
-        e6MinusculeWeight_negativeWeightIndex, e6MinusculeReflection_apply_apply]
+        e6MinusculeReflection_apply_apply]
 
 private theorem rep_serreRootGenerator_sq_apply_matrixBasis (k : Fin 6 ⊕ Fin 6) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
@@ -144,7 +132,7 @@ private theorem rep_serreRootGenerator_sq_apply_matrixBasis (k : Fin 6 ⊕ Fin 6
     (fun f : Module.End ℚ ((Fin 27 ⊕ Fin 27) → ℚ) =>
       f ((matrixBasis (rootSource k) : lattice) : (Fin 27 ⊕ Fin 27) → ℚ))
     (rep_serreRootGenerator_sq k)
-  simpa only [pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-! ## Closed root-subgroup morphisms -/
 
@@ -175,6 +163,18 @@ theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
     mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
     ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at h
   exact Function.Surjective.of_comp h
+
+/-- Surjectivity of each numbered root-subgroup coordinate map persists under arbitrary
+commutative base change, in the transported quotient presentation. -/
+theorem rootSubgroupToBaseChangeCoordinateMap_surjective
+    (A : Type*) [CommRing A] (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupToBaseChangeCoordinateMap A k).hom := by
+  rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap A k]
+  exact (AdditiveGroup.gaScalarTensorBialgEquiv (k := ℤ) (K := A)).surjective.comp
+    ((CommHopfAlgCat.baseChangeMap_surjective (K := A)
+      (rootSubgroupIntegralCoordinateMap k)
+      (rootSubgroupIntegralCoordinateMap_surjective k)).comp
+      (ConcreteCategory.bijective_of_isIso (baseChangeCoordinateIso A).hom).2)
 
 /-- **Every numbered root-subgroup map into the doubled type-`E₆` minuscule carrier is a closed
 immersion.** Its scheme-theoretic image is therefore a closed copy of `𝔾ₐ`, as a pinning requires

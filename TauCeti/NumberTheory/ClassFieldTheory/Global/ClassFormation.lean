@@ -231,7 +231,7 @@ theorem globalInv_res {small big : NormalLayer (AbsoluteGaloisGroup K)}
     globalInv K small (R.cohomologyRes (globalFormation K) 2 x) =
       R.relativeDegree • globalInv K big x := by
   rw [globalInv_eq_descendedInv,
-    descendedInv_res _ _ _ _ _ (fun R y ↦ ideleSumLocalInv_res K R y)]
+    descendedInv_res _ _ _ _ _ (ideleSumLocalInv_res K)]
 
 /-- **Conjugation preserves the global invariant.** -/
 @[simp]
@@ -240,14 +240,14 @@ theorem globalInv_conj (L : NormalLayer (AbsoluteGaloisGroup K)) (g : AbsoluteGa
     globalInv K (L.conjugate g) ((L.conjugateCohomologyIso (globalFormation K) g 2).hom x) =
       globalInv K L x := by
   rw [globalInv_eq_descendedInv,
-    descendedInv_conj _ _ _ _ _ (fun L g y ↦ ideleSumLocalInv_conj K L g y)]
+    descendedInv_conj _ _ _ _ _ (ideleSumLocalInv_conj K)]
 
 /-- **The global invariant is injective**, because the idele-class `H¹` vanishes and the sum of
 the local invariants vanishes only on the classes that die in the idele classes. -/
 theorem globalInv_injective (L : NormalLayer (AbsoluteGaloisGroup K)) :
     Function.Injective (globalInv K L) := by
   rw [globalInv_eq_descendedInv]
-  exact descendedInv_injective _ _ _ _ _ subsingleton_h1_globalFormation
+  exact descendedInv_injective _ _ _ _ _ (subsingleton_h1_globalFormation (K := K))
     (fun _ _ h ↦ (ideleToClassH2_apply K _ _).symm.trans (ideleToClassH2_eq_zero_iff.2 h)) L
 
 /-- **The image of the global invariant of a layer of degree `n` is the `n`-torsion of `ℚ/ℤ`.** -/
@@ -255,7 +255,7 @@ theorem range_globalInv (L : NormalLayer (AbsoluteGaloisGroup K)) :
     Set.range (globalInv K L) =
       (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) L.degree : Set (AddCircle (1 : ℚ))) := by
   rw [globalInv_eq_descendedInv]
-  exact range_descendedInv _ _ _ _ _ subsingleton_h1_globalFormation
+  exact range_descendedInv _ _ _ _ _ (subsingleton_h1_globalFormation (K := K))
     (fun _ _ h ↦ (ideleToClassH2_apply K _ _).symm.trans (ideleToClassH2_eq_zero_iff.2 h))
     (fun R y ↦ ideleSumLocalInv_res K R y) exists_refinement_ideleSumLocalInv_eq L
 

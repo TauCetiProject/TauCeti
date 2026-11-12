@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Lift
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
-import Mathlib.CategoryTheory.Sites.SheafOfTypes
 
 /-!
 # Projective orbits represent homogeneous quotients
@@ -23,9 +22,9 @@ scheme of the line through `m`: its fppf sheaf of points is isomorphic to `G/N`,
 with the projections from `G`. Every closed subgroup admits such a vector, so `G/N` is
 represented by a scheme, locally closed in a projective space.
 
-The orbit scheme defines an fppf sheaf on affine `k`-schemes because the fppf topology is
-subcanonical. The orbit map from `G` is invariant under `N` and descends to `G/N`. The
-descended map is locally injective because the fibers of the orbit map are exactly the left
+The orbit scheme defines an fppf sheaf on affine `k`-schemes, `CommAlgCat.pointsSheaf`, because
+the fppf topology is subcanonical. The orbit map from `G` is invariant under `N` and descends to
+`G/N`. The descended map is locally injective because the orbit-map fibers are exactly the left
 cosets of `N` (`Comodule.projectiveOrbitMap_SpecMap_eq_iff_exists_units_matrixCoefficient`),
 and it is locally surjective because every point of the orbit lifts to `G` after a faithfully
 flat, finitely presented extension (`Comodule.exists_faithfullyFlat_lift_toProjectiveOrbit`).
@@ -63,12 +62,7 @@ variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k
 beside the fppf homogeneous quotient. -/
 noncomputable def projectiveOrbitPointsSheaf (m : M) (hm : Module.IsUnimodular k m) :
     Sheaf (CommAlgCat.fppfTopology k) (Type (u + 1)) :=
-  ⟨((algSpec (CommRingCat.of k)).op ⋙
-      yoneda.obj (Over.mk (projectiveOrbitToSpec (H := H) m hm))) ⋙ uliftFunctor.{u + 1, u},
-    (isSheaf_iff_isSheaf_of_type _ _).mpr <| Presieve.isSheaf_comp_uliftFunctor _ <|
-      (isSheaf_iff_isSheaf_of_type _ _).mp <| (algSpec (CommRingCat.of k)).op_comp_isSheaf _ _
-        ((Scheme.fppfTopology.over (Spec (CommRingCat.of k))).yoneda.obj
-          (Over.mk (projectiveOrbitToSpec (H := H) m hm)))⟩
+  CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm))
 
 /-- The points of the projective orbit scheme over `Spec A` are its morphisms from `Spec A`
 over the base field. -/

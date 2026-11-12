@@ -36,11 +36,13 @@ Brauer-valued invariant carries exactly the information of the local sign-valued
 
 public section
 
+universe u
+
 namespace TauCeti
 
 open _root_.ContinuousCohomology RegularFormClass
 
-variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
 
 /-- **The second Stiefel–Whitney class over a local field is the local Hasse invariant**: two

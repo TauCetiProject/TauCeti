@@ -21,6 +21,9 @@ semidirect product are naturally the ordinary `SemidirectProduct` of the point g
 the group-object laws without choosing elements of the ambient category and exposes the familiar
 component formulas to downstream constructions.
 
+For two normal closed subgroup schemes, conjugation supplies the action below; multiplication from
+their semidirect product is then a group-scheme morphism whose image is their product.
+
 ## Main declarations
 
 * `TauCeti.GrpObj.Action`: an internal action by group automorphisms.
@@ -33,10 +36,6 @@ component formulas to downstream constructions.
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§15--16.
 * J. S. Milne, *Algebraic Groups* (2017), §6.a.
-
-This is a prerequisite for Layer 5, "The unipotent radical", of the ReductiveGroups roadmap.
-For two normal closed subgroup schemes, conjugation supplies the action below; multiplication
-from their semidirect product is then a group-scheme morphism whose image is their product.
 -/
 
 public section

@@ -8,6 +8,8 @@ module
 public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
+import TauCeti.GroupTheory.GroupAction.Closure
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # The number of orbits of a permutation
@@ -34,8 +36,15 @@ permutations of the same type.
   `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints` of `TauCeti.GroupTheory.Perm.Partition`.
 * `TauCeti.orbitCount_eq_one_of_forall_sameCycle`: a transitive permutation of a nonempty type has
   orbit count one.
+* `TauCeti.exists_not_sameCycle_apply_of_isPretransitive_closure`: if `σ` has more than one
+  orbit but generates a transitive group together with a set `S`, then some member of `S`
+  moves a point to another orbit of `σ`.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
+* `Equiv.Perm.SameCycle.of_forall_sameCycle_apply`: a permutation moving every point within its
+  cycle of `π` has each of its cycles inside a cycle of `π`.
+* `TauCeti.orbitCount_le_card_orbitRelQuotient`: a subgroup of permutations moving every point
+  within its cycle of `π` has at least as many orbits as `π`.
 * `Equiv.Perm.card_le_orderOf_mul_orbitCount`: conversely, the number of points is at most the
   order of the permutation times its number of orbits, each orbit length dividing the order.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
@@ -71,7 +80,8 @@ The two cross-type results, `TauCeti.orbitCount_add_one_eq_of_semiconj` and
 bijectively onto the orbits of `τ` other than a fixed point `p` of `τ`. Its `SameCycle` hypothesis
 comes from Mathlib's `Equiv.Perm.sameCycle_extendDomain` for adjoining a point. For splicing a
 point into an orbit, a one-step statement is propagated over all integer powers by the private
-lemma `sameCycle_zpow_of_forall_sameCycle_apply`. `TauCeti.orbitCount_add_one_of_merge` does not
+lemma `sameCycle_zpow_of_forall_sameCycle_apply`, whose public form is
+`Equiv.Perm.SameCycle.map_of_forall_sameCycle_apply`. `TauCeti.orbitCount_add_one_of_merge` does not
 go through that lemma: it exhibits the orbits of `τ` as the orbits of `σ` with one class removed
 and finishes through `Equiv.optionSubtypeNe`.
 -/
@@ -112,6 +122,30 @@ theorem orbitCount_eq_one_of_forall_sameCycle [Nonempty α] {σ : Equiv.Perm α}
     ⟨fun q r => Quotient.inductionOn q fun x => Quotient.inductionOn r fun y =>
       Quotient.sound (h x y)⟩
   exact Nat.card_unique
+
+/-- A permutation of a finite type has at most one orbit exactly when any two points lie in the
+same cycle. On a nonempty type this means exactly one orbit, and on the empty type there are
+none. -/
+theorem orbitCount_le_one_iff [Finite α] {σ : Equiv.Perm α} :
+    orbitCount σ ≤ 1 ↔ ∀ x y, σ.SameCycle x y := by
+  rw [orbitCount_def, Finite.card_le_one_iff_subsingleton]
+  refine ⟨fun _ x y ↦ Quotient.exact (Subsingleton.elim (Quotient.mk (SameCycle.setoid σ) x)
+    (Quotient.mk _ y)), fun h ↦ ⟨fun q r ↦ Quotient.inductionOn₂ q r fun x y ↦
+      Quotient.sound (h x y)⟩⟩
+
+/-- If a permutation `σ` with more than one orbit generates, together with a set `S` of
+permutations, a subgroup acting transitively, then some permutation in `S` moves some point to a
+different orbit of `σ`. -/
+theorem exists_not_sameCycle_apply_of_isPretransitive_closure [Nonempty α] {σ : Equiv.Perm α}
+    {S : Set (Equiv.Perm α)} (hconn : MulAction.IsPretransitive (Subgroup.closure (insert σ S)) α)
+    (hσ : orbitCount σ ≠ 1) : ∃ g ∈ S, ∃ x, ¬ σ.SameCycle x (g x) := by
+  by_contra! h
+  refine hσ (orbitCount_eq_one_of_forall_sameCycle fun x y ↦ Quotient.exact
+    (apply_eq_apply_of_isPretransitive_closure (f := Quotient.mk (SameCycle.setoid σ)) ?_
+      hconn x y))
+  rintro g (rfl | hg) z
+  · exact Quotient.sound ⟨-1, by simp⟩
+  · exact (Quotient.sound (h g hg z)).symm
 
 /-- A permutation of a finite type has at most as many orbits as there are points. -/
 theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :
@@ -256,6 +290,38 @@ private theorem sameCycle_zpow_of_forall_sameCycle_apply {π : Equiv.Perm α}
   | pred k ih =>
     rw [sub_eq_add_neg, zpow_add, hneg, Equiv.Perm.mul_apply]
     exact (hinv x).trans (ih (σ⁻¹ x))
+
+/-- If a map `g` carries every point and its image under `σ` into one cycle of `π`, then it carries
+each cycle of `σ` into a cycle of `π`. -/
+theorem _root_.Equiv.Perm.SameCycle.map_of_forall_sameCycle_apply {π : Equiv.Perm α}
+    {σ : Equiv.Perm β} {g : β → α} (h : ∀ x, π.SameCycle (g x) (g (σ x))) {x y : β}
+    (hxy : σ.SameCycle x y) : π.SameCycle (g x) (g y) := by
+  obtain ⟨i, rfl⟩ := hxy
+  exact sameCycle_zpow_of_forall_sameCycle_apply h i x
+
+/-- If `τ` moves every point within its cycle of `π`, then each cycle of `τ` lies in a cycle of
+`π`. -/
+theorem _root_.Equiv.Perm.SameCycle.of_forall_sameCycle_apply {π τ : Equiv.Perm α}
+    (h : ∀ x, π.SameCycle x (τ x)) {x y : α} (hxy : τ.SameCycle x y) : π.SameCycle x y :=
+  hxy.map_of_forall_sameCycle_apply (g := id) h
+
+/-- If every permutation in a subgroup `H` moves every point within its cycle of `π`, then `H` has
+at least as many orbits as `π`: each orbit of `H` lies in a cycle of `π`. -/
+theorem orbitCount_le_card_orbitRelQuotient [Finite α] {π : Equiv.Perm α}
+    {H : Subgroup (Equiv.Perm α)} (hH : ∀ g ∈ H, ∀ x, π.SameCycle x (g x)) :
+    orbitCount π ≤ Nat.card (MulAction.orbitRel.Quotient H α) := by
+  let f : MulAction.orbitRel.Quotient H α → Quotient (SameCycle.setoid π) :=
+    fun q => Quotient.liftOn' q (fun x => Quotient.mk'' x) fun a b hab => by
+      apply Quotient.sound
+      rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hab
+      obtain ⟨g, rfl⟩ := hab
+      exact (hH g g.2 b).symm
+  have hf : Function.Surjective f := by
+    intro q
+    induction q using Quotient.inductionOn'
+    exact ⟨Quotient.mk'' _, rfl⟩
+  rw [orbitCount_def]
+  exact Nat.card_le_card_of_surjective f hf
 
 /-- The counting step shared by the two results below. A map `F : α → β` whose fibrewise behaviour
 identifies the `σ`-orbits with the `τ`-orbits, and whose image is exactly the complement of a

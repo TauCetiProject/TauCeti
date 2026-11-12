@@ -115,6 +115,11 @@ lemma cotangentMap_augmentation (x : AugmentationIdeal R A) :
   ext
   simp [hx]
 
+/-- Every element of the cotangent space is the cotangent class of some element. -/
+lemma cotangentMap_surjective : Function.Surjective (cotangentMap R A) := fun c ↦ by
+  obtain ⟨a, rfl⟩ := (AugmentationIdeal R A).toCotangent_surjective c
+  exact ⟨a, cotangentMap_augmentation R A a⟩
+
 /-- The cotangent displacement of a product satisfies the Leibniz rule for the
 action through the counit. -/
 lemma cotangentMap_mul (a b : A) :
@@ -251,7 +256,7 @@ noncomputable def cotangentLinearEquiv :
     ext a
     apply (Bialgebra.CounitAlgebra.algEquivSelf R A B).injective
     simp only [algEquivSelf_ofCotangentLinearMap_apply, LinearMap.add_apply,
-      Derivation.add_apply, map_add]
+      _root_.add_apply, map_add]
   map_smul' b f := by
     ext a
     apply (Bialgebra.CounitAlgebra.algEquivSelf R A B).injective
@@ -513,6 +518,40 @@ lemma tangentScalarExtensionEquiv_lTensor_dualCotangentMap {A' : Type*} [CommRin
       tangentScalarExtensionEquiv_tmul_apply, ← cotangentLinearEquiv_apply_apply,
       ← cotangentLinearEquiv_apply_apply, cotangentLinearEquiv_dualCotangentMap,
       derivationComp_apply]
+
+open TrivSqZeroExt WithConv in
+/-- Extracting the infinitesimal coefficient after scalar extension to the dual numbers: the
+coefficient of the cotangent-linear equivalence agrees with the infinitesimal part of the
+scalar-extended tangent vector. -/
+theorem algEquivSelf_cotangentLinearEquiv_rTensor_sndHom
+    (z : DualNumber (Bialgebra.CounitAlgebra R A R) ⊗[R]
+      Module.Dual R (Bialgebra.CotangentSpace R A)) (a : A) :
+    Bialgebra.CounitAlgebra.algEquivSelf R A R
+        (cotangentLinearEquiv (B := R)
+          (TensorProduct.lid R (Module.Dual R (Bialgebra.CotangentSpace R A))
+            (LinearMap.rTensor (Module.Dual R (Bialgebra.CotangentSpace R A))
+              ((Bialgebra.CounitAlgebra.algEquivSelf R A R).toLinearMap ∘ₗ
+                (sndHom (Bialgebra.CounitAlgebra R A R)
+                  (Bialgebra.CounitAlgebra R A R)).restrictScalars R) z)) a) =
+      Bialgebra.CounitAlgebra.algEquivSelf R A R
+        ((Bialgebra.CounitAlgebra.algEquivSelf R A (DualNumber (Bialgebra.CounitAlgebra R A R))
+          (tangentScalarExtensionEquiv (R := R) (A := A)
+            (B := DualNumber (Bialgebra.CounitAlgebra R A R)) z a)).snd) := by
+  induction z using TensorProduct.inductionOn with
+  | add z w hz hw => simp only [map_add, add_apply, snd_add, hz, hw]
+  | tmul c y =>
+    rw [LinearMap.rTensor_tmul, TensorProduct.lid_tmul,
+      algEquivSelf_cotangentLinearEquiv_apply,
+      algEquivSelf_tangentScalarExtensionEquiv_tmul_apply,
+      LinearMap.smul_apply, smul_eq_mul]
+    simp only [algebraMap_eq_inl', snd_mul, snd_inl, fst_inl,
+      op_smul_eq_smul, smul_eq_mul]
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+      LinearMap.restrictScalars_apply, sndHom_apply]
+    -- The coefficient synonym carries the same ring operations, with transported instances.
+    erw [mul_zero, zero_add, map_mul]
+    rw [AlgEquiv.commutes]
+    exact mul_comm _ _
 
 end ScalarExtension
 

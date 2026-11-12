@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.Basic
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Modular-forms basics: extensions of Mathlib's API
@@ -30,6 +31,10 @@ cusps of `Γ'`, so one needs to know that `Γ` has no further cusps, which
 (`Subgroup.IsArithmetic.isCusp_of_isCusp`: both have the cusps of `SL(2, ℤ)`). Under it the two
 constructions are mutually inverse: the image of `M_k(Γ) → M_k(Γ')` is exactly the
 `Γ`-invariant part of `M_k(Γ')` (`ModularForm.mem_range_restrictₗ_iff`).
+Mathlib's trace enlarges the group by summing translates over coset representatives. When every
+element of `Γ` is a product of an element of `Γ' ≤ Γ` and one of `𝒢`, the cosets of `𝒢` in `Γ`
+and in `Γ'` correspond, so the trace from `𝒢` to `Γ`, restricted to `Γ'`, is the trace from `𝒢`
+to `Γ'` (`CuspForm.restrict_trace`). This is how forms for two non-nested groups are compared.
 
 Translation by a positive-determinant matrix is packaged as the linear map
 `ModularForm.translateₗ`. General `GL₂(ℝ)` translation is only semilinear because a
@@ -51,8 +56,12 @@ AINTLIB `LeanModularForms` project
 
 ## Main results
 
+* `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
+  at `s • τ`, is `denom s τ ^ k * f τ`.
 * `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
   under the weight-`k` slash action.
+* `SlashAction.slash_eq_of_rightCoset_eq`: slashing a `H₁`-invariant element by `x` depends
+  only on the right coset `H₁ x`, for any slash action.
 * `SlashInvariantFormClass.SL_slash_eq`: a form invariant under the image of `Γ ≤ SL(2, ℤ)`
   is fixed by the slash action of every element of `Γ`.
 * `SlashInvariantForm.slash_action_eqn_of_det_pos`: the transformation law
@@ -61,12 +70,20 @@ AINTLIB `LeanModularForms` project
 * `slash_zpow_eq_self_of_slash_eq`, `slash_zpow_mul_mul_zpow_eq_smul`: slash
   invariance passes to integer powers, and an eigenvalue law survives multiplication on both
   sides by powers of an invariance.
+* `TauCeti.ModularForm.SL_slash_neg`, `TauCeti.ModularForm.SL_slash_zpow_eq_self_of_slash_eq`:
+  for `A ∈ SL(2, ℤ)`, `f ∣[k] (-A) = (-1)^k • f ∣[k] A`, and invariance under `A` passes to
+  every integer power of `A`.
+* `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
+  `S² = -I`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
 * `ModularForm.mem_range_restrictₗ_iff`, `CuspForm.mem_range_restrictₗ_iff`: for `Γ' ≤ Γ` with every
   cusp of `Γ` a cusp of `Γ'`, a form for `Γ'` extends to `Γ` exactly when it is `Γ`-slash
   invariant.
+* `SlashInvariantForm.restrict_trace`, `ModularForm.restrict_trace`, `CuspForm.restrict_trace`:
+  when every element of `Γ` factors as an element of `Γ' ≤ Γ` times an element of `𝒢`, the trace
+  from `𝒢` to `Γ` restricts to the trace from `𝒢` to `Γ'`.
 -/
 
 public section
@@ -159,23 +176,62 @@ analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet prov
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
 
-/-- The weight-`k` slash action of `-I` is multiplication by `(-1) ^ k`: `-I` acts trivially
-on `ℍ` and has determinant `1`, so the only surviving factor is its automorphy factor
-`denom (-I) z ^ (-k) = (-1) ^ (-k) = (-1) ^ k`.
+namespace SlashAction
 
-This is the source of every parity constraint on weights and nebentypus characters. -/
+/-- **Slashing a `H₁`-invariant element depends only on the right coset.** If `H₁ x = H₁ y`
+then `f ∣[k] x = f ∣[k] y`, because `y = (y x⁻¹) x` with `y x⁻¹ ∈ H₁` and the slash by that
+factor is trivial on `f`.
+
+It is used in `HeckeSlash/Independence.lean` to show that Hecke slash sums do not depend on the
+choice of right-coset representatives. -/
+lemma slash_eq_of_rightCoset_eq {β H A : Type*} [Group H] [AddMonoid A] [SlashAction β H A]
+    {H₁ : Subgroup H} (k : β) {f : A} (hf : ∀ γ ∈ H₁, f ∣[k] γ = f) {x y : H}
+    (h : MulOpposite.op x • (H₁ : Set H) = MulOpposite.op y • (H₁ : Set H)) :
+    f ∣[k] x = f ∣[k] y := by
+  have hγ : y * x⁻¹ ∈ H₁ := (rightCoset_eq_iff H₁).mp h
+  calc f ∣[k] x = (f ∣[k] (y * x⁻¹)) ∣[k] x := by rw [hf _ hγ]
+    _ = f ∣[k] (y * x⁻¹ * x) := (SlashAction.slash_mul k (y * x⁻¹) x f).symm
+    _ = f ∣[k] y := by rw [inv_mul_cancel_right]
+
+end SlashAction
+
+namespace TauCeti.ModularForm
+
+variable {k : ℤ} {f : ℍ → ℂ}
+
+/-- Negating a matrix of `SL(2, ℤ)` multiplies its weight-`k` slash action by `(-1)^k`, the
+scalar by which the central element `-I` acts. -/
 @[simp]
-theorem _root_.ModularForm.slash_neg_one (k : ℤ) (f : ℍ → ℂ) :
-    f ∣[k] (-1 : GL (Fin 2) ℝ) = (-1 : ℂ) ^ k • f := by
-  have hzpow : (-1 : ℂ) ^ (-k) = (-1 : ℂ) ^ k := by
-    rw [zpow_neg, ← inv_zpow]
-    norm_num
-  have hdet : (-1 : GL (Fin 2) ℝ).det = 1 := by
-    ext
-    simp [Matrix.det_neg]
-  funext z
-  rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp [Matrix.det_neg])]
-  simp [hzpow, hdet, mul_comm]
+theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
+    f ∣[k] (-A) = (-1 : ℂ) ^ k • f ∣[k] A := by
+  -- `ModularForm.SL_slash` exposes the image of `-I` in `GL (Fin 2) ℝ` through `toGL ∘ map`,
+  -- which is `mapGL` unfolded.
+  have hGL : toGL (map (Int.castRingHom ℝ) (-1 : SL(2, ℤ))) = -1 := mapGL_neg_one
+  rw [← neg_one_mul, SlashAction.slash_mul, ModularForm.SL_slash f (-1), hGL,
+    _root_.ModularForm.slash_neg_one]
+  -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
+  exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
+
+/-- The inversion `S` of `SL(2, ℤ)` acts twice by `S² = -I`, hence on the weight-`k` slash action
+by the scalar `(-1)^k`. -/
+@[simp]
+theorem SL_slash_S_slash_S (k : ℤ) (f : ℍ → ℂ) :
+    (f ∣[k] ModularGroup.S) ∣[k] ModularGroup.S = (-1 : ℂ) ^ k • f := by
+  have hS : ModularGroup.S * ModularGroup.S = (-1 : SL(2, ℤ)) :=
+    Subtype.ext (by simpa using ModularGroup.S_mul_S_eq)
+  rw [← SlashAction.slash_mul, hS, SL_slash_neg, SlashAction.slash_one]
+
+/-- Invariance under an element of `SL(2, ℤ)` passes to all its integer powers: the
+`SL(2, ℤ)` form of `slash_zpow_eq_self_of_slash_eq`. -/
+theorem SL_slash_zpow_eq_self_of_slash_eq {A : SL(2, ℤ)} (hA : f ∣[k] A = f) (j : ℤ) :
+    f ∣[k] (A ^ j) = f := by
+  have hGL : toGL (map (Int.castRingHom ℝ) (A ^ j)) = toGL (map (Int.castRingHom ℝ) A) ^ j :=
+    map_zpow (mapGL ℝ) A j
+  rw [ModularForm.SL_slash] at hA ⊢
+  rw [hGL]
+  exact slash_zpow_eq_self_of_slash_eq k f hA j
+
+end TauCeti.ModularForm
 
 /-- **The weight-`k` slash formula at a positive-determinant matrix**, free of the `σ` twist:
 
@@ -196,6 +252,21 @@ theorem _root_.ModularForm.slash_apply_of_det_pos (k : ℤ) {g : GL (Fin 2) ℝ}
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (f : ℍ → ℂ) (τ : ℍ) :
     (f ∣[k] g) τ = f (g • τ) * |(g.det : ℝ)| ^ (k - 1) * denom g τ ^ (-k) :=
   congrFun (ModularForm.slash_def_of_det_pos k hg f) τ
+
+/-- The slash of `f` by the inverse of `s ∈ SL(2, ℝ)`, read at `s • τ`, is
+`denom s τ ^ k * f τ`. -/
+theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul (s : SL(2, ℝ)) (k : ℤ)
+    (f : ℍ → ℂ) (τ : ℍ) :
+    (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) (s • τ) =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ ^ k * f τ := by
+  have h1 := Matrix.SpecialLinearGroup.denom_mapGL_mul s⁻¹ s τ
+  rw [inv_mul_cancel, map_one, denom_one] at h1
+  have h2 : denom (Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) ((s • τ : ℍ) : ℂ) =
+      (denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ)⁻¹ :=
+    eq_inv_of_mul_eq_one_left h1.symm
+  rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp),
+    Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
+  simp [mul_comm]
 
 /-- **Scalars pass through the slash of a positive-determinant matrix.** Mathlib's
 `ModularForm.smul_slash` carries the twist `σ A c`, which is complex conjugation when the
@@ -231,7 +302,7 @@ theorem _root_.ModularForm.slash_scalar (k : ℤ) (u : ℝˣ) (f : ℍ → ℂ) 
   rw [ModularForm.slash_apply_of_det_pos k hdetpos, UpperHalfPlane.glScalar_smul,
     UpperHalfPlane.denom_scalar, hdet, abs_of_nonneg (sq_nonneg (u : ℝ))]
   push_cast
-  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← zpow_mul]
+  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← _root_.zpow_mul]
   simp only [Pi.smul_apply, smul_eq_mul]
   rw [mul_assoc, ← zpow_add₀ (by exact_mod_cast u.ne_zero), mul_comm]
   congr 1
@@ -264,7 +335,7 @@ theorem _root_.SlashInvariantForm.slash_action_eqn_of_det_pos {F : Type*} [FunLi
   have hden : denom γ (τ : ℂ) ^ (-k) ≠ 0 := zpow_ne_zero _ (denom_ne_zero γ τ)
   have hpow : ((|(γ.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) ≠ 0 := zpow_ne_zero _ hdet_ne
   rw [(eq_mul_inv_iff_mul_eq₀ hpow).mpr ((eq_mul_inv_iff_mul_eq₀ hden).mpr h),
-    ← zpow_neg, ← zpow_neg, neg_neg, neg_sub]
+    ← _root_.zpow_neg, ← _root_.zpow_neg, neg_neg, neg_sub]
   ring
 
 /-! ### Translation by positive-determinant matrices -/
@@ -435,6 +506,59 @@ lemma mem_range_restrictₗ_iff {R : Type*} [Semiring R] [SMul R ℂ]
 
 end CuspForm
 
+/-! ### Restricting a trace along a factorization -/
+
+section RestrictTrace
+
+variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsFiniteRelIndex Γ] [𝒢.IsFiniteRelIndex Γ']
+
+/-- **Restricting a trace along a factorization.** Let `Γ' ≤ Γ` be such that every element of `Γ`
+is a product `x * g` with `x ∈ Γ'` and `g ∈ 𝒢`. Then the trace from `𝒢` to `Γ`, restricted to
+`Γ'`, is the trace from `𝒢` to `Γ'`.
+
+For congruence subgroups, with `𝒢 = Γ₁(b)`, `Γ = Γ₁(gcd a b)` and `Γ' = Γ₁(a)`
+(`CongruenceSubgroup.exists_mul_eq_of_mem_Gamma1_gcd`), it says that the trace from `Γ₁(lcm a b)`
+to `Γ₁(a)` of a form of level `Γ₁(b)` is its trace from `Γ₁(b)` to `Γ₁(gcd a b)`, restricted to
+`Γ₁(a)`. -/
+lemma SlashInvariantForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : SlashInvariantForm 𝒢 k) :
+    restrict hΓ' (SlashInvariantForm.trace Γ f) = SlashInvariantForm.trace Γ' f := by
+  let := Fintype.ofFinite (Γ ⧸ 𝒢.subgroupOf Γ)
+  let := Fintype.ofFinite (Γ' ⧸ 𝒢.subgroupOf Γ')
+  -- the two traces sum over `Γ' ⧸ (𝒢 ⊓ Γ')` and `Γ ⧸ (𝒢 ⊓ Γ)`; the coset map induced by the
+  -- inclusion `Γ' → Γ` is injective, and the factorization hypothesis makes it surjective
+  let e := Subgroup.quotientSubgroupOfEmbeddingOfLE 𝒢 hΓ'
+  have he : Function.Bijective e := by
+    refine ⟨e.injective, fun q ↦ ?_⟩
+    induction q using QuotientGroup.induction_on with | H h => ?_
+    obtain ⟨x, hx, g, hg, hxg⟩ := hmul h h.2
+    refine ⟨QuotientGroup.mk ⟨x, hx⟩, Quotient.sound' ?_⟩
+    rw [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf]
+    simpa [← hxg] using hg
+  ext τ
+  rw [coe_restrict, coe_trace, coe_trace, Finset.sum_apply, Finset.sum_apply]
+  refine (Fintype.sum_bijective e he _ _ fun q ↦ ?_).symm
+  induction q using QuotientGroup.induction_on with
+  | H x => simp [e, Subgroup.quotientSubgroupOfEmbeddingOfLE_apply_mk, quotientFunc_mk]
+
+/-- **Restricting a trace along a factorization**, for modular forms: see
+`SlashInvariantForm.restrict_trace`. -/
+lemma ModularForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : ModularForm 𝒢 k) :
+    restrict hΓ' (ModularForm.trace Γ f) = ModularForm.trace Γ' f :=
+  ModularForm.ext fun τ ↦ congrFun (congrArg DFunLike.coe
+    (SlashInvariantForm.restrict_trace hΓ' hmul f.toSlashInvariantForm)) τ
+
+/-- **Restricting a trace along a factorization**, for cusp forms: see
+`SlashInvariantForm.restrict_trace`. -/
+lemma CuspForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : CuspForm 𝒢 k) :
+    restrict hΓ' (CuspForm.trace Γ f) = CuspForm.trace Γ' f :=
+  CuspForm.ext fun τ ↦ congrFun (congrArg DFunLike.coe
+    (SlashInvariantForm.restrict_trace hΓ' hmul f.toSlashInvariantForm)) τ
+
+end RestrictTrace
+
 end ChangeGroup
 
 /-! ### Constant forms at nonzero weight -/
@@ -463,12 +587,12 @@ theorem eq_zero_of_eq_const_of_weight_ne_zero
   have hdetpos : 0 < γ.val.det := by
     simp [← GeneralLinearGroup.val_det_apply, hdet]
   have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hγ hdetpos z
-  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, one_zpow, one_mul] at h
+  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, _root_.one_zpow, one_mul] at h
   rw [hf, Function.const_apply, Function.const_apply] at h
   have hd : denom γ z ^ k = 1 := mul_right_cancel₀ hc0 (by simpa using h.symm)
   have hnorm : ‖denom γ z‖ = 1 := by
     apply (zpow_left_inj₀ (norm_nonneg _) zero_le_one hk).mp
-    simpa only [norm_zpow, norm_one, one_zpow] using congrArg norm hd
+    simpa only [norm_zpow, norm_one, _root_.one_zpow] using congrArg norm hd
   have him : |(denom γ z).im| = 2 := by
     simp [denom, z, Complex.mul_im, abs_mul, abs_div, abs_abs]
     field_simp

@@ -34,11 +34,15 @@ it therefore becomes a character, which is what governs the stabilizers of a dis
   `Matrix.ProjectiveSpecialLinearGroup.deriv_coe_smul`: it is the complex derivative of that
   transformation, read through Mathlib's partial inverse `UpperHalfPlane.ofComplex` of the
   inclusion `ℍ → ℂ`.
+* `Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq`: the derivative
+  of a function invariant under a Möbius transformation.
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul`: the chain rule
   `(q₁ * q₂)' z = q₁' (q₂ • z) * q₂' z`, and
   `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv` for the inverse.
 * `Matrix.ProjectiveSpecialLinearGroup.norm_smulDeriv_of_smul_eq_self`: the derivative at a
   fixed point is unimodular, so a transformation fixing a point rotates about it.
+* `Matrix.SpecialLinearGroup.conj_denom_eq_inv_of_smul_eq_self`: at a fixed point of
+  `g ∈ SL(2, ℝ)` the automorphy factor is unimodular, so its conjugate is its inverse.
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_dilation`: the dilation `z ↦ exp s * z` has
   derivative `exp s`.
 
@@ -79,6 +83,15 @@ theorem normSq_denom_eq_one_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g �
   have hne := UpperHalfPlane.normSq_denom_ne_zero (mapGL ℝ g) z.im_ne_zero
   rw [Units.val_one, abs_one, one_mul, eq_div_iff hne] at him
   exact mul_left_cancel₀ z.im_ne_zero (by rw [him, mul_one])
+
+open scoped ComplexConjugate in
+/-- At a fixed point the automorphy factor is unimodular
+(`Matrix.SpecialLinearGroup.normSq_denom_eq_one_of_smul_eq_self`), so its conjugate is its
+inverse. -/
+theorem conj_denom_eq_inv_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z) :
+    conj (denom (mapGL ℝ g) (z : ℂ)) = (denom (mapGL ℝ g) (z : ℂ))⁻¹ :=
+  eq_inv_of_mul_eq_one_left <| by
+    rw [mul_comm, Complex.mul_conj, normSq_denom_eq_one_of_smul_eq_self hz, Complex.ofReal_one]
 
 end Matrix.SpecialLinearGroup
 
@@ -179,6 +192,35 @@ theorem hasStrictDerivAt_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
 theorem deriv_coe_smul (q : PSL(2, ℝ)) (z : ℍ) :
     deriv (fun w : ℂ ↦ ((q • ofComplex w : ℍ) : ℂ)) (z : ℂ) = smulDeriv q z :=
   (hasStrictDerivAt_coe_smul q z).hasDerivAt.deriv
+
+/-- **The derivative of an invariant function.** If a function `W` on `ℂ` is unchanged near `z`
+by the Möbius transformation attached to `q`, read on `ℂ` through `UpperHalfPlane.ofComplex`, then
+by the chain rule its derivative at `z` is its derivative at `q • z` times `smulDeriv q z`. (If `W`
+is not differentiable at `q • z`, then by invariance it is not differentiable at `z` either, and
+both sides vanish.) -/
+theorem deriv_smul_mul_smulDeriv_of_eventuallyEq {W : ℂ → ℂ} (q : PSL(2, ℝ)) {z : ℍ}
+    (hW : (fun w : ℂ ↦ W ((q • ofComplex w : ℍ) : ℂ)) =ᶠ[nhds (z : ℂ)] W) :
+    deriv W ((q • z : ℍ) : ℂ) * smulDeriv q z = deriv W z := by
+  by_cases hd : DifferentiableAt ℂ W ((q • z : ℍ) : ℂ)
+  · have h := hd.hasDerivAt.comp_of_eq (z : ℂ) (hasStrictDerivAt_coe_smul q z).hasDerivAt
+      (by rw [ofComplex_apply])
+    rw [← hW.deriv_eq, ← h.deriv, Function.comp_def]
+  · have hz : ¬ DifferentiableAt ℂ W (z : ℂ) := fun hz ↦ hd (by
+      -- the invariance runs both ways, so `W` is differentiable at `q • z` if it is at `z`
+      have hg := (hasStrictDerivAt_coe_smul q⁻¹ (q • z)).hasDerivAt
+      have hc := hz.hasDerivAt.comp_of_eq ((q • z : ℍ) : ℂ) hg
+        (by rw [ofComplex_apply, inv_smul_smul])
+      refine hc.differentiableAt.congr_of_eventuallyEq ?_
+      have hW' : ∀ᶠ y in nhds (((q⁻¹ • ofComplex ((q • z : ℍ) : ℂ) : ℍ)) : ℂ),
+          W ((q • ofComplex y : ℍ) : ℂ) = W y := by
+        rwa [ofComplex_apply, inv_smul_smul]
+      filter_upwards [hg.continuousAt.eventually hW',
+        isOpen_upperHalfPlaneSet.mem_nhds (q • z).2] with u hu hu'
+      simp only [Function.comp_apply]
+      rw [ofComplex_apply, smul_inv_smul, ofComplex_apply_of_im_pos hu'] at hu
+      rw [ofComplex_apply_of_im_pos hu']
+      exact hu)
+    rw [deriv_zero_of_not_differentiableAt hd, deriv_zero_of_not_differentiableAt hz, zero_mul]
 
 -- Not `@[simp]`: `smulDeriv_coe` rewrites the left-hand side first. Use it via `rw`.
 /-- The derivative of the dilation `z ↦ exp s * z` is `exp s`. -/

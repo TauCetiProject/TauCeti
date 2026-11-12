@@ -5,18 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.UnitaryGroup
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
-# Scalar orthogonal matrices
+# Scalar, diagonal and determinant facts for orthogonal matrices
 
 A scalar matrix `c • 1` over a nonempty index type lies in the orthogonal group of the standard
 symmetric form only when `c ^ 2 = 1`. For an empty index type every scalar qualifies.
+
+Over a ring without zero divisors an orthogonal matrix has determinant `1` or `-1`, and both values
+occur as soon as the index type is nonempty: the diagonal reflection negating one coordinate is an
+orthogonal matrix of determinant `-1`.
+
+Permutation matrices are orthogonal, and a matrix is orthogonal exactly when it preserves the dot
+product. The columns of an orthogonal matrix are orthonormal for the dot product. For a trivial
+star operation the unitary elements of the general linear group are the orthogonal matrices.
+
+## Main definitions
+
+* `TauCeti.orthogonalDiagonalReflection`: the diagonal orthogonal matrix negating one coordinate.
 
 ## Main declarations
 
 * `TauCeti.sq_eq_one_of_smul_one_mem_orthogonalGroup`: a scalar orthogonal matrix over a nonempty
   index type has scalar a square root of one.
+* `TauCeti.det_eq_one_or_neg_one_of_mem_orthogonalGroup`: the determinant of an orthogonal matrix
+  is `1` or `-1`.
+* `TauCeti.det_orthogonalDiagonalReflection`: the diagonal reflection has determinant `-1`.
+* `Matrix.permMatrix_mem_orthogonalGroup`: a permutation matrix is orthogonal.
+* `Matrix.mem_orthogonalGroup_iff_dotProduct_mulVec`: a matrix is orthogonal exactly when it
+  preserves the dot product.
+* `Matrix.col_dotProduct_col_of_mem_orthogonalGroup`: the columns of an orthogonal matrix are
+  orthonormal.
+* `Matrix.GeneralLinearGroup.mem_unitarySubgroup_iff_mem_orthogonalGroup`: for a trivial star
+  operation, the unitary elements of `GL n R` are the orthogonal matrices.
 -/
 
 public section
@@ -32,4 +55,87 @@ theorem sq_eq_one_of_smul_one_mem_orthogonalGroup {n : Type*} [Fintype n] [Decid
   have hentry := congrFun (congrFun h (Classical.arbitrary n)) (Classical.arbitrary n)
   simpa [sq] using hentry
 
+/-- Over a ring without zero divisors, the determinant of an orthogonal matrix is `1` or `-1`: the
+orthogonality relation `Aᵀ * A = 1` gives `det A * det A = 1`. -/
+theorem det_eq_one_or_neg_one_of_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n]
+    {R : Type*} [CommRing R] [NoZeroDivisors R] {A : Matrix n n R}
+    (hA : A ∈ Matrix.orthogonalGroup n R) : A.det = 1 ∨ A.det = -1 := by
+  have h := congrArg Matrix.det ((Matrix.mem_orthogonalGroup_iff n R).1 hA)
+  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_one] at h
+  exact mul_self_eq_one_iff.1 h
+
+section DiagonalReflection
+
+variable {n : Type*} [Fintype n] [DecidableEq n] (R : Type*) [CommRing R]
+
+/-- The diagonal reflection negating the coordinate `i`: the diagonal matrix with entry `-1` at
+`i` and `1` elsewhere, an orthogonal matrix of determinant `-1`
+(`TauCeti.det_orthogonalDiagonalReflection`). -/
+def orthogonalDiagonalReflection (i : n) : Matrix.orthogonalGroup n R :=
+  ⟨Matrix.diagonal (Function.update 1 i (-1)), by
+    rw [Matrix.mem_orthogonalGroup_iff, Matrix.diagonal_transpose, Matrix.diagonal_mul_diagonal,
+      ← Matrix.diagonal_one]
+    congr 1
+    funext j
+    by_cases hj : j = i <;> simp [hj]⟩
+
+/-- The diagonal reflection negating the coordinate `i` has underlying matrix the diagonal matrix
+with entry `-1` at `i` and `1` elsewhere. -/
+@[simp]
+theorem coe_orthogonalDiagonalReflection (i : n) :
+    (orthogonalDiagonalReflection R i : Matrix n n R) =
+      Matrix.diagonal (Function.update 1 i (-1)) :=
+  (rfl)
+
+/-- The diagonal reflection negating one coordinate has determinant `-1`. -/
+theorem det_orthogonalDiagonalReflection (i : n) :
+    (orthogonalDiagonalReflection R i : Matrix n n R).det = -1 := by
+  rw [coe_orthogonalDiagonalReflection, Matrix.det_diagonal,
+    Finset.prod_update_of_mem (Finset.mem_univ i)]
+  simp
+
+end DiagonalReflection
+
 end TauCeti
+
+namespace Matrix
+
+/-- A permutation matrix is orthogonal. This is `Matrix.permMatrix_mem_unitaryGroup` for the
+trivial star operation `starRingOfComm`, which defines `Matrix.orthogonalGroup`. -/
+theorem permMatrix_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n] (R : Type*)
+    [CommRing R] (σ : Equiv.Perm n) : σ.permMatrix R ∈ orthogonalGroup n R :=
+  letI := starRingOfComm (R := R)
+  permMatrix_mem_unitaryGroup σ
+
+/-- A square matrix is orthogonal exactly when it preserves the dot product. -/
+theorem mem_orthogonalGroup_iff_dotProduct_mulVec {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {A : Matrix n n R} :
+    A ∈ orthogonalGroup n R ↔ ∀ x y, (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = x ⬝ᵥ y := by
+  rw [mem_orthogonalGroup_iff']
+  refine ⟨fun h x y => ?_, fun h => Matrix.ext fun i j => ?_⟩
+  · rw [dotProduct_mulVec, ← mulVec_transpose, mulVec_mulVec, h, one_mulVec]
+  · have hij := h (Pi.single i 1) (Pi.single j 1)
+    simp only [mulVec_single_one, single_dotProduct, one_mul] at hij
+    rw [Matrix.mul_apply, Matrix.one_apply]
+    simpa [dotProduct, Pi.single_apply, eq_comm] using hij
+
+/-- The columns of an orthogonal matrix are orthonormal for the dot product: the dot product of
+columns `i` and `j` is the `(i, j)` entry of the identity matrix. -/
+theorem col_dotProduct_col_of_mem_orthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {A : Matrix n n R} (hA : A ∈ orthogonalGroup n R) (i j : n) :
+    A.col i ⬝ᵥ A.col j = (1 : Matrix n n R) i j := by
+  rw [← (mem_orthogonalGroup_iff' _ _).1 hA, mul_apply']
+  rfl
+
+end Matrix
+
+namespace Matrix.GeneralLinearGroup
+
+/-- For a trivial star operation, the unitary elements of `GL n R` are the orthogonal matrices. -/
+theorem mem_unitarySubgroup_iff_mem_orthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [StarRing R] [TrivialStar R] {M : GL n R} :
+    M ∈ unitarySubgroup (GL n R) ↔ (M : Matrix n n R) ∈ orthogonalGroup n R := by
+  rw [mem_orthogonalGroup_iff, ← conjTranspose_eq_transpose_of_trivial]
+  simp [Units.unitary_eq, mem_unitaryGroup_iff, star_eq_conjTranspose]
+
+end Matrix.GeneralLinearGroup

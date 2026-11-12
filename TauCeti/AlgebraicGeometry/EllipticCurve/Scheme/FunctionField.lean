@@ -10,7 +10,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Gener
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
+public import TauCeti.FieldTheory.FunctionField.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
 
 /-!
@@ -28,6 +30,9 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
 * `WeierstrassCurve.projModelFunctionFieldAlgebra`: the transported `R`-algebra structure on
   `W.projModel.functionField`.
 * `WeierstrassCurve.projModelFunctionFieldAlgEquiv`: the comparison as an `R`-algebra equivalence.
+* `WeierstrassCurve.projModelFunctionFieldBaseAlgEquiv`: the comparison as an `R`-algebra
+  equivalence for the algebra structure `Scheme.functionFieldBaseAlgebra` defined by the structure
+  morphism `projModel W ⟶ Spec R`.
 
 ## Main results
 
@@ -41,6 +46,9 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
   the generic point `Spec K(E) ⟶ E` of the projective model is the point with homogeneous
   coordinates `[x : y : 1]`, where `x` and `y` are the affine coordinates in
   `W.toAffine.FunctionField`.
+
+* `WeierstrassCurve.isFunctionField_functionField_projModel`: over a field `K`, the function field
+  `K(E)` of the projective model is an algebraic function field of one variable over `K`.
 
 ## References
 
@@ -282,5 +290,48 @@ theorem projModelFunctionFieldEquiv_baseRingToFunctionField [IsDomain R] (r : R)
     projModelPoint_projModelOver, ← Spec.map_comp, Spec.map_inj] at h
   rw [← Scheme.algebraMap_functionField_eq_baseRingToFunctionField]
   exact congr($h r)
+
+section BaseAlgebra
+
+-- Within this section the function field of the projective model carries the `R`-algebra structure
+-- `Scheme.functionFieldBaseAlgebra` defined by the structure morphism, not the transported one.
+attribute [local instance high] Scheme.functionFieldBaseAlgebra
+
+/-- The identification of function fields `projModelFunctionFieldEquiv`, as an equivalence of
+`R`-algebras for the algebra structure `Scheme.functionFieldBaseAlgebra` defined by the structure
+morphism. This is the structure for which pullbacks of rational functions along morphisms over
+`Spec R` are `R`-algebra maps; `projModelFunctionFieldAlgEquiv` uses the transported structure
+`projModelFunctionFieldAlgebra` instead. -/
+noncomputable def projModelFunctionFieldBaseAlgEquiv [IsDomain R] :
+    W.projModel.functionField ≃ₐ[R] W.toAffine.FunctionField :=
+  AlgEquiv.ofRingEquiv (f := W.projModelFunctionFieldEquiv) fun r ↦ by
+    rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
+      projModelFunctionFieldEquiv_baseRingToFunctionField]
+
+/-- The underlying function of `projModelFunctionFieldBaseAlgEquiv` is
+`projModelFunctionFieldEquiv`. -/
+@[simp]
+theorem projModelFunctionFieldBaseAlgEquiv_apply [IsDomain R] (z : W.projModel.functionField) :
+    W.projModelFunctionFieldBaseAlgEquiv z = W.projModelFunctionFieldEquiv z :=
+  AlgEquiv.ofRingEquiv_apply _ z
+
+/-- The inverse of `projModelFunctionFieldBaseAlgEquiv` is the inverse of
+`projModelFunctionFieldEquiv`. -/
+@[simp]
+theorem projModelFunctionFieldBaseAlgEquiv_symm_apply [IsDomain R]
+    (z : W.toAffine.FunctionField) :
+    W.projModelFunctionFieldBaseAlgEquiv.symm z = W.projModelFunctionFieldEquiv.symm z :=
+  AlgEquiv.ofRingEquiv_symm_apply _ z
+
+/-- The function field of the projective model of a Weierstrass curve is an algebraic function
+field of one variable over the base field. -/
+theorem isFunctionField_functionField_projModel {K : Type u} [Field K] (W : WeierstrassCurve K) :
+    TauCeti.IsFunctionField K W.projModel.functionField := by
+  have := W.toAffine.isFunctionField.essFiniteType
+  have := (Algebra.EssFiniteType.iff_of_algEquiv W.projModelFunctionFieldBaseAlgEquiv).2 this
+  rw [TauCeti.isFunctionField_iff_trdeg_eq_one, W.projModelFunctionFieldBaseAlgEquiv.trdeg_eq]
+  exact W.toAffine.isFunctionField.trdeg_eq_one
+
+end BaseAlgebra
 
 end WeierstrassCurve

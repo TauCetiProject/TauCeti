@@ -7,11 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.Topology.CWComplex.Classical.CWType
-import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
-import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
+public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
+import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
-import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
-import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
 
 /-!
 # Uniqueness of `K(G, 1)` spaces of CW type
@@ -28,19 +27,24 @@ with the identifications of both fundamental groups with `G`
 (`TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`). So the classifying space is well
 defined up to homotopy equivalence among spaces of CW type.
 
-The cellular classifying space of a presentation of `π₁(X, x)` maps into both spaces by pointed
-maps realizing any homomorphism of fundamental groups
-(`TauCeti.exists_mapOfEq_cellularClassifyingSpace`). Choosing these maps `f` into `X` and `g` into
-`Y` to realize an identification `ψ` and `φ ∘ ψ`, both are weak homotopy equivalences, because all
-the spaces are aspherical. Since `X` has CW type, the identity of `X` lifts through `f` up to
-homotopy to a map `s` from `X` to the cellular classifying space, and `g ∘ s` is a weak homotopy
-equivalence between spaces of CW type, hence a homotopy equivalence by Whitehead's theorem. The
-homotopy from `f ∘ s` to the identity moves the base point, which is why the realization of `φ`
-involves a change of base point
+The cellular classifying space `C` of a presentation of `π₁(X, x)` is homotopy equivalent to both
+spaces by homotopy equivalences `f : C ≃ₕ X` and `g : C ≃ₕ Y` whose forward maps are pointed and
+realize an identification `ψ` and `φ ∘ ψ` (`TauCeti.cellularClassifyingSpaceHomotopyEquiv`). The
+composite `g ∘ f⁻¹` is the required homotopy equivalence. The homotopy from `f ∘ f⁻¹` to the
+identity moves the base point, which is why the realization of `φ` involves a change of base point
 (`ContinuousMap.Homotopy.exists_path_fundamentalGroupMulEquivOfPath_map_comp`).
 
 The hypothesis of CW type on both spaces cannot be dropped: a point and the Warsaw circle are both
 path connected with trivial homotopy groups, but they are not homotopy equivalent.
+
+Without it, the classifying space still maps to every aspherical space by a weak homotopy
+equivalence realizing a prescribed identification of the fundamental group with `G`
+(`TauCeti.IsAspherical.exists_isWeakHomotopyEquivalence_classifyingSpace`), which is the case
+`n = 1` of Hatcher's Proposition 4.30. The map factors through the CW approximation of the
+target, which is an aspherical space of CW type and hence homotopy equivalent to
+`classifyingSpace G`. So `classifyingSpace G` computes every weak homotopy invariant, for instance
+the singular homology, of an arbitrary `K(G, 1)` space, such as the loop space of a `K(G, 2)` space
+for abelian `G`, which need not have CW type.
 
 ## Main results
 
@@ -83,31 +87,18 @@ theorem IsAspherical.exists_homotopyEquiv {X Y : Type u} [TopologicalSpace X]
     (hY : IsAspherical Y y) (φ : FundamentalGroup X x ≃* FundamentalGroup Y y) :
     ∃ (e : X ≃ₕ Y) (γ : Path (e.toFun x) y),
       ∀ a, fundamentalGroupMulEquivOfPath γ (map e.toFun x a) = φ a := by
-  obtain ⟨R, hC⟩ :=
+  obtain ⟨R, -, -, hC⟩ :=
     exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace (FundamentalGroup X x)
   obtain ⟨ψ⟩ := hC.nonempty_fundamentalGroupMulEquiv
   have : PathConnectedSpace (cellularClassifyingSpace R) := hC.isAspherical.pathConnectedSpace
-  have hπ {Z : Type u} [TopologicalSpace Z] {z : Z} (hZ : IsAspherical Z z) :
-      ∀ k, 2 ≤ k → Subsingleton (π_ k Z z) := fun k hk ↦ by
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
-    exact hZ.subsingleton_homotopyGroup n
-  -- Pointed maps from the cellular classifying space realizing `ψ` and `φ ∘ ψ`.
-  obtain ⟨f, hf, hfψ⟩ := exists_mapOfEq_cellularClassifyingSpace R (hπ hX) ψ.toMonoidHom
-  obtain ⟨g, hg, hgψ⟩ :=
-    exists_mapOfEq_cellularClassifyingSpace R (hπ hY) (ψ.trans φ).toMonoidHom
-  have hfw : f.IsWeakHomotopyEquivalence :=
-    (hC.isAspherical.isWeakHomotopyEquivalence_iff hX hf).2 (hfψ ▸ ψ.bijective)
-  have hgw : g.IsWeakHomotopyEquivalence :=
-    (hC.isAspherical.isWeakHomotopyEquivalence_iff hY hg).2 (hgψ ▸ (ψ.trans φ).bijective)
-  -- A homotopy right inverse `s` of `f`; then `g ∘ s` is a weak homotopy equivalence.
-  obtain ⟨s, ⟨H⟩⟩ := hfw.exists_comp_homotopic (ContinuousMap.id X)
-  have hgs : (g.comp s).IsWeakHomotopyEquivalence :=
-    hgw.comp (hfw.of_postcomp (ContinuousMap.IsWeakHomotopyEquivalence.id.of_homotopic ⟨H.symm⟩))
-  refine ⟨hgs.homotopyEquiv, ?_⟩
-  rw [hgs.homotopyEquiv_toFun]
-  refine H.exists_path_fundamentalGroupMulEquivOfPath_map_comp hf hg φ.toMonoidHom ?_
-  rw [hfψ, hgψ]
-  exact (MulEquiv.toMonoidHom_trans ψ φ).symm
+  -- Pointed homotopy equivalences from the cellular classifying space realizing `ψ` and `φ ∘ ψ`.
+  set f := cellularClassifyingSpaceHomotopyEquiv R hX ψ
+  set g := cellularClassifyingSpaceHomotopyEquiv R hY (ψ.trans φ)
+  -- `f⁻¹` is a homotopy right inverse of `f`, so `g ∘ f⁻¹` realizes `φ` up to basepoint change.
+  refine ⟨f.symm.trans g, f.right_inv.some.exists_path_fundamentalGroupMulEquivOfPath_map_comp
+    (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hX ψ)
+    (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hY (ψ.trans φ)) φ.toMonoidHom
+    (MonoidHom.ext fun a ↦ by simp [f])⟩
 
 /-- **Two `K(G, 1)` spaces of CW type are homotopy equivalent.** See
 `TauCeti.IsAspherical.exists_homotopyEquiv` for a homotopy equivalence realizing a prescribed
@@ -137,5 +128,62 @@ theorem IsAspherical.exists_homotopyEquiv_classifyingSpace {G : Type u} [Group G
     (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical
     (eX.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)
   exact ⟨e, γ, fun a ↦ by rw [h, MulEquiv.trans_apply, MulEquiv.apply_symm_apply]⟩
+
+/-- A weak homotopy equivalence `c : W → X` out of a space of CW type, followed by a homotopy
+equivalence from `classifyingSpace G` to `W`, realizes a prescribed identification of the
+fundamental group of an aspherical space `X` with `G`. -/
+private theorem exists_isWeakHomotopyEquivalence_classifyingSpace_of_cwType {G : Type u}
+    [Group G] {W X : Type u} [TopologicalSpace W] [CWType W] [TopologicalSpace X] {w : W} {x : X}
+    {c : C(W, X)} (hc : c.IsWeakHomotopyEquivalence) (hcw : c w = x) (hX : IsAspherical X x)
+    (eX : FundamentalGroup X x ≃* G) :
+    ∃ (f : C(classifyingSpace G, X)) (γ : Path (f (classifyingSpaceBasepoint G)) x),
+      f.IsWeakHomotopyEquivalence ∧
+        ∀ a, eX (fundamentalGroupMulEquivOfPath γ (map f _ a)) =
+          classifyingSpaceFundamentalGroupMulEquiv G a := by
+  subst hcw
+  -- `W` is aspherical, and `c` identifies its fundamental group with that of `X`.
+  have hW : IsAspherical W w := (hc.isAspherical_iff w).2 hX
+  let ψ := MulEquiv.ofBijective (map c w) (mapOfEq_rfl c ▸ hc.mapOfEq_bijective rfl)
+  obtain ⟨e, γ, he⟩ :=
+    (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical.exists_homotopyEquiv hW
+      ((classifyingSpaceFundamentalGroupMulEquiv G).trans (eX.symm.trans ψ.symm))
+  refine ⟨c.comp e.toFun, γ.map c.continuous, hc.comp e.isWeakHomotopyEquivalence, fun a ↦ ?_⟩
+  rw [map_comp, MonoidHom.comp_apply, ← map_fundamentalGroupMulEquivOfPath, he]
+  simp [ψ, MulEquiv.ofBijective_apply_symm_apply]
+
+/-- **Every aspherical space receives a weak homotopy equivalence from the classifying space**
+(Hatcher, Proposition 4.30 for `n = 1`). For an aspherical space `X`, of any kind, whose
+fundamental group is identified with `G` by `eX`, there is a weak homotopy equivalence
+`f : classifyingSpace G → X` compatible with the identifications: for a suitable path `γ` from
+`f` of the base point to `x`, the map induced by `f`, followed by basepoint change along `γ` and
+`eX`, is `classifyingSpaceFundamentalGroupMulEquiv G`.
+
+The map is the composite of a homotopy equivalence from `classifyingSpace G` to the CW
+approximation of `X` with the approximating map. Unlike
+`TauCeti.IsAspherical.exists_homotopyEquiv_classifyingSpace`, no hypothesis of CW type is made on
+`X`, and a weak homotopy equivalence is the most one can ask for: the Warsaw circle is aspherical
+with trivial fundamental group, and it is not homotopy equivalent to a point. -/
+theorem IsAspherical.exists_isWeakHomotopyEquivalence_classifyingSpace {G : Type u} [Group G]
+    {X : Type u} [TopologicalSpace X] {x : X} (hX : IsAspherical X x)
+    (eX : FundamentalGroup X x ≃* G) :
+    ∃ (f : C(classifyingSpace G, X)) (γ : Path (f (classifyingSpaceBasepoint G)) x),
+      f.IsWeakHomotopyEquivalence ∧
+        ∀ a, eX (fundamentalGroupMulEquivOfPath γ (map f _ a)) =
+          classifyingSpaceFundamentalGroupMulEquiv G a :=
+  have : PathConnectedSpace X := hX.pathConnectedSpace
+  exists_isWeakHomotopyEquivalence_classifyingSpace_of_cwType
+    (isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of X) x)
+    (cwApproximationMap_cwApproximationBasepoint (TopCat.of X) x) hX eX
+
+/-- **Every `K(G, 1)` space receives a weak homotopy equivalence from the classifying space.**
+See `TauCeti.IsAspherical.exists_isWeakHomotopyEquivalence_classifyingSpace` for a weak homotopy
+equivalence realizing a prescribed identification of the fundamental group with `G`. -/
+theorem IsEilenbergMacLaneSpaceOne.exists_isWeakHomotopyEquivalence_classifyingSpace
+    {G : Type u} [Group G] {X : Type u} [TopologicalSpace X] {x : X}
+    (hX : IsEilenbergMacLaneSpaceOne G X x) :
+    ∃ f : C(classifyingSpace G, X), f.IsWeakHomotopyEquivalence := by
+  obtain ⟨eX⟩ := hX.nonempty_fundamentalGroupMulEquiv
+  obtain ⟨f, -, hf, -⟩ := hX.isAspherical.exists_isWeakHomotopyEquivalence_classifyingSpace eX
+  exact ⟨f, hf⟩
 
 end TauCeti

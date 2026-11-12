@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
+public import Mathlib.Algebra.Polynomial.Eval.Defs
+import Mathlib.Algebra.Polynomial.Degree.Domain
+import Mathlib.Algebra.Polynomial.Degree.Lemmas
 
 /-!
 # Degrees of polynomial sums and products
@@ -18,13 +21,19 @@ other of `natDegree` at most `n`: the product has degree below `a + n`.  Stating
 coefficient window of prescribed length needs when it is read off polynomials that may vanish.
 
 `TauCeti.degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le` combines two such product bounds
-into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`.
+into the coefficient window used for polynomial relations with formal degree bounds `m` and `n`;
+`Polynomial.mul_add_mul_eq_zero_of_coeff_window` uses it to show that a relation `A * q + B * p = 0`
+is forced by the vanishing of a window of coefficients.
 `Polynomial.natDegree_multiset_prod_X_sub_C_le` bounds the degree of a product of `card s` monic
 linear factors by `card s` over any commutative ring, without the nontriviality that Mathlib's
 `Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
 `Polynomial.natDegree_X_pow_add_C_mul_X_add_C` reads off the degree of the trinomial
-`X ^ n + C a * X + C b` for `2 ≤ n`. `Polynomial.sub_C_ne_zero` records that a nonconstant
-polynomial differs from every constant polynomial.
+`X ^ n + C a * X + C b` for `2 ≤ n`, and `Polynomial.natDegree_comp_C_mul_X_add_C` shows
+that an affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree.
+`Polynomial.sub_C_ne_zero` records that a nonconstant polynomial differs from every constant
+polynomial, and `Polynomial.natDegree_one_sub_C_mul_le` bounds the degree of `1 - C a * p` by that
+of `p`; in particular `Polynomial.natDegree_one_sub_C_mul_X_le` shows that `1 - t X` has degree at
+most one.
 -/
 
 public section
@@ -61,6 +70,40 @@ theorem degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le {p q A B : R[X]} {m n
   · exact (degree_mul_lt_of_degree_lt_of_natDegree_le hB hm).trans_le
       (WithBot.coe_le_coe.mpr (by omega : n - j + m ≤ (m - j) + (n - j) + j))
 
+/-- A relation `A * q + B * p = 0` is forced by the vanishing of the window of coefficients in
+degrees `d, …, m + n - d - 1`, where `d` is the degree of a common divisor `g` of `p` and `q` and
+`A`, `B` have degrees below `m - d` and `n - d`: the combination then has degree below `d`, so
+the divisor `g` forces it to vanish. -/
+theorem _root_.Polynomial.mul_add_mul_eq_zero_of_coeff_window {S : Type*} [CommSemiring S]
+    [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ} (hp : p ≠ 0)
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hgp : g ∣ p) (hgq : g ∣ q)
+    (hAdeg : A.degree < (m - g.natDegree : ℕ)) (hBdeg : B.degree < (n - g.natDegree : ℕ))
+    (hwin : ∀ i : Fin ((m - g.natDegree) + (n - g.natDegree)),
+      (A * q + B * p).coeff (i + g.natDegree) = 0) :
+    A * q + B * p = 0 := by
+  have hg0 : g ≠ 0 := ne_zero_of_dvd_ne_zero hp hgp
+  set d := g.natDegree
+  have hdm : d ≤ m := (natDegree_le_of_dvd hgp hp).trans hm
+  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
+    rcases eq_or_ne q 0 with rfl | hq0
+    · rw [mul_zero, zero_add]
+      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm).trans_le
+        (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
+    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm hn hdm
+        ((natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
+  have hdeg : (A * q + B * p).degree < d := by
+    rw [degree_lt_iff_coeff_zero]
+    intro e he
+    by_cases hlt : e < (m - d) + (n - d) + d
+    · have := hwin ⟨e - d, by omega⟩
+      rwa [Nat.sub_add_cancel he] at this
+    · apply coeff_eq_zero_of_degree_lt
+      exact hsumdeg.trans_le (WithBot.coe_le_coe.mpr
+        (by omega : (m - d) + (n - d) + d ≤ e))
+  exact eq_zero_of_dvd_of_degree_lt
+    (dvd_add (dvd_mul_of_dvd_right hgq _) (dvd_mul_of_dvd_right hgp _))
+    (by rw [degree_eq_natDegree hg0]; exact hdeg)
+
 /-- A product of `card s` monic linear factors has degree at most `card s`; unlike
 `natDegree_multiset_prod_X_sub_C_eq_card`, this needs no nontriviality. -/
 theorem _root_.Polynomial.natDegree_multiset_prod_X_sub_C_le {S : Type*} [CommRing S]
@@ -76,11 +119,27 @@ theorem _root_.Polynomial.sub_C_ne_zero {S : Type*} [Ring S] {p : S[X]} (hp : 0 
     (a : S) : p - C a ≠ 0 :=
   ne_zero_of_natDegree_gt (n := 0) (by rwa [natDegree_sub_C])
 
+/-- Subtracting a constant multiple of `p` from one gives degree at most that of `p`. -/
+theorem _root_.Polynomial.natDegree_one_sub_C_mul_le {S : Type*} [Ring S] (a : S) (p : S[X]) :
+    (1 - C a * p).natDegree ≤ p.natDegree :=
+  (natDegree_sub_le _ _).trans (max_le (by simp) (natDegree_C_mul_le _ _))
+
+/-- The linear polynomial `1 - t X` has degree at most one. -/
+theorem _root_.Polynomial.natDegree_one_sub_C_mul_X_le {S : Type*} [Ring S] (t : S) :
+    (1 - C t * X).natDegree ≤ 1 :=
+  (natDegree_one_sub_C_mul_le t X).trans natDegree_X_le
+
 /-- For `2 ≤ n`, the trinomial `X ^ n + C a * X + C b` has degree `n`. -/
 theorem _root_.Polynomial.natDegree_X_pow_add_C_mul_X_add_C [Nontrivial R] (a b : R) {n : ℕ}
     (hn : 2 ≤ n) : (X ^ n + C a * X + C b).natDegree = n := by
   rw [add_assoc, natDegree_add_eq_left_of_degree_lt, natDegree_X_pow]
   rw [degree_X_pow]
   exact degree_linear_le.trans_lt (by exact_mod_cast (by omega : 1 < n))
+
+/-- An affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree. -/
+@[simp]
+theorem _root_.Polynomial.natDegree_comp_C_mul_X_add_C [NoZeroDivisors R] {a : R} (ha : a ≠ 0)
+    (b : R) (p : R[X]) : (p.comp (C a * X + C b)).natDegree = p.natDegree := by
+  rw [natDegree_comp, natDegree_linear ha, mul_one]
 
 end TauCeti

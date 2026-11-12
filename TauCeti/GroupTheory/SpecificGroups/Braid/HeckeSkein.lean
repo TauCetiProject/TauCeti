@@ -347,10 +347,7 @@ theorem strandSpan_sup_heckeSkein_eq_top (n : ℕ) :
   induction n with
   | zero =>
     refine strandSpan_sup_heckeSkein_eq_top_of_forall fun b c ↦ ?_
-    have hc : c = 1 := by
-      have h : MonoidHom.id (BraidGroup 1) = 1 := hom_ext fun i ↦ i.elim0
-      exact DFunLike.congr_fun h c
-    simpa [hc] using single_mul_sigma_mul_sigma_mem (S := S) (z := z) b
+    simpa [eq_one_of_le_one le_rfl c] using single_mul_sigma_mul_sigma_mem (S := S) (z := z) b
   | succ m ih =>
     refine strandSpan_sup_heckeSkein_eq_top_of_forall fun b c ↦ ?_
     simpa [mapDomain_single, single_mul_single, mul_assoc] using

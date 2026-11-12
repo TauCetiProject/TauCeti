@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.Singular.Basic
+public import TauCeti.Topology.Category.TopCat.Subspace
+public import TauCeti.Topology.Category.TopPair
 
 /-!
 # Relative singular chains
@@ -41,16 +43,6 @@ open CategoryTheory Limits
 universe w v u
 
 namespace TopPair
-
-/-- The ambient component of the identity map of a topological pair is the identity. -/
-@[simp]
-lemma Hom.fst_id (P : TopPair.{w}) : Hom.fst (𝟙 P) = 𝟙 P.fst := rfl
-
-/-- The ambient component of a composite map of topological pairs is the composite of the
-ambient components. -/
-@[simp]
-lemma Hom.fst_comp {P Q S : TopPair.{w}} (f : P ⟶ Q) (g : Q ⟶ S) :
-    Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g := rfl
 
 /-- The inclusion of the subspace of a topological pair is a monomorphism, since an embedding is
 injective. -/
@@ -95,6 +87,77 @@ lemma mem_range_restrict_hom_app_iff (P : TopPair.{w}) (S : (toSSetPair.obj P).r
       Set.range (P.fst.toSSetObjEquiv n x.1) ⊆ Set.range P.map :=
   (SSetPair.mem_range_restrict_hom_app_iff _ _ x).trans
     (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.1)
+
+section ofInclusionMap
+
+variable {X : TopCat.{w}} {A₁ C₁ A₂ C₂ : Set X} (h₁ : C₁ ⊆ A₁) (h₂ : C₂ ⊆ A₂) (hA : A₁ ⊆ A₂)
+  (hg : ∀ x : A₁, (x : X) ∈ C₁ → (ContinuousMap.inclusion hA x : X) ∈ C₂)
+
+/-- On singular simplicial sets of subspaces, the map of pairs `(A₁, C₁) ⟶ (A₂, C₂)` induced by
+the inclusion `A₁ ⊆ A₂` is the map induced by the inclusion `C₁ ⊆ C₂`. -/
+lemma toSSetPair_map_ofInclusionMap_inclusion_left (hC : C₁ ⊆ C₂) :
+    (toSSetPair.map (ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA) hg)).left =
+      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion hC)) := by
+  rw [toSSetPair_map_left]
+  congr 1
+  ext x
+  exact Subtype.ext (ofInclusionMap_snd_apply _ _ x)
+
+/-- On the ambient singular simplicial sets, the map of pairs `(A₁, C₁) ⟶ (A₂, C₂)` induced by
+the inclusion `A₁ ⊆ A₂` is the map induced by that inclusion. -/
+lemma toSSetPair_map_ofInclusionMap_inclusion_right :
+    (toSSetPair.map (ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA) hg)).right =
+      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.inclusion hA)) := by
+  rw [toSSetPair_map_right]
+  congr 1
+  ext x
+  exact ofInclusionMap_fst_apply _ _ x
+
+/-- The map of pairs induced by an inclusion of subspaces is a monomorphism on the singular
+simplicial sets of the subspaces. -/
+lemma mono_toSSetPair_map_ofInclusionMap_inclusion_left :
+    Mono (toSSetPair.map (ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA) hg)).left := by
+  have hC : C₁ ⊆ C₂ := fun x hx ↦ hg ⟨x, h₁ hx⟩ hx
+  rw [toSSetPair_map_ofInclusionMap_inclusion_left h₁ h₂ hA hg hC]
+  exact Functor.map_mono _ _
+
+/-- The map of pairs induced by an inclusion of subspaces is a monomorphism on the ambient
+singular simplicial sets. -/
+lemma mono_toSSetPair_map_ofInclusionMap_inclusion_right :
+    Mono (toSSetPair.map (ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA) hg)).right := by
+  rw [toSSetPair_map_ofInclusionMap_inclusion_right]
+  exact Functor.map_mono _ _
+
+end ofInclusionMap
+
+section ofInclusionMapRestrict
+
+variable {X Y : TopCat.{w}} (f : X ⟶ Y) {A₁ C₁ : Set X} {A₂ C₂ : Set Y} (h₁ : C₁ ⊆ A₁)
+  (h₂ : C₂ ⊆ A₂) (hfA : Set.MapsTo f A₁ A₂) (hfC : Set.MapsTo f C₁ C₂)
+
+/-- On the singular simplicial sets of the subspaces, the map of pairs `(A₁, C₁) ⟶ (A₂, C₂)`
+induced by the restriction of `f` is the map induced by the restriction of `f` to `C₁`. -/
+lemma toSSetPair_map_ofInclusionMap_restrict_left :
+    (toSSetPair.map (ofInclusionMap h₁ h₂ ⟨hfA.restrict, f.hom.continuous.restrict hfA⟩
+        fun _ hx ↦ hfC hx)).left =
+      TopCat.toSSet.map (TopCat.ofHom ⟨hfC.restrict, f.hom.continuous.restrict hfC⟩) := by
+  rw [toSSetPair_map_left]
+  congr 1
+  ext x
+  exact Subtype.ext (ofInclusionMap_snd_apply _ _ x)
+
+/-- On the ambient singular simplicial sets, the map of pairs `(A₁, C₁) ⟶ (A₂, C₂)` induced by
+the restriction of `f` is the map induced by that restriction. -/
+lemma toSSetPair_map_ofInclusionMap_restrict_right :
+    (toSSetPair.map (ofInclusionMap h₁ h₂ ⟨hfA.restrict, f.hom.continuous.restrict hfA⟩
+        fun _ hx ↦ hfC hx)).right =
+      TopCat.toSSet.map (TopCat.ofHom ⟨hfA.restrict, f.hom.continuous.restrict hfA⟩) := by
+  rw [toSSetPair_map_right]
+  congr 1
+  ext x
+  exact ofInclusionMap_fst_apply _ _ x
+
+end ofInclusionMapRestrict
 
 variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 
@@ -280,6 +343,15 @@ lemma singularHomologyMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.m
     ← singularChainComplexMap, singularChainComplexMap_eq_zero_of_fac f R g hg,
     HomologicalComplex.homologyMap_zero]
 
+/-- Whether the relative singular homology of a pair of subspaces vanishes only depends on the
+subspaces, not on how they are written. -/
+lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Set X}
+    (h : S ⊆ A) (h' : S' ⊆ A') (hA : A = A') (hS : S = S') (n : ℕ) :
+    IsZero ((ofInclusion h).singularHomology R n) ↔
+      IsZero ((ofInclusion h').singularHomology R n) := by
+  subst hA hS
+  rfl
+
 /-- Relative singular homology as a functor on topological pairs. -/
 @[no_expose]
 noncomputable def singularHomologyFunctor (n : ℕ) : TopPair.{w} ⥤ C :=
@@ -375,6 +447,20 @@ lemma isIso_singularHomologyπ_of_isIso_comp [IsIso (Hom.fst f)] {n : ℕ}
     rw [singularHomologyπ_naturality]
     exact h
   exact IsIso.of_isIso_comp_left (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) _
+
+/-- For subsets `S' ⊆ S` of `X`, the map `Hₙ(X) ⟶ Hₙ(X, S)` factors through `Hₙ(X) ⟶ Hₙ(X, S')`,
+via the map induced by the identity of `X` as a map of pairs `(X, S') ⟶ (X, S)`. -/
+@[reassoc]
+lemma singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id {X : TopCat.{w}}
+    {S S' : Set X} (h : Set.MapsTo (𝟙 X) S' S) (n : ℕ) :
+    (ofSubset S').singularHomologyπ R n ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) h) R n =
+      (ofSubset S).singularHomologyπ R n := by
+  have hid : SSet.homologyMap (TopCat.toSSet.map (Hom.fst (ofSubsetMap (𝟙 X) h))) R n = 𝟙 _ := by
+    rw [ofSubsetMap_fst]
+    exact (congrArg (SSet.homologyMap · R n) (TopCat.toSSet.map_id X)).trans
+      (SSet.homologyMap_id _ R n)
+  rw [← singularHomologyπ_naturality, hid]
+  exact Category.id_comp _
 
 end Homology
 

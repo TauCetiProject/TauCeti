@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Ring.Hom.Defs
 
 import Mathlib.Tactic
 
@@ -89,6 +90,21 @@ theorem eq_one_of_units_mul_zpow_eq_zpow [NeZero (2 : K)] {q : K}
     linear_combination -h
   exact mul_ne_zero two_ne_zero (zpow_ne_zero m hq.ne_zero) this
 
+/-- At a generic parameter in a field of characteristic not two, a signed power `ε q ^ m`
+determines both the sign `ε` and the exponent `m`. -/
+theorem units_mul_zpow_inj [NeZero (2 : K)] {q : K} (hq : IsGenericQuantumParameter q)
+    {ε δ : ℤˣ} {m n : ℤ} :
+    ((ε : ℤ) : K) * q ^ m = ((δ : ℤ) : K) * q ^ n ↔ ε = δ ∧ m = n := by
+  refine ⟨fun h => ?_, by rintro ⟨rfl, rfl⟩; rfl⟩
+  -- Moving `δ` across gives `(δ ε) q ^ m = q ^ n`, which forces the sign `δ ε` to be one.
+  have hδε : δ * ε = 1 := hq.eq_one_of_units_mul_zpow_eq_zpow (m := m) (n := n) <| by
+    rw [Units.val_mul, Int.cast_mul, mul_assoc, h, ← mul_assoc, ← Int.cast_mul, ← Units.val_mul,
+      Int.units_mul_self, Units.val_one, Int.cast_one, one_mul]
+  obtain rfl : ε = δ := by
+    rw [← mul_right_inj δ, hδε, Int.units_mul_self]
+  refine ⟨rfl, hq.zpow_injective (mul_left_cancel₀ ?_ h)⟩
+  rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+
 /-- A generic quantum parameter is not equal to its inverse. -/
 theorem ne_inv {q : K} (hq : IsGenericQuantumParameter q) : q ≠ q⁻¹ := by
   intro h
@@ -140,9 +156,12 @@ theorem quantumInteger_def (q : K) (r : ℤ) :
   rw [quantumInteger]
 
 /-- `(q - q⁻¹) [n]_q = q^n - q^(-n)` for natural `n`. -/
-theorem sub_inv_mul_quantumInteger_natCast {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
+theorem sub_inv_mul_quantumInteger_natCast (q : K) (n : ℕ) :
     (q - q⁻¹) * quantumInteger q n = q ^ n - q⁻¹ ^ n := by
-  rw [quantumInteger_def, mul_div_cancel₀ _ hq, zpow_neg, zpow_natCast, inv_pow]
+  by_cases hq : q - q⁻¹ = 0
+  · rw [hq, zero_mul]
+    exact (sub_eq_zero.mpr (congrArg (· ^ n) (sub_eq_zero.mp hq))).symm
+  · rw [quantumInteger_def, mul_div_cancel₀ _ hq, zpow_neg, zpow_natCast, inv_pow]
 
 /-- The zeroth quantum integer is zero. -/
 @[simp] theorem quantumInteger_zero (q : K) : quantumInteger q 0 = 0 := by
@@ -254,4 +273,33 @@ theorem quantumInteger_ne_zero {q : K} (hq : IsGenericQuantumParameter q) {r : �
   refine hfin (isOfFinOrder_iff_zpow_eq_one.mpr ⟨r - -r, by omega, ?_⟩)
   rw [zpow_sub₀ hq.ne_zero, sub_eq_zero.mp h, div_self (zpow_ne_zero _ hq.ne_zero)]
 
+/-- For `q ≠ 0`, the quantum integer `[r]_q` vanishes exactly when `q^(2r) = 1`. When
+`q - q⁻¹ = 0`, that is `q = ±1`, both sides hold: `[r]_q = 0` by the field convention. -/
+theorem quantumInteger_eq_zero_iff {q : K} (hq : q ≠ 0) (r : ℤ) :
+    quantumInteger q r = 0 ↔ q ^ (2 * r) = 1 := by
+  by_cases hd : q - q⁻¹ = 0
+  · -- Here `q² = 1`, so both sides hold.
+    have hsq : q ^ 2 = 1 := by
+      field_simp at hd
+      linear_combination hd
+    simp [quantumInteger_def, hd, zpow_mul, hsq]
+  have := zpow_ne_zero r hq
+  rw [quantumInteger_def, div_eq_zero_iff, or_iff_left hd, sub_eq_zero, two_mul, zpow_add₀ hq,
+    zpow_neg]
+  constructor <;> intro h <;> field_simp at h ⊢ <;> linear_combination h
+
 end TauCeti
+
+namespace RingHom
+
+open TauCeti
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- Ring homomorphisms between fields commute with the quantum integers. -/
+@[simp]
+theorem map_quantumInteger (φ : K →+* L) (q : K) (r : ℤ) :
+    φ (quantumInteger q r) = quantumInteger (φ q) r := by
+  simp [quantumInteger_def]
+
+end RingHom

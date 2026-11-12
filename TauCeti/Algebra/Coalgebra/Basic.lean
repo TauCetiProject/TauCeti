@@ -8,16 +8,21 @@ module
 public import Mathlib.RingTheory.Coalgebra.Basic
 
 /-!
-# Elements whose comultiplication is a single tensor
+# Coalgebra extensionality and counit identities
 
-If the comultiplication of an element `a` of a coalgebra is the pure tensor `a ⊗ c`, then the
-counit law `(ε ⊗ id) ∘ Δ = id` collapses the coalgebra structure at `a`: applying it to
-`Δ a = a ⊗ c` gives `a = ε(a) • c`. In particular an element fixed by the regular coaction,
-`Δ a = a ⊗ 1`, is the scalar multiple `ε(a) • 1` of the identity.
+Coalgebra structures are determined by their comultiplication and counit.
+The counit recovers an element from either leg of a finite representation of its coproduct.
+
+If the comultiplication of an element `a` of a coalgebra is a pure tensor `b ⊗ c`, then the
+counit law `(ε ⊗ id) ∘ Δ = id` determines `a` from it: applying it to `Δ a = b ⊗ c` gives
+`a = ε(b) • c`. In particular `Δ a = a ⊗ c` gives `a = ε(a) • c`, so in a bialgebra an element
+fixed by the regular coaction, `Δ a = a ⊗ 1`, is the scalar multiple `ε(a) • 1` of the identity.
 
 ## Main declarations
 
-* `TauCeti.Coalgebra.eq_counit_smul_of_comul_eq_tmul`: `Δ a = a ⊗ c` implies `a = ε(a) • c`.
+* `Coalgebra.ext`: equality of coalgebras from equality of comultiplication and counit.
+* `Coalgebra.sum_smul_counit`: the right counit identity in a finite coproduct representation.
+* `TauCeti.Coalgebra.eq_counit_smul_of_comul_eq_tmul`: `Δ a = b ⊗ c` implies `a = ε(b) • c`.
 
 ## References
 
@@ -28,6 +33,33 @@ public section
 
 open scoped TensorProduct
 
+namespace Coalgebra
+
+variable {R A ι : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [Coalgebra R A]
+
+omit [Coalgebra R A] in
+/-- Coalgebra structures with the same comultiplication and counit are equal. -/
+@[ext] theorem ext {c d : Coalgebra R A} (hcomul : c.comul = d.comul)
+    (hcounit : c.counit = d.counit) : c = d := by
+  cases c with
+  | @mk cs _ _ _ =>
+    cases d with
+    | @mk ds _ _ _ =>
+      cases cs
+      cases ds
+      cases hcomul
+      cases hcounit
+      rfl
+
+/-- Applying the counit to the second leg of a finite coproduct representation recovers
+its represented element. -/
+lemma sum_smul_counit {a : A} (𝓡 : Repr R a ι) :
+    ∑ i ∈ 𝓡.index, counit (R := R) (𝓡.right i) • 𝓡.left i = a := by
+  simpa only [map_sum, TensorProduct.rid_tmul, one_smul] using
+    congrArg (TensorProduct.rid R A) (sum_tmul_counit_eq 𝓡)
+
+end Coalgebra
+
 namespace TauCeti.Coalgebra
 
 universe u v
@@ -35,13 +67,11 @@ universe u v
 variable {R : Type u} {A : Type v}
 variable [CommSemiring R] [AddCommMonoid A] [Module R A] [Coalgebra R A]
 
-/-- An element whose comultiplication is the pure tensor `a ⊗ c` is the scalar multiple of `c` by
-its counit. -/
-theorem eq_counit_smul_of_comul_eq_tmul {a c : A}
-    (h : Coalgebra.comul (R := R) a = a ⊗ₜ[R] c) :
-    a = Coalgebra.counit (R := R) a • c := by
-  have hc := congrArg ((Coalgebra.counit (R := R) (A := A)).rTensor A) h
-  rw [Coalgebra.rTensor_counit_comul, LinearMap.rTensor_tmul] at hc
-  simpa using congrArg (TensorProduct.lid R A) hc
+/-- An element whose comultiplication is the pure tensor `b ⊗ c` is the scalar multiple of `c` by
+the counit of `b`. -/
+theorem eq_counit_smul_of_comul_eq_tmul {a b c : A}
+    (h : Coalgebra.comul (R := R) a = b ⊗ₜ[R] c) :
+    a = Coalgebra.counit (R := R) b • c := by
+  simpa [h] using congr(TensorProduct.lid R A $(Coalgebra.rTensor_counit_comul (R := R) a)).symm
 
 end TauCeti.Coalgebra

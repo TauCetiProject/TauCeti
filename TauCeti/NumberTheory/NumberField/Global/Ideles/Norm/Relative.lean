@@ -49,6 +49,8 @@ homomorphism to `ℝ≥0ˣ`.
   `TauCeti.GlobalNumberFields.ideleClassNormMap_ofCompletion`: the norm of an idele, or of an
   idele class, concentrated at one infinite place `w` is concentrated at the place below `w`,
   with the local norm as coordinate.
+* `TauCeti.GlobalNumberFields.ideleNormMap_ofAdicCompletion`,
+  `TauCeti.GlobalNumberFields.ideleClassNormMap_ofAdicCompletion`: the same at a finite place.
 * `TauCeti.GlobalNumberFields.ideleNormMap_unitEmbedding`: the norm of a principal idele is the
   principal idele of the global norm.
 * `TauCeti.GlobalNumberFields.ideleNormMap_ideleExtension`,
@@ -56,6 +58,8 @@ homomorphism to `ℝ≥0ˣ`.
   an idele class, extended from `K` is its `[L : K]`-th power.
 * `TauCeti.GlobalNumberFields.ideleNormMap_comp`,
   `TauCeti.GlobalNumberFields.ideleClassNormMap_comp`: norm maps compose in towers.
+* `TauCeti.GlobalNumberFields.range_ideleClassNormMap_le_of_algHom`: a larger extension has a
+  smaller idele-class norm group.
 * `TauCeti.GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv`: `K`-isomorphic extensions
   have the same idele-class norm group.
 * `TauCeti.GlobalNumberFields.range_ideleClassNormMap`,
@@ -149,6 +153,34 @@ theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w
   · simp only [ideleFiniteCoord_ideleNormMap,
       HeightOneSpectrum.ideleFiniteCoord_ofCompletion, map_one, finprod_one]
 
+variable {K L} in
+/-- **The norm of an idele concentrated at one finite place.** If `w` lies over `v`, the norm of
+the idele that is `u` at `w` and `1` elsewhere is the idele that is `N_{L_w/K_v}(u)` at `v` and
+`1` elsewhere. -/
+theorem ideleNormMap_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] (u : (w.adicCompletion L)ˣ) :
+    ideleNormMap K L (IdeleGroup.ofAdicCompletion (𝓞 L) L w u) =
+      IdeleGroup.ofAdicCompletion (𝓞 K) K v (Algebra.normUnits (v.adicCompletion K) u) := by
+  refine IdeleGroup.ext (fun v' ↦ ?_) (fun v' ↦ ?_)
+  · simp only [ideleInfiniteCoord_ideleNormMap,
+      InfinitePlace.ideleInfiniteCoord_ofAdicCompletion, map_one, finprod_one]
+  · rw [ideleFiniteCoord_ideleNormMap]
+    by_cases hv : v' = v
+    · subst hv
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self, finprod_eq_single _ ⟨w, ‹_›⟩]
+      · rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self]
+      · rintro ⟨w', hw'⟩ hne
+        rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w'
+          fun h ↦ hne (Subtype.ext h), map_one]
+    · -- No place above `v'` is `w`, so every factor is trivial.
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv]
+      refine finprod_eq_one_of_forall_eq_one fun w' ↦ ?_
+      have hne : w'.1 ≠ w := by
+        rintro rfl
+        exact hv (HeightOneSpectrum.ext
+          (w'.2.over.trans ‹w'.1.asIdeal.LiesOver v.asIdeal›.over.symm))
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w'.1 hne, map_one]
+
 /-- The norm of a principal idele is the principal idele of the norm of `L / K`. -/
 @[simp]
 theorem ideleNormMap_unitEmbedding (x : Lˣ) :
@@ -234,13 +266,21 @@ theorem ideleClassNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace 
   rw [IdeleClassGroup.ofCompletion_apply, ideleClassNormMap_mk, ideleNormMap_ofCompletion v w,
     ← IdeleClassGroup.ofCompletion_apply]
 
+variable {K L} in
+/-- **The norm of an idele class concentrated at one finite place.** If `w` lies over `v`, the
+norm of the class of the idele that is `u` at `w` is the class of the idele that is
+`N_{L_w/K_v}(u)` at `v`. -/
+theorem ideleClassNormMap_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal] (u : (w.adicCompletion L)ˣ) :
+    ideleClassNormMap K L (IdeleClassGroup.ofAdicCompletion (𝓞 L) L w u) =
+      IdeleClassGroup.ofAdicCompletion (𝓞 K) K v (Algebra.normUnits (v.adicCompletion K) u) := by
+  rw [IdeleClassGroup.ofAdicCompletion_apply, ideleClassNormMap_mk,
+    ideleNormMap_ofAdicCompletion v w, ← IdeleClassGroup.ofAdicCompletion_apply]
+
 /-- The idele-class norm group `N_{L/K}(C_L)` is normal in `C_K`, which is commutative, so the
 norm quotient `C_K / N_{L/K}(C_L)` is a group. -/
 instance normal_range_ideleClassNormMap :
     (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.Normal :=
-  -- `IdeleClassGroup` is an abbreviation whose commutativity `IsMulCommutative` search does not
-  -- find through the quotient, so it is supplied here.
-  have : IsMulCommutative (IdeleClassGroup (𝓞 K) K) := ⟨⟨fun a b ↦ mul_comm a b⟩⟩
   Subgroup.normal_of_isMulCommutative _
 
 /-- The relative norm on idele classes is continuous for the quotient topology. -/
@@ -269,23 +309,26 @@ theorem ideleClassNormMap_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
         (DFunLike.congr_fun (ideleNormMap_comp K L M) x)
 
 variable {K L} in
+/-- **A larger extension has a smaller idele-class norm group**: if `f : L →ₐ[K] M`, then
+`N_{M/K}(C_M) ≤ N_{L/K}(C_L)`. Through `f`, `M` is an extension of `L`, and
+`N_{M/K} = N_{L/K} ∘ N_{M/L}`. -/
+theorem range_ideleClassNormMap_le_of_algHom {M : Type*} [Field M] [NumberField M]
+    [Algebra K M] (f : L →ₐ[K] M) :
+    (ideleClassNormMap K M : IdeleClassGroup (𝓞 M) M →* IdeleClassGroup (𝓞 K) K).range ≤
+      (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
+  let _ : Algebra L M := f.toRingHom.toAlgebra
+  have : IsScalarTower K L M := IsScalarTower.of_algebraMap_eq fun x ↦ (f.commutes x).symm
+  rintro _ ⟨y, rfl⟩
+  exact ⟨ideleClassNormMap L M y, DFunLike.congr_fun (ideleClassNormMap_comp K L M) y⟩
+
+variable {K L} in
 /-- **`K`-isomorphic extensions have the same idele-class norm group**: if `e : L ≃ₐ[K] M`, then
-`N_{L/K}(C_L) = N_{M/K}(C_M)`. Through `e⁻¹`, `L` is an extension of `M` of degree one, whose
-idele-class norm `N_{L/M}` is onto, and `N_{L/K} = N_{M/K} ∘ N_{L/M}`. -/
+`N_{L/K}(C_L) = N_{M/K}(C_M)`. -/
 theorem range_ideleClassNormMap_eq_of_algEquiv {M : Type*} [Field M] [NumberField M]
     [Algebra K M] (e : L ≃ₐ[K] M) :
     (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range =
-      (ideleClassNormMap K M : IdeleClassGroup (𝓞 M) M →* IdeleClassGroup (𝓞 K) K).range := by
-  let _ : Algebra M L := e.symm.toRingHom.toAlgebra
-  have : IsScalarTower K M L := IsScalarTower.of_algebraMap_eq fun x ↦ (e.symm.commutes x).symm
-  have hcomp (y : IdeleClassGroup (𝓞 L) L) :
-      ideleClassNormMap K M (ideleClassNormMap M L y) = ideleClassNormMap K L y :=
-    DFunLike.congr_fun (ideleClassNormMap_comp K M L) y
-  ext c
-  simp only [MonoidHom.mem_range, MonoidHom.coe_ofClass]
-  refine ⟨fun ⟨y, hy⟩ ↦ ⟨ideleClassNormMap M L y, (hcomp y).trans hy⟩,
-    fun ⟨y, hy⟩ ↦ ⟨ideleClassExtension M L y, ?_⟩⟩
-  rw [← hcomp, ideleClassNormMap_ideleClassExtension,
-    Module.finrank_of_bijective_algebraMap e.symm.bijective, pow_one, hy]
+      (ideleClassNormMap K M : IdeleClassGroup (𝓞 M) M →* IdeleClassGroup (𝓞 K) K).range :=
+  le_antisymm (range_ideleClassNormMap_le_of_algHom e.symm.toAlgHom)
+    (range_ideleClassNormMap_le_of_algHom e.toAlgHom)
 
 end TauCeti.GlobalNumberFields

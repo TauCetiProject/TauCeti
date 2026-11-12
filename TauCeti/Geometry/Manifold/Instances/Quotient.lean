@@ -44,8 +44,14 @@ an open invariant subset. The free locus inherits the charts of the ambient mani
   diffeomorphism.
 * `TauCeti.instIsManifoldAddQuotient`, `TauCeti.isLocalDiffeomorph_addQuotientMk`: the same for
   additive actions, on Mathlib's additive orbit space `AddAction.orbitRel.Quotient`.
-* `TauCeti.exists_trans_eq_of_mem_atlas_quotient`: every chart of the orbit space is a local
+* `TauCeti.mfderiv_quotientMk_smul_apply`: the derivative of the orbit projection is invariant
+  under the derivatives of the group elements.
+* `TauCeti.exists_trans_eq_of_mem_atlas_quotient`,
+  `TauCeti.exists_trans_eq_of_mem_atlas_addQuotient`: every chart of the orbit space is a local
   section of the orbit projection followed by a chart of `M`.
+* `TauCeti.exists_symm_eq_quotientMk_of_mem_atlas_quotient`,
+  `TauCeti.exists_symm_eq_addQuotientMk_of_mem_atlas_addQuotient`: so the inverse of every chart
+  of the orbit space is the inverse of a chart of `M` followed by the orbit projection.
 * `TauCeti.freeLocus.instChartedSpace`, `TauCeti.freeLocus.instIsManifold` and
   `TauCeti.freeLocus.instContMDiffConstSMul`: the free locus of a properly discontinuous action
   is an open submanifold on which the group acts by `C^n` maps.
@@ -217,6 +223,9 @@ variable [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul
 
 /-- A chart of the orbit space of a free, properly discontinuous action is a local section of the
 orbit projection followed by a chart of `M`. -/
+@[to_additive exists_trans_eq_of_mem_atlas_addQuotient /-- A chart of the orbit space of a free,
+properly discontinuous additive action is a local section of the orbit projection followed by a
+chart of `M`. -/]
 theorem exists_trans_eq_of_mem_atlas_quotient
     {e : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) H}
     (he : e ∈ atlas H (MulAction.orbitRel.Quotient G M)) :
@@ -227,6 +236,24 @@ theorem exists_trans_eq_of_mem_atlas_quotient
   rw [hf.atlas_chartedSpaceOfRightInverse Quotient.mk_surjective.hasRightInverse.choose_spec] at he
   obtain ⟨q, rfl⟩ := he
   exact ⟨_, _, rfl, fun x hx ↦ hf.apply_localInverseAt_of_mem hx⟩
+
+/-- The inverse of a chart of the orbit space of a free, properly discontinuous action is the
+inverse of a chart of `M` followed by the orbit projection. -/
+@[to_additive exists_symm_eq_addQuotientMk_of_mem_atlas_addQuotient /-- The inverse of a chart of
+the orbit space of a free, properly discontinuous additive action is the inverse of a chart of `M`
+followed by the orbit projection. -/]
+theorem exists_symm_eq_quotientMk_of_mem_atlas_quotient
+    {e : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) H}
+    (he : e ∈ atlas H (MulAction.orbitRel.Quotient G M)) :
+    ∃ z : M, ∀ w ∈ e.target, w ∈ (chartAt H z).target ∧
+      e.symm w = Quotient.mk _ ((chartAt H z).symm w) := by
+  obtain ⟨s, z, rfl, hs⟩ := exists_trans_eq_of_mem_atlas_quotient he
+  refine ⟨z, fun w hw ↦ ?_⟩
+  rw [OpenPartialHomeomorph.trans_target] at hw
+  refine ⟨hw.1, ?_⟩
+  -- The local section `s` is inverse to the orbit projection on its source.
+  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.coe_trans,
+    Function.comp_apply, ← hs _ (s.map_target hw.2), s.right_inv hw.2]
 
 /-- The orbit space of a free, properly discontinuous action by `C^n` maps on a `C^n` manifold is a
 `C^n` manifold, for the charts pushed forward along the orbit projection. -/
@@ -249,6 +276,25 @@ theorem isLocalDiffeomorph_quotientMk [IsManifold I n M] :
   (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G) (E := M)).isCoveringMap
     |>.isLocalHomeomorph |>.isLocalDiffeomorph_chartedSpaceOfRightInverse
       Quotient.mk_surjective.hasRightInverse.choose_spec (quotientMk_deck (G := G) (M := M))
+
+/-- The derivative of the orbit projection at `g • x`, applied to the derivative of `g • ·` at
+`x`, is the derivative of the orbit projection at `x`: the orbit projection is invariant. -/
+@[to_additive mfderiv_addQuotientMk_vadd_apply /-- The derivative of the additive orbit projection
+at `g +ᵥ x`, applied to the derivative of `g +ᵥ ·` at `x`, is the derivative of the orbit
+projection at `x`: the orbit projection is invariant. -/]
+theorem mfderiv_quotientMk_smul_apply (hn : n ≠ 0) {g : G} {x : M}
+    (hq : MDifferentiableAt I I (Quotient.mk (MulAction.orbitRel G M)) (g • x))
+    (v : TangentSpace I x) :
+    mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) (g • x)
+        (mfderiv I I (g • · : M → M) x v) =
+      mfderiv I I (Quotient.mk (MulAction.orbitRel G M)) x v := by
+  have hinv : Quotient.mk (MulAction.orbitRel G M) ∘ (g • · : M → M) =
+      Quotient.mk (MulAction.orbitRel G M) :=
+    funext fun y ↦ Quotient.sound ⟨g, rfl⟩
+  rw [← ContinuousLinearMap.comp_apply, ← mfderiv_comp x hq
+    ((contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn x), hinv]
+  -- The two sides differ only in how the tangent space at the orbit of `x` is written.
+  rfl
 
 end Quotient
 

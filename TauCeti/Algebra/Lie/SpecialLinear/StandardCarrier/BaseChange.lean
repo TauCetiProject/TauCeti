@@ -41,10 +41,6 @@ its torus.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
-
-This advances the base-change and pinning targets in Layer 9 of the ReductiveGroups roadmap. The
-specialized type `A` carrier is consumed by milestone L0, "pinned ambient groups", of the
-CFSGStatement roadmap.
 -/
 
 public section
@@ -69,7 +65,7 @@ noncomputable def baseChangeDefiningIdeal :
     HopfIdeal A (GeneralLinear.coordinateHopfAlgebra A (r + 1)) :=
   kostantToralBaseChangePresentationIdeal
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A
 
 /-- The specialized defining ideal is the general toral Kostant base-change ideal for the
@@ -79,7 +75,7 @@ theorem baseChangeDefiningIdeal_def :
     baseChangeDefiningIdeal r A =
       kostantToralBaseChangePresentationIdeal
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A := by
   unfold baseChangeDefiningIdeal
   rfl
@@ -93,11 +89,11 @@ noncomputable def baseChangeCoordinateIso :
         (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
           (kostantToralDefiningIdeal
             (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-            (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+            (rep_kostantForm_mem_lattice r)
             (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r))) :=
   kostantToralBaseChangePresentationIso
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A
 
 /-- The type `A_r` base-change coordinate isomorphism is compatible with the quotient
@@ -112,11 +108,11 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
           (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
             (kostantToralDefiningIdeal
               (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-              (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+              (rep_kostantForm_mem_lattice r)
               (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r))) := by
   exact mkQuotient_comp_kostantToralBaseChangePresentationIso_hom
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A
 
 /-- The base change to `A` of the integral root-subgroup coordinate map at the numbered root
@@ -125,7 +121,7 @@ noncomputable def rootSubgroupBaseChangeCoordinateMap (i : Fin r ⊕ Fin r) :
     GeneralLinear.coordinateHopfAlgebra A (r + 1) ⟶ AdditiveGroup.coordinateHopfAlgebra A :=
   kostantRootSubgroupBaseChangePresentationCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) A i
 
 /-- The ambient base-changed root-subgroup map is the specialization of the general transported
@@ -134,7 +130,7 @@ theorem rootSubgroupBaseChangeCoordinateMap_def (i : Fin r ⊕ Fin r) :
     rootSubgroupBaseChangeCoordinateMap r A i =
       kostantRootSubgroupBaseChangePresentationCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) A i := by
   unfold rootSubgroupBaseChangeCoordinateMap
   rfl
@@ -146,7 +142,7 @@ noncomputable def rootSubgroupToBaseChangeCoordinateMap (i : Fin r ⊕ Fin r) :
         (baseChangeDefiningIdeal r A) ⟶ AdditiveGroup.coordinateHopfAlgebra A :=
   kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A i
 
 /-- The factored type `A_r` root-subgroup map recovers its ambient transported coordinate map. -/
@@ -158,7 +154,7 @@ theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap (i : Fin r ⊕ Fin
       rootSubgroupBaseChangeCoordinateMap r A i := by
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A i
 
 /-- The base change to `A` of the integral type `A_r` weight-torus coordinate map, transported to
@@ -192,7 +188,7 @@ noncomputable def weightTorusToBaseChangeCoordinateMap :
       (DiagonalizableGroup.coordinateRing A (SplitTorus.characterGroup (Fin r))).obj :=
   kostantWeightTorusToralBaseChangePresentationCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A
 
 /-- The factored type `A_r` weight-torus map recovers its ambient transported coordinate map. -/
@@ -204,7 +200,7 @@ theorem mkQuotient_comp_weightTorusToBaseChangeCoordinateMap :
       weightTorusBaseChangeCoordinateMap r A := by
   exact mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A
 
 /-- The transported defining ideal lies in the common kernel of the numbered root-subgroup and
@@ -221,7 +217,7 @@ theorem baseChangeDefiningIdeal_le_commonKernel :
           | .inr _ => weightTorusBaseChangeCoordinateMap r A) := by
   have h := kostantToralBaseChangePresentationIdeal_le_commonKernelHopfIdeal
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A
   dsimp only at h ⊢
   rw [CommHopfAlgCat.le_commonKernelHopfIdeal_iff] at h ⊢

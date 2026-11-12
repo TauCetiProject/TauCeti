@@ -14,6 +14,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+public import Mathlib.Topology.DiscreteSubset
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
 /-!
@@ -43,6 +44,8 @@ holomorphic, and that a homeomorphism from an open subset of a complex curve ont
 * `TauCeti.analyticAt_chart_comp_comp_symm`: a map holomorphic near `x` has an analytic
   representative in any charts of the maximal atlases at `x` and `f x`;
   `TauCeti.analyticAt_chartAt_comp_comp_chartAt_symm` is the case of the preferred charts.
+* `TauCeti.analyticAt_comp_chartAt_symm`: a function to a complete complex normed space that is
+  holomorphic near `x` has an analytic representative in the preferred chart at `x`.
 * `IsHomeomorph.mdifferentiable_symm`: the inverse of a holomorphic homeomorphism between complex
   curves is holomorphic.
 * `TauCeti.mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE`: Riemann's removable singularity
@@ -130,6 +133,18 @@ theorem analyticAt_chartAt_comp_comp_chartAt_symm
   analyticAt_chart_comp_comp_symm (chart_mem_maximalAtlas x) (chart_mem_maximalAtlas (f x))
     (mem_chart_source ℂ x) (mem_chart_source ℂ (f x)) hf
 
+/-- A function to a complete complex normed space that is holomorphic near `x` has an analytic
+representative in the preferred chart at `x`. -/
+theorem analyticAt_comp_chartAt_symm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {g : X → E} (hg : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) g y) :
+    AnalyticAt ℂ (g ∘ (chartAt ℂ x).symm) (chartAt ℂ x x) := by
+  have hcx := mem_chart_source ℂ x
+  rw [Complex.analyticAt_iff_eventually_differentiableAt]
+  filter_upwards [(chartAt ℂ x).open_target.mem_nhds ((chartAt ℂ x).map_source hcx),
+    ((chartAt ℂ x).tendsto_symm hcx).eventually hg] with z hz hgz
+  exact mdifferentiableAt_iff_differentiableAt.1
+    (hgz.comp z (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ x) hz))
+
 end PreferredCharts
 
 /-! ### Regularity consequences -/
@@ -175,17 +190,14 @@ theorem _root_.IsHomeomorph.mdifferentiable_symm [IsManifold 𝓘(ℂ) 1 X]
     rw [← hFcx]
     exact ((analyticAt_comp_iff_of_deriv_ne_zero hFa hFderiv).mp
       (analyticAt_id.congr hGleft.symm)).differentiableAt
-  have hGmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) G (c' y) := hGdiff.mdifferentiableAt
   have hinner : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (G ∘ c') y :=
-    hGmd.comp y (mdifferentiableAt_of_mem_maximalAtlas (chart_mem_maximalAtlas (f x))
-      (hfx ▸ hc'fx))
+    hGdiff.mdifferentiableAt.comp y (mdifferentiableAt_of_mem_maximalAtlas
+      (chart_mem_maximalAtlas (f x)) (hfx ▸ hc'fx))
   have hGcy : G (c' y) = c x := by simp only [G, c'.left_inv (hfx ▸ hc'fx), x]
-  have hcomp : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (c.symm ∘ G ∘ c') y := by
-    have hsymm : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) c.symm (G (c' y)) := by
-      simpa only [hGcy] using
-        mdifferentiableAt_symm_of_mem_maximalAtlas (chart_mem_maximalAtlas x)
-          (c.map_source hcx)
-    exact hsymm.comp y hinner
+  have hcomp : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (c.symm ∘ G ∘ c') y :=
+    (by simpa only [hGcy] using
+      mdifferentiableAt_symm_of_mem_maximalAtlas (chart_mem_maximalAtlas x) (c.map_source hcx) :
+      MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) c.symm (G (c' y))).comp y hinner
   refine hcomp.congr_of_eventuallyEq ?_
   filter_upwards [c'.open_source.mem_nhds (hfx ▸ hc'fx),
     (hhomeo.homeomorph f).symm.continuous.continuousAt.eventually
@@ -247,6 +259,24 @@ theorem mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE (hc : ContinuousA
       (hc.comp_of_eq (c.continuousAt_symm (c.map_source hcx)) (c.left_inv hcx))
       (by rw [c.left_inv hcx])
 
+/-- A continuous map between complex curves that is holomorphic off a closed discrete set is
+holomorphic everywhere. -/
+theorem mdifferentiable_of_continuous_of_mdifferentiableOn_compl {s : Set X}
+    (hc : Continuous f) (hs : sᶜ ∈ codiscrete X)
+    (hf : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f sᶜ) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f := by
+  intro x
+  refine mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE hc.continuousAt ?_
+  filter_upwards [mem_codiscrete_iff_forall_mem_nhdsNE.mp hs x] with y hy
+  exact (hf y hy).mdifferentiableAt ((mem_codiscrete'.mp hs).1.mem_nhds hy)
+
+/-- A continuous map between complex curves that is holomorphic off a finite set is
+holomorphic everywhere. -/
+theorem _root_.Set.Finite.mdifferentiable_of_continuous_of_compl {s : Set X}
+    (hs : s.Finite) (hc : Continuous f) (hf : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f sᶜ) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f :=
+  have := ChartedSpace.t1Space ℂ X
+  mdifferentiable_of_continuous_of_mdifferentiableOn_compl hc hs.compl_mem_codiscrete hf
+
 /-- **A continuous lift of a holomorphic map through a local biholomorphism is holomorphic.** If
 `g` is holomorphic near `f x` and injective on a neighbourhood of `f x`, `g ∘ f` is holomorphic near
 `x`, and `f` is continuous at `x`, then `f` is holomorphic at `x`.
@@ -301,11 +331,13 @@ end LocalCriteria
 /-! ### Charts with holomorphic inverse -/
 
 /-- **A homeomorphism onto an open subset of `ℂ` with holomorphic inverse is a holomorphic chart.**
-On a complex curve, an open partial homeomorphism `e : X → ℂ` whose inverse is `C^n` on the target,
-for some `n ≠ 0`, belongs to the maximal `C^n` atlas. -/
-theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : ℕ∞ω} (hn : n ≠ 0)
+On a complex curve, an open partial homeomorphism `e : X → ℂ` whose inverse is `C^n` on the target
+belongs to the maximal `C^n` atlas. -/
+theorem _root_.OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn_symm {n : ℕ∞ω}
     [IsManifold 𝓘(ℂ) n X] (e : OpenPartialHomeomorph X ℂ)
     (he : ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n e.symm e.target) : e ∈ maximalAtlas 𝓘(ℂ) n X := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact e.mem_maximalAtlas_of_contMDiffOn (contMDiffOn_zero_iff.2 e.continuousOn) he
   refine e.mem_maximalAtlas_of_contMDiffOn (fun x hx ↦ ?_) he
   let c := chartAt ℂ x
   have hc : c ∈ maximalAtlas 𝓘(ℂ) n X := chart_mem_maximalAtlas x

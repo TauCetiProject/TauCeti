@@ -48,15 +48,19 @@ space whose dimension is the index of `D₁`. This file supplies only the linear
 
 ## The exact sequence
 
-Everything below is read off one four-term exact sequence of `𝕜`-modules,
+Everything below is read off one five-term exact sequence of `𝕜`-modules,
 ```text
-0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁,
+0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁ → F ⧸ range (D₁.coprod D₂) → 0,
 ```
-whose maps are `x ↦ (x, 0)` (`ContinuousLinearMap.kerCoprodHom`), the parameter projection, and
-the map induced by `D₂` (`ContinuousLinearMap.parameterToCoker`). Its exactness at
-`ker (D₁.coprod D₂)` and at `Λ` is
-`ContinuousLinearMap.exact_kerCoprodHom_parameterProj` and
-`ContinuousLinearMap.exact_parameterProj_parameterToCoker`; both hold with no hypothesis at all.
+whose maps are `x ↦ (x, 0)` (`ContinuousLinearMap.kerCoprodHom`), the parameter projection,
+the map induced by `D₂` (`ContinuousLinearMap.parameterToCoker`), and the canonical cokernel
+map (`ContinuousLinearMap.cokerCoprodHom`). Its exactness is supplied by
+`ContinuousLinearMap.exact_kerCoprodHom_parameterProj`,
+`ContinuousLinearMap.exact_parameterProj_parameterToCoker`, and
+`ContinuousLinearMap.exact_parameterToCoker_cokerCoprodHom`, with no surjectivity hypothesis.
+For finite-dimensional `ker D₁`, `F ⧸ range D₁`, and `Λ`,
+`ContinuousLinearMap.index_coprod` shows that adjoining the parameter directions increases
+the index by `dim Λ`, whether or not the total linearization is surjective.
 
 Exactness at `ker (D₁.coprod D₂)` says that the kernel of the projection is `ker D₁`: a point of
 the universal zero set over a *fixed* parameter is a solution of the equation that parameter
@@ -65,18 +69,25 @@ directions whose infinitesimal effect `D₂ l` on the equation is already achiev
 solution.
 
 Surjectivity of the total linearization says exactly that `range D₁ ⊔ range D₂ = ⊤`, that is, that
-the last map above is onto
+the map from `Λ` to the cokernel of `D₁` is onto
 (`ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective`). Extending
-the sequence by `→ 0` on the right then identifies the cokernel of the projection with the
+the truncated sequence `0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁`
+by `→ 0` on the right then identifies the cokernel of the projection with the
 cokernel of `D₁` (`ContinuousLinearMap.quotientRangeParameterProjEquiv`), and the surjectivity
 criterion is the degenerate case of that identification.
 
-The exact sequence, its algebraic identifications, and the `finrank` identities hold over any ring,
-with continuous addition in `F`; the finite-dimensionality statements hold over division rings
-without any norm. The index statement also holds over any ring and needs neither completeness
-nor the Fredholm property, because
+The exact sequence and its algebraic identifications hold over any ring, with continuous addition
+in `F`, as do the `finrank` identifications for the parameter projection. The finite-dimensionality
+statements and rank-nullity formulas hold over division rings without any norm. The projection-index
+statement also holds over any ring and needs neither completeness nor the Fredholm property, because
 `ContinuousLinearMap.index` is a difference of two `Module.finrank`s and the sequence matches both
 of them.
+
+Enlarging the parameter space along `ι : Λ → Λ'` with `D₂' ∘ ι = D₂` enlarges the kernel of the
+total linearization by the same quotient: `(x, l) ↦ (x, ι l)`
+(`ContinuousLinearMap.kerCoprodMap`) and the parameter projection followed by the quotient map
+form a short exact sequence `0 → ker (D₁.coprod D₂) → ker (D₁.coprod D₂') → Λ' ⧸ range ι → 0`
+when `ι` is injective and `D₁.coprod D₂` is onto.
 
 The Fredholm statement additionally assumes that `D₁` is Fredholm and that `E` and `Λ` are Banach
 spaces; `F` need only have continuous addition and closed points. Its closed range is the preimage
@@ -87,9 +98,13 @@ Banach open mapping theorem gives strictness. No completeness of the scalar fiel
 
 * `ContinuousLinearMap.parameterProj`: the projection to the parameter space of the kernel of a
   total linearization `D₁.coprod D₂`.
-* `ContinuousLinearMap.exact_kerCoprodHom_parameterProj` and
-  `ContinuousLinearMap.exact_parameterProj_parameterToCoker`:
-  the exact sequence above.
+* `ContinuousLinearMap.exact_kerCoprodHom_parameterProj`,
+  `ContinuousLinearMap.exact_parameterProj_parameterToCoker`, and
+  `ContinuousLinearMap.exact_parameterToCoker_cokerCoprodHom`: the exact sequence above.
+* `ContinuousLinearMap.cokerCoprodHom`: the surjection from the original cokernel to that
+  of the total linearization, with kernel the image of `parameterToCoker`.
+* `ContinuousLinearMap.index_coprod`: finite-dimensional domain extension increases the index
+  by the dimension of the added variables.
 * `ContinuousLinearMap.kerEquivKerParameterProj`: the kernel of the projection is `ker D₁`.
 * `ContinuousLinearMap.range_parameterProj`: its range is the preimage of `range D₁` under `D₂`.
 * `ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective`: the total linearization
@@ -102,11 +117,15 @@ Banach open mapping theorem gives strictness. No completeness of the scalar fiel
   projection has the same index as `D₁`.
 * `ContinuousLinearMap.isFredholm_parameterProj`: when `E` and `Λ` are Banach spaces, if `D₁` is
   Fredholm then the projection is Fredholm.
+* `ContinuousLinearMap.kerCoprodMap`, `ContinuousLinearMap.exact_kerCoprodMap` and
+  `ContinuousLinearMap.surjective_mkQ_comp_parameterProj`: for `ι : Λ → Λ'` with `D₂' ∘ ι = D₂`,
+  the short exact sequence `0 → ker (D₁.coprod D₂) → ker (D₁.coprod D₂') → Λ' ⧸ range ι → 0`
+  when `ι` is injective and `D₁.coprod D₂` is onto.
 
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS Colloquium
-  Publications 52, 2012, Appendix A.3.
+  Publications 52, 2012, Appendices A.2–A.3.
 -/
 
 public section
@@ -133,7 +152,7 @@ its tangent space. This map is then the linearization of the projection of that 
 space of parameters. Every continuous linear map out of `E × Λ` is of the form `D₁.coprod D₂`,
 by `ContinuousLinearMap.coprod_comp_inl_inr`, so the coproduct source is no restriction. -/
 def parameterProj : (D₁.coprod D₂).ker →L[𝕜] Λ :=
-  (ContinuousLinearMap.snd 𝕜 E Λ).domRestrict (D₁.coprod D₂).ker
+  (snd 𝕜 E Λ).domRestrict (D₁.coprod D₂).ker
 
 /-- The parameter projection reads off the parameter component of a candidate tangent vector. -/
 @[simp]
@@ -145,7 +164,7 @@ theorem parameterProj_apply (v : (D₁.coprod D₂).ker) : parameterProj D₁ D�
 /-- The embedding `x ↦ (x, 0)` of `ker D₁` into the kernel of the total linearization: the formal
 tangent directions to the universal zero set along which the parameter does not move. -/
 def kerCoprodHom : D₁.ker →L[𝕜] (D₁.coprod D₂).ker :=
-  (ContinuousLinearMap.inl 𝕜 E Λ).restrict fun _ hx => by simpa [LinearMap.mem_ker] using hx
+  (inl 𝕜 E Λ).restrict fun _ hx => by simpa [LinearMap.mem_ker] using hx
 
 /-- The embedding sends `x` to the pair `(x, 0)`. -/
 @[simp]
@@ -185,7 +204,7 @@ theorem exact_kerCoprodHom_parameterProj :
 /-- **The kernel of the parameter projection is the kernel of `D₁`**, embedded by `x ↦ (x, 0)`. -/
 private def kerParameterProjInverse :
     (parameterProj D₁ D₂).ker →L[𝕜] D₁.ker :=
-  ((ContinuousLinearMap.fst 𝕜 E Λ).comp (D₁.coprod D₂).ker.subtypeL).restrict fun v hv => by
+  ((fst 𝕜 E Λ).comp (D₁.coprod D₂).ker.subtypeL).restrict fun v hv => by
     have hl : (v : E × Λ).2 = 0 := by simpa [LinearMap.mem_ker] using hv
     simpa [LinearMap.mem_ker, hl] using v.property
 
@@ -232,7 +251,7 @@ No hypothesis on `D₁` or on the total linearization is needed. -/
 theorem range_parameterProj :
     (parameterProj D₁ D₂).range = D₁.range.comap (D₂ : Λ →ₗ[𝕜] F) := by
   ext l
-  simp only [LinearMap.mem_range, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
+  simp only [LinearMap.mem_range, Submodule.mem_comap, coe_coe,
     parameterProj_apply]
   constructor
   · rintro ⟨⟨⟨x, m⟩, hk⟩, rfl⟩
@@ -252,6 +271,12 @@ omit [ContinuousAdd F] in
 @[simp]
 theorem parameterToCoker_apply (l : Λ) : parameterToCoker D₁ D₂ l = D₁.range.mkQ (D₂ l) :=
   (rfl)
+
+omit [ContinuousAdd F] in
+/-- The image of the parameter map is the image of `range D₂` under the quotient map. -/
+theorem range_parameterToCoker :
+    LinearMap.range (parameterToCoker D₁ D₂) = D₂.range.map D₁.range.mkQ := by
+  rw [parameterToCoker, LinearMap.range_comp]
 
 /-- The kernel of the map induced by `D₂` is the range of the parameter projection: this is
 `ContinuousLinearMap.range_parameterProj` read in the quotient. -/
@@ -278,7 +303,47 @@ theorem parameterToCoker_surjective_iff_coprod_surjective :
   have hcoprod : Function.Surjective (D₁.coprod D₂) ↔ (D₁.coprod D₂).range = ⊤ :=
     (LinearMap.range_eq_top (f := (D₁.coprod D₂ : E × Λ →ₗ[𝕜] F))).symm
   rw [hcoprod, ← LinearMap.range_eq_top, parameterToCoker, LinearMap.range_comp,
-    Submodule.map_mkQ_eq_top, ContinuousLinearMap.range_coprod]
+    Submodule.map_mkQ_eq_top, range_coprod]
+
+/-! ### Exactness at the original cokernel -/
+
+/-- Adjoining parameter directions enlarges the range of the original operator. -/
+theorem range_le_range_coprod : D₁.range ≤ (D₁.coprod D₂).range := by
+  rw [range_coprod]
+  exact le_sup_left
+
+/-- The canonical map from the cokernel of `D₁` onto the cokernel after
+adjoining the parameter directions `D₂`. -/
+noncomputable def cokerCoprodHom : (F ⧸ D₁.range) →ₗ[𝕜] F ⧸ (D₁.coprod D₂).range :=
+  Submodule.factor (range_le_range_coprod D₁ D₂)
+
+/-- The cokernel map preserves the representative in the common target. -/
+@[simp]
+theorem cokerCoprodHom_mk (y : F) :
+    cokerCoprodHom D₁ D₂ (Submodule.Quotient.mk y) = Submodule.Quotient.mk y :=
+  (rfl)
+
+/-- Every obstruction class for the total linearization comes from an
+obstruction class for the original operator. -/
+theorem cokerCoprodHom_surjective : Function.Surjective (cokerCoprodHom D₁ D₂) :=
+  Submodule.factor_surjective (range_le_range_coprod D₁ D₂)
+
+/-- The obstructions removed by the parameter directions are precisely the
+image of those directions in the original cokernel. -/
+@[simp]
+theorem ker_cokerCoprodHom :
+    LinearMap.ker (cokerCoprodHom D₁ D₂) = LinearMap.range (parameterToCoker D₁ D₂) := by
+  -- `Submodule.factor` abbreviates the identity-induced `mapQ`, whose kernel has a named lemma.
+  rw [cokerCoprodHom, Submodule.ker_mapQ, Submodule.comap_id, range_coprod,
+    Submodule.map_sup, Submodule.mkQ_map_self, bot_sup_eq, range_parameterToCoker]
+
+/-- Exactness at the original cokernel in the domain-extension sequence.
+Together with `exact_kerCoprodHom_parameterProj`,
+`exact_parameterProj_parameterToCoker`, and the injectivity and surjectivity
+of the end maps, this gives the full five-term exact sequence. -/
+theorem exact_parameterToCoker_cokerCoprodHom :
+    Function.Exact (parameterToCoker D₁ D₂) (cokerCoprodHom D₁ D₂) :=
+  LinearMap.exact_iff.mpr (ker_cokerCoprodHom D₁ D₂)
 
 /-! ### The cokernel of the projection -/
 
@@ -335,7 +400,7 @@ theorem parameterProj_surjective_of_surjective (hD₁ : Function.Surjective D₁
 projection from the universal zero set precisely when the equation it indexes is regular. -/
 theorem range_parameterProj_eq_top_iff (hD : (D₁.coprod D₂).range = ⊤) :
     (parameterProj D₁ D₂).range = ⊤ ↔ D₁.range = ⊤ := by
-  rw [ContinuousLinearMap.range_coprod] at hD
+  rw [range_coprod] at hD
   refine ⟨fun h => ?_, range_parameterProj_eq_top_of_range_eq_top D₁ D₂⟩
   refine top_unique ?_
   rw [← hD]
@@ -373,11 +438,90 @@ gives the dimension of the finite-dimensional model space for a regular fibre.
 Neither operator is assumed Fredholm: both sides are differences of `Module.finrank`s, and the
 exact sequence matches the four dimensions in pairs, junk values included. -/
 theorem index_parameterProj (hD : Function.Surjective (D₁.coprod D₂)) :
-    ContinuousLinearMap.index (parameterProj D₁ D₂) = ContinuousLinearMap.index D₁ := by
-  rw [ContinuousLinearMap.index_eq_finrank_sub, ContinuousLinearMap.index_eq_finrank_sub,
+    index (parameterProj D₁ D₂) = index D₁ := by
+  rw [index_eq_finrank_sub, index_eq_finrank_sub,
     finrank_ker_parameterProj, finrank_quotient_range_parameterProj D₁ D₂ hD]
 
 end Topological
+
+section ChangeOfParameters
+
+/-! ### Changing the parameter space -/
+
+variable {𝕜 : Type*} [Ring 𝕜]
+variable {E Λ Λ' F : Type*}
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ]
+variable [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ']
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+variable {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {D₂' : Λ' →L[𝕜] F} {ι : Λ →ₗ[𝕜] Λ'}
+
+/-- If the parameter directions `D₂` factor as `D₂' ∘ ι` and `D₁.coprod D₂` is onto, then so is
+`D₁.coprod D₂'`. -/
+theorem surjective_coprod_of_comp (hι : ∀ l, D₂' (ι l) = D₂ l)
+    (h : Function.Surjective (D₁.coprod D₂)) : Function.Surjective (D₁.coprod D₂') := by
+  intro y
+  obtain ⟨⟨x, l⟩, rfl⟩ := h y
+  exact ⟨(x, ι l), by simp [hι]⟩
+
+variable (D₁) in
+/-- The map `(x, l) ↦ (x, ι l)` between the kernels of two total linearizations with
+`D₂' ∘ ι = D₂`. -/
+def kerCoprodMap (hι : ∀ l, D₂' (ι l) = D₂ l) :
+    (D₁.coprod D₂).ker →ₗ[𝕜] (D₁.coprod D₂').ker :=
+  (LinearMap.prodMap LinearMap.id ι).restrict fun v hv ↦ by
+    simpa [LinearMap.mem_ker, hι] using hv
+
+/-- `ContinuousLinearMap.kerCoprodMap` keeps the first component and applies `ι` to the
+parameter. -/
+@[simp]
+theorem coe_kerCoprodMap (hι : ∀ l, D₂' (ι l) = D₂ l) (v : (D₁.coprod D₂).ker) :
+    (kerCoprodMap D₁ hι v : E × Λ') = ((v : E × Λ).1, ι (v : E × Λ).2) :=
+  (rfl)
+
+/-- For injective `ι`, the map `ContinuousLinearMap.kerCoprodMap` of kernels is injective. -/
+theorem kerCoprodMap_injective (hι : ∀ l, D₂' (ι l) = D₂ l)
+    (hι' : Function.Injective ι) : Function.Injective (kerCoprodMap D₁ hι) := by
+  intro v w hvw
+  have h := congrArg Subtype.val hvw
+  simp only [coe_kerCoprodMap, Prod.mk.injEq] at h
+  exact Subtype.ext (Prod.ext h.1 (hι' h.2))
+
+/-- The kernel of the larger total linearization maps to `Λ' ⧸ range ι` by the parameter
+projection, with kernel the image of the kernel of the smaller one under
+`ContinuousLinearMap.kerCoprodMap`. -/
+theorem exact_kerCoprodMap (hι : ∀ l, D₂' (ι l) = D₂ l) :
+    Function.Exact (kerCoprodMap D₁ hι)
+      ((LinearMap.range ι).mkQ ∘ₗ (parameterProj D₁ D₂' : (D₁.coprod D₂').ker →ₗ[𝕜] Λ')) := by
+  rintro ⟨⟨x, l'⟩, hv⟩
+  have hv' : D₁ x + D₂' l' = 0 := by simpa [LinearMap.mem_ker] using hv
+  simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply,
+    Submodule.Quotient.mk_eq_zero, LinearMap.mem_range, coe_coe,
+    parameterProj_apply]
+  constructor
+  · rintro ⟨l, rfl⟩
+    exact ⟨⟨(x, l), by simpa [LinearMap.mem_ker, ← hι] using hv'⟩, rfl⟩
+  · rintro ⟨w, hw⟩
+    have hw' := congrArg (fun v : (D₁.coprod D₂').ker ↦ (v : E × Λ').2) hw
+    exact ⟨(w : E × Λ).2, by simpa [coe_kerCoprodMap] using hw'⟩
+
+/-- If `D₁.coprod D₂` is onto and `D₂' ∘ ι = D₂`, then the kernel of `D₁.coprod D₂'` surjects
+onto `Λ' ⧸ range ι` through the parameter projection. -/
+theorem surjective_mkQ_comp_parameterProj (hι : ∀ l, D₂' (ι l) = D₂ l)
+    (h : Function.Surjective (D₁.coprod D₂)) :
+    Function.Surjective
+      ((LinearMap.range ι).mkQ ∘ₗ (parameterProj D₁ D₂' : (D₁.coprod D₂').ker →ₗ[𝕜] Λ')) := by
+  rintro ⟨l'⟩
+  obtain ⟨⟨x, l⟩, hxl⟩ := h (D₂' l')
+  refine ⟨⟨(-x, l' - ι l), ?_⟩, ?_⟩
+  · simp only [LinearMap.mem_ker, coe_coe, coprod_apply, map_neg, map_sub, hι] at hxl ⊢
+    rw [← hxl]
+    abel
+  · simp only [LinearMap.coe_comp, Function.comp_apply, coe_coe, parameterProj_apply,
+      Submodule.mkQ_apply]
+    exact (Submodule.Quotient.eq _).2 (by simp)
+
+end ChangeOfParameters
 
 section Dimension
 
@@ -394,12 +538,55 @@ theorem finiteDimensional_ker_parameterProj [FiniteDimensional 𝕜 D₁.ker] :
     FiniteDimensional 𝕜 ((parameterProj D₁ D₂).ker) :=
   (kerEquivKerParameterProj D₁ D₂).toLinearEquiv.finiteDimensional
 
+/-- Adjoining finitely many domain variables preserves finite-dimensionality of the kernel. -/
+theorem finiteDimensional_ker_coprod [FiniteDimensional 𝕜 D₁.ker]
+    [FiniteDimensional 𝕜 Λ] : FiniteDimensional 𝕜 (D₁.coprod D₂).ker := by
+  have := finiteDimensional_ker_parameterProj D₁ D₂
+  have : FiniteDimensional 𝕜 ((D₁.coprod D₂).ker ⧸ (parameterProj D₁ D₂).ker) :=
+    (LinearMap.quotKerEquivRange (parameterProj D₁ D₂).toLinearMap).symm.finiteDimensional
+  exact Module.Finite.of_submodule_quotient (parameterProj D₁ D₂).ker
+
 /-- The cokernel of the parameter projection is finite dimensional as soon as that of `D₁` is;
 surjectivity of the total linearization is not needed. -/
 theorem finiteDimensional_quotient_range_parameterProj
     [FiniteDimensional 𝕜 (F ⧸ D₁.range)] :
     FiniteDimensional 𝕜 (Λ ⧸ (parameterProj D₁ D₂).range) :=
   (quotientRangeParameterProjEquivRange D₁ D₂).symm.finiteDimensional
+
+/-- Kernel growth is the dimension of the extra variables minus the
+number of independent old obstructions they remove. -/
+theorem finrank_ker_coprod_add_finrank_range_parameterToCoker
+    [FiniteDimensional 𝕜 (D₁.coprod D₂).ker] [FiniteDimensional 𝕜 Λ] :
+    finrank 𝕜 (D₁.coprod D₂).ker + finrank 𝕜 (LinearMap.range (parameterToCoker D₁ D₂)) =
+      finrank 𝕜 D₁.ker + finrank 𝕜 Λ := by
+  have hproj := (parameterProj D₁ D₂).toLinearMap.finrank_range_add_finrank_ker
+  have hparam := (parameterToCoker D₁ D₂).finrank_range_add_finrank_ker
+  rw [finrank_ker_parameterProj] at hproj
+  rw [ker_parameterToCoker] at hparam
+  omega
+
+/-- The extended cokernel is smaller by the rank of the parameter map
+into the old cokernel. No finiteness of the parameter space is needed. -/
+theorem finrank_quotient_range_coprod_add_finrank_range_parameterToCoker
+    [FiniteDimensional 𝕜 (F ⧸ D₁.range)] :
+    finrank 𝕜 (F ⧸ (D₁.coprod D₂).range) +
+      finrank 𝕜 (LinearMap.range (parameterToCoker D₁ D₂)) = finrank 𝕜 (F ⧸ D₁.range) := by
+  have h := (cokerCoprodHom D₁ D₂).finrank_range_add_finrank_ker
+  rw [LinearMap.range_eq_top.mpr (cokerCoprodHom_surjective D₁ D₂),
+    finrank_top, ker_cokerCoprodHom] at h
+  exact h
+
+/-- Adjoining finitely many domain variables increases the index by their dimension,
+provided the original kernel and cokernel are finite dimensional.
+Neither Fredholmness nor surjectivity of the extension is required. -/
+theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
+    [FiniteDimensional 𝕜 (F ⧸ D₁.range)] [FiniteDimensional 𝕜 Λ] :
+    (D₁.coprod D₂).index = D₁.index + finrank 𝕜 Λ := by
+  have := finiteDimensional_ker_coprod D₁ D₂
+  have hker := finrank_ker_coprod_add_finrank_range_parameterToCoker D₁ D₂
+  have hcoker := finrank_quotient_range_coprod_add_finrank_range_parameterToCoker D₁ D₂
+  rw [index_eq_finrank_sub, index_eq_finrank_sub]
+  omega
 
 end Dimension
 
@@ -418,12 +605,12 @@ surjective, `ContinuousLinearMap.index_parameterProj` also identifies their indi
 
 Applying Sard--Smale in the nonlinear setting is a further step requiring a suitable smooth chart,
 real scalars, second countability, and the theorem's `C^k` threshold. -/
-theorem isFredholm_parameterProj (hD₁ : ContinuousLinearMap.IsFredholm D₁) :
-    ContinuousLinearMap.IsFredholm (parameterProj D₁ D₂) := by
+theorem isFredholm_parameterProj (hD₁ : IsFredholm D₁) :
+    IsFredholm (parameterProj D₁ D₂) := by
   have hker := hD₁.finite_ker
   have hcoker := hD₁.finite_coker
   have hclosed : IsClosed ((parameterProj D₁ D₂).range : Set Λ) := by
-    simpa only [range_parameterProj, Submodule.comap_coe, ContinuousLinearMap.coe_coe] using
+    simpa only [range_parameterProj, Submodule.comap_coe, coe_coe] using
       hD₁.isClosed_range.preimage D₂.continuous
   refine ⟨?_, hclosed, finiteDimensional_ker_parameterProj D₁ D₂,
     finiteDimensional_quotient_range_parameterProj D₁ D₂, ?_⟩
@@ -434,7 +621,7 @@ theorem isFredholm_parameterProj (hD₁ : ContinuousLinearMap.IsFredholm D₁) :
     exact (parameterProj D₁ D₂).rangeRestrict.isQuotientMap Set.rangeFactorization_surjective
   · obtain ⟨P, hP⟩ := hD₁.closedComplemented_ker
     refine ⟨(kerEquivKerParameterProj D₁ D₂).toContinuousLinearMap.comp
-      (P.comp ((ContinuousLinearMap.fst 𝕜 E Λ).comp (D₁.coprod D₂).ker.subtypeL)), ?_⟩
+      (P.comp ((fst 𝕜 E Λ).comp (D₁.coprod D₂).ker.subtypeL)), ?_⟩
     intro v
     apply (kerEquivKerParameterProj D₁ D₂).symm.injective
     simpa using hP ((kerEquivKerParameterProj D₁ D₂).symm v)

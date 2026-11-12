@@ -46,26 +46,11 @@ private theorem det_exteriorPower_two_sq [IsDomain R] (A : Matrix (Fin 4) (Fin 4
       b.exteriorPowerTopEquiv
   have hcomp : B.comp (exteriorPower.map 2 A.toLin') (exteriorPower.map 2 A.toLin') =
       A.det • B := by
-    apply exteriorPower.linearMap_ext
-    apply AlternatingMap.ext
-    intro u
-    apply exteriorPower.linearMap_ext
-    apply AlternatingMap.ext
-    intro v
-    simp only [LinearMap.compAlternatingMap_apply, LinearMap.BilinForm.comp_apply,
-      exteriorPower.map_apply_ιMulti, hpair, LinearMap.smul_apply, LinearMap.compr₂_apply]
-    rw [exteriorPower.wedge_ιMulti, exteriorPower.wedge_ιMulti]
-    simp only [smul_eq_mul]
-    have happ : Fin.append (A.toLin' ∘ u) (A.toLin' ∘ v) = A.toLin' ∘ Fin.append u v := by
-      funext i
-      refine Fin.addCases ?_ ?_ i <;> intro j <;>
-        simp only [Fin.append_left, Fin.append_right, Function.comp_apply]
-    -- Expose the linear equivalence behind the volume map's linear-map coercion.
-    change b.exteriorPowerTopEquiv (exteriorPower.ιMulti R 4
-      (Fin.append (A.toLin' ∘ u) (A.toLin' ∘ v))) =
-        A.det * b.exteriorPowerTopEquiv (exteriorPower.ιMulti R 4 (Fin.append u v))
-    rw [happ, Basis.exteriorPowerTopEquiv_apply_ιMulti,
-      Basis.exteriorPowerTopEquiv_apply_ιMulti, Basis.det_comp, LinearMap.det_toLin']
+    rw [hpair]
+    simpa only [LinearMap.BilinForm.comp, LinearMap.det_toLin'] using
+      exteriorPower.wedge_compr₂_compl₁₂_exteriorPower_map_eq_det_smul
+        (k := 2) (l := 2) (by simp) rfl
+        b.exteriorPowerTopEquiv.toLinearMap A.toLin'
   let e := b.exteriorPower 2
   have hG : (LinearMap.BilinForm.toMatrix e B).det ≠ 0 :=
     (LinearMap.separatingLeft_iff_det_ne_zero e).mp hB.separatingLeft
@@ -105,23 +90,24 @@ theorem det_exteriorPower_two (b₀ : Basis (Fin 4) R M) (f : M →ₗ[R] M) :
     · exact h
     · let ε : P →+* ℤ := MvPolynomial.eval₂Hom (RingHom.id ℤ)
         (fun ij ↦ (1 : Matrix (Fin 4) (Fin 4) ℤ) ij.1 ij.2)
-      have hU : ε.mapMatrix U = 1 := by
+      have hU : U.map ε = 1 := by
         ext i j
-        rw [RingHom.mapMatrix_apply, Matrix.map_apply]
+        rw [Matrix.map_apply]
         exact MvPolynomial.eval₂Hom_X' _ _ (i, j)
-      have hC : ε.mapMatrix C = 1 := by
+      have hC : C.map ε = 1 := by
         rw [RingHom.map_toMatrix_exteriorPower, hU]
         simp only [Matrix.toLin'_one, exteriorPower.map_id, LinearMap.toMatrix_id]
       have he := congrArg ε h
-      rw [map_neg, map_pow, RingHom.map_det, RingHom.map_det, hC, hU] at he
+      rw [map_neg, map_pow, RingHom.map_det, RingHom.map_det, RingHom.mapMatrix_apply,
+        RingHom.mapMatrix_apply, hC, hU] at he
       norm_num at he
   let ε : P →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R) (fun ij ↦ A ij.1 ij.2)
-  have hU : ε.mapMatrix U = A := by
+  have hU : U.map ε = A := by
     ext i j
-    rw [RingHom.mapMatrix_apply, Matrix.map_apply]
+    rw [Matrix.map_apply]
     exact MvPolynomial.eval₂Hom_X' _ _ (i, j)
   have h := congrArg ε hpos
-  rw [map_pow, RingHom.map_det, RingHom.map_det,
+  rw [map_pow, RingHom.map_det, RingHom.map_det, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
     RingHom.map_toMatrix_exteriorPower, hU] at h
   have hmatrix : LinearMap.toMatrix ((Pi.basisFun R (Fin 4)).exteriorPower 2)
       ((Pi.basisFun R (Fin 4)).exteriorPower 2) (exteriorPower.map 2 A.toLin') =

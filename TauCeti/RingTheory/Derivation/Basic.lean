@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.Data.Nat.Choose.Sum
 
@@ -17,17 +18,29 @@ does not apply that lemma to it. This file adds the literal form `Derivation.map
 `simp` differentiates polynomial expressions with numeric coefficients, for instance partial
 derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`.
 
+A derivation differentiates a finite product termwise: `D (∏ i ∈ s, f i)` is the sum over
+`j ∈ s` of `D (f j)` times the product of the other factors. In particular, a derivation `δ`
+with `δ tⱼ = δᵢⱼ` sends a monomial `∏ⱼ tⱼ ^ βⱼ` to `βᵢ ∏ⱼ tⱼ ^ (β - eᵢ)ⱼ`.
+
 Iterates of a derivation remain linear over the scalars, so they commute with finite scalar
 linear combinations. On products they satisfy the general Leibniz rule
 `Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
 
+An element whose derivative is a unit is squarefree, since a square factor `x * x` of `a` makes
+`x` divide `D a`. This detects squarefreeness of a polynomial from a partial derivative that is a
+unit, without factoring it.
+
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
+* `Derivation.leibniz_prod`: the Leibniz rule for finite products.
+* `Derivation.apply_prod_pow_of_apply_eq`: a derivation dual to the `i`-th coordinate
+  differentiates a monomial in the coordinates by lowering its `i`-th exponent.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
+* `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
 -/
 
 public section
@@ -42,12 +55,46 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M] [Al
 theorem map_ofNat (n : ℕ) [n.AtLeastTwo] : D (no_index (OfNat.ofNat n : A)) = 0 := by
   rw [← Nat.cast_ofNat, map_natCast]
 
+/-- **Leibniz rule for finite products**: `D (∏ i ∈ s, f i)` is the sum over `j ∈ s` of
+`D (f j)` times the product of the other factors. -/
+theorem leibniz_prod {ι : Type*} [DecidableEq ι] (s : Finset ι) (f : ι → A) :
+    D (∏ i ∈ s, f i) = ∑ j ∈ s, (∏ i ∈ s.erase j, f i) • D (f j) := by
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, leibniz, ih, Finset.sum_insert ha, Finset.erase_insert ha,
+      Finset.smul_sum, add_comm]
+    congr 1
+    refine Finset.sum_congr rfl fun j hj => ?_
+    rw [Finset.erase_insert_of_ne (ne_of_mem_of_not_mem hj ha).symm,
+      Finset.prod_insert fun h => ha (Finset.mem_of_mem_erase h), smul_smul]
+
+/-- A derivation dual to the `i`-th coordinate differentiates a monomial `∏ⱼ tⱼ ^ βⱼ` in the
+coordinates to `βᵢ ∏ⱼ tⱼ ^ (β - eᵢ)ⱼ`. -/
+theorem apply_prod_pow_of_apply_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (δ : Derivation R A A) {t : ι → A} {i : ι} (ht : ∀ j, δ (t j) = if j = i then 1 else 0)
+    (β : ι → ℕ) :
+    δ (∏ j, t j ^ β j) = β i • ∏ j, t j ^ (β - Pi.single i 1 : ι → ℕ) j := by
+  have hrest : δ (∏ j ∈ Finset.univ.erase i, t j ^ β j) = 0 :=
+    Finset.prod_induction _ (fun a ↦ δ a = 0) (fun a b ha hb ↦ by simp [leibniz, ha, hb])
+      (by simp) fun j hj ↦ by simp [leibniz_pow, ht, Finset.ne_of_mem_erase hj]
+  have hcongr : ∏ j ∈ Finset.univ.erase i, t j ^ (β - Pi.single i 1 : ι → ℕ) j =
+      ∏ j ∈ Finset.univ.erase i, t j ^ β j :=
+    Finset.prod_congr rfl fun j hj ↦ by simp [Finset.ne_of_mem_erase hj]
+  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i),
+    ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i), hcongr, leibniz, hrest,
+    leibniz_pow, ht]
+  simp only [ite_true, smul_eq_mul, mul_one, nsmul_eq_mul, Pi.sub_apply,
+    Pi.single_eq_same]
+  ring
+
 /-- Iterated differentiation commutes with finite scalar linear combinations. -/
 theorem iterate_sum_smul {ι : Type*} (D : Derivation R A A) (m : ℕ) (s : Finset ι)
     (c : ι → R) (f : ι → A) :
     (D : A → A)^[m] (∑ i ∈ s, c i • f i) = ∑ i ∈ s, c i • (D : A → A)^[m] (f i) := by
-  simpa only [LinearMap.map_smul, Module.End.pow_apply, coeFn_coe] using
-    map_sum (D.toLinearMap ^ m) (fun i ↦ c i • f i) s
+  have h := map_sum (D.toLinearMap ^ m) (fun i ↦ c i • f i) s
+  simp only [LinearMap.map_smul] at h
+  simpa only [pow_apply_eq_iterate, coeFn_coe] using h
 
 /-- **General Leibniz rule** for iterates of a derivation of a commutative algebra.
 
@@ -69,7 +116,7 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
 /-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
 theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
     (r • D)^[n] a = r ^ n • D^[n] a := by
-  simpa [Module.End.pow_apply, coeFn_coe] using
+  simpa [_root_.pow_apply_eq_iterate, coeFn_coe] using
     LinearMap.congr_fun (smul_pow r D.toLinearMap n) a
 
 /-- Scalar multiples of a locally nilpotent derivation are locally nilpotent. -/
@@ -77,5 +124,14 @@ theorem exists_iterate_smul_eq_zero (D : Derivation R A A)
     (hD : ∀ a, ∃ n, D^[n] a = 0) (r : R) (a : A) : ∃ n, (r • D)^[n] a = 0 := by
   obtain ⟨n, hn⟩ := hD a
   exact ⟨n, by rw [iterate_smul_apply, hn, smul_zero]⟩
+
+/-- An element whose derivative is a unit is squarefree: if `a = x * x * y`, then `x` divides
+`D a = x * D (x * y) + x * y * D x`. -/
+theorem squarefree_of_isUnit (D : Derivation R A A) {a : A} (ha : IsUnit (D a)) :
+    Squarefree a := by
+  rintro x ⟨y, rfl⟩
+  refine isUnit_of_dvd_unit ?_ ha
+  rw [mul_assoc, leibniz, smul_eq_mul, smul_eq_mul]
+  exact dvd_add (dvd_mul_right x _) (dvd_mul_of_dvd_left (dvd_mul_right x y) _)
 
 end Derivation

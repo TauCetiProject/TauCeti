@@ -28,8 +28,17 @@ injectivity of the period maps is needed.
 The pushforward moves the period neighbourhood `U_C` into `U'_(c * C)`, so it is continuous for the
 period topologies. Since `c > 0`, it preserves nonnegative and strictly positive supports, and it
 restricts to a ring homomorphism of the nonnegative subrings which maps the positive ideal into the
-positive ideal. Applied to the inclusion of a finite-index subgroup of exponents, these maps
-compare the Novikov rings of a finite cyclic covering and of its base.
+positive ideal. Likewise, when `φ` has finite kernel, the restriction along `φ` moves `U'_(c * C)`
+into `U_C` and is continuous.
+
+For a subgroup `K ≤ H`, with the restricted period map `N.comp K.subtype`, the pushforward along
+the inclusion makes `Nov(R, H, N)` an algebra over `Nov(R, K, N|K)`; its algebra map keeps every
+coefficient at its exponent (`TauCeti.NovikovSeries.coeff_algebraMap_addSubgroup_coe`). The
+restriction of coefficients `comap K.subtype` to `K` satisfies the projection formula
+`comap (b * a) = b * comap a` for `b` in `Nov(R, K, N|K)`
+(`TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`). Applied to the inclusion of a
+finite-index subgroup of exponents, these maps compare the Novikov rings of a finite abelian
+covering and of its base.
 
 ## Main definitions
 
@@ -39,18 +48,33 @@ compare the Novikov rings of a finite cyclic covering and of its base.
   coefficients, as an algebra homomorphism.
 * `TauCeti.NovikovSeries.mapNonnegSubring`: the restriction of `mapRingHom` to the nonnegative
   subrings.
+* `TauCeti.NovikovSeries.instAlgebraAddSubgroup`: `Nov(R, H, N)` as an algebra over
+  `Nov(R, K, N|K)` for a subgroup `K ≤ H`, along the pushforward of the inclusion of exponents.
 
 ## Main results
 
 * `TauCeti.NovikovSeries.map_mul`: the pushforward along a multiplicative coefficient map is
-  multiplicative.
+  multiplicative, and `TauCeti.NovikovSeries.map_one`: along a ring homomorphism it preserves `1`.
 * `TauCeti.NovikovSeries.mapRingHom_id` and `TauCeti.NovikovSeries.mapRingHom_comp`: the
   identity and composition laws.
 * `TauCeti.NovikovSeries.map_mem_periodFiltration`: the pushforward sends `U_C` into `U'_(c * C)`.
 * `TauCeti.NovikovSeries.continuous_map` and `TauCeti.NovikovSeries.continuous_mapRingHom`: the
   pushforward is continuous for the period topologies.
+* `TauCeti.NovikovSeries.continuous_mapNonnegSubring` and
+  `TauCeti.NovikovSeries.mapNonnegSubring_injective`: the pushforward on the nonnegative subrings
+  is continuous, and injective along injective coefficient and exponent maps.
+* `TauCeti.NovikovSeries.mapNonnegSubring_algebraMap`,
+  `TauCeti.NovikovSeries.mapNonnegSubring_comp_algebraMap` and
+  `TauCeti.NovikovSeries.mapNonnegSubring_smul`: the pushforward on the nonnegative subrings is
+  compatible with constants and semilinear over the coefficient map.
+* `TauCeti.NovikovSeries.comap_mem_periodFiltration` and `TauCeti.NovikovSeries.continuous_comap`:
+  the restriction sends `U'_(c * C)` into `U_C`, and is continuous for the period topologies.
 * `TauCeti.NovikovSeries.mapNonnegSubring_mem_posIdeal`: the pushforward maps the positive ideal
   into the positive ideal.
+* `TauCeti.NovikovSeries.map_unitsOneSubSingle`: the pushforward sends the unit `1 - r e^g` to
+  the unit `1 - ρ r e^(φ g)`.
+* `TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`: the projection formula for restriction
+  of coefficients to a subgroup `K`.
 
 ## References
 
@@ -182,6 +206,12 @@ theorem mapRingHom_apply (a : NovikovSeries R H N) :
     mapRingHom ρ φ hφ a = map (ρ : R →+ S) φ hφ a :=
   (rfl)
 
+/-- The pushforward along a ring homomorphism of coefficients preserves `1`. -/
+@[simp]
+theorem map_one : map (ρ : R →+ S) φ hφ (1 : NovikovSeries R H N) = 1 := by
+  rw [one_def, map_single]
+  simp
+
 /-- The pushforward ring homomorphism along the identity coefficient and exponent maps is the
 identity. -/
 @[simp]
@@ -225,9 +255,9 @@ theorem mapAlgHom_apply (ρ : R →ₐ[A] S) (φ : H →+ H') (hφ : ∃ c > 0, 
 
 end AlgHom
 
-section Topology
+section Filtration
 
-variable [AddZeroClass H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddCommGroup R]
+variable [AddZeroClass H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddGroup R]
   [AddCommGroup S] (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
 
 /-- If `φ` rescales periods by `c ≥ 0`, the pushforward sends the period neighbourhood `U_C` into
@@ -237,6 +267,13 @@ theorem map_mem_periodFiltration {c C : ℝ} (hc : 0 ≤ c) (hcφ : ∀ h, N' (�
     map ρ φ hφ a ∈ periodFiltration S N' (c * C) :=
   mem_periodFiltration.2 fun _ hh' =>
     coeff_map_eq_zero_of_lt ρ φ hφ hc hcφ (mem_periodFiltration.1 ha) hh'
+
+end Filtration
+
+section Topology
+
+variable [AddZeroClass H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddCommGroup R]
+  [AddCommGroup S] (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
 
 /-- The pushforward of Novikov series is continuous for the period topologies. -/
 @[fun_prop]
@@ -250,6 +287,52 @@ theorem continuous_map : Continuous (map ρ φ hφ) := by
 
 end Topology
 
+section ComapFiltration
+
+variable [AddGroup H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddGroup R]
+  (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hker : (φ.ker : Set H).Finite)
+
+/-- If `φ` rescales periods by `c > 0`, the restriction sends the period neighbourhood
+`U'_(c * C)` into `U_C`. -/
+theorem comap_mem_periodFiltration {c C : ℝ} (hc : 0 < c) (hcφ : ∀ h, N' (φ h) = c * N h)
+    {b : NovikovSeries R H' N'} (hb : b ∈ periodFiltration R N' (c * C)) :
+    comap φ hφ hker b ∈ periodFiltration R N C :=
+  mem_periodFiltration.2 fun _ hh =>
+    coeff_comap_eq_zero_of_lt φ hφ hker hc hcφ (mem_periodFiltration.1 hb) hh
+
+end ComapFiltration
+
+section ComapTopology
+
+variable [AddGroup H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddCommGroup R]
+  (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hker : (φ.ker : Set H).Finite)
+
+/-- The restriction of Novikov series is continuous for the period topologies. -/
+@[fun_prop]
+theorem continuous_comap : Continuous (comap (R := R) φ hφ hker) := by
+  obtain ⟨c, hc, hcφ⟩ := id hφ
+  refine continuous_of_continuousAt_zero (comap φ hφ hker) ?_
+  rw [ContinuousAt, map_zero]
+  exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun C _ =>
+    ⟨c * C, trivial, fun b hb => comap_mem_periodFiltration φ hφ hker hc hcφ hb⟩
+
+end ComapTopology
+
+section NonnegSupport
+
+variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [Ring R] [Ring S]
+  (ρ : R →+ S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+
+/-- The pushforward sends series supported in nonnegative periods to series supported in
+nonnegative periods, for any additive coefficient map. -/
+theorem map_mem_nonnegSubring {a : NovikovSeries R H N} (ha : a ∈ nonnegSubring R N) :
+    map ρ φ hφ a ∈ nonnegSubring S N' := by
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  simpa using map_mem_periodFiltration ρ φ _ hc.le hcφ (C := 0)
+    (mem_periodFiltration.2 (mem_nonnegSubring.1 ha))
+
+end NonnegSupport
+
 section TopologyRing
 
 variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [Ring R] [Ring S]
@@ -260,22 +343,25 @@ variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [Ring 
 theorem continuous_mapRingHom : Continuous (mapRingHom ρ φ hφ) :=
   continuous_map (ρ : R →+ S) φ hφ
 
-/-- The pushforward sends series supported in nonnegative periods to series supported in
-nonnegative periods. -/
-theorem map_mem_nonnegSubring {a : NovikovSeries R H N} (ha : a ∈ nonnegSubring R N) :
-    map (ρ : R →+ S) φ hφ a ∈ nonnegSubring S N' := by
-  obtain ⟨c, hc, hcφ⟩ := hφ
-  simpa using map_mem_periodFiltration (ρ : R →+ S) φ _ hc.le hcφ (C := 0)
-    (mem_periodFiltration.2 (mem_nonnegSubring.1 ha))
-
 /-- The restriction of the pushforward ring homomorphism to the nonnegative subrings. -/
 def mapNonnegSubring : nonnegSubring R N →+* nonnegSubring S N' :=
-  (mapRingHom ρ φ hφ).restrict _ _ fun _ ha => map_mem_nonnegSubring ρ φ hφ ha
+  (mapRingHom ρ φ hφ).restrict _ _ fun _ ha => map_mem_nonnegSubring (ρ : R →+ S) φ hφ ha
 
 @[simp]
 theorem coe_mapNonnegSubring (a : nonnegSubring R N) :
     (mapNonnegSubring ρ φ hφ a : NovikovSeries S H' N') = map (ρ : R →+ S) φ hφ a :=
   (rfl)
+
+/-- The pushforward on the nonnegative subrings is continuous for the period topologies. -/
+@[fun_prop]
+theorem continuous_mapNonnegSubring : Continuous (mapNonnegSubring ρ φ hφ) :=
+  continuous_induced_rng.2 <| (continuous_mapRingHom ρ φ hφ).comp continuous_subtype_val
+
+/-- The pushforward on the nonnegative subrings along injective coefficient and exponent maps is
+injective. -/
+theorem mapNonnegSubring_injective (hρ : Function.Injective ρ) (hinj : Function.Injective φ) :
+    Function.Injective (mapNonnegSubring ρ φ hφ) := fun _ _ hab =>
+  Subtype.ext <| map_injective (ρ : R →+ S) φ hφ hρ hinj (congrArg Subtype.val hab)
 
 /-- The pushforward maps the ideal of series supported in strictly positive periods into the
 corresponding ideal. -/
@@ -287,7 +373,166 @@ theorem mapNonnegSubring_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIde
   exact exists_pos_mem_periodFiltration_iff.1
     ⟨c * C, mul_pos hc hC, map_mem_periodFiltration (ρ : R →+ S) φ _ hc.le hcφ haC⟩
 
+/-- The pushforward sends the unit `1 - r e^g` of the nonnegative subring to the unit
+`1 - ρ r e^(φ g)`. -/
+@[simp]
+theorem map_unitsOneSubSingle {g : H} (hg : 0 < N g) (hg' : 0 < N' (φ g)) (r : R) :
+    Units.map (mapNonnegSubring ρ φ hφ : nonnegSubring R N →* nonnegSubring S N')
+      (unitsOneSubSingle hg r) = unitsOneSubSingle hg' (ρ r) :=
+  Units.ext <| Subtype.ext <| by simp
+
 end TopologyRing
+
+section AlgebraMap
+
+variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [CommRing R] [CommRing S]
+  (ρ : R →+* S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+
+/-- The pushforward on the nonnegative subrings sends the constant `r` to the constant `ρ r`. -/
+@[simp]
+theorem mapNonnegSubring_algebraMap (r : R) :
+    mapNonnegSubring ρ φ hφ (algebraMap R (nonnegSubring R N) r) =
+      algebraMap S (nonnegSubring S N') (ρ r) := by
+  ext : 1
+  simp [algebraMap_apply, map_single]
+
+/-- The pushforward on the nonnegative subrings commutes with the constant embeddings. -/
+theorem mapNonnegSubring_comp_algebraMap :
+    (mapNonnegSubring ρ φ hφ).comp (algebraMap R (nonnegSubring R N)) =
+      (algebraMap S (nonnegSubring S N')).comp ρ :=
+  RingHom.ext <| mapNonnegSubring_algebraMap ρ φ hφ
+
+/-- The pushforward on the nonnegative subrings is semilinear over `ρ`. -/
+@[simp]
+theorem mapNonnegSubring_smul (r : R) (a : nonnegSubring R N) :
+    mapNonnegSubring ρ φ hφ (r • a) = ρ r • mapNonnegSubring ρ φ hφ a := by
+  rw [Algebra.smul_def, Algebra.smul_def, _root_.map_mul, mapNonnegSubring_algebraMap]
+
+end AlgebraMap
+
+section Subgroup
+
+variable [AddCommGroup H] {N : H →+ ℝ} (K : AddSubgroup H)
+
+/-- The inclusion of a subgroup preserves periods, for the restricted period map. -/
+theorem exists_period_rescale_subtype :
+    ∃ c > 0, ∀ k, N (K.subtype k) = c * (N.comp K.subtype) k :=
+  ⟨1, one_pos, fun k => by simp⟩
+
+variable [CommSemiring R]
+
+/-- Novikov series on `H` form an algebra over Novikov series on a subgroup `K`, with the
+restricted period map, along the pushforward of the inclusion `K → H`. -/
+instance instAlgebraAddSubgroup :
+    Algebra (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) :=
+  (mapRingHom (RingHom.id R) K.subtype (exists_period_rescale_subtype K)).toAlgebra
+
+/-- The algebra map from Novikov series on `K` is the pushforward along the inclusion. -/
+theorem algebraMap_addSubgroup_eq_mapRingHom :
+    algebraMap (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) =
+      mapRingHom (RingHom.id R) K.subtype (exists_period_rescale_subtype K) :=
+  (rfl)
+
+variable {K}
+
+/-- The algebra map from Novikov series on `K` keeps every coefficient at its exponent. -/
+@[simp]
+theorem coeff_algebraMap_addSubgroup_coe (b : NovikovSeries R K (N.comp K.subtype)) (k : K) :
+    (algebraMap _ (NovikovSeries R H N) b).coeff k = b.coeff k := by
+  rw [algebraMap_addSubgroup_eq_mapRingHom, mapRingHom_apply, ← AddSubgroup.subtype_apply,
+    coeff_map_of_injective _ _ _ K.subtype_injective]
+  simp
+
+/-- The algebra map from Novikov series on `K` has zero coefficients outside `K`. -/
+@[simp]
+theorem coeff_algebraMap_addSubgroup_of_notMem (b : NovikovSeries R K (N.comp K.subtype))
+    {h : H} (hh : h ∉ K) : (algebraMap _ (NovikovSeries R H N) b).coeff h = 0 := by
+  rw [algebraMap_addSubgroup_eq_mapRingHom, mapRingHom_apply]
+  exact coeff_map_eq_zero_of_notMem_range _ K.subtype _ b (by simpa using hh)
+
+/-- Restricting to a subgroup and then including recovers a series supported on that subgroup. -/
+theorem algebraMap_comap_subtype_of_support_subset (a : NovikovSeries R H N)
+    (ha : a.support ⊆ (K : Set H)) :
+    algebraMap (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N)
+      (comap K.subtype (exists_period_rescale_subtype K)
+        (by simp [K.subtype.ker_eq_bot K.subtype_injective]) a) = a := by
+  ext h
+  by_cases hh : h ∈ K
+  · exact (coeff_algebraMap_addSubgroup_coe _ ⟨h, hh⟩).trans (coeff_comap _ _ _ _ _)
+  · rw [coeff_algebraMap_addSubgroup_of_notMem _ hh]
+    symm
+    by_contra hc
+    exact hh (ha (mem_support.2 hc))
+
+/-- A series comes from the subgroup Novikov ring exactly when its support lies in the subgroup. -/
+-- Rewrite before the generic simp rule that expands membership in a range to an existential.
+@[simp high]
+theorem mem_range_algebraMap_addSubgroup_iff (a : NovikovSeries R H N) :
+    a ∈ Set.range (algebraMap (NovikovSeries R K (N.comp K.subtype))
+      (NovikovSeries R H N)) ↔ a.support ⊆ (K : Set H) := by
+  constructor
+  · rintro ⟨b, rfl⟩ h hh
+    by_contra hK
+    exact (mem_support.1 hh) (coeff_algebraMap_addSubgroup_of_notMem b hK)
+  · intro ha
+    exact ⟨_, algebraMap_comap_subtype_of_support_subset a ha⟩
+
+/-- The algebra map from Novikov series on `K` sends the monomial `r e^k` to `r e^k`. -/
+@[simp]
+theorem algebraMap_addSubgroup_single (k : K) (r : R) :
+    algebraMap (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) (single k r) =
+      single (k : H) r := by
+  simp [algebraMap_addSubgroup_eq_mapRingHom]
+
+variable (K) in
+/-- The coefficient scalars act on Novikov series on `H` through Novikov series on `K`. -/
+instance instIsScalarTowerAddSubgroup :
+    IsScalarTower R (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) :=
+  .of_algebraMap_eq (S := NovikovSeries R K (N.comp K.subtype)) fun r => by
+    simp only [algebraMap_apply, algebraMap_addSubgroup_single, AddSubgroup.coe_zero]
+
+variable (hφ : ∃ c > 0, ∀ k, N (K.subtype k) = c * (N.comp K.subtype) k)
+  (hker : (K.subtype.ker : Set K).Finite)
+
+/-- Restricting the image of a Novikov series on `K` back to `K` recovers the series. -/
+@[simp]
+theorem comap_subtype_algebraMap (b : NovikovSeries R K (N.comp K.subtype)) :
+    comap K.subtype hφ hker (algebraMap _ (NovikovSeries R H N) b) = b := by
+  ext k
+  simp
+
+/-- The algebra map induced by inclusion of a subgroup of exponents is injective. -/
+theorem algebraMap_addSubgroup_injective :
+    Function.Injective (algebraMap (NovikovSeries R K (N.comp K.subtype))
+      (NovikovSeries R H N)) :=
+  Function.LeftInverse.injective
+    (comap_subtype_algebraMap (exists_period_rescale_subtype K)
+      (by simp [K.subtype.ker_eq_bot K.subtype_injective]))
+
+/-- The projection formula: restriction of coefficients to `K` is linear over Novikov series
+on `K`. -/
+theorem comap_subtype_algebraMap_mul (b : NovikovSeries R K (N.comp K.subtype))
+    (a : NovikovSeries R H N) :
+    comap K.subtype hφ hker (algebraMap _ _ b * a) = b * comap K.subtype hφ hker a := by
+  ext k
+  rw [coeff_comap, AddSubgroup.subtype_apply, coeff_mul]
+  refine (coeff_mul_eq_sum_of_injOn (F := (finite_setOf_add_eq b (comap K.subtype hφ hker a)
+    k).toFinset) (f := fun p : K × K => ((p.1 : H), (p.2 : H)))
+    (fun p hp => ?_) (fun u v huv hu hv => ?_) fun p _ p' _ hpp' => ?_).trans ?_
+  · rw [Set.Finite.mem_toFinset] at hp
+    simp only [← AddSubgroup.coe_add, hp.1]
+  · have huK : u ∈ K := by_contra fun huK => hu (coeff_algebraMap_addSubgroup_of_notMem b huK)
+    have hvK : v ∈ K := by
+      rw [← add_sub_cancel_left u v, huv]
+      exact K.sub_mem k.2 huK
+    refine ⟨(⟨u, huK⟩, ⟨v, hvK⟩), (Set.Finite.mem_toFinset _).2 ⟨Subtype.ext huv, ?_, ?_⟩, rfl⟩
+    · rwa [← coeff_algebraMap_addSubgroup_coe (H := H)]
+    · rwa [coeff_comap]
+  · simp only [Prod.mk.injEq] at hpp'
+    exact Prod.ext (Subtype.ext hpp'.1) (Subtype.ext hpp'.2)
+  · simp only [coeff_algebraMap_addSubgroup_coe, coeff_mul, coeff_comap, AddSubgroup.subtype_apply]
+
+end Subgroup
 
 end NovikovSeries
 

@@ -6,6 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Cochain
+public import Mathlib.Algebra.Lie.Solvable
+public import Mathlib.Algebra.Lie.TensorProduct
+public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Isomorphisms
+import TauCeti.Algebra.Lie.BaseChange.Perfect
 
 /-!
 # Low-degree Lie algebra cochains
@@ -21,6 +26,10 @@ with values in an `L`-module `M`.
   (`LieModule.Cohomology.twoCochainMap_mem_twoCocycle`).
 * An additive group structure on every submodule of 2-cochains, such as the 2-cocycles, so that
   quotients of such submodules can be formed.
+* `LieModule.Cohomology.sub_apply_apply`: the values of a difference of 2-cochains.
+* `LieModule.Cohomology.exists_d₁₂_eq_of_forall_dual`: on a perfect Lie algebra, a 2-cochain with
+  trivial projective coefficients is a coboundary once its image under every linear functional is
+  one.
 -/
 
 public section
@@ -36,6 +45,10 @@ instance instAddCommGroupSubmoduleTwoCochain (S : Submodule R (twoCochain R L M)
     AddCommGroup S :=
   Submodule.addCommGroup (M := twoCochain R L M) S
 
+@[simp]
+lemma sub_apply_apply (a b : twoCochain R L M) (x y : L) : (a - b) x y = a x y - b x y :=
+  (rfl)
+
 variable {L' M' : Type*} [LieRing L'] [LieAlgebra R L'] [AddCommGroup M'] [Module R M']
 
 /-- Pull a 2-cochain back along a Lie algebra morphism `φ` and push it forward along a linear map
@@ -50,6 +63,22 @@ def twoCochainMap (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L) :
 lemma twoCochainMap_apply_apply (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L) (c : twoCochain R L M)
     (x y : L') : twoCochainMap e φ c x y = e (c (φ x) (φ y)) :=
   (rfl)
+
+/-- Pullback and coefficient pushforward by identity maps leave two-cochains unchanged. -/
+@[simp]
+lemma twoCochainMap_id :
+    twoCochainMap (LinearMap.id : M →ₗ[R] M) (LieHom.id : L →ₗ⁅R⁆ L) = LinearMap.id := by
+  ext c x y
+  rfl
+
+/-- Coefficient pushforward composes covariantly and Lie algebra pullback contravariantly. -/
+lemma twoCochainMap_comp {L'' M'' : Type*} [LieRing L''] [LieAlgebra R L'']
+    [AddCommGroup M''] [Module R M''] (e : M →ₗ[R] M') (e' : M' →ₗ[R] M'')
+    (φ : L' →ₗ⁅R⁆ L) (ψ : L'' →ₗ⁅R⁆ L') :
+    (twoCochainMap e' ψ).comp (twoCochainMap e φ) =
+      twoCochainMap (e'.comp e) (φ.comp ψ) := by
+  ext c x y
+  rfl
 
 variable [LieRingModule L M] [LieModule R L M]
 
@@ -67,6 +96,14 @@ lemma d₁₂_comp_lieHom_apply_apply_ofTrivial [LieRingModule L' M'] [LieModule
   simp only [d₁₂_apply_apply_ofTrivial, LinearMap.comp_apply, LieHom.coe_toLinearMap,
     LieHom.map_lie, map_neg]
 
+/-- With trivial coefficients, pullback and coefficient pushforward commute with `d₁₂`. -/
+lemma twoCochainMap_d₁₂ [LieRingModule L' M'] [LieModule R L' M']
+    [LieModule.IsTrivial L M] [LieModule.IsTrivial L' M'] (e : M →ₗ[R] M')
+    (φ : L' →ₗ⁅R⁆ L) (f : oneCochain R L M) :
+    twoCochainMap e φ (d₁₂ R L M f) = d₁₂ R L' M' (e ∘ₗ f ∘ₗ φ.toLinearMap) := by
+  ext x y
+  exact (d₁₂_comp_lieHom_apply_apply_ofTrivial e φ f x y).symm
+
 /-- With trivial coefficients, pulling back along a Lie algebra morphism and pushing forward along
 a linear map sends 2-cocycles to 2-cocycles. -/
 lemma twoCochainMap_mem_twoCocycle [LieRingModule L' M'] [LieModule R L' M']
@@ -76,5 +113,33 @@ lemma twoCochainMap_mem_twoCocycle [LieRingModule L' M'] [LieModule R L' M']
   rw [mem_twoCocycle_iff_of_trivial] at hc ⊢
   intro x y z
   simp only [twoCochainMap_apply_apply, LieHom.map_lie, hc (φ x) (φ y) (φ z), map_add]
+
+/-- **On a perfect Lie algebra, coboundaries are detected by functionals.** Let `L` be a perfect Lie
+algebra and `M` a projective module with trivial action, for instance a vector space. A 2-cochain
+`c` with values in `M` is a coboundary as soon as, for every linear functional `φ` on `M`, the
+scalar cochain `φ ∘ c` is the coboundary `(x, y) ↦ -g ⁅x, y⁆` of some linear form `g` on `L`. The
+coefficients may be infinitely generated: since `L` is perfect, `c` descends along the bracket
+`L ⊗ L → L`, because functionals separate the points of `M`. -/
+theorem exists_d₁₂_eq_of_forall_dual [LieModule.IsTrivial L M] [Module.Projective R M]
+    (hL : LieAlgebra.derivedSeries R L 1 = ⊤) (c : twoCochain R L M)
+    (hc : ∀ φ : Module.Dual R M, ∃ g : Module.Dual R L, ∀ x y : L, φ (c x y) = -g ⁅x, y⁆) :
+    ∃ f : oneCochain R L M, d₁₂ R L M f = c := by
+  let B := (LieModule.toModuleHom R L L).toLinearMap
+  have hB_apply (x y : L) : B (x ⊗ₜ y) = ⁅x, y⁆ := LieModule.toModuleHom_apply R L L x y
+  -- Since `L` is perfect, every element is a linear combination of brackets.
+  have hB : Function.Surjective B := fun u ↦
+    (Submodule.span_le (p := LinearMap.range B)).mpr
+      (by rintro _ ⟨x, y, rfl⟩; exact ⟨x ⊗ₜ y, hB_apply x y⟩)
+      (TauCeti.LieAlgebra.mem_span_lie_of_derivedSeries_one_eq_top hL u)
+  -- The kernel of the bracket is killed by every functional applied to `c`, hence by `c`.
+  have hker : LinearMap.ker B ≤ LinearMap.ker (TensorProduct.lift c.1) := by
+    intro w hw
+    refine LinearMap.mem_ker.mpr ((Module.forall_dual_apply_eq_zero_iff R _).mp fun φ ↦ ?_)
+    obtain ⟨g, hg⟩ := hc φ
+    have hφ : φ ∘ₗ TensorProduct.lift c.1 = -(g ∘ₗ B) :=
+      TensorProduct.ext' fun x y ↦ by simp [hB_apply, hg]
+    simpa [LinearMap.mem_ker.mp hw] using LinearMap.congr_fun hφ w
+  refine ⟨-B.liftOfSurjective hB ⟨_, hker⟩, Subtype.ext (LinearMap.ext₂ fun x y ↦ ?_)⟩
+  simp [← hB_apply, trivial_lie_zero]
 
 end LieModule.Cohomology

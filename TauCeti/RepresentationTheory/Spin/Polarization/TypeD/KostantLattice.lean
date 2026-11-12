@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Serre.Relations
 
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
-import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 import TauCeti.RingTheory.DividedPowers.Associative
 
 /-!
@@ -155,24 +154,32 @@ theorem typeDSpinRep_serreF_eq_spinAction (i : Fin n) :
       spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) i) := by
   rw [P.typeDSpinRep_ι b hn, P.typeDSpinSerreRepresentation_serreF b hn]
 
-/-- **The represented root generators preserve exterior parity**, for a polarization without a
-line summand. Each acts through a simple-root Clifford bivector, which is even, so it maps each
+/-- **The represented root generators preserve exterior parity.** Each acts through a
+simple-root Clifford bivector, a product of two vectors of `W` or `W'`, which maps each
 half-spin summand into itself. -/
-theorem typeDSpinRep_rootGenerator_mem_evenOdd (hline : P.line = ⊥) (k : Fin n ⊕ Fin n)
+theorem typeDSpinRep_rootGenerator_mem_evenOdd (k : Fin n ⊕ Fin n)
     {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W} (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) :
     P.typeDSpinRep b hn
         (_root_.UniversalEnvelopingAlgebra.ι ℚ
           (TauCeti.serreRootGenerator (CartanMatrix.D n) k)) s ∈
       evenOdd (0 : QuadraticForm ℚ P.W) j := by
+  have hW (x : P.W) := fun {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W}
+    (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) ↦ P.cliffordOperator_coe_W_mem_evenOdd x hs
+  have hW' (y : P.W') := fun {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W}
+    (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) ↦ P.cliffordOperator_coe_W'_mem_evenOdd y hs
   cases k with
   | inl i =>
-    rw [TauCeti.serreRootGenerator_inl, P.typeDSpinRep_serreE_eq_spinAction b hn]
-    exact spinAction_mem_evenOdd_of_mem_even P hline (quadraticLieSubalgebra_le_even Q
-      (P.typeDSimpleRootBivector_mem_quadraticLieSubalgebra b (by omega) i)) hs
+    rw [TauCeti.serreRootGenerator_inl, P.typeDSpinRep_serreE_eq_spinAction b hn,
+      P.typeDSimpleRootBivector_def b]
+    split_ifs
+    · exact P.spinAction_ι_mul_ι_mem_evenOdd (hW _) (hW' _) hs
+    · exact P.spinAction_ι_mul_ι_mem_evenOdd (hW _) (hW _) hs
   | inr i =>
-    rw [TauCeti.serreRootGenerator_inr, P.typeDSpinRep_serreF_eq_spinAction b hn]
-    exact spinAction_mem_evenOdd_of_mem_even P hline (quadraticLieSubalgebra_le_even Q
-      (P.typeDSimpleNegativeRootBivector_mem_quadraticLieSubalgebra b (by omega) i)) hs
+    rw [TauCeti.serreRootGenerator_inr, P.typeDSpinRep_serreF_eq_spinAction b hn,
+      P.typeDSimpleNegativeRootBivector_def b]
+    split_ifs
+    · exact P.spinAction_ι_mul_ι_mem_evenOdd (hW _) (hW' _) hs
+    · exact P.spinAction_ι_mul_ι_mem_evenOdd (hW' _) (hW' _) hs
 
 /-- At a chain node, the positive type-`D` root generator moves the singleton exterior-basis
 vector at `i + 1` to the singleton at `i`. -/
@@ -183,7 +190,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_singleton {i : Fin n}
         (b.ExteriorAlgebra {⟨(i : ℕ) + 1, hnext⟩}) =
       b.ExteriorAlgebra {i} := by
   rw [P.typeDSpinRep_serreE_eq_spinAction b hn,
-    P.typeDSimpleRootBivector_def b, dite_eq_left hnext, map_mul, Module.End.mul_apply,
+    P.typeDSimpleRootBivector_def b, dite_eq_left hnext, map_mul, mul_apply_eq_comp,
     TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
@@ -198,7 +205,7 @@ theorem typeDSpinRep_serreF_exteriorBasis_singleton {i : Fin n}
       b.ExteriorAlgebra {⟨(i : ℕ) + 1, hnext⟩} := by
   rw [P.typeDSpinRep_serreF_eq_spinAction b hn,
     P.typeDSimpleNegativeRootBivector_def b, dite_eq_left hnext, map_mul,
-    Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
+    mul_apply_eq_comp, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
     P.pairingEquiv_dualVector, TauCeti.ExteriorAlgebra.basis_singleton,
     CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
@@ -214,7 +221,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_empty {i : Fin n}
           {(⟨n - 2, by omega⟩ : Fin n), (⟨n - 1, by omega⟩ : Fin n)} •
         b.ExteriorAlgebra {⟨n - 2, by omega⟩, ⟨n - 1, by omega⟩} := by
   rw [P.typeDSpinRep_serreE_eq_spinAction b hn,
-    P.typeDSimpleRootBivector_def b, dite_eq_right hlast, map_mul, Module.End.mul_apply,
+    P.typeDSimpleRootBivector_def b, dite_eq_right hlast, map_mul, mul_apply_eq_comp,
     TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_wedge]
   have hEmpty : b.ExteriorAlgebra (∅ : Finset (Fin n)) = 1 := by
     rw [ExteriorAlgebra.basis_apply]
@@ -245,7 +252,7 @@ theorem typeDSpinRep_serreF_exteriorBasis_pair {i : Fin n}
           {(⟨n - 1, by omega⟩ : Fin n)}) • b.ExteriorAlgebra ∅ := by
   rw [P.typeDSpinRep_serreF_eq_spinAction b hn,
     P.typeDSimpleNegativeRootBivector_def b, dite_eq_right hlast, map_mul,
-    Module.End.mul_apply, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
+    mul_apply_eq_comp, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
     TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
     TauCeti.ExteriorAlgebra.contractLeft_coord_basis]
   rw [ite_eq_left (by simp), Finset.erase_insert (by
@@ -348,7 +355,7 @@ theorem typeDSpinRep_serreKostantForm_apply_mem_integralLattice
     (fun k m _ hw ↦ by
       rw [Associative.map_dividedPower]
       exact Associative.dividedPower_apply_mem_of_pow_two_eq_zero _
-        (TauCeti.ExteriorAlgebra.integralLattice b) (zero_mem _)
+        (TauCeti.ExteriorAlgebra.integralLattice b)
         (P.typeDSpinRep_rootGenerator_sq b hn k)
         (fun hw' ↦ P.typeDSpinRep_rootGenerator_apply_mem_integralLattice b hn k hw') m hw)
     (fun i m _ hw ↦

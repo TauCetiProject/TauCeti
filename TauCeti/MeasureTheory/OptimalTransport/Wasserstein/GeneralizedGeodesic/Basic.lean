@@ -227,7 +227,7 @@ theorem wassersteinEDist_generalizedGeodesic_sq_add_le (hγ : γ.fst = μ) (ht :
         ENNReal.ofReal (t * (1 - t)) * ∫⁻ w, edist w.2.1 w.2.2 ^ 2 ∂γ ≤
       ENNReal.ofReal (1 - t) * ∫⁻ w, edist w.1 w.2.1 ^ 2 ∂γ +
         ENNReal.ofReal t * ∫⁻ w, edist w.1 w.2.2 ^ 2 ∂γ := by
-  have hf : Measurable fun w : E × E × E ↦ (1 - t) • w.2.1 + t • w.2.2 := by fun_prop
+  have _ : Measurable fun w : E × E × E ↦ (1 - t) • w.2.1 + t • w.2.2 := by fun_prop
   -- The plan couples its base marginal `μ` with the generalized geodesic at time `t`.
   have hπ : IsCoupling (γ.map fun w ↦ (w.1, (1 - t) • w.2.1 + t • w.2.2)) μ
       (generalizedGeodesic γ t) := by
@@ -313,9 +313,10 @@ theorem hasFiniteMoment_generalizedGeodesic {γ : Measure (E × E × E)} [IsFini
     HasFiniteMoment q (generalizedGeodesic γ t) := by
   rw [Measure.fst, Measure.snd, Measure.map_map measurable_fst measurable_snd] at h₀
   rw [Measure.snd, Measure.snd, Measure.map_map measurable_snd measurable_snd] at h₁
-  have h := ((memLp_of_hasFiniteMoment_map (measurable_fst.comp measurable_snd) h₀).const_smul
-    (1 - t)).add ((memLp_of_hasFiniteMoment_map (measurable_snd.comp measurable_snd) h₁).const_smul
-    t)
+  have h := ((memLp_of_hasFiniteMoment_map
+    (measurable_fst.comp measurable_snd).aemeasurable h₀).const_smul (1 - t)).add
+    ((memLp_of_hasFiniteMoment_map
+      (measurable_snd.comp measurable_snd).aemeasurable h₁).const_smul t)
   rw [generalizedGeodesic_def, hasFiniteMoment_map_iff_memLp_edist (by fun_prop) 0]
   exact (memLp_congr_enorm h.aestronglyMeasurable (by fun_prop) (.of_forall fun w ↦ by simp)).1 h
 

@@ -76,9 +76,6 @@ predicate as a hypothesis, and the representation API for `TauCeti.bernsteinMeas
 
 * D. V. Widder, *The Laplace Transform* (Princeton, 1941), Chapter IV.
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984).
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone) and Part C, Milestone 2 (BCR semigroup--Bochner).
 -/
 
 public section
@@ -186,7 +183,7 @@ private lemma isTightMeasureSet_range_of_laplaceTransform_between_shift
   -- The finitely many shifts larger than `x` are tight on their own.
   obtain ⟨K, hK_compact, hK_tail⟩ :=
     isTightMeasureSet_iff_exists_isCompact_measure_compl_le.mp
-      (isTightMeasureSet_range_of_finite (fun n : {n : ℕ // n < N} => μ n) fun n => hfin n) ε hε
+      (isTightMeasureSet_range_of_finite fun n : {n : ℕ // n < N} => μ n) ε hε
   refine ⟨K ∪ Metric.closedBall (0 : ℝ≥0) (y / 2)⁻¹,
     hK_compact.union (isCompact_closedBall _ _), ?_⟩
   rintro ν ⟨n, rfl⟩

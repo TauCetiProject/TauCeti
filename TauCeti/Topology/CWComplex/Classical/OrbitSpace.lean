@@ -94,14 +94,14 @@ private theorem eq_one_of_smul_mem_openCell {n : ℕ} {i : cell (univ : Set E) n
       (openCell_subset_closedCell n _ hmem)))
   exact hfree g n i (by rw [smul_openCell hcell, hgi])
 
+omit [T2Space E] in
 include hp hcell hfree in
-/-- The covering map is injective on every open cell. -/
+/-- The covering map is injective on every open cell, without any separation assumption on `E`. -/
 theorem _root_.IsQuotientCoveringMap.injOn_openCell {n : ℕ} (i : cell (univ : Set E) n) :
     InjOn p (openCell n i) := by
   intro x hx y hy hxy
   obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.1 (hp.apply_eq_iff_mem_orbit.1 hxy)
-  rw [eq_one_of_smul_mem_openCell hcell hfree hy (notMem_skeletonLT_union_of_mem_openCell n hx),
-    one_smul]
+  rw [eq_one_of_mem_openCell_of_smul_mem hcell hfree hy hx, one_smul]
 
 include hp hcell hfree in
 /-- The inverse of the restriction of the covering map to an open cell is continuous on the
@@ -149,6 +149,7 @@ private def quotientCellMap (n : ℕ)
   (map n o.out).trans <|
     Set.InjOn.toPartialEquiv p (openCell n o.out) (hp.injOn_openCell hcell hfree o.out)
 
+omit [T2Space E] in
 private theorem image_quotientCellMap {n : ℕ}
     (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell (univ : Set E) n))
     (S : Set (Fin n → ℝ)) : quotientCellMap hp hcell hfree n o '' S = p '' (map n o.out '' S) :=
@@ -183,6 +184,7 @@ private theorem image_closedCell_out {n : ℕ} (i : cell (univ : Set E) n) :
   obtain ⟨g, hg⟩ := exists_smul_eq_out hcell i
   rw [← hg, ← smul_closedCell, hp.image_smul_set]
 
+omit [T2Space E] in
 private theorem source_quotientCellMap {n : ℕ}
     (o : letI := cellMulAction hcell n; MulAction.orbitRel.Quotient G (cell (univ : Set E) n)) :
     (quotientCellMap hp hcell hfree n o).source = ball 0 1 := by
@@ -203,6 +205,7 @@ private theorem continuousOn_symm_quotientCellMap {n : ℕ}
   rw [quotientCellMap, PartialEquiv.coe_trans_symm, PartialEquiv.trans_target]
   exact ((continuousOn_symm n o.out).comp hinv hmaps).mono inter_subset_left
 
+omit [T2Space E] in
 private theorem pairwiseDisjoint_quotientCellMap :
     (univ : Set (Σ n, letI := cellMulAction hcell n;
       MulAction.orbitRel.Quotient G (cell (univ : Set E) n))).PairwiseDisjoint
@@ -227,6 +230,7 @@ private theorem image_quotientCellMap_mk_closedBall {n : ℕ} (i : cell (univ : 
   rw [image_quotientCellMap]
   exact image_closedCell_out hp hcell i
 
+omit [T2Space E] in
 include hp in
 private theorem image_quotientCellMap_mk_ball {n : ℕ} (i : cell (univ : Set E) n) :
     letI := cellMulAction hcell n

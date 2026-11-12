@@ -6,15 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 
 /-!
 # The exponential `e^{2π i τ}` on the upper half-plane
 
-Elementary facts about `q = e^{2π i τ}` and `e^{2π i (x τ + y)}` for `τ` in the upper half-plane,
-complementing `Mathlib.Analysis.Complex.UpperHalfPlane.Exp`.
+Elementary facts about `q = e^{2π i τ}`, its square root `e^{π i τ}` and `e^{2π i (x τ + y)}`
+for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperHalfPlane.Exp`.
 
 ## Main results
 
+* `TauCeti.UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq`: `e^{2π i τ} = (e^{π i τ})²`.
+* `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul`: `|q| = e^{-2π Im τ}`.
+* `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_add`: `‖e^{2π i (x τ + y)}‖ = |q|^x`.
+* `TauCeti.UpperHalfPlane.tendsto_exp_two_pi_I_mul_add`: for `x > 0`,
+  `e^{2π i (x τ + y)} → 0` as `Im τ → ∞`.
+* `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_le`: `|q| ≤ e^{-2π t}` when `t ≤ Im τ`.
+* `TauCeti.UpperHalfPlane.norm_one_sub_exp_two_pi_I_mul`: `|1 - e^{2π i y}| = |2 sin (π y)|`.
+* `TauCeti.UpperHalfPlane.norm_exp_pi_I_lt_one`: `‖e^{π i τ}‖ < 1` on the upper half-plane.
 * `TauCeti.UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero`: `1 - e^{2π i (x τ + y)}` has no zero in
   the upper half-plane unless `x = 0` and `y ∈ ℤ`.
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_zpow_mul_exp`:
@@ -28,6 +37,61 @@ open UpperHalfPlane hiding I
 open scoped Real
 
 namespace TauCeti.UpperHalfPlane
+
+/-- `q = e^{2π i τ}` is the square of `e^{π i τ}`. -/
+theorem exp_two_pi_I_eq_exp_pi_I_sq (τ : ℂ) : cexp (2 * π * I * τ) = cexp (π * I * τ) ^ 2 := by
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- `|q| = e^{-2π Im τ}` for `q = e^{2π i τ}`. -/
+theorem norm_exp_two_pi_I_mul (τ : ℂ) :
+    ‖cexp (2 * π * I * τ)‖ = Real.exp (-(2 * π * τ.im)) := by
+  simp [Complex.norm_exp]
+
+/-- `‖e^{2π i (x τ + y)}‖ = |q|^x` for `q = e^{2π i τ}`. -/
+theorem norm_exp_two_pi_I_mul_add (x y : ℝ) (τ : ℂ) :
+    ‖cexp (2 * π * I * (x * τ + y))‖ = ‖cexp (2 * π * I * τ)‖ ^ x := by
+  rw [Complex.norm_exp, norm_exp_two_pi_I_mul, ← Real.exp_mul]
+  congr 1
+  simp
+  ring
+
+/-- For `x > 0`, `e^{2π i (x τ + y)}` tends to zero as `Im τ → ∞`, with no restriction on
+`Re τ`. -/
+theorem tendsto_exp_two_pi_I_mul_add {x : ℝ} (hx : 0 < x) (y : ℝ) :
+    Filter.Tendsto (fun τ : ℍ ↦ cexp (2 * π * I * (x * (τ : ℂ) + y)))
+      atImInfty (nhds 0) := by
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  have him : Filter.Tendsto (fun τ : ℍ ↦ τ.im) atImInfty Filter.atTop := Filter.tendsto_comap
+  have h := Real.tendsto_exp_atBot.comp
+    (him.const_mul_atTop_of_neg (neg_neg_of_pos (by positivity : 0 < 2 * π * x)))
+  convert h using 1
+  funext τ
+  rw [norm_exp_two_pi_I_mul_add, norm_exp_two_pi_I_mul, ← Real.exp_mul]
+  congr 1
+  rw [coe_im]
+  ring
+
+/-- `Im τ ≥ t` means `|q| ≤ e^{-2π t}` for `q = e^{2π i τ}`. -/
+theorem norm_exp_two_pi_I_mul_le {t : ℝ} {τ : ℂ} (hτ : t ≤ τ.im) :
+    ‖cexp (2 * π * I * τ)‖ ≤ Real.exp (-(2 * π * t)) := by
+  rw [norm_exp_two_pi_I_mul, Real.exp_le_exp, neg_le_neg_iff]
+  gcongr
+
+/-- `|1 - e^{2π i y}| = |2 sin (π y)|` for real `y`. -/
+theorem norm_one_sub_exp_two_pi_I_mul (y : ℝ) :
+    ‖1 - cexp (2 * π * I * y)‖ = |2 * Real.sin (π * y)| := by
+  rw [norm_sub_rev, show 2 * π * I * y = I * ((2 * π * y : ℝ) : ℂ) by push_cast; ring,
+    norm_exp_I_mul_ofReal_sub_one, Real.norm_eq_abs]
+  ring_nf
+
+/-- The square root `e^{π i τ}` of `q = e^{2π i τ}` has norm less than one on the upper
+half-plane. -/
+theorem norm_exp_pi_I_lt_one {τ : ℂ} (hτ : 0 < τ.im) : ‖cexp (π * I * τ)‖ < 1 := by
+  rw [Complex.norm_exp, Real.exp_lt_one_iff]
+  simpa using mul_pos Real.pi_pos hτ
 
 /-- `1 - e^{2π i (x τ + y)}` vanishes at a point `τ` of the upper half-plane only when `x = 0` and
 `y` is an integer. -/

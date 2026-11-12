@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Distributions.Gaussian.Real
-import TauCeti.Probability.Distributions.Gaussian.Cdf
+public import TauCeti.Probability.Distributions.Gaussian.Smooth
 import TauCeti.Probability.Distributions.Tilted
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Black–Scholes call and put prices as risk-neutral expectations
@@ -56,6 +57,8 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
   `TauCeti.BlackScholes.putPrice_nonneg`, `TauCeti.BlackScholes.putPrice_le_mul_cdf`,
   `TauCeti.BlackScholes.putPrice_le` — the no-arbitrage bounds `0 ≤ C ≤ s` and
   `0 ≤ P ≤ K e^{-rτ} Φ(-d₋) ≤ K e^{-rτ}`.
+* `ContDiffAt.callPrice`, `ContDiffAt.putPrice` — smooth composition of the closed forms
+  with spot and remaining maturity wherever `s ≠ 0` and `τ > 0`, for `K, σ ≠ 0`.
 
 ## References
 
@@ -145,6 +148,14 @@ theorem riskNeutralPrice_def (h : ℝ → ℝ) (s r σ τ : ℝ) :
 theorem riskNeutralPrice_zero (h : ℝ → ℝ) (s r σ : ℝ) : riskNeutralPrice h s r σ 0 = h s := by
   simp [riskNeutralPrice_def]
 
+/-- The risk-neutral price of a measurable payoff is a measurable function of the spot. -/
+theorem measurable_riskNeutralPrice {h : ℝ → ℝ} (hh : Measurable h) (r σ τ : ℝ) :
+    Measurable fun s => riskNeutralPrice h s r σ τ := by
+  have hF : StronglyMeasurable fun p : ℝ × ℝ => h (terminalSpot p.1 r σ τ p.2) :=
+    (hh.comp (by unfold terminalSpot; fun_prop)).stronglyMeasurable
+  simp_rw [riskNeutralPrice_def]
+  exact (hF.integral_prod_right' (ν := gaussianReal 0 1)).measurable.const_mul _
+
 /-- A nonnegative payoff has a nonnegative risk-neutral price. -/
 theorem riskNeutralPrice_nonneg {h : ℝ → ℝ} (hh : ∀ x, 0 ≤ h x) (s r σ τ : ℝ) :
     0 ≤ riskNeutralPrice h s r σ τ := by
@@ -178,14 +189,29 @@ def dMinus (s r σ K τ : ℝ) : ℝ :=
 theorem dMinus_def (s r σ K τ : ℝ) : dMinus s r σ K τ = dPlus s r σ K τ - σ * √τ :=
   (rfl)
 
-/-- For `τ ≥ 0`, `d₋ = (log (s / K) + (r - σ² / 2) τ) / (σ √τ)`. When `σ √τ = 0` both sides
-vanish. -/
-theorem dMinus_eq (s r σ K : ℝ) (hτ : 0 ≤ τ) :
+/-- The Gaussian coordinate `d₊` is jointly measurable in spot and remaining maturity. -/
+theorem measurable_dPlus (r σ K : ℝ) :
+    Measurable (fun p : ℝ × ℝ => dPlus p.1 r σ K p.2) := by
+  simp only [dPlus_def]
+  exact ((measurable_fst.div_const K).log.add
+    (measurable_const.mul measurable_snd)).div (measurable_const.mul measurable_snd.sqrt)
+
+/-- The Gaussian coordinate `d₋` is jointly measurable in spot and remaining maturity. -/
+theorem measurable_dMinus (r σ K : ℝ) :
+    Measurable (fun p : ℝ × ℝ => dMinus p.1 r σ K p.2) := by
+  simp only [dMinus_def]
+  exact (measurable_dPlus r σ K).sub (measurable_const.mul measurable_snd.sqrt)
+
+/-- `d₋ = (log (s / K) + (r - σ² / 2) τ) / (σ √τ)`, for every `τ`: if `σ √τ ≠ 0` then `τ > 0`,
+since `√τ = 0` for `τ ≤ 0`. Lean subtlety: when `σ √τ = 0` (that is, `σ = 0` or `τ ≤ 0`) both sides
+are `0`, by Lean's convention `x / 0 = 0`. -/
+theorem dMinus_eq (s r σ K τ : ℝ) :
     dMinus s r σ K τ = (log (s / K) + (r - σ ^ 2 / 2) * τ) / (σ * √τ) := by
   rw [dMinus_def, dPlus_def]
   rcases eq_or_ne (σ * √τ) 0 with h | h
   · simp [h]
-  · have hsq : (σ * √τ) ^ 2 = σ ^ 2 * τ := by rw [mul_pow, sq_sqrt hτ]
+  · have hτ : 0 < τ := sqrt_ne_zero'.1 (right_ne_zero_of_mul h)
+    have hsq : (σ * √τ) ^ 2 = σ ^ 2 * τ := by rw [mul_pow, sq_sqrt hτ.le]
     rw [eq_div_iff h, sub_mul, div_mul_cancel₀ _ h]
     linear_combination -1 * hsq
 
@@ -263,7 +289,7 @@ theorem lt_terminalSpot_iff (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < 
   calc K < terminalSpot s r σ τ z ↔ log (K / s) < (r - σ ^ 2 / 2) * τ + σ * √τ * z := by
         rw [terminalSpot_def, ← div_lt_iff₀' hs, log_lt_iff_lt_exp (div_pos hK hs)]
     _ ↔ -dMinus s r σ K τ < z := by
-        rw [dMinus_eq s r σ K hτ.le, neg_lt, lt_div_iff₀ ha, log_div hK.ne' hs.ne',
+        rw [dMinus_eq s r σ K τ, neg_lt, lt_div_iff₀ ha, log_div hK.ne' hs.ne',
           log_div hs.ne' hK.ne']
         constructor <;> intro h <;> linarith
 
@@ -363,3 +389,101 @@ theorem putPrice_le (hs : 0 ≤ s) (hK : 0 ≤ K) : putPrice s r σ K τ ≤ K *
     (cdf_le_one _ _))
 
 end TauCeti.BlackScholes
+
+/-! ### Smooth composition -/
+
+open TauCeti.BlackScholes
+open scoped ContDiff
+
+namespace ContDiffAt
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {f g : E → ℝ} {x : E} {r σ K : ℝ}
+
+/-- The Black–Scholes normal argument is smooth under composition wherever its logarithm
+and denominator are nonsingular. -/
+@[fun_prop]
+theorem dPlus {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
+    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    ContDiffAt ℝ n (fun y => dPlus (f y) r σ K (g y)) x := by
+  simp only [dPlus_def]
+  exact (((hf.div_const K).log (div_ne_zero hs hK)).add
+    (contDiffAt_const.mul hg)).div
+      (contDiffAt_const.mul (hg.sqrt hτ.ne'))
+      (mul_ne_zero hσ (sqrt_pos.2 hτ).ne')
+
+/-- The lower Black–Scholes normal argument is smooth under composition on the same domain. -/
+@[fun_prop]
+theorem dMinus {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
+    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    ContDiffAt ℝ n (fun y => dMinus (f y) r σ K (g y)) x := by
+  simp only [dMinus_def]
+  exact (hf.dPlus hg hs hK hσ hτ).sub (contDiffAt_const.mul (hg.sqrt hτ.ne'))
+
+variable {n : ℕ∞}
+
+/-- The closed-form call price is smooth under composition in spot and remaining maturity
+wherever the normal arguments are nonsingular. -/
+@[fun_prop]
+theorem callPrice (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
+    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    ContDiffAt ℝ n (fun y => callPrice (f y) r σ K (g y)) x := by
+  have hΦ := TauCeti.Probability.contDiff_cdf_gaussianReal (n := n) 0 one_ne_zero
+  simp only [callPrice_def]
+  exact (hf.mul (hΦ.contDiffAt.comp _ (hf.dPlus hg hs hK hσ hτ))).sub
+    ((contDiffAt_const.mul ((contDiffAt_const.mul hg).exp)).mul
+      (hΦ.contDiffAt.comp _ (hf.dMinus hg hs hK hσ hτ)))
+
+/-- The closed-form put price is smooth under composition in spot and remaining maturity
+wherever the normal arguments are nonsingular. -/
+@[fun_prop]
+theorem putPrice (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
+    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    ContDiffAt ℝ n (fun y => putPrice (f y) r σ K (g y)) x := by
+  simp only [putPrice_eq_callPrice]
+  exact ((hf.callPrice hg hs hK hσ hτ).sub hf).add
+    (contDiffAt_const.mul ((contDiffAt_const.mul hg).exp))
+
+end ContDiffAt
+
+namespace ContinuousAt
+
+variable {E : Type*} [TopologicalSpace E]
+  {f g : E → ℝ} {x : E} {r σ K : ℝ}
+
+/-- The Black–Scholes normal argument is continuous under composition wherever its logarithm
+and denominator are nonsingular. -/
+@[fun_prop]
+theorem dPlus (hf : ContinuousAt f x) (hg : ContinuousAt g x)
+    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    ContinuousAt (fun y => dPlus (f y) r σ K (g y)) x :=
+  ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).dPlus contDiffAt_snd
+    hs hK hσ hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
+
+/-- The lower Black–Scholes normal argument is continuous under composition on the same domain. -/
+@[fun_prop]
+theorem dMinus (hf : ContinuousAt f x) (hg : ContinuousAt g x)
+    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    ContinuousAt (fun y => dMinus (f y) r σ K (g y)) x :=
+  ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).dMinus contDiffAt_snd
+    hs hK hσ hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
+
+/-- The closed-form call price is continuous under composition in spot and remaining maturity
+wherever the normal arguments are nonsingular. -/
+@[fun_prop]
+theorem callPrice (hf : ContinuousAt f x) (hg : ContinuousAt g x)
+    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    ContinuousAt (fun y => callPrice (f y) r σ K (g y)) x :=
+  ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).callPrice contDiffAt_snd
+    hs hK hσ hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
+
+/-- The closed-form put price is continuous under composition in spot and remaining maturity
+wherever the normal arguments are nonsingular. -/
+@[fun_prop]
+theorem putPrice (hf : ContinuousAt f x) (hg : ContinuousAt g x)
+    (hs : f x ≠ 0) (hK : K ≠ 0) (hσ : σ ≠ 0) (hτ : 0 < g x) :
+    ContinuousAt (fun y => putPrice (f y) r σ K (g y)) x :=
+  ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).putPrice contDiffAt_snd
+    hs hK hσ hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
+
+end ContinuousAt

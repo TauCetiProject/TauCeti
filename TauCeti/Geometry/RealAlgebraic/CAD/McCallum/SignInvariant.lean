@@ -17,7 +17,8 @@ on a base cell are omitted from its root stack and have sign zero throughout its
 
 Unlike an intermediate order-invariant lift, this final sign-invariant lift needs no
 well-orientedness assumption at the top level. The lower CAD must still be order-invariant
-for the projection; mere sign-invariance of that projection is not substituted for it.
+for the projection; mere sign-invariance of that projection does not suffice
+(`TauCeti.exists_signInvariant_mcCallumProjection_stackCells_not_signInvariant`).
 
 ## References
 

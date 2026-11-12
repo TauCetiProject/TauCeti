@@ -8,7 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative
 import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -42,7 +44,9 @@ of a connection on the tangent bundle.
   finite-dimensional Hausdorff manifolds, curvature at a point depends only on the values of
   its three inputs there.
 * `CovariantDerivative.curvatureOperator_congr_of_eventuallyEq`: curvature agrees at a point
-  when its smooth inputs agree in a neighborhood of that point.
+  when its smooth inputs agree in a neighborhood of that point;
+  `CovariantDerivative.curvatureOperator_congr_of_eventuallyEq_of_mdifferentiableAt` only asks
+  for differentiability near the point.
 * `CovariantDerivative.curvatureOperator_congr_covariantDerivative`: two connections which agree
   on differentiable sections have the same curvature on differentiable inputs.
 
@@ -283,23 +287,30 @@ theorem curvatureOperator_add_section
   simp only [add_apply]
   abel
 
+omit [CompleteSpace E] in
 /-- Curvature changes sign when its first vector-field argument is negated. -/
 @[simp]
 theorem curvatureOperator_neg_first
     (hX : CMDiff ∞ (T% X)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov (-X) Y σ = -curvatureOperator cov X Y σ := by
-  apply eq_neg_of_add_eq_zero_left
-  rw [← curvatureOperator_add_first hX.neg_section hX hσ, neg_add_cancel,
-    curvatureOperator_zero_first]
+  funext x
+  have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) :=
+    (cov.contMDiff_apply hX hσ).mdifferentiable (by simp)
+  have hinner : (fun y ↦ cov σ y ((-X) y)) = -fun y ↦ cov σ y (X y) :=
+    funext fun y ↦ map_neg (cov σ y) (X y)
+  rw [Pi.neg_apply, curvatureOperator_apply, curvatureOperator_apply, mlieBracket_neg_left, hinner,
+    cov.isCovariantDerivativeOnUniv.neg (hXσd x)]
+  simp only [Pi.neg_apply, map_neg, neg_apply]
+  abel
 
+omit [CompleteSpace E] in
 /-- Curvature changes sign when its second vector-field argument is negated. -/
 @[simp]
 theorem curvatureOperator_neg_second
     (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov X (-Y) σ = -curvatureOperator cov X Y σ := by
-  apply eq_neg_of_add_eq_zero_left
-  rw [← curvatureOperator_add_second hY.neg_section hY hσ, neg_add_cancel,
-    curvatureOperator_zero_second]
+  rw [curvatureOperator_antisymm cov X (-Y) σ, curvatureOperator_neg_first hY hσ, neg_neg,
+    curvatureOperator_antisymm cov Y X σ]
 
 omit [CompleteSpace E] in
 /-- Curvature changes sign when its section argument is negated. -/
@@ -361,64 +372,23 @@ theorem curvatureOperator_smul_section
   funext x
   -- The pointwise `Pi` action on the right hides the applied curvature operator from `rw`.
   change curvatureOperator cov X Y (f • σ) x = f x • curvatureOperator cov X Y σ x
-  let gX : M → ℝ := fun y ↦ d% f y (X y)
-  let gY : M → ℝ := fun y ↦ d% f y (Y y)
   have hfd : MDiff f := hf.mdifferentiable (by simp)
   have hXd : MDiff (T% X) := hX.mdifferentiable (by simp)
   have hYd : MDiff (T% Y) := hY.mdifferentiable (by simp)
   have hσd : MDiff (T% σ) := hσ.mdifferentiable (by simp)
-  have hXσ := cov.contMDiff_apply hX hσ
-  have hYσ := cov.contMDiff_apply hY hσ
-  have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) := hXσ.mdifferentiable (by simp)
-  have hYσd : MDiff (T% (fun y ↦ cov σ y (Y y))) := hYσ.mdifferentiable (by simp)
-  have hgX : ContMDiff I 𝓘(ℝ) ∞ gX := by
-    exact (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
-      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hX
-  have hgY : ContMDiff I 𝓘(ℝ) ∞ gY := by
-    exact (_root_.ContMDiff.contMDiff_mvfderiv_apply hf
-      (m := (⊤ : ℕ∞)) (n := (⊤ : ℕ∞)) (by simp)).comp hY
-  have hgXd : MDiff gX := hgX.mdifferentiable (by simp)
-  have hgYd : MDiff gY := hgY.mdifferentiable (by simp)
-  have hinnerX : (fun y ↦ cov (f • σ) y (X y)) =
-      f • (fun y ↦ cov σ y (X y)) + gX • σ := by
-    funext y
-    have h := cov.isCovariantDerivativeOnUniv.leibniz (hσd y) (hfd y)
-    -- `h` is an equality of continuous linear maps; expose its value at `X y` through the
-    -- pointwise `Pi` operations before rewriting by it.
-    change cov (f • σ) y (X y) = f y • cov σ y (X y) + gX y • σ y
-    rw [h]
-    simp [gX, add_apply, ContinuousLinearMap.smulRight_apply]
-  have hinnerY : (fun y ↦ cov (f • σ) y (Y y)) =
-      f • (fun y ↦ cov σ y (Y y)) + gY • σ := by
-    funext y
-    have h := cov.isCovariantDerivativeOnUniv.leibniz (hσd y) (hfd y)
-    -- `h` is an equality of continuous linear maps; expose its value at `Y y` through the
-    -- pointwise `Pi` operations before rewriting by it.
-    change cov (f • σ) y (Y y) = f y • cov σ y (Y y) + gY y • σ y
-    rw [h]
-    simp [gY, add_apply, ContinuousLinearMap.smulRight_apply]
-  have hfXσd : MDiff (T% (f • fun y ↦ cov σ y (X y))) :=
-    (hf.smul_section hXσ).mdifferentiable (by simp)
-  have hfYσd : MDiff (T% (f • fun y ↦ cov σ y (Y y))) :=
-    (hf.smul_section hYσ).mdifferentiable (by simp)
-  have hgXσd : MDiff (T% (gX • σ)) := (hgX.smul_section hσ).mdifferentiable (by simp)
-  have hgYσd : MDiff (T% (gY • σ)) := (hgY.smul_section hσ).mdifferentiable (by simp)
   let _ : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (m := minSmoothness ℝ 2) (n := ∞) (by simp)
   -- The commutator identity below cancels the second-derivative terms.
   have hcomm := mvfderiv_mlieBracket (f := f) (V := X) (W := Y) (x := x)
     (hf.contMDiffAt) (by simp) (hXd x) (hYd x)
-  rw [curvatureOperator_apply, curvatureOperator_apply, hinnerY, hinnerX,
-    cov.isCovariantDerivativeOnUniv.add (hfYσd x) (hgYσd x),
-    cov.isCovariantDerivativeOnUniv.add (hfXσd x) (hgXσd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hYσd x) (hfd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgYd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hXσd x) (hfd x),
-    cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hgXd x),
+  rw [curvatureOperator_apply, curvatureOperator_apply,
+    covariantDerivative_covariantDerivative_smul_section (k := ∞) (by simp) cov (X := X)
+      (by simpa using hf) hY (by simpa using hσ) x,
+    covariantDerivative_covariantDerivative_smul_section (k := ∞) (by simp) cov (X := Y)
+      (by simpa using hf) hX (by simpa using hσ) x,
     cov.isCovariantDerivativeOnUniv.leibniz (hσd x) (hfd x)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
   rw [hcomm]
-  simp only [gX, gY]
   simp only [sub_smul, smul_sub]
   -- Fold the expanded vector expressions into local names: rewriting cannot target these
   -- abbreviations, while `change` recognizes their definitional equality before `abel`.
@@ -432,47 +402,66 @@ theorem curvatureOperator_smul_section
   change A + P + (Q + S) - (B + Q + (P + T)) - (D + (S - T)) = A - B - D
   abel
 
-omit [CompleteSpace E] in
-/-- Curvature at a point is unchanged when its smooth inputs agree in a neighborhood of that
-point. -/
-theorem curvatureOperator_congr_of_eventuallyEq
+omit [CompleteSpace E] [IsManifold I ∞ M] [VectorBundle ℝ F V]
+  [_root_.CovariantDerivative.ContMDiffCovariantDerivative cov ∞] in
+/-- Curvature at a point is unchanged when its inputs agree in a neighborhood of that point,
+provided the second section is differentiable near the point and the covariant derivatives of it
+entering the curvature are differentiable at the point. Nothing is asked of the first inputs, and
+no global smoothness is required, so this applies to local frames. -/
+theorem curvatureOperator_congr_of_eventuallyEq_of_mdifferentiableAt
     {X X' Y Y' : Π x : M, TangentSpace I x} {σ σ' : Π x : M, V x} {x : M}
-    (hX : CMDiff ∞ (T% X)) (hX' : CMDiff ∞ (T% X'))
-    (hY : CMDiff ∞ (T% Y)) (hY' : CMDiff ∞ (T% Y'))
-    (hσ : CMDiff ∞ (T% σ)) (hσ' : CMDiff ∞ (T% σ'))
-    (hXX' : X =ᶠ[nhds x] X') (hYY' : Y =ᶠ[nhds x] Y')
-    (hσσ' : Filter.Eventually (fun y ↦ σ y = σ' y) (nhds x)) :
+    (hσ' : ∀ᶠ y in 𝓝 x, MDiffAt (T% σ') y)
+    (hY'σ' : MDiffAt (T% (fun y ↦ cov σ' y (Y' y))) x)
+    (hX'σ' : MDiffAt (T% (fun y ↦ cov σ' y (X' y))) x)
+    (hXX' : X =ᶠ[𝓝 x] X') (hYY' : Y =ᶠ[𝓝 x] Y')
+    (hσσ' : Filter.Eventually (fun y ↦ σ y = σ' y) (𝓝 x)) :
     curvatureOperator cov X Y σ x = curvatureOperator cov X' Y' σ' x := by
-  have hσd := hσ.mdifferentiable (by simp)
-  have hσ'd := hσ'.mdifferentiable (by simp)
+  -- Differentiability transfers from `σ'` to `σ`, which agrees with it near every point near `x`.
+  have hσ : ∀ᶠ y in 𝓝 x, MDiffAt (T% σ) y := by
+    filter_upwards [eventually_eventually_nhds.2 hσσ', hσ'] with y hσy hd
+    exact hd.congr_of_eventuallyEq (hσy.mono fun z hz ↦ by simp [hz])
   have hinnerY : Filter.Eventually
-      (fun y ↦ cov σ y (Y y) = cov σ' y (Y' y)) (nhds x) := by
-    filter_upwards [eventually_eventually_nhds.2 hσσ', hYY'.eventuallyEq_nhds] with y hσy hYy
-    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
-      (hσd y) (hσ'd y) Filter.univ_mem hσy, hYy.eq_of_nhds]
+      (fun y ↦ cov σ y (Y y) = cov σ' y (Y' y)) (𝓝 x) := by
+    filter_upwards [eventually_eventually_nhds.2 hσσ', hYY'.eventuallyEq_nhds, hσ, hσ']
+      with y hσy hYy hσd hσ'd
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hσd hσ'd Filter.univ_mem hσy,
+      hYy.eq_of_nhds]
   have hinnerX : Filter.Eventually
-      (fun y ↦ cov σ y (X y) = cov σ' y (X' y)) (nhds x) := by
-    filter_upwards [eventually_eventually_nhds.2 hσσ', hXX'.eventuallyEq_nhds] with y hσy hXy
-    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
-      (hσd y) (hσ'd y) Filter.univ_mem hσy, hXy.eq_of_nhds]
-  have hYσ := cov.contMDiff_apply hY hσ
-  have hY'σ' := cov.contMDiff_apply hY' hσ'
-  have hXσ := cov.contMDiff_apply hX hσ
-  have hX'σ' := cov.contMDiff_apply hX' hσ'
+      (fun y ↦ cov σ y (X y) = cov σ' y (X' y)) (𝓝 x) := by
+    filter_upwards [eventually_eventually_nhds.2 hσσ', hXX'.eventuallyEq_nhds, hσ, hσ']
+      with y hσy hXy hσd hσ'd
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hσd hσ'd Filter.univ_mem hσy,
+      hXy.eq_of_nhds]
+  have hYσ : MDiffAt (T% (fun y ↦ cov σ y (Y y))) x :=
+    hY'σ'.congr_of_eventuallyEq (hinnerY.mono fun z hz ↦ by simp [hz])
+  have hXσ : MDiffAt (T% (fun y ↦ cov σ y (X y))) x :=
+    hX'σ'.congr_of_eventuallyEq (hinnerX.mono fun z hz ↦ by simp [hz])
   have hfirst : cov (fun y ↦ cov σ y (Y y)) x (X x) =
       cov (fun y ↦ cov σ' y (Y' y)) x (X' x) := by
-    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
-      (hYσ.mdifferentiable (by simp) x) (hY'σ'.mdifferentiable (by simp) x)
-      Filter.univ_mem hinnerY, hXX'.self_of_nhds]
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hYσ hY'σ' Filter.univ_mem hinnerY,
+      hXX'.self_of_nhds]
   have hsecond : cov (fun y ↦ cov σ y (X y)) x (Y x) =
       cov (fun y ↦ cov σ' y (X' y)) x (Y' x) := by
-    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
-      (hXσ.mdifferentiable (by simp) x) (hX'σ'.mdifferentiable (by simp) x)
-      Filter.univ_mem hinnerX, hYY'.self_of_nhds]
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hXσ hX'σ' Filter.univ_mem hinnerX,
+      hYY'.self_of_nhds]
   have hthird : cov σ x (mlieBracket I X Y x) = cov σ' x (mlieBracket I X' Y' x) := by
-    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
-      (hσd x) (hσ'd x) Filter.univ_mem hσσ', hXX'.mlieBracket_vectorField_eq hYY']
+    rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq hσ.self_of_nhds hσ'.self_of_nhds
+      Filter.univ_mem hσσ', hXX'.mlieBracket_vectorField_eq hYY']
   rw [curvatureOperator_apply, curvatureOperator_apply, hfirst, hsecond, hthird]
+
+omit [CompleteSpace E] in
+/-- Curvature at a point is unchanged when its inputs agree in a neighborhood of that point with
+smooth inputs. -/
+theorem curvatureOperator_congr_of_eventuallyEq
+    {X X' Y Y' : Π x : M, TangentSpace I x} {σ σ' : Π x : M, V x} {x : M}
+    (hX' : CMDiff ∞ (T% X')) (hY' : CMDiff ∞ (T% Y')) (hσ' : CMDiff ∞ (T% σ'))
+    (hXX' : X =ᶠ[nhds x] X') (hYY' : Y =ᶠ[nhds x] Y')
+    (hσσ' : Filter.Eventually (fun y ↦ σ y = σ' y) (nhds x)) :
+    curvatureOperator cov X Y σ x = curvatureOperator cov X' Y' σ' x :=
+  curvatureOperator_congr_of_eventuallyEq_of_mdifferentiableAt
+    (Filter.Eventually.of_forall (hσ'.mdifferentiable (by simp)))
+    ((cov.contMDiff_apply hY' hσ').mdifferentiable (by simp) x)
+    ((cov.contMDiff_apply hX' hσ').mdifferentiable (by simp) x) hXX' hYY' hσσ'
 
 omit [CompleteSpace E] in
 /-- On a finite-dimensional Hausdorff manifold and a finite-rank smooth vector bundle, the value
@@ -490,26 +479,18 @@ theorem curvatureOperator_congr
     curvatureOperator cov X Y σ x = curvatureOperator cov X' Y σ x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
         (fun Z ↦ curvatureOperator cov Z Y σ x) x
-        (fun hZ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hZ hZ' hY hY hσ hσ hZZ' Filter.EventuallyEq.rfl
-            (Filter.Eventually.of_forall fun _ ↦ rfl))
         (fun hZ hZ' ↦ congrFun (curvatureOperator_add_first hZ hZ' hσ) x)
         (fun hf hZ ↦ congrFun (curvatureOperator_smul_first hf hZ hσ) x)
         hX hX' hXX'
     _ = curvatureOperator cov X' Y' σ x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
         (fun Z ↦ curvatureOperator cov X' Z σ x) x
-        (fun hZ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hX' hX' hZ hZ' hσ hσ Filter.EventuallyEq.rfl hZZ'
-            (Filter.Eventually.of_forall fun _ ↦ rfl))
         (fun hZ hZ' ↦ congrFun (curvatureOperator_add_second hZ hZ' hσ) x)
         (fun hf hZ ↦ congrFun (curvatureOperator_smul_second hf hZ hσ) x)
         hY hY' hYY'
     _ = curvatureOperator cov X' Y' σ' x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := F) (W := V)
         (fun τ ↦ curvatureOperator cov X' Y' τ x) x
-        (fun hτ hτ' hττ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hX' hX' hY' hY' hτ hτ' Filter.EventuallyEq.rfl Filter.EventuallyEq.rfl hττ')
         (fun hτ hτ' ↦ congrFun (curvatureOperator_add_section hX' hY' hτ hτ') x)
         (fun hf hτ ↦ congrFun (curvatureOperator_smul_section hf hX' hY' hτ) x)
         hσ hσ' hσσ'

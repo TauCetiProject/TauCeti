@@ -10,6 +10,9 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.PSeries
 
+import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.Analysis.Normed.Operator.Banach
+
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
 
@@ -34,7 +37,12 @@ product when `E` has them.
 * `TauCeti.CircleSobolev s E`: the Sobolev space of order `s`, with norm
   `‖a‖² = ∑ₙ weight (2 s) n * ‖a.coeff n‖²` (`CircleSobolev.hasSum_norm_sq`).
 * `TauCeti.CircleSobolev.single n x`: the Fourier monomial `x e^{inθ}`.
+* `TauCeti.CircleSobolev.reflect`: the linear isometric reflection `n ↦ -n` of the Fourier
+  coefficients.
 * `TauCeti.CircleSobolev.inclusion`: the continuous inclusion `H^s → H^t` for `t ≤ s`.
+* `TauCeti.CircleSobolev.restrict`: a continuous linear map `H^t → H^t'` carrying `H^s` into
+  `H^s'`, as a continuous linear map `H^s → H^s'` (by the closed graph theorem), and
+  `TauCeti.CircleSobolev.restrictEquiv`, its analogue for continuous linear isomorphisms.
 * `TauCeti.CircleSobolev.toContinuousMap`: for `s > 1/2`, the continuous function on
   `AddCircle T` given by the uniformly convergent Fourier series.
 
@@ -46,8 +54,12 @@ product when `E` has them.
   `H^s`, so trigonometric polynomials are dense (`CircleSobolev.dense_finite_support_coeff`).
   Continuous linear maps out of `H^s` are therefore determined by their values on Fourier
   monomials (`CircleSobolev.continuousLinearMap_ext_single`).
+* `TauCeti.CircleSobolev.tendsto_of_tendsto_coeff`: dominated convergence in `H^s`, convergence
+  in `H^s` from convergence of the Fourier coefficients under a summable domination.
 * `TauCeti.CircleSobolev.isCompactOperator_inclusion`: for `t < s` and finite-dimensional `E`,
   the inclusion `H^s → H^t` is compact (Rellich's theorem).
+* `TauCeti.CircleSobolev.exists_norm_inclusion_le`: for `r ≤ t < s`,
+  `‖a‖_{H^t} ≤ ε ‖a‖_{H^s} + C_ε ‖a‖_{H^r}` for every `ε > 0` (Ehrling's inequality).
 * `TauCeti.CircleSobolev.tsum_norm_coeff_le`: for `s > 1/2`, the Fourier coefficients are
   absolutely summable, with `∑ₙ ‖a.coeff n‖ ≤ (∑ₙ (1 + |n|) ^ (-2 s)) ^ (1/2) ‖a‖`.
 * `TauCeti.CircleSobolev.fourierCoeff_toContinuousMap`: for `s > 1/2`, the continuous function
@@ -258,6 +270,12 @@ theorem coeff_zsmul (k : ℤ) (a : CircleSobolev s E) : (k • a).coeff = k • 
 instance : Module ℂ (CircleSobolev s E) :=
   coeff_injective.module ℂ ⟨⟨coeff, rfl⟩, fun _ _ ↦ rfl⟩ fun _ _ ↦ rfl
 
+/-- The real scalar multiplication, restricted from the complex one, acts on the coefficients. -/
+@[simp]
+theorem coeff_real_smul (r : ℝ) (a : CircleSobolev s E) : (r • a).coeff = r • a.coeff := by
+  rw [← Complex.coe_smul, coeff_smul]
+  exact funext fun n ↦ Complex.coe_smul r (a.coeff n)
+
 /-- The Fourier coefficient sequence, as a linear map. -/
 def coeffₗ : CircleSobolev s E →ₗ[ℂ] ℤ → E where
   toFun := coeff
@@ -360,11 +378,33 @@ theorem norm_sq_eq_tsum (a : CircleSobolev s E) :
     ‖a‖ ^ 2 = ∑' n, weight (2 * s) n * ‖a.coeff n‖ ^ 2 :=
   (hasSum_norm_sq a).tsum_eq.symm
 
+/-- Parseval's identity for `H^s` in `ℝ≥0∞`: the squared norm is the weighted sum of the squared
+coefficient norms. -/
+theorem ofReal_norm_sq_eq_tsum (a : CircleSobolev s E) :
+    ENNReal.ofReal (‖a‖ ^ 2) = ∑' n, ENNReal.ofReal (weight (2 * s) n * ‖a.coeff n‖ ^ 2) := by
+  rw [← (hasSum_norm_sq a).tsum_eq, ENNReal.ofReal_tsum_of_nonneg
+    (fun n ↦ by positivity [weight_nonneg (2 * s) n]) (hasSum_norm_sq a).summable]
+
 /-- A coefficientwise bound of weighted norms gives the corresponding bound on the norms, possibly
 between different orders. -/
 theorem norm_le_of_forall_le {a : CircleSobolev s E} {b : CircleSobolev t E} {C : ℝ}
-    (hC : 0 ≤ C) (h : ∀ n, weight t n * ‖b.coeff n‖ ≤ C * (weight s n * ‖a.coeff n‖)) :
+    (h : ∀ n, weight t n * ‖b.coeff n‖ ≤ C * (weight s n * ‖a.coeff n‖)) :
     ‖b‖ ≤ C * ‖a‖ := by
+  rcases lt_or_ge C 0 with hC | hC
+  · -- For `C < 0` both sides of `h` vanish, so `a = 0` and `b = 0`.
+    have hx (n : ℤ) : weight s n * ‖a.coeff n‖ = 0 := by
+      have := (mul_nonneg (weight_nonneg t n) (norm_nonneg (b.coeff n))).trans (h n)
+      nlinarith [mul_nonneg (weight_nonneg s n) (norm_nonneg (a.coeff n))]
+    have hy (n : ℤ) : weight t n * ‖b.coeff n‖ = 0 :=
+      le_antisymm (by simpa [hx n] using h n)
+        (mul_nonneg (weight_nonneg t n) (norm_nonneg _))
+    have hzero {r : ℝ} {c : ℤ → E} {w : ℤ → ℝ} (hc : ∀ n, w n * ‖c n‖ = 0)
+        (hs : HasSum (fun n ↦ (w n * ‖c n‖) ^ 2) (r ^ 2)) : r = 0 := by
+      have h0 : HasSum (fun n ↦ (w n * ‖c n‖) ^ 2) 0 := by simp [hc]
+      exact pow_eq_zero_iff two_ne_zero |>.1 (hs.unique h0)
+    rw [hzero (w := weight s) (c := a.coeff) hx (hasSum_sq_weight_mul_norm_coeff a),
+      hzero (w := weight t) (c := b.coeff) hy (hasSum_sq_weight_mul_norm_coeff b)]
+    simp
   have hle : ‖b‖ ^ 2 ≤ (C * ‖a‖) ^ 2 := by
     rw [mul_pow]
     refine hasSum_le (fun n ↦ ?_) (hasSum_sq_weight_mul_norm_coeff b)
@@ -401,6 +441,63 @@ theorem memℓp_of_forall_le {a : CircleSobolev s E} {c : ℤ → E} {C : ℝ}
   rw [Pi.smul_apply, norm_smul, norm_smul, norm_smul, norm_weight, norm_weight, Real.norm_eq_abs]
   exact (h n).trans
     (mul_le_mul_of_nonneg_right (le_abs_self C) (mul_nonneg (weight_nonneg s n) (norm_nonneg _)))
+
+private theorem hasSum_sq_weight_mul_norm_coeff_neg (a : CircleSobolev s E) :
+    HasSum (fun n ↦ (weight s n * ‖a.coeff (-n)‖) ^ 2) (‖a‖ ^ 2) := by
+  have h := (Equiv.neg ℤ).hasSum_iff.2 (hasSum_sq_weight_mul_norm_coeff a)
+  simpa only [Function.comp_def, Equiv.neg_apply, weight_neg_right] using h
+
+/-- The element of `H^s` with the Fourier coefficients of `a` reflected across frequency zero. -/
+private def reflectFun (a : CircleSobolev s E) : CircleSobolev s E :=
+  ⟨fun n ↦ a.coeff (-n),
+    (memℓp_weight_smul_iff _).2 (hasSum_sq_weight_mul_norm_coeff_neg a).summable⟩
+
+/-- The reflection `n ↦ -n` of the Fourier coefficients, as a linear isometric automorphism of
+`H^s`. It corresponds to the reflection `x ↦ -x` of the circle. -/
+def reflect : CircleSobolev s E ≃ₗᵢ[ℂ] CircleSobolev s E where
+  toFun := reflectFun
+  invFun := reflectFun
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv a := CircleSobolev.ext <| funext fun n ↦ congrArg a.coeff (neg_neg n)
+  right_inv a := CircleSobolev.ext <| funext fun n ↦ congrArg a.coeff (neg_neg n)
+  norm_map' a := by
+    have h := (hasSum_sq_weight_mul_norm_coeff (reflectFun a)).unique
+      (hasSum_sq_weight_mul_norm_coeff_neg a)
+    exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h
+
+@[simp]
+theorem coeff_reflect (a : CircleSobolev s E) (n : ℤ) : (reflect a).coeff n = a.coeff (-n) :=
+  (rfl)
+
+@[simp]
+theorem reflect_symm : (reflect : CircleSobolev s E ≃ₗᵢ[ℂ] CircleSobolev s E).symm = reflect :=
+  (rfl)
+
+/-- Dominated convergence in `H^s`: if the Fourier coefficients of `b x` converge to those of `a`
+and the squared weighted norms `((1 + |n|) ^ s ‖(b x).coeff n - a.coeff n‖) ^ 2` are eventually
+dominated by a summable sequence, then `b x` converges to `a` in `H^s`. -/
+theorem tendsto_of_tendsto_coeff {α : Type*} {l : Filter α} {b : α → CircleSobolev s E}
+    {a : CircleSobolev s E} {bound : ℤ → ℝ} (hbound : Summable bound)
+    (hcoeff : ∀ n, Tendsto (fun x ↦ (b x).coeff n) l (𝓝 (a.coeff n)))
+    (hle : ∀ᶠ x in l, ∀ n, (weight s n * ‖(b x).coeff n - a.coeff n‖) ^ 2 ≤ bound n) :
+    Tendsto b l (𝓝 a) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hsq : Tendsto (fun x ↦ ‖b x - a‖ ^ 2) l (𝓝 0) := by
+    have hlim (n : ℤ) : Tendsto (fun x ↦ (weight s n * ‖(b x).coeff n - a.coeff n‖) ^ 2) l
+        (𝓝 0) := by
+      have h := ((hcoeff n).sub_const (a.coeff n)).norm
+      rw [sub_self, norm_zero] at h
+      simpa using ((h.const_mul (weight s n)).pow 2)
+    have h := tendsto_tsum_of_dominated_convergence hbound hlim
+      (hle.mono fun x hx n ↦ by rw [Real.norm_of_nonneg (by positivity)]; exact hx n)
+    simp only [tsum_zero] at h
+    refine h.congr fun x ↦ ?_
+    rw [← (hasSum_sq_weight_mul_norm_coeff (b x - a)).tsum_eq]
+    simp
+  have h := (Real.continuous_sqrt.tendsto 0).comp hsq
+  simp only [Function.comp_def, Real.sqrt_zero, Real.sqrt_sq (norm_nonneg _)] at h
+  exact h
 
 /-! ### Hilbert structure -/
 
@@ -514,7 +611,7 @@ def inclusion (h : t ≤ s) : CircleSobolev s E →L[ℂ] CircleSobolev t E :=
     { toFun a := ⟨a.coeff, memℓp_of_forall_le (weight_mul_norm_le_of_le h a)⟩
       map_add' _ _ := (rfl)
       map_smul' _ _ := (rfl) }
-    1 fun a ↦ norm_le_of_forall_le zero_le_one (weight_mul_norm_le_of_le h a)
+    1 fun a ↦ norm_le_of_forall_le (weight_mul_norm_le_of_le h a)
 
 @[simp]
 theorem coeff_inclusion (h : t ≤ s) (a : CircleSobolev s E) :
@@ -540,8 +637,89 @@ theorem inclusion_injective (h : t ≤ s) :
   fun _ _ hab ↦ CircleSobolev.ext (by simpa using congr_arg coeff hab)
 
 theorem norm_inclusion_le (h : t ≤ s) (a : CircleSobolev s E) : ‖inclusion h a‖ ≤ ‖a‖ := by
-  simpa using norm_le_of_forall_le (a := a) (b := inclusion h a) zero_le_one
+  simpa using norm_le_of_forall_le (a := a) (b := inclusion h a) (C := 1)
     (by simpa using weight_mul_norm_le_of_le h a)
+
+section Restrict
+
+variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s')
+  (P : CircleSobolev t E →L[ℂ] CircleSobolev t' E)
+  (hP : ∀ a : CircleSobolev s E, ∃ b : CircleSobolev s' E, inclusion h' b = P (inclusion h a))
+
+/-- A map `P` carrying `H^s` into `H^s'`, as a function `H^s → H^s'`. -/
+private def restrictFun (a : CircleSobolev s E) : CircleSobolev s' E :=
+  (hP a).choose
+
+private theorem inclusion_restrictFun (a : CircleSobolev s E) :
+    inclusion h' (restrictFun h h' P hP a) = P (inclusion h a) :=
+  (hP a).choose_spec
+
+/-- A map `P` carrying `H^s` into `H^s'`, as a linear map `H^s → H^s'`. -/
+private def restrictLinear : CircleSobolev s E →ₗ[ℂ] CircleSobolev s' E where
+  toFun := restrictFun h h' P hP
+  map_add' a b := inclusion_injective h' (by
+    simp only [map_add, inclusion_restrictFun])
+  map_smul' z a := inclusion_injective h' (by
+    simp only [map_smul, inclusion_restrictFun, RingHom.id_apply])
+
+/-- The graph of `restrictLinear` is closed: it is the set of pairs `(u, v)` with
+`v = P u` in `H^t'`. -/
+private theorem isClosed_graph_restrictLinear :
+    IsClosed ((restrictLinear h h' P hP).graph : Set (CircleSobolev s E × CircleSobolev s' E)) := by
+  have hgr : ((restrictLinear h h' P hP).graph : Set (CircleSobolev s E × CircleSobolev s' E)) =
+      {p | inclusion h' p.2 = P (inclusion h p.1)} := by
+    ext ⟨a, b⟩
+    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq]
+    refine ⟨fun hb ↦ hb ▸ inclusion_restrictFun h h' P hP a, fun hb ↦ ?_⟩
+    exact inclusion_injective h' (hb.trans (inclusion_restrictFun h h' P hP a).symm)
+  rw [hgr]
+  exact isClosed_eq ((inclusion _).continuous.comp continuous_snd)
+    ((P.continuous.comp (inclusion _).continuous).comp continuous_fst)
+
+/-- **Restriction of an operator to smaller Sobolev spaces.** A continuous linear map
+`P : H^t → H^t'` carrying `H^s` into `H^s'`, for `t ≤ s` and `t' ≤ s'`, as a continuous linear map
+`H^s → H^s'`. It is continuous by the closed graph theorem. -/
+def restrict [CompleteSpace E] : CircleSobolev s E →L[ℂ] CircleSobolev s' E :=
+  ContinuousLinearMap.ofIsClosedGraph (isClosed_graph_restrictLinear h h' P hP)
+
+/-- In `H^t'`, `restrict` is `P`: the inclusion of the image of `u` is `P` applied to the inclusion
+of `u`. -/
+@[simp]
+theorem inclusion_restrict [CompleteSpace E] (a : CircleSobolev s E) :
+    inclusion h' (restrict h h' P hP a) = P (inclusion h a) :=
+  inclusion_restrictFun h h' P hP a
+
+end Restrict
+
+section RestrictEquiv
+
+variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s') (P : CircleSobolev t E ≃L[ℂ] CircleSobolev t' E)
+  (hP : ∀ a : CircleSobolev s E, ∃ b : CircleSobolev s' E, inclusion h' b = P (inclusion h a))
+  (hP' : ∀ b : CircleSobolev s' E, ∃ a : CircleSobolev s E,
+    inclusion h a = P.symm (inclusion h' b))
+
+/-- **Restriction of an isomorphism to smaller Sobolev spaces.** A continuous linear isomorphism
+`P : H^t → H^t'` such that `P` carries `H^s` into `H^s'` and `P⁻¹` carries `H^s'` into `H^s`, for
+`t ≤ s` and `t' ≤ s'`, as a continuous linear isomorphism `H^s → H^s'`. -/
+def restrictEquiv [CompleteSpace E] : CircleSobolev s E ≃L[ℂ] CircleSobolev s' E :=
+  ContinuousLinearEquiv.equivOfInverse (restrict h h' P fun a ↦ by simpa using hP a)
+    (restrict h' h P.symm fun b ↦ by simpa using hP' b)
+    (fun a ↦ inclusion_injective h (by simp))
+    (fun b ↦ inclusion_injective h' (by simp))
+
+/-- In `H^t'`, `restrictEquiv` is `P`. -/
+@[simp]
+theorem inclusion_restrictEquiv [CompleteSpace E] (a : CircleSobolev s E) :
+    inclusion h' (restrictEquiv h h' P hP hP' a) = P (inclusion h a) :=
+  inclusion_restrict h h' (P : CircleSobolev t E →L[ℂ] CircleSobolev t' E) _ a
+
+/-- In `H^t`, the inverse of `restrictEquiv` is the inverse of `P`. -/
+@[simp]
+theorem inclusion_restrictEquiv_symm [CompleteSpace E] (b : CircleSobolev s' E) :
+    inclusion h ((restrictEquiv h h' P hP hP').symm b) = P.symm (inclusion h' b) :=
+  inclusion_restrict h' h (P.symm : CircleSobolev t' E →L[ℂ] CircleSobolev t E) _ b
+
+end RestrictEquiv
 
 /-- **Rellich's theorem** on the circle: the inclusion `H^s → H^t` is a compact operator for
 `t < s` when `E` is finite-dimensional. -/
@@ -560,7 +738,7 @@ theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     rw [tendsto_iff_norm_sub_tendsto_zero]
     refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_) hlim
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun a ↦ ?_
-    refine norm_le_of_forall_le (by positivity) fun m ↦ ?_
+    refine norm_le_of_forall_le fun m ↦ ?_
     have hw : 0 ≤ weight s m * ‖a.coeff m‖ := mul_nonneg (weight_nonneg s m) (norm_nonneg _)
     by_cases hm : m ∈ Finset.Icc (-(N : ℤ)) N
     · simp [hF, Finset.sum_apply, Pi.single_apply, hm,
@@ -583,6 +761,51 @@ theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     · simpa using isCompactOperator_zero
     · rw [ContinuousLinearMap.coe_comp]
       exact (isCompactOperator_of_locallyCompactSpace_dom (coeffCLM n)).clm_comp (single n)
+
+/-- **Ehrling's inequality** on the circle: for `r ≤ t < s`, the `H^t` norm is bounded by an
+arbitrarily small multiple of the `H^s` norm plus a multiple of the weaker `H^r` norm. -/
+theorem exists_norm_inclusion_le {r : ℝ} (hrt : r ≤ t) (hts : t < s) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ a : CircleSobolev s E,
+      ‖inclusion hts.le a‖ ≤ ε * ‖a‖ + C * ‖inclusion (hrt.trans hts.le) a‖ := by
+  -- High frequencies `|n| ≥ N` are controlled by `H^s`, the finitely many low ones by `H^r`.
+  obtain ⟨N, hN⟩ : ∃ N : ℕ, (1 + (N : ℝ)) ^ (t - s) ≤ ε := by
+    have hlim : Tendsto (fun N : ℕ ↦ (1 + (N : ℝ)) ^ (t - s)) atTop (𝓝 0) := by
+      simpa [Function.comp_def] using (tendsto_rpow_neg_atTop (sub_pos.2 hts)).comp
+        (tendsto_atTop_add_const_left _ 1 tendsto_natCast_atTop_atTop)
+    exact (hlim.eventually (ge_mem_nhds hε)).exists
+  set C := (1 + (N : ℝ)) ^ (t - r) with hC
+  have hC0 : 0 ≤ C := by positivity
+  refine ⟨C, hC0, fun a ↦ ?_⟩
+  have hpt : ∀ n, (weight t n * ‖a.coeff n‖) ^ 2 ≤
+      ε ^ 2 * (weight s n * ‖a.coeff n‖) ^ 2 + C ^ 2 * (weight r n * ‖a.coeff n‖) ^ 2 := by
+    intro n
+    have hw (u : ℝ) : 0 ≤ weight u n * ‖a.coeff n‖ :=
+      mul_nonneg (weight_nonneg u n) (norm_nonneg _)
+    have hsplit (u : ℝ) : weight t n = weight (t - u) n * weight u n := by
+      rw [← weight_add, sub_add_cancel]
+    rcases le_or_gt (N : ℝ) |(n : ℝ)| with hn | hn
+    · have h : weight t n * ‖a.coeff n‖ ≤ ε * (weight s n * ‖a.coeff n‖) := by
+        rw [hsplit s, mul_assoc]
+        exact mul_le_mul_of_nonneg_right
+          ((weight_le_of_le_abs (by linarith) hn).trans hN) (hw s)
+      calc (weight t n * ‖a.coeff n‖) ^ 2 ≤ (ε * (weight s n * ‖a.coeff n‖)) ^ 2 :=
+            pow_le_pow_left₀ (hw t) h 2
+        _ ≤ _ := by rw [mul_pow]; exact le_add_of_nonneg_right (by positivity)
+    · have h : weight t n * ‖a.coeff n‖ ≤ C * (weight r n * ‖a.coeff n‖) := by
+        rw [hsplit r, mul_assoc, weight_def, hC]
+        exact mul_le_mul_of_nonneg_right
+          (Real.rpow_le_rpow (by positivity) (by linarith) (by linarith)) (hw r)
+      calc (weight t n * ‖a.coeff n‖) ^ 2 ≤ (C * (weight r n * ‖a.coeff n‖)) ^ 2 :=
+            pow_le_pow_left₀ (hw t) h 2
+        _ ≤ _ := by rw [mul_pow]; exact le_add_of_nonneg_left (by positivity)
+  have hsum := ((hasSum_sq_weight_mul_norm_coeff a).mul_left (ε ^ 2)).add
+    ((hasSum_sq_weight_mul_norm_coeff (inclusion (hrt.trans hts.le) a)).mul_left (C ^ 2))
+  have hle := hasSum_le (fun n ↦ by simpa using hpt n)
+    (hasSum_sq_weight_mul_norm_coeff (inclusion hts.le a)) hsum
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1
+    (hle.trans ?_)
+  nlinarith [mul_nonneg (mul_nonneg hε.le (norm_nonneg a)) (mul_nonneg hC0 (norm_nonneg
+    (inclusion (hrt.trans hts.le) a)))]
 
 /-! ### Absolute convergence and continuity for `s > 1/2` -/
 

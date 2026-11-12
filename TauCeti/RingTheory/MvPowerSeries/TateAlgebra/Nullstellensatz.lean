@@ -24,7 +24,7 @@ number of variables. A maximal ideal `m` of `K⟨X, Y⟩` contains a nonzero ser
 variable `Y` is not a unit. An automorphism of `K⟨X, Y⟩` makes `f` distinguished in `Y` with a
 unit dominant coefficient (`TauCeti.MvPowerSeries.exists_algEquiv_isDistinguished_isUnit`), and
 Weierstrass division then makes `K⟨X⟩⟨Y⟩ ⧸ (f)` a finite module over `K⟨X⟩`
-(`TauCeti.PowerSeries.IsDistinguished.finite_quotient`). So the residue field of `m` is finite
+(`TauCeti.PowerSeries.IsMulDistinguished.finite_quotient`). So the residue field of `m` is finite
 over `K⟨X⟩`, and integral over the quotient of `K⟨X⟩` by the contraction of `m`. That quotient is
 therefore a field, finite over `K` by induction.
 
@@ -81,16 +81,12 @@ private theorem finite_quotient_option {σ : Type*} [Finite σ]
   -- Separate the variable `Y = X none`: `K⟨X, Y⟩ ≅ S = K⟨X⟩⟨Y⟩`, as `K`-algebras.
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
-  let _ : Algebra K S := ((algebraMap R S).comp (algebraMap K R)).toAlgebra
-  have : IsScalarTower K R S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  let Φ : Tate (Option σ) ≃ₐ[K] S :=
-    e.trans (AlgEquiv.ofRingEquiv (f := Huber.restrictedOptionEquiv)
-      Huber.restrictedOptionEquiv_algebraMap)
+  let Φ : Tate (Option σ) ≃ₐ[K] S := e.trans restrictedOptionEquiv
   let m' := m.map (Φ : Tate (Option σ) →+* S)
   have : m'.IsMaximal := Ideal.map_isMaximal_of_equiv (Φ : Tate (Option σ) ≃+* S)
   -- `S ⧸ m'` is a quotient of `S ⧸ (Φ f)`, which is finite over `R` by Weierstrass division.
-  have := hd.finite_quotient zero_lt_one hu
-  have hle : Ideal.span {Huber.restrictedOptionEquiv (e f)} ≤ m' :=
+  have := (PowerSeries.isMulDistinguished_iff_isUnit.mpr ⟨hd, hu⟩).finite_quotient zero_lt_one
+  have hle : Ideal.span {restrictedOptionEquiv (e f)} ≤ m' :=
     Ideal.span_le.mpr (Set.singleton_subset_iff.mpr (Ideal.mem_map_of_mem _ hfm))
   have : Module.Finite R (S ⧸ m') :=
     Module.Finite.of_surjective (Ideal.Quotient.factorₐ R hle).toLinearMap

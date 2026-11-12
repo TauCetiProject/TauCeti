@@ -38,6 +38,8 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
   when it lies below `a`.
 * `lowerConvexEnvelope_mono` and `lowerConvexEnvelope_idem`: the envelope is monotone
   on admissible inputs and idempotent.
+* `lowerConvexEnvelope_inf_lowerConvexEnvelope`: the envelope of the pointwise minimum of two
+  admissible sequences depends only on their envelopes.
 * `lowerConvexEnvelope_ne_top_iff`: the finite domain of an admissible envelope is the
   integer convex hull of the finite indices of the sequence.
 * `lowerConvexEnvelope_eq_of_forall_lt` and `lowerConvexEnvelope_eq_of_forall_gt`: the
@@ -45,8 +47,12 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
 * `lowerConvexEnvelope_add_affine`: adding a real affine function to the sequence adds it
   to the envelope; `lowerConvexEnvelope_const_add` allows an infinite constant, and
   `lowerConvexEnvelope_add_nsmul` states the shear by a finite slope.
+* `lowerConvexEnvelope_map_mul`: scaling the sequence by a positive real factor scales the
+  envelope by the same factor.
 * `lowerConvexEnvelope_shift`: shifting the sequence to the right, with infinite heights
   at the vacated indices, shifts the envelope in the same way.
+* `lowerConvexEnvelope_reflect`: reflecting points that are infinite beyond `N` in the index
+  `N` reflects their envelope in the same way.
 
 ## References
 
@@ -99,9 +105,17 @@ theorem sup {g h : ℕ → WithTop ℝ} (hg : IsConvexSeq g) (hh : IsConvexSeq h
     IsConvexSeq (g ⊔ h) :=
   of_isLUB (by simp [hg, hh]) isLUB_pair
 
-/-- The pointwise supremum of a nonempty family of convex height sequences is convex. -/
-theorem iSup {ι : Sort*} [Nonempty ι] {g : ι → ℕ → WithTop ℝ}
+/-- The pointwise supremum of a family of convex height sequences is convex. For the empty family
+the supremum is the junk value `sSup ∅ = 0` of `WithTop ℝ`, the constant sequence `0`. -/
+theorem iSup {ι : Sort*} {g : ι → ℕ → WithTop ℝ}
     (hg : ∀ i, IsConvexSeq (g i)) : IsConvexSeq fun n => ⨆ i, g i n := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have h0 : (fun n => ⨆ i, g i n) = fun n : ℕ => (((0 : ℝ) + 0 * n : ℝ) : WithTop ℝ) := by
+      ext n
+      rw [iSup_of_empty', WithTop.sSup_eq (by simp) (by simp)]
+      simp
+    rw [h0]
+    exact isConvexSeq_affine 0 0
   refine of_isLUB (Set.forall_mem_range.mpr hg) (isLUB_pi.mpr fun n => ?_)
   rw [← Set.range_comp]
   exact WithTop.isLUB_sSup' (Set.range_nonempty _)
@@ -170,6 +184,12 @@ theorem isLUB_lowerConvexEnvelope (ha : IsAdmissible a) (n : ℕ) :
 theorem lowerConvexEnvelope_of_not_isAdmissible (ha : ¬IsAdmissible a) :
     lowerConvexEnvelope a = ⊤ := by
   rw [lowerConvexEnvelope, ite_eq_right ha]
+
+/-- A finite height of the total envelope excludes its inadmissible fallback. -/
+theorem isAdmissible_of_lowerConvexEnvelope_ne_top {n : ℕ}
+    (hn : lowerConvexEnvelope a n ≠ ⊤) : IsAdmissible a := by
+  by_contra ha
+  exact hn (congrFun (lowerConvexEnvelope_of_not_isAdmissible ha) n)
 
 /-- An admissible sequence has `lowerConvexEnvelope a` as its lower convex envelope. -/
 theorem isLowerConvexEnvelope_lowerConvexEnvelope (ha : IsAdmissible a) :
@@ -242,6 +262,21 @@ theorem lowerConvexEnvelope_mono (hb : IsAdmissible b) (hba : b ≤ a) :
     lowerConvexEnvelope b ≤ lowerConvexEnvelope a :=
   le_lowerConvexEnvelope (isConvexSeq_lowerConvexEnvelope b)
     ((lowerConvexEnvelope_le hb).trans hba)
+
+/-- For admissible `a` and `b`, the envelope of the pointwise minimum of their envelopes is the
+envelope of `a ⊓ b`. So the greatest convex minorant of `a ⊓ b` depends only on the envelopes of
+`a` and `b`, and by `le_lowerConvexEnvelope` it lies above every common convex minorant of the
+two envelopes. The pointwise minimum of two envelopes need not itself be convex. -/
+theorem lowerConvexEnvelope_inf_lowerConvexEnvelope (ha : IsAdmissible a) (hb : IsAdmissible b) :
+    lowerConvexEnvelope (lowerConvexEnvelope a ⊓ lowerConvexEnvelope b) =
+      lowerConvexEnvelope (a ⊓ b) :=
+  le_antisymm
+    (lowerConvexEnvelope_mono ((isConvexSeq_lowerConvexEnvelope a).isAdmissible.inf
+        (isConvexSeq_lowerConvexEnvelope b).isAdmissible)
+      (inf_le_inf (lowerConvexEnvelope_le ha) (lowerConvexEnvelope_le hb)))
+    (le_lowerConvexEnvelope (isConvexSeq_lowerConvexEnvelope _)
+      (le_inf (lowerConvexEnvelope_mono (ha.inf hb) inf_le_left)
+        (lowerConvexEnvelope_mono (ha.inf hb) inf_le_right)))
 
 /-! ### Finite domain and endpoints -/
 
@@ -416,6 +451,37 @@ theorem lowerConvexEnvelope_add_nsmul (a : ℕ → WithTop ℝ) {t : WithTop ℝ
   simp only [key]
   exact lowerConvexEnvelope_add_affine a 0 m
 
+/-! ### Scaling of heights -/
+
+/-- Scaling the points by a positive real factor scales their lower convex envelope by the
+same factor. -/
+theorem IsLowerConvexEnvelope.map_mul (hh : IsLowerConvexEnvelope a h) {c : ℝ} (hc : 0 < c) :
+    IsLowerConvexEnvelope (fun n => (a n).map (c * ·)) (fun n => (h n).map (c * ·)) := by
+  have hmono {r : ℝ} (hr : 0 < r) {x y : WithTop ℝ} : x.map (r * ·) ≤ y.map (r * ·) ↔ x ≤ y :=
+    WithTop.map_le_iff _ (mul_le_mul_iff_right₀ hr)
+  refine ⟨hh.isConvexSeq.map_mul hc.le, fun n => (hmono hc).mpr (hh.le n), fun g hg hga n => ?_⟩
+  -- Scaling `g` back by `c⁻¹` gives a convex minorant of `a`.
+  have hle := hh.greatest (hg.map_mul (inv_nonneg.mpr hc.le)) fun k => by
+    rw [← hmono hc, WithTop.map_mul_map_inv_mul hc.ne']
+    exact hga k
+  rw [← WithTop.map_mul_map_inv_mul hc.ne' (g n)]
+  exact (hmono hc).mpr (hle n)
+
+/-- Scaling a sequence by a positive real factor scales its lower convex envelope by the same
+factor. This holds for inadmissible sequences too, where both sides are the all-infinite
+fallback. -/
+theorem lowerConvexEnvelope_map_mul (a : ℕ → WithTop ℝ) {c : ℝ} (hc : 0 < c) :
+    lowerConvexEnvelope (fun n => (a n).map (c * ·)) =
+      fun n => (lowerConvexEnvelope a n).map (c * ·) := by
+  by_cases ha : IsAdmissible a
+  · exact ((isLowerConvexEnvelope_lowerConvexEnvelope ha).map_mul hc
+      |>.eq_lowerConvexEnvelope).symm
+  · have ha' : ¬IsAdmissible fun n => (a n).map (c * ·) := fun h' => ha <| by
+      simpa only [WithTop.map_inv_mul_map_mul hc.ne'] using h'.map_mul (inv_nonneg.mpr hc.le)
+    rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible ha']
+    funext _
+    simp
+
 /-! ### Translation of indices -/
 
 /-- Shifting the points `k` places to the right, with infinite heights at the first `k`
@@ -447,5 +513,38 @@ theorem lowerConvexEnvelope_shift (a : ℕ → WithTop ℝ) (k : ℕ) :
       (by rwa [isAdmissible_shift_iff])]
     funext n
     simp
+
+
+/-! ### Reflection of indices -/
+
+/-- Reflecting points in `N`, when they are infinite beyond `N`, reflects their lower convex
+envelope in the same way. The hypothesis is needed, since reflection discards the points beyond
+`N`, which may affect the envelope on `[0, N]`. -/
+theorem IsLowerConvexEnvelope.reflect (hh : IsLowerConvexEnvelope a h) {N : ℕ}
+    (ha : ∀ n, N < n → a n = ⊤) :
+    IsLowerConvexEnvelope (fun n => if n ≤ N then a (N - n) else ⊤)
+      (fun n => if n ≤ N then h (N - n) else ⊤) := by
+  refine ⟨hh.isConvexSeq.reflect N, fun n => ?_, fun g hg hga n => ?_⟩
+  · dsimp only
+    split_ifs
+    exacts [hh.le _, le_rfl]
+  · -- Reflecting `g` back gives a convex minorant of `a`.
+    have hle := hh.greatest (hg.reflect N) fun m => by
+      dsimp only
+      split_ifs with hm
+      · simpa [Nat.sub_sub_self hm] using hga (N - m)
+      · simp [ha m (by omega)]
+    dsimp only
+    split_ifs with hn
+    · simpa [Nat.sub_sub_self hn] using hle (N - n)
+    · exact le_top
+
+/-- Reflecting points in `N`, when they are infinite beyond `N`, reflects their lower convex
+envelope in the same way. -/
+theorem lowerConvexEnvelope_reflect {N : ℕ} (ha : ∀ n, N < n → a n = ⊤) :
+    lowerConvexEnvelope (fun n => if n ≤ N then a (N - n) else ⊤) =
+      fun n => if n ≤ N then lowerConvexEnvelope a (N - n) else ⊤ :=
+  ((isLowerConvexEnvelope_lowerConvexEnvelope (isAdmissible_of_forall_gt ha)).reflect ha
+    |>.eq_lowerConvexEnvelope).symm
 
 end TauCeti

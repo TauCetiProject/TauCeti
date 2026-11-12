@@ -113,6 +113,11 @@ theorem range_orbitClosureι : Set.range (orbitClosureι G x) = orbitClosure G x
   rw [orbitClosureι_def, Scheme.IdealSheafData.range_subschemeι, Scheme.Hom.support_ker,
     orbitClosure_def, orbit_def]
 
+/-- For a closed orbit, its scheme-theoretic closure inclusion has exactly that orbit as range. -/
+theorem range_orbitClosureι_of_isClosed (hc : IsClosed (orbit G x)) :
+    Set.range (orbitClosureι G x) = orbit G x := by
+  rw [range_orbitClosureι, orbitClosure_def, hc.closure_eq]
+
 /-- The orbit morphism covers its scheme-theoretic closure exactly when the orbit is closed. -/
 theorem surjective_toOrbitClosure_iff :
     Surjective (toOrbitClosure G x) ↔ IsClosed (orbit G x) := by
@@ -192,7 +197,7 @@ theorem exists_surjective_toOrbitClosure_subset (x : 𝟙_ (Over (Spec (.of k)))
   have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
   obtain ⟨y, hy, hsub⟩ := exists_isClosed_orbit_subset_orbitClosure G x
   refine ⟨y, (surjective_toOrbitClosure_iff G y).mpr hy, ?_⟩
-  rw [range_orbitClosureι, orbitClosure_def, hy.closure_eq]
+  rw [range_orbitClosureι_of_isClosed G y hy]
   exact hsub
 
 /-- A nonempty finite-type scheme with a finite-type group action has a closed orbit

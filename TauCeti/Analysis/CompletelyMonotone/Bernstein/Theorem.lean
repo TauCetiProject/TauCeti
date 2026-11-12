@@ -23,8 +23,7 @@ on `ℝ≥0`.
 
 ## Scope
 
-This is the **existence** half of the Bernstein milestone in
-`TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B. Uniqueness of the representing measure
+This is the **existence** half of Bernstein's theorem. Uniqueness of the representing measure
 is `TauCeti.RepresentsLaplace.unique`, the converse direction is
 `TauCeti.isContinuousCompletelyMonotoneOnIoi_laplaceTransform`, and all three combine in
 `Bernstein/HausdorffBernsteinWidder.lean` as `TauCeti.hausdorff_bernstein_widder` and
@@ -49,14 +48,10 @@ tight. The three remaining steps are:
 3. add the atom `L • δ₀`, whose Laplace transform is the constant `L`, to represent `f` itself.
 
 Step 1 uses `finite_measure_cluster_limit` rather than its subsequence form
-`finite_measure_subseq_limit`: the latter needs `FirstCountableTopology (FiniteMeasure ℝ≥0)`, and
-Mathlib's metrizability instances for spaces of measures are stated for `ProbabilityMeasure`, not
-`FiniteMeasure`. No subsequence is actually required — every ingredient is a filter limit, so an
-ultrafilter below `atTop` suffices, and being `NeBot` it still gives uniqueness of limits.
+`finite_measure_subseq_limit`. Every ingredient is a filter limit, so an ultrafilter below `atTop`
+suffices, and being `NeBot` it still gives uniqueness of limits.
 
 ## References
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
 
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013) — the approximating measures this proof
   passes to the limit.

@@ -16,7 +16,8 @@ holds for adic precompleteness and completeness. In particular a finite free mod
 over an `I`-adically complete ring is `I`-adically complete, which is what the complete Nakayama
 lemma (`surjective_of_mkQ_comp_surjective`) requires of the source of a map out of a finite free
 module. For a principal ideal `(π)`, the `(π)`-adic filtration of a product `ι → R` is read off
-coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coordinate of `x`.
+coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coordinate of `x`. Hence
+`π`-adic limits and separation of coordinate families can be stated with divisibility alone.
 
 ## Main results
 
@@ -27,6 +28,12 @@ coordinatewise: `x ∈ (π)^n • ⊤` exactly when `π ^ n` divides every coord
 * `IsHausdorff.pi`: adic Hausdorffness passes to products.
 * `IsPrecomplete.pi`, `IsAdicComplete.pi`: adic precompleteness and completeness pass to finite
   products.
+* `AdicCompletion.map_inl_map_fst_add_map_inr_map_snd`: an element of the completion of a binary
+  product `M × N` is the sum of the images of its completed components.
+* `TauCeti.exists_forall_pow_dvd_sub`: a `π`-adically Cauchy sequence of coordinate families over a
+  precomplete ring has a limit.
+* `TauCeti.eq_zero_of_forall_pow_dvd`: over a Hausdorff ring, a coordinate family divisible by every
+  power of `π` vanishes.
 -/
 
 public section
@@ -78,3 +85,45 @@ instance IsPrecomplete.pi [Finite ι] [∀ i, IsPrecomplete I (M i)] : IsPrecomp
 /-- A finite product of `I`-adically complete modules is `I`-adically complete. -/
 instance IsAdicComplete.pi [Finite ι] [∀ i, IsAdicComplete I (M i)] :
     IsAdicComplete I (∀ i, M i) where
+
+/-- An element of the adic completion of a binary product `M × N` is the sum of the images of its
+two completed components, under the completed inclusions. -/
+theorem AdicCompletion.map_inl_map_fst_add_map_inr_map_snd {M N : Type*} [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (z : AdicCompletion I (M × N)) :
+    map I (LinearMap.inl R M N) (map I (LinearMap.fst R M N) z) +
+      map I (LinearMap.inr R M N) (map I (LinearMap.snd R M N) z) = z := by
+  have h : LinearMap.inl R M N ∘ₗ LinearMap.fst R M N + LinearMap.inr R M N ∘ₗ
+      LinearMap.snd R M N = LinearMap.id := by
+    ext <;> simp
+  rw [map_comp_apply, map_comp_apply, ← LinearMap.add_apply, ← map_add, h, map_id,
+    LinearMap.id_apply]
+
+namespace TauCeti
+
+/-- **Limits of coordinate families.** Over a `π`-adically precomplete ring, a sequence of
+coordinate families whose consecutive terms are congruent modulo `π ^ m` has a limit, congruent to
+the `m`-th term modulo `π ^ m`. -/
+theorem exists_forall_pow_dvd_sub (π : R) [IsPrecomplete (Ideal.span {π}) R]
+    (x : ℕ → ι → R) (hx : ∀ m i, π ^ m ∣ x (m + 1) i - x m i) :
+    ∃ L : ι → R, ∀ m i, π ^ m ∣ L i - x m i := by
+  have hmem (m : ℕ) (r : R) : r ∈ ((Ideal.span {π}) ^ m • ⊤ : Ideal R) ↔ π ^ m ∣ r := by
+    rw [Ideal.smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
+  have hcauchy {m m' : ℕ} (hm : m ≤ m') (i : ι) : π ^ m ∣ x m' i - x m i := by
+    induction m', hm using Nat.le_induction with
+    | base => simp
+    | succ m' hm ih =>
+      rw [← sub_add_sub_cancel]
+      exact dvd_add ((pow_dvd_pow π hm).trans (hx m' i)) ih
+  choose L hL using fun i ↦ IsPrecomplete.prec (I := Ideal.span {π}) inferInstance
+    (f := (x · i)) fun hm ↦ by rw [SModEq.sub_mem, hmem, dvd_sub_comm]; exact hcauchy hm i
+  exact ⟨L, fun m i ↦ dvd_sub_comm.mp ((hmem m _).1 (SModEq.sub_mem.1 (hL i m)))⟩
+
+/-- Over a `π`-adically Hausdorff ring, a coordinate family whose coordinates are divisible by
+every power of `π` vanishes. -/
+theorem eq_zero_of_forall_pow_dvd (π : R) [IsHausdorff (Ideal.span {π}) R] {x : ι → R}
+    (hx : ∀ m i, π ^ m ∣ x i) : x = 0 :=
+  IsHausdorff.haus (I := Ideal.span {π}) inferInstance x fun m ↦ by
+    rw [SModEq.zero, mem_span_singleton_pow_smul_top_iff]
+    exact hx m
+
+end TauCeti

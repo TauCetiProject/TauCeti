@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Splitting
-public import TauCeti.Algebra.Homology.ModuleCat.ShiftSequence
+public import TauCeti.Algebra.Homology.ModuleCat.Shift.Sequence
 
 /-!
 # The action of a cycle of degree zero on the cohomology of a shifted module complex
@@ -61,7 +61,7 @@ noncomputable def shiftedModuleComplexActX {a : A} (ha : a ∈ 𝒜 0) (q n : �
       (ℳ (n + (q + 1))).subtype).codRestrict _ fun x ↦ by
         have hdeg : n + 1 + q = n + (q + 1) := by ring
         rw [hdeg]
-        exact op_smul_koszulTwist_mem_of_mem_zero ha x.2) ∘ₗ
+        exact op_smul_koszulTwist_mem_of_mem_zero ha x.2 1) ∘ₗ
     (shiftedModuleComplexXEquiv hM (q + 1) n).toLinearMap
 
 @[simp]
@@ -88,7 +88,7 @@ noncomputable def shiftedModuleComplexAct {a : A} (ha : a ∈ 𝒜 0) (hda : d a
       LinearMap.neg_apply, map_neg, Submodule.coe_neg]
     rw [shiftedModuleComplexXEquiv_shiftedModuleComplexActX, shiftedModuleComplexXEquiv_d,
       shiftedModuleComplexXEquiv_d, shiftedModuleComplexXEquiv_shiftedModuleComplexActX]
-    exact (hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) i α).2).symm
+    exact (hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) i α).1).symm
 
 /-- The components of `shiftedModuleComplexAct` are the linear maps `shiftedModuleComplexActX`. -/
 @[simp]
@@ -150,7 +150,7 @@ theorem exists_shiftedModuleComplexActHomology_homologyπ {a : A} (ha : a ∈ �
   have hmem : op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
       (shiftedModuleComplexXEquiv hM (q + 1) n α : M) ∈ ℳ (n' + q) :=
     op_smul_koszulTwist_mem_of_mem_zero ha
-      (shiftedModuleComplexXEquiv_mem hM (by omega : n' + q = n + (q + 1)) α)
+      (shiftedModuleComplexXEquiv_mem hM (by omega : n' + q = n + (q + 1)) α) 1
   have hβ : (shiftedModuleComplexXEquiv hM q n'
       ((shiftedModuleComplexXEquiv hM q n').symm ⟨_, hmem⟩) : M) =
         op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
@@ -159,7 +159,7 @@ theorem exists_shiftedModuleComplexActHomology_homologyπ {a : A} (ha : a ∈ �
   have hβ' : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n' (n' + 1)).hom
       ((shiftedModuleComplexXEquiv hM q n').symm ⟨_, hmem⟩) = 0 := by
     rw [shiftedModuleComplexXEquiv_d_eq_zero_iff, hβ]
-    have h := hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) n α).2
+    have h := hM.op_smul_koszulTwist_map_eq_neg hda (shiftedModuleComplexXEquiv hM (q + 1) n α).1
     rw [(shiftedModuleComplexXEquiv_d_eq_zero_iff hM (q + 1) n α).1 hα, map_zero,
       smul_zero] at h
     exact neg_eq_zero.1 h.symm

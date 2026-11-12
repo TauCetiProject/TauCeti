@@ -8,19 +8,27 @@ module
 public import Mathlib.Geometry.Polygon.Basic
 public import TauCeti.Data.Fin.Basic
 
-/-!
-# Relabelling and inserting vertices of polygons
+import Mathlib.Algebra.Group.Fin.Basic
 
-Two operations on Mathlib's `Polygon P n`, a cyclic list of vertices. The cyclic relabelling
+/-!
+# Relabelling, inserting vertices and images of polygons
+
+Four operations on Mathlib's `Polygon P n`, a cyclic list of vertices. The cyclic relabelling
 `Polygon.rotate` moves the base point of the vertex list one step along the polygon; it has the
-same edges in the same cyclic order, so it presents the same oriented polygon. Inserting a vertex,
+same edges in the same cyclic order, so it presents the same oriented polygon. The reversal
+`Polygon.reverse` keeps the base vertex and lists the vertices in the opposite cyclic order; it has
+the same edges, so it presents the same polygon with the opposite orientation. Inserting a vertex,
 `Polygon.insertVertex poly i c`, puts the new vertex `c` between vertex `i` and the next one, which
-replaces edge `i` by the two segments through `c`.
+replaces edge `i` by the two segments through `c`. The image `poly.map f` of a polygon under a
+map `f` is the polygon whose vertices are the images of those of `poly`; for an affine map `f`, its
+edges are the images of the edges of `poly` (`Polygon.edgeSet_map`).
 
 ## Main definitions
 
 * `Polygon.rotate`: the cyclic relabelling of the vertices of a polygon.
+* `Polygon.reverse`: the polygon with its vertices listed in the opposite cyclic order.
 * `Polygon.insertVertex`: the polygon with a new vertex inserted after vertex `i`.
+* `Polygon.map f poly`: the polygon with vertices `f (poly i)`.
 
 The file also records the elementary description of the boundary of a polygon as the union of
 the paths of its edges, and the fact that the vertices lie on the boundary.
@@ -30,8 +38,17 @@ the paths of its edges, and the fact that the vertices lie on the boundary.
 * `Polygon.mem_boundary_iff`: a point lies on the boundary exactly when it lies on some edge.
 * `Polygon.apply_mem_boundary`: every vertex lies on the boundary.
 * `Polygon.boundary_rotate`: the cyclic relabelling has the same boundary.
+* `Polygon.boundary_reverse`: the reversal has the same boundary.
 * `Polygon.boundary_insertVertex`: inserting a vertex `c` after vertex `i` replaces edge `i` by the
   segments from vertex `i` to `c` and from `c` to the next vertex.
+* `Polygon.edgeSet_subset_boundary_insertVertex`,
+  `Polygon.affineSegment_union_subset_boundary_insertVertex` and
+  `Polygon.exists_mem_edgeSet_of_mem_boundary_insertVertex`: the old edges other than `i` and the
+  two new edges lie on the new boundary, and every other point of it lies on an old edge `k ≠ i`.
+* `Polygon.boundary_insertVertex_edgePath`: subdividing an edge at one of its points does not
+  change the boundary.
+* `Polygon.boundary_map`: the boundary of the image under an affine map is the image of the
+  boundary.
 -/
 
 public section
@@ -53,6 +70,23 @@ def rotate (poly : Polygon P n) : Polygon P n :=
 @[simp]
 theorem rotate_apply (poly : Polygon P n) (i : Fin n) : poly.rotate i = poly (finRotate n i) :=
   (rfl)
+
+/-- The reversal of a polygon: vertex `i` of `poly.reverse` is vertex `-i` of `poly`. It keeps
+vertex `0` and lists the other vertices in the opposite cyclic order, so it has the same edges
+(`Polygon.edgeSet_reverse`), traversed in the opposite direction: it presents the same polygon
+with the opposite orientation. -/
+def reverse (poly : Polygon P n) : Polygon P n :=
+  ⟨poly.vertices ∘ Neg.neg⟩
+
+@[simp]
+theorem reverse_apply (poly : Polygon P n) (i : Fin n) : poly.reverse i = poly (-i) :=
+  (rfl)
+
+/-- Reversing a polygon twice gives the polygon back. -/
+@[simp]
+theorem reverse_reverse (poly : Polygon P n) : poly.reverse.reverse = poly := by
+  cases poly
+  simp only [reverse, comp_def, neg_neg]
 
 /-- The polygon with the new vertex `c` inserted after vertex `i`, at position `i + 1`. Its edges
 are those of `poly`, except that the edge from vertex `i` to the next vertex is replaced by the
@@ -85,6 +119,66 @@ theorem insertVertex_apply_finRotate_succ_self :
     poly.insertVertex i c (finRotate (n + 1) i.succ) = poly (finRotate n i) := by
   rw [Fin.finRotate_succ_eq_succ_succAbove, insertVertex_apply_succAbove]
 
+/-- The vertices of `poly.insertVertex i c` by position: vertex `j` of `poly` for `j ≤ i`, then
+`c` at position `i + 1`, then vertex `j - 1` of `poly` at every later position `j`. -/
+theorem insertVertex_apply (j : Fin (n + 1)) :
+    poly.insertVertex i c j =
+      if h : (j : ℕ) ≤ i then poly ⟨j, by omega⟩
+      else if (j : ℕ) = i + 1 then c else poly ⟨j - 1, by omega⟩ := by
+  obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
+  · simp
+  · rw [insertVertex_apply_succAbove]
+    have hv := Fin.val_succAbove i.succ k
+    simp only [Fin.val_succ] at hv
+    split_ifs at hv <;> split_ifs <;> first | omega | (congr 1; ext; simp; omega)
+
+/-- Inserting `x` after vertex `i` and then `y` between vertex `i` and `x` gives the same polygon
+as inserting `y` after vertex `i` and then `x` after `y`: both put `y, x` between vertex `i` and
+the next vertex. -/
+theorem insertVertex_insertVertex_castSucc (x y : P) :
+    (poly.insertVertex i x).insertVertex i.castSucc y =
+      (poly.insertVertex i y).insertVertex i.succ x := by
+  refine congrArg Polygon.mk (funext fun j => ?_)
+  simp only [← insertVertex_vertices, insertVertex_apply, Fin.val_succ, Fin.val_castSucc]
+  split_ifs <;> first | rfl | omega
+
+section EdgePath
+
+variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+
+/-- Edge `j` of the cyclic relabelling `poly.rotate` runs along edge `j + 1` of `poly`. -/
+@[simp]
+theorem edgePath_rotate (j : Fin n) : poly.rotate.edgePath R j = poly.edgePath R (finRotate n j) :=
+  (rfl)
+
+/-- Away from the new vertex, the edges of `poly.insertVertex i c` run along the edges of
+`poly`. -/
+theorem edgePath_insertVertex_succAbove {k : Fin n} (hk : k ≠ i) :
+    (poly.insertVertex i c).edgePath R (i.succ.succAbove k) = poly.edgePath R k := by
+  rw [edgePath, edgePath, Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
+    insertVertex_apply_succAbove]
+
+/-- The first new edge of `poly.insertVertex i c` runs from vertex `i` to the new vertex `c`. -/
+@[simp]
+theorem edgePath_insertVertex_castSucc_self :
+    (poly.insertVertex i c).edgePath R i.castSucc = AffineMap.lineMap (poly i) c := by
+  rw [edgePath, finRotate_apply, Fin.coeSucc_eq_succ, insertVertex_apply_castSucc_self,
+    insertVertex_apply_succ_self]
+
+/-- The second new edge of `poly.insertVertex i c` runs from the new vertex `c` to the vertex
+after `i`. -/
+@[simp]
+theorem edgePath_insertVertex_succ_self :
+    (poly.insertVertex i c).edgePath R i.succ = AffineMap.lineMap c (poly (finRotate n i)) := by
+  rw [edgePath, insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
+
+/-- Moving along an edge by `c` translates a point of it by `c` times the edge direction. -/
+theorem edgePath_add (k : Fin n) (r c : R) : poly.edgePath R k (r + c) =
+    c • (poly (finRotate n k) -ᵥ poly k) +ᵥ poly.edgePath R k r := by
+  simp only [edgePath, AffineMap.lineMap_apply, vadd_vadd, ← add_smul, add_comm]
+
+end EdgePath
+
 /-! ### Points of the boundary -/
 
 section Boundary
@@ -97,6 +191,12 @@ a parameter in `[0, 1]`. -/
 theorem mem_boundary_iff :
     x ∈ poly.boundary R ↔ ∃ i, ∃ t ∈ Icc (0 : R) 1, poly.edgePath R i t = x := by
   simp only [boundary, mem_iUnion, edgeSet_eq_image_edgePath, mem_image]
+
+/-- The point of an edge at a parameter in `[0, 1]` lies on the edge. -/
+theorem edgePath_mem_edgeSet (k : Fin n) {r : R} (hr : r ∈ Icc (0 : R) 1) :
+    poly.edgePath R k r ∈ poly.edgeSet R k := by
+  rw [edgeSet_eq_image_edgePath]
+  exact mem_image_of_mem _ hr
 
 variable [ZeroLEOneClass R] (poly : Polygon P n) (i : Fin n)
 
@@ -134,6 +234,22 @@ theorem boundary_rotate : poly.rotate.boundary R = poly.boundary R := by
   simp only [boundary, edgeSet_rotate]
   exact (finRotate n).surjective.iUnion_comp (poly.edgeSet R)
 
+variable [IsOrderedRing R] in
+/-- Edge `j` of the reversal `poly.reverse` is edge `-(j + 1)` of `poly`, traversed backwards. -/
+@[simp]
+theorem edgeSet_reverse (j : Fin n) :
+    poly.reverse.edgeSet R j = poly.edgeSet R (-finRotate n j) := by
+  rw [edgeSet, edgeSet, reverse_apply, reverse_apply, Fin.finRotate_neg_finRotate,
+    affineSegment_comm]
+
+variable [IsOrderedRing R] in
+/-- Reversing a polygon does not change its boundary: the edges of `poly.reverse` are those of
+`poly`, reindexed by `j ↦ -(j + 1)`. -/
+@[simp]
+theorem boundary_reverse : poly.reverse.boundary R = poly.boundary R := by
+  simp only [boundary, edgeSet_reverse]
+  exact ((finRotate n).trans (Equiv.neg (Fin n))).surjective.iUnion_comp (poly.edgeSet R)
+
 /-- The first new edge runs from vertex `i` to the new vertex `c`. -/
 @[simp]
 theorem edgeSet_insertVertex_castSucc_self :
@@ -152,6 +268,36 @@ theorem edgeSet_insertVertex_succAbove {k : Fin n} (hk : k ≠ i) :
     (poly.insertVertex i c).edgeSet R (i.succ.succAbove k) = poly.edgeSet R k := by
   rw [edgeSet, Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
     insertVertex_apply_succAbove, edgeSet]
+
+/-- Every edge of `poly.insertVertex i c` other than the first new edge is an edge of `poly` other
+than edge `i`, or the second new edge, from `c` to the vertex after `i`. -/
+theorem edgeSet_insertVertex_subset_of_ne_castSucc {k : Fin (n + 1)} (hk : k ≠ i.castSucc) :
+    (poly.insertVertex i c).edgeSet R k ⊆
+      (⋃ (l : Fin n) (_ : l ≠ i), poly.edgeSet R l) ∪ affineSegment R c (poly (finRotate n i)) := by
+  obtain rfl | ⟨l, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ k
+  · rw [edgeSet_insertVertex_succ_self]
+    exact subset_union_right
+  · have hl : l ≠ i := by
+      rintro rfl
+      exact hk (Fin.succAbove_succ_self l)
+    rw [edgeSet_insertVertex_succAbove _ _ _ hl]
+    exact subset_union_of_subset_left
+      (subset_iUnion₂ (s := fun l (_ : l ≠ i) => poly.edgeSet R l) l hl) _
+
+/-- Every edge of `poly.insertVertex i c` other than the second new edge is an edge of `poly` other
+than edge `i`, or the first new edge, from vertex `i` to `c`. -/
+theorem edgeSet_insertVertex_subset_of_ne_succ {k : Fin (n + 1)} (hk : k ≠ i.succ) :
+    (poly.insertVertex i c).edgeSet R k ⊆
+      (⋃ (l : Fin n) (_ : l ≠ i), poly.edgeSet R l) ∪ affineSegment R (poly i) c := by
+  obtain rfl | ⟨l, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ k
+  · exact absurd rfl hk
+  · by_cases hl : l = i
+    · subst hl
+      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self]
+      exact subset_union_right
+    · rw [edgeSet_insertVertex_succAbove _ _ _ hl]
+      exact subset_union_of_subset_left
+        (subset_iUnion₂ (s := fun l (_ : l ≠ i) => poly.edgeSet R l) l hl) _
 
 /-- Inserting the vertex `c` after vertex `i` replaces edge `i` by the segments from vertex `i` to
 `c` and from `c` to the next vertex. -/
@@ -174,6 +320,115 @@ theorem boundary_insertVertex :
     · exact ⟨i.castSucc, by rwa [edgeSet_insertVertex_castSucc_self]⟩
     · exact ⟨i.succ, by rwa [edgeSet_insertVertex_succ_self]⟩
 
+/-- The two new edges of `poly.insertVertex i c` lie on its boundary. -/
+theorem affineSegment_union_subset_boundary_insertVertex :
+    affineSegment R (poly i) c ∪ affineSegment R c (poly (finRotate n i)) ⊆
+      (poly.insertVertex i c).boundary R := by
+  rw [boundary_insertVertex]
+  exact subset_union_right
+
+/-- An edge `k ≠ i` of `poly` is an edge of `poly.insertVertex i c`, so lies on its boundary. -/
+theorem edgeSet_subset_boundary_insertVertex {k : Fin n} (hk : k ≠ i) :
+    poly.edgeSet R k ⊆ (poly.insertVertex i c).boundary R := by
+  rw [boundary_insertVertex]
+  exact subset_union_of_subset_left
+    (subset_iUnion₂ (s := fun k (_ : k ≠ i) => poly.edgeSet R k) k hk) _
+
+/-- A point of the boundary of `poly.insertVertex i c` off the two new edges lies on an edge
+`k ≠ i` of `poly`. -/
+theorem exists_mem_edgeSet_of_mem_boundary_insertVertex {x : P}
+    (hx : x ∈ (poly.insertVertex i c).boundary R)
+    (hxc : x ∉ affineSegment R (poly i) c ∪ affineSegment R c (poly (finRotate n i))) :
+    ∃ k, k ≠ i ∧ x ∈ poly.edgeSet R k := by
+  rw [boundary_insertVertex] at hx
+  simpa only [mem_iUnion, exists_prop] using hx.resolve_right hxc
+
 end Edges
+
+/-! ### Subdividing an edge -/
+
+section Subdivide
+
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
+  [AddTorsor V P] {s : R}
+
+/-- A point of an edge splits it into the segments from its start to the point and from the point
+to its end. -/
+theorem edgeSet_eq_affineSegment_union (hs : s ∈ Icc (0 : R) 1) :
+    poly.edgeSet R i = affineSegment R (poly i) (poly.edgePath R i s) ∪
+      affineSegment R (poly.edgePath R i s) (poly (finRotate n i)) := by
+  have hseg (t u : R) (htu : t ≤ u) :
+      affineSegment R (poly.edgePath R i t) (poly.edgePath R i u) =
+        poly.edgePath R i '' Icc t u := by
+    rw [← affineSegment_image, affineSegment_eq_segment, segment_eq_Icc htu]
+  have h₀ : poly.edgePath R i 0 = poly i := by rw [edgePath, AffineMap.lineMap_apply_zero]
+  have h₁ : poly.edgePath R i 1 = poly (finRotate n i) := by
+    rw [edgePath, AffineMap.lineMap_apply_one]
+  rw [← h₀, ← h₁, hseg 0 s hs.1, hseg s 1 hs.2, ← image_union, Icc_union_Icc_eq_Icc hs.1 hs.2,
+    edgeSet_eq_image_edgePath]
+
+/-- **Subdividing an edge does not change the boundary** of a polygon. -/
+theorem boundary_insertVertex_edgePath (hs : s ∈ Icc (0 : R) 1) :
+    (poly.insertVertex i (poly.edgePath R i s)).boundary R = poly.boundary R := by
+  rw [boundary_insertVertex, ← edgeSet_eq_affineSegment_union poly i hs, boundary]
+  ext x
+  simp only [mem_union, mem_iUnion]
+  constructor
+  · rintro (⟨k, -, hx⟩ | hx)
+    exacts [⟨k, hx⟩, ⟨i, hx⟩]
+  · rintro ⟨k, hx⟩
+    by_cases hk : k = i
+    · exact .inr (hk ▸ hx)
+    · exact .inl ⟨k, hk, hx⟩
+
+end Subdivide
+
+/-! ### Images under maps -/
+
+section Map
+
+variable {V' P' : Type*}
+
+/-- The **image of a polygon** under a map `f`: the polygon with vertices `f (poly i)`. -/
+def map (f : P → P') (poly : Polygon P n) : Polygon P' n :=
+  ⟨fun i ↦ f (poly i)⟩
+
+/-- The vertices of the image of a polygon are the images of its vertices. -/
+@[simp]
+theorem map_apply (f : P → P') (poly : Polygon P n) (i : Fin n) : poly.map f i = f (poly i) :=
+  (rfl)
+
+/-- The image of a polygon under the identity is the polygon itself. -/
+@[simp]
+theorem map_id (poly : Polygon P n) : poly.map id = poly :=
+  (rfl)
+
+/-- Taking images of polygons is compatible with composition of maps. -/
+theorem map_map {P'' : Type*} (f : P → P') (g : P' → P'') (poly : Polygon P n) :
+    (poly.map f).map g = poly.map (g ∘ f) :=
+  (rfl)
+
+variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P] [AddCommGroup V'] [Module R V']
+  [AddTorsor V' P'] (f : P →ᵃ[R] P') (poly : Polygon P n)
+
+/-- The edges of the image of a polygon under an affine map are the images of its edges. -/
+theorem edgePath_map (i : Fin n) : (poly.map f).edgePath R i = f.comp (poly.edgePath R i) :=
+  (f.comp_lineMap _ _).symm
+
+variable [PartialOrder R]
+
+/-- The edge sets of the image of a polygon under an affine map are the images of its edge
+sets. -/
+@[simp]
+theorem edgeSet_map (i : Fin n) : (poly.map f).edgeSet R i = f '' poly.edgeSet R i := by
+  rw [edgeSet_eq_image_edgePath, edgeSet_eq_image_edgePath, edgePath_map, AffineMap.coe_comp,
+    image_comp]
+
+/-- The boundary of the image of a polygon under an affine map is the image of its boundary. -/
+@[simp]
+theorem boundary_map : (poly.map f).boundary R = f '' poly.boundary R := by
+  simp only [boundary, edgeSet_map, image_iUnion]
+
+end Map
 
 end Polygon

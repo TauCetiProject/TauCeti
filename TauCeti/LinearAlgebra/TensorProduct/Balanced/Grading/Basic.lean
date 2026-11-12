@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
-public import TauCeti.Algebra.Module.GradedModule.TensorProduct
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 public import TauCeti.Algebra.Module.GradedModule.Opposite
 
 /-!
-# Grading tensor products balanced over a graded algebra
+# Total gradings on balanced tensor products
 
 The balancing relations for a right and a left graded module are homogeneous for total
 cohomological degree. The quotient therefore inherits an internal grading, with
@@ -22,6 +22,9 @@ adds their degrees.
 This is the grading needed to equip the ordinary balanced tensor product of differential
 graded modules with its cochain complex. No flatness or finite-dimensionality is required.
 The construction reuses `InternalGrading.tensorProduct` and `InternalGrading.quotient`.
+Only an internal decomposition of the balancing semiring and homogeneous module actions are
+needed; its multiplication need not respect that decomposition, and its ground-ring module
+structure need not arise from an algebra structure.
 
 ## References
 
@@ -35,10 +38,10 @@ open scoped TensorProduct
 
 namespace TauCeti.BalancedTensorProduct
 
-variable {R A M N : Type*} [CommRing R] [Semiring A] [Algebra R A]
+variable {R A M N : Type*} [CommRing R] [Semiring A] [Module R A]
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
   [AddCommGroup N] [Module R N] [Module A N]
-  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
+  {𝒜 : ℤ → Submodule R A} [Decomposition 𝒜]
   (G : InternalGrading R M) (H : InternalGrading R N)
 
 private def homogeneousRelations : Set (M ⊗[R] N) :=
@@ -88,15 +91,12 @@ theorem isHomogeneous_relations :
   rw [relations_eq_span_homogeneous (𝒜 := 𝒜) G H]
   apply (G.tensorProduct H).isHomogeneous_span
   rintro z ⟨p, q, r, a, m, n, ha, hm, hn, rfl⟩
-  have hop : op a ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece p :=
-    (InternalGrading.op_mem_opposite_piece_iff _ _ _).2 (by simpa using ha)
-  refine ⟨p + q + r, Submodule.sub_mem _
-    (G.tmul_mem_tensorProduct H (SetLike.GradedSMul.smul_mem hop hm) hn) ?_⟩
-  have hdeg : p + q + r = q + (p +ᵥ r) := by simp only [vadd_eq_add]; ring
-  rw [hdeg]
-  exact G.tmul_mem_tensorProduct H hm (SetLike.GradedSMul.smul_mem ha hn)
+  refine ⟨q + p + r, Submodule.sub_mem _
+    (G.tmul_mem_tensorProduct H (op_smul_mem_of_mem_graded ha hm) hn) ?_⟩
+  simpa only [vadd_eq_add, add_assoc] using
+    G.tmul_mem_tensorProduct H hm (SetLike.GradedSMul.smul_mem ha hn)
 
-/-- The total-degree grading of a tensor product balanced over a graded algebra. -/
+/-- The total-degree grading of a tensor product balanced over homogeneous module actions. -/
 noncomputable def grading : InternalGrading R (BalancedTensorProduct R A M N) :=
   (G.tensorProduct H).quotient (balancedTensorRelations R A M N)
     (isHomogeneous_relations (𝒜 := 𝒜) G H)
@@ -132,7 +132,7 @@ theorem tmul_mem_grading {p q : ℤ} {m : M} {n : N}
   (mem_grading_piece_iff (𝒜 := 𝒜) G H).2 ⟨_, G.tmul_mem_tensorProduct H hm hn, mkQ_tmul R A m n⟩
 
 /-- A linear map shifts balanced tensor degrees if it does so on homogeneous pure tensors. -/
-theorem map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
+theorem map_mem_of_tmul {Q : Type*} [AddCommMonoid Q] [Module R Q]
     (𝓟 : ℤ → Submodule R Q) (f : BalancedTensorProduct R A M N →ₗ[R] Q) (s : ℤ)
     (hf : ∀ {p q : ℤ} {m : M} {n : N},
       m ∈ G.piece p → n ∈ H.piece q → f (tmul R A m n) ∈ 𝓟 (p + q + s))
@@ -147,7 +147,7 @@ theorem map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
   omega
 
 /-- Homogeneity of a balanced tensor map can be checked on homogeneous pure tensors. -/
-theorem isHomogeneous_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
+theorem isHomogeneous_of_tmul {Q : Type*} [AddCommMonoid Q] [Module R Q]
     (𝓟 : ℤ → Submodule R Q) (f : BalancedTensorProduct R A M N →ₗ[R] Q) (s : ℤ)
     (hf : ∀ {p q : ℤ} {m : M} {n : N},
       m ∈ G.piece p → n ∈ H.piece q → f (tmul R A m n) ∈ 𝓟 (p + q + s)) :
@@ -186,5 +186,61 @@ theorem isHomogeneous_map (f : M →ₗ[R] M') (g : N →ₗ[R] N')
   omega
 
 end Map
+
+section Decomposition
+
+variable {M' N' : Type*}
+  [AddCommGroup M'] [Module R M'] [Module Aᵐᵒᵖ M']
+  [AddCommGroup N'] [Module R N'] [Module A N']
+  {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
+  {ℳ' : ℤ → Submodule R M'} {𝒩' : ℤ → Submodule R N'}
+  [Decomposition ℳ] [Decomposition 𝒩] [Decomposition ℳ'] [Decomposition 𝒩']
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  [SetLike.GradedSMul 𝒜 𝒩]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ']
+  [SetLike.GradedSMul 𝒜 𝒩']
+
+-- Use the characteristic piece equation, since `ofDecomposition` is opaque across modules.
+local instance tensorGradedRight :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
+    (InternalGrading.ofDecomposition ℳ).piece := by
+  rw [InternalGrading.ofDecomposition_piece]
+  infer_instance
+
+local instance tensorGradedLeft :
+    SetLike.GradedSMul 𝒜 (InternalGrading.ofDecomposition 𝒩).piece := by
+  rw [InternalGrading.ofDecomposition_piece]
+  infer_instance
+
+omit [Module R A] in
+/-- Maps out of the balanced tensor product agree once they agree on pure tensors with a
+homogeneous left factor. -/
+theorem hom_ext_of_mem {P : Type*} [AddCommGroup P] [Module R P]
+    {φ ψ : BalancedTensorProduct R A M N →ₗ[R] P}
+    (h : ∀ {q : ℤ} {m : M}, m ∈ ℳ q → ∀ n : N, φ (tmul R A m n) = ψ (tmul R A m n)) :
+    φ = ψ := by
+  refine hom_ext fun m n ↦ ?_
+  have key : φ ∘ₗ (mk R A).flip n = ψ ∘ₗ (mk R A).flip n := by
+    refine (InternalGrading.ofDecomposition ℳ).linearMap_ext fun q x hx ↦ ?_
+    rw [InternalGrading.ofDecomposition_piece] at hx
+    simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using h hx n
+  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
+
+/-- Tensoring homogeneous equivariant maps adds their degrees for the total grading of the
+balanced tensor product of internally decomposed modules. -/
+theorem isHomogeneous_map_grading (f : M →ₗ[R] M') (g : N →ₗ[R] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n) {r s : ℤ}
+    (hf₀ : LinearMap.IsHomogeneous f ℳ ℳ' r) (hg₀ : LinearMap.IsHomogeneous g 𝒩 𝒩' s) :
+    LinearMap.IsHomogeneous (map f g hf hg)
+      (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+        (InternalGrading.ofDecomposition 𝒩)).piece
+      (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ')
+        (InternalGrading.ofDecomposition 𝒩')).piece (r + s) := by
+  refine isHomogeneous_map (𝒜 := 𝒜) _ _ _ _ f g hf hg ?_ ?_
+  · simpa only [InternalGrading.ofDecomposition_piece] using hf₀
+  · simpa only [InternalGrading.ofDecomposition_piece] using hg₀
+
+end Decomposition
 
 end TauCeti.BalancedTensorProduct

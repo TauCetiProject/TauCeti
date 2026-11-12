@@ -7,7 +7,7 @@ module
 
 -- `TauCeti.Algebra.CentralSimple.TensorProduct` is imported publicly: the scalar extension
 -- `L ⊗[K] A` appears in the statements below, and it is the simplicity instance
--- `TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right` proved there that makes those statements
+-- `IsSimpleRing.tensorProduct_of_isCentral_right` proved there that makes those statements
 -- provable. It also re-exports `Mathlib.RingTheory.TensorProduct.Basic` (hence the `⊗[K]`
 -- notation and the algebra structure on `L ⊗[K] A`) and `Mathlib.Algebra.Central.Basic`, which is
 -- why neither is imported again here.
@@ -25,6 +25,7 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Central.BaseChange
 import TauCeti.Algebra.Central.Quaternion
+import TauCeti.Algebra.Matrix.BaseChange
 
 /-!
 # The degree of a central simple algebra
@@ -37,7 +38,7 @@ The proof is the base-change one, and it needs no theory of maximal subfields. L
 field extension with `L` separably closed. Then `L ⊗[K] A` is again central simple and is
 finite-dimensional over `L` of the same dimension as `A` over `K` (`Module.finrank_baseChange`).
 The separably closed Artin--Wedderburn theorem
-`TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed` writes it as
+`IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed` writes it as
 `Matrix (Fin n) (Fin n) L`, whose dimension is `n ^ 2`.
 
 Centrality of `A` over `K` is essential rather than decorative: `ℂ` is a simple, finite-dimensional
@@ -46,17 +47,18 @@ of the file, alongside the real quaternions as the positive one.
 
 The same argument says that a separably closed extension **splits** `A`, in `deg K A` rows and
 columns; that is recorded as
-`TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`.
+`IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`.
 
 ## Main results
 
-* `TauCeti.IsSimpleRing.isSquare_finrank`: **the dimension of a finite-dimensional central simple
-  algebra is a perfect square**.
+* `IsSimpleRing.isSquare_finrank`: **the dimension of a finite-dimensional central simple algebra
+  is a perfect square** (stated without a finiteness hypothesis, since `Module.finrank` is `0`
+  otherwise).
 * `TauCeti.Algebra.deg`: the degree of a central simple algebra, with
   `TauCeti.Algebra.deg_sq : deg K A ^ 2 = Module.finrank K A`, its multiplicativity
   `TauCeti.Algebra.deg_tensorProduct` and `TauCeti.Algebra.deg_matrix`, the reading
   `TauCeti.Algebra.deg_eq_mul_deg_of_algEquiv_matrix` off a Wedderburn presentation, and the
-  splitting `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed` restated with
+  splitting `IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed` restated with
   matrix size `deg K A`.
 * `TauCeti.Algebra.finrank_tensorProduct_mulOpposite` and
   `TauCeti.Algebra.deg_tensorProduct_mulOpposite`: the dimension `(Module.finrank K A) ^ 2` and the
@@ -79,24 +81,17 @@ need never unfold the definition. The two exceptions do not compute a degree and
 (and from which `TauCeti.Algebra.deg_eq_of_algEquiv` is read off), and
 `TauCeti.Algebra.deg_pos`, which only needs `Module.finrank_pos`.
 
-`TauCeti.IsSimpleRing.isSquare_finrank` covers every base field, so the finite-base-field
-square-dimension statement that used to sit in `TauCeti/Algebra/CentralSimple/Wedderburn.lean` is
-gone, in favour of this one; that file keeps the matrix presentation
-`TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite`, which is genuinely special to a finite base
-field and from which the square dimension used to be read off.
+`IsSimpleRing.isSquare_finrank` covers every base field, finite ones included.
+`TauCeti/Algebra/CentralSimple/Wedderburn.lean` has the matrix presentation
+`IsSimpleRing.exists_algEquiv_matrix_of_finite`, which is genuinely special to a finite base field.
 
 ## References
 
-This implements the third bullet of Layer 4 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md)
-(square dimension by base change to the algebraic closure, and the degree defined as its square
-root). See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
+See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
 R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/
 
 public section
-
-namespace TauCeti
 
 open scoped TensorProduct
 
@@ -119,31 +114,33 @@ product of two copies of `ℂ`; the shadow of that failure which is checked in t
 `Module.finrank ℝ ℂ = 2` is not a perfect square.
 
 This is the private engine of the two public statements it splits into: the matrix size is a perfect
-square root of the dimension (`TauCeti.IsSimpleRing.isSquare_finrank`) and is therefore the degree,
+square root of the dimension (`IsSimpleRing.isSquare_finrank`) and is therefore the degree,
 so the splitting is stated downstream with the size named exactly, by
-`TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`, rather than existentially
+`IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`, rather than existentially
 quantified. -/
 private theorem exists_algEquiv_matrix_baseChange_of_isSepClosed [IsSepClosed L] :
     ∃ (n : ℕ) (_ : NeZero n), Module.finrank K A = n ^ 2 ∧
       Nonempty (L ⊗[K] A ≃ₐ[L] Matrix (Fin n) (Fin n) L) := by
   obtain ⟨n, hn, -, ⟨e⟩⟩ := exists_algEquiv_matrix_of_isSepClosed L (L ⊗[K] A)
-  refine ⟨n, hn, ?_, ⟨e⟩⟩
-  calc Module.finrank K A
-      = Module.finrank L (L ⊗[K] A) :=
-        (Module.finrank_baseChange (R := L) (S := K) (M' := A)).symm
-    _ = Module.finrank L (Matrix (Fin n) (Fin n) L) := e.toLinearEquiv.finrank_eq
-    _ = n ^ 2 := by simp [Module.finrank_matrix, sq]
+  exact ⟨n, hn, TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix K A L e, ⟨e⟩⟩
 
+omit [FiniteDimensional K A] in
 /-- **The dimension of a finite-dimensional central simple algebra is a perfect square.**
 
-Base change to an algebraic closure of `K` splits `A`, and a full matrix algebra has square
-dimension. Centrality cannot be dropped: `Module.finrank ℝ ℂ = 2`. -/
+No finiteness hypothesis is needed: for an infinite-dimensional algebra `Module.finrank` is the
+junk value `0 = 0 * 0`. For a finite-dimensional one, base change to an algebraic closure of `K`
+splits `A`, and a full matrix algebra has square dimension. Centrality cannot be dropped:
+`Module.finrank ℝ ℂ = 2`. -/
 theorem isSquare_finrank : IsSquare (Module.finrank K A) := by
-  obtain ⟨n, -, hrank, -⟩ :=
-    exists_algEquiv_matrix_baseChange_of_isSepClosed K (AlgebraicClosure K) A
-  exact ⟨n, by rw [hrank, sq]⟩
+  by_cases h : FiniteDimensional K A
+  · obtain ⟨n, -, hrank, -⟩ :=
+      exists_algEquiv_matrix_baseChange_of_isSepClosed K (AlgebraicClosure K) A
+    exact ⟨n, by rw [hrank, sq]⟩
+  · exact ⟨0, by simp [Module.finrank_of_not_finite h]⟩
 
 end IsSimpleRing
+
+namespace TauCeti
 
 /-! ### The degree -/
 
@@ -152,9 +149,9 @@ namespace Algebra
 variable (K : Type*) [Field K] (A : Type*) [Ring A] [Algebra K A]
 
 /-- The **degree** of a central simple `K`-algebra `A`: the square root of `Module.finrank K A`,
-which is a perfect square by `TauCeti.IsSimpleRing.isSquare_finrank`. Equivalently, the size of the
+which is a perfect square by `IsSimpleRing.isSquare_finrank`. Equivalently, the size of the
 matrix algebra that `A` becomes over a separably closed extension of `K`
-(`TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`).
+(`IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`).
 
 This is defined for an arbitrary `K`-algebra. The characteristic property
 `TauCeti.Algebra.deg_eq_of_finrank_eq_sq` fixes the value whenever the dimension is a square, with
@@ -232,9 +229,10 @@ end Nontrivial
 
 section CentralSimple
 
-variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A]
+variable [Algebra.IsCentral K A] [IsSimpleRing A]
 
-/-- The dimension of a central simple algebra is the square of its degree. -/
+/-- The dimension of a central simple algebra is the square of its degree. For an
+infinite-dimensional algebra both sides are `0`, so no finiteness hypothesis is needed. -/
 @[simp]
 theorem deg_sq : deg K A ^ 2 = Module.finrank K A := by
   obtain ⟨n, hn⟩ := IsSimpleRing.isSquare_finrank K A
@@ -244,7 +242,7 @@ theorem deg_sq : deg K A ^ 2 = Module.finrank K A := by
 that central simple `K`-algebras are closed under `⊗[K]`. -/
 @[simp]
 theorem deg_tensorProduct (B : Type*) [Ring B] [Algebra K B] [Algebra.IsCentral K B]
-    [IsSimpleRing B] [FiniteDimensional K B] :
+    [IsSimpleRing B] :
     deg K (A ⊗[K] B) = deg K A * deg K B :=
   deg_eq_of_finrank_eq_sq <| by
     rw [Module.finrank_tensorProduct, ← deg_sq K A, ← deg_sq K B]; ring
@@ -261,15 +259,17 @@ variable {K A}
 
 /-- The degree read off a matrix presentation: if `A` is `n × n` matrices over a central simple
 `K`-algebra `D` then `deg K A = n * deg K D`. Fed the central division algebra `D` of
-`TauCeti.IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`, this is the degree of a
+`IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`, this is the degree of a
 Wedderburn presentation; note that `A` itself carries no hypotheses here, since they are inherited
 through the isomorphism. -/
 theorem deg_eq_mul_deg_of_algEquiv_matrix {n : ℕ} {D : Type*} [Ring D] [Algebra K D]
-    [Algebra.IsCentral K D] [IsSimpleRing D] [FiniteDimensional K D]
+    [Algebra.IsCentral K D] [IsSimpleRing D]
     (e : A ≃ₐ[K] Matrix (Fin n) (Fin n) D) : deg K A = n * deg K D := by
   rw [deg_eq_of_algEquiv e, deg_matrix]
 
 end Algebra
+
+end TauCeti
 
 namespace IsSimpleRing
 
@@ -280,11 +280,14 @@ variable (K : Type*) [Field K] (L : Type*) [Field L] [Algebra K L]
 /-- A separably closed extension `L / K` splits a finite-dimensional central simple
 `K`-algebra `A` into matrices of size exactly `TauCeti.Algebra.deg K A`. -/
 theorem nonempty_algEquiv_matrix_baseChange_of_isSepClosed [IsSepClosed L] :
-    Nonempty (L ⊗[K] A ≃ₐ[L] Matrix (Fin (Algebra.deg K A)) (Fin (Algebra.deg K A)) L) := by
+    Nonempty (L ⊗[K] A ≃ₐ[L]
+      Matrix (Fin (TauCeti.Algebra.deg K A)) (Fin (TauCeti.Algebra.deg K A)) L) := by
   obtain ⟨n, -, hrank, he⟩ := exists_algEquiv_matrix_baseChange_of_isSepClosed K L A
-  rwa [Algebra.deg_eq_of_finrank_eq_sq hrank]
+  rwa [TauCeti.Algebra.deg_eq_of_finrank_eq_sq hrank]
 
 end IsSimpleRing
+
+namespace TauCeti
 
 /-! ### Worked examples -/
 
@@ -304,11 +307,11 @@ example : Algebra.deg K (Matrix (Fin n) (Fin n) K) = n := by
 example : Algebra.deg ℝ ℍ[ℝ] = 2 :=
   Algebra.deg_eq_of_finrank_eq_sq (by rw [Quaternion.finrank_eq_four]; norm_num)
 
-/-- The perfect-square theorem applies to the real quaternions: all three of `Algebra.IsCentral`,
-`IsSimpleRing` and `FiniteDimensional` are found by instance search. -/
+/-- The perfect-square theorem applies to the real quaternions: both `Algebra.IsCentral` and
+`IsSimpleRing` are found by instance search. -/
 example : IsSquare (Module.finrank ℝ ℍ[ℝ]) := IsSimpleRing.isSquare_finrank ℝ ℍ[ℝ]
 
-/-- The negative control for `TauCeti.IsSimpleRing.isSquare_finrank`: `ℂ` is a simple,
+/-- The negative control for `IsSimpleRing.isSquare_finrank`: `ℂ` is a simple,
 finite-dimensional `ℝ`-algebra of dimension `2`, which is not a perfect square. So centrality is
 doing real work in that theorem; `ℂ` is exactly the `ℝ`-algebra it excludes. -/
 example : ¬ IsSquare (Module.finrank ℝ ℂ) := by

@@ -36,9 +36,10 @@ by `C` (`negVariableChange_smul`).
 Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
 recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
 discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
+Every change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal
+`(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`).
 
-The negation is the nontrivial automorphism in the `Aut (E, O)`
-milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
+The negation is the nontrivial automorphism in `Aut (E, O)`, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
 `j(E) ∉ {0, 1728}`.
 
@@ -54,7 +55,7 @@ satisfies are polynomial. Only the nontriviality `negVariableChange_ne_one` need
 be elliptic over a nontrivial ring.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at the roadmap's pin
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean` at
 `bc2fe8ff7396` (FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude), generalised here from
 FLT's field-level statements to a commutative ring.
 -/
@@ -230,6 +231,14 @@ theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ =
   simp [variableChange_c₄]
 
 end Translate
+
+/-- A change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal they
+generate: the cuspidal locus `V(c₄, Δ)` is stable under the coordinate-change group. -/
+theorem span_variableChange_c₄_Δ (W : WeierstrassCurve R) (C : VariableChange R) :
+    Ideal.span {(C • W).c₄, (C • W).Δ} = Ideal.span {W.c₄, W.Δ} := by
+  rw [variableChange_c₄, variableChange_Δ, Ideal.span_insert, Ideal.span_insert,
+    Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 4),
+    Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 12)]
 
 section BaseChange
 

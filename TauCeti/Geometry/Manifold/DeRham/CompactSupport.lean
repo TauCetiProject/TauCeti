@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Compactly supported de Rham cohomology
@@ -23,10 +24,13 @@ The inclusion of complexes induces the comparison `H^•_c(M) → H^•_dR(M)`, 
 class of the representative; it is an isomorphism on compact manifolds, where every form is
 compactly supported.
 
+On a manifold modelled on a finite-dimensional space, every alternating form of degree above the
+dimension is zero, so `H^k_c(M)` vanishes for `k > dim M`.
+
 Pullback along a smooth proper map preserves compact support, so `H^•_c` is contravariant for
-smooth proper maps. Pullback along a general smooth map does not preserve compact support: the
-constant map `ℝ → pt` pulls the constant function `1` back to a function without compact
-support.
+smooth proper maps, and a diffeomorphism induces an isomorphism. Pullback along a general smooth
+map does not preserve compact support: the constant map `ℝ → pt` pulls the constant function `1`
+back to a function without compact support.
 
 ## Main definitions
 
@@ -40,6 +44,10 @@ support.
 * `TauCeti.compactlySupportedDeRhamComplex.ι`: the inclusion into the de Rham complex.
 * `TauCeti.compactlySupportedDeRhamComplex.map`: the cochain map induced by a smooth proper map.
 * `TauCeti.compactlySupportedDeRhamCohomology.map`: the induced map on cohomology.
+* `TauCeti.compactlySupportedDeRhamCohomology.equivOfDiffeomorph`: the induced isomorphism for a
+  diffeomorphism.
+* `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt`: `H^k_c(M) = 0` above
+  the dimension.
 
 ## References
 
@@ -80,6 +88,14 @@ theorem mem_compactlySupportedForms {k : ℕ} {φ : SmoothForm I M ℝ k} :
       IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1) :=
   Iff.rfl
 
+/-- Transporting the degree of a smooth form preserves compact support. -/
+theorem cast_mem_compactlySupportedForms_iff {a b : ℕ} (h : a = b) {φ : SmoothForm I M ℝ a} :
+    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) h φ ∈
+        compactlySupportedForms I M b ↔
+      φ ∈ compactlySupportedForms I M a := by
+  cases h
+  rfl
+
 /-- On a compact manifold every smooth form is compactly supported. -/
 @[simp]
 theorem compactlySupportedForms_eq_top [CompactSpace M] (k : ℕ) :
@@ -96,6 +112,13 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 2 M]
 
+/-- The exterior derivative of a compactly supported smooth form is compactly supported. -/
+theorem mextDerivₗ_mem_compactlySupportedForms {k : ℕ} {φ : SmoothForm I M ℝ k}
+    (hφ : φ ∈ compactlySupportedForms I M k) :
+    mextDerivₗ I k φ ∈ compactlySupportedForms I M (k + 1) := by
+  rw [mem_compactlySupportedForms, mextDerivₗ_apply]
+  exact RoughForm.isCompact_tsupport_mextDeriv hφ
+
 namespace compactlySupportedForms
 
 variable (M) in
@@ -103,9 +126,8 @@ variable (M) in
 supports. -/
 def mextDerivₗ (k : ℕ) :
     compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedForms I M (k + 1) :=
-  (TauCeti.mextDerivₗ I (M := M) (F := ℝ) k).restrict fun φ hφ ↦ by
-    rw [mem_compactlySupportedForms, mextDerivₗ_apply]
-    exact RoughForm.isCompact_tsupport_mextDeriv hφ
+  (TauCeti.mextDerivₗ I (M := M) (F := ℝ) k).restrict fun _ ↦
+    mextDerivₗ_mem_compactlySupportedForms I
 
 /-- The exterior derivative of a compactly supported form is its exterior derivative as a smooth
 form. -/
@@ -241,6 +263,21 @@ theorem compactlySupportedClosedForms_le_compactlySupportedForms (k : ℕ) :
 theorem compactlySupportedClosedForms_le_closedForms (k : ℕ) :
     compactlySupportedClosedForms I M k ≤ closedForms I M k :=
   inf_le_right
+
+/-- In degree at least the model dimension, every compactly supported form is closed. -/
+def compactlySupportedForms.toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) :
+    compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedClosedForms I M k :=
+  LinearMap.codRestrict _ (compactlySupportedForms I M k).subtype fun φ ↦
+    (mem_compactlySupportedClosedForms I).mpr
+      ⟨φ.2, mem_closedForms_of_finrank_le I h φ.1⟩
+
+/-- Viewing a top-degree compactly supported form as closed does not change the smooth form. -/
+@[simp]
+theorem compactlySupportedForms.coe_toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) (φ : compactlySupportedForms I M k) :
+    (toClosedOfFinrankLe I h φ : SmoothForm I M ℝ k) = φ :=
+  (rfl)
 
 variable (M) in
 /-- Compactly supported exact forms are exterior derivatives of compactly supported forms in
@@ -400,6 +437,19 @@ theorem compactlySupportedDeRhamComplex.homologyMap_ι (k : ℕ) :
       ModuleCat.ofHom (compactlySupportedDeRhamCohomology.toDeRhamCohomology I M k) :=
   (rfl)
 
+variable (M) in
+/-- Compactly supported cohomology vanishes in degrees above the dimension of the model, where
+every alternating form is zero. -/
+theorem subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt [FiniteDimensional ℝ E]
+    {k : ℕ} (hk : Module.finrank ℝ E < k) :
+    Subsingleton (compactlySupportedDeRhamCohomology I M k) := by
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective I k c
+  -- Each tangent space `TangentSpace I x` is the model space `E`.
+  have hφ : φ = 0 := Subtype.ext <| Subtype.ext <| funext fun x ↦
+    ContinuousAlternatingMap.eq_zero_of_finrank_lt _ (by rw [Fintype.card_fin]; exact hk)
+  rw [hφ, map_zero]
+
 end Complex
 
 section Pullback
@@ -492,6 +542,13 @@ theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperM
     (φ : compactlySupportedClosedForms I' M' k) :
     (mpullback f hf hp k φ : SmoothForm I M ℝ k) = SmoothForm.mpullback f hf φ :=
   (rfl)
+
+/-- The underlying rough form of the pullback of a compactly supported closed form is the rough
+pullback of its underlying rough form. -/
+theorem coe_coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f) (k : ℕ)
+    (φ : compactlySupportedClosedForms I' M' k) :
+    (mpullback f hf hp k φ).1.1 = TauCeti.mpullback I I' f φ.1.1 :=
+  (congrArg Subtype.val (coe_mpullback f hf hp k φ)).trans (SmoothForm.coe_mpullback f hf _)
 
 /-- Pullback of compactly supported closed forms by the identity is the identity linear map. -/
 @[simp]
@@ -586,6 +643,46 @@ theorem toDeRhamCohomology_map (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : 
   congr 1
   apply Subtype.ext
   rw [compactlySupportedClosedForms.coe_mpullback, closedForms.coe_mpullback]
+
+/-- A diffeomorphism `Φ : M ≃ M'`, which is a proper map, induces a linear equivalence
+`H^k_c(M') ≃ H^k_c(M)` on compactly supported de Rham cohomology: pullback along `Φ`, with inverse
+pullback along `Φ.symm`. -/
+def equivOfDiffeomorph (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ) :
+    compactlySupportedDeRhamCohomology I' M' k ≃ₗ[ℝ] compactlySupportedDeRhamCohomology I M k :=
+  LinearEquiv.ofLinearMap (map Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k)
+    (map Φ.symm Φ.symm.contMDiff Φ.symm.toHomeomorph.isProperMap k)
+    (by
+      refine (map_comp _ _ _ _ _ _ k).symm.trans ?_
+      convert map_id (I := I) (M := M) k
+      exact funext Φ.symm_apply_apply)
+    (by
+      refine (map_comp _ _ _ _ _ _ k).symm.trans ?_
+      convert map_id (I := I') (M := M') k
+      exact funext Φ.apply_symm_apply)
+
+/-- The equivalence induced by a diffeomorphism is pullback along it. -/
+@[simp]
+theorem equivOfDiffeomorph_apply (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
+    (c : compactlySupportedDeRhamCohomology I' M' k) :
+    equivOfDiffeomorph Φ k c = map Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k c :=
+  (rfl)
+
+/-- The inverse of the equivalence induced by a diffeomorphism is pullback along its inverse. -/
+@[simp]
+theorem equivOfDiffeomorph_symm_apply (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
+    (c : compactlySupportedDeRhamCohomology I M k) :
+    (equivOfDiffeomorph Φ k).symm c =
+      map Φ.symm Φ.symm.contMDiff Φ.symm.toHomeomorph.isProperMap k c :=
+  (rfl)
+
+/-- The equivalence induced by a diffeomorphism sends the class of a compactly supported closed
+form to the class of its pullback. -/
+theorem equivOfDiffeomorph_mk (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
+    (φ : compactlySupportedClosedForms I' M' k) :
+    equivOfDiffeomorph Φ k (mk I' k φ) =
+      mk I k
+        (compactlySupportedClosedForms.mpullback Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k φ) :=
+  map_mk _ _ _ k φ
 
 end compactlySupportedDeRhamCohomology
 

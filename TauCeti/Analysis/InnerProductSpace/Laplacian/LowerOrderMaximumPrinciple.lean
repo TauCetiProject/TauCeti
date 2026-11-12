@@ -63,12 +63,9 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
   let u : E := ‖v‖⁻¹ • v
   have hu : ‖u‖ = 1 := norm_smul_inv_norm hv
   let w : E → ℝ := fun y => Real.exp ((β + 1) * ⟪u, y⟫)
-  have hwpos (y : E) : 0 < w y := Real.exp_pos _
   have hwcd : ContDiff ℝ 2 w := (contDiff_exp_inner _ u).of_le (by norm_cast)
-  obtain ⟨C, hC⟩ := hK.bddAbove_image hwcd.continuous.continuousOn
-  have hC0 : 0 ≤ C := (hwpos x).le.trans (hC (Set.mem_image_of_mem w hxK))
-  apply le_of_forall_pos_mul_le hC0
-  intro ε hε
+  refine BddAbove.le_of_forall_pos_exists_add_mul_le
+    (hK.bddAbove_image hwcd.continuous.continuousOn) fun ε hε => ?_
   obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hxK⟩
     (hcont.add (hwcd.continuous.continuousOn.const_smul ε))
   have hfz : f z ≤ m :=
@@ -76,11 +73,8 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
       (fun h hlt => (mul_nonneg (hc h) (hm.trans hlt.le)).trans (hsub h)) (fun hz => hbdry hz) hzK
       (fun _ => hwcd.contDiffAt)
       (fun hz => laplacian_add_fderiv_exp_inner_pos_of_norm_le hu (hb hz) z) hzmax
-  have hxle : f x + ε * w x ≤ f z + ε * w z := by
-    simpa [smul_eq_mul] using hzmax hxK
-  have hwzC : ε * w z ≤ ε * C :=
-    mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
-  nlinarith [mul_nonneg hε.le (hwpos x).le]
+  refine ⟨z, hzK, ?_, hfz⟩
+  simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK
 
 /-- **Weak minimum principle for `-Δ - b·∇ + c`.** This is the negation-dual of
 `le_of_mul_le_laplacian_add_fderiv_le_frontier`. -/
@@ -103,15 +97,18 @@ theorem ge_of_laplacian_add_fderiv_le_mul_ge_frontier {K : Set E} (hK : IsCompac
   simpa using neg_le_neg h
 
 /-- A solution of `-Δ f - b·∇f + c f = 0` is bounded in absolute value by every
-nonnegative bound for its absolute value on the frontier. -/
+bound for its absolute value on the frontier. -/
 theorem abs_le_of_laplacian_add_fderiv_eq_mul_abs_le_frontier {K : Set E} (hK : IsCompact K)
-    {c f : E → ℝ} {b : E → E} {β M : ℝ} (hM : 0 ≤ M) (hcont : ContinuousOn f K)
+    {c f : E → ℝ} {b : E → E} {β M : ℝ} (hcont : ContinuousOn f K)
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x) (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
     (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β) (hsol : ∀ ⦃x⦄, x ∈ interior K →
       Δ f x + fderiv ℝ f x (b x) = c x * f x)
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) :
     ∀ ⦃x⦄, x ∈ K → |f x| ≤ M := by
   intro x hx
+  have hM : 0 ≤ M := by
+    obtain ⟨z, hz⟩ := nonempty_frontier_iff.2 ⟨⟨x, hx⟩, hK.ne_univ⟩
+    exact (abs_nonneg _).trans (hbdry hz)
   refine abs_le.mpr ⟨ge_of_laplacian_add_fderiv_le_mul_ge_frontier hK (neg_nonpos.mpr hM) hcont
       hcd hc hb (fun y hy => (hsol hy).le) (fun y hy => (abs_le.mp (hbdry hy)).1) hx,
     le_of_mul_le_laplacian_add_fderiv_le_frontier hK hM hcont hcd hc hb

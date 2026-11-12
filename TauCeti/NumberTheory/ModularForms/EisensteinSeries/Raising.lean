@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Character
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
@@ -133,7 +134,6 @@ theorem qExpansion_charEisensteinSeriesMFRaise (hk : 3 ≤ k)
   rw [charEisensteinSeriesMFRaise]
   exact ModularForm.qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The coefficient formula for a raised character Eisenstein series:
@@ -151,7 +151,6 @@ theorem qExpansion_charEisensteinSeriesMFRaise_coeff (hk : 3 ≤ k)
   rw [charEisensteinSeriesMFRaise]
   exact ModularForm.qExpansion_levelRaise_coeff
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _ n
 
 /-- The `q`-expansion of `G_k^{ψ,φ,t}` is supported on the multiples of `t`. -/
@@ -165,7 +164,6 @@ theorem isSupportedOnDvd_qExpansion_charEisensteinSeriesMFRaise (hk : 3 ≤ k)
   rw [charEisensteinSeriesMFRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- **Character-space membership after raising.** At every target level `N` divisible by `tuv`,
@@ -182,21 +180,7 @@ theorem charEisensteinSeriesMFRaise_mem_modFormCharSpace (hk : 3 ≤ k)
   have hbase := charEisensteinSeriesMF_mem_modFormCharSpace
     (N := u * v) ψ φ hk dvd_rfl
   have hraise := ModularForm.levelRaise_mem_modFormCharSpace_of_dvd htuv _ hbase
-  rw [charEisensteinSeriesMFRaise]
-  have hψ := DirichletCharacter.changeLevel_trans ψ (dvd_mul_right u v)
-    ((dvd_mul_left (u * v) t).trans htuv)
-  have hφ := DirichletCharacter.changeLevel_trans φ (dvd_mul_left v u)
-    ((dvd_mul_left (u * v) t).trans htuv)
-  have hchar :
-      (ψ.changeLevel ((dvd_mul_right u v).trans
-            ((dvd_mul_left (u * v) t).trans htuv)) *
-          φ.changeLevel ((dvd_mul_left v u).trans
-            ((dvd_mul_left (u * v) t).trans htuv))).toUnitHom =
-        ((ψ.changeLevel (dvd_mul_right u v) *
-          φ.changeLevel (dvd_mul_left v u)).toUnitHom).comp
-            (ZMod.unitsMap ((dvd_mul_left (u * v) t).trans htuv)) := by
-    rw [hψ, hφ, ← map_mul, DirichletCharacter.changeLevel_toUnitHom]
-  rw [hchar]
+  rw [charEisensteinSeriesMFRaise, DirichletCharacter.changeLevel_trans_mul_toUnitHom]
   exact hraise
 
 /-- The parity obstruction survives level raising: if

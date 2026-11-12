@@ -5,12 +5,58 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.Finset.Sort
+public import Mathlib.Data.List.Rotate
+public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Order.Fin.Tuple
+public import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Data.List.Chain
+import Mathlib.Order.Interval.Finset.Fin
 
 /-!
-# Sorting a two-element finset
+# Sorting finsets
 
-Sorting the finset `{a, b}` of two distinct elements with `r a b` gives the list `[a, b]`.
+Sorting the finset `{a, b}` of two distinct elements with `r a b` gives the list `[a, b]`, and
+sorting `s.erase a` gives the sorted list of `s` with `a` erased.
+
+For a map `f` that is monotone on a finset `s` of a linear order, the points of `s` sorted in
+increasing order are the concatenation, over the values `y` of `f` on `s` in increasing order, of
+the sorted fibres `{x ∈ s | f x = y}`. Consequently the ordered product of a word along `s` is the
+ordered product, over the values of `f` on `s`, of the ordered products along the fibres.
+
+Consecutive entries of the sorted list of `s` are the pairs of positions of `s` with no position of
+`s` strictly between them, so a chain condition on the sorted list is a condition on such adjacent
+pairs.
+
+The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
+elements of `s` below it.
+
+Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
+sorted list of the image in reversed order; in particular, sorting the points of a finset of
+`Fin n` moved along the reversal `Fin.rev` reverses the list of their images.
+
+Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
+last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
+
+The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
+
+Removing the position of `i` from the increasing enumeration of `s` gives the increasing
+enumeration of `s.erase i`.
+
+Every nonempty finset can be listed by a monotone sequence strictly increasing through its first
+`card` entries, starting at its minimum and reaching its maximum at index `card - 1`
+(`Finset.exists_strictMonoOn_Iic_surj`).
+
+If every element of `I` is at most `s ≤ t`, the sequence `⊥`, the elements of `I` in increasing
+order, `s`, then constantly `t`, is monotone in `ℕ`, `Finset.monotone_bot_orderEmbOfFin_snoc`.
+
+Sorting the interval `[a, b)` of natural numbers lists `a, a + 1, …, b - 1`, `Nat.sort_Ico`.
+
+The support-enlargement and adjacent-swap ordered-product lemmas are adapted from
+`Mei/Algebra/BigOperators/Group/Finset/Ordered.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0), originally authored by Codex.
 -/
 
 public section
@@ -25,4 +71,337 @@ theorem sort_pair {a b : α} (hab : r a b) (hne : a ≠ b) : sort {a, b} r = [a,
   rw [sort_insert r (fun c hc => mem_singleton.1 hc ▸ hab) (notMem_singleton.2 hne),
     sort_singleton]
 
+/-- Sorting `s.erase a` erases `a` from the sorted list of `s`. -/
+theorem sort_erase (s : Finset α) (a : α) : sort (s.erase a) r = (sort s r).erase a :=
+  List.Perm.eq_of_pairwise' (pairwise_sort _ r) ((pairwise_sort s r).erase a) <|
+    Multiset.coe_eq_coe.1 <| by rw [sort_eq, erase_val, ← Multiset.coe_erase, sort_eq]
+
+section LinearOrder
+
+variable {α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : α → β}
+
+/-- A nonempty finset in a linear order has a monotone enumeration, strictly increasing on
+`Set.Iic (d.card - 1)`. Its image on that segment is exactly the finset, and its first and last
+entries are the minimum and maximum. -/
+theorem exists_strictMonoOn_Iic_surj (d : Finset α) (hd : d.Nonempty) :
+    ∃ τ : ℕ → α, Monotone τ ∧ StrictMonoOn τ (Set.Iic (d.card - 1)) ∧
+      (∀ j, τ j ∈ d) ∧ τ '' Set.Iic (d.card - 1) = (d : Set α) ∧
+      τ 0 = d.min' hd ∧ τ (d.card - 1) = d.max' hd := by
+  classical
+  have hcard : 0 < d.card := card_pos.mpr hd
+  -- Freeze the increasing enumeration after its last entry.
+  let τ : ℕ → α := fun j ↦ d.orderEmbOfFin rfl ⟨min j (d.card - 1), by omega⟩
+  have hτj (j : ℕ) (hj : j ≤ d.card - 1) :
+      τ j = d.orderEmbOfFin rfl ⟨j, by omega⟩ := by
+    simp only [τ, min_eq_left hj]
+  refine ⟨τ, ?_, ?_, fun j ↦ orderEmbOfFin_mem d rfl _, ?_, ?_, ?_⟩
+  · exact fun i j hij ↦ (d.orderEmbOfFin rfl).monotone (min_le_min_right _ hij)
+  · intro i hi j hj hij
+    rw [hτj i hi, hτj j hj]
+    exact (d.orderEmbOfFin rfl).strictMono hij
+  · apply Set.Subset.antisymm
+    · rintro _ ⟨j, _, rfl⟩
+      exact orderEmbOfFin_mem d rfl _
+    · intro x hx
+      obtain ⟨j, rfl⟩ := (range_orderEmbOfFin d rfl).symm ▸ hx
+      refine ⟨j.val, Nat.le_sub_one_of_lt j.isLt, ?_⟩
+      exact hτj j.val (Nat.le_sub_one_of_lt j.isLt)
+  · rw [hτj 0 (Nat.zero_le _), orderEmbOfFin_zero rfl hcard]
+  · rw [hτj _ le_rfl, orderEmbOfFin_last rfl hcard]
+
+/-- Collapsing `j` onto its predecessor `i` in `s` is monotone on `s`, identifies only
+`i` and `j`, and strictly decreases the cardinality of the image of `s`. -/
+theorem collapse_adjacent_spec {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i < j)
+    (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) :
+    MonotoneOn (fun z => if z = j then i else z) s ∧
+      (∀ {u v}, (if u = j then i else u) = (if v = j then i else v) → u ≠ v →
+        (u = i ∨ u = j) ∧ (v = i ∨ v = j)) ∧
+      #(s.image fun z => if z = j then i else z) < #s :=
+  ⟨fun z hz w _ hzw => by grind [hadj z hz], fun huv hne => by grind,
+    card_image_le.lt_of_ne fun h => hij.ne (card_image_iff.1 h hi hj (by simp))⟩
+
+/-- For a map `f` that is monotone on `s`, listing the values of `f` on `s` in increasing order and
+replacing each value `y` by the increasing list of the points of `s` over `y` lists `s` in
+increasing order. -/
+theorem flatten_map_sort_filter_eq_sort (hf : MonotoneOn f s) :
+    ((s.image f).sort.map fun y => {x ∈ s | f x = y}.sort).flatten = s.sort := by
+  refine List.SortedLT.eq_of_mem_iff ?_ (sortedLT_sort s) fun x => ?_
+  · rw [List.sortedLT_iff_pairwise, List.pairwise_flatten, List.pairwise_map]
+    refine ⟨fun l hl => ?_, (sortedLT_sort _).pairwise.imp fun {y z} hyz x hx w hw => ?_⟩
+    · obtain ⟨y, -, rfl⟩ := List.mem_map.1 hl
+      exact (sortedLT_sort _).pairwise
+    · rw [mem_sort, mem_filter] at hx hw
+      exact hf.reflect_lt hx.1 hw.1 (hx.2 ▸ hw.2 ▸ hyz)
+  · rw [mem_sort, List.mem_flatten]
+    simp only [List.mem_map]
+    constructor
+    · rintro ⟨_, ⟨y, -, rfl⟩, hx⟩
+      exact (mem_filter.1 ((mem_sort _).1 hx)).1
+    · intro hx
+      exact ⟨_, ⟨f x, (mem_sort _).2 (mem_image_of_mem f hx), rfl⟩,
+        (mem_sort _).2 (mem_filter.2 ⟨hx, rfl⟩)⟩
+
+/-- For a map `f` that is monotone on `s`, the product of a word `a` along `s` in increasing order
+is the product, over the values `y` of `f` on `s` in increasing order, of the products of `a` along
+the fibres `{x ∈ s | f x = y}` in increasing order. -/
+theorem prod_map_sort_eq_prod_map_sort_image {M : Type*} [Monoid M] (hf : MonotoneOn f s)
+    (a : α → M) :
+    (s.sort.map a).prod =
+      ((s.image f).sort.map fun y => ({x ∈ s | f x = y}.sort.map a).prod).prod := by
+  rw [← flatten_map_sort_filter_eq_sort hf, List.map_flatten, List.prod_flatten, List.map_map,
+    List.map_map, Function.comp_def, Function.comp_def]
+
+section OrderedProduct
+
+variable {ι M : Type*} [LinearOrder ι] [Monoid M]
+
+/-- Enlarging an ordered index set by identity factors preserves the product. -/
+theorem prod_map_sort_subset {s t : Finset ι} (hst : s ⊆ t) (f : ι → M)
+    (hf : ∀ i ∈ t, i ∉ s → f i = 1) :
+    (s.sort.map f).prod = (t.sort.map f).prod := by
+  classical
+  have hfilter : (s.sort.filter fun i => f i != 1) =
+      (t.sort.filter fun i => f i != 1) := by
+    apply List.Pairwise.eq_of_mem_iff
+      ((sortedLT_sort s).pairwise.filter _) ((sortedLT_sort t).pairwise.filter _)
+    intro i
+    simp only [List.mem_filter, mem_sort, bne_iff_ne]
+    constructor
+    · exact fun h => ⟨hst h.1, h.2⟩
+    · exact fun h => ⟨by_contra fun hi => h.2 (hf i h.1 hi), h.2⟩
+  calc
+    _ = ((s.sort.filter fun i => f i != 1).map f).prod := by
+      simpa only [List.filter_map, Function.comp_def, bne_iff_ne] using
+        (List.prod_filter_bne_one (s.sort.map f)).symm
+    _ = ((t.sort.filter fun i => f i != 1).map f).prod := by rw [hfilter]
+    _ = _ := by
+      simpa only [List.filter_map, Function.comp_def, bne_iff_ne] using
+        List.prod_filter_bne_one (t.sort.map f)
+
+/-- Sorted products agree when their index sets agree wherever the factor is not one. -/
+theorem prod_map_sort_eq_of_ne_one (s t : Finset ι) (f : ι → M)
+    (h : ∀ i, f i ≠ 1 → (i ∈ s ↔ i ∈ t)) :
+    (s.sort.map f).prod = (t.sort.map f).prod := by
+  classical
+  have hs : (s.sort.map f).prod = ((s ∪ t).sort.map f).prod := by
+    apply prod_map_sort_subset subset_union_left
+    intro i hi his
+    by_contra hfi
+    exact his ((h i hfi).mpr ((mem_union.mp hi).resolve_left his))
+  have ht : (t.sort.map f).prod = ((s ∪ t).sort.map f).prod := by
+    apply prod_map_sort_subset subset_union_right
+    intro i hi hit
+    by_contra hfi
+    exact hit ((h i hfi).mp ((mem_union.mp hi).resolve_right hit))
+  exact hs.trans ht.symm
+
+/-- Swapping two consecutive indices in a finite increasing product preserves it
+when their factors commute. -/
+theorem prod_map_sort_swap (s : Finset ι) (f : ι → M) {a b : ι}
+    (hab : a < b) (ha : a ∈ s) (hb : b ∈ s)
+    (hgap : ∀ i ∈ s, ¬ (a < i ∧ i < b)) (hcomm : Commute (f a) (f b)) :
+    (s.sort.map (fun i => f (Equiv.swap a b i))).prod = (s.sort.map f).prod := by
+  classical
+  let l := (s.filter (· < a)).sort
+  let r := (s.filter (b < ·)).sort
+  have hl : ∀ i ∈ l, i < a := by simp [l]
+  have hr : ∀ i ∈ r, b < i := by simp [r]
+  -- Isolate the two consecutive indices between an unchanged prefix and suffix.
+  have hsort : s.sort = l ++ [a, b] ++ r := by
+    apply (sortedLT_sort s).eq_of_mem_iff
+    · apply List.sortedLT_append.mpr
+      refine ⟨?_, sortedLT_sort _, ?_⟩
+      · apply List.sortedLT_append.mpr
+        refine ⟨sortedLT_sort _, by simp [hab, List.sortedLT_nil], ?_⟩
+        intro i hi j hj
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+        rcases hj with rfl | rfl
+        · exact hl i hi
+        · exact (hl i hi).trans hab
+      · intro i hi j hj
+        simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
+        rcases hi with hi | rfl | rfl
+        · exact (hl i hi).trans (hab.trans (hr j hj))
+        · exact hab.trans (hr j hj)
+        · exact hr j hj
+    · intro i
+      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false,
+        l, r, mem_sort, mem_filter]
+      constructor
+      · intro hi
+        have := hgap i hi
+        by_cases hia : i = a <;> by_cases hib : i = b <;> grind
+      · grind
+  have hleft : l.map (fun i => f (Equiv.swap a b i)) = l.map f := by
+    apply List.map_congr_left
+    intro i hi
+    rw [Equiv.swap_apply_of_ne_of_ne (ne_of_lt (hl i hi))
+      (ne_of_lt ((hl i hi).trans hab))]
+  have hright : r.map (fun i => f (Equiv.swap a b i)) = r.map f := by
+    apply List.map_congr_left
+    intro i hi
+    rw [Equiv.swap_apply_of_ne_of_ne (ne_of_gt (hab.trans (hr i hi)))
+      (ne_of_gt (hr i hi))]
+  simp only [hsort, List.map_append, List.prod_append, hleft, hright,
+    List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
+    Equiv.swap_apply_left, Equiv.swap_apply_right]
+  rw [hcomm.eq]
+
+end OrderedProduct
+
+/-- A relation holds between the images of consecutive entries of `s` sorted in increasing order
+exactly when it holds between the images of any two positions `x < y` of `s` with no position of
+`s` strictly between them. -/
+theorem isChain_map_sort_iff {γ : Type*} {r : γ → γ → Prop} {g : α → γ} :
+    (s.sort.map g).IsChain r ↔
+      ∀ x ∈ s, ∀ y ∈ s, x < y → (∀ z ∈ s, z ≤ x ∨ y ≤ z) → r (g x) (g y) := by
+  have hl := sortedLT_sort s
+  have hmem : ∀ {x}, x ∈ s.sort ↔ x ∈ s := mem_sort _
+  rw [List.isChain_map, List.isChain_iff_getElem]
+  refine ⟨fun h x hx y hy hxy hadj => ?_, fun h i hi => ?_⟩
+  · obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem (hmem.2 hx)
+    obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem (hmem.2 hy)
+    have hik : i < k := hl.getElem_lt_getElem_iff.1 hxy
+    obtain rfl : k = i + 1 := by
+      by_contra hne
+      have hi1 : i + 1 < s.sort.length := by omega
+      rcases hadj _ (hmem.1 (List.getElem_mem hi1)) with h' | h'
+      · exact absurd (hl.getElem_le_getElem_iff.1 h') (by omega)
+      · exact absurd (hl.getElem_le_getElem_iff.1 h') (by omega)
+    exact h i hk
+  · refine h _ (hmem.1 (List.getElem_mem _)) _ (hmem.1 (List.getElem_mem _))
+      (hl.getElem_lt_getElem_iff.2 (by omega)) fun z hz => ?_
+    obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem (hmem.2 hz)
+    rw [hl.getElem_le_getElem_iff, hl.getElem_le_getElem_iff]
+    omega
+
+/-- For an embedding `e` that is strictly antitone on `s`, mapping the increasing list of `s` along
+`e` gives the decreasing list of the image of `s`, the reverse of its increasing list. -/
+theorem _root_.StrictAntiOn.map_finsetSort {e : α ↪ β} (he : StrictAntiOn e s) :
+    s.sort.map e = (s.map e).sort.reverse := by
+  have hgt : (s.sort.map e).SortedGT := by
+    rw [List.sortedGT_iff_pairwise, List.pairwise_map]
+    exact (sortedLT_sort s).pairwise.imp_of_mem fun hx hy hxy =>
+      he ((mem_sort _).1 hx) ((mem_sort _).1 hy) hxy
+  rw [List.SortedLT.eq_of_mem_iff (sortedLT_sort (s.map e)) hgt.reverse fun x => by simp,
+    List.reverse_reverse]
+
+/-- The `m`-th element of `s` in increasing order has exactly `m` elements of `s` below it. -/
+theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k) :
+    #{j ∈ s | j < s.orderEmbOfFin h m} = m := by
+  have e := map_orderEmbOfFin_univ s h
+  generalize s.orderEmbOfFin h = a at e ⊢
+  subst e
+  rw [filter_map, card_map]
+  simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
+    filter_gt_eq_Iio, Fin.card_Iio]
+
+/-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
+images under `Fin.rev` of the sorted points of `B` in reversed order. -/
+theorem sort_map_revPerm {n : ℕ} (B : Finset (Fin n)) :
+    (B.map Fin.revPerm.toEmbedding).sort = (B.sort.map Fin.rev).reverse := by
+  have h := StrictAntiOn.map_finsetSort (e := Fin.revPerm.toEmbedding) (s := B)
+    fun i _ j _ hij => by simpa using hij
+  rw [Equiv.coe_toEmbedding, show ⇑Fin.revPerm = @Fin.rev n from funext Fin.revPerm_apply] at h
+  rw [h, List.reverse_reverse]
+
+/-- Sorting a finset `B` of `Fin n` and then moving its points along `finRotate n` gives a cyclic
+rotation of the sorted list of the moved points: the order is unchanged except that the last
+position, which moves to `0`, goes from the end of the list to its front. -/
+theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
+    B.sort.map (finRotate n) ~r (B.map (finRotate n).toEmbedding).sort := by
+  cases n with
+  | zero => simp [eq_empty_of_isEmpty B]
+  | succ n =>
+    -- Away from the last position, `finRotate` is strictly monotone, so it commutes with sorting.
+    have hsort {C : Finset (Fin (n + 1))} (hC : Fin.last n ∉ C) :
+        (C.map (finRotate (n + 1)).toEmbedding).sort = C.sort.map (finRotate (n + 1)) := by
+      have hmono : StrictMonoOn (finRotate (n + 1)).toEmbedding C := fun i hi j hj hij => by
+        rw [Fin.lt_def] at hij ⊢
+        simp only [Equiv.coe_toEmbedding, coe_finRotate_of_ne_last (ne_of_mem_of_not_mem hi hC),
+          coe_finRotate_of_ne_last (ne_of_mem_of_not_mem hj hC)]
+        omega
+      rw [← hmono.map_finsetSort, Equiv.coe_toEmbedding]
+    by_cases hB : Fin.last n ∈ B
+    · set C := B.erase (Fin.last n)
+      have hC : Fin.last n ∉ C := notMem_erase _ _
+      have hBC : B.sort = C.sort ++ [Fin.last n] := by
+        refine List.SortedLT.eq_of_mem_iff (sortedLT_sort B)
+          (List.sortedLT_append.2 ⟨sortedLT_sort C,
+            List.sortedLT_cons.2 ⟨by simp, List.sortedLT_nil⟩, fun x hx y hy => ?_⟩) fun x => ?_
+        · rw [List.mem_singleton.1 hy, Fin.lt_last_iff_ne_last]
+          exact ne_of_mem_of_not_mem ((mem_sort _).1 hx) hC
+        · simp only [mem_sort, List.mem_append, List.mem_singleton, C, mem_erase]
+          by_cases hx : x = Fin.last n <;> simp [hx, hB]
+      have h0 : (finRotate (n + 1)).symm 0 = Fin.last n :=
+        (finRotate (n + 1)).symm_apply_eq.2 finRotate_last.symm
+      -- The last position moves to `0`, which comes first among the moved points.
+      have hBC' : (B.map (finRotate (n + 1)).toEmbedding).sort =
+          0 :: C.sort.map (finRotate (n + 1)) := by
+        rw [← insert_erase hB, map_insert, Equiv.coe_toEmbedding, finRotate_last,
+          sort_insert _ (fun _ _ => Fin.zero_le _) (by rw [mem_map_equiv, h0]; exact hC), hsort hC]
+      rw [hBC, hBC']
+      simpa using List.isRotated_append (l := C.sort.map (finRotate (n + 1))) (l' := [0])
+    · rw [hsort hB]
+
+/-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
+enumeration of `s.erase i`. -/
+theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
+    (i : I) (s : Finset I) (hi : i ∈ s) {n : ℕ} (hsCard : s.card = n + 1)
+    (hn : (s.erase i).card = n) :
+    ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
+      (s.erase i).orderEmbOfFin hn := by
+  let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+  have hek : e k = i :=
+    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
+  apply orderEmbOfFin_unique
+  · intro j
+    exact mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
+      orderEmbOfFin_mem s hsCard _⟩
+  · exact e.strictMono.comp (Fin.strictMono_succAbove k)
+
+end LinearOrder
+
+open Classical in
+/-- If every element of `I` is at most `s` and `s ≤ t`, then the sequence `⊥`, the elements of
+`I` in increasing order, `s`, then constantly `t` (from index `I.card + 2` on), is monotone in
+`ℕ`. -/
+theorem monotone_bot_orderEmbOfFin_snoc {T : Type*} [LinearOrder T] [OrderBot T] (I : Finset T)
+    {s t : T}
+    (hI : ∀ i ∈ I, i ≤ s) (hst : s ≤ t) :
+    Monotone (fun n : ℕ ↦ if h : n = 0 then (⊥ : T) else
+      if h : n ≤ I.card then I.orderEmbOfFin rfl ⟨n - 1, by omega⟩ else
+        if n = I.card + 1 then s else t) := by
+  apply monotone_nat_of_le_succ
+  intro n
+  by_cases hn : n = 0
+  · simp [hn]
+  by_cases hnI : n ≤ I.card
+  · by_cases hnI' : n + 1 ≤ I.card
+    · simp [hn, hnI, hnI']
+    · have hncard : n = I.card := by omega
+      have hcard : I.card ≠ 0 := by omega
+      have h1 : ¬I.card + 1 ≤ I.card := by omega
+      subst hncard
+      simpa [hcard, h1] using hI _ (I.orderEmbOfFin_mem rfl ⟨I.card - 1, by omega⟩)
+  · by_cases hncard : n = I.card + 1
+    · have h1 : ¬I.card + 1 ≤ I.card := by omega
+      have h2 : ¬I.card + 1 + 1 ≤ I.card := by omega
+      subst hncard
+      simp [hst, h1, h2]
+    · have hne : n ≠ I.card := by omega
+      have h1 : ¬n + 1 ≤ I.card := by omega
+      simp [hn, hnI, hncard, hne, h1]
+
 end Finset
+
+namespace Nat
+
+/-- Sorting the interval `[a, b)` of natural numbers gives the list `a, a + 1, …, b - 1`. -/
+@[simp]
+theorem sort_Ico (a b : ℕ) : (Finset.Ico a b).sort = List.range' a (b - a) := by
+  rw [Nat.Ico_eq_range']
+  exact List.mergeSort_eq_self _ List.pairwise_le_range'
+
+end Nat

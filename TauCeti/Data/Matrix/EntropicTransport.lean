@@ -183,8 +183,8 @@ theorem entropicTransportValue_eq_of_isMinOn
 theorem entropicTransportObjective_add (C H : Matrix ι κ ℝ) (ε : ℝ) (a : ι → ℝ) (b : κ → ℝ)
     (P : Matrix ι κ ℝ) :
     (C + H).entropicTransportObjective ε a b P = C.entropicTransportObjective ε a b P + ⟪H, P⟫ := by
-  simp only [entropicTransportObjective_def, frobenius_inner_def, add_apply, add_mul,
-    Finset.sum_add_distrib]
+  simp only [Matrix.add_apply, Finset.sum_add_distrib, entropicTransportObjective_def,
+    frobenius_real_inner_eq_sum_mul, add_mul]
   ring
 
 /-- **The Gibbs reformulation.** For nonzero marginals and a nonzero temperature, the regularised
@@ -297,9 +297,9 @@ private theorem mul_sum_sum_sub_mul_log_sub_log_eq (hε : 0 < ε) (ha : ∀ i, 0
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [sub_apply]
+    simp only [Matrix.sub_apply]
     ring
-  rw [frobenius_inner_def]
+  rw [frobenius_real_inner_eq_sum_mul]
   linarith
 
 /-- **The optimal plan is a Lipschitz function of the cost.** For a positive temperature and
@@ -320,11 +320,12 @@ theorem norm_sub_le_of_isMinOn_entropicTransportObjective (hε : 0 < ε) (ha : �
       _ ≤ m := Finset.single_le_sum (fun i' _ ↦ (ha i').le) (Finset.mem_univ i)
   -- Strong monotonicity of the logarithm on `(0, m]`, summed over the entries.
   have hsq : ‖P - Q‖ ^ 2 ≤ m * ∑ i, ∑ j, (P i j - Q i j) * (log (P i j) - log (Q i j)) := by
-    rw [← real_inner_self_eq_norm_sq, frobenius_inner_def, Finset.mul_sum]
+    rw [← real_inner_self_eq_norm_sq, frobenius_real_inner_eq_sum_mul, Finset.mul_sum]
     refine Finset.sum_le_sum fun i _ ↦ ?_
     rw [Finset.mul_sum]
     refine Finset.sum_le_sum fun j _ ↦ ?_
-    simpa [sub_apply, sq] using Real.sq_sub_le_mul_sub_mul_log_sub_log (hPpos i j) (hQpos i j)
+    simpa [Matrix.sub_apply,
+      sq] using Real.sq_sub_le_mul_sub_mul_log_sub_log (hPpos i j) (hQpos i j)
       (hle hP i j) (hle hQ i j)
   have hinner : ε * ‖P - Q‖ ^ 2 ≤ m * (‖P - Q‖ * ‖C - C'‖) := by
     calc ε * ‖P - Q‖ ^ 2
@@ -427,7 +428,7 @@ theorem le_entropicTransportObjective (hε : 0 < ε) (hQ : Q ∈ transportPolyto
   have hrow (i : ι) (j : κ) : Q i j ≤ a i := (hQ.2.apply_le hQ.1 i j).1
   have hcol (i : ι) (j : κ) : Q i j ≤ b j := (hQ.2.apply_le hQ.1 i j).2
   obtain ⟨hQ0, hQm⟩ := hQ
-  obtain ⟨hQa, hQb⟩ := (hasMarginals_def Q a b).1 hQm
+  obtain ⟨hQa, _⟩ := (hasMarginals_def Q a b).1 hQm
   -- Cell by cell, this is the supporting line of `u ↦ u * log u` at the Gibbs density
   -- `a i * b j * exp ((f i + g j - C i j) / ε)`, evaluated at `Q i j`.
   have hcell (i : ι) (j : κ) :
@@ -442,7 +443,7 @@ theorem le_entropicTransportObjective (hε : 0 < ε) (hQ : Q ∈ transportPolyto
       simp only [zero_mul, mul_zero, zero_sub, zero_add, sub_self]
       nlinarith
     · have hab : 0 < a i * b j := mul_pos (hpos.trans_le (hrow i j)) (hpos.trans_le (hcol i j))
-      have h := mul_log_sub_mul_log_ge _ _ (mul_pos hab (exp_pos t)) hpos.le
+      have h := mul_log_sub_mul_log_ge (mul_pos hab (exp_pos t)) hpos.le
       rw [log_mul hab.ne' (exp_pos t).ne', log_exp] at h
       rw [vecMulVec_apply]
       nlinarith [mul_le_mul_of_nonneg_left h hε.le]
@@ -622,7 +623,7 @@ private theorem entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ → �
         C i j * P i j + ε * (P i j * log (P i j)) +
           D i j * (C i j + ε * log (P i j) + ε) + ε * (D i j ^ 2 / P i j) := by
     have h := TauCeti.mul_log_sub_mul_log_sub_le_sq_div (hPpos i j) (hPD i j)
-    simp only [add_apply, add_sub_cancel_left] at h ⊢
+    simp only [Matrix.add_apply, add_sub_cancel_left] at h ⊢
     nlinarith [mul_le_mul_of_nonneg_left h hε.le]
   have hsum := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦
     Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) ↦ hcell i j
@@ -630,10 +631,10 @@ private theorem entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ → �
   -- The marginal terms, by the supporting line of `u ↦ u * log u` at `a i` and at `b j`.
   have hrow : ∑ i, (a i * log (a i) + (a' i - a i) * (log (a i) + 1)) ≤
       ∑ i, a' i * log (a' i) :=
-    Finset.sum_le_sum fun i _ ↦ by linarith [mul_log_sub_mul_log_ge _ _ (ha i) (ha' i)]
+    Finset.sum_le_sum fun i _ ↦ by linarith [mul_log_sub_mul_log_ge (ha i) (ha' i)]
   have hcol : ∑ j, (b j * log (b j) + (b' j - b j) * (log (b j) + 1)) ≤
       ∑ j, b' j * log (b' j) :=
-    Finset.sum_le_sum fun j _ ↦ by linarith [mul_log_sub_mul_log_ge _ _ (hb j) (hb' j)]
+    Finset.sum_le_sum fun j _ ↦ by linarith [mul_log_sub_mul_log_ge (hb j) (hb' j)]
   simp only [Finset.sum_add_distrib] at hrow hcol
   -- The first-order term: `C + ε * log P` is a row term plus a column term on the support.
   have hlin := sum_sum_mul_add_mul_log_add_eq hε.ne' ha hb hPfg hD
@@ -731,7 +732,6 @@ private theorem abs_entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ �
   obtain ⟨hPa, hPb⟩ := (hasMarginals_def P a b).1 hP.2
   have hPpos := pos_of_eq_mul_exp ha hb hPfg
   set δ := ‖p - (a, b)‖
-  have hδ : 0 ≤ δ := norm_nonneg _
   have hh (i : ι) : |p.1 i - a i| ≤ δ :=
     (norm_le_pi_norm (p - (a, b)).1 i).trans (norm_fst_le (p - (a, b)))
   have hk (j : κ) : |p.2 j - b j| ≤ δ :=

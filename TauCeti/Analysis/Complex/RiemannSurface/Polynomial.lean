@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.CriticalValues
 public import TauCeti.Algebra.Polynomial.Degree.Operations
 public import TauCeti.Algebra.Polynomial.Reverse
-public import TauCeti.Analysis.Complex.RiemannSurface.BranchValues
+public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Values
 public import TauCeti.Analysis.Polynomial.Order
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Compactification.OnePoint.Map
@@ -118,7 +119,7 @@ theorem mdifferentiable_onePointMap_eval (hp : 0 < p.natDegree) :
   | infty =>
     refine MDifferentiableAt.congr_of_eventuallyEq ?_ (onePointMap_eval_eventuallyEq_infty hp)
     exact (mdifferentiableAt_atlas_symm (Or.inr rfl) (by simp)).comp _
-      ((analyticAt_pow_div_eval_reverse (ne_zero_of_natDegree_gt hp)
+      ((analyticAt_pow_div_eval_reverse p
         _).differentiableAt.mdifferentiableAt.comp_of_eq _
         (mdifferentiableAt_atlas (Or.inr rfl) (by simp)) (by simp))
   | coe z =>
@@ -171,7 +172,7 @@ theorem localMultiplicity_onePointMap_eval_infty (hp : 0 < p.natDegree) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (∞ : OnePoint ℂ) = p.natDegree := by
   have h0 := eval_zero_reverse_ne_zero (ne_zero_of_natDegree_gt hp)
   have h : analyticOrderAt (fun w : ℂ ↦ w ^ p.natDegree / p.reverse.eval w) 0 = p.natDegree :=
-    (analyticAt_pow_div_eval_reverse (ne_zero_of_natDegree_gt hp) _).analyticOrderAt_eq_natCast.2
+    (analyticAt_pow_div_eval_reverse p _).analyticOrderAt_eq_natCast.2
       ⟨fun w ↦ (p.reverse.eval w)⁻¹, ((AnalyticOnNhd.eval_polynomial _) 0 (mem_univ _)).inv h0,
         inv_ne_zero h0,
         .of_forall fun w ↦ by simp [div_eq_mul_inv]⟩
@@ -192,26 +193,28 @@ theorem coe_spherePolynomial (hp : 0 < p.natDegree) :
 /-- The branch values of the extension of a nonconstant polynomial `p` to the Riemann sphere lie
 in `{∞}` together with the critical values of `p`. -/
 theorem branchValues_spherePolynomial_subset (hp : 0 < p.natDegree) :
-    (spherePolynomial hp).branchValues ⊆
-      insert ∞ ((fun z ↦ ((p.eval z : ℂ) : OnePoint ℂ)) '' {z | p.derivative.IsRoot z}) := by
+    (spherePolynomial hp).branchValues ⊆ insert ∞ ((↑) '' p.criticalValues ℂ) := by
   intro y hy
   obtain ⟨x, rfl, hx⟩ := (mem_branchValues_iff _ _).1 hy
   induction x using OnePoint.rec with
   | infty => simp
   | coe z =>
     rw [coe_spherePolynomial, one_lt_localMultiplicity_onePointMap_eval_coe_iff hp] at hx
-    exact mem_insert_of_mem _ ⟨z, hx, by simp⟩
+    exact mem_insert_of_mem _
+      ⟨_, (mem_criticalValues_self_iff (derivative_ne_zero.mpr hp.ne')).2 ⟨z, hx, rfl⟩, by simp⟩
 
 /-- **The branch values of a polynomial map of the Riemann sphere.** For a polynomial `p` of
 degree at least `2`, the branch values of its extension to the Riemann sphere are exactly `∞`,
 where the local multiplicity is the degree, together with the critical values of `p`. -/
 theorem branchValues_spherePolynomial (hp : 1 < p.natDegree) :
     (spherePolynomial (zero_lt_one.trans hp)).branchValues =
-      insert ∞ ((fun z ↦ ((p.eval z : ℂ) : OnePoint ℂ)) '' {z | p.derivative.IsRoot z}) := by
+      insert ∞ ((↑) '' p.criticalValues ℂ) := by
   refine (branchValues_spherePolynomial_subset _).antisymm (insert_subset_iff.2 ⟨?_, ?_⟩)
   · refine (mem_branchValues_iff _ _).2 ⟨∞, by simp, ?_⟩
     rwa [coe_spherePolynomial, localMultiplicity_onePointMap_eval_infty (zero_lt_one.trans hp)]
-  · rintro _ ⟨z, hz, rfl⟩
+  · rintro _ ⟨_, hy, rfl⟩
+    obtain ⟨z, hz, rfl⟩ :=
+      (mem_criticalValues_self_iff (derivative_ne_zero.mpr (zero_lt_one.trans hp).ne')).1 hy
     refine (mem_branchValues_iff _ _).2 ⟨z, by simp, ?_⟩
     rwa [coe_spherePolynomial,
       one_lt_localMultiplicity_onePointMap_eval_coe_iff (zero_lt_one.trans hp)]

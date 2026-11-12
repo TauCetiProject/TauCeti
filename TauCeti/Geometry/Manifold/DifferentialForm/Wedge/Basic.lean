@@ -256,6 +256,15 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
             (ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) :=
   bundleWedgeWith_apply _ _ φ ψ x v
 
+/-- Pairing a rough form with a degree-zero form pairs its value with the function value. -/
+@[simp]
+theorem wedgeWith_apply_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ 0)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    φ.wedgeWith μ ψ x v = μ (φ x v) (ψ x 0) := by
+  rw [wedgeWith_apply']
+  exact ContinuousAlternatingMap.pairedWedge_apply_zero_right μ μ.continuous₂ _ _ v
+
 /-- Evaluation of the paired rough-form wedge on two one-forms. -/
 theorem wedgeWith_apply_one_one (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : RoughForm I M F₁ 1) (ψ : RoughForm I M F₂ 1) (x : M)
@@ -336,6 +345,26 @@ theorem wedgeWith_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
   simpa only [wedgeWith] using
     (bundleWedgeWith_zero_right (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) φ)
 
+/-- The paired rough-form wedge is supported in the support of its first form. -/
+theorem tsupport_wedgeWith_subset_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    _root_.tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] F₃) (φ.wedgeWith μ ψ) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F₁) φ := by
+  refine closure_mono fun x hx hφ ↦ hx ?_
+  rw [wedgeWith_apply']
+  exact (congrArg (ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ · (ψ x)) hφ).trans
+    (ContinuousAlternatingMap.pairedWedge_zero_left μ μ.continuous₂ (ψ x))
+
+/-- The paired rough-form wedge is supported in the support of its second form. -/
+theorem tsupport_wedgeWith_subset_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) :
+    _root_.tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] F₃) (φ.wedgeWith μ ψ) ⊆
+      _root_.tsupport (α := E [⋀^Fin l]→L[ℝ] F₂) ψ := by
+  refine closure_mono fun x hx hψ ↦ hx ?_
+  rw [wedgeWith_apply']
+  exact (congrArg (ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ (φ x)) hψ).trans
+    (ContinuousAlternatingMap.pairedWedge_zero_right μ μ.continuous₂ (φ x))
+
 /-- Swapping the factors of a paired rough-form wedge flips the pairing and contributes the
 graded sign. The argument reindexing is the canonical cast between the two degree sums. -/
 theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -382,6 +411,15 @@ theorem wedge_apply (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l)
   simpa [wedge, ContinuousLinearMap.mul_apply'] using
     (wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v)
 
+/-- Wedging a real-valued rough form with a degree-zero form multiplies its value by the
+function value. -/
+@[simp]
+theorem wedge_apply_zero_right (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ 0)
+    (x : M) (v : Fin k → TangentSpace I x) :
+    φ.wedge ψ x v = φ x v * ψ x 0 := by
+  simpa only [wedge_def, ContinuousLinearMap.mul_apply'] using
+    (wedgeWith_apply_zero_right (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v)
+
 /-- The wedge of real-valued one-forms has the determinant normalization. -/
 @[simp]
 theorem wedge_apply_one_one (φ : RoughForm I M ℝ 1) (ψ : RoughForm I M ℝ 1)
@@ -391,6 +429,33 @@ theorem wedge_apply_one_one (φ : RoughForm I M ℝ 1) (ψ : RoughForm I M ℝ 1
   simpa only [wedge, wedgeWith, ContinuousLinearMap.mul_apply'] using
     (bundleWedgeWith_apply_one_one (μ := fun _ ↦ ContinuousLinearMap.mul ℝ ℝ)
       (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂) φ ψ x v w)
+
+/-- The wedge of the `0`-form of a function `f` with an `l`-form `φ` is the pointwise product
+`f • φ`, read in degree `0 + l`. -/
+theorem ofFunction_wedge_apply (f : M → ℝ) (φ : RoughForm I M ℝ l) (x : M)
+    (v : Fin (0 + l) → TangentSpace I x) :
+    (ofFunction I f).wedge φ x v = f x * φ x (fun i ↦ v (Fin.cast (zero_add l).symm i)) := by
+  -- Each permutation of the `0 + l` slots acts on `φ` by its sign, so every summand of the
+  -- alternation equals the unpermuted value and the sum cancels the factor `l!`.
+  have hterm : ∀ σ : Equiv.Perm (Fin (0 + l)),
+      Equiv.Perm.sign σ • (f x * φ x fun j ↦ v (σ (Fin.natAdd 0 j))) =
+        f x * φ x (fun i ↦ v (Fin.cast (zero_add l).symm i)) := by
+    intro σ
+    have h := (φ x).map_perm (fun i ↦ v (Fin.cast (zero_add l).symm i))
+      (((finCongr (zero_add l)).symm.trans σ).trans (finCongr (zero_add l)))
+    rw [Equiv.Perm.sign_symm_trans_trans] at h
+    have hv : ((fun i ↦ v (Fin.cast (zero_add l).symm i)) ∘
+        ((((finCongr (zero_add l)).symm.trans σ).trans (finCongr (zero_add l))) :
+          Fin l → Fin l)) = fun j ↦ v (σ (Fin.natAdd 0 j)) := by
+      funext j
+      simp [Fin.natAdd_zero]
+    simp only [hv, ContinuousAlternatingMap.coe_toAlternatingMap] at h
+    rw [h, mul_smul_comm, smul_smul, Int.units_mul_self, one_smul]
+  rw [wedge_apply]
+  simp only [Nat.factorial_zero, Nat.cast_one, one_mul, ofFunction_apply]
+  rw [Finset.sum_congr rfl fun σ _ ↦ hterm σ]
+  simp [Finset.sum_const, Fintype.card_perm]
+  field_simp
 
 /-- The real wedge is additive in its first form. -/
 @[simp]
@@ -434,6 +499,16 @@ theorem wedge_comm (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) (x : M)
     φ.wedge ψ x v = (-1 : ℝ) ^ (k * l) • ψ.wedge φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [wedge] using wedgeWith_comm (ContinuousLinearMap.mul ℝ ℝ)
     (fun a b ↦ mul_comm a b) φ ψ x v
+
+/-- Wedging with the `0`-form of a function on the right multiplies a form pointwise by the
+function. -/
+@[simp]
+theorem wedge_ofFunction (φ : RoughForm I M ℝ k) (f : M → ℝ) :
+    φ.wedge (RoughForm.ofFunction I f) = fun x ↦ f x • φ x := by
+  funext x
+  ext v
+  rw [wedge_comm, ofFunction_wedge_apply]
+  simp
 
 end RoughForm
 

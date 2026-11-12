@@ -48,11 +48,15 @@ that composes to zero is already zero.
   `sl₂` triple in `sl n R`. The three bracket relations are available separately as
   `TauCeti.lie_single_single_eq_singleSubSingle`, `TauCeti.lie_singleSubSingle_single` and
   `TauCeti.lie_singleSubSingle_single_swap`.
+* `TauCeti.isSl2Triple_matrix_single`: the same matrix units form a triple in the full matrix Lie
+  ring over any nontrivial ring.
 * `TauCeti.slFinTwoBasis`: the standard basis `(e, f, h)` of `sl (Fin 2) R`, obtained from the
   coordinate isomorphism `TauCeti.slFinTwoEquivFun` and identified vector by vector in
-  `TauCeti.slFinTwoBasis_zero`, `TauCeti.slFinTwoBasis_one` and `TauCeti.slFinTwoBasis_two`. The
-  rank `3` is the case `n = Fin 2` of `TauCeti.finrank_sl`, and the `Module.Free` and
-  `Module.Finite` instances come from there too.
+  `TauCeti.slFinTwoBasis_zero`, `TauCeti.slFinTwoBasis_one` and `TauCeti.slFinTwoBasis_two`. Its
+  bracket relations are `TauCeti.lie_slFinTwoBasis_zero_one`,
+  `TauCeti.lie_slFinTwoBasis_two_zero` and `TauCeti.lie_slFinTwoBasis_two_one`. The rank `3` is the
+  case `n = Fin 2` of `TauCeti.finrank_sl`, and the `Module.Free` and `Module.Finite` instances come
+  from there too.
 * `TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top`: in `sl (Fin 2) R` the subalgebra generated
   by a standard triple is the whole of `sl (Fin 2) R`. The underlying expansion of an arbitrary
   element in the triple is `TauCeti.eq_smul_single_add_smul_single_add_smul_singleSubSingle`.
@@ -85,10 +89,10 @@ Mathlib does not register `LieRing.ofAssociativeRing` as a global instance, so, 
 `Mathlib/Algebra/Lie/Classical.lean`, it is a local instance here.
 
 Linear independence of a triple is the eigenvector argument of
-`Module.End.eigenvectors_linearIndependent'`, so it asks what that theorem asks — a domain of
-characteristic zero and a torsion-free Lie algebra — rather than a field: the eigenvalues `2`, `-2`
-and `0` need only be distinct, not invertible. The presentation `TauCeti.lieHomOfSl2Basis` needs
-neither, being a bilinearity argument over an arbitrary commutative ring.
+`Module.End.eigenvectors_linearIndependent'`, so it asks what that theorem asks — a domain in
+which `2` is nonzero and a torsion-free Lie algebra — rather than a field: the eigenvalues `2`,
+`-2` and `0` need only be distinct, not invertible. The presentation `TauCeti.lieHomOfSl2Basis`
+needs neither, being a bilinearity argument over an arbitrary commutative ring.
 
 The `sl (Fin 2) R` results are stated for an arbitrary pair `i ≠ j` of indices in `Fin 2`, not just
 for `(0, 1)`: the opposite pair gives the opposite triple `(-h, f, e)`, and both are standard.
@@ -120,6 +124,15 @@ theorem _root_.IsSl2Triple.eq_two_of_lie_h_e_eq_smul {S H : Type*} [CommRing S] 
   exact sub_eq_zero.mp
     ((NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero hzero).resolve_right t.e_ne_zero)
 
+/-- Negating and swapping the raising and lowering elements, and negating the Cartan element,
+preserves an `sl₂` triple. -/
+theorem _root_.IsSl2Triple.neg_symm {L : Type*} [LieRing L] {h e f : L}
+    (t : IsSl2Triple h e f) : IsSl2Triple (-h) (-f) (-e) where
+  h_ne_zero := neg_ne_zero.mpr t.h_ne_zero
+  lie_e_f := by simp only [neg_lie, lie_neg, t.symm.lie_e_f, neg_neg]
+  lie_h_e_nsmul := by simp only [lie_neg, t.symm.lie_h_e_nsmul, smul_neg]
+  lie_h_f_nsmul := by simp only [lie_neg, t.symm.lie_h_f_nsmul, smul_neg, neg_neg]
+
 /-- **Rescaling an `sl₂` triple by a unit of the base ring.** Scaling the raising element by `c`
 and the lowering element by `c⁻¹` leaves their bracket, hence the Cartan element, unchanged. -/
 theorem _root_.IsSl2Triple.rescale {S L : Type*} [CommRing S] [LieRing L] [LieAlgebra S L]
@@ -148,7 +161,7 @@ theorem lie_single_single_eq_singleSubSingle (hij : i ≠ j) (c : R) :
   ext : 1
   rw [SpecialLinear.sl_bracket, SpecialLinear.val_single, SpecialLinear.val_single,
     SpecialLinear.val_singleSubSingle, ← LieRing.of_associative_ring_bracket,
-    lie_single_single_eq_sub]
+    Matrix.lie_single_single_eq_sub]
 
 /-- `⁅Eᵢᵢ - Eⱼⱼ, Eᵢⱼ⁆ = 2 Eᵢⱼ` in `sl n R`: the relation `⁅h, e⁆ = 2e` of the standard `sl₂`
 triple. -/
@@ -197,6 +210,23 @@ theorem isSl2Triple_single [Nontrivial R] (hij : i ≠ j) :
     rw [lie_singleSubSingle_single hij, two_smul, two_smul]
   lie_h_f_nsmul := by
     rw [lie_singleSubSingle_single_swap hij, two_smul, two_smul]
+
+/-- For distinct indices the matrix units `Eₚq`, `E_qp` and `Eₚₚ - E_qq` form an `sl₂` triple
+in the full matrix Lie ring, over any nontrivial ring. -/
+theorem isSl2Triple_matrix_single {S : Type*} [Ring S] [Nontrivial S]
+    (p q : n) (hpq : p ≠ q) :
+    IsSl2Triple (single p p (1 : S) - single q q 1) (single p q (1 : S)) (single q p 1) where
+  h_ne_zero hzero := (one_ne_zero : (1 : S) ≠ 0) <| by
+    simpa [single_apply, hpq, hpq.symm] using congrArg (fun A => A p p) hzero
+  lie_e_f := Matrix.lie_single_single_eq_sub p q 1
+  lie_h_e_nsmul := by
+    rw [Matrix.lie_single_self_sub_single_self_single hpq, two_smul, ← single_add]
+    norm_num
+  lie_h_f_nsmul := by
+    rw [← neg_sub (single q q (1 : S)) (single p p 1), neg_lie,
+      Matrix.lie_single_self_sub_single_self_single hpq.symm]
+    rw [two_smul, ← single_add]
+    norm_num
 
 end Triple
 
@@ -275,6 +305,27 @@ theorem slFinTwoBasis_one : slFinTwoBasis R 1 = SpecialLinear.single 1 0 one_ne_
 @[simp]
 theorem slFinTwoBasis_two : slFinTwoBasis R 2 = SpecialLinear.singleSubSingle 0 1 (1 : R) :=
   Subtype.ext <| by simpa using slFinTwoBasis_apply R 2
+
+/-! ### The relations of the standard basis of `sl₂` -/
+
+/-- The standard basis of `sl (Fin 2) R` obeys the relation `⁅e, f⁆ = h`, in the form
+`TauCeti.lieHomOfSl2Basis` asks for. -/
+theorem lie_slFinTwoBasis_zero_one :
+    ⁅slFinTwoBasis R 0, slFinTwoBasis R 1⁆ = slFinTwoBasis R 2 := by
+  rw [slFinTwoBasis_zero, slFinTwoBasis_one, slFinTwoBasis_two]
+  exact lie_single_single_eq_singleSubSingle zero_ne_one 1
+
+/-- The standard basis of `sl (Fin 2) R` obeys the relation `⁅h, e⁆ = 2e`. -/
+theorem lie_slFinTwoBasis_two_zero :
+    ⁅slFinTwoBasis R 2, slFinTwoBasis R 0⁆ = (2 : R) • slFinTwoBasis R 0 := by
+  rw [slFinTwoBasis_zero, slFinTwoBasis_two]
+  exact lie_singleSubSingle_single zero_ne_one 1
+
+/-- The standard basis of `sl (Fin 2) R` obeys the relation `⁅h, f⁆ = -2f`. -/
+theorem lie_slFinTwoBasis_two_one :
+    ⁅slFinTwoBasis R 2, slFinTwoBasis R 1⁆ = -((2 : R) • slFinTwoBasis R 1) := by
+  rw [slFinTwoBasis_one, slFinTwoBasis_two]
+  exact lie_singleSubSingle_single_swap zero_ne_one 1
 
 variable {R}
 
@@ -464,6 +515,20 @@ theorem mem_lieSubmoduleOfStable (t : IsSl2Triple h e f) (S : Submodule K M)
     m ∈ t.lieSubmoduleOfStable S he hf ↔ m ∈ S :=
   Iff.rfl
 
+/-- **The Cartan element of the triple acts as an element of a subalgebra containing it.** On a Lie
+submodule for the subalgebra generated by an `sl₂` triple whose Cartan element `h` is an element
+`x` of a Lie subalgebra `H`, the action of `h` is the restriction of the action of `x` on the
+ambient module. -/
+theorem toEnd_h_eq_restrict {H : LieSubalgebra K L} (t : IsSl2Triple h e f)
+    (N : LieSubmodule K (t.toLieSubalgebra K) M) {x : H} (hh : h = (x : L))
+    (hA : ∀ v ∈ N.toSubmodule, LieModule.toEnd K H M x v ∈ N.toSubmodule) :
+    LieModule.toEnd K (t.toLieSubalgebra K) N ⟨h, t.h_mem_toLieSubalgebra⟩ =
+      (LieModule.toEnd K H M x).restrict hA := by
+  refine LinearMap.ext fun v ↦ Subtype.ext ?_
+  rw [LinearMap.coe_restrict_apply]
+  simp only [LieModule.toEnd_apply_apply, LieSubmodule.coe_bracket,
+    LieSubalgebra.coe_bracket_of_module, hh]
+
 end IsSl2Triple
 
 namespace TauCeti
@@ -477,14 +542,18 @@ section GeneratingTriple
 variable {K : Type*} [CommRing K] [IsDomain K] [CharZero K] {L : Type*} [LieRing L]
   [LieAlgebra K L] [Module.IsTorsionFree K L] {h e f : L}
 
+omit [CharZero K] in
 /-- **An `sl₂` triple is linearly independent.** Its three elements are eigenvectors of `ad h` for
-the eigenvalues `2`, `-2` and `0`, which are distinct in characteristic zero. -/
-theorem linearIndependent_isSl2Triple (t : IsSl2Triple h e f) :
+the eigenvalues `2`, `-2` and `0`, which are distinct when `2` is nonzero in the domain `K`. -/
+theorem linearIndependent_isSl2Triple [NeZero (2 : K)] (t : IsSl2Triple h e f) :
     LinearIndependent K ![e, f, h] := by
+  have h2 : (2 : K) ≠ 0 := two_ne_zero
+  have hn : (2 : K) ≠ -2 := fun e => mul_ne_zero h2 h2 (by linear_combination e)
   refine (LieAlgebra.ad K L h).eigenvectors_linearIndependent' ![2, -2, 0] ?_ ![e, f, h]
     fun i => ?_
   · intro i j hij
-    fin_cases i <;> fin_cases j <;> first | rfl | (exfalso; revert hij; norm_num)
+    fin_cases i <;> fin_cases j <;>
+      first | rfl | (exfalso; revert hij; simp [h2, h2.symm, hn, hn.symm])
   · have heig_e : (LieAlgebra.ad K L h).HasEigenvector 2 e :=
       ⟨Module.End.mem_eigenspace_iff.2 (t.lie_h_e_smul K), t.e_ne_zero⟩
     have heig_f : (LieAlgebra.ad K L h).HasEigenvector (-2) f :=

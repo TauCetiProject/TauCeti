@@ -40,7 +40,7 @@ sides: the cap is preserved by every `A` with `Aᵀ * A = 1`, and the cup by eve
 which side a proof uses is the visible difference between contracting a pair of inputs and
 expanding a pair of outputs.
 
-The crossing is *not* given a name of its own: it is the Layer 8 permutation action
+The crossing is *not* given a name of its own: it is the permutation action
 `TauCeti.permTensorAction k n 2 (Equiv.swap 0 1)` of the transposition, which is exactly the
 statement that the symmetric group sits inside the Brauer algebra as the diagrams with no arc.
 
@@ -75,7 +75,7 @@ statement that the symmetric group sits inside the Brauer algebra as the diagram
   action of the orthogonal group. The corresponding statement for the crossing `s` is the
   restriction along `TauCeti.orthogonalGroupToGL` of the general-linear
   `commute_permTensorAction_tensorPowerRep`, in
-  `TauCeti.RepresentationTheory.ClassicalGroups.TensorPower`.
+  `TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic`.
 
 ## References
 
@@ -83,9 +83,6 @@ statement that the symmetric group sits inside the Brauer algebra as the diagram
   Annals of Mathematics 38 (1937), 857-872.
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 9.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "The invariant form and the action on `V^{⊗k}`", and the worked example "Brauer duality
-  on `(ℂ³)^{⊗2}` for `O(3)`".
 -/
 
 public section
@@ -267,7 +264,7 @@ loop. -/
 theorem orthogonalCupCap_mul_self :
     orthogonalCupCap k n * orthogonalCupCap k n = (n : k) • orthogonalCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  rw [Module.End.mul_apply, LinearMap.smul_apply, orthogonalCupCap_apply, orthogonalCupCap_apply,
+  rw [mul_apply_eq_comp, LinearMap.smul_apply, orthogonalCupCap_apply, orthogonalCupCap_apply,
     orthogonalCap_comp_orthogonalCup_apply, ← smul_eq_mul, map_smul]
 
 /-- **The relation `s² = 1`**: the crossing is an involution.
@@ -301,7 +298,7 @@ theorem orthogonalCap_comp_permTensorAction_swap :
 theorem permTensorAction_swap_mul_orthogonalCupCap :
     permTensorAction k n 2 (Equiv.swap 0 1) * orthogonalCupCap k n = orthogonalCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  simpa only [Module.End.mul_apply, orthogonalCupCap_apply, LinearMap.coe_comp,
+  simpa only [mul_apply_eq_comp, orthogonalCupCap_apply, LinearMap.coe_comp,
     Function.comp_apply] using
     LinearMap.congr_fun (permTensorAction_swap_comp_orthogonalCup k n) (orthogonalCap k n x)
 
@@ -309,7 +306,7 @@ theorem permTensorAction_swap_mul_orthogonalCupCap :
 theorem orthogonalCupCap_mul_permTensorAction_swap :
     orthogonalCupCap k n * permTensorAction k n 2 (Equiv.swap 0 1) = orthogonalCupCap k n := by
   refine LinearMap.ext fun x => ?_
-  simpa only [Module.End.mul_apply, orthogonalCupCap_apply, LinearMap.coe_comp,
+  simpa only [mul_apply_eq_comp, orthogonalCupCap_apply, LinearMap.coe_comp,
     Function.comp_apply] using
     congrArg (orthogonalCup k n)
       (LinearMap.congr_fun (orthogonalCap_comp_permTensorAction_swap k n) x)
@@ -433,7 +430,7 @@ theorem commute_orthogonalCupCap_tensorPower (g : Matrix.orthogonalGroup (Fin n)
   have hcup := LinearMap.congr_fun (tensorPower_comp_orthogonalCup k n g)
   simp only [LinearMap.coe_comp, Function.comp_apply] at hcap hcup
   refine LinearMap.ext fun x => ?_
-  rw [Module.End.mul_apply, Module.End.mul_apply, orthogonalCupCap_apply, orthogonalCupCap_apply,
+  rw [mul_apply_eq_comp, mul_apply_eq_comp, orthogonalCupCap_apply, orthogonalCupCap_apply,
     hcap x, hcup (orthogonalCap k n x)]
 
 end CommRing

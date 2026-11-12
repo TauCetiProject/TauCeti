@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
+public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 
+import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Analysis.Polynomial.SymmetricPower
 import TauCeti.Topology.DiscreteSeparation
 
 /-!
@@ -16,10 +20,12 @@ import TauCeti.Topology.DiscreteSeparation
 
 Near `τ`, the chart of `ℍ` at `τ` reads a function `f` as its extension `f ∘ ofComplex`. A
 function holomorphic on the upper half-plane, extended to `ℂ` by `ofComplex`, is
-analytic at every point of the open upper half-plane. Holomorphy on `ℍ` is also invariant
-under the Möbius action of a positive-determinant real matrix, the biholomorphism
-`UpperHalfPlane.mdifferentiable_smul` exhibits. Polynomial functions of the coordinate, such as
-`z ↦ P(z, 1)` for a binary form `P`, are holomorphic.
+analytic at every point of the open upper half-plane, and a locally uniform limit of holomorphic
+functions on `ℍ` is holomorphic. Holomorphy on `ℍ` is also invariant under the Möbius action of
+a positive-determinant real matrix, the biholomorphism `UpperHalfPlane.mdifferentiable_smul`
+exhibits. Polynomial functions of the coordinate, such as `z ↦ P(z, 1)` for a binary form `P`,
+are holomorphic, and so are the coefficients of a product `∏ (X - aᵢ(τ))` of linear factors
+whose roots `aᵢ` are holomorphic.
 
 ## Main declarations
 
@@ -28,6 +34,8 @@ under the Möbius action of a positive-determinant real matrix, the biholomorphi
 * `TauCeti.UpperHalfPlane.analyticAt_comp_ofComplex`.
 * `MvPolynomial.mdifferentiable_aeval_coe` — `z ↦ P(z, 1)` is holomorphic for a polynomial `P`
   in two variables.
+* `TauCeti.UpperHalfPlane.mdifferentiable_coeff_prod_X_sub_C` — the coefficients of
+  `∏ (X - aᵢ(τ))` are holomorphic when every `aᵢ` is.
 * `TauCeti.UpperHalfPlane.mdifferentiable_comp_smul_iff` — `τ ↦ f (g • τ)` is holomorphic
   exactly when `f` is, for `g : GL (Fin 2) ℝ` of positive determinant.
 * `TauCeti.UpperHalfPlane.not_accPt_zeros_comp_ofComplex` and
@@ -74,6 +82,20 @@ lemma _root_.MvPolynomial.mdifferentiable_aeval_coe {R : Type*} [CommSemiring R]
     · simpa using mdifferentiable_coe
     · simpa using mdifferentiable_const
 
+open _root_.Polynomial in
+/-- The coefficients of `∏ (X - C (aᵢ τ))` are holomorphic functions of `τ` when every `aᵢ` is. -/
+theorem mdifferentiable_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι) {a : ι → ℍ → ℂ}
+    (ha : ∀ i ∈ s, MDiff (a i)) (k : ℕ) :
+    MDiff fun τ : ℍ ↦ ((∏ i ∈ s, (X - C (a i τ))).coeff k : ℂ) := by
+  -- index the roots by `s`: the coefficient is an analytic function of the tuple of roots
+  have hv : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, s → ℂ) fun τ : ℍ ↦ fun i : s ↦ a i τ :=
+    mdifferentiable_pi_space_iff.2 fun i ↦ ha i i.2
+  have hg : Differentiable ℂ fun v : s → ℂ ↦ (∏ i : s, (X - C (v i))).coeff k := fun v ↦
+    (TauCeti.Polynomial.analyticAt_coeff_prod_X_sub_C Finset.univ k v).differentiableAt
+  convert Differentiable.comp_mdifferentiable hg hv using 1
+  ext τ
+  rw [Function.comp_apply, Finset.prod_coe_sort s fun i ↦ X - C (a i τ)]
+
 /-- A function holomorphic on `ℍ` composes with `ofComplex` to a function analytic at
 every point of the open upper half-plane. -/
 lemma analyticAt_comp_ofComplex {f : ℍ → ℂ} (hf : MDiff f) {w : ℂ} (hw : 0 < w.im) :
@@ -117,6 +139,22 @@ lemma exists_isOpen_zeros_inter {g : ℍ → ℂ} (hg : MDiff g) (hg0 : g ≠ 0)
     ext z
     exact ⟨fun hz => ⟨hz.1, hW hz.1, hz.2⟩, fun hz => ⟨hz.1, hz.2.2⟩⟩
   rw [hmassage hUV, hmassage hK, hUZ]
+
+/-- **A locally uniform limit of holomorphic functions on `ℍ` is holomorphic**: the limit is
+transported to the open upper half-plane of `ℂ` by `ofComplex`. -/
+lemma mdifferentiable_of_tendstoLocallyUniformly {ι : Type*} {l : Filter ι} [l.NeBot]
+    {F : ι → ℍ → ℂ} {f : ℍ → ℂ} (hF : TendstoLocallyUniformly F f l)
+    (hFd : ∀ᶠ i in l, MDiff (F i)) : MDiff f := by
+  rw [UpperHalfPlane.mdifferentiable_iff]
+  have hloc : TendstoLocallyUniformlyOn (fun i ↦ ↑ₕ(F i)) (↑ₕf) l {z : ℂ | 0 < z.im} := by
+    rw [← upperHalfPlaneSet, ← range_coe, ← Set.image_univ]
+    apply TendstoLocallyUniformlyOn.comp (s := ⊤) _ _ _
+      (OpenPartialHomeomorph.continuousOn_symm _)
+    · simpa only [Set.top_eq_univ, tendstoLocallyUniformlyOn_univ] using hF
+    · simp only [Topology.IsOpenEmbedding.toOpenPartialHomeomorph_target, Set.top_eq_univ,
+        Set.mapsTo_range_iff, Set.mem_univ, forall_const]
+  exact hloc.differentiableOn (hFd.mono fun i hi ↦ UpperHalfPlane.mdifferentiable_iff.mp hi)
+    isOpen_upperHalfPlaneSet
 
 /-! ### Holomorphy and the Möbius action -/
 

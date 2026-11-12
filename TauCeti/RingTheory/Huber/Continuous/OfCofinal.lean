@@ -39,6 +39,11 @@ The form a call site actually holds — a *finite* generating set with *every* g
 Lemma 7.4 hands over — is the corollary `isContinuous_of_forall_cofinalValue`. Finiteness enters
 there and only there, to produce the dominating generator as a maximum.
 
+Both continuity criteria require only separately continuous addition, as does the
+ideal-of-definition criterion they use. The full-characteristic-group result instead needs only
+continuous right multiplication, to pull back the open unit ball along multiplication by a
+fixed element.
+
 ## Why the bound is taken over `A₀`
 
 The valuation bound is applied through `v.comap P.ringOfDefinition.subtype`, over the ring of
@@ -69,7 +74,7 @@ namespace TauCeti.Huber.PairOfDefinition
 
 open TauCeti Valuation
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A]
   {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
 
 /-- **A single dominating cofinal generator makes a valuation continuous.** If `v ≤ 1` on an ideal
@@ -79,7 +84,8 @@ cofinal value, then `v` is continuous.
 No finiteness is needed: the spanning set is an arbitrary `Set`, cofinality is asked of `t₀`
 alone, and `t₀` need not even lie in the spanning set — dominating it is enough.
 `isContinuous_of_forall_cofinalValue` below is the reading a call site usually holds. -/
-theorem isContinuous_of_forall_le_of_cofinalValue (P : PairOfDefinition A) (v : Valuation A Γ₀)
+theorem isContinuous_of_forall_le_of_cofinalValue [SeparatelyContinuousAdd A]
+    (P : PairOfDefinition A) (v : Valuation A Γ₀)
     {s : Set P.ringOfDefinition} {t₀ : P.ringOfDefinition}
     (hgen : Ideal.span s = P.idealOfDefinition)
     (hle : ∀ t ∈ s, v ((t : P.ringOfDefinition) : A) ≤ v ((t₀ : P.ringOfDefinition) : A))
@@ -117,7 +123,8 @@ basic neighbourhood is already `{0}`.
 
 It is the form Wedhorn Theorem 7.10's `⊇` direction hands over: membership in `Spv (A, IA)`
 supplies the cofinality through Lemma 7.4, and `v a < 1` on `I` supplies the bound. -/
-theorem isContinuous_of_forall_cofinalValue (P : PairOfDefinition A) (v : Valuation A Γ₀)
+theorem isContinuous_of_forall_cofinalValue [SeparatelyContinuousAdd A]
+    (P : PairOfDefinition A) (v : Valuation A Γ₀)
     {s : Finset P.ringOfDefinition}
     (hgen : Ideal.span (s : Set P.ringOfDefinition) = P.idealOfDefinition)
     (h1 : ∀ a ∈ P.idealOfDefinition, v ((a : P.ringOfDefinition) : A) ≤ 1)
@@ -145,7 +152,8 @@ splits membership in `Spv (A, IA)` into cofinality on `IA` — which
 this lemma reduces to the first case. The sub-unit bound is what hands the valuation-level lemma
 its neighbourhood: `v a < 1` on `I` places the open ideal image inside the unit ball, so the
 unit ball is itself a neighbourhood of `0`. -/
-theorem cofinalValue_of_hasFullCharacteristicGroup (P : PairOfDefinition A)
+theorem cofinalValue_of_hasFullCharacteristicGroup [ContinuousConstSMul Aᵐᵒᵖ A]
+    (P : PairOfDefinition A)
     (v : Valuation A Γ₀) (hfull : HasFullCharacteristicGroup v)
     (h1 : ∀ a ∈ P.idealOfDefinition, v ((a : P.ringOfDefinition) : A) < 1)
     {x : P.ringOfDefinition} (hx : x ∈ P.idealOfDefinition) :

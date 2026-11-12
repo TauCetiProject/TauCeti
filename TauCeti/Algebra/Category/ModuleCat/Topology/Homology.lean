@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Topology.Homology
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Topology.Algebra.Module.Quotient
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
@@ -46,7 +47,8 @@ map out of the cycles that vanishes on the kernel of the class map to a linear m
 homology; unlike Mathlib's `CategoryTheory.ShortComplex.descHomology` it produces a *linear* map
 into an arbitrary module rather than a morphism of `TopModuleCat R`, which is what a bilinear
 operation on homology, such as a cup product, needs in its first variable. Both have degreewise
-forms for a homological complex.
+forms for a homological complex. `HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq` describes
+the induced map on homology on the class of an elementwise cocycle.
 -/
 
 public section
@@ -270,6 +272,22 @@ theorem iCycles_cyclesMkOfEq (x : K.X n) (j : ι) (hj : c.next n = j) (hx : (K.d
   subst hj
   exact (K.sc n).iCycles_cyclesMkOfEq x _
 
+variable {K} in
+/-- A chain map of complexes of topological modules carries the class of a cocycle to the class
+of its image. -/
+@[simp]
+theorem homologyMap_homologyπ_cyclesMkOfEq {L : HomologicalComplex (TopModuleCat R) c}
+    (f : K ⟶ L) [K.HasHomology n] [L.HasHomology n] (x : K.X n) (j : ι)
+    (hj : c.next n = j) (hx : (K.d n j).hom x = 0) :
+    homologyMap f n (K.homologyπ n (K.cyclesMkOfEq x j hj hx)) =
+      L.homologyπ n (L.cyclesMkOfEq ((f.f n).hom x) j hj (by
+        rw [HomologicalComplex.Hom.comm_apply, hx, map_zero])) := by
+  rw [← ConcreteCategory.comp_apply, homologyπ_naturality, ConcreteCategory.comp_apply]
+  congr 1
+  apply L.iCycles_injective n
+  rw [← ConcreteCategory.comp_apply, cyclesMap_i, ConcreteCategory.comp_apply,
+    iCycles_cyclesMkOfEq, iCycles_cyclesMkOfEq]
+
 /-- The differential vanishes on the underlying element of a cycle. -/
 @[simp]
 theorem d_iCycles_apply (j : ι) (z : K.cycles n) : (K.d n j).hom (K.iCycles n z) = 0 := by
@@ -278,7 +296,7 @@ theorem d_iCycles_apply (j : ι) (z : K.cycles n) : (K.d n j).hom (K.iCycles n z
 
 /-- The underlying element of the cycle `K.toCycles i n x` is the differential of `x`. -/
 @[simp]
-theorem iCycles_toCycles_apply (i : ι) [K.HasHomology n] (x : K.X i) :
+theorem iCycles_toCycles_apply (i : ι) (x : K.X i) :
     K.iCycles n (K.toCycles i n x) = (K.d i n).hom x := by
   have h := ConcreteCategory.congr_hom (K.toCycles_i i n) x
   simpa only [ConcreteCategory.comp_apply] using h

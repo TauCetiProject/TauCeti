@@ -128,6 +128,47 @@ function field by the stalk of `𝒪_X(D)` at `x`. -/
 abbrev PrincipalPart (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) : Type u :=
   X.functionField ⧸ stalkSubmodule D x
 
+/-- Enlarging a divisor enlarges its stalk submodule in the function field. -/
+lemma stalkSubmodule_mono (h : D ≤ E) (x : CodimensionOnePoint X) :
+    stalkSubmodule D x ≤ stalkSubmodule E x := by
+  intro f hf
+  exact mem_stalkSubmodule.mpr <|
+    (mem_stalkSubmodule.mp hf).imp id (le_trans (neg_le_neg (WeilDivisor.coeff_le_coeff h x)))
+
+/-- The quotient map on principal parts induced by an inclusion of divisors. -/
+def principalPartMapOfLE (h : D ≤ E) (x : CodimensionOnePoint X) :
+    PrincipalPart D x →ₗ[X.presheaf.stalk (x : X)] PrincipalPart E x :=
+  Submodule.factor (stalkSubmodule_mono h x)
+
+/-- The map of local principal parts preserves the representing rational function. -/
+@[simp]
+lemma principalPartMapOfLE_mk (h : D ≤ E) (x : CodimensionOnePoint X)
+    (f : X.functionField) :
+    principalPartMapOfLE h x (Submodule.Quotient.mk f) = Submodule.Quotient.mk f :=
+  Submodule.factor_mk (stalkSubmodule_mono h x) f
+
+/-- The local principal-parts map attached to a reflexive divisor inequality is the identity. -/
+@[simp]
+lemma principalPartMapOfLE_refl (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
+    principalPartMapOfLE (le_refl D) x = LinearMap.id :=
+  Submodule.mapQ_id _ (stalkSubmodule_mono (le_refl D) x)
+
+/-- Local principal-parts maps compose along a chain of divisor inequalities. -/
+@[simp]
+lemma principalPartMapOfLE_comp {D E F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E ≤ F)
+    (x : CodimensionOnePoint X) :
+    (principalPartMapOfLE h' x).comp (principalPartMapOfLE h x) =
+      principalPartMapOfLE (h.trans h') x :=
+  Submodule.factor_comp (stalkSubmodule_mono h x) (stalkSubmodule_mono h' x)
+
+/-- Successive local principal-parts maps agree with the direct map on every quotient class. -/
+@[simp]
+lemma principalPartMapOfLE_comp_apply {D E F : SchemeWeilDivisor X} (h : D ≤ E) (h' : E ≤ F)
+    (x : CodimensionOnePoint X) (q : PrincipalPart D x) :
+    principalPartMapOfLE h' x (principalPartMapOfLE h x q) =
+      principalPartMapOfLE (h.trans h') x q :=
+  Submodule.factor_comp_apply (stalkSubmodule_mono h x) (stalkSubmodule_mono h' x) q
+
 /-- The finitely supported families of principal parts of `D` at the codimension-one points of
 `U`. -/
 abbrev principalPartsSections (D : SchemeWeilDivisor X) (U : X.Opens) :=
@@ -264,12 +305,12 @@ private theorem isSheaf_principalPartsPresheaf (D : SchemeWeilDivisor X) :
         Subtype.val).preimage Subtype.val_injective.injOn).subset fun x hx ↦ ?_
     obtain ⟨i, hit, hi⟩ := Set.mem_iUnion₂.mp (ht x.2)
     exact Set.mem_biUnion hit ⟨⟨x.1, hi⟩, by rwa [Set.mem_ofPred_eq, ← hg x hi], rfl⟩
-  refine ⟨(principalPartsPresheafSectionsEquiv D (iSup U)).symm (dfinsuppOfFiniteSupport g hfin),
+  refine ⟨(principalPartsPresheafSectionsEquiv D (iSup U)).symm (DFinsupp.ofSupportFinite g hfin),
     fun i ↦ (principalPartsPresheafSectionsEquiv D (U i)).injective (DFinsupp.ext fun y ↦ ?_),
     fun s hs ↦ (principalPartsPresheafSectionsEquiv D (iSup U)).injective (DFinsupp.ext fun x ↦ ?_)⟩
   · refine (principalPartsPresheafSectionsEquiv_map_apply D (Opens.leSupr U i) _ y).trans ?_
-    simpa only [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply] using hg ⟨y.1, _⟩ y.2
-  · simp only [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply, hg x (hj x), ← hs (j x),
+    simpa only [AddEquiv.apply_symm_apply, DFinsupp.ofSupportFinite_apply] using hg ⟨y.1, _⟩ y.2
+  · simp only [AddEquiv.apply_symm_apply, DFinsupp.ofSupportFinite_apply, hg x (hj x), ← hs (j x),
       principalPartsPresheafSectionsEquiv_map_apply]
 
 /-- The sheaf of `𝒪_X`-modules of principal parts of a Weil divisor `D` on a Noetherian integral
@@ -320,13 +361,13 @@ instance (D : SchemeWeilDivisor X) : (principalParts D).presheaf.IsFlasque where
     refine (AddCommGrpCat.epi_iff_surjective _).mpr fun t ↦ ?_
     let t' := principalPartsSectionsEquiv D V.unop t
     -- Extend `t'` by zero to `U`; the restriction map forgets the points outside `V`.
-    refine ⟨(principalPartsSectionsEquiv D U.unop).symm (dfinsuppOfFiniteSupport
+    refine ⟨(principalPartsSectionsEquiv D U.unop).symm (DFinsupp.ofSupportFinite
         (fun x ↦ if h : (x.1 : X) ∈ V.unop then t' ⟨x.1, h⟩ else 0) ?_),
       (principalPartsSectionsEquiv D V.unop).injective <| DFinsupp.ext fun y ↦ ?_⟩
     · exact (t'.finite_support.image fun y ↦ ⟨y.1, i.unop.le y.2⟩).subset fun x hx ↦
         (dite_ne_right_iff.mp hx).elim fun h ht ↦ ⟨⟨x.1, h⟩, ht, rfl⟩
     · refine (principalParts_presheaf_map_apply D i.unop _ y).trans ?_
-      rw [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply, dite_eq_left y.2]
+      rw [AddEquiv.apply_symm_apply, DFinsupp.ofSupportFinite_apply, dite_eq_left y.2]
 
 /-- The principal part at a codimension-one point `x` of `U` of a section of `𝒦_X` over `U`. -/
 def principalPartAt (D : SchemeWeilDivisor X) {U : X.Opens} (s : Γ(Scheme.rationalFunctions X, U))
@@ -376,7 +417,7 @@ lemma finite_setOf_principalPartAt_ne_zero (D : SchemeWeilDivisor X) {U : X.Open
 
 private def toPrincipalPartsFamily (D : SchemeWeilDivisor X) (U : X.Opens) :
     Γ(Scheme.rationalFunctions X, U) →+ principalPartsSections D U where
-  toFun s := dfinsuppOfFiniteSupport (principalPartAt D s)
+  toFun s := DFinsupp.ofSupportFinite (principalPartAt D s)
     (finite_setOf_principalPartAt_ne_zero D s)
   map_zero' := by
     apply DFinsupp.ext
@@ -400,7 +441,7 @@ private lemma toPrincipalPartsApp_apply (D : SchemeWeilDivisor X) (U : X.Opens)
     (s : Γ(Scheme.rationalFunctions X, U)) (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
     principalPartsSectionsEquiv D U (toPrincipalPartsApp D U s) x = principalPartAt D s x := by
   simp only [toPrincipalPartsApp, AddMonoidHom.comp_apply]
-  exact dfinsuppOfFiniteSupport_apply _ _ _
+  exact DFinsupp.ofSupportFinite_apply _ _ _
 
 /-- The principal parts of `r • s` are those of `s` multiplied by the germs of `r`. -/
 lemma principalPartAt_smul (D : SchemeWeilDivisor X) {U : X.Opens} (r : Γ(X, U))

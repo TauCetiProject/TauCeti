@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
@@ -35,10 +36,10 @@ The sequence is Mathlib's `ShortComplex.cokernelSequence`, and its first map is 
 
 public section
 
-open CategoryTheory Limits MonoidalCategory AlgebraicGeometry
+open CategoryTheory Limits MonoidalCategory AlgebraicGeometry TauCeti
 open TauCeti.AlgebraicGeometry
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -48,7 +49,7 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- For a quasi-compact scheme-theoretically dominant morphism, pullback of regular functions
 is a monomorphism of sheaves of modules. -/
-instance _root_.AlgebraicGeometry.Scheme.Hom.mono_unitToPushforwardObjUnit
+instance mono_unitToPushforwardObjUnit
     [QuasiCompact f] [IsSchemeTheoreticallyDominant f] :
     Mono (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom) := by
   apply (SheafOfModules.forget _).mono_of_mono_map
@@ -59,12 +60,12 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.mono_unitToPushforwardObjUnit
 
 /-- For an affine morphism the quotient of the direct image of the structure sheaf by the
 image of the base's structure sheaf is quasicoherent. Injectivity is not required. -/
-instance _root_.AlgebraicGeometry.Scheme.Hom.isQuasicoherent_cokernel_unitToPushforwardObjUnit
+instance isQuasicoherent_cokernel_unitToPushforwardObjUnit
     [IsAffineHom f] :
     (cokernel (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom)).IsQuasicoherent := by
   have : (SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
     AlgebraicGeometry.isQuasicoherent_structureSheaf X
-  have h := isQuasicoherent_pushforward_of_isAffineHom f (SheafOfModules.unit X.ringCatSheaf)
+  have h := Scheme.Modules.isQuasicoherent_pushforward (SheafOfModules.unit X.ringCatSheaf) f
   have : ((SheafOfModules.pushforward f.toRingCatSheafHom).obj
       (SheafOfModules.unit X.ringCatSheaf)).IsQuasicoherent := by
     simpa only [Scheme.Modules.pushforward] using h
@@ -72,4 +73,4 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.isQuasicoherent_cokernel_unitToPush
 
 end
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

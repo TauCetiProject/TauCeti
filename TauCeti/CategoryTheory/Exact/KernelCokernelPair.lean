@@ -57,6 +57,9 @@ category with homology the notion coincides with Mathlib's
   exact structure.
 * `TauCeti.IsKernelCokernelPair.biprod`: a direct sum of kernel–cokernel pairs is a
   kernel–cokernel pair.
+* `TauCeti.IsKernelCokernelPair.hasHomology`: with a zero object, a kernel–cokernel pair has
+  homology, with no balancedness or (co)completeness assumption, so it is short exact
+  (`TauCeti.IsKernelCokernelPair.shortExact`) in any exact category.
 * `TauCeti.isKernelCokernelPair_iff_shortExact`: in a balanced preadditive category the
   kernel–cokernel pairs among the short complexes with homology are exactly the short exact
   ones. These are the conflations of the canonical exact structure on an abelian category.
@@ -168,6 +171,42 @@ theorem eq_desc (h : IsKernelCokernelPair S) (k : S.X₂ ⟶ A) (hk : S.f ≫ k 
 
 end Factorizations
 
+open ZeroObject in
+/-- **A kernel–cokernel pair has homology** in a category with a zero object: the cycles are the
+first term, the opcycles are the last term, and the homology is zero. -/
+theorem hasHomology [HasZeroObject C] (h : IsKernelCokernelPair S) : S.HasHomology := by
+  have := h.mono_f
+  have := h.epi_g
+  have hlift : h.fIsKernel.lift (KernelFork.ofι S.f S.zero) = 𝟙 S.X₁ :=
+    Fork.IsLimit.hom_ext h.fIsKernel (by simp)
+  have hdesc : h.gIsCokernel.desc (CokernelCofork.ofπ S.g S.zero) = 𝟙 S.X₃ :=
+    Cofork.IsColimit.hom_ext h.gIsCokernel (by simp)
+  have hepi : Epi (h.fIsKernel.lift (KernelFork.ofι S.f S.zero)) := by
+    rw [hlift]; exact (inferInstance : Epi (𝟙 S.X₁))
+  have hmono : Mono (h.gIsCokernel.desc (CokernelCofork.ofπ S.g S.zero)) := by
+    rw [hdesc]; exact (inferInstance : Mono (𝟙 S.X₃))
+  exact .mk'
+    { left :=
+        { K := S.X₁
+          H := 0
+          i := S.f
+          π := 0
+          wi := S.zero
+          hi := h.fIsKernel
+          wπ := comp_zero
+          hπ := CokernelCofork.IsColimit.ofEpiOfIsZero _ hepi (isZero_zero C) }
+      right :=
+        { Q := S.X₃
+          H := 0
+          p := S.g
+          ι := 0
+          wp := S.zero
+          hp := h.gIsCokernel
+          wι := zero_comp
+          hι := KernelFork.IsLimit.ofMonoOfIsZero _ hmono (isZero_zero C) }
+      iso := Iso.refl _
+      comm := by simp }
+
 /-- Being a kernel–cokernel pair is invariant under isomorphism of short complexes; this is the
 closure property an exact structure demands of its class of conflations. -/
 theorem of_iso (h : IsKernelCokernelPair S₁) (e : S₁ ≅ S₂) : IsKernelCokernelPair S₂ where
@@ -175,6 +214,43 @@ theorem of_iso (h : IsKernelCokernelPair S₁) (e : S₁ ≅ S₂) : IsKernelCok
     (asIso e.hom.τ₁) e.hom.comm₂₃ (by simpa using e.hom.comm₁₂)⟩
   nonempty_gIsCokernel := ⟨IsCokernel.ofIso _ h.gIsCokernel _ (asIso e.hom.τ₁) (asIso e.hom.τ₂)
     (asIso e.hom.τ₃) e.hom.comm₁₂ (by simpa using e.hom.comm₂₃)⟩
+
+/-- A retract of a kernel–cokernel pair, in the category of short complexes, is a kernel–cokernel
+pair. -/
+theorem of_retract (h : IsKernelCokernelPair S₂) (e : Retract S₁ S₂) :
+    IsKernelCokernelPair S₁ := by
+  have h₁ : e.i.τ₁ ≫ e.r.τ₁ = 𝟙 _ := (e.map ShortComplex.π₁).retract
+  have h₂ : e.i.τ₂ ≫ e.r.τ₂ = 𝟙 _ := (e.map ShortComplex.π₂).retract
+  have h₃ : e.i.τ₃ ≫ e.r.τ₃ = 𝟙 _ := (e.map ShortComplex.π₃).retract
+  have := h.mono_f
+  have := h.epi_g
+  have : IsSplitMono e.i.τ₁ := ⟨⟨e.r.τ₁, h₁⟩⟩
+  have : IsSplitEpi e.r.τ₃ := ⟨⟨e.i.τ₃, h₃⟩⟩
+  have : Mono S₁.f := by
+    have : Mono (S₁.f ≫ e.i.τ₂) := by rw [← e.i.comm₁₂]; exact mono_comp _ _
+    exact mono_of_mono S₁.f e.i.τ₂
+  have : Epi S₁.g := by
+    have : Epi (e.r.τ₂ ≫ S₁.g) := by rw [e.r.comm₂₃]; exact epi_comp _ _
+    exact epi_of_epi e.r.τ₂ S₁.g
+  -- A morphism killed by `S₁.g` is pushed into `S₂.X₂`, lifted through `S₂.f` and retracted.
+  have hk {W : C} {k : W ⟶ S₁.X₂} (hk : k ≫ S₁.g = 0) : (k ≫ e.i.τ₂) ≫ S₂.g = 0 := by
+    rw [Category.assoc, e.i.comm₂₃, reassoc_of% hk, zero_comp]
+  have lift_f {W : C} (k : W ⟶ S₁.X₂) (hk' : k ≫ S₁.g = 0) :
+      (h.lift _ (hk hk') ≫ e.r.τ₁) ≫ S₁.f = k := by
+    rw [Category.assoc, e.r.comm₁₂, h.lift_f_assoc, Category.assoc, h₂, Category.comp_id]
+  -- Dually, a morphism killed by `S₁.f` is retracted, descended through `S₂.g` and pushed back.
+  have hd {W : C} {k : S₁.X₂ ⟶ W} (hk : S₁.f ≫ k = 0) : S₂.f ≫ e.r.τ₂ ≫ k = 0 := by
+    rw [← Category.assoc, ← e.r.comm₁₂, Category.assoc, hk, comp_zero]
+  have g_desc {W : C} (k : S₁.X₂ ⟶ W) (hk' : S₁.f ≫ k = 0) :
+      S₁.g ≫ e.i.τ₃ ≫ h.desc _ (hd hk') = k := by
+    rw [← Category.assoc, ← e.i.comm₂₃, Category.assoc, h.g_desc, ← Category.assoc, h₂,
+      Category.id_comp]
+  exact
+    { nonempty_fIsKernel := ⟨KernelFork.IsLimit.ofι _ _ (fun k hk' ↦ h.lift _ (hk hk') ≫ e.r.τ₁)
+        lift_f (fun k hk' l hl ↦ by rw [← cancel_mono S₁.f, hl, lift_f k hk'])⟩
+      nonempty_gIsCokernel := ⟨CokernelCofork.IsColimit.ofπ _ _
+        (fun k hk' ↦ e.i.τ₃ ≫ h.desc _ (hd hk')) g_desc
+        (fun k hk' l hl ↦ by rw [← cancel_epi S₁.g, hl, g_desc k hk'])⟩ }
 
 /-- A functor preserving zero morphisms and the two relevant (co)limits — for instance an
 equivalence, or an exact functor between abelian categories — carries kernel–cokernel pairs to
@@ -227,12 +303,12 @@ theorem of_hasBinaryBiproduct (X₁ X₂ : C) [HasBinaryBiproduct X₁ X₂] :
 theorem biprod [HasBinaryBiproduct S₁.X₁ S₂.X₁] [HasBinaryBiproduct S₁.X₂ S₂.X₂]
     [HasBinaryBiproduct S₁.X₃ S₂.X₃] (h₁ : IsKernelCokernelPair S₁)
     (h₂ : IsKernelCokernelPair S₂) :
-    IsKernelCokernelPair (shortComplexBiprod S₁ S₂) := by
+    IsKernelCokernelPair (S₁.biprod S₂) := by
   -- The projection lemmas cannot rewrite this dependent predicate: its kernel and cokernel
   -- forks also depend on the composite-zero proof. Expose the short complex once here.
   change IsKernelCokernelPair
     (ShortComplex.mk (biprod.map S₁.f S₂.f) (biprod.map S₁.g S₂.g)
-      (shortComplexBiprod_zero S₁ S₂))
+      (S₁.biprod S₂).zero)
   have := h₁.mono_f
   have := h₂.mono_f
   have := h₁.epi_g

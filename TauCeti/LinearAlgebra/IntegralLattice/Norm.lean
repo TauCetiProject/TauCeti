@@ -49,8 +49,9 @@ the integral norm on the carrier.
 * `TauCeti.IntegralLattice.integralNorm_add`: polarization identity for the integral norm.
 * `TauCeti.IntegralLattice.integralNorm_sub`: subtractive polarization identity for the integral
   norm.
-* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast` and
-  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`: characterization of integer-norm vectors.
+* `TauCeti.IntegralLattice.mem_vectorsOfNorm_intCast`,
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_natCast`, and
+  `TauCeti.IntegralLattice.mem_vectorsOfNorm_one_iff`: characterization of integer-norm vectors.
 
 ## References
 
@@ -238,6 +239,11 @@ theorem mem_vectorsOfNorm_natCast (L : IntegralLattice V) {n : ℕ} {x : L} :
     x ∈ L.vectorsOfNorm (n : ℚ) ↔ L.integralNorm x = n := by
   rw [← Int.cast_natCast, L.mem_vectorsOfNorm_intCast]
 
+/-- A lattice vector has norm one if and only if its integral pairing with itself is one. -/
+theorem mem_vectorsOfNorm_one_iff (L : IntegralLattice V) {x : L} :
+    x ∈ L.vectorsOfNorm 1 ↔ L.integralForm x x = 1 := by
+  rw [← Int.cast_one (R := ℚ), L.mem_vectorsOfNorm_intCast, integralNorm_apply]
+
 /-- The zero vector in an integral lattice has norm zero. -/
 theorem zero_mem_vectorsOfNorm (L : IntegralLattice V) : (0 : L) ∈ L.vectorsOfNorm 0 := by
   simp
@@ -246,6 +252,18 @@ theorem zero_mem_vectorsOfNorm (L : IntegralLattice V) : (0 : L) ∈ L.vectorsOf
 theorem neg_mem_vectorsOfNorm_iff {L : IntegralLattice V} {n : ℚ} (x : L) :
     -x ∈ L.vectorsOfNorm n ↔ x ∈ L.vectorsOfNorm n := by
   simp [mem_vectorsOfNorm]
+
+/-- Negation has no fixed point on a shell of nonzero norm. -/
+theorem neg_ne_self_of_mem_vectorsOfNorm {L : IntegralLattice V} {n : ℚ} (hn : n ≠ 0)
+    {x : L} (hx : x ∈ L.vectorsOfNorm n) : -x ≠ x := by
+  intro h
+  have hz : (2 : ℚ) • (x : V) = 0 := by
+    calc
+      (2 : ℚ) • (x : V) = (x : V) + x := two_smul ℚ (x : V)
+      _ = -(x : V) + x := congrArg (· + (x : V)) (congrArg Subtype.val h).symm
+      _ = 0 := neg_add_cancel _
+  have hx0 : x = 0 := Subtype.ext ((smul_eq_zero.mp hz).resolve_left (by norm_num))
+  exact hn (by simpa [hx0] using (mem_vectorsOfNorm.mp hx).symm)
 
 -- This membership transport is not registered with `simp`: `mem_vectorsOfNorm`,
 -- `coe_carrierEquiv_apply`, and `Isometry.norm_apply` already prove it, so tagging it fails the

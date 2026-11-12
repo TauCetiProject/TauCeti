@@ -11,6 +11,7 @@ import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Coordinate projections on an exterior algebra
@@ -25,6 +26,8 @@ shuffle sign that carries the moved coordinate to the front: contraction erases 
 from the index set, and left multiplication inserts it, each vanishing when the index set is on
 the wrong side of that move. Creation after contraction at distinct coordinates therefore
 replaces an occupied coordinate with an unoccupied one, with the product of their shuffle signs.
+Two creations after contractions at distinct coordinates, in reverse order, project onto the
+exterior basis vectors containing both coordinates.
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
@@ -50,6 +53,14 @@ In degree at least the rank, contraction loses no information: if `d m = 1` and
 zero once their degrees add up to the rank, and in rank at most four a two-form `x` satisfies
 `x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. This is the algebra behind the splitting of a two-form on a product
 `ℝ × Y` along the unit normal of the factor `Y`.
+
+On `M × R`, with `e = (0, 1)`, every element `z` of the exterior algebra splits as `a + e ∧ b`,
+where `a` and `b` are the images in `⋀ M` of `z` and of its contraction by the second coordinate
+(`ExteriorAlgebra.map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`). This is the
+decomposition `⋀ᵏ⁺¹ (M × R) ≅ ⋀ᵏ⁺¹ M ⊕ e ∧ ⋀ᵏ M` used to adjoin one element to a Koszul complex.
+In this splitting, the contraction by `φ + x · snd` acts as `d(a + e ∧ b) = (d a + x b) - e ∧ d b`
+(`ExteriorAlgebra.map_fst_contractLeft_coprod`,
+`ExteriorAlgebra.contractLeft_map_fst_contractLeft_snd`).
 -/
 
 public section
@@ -134,104 +145,18 @@ private theorem basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem
   -- which the shuffle crosses when it moves the singleton `{i}` to the front.
   let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
   let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
-  have hek : e k = i := by
-    exact congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  have hremove : k.removeNth (fun j ↦ e j) =
-      (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) := by
-    apply Finset.orderEmbOfFin_unique
-    · intro j
-      exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
-        Finset.orderEmbOfFin_mem s hsCard _⟩
-    · exact e.strictMono.comp (Fin.strictMono_succAbove k)
+  have hek : e k = i :=
+    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
   let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
   let t : Set.powersetCard I n := ⟨s.erase i, rfl⟩
   have hdisj : Disjoint u.val t.val := by simp [u, t]
-  have hsCard' : s.card = 1 + n := hsCard.trans (Nat.add_comm n 1)
-  have hunion : Set.powersetCard.disjUnion hdisj =
-      (Set.powersetCard.ofCard (s := s) hsCard' : Set.powersetCard I (1 + n)) := by
-    apply Subtype.ext
-    simp [u, t, hi]
   let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
-  let c : Fin (1 + n) ≃ Fin (n + 1) := finCongr (Nat.add_comm 1 n)
-  let p' : Equiv.Perm (Fin (n + 1)) := c.symm.trans (p.trans c)
   -- After reconciling the two cardinality presentations, this shuffle is the inverse cycle
   -- which moves position `k` to the front and shifts the preceding positions one step right.
-  have hec : (fun q ↦ e (c q)) =
-      (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
-        (Set.powersetCard.disjUnion hdisj).prop := by
-    apply Finset.orderEmbOfFin_unique
-    · intro q
-      have hdval : (Set.powersetCard.disjUnion hdisj).val = s :=
-        congrArg Subtype.val hunion
-      rw [hdval]
-      exact Finset.orderEmbOfFin_mem s hsCard (c q)
-    · intro a b hab
-      apply e.strictMono
-      simpa [c, Fin.ext_iff] using hab
-  have hp : p' = k.cycleRange.symm := by
-    apply Equiv.ext
-    intro j
-    apply e.injective
-    -- Unfold the conjugated shuffle so both sides are compared in the increasing enumeration.
-    change e (c (p (c.symm j))) = e (k.cycleRange.symm j)
-    have hrhs : e (k.cycleRange.symm j) =
-        (Fin.cons (e k) (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j := by
-      simpa only [Function.comp_apply] using
-        congrFun (Fin.cons_removeNth_eq_comp_cycleRange_symm e k) j |>.symm
-    rw [hrhs, hek]
-    -- The disjoint-union permutation enumerates the singleton first and the erased set second.
-    change e (c (p (c.symm j))) =
-      (Fin.cons i (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j
-    rw [hremove]
-    -- Expose the function represented by the increasing enumeration before applying `hec`.
-    change (fun q ↦ e (c q)) (p (c.symm j)) = _
-    rw [hec]
-    let x : (Set.powersetCard.disjUnion hdisj).val :=
-      Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-        (((Set.powersetCard.orderIsoOfFin u).sumCongr
-          (Set.powersetCard.orderIsoOfFin t)) (finSumFinEquiv.symm (c.symm j)))
-    have hx : (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
-        (Set.powersetCard.disjUnion hdisj).prop (p (c.symm j)) = x := by
-      have hpApply : p (c.symm j) =
-          (Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).symm x := rfl
-      rw [hpApply]
-      exact congrArg Subtype.val
-        ((Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).apply_symm_apply x)
-    rw [hx]
-    cases j using Fin.cases with
-    | zero =>
-        have hzero : finSumFinEquiv.symm (c.symm 0) = Sum.inl (0 : Fin 1) := by
-          apply finSumFinEquiv.injective
-          apply Fin.ext
-          rfl
-        simp only [x, hzero, Fin.cons_zero]
-        -- Coercing the disjoint-union subtype reveals the singleton entry.
-        change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-          (Sum.inl ((Set.powersetCard.orderIsoOfFin u) 0))) = i
-        rw [Equiv.Finset.disjUnionEquiv_inl]
-        dsimp only [Set.powersetCard.orderIsoOfFin, u]
-        -- The unique increasing enumeration of a singleton is constant at its element.
-        change Finset.orderEmbOfFin {i} (Finset.card_singleton i) 0 = i
-        exact Finset.orderEmbOfFin_singleton i 0
-    | succ q =>
-        have hsucc : finSumFinEquiv.symm (c.symm q.succ) = Sum.inr q := by
-          apply finSumFinEquiv.injective
-          rw [finSumFinEquiv.apply_symm_apply]
-          apply Fin.ext
-          simp [c]
-          omega
-        simp only [x, hsucc, Fin.cons_succ]
-        -- Coercing the right summand reveals the increasing enumeration of `s.erase i`.
-        change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-          (Sum.inr ((Set.powersetCard.orderIsoOfFin t) q))) =
-            (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
-        rw [Equiv.Finset.disjUnionEquiv_inr]
-        dsimp only [Set.powersetCard.orderIsoOfFin, t]
-        change (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q =
-          (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
-        rfl
-  have hsign : Equiv.Perm.sign p' = Equiv.Perm.sign p := by
-    simp [p']
+  have hp := Set.powersetCard.conj_permOfDisjoint_singleton_erase i s hi rfl hsCard hdisj
+  have hsign : Equiv.Perm.sign ((finCongr (Nat.add_comm 1 n)).symm.trans
+      (p.trans (finCongr (Nat.add_comm 1 n)))) = Equiv.Perm.sign p :=
+    Equiv.Perm.sign_symm_trans_trans p (finCongr (Nat.add_comm 1 n))
   rw [basisEraseSign]
   -- Unfolding the local permutation exposes the sign computed above.
   change Equiv.Perm.sign p = _
@@ -395,6 +320,26 @@ theorem ι_mul_contractLeft_coord_basis {I : Type w} [LinearOrder I]
     rw [basisEraseSign_eq_neg_one_pow_card_filter_lt, smul_smul, hsignSq, one_smul]
   · rw [mul_zero]
 
+/-- Creation of two distinct basis coordinates after contracting them in the reverse order is the
+projection onto exterior basis vectors containing both coordinates. -/
+theorem ι_mul_ι_mul_contractLeft_contractLeft_coord_basis {I : Type w} [LinearOrder I]
+    (b : Module.Basis I R M) {i j : I} (hij : i ≠ j) (s : Finset I) :
+    ExteriorAlgebra.ι R (b j) *
+        (ExteriorAlgebra.ι R (b i) *
+          contractLeft (Q := (0 : QuadraticForm R M)) (b.coord i)
+            (contractLeft (Q := (0 : QuadraticForm R M)) (b.coord j) (b.ExteriorAlgebra s))) =
+      if i ∈ s ∧ j ∈ s then b.ExteriorAlgebra s else 0 := by
+  classical
+  by_cases hj : j ∈ s
+  · rw [contractLeft_coord_basis, ite_eq_left hj, map_zsmul_unit, mul_smul_comm, mul_smul_comm,
+      ι_mul_contractLeft_coord_basis]
+    by_cases hi : i ∈ s
+    · rw [ite_eq_left (Finset.mem_erase.mpr ⟨hij, hi⟩), ite_eq_left ⟨hi, hj⟩]
+      have h := ι_mul_contractLeft_coord_basis b j s
+      simpa only [contractLeft_coord_basis, ite_eq_left hj, mul_smul_comm] using h
+    · simp [hi]
+  · simp [hj]
+
 /-! ### Exterior powers under the grade involution and contraction -/
 
 /-- **The grade involution acts on the `n`-th exterior power by `(-1) ^ n`.** -/
@@ -403,7 +348,7 @@ theorem involute_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra R M} (hx : 
   induction hx using Submodule.pow_induction_on_left' with
   | algebraMap r => simp
   | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, smul_add]
-  | mem_mul m hm i x hx ih =>
+  | mem_mul m hm i x _ ih =>
     obtain ⟨v, rfl⟩ := hm
     rw [map_mul, ih, involute_ι, mul_smul_comm, neg_mul, smul_neg, pow_succ', mul_smul,
       neg_one_smul]
@@ -487,6 +432,13 @@ theorem ι_mul_eq_involute_mul (m : M) (x : ExteriorAlgebra R M) :
   | mul x y hx hy => rw [← mul_assoc, hx, mul_assoc, hy, map_mul, mul_assoc]
   | add x y hx hy => rw [mul_add, hx, hy, map_add, add_mul]
 
+/-- A vector graded-commutes with an element of the `n`-th exterior power with the sign
+`(-1) ^ n`. -/
+theorem ι_mul_eq_neg_one_pow_smul_mul {n : ℕ} {x : ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M)
+    (m : M) : ExteriorAlgebra.ι R m * x = (-1 : R) ^ n • (x * ExteriorAlgebra.ι R m) := by
+  rw [ι_mul_eq_involute_mul, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower hx,
+    smul_mul_assoc]
+
 end ExteriorAlgebra
 
 namespace TauCeti.ExteriorAlgebra
@@ -564,3 +516,103 @@ theorem mul_self_eq_two_smul_mul_ι_mul_contractLeft {d : Module.Dual R M} {m : 
   abel
 
 end TauCeti.ExteriorAlgebra
+
+namespace ExteriorAlgebra
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-! ### Splitting off a free coordinate -/
+
+/-- **Splitting off a free coordinate.** In the exterior algebra of `M × R`, with `e = (0, 1)`,
+every element `z` is `a + e ∧ b`, where `a` is the image of `z` under `⋀ M × R → ⋀ M → ⋀ (M × R)`
+and `b` is the image of the contraction of `z` by the second coordinate. -/
+theorem map_inl_map_fst_add_ι_inr_mul_contractLeft_snd (z : ExteriorAlgebra R (M × R)) :
+    map (LinearMap.inl R M R) (map (LinearMap.fst R M R) z) +
+        ι R (LinearMap.inr R M R 1) * map (LinearMap.inl R M R) (map (LinearMap.fst R M R)
+          (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)) =
+      z := by
+  induction z using CliffordAlgebra.left_induction with
+  | algebraMap r => simp [contractLeft_algebraMap]
+  | add z₁ z₂ h₁ h₂ =>
+    simp only [map_add, mul_add]
+    conv_rhs => rw [← h₁, ← h₂]
+    abel
+  | ι_mul z m ih =>
+    -- Write `m = (m₁, 0) + m₂ e`; then `e ∧ e = 0` and `(m₁, 0) ∧ e = -(e ∧ (m₁, 0))`.
+    have hm : ι R m = ι R (LinearMap.inl R M R m.1) + m.2 • ι R (LinearMap.inr R M R 1) := by
+      rw [← map_smul, ← map_add]; congr 1; ext <;> simp
+    have he := ι_sq_zero (R := R) (LinearMap.inr R M R (1 : R))
+    have hc := eq_neg_of_add_eq_zero_right <|
+      ι_add_mul_swap (R := R) (LinearMap.inr R M R (1 : R)) (LinearMap.inl R M R m.1)
+    -- `left_induction` states the step with `CliffordAlgebra.ι 0`, which is `ι R` by definition.
+    change _ = ι R m * z
+    rw [contractLeft_ι_mul]
+    simp only [map_mul, map_sub, map_smul, map_apply_ι]
+    conv_rhs => rw [← ih, hm]
+    simp only [add_mul, mul_add, mul_sub, smul_mul_assoc, mul_smul_comm, ← mul_assoc, he, hc,
+      smul_zero, add_zero, neg_mul, LinearMap.fst_apply, LinearMap.snd_apply]
+    abel
+
+/-! ### Contractions on `M × R` in the splitting `a + e ∧ b` -/
+
+/-- The contraction by `φ.coprod ψ` on the image of `⋀ M` in `⋀ (M × N)` is the contraction
+by `φ`. -/
+theorem contractLeft_coprod_map_inl {N : Type*} [AddCommGroup N] [Module R N]
+    (φ : Module.Dual R M) (ψ : Module.Dual R N) (w : ExteriorAlgebra R M) :
+    contractLeft (Q := (0 : QuadraticForm R (M × N))) (φ.coprod ψ)
+        (map (LinearMap.inl R M N) w) =
+      map (LinearMap.inl R M N) (contractLeft (Q := (0 : QuadraticForm R M)) φ w) := by
+  rw [contractLeft_map, LinearMap.coprod_inl]
+
+/-- The contraction by `φ + x · snd` on `e ∧ w`, with `e = (0, 1)`: `d(e ∧ w) = x w - e ∧ d w`. -/
+theorem contractLeft_coprod_ι_inr_mul (φ : Module.Dual R M) (x : R)
+    (w : ExteriorAlgebra R (M × R)) :
+    contractLeft (Q := (0 : QuadraticForm R (M × R)))
+        (φ.coprod (LinearMap.toSpanSingleton R R x)) (ι R (LinearMap.inr R M R 1) * w) =
+        x • w - ι R (LinearMap.inr R M R 1) *
+          contractLeft (Q := (0 : QuadraticForm R (M × R)))
+            (φ.coprod (LinearMap.toSpanSingleton R R x)) w := by
+  rw [contractLeft_ι_mul]
+  simp
+
+/-- Projection onto the first factor retracts the induced map of exterior algebras. -/
+theorem leftInverse_map_fst_map_inl {N : Type*} [AddCommGroup N] [Module R N] :
+    Function.LeftInverse (map (LinearMap.fst R M N)) (map (LinearMap.inl R M N)) :=
+  leftInverse_map_iff.2 fun _ ↦ rfl
+
+/-- The `⋀ M`-component of the contraction by `φ + x · snd`: writing `z = a + e ∧ b` as in
+`map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`, the `⋀ M`-component of `d z` is `d a + x b`. -/
+theorem map_fst_contractLeft_coprod (φ : Module.Dual R M) (x : R)
+    (z : ExteriorAlgebra R (M × R)) :
+    map (LinearMap.fst R M R)
+        (contractLeft (Q := (0 : QuadraticForm R (M × R)))
+          (φ.coprod (LinearMap.toSpanSingleton R R x)) z) =
+      contractLeft (Q := (0 : QuadraticForm R M)) φ (map (LinearMap.fst R M R) z) +
+        x • map (LinearMap.fst R M R)
+          (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z) := by
+  conv_lhs => rw [← map_inl_map_fst_add_ι_inr_mul_contractLeft_snd z]
+  rw [map_add, contractLeft_coprod_map_inl, contractLeft_coprod_ι_inr_mul,
+    contractLeft_coprod_map_inl]
+  simp only [LinearMap.coe_inr, map_add, map_sub, map_smul, map_mul, map_apply_ι,
+    LinearMap.fst_apply, map_zero, zero_mul, sub_zero]
+  rw [leftInverse_map_fst_map_inl, leftInverse_map_fst_map_inl]
+
+/-- The `e`-component of the contraction by `φ + x · snd`: writing `z = a + e ∧ b` as in
+`map_inl_map_fst_add_ι_inr_mul_contractLeft_snd`, the contraction `d b` is minus the
+`e`-component of `d z`. -/
+theorem contractLeft_map_fst_contractLeft_snd (φ : Module.Dual R M) (x : R)
+    (z : ExteriorAlgebra R (M × R)) :
+    contractLeft (Q := (0 : QuadraticForm R M)) φ (map (LinearMap.fst R M R)
+        (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)) =
+      -map (LinearMap.fst R M R)
+        (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R)
+          (contractLeft (Q := (0 : QuadraticForm R (M × R)))
+            (φ.coprod (LinearMap.toSpanSingleton R R x)) z)) := by
+  have hD := map_inl_map_fst_add_ι_inr_mul_contractLeft_snd
+    (contractLeft (Q := (0 : QuadraticForm R (M × R))) (LinearMap.snd R M R) z)
+  rw [contractLeft_contractLeft, map_zero, map_zero, mul_zero, add_zero] at hD
+  rw [← leftInverse_map_fst_map_inl (R := R) (M := M) (N := R) (contractLeft _ _),
+    ← contractLeft_coprod_map_inl φ (LinearMap.toSpanSingleton R R x),
+    hD, contractLeft_comm, map_neg]
+
+end ExteriorAlgebra

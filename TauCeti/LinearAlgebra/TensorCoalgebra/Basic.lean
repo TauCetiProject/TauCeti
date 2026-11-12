@@ -24,8 +24,8 @@ empty word are the separate type `TauCeti.TensorWords`, built in
 `TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic`.
 
 The construction uses Mathlib's `TensorPower` and direct-sum/tensor-product equivalences, together
-with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended bar construction in
-the `DGAInfinity` roadmap.
+with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended bar construction of
+`A∞` algebras (`TauCeti.AInfinityAlgebra`).
 
 ## Main definitions
 
@@ -70,6 +70,10 @@ namespace ReducedTensorWords
 noncomputable def of (n : {n : ℕ // 0 < n}) :
     TensorPower R n.1 M →ₗ[R] ReducedTensorWords R M :=
   DirectSum.lof R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.1 M) n
+
+/-- Inclusion into reduced tensor words is the direct-sum inclusion. -/
+theorem of_def (n : {n : ℕ // 0 < n}) :
+    of R M n = DirectSum.lof R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.1 M) n := (rfl)
 
 /-- The positive tensor-power inclusions generate all reduced tensor words. -/
 theorem iSup_range_of : ⨆ n : {n : ℕ // 0 < n}, LinearMap.range (of R M n) = ⊤ := by
@@ -220,6 +224,16 @@ theorem of_tprod_eq_subword {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
   rw [subword_eq_of_tprod R x hn (by omega)]
   congr 1
   exact congrArg _ (funext fun j ↦ (congrArg x (Fin.ext (Nat.zero_add j.1))).symm)
+
+/-- A block of length two is a two-letter word. -/
+theorem subword_two_eq {n : ℕ} (x : Fin n → M) {p : ℕ} (hp : p + 2 ≤ n) :
+    subword R x p 2 =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![x ⟨p, by omega⟩, x ⟨p + 1, by omega⟩]) := by
+  rw [subword_eq_of_tprod R x two_pos hp]
+  exact of_tprod_congr R M _ rfl fun i ↦ by
+    match i with
+    | ⟨0, _⟩ => simp
+    | ⟨1, _⟩ => simp
 
 /-- A block of a tensor word depends only on its letters, not on the tuple carrying them nor on
 where the block sits inside it. -/

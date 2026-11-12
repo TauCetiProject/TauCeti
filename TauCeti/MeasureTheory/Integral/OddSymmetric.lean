@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.MeasureTheory.Group.Integral
 
 /-!
-# Integrals of odd functions over symmetric intervals
+# Integrals of odd functions over symmetric domains
 
 An odd integrand into a real normed space integrates to zero over an interval `[-R, R]`
-symmetric about the origin.
+symmetric about the origin, and more generally against any measure invariant under negation.
+In particular a law invariant under negation has mean zero.
 
 No integrability hypothesis is needed. The substitution `t ↦ -t` carries `[-R, R]` to itself, so
 `intervalIntegral.integral_comp_neg` identifies the integral with the integral of `t ↦ g (-t)`;
@@ -23,6 +25,8 @@ to its own negative is zero. In particular the statement is also true (vacuously
 ## Main results
 
 * `intervalIntegral.integral_eq_zero_of_odd` — `∫ t in -R..R, g t = 0` for odd `g`.
+* `MeasureTheory.integral_eq_zero_of_odd` — `∫ x, g x ∂μ = 0` for odd `g` and a measure `μ`
+  invariant under negation.
 -/
 
 public section
@@ -48,5 +52,21 @@ theorem integral_eq_zero_of_odd {E : Type*} [NormedAddCommGroup E] [NormedSpace 
   simpa using htwo
 
 end intervalIntegral
+
+namespace MeasureTheory
+
+/-- **An odd integrand integrates to zero against a measure invariant under negation.** No
+integrability hypothesis is needed: the substitution `x ↦ -x` preserves the measure, so the
+integral equals its own negative. -/
+theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableNeg G]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant] {g : G → E}
+    (hodd : Function.Odd g) : ∫ x, g x ∂μ = 0 := by
+  have hfun : (fun x ↦ g (-x)) = fun x ↦ -g x := funext hodd
+  have h := integral_neg_eq_self g μ
+  rw [hfun, integral_neg] at h
+  rw [neg_eq_iff_add_eq_zero, ← two_smul ℝ] at h
+  exact (smul_eq_zero.1 h).resolve_left two_ne_zero
+
+end MeasureTheory
 
 end

@@ -8,6 +8,9 @@ module
 public import TauCeti.RepresentationTheory.Spin.Polarization.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # The spinor module of a polarized quadratic space
@@ -64,12 +67,18 @@ restriction to `pinGroup Q` and `spinGroup Q`, are in
   `TauCeti.SpinPolarizationData.cliffordOperator_coe_W'` and
   `TauCeti.SpinPolarizationData.cliffordOperator_coe_line`: the operator of a vector of a single
   summand, in terms of the component operator of that summand.
+* `TauCeti.SpinPolarizationData.cliffordOperator_coe_W_mem_evenOdd`,
+  `TauCeti.SpinPolarizationData.cliffordOperator_coe_W'_mem_evenOdd` and
+  `TauCeti.SpinPolarizationData.spinAction_ι_mul_ι_mem_evenOdd`: a vector of `W` or `W'` shifts
+  the exterior parity by one, so a product of two such vectors preserves it.
 * `TauCeti.SpinPolarizationData.contract_wedge`: the only anticommutation relation between the
   component operators that is not zero, and the one carrying the polarization pairing.
 * `TauCeti.SpinPolarizationData.cliffordOperator_sq`: the Clifford relation `c v ∘ c v = Q v • 1`.
 * `TauCeti.spinAction_ι_wedge`, `TauCeti.spinAction_ι_contract` and
   `TauCeti.spinAction_ι_lineOperator`: the three summands act by exterior multiplication,
   contraction, and the parity operator.
+* `TauCeti.SpinPolarizationData.spinAction_map_comp_exteriorAlgebraMap`: naturality of the Fock
+  action along an isometric embedding of an even polarization into another polarization.
 
 ## References
 
@@ -84,7 +93,7 @@ open CliffordAlgebra QuadraticMap
 
 namespace TauCeti
 
-universe u v
+universe u v v₁ v₂
 
 namespace SpinPolarizationData
 
@@ -146,6 +155,20 @@ theorem cliffordOperator_coe_W (x : P.W) : P.cliffordOperator (x : V) = P.wedge 
 theorem cliffordOperator_coe_W' (y : P.W') : P.cliffordOperator (y : V) = P.contract y := by
   simp [cliffordOperator]
 
+/-- Every vector of `W` shifts the exterior parity by one. -/
+theorem cliffordOperator_coe_W_mem_evenOdd (x : P.W) {j : ZMod 2}
+    {s : ExteriorAlgebra K P.W} (hs : s ∈ evenOdd (0 : QuadraticForm K P.W) j) :
+    P.cliffordOperator (x : V) s ∈ evenOdd (0 : QuadraticForm K P.W) (j + 1) := by
+  rw [P.cliffordOperator_coe_W, P.wedge_apply, ← add_comm (1 : ZMod 2) j]
+  exact SetLike.mul_mem_graded (ι_mem_evenOdd_one (0 : QuadraticForm K P.W) x) hs
+
+/-- Every vector of `W'` shifts the exterior parity by one. -/
+theorem cliffordOperator_coe_W'_mem_evenOdd (y : P.W') {j : ZMod 2}
+    {s : ExteriorAlgebra K P.W} (hs : s ∈ evenOdd (0 : QuadraticForm K P.W) j) :
+    P.cliffordOperator (y : V) s ∈ evenOdd (0 : QuadraticForm K P.W) (j + 1) := by
+  rw [P.cliffordOperator_coe_W', P.contract_apply]
+  exact CliffordAlgebra.contractLeft_mem_evenOdd _ hs
+
 /-- On the orthogonal remainder the Clifford operator is the scaled parity operator. -/
 @[simp, grind =]
 theorem cliffordOperator_coe_line (z : P.line) : P.cliffordOperator (z : V) = P.lineOperator z := by
@@ -205,8 +228,9 @@ theorem cliffordOperator_sq (v : V) :
     simp only [map_add, P.cliffordOperator_coe_W, P.cliffordOperator_coe_W',
       P.cliffordOperator_coe_line]
   rw [hc, P.quadraticForm_coe_add_coe_add_coe, ← P.lineCoordinate_sq z]
-  ext s
-  simp only [Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply,
+  apply LinearMap.ext
+  intro s
+  simp only [mul_apply_eq_comp, LinearMap.add_apply, Module.algebraMap_end_apply,
     wedge_apply, contract_apply, lineOperator_apply, map_add, map_smul, mul_add,
     ← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul,
     CliffordAlgebra.contractLeft_ι_mul, CliffordAlgebra.contractLeft_contractLeft,
@@ -258,5 +282,63 @@ theorem spinAction_ι_lineOperator (z : P.line) (s : ExteriorAlgebra K P.W) :
     spinAction Q P (CliffordAlgebra.ι Q z) s =
       P.lineCoordinate z • CliffordAlgebra.involute s := by
   rw [spinAction_ι, P.cliffordOperator_coe_line, P.lineOperator_apply]
+
+namespace SpinPolarizationData
+
+/-- A product of two vectors that each shift the exterior parity by one preserves it. -/
+theorem spinAction_ι_mul_ι_mem_evenOdd {u v : V}
+    (hu : ∀ {j : ZMod 2} {s : ExteriorAlgebra K P.W},
+      s ∈ evenOdd (0 : QuadraticForm K P.W) j →
+        P.cliffordOperator u s ∈ evenOdd (0 : QuadraticForm K P.W) (j + 1))
+    (hv : ∀ {j : ZMod 2} {s : ExteriorAlgebra K P.W},
+      s ∈ evenOdd (0 : QuadraticForm K P.W) j →
+        P.cliffordOperator v s ∈ evenOdd (0 : QuadraticForm K P.W) (j + 1))
+    {j : ZMod 2} {s : ExteriorAlgebra K P.W} (hs : s ∈ evenOdd (0 : QuadraticForm K P.W) j) :
+    spinAction Q P (ι Q u * ι Q v) s ∈ evenOdd (0 : QuadraticForm K P.W) j := by
+  have htwice : ∀ c : ZMod 2, c + 1 + 1 = c := by decide
+  rw [map_mul, mul_apply_eq_comp, spinAction_ι, spinAction_ι, ← htwice j]
+  exact hu (hv hs)
+
+/-! ### Naturality of the Fock action -/
+
+section Fock
+
+variable {K : Type u} [CommRing K] {V₁ : Type v₁} [AddCommGroup V₁] [Module K V₁]
+  {V₂ : Type v₂} [AddCommGroup V₂] [Module K V₂]
+  {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
+  (P₁ : SpinPolarizationData Q₁) (P₂ : SpinPolarizationData Q₂)
+  {f : Q₁ →qᵢ Q₂} {g : P₁.W →ₗ[K] P₂.W}
+
+/-- **The Fock action is natural along an isometric embedding of polarizations.** Let `f` be an
+isometry from the space of an even polarization `P₁` to the space of a polarization `P₂`, acting
+on `P₁.W` through a linear map `g` into `P₂.W` and carrying `P₁.W'` into `P₂.W'`. Then the
+exterior-algebra map induced by `g` intertwines the Fock action of every Clifford element `x` with
+the Fock action of its image under the Clifford algebra map induced by `f`. -/
+theorem spinAction_map_comp_exteriorAlgebraMap (hline : P₁.line = ⊥)
+    (hW : ∀ w : P₁.W, f w = g w) (hW' : ∀ y : P₁.W', f y ∈ P₂.W') (x : CliffordAlgebra Q₁) :
+    spinAction Q₂ P₂ (map f x) ∘ₗ (ExteriorAlgebra.map g).toLinearMap =
+      (ExteriorAlgebra.map g).toLinearMap ∘ₗ spinAction Q₁ P₁ x := by
+  symm
+  refine CliffordAlgebra.comp_eq_map_comp_of_forall_ι (S := K)
+    (ρ₁ := spinAction Q₁ P₁) (ρ₂ := spinAction Q₂ P₂)
+    (U := (ExteriorAlgebra.map g).toLinearMap) (fun v => ?_) x
+  symm
+  obtain ⟨⟨⟨w, y⟩, l⟩, rfl⟩ := P₁.decompositionEquiv.surjective v
+  have hl : (l : V₁) = 0 := by simpa [hline] using l.property
+  -- The isometry `f` transports the polar pairing of `P₁` to that of `P₂`.
+  have hpair : P₂.pairingEquiv ⟨f y, hW' y⟩ ∘ₗ g = P₁.pairingEquiv y :=
+    LinearMap.ext fun x => by
+      rw [LinearMap.comp_apply, P₂.pairingEquiv_apply, P₁.pairingEquiv_apply, ← hW,
+        QuadraticMap.Isometry.polar_apply]
+  have hy : f y = ((⟨f y, hW' y⟩ : P₂.W') : V₂) := (rfl)
+  refine LinearMap.ext fun s => ?_
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    P₁.decompositionEquiv_apply, hl, add_zero, map_add, LinearMap.add_apply, hW]
+  rw [hy, spinAction_ι_wedge, spinAction_ι_contract, spinAction_ι_wedge, spinAction_ι_contract,
+    map_mul, ExteriorAlgebra.map_apply_ι, ExteriorAlgebra.contractLeft_map, hpair]
+
+end Fock
+
+end SpinPolarizationData
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ConstantSpeed
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
+public import TauCeti.Topology.MetricSpace.Arclength.Basic
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 
@@ -17,7 +18,9 @@ Mathlib's `HasConstantSpeedOnWith` specifies the variation on every subinterval.
 identifies that condition with absolute continuity and an almost everywhere constant metric
 derivative. In particular, unit-speed arclength curves have metric derivative one almost
 everywhere, and their difference quotients converge to one there. Singleton intervals and
-speed zero are included.
+speed zero are included. The natural parameterization of a continuous curve of bounded
+variation is absolutely continuous on its length interval
+(`BoundedVariationOn.absolutelyContinuousOnInterval_naturalParameterization`).
 
 For finite-dimensional real normed targets, the norm of the usual derivative equals the
 specified speed almost everywhere. No differentiability of a metric-valued curve is assumed.
@@ -110,6 +113,19 @@ theorem hasConstantSpeedOnWith_iff_absolutelyContinuousOnInterval_metricDerivati
     fun h ↦ h.1.hasConstantSpeedOnWith_of_ae_metricDerivative_eq h.2⟩
 
 end TauCeti
+
+/-- The natural parameterization of a continuous curve of bounded variation on `[a, b]` is
+absolutely continuous on its length interval, because it has unit speed and is therefore
+1-Lipschitz there. -/
+theorem BoundedVariationOn.absolutelyContinuousOnInterval_naturalParameterization {X : Type*}
+    [MetricSpace X] {γ : ℝ → X} (hγ : BoundedVariationOn γ (Icc a b))
+    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
+      (eVariationOn γ (Icc a b)).toReal := by
+  refine LipschitzOnWith.absolutelyContinuousOnInterval (K := 1) ?_
+  rw [uIcc_of_le ENNReal.toReal_nonneg, ← hγ.image_variationOnFromTo_Icc hcont hab]
+  exact HasConstantSpeedOnWith.lipschitzOnWith
+    (has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab))
 
 /-- Along a curve of constant variation speed, the metric difference quotients converge to
 the specified speed at almost every interior time. In particular, unit variation speed gives

@@ -96,7 +96,7 @@ theorem restrict_pi_poissonMeasure_mul_weights (r : ℝ≥0) (p : StdSimplex ℝ
   classical
   apply Measure.ext_of_singleton
   intro k
-  rw [Measure.restrict_apply (measurableSet_singleton k), Measure.smul_apply,
+  rw [Measure.restrict_apply (measurableSet_singleton k), _root_.smul_apply,
     smul_eq_mul, multinomialMeasure_singleton]
   by_cases hk : ∑ i, k i = n
   · rw [ite_eq_left hk, Set.singleton_inter_of_mem (s := {l : ι → ℕ | ∑ i, l i = n}) hk]
@@ -132,10 +132,11 @@ theorem cond_pi_poissonMeasure_mul_weights_of_pos {r : ℝ≥0} (hr : 0 < r)
 /-- Independent Poisson counts, conditioned on their total, are multinomial with normalized
 rate weights. The simplex parameter is specified by its coordinates, so no choice of a
 normalization or of off-domain weights enters the result. -/
-theorem cond_pi_poissonMeasure {r : ι → ℝ≥0} (hr : 0 < ∑ i, r i)
+theorem cond_pi_poissonMeasure {r : ι → ℝ≥0}
     (p : StdSimplex ℝ≥0 ι) (hp : ∀ i, p.weights i = r i / ∑ j, r j) (n : ℕ) :
     cond (Measure.pi (fun i => poissonMeasure (r i))) {k | ∑ i, k i = n} =
       multinomialMeasure n p := by
+  have hr : 0 < ∑ i, r i := pos_of_ne_zero fun h => by simpa [hp, h] using p.sum_coe_weights
   have hrate (i : ι) : (∑ j, r j) * p.weights i = r i := by
     rw [hp i, mul_div_cancel₀ _ hr.ne']
   simpa only [hrate] using cond_pi_poissonMeasure_mul_weights_of_pos hr p n
@@ -145,12 +146,12 @@ law with weights proportional to their rates. -/
 theorem _root_.ProbabilityTheory.iIndepFun.hasLaw_cond_sum_poissonMeasure
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : ι → Ω → ℕ} {r : ι → ℝ≥0}
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (poissonMeasure (r i)) P)
-    (hr : 0 < ∑ i, r i) (p : StdSimplex ℝ≥0 ι)
+    (p : StdSimplex ℝ≥0 ι)
     (hp : ∀ i, p.weights i = r i / ∑ j, r j) (n : ℕ) :
     HasLaw (fun ω i => X i ω) (multinomialMeasure n p)
       (cond P {ω | ∑ i, X i ω = n}) := by
   have h := (hindep.hasLaw_pi hlaw).cond (s := {k | ∑ i, k i = n}) (.of_discrete)
-  rw [cond_pi_poissonMeasure hr p hp n] at h
+  rw [cond_pi_poissonMeasure p hp n] at h
   exact h
 
 /-- If all rates vanish, a positive total is impossible and conditioning on it gives the

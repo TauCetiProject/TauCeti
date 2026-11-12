@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
@@ -23,9 +25,14 @@ variable and applying Tonelli's theorem gives the `Lᵖ → L^q` bound for the i
 
 The statement is in `ℝ≥0∞`, so it needs no integrability hypotheses.
 
+The file also records the weighted Young inequality for a pairing,
+`∫ w ⟪G, η⟫ ≤ (δ / 2) ∫ w ‖η‖² + (2 δ)⁻¹ ∫ w ‖G‖²` for a nonnegative weight `w` and `δ > 0`,
+which absorbs a pairing into a coercive term in energy estimates.
+
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
+* `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 
 ## References
 
@@ -38,30 +45,29 @@ public section
 namespace TauCeti
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 variable {β : Type*} [MeasurableSpace β] {ν : Measure β}
 
 /-- **Hölder's inequality for Young's exponents.** Let `1 ≤ p ≤ q` and let `r` be the exponent with
 `1/p + 1/r = 1 + 1/q`. Then
-`∫⁻ k g ≤ (∫⁻ k ^ r g ^ p) ^ (1/q) (∫⁻ k ^ r) ^ (1 - 1/p) (∫⁻ g ^ p) ^ (1/p - 1/q)`.
-
-This is Hölder's inequality with the three exponents `1/q`, `1 - 1/p` and `1/p - 1/q`, which add
-up to `1`, applied to the factorization
-`k g = (k ^ r g ^ p) ^ (1/q) (k ^ r) ^ (1 - 1/p) (g ^ p) ^ (1/p - 1/q)`. -/
+`∫⁻ k g ≤ (∫⁻ k ^ r g ^ p) ^ (1/q) (∫⁻ k ^ r) ^ (1 - 1/p) (∫⁻ g ^ p) ^ (1/p - 1/q)`. -/
 theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMeasurable k ν)
     (hg : AEMeasurable g ν) {p q r : ℝ} (hp : 1 ≤ p) (hpq : p ≤ q) (hr : p⁻¹ + r⁻¹ = 1 + q⁻¹) :
     ∫⁻ y, k y * g y ∂ν ≤ (∫⁻ y, k y ^ r * g y ^ p ∂ν) ^ q⁻¹ * (∫⁻ y, k y ^ r ∂ν) ^ (1 - p⁻¹) *
       (∫⁻ y, g y ^ p ∂ν) ^ (p⁻¹ - q⁻¹) := by
   have hp0 : 0 < p := by linarith
   have hq0 : 0 < q := by linarith
-  have ha : 0 ≤ q⁻¹ := inv_nonneg.2 hq0.le
+  have ha : 0 ≤ q⁻¹ := by positivity
   have hb : 0 ≤ 1 - p⁻¹ := sub_nonneg.2 (inv_le_one_of_one_le₀ hp)
   have hc : 0 ≤ p⁻¹ - q⁻¹ := sub_nonneg.2 (inv_anti₀ hp0 hpq)
   have hr0 : 0 < r := inv_pos.1 (by linarith [inv_pos.2 hq0])
-  have hkr : r * q⁻¹ + r * (1 - p⁻¹) = 1 := by
-    rw [← mul_add, show q⁻¹ + (1 - p⁻¹) = r⁻¹ by linarith, mul_inv_cancel₀ hr0.ne']
-  have hgp : p * q⁻¹ + p * (p⁻¹ - q⁻¹) = 1 := by field_simp; ring
+  have hr' : q⁻¹ + (1 - p⁻¹) = r⁻¹ := by linarith
+  have hkr : r * (q⁻¹ + (1 - p⁻¹)) = 1 := by rw [hr', mul_inv_cancel₀ hr0.ne']
+  have hgp : p * (q⁻¹ + (p⁻¹ - q⁻¹)) = 1 := by rw [add_sub_cancel, mul_inv_cancel₀ hp0.ne']
+  -- Hölder's inequality with the three exponents `1/q`, `1 - 1/p` and `1/p - 1/q`, which add up
+  -- to `1`, applied to the factorization
+  -- `k g = (k ^ r g ^ p) ^ (1/q) (k ^ r) ^ (1 - 1/p) (g ^ p) ^ (1/p - 1/q)`.
   have h := ENNReal.lintegral_prod_norm_pow_le (μ := ν) Finset.univ
     (f := ![fun y => k y ^ r * g y ^ p, fun y => k y ^ r, fun y => g y ^ p])
     (p := ![q⁻¹, 1 - p⁻¹, p⁻¹ - q⁻¹])
@@ -70,19 +76,50 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
       · exact (hk.pow_const r).mul (hg.pow_const p)
       · exact hk.pow_const r
       · exact hg.pow_const p)
-    (by simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]; ring)
+    (by simp [Fin.sum_univ_three]; ring)
     (fun i _ => by fin_cases i <;> [exact ha; exact hb; exact hc])
-  simp only [Fin.prod_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons] at h
+  simp only [Fin.prod_univ_three, Matrix.cons_val] at h
   refine le_trans (lintegral_mono fun y => le_of_eq ?_) h
+  -- The pointwise factorization: expand the powers, split the exponents of `k y` and `g y`
+  -- with `hkr` and `hgp`, and regroup.
   rw [ENNReal.mul_rpow_of_nonneg _ _ ha, ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
     ← ENNReal.rpow_mul, ← ENNReal.rpow_mul]
-  calc k y * g y = k y ^ (r * q⁻¹ + r * (1 - p⁻¹)) * g y ^ (p * q⁻¹ + p * (p⁻¹ - q⁻¹)) := by
+  calc k y * g y = k y ^ (r * (q⁻¹ + (1 - p⁻¹))) * g y ^ (p * (q⁻¹ + (p⁻¹ - q⁻¹))) := by
         rw [hkr, hgp, ENNReal.rpow_one, ENNReal.rpow_one]
     _ = _ := by
-        rw [ENNReal.rpow_add_of_nonneg _ _ (by positivity) (mul_nonneg hr0.le hb),
-          ENNReal.rpow_add_of_nonneg _ _ (by positivity) (mul_nonneg hp0.le hc)]
+        rw [mul_add, mul_add,
+          ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hr0.le ha) (mul_nonneg hr0.le hb),
+          ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hp0.le ha) (mul_nonneg hp0.le hc)]
         ring
+
+/-- **Weighted Young inequality for a pairing.** For a nonnegative weight `w` and `δ > 0`,
+
+`∫ w ⟪G, η⟫ ≤ (δ / 2) ∫ w ‖η‖² + (2 δ)⁻¹ ∫ w ‖G‖²`,
+
+provided the two integrals on the right exist. -/
+theorem integral_mul_inner_le {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    {w : β → ℝ} {G η : β → F} (hw : ∀ z, 0 ≤ w z)
+    (hη : Integrable (fun z ↦ w z * ‖η z‖ ^ 2) ν) (hG : Integrable (fun z ↦ w z * ‖G z‖ ^ 2) ν)
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∫ z, w z * ⟪G z, η z⟫_ℝ ∂ν ≤
+      δ / 2 * (∫ z, w z * ‖η z‖ ^ 2 ∂ν) + 1 / (2 * δ) * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by
+  have i₁ := hη.const_mul (δ / 2)
+  have i₂ := hG.const_mul (1 / (2 * δ))
+  rw [← integral_const_mul, ← integral_const_mul, ← integral_add i₁ i₂]
+  by_cases hi : Integrable (fun z ↦ w z * ⟪G z, η z⟫_ℝ) ν
+  · refine integral_mono hi (i₁.add i₂) fun z ↦ ?_
+    have h := real_inner_le_norm (G z) (η z)
+    have hq : ‖G z‖ * ‖η z‖ ≤ δ / 2 * ‖η z‖ ^ 2 + 1 / (2 * δ) * ‖G z‖ ^ 2 := by
+      have e : δ / 2 * ‖η z‖ ^ 2 + 1 / (2 * δ) * ‖G z‖ ^ 2 =
+          (δ ^ 2 * ‖η z‖ ^ 2 + ‖G z‖ ^ 2) / (2 * δ) := by
+        field_simp
+      rw [e, le_div_iff₀ (by positivity)]
+      nlinarith [sq_nonneg (δ * ‖η z‖ - ‖G z‖)]
+    have := mul_le_mul_of_nonneg_left (h.trans hq) (hw z)
+    linarith
+  · rw [integral_undef hi]
+    exact integral_nonneg fun z ↦ by
+      have := hw z
+      positivity
 
 end TauCeti

@@ -6,9 +6,11 @@ Authors: William Coram, The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.OrdConnected
+public import TauCeti.Algebra.Order.WithTop.Untop0
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -25,9 +27,12 @@ This file proves supporting-line and chord inequalities, including existence of
 affine minorants through finite heights and separation at infinite heights. It
 recovers heights from an anchor and consecutive increments, and characterises convexity by second
 differences. A sequence is admissible when it has a real affine lower bound,
-which is equivalent to having a convex minorant. Convexity and admissibility are
+which is equivalent to having a convex minorant; a pointwise minimum is admissible exactly when
+both sequences are. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
-and shear, and under translating the indices. These results provide the discrete
+and shear, under scaling the heights by a nonnegative real factor, and under translating the
+indices. Reflecting the indices in `N` preserves
+convexity; it discards the heights beyond `N`. These results provide the discrete
 geometry used to construct lower convex envelopes without any coefficient data.
 
 The supporting-line and chord arguments are adapted from William Coram's
@@ -166,6 +171,22 @@ theorem IsAdmissible.mono {a b : ℕ → WithTop ℝ} (hb : IsAdmissible b) (hba
   let ⟨c, m, hcm⟩ := hb
   ⟨c, m, fun n => (hcm n).trans (hba n)⟩
 
+/-- The pointwise minimum of two admissible sequences is admissible: on `ℕ`, the smaller
+intercept and the smaller slope give a common real affine lower bound. -/
+theorem IsAdmissible.inf {a b : ℕ → WithTop ℝ} (ha : IsAdmissible a) (hb : IsAdmissible b) :
+    IsAdmissible (a ⊓ b) := by
+  obtain ⟨c, m, hcm⟩ := ha
+  obtain ⟨d, k, hdk⟩ := hb
+  refine ⟨min c d, min m k, fun n => le_inf ((WithTop.coe_le_coe.mpr ?_).trans (hcm n))
+    ((WithTop.coe_le_coe.mpr ?_).trans (hdk n))⟩ <;> gcongr
+  exacts [min_le_left _ _, min_le_left _ _, min_le_right _ _, min_le_right _ _]
+
+/-- A pointwise minimum is admissible exactly when both sequences are. -/
+@[simp]
+theorem isAdmissible_inf_iff {a b : ℕ → WithTop ℝ} :
+    IsAdmissible (a ⊓ b) ↔ IsAdmissible a ∧ IsAdmissible b :=
+  ⟨fun h => ⟨h.mono inf_le_left, h.mono inf_le_right⟩, fun h => h.1.inf h.2⟩
+
 /-- A sequence whose heights are infinite after some index is admissible: a constant below
 its finitely many finite heights bounds it from below. -/
 theorem isAdmissible_of_forall_gt {a : ℕ → WithTop ℝ} {p : ℕ} (hp : ∀ n, p < n → a n = ⊤) :
@@ -190,11 +211,16 @@ theorem ne_top_of_le_of_le {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
     (hij : i ≤ j) (hjk : j ≤ k) : h j ≠ ⊤ :=
   hh.ordConnected.out hi hk ⟨hij, hjk⟩
 
-/-- Every later secant is bounded below by the slope of a finite edge that
-precedes it. The length-zero case is included. -/
-theorem mul_slope_le_sub {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
-    (hm : h m ≠ ⊤) (hm' : h (m + 1) ≠ ⊤) (hij : i ≤ j) (hmi : m ≤ i) :
+/-- Every later secant is bounded below by the slope of an edge `m, m + 1` that precedes it.
+Finiteness at `i` follows from that at `m` and `j`, and the edge is finite when `i < j`. For
+`i = j` the inequality is the trivial `0 ≤ 0`, with no finiteness of `h (m + 1)` needed. -/
+theorem mul_slope_le_sub {i j m : ℕ} (hj : h j ≠ ⊤)
+    (hm : h m ≠ ⊤) (hij : i ≤ j) (hmi : m ≤ i) :
     ((j - i : ℕ) : ℝ) * unitSlope h m ≤ (h j).untop₀ - (h i).untop₀ := by
+  have hi : h i ≠ ⊤ := hh.ne_top_of_le_of_le hm hj hmi hij
+  rcases hij.eq_or_lt with rfl | hlt
+  · simp
+  have hm' : h (m + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hm hj (Nat.le_succ m) (by omega)
   have hs : ∑ _n ∈ Ico i j, unitSlope h m ≤ ∑ n ∈ Ico i j, unitSlope h n := by
     apply sum_le_sum
     intro n hn
@@ -203,24 +229,30 @@ theorem mul_slope_le_sub {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
       ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
         hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ (hmi.trans hin)
   simp only [unitSlope] at hs
-  rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
+  rw [sum_Ico_sub (fun n => (h n).untop₀) hlt.le] at hs
   simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
 
-/-- Every earlier secant is bounded above by the slope of a finite edge that
-follows its last edge. The length-zero case is included. -/
-theorem sub_le_mul_slope {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
-    (hm : h m ≠ ⊤) (hm' : h (m + 1) ≠ ⊤) (hij : i ≤ j) (hjm : j ≤ m + 1) :
+/-- Every earlier secant is bounded above by the slope of an edge `m, m + 1` that follows its
+last edge. The edge is finite when `i < j`, and for `i = j` the inequality is the trivial
+`0 ≤ 0`. -/
+theorem sub_le_mul_slope {i j m : ℕ} (hi : h i ≠ ⊤) (hm' : h (m + 1) ≠ ⊤)
+    (hij : i ≤ j) (hjm : j ≤ m + 1) :
     (h j).untop₀ - (h i).untop₀ ≤ ((j - i : ℕ) : ℝ) * unitSlope h m := by
-  have hs : ∑ n ∈ Ico i j, unitSlope h n ≤ ∑ _n ∈ Ico i j, unitSlope h m := by
-    apply sum_le_sum
-    intro n hn
-    obtain ⟨hin, hnj⟩ := mem_Ico.mp hn
-    exact hh.monotoneOn
-      ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
-        hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ ⟨hm, hm'⟩ (by omega)
-  simp only [unitSlope] at hs
-  rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
-  simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
+  have hj : h j ≠ ⊤ := hh.ne_top_of_le_of_le hi hm' hij hjm
+  rcases le_or_gt i m with him | hmi
+  · have hm : h m ≠ ⊤ := hh.ne_top_of_le_of_le hi hm' him (Nat.le_succ m)
+    have hs : ∑ n ∈ Ico i j, unitSlope h n ≤ ∑ _n ∈ Ico i j, unitSlope h m := by
+      apply sum_le_sum
+      intro n hn
+      obtain ⟨hin, hnj⟩ := mem_Ico.mp hn
+      exact hh.monotoneOn
+        ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
+          hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ ⟨hm, hm'⟩ (by omega)
+    simp only [unitSlope] at hs
+    rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
+    simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
+  · obtain rfl : i = j := by omega
+    simp
 
 /-- The affine line through a finite edge lies below the entire height sequence,
 including indices outside its finite domain. -/
@@ -230,10 +262,10 @@ theorem supportingLine_le {n : ℕ} (hn : h n ≠ ⊤) (hn' : h (n + 1) ≠ ⊤)
   · simp [hk]
   · rw [← WithTop.coe_untop₀_of_ne_top hk, WithTop.coe_le_coe]
     rcases le_total n k with hnk | hkn
-    · have hs := hh.mul_slope_le_sub hn hk hn hn' hnk le_rfl
+    · have hs := hh.mul_slope_le_sub hk hn hnk le_rfl
       rw [Nat.cast_sub hnk] at hs
       linarith
-    · have hs := hh.sub_le_mul_slope hk hn hn hn' hkn (Nat.le_succ n)
+    · have hs := hh.sub_le_mul_slope hk hn' hkn (Nat.le_succ n)
       rw [Nat.cast_sub hkn] at hs
       nlinarith
 
@@ -248,8 +280,8 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
   · ring_nf
     exact le_rfl
   have hj' : h (j + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hi hk (by omega) hjk'
-  have hleft := hh.sub_le_mul_slope hi hj hj hj' hij (Nat.le_succ j)
-  have hright := hh.mul_slope_le_sub hj hk hj hj' hjk le_rfl
+  have hleft := hh.sub_le_mul_slope hi hj' hij (Nat.le_succ j)
+  have hright := hh.mul_slope_le_sub hk hj hjk le_rfl
   rw [Nat.cast_sub hij] at hleft
   rw [Nat.cast_sub hjk] at hright
   have hleft' := mul_le_mul_of_nonneg_left hleft
@@ -257,6 +289,26 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
   have hright' := mul_le_mul_of_nonneg_left hright
     (sub_nonneg.mpr (Nat.cast_le.mpr hij) : (0 : ℝ) ≤ j - i)
   nlinarith
+
+/-- If a convex height sequence passes through two points of a real affine line, then at
+every intermediate index where it lies on or above that line it lies on the line. -/
+theorem eq_affine_of_affine_le {i j k : ℕ} {c m : ℝ} (hi : h i = ((c + m * i : ℝ) : WithTop ℝ))
+    (hk : h k = ((c + m * k : ℝ) : WithTop ℝ)) (hij : i ≤ j) (hjk : j ≤ k)
+    (hj : ((c + m * j : ℝ) : WithTop ℝ) ≤ h j) : h j = ((c + m * j : ℝ) : WithTop ℝ) := by
+  have hi' : h i ≠ ⊤ := hi ▸ WithTop.coe_ne_top
+  have hk' : h k ≠ ⊤ := hk ▸ WithTop.coe_ne_top
+  have hj' := hh.ne_top_of_le_of_le hi' hk' hij hjk
+  rw [← WithTop.coe_untop₀_of_ne_top hj'] at hj ⊢
+  rw [WithTop.coe_le_coe] at hj
+  rw [WithTop.coe_eq_coe]
+  rcases eq_or_lt_of_le (hij.trans hjk) with hik | hik
+  · obtain rfl : j = i := le_antisymm (hik ▸ hjk) hij
+    rw [hi, WithTop.untop₀_coe]
+  have hc := hh.chord_inequality hi' hk' hij hjk
+  rw [hi, hk, WithTop.untop₀_coe, WithTop.untop₀_coe] at hc
+  have hik' : (0 : ℝ) < k - i := sub_pos.mpr (Nat.cast_lt.mpr hik)
+  refine le_antisymm (le_of_mul_le_mul_left ?_ hik') hj
+  linarith
 
 /-- Moving two indices one step towards each other does not increase the sum of their
 heights: for `i ≤ k`, the inner pair `i + 1, k + 1` has sum at most that of the outer pair
@@ -420,6 +472,104 @@ theorem update_of_le {n : ℕ} {y : ℝ}
 
 end IsConvexSeq
 
+/-- Splice two convex sequences where their heights agree, taking the prefix from the
+sequence lying higher on that prefix. This comparison ensures convexity across the join;
+no finiteness assumption on the joining height is needed. -/
+theorem IsConvexSeq.ite_le_of_le_of_eq {g h : ℕ → WithTop ℝ}
+    (hg : IsConvexSeq g) (hh : IsConvexSeq h) {p : ℕ} (hle : ∀ n ≤ p, h n ≤ g n)
+    (heq : g p = h p) : IsConvexSeq (fun n => if n ≤ p then g n else h n) := by
+  have hfinite {n : ℕ} (hn : (if n ≤ p then g n else h n) ≠ ⊤) : h n ≠ ⊤ := by
+    split_ifs at hn with hnp
+    · exact ne_top_of_le_ne_top hn (hle n hnp)
+    · exact hn
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi k hk j hj => ?_⟩, fun n hn hn₂ => ?_⟩
+  · simp only [Set.mem_ofPred_eq] at hi hk ⊢
+    by_cases hjp : j ≤ p
+    · rw [ite_eq_left hjp]
+      have hip : i ≤ p := hj.1.trans hjp
+      rw [ite_eq_left hip] at hi
+      by_cases hkp : k ≤ p
+      · rw [ite_eq_left hkp] at hk
+        exact hg.ne_top_of_le_of_le hi hk hj.1 hj.2
+      · have hp : g p ≠ ⊤ := by
+          rw [heq]
+          exact hh.ne_top_of_le_of_le (ne_top_of_le_ne_top hi (hle i hip)) (hfinite hk)
+            hip (by omega)
+        exact hg.ne_top_of_le_of_le hi hp hj.1 hjp
+    · rw [ite_eq_right hjp]
+      exact hh.ne_top_of_le_of_le (hfinite hi) (hfinite hk) hj.1 hj.2
+  · by_cases hnp : n + 2 ≤ p
+    · simpa only [ite_eq_left (by omega : n ≤ p),
+        ite_eq_left (by omega : n + 1 ≤ p), ite_eq_left hnp] using
+        (isConvexSeq_iff_two_mul_le.mp hg).2 n
+          (by simpa only [ite_eq_left (by omega : n ≤ p)] using hn)
+          (by simpa only [ite_eq_left hnp] using hn₂)
+    · by_cases hpn : p ≤ n
+      · have hsame (k : ℕ) (hk : p ≤ k) : (if k ≤ p then g k else h k) = h k := by
+          rcases eq_or_lt_of_le hk with rfl | hk
+          · simp [heq]
+          · simp [not_le.mpr hk]
+        simpa only [hsame n hpn, hsame (n + 1) (by omega), hsame (n + 2) (by omega)] using
+          (isConvexSeq_iff_two_mul_le.mp hh).2 n (hfinite hn) (hfinite hn₂)
+      · have hmid : n + 1 = p := by omega
+        have hnf : g n ≠ ⊤ := by simpa [(by omega : n ≤ p)] using hn
+        have hnh : h n ≠ ⊤ := hfinite hn
+        have hcomp := WithTop.untop₀_le_untop₀ hnf (hle n (by omega))
+        have hconv := (isConvexSeq_iff_two_mul_le.mp hh).2 n hnh (hfinite hn₂)
+        simp only [ite_eq_left (by omega : n ≤ p), ite_eq_right hnp, hmid, heq,
+          ite_self]
+        rw [hmid] at hconv
+        linarith
+
+/-- Splice two convex sequences where their heights agree, taking the suffix from the
+sequence lying higher on that suffix. The comparison preserves convexity across the join,
+including when the joining height is infinite. -/
+theorem IsConvexSeq.ite_le_of_le_of_eq_right {g h : ℕ → WithTop ℝ}
+    (hh : IsConvexSeq h) (hg : IsConvexSeq g) {p : ℕ}
+    (hle : ∀ n, p ≤ n → h n ≤ g n) (heq : h p = g p) :
+    IsConvexSeq (fun n => if n ≤ p then h n else g n) := by
+  have hfinite {n : ℕ} (hn : (if n ≤ p then h n else g n) ≠ ⊤) : h n ≠ ⊤ := by
+    split_ifs at hn with hnp
+    · exact hn
+    · exact ne_top_of_le_ne_top hn (hle n (by omega))
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi k hk j hj => ?_⟩, fun n hn hn₂ => ?_⟩
+  · simp only [Set.mem_ofPred_eq] at hi hk ⊢
+    obtain ⟨hij, hjk⟩ := hj
+    by_cases hjp : j ≤ p
+    · rw [ite_eq_left hjp]
+      exact hh.ne_top_of_le_of_le (hfinite hi) (hfinite hk) hij hjk
+    · rw [ite_eq_right hjp]
+      have hkfin := hfinite hk
+      have hkp : ¬ k ≤ p := by omega
+      rw [ite_eq_right hkp] at hk
+      by_cases hip : i ≤ p
+      · have hp : g p ≠ ⊤ := by
+          rw [← heq]
+          exact hh.ne_top_of_le_of_le (hfinite hi) hkfin hip (by omega)
+        exact hg.ne_top_of_le_of_le hp hk (by omega) hjk
+      · rw [ite_eq_right hip] at hi
+        exact hg.ne_top_of_le_of_le hi hk hij hjk
+  · by_cases hnp : n + 2 ≤ p
+    · simpa only [ite_eq_left (by omega : n ≤ p),
+        ite_eq_left (by omega : n + 1 ≤ p), ite_eq_left hnp] using
+        (isConvexSeq_iff_two_mul_le.mp hh).2 n (hfinite hn) (hfinite hn₂)
+    · by_cases hpn : p ≤ n
+      · have hsame (k : ℕ) (hk : p ≤ k) : (if k ≤ p then h k else g k) = g k := by
+          rcases eq_or_lt_of_le hk with rfl | hk
+          · simp [heq]
+          · simp [not_le.mpr hk]
+        rw [hsame n hpn] at hn
+        rw [hsame (n + 2) (by omega)] at hn₂
+        simpa only [hsame n hpn, hsame (n + 1) (by omega), hsame (n + 2) (by omega)] using
+          (isConvexSeq_iff_two_mul_le.mp hg).2 n hn hn₂
+      · have hmid : n + 1 = p := by omega
+        have hng : g (n + 2) ≠ ⊤ := by simpa only [ite_eq_right hnp] using hn₂
+        have hcomp := WithTop.untop₀_le_untop₀ hng (hle (n + 2) (by omega))
+        have hconv := (isConvexSeq_iff_two_mul_le.mp hh).2 n (hfinite hn) (hfinite hn₂)
+        simp only [ite_eq_left (by omega : n ≤ p), ite_eq_right hnp, hmid, le_refl, ite_true]
+        rw [hmid] at hconv
+        linarith
+
 /-- A height sequence admits a convex minorant exactly when it is admissible, that
 is, when it admits a real affine lower bound. No nonempty-support hypothesis is
 needed. -/
@@ -430,6 +580,51 @@ theorem exists_convexSeq_le_iff {a : ℕ → WithTop ℝ} :
     exact hh.isAdmissible.mono hha
   · rintro ⟨c, m, hcm⟩
     exact ⟨_, isConvexSeq_affine c m, hcm⟩
+
+/-! ### Changes of height scale -/
+
+section HeightScale
+
+variable {h : ℕ → WithTop ℝ} (e : ℝ ≃+o ℝ)
+
+/-- Changing the height scale leaves the finite unit edges unchanged. -/
+@[simp]
+theorem finiteEdges_map (f : ℝ → ℝ) :
+    finiteEdges (fun n => WithTop.map f (h n)) = finiteEdges h := by
+  ext n
+  simp
+
+/-- Unit increments transform additively with the height scale. This also respects
+the zero default at infinite heights; only finite edges represent geometric slopes. -/
+@[simp]
+theorem unitSlope_map {F : Type*} [FunLike F ℝ ℝ] [AddMonoidHomClass F ℝ ℝ]
+    (f : F) (n : ℕ) :
+    unitSlope (fun n => WithTop.map f (h n)) n = f (unitSlope h n) := by
+  simp only [unitSlope_def, map_sub]
+  generalize h n = x, h (n + 1) = y
+  induction x using WithTop.recTopCoe <;>
+    induction y using WithTop.recTopCoe <;> simp
+
+/-- An ordered additive change of height scale preserves convexity. -/
+theorem IsConvexSeq.map (hh : IsConvexSeq h) {F : Type*} [FunLike F ℝ ℝ]
+    [AddMonoidHomClass F ℝ ℝ] [OrderHomClass F ℝ ℝ] (f : F) :
+    IsConvexSeq (fun n => WithTop.map f (h n)) := by
+  refine ⟨?_, ?_⟩
+  · simpa only [ne_eq, WithTop.map_eq_top_iff] using hh.ordConnected
+  · intro i hi j hj hij
+    rw [finiteEdges_map] at hi hj
+    simp only [unitSlope_map]
+    exact OrderHomClass.mono f (hh.monotoneOn hi hj hij)
+
+/-- An ordered additive change of height scale preserves and reflects convexity. -/
+@[simp]
+theorem isConvexSeq_map_iff :
+    IsConvexSeq (fun n => WithTop.map e (h n)) ↔ IsConvexSeq h := by
+  refine ⟨fun hh => ?_, fun hh => hh.map e⟩
+  have hinv : e.symm ∘ e = id := funext e.symm_apply_apply
+  simpa only [WithTop.map_map, hinv, WithTop.map_id, id_eq] using hh.map e.symm
+
+end HeightScale
 
 /-! ### Affine covariance -/
 
@@ -503,6 +698,32 @@ theorem unitSlope_add_affine {h : ℕ → WithTop ℝ} {n : ℕ} (hn : n ∈ fin
   ring
 
 
+/-! ### Scaling of heights -/
+
+/-- Scaling the heights by a nonnegative real factor preserves convexity. -/
+theorem IsConvexSeq.map_mul {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) {c : ℝ} (hc : 0 ≤ c) :
+    IsConvexSeq fun n => (h n).map (c * ·) := by
+  obtain ⟨hD, hmid⟩ := isConvexSeq_iff_two_mul_le.mp hh
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨by simpa only [ne_eq, WithTop.map_eq_top_iff] using hD,
+    fun n hn hn₂ => ?_⟩
+  simp only [ne_eq, WithTop.map_eq_top_iff] at hn hn₂
+  simp only [WithTop.untop₀_map_mul]
+  nlinarith [hmid n hn hn₂]
+
+/-- Scaling the heights by a nonnegative real factor preserves admissibility. -/
+theorem IsAdmissible.map_mul {a : ℕ → WithTop ℝ} (ha : IsAdmissible a) {c : ℝ} (hc : 0 ≤ c) :
+    IsAdmissible fun n => (a n).map (c * ·) := by
+  obtain ⟨c₀, m₀, hcm⟩ := ha
+  refine ⟨c * c₀, c * m₀, fun n => ?_⟩
+  have hn := hcm n
+  dsimp only
+  cases h : a n with
+  | top => simp
+  | coe x =>
+    rw [h, WithTop.coe_le_coe] at hn
+    simp only [WithTop.map_coe, WithTop.coe_le_coe]
+    nlinarith
+
 /-! ### Translation of indices -/
 
 /-- Dropping the first `k` heights preserves convexity. -/
@@ -570,5 +791,57 @@ moves every unit slope `k` places to the right. -/
 theorem unitSlope_shift (h : ℕ → WithTop ℝ) (k n : ℕ) :
     unitSlope (fun n => if k ≤ n then h (n - k) else ⊤) (n + k) = unitSlope h n := by
   simp [unitSlope_def, show k ≤ n + k + 1 by omega, show n + k + 1 - k = n + 1 by omega]
+
+/-! ### Reflection of indices -/
+
+/-- Reflecting heights in `N`, with infinite heights beyond `N`, preserves convexity. The heights
+of `h` beyond `N` are discarded. -/
+theorem IsConvexSeq.reflect {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) (N : ℕ) :
+    IsConvexSeq fun n => if n ≤ N then h (N - n) else ⊤ := by
+  have hmem {n : ℕ} : (if n ≤ N then h (N - n) else ⊤) ≠ ⊤ ↔ n ≤ N ∧ h (N - n) ≠ ⊤ := by
+    split_ifs with hn <;> simp [hn]
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi j hj l hl => ?_⟩, fun n hn hn₂ => ?_⟩
+  · obtain ⟨-, hi⟩ := hmem.mp hi
+    obtain ⟨hjN, hj⟩ := hmem.mp hj
+    exact hmem.mpr ⟨hl.2.trans hjN,
+      hh.ne_top_of_le_of_le hj hi (by have := hl.2; omega) (by have := hl.1; omega)⟩
+  · obtain ⟨-, hn⟩ := hmem.mp hn
+    obtain ⟨hn₂N, hn₂⟩ := hmem.mp hn₂
+    have e₀ : N - n = N - (n + 2) + 2 := by omega
+    have e₁ : N - (n + 1) = N - (n + 2) + 1 := by omega
+    rw [e₀] at hn
+    have key := (isConvexSeq_iff_two_mul_le.mp hh).2 (N - (n + 2)) hn₂ hn
+    simp only [show n ≤ N by omega, show n + 1 ≤ N by omega, hn₂N, ite_true, e₀, e₁]
+    linarith
+
+/-- Reflecting heights in `N`, when they are infinite beyond `N`, reverses the finite unit
+edges: the edge `[m, m + 1]` moves to `[N - 1 - m, N - m]`. -/
+theorem finiteEdges_reflect {h : ℕ → WithTop ℝ} {N : ℕ} (hh : ∀ n, N < n → h n = ⊤) :
+    finiteEdges (fun n => if n ≤ N then h (N - n) else ⊤) = (N - 1 - ·) '' finiteEdges h := by
+  ext n
+  simp only [mem_finiteEdges, Set.mem_image]
+  constructor
+  · rintro ⟨h₀, h₁⟩
+    have hn : n + 1 ≤ N := by
+      by_contra hn
+      simp [hn] at h₁
+    refine ⟨N - 1 - n, ⟨?_, ?_⟩, by omega⟩
+    · simpa [hn, show N - (n + 1) = N - 1 - n by omega] using h₁
+    · simpa [show n ≤ N by omega, show N - 1 - n + 1 = N - n by omega] using h₀
+  · rintro ⟨m, ⟨h₀, h₁⟩, rfl⟩
+    have hm : m + 1 ≤ N := by
+      by_contra hm
+      exact h₁ (hh _ (by omega))
+    simp only [show N - 1 - m ≤ N by omega, show N - 1 - m + 1 ≤ N by omega, ite_true,
+      show N - (N - 1 - m) = m + 1 by omega, show N - (N - 1 - m + 1) = m by omega]
+    exact ⟨h₁, h₀⟩
+
+/-- Reflecting heights in `N` negates the unit slopes and reverses their order. -/
+@[simp]
+theorem unitSlope_reflect (h : ℕ → WithTop ℝ) {N n : ℕ} (hn : n < N) :
+    unitSlope (fun n => if n ≤ N then h (N - n) else ⊤) n = -unitSlope h (N - 1 - n) := by
+  simp only [unitSlope_def, show n + 1 ≤ N by omega, show n ≤ N by omega, ite_true,
+    show N - (n + 1) = N - 1 - n by omega, show N - n = N - 1 - n + 1 by omega]
+  ring
 
 end TauCeti

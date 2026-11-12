@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.FieldTheory.FunctionField.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 
 /-!
 # The function field of an integral scheme of finite type over a field
@@ -71,12 +72,8 @@ private lemma exists_finiteType_isFractionRing_functionField :
   let φ : k →+* Γ(X, U) :=
     ((X ↘ Spec (.of k)).appLE ⊤ U le_top).hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom
   let _ : Algebra k Γ(X, U) := φ.toAlgebra
-  have hft : Algebra.FiniteType k Γ(X, U) := by
-    refine RingHom.FiniteType.comp
-      (HasRingHomProperty.appLE @LocallyOfFiniteType (X ↘ Spec (.of k)) inferInstance
-        ⟨⊤, isAffineOpen_top _⟩ ⟨U, hU⟩ le_top) ?_
-    exact RingHom.FiniteType.of_surjective _
-      (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective
+  have hft : Algebra.FiniteType k Γ(X, U) :=
+    (X ↘ Spec (.of k)).finiteType_ΓSpecIso_inv_comp_appLE hU
   have htower : IsScalarTower k Γ(X, U) X.functionField :=
     .of_algebraMap_eq' (Scheme.baseRingToFunctionField_eq_comp_appLE k X U)
   refine ⟨Γ(X, U), inferInstance, inferInstance, inferInstance, inferInstance, htower, hft,
@@ -101,11 +98,7 @@ instance essFiniteType_functionField : Algebra.EssFiniteType k X.functionField :
 theorem topologicalKrullDim_eq_toNat_trdeg_functionField :
     topologicalKrullDim X = (Algebra.trdeg k X.functionField).toNat := by
   obtain ⟨A, _, _, _, _, _, _, _, hdim⟩ := exists_finiteType_isFractionRing_functionField k (X := X)
-  have : FaithfulSMul A X.functionField :=
-    (faithfulSMul_iff_algebraMap_injective _ _).2 (IsFractionRing.injective A _)
-  have := IsLocalization.isAlgebraic X.functionField (nonZeroDivisors A)
-  rw [hdim, ringKrullDim_eq_toNat_trdeg k A, ← trdeg_add_eq k A (A := X.functionField),
-    trdeg_eq_zero (R := A), add_zero]
+  rw [hdim, ringKrullDim_eq_toNat_trdeg_of_isFractionRing k A X.functionField]
 
 /-- **Curves have algebraic function fields.** An integral scheme locally of finite type over a
 field `k` has dimension one exactly when its function field is an algebraic function field of one

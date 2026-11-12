@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Squares
-public import TauCeti.LinearAlgebra.Dimension.Sup
+public import TauCeti.LinearAlgebra.Dimension.Submodule
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.InvariantForm
@@ -268,10 +268,10 @@ omit [Finite G] in
 private theorem finrank_symmetricInvariantForms_add_le (ρ : Representation k G V) :
     finrank k (symmetricInvariantForms ρ) + finrank k (alternatingInvariantForms ρ)
       ≤ finrank k (invariantForms ρ) :=
-  finrank_add_finrank_le_of_inf_eq_bot (K := k) (W := BilinForm k V) (symmetricInvariantForms_le ρ)
-    (alternatingInvariantForms_le ρ)
-    (symmetricInvariantForms_inf_alternatingInvariantForms
+  Submodule.finrank_add_finrank_le_of_disjoint_of_le (𝕜 := k) (E := BilinForm k V)
+    (disjoint_iff.mpr <| symmetricInvariantForms_inf_alternatingInvariantForms
       (IsRegular.of_ne_zero (two_ne_zero (α := k))).left ρ)
+    (symmetricInvariantForms_le ρ) (alternatingInvariantForms_le ρ)
 
 /- The two counts are squeezed together: each of the two injections gives one inequality, and the
 two subspaces meeting only in `0` inside a space of the total dimension gives the third, which
@@ -402,7 +402,7 @@ algebraically closed field of characteristic zero takes only the values `1`, `0`
 theorem frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one :
     frobeniusSchurIndicator ρ = 1 ∨ frobeniusSchurIndicator ρ = 0 ∨
       frobeniusSchurIndicator ρ = -1 := by
-  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ (by norm_num) with
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨_, hB, hB0, hsymm⟩ | ⟨_, hB, hB0, halt⟩ | hbot
   · exact Or.inl (frobeniusSchurIndicator_eq_one_of_isSymm ρ hB hB0 hsymm)
   · exact Or.inr (Or.inr (frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hB hB0 halt))
@@ -416,7 +416,7 @@ theorem frobeniusSchurIndicator_eq_one_iff :
       ∃ B : BilinForm k V, IsInvariantForm ρ B ∧ B.IsSymm ∧ B.Nondegenerate := by
   refine ⟨fun h => ?_, fun ⟨_, hB, hsymm, hnd⟩ =>
     frobeniusSchurIndicator_eq_one_of_isSymm ρ hB (hB.nondegenerate_iff_ne_zero.mp hnd) hsymm⟩
-  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ (by norm_num) with
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨C, hC, hC0, hsymm⟩ | ⟨_, hB, hB0, halt⟩ | hbot
   · exact ⟨C, hC, hsymm, hC.nondegenerate hC0⟩
   · rw [frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hB hB0 halt] at h
@@ -432,7 +432,7 @@ theorem frobeniusSchurIndicator_eq_neg_one_iff :
       ∃ B : BilinForm k V, IsInvariantForm ρ B ∧ B.IsAlt ∧ B.Nondegenerate := by
   refine ⟨fun h => ?_, fun ⟨_, hB, halt, hnd⟩ =>
     frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hB (hB.nondegenerate_iff_ne_zero.mp hnd) halt⟩
-  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ (by norm_num) with
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨_, hB, hB0, hsymm⟩ | ⟨C, hC, hC0, halt⟩ | hbot
   · rw [frobeniusSchurIndicator_eq_one_of_isSymm ρ hB hB0 hsymm] at h
     exact absurd h (by norm_num)
@@ -445,7 +445,7 @@ carries no nonzero invariant bilinear form at all. -/
 theorem frobeniusSchurIndicator_eq_zero_iff :
     frobeniusSchurIndicator ρ = 0 ↔ invariantForms ρ = ⊥ := by
   refine ⟨fun h => ?_, frobeniusSchurIndicator_eq_zero_of_invariantForms_eq_bot ρ⟩
-  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ (by norm_num) with
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨_, hB, hB0, hsymm⟩ | ⟨_, hB, hB0, halt⟩ | hbot
   · rw [frobeniusSchurIndicator_eq_one_of_isSymm ρ hB hB0 hsymm] at h
     exact absurd h one_ne_zero

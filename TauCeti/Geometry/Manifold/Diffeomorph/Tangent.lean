@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
-public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Basic
 
 /-!
 # Tangent lifts of diffeomorphisms
@@ -23,13 +22,14 @@ The underlying function is Mathlib's `tangentMap`; no parallel tangent-map API i
 ## Main definitions and results
 
 * `Diffeomorph.tangent`: the tangent lift of a smooth diffeomorphism.
+* `Diffeomorph.tangentHomeomorph`: the tangent map of a `C^n` diffeomorphism, `n ≥ 1`, as a
+  homeomorphism of tangent bundles.
 * `Diffeomorph.tangent_symm`: taking a tangent lift commutes with inversion.
+* `Diffeomorph.tangent_symm_mk`: the inverse tangent lift acts on fibres by `(dh_x)⁻¹`.
 * `Diffeomorph.tangent_refl`: the tangent lift of the identity is the identity.
 * `Diffeomorph.tangent_trans`: taking a tangent lift commutes with composition.
 * `Diffeomorph.tangent_curveVelocityLift`: tangent lifts carry the velocity lift of a
   differentiable curve to the velocity lift of its image.
-* `Diffeomorph.differentiableWithinAt_sectionCoord_mfderiv`: differentials of diffeomorphisms
-  preserve differentiability of tangent fields along curves in local bundle coordinates.
 -/
 
 public section
@@ -79,6 +79,12 @@ theorem tangent_symm (h : M ≃ₘ⟮I, J⟯ N) :
     h.tangent.symm = h.symm.tangent :=
   Diffeomorph.ext fun _ ↦ rfl
 
+/-- The inverse tangent lift sends `(h x, w)` to `(x, (dh_x)⁻¹ w)`. -/
+theorem tangent_symm_mk (h : M ≃ₘ⟮I, J⟯ N) (x : M) (w : TangentSpace J (h x)) :
+    h.tangent.symm (TotalSpace.mk' F (h x) w) =
+      TotalSpace.mk' E x ((mfderiv I J h x).inverse w) := by
+  simpa only [tangent_symm, coe_tangent] using h.tangentMap_symm_mk (by simp) x w
+
 /-- The tangent lift of the identity diffeomorphism is the identity diffeomorphism of the tangent
 bundle. -/
 @[simp]
@@ -99,6 +105,30 @@ theorem tangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
     tangentMap_comp_at z ((g.mdifferentiable (by simp)) (h z.1))
       ((h.mdifferentiable (by simp)) z.1)
 
+/-- The tangent map of a `C^n` diffeomorphism, `n ≥ 1`, as a homeomorphism of tangent bundles.
+Its value at `(x, v)` is `(h x, mfderiv I J h x v)`, and its inverse is the tangent map of
+`h.symm`. For smooth diffeomorphisms, `Diffeomorph.tangent` upgrades it to a diffeomorphism. -/
+def tangentHomeomorph {n : WithTop ℕ∞} (h : M ≃ₘ^n⟮I, J⟯ N) (hn : 1 ≤ n) :
+    TangentBundle I M ≃ₜ TangentBundle J N where
+  toFun := tangentMap I J h
+  invFun := tangentMap J I h.symm
+  left_inv := h.tangentMap_symm_apply (zero_lt_one.trans_le hn).ne'
+  right_inv := h.tangentMap_apply_symm (zero_lt_one.trans_le hn).ne'
+  continuous_toFun := h.contMDiff.continuous_tangentMap hn
+  continuous_invFun := h.symm.contMDiff.continuous_tangentMap hn
+
+/-- The underlying function of `Diffeomorph.tangentHomeomorph` is Mathlib's `tangentMap`. -/
+@[simp]
+theorem coe_tangentHomeomorph {n : WithTop ℕ∞} (h : M ≃ₘ^n⟮I, J⟯ N) (hn : 1 ≤ n) :
+    ⇑(h.tangentHomeomorph hn) = tangentMap I J h :=
+  (rfl)
+
+/-- The inverse of `Diffeomorph.tangentHomeomorph` is the tangent map of the inverse. -/
+@[simp]
+theorem coe_tangentHomeomorph_symm {n : WithTop ℕ∞} (h : M ≃ₘ^n⟮I, J⟯ N) (hn : 1 ≤ n) :
+    ⇑(h.tangentHomeomorph hn).symm = tangentMap J I h.symm :=
+  (rfl)
+
 /-- A tangent lift carries the velocity lift of a differentiable curve to the velocity lift of
 the image curve. This is the bundled tangent-map form of the chain rule. -/
 theorem tangent_curveVelocityLift (h : M ≃ₘ⟮I, J⟯ N) {γ : 𝕜 → M} {t : 𝕜}
@@ -108,63 +138,6 @@ theorem tangent_curveVelocityLift (h : M ≃ₘ⟮I, J⟯ N) {γ : 𝕜 → M} {
   rw [coe_tangent]
   exact TauCeti.Manifold.tangentMap_curveVelocityLift
     ((h.mdifferentiable (by simp)) (γ t)) hγ
-
-/-! ### Tangent fields along curves -/
-
-/-- The differential of a diffeomorphism carries a tangent field along `γ` that is differentiable
-in local coordinates to a tangent field along `h ∘ γ` that is differentiable in local
-coordinates. -/
-theorem differentiableWithinAt_sectionCoord_mfderiv [IsManifold I 2 M] [IsManifold J 2 N]
-    (h : M ≃ₘ⟮I, J⟯ N)
-    {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {s : Set 𝕜} {t : 𝕜}
-    (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
-    DifferentiableWithinAt 𝕜
-      (sectionCoord (F := F) (h ∘ γ) (fun r ↦ mfderiv I J h (γ r) (V r)) (h (γ t))) s t := by
-  let e := trivializationAt E (TangentSpace I) (γ t)
-  have hbase : γ t ∈ e.baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
-  have hnear : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
-    hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hbase)
-  have hcoord : DifferentiableWithinAt 𝕜
-      (fun r ↦ (e (TotalSpace.mk' E (γ r) (V r))).2) s t := by
-    apply hV.congr_of_eventuallyEq
-    · filter_upwards [hnear] with r hr
-      rw [sectionCoord_apply,
-        Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e hr]
-    · rw [sectionCoord_apply,
-        Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e hbase]
-  have htotal : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I.tangent
-      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t := by
-    rw [e.mdifferentiableWithinAt_totalSpace_iff I]
-    · exact ⟨hγ, mdifferentiableWithinAt_iff_differentiableWithinAt.mpr hcoord⟩
-    · exact (Bundle.Trivialization.mem_source e).2 hbase
-  have htotal' :=
-    h.tangent.contMDiff.contMDiffAt.mdifferentiableAt (by simp)
-      |>.comp_mdifferentiableWithinAt t htotal
-  have hmap : tangentMap I J h ∘ (fun r ↦ TotalSpace.mk' E (γ r) (V r)) =
-      fun r ↦ TotalSpace.mk' F (h (γ r)) (mfderiv I J h (γ r) (V r)) := by
-    funext r
-    exact TotalSpace.ext tangentMap_proj (heq_of_eq tangentMap_snd)
-  have htransport : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) J.tangent
-      (fun r ↦ TotalSpace.mk' F (h (γ r)) (mfderiv I J h (γ r) (V r))) s t := by
-    simpa only [Diffeomorph.coe_tangent, hmap] using htotal'
-  exact differentiableWithinAt_sectionCoord (h ∘ γ)
-    (fun r ↦ mfderiv I J h (γ r) (V r)) htransport
-    (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (h (γ t)))
-
-/-- The unrestricted form of
-`Diffeomorph.differentiableWithinAt_sectionCoord_mfderiv`. -/
-theorem differentiableAt_sectionCoord_mfderiv [IsManifold I 2 M] [IsManifold J 2 N]
-    (h : M ≃ₘ⟮I, J⟯ N)
-    {γ : 𝕜 → M} {V : ∀ r, TangentSpace I (γ r)} {t : 𝕜}
-    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t)
-    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ t)) t) :
-    DifferentiableAt 𝕜
-      (sectionCoord (F := F) (h ∘ γ) (fun r ↦ mfderiv I J h (γ r) (V r)) (h (γ t))) t := by
-  rw [← differentiableWithinAt_univ]
-  exact h.differentiableWithinAt_sectionCoord_mfderiv hγ.mdifferentiableWithinAt
-    hV.differentiableWithinAt
 
 end Diffeomorph
 

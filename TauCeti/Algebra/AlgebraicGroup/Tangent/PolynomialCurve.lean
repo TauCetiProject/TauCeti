@@ -1,63 +1,115 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import Mathlib.Algebra.Polynomial.Coeff
 
 /-!
-# Tangent vectors of polynomial curves
+# Velocities of polynomial curves through the identity
 
-A polynomial curve in an affine monoid that starts at the identity has a tangent vector
-there. On coordinate rings its velocity takes the coefficient of degree one. The constant
-coefficient is the counit, so the polynomial product formula gives the counit-valued
-Leibniz rule. This construction lets polynomial one-parameter curves supply actual tangent
-vectors without any smoothness or reducedness assumption.
+A polynomial curve in the affine group `Spec H` is an `R[X]`-valued point, that is, an
+algebra homomorphism `γ : H →ₐ[R] R[X]`. When the curve passes through the identity at
+`t = 0`, meaning that evaluation at zero recovers the counit, its velocity at `t = 0` is the
+tangent vector at the identity which sends a coordinate function `h` to the linear coefficient
+of the polynomial `γ h`.
 
-The tangent carrier is the existing `TauCeti.Bialgebra.CounitAlgebra`; no new tangent-space
-model is introduced.
+A curve lying in a closed subgroup has its velocity in the Lie algebra of that subgroup. This
+is the coordinate form of the statement that the derivative at zero of a curve inside a closed
+subgroup is tangent to the subgroup. It is the step from polynomial one-parameter subgroups to
+tangent vectors, and is used to show that the logarithm of a unipotent point of a closed
+subgroup of `GLₙ` lies in its Lie algebra.
+
+## Main declarations
+
+* `TauCeti.Bialgebra.curveVelocity`: the velocity at zero of a polynomial curve through the
+  identity.
+* `TauCeti.Bialgebra.curveVelocity_apply`, `TauCeti.Bialgebra.algEquivSelf_curveVelocity_apply`:
+  the velocity evaluates a coordinate function to the linear coefficient of its pullback.
+* `TauCeti.Bialgebra.curveVelocity_mem_lieSubalgebra`: a curve in a closed subgroup has its
+  velocity in the subgroup's Lie algebra.
+
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), §10.a.
+* J. E. Humphreys, *Linear Algebraic Groups* (1975), §15.
 -/
 
 public section
 
-namespace TauCeti.Bialgebra
-
 open Polynomial
 
-variable {R H : Type*} [CommSemiring R] [CommSemiring H] [_root_.Bialgebra R H]
+namespace TauCeti.Bialgebra
 
-/-- The velocity at zero of a polynomial curve starting at the identity. Its coordinate
-map has direction `H →ₐ[R] R[X]`. -/
-noncomputable def polynomialCurveTangent (φ : H →ₐ[R] R[X])
-    (hφ : (aeval (0 : R)).comp φ = _root_.Bialgebra.counitAlgHom R H) :
+section Velocity
+
+variable {R H : Type*} [CommSemiring R] [CommSemiring H]
+
+variable [_root_.Bialgebra R H]
+
+/-- The velocity at `t = 0` of a polynomial curve `γ` through the identity: the tangent vector
+at the identity sending a coordinate function `h` to the coefficient of `t` in `γ h`. The
+hypothesis says that `γ` passes through the identity at `t = 0`.
+
+The coefficient formula gives the counit-valued Leibniz rule directly, so the construction
+also works over commutative semirings. -/
+noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
+    (hγ : (aeval (0 : R)).comp γ = _root_.Bialgebra.counitAlgHom R H) :
     Derivation R H (CounitAlgebra R H R) where
   toLinearMap := (CounitAlgebra.algEquivSelf R H R).symm.toLinearMap.comp
-    ((lcoeff R 1).comp φ.toLinearMap)
+    ((lcoeff R 1).comp γ.toLinearMap)
   map_one_eq_zero' := by
     -- The linear-map fields return the counit coefficient synonym.
     simp [Polynomial.coeff_one]
     rfl
   leibniz' a b := by
     apply (CounitAlgebra.algEquivSelf R H R).injective
-    have hzero (x : H) : (φ x).coeff 0 = Coalgebra.counit (R := R) x := by
+    have hzero (x : H) : (γ x).coeff 0 = Coalgebra.counit (R := R) x := by
       simpa only [AlgHom.comp_apply, Polynomial.coeff_zero_eq_aeval_zero,
-        _root_.Bialgebra.counitAlgHom_apply] using AlgHom.congr_fun hφ x
+        _root_.Bialgebra.counitAlgHom_apply] using AlgHom.congr_fun hγ x
     simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, lcoeff_apply,
       AlgHom.toLinearMap_apply, map_mul, map_add, AlgEquiv.apply_symm_apply,
       CounitAlgebra.algEquivSelf_smul, Algebra.algebraMap_self, RingHom.id_apply]
     rw [mul_coeff_one, hzero, hzero]
     ring
 
-/-- The velocity reads the linear coefficient of each pulled-back coordinate function. -/
+/-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
+`t` in its pullback, read through the identification of the counit coefficient algebra with
+`R`. -/
 @[simp]
-theorem polynomialCurveTangent_apply (φ : H →ₐ[R] R[X])
-    (hφ : (aeval (0 : R)).comp φ = _root_.Bialgebra.counitAlgHom R H) (x : H) :
-    polynomialCurveTangent φ hφ x = (φ x).coeff 1 := by
-  -- The simplification leaves only the definitional identification of the coefficient synonym.
-  simp [polynomialCurveTangent]
+theorem curveVelocity_apply (γ : H →ₐ[R] R[X])
+    (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
+    curveVelocity γ hγ h = (γ h).coeff 1 := by
+  simp [curveVelocity]
   rfl
+
+/-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
+`t` in its pullback.
+
+This is not a `simp` lemma: `CounitAlgebra.algEquivSelf_apply` already rewrites its left-hand
+side. -/
+theorem algEquivSelf_curveVelocity_apply (γ : H →ₐ[R] R[X])
+    (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
+    CounitAlgebra.algEquivSelf R H R (curveVelocity γ hγ h) = (γ h).coeff 1 := by
+  rw [CounitAlgebra.algEquivSelf_apply, curveVelocity_apply]
+
+end Velocity
+
+variable {R H : Type*} [CommRing R] [CommRing H]
+
+/-- A polynomial curve through the identity which lies in the closed subgroup cut out by a
+Hopf ideal `I` has its velocity in the Lie algebra of that subgroup. -/
+theorem curveVelocity_mem_lieSubalgebra [HopfAlgebra R H] (γ : H →ₐ[R] R[X])
+    (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (I : HopfIdeal R H)
+    (hI : ∀ x ∈ I, γ x = 0) :
+    curveVelocity γ hγ ∈ I.lieSubalgebra (B := R) := by
+  rw [HopfIdeal.mem_lieSubalgebra_iff]
+  intro x hx
+  apply (CounitAlgebra.algEquivSelf R H R).injective
+  rw [algEquivSelf_curveVelocity_apply, hI x (HopfIdeal.mem_toIdeal.mp hx), coeff_zero,
+    map_zero]
 
 end TauCeti.Bialgebra

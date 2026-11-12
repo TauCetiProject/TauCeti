@@ -197,7 +197,7 @@ theorem eq_smul_count_of_isMulLeftInvariant (μ : Measure G) [μ.IsMulLeftInvari
     rw [← measure_preimage_mul μ g {g}, h]
   have hsmul : μ = μ {(1 : G)} • Measure.count := by
     refine Measure.ext_of_singleton fun a ↦ ?_
-    rw [Measure.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one, hone a]
+    rw [_root_.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one, hone a]
   have hmass : μ {(1 : G)} * (Nat.card G : ℝ≥0∞) = 1 := by
     have h := congrArg (fun ν : Measure G ↦ ν univ) hsmul
     simpa [Measure.count_univ, ENat.card_eq_coe_natCard] using h.symm
@@ -220,12 +220,12 @@ theorem haarProb_eq_smul_count :
 /-- **The normalized Haar measure of a singleton in a finite discrete group is `|G|⁻¹`.** -/
 @[simp]
 theorem haarProb_singleton (g : G) : haarProb G {g} = (Nat.card G : ℝ≥0∞)⁻¹ := by
-  rw [haarProb_eq_smul_count G, Measure.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one]
+  rw [haarProb_eq_smul_count G, _root_.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one]
 
 /-- The normalized Haar measure of a set in a finite discrete group is the fraction of the group it
 occupies. -/
 theorem haarProb_apply (s : Set G) : haarProb G s = (s.ncard : ℝ≥0∞) / Nat.card G := by
-  rw [haarProb_eq_smul_count G, Measure.smul_apply,
+  rw [haarProb_eq_smul_count G, _root_.smul_apply,
     Measure.count_apply_finite s s.toFinite, smul_eq_mul, ENNReal.div_eq_inv_mul,
     Set.ncard_eq_toFinset_card s s.toFinite]
 
@@ -636,7 +636,7 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSp
   [FiniteDimensional 𝕜 W]
   (π : ContRepresentation 𝕜 G V)
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
+omit [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **The off-diagonal branch of first (row) character orthogonality for a finite group**: for a
 *unitary* `π`, the group average of `conj χ_π · χ_ρ` vanishes when no nonzero continuous intertwiner
 `ρ → π` exists, which for a pair of irreducibles is Schur's lemma. Unitarity is asked of `π` alone,
@@ -774,17 +774,15 @@ group on an inner product space is conjugate, by a continuous linear automorphis
 to one preserving the inner product.
 
 This is `ContRepresentation.exists_isUnitary_congr` with all of its compact-group
-hypotheses discharged: the statement mentions neither a topology on `G` nor a measure, so the proof
-installs the discrete topology and the Borel structure it averages against — a finite discrete
-group is compact and every representation of it is continuous by `continuous_of_discreteTopology` —
-and the caller is left with a bare finite group. The form being averaged is the explicit
+hypotheses discharged: the statement mentions no topology on `G`, so the proof installs the
+discrete topology — a finite discrete group is compact and every representation of it is
+continuous by `continuous_of_discreteTopology` — and the caller is left with a bare finite group.
+The form being averaged is the explicit
 `|G|⁻¹ ∑ g, ⟪π g ·, π g ·⟫` of `ContRepresentation.inner_gramOperator_eq_inv_mul_sum`. -/
 theorem exists_isUnitary_congr_of_finite (π : ContRepresentation 𝕜 G V) :
     ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
   let _ : TopologicalSpace G := ⊥
   have _ : DiscreteTopology G := ⟨rfl⟩
-  let _ : MeasurableSpace G := borel G
-  have _ : BorelSpace G := ⟨rfl⟩
   exact exists_isUnitary_congr π continuous_of_discreteTopology
 
 /-- **Maschke's theorem in orthogonal form.** A finite-dimensional representation `π` of a finite

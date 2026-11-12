@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Chebotarev.Crossing.TaggedCount
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.NumberTheory.PrimesCongruentOne
 
 /-!
 # The crossing constant of an auxiliary cyclic group
@@ -18,8 +20,10 @@ automorphism paired with the tags.  This file defines that quantity, `crossingCo
 bounds it below.
 
 What the bound provides is uniformity: it depends on `f` only through the number of primes
-dividing `f`, and on the auxiliary group only through the level `r` in `f ^ r ∣ #H`, so a consumer
-that can raise `r` gets a bound approaching `1 / #Aut_K(L)` without revisiting this file.
+dividing `f`, and on the auxiliary group only through the level `r` in `f ^ r ∣ #H`. Raising `r`
+therefore pushes the crossing constant of every cyclic group of that level towards
+`1 / #Aut_K(L)`, uniformly in the group; the file closes with this limit, in the form a consumer
+choosing one auxiliary group per target value needs.
 
 ## Main definitions
 
@@ -31,6 +35,12 @@ that can raise `r` gets a bound approaching `1 / #Aut_K(L)` without revisiting t
 * `TauCeti.NumberField.Chebotarev.crossingConstant_nonneg`: the constant is nonnegative.
 * `TauCeti.NumberField.Chebotarev.le_crossingConstant`: once `f ^ r` divides `#H`, the crossing
   constant is at least `(1 - 2 ^ (-r)) ^ #f.primeFactors` divided by the order of `Aut_K(L)`.
+* `TauCeti.NumberField.Chebotarev.exists_forall_lt_crossingConstant`: as the level `r` grows, that
+  bound tends to `1 / #Aut_K(L)`, so every `δ < 1 / #Aut_K(L)` lies below the crossing constant of
+  every cyclic group whose order is divisible by `f ^ r`, for a single `r`.
+* `TauCeti.NumberField.Chebotarev.exists_prime_coprime_lt_crossingConstant`: that level is
+  realised by `(ZMod q)ˣ` for a prime `q` coprime to any given nonzero `N`; the cyclotomic
+  crossing takes `N` to be the discriminant of `L`.
 
 ## References
 
@@ -41,7 +51,8 @@ public section
 
 namespace TauCeti.NumberField.Chebotarev
 
-open Finset
+open Finset Filter
+open scoped Topology
 
 variable (K L : Type*) [CommSemiring K] [Semiring L] [Algebra K L]
 variable {H : Type*} [Group H] [Fintype H]
@@ -85,5 +96,44 @@ theorem le_crossingConstant [IsCyclic H] (f r : ℕ) (hrpos : 0 < r) (hf : f ^ r
   rw [crossingConstant_def, div_mul_eq_div_div_swap]
   gcongr
   exact (le_div_iff₀ (mod_cast Nat.card_pos)).mpr <| le_card_taggedElements_cyclic f r hrpos hf
+
+/-- **The crossing constant approaches `1 / #Aut_K(L)`.**  For every `δ < 1 / #Aut_K(L)` there is
+a level `r` such that the crossing constant of every cyclic group whose order is divisible by
+`f ^ r` exceeds `δ`.
+
+The level depends only on `δ`, `f` and the order of `Aut_K(L)`, not on the cyclic group, so a
+consumer that can choose an auxiliary group of any level pushes the crossing bound arbitrarily
+close to `1 / #Aut_K(L)`. -/
+theorem exists_forall_lt_crossingConstant (f : ℕ) {δ : ℝ}
+    (hδ : δ < 1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) :
+    ∃ r : ℕ, ∀ (H : Type*) [Group H] [Fintype H] [IsCyclic H], f ^ r ∣ Nat.card H →
+      δ < crossingConstant K L (H := H) f := by
+  -- The bound of `le_crossingConstant` tends to `1 / #Aut_K(L)` as the level grows.
+  have h2 : Tendsto (fun r : ℕ ↦ (2 : ℝ) ^ (-(r : ℤ))) atTop (𝓝 0) := by
+    simpa [zpow_neg, zpow_natCast, inv_pow] using
+      tendsto_pow_atTop_nhds_zero_of_lt_one (r := (2 : ℝ)⁻¹) (by norm_num) (by norm_num)
+  have hlim := (((tendsto_const_nhds (x := (1 : ℝ))).sub h2).pow
+    f.primeFactors.card).div_const (Nat.card (L ≃ₐ[K] L) : ℝ)
+  rw [sub_zero, one_pow] at hlim
+  obtain ⟨r, hr, hδr⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (lt_mem_nhds hδ))).exists
+  exact ⟨r, fun H _ _ _ hf ↦ hδr.trans_le (le_crossingConstant K L f r hr hf)⟩
+
+/-- **An auxiliary prime with a large crossing constant.**  For every `δ < 1 / #Aut_K(L)`, every
+`f ≠ 0` and every `N ≠ 0` there is a prime `q`, coprime to `N`, such that the crossing constant of
+`(ZMod q)ˣ` at `f` exceeds `δ`.
+
+The cyclotomic crossing takes `N` to be the absolute discriminant of `L`: coprimality to it is
+what the joint restriction `IsCyclotomicExtension.galEquivProd` needs to split the Galois group of
+`L(μ_q) / K` as `Aut_K(L) × (ZMod q)ˣ`. -/
+theorem exists_prime_coprime_lt_crossingConstant {f N : ℕ} (hf : f ≠ 0) (hN : N ≠ 0) {δ : ℝ}
+    (hδ : δ < 1 / (Nat.card (L ≃ₐ[K] L) : ℝ)) :
+    ∃ q : ℕ, ∃ _ : Fact q.Prime, N.Coprime q ∧ δ < crossingConstant K L (H := (ZMod q)ˣ) f := by
+  -- Choose the level first, then a prime `q ≡ 1 [MOD f ^ r]` larger than `N`.
+  obtain ⟨r, hr⟩ := exists_forall_lt_crossingConstant K L f hδ
+  obtain ⟨q, hq, hqN, hqmod⟩ := Nat.exists_prime_gt_modEq_one N (pow_ne_zero r hf)
+  have : Fact q.Prime := ⟨hq⟩
+  refine ⟨q, this, (Nat.coprime_of_lt_prime hN hqN hq).symm, hr _ ?_⟩
+  rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hq]
+  exact (Nat.modEq_iff_dvd' hq.one_lt.le).mp hqmod.symm
 
 end TauCeti.NumberField.Chebotarev

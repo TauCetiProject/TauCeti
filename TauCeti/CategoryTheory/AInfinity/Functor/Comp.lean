@@ -48,8 +48,8 @@ sides to the corresponding sides of the `A∞` equation of `𝒢`.
 * `TauCeti.AInfinityFunctor.inducedHom_id` and `TauCeti.AInfinityFunctor.inducedHom_comp`: the
   morphism induced by the identity functor is the identity, and the morphism induced by a composite
   is the composite of the induced morphisms.
-* `TauCeti.AInfinityFunctor.comp_map`: the map of a composite on Hom modules is the composite of
-  the maps.
+* `TauCeti.AInfinityFunctor.comp_map` and `TauCeti.AInfinityFunctor.comp_map_apply`: the map of a
+  composite on Hom modules is the composite of the maps.
 * `TauCeti.AInfinityFunctor.id_comp`, `TauCeti.AInfinityFunctor.comp_id` and
   `TauCeti.AInfinityFunctor.comp_assoc`: the unit and associativity laws.
 
@@ -190,7 +190,7 @@ private theorem isWordPathCompatible_inducedTaylor :
     IsWordPathCompatible (fun X : InducedQuiver C F ↦ (⟨X.obj⟩ : InducedQuiver D (𝒢.obj ∘ F)))
       (inducedTaylor 𝒢 F) where
   mem_range_of_mem_composableWords {X Y} {w} hw := by
-    refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_) (by simp)
+    refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_)
       (fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy)
       (fun r x hx ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hx) hw
     rw [inducedTaylor_of_isComposableString 𝒢 F hn hz hab, ← ha, ← hb]
@@ -208,7 +208,7 @@ private theorem totalHomMap_inducedTaylor {X Y : InducedQuiver C F}
     totalHomMap R (𝒢.obj ∘ F) (inducedTaylor 𝒢 F w) =
       (totalHomMap R 𝒢.obj ∘ₗ 𝒢.toAInfinityHom.taylor)
         (ReducedTensorWords.map (R := R) (totalHomMap R F) w) := by
-  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_) (by simp)
+  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_)
     (fun x y hx hy ↦ by simp only [map_add, hx, hy]) (fun r x hx ↦ by simp only [map_smul, hx]) hw
   have hmem := 𝒢.isWordPathCompatible_taylor.mem_range_of_mem_composableWords
     (map_mem_composableWords (φ := fun X : InducedQuiver C F ↦ F X.obj) (Θ := totalHomMap R F)
@@ -229,7 +229,7 @@ private theorem isHomogeneous_inducedTaylor :
   intro E w hw
   rw [add_zero]
   refine gradedPiece_induction (motive := fun w ↦ inducedTaylor 𝒢 F w ∈ _) hw
-    (fun n hn e x hx hE ↦ ?_) (by simp)
+    (fun n hn e x hx hE ↦ ?_)
     (fun u v _ _ hu hv ↦ by rw [map_add]; exact add_mem hu hv)
     (fun r u _ hu ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hu)
   subst hE
@@ -445,6 +445,13 @@ theorem comp_map (X Y : A) :
     ℱ.toAInfinityHom) (homInclusion X Y f)).trans ?_
   rw [LinearMap.comp_apply, ← homInclusion_map, linearPart_inducedHom_homInclusion]
   rfl
+
+/-- The map of a composite on a morphism is the composite of the maps.  Unlike
+`TauCeti.AInfinityFunctor.comp_map`, this can be used to rewrite where the objects of the
+composite are only definitionally the images of the objects under the two functors. -/
+theorem comp_map_apply {X Y : A} (f : homModule (R := R) X Y) :
+    (𝒢.comp ℱ).map X Y f = 𝒢.map (ℱ.obj X) (ℱ.obj Y) (ℱ.map X Y f) :=
+  LinearMap.congr_fun (𝒢.comp_map ℱ X Y) f
 
 /-- Composing with the identity `A∞` functor on the left leaves an `A∞` functor unchanged. -/
 @[simp]

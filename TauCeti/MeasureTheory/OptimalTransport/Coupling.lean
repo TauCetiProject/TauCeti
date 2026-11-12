@@ -18,10 +18,10 @@ A *coupling*, or *transport plan*, of a measure `μ` on `X` and a measure `ν` o
 transport: the primal transport problem minimises a cost over the couplings of two fixed
 measures, so every statement about that problem is a statement about the set defined here.
 
-Nothing in this file needs a topology, a metric, a density, or a normalisation, and the two
-factors may be different measurable spaces. The relation is therefore stated for arbitrary
-measures, and the probability case is packaged separately as a subtype of
-`MeasureTheory.ProbabilityMeasure (X × Y)`.
+Apart from one closing lemma on metric spaces, nothing in this file needs a topology, a
+metric, a density, or a normalisation, and the two factors may be different measurable spaces.
+The relation is therefore stated for arbitrary measures, and the probability case is packaged
+separately as a subtype of `MeasureTheory.ProbabilityMeasure (X × Y)`.
 
 ## Main definitions
 
@@ -55,18 +55,25 @@ measures, and the probability case is packaged separately as a subtype of
   exactly when they have the same total mass, the witness being their normalised product;
 * `TauCeti.isCoupling_sum_map_pi` — pairing the source of each of finitely many independent
   samples with the target of a permuted one preserves both total marginals;
+* `TauCeti.isCoupling_withDensity_of_lintegral_eq` — a density against `μ.prod ν` with almost
+  everywhere unit rows and almost everywhere constant columns is a coupling of finite measures of
+  equal mass;
 * `TauCeti.isCoupling_map_swap_iff` and `TauCeti.isCoupling_map_prodMap_iff` —
   invariance of the relation under the coordinate swap and under measurable equivalences of the
   two factors;
-* `TauCeti.isCoupling_map_prodMk_of_measurePreserving` — two measure-preserving maps out of a
-  common space induce a coupling of their targets;
+* `TauCeti.isCoupling_map_prodMk_of_aemeasurable` and
+  `TauCeti.isCoupling_map_prodMk_of_measurePreserving` — two almost everywhere measurable, in
+  particular two measure-preserving, maps out of a common space induce a coupling of their
+  targets;
 * `MeasureTheory.Measure.isCoupling_diagonalCoupling` — the diagonal coupling couples a measure
   with itself;
 * `TauCeti.isCoupling_toMeasure_iff` — the coupling condition on bundled probability measures,
   as the pair of equations for the two marginal pushforwards;
 * `TauCeti.IsCoupling.eq_map_prodMk` — a coupling out of a Dirac measure is the
   pushforward of its target along `y ↦ (x, y)`, so it is unique; `IsCoupling.eq_dirac`
-  specialises this to a pair of Dirac measures.
+  specialises this to a pair of Dirac measures;
+* `TauCeti.IsCoupling.ae_lt_dist` — a coupling of measures carried by two balls whose centres are
+  far apart only pairs points that are far apart.
 
 ## Implementation notes
 
@@ -266,6 +273,23 @@ theorem measure_univ_prod (hπ : IsCoupling π μ ν) {t : Set Y} (ht : Measurab
     π (univ ×ˢ t) = ν t := by
   rw [univ_prod, ← Measure.snd_apply ht, hπ.snd_eq]
 
+/-- **Transport up to an exceptional set.** If a coupling `π` gives mass at most `δ` to the pairs
+of cost `c` at least `δ`, then it moves every measurable set `s` into the points at cost less than
+`δ` from `s`, up to mass `δ`. -/
+theorem measure_le_of_measure_setOf_le (hπ : IsCoupling π μ ν) {c : X → Y → ℝ≥0∞} {δ : ℝ≥0∞}
+    (h : π {z | δ ≤ c z.1 z.2} ≤ δ) {s : Set X} (hs : MeasurableSet s) :
+    μ s ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ :=
+  calc μ s = π (s ×ˢ univ) := (hπ.measure_prod_univ hs).symm
+    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ} ∪ {z | δ ≤ c z.1 z.2}) := by
+        refine measure_mono fun z hz ↦ ?_
+        rcases lt_or_ge (c z.1 z.2) δ with hlt | hge
+        · exact .inl ⟨z.1, hz.1, hlt⟩
+        · exact .inr hge
+    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ}) + π {z | δ ≤ c z.1 z.2} := measure_union_le _ _
+    _ ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ := by
+        rw [← hπ.snd_eq]
+        exact add_le_add (Measure.le_map_apply measurable_snd.aemeasurable _) h
+
 /-- The source measure of a coupling has the total mass of the coupling. -/
 theorem measure_univ_left (hπ : IsCoupling π μ ν) : μ univ = π univ := by
   rw [← hπ.fst_eq, Measure.fst_univ]
@@ -437,6 +461,24 @@ protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π 
   rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)] at h
 
+section Metric
+
+variable {Z : Type*} [PseudoMetricSpace Z] [MeasurableSpace Z] {q : Measure (Z × Z)}
+  {μ' ν' : Measure Z} {x y : Z} {r r' D : ℝ}
+
+/-- If the marginals of a coupling `q` are carried by the balls `B(x, r)` and `B(y, r')`, whose
+centres are at distance at least `D + r + r'`, then `q`-almost every pair is at distance more
+than `D`. -/
+theorem ae_lt_dist (hq : IsCoupling q μ' ν') (hμ : ∀ᵐ x' ∂μ', x' ∈ Metric.ball x r)
+    (hν : ∀ᵐ y' ∂ν', y' ∈ Metric.ball y r') (hxy : D + r + r' ≤ dist x y) :
+    ∀ᵐ z ∂q, D < dist z.1 z.2 := by
+  filter_upwards [hq.measurePreserving_fst.quasiMeasurePreserving.ae hμ,
+    hq.measurePreserving_snd.quasiMeasurePreserving.ae hν] with z hz₀ hz₁
+  rw [Metric.mem_ball] at hz₀ hz₁
+  linarith [dist_triangle x z.1 y, dist_triangle z.1 z.2 y, dist_comm x z.1]
+
+end Metric
+
 end IsCoupling
 
 /-- The converse of `TauCeti.IsCoupling.measure_prod_univ` and
@@ -447,6 +489,39 @@ theorem isCoupling_of_measure_prod_univ_of_measure_univ_prod
     (ht : ∀ t, MeasurableSet t → π (univ ×ˢ t) = ν t) : IsCoupling π μ ν where
   fst_eq := Measure.ext fun s hsm ↦ by rw [Measure.fst_apply hsm, ← prod_univ]; exact hs s hsm
   snd_eq := Measure.ext fun t htm ↦ by rw [Measure.snd_apply htm, ← univ_prod]; exact ht t htm
+
+/-- A density `f` against `μ.prod ν` whose rows integrate to `1` against `ν` for `μ`-almost every
+`x`, and whose columns integrate to a constant against `μ` for `ν`-almost every `y`, defines a
+coupling of `μ` and `ν`, when `μ` and `ν` are finite measures of equal mass. -/
+theorem isCoupling_withDensity_of_lintegral_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (hμν : μ univ = ν univ) {f : X × Y → ℝ≥0∞} (hf : AEMeasurable f (μ.prod ν))
+    (hrow : ∀ᵐ x ∂μ, ∫⁻ y, f (x, y) ∂ν = 1) {κ : ℝ≥0∞}
+    (hcol : ∀ᵐ y ∂ν, ∫⁻ x, f (x, y) ∂μ = κ) :
+    IsCoupling ((μ.prod ν).withDensity f) μ ν := by
+  by_cases hν : ν = 0
+  · have hμ : μ = 0 := by rwa [← Measure.measure_univ_eq_zero, hμν, Measure.measure_univ_eq_zero]
+    subst hμ hν
+    exact ⟨by simp, by simp⟩
+  have hfst : ((μ.prod ν).withDensity f).fst = μ := by
+    ext s hs
+    rw [Measure.fst_apply hs, ← prod_univ, withDensity_apply _ (hs.prod MeasurableSet.univ),
+      setLIntegral_prod _ hf.restrict]
+    simp_rw [Measure.restrict_univ]
+    rw [setLIntegral_congr_fun_ae hs (hrow.mono fun x hx _ ↦ hx), setLIntegral_const, one_mul]
+  have hsnd (t : Set Y) (ht : MeasurableSet t) : ((μ.prod ν).withDensity f).snd t = κ * ν t := by
+    rw [Measure.snd_apply ht, ← univ_prod, withDensity_apply _ (MeasurableSet.univ.prod ht),
+      setLIntegral_prod_symm _ hf.restrict]
+    simp_rw [Measure.restrict_univ]
+    rw [setLIntegral_congr_fun_ae ht (hcol.mono fun y hy _ ↦ hy), setLIntegral_const]
+  -- Comparing total masses forces `κ = 1`.
+  have hκ : κ = 1 := by
+    have h₁ := hsnd univ MeasurableSet.univ
+    rw [Measure.snd_univ, ← Measure.fst_univ, hfst, hμν] at h₁
+    exact (ENNReal.mul_eq_right (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)).1
+      h₁.symm
+  refine ⟨hfst, ?_⟩
+  ext t ht
+  rw [hsnd t ht, hκ, one_mul]
 
 /-- The coupling relation is invariant under exchanging the two coordinates. -/
 @[simp]
@@ -464,13 +539,20 @@ theorem isCoupling_map_prodMap_iff (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') :
     f.symm_comp_self, Prod.map_id, Measure.map_id, e.map_symm_map, f.map_symm_map] using
     h.map e.symm.measurable f.symm.measurable
 
+/-- Two almost everywhere measurable maps `f` and `g` out of a common space `(Ω, γ)`, pushing `γ`
+to `μ` and to `ν`, induce the coupling `(f, g)_# γ` of `μ` and `ν`. -/
+theorem isCoupling_map_prodMk_of_aemeasurable {Ω : Type*} [MeasurableSpace Ω]
+    {γ : Measure Ω} {f : Ω → X} {g : Ω → Y} (hf : AEMeasurable f γ) (hg : AEMeasurable g γ)
+    (hfμ : γ.map f = μ) (hgν : γ.map g = ν) : IsCoupling (γ.map fun w ↦ (f w, g w)) μ ν :=
+  ⟨(Measure.fst_map_prodMk₀ hf hg).trans hfμ, (Measure.snd_map_prodMk₀ hf hg).trans hgν⟩
+
 /-- Two measure-preserving maps `f` and `g` out of a common space `(Ω, γ)` induce the coupling
 `(f, g)_# γ` of their targets. -/
 theorem isCoupling_map_prodMk_of_measurePreserving {Ω : Type*} [MeasurableSpace Ω]
     {γ : Measure Ω} {f : Ω → X} {g : Ω → Y} (hf : MeasurePreserving f γ μ)
     (hg : MeasurePreserving g γ ν) : IsCoupling (γ.map fun w ↦ (f w, g w)) μ ν :=
-  ⟨(Measure.fst_map_prodMk hf.measurable hg.measurable).trans hf.map_eq,
-    (Measure.snd_map_prodMk hf.measurable hg.measurable).trans hg.map_eq⟩
+  isCoupling_map_prodMk_of_aemeasurable hf.measurable.aemeasurable hg.measurable.aemeasurable
+    hf.map_eq hg.map_eq
 
 /-- The zero measure couples the two zero measures. -/
 @[simp]

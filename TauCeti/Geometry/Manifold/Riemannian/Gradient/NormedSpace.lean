@@ -8,13 +8,24 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The gradient on a normed space
 
 On a flat inner product space with its standard Riemannian metric, the manifold gradient agrees
-with Mathlib's `gradient`; the squared norm therefore has the expected radial gradient.
+with Mathlib's `gradient`; the squared norm therefore has the expected radial gradient. For an
+arbitrary Riemannian metric on a normed space, the gradient is read in linear coordinates through
+its pairing with constant vectors, and its squared length is `|dφ|² = dφ(g⁻¹ dφ)` for the metric
+coefficient field `g`.
+
+The standard metric is analytic (`IsContMDiffRiemannianBundle.vectorSpace`), so the manifold
+results on gradient flows apply to it, and a classical solution of `γ' = -∇ f (γ)` on an open
+interval around `0` is the maximal integral curve of `-grad f` there
+(`TauCeti.Manifold.eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt`).
 -/
 
 public section
@@ -60,6 +71,33 @@ theorem mgradient_eq_gradient {F : Type*} [NormedAddCommGroup F] [InnerProductSp
       rw [mvfderiv_eq_fderiv]
       simp
 
+/-- If the installed fibre metric is the standard one, the manifold gradient is Mathlib's
+`gradient`. This transports `mgradient_eq_gradient` along an equality of fibre metrics, such as
+`toRiemannianMetric_ofLE`, which cannot be rewritten inside the instance-dependent arguments. -/
+theorem mgradient_eq_gradient_of_eq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [inst : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    (hg : RiemannianBundle.g = (riemannianMetricVectorSpace F).toRiemannianMetric)
+    (f : F → ℝ) (x : F) :
+    mgradient 𝓘(ℝ, F) f x = gradient f x := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  exact mgradient_eq_gradient f x
+
+/-- If the installed fibre metric is the standard one, the manifold gradient has the norm of
+Mathlib's `gradient`. The norm on the tangent space is itself induced by the installed metric, so
+this is transported along `hg` together with `mgradient_eq_gradient_of_eq`. -/
+theorem norm_mgradient_eq_norm_gradient_of_eq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [inst : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    (hg : RiemannianBundle.g = (riemannianMetricVectorSpace F).toRiemannianMetric)
+    (f : F → ℝ) (x : F) :
+    ‖mgradient 𝓘(ℝ, F) f x‖ = ‖gradient f x‖ := by
+  rw [mgradient_eq_gradient_of_eq hg]
+  obtain ⟨_⟩ := inst
+  subst hg
+  exact norm_tangentSpace_vectorSpace
+
 /-- The gradient of the squared norm in the standard flat metric is the radial vector field.
 
 Source: `Mathlib.Analysis.InnerProductSpace.Calculus.fderiv_norm_sq_apply`.
@@ -80,5 +118,53 @@ theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
   rw [mgradient_eq_gradient]
   simp [gradient, fderiv_norm_sq_apply, hx]
   rfl
+
+/-- On a normed space with any Riemannian metric, pairing the gradient with a constant vector `v`
+gives the Fréchet derivative in the direction `v`. -/
+theorem inner_mgradient_model_space {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    (f : F → ℝ) (x v : F) :
+    inner ℝ (mgradient 𝓘(ℝ, F) f x) ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v) =
+      fderiv ℝ f x v := by
+  rw [inner_mgradient, mvfderiv_eq_fderiv]
+  -- `NormedSpace.fromTangentSpace x` is `tangentSpaceCastModel 𝓘(ℝ, F) x` by definition.
+  simp [NormedSpace.fromTangentSpace]
+
+/-- On a normed space whose Riemannian metric at `x` is the bilinear form `g x` in linear
+coordinates, the squared length of the gradient is `|df|² = df(g⁻¹ df)`. -/
+theorem norm_mgradient_sq_model_space {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    {g : F → F →L[ℝ] F →L[ℝ] ℝ} {x : F}
+    (hg : ∀ v w : TangentSpace 𝓘(ℝ, F) x, inner ℝ v w =
+      g x (tangentSpaceCastModel 𝓘(ℝ, F) x v) (tangentSpaceCastModel 𝓘(ℝ, F) x w))
+    (f : F → ℝ) :
+    ‖mgradient 𝓘(ℝ, F) f x‖ ^ 2 = fderiv ℝ f x ((g x).inverse (fderiv ℝ f x)) := by
+  have hinv : (g x).IsInvertible := ContinuousLinearMap.isInvertible_of_pos fun v hv ↦ by
+    have h := hg ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v)
+      ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v)
+    simp only [ContinuousLinearEquiv.apply_symm_apply] at h
+    exact h ▸ real_inner_self_pos.2 (by simpa using hv)
+  have h : g x (tangentSpaceCastModel 𝓘(ℝ, F) x (mgradient 𝓘(ℝ, F) f x)) = fderiv ℝ f x := by
+    ext v
+    rw [← inner_mgradient_model_space f x v, hg]
+    simp
+  rw [← h, hinv.inverse_apply_self, ← real_inner_self_eq_norm_sq, hg]
+
+/-- **Negative gradient trajectories of a flat space.** On a finite-dimensional real inner product
+space with its standard metric, let `f` be `C²` and let `γ` solve `γ' = -∇ f (γ)` on an open
+interval around `0`. Then `γ` is the maximal integral curve of `-grad f` through `γ 0` on that
+interval. -/
+theorem eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {f : F → ℝ} (hf : ContDiff ℝ 2 f)
+    {γ : ℝ → F} {a b : ℝ} (h0 : (0 : ℝ) ∈ Ioo a b)
+    (hγ : ∀ t ∈ Ioo a b, HasDerivAt γ (-gradient f (γ t)) t) :
+    EqOn (maximalIntegralCurve (-mgradient 𝓘(ℝ, F) f) (γ 0)) γ (Ioo a b) := by
+  refine IsMIntegralCurveOn.eqOn_maximalIntegralCurve
+    (contMDiff_neg_mgradient_one hf.contMDiff) ?_ h0 rfl
+  rw [isMIntegralCurveOn_iff_isIntegralCurveOn]
+  intro t ht
+  -- The tangent space of `F` at `γ t` is `F` itself, with the same negation.
+  exact (hγ t ht).hasDerivWithinAt.congr_deriv
+    (congrArg (fun w : F ↦ -w) (mgradient_eq_gradient_of_eq rfl f (γ t))).symm
 
 end TauCeti.Manifold

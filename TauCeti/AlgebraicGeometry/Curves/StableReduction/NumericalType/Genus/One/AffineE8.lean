@@ -42,6 +42,70 @@ universe u
 
 variable (T : NumericalType.{u})
 
+/-- The numerical data of a genus-one affine E₈ diagram: constant weights, multiplicities
+proportional to its marks, and intersection matrix given by its affine Cartan matrix.
+Component genera are imposed separately in the minimal classification. -/
+def IsGenusOneAffineE8Shape (T : NumericalType.{u}) : Prop :=
+  ∃ e : Fin 9 ≃ T.Component,
+  (∀ i, T.weight (e i) = T.weight (e 0)) ∧
+  (∀ i, (T.multiplicity (e i) : ℤ) =
+    AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
+  (∀ i j, T.intersection (e i) (e j) =
+    -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j)
+
+/-- The complete numerical data recorded by `IsGenusOneAffineE8Shape`. -/
+theorem isGenusOneAffineE8Shape_iff : T.IsGenusOneAffineE8Shape ↔
+  ∃ e : Fin 9 ≃ T.Component,
+  (∀ i, T.weight (e i) = T.weight (e 0)) ∧
+  (∀ i, (T.multiplicity (e i) : ℤ) =
+    AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
+  (∀ i j, T.intersection (e i) (e j) =
+    -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j) := Iff.rfl
+
+/-- The relabelling step of `affineE8_weights_intersections`: once the weights and intersections
+of the chain `c` and of the branch `l 1` are known, those of `l` follow in the canonical
+numbering. -/
+private lemma affineE8_weights_intersections_of_chain (l : Fin 9 → T.Component)
+    (c : ℕ → T.Component) (hc0 : l 8 = c 0) (hc1 : l 7 = c 1) (hc2 : l 6 = c 2)
+    (hc3 : l 5 = c 3) (hc4 : l 4 = c 4) (hc5 : l 0 = c 5) (hc6 : l 2 = c 6)
+    (hc7 : l 3 = c 7)
+    (hself1 : T.intersection (l 1) (l 1) = -(2 * (T.weight (l 1) : ℤ))) {w : ℕ+}
+    (hwb : (T.weight (l 1) : ℤ) = w) (hw : ∀ i < 8, (T.weight (c i) : ℤ) = w)
+    (hentry : ∀ {i j : ℕ}, i < 8 → j < 8 → T.intersection (c i) (c j) =
+      if i = j then -(2 * (w : ℤ)) else if i + 1 = j ∨ j + 1 = i then (w : ℤ) else 0)
+    (hbentry : ∀ {i : ℕ}, i < 8 → T.intersection (c i) (l 1) = if i = 5 then (w : ℤ) else 0) :
+    (∀ i, T.weight (l i) = T.weight (l 0)) ∧
+      (∀ i j, T.intersection (l i) (l j) =
+        -(T.weight (l 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j) := by
+  classical
+  have hw0 : (T.weight (l 0) : ℤ) = w := by rw [hc5]; exact hw 5 (by omega)
+  have hweights : ∀ i, T.weight (l i) = T.weight (l 0) := by
+    intro i
+    apply PNat.coe_injective
+    apply Int.natCast_inj.mp
+    rw [hw0]
+    fin_cases i <;> simp [hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7, hwb, hw]
+  have hmatrix : ∀ i j, T.intersection (l i) (l j) =
+      -(T.weight (l 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j := by
+    intro i j
+    -- The affine API is indexed by Fin E8.nodes, which elaborates as Fin 9.
+    erw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E8 i j]
+    rw [hw0]
+    fin_cases i <;> fin_cases j <;>
+      simp! only [Fin.zero_eta, Fin.isValue, hc5, Nat.reduceLT, hentry, ↓reduceIte,
+        AffineDynkinType.nodes_E8, neg_mul, neg_inj, Fin.mk_one, hbentry, zero_ne_one,
+        Int.reduceNeg, mul_ite, mul_neg, mul_one, neg_neg, mul_zero, left_eq_ite_iff,
+        Int.natCast_eq_zero, PNat.ne_zero, imp_false, Decidable.not_not, Fin.reduceFinMk, hc6,
+        Nat.reduceEqDiff, Nat.reduceAdd, or_false, Fin.reduceEq, hc7, Nat.lt_add_one, or_self,
+        right_eq_ite_iff, hc4, Nat.succ_ne_self, or_true, hc3, hc2, hc1, Nat.one_lt_ofNat,
+        OfNat.ofNat_ne_one, hc0, Nat.ofNat_pos, OfNat.ofNat_ne_zero, zero_add,
+        OfNat.one_ne_ofNat, T.intersection_comm (l 1), one_ne_zero, hself1, hwb,
+        OfNat.zero_ne_ofNat]
+    all_goals first
+      | (erw [AffineDynkinType.graph_E8_adj]; norm_num)
+      | ring
+  exact ⟨hweights, hmatrix⟩
+
 /-- The finite E₈ calculation and affine exclusion determine the full intersection data. -/
 private lemma affineE8_weights_intersections (l : Fin 9 → T.Component)
     (hl : Function.Injective l)
@@ -89,44 +153,8 @@ private lemma affineE8_weights_intersections (l : Fin 9 → T.Component)
     · subst h5
       exact hab
     · exact hbzero i hi h5
-  -- Name the inverse relabelling to apply the chain formulas in affine node order.
-  have hc0 : l 8 = c 0 := rfl
-  have hc1 : l 7 = c 1 := rfl
-  have hc2 : l 6 = c 2 := rfl
-  have hc3 : l 5 = c 3 := rfl
-  have hc4 : l 4 = c 4 := rfl
-  have hc5 : l 0 = c 5 := rfl
-  have hc6 : l 2 = c 6 := rfl
-  have hc7 : l 3 = c 7 := rfl
-  have hw0 : (T.weight (l 0) : ℤ) = w := hw 5 (by omega)
-  have hweights : ∀ i, T.weight (l i) = T.weight (l 0) := by
-    intro i
-    apply PNat.coe_injective
-    apply Int.natCast_inj.mp
-    rw [hw0]
-    fin_cases i <;> first
-      | exact hwb
-      | exact hw 0 (by omega)
-      | exact hw 1 (by omega)
-      | exact hw 2 (by omega)
-      | exact hw 3 (by omega)
-      | exact hw 4 (by omega)
-      | exact hw 5 (by omega)
-      | exact hw 6 (by omega)
-      | exact hw 7 (by omega)
-  have hmatrix : ∀ i j, T.intersection (l i) (l j) =
-      -(T.weight (l 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j := by
-    intro i j
-    -- The affine API is indexed by Fin E8.nodes, which elaborates as Fin 9.
-    erw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E8 i j]
-    rw [hw0]
-    fin_cases i <;> fin_cases j <;>
-      simp! [hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
-        hentry, hbentry, T.intersection_comm (l 1), hself 1, hwb]
-    all_goals first
-      | (erw [AffineDynkinType.graph_E8_adj]; norm_num)
-      | ring
-  exact ⟨hcard, hweights, hmatrix⟩
+  exact ⟨hcard, T.affineE8_weights_intersections_of_chain l c rfl rfl rfl rfl rfl rfl rfl rfl
+    (hself 1) hwb hw hentry hbentry⟩
 
 /-- Nine distinct components of self-intersection `-2w` containing the affine E₈ edges
 are the entire numerical type. All weights agree, all intersections are determined, and
@@ -185,5 +213,21 @@ theorem IsMinimal.exists_equiv_affineE8 (hT : T.IsMinimal) (hg : T.arithmeticGen
   obtain ⟨e, he, hw, hm, ha⟩ := T.exists_equiv_affineE8 l hl
     (fun i ↦ (T.isMinusTwoIndex_iff.mp (h₂ (l i))).2) hadj
   exact ⟨e, he, fun i ↦ (T.isMinusTwoIndex_iff.mp (h₂ (e i))).1, hw, hm, ha⟩
+
+/-- In the affine E₈ shape, a component weight divides all weights with quotient at most four,
+and a component multiplicity divides all multiplicities with quotient at most six. -/
+lemma IsGenusOneAffineE8Shape.exists_weight_and_multiplicity_dvd_and_le
+    (hshape : T.IsGenusOneAffineE8Shape) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  obtain ⟨e, hw, hm, -⟩ := (isGenusOneAffineE8Shape_iff T).mp hshape
+  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+    e 0 8 (fun i ↦ ?_) (fun i ↦ ?_)
+  all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+  · rw [hw i]; omega
+  · rw [hm i]
+    fin_cases i <;> simp
 
 end TauCeti.NumericalType

@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 import TauCeti.Topology.Algebra.Module.Complement
 
 /-!
 # Fredholm operators
 
-This file extends Mathlib's notion of a **Fredholm operator** with finite-dimensional examples
-and invariance under scalar multiplication and continuous linear changes of coordinates.
+This file extends Mathlib's notion of a **Fredholm operator** with finite-dimensional examples,
+invariance under scalar multiplication and continuous linear changes of coordinates, and
+preservation under restriction of scalars along a finite extension of scalar fields.
 All Fredholm hypotheses use `ContinuousLinearMap.IsFredholm` directly. That predicate asks for a
 strict map with closed range, finite-dimensional kernel and cokernel, and a topologically
 complemented kernel. Between Banach spaces over an `IsRCLikeNormedField`, finite-dimensional
@@ -34,6 +37,14 @@ intended throughout.
   `ContinuousLinearMap.IsFredholm.equiv_comp`: composing with a continuous linear equivalence on
   either side preserves Fredholmness. These implications hold between topological modules over any
   `NontriviallyNormedField`, without completeness or separation assumptions.
+* `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_index_eq_zero`: an injective
+  Fredholm operator of index zero is invertible.
+* `ContinuousLinearMap.isFredholm_iff_of_comp_eq`: operators conjugate under continuous linear
+  equivalences are simultaneously Fredholm.
+* `ContinuousLinearMap.IsFredholm.restrictScalars`: a Fredholm operator over `𝕜'` stays Fredholm
+  over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
+  a complex Fredholm operator is Fredholm. Its index is computed by
+  `ContinuousLinearMap.index_restrictScalars`.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -84,16 +95,16 @@ lemma IsFredholm.equiv_comp (hT : IsFredholm T) (e : F ≃L[𝕜] G) :
   · -- Expose function composition so the homeomorphism strictness lemma applies.
     change Topology.IsStrictMap (fun x ↦ e (T x))
     exact e.toHomeomorph.comp_isStrictMap_iff.mpr hT.isStrictMap
-  · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp]
+  · rw [toLinearMap_comp, LinearMap.range_comp]
     simpa [Submodule.map_coe] using e.isClosed_image.2 hT.isClosed_range
-  · rw [ContinuousLinearMap.toLinearMap_comp,
+  · rw [toLinearMap_comp,
       ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearEquiv.ker_comp]
     exact hT.finite_ker
-  · rw [ContinuousLinearMap.toLinearMap_comp,
+  · rw [toLinearMap_comp,
       ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearMap.range_comp]
     have := hT.finite_coker
     exact (Submodule.Quotient.equiv _ _ e.toLinearEquiv rfl).finiteDimensional
-  · rw [ContinuousLinearMap.toLinearMap_comp,
+  · rw [toLinearMap_comp,
       ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearEquiv.ker_comp]
     exact hT.closedComplemented_ker
 
@@ -109,16 +120,35 @@ lemma IsFredholm.comp_equiv (hT : IsFredholm T) (e : G ≃L[𝕜] E) :
     change Topology.IsStrictMap (fun x ↦ T (e x))
     exact e.toHomeomorph.isStrictMap_comp_iff.mpr hT.isStrictMap
   · simpa using hT.isClosed_range
-  · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp,
+  · rw [toLinearMap_comp, LinearMap.ker_comp,
       ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
       Submodule.comap_equiv_eq_map_symm]
     have := hT.finite_ker
     exact (e.symm.submoduleMap _).finiteDimensional
   · simpa using hT.finite_coker
-  · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp,
+  · rw [toLinearMap_comp, LinearMap.ker_comp,
       ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
       Submodule.comap_equiv_eq_map_symm]
     exact hT.closedComplemented_ker.map e.symm
+
+/-- Operators conjugate under continuous linear equivalences, `e' ∘ T = S ∘ e`, are
+simultaneously Fredholm. -/
+lemma isFredholm_iff_of_comp_eq {H : Type*} [AddCommGroup H] [TopologicalSpace H] [Module 𝕜 H]
+    {S : G →L[𝕜] H} (e : E ≃L[𝕜] G) (e' : F ≃L[𝕜] H)
+    (h : (e' : F →L[𝕜] H).comp T = S.comp (e : E →L[𝕜] G)) : IsFredholm T ↔ IsFredholm S := by
+  have hS : S = ((e' : F →L[𝕜] H).comp T).comp (e.symm : G →L[𝕜] E) := by
+    rw [h]
+    ext x
+    simp
+  have hT : T = ((e'.symm : H →L[𝕜] F).comp S).comp (e : E →L[𝕜] G) := by
+    rw [hS]
+    ext x
+    simp
+  refine ⟨fun hT' ↦ ?_, fun hS' ↦ ?_⟩
+  · rw [hS]
+    exact (hT'.equiv_comp e').comp_equiv e.symm
+  · rw [hT]
+    exact (hS'.equiv_comp e'.symm).comp_equiv e
 
 end CompEquiv
 
@@ -137,5 +167,39 @@ lemma IsFredholm.neg {T : E →L[𝕜] F} (hT : IsFredholm T) : IsFredholm (-T) 
   convert hT.equiv_comp (ContinuousLinearEquiv.neg 𝕜) using 1
   ext x
   simp
+
+/-- An injective Fredholm operator of index zero is invertible: index zero forces its cokernel to
+vanish. -/
+lemma IsFredholm.isInvertible_of_injective_of_index_eq_zero {T : E →L[𝕜] F} (hT : IsFredholm T)
+    (hinj : Function.Injective T) (h0 : T.index = 0) : T.IsInvertible := by
+  have := hT.finite_coker
+  exact isInvertible_iff_isFredholm_and_bijective.2
+    ⟨hT, T.bijective_of_injective_of_index_eq_zero hinj h0⟩
+
+section RestrictScalars
+
+variable (𝕜) {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [Module 𝕜 𝕜'] [Module.Finite 𝕜 𝕜']
+  [Module 𝕜' E] [IsScalarTower 𝕜 𝕜' E] [Module 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+
+/-- Restricting scalars along a finite extension `𝕜 → 𝕜'` of nontrivially normed fields preserves
+Fredholmness. In particular the realification of a complex Fredholm operator is Fredholm. -/
+lemma IsFredholm.restrictScalars {T : E →L[𝕜'] F} (hT : IsFredholm T) :
+    IsFredholm (T.restrictScalars 𝕜) where
+  isStrictMap := by simpa only [coe_restrictScalars'] using hT.isStrictMap
+  isClosed_range := by
+    simpa only [coe_restrictScalars, LinearMap.range_restrictScalars,
+      Submodule.coe_restrictScalars] using hT.isClosed_range
+  finite_ker := by
+    have := hT.finite_ker
+    -- The kernel of the restricted map is `T.ker` with the `𝕜`-structure inherited from `E`.
+    have : FiniteDimensional 𝕜 T.ker := Module.Finite.trans 𝕜' T.ker
+    exact this
+  finite_coker := by
+    have := hT.finite_coker
+    have : FiniteDimensional 𝕜 (F ⧸ T.range) := Module.Finite.trans 𝕜' _
+    exact (Submodule.Quotient.restrictScalarsEquiv 𝕜 T.range).symm.finiteDimensional
+  closedComplemented_ker := hT.closedComplemented_ker.restrictScalars 𝕜
+
+end RestrictScalars
 
 end ContinuousLinearMap

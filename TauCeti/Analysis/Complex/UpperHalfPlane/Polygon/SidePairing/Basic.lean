@@ -143,6 +143,11 @@ theorem map_smul_side (i : Fin n) : σ.map i • P.side i = P.side (σ.pair i) :
   rw [side_def, side_def, smul_extGeodesicSegment, σ.map_smul_vertex, σ.map_smul_vertex_add_one,
     extGeodesicSegment_comm]
 
+/-- The side-pairing map carries a point of side `i` to a point of side `pair i`. -/
+theorem map_smul_mem_side {i : Fin n} {x : ℍ} (hx : x ∈ P.side i) :
+    σ.map i • x ∈ P.side (σ.pair i) :=
+  σ.map_smul_side i ▸ smul_mem_smul_set hx
+
 /-- A side-pairing map is not the identity. -/
 theorem map_ne_one (i : Fin n) : σ.map i ≠ 1 := by
   -- the identity would fix both endpoints of side `i`, forcing `pair i + 1 = i` and
@@ -230,6 +235,11 @@ theorem partialCycleMap_smul_vertex (j : Fin n) (m : ℕ) :
   | succ m ih =>
     rw [partialCycleMap_succ, mul_smul, ih, map_smul_vertex_eq_next, Function.iterate_succ_apply']
 
+/-- Following the cycle through a finite vertex leads to finite vertices. -/
+theorem vertex_next_iterate_eq_inl {j : Fin n} {x : ℍ} (hx : P.vertex j = .inl x) (m : ℕ) :
+    P.vertex (σ.next^[m] j) = .inl (σ.partialCycleMap j m • x) := by
+  rw [← σ.partialCycleMap_smul_vertex, hx, Sum.smul_inl]
+
 /-- Consecutive tiles `(partialCycleMap j m)⁻¹ • P` along a vertex cycle share a side: pulled back
 to the initial vertex, the vertex before the cycle vertex in tile `m + 1` is the vertex after it
 in tile `m`. -/
@@ -300,6 +310,34 @@ of the cycle transformation followed by the first `m` side-pairing maps. -/
 theorem partialCycleMap_mul_cycleLength_add (j : Fin n) (k m : ℕ) :
     σ.partialCycleMap j (k * σ.cycleLength j + m) = σ.partialCycleMap j m * σ.cycleMap j ^ k := by
   rw [partialCycleMap_add, next_iterate_mul_cycleLength, partialCycleMap_mul_cycleLength]
+
+/-- After `orderOf (cycleMap j)` circuits of the cycle through `j` the partial cycle products
+start again. -/
+theorem partialCycleMap_mul_orderOf_mul_cycleLength_add (j : Fin n) (q r : ℕ) :
+    σ.partialCycleMap j (q * (orderOf (σ.cycleMap j) * σ.cycleLength j) + r) =
+      σ.partialCycleMap j r := by
+  rw [← mul_assoc, σ.partialCycleMap_mul_cycleLength_add, mul_comm q, pow_mul,
+    pow_orderOf_eq_one, one_pow, mul_one]
+
+/-- The partial cycle products at `j` are periodic with period `orderOf (cycleMap j)` times the
+cycle length. -/
+theorem partialCycleMap_mod_orderOf_mul_cycleLength (j : Fin n) (m : ℕ) :
+    σ.partialCycleMap j (m % (orderOf (σ.cycleMap j) * σ.cycleLength j)) =
+      σ.partialCycleMap j m := by
+  conv_rhs => rw [← Nat.div_add_mod' m (orderOf (σ.cycleMap j) * σ.cycleLength j)]
+  rw [partialCycleMap_mul_orderOf_mul_cycleLength_add]
+
+/-- When the cycle transformation at `j` has finite order, the inverse of a partial cycle product
+at `j` is a partial cycle product at the vertex it reaches. -/
+theorem exists_partialCycleMap_eq_inv {j : Fin n} (hj : 0 < orderOf (σ.cycleMap j)) (m : ℕ) :
+    ∃ m', σ.partialCycleMap (σ.next^[m] j) m' = (σ.partialCycleMap j m)⁻¹ := by
+  set T := orderOf (σ.cycleMap j) * σ.cycleLength j
+  have hT : 1 ≤ T := Nat.mul_pos hj (σ.cycleLength_pos j)
+  refine ⟨m * T - m, eq_inv_of_mul_eq_one_left ?_⟩
+  have h := σ.partialCycleMap_add j m (m * T - m)
+  rw [Nat.add_sub_cancel' (Nat.le_mul_of_pos_right m hT)] at h
+  rw [← h, ← add_zero (m * T), partialCycleMap_mul_orderOf_mul_cycleLength_add,
+    partialCycleMap_zero]
 
 /-- The cycle transformation lies in every subgroup containing the side-pairing maps. -/
 theorem cycleMap_mem {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i ∈ Γ) (j : Fin n) :
@@ -391,6 +429,35 @@ theorem card_cycle (j : Fin n) : (σ.cycle j).card = σ.cycleLength j := by
 theorem mem_cycle_comm {j i : Fin n} : i ∈ σ.cycle j ↔ j ∈ σ.cycle i := by
   simp only [mem_cycle_iff_sameCycle]
   exact Equiv.Perm.sameCycle_comm
+
+/-- Membership along vertex cycles is transitive. -/
+theorem mem_cycle_trans {j i k : Fin n} (hi : i ∈ σ.cycle j) (hk : k ∈ σ.cycle i) :
+    k ∈ σ.cycle j := by
+  rw [mem_cycle_iff_sameCycle] at hi hk ⊢
+  exact hi.trans hk
+
+/-- The least vertex index on each vertex cycle, including ideal cycles. -/
+def cycleRepresentatives : Finset (Fin n) :=
+  Finset.univ.filter fun i ↦ ∀ j ∈ σ.cycle i, i ≤ j
+
+/-- A vertex represents its cycle exactly when it is its least index. -/
+@[simp]
+theorem mem_cycleRepresentatives {i : Fin n} :
+    i ∈ σ.cycleRepresentatives ↔ ∀ j ∈ σ.cycle i, i ≤ j := by
+  simp [cycleRepresentatives]
+
+/-- Every vertex cycle has exactly one least-index representative. -/
+theorem existsUnique_mem_cycleRepresentatives (j : Fin n) :
+    ∃! i, i ∈ σ.cycleRepresentatives ∧ i ∈ σ.cycle j := by
+  let i := (σ.cycle j).min' ⟨j, σ.self_mem_cycle j⟩
+  have hi : i ∈ σ.cycle j := Finset.min'_mem _ _
+  have hmin : ∀ k ∈ σ.cycle j, i ≤ k := fun k hk ↦ Finset.min'_le _ _ hk
+  have hrep : i ∈ σ.cycleRepresentatives := by
+    rw [mem_cycleRepresentatives]
+    exact fun k hk ↦ hmin k (σ.mem_cycle_trans hi hk)
+  refine ⟨i, ⟨hrep, hi⟩, fun k hk ↦ le_antisymm ?_ (hmin k hk.2)⟩
+  exact (σ.mem_cycleRepresentatives.mp hk.1) i
+    (σ.mem_cycle_trans (σ.mem_cycle_comm.mp hk.2) hi)
 
 /-- The vertices of one cycle have the same cycle length. -/
 theorem cycleLength_eq_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
@@ -502,6 +569,15 @@ theorem cycleAngleSum_pos_of_isLeft_vertex {j : Fin n} (hj : (P.vertex j).isLeft
   rw [cycleAngleSum_def]
   exact Finset.sum_pos' (fun i _ ↦ P.interiorAngle_nonneg i)
     ⟨j, σ.self_mem_cycle j, P.interiorAngle_pos_of_isLeft_vertex hj⟩
+
+/-- The angle condition `orderOf (cycleMap j) * cycleAngleSum j = 2π` forces the cycle
+transformation to have finite order. -/
+theorem orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq {j : Fin n}
+    (hcyc : (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π) :
+    orderOf (σ.cycleMap j) ≠ 0 := by
+  intro h0
+  rw [h0, Nat.cast_zero, zero_mul] at hcyc
+  exact Real.two_pi_pos.ne hcyc
 
 /-- The angle sum as a sum over the first `cycleLength j` successors of `j`. -/
 theorem cycleAngleSum_eq_sum_range (j : Fin n) :

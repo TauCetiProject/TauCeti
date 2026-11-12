@@ -143,12 +143,12 @@ theorem ρ_mem_level_conj (g : G) {U U' : OpenSubgroup G}
     simpa [mul_assoc] using hw
   calc
     F.toRep.ρ w (F.toRep.ρ g a) = F.toRep.ρ (w * g) a := by
-      rw [← Module.End.mul_apply, ← map_mul]
+      rw [← mul_apply_eq_comp, ← map_mul]
     _ = F.toRep.ρ (g * (g⁻¹ * w * g)) a := by
       congr 1
       group
     _ = F.toRep.ρ g (F.toRep.ρ (g⁻¹ * w * g) a) := by
-      rw [← Module.End.mul_apply, ← map_mul]
+      rw [← mul_apply_eq_comp, ← map_mul]
     _ = F.toRep.ρ g a := congrArg _ (F.mem_level.1 ha _ hw')
 
 /-- **Conjugation of levels:** acting by `g` is an isomorphism `A^U ≃ A^{gUg⁻¹}`. The hypothesis
@@ -412,7 +412,7 @@ theorem conjugateCoefficientEquiv_rep_apply (γ : L.Gal) (x : F.level L.top) :
     refine Subtype.ext ?_
     rw [conjugateGalEquiv_mk, conjugateCoefficientEquiv_apply_coe, rep_ρ_mk_apply_coe,
       rep_ρ_mk_apply_coe, conjugateGroundEquiv_apply_coe, conjugateCoefficientEquiv_apply_coe]
-    simp only [← Module.End.mul_apply, ← map_mul]
+    simp only [← mul_apply_eq_comp, ← map_mul]
     congr 1
     group
 
@@ -776,7 +776,7 @@ theorem conjugateTateIso_one (r : ℤ) :
     L.conjugateTateIso F 1 r = eqToIso (by rw [conjugate_one]) := by
   refine Iso.ext ?_
   have key := L.tateCohomologyMap_eq_conjugateTateIso_hom F 1 L.conjugate_one
-    (Rep.isIntertwiningMap_id (L.rep F))
+    (L.rep F).ρ.isIntertwiningMap_id
     (fun u v huv ↦ congrArg QuotientGroup.mk (Subtype.ext (by simpa using huv.symm)))
     (fun x ↦ by simp) r
   rw [TateCohomology.map_id] at key

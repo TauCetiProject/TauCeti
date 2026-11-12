@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
@@ -30,7 +32,8 @@ without duplicating it.
 The file also records that a finitely generated internally graded module has only finitely many
 nonzero pieces, the Koszul twist operator used to encode Koszul signs on homogeneous elements, and
 the letterwise tuple operation that applies it on a half-open index interval. These sign
-operations use integer degrees, while decomposition and transport allow any index type.
+operations use integer degrees, while decomposition and transport allow any index type. The
+Koszul twist and its tuple operation work over any ring: their integer signs are central scalars.
 
 ## Main definitions
 
@@ -48,11 +51,16 @@ operations use integer degrees, while decomposition and transport allow any inde
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
   elements.
+* `TauCeti.InternalGrading.decompose_mem_of_mem_span_sigma`: the components of an element in the
+  span of homogeneous families `s p ⊆ C p` lie in the matching `C p`.
 * `TauCeti.InternalGrading.finite_piece_ne_bot`: a finitely generated internally graded module has
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
   each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
+* `TauCeti.InternalGrading.koszulTwist_ofDecomposition_mul` and
+  `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
+  is multiplicative and fixes the unit, so it may be applied factorwise to products.
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
@@ -61,8 +69,9 @@ operations use integer degrees, while decomposition and transport allow any inde
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
   map are homogeneous submodules.
-* `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: a homogeneous linear map commutes with
-  Koszul twists up to the sign determined by its degree.
+* `TauCeti.LinearMap.IsHomogeneous.koszulTwist_apply` and
+  `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: pointwise and operator forms of commuting a
+  homogeneous linear map with Koszul twists up to the sign determined by its degree.
 * `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
   twisting a block of a tuple.
 
@@ -153,6 +162,26 @@ theorem linearMap_ext {S : Type*} [Semiring S] [Module S M]
     (G.span_setOf_exists_mem_piece_eq_top S)).2
   rintro ⟨x, p, hx⟩
   exact h p x hx
+
+/-- The components of an element in the span of a family `s p ⊆ C p` of homogeneous elements of
+degree `p` lie in the matching `C p`. -/
+theorem decompose_mem_of_mem_span_sigma (G : InternalGrading R M ι) (C : ι → Submodule R M)
+    (s : ι → Set M) (hsC : ∀ p, s p ⊆ C p) (hCG : ∀ p, C p ≤ G.piece p) {z : M}
+    (hz : z ∈ Submodule.span R (Set.range fun i : (Σ p : ι, s p) ↦ (i.2 : M))) (p : ι) :
+    (DirectSum.decompose G.piece z p : M) ∈ C p := by
+  induction hz using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨i, rfl⟩ := hx
+    by_cases hi : i.1 = p
+    · rw [DirectSum.decompose_of_mem_same _ (hi ▸ hCG _ (hsC _ i.2.2))]
+      exact hi ▸ hsC _ i.2.2
+    · rw [DirectSum.decompose_of_mem_ne _ (hCG _ (hsC _ i.2.2)) hi]
+      exact (C p).zero_mem
+  | zero => simp
+  | add x y _ _ hx hy => simpa using (C p).add_mem hx hy
+  | smul a x _ hx =>
+    rw [DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
+    exact (C p).smul_mem a hx
 
 section Map
 
@@ -369,13 +398,23 @@ theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
 
 end Decompose
 
-/-- The image of a homogeneous linear map is a homogeneous submodule. -/
-theorem isHomogeneous_range {ι : Type} [DecidableEq ι] [AddGroup ι]
+/-- The image of a homogeneous linear map is a homogeneous submodule, for degrees in any
+additive monoid. -/
+theorem isHomogeneous_range {ι : Type} [DecidableEq ι] [AddMonoid ι]
     {G : InternalGrading R M ι} {H : InternalGrading R N ι} {f : M →ₗ[S] N} {r : ι}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     DirectSum.SetLike.IsHomogeneous H.piece (_root_.LinearMap.range f) := by
   rintro q _ ⟨x, rfl⟩
-  exact ⟨_, (hf.map_decompose (q - r) x).trans (by rw [sub_add_cancel])⟩
+  induction x using DirectSum.Decomposition.inductionOn G.piece with
+  | zero => simp
+  | @homogeneous p x =>
+    by_cases hpq : p + r = q
+    · subst q
+      rw [DirectSum.decompose_of_mem_same H.piece (hf.map_mem x.2)]
+      exact ⟨x, rfl⟩
+    · rw [DirectSum.decompose_of_mem_ne H.piece (hf.map_mem x.2) hpq]
+      exact Submodule.zero_mem _
+  | add x y hx hy => simpa using Submodule.add_mem _ hx hy
 
 end LinearMap.IsHomogeneous
 
@@ -409,11 +448,28 @@ theorem InternalGrading.sum_decompose_toFinset (G : InternalGrading R M ι)
   · rw [DFinsupp.notMem_support_iff.mp hp]
     simp
 
+/-- A nonzero finitely generated internally graded module over a linearly ordered index has a top
+degree `p`: all pieces above `p` vanish and the piece at `p` does not. -/
+theorem InternalGrading.exists_top_piece [LinearOrder ι] (G : InternalGrading R M ι)
+    [Module.Finite R M] [Nontrivial M] :
+    ∃ p, (∀ q, p < q → G.piece q = ⊥) ∧ G.piece p ≠ ⊥ := by
+  have hfin := G.finite_piece_ne_bot
+  -- A nonzero element has a nonzero homogeneous component, so some piece is nonzero.
+  obtain ⟨x, hx⟩ := exists_ne (0 : M)
+  have hne : hfin.toFinset.Nonempty := by
+    by_contra h
+    apply hx
+    rw [← G.sum_decompose_toFinset hfin x, Finset.not_nonempty_iff_eq_empty.1 h,
+      Finset.sum_empty]
+  refine ⟨hfin.toFinset.max' hne, fun q hq => ?_, hfin.mem_toFinset.1 (hfin.toFinset.max'_mem hne)⟩
+  by_contra h
+  exact (hfin.toFinset.le_max' q (hfin.mem_toFinset.2 h)).not_gt hq
+
 end FiniteSupport
 
 section KoszulTwist
 
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- The Koszul twist of parameter `q`: on the homogeneous piece of degree `e` it acts as the
 scalar `(-1)^(q * e)`.
@@ -425,8 +481,8 @@ degree `D` is the scalar by which `koszulTwist G q` scales those inputs. -/
 noncomputable def InternalGrading.koszulTwist (G : InternalGrading R M) (q : ℤ) : M →ₗ[R] M :=
   DirectSum.coeLinearMap (fun e => G.piece e) ∘ₗ
     DirectSum.toModule R ℤ (⨁ e : ℤ, G.piece e)
-      (fun e => (((q * e).negOnePow : ℤ) : R) •
-        DirectSum.lof R ℤ (fun e => G.piece e) e) ∘ₗ
+      (fun e => DirectSum.lof R ℤ (fun e => G.piece e) e ∘ₗ
+        Module.End.smulLeft (((q * e).negOnePow : ℤ) : R) (Set.intCast_mem_center R _)) ∘ₗ
     (DirectSum.decomposeLinearEquiv (ℳ := G.piece)).toLinearMap
 
 /-- The tuple `x` with exactly the letters at positions in the half-open interval `[a, a + p)`
@@ -441,7 +497,7 @@ end KoszulTwist
 
 section KoszulTwistLemmas
 
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- On a homogeneous element of degree `e`, the Koszul twist of parameter `q` acts as the scalar
 `(-1)^(q * e)`. -/
@@ -481,6 +537,13 @@ theorem InternalGrading.koszulTwist_mem_ofDecomposition (ℳ : ℤ → Submodule
     rwa [InternalGrading.ofDecomposition_piece]
   have := koszulTwist_mem_piece _ hx' q
   rwa [InternalGrading.ofDecomposition_piece] at this
+
+/-- On an element of degree `e` of a decomposition `ℳ`, the Koszul twist of parameter `q` of the
+grading of `ℳ` acts as the scalar `(-1)^(q * e)`. -/
+theorem InternalGrading.koszulTwist_ofDecomposition_apply_of_mem (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] {x : M} {e : ℤ} (hx : x ∈ ℳ e) (q : ℤ) :
+    koszulTwist (InternalGrading.ofDecomposition ℳ) q x = (((q * e).negOnePow : ℤ) : R) • x :=
+  koszulTwist_apply_of_mem _ (by rwa [InternalGrading.ofDecomposition_piece]) q
 
 /-- The Koszul twist of parameter zero is the identity. -/
 @[simp]
@@ -536,30 +599,56 @@ theorem InternalGrading.koszulTwist_koszulTwist (G : InternalGrading R M) (q : �
   have h := LinearMap.congr_fun (koszulTwist_comp_self G q) x
   rwa [LinearMap.comp_apply, LinearMap.id_apply] at h
 
+/-- The Koszul twist only depends on the parity of its parameter; in particular, negating the
+parameter does not change it. -/
+@[simp]
+theorem InternalGrading.koszulTwist_neg (G : InternalGrading R M) (q : ℤ) :
+    koszulTwist G (-q) = koszulTwist G q := by
+  rw [← LinearMap.comp_id (koszulTwist G (-q)), ← koszulTwist_comp_self G q,
+    ← LinearMap.comp_assoc, koszulTwist_comp, neg_add_cancel, koszulTwist_zero,
+    LinearMap.id_comp]
+
 namespace LinearMap.IsHomogeneous
 
 variable {N : Type w} [AddCommMonoid N] [Module R N]
 
-/-- A homogeneous linear map of degree `r` commutes with the Koszul twist of parameter `q` up to
-the scalar `(-1)^(q * r)`. This is the operator form of the sign acquired by moving a degree-`r`
-map past a homogeneous input. -/
-theorem koszulTwist_comp {G : InternalGrading R M} {H : InternalGrading R N}
-    {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
-    H.koszulTwist q ∘ₗ f =
-      ((((q * r).negOnePow : ℤ) : R) • (f ∘ₗ G.koszulTwist q)) := by
-  refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun p ↦ ?_
-  ext x
-  have hx : (x : M) ∈ G.piece p := Submodule.coe_mem x
-  have hfx : f (x : M) ∈ H.piece (p + r) := hf.map_mem hx
-  have hcalc : H.koszulTwist q (f (x : M)) =
-      (((q * r).negOnePow : ℤ) : R) • f (G.koszulTwist q (x : M)) := by
-    rw [H.koszulTwist_apply_of_mem hfx q, G.koszulTwist_apply_of_mem hx q, map_smul,
-      smul_smul]
+/-- A homogeneous linear map of degree `r` commutes pointwise with the Koszul twist of
+parameter `q` up to the scalar `(-1)^(q * r)`. -/
+theorem koszulTwist_apply {G : InternalGrading R M} {H : InternalGrading R N}
+    {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) (x : M) :
+    H.koszulTwist q (f x) = (((q * r).negOnePow : ℤ) : R) • f (G.koszulTwist q x) := by
+  induction x using DirectSum.Decomposition.inductionOn G.piece with
+  | zero => simp
+  | @homogeneous p x =>
+    rw [H.koszulTwist_apply_of_mem (hf.map_mem x.2) q,
+      G.koszulTwist_apply_of_mem x.2 q, map_smul, smul_smul]
     congr 1
     rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
     congr 2
     ring_nf
-  simpa only [LinearMap.comp_apply, LinearMap.smul_apply, Submodule.coe_subtype] using hcalc
+  | add x y hx hy => simp [map_add, hx, hy, smul_add]
+
+/-- A homogeneous linear map of degree `r` commutes with the Koszul twist of parameter `q` up to
+the scalar `(-1)^(q * r)`. This is the operator form of the sign acquired by moving a degree-`r`
+map past a homogeneous input. The sign acts through its central scalar endomorphism, so this
+formula also applies over a noncommutative ring. -/
+theorem koszulTwist_comp {G : InternalGrading R M} {H : InternalGrading R N}
+    {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
+    H.koszulTwist q ∘ₗ f =
+      Module.End.smulLeft (((q * r).negOnePow : ℤ) : R) (Set.intCast_mem_center R _) ∘ₗ
+        (f ∘ₗ G.koszulTwist q) := by
+  ext x
+  simpa only [LinearMap.comp_apply, Module.End.smulLeft_apply] using hf.koszulTwist_apply q x
+
+/-- Over a commutative ring, the Koszul compatibility of a homogeneous map is a scalar multiple
+of the composition with the source twist. -/
+theorem koszulTwist_comp_eq_smul {R : Type u} [CommRing R] {M : Type v} {N : Type w}
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[R] N} {r : ℤ}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
+    H.koszulTwist q ∘ₗ f = (((q * r).negOnePow : ℤ) : R) • (f ∘ₗ G.koszulTwist q) := by
+  simpa only [Module.End.smulLeft_eq, LinearMap.smul_comp, LinearMap.id_comp] using
+    hf.koszulTwist_comp q
 
 end LinearMap.IsHomogeneous
 
@@ -587,18 +676,28 @@ theorem InternalGrading.twistedTuple_apply (G : InternalGrading R M) (q : ℤ) {
   · exact twistedTuple_apply_of_mem_Ico G q x a p i h
   · exact twistedTuple_apply_of_not_mem_Ico G q x a p i h
 
+/-- Two twistings of the same tuple agree at an index lying in both twisted intervals or in
+neither. -/
+theorem InternalGrading.twistedTuple_apply_eq_twistedTuple_apply (G : InternalGrading R M)
+    (q : ℤ) {n : ℕ} (x : Fin n → M) {a p a' p' : ℕ} (i : Fin n)
+    (h : a ≤ i.val ∧ i.val < a + p ↔ a' ≤ i.val ∧ i.val < a' + p') :
+    twistedTuple G q x a p i = twistedTuple G q x a' p' i := by
+  by_cases hi : a ≤ i.val ∧ i.val < a + p
+  · rw [twistedTuple_apply_of_mem_Ico G q x a p i hi,
+      twistedTuple_apply_of_mem_Ico G q x a' p' i (h.1 hi)]
+  · rw [twistedTuple_apply_of_not_mem_Ico G q x a p i hi,
+      twistedTuple_apply_of_not_mem_Ico G q x a' p' i (mt h.2 hi)]
+
 /-- A degree-zero homogeneous linear map commutes with twisting a consecutive block of a tuple. -/
 theorem LinearMap.IsHomogeneous.twistedTuple_map {N : Type w} [AddCommMonoid N] [Module R N]
     {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[R] N}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) (q : ℤ) {n : ℕ}
     (x : Fin n → M) (a p : ℕ) :
     H.twistedTuple q (fun i ↦ f (x i)) a p = fun i ↦ f (G.twistedTuple q x a p i) := by
-  have hcomm := hf.koszulTwist_comp q
   funext i
   simp only [InternalGrading.twistedTuple_apply]
   split_ifs with h
-  · have hi := LinearMap.congr_fun hcomm (x i)
-    simpa [LinearMap.comp_apply] using hi
+  · simpa using hf.koszulTwist_apply q (x i)
   · rfl
 
 /-- Twisting an empty interval leaves the tuple unchanged. -/
@@ -619,10 +718,45 @@ end KoszulTwistLemmas
 
 namespace InternalGrading
 
+section KoszulTwistMul
+
+variable {R : Type u} {A : Type v} [Ring R]
+
+/-- **The Koszul twist of a graded algebra is multiplicative**: degrees add under multiplication,
+so the signs `(-1) ^ (q |a|)` multiply. -/
+theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R A]
+    {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜]
+    [DirectSum.Decomposition 𝒜] (q : ℤ) (a b : A) :
+    (ofDecomposition 𝒜).koszulTwist q (a * b) =
+      (ofDecomposition 𝒜).koszulTwist q a * (ofDecomposition 𝒜).koszulTwist q b := by
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | add a a' ha ha' => rw [add_mul, map_add, ha, ha', map_add, add_mul]
+  | homogeneous a =>
+    obtain ⟨a, hap⟩ := a
+    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | add b b' hb hb' => rw [mul_add, map_add, hb, hb', map_add, mul_add]
+    | homogeneous b =>
+      obtain ⟨b, hbq⟩ := b
+      rw [koszulTwist_ofDecomposition_apply_of_mem _ (SetLike.GradedMul.mul_mem hap hbq),
+        koszulTwist_ofDecomposition_apply_of_mem _ hap,
+        koszulTwist_ofDecomposition_apply_of_mem _ hbq, intUnits_smul_mul_smul, mul_add,
+        Int.negOnePow_add]
+
+/-- The Koszul twist of a graded algebra fixes the unit, which has degree zero. -/
+@[simp]
+theorem koszulTwist_ofDecomposition_one [Semiring A] [Module R A] {𝒜 : ℤ → Submodule R A}
+    [SetLike.GradedOne 𝒜] [DirectSum.Decomposition 𝒜] (q : ℤ) :
+    (ofDecomposition 𝒜).koszulTwist q 1 = 1 :=
+  koszulTwist_apply_of_mem_zero _
+    (by rw [ofDecomposition_piece]; exact SetLike.GradedOne.one_mem (A := 𝒜)) q
+
+end KoszulTwistMul
+
 section QuadraticTwist
 
-variable {R : Type u} {M : Type v}
-  [CommRing R] [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- The quadratic sign exponent attached to degree `p`, namely the generalized binomial
 coefficient `p choose 2`. -/
@@ -649,6 +783,30 @@ theorem negOnePow_quadraticExponent_add (p q : ℤ) :
   rw [quadraticExponent_add, Int.negOnePow_add, Int.negOnePow_add]
   ac_rfl
 
+/-- The product of three quadratic signs reduces to the bilinear Koszul sign. -/
+theorem negOnePow_quadraticExponent_cancel (p r : ℤ) :
+    (quadraticExponent p).negOnePow *
+        (quadraticExponent r).negOnePow *
+        (quadraticExponent (r + p)).negOnePow = (p * r).negOnePow := by
+  rw [negOnePow_quadraticExponent_add]
+  calc
+    _ = (r * p).negOnePow *
+        ((quadraticExponent p).negOnePow *
+          (quadraticExponent p).negOnePow) *
+        ((quadraticExponent r).negOnePow *
+          (quadraticExponent r).negOnePow) := by ac_rfl
+    _ = (p * r).negOnePow := by rw [Int.units_mul_self, Int.units_mul_self, mul_one, mul_one,
+      mul_comm r p]
+
+/-- The quadratic signs of two negated degrees multiply with the Koszul composition sign. -/
+theorem negOnePow_quadraticExponent_neg_add (s t : ℤ) :
+    (quadraticExponent (-t)).negOnePow *
+        (quadraticExponent (-s)).negOnePow =
+      (s * t).negOnePow * (quadraticExponent (-(t + s))).negOnePow := by
+  rw [neg_add, negOnePow_quadraticExponent_add, neg_mul_neg,
+    mul_comm t s]
+  rw [← mul_assoc, ← mul_assoc, Int.units_mul_self, one_mul]
+
 /-- The quadratic twist multiplies the degree-`p` component by `(-1) ^ (p choose 2)`.
 
 Transporting the ordinary opposite multiplication through this involution produces the
@@ -656,8 +814,9 @@ Koszul-signed opposite multiplication. -/
 noncomputable def quadraticTwist (G : InternalGrading R M) : M →ₗ[R] M :=
   DirectSum.coeLinearMap (fun p => G.piece p) ∘ₗ
     DirectSum.toModule R ℤ (⨁ p : ℤ, G.piece p)
-      (fun p => (((quadraticExponent p).negOnePow : ℤ) : R) •
-        DirectSum.lof R ℤ (fun p => G.piece p) p) ∘ₗ
+      (fun p => DirectSum.lof R ℤ (fun p => G.piece p) p ∘ₗ
+        Module.End.smulLeft (((quadraticExponent p).negOnePow : ℤ) : R)
+          (Set.intCast_mem_center R _)) ∘ₗ
     (DirectSum.decomposeLinearEquiv (ℳ := G.piece)).toLinearMap
 
 /-- On a homogeneous element of degree `p`, the quadratic twist is multiplication by

@@ -226,7 +226,7 @@ theorem spinAction_mem_evenOdd (hline : P.line = ⊥) {i j : ZMod 2} {x : Cliffo
       exact cliffordOperator_mem_evenOdd P hline a hs
   | add x y hx hy ihx ihy => simpa only [map_add, LinearMap.add_apply] using add_mem ihx ihy
   | ι_mul_ι_mul m₁ m₂ x hx ih =>
-    rw [map_mul, map_mul, Module.End.mul_apply, Module.End.mul_apply, spinAction_ι, spinAction_ι,
+    rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, spinAction_ι, spinAction_ι,
       ← htwice (i + j)]
     exact cliffordOperator_mem_evenOdd P hline m₁ (cliffordOperator_mem_evenOdd P hline m₂ ih)
 
@@ -436,5 +436,27 @@ theorem map_spinAction_spinMinus_le_spinPlus (hline : P.line = ⊥) {x : Cliffor
   have hparity : (1 : ZMod 2) + 1 = 0 := by decide
   rw [spinPlus_def, ← hparity]
   exact spinAction_mem_evenOdd P hline hx hs
+
+/-- The even half-spin subrepresentation acts as the even half-spin action of the even part. -/
+theorem spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction
+    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (g : spinGroup Q) (p : spinPlus Q P) :
+    (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm).symm
+      ((spinPlusSubrep P hline).toRepresentation g
+        (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm p)) =
+      spinPlusAction Q P hline (spinGroupToEven Q g) p := by
+  apply Subtype.ext
+  exact (coe_spinPlusAction_spinGroupToEven_apply P hline g p).symm
+
+/-- The odd half-spin subrepresentation acts as the odd half-spin action of the even part. -/
+theorem spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction
+    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (g : spinGroup Q)
+    (s : (spinMinusSubrep P hline).toSubmodule) :
+    (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm
+      ((spinMinusSubrep P hline).toRepresentation g s) =
+      spinMinusAction Q P hline (spinGroupToEven Q g)
+        ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s) := by
+  apply Subtype.ext
+  simpa using (coe_spinMinusAction_spinGroupToEven_apply P hline g
+    ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s)).symm
 
 end TauCeti

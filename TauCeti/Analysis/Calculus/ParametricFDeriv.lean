@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.TangentCone.Prod
 
 /-!
 # Mixed derivatives of a parametric map
@@ -18,9 +19,6 @@ of its velocity in that direction at `p₀`. This is the mixed-partial identity 
 derivative of a parametric-family pullback with a Lie bracket. Over `ℝ` or `ℂ`, the required
 smoothness is `C²`;
 over a general nontrivially normed field, it is analyticity.
-
-This supplies a prerequisite for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
 ## Main definitions
 
@@ -34,23 +32,37 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `hasFDerivAt_timeSlice`: the spatial Jacobian differentiates the corresponding fixed-parameter
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
+* `TauCeti.hasDerivAt_parameterCurve_uncurry`, `TauCeti.hasDerivAt_timeSlice_uncurry`: the same
+  for a curried function `u`, as directional derivatives of `uncurry u`.
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
+* `TauCeti.hasFDerivAt_apply_snd_fst`: the derivative of `(x, (t, e)) ↦ F t x`, in terms of the
+  parameter velocity and the derivative of the slice `F t`.
 * `ContDiffAt.deriv_parameterCurve_eventuallyEq_timeFDeriv`: near a point, the derivatives of the
   parameter curves are the parameter-velocity field.
 * `ContDiffAt.differentiableAt_timeFDeriv`: the parameter-velocity field of a jointly `C²` map is
-  differentiable.
+  differentiable, and `ContDiffAt.differentiableAt_deriv_snd` is the same statement for the
+  partial derivative in the second of two scalar variables.
+* `TauCeti.hasFDerivAt_fderivWithin_slice`: mixed derivatives for a normed parameter space, with
+  spatial derivatives within a set accumulated by its interior, such as the range of a model with
+  corners.
 * `TauCeti.hasFDerivAt_spatialFDeriv`: mixed derivatives for a normed parameter space.
 * `hasDerivAt_spatialFDeriv`: the spatial Jacobian differentiates to the spatial derivative of the
   parameter velocity.
+* `TauCeti.hasDerivAt_fderivWithin_slice`: the case of a scalar parameter of mixed derivatives
+  within a set.
 * `deriv_spatialFDeriv_apply`: the parameter derivative of the spatial Jacobian equals the
   derivative of the parameter-velocity field.
 * `deriv_deriv_comm`: for a map of two scalar variables, the two iterated partial derivatives
   agree.
+* `TauCeti.contDiffAt_deriv_slice_left`: the partial derivative in the first variable of a
+  `C^(n+1)` map is `C^n`.
+* `TauCeti.contDiffWithinAt_deriv_slice_left`: the same within a set.
+* `TauCeti.deriv_deriv_slice_left`: **symmetry of the mixed partial derivatives**, the derivative
+  in the second variable of the partial derivative in the first variable is the mixed second
+  derivative in the directions `(1, 0)` and `(0, 1)`.
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 * Sébastien Gouëzel, `Mathlib/Analysis/Calculus/FDeriv/Symmetric.lean`, theorem
   `ContDiffAt.isSymmSndFDerivAt`.
 -/
@@ -60,7 +72,7 @@ public section
 noncomputable section
 
 open Filter ContinuousLinearMap
-open scoped Topology
+open scoped ContDiff Topology
 
 variable {𝕜 E F' : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -85,27 +97,33 @@ private theorem HasFDerivAt.clm_apply_const {c : E → F' →L[𝕜] G}
 
 end
 
-/-- The spatial Jacobian of a parametric map at `x`, as a function of the parameter. If `F` is not
-differentiable at `(t, x)`, its value at `t` is the junk value `0`. -/
-def spatialFDeriv (F : 𝕜 × E → F') (x : E) (t : 𝕜) : E →L[𝕜] F' :=
-  (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 𝕜 E)
+section Spatial
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+
+/-- The spatial Jacobian of a parametric map at `x`, as a function of a normed-space
+parameter. If `F` is not differentiable at `(t, x)`, its value at `t` is the junk value `0`. -/
+def spatialFDeriv (F : P × E → F') (x : E) (t : P) : E →L[𝕜] F' :=
+  (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 P E)
 
 /-- The spatial derivative as the restriction of the full derivative to the spatial factor. -/
-theorem spatialFDeriv_def (F : 𝕜 × E → F') (x : E) (t : 𝕜) :
-    spatialFDeriv F x t =
-      (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 𝕜 E) :=
+theorem spatialFDeriv_def (F : P × E → F') (x : E) (t : P) :
+    spatialFDeriv (𝕜 := 𝕜) F x t =
+      (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 P E) :=
   (rfl)
 
 /-- The spatial derivative, as a function of the parameter. -/
-theorem spatialFDeriv_eq (F : 𝕜 × E → F') (x : E) :
-    spatialFDeriv F x = fun t =>
-      (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 𝕜 E) :=
+theorem spatialFDeriv_eq (F : P × E → F') (x : E) :
+    spatialFDeriv (𝕜 := 𝕜) F x = fun t =>
+      (fderiv 𝕜 F (t, x)).comp (ContinuousLinearMap.inr 𝕜 P E) :=
   (rfl)
 
 @[simp]
-theorem spatialFDeriv_apply (F : 𝕜 × E → F') (x : E) (t : 𝕜) (w : E) :
-    spatialFDeriv F x t w = fderiv 𝕜 F (t, x) (0, w) :=
+theorem spatialFDeriv_apply (F : P × E → F') (x : E) (t : P) (w : E) :
+    spatialFDeriv (𝕜 := 𝕜) F x t w = fderiv 𝕜 F (t, x) (0, w) :=
   (rfl)
+
+end Spatial
 
 /-- The parameter velocity of a parametric map at `(t, x)`. If `F` is not differentiable there,
 this is the junk value `0`. -/
@@ -130,28 +148,140 @@ theorem hasDerivAt_parameterCurve {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     hF.hasFDerivAt.comp_hasDerivAt t (hasFDerivAt_prodMk_left t x).hasDerivAt
 
 /-- The spatial Jacobian is the derivative of the fixed-parameter slice `fun y ↦ F (t, y)`. -/
-theorem hasFDerivAt_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
+theorem hasFDerivAt_timeSlice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {t : P} {x : E}
     (hF : DifferentiableAt 𝕜 F (t, x)) :
-    HasFDerivAt (fun y => F (t, y)) (spatialFDeriv F x t) x := by
+    HasFDerivAt (fun y => F (t, y)) (spatialFDeriv (𝕜 := 𝕜) F x t) x := by
   rw [spatialFDeriv_def]
   exact hF.hasFDerivAt.comp x (hasFDerivAt_prodMk_right t x)
 
 /-- The derivative of the fixed-parameter slice `fun y ↦ F (t, y)` is its spatial Jacobian. -/
-theorem fderiv_timeSlice {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
+theorem fderiv_timeSlice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {t : P} {x : E}
     (hF : DifferentiableAt 𝕜 F (t, x)) :
-    fderiv 𝕜 (fun y => F (t, y)) x = spatialFDeriv F x t :=
+    fderiv 𝕜 (fun y => F (t, y)) x = spatialFDeriv (𝕜 := 𝕜) F x t :=
   TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
+
+/-- For a function `u` of a scalar parameter and a spatial variable, the derivative of the
+parameter curve `s ↦ u s x` is the derivative of `uncurry u` in the direction `(1, 0)`. This is
+`hasDerivAt_parameterCurve` for `uncurry u`, with the parameter velocity unfolded. -/
+theorem hasDerivAt_parameterCurve_uncurry {u : 𝕜 → E → F'} {t : 𝕜} {x : E}
+    (hu : DifferentiableAt 𝕜 (Function.uncurry u) (t, x)) :
+    HasDerivAt (fun s ↦ u s x) (fderiv 𝕜 (Function.uncurry u) (t, x) (1, 0)) t := by
+  simpa only [Function.uncurry_apply_pair, timeFDeriv_apply] using hasDerivAt_parameterCurve hu
+
+/-- For a function `u` of a parameter and a scalar spatial variable, the derivative of the
+fixed-parameter slice `u t` is the derivative of `uncurry u` in the direction `(0, 1)`. This is
+`hasFDerivAt_timeSlice` for `uncurry u`, with the spatial Jacobian applied to `1`. -/
+theorem hasDerivAt_timeSlice_uncurry {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {u : P → 𝕜 → F'} {t : P} {x : 𝕜} (hu : DifferentiableAt 𝕜 (Function.uncurry u) (t, x)) :
+    HasDerivAt (u t) (fderiv 𝕜 (Function.uncurry u) (t, x) (0, 1)) x := by
+  simpa only [Function.uncurry_apply_pair, spatialFDeriv_apply] using
+    (hasFDerivAt_timeSlice hu).hasDerivAt
 
 /-- **The chain rule along a curve.** If `F` is differentiable at `(t, γ t)` and `γ` has velocity
 `v` at `t`, then `s ↦ F (s, γ s)` has derivative the parameter velocity of `F` plus its spatial
 Jacobian applied to `v`. -/
 theorem hasDerivAt_comp_prodMk {F : 𝕜 × E → F'} {γ : 𝕜 → E} {v : E} {t : 𝕜}
     (hF : DifferentiableAt 𝕜 F (t, γ t)) (hγ : HasDerivAt γ v t) :
-    HasDerivAt (fun s ↦ F (s, γ s)) (timeFDeriv F t (γ t) + spatialFDeriv F (γ t) t v) t := by
+    HasDerivAt (fun s ↦ F (s, γ s))
+      (timeFDeriv F t (γ t) + spatialFDeriv (𝕜 := 𝕜) F (γ t) t v) t := by
   refine (hF.hasFDerivAt.comp_hasDerivAt t ((hasDerivAt_id t).prodMk hγ)).congr_deriv ?_
   rw [timeFDeriv_apply, spatialFDeriv_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+
+/-- A scalar function `F(t, x)` of a parameter and a point, viewed as a function of
+`(x, (t, e))` that ignores the extra coordinate `e`, has derivative
+`(δx, δt, δe) ↦ ∂_t F(t, x) δt + d(F t)(x) δx` where it is differentiable. -/
+theorem hasFDerivAt_apply_snd_fst {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {F : 𝕜 → E → 𝕜} {t : 𝕜} {x : E}
+    (hF : DifferentiableAt 𝕜 (Function.uncurry F) (t, x)) (e : G) :
+    HasFDerivAt (fun y : E × (𝕜 × G) ↦ F y.2.1 y.1)
+      (timeFDeriv (Function.uncurry F) t x • (fst 𝕜 𝕜 G).comp (snd 𝕜 E (𝕜 × G)) +
+        (fderiv 𝕜 (F t) x).comp (fst 𝕜 E (𝕜 × G))) (x, (t, e)) := by
+  have hpair : HasFDerivAt (fun y : E × (𝕜 × G) ↦ (y.2.1, y.1))
+      (((fst 𝕜 𝕜 G).comp (snd 𝕜 E (𝕜 × G))).prod (fst 𝕜 E (𝕜 × G))) (x, (t, e)) :=
+    hasFDerivAt_snd.fst.prodMk hasFDerivAt_fst
+  have hspatial : spatialFDeriv (Function.uncurry F) x t = fderiv 𝕜 (F t) x :=
+    (fderiv_timeSlice hF).symm
+  refine (hF.hasFDerivAt.comp (x, (t, e)) hpair).congr_fderiv
+    (ContinuousLinearMap.ext fun w ↦ ?_)
+  -- Split `(δt, δx)` into its time and space components.
+  have hsplit : ((w.2.1, w.1) : 𝕜 × E) = w.2.1 • ((1 : 𝕜), (0 : E)) + (0, w.1) := by simp
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
+    ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
+  rw [hsplit, map_add, map_smul, ← timeFDeriv_apply, ← spatialFDeriv_apply, hspatial]
+  simp [mul_comm]
+
+/-- **Mixed derivatives within a set.** Let `F : P × E → F'`, with `P` a normed parameter space, be
+sufficiently smooth within `univ ×ˢ s` at `(p, x)`, where `s` has unique derivatives and `x ∈ s` is
+accumulated by the interior of `s`. Then differentiating in the parameter the spatial derivative
+within `s` of the slices `y ↦ F (q, y)` gives the spatial derivative within `s` of the parameter
+derivative at `p`.
+
+Over `ℝ` or `ℂ` the required smoothness is `C²`. The set `s` is typically the range of a model with
+corners, so that this computes mixed derivatives of maps read in charts of manifolds with
+boundary. -/
+theorem hasFDerivAt_fderivWithin_slice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {s : Set E} {p : P} {x : E}
+    (hF : ContDiffWithinAt 𝕜 (minSmoothness 𝕜 2) F (Set.univ ×ˢ s) (p, x))
+    (hs : UniqueDiffOn 𝕜 s) (hx : x ∈ closure (interior s)) (h'x : x ∈ s) :
+    HasFDerivAt (fun q ↦ fderivWithin 𝕜 (fun y ↦ F (q, y)) s x)
+      (fderivWithin 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p) s x).flip p := by
+  set S : Set (P × E) := Set.univ ×ˢ s
+  have hS : UniqueDiffOn 𝕜 S := UniqueDiffOn.prod uniqueDiffOn_univ hs
+  have hpx : (p, x) ∈ S := ⟨Set.mem_univ p, h'x⟩
+  have hpx' : (p, x) ∈ closure (interior S) := by
+    simp only [S, interior_prod_eq, interior_univ, closure_prod_eq, closure_univ]
+    exact ⟨Set.mem_univ p, hx⟩
+  -- `D` is the derivative of `F` within `S`; it is differentiable within `S` at `(p, x)`, with
+  -- symmetric derivative.
+  set D := fderivWithin 𝕜 F S
+  have h2 : (1 : WithTop ℕ∞) + 1 ≤ minSmoothness 𝕜 2 :=
+    le_trans (by norm_num) le_minSmoothness
+  obtain ⟨u, hu, hxu, hFu⟩ := hF.contDiffOn' (m := 1 + 1) h2 (by simp)
+  rw [Set.insert_eq_of_mem hpx] at hFu
+  have hdiff : ∀ z ∈ S ∩ u, HasFDerivWithinAt F (D z) S z := fun z hz ↦
+    (((hFu.differentiableOn (by simp)) z hz).mono_of_mem_nhdsWithin
+      (inter_mem_nhdsWithin S (hu.mem_nhds hz.2))).hasFDerivWithinAt
+  have hD : HasFDerivWithinAt D (fderivWithin 𝕜 D S (p, x)) S (p, x) :=
+    ((hF.fderivWithin_right (m := 1) hS h2 hpx).differentiableWithinAt
+      one_ne_zero).hasFDerivWithinAt
+  have hsymm := hF.isSymmSndFDerivWithinAt le_rfl hS hpx' hpx
+  -- Near `p`, the spatial derivative of the slice through `(q, x)` is read off from `D (q, x)`.
+  have hslice : (fun q ↦ fderivWithin 𝕜 (fun y ↦ F (q, y)) s x) =ᶠ[𝓝 p]
+      fun q ↦ (D (q, x)).comp (inr 𝕜 P E) := by
+    filter_upwards [(continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
+      (hu.mem_nhds hxu)] with q hq
+    exact ((hdiff (q, x) ⟨⟨Set.mem_univ q, h'x⟩, hq⟩).comp x
+      (hasFDerivAt_prodMk_right q x).hasFDerivWithinAt
+      (fun y hy ↦ ⟨Set.mem_univ q, hy⟩)).fderivWithin (hs x h'x)
+  have hleft : HasFDerivAt (fun q ↦ (D (q, x)).comp (inr 𝕜 P E))
+      (((compL 𝕜 E (P × E) F').flip (inr 𝕜 P E)).comp
+        ((fderivWithin 𝕜 D S (p, x)).comp (inl 𝕜 P E))) p :=
+    ((compL 𝕜 E (P × E) F').flip (inr 𝕜 P E)).hasFDerivAt.comp p
+      (hasFDerivWithinAt_univ.mp (hD.comp p (hasFDerivAt_prodMk_left p x).hasFDerivWithinAt
+        (fun q _ ↦ Set.mk_mem_prod (Set.mem_univ q) h'x)))
+  -- Near `x` in `s`, the parameter derivative at `p` is read off from `D (p, y)`.
+  have hvel : (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p) =ᶠ[𝓝[s] x]
+      fun y ↦ (D (p, y)).comp (inl 𝕜 P E) := by
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds
+      ((continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
+        (hu.mem_nhds hxu))] with y hy hyu
+    exact (hasFDerivWithinAt_univ.mp ((hdiff (p, y) ⟨⟨Set.mem_univ p, hy⟩, hyu⟩).comp p
+      (hasFDerivAt_prodMk_left p y).hasFDerivWithinAt
+        (fun q _ ↦ Set.mk_mem_prod (Set.mem_univ q) hy))).fderiv
+  have hright : HasFDerivWithinAt (fun y ↦ (D (p, y)).comp (inl 𝕜 P E))
+      (((compL 𝕜 P (P × E) F').flip (inl 𝕜 P E)).comp
+        ((fderivWithin 𝕜 D S (p, x)).comp (inr 𝕜 P E))) s x :=
+    ((compL 𝕜 P (P × E) F').flip (inl 𝕜 P E)).hasFDerivAt.comp_hasFDerivWithinAt x
+      (hD.comp x (hasFDerivAt_prodMk_right p x).hasFDerivWithinAt fun _ hy ↦
+        ⟨Set.mem_univ p, hy⟩)
+  rw [hvel.fderivWithin_eq (mem_of_mem_nhdsWithin h'x hvel), hright.fderivWithin (hs x h'x)]
+  refine (hleft.congr_of_eventuallyEq hslice).congr_fderiv ?_
+  ext h w
+  simpa using hsymm (h, 0) (0, w)
 
 /-- For a jointly sufficiently smooth map with a normed parameter space, differentiating the
 spatial derivative in the parameter is the spatial derivative of the parameter derivative.
@@ -161,29 +291,57 @@ theorem hasFDerivAt_spatialFDeriv {P : Type*} [NormedAddCommGroup P] [NormedSpac
     (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (p, x)) :
     HasFDerivAt (fun q ↦ fderiv 𝕜 (fun y ↦ F (q, y)) x)
       (fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p) x).flip p := by
-  have hDF := ContDiffAt.hasFDerivAt_fderiv hF le_minSmoothness
-  have hnear : ∀ᶠ z in 𝓝 (p, x), DifferentiableAt 𝕜 F z :=
-    ((hF.of_le (le_trans (by norm_num) le_minSmoothness)).eventually (by simp)).mono fun _ hz ↦
-        hz.differentiableAt one_ne_zero
-  have hSpatial := ((compL 𝕜 E (P × E) F').flip (inr 𝕜 P E)).hasFDerivAt.comp p
-    (hDF.comp p (hasFDerivAt_prodMk_left (𝕜 := 𝕜) p x))
-  have hSpatialSlice := hSpatial.congr_of_eventuallyEq (f₁ :=
-      fun q ↦ fderiv 𝕜 (fun y ↦ F (q, y)) x) (by
-    filter_upwards [(continuousAt_id.prodMk continuousAt_const).eventually hnear] with q hq
-    simpa only [Function.comp_def, compL_apply, flip_apply, id_eq] using
-      (hq.hasFDerivAt.comp x (hasFDerivAt_prodMk_right (𝕜 := 𝕜) q x)).fderiv)
-  have hParameter := ((compL 𝕜 P (P × E) F').flip (inl 𝕜 P E)).hasFDerivAt.comp x
-    (hDF.comp x (hasFDerivAt_prodMk_right (𝕜 := 𝕜) p x))
-  have hParameterSlice := hParameter.congr_of_eventuallyEq (f₁ :=
-      fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p) (by
-    filter_upwards [(continuousAt_const.prodMk continuousAt_id).eventually hnear] with y hy
-    simpa only [Function.comp_def, compL_apply, flip_apply, id_eq] using
-      (hy.hasFDerivAt.comp p (hasFDerivAt_prodMk_left (𝕜 := 𝕜) p y)).fderiv)
-  convert hSpatialSlice using 1
-  rw [hParameterSlice.fderiv]
-  ext h w
-  simpa only [comp_apply, compL_apply, flip_apply, inl_apply, inr_apply] using
-    ((hF.isSymmSndFDerivAt le_rfl).eq (h, 0) (0, w)).symm
+  have h := hasFDerivAt_fderivWithin_slice (𝕜 := 𝕜) (F := F) (s := Set.univ) (p := p) (x := x)
+    (by rwa [Set.univ_prod_univ, contDiffWithinAt_univ]) uniqueDiffOn_univ (by simp)
+    (Set.mem_univ x)
+  simpa only [fderivWithin_univ] using h
+
+/-- The parameter derivative of a jointly `C²` map, applied to a fixed direction, is
+spatially differentiable. Its derivative is evaluation of the spatial derivative of the
+parameter-derivative family at that direction. -/
+theorem hasFDerivAt_parameterFDeriv_apply {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {p : P} {x : E} (hF : ContDiffAt 𝕜 2 F (p, x)) (h : P) :
+    HasFDerivAt (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h)
+      ((fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p) x).flip h) x := by
+  have hswap : ContDiffAt 𝕜 2 (Function.uncurry fun y q ↦ F (q, y)) (x, p) :=
+    hF.comp (x, p) (contDiffAt_snd.prodMk contDiffAt_fst)
+  exact ((hswap.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt
+    one_ne_zero).hasFDerivAt.clm_apply_const h
+
+/-- **Mixed partial derivatives commute.** For a map of two variables with the minimum smoothness
+needed for symmetric second derivatives, differentiating in the second variable in the direction
+`v` and then in the first variable in the direction `h` agrees with differentiating in the
+opposite order. -/
+theorem fderiv_fderiv_slice_apply_comm {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    {F : P × E → F'} {p : P} {x : E} (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (p, x)) (h : P)
+    (v : E) :
+    fderiv 𝕜 (fun q ↦ fderiv 𝕜 (fun y ↦ F (q, y)) x v) p h =
+      fderiv 𝕜 (fun y ↦ fderiv 𝕜 (fun q ↦ F (q, y)) p h) x v := by
+  rw [((hasFDerivAt_spatialFDeriv hF).clm_apply_const v).fderiv,
+    (hasFDerivAt_parameterFDeriv_apply (hF.of_le le_minSmoothness) h).fderiv]
+  simp only [ContinuousLinearMap.flip_apply]
+
+/-- **Mixed derivatives within a set, scalar parameter.** The case `P = 𝕜` of
+`hasFDerivAt_fderivWithin_slice`, with the parameter derivative written as `deriv`. -/
+theorem hasDerivAt_fderivWithin_slice {F : 𝕜 × E → F'} {s : Set E} {t : 𝕜} {x : E}
+    (hF : ContDiffWithinAt 𝕜 (minSmoothness 𝕜 2) F (Set.univ ×ˢ s) (t, x))
+    (hs : UniqueDiffOn 𝕜 s) (hx : x ∈ closure (interior s)) (h'x : x ∈ s) :
+    HasDerivAt (fun r ↦ fderivWithin 𝕜 (fun y ↦ F (r, y)) s x)
+      (fderivWithin 𝕜 (fun y ↦ _root_.deriv (fun r ↦ F (r, y)) t) s x) t := by
+  refine (hasFDerivAt_fderivWithin_slice hF hs hx h'x).hasDerivAt.congr_deriv ?_
+  -- The parameter derivatives `y ↦ ∂ᵣ F (r, y)` at `t` vary differentiably with `y` in `s`.
+  have hswap : ContDiffWithinAt 𝕜 (minSmoothness 𝕜 2) (Function.uncurry fun y r ↦ F (r, y))
+      (s ×ˢ Set.univ) (x, t) :=
+    hF.comp (x, t) (contDiffWithinAt_snd.prodMk contDiffWithinAt_fst)
+      fun z hz ↦ Set.mk_mem_prod (Set.mem_univ z.2) hz.1
+  have hdiff : DifferentiableWithinAt 𝕜 (fun y ↦ fderiv 𝕜 (fun r ↦ F (r, y)) t) s x := by
+    simpa only [fderivWithin_univ] using
+      ((hswap.fderivWithin (m := 1) contDiffWithinAt_const uniqueDiffOn_univ
+        (le_trans (by norm_num) le_minSmoothness) h'x (fun _ _ ↦ Set.mem_univ _)
+        ).differentiableWithinAt one_ne_zero)
+  simp only [← fderiv_apply_one_eq_deriv]
+  rw [fderivWithin_clm_apply (hs x h'x) hdiff (differentiableWithinAt_const _)]
+  simp
 
 end TauCeti
 
@@ -210,37 +368,57 @@ theorem differentiableAt_timeFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (differentiableAt_const t |>.prodMk differentiableAt_id) |>.clm_apply
       (differentiableAt_const (1, 0))
 
+/-- For a map of two scalar variables which is `C²` at `(t, x)`, the partial derivative in the
+second variable at `x` is differentiable in the first variable at `t`. -/
+theorem differentiableAt_deriv_snd {g : 𝕜 × 𝕜 → F'} {t x : 𝕜} (hg : ContDiffAt 𝕜 2 g (t, x)) :
+    DifferentiableAt 𝕜 (fun s ↦ _root_.deriv (fun r ↦ g (s, r)) x) t := by
+  -- Exchange the variables, so that the partial derivative is a parameter-velocity field.
+  have hswap : ContDiffAt 𝕜 2 (fun z : 𝕜 × 𝕜 ↦ g (z.2, z.1)) (x, t) :=
+    hg.comp (x, t) (contDiff_snd.prodMk contDiff_fst).contDiffAt
+  exact hswap.differentiableAt_timeFDeriv.congr_of_eventuallyEq
+    (hswap.of_le (by norm_num)).deriv_parameterCurve_eventuallyEq_timeFDeriv
+
 end ContDiffAt
 
 /-- At `t`, the spatial Jacobian has derivative the spatial derivative of the parameter velocity. -/
 theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t, x)) :
-    HasDerivAt (spatialFDeriv F x) (fderiv 𝕜 (timeFDeriv F t) x) t := by
+    HasDerivAt (spatialFDeriv (𝕜 := 𝕜) F x) (fderiv 𝕜 (timeFDeriv F t) x) t := by
   have hSlice := (TauCeti.hasFDerivAt_spatialFDeriv hF).hasDerivAt
-  have hswap : ContDiffAt 𝕜 (minSmoothness 𝕜 2)
-      (Function.uncurry (fun y s ↦ F (s, y))) (x, t) :=
-    hF.comp (x, t) (contDiffAt_snd.prodMk contDiffAt_fst)
-  have hParameter := (hswap.fderiv (m := 1) contDiffAt_const
-    (le_trans (by norm_num) le_minSmoothness)).differentiableAt one_ne_zero
   have hcurve := (hF.of_le (le_trans (by norm_num) le_minSmoothness))
     |>.deriv_parameterCurve_eventuallyEq_timeFDeriv
-  have hTime := (hParameter.hasFDerivAt.clm_apply_const 1).congr_of_eventuallyEq
+  have hTime := (TauCeti.hasFDerivAt_parameterFDeriv_apply
+    (hF.of_le le_minSmoothness) 1).congr_of_eventuallyEq
     (f₁ := timeFDeriv F t) (by
       simpa only [← fderiv_apply_one_eq_deriv] using
         hcurve.symm)
   have hnear : ∀ᶠ z in 𝓝 (t, x), DifferentiableAt 𝕜 F z :=
     ((hF.of_le (le_trans (by norm_num) le_minSmoothness)).eventually (by simp)).mono fun _ hz ↦
         hz.differentiableAt one_ne_zero
-  have hSpatial := hSlice.congr_of_eventuallyEq (f₁ := spatialFDeriv F x) (by
+  have hSpatial := hSlice.congr_of_eventuallyEq (f₁ := spatialFDeriv (𝕜 := 𝕜) F x) (by
     filter_upwards [(continuousAt_id.prodMk continuousAt_const).eventually hnear] with s hs
     exact (fderiv_timeSlice hs).symm)
   simpa only [flip_apply, hTime.fderiv] using hSpatial
+
+/-- If `W` is the parameter velocity of a jointly smooth family `G` at time `t` near `x`, then the
+parameter derivative of the spatial Jacobian of `G` at `x` is the derivative of `W` at `x`. -/
+theorem ContDiffAt.hasDerivAt_fderiv_slice_of_eventually_hasDerivAt {G : 𝕜 × E → F'}
+    {W : E → F'} {t : 𝕜} {x : E} (hG : ContDiffAt 𝕜 (minSmoothness 𝕜 2) G (t, x))
+    (hvel : ∀ᶠ z in 𝓝 x, HasDerivAt (fun u ↦ G (u, z)) (W z) t) :
+    HasDerivAt (fun u ↦ fderiv 𝕜 (fun z ↦ G (u, z)) x) (fderiv 𝕜 W x) t := by
+  have h := TauCeti.hasDerivAt_fderivWithin_slice (F := G) (s := Set.univ) (t := t) (x := x)
+    (by rwa [Set.univ_prod_univ, contDiffWithinAt_univ]) uniqueDiffOn_univ (by simp)
+    (Set.mem_univ x)
+  simp only [fderivWithin_univ] at h
+  have hW : (fun y ↦ _root_.deriv (fun r ↦ G (r, y)) t) =ᶠ[𝓝 x] W :=
+    hvel.mono fun z hz ↦ hz.deriv
+  rwa [hW.fderiv_eq] at h
 
 /-- For a sufficiently smooth parametric map, the parameter derivative of its spatial Jacobian,
 applied to `w`, is the spatial derivative of its parameter-velocity field applied to `w`. -/
 theorem deriv_spatialFDeriv_apply {F : 𝕜 × E → F'} {t : 𝕜} {x w : E}
     (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t, x)) :
-    _root_.deriv (fun s => spatialFDeriv F x s w) t =
+    _root_.deriv (fun s => spatialFDeriv (𝕜 := 𝕜) F x s w) t =
       fderiv 𝕜 (timeFDeriv F t) x w := by
   exact ((hasDerivAt_spatialFDeriv hF).clm_apply_const w).deriv
 
@@ -259,9 +437,55 @@ theorem deriv_deriv_comm {g : 𝕜 × 𝕜 → F'} {t x : 𝕜}
   have hfst : ∀ᶠ s in 𝓝 t, DifferentiableAt 𝕜 g (s, x) :=
     (continuous_id.prodMk continuous_const).continuousAt.eventually hdiff
   have h₁ : (fun s => _root_.deriv (fun r => g (s, r)) x) =ᶠ[𝓝 t]
-      fun s => spatialFDeriv g x s 1 := by
+      fun s => spatialFDeriv (𝕜 := 𝕜) g x s 1 := by
     filter_upwards [hfst] with s hs
     rw [← fderiv_timeSlice hs, fderiv_apply_one_eq_deriv]
   have h₂ := (hg.of_le (le_trans (by norm_num) le_minSmoothness))
     |>.deriv_parameterCurve_eventuallyEq_timeFDeriv
   rw [h₁.deriv_eq, h₂.deriv_eq, deriv_spatialFDeriv_apply hg, fderiv_apply_one_eq_deriv]
+
+namespace TauCeti
+
+/-- If `u` is `C^(n+1)` at `(a, b)`, then its partial derivative in the first variable along the
+vertical line through `a` is `C^n` at `b`. -/
+theorem contDiffAt_deriv_slice_left {n : ℕ∞ω} {u : 𝕜 × E → F'} {a : 𝕜} {b : E}
+    (hu : ContDiffAt 𝕜 (n + 1) u (a, b)) :
+    ContDiffAt 𝕜 n (fun y ↦ _root_.deriv (fun s ↦ u (s, y)) a) b := by
+  refine ContDiffAt.congr_of_eventuallyEq ?_
+    (hu.of_le le_add_self).deriv_parameterCurve_eventuallyEq_timeFDeriv
+  rw [timeFDeriv_eq]
+  exact ((hu.fderiv_right le_rfl).comp b (contDiff_prodMk_right a).contDiffAt).clm_apply
+    contDiffAt_const
+
+/-- **The parameter derivative loses one derivative, within a set.** If `G` is `C^n` on `ℝ × s` at
+`(t, u₀)`, then the parameter derivative `u ↦ ∂ᵣ G (r, u)` at `r = t` is `C^m` within `s` at `u₀`,
+for `m + 1 ≤ n`. -/
+theorem contDiffWithinAt_deriv_slice_left {m n : ℕ∞ω} {G : 𝕜 × E → F'} {s : Set E} {t : 𝕜}
+    {u₀ : E} (hG : ContDiffWithinAt 𝕜 n G (Set.univ ×ˢ s) (t, u₀)) (hu₀ : u₀ ∈ s)
+    (hmn : m + 1 ≤ n) :
+    ContDiffWithinAt 𝕜 m (fun u ↦ _root_.deriv (fun r ↦ G (r, u)) t) s u₀ := by
+  have h := ContDiffWithinAt.fderivWithin_apply (f := fun u r ↦ G (r, u)) (g := fun _ ↦ t)
+    (k := fun _ ↦ (1 : 𝕜)) (t := Set.univ)
+    (hG.comp (u₀, t) (contDiffWithinAt_snd.prodMk contDiffWithinAt_fst)
+      fun z hz ↦ Set.mk_mem_prod (Set.mem_univ z.2) hz.1)
+    contDiffWithinAt_const contDiffWithinAt_const uniqueDiffOn_univ hmn hu₀
+    fun _ _ ↦ Set.mem_univ _
+  simpa only [fderivWithin_univ, fderiv_apply_one_eq_deriv] using h
+
+/-- **Symmetry of the mixed partial derivatives.** Near a point where `u` is `C²` (`C^ω` over a
+field other than `ℝ` or `ℂ`), the derivative in the second variable of the partial derivative of
+`u` in the first variable is the second derivative of `u` in the directions `(1, 0)` and
+`(0, 1)`. -/
+theorem deriv_deriv_slice_left {n : ℕ∞ω} {u : 𝕜 × 𝕜 → F'} {a t : 𝕜}
+    (hu : ContDiffAt 𝕜 n u (a, t)) (hn : minSmoothness 𝕜 2 ≤ n) :
+    _root_.deriv (fun r ↦ _root_.deriv (fun s ↦ u (s, r)) a) t =
+      fderiv 𝕜 (fderiv 𝕜 u) (a, t) (1, 0) (0, 1) := by
+  have h2 : ContDiffAt 𝕜 2 u (a, t) := hu.of_le (le_minSmoothness.trans hn)
+  have hD : DifferentiableAt 𝕜 (fderiv 𝕜 u) (a, t) :=
+    (h2.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
+  have h := hasDerivAt_fderiv_apply_snd hD ((1 : 𝕜), (0 : 𝕜))
+  rw [(h.congr_of_eventuallyEq
+      (h2.of_le one_le_two).deriv_parameterCurve_eventuallyEq_timeFDeriv).deriv,
+    hu.isSymmSndFDerivAt hn]
+
+end TauCeti

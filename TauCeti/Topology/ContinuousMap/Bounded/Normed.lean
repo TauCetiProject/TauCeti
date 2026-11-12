@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 
 /-!
@@ -33,6 +34,22 @@ The derivative of a superposition operator `f ↦ G ∘ f` at `f` is `applyCLM` 
 near `f₀` by `Θ f t = G (f t)`, with `G` uniformly continuous on a set containing a tube around the
 range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_of_mem_ball` and
 `BoundedContinuousFunction.ball_half_subset_of_mem_ball` are the facts about the tube).
+
+`BoundedContinuousFunction.compContinuousₗᵢ` is precomposition with a homeomorphism, as a linear
+isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
+`ContinuousLinearMap.compLeftContinuousBounded_compContinuous` says that postcomposition with a
+continuous linear map commutes with precomposition.
+
+`BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
+real function is a uniform limit of finite-valued bounded functions.
+
+`BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg` says that a nonnegative real
+bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
+
+`BoundedContinuousFunction.dilate` is the dilation `n ↦ f (n / k)` of a bounded sequence, with
+natural-number division; dilations compose multiplicatively and commute with the pointwise
+operations. They are the operators under which Dixmier's generalized limits are invariant, see
+`TauCeti.Analysis.Normed.Order.GeneralizedLimit`.
 -/
 
 public section
@@ -124,5 +141,149 @@ theorem continuousAt_of_forall_apply_eq (hG : UniformContinuousOn G s) (hδ : 0 
     (hf₀ t (mem_ball_self hδ)) ((dist_coe_le_dist t).trans (hf.le.trans (min_le_right _ _)))
 
 end PseudoMetricSpace
+
+end BoundedContinuousFunction
+
+/-- Postcomposition with a continuous linear map commutes with precomposition with a continuous
+map. -/
+theorem ContinuousLinearMap.compLeftContinuousBounded_compContinuous {α δ 𝕜 β γ : Type*}
+    [TopologicalSpace α] [TopologicalSpace δ] [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup β] [NormedSpace 𝕜 β] [SeminormedAddCommGroup γ] [NormedSpace 𝕜 γ]
+    (g : β →L[𝕜] γ) (f : α →ᵇ β) (a : C(δ, α)) :
+    g.compLeftContinuousBounded δ (f.compContinuous a) =
+      (g.compLeftContinuousBounded α f).compContinuous a :=
+  (rfl)
+
+namespace BoundedContinuousFunction
+
+variable {α 𝕜 β S : Type*} [TopologicalSpace α] [NormedField 𝕜] [SeminormedAddCommGroup β]
+  [NormedSpace 𝕜 β] [SetLike S (α →ᵇ β)] [AddSubgroupClass S (α →ᵇ β)]
+  [SMulMemClass S 𝕜 (α →ᵇ β)]
+
+/-- Precomposition with a continuous map `a` of `α` that has a continuous inverse `b`, as a linear
+isometry equivalence of a submodule `s` of `α →ᵇ β`, such as a `Submodule` or a `Subalgebra`,
+preserved by both `a` and `b`. -/
+def compContinuousₗᵢ (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x) (hba : ∀ x, b (a x) = x)
+    (ha : ∀ f ∈ s, f.compContinuous a ∈ s) (hb : ∀ f ∈ s, f.compContinuous b ∈ s) :
+    s ≃ₗᵢ[𝕜] s where
+  toFun f := ⟨(f : α →ᵇ β).compContinuous a, ha _ f.2⟩
+  invFun f := ⟨(f : α →ᵇ β).compContinuous b, hb _ f.2⟩
+  map_add' _ _ := Subtype.ext <| ext fun _ => by simp
+  map_smul' _ _ := Subtype.ext <| ext fun _ => by simp
+  left_inv f := Subtype.ext <| ext fun x => congrArg (f : α →ᵇ β) (hab x)
+  right_inv f := Subtype.ext <| ext fun x => congrArg (f : α →ᵇ β) (hba x)
+  norm_map' f := by
+    rw [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_norm]
+    refine le_antisymm ((f : α →ᵇ β).norm_compContinuous_le a) ?_
+    calc ‖(f : α →ᵇ β)‖ = ‖((f : α →ᵇ β).compContinuous a).compContinuous b‖ := by
+          congr 1
+          ext x
+          exact congrArg (f : α →ᵇ β) (hab x).symm
+      _ ≤ ‖(f : α →ᵇ β).compContinuous a‖ := norm_compContinuous_le _ _
+
+/-- `compContinuousₗᵢ s a b … f` is the precomposition of `f` with `a`. -/
+@[simp]
+theorem compContinuousₗᵢ_apply (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
+    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ s, f.compContinuous a ∈ s)
+    (hb : ∀ f ∈ s, f.compContinuous b ∈ s) (f : s) :
+    (compContinuousₗᵢ (𝕜 := 𝕜) s a b hab hba ha hb f : α →ᵇ β) =
+      (f : α →ᵇ β).compContinuous a :=
+  (rfl)
+
+/-- The inverse of `compContinuousₗᵢ s a b …` is precomposition with `b`. -/
+@[simp]
+theorem compContinuousₗᵢ_symm_apply (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x)
+    (hba : ∀ x, b (a x) = x) (ha : ∀ f ∈ s, f.compContinuous a ∈ s)
+    (hb : ∀ f ∈ s, f.compContinuous b ∈ s) (f : s) :
+    ((compContinuousₗᵢ (𝕜 := 𝕜) s a b hab hba ha hb).symm f : α →ᵇ β) =
+      (f : α →ᵇ β).compContinuous b :=
+  (rfl)
+
+/-- On a discrete space, every bounded real function is a uniform limit of finite-valued
+bounded functions: `δ * ⌊f / δ⌋` is within `δ` of `f`. -/
+theorem exists_finite_range_dist_lt {X : Type*} [TopologicalSpace X] [DiscreteTopology X]
+    (f : X →ᵇ ℝ) {ε : ℝ} (hε : 0 < ε) : ∃ g : X →ᵇ ℝ, (Set.range g).Finite ∧ dist f g < ε := by
+  set δ := ε / 2 with hδ_def
+  have hδ : 0 < δ := half_pos hε
+  have hrange : (Set.range fun x => δ * ⌊f x / δ⌋).Finite := by
+    refine ((Set.finite_Icc ⌊-‖f‖ / δ⌋ ⌊‖f‖ / δ⌋).image fun n : ℤ => δ * n).subset
+      (Set.range_subset_iff.2 fun x => Set.mem_image_of_mem _ ?_)
+    have hx := abs_le.1 (Real.norm_eq_abs (f x) ▸ f.norm_coe_le_norm x)
+    exact ⟨Int.floor_mono (div_le_div_of_nonneg_right hx.1 hδ.le),
+      Int.floor_mono (div_le_div_of_nonneg_right hx.2 hδ.le)⟩
+  refine ⟨mkOfDiscrete _ _ fun x y =>
+      dist_le_diam_of_mem hrange.isBounded (Set.mem_range_self x) (Set.mem_range_self y),
+    hrange, lt_of_le_of_lt ((f.dist_le hδ.le).2 fun x => ?_) (by linarith)⟩
+  have h : f x - δ * ⌊f x / δ⌋ = δ * Int.fract (f x / δ) := by
+    rw [Int.fract, mul_sub, mul_div_cancel₀ _ hδ.ne']
+  rw [mkOfDiscrete_apply, Real.dist_eq, h, abs_of_nonneg (mul_nonneg hδ.le (Int.fract_nonneg _))]
+  exact mul_le_of_le_one_right hδ.le (Int.fract_lt_one _).le
+
+/-- A nonnegative real bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`. -/
+theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f : X →ᵇ ℝ}
+    (hf : 0 ≤ f) : ‖‖f‖ • (1 : X →ᵇ ℝ) - f‖ ≤ ‖f‖ :=
+  (norm_le (norm_nonneg f)).2 fun x => by
+    have h₁ := f.apply_le_norm x
+    have h₀ : 0 ≤ f x := hf x
+    simp only [FunLike.coe_sub, FunLike.coe_smul, FunLike.coe_one, Pi.sub_apply, Pi.smul_apply,
+      Pi.one_apply, smul_eq_mul, mul_one,
+      Real.norm_eq_abs]
+    rw [abs_of_nonneg (by linarith)]
+    linarith
+
+section Dilate
+
+variable {β : Type*} [PseudoMetricSpace β]
+
+/-- The dilation of a bounded sequence `f` by `k`: the sequence `n ↦ f (n / k)`, with
+natural-number division. For `k ≥ 1` it repeats every entry of `f` exactly `k` times. -/
+def dilate (f : ℕ →ᵇ β) (k : ℕ) : ℕ →ᵇ β :=
+  f.compContinuous ⟨(· / k), continuous_of_discreteTopology⟩
+
+@[simp]
+theorem dilate_apply (f : ℕ →ᵇ β) (k n : ℕ) : f.dilate k n = f (n / k) :=
+  (rfl)
+
+@[simp]
+theorem dilate_one (f : ℕ →ᵇ β) : f.dilate 1 = f := by
+  ext n
+  simp
+
+/-- Dilations compose multiplicatively, since `n / l / k = n / (k * l)`. -/
+@[simp]
+theorem dilate_dilate (f : ℕ →ᵇ β) (k l : ℕ) : (f.dilate k).dilate l = f.dilate (k * l) := by
+  ext n
+  simp [Nat.div_div_eq_div_mul, mul_comm]
+
+@[simp]
+theorem zero_dilate [Zero β] (k : ℕ) : (0 : ℕ →ᵇ β).dilate k = 0 := by
+  ext n
+  simp
+
+@[simp]
+theorem smul_dilate {𝕜 : Type*} [PseudoMetricSpace 𝕜] [Zero 𝕜] [Zero β] [SMul 𝕜 β]
+    [IsBoundedSMul 𝕜 β] (c : 𝕜) (f : ℕ →ᵇ β) (k : ℕ) : (c • f).dilate k = c • f.dilate k := by
+  ext n
+  simp
+
+@[simp]
+theorem add_dilate [Add β] [BoundedAdd β] [ContinuousAdd β] (f g : ℕ →ᵇ β) (k : ℕ) :
+    (f + g).dilate k = f.dilate k + g.dilate k :=
+  (rfl)
+
+@[simp]
+theorem sub_dilate [Sub β] [BoundedSub β] [ContinuousSub β] (f g : ℕ →ᵇ β) (k : ℕ) :
+    (f - g).dilate k = f.dilate k - g.dilate k :=
+  (rfl)
+
+end Dilate
+
+/-- Dilations commute with negation. This is stated for a `SeminormedAddCommGroup` codomain, the
+setting of Mathlib's `Neg` instance on bounded continuous functions. -/
+@[simp]
+theorem neg_dilate {β : Type*} [SeminormedAddCommGroup β] (f : ℕ →ᵇ β) (k : ℕ) :
+    (-f).dilate k = -f.dilate k := by
+  ext n
+  simp
 
 end BoundedContinuousFunction

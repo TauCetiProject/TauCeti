@@ -7,10 +7,9 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
-public import Mathlib.Order.Filter.ZeroAndBoundedAtFilter
+public import TauCeti.Order.Filter.ZeroAndBoundedAtFilter
 import Mathlib.Data.Finsupp.Encodable
 import TauCeti.Topology.LiftTendstoCofinite
-import TauCeti.Order.Filter.ZeroAndBoundedAtFilter
 import TauCeti.RingTheory.Huber.Bounded
 import TauCeti.Topology.Algebra.Module.Submodule
 
@@ -34,6 +33,8 @@ where the convergent/restricted power series ring is (5.6.1) in §5.6.
 * `restrictedMvPowerSeriesSubringVal`: the inclusion `A⟨T₁, …, Tₖ⟩ → MvPowerSeries (Fin k) A` as
   an `A`-algebra map. `A⟨T⟩` is a `Subring` carrying an `Algebra A` instance rather than a
   `Subalgebra`, so `Subalgebra.val` does not apply.
+* `restrictedMvPowerSeriesSubmodule.instAddCommGroup`: restricted module series have additive
+  inverses whenever their coefficients do and negation is continuous, even over semiring scalars.
 * `isRestricted_of_hasFiniteSupport`: the introduction rule at module coefficients — finitely many
   nonzero coefficients suffice.
 * `isRestricted_pi_iff`: restrictedness of a series with coefficients in a product is
@@ -64,8 +65,8 @@ where the convergent/restricted power series ring is (5.6.1) in §5.6.
 ## Provenance
 
 This module is a port of AINTLIB's `projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`,
-the roadmap's designated prior formalisation of this material. Three groups, because the port and
-this PR did different things to different declarations.
+a prior formalisation of this material. The declarations fall into groups according to how much
+of each is AINTLIB's.
 
 **AINTLIB's in definition, statement and proof.** `restrictedMvPowerSeriesSubring`,
 `restrictedMvPowerSeriesSubring.instAlgebra`, `IsRestricted.finite_coeff_notMem`, the private
@@ -130,19 +131,19 @@ arbitrary topological modules with strictness hypothesised, so none of that bund
 source works at ring coefficients through its own `restrictedModule` and lifts with
 `restrictedModule_map_surjective`; both come from this file's module-coefficient functor here.
 And the continuity of the action on `↥(range u)`, which the source establishes inline, is
-`Submodule.continuousConstSMul`.
+Mathlib's `ContinuousConstSMul` instance on subobjects.
 
 The name `isRestricted_iff` needs care: the port introduced it for the `coeff`-form unfolding
 lemma, which is now `isRestricted_iff_coeff`. The statement the name carries here — unfolding
 through `Filter.ZeroAtFilter` at coefficients asking only for a `0` and a topology — is new.
 
-That originality claim was checked against **both** AINTLIB sources the roadmap designates for
-this material, not only `RestrictedPowerSeries.lean`. AINTLIB's `TateAlgebra.lean`,
-`TateAlgebraTopology.lean` and `TateAlgebraWedhorn.lean` build `TateAlgebra A` for a *ring* `A`
+That originality claim holds against AINTLIB's other development of this material too, not only
+`RestrictedPowerSeries.lean`. AINTLIB's `TateAlgebra.lean`, `TateAlgebraTopology.lean` and
+`TateAlgebraWedhorn.lean` build `TateAlgebra A` for a *ring* `A`
 (`[CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]`) throughout; their `Submodule`
 occurrences are ideals of that ring viewed as submodules, not coefficients in a module. There is
-no `M⟨X⟩` there, and §0.5's "restricted series with coefficients in a complete topological module"
-has no AINTLIB counterpart to credit.
+no `M⟨X⟩` there, so restricted series with coefficients in a topological module have no AINTLIB
+counterpart to credit.
 
 The port additionally moves the declarations into the `TauCeti.Huber` namespace, opts into the
 Lean module system with the definition bodies unexposed — hence the added `isRestricted_iff_coeff`,
@@ -171,8 +172,8 @@ This is the canonical concrete definition. `M⟨T₁, …, Tₖ⟩` is cut out o
 coefficient function — see `isRestricted_iff`, which is `Iff.rfl`. The closure
 lemmas delegate to `zero_zeroAtFilter` and `ZeroAtFilter.add`/`.neg`/`.smul`, and
 `restrictedMvPowerSeriesSubmodule` *is* `Filter.zeroAtFilterSubmodule` at that filter rather than
-a reconstruction of it. The Huber-specific names are kept because `M⟨T₁, …, Tₖ⟩` is the object the
-roadmap names, but no closure property is proved here that Mathlib already has.
+a reconstruction of it. The Huber-specific names are kept because `M⟨T₁, …, Tₖ⟩` is the object
+Huber theory works with, but no closure property is proved here that Mathlib already has.
 
 `isRestricted_iff` unfolds the predicate through `Filter.ZeroAtFilter`, which is the form the
 delegations use and what module coefficients admit; `isRestricted_iff_coeff` unfolds it through
@@ -559,6 +560,37 @@ theorem mem_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A
     {f : MvPowerSeries (Fin k) M} :
     f ∈ restrictedMvPowerSeriesSubmodule k A M ↔ IsRestricted f := (Iff.rfl)
 
+/-- Restricted series with additive-group coefficients and continuous negation have additive
+inverses even over semiring scalars. The usual submodule instance takes precedence when the
+scalars form a ring. -/
+instance (priority := 100) restrictedMvPowerSeriesSubmodule.instAddCommGroup
+    (k : ℕ) (A M : Type*) [Semiring A] [AddCommGroup M] [TopologicalSpace M]
+    [Module A M] [ContinuousAdd M] [ContinuousNeg M] [ContinuousConstSMul A M] :
+    AddCommGroup (restrictedMvPowerSeriesSubmodule k A M) :=
+  -- Reuse the submodule's additive submonoid directly so the group operations also match
+  -- the native ring-scalar instance at typeclass-search transparency.
+  AddSubgroupClass.toAddCommGroup
+    ({ (restrictedMvPowerSeriesSubmodule k A M).toAddSubmonoid with
+        neg_mem' := fun hf ↦ mem_restrictedMvPowerSeriesSubmodule.mpr
+          (mem_restrictedMvPowerSeriesSubmodule.mp hf).neg } :
+      AddSubgroup (MvPowerSeries (Fin k) M))
+
+/-- Negation of a restricted series is coefficientwise negation. -/
+@[simp]
+theorem coe_neg_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommGroup M] [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousNeg M]
+    [ContinuousConstSMul A M] (f : restrictedMvPowerSeriesSubmodule k A M) :
+    ((-f : restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) =
+      -(f : MvPowerSeries (Fin k) M) := (rfl)
+
+/-- Subtraction of restricted series is coefficientwise subtraction. -/
+@[simp]
+theorem coe_sub_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommGroup M] [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousNeg M]
+    [ContinuousConstSMul A M] (f g : restrictedMvPowerSeriesSubmodule k A M) :
+    ((f - g : restrictedMvPowerSeriesSubmodule k A M) : MvPowerSeries (Fin k) M) =
+      (f : MvPowerSeries (Fin k) M) - (g : MvPowerSeries (Fin k) M) := (rfl)
+
 /-- **Coefficientwise extensionality** for `M⟨T₁, …, Tₖ⟩`. Mathlib's `MvPowerSeries.ext` is stated
 in a `Semiring` section, so it does not apply at module coefficients; without this a consumer has
 to reach for `Subtype.ext (funext …)` and cross the `MvPowerSeries`-is-a-`def` gap by hand. -/
@@ -669,7 +701,7 @@ The hypothesis is the filter inequality the proof actually consumes rather than 
 which is strictly stronger here: these modules carry `ContinuousAdd` rather than
 `IsTopologicalAddGroup`, so without translation invariance global openness does not follow from
 openness at `0`. A caller holding `IsOpenMap φ` — over a Tate ring, from
-`TauCeti.Huber.IsTateRing.isOpenMap` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
+`LinearMap.isOpenMap_of_isTateRing` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
 theorem restrictedMvPowerSeriesSubmoduleMap_surjective {k : ℕ} {A M N : Type*} [Semiring A]
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousConstSMul A M] [(nhds (0 : M)).IsCountablyGenerated]

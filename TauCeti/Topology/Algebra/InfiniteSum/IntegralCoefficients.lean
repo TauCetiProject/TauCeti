@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
-public import Mathlib.RingTheory.PowerSeries.Basic
-public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.BoundedHom
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.PowerSeries.EvalAt
@@ -37,31 +37,12 @@ multiplication by an evaluated integral formal unit preserves norms. These resul
 `NormOneClass` (`‖1‖ = 1`).
 
 Iterating these evaluations, `evalIntBivariateSeries` evaluates an integral power series in two
-variables at a pair of parameters in the open unit ball. Likewise an integral polynomial has value
-of norm at most one at every point of the closed unit ball (`Polynomial.norm_aeval_le_one`), so
-evaluating the coefficients of a series in `ℤ[X]⟦Y⟧` at such a point is a valid coefficient map
-for `RingHom.evalBoundedSeries`.
+variables at a pair of parameters in the open unit ball.
 -/
 
 public section
 
 open PowerSeries
-
-namespace Polynomial
-
-/-- An integral polynomial evaluated at a point of the closed unit ball of a non-archimedean
-normed ring with `‖1‖ = 1` has norm at most one. -/
-theorem norm_aeval_le_one {K : Type*} [NormedRing K] [NormOneClass K] [IsUltrametricDist K]
-    (p : ℤ[X]) {x : K} (hx : ‖x‖ ≤ 1) : ‖aeval x p‖ ≤ 1 := by
-  rw [aeval_eq_sum_range]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦ ?_
-  rw [zsmul_eq_mul]
-  calc ‖(p.coeff i : K) * x ^ i‖ ≤ ‖(p.coeff i : K)‖ * ‖x ^ i‖ := norm_mul_le _ _
-    _ ≤ 1 * 1 := mul_le_mul (IsUltrametricDist.norm_intCast_le_one K _)
-        ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx)) (norm_nonneg _) zero_le_one
-    _ = 1 := one_mul 1
-
-end Polynomial
 
 namespace RingHom
 
@@ -136,8 +117,7 @@ theorem norm_evalBoundedSeries_le {R K : Type*} [Semiring R]
     (φ : R →+* K) (hφ : ∃ B : ℝ, ∀ r, ‖φ r‖ ≤ B) (hM : ∀ r, ‖φ r‖ ≤ M)
     (q : K) (hq : ‖q‖ < 1) (f : R⟦X⟧) :
     ‖evalBoundedSeries φ hφ q hq f‖ ≤ M := by
-  have hs := PowerSeries.norm_evalScalar_le (F := f.map φ) (a := q)
-    ((norm_nonneg (φ 0)).trans (hM 0)) fun n ↦ by
+  have hs := PowerSeries.norm_evalScalar_le (F := f.map φ) (a := q) fun n ↦ by
       rw [coeff_map]
       exact (mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg q) hq.le)).trans
         (hM _)
@@ -251,6 +231,29 @@ theorem norm_evalIntSeries_le_of_constantCoeff_eq_zero {K : Type*} [NormedCommRi
   obtain ⟨g, rfl⟩ := X_dvd_iff.mpr hf
   rw [map_mul, evalIntSeries_X]
   exact norm_mul_evalIntSeries_le q q hq g
+
+/-- Evaluation of integral series commutes with substitution at a series with zero constant
+term. Both evaluation parameters lie in the open unit ball. -/
+theorem evalIntSeries_subst {K : Type*} [NormedCommRing K] [CompleteSpace K]
+    [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f g : ℤ⟦X⟧)
+    (hg : constantCoeff g = 0) :
+    evalIntSeries q hq (f.subst g) =
+      evalIntSeries (evalIntSeries q hq g)
+        ((norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq hg).trans_lt hq) f := by
+  have hgq : ‖evalIntSeries q hq g‖ < 1 :=
+    (norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq hg).trans_lt hq
+  have hs : HasSubst g := .of_constantCoeff_zero hg
+  have h := RingHom.ext_powerSeries_of_bounded
+    ((evalIntSeries q hq).comp (substAlgHom hs).toRingHom)
+    (evalIntSeries (evalIntSeries q hq g) hgq)
+    ⟨‖(1 : K)‖, fun _ ↦ norm_evalIntSeries_le_norm_one q hq _⟩
+    ⟨‖(1 : K)‖, fun _ ↦ norm_evalIntSeries_le_norm_one _ _ _⟩
+    (fun r ↦ by simp)
+    (by simp [substAlgHom_X])
+    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      substAlgHom_X] using hgq)
+  simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    coe_substAlgHom] using RingHom.congr_fun h f
 
 /-- Multiplication by an integral formal unit evaluated inside the open unit ball preserves norms
 in a complete non-archimedean normed commutative ring, without requiring a normalized norm. -/

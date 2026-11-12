@@ -45,6 +45,10 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
 * `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
   normalized to value one by inverse-square-root scaling. This normalization feeds the
   reflection-pair construction for compact real Clifford forms.
+* `QuadraticMap.map_inv_sqrt_abs_smul_eq_one_or_neg_one`: a vector of nonzero quadratic value can
+  be normalized to value `1` or `-1`.
+* `QuadraticMap.exists_isOrtho_of_mul_pos`: two orthogonal vectors whose values are nonzero of the
+  same sign rescale to orthogonal vectors with the same value `1` or `-1`.
 * `QuadraticForm.sigPos_weightedSumSquares_signType` and
   `QuadraticForm.sigNeg_weightedSumSquares_signType`: the two indices of inertia of a
   sign-weighted sum of squares count the weights `1` and the weights `-1`.
@@ -58,6 +62,8 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
   `QuadraticForm.nondegenerate_realSignatureForm`: every signature is realized by a regular form.
 * `QuadraticForm.equivalent_realSignatureForm`: a regular real quadratic form is isometric to the
   normal form of its signature.
+* `QuadraticForm.equivalent_weightedSumSquares_ite_lt_sigNeg`: the same normal form on the
+  coordinate space, with the `sigNeg Q` negative squares first.
 * `QuadraticForm.exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq`: every signature `(p, n - p)` is
   realized by a regular form on the coordinate space `ℝⁿ`.
 * `QuadraticForm.equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq`: a regular real form is
@@ -77,6 +83,8 @@ open Finset QuadraticMap
 
 namespace QuadraticMap
 
+section AddCommMonoid
+
 variable {M : Type*} [AddCommMonoid M] [Module ℝ M]
 
 /-- Scaling a vector by the inverse square root of its positive quadratic value gives value one. -/
@@ -90,6 +98,44 @@ theorem map_inv_sqrt_smul_eq_one {Q : QuadraticForm ℝ M} {v : M} (hpos : 0 < Q
       simp only [QuadraticMap.map_smul, smul_eq_mul, pow_two]
     _ = (Q v)⁻¹ * Q v := by rw [hsquare]
     _ = 1 := inv_mul_cancel₀ hpos.ne'
+
+/-- Scaling a vector by the inverse square root of the absolute value of its quadratic value gives
+value `Q v / |Q v|`, which is `1`, `-1` or `0` according to the sign of `Q v`. -/
+theorem map_inv_sqrt_abs_smul (Q : QuadraticForm ℝ M) (v : M) :
+    Q ((√|Q v|)⁻¹ • v) = Q v / |Q v| := by
+  rw [QuadraticMap.map_smul, smul_eq_mul, ← mul_inv, Real.mul_self_sqrt (abs_nonneg _),
+    div_eq_inv_mul]
+
+/-- Scaling a vector of nonzero quadratic value by the inverse square root of the absolute value
+of that quadratic value gives value `1` or `-1`. -/
+theorem map_inv_sqrt_abs_smul_eq_one_or_neg_one {Q : QuadraticForm ℝ M} {v : M} (hv : Q v ≠ 0) :
+    Q ((√|Q v|)⁻¹ • v) = 1 ∨ Q ((√|Q v|)⁻¹ • v) = -1 := by
+  rw [map_inv_sqrt_abs_smul]
+  rcases hv.lt_or_gt with h | h
+  · exact .inr (by rw [abs_of_neg h, div_neg, div_self hv])
+  · exact .inl (by rw [abs_of_pos h, div_self hv])
+
+end AddCommMonoid
+
+section AddCommGroup
+
+variable {M : Type*} [AddCommGroup M] [Module ℝ M]
+
+/-- Two orthogonal vectors whose quadratic values are nonzero of the same sign rescale to two
+orthogonal vectors with the same quadratic value `1` or `-1`. -/
+theorem exists_isOrtho_of_mul_pos {Q : QuadraticForm ℝ M} {e f : M} (hef : Q.IsOrtho e f)
+    (h : 0 < Q e * Q f) :
+    ∃ e' f' : M, (Q e' = 1 ∨ Q e' = -1) ∧ Q f' = Q e' ∧ Q.IsOrtho e' f' := by
+  refine ⟨(√|Q e|)⁻¹ • e, (√|Q f|)⁻¹ • f,
+    map_inv_sqrt_abs_smul_eq_one_or_neg_one (left_ne_zero_of_mul h.ne'), ?_, ?_⟩
+  · rw [map_inv_sqrt_abs_smul, map_inv_sqrt_abs_smul]
+    rcases mul_pos_iff.mp h with ⟨he, hf⟩ | ⟨he, hf⟩
+    · rw [abs_of_pos he, abs_of_pos hf, div_self he.ne', div_self hf.ne']
+    · rw [abs_of_neg he, abs_of_neg hf, div_neg, div_neg, div_self he.ne, div_self hf.ne]
+  · rw [isOrtho_def, QuadraticMap.map_add Q, polar_smul_left, polar_smul_right,
+      hef.polar_eq_zero, smul_zero, smul_zero, add_zero]
+
+end AddCommGroup
 
 end QuadraticMap
 
@@ -313,6 +359,30 @@ theorem equivalent_realSignatureForm_iff (p q p' q' : ℕ) :
 theorem equivalent_realSignatureForm (Q : _root_.QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
     Q.Equivalent (realSignatureForm (sigPos Q) (sigNeg Q)) :=
   (equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq hQ _ _).mpr ⟨rfl, rfl⟩
+
+/-- **Sylvester's normal form with the negative squares first.** A regular real quadratic form
+`Q` on an `n`-dimensional space is isometric to the diagonal form
+`-x₀² - ⋯ - x_{q-1}² + x_q² + ⋯ + x_{n-1}²` on `Fin n → ℝ`, where `q = sigNeg Q`. This is the
+coordinate order of Morse charts, in which the negative directions of a Hessian come first. -/
+theorem equivalent_weightedSumSquares_ite_lt_sigNeg (Q : _root_.QuadraticForm ℝ M)
+    (hQ : Q.Nondegenerate) :
+    Q.Equivalent (weightedSumSquares ℝ fun i : Fin (Module.finrank ℝ M) ↦
+      if i.val < sigNeg Q then (-1 : ℝ) else 1) := by
+  have hdim : Module.finrank ℝ M = sigNeg Q + sigPos Q := by
+    rw [← sigPos_add_sigNeg_of_nondegenerate Q hQ, add_comm]
+  -- Send the first `sigNeg Q` coordinates to the negative block of the signature normal form.
+  let e : Fin (Module.finrank ℝ M) ≃ Fin (sigPos Q) ⊕ Fin (sigNeg Q) :=
+    (finCongr hdim).trans (finSumFinEquiv.symm.trans (Equiv.sumComm _ _))
+  have hweight : (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) ∘ e =
+      fun i ↦ if i.val < sigNeg Q then -1 else 1 := by
+    funext i
+    obtain ⟨j, rfl⟩ := (finCongr hdim).symm.surjective i
+    induction j using Fin.addCases with
+    | left j => simp [e]
+    | right j => simp [e]
+  refine (equivalent_realSignatureForm Q hQ).trans ?_
+  rw [realSignatureForm_def]
+  exact (equivalent_weightedSumSquares_of_comp_eq e hweight).symm
 
 /-- Every signature `(p, n - p)` with `p ≤ n` is the signature of a regular quadratic form on the
 coordinate space `ℝⁿ`: the normal form `realSignatureForm p (n - p)` transported along a bijection

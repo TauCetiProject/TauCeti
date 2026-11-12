@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Probability.Moments.CovarianceBilin
 import Mathlib.Analysis.Matrix.Hermitian
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Covariances and covariance matrices
@@ -26,13 +28,16 @@ totalized coordinate by coordinate.
   covariance when the measure has a finite second moment.
 * `TauCeti.posSemidef_covMatrix` proves that covariance matrices are positive semidefinite under
   the same moment hypotheses.
-* `TauCeti.integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix` decomposes the second
-  moment into the squared norm of the mean and the trace of the covariance matrix.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**.
+* `TauCeti.integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix` computes the mean
+  of a quadratic form of the centred variable as a trace against the covariance matrix.
+* `TauCeti.integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map` is the same
+  identity for a square-integrable random vector and the covariance matrix of its law.
+* `TauCeti.integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix` decomposes the
+  second moment about a point into the squared distance from the mean to that point and the trace
+  of the covariance matrix.
+* `TauCeti.covarianceBilin_eq_smul_innerSL` shows that a law invariant under every linear
+  isometry has covariance equal to its second moment divided by the dimension, times the inner
+  product.
 -/
 
 public section
@@ -116,30 +121,158 @@ theorem posSemidef_covMatrix [Fintype ι]
   rw [covarianceBilin_eq_covMatrix μ hμ x x] at hnonneg
   simpa only [RCLike.re_to_real, real_inner_comm] using hnonneg
 
-/-- The second moment of a Euclidean-valued probability measure is the squared norm of its mean
-plus the trace of its covariance matrix. -/
-theorem integral_norm_sq_eq_norm_integral_sq_add_trace_covMatrix [Fintype ι]
-    (μ : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure μ] (hμ : MemLp id 2 μ) :
-    ∫ x, ‖x‖ ^ 2 ∂μ = ‖∫ x, x ∂μ‖ ^ 2 + Matrix.trace (covMatrix μ) := by
-  classical
+/-- The mean of the quadratic form of a matrix `B` on the centred variable of a Euclidean-valued
+probability measure with finite second moment is the trace of `B` times the covariance matrix. -/
+theorem integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix [Fintype ι]
+    [DecidableEq ι] (μ : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure μ]
+    (hμ : MemLp id 2 μ) (B : Matrix ι ι ℝ) :
+    ∫ x, ⟪B.toEuclideanLin (x - ∫ y, y ∂μ), x - ∫ y, y ∂μ⟫ ∂μ = (B * covMatrix μ).trace := by
+  set m := ∫ y, y ∂μ
   have hcoord (i : ι) : MemLp (fun x : EuclideanSpace ℝ ι => x i) 2 μ := by
     simpa only [id_eq, EuclideanSpace.coe_proj] using
       hμ.continuousLinearMap_comp (𝕜 := ℝ) (EuclideanSpace.proj i)
-  have hsq (i : ι) : Integrable (fun x : EuclideanSpace ℝ ι => (x i) ^ 2) μ := by
-    have h := (memLp_two_iff_integrable_sq_norm (hcoord i).aestronglyMeasurable).mp (hcoord i)
-    simpa only [Real.norm_eq_abs, sq_abs] using h
-  have hmean (i : ι) : (∫ x, x ∂μ) i = ∫ x, x i ∂μ := by
-    exact eval_integral_piLp (q := 2) (fun j => (hcoord j).integrable one_le_two) i
-  have hnorm : (fun x : EuclideanSpace ℝ ι => ‖x‖ ^ 2) = fun x => ∑ i, (x i) ^ 2 :=
-    funext EuclideanSpace.real_norm_sq_eq
-  rw [hnorm, integral_finsetSum Finset.univ (fun i _ => hsq i),
-    EuclideanSpace.real_norm_sq_eq, Matrix.trace]
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [Matrix.diag_apply, covMatrix_apply,
-    covariance_self (hcoord i).aemeasurable, variance_eq_sub (hcoord i), hmean]
-  ring_nf
-  rfl
+  have hmean (i : ι) : m i = ∫ x, x i ∂μ :=
+    eval_integral_piLp (q := 2) (fun j => (hcoord j).integrable one_le_two) i
+  have hc (i : ι) : MemLp (fun x : EuclideanSpace ℝ ι => x i - m i) 2 μ :=
+    (hcoord i).sub (memLp_const _)
+  have hint (j k : ι) :
+      Integrable (fun x : EuclideanSpace ℝ ι => B j k * ((x k - m k) * (x j - m j))) μ :=
+    ((hc k).integrable_mul (hc j)).const_mul _
+  have hpt (x : EuclideanSpace ℝ ι) : ⟪B.toEuclideanLin (x - m), x - m⟫ =
+      ∑ j, ∑ k, B j k * ((x k - m k) * (x j - m j)) := by
+    simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial, Matrix.toLpLin_apply,
+      Matrix.mulVec, dotProduct, PiLp.sub_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => ?_
+    ring
+  simp_rw [hpt]
+  rw [integral_finsetSum _ fun j _ => integrable_finsetSum _ fun k _ => hint j k]
+  simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [integral_finsetSum _ fun k _ => hint j k]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [integral_const_mul, covMatrix_apply, covariance, hmean, hmean]
+
+/-- The mean of the quadratic form of a matrix `B` on the centred variable of a square-integrable
+Euclidean-valued random vector `X` is the trace of `B` times the covariance matrix of the law of
+`X`. -/
+theorem integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map [Fintype ι]
+    [DecidableEq ι] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+    {X : Ω → EuclideanSpace ℝ ι} (hX : MemLp X 2 P) (B : Matrix ι ι ℝ) :
+    ∫ ω, ⟪B.toEuclideanLin (X ω - ∫ ω', X ω' ∂P), X ω - ∫ ω', X ω' ∂P⟫ ∂P =
+      (B * covMatrix (P.map X)).trace := by
+  have hXm : AEMeasurable X P := hX.aestronglyMeasurable.aemeasurable
+  have hmap : MemLp id 2 (P.map X) := (memLp_map_measure_iff aestronglyMeasurable_id hXm).2 hX
+  have hmean : ∫ y, y ∂(P.map X) = ∫ ω', X ω' ∂P := integral_map hXm aestronglyMeasurable_id
+  rw [← integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix _ hmap, hmean,
+    integral_map hXm (by fun_prop)]
+
+/-- The second moment of a Euclidean-valued probability measure about a point `c` is the squared
+distance from its mean to `c` plus the trace of its covariance matrix. -/
+theorem integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix [Fintype ι]
+    (μ : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure μ] (hμ : MemLp id 2 μ)
+    (c : EuclideanSpace ℝ ι) :
+    ∫ x, ‖x - c‖ ^ 2 ∂μ = ‖∫ x, x ∂μ - c‖ ^ 2 + Matrix.trace (covMatrix μ) := by
+  classical
+  set m := ∫ x, x ∂μ
+  have hc : MemLp (fun x : EuclideanSpace ℝ ι => x - m) 2 μ := hμ.sub (memLp_const m)
+  have hsq : Integrable (fun x : EuclideanSpace ℝ ι => ‖x - m‖ ^ 2) μ :=
+    (memLp_two_iff_integrable_sq_norm hc.aestronglyMeasurable).1 hc
+  have hlin : Integrable (fun x : EuclideanSpace ℝ ι => 2 * ⟪x - m, m - c⟫) μ :=
+    ((hc.integrable one_le_two).inner_const (m - c)).const_mul 2
+  have hcov : ∫ x, ‖x - m‖ ^ 2 ∂μ = Matrix.trace (covMatrix μ) := by
+    simpa [real_inner_self_eq_norm_sq] using
+      integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix μ hμ 1
+  have hmean : ∫ x, ⟪x - m, m - c⟫ ∂μ = 0 := by
+    have h0 : ∫ x, x - m ∂μ = 0 := by
+      rw [integral_sub (f := fun x => x) (hμ.integrable one_le_two) (integrable_const m),
+        integral_const,
+        probReal_univ, one_smul]
+      exact sub_self m
+    simp_rw [real_inner_comm (m - c)]
+    rw [integral_inner (hc.integrable one_le_two), h0, inner_zero_right]
+  calc ∫ x, ‖x - c‖ ^ 2 ∂μ = ∫ x, ‖x - m‖ ^ 2 + 2 * ⟪x - m, m - c⟫ + ‖m - c‖ ^ 2 ∂μ := by
+        refine integral_congr_ae (.of_forall fun x => ?_)
+        dsimp only
+        rw [← norm_add_sq_real, sub_add_sub_cancel]
+    _ = ‖m - c‖ ^ 2 + Matrix.trace (covMatrix μ) := by
+        rw [integral_add (f := fun x => ‖x - m‖ ^ 2 + 2 * ⟪x - m, m - c⟫) (hsq.add hlin)
+          (integrable_const _), integral_add hsq hlin, integral_const_mul, hmean, hcov,
+          integral_const, probReal_univ, one_smul]
+        ring
+
+section IsometryInvariant
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+
+/-- For a measure with finite second moment invariant under every linear isometry, the variance
+in a direction depends only on the length of the direction vector. -/
+private lemma covarianceBilin_self_eq_of_norm_eq [IsFiniteMeasure μ]
+    (hμ : ∀ f : E ≃ₗᵢ[ℝ] E, μ.map f = μ) (h : MemLp id 2 μ) {x y : E} (hxy : ‖x‖ = ‖y‖) :
+    covarianceBilin μ x x = covarianceBilin μ y y := by
+  -- The reflection exchanging `x` and `y` is an isometry whose adjoint sends `y` to `x`.
+  set f := (ℝ ∙ (x - y))ᗮ.reflection
+  have hfy : f.symm y = x := by
+    rw [LinearIsometryEquiv.symm_apply_eq, Submodule.reflection_sub hxy]
+  have := covarianceBilin_map h (f : E →L[ℝ] E) y y
+  simp only [LinearIsometryEquiv.adjoint_eq_symm] at this
+  simpa [hμ f, hfy] using this.symm
+
+/-- **Covariance of an isotropic law.** A finite measure on a finite-dimensional real inner
+product space that is invariant under every linear isometry has covariance a multiple of the inner
+product, the multiple being the second moment divided by the dimension. No moment hypothesis is
+needed: without a finite second moment both sides vanish. -/
+theorem covarianceBilin_eq_smul_innerSL [IsFiniteMeasure μ]
+    (hμ : ∀ f : E ≃ₗᵢ[ℝ] E, μ.map f = μ) :
+    covarianceBilin μ = ((∫ x, ‖x‖ ^ 2 ∂μ) / Module.finrank ℝ E) • innerSL ℝ := by
+  by_cases h : MemLp id 2 μ
+  swap
+  · have : ¬ Integrable (fun x ↦ ‖x‖ ^ 2) μ := by
+      rwa [memLp_two_iff_integrable_sq_norm aestronglyMeasurable_id] at h
+    rw [covarianceBilin_of_not_memLp h, integral_undef this]
+    ext
+    simp
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · ext x y
+    simp [Subsingleton.elim x 0]
+  -- Invariance under `-1` makes the mean vanish, so covariance is the second-moment form.
+  have hm : ∫ x, x ∂μ = 0 := by
+    have : μ.IsNegInvariant := ⟨hμ (LinearIsometryEquiv.neg ℝ)⟩
+    exact integral_eq_zero_of_odd fun x ↦ rfl
+  set Q : E → ℝ := fun x ↦ covarianceBilin μ x x
+  set d := Module.finrank ℝ E
+  have hd : (d : ℝ) ≠ 0 := by exact_mod_cast Module.finrank_pos.ne'
+  set b := stdOrthonormalBasis ℝ E
+  set e := b ⟨0, Module.finrank_pos⟩
+  have he : ‖e‖ = 1 := b.orthonormal.1 _
+  -- Summing the common value of `Q` over an orthonormal basis gives the second moment.
+  have htrace : (d : ℝ) * Q e = ∫ x, ‖x‖ ^ 2 ∂μ := by
+    have hQb : ∀ i, Q (b i) = Q e := fun i ↦
+      covarianceBilin_self_eq_of_norm_eq hμ h (by rw [b.orthonormal.1 i, he])
+    have hint : ∀ i, Integrable (fun z ↦ ⟪b i, z⟫ ^ 2) μ := fun i ↦ by
+      have := ((innerSL ℝ (b i)).comp_memLp' h).integrable_mul ((innerSL ℝ (b i)).comp_memLp' h)
+      simpa [sq, Pi.mul_def] using this
+    calc (d : ℝ) * Q e = ∑ i, Q (b i) := by simp [hQb, d]
+      _ = ∫ x, ∑ i, ⟪b i, x⟫ ^ 2 ∂μ := by
+        rw [integral_finsetSum _ fun i _ ↦ hint i]
+        simp [Q, covarianceBilin_apply h, hm, sq]
+      _ = ∫ x, ‖x‖ ^ 2 ∂μ := by simp_rw [b.sum_sq_inner_right]
+  have hQ : ∀ x, Q x = ‖x‖ ^ 2 * Q e := fun x ↦ by
+    have := covarianceBilin_self_eq_of_norm_eq hμ h (x := x) (y := ‖x‖ • e)
+      (by simp [norm_smul, he])
+    simp only [Q, this, map_smul, smul_apply, smul_eq_mul]
+    ring
+  -- Polarization recovers the bilinear form from the quadratic form `Q`.
+  ext x y
+  have hpol : Q (x + y) = Q x + 2 * covarianceBilin μ x y + Q y := by
+    simp only [Q, map_add, add_apply, covarianceBilin_comm y x]
+    ring
+  have hxy : covarianceBilin μ x y = Q e * ⟪x, y⟫ := by
+    rw [hQ, hQ x, hQ y, norm_add_sq_real] at hpol
+    linarith
+  rw [hxy, ← htrace, smul_apply, smul_apply, innerSL_apply_apply, smul_eq_mul,
+    mul_div_cancel_left₀ _ hd]
+
+end IsometryInvariant
 
 end TauCeti

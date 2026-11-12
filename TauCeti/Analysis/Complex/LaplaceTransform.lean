@@ -24,6 +24,11 @@ and its truncations `G_T z = ∫ t in 0..T, f t * exp (-z t)`:
   `[0, T]`, then `‖G_T z‖ ≤ M exp (-T re z) / (-re z)` for `re z < 0`
   (`norm_intervalIntegral_mul_cexp_neg_mul_le_of_re_neg`).
 
+The substitution `x = exp t` identifies `∫ x in u..v, x ^ (-z - 1)` with the truncated Laplace
+transform `∫ t in log u..log v, exp (-z t)` of the constant function `1`
+(`intervalIntegral_ofReal_cpow_neg_sub_one`); this links Dirichlet series, via integrals against
+`x ^ (-z - 1)`, to Laplace transforms of step functions `t ↦ a ⌊exp t⌋₊`.
+
 These are the analytic inputs of Newman's contour argument for his Tauberian theorem.
 -/
 
@@ -36,11 +41,35 @@ namespace TauCeti
 
 variable {f : ℝ → ℂ} {M T : ℝ}
 
-/-- **Truncated Laplace transforms are entire.** If `f` is interval integrable on `[a, b]`, then
-`z ↦ ∫ t in a..b, f t * exp (-z t)` is complex differentiable everywhere. -/
-theorem differentiable_intervalIntegral_mul_cexp_neg_mul {a b : ℝ}
-    (hf : IntervalIntegrable f volume a b) :
+/-- Multiplying by the exponential kernel `cexp (-z t)` does not change interval integrability. -/
+theorem intervalIntegrable_mul_cexp_neg_mul_iff {a b : ℝ} (z : ℂ) :
+    IntervalIntegrable (fun t : ℝ ↦ f t * cexp (-z * t)) volume a b ↔
+      IntervalIntegrable f volume a b := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mul_continuousOn (g := fun t : ℝ ↦ cexp (-z * t)) (by fun_prop)⟩
+  have := h.mul_continuousOn (g := fun t : ℝ ↦ cexp (z * t)) (by fun_prop)
+  simpa [mul_assoc, ← Complex.exp_add] using this
+
+/-- Multiplying by the exponential kernel `cexp (-z t)` does not change almost-everywhere strong
+measurability. -/
+theorem aestronglyMeasurable_mul_cexp_neg_mul_iff {μ : Measure ℝ} (z : ℂ) :
+    AEStronglyMeasurable (fun t : ℝ ↦ f t * cexp (-z * t)) μ ↔ AEStronglyMeasurable f μ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mul (g := fun t : ℝ ↦ cexp (-z * t))
+    (by fun_prop : Continuous _).aestronglyMeasurable⟩
+  have := h.mul (g := fun t : ℝ ↦ cexp (z * t)) (by fun_prop : Continuous _).aestronglyMeasurable
+  simpa [Pi.mul_def, mul_assoc, ← Complex.exp_add] using this
+
+/-- **Truncated Laplace transforms are entire.** The function
+`z ↦ ∫ t in a..b, f t * exp (-z t)` is complex differentiable everywhere. If `f` is not
+interval integrable on `[a, b]`, it is identically `0`. -/
+theorem differentiable_intervalIntegral_mul_cexp_neg_mul {a b : ℝ} :
     Differentiable ℂ fun z : ℂ ↦ ∫ t in a..b, f t * cexp (-z * t) := by
+  by_cases hf : IntervalIntegrable f volume a b
+  swap
+  · have : (fun z : ℂ ↦ ∫ t in a..b, f t * cexp (-z * t)) = fun _ ↦ 0 :=
+      funext fun z ↦ intervalIntegral.integral_undef
+        ((intervalIntegrable_mul_cexp_neg_mul_iff z).not.mpr hf)
+    rw [this]
+    exact differentiable_const _
   intro z₀
   -- On `Ι a b` we have `|t| ≤ C` and, for `z` within distance `1` of `z₀`, `‖exp (-z t)‖ ≤ K`;
   -- so the `z`-derivative `-t f t exp (-z t)` of the integrand is dominated by `C * K * ‖f t‖`.
@@ -82,6 +111,26 @@ theorem differentiable_intervalIntegral_mul_cexp_neg_mul {a b : ℝ}
       _ = C * K * ‖f t‖ := by ring
   · have h := ((hasDerivAt_id' z).neg.mul_const (t : ℂ)).cexp.const_mul (f t)
     simpa using h
+
+/-- **Substitution `x = exp t`.** For `0 < u` and `0 < v`, the integral of `x ^ (-z - 1)` over
+`[u, v]` is the truncated Laplace transform `∫ t in log u..log v, exp (-z t)` of the constant
+function `1`. -/
+theorem intervalIntegral_ofReal_cpow_neg_sub_one {u v : ℝ} (hu : 0 < u) (hv : 0 < v) (z : ℂ) :
+    ∫ x in u..v, (x : ℂ) ^ (-z - 1) = ∫ t in Real.log u..Real.log v, cexp (-z * t) := by
+  have hg : ContinuousOn (fun x : ℝ ↦ (x : ℂ) ^ (-z - 1))
+      (Real.exp '' [[Real.log u, Real.log v]]) := by
+    rintro _ ⟨t, -, rfl⟩
+    exact (Complex.continuousAt_ofReal_cpow_const _ _
+      (Or.inr (Real.exp_pos t).ne')).continuousWithinAt
+  have h := intervalIntegral.integral_deriv_smul_comp' (fun t _ ↦ Real.hasDerivAt_exp t)
+    Real.continuous_exp.continuousOn hg
+  rw [Real.exp_log hu, Real.exp_log hv] at h
+  rw [← h]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  rw [Function.comp_apply, Complex.real_smul, Complex.cpow_def_of_ne_zero
+    (Complex.ofReal_ne_zero.mpr (Real.exp_pos t).ne'), ← Complex.ofReal_log (Real.exp_pos t).le,
+    Real.log_exp, Complex.ofReal_exp, ← Complex.exp_add]
+  ring_nf
 
 /-- Pointwise bound on the Laplace integrand: if `‖w‖ ≤ M`, then
 `‖w * exp (-z t)‖ ≤ M * exp (-re z * t)` for real `t`. -/
@@ -141,21 +190,22 @@ theorem norm_intervalIntegral_mul_cexp_neg_mul_le_of_re_neg
 /-- **Holomorphy of the Laplace transform.** If `f` is bounded on `[0, ∞)`, its Laplace transform
 `z ↦ ∫ t in Ici 0, f t * exp (-z t)` is complex differentiable on the half-plane `0 < re z`. -/
 theorem differentiableOn_integral_mul_cexp_neg_mul
-    (hf : AEStronglyMeasurable f (volume.restrict (Ici 0)))
     (hbound : ∀ t ∈ Ici (0 : ℝ), ‖f t‖ ≤ M) :
     DifferentiableOn ℂ (fun z : ℂ ↦ ∫ t in Ici (0 : ℝ), f t * cexp (-z * t)) {z | 0 < z.re} := by
+  by_cases hf : AEStronglyMeasurable f (volume.restrict (Ici 0))
+  swap
+  · have : (fun z : ℂ ↦ ∫ t in Ici (0 : ℝ), f t * cexp (-z * t)) = fun _ ↦ 0 :=
+      funext fun z ↦ integral_undef fun h ↦
+        hf ((aestronglyMeasurable_mul_cexp_neg_mul_iff z).1 h.aestronglyMeasurable)
+    rw [this]
+    exact differentiableOn_const _
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound 0 (mem_Ici.mpr le_rfl))
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const Complex.continuous_re
   -- The truncations at `n : ℕ` converge to the transform uniformly on each `{c < re z}`.
-  have hloc (n : ℕ) : IntervalIntegrable f volume 0 n := by
-    refine (intervalIntegrable_iff_integrableOn_Ioc_of_le n.cast_nonneg).mpr
-      (Integrable.mono' (integrableOn_const measure_Ioc_lt_top.ne (C := M))
-        (hf.mono_set (Ioc_subset_Ioi_self.trans Ioi_subset_Ici_self))
-        (ae_restrict_of_forall_mem measurableSet_Ioc fun t ht ↦ hbound t (le_of_lt ht.1)))
   refine TendstoLocallyUniformlyOn.differentiableOn (φ := atTop)
     (F := fun (n : ℕ) (z : ℂ) ↦ ∫ t in (0 : ℝ)..n, f t * cexp (-z * t)) ?_
     (.of_forall fun n ↦
-      (differentiable_intervalIntegral_mul_cexp_neg_mul (hloc n)).differentiableOn) hopen
+      differentiable_intervalIntegral_mul_cexp_neg_mul.differentiableOn) hopen
   rw [Metric.tendstoLocallyUniformlyOn_iff]
   intro ε hε z₀ hz₀
   have hc : 0 < z₀.re / 2 := half_pos hz₀

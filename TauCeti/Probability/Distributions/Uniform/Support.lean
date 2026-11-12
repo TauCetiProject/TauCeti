@@ -31,7 +31,8 @@ theorem support_uniformMeasure {a b : ℝ} (hab : a < b) :
   rw [uniformMeasure_eq_withDensity]
   calc
     (volume.withDensity fun x ↦ pdf.uniformPDF (Ioc a b) x volume).support = closure (Ioo a b) :=
-      Measure.support_withDensity_eq_closure_of_subset measurable_uniformPDF_Ioc_volume isOpen_Ioo
+      Measure.support_withDensity_eq_closure_of_subset
+        (measurable_uniformPDF measurableSet_Ioc volume) isOpen_Ioo
         (fun x hx ↦ by
           rw [Function.mem_support, pdf.uniformPDF_ite, ite_eq_left ⟨hx.1, hx.2.le⟩]
           simp [Real.volume_Ioc])

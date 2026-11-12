@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Periodic
+public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.LogDeriv
@@ -29,11 +30,15 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
 
 * `Function.Periodic.fderiv`: the Fréchet derivative of a periodic function is
   periodic.
+* `Function.Periodic.iteratedFDeriv`: the iterated Fréchet derivatives of a periodic function are
+  periodic.
 * `Function.Periodic.deriv`: the derivative of a periodic function is periodic.
 * `Function.Periodic.iteratedDeriv`: the iterated derivatives of a periodic function are
   periodic.
 * `Function.Periodic.logDeriv`: the logarithmic derivative of a periodic
   function is periodic.
+* `TauCeti.fderiv_add_eq_smul`: a scalar twist `f (x + c) = a • f x` under translation passes to
+  the Fréchet derivative.
 -/
 
 public section
@@ -47,6 +52,12 @@ protected theorem Periodic.fderiv {E F : Type*} [NormedAddCommGroup E] [NormedSp
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {c : E}
     (hf : Periodic f c) : Periodic (fderiv 𝕜 f) c := fun x ↦ by
   rw [← fderiv_comp_add_right, hf.funext]
+
+/-- The iterated Fréchet derivatives of a periodic function are periodic. -/
+protected theorem Periodic.iteratedFDeriv {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {c : E}
+    (hf : Periodic f c) (n : ℕ) : Periodic (iteratedFDeriv 𝕜 n f) c := fun x ↦ by
+  rw [← congr_fun (iteratedFDeriv_comp_add_right' n c) x, hf.funext]
 
 /-- The derivative of a periodic function is periodic. -/
 protected theorem Periodic.deriv {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -67,5 +78,21 @@ protected theorem Periodic.logDeriv {𝕜' : Type*} [NontriviallyNormedField �
   hf.deriv.div hf
 
 end Function
+
+namespace TauCeti
+
+/-- A scalar twist under translation, `f (x + c) = a • f x`, passes to the Fréchet derivative.
+For `a = 1` this is `Function.Periodic.fderiv`, and for `a = -1` it covers antiperiodic maps. -/
+theorem fderiv_add_eq_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {c : E} {a : 𝕜}
+    (h : ∀ x, f (x + c) = a • f x) (x : E) : fderiv 𝕜 f (x + c) = a • fderiv 𝕜 f x := by
+  have hfun : (fun y ↦ f (y + c)) = a • f := funext h
+  rcases eq_or_ne a 0 with rfl | ha
+  · have hf : f = 0 := funext fun y ↦ by simpa using h (y - c)
+    simp [hf]
+  · let _ := invertibleOfNonzero ha
+    rw [← fderiv_comp_add_right, hfun, fderiv_const_smul_of_invertible]
+
+end TauCeti
 
 end

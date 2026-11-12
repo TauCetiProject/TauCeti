@@ -130,8 +130,8 @@ theorem nonempty_interior_closure_image_of_tendsto_zero [BaireSpace N] {F : Type
 
 /-- **The Baire step under the class hypothesis.** The same conclusion as
 `TauCeti.nonempty_interior_closure_image_of_tendsto_zero`, with the zero sequence taken from
-`TauCeti.HasZeroSequenceOfUnits` instead of supplied by the caller. This is the form a downstream
-open mapping theorem wants, since the roadmap states Henkel's hypothesis as the class. -/
+`TauCeti.HasZeroSequenceOfUnits` instead of supplied by the caller, for use under Henkel's
+hypothesis stated as that class. -/
 theorem HasZeroSequenceOfUnits.nonempty_interior_closure_image [HasZeroSequenceOfUnits A]
     [BaireSpace N] {F : Type*} [FunLike F M N] [MulActionHomClass F A M N] (f : F)
     (hf : Function.Surjective f) (hc : ∀ x : M, ContinuousAt (fun a : A ↦ a • x) 0) {U : Set M}

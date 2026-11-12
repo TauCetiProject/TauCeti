@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.Real.Inequalities
 import TauCeti.Data.EReal.Operations
 
 /-!
@@ -53,6 +54,9 @@ ordinary interval integrals.
   without lower semicontinuity.
 * `TauCeti.moreauYosida_add_lintegral_descendingSlope_le`: the discrete energy–dissipation
   inequality `φ_σ(x) + ∫₀^σ |∂φ|²(y_r) / 2 dr ≤ φ(x)`.
+* `TauCeti.apply_add_add_lintegral_descendingSlope_le`: the same inequality for a resolvent step
+  `z ∈ J_τ x`, as `φ z + d(x, z)² / (2τ) + ∫₀^τ |∂φ|²(y_r) / 2 dr ≤ φ(x)`, with no finiteness
+  hypotheses.
 
 ## References
 
@@ -196,7 +200,7 @@ private theorem monotoneOn_toReal_edist {y : ℝ → X} {s : Set ℝ} (hs : s �
   · rfl
   refine ENNReal.toReal_mono (edist_ne_top_of_mem_moreauYosidaResolvent (hy t ht))
     (edist_le_edist_of_mem_moreauYosidaResolvent
-    (Real.toNNReal_pos.2 (hs hr)) ?_ (hy r hr) (hy t ht)
+    ?_ (hy r hr) (hy t ht)
     (apply_ne_bot_of_moreauYosida_ne_bot (hy r hr) (hfin r hr).2) (hfin r hr).1)
   exact Real.toNNReal_lt_toNNReal_iff'.2 ⟨hrt, hs ht⟩
 
@@ -318,7 +322,6 @@ theorem tendsto_moreauYosida_nhdsGT_zero (hφ : LowerSemicontinuousAt φ x) {σ 
     tendsto_inv_nhdsGT_zero.comp (tendsto_nhdsWithin_iff.2
       ⟨(NNReal.continuous_coe.tendsto' 0 0 rfl).mono_left nhdsWithin_le_nhds,
         eventually_nhdsWithin_of_forall fun τ hτ ↦ NNReal.coe_pos.2 hτ⟩)
-  have hσ₀ : (0 : ℝ) < σ := NNReal.coe_pos.2 hσ
   have hδ₀' : (0 : ℝ) < δ₀ := NNReal.coe_pos.2 (ENNReal.coe_pos.1 hδ₀)
   filter_upwards [(hinv.const_mul_atTop (by positivity : (0 : ℝ) < δ₀ ^ 2 / 2)).eventually_ge_atTop
       (c' - m + δ₀ ^ 2 / (2 * σ)), nhdsWithin_le_nhds (Iio_mem_nhds hσ), self_mem_nhdsWithin]
@@ -354,17 +357,7 @@ theorem tendsto_moreauYosida_nhdsGT_zero (hφ : LowerSemicontinuousAt φ x) {σ 
   have hdδ : (δ₀ : ℝ) ≤ d := by
     rw [← ENNReal.coe_toReal δ₀]
     exact ENNReal.toReal_mono hz hzδ
-  have hw : 0 ≤ 1 / (2 * (τ : ℝ)) - 1 / (2 * σ) := by
-    rw [sub_nonneg]
-    gcongr
-  have hsq : (δ₀ : ℝ) ^ 2 ≤ d ^ 2 := pow_le_pow_left₀ δ₀.coe_nonneg hdδ 2
-  have key : (δ₀ : ℝ) ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) ≤ d ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) :=
-    mul_le_mul_of_nonneg_right hsq hw
-  have e₁ : (δ₀ : ℝ) ^ 2 / 2 * (τ : ℝ)⁻¹ = δ₀ ^ 2 / (2 * τ) := by field_simp
-  have e₂ : d ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) = d ^ 2 / (2 * τ) - d ^ 2 / (2 * σ) := by ring
-  have e₃ : (δ₀ : ℝ) ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) = δ₀ ^ 2 / (2 * τ) - δ₀ ^ 2 / (2 * σ) := by
-    ring
-  linarith
+  exact Real.le_add_sq_div_two_mul_of_sq_div_le hδ₀'.le hdδ hτ₀ (by exact_mod_cast hτσ.le) hτK h
 
 variable {y : ℝ → X} {σ : ℝ}
 
@@ -487,12 +480,8 @@ theorem moreauYosida_add_lintegral_descendingSlope_le (hσ : 0 < σ)
   refine setLIntegral_mono' measurableSet_Ioc fun r hr ↦ ?_
   -- At a resolvent step, `|∂φ|(y r) ≤ d(x, y r) / r`.
   have hr₀ : 0 < r.toNNReal := Real.toNNReal_pos.2 hr.1
-  have hr₁ : moreauYosida φ r.toNNReal x ≠ ⊤ := ne_top_of_le_ne_top hx (moreauYosida_le_self φ _ x)
-  have hr₂ : moreauYosida φ r.toNNReal x ≠ ⊥ :=
-    ne_bot_of_le_ne_bot hσ' (antitone_moreauYosida φ x (Real.toNNReal_mono hr.2))
   have hd := edist_ne_top_of_mem_moreauYosidaResolvent (hy r hr)
   have hslope := descendingSlope_le_of_mem_moreauYosidaResolvent hr₀ (hy r hr)
-    (apply_ne_bot_of_moreauYosida_ne_bot (hy r hr) hr₂) hr₁
   have hfin : (edist x (y r) / r.toNNReal) ^ 2 / 2 ≠ ∞ :=
     ENNReal.div_ne_top (ENNReal.pow_ne_top (ENNReal.div_ne_top hd (by simpa using hr₀.ne')))
       two_ne_zero
@@ -501,6 +490,27 @@ theorem moreauYosida_add_lintegral_descendingSlope_le (hσ : 0 < σ)
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.coe_toReal,
     Real.coe_toNNReal _ hr.1.le, ENNReal.toReal_ofNat, g]
   ring
+
+/-- **Discrete energy–dissipation inequality for one resolvent step.** Let `z ∈ J_τ x` be a
+resolvent step with time step `τ > 0`, and let `y r ∈ J_r x` be a resolvent step for every time
+`r ∈ (0, τ]`. Then `φ z + d(x, z)² / (2τ) + ∫₀^τ |∂φ|²(y r) / 2 dr ≤ φ(x)`, where `|∂φ|` is the
+descending slope. Unlike `TauCeti.moreauYosida_add_lintegral_descendingSlope_le`, no finiteness
+hypothesis is needed: the inequality is trivial when `φ x = ⊤` or `φ z = ⊥`. -/
+theorem apply_add_add_lintegral_descendingSlope_le {τ : ℝ≥0} (hτ : 0 < τ) {z : X}
+    (hz : z ∈ moreauYosidaResolvent φ τ x)
+    (hy : ∀ r ∈ Ioc 0 (τ : ℝ), y r ∈ moreauYosidaResolvent φ r.toNNReal x) :
+    φ z + (edist x z ^ 2 / (2 * τ) : ℝ≥0∞) +
+      ((∫⁻ r in Ioc 0 (τ : ℝ), descendingSlope φ (y r) ^ 2 / 2 : ℝ≥0∞) : EReal) ≤ φ x := by
+  by_cases hx : φ x = ⊤
+  · exact hx ▸ le_top
+  by_cases hz' : φ z = ⊥
+  · simp [hz']
+  have hφτ := (mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hz).2
+  have hτ' : moreauYosida φ (τ : ℝ).toNNReal x ≠ ⊥ := by
+    rw [Real.toNNReal_coe, ← hφτ]
+    exact fun h ↦ (EReal.add_eq_bot_iff.1 h).elim hz' (EReal.coe_ennreal_ne_bot _)
+  simpa only [Real.toNNReal_coe, ← hφτ] using
+    moreauYosida_add_lintegral_descendingSlope_le (NNReal.coe_pos.2 hτ) hy hx hτ'
 
 end EMetricSpace
 

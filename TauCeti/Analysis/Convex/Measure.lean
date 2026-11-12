@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Convex.Measure
 
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.Normed.Module.Convex
 
 /-!
 # Measure of convex sets
@@ -19,6 +22,16 @@ positive measure (`Convex.interior_inter_nonempty_of_addHaar_inter_ne_zero`). A 
 positive Haar measure exactly when its interior is nonempty, equivalently when its affine span is
 the whole space
 (`Convex.addHaar_pos_iff_interior_nonempty`, `Convex.addHaar_pos_iff_affineSpan_eq_top`).
+
+For the same reason, convex sets with disjoint interiors are almost everywhere disjoint
+(`Convex.aedisjoint_of_disjoint_interior`), and so are unions of countably many of them
+(`TauCeti.aedisjoint_iUnion_of_convex`). Hence Haar measure is additive over countable families of
+convex sets with pairwise disjoint interiors (`TauCeti.addHaar_iUnion_of_convex`), and finitely
+many interior-disjoint translates of a convex set `K` have total measure `card ι * μ K`
+(`Convex.addHaar_iUnion_vadd`). These are the volume computations for packings of lattice
+translates of a convex body in the proof of the upper half of Minkowski's second theorem by
+M. Henk, *Successive minima and lattice points*, Rend. Circ. Mat. Palermo (2) Suppl. 70 (2002),
+377–384, §3, arXiv:math/0204158.
 
 A convex set containing a ball of radius `r > 0` and a point at distance `L` from its centre has
 measure at least `2 ^ (-(n + 1)) * μ (ball 0 1) * L * r ^ (n - 1)`, which is the order of the
@@ -100,13 +113,7 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
   -- `m + 1 > L / (2 * r)` balls about them are pairwise disjoint.
   set m := ⌊L / (2 * r)⌋₊
   set c : ℕ → E := fun j => x + ((j : ℝ) * r / L) • (y - x)
-  have hyx : ‖y - x‖ = L := (dist_eq_norm y x).symm
-  have hdist : ∀ i j : ℕ, dist (c i) (c j) = |(i : ℝ) - j| * r := fun i j => by
-    simp only [c, dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, hyx,
-      Real.norm_eq_abs, ← sub_div, ← sub_mul, abs_div, abs_mul, abs_of_pos hr]
-    rw [abs_of_pos hL]
-    field_simp
-  have hsub : ∀ j ∈ Finset.range (m + 1), ball (c j) (r / 2) ⊆ s := fun j hj z hz => by
+  have hsub : ∀ j ∈ Finset.range (m + 1), ball (c j) (r / 2) ⊆ s := fun j hj => by
     set t := (j : ℝ) * r / L
     have ht₀ : 0 ≤ t := by positivity
     have ht : t ≤ 1 / 2 := by
@@ -116,40 +123,22 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
       rw [div_le_iff₀ hL]
       rw [le_div_iff₀ (by positivity)] at hj
       linarith
-    -- `z = (1 - t) • b + t • y` with `b = x + (1 - t)⁻¹ • (z - c j)` in `ball x r`.
-    have hb : x + (1 - t)⁻¹ • (z - c j) ∈ ball x r := by
-      rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, norm_inv, Real.norm_eq_abs,
-        abs_of_pos (by linarith), ← dist_eq_norm, inv_mul_lt_iff₀ (by linarith)]
-      rw [mem_ball] at hz
-      nlinarith
-    convert hs (hball hb) hy (by linarith : (0 : ℝ) ≤ 1 - t) ht₀ (by ring) using 1
-    have hc : c j = x + t • (y - x) := rfl
-    rw [smul_add, smul_smul, mul_inv_cancel₀ (by linarith : (1 - t) ≠ 0), one_smul, hc]
-    module
-  have hdisj : (Finset.range (m + 1) : Set ℕ).PairwiseDisjoint fun j => ball (c j) (r / 2) :=
-    fun i _ j _ hij => ball_disjoint_ball <| by
-      rw [hdist, add_halves]
-      have : (1 : ℝ) ≤ |(i : ℝ) - j| := by
-        rcases lt_or_gt_of_ne hij with h | h
-        · have : (i : ℝ) + 1 ≤ j := by exact_mod_cast h
-          exact le_abs.2 (Or.inr (by linarith))
-        · have : (j : ℝ) + 1 ≤ i := by exact_mod_cast h
-          exact le_abs.2 (Or.inl (by linarith))
-      nlinarith
-  have hn : 1 ≤ n := finrank_pos
+    exact (ball_subset_ball (by nlinarith)).trans
+      (hs.ball_add_smul_sub_subset hball hy ht₀ (by linarith))
+  -- The centres are `x + j • v` with `v = (r / L) • (y - x)` of norm `r`.
+  have hv : ‖(r / L) • (y - x)‖ = r := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity), ← dist_eq_norm]
+    exact div_mul_cancel₀ r hL.ne'
+  have hdisj : (Finset.range (m + 1) : Set ℕ).PairwiseDisjoint fun j => ball (c j) (r / 2) := by
+    have h := (TauCeti.pairwise_disjoint_ball_add_natCast_smul x ((r / L) • (y - x))).set_pairwise
+      (Finset.range (m + 1) : Set ℕ)
+    intro i hi j hj hij
+    simpa only [hv, c, smul_smul, mul_div_assoc] using h hi hj hij
   have hm : L / (2 * r) < m + 1 := Nat.lt_floor_add_one _
   calc ENNReal.ofReal (L * r ^ (n - 1)) * μ (ball 0 1)
       ≤ ENNReal.ofReal (2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)) * μ (ball 0 1) := by
         gcongr ENNReal.ofReal ?_ * _
-        have hrn : r ^ n = r * r ^ (n - 1) := by rw [← pow_succ', Nat.sub_add_cancel hn]
-        have h2 : (2 : ℝ) ^ (n + 1) * (r / 2) ^ n = 2 * r ^ n := by
-          rw [div_pow, pow_succ]
-          field_simp
-        rw [div_lt_iff₀ (by positivity)] at hm
-        calc L * r ^ (n - 1) ≤ (m + 1) * (2 * r) * r ^ (n - 1) := by gcongr
-          _ = 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
-            rw [mul_left_comm (2 ^ (n + 1) : ℝ), h2, hrn]
-            ring
+        exact TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow hr finrank_pos hm
     _ = 2 ^ (n + 1) * ∑ j ∈ Finset.range (m + 1), μ (ball (c j) (r / 2)) := by
         simp only [addHaar_ball μ _ (by positivity : 0 ≤ r / 2), Finset.sum_const,
           Finset.card_range, nsmul_eq_mul]
@@ -163,6 +152,53 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
     _ ≤ 2 ^ (n + 1) * μ s := by
         gcongr
         exact iUnion₂_subset hsub
+
+open Function
+open scoped Pointwise
+
+/-- Two convex sets in a finite-dimensional real normed space whose interiors are disjoint meet in
+a null set for every additive Haar measure, since each differs from its interior by a subset of
+its null frontier. The sets need not be closed, bounded or full-dimensional. -/
+theorem Convex.aedisjoint_of_disjoint_interior (hs : Convex ℝ s) {t : Set E} (ht : Convex ℝ t)
+    (h : Disjoint (interior s) (interior t)) : AEDisjoint μ s t :=
+  h.aedisjoint.congr (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm
+    (interior_ae_eq_of_null_frontier (ht.addHaar_frontier μ)).symm
+
+namespace TauCeti
+
+/-- **Unions of convex sets with disjoint interiors.** If every interior of a member of the
+countable family `A` is disjoint from every interior of a member of the countable family `B`, and
+all members are convex, then the unions `⋃ i, A i` and `⋃ j, B j` meet in a null set for every
+additive Haar measure. The unions need not be convex, and the members need not be closed or
+bounded. -/
+theorem aedisjoint_iUnion_of_convex {ι κ : Sort*} [Countable ι] [Countable κ] {A : ι → Set E}
+    {B : κ → Set E} (hA : ∀ i, Convex ℝ (A i)) (hB : ∀ j, Convex ℝ (B j))
+    (h : ∀ i j, Disjoint (interior (A i)) (interior (B j))) :
+    AEDisjoint μ (⋃ i, A i) (⋃ j, B j) :=
+  AEDisjoint.iUnion_left_iff.2 fun i ↦ AEDisjoint.iUnion_right_iff.2 fun j ↦
+    (hA i).aedisjoint_of_disjoint_interior (hB j) (h i j)
+
+/-- **Additivity over convex sets with disjoint interiors.** For a countable family of convex
+sets whose interiors are pairwise disjoint, the additive Haar measure of the union is the sum of
+the measures of the members, although the members may share boundary points. -/
+theorem addHaar_iUnion_of_convex {ι : Type*} [Countable ι] {A : ι → Set E}
+    (hA : ∀ i, Convex ℝ (A i)) (h : Pairwise (Disjoint on fun i ↦ interior (A i))) :
+    μ (⋃ i, A i) = ∑' i, μ (A i) :=
+  measure_iUnion₀ (fun _ _ hij ↦ (hA _).aedisjoint_of_disjoint_interior (hA _) (h hij))
+    fun i ↦ (hA i).nullMeasurableSet μ
+
+end TauCeti
+
+/-- **Volume of interior-disjoint translates.** If the translates `v i +ᵥ interior K` of the
+interior of a convex set `K` are pairwise disjoint, then the union of the finitely many translates
+`v i +ᵥ K` has `card ι` times the additive Haar measure of `K`. The translates may share boundary
+points, and `K` need not be closed, bounded or full-dimensional. -/
+theorem Convex.addHaar_iUnion_vadd {K : Set E} (hK : Convex ℝ K) {ι : Type*} [Fintype ι]
+    {v : ι → E} (h : Pairwise (Disjoint on fun i ↦ v i +ᵥ interior K)) :
+    μ (⋃ i, v i +ᵥ K) = Fintype.card ι * μ K := by
+  rw [TauCeti.addHaar_iUnion_of_convex (fun i ↦ hK.vadd (v i))
+    (by simpa only [interior_vadd] using h)]
+  simp
 
 open Bornology
 open scoped ENNReal

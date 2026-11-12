@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Basic
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Topology.Category.TopPair
@@ -18,8 +19,13 @@ A homotopy between maps of topological pairs induces a chain homotopy between th
 of relative singular chain complexes, so homotopic maps of pairs induce the same map on relative
 singular homology, and maps of pairs that are inverse to each other up to homotopy induce
 isomorphisms on it.  This is the homotopy axiom of Eilenberg--Steenrod for the relative singular
-theory.  In the absolute case, a homotopy equivalence of spaces induces an isomorphism on singular
-homology (`ContinuousMap.HomotopyEquiv.singularHomologyIso`).
+theory.  In particular, if `s ⊆ c ⊆ t` and `t` strong deformation retracts onto `c`, the inclusion
+of pairs `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular homology
+(`TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel`), and if `t` strong
+deformation retracts onto `s` the relative homology of `(t, s)` vanishes
+(`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`).  In the absolute
+case, a homotopy equivalence of spaces induces an isomorphism on singular homology
+(`ContinuousMap.HomotopyEquiv.singularHomologyIso`).
 
 The homotopy is transported to the singular simplicial sets of the two spaces, where the
 compatibility of the two simplicial homotopies over the inclusion of the subspace descends the
@@ -109,6 +115,54 @@ lemma isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy {X : TopCat.{w}} {B N
   · rw [← ofSubsetMap_comp _ _ hρ hBN (hBN.comp hρ), ← ofSubsetMap_id (B := N) fun _ hx ↦ hx]
     simpa only [Category.comp_id] using (ofSubsetHomotopy H hN).symm
 
+/-- **A strong deformation retraction of the ambient space induces isomorphisms on relative
+singular homology.** If `s ⊆ c ⊆ t` and `t` deformation retracts onto `c` relative to `c`, the
+inclusion `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular homology. -/
+theorem isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X : TopCat.{w}}
+    {s c t : Set X} (hsc : s ⊆ c) (hct : c ⊆ t) (r : C(t, c))
+    (G : ((ContinuousMap.inclusion hct).comp r).HomotopyRel (ContinuousMap.id t)
+      {x | (x : X) ∈ c})
+    (R : C) (n : ℕ) :
+    IsIso ((ofInclusion hsc).singularHomologyMap
+      (ofInclusionMap hsc (hsc.trans hct) (ContinuousMap.inclusion hct)
+        fun _ hx ↦ by simpa using hx) R n) := by
+  -- The retraction fixes every point of `c`, in particular every point of `s`.
+  have hrc (x : t) (hx : (x : X) ∈ c) : (r x : X) = x :=
+    congrArg Subtype.val (G.fst_eq_snd (x := x) hx)
+  have hrs (x : t) (hx : (x : X) ∈ s) : (r x : X) ∈ s := (hrc x (hsc hx)).symm ▸ hx
+  refine isIso_singularHomologyMap _ (ofInclusionMap (hsc.trans hct) hsc r hrs) ?_ ?_ R n
+  · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
+    have hid : r.comp (ContinuousMap.inclusion hct) = ContinuousMap.id c := by
+      ext x
+      exact hrc _ x.2
+    simp only [hid]
+    exact Homotopy.refl _
+  · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
+    -- The homotopy is stationary on `c ⊇ s`, so it keeps `s` inside `s`.
+    refine ofInclusionHomotopy G.toHomotopy fun τ x hx ↦ ?_
+    have h : G.toHomotopy (τ, x) = _ := G.eq_fst τ (hsc hx)
+    exact h ▸ hrs x hx
+
+/-- **A pair with a strong deformation retraction onto its subspace has no relative homology.**
+If `s ⊆ t` and `t` deformation retracts onto `s` relative to `s`, the relative singular homology
+of `(t, s)` vanishes in every degree. -/
+theorem isZero_singularHomology_ofInclusion_of_homotopyRel {X : TopCat.{w}} {s t : Set X}
+    (hst : s ⊆ t) (r : C(t, s))
+    (G : ((ContinuousMap.inclusion hst).comp r).HomotopyRel (ContinuousMap.id t)
+      {x | (x : X) ∈ s})
+    (R : C) (n : ℕ) :
+    IsZero ((ofInclusion hst).singularHomology R n) := by
+  -- The identity of the pair is homotopic to the retraction, which factors through `s`.
+  refine isZero_singularHomology_of_homotopy
+    (f := ofInclusionMap hst hst ((ContinuousMap.inclusion hst).comp r) fun x _ ↦ (r x).2)
+    ?_ (TopCat.ofHom r)
+    (by ext x; exact (ofInclusionMap_fst_apply (hst := hst) (hst' := hst) _ _ x).symm) R n
+  rw [← ofInclusionMap_id]
+  refine ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
+  have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
+  rw [h]
+  exact hx
+
 end TopPair
 
 namespace ContinuousMap.HomotopyEquiv
@@ -146,3 +200,33 @@ lemma singularHomologyIso_inv (n : ℕ) :
       ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom e.invFun) := (rfl)
 
 end ContinuousMap.HomotopyEquiv
+
+namespace ContinuousMap
+
+open TauCeti
+
+variable (k : Type w) [Ring k] (n : ℕ)
+
+/-- Homotopic continuous maps induce the same map on singular homology. -/
+theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
+    [TopologicalSpace Z] {g g' : C(Y, Z)} (H : g.Homotopic g') :
+    singularHomologyMap k n g = singularHomologyMap k n g' :=
+  congrArg ModuleCat.Hom.hom
+    (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
+      (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
+
+/-- A continuous map with a left inverse up to homotopy is injective on singular homology. -/
+theorem injective_singularHomologyMap_of_homotopic_comp_id {Y Z : Type w} [TopologicalSpace Y]
+    [TopologicalSpace Z] {s : C(Y, Z)} {r : C(Z, Y)} (H : (r.comp s).Homotopic (.id Y)) :
+    Function.Injective (singularHomologyMap k n s) :=
+  Function.LeftInverse.injective (g := singularHomologyMap k n r) fun y ↦ by
+    rw [← singularHomologyMap_comp, singularHomologyMap_eq_of_homotopic k n H,
+      singularHomologyMap_id]
+
+/-- A homotopy equivalence induces a bijection on singular homology. -/
+theorem HomotopyEquiv.bijective_singularHomologyMap {Y Z : Type w}
+    [TopologicalSpace Y] [TopologicalSpace Z]
+    (e : ContinuousMap.HomotopyEquiv Y Z) : Function.Bijective (singularHomologyMap k n e.toFun) :=
+  ConcreteCategory.bijective_of_isIso (e.singularHomologyIso (ModuleCat.of k k) n).hom
+
+end ContinuousMap

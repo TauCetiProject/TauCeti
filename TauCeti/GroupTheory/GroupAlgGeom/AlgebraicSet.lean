@@ -52,6 +52,12 @@ normal closure of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.V_normalClosure`, `TauCeti.GroupAlgGeom.normalClosure_le_Rad`: a system
   and its normal closure have the same solutions, so `ncl(S) ≤ Rad_H(S)`.
 * `TauCeti.GroupAlgGeom.V_I_V`: `V(I(V(S))) = V(S)`.
+* `TauCeti.GroupAlgGeom.preimage_wordMap_V`: inverse images of algebraic sets under word maps
+  are algebraic.
+* `TauCeti.GroupAlgGeom.exists_finite_V_eq_of_finite`,
+  `TauCeti.GroupAlgGeom.exists_subsingleton_V_eq`: with finitely many points, every system has a
+  finite subsystem with the same solutions; with at most one point, for instance with no
+  variables, a single equation suffices.
 * `TauCeti.GroupAlgGeom.I_singleton_comp`: the ideal of a point with coordinates `ι (g x)` is the
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
@@ -64,6 +70,11 @@ normal closure of `x ^ n` when `n ≠ 1`.
   `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
   injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
   strictly contains that of `x ^ n` when `n ≠ 1`.
+* `TauCeti.GroupAlgGeom.Rad_pow_mul_inl_pow_eq_normalClosure`,
+  `TauCeti.GroupAlgGeom.inr_of_mul_inl_notMem_normalClosure_pow_mul_inl`: over a group `H` with
+  unique roots and injective coefficients, the radical of the one-variable equation
+  `x ^ n * b ^ n` (`n ≠ 0`) is the normal closure of `x * b`. For `n ≠ 1`, the element `x * b`
+  does not lie in the normal closure of `x ^ n * d`, whatever the coefficients `b` and `d`.
 
 ## References
 
@@ -162,6 +173,74 @@ theorem V_union (S T : Set (GX G X)) : V ι (S ∪ T) = V ι S ∩ V ι T :=
 theorem V_iUnion {κ : Sort*} (S : κ → Set (GX G X)) : V ι (⋃ k, S k) = ⋂ k, V ι (S k) :=
   upperPolar_iUnion _ S
 
+/-- Pulling an algebraic set back along a tuple of words substitutes those words into its
+equations. -/
+theorem preimage_wordMap_V {Y : Type*} (w : Y → GX G X) (S : Set (GX G Y)) :
+    wordMap ι w ⁻¹' V ι S =
+      V ι ((eval (inl : G →* GX G X) w) '' S) := by
+  ext v
+  simp only [Set.mem_preimage, mem_V, Set.mem_image]
+  constructor
+  · intro hv s hs
+    obtain ⟨t, ht, rfl⟩ := hs
+    rw [← MonoidHom.comp_apply, eval_comp_eval]
+    exact hv t ht
+  · intro hv t ht
+    have := hv _ ⟨t, ht, rfl⟩
+    rwa [← MonoidHom.comp_apply, eval_comp_eval] at this
+
+/-- The inverse image of a solution set under the tuple word map is the solution set
+of the image system. -/
+theorem preimage_wordMap_V_eq_V_image {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (T : Set (GX G Y)) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T = V ι (σ '' T) := by
+  calc
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T =
+        V ι ((eval (inl : G →* GX G X)
+          (fun y => σ (inr (FreeGroup.of y)))) '' T) := preimage_wordMap_V _ _
+    _ = V ι (σ '' T) := congrArg (fun f : GX G Y →* GX G X => V ι (f '' T))
+      (eval_eq_of_comp_inl σ.comp_coeff)
+
+/-- A word map sends solutions to solutions of the inverse-image system. -/
+theorem wordMap_mem_V {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (v : X → H) (hv : v ∈ V ι S) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) v ∈ V ι (σ ⁻¹' S) := by
+  have h := (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
+  exact h.mpr (V_antitone ι (Set.image_preimage_subset σ S) hv)
+
+/-- A tuple solves `S` exactly when its word map solves the inverse-image system. -/
+theorem wordMap_mem_V_iff {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (hσ : Function.Surjective σ) (S : Set (GX G X)) (v : X → H) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) v ∈ V ι (σ ⁻¹' S) ↔ v ∈ V ι S := by
+  simpa only [Set.mem_preimage, Set.image_preimage_eq S hσ] using
+    (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
+
+/-- The singleton of a tuple of coefficients is the solution set of the equations specifying
+all its coordinates. -/
+theorem singleton_comp_eq_V (g : X → G) :
+    ({(ι ∘ g : X → H)} : Set (X → H)) =
+      V ι (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹) := by
+  ext v
+  simp only [Set.mem_singleton_iff, mem_V, Set.mem_range]
+  constructor
+  · rintro rfl s ⟨x, rfl⟩
+    simp
+  · intro hv
+    funext x
+    have hx := hv _ ⟨x, rfl⟩
+    simpa only [Function.comp_apply, map_mul, map_inv, eval_inl, eval_inr_of,
+      mul_inv_eq_one] using hx
+
+/-- If some coefficient remains nontrivial in `H`, an equation with that constant has no
+solutions. -/
+theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
+    V ι ({inl g} : Set (GX G X)) = ∅ := by
+  ext v
+  simp [hg]
+
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
   SetLike.coe_injective ((lowerPolar_union _ Y Z).trans (coe_inf (I ι Y) (I ι Z)).symm)
@@ -176,6 +255,52 @@ theorem V_normalClosure (S : Set (GX G X)) : V ι (normalClosure S : Set (GX G X
   refine (V_antitone ι subset_normalClosure).antisymm fun v hv => ?_
   have : normalClosure S ≤ (eval ι v).ker := normalClosure_le_normal fun s hs => mem_V.1 hv s hs
   exact mem_V.2 fun s hs => this hs
+
+/-! ### Finite subsystems -/
+
+/-- A homomorphism `m : G[X] →* G'[Y]` together with a map of points `θ` compatible with
+evaluation carries finite subsystems of `m(S)` with the same solutions back to finite subsystems
+of `S` with the same solutions. -/
+theorem exists_finite_V_eq_of_map {G' Y : Type*} [Group G'] {ι : G →* H} {ι' : G' →* H}
+    (m : GX G X →* GX G' Y) (θ : (X → H) → (Y → H))
+    (hθ : ∀ v s, eval ι' (θ v) (m s) = eval ι v s) {S : Set (GX G X)}
+    (h : ∃ T ⊆ m '' S, T.Finite ∧ V ι' T = V ι' (m '' S)) :
+    ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
+  obtain ⟨S₀, hS₀, hfin, hV⟩ := Set.exists_subset_image_finite_and.1 h
+  have key (T : Set (GX G X)) : V ι T = θ ⁻¹' V ι' (m '' T) := by
+    ext v
+    simp [hθ]
+  exact ⟨S₀, hS₀, hfin, by rw [key, key, hV]⟩
+
+/-- If there are only finitely many points `X → H`, every system is equivalent to a finite
+subsystem: one equation failing at each non-solution suffices. -/
+theorem exists_finite_V_eq_of_finite {ι : G →* H} [Finite (X → H)] (S : Set (GX G X)) :
+    ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
+  have hw (v : ↥(V ι S)ᶜ) : ∃ s ∈ S, eval ι v s ≠ 1 := by
+    have hv := v.2
+    simpa only [Set.mem_compl_iff, mem_V, not_forall, exists_prop] using hv
+  choose w hwS hw using hw
+  have hsub : Set.range w ⊆ S := Set.range_subset_iff.2 hwS
+  refine ⟨Set.range w, hsub, Set.finite_range w, (V_antitone ι hsub).antisymm' fun v hv => ?_⟩
+  by_contra hvS
+  exact hw ⟨v, hvS⟩ (mem_V.1 hv _ ⟨⟨v, hvS⟩, rfl⟩)
+
+/-- If there is at most one point `X → H`, for instance when there are no variables, a single
+equation suffices: a system with a solution is equivalent to the empty subsystem, and a system
+without one is equivalent to any of its equations that fails at the point. -/
+theorem exists_subsingleton_V_eq {ι : G →* H} [Subsingleton (X → H)] (S : Set (GX G X)) :
+    ∃ S₀ ⊆ S, S₀.Subsingleton ∧ V ι S₀ = V ι S := by
+  by_cases hS : ∃ s ∈ S, ∃ v, eval ι v s ≠ 1
+  · obtain ⟨s, hs, v, hv⟩ := hS
+    have hs₀ : V ι {s} = ∅ :=
+      Set.eq_empty_iff_forall_notMem.2 fun u hu => hv (Subsingleton.elim v u ▸ mem_V.1 hu s rfl)
+    refine ⟨{s}, Set.singleton_subset_iff.2 hs, Set.subsingleton_singleton, ?_⟩
+    rw [hs₀, eq_comm, ← Set.subset_empty_iff, ← hs₀]
+    exact V_antitone ι (Set.singleton_subset_iff.2 hs)
+  · refine ⟨∅, Set.empty_subset S, Set.subsingleton_empty, ?_⟩
+    simp only [not_exists, not_and, not_not] at hS
+    rw [V_empty]
+    exact (Set.eq_univ_of_forall fun v => mem_V.2 fun s hs => hS s hs v).symm
 
 /-! ### Radicals -/
 
@@ -304,6 +429,12 @@ def quotientHomEquiv : GHom (quotientCoeff N) ι ≃ V ι (N : Set (GX G X)) whe
 theorem quotientHomEquiv_apply_coe (φ : GHom (quotientCoeff N) ι) (x : X) :
     (quotientHomEquiv ι N φ : X → H) x = φ (inr (FreeGroup.of x) : GX G X) := (rfl)
 
+/-- Evaluation at the point corresponding to a `G`-homomorphism `φ : G[X] ⧸ N → H` is `φ`
+composed with the quotient map. -/
+theorem eval_quotientHomEquiv (φ : GHom (quotientCoeff N) ι) (w : GX G X) :
+    eval ι (quotientHomEquiv ι N φ) w = φ (w : GX G X ⧸ N) :=
+  DFunLike.congr_fun (eval_eq_comp_mk' φ) w
+
 @[simp]
 theorem quotientHomEquiv_symm_apply (v : V ι (N : Set (GX G X))) :
     (quotientHomEquiv ι N).symm v = quotientEvalGHom v v.2 := (rfl)
@@ -324,6 +455,17 @@ theorem quotientCoeff_injective (hι : Function.Injective ι)
   ext g
   simp
 
+/-- A surjective `G`-homomorphism `π : G[X] →* K` induces a `G`-isomorphism `G[X] ⧸ N → K` from
+the quotient by its kernel `N`. -/
+theorem exists_bijective_gHom_of_eq_ker {K : Type*} [Group K] {κ : G →* K}
+    (π : GHom (inl : G →* GX G X) κ) (hπ : Function.Surjective π)
+    (hN : N = (π : GX G X →* K).ker) :
+    ∃ ψ : GHom (quotientCoeff N) κ, Function.Bijective ψ ∧
+      ∀ w : GX G X, ψ (w : GX G X ⧸ N) = π w := by
+  let e := QuotientGroup.liftEquiv N (φ := (π : GX G X →* K)) hπ hN
+  refine ⟨⟨e.toMonoidHom, fun g => ?_⟩, e.bijective, fun w => rfl⟩
+  simp [e]
+
 end GX
 
 /-! ### Coordinate groups and the group of a system -/
@@ -339,6 +481,8 @@ variable (ι) in
 /-- The coefficient homomorphism `G →* G_{R(S)}`. -/
 def coeff (S : Set (GX G X)) : G →* CoordGroup ι S :=
   GX.quotientCoeff _
+
+theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) := (rfl)
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
@@ -366,9 +510,16 @@ theorem homEquiv_apply_coe (φ : GHom (coeff ι S) ι) (x : X) :
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.2 := (rfl)
 
+/-- Evaluation at a solution agrees with the corresponding coordinate-group homomorphism. -/
+@[simp]
+theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) (w : GX G X) :
+    eval ι (homEquiv ι S φ) w = φ (w : CoordGroup ι S) :=
+  GX.eval_quotientHomEquiv φ w
+
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
-theorem gHom_ext {φ ψ : GHom (coeff ι S) ι}
+theorem gHom_ext {K : Type*} [Group K] {κ : G →* K}
+    {φ ψ : GHom (coeff ι S) κ}
     (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
   GX.quotientGHom_ext h
 
@@ -388,7 +539,92 @@ variable (ι) in
 theorem toGGroup_coeff (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     (toGGroup ι hι hS).coeff = coeff ι S := (rfl)
 
+variable {Y : Type*}
+variable (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y))
+
+/-- A tuple of words maps the solution set of `S` into the solution set of `T`. -/
+def MapsToWordMap (w : Y → GX G X) : Prop :=
+  Set.MapsTo (wordMap ι w) (V ι S) (V ι T)
+
+/-- A tuple of words maps solutions of `S` to solutions of `T` precisely when its word map
+does so at every solution. -/
+theorem mapsToWordMap_iff (w : Y → GX G X) :
+    MapsToWordMap ι S T w ↔ ∀ v ∈ V ι S, wordMap ι w v ∈ V ι T :=
+  Iff.rfl
+
+/-- A word map between algebraic sets pulls equations vanishing on the target back to
+equations vanishing on the source. -/
+theorem Rad_le_comap_of_mapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) :
+    Rad ι T ≤ (Rad ι S).comap (eval (inl : G →* GX G X) w) := by
+  intro t ht
+  rw [Subgroup.mem_comap, mem_Rad]
+  intro v hv
+  rw [← MonoidHom.comp_apply, eval_comp_eval]
+  exact (mem_Rad.mp ht) _ ((mapsToWordMap_iff ι S T w).mp hw v hv)
+
+/-- A word map between algebraic sets induces a coefficient-preserving homomorphism of
+coordinate groups in the opposite direction. -/
+def homOfMapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) :
+    GHom (coeff ι T) (coeff ι S) where
+  toMonoidHom := QuotientGroup.map _ _ (eval (inl : G →* GX G X) w)
+    (Rad_le_comap_of_mapsToWordMap ι S T w hw)
+  map_coeff' g := by simp [coeff_apply]
+
+@[simp]
+theorem homOfMapsToWordMap_mk (w : Y → GX G X) (hw : MapsToWordMap ι S T w)
+    (t : GX G Y) :
+    homOfMapsToWordMap ι S T w hw (t : CoordGroup ι T) =
+      (eval (inl : G →* GX G X) w t : CoordGroup ι S) := by
+  simp [homOfMapsToWordMap]
+
+/-- Evaluating the induced coordinate-group homomorphism at a point is the original word
+map of that point. -/
+theorem homEquiv_comp_homOfMapsToWordMap (w : Y → GX G X)
+    (hw : MapsToWordMap ι S T w) (v : V ι S) :
+    (homEquiv ι T ((evalGHom v.1 v.2).comp
+      (homOfMapsToWordMap ι S T w hw)) : Y → H) = wordMap ι w v.1 := by
+  funext y
+  simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply,
+    homOfMapsToWordMap_mk, evalGHom_mk, wordMap_apply, eval_inr_of]
+
+/-- A coefficient-preserving word map induces a homomorphism between coordinate groups. -/
+def homOfWordMap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) : GHom (coeff ι (σ ⁻¹' S)) (coeff ι S) :=
+  homOfMapsToWordMap ι S (σ ⁻¹' S) (fun y => σ (inr (FreeGroup.of y)))
+    (fun v hv => wordMap_mem_V ι σ S v hv)
+
+@[simp]
+theorem homOfWordMap_mk {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (w : GX G Y) :
+    homOfWordMap ι σ S (w : CoordGroup ι (σ ⁻¹' S)) =
+      (σ w : CoordGroup ι S) := by
+  simp only [homOfWordMap, homOfMapsToWordMap]
+  exact congrArg (fun t : GX G X => (t : CoordGroup ι S))
+    (DFunLike.congr_fun (eval_eq_of_comp_inl σ.comp_coeff) w)
+
+/-- Precomposition with the coordinate-group word map corresponds to the word map on
+tuples under the point–homomorphism equivalence. -/
+theorem homEquiv_comp_homOfWordMap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) :
+    ((homEquiv ι (σ ⁻¹' S) (φ.comp (homOfWordMap ι σ S)) : Y → H)) =
+      wordMap ι (fun y => σ (inr (FreeGroup.of y))) (homEquiv ι S φ) := by
+  funext y; simp
+
 end CoordGroup
+
+/-- The word homomorphism `σ` maps the radical of the inverse-image system into the
+radical of the original system. -/
+theorem Rad_preimage_le_comap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (S : Set (GX G X)) :
+    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom := by
+  have h := CoordGroup.Rad_le_comap_of_mapsToWordMap ι S (σ ⁻¹' S)
+    (fun y => σ (inr (FreeGroup.of y))) (fun v hv => wordMap_mem_V ι σ S v hv)
+  have heval : eval (inl : G →* GX G X) (fun y => σ (inr (FreeGroup.of y))) =
+      σ.toMonoidHom := eval_eq_of_comp_inl σ.comp_coeff
+  rwa [heval] at h
 
 variable (G) in
 /-- The group `G_S = G[X] ⧸ ncl(S)` presented over `G` by the system `S` of equations. -/
@@ -400,6 +636,8 @@ namespace SystemGroup
 /-- The coefficient homomorphism `G →* G_S`. -/
 def coeff (S : Set (GX G X)) : G →* SystemGroup G S :=
   GX.quotientCoeff _
+
+theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure S) := (rfl)
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
@@ -488,18 +726,55 @@ theorem Rad_pow_eq_normalClosure [IsMulTorsionFree H] (hι : Function.Injective 
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
-/-- The normal closure of the one-variable equation `x ^ n` does not contain `x` when `n ≠ 1`. -/
-theorem inr_of_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) :
-    (inr (of x) : GX G X) ∉ normalClosure {inr (of x) ^ n} := by
+/-- In a group `H` with unique roots, the equation `x ^ n * b ^ n = 1` (`n ≠ 0`) has the same
+solutions as `x * b = 1`: the only `n`-th root of `(b ^ n)⁻¹` is `b⁻¹`. -/
+theorem V_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    V ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = V ι {inr (of x) * inl b} := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+
+/-- In a group `H` with unique roots, the equations `x ^ n * b ^ n = 1` (`n ≠ 0`) and `x * b = 1`
+have the same radical. -/
+theorem Rad_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = Rad ι {inr (of x) * inl b} := by
+  rw [Rad_def, V_pow_mul_inl_pow hn, Rad_def]
+
+/-- For injective coefficients, the radical of the one-variable equation `x * b = 1` is its
+normal closure: the quotient `G[x] ⧸ ncl(x b)` is `G` itself. -/
+theorem Rad_inr_of_mul_inl [Subsingleton X] (hι : Function.Injective ι) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) * inl b} = normalClosure {inr (of x) * inl b} := by
+  have := uniqueOfSubsingleton x
+  have hV : V ι {(inr (of x) : GX G X) * inl b} = {ι ∘ fun _ => b⁻¹} := by
+    ext v
+    simp [funext_iff, Unique.forall_iff, Subsingleton.elim default x, mul_eq_one_iff_eq_inv]
+  rw [Rad_def, hV, I_singleton_comp hι]
+  simp [Set.range_unique, Subsingleton.elim default x]
+
+/-- Over a group `H` with unique roots and injective coefficients, the radical of the
+one-variable equation `x ^ n * b ^ n = 1` (`n ≠ 0`) is the normal closure of `x * b`. -/
+theorem Rad_pow_mul_inl_pow_eq_normalClosure [Subsingleton X] [HasUniqueRoots H]
+    (hι : Function.Injective ι) {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = normalClosure {inr (of x) * inl b} := by
+  rw [Rad_pow_mul_inl_pow hn, Rad_inr_of_mul_inl hι]
+
+/-- When `n ≠ 1`, the normal closure of the equation `x ^ n * d` does not contain `x * b`, for
+any coefficients `b` and `d`. -/
+theorem inr_of_mul_inl_notMem_normalClosure_pow_mul_inl {n : ℕ} (hn : n ≠ 1) (x : X) (b d : G) :
+    (inr (of x) * inl b : GX G X) ∉ normalClosure {inr (of x) ^ n * inl d} := by
   -- Send the coefficients to `1` and the variables to a generator of `ℤ / n`.
   let f : GX G X →* Multiplicative (ZMod n) := eval 1 fun _ => .ofAdd 1
-  have hle : normalClosure {inr (of x) ^ n} ≤ f.ker := by
+  have hle : normalClosure {(inr (of x) : GX G X) ^ n * inl d} ≤ f.ker := by
     refine normalClosure_le_normal ?_
     rintro _ rfl
     simp [f, ← ofAdd_nsmul]
   intro h
   have : (Multiplicative.ofAdd 1 : Multiplicative (ZMod n)) = 1 := by simpa [f] using hle h
   exact hn (ZMod.one_eq_zero_iff.1 this)
+
+/-- The normal closure of the one-variable equation `x ^ n` does not contain `x` when `n ≠ 1`. -/
+theorem inr_of_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) :
+    (inr (of x) : GX G X) ∉ normalClosure {inr (of x) ^ n} := by
+  simpa using inr_of_mul_inl_notMem_normalClosure_pow_mul_inl hn x (1 : G) 1
 
 /-- For `n ≠ 1`, the normal closure of `x ^ n` differs from the normal closure of `x`. -/
 theorem normalClosure_pow_ne_normalClosure {n : ℕ} (hn : n ≠ 1) (x : X) :

@@ -27,8 +27,11 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 ## Main definitions
 
 * `TauCeti.cornerSubmodule`: the corner `eAf`, as a `k`-submodule of `A`.
+* `IsIdempotentElem.compress`: the compression `x ↦ e * x * e` of `A` onto the corner ring `eAe`.
 * `IsIdempotentElem.Corner.instAlgebra`: the corner `eAe` of an idempotent of a nonunital
   `R`-algebra is a unital `R`-algebra.
+* `IsIdempotentElem.cornerFunctional`: the compression `x ↦ φ x / φ e` of a linear functional `φ`
+  to the corner `eAe`, normalised at its unit `e`.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
   agrees with the corner submodule `TauCeti.cornerSubmodule R e e`.
 * `IsIdempotentElem.cornerMap`: a homomorphism of nonunital semirings restricts to a unital
@@ -42,8 +45,12 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 ## Main results
 
 * `TauCeti.mem_cornerSubmodule_iff`: the fixed-point characterization of an idempotent corner.
+* `TauCeti.mem_span_singleton_of_mem_cornerSubmodule`: the corner `eAf` lies in the left ideal
+  `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
   corner ring `eAe` is fixed by `e` on both sides.
+* `IsIdempotentElem.val_list_prod_map_compress`: a product of compressions in `eAe` is
+  `e (x₁ e) ⋯ (xₙ e)` in `A`.
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
   is.
 
@@ -58,6 +65,8 @@ public section
 namespace TauCeti
 
 universe u v
+
+section NonUnitalSemiring
 
 variable (k : Type v) [Semiring k] {A : Type u} [NonUnitalSemiring A] [Module k A]
   [SMulCommClass k A A] [IsScalarTower k A A]
@@ -103,6 +112,24 @@ theorem mul_eq_self_of_mem_cornerSubmodule_right {e f x : A} (hf : IsIdempotentE
   simp only [LinearMap.mulLeftRight_apply]
   rw [mul_assoc, hf.eq]
 
+end NonUnitalSemiring
+
+section Semiring
+
+variable {k : Type v} [Semiring k] {A : Type u} [Semiring A] [Module k A]
+  [SMulCommClass k A A] [IsScalarTower k A A]
+
+/-- An element of the corner `eAf` lies in the left ideal `Af`, without any idempotency
+assumption. -/
+theorem mem_span_singleton_of_mem_cornerSubmodule {e f x : A}
+    (hx : x ∈ cornerSubmodule k e f) : x ∈ (Ideal.span {f} : Ideal A) := by
+  rw [cornerSubmodule_def, LinearMap.mem_range] at hx
+  obtain ⟨y, hy⟩ := hx
+  exact Ideal.mem_span_singleton'.2 ⟨e * y, by
+    simpa only [LinearMap.mulLeftRight_apply] using hy⟩
+
+end Semiring
+
 end TauCeti
 
 /-! ### The corner ring as an algebra -/
@@ -123,6 +150,19 @@ theorem mul_corner_val (b : he.Corner) : e * b.1 = b.1 :=
 theorem corner_val_mul (b : he.Corner) : b.1 * e = b.1 :=
   ((Subsemigroup.mem_corner_iff he).1 b.2).2
 
+/-- The *compression* `x ↦ e * x * e` of `A` onto the corner `eAe`. -/
+def compress (x : A) : he.Corner :=
+  ⟨e * x * e, (Subsemigroup.mem_corner_iff he).2
+    ⟨by rw [← mul_assoc, ← mul_assoc, he.eq], by rw [mul_assoc, he.eq]⟩⟩
+
+@[simp]
+theorem val_compress (x : A) : (he.compress x).1 = e * x * e := (rfl)
+
+/-- The compression fixes the elements of the corner. -/
+@[simp]
+theorem compress_val (b : he.Corner) : he.compress b.1 = b :=
+  Subtype.ext <| by rw [val_compress, he.mul_corner_val, he.corner_val_mul]
+
 namespace Corner
 
 variable {he} {R : Type v} [SMul R A] [SMulCommClass R A A] [IsScalarTower R A A]
@@ -136,6 +176,11 @@ instance instSMul : SMul R he.Corner where
 theorem val_smul (r : R) (b : he.Corner) : (r • b).1 = r • b.1 := (rfl)
 
 end Corner
+
+@[simp]
+theorem compress_smul {R : Type v} [SMul R A] [SMulCommClass R A A] [IsScalarTower R A A]
+    (r : R) (x : A) : he.compress (r • x) = r • he.compress x :=
+  Subtype.ext <| by simp [mul_smul_comm, smul_mul_assoc]
 
 end Semigroup
 
@@ -200,6 +245,60 @@ end Algebra
 
 end Corner
 
+section NonUnitalSemiring
+
+variable {A : Type u} [NonUnitalSemiring A] {e : A} (he : IsIdempotentElem e)
+
+@[simp]
+theorem compress_zero : he.compress 0 = 0 :=
+  Subtype.ext <| by simp
+
+@[simp]
+theorem compress_add (x y : A) : he.compress (x + y) = he.compress x + he.compress y :=
+  Subtype.ext <| by simp [mul_add, add_mul]
+
+end NonUnitalSemiring
+
+section Semiring
+
+variable {A : Type u} [Semiring A] {e : A} (he : IsIdempotentElem e)
+
+/-- The product in the corner `eAe` of the compressions `e xᵢ e` of a list `x₁, …, xₙ` is
+`e (x₁ e) ⋯ (xₙ e)`. -/
+theorem val_list_prod_map_compress (l : List A) :
+    (l.map he.compress).prod.1 = e * (l.map (· * e)).prod := by
+  induction l with
+  | nil => simp
+  | cons x l ih => simp [ih, mul_assoc, he.mul_self_mul]
+
+end Semiring
+
+section Functional
+
+variable {A : Type u} [NonUnitalSemiring A] {e : A} (he : IsIdempotentElem e)
+  {R : Type v} [Semifield R] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+
+/-- The *compression* of a linear functional `φ` to the corner `eAe` of an idempotent `e`,
+normalised at the unit `e` of the corner: `x ↦ φ x / φ e`. When `φ e ≠ 0` it takes the value `1`
+at the unit (`IsIdempotentElem.cornerFunctional_one`). -/
+def cornerFunctional (φ : A →ₗ[R] R) : he.Corner →ₗ[R] R where
+  toFun x := (φ e)⁻¹ * φ x.1
+  map_add' x y := by rw [Corner.val_add, map_add, mul_add]
+  map_smul' c x := by
+    rw [Corner.val_smul, map_smul, smul_eq_mul, smul_eq_mul, RingHom.id_apply, mul_left_comm]
+
+@[simp]
+theorem cornerFunctional_apply (φ : A →ₗ[R] R) (x : he.Corner) :
+    he.cornerFunctional φ x = (φ e)⁻¹ * φ x.1 :=
+  (rfl)
+
+/-- The compression of `φ` to the corner `eAe` is normalised when `φ e ≠ 0`. -/
+theorem cornerFunctional_one {φ : A →ₗ[R] R} (hφe : φ e ≠ 0) :
+    he.cornerFunctional φ 1 = 1 := by
+  rw [cornerFunctional_apply, Corner.val_one, inv_mul_cancel₀ hφe]
+
+end Functional
+
 section Map
 
 variable {A B : Type*} [NonUnitalSemiring A] [NonUnitalSemiring B]
@@ -224,7 +323,7 @@ theorem cornerMap_surjective (f : A →ₙ+* B) (hf : Function.Surjective f) :
     Function.Surjective (he.cornerMap f) := by
   intro y
   obtain ⟨x, hx⟩ := hf y.1
-  refine ⟨⟨e * x * e, x, rfl⟩, ?_⟩
+  refine ⟨he.compress x, ?_⟩
   apply Subtype.ext
   exact (map_mul f (e * x) e).trans (by
     rw [map_mul, hx, (he.map f).mul_corner_val, (he.map f).corner_val_mul])

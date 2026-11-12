@@ -16,8 +16,11 @@ public import Mathlib.Tactic.Field
 public import Mathlib.Tactic.LinearCombination
 public import TauCeti.Algebra.Group.MapMulMulEqOne
 public import TauCeti.Algebra.Polynomial.LinearFactor
+public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Collinear
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -73,10 +76,11 @@ what makes the corrected element a unit. Both branches are packaged in `μX`, an
   representative `x - T + fCofactor x` has norm `(f' x) ^ 2`. This is the value the norm condition
   on the image of the descent map is read off from at the `2`-torsion.
 
-`WeierstrassCurve.Affine.A` is the étale algebra and `WeierstrassCurve.Affine.M` its group of
-square classes of units; `M` is spelled as a quotient of `W.Aˣ` by the range of Mathlib's
-`powMonoidHom 2`, which is the same spelling that `TauCeti/GroupTheory/Finiteness.lean` already
-uses for square classes.
+The cubic quotient algebra `WeierstrassCurve.Affine.A` and its group of square classes of units
+`WeierstrassCurve.Affine.M` are defined over arbitrary commutative rings. Their definitions and
+the basic square-class identities do not require ellipticity or normal form. `M` is spelled as a
+quotient of `W.Aˣ` by the range of Mathlib's `powMonoidHom 2`, which is the same spelling that
+`TauCeti/GroupTheory/Finiteness.lean` already uses for square classes.
 
 ## Namespace
 
@@ -224,9 +228,11 @@ lemma evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x : 
   ring
 
 /-- At a point of `W`, a nonzero value of `f x` forces the `y`-coordinate to be nonzero. -/
-lemma y_ne_zero_of_eval_f_ne_zero [W.IsCharNeTwoNF] {x y : R} (h : W.Equation x y)
-    (hx : W.f.eval x ≠ 0) : y ≠ 0 :=
-  fun h0 ↦ hx <| by simp [(equation_iff_eval_f_eq_sq W x y).mp h, h0]
+lemma y_ne_zero_of_eval_f_ne_zero {x y : R} (h : W.Equation x y)
+    (hx : W.f.eval x ≠ 0) : y ≠ 0 := by
+  rintro rfl
+  rw [equation_iff] at h
+  exact hx (by rw [eval_f]; linear_combination -h)
 
 lemma monic_fCofactor (x : R) : (W.fCofactor x).Monic := by
   simp only [fCofactor]
@@ -329,10 +335,54 @@ lemma mk_eq_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0
   rw [← EquivLike.apply_eq_iff_eq <| W.equivProdA' hx]
   simpa only [equivProdA'_apply] using Prod.mk_inj
 
-lemma isUnit_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0) {p : R[X]} :
+lemma isUnit_mk_iff {x : R} (hx : W.f.eval x = 0) {p : R[X]} :
     IsUnit (AdjoinRoot.mk W.f p) ↔
       IsUnit (p.eval x) ∧ IsUnit (AdjoinRoot.mk (W.fCofactor x) p) := by
-  rw [← isUnit_map_iff (W.equivProdA' hx), W.equivProdA'_apply hx, Prod.isUnit_iff]
+  have key (q : R[X]) : IsUnit (AdjoinRoot.mk q p) ↔ IsCoprime p q := by
+    rw [AdjoinRoot.mk]
+    exact (Ideal.Quotient.isUnit_mk_iff).trans (Ideal.sup_eq_top_iff_isCoprime _ _)
+  have hlin : IsUnit (p.eval x) ↔ IsCoprime p (X - C x) := by
+    rw [← key]
+    exact (MulEquiv.isUnit_map (quotientSpanXSubCAlgEquiv x).toRingEquiv.toMulEquiv
+      (x := AdjoinRoot.mk (X - C x) p))
+  rw [key W.f, key (W.fCofactor x), hlin, W.f_eq_mul_of_eval_eq_zero hx,
+    IsCoprime.mul_right_iff, and_comm]
+
+/-! ### Square classes of the cubic quotient algebra -/
+
+section SquareClasses
+
+variable {W}
+
+/-- The group of square classes of units of `W.A`, over any commutative coefficient ring. -/
+abbrev M : Type _ := W.Aˣ ⧸ (powMonoidHom 2 : W.Aˣ →* W.Aˣ).range
+
+/-- **The square classes of `W.A` form a commutative group.** This is the target of the descent
+map: `μ` lands in `W.M`. Every element squares to `1` by
+`QuotientGroup.pow_eq_one_quotient_range_powMonoidHom` (equivalently `M.inv_eq_self`: every
+element is its own inverse), so `W.M` is an elementary abelian `2`-group.
+
+The instance is stated rather than left to `inferInstance`: the latter succeeds on the spot, but
+instance search does not find it at the use sites below (e.g. for `mul_right_comm` in
+`μX_mul_mul_eq_one`) unless it is declared here. -/
+noncomputable instance M.instCommGroup : CommGroup W.M := inferInstance
+
+/-- The product of the classes of three units of `W.A` is trivial exactly when their product is a
+square in `W.A`. This is the shape in which multiplicativity of the `x - T` map is proved: each
+case exhibits an explicit square root of the product of the three representatives. -/
+lemma M.mk_mul_mk_mul_mk_eq_one_iff {a b c : W.A} (ha : IsUnit a) (hb : IsUnit b)
+    (hc : IsUnit c) :
+    (ha.unit : W.M) * hb.unit * hc.unit = 1 ↔ ∃ z, z ^ 2 = a * b * c := by
+  simp only [← QuotientGroup.mk_mul, ← IsUnit.unit_mul]
+  simpa only [IsUnit.unit_spec] using
+    TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow 2 ((ha.mul hb).mul hc).unit
+
+@[simp] lemma M.mul_self (m : W.M) : m * m = 1 := by
+  simpa only [sq] using QuotientGroup.pow_eq_one_quotient_range_powMonoidHom 2 m
+
+@[simp] lemma M.inv_eq_self (m : W.M) : m⁻¹ = m := inv_eq_of_mul_eq_one_right (M.mul_self m)
+
+end SquareClasses
 
 end CommRingCurve
 
@@ -340,7 +390,9 @@ section NontrivialCurve
 
 variable {K : Type*} [CommRing K] [Nontrivial K] (W : Affine K)
 
+omit [Nontrivial K] in
 lemma ringChar_ne_two [W.IsElliptic] [W.IsCharNeTwoNF] : ringChar K ≠ 2 := by
+  nontriviality K
   have h := W.isUnit_Δ.ne_zero
   contrapose h
   have h2 : (2 : K) = 0 := by
@@ -361,38 +413,46 @@ lemma degree_f : W.f.degree = 3 := by
   rw [degree_eq_natDegree W.f_ne_zero, natDegree_f]
   rfl
 
+omit [Nontrivial K] in
 /-- The discriminant of the cubic `f`, in terms of the coefficients of `W`. -/
 lemma discr_f : W.f.discr = W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆
     - 27 * W.a₆ ^ 2 + 18 * W.a₂ * W.a₄ * W.a₆ := by
+  nontriviality K
   rw [discr_of_degree_eq_three W.degree_f]
   simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_C, coeff_X]
   norm_num
 
+omit [Nontrivial K] in
 /-- At a root `x` of `f`, the discriminant of `f` is the discriminant
 `(x + a₂)² - 4 (x² + a₂x + a₄)` of the cofactor `fCofactor x` times the square of the derivative
 `f' x = 3x² + 2a₂x + a₄`. -/
 lemma discr_f_eq_mul_sq_of_eval_eq_zero {x : K} (hx : W.f.eval x = 0) :
     W.f.discr = ((x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄)) *
       (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) ^ 2 := by
+  nontriviality K
   rw [W.discr_f]
   rw [eval_f] at hx
   linear_combination (18 * W.a₂ * W.a₄ - 4 * W.a₂ ^ 3
     - 27 * (W.a₆ - (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x))) * hx
 
+omit [Nontrivial K] in
 /-- The norm of `f'(T)` in `K[X] ⧸ (f)` is `-disc f`. This holds in every characteristic: the norm
 is the resultant of `f` and `f'`, and since `f` is monic that resultant does not depend on the
 degree at which `f'` is read. -/
 lemma norm_mk_derivative_f :
     Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
+  nontriviality K
   rw [AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le W.monic_f (n := W.f.natDegree - 1)
     (by rw [natDegree_f, derivative_f]; compute_degree),
     resultant_deriv (by rw [degree_f]; norm_num), W.monic_f.leadingCoeff, natDegree_f]
   norm_num
 
+omit [Nontrivial K] in
 /-- In characteristic `≠ 2` normal form the discriminant of `W` is `16` times that of the cubic
 `f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`: there, if
 `a₂`, `a₄` and `a₆` are integral, `Δ` is never a unit while `disc f` can be. -/
 lemma Δ_eq_sixteen_mul_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
+  nontriviality K
   rw [Δ_of_isCharNeTwoNF W, W.discr_f]
   ring
 
@@ -428,20 +488,31 @@ lemma nonsingular_of_eval_f_eq_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : K} (hx
   (equation_iff_nonsingular_of_Δ_ne_zero W.isUnit_Δ.ne_zero).mp
     (by rw [equation_iff_eval_f_eq_sq, hx]; ring)
 
-/-- **Every class in `W.A` is represented by a polynomial of degree at most `2`.** The bound is
-`natDegree f - 1 = 2`; this is the normal form the kernel computation reduces to before
-multiplying by a linear class. -/
+omit [Nontrivial K] in
+/-- **Every class in `W.A` is represented by a polynomial of degree at most `2`.** Over a
+nontrivial ring the bound is `natDegree f - 1 = 2`; over the trivial ring every class is `0`. This
+is the normal form the kernel computation reduces to before multiplying by a linear class. -/
 lemma exists_mk_quadratic_eq (a : W.A) :
     ∃ r s t, a = AdjoinRoot.mk W.f (C r * X ^ 2 + C s * X + C t) := by
+  by_cases hK : Subsingleton K
+  · have : Subsingleton W.A := AdjoinRoot.mk_surjective.subsingleton
+    exact ⟨0, 0, 0, Subsingleton.elim _ _⟩
+  have := not_subsingleton_iff_nontrivial.1 hK
   obtain ⟨p, hp, rfl⟩ := AdjoinRoot.exists_degree_lt_mk_eq W.monic_f a
   rw [degree_eq_natDegree W.monic_f.ne_zero, natDegree_f] at hp
   exact ⟨_, _, _, congrArg (AdjoinRoot.mk W.f) <|
     eq_quadratic_of_degree_le_two <| Order.lt_succ_iff.mp hp⟩
 
+omit [Nontrivial K] in
 /-- **Every class in `W.A' x` is represented by a polynomial of degree at most `1`.** This is
-`exists_mk_quadratic_eq` for the cofactor, where the bound is `natDegree (fCofactor x) - 1 = 1`. -/
+`exists_mk_quadratic_eq` for the cofactor, where over a nontrivial ring the bound is
+`natDegree (fCofactor x) - 1 = 1`. -/
 lemma exists_mk_linear_eq {x : K} (a : W.A' x) :
     ∃ r s, a = AdjoinRoot.mk (W.fCofactor x) (C r * X + C s) := by
+  by_cases hK : Subsingleton K
+  · have : Subsingleton (W.A' x) := AdjoinRoot.mk_surjective.subsingleton
+    exact ⟨0, 0, Subsingleton.elim _ _⟩
+  have := not_subsingleton_iff_nontrivial.1 hK
   obtain ⟨p, hp, rfl⟩ := AdjoinRoot.exists_degree_lt_mk_eq (W.monic_fCofactor x) a
   rw [degree_eq_natDegree (W.monic_fCofactor x).ne_zero, natDegree_fCofactor] at hp
   exact ⟨_, _, congrArg (AdjoinRoot.mk (W.fCofactor x)) <|
@@ -558,39 +629,8 @@ lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero {x : K} (h : W.f.eval x = 
 end
 
 /-!
-### The square classes `M`, and the map `μ₀`
+### The `x - T` map on coordinates and points
 -/
-
-/-- The group of square classes of units of `W.A`. -/
-abbrev M : Type _ := W.Aˣ ⧸ (powMonoidHom 2 : W.Aˣ →* W.Aˣ).range
-
-/-- **The square classes of `W.A` form a commutative group.** This is the target of the descent
-map: `μ` lands in `W.M`, and `M.sq_eq_one` says every element squares to `1` (equivalently
-`M.inv_eq_self`: every element is its own inverse), so `W.M` is an elementary abelian `2`-group.
-
-The instance is stated rather than left to `inferInstance`: the latter succeeds on the spot, but
-instance search does not find it at the use sites below (e.g. for `mul_right_comm` in
-`μX_mul_mul_eq_one`) unless it is declared here. -/
-noncomputable instance M.instCommGroup : CommGroup W.M := inferInstance
-
-/-- The product of the classes of three units of `W.A` is trivial exactly when their product is a
-square in `W.A`. This is the shape in which multiplicativity of the `x - T` map is proved: each
-case exhibits an explicit square root of the product of the three representatives. -/
-lemma M.mk_mul_mk_mul_mk_eq_one_iff {a b c : W.A} (ha : IsUnit a) (hb : IsUnit b)
-    (hc : IsUnit c) :
-    (ha.unit : W.M) * hb.unit * hc.unit = 1 ↔ ∃ z, z ^ 2 = a * b * c := by
-  simp only [← QuotientGroup.mk_mul, ← IsUnit.unit_mul]
-  simpa only [IsUnit.unit_spec] using
-    TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow 2 ((ha.mul hb).mul hc).unit
-
-lemma M.sq_eq_one (m : W.M) : m ^ 2 = 1 := by
-  obtain ⟨u, rfl⟩ := QuotientGroup.mk_surjective m
-  rw [← QuotientGroup.mk_pow]
-  exact (QuotientGroup.eq_one_iff _).mpr ⟨u, rfl⟩
-
-@[simp] lemma M.mul_self (m : W.M) : m * m = 1 := by rw [← sq, sq_eq_one]
-
-@[simp] lemma M.inv_eq_self (m : W.M) : m⁻¹ = m := inv_eq_of_mul_eq_one_right (M.mul_self m)
 
 variable [W.IsCharNeTwoNF]
 
@@ -673,19 +713,11 @@ lemma Point.exists_polynomial_factorization_of_some_add_some_add_some_eq_zero
     (hP : W.Nonsingular xP yP) (hQ : W.Nonsingular xQ yQ) (hR : W.Nonsingular xR yR)
     (hPQR : some xP yP hP + some xQ yQ hQ + some xR yR hR = 0) :
     ∃ pol, (X - C xP) * (X - C xQ) * (X - C xR) = W.f - pol ^ 2 ∧ pol.natDegree ≤ 1 := by
-  refine ⟨linePolynomial xP yP <| W.slope xP xQ yP yQ, ?_, ?_⟩
-  · have hgeneric : ¬(xP = xQ ∧ yP = W.negY xQ yQ) := by
-      by_contra H
-      simp [add_of_Y_eq H.1 H.2] at hPQR
-    have := addPolynomial_slope hP.1 hQ.1 hgeneric |>.symm
-    rw [neg_eq_iff_eq_neg] at this
-    convert this using 1
-    · congr
-      rw [add_eq_zero_iff_eq_neg, neg_some, add_some hgeneric] at hPQR
-      grind
-    · simp [addPolynomial, polynomial]
-  · simp only [linePolynomial, natDegree_add_C]
-    compute_degree
+  obtain ⟨ℓ, ν, -, -, -, h⟩ := (some_add_some_add_some_eq_zero_iff hP hQ hR).1 hPQR
+  refine ⟨C ℓ * X + C ν, ?_, natDegree_linear_le⟩
+  have hf : W.polynomial.eval (C ℓ * X + C ν) = (C ℓ * X + C ν) ^ 2 - W.f := by
+    simp [polynomial]
+  linear_combination h - hf
 
 open Point in
 private lemma xQ_ne_xP_of_eval_f_eq_zero {xP yP xQ yQ xR yR : K} (hP : W.Nonsingular xP yP)
@@ -868,7 +900,7 @@ lemma μ_apply (P : W.Point) : μ (.ofAdd P) = μ₀ P := by
 detect a point up to adding `2 • Q`. -/
 @[simp]
 lemma μ₀_two_nsmul (P : W.Point) : W.μ₀ (2 • P) = 1 := by
-  rw [← μ_apply, ofAdd_nsmul, map_pow, M.sq_eq_one]
+  rw [← μ_apply, ofAdd_nsmul, map_pow, QuotientGroup.pow_eq_one_quotient_range_powMonoidHom]
 
 /-!
 ### The divisibility criterion

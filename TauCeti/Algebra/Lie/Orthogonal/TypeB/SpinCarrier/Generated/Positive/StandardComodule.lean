@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Positiv
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.StandardComodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule.Quotient
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.StandardComodule
 
 /-!
@@ -92,7 +93,9 @@ theorem torusCorestrict_eq_ofWeights :
     generator_inr, generatorCoordinateMap_inr,
     GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
 
-private theorem rootPoint_matrix (i : Fin (n + 1)) (A : Type u) [CommRing A] [Algebra R A]
+/-- The ambient matrix of a point of a positive root generator is the corresponding concrete
+spin root-subgroup matrix, over any value algebra. -/
+theorem rootPoint_matrix (i : Fin (n + 1)) (A : Type u) [CommRing A] [Algebra R A]
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R)
       (CommAlgCat.of R A)) :
     GeneralLinear.pointToGeneralLinear (dimension n)
@@ -112,19 +115,11 @@ theorem rootSubgroupPoints_mulVec_mem
     ((rootSubgroupPoints n (.inl i) R t : Matrix.GeneralLinearGroup (Fin (dimension n)) R) :
       Matrix (Fin (dimension n)) (Fin (dimension n)) R) *ᵥ v ∈ N := by
   let q := (AdditiveGroup.gaPointsMulEquiv (R := R) (A := R)).symm t
-  let f := CommHopfAlgCat.commonKernelLift (generator n R) (.inl i)
-  have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R (dimension n)
-    (CommHopfAlgCat.mkQuotient _ (definingIdeal n R)).hom N
-    (toConv (q.ofConv.comp f.hom.toAlgHom)) hv
-  have hcomp : BialgHom.mapDomain (CommHopfAlgCat.mkQuotient _ (definingIdeal n R)).hom
-      (toConv (q.ofConv.comp f.hom.toAlgHom)) =
-      toConv (q.ofConv.comp (generator n R (.inl i)).hom.toAlgHom) := by
-    apply WithConv.ext
-    ext x
-    simp only [BialgHom.mapDomain_apply_apply, AlgHom.comp_apply]
-    exact congrArg (fun g ↦ q.ofConv (g.hom x))
-      (CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generator n R) (.inl i))
-  rw [hcomp, rootPoint_matrix n R i R q, MulEquiv.apply_symm_apply] at h
+  have h := GeneralLinear.quotientStandardComodule_mulVec_mem R (dimension n)
+    (definingIdeal n R) (generator n R (.inl i))
+    (by simpa only [generator_inl] using
+      ((le_definingIdeal_iff n R (definingIdeal n R)).mp le_rfl).1 i) N q hv
+  rw [rootPoint_matrix n R i R q, MulEquiv.apply_symm_apply] at h
   exact h
 
 /-- A subcomodule containing a weight vector contains every vector obtained by one raising step:
@@ -134,12 +129,8 @@ theorem single_basisReflection_mem
     (i : Fin (n + 1)) (a : Fin (dimension n)) (ha : basisWeight n a i = -1)
     (hv : Pi.single a (1 : R) ∈ N) :
     Pi.single (basisReflection n i a) (1 : R) ∈ N := by
-  obtain ⟨c, hc⟩ := exists_rep_rootGenerator_inl_exteriorBasis n i _ _ ha
-    (signSet_basisReflection n i a).symm
-  refine single_mem_of_rep_rootGenerator_eq n R N.toSubmodule (.inl i) (c := c)
-    (fun w hw ↦ rootSubgroupPoints_mulVec_mem n R N i _ hw) ?_ hv
-  rw [coe_latticeBasis n a, coe_latticeBasis n (basisReflection n i a)]
-  exact hc
+  exact single_basisReflection_mem_of_rootSubgroupPoints n R N.toSubmodule i a
+    (fun w hw ↦ rootSubgroupPoints_mulVec_mem n R N i _ hw) ha hv
 
 variable {n R}
 
@@ -156,6 +147,7 @@ private theorem stable_of_raising_closed (s : Set (Fin (dimension n)))
   · intro i
     apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have ha : a ∉ s := by
       intro ha
       by_cases hb : b ∈ s <;> simp [w, ha, hb] at hab

@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
+public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
@@ -90,6 +91,34 @@ theorem coe_symmetricCongruenceLinearMap_apply (M : Matrix (Fin q) (Fin p) ℝ)
     (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ) =
       M * (A : Matrix (Fin p) (Fin p) ℝ) * Mᵀ :=
   (rfl)
+
+/-- Congruence by a matrix whose `i`-th row vanishes off the column `j` reads the diagonal entry
+`(i, i)` off the diagonal entry `(j, j)`, scaled by the square of the surviving entry. -/
+theorem coe_symmetricCongruenceLinearMap_apply_self_of_apply_eq_zero
+    {M : Matrix (Fin q) (Fin p) ℝ} {i : Fin q} {j : Fin p} (hrow : ∀ a, a ≠ j → M i a = 0)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ) i i =
+      M i j ^ 2 * (A : Matrix (Fin p) (Fin p) ℝ) j j := by
+  rw [coe_symmetricCongruenceLinearMap_apply, Matrix.mul_apply,
+    Fintype.sum_eq_single j fun a ha ↦ by rw [Matrix.transpose_apply, hrow a ha, mul_zero],
+    Matrix.mul_apply, Fintype.sum_eq_single j fun a ha ↦ by rw [hrow a ha, zero_mul],
+    Matrix.transpose_apply]
+  ring
+
+/-- Congruence by a permutation matrix permutes the rows and the columns simultaneously. -/
+theorem coe_symmetricCongruenceLinearMap_permMatrix_apply (σ : Equiv.Perm (Fin p))
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap (σ.permMatrix ℝ) A : Matrix (Fin p) (Fin p) ℝ) =
+      (A : Matrix (Fin p) (Fin p) ℝ).submatrix σ σ := by
+  simp [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, Equiv.Perm.inv_def]
+
+/-- Congruence by a diagonal matrix multiplies each entry by its row and column factors. -/
+theorem coe_symmetricCongruenceLinearMap_diagonal_apply (s : Fin p → ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (i j : Fin p) :
+    (symmetricCongruenceLinearMap (diagonal s) A : Matrix (Fin p) (Fin p) ℝ) i j =
+      s i * (A : Matrix (Fin p) (Fin p) ℝ) i j * s j := by
+  simp only [coe_symmetricCongruenceLinearMap_apply, diagonal_transpose, mul_diagonal,
+    diagonal_mul]
 
 /-- Congruence by a square matrix `M` multiplies the determinant of a symmetric matrix by
 `(det M) ^ 2`, including when `M` is singular. -/
@@ -533,6 +562,38 @@ end Cone
 end GeneralLinearGroup
 
 end Matrix
+
+namespace TauCeti
+
+variable {p : ℕ}
+
+/-- Congruence by the `i`-th row of the identity matrix, read as a real number, is the diagonal
+entry `(i, i)`. -/
+theorem symmetricFinOneEquiv_comp_symmetricCongruenceLinearMap_row (i : Fin p) :
+    symmetricFinOneEquiv ∘ Matrix.symmetricCongruenceLinearMap
+        ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ : Fin 1 ↦ i) id) =
+      fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (A : Matrix (Fin p) (Fin p) ℝ) i i := by
+  funext A
+  rw [Function.comp_apply, symmetricFinOneEquiv_apply,
+    Matrix.coe_symmetricCongruenceLinearMap_apply_self_of_apply_eq_zero (j := i)
+      fun a ha ↦ by rw [Matrix.submatrix_apply, id_eq, Matrix.one_apply_ne ha.symm],
+    Matrix.submatrix_apply, id_eq, Matrix.one_apply_eq, one_pow, one_mul]
+
+/-- Mapping a measure by congruence with the `i`-th row of the identity matrix and then applying
+the single-entry identification is the same as mapping it by its `(i, i)` entry. -/
+theorem map_symmetricFinOneEquiv_symmetricCongruenceLinearMap_row (i : Fin p)
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) :
+    (μ.map (Matrix.symmetricCongruenceLinearMap
+        ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ : Fin 1 ↦ i) id))).map
+        symmetricFinOneEquiv =
+      μ.map fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (A : Matrix (Fin p) (Fin p) ℝ) i i := by
+  rw [Measure.map_map symmetricFinOneEquiv.continuous.measurable
+    (LinearMap.continuous_of_finiteDimensional _).measurable,
+    symmetricFinOneEquiv_comp_symmetricCongruenceLinearMap_row]
+
+end TauCeti
 
 namespace MeasureTheory.Measure
 

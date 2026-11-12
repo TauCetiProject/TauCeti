@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Representability.ConnectionMatrix
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
+import Mathlib.Data.Finset.Sym
 import TauCeti.LinearAlgebra.Matrix.PosSemidef
 import TauCeti.MeasureTheory.Integral.Pi
 import TauCeti.MeasureTheory.Integral.PosSemidef
@@ -119,25 +120,17 @@ private theorem prod_edgeFactor_inter_sym2 {U V : Type*} [Fintype U] [Fintype V]
     ∏ e ∈ G.edgeFinset ∩ (Finset.univ.map f).sym2, edgeFactor W z e =
       ∏ e ∈ (G.comap f).edgeFinset, edgeFactor W (z ∘ f) e := by
   have h : (G.comap f).edgeFinset.map f.sym2Map = G.edgeFinset ∩ (Finset.univ.map f).sym2 := by
-    ext e
-    induction e using Sym2.ind with
-    | _ u v =>
-      simp only [Finset.mem_map, mem_edgeFinset, Function.Embedding.sym2Map_apply,
-        Finset.mem_inter, Finset.mem_sym2_iff, Sym2.mem_iff, Finset.mem_univ, true_and]
-      constructor
-      · rintro ⟨e, he, hmap⟩
-        induction e using Sym2.ind with
-        | _ a b =>
-          rw [Sym2.map_mk, Sym2.eq_iff] at hmap
-          rcases hmap with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-          · exact ⟨he, by rintro _ (rfl | rfl) <;> simp⟩
-          · exact ⟨(comap_adj.1 he).symm, by rintro _ (rfl | rfl) <;> simp⟩
-      · rintro ⟨huv, hsub⟩
-        obtain ⟨a, rfl⟩ := hsub u (Or.inl rfl)
-        obtain ⟨b, rfl⟩ := hsub _ (Or.inr rfl)
-        exact ⟨s(a, b), comap_adj.2 huv, rfl⟩
+    aesop (add simp [Finset.ext_iff, Sym2.exists, Sym2.forall, adj_comm])
   rw [← h, Finset.prod_map]
   exact Finset.prod_congr rfl fun e _ => edgeFactor_map W f z e
+
+/-- The labels of a gluing are the images of the labels of either side. -/
+private theorem univ_map_labelEmb_glue (A B : LabeledGraph k) :
+    Finset.univ.map (labelEmb (A.glue B)) = (Finset.univ.map (labelEmb A)).map (A.glueInl B) ∧
+      Finset.univ.map (labelEmb (A.glue B)) = (Finset.univ.map (labelEmb B)).map (A.glueInr B) := by
+  refine ⟨?_, ?_⟩ <;> rw [Finset.map_map] <;> congr 1
+  · exact Function.Embedding.ext fun i => congrFun (LabeledGraph.glueInl_label A B) i
+  · exact Function.Embedding.ext fun i => congrFun (LabeledGraph.glueInr_label A B) i
 
 /-- **The edge product of a gluing splits** into the edges between labels, which form the union of
 the labeled edge sets of the two sides, and the edges of each side meeting an unlabeled
@@ -169,22 +162,15 @@ private theorem prod_edgeFactor_glue (A B : LabeledGraph k) [DecidableRel (A.glu
       simp [LabeledGraph.glue_graph, edgeSet_map]
     -- The labels of the gluing are the images of the labels of either side, so removing the
     -- pairs of labels commutes with pushing the edges of a side into the gluing.
+    obtain ⟨hmapl, hmapr⟩ := univ_map_labelEmb_glue A B
     have hl : (A.graph.edgeFinset.map (A.glueInl B).sym2Map) \
           (Finset.univ.map (labelEmb (A.glue B))).sym2 =
-        (A.graph.edgeFinset \ (Finset.univ.map (labelEmb A)).sym2).map (A.glueInl B).sym2Map := by
-      have h : (labelEmb A).trans (A.glueInl B) = labelEmb (A.glue B) := by
-        refine Function.Embedding.ext fun i => ?_
-        rw [Function.Embedding.trans_apply]
-        exact (congrFun (LabeledGraph.glueInl_label A B) i).symm
-      rw [← h, ← Finset.map_map, Finset.sym2_map, Finset.map_sdiff]
+        (A.graph.edgeFinset \ (Finset.univ.map (labelEmb A)).sym2).map (A.glueInl B).sym2Map :=
+      by rw [hmapl, Finset.sym2_map, Finset.map_sdiff]
     have hr : (B.graph.edgeFinset.map (A.glueInr B).sym2Map) \
           (Finset.univ.map (labelEmb (A.glue B))).sym2 =
-        (B.graph.edgeFinset \ (Finset.univ.map (labelEmb B)).sym2).map (A.glueInr B).sym2Map := by
-      have h : (labelEmb B).trans (A.glueInr B) = labelEmb (A.glue B) := by
-        refine Function.Embedding.ext fun i => ?_
-        rw [Function.Embedding.trans_apply]
-        exact (congrFun (LabeledGraph.glueInr_label A B) i).symm
-      rw [← h, ← Finset.map_map, Finset.sym2_map, Finset.map_sdiff]
+        (B.graph.edgeFinset \ (Finset.univ.map (labelEmb B)).sym2).map (A.glueInr B).sym2Map :=
+      by rw [hmapr, Finset.sym2_map, Finset.map_sdiff]
     -- An edge meeting an unlabeled vertex comes from only one side.
     have hdisj : Disjoint ((A.graph.edgeFinset \ (Finset.univ.map (labelEmb A)).sym2).map
         (A.glueInl B).sym2Map)
@@ -249,7 +235,8 @@ private theorem glueCoord_apply (A B : LabeledGraph k)
     (p : (Fin k → Ω) × (A.Unlabeled ⊕ B.Unlabeled → Ω)) :
     glueCoord A B p = Sum.elim p.1 p.2 ∘ (A.glueEquiv B).symm := (rfl)
 
-private theorem measurePreserving_glueCoord (A B : LabeledGraph k) :
+omit [IsProbabilityMeasure μ] in
+private theorem measurePreserving_glueCoord [SigmaFinite μ] (A B : LabeledGraph k) :
     MeasurePreserving (glueCoord A B)
       ((Measure.pi fun _ : Fin k => μ).prod (Measure.pi fun _ : A.Unlabeled ⊕ B.Unlabeled => μ))
       (Measure.pi fun _ : Fin (A.glue B).n => μ) :=

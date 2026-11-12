@@ -16,6 +16,7 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 import Mathlib.Tactic.Module
 import TauCeti.GroupTheory.Perm.Inversion
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.LinearAlgebra.Alternating.Alternatization
 
 /-!
 # Paired wedges of continuous alternating maps
@@ -23,9 +24,13 @@ import TauCeti.GroupTheory.Perm.Basic
 This file constructs the paired wedge of continuous alternating maps on real modules with a
 topology. Its determinant normalization is the signed-permutation sum divided by the two input
 factorials. It provides bilinearity and pullback compatibility for general topological coefficient
-spaces, including the flip law. A pairing that turns multiplication by one scalar into
-multiplication by another, such as a complex-bilinear pairing, makes the paired wedge semilinear
-in the same way, and the paired wedge is natural for coefficient maps intertwining two pairings.
+spaces, including the flip law, and transports a degree equality in the first factor through the
+wedge (`ContinuousAlternatingMap.pairedWedge_apply_of_left_eq_smul_cast`). A pairing that turns
+multiplication by one scalar into multiplication by another, such as a complex-bilinear pairing,
+makes the paired wedge semilinear in the same way, and the paired wedge is natural for coefficient
+maps intertwining two pairings.
+The paired wedge of two alternatizations is the alternatization of the paired product of the
+underlying multilinear maps.
 Joint continuity of each pairing is supplied explicitly; no norm is required on the domain or
 coefficients. The output coefficients require only continuity of multiplication by each fixed
 scalar. The flip law assumes this property for the second input coefficient space as well.
@@ -33,7 +38,9 @@ scalar. The flip law assumes this property for the second input coefficient spac
 It also proves the norm-free interior-product antiderivation law
 `ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (deg φ) • φ ∧ ι_v ψ`, using
 `ContinuousAlternatingMap.curryLeftTopological` from the accompanying Curry module.
-The normed counterpart is `ContinuousAlternatingMap.curryLeft_pairedWedge`.
+The normed counterpart is `ContinuousAlternatingMap.curryLeft_pairedWedge`. Consequently a wedge
+`α ∧ ψ` with a one-form `α`, evaluated on `(u, w)` where `α` kills every vector of `w`, is the
+pairing of `α u` with `ψ w` (`ContinuousAlternatingMap.pairedWedge_apply_vecCons_of_forall`).
 
 The alternating-map API follows Mathlib's `AlternatingMap.curryLeft` and `map_insertNth`, and the
 paired-wedge design follows Yury Kudryashov's `DeRhamCohomology` project.
@@ -143,6 +150,26 @@ theorem pairedWedge_apply {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     wedgeWithUnalternatedContinuous_apply]
   simp only [Function.comp_apply]
 
+/-- Wedge with a degree-zero form is the coefficient pairing with its value on the empty tuple. -/
+@[simp]
+theorem pairedWedge_apply_zero_right {k : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin 0]→L[ℝ] F₂) (v : Fin k → E) :
+    pairedWedge μ hμ φ ψ v = μ (φ v) (ψ 0) := by
+  let L : F₁ →L[ℝ] F₃ :=
+    { toFun := fun a ↦ μ a (ψ 0)
+      map_add' := fun a b ↦ by simp
+      map_smul' := fun c a ↦ by simp
+      cont := hμ.comp (continuous_id.prodMk continuous_const) }
+  have h : wedgeWithUnalternatedContinuous μ hμ φ ψ =
+      (L.compContinuousAlternatingMap φ).toContinuousMultilinearMap := by
+    ext w
+    rw [wedgeWithUnalternatedContinuous_apply]
+    have hw : (fun j : Fin 0 ↦ w (Fin.natAdd k j)) = 0 := Subsingleton.elim _ _
+    simp [L, hw]
+  rw [pairedWedge, h, alternatization_toContinuousMultilinearMap]
+  simp [← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.factorial_ne_zero, L]
+
 /-- On one-forms, the paired wedge is the usual two-term alternating product. -/
 @[simp]
 theorem pairedWedge_apply_one_one {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}
@@ -168,6 +195,33 @@ theorem pairedWedge_toAlternatingMap {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[
   simp only [ContinuousAlternatingMap.coe_toAlternatingMap, pairedWedge_apply,
     _root_.smul_apply, MultilinearMap.alternatization_apply,
     MultilinearMap.domDomCongr_apply, ContinuousAlternatingMap.wedgeWithUnalternated_apply]
+
+/-- **The paired wedge of alternatizations is the alternatization of the paired product**: if `φ`
+and `ψ` are the alternatizations of `f` and `g`, then their paired wedge is the alternatization of
+`v ↦ μ (f (v ∘ Fin.castAdd l)) (g (v ∘ Fin.natAdd k))`. The factorials produced by alternatizing
+twice cancel the determinant normalization. -/
+theorem pairedWedge_toAlternatingMap_of_eq_alternatization {k l : ℕ}
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    {φ : E [⋀^Fin k]→L[ℝ] F₁} {ψ : E [⋀^Fin l]→L[ℝ] F₂}
+    {f : MultilinearMap ℝ (fun _ : Fin k => E) F₁} {g : MultilinearMap ℝ (fun _ : Fin l => E) F₂}
+    (hf : φ.toAlternatingMap = f.alternatization) (hg : ψ.toAlternatingMap = g.alternatization) :
+    (pairedWedge μ hμ φ ψ).toAlternatingMap =
+      ((pairingLinear μ).compMultilinearMap
+        ((f.domCoprod g).domDomCongr finSumFinEquiv)).alternatization := by
+  -- Structural identity: alternatizing the unalternated pairing of two alternatizations
+  -- gives `k! l!` times the alternatization of the paired product.
+  have key : (wedgeWithUnalternated μ φ ψ).alternatization =
+      (k.factorial * l.factorial) • ((pairingLinear μ).compMultilinearMap
+        ((f.domCoprod g).domDomCongr finSumFinEquiv)).alternatization := by
+    rw [wedgeWithUnalternated_def, LinearMap.compMultilinearMap_alternatization,
+      MultilinearMap.alternatization_domDomCongr, MultilinearMap.domCoprod_alternatization_eq,
+      hf, hg, ← MultilinearMap.domCoprod_alternatization,
+      LinearMap.compMultilinearMap_alternatization, MultilinearMap.alternatization_domDomCongr,
+      Fintype.card_fin, Fintype.card_fin, AlternatingMap.domDomCongr_smul,
+      LinearMap.compAlternatingMap_smul]
+  -- Scalar normalization: the `(k! l!)⁻¹` of the paired wedge cancels these factorials.
+  rw [pairedWedge_toAlternatingMap, key, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.cast_mul,
+    inv_mul_cancel₀ (by positivity), one_smul]
 
 /-- Precomposing both inputs of a paired wedge by a continuous linear map is the same as
 precomposing the resulting wedge. -/
@@ -202,6 +256,20 @@ theorem pairedWedge_add_right [ContinuousAdd F₂] {k l : ℕ} (μ : F₁ →L[�
   ext v
   simp only [pairedWedge_apply, ContinuousAlternatingMap.add_apply, map_add,
     smul_add, Finset.sum_add_distrib]
+
+/-- The paired wedge distributes over finite sums in its first alternating map. -/
+theorem pairedWedge_sum_left [ContinuousAdd F₁] {k l : ℕ} {ι : Type*} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (s : Finset ι)
+    (φ : ι → E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
+    pairedWedge μ hμ (∑ i ∈ s, φ i) ψ = ∑ i ∈ s, pairedWedge μ hμ (φ i) ψ :=
+  _root_.map_sum (AddMonoidHom.mk' (pairedWedge μ hμ · ψ) (pairedWedge_add_left μ hμ · · ψ)) φ s
+
+/-- The paired wedge distributes over finite sums in its second alternating map. -/
+theorem pairedWedge_sum_right [ContinuousAdd F₂] {k l : ℕ} {ι : Type*}
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    (s : Finset ι) (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : ι → E [⋀^Fin l]→L[ℝ] F₂) :
+    pairedWedge μ hμ φ (∑ i ∈ s, ψ i) = ∑ i ∈ s, pairedWedge μ hμ φ (ψ i) :=
+  _root_.map_sum (AddMonoidHom.mk' (pairedWedge μ hμ φ ·) (pairedWedge_add_right μ hμ φ)) ψ s
 
 /-- If the pairing turns multiplication by `c` in its first argument into multiplication by `d`,
 then so does the paired wedge in its first alternating map. For a complex-bilinear pairing this is
@@ -247,6 +315,20 @@ theorem pairedWedge_smul_right [ContinuousConstSMul ℝ F₂] {k l : ℕ} (μ : 
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
     pairedWedge μ hμ φ (c • ψ) = c • pairedWedge μ hμ φ ψ :=
   pairedWedge_smul_right_of_map_smul μ hμ (fun a b ↦ by simp) φ ψ
+
+/-- Degree transport in the first factor of a paired wedge: if `A`, of degree `b`, agrees with
+`c • B` after reindexing its arguments along `Fin.cast h : Fin a → Fin b`, then the wedge of `A`
+and `ψ` is `c •` the wedge of `B` and `ψ`, evaluated on the correspondingly transported tuple. -/
+theorem pairedWedge_apply_of_left_eq_smul_cast {a b l : ℕ}
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (h : a = b)
+    {A : E [⋀^Fin b]→L[ℝ] F₁} {B : E [⋀^Fin a]→L[ℝ] F₁} (c : ℝ)
+    (hAB : ∀ w, A w = c • B (w ∘ Fin.cast h)) (ψ : E [⋀^Fin l]→L[ℝ] F₂) (x : Fin (b + l) → E) :
+    pairedWedge μ hμ A ψ x = c • pairedWedge μ hμ B ψ (x ∘ Fin.cast (by omega)) := by
+  subst h
+  simp only [pairedWedge_apply, hAB, map_smul, _root_.smul_apply, smul_comm _ c,
+    Finset.smul_sum]
+  -- After `subst`, the transport `Fin.cast` is the identity on values, so both tuples agree.
+  rfl
 
 /-- The paired wedge is natural in the coefficients: if continuous linear maps `L₁`, `L₂`, `L`
 of the coefficient spaces intertwine the pairings `μ` and `μ'`, then applying `L` to the paired
@@ -361,21 +443,21 @@ theorem pairedWedge_zero_right {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F
   simp only [pairedWedge_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, _root_.map_zero,
     smul_zero, Finset.sum_const_zero]
 
-/-- The flip identity: swapping the two forms of a paired wedge flips the pairing and costs the
-graded sign `(-1) ^ (k * l)`. This holds for every pairing. -/
-theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
-    {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+/-- The flip identity for two pairings that are each other's transpose: swapping the two forms of
+a paired wedge swaps the pairing and costs the graded sign `(-1) ^ (k * l)`. -/
+theorem pairedWedge_flip_of_forall_apply_eq {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
+    (nu : F₂ →L[ℝ] F₁ →L[ℝ] F₃) (hnu : Continuous (Function.uncurry fun x y ↦ nu x y))
+    (hmunu : ∀ a b, nu b a = mu a b)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
     pairedWedge mu hmu phi psi v =
-      (-1 : ℝ) ^ (k * l) • pairedWedge (mu.pairingFlip hmu)
-        (mu.pairingFlip_continuous hmu) psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
+      (-1 : ℝ) ^ (k * l) • pairedWedge nu hnu psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
   -- Reindex the permutation sum on the right by composing with the block swap `B`, which
   -- exchanges the first `k` and the last `l` indices and has sign `(-1) ^ (k * l)`.
   set c : Fin (l + k) ≃ Fin (k + l) := finCongr (Nat.add_comm l k)
   set B : Equiv.Perm (Fin (k + l)) := finAddFlip.trans c
   have hsum : ∑ tau : Equiv.Perm (Fin (l + k)), Equiv.Perm.sign tau •
-        mu.pairingFlip hmu
+        nu
           (psi (fun i => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.castAdd k i))))
           (phi (fun j => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.natAdd l j)))) =
       Equiv.Perm.sign B • ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
@@ -397,7 +479,7 @@ theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F
             fun i => v (Fin.cast (Nat.add_comm l k) (tau (Fin.castAdd k i))) := by
           funext j
           simp [B, c, finAddFlip_apply_natAdd]
-        simp only [f, Function.comp_apply, ContinuousLinearMap.pairingFlip_apply]
+        simp only [f, Function.comp_apply, hmunu]
         rw [← hright, ← hleft]
       _ = _ := sum_sign_smul_permCongr_mul c B f
   rw [pairedWedge_apply, pairedWedge_apply, hsum, sign_finAddFlip_trans_finCongr]
@@ -407,9 +489,20 @@ theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F
   ring_nf
   simp
 
+/-- The flip identity: swapping the two forms of a paired wedge flips the pairing and costs the
+graded sign `(-1) ^ (k * l)`. This holds for every pairing. -/
+theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂]
+    {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
+    pairedWedge mu hmu phi psi v =
+      (-1 : ℝ) ^ (k * l) • pairedWedge (mu.pairingFlip hmu)
+        (mu.pairingFlip_continuous hmu) psi phi (v ∘ Fin.cast (Nat.add_comm l k)) :=
+  pairedWedge_flip_of_forall_apply_eq mu hmu _ (mu.pairingFlip_continuous hmu)
+    (fun a b ↦ ContinuousLinearMap.pairingFlip_apply mu hmu b a) phi psi v
+
 /-- Anticommutation of a paired wedge along a skew-symmetric pairing. -/
-theorem pairedWedge_anticomm [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
-    {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+theorem pairedWedge_anticomm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (hskew : ∀ a b, mu a b = -mu b a)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₁)
@@ -417,27 +510,58 @@ theorem pairedWedge_anticomm [IsTopologicalAddGroup F₁] [ContinuousConstSMul �
     pairedWedge mu hmu phi psi v =
       -((-1 : ℝ) ^ (k * l) • pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l
     k))) := by
-  have hflip : (mu.pairingFlip hmu) = -mu := by
-    ext a b
-    simpa only [ContinuousLinearMap.pairingFlip_apply, _root_.neg_apply] using hskew b a
-  rw [pairedWedge_flip]
-  simp only [hflip, pairedWedge_neg_pairing mu hmu, ContinuousAlternatingMap.neg_apply,
-    smul_neg]
+  rw [pairedWedge_flip_of_forall_apply_eq mu hmu (-mu)
+    (by
+      convert hmu.neg using 1
+      ext p
+      simp only [Function.uncurry_def, _root_.neg_apply, Pi.neg_apply])
+    (fun a b ↦ by simp [hskew a b]) phi psi v, pairedWedge_neg_pairing mu hmu]
+  simp only [ContinuousAlternatingMap.neg_apply, smul_neg]
 
 /-- Graded commutativity of the paired wedge along a symmetric pairing. -/
-theorem pairedWedge_comm [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F₁]
-    {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+theorem pairedWedge_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (hsymm : ∀ a b, mu a b = mu b a)
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₁) (v : Fin (k + l) → E) :
     pairedWedge mu hmu phi psi v =
-      (-1 : ℝ) ^ (k * l) • pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l k))
-    := by
-  have hflip : (mu.pairingFlip hmu) = mu := by
-    ext a b
-    simpa only [ContinuousLinearMap.pairingFlip_apply] using hsymm b a
-  rw [pairedWedge_flip]
-  simp only [hflip]
+      (-1 : ℝ) ^ (k * l) • pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l k)) :=
+  pairedWedge_flip_of_forall_apply_eq mu hmu mu hmu (fun a b ↦ hsymm b a) phi psi v
+
+/-- Wedge with a degree-zero form on the left pairs its value on the empty tuple with the other
+form. -/
+@[simp]
+theorem pairedWedge_apply_zero_left {l : ℕ}
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    (φ : E [⋀^Fin 0]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (0 + l) → E) :
+    pairedWedge μ hμ φ ψ v = μ (φ 0) (ψ (v ∘ Fin.cast (Nat.zero_add l).symm)) := by
+  have key (σ : Equiv.Perm (Fin (0 + l))) :
+      (ψ fun j ↦ v (σ (Fin.natAdd 0 j))) =
+        Equiv.Perm.sign σ • ψ (v ∘ Fin.cast (Nat.zero_add l).symm) := by
+    have h := ψ.toAlternatingMap.map_perm (v ∘ Fin.cast (Nat.zero_add l).symm)
+      ((finCongr (Nat.zero_add l)).permCongr σ)
+    rw [Equiv.Perm.sign_permCongr] at h
+    simp only [ContinuousAlternatingMap.coe_toAlternatingMap] at h
+    refine Eq.trans ?_ h
+    congr 1
+    ext j
+    simp [Equiv.permCongr_apply]
+  have hφ (w : Fin 0 → E) : φ w = φ 0 := congrArg φ (Subsingleton.elim _ _)
+  simp only [pairedWedge_apply, hφ, key, _root_.map_zsmul_unit, smul_smul, Int.units_mul_self,
+    one_smul, Finset.sum_const, Finset.card_univ, Fintype.card_perm, Fintype.card_fin]
+  simp [← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.factorial_ne_zero]
+
+/-- A wedge `α ∧ ψ` with a one-form `α` vanishes on every tuple of vectors that `α` kills. -/
+theorem pairedWedge_apply_eq_zero_of_forall {l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (α : E [⋀^Fin 1]→L[ℝ] F₁)
+    (ψ : E [⋀^Fin l]→L[ℝ] F₂) (w : Fin (1 + l) → E) (hw : ∀ i, α ![w i] = 0) :
+    pairedWedge μ hμ α ψ w = 0 := by
+  rw [pairedWedge_apply]
+  refine smul_eq_zero_of_right _ (Finset.sum_eq_zero fun σ _ ↦ ?_)
+  have h : (fun i : Fin 1 ↦ w (σ (Fin.castAdd l i))) = ![w (σ (Fin.castAdd l 0))] := by
+    ext i
+    fin_cases i
+    rfl
+  simp [h, hw]
 
 section InteriorProduct
 
@@ -544,6 +668,58 @@ theorem curryLeftTopological_pairedWedge
     Finset.card_univ, Fintype.card_fin]
   rw [Nat.factorial_succ k, Nat.factorial_succ l]
   match_scalars <;> field_simp
+
+/-- Expanding a wedge `α ∧ ψ` with a one-form `α` along its first argument `u`: when `α` kills the
+remaining arguments `w`, the wedge is `μ (α u) (ψ w)`. -/
+theorem pairedWedge_apply_vecCons_of_forall (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (α : E [⋀^Fin 1]→L[ℝ] F₁)
+    (ψ : E [⋀^Fin l]→L[ℝ] F₂) (u : E) (w : Fin l → E) (hw : ∀ i, α ![w i] = 0) :
+    pairedWedge μ hμ α ψ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l)) = μ (α ![u]) (ψ w) := by
+  let g : (Fin (l + 1) → E) → F₃ := fun y ↦ μ (α ![y 0]) (ψ fun j ↦ y j.succ)
+  have hterm (σ : Perm (Fin (1 + l))) :
+      Perm.sign σ • μ (α fun i ↦ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l))
+          (σ (Fin.castAdd l i)))
+        (ψ fun j ↦ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l)) (σ (Fin.natAdd 1 j))) =
+      Perm.sign ((finCongr (Nat.add_comm 1 l)).permCongr σ) •
+        g (Fin.cons u w ∘ (finCongr (Nat.add_comm 1 l)).permCongr σ) := by
+    have hα : (fun i : Fin 1 ↦ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l))
+          (σ (Fin.castAdd l i))) =
+        ![(Fin.cons u w ∘ (finCongr (Nat.add_comm 1 l)).permCongr σ) 0] := by
+      ext i
+      fin_cases i
+      simp [Equiv.permCongr_apply]
+      rfl
+    have hψ : (fun j : Fin l ↦ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l))
+          (σ (Fin.natAdd 1 j))) =
+        fun j ↦ (Fin.cons u w ∘ (finCongr (Nat.add_comm 1 l)).permCongr σ) j.succ := by
+      ext j
+      simp only [Function.comp_apply, Equiv.permCongr_apply, finCongr_symm, finCongr_apply]
+      have h : (Fin.cast (Nat.add_comm l 1) j.succ : Fin (1 + l)) = Fin.natAdd 1 j :=
+        Fin.ext (by simp; omega)
+      rw [h]
+      rfl
+    rw [Perm.sign_permCongr, hα, hψ]
+  have hrest (j : Fin l) (τ : Perm (Fin l)) : g (j.succ.insertNth u (w ∘ τ)) = 0 := by
+    have : NeZero l := ⟨j.pos.ne'⟩
+    have h0 : (j.succ.insertNth u (w ∘ τ) : Fin (l + 1) → E) 0 = w (τ 0) := by
+      rw [← Fin.succ_succAbove_zero j, Fin.insertNth_apply_succAbove]
+      rfl
+    simp [g, h0, hw]
+  have hzero (τ : Perm (Fin l)) : Perm.sign τ • g ((0 : Fin (l + 1)).insertNth u (w ∘ τ)) =
+      μ (α ![u]) (ψ w) := by
+    rw [Fin.insertNth_zero']
+    simp only [g, Fin.cons_zero, Fin.cons_succ]
+    have := ψ.toAlternatingMap.map_perm w τ
+    simp only [ContinuousAlternatingMap.coe_toAlternatingMap] at this
+    rw [this, map_zsmul_unit, smul_smul, Int.units_mul_self, one_smul]
+  rw [pairedWedge_apply, Finset.sum_congr rfl fun σ _ ↦ hterm σ,
+    Fintype.sum_equiv (finCongr (Nat.add_comm 1 l)).permCongr _
+      (fun τ : Perm (Fin (l + 1)) ↦ Perm.sign τ • g (Fin.cons u w ∘ τ)) fun σ ↦ rfl,
+    sum_sign_smul_cons_comp_eq_sum_insertNth g u w, Fin.sum_univ_succ]
+  simp only [Fin.val_zero, pow_zero, one_smul, hrest, smul_zero, Finset.sum_const_zero, add_zero,
+    hzero, Finset.sum_const, Finset.card_univ, Fintype.card_perm, Fintype.card_fin]
+  simp [← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.factorial_ne_zero]
+
 end InteriorProduct
 
 end ContinuousAlternatingMap

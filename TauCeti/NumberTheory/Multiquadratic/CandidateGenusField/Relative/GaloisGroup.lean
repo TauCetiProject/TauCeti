@@ -38,7 +38,7 @@ The prime-discriminant description of the genus field is classical; see D. A. Co
 ## Provenance
 
 The relative Galois equivalence and its action on generators specialize
-`TauCeti.NumberTheory.Multiquadratic.Galois.Relative`, whose Layer-0 multiquadratic machinery is
+`TauCeti.NumberTheory.Multiquadratic.Galois.Relative`, whose multiquadratic machinery is
 migrated from [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
 
@@ -85,7 +85,7 @@ theorem exists_candidateGenusFieldProdRoot_eq_mul_baseRoot {d : ℤ} (hd : Squar
       candidateGenusFieldProdRoot hd =
         algebraMap ℚ (candidateGenusField hd) a * candidateGenusFieldBaseRoot hd := by
   obtain ⟨a, ha, hrad⟩ := exists_prod_radicand_eq_sq_mul_of_prod_primeDiscriminant_eq
-    (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.2
+    (genusPrimeDiscriminants_spec hd).2.2
   rw [← Finset.univ_eq_attach] at hrad
   have hsq : candidateGenusFieldProdRoot hd ^ 2 =
       (algebraMap ℚ (candidateGenusField hd) a * candidateGenusFieldBaseRoot hd) ^ 2 := by

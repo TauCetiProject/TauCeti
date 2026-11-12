@@ -18,7 +18,8 @@ import TauCeti.Algebra.BigOperators.Fin
 
 A common divisor of the entries of a matrix survives multiplication on either side: every
 entry of `P * A * Q` is an `S`-combination of entries of `A`, so anything dividing all of
-those divides all of these.
+those divides all of these. Likewise a common divisor of the coordinates of a vector divides
+every coordinate of its product with a matrix.
 
 Nothing in the entrywise statements needs invertibility, a square shape, or a diagonal target —
 only that the products are conformable — so they are at `NonUnitalCommSemiring` and
@@ -42,11 +43,23 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
 
 * `Matrix.dvd_mul_mul_apply`: a common divisor of the entries of `A` divides every entry of
   `P * A * Q`.
+* `Matrix.dvd_mulVec_apply`: a common divisor of the coordinates of `v` divides every
+  coordinate of `N *ᵥ v`.
 * `Matrix.dvd_diag_of_dvd_entries`: if `L * A * R` is `Matrix.diagonal d`, then a common
   divisor of the entries of `A` divides every `d k`.
 * `Matrix.forall_dvd_apply_iff_of_mul_eq_mul`: if `W * B = A * W`, then an element coprime to
   `det W` divides every entry of `A` exactly when it divides every entry of `B` — `A` and `B`
   are conjugate after inverting `det W`.
+* `Matrix.exists_diagonal_mul_eq_mul_diagonal_iff`: `diagonal a * W = v * diagonal a` for some
+  matrix `W` exactly when `a i ∣ v i j * a j` for all `i` and `j` (over a domain with every `a i`
+  nonzero, this says `diagonal a⁻¹ * v * diagonal a`, computed in the fraction field, is
+  integral); by `Matrix.isUnit_det_of_diagonal_mul_eq_mul_diagonal`, over a domain with every
+  `a i` nonzero, such a `W` has unit determinant when `v` does.
+* `Matrix.dvd_of_forall_dvd_vecMul`: a common divisor of the entries of `r ᵥ* τ`, with `det τ` a
+  unit, divides every entry of `r`.
+* `Matrix.dvd_apply_mul_of_dvd_row`: if `a i * b i` divides row `i` of
+  `σ * diagonal a * τ * diagonal b`, with `det τ` a unit and `b i` divisible by every `b j`,
+  then `a i ∣ σ i k * a k` for every `k`.
 * `Matrix.det_mul_eq_sum_prod_mul_det_submatrix`: the expansion of `det (A * B)` for a
   rectangular middle factor, as a sum over maps into the middle index type.
 * `Matrix.dvd_det_submatrix_mul_mul`: a common divisor of the minors of `A` divides every
@@ -75,6 +88,12 @@ theorem dvd_mul_mul_apply [Fintype m] [Fintype n] {A : Matrix m n S} {c : S}
   rw [Matrix.mul_apply]
   exact Dvd.dvd.mul_right (Finset.dvd_sum fun p _ ↦ (hc p k).mul_left _) _
 
+/-- **A common divisor of the coordinates survives multiplication by a matrix.** If `c` divides
+every coordinate of `v`, then it divides every coordinate of `N *ᵥ v`. -/
+theorem dvd_mulVec_apply [Fintype n] {v : n → S} {c : S} (hc : ∀ j, c ∣ v j) (N : Matrix m n S)
+    (i : m) : c ∣ (N *ᵥ v) i :=
+  Finset.dvd_sum fun j _ ↦ (hc j).mul_left _
+
 /-- **Every common divisor of the entries divides every diagonal entry.** Each `d k` is the
 `(k, k)` entry of `L * A * R`, hence an `S`-combination of the entries of `A`. -/
 theorem dvd_diag_of_dvd_entries [Fintype m] [Fintype n] [DecidableEq o] (A : Matrix m n S)
@@ -93,13 +112,68 @@ theorem forall_dvd_apply_iff_of_mul_eq_mul {R : Type*} [CommRing R] [Fintype n] 
   constructor
   · intro hA i j
     have hij := dvd_mul_mul_apply hA W.adjugate W i j
-    rw [mul_assoc, ← h, ← mul_assoc, adjugate_mul, smul_mul, one_mul, smul_apply,
+    rw [mul_assoc, ← h, ← mul_assoc, adjugate_mul, smul_mul, one_mul, Matrix.smul_apply,
       smul_eq_mul] at hij
     exact he.dvd_of_dvd_mul_left hij
   · intro hB i j
     have hij := dvd_mul_mul_apply hB W W.adjugate i j
-    rw [h, mul_assoc, mul_adjugate, Matrix.mul_smul, mul_one, smul_apply, smul_eq_mul] at hij
+    rw [h, mul_assoc, mul_adjugate, Matrix.mul_smul, mul_one, Matrix.smul_apply, smul_eq_mul] at hij
     exact he.dvd_of_dvd_mul_left hij
+
+/-- **Divisibility criterion for `diagonal a * W = v * diagonal a`.** Such a matrix `W` exists
+exactly when `a i ∣ v i j * a j` for all `i` and `j`, with `W i j` a witness of the divisibility.
+No hypothesis on `a` is needed. Over a domain with every `a i` nonzero, `W` is then
+`diagonal a⁻¹ * v * diagonal a` computed in the fraction field, so the criterion says that this
+conjugate is integral. -/
+theorem exists_diagonal_mul_eq_mul_diagonal_iff [Fintype m] [DecidableEq m] {a : m → S}
+    {v : Matrix m m S} :
+    (∃ W : Matrix m m S, diagonal a * W = v * diagonal a) ↔ ∀ i j, a i ∣ v i j * a j := by
+  refine ⟨fun ⟨W, h⟩ i j ↦ ⟨W i j, by simpa using (congrFun (congrFun h i) j).symm⟩, fun h ↦ ?_⟩
+  choose W hW using h
+  exact ⟨Matrix.of W, by ext i j; simp [hW]⟩
+
+/-- An integral conjugate `W` of a matrix `v` of unit determinant by a diagonal matrix with
+nonzero entries, `diagonal a * W = v * diagonal a`, also has unit determinant. -/
+theorem isUnit_det_of_diagonal_mul_eq_mul_diagonal {R : Type*} [CommRing R] [IsDomain R]
+    [Fintype n] [DecidableEq n] {a : n → R} (ha₀ : ∀ i, a i ≠ 0) {v W : Matrix n n R}
+    (hv : IsUnit v.det) (h : diagonal a * W = v * diagonal a) : IsUnit W.det := by
+  have hdet := congrArg det h
+  rw [det_mul, det_mul, mul_comm v.det] at hdet
+  have hne : (diagonal a).det ≠ 0 := by
+    rw [det_diagonal]
+    exact Finset.prod_ne_zero_iff.2 fun i _ ↦ ha₀ i
+  rwa [mul_left_cancel₀ hne hdet]
+
+/-- A common divisor of the entries of `r ᵥ* τ`, for `τ` of unit determinant, divides every
+entry of `r`: `r ᵥ* τ ᵥ* adjugate τ = det τ • r`. -/
+theorem dvd_of_forall_dvd_vecMul {R : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+    {τ : Matrix n n R} (hτ : IsUnit τ.det) {c : R} {r : n → R} (h : ∀ j, c ∣ (r ᵥ* τ) j)
+    (k : n) : c ∣ r k := by
+  have hr : (r ᵥ* τ) ᵥ* τ.adjugate = τ.det • r := by
+    rw [vecMul_vecMul, mul_adjugate, vecMul_smul, vecMul_one]
+  have hk : c ∣ τ.det * r k := by
+    rw [← smul_eq_mul, ← Pi.smul_apply, ← hr]
+    exact Finset.dvd_sum fun j _ ↦ (h j).mul_right _
+  exact (hτ.dvd_mul_left).1 hk
+
+/-- **A row of `σ * diagonal a * τ * diagonal b` divisible by `a i * b i`.** If `τ` has unit
+determinant, every `b j` is nonzero and divides `b i`, and `a i * b i` divides every entry in row
+`i` of `σ * diagonal a * τ * diagonal b`, then `a i ∣ σ i k * a k` for every `k`. Row `i` of the
+product is `(fun k ↦ σ i k * a k) ᵥ* τ` scaled entrywise by `b`, so this is
+`Matrix.dvd_of_forall_dvd_vecMul` after cancelling `b j`. -/
+theorem dvd_apply_mul_of_dvd_row {R : Type*} [CommRing R] [IsDomain R] [Fintype n]
+    [DecidableEq n] {a b : n → R} {σ τ : Matrix n n R} (hτ : IsUnit τ.det) (hb₀ : ∀ j, b j ≠ 0)
+    {i : n} (hbi : ∀ j, b j ∣ b i) (h : ∀ j, a i * b i ∣ (σ * diagonal a * τ * diagonal b) i j)
+    (k : n) : a i ∣ σ i k * a k := by
+  refine dvd_of_forall_dvd_vecMul hτ (r := fun k ↦ σ i k * a k) (fun j ↦ ?_) k
+  obtain ⟨e, he⟩ := hbi j
+  have hj := h j
+  have hrow : (σ * diagonal a * τ * diagonal b) i j =
+      ((fun k ↦ σ i k * a k) ᵥ* τ) j * b j := by
+    rw [mul_diagonal, Matrix.mul_apply]
+    simp only [mul_diagonal, vecMul, dotProduct]
+  rw [hrow, he, ← mul_assoc, mul_right_comm] at hj
+  exact (dvd_mul_right _ e).trans ((mul_dvd_mul_iff_right (hb₀ j)).1 hj)
 
 /-! ### Divisibility of minors
 

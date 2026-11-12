@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses
 
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NormalForm
 import TauCeti.FieldTheory.Quadratic
-import TauCeti.NumberTheory.LegendreSymbol.Complex
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 
 /-!
 # The character table of `GL₂(𝔽₂)`
@@ -90,8 +90,7 @@ variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 private theorem exists_fieldTwo_root (hF : Fintype.card F = 2) :
     ∃ u : Eˣ, (u : E) * u = u + 1 ∧ (u : E) ∉ Set.range (algebraMap F E) := by
   obtain ⟨-, hroot⟩ := fieldTwo_facts hF
-  obtain ⟨x, hx⟩ := exists_mul_self_eq_of_finite E (t := (1 : F)) (d := -1)
-    (fun a => by simpa using hroot a)
+  obtain ⟨x, hx⟩ := exists_mul_self_eq_of_finite E (1 : F) (-1)
   have hx' : x * x = x + 1 := by simpa using hx
   have hx0 : x ≠ 0 := by rintro rfl; simp at hx'
   refine ⟨Units.mk0 x hx0, hx', ?_⟩
@@ -200,7 +199,7 @@ private theorem exists_fieldTwo_row (hF : Fintype.card F = 2) (i : GL2CharacterP
     refine ⟨1, fun j => ?_⟩
     rw [GL2CharacterParam.coe_classFunction_cuspidal_mk,
       character_fieldTwoNormalForm hF hu hout, character_GL2Cuspidal]
-    have hψ := primitiveChar_to_Complex_ne_one F
+    have hψ := (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one
     fin_cases j <;> simp only [fieldTwoNormalForm, Fin.reduceFinMk, Matrix.cons_val,
       gl2FieldTwoCharacterTable_apply, Matrix.of_apply]
     · rw [GL2CuspidalVirtualCharacter_apply_scalar]

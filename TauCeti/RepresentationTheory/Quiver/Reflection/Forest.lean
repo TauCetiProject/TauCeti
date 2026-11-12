@@ -80,7 +80,7 @@ private theorem exists_isSinkAdmissible_flip [Finite V] [q : _root_.Quiver.{v} V
   have hout (x : V) (hx : x ∈ B) (b : V) (hb : b ∉ B) : IsEmpty (x ⟶ b) := ⟨fun f ↦ by
     rcases Sym2.eq_iff.mp (hcross x b hx hb (.inl ⟨f⟩)) with ⟨rfl, -⟩ | ⟨rfl, rfl⟩
     · exact huB hx
-    · exact (hacyc.isEmpty_hom_of_hom e).elim f⟩
+    · exact (hacyc.isEmpty_hom_of_path e.toPath).elim f⟩
   -- an arrow joining two vertices on different sides of `B` lies over the removed edge
   have hsplit (a b : V) (hab : ¬(a ∈ B ↔ b ∈ B)) (hne : s(a, b) ≠ s(u, w)) :
       IsEmpty (a ⟶ b) ∧ IsEmpty (b ⟶ a) := by
@@ -98,7 +98,7 @@ private theorem exists_isSinkAdmissible_flip [Finite V] [q : _root_.Quiver.{v} V
   refine ⟨l, isSinkAdmissible_of_pairwise q hnd (fun x _ ↦ hacyc.isEmpty_hom_self x) hp
       fun x hx b hb ↦ hout x ((hmem x).mp hx) b fun h ↦ hb ((hmem b).mpr h), ?_, ?_⟩
   · rw [hom_reflectList_of_not_iff q hnd fun h ↦ hwu h.symm]
-    exact hacyc.isEmpty_hom_of_hom e
+    exact hacyc.isEmpty_hom_of_path e.toPath
   · intro a b hne
     by_cases hab : a ∈ l ↔ b ∈ l
     · rw [hom_reflectList q hnd hab]

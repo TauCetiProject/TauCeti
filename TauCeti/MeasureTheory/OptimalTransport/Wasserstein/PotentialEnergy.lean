@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Convex
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Stability
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
@@ -49,8 +50,9 @@ The geodesic used is the interpolation of an optimal plan
 displacement convexity: two laws are joined by some geodesic along which the inequality holds. The
 plan-level inequality does not need the plan to be optimal, so it also applies to interpolations
 along non-optimal plans: applied to generalized geodesics, it makes the potential energy `m`-convex
-along generalized geodesics based at every law of `P₂(E)`
-(`StrongConvexOn.generalizedGeodesicallyConvex_potentialEnergy`), the convexity under which the
+along every generalized-geodesic plan based at every law of `P₂(E)`
+(`StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy`). Thus it can be added to an
+energy convex along some generalized-geodesic plan while retaining the convexity under which the
 Jordan–Kinderlehrer–Otto step is unique.
 
 ## Main definitions
@@ -85,8 +87,8 @@ Jordan–Kinderlehrer–Otto step is unique.
 * `StrongConvexOn.geodesicallyConvex_potentialEnergy`: the potential energy of an `m`-strongly
   convex potential with at most quadratic negative part is `m`-geodesically convex on the
   `2`-Wasserstein space of a separable Banach space.
-* `StrongConvexOn.generalizedGeodesicallyConvex_potentialEnergy`: the same potential energy is
-  `m`-convex along generalized geodesics based at every law of finite second moment.
+* `StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy`: the same potential energy is
+  `m`-convex along every generalized-geodesic plan based at every law of finite second moment.
 
 ## References
 
@@ -302,23 +304,30 @@ end Definition
 
 section Growth
 
-variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
 
 /-- A potential whose negative part grows at most quadratically has potential energy `≠ ⊥`
 against every finite measure with finite second moment. -/
 theorem potentialEnergy_ne_bot_of_hasFiniteMoment {V : E → ℝ} {μ : Measure E} [IsFiniteMeasure μ]
     (hμ : HasFiniteMoment 2 μ) {A B : ℝ} (hVAB : ∀ x, -(A + B * ‖x‖ ^ 2) ≤ V x) :
     potentialEnergy V μ ≠ ⊥ := by
-  have hnorm : AEStronglyMeasurable (fun x : E ↦ ‖x‖) μ :=
-    continuous_norm.measurable.aestronglyMeasurable
-  have hmem : MemLp (fun x : E ↦ ‖x‖) 2 μ :=
-    (memLp_congr_enorm hnorm measurable_edist_right.aestronglyMeasurable
-      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
-      (hμ.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
-  have hsq := (memLp_two_iff_integrable_sq_norm hnorm).1 hmem
-  simp only [norm_norm] at hsq
-  exact potentialEnergy_ne_bot_of_le ((integrable_const A).add (hsq.const_mul B)).neg
-    (.of_forall hVAB)
+  obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.1 hμ
+  have hmem : MemLp (fun y ↦ dist y x₀) 2 μ := memLp_dist_iff_memLp_edist.2 hx₀
+  have hsq := (memLp_two_iff_integrable_sq_norm hmem.aestronglyMeasurable).1 hmem
+  simp only [Real.norm_eq_abs, sq_abs] at hsq
+  -- Bound `‖y‖ ^ 2 ≤ 2 d(y, x₀) ^ 2 + 2 ‖x₀‖ ^ 2` and use the integrable lower bound.
+  refine potentialEnergy_ne_bot_of_le
+    (W := fun y ↦ -(A + |B| * (2 * dist y x₀ ^ 2 + 2 * ‖x₀‖ ^ 2)))
+    ((integrable_const A).add ((hsq.const_mul 2).add (integrable_const _) |>.const_mul _)).neg
+    (.of_forall fun y ↦ ?_)
+  refine le_trans ?_ (hVAB y)
+  have hy : ‖y‖ ^ 2 ≤ 2 * dist y x₀ ^ 2 + 2 * ‖x₀‖ ^ 2 := by
+    rw [dist_eq_norm]
+    nlinarith [sq_nonneg (‖y - x₀‖ - ‖x₀‖), norm_le_norm_add_norm_sub' y x₀,
+      norm_nonneg y, norm_nonneg (y - x₀), norm_nonneg x₀]
+  have := mul_le_mul_of_nonneg_left hy (abs_nonneg B)
+  have := neg_abs_le B
+  nlinarith [sq_nonneg ‖y‖, abs_nonneg B, le_abs_self B]
 
 end Growth
 
@@ -339,7 +348,7 @@ theorem integrable_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {�
   have hgrowth (x : E) : |V x - V 0| ≤ C * (1 + ‖x‖) * ‖x‖ := by
     have hb : ∀ y ∈ Metric.closedBall (0 : E) ‖x‖, ‖fderiv ℝ V y‖ ≤ C * (1 + ‖x‖) := by
       intro y hy
-      rw [← toDual_gradient, LinearIsometryEquiv.norm_map]
+      rw [← norm_gradient_eq_norm_fderiv]
       exact (hV' y).trans (mul_le_mul_of_nonneg_left (by simpa using hy)
         (by simpa using (norm_nonneg _).trans (hV' 0)))
     have := (convex_closedBall (0 : E) ‖x‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
@@ -551,24 +560,22 @@ theorem _root_.StrongConvexOn.geodesicallyConvex_potentialEnergy (hV : StrongCon
       hVAB)
     ((memLp_two_iff_integrable_sq_norm (by fun_prop)).1 hmem) ht
 
-/-- **Convexity of the potential energy along generalized geodesics.** On a separable Banach space
-`E`, the potential energy of an `m`-strongly convex measurable potential `V` whose negative part
-grows at most quadratically is `m`-convex along generalized geodesics based at every `μ ∈ P₂(E)`:
-any two laws `ν₀` and `ν₁` of `P₂(E)` carry some quadratic generalized-geodesic plan `γ` from `ν₀`
-to `ν₁` based at `μ` along whose generalized geodesic `ν_t`, for `t ∈ [0, 1]`,
+omit [CompleteSpace E] in
+/-- **Convexity of the potential energy along every generalized-geodesic plan.** On a separable
+normed space `E`, the potential energy of an `m`-strongly convex measurable potential `V` whose
+negative part grows at most quadratically is `m`-convex along every quadratic
+generalized-geodesic plan based at every `μ ∈ P₂(E)`. For its interpolation `ν_t`,
 `∫ V dν_t ≤ (1 - t) ∫ V dν₀ + t ∫ V dν₁ - (m / 2) t (1 - t) ∫ ‖y₀ - y₁‖² dγ`. -/
-theorem _root_.StrongConvexOn.generalizedGeodesicallyConvex_potentialEnergy
+theorem _root_.StrongConvexOn.convexAlongGeneralizedGeodesics_potentialEnergy
     (hV : StrongConvexOn univ m V) (hVm : Measurable V) {A B : ℝ}
     (hVAB : ∀ x, -(A + B * ‖x‖ ^ 2) ≤ V x) (μ : WassersteinSpace 2 E) :
-    GeneralizedGeodesicallyConvex m
+    ConvexAlongGeneralizedGeodesics m
       (fun ν : WassersteinSpace 2 E ↦ potentialEnergy V ((ν : ProbabilityMeasure E) : Measure E))
       μ := by
-  rw [generalizedGeodesicallyConvex_def]
-  intro ν₀ ν₁ _ _
-  obtain ⟨γ, hγ⟩ := exists_isGeneralizedGeodesicPlan two_ne_zero
-    ((μ : ProbabilityMeasure E) : Measure E) ((ν₀ : ProbabilityMeasure E) : Measure E)
-    ((ν₁ : ProbabilityMeasure E) : Measure E) ⟨_, isCoupling_prod _ _⟩ ⟨_, isCoupling_prod _ _⟩
-  refine ⟨γ, hγ, fun t ht ν hν ↦ ?_⟩
+  rw [convexAlongGeneralizedGeodesics_def]
+  intro ν₀ ν₁ _ _ γ hγ
+  rw [convexAlongGeneralizedGeodesicPlan_def]
+  intro t ht ν hν
   -- The generalized geodesic is the interpolation of the coupling `γ.snd` of `ν₀` and `ν₁`.
   have hπ := hγ.isCoupling_snd
   have : IsProbabilityMeasure γ.snd := hπ.isProbabilityMeasure

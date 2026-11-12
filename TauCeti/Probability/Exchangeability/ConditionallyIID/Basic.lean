@@ -27,8 +27,8 @@ measure also witnesses `MixedIIDWith`, while the process is not conditionally i.
 copy. The arrow runs one way only, and `mixedIIDWith_of_conditionallyIIDWith` is that arrow —
 obtained by integrating the `ν` coordinate out.
 
-Terminology follows the roadmap: a `ν` witnessing only the mixture identity is a *mixing
-representative*, whereas `ν` here is a genuine **directing measure**.
+A `ν` witnessing only the mixture identity is called a *mixing representative*, whereas `ν` here
+is a genuine **directing measure**.
 
 ## Main results
 
@@ -37,13 +37,11 @@ representative*, whereas `ν` here is a genuine **directing measure**.
 * `mixedIIDWith_of_conditionallyIIDWith`, `mixedIID_of_conditionallyIID` — the easy projection down
   to the mixture identity. Both predicates are index-generic, so the projection is too.
 
-This is a **Layer 0** contribution to `TauCetiRoadmap/Exchangeability/README.md` — the conditional
-predicate for which the roadmap reserves the `ConditionallyIID` name, together with the easy
-projection it pins alongside — which rests on the Layer 1 joint-kernel lemma
+The projection rests on the joint-kernel lemma
 `measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure`.
 
-The Layer 1 joint-rectangle common ending `conditionallyIID_of_jointRectangles` lives in
-`TauCeti.Probability.DeFinetti.ConditionalCommonEnding`. The Layer 6 summit theorems that conclude
+The joint-rectangle common ending `conditionallyIID_of_jointRectangles` lives in
+`TauCeti.Probability.DeFinetti.ConditionalCommonEnding`. The de Finetti theorems that conclude
 this predicate, together with the `deFinetti*` equivalence handles, live in
 `TauCeti.Probability.DeFinetti.Theorem`. A.e. uniqueness of the directing measure
 (`conditionallyIID_ae_unique`) lives in
@@ -116,6 +114,15 @@ theorem ConditionallyIID.of_directing {μ : Measure Ω} {X : ι → Ω → α}
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) : ConditionallyIID μ X :=
   ⟨ν, h⟩
 
+/-- On an empty sample space the measure is zero and every identity is between zero measures, so
+every family of coordinates is conditionally i.i.d. -/
+theorem ConditionallyIID.of_isEmpty [IsEmpty Ω] {μ : Measure Ω} {X : ι → Ω → α} :
+    ConditionallyIID μ X := by
+  refine ConditionallyIID.of_directing (ν := fun ω => isEmptyElim ω)
+    (.intro (fun _ => Subsingleton.measurable.aemeasurable) Subsingleton.measurable
+      fun m k _ => ?_)
+  simp [Measure.eq_zero_of_isEmpty μ]
+
 /-- Simp normal form for the existential wrapper `ConditionallyIID`. -/
 @[simp]
 theorem conditionallyIID_iff {μ : Measure Ω} {X : ι → Ω → α} :
@@ -132,6 +139,13 @@ theorem ConditionallyIIDWith.aemeasurable {μ : Measure Ω} {X : ι → Ω → �
 theorem ConditionallyIIDWith.measurable_directing {μ : Measure Ω} {X : ι → Ω → α}
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) : Measurable ν :=
   h.2.1
+
+/-- The directing measure together with the path of a `ConditionallyIIDWith` family is almost
+everywhere measurable. -/
+theorem ConditionallyIIDWith.aemeasurable_directing_path [Countable ι] {μ : Measure Ω}
+    {X : ι → Ω → α} {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) :
+    AEMeasurable (fun ω => (ν ω, fun i => X i ω)) μ :=
+  h.measurable_directing.aemeasurable.prodMk (AEMeasurable.of_eval h.aemeasurable)
 
 /-- The defining joint-law disintegration of a `ConditionallyIIDWith` witness. -/
 theorem ConditionallyIIDWith.jointLaw_eq_disintegration {μ : Measure Ω} {X : ι → Ω → α}

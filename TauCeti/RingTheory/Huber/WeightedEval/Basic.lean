@@ -35,7 +35,9 @@ it to summability, through Mathlib's
   the hypothesis the summability proof uses, and it is equivalent to the coordinatewise one for an
   arbitrary `T` (`TauCeti.Huber.isWeightBounded_iff_isWeightedVarPowerBounded`). At the one-weight
   family it is *equivalent* to each `bᵢ` being power-bounded, which is Wedhorn's condition —
-  `TauCeti.Huber.isWeightBounded_one_weight_iff_forall_isPowerBounded`.
+  `TauCeti.Huber.isWeightBounded_one_weight_iff_forall_isPowerBounded`. In a linearly
+  topologised ring it holds for every weight family and every tuple
+  (`TauCeti.Huber.isWeightBounded_of_isLinearTopology`).
 
 ## Main results
 
@@ -133,8 +135,8 @@ theorem isWeightBounded_iff (φ : A →+* B) (T : Fin k → Set A) (b : Fin k �
 
 /-- **At the one-weight family the hypothesis is boundedness of the monomials.** With every weight
 equal to `{1}` the weighted monomials are just the `bν`, so `IsWeightBounded` says exactly that
-they form a bounded set — the condition a reader expects to see, and the bridge from the roadmap's
-power-bounded-variable hypothesis. -/
+they form a bounded set — the condition a reader expects to see, and the bridge from hypotheses
+phrased as power-boundedness of the variables. -/
 @[simp]
 theorem isWeightBounded_one_weight_iff (φ : A →+* B) (b : Fin k → B) :
     IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set A)) b ↔
@@ -212,6 +214,19 @@ theorem isWeightBounded_iff_isWeightedVarPowerBounded {φ : A →+* B} {T : Fin 
   ⟨IsWeightBounded.isWeightedVarPowerBounded, isWeightBounded_of_isWeightedVarPowerBounded⟩
 
 end Semiring
+
+section LinearTopology
+
+variable {k : ℕ} {A B : Type*} [CommSemiring A] [CommRing B] [TopologicalSpace B]
+  [IsLinearTopology B B]
+
+/-- **Into a linearly topologised ring every tuple is weight-bounded**, for every weight family:
+every subset of such a ring, for instance an adic ring, is bounded. -/
+theorem isWeightBounded_of_isLinearTopology (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) :
+    IsWeightBounded φ T b :=
+  (isWeightBounded_iff φ T b).mpr (isBounded_of_isLinearTopology _)
+
+end LinearTopology
 
 section Terms
 

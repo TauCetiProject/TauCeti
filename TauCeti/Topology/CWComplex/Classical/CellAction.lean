@@ -21,7 +21,13 @@ open cells give a free action on cells.
 * `TauCeti.cellMulAction`: the induced monoid action on cells.
 * `TauCeti.smul_openCell` and `TauCeti.smul_mem_openCell_smul`: compatibility with open cells.
 * `TauCeti.smul_closedCell`: compatibility with closed cells for continuous translations.
+* `TauCeti.smul_mem_skeletonLT`: a fixed translation carrying each open cell onto an open cell
+  of the same dimension preserves every skeleton of a CW complex.
+* `TauCeti.smul_closedCell_of_smul_openCell`: continuous translations carrying an open cell
+  onto another also carry the corresponding closed cells onto each other.
 * `TauCeti.isCancelSMul_cell`: freeness of the induced group action on cells.
+* `TauCeti.eq_one_of_mem_openCell_of_smul_mem`: only the identity carries a point of an open
+  cell into the same open cell under a free cellular action.
 
 ## References
 
@@ -42,6 +48,30 @@ universe u
 namespace TauCeti
 
 variable {E : Type u} [TopologicalSpace E] {G : Type*}
+
+/-- Translation by a fixed element carrying each open cell onto an open cell of the same dimension
+preserves every skeleton of a CW complex. -/
+lemma smul_mem_skeletonLT {C : Set E} [CWComplex C] [T2Space E] [SMul G E]
+    (g : G) (hcell : ∀ (n : ℕ) (i : cell C n),
+      ∃ j : cell C n, g • openCell n i = openCell n j)
+    {n : ℕ∞} {z : E} (hz : z ∈ (skeletonLT C n : Set E)) :
+    g • z ∈ (skeletonLT C n : Set E) := by
+  rw [← CWComplex.iUnion_openCell_eq_skeletonLT] at hz ⊢
+  simp only [mem_iUnion] at hz ⊢
+  obtain ⟨m, hm, i, hi⟩ := hz
+  obtain ⟨j, hj⟩ := hcell m i
+  exact ⟨m, hm, j, hj ▸ smul_mem_smul_set hi⟩
+
+/-- A continuous translation carrying an open cell onto another also carries the corresponding
+closed cell onto the other closed cell. -/
+lemma smul_closedCell_of_smul_openCell {C D : Set E} [RelCWComplex C D] [T2Space E]
+    [SMul G E] [ContinuousConstSMul G E] {n : ℕ} {g : G} {i j : cell C n}
+    (h : g • openCell n i = openCell n j) : g • closedCell n i = closedCell n j := by
+  have hcompact : IsCompact (closure (openCell n i)) := by
+    rw [closure_openCell_eq_closedCell]
+    exact isCompact_closedCell
+  simpa only [image_smul, h, closure_openCell_eq_closedCell] using
+    image_closure_of_isCompact hcompact (continuous_const_smul g).continuousOn
 
 section CellAction
 
@@ -88,12 +118,8 @@ theorem smul_mem_openCell_smul {n : ℕ} (g : G) {i : cell C n} {y : E}
 theorem smul_closedCell [T2Space E] [ContinuousConstSMul G E] {n : ℕ} (g : G)
     (i : cell C n) :
     letI := cellMulAction hcell n
-    g • closedCell n i = closedCell n (g • i) := by
-  have hcompact : IsCompact (closure (openCell n i)) := by
-    rw [closure_openCell_eq_closedCell]
-    exact isCompact_closedCell
-  simpa only [image_smul, smul_openCell hcell, closure_openCell_eq_closedCell] using
-    image_closure_of_isCompact hcompact (continuous_const_smul g).continuousOn
+    g • closedCell n i = closedCell n (g • i) :=
+  smul_closedCell_of_smul_openCell (smul_openCell hcell g i)
 
 end CellAction
 
@@ -115,5 +141,21 @@ theorem isCancelSMul_cell
   exact hfree g n i (by rw [smul_openCell hcell, hi])
 
 end FreeCellAction
+
+variable {C D : Set E} [RelCWComplex C D] [Monoid G] [MulAction G E]
+  (hcell : ∀ (g : G) (n : ℕ) (i : cell C n),
+    ∃ j : cell C n, g • openCell n i = openCell n j)
+  (hfree : ∀ (g : G) (n : ℕ) (i : cell C n),
+    g • openCell n i = openCell n i → g = 1)
+
+include hcell hfree in
+/-- Only the identity carries a point of an open cell into the same open cell. -/
+lemma eq_one_of_mem_openCell_of_smul_mem {n : ℕ} {i : cell C n} {g : G}
+    {z : E} (hz : z ∈ openCell n i) (hgz : g • z ∈ openCell n i) : g = 1 := by
+  obtain ⟨j, hj⟩ := hcell g n i
+  have hji : (⟨n, j⟩ : Σ m, cell C m) = ⟨n, i⟩ :=
+    eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨g • z, hj ▸ smul_mem_smul_set hz, hgz⟩)
+  obtain rfl : j = i := eq_of_heq (Sigma.mk.inj_iff.1 hji).2
+  exact hfree g n j hj
 
 end TauCeti

@@ -7,12 +7,11 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.EssentialImage
 public import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
-import Mathlib.LinearAlgebra.FreeModule.PID
-import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.Algebra.MonoidAlgebra.Torsion
+import TauCeti.RingTheory.Spectrum.Prime.Topology
+import TauCeti.GroupTheory.FiniteAbelian.TorsionFree
 
 /-!
 # Characterization of tori among groups of multiplicative type
@@ -30,8 +29,8 @@ generation then identifies it with a finite-rank free abelian group.
 * `iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced`: a finite-type
   commutative Hopf algebra over a field is a torus exactly when it is of multiplicative type,
   geometrically connected, and geometrically reduced.
-* `TauCeti.torusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top`: over an algebraically closed
-  field, a reduced connected diagonalizable group is a torus.
+* `TauCeti.splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top`: a reduced connected
+  diagonalizable group is a split torus.
 
 ## References
 
@@ -47,23 +46,6 @@ namespace TauCeti
 
 universe u
 
-private theorem exists_mulEquiv_finsupp_int
-    (G : Type u) [CommGroup G] [Group.FG G] [IsMulTorsionFree G] :
-    ∃ n : ℕ, Nonempty (G ≃* Multiplicative (Fin n →₀ ℤ)) := by
-  have : HasUniqueRoots G :=
-    ⟨fun _ hn _ _ h ↦ eq_of_pow_eq_pow_of_commute hn (Commute.all _ _) h⟩
-  let _ : Module.Finite ℤ (Additive G) :=
-    Module.Finite.iff_addGroup_fg.mpr (inferInstance : AddGroup.FG (Additive G))
-  let _ : Module.IsTorsionFree ℤ (Additive G) := inferInstance
-  let _ : Module.Free ℤ (Additive G) := Module.free_of_finite_type_torsion_free'
-  let b := Module.Free.chooseBasis ℤ (Additive G)
-  let _ : Finite (Module.Free.ChooseBasisIndex ℤ (Additive G)) :=
-    Module.Finite.finite_basis b
-  let eι := Finite.equivFin (Module.Free.ChooseBasisIndex ℤ (Additive G))
-  let e : Additive G ≃+ (Fin (Nat.card (Module.Free.ChooseBasisIndex ℤ (Additive G))) →₀ ℤ) :=
-    b.repr.toAddEquiv.trans (Finsupp.domCongr eι)
-  exact ⟨_, ⟨AddEquiv.toMultiplicative e⟩⟩
-
 /-- **The coordinate Hopf algebra of a finitely generated torsion-free commutative group is a
 split torus.** Such a `G` is free of some finite rank `n`, which is then the rank of the split
 torus. -/
@@ -71,10 +53,12 @@ theorem splitTorusCommHopfAlgProperty_coordinateRing (K : Type u) [CommRing K]
     (G : FGCommGrpCat.{u}) [IsMulTorsionFree G] :
     splitTorusCommHopfAlgProperty K (DiagonalizableGroup.coordinateRing K G) := by
   rw [splitTorusCommHopfAlgProperty_iff]
-  obtain ⟨n, ⟨e⟩⟩ := exists_mulEquiv_finsupp_int G
+  obtain ⟨-, S, -, hS⟩ := Group.fg_iff'.mp (inferInstance : Group.FG G)
+  obtain ⟨n, -, ⟨e⟩⟩ := CommGroup.equiv_multiplicative_fin_int_of_isMulTorsionFree hS
   exact ⟨n, ⟨ObjectProperty.isoMk _ <| _root_.CommHopfAlgCat.isoMk
     (MonoidAlgebra.domCongrBialgEquiv K K
-      ((AddEquiv.toMultiplicative (Finsupp.domCongr Equiv.ulift)).trans e.symm))⟩⟩
+      ((AddEquiv.toMultiplicative ((Finsupp.domCongr Equiv.ulift).trans
+        (Finsupp.linearEquivFunOnFinite ℤ ℤ (Fin n)).toAddEquiv)).trans e.symm))⟩⟩
 
 /-- **Every split torus is diagonalizable:** its coordinate Hopf algebra is spanned by its
 group-like elements. -/
@@ -132,23 +116,29 @@ theorem iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduc
     rw [torusCommHopfAlgProperty_iff]
     exact ⟨n, ⟨j ≪≫ i⟩⟩
 
-/-- **A reduced connected diagonalizable group over an algebraically closed field is a torus.**
+end torusCommHopfAlgProperty
+
+/-- **A reduced connected diagonalizable group is a split torus.**
 Diagonalizability is expressed by the group-like elements spanning the coordinate Hopf
 algebra. -/
-theorem of_groupLikeSetSpan_eq_top {k : Type u} [Field k] [IsAlgClosed k]
+theorem splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top {k : Type u} [Field k]
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
     (hH : Subcoalgebra.groupLikeSetSpan (R := k) (C := H) Set.univ = ⊤) :
-    torusCommHopfAlgProperty k H := by
+    splitTorusCommHopfAlgProperty k H := by
   rw [← DiagonalizableGroup.groupLikeSpannedProperty_iff,
     ← DiagonalizableGroup.essImage_coordinateRingFunctor] at hH
   obtain ⟨G, ⟨i⟩⟩ := hH
-  exact (iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced k H).mpr
-    ⟨(multiplicativeTypeCommHopfAlgProperty k).prop_of_iso i
-      (DiagonalizableGroup.multiplicativeType_coordinateRing k G),
-    (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k H.obj).mpr inferInstance,
-    (geometricallyReducedCommHopfAlgProperty_iff_isReduced_of_isAlgClosed k H.obj).mpr
-      inferInstance⟩
-
-end torusCommHopfAlgProperty
+  -- The isomorphism is injective on underlying rings, so reducedness and connectedness pass
+  -- to the group algebra `k[G]`, which makes `G` torsion-free.
+  have hi : Function.Injective
+      (i.hom.hom.hom.toAlgHom.toRingHom : MonoidAlgebra k G →+* H) :=
+    (ConcreteCategory.bijective_of_isIso
+      ((forget₂ (FiniteTypeCommHopfAlgCat.{u, u} k) (CommHopfAlgCat.{u} k)).map i.hom)).1
+  have _ : IsReduced (MonoidAlgebra k G) := isReduced_of_injective _ hi
+  have _ : ConnectedSpace (PrimeSpectrum (MonoidAlgebra k G)) :=
+    RingHom.connectedSpace_primeSpectrum_of_injective _ hi
+  have _ : IsMulTorsionFree G := isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace k G
+  exact (splitTorusCommHopfAlgProperty k).prop_of_iso i
+    (splitTorusCommHopfAlgProperty_coordinateRing k G)
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Ring.LadderValley
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
@@ -15,7 +16,8 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 For a finite simple graph with vertices labelled by natural numbers, every numerical
 `TauCeti.signlessArrow` is homogeneous of degree one. Consequently, a valley word made from
 these arrows is homogeneous in its word length. This packages the graph-word interface to the
-path grading of the signless preprojective algebra.
+path grading of the signless preprojective algebra. For an arbitrary simple graph, a product of
+`n` backtracks at a common vertex has path degree `2 * n`.
 -/
 
 public section
@@ -72,5 +74,16 @@ theorem ladderValley_mem_grade (m s r : ℕ) :
       simpa [add_assoc, add_comm, add_left_comm] using
         mul_mem_signlessPreprojectiveGrade k _
           (signlessArrow_mem_grade_one k G (m + r) (m + r + 1)) ih
+
+/-- A product of backtracks `v → w → v` at a common vertex `v` has path degree twice the number of
+backtracks. -/
+theorem list_prod_signlessPreprojectiveMk_backtrackElem_mem_signlessPreprojectiveGrade
+    {V : Type*} {G : SimpleGraph V} [Fintype V] [DecidableRel G.Adj] {v : V}
+    (l : List {w // G.Adj v w}) :
+    (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.2)).prod ∈
+      signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length) := by
+  simpa [map_list_prod, Function.comp_def, mul_comm] using signlessPreprojectiveMk_mem_grade k _
+    (SetLike.list_prod_map_mem_graded l (fun _ => 2) _ fun w _ =>
+      backtrackElem_mem_grade_two k G w.2)
 
 end TauCeti

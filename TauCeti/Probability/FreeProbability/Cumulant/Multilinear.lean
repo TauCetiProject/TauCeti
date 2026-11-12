@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Multilinear.Basic
-public import TauCeti.Probability.FreeProbability.Cumulant.Basic
+public import TauCeti.Probability.FreeProbability.Cumulant.Product
 
 /-!
 # Multilinearity of free cumulants
@@ -17,6 +17,9 @@ the word read along that part. Hence the block moment `φ_P(a)` is linear in the
 and so is the free cumulant `κ_π(a)`, which is a linear combination of block moments by
 Möbius inversion. In other words, the block moments and the free cumulants
 `κ_n(a₁, …, aₙ)` are multilinear functionals of their arguments.
+
+The additive laws only require an additive map from a semiring `A` to a commutative semiring
+`R` (a commutative ring for cumulants), without a common scalar algebra.
 
 Multilinearity is the basic tool for computing with cumulants: it reduces cumulants of sums and
 scalar multiples to cumulants of the summands, for example when splitting each argument into its
@@ -40,6 +43,10 @@ all of `α` are bundled as multilinear maps `(α → A) → R`:
 * `TauCeti.partitionCumulant_update_add`, `TauCeti.partitionCumulant_update_smul`,
   `TauCeti.freeCumulant_update_add`, `TauCeti.freeCumulant_update_smul` — the free cumulants
   `κ_π(a)` and `κ_s(a)` are linear in each entry `a i` with `i ∈ s`.
+* `TauCeti.freeCumulant_add_algebraMap` — for a normalised `φ`, free cumulants of order at least
+  two are invariant under adding scalars to their arguments, in particular under centring.
+* `TauCeti.freeCumulant_sum_smul` — the free cumulant of linear combinations of a family expands
+  as a sum over words in the family.
 
 ## Implementation notes
 
@@ -63,11 +70,10 @@ variable {R A α : Type*} [LinearOrder α] {s : Finset α}
 
 section Moment
 
-variable [CommSemiring R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (a : α → A)
-
 /-- Changing the entry at a position `i ∈ s` affects the block moment `φ_P(a)` only through the
 moment of the part of `P` containing `i`, in which `a i` appears exactly once. -/
-private theorem exists_partitionMoment_update (P : Finpartition s) {i : α} (hi : i ∈ s) :
+private theorem exists_partitionMoment_update [CommMonoid R] [Monoid A] (φ : A → R)
+    (a : α → A) (P : Finpartition s) {i : α} (hi : i ∈ s) :
     ∃ (p q : A) (c : R), ∀ x : A, partitionMoment φ (update a i x) P = φ (p * x * q) * c := by
   have hiB : i ∈ (P.part i).sort := mem_sort _ |>.2 (P.mem_part_self.2 hi)
   refine ⟨(((P.part i).sort.map a).take ((P.part i).sort.idxOf i)).prod,
@@ -84,24 +90,31 @@ private theorem exists_partitionMoment_update (P : Finpartition s) {i : α} (hi 
 
 /-- The block moment `φ_P(a)` is additive in each entry `a i` with `i ∈ s`. -/
 @[simp]
-theorem partitionMoment_update_add (P : Finpartition s) {i : α} (hi : i ∈ s) (x y : A) :
+theorem partitionMoment_update_add [CommSemiring R] [Semiring A] {F : Type*} [FunLike F A R]
+    [AddHomClass F A R] (φ : F) (a : α → A) (P : Finpartition s) {i : α} (hi : i ∈ s)
+    (x y : A) :
     partitionMoment φ (update a i (x + y)) P =
       partitionMoment φ (update a i x) P + partitionMoment φ (update a i y) P := by
   obtain ⟨p, q, c, h⟩ := exists_partitionMoment_update φ a P hi
-  rw [h, h, h, mul_add, add_mul, map_add, add_mul]
+  simp [h, mul_add, add_mul]
 
 /-- The block moment `φ_P(a)` is homogeneous in each entry `a i` with `i ∈ s`. -/
 @[simp]
-theorem partitionMoment_update_smul (P : Finpartition s) {i : α} (hi : i ∈ s) (c : R) (x : A) :
+theorem partitionMoment_update_smul [CommSemiring R] [Semiring A] [Algebra R A]
+    (φ : A →ₗ[R] R) (a : α → A) (P : Finpartition s) {i : α} (hi : i ∈ s) (c : R) (x : A) :
     partitionMoment φ (update a i (c • x)) P = c * partitionMoment φ (update a i x) P := by
   obtain ⟨p, q, d, h⟩ := exists_partitionMoment_update φ a P hi
-  rw [h, h, mul_smul_comm, smul_mul_assoc, map_smul, smul_eq_mul, mul_assoc]
+  simp [h, mul_assoc]
 
 end Moment
 
 section Cumulant
 
-variable [CommRing R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (a : α → A)
+variable [CommRing R]
+
+section Additive
+
+variable [Semiring A] {F : Type*} [FunLike F A R] [AddHomClass F A R] (φ : F) (a : α → A)
 
 /-- The free cumulant `κ_π(a)` is additive in each entry `a i` with `i ∈ s`. -/
 @[simp]
@@ -112,6 +125,27 @@ theorem partitionCumulant_update_add (π : NoncrossingPartition s) {i : α} (hi 
   simp only [partitionCumulant_def, partitionMoment_update_add φ a _ hi, mul_add,
     sum_add_distrib]
 
+/-- The free cumulant `κ_s(a)` of a word is additive in each entry `a i` with `i ∈ s`. -/
+@[simp]
+theorem freeCumulant_update_add {i : α} (hi : i ∈ s) (x y : A) :
+    freeCumulant φ (update a i (x + y)) s =
+      freeCumulant φ (update a i x) s + freeCumulant φ (update a i y) s := by
+  simp only [freeCumulant_def, partitionCumulant_update_add φ a _ hi]
+
+/-- A free cumulant for an additive map vanishes if one of its letters is zero. -/
+theorem freeCumulant_eq_zero_of_apply_eq_zero {i : α} (hai : a i = 0) (hi : i ∈ s) :
+    freeCumulant φ a s = 0 := by
+  classical
+  have he : update a i 0 = a := update_eq_self_iff.2 hai.symm
+  have h := freeCumulant_update_add φ a hi 0 0
+  exact add_eq_left.mp (by simpa only [add_zero, he] using h.symm)
+
+end Additive
+
+section Homogeneous
+
+variable [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (a : α → A)
+
 /-- The free cumulant `κ_π(a)` is homogeneous in each entry `a i` with `i ∈ s`. -/
 @[simp]
 theorem partitionCumulant_update_smul (π : NoncrossingPartition s) {i : α} (hi : i ∈ s)
@@ -120,18 +154,57 @@ theorem partitionCumulant_update_smul (π : NoncrossingPartition s) {i : α} (hi
   simp only [partitionCumulant_def, partitionMoment_update_smul φ a _ hi, mul_sum,
     mul_left_comm c]
 
-/-- The free cumulant `κ_s(a)` of a word is additive in each entry `a i` with `i ∈ s`. -/
-@[simp]
-theorem freeCumulant_update_add {i : α} (hi : i ∈ s) (x y : A) :
-    freeCumulant φ (update a i (x + y)) s =
-      freeCumulant φ (update a i x) s + freeCumulant φ (update a i y) s := by
-  simp only [freeCumulant_def, partitionCumulant_update_add φ a _ hi]
-
 /-- The free cumulant `κ_s(a)` of a word is homogeneous in each entry `a i` with `i ∈ s`. -/
 @[simp]
 theorem freeCumulant_update_smul {i : α} (hi : i ∈ s) (c : R) (x : A) :
     freeCumulant φ (update a i (c • x)) s = c * freeCumulant φ (update a i x) s := by
   simp only [freeCumulant_def, partitionCumulant_update_smul φ a _ hi]
+
+/-- For a normalised `φ`, a free cumulant of order at least two is unchanged by adding scalar
+multiples of `1` to its arguments: `κ_s(a + c • 1) = κ_s(a)` when `φ 1 = 1` and `#s ≥ 2`. In
+particular, centring the letters `a x ↦ a x - φ (a x) • 1` does not change it. -/
+theorem freeCumulant_add_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s) :
+    freeCumulant φ (fun x => a x + algebraMap R A (c x)) s = freeCumulant φ a s := by
+  classical
+  -- Shift the letters at the positions of `t ⊆ s` one at a time; each shift adds the cumulant
+  -- of a word with a unit letter, which vanishes.
+  suffices h : ∀ t ⊆ s, freeCumulant φ
+      (fun x => if x ∈ t then a x + algebraMap R A (c x) else a x) s = freeCumulant φ a s by
+    rw [← h s subset_rfl]
+    exact freeCumulant_congr φ fun x hx => by simp [mem_coe.1 hx]
+  intro t
+  induction t using Finset.induction_on with
+  | empty => simp
+  | insert i t hit ih =>
+    intro hts
+    have hi := hts (mem_insert_self i t)
+    have hupd : (fun x => if x ∈ insert i t then a x + algebraMap R A (c x) else a x) =
+        update (fun x => if x ∈ t then a x + algebraMap R A (c x) else a x) i
+          (a i + c i • 1) := by
+      ext x
+      rcases eq_or_ne x i with rfl | hx
+      · simp [Algebra.algebraMap_eq_smul_one]
+      · rw [update_of_ne hx, if_congr (by rw [mem_insert, or_iff_right hx]) rfl rfl]
+    -- Split off the shift `c i • 1` by linearity in the entry `i`; its cumulant has a unit letter.
+    have hunit : freeCumulant φ (update (fun x => if x ∈ t then a x + algebraMap R A (c x) else
+        a x) i 1) s = 0 := freeCumulant_eq_zero_of_apply_eq_one φ _ hφ (update_self _ _ _) hi hs
+    have hai : update (fun x => if x ∈ t then a x + algebraMap R A (c x) else a x) i (a i) =
+        fun x => if x ∈ t then a x + algebraMap R A (c x) else a x :=
+      update_eq_self_iff.2 (by simp [hit])
+    rw [hupd, freeCumulant_update_add φ _ hi, freeCumulant_update_smul φ _ hi, hunit, mul_zero,
+      add_zero, hai]
+    exact ih ((subset_insert i t).trans hts)
+
+/-- Scalar words have vanishing free cumulants of order at least two for a normalised
+functional. -/
+@[simp]
+theorem freeCumulant_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s) :
+    freeCumulant φ (fun i => algebraMap R A (c i)) s = 0 := by
+  obtain ⟨i, hi⟩ := card_pos.1 (by omega : 0 < #s)
+  have hz := freeCumulant_eq_zero_of_apply_eq_zero φ (fun _ : α => (0 : A)) rfl hi
+  simpa using (freeCumulant_add_algebraMap φ (fun _ : α => (0 : A)) hφ c hs).trans hz
+
+end Homogeneous
 
 end Cumulant
 
@@ -189,8 +262,40 @@ theorem freeCumulantMultilinear_apply (a : α → A) :
     freeCumulantMultilinear φ a = freeCumulant φ a univ := by
   rw [freeCumulantMultilinear, partitionCumulantMultilinear_apply, freeCumulant_def]
 
+/-- *Multilinear expansion*: the free cumulant of the linear combinations
+`m ↦ ∑ i, c m i • s i` is the sum, over all words `v` in the family `s`, of the product of the
+coefficients `c m (v m)` times the free cumulant of `s ∘ v`. -/
+theorem freeCumulant_sum_smul {ι : Type*} [DecidableEq α] [Fintype ι] (s : ι → A)
+    (c : α → ι → R) :
+    freeCumulant φ (fun m => ∑ i, c m i • s i) univ =
+      ∑ v : α → ι, (∏ m, c m (v m)) * freeCumulant φ (s ∘ v) univ := by
+  simp_rw [← freeCumulantMultilinear_apply, MultilinearMap.map_sum, MultilinearMap.map_smul_univ,
+    smul_eq_mul, comp_def]
+
 end Cumulant
 
 end Multilinear
+
+section Relabel
+
+variable [CommRing R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R)
+
+/-- Scaling each letter scales the free cumulant by the product of the corresponding scalars. -/
+@[simp]
+theorem freeCumulant_smul (c : α → R) (a : α → A) (s : Finset α) :
+    freeCumulant φ (fun i => c i • a i) s = (∏ i ∈ s, c i) * freeCumulant φ a s := by
+  classical
+  simp only [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ _ s,
+    ← freeCumulantMultilinear_apply, Function.comp_def]
+  rw [MultilinearMap.map_smul_univ, smul_eq_mul]
+  congr 1
+  symm
+  calc
+    ∏ i ∈ s, c i = ∏ i ∈ univ.image (s.orderEmbOfFin rfl), c i := by
+      rw [image_orderEmbOfFin_univ]
+    _ = ∏ i : Fin #s, c (s.orderEmbOfFin rfl i) :=
+      prod_image (s.orderEmbOfFin rfl).injective.injOn
+
+end Relabel
 
 end TauCeti

@@ -12,6 +12,7 @@ public import Mathlib.Probability.Distributions.Poisson.Basic
 
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.Probability.Distributions.Poisson.Measurability
+import TauCeti.Probability.Distributions.Poisson.Basic
 
 /-!
 # Gamma mixtures of Poisson distributions
@@ -28,11 +29,13 @@ to `r + k`. Euler's Gamma integral then gives exactly the negative-binomial mass
 
 * `TauCeti.Probability.bind_gammaMeasure_poissonMeasure` — a Gamma mixture of Poisson laws is
   negative-binomial.
+* `TauCeti.Probability.bind_gammaMeasure_poissonMeasure_mul_toNNReal` — the same identity with
+  an arbitrary positive Gamma rate and a nonnegative multiplier of the Poisson rate.
 * `TauCeti.Probability.mixedPoissonMeasure_map_toNNReal_gammaMeasure` — the same identity for the
   mixed Poisson law `TauCeti.Probability.mixedPoissonMeasure`, whose mixing measure lives on the
   rates `ℝ≥0`; the Gamma law is carried there by `Real.toNNReal`.
-* `Real.gammaKernel_mul_exp_mul_pow_div_factorial` — the pointwise algebra it runs on: at a
-  nonzero point, `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` times `exp (-x) * x ^ k / k !`
+* `Real.gammaKernel_mul_exp_mul_pow_div_factorial` — the pointwise algebra it runs on: at every
+  point, `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` times `exp (-x) * x ^ k / k !`
   collects into `c ^ r / (Γ r * k !) * (x ^ (r + k - 1) * exp (-((c + 1) * x)))`. The identity is
   algebraic — it carries no positivity hypotheses — and the mixture below supplies the
   probabilistic reading of its two sides.
@@ -57,13 +60,31 @@ namespace Probability
 
 /-- Multiplying a Gamma kernel by finitely many Poisson masses shifts its shape by the total
 count and its rate by the sum of the Poisson weights. The identity holds for arbitrary real
-parameters at every nonzero point, without positivity or normalization assumptions. -/
+parameters at every point, without positivity or normalization assumptions. At the origin the two
+sides agree: if every count is zero they coincide, and otherwise the left side vanishes, as does
+the right, since either `0 ^ (r + ∑ k - 1) = 0` or `r` is a nonpositive integer, where
+`Real.Gamma` vanishes. -/
 theorem _root_.Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial {ι : Type*} [Fintype ι]
-    (c r : ℝ) (p : ι → ℝ) (k : ι → ℕ) {x : ℝ} (hx : x ≠ 0) :
+    (c r : ℝ) (p : ι → ℝ) (k : ι → ℕ) (x : ℝ) :
     c ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(c * x)) *
         (∏ i, (Real.exp (-(p i * x)) * (p i * x) ^ k i / (k i).factorial)) =
       (c ^ r / Real.Gamma r * (∏ i, p i ^ k i) / (∏ i, ((k i).factorial : ℝ))) *
         (x ^ (r + ∑ i, (k i : ℝ) - 1) * Real.exp (-((c + ∑ i, p i) * x))) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · by_cases hk : ∀ i, k i = 0
+    · simp [hk]
+    · obtain ⟨i, hi⟩ := not_forall.mp hk
+      rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hi]), mul_zero]
+      symm
+      by_cases he : r + ∑ i, (k i : ℝ) - 1 = 0
+      · have hn : 0 < ∑ i, k i :=
+          Finset.sum_pos' (fun _ _ => Nat.zero_le _) ⟨i, Finset.mem_univ i, by omega⟩
+        have hr : r = -((∑ i, k i - 1 : ℕ) : ℝ) := by
+          rw [Nat.cast_sub hn]
+          push_cast at he ⊢
+          linarith
+        simp [hr, Real.Gamma_neg_nat_eq_zero]
+      · simp [Real.zero_rpow he]
   -- Combine the powers at the shifted shape, using only that the point is nonzero.
   have hpow : x ^ (r - 1) * x ^ (∑ i, k i) = x ^ (r + ∑ i, (k i : ℝ) - 1) := by
     rw [← Real.rpow_add_natCast hx]
@@ -86,11 +107,11 @@ theorem _root_.Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial {ι : Type*} 
           (Real.exp (-(c * x)) * (∏ i, Real.exp (-(p i * x))))) := by ring
     _ = _ := by rw [hpow, hexp]
 
-/-- Collecting `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` against `exp (-x) * x ^ k / k !` at a
-nonzero point: the two powers of `x` and the two exponentials each combine, leaving
+/-- Collecting `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` against `exp (-x) * x ^ k / k !` at
+every point: the two powers of `x` and the two exponentials each combine, leaving
 `x ^ (r + k - 1) * exp (-((c + 1) * x))` under the constant `c ^ r / (Γ r * k !)`.
 
-The identity is algebraic. Nothing here is assumed positive except that `x` is nonzero, so neither
+The identity is algebraic. Nothing here is assumed positive, so neither
 side need be a probability density, and the surviving constant is `c ^ r / (Γ r * k !)` rather than
 the `(c + 1) ^ (r + k) / Γ (r + k)` that would normalise the `x`-dependent factor into a gamma
 kernel of shape `r + k` and rate `c + 1`. The gamma--Poisson mixture below instantiates the
@@ -99,15 +120,14 @@ are the densities their shapes suggest. -/
 -- The factors are written out rather than as `gammaPDFReal` and `poissonPMFReal`: the former
 -- carries an `if 0 ≤ x` guard that is not definitional at a bound variable, and the latter is
 -- indexed by `ℝ≥0`, so either would cost the consumer a congruence step under its integral.
-theorem _root_.Real.gammaKernel_mul_exp_mul_pow_div_factorial (c r : ℝ) (k : ℕ) {x : ℝ}
-    (hx : x ≠ 0) :
+theorem _root_.Real.gammaKernel_mul_exp_mul_pow_div_factorial (c r : ℝ) (k : ℕ) (x : ℝ) :
     c ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(c * x)) *
         (Real.exp (-x) * x ^ k / k.factorial) =
       c ^ r / (Real.Gamma r * k.factorial) *
         (x ^ (r + (k : ℝ) - 1) * Real.exp (-((c + 1) * x))) := by
   simpa [div_div] using
     (Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial c r (fun _ : Unit => 1)
-      (fun _ => k) hx)
+      (fun _ => k) x)
 
 private lemma integral_poissonMass_gammaMeasure {r p : ℝ} (hr : 0 < r) (hp : 0 < p)
     (hp1 : p < 1) (k : ℕ) :
@@ -126,8 +146,8 @@ private lemma integral_poissonMass_gammaMeasure {r p : ℝ} (hr : 0 < r) (hp : 0
     ((p / (1 - p)) ^ r / Real.Gamma r * x ^ (r - 1) *
       Real.exp (-(p / (1 - p) * x))) *
         (Real.exp (-x) * x ^ k / k.factorial)) = _
-  have hcongr := fun x (hx : x ∈ Ioi (0 : ℝ)) =>
-    Real.gammaKernel_mul_exp_mul_pow_div_factorial (p / (1 - p)) r k hx.ne'
+  have hcongr := fun x (_ : x ∈ Ioi (0 : ℝ)) =>
+    Real.gammaKernel_mul_exp_mul_pow_div_factorial (p / (1 - p)) r k x
   -- Euler's Gamma integral evaluates the kernel with shifted shape `r + k`.
   rw [setIntegral_congr_fun measurableSet_Ioi hcongr, integral_const_mul,
     Real.integral_rpow_mul_exp_neg_mul_Ioi hshape (by positivity : 0 < p / (1 - p) + 1),
@@ -184,6 +204,33 @@ theorem bind_gammaMeasure_poissonMeasure {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (
     filter_upwards [TauCeti.Probability.ae_pos_gammaMeasure r (p / (1 - p))] with lam hlam
     rw [Real.coe_toNNReal lam hlam.le])]
   exact integral_poissonMass_gammaMeasure hr hp hp1 k
+
+/-- A Gamma mixture of Poisson laws with rates multiplied by a nonnegative weight is
+negative-binomial. A zero weight gives success probability one and hence a Dirac law. -/
+@[simp]
+theorem bind_gammaMeasure_poissonMeasure_mul_toNNReal {r c : ℝ} (hr : 0 < r)
+    (hc : 0 < c) (a : ℝ≥0) :
+    (gammaMeasure r c).bind (fun x => poissonMeasure (a * Real.toNNReal x)) =
+      negativeBinomialMeasure r (c / (c + a)) := by
+  let _ := isProbabilityMeasure_gammaMeasure hr hc
+  by_cases ha : a = 0
+  · subst a
+    simp [Measure.bind_const, hc.ne', poissonMeasure_zero,
+      negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one hr.le]
+  have ha' : 0 < (a : ℝ) := by exact_mod_cast (pos_iff_ne_zero.mpr ha)
+  have hp : 0 < c / (c + a) := div_pos hc (by positivity)
+  have hp1 : c / (c + a) < 1 := (div_lt_one (by positivity)).mpr (by linarith)
+  have hrate : c / (c + a) / (1 - c / (c + a)) = c / a := by
+    field_simp [ha'.ne', (add_pos hc ha').ne']
+    ring
+  calc
+    _ = ((gammaMeasure r c).map (fun x => (a : ℝ) * x)).bind
+        (fun x => poissonMeasure (Real.toNNReal x)) := by
+      rw [Measure.bind_map (by fun_prop) (by fun_prop)]
+      simp only [Real.toNNReal_mul a.coe_nonneg, Real.toNNReal_coe]
+    _ = _ := by
+      rw [gammaMeasure_map_const_mul ha',
+        ← hrate, bind_gammaMeasure_poissonMeasure hr hp hp1]
 
 /-- **The Gamma-mixed Poisson law is negative-binomial**, stated for
 `TauCeti.Probability.mixedPoissonMeasure`: the Gamma law of shape `r` and rate `p / (1 - p)`,

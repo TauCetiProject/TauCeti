@@ -10,6 +10,7 @@ import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+public import TauCeti.RingTheory.Polynomial.Reductum
 
 /-!
 # Principal subresultant coefficients
@@ -32,6 +33,8 @@ the scalar data used by subresultant gcd criteria and projection operators.
 * `Polynomial.psc_zero`: the zeroth principal subresultant coefficient is the resultant.
 * `Polynomial.psc_map_map`: fixed-bound principal subresultant coefficients commute with coefficient
   maps.
+* `Polynomial.psc_map_of_natDegree_eq`: at the actual degrees, they commute with coefficient maps
+  that preserve both degrees.
 * `Polynomial.psc_comm`: swapping the polynomials multiplies by `(-1) ^ ((m - j) * (n - j))`.
 * `Polynomial.psc_left_bound`, `Polynomial.psc_right_bound`: at a formal degree bound, the
   determinant is a power of the coefficient at that bound.
@@ -171,6 +174,20 @@ theorem _root_.Polynomial.psc_def [CommRing R] (p q : R[X]) (m n j : ℕ) :
     psc p q m n j = (subresultantMatrix p q m n j).det := by
   rw [psc]
 
+/-- The principal subresultant coefficient reads only the coefficients of the left input below
+its formal bound, so it is unchanged by truncating the left input to that bound. -/
+@[simp]
+theorem _root_.Polynomial.psc_reductum_left [CommRing R] (p q : R[X]) (m n j : ℕ) :
+    psc (p.reductum (m + 1)) q m n j = psc p q m n j := by
+  rw [psc_def, psc_def]
+  congr 1
+  ext i k
+  induction k using Fin.addCases with
+  | left k => simp
+  | right k =>
+    simp only [subresultantMatrix_natAdd, coeff_reductum]
+    split_ifs <;> first | rfl | omega
+
 /-- The zeroth principal subresultant coefficient is the fixed-bound resultant. -/
 @[simp]
 theorem _root_.Polynomial.psc_zero [CommRing R] (p q : R[X]) (m n : ℕ) :
@@ -184,6 +201,18 @@ theorem _root_.Polynomial.psc_map_map [CommRing R] [CommRing S] (f : R →+* S)
     (p q : R[X]) (m n j : ℕ) :
     psc (p.map f) (q.map f) m n j = f (psc p q m n j) := by
   simp [psc_def, RingHom.map_det]
+
+/-- At the actual degrees, principal subresultant coefficients commute with a coefficient map that
+preserves both degrees, for instance one that does not kill the leading coefficients
+(`Polynomial.natDegree_map_of_leadingCoeff_ne_zero`). When a degree drops, the specialized
+coefficients at the smaller actual degrees are given instead by the degree-drop formulas
+`Polynomial.map_psc_of_right_degree_drop` and `Polynomial.map_psc_of_left_degree_drop`. -/
+theorem _root_.Polynomial.psc_map_of_natDegree_eq [CommRing R] [CommRing S] (f : R →+* S)
+    {p q : R[X]} (hp : (p.map f).natDegree = p.natDegree) (hq : (q.map f).natDegree = q.natDegree)
+    (j : ℕ) :
+    psc (p.map f) (q.map f) (p.map f).natDegree (q.map f).natDegree j =
+      f (psc p q p.natDegree q.natDegree j) := by
+  rw [hp, hq, psc_map_map]
 
 /-- Swapping the polynomials and their bounds changes the principal subresultant coefficient by
 the sign `(-1) ^ ((m - j) * (n - j))`. -/

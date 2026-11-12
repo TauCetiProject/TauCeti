@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Finsupp
 public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.FiniteType
 
 /-!
 # Finite presentation of modules and their associated sheaves
@@ -18,7 +19,9 @@ public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 An `R`-module is finitely presented if and only if its associated sheaf on `Spec R` is finitely
 presented. More generally, the sections of a finitely presented sheaf over any affine open are
 a finitely presented module over its ring of functions. On an affine scheme, the sheaf admits
-a global presentation with finitely many generators and relations.
+a global presentation with finitely many generators and relations. Likewise, an `R`-module is
+finite if and only if its associated sheaf is of finite type: the sheaf of a finite module is a
+quotient of the sheaf of a finite free module, and conversely the global sections are finite.
 
 The forward implication uses Mathlib's `presentationTilde`, whose generating and relation
 families are precisely those of the module presentation. For the converse, finite local sheaf
@@ -67,13 +70,17 @@ instance isFinitePresentation_tilde [Module.FinitePresentation R M] :
   obtain ⟨s, hs, t, ht⟩ := Module.FinitePresentation.out (R := R) (M := M)
   let P := presentationTilde M (s : Set M) hs (t : Set (s →₀ R)) ht
   have : P.IsFinite := isFinite_presentationTilde M _ hs _ ht
-  let q := P.quasicoherentData
-  have : q.IsFinitePresentation := by
-    refine { isFinite_presentation := ?_ }
-    intro U
-    dsimp [q, SheafOfModules.Presentation.quasicoherentData]
-    apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
-  exact SheafOfModules.IsFinitePresentation.mk (M := tilde M) ⟨q, inferInstance⟩
+  exact P.isFinitePresentation
+
+/-- The sheaf associated with a finite module is of finite type. -/
+instance _root_.ModuleCat.isFiniteType_tilde [Module.Finite R M] : (tilde M).IsFiniteType := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
+  let F := ModuleCat.of R (Fin n → R)
+  let p : F ⟶ M := ModuleCat.ofHom f
+  have : Epi p := (ModuleCat.epi_iff_surjective p).2 hf
+  have : Epi (tilde.map p) := (tilde.functor R).map_epi p
+  have : (tilde F).IsFiniteType := SheafOfModules.instIsFiniteTypeOfIsFinitePresentation (tilde F)
+  exact Scheme.Modules.isFiniteType_of_epi (tilde.map p)
 
 /-- A finite global presentation on `Spec R` gives a finitely presented module of global
 sections over `R`. -/
@@ -344,6 +351,18 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_moduleSpecΓ
   have : Module.Finite R Γ(Spec R, ⊤) :=
     Module.Finite.equiv (LinearEquiv.ofBijective _ hbij)
   exact Module.Finite.trans (R := R) Γ(Spec R, ⊤) Γ(M, ⊤)
+
+/-- A module is finite if and only if its associated sheaf on the spectrum is of finite type. -/
+@[simp]
+theorem _root_.ModuleCat.isFiniteType_tilde_iff (M : ModuleCat.{u} R) :
+    (tilde M).IsFiniteType ↔ Module.Finite R M := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  have hΓ : Module.Finite R (moduleSpecΓFunctor.obj (tilde M)) :=
+    Scheme.Modules.finite_moduleSpecΓ (tilde M)
+  -- The instance is passed explicitly: the module structure on these sections is not found by
+  -- unification with `hΓ`.
+  exact @Module.Finite.equiv _ _ _ _ _ _ _ _ hΓ
+    ((tilde.toTildeΓNatIso (R := R)).app M).symm.toLinearEquiv
 
 open _root_.AlgebraicGeometry.Scheme.Modules
 

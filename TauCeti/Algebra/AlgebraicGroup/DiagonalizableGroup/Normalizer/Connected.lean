@@ -80,14 +80,16 @@ private theorem map_conjugation_tensor_eq
   let a := LinearMap.tensorComponent ψ z
   have heval (f : K →ₐ[k] k) :
       f a = ψ (π (HopfAlgebra.pointConjugationAlgHom (mapDomain φ (toConv f)) x)) := by
-    have h := (π.toAlgHom.apply_pointConjugationAlgHom (mapDomain φ (toConv f)) x).symm
+    have h := (π.toAlgHom.toLinearMap.apply_pointConjugationAlgHom
+      (mapDomain φ (toConv f)) x).symm
     have hc := congrArg ψ h
     have hcontract := LinearMap.congr_fun (f.toLinearMap.comp_tensorComponent ψ) z
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.rTensor_def,
       AlgHom.toLinearMap_apply] at hcontract
     rw [hcontract]
     simpa only [z, TensorProduct.map_map, LinearMap.comp_id, LinearMap.id_comp,
-      mapDomain_apply, ofConv_toConv, AlgHom.comp_toLinearMap, BialgHom.coe_toAlgHom] using hc
+      mapDomain_apply, ofConv_toConv, AlgHom.comp_toLinearMap, AlgHom.toLinearMap_apply,
+      BialgHom.coe_toAlgHom] using hc
   have ha : (Set.range fun f : K →ₐ[k] k ↦ f a).Finite := by
     apply ((hfinite x).image ψ).subset
     rintro _ ⟨f, rfl⟩
@@ -113,9 +115,9 @@ theorem centralizerHopfIdeal_le_ker_of_forall_mapDomain_mem_normalizerPoints
   have h := map_conjugation_tensor_eq π hπ φ hnorm x
   have hz : TensorProduct.map φ.toAlgHom.toLinearMap LinearMap.id
       (centralizerDefect π x) = 0 := by
-    simp only [centralizerDefect_def, map_sub, TensorProduct.map_algebraTensorProduct_map,
-      AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp, TensorProduct.map_tmul,
-      AlgHom.toLinearMap_apply, map_one, LinearMap.id_apply, h, sub_self]
+    simp only [centralizerDefect_def, map_sub, Algebra.TensorProduct.map_apply_eq_map,
+      TensorProduct.map_map, AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp,
+      TensorProduct.map_tmul, AlgHom.toLinearMap_apply, map_one, LinearMap.id_apply, h, sub_self]
   simpa only [AlgHom.toLinearMap_apply, BialgHom.coe_toAlgHom] using
     (map_centralizerDefect_eq_zero_iff π φ.toAlgHom.toLinearMap x).mp hz χ
 

@@ -33,6 +33,10 @@ gives the following consequences.
 * Semialgebraic functions compose when the intermediate space has finitely many coordinates: the
   graph of `g ∘ f` is obtained from the graphs of `f` and `g` by eliminating the intermediate
   coordinates.
+* Composing the pair of two semialgebraic functions with a polynomial map shows that pointwise
+  sums, products, and differences of semialgebraic functions with finitely many output
+  coordinates are semialgebraic, and that the loci where two of them agree, or are ordered, are
+  semialgebraic.
 
 ## Main results
 
@@ -40,10 +44,13 @@ All results assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`
 
 * `TauCeti.IsSemialgebraic.image_comp_inr`, `TauCeti.IsSemialgebraic.image_comp_inl`: projections
   of semialgebraic sets that forget finitely many coordinates are semialgebraic.
+* `TauCeti.IsSemialgebraic.setOf_exists_sumElim`,
+  `TauCeti.IsSemialgebraic.setOf_forall_sumElim`: quantification over finitely many coordinates.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_image`,
   `TauCeti.IsSemialgebraicMap.isSemialgebraic_image`: images under semialgebraic functions with
   finitely many input coordinates; `TauCeti.IsSemialgebraic.image_eval`: images under polynomial
-  maps with finitely many input and output coordinates.
+  maps with finitely many input and output coordinates; `TauCeti.IsSemialgebraic.image_comp`:
+  images under changes of coordinates, such as coordinate projections.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_preimage`,
   `TauCeti.IsSemialgebraicMap.isSemialgebraic_preimage`: inverse images under semialgebraic
   functions with finitely many output coordinates.
@@ -51,6 +58,15 @@ All results assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`
   semialgebraic on `s` exactly when its graph over `s` is semialgebraic.
 * `TauCeti.IsSemialgebraicOn.comp`, `TauCeti.IsSemialgebraicMap.comp`: composition, when the
   intermediate space has finitely many coordinates.
+* `TauCeti.IsSemialgebraicOn.eval_comp`: applying a polynomial map to the values;
+  `TauCeti.isSemialgebraicOn_sumElim_iff`: a pair is semialgebraic exactly when its components
+  are, and `TauCeti.isSemialgebraicOn_pi_iff`: so is a function with finitely many output
+  coordinates; `TauCeti.IsSemialgebraicOn.add`, `TauCeti.IsSemialgebraicOn.mul`,
+  `TauCeti.IsSemialgebraicOn.sub`: pointwise arithmetic.  Negation needs no projection and is
+  proved in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function`.
+* `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq`,
+  `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_le`: the loci where two semialgebraic
+  functions agree, or where one is bounded above by the other, are semialgebraic.
 
 ## References
 
@@ -134,6 +150,25 @@ theorem IsSemialgebraic.image_comp_inl [Finite τ] {s : Set (σ ⊕ τ → R)}
   · rintro ⟨z, hz, rfl⟩
     exact ⟨_, hz, rfl⟩
 
+/-- Existential quantification over finitely many coordinates preserves semialgebraicity. -/
+theorem IsSemialgebraic.setOf_exists_sumElim [Finite τ] {s : Set (σ ⊕ τ → R)}
+    (hs : IsSemialgebraic s) :
+    IsSemialgebraic {x : σ → R | ∃ y : τ → R, Sum.elim x y ∈ s} := by
+  convert hs.image_comp_inl using 1
+  ext x
+  constructor
+  · rintro ⟨y, hy⟩
+    exact ⟨Sum.elim x y, hy, rfl⟩
+  · rintro ⟨z, hz, rfl⟩
+    exact ⟨z ∘ Sum.inr, by simpa using hz⟩
+
+/-- Universal quantification over finitely many coordinates preserves semialgebraicity. -/
+theorem IsSemialgebraic.setOf_forall_sumElim [Finite τ] {s : Set (σ ⊕ τ → R)}
+    (hs : IsSemialgebraic s) :
+    IsSemialgebraic {x : σ → R | ∀ y : τ → R, Sum.elim x y ∈ s} := by
+  simpa only [compl_ofPred, mem_compl_iff, not_exists, not_not] using
+    hs.compl.setOf_exists_sumElim.compl
+
 /-- Given projection closure, the image of the domain of a semialgebraic function with finitely
 many input coordinates is semialgebraic. -/
 theorem IsSemialgebraicOn.isSemialgebraic_image [Finite σ] {f : (σ → R) → (τ → R)}
@@ -160,6 +195,13 @@ theorem IsSemialgebraic.image_eval [Finite σ] [Finite τ] {s : Set (σ → R)}
     (hs : IsSemialgebraic s) (p : τ → MvPolynomial σ R) :
     IsSemialgebraic ((fun x i => eval x (p i)) '' s) :=
   (isSemialgebraicOn_eval p hs).isSemialgebraic_image
+
+/-- Given projection closure, the image of a semialgebraic set under a change of coordinates
+`x ↦ x ∘ f`, such as a coordinate projection, is semialgebraic. -/
+theorem IsSemialgebraic.image_comp [Finite σ] [Finite τ] {s : Set (σ → R)}
+    (hs : IsSemialgebraic s) (f : τ → σ) :
+    IsSemialgebraic ((fun x : σ → R => x ∘ f) '' s) := by
+  simpa [Function.comp_def] using hs.image_eval fun i => X (f i)
 
 /-- Given projection closure, the points of the domain of a semialgebraic function with finitely
 many output coordinates at which it takes values in a semialgebraic set form a semialgebraic
@@ -228,5 +270,98 @@ theorem IsSemialgebraicMap.comp [Finite τ] {g : (τ → R) → (υ → R)} {f :
     (hg : IsSemialgebraicMap g) (hf : IsSemialgebraicMap f) : IsSemialgebraicMap (g ∘ f) :=
   isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hg).comp
     (isSemialgebraicOn_univ.2 hf) (mapsTo_univ f univ)
+
+/-! ### Polynomial operations on semialgebraic functions -/
+
+section Operations
+
+variable {τ' : Type*} {f : (σ → R) → (τ → R)} {s : Set (σ → R)}
+
+/-- Given projection closure, applying a polynomial map to the values of a semialgebraic function
+with finitely many output coordinates gives a semialgebraic function. -/
+theorem IsSemialgebraicOn.eval_comp [Finite τ] [Finite υ] (hf : IsSemialgebraicOn f s)
+    (p : υ → MvPolynomial τ R) :
+    IsSemialgebraicOn (fun x i => eval (f x) (p i)) s :=
+  (isSemialgebraicOn_eval p isSemialgebraic_univ).comp hf (mapsTo_univ f s)
+
+/-- Given projection closure, a pair of functions with finitely many output coordinates is
+semialgebraic exactly when both of its components are. -/
+@[simp]
+theorem isSemialgebraicOn_sumElim_iff [Finite τ] [Finite τ'] {g : (σ → R) → (τ' → R)} :
+    IsSemialgebraicOn (fun x => Sum.elim (f x) (g x)) s ↔
+      IsSemialgebraicOn f s ∧ IsSemialgebraicOn g s := by
+  refine ⟨fun h => ⟨?_, ?_⟩, fun h => h.1.sumElim h.2⟩
+  · simpa using h.eval_comp fun i : τ => X (Sum.inl i)
+  · simpa using h.eval_comp fun i : τ' => X (Sum.inr i)
+
+/-- Given projection closure, a function with finitely many output coordinates is semialgebraic on
+`s` exactly when `s` is semialgebraic and each coordinate of the function is semialgebraic on
+`s`. -/
+theorem isSemialgebraicOn_pi_iff [Finite τ] :
+    IsSemialgebraicOn f s ↔
+      IsSemialgebraic s ∧ ∀ i, IsSemialgebraicOn (fun x (_ : Unit) => f x i) s := by
+  refine ⟨fun h => ⟨h.isSemialgebraic, fun i => ?_⟩, fun h => .pi h.1 h.2⟩
+  simpa using h.eval_comp fun _ : Unit => X i
+
+variable [Finite τ] {g : (σ → R) → (τ → R)}
+
+/-- Given projection closure, the pointwise sum of semialgebraic functions is semialgebraic. -/
+theorem IsSemialgebraicOn.add (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraicOn g s) :
+    IsSemialgebraicOn (f + g) s := by
+  convert (hf.sumElim hg).eval_comp fun i : τ => X (Sum.inl i) + X (Sum.inr i) using 1
+  funext x i
+  simp
+
+/-- Given projection closure, the pointwise product of semialgebraic functions is
+semialgebraic. -/
+theorem IsSemialgebraicOn.mul (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraicOn g s) :
+    IsSemialgebraicOn (f * g) s := by
+  convert (hf.sumElim hg).eval_comp fun i : τ => X (Sum.inl i) * X (Sum.inr i) using 1
+  funext x i
+  simp
+
+/-- Given projection closure, the pointwise difference of semialgebraic functions is
+semialgebraic. -/
+theorem IsSemialgebraicOn.sub (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraicOn g s) :
+    IsSemialgebraicOn (f - g) s := by
+  convert (hf.sumElim hg).eval_comp fun i : τ => X (Sum.inl i) - X (Sum.inr i) using 1
+  funext x i
+  simp
+
+/-- Given projection closure, the pointwise sum of semialgebraic maps is semialgebraic. -/
+theorem IsSemialgebraicMap.add (hf : IsSemialgebraicMap f) (hg : IsSemialgebraicMap g) :
+    IsSemialgebraicMap (f + g) :=
+  isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).add (isSemialgebraicOn_univ.2 hg)
+
+/-- Given projection closure, the pointwise product of semialgebraic maps is semialgebraic. -/
+theorem IsSemialgebraicMap.mul (hf : IsSemialgebraicMap f) (hg : IsSemialgebraicMap g) :
+    IsSemialgebraicMap (f * g) :=
+  isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).mul (isSemialgebraicOn_univ.2 hg)
+
+/-- Given projection closure, the pointwise difference of semialgebraic maps is semialgebraic. -/
+theorem IsSemialgebraicMap.sub (hf : IsSemialgebraicMap f) (hg : IsSemialgebraicMap g) :
+    IsSemialgebraicMap (f - g) :=
+  isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).sub (isSemialgebraicOn_univ.2 hg)
+
+/-- Given projection closure, the points of the common domain at which two semialgebraic
+functions agree form a semialgebraic set. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq (hf : IsSemialgebraicOn f s)
+    (hg : IsSemialgebraicOn g s) : IsSemialgebraic (s ∩ {x | f x = g x}) := by
+  convert (hf.sumElim hg).isSemialgebraic_inter_preimage
+    (.iInter fun i : τ => isSemialgebraic_eval_eq (X (Sum.inl i)) (X (Sum.inr i))) using 2
+  ext x
+  simp [funext_iff]
+
+/-- Given projection closure, the points of the common domain at which one semialgebraic function
+is bounded above by another, coordinatewise, form a semialgebraic set. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_le [IsOrderedAddMonoid R]
+    (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraicOn g s) :
+    IsSemialgebraic (s ∩ {x | f x ≤ g x}) := by
+  convert (hf.sumElim hg).isSemialgebraic_inter_preimage
+    (.iInter fun i : τ => isSemialgebraic_eval_le (X (Sum.inl i)) (X (Sum.inr i))) using 2
+  ext x
+  simp [Pi.le_def]
+
+end Operations
 
 end TauCeti

@@ -44,7 +44,7 @@ degree is the height `#S` itself, and the terms are finite biproducts.
 * `CategoryTheory.Functor.cubeComplex F`: the signed totalization of the cube `F`; its terms are
   biproducts with summand inclusions `Functor.cubeComplexι` and projections
   `Functor.cubeComplexπ`, and its differential is characterised on summands by
-  `Functor.ι_cubeComplex_d`.
+  `Functor.ι_cubeComplex_d` and, into a vertex, by `Functor.cubeComplex_d_π`.
 * `CategoryTheory.NatTrans.cubeComplexMap α`: the cochain map induced by a map of cubes.
 * `CategoryTheory.cubeComplexFunctor C ι`: the totalization as an additive functor of the cube.
 
@@ -52,6 +52,7 @@ degree is the height `#S` itself, and the terms are finite biproducts.
 
 * `Functor.isZero_cubeComplex_X_of_neg`, `Functor.isZero_cubeComplex_X_of_card_lt`: the terms
   vanish outside the degrees `0, …, #ι`.
+* `Functor.cubeComplex_total`: each term is the direct sum of its vertices.
 * `Functor.cubeComplexXZeroIso`: the degree `0` term is the initial vertex `F(∅)`.
 
 ## References
@@ -165,15 +166,43 @@ def cubeComplex : CochainComplex C ℤ where
     rintro i _ _ rfl rfl
     exact F.cubeD_comp_cubeD i
 
+/-- The degree `r` term is the biproduct of the vertices of height `r`. -/
+lemma cubeComplex_X (r : ℤ) :
+    F.cubeComplex.X r = ⨁ fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1 := (rfl)
+
 /-- The inclusion of the vertex `F(S)` into the degree `r` term of the cube complex, for a vertex
 of height `#S = r`. -/
 def cubeComplexι {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) : F.obj S.1 ⟶ F.cubeComplex.X r :=
   biproduct.ι (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S
 
+/-- The vertex inclusion agrees with the biproduct inclusion under the term identification. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexι_comp_eqToHom {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    F.cubeComplexι S ≫ eqToHom (F.cubeComplex_X r) =
+      biproduct.ι (fun T : {T : Finset ι // (#T : ℤ) = r} ↦ F.obj T.1) S :=
+  Category.comp_id _
+
 /-- The projection of the degree `r` term of the cube complex onto the vertex `F(S)`, for a vertex
 of height `#S = r`. -/
 def cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) : F.cubeComplex.X r ⟶ F.obj S.1 :=
   biproduct.π (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S
+
+/-- The biproduct projection agrees with the vertex projection under the term identification. -/
+@[reassoc (attr := simp)]
+lemma eqToHom_comp_cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    eqToHom (F.cubeComplex_X r) ≫
+      biproduct.π (fun T : {T : Finset ι // (#T : ℤ) = r} ↦ F.obj T.1) S =
+        F.cubeComplexπ S :=
+  Category.id_comp _
+
+/-- Transporting a cube term to an equal height preserves each vertex inclusion. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexι_comp_XIsoOfEq_hom {r r' : ℤ} (h : r = r')
+    (S : {S : Finset ι // (#S : ℤ) = r}) :
+    F.cubeComplexι S ≫ (F.cubeComplex.XIsoOfEq h).hom =
+      F.cubeComplexι ⟨S.1, S.2.trans h⟩ := by
+  subst h
+  simp
 
 /-- The inclusion of a vertex followed by the projection onto a vertex of the same height is the
 identity when the vertices agree, and zero otherwise. -/
@@ -195,6 +224,13 @@ lemma cubeComplexι_π_self {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
 lemma cubeComplexι_π_of_ne {r : ℤ} {S T : {S : Finset ι // (#S : ℤ) = r}} (h : S ≠ T) :
     F.cubeComplexι S ≫ F.cubeComplexπ T = 0 :=
   biproduct.ι_π_ne _ h
+
+/-- The inclusion of a vertex is compatible with the identification of equal vertices. -/
+@[reassoc]
+lemma eqToHom_comp_cubeComplexι {r : ℤ} {S T : Finset ι} (h : S = T) (hT : (#T : ℤ) = r) :
+    eqToHom (congrArg F.obj h) ≫ F.cubeComplexι ⟨T, hT⟩ = F.cubeComplexι ⟨S, h ▸ hT⟩ := by
+  subst h
+  simp
 
 /-- The morphism out of the degree `r` term of the cube complex given on each vertex. -/
 def cubeComplexDesc {r : ℤ} {A : C} (f : ∀ S : {S : Finset ι // (#S : ℤ) = r}, F.obj S.1 ⟶ A) :
@@ -220,6 +256,13 @@ lemma cubeComplexLift_π {r : ℤ} {A : C}
     F.cubeComplexLift f ≫ F.cubeComplexπ S = f S :=
   biproduct.lift_π f S
 
+/-- The projections onto the vertices of height `r`, followed by their inclusions, sum to the
+identity of the degree `r` term of the cube complex. -/
+@[simp]
+lemma cubeComplex_total (r : ℤ) :
+    ∑ S : {S : Finset ι // (#S : ℤ) = r}, F.cubeComplexπ S ≫ F.cubeComplexι S = 𝟙 _ :=
+  biproduct.total
+
 /-- Morphisms out of a term of the cube complex agree when they agree on every vertex. -/
 @[ext]
 lemma cubeComplex_hom_ext {r : ℤ} {A : C} {f g : F.cubeComplex.X r ⟶ A}
@@ -232,6 +275,18 @@ agree. -/
 lemma cubeComplex_hom_ext' {r : ℤ} {A : C} {f g : A ⟶ F.cubeComplex.X r}
     (h : ∀ S, f ≫ F.cubeComplexπ S = g ≫ F.cubeComplexπ S) : f = g :=
   biproduct.hom_ext _ _ h
+
+/-- A term of the signed totalization vanishes exactly when all vertices of that height vanish. -/
+lemma isZero_cubeComplex_X_iff (r : ℤ) :
+    IsZero (F.cubeComplex.X r) ↔
+      ∀ S : {S : Finset ι // (#S : ℤ) = r}, IsZero (F.obj S.1) := by
+  constructor
+  · intro h S
+    rw [IsZero.iff_id_eq_zero, ← F.cubeComplexι_π_self S,
+      h.eq_zero_of_tgt (F.cubeComplexι S), zero_comp]
+  · intro h
+    rw [IsZero.iff_id_eq_zero]
+    exact F.cubeComplex_hom_ext fun S ↦ (h S).eq_of_src _ _
 
 /-- The cube differential on the vertex `F(S)` of height `r` is the sum, over the indices `a ∉ S`,
 of the edge map `F(S) ⟶ F(S ∪ {a})` with sign `(-1)` to the number of elements of `S` below
@@ -250,6 +305,63 @@ lemma ι_cubeComplex_d {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
     dite_eq_left (by rw [card_insert_of_notMem (mem_compl.1 a.2), Nat.cast_succ, S.2])]
   -- `cubeComplexι` is the biproduct inclusion.
   rfl
+
+/-- The cube differential into the vertex `F(T)` of height `r + 1` is the sum, over the indices
+`a ∈ T`, of the projection onto the vertex `F(T \ {a})` followed by the edge map
+`F(T \ {a}) ⟶ F(T)`, with sign `(-1)` to the number of elements of `T \ {a}` below `a`. -/
+@[reassoc]
+lemma cubeComplex_d_π {r : ℤ} (T : {T : Finset ι // (#T : ℤ) = r + 1}) :
+    F.cubeComplex.d r (r + 1) ≫ F.cubeComplexπ T =
+      ∑ a : T.1, ((-1 : ℤ) ^ #{b ∈ T.1.erase a.1 | b < a.1}) •
+        F.cubeComplexπ ⟨T.1.erase a.1, by have := card_erase_add_one a.2; have := T.2; omega⟩ ≫
+          F.map (homOfLE (T.1.erase_subset a.1)) := by
+  refine F.cubeComplex_hom_ext fun U ↦ ?_
+  rw [F.ι_cubeComplex_d_assoc, Preadditive.sum_comp, Preadditive.comp_sum]
+  simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc]
+  by_cases hU : ∃ c ∉ U.1, insert c U.1 = T.1
+  · obtain ⟨c, hc, hT⟩ := hU
+    have hcT : c ∈ T.1 := hT ▸ mem_insert_self c U.1
+    have hU' : T.1.erase c = U.1 := hT ▸ erase_insert hc
+    rw [Finset.sum_eq_single_of_mem (⟨c, mem_compl.2 hc⟩ : (U.1ᶜ : Finset ι)) (mem_univ _) ?hL,
+      Finset.sum_eq_single_of_mem (⟨c, hcT⟩ : T.1) (mem_univ _) ?hR]
+    case hL =>
+      rintro ⟨a, ha⟩ - hac
+      rw [F.cubeComplexι_π_of_ne, comp_zero, smul_zero]
+      intro h
+      have ha' : a ∈ T.1 := congrArg Subtype.val h ▸ mem_insert_self a U.1
+      rw [← hT] at ha'
+      exact hac (Subtype.ext ((mem_insert.1 ha').resolve_right (mem_compl.1 ha)))
+    case hR =>
+      rintro ⟨a, ha⟩ - hac
+      rw [F.cubeComplexι_π_of_ne_assoc, zero_comp, smul_zero]
+      intro h
+      have hU : U.1 = T.1.erase a := congrArg Subtype.val h
+      have haU : a ∈ U.1 := by
+        rw [← hT] at ha
+        exact (mem_insert.1 ha).resolve_left fun h ↦ hac (Subtype.ext h)
+      exact notMem_erase a T.1 (hU ▸ haU)
+    -- Both sides are the edge map `F(U) ⟶ F(T)` with the same sign.
+    have key {s : ℤ} (V W : {S : Finset ι // (#S : ℤ) = s}) (h : V.1 = W.1) :
+        F.cubeComplexι V ≫ F.cubeComplexπ W = F.map (eqToHom h) := by
+      obtain ⟨V, hV⟩ := V
+      obtain ⟨W, hW⟩ := W
+      dsimp only at h
+      subst h
+      simp
+    have hs : #{b ∈ T.1.erase c | b < c} = #{b ∈ U.1 | b < c} := by rw [hU']
+    dsimp only
+    rw [hs, key _ T hT, reassoc_of% (key U _ hU'.symm), ← F.map_comp, ← F.map_comp]
+    exact congrArg (fun f ↦ ((-1 : ℤ) ^ #{b ∈ U.1 | b < c}) • F.map f) (Subsingleton.elim _ _)
+  · push Not at hU
+    rw [Finset.sum_eq_zero, Finset.sum_eq_zero]
+    · rintro ⟨a, ha⟩ -
+      rw [F.cubeComplexι_π_of_ne_assoc, zero_comp, smul_zero]
+      intro h
+      have hU' : U.1 = T.1.erase a := congrArg Subtype.val h
+      exact hU a (hU' ▸ notMem_erase a T.1) (by rw [hU', insert_erase ha])
+    · rintro ⟨a, ha⟩ -
+      rw [F.cubeComplexι_π_of_ne, comp_zero, smul_zero]
+      exact fun h ↦ hU a (mem_compl.1 ha) (congrArg Subtype.val h)
 
 /-- The cube complex vanishes in negative degrees. -/
 lemma isZero_cubeComplex_X_of_neg {r : ℤ} (hr : r < 0) : IsZero (F.cubeComplex.X r) := by

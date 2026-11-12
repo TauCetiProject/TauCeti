@@ -28,7 +28,11 @@ exactly on the boundary (`TauCeti.cubeRadius_eq_one_iff`). Radial rescaling by a
 `TauCeti.cubeScale`, defined with `Set.projIcc` so that it is total and jointly continuous, and
 it multiplies the radius by `s` as long as the result still fits in the cube
 (`TauCeti.cubeRadius_cubeScale`). In particular a point of radius `r > 0` is scaled by `1 / r`
-onto the boundary, which is what makes the collar constructions glue continuously.
+onto the boundary, which is what makes the collar constructions glue continuously. Pushing up
+and then rescaling also contracts the open box `{1} × I^N ∪ I × ∂I^N` of `I × I^N` onto the
+centre of its top face (`TauCeti.openBoxContraction`), for any index type, and moving the top
+face along straight lines contracts it onto any point of its top face
+(`TauCeti.openBoxContractionTo`).
 
 The radius is also the sup norm of the image of a cube point under the affine homeomorphism
 `TauCeti.cubeHomeomorphClosedBall` of the cube onto the closed unit ball of `N → ℝ`
@@ -45,6 +49,11 @@ splitting off the first coordinate identifies the closed unit ball with the cube
   with equality exactly on `Cube.boundary N`.
 * `TauCeti.cubeScale`: radial rescaling of a cube point, and `TauCeti.cubeRadius_cubeScale`: it
   scales the radius.
+* `TauCeti.openBoxContraction`: the contraction of the open box of `I × I^N` onto the centre of
+  its top face, which keeps the open box inside itself (`TauCeti.openBoxContraction_mem_openBox`).
+* `TauCeti.openBoxContractionTo`: the contraction of the open box onto an arbitrary point `(1, c)`
+  of its top face, which keeps each face `t j = c j` of the cube inside itself
+  (`TauCeti.openBoxContractionTo_update`).
 * `TauCeti.norm_cubeHomeomorphClosedBall_eq_one_iff`: the cube homeomorphism onto the closed unit
   ball of the sup norm carries `Cube.boundary N` onto the unit sphere.
 * `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
@@ -93,6 +102,125 @@ theorem cubeScale_one (z : I^N) : cubeScale 1 z = z := by
   simp only [cubeScale]
   rw [Set.coe_projIcc, max_eq_right (by simp; linarith), min_eq_right (by linarith)]
   ring
+
+/-- Rescaling by `0` collapses the cube onto its centre. -/
+@[simp]
+theorem cubeScale_zero (z : I^N) : cubeScale 0 z = cubeCenter := by
+  funext i
+  apply Subtype.ext
+  simp only [cubeScale, cubeCenter, mul_zero, add_zero]
+  rw [Set.coe_projIcc]
+  norm_num
+
+/-! ### Contracting the open box -/
+
+/-- The contraction of the open box `{1} × I^N ∪ I × ∂I^N` of the cube `I × I^N` to the centre
+`(1, c)` of its top face: up to time `1 / 2` it pushes every point up to the top face, and after
+that it shrinks the top face onto its centre. -/
+def openBoxContraction (t : I) (z : I × I^N) : I × I^N :=
+  (Set.projIcc 0 1 zero_le_one ((z.1 : ℝ) + 2 * t), cubeScale (min 1 (2 - 2 * (t : ℝ))) z.2)
+
+/-- The contraction of the open box is jointly continuous in time and space. -/
+theorem continuous_openBoxContraction :
+    Continuous fun q : I × (I × I^N) ↦ openBoxContraction q.1 q.2 :=
+  (continuous_projIcc.comp' (by fun_prop)).prodMk (continuous_cubeScale.comp
+    ((continuous_const.min (continuous_const.sub (continuous_const.mul
+      (continuous_subtype_val.comp continuous_fst)))).prodMk (continuous_snd.comp continuous_snd)))
+
+/-- At time `0` the contraction of the open box is the identity. -/
+@[simp]
+theorem openBoxContraction_zero (z : I × I^N) : openBoxContraction 0 z = z := by
+  ext1
+  · simp [openBoxContraction]
+  · norm_num [openBoxContraction]
+
+/-- At time `1` the contraction of the open box is constant at the centre of the top face. -/
+@[simp]
+theorem openBoxContraction_one (z : I × I^N) :
+    openBoxContraction 1 z = (1, cubeCenter) := by
+  ext1
+  · exact projIcc_eq_one.2 (by simp; linarith [z.1.2.1])
+  · norm_num [openBoxContraction]
+
+/-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside itself. -/
+theorem openBoxContraction_mem_openBox {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
+    (t : I) : (openBoxContraction t z).1 = 1 ∨ (openBoxContraction t z).2 ∈ Cube.boundary N := by
+  by_cases ht : (t : ℝ) ≤ 1 / 2
+  · rcases hz with hz | hz
+    · exact .inl (projIcc_eq_one.2 (by simp [hz]; linarith [t.2.1]))
+    · exact .inr (by rwa [openBoxContraction, min_eq_left (by linarith), cubeScale_one])
+  · exact .inl (projIcc_eq_one.2 (by linarith [z.1.2.1]))
+
+/-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside the boundary of the cube. -/
+theorem openBoxContraction_mem_prodBoundary {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
+    (t : I) : openBoxContraction t z ∈ Cube.prodBoundary N :=
+  Cube.mk_mem_prodBoundary (openBoxContraction_mem_openBox hz t)
+
+/-- The contraction of the open box `{1} × I^N ∪ I × ∂I^N` of `I × I^N` onto the point `(1, c)` of
+its top face: up to time `1 / 2` it pushes every point up to the top face, and after that it moves
+the top face along straight lines onto `c`. Unlike `TauCeti.openBoxContraction`, which aims at the
+centre of the top face, it keeps each face `t j = c j` of the cube through `(1, c)` inside
+itself (`TauCeti.openBoxContractionTo_update`), which is what lets the deformations of two maps
+sharing such a face be glued. -/
+def openBoxContractionTo (c : I^N) (t : I) (w : I × I^N) : I × I^N :=
+  (Set.projIcc 0 1 zero_le_one ((w.1 : ℝ) + 2 * t),
+    fun i ↦ Set.projIcc 0 1 zero_le_one ((w.2 i : ℝ) + max 0 (2 * (t : ℝ) - 1) * (c i - w.2 i)))
+
+/-- The contraction of the open box onto `(1, c)` is jointly continuous in time and space. -/
+theorem continuous_openBoxContractionTo (c : I^N) :
+    Continuous fun q : I × (I × I^N) ↦ openBoxContractionTo c q.1 q.2 :=
+  (continuous_projIcc.comp (by fun_prop)).prodMk
+    (continuous_pi fun _ ↦ continuous_projIcc.comp (by fun_prop))
+
+/-- At time `0` the contraction of the open box onto `(1, c)` is the identity. -/
+@[simp]
+theorem openBoxContractionTo_zero (c : I^N) (w : I × I^N) :
+    openBoxContractionTo c 0 w = w := by
+  ext1
+  · simp [openBoxContractionTo]
+  · funext i
+    simp [openBoxContractionTo]
+
+/-- At time `1` the contraction of the open box onto `(1, c)` is constant at `(1, c)`. -/
+@[simp]
+theorem openBoxContractionTo_one (c : I^N) (w : I × I^N) :
+    openBoxContractionTo c 1 w = (1, c) := by
+  ext1
+  · exact projIcc_eq_one.2 (by simp; linarith [w.1.2.1])
+  · funext i
+    simp only [openBoxContractionTo, Set.Icc.coe_one]
+    rw [show (w.2 i : ℝ) + max 0 (2 * 1 - 1) * (c i - w.2 i) = c i by norm_num, Set.projIcc_val]
+
+/-- The contraction onto `(1, c)` keeps the open box `{1} × I^N ∪ I × ∂I^N` inside the boundary of
+the cube. -/
+theorem openBoxContractionTo_mem_prodBoundary (c : I^N) {w : I × I^N}
+    (hw : w.1 = 1 ∨ w.2 ∈ Cube.boundary N) (t : I) :
+    openBoxContractionTo c t w ∈ Cube.prodBoundary N := by
+  refine Cube.mk_mem_prodBoundary ?_
+  by_cases ht : (t : ℝ) ≤ 1 / 2
+  · rcases hw with hw | hw
+    · exact .inl (projIcc_eq_one.2 (by simp [hw]; linarith [t.2.1]))
+    · refine .inr ?_
+      have : max (0 : ℝ) (2 * t - 1) = 0 := max_eq_left (by linarith)
+      simpa [openBoxContractionTo, this] using hw
+  · exact .inl (projIcc_eq_one.2 (by linarith [w.1.2.1]))
+
+/-- The contraction onto `(1, c)` keeps the face `t j = c j` inside itself, acting there as the
+contraction onto any point with the same coordinates outside `j`. -/
+theorem openBoxContractionTo_update [DecidableEq N] (c : I^N) (j : N) (e : I) (t : I)
+    (s : I) (z : I^N) :
+    openBoxContractionTo (Function.update c j e) t (s, Function.update z j e) =
+      ((openBoxContractionTo c t (s, z)).1,
+        Function.update (openBoxContractionTo c t (s, z)).2 j e) := by
+  ext1
+  · rfl
+  · funext i
+    by_cases hij : i = j
+    · subst hij
+      simp [openBoxContractionTo]
+    · simp [openBoxContractionTo, Function.update_of_ne hij]
+
+/-! ### The `sup` radius -/
 
 variable [Fintype N]
 

@@ -107,44 +107,22 @@ variable {A : Type*} [CommRing A] [Algebra ℚ A]
 theorem derivative_subst_exp_sub_one (F : A⟦X⟧) :
     d⁄dX (F.subst (exp A - 1)) = (mahlerDerivation A F).subst (exp A - 1) := by
   have h := HasSubst.exp_sub_one (A := A)
-  have hderiv : d⁄dX (exp A - 1) = 1 + (exp A - 1) := by
-    simp only [map_sub, derivative_exp, derivative_one, sub_zero, add_sub_cancel]
-  calc
-    d⁄dX (F.subst (exp A - 1)) =
-        (d⁄dX F).subst (exp A - 1) * d⁄dX (exp A - 1) := derivative_subst h
-    _ = (1 + (exp A - 1)) * (d⁄dX F).subst (exp A - 1) := by
-      rw [hderiv, mul_comm]
-    _ = ((1 + X) * d⁄dX F).subst (exp A - 1) := by
-      rw [subst_mul h, subst_add h, subst_X h, ← coe_substAlgHom h, map_one]
-    _ = (mahlerDerivation A F).subst (exp A - 1) := by
-      rw [mahlerDerivation_apply]
+  rw [mahlerDerivation_apply]
+  apply derivative_subst_of_derivative_eq_subst h
+  rw [subst_add h, subst_X h, ← coe_substAlgHom h, map_one]
+  simp only [map_sub, derivative_exp, derivative_one, sub_zero, add_sub_cancel]
 
 /-- The iterated form of `derivative_subst_exp_sub_one`. -/
 theorem iterate_derivative_subst_exp_sub_one (F : A⟦X⟧) (k : ℕ) :
     d⁄dX^[k] (F.subst (exp A - 1)) = ((mahlerDerivation A)^[k] F).subst (exp A - 1) := by
-  induction k generalizing F with
-  | zero => rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply, Function.iterate_succ_apply, derivative_subst_exp_sub_one,
-      ih]
+  exact iterate_derivative_subst derivative_subst_exp_sub_one F k
 
 /-- The constant coefficient of `∂ ^ k F` is `k !` times the `k`-th coefficient of
 `F (exp X - 1)`. -/
 theorem constantCoeff_iterate_mahlerDerivation (F : A⟦X⟧) (k : ℕ) :
     constantCoeff ((mahlerDerivation A)^[k] F) = k.factorial * coeff k (F.subst (exp A - 1)) := by
-  have h0 : constantCoeff (exp A - 1) = 0 := by simp [constantCoeff_exp]
-  have hsubst :
-      constantCoeff (((mahlerDerivation A)^[k] F).subst (exp A - 1)) =
-        constantCoeff ((mahlerDerivation A)^[k] F) := by
-    rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero h0,
-      Algebra.algebraMap_self, RingHom.id_apply]
-  calc
-    constantCoeff ((mahlerDerivation A)^[k] F) =
-        constantCoeff (((mahlerDerivation A)^[k] F).subst (exp A - 1)) := hsubst.symm
-    _ = constantCoeff (d⁄dX^[k] (F.subst (exp A - 1))) := by
-      rw [iterate_derivative_subst_exp_sub_one]
-    _ = k.factorial * coeff k (F.subst (exp A - 1)) :=
-      constantCoeff_iterate_derivative _ _
+  exact constantCoeff_iterate_of_derivative_subst (by simp [constantCoeff_exp])
+    derivative_subst_exp_sub_one F k
 
 end Exp
 

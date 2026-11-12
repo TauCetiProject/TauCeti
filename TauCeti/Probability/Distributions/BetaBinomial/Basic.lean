@@ -146,7 +146,7 @@ theorem betaBinomialMeasure_eq_sum_dirac {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (
   let _ := isProbabilityMeasure_betaBinomialMeasure ha hb n
   apply Measure.ext_of_singleton
   intro k
-  rw [betaBinomialMeasure_singleton ha hb, Measure.finsetSum_apply]
+  rw [betaBinomialMeasure_singleton ha hb, _root_.sum_apply]
   by_cases hk : k ≤ n
   · rw [Finset.sum_eq_single k]
     · simp
@@ -185,6 +185,16 @@ theorem betaBinomialMeasure_singleton_ne_zero_iff {a b : ℝ} (ha : 0 < a) (hb :
     simpa only [Nat.cast_sub hkn] using
       div_pos (mul_pos hchoose hbetaNum) (beta_pos ha hb)
 
+/-- Beta-binomial counts are almost surely at most the trial count, including the zero laws
+at invalid shape parameters. -/
+theorem ae_le_betaBinomialMeasure (n : ℕ) (a b : ℝ) :
+    ∀ᵐ k ∂betaBinomialMeasure n a b, k ≤ n := by
+  by_cases h : 0 < a ∧ 0 < b
+  · exact ae_iff_of_countable.mpr fun k hk ↦
+      (betaBinomialMeasure_singleton_ne_zero_iff h.1 h.2 n k).mp hk
+  · rw [betaBinomialMeasure_eq_zero_of_invalid h, ae_zero]
+    exact Filter.eventually_bot
+
 /-- With zero trials, every valid beta-binomial law is concentrated at zero. -/
 @[simp]
 theorem betaBinomialMeasure_zero_trials {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
@@ -202,7 +212,7 @@ theorem betaBinomialMeasure_zero_trials {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
 
 /-- Every function on the native carrier is integrable against a beta-binomial law.
 This also includes invalid shapes, for which the law is zero. -/
-theorem integrable_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
+theorem integrable_betaBinomialMeasure {E : Type*} [SeminormedAddGroup E]
     (f : ℕ → E) (n : ℕ) (a b : ℝ) : Integrable f (betaBinomialMeasure n a b) := by
   by_cases h : 0 < a ∧ 0 < b
   · rw [betaBinomialMeasure_eq_sum_dirac h.1 h.2]
@@ -211,7 +221,7 @@ theorem integrable_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
   · simp [betaBinomialMeasure_eq_zero_of_invalid h]
 
 /-- Every function is integrable against the real cast of a beta-binomial law. -/
-theorem integrable_map_cast_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
+theorem integrable_map_cast_betaBinomialMeasure {E : Type*} [SeminormedAddGroup E]
     (f : ℝ → E) (n : ℕ) (a b : ℝ) :
     Integrable f ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ)) := by
   rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]

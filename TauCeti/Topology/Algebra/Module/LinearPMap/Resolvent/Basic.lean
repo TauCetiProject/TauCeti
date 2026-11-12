@@ -22,12 +22,15 @@ Over a noncommutative ring, the scalar expression `x ↦ lambda • x - A x` nee
 The predicate still requires its inverse to be linear over the full scalar ring; a parameter
 whose shift is not linear therefore does not belong to the resolvent set.
 
-This file gives the graph characterization, the two inverse identities, and the fact that an
-operator has no proper extension sharing a resolvent point. The pointwise resolvent identity
-holds over rings, and resolvents commute over division rings. For topological additive groups, an
-invertible continuous linear perturbation gives another resolvent. Over commutative rings
-with continuous scalar multiplication by constants, the resolvent of an everywhere defined
-continuous linear operator agrees with Mathlib's algebraic resolvent.
+This file gives the graph characterization, the two inverse identities, the fact that a point of
+the resolvent set is not an eigenvalue, and the fact that an operator has no proper extension
+sharing a resolvent point. The pointwise resolvent identity
+holds over rings. Over division rings resolvents commute, and the resolvent at `lambda` acts on
+an eigenvector for the eigenvalue `c` as multiplication by `(lambda - c)⁻¹`. For topological
+additive groups, an invertible continuous linear perturbation gives another resolvent. Over
+commutative rings with continuous scalar multiplication by constants, the resolvent of an
+everywhere defined continuous linear operator agrees with Mathlib's algebraic resolvent, and their
+spectra agree.
 
 On normed spaces over nontrivially normed fields the continuous linear inverse is bounded;
 Neumann perturbations and openness of the resolvent set are developed in
@@ -135,6 +138,15 @@ theorem mem_resolventSet_iff :
     lambda ∈ resolventSet A ↔ ∃ R : X →L[𝕜] X, IsResolventAt A lambda R :=
   Iff.rfl
 
+/-- The spectrum of a partial linear map consists of the scalars whose shifts do not admit
+continuous linear two-sided inverses. -/
+def spectrum (A : X →ₗ.[𝕜] X) : Set 𝕜 := A.resolventSetᶜ
+
+/-- Membership in the partial-operator spectrum is failure of resolvent membership. -/
+@[simp]
+theorem mem_spectrum_iff (A : X →ₗ.[𝕜] X) (z : 𝕜) :
+    z ∈ A.spectrum ↔ z ∉ A.resolventSet := (Iff.rfl)
+
 /-- Exhibiting an inverse puts `lambda` in the resolvent set. -/
 theorem IsResolventAt.mem_resolventSet (h : IsResolventAt A lambda R) :
     lambda ∈ resolventSet A :=
@@ -194,6 +206,12 @@ theorem smul_sub_apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
 theorem smul_sub_bijective (h : lambda ∈ resolventSet A) :
     Function.Bijective fun x : A.domain => lambda • (x : X) - A x :=
   (isResolventAt_resolvent h).smul_sub_bijective
+
+/-- A point of the resolvent set is not an eigenvalue: `A x = lambda • x` forces `x = 0`. -/
+theorem eq_zero_of_apply_eq_smul (h : lambda ∈ resolventSet A) (x : A.domain)
+    (hx : A x = lambda • (x : X)) : x = 0 :=
+  Subtype.ext <| by rw [ZeroMemClass.coe_zero, ← resolvent_smul_sub_apply h x, hx, sub_self,
+    ContinuousLinearMap.map_zero]
 
 /-- **An operator has no proper extension sharing a resolvent point.** If `A ≤ B` and some
 `lambda` lies in the resolvent set of both, then `A = B`.
@@ -297,6 +315,21 @@ theorem resolvent_comm (hl : lambda ∈ A.resolventSet) (hm : mu ∈ A.resolvent
     have h4 := congrArg (fun x : X => (mu - lambda)⁻¹ • x) h3
     simpa only [ContinuousLinearMap.comp_apply, smul_smul, inv_mul_cancel₀ hsub, one_smul]
       using h4
+
+/-- The resolvent acts on an eigenvector of `A` for the eigenvalue `c` as multiplication by
+`(lambda - c)⁻¹`. For `c = lambda` both sides vanish: a point of the resolvent set is not an
+eigenvalue, so the eigenvector is zero. -/
+theorem resolvent_apply_of_apply_eq_smul (h : lambda ∈ A.resolventSet) {c : 𝕜} (x : A.domain)
+    (hx : A x = c • (x : X)) : A.resolvent lambda x = (lambda - c)⁻¹ • (x : X) := by
+  rcases eq_or_ne (lambda - c) 0 with hc | hc
+  · rw [← sub_eq_zero.1 hc] at hx
+    rw [eq_zero_of_apply_eq_smul h x hx, ZeroMemClass.coe_zero, ContinuousLinearMap.map_zero,
+      smul_zero]
+  · have hx' : (lambda - c) • A.resolvent lambda x = x := by
+      rw [← ContinuousLinearMap.map_smul, sub_smul, ← hx, resolvent_smul_sub_apply h]
+    calc A.resolvent lambda x = (lambda - c)⁻¹ • ((lambda - c) • A.resolvent lambda x) :=
+          (inv_smul_smul₀ hc _).symm
+      _ = (lambda - c)⁻¹ • (x : X) := by rw [hx']
 
 end DivisionRing
 
@@ -407,6 +440,15 @@ theorem _root_.ContinuousLinearMap.mem_resolventSet_toPMap_top_iff
     ⟨fun ⟨_, hR⟩ => hR.isUnit_toPMap_top,
       fun h => ⟨_, h.isResolventAt_toPMap_top⟩⟩
 
+/-- For a continuous linear operator on the full domain, the partial-operator spectrum agrees
+with Mathlib's algebraic spectrum in `X →L[𝕜] X`. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.spectrum_toPMap_top (T : X →L[𝕜] X) :
+    (T.toLinearMap.toPMap ⊤).spectrum = _root_.spectrum 𝕜 T := by
+  ext z
+  simp only [mem_spectrum_iff, ContinuousLinearMap.mem_resolventSet_toPMap_top_iff,
+    _root_.spectrum.mem_iff, _root_.spectrum.mem_resolventSet_iff]
+
 /-- **The continuous-operator bridge, value half.** For a continuous linear operator, the
 partial-map resolvent is Mathlib's algebraic resolvent. -/
 @[simp]
@@ -420,20 +462,5 @@ theorem _root_.ContinuousLinearMap.resolvent_toPMap_top
 end ContinuousOperator
 
 end LinearPMap
-
-namespace TauCeti
-
-variable {𝕜 E : Type*} [Ring 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
-
-/-- The spectrum of a partial linear map consists of the scalars whose shifts do not admit
-continuous linear two-sided inverses. -/
-def _root_.LinearPMap.spectrum (A : E →ₗ.[𝕜] E) : Set 𝕜 := A.resolventSetᶜ
-
-/-- Membership in the partial-operator spectrum is failure of resolvent membership. -/
-@[simp]
-theorem _root_.LinearPMap.mem_spectrum_iff (A : E →ₗ.[𝕜] E) (z : 𝕜) :
-    z ∈ A.spectrum ↔ z ∉ A.resolventSet := (Iff.rfl)
-
-end TauCeti
 
 end

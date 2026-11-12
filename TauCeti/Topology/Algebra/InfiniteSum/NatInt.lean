@@ -5,15 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
+public import TauCeti.Topology.Algebra.InfiniteSum.Constructions
 
 /-!
 # Reindexing infinite sums between the integers and natural numbers
 
 This file supplements Mathlib's results on infinite sums over `ℕ` and `ℤ` with a reindexing
-lemma for an integer-indexed family whose support is bounded below, and with the splitting of a
-summable integer-indexed family into its residue classes modulo `M`.
+lemma for an integer-indexed family whose support is bounded below, with the splitting of a
+summable integer-indexed family into its residue classes modulo `M`, and with the grouping of an
+integer-indexed sum, or of a product or sum indexed by the natural numbers, into blocks of `M`
+consecutive terms.
 
 ## Main results
 
@@ -22,6 +26,13 @@ summable integer-indexed family into its residue classes modulo `M`.
   their sum.
 * `TauCeti.tsum_int_eq_sum_fin_tsum`: a summable family on `ℤ` sums to the sum over the residues
   `r < M` of its sums over the classes `qM + r`.
+* `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
+  `qM + r`, `r < M`.
+* `HasSum.sum_zmod_val_sub`: the same, with the blocks `a - N y` indexed by the least
+  nonnegative representatives `a` of the residues modulo `N`.
+* `HasProd.prod_fin_mul_add_nat`, `HasSum.sum_fin_mul_add_nat`: the grouping of
+  `HasSum.sum_fin_mul_add` into blocks `qM + r`, `r < M`, for a product or sum over the natural
+  numbers.
 -/
 
 public section
@@ -75,3 +86,37 @@ theorem tsum_int_eq_sum_fin_tsum {E : Type*} [AddCommGroup E] [UniformSpace E]
   simpa [NeZero.ne M] using h
 
 end TauCeti
+
+/-- **A sum over the integers grouped into blocks of `M` consecutive terms**: if `f` has sum `s`,
+then so does the family of block sums `q ↦ ∑_{r < M} f (q * M + r)`. -/
+theorem HasSum.sum_fin_mul_add {E : Type*} [AddCommMonoid E] [TopologicalSpace E]
+    {f : ℤ → E} {s : E} (hf : HasSum f s) (M : ℕ)
+    [NeZero M] : HasSum (fun q : ℤ ↦ ∑ r : Fin M, f (q * M + r)) s := by
+  simpa [Function.comp_def] using
+    ((Int.divModEquiv M).symm.hasSum_iff.mpr hf).sum_fiberwise_of_fintype
+
+/-- **A product over the natural numbers grouped into blocks of `M` consecutive factors**: if `f`
+has product `a`, then so does the family of block products `n ↦ ∏_{r < M} f (n * M + r)`. -/
+@[to_additive /-- **A sum over the natural numbers grouped into blocks of `M` consecutive terms**:
+if `f` has sum `s`, then so does the family of block sums `n ↦ ∑_{r < M} f (n * M + r)`. -/]
+theorem HasProd.prod_fin_mul_add_nat {E : Type*} [CommMonoid E] [TopologicalSpace E]
+    {f : ℕ → E} {a : E} (hf : HasProd f a) (M : ℕ)
+    [NeZero M] : HasProd (fun n : ℕ ↦ ∏ r : Fin M, f (n * M + r)) a := by
+  simpa [Function.comp_def] using
+    ((Nat.divModEquiv M).symm.hasProd_iff.mpr hf).prod_fiberwise_of_fintype
+
+/-- **A sum over the integers grouped into blocks of `N` consecutive terms**: if `f` has sum `s`,
+then so does the family of block sums `y ↦ ∑_a f (a - N y)`, where `a` runs over the least
+nonnegative representatives of the residues modulo `N`. -/
+theorem HasSum.sum_zmod_val_sub {E : Type*} [AddCommMonoid E] [TopologicalSpace E]
+    {f : ℤ → E} {s : E} (hf : HasSum f s) (N : ℕ)
+    [NeZero N] : HasSum (fun y : ℤ ↦ ∑ a : ZMod N, f ((a.val : ℤ) - N * y)) s := by
+  have hbij : Function.Bijective fun r : Fin N ↦ ((r : ℕ) : ZMod N) :=
+    (Fintype.bijective_iff_surjective_and_card _).mpr
+      ⟨fun j ↦ ⟨⟨j.val, j.val_lt⟩, by simp⟩, by simp [ZMod.card]⟩
+  refine ((Equiv.neg ℤ).hasSum_iff.mpr (hf.sum_fin_mul_add N)).congr_fun fun y ↦ ?_
+  rw [Function.comp_apply, Equiv.neg_apply,
+    ← Fintype.sum_bijective _ hbij (fun r : Fin N ↦ _) _ fun _ ↦ rfl]
+  refine Finset.sum_congr rfl fun r _ ↦ ?_
+  rw [ZMod.val_cast_of_lt r.isLt]
+  rw [sub_eq_neg_add, neg_mul, mul_comm]

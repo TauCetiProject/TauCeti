@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
+import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # The geometric degree of an extension of function fields
@@ -47,10 +49,18 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
 
 ## Main results
 
+* `IntermediateField.constantCompositum_toSubfield`: adjoining constants to an intermediate
+  field gives the same subfield as adjoining its image to the constants.
+* `TauCeti.constantCompositum_adjoin_simple_toSubfield`: extending the constants of `k(t)`
+  gives `K(t)` as a subfield of the ambient field.
 * `TauCeti.constantCompositum_eq_top_iff`: an intermediate field into which `k'` maps is generated
   over `F` by the image of `k'` exactly when it is the compositum `F · k'`.
+* `TauCeti.constantCompositum_eq_top_iff_of_range_eq`: the compositum `F · k'` depends only on
+  the image of `F` in `F'`.
 * `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
   intermediate field `E` of `F' / F`.
+* `TauCeti.constantCompositum_eq_top_of_adjoin_eq_top`: `F'` is the compositum `F · k'` as soon
+  as the image of `F` generates `F'` over a field `k'`.
 * `TauCeti.finrank_constantCompositum_mul_geometricDegree`: the tower law
   `[F·k' : F] · n(F'/F) = [F' : F]`.
 * `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`:
@@ -60,8 +70,8 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   the whole degree as soon as the compositum is trivial, however that is established.
 * `TauCeti.geometricDegree_eq_finrank`: the geometric degree is the whole degree when the
   constants of `F'` already lie in `F`.
-* `TauCeti.geometricDegree_eq_one_of_constantCompositum_eq_top`: the geometric degree is one when
-  `F'` is the compositum `F · k'`.
+* `TauCeti.geometricDegree_eq_one_iff`: the geometric degree is one exactly when `F'` is the
+  compositum `F · k'`.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
   separable constant field extension over an exact constant field.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
@@ -137,6 +147,21 @@ theorem constantCompositum_le_iff {K : IntermediateField F F'} :
     constantCompositum F k' F' ≤ K ↔ ∀ c : k', algebraMap k' F' c ∈ K := by
   simp [constantCompositum_def, IntermediateField.adjoin_le_iff, Set.range_subset_iff]
 
+/-- **The compositum depends only on the image of the lower field**: if fields `E` and `F` have
+the same image in `F'`, then `E · k'` and `F · k'` are the same subfield of `F'`. -/
+theorem constantCompositum_toSubfield_eq_of_range_eq {E : Type*} [Field E] [Algebra E F']
+    (h : (algebraMap E F').range = (algebraMap F F').range) :
+    (constantCompositum E k' F').toSubfield = (constantCompositum F k' F').toSubfield := by
+  simp only [constantCompositum_def, adjoin_toSubfield, ← RingHom.coe_range, h]
+
+/-- If fields `E` and `F` have the same image in `F'`, then `F' = E · k'` exactly when
+`F' = F · k'`. -/
+theorem constantCompositum_eq_top_iff_of_range_eq {E : Type*} [Field E] [Algebra E F']
+    (h : (algebraMap E F').range = (algebraMap F F').range) :
+    constantCompositum E k' F' = ⊤ ↔ constantCompositum F k' F' = ⊤ := by
+  rw [← toSubfield_inj, ← toSubfield_inj, top_toSubfield, top_toSubfield,
+    constantCompositum_toSubfield_eq_of_range_eq F k' F' h]
+
 /-- **The compositum commutes with passing to an intermediate field**: if `k'` maps into an
 intermediate field `E` of `F' / F` compatibly with `F'`, the compositum `F · k'` formed inside `E`
 is carried by the inclusion `E → F'` onto the compositum formed inside `F'`. -/
@@ -210,8 +235,9 @@ theorem finrank_constantCompositum_mul_geometricDegree :
   rw [geometricDegree_def]
   exact Module.finrank_mul_finrank ..
 
-/-- The geometric degree of a finite extension is positive. -/
-theorem geometricDegree_pos [FiniteDimensional F F'] : 0 < geometricDegree F k' F' := by
+/-- The geometric degree is positive if the extension over the constant compositum is finite. -/
+theorem geometricDegree_pos [FiniteDimensional (constantCompositum F k' F') F'] :
+    0 < geometricDegree F k' F' := by
   rw [geometricDegree_def]
   exact Module.finrank_pos
 
@@ -223,14 +249,14 @@ theorem geometricDegree_eq_finrank_of_constantCompositum_eq_bot
     geometricDegree F k' F' = Module.finrank F F' := by
   rw [geometricDegree_def, h, IntermediateField.finrank_bot']
 
-/-- **The geometric degree is one when `F'` is the compositum `F · k'`**: nothing is left after
-the image of `k'` has been adjoined.  This is the case of a constant field extension: combined
-with the conorm degree formula `TauCeti.Divisor.degree_conorm`, it is the ingredient that makes
-the conorm along a constant field extension preserve degrees. -/
+/-- **The geometric degree is one exactly when `F'` is the compositum `F · k'`**: nothing is
+left after the image of `k'` has been adjoined. For a constant field extension the compositum
+is all of `F'`; combined with the conorm degree formula `TauCeti.Divisor.degree_conorm`, this
+makes the conorm preserve degrees. -/
 @[simp]
-theorem geometricDegree_eq_one_of_constantCompositum_eq_top
-    (h : constantCompositum F k' F' = ⊤) : geometricDegree F k' F' = 1 := by
-  rw [geometricDegree_def, h, IntermediateField.finrank_top]
+theorem geometricDegree_eq_one_iff :
+    geometricDegree F k' F' = 1 ↔ constantCompositum F k' F' = ⊤ := by
+  rw [geometricDegree_def, IntermediateField.finrank_eq_one_iff_eq_top]
 
 /-! ### When `k'` maps to `F'` through `F` -/
 
@@ -257,6 +283,34 @@ end ConstantsInBase
 
 end Compositum
 
+/-! ### The compositum of an intermediate field with the constants -/
+
+section IntermediateFieldCompositum
+
+open scoped IntermediateField
+
+variable {K : Type*} [Field k] [Field K]
+  [Algebra k K] [Algebra k F] [Algebra k F'] [Algebra K F'] [Algebra F F']
+  [IsScalarTower k K F'] [IsScalarTower k F F']
+
+omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
+/-- The compositum `C · K` is the same subfield of the ambient field whether it is formed
+by adjoining `K` to `C` or by adjoining the image of `C` to `K`. -/
+theorem _root_.IntermediateField.constantCompositum_toSubfield (C : IntermediateField k F) :
+    (constantCompositum C K F').toSubfield =
+      (IntermediateField.adjoin K (Set.range (algebraMap C F'))).toSubfield := by
+  rw [constantCompositum_def, IntermediateField.adjoin_toSubfield,
+    IntermediateField.adjoin_toSubfield, Set.union_comm]
+
+/-- For a simple parameter field `k(t)`, extending constants gives exactly `K(t)`
+as a subfield of the ambient field. -/
+theorem constantCompositum_adjoin_simple_toSubfield (x : F) :
+    (constantCompositum k⟮x⟯ K F').toSubfield = K⟮algebraMap F F' x⟯.toSubfield := by
+  rw [_root_.IntermediateField.constantCompositum_toSubfield,
+    IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
+
+end IntermediateFieldCompositum
+
 /-! ### Generators of the compositum -/
 
 section GeneratedCompositum
@@ -277,11 +331,31 @@ theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
 
 end GeneratedCompositum
 
+/-! ### A compositum generated by the lower field -/
+
+section CompositumOfFields
+
+variable [Field k'] [Algebra k' F'] [Algebra F F'] (F k' F')
+
+/-- **The compositum is everything when `F` generates `F'` over `k'`**: if the image of `F`
+generates `F'` as a field over `k'`, then `F' = F · k'`, because `F · k'` is a subfield containing
+the images of both `F` and `k'`. -/
+theorem constantCompositum_eq_top_of_adjoin_eq_top
+    (h : IntermediateField.adjoin k' (Set.range (algebraMap F F')) = ⊤) :
+    constantCompositum F k' F' = ⊤ := by
+  let L : IntermediateField k' F' := (constantCompositum F k' F').toSubfield.toIntermediateField
+    (algebraMap_mem_constantCompositum F k' F')
+  have hL : L = ⊤ := eq_top_iff.mpr <| h.symm.le.trans <| IntermediateField.adjoin_le_iff.mpr <|
+    Set.range_subset_iff.mpr (constantCompositum F k' F').algebraMap_mem
+  exact eq_top_iff.mpr fun x _ ↦ (hL ▸ IntermediateField.mem_top : x ∈ L)
+
+end CompositumOfFields
+
 /-! ### The constants of the compositum over the original constants -/
 
 section ConstantCompositumAlgebra
 
-variable [CommSemiring k] [CommSemiring k'] [Algebra k k'] [Algebra k F] [Algebra k F']
+variable [CommSemiring k] [CommSemiring k'] [Algebra k k'] [SMul k F] [Algebra k F']
 variable [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 variable (k F k' F')
 
@@ -341,23 +415,42 @@ variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] (F k' F')
 
 /-- **Mathlib's linear disjointness implies the degree hypothesis**: if the constants of `F'` and
 the lower function field `F` are linearly disjoint over `k` in the sense of
-`IntermediateField.LinearDisjoint`, and `k' / k` is algebraic, then adjoining the constants to `F`
-costs exactly `[k' : k]`.
+`IntermediateField.LinearDisjoint`, then adjoining the constants to `F` costs exactly `[k' : k]`
+(both sides are `0` when `k' / k` is infinite).
 
 This is the bridge from Mathlib's predicate to the degree form `[F·k' : F] = [k' : k]` in which the
 hypothesis is carried by
 `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`,
 `TauCeti.finrank_dvd_finrank_of_finrank_constantCompositum_eq` and
 `TauCeti.Divisor.degree_conorm`. -/
-theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint [Algebra.IsAlgebraic k k']
+theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) :
     Module.finrank F (constantCompositum F k' F') = Module.finrank k k' := by
   have e := (IsScalarTower.toAlgHom k k' F').equivFieldRange
-  have halg : Algebra.IsAlgebraic k (IsScalarTower.toAlgHom k k' F').fieldRange := e.isAlgebraic
-  have hrank := H.adjoin_rank_eq_rank_left_of_isAlgebraic (.inl halg)
-  rw [constantCompositum_def, ← IsScalarTower.toAlgHom_fieldRange k k' F',
-    e.toLinearEquiv.finrank_eq]
-  exact congrArg Cardinal.toNat hrank
+  by_cases hk : Algebra.IsAlgebraic k k'
+  · have halg : Algebra.IsAlgebraic k (IsScalarTower.toAlgHom k k' F').fieldRange :=
+      e.isAlgebraic
+    have hrank := H.adjoin_rank_eq_rank_left_of_isAlgebraic (.inl halg)
+    rw [constantCompositum_def, ← IsScalarTower.toAlgHom_fieldRange k k' F',
+      e.toLinearEquiv.finrank_eq]
+    exact congrArg Cardinal.toNat hrank
+  · have hk' : ¬ Module.Finite k k' := fun _ ↦ hk (Algebra.IsAlgebraic.of_finite k k')
+    rw [Module.finrank_of_not_finite hk', Module.finrank_of_not_finite]
+    intro hfin
+    have hrank := Subalgebra.LinearDisjoint.adjoin_rank_eq_rank_left H
+    have hrk := rank_adjoin_eq_rank_adjoin_range (k := k) (F := F) (F' := F')
+      ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')
+    have hle : Module.rank F (Algebra.adjoin F
+        ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')) ≤
+        Module.rank F (constantCompositum F k' F') := by
+      rw [← Subalgebra.rank_toSubmodule]
+      exact Submodule.rank_mono (Subalgebra.toSubmodule.monotone
+        (IntermediateField.algebra_adjoin_le_adjoin F _))
+    have h2 : Module.rank k (IsScalarTower.toAlgHom k k' F').fieldRange ≤
+        Module.rank F (constantCompositum F k' F') :=
+      hrank.symm.le.trans (hrk.symm.le.trans hle)
+    have := Module.rank_lt_aleph0_iff.mp (h2.trans_lt (Module.rank_lt_aleph0_iff.mpr hfin))
+    exact hk' (Module.Finite.equiv e.symm.toLinearEquiv)
 
 /-- **Adjoining a separable constant field extension to the lower function field preserves
 finrank**, provided the constant field downstairs is exact: `[F·k' : F] = [k' : k]`, which for

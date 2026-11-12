@@ -17,7 +17,7 @@ topology is part of the data. Completeness holds for every ideal of definition, 
 is Huber with the whole ring as a ring of definition.
 
 The general continuity criteria in
-`TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology` apply using the chosen finitely
+`TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic` apply using the chosen finitely
 generated ideal from `TauCeti.IsAdicRing.ideal_spec`. They test arbitrary ideals of definition
 and do not require completeness.
 
@@ -66,6 +66,11 @@ variable {A}
 instance (priority := 100) t2Space [IsAdicRing A] : T2Space A := by
   have := (ideal_spec A).2.2
   exact (ideal_spec A).2.1.isHausdorff_iff.mp inferInstance
+
+/-- An adic ring is linearly topologised: the powers of an ideal of definition form a basis of
+neighbourhoods of zero consisting of ideals. -/
+instance (priority := 100) isLinearTopology [IsAdicRing A] : IsLinearTopology A A :=
+  (ideal_spec A).2.1.isLinearTopology
 
 /-- In a nonzero adic ring, the chosen ideal of definition is proper. -/
 theorem ideal_ne_top [Nontrivial A] [IsAdicRing A] : ideal A ≠ ⊤ := by

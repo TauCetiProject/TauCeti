@@ -13,8 +13,11 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 import TauCeti.Analysis.Calculus.SegmentIncrement
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Dilation
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Potential estimates for `C¹` functions
@@ -106,7 +109,8 @@ theorem lintegral_comp_add_smul_sub_mul_ite (μ : Measure E) [μ.IsAddHaarMeasur
   calc
     _ = ∫⁻ y, ENNReal.ofReal t⁻¹ * f (AffineMap.homothety x t y) ∂μ := lintegral_congr hKf
     _ = ENNReal.ofReal t⁻¹ * (ENNReal.ofReal |(t ^ finrank ℝ E)⁻¹| * ∫⁻ w, f w ∂μ) := by
-      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_comp_homothety μ f x ht.ne']
+      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+        Measure.lintegral_comp_homothety μ f x ht.ne']
     _ = _ := by
       rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc,
         ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le)]
@@ -170,8 +174,9 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
       (lintegral_lintegral_swap hLmeas.aemeasurable).symm
     _ ≤ ∫⁻ w, ENNReal.ofReal (D ^ n / n) * (g w * ‖x - w‖ₑ ^ (1 - (n : ℝ))) ∂μ :=
       lintegral_mono fun w => by
-        simpa only [hL_def, ofReal_norm] using
-          setLIntegral_Ioc_rpow_mul_ite_le hn (g w) (norm_nonneg (x - w)) D
+        simpa only [hL_def, ofReal_norm, Real.rpow_natCast] using
+          (lintegral_mono_set Ioc_subset_Ioi_self).trans <| setLIntegral_Ioi_rpow_mul_ite_le
+            (Nat.cast_pos.2 hn) (g w) (norm_nonneg (x - w)) D
     _ = _ := lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
 
 /-- **The integrated oscillation bound.** If `u` is `C¹` on an open set `Ω` which is star-convex
@@ -199,8 +204,6 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
     have h := enorm_sub_le_lintegral_enorm_fderiv_apply (u := u) x (y - x)
       (fun t ht => (hu.differentiableOn one_ne_zero _ (hmem t ht)).differentiableAt
         (hΩ.mem_nhds (hmem t ht)))
-      ((hcont.comp (by fun_prop : Continuous fun t : ℝ => x + t • (y - x)).continuousOn
-        hmem).clm_apply continuousOn_const)
     rw [add_sub_cancel, enorm_sub_rev] at h
     rw [← lintegral_mul_const' _ _ enorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
     refine h.trans (setLIntegral_mono' measurableSet_Icc fun t ht => ?_)
@@ -231,31 +234,14 @@ theorem enorm_sub_setAverage_le_of_starConvex [CompleteSpace F] (hΩ : IsOpen Ω
   have hS_top : μ S ≠ ∞ := ((measure_mono (hS.trans hD)).trans_lt measure_closedBall_lt_top).ne
   have hcore := setLIntegral_enorm_sub_le_of_starConvex (μ := μ) hΩ hu hx hD
   rw [ENNReal.div_eq_inv_mul, mul_assoc]
-  have hmeas : AEStronglyMeasurable (fun y => u x - u y) (μ.restrict S) :=
-    (aestronglyMeasurable_const.sub ((hu.continuousOn.aestronglyMeasurable
-      hΩ.measurableSet).mono_measure (Measure.restrict_mono hS le_rfl)))
-  by_cases hint : ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ = ∞
-  · have htop : ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ = ∞ := top_le_iff.1 (hint ▸ lintegral_mono_set hS)
-    rw [htop, top_le_iff] at hcore
-    rw [hcore, ENNReal.mul_top (ENNReal.inv_ne_zero.2 hS_top)]
-    exact le_top
-  have hdiff : IntegrableOn (fun y => u x - u y) S μ := ⟨hmeas, Ne.lt_top hint⟩
-  have hu_int : IntegrableOn u S μ := by
-    refine ((integrableOn_const (C := u x) hS_top).sub hdiff).congr (ae_of_all _ fun y => ?_)
-    simp
-  have hmean : u x - ⨍ y in S, u y ∂μ = ⨍ y in S, (u x - u y) ∂μ := by
-    rw [setAverage_fun_sub (integrableOn_const (C := u x) hS_top) hu_int,
-      setAverage_const hS₀ hS_top]
+  have hSm : AEStronglyMeasurable u (μ.restrict S) :=
+    (hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).mono_measure
+      (Measure.restrict_mono hS le_rfl)
   calc
-    ‖u x - ⨍ y in S, u y ∂μ‖ₑ = ‖(μ.real S)⁻¹ • ∫ y in S, (u x - u y) ∂μ‖ₑ := by
-      rw [hmean, setAverage_eq]
-    _ ≤ (μ S)⁻¹ * ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ := by
-      rw [enorm_smul]
-      gcongr
-      · rw [Real.enorm_of_nonneg (inv_nonneg.2 measureReal_nonneg), ENNReal.ofReal_inv_of_pos
-          (by rw [measureReal_def]; exact ENNReal.toReal_pos hS₀ hS_top),
-        ofReal_measureReal hS_top]
-      · exact enorm_integral_le_lintegral_enorm _
+    ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤ (μ S)⁻¹ * ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ := by
+      rw [enorm_sub_rev, ← ENNReal.div_eq_inv_mul, ← setLAverage_eq]
+      refine (enorm_setAverage_sub_le_setLAverage hSm hS₀ hS_top (u x)).trans_eq ?_
+      exact congrArg (laverage _) (funext fun y => enorm_sub_rev _ _)
     _ ≤ (μ S)⁻¹ * ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ := by gcongr
     _ ≤ _ := by gcongr
 
@@ -286,8 +272,7 @@ theorem enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow [Nontrivial E] (hu : 
   set ω := μ.real (ball (0 : E) 1)
   set P := ∫⁻ y, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (n : ℝ)) ∂μ
   have hn0 : n ≠ 0 := finrank_pos.ne'
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   obtain ⟨ρ₀, hρ₀⟩ := h2u.isBounded.subset_closedBall x
   set ρ := max ρ₀ 0
   have hρ : 0 ≤ ρ := le_max_right _ _
@@ -325,20 +310,7 @@ theorem enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow [Nontrivial E] (hu : 
     congr 2
     field_simp
   -- Let `D → ∞`.
-  have hlim : Tendsto (fun D : ℝ => D ^ n / (n * ω * (D ^ n - ρ ^ n))) atTop
-      (𝓝 ((n * ω)⁻¹)) := by
-    have h₁ : Tendsto (fun D : ℝ => (ρ / D) ^ n) atTop (𝓝 0) := by
-      have h := ((tendsto_const_nhds (x := ρ)).div_atTop tendsto_id).pow n
-      rwa [zero_pow hn0] at h
-    have h₂ := (tendsto_const_nhds (x := (n * ω)⁻¹)).mul
-      ((tendsto_const_nhds (x := (1 : ℝ)).sub h₁).inv₀ (by norm_num))
-    rw [sub_zero, inv_one, mul_one] at h₂
-    refine h₂.congr' ?_
-    filter_upwards [eventually_gt_atTop ρ] with D hD
-    have hD0 : 0 < D := hρ.trans_lt hD
-    have hDρ : D ^ n - ρ ^ n ≠ 0 := (sub_pos.2 (pow_lt_pow_left₀ hD hρ hn0)).ne'
-    rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
-    field_simp
+  have hlim := Real.tendsto_pow_div_mul_sub_pow_atTop (ω := ω) hn0 ρ
   exact ge_of_tendsto (ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal hlim)
     (Or.inl (ENNReal.ofReal_pos.2 (by positivity)).ne'))
     ((eventually_gt_atTop ρ).mono hbound)

@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+public import TauCeti.Algebra.Order.Field.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MaximumPrinciple
+public import Mathlib.Analysis.Complex.ReImTopology
 
 /-!
 # The weak maximum principle for subharmonic functions
@@ -24,14 +26,25 @@ actually uses is the **weak maximum principle**, which relaxes `0 < Δ f` to the
 * `TauCeti.le_of_laplacian_nonneg_le_frontier`: **weak maximum principle**. A continuous function
   on a compact set that is `C²` and subharmonic (`0 ≤ Δ f`) on the interior is bounded on all of
   `K` by any bound it satisfies on `frontier K`.
+* `TauCeti.le_of_laplacian_nonneg_of_lt_le_frontier`: the same bound when `f` is only known to be
+  `C²` and subharmonic at the interior points where it exceeds the bound.
 * `TauCeti.ge_of_laplacian_nonpos_ge_frontier`: the dual weak minimum principle for superharmonic
   functions (`Δ f ≤ 0`).
+* `TauCeti.ge_of_laplacian_nonpos_of_lt_ge_frontier`: the dual of the bound above a level, for
+  `f` only known to be `C²` and superharmonic at the interior points where it is below the bound.
+* `TauCeti.le_of_laplacian_nonneg_of_lt_le_strip`: the bound above a level on the closed strip
+  `ℝ × [0, 1]` of the complex plane, for a function bounded on the two boundary lines and on the
+  two ends of the strip.
 * `TauCeti.exists_mem_frontier_isMaxOn_of_laplacian_nonneg` /
   `TauCeti.exists_mem_frontier_isMinOn_of_laplacian_nonpos`: on a nonempty compact set in a
   nontrivial finite-dimensional real inner product space, a subharmonic (resp. superharmonic)
   function attains a maximum (resp. minimum) on the frontier.
 * `InnerProductSpace.HarmonicOnNhd.eq_zero_of_tendsto_cocompact`: a harmonic function on a
   nontrivial finite-dimensional space that tends to zero at infinity vanishes identically.
+* `TauCeti.nonpos_of_tendsto_cocompact_of_laplacian_nonneg`,
+  `TauCeti.eq_zero_of_tendsto_cocompact_of_mul_laplacian_nonneg`: the same Liouville argument for
+  a real `C²` function satisfying only the sign condition `0 ≤ f · Δ f`, as differences of
+  solutions of monotone semilinear equations do.
 -/
 
 public section
@@ -43,40 +56,6 @@ namespace TauCeti
 open InnerProductSpace Laplacian Topology RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- The `ε → 0` limit of a perturbation estimate: if `a ≤ m + ε * C` for every `ε > 0`, with a
-nonnegative constant `C`, then `a ≤ m`. This packages the endgame of the perturbation arguments in
-the weak maximum principles. -/
-theorem le_of_forall_pos_mul_le {a m C : ℝ} (hC : 0 ≤ C) (h : ∀ ε : ℝ, 0 < ε → a ≤ m + ε * C) :
-    a ≤ m := by
-  rcases eq_or_lt_of_le hC with hC0 | hCpos
-  · have := h 1 one_pos
-    rw [← hC0] at this
-    simpa using this
-  · refine le_of_forall_pos_le_add fun δ hδ => ?_
-    have hk := h (δ / C) (by positivity)
-    have : δ / C * C = δ := by field_simp
-    linarith
-
-omit [FiniteDimensional ℝ E] in
-/-- If every upper bound for a continuous function on the frontier of a nonempty compact set is
-also an upper bound on the whole set, then the function attains a maximum on the frontier. -/
-theorem exists_mem_frontier_isMaxOn_of_le_frontier {K : Set E} (hK : IsCompact K)
-    [Nontrivial E] (hne : K.Nonempty) {f : E → ℝ} (hcont : ContinuousOn f K)
-    (hbound : ∀ {m : ℝ}, (∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) →
-      ∀ ⦃x⦄, x ∈ K → f x ≤ m) :
-    ∃ x ∈ frontier K, IsMaxOn f K x := by
-  have hfrsub : frontier K ⊆ K := hK.isClosed.frontier_subset
-  have hfrcompact : IsCompact (frontier K) := hK.of_isClosed_subset isClosed_frontier hfrsub
-  have hfrne : (frontier K).Nonempty := by
-    rw [Set.nonempty_iff_ne_empty]
-    intro hempty
-    rcases frontier_eq_empty_iff.mp hempty with h | h
-    · exact hne.ne_empty h
-    · exact noncompact_univ E (h ▸ hK)
-  obtain ⟨z, hzfr, hzmax⟩ := hfrcompact.exists_isMaxOn hfrne (hcont.mono hfrsub)
-  refine ⟨z, hzfr, isMaxOn_iff.mpr fun y hyK => ?_⟩
-  exact hbound (fun w hw => isMaxOn_iff.mp hzmax w hw) hyK
 
 /-- The Laplacian of the perturbation `f + ε‖·‖²` at a point where `f` is `C²`: it exceeds `Δ f` by
 the contribution `ε * (2 * dim E)` of the strictly convex term `ε‖·‖²`. This is the computation the
@@ -90,26 +69,6 @@ theorem laplacian_add_const_smul_norm_sq {f : E → ℝ} {x : E} (ε : ℝ) (hf 
   have hsmul : Δ (fun z : E => ε • ‖z‖ ^ 2) x = ε • Δ (fun z : E => ‖z‖ ^ 2) x :=
     laplacian_smul ε (contDiff_norm_sq ℝ).contDiffAt
   rw [hadd, hsmul, laplacian_norm_sq, smul_eq_mul]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- **The `ε → 0` perturbation engine of the weak maximum principles.** To bound `f x ≤ m` on a
-bounded set `K`, it suffices to produce, for every `ε > 0`, a point `z ∈ K` at which the
-perturbation `f + ε‖·‖²` attains its maximum over `K` and where `f z ≤ m`: bounding `‖·‖²` by a
-constant on the bounded `K` and letting `ε → 0` then gives `f x ≤ m`. The bare-Laplacian and
-`-Δ + c` weak maximum principles differ only in how they produce such a maximizer, so this lemma
-packages everything they share. -/
-theorem le_of_forall_pos_exists_isMaxOn_perturbation {K : Set E} (hK : Bornology.IsBounded K)
-    {f : E → ℝ} {m : ℝ} {x : E} (hxK : x ∈ K)
-    (H : ∀ ε : ℝ, 0 < ε → ∃ z ∈ K, IsMaxOn (fun y : E => f y + ε • ‖y‖ ^ 2) K z ∧ f z ≤ m) :
-    f x ≤ m := by
-  obtain ⟨M, hM⟩ := hK.exists_norm_le
-  refine le_of_forall_pos_mul_le (sq_nonneg M) fun ε hε => ?_
-  obtain ⟨z, hzK, hzmax, hfz⟩ := H ε hε
-  have hxz : f x + ε * ‖x‖ ^ 2 ≤ f z + ε * ‖z‖ ^ 2 := by simpa [smul_eq_mul] using hzmax hxK
-  have hzC : ‖z‖ ^ 2 ≤ M ^ 2 := by nlinarith [hM z hzK, norm_nonneg z]
-  have hεzC : ε * ‖z‖ ^ 2 ≤ ε * M ^ 2 := mul_le_mul_of_nonneg_left hzC hε.le
-  have hεx : 0 ≤ ε * ‖x‖ ^ 2 := mul_nonneg hε.le (sq_nonneg _)
-  linarith
 
 section Nontrivial
 
@@ -127,7 +86,8 @@ theorem le_of_laplacian_nonneg_le_frontier {K : Set E} (hK : IsCompact K) {f : E
   -- frontier by the strict boundary maximum principle; then let `ε → 0`.
   intro x hxK
   have hfrpos : (0 : ℝ) < Module.finrank ℝ E := by exact_mod_cast Module.finrank_pos
-  refine le_of_forall_pos_exists_isMaxOn_perturbation hK.isBounded hxK fun ε hε => ?_
+  refine BddAbove.le_of_forall_pos_exists_add_mul_le
+    (hK.bddAbove_image (f := fun y : E => ‖y‖ ^ 2) (by fun_prop)) fun ε hε => ?_
   have hεsq : ∀ y : E, ContDiffAt ℝ 2 (fun z : E => ε • ‖z‖ ^ 2) y :=
     fun y => ((contDiff_norm_sq ℝ).contDiffAt).const_smul ε
   have hgcont : ContinuousOn (fun y : E => f y + ε • ‖y‖ ^ 2) K := hcont.add (by fun_prop)
@@ -141,7 +101,50 @@ theorem le_of_laplacian_nonneg_le_frontier {K : Set E} (hK : IsCompact K) {f : E
   -- Strict boundary maximum principle: the maximizer lies on the frontier, where `f ≤ m`.
   obtain ⟨z, hzfr, hzmax⟩ :=
     exists_mem_frontier_isMaxOn_of_laplacian_pos hK ⟨x, hxK⟩ hgcont hgcd hglap
-  exact ⟨z, hK.isClosed.frontier_subset hzfr, hzmax, hbdry hzfr⟩
+  exact ⟨z, hK.isClosed.frontier_subset hzfr,
+    by simpa only [smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK, hbdry hzfr⟩
+
+/-- **Weak maximum principle above a level.**
+
+Let `K` be compact and `f` continuous on `K`, with `f ≤ m` on `frontier K`. If `f` is `C²` and
+subharmonic (`0 ≤ Δ f`) at the interior points of `K` where `m < f`, then `f ≤ m` on all of `K`.
+Nothing is assumed about `f` at interior points where `f ≤ m`. -/
+theorem le_of_laplacian_nonneg_of_lt_le_frontier {K : Set E} (hK : IsCompact K) {f : E → ℝ}
+    {m : ℝ} (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → m < f x → ContDiffAt ℝ 2 f x)
+    (hlap : ∀ ⦃x⦄, x ∈ interior K → m < f x → 0 ≤ Δ f x)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) :
+    ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
+  -- Apply the weak maximum principle to the compact superlevel set `K' = {f ≥ m + ε}`, on whose
+  -- interior `f > m`, and on whose frontier `f ≤ m + ε`.
+  intro x hx
+  refine le_of_forall_pos_le_add fun ε hε => ?_
+  set K' := K ∩ f ⁻¹' Set.Ici (m + ε) with hK'
+  have hK'c : IsClosed K' := hcont.preimage_isClosed_of_isClosed hK.isClosed isClosed_Ici
+  by_cases hxK' : x ∈ K'
+  swap
+  · simp only [hK', Set.mem_inter_iff, hx, Set.mem_preimage, Set.mem_Ici, true_and,
+      not_le] at hxK'
+    exact hxK'.le
+  -- Interior points of `K'` are interior points of `K` where `f > m`.
+  have hint : ∀ ⦃y⦄, y ∈ interior K' → y ∈ interior K ∧ m < f y := fun y hy => by
+    have h : m + ε ≤ f y := (interior_subset hy).2
+    exact ⟨interior_mono Set.inter_subset_left hy, by linarith⟩
+  refine le_of_laplacian_nonneg_le_frontier (hK.of_isClosed_subset hK'c Set.inter_subset_left)
+    (hcont.mono Set.inter_subset_left) (fun y hy => hcd (hint hy).1 (hint hy).2)
+    (fun y hy => hlap (hint hy).1 (hint hy).2) (fun y hy => ?_) hxK'
+  have hyK' : y ∈ K' := hK'c.frontier_subset hy
+  by_contra hlt
+  rw [not_le] at hlt
+  by_cases hyK : y ∈ frontier K
+  · linarith [hbdry hyK]
+  -- Otherwise `y` is an interior point of `K` with `f y > m + ε`, hence interior to `K'`.
+  have hyint : y ∈ interior K := by
+    by_contra hy'
+    exact hyK (hK.isClosed.frontier_eq ▸ ⟨hyK'.1, hy'⟩)
+  have hKy : K ∈ 𝓝 y := mem_interior_iff_mem_nhds.mp hyint
+  exact hy.2 (mem_interior_iff_mem_nhds.mpr (Filter.inter_mem hKy
+    ((hcont.continuousAt hKy).preimage_mem_nhds (Ici_mem_nhds hlt))))
 
 /-- **Weak minimum principle for superharmonic functions.**
 
@@ -161,6 +164,26 @@ theorem ge_of_laplacian_nonpos_ge_frontier {K : Set E} (hK : IsCompact K) {f : E
   simp only [Pi.neg_apply] at hle
   linarith
 
+/-- **Weak minimum principle below a level.**
+
+The dual of `le_of_laplacian_nonneg_of_lt_le_frontier`: let `K` be compact and `f` continuous on
+`K`, with `m ≤ f` on `frontier K`. If `f` is `C²` and superharmonic (`Δ f ≤ 0`) at the interior
+points of `K` where `f < m`, then `m ≤ f` on all of `K`. -/
+theorem ge_of_laplacian_nonpos_of_lt_ge_frontier {K : Set E} (hK : IsCompact K) {f : E → ℝ}
+    {m : ℝ} (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → f x < m → ContDiffAt ℝ 2 f x)
+    (hlap : ∀ ⦃x⦄, x ∈ interior K → f x < m → Δ f x ≤ 0)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → m ≤ f x) :
+    ∀ ⦃x⦄, x ∈ K → m ≤ f x := by
+  intro x hxK
+  have hle := le_of_laplacian_nonneg_of_lt_le_frontier (f := -f) (m := -m) hK hcont.neg
+    (fun y hy hlt => (hcd hy (by simpa using hlt)).neg)
+    (fun y hy hlt => by
+      rw [congrFun laplacian_neg y, Pi.neg_apply]; linarith [hlap hy (by simpa using hlt)])
+    (fun y hy => neg_le_neg (hbdry hy)) hxK
+  simp only [Pi.neg_apply] at hle
+  linarith
+
 /-- A subharmonic (`0 ≤ Δ f`) continuous function on a nonempty compact set in a nontrivial
 finite-dimensional real inner product space attains a maximum on the frontier. This is the
 `∃`-form of the weak maximum principle, mirroring
@@ -169,7 +192,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_nonneg {K : Set E} (hK : IsComp
     (hne : K.Nonempty) {f : E → ℝ} (hcont : ContinuousOn f K)
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x) (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  exact exists_mem_frontier_isMaxOn_of_le_frontier hK hne hcont fun hbdry =>
+  exact hK.exists_mem_frontier_isMaxOn_of_le_frontier hne
+    (hcont.mono hK.isClosed.frontier_subset) fun hbdry =>
     le_of_laplacian_nonneg_le_frontier hK hcont hcd hlap hbdry
 
 /-- A superharmonic (`Δ f ≤ 0`) continuous function on a nonempty compact set in a nontrivial
@@ -229,7 +253,81 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.eq_zero_of_tendsto_cocompact {F :
   rw [Real.dist_eq, sub_zero]
   exact abs_le.2 ⟨hge, hle⟩
 
+/-- **A function vanishing at infinity that is subharmonic where positive is nonpositive.** If a
+`C²` function `f` on a nontrivial finite-dimensional real inner product space satisfies
+`0 ≤ Δ f x` wherever `0 < f x`, and `f x → 0` as `x → ∞`, then `f ≤ 0` everywhere. -/
+theorem nonpos_of_tendsto_cocompact_of_laplacian_nonneg {f : E → ℝ} (hf : ContDiff ℝ 2 f)
+    (hpos : ∀ x, 0 < f x → 0 ≤ Δ f x) (h : Filter.Tendsto f (Filter.cocompact E) (𝓝 0))
+    (x : E) : f x ≤ 0 := by
+  by_contra! hx
+  -- Apply the weak maximum principle on the compact superlevel set `{f ≥ f x / 2}`, where `f` is
+  -- positive and hence subharmonic, and on whose frontier `f = f x / 2`.
+  set K := {y | f x / 2 ≤ f y}
+  have hKc : IsClosed K := isClosed_le continuous_const hf.continuous
+  obtain ⟨t, ht, htK⟩ := Filter.mem_cocompact.1 (h (Iio_mem_nhds (half_pos hx)))
+  have hK : IsCompact K := ht.of_isClosed_subset hKc fun y hy => by
+    by_contra hyt
+    exact (htK hyt : f y < f x / 2).not_ge hy
+  have hle := le_of_laplacian_nonneg_le_frontier hK hf.continuous.continuousOn
+    (fun _ _ => hf.contDiffAt)
+    (fun y hy => hpos y ((half_pos hx).trans_le (interior_subset hy : f x / 2 ≤ f y)))
+    (fun y hy => (frontier_le_subset_eq continuous_const hf.continuous hy).ge)
+    (half_le_self hx.le : f x / 2 ≤ f x)
+  linarith
+
+/-- **Liouville theorem under the sign condition `f · Δ f ≥ 0`.** A `C²` function on a nontrivial
+finite-dimensional real inner product space which tends to zero at infinity and satisfies
+`0 ≤ f x * Δ f x` everywhere vanishes identically. The sign condition holds for solutions of
+`Δ f = c f` with `c ≥ 0`, and for differences of solutions of semilinear equations `Δ u = F(x, u)`
+with `F` nondecreasing in `u`. -/
+theorem eq_zero_of_tendsto_cocompact_of_mul_laplacian_nonneg {f : E → ℝ} (hf : ContDiff ℝ 2 f)
+    (hsign : ∀ x, 0 ≤ f x * Δ f x) (h : Filter.Tendsto f (Filter.cocompact E) (𝓝 0)) :
+    f = 0 := by
+  funext x
+  refine le_antisymm (nonpos_of_tendsto_cocompact_of_laplacian_nonneg hf
+    (fun y hy => (mul_nonneg_iff_of_pos_left hy).1 (hsign y)) h x) ?_
+  have hneg := nonpos_of_tendsto_cocompact_of_laplacian_nonneg (f := -f) hf.neg (fun y hy => by
+    rw [laplacian_neg, Pi.neg_apply]
+    have := hsign y
+    rw [Pi.neg_apply, neg_pos] at hy
+    nlinarith) (by rw [← neg_zero]; exact h.neg) x
+  simpa using hneg
+
 end Nontrivial
+
+open Complex Set in
+/-- **The weak maximum principle on a strip, above a level.** Let `f` be continuous on the closed
+strip `ℝ × [0, 1]` of the complex plane and `C²` and subharmonic at the points of the open strip
+where it exceeds `m`. If `f ≤ m` on the two boundary lines `ℑ z = 0` and `ℑ z = 1`, and also on
+the two ends `|ℜ z| ≥ T` of the strip, then `f ≤ m` on the whole closed strip. The proof applies
+`TauCeti.le_of_laplacian_nonneg_of_lt_le_frontier` on rectangles `[-S, S] × [0, 1]`. -/
+theorem le_of_laplacian_nonneg_of_lt_le_strip {f : ℂ → ℝ} {m T : ℝ}
+    (hcont : ContinuousOn f (univ ×ℂ Icc 0 1))
+    (hcd : ∀ ⦃z : ℂ⦄, 0 < z.im → z.im < 1 → m < f z → ContDiffAt ℝ 2 f z)
+    (hlap : ∀ ⦃z : ℂ⦄, 0 < z.im → z.im < 1 → m < f z → 0 ≤ Δ f z)
+    (h₀ : ∀ z : ℂ, z.im = 0 → f z ≤ m) (h₁ : ∀ z : ℂ, z.im = 1 → f z ≤ m)
+    (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → f z ≤ m) {z : ℂ} (hz₀ : 0 ≤ z.im)
+    (hz₁ : z.im ≤ 1) : f z ≤ m := by
+  -- Apply the maximum principle on a rectangle `[-S, S] × [0, 1]` containing `z`, with `S ≥ T`.
+  set S := max T |z.re|
+  have hS : 0 ≤ S := (abs_nonneg _).trans (le_max_right _ _)
+  have hsub : Icc (-S) S ×ℂ Icc 0 1 ⊆ univ ×ℂ Icc 0 1 := fun w hw ↦ ⟨mem_univ _, hw.2⟩
+  have hint : interior (Icc (-S) S ×ℂ Icc (0 : ℝ) 1) = Ioo (-S) S ×ℂ Ioo 0 1 := by
+    rw [interior_reProdIm, interior_Icc, interior_Icc]
+  refine le_of_laplacian_nonneg_of_lt_le_frontier (isCompact_Icc.reProdIm isCompact_Icc)
+    (hcont.mono hsub) (fun w hw ↦ ?_) (fun w hw ↦ ?_) (fun w hw ↦ ?_)
+    ⟨abs_le.mp (le_max_right _ _), hz₀, hz₁⟩
+  · rw [hint] at hw
+    exact hcd hw.2.1 hw.2.2
+  · rw [hint] at hw
+    exact hlap hw.2.1 hw.2.2
+  · rw [frontier_reProdIm, closure_Icc, closure_Icc, frontier_Icc zero_le_one,
+      frontier_Icc (by linarith)] at hw
+    rcases hw with ⟨-, hw | hw⟩ | ⟨hw, hw₀, hw₁⟩
+    · exact h₀ w hw
+    · exact h₁ w hw
+    · refine hends w ?_ hw₀ hw₁
+      rcases hw with hw | hw <;> rw [hw] <;> simp [S, abs_of_nonneg hS]
 
 end TauCeti
 

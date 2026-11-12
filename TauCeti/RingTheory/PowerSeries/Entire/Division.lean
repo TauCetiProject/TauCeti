@@ -11,15 +11,15 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
-import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 
 /-!
-# Division of entire power series by monic polynomials
+# Division of entire power series by polynomials with invertible leading coefficient
 
 Let `p` be a monic polynomial of degree `d` over a complete normed commutative ring `R`, and let
 `∑ bₖ Xᵏ` be the inverse of its reverse `Xᵈ p(1/X)`, a power series with constant coefficient
@@ -36,6 +36,11 @@ inner sums converge however fast the radius of `f` is tested
 quotient and remainder of ordinary polynomial division. Over an ultrametric ring with `‖1‖ = 1`,
 a monic polynomial is distinguished of its degree at every large radius, so the Weierstrass
 division estimate makes `q` and `r` unique among divisions with entire quotient.
+
+Normalising a polynomial with invertible leading coefficient reduces division to the monic
+case. The resulting entire quotient and polynomial remainder of smaller degree exist without
+an ultrametric hypothesis and are unique over an ultrametric ring with `‖1‖ = 1`. The
+coefficient norm need not be multiplicative, and the coefficient ring may have nilpotents.
 
 This is the division of entire series by polynomials used in the Fredholm theory of compact
 operators, whose Fredholm determinants are entire series.
@@ -58,6 +63,9 @@ operators, whose Fredholm determinants are entire series.
 * `PowerSeries.IsEntire.add_divByMonic` and `PowerSeries.IsEntire.smul_divByMonic`, with their
   `modByMonic` companions: on entire series, quotient and remainder are additive and
   `R`-linear.
+* `PowerSeries.IsEntire.tendsto_coeff_divByMonic_trunc` and
+  `PowerSeries.IsEntire.tendsto_coeff_modByMonic_trunc`: the quotients and remainders of the
+  polynomial truncations converge coefficientwise.
 * `PowerSeries.IsEntire.map_divByMonic` and `PowerSeries.IsEntire.map_modByMonic`: continuous
   coefficient homomorphisms commute with quotient and remainder.
 * `PowerSeries.divByMonic_coe` and `PowerSeries.modByMonic_coe`: on polynomials, these are
@@ -68,6 +76,8 @@ operators, whose Fredholm determinants are entire series.
   `a` exactly when it is `X - a` times an entire series.
 * `PowerSeries.IsEntire.exists_eq_X_sub_C_pow_mul`: if the Hasse derivatives of order less than
   `h` of an entire series vanish at `a`, then it is `(X - a)ʰ` times an entire series.
+* `PowerSeries.IsEntire.evalAt_hasseDeriv_mul_of_forall_lt`: if the Hasse derivatives of order
+  less than `k` of an entire series `f` vanish at `a`, then `(Δᵏ (f g))(a) = (Δᵏ f)(a) g(a)`.
 * `PowerSeries.divByMonic_modByMonic_unique`: over an ultrametric ring with `‖1‖ = 1`, a division
   with entire quotient and remainder of degree less than `d` is this one.
 * `PowerSeries.IsEntire.coe_mul_divByMonic_cancel_left`: over an ultrametric ring with
@@ -76,6 +86,14 @@ operators, whose Fredholm determinants are entire series.
   the remainder of `g + p * q`, for a polynomial `g` and entire `q`, is `g %ₘ p`.
 * `PowerSeries.IsEntire.modByMonic_eq_zero_iff`: over an ultrametric ring with `‖1‖ = 1`, the
   remainder vanishes exactly when `p` divides `f` with entire quotient.
+* `TauCeti.PowerSeries.exists_entire_mul_add_eq`: division by a polynomial with invertible
+  leading coefficient, with entire quotient and polynomial remainder of smaller degree.
+* `TauCeti.PowerSeries.IsMulDistinguished.isEntire_of_isEntire_coe_mul`: over an ultrametric
+  ring, a series restricted at `c` whose product with a Weierstrass polynomial at `c` is entire
+  is itself entire.
+* `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
+  `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
+  with `‖1‖ = 1`.
 
 ## References
 
@@ -170,7 +188,6 @@ private theorem norm_coeff_mul_coeff_le {b : ℕ → R} {s M A C : ℝ} (hs : 1 
     (hA : 0 ≤ A) (hC0 : 0 ≤ C) (hM : ∀ m, ‖coeff m f‖ * s ^ m ≤ M) (hb : ∀ k, ‖b k‖ ≤ A * C ^ k)
     (d n k : ℕ) :
     ‖coeff (n + d + k) f * b k‖ ≤ M * A * (s ^ n)⁻¹ * (1 / 2) ^ k := by
-  have hs0 : 0 < s := zero_lt_one.trans_le hs
   have hM0 : 0 ≤ M := (by positivity : 0 ≤ ‖coeff 0 f‖ * s ^ 0).trans (hM 0)
   have hC : C ≤ s / 2 := by linarith
   calc ‖coeff (n + d + k) f * b k‖ ≤ ‖coeff (n + d + k) f‖ * (A * (s / 2) ^ k) :=
@@ -309,6 +326,36 @@ theorem IsEntire.smul_modByMonic (hf : f.IsEntire) (a : R) (p : Polynomial R) :
     (a • f).modByMonic p = a • f.modByMonic p := by
   rw [modByMonic, modByMonic, hf.smul_divByMonic, ← map_smul, mul_smul_comm, smul_sub]
 
+/-- The quotients of the polynomial truncations of an entire series converge coefficientwise to
+its quotient: each coefficient of the quotient of `trunc N f` is a partial sum of the series
+defining that of `f`. -/
+theorem IsEntire.tendsto_coeff_divByMonic_trunc (hf : f.IsEntire) (p : Polynomial R) (n : ℕ) :
+    Tendsto (fun N ↦ coeff n ((trunc N f : R⟦X⟧).divByMonic p)) atTop
+      (𝓝 (coeff n (f.divByMonic p))) := by
+  refine ((hasSum_coeff_divByMonic hf p n).tendsto_sum_nat.comp
+    (tendsto_sub_atTop_nat (n + p.natDegree))).congr fun N ↦ ?_
+  have hcoeff (k : ℕ) : coeff (n + p.natDegree + k) (trunc N f : R⟦X⟧) =
+      if k < N - (n + p.natDegree) then coeff (n + p.natDegree + k) f else 0 := by
+    rw [Polynomial.coeff_coe, coeff_trunc]
+    exact if_congr (by omega) rfl rfl
+  rw [Function.comp_apply, coeff_divByMonic, tsum_eq_sum (s := range (N - (n + p.natDegree)))
+    fun k hk ↦ by rw [hcoeff, ite_eq_right (by simpa using hk), zero_mul]]
+  exact sum_congr rfl fun k hk ↦ by rw [hcoeff, ite_eq_left (by simpa using hk)]
+
+/-- The remainders of the polynomial truncations of an entire series converge coefficientwise to
+its remainder. -/
+theorem IsEntire.tendsto_coeff_modByMonic_trunc (hf : f.IsEntire) (p : Polynomial R) (n : ℕ) :
+    Tendsto (fun N ↦ ((trunc N f : R⟦X⟧).modByMonic p).coeff n) atTop
+      (𝓝 ((f.modByMonic p).coeff n)) := by
+  simp only [coeff_modByMonic]
+  split_ifs
+  · simp only [map_sub, coeff_mul, Polynomial.coeff_coe]
+    refine Tendsto.sub (tendsto_const_nhds.congr' ?_) (tendsto_finsetSum _ fun x _ ↦
+      (hf.tendsto_coeff_divByMonic_trunc p x.2).const_mul _)
+    filter_upwards [eventually_gt_atTop n] with N hN
+    rw [coeff_trunc, ite_eq_left hN]
+  · exact tendsto_const_nhds
+
 section Map
 
 variable {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S]
@@ -430,6 +477,17 @@ theorem IsEntire.exists_eq_X_sub_C_pow_mul (hf : f.IsEntire)
       simpa [hg.evalAt_hasseDeriv_X_sub_C_pow_mul, hasseDeriv_zero] using hzero h h.lt_succ_self
     obtain ⟨q, hq, rfl⟩ := (hg.evalAt_eq_zero_iff).mp hga
     exact ⟨q, hq, by ring⟩
+
+/-- If the Hasse derivatives of order less than `k` of an entire series `f` vanish at `a`, then
+the Hasse derivative of order `k` of `f * g` at `a` is that of `f` times `g(a)`. -/
+theorem IsEntire.evalAt_hasseDeriv_mul_of_forall_lt {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire)
+    {a : R} {k : ℕ} (hk : ∀ j < k, (PowerSeries.hasseDeriv j f).evalAt a = 0) :
+    (PowerSeries.hasseDeriv k (f * g)).evalAt a =
+      (PowerSeries.hasseDeriv k f).evalAt a * g.evalAt a := by
+  obtain ⟨f₁, hf₁, rfl⟩ := hf.exists_eq_X_sub_C_pow_mul hk
+  rw [mul_assoc, (hf₁.mul hg).evalAt_hasseDeriv_X_sub_C_pow_mul,
+    hf₁.evalAt_hasseDeriv_X_sub_C_pow_mul]
+  simp [hf₁.evalAt_mul hg]
 
 section Ultrametric
 
@@ -562,3 +620,87 @@ end Ultrametric
 end NormedCommRing
 
 end PowerSeries
+
+namespace TauCeti.PowerSeries
+
+open _root_.PowerSeries
+
+variable {R : Type*} [NormedCommRing R] [CompleteSpace R]
+  {f : R⟦X⟧} {p : Polynomial R}
+
+/-- An entire series admits division by a polynomial with invertible leading coefficient,
+with entire quotient and polynomial remainder of degree less than the divisor. No ultrametric
+hypothesis is needed for existence. -/
+theorem exists_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingCoeff)
+    [Nontrivial R] :
+    ∃ (q : R⟦X⟧) (b : Polynomial R),
+      q.IsEntire ∧ b.degree < p.degree ∧ (p : R⟦X⟧) * q + b = f := by
+  let u := hp.unit
+  let P : Polynomial R := u⁻¹ • p
+  have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  have hdeg : P.degree = p.degree :=
+    Polynomial.degree_smul_of_smul_regular p (IsSMulRegular.all _)
+  have hcoe : (P : R⟦X⟧) = u⁻¹ • (p : R⟦X⟧) := by
+    simp [P, Units.smul_def]
+  refine ⟨u⁻¹ • f.divByMonic P, f.modByMonic P,
+    (hf.divByMonic P).smul _, ?_, ?_⟩
+  · rw [← hdeg]
+    exact PowerSeries.degree_modByMonic_lt f hP.ne_zero
+  · rw [mul_smul_comm, ← smul_mul_assoc, ← hcoe, add_comm]
+    exact hf.modByMonic_add_divByMonic hP
+
+/-- **Restricted quotients of entire series by Weierstrass polynomials are entire.** Over a
+complete ultrametric normed commutative ring, let `ω` be a monic polynomial of degree `d` which
+is multiplicatively distinguished of degree `d` at a positive radius `c`. If `q` is restricted at
+`c` and `ω * q` is entire, then `q` is entire: it is the quotient of the entire division of
+`ω * q` by `ω`. The hypothesis on `ω` cannot be dropped: `(X - 1) * ∑ Xⁿ = -1` is entire. -/
+theorem IsMulDistinguished.isEntire_of_isEntire_coe_mul [IsUltrametricDist R] {c : ℝ} {d : ℕ}
+    {ω : Polynomial R} {q : R⟦X⟧} (hω : IsMulDistinguished c d (ω : R⟦X⟧)) (hc : 0 < c)
+    (hωm : ω.IsMonicOfDegree d) (hq : q.IsRestricted c) (h : ((ω : R⟦X⟧) * q).IsEntire) :
+    q.IsEntire := by
+  have hdiv := h.modByMonic_add_divByMonic hωm.monic
+  have hr : ∀ m, d ≤ m →
+      ((((ω : R⟦X⟧) * q).modByMonic ω : Polynomial R) : R⟦X⟧).coeff m = 0 := fun m hm ↦ by
+    rw [Polynomial.coeff_coe, coeff_modByMonic, ite_eq_right (by rw [hωm.natDegree_eq]; omega)]
+  obtain ⟨hq', -⟩ := hω.eq_and_eq_of_mul_add_eq_mul_add hc ((h.divByMonic ω).isRestricted c) hq
+    hr (fun _ _ ↦ map_zero _) (by rw [add_comm, hdiv, add_zero])
+  exact hq' ▸ h.divByMonic ω
+
+variable [IsUltrametricDist R] [NormOneClass R]
+
+/-- Entire quotients and polynomial remainders of degree less than a polynomial with invertible
+leading coefficient are unique, over a complete ultrametric norm-one ring. -/
+theorem eq_and_eq_of_entire_mul_add_eq (hp : IsUnit p.leadingCoeff)
+    {q q' : R⟦X⟧} {b b' : Polynomial R} (hq : q.IsEntire) (hq' : q'.IsEntire)
+    (hb : b.degree < p.degree) (hb' : b'.degree < p.degree)
+    (h : (p : R⟦X⟧) * q + b = f) (h' : (p : R⟦X⟧) * q' + b' = f) :
+    q = q' ∧ b = b' := by
+  let u := hp.unit
+  let P : Polynomial R := u⁻¹ • p
+  have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  have hdeg : P.degree = p.degree :=
+    Polynomial.degree_smul_of_smul_regular p (IsSMulRegular.all _)
+  have hcoe : (P : R⟦X⟧) = u⁻¹ • (p : R⟦X⟧) := by
+    simp [P, Units.smul_def]
+  have hdiv (x : R⟦X⟧) : (P : R⟦X⟧) * (u • x) = (p : R⟦X⟧) * x := by
+    rw [hcoe, smul_mul_smul_comm, inv_mul_cancel, one_smul]
+  have h₁ := PowerSeries.divByMonic_modByMonic_unique (f := f) (u • q) b hP (hq.smul _)
+    ⟨by rw [hdiv, add_comm]; exact h, hdeg.symm ▸ hb⟩
+  have h₂ := PowerSeries.divByMonic_modByMonic_unique (f := f) (u • q') b' hP (hq'.smul _)
+    ⟨by rw [hdiv, add_comm]; exact h', hdeg.symm ▸ hb'⟩
+  exact ⟨(MulAction.injective u) (h₁.1.symm.trans h₂.1), h₁.2.symm.trans h₂.2⟩
+
+/-- **Entire division by a polynomial with invertible leading coefficient.** Over a complete
+ultrametric norm-one ring, every entire series has exactly one decomposition as the divisor
+times an entire quotient plus a polynomial remainder of smaller degree. This includes constant
+unit divisors, whose remainders are zero. -/
+theorem existsUnique_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingCoeff) :
+    ∃! qb : R⟦X⟧ × Polynomial R,
+      qb.1.IsEntire ∧ qb.2.degree < p.degree ∧ (p : R⟦X⟧) * qb.1 + qb.2 = f := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  obtain ⟨q, b, hq, hb, h⟩ := exists_entire_mul_add_eq hf hp
+  refine ⟨(q, b), ⟨hq, hb, h⟩, fun qb ⟨hq', hb', h'⟩ ↦ ?_⟩
+  obtain ⟨rfl, rfl⟩ := eq_and_eq_of_entire_mul_add_eq hp hq' hq hb' hb h' h
+  rfl
+
+end TauCeti.PowerSeries

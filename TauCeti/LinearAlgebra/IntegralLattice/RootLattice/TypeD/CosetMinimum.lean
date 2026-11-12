@@ -39,6 +39,9 @@ lower bound.
 * `TauCeti.IntegralLattice.isLeast_form_self_checkerboardVectorClass`,
   `isLeast_form_self_checkerboardSpinorClass`, `isLeast_form_self_checkerboardCospinorClass`:
   the minimum norms `1`, `n / 4` and `n / 4` of the three nonzero cosets.
+* `TauCeti.IntegralLattice.isLeast_form_self_zmodTwoProdAddEquivCheckerboardDiscriminantGroup`,
+  `isLeast_form_self_zmodFourAddEquivCheckerboardDiscriminantGroup`: the same minima, indexed by
+  the label of the class in `ℤ/2 × ℤ/2` (even `n`) or `ℤ/4` (odd `n`).
 * `TauCeti.IntegralLattice.sub_checkerboardVector_mem_and_form_self_eq_one_iff`,
   `sub_checkerboardSpinor_mem_and_form_self_eq_iff`,
   `sub_checkerboardCospinor_mem_and_form_self_eq_iff`: the minimal vectors of each coset.
@@ -64,7 +67,7 @@ private theorem exists_int_of_sub_checkerboardVector_mem [NeZero n] {x : Fin n �
     (hx : x - checkerboardVector n ∈ checkerboardCarrier n) :
     ∃ z : Fin n → ℤ, ∀ i, x i = (z i : ℚ) := by
   choose w hw using ((mem_checkerboardCarrier_iff _).mp hx).1
-  refine ⟨fun i ↦ w i + if i = checkerboardLastIndex n then 1 else 0, fun i ↦ ?_⟩
+  refine ⟨fun i ↦ w i + if i = ⊤ then 1 else 0, fun i ↦ ?_⟩
   have := hw i
   rw [Pi.sub_apply, checkerboardVector_apply] at this
   push_cast
@@ -84,7 +87,7 @@ private theorem exists_eq_single_of_form_self_eq_one [NeZero n] {x : Fin n → �
       rw [← hnorm]
       exact Finset.sum_congr rfl fun j _ ↦ by rw [hz j, sq]
     exact_mod_cast this
-  obtain ⟨i, h | h⟩ := exists_eq_single_or_neg_single_of_sum_sq_eq_one z hsum <;>
+  obtain ⟨i, h | h⟩ := sum_sq_eq_one_iff.mp hsum <;>
     refine ⟨i, ?_⟩ <;> [left; right] <;> funext j <;> rw [hz j, h] <;>
     rcases eq_or_ne j i with rfl | hj <;> simp [*]
 
@@ -97,7 +100,7 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
   · exact fun ⟨hx, hnorm⟩ ↦ exists_eq_single_of_form_self_eq_one hx hnorm
   · rintro ⟨i, hx | hx⟩ <;> subst hx
     · refine ⟨mem_checkerboardCarrier_of
-        (fun j ↦ (if j = i then 1 else 0) - if j = checkerboardLastIndex n then 1 else 0)
+        (fun j ↦ (if j = i then 1 else 0) - if j = ⊤ then 1 else 0)
         (fun j ↦ ?_) ?_, ?_⟩
       · simp only [Pi.sub_apply, Pi.single_apply, checkerboardVector_apply]
         push_cast
@@ -105,7 +108,7 @@ theorem sub_checkerboardVector_mem_and_form_self_eq_one_iff [NeZero n] (x : Fin 
       · simp [Finset.sum_sub_distrib]
       · rw [checkerboardLattice_form_single, Pi.single_eq_same, mul_one]
     · refine ⟨mem_checkerboardCarrier_of
-        (fun j ↦ -(if j = i then 1 else 0) - if j = checkerboardLastIndex n then 1 else 0)
+        (fun j ↦ -(if j = i then 1 else 0) - if j = ⊤ then 1 else 0)
         (fun j ↦ ?_) ?_, ?_⟩
       · simp only [Pi.sub_apply, Pi.neg_apply, Pi.single_apply, checkerboardVector_apply]
         push_cast
@@ -151,7 +154,7 @@ private theorem exists_int_add_half_of_sub_checkerboardCospinor_mem [NeZero n] {
     (hx : x - checkerboardCospinor n ∈ checkerboardCarrier n) (i : Fin n) :
     ∃ z : ℤ, x i = z + 1 / 2 := by
   obtain ⟨z, hz⟩ := ((mem_checkerboardCarrier_iff _).mp hx).1 i
-  refine ⟨z - if i = checkerboardLastIndex n then 1 else 0, ?_⟩
+  refine ⟨z - if i = ⊤ then 1 else 0, ?_⟩
   rw [Pi.sub_apply, checkerboardCospinor_apply] at hz
   push_cast
   linarith
@@ -186,7 +189,7 @@ private theorem sub_checkerboardSpinor_mem_iff {x : Fin n → ℚ}
     (hx : ∀ i, x i = 1 / 2 ∨ x i = -(1 / 2)) :
     x - checkerboardSpinor n ∈ checkerboardCarrier n ↔ Even #{i | x i = -(1 / 2)} := by
   rw [mem_checkerboardCarrier_iff_even_sum _ (sub_checkerboardSpinor_eq hx), Finset.sum_neg_distrib,
-    even_neg, Finset.sum_boole, Int.even_coe_nat]
+    even_neg, Finset.sum_boole, Int.even_natCast]
 
 /-- A `±1/2` vector lies in the cospinor coset exactly when it has an odd number of negative
 coordinates. -/
@@ -194,8 +197,7 @@ private theorem sub_checkerboardCospinor_mem_iff [NeZero n] {x : Fin n → ℚ}
     (hx : ∀ i, x i = 1 / 2 ∨ x i = -(1 / 2)) :
     x - checkerboardCospinor n ∈ checkerboardCarrier n ↔ Odd #{i | x i = -(1 / 2)} := by
   have hcoord (i : Fin n) : (x - checkerboardCospinor n) i =
-      ((-(if x i = -(1 / 2) then 1 else 0) + if i = checkerboardLastIndex n then 1 else 0 : ℤ) :
-        ℚ) := by
+      ((-(if x i = -(1 / 2) then 1 else 0) + if i = ⊤ then 1 else 0 : ℤ) : ℚ) := by
     have := sub_checkerboardSpinor_eq hx i
     rw [Pi.sub_apply, checkerboardSpinor_apply] at this
     rw [Pi.sub_apply, checkerboardCospinor_apply]
@@ -203,7 +205,7 @@ private theorem sub_checkerboardCospinor_mem_iff [NeZero n] {x : Fin n → ℚ}
     linarith
   rw [mem_checkerboardCarrier_iff_even_sum _ hcoord, Finset.sum_add_distrib,
     Finset.sum_neg_distrib, Fintype.sum_ite_eq',
-    Finset.sum_boole, even_add_one, odd_neg, Int.odd_coe_nat]
+    Finset.sum_boole, even_add_one, odd_neg, Int.odd_natCast]
 
 /-- **Vectors of the spinor coset have norm at least `n / 4`.** -/
 theorem div_four_le_checkerboardLattice_form_self_of_sub_checkerboardSpinor_mem
@@ -277,5 +279,55 @@ theorem isLeast_form_self_checkerboardCospinorClass [NeZero n] :
   rintro q ⟨x, hx, rfl⟩
   exact div_four_le_checkerboardLattice_form_self_of_sub_checkerboardCospinor_mem
     ((mk_eq_checkerboardCospinorClass_iff x).mp hx)
+
+/-! ## Minima indexed by labels -/
+
+/-- **The minimum norm of each discriminant class of `Dₙ`, `n` even.**  The class labelled
+`b : ZMod 2 × ZMod 2` by `zmodTwoProdAddEquivCheckerboardDiscriminantGroup` has minimum norm `0`
+for `b = 0`, `1` for the vector label `(1, 0)`, and `n / 4` for the spinor and cospinor labels
+`(0, 1)` and `(1, 1)`. -/
+theorem isLeast_form_self_zmodTwoProdAddEquivCheckerboardDiscriminantGroup [NeZero n]
+    (hn : Even n) (b : ZMod 2 × ZMod 2) :
+    IsLeast {q : ℚ | ∃ x : (checkerboardLattice n).dualCarrier,
+      Submodule.Quotient.mk x = zmodTwoProdAddEquivCheckerboardDiscriminantGroup n hn b ∧
+        (checkerboardLattice n).form x x = q}
+      (if b = 0 then 0 else if b = (1, 0) then 1 else (n : ℚ) / 4) := by
+  obtain rfl | rfl | rfl | rfl : b = 0 ∨ b = (1, 0) ∨ b = (0, 1) ∨ b = (1, 1) := by
+    revert b; decide
+  · rw [ite_eq_left rfl, map_zero]
+    exact (isPosDef_checkerboardLattice n).isPosSemidef.isLeast_form_self_zero
+  · rw [ite_eq_right (by decide), ite_eq_left rfl,
+      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero]
+    exact isLeast_form_self_checkerboardVectorClass
+  · rw [ite_eq_right (by decide), ite_eq_right (by decide),
+      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one]
+    exact isLeast_form_self_checkerboardSpinorClass
+  · rw [ite_eq_right (by decide), ite_eq_right (by decide),
+      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one]
+    exact isLeast_form_self_checkerboardCospinorClass
+
+/-- **The minimum norm of each discriminant class of `Dₙ`, `n` odd.**  The class labelled
+`b : ZMod 4` by `zmodFourAddEquivCheckerboardDiscriminantGroup` has minimum norm `0` for `b = 0`,
+`1` for the vector label `2`, and `n / 4` for the spinor and cospinor labels `1` and `3`. -/
+theorem isLeast_form_self_zmodFourAddEquivCheckerboardDiscriminantGroup (hn : Odd n)
+    (b : ZMod 4) :
+    IsLeast {q : ℚ | ∃ x : (checkerboardLattice n).dualCarrier,
+      Submodule.Quotient.mk x = zmodFourAddEquivCheckerboardDiscriminantGroup n hn b ∧
+        (checkerboardLattice n).form x x = q}
+      (if b = 0 then 0 else if b = 2 then 1 else (n : ℚ) / 4) := by
+  have : NeZero n := NeZero.of_pos hn.pos
+  obtain rfl | rfl | rfl | rfl : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 := by
+    revert b; decide
+  · rw [ite_eq_left rfl, map_zero]
+    exact (isPosDef_checkerboardLattice n).isPosSemidef.isLeast_form_self_zero
+  · rw [ite_eq_right (by decide), ite_eq_right (by decide),
+      zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one]
+    exact isLeast_form_self_checkerboardSpinorClass
+  · rw [ite_eq_right (by decide), ite_eq_left rfl,
+      zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two]
+    exact isLeast_form_self_checkerboardVectorClass
+  · rw [ite_eq_right (by decide), ite_eq_right (by decide),
+      zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three]
+    exact isLeast_form_self_checkerboardCospinorClass
 
 end TauCeti.IntegralLattice

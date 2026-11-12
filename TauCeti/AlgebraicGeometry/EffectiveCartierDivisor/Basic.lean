@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
@@ -23,11 +24,17 @@ No integrality or reducedness assumption is imposed on the ambient scheme.
 
 `Scheme.IdealSheafData.IsEffectiveCartier` uses ordinary ideals of sections on affine opens.
 The equivalent `isEffectiveCartier_iff_exists_comap` formulation describes the actual
-restriction of the ideal sheaf to each affine open. It transports local equations under
+restriction of the ideal sheaf to each affine open; a nonzerodivisor equation on an affine open
+`U` makes the restriction to `U` effective Cartier
+(`isEffectiveCartier_comap_ι_of_eq_span_singleton`). It transports local equations under
 flat pullback and identifies the resulting closed subscheme with the fibre product through
-Mathlib's `Scheme.IdealSheafData.comapIso`. By `isEffectiveCartier_iff_exists_isOpenImmersion`,
-the local equations may also be given on affine schemes openly immersed in `X`, such as the
-charts `Spec (A ⊗[R] B)` of a fibre product.
+Mathlib's `Scheme.IdealSheafData.comapIso`. Pulling back to `X ×_S T'` along a composite
+`T' ⟶ T ⟶ S` gives an effective Cartier divisor exactly when pulling back in stages through
+`X ×_S T` does (`isEffectiveCartier_comap_fst_comp_iff`).
+By `isEffectiveCartier_iff_exists_isOpenImmersion`, the local equations may also be given on affine
+schemes openly immersed in `X`, such as the charts `Spec (A ⊗[R] B)` of a fibre product. Being an
+effective Cartier divisor is local: it suffices to check it after pulling back along open
+immersions whose images cover `X` (`isEffectiveCartier_of_forall_exists_isOpenImmersion`).
 
 Local equations can be shrunk into any neighbourhood
 (`IsEffectiveCartier.exists_eq_span_singleton_le`), because a nonzerodivisor on an affine open
@@ -40,6 +47,13 @@ nonzerodivisor along a flat morphism to an affine scheme
 
 The empty closed subscheme is an effective Cartier divisor, with equation `1`. Equations
 need not generate proper ideals; a zero equation is permitted only on the empty scheme.
+Pullback along an arbitrary morphism `f : X ⟶ Y` from an integral scheme also preserves effective
+Cartier divisors, provided the generic point of `X` does not map into the divisor
+(`IsEffectiveCartier.comap_of_isIntegral`): the pulled-back local equation is then a nonzero
+element of a domain. In particular an effective Cartier divisor not containing a point `η` meets
+the closure of `η`, with its reduced induced structure, properly
+(`IsEffectiveCartier.comap_subschemeι_vanishingIdeal_closure_singleton`).
+
 Sums, nonnegative multiples, and finite sums are effective Cartier
 (`TauCeti.isEffectiveCartier_mul`, `TauCeti.isEffectiveCartier_pow`, and
 `TauCeti.isEffectiveCartier_prod`), and addition of an effective Cartier divisor is cancellative
@@ -47,7 +61,8 @@ Sums, nonnegative multiples, and finite sums are effective Cartier
 
 ## References
 
-* Stacks Project, *Divisors*, Effective Cartier divisors, Tag 01WQ.
+* Stacks Project, *Divisors*, Effective Cartier divisors, Tag 01WQ, including the criterion for
+  the pullback of an effective Cartier divisor to be defined when the source is integral.
 * Mathlib's `Scheme.IdealSheafData.subscheme` and `Scheme.IdealSheafData.comapIso` supply the
   closed subscheme and its base change.
 -/
@@ -137,6 +152,18 @@ theorem isEffectiveCartier_iff_exists_comap (I : X.IdealSheafData) :
       simpa only [Ideal.map_map, ← CommRingCat.hom_comp, Iso.inv_hom_id,
         CommRingCat.hom_id, Ideal.map_id, Ideal.map_span, Set.image_singleton] using h'
 
+/-- If `I` has a nonzerodivisor equation `a` on an affine open `U`, then its restriction to the
+open subscheme `U` is an effective Cartier divisor, with global equation `U.1.topIso.inv a`. -/
+theorem isEffectiveCartier_comap_ι_of_eq_span_singleton {I : X.IdealSheafData}
+    (U : X.affineOpens) {a : Γ(X, U)} (ha : IsSMulRegular Γ(X, U) a)
+    (hUa : I.ideal U = Ideal.span {a}) : (I.comap U.1.ι).IsEffectiveCartier := by
+  -- `U.1.topIso.inv a` is the image of `a` under the ring isomorphism `Γ(X, U) ≃+* Γ(U, ⊤)`.
+  have hb : IsSMulRegular Γ(U.1.toScheme, ⊤) (U.1.topIso.inv a) :=
+    (TauCeti.isSMulRegular_map_iff U.1.topIso.symm.commRingCatIsoToRingEquiv a).mpr ha
+  rw [comap_ι_eq_ofIdealTop, hUa, Ideal.map_span, Set.image_singleton]
+  exact isEffectiveCartier_ofIdealTop_span_singleton _ fun V ↦
+    (isAffineOpen_top U.1.toScheme).isSMulRegular_map le_top hb
+
 /-- Effective Cartier equations can equivalently be given on any affine schemes openly immersed
 in `X`, not only on the affine open subschemes of `X`. -/
 theorem isEffectiveCartier_iff_exists_isOpenImmersion (I : X.IdealSheafData) :
@@ -165,6 +192,21 @@ theorem isEffectiveCartier_iff_exists_isOpenImmersion (I : X.IdealSheafData) :
       Set.image_singleton]
     simp [t, e]
 
+/-- **Being an effective Cartier divisor is local.** An ideal sheaf is an effective Cartier divisor
+as soon as every point lies in the image of an open immersion along which it pulls back to an
+effective Cartier divisor. The converse holds by `IsEffectiveCartier.comap`, since open immersions
+are flat. -/
+theorem isEffectiveCartier_of_forall_exists_isOpenImmersion (I : X.IdealSheafData)
+    (h : ∀ x : X, ∃ (W : Scheme.{u}) (φ : W ⟶ X) (_ : IsOpenImmersion φ),
+      x ∈ Set.range φ ∧ (I.comap φ).IsEffectiveCartier) :
+    I.IsEffectiveCartier := by
+  rw [isEffectiveCartier_iff_exists_isOpenImmersion]
+  intro x
+  obtain ⟨W, φ, _, ⟨y, rfl⟩, hW⟩ := h x
+  obtain ⟨Z, _, ψ, _, ⟨z, rfl⟩, a, ha, hZ⟩ :=
+    (isEffectiveCartier_iff_exists_isOpenImmersion _).mp hW y
+  exact ⟨Z, inferInstance, ψ ≫ φ, inferInstance, ⟨z, rfl⟩, a, ha, by rw [comap_comp, hZ]⟩
+
 /-- Pullback along a flat morphism preserves effective Cartier divisors on arbitrary
 schemes. The pulled-back ideal defines the usual fibre-product closed subscheme. -/
 theorem IsEffectiveCartier.comap {I : Y.IdealSheafData} (hI : I.IsEffectiveCartier)
@@ -190,6 +232,58 @@ theorem IsEffectiveCartier.comap {I : Y.IdealSheafData} (hI : I.IsEffectiveCarti
     _ = (ofIdealTop (Ideal.span {a})).comap g := by rw [hUa]
     _ = ofIdealTop (Ideal.span {g.appTop a}) := by
       rw [comap_ofIdealTop, Ideal.map_span, Set.image_singleton]
+
+open Limits in
+/-- **Base change in stages.** For `g : T ⟶ S` and `h : T' ⟶ T`, the pullback of an ideal sheaf
+`I` on `X` to `X ×_S T'` along `h ≫ g` is an effective Cartier divisor exactly when the pullback of
+`I.comap (pullback.fst f g)` from `X ×_S T` to `(X ×_S T) ×_T T'` is. The two are identified by
+the associativity isomorphism `pullbackLeftPullbackSndIso` of iterated pullbacks. -/
+theorem isEffectiveCartier_comap_fst_comp_iff {S T T' : Scheme.{u}} {I : X.IdealSheafData}
+    {f : X ⟶ S} (g : T ⟶ S) (h : T' ⟶ T) :
+    (I.comap (pullback.fst f (h ≫ g))).IsEffectiveCartier ↔
+      ((I.comap (pullback.fst f g)).comap
+        (pullback.fst (pullback.snd f g) h)).IsEffectiveCartier := by
+  rw [← pullbackLeftPullbackSndIso_inv_fst f g h, comap_comp, comap_comp]
+  constructor
+  · intro hI
+    have := hI.comap (pullbackLeftPullbackSndIso f g h).hom
+    rwa [← comap_comp, Iso.hom_inv_id, comap_id] at this
+  · intro hI
+    -- The instance is passed explicitly: elaborating `hI.comap _` does not find it.
+    have hi : Flat (pullbackLeftPullbackSndIso f g h).inv := inferInstance
+    exact @IsEffectiveCartier.comap _ _ _ hI _ hi
+
+/-- **Pullback to an integral scheme.** Let `f : X ⟶ Y` be a morphism from an integral scheme `X`
+whose generic point does not map into the support of an effective Cartier divisor `I` on `Y`. Then
+the inverse image of `I` on `X` is an effective Cartier divisor: no flatness is needed. -/
+theorem IsEffectiveCartier.comap_of_isIntegral {I : Y.IdealSheafData} (hI : I.IsEffectiveCartier)
+    (f : X ⟶ Y) [IsIntegral X] (hf : f (genericPoint X) ∉ I.support) :
+    (I.comap f).IsEffectiveCartier := by
+  rw [isEffectiveCartier_iff]
+  intro x
+  obtain ⟨U, hxU, a, -, hUa⟩ := (isEffectiveCartier_iff I).mp hI (f x)
+  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U.1).isOpen
+  have hIV : (I.comap f).ideal ⟨V, hV⟩ = Ideal.span {f.appLE U.1 V hVU a} := by
+    rw [ideal_comap_of_le I f U ⟨V, hV⟩ hVU, hUa, Ideal.map_span, Set.image_singleton]
+  -- `Γ(X, V)` is a domain, so the local equation is a nonzerodivisor as soon as it is nonzero.
+  have : Nonempty V := ⟨⟨x, hxV⟩⟩
+  refine ⟨⟨V, hV⟩, hxV, _, IsSMulRegular.of_ne_zero fun h0 ↦ hf ?_, hIV⟩
+  -- A zero local equation would put the generic point of `X`, which lies in `V`, in the support.
+  have hξ : genericPoint X ∈ V :=
+    (genericPoint_spec X).mem_open_set_iff V.isOpen |>.mpr ⟨x, trivial, hxV⟩
+  have h : genericPoint X ∈ (I.comap f).support := by
+    rw [← mem_supportSet_iff_mem_support, mem_supportSet_iff_of_mem (U := ⟨V, hV⟩) hξ, hIV, h0]
+    simp
+  rwa [support_comap, ← SetLike.mem_coe, Closeds.coe_preimage] at h
+
+/-- **Meeting the closure of a point properly.** An effective Cartier divisor `I` whose support does
+not contain a point `η` pulls back to an effective Cartier divisor on the closure of `η`, with its
+reduced induced closed subscheme structure. -/
+theorem IsEffectiveCartier.comap_subschemeι_vanishingIdeal_closure_singleton
+    {I : X.IdealSheafData} (hI : I.IsEffectiveCartier) {η : X} (hη : η ∉ I.support) :
+    (I.comap (vanishingIdeal ⟨closure {η}, isClosed_closure⟩).subschemeι).IsEffectiveCartier :=
+  hI.comap_of_isIntegral _ (by rwa [subschemeι_genericPoint_vanishingIdeal_closure_singleton])
 
 /-- Along a flat morphism `f : X ⟶ Y` to an affine scheme, the pullback of a nonzerodivisor `b`
 on `Y` cuts out an effective Cartier divisor on `X`, with global equation `f.appTop b`. -/

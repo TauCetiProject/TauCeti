@@ -17,7 +17,9 @@ Let `f : W₁ → W₂` be a nonzero morphism of elliptic curves over a field, a
 acts additively on points, so it induces a map `E₁ → E₂`, again written `f`. Since `f̂ ∘ f` and
 `f ∘ f̂` are multiplication by `deg f ≠ 0` and `E₁`, `E₂` are torsion-free, this map is injective.
 When `E₂` is finitely generated, so is `E₁`, the two have the same rank `r`, and the images of
-`f` and of its dual have finite index, with `[E₂ : f E₁] · [E₁ : f̂ E₂] = (deg f) ^ r`. Over a
+`f` and of its dual have finite index, with `[E₂ : f E₁] · [E₁ : f̂ E₂] = (deg f) ^ r`. The index
+`[E₂ : f E₁]` is the index of `f(W₁(F)) + W₂(F)_tors` in `W₂(F)`, which is how the
+cokernel of `f` on the points themselves is compared with it. Over a
 field with heights, the descended Néron–Tate pairing scales by the degree,
 `⟨f x, f y⟩ = deg f · ⟨x, y⟩`, by `TauCeti.Isogeny.Hom.neronTatePairing_pointMap`.
 
@@ -32,9 +34,12 @@ field with heights, the descended Néron–Tate pairing scales by the degree,
   pairing scales by the degree.
 * `TauCeti.Isogeny.Hom.pointModTorsionMap_injective`: a nonzero morphism is injective on the points
   modulo torsion.
+* `TauCeti.Isogeny.Hom.index_range_pointModTorsionMap`: `[E₂ : f E₁]` is the index of
+  `f(W₁(F)) + W₂(F)_tors` in `W₂(F)`.
 * `TauCeti.Isogeny.Hom.finrank_pointModTorsion_eq`: the two curves have the same rank.
 * `TauCeti.Isogeny.Hom.index_mul_index_dual_eq_degree_pow`: `[E₂ : f E₁] · [E₁ : f̂ E₂]` is
-  `(deg f) ^ r`.
+  `(deg f) ^ r`; in particular `[E₂ : f E₁]` is finite,
+  `TauCeti.Isogeny.Hom.index_range_pointModTorsionMap_ne_zero`.
 
 ## References
 
@@ -105,6 +110,25 @@ theorem neronTatePairingModTorsion_pointModTorsionMap (f : Hom W₁ W₂)
     induction y using Submodule.Quotient.induction_on with
     | _ Q => simp
 
+/-- **The index of the image modulo torsion, computed on points**: the index of the image of the
+points of `W₁` modulo torsion in the points of `W₂` modulo torsion is the index of
+`f(W₁(F)) + W₂(F)_tors` in `W₂(F)`. -/
+theorem index_range_pointModTorsionMap (f : Hom W₁ W₂) :
+    (LinearMap.range f.pointModTorsionMap).toAddSubgroup.index =
+      (f.pointMapHom.range ⊔ AddCommGroup.torsion W₂.Point).index := by
+  -- the image modulo torsion is the image of `f(W₁(F))` under the quotient map
+  have h : (LinearMap.range f.pointModTorsionMap).toAddSubgroup =
+      f.pointMapHom.range.map (Submodule.torsion ℤ W₂.Point).mkQ.toAddMonoidHom := by
+    rw [pointModTorsionMap, Submodule.range_mapQ]
+    ext
+    simp [← SetLike.mem_coe]
+  rw [h, AddSubgroup.index_map, AddMonoidHom.range_eq_top_of_surjective
+    (Submodule.torsion ℤ W₂.Point).mkQ.toAddMonoidHom (Submodule.mkQ_surjective _),
+    AddSubgroup.index_top, mul_one, ← Submodule.torsion_int]
+  congr 2
+  ext P
+  simp
+
 /-- **A nonzero morphism is injective on the points modulo torsion**: `f̂ ∘ f` is multiplication by
 `deg f ≠ 0`, and the points modulo torsion are torsion-free. -/
 theorem pointModTorsionMap_injective {f : Hom W₁ W₂} (hf : f ≠ 0) :
@@ -148,5 +172,13 @@ theorem index_mul_index_dual_eq_degree_pow [Module.Finite ℤ (PointModTorsion W
   rw [hprod, dual_pointModTorsionMap_comp_pointModTorsionMap, ← natCast_zsmul, map_smul,
     LinearMap.toMatrix_id, Matrix.det_smul, Matrix.det_one, mul_one, Fintype.card_fin,
     Int.natAbs_pow, Int.natAbs_natCast]
+
+/-- **The image of a nonzero morphism modulo torsion has finite index**, its index and that of the
+dual multiplying to `(deg f) ^ r ≠ 0`. -/
+theorem index_range_pointModTorsionMap_ne_zero [Module.Finite ℤ (PointModTorsion W₂)]
+    {f : Hom W₁ W₂} (hf : f ≠ 0) :
+    (LinearMap.range f.pointModTorsionMap).toAddSubgroup.index ≠ 0 :=
+  left_ne_zero_of_mul <| (index_mul_index_dual_eq_degree_pow hf).symm ▸
+    pow_ne_zero _ ((degree_eq_zero_iff f).not.2 hf)
 
 end TauCeti.Isogeny.Hom

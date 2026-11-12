@@ -40,6 +40,11 @@ dominant member of the set
 (`TauCeti.exists_weylGroup_smul_dominant_of_forall_reflection_mem_of_sub_mem_posRootCone`).
 Finiteness is the corollary obtained by forgetting which translate was used.
 
+## Main definitions
+
+* `RootPairing.dominantWeightsBelow`: the finite set of the dominant integral weights `mu` below a
+  weight `lam`, that is with `lam - mu` in the positive root cone.
+
 ## Main results
 
 * `TauCeti.finite_setOf_dominant_sub_mem_posRootCone`: **only finitely many dominant weights lie
@@ -49,6 +54,9 @@ Finiteness is the corollary obtained by forgetting which translate was used.
   simple reflections, has a dominant Weyl translate in the set.**
 * `TauCeti.finite_of_forall_reflection_mem_of_sub_mem_posRootCone`: **a set of weights below `lam`,
   integral on the simple coroots and stable under the simple reflections, is finite.**
+* `RootPairing.dominantWeightsBelow_ssubset_of_mem_of_ne`: a dominant weight strictly below a
+  dominant weight `lam` has strictly fewer dominant weights below it, the well-foundedness of the
+  dominance order.
 * `TauCeti.eq_zero_of_mem_posRootCone_of_forall_coroot'_nonpos`: **the only antidominant member of
   the positive root cone is zero**, the case `lam = 0` of the first statement applied to all the
   natural multiples of a member at once.
@@ -226,17 +234,19 @@ private theorem mem_of_sub_eq_sum_nsmul_root_of_reflection_stable {lam : M} {S T
     have hback : P.reflection i (P.reflection i mu) = mu := P.reflection_same i mu
     exact hback ▸ hTrefl i _ hmem
 
-omit [Finite ι] [IsDomain R] [P.IsRootSystem] [P.IsCrystallographic] in
+omit [Finite ι] [CharZero R] [IsDomain R] [P.IsRootSystem] [P.IsCrystallographic] in
 /-- **A member of a reflection-stable set of weights below a weight has a dominant Weyl
 translate in the set.** Let `S` be a set of weights with `lam - mu` in the positive root cone for
 every `mu ∈ S`, on which every simple coroot takes integer values, and which every simple
 reflection carries into itself. Then every `mu ∈ S` has a Weyl-group element `w` for which `w • mu`
 again lies in `S` and every simple coroot takes a natural value on it.
 
-A member on which some simple coroot is negative is moved by the corresponding reflection strictly
-closer to `lam`, so the induction on the height of `lam - mu` stops exactly at a dominant member;
-the set of weights admitting such a `w` is reflection stable, which is what lets the induction run
-inside it.
+In positive characteristic `p` every integer cast equals the natural cast of its residue mod `p`,
+so the integrality hypothesis already makes `mu` itself dominant and `w = 1` works. In
+characteristic zero, a member on which some simple coroot is negative is moved by the corresponding
+reflection strictly closer to `lam`, so the induction on the height of `lam - mu` stops exactly at
+a dominant member; the set of weights admitting such a `w` is reflection stable, which is what lets
+the induction run inside it.
 
 `RootPairing.exists_mem_dominantChamber` is the same statement for an arbitrary weight, with
 dominance read as `0 ≤ ⟨mu, αᵢ^∨⟩` and no reference to `lam`. It needs a `[LinearOrder R]` on the
@@ -253,6 +263,19 @@ theorem exists_weylGroup_smul_dominant_of_forall_reflection_mem_of_sub_mem_posRo
     ∃ w : P.weylGroup, w • mu ∈ S ∧
       ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i (w • mu) = (n : R) := by
   classical
+  by_cases hc : CharZero R
+  swap
+  · -- In positive characteristic every integer is congruent to a natural number, so `w = 1` works.
+    obtain ⟨p, hp⟩ := CharP.exists R
+    have hp0 : p ≠ 0 := by
+      rintro rfl
+      exact hc (CharP.charP_to_charZero R)
+    refine ⟨1, by rwa [one_smul], fun i hi ↦ ?_⟩
+    obtain ⟨z, hz⟩ := hint mu hmu i hi
+    refine ⟨(z % p).toNat, ?_⟩
+    rw [one_smul, hz, ← Int.cast_natCast,
+      Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast hp0))]
+    exact CharP.intCast_eq_intCast_mod R p
   -- Undoing a reflection by appending it to the Weyl-group element on the right.
   have hsmul : ∀ (i : ι) (x : M) (w : P.weylGroup),
       (w * RootPairing.weylGroup.ofIdx P i) • P.reflection i x = w • x := fun i x w ↦ by
@@ -293,7 +316,7 @@ theorem finite_of_forall_reflection_mem_of_sub_mem_posRootCone {lam : M} {S : Se
       hrefl hmu
   exact ⟨w, w • mu, ⟨hcone _ hwS, hwdom⟩, inv_smul_smul w mu⟩
 
-omit [IsDomain R] in
+omit [IsDomain R] [CharZero R] in
 /-- **The only antidominant member of the positive root cone is zero.** A nonnegative integer
 combination `nu` of the simple roots on which every simple coroot takes a nonpositive value is
 zero.
@@ -345,3 +368,57 @@ theorem eq_zero_of_mem_posRootCone_of_forall_coroot'_nonpos [LinearOrder R]
     (finite_setOf_dominant_sub_mem_posRootCone b 0)
 
 end TauCeti
+
+namespace RootPairing
+
+open TauCeti
+
+variable {ι : Type*} {R : Type*} {M : Type*} {N : Type*}
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
+  [P.IsRootSystem] [P.IsCrystallographic] (b : P.Base)
+
+/-- The **dominant integral weights below `lam`**: the weights `mu` with `lam - mu` in the positive
+root cone of `b`, on which every simple coroot takes a natural value. There are only finitely many
+of them (`TauCeti.finite_setOf_dominant_sub_mem_posRootCone`), and this is that finite set. -/
+noncomputable def dominantWeightsBelow (lam : M) : Finset M :=
+  (finite_setOf_dominant_sub_mem_posRootCone b lam).toFinset
+
+variable {P b}
+
+/-- Membership in `RootPairing.dominantWeightsBelow`: `mu` lies below `lam` and is dominant
+integral. -/
+@[simp]
+theorem mem_dominantWeightsBelow {lam mu : M} :
+    mu ∈ P.dominantWeightsBelow b lam ↔
+      lam - mu ∈ posRootCone P b ∧ ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i mu = (n : R) := by
+  simp [dominantWeightsBelow]
+
+/-- A dominant integral weight is one of the dominant integral weights below itself. -/
+theorem self_mem_dominantWeightsBelow {lam : M}
+    (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R)) :
+    lam ∈ P.dominantWeightsBelow b lam :=
+  mem_dominantWeightsBelow.mpr ⟨by simp, hlam⟩
+
+/-- The dominant integral weights below a weight `mu` that lies below `lam` also lie below `lam`:
+the dominance order is transitive. -/
+theorem dominantWeightsBelow_subset_of_mem {lam mu : M} (h : mu ∈ P.dominantWeightsBelow b lam) :
+    P.dominantWeightsBelow b mu ⊆ P.dominantWeightsBelow b lam := fun nu hnu ↦ by
+  rw [mem_dominantWeightsBelow] at h hnu ⊢
+  exact ⟨by simpa using add_mem h.1 hnu.1, hnu.2⟩
+
+/-- **Strictly fewer dominant weights lie below a strictly lower weight.** Let `lam` be dominant
+integral and let `mu ≠ lam` be one of the dominant integral weights below `lam`. Then the dominant
+integral weights below `mu` form a proper subset of those below `lam`, since `lam` itself is not
+below `mu`. This is what makes the dominance order on dominant integral weights well-founded. -/
+theorem dominantWeightsBelow_ssubset_of_mem_of_ne {lam mu : M}
+    (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R))
+    (h : mu ∈ P.dominantWeightsBelow b lam) (hne : mu ≠ lam) :
+    P.dominantWeightsBelow b mu ⊂ P.dominantWeightsBelow b lam := by
+  refine (Finset.ssubset_iff_of_subset (dominantWeightsBelow_subset_of_mem h)).mpr
+    ⟨lam, self_mem_dominantWeightsBelow hlam, fun hmem ↦ hne ?_⟩
+  have h0 := eq_zero_of_add_eq_zero_of_mem_posRootCone P b (mem_dominantWeightsBelow.mp h).1
+    (mem_dominantWeightsBelow.mp hmem).1 (by abel)
+  exact (sub_eq_zero.mp h0).symm
+
+end RootPairing

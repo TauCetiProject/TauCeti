@@ -7,7 +7,11 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.SymplecticGroup
+public import Mathlib.Analysis.Complex.Basic
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # The realification of a matrix over an RCLike field
@@ -21,9 +25,23 @@ the *realification* of `A`. It is additive and multiplicative and turns the conj
 into the transpose, so it carries Hermitian matrices to symmetric ones and `*`-congruence to
 congruence. This is what lets real quadratic-form theory be applied to Hermitian forms.
 
+Realification is injective, so on square matrices it is an embedding of `ℝ`-algebras. Its values
+commute with the standard alternating matrix `Matrix.J`, the realification of multiplication by
+`i` when `𝕜 = ℂ`. A matrix is therefore unitary exactly when its realification is orthogonal, and
+exactly when its realification is symplectic.
+
+The determinant formula reuses `LinearMap.det_restrictScalars_eq_normSq` for `𝕜 = ℂ`, expressing
+the realification in the real basis induced by `Complex.basisOneI`. A general `RCLike` field is
+either `ℝ`, where the realification is block diagonal, or isomorphic to `ℂ` via
+`RCLike.complexRingEquiv`.
+
 ## Main definitions
 
-* `Matrix.realify`: the real matrix of the `ℝ`-linear map a complex matrix induces.
+* `Matrix.realify`: the real matrix of the `ℝ`-linear map a matrix over `𝕜` induces.
+* `Matrix.realifyLinearMap`: realification, as an `ℝ`-linear map.
+* `Matrix.realifyAlgHom`: realification of square matrices, as an `ℝ`-algebra homomorphism.
+* `Matrix.GeneralLinearGroup.realify`: the injective group homomorphism `GL n 𝕜 →* GL (n ⊕ n) ℝ`
+  that realification induces on invertible matrices.
 * `TauCeti.realifyReflection`: the reflection of `ℝ^ι ⊕ ℝ^ι` negating the second summand, which
   realises entrywise conjugation as a congruence of realifications.
 
@@ -34,9 +52,15 @@ congruence. This is what lets real quadratic-form theory be applied to Hermitian
 * `Matrix.realify_conjTranspose`: the conjugate transpose becomes the transpose.
 * `Matrix.IsHermitian.isSymm_realify`: a Hermitian matrix realifies to a symmetric one.
 * `Matrix.realify_map_ofReal`: a real matrix realifies to two diagonal copies of itself.
-* `Matrix.isUnit_det_realify`: realification preserves invertibility.
+* `Matrix.det_realify`: the real determinant is the squared modulus of the determinant over `𝕜`.
+* `Matrix.isUnit_det_realify_iff`: realification preserves and reflects invertibility.
 * `Matrix.realify_map_starRingEnd`: entrywise conjugation becomes congruence by the reflection
   `TauCeti.realifyReflection` that negates the imaginary coordinates.
+* `Matrix.realify_injective` and `Matrix.realifyAlgHom`: realification is injective, and on square
+  matrices it is a homomorphism of `ℝ`-algebras.
+* `Matrix.commute_J_realify`: realifications commute with `Matrix.J`.
+* `Matrix.realify_mem_orthogonalGroup_iff` and `Matrix.realify_mem_symplecticGroup_iff`: a matrix
+  is unitary exactly when its realification is orthogonal, and exactly when it is symplectic.
 -/
 
 public section
@@ -72,49 +96,50 @@ namespace Matrix
 
 open TauCeti
 
+variable {𝕜 : Type*} [RCLike 𝕜]
+
 /-- The realification of a matrix over an `RCLike` field, obtained by splitting its entries into
 real and imaginary parts. -/
-def realify {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) : Matrix (m ⊕ m) (n ⊕ n) ℝ :=
+def realify (A : Matrix m n 𝕜) : Matrix (m ⊕ m) (n ⊕ n) ℝ :=
   fromBlocks (A.map RCLike.re) (-(A.map RCLike.im)) (A.map RCLike.im) (A.map RCLike.re)
 
 @[simp]
-theorem realify_apply_inl_inl {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) (i : m) (j : n) :
+theorem realify_apply_inl_inl (A : Matrix m n 𝕜) (i : m) (j : n) :
     A.realify (Sum.inl i) (Sum.inl j) = RCLike.re (A i j) := by simp [realify]
 
 @[simp]
-theorem realify_apply_inl_inr {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) (i : m) (j : n) :
+theorem realify_apply_inl_inr (A : Matrix m n 𝕜) (i : m) (j : n) :
     A.realify (Sum.inl i) (Sum.inr j) = -RCLike.im (A i j) := by simp [realify]
 
 @[simp]
-theorem realify_apply_inr_inl {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) (i : m) (j : n) :
+theorem realify_apply_inr_inl (A : Matrix m n 𝕜) (i : m) (j : n) :
     A.realify (Sum.inr i) (Sum.inl j) = RCLike.im (A i j) := by simp [realify]
 
 @[simp]
-theorem realify_apply_inr_inr {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) (i : m) (j : n) :
+theorem realify_apply_inr_inr (A : Matrix m n 𝕜) (i : m) (j : n) :
     A.realify (Sum.inr i) (Sum.inr j) = RCLike.re (A i j) := by simp [realify]
 
 @[simp]
-theorem realify_zero {𝕜 : Type*} [RCLike 𝕜] : (0 : Matrix m n 𝕜).realify = 0 := by
+theorem realify_zero : (0 : Matrix m n 𝕜).realify = 0 := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
 
 /-- Realification preserves addition. -/
 @[simp]
-theorem realify_add {𝕜 : Type*} [RCLike 𝕜] (A B : Matrix m n 𝕜) :
+theorem realify_add (A B : Matrix m n 𝕜) :
     (A + B).realify = A.realify + B.realify := by
   ext p q
-  rcases p with i | i <;> rcases q with j | j <;> simp
-  ring
+  rcases p with i | i <;> rcases q with j | j <;> simp [add_comm]
 
 @[simp]
-theorem realify_neg {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) :
+theorem realify_neg (A : Matrix m n 𝕜) :
     (-A).realify = -A.realify := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
 
 /-- Realification commutes with real scalar multiplication. -/
 @[simp]
-theorem realify_smul {𝕜 : Type*} [RCLike 𝕜] (r : ℝ) (A : Matrix m n 𝕜) :
+theorem realify_smul (r : ℝ) (A : Matrix m n 𝕜) :
     (r • A).realify = r • A.realify := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;>
@@ -122,21 +147,20 @@ theorem realify_smul {𝕜 : Type*} [RCLike 𝕜] (r : ℝ) (A : Matrix m n 𝕜
 
 /-- A matrix with real entries realifies to two diagonal copies of itself. -/
 @[simp]
-theorem realify_map_ofReal {𝕜 : Type*} [RCLike 𝕜] (M : Matrix m n ℝ) :
+theorem realify_map_ofReal (M : Matrix m n ℝ) :
     (M.map (algebraMap ℝ 𝕜)).realify = fromBlocks M 0 0 M := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp
 
 /-- Realification preserves the identity matrix. -/
 @[simp]
-theorem realify_one {𝕜 : Type*} [RCLike 𝕜] [DecidableEq ι] :
+theorem realify_one [DecidableEq ι] :
     (1 : Matrix ι ι 𝕜).realify = 1 := by
   rw [← Matrix.map_one (algebraMap ℝ 𝕜) (by simp) (by simp), realify_map_ofReal, fromBlocks_one]
 
 /-- Realification preserves matrix multiplication. -/
 @[simp]
-theorem realify_mul {𝕜 : Type*} [RCLike 𝕜] [Fintype n] (A : Matrix m n 𝕜)
-    (B : Matrix n l 𝕜) :
+theorem realify_mul [Fintype n] (A : Matrix m n 𝕜) (B : Matrix n l 𝕜) :
     (A * B).realify = A.realify * B.realify := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;>
@@ -145,27 +169,61 @@ theorem realify_mul {𝕜 : Type*} [RCLike 𝕜] [Fintype n] (A : Matrix m n �
 
 /-- Realification turns the conjugate transpose into the transpose. -/
 @[simp]
-theorem realify_conjTranspose {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) :
+theorem realify_conjTranspose (A : Matrix m n 𝕜) :
     (Aᴴ).realify = (A.realify)ᵀ := by
   ext p q
   rcases p with i | i <;> rcases q with j | j <;> simp [conjTranspose_apply]
 
 /-- Realification carries Hermitian matrices to symmetric ones. -/
-theorem IsHermitian.isSymm_realify {𝕜 : Type*} [RCLike 𝕜] {A : Matrix ι ι 𝕜}
-    (hA : Matrix.IsHermitian A) :
+theorem IsHermitian.isSymm_realify {A : Matrix ι ι 𝕜} (hA : A.IsHermitian) :
     A.realify.IsSymm := by
   rw [Matrix.IsSymm, ← realify_conjTranspose, hA.eq]
 
-/-- Realification preserves invertibility. -/
-theorem isUnit_det_realify {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
-    {A : Matrix ι ι 𝕜} (h : IsUnit A.det) :
-    IsUnit (A.realify).det := by
-  refine Matrix.isUnit_det_of_left_inverse (B := (A⁻¹).realify) ?_
-  rw [← realify_mul, Matrix.nonsing_inv_mul _ h, realify_one]
+/-- The case `𝕜 = ℂ` of `Matrix.det_realify`: the realification is the matrix of the underlying
+real-linear map in the real basis induced by `Complex.basisOneI`. -/
+private theorem det_realify_complex [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℂ) :
+    A.realify.det = Complex.normSq A.det := by
+  let e : ι ⊕ ι ≃ ι × Fin 2 :=
+    (Equiv.boolProdEquivSum ι).symm.trans ((finTwoEquiv.symm.prodCongr (.refl ι)).trans
+      (.prodComm _ _))
+  let b := (Complex.basisOneI.smulTower' (Pi.basisFun ℂ ι)).reindex e.symm
+  have h : LinearMap.toMatrix b b (A.mulVecLin.restrictScalars ℝ) = A.realify := by
+    ext i j
+    cases i <;> cases j <;>
+      simp [b, e, finTwoEquiv, LinearMap.toMatrix_apply, Module.Basis.smulTower'_repr,
+        Module.Basis.smulTower'_apply, Complex.mul_re, Complex.mul_im]
+  rw [← h, LinearMap.det_toMatrix, LinearMap.det_restrictScalars_eq_normSq, ← Matrix.toLin'_apply',
+    LinearMap.det_toLin']
+
+/-- The determinant of a matrix's realification is the squared modulus of its determinant,
+including singular matrices and empty index types. -/
+@[simp]
+theorem det_realify [Fintype ι] [DecidableEq ι] (A : Matrix ι ι 𝕜) :
+    A.realify.det = RCLike.normSq A.det := by
+  obtain h | h := RCLike.I_eq_zero_or_im_I_eq_one (K := 𝕜)
+  · -- `𝕜` is `ℝ`: the entries are real, so the realification is block diagonal.
+    have hA : A = (A.map RCLike.re).map (algebraMap ℝ 𝕜) := by
+      ext i j
+      simp [RCLike.ext_iff, RCLike.im_eq_zero h]
+    rw [hA, realify_map_ofReal, det_fromBlocks_zero₂₁, ← RingHom.mapMatrix_apply (algebraMap ℝ 𝕜),
+      ← RingHom.map_det]
+    simp [RCLike.normSq_apply]
+  · -- `𝕜` is `ℂ`: transport along the ring isomorphism, which preserves both parts.
+    let e := RCLike.complexRingEquiv h
+    have hA : A.realify = (A.map e).realify := by
+      ext p q
+      rcases p with i | i <;> rcases q with j | j <;> simp [e]
+    rw [hA, det_realify_complex, ← RingEquiv.mapMatrix_apply, ← RingEquiv.map_det]
+    simp [e, Complex.normSq_apply, RCLike.normSq_apply]
+
+/-- Realification preserves and reflects invertibility. -/
+theorem isUnit_det_realify_iff [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜} :
+    IsUnit A.realify.det ↔ IsUnit A.det := by
+  simp [isUnit_iff_ne_zero]
 
 /-- Entrywise conjugation becomes congruence by the reflection negating the imaginary
 coordinates. -/
-theorem realify_map_starRingEnd {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+theorem realify_map_starRingEnd [Fintype ι] [DecidableEq ι]
     (A : Matrix ι ι 𝕜) :
     (A.map (starRingEnd 𝕜)).realify =
       realifyReflection ι * A.realify * (realifyReflection ι)ᵀ := by
@@ -174,5 +232,104 @@ theorem realify_map_starRingEnd {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [Decid
   rcases p with i | i <;> rcases q with j | j <;>
     simp [realifyReflection, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply,
       Finset.sum_ite_eq', Finset.sum_ite_eq]
+
+/-- The quadratic form of a realified matrix is the real part of its original quadratic
+form, evaluated at the split real and imaginary coordinates. -/
+theorem dotProduct_realify_mulVec [Fintype n]
+    (A : Matrix n n 𝕜) (z : n → 𝕜) :
+    Sum.elim (fun i ↦ RCLike.re (z i)) (fun i ↦ RCLike.im (z i)) ⬝ᵥ
+        A.realify *ᵥ Sum.elim (fun i ↦ RCLike.re (z i)) (fun i ↦ RCLike.im (z i)) =
+      RCLike.re (star z ⬝ᵥ A *ᵥ z) := by
+  simp only [dotProduct, mulVec, Fintype.sum_sum_type, RCLike.mul_re, RCLike.mul_im,
+    Sum.elim_inl, Sum.elim_inr, realify_apply_inl_inl, realify_apply_inl_inr,
+    realify_apply_inr_inl, realify_apply_inr_inr, Pi.star_apply, map_sum,
+    RCLike.star_def, RCLike.conj_re, RCLike.conj_im, Finset.mul_sum, ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- Realification is injective: the real and imaginary parts of the entries are read off the first
+block column. -/
+theorem realify_injective :
+    Function.Injective (realify : Matrix m n 𝕜 → Matrix (m ⊕ m) (n ⊕ n) ℝ) := by
+  intro A B h
+  ext i j
+  apply RCLike.ext
+  · simpa using congr_fun₂ h (Sum.inl i) (Sum.inl j)
+  · simpa using congr_fun₂ h (Sum.inr i) (Sum.inl j)
+
+@[simp]
+theorem realify_inj {A B : Matrix m n 𝕜} :
+    A.realify = B.realify ↔ A = B :=
+  realify_injective.eq_iff
+
+variable (m n 𝕜) in
+/-- Realification of matrices, as an `ℝ`-linear map. -/
+def realifyLinearMap : Matrix m n 𝕜 →ₗ[ℝ] Matrix (m ⊕ m) (n ⊕ n) ℝ where
+  toFun := realify
+  map_add' := realify_add
+  map_smul' := realify_smul
+
+@[simp]
+theorem realifyLinearMap_apply (A : Matrix m n 𝕜) :
+    realifyLinearMap m n 𝕜 A = A.realify :=
+  (rfl)
+
+variable (ι 𝕜) in
+/-- Realification of square matrices, as a homomorphism of `ℝ`-algebras. -/
+def realifyAlgHom [Fintype ι] [DecidableEq ι] :
+    Matrix ι ι 𝕜 →ₐ[ℝ] Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ :=
+  AlgHom.ofLinearMap (realifyLinearMap ι ι 𝕜) realify_one realify_mul
+
+@[simp]
+theorem realifyAlgHom_apply [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι 𝕜) : realifyAlgHom ι 𝕜 A = A.realify :=
+  (rfl)
+
+/-- Realifications commute with the standard alternating matrix `J`. -/
+theorem commute_J_realify [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι 𝕜) : Commute (J ι ℝ) A.realify := by
+  simp [Commute, SemiconjBy, J, realify, fromBlocks_multiply]
+
+/-- A square matrix is unitary exactly when its realification is orthogonal. -/
+@[simp]
+theorem realify_mem_orthogonalGroup_iff [Fintype ι] [DecidableEq ι]
+    {A : Matrix ι ι 𝕜} : A.realify ∈ orthogonalGroup (ι ⊕ ι) ℝ ↔ A ∈ unitaryGroup ι 𝕜 := by
+  rw [mem_orthogonalGroup_iff, mem_unitaryGroup_iff, star_eq_conjTranspose,
+    ← realify_conjTranspose, ← realify_mul, ← realify_one (𝕜 := 𝕜), realify_inj]
+
+/-- A square matrix is unitary exactly when its realification is symplectic. -/
+@[simp]
+theorem realify_mem_symplecticGroup_iff [Fintype ι] [DecidableEq ι]
+    {A : Matrix ι ι 𝕜} : A.realify ∈ symplecticGroup ι ℝ ↔ A ∈ unitaryGroup ι 𝕜 := by
+  rw [SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute (commute_J_realify A),
+    realify_mem_orthogonalGroup_iff]
+
+namespace GeneralLinearGroup
+
+variable (ι 𝕜) [Fintype ι] [DecidableEq ι]
+
+/-- Realification of invertible matrices: the group homomorphism `GL ι 𝕜 →* GL (ι ⊕ ι) ℝ` that
+`Matrix.realifyAlgHom` induces on units. -/
+def realify : GL ι 𝕜 →* GL (ι ⊕ ι) ℝ :=
+  Units.map (realifyAlgHom ι 𝕜 : Matrix ι ι 𝕜 →* Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ)
+
+theorem realify_def :
+    realify ι 𝕜 = Units.map (realifyAlgHom ι 𝕜 : Matrix ι ι 𝕜 →* Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) :=
+  (rfl)
+
+variable {ι 𝕜}
+
+@[simp]
+theorem coe_realify (A : GL ι 𝕜) :
+    (realify ι 𝕜 A : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) = (A : Matrix ι ι 𝕜).realify :=
+  (rfl)
+
+theorem realify_injective : Function.Injective (realify ι 𝕜) := fun _ _ h ↦
+  Units.ext <| Matrix.realify_injective <| by simpa using congrArg Units.val h
+
+@[simp]
+theorem realify_inj {A B : GL ι 𝕜} : realify ι 𝕜 A = realify ι 𝕜 B ↔ A = B :=
+  realify_injective.eq_iff
+
+end GeneralLinearGroup
 
 end Matrix

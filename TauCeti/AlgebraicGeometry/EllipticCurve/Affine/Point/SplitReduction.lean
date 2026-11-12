@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
+-- Proof-only: the coefficients of the addition polynomial, and the line through two points.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.AddPolynomial
 -- Proof-only: the points with singular reduction when the reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
+-- Proof-only: the equation in split branch coordinates.
+import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
 import TauCeti.RingTheory.Henselian.Basic
 -- Proof-only: the values of `v` in `(v ϖ ^ n, 1]` when `ϖ` generates the maximal ideal.
@@ -317,7 +321,6 @@ private theorem valuation_eq_and_le_of_nonsingular {a₆ A B ν x₁ x₂ x₃ :
   -- every quadratic monomial in `x₁`, `u₁`, `w₁` with coefficient of valuation `≤ σ²` is at most
   -- `σ² κ²`, which is smaller than `σ³ κ`
   have hσ2 : σ ≤ σ ^ 2 := le_self_pow₀ hσ1 two_ne_zero
-  have hσ23 : σ ^ 2 ≤ σ ^ 3 := pow_le_pow_right₀ hσ1 (by norm_num)
   have hκκ : σ ^ 2 * (κ * κ) < σ ^ 3 * κ :=
     calc σ ^ 2 * (κ * κ) < σ ^ 2 * (σ * κ) :=
           mul_lt_mul_of_pos_left (mul_lt_mul_of_pos_right (hu₁.trans_le hσ1) hκ0.pos)
@@ -413,14 +416,6 @@ section Point
 
 variable {F : Type*} [Field F] {W : Affine F} {α β : F}
 
-/-- With `a₃ = a₄ = 0` and `T² + a₁ T - a₂ = (T - α) (T - β)`, the Weierstrass equation reads
-`(y - α x) (y - β x) = x³ + a₆`. -/
-private theorem equation_iff_mul (h₁ : W.a₁ = -(α + β)) (h₂ : W.a₂ = -(α * β)) (h₃ : W.a₃ = 0)
-    (h₄ : W.a₄ = 0) {x y : F} :
-    W.Equation x y ↔ (y - α * x) * (y - β * x) = x ^ 3 + W.a₆ := by
-  rw [equation_iff, h₁, h₂, h₃, h₄]
-  constructor <;> intro h <;> linear_combination h
-
 variable [DecidableEq F]
 
 /-- **The line through two points.** For two points of `(y - α x) (y - β x) = x³ + a₆` that are not
@@ -440,21 +435,11 @@ private theorem exists_line (h₁ : W.a₁ = -(α + β)) (h₂ : W.a₂ = -(α *
       x₁ + x₂ + W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂) = A * B ∧
       x₁ * x₂ + x₁ * W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂) +
         x₂ * W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂) = -(A + B) * ν := by
-  set ℓ := W.slope x₁ x₂ y₁ y₂ with hℓ
+  set ℓ := W.slope x₁ x₂ y₁ y₂
   -- the line passes through the second point
-  have hy₂ : y₂ = ℓ * x₂ + (y₁ - ℓ * x₁) := by
-    by_cases hx : x₁ = x₂
-    · rw [← Y_eq_of_Y_ne hP hQ hx fun h ↦ hxy ⟨hx, h⟩, hx]
-      ring
-    · rw [hℓ, slope_of_X_ne hx]
-      field_simp [sub_ne_zero.2 hx]
-      ring
+  have hy₂ : y₂ = ℓ * x₂ + (y₁ - ℓ * x₁) := Y_eq_slope_mul_add hP hQ hxy
   -- the coefficient of `X` in `W(X, ℓ (X - x₁) + y₁) = -(X - x₁) (X - x₂) (X - x₃)`
-  have hc : 2 * x₁ * ℓ ^ 2 + (W.a₁ * x₁ - 2 * y₁ - W.a₃) * ℓ + (-W.a₁ * y₁ + W.a₄) =
-      x₁ * x₂ + x₁ * W.addX x₁ x₂ ℓ + x₂ * W.addX x₁ x₂ ℓ := by
-    have key := W.addPolynomial_slope hP hQ hxy
-    rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at key
-    exact congrArg Cubic.c ((Cubic.toPoly_injective _ _).1 key)
+  have hc := (coeffs_of_addPolynomial_eq (W.addPolynomial_slope hP hQ hxy)).2.1
   refine ⟨ℓ - α, ℓ - β, y₁ - ℓ * x₁, by ring, by ring, by ring, by rw [hy₂]; ring,
     by rw [hy₂]; ring, ?_, ?_, ?_, ?_⟩
   · simp only [addY, negY, negAddY, h₁, h₃]; ring
@@ -504,7 +489,7 @@ private theorem SplitNodal.valuation_a₆_ne_zero (hW : SplitNodal v W α β) : 
 
 private theorem SplitNodal.equation_iff (hW : SplitNodal v W α β) {x y : F} :
     W.Equation x y ↔ (y - α * x) * (y - β * x) = x ^ 3 + W.a₆ :=
-  equation_iff_mul hW.a₁ hW.a₂ hW.a₃ hW.a₄
+  W.equation_iff_mul hW.a₁ hW.a₂ hW.a₃ hW.a₄ x y
 
 private theorem sub_mul_eq (α β x y : F) : (β - α) * x = (y - α * x) - (y - β * x) := by ring
 

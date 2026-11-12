@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing
 
 /-!
@@ -38,6 +39,15 @@ the section ring of every pole divisor is generated in degree one
 (`TauCeti.riemannRochSpace_nsmul_poles_le_pow_of_genus_eq_zero`). Generation in degree one is
 what embeds a curve in projective space by the complete linear system of the divisor.
 
+These statements use Riemann–Roch, so they need `k` to be the exact constant field of `F`. Over
+an arbitrary `k`, the multiples of a pole divisor have the same Riemann–Roch spaces over `k` and
+over the full constant field `K = algebraicClosure k F`
+(`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`), and `K` is exact. So generation in
+every positive degree persists over `k`, for `e ≥ 2 g(F / K)`
+(`TauCeti.riemannRochSpace_nsmul_poles_pow_le_pow_of_ne_zero`). Only degree zero is lost, where
+`L(0) = K` is larger than the constants `k` unless `k` is exact; projective embeddings do not see
+degree zero.
+
 The argument is the base-point-free pencil calculation: the intersection of
 `L(A)` and `z L(A)` is `L(A - Z)`, and Riemann–Roch computes the dimension of their
 sum. Multiplication by `z` is the existing equivalence
@@ -66,8 +76,8 @@ theorem riemannRochSpace_add_poles_eq_sup (hF : IsFunctionField k F)
     (hA : 2 * (genus k F : ℤ) - 1 ≤ Divisor.degree (A - Divisor.zeros hF z)) :
     riemannRochSpace (A + Divisor.poles hF z) =
       riemannRochSpace A ⊔ riemannRochSpace (A - Divisor.principal hF z) := by
-  have hZ : 0 ≤ Divisor.zeros hF z := (Divisor.isEffective_zeros hF z).zero_le
-  have hD : 0 ≤ Divisor.poles hF z := (Divisor.isEffective_poles hF z).zero_le
+  have hZ : 0 ≤ Divisor.zeros hF z := Divisor.zeros_nonneg hF z
+  have hD : 0 ≤ Divisor.poles hF z := Divisor.poles_nonneg hF z
   have hinf : A ⊓ (A - Divisor.principal hF z) = A - Divisor.zeros hF z := by
     ext P
     simp only [WeilDivisor.coeff_inf, WeilDivisor.coeff_sub,
@@ -151,7 +161,7 @@ theorem riemannRochSpace_succ_nsmul_poles_le_mul (hF : IsFunctionField k F)
   obtain ⟨a, ha, b, hb, rfl⟩ := (mem_riemannRochSpace_succ_nsmul_poles_iff hF hex z n hn f).mp hf
   refine add_mem ?_ (Submodule.mul_mem_mul (mem_riemannRochSpace_poles hF z) hb)
   simpa only [one_mul] using Submodule.mul_mem_mul
-    (one_mem_riemannRochSpace_iff.mpr (Divisor.isEffective_poles hF z).zero_le) ha
+    (one_mem_riemannRochSpace_iff.mpr (Divisor.poles_nonneg hF z)) ha
 
 /-- Iterating the pencil: once the bound holds at `N`, every section of `(N + j) D`, for
 `D = (z)∞`, is a sum of products of `j` sections of `D` with a section of `N D`. -/
@@ -161,7 +171,7 @@ theorem riemannRochSpace_add_nsmul_poles_le_pow_mul (hF : IsFunctionField k F)
     (j : ℕ) :
     riemannRochSpace ((N + j) • Divisor.poles hF z) ≤
       riemannRochSpace (Divisor.poles hF z) ^ j * riemannRochSpace (N • Divisor.poles hF z) := by
-  have hdeg := Divisor.degree_nonneg (Divisor.isEffective_poles hF z).zero_le
+  have hdeg := Divisor.degree_nonneg (Divisor.poles_nonneg hF z)
   induction j with
   | zero => simp
   | succ j ih =>
@@ -181,7 +191,7 @@ theorem riemannRochSpace_nsmul_nsmul_poles_le_pow (hF : IsFunctionField k F)
     (n : ℕ) :
     riemannRochSpace (n • e • Divisor.poles hF z) ≤
       riemannRochSpace (e • Divisor.poles hF z) ^ n := by
-  have hdeg := Divisor.degree_nonneg (Divisor.isEffective_poles hF z).zero_le
+  have hdeg := Divisor.degree_nonneg (Divisor.poles_nonneg hF z)
   refine Divisor.adjoin_sectionRingGrade_one_eq_top_iff.mp
     (Divisor.adjoin_sectionRingGrade_one_eq_top hF hex fun m hm ↦ ?_) n
   have hm : (1 : ℤ) ≤ m := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hm
@@ -207,10 +217,29 @@ theorem riemannRochSpace_nsmul_poles_pow_le_pow (hF : IsFunctionField k F)
     exact_mod_cast Module.finrank_pos
   rw [Divisor.poles_pow]
   refine riemannRochSpace_nsmul_nsmul_poles_le_pow hF hex z ?_ n
-  have he' : (2 * genus k F : ℤ) ≤ e := by exact_mod_cast he
   have he₀' : (1 : ℤ) ≤ e := by exact_mod_cast he₀
   have := mul_nonneg (sub_nonneg.2 he₀') (sub_nonneg.2 hdeg)
   nlinarith
+
+/-- **High powers of a transcendental function have pole divisors whose section ring is generated
+in positive degrees, over any constant field**: if `z` is transcendental over `k`, `e ≥ 1` and
+`e ≥ 2g`, where `g` is the genus of `F` over its full constant field `algebraicClosure k F`, then
+for every `n ≠ 0`, every section of `n (zᵉ)∞` is a sum of products of `n` sections of `(zᵉ)∞`.
+Degree zero is excluded: `L(0)` is `algebraicClosure k F`, which is larger than the constants `k`
+unless `k` is the exact constant field. -/
+theorem riemannRochSpace_nsmul_poles_pow_le_pow_of_ne_zero (hF : IsFunctionField k F) {z : Fˣ}
+    (hz : Transcendental k (z : F)) {e : ℕ} (he₀ : 0 < e)
+    (he : 2 * genus (algebraicClosure k F) F ≤ e) {n : ℕ} (hn : n ≠ 0) :
+    riemannRochSpace (n • Divisor.poles hF (z ^ e)) ≤
+      riemannRochSpace (Divisor.poles hF (z ^ e)) ^ n := by
+  have hF' := hF.algebraicClosure
+  -- Generation over the exact constant field `algebraicClosure k F`, restricted to `k`.
+  have h := Submodule.restrictScalars_mono k
+    (riemannRochSpace_nsmul_poles_pow_le_pow hF' isIntegrallyClosedIn_algebraicClosure
+      (hz.extendScalars _) he₀ he n)
+  rwa [Submodule.restrictScalars_pow hn, restrictScalars_riemannRochSpace_nsmul_poles hF hF',
+    ← one_nsmul (Divisor.poles hF' _), restrictScalars_riemannRochSpace_nsmul_poles hF hF',
+    one_nsmul] at h
 
 /-- **In genus zero, the section ring of a pole divisor is generated in degree one**: over an
 exact constant field, every section of `n D`, for `D = (z)∞`, is a sum of products of `n`
@@ -230,7 +259,7 @@ theorem riemannRochSpace_add_nsmul_poles_eq_span (hF : IsFunctionField k F)
     riemannRochSpace ((N + m) • Divisor.poles hF z) =
       Submodule.span k {f : F | ∃ i ≤ m, ∃ a ∈ riemannRochSpace (N • Divisor.poles hF z),
         f = (z : F) ^ i * a} := by
-  have hD : 0 ≤ Divisor.poles hF z := (Divisor.isEffective_poles hF z).zero_le
+  have hD : 0 ≤ Divisor.poles hF z := Divisor.poles_nonneg hF z
   have hdegD : 0 ≤ Divisor.degree (Divisor.poles hF z) := Divisor.degree_nonneg hD
   induction m with
   | zero =>

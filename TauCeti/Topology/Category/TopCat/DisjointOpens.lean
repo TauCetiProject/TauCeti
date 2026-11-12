@@ -22,12 +22,13 @@ subspace of the square of the Sierpiński space `Prop`. So these are the maps wi
 property with respect to the map from that space to a point, and the general theory of lifting
 properties shows that they are stable under cobase change, coproducts and transfinite composition.
 In particular a relative cell complex in `TopCat` whose cells extend disjoint open sets extends
-disjoint open sets.
+disjoint open sets. A map with a continuous retraction on a neighbourhood of its range extends
+disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`).
 
 The application is to Hausdorffness of cell complexes: two points separated by open sets stay
 separated after a map which extends disjoint open sets.
 
-* `TauCeti.TopCat.t2Space_of_isColimit`: the colimit of a directed diagram of Hausdorff spaces is
+* `TauCeti.TopCat.t2Space_of_isColimit`: the colimit of a filtered diagram of Hausdorff spaces is
   Hausdorff if the maps to the colimit extend disjoint open sets.
 * `TauCeti.TopCat.t2Space_of_isPushout`: attaching a regular Hausdorff space `B` to a Hausdorff
   space along a map `m : A ⟶ B` with closed range which extends disjoint open sets gives a
@@ -156,34 +157,56 @@ theorem extendsDisjointOpens_iff {X Y : TopCat.{u}} (f : X ⟶ Y) :
     exact hom_ext_classifier (by rw [← preimage_setOf_fst, setOf_classify_fst, hU])
       (by rw [← preimage_setOf_snd, setOf_classify_snd, hV])
 
+/-- A map `m : X ⟶ Y` of `TopCat` extends disjoint open sets if it has a continuous retraction
+near its range, read through an inducing map `μ : X → Z`: a map `ρ : Y → Z` continuous on an open
+neighbourhood `N` of the range of `m`, sending `N` into the range of `μ`, with `ρ ∘ m = μ`. An open
+subset `μ ⁻¹' W` of `X` is then the trace of the open set `N ∩ ρ ⁻¹' W`, and these sets are
+disjoint over disjoint sets. For the boundary sphere of a disk, `ρ` is the radial projection. -/
+theorem extendsDisjointOpens_of_continuousOn {X Y : TopCat.{u}} {Z : Type*} [TopologicalSpace Z]
+    (m : X ⟶ Y) {μ : X → Z} (hμ : IsInducing μ) {N : Set Y} (hN : IsOpen N) {ρ : Y → Z}
+    (hρ : ContinuousOn ρ N) (hmN : ∀ x, m x ∈ N) (hρN : Set.MapsTo ρ N (Set.range μ))
+    (hρm : ∀ x, ρ (m x) = μ x) : extendsDisjointOpens m := by
+  rw [extendsDisjointOpens_iff]
+  intro U V hU hV hUV
+  obtain ⟨W, hW, rfl⟩ := hμ.isOpen_iff.1 hU
+  obtain ⟨W', hW', rfl⟩ := hμ.isOpen_iff.1 hV
+  refine ⟨N ∩ ρ ⁻¹' W, N ∩ ρ ⁻¹' W', hρ.isOpen_inter_preimage hN hW,
+    hρ.isOpen_inter_preimage hN hW', Set.disjoint_left.2 ?_, ?_, ?_⟩
+  · rintro y ⟨hyN, hyW⟩ ⟨-, hyW'⟩
+    obtain ⟨x, hx⟩ := hρN hyN
+    rw [Set.mem_preimage, ← hx] at hyW hyW'
+    exact Set.disjoint_left.1 hUV hyW hyW'
+  · ext x
+    simp [hmN, hρm]
+  · ext x
+    simp [hmN, hρm]
+
 /-- If two points of a Hausdorff space `X` are mapped by `f : X ⟶ Y` to distinct points and `f`
 extends disjoint open sets, then their images are separated by disjoint open sets of `Y`. -/
 private lemma exists_disjoint_isOpen_apply {X Y : TopCat.{u}} [T2Space X] {f : X ⟶ Y}
     (hf : extendsDisjointOpens f) {x x' : X} (h : f x ≠ f x') :
-    ∃ U V : Set Y, IsOpen U ∧ IsOpen V ∧ Disjoint U V ∧ f x ∈ U ∧ f x' ∈ V := by
+    ∃ U V : Set Y, IsOpen U ∧ IsOpen V ∧ f x ∈ U ∧ f x' ∈ V ∧ Disjoint U V := by
   obtain ⟨U, V, hU, hV, hx, hx', hUV⟩ := t2_separation (ne_of_apply_ne f h)
   obtain ⟨U', V', hU', hV', hUV', rfl, rfl⟩ := (extendsDisjointOpens_iff f).1 hf U V hU hV hUV
-  exact ⟨U', V', hU', hV', hUV', hx, hx'⟩
+  exact ⟨U', V', hU', hV', hx, hx', hUV'⟩
 
-/-- The colimit of a directed diagram of Hausdorff spaces is Hausdorff if the maps from the
+/-- The colimit of a filtered diagram of Hausdorff spaces is Hausdorff if the maps from the
 spaces of the diagram to the colimit extend disjoint open sets. -/
-theorem t2Space_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J] {F : J ⥤ TopCat.{u}}
+theorem t2Space_of_isColimit {J : Type*} [Category J] [IsFilteredOrEmpty J] {F : J ⥤ TopCat.{u}}
     [∀ j, T2Space (F.obj j)] {c : Cocone F} (hc : IsColimit c)
     (h : ∀ j, extendsDisjointOpens (c.ι.app j)) : T2Space c.pt := by
   have hc' := isColimitOfPreserves (forget TopCat) hc
-  refine t2Space_iff_disjoint_nhds.2 fun y y' hyy' ↦ ?_
+  refine ⟨fun y y' hyy' ↦ ?_⟩
   obtain ⟨i, x, hx⟩ := Types.jointly_surjective_of_isColimit hc' y
   obtain ⟨i', x', hx'⟩ := Types.jointly_surjective_of_isColimit hc' y'
-  obtain ⟨k, hik, hi'k⟩ := exists_ge_ge i i'
-  have hy : c.ι.app k (F.map (homOfLE hik) x) = y := by
+  have hy : c.ι.app _ (F.map (IsFiltered.leftToMax i i') x) = y := by
     rw [← ConcreteCategory.comp_apply, c.w]
     exact hx
-  have hy' : c.ι.app k (F.map (homOfLE hi'k) x') = y' := by
+  have hy' : c.ι.app _ (F.map (IsFiltered.rightToMax i i') x') = y' := by
     rw [← ConcreteCategory.comp_apply, c.w]
     exact hx'
   rw [← hy, ← hy'] at hyy' ⊢
-  obtain ⟨U, V, hU, hV, hUV, hxU, hxV⟩ := exists_disjoint_isOpen_apply (h k) hyy'
-  exact Filter.disjoint_of_disjoint_of_mem hUV (hU.mem_nhds hxU) (hV.mem_nhds hxV)
+  exact exists_disjoint_isOpen_apply (h _) hyy'
 
 section Pushout
 
@@ -215,7 +238,7 @@ a point coming from `B` but not from `A` is separated from every point coming fr
 side. -/
 private lemma exists_disjoint_isOpen_of_isPushout_of_notMem [RegularSpace B]
     (sq : IsPushout g m f g₂) (hm : IsClosed (Set.range m)) {b : B} (hb : b ∉ Set.range m)
-    (x : X) : ∃ W W' : Set P, IsOpen W ∧ IsOpen W' ∧ Disjoint W W' ∧ g₂ b ∈ W ∧ f x ∈ W' := by
+    (x : X) : ∃ W W' : Set P, IsOpen W ∧ IsOpen W' ∧ g₂ b ∈ W ∧ f x ∈ W' ∧ Disjoint W W' := by
   obtain ⟨t, ht, htc, htm⟩ := exists_mem_nhds_isClosed_subset (hm.isOpen_compl.mem_nhds hb)
   have hint : Disjoint (interior t) tᶜ := disjoint_compl_right.mono_left interior_subset
   obtain ⟨W, W', hW, hW', hWW', -, hfW', hg₂W, -⟩ := exists_disjoint_isOpen_of_isPushout sq
@@ -226,7 +249,7 @@ private lemma exists_disjoint_isOpen_of_isPushout_of_notMem [RegularSpace B]
     (by
       ext a
       simpa using fun h ↦ htm h ⟨a, rfl⟩)
-  refine ⟨W, W', hW, hW', hWW', ?_, ?_⟩
+  refine ⟨W, W', hW, hW', ?_, ?_, hWW'⟩
   · rw [← Set.mem_preimage, hg₂W]
     exact mem_interior_iff_mem_nhds.2 ht
   · rw [← Set.mem_preimage, hfW']
@@ -239,24 +262,21 @@ theorem t2Space_of_isPushout (sq : IsPushout g m f g₂) [T2Space X] [T2Space B]
     (hm : extendsDisjointOpens m) (hm' : IsClosed (Set.range m)) : T2Space P := by
   have hf : extendsDisjointOpens f := MorphismProperty.of_isPushout sq hm
   have sq' := (forget TopCat).map_isPushout sq
-  refine t2Space_iff_disjoint_nhds.2 fun p q hpq ↦ ?_
-  suffices ∃ W W' : Set P, IsOpen W ∧ IsOpen W' ∧ Disjoint W W' ∧ p ∈ W ∧ q ∈ W' by
-    obtain ⟨W, W', hW, hW', hWW', hp, hq⟩ := this
-    exact Filter.disjoint_of_disjoint_of_mem hWW' (hW.mem_nhds hp) (hW'.mem_nhds hq)
+  refine ⟨fun p q hpq ↦ ?_⟩
   obtain ⟨x, rfl⟩ | ⟨b, rfl, hb⟩ := Types.eq_or_eq_of_isPushout' sq' p <;>
     obtain ⟨x', rfl⟩ | ⟨b', rfl, hb'⟩ := Types.eq_or_eq_of_isPushout' sq' q
   · exact exists_disjoint_isOpen_apply hf hpq
-  · obtain ⟨W, W', hW, hW', hWW', hb', hx⟩ :=
+  · obtain ⟨W, W', hW, hW', hb', hx, hWW'⟩ :=
       exists_disjoint_isOpen_of_isPushout_of_notMem sq hm' hb' x
-    exact ⟨W', W, hW', hW, hWW'.symm, hx, hb'⟩
+    exact ⟨W', W, hW', hW, hx, hb', hWW'.symm⟩
   · exact exists_disjoint_isOpen_of_isPushout_of_notMem sq hm' hb x'
   · obtain ⟨U, U', hU, hU', hbU, hbU', hUU'⟩ := t2_separation (ne_of_apply_ne g₂ hpq)
     obtain ⟨W, W', hW, hW', hWW', -, -, hg₂W, hg₂W'⟩ := exists_disjoint_isOpen_of_isPushout sq
       isOpen_empty isOpen_empty (Set.empty_disjoint _) (hU.inter hm'.isOpen_compl)
       (hU'.inter hm'.isOpen_compl) (hUU'.mono Set.inter_subset_left Set.inter_subset_left)
       (by ext a; simp) (by ext a; simp)
-    exact ⟨W, W', hW, hW', hWW', (Set.ext_iff.1 hg₂W b).2 ⟨hbU, hb⟩,
-      (Set.ext_iff.1 hg₂W' b').2 ⟨hbU', hb'⟩⟩
+    exact ⟨W, W', hW, hW', (Set.ext_iff.1 hg₂W b).2 ⟨hbU, hb⟩,
+      (Set.ext_iff.1 hg₂W' b').2 ⟨hbU', hb'⟩, hWW'⟩
 
 end Pushout
 

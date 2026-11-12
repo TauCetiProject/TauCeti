@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.WeakDual
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
@@ -16,6 +17,12 @@ This is Mathlib's weak representation theorem `LinearMap.dualEmbedding_surjectiv
 canonical pairing `topDualPairing 𝕜 F`, stated directly for the `WeakDual` type synonym, so that
 it applies to `WeakDual 𝕜 F` whatever instance path elaborated it. Hahn–Banach separation in a
 weak dual produces such functionals, and this lemma turns them into points of the predual.
+
+Over `𝕜 = ℝ` or `ℂ`, the dual `WeakDual 𝕜 F` is also a real vector space. A real multiple `c • f`
+is the multiple of `f` by the scalar `(c : 𝕜)`, and acts pointwise as multiplication by `(c : 𝕜)`.
+The instances `WeakDual.instIsScalarTowerReal` and `WeakDual.instLocallyConvexSpaceReal` record
+that this real structure is compatible with the `𝕜`-structure and that the weak-star topology is
+real locally convex, as needed for real Hahn–Banach separation and the Krein–Milman theorem.
 -/
 
 public section
@@ -33,5 +40,33 @@ theorem exists_forall_apply_eq_apply {𝕜 F : Type*} [NontriviallyNormedField �
   refine ⟨x, fun φ ↦ ?_⟩
   simp only [WeakBilin.eval, LinearMap.coe_mk, AddHom.coe_mk]
   exact topDualPairing_apply φ x
+
+section RCLike
+
+variable {𝕜 F : Type*} [RCLike 𝕜] [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+
+/-- A real multiple of a functional in `WeakDual 𝕜 F` acts as multiplication by the corresponding
+scalar of `𝕜`. -/
+theorem real_smul_apply (c : ℝ) (f : WeakDual 𝕜 F) (x : F) : (c • f) x = (c : 𝕜) * f x :=
+  -- The real action on `WeakDual 𝕜 F` is pointwise, so `(c • f) x` is `c • f x` by definition,
+  -- which `RCLike.real_smul_eq_coe_mul` rewrites.
+  RCLike.real_smul_eq_coe_mul c (f x)
+
+/-- A real multiple of a functional in `WeakDual 𝕜 F` is its multiple by the corresponding scalar
+of `𝕜`. -/
+theorem real_smul_eq_coe_smul (c : ℝ) (f : WeakDual 𝕜 F) : c • f = (c : 𝕜) • f :=
+  DFunLike.ext _ _ fun x ↦ real_smul_apply c f x
+
+/-- The real action on `WeakDual 𝕜 F` is compatible with the `𝕜`-action. -/
+instance instIsScalarTowerReal : IsScalarTower ℝ 𝕜 (WeakDual 𝕜 F) :=
+  inferInstanceAs (IsScalarTower ℝ 𝕜 (StrongDual 𝕜 F))
+
+/-- The weak-star topology on `WeakDual 𝕜 F` is real locally convex: it is defined by the
+seminorms of the canonical dual pairing. -/
+instance instLocallyConvexSpaceReal {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    [TopologicalSpace F] : LocallyConvexSpace ℝ (WeakDual 𝕜 F) :=
+  inferInstanceAs (LocallyConvexSpace ℝ (WeakBilin (topDualPairing 𝕜 F)))
+
+end RCLike
 
 end WeakDual

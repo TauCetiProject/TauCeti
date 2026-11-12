@@ -71,6 +71,7 @@ variable {K L M : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Fi
   (hur : ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
     ∀ (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q)
 
+omit [NumberField L] in
 include hp hexp in
 /-- The Frobenius elements `Frob_v` at the places `v ∉ S` that have a place of `L` of residue
 degree one above them generate `Gal(M/L)`, as soon as the Frobenius elements of `M/L` above the
@@ -103,7 +104,7 @@ private theorem closure_artinElementAway_image_eq_range
     -- `f(w/v)` divides `f(Q/v)`, the order of `Frob_v`, which divides `p`.
     have hdvd : (Q.asIdeal.under (𝓞 L)).inertiaDeg (𝓞 K) ∣ p := by
       have := hur v hv Q.asIdeal
-      have horder := Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q.asIdeal Q.ne_bot
+      have horder := Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q.asIdeal
         (isArithFrobAt_artinElementAway hab S hur hv Q.asIdeal)
       rw [Ideal.inertiaDeg_tower (Q.asIdeal.under (𝓞 L)) Q.asIdeal] at horder
       exact (Dvd.intro _ horder.symm).trans (orderOf_dvd_of_pow_eq_one (hpow _))

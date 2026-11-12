@@ -48,6 +48,8 @@ and contains `D(X)` itself. The main instance is the common kernel `D(X ⧸ S) �
   and `centralizerCoefficient_def` are the public formulas for these two definitions.
 * `BialgHom.centralizerHopfIdeal`: the Hopf ideal cutting out the centralizer of the diagonalizable
   subgroup.
+* `BialgHom.centralizerHopfIdeal_toIdeal_fg`: the centralizer ideal is finitely generated when `H`
+  is of finite type, over any base ring.
 * `BialgHom.centralizerHopfIdeal_le_ker_iff`: an algebra-valued point kills the centralizer
   ideal exactly when it commutes with every point of the diagonalizable subgroup over every
   extension of its value algebra.
@@ -57,6 +59,8 @@ and contains `D(X)` itself. The main instance is the common kernel `D(X ⧸ S) �
   lies in the centralizer exactly when conjugation by it fixes the coordinate map `π`.
 * `BialgHom.normalizerCharacterHom_eq_one_iff_centralizerHopfIdeal_le_ker`: the rational points of
   the centralizer are the kernel of the normalizer action on characters.
+* `BialgHom.ker_normalizerCharacterHom`: the same statement as an equality of subgroups of the
+  rational normalizer.
 * `BialgHom.centralizerHopfIdeal_le_kerOfSurjective`: the diagonalizable subgroup lies in its own
   centralizer.
 * `BialgHom.centralizerHopfIdeal_eq_bot_iff_isCentral`: the centralizer is the whole group exactly
@@ -217,6 +221,45 @@ theorem centralizerHopfIdeal_toIdeal :
       Ideal.span (Set.range fun p : H × X ↦ centralizerCoefficient π p.1 p.2) :=
   HopfIdeal.ofIdealOfPointsSubgroup_toIdeal _ _ _
 
+/-- **The centralizer ideal is finitely generated when `H` is of finite type**, over any base
+ring: the coefficients of the conjugation defects of finitely many algebra generators of `H`
+already generate it. -/
+theorem centralizerHopfIdeal_toIdeal_fg [Algebra.FiniteType R H] :
+    (centralizerHopfIdeal π).toIdeal.FG := by
+  obtain ⟨s, hs⟩ := Algebra.FiniteType.out (R := R) (A := H)
+  set T : Set H := ⋃ x ∈ s, Set.range (centralizerCoefficient π x)
+  have hT : T.Finite := s.finite_toSet.biUnion fun x _ ↦ by
+    have h : centralizerCoefficient π x = Comodule.tensorCoeffEquiv R X H (centralizerDefect π x) :=
+      funext fun χ ↦ by rw [centralizerCoefficient_def, Comodule.tensorCoeffEquiv_apply]
+    rw [h]
+    exact Finsupp.finite_range _
+  refine ⟨hT.toFinset, le_antisymm ?_ ?_⟩
+  · rw [hT.coe_toFinset, Ideal.span_le, centralizerHopfIdeal_toIdeal]
+    exact Set.iUnion₂_subset fun x _ ↦ Set.range_subset_iff.mpr fun χ ↦
+      Ideal.subset_span ⟨(x, χ), rfl⟩
+  · rw [hT.coe_toFinset]
+    let φ := Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R (Ideal.span T))
+      (AlgHom.id R (MonoidAlgebra R X))
+    have key (x : H) :
+        φ (centralizerDefect π x) = 0 ↔ ∀ χ, centralizerCoefficient π x χ ∈ Ideal.span T := by
+      rw [Algebra.TensorProduct.map_apply_eq_map, AlgHom.toLinearMap_id,
+        map_centralizerDefect_eq_zero_iff]
+      simp [Ideal.Quotient.eq_zero_iff_mem]
+    -- The defect is the difference of two algebra maps `F` and `G`, which agree modulo the
+    -- span of `T` on the generators `s`, hence everywhere.
+    let F := (Algebra.TensorProduct.map (AlgHom.id R H) π.toAlgHom).comp
+      (HopfAlgebra.conjugationAlgHom (R := R) (H := H))
+    let G := (Algebra.TensorProduct.includeRight (R := R) (A := H)).comp π.toAlgHom
+    have hdef (x : H) : φ (centralizerDefect π x) = φ.comp F x - φ.comp G x := by
+      rw [centralizerDefect_def, map_sub]
+      rfl
+    have hFG : φ.comp F = φ.comp G := AlgHom.ext_of_adjoin_eq_top hs fun x hx ↦
+      sub_eq_zero.mp <| (hdef x).symm.trans <| (key x).mpr fun χ ↦
+        Ideal.subset_span (Set.mem_biUnion hx ⟨χ, rfl⟩)
+    rw [centralizerHopfIdeal_toIdeal, Ideal.span_le]
+    rintro _ ⟨⟨x, χ⟩, rfl⟩
+    exact (key x).mp (by rw [hdef, hFG, sub_self]) χ
+
 /-- A point of `G` kills the centralizer ideal exactly when it commutes with the point of `D(X)`
 carried by any injective algebra map `ψ` out of `A ⊗[R] R[X]`. The identity of `A ⊗[R] R[X]`
 carries the universal point of `D(X)`; the left unitor `R ⊗[R] R[X] ≃ R[X]` is used for rational
@@ -360,6 +403,26 @@ theorem normalizerCharacterHom_eq_one_iff_centralizerHopfIdeal_le_ker
     centralizerHopfIdeal_le_ker_iff_comp_pointConjugationAlgHom_eq]
   refine ⟨fun h ↦ ?_, comp_pointConjugationAlgHom_inv_eq_of_comp_eq π⟩
   simpa only [inv_inv] using comp_pointConjugationAlgHom_inv_eq_of_comp_eq π h
+
+/-- **The kernel of the normalizer action on characters is the rational centralizer** of the
+diagonalizable subgroup scheme. -/
+theorem ker_normalizerCharacterHom [ConnectedSpace (PrimeSpectrum R)]
+    (hπ : Function.Surjective π) :
+    (normalizerCharacterHom π hπ).ker =
+      (centralizerPointsSubgroup π (CommAlgCat.of R R)).subgroupOf (normalizerPoints π hπ) := by
+  ext g
+  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf,
+    normalizerCharacterHom_eq_one_iff_centralizerHopfIdeal_le_ker,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  exact ⟨fun h x hx ↦ h (HopfIdeal.mem_toIdeal.mpr hx),
+    fun h x hx ↦ h x (HopfIdeal.mem_toIdeal.mp hx)⟩
+
+/-- The rational centralizer is normal in the rational normalizer, being the kernel of its action
+on characters. -/
+instance normal_centralizerPointsSubgroup_subgroupOf_normalizerPoints
+    [ConnectedSpace (PrimeSpectrum R)] (hπ : Function.Surjective π) :
+    ((centralizerPointsSubgroup π (CommAlgCat.of R R)).subgroupOf (normalizerPoints π hπ)).Normal :=
+  ker_normalizerCharacterHom π hπ ▸ (normalizerCharacterHom π hπ).normal_ker
 
 /-! ## Comparison with the diagonalizable subgroup -/
 

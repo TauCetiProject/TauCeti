@@ -21,6 +21,10 @@ isomorphism, local on both source and target, stable under arbitrary base change
 smooth morphisms of relative dimension one.  These are the closure properties needed to use
 nodal curves in families over nonaffine bases.
 
+On an affine open `U` of a nodal relative curve over `Spec R`, the quotient of `Γ(X, U)` by the
+ideal of the singular locus is unramified over `R`
+(`AlgebraicGeometry.Scheme.formallyUnramified_quotient_singularLocus_ideal`).
+
 ## References
 
 * [Stacks Project, Lemma 53.20.1, Tag 0C58](https://stacks.math.columbia.edu/tag/0C58).
@@ -30,7 +34,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits AlgebraicGeometry
+open CategoryTheory Limits Opposite AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -228,13 +232,14 @@ instance : HasAffineProperty (@AtWorstNodalOfRelativeDimensionOne.{u})
   isLocal_affineProperty := inferInstance
   eq_targetAffineLocally' := rfl
 
-/-- On an affine target, the global nodal property is exactly the scheme-theoretic
+/-- For a target isomorphic to a spectrum, the global nodal property is exactly the scheme-theoretic
 criterion after any chosen presentation of the target as a spectrum. -/
-theorem atWorstNodalOfRelativeDimensionOne_iff_of_isAffine
-    {R : Type u} [CommRing R] {X Y : Scheme.{u}} [IsAffine Y]
+theorem atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec
+    {R : Type u} [CommRing R] {X Y : Scheme.{u}}
     (f : X ⟶ Y) (e : Y ≅ Spec (.of R)) :
     AtWorstNodalOfRelativeDimensionOne f ↔
       AffineAtWorstNodalOfRelativeDimensionOne (f ≫ e.hom) := by
+  have : IsAffine Y := IsAffine.of_isIso e.hom
   rw [HasAffineProperty.iff_of_isAffine
     (P := @AtWorstNodalOfRelativeDimensionOne.{u})
     (Q := affineAtWorstNodalOfRelativeDimensionOne)]
@@ -282,6 +287,47 @@ theorem AtWorstNodalOfRelativeDimensionOne.syntomic
     (P := @SyntomicOfRelativeDimension 1) (f ∣_ U.1) e.hom]
   exact he.syntomic
 
+/-- Over an affine open `U` of a nodal relative curve over `Spec R`, the quotient of `Γ(X, U)` by
+the ideal of the singular locus is unramified over `R`: it is the ring of functions of the
+singular subscheme over `U`. -/
+theorem _root_.AlgebraicGeometry.Scheme.formallyUnramified_quotient_singularLocus_ideal
+    {R : Type u} [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) (U : X.affineOpens) :
+    letI : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
+    letI : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+    Algebra.FormallyUnramified R (Γ(X, U) ⧸ (X.singularLocus R).ideal U) := by
+  let : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
+  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+  set I := X.singularLocus R
+  have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
+  have hu : FormallyUnramified (I.subschemeι ≫ (X ↘ Spec (.of R))) :=
+    hAffine.unramified_singularLocus.toFormallyUnramified
+  -- The ring map from `Γ(Spec R, ⊤)` to the functions on the singular subscheme over `U`.
+  have hP : ((I.subschemeι ≫ (X ↘ Spec (.of R))).appLE ⊤ (I.subschemeι ⁻¹ᵁ U)
+      (by simp)).hom.FormallyUnramified :=
+    HasRingHomProperty.appLE (P := @FormallyUnramified) _ hu ⟨⊤, isAffineOpen_top _⟩
+      ⟨I.subschemeι ⁻¹ᵁ U, U.2.preimage _⟩ _
+  have key : (X ↘ Spec (.of R)).appLE ⊤ U (by simp) ≫ I.subschemeι.app U =
+      (I.subschemeι ≫ (X ↘ Spec (.of R))).appLE ⊤ (I.subschemeι ⁻¹ᵁ U) (by simp) := by
+    rw [Scheme.Hom.app_eq_appLE]
+    exact Scheme.Hom.appLE_comp_appLE _ _ _ _ _ _ _
+  rw [← key, I.subschemeι_app] at hP
+  -- Composing with `R ≅ Γ(Spec R, ⊤)` and `Γ(I.subscheme, ι ⁻¹ U) ≅ Γ(X, U) ⧸ I(U)` gives the
+  -- algebra map.
+  have hiso := RingHom.FormallyUnramified.of_surjective
+    (I.subschemeObjIso U).commRingCatIsoToRingEquiv.surjective
+  have hiso' := RingHom.FormallyUnramified.of_surjective
+    (Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv.symm.surjective
+  have h := hiso'.comp (hP.comp hiso)
+  rw [← RingHom.formallyUnramified_algebraMap]
+  convert h using 1
+  ext r
+  have hb := ConcreteCategory.congr_hom (X.baseRingToStructurePresheaf_app_eq_appLE R U.1) r
+  simp only [CommRingCat.comp_apply, RingHom.comp_apply] at hb ⊢
+  rw [Iso.inv_hom_id_apply]
+  exact congrArg (Ideal.Quotient.mk (I.ideal U)) hb
+
 /-- A smooth morphism of relative dimension one is at worst nodal. -/
 theorem AtWorstNodalOfRelativeDimensionOne.of_smooth
     {X Y : Scheme.{u}} (f : X ⟶ Y) [SmoothOfRelativeDimension 1 f] :
@@ -311,7 +357,7 @@ theorem _root_.TauCeti.NodeAlgebra.atWorstNodalOfRelativeDimensionOne
     {R : Type u} [CommRing R] (a : R) :
     AtWorstNodalOfRelativeDimensionOne
       (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))) := by
-  apply (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mpr
+  apply (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mpr
   simpa using NodeAlgebra.affineAtWorstNodalOfRelativeDimensionOne a
 
 end TauCeti.AlgebraicGeometry

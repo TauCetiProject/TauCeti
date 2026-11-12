@@ -14,6 +14,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RingTheory.Norm.Units
+public import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # The Kummer map `Kˣ → H¹(G_K, μₙ)` and the Kummer isomorphism
@@ -410,13 +411,15 @@ variable {K n} in
 field containing a primitive `n`th root of unity and with `Kˣ ⧸ (Kˣ)ⁿ` finite, and `H` a
 topological group isomorphic to `G_K`. Then `H¹(H, M)` is finite for every cyclic discrete
 `H`-module `M` of order `n` with trivial action: such a module is `μₙ(Kˢ)`
-(`TauCeti.finite_H1_kummerCoeff`). -/
+(`TauCeti.finite_H1_kummerCoeff`). Continuity of the action, needed to state `H¹(H, M)`, holds
+automatically because the action is trivial; the final argument defaults to that proof, so callers
+never need to supply it. -/
 theorem finite_H1_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : K}
     (hζ : IsPrimitiveRoot ζ n) [Finite (powerClassQuotient Kˣ n)] {H : Type*} [Group H]
     [TopologicalSpace H] (φ : AbsoluteGaloisGroup K ≃ₜ* H) (M : Type*) [AddCommGroup M]
-    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction H M] [ContinuousSMul H M]
-    [IsAddCyclic M]
-    (hM : Nat.card M = n) (htriv : ∀ (h : H) (m : M), h • m = m) :
+    [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction H M] [IsAddCyclic M]
+    (hM : Nat.card M = n) (htriv : ∀ (h : H) (m : M), h • m = m)
+    (_ : ContinuousSMul H M := continuousSMul_of_forall_smul_eq_self htriv) :
     Finite (H1 H M) := by
   have := hζ.neZero'
   have := finite_H1_kummerCoeff K n (NeZero.ne (n : K)).isUnit
@@ -641,6 +644,17 @@ theorem units_map_separableClosureRingEquiv_symm_pow
   rw [← map_pow, hα]
   ext
   simp [← IsScalarTower.algebraMap_apply]
+
+variable {K n L} in
+/-- **Transporting an `n`th root of a conjugate to `Lˢ`**: if `α ∈ Kˢ` is an `n`th root of `σ b`
+for `b ∈ Lˣ`, its image under the inverse of the identification
+`separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ` is an `n`th root of `b`. -/
+theorem units_map_separableClosureRingEquiv_symm_pow_eq {b : Lˣ}
+    (hα : (α : SeparableClosure K) ^ n = σ b) :
+    Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom α ^ n =
+      Units.map (algebraMap L (SeparableClosure L)).toMonoidHom b := by
+  ext
+  simp [← map_pow, hα]
 
 /-- **Restriction of a Kummer cocycle class**: restricting the class of `g ↦ g α / α` to `G_L`
 gives the class of `h ↦ h β / β`, where `β ∈ Lˢ`, the image of the root `α` under the

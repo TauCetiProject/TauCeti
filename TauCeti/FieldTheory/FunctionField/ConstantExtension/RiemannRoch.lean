@@ -53,6 +53,8 @@ extension. Multiples of a pole divisor also admit a statement without any fibre 
 * `TauCeti.Divisor.dim_nsmul_poles_le_of_linearDisjoint`: if `F` and `k'` are linearly disjoint
   over `k`, then `ℓ(n (z)_∞)` of `F / k` is at most that of `F' / k'`, with no separability or
   exactness hypothesis.
+* `TauCeti.finrank_span_image_riemannRochSpace_of_linearDisjoint`: if `F` and `k'` are linearly
+  disjoint over `k`, then `L(D) · k'` has `k'`-dimension `ℓ(D)`.
 
 ## Reference
 
@@ -319,13 +321,12 @@ theorem Divisor.dim_nsmul_poles_of_constantCompositum_eq_top
 
 omit [Algebra.IsSeparable k k'] in
 /-- **Under linear disjointness `ℓ(n (z)_∞)` can only grow**: if the image of `k'` in `F'` and `F`
-are linearly disjoint over `k` and both `k' / k` and `F' / F` are integral, then `n (z)_∞` has
+are linearly disjoint over `k` and `F' / F` is integral, then `n (z)_∞` has
 dimension in `F' / k'` at least its dimension in `F / k`, because a `k`-basis of `L(n (z)_∞)` stays
 linearly independent over `k'` inside `L(n (z)_∞)` of `F'`.  This is the inequality counterpart of
 `TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`, with neither separability nor
 exactness assumed. -/
-theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral k k']
-    [Algebra.IsIntegral F F']
+theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral F F']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) (n : ℕ) (z : Fˣ) :
     (n • Divisor.poles hF z).dim ≤
@@ -343,5 +344,22 @@ theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral k k']
       ⟨algebraMap F F' (b i), (mem_riemannRochSpace_nsmul_poles_map_iff hF hF' n z _).2 (b i).2⟩
   have hv : LinearIndependent k' v := .of_comp (riemannRochSpace D').subtype hli
   simpa [Divisor.dim_def] using hv.fintype_card_le_finrank
+
+
+omit [Algebra.IsSeparable k k'] in
+/-- **Under linear disjointness `L(D) · k'` has dimension `ℓ(D)`**: if the image of `k'` in `F'`
+and `F` are linearly disjoint over `k`, then the `k'`-span of the image of `L(D)` in `F'` has
+`k'`-dimension `ℓ(D)`, because a `k`-basis of `L(D)` stays linearly independent over `k'`.  Neither
+separability nor exactness is assumed. -/
+theorem finrank_span_image_riemannRochSpace_of_linearDisjoint (hF : IsFunctionField k F)
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) (D : Divisor k F) :
+    Module.finrank k' (Submodule.span k' (algebraMap F F' '' riemannRochSpace D)) = D.dim := by
+  have := finiteDimensional_riemannRochSpace hF D
+  let b := Module.finBasis k (riemannRochSpace D)
+  have hli : LinearIndependent k' fun i ↦ algebraMap F F' (b i) :=
+    H.linearIndependent_algebraMap_comp
+      (b.linearIndependent.map' (riemannRochSpace D).subtype (Submodule.ker_subtype _))
+  rw [span_image_riemannRochSpace_eq_span_range b, finrank_span_eq_card hli, Fintype.card_fin,
+    Divisor.dim_def]
 
 end TauCeti

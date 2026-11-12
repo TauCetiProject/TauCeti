@@ -12,9 +12,11 @@ public import Mathlib.RingTheory.IsTensorProduct
 /-!
 # Graded coefficient inclusion and images of the irrelevant ideal
 
-For a surjective graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ`, the irrelevant ideal `ℬ₊` is contained
+For a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` whose image contains every homogeneous element
+of positive degree, in particular for a surjective one, the irrelevant ideal `ℬ₊` is contained
 in the image `𝒜₊.map f` of the irrelevant ideal `𝒜₊`. This containment is the hypothesis under
-which `f` induces `AlgebraicGeometry.Proj.map f : Proj ℬ ⟶ Proj 𝒜`. An injective graded ring
+which `f` induces `AlgebraicGeometry.Proj.map f : Proj ℬ ⟶ Proj 𝒜`. Nothing is required in
+degree zero. An injective graded ring
 homomorphism reflects homogeneity, so the inverse of a bijective one is again graded and the two
 induce mutually inverse morphisms of `Proj`.
 
@@ -34,6 +36,8 @@ inverse `TauCeti.GradedAlgebra.baseChangeLiftInv` is graded as well.
 
 ## Main results
 
+* `HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range`: `ℬ₊ ≤ 𝒜₊.map f` when the image of
+  `f` contains every homogeneous element of positive degree.
 * `HomogeneousIdeal.irrelevant_le_map_of_surjective`: `ℬ₊ ≤ 𝒜₊.map f` for a surjective `f`.
 * `Graded.map_mem_iff_of_injective`: an injective graded ring homomorphism reflects homogeneity.
 * `HomogeneousIdeal.irrelevant_le_map_baseChangeMap`: the same containment for extension
@@ -71,15 +75,23 @@ variable {ι A B σ τ : Type*} [Semiring A] [Semiring B] [SetLike σ A] [SetLik
   [AddSubmonoidClass σ A] [AddSubmonoidClass τ B] [DecidableEq ι] [AddCommMonoid ι]
   [PartialOrder ι] [CanonicallyOrderedAdd ι] {𝒜 : ι → σ} {ℬ : ι → τ} [GradedRing 𝒜] [GradedRing ℬ]
 
-/-- For a surjective graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ`, the irrelevant ideal `ℬ₊` is
-contained in the image `𝒜₊.map f` of the irrelevant ideal `𝒜₊`. -/
-theorem irrelevant_le_map_of_surjective (f : 𝒜 →+*ᵍ ℬ) (hf : Function.Surjective f) :
+/-- If the image of a graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ` contains every homogeneous element
+of positive degree, then the irrelevant ideal `ℬ₊` is contained in the image `𝒜₊.map f` of the
+irrelevant ideal `𝒜₊`. -/
+theorem irrelevant_le_map_of_grade_subset_range (f : 𝒜 →+*ᵍ ℬ)
+    (hf : ∀ i, 0 < i → (ℬ i : Set B) ⊆ Set.range f) :
     irrelevant ℬ ≤ (irrelevant 𝒜).map f := by
   refine (irrelevant_le _).mpr fun i hi b hb ↦ ?_
-  obtain ⟨a, rfl⟩ := hf b
+  obtain ⟨a, rfl⟩ := hf i hi hb
   -- `f a` is homogeneous of degree `i`, so it is the image of the degree-`i` component of `a`
   rw [← DirectSum.decompose_of_mem_same ℬ (hb : f a ∈ ℬ i), ← f.map_directSumDecompose]
   exact Ideal.mem_map_of_mem _ (mem_irrelevant_of_mem _ hi (SetLike.coe_mem _))
+
+/-- For a surjective graded ring homomorphism `f : 𝒜 →+*ᵍ ℬ`, the irrelevant ideal `ℬ₊` is
+contained in the image `𝒜₊.map f` of the irrelevant ideal `𝒜₊`. -/
+theorem irrelevant_le_map_of_surjective (f : 𝒜 →+*ᵍ ℬ) (hf : Function.Surjective f) :
+    irrelevant ℬ ≤ (irrelevant 𝒜).map f :=
+  irrelevant_le_map_of_grade_subset_range f fun _ _ ↦ hf.range_eq ▸ Set.subset_univ _
 
 end HomogeneousIdeal
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Shuffle
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
-public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
+public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 
 /-!
 # The shuffle map on singular chains
@@ -29,7 +29,9 @@ input for their Eilenberg--Zilber chain homotopies.
 * `TopCat.shuffle`: the shuffle map on singular chains.
 * `TopCat.shuffle_def`: its factorization through the simplicial shuffle map.
 * `TopCat.ιChainComplex_tensorHom_ιChainComplex_shuffle_f`: its value on a pair of singular
-  simplices.
+  simplices, `TopCat.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_snd` on a singular vertex and
+  a singular simplex followed by the projection to the second factor, and
+  `TopCat.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one` on two singular `1`-simplices.
 * `TopCat.shuffle_naturality`: naturality in both spaces.
 * `TopCat.shuffle_coefficient_naturality`: naturality in both coefficient objects.
 * `TopCat.shuffle_comp_chainComplexMap_prodComparison`: projecting a shuffled singular chain
@@ -52,7 +54,7 @@ open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicT
   HomologicalComplex
 open scoped Simplicial
 open Functor.LaxMonoidal Functor.Monoidal Functor.OplaxMonoidal
-open TauCeti.SSet (chainComplexMap_f_comp)
+open SSet (chainComplexMap_f_comp)
 
 universe w v u
 
@@ -119,6 +121,34 @@ lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero {X Y : TopCat.{w}} 
             (toSSet.obj X) (toSSet.obj Y) R S x y)
     _ = _ := SSet.ι_chainComplexMap_f (toSSet.obj X ⊗ toSSet.obj Y)
       (toSSet.obj (X ⊗ Y)) (Functor.LaxMonoidal.μ toSSet X Y) (R ⊗ S) z
+
+/-- In bidegree `(0, q)`, the singular shuffle map followed by the projection `X × Y ⟶ Y` sends the
+summand of a singular vertex `x` of `X` and a singular `q`-simplex `y` of `Y` to the summand of
+`y`. -/
+@[reassoc]
+lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_snd {X Y : TopCat.{w}} (R S : C) {q : ℕ}
+    (x : (toSSet.obj X) _⦋0⦌) (y : (toSSet.obj Y) _⦋q⦌) :
+    ((toSSet.obj X).ιChainComplex x ⊗ₘ (toSSet.obj Y).ιChainComplex y) ≫
+        ιTensorObj _ _ 0 q q (zero_add q) ≫ (shuffle X Y R S).f q ≫
+          (SSet.chainComplexMap (toSSet.map (snd X Y)) (R ⊗ S)).f q =
+      (toSSet.obj Y).ιChainComplex y := by
+  rw [shuffle_def, HomologicalComplex.comp_f, Category.assoc, chainComplexMap_f_comp, μ_snd,
+    SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_snd]
+
+/-- In bidegree `(1, 1)`, the singular shuffle map sends a pair of singular `1`-simplices
+`(x, y)` to `(s₁ x, s₀ y) - (s₀ x, s₁ y)`, read as singular `2`-simplices of the product. -/
+@[reassoc]
+lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one {X Y : TopCat.{w}} (R S : C)
+    (x : (toSSet.obj X) _⦋1⦌) (y : (toSSet.obj Y) _⦋1⦌) :
+    ((toSSet.obj X).ιChainComplex x ⊗ₘ (toSSet.obj Y).ιChainComplex y) ≫
+        ιTensorObj _ _ 1 1 2 rfl ≫ (shuffle X Y R S).f 2 =
+      (toSSet.obj (X ⊗ Y)).ιChainComplex ((Functor.LaxMonoidal.μ toSSet X Y).app _
+        (((toSSet.obj X).σ 1 x, (toSSet.obj Y).σ 0 y) : (toSSet.obj X ⊗ toSSet.obj Y) _⦋2⦌)) -
+      (toSSet.obj (X ⊗ Y)).ιChainComplex ((Functor.LaxMonoidal.μ toSSet X Y).app _
+        (((toSSet.obj X).σ 0 x, (toSSet.obj Y).σ 1 y) : (toSSet.obj X ⊗ toSSet.obj Y) _⦋2⦌)) := by
+  rw [shuffle, HomologicalComplex.comp_f,
+    SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one_assoc, Preadditive.sub_comp]
+  exact congrArg₂ (· - ·) (SSet.ι_chainComplexMap_f _ _ _ _ _) (SSet.ι_chainComplexMap_f _ _ _ _ _)
 
 /-- The shuffle map on singular chains is natural in both spaces. -/
 @[reassoc]

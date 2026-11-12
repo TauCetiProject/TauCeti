@@ -18,34 +18,34 @@ points lying in finitely many disjoint coordinate patches. If the multiplicity i
 `m i`, its coordinates form a block `Fin (m i) → 𝕜`; a bijection
 `(Σ i, Fin (m i)) ≃ Fin n` regroups those blocks into the model space `Fin n → 𝕜`.
 
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` proves that changing the surface
+`Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` proves that changing the surface
 coordinate is analytic on one block when its roots are distinct. This file applies that result to
 a finite family of blocks and then conjugates the family by the possibly different source and
 target regroupings. The assembled statement is
-`TauCeti.Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm`.
+`Sym.analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm`.
 
 Thus the blockwise coordinate-change expression used by elementary-symmetric charts is analytic
 at tuples that are multiplicity-free inside every block. At colliding tuples, the polynomial case
-is `TauCeti.Sym.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
+is `Polynomial.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
 `TauCeti/Analysis/Polynomial/SymmetricPower.lean`. The complex colliding-point case, including
 general holomorphic coordinate changes, is proved separately in
 `TauCeti/Analysis/Polynomial/RootSum/Family.lean`.
 
-This is the multiplicity-free assembly step in Lane F4.1 of the analytic Heegaard Floer roadmap,
-whose first target is the smooth complex structure on `Sym^g(Σ)` from elementary symmetric
-functions. The organization follows Ozsváth--Szabó,
+The statements hold over any complete nontrivially normed algebraically closed field. For complex
+symmetric powers, this is the multiplicity-free assembly step for the complex structure from
+elementary symmetric functions. The organization follows Ozsváth--Szabó,
 [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2.1.
 -/
 
 public section
 
 open Topology
-
-namespace TauCeti
+open TauCeti (piSigmaConstHomeomorph analyticAt_piSigmaConstHomeomorph
+  analyticAt_piSigmaConstHomeomorph_symm)
 
 namespace Sym
 
-variable {𝕜 : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [IsAlgClosed 𝕜]
 variable {ι : Type*} [Finite ι] {m : ι → ℕ} {n : ℕ}
 
 attribute [local instance] Fintype.ofFinite
@@ -58,11 +58,11 @@ the family of coefficient blocks, provided `φ i` is analytic at every represent
 private theorem analyticAt_pi_coeffEquiv_map_coeffEquiv_symm
     {φ : ι → 𝕜 → 𝕜} {c₀ z : ∀ i, Fin (m i) → 𝕜}
     (hz : ∀ i, Function.Injective (z i))
-    (hc₀ : ∀ i, (coeffEquiv 𝕜 (m i)).symm (c₀ i) = ofFn (z i))
+    (hc₀ : ∀ i, (coeffEquiv 𝕜 (m i)).symm (c₀ i) = Sym.ofFn (z i))
     (hφ : ∀ i j, AnalyticAt 𝕜 (φ i) (z i j)) :
     AnalyticAt 𝕜
       (fun c i => coeffEquiv 𝕜 (m i)
-        (_root_.Sym.map (φ i) ((coeffEquiv 𝕜 (m i)).symm (c i)))) c₀ := by
+        (Sym.map (φ i) ((coeffEquiv 𝕜 (m i)).symm (c i)))) c₀ := by
   refine AnalyticAt.pi fun i => ?_
   exact AnalyticAt.comp (f := fun c : (∀ i, Fin (m i) → 𝕜) => c i)
     (analyticAt_coeffEquiv_map_coeffEquiv_symm (hz i) (hc₀ i) (hφ i))
@@ -78,36 +78,18 @@ theorem analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm
     (e e' : (Σ i, Fin (m i)) ≃ Fin n)
     {φ : ι → 𝕜 → 𝕜} {c₀ z : ∀ i, Fin (m i) → 𝕜}
     (hz : ∀ i, Function.Injective (z i))
-    (hc₀ : ∀ i, (coeffEquiv 𝕜 (m i)).symm (c₀ i) = ofFn (z i))
+    (hc₀ : ∀ i, (coeffEquiv 𝕜 (m i)).symm (c₀ i) = Sym.ofFn (z i))
     (hφ : ∀ i j, AnalyticAt 𝕜 (φ i) (z i j)) :
     AnalyticAt 𝕜
       (fun c => piSigmaConstHomeomorph 𝕜 e' (fun i =>
-        coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
+        coeffEquiv 𝕜 (m i) (Sym.map (φ i)
           ((coeffEquiv 𝕜 (m i)).symm ((piSigmaConstHomeomorph 𝕜 e).symm c i)))))
       (piSigmaConstHomeomorph 𝕜 e c₀) := by
-  have hin := analyticAt_piSigmaConstHomeomorph_symm (𝕜 := 𝕜) e
-    (piSigmaConstHomeomorph 𝕜 e c₀)
   have hblocks := analyticAt_pi_coeffEquiv_map_coeffEquiv_symm hz hc₀ hφ
-  have hblocks' : AnalyticAt 𝕜
-      (fun c => fun i => coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
-        ((coeffEquiv 𝕜 (m i)).symm (c i))))
-      ((piSigmaConstHomeomorph 𝕜 e).symm (piSigmaConstHomeomorph 𝕜 e c₀)) := by
-    rw [Homeomorph.symm_apply_apply]
-    exact hblocks
-  have hmiddle := AnalyticAt.comp
-    (f := (piSigmaConstHomeomorph 𝕜 e).symm) hblocks' hin
-  have hmiddle' : AnalyticAt 𝕜
-      (fun c => fun i => coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
-        ((coeffEquiv 𝕜 (m i)).symm ((piSigmaConstHomeomorph 𝕜 e).symm c i))))
-      (piSigmaConstHomeomorph 𝕜 e c₀) := by
-    convert hmiddle using 1
-    all_goals rfl
-  convert AnalyticAt.comp
-    (f := fun c => fun i => coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
-      ((coeffEquiv 𝕜 (m i)).symm ((piSigmaConstHomeomorph 𝕜 e).symm c i))))
-    (analyticAt_piSigmaConstHomeomorph (𝕜 := 𝕜) e' _) hmiddle' using 1
-  all_goals rfl
+  have hmiddle := hblocks.comp_of_eq
+    (analyticAt_piSigmaConstHomeomorph_symm (𝕜 := 𝕜) e
+      (piSigmaConstHomeomorph 𝕜 e c₀))
+    ((piSigmaConstHomeomorph 𝕜 e).symm_apply_apply c₀)
+  exact (analyticAt_piSigmaConstHomeomorph (𝕜 := 𝕜) e' _).comp hmiddle
 
 end Sym
-
-end TauCeti

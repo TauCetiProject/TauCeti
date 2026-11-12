@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.LocalField
-public import TauCeti.Data.ZMod.IntUnitsPower
-public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.CupNorm
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.AnisotropicQuaternary
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Basic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.PadicTwo
 
 /-!
@@ -24,8 +22,10 @@ square-class basis `-1`, `2`, `5`, this gives the Gram coefficient
 second Stiefel–Whitney calculations into arithmetic in `ZMod 2`.
 
 These computations use `TauCeti.cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one`,
-`TauCeti.cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq`, and
-`TauCeti.BrauerGroup.quaternionClass_eq_iff_hilbertSymbol_eq`.
+`TauCeti.cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq`,
+`TauCeti.BrauerGroup.quaternionClass_eq_iff_hilbertSymbol_eq`, and the reading of a Kummer cup
+over any local field as a multiple of a nonzero cup,
+`TauCeti.cup_kummerClass_eq_hilbertSymbol_smul`.
 
 ## References
 
@@ -66,15 +66,7 @@ theorem kummerCup_eq_hilbertSymbol_smul_padicTwo (a b : ℚ_[2]ˣ) :
       additiveIntUnitsAddEquiv (Additive.ofMul (hilbertSymbol a b)) •
         kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
   rw [kummerCup_squareClass_squareClass, kummerCup_squareClass_squareClass]
-  have hpos : additiveIntUnitsAddEquiv (Additive.ofMul (1 : ℤˣ)) = 0 := by simp
-  have hneg : additiveIntUnitsAddEquiv (Additive.ofMul (-1 : ℤˣ)) = 1 := by simp
-  rcases Int.units_eq_one_or (hilbertSymbol a b) with hab | hab
-  · rw [hab, hpos, zero_smul]
-    exact (cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one _ _).2 hab
-  · rw [hab, hneg, one_smul]
-    exact (cup_kummerClass_eq_cup_kummerClass_iff_quaternionClass_eq _ _ _ _).2
-      ((BrauerGroup.quaternionClass_eq_iff_hilbertSymbol_eq _ _ _ _).2
-        (hab.trans hilbertSymbol_neg_one_neg_one_padicTwo.symm))
+  exact cup_kummerClass_eq_hilbertSymbol_smul hilbertSymbol_neg_one_neg_one_padicTwo a b
 
 /-- **The Gram formula for the Kummer cup over `ℚ₂`.** In square-class coordinates along
 `-1`, `2`, `5`, the cup is `x₀ y₀ + x₁ y₂ + x₂ y₁` times the nonzero class

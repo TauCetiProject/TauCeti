@@ -50,11 +50,6 @@ type-A Chevalley commutator equations on arbitrary commutative-ring-valued point
 * J. S. Milne, *Algebraic Groups* (2017), Section 21.
 * R. W. Carter, *Simple Groups of Lie Type* (1972), Sections 4.4, 7.1, and 11.3.
 * R. Steinberg, *Lectures on Chevalley Groups*, Sections 3--4.
-
-This advances the "Root subgroup maps" target in Layer 9, "The Chevalley--Demazure
-construction", of `TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L0,
-"pinned ambient groups", of `TauCetiRoadmap/CFSGStatement/README.md`; milestone L1 subsequently
-needs the Frobenius equation on `x_alpha` for every root `alpha`.
 -/
 
 public section
@@ -199,29 +194,9 @@ private theorem definingIdeal_toIdeal_le_rootSubgroupCoordinateMap_ker
       (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q)))).mp hmem x hx
   have hmatrix := TauCeti.GeneralLinear.pointsMulEquiv_rootSubgroupPoints
     (R := ℤ) hij q
-  have hconv :
-      (TauCeti.GeneralLinear.pointsMulEquiv
-          (R := ℤ) (A := AdditiveGroup.coordinateHopfAlgebra ℤ) (r + 1)).symm
-          (TauCeti.transvectionUnit hij
-            (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q))) =
-        TauCeti.GeneralLinear.rootSubgroupPoints hij q := by
-    calc
-      _ = (TauCeti.GeneralLinear.pointsMulEquiv
-          (R := ℤ) (A := AdditiveGroup.coordinateHopfAlgebra ℤ) (r + 1)).symm
-            ((TauCeti.GeneralLinear.pointsMulEquiv
-              (R := ℤ) (A := AdditiveGroup.coordinateHopfAlgebra ℤ) (r + 1))
-                (TauCeti.GeneralLinear.rootSubgroupPoints hij q)) :=
-          congrArg _ hmatrix.symm
-      _ = _ := Equiv.symm_apply_apply _ _
-  have hzero' :
-      (TauCeti.GeneralLinear.rootSubgroupPoints hij q).ofConv x = 0 := by
-    calc
-      _ = ((TauCeti.GeneralLinear.pointsMulEquiv
-          (R := ℤ) (A := AdditiveGroup.coordinateHopfAlgebra ℤ) (r + 1)).symm
-            (TauCeti.transvectionUnit hij
-              (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv q)))).ofConv x :=
-        congrArg (fun f => f.ofConv x) hconv.symm
-      _ = 0 := hzero
+  have hzero' : (TauCeti.GeneralLinear.rootSubgroupPoints hij q).ofConv x = 0 := by
+    rw [← (Equiv.symm_apply_eq _).2 hmatrix.symm]
+    exact hzero
   have hpoint := TauCeti.GeneralLinear.mapPointsFunctor_rootSubgroupCoordinateMap_app
     (R := ℤ) hij (CommAlgCat.of ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hpoint
@@ -258,7 +233,7 @@ private theorem generalLinear_rootSubgroupCoordinateMap_eq_kostantRootSubgroupCo
         (R := ℤ) (rootTarget_ne_rootSource r k) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+        (rep_kostantForm_mem_lattice r) k
         (isNilpotent_rep_rootGenerator r k) (latticeBasis r) := by
   apply _root_.CommHopfAlgCat.hom_ext
   apply TauCeti.GeneralLinear.coordinateHopfAlgebra_bialgHom_ext
@@ -298,7 +273,7 @@ private theorem generalLinear_rootSubgroupCoordinateMap_eq_kostantRootSubgroupCo
   have hK :=
     TauCeti.UniversalEnvelopingAlgebra.pointsMulEquiv_kostantRootSubgroupCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+      (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
       (A := AdditiveGroup.coordinateHopfAlgebra ℤ) q
   have hK' := hK.trans (kostantRootSubgroupMatrix_eq_transvection r k q)
@@ -342,7 +317,7 @@ theorem rootSubgroupCoordinateMapOfPair_eq_rootSubgroupCoordinateMap
     rootSubgroupCoordinateMapOfPair r (rootTarget_ne_rootSource r k) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k := by
   let q := CommHopfAlgCat.mkQuotient
     (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) (definingIdeal r)

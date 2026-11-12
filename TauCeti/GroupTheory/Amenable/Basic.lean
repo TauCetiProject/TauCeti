@@ -18,9 +18,11 @@ countability or generation hypothesis is part of the definition.
 
 A mean `m` on `UCB G` pushes forward along a continuous homomorphism `φ : G →ₜ* H` to the mean
 `f ↦ m (f ∘ φ)` on `UCB H`. Since `(L_(φ g) f) ∘ φ = L_g (f ∘ φ)`, the pushforward of a
-left-invariant mean along a surjective homomorphism is left invariant. Hence amenability passes to
-images under surjective continuous homomorphisms, and is invariant under isomorphisms of
-topological groups.
+left-invariant mean is invariant under translation by the range of `φ`, and, by continuity of
+`k ↦ m ((L_k f) ∘ φ)`, by its closure. So the pushforward along a homomorphism with dense range is
+left invariant. Hence amenability passes to the target of a continuous homomorphism with dense
+range, in particular to images under surjective continuous homomorphisms, and is invariant under
+isomorphisms of topological groups.
 
 ## Main definitions
 
@@ -32,10 +34,10 @@ topological groups.
 
 * `TauCeti.Mean.convex_toContinuousLinearMap_image_setOf_isLeftInvariant`: the left-invariant
   means form a convex set.
-* `TauCeti.Mean.IsLeftInvariant.map`: pushforward along a surjective continuous homomorphism
-  preserves left invariance.
-* `TauCeti.Amenable.of_surjective`: amenability passes to images under surjective continuous
-  homomorphisms.
+* `TauCeti.Mean.IsLeftInvariant.map`: pushforward along a continuous homomorphism with dense
+  range preserves left invariance.
+* `TauCeti.Amenable.of_denseRange`: amenability passes to the target of a continuous homomorphism
+  with dense range, in particular to images under surjective continuous homomorphisms.
 * `ContinuousMulEquiv.amenable_iff`: amenability is invariant under isomorphisms of topological
   groups.
 
@@ -108,13 +110,24 @@ theorem map_map (ψ : H →ₜ* K) (φ : G →ₜ* H) (m : Mean G) :
     (m.map φ).map ψ = m.map (ψ.comp φ) :=
   ext fun f => by simp [UCB.compRightAlgHom_comp]
 
-/-- The pushforward of a left-invariant mean along a surjective continuous homomorphism is left
-invariant. -/
-theorem IsLeftInvariant.map {m : Mean G} (hm : m.IsLeftInvariant) {φ : G →ₜ* H}
-    (hφ : Function.Surjective φ) : (m.map φ).IsLeftInvariant := by
-  intro h f
-  obtain ⟨g, rfl⟩ := hφ h
+/-- The pushforward of a left-invariant mean along a continuous homomorphism `φ` is invariant under
+left translation by the elements `φ g` of the range of `φ`. -/
+theorem IsLeftInvariant.map_apply_leftTranslation {m : Mean G} (hm : m.IsLeftInvariant)
+    (φ : G →ₜ* H) (g : G) (f : UCB H) :
+    m.map φ (UCB.leftTranslation (φ g) f) = m.map φ f := by
   rw [map_apply, map_apply, UCB.compRightAlgHom_leftTranslation, hm]
+
+/-- The pushforward of a left-invariant mean along a continuous homomorphism with dense range is
+left invariant. -/
+theorem IsLeftInvariant.map {m : Mean G} (hm : m.IsLeftInvariant) {φ : G →ₜ* H}
+    (hφ : DenseRange φ) : (m.map φ).IsLeftInvariant := by
+  -- the pushforward is invariant under translation by the range, and
+  -- `k ↦ m.map φ (L_k f)` is continuous
+  intro h f
+  have hc : Continuous fun k : H => m.map φ (UCB.leftTranslation k f) :=
+    (map_continuous (m.map φ)).comp (UCB.continuous_leftTranslation_apply f)
+  exact hφ.induction_on (p := fun k => m.map φ (UCB.leftTranslation k f) = m.map φ f) h
+    (isClosed_eq hc continuous_const) fun g => hm.map_apply_leftTranslation φ g f
 
 end Mean
 
@@ -129,12 +142,23 @@ variable (G) in
 theorem amenable_iff : Amenable G ↔ ∃ m : Mean G, m.IsLeftInvariant :=
   ⟨fun h => h.1, fun h => ⟨h⟩⟩
 
-/-- The image of an amenable topological group under a surjective continuous homomorphism is
-amenable. -/
-theorem Amenable.of_surjective [Amenable G] (φ : G →ₜ* H) (hφ : Function.Surjective φ) :
+/-- The target of a continuous homomorphism with dense range from an amenable topological group
+is amenable; in particular, so is the image under a surjective continuous homomorphism. -/
+theorem Amenable.of_denseRange [Amenable G] (φ : G →ₜ* H) (hφ : DenseRange φ) :
     Amenable H :=
   have ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   ⟨⟨m.map φ, hm.map hφ⟩⟩
+
+omit [TopologicalSpace G] [IsTopologicalGroup G] in
+/-- Amenability passes from a finer group topology to a coarser group topology. -/
+theorem Amenable.of_le {t₁ t₂ : TopologicalSpace G}
+    [@IsTopologicalGroup G t₁ _] [@IsTopologicalGroup G t₂ _] (h : t₁ ≤ t₂)
+    (ha : @Amenable G _ t₁ _) : @Amenable G _ t₂ _ := by
+  -- The source and target share a carrier but have different topologies.
+  let φ : @ContinuousMonoidHom G G _ _ t₁ t₂ :=
+    @ContinuousMonoidHom.mk G G _ _ t₁ t₂ (MonoidHom.id G) (continuous_id_of_le h)
+  exact @Amenable.of_denseRange G G _ t₁ _ _ t₂ _ ha φ
+    (@Function.Surjective.denseRange G t₂ G _ fun x => ⟨x, MonoidHom.id_apply G x⟩)
 
 end TauCeti
 
@@ -147,7 +171,7 @@ variable {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- Amenability is invariant under isomorphisms of topological groups. -/
 theorem amenable_iff (e : G ≃ₜ* H) : Amenable G ↔ Amenable H :=
-  ⟨fun _ => .of_surjective (e : G →ₜ* H) e.surjective,
-    fun _ => .of_surjective (e.symm : H →ₜ* G) e.symm.surjective⟩
+  ⟨fun _ => .of_denseRange (e : G →ₜ* H) e.surjective.denseRange,
+    fun _ => .of_denseRange (e.symm : H →ₜ* G) e.symm.surjective.denseRange⟩
 
 end ContinuousMulEquiv

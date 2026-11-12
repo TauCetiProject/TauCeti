@@ -34,7 +34,8 @@ of `TauCeti.Analysis.Fredholm.LevelSet.Tangent` rather than by an inclusion. Tha
 regularity criterion from the chart origin to a whole neighbourhood of it, and the file closes
 with local Sard--Smale in the resulting geometric form: the parameters near `l` which carry a
 nearby solution where the fixed-parameter linearization fails to be surjective form a closed
-nowhere dense set of values.
+nowhere dense set of values. The regularity required of `f` is Smale's threshold
+`k > max (index D₁, 0)`, which does not depend on the kernel of `D₁`.
 
 These results are the local nonlinear calculation in the parametric transversality package of
 McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Appendix A.3. Passing
@@ -64,6 +65,9 @@ smooth compatibility and a countable cover, and is not asserted here.
   it names is surjective.
 * `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`:
   local parametric transversality.
+* `TauCeti.exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl`: local parametric
+  transversality as a neighbourhood of a solution in the level set together with one nowhere dense
+  set of parameters.
 
 ## References
 
@@ -312,6 +316,49 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 variable {f : E × Λ → F} {D₁ : E →L[ℝ] F} {D₂ : Λ →L[ℝ] F}
 variable {x : E} {l : Λ} {c : F}
 
+/-- **Criticality near the chart origin.** Eventually in `𝓝 0`, a point `k` lies in the target of
+the level-set chart and the derivative of the local parameter map at `k` is surjective exactly when
+the fixed-parameter part of the derivative of `f` at the solution `k` names is. This is
+`TauCeti.surjective_fderiv_levelSetParameterMap_iff_of_mem` with its membership hypotheses
+discharged on a neighbourhood of the origin; it needs only that `f` is differentiable near
+`(x, l)`. -/
+theorem eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff
+    (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
+    (hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w) (hD : Surjective (D₁.coprod D₂))
+    (hker : (D₁.coprod D₂).ker.ClosedComplemented) (hxl : f (x, l) = c) :
+    ∀ᶠ k in 𝓝 (0 : (D₁.coprod D₂).ker),
+      k ∈ (levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).target ∧
+      (Surjective (fderiv ℝ (levelSetParameterMap hf hD hker hxl) k) ↔
+        Surjective ((fderiv ℝ f (((levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker
+          hxl).symm k : ↥{z | f z = c}) : E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))) := by
+  set Φ := levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl with hΦ
+  have hsource : hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD) hker ∈
+      𝓝 ((x, l) : E × Λ) :=
+    (hf.isOpen_implicitCoordSource _ _).mem_nhds (hf.mem_implicitCoordSource _ _)
+  have hval0 : ((Φ.symm 0 : ↥{z | f z = c}) : E × Λ) = (x, l) := by
+    rw [hΦ, levelSetChart_symm_zero]
+  have hcontAt : ContinuousAt (fun k ↦ ((Φ.symm k : ↥{z | f z = c}) : E × Λ)) 0 :=
+    (hasStrictFDerivAt_coe_levelSetChart_symm hf (LinearMap.range_eq_top.mpr hD) hker
+      hxl).continuousAt
+  have hV : (fun k ↦ ((Φ.symm k : ↥{z | f z = c}) : E × Λ)) ⁻¹'
+      (hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD) hker ∩
+        {w | DifferentiableAt ℝ f w}) ∈ 𝓝 (0 : (D₁.coprod D₂).ker) := by
+    refine hcontAt.preimage_mem_nhds ?_
+    rw [hval0]
+    exact Filter.inter_mem hsource hdiff
+  filter_upwards [Φ.open_target.mem_nhds
+    (mem_levelSetChart_target hf (LinearMap.range_eq_top.mpr hD) hker hxl), hV] with k hk hkV
+  refine ⟨hk, ?_⟩
+  have hA : HasFDerivAt f
+      (((fderiv ℝ f ((Φ.symm k : ↥{z | f z = c}) : E × Λ)).comp
+          (ContinuousLinearMap.inl ℝ E Λ)).coprod
+        ((fderiv ℝ f ((Φ.symm k : ↥{z | f z = c}) : E × Λ)).comp
+          (ContinuousLinearMap.inr ℝ E Λ)))
+      ((Φ.symm k : ↥{z | f z = c}) : E × Λ) := by
+    rw [ContinuousLinearMap.coprod_comp_inl_inr]
+    exact hkV.2.hasFDerivAt
+  exact surjective_fderiv_levelSetParameterMap_iff_of_mem hf hD hker hxl hk hkV.1 hA
+
 /-- **Local parametric Sard--Smale.** In a regular chart of a universal level set whose
 fixed-parameter linearization is Fredholm, the critical values of the local parameter map coming
 from a sufficiently small neighbourhood of the chart origin form a closed nowhere dense set.
@@ -327,9 +374,9 @@ Here criticality is defined intrinsically for the local parameter map;
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`
 rewrites it as failure of regularity of the original equation.
 
-The differentiability threshold is the one currently supplied by
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`, rewritten using the fact
-that the kernel of `D₁.parameterProj D₂` has the same dimension as `ker D₁`. -/
+The differentiability threshold is Smale's, `n > max (index D₁, 0)`: the derivative of the local
+parameter map at the chart origin, `D₁.parameterProj D₂`, has the same index as `D₁`, so this is
+the threshold required by `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`. -/
 theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap
     {n : ℕ∞ω} {U : Set (D₁.coprod D₂).ker}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -337,7 +384,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
     (hD₁ : ContinuousLinearMap.IsFredholm D₁)
     (hD : Surjective (D₁.coprod D₂))
     (hxl : f (x, l) = c)
-    (hn : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
     (hU : U ∈ 𝓝 (0 : (D₁.coprod D₂).ker)) :
     ∃ N ∈ 𝓝 (0 : (D₁.coprod D₂).ker),
       N ⊆ U ∩ (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
@@ -351,17 +398,9 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
   let g := levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
   have hg : ContDiffAt ℝ n g 0 :=
     contDiffAt_levelSetParameterMap hf hcont hD (hD₁.closedComplemented_ker_coprod hD) hxl
-  have hg' : fderiv ℝ g 0 = D₁.parameterProj D₂ :=
-    fderiv_levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
-  have hn' :
-      ((finrank ℝ (D₁.parameterProj D₂).ker * finrank ℝ (D₁.parameterProj D₂).ker + 1 : ℕ) :
-        ℕ∞ω) ≤ n := by
-    simpa only [ContinuousLinearMap.finrank_ker_parameterProj] using hn
   have hFred := isFredholm_fderiv_levelSetParameterMap hf hD hxl hD₁
-  have hn'' :
-      ((finrank ℝ (fderiv ℝ g 0).ker * finrank ℝ (fderiv ℝ g 0).ker + 1 : ℕ) : ℕ∞ω) ≤ n := by
-    rw [hg']
-    exact hn'
+  have hn'' : (((fderiv ℝ g 0).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n := by
+    rwa [index_fderiv_levelSetParameterMap]
   have htarget := (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
     (hD₁.closedComplemented_ker_coprod hD) hxl).open_target.mem_nhds
       (mem_levelSetChart_target hf (LinearMap.range_eq_top.mpr hD)
@@ -383,8 +422,9 @@ parameter at which the equation has a solution, by
 `TauCeti.exists_apply_levelSetParameterMap_eq`.
 
 Only a neighbourhood of one solution is described: passing to a residual set of parameters for a
-whole universal moduli space needs a countable cover, which is not asserted here. The
-differentiability threshold is the one supplied by the local Sard--Smale theorem. -/
+whole universal moduli space needs a countable cover, which is not asserted here. The regularity
+hypothesis `hn` is Smale's threshold, as in
+`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap`. -/
 theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
     {n : ℕ∞ω} {U : Set (D₁.coprod D₂).ker}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -392,7 +432,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
     (hD₁ : ContinuousLinearMap.IsFredholm D₁)
     (hD : Surjective (D₁.coprod D₂))
     (hxl : f (x, l) = c)
-    (hn : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
     (hU : U ∈ 𝓝 (0 : (D₁.coprod D₂).ker)) :
     ∃ N ∈ 𝓝 (0 : (D₁.coprod D₂).ker),
       N ⊆ U ∩ (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
@@ -407,34 +447,16 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
           (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
               (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
             E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))})) := by
-  have hne : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
-    (fun m : ℕ ↦ (by simp : ((m : ℕ) : ℕ∞ω) ≠ ∞)) _
-  have hne0 : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
-    (fun m : ℕ ↦ (by simp : ((m + 1 : ℕ) : ℕ∞ω) ≠ 0)) _
+  have hn1 : 1 ≤ n := (Nat.cast_le.mpr (Nat.le_add_left 1 _)).trans hn
   have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
-    filter_upwards [(hcont.of_le hn).eventually hne] with w hw
-    exact hw.differentiableAt hne0
-  have hsource : hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD)
-      (hD₁.closedComplemented_ker_coprod hD) ∈ 𝓝 ((x, l) : E × Λ) :=
-    (hf.isOpen_implicitCoordSource _ _).mem_nhds (hf.mem_implicitCoordSource _ _)
-  have hval0 : (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-      (hD₁.closedComplemented_ker_coprod hD) hxl).symm 0 : ↥{z | f z = c}) : E × Λ) = (x, l) := by
-    rw [levelSetChart_symm_zero]
-  have hcontAt : ContinuousAt (fun k ↦ (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-      (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) : E × Λ)) 0 :=
-    (hasStrictFDerivAt_coe_levelSetChart_symm hf (LinearMap.range_eq_top.mpr hD)
-      (hD₁.closedComplemented_ker_coprod hD) hxl).continuousAt
-  have hV : (fun k ↦ (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-        (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) : E × Λ)) ⁻¹'
-      (hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD)
-        (hD₁.closedComplemented_ker_coprod hD) ∩ {w | DifferentiableAt ℝ f w}) ∈
-      𝓝 (0 : (D₁.coprod D₂).ker) := by
-    refine hcontAt.preimage_mem_nhds ?_
-    rw [hval0]
-    exact Filter.inter_mem hsource hdiff
+    filter_upwards [(hcont.of_le hn1).eventually (by simp)] with w hw
+    exact hw.differentiableAt one_ne_zero
+  obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
+    (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hf hdiff hD
+      (hD₁.closedComplemented_ker_coprod hD) hxl)
   obtain ⟨N, hN, hNsub, hNclosed, hNdense⟩ :=
     exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap
-      hf hcont hD₁ hD hxl hn (Filter.inter_mem hU hV)
+      hf hcont hD₁ hD hxl hn (Filter.inter_mem hU (hWopen.mem_nhds hW0))
   have hset : N ∩ {k | ¬ Surjective (fderiv ℝ
         (levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl) k)} =
       N ∩ {k | ¬ Surjective ((fderiv ℝ f
@@ -444,23 +466,71 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
     ext k
     simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, and_congr_right_iff]
     intro hkN
-    obtain ⟨⟨-, hksrc, hkdiff⟩, hktarget⟩ := hNsub hkN
-    have hA : HasFDerivAt f
-        (((fderiv ℝ f (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-                (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
-              E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ)).coprod
-          ((fderiv ℝ f (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-                (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
-              E × Λ)).comp (ContinuousLinearMap.inr ℝ E Λ)))
-        (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-            (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) : E × Λ) := by
-      rw [ContinuousLinearMap.coprod_comp_inl_inr]
-      exact hkdiff.hasFDerivAt
-    exact not_congr (surjective_fderiv_levelSetParameterMap_iff_of_mem hf hD
-      (hD₁.closedComplemented_ker_coprod hD) hxl hktarget hksrc hA)
+    exact not_congr (hW k (hNsub hkN).1.2).2
   refine ⟨N, hN, hNsub.trans (Set.inter_subset_inter_left _ Set.inter_subset_left), ?_, ?_⟩
   · rw [← hset]; exact hNclosed
   · rw [← hset]; exact hNdense
+
+/-- **Local step of global parametric transversality.** Near a solution `z` of `f z = c` at which
+`f` is smooth enough, the linearization in the fixed variable is Fredholm and the total
+linearization is surjective, there is a neighbourhood `Q` of `z` in the level set and a nowhere
+dense set of parameters containing the parameter of every point of `Q` where the fixed-variable
+derivative fails to be surjective. -/
+theorem exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl
+    {f : E × Λ → F} {c : F} {n : ℕ∞ω} (z : {z : E × Λ | f z = c})
+    (hcont : ContDiffAt ℝ n f z)
+    (hFred : ContinuousLinearMap.IsFredholm
+        ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
+    (htotal : Surjective (fderiv ℝ f z))
+    (hn : ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) :
+        ℕ∞ω) ≤ n) :
+    ∃ Q ∈ 𝓝 z, ∃ B : Set Λ, IsNowhereDense B ∧
+      ∀ w : {z : E × Λ | f z = c}, w ∈ Q →
+        ¬ Surjective ((fderiv ℝ f w).comp (ContinuousLinearMap.inl ℝ E Λ)) →
+          (w : E × Λ).2 ∈ B := by
+  let fixedDeriv (z : {z : E × Λ | f z = c}) : E →L[ℝ] F :=
+    (fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)
+  let parameterDeriv (z : {z : E × Λ | f z = c}) : Λ →L[ℝ] F :=
+    (fderiv ℝ f z).comp (ContinuousLinearMap.inr ℝ E Λ)
+  have hn0 : n ≠ 0 := by
+    intro hnzero
+    have hpos : (0 : ℕ∞ω) < (((fixedDeriv z).index.toNat + 1 : ℕ) : ℕ∞ω) := by
+      simp
+    exact (not_lt_of_ge (hn.trans_eq hnzero) hpos)
+  have hstrict : HasStrictFDerivAt f ((fixedDeriv z).coprod (parameterDeriv z)) z := by
+    simpa only [fixedDeriv, parameterDeriv,
+      ContinuousLinearMap.coprod_comp_inl_inr] using
+      hcont.hasStrictFDerivAt_fderiv hn0
+  have hfixed : ContinuousLinearMap.IsFredholm (fixedDeriv z) := hFred
+  have hsurj : Surjective ((fixedDeriv z).coprod (parameterDeriv z)) := by
+    simpa only [fixedDeriv, parameterDeriv,
+      ContinuousLinearMap.coprod_comp_inl_inr] using htotal
+  obtain ⟨N, hNnhds, -, -, hNnowhere⟩ :=
+    exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
+      hstrict hcont hfixed hsurj z.2 hn (U := univ) Filter.univ_mem
+  let Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj)
+    (hfixed.closedComplemented_ker_coprod hsurj) z.2
+  let g := levelSetParameterMap hstrict hsurj
+    (hfixed.closedComplemented_ker_coprod hsurj) z.2
+  obtain ⟨Q₀, hQ₀nhds, hQ₀⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
+    hstrict (LinearMap.range_eq_top.mpr hsurj) (hfixed.closedComplemented_ker_coprod hsurj) z.2
+    hNnhds
+  let Q : Set {z : E × Λ | f z = c} := Subtype.val ⁻¹' Q₀
+  let B : Set Λ := g ''
+    (N ∩ {k | ¬ Surjective ((fderiv ℝ f ((Φ.symm k : {z : E × Λ | f z = c}) : E × Λ)).comp
+      (ContinuousLinearMap.inl ℝ E Λ))})
+  have hQnhds : Q ∈ 𝓝 z := continuous_subtype_val.continuousAt.preimage_mem_nhds hQ₀nhds
+  refine ⟨Q, hQnhds, B, hNnowhere, ?_⟩
+  intro w hwQ hwbad
+  obtain ⟨hwsource, hwN⟩ := hQ₀ w hwQ
+  have hwback : Φ.symm (Φ w) = w := Φ.left_inv hwsource
+  have hwbad' : ¬ Surjective ((fderiv ℝ f ((Φ.symm (Φ w) : {z : E × Λ | f z = c}) : E × Λ)).comp
+      (ContinuousLinearMap.inl ℝ E Λ)) := by
+    rw [hwback]
+    exact hwbad
+  refine ⟨Φ w, ⟨hwN, hwbad'⟩, ?_⟩
+  exact levelSetParameterMap_levelSetChart hstrict hsurj
+    (hfixed.closedComplemented_ker_coprod hsurj) z.2 hwsource
 
 end Real
 

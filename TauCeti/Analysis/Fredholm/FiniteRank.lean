@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.Criteria
+public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
@@ -21,47 +21,49 @@ hypothesis of `ContinuousLinearMap.IsFredholm.add_hasFiniteRange`.
 ## Main declarations
 
 * `ContinuousLinearMap.index_add_of_hasFiniteRange`: over a complete nontrivially normed
-  field, adding an operator of finite rank preserves the Fredholm index.
+  field, adding an operator of finite rank between Hausdorff topological vector spaces preserves
+  the Fredholm index.
 -/
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 open Module
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+  [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
+variable [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F]
+  [IsTopologicalAddGroup F] [ContinuousSMul 𝕜 F] [T2Space F]
 variable {T K : E →L[𝕜] F}
 
 
-/-- Over a complete nontrivially normed field, perturbing a Fredholm operator by an operator of
-finite rank leaves its index unchanged: both operators restrict to the same map on the closed,
-finite-codimensional subspace `ker K`, and additivity of the index cancels the index shift of that
-restriction. -/
-theorem _root_.ContinuousLinearMap.index_add_of_hasFiniteRange
-    (hT : ContinuousLinearMap.IsFredholm T)
+/-- Finite-rank perturbations of Fredholm operators between Hausdorff topological vector spaces
+over a complete nontrivially normed field preserve the index. -/
+theorem index_add_of_hasFiniteRange
+    (hT : IsFredholm T)
     (hK : LinearMap.HasFiniteRange (K : E →ₗ[𝕜] F)) :
-    ContinuousLinearMap.index (T + K) = ContinuousLinearMap.index T := by
+    index (T + K) = index T := by
   set ι := (LinearMap.ker (K : E →ₗ[𝕜] F)).subtypeL with hι
-  have hιF : ContinuousLinearMap.IsFredholm ι := isFredholm_ker_subtypeL hK
+  have := hK.cofg_ker
+  have hιF : IsFredholm ι := K.ker.isFredholm_subtypeL K.isClosed_ker
   have hcomp : (T + K).comp ι = T.comp ι := by
     ext x
     have hx : K (x : E) = 0 := LinearMap.mem_ker.mp x.2
     simp [hι, hx]
-  have h₁ : ContinuousLinearMap.index ((T + K).comp ι) =
-      ContinuousLinearMap.index (T + K) + ContinuousLinearMap.index ι := by
-    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+  have h₁ : index ((T + K).comp ι) =
+      index (T + K) + index ι := by
+    simpa only [index_def, toLinearMap_comp] using
       (hT.add_hasFiniteRange hK).index_comp hιF
-  have h₂ : ContinuousLinearMap.index (T.comp ι) =
-      ContinuousLinearMap.index T + ContinuousLinearMap.index ι := by
-    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+  have h₂ : index (T.comp ι) =
+      index T + index ι := by
+    simpa only [index_def, toLinearMap_comp] using
       hT.index_comp hιF
   rw [hcomp, h₂] at h₁
   omega
 
 
-end TauCeti
+end ContinuousLinearMap
 
 end

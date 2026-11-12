@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+public import TauCeti.MeasureTheory.Function.LpSeminorm.EDist
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
@@ -25,8 +26,8 @@ space carrying an extended distance is
 the infimum taken over the couplings `π` of `μ` and `ν`. This file defines
 `TauCeti.wassersteinEDist` and proves the identities that make it a distance: it vanishes on the
 diagonal, it is symmetric, it is monotone in the exponent, it satisfies the triangle inequality,
-and — on a genuine metric space with the hypotheses under which the infimum is attained — it
-separates measures.
+and — on a Polish space with a compatible extended pseudometric, where the infimum is attained —
+it separates measures.
 
 Writing the objective as an `eLpNorm` rather than as a root of an integral is what makes the
 exponent `p = ∞` a case of the definition instead of a separate one: at that endpoint the value is
@@ -36,26 +37,28 @@ primal Kantorovich problem of `TauCeti.transportCost` for the cost `edist ^ p`.
 
 The two-variable transport identities below assume joint measurability of the ground extended
 distance, `Measurable fun z : X × X ↦ edist z.1 z.2`. This is not automatic for an abstract
-`PseudoEMetricSpace` sitting on an unrelated measurable space, and it is exactly what is needed to
-move the objective along a pushforward; on a second countable Borel space it is Mathlib's
-`measurable_edist`. The same hypothesis is what makes the objective computable at all, since
+`WeakPseudoEMetricSpace` sitting on an unrelated measurable space, and it is exactly what is needed
+to move the objective along a pushforward. When the topology is induced by the ground distance,
+Mathlib's `measurable_edist` supplies this on a second countable Borel space. The same hypothesis is
+what makes the objective computable at all, since
 `MeasureTheory.eLpNorm` is `∞` for a function that is not almost-everywhere strongly measurable:
 that is why the two endpoint readings at `p = 0` and `p = ∞` and the transport-cost bridge ask for
 it, even though no pushforward is involved. The pure finite-moment results use only
 almost-everywhere strong measurability
 of the relevant distance sections, the two-Dirac value needs no measurability at all, and the
-vanishing on the diagonal needs only a measurable diagonal, `MeasurableEq`. Nothing else about the
-topology is assumed until the triangle inequality asks for a standard Borel structure, which is
-what the gluing lemma consumes.
+vanishing on the diagonal needs only a measurable diagonal, `MeasurableEq`. The algebraic laws
+use `WeakPseudoEMetricSpace`, so the ground distance need not induce the ambient topology. The
+triangle inequality additionally asks for a standard Borel measurable structure, which is what the
+gluing lemma consumes.
 
 ## Main definitions
 
 * `TauCeti.wassersteinEDist p μ ν` — the infimum of `eLpNorm (fun z ↦ edist z.1 z.2) p π` over the
   couplings `π` of `μ` and `ν`.
 * `TauCeti.HasFiniteMoment p μ` — the `MemLp` finite-moment condition about some basepoint, with
-  `TauCeti.hasFiniteMoment_of_ae_mem_finset`, `TauCeti.hasFiniteMoment_of_boundedSpace`, and
-  `TauCeti.hasFiniteMoment_dirac` supplying finite moments for finite carriers, bounded spaces,
-  and Dirac laws.
+  `TauCeti.hasFiniteMoment_of_ae_mem_finset`, `TauCeti.hasFiniteMoment_of_ae_mem_of_isBounded`,
+  `TauCeti.hasFiniteMoment_of_boundedSpace`, and `TauCeti.hasFiniteMoment_dirac` supplying finite
+  moments for finite carriers, bounded carriers, bounded spaces, and Dirac laws.
 
 ## Main statements
 
@@ -71,6 +74,9 @@ what the gluing lemma consumes.
   space, measures at `W_∞` distance below the separation scale agree;
 * `TauCeti.wassersteinEDist_self`, `TauCeti.wassersteinEDist_comm` and
   `TauCeti.wassersteinEDist_triangle` — the three axioms of an extended pseudodistance;
+* `TauCeti.wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le` — measures
+  within `W_p`-distance `a`, `b` of Diracs at `x₀`, `x₁` are within `a + d(x₀, x₁) + b` of each
+  other;
 * `TauCeti.wassersteinEDist_mono_exponent` — monotonicity in `p` when the first marginal is a
   probability measure;
 * `TauCeti.wassersteinEDist_dirac_left`, `TauCeti.wassersteinEDist_dirac_right` and
@@ -99,7 +105,7 @@ what the gluing lemma consumes.
   moments survive finite scalings and sums of finite measures, hence mixtures;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
-* `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
+* `TauCeti.HasFiniteMoment.memLp_id` — on a seminormed additive group, a finite measure of finite
   `p`-moment has the identity in `L^p`, and `TauCeti.memLp_of_hasFiniteMoment_map` reads this off
   for a function from its law; `TauCeti.integrable_norm_sub_sq_of_hasFiniteMoment` deduces that the
   quadratic cost is integrable against a coupling of laws of finite second moment, and
@@ -115,10 +121,11 @@ what the gluing lemma consumes.
   `K * (edist x₀ x ^ r + edist x₀ y ^ r)` for the cost `edist x y ^ r`, with
   `TauCeti.HasFiniteMoment.lintegral_const_mul_edist_rpow_ne_top` its integrability under a finite
   `p`-moment;
-* `TauCeti.exists_isCoupling_eLpNorm_eq_wassersteinEDist` — on a Polish metric space and for a
-  finite nonzero exponent, between finite measures that admit a coupling, the infimum is attained;
-* `TauCeti.wassersteinEDist_eq_zero_iff` — on a Polish metric space and for a finite nonzero
-  exponent, `W_p (μ, ν) = 0` exactly when `μ = ν` if the source measure is finite, with
+* `TauCeti.exists_isCoupling_eLpNorm_eq_wassersteinEDist` — on a Polish space with a compatible
+  extended pseudometric and for a finite nonzero exponent, between finite measures that admit a
+  coupling, the infimum is attained;
+* `TauCeti.wassersteinEDist_eq_zero_iff` — on such a space and for a finite nonzero exponent,
+  `W_p (μ, ν) = 0` exactly when `μ = ν` if the source measure is finite, with
   `TauCeti.wassersteinEDist_top_eq_zero_iff` giving the endpoint `p = ∞` under the same
   finiteness hypothesis and `TauCeti.eq_of_wassersteinEDist_eq_zero` packaging the two into a
   single statement.
@@ -143,10 +150,9 @@ use. Attainment and separation apply to finite equal-mass measures by normalisin
 while the order-theoretic API, symmetry and the vanishing on the diagonal hold for arbitrary
 measures.
 
-This is Layer 3, item 1 of the optimal-transport roadmap. The basepoint-independence lemmas that
-item 2 rests on are proved here, on the Dirac identity; the finite-moment spaces `P_p (X)`
-themselves and the metric structure carried by an anchored finite-distance component are item 2
-and are not built here.
+The Dirac identities and basepoint-independence lemmas connect finite moments to finite-distance
+components. The metric structures on these components and on the finite-moment spaces `P_p (X)`
+are built in `TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space`.
 
 ## References
 
@@ -178,8 +184,12 @@ variable [EDist X] {μ ν : Measure X} {π : Measure (X × X)}
 and `ν`, of the `L^p (π)` seminorm of the ground extended distance `fun z ↦ edist z.1 z.2`.
 
 It is `∞` when `μ` and `ν` have no coupling at all. For a jointly measurable ground distance the
-objective at `p = ∞` is the `π`-essential supremum, by Mathlib's `MeasureTheory.eLpNorm`
-convention; without measurability that convention makes every objective `∞`. -/
+objective at `p = ∞` is the `π`-essential supremum. Mathlib's `MeasureTheory.eLpNorm` makes the
+objective of a coupling `π` equal to `∞` when the ground distance is not almost everywhere
+strongly measurable for `π`. Without joint measurability that depends on `π`: when points are
+measurable, every function is almost everywhere constant for a Dirac coupling, and for `p ≠ 0` its
+objective is the distance between the two points (`TauCeti.wassersteinEDist_dirac_dirac`, which
+assumes no measurability of the distance). -/
 def wassersteinEDist (p : ℝ≥0∞) (μ ν : Measure X) : ℝ≥0∞ :=
   ⨅ (π : Measure (X × X)) (_ : IsCoupling π μ ν), eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π
 
@@ -317,7 +327,7 @@ end EDist
 
 section Perturbation
 
-variable [PseudoEMetricSpace X]
+variable [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 
 /-- **Moving a piece of mass to a single point.** Replacing the part `τ` of the measure `σ + τ`
 by the Dirac mass at `x₀` carrying the same total mass costs at most the `L^p (τ)` seminorm of
@@ -370,7 +380,7 @@ end Perturbation
 
 section Measurable
 
-variable [PseudoEMetricSpace X]
+variable [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 
 /-- The Wasserstein distance from a measure to itself vanishes: the diagonal coupling has zero
 displacement almost everywhere.
@@ -507,7 +517,7 @@ end MeasurableEDist
 
 section Measurable
 
-variable [PseudoEMetricSpace X]
+variable [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 
 section Dirac
 
@@ -583,9 +593,11 @@ theorem memLp_edist_iff_of_edist_ne_top
 /-- Finiteness of the Wasserstein distance from a Dirac source transfers to every basepoint at
 finite ground distance from the original basepoint. -/
 theorem wassersteinEDist_dirac_left_ne_top (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
-    {x₀ x₁ : X} (hx : edist x₁ x₀ ≠ ∞) (ν : Measure X) [IsProbabilityMeasure ν]
+    {x₀ x₁ : X} (hx : edist x₁ x₀ ≠ ∞) (ν : Measure X)
     (h : wassersteinEDist p (Measure.dirac x₀) ν ≠ ∞) :
     wassersteinEDist p (Measure.dirac x₁) ν ≠ ∞ := by
+  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top h
+  have : IsProbabilityMeasure ν := hπ.isProbabilityMeasure_right
   rw [← memLp_edist_iff_wassersteinEDist_dirac_ne_top hd] at h ⊢
   exact (memLp_edist_iff_of_edist_ne_top
     (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable
@@ -613,27 +625,48 @@ theorem wassersteinEDist_triangle (hd : Measurable fun z : X × X ↦ edist z.1 
     (MeasureTheory.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hd hd hd fun x y z ↦
       edist_triangle x y z)
 
+/-- Two measures within `W_p`-distance `a` and `b` of Dirac masses at `x₀` and `x₁` are within
+`W_p`-distance `a + edist x₀ x₁ + b` of each other. -/
+theorem wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p)
+    {x₀ x₁ : X} {μ₀ μ₁ : Measure X} {a b : ℝ≥0∞}
+    (h₀ : wassersteinEDist p (Measure.dirac x₀) μ₀ ≤ a)
+    (h₁ : wassersteinEDist p (Measure.dirac x₁) μ₁ ≤ b) :
+    wassersteinEDist p μ₀ μ₁ ≤ a + edist x₀ x₁ + b := by
+  calc wassersteinEDist p μ₀ μ₁
+      ≤ wassersteinEDist p μ₀ (Measure.dirac x₀) +
+        (wassersteinEDist p (Measure.dirac x₀) (Measure.dirac x₁) +
+          wassersteinEDist p (Measure.dirac x₁) μ₁) :=
+        (wassersteinEDist_triangle hd hp _ _ _).trans
+          (add_le_add le_rfl (wassersteinEDist_triangle hd hp _ _ _))
+    _ ≤ a + (edist x₀ x₁ + b) := by
+        rw [wassersteinEDist_comm hd p μ₀ (Measure.dirac x₀),
+          wassersteinEDist_dirac_dirac (zero_lt_one.trans_le hp).ne']
+        gcongr
+    _ = a + edist x₀ x₁ + b := (add_assoc _ _ _).symm
+
 end Triangle
 
 end Measurable
 
+section EMetricMoment
+
+variable [PseudoEMetricSpace X]
+
+/-- A Dirac law has finite `p`-moment for every exponent: its distance from its atom vanishes
+almost everywhere. -/
+theorem hasFiniteMoment_dirac [OpensMeasurableSpace X] (p : ℝ≥0∞) (x : X) :
+    HasFiniteMoment p (Measure.dirac x) := by
+  refine hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := 0)
+    measurable_edist_right.aestronglyMeasurable ENNReal.zero_ne_top ?_⟩
+  filter_upwards [ae_eq_dirac' (a := x) (measurable_edist_right (x := x))] with y hy
+  simp only [enorm_eq_self, hy, Function.const_apply, edist_self, le_refl]
+
+end EMetricMoment
+
 section MetricMoment
 
 variable [PseudoMetricSpace X]
-
-/-- On an ordinary pseudometric space, the real-distance and extended-distance formulations of
-finite `p`-moment at a basepoint agree. -/
-theorem memLp_dist_iff_memLp_edist
-    {x : X} {ν : Measure X}
-    (hd : AEStronglyMeasurable (fun y ↦ dist y x) ν) :
-    MemLp (fun y ↦ dist y x) p ν ↔ MemLp (fun y ↦ edist x y) p ν := by
-  apply memLp_congr_enorm
-  · exact hd
-  · exact (ENNReal.continuous_ofReal.comp_aestronglyMeasurable hd).congr
-      (.of_forall fun y ↦ by simp only [edist_dist, dist_comm])
-  · exact .of_forall fun y ↦ by
-      simp only [edist_dist, dist_comm, enorm_eq_self]
-      exact Real.enorm_eq_ofReal dist_nonneg
 
 /-- On an ordinary pseudometric space, a finite measure with finite `p`-moment at some basepoint
 has finite `p`-moment at every basepoint whose distance section is almost-everywhere strongly
@@ -653,9 +686,8 @@ theorem HasFiniteMoment.integrable_of_lipschitzWith [OpensMeasurableSpace X] {ν
     [IsFiniteMeasure ν] (h : HasFiniteMoment 1 ν) {K : ℝ≥0} {f : X → ℝ}
     (hf : LipschitzWith K f) : Integrable f ν := by
   obtain ⟨x₀, hx₀⟩ := h
-  have hd : Measurable fun y ↦ dist y x₀ := (continuous_id.dist continuous_const).measurable
   have hint : Integrable (fun y ↦ dist y x₀) ν :=
-    memLp_one_iff_integrable.1 ((memLp_dist_iff_memLp_edist hd.aestronglyMeasurable).2 hx₀)
+    memLp_one_iff_integrable.1 (memLp_dist_iff_memLp_edist.2 hx₀)
   refine ((integrable_const |f x₀|).add (hint.const_mul K)).mono'
     hf.continuous.aestronglyMeasurable (.of_forall fun y ↦ ?_)
   have hy := hf.dist_le_mul y x₀
@@ -663,35 +695,31 @@ theorem HasFiniteMoment.integrable_of_lipschitzWith [OpensMeasurableSpace X] {ν
   simp only [Pi.add_apply, Real.norm_eq_abs]
   linarith [abs_sub_abs_le_abs_sub (f y) (f x₀)]
 
+/-- A finite measure carried by a bounded set has finite `p`-moment for every exponent: the ground
+distance to a basepoint is bounded on that set. -/
+theorem hasFiniteMoment_of_ae_mem_of_isBounded [OpensMeasurableSpace X] {ν : Measure X}
+    {s : Set X} [IsFiniteMeasure ν] (x₀ : X) (hs : Bornology.IsBounded s) (hν : ∀ᵐ y ∂ν, y ∈ s) :
+    HasFiniteMoment p ν := by
+  obtain ⟨r, hr⟩ := hs.subset_closedBall x₀
+  refine hasFiniteMoment_def.2 ⟨x₀, MemLp.of_enorm_bound (C := ENNReal.ofReal r)
+    measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top ?_⟩
+  filter_upwards [hν] with y hy
+  simpa only [enorm_eq_self, edist_dist, dist_comm x₀] using
+    ENNReal.ofReal_le_ofReal (Metric.mem_closedBall.1 (hr hy))
+
 /-- A finite measure carried by a finite set has finite `p`-moment for every exponent: the ground
 distance to a basepoint is bounded on that finite set. -/
 theorem hasFiniteMoment_of_ae_mem_finset [OpensMeasurableSpace X] {ν : Measure X}
     {s : Finset X} [IsFiniteMeasure ν] (x₀ : X) (hs : ∀ᵐ y ∂ν, y ∈ s) :
-    HasFiniteMoment p ν := by
-  refine hasFiniteMoment_def.2 ⟨x₀, MemLp.of_enorm_bound (C := s.sup fun z ↦ edist x₀ z)
-    measurable_edist_right.aestronglyMeasurable ?_ ?_⟩
-  · exact ((Finset.sup_lt_iff (by simp)).2 fun z _ ↦ edist_lt_top x₀ z).ne
-  · filter_upwards [hs] with y hy
-    simpa only [enorm_eq_self] using Finset.le_sup (f := fun z ↦ edist x₀ z) hy
+    HasFiniteMoment p ν :=
+  hasFiniteMoment_of_ae_mem_of_isBounded x₀ s.finite_toSet.isBounded hs
 
 /-- On a nonempty bounded pseudometric space, for instance a nonempty compact one, every finite
 measure has finite `p`-moment for every exponent: the ground distance is bounded. -/
 theorem hasFiniteMoment_of_boundedSpace [OpensMeasurableSpace X] [BoundedSpace X] [Nonempty X]
-    (ν : Measure X) [IsFiniteMeasure ν] : HasFiniteMoment p ν := by
-  obtain ⟨C, hC⟩ := Metric.boundedSpace_iff.1 ‹BoundedSpace X›
-  let x₀ : X := Classical.arbitrary X
-  refine hasFiniteMoment_def.2 ⟨x₀, MemLp.of_enorm_bound (C := ENNReal.ofReal C)
-    measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top (.of_forall fun y ↦ ?_)⟩
-  simpa only [enorm_eq_self, edist_dist] using ENNReal.ofReal_le_ofReal (hC x₀ y)
-
-/-- A Dirac law has finite `p`-moment for every exponent: its distance from its atom vanishes
-almost everywhere. -/
-theorem hasFiniteMoment_dirac [OpensMeasurableSpace X] (p : ℝ≥0∞) (x : X) :
-    HasFiniteMoment p (Measure.dirac x) := by
-  refine hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := 0)
-    measurable_edist_right.aestronglyMeasurable ENNReal.zero_ne_top ?_⟩
-  filter_upwards [ae_eq_dirac' (a := x) (measurable_edist_right (x := x))] with y hy
-  simp only [enorm_eq_self, hy, Function.const_apply, edist_self, le_refl]
+    (ν : Measure X) [IsFiniteMeasure ν] : HasFiniteMoment p ν :=
+  hasFiniteMoment_of_ae_mem_of_isBounded (Classical.arbitrary X) (Bornology.IsBounded.all _)
+    (.of_forall fun _ ↦ Set.mem_univ _)
 
 /-- On an ordinary pseudometric space, the finite-moment condition can be tested at any prescribed
 basepoint whose distance section is almost-everywhere strongly measurable. -/
@@ -719,25 +747,17 @@ theorem HasFiniteMoment.lintegral_const_mul_edist_rpow_ne_top [OpensMeasurableSp
   rw [lintegral_const_mul' _ _ hc]
   exact ENNReal.mul_ne_top hc ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x ν).1 hν)
 
-/-- The sum of two finite measures with finite `p`-moments has finite `p`-moment. -/
+/-- Adding a finite measure with finite `p`-moment preserves finite `p`-moment. -/
 theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] {μ ν : Measure X}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : HasFiniteMoment p μ)
+    [IsFiniteMeasure ν] (hμ : HasFiniteMoment p μ)
     (hν : HasFiniteMoment p ν) : HasFiniteMoment p (μ + ν) := by
-  obtain ⟨x, hx⟩ := id hμ
-  rcases eq_or_ne p 0 with rfl | hp0
-  · exact ⟨x, memLp_zero_iff_aestronglyMeasurable.2 measurable_edist_right.aestronglyMeasurable⟩
-  rcases eq_or_ne p ∞ with rfl | hp
-  · -- At `p = ∞`, both moment conditions are essential bounds about `x`.
-    have hy := hν.memLp (x := x) measurable_edist_right.aestronglyMeasurable
-    refine ⟨x, MemLp.of_enorm_bound measurable_edist_right.aestronglyMeasurable
-      (C := max (eLpNormEssSup (fun y ↦ edist x y) μ) (eLpNormEssSup (fun y ↦ edist x y) ν))
-      (max_ne_top (eLpNormEssSup_le_eLpNorm_top.trans_lt hx.eLpNorm_lt_top).ne
-        (eLpNormEssSup_le_eLpNorm_top.trans_lt hy.eLpNorm_lt_top).ne) ?_⟩
-    exact ae_add_measure_iff.2 ⟨ae_le_eLpNormEssSup.mono fun _ h ↦ h.trans (le_max_left _ _),
-      ae_le_eLpNormEssSup.mono fun _ h ↦ h.trans (le_max_right _ _)⟩
-  rw [hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x] at hμ hν ⊢
-  rw [lintegral_add_measure]
-  exact ENNReal.add_ne_top.2 ⟨hμ, hν⟩
+  obtain ⟨x, hx⟩ := hμ
+  -- Apply the measure-addition API to the real-valued distance section.
+  have hdist (σ : Measure X) :
+      MemLp (fun y ↦ dist y x) p σ ↔ MemLp (fun y ↦ edist x y) p σ :=
+    memLp_dist_iff_memLp_edist
+  exact ⟨x, (hdist _).1 (((hdist _).2 hx).add_measure
+    ((hdist _).2 (hν.memLp measurable_edist_right.aestronglyMeasurable)))⟩
 
 /-- On an ordinary pseudometric space, the finite-moment condition is equivalent to finite
 Wasserstein distance from the Dirac law at any prescribed basepoint. -/
@@ -764,7 +784,7 @@ theorem memLp_edist_iff_hasFiniteMoment_of_isCoupling
   have hbase : ∀ σ : Measure X, AEStronglyMeasurable (fun y : X ↦ dist y x₀) σ := fun _ ↦
     (hdR.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable
   have hmoment : MemLp (fun y ↦ dist y x₀) p ν ↔ HasFiniteMoment p ν :=
-    (memLp_dist_iff_memLp_edist (hbase ν)).trans
+    memLp_dist_iff_memLp_edist.trans
       (hasFiniteMoment_iff_memLp_edist
         (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable).symm
   have hmap : MemLp (fun z : X × X ↦ dist z.2 x₀) p π ↔ MemLp (fun y ↦ dist y x₀) p ν := by
@@ -774,7 +794,7 @@ theorem memLp_edist_iff_hasFiniteMoment_of_isCoupling
         measurable_snd.aemeasurable).symm
   have hfst : MemLp (fun z : X × X ↦ dist z.1 x₀) p π := by
     simpa only [Function.comp_def] using
-      ((memLp_dist_iff_memLp_edist (hbase μ₀)).mpr hx₀).comp_measurePreserving
+      (memLp_dist_iff_memLp_edist.mpr hx₀).comp_measurePreserving
         hπ.measurePreserving_fst
   constructor
   · intro hdist
@@ -835,21 +855,25 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
         (measurable_id.prodMk measurable_id).aemeasurable]
       exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
 
-/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ q` has
+/-- A measure of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ q` has
 finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight has finite `p`-moment
 and `0 < q`: the corresponding summand bounds `W_p(ν, μ i)`. -/
 theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {ι : Type*} {s : Finset ι} {w : ι → ℝ≥0∞}
-    {μ : ι → Measure X} {ν : Measure X} [IsProbabilityMeasure ν] {i : ι} (hi : i ∈ s)
-    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {q : ℝ}
+    {μ : ι → Measure X} {ν : Measure X} {i : ι} (hi : i ∈ s)
+    (hwi : w i ≠ 0) [IsFiniteMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {q : ℝ}
     (hq : 0 < q) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ q ≠ ∞) :
     HasFiniteMoment p ν := by
   have hi' : w i * wassersteinEDist p ν (μ i) ^ q ≠ ∞ :=
     ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ q)
       (fun _ _ ↦ bot_le) hi)
-  rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ,
-    wassersteinEDist_comm hd]
-  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top hwi])
+  have hW : wassersteinEDist p (μ i) ν ≠ ∞ := by
+    rw [wassersteinEDist_comm hd]
+    exact fun htop ↦ hi' (by rw [htop, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top hwi])
+  obtain ⟨π, hπ, hπtop⟩ := wassersteinEDist_lt_iff.mp hW.lt_top
+  have : IsFiniteMeasure ν := ⟨by rw [← hπ.measure_univ_eq]; exact measure_lt_top _ _⟩
+  obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.mp hμ
+  exact (memLp_edist_iff_hasFiniteMoment_of_isCoupling hd hπ hx₀).mp hπtop
 
 end Anchor
 
@@ -899,7 +923,7 @@ end MetricMoment
 
 section NormedMoment
 
-variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+variable {E : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E]
 
 /-- For an integrable quadratic cost, the transport integral of the squared extended distance is
 the real transport integral of the squared norm of the displacement. -/
@@ -912,7 +936,7 @@ theorem lintegral_edist_sq_eq_ofReal_integral {π : Measure (E × E)}
 
 variable [OpensMeasurableSpace E] [SecondCountableTopology E]
 
-/-- On a normed additive group, a finite measure with finite `p`-moment has the identity in
+/-- On a seminormed additive group, a finite measure with finite `p`-moment has the identity in
 `L^p`: its distance from the basepoint `0` is the norm. -/
 theorem HasFiniteMoment.memLp_id {ν : Measure E} [IsFiniteMeasure ν] (h : HasFiniteMoment p ν) :
     MemLp id p ν :=
@@ -922,9 +946,16 @@ theorem HasFiniteMoment.memLp_id {ν : Measure E} [IsFiniteMeasure ν] (h : HasF
 
 /-- A function whose law under a finite measure has finite `q`-th moment lies in `Lq`. -/
 theorem memLp_of_hasFiniteMoment_map {α : Type*} [MeasurableSpace α] {π : Measure α}
-    [IsFiniteMeasure π] {f : α → E} (hf : Measurable f) (h : HasFiniteMoment q (π.map f)) :
+    [IsFiniteMeasure π] {f : α → E} (hf : AEMeasurable f π) (h : HasFiniteMoment q (π.map f)) :
     MemLp f q π :=
-  (memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable).1 h.memLp_id
+  h.memLp_id.comp_of_map hf
+
+end NormedMoment
+
+section NormedSubMoment
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  [SecondCountableTopology E]
 
 /-- The quadratic cost `‖x - y‖²` is integrable against a finite measure on `E × E` whose two
 marginals have finite second moment. -/
@@ -934,20 +965,20 @@ theorem integrable_norm_sub_sq_of_hasFiniteMoment {π : Measure (E × E)} [IsFin
   rw [Measure.fst] at h₁
   rw [Measure.snd] at h₂
   exact (memLp_two_iff_integrable_sq_norm (by fun_prop)).1 <|
-    (memLp_of_hasFiniteMoment_map measurable_fst h₁).sub
-      (memLp_of_hasFiniteMoment_map measurable_snd h₂)
+    (memLp_of_hasFiniteMoment_map measurable_fst.aemeasurable h₁).sub
+      (memLp_of_hasFiniteMoment_map measurable_snd.aemeasurable h₂)
 
-/-- The displacement `(x, y) ↦ y - x` is square integrable against a finite measure on `E × E`
-whose two marginals have finite second moment. -/
+/-- The displacement `(x, y) ↦ y - x` belongs to `L^p` of a finite measure on `E × E`
+whose two marginals have finite `p`-moment. -/
 theorem memLp_sub_of_hasFiniteMoment {π : Measure (E × E)} [IsFiniteMeasure π]
-    (h₁ : HasFiniteMoment 2 π.fst) (h₂ : HasFiniteMoment 2 π.snd) :
-    MemLp (fun z : E × E ↦ z.2 - z.1) 2 π := by
+    (h₁ : HasFiniteMoment p π.fst) (h₂ : HasFiniteMoment p π.snd) :
+    MemLp (fun z : E × E ↦ z.2 - z.1) p π := by
   rw [Measure.fst] at h₁
   rw [Measure.snd] at h₂
-  exact (memLp_of_hasFiniteMoment_map measurable_snd h₂).sub
-    (memLp_of_hasFiniteMoment_map measurable_fst h₁)
+  exact (memLp_of_hasFiniteMoment_map measurable_snd.aemeasurable h₂).sub
+    (memLp_of_hasFiniteMoment_map measurable_fst.aemeasurable h₁)
 
-end NormedMoment
+end NormedSubMoment
 
 section Bridge
 
@@ -1052,7 +1083,7 @@ end Bridge
 
 section NormedOptimal
 
-variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+variable {E : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
   [SecondCountableTopology E] {μ ν : Measure E} {π : Measure (E × E)}
 
 /-- For a finite nonzero exponent, the `p`-th moment of the displacement `(x, y) ↦ y - x` under an
@@ -1096,11 +1127,11 @@ end InfiniteMoment
 
 section Polish
 
-variable {X : Type u} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [SecondCountableTopology X] [CompleteSpace X]
+variable {X : Type u} [PseudoEMetricSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
 
-/-- **Attainment.** On a Polish metric space and for a finite nonzero exponent, the infimum between
-two finite measures that admit a coupling is a minimum. -/
+/-- **Attainment.** On a Polish space with a compatible extended pseudometric and for a finite
+nonzero exponent, the infimum between two finite measures that admit a coupling is a minimum.
+The chosen extended pseudometric need not be complete. -/
 theorem exists_isCoupling_eLpNorm_eq_wassersteinEDist (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X)
     [IsFiniteMeasure μ] (hcoup : ∃ π, IsCoupling π μ ν) :
     ∃ π, IsCoupling π μ ν ∧
@@ -1144,8 +1175,9 @@ theorem exists_isCoupling_eLpNorm_eq_wassersteinEDist (hp0 : p ≠ 0) (hp : p �
   rw [eLpNorm_smul_measure_of_ne_zero hm0, smul_eq_mul, hval, ← hμeq, ← hνeq,
     wassersteinEDist_smul hm0 hmtop]
 
-/-- **Separation of measures.** On a Polish metric space and for a finite nonzero exponent, the
-Wasserstein distance between finite measures vanishes exactly when they are equal. -/
+/-- **Separation of measures.** On a Polish space with a compatible extended pseudometric and for
+a finite nonzero exponent, the Wasserstein distance between finite measures vanishes exactly when
+they are equal. Polishness ensures that zero ground distance separates points. -/
 theorem wassersteinEDist_eq_zero_iff (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : Measure X)
     [IsFiniteMeasure μ] :
     wassersteinEDist p μ ν = 0 ↔ μ = ν := by
@@ -1157,13 +1189,13 @@ theorem wassersteinEDist_eq_zero_iff (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ ν : M
   have hzero : (fun z : X × X ↦ edist z.1 z.2) =ᵐ[π] 0 :=
     (eLpNorm_eq_zero_iff hp0).1 (hval.trans h)
   have hdiag : (Prod.fst : X × X → X) =ᵐ[π] Prod.snd := by
-    filter_upwards [hzero] with z hz using edist_eq_zero.1 hz
+    filter_upwards [hzero] with z hz using (EMetric.inseparable_iff.2 hz).eq
   rw [← hπ.fst_eq, ← hπ.snd_eq, Measure.fst, Measure.snd, Measure.map_congr hdiag]
 
-/-- **Separation at the infinite exponent.** On a Polish metric space, the infinite-exponent
-Wasserstein distance between finite measures vanishes exactly when they are equal. Only the first
-measure is assumed finite: finite distance supplies a coupling, so the second has the same finite
-mass. -/
+/-- **Separation at the infinite exponent.** On a Polish space with a compatible extended
+pseudometric, the infinite-exponent Wasserstein distance between finite measures vanishes exactly
+when they are equal. Only the first measure is assumed finite: finite distance supplies a coupling,
+so the second has the same finite mass. -/
 theorem wassersteinEDist_top_eq_zero_iff (μ ν : Measure X) [IsFiniteMeasure μ] :
     wassersteinEDist ∞ μ ν = 0 ↔ μ = ν := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ wassersteinEDist_self ∞ μ⟩
@@ -1212,9 +1244,9 @@ theorem wassersteinEDist_top_eq_zero_iff (μ ν : Measure X) [IsFiniteMeasure μ
     _ = ν := by
       simp [ν', smul_smul, ENNReal.mul_inv_cancel hm₀ hm_top]
 
-/-- **Separation of measures, uniformly in the exponent.** On a Polish metric space, two finite
-measures at zero `p`-Wasserstein distance are equal, for every nonzero exponent. This packages
-`TauCeti.wassersteinEDist_eq_zero_iff` together with its endpoint
+/-- **Separation of measures, uniformly in the exponent.** On a Polish space with a compatible
+extended pseudometric, two finite measures at zero `p`-Wasserstein distance are equal, for every
+nonzero exponent. This packages `TauCeti.wassersteinEDist_eq_zero_iff` together with its endpoint
 `TauCeti.wassersteinEDist_top_eq_zero_iff`, so that consumers need not repeat the case split on
 `p = ∞`. -/
 theorem eq_of_wassersteinEDist_eq_zero (hp : p ≠ 0) (μ ν : Measure X) [IsFiniteMeasure μ]

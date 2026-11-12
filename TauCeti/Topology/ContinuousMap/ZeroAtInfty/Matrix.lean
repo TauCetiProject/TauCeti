@@ -41,6 +41,13 @@ their matrices.
   normed field (`opNorm_eq_iSup_norm_matrixCoeff`).
 * For finite index types the matrix is the usual matrix of the underlying linear map
   `R ^ J → R ^ I` (`matrixCoeff_eq_toMatrix'`).
+* A matrix over `R` with null columns and bounded entries also acts on the module-valued model
+  space `C₀(J, E)` of a complete ultrametric normed `R`-module `E` with contractive action, by
+  `(A x) i = ∑ j, A i j • x j` (`Matrix.toZeroAtInftySMulCLM`). This is linear over every
+  semiring acting on `E` compatibly with `R`, and a bound `C` on the entries bounds it by `C`
+  (`Matrix.norm_toZeroAtInftySMulCLM_apply_le`). The map `Matrix.toZeroAtInftyCLM`, which
+  multiplies by the entries on the right, is the case of the matrix over the opposite ring `Rᵐᵒᵖ`
+  acting on `R` (`Matrix.toZeroAtInftySMulCLM_map_op`).
 
 Decay of the rows `i ↦ ⨆ j, ‖A i j‖`, which is uniform in the input index, is a strictly stronger
 condition than decay of each column: over a nonzero norm-one ring, the identity of `C₀(ℕ, R)` has
@@ -51,6 +58,8 @@ null columns, but every row has norm one.
 * `ContinuousLinearMap.matrixCoeff`: the matrix of a continuous linear map between model spaces.
 * `Matrix.toZeroAtInftyCLM`: the continuous linear map defined by a matrix with null columns and
   bounded entries.
+* `Matrix.toZeroAtInftySMulCLM`: the continuous linear map `C₀(J, E) → C₀(I, E)` defined by such a
+  matrix acting on module-valued null families.
 
 ## References
 
@@ -261,6 +270,46 @@ theorem matrixCoeff_mul (u v : C₀(J, R) →L[R] C₀(J, R)) (i j : J) :
     (u * v).matrixCoeff i j = ∑' k, u.matrixCoeff i k * v.matrixCoeff k j :=
   u.matrixCoeff_comp v i j
 
+/-- If the rows of `w` outside a finite set `F` vanish, the block of `w ^ k` on `F` is the
+`k`-th power of the block of `w` on `F`. -/
+theorem submatrix_matrixCoeff_pow {w : C₀(J, R) →L[R] C₀(J, R)} {F : Finset J}
+    (hw : ∀ i ∉ F, ∀ j, w.matrixCoeff i j = 0) (k : ℕ) :
+    (w ^ k).matrixCoeff.submatrix (Subtype.val : F → J) (Subtype.val : F → J) =
+      w.matrixCoeff.submatrix (Subtype.val : F → J) (Subtype.val : F → J) ^ k := by
+  induction k with
+  | zero =>
+    ext x y
+    simp [Matrix.one_apply]
+  | succ k ih =>
+    ext x y
+    rw [pow_succ, pow_succ, Matrix.submatrix_apply, matrixCoeff_mul, Matrix.mul_apply, ← ih,
+      tsum_eq_sum (s := F) fun l hl ↦ by simp [hw l hl], ← Finset.sum_coe_sort F]
+    simp
+
+/-- For a finite set `S` of output coordinates and any polynomial `Q`, the block on `S` of the
+matrix of `Q(π_S ∘ u)` is `Q(A)`, where `A` is the block of `u` on `S`: the rows of `π_S ∘ u`
+outside `S` vanish, so the products of matrices only involve indices in `S`. -/
+theorem submatrix_matrixCoeff_aeval_indicatorCLM_comp (S : Finset J)
+    (u : C₀(J, R) →L[R] C₀(J, R)) (Q : Polynomial R) :
+    (Polynomial.aeval ((indicatorCLM R (S : Set J)).comp u) Q).matrixCoeff.submatrix
+        (Subtype.val : S → J) (Subtype.val : S → J) =
+      Polynomial.aeval (u.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J)) Q := by
+  set w := (indicatorCLM R (S : Set J)).comp u
+  -- the rows of `w` outside `S` vanish, and its block on `S` is that of `u`
+  have hw : ∀ i ∉ S, ∀ j, w.matrixCoeff i j = 0 := fun i hi _ ↦ by simp [w, matrixCoeff_apply, hi]
+  have hblock : w.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J) =
+      u.matrixCoeff.submatrix (Subtype.val : S → J) (Subtype.val : S → J) := by
+    ext i i'
+    simp [w, matrixCoeff_apply]
+  induction Q using Polynomial.induction_on' with
+  | add p q hp hq =>
+    rw [map_add, map_add, matrixCoeff_add, Matrix.submatrix_add, Pi.add_apply, Pi.add_apply, hp,
+      hq]
+  | monomial j a =>
+    rw [Polynomial.aeval_monomial, Polynomial.aeval_monomial, ← Algebra.smul_def,
+      ← Algebra.smul_def, matrixCoeff_smul, Matrix.submatrix_smul, Pi.smul_apply, Pi.smul_apply,
+      submatrix_matrixCoeff_pow hw, hblock]
+
 end NormedCommRing
 
 end ContinuousLinearMap
@@ -345,3 +394,162 @@ theorem ContinuousLinearMap.opNorm_eq_iSup_norm_matrixCoeff {𝕜 : Type*}
     [NontriviallyNormedField 𝕜] [IsUltrametricDist 𝕜] (u : C₀(J, 𝕜) →L[𝕜] C₀(I, 𝕜)) :
     ‖u‖ = ⨆ p : I × J, ‖u.matrixCoeff p.1 p.2‖ :=
   (ringOpNorm_eq_opNorm u).symm.trans u.ringOpNorm_eq_iSup_norm_matrixCoeff
+
+/-! ### Matrices acting on module-valued model spaces -/
+
+namespace Matrix
+
+omit [DecidableEq J]
+
+variable [DiscreteTopology I] {E : Type*} [NormedAddCommGroup E]
+
+section SeminormedRing
+
+variable [SeminormedRing R] [Module R E] [IsBoundedSMul R E]
+
+/-- The `j`-th column of a matrix with null columns, multiplied by `e`, as an element of
+`C₀(I, E)`. -/
+private def smulColumn (A : Matrix I J R) (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0))
+    (j : J) (e : E) : C₀(I, E) :=
+  mkOfDiscrete (fun i ↦ A i j • e) (by simpa using (hcol j).smul_const e)
+
+omit [TopologicalSpace J] [DiscreteTopology J] in
+@[simp]
+private theorem smulColumn_apply (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (j : J) (e : E) (i : I) :
+    smulColumn A hcol j e i = A i j • e :=
+  congrFun (coe_mkOfDiscrete _ _) i
+
+omit [TopologicalSpace J] [DiscreteTopology J] in
+private theorem norm_smulColumn_le (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) {C : ℝ} (hC0 : 0 ≤ C)
+    (hC : ∀ i j, ‖A i j‖ ≤ C) (j : J) (e : E) : ‖smulColumn A hcol j e‖ ≤ C * ‖e‖ :=
+  (ZeroAtInftyContinuousMap.norm_le (mul_nonneg hC0 (norm_nonneg e))).2 fun i ↦ by
+    rw [smulColumn_apply]
+    exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right (hC i j) (norm_nonneg e))
+
+variable [IsUltrametricDist E]
+
+omit [DiscreteTopology J] in
+private theorem norm_tsum_smulColumn_le (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) {C : ℝ} (hC0 : 0 ≤ C)
+    (hC : ∀ i j, ‖A i j‖ ≤ C) (x : C₀(J, E)) :
+    ‖∑' j, smulColumn A hcol j (x j)‖ ≤ C * ‖x‖ :=
+  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (mul_nonneg hC0 (norm_nonneg x)) fun j ↦
+    (norm_smulColumn_le A hcol hC0 hC j (x j)).trans
+      (mul_le_mul_of_nonneg_left (x.norm_coe_le_norm j) hC0)
+
+variable [CompleteSpace E]
+
+private theorem summable_smulColumn (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    (x : C₀(J, E)) : Summable fun j ↦ smulColumn A hcol j (x j) := by
+  obtain ⟨C, hC⟩ := hbdd
+  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| squeeze_zero_norm
+    (fun j ↦ norm_smulColumn_le A hcol (le_max_right C 0)
+      (fun i j ↦ (hC i j).trans (le_max_left C 0)) j (x j)) ?_
+  simpa using (tendsto_zero_iff_norm_tendsto_zero.mp x.tendsto_cofinite).const_mul (max C 0)
+
+variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass R S E]
+
+/-- The continuous linear map `C₀(J, E) →L[S] C₀(I, E)` defined by a matrix `A` over `R` whose
+columns tend to zero along the cofinite filter and whose entries are uniformly bounded, for a
+complete ultrametric normed `R`-module `E` with contractive action. It sends `x` to the family
+`i ↦ ∑ j, A i j • x j` (`Matrix.hasSum_toZeroAtInftySMulCLM_apply`), and it is linear over every
+semiring `S` whose action on `E` commutes with that of `R`. -/
+noncomputable def toZeroAtInftySMulCLM (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C) :
+    C₀(J, E) →L[S] C₀(I, E) :=
+  let L : C₀(J, E) →ₗ[S] C₀(I, E) :=
+    { toFun x := ∑' j, smulColumn A hcol j (x j)
+      map_add' x y := by
+        have h (j : J) : smulColumn A hcol j ((x + y) j) =
+            smulColumn A hcol j (x j) + smulColumn A hcol j (y j) := by
+          ext i
+          simp [smul_add]
+        simp only [h]
+        exact (summable_smulColumn A hcol hbdd x).tsum_add (summable_smulColumn A hcol hbdd y)
+      map_smul' s x := by
+        have h (j : J) : smulColumn A hcol j ((s • x) j) = s • smulColumn A hcol j (x j) := by
+          ext i
+          simp [smul_comm _ s]
+        simp only [h, RingHom.id_apply]
+        exact (summable_smulColumn A hcol hbdd x).tsum_const_smul s }
+  { L with
+    cont := by
+      obtain ⟨C, hC⟩ := hbdd
+      exact AddMonoidHomClass.continuous_of_bound L (max C 0) fun x ↦
+        norm_tsum_smulColumn_le A hcol (le_max_right C 0)
+          (fun i j ↦ (hC i j).trans (le_max_left C 0)) x }
+
+private theorem toZeroAtInftySMulCLM_eq_tsum (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    (x : C₀(J, E)) : A.toZeroAtInftySMulCLM S hcol hbdd x = ∑' j, smulColumn A hcol j (x j) :=
+  (rfl)
+
+/-- The map defined by a matrix `A` with null columns and bounded entries sends `x` to the family
+of unconditional sums `i ↦ ∑ j, A i j • x j`. -/
+theorem hasSum_toZeroAtInftySMulCLM_apply (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    (x : C₀(J, E)) (i : I) :
+    HasSum (fun j ↦ A i j • x j) (A.toZeroAtInftySMulCLM S hcol hbdd x i) := by
+  rw [toZeroAtInftySMulCLM_eq_tsum]
+  simpa using
+    (summable_smulColumn A hcol hbdd x).hasSum.mapL (ZeroAtInftyContinuousMap.evalCLM S i)
+
+/-- The coordinates of the map defined by a matrix `A`. -/
+theorem toZeroAtInftySMulCLM_apply (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    (x : C₀(J, E)) (i : I) :
+    A.toZeroAtInftySMulCLM S hcol hbdd x i = ∑' j, A i j • x j :=
+  (A.hasSum_toZeroAtInftySMulCLM_apply S hcol hbdd x i).tsum_eq.symm
+
+/-- The map defined by a matrix `A` sends the coordinate vector `single j e` to the `j`-th column
+of `A` multiplied by `e`. -/
+@[simp]
+theorem toZeroAtInftySMulCLM_single_apply [DecidableEq J] (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    (j : J) (e : E) (i : I) :
+    A.toZeroAtInftySMulCLM S hcol hbdd (ZeroAtInftyContinuousMap.single j e) i = A i j • e := by
+  rw [toZeroAtInftySMulCLM_apply, tsum_eq_single j fun k hk ↦ by
+    simp [ZeroAtInftyContinuousMap.single_eq_of_ne hk]]
+  simp
+
+/-- A bound `C` on the entries of `A` gives `‖A x‖ ≤ C * ‖x‖`. -/
+theorem norm_toZeroAtInftySMulCLM_apply_le (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    {C : ℝ} (hC0 : 0 ≤ C) (hC : ∀ i j, ‖A i j‖ ≤ C) (x : C₀(J, E)) :
+    ‖A.toZeroAtInftySMulCLM S hcol hbdd x‖ ≤ C * ‖x‖ :=
+  norm_tsum_smulColumn_le A hcol hC0 hC x
+
+/-- The map defined by a difference of matrices is the difference of their maps. -/
+theorem toZeroAtInftySMulCLM_sub_apply (A B : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ (A - B) i j) cofinite (𝓝 0))
+    (hbdd : ∃ C, ∀ i j, ‖(A - B) i j‖ ≤ C)
+    (hA : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hA' : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    (hB : ∀ j, Tendsto (fun i ↦ B i j) cofinite (𝓝 0)) (hB' : ∃ C, ∀ i j, ‖B i j‖ ≤ C)
+    (x : C₀(J, E)) :
+    (A - B).toZeroAtInftySMulCLM S hcol hbdd x =
+      A.toZeroAtInftySMulCLM S hA hA' x - B.toZeroAtInftySMulCLM S hB hB' x := by
+  ext i
+  refine ((A - B).hasSum_toZeroAtInftySMulCLM_apply S hcol hbdd x i).unique ?_
+  simpa [sub_smul] using (A.hasSum_toZeroAtInftySMulCLM_apply S hA hA' x i).sub
+    (B.hasSum_toZeroAtInftySMulCLM_apply S hB hB' x i)
+
+end SeminormedRing
+
+variable [NormedRing R] [IsUltrametricDist R] [CompleteSpace R]
+
+/-- Right multiplication by the entries of `A` is the action of `A` through the opposite ring: the
+map `Matrix.toZeroAtInftyCLM` of a matrix over a complete ultrametric normed ring `R` is the map
+defined by the matrix `A.map MulOpposite.op` over `Rᵐᵒᵖ`, acting on `R`. -/
+theorem toZeroAtInftySMulCLM_map_op (A : Matrix I J R)
+    (hcol : ∀ j, Tendsto (fun i ↦ A i j) cofinite (𝓝 0)) (hbdd : ∃ C, ∀ i j, ‖A i j‖ ≤ C)
+    (hcol' : ∀ j, Tendsto (fun i ↦ A.map MulOpposite.op i j) cofinite (𝓝 0))
+    (hbdd' : ∃ C, ∀ i j, ‖A.map MulOpposite.op i j‖ ≤ C) :
+    (A.map MulOpposite.op).toZeroAtInftySMulCLM R hcol' hbdd' = A.toZeroAtInftyCLM hcol hbdd := by
+  ext x i
+  refine ((A.map MulOpposite.op).hasSum_toZeroAtInftySMulCLM_apply R hcol' hbdd' x i).unique ?_
+  simpa using ContinuousLinearMap.hasSum_toZeroAtInftyCLM_apply A hcol hbdd x i
+
+end Matrix

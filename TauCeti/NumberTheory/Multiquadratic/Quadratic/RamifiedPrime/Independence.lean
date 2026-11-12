@@ -73,7 +73,7 @@ In the namespace `TauCeti.Multiquadratic`:
 public section
 
 open Polynomial
-open scoped NumberField nonZeroDivisors
+open scoped NumberField nonZeroDivisors symmDiff
 open NumberField (ramifiedPrimes)
 
 namespace TauCeti.Multiquadratic
@@ -226,41 +226,17 @@ theorem prod_eq_one_or_prod_eq_natAbs_of_isPrincipal_prod
   refine hconv ?_
   by_cases hd4 : d % 4 = 1
   · -- `disc K = d`: every ramified prime divides the odd number `d`.
-    have hdisc : NumberField.discr K = d :=
-      NumberField.discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hsf hd4
-    have hsub : s ⊆ d.natAbs.primeFactors := fun p hp => by
-      have h := hdvddiscr p hp
-      rw [hdisc] at h
-      exact Nat.mem_primeFactors.mpr
-        ⟨hpprime p hp, by simpa using Int.natAbs_dvd_natAbs.mpr h, by omega⟩
     have hmdvd : ((∏ p ∈ s, p : ℕ) : ℤ) ∣ -d := by
       rw [← hnabs]
-      exact_mod_cast (Finset.prod_dvd_prod_of_subset _ _ (fun p => p) hsub).trans
-        (Nat.prod_primeFactors_dvd _)
+      exact_mod_cast TauCeti.NumberField.prod_dvd_natAbs_of_mod_four_eq_one hmin hgen hsf hd4
+        hpprime hdvddiscr
     exact eq_one_or_eq_of_four_mul_eq_sq_add (A := A₀) (B := B₀) hn1 (by omega) hmpos hmsf hmdvd
       (by linear_combination hAB₀ + 4 * hnormeq)
   · -- `disc K = 4d`: a ramified prime divides `2|d|`, and the norm form has no denominator.
-    have hdisc : NumberField.discr K = 4 * d :=
-      NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf hd4
-    have hsub : s ⊆ (2 * d.natAbs).primeFactors := fun p hp => by
-      have h := hdvddiscr p hp
-      rw [hdisc] at h
-      have h4 : p ∣ 4 * d.natAbs := by
-        simpa [Int.natAbs_mul] using Int.natAbs_dvd_natAbs.mpr h
-      refine Nat.mem_primeFactors.mpr ⟨hpprime p hp, ?_, by omega⟩
-      rcases ((hpprime p hp).dvd_mul).mp h4 with h' | h'
-      · have hfour : (4 : ℕ) = 2 ^ 2 := by norm_num
-        rw [hfour] at h'
-        have hp2 : p = 2 := (Nat.prime_dvd_prime_iff_eq (hpprime p hp) Nat.prime_two).mp
-          ((hpprime p hp).dvd_of_dvd_pow h')
-        rw [hp2]
-        exact ⟨d.natAbs, rfl⟩
-      · exact h'.mul_left 2
     have hmdvd : ((∏ p ∈ s, p : ℕ) : ℤ) ∣ 2 * -d := by
-      have hcast : ((2 * d.natAbs : ℕ) : ℤ) = 2 * -d := by push_cast [hnabs]; ring
-      rw [← hcast]
-      exact_mod_cast (Finset.prod_dvd_prod_of_subset _ _ (fun p => p) hsub).trans
-        (Nat.prod_primeFactors_dvd _)
+      rw [← hnabs]
+      exact_mod_cast TauCeti.NumberField.prod_dvd_two_mul_natAbs_of_mod_four_ne_one hmin hgen hsf
+        hd4 hpprime hdvddiscr
     obtain ⟨A, B, hAB⟩ :=
       NumberField.exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one hmin hgen hsf hd4 z
     exact eq_one_or_eq_of_eq_sq_add (A := A) (B := B) hn1 hnsf hmpos hmsf hmdvd
@@ -326,19 +302,19 @@ theorem two_pow_le_natCard_closure_image_classGroupMk0
     simp only [Finset.coe_powerset, Set.mem_preimage, Set.mem_powerset_iff,
       Finset.coe_subset] at hS hT
     simp only at hST
-    have hsymmDiff_erase : S \ T ∪ T \ S ⊆ s.erase q :=
-      Finset.union_subset (Finset.sdiff_subset.trans hS) (Finset.sdiff_subset.trans hT)
-    have hsymmDiff_s : S \ T ∪ T \ S ⊆ s := hsymmDiff_erase.trans (Finset.erase_subset q s)
-    have hqnot : q ∉ S \ T ∪ T \ S := fun hp => Finset.notMem_erase q s (hsymmDiff_erase hp)
-    have hprod_symmDiff_eq_one : ∏ p ∈ S \ T ∪ T \ S, ClassGroup.mk0 (Q p) = 1 := by
-      rw [prod_sdiff_union_sdiff _ fun p hp =>
+    have hsymmDiff_erase : S ∆ T ⊆ s.erase q :=
+      symmDiff_le_sup.trans (Finset.union_subset hS hT)
+    have hsymmDiff_s : S ∆ T ⊆ s := hsymmDiff_erase.trans (Finset.erase_subset q s)
+    have hqnot : q ∉ S ∆ T := fun hp => Finset.notMem_erase q s (hsymmDiff_erase hp)
+    have hprod_symmDiff_eq_one : ∏ p ∈ S ∆ T, ClassGroup.mk0 (Q p) = 1 := by
+      rw [prod_symmDiff _ fun p hp =>
         hsq p (Finset.mem_of_mem_erase (hS (Finset.mem_inter.mp hp).1)), hST, ← sq,
         ← Finset.prod_pow]
       exact Finset.prod_eq_one fun p hp => hsq p (Finset.mem_of_mem_erase (hT hp))
     rcases eq_empty_or_eq_primeFactors_of_prod_classGroupMk0_eq_one Q hmin hgen hsf hd
         (fun p hp => hram p (hsymmDiff_s hp)) (fun p hp => hprime p (hsymmDiff_s hp))
         (fun p hp => hover p (hsymmDiff_s hp)) hprod_symmDiff_eq_one with hempty | hpf
-    · exact Finset.symmDiff_eq_empty.mp ((Finset.symmDiff_def S T).trans hempty)
+    · exact Finset.symmDiff_eq_empty.mp hempty
     · exact absurd (by rw [hpf]; exact hq) hqnot
   have himg : (fun S : Finset ℕ => ∏ p ∈ S, ClassGroup.mk0 (Q p)) '' ↑(s.erase q).powerset ⊆
       (↑(Subgroup.closure ((fun p ↦ ClassGroup.mk0 (Q p)) '' (↑s : Set ℕ))) :

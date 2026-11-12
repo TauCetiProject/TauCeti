@@ -31,6 +31,8 @@ The standard simplex is sent to `[1] - [0]` (`TauCeti.cubeRelClass_singularHomol
   `H₁(I¹, ∂I¹; R)`; `TauCeti.cubeRelClass_singularHomologyMap`: its image under a map of pairs.
 * `TauCeti.reducedSingularHomologyTopCatSphereIso_zero_inv_ι`: the generator of reduced `H₀(S⁰)` is
   `[-e₀] - [e₀]` on `TopCat.sphere 0`.
+* `TauCeti.eq_sphereMinus_or_eq_spherePlus`, `TauCeti.sphereMinus_ne_spherePlus`: `S⁰` consists
+  of the two distinct points `-e₀` and `e₀`.
 * `TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`: the generator of `H₁(I¹, ∂I¹; R)` is
   `-cubeRelClass R`.
 -/
@@ -54,16 +56,24 @@ def cubePoint (t : I) : (cubeBoundaryPair.{w} 1).fst := ULift.up fun _ ↦ t
 lemma cubePoint_down (t : I) : (cubePoint.{w} t).down = fun _ ↦ t := by
   rw [cubePoint]
 
+/-- The parametrization `TauCeti.cubePoint` of the cube `I¹` is continuous. -/
+@[fun_prop]
+lemma continuous_cubePoint : Continuous (cubePoint.{w}) :=
+  continuous_uliftUp.comp (continuous_pi fun _ ↦ continuous_id)
+
 /-- An endpoint of the cube `I¹`, as a point of its boundary. -/
 def cubeEnd (t : I) (ht : t = 0 ∨ t = 1) : (cubeBoundaryPair.{w} 1).snd :=
   ⟨cubePoint t, ⟨0, ht⟩⟩
 
-/-- The standard singular `1`-simplex of the cube `I¹`, from `0` to `1`. -/
+/-- The endpoint `TauCeti.cubeEnd t ht` of `I¹` is the point `TauCeti.cubePoint t`. -/
+lemma map_cubeEnd (t : I) (ht : t = 0 ∨ t = 1) :
+    (cubeBoundaryPair.{w} 1).map (cubeEnd t ht) = cubePoint t :=
+  (rfl)
+
+/-- The standard singular `1`-simplex of the cube `I¹`, from `0` to `1`: the singular
+`1`-simplex `TauCeti.TopCat.simplex₁` of the parametrization `TauCeti.cubePoint` of `I¹`. -/
 def cubeSimplex : (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst) _⦋1⦌ :=
-  ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).symm
-    ⟨fun a ↦ cubePoint ⟨a.weights 1, a.weights_nonneg 1, a.weights_apply_le_one 1⟩,
-      continuous_uliftUp.comp (continuous_pi fun _ ↦
-        (Convexity.StdSimplex.continuous_weights_apply ℝ 1).subtype_mk _)⟩
+  TopCat.simplex₁ ⟨cubePoint, continuous_cubePoint⟩
 
 /-- An endpoint of the cube `I¹`, as a singular `0`-simplex of its boundary. -/
 def cubeEndVertex (t : I) (ht : t = 0 ∨ t = 1) :
@@ -75,40 +85,20 @@ weight. -/
 lemma toSSetObjEquiv_cubeSimplex_apply (a : Convexity.StdSimplex ℝ (Fin 2)) :
     (cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _ cubeSimplex a =
       cubePoint (Convexity.StdSimplex.homeomorphI a) := by
-  rw [cubeSimplex, Equiv.apply_symm_apply]
-  exact congrArg cubePoint (Subtype.ext (Convexity.StdSimplex.homeomorphI_apply_coe a).symm)
+  rw [cubeSimplex, TopCat.toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
+    ContinuousMap.coe_ofClass, ContinuousMap.coe_mk]
 
 lemma δ_one_cubeSimplex :
     (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst).δ 1 cubeSimplex =
       (TopCat.toSSet.map (cubeBoundaryPair.{w} 1).map).app _ (cubeEndVertex 0 (Or.inl rfl)) := by
-  apply ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).injective
-  ext a : 1
-  -- Both sides evaluate a singular simplex of the cube: the face of `cubeSimplex` is
-  -- `cubePoint` of the last weight of the face inclusion, and the vertex is `cubePoint` of the
-  -- endpoint, by `toSSetObjEquiv_δ_apply` and the definitions of `cubeSimplex`/`cubeEndVertex`.
-  change cubePoint _ = cubePoint 0
-  congr 1
-  ext
-  exact Finsupp.mapDomain_of_notMem_range _ _ (by
-    simp only [Quiver.Hom.unop_op, Set.mem_range]
-    decide)
+  rw [cubeSimplex, TopCat.δ_one_simplex₁, cubeEndVertex,
+    TopCat.toSSet_map_app_toSSetObj₀Equiv_symm, map_cubeEnd, ContinuousMap.coe_mk]
 
 lemma δ_zero_cubeSimplex :
     (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst).δ 0 cubeSimplex =
       (TopCat.toSSet.map (cubeBoundaryPair.{w} 1).map).app _ (cubeEndVertex 1 (Or.inr rfl)) := by
-  apply ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).injective
-  ext a : 1
-  -- Both sides evaluate a singular simplex of the cube: the face of `cubeSimplex` is
-  -- `cubePoint` of the last weight of the face inclusion, and the vertex is `cubePoint` of the
-  -- endpoint, by `toSSetObjEquiv_δ_apply` and the definitions of `cubeSimplex`/`cubeEndVertex`.
-  change cubePoint _ = cubePoint 1
-  congr 1
-  ext
-  -- The coordinate is the weight at `1 = (0 : Fin 2).succAbove 0` of the face inclusion.
-  change (Convexity.StdSimplex.map (Fin.succAbove 0) a).weights ((0 : Fin 2).succAbove 0) = 1
-  rw [Convexity.StdSimplex.weights_map, Finsupp.mapDomain_apply_of_injective
-    Fin.succAbove_right_injective]
-  simp
+  rw [cubeSimplex, TopCat.δ_zero_simplex₁, cubeEndVertex,
+    TopCat.toSSet_map_app_toSSetObj₀Equiv_symm, map_cubeEnd, ContinuousMap.coe_mk]
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
@@ -212,6 +202,25 @@ lemma sphereMinus_coord :
       EuclideanSpace ℝ (Fin 1)) 0 = -1
   rw [diskBoundaryHomeomorph_symm_apply_down_apply]
   simp
+
+/-- **`S⁰` consists of the two points `-e₀` and `e₀`.** -/
+lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{w} 1) :
+    p = sphereMinus ∨ p = spherePlus := by
+  have hnorm : ‖((p : ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1))‖ = 1 := by
+    simp
+  rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs,
+    Real.sqrt_sq_eq_abs, abs_eq zero_le_one] at hnorm
+  rcases hnorm with h | h
+  · exact Or.inr (diskBoundary_one_ext (h.trans spherePlus_coord.{w}.symm))
+  · exact Or.inl (diskBoundary_one_ext (h.trans sphereMinus_coord.{w}.symm))
+
+/-- The two points `-e₀` and `e₀` of `S⁰` are distinct. -/
+lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{w} 1) ≠ spherePlus := by
+  intro h
+  have h' := sphereMinus_coord.{w}
+  rw [h, spherePlus_coord] at h'
+  norm_num at h'
 
 lemma diskBoundaryPairToCube_snd_spherePlus :
     TopPair.Hom.snd (diskBoundaryPairToCube.{w} 1) spherePlus = cubeEnd 1 (Or.inr rfl) := by

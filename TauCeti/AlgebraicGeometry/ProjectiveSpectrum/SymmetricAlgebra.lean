@@ -9,6 +9,10 @@ public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.KrullDimension
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
+import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
 
 /-!
 # The projective spectrum of a finite module
@@ -25,7 +29,12 @@ lines in a finite locally free representation `V`, use `M = V∨`.
 `Proj(Sym M)` a scheme over `Spec R`. Its properness and
 quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
 also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
-standard affine charts. Its source is Jacobson whenever `Spec R` is Jacobson.
+standard affine charts, and the standard opens of a spanning family of linear forms cover
+the projective spectrum. Its source is Jacobson whenever `Spec R` is Jacobson.
+
+For a nonzero free module `M` over a domain, `Proj(Sym M)` is integral. Over a field `k` it is
+the projective space of lines in `M∨`, of Krull dimension at most `dim M - 1`. These are the
+ambient facts needed to recognize a dense subset of a projective space by its dimension.
 
 ## References
 
@@ -82,6 +91,25 @@ theorem awayι_projToSpec {f : SymmetricAlgebra R M} {n : ℕ}
   rw [projToSpec_def, Proj.awayι_toSpecZero_assoc, ← Spec.map_comp]
   rw [← CommRingCat.ofHom_comp]
 
+/-- The standard opens `D₊(v j)` of a spanning family `v` of linear forms cover the projective
+spectrum of the symmetric algebra. -/
+theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
+    (hv : Submodule.span R (Set.range v) = ⊤) :
+    ⨆ j, Proj.basicOpen (homogeneousSubmodule R M) (_root_.SymmetricAlgebra.ι R M (v j)) = ⊤ := by
+  refine Proj.iSup_basicOpen_eq_top' _ _ (fun j ↦ ⟨1, ι_mem_homogeneousSubmodule R M _⟩)
+    (top_unique ?_)
+  rintro a -
+  -- The images of `v` generate over `R` because they span the generators `range ι`.
+  have ha : a ∈ Algebra.adjoin R (Set.range fun j ↦ _root_.SymmetricAlgebra.ι R M (v j)) := by
+    rw [← Algebra.adjoin_span, Set.range_comp', ← Submodule.map_span, hv, Submodule.map_top,
+      LinearMap.coe_range, SymmetricAlgebra.adjoin_range_ι]
+    exact Algebra.mem_top
+  induction ha using Algebra.adjoin_induction with
+  | mem x hx => exact Algebra.subset_adjoin hx
+  | algebraMap r => exact Subalgebra.algebraMap_mem _ (algebraMap R (homogeneousSubmodule R M 0) r)
+  | add x y _ _ hx hy => exact add_mem hx hy
+  | mul x y _ _ hx hy => exact mul_mem hx hy
+
 /-- The projective spectrum of a finite module is proper over the coefficient ring.
 Freeness and projectivity are not required. -/
 instance instIsProperProjToSpec [Module.Finite R M] : IsProper (projToSpec R M) := by
@@ -120,5 +148,35 @@ instance instIsNoetherianProj [Module.Finite R M] [IsNoetherianRing R] :
 instance instJacobsonSpaceProj [Module.Finite R M] [JacobsonSpace (Spec (.of R))] :
     JacobsonSpace (Proj (homogeneousSubmodule R M)) :=
   LocallyOfFiniteType.jacobsonSpace (projToSpec R M)
+
+/-- The irrelevant ideal of the symmetric algebra of a nonzero module is nonzero: it contains the
+nonzero linear forms. -/
+theorem irrelevant_ne_bot [Nontrivial M] :
+    HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) ≠ ⊥ := by
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  intro h
+  have hmem : _root_.SymmetricAlgebra.ι R M m ∈ HomogeneousIdeal.irrelevant
+      (homogeneousSubmodule R M) := by
+    rw [HomogeneousIdeal.mem_irrelevant_iff, GradedRing.proj_apply,
+      DirectSum.decompose_of_mem_ne _ (ι_mem_homogeneousSubmodule R M m) one_ne_zero]
+  rw [h, ← HomogeneousIdeal.mem_iff, HomogeneousIdeal.toIdeal_bot, Ideal.mem_bot] at hmem
+  exact hm (SymmetricAlgebra.ι_injective R M (hmem.trans (map_zero _).symm))
+
+/-- The projective spectrum of the symmetric algebra of a nonzero free module over a domain is an
+integral scheme. -/
+instance instIsIntegralProj [IsDomain R] [Module.Free R M] [Nontrivial M] :
+    IsIntegral (Proj (homogeneousSubmodule R M)) :=
+  have : IsDomain (_root_.SymmetricAlgebra R M) := NoZeroDivisors.to_isDomain _
+  Proj.isIntegral_of_isDomain _ (irrelevant_ne_bot R M)
+
+/-- Over a field, the projective spectrum of the symmetric algebra of a finite-dimensional vector
+space `M`, the projective space of lines in the dual of `M`, has Krull dimension at most
+`dim M - 1`. -/
+theorem topologicalKrullDim_proj_add_one_le_finrank (k : Type u) [Field k] [Module k M]
+    [Module.Finite k M] :
+    topologicalKrullDim (Proj (homogeneousSubmodule k M)) + 1 ≤ Module.finrank k M := by
+  let : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
+  exact (Proj.topologicalKrullDim_add_one_le_ringKrullDim _).trans_eq
+    (ringKrullDim_eq_finrank k M)
 
 end TauCeti.SymmetricAlgebra
