@@ -581,8 +581,8 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_m
   have hPR : ∀ v : W1p0 mu Omega 2,
       ‖W1p.value (v : W1p mu Omega 2)‖ ≤ P.toReal * ‖W1p.gradient (v : W1p mu Omega 2)‖ :=
     fun v => by
-      have := ENNReal.toReal_mono (ENNReal.mul_ne_top hPfin enorm_ne_top) (hP v)
-      rwa [ENNReal.toReal_mul, toReal_enorm, ← Lp.norm_def] at this
+      have := ENNReal.toReal_mono (ENNReal.mul_ne_top hPfin eNorm_ne_top) (hP v)
+      rwa [ENNReal.toReal_mul, toReal_eNorm, ← Lp.norm_def] at this
   -- The energy form is coercive on `H¹₀(Ω)`, by the Poincaré inequality.
   have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0)
     h.upper_nonneg ha aestronglyMeasurable_const hc
