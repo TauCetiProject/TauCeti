@@ -398,7 +398,7 @@ theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteD
     (hn : IsUnit (n : A ⧸ maximalIdeal A)) (hβ : β ^ n = algebraMap A E π)
     (h : Algebra.IsUnramifiedWRT (integralClosure A K⟮β⟯) E) :
     Algebra.IsTamelyRamifiedWRT A L := by
-  have hn0 : n ≠ 0 := by
+  have _ : n ≠ 0 := by
     rintro rfl
     simp at hn
   have : IsScalarTower A L E := .of_algebraMap_eq fun a ↦ by

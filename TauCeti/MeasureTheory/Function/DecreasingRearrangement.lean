@@ -343,10 +343,10 @@ theorem eLpNorm_decreasingRearrangement (hf : AEMeasurable f μ) (p : ℝ≥0∞
   · rw [eLpNorm_exponent_zero hg, eLpNorm_exponent_zero hf']
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top hg, eLpNorm_exponent_top hf']
-    simp only [eLpNormEssSup_eq_essSup_enorm, enorm_eq_self, essSup_decreasingRearrangement]
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hg,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hf']
-  simp only [enorm_eq_self]
+    simp only [eLpNormEssSup_eq_essSup_eNorm, eNorm_eq_self, essSup_decreasingRearrangement]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hg,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf']
+  simp only [eNorm_eq_self]
   rw [μ.lintegral_rpow_decreasingRearrangement hf (ENNReal.toReal_pos hp0 hptop)]
 
 /-- The decreasing rearrangement lies in `Lᵖ(0, ∞)` exactly when `f` lies in `Lᵖ(μ)`, for every
@@ -438,10 +438,10 @@ theorem lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm {f : α → E}
   · subst hsum
     by_cases h₀ : AEStronglyMeasurable f₀ μ
     · have h₁ : AEStronglyMeasurable f₁ μ := by simpa using hf.sub h₀
-      rw [eLpNorm_one_eq_lintegral_enorm h₀, eLpNorm_exponent_top h₁,
-        eLpNormEssSup_eq_essSup_enorm]
-      exact μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.enorm t
-        (ae_of_all _ fun y ↦ enorm_add_le (f₀ y) (f₁ y))
+      rw [eLpNorm_one_eq_lintegral_eNorm h₀, eLpNorm_exponent_top h₁,
+        eLpNormEssSup_eq_essSup_eNorm]
+      exact μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.eNorm t
+        (ae_of_all _ fun y ↦ eNorm_add_le (f₀ y) (f₁ y))
     · simp [eLpNorm_of_not_aestronglyMeasurable h₀]
   · set c := μ.decreasingRearrangement (‖f ·‖ₑ) t
     rcases eq_or_ne c ∞ with hc | hc
@@ -467,9 +467,9 @@ theorem lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm {f : α → E}
           TauCeti.norm_radialRetraction hr, ENNReal.ofReal_max, ENNReal.ofReal_zero,
           max_eq_left zero_le, ENNReal.ofReal_sub _ hr, hcr]
         exact ⟨rfl, (ENNReal.ofReal_le_ofReal (min_le_right _ _)).trans_eq hcr⟩
-      rw [eLpNorm_one_eq_lintegral_enorm (hf.sub hf₁), eLpNorm_exponent_top hf₁,
-        eLpNormEssSup_eq_essSup_enorm,
-        μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.enorm t]
+      rw [eLpNorm_one_eq_lintegral_eNorm (hf.sub hf₁), eLpNorm_exponent_top hf₁,
+        eLpNormEssSup_eq_essSup_eNorm,
+        μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.eNorm t]
       gcongr ?_ + _ * ?_
       · exact (lintegral_congr fun y ↦ (htrunc y).1).le
       · exact essSup_le_of_ae_le c (ae_of_all _ fun y ↦ (htrunc y).2)

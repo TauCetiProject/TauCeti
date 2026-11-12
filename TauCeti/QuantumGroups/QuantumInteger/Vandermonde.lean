@@ -62,7 +62,7 @@ theorem quantumBinomial_add_left_eq (hq : q ≠ 0) (m n r : ℕ) :
     rw [zero_add, Nat.sum_antidiagonal_eq_sum_range_succ_mk]
     rw [sum_eq_single 0]
     · simp
-    · intro a ha hne
+    · intro a _ hne
       simp [quantumBinomial_eq_zero_of_lt q (Nat.pos_of_ne_zero hne)]
     · simp
   | succ m ih =>

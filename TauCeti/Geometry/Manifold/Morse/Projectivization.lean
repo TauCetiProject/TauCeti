@@ -521,7 +521,7 @@ theorem manifoldMorseIndex_projectiveMomentFunction (w : Fin (n + 1) → ℝ) (k
   have himage : k.succAbove '' {j | (w ∘ k.succAbove) j < w k} = {i | w i < w k} := by
     ext i
     simp only [mem_image, mem_ofPred_eq, comp_apply]
-    refine ⟨fun ⟨j, hj, hji⟩ ↦ hji ▸ hj, fun hi ↦ ?_⟩
+    refine ⟨fun ⟨_, hj, hji⟩ ↦ hji ▸ hj, fun hi ↦ ?_⟩
     obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq (x := i) (y := k) fun h ↦ (h ▸ hi).false
     exact ⟨j, hi, rfl⟩
   rw [← himage, Fin.succAbove_right_injective.injOn.ncard_image]

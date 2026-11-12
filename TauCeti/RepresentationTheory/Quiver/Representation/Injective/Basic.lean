@@ -39,11 +39,12 @@ path algebra it is the `k`-dual `D(eᵢ · kQ)` of the right ideal spanned by th
 
 ## Implementation notes
 
-The name `indecInjRep` is the one the roadmap pins for this object. As with the projectives,
-indecomposability is *not* proved here: it needs the Krull-Schmidt theory of Layer 2, which is not
-yet available. What is proved is injectivity, and the universal property that makes `Iᵢ` the
-representing object of the contravariant functor `M ↦ Module.Dual k Mᵢ`; both are independent of any
-finiteness assumption on `Q`, so no such assumption is made.
+As with the projectives, indecomposability, which the name `indecInjRep` records, is *not* proved
+here; over an acyclic quiver it is proved in
+`TauCeti.RepresentationTheory.Quiver.Representation.Indecomposable`. What is proved here is
+injectivity, and the universal property that makes `Iᵢ` the representing object of the
+contravariant functor `M ↦ Module.Dual k Mᵢ`; both are independent of any finiteness assumption on
+`Q`, so no such assumption is made.
 
 `Iᵢ` puts the **product** `Quiver.Path j i → k` at `j`, not the free module on the paths `j → i`.
 The two agree exactly when there are finitely many paths `j → i`, and the product is the right
@@ -83,9 +84,8 @@ objects sit in a common category only when those universes agree, and the embedd
 
 ## References
 
-This implements the indecomposable injectives of Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. III.
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. III.
 -/
 
 public section
