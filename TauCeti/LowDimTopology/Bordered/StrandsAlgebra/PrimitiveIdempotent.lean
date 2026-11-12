@@ -19,10 +19,11 @@ The algebra `A(Z)` of a pointed matched circle, the matched subalgebra of the st
 and sum to the unit (`TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`), and
 this file shows that they are **primitive** idempotents of `A(Z)`, provided `1` is primitive in the
 ground semiring, that is, the ground semiring is nontrivial and `1` is not the sum of two nonzero
-orthogonal idempotents; over `𝔽₂` they are therefore the primitive idempotents of a complete
-orthogonal decomposition of the unit, which is the ring of idempotents over which type `D`
-structures and type `A` modules of bordered Floer theory are defined. Precisely, `I(s)` is
-primitive exactly when `s` consists of matched pairs and `1` is primitive in the ground semiring
+orthogonal idempotents. So when `1` is primitive in the ground semiring (for instance over `𝔽₂`),
+the `I(s)` form a complete family of orthogonal primitive idempotents of `A(Z)`; they span the
+subalgebra of idempotents `I(Z)` of [LOT, §3.2], the ground ring of type `D` structures and type
+`A` modules of bordered Floer theory. Precisely, `I(s)` is primitive exactly when `s` consists of
+matched pairs and `1` is primitive in the ground semiring
 (`TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_iff`).
 
 The proof uses the filtration of the strands algebra by the total length of the strands
@@ -75,9 +76,7 @@ variable {R α β : Type*} [CommSemiring R] [LinearOrder α] [Fintype α] [Decid
 
 /-- **The idempotents of the corner ring of `I(s)` vanishing at an identity diagram.** An
 idempotent `x` of the matched subalgebra with `I(s) x = x` whose coefficient vanishes at the
-identity diagram of some set `S` of points over `s` is zero: it takes the same value at the identity
-diagrams of all sets of points over `s` and vanishes at the other identity diagrams, so it lies in
-`F_1` and is nilpotent. -/
+identity diagram of some set `S` of points over `s` is zero. -/
 theorem eq_zero_of_isIdempotentElem_of_repr_apply_idOn_eq_zero {x : StrandsAlgebra R α}
     (hx : x ∈ matchedSubalgebra R M) (hxx : IsIdempotentElem x) (hex : matchedIdem R M s * x = x)
     {S : Finset α} (hS : S ∈ matchedChoices M s) (h0 : (basis R α).repr x (idOn S) = 0) :
@@ -92,7 +91,7 @@ theorem eq_zero_of_isIdempotentElem_of_repr_apply_idOn_eq_zero {x : StrandsAlgeb
 /-- **The idempotents of the corner ring of `I(s)`.** When `1` is primitive in the ground ring,
 that is, the ground ring is nontrivial and has no idempotents besides `0` and `1`, the only
 idempotents `x` of the matched subalgebra with `I(s) x = x I(s) = x` are `0` and `I(s)`. Unlike
-the primitivity of `I(s)`, this uses subtraction, through the complement `I(s) - x`. -/
+the primitivity of `I(s)`, this needs a ring rather than a semiring. -/
 theorem eq_zero_or_eq_matchedIdem_of_isIdempotentElem {R : Type*} [CommRing R]
     (h1 : IsPrimitiveIdempotent (1 : R)) {x : StrandsAlgebra R α}
     (hx : x ∈ matchedSubalgebra R M) (hxx : IsIdempotentElem x) (hex : matchedIdem R M s * x = x)

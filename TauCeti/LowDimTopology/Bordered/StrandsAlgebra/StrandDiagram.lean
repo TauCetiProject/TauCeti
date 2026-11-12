@@ -57,6 +57,8 @@ product is associative in the form needed for the associativity of the strands a
   and their right-hand versions: the identity diagrams are the units of composition.
 * `TauCeti.StrandDiagram.length_trans`, `TauCeti.StrandDiagram.length_eq_zero_iff`: lengths add
   under concatenation, and the diagrams of length zero are the identity diagrams.
+* `TauCeti.StrandDiagram.composable_and_trans_eq_idOn_iff`: a composite of diagrams is an identity
+  diagram `I(S)` only when both factors are `I(S)`.
 
 ## References
 
@@ -663,6 +665,24 @@ theorem length_eq_zero_iff {φ : StrandDiagram α} : φ.length = 0 ↔ φ = idOn
 /-- A diagram which is not an identity diagram has positive length. -/
 theorem one_le_length_iff {φ : StrandDiagram α} : 1 ≤ φ.length ↔ φ ≠ idOn φ.source := by
   rw [Nat.one_le_iff_ne_zero, Ne, length_eq_zero_iff]
+
+/-- A composite of two diagrams is the identity diagram `I(S)` exactly when both diagrams are
+`I(S)`. -/
+theorem composable_and_trans_eq_idOn_iff {φ ψ : StrandDiagram α} {S : Finset α} :
+    φ.Composable ψ ∧ φ.trans ψ = idOn S ↔ φ = idOn S ∧ ψ = idOn S := by
+  refine ⟨fun ⟨h, hφψ⟩ ↦ ?_, fun ⟨hφ, hψ⟩ ↦ ?_⟩
+  · have hlen := length_trans h.target_eq
+    rw [hφψ, length_idOn, eq_comm, Nat.add_eq_zero_iff] at hlen
+    have hφ := length_eq_zero_iff.1 hlen.1
+    have hψ := length_eq_zero_iff.1 hlen.2
+    have hS : φ.source = S := by
+      rw [← source_trans_of_target_eq h.target_eq, hφψ, source_idOn]
+    rw [hφ, hS] at h
+    rw [hψ, ← h.target_eq, target_idOn]
+    exact ⟨hS ▸ hφ, rfl⟩
+  · subst hφ hψ
+    exact ⟨composable_idOn_left_iff.2 (source_idOn S).symm,
+      idOn_trans_of_eq_source (source_idOn S).symm⟩
 
 end Finite
 

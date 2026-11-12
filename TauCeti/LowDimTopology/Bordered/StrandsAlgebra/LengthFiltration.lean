@@ -123,27 +123,8 @@ theorem mul_mem_lengthFiltration {a b : ℕ} {x y : StrandsAlgebra R α}
     exact Nat.add_le_add hφ hψ
   · exact zero_mem _
 
-/-- A composite of two diagrams is the identity diagram `I(S)` exactly when both diagrams are
-`I(S)`: lengths add, so both have length zero. -/
-theorem composable_and_trans_eq_idOn_iff {φ ψ : StrandDiagram α} {S : Finset α} :
-    φ.Composable ψ ∧ φ.trans ψ = idOn S ↔ φ = idOn S ∧ ψ = idOn S := by
-  refine ⟨fun ⟨h, hφψ⟩ ↦ ?_, fun ⟨hφ, hψ⟩ ↦ ?_⟩
-  · have hlen := length_trans h.target_eq
-    rw [hφψ, length_idOn, eq_comm, Nat.add_eq_zero_iff] at hlen
-    have hφ := length_eq_zero_iff.1 hlen.1
-    have hψ := length_eq_zero_iff.1 hlen.2
-    have hS : φ.source = S := by
-      rw [← source_trans_of_target_eq h.target_eq, hφψ, source_idOn]
-    rw [hφ, hS] at h
-    rw [hψ, ← h.target_eq, target_idOn]
-    exact ⟨hS ▸ hφ, rfl⟩
-  · subst hφ hψ
-    exact ⟨composable_idOn_left_iff.2 (source_idOn S).symm,
-      idOn_trans_of_eq_source (source_idOn S).symm⟩
-
 /-- **The coefficient at an identity diagram is multiplicative**: the coefficient of `x y` at
-`I(S)` is the product of those of `x` and `y`, since a composite of diagrams is `I(S)` only when
-both factors are. -/
+`I(S)` is the product of those of `x` and `y`. -/
 theorem repr_mul_apply_idOn (x y : StrandsAlgebra R α) (S : Finset α) :
     (basis R α).repr (x * y) (idOn S) =
       (basis R α).repr x (idOn S) * (basis R α).repr y (idOn S) := by
