@@ -50,16 +50,20 @@ because `m` is the annihilator of `R ⧸ m`. So their number is the number of ma
 
 ## Main results
 
-* `TauCeti.isRepresentationFinite_iff_isRepresentationFinite` and
-  `TauCeti.card_skeleton_indecomposable_eq_card_skeleton_indecomposable`: representation-finiteness
-  and the number of finitely generated indecomposable modules do not depend on the universe of the
-  modules.
-* `CategoryTheory.Equivalence.isRepresentationFinite_iff` and
-  `CategoryTheory.Equivalence.card_skeleton_indecomposable_eq`: rings with equivalent module
-  categories are representation-finite together and have equally many finitely generated
-  indecomposable modules.
-* `TauCeti.card_skeleton_indecomposable_eq_card_maximalSpectrum`: over a commutative semisimple
-  ring the finitely generated indecomposable modules are counted by the maximal ideals.
+* `TauCeti.skeletonIndecomposableEquivSkeletonIndecomposable`,
+  `TauCeti.isRepresentationFinite_iff_isRepresentationFinite` and
+  `TauCeti.card_skeleton_indecomposable_eq_card_skeleton_indecomposable`: the isomorphism classes of
+  finitely generated indecomposable modules, and so representation-finiteness and their number, do
+  not depend on the universe of the modules.
+* `CategoryTheory.Equivalence.skeletonIndecomposableEquiv`,
+  `CategoryTheory.Equivalence.isRepresentationFinite_iff` and
+  `CategoryTheory.Equivalence.card_skeleton_indecomposable_eq`: an equivalence of module categories
+  identifies these isomorphism classes, so the two rings are representation-finite together and
+  have equally many finitely generated indecomposable modules.
+* `TauCeti.maximalSpectrumEquivSkeletonIndecomposable`,
+  `TauCeti.card_skeleton_indecomposable_eq_card_maximalSpectrum` and
+  `TauCeti.isRepresentationFinite_iff_finite_maximalSpectrum`: over a commutative semisimple ring
+  the finitely generated indecomposable modules correspond to the maximal ideals.
 
 ## References
 
@@ -119,7 +123,7 @@ theorem isRepresentationFinite_of_forall_exists_iso {S : Set (ModuleCat.{w} A)} 
 
 end Definition
 
-universe u u' v v'
+universe v v' u u'
 
 section Universe
 
@@ -163,7 +167,49 @@ private noncomputable def skeletonIndecomposableEquivMax [Small.{v} A] :
         fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M) ≃
       Skeleton (ObjectProperty.FullSubcategory
         fun N : ModuleCat.{max v v'} A ↦ Module.Finite A N ∧ Indecomposable N) :=
-  Equiv.ofBijective _ (bijective_uliftFunctor_mapSkeleton.{u, v, v'} A)
+  Equiv.ofBijective _ (bijective_uliftFunctor_mapSkeleton.{v, v', u} A)
+
+/-- The class of `M` is sent to the class of its lift `ULift M`. -/
+private theorem skeletonIndecomposableEquivMax_toSkeleton [Small.{v} A]
+    (M : ObjectProperty.FullSubcategory
+      fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M) :
+    skeletonIndecomposableEquivMax.{v, v', u} A (toSkeleton M) =
+      toSkeleton ⟨ModuleCat.of A (ULift.{v'} M.obj),
+        finite_and_indecomposable_of_linearEquiv ULift.moduleEquiv.symm M.property⟩ :=
+  Functor.mapSkeleton_obj_toSkeleton _ M
+
+variable (A) in
+/-- The isomorphism classes of finitely generated indecomposable modules in two universes in which
+`A` is small correspond to each other, a class corresponding to the class of the linearly
+equivalent modules
+(`TauCeti.skeletonIndecomposableEquivSkeletonIndecomposable_toSkeleton_eq_toSkeleton_iff`). -/
+noncomputable def skeletonIndecomposableEquivSkeletonIndecomposable [Small.{v} A]
+    [Small.{v'} A] :
+    Skeleton (ObjectProperty.FullSubcategory
+        fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M) ≃
+      Skeleton (ObjectProperty.FullSubcategory
+        fun N : ModuleCat.{v'} A ↦ Module.Finite A N ∧ Indecomposable N) :=
+  (skeletonIndecomposableEquivMax.{v, v', u} A).trans
+    (skeletonIndecomposableEquivMax.{v', v, u} A).symm
+
+/-- The universe-change correspondence sends the class of `M` to the class of `N` exactly when `M`
+and `N` are linearly equivalent. -/
+@[simp]
+theorem skeletonIndecomposableEquivSkeletonIndecomposable_toSkeleton_eq_toSkeleton_iff
+    [Small.{v} A] [Small.{v'} A]
+    {M : ObjectProperty.FullSubcategory
+      fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M}
+    {N : ObjectProperty.FullSubcategory
+      fun N : ModuleCat.{v'} A ↦ Module.Finite A N ∧ Indecomposable N} :
+    skeletonIndecomposableEquivSkeletonIndecomposable.{v, v', u} A (toSkeleton M) = toSkeleton N ↔
+      Nonempty (M.obj ≃ₗ[A] N.obj) := by
+  rw [skeletonIndecomposableEquivSkeletonIndecomposable, Equiv.trans_apply, Equiv.symm_apply_eq,
+    skeletonIndecomposableEquivMax_toSkeleton, skeletonIndecomposableEquivMax_toSkeleton,
+    toSkeleton_eq_toSkeleton_iff]
+  refine ⟨fun ⟨f⟩ ↦ ⟨ULift.moduleEquiv.{u, v, v'}.symm.trans
+      (((ObjectProperty.ι _).mapIso f).toLinearEquiv.trans ULift.moduleEquiv.{u, v', v})⟩,
+    fun ⟨f⟩ ↦ ⟨ObjectProperty.isoMk _ (ULift.moduleEquiv.{u, v, v'}.trans
+      (f.trans ULift.moduleEquiv.{u, v', v}.symm)).toModuleIso⟩⟩
 
 variable (A) in
 /-- **The number of finitely generated indecomposable modules does not depend on the universe** of
@@ -174,8 +220,7 @@ theorem card_skeleton_indecomposable_eq_card_skeleton_indecomposable [Small.{v} 
         fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M)) =
       Nat.card (Skeleton (ObjectProperty.FullSubcategory
         fun N : ModuleCat.{v'} A ↦ Module.Finite A N ∧ Indecomposable N)) :=
-  (Nat.card_congr (skeletonIndecomposableEquivMax.{u, v, v'} A)).trans
-    (Nat.card_congr (skeletonIndecomposableEquivMax.{u, v', v} A)).symm
+  Nat.card_congr (skeletonIndecomposableEquivSkeletonIndecomposable.{v, v', u} A)
 
 variable (A) in
 /-- **Representation-finiteness does not depend on the universe** of the modules, among the
@@ -183,8 +228,7 @@ universes in which the ring is small. -/
 theorem isRepresentationFinite_iff_isRepresentationFinite [Small.{v} A] [Small.{v'} A] :
     IsRepresentationFinite.{v} A ↔ IsRepresentationFinite.{v'} A := by
   rw [isRepresentationFinite_iff, isRepresentationFinite_iff,
-    (skeletonIndecomposableEquivMax.{u, v, v'} A).finite_iff,
-    (skeletonIndecomposableEquivMax.{u, v', v} A).finite_iff]
+    (skeletonIndecomposableEquivSkeletonIndecomposable.{v, v'} A).finite_iff]
 
 end Universe
 
@@ -193,8 +237,12 @@ section Equivalence
 variable {A : Type u} [Ring A] {B : Type u'} [Ring B]
 
 /-- An equivalence of module categories identifies the isomorphism classes of finitely generated
-indecomposable modules over the two rings. -/
-private noncomputable def skeletonIndecomposableEquiv (e : ModuleCat.{v} A ≌ ModuleCat.{v'} B) :
+indecomposable modules over the two rings, the class of `M` going to the class of `e.functor.obj M`
+(`CategoryTheory.Equivalence.skeletonIndecomposableEquiv_toSkeleton_eq_toSkeleton_iff`). No
+linearity of the equivalence is needed, and the two module categories may live in different
+universes. -/
+noncomputable def _root_.CategoryTheory.Equivalence.skeletonIndecomposableEquiv
+    (e : ModuleCat.{v} A ≌ ModuleCat.{v'} B) :
     Skeleton (ObjectProperty.FullSubcategory
         fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M) ≃
       Skeleton (ObjectProperty.FullSubcategory
@@ -205,6 +253,22 @@ private noncomputable def skeletonIndecomposableEquiv (e : ModuleCat.{v} A ≌ M
   (e.congrFullSubcategory (Q := Q) (funext fun M ↦ propext (and_congr
     (e.finite_functor_obj_iff M) (e.indecomposable_functor_obj_iff M)))).skeletonIsoCat.objEquiv
 
+/-- The correspondence induced by an equivalence of module categories sends the class of `M` to the
+class of `N` exactly when `e.functor.obj M` is isomorphic to `N`. -/
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.skeletonIndecomposableEquiv_toSkeleton_eq_toSkeleton_iff
+    (e : ModuleCat.{v} A ≌ ModuleCat.{v'} B)
+    {M : ObjectProperty.FullSubcategory
+      fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M}
+    {N : ObjectProperty.FullSubcategory
+      fun N : ModuleCat.{v'} B ↦ Module.Finite B N ∧ Indecomposable N} :
+    e.skeletonIndecomposableEquiv (toSkeleton M) = toSkeleton N ↔
+      Nonempty (e.functor.obj M.obj ≅ N.obj) := by
+  rw [Equivalence.skeletonIndecomposableEquiv]
+  refine (congrArg (· = toSkeleton N) (Functor.mapSkeleton_obj_toSkeleton _ M)).to_iff.trans
+    (toSkeleton_eq_toSkeleton_iff.trans
+      ⟨fun ⟨f⟩ ↦ ⟨(ObjectProperty.ι _).mapIso f⟩, fun ⟨f⟩ ↦ ⟨ObjectProperty.isoMk _ f⟩⟩)
+
 /-- **Rings with equivalent module categories have equally many finitely generated indecomposable
 modules** up to isomorphism. No linearity of the equivalence is needed, and the two module
 categories may live in different universes. -/
@@ -214,7 +278,7 @@ theorem _root_.CategoryTheory.Equivalence.card_skeleton_indecomposable_eq
         fun M : ModuleCat.{v} A ↦ Module.Finite A M ∧ Indecomposable M)) =
       Nat.card (Skeleton (ObjectProperty.FullSubcategory
         fun N : ModuleCat.{v'} B ↦ Module.Finite B N ∧ Indecomposable N)) :=
-  Nat.card_congr (skeletonIndecomposableEquiv e)
+  Nat.card_congr e.skeletonIndecomposableEquiv
 
 /-- **Rings with equivalent module categories are representation-finite together.** No linearity
 of the equivalence is needed, and the two module categories may live in different universes. -/
@@ -222,7 +286,7 @@ theorem _root_.CategoryTheory.Equivalence.isRepresentationFinite_iff
     (e : ModuleCat.{v} A ≌ ModuleCat.{v'} B) :
     IsRepresentationFinite.{v} A ↔ IsRepresentationFinite.{v'} B := by
   rw [TauCeti.isRepresentationFinite_iff, TauCeti.isRepresentationFinite_iff,
-    (skeletonIndecomposableEquiv e).finite_iff]
+    e.skeletonIndecomposableEquiv.finite_iff]
 
 end Equivalence
 
@@ -260,15 +324,42 @@ private theorem bijective_toSkeleton_quotientMaximal [IsSemisimpleRing R] :
     rw [← toSkeleton_fromSkeleton_obj x]
     exact toSkeleton_eq_toSkeleton_iff.mpr ⟨ObjectProperty.isoMk _ f.symm.toModuleIso⟩
 
+/-- Over a commutative semisimple ring the maximal ideals correspond to the isomorphism classes of
+finitely generated indecomposable modules, in any universe in which the ring is small: `m` goes to
+the class of the simple module `R ⧸ m`
+(`TauCeti.maximalSpectrumEquivSkeletonIndecomposable_apply_eq_toSkeleton_iff`). -/
+noncomputable def maximalSpectrumEquivSkeletonIndecomposable [IsSemisimpleRing R] [Small.{v} R] :
+    MaximalSpectrum R ≃ Skeleton (ObjectProperty.FullSubcategory
+      fun M : ModuleCat.{v} R ↦ Module.Finite R M ∧ Indecomposable M) :=
+  (Equiv.ofBijective _ (bijective_toSkeleton_quotientMaximal R)).trans
+    (skeletonIndecomposableEquivSkeletonIndecomposable.{u, v, u} R)
+
+variable {R} in
+/-- The maximal ideal `m` corresponds to the class of `N` exactly when `N` is linearly equivalent
+to `R ⧸ m`. -/
+@[simp]
+theorem maximalSpectrumEquivSkeletonIndecomposable_apply_eq_toSkeleton_iff [IsSemisimpleRing R]
+    [Small.{v} R] {m : MaximalSpectrum R}
+    {N : ObjectProperty.FullSubcategory
+      fun N : ModuleCat.{v} R ↦ Module.Finite R N ∧ Indecomposable N} :
+    maximalSpectrumEquivSkeletonIndecomposable.{v, u} R m = toSkeleton N ↔
+      Nonempty ((R ⧸ m.asIdeal) ≃ₗ[R] N.obj) :=
+  skeletonIndecomposableEquivSkeletonIndecomposable_toSkeleton_eq_toSkeleton_iff.{u, v, u}
+
 /-- **Over a commutative semisimple ring the finitely generated indecomposable modules are counted
 by the maximal ideals**: they are the simple modules `R ⧸ m`, pairwise non-isomorphic. The modules
 may be taken in any universe in which the ring is small. -/
 theorem card_skeleton_indecomposable_eq_card_maximalSpectrum [IsSemisimpleRing R] [Small.{v} R] :
     Nat.card (Skeleton (ObjectProperty.FullSubcategory
         fun M : ModuleCat.{v} R ↦ Module.Finite R M ∧ Indecomposable M)) =
-      Nat.card (MaximalSpectrum R) := by
-  rw [card_skeleton_indecomposable_eq_card_skeleton_indecomposable.{u, v, u} R]
-  exact (Nat.card_congr (Equiv.ofBijective _ (bijective_toSkeleton_quotientMaximal R))).symm
+      Nat.card (MaximalSpectrum R) :=
+  (Nat.card_congr (maximalSpectrumEquivSkeletonIndecomposable R)).symm
+
+/-- **A commutative semisimple ring is representation-finite exactly when it has finitely many
+maximal ideals.** The modules may be taken in any universe in which the ring is small. -/
+theorem isRepresentationFinite_iff_finite_maximalSpectrum [IsSemisimpleRing R] [Small.{v} R] :
+    IsRepresentationFinite.{v} R ↔ Finite (MaximalSpectrum R) := by
+  rw [isRepresentationFinite_iff, (maximalSpectrumEquivSkeletonIndecomposable.{v, u} R).finite_iff]
 
 end CommSemisimple
 
