@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Complex.OperatorNorm
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
