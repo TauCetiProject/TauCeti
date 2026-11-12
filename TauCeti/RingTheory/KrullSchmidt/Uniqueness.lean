@@ -33,8 +33,8 @@ finite length ensures finite index types and supplies locality through Fitting's
 ## Main results
 
 * `TauCeti.exists_equiv_linearEquiv_of_isLocalRing_end`: **the Krull-Schmidt theorem** in Azumaya's
-  generality, for a first family whose summands have local endomorphism rings and a second family
-  of indecomposable summands.
+  generality, for a first family whose summands have local endomorphism rings and a finite second
+  family of indecomposable summands.
 * `TauCeti.exists_equiv_linearEquiv_of_iSupIndep`: the same for two families of indecomposable
   submodules of a module of finite length; finiteness of the index types follows automatically.
 * `TauCeti.exists_equiv_linearEquiv_of_finset`: the same in the `Finset` and `DirectSum.IsInternal`
