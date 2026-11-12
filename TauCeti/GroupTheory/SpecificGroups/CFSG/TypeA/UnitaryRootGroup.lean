@@ -113,6 +113,8 @@ def unitaryRootHom (q : PrimePower) (hv : (LieTypeIndex.twistedA 2 q).Valid) :
           ((ofTwistedA 2 q hv).1.fieldExponent * 2)) (ofTwistedA 2 q hv).1.characteristic
           (ofTwistedA 2 q hv).1.fieldExponent) →*
       (ofTwistedA 2 q hv).FixedPoints :=
+  -- The abbreviation ofTwistedA makes its rank definitionally 2, so the descent domain
+  -- indexed by Fin (rank + 1) agrees with the root homomorphism's Fin 3 matrix carrier.
   (specialUnitaryEquivFixedPoints 2 q hv).toMonoidHom.comp (ofTwistedA 2 q hv).1.unitaryRootHom
 
 /-- The root embedding is finite-field descent applied to the finite unitary root matrix. -/

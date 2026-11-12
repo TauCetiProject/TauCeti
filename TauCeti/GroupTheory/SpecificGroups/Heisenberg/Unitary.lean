@@ -81,6 +81,24 @@ theorem mem_unitarySubgroup {a : HeisenbergGroup R} :
     · fin_cases i <;> fin_cases j <;>
         simp_all [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, hσ a.x]
 
+namespace unitarySubgroup
+
+omit hσ
+variable {σ}
+
+/-- The middle coordinate of a unitary root element is the involution of its first coordinate. -/
+theorem y_eq (a : unitarySubgroup σ) (hσ : Function.Involutive σ) :
+    (a : HeisenbergGroup R).y = σ (a : HeisenbergGroup R).x :=
+  ((mem_unitarySubgroup σ hσ).mp a.property).1
+
+/-- The trace of the last coordinate of a unitary root element is the norm of its first. -/
+theorem z_add_map_z (a : unitarySubgroup σ) (hσ : Function.Involutive σ) :
+    (a : HeisenbergGroup R).z + σ (a : HeisenbergGroup R).z =
+      (a : HeisenbergGroup R).x * σ (a : HeisenbergGroup R).x :=
+  ((mem_unitarySubgroup σ hσ).mp a.property).2
+
+end unitarySubgroup
+
 /-- Construct a unitary root element from parameters whose trace is the norm. -/
 def unitaryMk (x z : R) (hz : z + σ z = x * σ x) : unitarySubgroup σ :=
   ⟨⟨x, σ x, z⟩, (mem_unitarySubgroup σ hσ).mpr ⟨rfl, hz⟩⟩
@@ -96,14 +114,13 @@ theorem unitarySubgroup_ext {a b : unitarySubgroup σ}
     (hz : (a : HeisenbergGroup R).z = (b : HeisenbergGroup R).z) : a = b := by
   apply Subtype.ext
   exact HeisenbergGroup.ext hx
-    (by rw [((mem_unitarySubgroup σ hσ).mp a.property).1,
-      ((mem_unitarySubgroup σ hσ).mp b.property).1, hx]) hz
+    (by rw [unitarySubgroup.y_eq a hσ, unitarySubgroup.y_eq b hσ, hx]) hz
 
 /-- Every unitary root element is given by its two parameters. -/
 @[simp]
 theorem unitaryMk_eq (a : unitarySubgroup σ) :
     unitaryMk σ hσ (a : HeisenbergGroup R).x (a : HeisenbergGroup R).z
-      ((mem_unitarySubgroup σ hσ).mp a.property).2 = a := by
+      (unitarySubgroup.z_add_map_z a hσ) = a := by
   apply unitarySubgroup_ext σ hσ <;> rfl
 
 /-- The multiplication law for the two parameters of the twisted root group. -/
@@ -113,8 +130,7 @@ theorem coe_unitarySubgroup_mul (a b : unitarySubgroup σ) :
         σ ((a : HeisenbergGroup R).x + (b : HeisenbergGroup R).x),
         (a : HeisenbergGroup R).z + (b : HeisenbergGroup R).z +
           (a : HeisenbergGroup R).x * σ (b : HeisenbergGroup R).x⟩ := by
-  ext <;> simp [((mem_unitarySubgroup σ hσ).mp a.property).1,
-    ((mem_unitarySubgroup σ hσ).mp b.property).1]
+  ext <;> simp [unitarySubgroup.y_eq a hσ, unitarySubgroup.y_eq b hσ]
 
 /-- Inversion negates the first parameter and applies the involution to the second. -/
 theorem coe_unitarySubgroup_inv (a : unitarySubgroup σ) :
@@ -123,9 +139,9 @@ theorem coe_unitarySubgroup_inv (a : unitarySubgroup σ) :
         σ (a : HeisenbergGroup R).z⟩ := by
   apply HeisenbergGroup.ext
   · rfl
-  · simp [((mem_unitarySubgroup σ hσ).mp a.property).1]
-  · simp only [Subgroup.coe_inv, inv_z, ((mem_unitarySubgroup σ hσ).mp a.property).1]
-    linear_combination -((mem_unitarySubgroup σ hσ).mp a.property).2
+  · simp [unitarySubgroup.y_eq a hσ]
+  · simp only [Subgroup.coe_inv, inv_z, unitarySubgroup.y_eq a hσ]
+    linear_combination -(unitarySubgroup.z_add_map_z a hσ)
 
 /-- The commutator formula for the twisted root group. -/
 theorem coe_unitarySubgroup_commutatorElement (a b : unitarySubgroup σ) :
@@ -134,8 +150,7 @@ theorem coe_unitarySubgroup_commutatorElement (a b : unitarySubgroup σ) :
         (b : HeisenbergGroup R).x * σ (a : HeisenbergGroup R).x⟩ := by
   exact (map_commutatorElement (unitarySubgroup σ).subtype a b).trans
     ((commutatorElement_eq (a : HeisenbergGroup R) (b : HeisenbergGroup R)).trans
-      (by rw [((mem_unitarySubgroup σ hσ).mp a.property).1,
-        ((mem_unitarySubgroup σ hσ).mp b.property).1]))
+      (by rw [unitarySubgroup.y_eq a hσ, unitarySubgroup.y_eq b hσ]))
 
 omit hσ in
 /-- Every commutator in the twisted root group is central. -/
