@@ -52,6 +52,7 @@ namespace TauCeti.DynkinType
     (F4.rationalBase ht) f hsimple i
   norm_num [f, AddMonoidHom.add_apply, AddMonoidHom.nsmul_apply,
     root_rationalRootSystem, simplyConnectedRootDatum_F4, f4SimplyConnectedRootDatum_root] at h
+  rw [height_rationalBase]
   exact_mod_cast h.symm
 
 /-- The positive F₄ roots are exactly the first half of the pinned root table. -/
