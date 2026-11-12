@@ -83,8 +83,10 @@ private theorem partialCycleMap_eq_of_coe_eq {j : Fin n} {z : ℍ} (hz : P.verte
         (σ.partialCycleMap j m)⁻¹ • P.vertexSector (σ.next^[m] j)) ∧
       ((σ.partialCycleMap j m')⁻¹ • P.carrier =ᶠ[𝓝 y]
         (σ.partialCycleMap j m')⁻¹ • P.vertexSector (σ.next^[m'] j)) :=
-    (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m).eventuallyEq_nhds.and
-      (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m').eventuallyEq_nhds
+    (Filter.Eventually.eventually_nhds
+        (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m)).and
+      (Filter.Eventually.eventually_nhds
+        (σ.eventuallyEq_inv_partialCycleMap_smul_carrier_vertexSector hz m'))
   obtain ⟨w, hwx, ⟨hm, hm'⟩, hwz⟩ := ((frequently_orientedAngle_eq z
     (geodesicLine (rayToward z (P.vertex (j - 1))) 1) ((-x : ℝ) : Real.Angle)).and_eventually
       ((hev.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin)).exists

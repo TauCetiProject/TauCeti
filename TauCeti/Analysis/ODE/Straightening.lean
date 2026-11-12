@@ -267,7 +267,7 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero {n : 
   -- required chart.
   classical
   have := Fintype.ofFinite ι
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   set u : ι → E := fun i ↦ w i a
   have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
     have : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
