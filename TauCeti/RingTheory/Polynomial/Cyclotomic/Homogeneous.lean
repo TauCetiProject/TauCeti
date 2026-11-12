@@ -31,7 +31,8 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
 * `TauCeti.homogeneousCyclotomic_eq_sum`: `Φ_n(a, b)` as the sum `∑_{k + l = φ(n)} c_k a^k b^l`.
 * `TauCeti.homogeneousCyclotomic_one_right`, `TauCeti.homogeneousCyclotomic_eq_eval_div_mul_pow`:
   `Φ_n(a, 1) = Φ_n(a)`, and `Φ_n(a, b) = Φ_n(a / b) b ^ φ(n)` for `b ≠ 0` in a field.
-* `RingHom.map_homogeneousCyclotomic`: ring homomorphisms commute with `Φ_n(·, ·)`.
+* `RingHom.map_homogeneousCyclotomic`, `Int.cast_homogeneousCyclotomic`: ring homomorphisms,
+  and in particular integer casts, commute with `Φ_n(·, ·)`.
 * `TauCeti.homogeneousCyclotomic_mul_mul`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`.
 * `TauCeti.homogeneousCyclotomic_zero`, `_one`, `_two`, `_three`, `_six`, `_prime`,
   `_prime_pow`: closed forms, including `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` and
@@ -113,6 +114,13 @@ theorem _root_.RingHom.map_homogeneousCyclotomic (f : R →+* S) (n : ℕ) (a b 
   congr 2
   ext i
   fin_cases i <;> simp
+
+/-- The cast of an integer homogeneous cyclotomic value is the homogeneous cyclotomic value of the
+casts. -/
+@[simp, norm_cast]
+theorem _root_.Int.cast_homogeneousCyclotomic (n : ℕ) (a b : ℤ) :
+    ((homogeneousCyclotomic n a b : ℤ) : R) = homogeneousCyclotomic n (a : R) (b : R) :=
+  (Int.castRingHom R).map_homogeneousCyclotomic n a b
 
 /-- `Φ_n` is homogeneous of degree `φ(n)`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`. -/
 theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :

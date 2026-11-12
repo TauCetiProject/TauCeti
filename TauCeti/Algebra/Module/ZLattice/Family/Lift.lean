@@ -58,8 +58,8 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ]
-  [Module.Finite ℤ Λ] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))] {Z : Type*} [TopologicalSpace Z]
 

@@ -40,6 +40,8 @@ whose determinant therefore has degree zero.
 * `TauCeti.TotallyRealLoop.maslovIndex_map`: `μ(B Λ) = μ(Λ) + 2 deg (det B)`.
 * `TauCeti.TotallyRealLoop.maslovIndex_map_const`: a constant automorphism preserves the Maslov
   index.
+* `TauCeti.TotallyRealLoop.maslovIndex_map_sub_maslovIndex`: the shift `μ(B Λ) - μ(Λ)` does not
+  depend on `Λ`.
 * `TauCeti.TotallyRealLoop.maslovIndex_map_eq_of_homotopy`: moving a loop by freely homotopic
   loops of automorphisms gives loops with the same Maslov index.
 
@@ -97,6 +99,23 @@ theorem maslovIndex_map_const (A : E ≃L[ℂ] E) :
     (Λ.map (fun _ => A) continuous_const rfl).maslovIndex = Λ.maslovIndex := by
   rw [Λ.maslovIndex_map _ _ _ (Path.refl A.normalizedDet) fun _ => A.det_eq_norm_mul_normalizedDet,
     Circle.degree_refl, mul_zero, add_zero]
+
+/-- **The shift of the Maslov index under a loop of automorphisms does not depend on the loop it
+moves.** For any two loops `Λ` and `Γ` of maximal totally real subspaces,
+`μ(B Λ) - μ(Λ) = μ(B Γ) - μ(Γ)`: both are twice the degree of the loop of normalized determinants
+of `B`. -/
+theorem maslovIndex_map_sub_maslovIndex (Γ : TotallyRealLoop E) (B : I → E ≃L[ℂ] E)
+    (hB : Continuous fun t => (B t : E →L[ℂ] E)) (hB01 : B 0 = B 1) :
+    (Λ.map B hB hB01).maslovIndex - Λ.maslovIndex =
+      (Γ.map B hB hB01).maslovIndex - Γ.maslovIndex := by
+  let δ : Path (B 0).normalizedDet (B 0).normalizedDet :=
+    { toFun := fun t => (B t).normalizedDet
+      continuous_toFun := hB.normalizedDet
+      source' := rfl
+      target' := by simp only [hB01] }
+  rw [Λ.maslovIndex_map _ _ _ δ fun t => (B t).det_eq_norm_mul_normalizedDet,
+    Γ.maslovIndex_map _ _ _ δ fun t => (B t).det_eq_norm_mul_normalizedDet]
+  ring
 
 /-- **Homotopy invariance in the frame.** If `B` is a free homotopy of loops of complex-linear
 automorphisms, `B (s, 0) = B (s, 1)` for every `s`, then moving a loop of maximal totally real

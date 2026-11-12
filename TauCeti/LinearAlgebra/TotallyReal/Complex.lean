@@ -326,6 +326,17 @@ theorem map_linearEquiv (A : E ≃ₗ[ℂ] E) :
   rw [isMaximalTotallyReal_iff, ← Submodule.map_comp, hcomm, Submodule.map_comp]
   exact Submodule.isCompl_map (A.restrictScalars ℝ) hL.isCompl
 
+omit hL in
+/-- If a complex-linear automorphism carries `L` onto a maximal totally real subspace `L'`, then
+`L` is maximal totally real. -/
+theorem of_map_linearEquiv {L' : Submodule ℝ E}
+    (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L')
+    (A : E ≃ₗ[ℂ] E) (h : L' = L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L := by
+  have h' : L'.map ((A.symm : E →ₗ[ℂ] E).restrictScalars ℝ) = L :=
+    (Submodule.map_symm_eq_iff (A.restrictScalars ℝ)).2 h.symm
+  simpa only [h'] using hL'.map_linearEquiv A.symm
+
 /-- A maximal totally real subspace has real dimension equal to the complex dimension of the
 ambient module. -/
 theorem finrank_eq_finrank_complex : finrank ℝ L = finrank ℂ E := by
@@ -417,8 +428,7 @@ theorem IsMaximalTotallyReal.projection_sum_smul {ι : Type*} [Fintype ι]
     conv_lhs => rw [← Complex.re_add_im (c i)]
     rw [add_smul, mul_smul, hr, hr]
   rw [hsplit, map_add,
-    Submodule.projection_apply_of_mem_right hL.isCompl
-      ⟨_, L.sum_mem fun i _ ↦ L.smul_mem _ (hv i), rfl⟩, add_zero,
+    hL.projection_map_of_mem (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i)), add_zero,
     Submodule.projection_apply_of_mem_left hL.isCompl (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i))]
 
 end TauCeti

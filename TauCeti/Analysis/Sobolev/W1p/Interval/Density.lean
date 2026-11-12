@@ -210,7 +210,6 @@ theorem one_le_dist_of_gradient_ae_eq_sign {a b : ℝ} (ha : a < 0) (hb : 0 < b)
   have hdist : r ≤ dist u w := by
     simpa only [dist_eq_norm, r, G, W1p.gradient_sub] using W1p.norm_gradient_le (u - w)
   by_contra! hlt
-  have hr : r < 1 := hdist.trans_lt hlt
   -- Continuity of `f'` at `0` is incompatible with the jump of the sign there.
   obtain ⟨δ, hδ, hcont⟩ := Metric.continuousAt_iff.1 ((hf.continuous_deriv le_rfl).continuousAt
     (x := 0)) ((1 - r) / 2) (by linarith)

@@ -78,7 +78,7 @@ theorem finiteAdeleExtension_finiteAdeleNorm_of_algebraMap_norm_eq_prod {ι : Ty
   simp only [Function.comp_apply, finiteAdeleNorm_algebraMap, finiteAdeleExtension_algebraMap,
     finiteAdeleEquiv_algebraMap, hσ, map_prod]
 
-omit [NumberField M] in
+omit [NumberField K] [NumberField M] in
 /-- **A product formula for the norm transfers to infinite adeles.** If for some ring
 automorphisms `σ i` of `M` the norm `N_{L/K}(x)` of every `x ∈ L`, read in `M`, is `∏ i, σ i x`,
 then extended to `M`, the norm of an infinite adele `a` of `L` is `∏ i, σ i a`. -/

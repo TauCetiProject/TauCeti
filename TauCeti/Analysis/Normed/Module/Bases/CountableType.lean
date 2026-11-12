@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.Normed.Group.Quotient
@@ -39,6 +40,9 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   `closure D`: the finite-dimensional subspaces `W ≤ closure D` attached to the initial spans of a
   densely spanning sequence together span a dense subspace of `closure D`, and each of their
   countably many spanning vectors is then replaced by a sequence in `D` converging to it.
+* `TauCeti.separatingDual_of_dense_span` and `Submodule.separatingDual_span_of_countable`: the
+  coordinate functionals of a `t`-orthogonal basis separate points on any ultrametric normed space
+  of countable type, and in particular on the span of any countable set.
 
 Neither a discrete valuation nor completeness of `E` is needed: only the finite-dimensional
 subspaces spanned by initial segments have to be closed, which holds over a complete field.
@@ -307,5 +311,44 @@ theorem _root_.Submodule.exists_dense_span_of_dense_span (D : Submodule K E) {v 
     rw [hf, ← D.coe_subtype, ← Submodule.map_coe, Submodule.map_span, ← range_comp]
     rfl
   exact ⟨w, Subtype.dense_iff.2 (hspan ▸ hDT)⟩
+
+/-- **Continuous linear functionals separate points on spaces of countable type**: over a complete
+nontrivially normed field, if a sequence has dense span in an ultrametric normed space `E`, then
+`StrongDual K E` separates points of `E`, without assuming completeness of `E` or spherical
+completeness of `K`. -/
+theorem separatingDual_of_dense_span {v : ℕ → E}
+    (hv : Dense (span K (range v) : Set E)) : SeparatingDual K E where
+  exists_ne_zero' {x} hx := by
+    have ht : (2⁻¹ : ℝ≥0) < 1 := by norm_num
+    obtain ⟨S, e, he⟩ := exists_isTOrthogonalBasis_of_dense_span hv ht
+    let b := he.toUnconditionalSchauderBasis (by norm_num)
+    by_contra! h
+    have hsum := b.expansion x
+    simp only [h, zero_smul] at hsum
+    exact hx (hsum.unique hasSum_zero)
+
+/-- Continuous linear functionals separate points on the span of any countable set in an
+ultrametric normed space over a complete nontrivially normed field. -/
+theorem _root_.Submodule.separatingDual_span_of_countable {S : Set E} (hS : S.Countable) :
+    SeparatingDual K (span K S) := by
+  obtain ⟨f, hf⟩ : ∃ f : ℕ → E, insert 0 S = range f :=
+    (hS.insert 0).exists_eq_range (insert_nonempty _ _)
+  have hfS (n : ℕ) : f n ∈ span K S := by
+    have : f n ∈ insert (0 : E) S := hf ▸ mem_range_self n
+    rcases mem_insert_iff.mp this with h0 | hn
+    · rw [h0]
+      exact zero_mem _
+    · exact subset_span hn
+  let v : ℕ → span K S := fun n ↦ ⟨f n, hfS n⟩
+  have hv : (span K S).subtype ∘ v = f := by
+    ext n
+    exact (span K S).subtype_apply (v n)
+  have htop : span K (range v) = ⊤ := by
+    apply Submodule.map_injective_of_injective (span K S).injective_subtype
+    rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span, ← range_comp, hv, ← hf,
+      span_insert_zero]
+  refine separatingDual_of_dense_span (v := v) ?_
+  rw [htop]
+  exact dense_univ
 
 end TauCeti

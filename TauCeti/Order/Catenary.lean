@@ -34,8 +34,8 @@ Saturated chains are Mathlib's `RelSeries {(a, b) : α × α | a ⋖ b}`, the ta
 * An order of Krull dimension at most one is catenary.
 * `TauCeti.Order.IsCatenary.krullDim_Icc_eq_length`: in a catenary partial order every saturated
   chain from `a` to `b` has length the Krull dimension of the interval `[a, b]`.
-* `TauCeti.Order.krullDim_Icc_eq_length_of_add`: the same conclusion in any partial order where
-  Krull dimension is additive on intervals.
+* `TauCeti.Order.krullDim_Icc_eq_length_of_add`: the same conclusion in any preorder where Krull
+  dimension is additive on intervals.
 * `TauCeti.Order.isCatenary_iff_krullDim_Icc_add`: a partial order is catenary if and only if its
   intervals have finite Krull dimension and Krull dimension is additive on intervals,
   `dim [a, c] = dim [a, b] + dim [b, c]` for `a ≤ b ≤ c`. This is the form in which catenarity is
@@ -162,15 +162,18 @@ end TauCeti.Order.IsCatenary
 
 namespace CovBy
 
-variable {α : Type*} [PartialOrder α] {a b : α}
+variable {α : Type*} [Preorder α] {a b : α}
 
 /-- The interval between the two members of a covering pair has Krull dimension one. -/
 theorem krullDim_Icc (hab : a ⋖ b) : Order.krullDim (Set.Icc a b) = 1 := by
   refine le_antisymm (Order.krullDim_le_one_iff.2 fun x => ?_) (Order.one_le_krullDim_iff.2
     ⟨⟨a, Set.left_mem_Icc.2 hab.le⟩, ⟨b, Set.right_mem_Icc.2 hab.le⟩, hab.lt⟩)
-  rcases hab.eq_or_eq x.2.1 x.2.2 with hx | hx
-  · exact Or.inl fun y _ => by rw [← Subtype.coe_le_coe, hx]; exact y.2.1
-  · exact Or.inr fun y _ => by rw [← Subtype.coe_le_coe, hx]; exact y.2.2
+  -- An element `x ≤ a` of `[a, b]` is minimal there; otherwise `a < x`, so `b ≤ x` since `a ⋖ b`,
+  -- and `x` is maximal.
+  by_cases hxa : (x : α) ≤ a
+  · exact Or.inl fun y _ => hxa.trans y.2.1
+  · exact Or.inr fun y _ =>
+      y.2.2.trans (not_lt_iff_le_imp_ge.1 (hab.2 (x.2.1.lt_of_not_ge hxa)) x.2.2)
 
 end CovBy
 
@@ -250,7 +253,9 @@ namespace TauCeti.Order
 
 open _root_.Order IsCatenary
 
-variable {α : Type*} [PartialOrder α]
+section Preorder
+
+variable {α : Type*} [Preorder α]
 
 /-- If Krull dimension is additive on intervals, then the interval between the endpoints of a
 saturated chain has Krull dimension the length of the chain: additivity computes it one covering
@@ -261,10 +266,10 @@ theorem krullDim_Icc_eq_length_of_add
     (s : RelSeries {(x, y) : α × α | x ⋖ y}) : krullDim (Set.Icc s.head s.last) = s.length := by
   induction hs : s.length generalizing s with
   | zero =>
-    rw [show s.last = s.head from congrArg s (Fin.ext (by simp [hs]))]
-    have := (Set.subsingleton_Icc_of_ge (le_refl s.head)).coe_sort
+    rw [show s.last = s.head from congrArg s (Fin.ext (by simp [hs])), Nat.cast_zero]
     have : Nonempty (Set.Icc s.head s.head) := ⟨⟨s.head, le_rfl, le_rfl⟩⟩
-    exact_mod_cast krullDim_eq_zero
+    exact le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.2.2.trans x.2.1)
+      krullDim_nonneg
   | succ n ih =>
     have hpos : s.length ≠ 0 := by omega
     -- Split off the first covering pair `s.head ⋖ s 1` of `s`.
@@ -281,6 +286,10 @@ theorem krullDim_Icc_eq_length_of_add
       ih _ (by simp [hs])]
     push_cast
     exact add_comm _ _
+
+end Preorder
+
+variable {α : Type*} [PartialOrder α]
 
 /-- A partial order is catenary if and only if every interval `[a, b]` has finite Krull dimension
 and Krull dimension is additive on intervals: `dim [a, c] = dim [a, b] + dim [b, c]` whenever

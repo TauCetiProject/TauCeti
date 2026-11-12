@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.PathSpace.Loop
 public import TauCeti.Topology.PathSpace.Moore
 public import TauCeti.Topology.UnitInterval.NNReal
 public import Mathlib.Topology.Homotopy.Equiv
@@ -61,6 +62,8 @@ The detour through length `L + 1` avoids dividing by a length that could be zero
   one composite is the identity on the nose.
 * `TauCeti.MoorePath.unitHomotopy_source`, `TauCeti.MoorePath.unitHomotopy_target`: the homotopy
   for the other composite preserves the end points.
+* `TauCeti.MooreLoopSpace.homotopyEquivPath_comp_map`: normalization to the unit interval
+  intertwines the Moore loop map `MooreLoopSpace.map` with `ContinuousMap.loopMap`.
 
 ## References
 
@@ -461,6 +464,15 @@ theorem homotopyEquivPath_apply (γ : MooreLoopSpace X x) : homotopyEquivPath x 
 theorem homotopyEquivPath_symm_apply (p : Path x x) :
     (homotopyEquivPath x).symm p = p.toMooreLoop :=
   (rfl)
+
+/-- Normalizing Moore loops to the unit interval intertwines the Moore loop map with the
+fixed-interval loop map. -/
+theorem homotopyEquivPath_comp_map {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) :
+    (homotopyEquivPath y).toFun.comp (map f hf).toContinuousMap =
+      (f.loopMap hf).comp (homotopyEquivPath x).toFun :=
+  ContinuousMap.ext fun γ ↦ Path.ext (funext fun s ↦ by
+    simp [homotopyEquivPath_apply, toPath_apply])
 
 /-! ### Moore loops of positive length -/
 
