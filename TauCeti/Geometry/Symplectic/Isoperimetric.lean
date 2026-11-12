@@ -12,7 +12,6 @@ import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.MeasureTheory.Integral.PolarCoord
 
 /-!
 # The isoperimetric inequality in a symplectic vector space
