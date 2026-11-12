@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Symplectic.Floer.CylinderAction
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Gradient
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
@@ -25,7 +24,7 @@ metric of `M` is `g = ω(·, J ·)` at `γ(s)`, then `J X_H` is the gradient `�
 (`TauCeti.SmoothTwoForm.IsNondegenerate.apply_hamiltonianVectorField_eq_mgradient`), so the
 time-independent Floer cylinders are exactly the upward gradient lines `γ' = ∇H(γ)` of `H`
 (`IsNondegenerate.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff_curveVelocity_eq_mgradient`).
-For a smooth almost complex structure `J` whose metric is `g` along `γ`, the curve `γ` is an
+For a family of almost complex structures `J` whose metric is `g` along `γ`, the curve `γ` is an
 integral curve of `∇H` exactly when `(s, t) ↦ γ(s)` is a Floer cylinder for `(H, J)`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_mgradient_iff`).
 
@@ -201,24 +200,21 @@ theorem IsNondegenerate.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff_curveVe
   rw [isComplexLinearMap_perturbedMFDeriv_comp_fst_iff hγ,
     hω.apply_hamiltonianVectorField_eq_mgradient hJ]
 
-/-- **The gradient lines of `H` are the time-independent Floer cylinders.** Let `J` be a smooth
-almost complex structure with `g(u, v) = ω(u, J v)` along `γ` for the Riemannian metric `g`. The
-curve `γ` is an integral curve of the gradient of `H` exactly when it is differentiable and
-`(s, t) ↦ γ(s)` solves the Floer equation for `K = H dt` and `J` at every point. -/
+/-- **The gradient lines of `H` are the time-independent Floer cylinders.** Let `J` be a family of
+almost complex structures on the tangent spaces with `g(u, v) = ω(u, J v)` along `γ` for the
+Riemannian metric `g`; no regularity of `J` is needed. The curve `γ` is an integral curve of the
+gradient of `H` exactly when it is differentiable and `(s, t) ↦ γ(s)` solves the Floer equation for
+`K = H dt` and `J` at every point. -/
 theorem IsNondegenerate.isMIntegralCurve_mgradient_iff (hω : ω.IsNondegenerate)
-    {J : SmoothAlmostComplexStructure I M}
+    {J : (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ s (u v : TangentSpace I (γ s)), ⟪u, v⟫ = ω.eval₂ (γ s) u (J (γ s) v)) :
     IsMIntegralCurve γ (Manifold.mgradient I H) ↔
       (∀ s, MDifferentiableAt 𝓘(ℝ) I γ s) ∧
-        ∀ z : ℝ × ℝ, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-          (J.almostComplexStructureAt (γ z.1))
+        ∀ z : ℝ × ℝ, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (γ z.1))
           (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) (fun w ↦ γ w.1) z).toLinearMap := by
-  have hJz (z : ℝ × ℝ) (u v : TangentSpace I (γ z.1)) :
-      ⟪u, v⟫ = ω.eval₂ (γ z.1) u (J.almostComplexStructureAt (γ z.1) v) := by
-    rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply, hJ z.1]
   have hiff (z : ℝ × ℝ) (hγ : MDifferentiableAt 𝓘(ℝ) I γ z.1) :=
-    hω.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff_curveVelocity_eq_mgradient (H := H) (hJz z)
-      hγ
+    hω.isComplexLinearMap_perturbedMFDeriv_comp_fst_iff_curveVelocity_eq_mgradient (H := H)
+      (hJ z.1) hγ
   rw [Manifold.isMIntegralCurve_iff_curveVelocity_eq]
   exact ⟨fun h ↦ ⟨fun s ↦ (h s).1, fun z ↦ (hiff z (h z.1).1).2 (h z.1).2⟩,
     fun h s ↦ ⟨h.1 s, (hiff (s, 0) (h.1 s)).1 (h.2 (s, 0))⟩⟩

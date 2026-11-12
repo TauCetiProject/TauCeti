@@ -15,10 +15,10 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 Let `σ` be a nondegenerate two-form on a finite-dimensional manifold `M` with a Riemannian metric
 `g`, and let `J` be an almost complex structure on a tangent space `T_x M` for which
 `g(u, v) = σ(u, J v)`. This is the relation between a symplectic form, a compatible almost complex
-structure and its metric `g_J = σ(·, J ·)`; given `g` and `σ`, such a `J` is unique
-(`TauCeti.SmoothAlmostComplexStructure.eq_of_inner_eq`). Then the Hamiltonian vector field of
-every function `f`, with the convention `ι_{X_f} σ = df`, and the gradient of `f` for `g` are
-related by
+structure and its metric `g_J = σ(·, J ·)`; given `g` and `σ`, such a `J` is unique, since
+`σ(u, J v) = g(u, v)` for all `u` determines `J v` by nondegeneracy of `σ` at `x`. Then the
+Hamiltonian vector field of every function `f`, with the convention `ι_{X_f} σ = df`, and the
+gradient of `f` for `g` are related by
 
 `J X_f(x) = ∇f(x)`, equivalently `X_f(x) = -J ∇f(x)`
 
