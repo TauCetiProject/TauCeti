@@ -68,17 +68,7 @@ theorem limMap_bijective_of_exact_of_isProZero (i : K ⟶ F) (f : F ⟶ G) (g : 
     simpa only [coe_limMap_apply, Submodule.coe_zero] using
       congrArg Subtype.val (Subsingleton.elim (limMap g y) 0)
   obtain ⟨b, hb⟩ := (exact_productMap hfg (y : G.Product)).mp hy
-  -- The failure of compatibility of `b` comes from the kernel tower.
-  have hbshift : productMap f (F.shift b) = 0 := by
-    rw [← shift_natural_apply, hb]
-    exact LinearMap.mem_ker.mp (G.lim_eq_ker ▸ y.property)
-  obtain ⟨a, ha⟩ := (exact_productMap hif (F.shift b)).mp hbshift
-  -- Vanishing of `lim¹ K` corrects that failure without changing the image of `b`.
-  obtain ⟨w, hw⟩ := K.subsingleton_limOne_iff.mp inferInstance a
-  have hlim : b - productMap i w ∈ F.lim := by
-    rw [lim_eq_ker, LinearMap.mem_ker, map_sub, shift_natural_apply, hw, ha, sub_self]
-  refine ⟨⟨_, hlim⟩, Subtype.ext ?_⟩
-  rw [coe_limMap_apply, map_sub, hb, (exact_productMap hif).apply_apply_eq_zero, sub_zero]
+  exact limMap_mem_range_of_subsingleton_limOne hif y b hb
 
 /-- A pro-isomorphism of towers, meaning a map with pro-zero kernel and cokernel, is
 bijective on inverse limits. In particular, no levelwise monomorphism assumption is needed. -/
@@ -107,6 +97,13 @@ theorem limEquivOfProIsomorphism_apply (f : F ⟶ G)
     limEquivOfProIsomorphism f hf x = limMap f x :=
   (rfl)
 
+/-- Applying the limit map to the inverse equivalence recovers the target element. -/
+@[simp]
+theorem limMap_limEquivOfProIsomorphism_symm_apply (f : F ⟶ G)
+    (hf : Functor.proIsomorphisms ℕᵒᵖ (ModuleCat.{v} R) f) (y : G.lim) :
+    limMap f ((limEquivOfProIsomorphism f hf).symm y) = y :=
+  (limEquivOfProIsomorphism f hf).apply_symm_apply y
+
 /-- The inverse equivalence lifts every target component through the original map. -/
 @[simp]
 theorem app_coe_limEquivOfProIsomorphism_symm (f : F ⟶ G)
@@ -114,7 +111,7 @@ theorem app_coe_limEquivOfProIsomorphism_symm (f : F ⟶ G)
     (f.app (op n)).hom (((limEquivOfProIsomorphism f hf).symm y : F.Product) n) =
       (y : G.Product) n := by
   have h := congrArg (fun x : G.lim ↦ (x : G.Product) n)
-    ((limEquivOfProIsomorphism f hf).apply_symm_apply y)
-  simpa only [limEquivOfProIsomorphism_apply, coe_limMap_apply, productMap_apply] using h
+    (limMap_limEquivOfProIsomorphism_symm_apply f hf y)
+  simpa only [coe_limMap_apply, productMap_apply] using h
 
 end TauCeti.ModuleTower

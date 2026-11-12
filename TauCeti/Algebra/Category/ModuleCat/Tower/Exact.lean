@@ -112,6 +112,24 @@ theorem exact_limMap (hf : ∀ n, Function.Injective (f.app (op n)).hom)
     exact LinearMap.mem_ker.1 (G.lim_eq_ker ▸ y.2)
   exact ⟨⟨x, hxlim⟩, Subtype.ext <| (coe_limMap_apply f _).trans hx⟩
 
+/-- If `lim¹ A` vanishes in a levelwise exact sequence `A → B → C`, every compatible
+family in `C` that lifts to a family in `B` also lifts to a compatible family in `B`. -/
+theorem limMap_mem_range_of_subsingleton_limOne
+    (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
+    [Subsingleton F.limOne] (z : H.lim) (y : G.Product) (hy : productMap g y = z) :
+    z ∈ LinearMap.range (limMap g) := by
+  have hyshift : productMap g (G.shift y) = 0 := by
+    rw [← shift_natural_apply, hy]
+    exact LinearMap.mem_ker.mp (H.lim_eq_ker ▸ z.property)
+  obtain ⟨x, hx⟩ := (exact_productMap hfg (G.shift y)).mp hyshift
+  -- The shift of `y` comes from `x`, which is itself a shift since `lim¹ A = 0`.
+  -- Then `y - f w` is compatible and still maps to `z`.
+  obtain ⟨w, hw⟩ := F.subsingleton_limOne_iff.1 ‹_› x
+  have hlim : y - productMap f w ∈ G.lim := by
+    rw [lim_eq_ker, LinearMap.mem_ker, map_sub, shift_natural_apply, hw, hx, sub_self]
+  refine ⟨⟨_, hlim⟩, Subtype.ext ?_⟩
+  rw [coe_limMap_apply, map_sub, hy, (exact_productMap hfg).apply_apply_eq_zero, sub_zero]
+
 /-- If `lim¹ A` vanishes, then for a levelwise exact sequence `A → B → C → 0` the map
 `lim B → lim C` is surjective. -/
 theorem limMap_surjective_of_subsingleton_limOne
@@ -119,14 +137,8 @@ theorem limMap_surjective_of_subsingleton_limOne
     (hg : ∀ n, Function.Surjective (g.app (op n)).hom) [Subsingleton F.limOne] :
     Function.Surjective (limMap g) := by
   intro z
-  -- Lift `z` to a family `y`; the shift of `y` comes from a family `x` of `A`, which is itself a
-  -- shift `F.shift w` since `lim¹ A = 0`. Then `y - f w` is compatible and maps to `z`.
-  obtain ⟨y, hy, x, hx⟩ := exists_lift f g hfg hg z
-  obtain ⟨w, hw⟩ := F.subsingleton_limOne_iff.1 ‹_› x
-  have hlim : y - productMap f w ∈ G.lim := by
-    rw [lim_eq_ker, LinearMap.mem_ker, map_sub, shift_natural_apply, hw, hx, sub_self]
-  refine ⟨⟨_, hlim⟩, Subtype.ext ?_⟩
-  rw [coe_limMap_apply, map_sub, hy, (exact_productMap hfg).apply_apply_eq_zero, sub_zero]
+  obtain ⟨y, hy⟩ := productMap_surjective hg (z : H.Product)
+  exact limMap_mem_range_of_subsingleton_limOne hfg z y hy
 
 end Lim
 
