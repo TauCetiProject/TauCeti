@@ -55,9 +55,10 @@ proof is independent of the source's.
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
 * `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
-* `Matrix.SpecialLinearGroup.map_comp` and `Matrix.SpecialLinearGroup.map_id`: the two functor
-  laws for base change, which support whole-matrix reduction arguments such as the level
-  antitonicity of the principal congruence subgroups.
+* `Matrix.SpecialLinearGroup.map_comp`: base change along a composite is the composite of the
+  base changes. With Mathlib's `Matrix.SpecialLinearGroup.map_id`, these functor laws support
+  whole-matrix reduction arguments such as the level antitonicity of the principal congruence
+  subgroups.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
