@@ -9,8 +9,10 @@ public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import TauCeti.Analysis.Complex.ContinuousLog.Circle
 public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import TauCeti.Topology.Sym.Metric
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Data.Multiset.Filter
 import TauCeti.Data.Multiset.Rel
+import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
 # Rouché's and Hurwitz's theorems for functions with local power factorizations
@@ -23,8 +25,10 @@ plane vortex. This file proves the two classical consequences of the argument pr
 functions.
 
 * **Rouché's theorem.** If `g` is another such function, with zero divisor `E`, and
-  `‖g w - f w‖ < ‖f w‖` on the circle of radius `r` about `c`, then `f` and `g` have the same
-  number of zeros, counted with multiplicity, in the open disc bounded by that circle
+  `‖f w - g w‖ < ‖f w‖ + ‖g w‖` on the circle of radius `r` about `c`, then `f` and `g` have the
+  same number of zeros, counted with multiplicity, in the open disc bounded by that circle
+  (`TauCeti.IsZeroMultiplicity.countP_dist_lt_eq_of_norm_sub_lt_add`). The classical hypothesis
+  `‖g w - f w‖ < ‖f w‖` implies this one
   (`TauCeti.IsZeroMultiplicity.countP_dist_lt_eq_of_norm_sub_lt`).
 * **Hurwitz's theorem.** If a family `g i` of such functions, with zero divisors `E i` of the same
   cardinality as `D`, converges to `f` locally uniformly, then the divisors `E i` converge to `D`:
@@ -47,11 +51,13 @@ avoiding `s`, each factor `w - z` with `z` outside the circle has a continuous l
 factor with `z` inside is `w - c` times a function with a continuous logarithm; so the product is
 `(w - c) ^ N` times a function with a continuous logarithm, where `N` counts the zeros inside
 (`TauCeti.hasContinuousLogOn_prod_pow_div_pow_sphere`). Under the hypothesis of Rouché's theorem,
-`g / f` takes values in the disc of radius one about one, hence has the principal logarithm, so
+`g / f` takes values in the slit plane (`TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`), hence
+has the principal logarithm, so
 `(w - c) ^ (N' - N)` has a continuous logarithm on the circle. That forces `N' = N`
 (`TauCeti.not_hasContinuousLogOn_zpow_sub_sphere`).
 
-For Hurwitz's theorem, choose `ρ ≤ ε` below half the distance between distinct points of `D`.
+For Hurwitz's theorem, choose `ρ ≤ ε` below half the distance between distinct points of `D`
+(`TauCeti.exists_pos_closedBall_subset_and_lt_dist`).
 On the circles of radius `ρ` about the points of `D`, `|f|` is bounded below by some `δ > 0`, and
 locally uniform convergence makes `‖g i - f‖ < δ` there eventually. Rouché's theorem then puts
 exactly `count z D` points of `E i` in the disc of radius `ρ` about each `z ∈ D`; since the discs
@@ -107,15 +113,9 @@ theorem hasContinuousLogOn_prod_pow_div_pow_sphere (s : Finset ℂ) (n : ℂ →
         rw [hempty]
         exact hasContinuousLogOn_iff.2 ⟨0, continuousOn_empty _, fun _ h ↦ h.elim⟩
       have hca : c - a ≠ 0 := sub_ne_zero.2 hca
-      have hlog : HasContinuousLogOn (fun w ↦ (w - a) / (c - a)) (sphere c r) := by
-        refine hasContinuousLogOn_of_mapsTo_slitPlane (by fun_prop) fun w hw ↦ ?_
-        have hw' : ‖(w - c) / (c - a)‖ < 1 := by
-          rw [norm_div, div_lt_one (norm_pos_iff.2 hca), ← dist_eq_norm, mem_sphere.1 hw,
-            ← dist_eq_norm, dist_comm]
-          exact hgt
-        convert mem_slitPlane_of_norm_lt_one hw' using 1
-        field_simp
-        ring
+      have hlog : HasContinuousLogOn (fun w ↦ (w - a) / (c - a)) (sphere c r) :=
+        hasContinuousLogOn_of_mapsTo_slitPlane (by fun_prop) fun w hw ↦
+          div_sub_mem_slitPlane_of_dist_lt_dist (by rw [mem_sphere.1 hw, dist_comm]; exact hgt)
       have hfac : HasContinuousLogOn (fun w ↦ (w - a) ^ n a) (sphere c r) :=
         ((hlog.mul (hasContinuousLogOn_const hca)).congr fun w _ ↦ by
           field_simp).pow (n a)
@@ -130,20 +130,19 @@ namespace IsZeroMultiplicity
 
 variable {f : ℂ → ℂ} {D : Multiset ℂ}
 
-/-- **Rouché's theorem for functions with local power factorizations.** Let `f` and `g` have
-finitely many zeros, with multiplicities the counts of multisets `D` and `E`. If
-`‖g w - f w‖ < ‖f w‖` on the circle of radius `r` about `c`, then `f` and `g` have the same number
-of zeros in the open disc bounded by that circle, counted with multiplicity. -/
-theorem countP_dist_lt_eq_of_norm_sub_lt {g : ℂ → ℂ} {E : Multiset ℂ}
+/-- **Rouché's theorem for functions with local power factorizations**, symmetric form. Let `f`
+and `g` have finitely many zeros, with multiplicities the counts of multisets `D` and `E`. If
+`‖f w - g w‖ < ‖f w‖ + ‖g w‖` on the circle of radius `r` about `c`, then `f` and `g` have the
+same number of zeros in the open disc bounded by that circle, counted with multiplicity. -/
+theorem countP_dist_lt_eq_of_norm_sub_lt_add {g : ℂ → ℂ} {E : Multiset ℂ}
     (hf : IsZeroMultiplicity f fun z ↦ D.count z) (hg : IsZeroMultiplicity g fun z ↦ E.count z)
-    {c : ℂ} {r : ℝ} (hlt : ∀ w ∈ sphere c r, ‖g w - f w‖ < ‖f w‖) :
+    {c : ℂ} {r : ℝ} (hlt : ∀ w ∈ sphere c r, ‖f w - g w‖ < ‖f w‖ + ‖g w‖) :
     (E.countP fun z ↦ dist z c < r) = D.countP fun z ↦ dist z c < r := by
   rcases le_or_gt r 0 with hr | hr
   · have hball : ∀ z, ¬ dist z c < r := fun z hz ↦ (dist_nonneg.trans_lt hz).not_ge hr
     rw [Multiset.countP_eq_zero.2 fun z _ ↦ hball z, Multiset.countP_eq_zero.2 fun z _ ↦ hball z]
   -- neither `f` nor `g` vanishes on the circle
-  have hf0 : ∀ w ∈ sphere c r, f w ≠ 0 := fun w hw h0 ↦
-    (norm_nonneg _).not_gt (by simpa [h0] using hlt w hw)
+  have hf0 : ∀ w ∈ sphere c r, f w ≠ 0 := fun w hw h0 ↦ by simpa [h0] using hlt w hw
   have hg0 : ∀ w ∈ sphere c r, g w ≠ 0 := fun w hw h0 ↦ by simpa [h0] using hlt w hw
   have hD : ∀ z ∈ D.toFinset, dist z c ≠ r := fun z hz h ↦
     hf0 z (mem_sphere.2 h) (hf.pos_iff.1 (Multiset.count_pos.2 (Multiset.mem_toFinset.1 hz)))
@@ -154,16 +153,11 @@ theorem countP_dist_lt_eq_of_norm_sub_lt {g : ℂ → ℂ} {E : Multiset ℂ}
   rw [← Multiset.sum_filter_count_eq_countP, ← Multiset.sum_filter_count_eq_countP]
   set N := ∑ z ∈ D.toFinset with dist z c < r, D.count z
   set N' := ∑ z ∈ E.toFinset with dist z c < r, E.count z
-  -- `g / f` takes values in the disc of radius one about one, so it has the principal logarithm
-  have hgf : HasContinuousLogOn (fun w ↦ g w / f w) (sphere c r) := by
-    refine hasContinuousLogOn_of_mapsTo_slitPlane
-      (hg.continuous.continuousOn.div hf.continuous.continuousOn hf0) fun w hw ↦ ?_
-    have h1 : ‖(g w - f w) / f w‖ < 1 := by
-      rw [norm_div, div_lt_one (norm_pos_iff.2 (hf0 w hw))]
-      exact hlt w hw
-    convert mem_slitPlane_of_norm_lt_one h1 using 1
-    field_simp [hf0 w hw]
-    ring
+  -- `g / f` takes values in the slit plane, so it has the principal logarithm
+  have hgf : HasContinuousLogOn (fun w ↦ g w / f w) (sphere c r) :=
+    hasContinuousLogOn_of_mapsTo_slitPlane
+      (hg.continuous.continuousOn.div hf.continuous.continuousOn hf0) fun w hw ↦
+        div_mem_slitPlane_of_norm_sub_lt_add (hlt w hw)
   have hexp : HasContinuousLogOn (fun w ↦ exp (L w - L' w)) (sphere c r) :=
     hasContinuousLogOn_iff.2 ⟨fun w ↦ L w - L' w, (hLc.sub hL'c).continuousOn, fun _ _ ↦ rfl⟩
   -- hence so does `(w - c) ^ (N' - N)`
@@ -188,28 +182,19 @@ theorem countP_dist_lt_eq_of_norm_sub_lt {g : ℂ → ℂ} {E : Multiset ℂ}
   exact not_hasContinuousLogOn_zpow_sub_sphere hr.le c
     (sub_ne_zero.2 fun h ↦ hne (by exact_mod_cast h)) hlog
 
-/-! ### Hurwitz's theorem -/
+/-- **Rouché's theorem for functions with local power factorizations.** Let `f` and `g` have
+finitely many zeros, with multiplicities the counts of multisets `D` and `E`. If
+`‖g w - f w‖ < ‖f w‖` on the circle of radius `r` about `c`, then `f` and `g` have the same number
+of zeros in the open disc bounded by that circle, counted with multiplicity. -/
+theorem countP_dist_lt_eq_of_norm_sub_lt {g : ℂ → ℂ} {E : Multiset ℂ}
+    (hf : IsZeroMultiplicity f fun z ↦ D.count z) (hg : IsZeroMultiplicity g fun z ↦ E.count z)
+    {c : ℂ} {r : ℝ} (hlt : ∀ w ∈ sphere c r, ‖g w - f w‖ < ‖f w‖) :
+    (E.countP fun z ↦ dist z c < r) = D.countP fun z ↦ dist z c < r :=
+  countP_dist_lt_eq_of_norm_sub_lt_add hf hg fun w hw ↦ by
+    rw [norm_sub_rev]
+    exact (hlt w hw).trans_le (le_add_of_nonneg_right (norm_nonneg _))
 
-/-- A finite set of points has a positive separation radius `ρ ≤ ε`: distinct points are at
-distance at least `2 ρ`. -/
-private theorem exists_pos_le_forall_two_mul_le_dist (D : Multiset ℂ) {ε : ℝ} (hε : 0 < ε) :
-    ∃ ρ > 0, ρ ≤ ε ∧ ∀ z ∈ D, ∀ w ∈ D, z ≠ w → 2 * ρ ≤ dist z w := by
-  classical
-  set T : Finset ℝ := insert (2 * ε) (((D.toFinset ×ˢ D.toFinset).filter
-    fun p ↦ p.1 ≠ p.2).image fun p ↦ dist p.1 p.2)
-  have hT : T.Nonempty := Finset.insert_nonempty _ _
-  have hpos : ∀ t ∈ T, 0 < t := by
-    intro t ht
-    rcases Finset.mem_insert.1 ht with rfl | ht
-    · positivity
-    · obtain ⟨p, hp, rfl⟩ := Finset.mem_image.1 ht
-      exact dist_pos.2 (Finset.mem_filter.1 hp).2
-  refine ⟨T.min' hT / 2, half_pos (hpos _ (T.min'_mem hT)), ?_, fun z hz w hw hzw ↦ ?_⟩
-  · linarith [T.min'_le (2 * ε) (Finset.mem_insert_self _ _)]
-  · have := T.min'_le (dist z w) (Finset.mem_insert_of_mem (Finset.mem_image.2
-      ⟨(z, w), Finset.mem_filter.2 ⟨Finset.mem_product.2
-        ⟨Multiset.mem_toFinset.2 hz, Multiset.mem_toFinset.2 hw⟩, hzw⟩, rfl⟩))
-    linarith
+/-! ### Hurwitz's theorem -/
 
 /-- **Hurwitz's theorem for functions with local power factorizations**, matching form. Let `f`
 have finitely many zeros, with multiplicities the counts of a multiset `D`, and let `g i` be
@@ -223,7 +208,15 @@ theorem eventually_rel_dist_lt_of_tendstoLocallyUniformly {ι : Type*} {l : Filt
     (hgf : TendstoLocallyUniformly g f l) {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ i in l, Multiset.Rel (fun a b ↦ dist a b < ε) D (E i) := by
   classical
-  obtain ⟨ρ, hρ, hρε, hsep⟩ := exists_pos_le_forall_two_mul_le_dist D hε
+  obtain ⟨ρ₀, hρ₀, -, hsep₀⟩ :=
+    exists_pos_closedBall_subset_and_lt_dist (T := D.toFinset) (U := fun _ ↦ univ)
+      fun _ _ ↦ univ_mem
+  set ρ := min ρ₀ ε
+  have hρ : 0 < ρ := lt_min hρ₀ hε
+  have hρε : ρ ≤ ε := min_le_right _ _
+  have hsep : ∀ z ∈ D, ∀ w ∈ D, z ≠ w → 2 * ρ < dist z w := fun z hz w hw hzw ↦
+    (mul_le_mul_of_nonneg_left (min_le_left _ _) zero_le_two).trans_lt
+      (hsep₀ z (Multiset.mem_toFinset.2 hz) w (Multiset.mem_toFinset.2 hw) hzw)
   -- the circles of radius `ρ` about the points of `D`, on which `f` is bounded away from zero
   set K := ⋃ z ∈ D.toFinset, sphere z ρ
   have hK : IsCompact K := D.toFinset.isCompact_biUnion fun z _ ↦ isCompact_sphere z ρ
@@ -251,8 +244,7 @@ theorem eventually_rel_dist_lt_of_tendstoLocallyUniformly {ι : Type*} {l : Filt
     (fun b _ a ha a' ha' hab ha'b ↦ ?_) (fun z hz ↦ ?_) hci).mono
       fun _ _ _ _ h ↦ h.trans_le hρε
   · -- a point is within `ρ` of at most one point of `D`
-    by_contra hne
-    linarith [hsep a ha a' ha' hne, dist_triangle_right a a' b]
+    exact eq_of_dist_lt_of_dist_lt (hsep a ha a' ha') (by rwa [dist_comm]) (by rwa [dist_comm])
   · -- Rouché's theorem on the circle of radius `ρ` about `z`
     have hR := countP_dist_lt_eq_of_norm_sub_lt hf hgi (c := z) (r := ρ) fun w hw ↦ by
       have h := hδi w (hmemK z hz w hw)
@@ -263,9 +255,9 @@ theorem eventually_rel_dist_lt_of_tendstoLocallyUniformly {ι : Type*} {l : Filt
       _ = D.countP fun b ↦ dist b z < ρ := hR
       _ = D.count z := by
         rw [Multiset.count_eq_card_filter_eq, ← Multiset.countP_eq_card_filter]
-        refine Multiset.countP_congr rfl fun b hb ↦ propext ⟨fun h ↦ ?_, fun h ↦ by simp [← h, hρ]⟩
-        by_contra hne
-        linarith [hsep z hz b hb hne, dist_comm z b]
+        exact Multiset.countP_congr rfl fun b hb ↦ propext
+          ⟨fun h ↦ eq_of_dist_lt_of_dist_lt (hsep z hz b hb) h (by simpa using hρ),
+            fun h ↦ by simp [← h, hρ]⟩
 
 /-- **Hurwitz's theorem for functions with local power factorizations.** Let `f` and `g i` have
 finitely many zeros, with multiplicities the counts of `D` and `E i` in the symmetric power

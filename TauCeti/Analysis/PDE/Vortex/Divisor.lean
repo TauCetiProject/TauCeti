@@ -207,12 +207,9 @@ theorem tendsto_of_tendstoLocallyUniformly {m : ℕ} {ι : Type*} {l : Filter ι
   have hΦ (u : ℂ → EuclideanSpace ℝ (Fin 4)) : Φ ∘ u = sectionValue u :=
     funext fun z ↦ (sectionValue_apply u z).symm
   have hlip : LipschitzWith 2 Φ := LipschitzWith.of_dist_le_mul fun v w ↦ by
-    have h := norm_sectionValue_le (fun _ ↦ v - w) 0
-    rw [← congrFun (hΦ fun _ ↦ v - w) 0] at h
-    rw [dist_eq_norm, dist_eq_norm, NNReal.coe_ofNat]
-    convert h using 2
-    simp only [Φ, Function.comp_apply, PiLp.sub_apply, ofReal_sub]
-    ring
+    have h := norm_sectionValue_le ((fun _ ↦ v) - fun _ ↦ w) 0
+    rw [sectionValue_sub, ← congrFun (hΦ _) 0, ← congrFun (hΦ _) 0] at h
+    simpa [dist_eq_norm] using h
   have hsec := hlip.uniformContinuous.comp_tendstoLocallyUniformly hxy
   simp only [hΦ] at hsec
   exact hx.tendsto_of_tendstoLocallyUniformly hy hsec

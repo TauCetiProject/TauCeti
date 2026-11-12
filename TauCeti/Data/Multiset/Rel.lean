@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Fintype.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
@@ -20,7 +21,9 @@ This is the form in which a matching of two multisets of roots is usually produc
 enumerating the roots of two polynomials in parallel. When each element of `t` is related to at
 most one element of `s`, the file also characterizes `Multiset.Rel r s t` by counting, for each
 element of `s`, the elements of `t` related to it; when `s` and `t` have the same cardinality the
-counts alone suffice (`Multiset.rel_of_forall_countP_eq_count_of_card_eq`).
+counts alone suffice (`Multiset.rel_of_forall_countP_eq_count_of_card_eq`), because these counts
+and the number of unrelated elements of `t` add up to the cardinality of `t`
+(`Multiset.sum_countP_add_countP_eq_card`).
 -/
 
 public section
@@ -82,7 +85,7 @@ theorem rel_iff_forall_countP_eq_count [DecidableEq α] [∀ a, DecidablePred (r
 /-- If each element of `t` is related by `r` to at most one element of `s`, the elements of `t`
 related to some element of `s` are counted by summing, over the distinct elements of `s`, the
 elements of `t` related to each. -/
-private theorem sum_countP_add_countP_eq_card [DecidableEq α] [∀ a, DecidablePred (r a)]
+theorem sum_countP_add_countP_eq_card [DecidableEq α] [∀ a, DecidablePred (r a)]
     {s : Multiset α} {t : Multiset β}
     (huniq : ∀ b ∈ t, ∀ a ∈ s, ∀ a' ∈ s, r a b → r a' b → a = a') :
     ∑ a ∈ s.toFinset, t.countP (r a) + t.countP (fun b => ∀ a ∈ s, ¬ r a b) = card t := by
