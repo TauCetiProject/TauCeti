@@ -201,12 +201,14 @@ theorem IsCharacteristic.eight_dvd_apply_self_sub_apply_self [Free R M] [B.IsPer
   exact hB.eight_dvd_apply_add_two_smul_sub hw v
 
 /-- **Even forms have characteristic norms divisible by `8`.** If `2` divides every `B x x`, then
-`0` is characteristic, so for a perfect symmetric form on a free module every characteristic
-vector has self-pairing divisible by `8`. -/
+`0` is characteristic, so for a perfect form on a free module every characteristic vector has
+self-pairing divisible by `8`. -/
 theorem IsCharacteristic.eight_dvd_apply_self_of_forall_two_dvd [Free R M] [B.IsPerfPair]
-    (hB : B.IsSymm) (hw : B.IsCharacteristic w) (heven : ∀ x, (2 : R) ∣ B x x) :
+    (hw : B.IsCharacteristic w) (heven : ∀ x, (2 : R) ∣ B x x) :
     (8 : R) ∣ B w w := by
-  simpa using (isCharacteristic_zero_iff.mpr heven).eight_dvd_apply_self_sub_apply_self hB hw
+  obtain ⟨v, rfl⟩ := (isCharacteristic_zero_iff.mpr heven).exists_eq_add_two_smul hw
+  obtain ⟨k, hk⟩ := heven v
+  exact ⟨k, by simp only [zero_add, map_smul, LinearMap.smul_apply, smul_eq_mul, hk]; ring⟩
 
 section Orthogonal
 

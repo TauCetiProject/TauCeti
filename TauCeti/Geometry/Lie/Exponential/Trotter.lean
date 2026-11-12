@@ -45,7 +45,6 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [IsManifold I 1 G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
@@ -67,7 +66,7 @@ theorem tendsto_pow_div_of_hasDerivAt_mulInvariantLog [FiniteDimensional ℝ E]
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   intro hf hlog t
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hseq : Tendsto (fun n : ℕ => n • (show E from mulInvariantLog (I := I) (G := G)
       (f (t / n)))) atTop (nhds (t • (show E from X))) :=
     (hlog.tendsto_nsmul_sub_add_div t).congr fun n => by

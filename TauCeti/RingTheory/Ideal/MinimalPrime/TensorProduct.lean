@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
 import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.TensorProduct.Quotient
+import Mathlib.RingTheory.IsTensorProduct
 import TauCeti.RingTheory.Ideal.GoingDown
 
 /-!
@@ -28,6 +29,8 @@ primes of the whole tensor product.
 
 * `Ideal.eq_map_comap_includeRight_of_isDomain`: a minimal prime over an extended ideal is
   extended from its contraction when the tensor product of the contracted quotient is a domain.
+* `Ideal.comap_tensorProduct_map_mem_minimalPrimes`: changing the left tensor factor by a flat
+  extension also preserves minimal primes under contraction.
 * `Ideal.comap_includeRight_mem_minimalPrimes`: under flat scalar extension, minimal primes of
   a tensor product contract to minimal primes of the right factor.
 -/
@@ -73,5 +76,26 @@ theorem comap_includeRight_mem_minimalPrimes
   simpa only [Ideal.under_def, Algebra.TensorProduct.algebraMap_eq_includeRight,
     Ideal.comap_coe] using
     (Ideal.under_mem_minimalPrimes (R := A) hQ)
+
+/-- Minimal primes contract to minimal primes under a flat extension of the left tensor
+factor, including when the tensor products are taken over a smaller base ring. -/
+theorem comap_tensorProduct_map_mem_minimalPrimes
+    {K E L A : Type*} [CommSemiring K] [CommRing E] [CommRing L] [CommSemiring A]
+    [Algebra K E] [Algebra K L] [Algebra E L] [IsScalarTower K E L] [Algebra K A]
+    [Module.Flat E L]
+    (Q : Ideal (L ⊗[K] A)) (hQ : Q ∈ minimalPrimes (L ⊗[K] A)) :
+    Q.comap (Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A)) ∈
+      minimalPrimes (E ⊗[K] A) := by
+  let f := Algebra.TensorProduct.map (IsScalarTower.toAlgHom K E L) (AlgHom.id K A)
+  algebraize [f.toRingHom]
+  have : IsScalarTower E (E ⊗[K] A) (L ⊗[K] A) := .of_algebraMap_eq fun x ↦ by
+    simp [RingHom.algebraMap_toAlgebra, f]
+  have hpush : Algebra.IsPushout E L (E ⊗[K] A) (L ⊗[K] A) :=
+    Algebra.IsPushout.tensorProduct_tensorProduct K A E L
+      (by ext; simp [RingHom.algebraMap_toAlgebra, f])
+  have : Module.Flat (E ⊗[K] A) (L ⊗[K] A) :=
+    Module.Flat.isBaseChange E (E ⊗[K] A) L _ hpush.symm.out
+  -- The algebra structure was defined by `f`, so contraction is along that tensor map.
+  exact Ideal.under_mem_minimalPrimes hQ
 
 end Ideal

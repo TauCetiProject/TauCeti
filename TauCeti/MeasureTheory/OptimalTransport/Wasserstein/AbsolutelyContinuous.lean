@@ -113,7 +113,7 @@ private lemma lintegral_eLpNorm_metricDerivative_ne_top (hab : a ≤ b)
     simpa using ENNReal.toReal_mono hp hp1
   -- Hölder's inequality on `[a, b]` bounds the integral by the expected action.
   have h := rpow_lintegral_le_measure_univ_rpow_mul (μ := volume.restrict (Ι a b))
-    (measurable_eLpNorm_metricDerivative hab η hp0 hp).aemeasurable hr
+    (u := fun r ↦ eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η) hr
   rw [lintegral_eLpNorm_metricDerivative_rpow hab η hp0 hp, Measure.restrict_apply_univ,
     Real.volume_uIoc] at h
   refine ((ENNReal.rpow_lt_top_iff_of_pos (by linarith)).1 (h.trans_lt ?_)).ne
@@ -137,12 +137,12 @@ private lemma isProbabilityMeasure_of_coe_eq_map_IccExtend (hab : a ≤ b)
 variable [SecondCountableTopology X]
 
 /-- **Time marginals of a law on paths move no faster than the averaged speed.** Let `η` be a
-σ-finite measure on `C([a, b], X)` concentrated on paths that are absolutely continuous on
+s-finite measure on `C([a, b], X)` concentrated on paths that are absolutely continuous on
 `[a, b]`, and let `1 ≤ p < ∞`. For times `s, u ∈ [a, b]`, the `p`-Wasserstein distance between the
 laws of `γ s` and `γ u` is at most the integral over the times between `s` and `u` of the `Lᵖ(η)`
 norm of the metric derivative of the paths. -/
 theorem wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm (hab : a ≤ b)
-    {η : Measure C(Icc a b, X)} [SigmaFinite η]
+    {η : Measure C(Icc a b, X)} [SFinite η]
     (hAC : ∀ᵐ γ : C(Icc a b, X) ∂η, AbsolutelyContinuousOnInterval (IccExtend hab γ) a b)
     (hp1 : 1 ≤ p) (hp : p ≠ ∞) {s u : ℝ} (hs : s ∈ uIcc a b) (hu : u ∈ uIcc a b) :
     wassersteinEDist p (η.map fun γ : C(Icc a b, X) ↦ IccExtend hab γ s)
@@ -165,9 +165,9 @@ theorem wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm (hab : a ≤ b)
         eLpNorm_map_measure measurable_edist.aestronglyMeasurable (hs'.prodMk hu').aemeasurable
     _ ≤ eLpNorm (fun γ : C(Icc a b, X) ↦ ∫⁻ r in Ι s u, metricDerivative (IccExtend hab γ) r)
           p η := by
-        refine eLpNorm_mono_enorm_ae (hs'.edist hu').aestronglyMeasurable ?_
+        refine eLpNorm_mono_eNorm_ae (hs'.edist hu').aestronglyMeasurable ?_
         filter_upwards [hAC] with γ hγ
-        simpa only [enorm_eq_self] using hγ.edist_le_lintegral_metricDerivative hs hu
+        simpa only [eNorm_eq_self] using hγ.edist_le_lintegral_metricDerivative hs hu
     _ ≤ ∫⁻ r in Ι s u,
           eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η := by
         -- Minkowski's integral inequality moves the `Lᵖ(η)` seminorm inside the time integral.

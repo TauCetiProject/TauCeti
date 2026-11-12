@@ -127,17 +127,24 @@ theorem simpleGains_def (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X 
       ∑ j ∈ range n, a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) :=
   (rfl)
 
+/-- Elementary gains only inspect the price at the clipped endpoints of the grid.
+No order condition on the grid is needed for this identity. -/
+theorem simpleGains_congr_price {X Y : ι → Ω → ℝ} (ω : Ω)
+    (hXY : ∀ j ≤ n, X (min (τ j) t) ω = Y (min (τ j) t) ω) :
+    simpleGains τ n a X t ω = simpleGains τ n a Y t ω := by
+  rw [simpleGains_def, simpleGains_def]
+  refine sum_congr rfl fun j hj ↦ ?_
+  have hj := mem_range.mp hj
+  rw [hXY _ hj, hXY _ (by omega)]
+
 /-- On the interval `(τ j, τ (j + 1)]` of a partition monotone up to `n`, the simple holding is
 `a j`. -/
 theorem simpleHolding_of_mem_Ioc (hτ : MonotoneOn τ (Set.Iic n)) (hj : j < n)
     (ht : t ∈ Set.Ioc (τ j) (τ (j + 1))) (ω : Ω) : simpleHolding τ n a t ω = a j ω := by
   rw [simpleHolding_def, sum_eq_single_of_mem j (mem_range.2 hj), Set.indicator_of_mem ht]
   intro i hi hij
-  refine Set.indicator_of_notMem (fun hit ↦ ?_) _
-  -- Intervals with different indices are disjoint.
-  rcases lt_or_gt_of_ne hij with hij | hij
-  · exact (hit.2.trans (hτ (hij.trans hj) hj.le hij)).not_gt ht.1
-  · exact (ht.2.trans (hτ (hij.trans (mem_range.1 hi)) (mem_range.1 hi).le hij)).not_gt hit.1
+  exact Set.indicator_of_notMem
+    (hτ.notMem_Ioc_of_mem_Ioc_of_ne (mem_range.1 hi) hj hij ht) _
 
 /-- Outside `(τ 0, τ n]` a simple strategy over a partition monotone up to `n` holds nothing. -/
 @[simp]
@@ -416,7 +423,7 @@ theorem isSelfFinancing_iff :
 /-- Holdings that are constant across trading dates are self-financing. -/
 theorem isSelfFinancing_const (a b : Ω → ℝ) :
     IsSelfFinancing τ n (fun _ ↦ a) (fun _ ↦ b) S β := by
-  intro j hj ω
+  intro j _ ω
   rfl
 
 /-- Self-financing strategies are closed under addition. -/

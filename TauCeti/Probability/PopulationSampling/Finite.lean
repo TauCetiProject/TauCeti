@@ -33,9 +33,17 @@ Probability preservation is therefore stated with an embedding into the populati
 sampling without replacement, and with a nonempty selection space `ι → κ` for sampling with
 replacement, including when both index types are empty.
 
+Measurable observations of population values commute with both sampling laws. For deterministic
+populations, this expresses sampling a population that factors through another as a pushforward
+of the latter's sampling law, without separation assumptions on the value space.
+
 ## Main declarations
 
 * `sampleWithoutReplacement`, `sampleWithReplacement`: the two finite sampling laws;
+* `sampleWithoutReplacement_map`, `sampleWithReplacement_map`: measurable observations commute
+  with sampling;
+* `sampleWithoutReplacement_dirac_comp`, `sampleWithReplacement_dirac_comp`: their
+  deterministic-population composition forms;
 * `pi_empiricalMeasureOfFintype_eq_map_uniformOn`: independent empirical draws as uniform
   selections;
 * `sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: the empirical-product mixture;
@@ -62,7 +70,7 @@ namespace TauCeti
 
 namespace Probability
 
-variable {α : Type*} [MeasurableSpace α]
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
 /-- The law obtained by sampling a random finite population without replacement.
 
@@ -71,18 +79,43 @@ selection `k : ι → κ`; then return the sample `i ↦ x (k i)`. This is `samp
 uniform law on injective index maps. If no injective selection exists, Mathlib's `uniformOn`
 convention makes this the zero measure.
 
-The population index is finite because uniform counting only distributes mass over finitely many
-injective selections. -/
-def sampleWithoutReplacement {ι κ : Type*} [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] (ρ : Measure (κ → α)) : Measure (ι → α) :=
+The results below take the population index finite with measurable singletons: uniform counting
+then distributes mass over finitely many injective selections. -/
+def sampleWithoutReplacement {ι κ : Type*} [MeasurableSpace κ] (ρ : Measure (κ → α)) :
+    Measure (ι → α) :=
   samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ
 
 /-- Sampling without replacement is `samplePopulation` along uniform injective selections. -/
-theorem sampleWithoutReplacement_def {ι κ : Type*} [Finite κ] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] (ρ : Measure (κ → α)) :
+theorem sampleWithoutReplacement_def {ι κ : Type*} [MeasurableSpace κ] (ρ : Measure (κ → α)) :
     sampleWithoutReplacement (ι := ι) ρ =
       samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ :=
   (rfl)
+
+/-- Sampling a deterministic population without replacement is the pushforward of uniform
+injective selections. -/
+@[simp]
+theorem sampleWithoutReplacement_dirac {ι κ : Type*} [Finite κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] (x : κ → α) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac x) =
+      (uniformOn {k : ι → κ | Function.Injective k}).map (fun k i => x (k i)) := by
+  rw [sampleWithoutReplacement_def, samplePopulation_dirac]
+
+/-- Observing population values commutes with sampling without replacement. -/
+theorem sampleWithoutReplacement_map {ι κ : Type*} [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] [Countable κ] (ρ : Measure (κ → α)) [SFinite ρ]
+    {g : α → β} (hg : Measurable g) :
+    sampleWithoutReplacement (ι := ι) (ρ.map (fun x i => g (x i))) =
+      (sampleWithoutReplacement (ι := ι) ρ).map (fun y i => g (y i)) := by
+  simp only [sampleWithoutReplacement_def, samplePopulation_map _ _ hg]
+
+/-- Sampling an observed deterministic population without replacement is the observation's
+pushforward of the original sampling law. -/
+theorem sampleWithoutReplacement_dirac_comp {ι κ : Type*} [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] [Countable κ] (x : κ → α)
+    {g : α → β} (hg : Measurable g) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac (g ∘ x)) =
+      (sampleWithoutReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
+  simp only [sampleWithoutReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
 /-- Sampling without replacement preserves probability mass whenever an injective selection
 exists. -/
@@ -121,7 +154,7 @@ end EmpiricalPopulation
 
 section Sampling
 
-variable {ι κ : Type*} [MeasurableSpace κ] [MeasurableSingletonClass κ]
+variable {ι κ : Type*} [MeasurableSpace κ]
 
 /-- Sampling with replacement from a random finite population.
 
@@ -132,15 +165,25 @@ on all index maps (`sampleWithReplacement_eq_samplePopulation_uniformOn`): the s
 as `sampleWithoutReplacement` without the injectivity constraint. If `κ` is empty but `ι` is not,
 no index map exists, and Mathlib's `uniformOn` convention makes this the zero measure.
 
-The sample index is finite because the selection law is a finite product. -/
-def sampleWithReplacement [Fintype ι] [Finite κ] (ρ : Measure (κ → α)) : Measure (ι → α) :=
+The sample index is finite because the selection law is a finite product. Apart from the
+finite-law instance, the results below take the population index finite with measurable
+singletons. -/
+def sampleWithReplacement [Fintype ι] (ρ : Measure (κ → α)) : Measure (ι → α) :=
   samplePopulation (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) ρ
 
 /-- Sampling with replacement is `samplePopulation` along independent uniform indices. -/
-theorem sampleWithReplacement_def [Fintype ι] [Finite κ] (ρ : Measure (κ → α)) :
+theorem sampleWithReplacement_def [Fintype ι] (ρ : Measure (κ → α)) :
     sampleWithReplacement (ι := ι) ρ =
       samplePopulation (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) ρ :=
   (rfl)
+
+/-- Sampling with replacement from a finite population law gives a finite law. -/
+instance isFiniteMeasure_sampleWithReplacement [Fintype ι] (ρ : Measure (κ → α))
+    [IsFiniteMeasure ρ] : IsFiniteMeasure (sampleWithReplacement (ι := ι) ρ) := by
+  rw [sampleWithReplacement_def]
+  infer_instance
+
+variable [MeasurableSingletonClass κ]
 
 /-- Sampling with replacement is `samplePopulation` along the uniform law on all index maps. -/
 theorem sampleWithReplacement_eq_samplePopulation_uniformOn [Fintype ι] [Finite κ]
@@ -148,11 +191,28 @@ theorem sampleWithReplacement_eq_samplePopulation_uniformOn [Fintype ι] [Finite
     sampleWithReplacement (ι := ι) ρ = samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ := by
   rw [sampleWithReplacement_def, ← uniformOn_pi, Set.pi_univ]
 
-/-- Sampling with replacement from a finite population law gives a finite law. -/
-instance isFiniteMeasure_sampleWithReplacement [Fintype ι] [Finite κ] (ρ : Measure (κ → α))
-    [IsFiniteMeasure ρ] : IsFiniteMeasure (sampleWithReplacement (ι := ι) ρ) := by
-  rw [sampleWithReplacement_def]
-  infer_instance
+/-- Sampling a deterministic population with replacement is the pushforward of uniform
+selections, without an injectivity constraint. -/
+@[simp]
+theorem sampleWithReplacement_dirac [Fintype ι] [Finite κ] (x : κ → α) :
+    sampleWithReplacement (ι := ι) (Measure.dirac x) =
+      (uniformOn (Set.univ : Set (ι → κ))).map (fun k i => x (k i)) := by
+  rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_dirac]
+
+/-- Observing population values commutes with sampling with replacement. -/
+theorem sampleWithReplacement_map [Fintype ι] [Countable κ]
+    (ρ : Measure (κ → α)) [SFinite ρ] {g : α → β} (hg : Measurable g) :
+    sampleWithReplacement (ι := ι) (ρ.map (fun x i => g (x i))) =
+      (sampleWithReplacement (ι := ι) ρ).map (fun y i => g (y i)) := by
+  simp only [sampleWithReplacement_def, samplePopulation_map _ _ hg]
+
+/-- Sampling an observed deterministic population with replacement is the observation's
+pushforward of the original sampling law. -/
+theorem sampleWithReplacement_dirac_comp [Fintype ι] [Countable κ] (x : κ → α)
+    {g : α → β} (hg : Measurable g) :
+    sampleWithReplacement (ι := ι) (Measure.dirac (g ∘ x)) =
+      (sampleWithReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
+  simp only [sampleWithReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
 /-- Sampling with replacement from a random population preserves probability mass whenever a
 selection exists. -/

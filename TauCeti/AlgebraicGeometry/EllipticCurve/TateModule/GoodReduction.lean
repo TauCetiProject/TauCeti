@@ -77,6 +77,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [IsUnramified K L]
   [DecidableEq L] {W : WeierstrassCurve K} [W.IsElliptic] [IsIntegral 𝒪[K] W]
 
+omit [W.IsElliptic] in
 /-- **Full torsion over an unramified extension is bounded at bad reduction** (Silverman AEC
 VII.7.1). Let `L/K` be an unramified extension of nonarchimedean local fields, and suppose that
 Tate's algorithm, run with a uniformiser `ϖ` of `K`, stops on the integral model of `W` at a
@@ -97,7 +98,7 @@ theorem le_componentCount_of_natCard_torsionBy_eq {ϖ : 𝒪[K]} (hϖ : Irreduci
   have : HenselianLocalRing A := inferInstanceAs (HenselianLocalRing 𝒪[L])
   let : Algebra 𝒪[K] A := inferInstanceAs (Algebra 𝒪[K] 𝒪[L])
   have hmodel := integralModel_baseChange (R := 𝒪[K]) (S := A) (L := L)
-    (RingHom.ext coe_algebraMap_integerRing) W
+    (RingHom.ext (Valuation.HasExtension.val_algebraMap (vA := valuation L))) W
   have hϖA : maximalIdeal A = Ideal.span {algebraMap 𝒪[K] A ϖ} :=
     (IsUnramified.irreducible_algebraMap hϖ).maximalIdeal_eq
   -- Tate's algorithm stops at `s` on the integral model over `A`: divisibility by powers of `ϖ`

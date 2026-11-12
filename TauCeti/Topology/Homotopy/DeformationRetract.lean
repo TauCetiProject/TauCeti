@@ -20,18 +20,23 @@ subsets of one space, `ContinuousMap.HomotopicRel.exists_inter_deformation_trans
 set inclusions.
 A strong deformation retraction also determines every retraction onto the same subspace up to
 homotopy relative to that subspace (`ContinuousMap.HomotopicRel.of_leftInverse`).
+The inclusion of a retract whose retraction, followed by the inclusion, is homotopic to the
+identity, as for a strong deformation retraction, is a homotopy equivalence
+(`ContinuousMap.HomotopyEquiv.ofRetraction`).
 Strong deformation retractions of subsets also transport along homeomorphisms
 (`Homeomorph.exists_deformation_of_image_eq`).
 
 A homotopy from the identity that fixes a subset `S` at all times and ends in `S` gives a strong
 deformation retraction onto `S` (`TauCeti.exists_strong_deformation_retraction_of_homotopy`).
 
-A deformation retraction in the weak sense of `B` onto `A ⊆ B` is a deformation of `B` within
-itself, starting at the identity, ending inside `A`, and keeping `A` inside `A` at all times. The
-inclusion of `A` is then a homotopy equivalence
-(`ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction`). Unlike a strong deformation
-retraction, the deformation need not fix `A`, which allows straight-line deformations that slide
-points of `A` within `A`.
+A deformation retraction — a map `i : Y → Z` with a continuous left inverse `r : Z → Y` such that
+`i ∘ r` is homotopic to the identity — exhibits `i` as a homotopy equivalence `Y ≃ₕ Z`
+(`ContinuousMap.HomotopyEquiv.ofDeformationRetraction`). More generally, a deformation retraction in
+the weak sense of `B` onto `A ⊆ B` is a deformation of `B` within itself, starting at the identity,
+ending inside `A`, and keeping `A` inside `A` at all times; the inclusion of `A` is then a homotopy
+equivalence (`ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction`). Unlike a strong
+deformation retraction, the deformation need not fix `A`, which allows straight-line deformations
+that slide points of `A` within `A`.
 
 Deformations of an open piece extend by the identity. Let `j : Y → X` be an open embedding. A
 continuous family of self-maps of `Y` which fixes the points of `j ⁻¹' V`, for an open
@@ -167,6 +172,51 @@ namespace ContinuousMap.HomotopyEquiv
 
 open scoped unitInterval
 
+/-- **A deformation retraction gives a homotopy equivalence.** If `r : C(Z, Y)` is a left inverse
+of `i : C(Y, Z)` and `i ∘ r` is homotopic to the identity of `Z`, then `i` is a homotopy
+equivalence `Y ≃ₕ Z` with homotopy inverse `r`. -/
+def ofDeformationRetraction {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) : Y ≃ₕ Z where
+  toFun := i
+  invFun := r
+  left_inv :=
+    have h : r.comp i = ContinuousMap.id Y := ContinuousMap.ext hri
+    h ▸ ContinuousMap.Homotopic.refl _
+  right_inv := hir
+
+/-- The forward continuous map of `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` is `i`. -/
+@[simp]
+theorem ofDeformationRetraction_toFun {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) :
+    (ofDeformationRetraction i r hri hir).toFun = i :=
+  (rfl)
+
+/-- The inverse continuous map of `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` is `r`. -/
+@[simp]
+theorem ofDeformationRetraction_invFun {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) :
+    (ofDeformationRetraction i r hri hir).invFun = r :=
+  (rfl)
+
+/-- `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` acts on points as `i`. -/
+theorem ofDeformationRetraction_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) (y : Y) :
+    ofDeformationRetraction i r hri hir y = i y :=
+  (rfl)
+
+/-- The homotopy inverse of `ContinuousMap.HomotopyEquiv.ofDeformationRetraction` acts on points
+as `r`. -/
+@[simp]
+theorem ofDeformationRetraction_symm_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (i : C(Y, Z)) (r : C(Z, Y)) (hri : LeftInverse r i)
+    (hir : (i.comp r).Homotopic (ContinuousMap.id Z)) (z : Z) :
+    (ofDeformationRetraction i r hri hir).symm z = r z :=
+  (rfl)
+
 variable {X : Type*} [TopologicalSpace X] {A B : Set X}
 
 /-- **The inclusion of a weak deformation retract is a homotopy equivalence.** Let `A ⊆ B`, and
@@ -205,6 +255,33 @@ theorem coe_ofWeakDeformationRetraction_symm_apply (hAB : A ⊆ B) (H : I × B �
     (hH : Continuous H) (hHB : ∀ p, H p ∈ B) (h₀ : ∀ x, H (0, x) = x) (h₁ : ∀ x, H (1, x) ∈ A)
     (hHA : ∀ t (x : B), (x : X) ∈ A → H (t, x) ∈ A) (x : B) :
     ((ofWeakDeformationRetraction hAB H hH hHB h₀ h₁ hHA).symm x : X) = H (1, x) :=
+  (rfl)
+
+/-- **The inclusion of a retract homotopic to the identity is a homotopy equivalence.** Let
+`A ⊆ B` and let `r : B → A` be a retraction whose composite with the inclusion is homotopic to the
+identity of `B`, as for a strong deformation retraction. Then the inclusion `A → B` is a homotopy
+equivalence, whose homotopy inverse is `r`. -/
+def ofRetraction (hAB : A ⊆ B) (r : C(B, A)) (hr : ∀ a, r (ContinuousMap.inclusion hAB a) = a)
+    (G : ((ContinuousMap.inclusion hAB).comp r).Homotopy (ContinuousMap.id B)) : A ≃ₕ B where
+  toFun := ContinuousMap.inclusion hAB
+  invFun := r
+  left_inv := (ContinuousMap.ext hr : r.comp (ContinuousMap.inclusion hAB) = .id A) ▸ .refl _
+  right_inv := ⟨G⟩
+
+/-- The homotopy equivalence `ContinuousMap.HomotopyEquiv.ofRetraction` is the inclusion. -/
+@[simp]
+theorem coe_ofRetraction_apply (hAB : A ⊆ B) (r : C(B, A))
+    (hr : ∀ a, r (ContinuousMap.inclusion hAB a) = a)
+    (G : ((ContinuousMap.inclusion hAB).comp r).Homotopy (ContinuousMap.id B)) (a : A) :
+    (ofRetraction hAB r hr G a : X) = a :=
+  (rfl)
+
+/-- The homotopy inverse of `ContinuousMap.HomotopyEquiv.ofRetraction` is the retraction. -/
+@[simp]
+theorem coe_ofRetraction_symm_apply (hAB : A ⊆ B) (r : C(B, A))
+    (hr : ∀ a, r (ContinuousMap.inclusion hAB a) = a)
+    (G : ((ContinuousMap.inclusion hAB).comp r).Homotopy (ContinuousMap.id B)) (b : B) :
+    (ofRetraction hAB r hr G).symm b = r b :=
   (rfl)
 
 end ContinuousMap.HomotopyEquiv

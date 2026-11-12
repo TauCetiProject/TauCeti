@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Change
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
 # The geodesic spray
@@ -92,9 +93,6 @@ variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
--- The geodesic-spray construction below, and the identification of its integral curves with the
--- velocity lifts of geodesics, follow the geodesic-spray development of the Tau Ceti Hopf--Rinow
--- roadmap, https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md
 variable (I M) in
 /-- **The geodesic spray** of the ambient Riemannian bundle instance: the vector field
 `(x, v) ↦ (v, -Γ_x (v, v))` on the tangent bundle, where `Γ` is the model-space Christoffel map of
@@ -192,7 +190,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
   have hxbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
   have hγd : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s := hγ.mdifferentiableOn (by norm_num)
   rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj,
-    accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hs hγd ht,
+    accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hγd ht,
     derivWithin_extChartAt_comp_curve (hγd t ht) (hs t ht)]
   -- the fibre reading of the velocity lift is the derivative of the chart reading of the curve
   have hsec : (fun r ↦ (trivializationAt E (TangentSpace I) (γ t)
@@ -200,7 +198,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
       derivWithin (extChartAt I (γ t) ∘ γ) s := by
     filter_upwards [(hγd t ht).continuousWithinAt.preimage_mem_nhdsWithin
         ((trivializationAt E (TangentSpace I) (γ t)).open_baseSet.mem_nhds hxbase),
-      sectionCoord_curveVelocityWithin_eventuallyEq γ hs hγd ht hxbase] with r hr hr'
+      sectionCoord_curveVelocityWithin_eventuallyEq γ hγd ht hxbase] with r hr hr'
     rw [← hr', curveVelocityLiftWithin_apply, sectionCoord_apply]
     exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hr _).symm
   have hcont := ContMDiffOn.continuousOn_curveVelocityLiftWithin (hγ.of_le one_le_two)
@@ -233,20 +231,10 @@ curve it lies over. -/
 theorem eq_curveVelocityLiftWithin_of_isMIntegralCurveOn {z : ℝ → TangentBundle I M}
     (hs : UniqueDiffWithinAt ℝ s t) (h : IsMIntegralCurveOn z (geodesicSpray I M) s)
     (ht : t ∈ s) :
-    z t = curveVelocityLiftWithin I (fun r ↦ (z r).proj) s t := by
-  have hproj : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I (fun r ↦ (z r).proj) s t :=
-    (Bundle.mdifferentiableAt_proj (fun x : M ↦ TangentSpace I x)).comp_mdifferentiableWithinAt t
-      (h t ht).mdifferentiableWithinAt
-  have hd := (hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
-    (F := E) (V := fun x : M ↦ TangentSpace I x) (IB := I) (z := z)
-    (a := (z t).2)
-    (b := -christoffelMap (finBasis ℝ E)
-      ((leviCivitaConnection I M).isCovariantDerivativeOn
-        (s := (trivializationAt E (TangentSpace I) (z t).proj).baseSet)) (z t).proj
-      (z t).2 (z t).2) (h t ht).continuousWithinAt).1 (h t ht)
-  have hvel : curveVelocityWithin I (fun r ↦ (z r).proj) s t = (z t).2 :=
-    (derivWithin_extChartAt_comp_curve hproj hs).symm.trans (hd.1.derivWithin hs)
-  rw [curveVelocityLiftWithin_apply, hvel]
+    z t = curveVelocityLiftWithin I (fun r ↦ (z r).proj) s t :=
+  eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt hs (h t ht) <| by
+    rw [Bundle.mfderiv_proj, geodesicSpray_apply]
+    rfl
 
 /-! ### All-time geodesics and the spray -/
 

@@ -22,6 +22,11 @@ For a record with meromorphic continuation, the resulting function is entire, ha
 expected orders and divisor, and is nonzero at every cleared pole. The uniqueness theorem
 allows identification with explicit entire formulas without unfolding the extension.
 
+The orders of the entire completion are symmetric: reflection across the real axis carries the
+orders of `Λ₀(d)` at `s` to those of `Λ₀(d^∨)` at `conj s`, and with a functional equation the
+orders of `Λ₀(d)` at `1 - s` are those of `Λ₀(d^∨)` at `s`. Together, `s ↦ 1 - conj s` preserves
+the orders and the divisor of `Λ₀(d)`.
+
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., §11–12.
@@ -29,7 +34,7 @@ allows identification with explicit entire formulas without unfolding the extens
 
 public section
 
-open Filter Topology Polynomial
+open ComplexConjugate Filter Topology Polynomial
 
 namespace TauCeti.LFunctions.AnalyticLFunctionData
 
@@ -62,7 +67,7 @@ theorem meromorphicOrderAt_polarPolynomial (s : ℂ) :
   rw [meromorphicOrderAt_fun_prod (fun p _ ↦ by fun_prop)]
   rw [Finset.sum_eq_single s]
   · exact meromorphicOrderAt_pow_id_sub_const
-  · intro p hp hps
+  · intro p _ hps
     have ha : AnalyticAt ℂ (fun z : ℂ ↦ (z - p) ^ d.polarOrder p) s := by fun_prop
     exact ha.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr
       (pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm hps)))
@@ -127,6 +132,11 @@ theorem HasMeromorphicContinuation.differentiable_entireCompletion :
     Differentiable ℂ d.entireCompletion :=
   fun s ↦ (h.analyticAt_entireCompletion s).differentiableAt
 
+/-- The entire completion is meromorphic on `ℂ`. -/
+theorem HasMeromorphicContinuation.meromorphicOn_entireCompletion :
+    MeromorphicOn d.entireCompletion Set.univ :=
+  fun s _ ↦ (h.analyticAt_entireCompletion s).meromorphicAt
+
 /-- Away from the poles no value is changed. -/
 theorem HasMeromorphicContinuation.entireCompletion_eq {s : ℂ} (hs : d.polarOrder s = 0) :
     d.entireCompletion s = d.polarPolynomial.eval s * d.completed s := by
@@ -152,8 +162,7 @@ theorem HasMeromorphicContinuation.entireCompletion_ne_zero_of_pole {s : ℂ}
 theorem HasMeromorphicContinuation.divisor_entireCompletion (s : ℂ) :
     MeromorphicOn.divisor d.entireCompletion Set.univ s =
       MeromorphicOn.divisor d.completed Set.univ s + (d.polarOrder s : ℤ) := by
-  rw [MeromorphicOn.divisor_apply
-    (fun z _ ↦ (h.analyticAt_entireCompletion z).meromorphicAt) (Set.mem_univ s),
+  rw [MeromorphicOn.divisor_apply h.meromorphicOn_entireCompletion (Set.mem_univ s),
     MeromorphicOn.divisor_apply h.meromorphic.meromorphicOn (Set.mem_univ s),
     h.meromorphicOrderAt_entireCompletion]
   by_cases hs : d.polarOrder s = 0
@@ -176,5 +185,66 @@ theorem HasMeromorphicContinuation.entireCompletion_unique {F : ℂ → ℂ}
     with z hz
   have hz0 : d.polarOrder z = 0 := by simpa using hz.2
   rw [heq z hz0, h.entireCompletion_eq hz0]
+
+/-! ### Symmetries of the orders -/
+
+/-- Reflection across the real axis carries the orders of the entire completion at `s` to those
+of the entire completion of the dual card at `conj s`. -/
+theorem HasMeromorphicContinuation.meromorphicOrderAt_dual_entireCompletion_conj (s : ℂ) :
+    meromorphicOrderAt d.dual.entireCompletion (conj s) =
+      meromorphicOrderAt d.entireCompletion s := by
+  rw [h.dual.meromorphicOrderAt_entireCompletion, h.meromorphicOrderAt_entireCompletion,
+    dual_completed, TauCeti.meromorphicOrderAt_conj_conj, dual_polarOrder_apply,
+    Complex.conj_conj]
+
+/-- The divisor form of `HasMeromorphicContinuation.meromorphicOrderAt_dual_entireCompletion_conj`.
+-/
+theorem HasMeromorphicContinuation.divisor_dual_entireCompletion_conj (s : ℂ) :
+    MeromorphicOn.divisor d.dual.entireCompletion Set.univ (conj s) =
+      MeromorphicOn.divisor d.entireCompletion Set.univ s := by
+  rw [MeromorphicOn.divisor_apply h.dual.meromorphicOn_entireCompletion (Set.mem_univ _),
+    MeromorphicOn.divisor_apply h.meromorphicOn_entireCompletion (Set.mem_univ _),
+    h.meromorphicOrderAt_dual_entireCompletion_conj]
+
+/-- The functional equation carries the orders of the entire completion of the dual card at `s`
+to those of the entire completion at `1 - s`. -/
+theorem HasFunctionalEquation.meromorphicOrderAt_entireCompletion_one_sub
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    meromorphicOrderAt d.entireCompletion (1 - s) =
+      meromorphicOrderAt d.dual.entireCompletion s := by
+  have hε : d.rootNumber ≠ 0 := norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber])
+  have hc : meromorphicOrderAt d.completed (1 - s) = meromorphicOrderAt d.dual.completed s := by
+    rw [meromorphicOrderAt_congr (hfe.eventuallyEq (1 - s)),
+      show (fun z ↦ d.rootNumber * d.dual.completed (1 - z)) =
+        d.rootNumber • (d.dual.completed ∘ fun z ↦ 1 - z) by
+          funext z; simp [Function.comp_def, smul_eq_mul],
+      meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hε,
+      meromorphicOrderAt_comp_of_deriv_ne_zero (by fun_prop) (by simp), sub_sub_cancel]
+  rw [h.meromorphicOrderAt_entireCompletion, h.dual.meromorphicOrderAt_entireCompletion, hc,
+    dual_polarOrder_apply, ← hfe.polarOrder_one_sub_conj (conj s), Complex.conj_conj]
+
+/-- The divisor form of `HasFunctionalEquation.meromorphicOrderAt_entireCompletion_one_sub`. -/
+theorem HasFunctionalEquation.divisor_entireCompletion_one_sub (hfe : d.HasFunctionalEquation)
+    (s : ℂ) :
+    MeromorphicOn.divisor d.entireCompletion Set.univ (1 - s) =
+      MeromorphicOn.divisor d.dual.entireCompletion Set.univ s := by
+  rw [MeromorphicOn.divisor_apply h.meromorphicOn_entireCompletion (Set.mem_univ _),
+    MeromorphicOn.divisor_apply h.dual.meromorphicOn_entireCompletion (Set.mem_univ _),
+    hfe.meromorphicOrderAt_entireCompletion_one_sub h]
+
+/-- The reflection `s ↦ 1 - conj s` preserves the orders of the entire completion. -/
+theorem HasFunctionalEquation.meromorphicOrderAt_entireCompletion_one_sub_conj
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    meromorphicOrderAt d.entireCompletion (1 - conj s) =
+      meromorphicOrderAt d.entireCompletion s := by
+  rw [hfe.meromorphicOrderAt_entireCompletion_one_sub h,
+    h.meromorphicOrderAt_dual_entireCompletion_conj]
+
+/-- The reflection `s ↦ 1 - conj s` preserves the divisor of the entire completion. -/
+theorem HasFunctionalEquation.divisor_entireCompletion_one_sub_conj
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    MeromorphicOn.divisor d.entireCompletion Set.univ (1 - conj s) =
+      MeromorphicOn.divisor d.entireCompletion Set.univ s := by
+  rw [hfe.divisor_entireCompletion_one_sub h, h.divisor_dual_entireCompletion_conj]
 
 end TauCeti.LFunctions.AnalyticLFunctionData

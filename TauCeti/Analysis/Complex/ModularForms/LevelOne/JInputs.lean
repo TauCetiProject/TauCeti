@@ -275,7 +275,7 @@ theorem periodic_j_comp_ofComplex : Function.Periodic (j ∘ ofComplex) 1 :=
 /-- The function `q j` is `1`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem periodic_qParam_mul_j_comp_ofComplex :
     Function.Periodic ((fun τ : ℍ ↦ 𝕢 1 τ * j τ) ∘ ofComplex) 1 := by
-  simpa using (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex one_ne_zero).mul
+  simpa using (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex).mul
     periodic_j_comp_ofComplex
 
 /-- The function `q j` is holomorphic on the upper half-plane. -/

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StandardKernel
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StrongType
+import Mathlib.MeasureTheory.Group.Integral
 
 /-!
 # Calderón–Zygmund operators on a finite-dimensional inner product space
@@ -19,7 +20,7 @@ The Calderón–Zygmund theorems
 `ℝⁿ = ι → ℝ` with the sup distance, because the Calderón–Zygmund decomposition runs on dyadic
 cubes. The singular integral kernels of analysis, such as the second derivatives `D²Gₙ (x - y)` of
 the Newtonian kernel, are instead estimated in the Euclidean distance. This file states the
-theorems on a finite-dimensional real inner product space `V` of dimension `n ≥ 1`, with its
+theorems on a finite-dimensional real inner product space `V` of dimension `n`, with its
 Lebesgue measure `volume`.
 
 Let `T` be a bounded linear operator on `L²(V)` given off the support of its argument by a kernel
@@ -68,6 +69,8 @@ type `(p, p)` bounds (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`,
 * `TauCeti.exists_eLpNorm_le_of_hormander`: operators on `L²(V)` such that both they
   and their adjoints have kernels satisfying Hörmander's condition are bounded in the `Lᵖ` norm
   for `1 < p < ∞`, uniformly.
+* `TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le`: a kernel dominated by the differences of a
+  translation-invariant kernel `K (x - y)` inherits Hörmander's condition from `K`.
 
 ## References
 
@@ -246,7 +249,7 @@ private theorem coordConj_ae_eq_integral
 private theorem enorm_coordConj
     (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V)) :
     ‖coordConj b T‖ₑ = ‖T‖ₑ := by
-  simp only [coordConj, enorm_eq_nnnorm, opNNNorm_linearIsometryEquiv_comp]
+  simp only [coordConj, eNorm_eq_nnNorm, opNNNorm_linearIsometryEquiv_comp]
   exact congrArg _ (opNNNorm_comp_linearIsometryEquiv T (lpCoord b E).symm)
 
 /-- A weak type `(1, 1)` bound for `T` in coordinates is a weak type `(1, 1)` bound for `T`, with
@@ -261,7 +264,7 @@ private theorem mul_volume_lt_enorm_le_of_coordConj
   have h := hA (lpCoord b E f) t
   -- Transfer the level set of `T' (f ∘ e) = (T f) ∘ e` and the `L¹` norm of `f ∘ e` back to `V`.
   have hS : MeasurableSet {v | t < ‖T f v‖ₑ} :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable (T f)).enorm
+    measurableSet_lt measurable_const (Lp.stronglyMeasurable (T f)).eNorm
   have hlevel : volume {x | t < ‖coordConj b T (lpCoord b E f) x‖ₑ} =
       volume {v | t < ‖T f v‖ₑ} := by
     rw [← he.measure_preimage hS.nullMeasurableSet]
@@ -269,8 +272,8 @@ private theorem mul_volume_lt_enorm_le_of_coordConj
     filter_upwards [coeFn_lpCoord b (T f)] with x hx
     simp only [coordConj_lpCoord, hx, Function.comp_apply, mem_ofPred_eq, mem_preimage]
   have hnorm : ∫⁻ x, ‖lpCoord b E f x‖ₑ = ∫⁻ v, ‖f v‖ₑ := by
-    rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
-      ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _), eLpNorm_lpCoord]
+    rw [← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _),
+      ← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _), eLpNorm_lpCoord]
   rwa [hlevel, hnorm] at h
 
 variable [CompleteSpace E] [CompleteSpace F]
@@ -278,7 +281,7 @@ variable [CompleteSpace E] [CompleteSpace F]
 /-- **The cancellation condition in coordinates.** If `T` has a standard kernel on `V`, the
 operator `T` in coordinates satisfies the cancellation condition of the Calderón–Zygmund theorem
 on `ι → ℝ` with a finite constant. -/
-private theorem exists_cancellation [Nonempty ι]
+private theorem exists_cancellation
     (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V))
     {k : V → V → E →L[ℝ] F} (hkm : StronglyMeasurable (Function.uncurry k)) {C₀ C : ℝ≥0}
     {δ : ℝ} (hδ : 0 < δ)
@@ -290,6 +293,18 @@ private theorem exists_cancellation [Nonempty ι]
     ∃ B : ℝ≥0∞, B ≠ ∞ ∧ ∀ (f : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (r : ℝ),
       (∀ᵐ x, x ∉ closedBall y r → f x = 0) → ∫ x, f x = 0 →
         ∫⁻ x in (closedBall y (2 * r))ᶜ, ‖coordConj b T f x‖ₑ ≤ B * ∫⁻ x, ‖f x‖ₑ := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- In dimension zero, a function of mean zero is zero, so the condition is vacuous.
+    classical
+    refine ⟨0, ENNReal.zero_ne_top, fun f y r _ hmean => ?_⟩
+    have h0 := integral_dirac (fun x => (f : (ι → ℝ) → E) x) isEmptyElim
+    rw [← Measure.volume_pi_eq_dirac, hmean] at h0
+    have hf : f = 0 := Lp.ext <| by
+      filter_upwards [Lp.coeFn_zero E 2 (volume : Measure (ι → ℝ))] with x hx
+      rw [hx, Subsingleton.elim x isEmptyElim]
+      exact h0.symm
+    subst hf
+    simp
   have hn : Module.finrank ℝ V = Fintype.card ι := Module.finrank_eq_card_basis b.toBasis
   rw [hn] at hsize hk
   have he := measurePreserving_coord b
@@ -360,7 +375,7 @@ private theorem setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander
     _ ≤ B * ∫⁻ v, ‖g v‖ₑ := hcanc
     _ = B * ∫⁻ x, ‖f x‖ₑ := by
         rw [← he.lintegral_comp_emb e.measurableEmbedding]
-        exact congrArg _ (lintegral_congr_ae (hge.mono fun x hx => congrArg enorm hx))
+        exact congrArg _ (lintegral_congr_ae (hge.mono fun x hx => congrArg eNorm hx))
 
 end Coordinates
 
@@ -370,7 +385,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
 /-- **The Calderón–Zygmund theorem on an inner product space**, weak type `(1, 1)`. Let `V` be a
-finite-dimensional real inner product space of dimension `n ≥ 1`, and let `T` be a bounded linear
+finite-dimensional real inner product space of dimension `n`, and let `T` be a bounded linear
 operator on `L²(V)` such that `T f x = ∫ K x y (f y) dy` for almost every `x` off any compact set
 outside which `f` vanishes, where for some `δ > 0` the kernel `K` satisfies the size and smoothness
 estimates
@@ -379,7 +394,7 @@ estimates
 `‖K x y - K x y'‖ ≤ C ‖y - y'‖ ^ δ ‖x - y'‖ ^ (-(n + δ))` whenever `‖x - y'‖ > 2 ‖y - y'‖`.
 
 Then there is a constant `A` with `t · |{‖T f‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. -/
-theorem exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
+theorem exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow
     (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V))
     {k : V → V → E →L[ℝ] F} (hkm : StronglyMeasurable (Function.uncurry k)) {C₀ C : ℝ≥0}
     {δ : ℝ} (hδ : 0 < δ)
@@ -391,7 +406,6 @@ theorem exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
     ∃ A : ℝ≥0, ∀ (f : Lp E 2 (volume : Measure V)) (t : ℝ≥0∞),
       t * volume {x | t < ‖T f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
   set b := stdOrthonormalBasis ℝ V
-  have : Nonempty (Fin (Module.finrank ℝ V)) := ⟨⟨0, Module.finrank_pos⟩⟩
   obtain ⟨B, hB, hT⟩ := exists_cancellation b T hkm hδ hsize hk hrep
   refine ⟨(2 ^ Fintype.card (Fin (Module.finrank ℝ V)) * (4 * ‖coordConj b T‖ₑ ^ 2) +
     ENNReal.ofReal 2 ^ Fintype.card (Fin (Module.finrank ℝ V)) + 4 * B).toNNReal, ?_⟩
@@ -401,7 +415,7 @@ theorem exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
 
 /-- **The Calderón–Zygmund theorem on an inner product space under Hörmander's condition**, weak
 type `(1, 1)`, with a constant depending only on the data. Let `V` be a finite-dimensional real
-inner product space of dimension `n ≥ 1`, and let `M` and `B` be finite. There is a constant `A`
+inner product space of dimension `n`, and let `M` and `B` be finite. There is a constant `A`
 with the following property. Let `T` be a bounded linear operator on `L²(V)` with `‖T‖ ≤ M`, such
 that `T f x = ∫ k x y (f y) dy` for almost every `x` off any compact set outside which `f` vanishes,
 where the kernel `k` satisfies **Hörmander's condition**
@@ -410,7 +424,7 @@ where the kernel `k` satisfies **Hörmander's condition**
 
 Then `t · |{‖T f‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. One can take
 `A = 4 · 2ⁿ M² + (2 √n)ⁿ + 4 B`. -/
-theorem _root_.TauCeti.exists_mul_volume_lt_enorm_le_of_hormander [Nontrivial V] {M B : ℝ≥0∞}
+theorem _root_.TauCeti.exists_mul_volume_lt_enorm_le_of_hormander {M B : ℝ≥0∞}
     (hM : M ≠ ∞) (hB : B ≠ ∞) :
     ∃ A : ℝ≥0, ∀ (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V))
       (k : V → V → E →L[ℝ] F), ‖T‖ₑ ≤ M → StronglyMeasurable (Function.uncurry k) →
@@ -420,7 +434,6 @@ theorem _root_.TauCeti.exists_mul_volume_lt_enorm_le_of_hormander [Nontrivial V]
       ∀ (f : Lp E 2 (volume : Measure V)) (t : ℝ≥0∞),
         t * volume {x | t < ‖T f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
   set b := stdOrthonormalBasis ℝ V
-  have : Nonempty (Fin (Module.finrank ℝ V)) := ⟨⟨0, Module.finrank_pos⟩⟩
   refine ⟨(2 ^ Fintype.card (Fin (Module.finrank ℝ V)) * (4 * M ^ 2) +
     ENNReal.ofReal (2 * NNReal.sqrt (Fintype.card (Fin (Module.finrank ℝ V)))) ^
       Fintype.card (Fin (Module.finrank ℝ V)) + 4 * B).toNNReal,
@@ -436,10 +449,10 @@ variable {H K : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [Complet
   [NormedAddCommGroup K] [InnerProductSpace ℝ K] [CompleteSpace K] {p : ℝ≥0∞}
 
 /-- **The Calderón–Zygmund theorem on an inner product space**, strong type `(p, p)` for
-`1 < p < ∞`. Let `V` be a finite-dimensional real inner product space of dimension `n ≥ 1`, and let
-`T` be a bounded linear operator on `L²(V)` of Hilbert space valued functions. Suppose that `T` and
-its adjoint `T†` are given off the support of their argument by kernels `k` and `k'`: for every
-compact set `s` and every `f` vanishing off `s`, `T f x = ∫ k x y (f y) dy` (respectively
+`1 < p < ∞`. Let `V` be a finite-dimensional real inner product space of dimension `n`,
+and let `T` be a bounded linear operator on `L²(V)` of Hilbert space valued functions. Suppose
+that `T` and its adjoint `T†` are given off the support of their argument by kernels `k` and `k'`:
+for every compact set `s` and every `f` vanishing off `s`, `T f x = ∫ k x y (f y) dy` (respectively
 `T† f x = ∫ k' x y (f y) dy`) for almost every `x ∉ s`. Suppose that, for some `δ > 0`, the
 kernel `k` satisfies the size and smoothness estimates
 
@@ -450,7 +463,7 @@ and that `k'` satisfies the same estimates with its own constants `C₀'`, `C'` 
 `δ' > 0`.
 
 Then for every `1 < p < ∞` there is a constant `C` with `‖T f‖_p ≤ C ‖f‖_p` for every `f ∈ L²`. -/
-theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
+theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow
     (T : Lp H 2 (volume : Measure V) →L[ℝ] Lp K 2 (volume : Measure V))
     {k : V → V → H →L[ℝ] K} (hkm : StronglyMeasurable (Function.uncurry k))
     {k' : V → V → K →L[ℝ] H} (hk'm : StronglyMeasurable (Function.uncurry k'))
@@ -469,12 +482,11 @@ theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
     ∃ C : ℝ≥0, ∀ f : Lp H 2 (volume : Measure V),
       eLpNorm (T f) p volume ≤ C * eLpNorm f p volume := by
   set b := stdOrthonormalBasis ℝ V
-  have : Nonempty (Fin (Module.finrank ℝ V)) := ⟨⟨0, Module.finrank_pos⟩⟩
   obtain ⟨B, hB, hT⟩ := exists_cancellation b T hkm hδ hsize hk hrep
   obtain ⟨B', hB', hT'⟩ := exists_cancellation b (adjoint T) hk'm hδ' hsize' hk' hrep'
   rw [← adjoint_coordConj] at hT'
   obtain ⟨A, hA⟩ := exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
-    (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K) 2 (M := ‖coordConj b T‖ₑ) enorm_ne_top hB hB'
+    (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K) 2 (M := ‖coordConj b T‖ₑ) eNorm_ne_top hB hB'
     hp hp_top
   refine ⟨A, fun f => ?_⟩
   simpa only [coordConj_lpCoord, eLpNorm_lpCoord] using
@@ -483,7 +495,7 @@ theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
 
 /-- **The Calderón–Zygmund theorem on an inner product space under Hörmander's condition**, strong
 type `(p, p)` for `1 < p < ∞`, with a constant depending only on the data. Let `V` be a
-finite-dimensional real inner product space of dimension `n ≥ 1`, let `M`, `B` and `B'` be finite,
+finite-dimensional real inner product space of dimension `n`, let `M`, `B` and `B'` be finite,
 and let `1 < p < ∞`. There is a constant `C` with the following property. Let `T` be a bounded
 linear operator on `L²(V)` of Hilbert space valued functions with `‖T‖ ≤ M`. Suppose that `T` and
 its adjoint `T†` are given off the support of their argument by kernels `k` and `k'`: for every
@@ -496,7 +508,7 @@ compact set `s` and every `f` vanishing off `s`, `T f x = ∫ k x y (f y) dy` (r
 
 Then `‖T f‖_p ≤ C ‖f‖_p` for every `f ∈ L²`. Since `C` does not depend on `T`, the theorem applies
 uniformly to families of operators, such as the truncations of a Fourier multiplier. -/
-theorem _root_.TauCeti.exists_eLpNorm_le_of_hormander [Nontrivial V] {M B B' : ℝ≥0∞}
+theorem _root_.TauCeti.exists_eLpNorm_le_of_hormander {M B B' : ℝ≥0∞}
     (hM : M ≠ ∞) (hB : B ≠ ∞) (hB' : B' ≠ ∞) (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ (T : Lp H 2 (volume : Measure V) →L[ℝ] Lp K 2 (volume : Measure V))
       (k : V → V → H →L[ℝ] K) (k' : V → V → K →L[ℝ] H), ‖T‖ₑ ≤ M →
@@ -509,7 +521,6 @@ theorem _root_.TauCeti.exists_eLpNorm_le_of_hormander [Nontrivial V] {M B B' : �
         (∀ᵐ x, x ∉ s → f x = 0) → ∀ᵐ x, x ∉ s → adjoint T f x = ∫ z, k' x z (f z)) →
       ∀ f : Lp H 2 (volume : Measure V), eLpNorm (T f) p volume ≤ C * eLpNorm f p volume := by
   set b := stdOrthonormalBasis ℝ V
-  have : Nonempty (Fin (Module.finrank ℝ V)) := ⟨⟨0, Module.finrank_pos⟩⟩
   obtain ⟨C, hC⟩ := exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
     (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K)
     (2 * NNReal.sqrt (Fintype.card (Fin (Module.finrank ℝ V)))) hM hB hB' hp hp_top
@@ -521,5 +532,36 @@ theorem _root_.TauCeti.exists_eLpNorm_le_of_hormander [Nontrivial V] {M B B' : �
     hC (coordConj b T) ((enorm_coordConj b T).trans_le hTM)
       (setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander b T hkm hk hrep) hT'
       (lpCoord b H f)
+
+/-- **Hörmander's condition for a translation-invariant kernel.** Let `k` be a kernel dominated by
+the differences of an integrable function `K`, `‖k x y - k x y'‖ ≤ ‖K (x - y) - K (x - y')‖`. If
+`K` satisfies Hörmander's condition in the translation-invariant form
+`∫_{‖x‖ > 2 ‖h‖} ‖K (x - h) - K x‖ dx ≤ B`, then `k` satisfies it in the two-variable form
+`∫_{‖x - y'‖ > 2 ‖y - y'‖} ‖k x y - k x y'‖ dx ≤ B` of the Calderón–Zygmund theorems. -/
+theorem _root_.TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le {G G' : Type*}
+    [NormedAddCommGroup G] [NormedAddCommGroup G'] {K : V → G'} (hK : Integrable K)
+    {k : V → V → G} (hk : ∀ x y y', ‖k x y - k x y'‖ ≤ ‖K (x - y) - K (x - y')‖) {B : ℝ}
+    (hB : ∀ h, ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖K (x - h) - K x‖ ≤ B) (y y' : V) :
+    ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k x y - k x y'‖ₑ ≤ ENNReal.ofReal B := by
+  set h := y - y'
+  have hS : MeasurableSet {z : V | 2 * ‖h‖ < ‖z‖} :=
+    measurableSet_lt measurable_const measurable_norm
+  have hS' : MeasurableSet {x : V | 2 * dist y y' < dist x y'} :=
+    measurableSet_lt measurable_const (measurable_id.dist measurable_const)
+  have hint : Integrable (fun z ↦ K (z - h) - K z) := (hK.comp_sub_right h).sub hK
+  calc ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k x y - k x y'‖ₑ
+      ≤ ∫⁻ x, {z : V | 2 * ‖h‖ < ‖z‖}.indicator (fun z ↦ ‖K (z - h) - K z‖ₑ) (x - y') := by
+        rw [← lintegral_indicator hS']
+        refine lintegral_mono fun x ↦ ?_
+        simp only [Set.indicator, Set.mem_ofPred_eq, dist_eq_norm, h]
+        split_ifs
+        · refine eNorm_le_iff_norm_le.2 ((hk x y y').trans_eq ?_)
+          rw [sub_sub_sub_cancel_right]
+        · exact le_rfl
+    _ = ∫⁻ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖ₑ := by
+        rw [lintegral_sub_right_eq_self, lintegral_indicator hS]
+    _ = ENNReal.ofReal (∫ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖) :=
+        (ofReal_integral_norm_eq_lintegral_eNorm hint.integrableOn).symm
+    _ ≤ ENNReal.ofReal B := ENNReal.ofReal_le_ofReal (hB h)
 
 end ContinuousLinearMap

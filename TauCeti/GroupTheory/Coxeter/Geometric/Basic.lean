@@ -47,9 +47,8 @@ orderOf (cs.simple i * cs.simple i') = M i i'
 ```
 
 uniformly in `i` and `i'`, with `0` read as `∞`
-(`CoxeterSystem.orderOf_simple_mul_simple`). Three further collapses are ruled out at the same
-time: a simple reflection is never the identity, it has order exactly two, and distinct indices
-give distinct simple reflections.
+(`CoxeterSystem.orderOf_simple_mul_simple`). A further collapse is ruled out at the same time:
+distinct indices give distinct simple reflections.
 
 Exactness, not just divisibility, is what a braid move needs. The braid move at `(i, i')` rewrites
 the alternating word `s i s i' s i ⋯` of length `M i i'` into the alternating word of the same
@@ -84,6 +83,10 @@ The second simple root is handled without a second induction: `σᵢ' σᵢ` is 
   `CoxeterMatrix.geometricReflection_apply_single_self` that the `i`-th one negates the `i`-th
   simple root, and `CoxeterMatrix.geometricForm_geometricReflection` that they are orthogonal for
   the canonical form.
+* `CoxeterMatrix.geometricForm_mapDomain_mapDomain` and
+  `CoxeterMatrix.mapDomain_geometricReflection`: **a map of index types along which the Coxeter
+  matrices agree** carries the canonical form to the canonical form and intertwines the simple
+  reflections.
 * `CoxeterMatrix.isLiftable_geometricReflection`: **the simple reflections satisfy the Coxeter
   relations**, so they lift along `CoxeterSystem.lift`.
 * `CoxeterSystem.geometricRepresentation`: **the standard geometric representation**, with
@@ -92,17 +95,16 @@ The second simple root is handled without a second induction: `σᵢ' σᵢ` is 
 * `CoxeterSystem.simple_mul_simple_pow_eq_one_iff` and
   `CoxeterSystem.orderOf_simple_mul_simple`: **the entry `M i i'` is the exact order of
   `s i * s i'`**, not merely a multiple of it.
-* `CoxeterSystem.simple_ne_one`, `CoxeterSystem.orderOf_simple` and
-  `CoxeterSystem.simple_injective`: **a simple reflection has order exactly two, and distinct
-  indices give distinct simple reflections**.
+* `CoxeterSystem.simple_injective`: **distinct indices give distinct simple reflections**.
 
 ## What is not proved here
 
 Tits' theorem proper -- that the geometric representation is *faithful*, so that a Coxeter group
 is a reflection group -- is a strictly stronger statement, proved by the "root bookkeeping"
-argument that tracks which simple roots a reduced word makes negative. It is not proved here, and
-none of the results above needs it: the exact order of a product of two simple reflections only
-needs the representation to be nontrivial on a single rank-two plane.
+argument that tracks which simple roots a reduced word makes negative. It is proved in
+`TauCeti/GroupTheory/Coxeter/Geometric/Sign.lean`, and none of the results above needs it: the
+exact order of a product of two simple reflections only needs the representation to be nontrivial
+on a single rank-two plane.
 
 ## References
 
@@ -186,6 +188,11 @@ theorem geometricReflection_apply_pair (i j : B) (a b : ℝ) :
     diagonal, Nat.cast_one, div_one, cos_pi]
   module
 
+/-- **A simple reflection changes only the coefficient of its own simple root.** -/
+theorem geometricReflection_apply_apply_of_ne {i j : B} (h : j ≠ i) (v : B →₀ ℝ) :
+    M.geometricReflection i v j = v j := by
+  simp [h.symm]
+
 /-- A vector orthogonal to the `i`-th simple root is fixed by the `i`-th simple reflection. -/
 theorem geometricReflection_apply_of_eq_zero {i : B} {v : B →₀ ℝ}
     (h : M.geometricForm (Finsupp.single i 1) v = 0) : M.geometricReflection i v = v := by
@@ -208,6 +215,39 @@ theorem geometricForm_geometricReflection (i : B) (u v : B →₀ ℝ) :
     LinearMap.smul_apply, smul_eq_mul, geometricForm_single_self,
     M.geometricForm_comm (Finsupp.single i 1) u]
   ring
+
+/-! ### Maps of index types -/
+
+section MapDomain
+
+variable {M} {B' : Type*} {M' : CoxeterMatrix B'} {f : B → B'}
+
+/-- **The canonical forms are compatible with a map of index types** along which the Coxeter
+matrices agree: the induced map of free real vector spaces is an isometry. -/
+theorem geometricForm_mapDomain_mapDomain (hf : ∀ i j, M i j = M' (f i) (f j))
+    (u v : B →₀ ℝ) :
+    M'.geometricForm (u.mapDomain f) (v.mapDomain f) = M.geometricForm u v := by
+  induction u using Finsupp.induction_linear with
+  | zero => simp
+  | add u₁ u₂ h₁ h₂ => simp only [Finsupp.mapDomain_add, map_add, LinearMap.add_apply, h₁, h₂]
+  | single i a =>
+    induction v using Finsupp.induction_linear with
+    | zero => simp
+    | add v₁ v₂ h₁ h₂ => simp only [Finsupp.mapDomain_add, map_add, h₁, h₂]
+    | single j b => simp [Finsupp.mapDomain_single, hf]
+
+/-- **The simple reflections are intertwined by a map of index types** along which the Coxeter
+matrices agree: the induced map sends the `i`-th simple reflection to the `f i`-th one. -/
+theorem mapDomain_geometricReflection (hf : ∀ i j, M i j = M' (f i) (f j)) (i : B)
+    (v : B →₀ ℝ) :
+    (M.geometricReflection i v).mapDomain f =
+      M'.geometricReflection (f i) (v.mapDomain f) := by
+  have hform := geometricForm_mapDomain_mapDomain hf (Finsupp.single i 1) v
+  rw [Finsupp.mapDomain_single] at hform
+  rw [geometricReflection_apply, geometricReflection_apply, Finsupp.mapDomain_sub,
+    Finsupp.mapDomain_smul, Finsupp.mapDomain_single, hform]
+
+end MapDomain
 
 /-! ### The rank-two computation -/
 
@@ -442,6 +482,13 @@ theorem geometricRepresentation_simple (i : B) :
     cs.geometricRepresentation (cs.simple i) = M.geometricReflection i :=
   cs.lift_apply_simple M.isLiftable_geometricReflection i
 
+/-- The image of `αᵢ` under `w * s i` is the negative of its image under `w`. -/
+theorem geometricRepresentation_mul_simple_single (w : W) (i : B) :
+    cs.geometricRepresentation (w * cs.simple i) (Finsupp.single i 1) =
+      -cs.geometricRepresentation w (Finsupp.single i 1) := by
+  rw [map_mul, mul_apply_eq_comp, geometricRepresentation_simple,
+    M.geometricReflection_apply_single_self, map_neg]
+
 /-- **The geometric representation is orthogonal** for the canonical bilinear form. -/
 theorem geometricForm_geometricRepresentation (w : W) (u v : B →₀ ℝ) :
     M.geometricForm (cs.geometricRepresentation w u) (cs.geometricRepresentation w v) =
@@ -480,16 +527,5 @@ theorem orderOf_simple_mul_simple (i i' : B) :
 theorem simple_injective : Function.Injective cs.simple := fun i i' h ↦
   by_contra fun hne ↦ M.off_diagonal i i' hne <| by
     rw [← cs.orderOf_simple_mul_simple, h, cs.simple_mul_simple_self, orderOf_one]
-
-/-- **A simple reflection is not the identity**: it negates its own simple root. -/
-theorem simple_ne_one (i : B) : cs.simple i ≠ 1 := fun h ↦ by
-  have hneg := M.geometricReflection_apply_single_self i
-  rw [← cs.geometricRepresentation_simple, h, map_one, one_apply_eq_self] at hneg
-  have := DFunLike.congr_fun hneg i
-  norm_num at this
-
-/-- **Each simple reflection has order exactly two.** -/
-theorem orderOf_simple (i : B) : orderOf (cs.simple i) = 2 :=
-  orderOf_eq_prime (cs.simple_sq i) (cs.simple_ne_one i)
 
 end CoxeterSystem

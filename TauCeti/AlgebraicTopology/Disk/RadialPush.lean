@@ -45,7 +45,7 @@ variable {n : ℕ} {r : ℝ}
 `TopCat.disk n`: at time `t` it sends `x` to `(1 - t) • x + t • r⁻¹ • radialRetraction r x`. -/
 def diskRadialPush (n : ℕ) (hr : 0 ≤ r) : C(I × TopCat.disk.{u} n, TopCat.disk.{u} n) where
   toFun p := ULift.up ⟨radialPush r p.1 p.2.down.1, mem_closedBall_zero_iff.2 <|
-    norm_radialPush_le_one hr p.1 (mem_closedBall_zero_iff.1 p.2.down.2)⟩
+    norm_radialPush_le_one p.1 (mem_closedBall_zero_iff.1 p.2.down.2)⟩
   continuous_toFun := continuous_uliftUp.comp <| ((continuous_radialPush hr).comp
     (continuous_fst.prodMk (continuous_subtype_val.comp
       (continuous_uliftDown.comp continuous_snd)))).subtype_mk _
@@ -68,7 +68,7 @@ theorem diskRadialPush_diskBoundaryInclusion (hr : 0 < r) (hr1 : r ≤ 1) (t : I
       TopCat.diskBoundaryInclusion n s :=
   ULift.ext (Subtype.ext ((coe_diskRadialPush_apply_down hr.le t _).trans
     (radialPush_of_norm_eq_one hr hr1 t
-      ((mem_range_diskBoundaryInclusion_iff _).1 (Set.mem_range_self s)))))
+      (norm_diskBoundaryInclusion s))))
 
 /-- At the end, the radial push on the disk sends the shell `r ≤ ‖x‖` into the boundary sphere. -/
 theorem norm_diskRadialPush_one (hr : 0 < r) {x : TopCat.disk.{u} n} (hx : r ≤ ‖x.down.1‖) :

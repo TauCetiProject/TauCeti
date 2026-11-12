@@ -47,6 +47,8 @@ simultaneously sees a nonlinear row and genuinely cyclotomic values.
 
 ## Main results
 
+* `TauCeti.complexEmbedding_alternatingGroupFourOmega`: the embedded cube root of unity is
+  `ω = exp (2πi/3)`.
 * `TauCeti.alternatingGroupFour_centralCharacterSearch`: the modular search returns exactly the
   reductions of the four displayed central-character rows.
 * `TauCeti.star_alternatingGroupFourExactCharacterTable_row_one`: exact conjugation exchanges the
@@ -159,6 +161,18 @@ abbrev AlternatingGroupFourClassIndex := Fin alternatingGroupFourClassData.numCl
 
 /-- The primitive cube root `ζ²` in the sixth cyclotomic ring. -/
 abbrev alternatingGroupFourOmega : Cyclotomic 6 := Cyclotomic.zeta 6 ^ 2
+
+/-- **The distinguished cube root of unity is `exp (2πi/3)`**: the embedding
+`TauCeti.Cyclotomic.complexEmbedding` sends `TauCeti.alternatingGroupFourOmega = ζ₆²` to
+`exp (2πi/6) ^ 2 = exp (2πi/3)`. -/
+theorem complexEmbedding_alternatingGroupFourOmega :
+    Cyclotomic.complexEmbedding alternatingGroupFourOmega =
+      Complex.exp (2 * Real.pi * Complex.I / 3) := by
+  rw [alternatingGroupFourOmega, map_pow, Cyclotomic.complexEmbedding_zeta,
+    Cyclotomic.complexRoot_def, ← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
 
 /-- **The exact central-character table of `A₄`.**  Columns are the identity, the class of
 double transpositions, and the two classes of three-cycles. -/
@@ -303,8 +317,7 @@ theorem alternatingGroupFour_centralCharacterSearch :
     alternatingGroupFourClassData.centralCharacterSearch (F := ZMod 7) =
       alternatingGroupFourModularCentralRows := by
   rw [alternatingGroupFourModularCentralRows]
-  apply alternatingGroupFourClassData.centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    isGoodDixonPrime_alternatingGroup_four_seven
+  apply alternatingGroupFourClassData.centralCharacterSearch_eq_rowsOfMap
     (Cyclotomic.reduce 7 alternatingGroupFourDixonPrimeData.root)
     alternatingGroupFourExactCentralCharacterTable
   · intro i

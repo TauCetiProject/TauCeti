@@ -232,7 +232,6 @@ the square of a unit. -/
 theorem exists_eq_neg_one_pow_mul_five_pow_mul_sq (u : ℤ_[2]ˣ) :
     ∃ w : ℤ_[2]ˣ, (u : ℤ_[2]) = (-1) ^ (serreEps u).val * 5 ^ (serreOmega u).val * w ^ 2 := by
   set r : ℤ_[2] := (-1) ^ (serreEps u).val * 5 ^ (serreOmega u).val
-  have hr : IsUnit r := ((isUnit_neg_one.pow _).mul (isUnit_five_padicInt.pow _))
   have key : ∀ x : ZMod (2 ^ 3), x * x = 1 →
       x = (-1) ^ (if x = 3 ∨ x = 7 then (1 : ZMod 2) else 0).val *
         5 ^ (if x = 3 ∨ x = 5 then (1 : ZMod 2) else 0).val := by
@@ -241,7 +240,7 @@ theorem exists_eq_neg_one_pow_mul_five_pow_mul_sq (u : ℤ_[2]ˣ) :
   have hres : PadicInt.toZModPow 3 (u : ℤ_[2]) = PadicInt.toZModPow 3 r := by
     simpa [r, serreEps, serreOmega, map_ofNat] using
       key _ (isUnit_iff_toZModPow_three_mul_self.mp u.isUnit)
-  obtain ⟨w, hw, hw'⟩ := PadicInt.exists_eq_sq_mul_of_toZModPow_three_eq hr u.isUnit hres.symm
+  obtain ⟨w, hw, hw'⟩ := PadicInt.exists_eq_sq_mul_of_toZModPow_three_eq u.isUnit hres.symm
   exact ⟨hw.unit, by simp [hw', mul_comm]⟩
 
 /-- **Squares of `2`-adic units in `ℚ_2`.** A unit of `ℤ_2` is a square in `ℚ_2` exactly when it is

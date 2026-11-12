@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.FiniteSupport.Defs
-public import Mathlib.Algebra.Group.Pointwise.Finset.Scalar
-public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import TauCeti.GroupTheory.Amenable.Foelner
-import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
-import TauCeti.MeasureTheory.Integral.LayerCake
+public import TauCeti.GroupTheory.Amenable.LevelSet
 
 /-!
 # Følner sets from almost invariant finitely supported functions
@@ -29,13 +25,13 @@ then some finite nonempty set `F ⊆ X` satisfies
 ∑_{g ∈ K} |g • F ∆ F| < ε · |F|.
 ```
 
-Such a set is found among the superlevel sets `{x | t < p x}`, `t > 0`.
+Such a set is found among the superlevel sets `{x | t < p x}`, `t ≥ 0`.
 
 This passes from Reiter's condition (almost invariant finitely supported probabilities) to Følner's
-condition (almost invariant finite sets). The proof is the layer-cake argument: for counting
-measure, the `ℓ¹` distance between `p` and its translate is the integral over the levels `t > 0` of
-`|g • F_t ∆ F_t|`, while the `ℓ¹` norm of `p` is the integral of `|F_t|`; see
-`MeasureTheory.Measure.exists_pos_sum_measure_symmDiff_lt_mul_measure`.
+condition (almost invariant finite sets). The finite layer-cake identities
+`TauCeti.exists_finsupp_layerCake` express the mass of `p` and each translation distance as
+weighted sums of level-set cardinalities and boundaries. A strict inequality between the
+weighted sums holds at some level, giving the desired set without measure-theoretic arguments.
 
 ## Main results
 
@@ -55,58 +51,12 @@ measure, the `ℓ¹` distance between `p` and its translate is the integral over
 
 public section
 
-open Finset Function MeasureTheory
-open scoped Pointwise symmDiff ENNReal
+open Finset Function
+open scoped Pointwise symmDiff
 
 namespace TauCeti
 
-/-- Against counting measure on a finite set `U` containing the support of a nonnegative `f`, the
-integral of `f` is its sum. -/
-private theorem lintegral_ofReal_count_restrict_eq_tsum {X : Type*} [MeasurableSpace X]
-    [MeasurableSingletonClass X] {U : Finset X} {f : X → ℝ} (hf : 0 ≤ f)
-    (hU : ∀ x ∉ U, f x = 0) :
-    ∫⁻ x, ENNReal.ofReal (f x) ∂Measure.count.restrict U = ENNReal.ofReal (∑' x, f x) := by
-  rw [tsum_eq_sum hU, ENNReal.ofReal_sum_of_nonneg fun x _ ↦ hf x]
-  simp [lintegral_finset]
-
 variable {G X : Type*} [Group G] [MulAction G X] [DecidableEq X]
-
-/-- Let `U` contain the support `S` of `p` and its translates `g • S`, `g ∈ K`. If, for counting
-measure on `U`, the superlevel set `{x | t < p x}` at a level `t > 0` has total boundary less than
-`ε` times its measure, then that superlevel set is a nonempty finset `F` with
-`∑_{g ∈ K} |g • F ∆ F| < ε |F|`. -/
-private theorem exists_finset_of_sum_count_restrict_lt [MeasurableSpace X]
-    [MeasurableSingletonClass X] {p : X → ℝ} {S U : Finset X} {K : Finset G} {ε t : ℝ}
-    (hS : ∀ x, p x ≠ 0 → x ∈ S) (hSU : S ⊆ U) (hKU : ∀ g ∈ K, g • S ⊆ U) (hε : 0 < ε)
-    (ht : 0 < t)
-    (hlt : ∑ g ∈ K, Measure.count.restrict U ({x | t < p (g⁻¹ • x)} ∆ {x | t < p x}) <
-      ENNReal.ofReal ε * Measure.count.restrict U {x | t < p x}) :
-    ∃ F : Finset X, F.Nonempty ∧ ∑ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
-  -- The superlevel set `F = {x | t < p x}` lies in `S`, and its translates are the superlevel
-  -- sets of the translates of `p`.
-  set F : Finset X := {x ∈ S | t < p x}
-  have hF : (F : Set X) = {x | t < p x} := by
-    ext x
-    simpa [F] using fun hx ↦ hS x (ht.trans hx).ne'
-  have hsmul (g : G) : {x | t < p (g⁻¹ • x)} = ((g • F : Finset X) : Set X) := by
-    rw [coe_smul_finset, hF]
-    ext x
-    simp [Set.mem_smul_set_iff_inv_smul_mem]
-  have hFU : F ⊆ U := (filter_subset _ _).trans hSU
-  have hmU (A : Finset X) (hA : A ⊆ U) : Measure.count.restrict U (A : Set X) = #A := by
-    rw [Measure.restrict_eq_self _ (coe_subset.2 hA), Measure.count_apply_finset]
-  have hsd {g : G} (hg : g ∈ K) :
-      Measure.count.restrict U ({x | t < p (g⁻¹ • x)} ∆ {x | t < p x}) = #((g • F) ∆ F) := by
-    rw [hsmul, ← hF, ← coe_symmDiff, hmU]
-    exact symmDiff_le_sup.trans (union_subset
-      ((smul_finset_subset_smul_finset (filter_subset _ _)).trans (hKU g hg)) hFU)
-  rw [sum_congr rfl fun g hg ↦ hsd hg, ← hF, hmU F hFU] at hlt
-  replace hlt : ∑ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
-    rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul hε.le] at hlt
-    exact_mod_cast ENNReal.natCast_lt_ofReal.1 (by exact_mod_cast hlt)
-  refine ⟨F, card_pos.1 ?_, hlt⟩
-  exact_mod_cast pos_of_mul_pos_right
-    ((sum_nonneg fun g _ ↦ Nat.cast_nonneg _).trans_lt hlt) hε.le
 
 /-- **Reiter implies Følner, summed form.** If a nonnegative finitely supported function `p` on
 `X` satisfies `∑_{g ∈ K} ∑_x |p (g⁻¹ • x) - p x| < ε · ∑_x p x`, then some finite nonempty set
@@ -115,40 +65,21 @@ theorem exists_finset_sum_card_smul_symmDiff_lt_of_sum_tsum_lt {p : X → ℝ} (
     (hfin : p.HasFiniteSupport) {K : Finset G} {ε : ℝ}
     (h : ∑ g ∈ K, ∑' x, |p (g⁻¹ • x) - p x| < ε * ∑' x, p x) :
     ∃ F : Finset X, F.Nonempty ∧ ∑ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
-  let : MeasurableSpace X := ⊤
-  have : MeasurableSingletonClass X := ⟨fun _ ↦ trivial⟩
-  have hpos : 0 < ε * ∑' x, p x :=
-    (sum_nonneg fun g _ ↦ tsum_nonneg fun x ↦ abs_nonneg _).trans_lt h
-  have hε : 0 < ε := pos_of_mul_pos_left hpos (tsum_nonneg hp)
-  -- Step 1: rewrite `h` as an inequality of integrals for counting measure on a finite set `U`
-  -- containing the supports of `p` and its translates. Step 2: select a level `t > 0` by
-  -- `exists_pos_sum_measure_symmDiff_lt_mul_measure`. Step 3: identify the measures of the
-  -- superlevel sets at `t` with cardinalities, by `exists_finset_of_sum_count_restrict_lt`.
-  set S := hfin.toFinset
-  have hS (x : X) (hx : p x ≠ 0) : x ∈ S := hfin.mem_toFinset.2 hx
-  set U : Finset X := S ∪ K.biUnion fun g ↦ g • S
-  have hpU (x : X) (hx : x ∉ U) : p x = 0 := not_not.1 fun h ↦ hx (mem_union_left _ (hS x h))
-  have hpgU {g : G} (hg : g ∈ K) (x : X) (hx : x ∉ U) : p (g⁻¹ • x) = 0 :=
-    not_not.1 fun h ↦ hx <| mem_union_right _ <| mem_biUnion.2
-      ⟨g, hg, mem_smul_finset.2 ⟨_, hS _ h, smul_inv_smul g x⟩⟩
-  -- Counting measure on `X` need not be s-finite, so work with counting measure on `U`: it is a
-  -- finite measure, and its integrals are sums over `U`.
-  set m : Measure X := Measure.count.restrict U
-  have : IsFiniteMeasure m := ⟨by simp [m]⟩
-  have h' : ∑ g ∈ K, ∫⁻ x, ‖p (g⁻¹ • x) - p x‖ₑ ∂m <
-      ENNReal.ofReal ε * ∫⁻ x, ENNReal.ofReal (p x) ∂m := by
-    simp_rw [Real.enorm_eq_ofReal_abs]
-    rw [sum_congr rfl fun g hg ↦ lintegral_ofReal_count_restrict_eq_tsum (fun _ ↦ abs_nonneg _)
-        fun x hx ↦ by simp [hpU x hx, hpgU hg x hx],
-      lintegral_ofReal_count_restrict_eq_tsum hp hpU,
-      ← ENNReal.ofReal_sum_of_nonneg fun g _ ↦ tsum_nonneg fun _ ↦ abs_nonneg _,
-      ← ENNReal.ofReal_mul hε.le]
-    exact (ENNReal.ofReal_lt_ofReal_iff hpos).2 h
-  obtain ⟨t, ht, hlt⟩ := m.exists_pos_sum_measure_symmDiff_lt_mul_measure K
-    measurable_from_top.aemeasurable (fun _ _ ↦ measurable_from_top.aemeasurable)
-    (ae_of_all _ hp) h'
-  exact exists_finset_of_sum_count_restrict_lt hS subset_union_left
-    (fun g hg ↦ (subset_biUnion_of_mem (fun g ↦ g • S) hg).trans subset_union_right) hε ht hlt
+  classical
+  obtain ⟨w, hw, -, hmass, hboundary⟩ := exists_finsupp_layerCake (G := G) hp hfin
+  let F (t : ℝ) := hfin.toFinset.filter (fun x => t < p x)
+  -- Both sides use the same nonnegative widths, so one level satisfies the strict inequality.
+  have h' : (∑ t ∈ w.support, w t * ∑ g ∈ K, (#((g • F t) ∆ F t) : ℝ)) <
+      ∑ t ∈ w.support, w t * (ε * #(F t)) := by
+    simp only [hboundary, hmass, Finsupp.sum] at h
+    rw [sum_comm] at h
+    simpa only [F, ← mul_sum, mul_sum, mul_left_comm] using h
+  obtain ⟨t, -, ht⟩ := exists_lt_of_sum_lt h'
+  have hlt : ∑ g ∈ K, (#((g • F t) ∆ F t) : ℝ) < ε * #(F t) :=
+    lt_of_mul_lt_mul_left ht (hw t)
+  refine ⟨F t, ?_, hlt⟩
+  by_contra hn
+  simp [not_nonempty_iff_eq_empty.1 hn] at hlt
 
 /-- **Reiter implies Følner.** If a nonnegative finitely supported function `p` on `X` satisfies
 `∑_{g ∈ K} ∑_x |p (g⁻¹ • x) - p x| < ε · ∑_x p x`, then some finite nonempty set `F ⊆ X` satisfies

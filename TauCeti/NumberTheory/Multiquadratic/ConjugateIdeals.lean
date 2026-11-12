@@ -84,7 +84,7 @@ dividing none of them, and let `σ` be an automorphism of `K` moving the square 
 radicand `d i` which is a quadratic residue modulo every member of `T`. Then the ideals `𝔄` of
 `𝓞 K` with `𝔄 · σ𝔄 = (∏ q ∈ T, q)` number exactly `2 ^ (g / 2)`, where `g` is the total number of
 primes of `𝓞 K` above the members of `T`. -/
-theorem ncard_setOf_mul_smul_eq_span_prod [Finite ι]
+theorem ncard_setOf_mul_smul_eq_span_prod
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (htop : adjoin ℚ (Set.range r) = ⊤)
     {T : Finset ℕ} (hT : ∀ q ∈ T, q.Prime) (hodd : ∀ q ∈ T, q ≠ 2)
     (hcop : ∀ q ∈ T, ∀ i, ¬ (q : ℤ) ∣ d i) {i : ι}
@@ -152,7 +152,7 @@ theorem ncard_setOf_mul_smul_eq_span_prod [Finite ι]
 `σ` moving the square root `r i` of a radicand which is a quadratic residue mod `p`, the ideals
 `𝔄` of `𝓞 K` with `𝔄 · σ𝔄 = (p)` number exactly `2 ^ (g / 2)`, where `g` is the number of primes
 above `p`: one for each choice of a prime from each `σ`-conjugate pair. -/
-theorem ncard_setOf_mul_smul_eq_span_natCast [Finite ι]
+theorem ncard_setOf_mul_smul_eq_span_natCast
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (htop : adjoin ℚ (Set.range r) = ⊤)
     (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) {i : ι} (hres : legendreSym p (d i) = 1)
     {σ : K ≃ₐ[ℚ] K} (hσ : σ (r i) ≠ r i) :

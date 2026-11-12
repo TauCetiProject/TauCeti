@@ -58,7 +58,6 @@ strict is witnessed by the deterministic 3-cycle, in
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 
 No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable rather than
 Markov exchangeable sequences.
@@ -262,17 +261,21 @@ theorem markovExchangeable_of_prefixLaw_singleton_eq [Countable α] [MeasurableS
   rw [h n u, h n v, h0, prod_eq_of_transitionCount_eq hcount p]
 
 /-- **The process-level and path-law formulations of Markov exchangeability agree.** -/
-theorem markovExchangeable_pathLaw_iff [Countable α] [MeasurableSingletonClass α]
+theorem markovExchangeable_pathLaw_iff
     {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : ∀ i, AEMeasurable (X i) μ) :
     MarkovExchangeable (pathLaw μ X) (fun n (x : ℕ → α) => x n) ↔ MarkovExchangeable μ X := by
   constructor
   · intro h
+    let _ : Countable α := h.countable
+    have : MeasurableSingletonClass α := h.measurableSingletonClass
     refine MarkovExchangeable.intro hX ?_
     intro n u v h0 hcount
     rw [← prefixLaw_pathLaw hX]
     exact h.prefixLaw_singleton_eq n u v h0 hcount
   · intro h
+    let _ : Countable α := h.countable
+    have : MeasurableSingletonClass α := h.measurableSingletonClass
     refine MarkovExchangeable.intro (fun i => (measurable_pi_apply i).aemeasurable) ?_
     intro n u v h0 hcount
     rw [prefixLaw_pathLaw hX]

@@ -10,6 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
+import Mathlib.Analysis.InnerProductSpace.Completion
+
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
 /-!
 # The modulus of a bounded operator
@@ -53,6 +56,8 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
   commutes with `|T|`.
 * `ContinuousLinearMap.norm_modulus_comp`, `ContinuousLinearMap.norm_comp_modulus`: the
   composition laws `‖|T| D‖ = ‖T D‖` and `‖D |T|‖ = ‖D T†‖`.
+* `ContinuousLinearMap.continuous_modulus`: on real Hilbert spaces, `|T|` depends continuously
+  on `T`.
 
 ## References
 
@@ -154,6 +159,22 @@ theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
 theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
   (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
 
+/-- The modulus is natural under linear isometric equivalences of the source and target:
+`|e₁ T e₂⁻¹| = e₂ |T| e₂⁻¹`. In particular the modulus commutes with conjugation by a linear
+isometric equivalence. -/
+theorem modulus_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
+    [CompleteSpace E'] [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [CompleteSpace F']
+    (e₁ : F ≃ₗᵢ[𝕜] F') (e₂ : E ≃ₗᵢ[𝕜] E') (T : E →L[𝕜] F) :
+    ((e₁ : F →L[𝕜] F') ∘L T ∘L (e₂.symm : E' →L[𝕜] E)).modulus =
+      (e₂ : E →L[𝕜] E') ∘L T.modulus ∘L (e₂.symm : E' →L[𝕜] E) := by
+  refine (eq_modulus_iff.2 ⟨?_, ?_⟩).symm
+  · simpa only [LinearIsometryEquiv.adjoint_eq_symm] using
+      T.isPositive_modulus.conj_adjoint (e₂ : E →L[𝕜] E')
+  · rw [adjoint_comp, adjoint_comp, LinearIsometryEquiv.adjoint_eq_symm,
+      LinearIsometryEquiv.adjoint_eq_symm, LinearIsometryEquiv.symm_symm]
+    ext x
+    simp [modulus_modulus_apply]
+
 /-- The modulus is the square root `CFC.sqrt (T† T)` of the continuous functional calculus, for
 every real algebra structure on `E →L[𝕜] E` compatible with the `𝕜`-action. -/
 theorem modulus_eq_sqrt [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
@@ -204,13 +225,21 @@ theorem norm_modulus_comp {G : Type*} [SeminormedAddCommGroup G] [NormedSpace �
   opNorm_ext _ _ fun x ↦ T.norm_modulus_apply (D x)
 
 /-- Postcomposition law for the modulus: `‖D |T|‖ = ‖D T†‖` for every bounded operator `D` out of
-the source of `T`. -/
+the source of `T` into an inner product space, which need not be complete. -/
 theorem norm_comp_modulus {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-    [CompleteSpace G] (T : E →L[𝕜] F) (D : E →L[𝕜] G) : ‖D ∘L T.modulus‖ = ‖D ∘L T†‖ :=
+    (T : E →L[𝕜] F) (D : E →L[𝕜] G) : ‖D ∘L T.modulus‖ = ‖D ∘L T†‖ := by
+  -- The embedding into the completion preserves norms, so we may assume `G` is complete.
+  let ι : G →L[𝕜] UniformSpace.Completion G := UniformSpace.Completion.toComplL
+  have hE (A : E →L[𝕜] G) : ‖ι ∘L A‖ = ‖A‖ :=
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := G)).norm_toContinuousLinearMap_comp
+  have hF (A : F →L[𝕜] G) : ‖ι ∘L A‖ = ‖A‖ :=
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := G)).norm_toContinuousLinearMap_comp
+  rw [← hE (D ∘L T.modulus), ← hF (D ∘L T†), ← comp_assoc, ← comp_assoc]
+  generalize ι ∘L D = D'
   -- Pass to adjoints, which preserve norms, and apply the precomposition law.
-  calc ‖D ∘L T.modulus‖ = ‖(D ∘L T.modulus)†‖ := (adjoint.norm_map _).symm
-    _ = ‖T ∘L D†‖ := by rw [adjoint_comp, adjoint_modulus, norm_modulus_comp]
-    _ = ‖D ∘L T†‖ := by rw [← adjoint.norm_map, adjoint_comp, adjoint_adjoint]
+  calc ‖D' ∘L T.modulus‖ = ‖(D' ∘L T.modulus)†‖ := (adjoint.norm_map _).symm
+    _ = ‖T ∘L D'†‖ := by rw [adjoint_comp, adjoint_modulus, norm_modulus_comp]
+    _ = ‖D' ∘L T†‖ := by rw [← adjoint.norm_map, adjoint_comp, adjoint_adjoint]
 
 section RealAlgebra
 
@@ -245,5 +274,21 @@ theorem isStrictlyPositive_modulus_of_forall_norm_le (T : E →L[𝕜] F)
     ((CFC.one_le_iff (R := ℝ) _ T.isSelfAdjoint_modulus).mp hP r hr)
 
 end RealAlgebra
+
+section Continuity
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- The modulus of an operator between real Hilbert spaces depends continuously on the operator,
+in operator norm. -/
+theorem continuous_modulus : Continuous (modulus : (E →L[ℝ] F) → E →L[ℝ] E) := by
+  have hg : Continuous fun T : E →L[ℝ] F ↦ T† ∘L T :=
+    (adjoint (𝕜 := ℝ) (E := E) (F := F)).continuous.clm_comp continuous_id
+  refine (CFC.continuousOn_sqrt.comp_continuous hg fun T ↦ ?_).congr fun T ↦ ?_
+  · exact nonneg_iff_isPositive.2 T.isPositive_adjoint_comp_self
+  · exact (modulus_eq_sqrt T).symm
+
+end Continuity
 
 end ContinuousLinearMap
