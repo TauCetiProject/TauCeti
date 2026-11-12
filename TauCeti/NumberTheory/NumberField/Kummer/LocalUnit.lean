@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 
 /-!
 # Integral radicals of local units
@@ -41,17 +41,16 @@ theorem exists_integral_pow_eq_of_valuation_eq_one
   have hd : (d : 𝓞 K) ∉ v.asIdeal := d.2
   let c : 𝓞 K := (d : 𝓞 K) ^ (n - 1) * b
   have hc : algebraMap (𝓞 K) K c = algebraMap (𝓞 K) K d ^ n * a := by
-    rw [map_mul, map_pow, ← hbd, mul_comm a, ← mul_assoc, ← pow_succ,
-      Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn)]
+    rw [map_mul, map_pow, ← hbd, ← pow_sub_one_mul hn]
+    ring
   have hcunit : c ∉ v.asIdeal := by
-    rw [← valuation_eq_one_iff_notMem (K := K), hc, map_mul, map_pow, ha,
-      (v.valuation_eq_one_iff_notMem (K := K)).mpr hd, one_pow, one_mul]
+    rw [← valuation_eq_one_iff_notMem (K := K), hc]
+    simp [ha, (v.valuation_eq_one_iff_notMem (K := K)).mpr hd]
   have hβc : (algebraMap (𝓞 K) M d * α) ^ n = algebraMap (𝓞 K) M c := by
-    rw [mul_pow, hα, IsScalarTower.algebraMap_apply (𝓞 K) K M,
-      IsScalarTower.algebraMap_apply (𝓞 K) K M c, hc, map_mul, map_pow]
+    -- Write both sides as images of elements of `K`, using `hα` for `α ^ n` and `hc` for `c`.
+    simp [IsScalarTower.algebraMap_apply (𝓞 K) K M, hc, mul_pow, hα]
   have hβint : IsIntegral ℤ (algebraMap (𝓞 K) M d * α) :=
-    IsIntegral.of_pow (Nat.pos_of_ne_zero hn)
-      (hβc ▸ (Algebra.IsIntegral.isIntegral (R := ℤ) c).map (IsScalarTower.toAlgHom ℤ (𝓞 K) M))
+    .of_pow (Nat.pos_of_ne_zero hn) (hβc ▸ (RingOfIntegers.isIntegral c).algebraMap)
   let β : 𝓞 M := ⟨_, hβint⟩
   have hβ : (β : M) = algebraMap (𝓞 K) M d * α := rfl
   refine ⟨d, c, β, hd, hcunit, hc, hβ, ?_⟩

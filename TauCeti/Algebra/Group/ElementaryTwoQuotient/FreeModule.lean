@@ -18,9 +18,9 @@ elementary-2 quotient of cardinality `2 ^ rank`: squaring is doubling, and `A / 
 
 This is the free building block complementing the finite cyclic one of
 `TauCeti.Algebra.Group.ElementaryTwoQuotient.Cyclic`: through a product decomposition of a
-finitely generated abelian group, the two together compute its number of square classes. The
-multiquadratic roadmap consumes this file through Dirichlet's unit theorem, whose free part
-`Fin (rank) → ℤ` contributes `2 ^ rank` square classes of units.
+finitely generated abelian group, the two together compute its number of square classes. For the
+unit group of a number field, Dirichlet's unit theorem gives a free part `Fin (rank) → ℤ`, which
+contributes `2 ^ rank` square classes of units.
 
 The counting itself is Mathlib's `ModN.natCard_eq` (`|A/nA| = n ^ rank` for a free finite-rank
 `ℤ`-module); this file transports it along the identification of `Additive (Multiplicative A)`
