@@ -37,9 +37,9 @@ of the inner product with itself is the constant-curvature tensor
 `TauCeti.FourTensor.constantCurvature`,
 `r(u, v, z, w) = ⟪u, z⟫ ⟪v, w⟫ - ⟪u, w⟫ ⟪v, z⟫`, the curvature four-tensor of the unit sphere.
 It is positive on linearly independent pairs `(u, v, u, v)`, where it is the Gram determinant.
-Its Ricci contraction is `(n - 1) g` and its scalar contraction is `n (n - 1)`, and it is the
-four-tensor of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the
-identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
+Its Ricci contraction is `(n - 1) g` and its scalar contraction is `n (n - 1)`, and `κ` times it
+is the four-tensor of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`,
+the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 
 ## Main definitions
 
