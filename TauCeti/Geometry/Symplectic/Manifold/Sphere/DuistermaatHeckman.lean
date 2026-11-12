@@ -198,33 +198,31 @@ private theorem fderiv_sphereCylinderCoord_apply {p : ℝ²} (hp : p 1 ∈ Ioo (
     (Ne.symm h))).ne'
   have hd : HasFDerivAt sphereCylinderCoord (fderiv ℝ sphereCylinderCoord p) p :=
     ((contDiffAt_sphereCylinderCoord hp).differentiableAt (by simp)).hasFDerivAt
-  have hcomp (i : Fin 3) := (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 (sphereCylinderCoord p) i).comp p hd
+  -- Each coordinate of the derivative is the derivative of that coordinate.
+  have hcoord (i : Fin 3) {f' : ℝ² →L[ℝ] ℝ}
+      (hf : HasFDerivAt (fun q ↦ sphereCylinderCoord q i) f' p) :
+      fderiv ℝ sphereCylinderCoord p u i = f' u :=
+    congrArg (· u) (((PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 (sphereCylinderCoord p) i).comp p
+      hd).unique hf)
   have h0 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 p (0 : Fin 2)
   have h1 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 p (1 : Fin 2)
   have hs := ((h1.pow 2).const_sub 1).sqrt h
   refine PiLp.ext fun i ↦ ?_
   fin_cases i
-  · have := (hcomp 0).unique (hs.mul h0.cos)
-    have := congrArg (· u) this
-    simp only [ContinuousLinearMap.comp_apply] at this
-    simp only [Fin.zero_eta, Fin.isValue, Matrix.cons_val_zero]
-    rw [show (fderiv ℝ sphereCylinderCoord p u) 0 = _ from this]
-    simp
+  · refine (hcoord 0 (hs.mul h0.cos)).trans ?_
+    simp only [Fin.zero_eta, Fin.isValue, cons_val_zero, one_div, _root_.mul_inv_rev,
+      Nat.add_one_sub_one, pow_one, nsmul_eq_mul, Nat.cast_ofNat, smul_neg, add_apply, smul_apply,
+      PiLp.proj_apply, smul_eq_mul, neg_mul, mul_neg, neg_apply]
     field_simp
     ring
-  · have := congrArg (· u) ((hcomp 1).unique (hs.mul h0.sin))
-    simp only [ContinuousLinearMap.comp_apply] at this
-    simp only [Fin.mk_one, Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_zero]
-    rw [show (fderiv ℝ sphereCylinderCoord p u) 1 = _ from this]
-    simp
+  · refine (hcoord 1 (hs.mul h0.sin)).trans ?_
+    simp only [Fin.mk_one, Fin.isValue, cons_val_one, cons_val_zero, one_div, _root_.mul_inv_rev,
+      Nat.add_one_sub_one, pow_one, nsmul_eq_mul, Nat.cast_ofNat, smul_neg, add_apply, smul_apply,
+      PiLp.proj_apply, smul_eq_mul, neg_apply]
     field_simp
     ring
-  · have := congrArg (· u) ((hcomp 2).unique h1)
-    simp only [ContinuousLinearMap.comp_apply] at this
-    simp only [Fin.reduceFinMk, Fin.isValue, Matrix.cons_val_two, Matrix.tail_cons,
-      Matrix.head_cons]
-    rw [show (fderiv ℝ sphereCylinderCoord p u) 2 = _ from this]
-    simp
+  · refine (hcoord 2 h1).trans ?_
+    simp only [Fin.reduceFinMk, Fin.isValue, cons_val_two, tail_cons, head_cons, PiLp.proj_apply]
 
 /-- The triple product `x ⬝ (dx(u) × dx(w))` in cylindrical coordinates is `dθ ∧ dh (u, w)`. -/
 private theorem dotProduct_cross_fderiv_sphereCylinderCoord {p : ℝ²} (hp : p 1 ∈ Ioo (-1) 1)
@@ -234,12 +232,15 @@ private theorem dotProduct_cross_fderiv_sphereCylinderCoord {p : ℝ²} (hp : p 
       u 0 * w 1 - u 1 * w 0 := by
   have h : 0 < 1 - p 1 ^ 2 := by nlinarith [hp.1, hp.2]
   have hr2 := Real.sq_sqrt h.le
+  have hr := mul_inv_cancel₀ (Real.sqrt_pos.2 h).ne'
   rw [fderiv_sphereCylinderCoord_apply hp, fderiv_sphereCylinderCoord_apply hp]
-  simp only [sphereCylinderCoord, cross_apply, dotProduct, Fin.sum_univ_three]
-  simp
-  field_simp
-  rw [hr2]
-  linear_combination (1 - p 1 ^ 2) * (u 0 * w 1 - u 1 * w 0) * sin_sq_add_cos_sq (p 0)
+  simp only [sphereCylinderCoord, cross_apply, dotProduct, Fin.sum_univ_three, Fin.isValue,
+    cons_val_zero, cons_val_one, cons_val_two, tail_cons, head_cons]
+  -- The triple product is `(sin² θ + cos² θ) (r² + h² r r⁻¹) (dθ ∧ dh)(u, w)` with
+  -- `r = √(1 - h²)`.
+  linear_combination (u 0 * w 1 - u 1 * w 0) *
+    ((√(1 - p 1 ^ 2) ^ 2 + p 1 ^ 2 * (√(1 - p 1 ^ 2) * (√(1 - p 1 ^ 2))⁻¹)) *
+      sin_sq_add_cos_sq (p 0) + hr2 + p 1 ^ 2 * hr)
 
 /-- **Archimedes' map preserves area**: cylindrical coordinates pull the area form of the sphere
 back to `dθ ∧ dh`. -/
@@ -430,8 +431,7 @@ theorem duistermaatHeckmanMeasure_sphereAreaForm :
       ((volume : Measure ℝ²).comap Subtype.val).map (sphereCylinder (-π)) := by
     rw [map_comap_volume_sphereCylinder, Measure.restrict_eq_self_of_ae_mem]
     exact ae_iff.2 liouvilleMeasure_compl_range_sphereCylinder
-  have hh : Measurable fun x : S² ↦ (x : ℝ³) 2 :=
-    ((continuous_apply 2).comp ((PiLp.continuous_ofLp 2 _).comp continuous_subtype_val)).measurable
+  have hh : Measurable fun x : S² ↦ (x : ℝ³) 2 := by fun_prop
   have hcomp : (fun x : S² ↦ (x : ℝ³) 2) ∘ sphereCylinder (-π) =
       (fun p : ℝ² ↦ p 1) ∘ Subtype.val := by
     funext p
@@ -460,8 +460,7 @@ sphere. -/
 theorem liouvilleMeasure_sphereAreaForm_setOf_mem_Icc {a b : ℝ} (ha : -1 ≤ a) (hb : b ≤ 1) :
     sphereAreaForm.liouvilleMeasure 1 {x : S² | (x : ℝ³) 2 ∈ Icc a b} =
       ENNReal.ofReal (2 * π * (b - a)) := by
-  have hh : Measurable fun x : S² ↦ (x : ℝ³) 2 :=
-    ((continuous_apply 2).comp ((PiLp.continuous_ofLp 2 _).comp continuous_subtype_val)).measurable
+  have hh : Measurable fun x : S² ↦ (x : ℝ³) 2 := by fun_prop
   have h := congrArg (· (Icc a b)) duistermaatHeckmanMeasure_sphereAreaForm
   simp only at h
   rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, Measure.map_apply hh measurableSet_Icc] at h
