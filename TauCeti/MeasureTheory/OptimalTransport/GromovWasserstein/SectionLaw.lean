@@ -198,9 +198,9 @@ theorem eLpNorm_kernelSectionLawEDist_le_gromovWassersteinDistortion [SFinite μ
           (hπ.measurePreserving_snd.prod hπ.measurePreserving_snd).quasiMeasurePreserving))
       ).aestronglyMeasurable
   rw [gromovWassersteinDistortion_def, eLpNorm_prod_eq_eLpNorm_eLpNorm hdisc]
-  refine eLpNorm_mono_enorm_ae hC ?_
+  refine eLpNorm_mono_eNorm_ae hC ?_
   filter_upwards [ae_kernelSectionLawEDist_le hπ hd hωX hωY] with q hq
-  simpa only [enorm_eq_self] using hq
+  simpa only [eNorm_eq_self] using hq
 
 /-- **The section-law lower bound, general form.** If the section-law distance is almost
 everywhere strongly measurable for every coupling of `μ` and `ν`, its smallest `Lᵖ` norm over
@@ -252,10 +252,10 @@ theorem wassersteinEDist_map_kernelEccentricity_le_eLpNorm_kernelSectionLawEDist
   refine (wassersteinEDist_map_le_eLpNorm_of_measurable_edist hπ ENNReal.measurable_edist
     (aestronglyMeasurable_kernelEccentricity hωX z₀).aemeasurable
     (aestronglyMeasurable_kernelEccentricity hωY z₀).aemeasurable).trans
-    (eLpNorm_mono_enorm_ae (hπ.aestronglyMeasurable_edist_kernelEccentricity hωX hωY z₀) ?_)
+    (eLpNorm_mono_eNorm_ae (hπ.aestronglyMeasurable_edist_kernelEccentricity hωX hωY z₀) ?_)
   filter_upwards [ae_edist_kernelEccentricity_le_kernelSectionLawEDist hπ hp hd hωX hωY z₀]
     with q hq
-  simpa only [enorm_eq_self] using hq
+  simpa only [eNorm_eq_self] using hq
 
 /-- **The section-law bound dominates the eccentricity bound.** For probability measures and
 `1 ≤ p`, the Wasserstein distance between the eccentricity distributions is at most the smallest
@@ -334,9 +334,9 @@ theorem ae_hasFiniteMoment_kernelSectionLaw (hp0 : p ≠ 0) (hp : p ≠ ∞)
   have hsec (x : X) : Measurable fun x' ↦ ω₀ (x, x') := hω₀.comp measurable_prodMk_left
   have hm₀ : MemLp (fun q ↦ edist (ω₀ q) z₀) p (μ.prod μ) :=
     hm.ae_eq (hωω₀.mono fun q hq ↦ by rw [hq])
-  have hint := (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp hm₀.aestronglyMeasurable).1
+  have hint := (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp hm₀.aestronglyMeasurable).1
     hm₀.eLpNorm_lt_top
-  simp only [enorm_eq_self] at hint
+  simp only [eNorm_eq_self] at hint
   rw [lintegral_prod _ hg.aemeasurable] at hint
   filter_upwards [ae_lt_top hg.lintegral_prod_right' hint.ne, kernelSectionLaw_congr_ae hωω₀]
     with x hx hx'

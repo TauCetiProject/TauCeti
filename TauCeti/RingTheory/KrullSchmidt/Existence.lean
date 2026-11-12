@@ -61,10 +61,6 @@ and Mathlib establishes that instance only for `[Ring A] [AddCommGroup M]`, its 
 
 ## References
 
-This implements the "existence of a decomposition" bullet of Layer 2 ("the Krull-Schmidt theorem")
-of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, pinned as
-`exists_indecomposable_decomposition` in its `Suggested.lean`.
-
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4.
 -/

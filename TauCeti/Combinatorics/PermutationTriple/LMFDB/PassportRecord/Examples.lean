@@ -404,7 +404,7 @@ example :
     parseMapLabel 4 "4T1-4_4_2.2-ab" =
       some (⟨⟨0, by simp⟩, {4}, {4}, {2, 2}⟩, "ab") := by
   rw [parseMapLabel_eq_some_iff]
-  refine ⟨"4T1", "4_4_2.2", by decide +kernel, by decide, by decide, ?_⟩
+  refine ⟨"4T1", "4_4_2.2", by decide +kernel, by decide, by simp, ?_⟩
   exact parsePassportLabel_torusPassportRecord
 
 end PassportRecord
@@ -484,25 +484,13 @@ theorem isPrimitivizationOf_torusPassportRecord :
     refine (equivalent_iff_cycleData_eq_of_degree_le_four (by norm_num) ⟨_, hs0⟩ Q).mpr ?_
     rw [hQ, Subtype.coe_mk, toTriple_doubleCoverStoredTriple]
     decide
-  exact
-    { deg_eq := rfl
-      orbitSize_eq := by
-        rw [BelyiRecord.storedEmbeddingCount_def]
-        rfl
-      triples_ne_nil := List.cons_ne_nil _ _
-      hasPassport s hs := by
-        obtain rfl := List.mem_singleton.mp hs
-        exact ⟨hs0, hs0Q⟩
-      forall₂_isCycleNotation := .cons ⟨⟨by decide, by decide, by decide⟩,
-        ⟨by decide, by decide, by decide⟩, Perm.isCycleNotation_nil_iff.mpr rfl⟩ .nil
-      lambdas_eq := by
-        rw [ConnectedTriple.passportOf_lam0, ConnectedTriple.passportOf_lam1,
-          ConnectedTriple.passportOf_laminf, hQ]
-        rfl
-      g_eq s hs := by
-        obtain rfl := List.mem_singleton.mp hs
-        rw [toTriple_doubleCoverStoredTriple, ← computedGenus_eq]
-        decide }
+  refine BelyiRecord.isValidFor_of_triples_eq_singleton rfl rfl rfl rfl
+    ⟨⟨by decide, by decide, by decide⟩, ⟨by decide, by decide, by decide⟩,
+      Perm.isCycleNotation_nil_iff.mpr rfl⟩ hs0 hs0Q ?_ ?_
+  · rw [toTriple_doubleCoverStoredTriple]
+    decide
+  · rw [toTriple_doubleCoverStoredTriple, ← computedGenus_eq]
+    decide
 
 /-! ### The map label `2T1-2_2_1.1-a` -/
 
@@ -513,7 +501,7 @@ theorem parseMapLabel_doubleCoverBelyiRecord :
     parseMapLabel 2 doubleCoverBelyiRecord.label =
       some (⟨⟨0, by simp⟩, {2}, {2}, {1, 1}⟩, "a") := by
   rw [parseMapLabel_eq_some_iff_append]
-  refine ⟨"2T1-2_2_1.1", by decide +kernel, by decide, by decide, ?_⟩
+  refine ⟨"2T1-2_2_1.1", by decide +kernel, by decide, by simp, ?_⟩
   rw [parsePassportLabel_eq_some_iff]
   refine ⟨"2T1", "2_2_1.1", "2", "2", "1.1", by decide +kernel,
     by decide +kernel, ?_, ?_, ?_, ?_⟩
