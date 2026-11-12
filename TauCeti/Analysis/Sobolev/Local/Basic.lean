@@ -97,6 +97,12 @@ theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
   intro K hK hc
   exact (hf K hK hc).ae_eq (ae_mono (Measure.restrict_mono_set volume hK) hfg)
 
+/-- Restricting to a subset preserves local `Lᵖ` membership of any function agreeing with the
+original one on that subset. -/
+theorem MemLpLoc.congr_mono (hf : MemLpLoc p U f) (hgf : Set.EqOn g f V) (hVU : V ⊆ U) :
+    MemLpLoc p V g := fun K hK hc => (hf K (hK.trans hVU) hc).ae_eq <| by
+  filter_upwards [ae_restrict_mem hc.measurableSet] with z hz using (hgf (hK hz)).symm
+
 /-- The zero function belongs to every local `Lᵖ` class. -/
 @[simp]
 theorem memLpLoc_zero : MemLpLoc p U (0 : ℂ → F) := fun _ _ _ => MemLp.zero
@@ -380,20 +386,17 @@ theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p U k f)
 original one on that subset. -/
 theorem MemWkpLoc.congr_mono (hf : MemWkpLoc p U k f) (hgf : Set.EqOn g f V) (hVU : V ⊆ U) :
     MemWkpLoc p V k g := by
-  have hg : MemLpLoc p V g := fun K hK hc => (hf.memLpLoc K (hK.trans hVU) hc).ae_eq <| by
-    filter_upwards [ae_restrict_mem hc.measurableSet] with z hz using (hgf (hK hz)).symm
   cases k with
-  | zero => exact hg
+  | zero => exact MemLpLoc.congr_mono hf hgf hVU
   | succ k =>
     obtain ⟨-, D, hD, hk⟩ := hf.mono hVU
-    exact ⟨hg, D, hD.congr_ae <| by
+    exact ⟨hf.memLpLoc.congr_mono hgf hVU, D, hD.congr_ae <| by
       filter_upwards [ae_restrict_mem isOpen_interior.measurableSet] with z hz using
         (hgf (interior_subset hz)).symm, hk⟩
 
-/-- On a measurable set, the local Sobolev class only depends on the values on that set. -/
-theorem MemWkpLoc.congr_fun (hf : MemWkpLoc p U k f) (hfg : Set.EqOn f g U)
-    (hU : MeasurableSet U) : MemWkpLoc p U k g :=
-  hf.congr_ae ((ae_restrict_mem hU).mono hfg)
+/-- The local Sobolev class only depends on the values on the set. -/
+theorem MemWkpLoc.congr (hf : MemWkpLoc p U k f) (hgf : Set.EqOn g f U) : MemWkpLoc p U k g :=
+  hf.congr_mono hgf subset_rfl
 
 /-- Decreasing the integrability exponent preserves each local derivative order. -/
 theorem MemWkpLoc.mono_exponent (hf : MemWkpLoc p U k f) (hqp : q ≤ p) :
