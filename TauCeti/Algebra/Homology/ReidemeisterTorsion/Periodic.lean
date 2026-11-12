@@ -99,11 +99,11 @@ lifts `s₀`, `s₁`, and `0` otherwise. The quotient does not depend on these c
 def parityTorsion : F := by
   classical
   exact if h : C.Acyclic then
-    torsionBracket c (CochainComplex.prev_zmod_two (CharTwo.add_self_eq_zero 1))
+    torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
         ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1)
         (chosenBoundaryBasis C c 0 1) (chosenBoundaryBasis C c 1 0) (chosenBoundaryLift C c 1 0)
         (chosenBoundaryLift_spec C c 1 0) *
-      (torsionBracket c (CochainComplex.prev_zmod_two (zero_add 1))
+      (torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
         ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) (chosenBoundaryBasis C c 1 0)
         (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
         (chosenBoundaryLift_spec C c 0 1))⁻¹
@@ -126,9 +126,9 @@ theorem parityTorsion_eq (h : C.Acyclic) {p q : ℕ}
     (s₀ : Fin q → C.X 0) (hs₀ : ∀ l, (C.d 0 1).hom (s₀ l) = b₁ l)
     (s₁ : Fin p → C.X 1) (hs₁ : ∀ l, (C.d 1 0).hom (s₁ l) = b₀ l) :
     C.parityTorsion c =
-      torsionBracket c (CochainComplex.prev_zmod_two (CharTwo.add_self_eq_zero 1))
+      torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
           ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1) b₁ b₀ s₁ hs₁ *
-        (torsionBracket c (CochainComplex.prev_zmod_two (zero_add 1))
+        (torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
           ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) b₀ b₁ s₀ hs₀)⁻¹ := by
   have hp : finrank F (LinearMap.range (C.d 1 0).hom) = p := by
     rw [finrank_eq_card_basis b₀, Fintype.card_fin]
@@ -247,12 +247,12 @@ the images of `c i'` by `C.d i' i` and of `c i'` itself, placed according to the
 private theorem parityTorsion_of_d_eq_zero_of_injective {i i' : ZMod 2} (hii' : i + 1 = i')
     (h : C.Acyclic) (hd : C.d i i' = 0) (hinj : Function.Injective (C.d i' i).hom)
     (hn : n i = n i') :
-    torsionBracket c (CochainComplex.prev_zmod_two (hii' ▸ CharTwo.add_cancel_right i 1))
+    torsionBracket c ((ComplexShape.up _).prev_eq' hii')
         ((ComplexShape.up _).next_eq' (hii' ▸ CharTwo.add_cancel_right i 1)) (h i')
         (rangeBasisOfEqZero hd) (rangeBasisOfInjective c hinj) (c i') (fun l ↦ by simp) = 1 ∧
-      torsionBracket c (CochainComplex.prev_zmod_two hii') ((ComplexShape.up _).next_eq' hii')
-          (h i) (rangeBasisOfInjective c hinj) (rangeBasisOfEqZero hd) Fin.elim0
-          (fun l ↦ l.elim0) =
+      torsionBracket c ((ComplexShape.up _).prev_eq' (hii' ▸ CharTwo.add_cancel_right i 1))
+          ((ComplexShape.up _).next_eq' hii') (h i) (rangeBasisOfInjective c hinj)
+          (rangeBasisOfEqZero hd) Fin.elim0 (fun l ↦ l.elim0) =
         (c i).det fun l ↦ (C.d i' i).hom (c i' (Fin.cast hn l)) := by
   constructor
   · rw [torsionBracket_eq_det_right _ _ _ _ _ _ _ _ (by simp)]
@@ -264,7 +264,7 @@ private theorem parityTorsion_of_d_eq_zero_of_injective {i i' : ZMod 2} (hii' : 
 complex is exact in the odd degree. -/
 private theorem injective_of_d_eq_zero {i i' : ZMod 2} (hii' : i + 1 = i') (hd : C.d i i' = 0)
     (h : C.ExactAt i') : Function.Injective (C.d i' i).hom := by
-  rw [← LinearMap.ker_eq_bot, ← (C.exactAt_iff_range_eq_ker
+  rw [← LinearMap.ker_eq_bot, ← (C.exactAt_iff_range_eq_ker_zmod_two
     (hii' ▸ CharTwo.add_cancel_right i 1)).1 h, hd, ModuleCat.hom_zero,
     LinearMap.range_zero]
 
@@ -289,9 +289,9 @@ private theorem acyclic_of_det_ne_zero {i i' : ZMod 2} (hii' : i + 1 = i') (hd :
   have hi'i : i' + 1 = i := hii' ▸ CharTwo.add_cancel_right i 1
   intro m
   obtain rfl | rfl : m = i ∨ m = i' := hii' ▸ eq_or_eq_add_one i m
-  · rw [C.exactAt_iff_range_eq_ker hii', hd, ModuleCat.hom_zero, LinearMap.ker_zero,
+  · rw [C.exactAt_iff_range_eq_ker_zmod_two hii', hd, ModuleCat.hom_zero, LinearMap.ker_zero,
       LinearMap.range_eq_top.2 hsurj]
-  · rw [C.exactAt_iff_range_eq_ker hi'i, hd, ModuleCat.hom_zero, LinearMap.range_zero,
+  · rw [C.exactAt_iff_range_eq_ker_zmod_two hi'i, hd, ModuleCat.hom_zero, LinearMap.range_zero,
       LinearMap.ker_eq_bot.2 hinj]
 
 variable {c} in
@@ -333,8 +333,8 @@ theorem parityTorsion_eq_one (h₀ : n 0 = 0) (h₁ : n 1 = 0) : C.parityTorsion
     ext x
     exact eq_zero_of_dim_eq_zero c h₀ _
   have : IsEmpty (Fin (n 1)) := by rw [h₁]; infer_instance
-  rw [parityTorsion_of_d_one_zero hd (h₁.trans h₀.symm), Basis.det_isEmpty]
-  rfl
+  rw [parityTorsion_of_d_one_zero hd (h₁.trans h₀.symm)]
+  simp [Basis.det_isEmpty]
 
 end TwoTerm
 
