@@ -28,7 +28,8 @@ The only property of the group in which the solutions are taken that the argumen
 uniqueness of roots (`HasUniqueRoots`), which holds in residually free groups and in torsion-free
 commutative-transitive groups. The descriptions of the radical are in one variable, as in the
 source: with further variables `Y` in the ambient alphabet, the same description of the radical
-is equivalent to `G[Y]` being separated by `G`.
+is equivalent to `G[Y]` being separated by `G`. The results here are the case `n = 2` of those on
+the equation `x ^ n d = 1` in `TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet`.
 
 ## Main results
 
@@ -82,11 +83,8 @@ theorem exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero [Subsingleton X]
     ∃ b : G, b ^ 2 = d ∧
       Rad (.id G) {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord} =
         normalClosure {inr (FreeGroup.of (x 0)) * inl b} := by
-  obtain ⟨v, hv⟩ := hS
-  have hv : v (x 0) ^ 2 * d = 1 := by
-    simpa [eval_inr_of] using hv
-  have hb : (v (x 0))⁻¹ ^ 2 = d := by rw [inv_pow, inv_eq_of_mul_eq_one_right hv]
-  exact ⟨_, hb, Rad_toWord_nonorientableCoeff_one_zero Function.injective_id hb⟩
+  rw [toWord_nonorientableCoeff_one_zero] at hS ⊢
+  exact exists_pow_eq_and_Rad_pow_mul_inl two_ne_zero hS
 
 /-- Over a group `G` with unique roots, the radical of the standard quadratic equation `x² d = 1`
 is not the normal closure of the equation. -/
@@ -94,18 +92,7 @@ theorem normalClosure_toWord_nonorientableCoeff_one_zero_ne_Rad [HasUniqueRoots 
     normalClosure {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord} ≠
       Rad (.id G) {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord} := by
   rw [toWord_nonorientableCoeff_one_zero]
-  -- Some `x b` lies in the radical: any `b` if there is no solution, `b = s⁻¹` for a solution `s`.
-  obtain ⟨b, hb⟩ : ∃ b : G,
-      inr (FreeGroup.of (x 0)) * inl b ∈ Rad (.id G) {inr (FreeGroup.of (x 0)) ^ 2 * inl d} := by
-    rcases (V (.id G) {(inr (FreeGroup.of (x 0)) : GX G X) ^ 2 * inl d}).eq_empty_or_nonempty
-      with hV | ⟨v, hv⟩
-    · exact ⟨1, by simp [mem_Rad, hV]⟩
-    have hv : v (x 0) ^ 2 * d = 1 := by simpa [eval_inr_of] using hv
-    refine ⟨(v (x 0))⁻¹, ?_⟩
-    rw [← inv_eq_of_mul_eq_one_right hv, ← inv_pow, Rad_pow_mul_inl_pow two_ne_zero]
-    exact normalClosure_le_Rad _ (subset_normalClosure rfl)
-  intro h
-  exact inr_of_mul_inl_notMem_normalClosure_pow_mul_inl (n := 2) (by decide) (x 0) b d (h ▸ hb)
+  exact normalClosure_pow_mul_inl_ne_Rad two_ne_zero (by decide) (x 0) d
 
 end Standard
 
