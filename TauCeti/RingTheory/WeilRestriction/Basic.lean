@@ -24,7 +24,8 @@ set of `Spec B`-morphisms `Spec (B ⊗[A] T) → Spec C`. This file constructs a
 representing this functor, together with its universal point, makes it functorial in
 `C`, shows that it carries surjections to surjections (closed immersions to closed immersions), and
 shows that its formation commutes with an arbitrary base change `A → A'`. When `C` is finitely
-presented over `B`, the representing algebra is finitely presented over `A`.
+presented over `B`, the representing algebra is finitely presented over `A`; the analogous
+finite type statement also holds.
 
 ## Main definitions
 
@@ -48,6 +49,8 @@ presented over `B`, the representing algebra is finitely presented over `A`.
 * `TauCeti.Algebra.WeilRestriction.homEquiv_comp`: `homEquiv` is natural in the `A`-algebra `T`.
 * `TauCeti.Algebra.WeilRestriction.hom_ext`: homomorphisms out of the Weil restriction are
   determined by their effect on the universal point.
+* `TauCeti.Algebra.WeilRestriction.instFiniteType`: the Weil restriction is of finite type over
+  `A` when `C` is of finite type over `B`.
 * `TauCeti.Algebra.WeilRestriction.instFinitePresentation`: the Weil restriction is of finite
   presentation over `A` when `C` is finitely presented over `B`.
 * `TauCeti.Algebra.WeilRestriction.range_le_iff_range_homEquiv_le`: a homomorphism out of the Weil
@@ -242,7 +245,7 @@ variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [A
 `A`-algebra `B`: an `A`-algebra representing the functor sending an `A`-algebra `T` to the set
 `C →ₐ[B] B ⊗[A] T`, see `WeilRestriction.homEquiv`. -/
 def WeilRestriction : Type _ :=
-  WeilRestriction.RepresentingAlgebra ((Generators.self B C).toPresentation)
+  WeilRestriction.RepresentingAlgebra (Presentation.ofGenerators (Generators.self B C))
     (WeilRestriction.coords A B)
 deriving CommRing, Algebra A
 
@@ -253,7 +256,7 @@ namespace WeilRestriction
 `B`-algebra homomorphism `C →ₐ[B] B ⊗[A] T` is its composite with `B ⊗[A] g` for a unique
 `g : WeilRestriction A B C →ₐ[A] T`. -/
 def universalPoint : C →ₐ[B] B ⊗[A] WeilRestriction A B C :=
-  universalPointOfPresentation ((Generators.self B C).toPresentation) (coords A B)
+  universalPointOfPresentation (Presentation.ofGenerators (Generators.self B C)) (coords A B)
 
 variable (T : Type*) [CommRing T] [Algebra A T]
 
@@ -262,7 +265,7 @@ variable (T : Type*) [CommRing T] [Algebra A T]
 to the composite `C → B ⊗[A] WeilRestriction A B C → B ⊗[A] T` of the universal point with
 `B ⊗[A] g`. It is natural in `T`, see `WeilRestriction.homEquiv_comp`. -/
 def homEquiv : (WeilRestriction A B C →ₐ[A] T) ≃ (C →ₐ[B] B ⊗[A] T) :=
-  homEquivOfPresentation T ((Generators.self B C).toPresentation) (coords A B)
+  homEquivOfPresentation T (Presentation.ofGenerators (Generators.self B C)) (coords A B)
 
 variable {A B C T}
 
@@ -288,16 +291,10 @@ theorem hom_ext {g₁ g₂ : WeilRestriction A B C →ₐ[A] T}
       (Algebra.TensorProduct.lTensor B g₂).comp (universalPoint A B C)) : g₁ = g₂ :=
   (homEquiv A B C T).injective <| by simpa using h
 
-/-- The Weil restriction of a finitely presented algebra along a finite projective algebra is of
-finite presentation over `A`. -/
-instance instFinitePresentation [FinitePresentation B C] :
-    FinitePresentation A (WeilRestriction A B C) := by
-  let P := Presentation.ofFinitePresentation B C
-  let K := coords A B
+-- Any presentation and any finite dual generating family give the same representing algebra.
+private def presentationAlgEquiv {ι σ : Type*} (P : Presentation B C ι σ) (K : Coords A B) :
+    RepresentingAlgebra P K ≃ₐ[A] WeilRestriction A B C := by
   let R := RepresentingAlgebra P K
-  let : FinitePresentation A R :=
-    FinitePresentation.quotient <| Submodule.fg_span <| Set.finite_range _
-  -- The finite presentation and the canonical presentation represent the same functor.
   let u := universalPointOfPresentation P K
   let f := (homEquiv A B C R).symm u
   let g := (homEquivOfPresentation (WeilRestriction A B C) P K).symm
@@ -305,7 +302,6 @@ instance instFinitePresentation [FinitePresentation B C] :
   have hf : homEquiv A B C R f = u := Equiv.apply_symm_apply _ _
   have hg : homEquivOfPresentation (WeilRestriction A B C) P K g =
       universalPoint A B C := Equiv.apply_symm_apply _ _
-  apply FinitePresentation.equiv (A := R)
   refine AlgEquiv.ofAlgHom g f ?_ ?_
   · apply (homEquiv A B C (WeilRestriction A B C)).injective
     rw [homEquiv_comp, hf]
@@ -317,6 +313,27 @@ instance instFinitePresentation [FinitePresentation B C] :
         AlgHom.id B (B ⊗[A] R) := Algebra.TensorProduct.map_id
     rw [homEquivOfPresentation_apply, hid]
     exact hf
+
+-- The comparison preserves the point classified by a homomorphism.
+private lemma homEquivOfPresentation_comp_presentationAlgEquiv {ι σ : Type*}
+    (P : Presentation B C ι σ) (K : Coords A B) (g : WeilRestriction A B C →ₐ[A] T) :
+    homEquivOfPresentation T P K (g.comp (presentationAlgEquiv P K).toAlgHom) =
+      homEquiv A B C T g := by
+  rw [homEquivOfPresentation_comp]
+  have h : homEquivOfPresentation (WeilRestriction A B C) P K
+      (presentationAlgEquiv P K).toAlgHom = universalPoint A B C :=
+    Equiv.apply_symm_apply _ _
+  rw [h, homEquiv_apply]
+
+/-- The Weil restriction of a finitely presented algebra along a finite projective algebra is of
+finite presentation over `A`. -/
+instance instFinitePresentation [FinitePresentation B C] :
+    FinitePresentation A (WeilRestriction A B C) := by
+  let P := Presentation.ofFinitePresentation B C
+  let K := coords A B
+  let : FinitePresentation A (RepresentingAlgebra P K) :=
+    FinitePresentation.quotient <| Submodule.fg_span <| Set.finite_range _
+  exact FinitePresentation.equiv (presentationAlgEquiv P K)
 
 /-- An `A`-algebra homomorphism `g` out of the Weil restriction takes values in a subalgebra `S`
 of `T` if and only if the point `homEquiv A B C T g : C →ₐ[B] B ⊗[A] T` it classifies takes values
@@ -405,6 +422,13 @@ theorem map_surjective {φ : C →ₐ[B] D} (hφ : Function.Surjective φ) :
   simpa using h ⟨c, rfl⟩
 
 end Map
+
+/-- The Weil restriction of a finite type algebra along a finite projective algebra is of
+finite type over `A`. -/
+instance instFiniteType [FiniteType B C] : FiniteType A (WeilRestriction A B C) := by
+  obtain ⟨n, f, hf⟩ := (FiniteType.iff_quotient_mvPolynomial'').mp
+    (inferInstance : FiniteType B C)
+  exact FiniteType.of_surjective (map A B f) (map_surjective hf)
 
 section BaseChange
 

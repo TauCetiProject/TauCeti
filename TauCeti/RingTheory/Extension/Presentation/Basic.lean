@@ -18,7 +18,7 @@ by its values on the generators (`Algebra.Generators.algHom_ext`, in
 
 ## Main definitions
 
-* `Algebra.Generators.toPresentation P`: the presentation using the chosen generators of `P`
+* `Algebra.Presentation.ofGenerators P`: the presentation using the chosen generators of `P`
   and every element of its kernel as a relation.
 * `Algebra.Presentation.lift P x hx`: the `R`-algebra homomorphism out of `S` sending the
   generators of `P` to a family `x` satisfying the relations of `P`.
@@ -40,9 +40,11 @@ namespace Algebra
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
+namespace Presentation
+
 /-- The presentation attached to a family of algebra generators, taking every element of the
 kernel as a defining relation. No finiteness assumption on the generators or relations is needed. -/
-def Generators.toPresentation {ι : Type*} (P : Generators R S ι) :
+def ofGenerators {ι : Type*} (P : Generators R S ι) :
     Presentation R S ι P.ker where
   toGenerators := P
   relation := Subtype.val
@@ -50,15 +52,13 @@ def Generators.toPresentation {ι : Type*} (P : Generators R S ι) :
 
 /-- Taking all kernel relations preserves the chosen generators. -/
 @[simp]
-theorem Generators.toPresentation_toGenerators {ι : Type*} (P : Generators R S ι) :
-    P.toPresentation.toGenerators = P := (rfl)
+theorem ofGenerators_toGenerators {ι : Type*} (P : Generators R S ι) :
+    (ofGenerators P).toGenerators = P := (rfl)
 
 /-- The relations in the presentation of a generating family are the kernel elements themselves. -/
 @[simp]
-theorem Generators.toPresentation_relation {ι : Type*} (P : Generators R S ι) (r : P.ker) :
-    P.toPresentation.relation r = r := (rfl)
-
-namespace Presentation
+theorem ofGenerators_relation {ι : Type*} (P : Generators R S ι) (r : P.ker) :
+    (ofGenerators P).relation r = r := (rfl)
 
 variable {ι σ : Type*} (P : Presentation R S ι σ) {T : Type*} [CommRing T] [Algebra R T]
 
@@ -100,13 +100,13 @@ theorem _root_.MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul {ι : Type*} {val : 
     (RingHom.ker (aeval (R := R) val)).map (map (algebraMap R B)) =
       RingHom.ker (aeval (R := B) fun v ↦ (1 : B) ⊗ₜ[R] val v :
         MvPolynomial ι B →ₐ[B] B ⊗[R] S) := by
-  let PA : Presentation R S ι (RingHom.ker (aeval (R := R) val) : Set (MvPolynomial ι R)) :=
-    (Generators.ofSurjective val hϕ).toPresentation
+  let PA := Presentation.ofGenerators (Generators.ofSurjective val hϕ)
   have h := PA.span_range_relation_eq_ker_baseChange B
   have h₁ : (Set.range fun i ↦ map (algebraMap R B) (PA.relation i)) =
       map (algebraMap R B) '' (RingHom.ker (aeval (R := R) val) : Set (MvPolynomial ι R)) := by
-    ext
-    simp [PA, Generators.toPresentation]
+    simp only [PA, Presentation.ofGenerators_relation]
+    rw [Set.range_comp', Subtype.range_coe, Generators.ker_eq_ker_aeval_val]
+    congr 2
   have h₂ : (PA.toGenerators.baseChange B).val = fun v ↦ 1 ⊗ₜ val v := by
     ext
     simp [PA]
