@@ -147,7 +147,7 @@ theorem smallDiskIncl_mk (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k} (hw : w.down.
   (rfl)
 
 /-- The radius `d + (1 - d) s` of the annulus coordinates is at least `d`. -/
-private theorem le_add_one_sub_mul (hd₁ : d ≤ 1) (s : I) : d ≤ d + (1 - d) * s :=
+theorem le_add_one_sub_mul (hd₁ : d ≤ 1) (s : I) : d ≤ d + (1 - d) * s :=
   le_add_of_nonneg_right (mul_nonneg (sub_nonneg.2 hd₁) s.2.1)
 
 /-- The norm of `(d + (1 - d) s) • θ` is `d + (1 - d) s`. -/

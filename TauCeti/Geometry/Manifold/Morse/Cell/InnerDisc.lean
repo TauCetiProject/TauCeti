@@ -96,7 +96,7 @@ private theorem apply_annulusPoint_le (hε : 0 ≤ ε) (m : C(X × TopCat.disk.{
     f (m (p.2.1, TopCat.annulusPoint d.2.1 d.2.2 (p.1, p.2.2))) ≤ c - ε * (d : ℝ) ^ 2 := by
   refine (hm _ _).trans (sub_le_sub_left (mul_le_mul_of_nonneg_left ?_ hε) c)
   rw [TopCat.norm_annulusPoint]
-  exact pow_le_pow_left₀ d.2.1 (le_add_of_nonneg_right (mul_nonneg (sub_nonneg.2 d.2.2) p.1.2.1)) 2
+  exact pow_le_pow_left₀ d.2.1 (TopCat.le_add_one_sub_mul d.2.2 p.1) 2
 
 /-- The annulus `d ≤ ‖w‖ ≤ 1` of a family of discs on which `f ≤ c - ε‖w‖²`, as a map into
 `M_{c-εd²}`. -/
@@ -174,8 +174,8 @@ private theorem stageGlue_boundary_le (hd : 0 < d)
   TopCat.discGlue_mem_of_norm_eq_one (S := {x | f x ≤ a}) _ _ _ _ hA hB _
     (TopCat.norm_diskBoundaryInclusion s)
 
-/-- The sublevel `M_{c-εd²}` lies in `M_{c+ε}`. -/
-private theorem sub_mul_sq_le_add (hε : 0 ≤ ε) : c - ε * (d : ℝ) ^ 2 ≤ c + ε :=
+/-- `c - εa² ≤ c + ε`, so the sublevel `M_{c-εa²}` lies in `M_{c+ε}`. -/
+private theorem sub_mul_sq_le_add (hε : 0 ≤ ε) (a : ℝ) : c - ε * a ^ 2 ≤ c + ε :=
   (sub_le_self _ (by positivity)).trans (le_add_of_nonneg_right hε)
 
 variable {r : C({x : M | f x ≤ c - ε * (d : ℝ) ^ 2}, {x : M | f x ≤ c - ε * (d : ℝ) ^ 2})}
@@ -233,8 +233,8 @@ private def annulusStageHomotopy :
   prop' t := by
     refine ⟨fun q ↦ stageGlue_le hd _ _ _ (fun q ↦ ?_) (fun q ↦ ?_) (t, q),
       fun x s ↦ stageGlue_boundary_le hd _ _ _ (fun p v hv ↦ ?_) (fun p θ ↦ ?_) t x s⟩
-    · exact (hm _ _).trans ((sub_le_self _ (by positivity)).trans (le_add_of_nonneg_right hε))
-    · exact (annulusDeformation R hr hε m hm _).2.trans (sub_mul_sq_le_add hε)
+    · exact (hm _ _).trans (sub_mul_sq_le_add hε _)
+    · exact (annulusDeformation R hr hε m hm _).2.trans (sub_mul_sq_le_add hε _)
     · exact (hm p.2 (TopCat.smallDiskIncl d.2.2 v)).trans_eq
         (by rw [TopCat.smallDiskIncl_apply, hv, one_pow, mul_one])
     · exact ((annulusDeformation R hr hε m hm).prop p.1).2 (p.2, θ)
@@ -336,7 +336,7 @@ private def middleStageHomotopy :
     refine ⟨fun q ↦ stageGlue_le hd _ _ _ (fun q ↦ hGf _) (fun q ↦ ?_) (t, q),
       fun x s ↦ stageGlue_boundary_le hd _ _ _ (fun p v hv ↦ ?_) (fun p θ ↦ ?_) t x s⟩
     · exact (R.toHomotopy.retractionTrackHomotopy (ContinuousMap.id I)
-        (circleHomotopy hε hm₀ hm₁ G hG₀ hG₁ hGd) _).2.trans (sub_mul_sq_le_add hε)
+        (circleHomotopy hε hm₀ hm₁ G hG₀ hG₁ hGd) _).2.trans (sub_mul_sq_le_add hε _)
     · -- A unit vector of the small disc forces `d = 1`.
       have hd₁ : (d : ℝ) = 1 := le_antisymm d.2.2 (hv ▸ mem_closedBall_zero_iff.1 v.2)
       simpa [hd₁] using hGd _ _ v (hv.trans hd₁.symm)
