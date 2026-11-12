@@ -493,7 +493,8 @@ applied in every slot. -/
 @[simp]
 theorem FrameAlgebra.congr_mk (e : S ≃ₐ[R] S') (x : ⨂[R] _ : ι, S) :
     FrameAlgebra.congr ι e (Ideal.Quotient.mk _ x) =
-      Ideal.Quotient.mk _ (PiTensorProduct.congrAlgEquiv (fun _ ↦ e) x) := (rfl)
+      Ideal.Quotient.mk _ (PiTensorProduct.congrAlgEquiv (fun _ ↦ e) x) := by
+  rw [FrameAlgebra.congr, Ideal.quotientEquivAlg_mk]
 
 /-- `TauCeti.Algebra.FrameAlgebra.congr` commutes with the action of the permutations of the
 slots. -/
@@ -508,7 +509,8 @@ omit [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] in
 theorem FrameAlgebra.congr_refl : FrameAlgebra.congr ι (AlgEquiv.refl : S ≃ₐ[R] S) = .refl :=
   AlgEquiv.ext fun y ↦ by
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [congr_mk, PiTensorProduct.congrAlgEquiv_refl]; rfl
+    rw [congr_mk, PiTensorProduct.congrAlgEquiv_refl, AlgEquiv.coe_refl, id_eq,
+      AlgEquiv.coe_refl, id_eq]
 
 /-- The inverse of `TauCeti.Algebra.FrameAlgebra.congr ι e` is induced by the inverse of `e`. -/
 @[simp]
@@ -541,7 +543,9 @@ omit [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] in
 private theorem baseChangeAlgEquiv_one_tmul_eq_comp (x : ⨂[R] _ : ι, S) :
     PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) ((1 : T) ⊗ₜ[R] x) =
       ((PiTensorProduct.baseChangeAlgEquiv (R := R) T (fun _ : ι ↦ S)).toAlgHom.restrictScalars
-        R).comp Algebra.TensorProduct.includeRight x := (rfl)
+        R).comp Algebra.TensorProduct.includeRight x := by
+  rw [AlgHom.comp_apply, AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply,
+    AlgEquiv.toAlgHom_apply]
 
 /-- Base change sends `δᵢⱼ` to `δᵢⱼ`: the locus where the points in the slots `i` and `j` agree
 pulls back to the corresponding locus for `T ⊗[R] S` over `T`. -/
@@ -582,7 +586,9 @@ of `t ⊗ x` to the tensor power of `T ⊗[R] S` over `T`. -/
 @[simp]
 theorem FrameAlgebra.baseChangeEquiv_tmul_mk (t : T) (x : ⨂[R] _ : ι, S) :
     FrameAlgebra.baseChangeEquiv R S ι T (t ⊗ₜ Ideal.Quotient.mk _ x) =
-      Ideal.Quotient.mk _ (PiTensorProduct.baseChangeAlgEquiv T (fun _ ↦ S) (t ⊗ₜ x)) := (rfl)
+      Ideal.Quotient.mk _ (PiTensorProduct.baseChangeAlgEquiv T (fun _ ↦ S) (t ⊗ₜ x)) := by
+  rw [baseChangeEquiv, AlgEquiv.trans_apply, Algebra.TensorProduct.tensorQuotientEquiv_apply_tmul,
+    Ideal.quotientEquivAlg_mk]
 
 attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
 /-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` is equivariant, for the permutations acting on

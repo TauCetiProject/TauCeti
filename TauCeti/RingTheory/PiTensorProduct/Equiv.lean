@@ -127,7 +127,7 @@ theorem congrAlgEquiv_refl {ι : Type*} {A : ι → Type*} [∀ i, Semiring (A i
   AlgEquiv.ext fun x ↦ by
     induction x using PiTensorProduct.induction_on with
     | smul_tprod r x => simp
-    | add x y hx hy => rw [map_add, hx, hy]; rfl
+    | add x y hx hy => rw [map_add, map_add, hx, hy]
 
 /-- `PiTensorProduct.congrAlgEquiv` sends slotwise composites to composites. -/
 theorem congrAlgEquiv_trans {ι : Type*} {A B C : ι → Type*} [∀ i, Semiring (A i)]

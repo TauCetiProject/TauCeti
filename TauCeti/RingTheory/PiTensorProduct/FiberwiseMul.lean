@@ -30,12 +30,16 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 
 ## Main definitions
 
+* `PiTensorProduct.productMap`: the algebra map into a commutative algebra induced by a family of
+  algebra maps out of the factors.
 * `PiTensorProduct.fiberwiseMul`: the algebra map along `f : σ → τ`.
 * `PiTensorProduct.mulAlgHom`: multiplication of all the factors of a finite tensor power of a
   commutative algebra.
 
 ## Main results
 
+* `PiTensorProduct.productMap_tprod`, `PiTensorProduct.productMap_singleAlgHom`: the values of
+  `PiTensorProduct.productMap` on pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
   pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_id`, `PiTensorProduct.fiberwiseMul_comp`: functoriality in `f`.
@@ -60,21 +64,57 @@ open scoped TensorProduct
 
 namespace PiTensorProduct
 
-variable {R : Type*} [CommSemiring R] {σ τ υ : Type*} {A : τ → Type*}
-  [∀ j, CommSemiring (A j)] [∀ j, Algebra R (A j)]
+variable {R : Type*} [CommSemiring R]
+
+section ProductMap
+
+variable {ι : Type*} [Fintype ι] {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+  {B : Type*} [CommSemiring B] [Algebra R B]
+
+/-- The algebra map out of a finite tensor product into a commutative algebra `B` induced by a
+family of algebra maps `f i : A i →ₐ[R] B`: it sends `⨂ₜ aᵢ` to `∏ᵢ f i aᵢ`. It is the indexed
+analogue of `Algebra.TensorProduct.productMap`. -/
+noncomputable def productMap (f : ∀ i, A i →ₐ[R] B) : (⨂[R] i, A i) →ₐ[R] B :=
+  liftAlgHom ((MultilinearMap.mkPiAlgebra R ι B).compLinearMap fun i ↦ (f i).toLinearMap)
+    (by simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
+      AlgHom.toLinearMap_apply, Pi.one_apply, map_one, Finset.prod_const_one])
+    (fun x y ↦ by
+      simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
+        AlgHom.toLinearMap_apply, Pi.mul_apply, map_mul, Finset.prod_mul_distrib])
+
+/-- `PiTensorProduct.productMap f` sends a pure tensor to the product of the images of its
+factors. -/
+@[simp]
+theorem productMap_tprod (f : ∀ i, A i →ₐ[R] B) (x : ∀ i, A i) :
+    productMap f (tprod R x) = ∏ i, f i (x i) :=
+  -- `lift.tprod` evaluates the multilinear map, which is the product by definition.
+  (liftAlgHom_apply _ _ _ _).trans (lift.tprod _)
+
+/-- `PiTensorProduct.productMap f` restricts to `f i` on the factor inclusion at `i`. It is a
+pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem productMap_singleAlgHom [DecidableEq ι] (f : ∀ i, A i →ₐ[R] B) (i : ι) (a : A i) :
+    productMap f (singleAlgHom i a) = f i a := by
+  rw [singleAlgHom_apply, productMap_tprod, Finset.prod_eq_single i (fun j _ hj ↦ ?_) (by simp),
+    MonoidHom.mulSingle_apply, Pi.mulSingle_eq_same]
+  rw [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne hj, map_one]
+
+/-- `PiTensorProduct.productMap f` restricts to `f i` on the factor inclusion at `i`. -/
+@[simp]
+theorem productMap_comp_singleAlgHom [DecidableEq ι] (f : ∀ i, A i →ₐ[R] B) (i : ι) :
+    (productMap f).comp (singleAlgHom i) = f i :=
+  AlgHom.ext (productMap_singleAlgHom f i)
+
+end ProductMap
+
+variable {σ τ υ : Type*} {A : τ → Type*} [∀ j, CommSemiring (A j)] [∀ j, Algebra R (A j)]
 
 /-- The algebra map `⨂_{i : σ} A (f i) → ⨂_{j : τ} A j` induced by a map `f : σ → τ` of finite
 index types: it sends `⨂ₜ x` to the product over `i` of `x i` placed in the slot `f i`. The
 factors in each fibre of `f` are multiplied together, and slots outside the range of `f` get `1`. -/
 noncomputable def fiberwiseMul [Fintype σ] [DecidableEq τ] (f : σ → τ) :
     (⨂[R] i, A (f i)) →ₐ[R] ⨂[R] j, A j :=
-  liftAlgHom ((MultilinearMap.mkPiAlgebra R σ (⨂[R] j, A j)).compLinearMap
-      fun i ↦ (singleAlgHom (A := A) (f i)).toLinearMap)
-    (by simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
-      AlgHom.toLinearMap_apply, Pi.one_apply, map_one, Finset.prod_const_one])
-    (fun x y ↦ by
-      simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
-        AlgHom.toLinearMap_apply, Pi.mul_apply, map_mul, Finset.prod_mul_distrib])
+  productMap fun i ↦ singleAlgHom (f i)
 
 variable [Fintype σ] [DecidableEq τ]
 
@@ -83,18 +123,15 @@ the results. -/
 @[simp]
 theorem fiberwiseMul_tprod (f : σ → τ) (x : ∀ i, A (f i)) :
     fiberwiseMul f (tprod R x) = ∏ i, singleAlgHom (f i) (x i) :=
-  -- `lift.tprod` evaluates the multilinear map, which is the product by definition.
-  (liftAlgHom_apply _ _ _ _).trans (lift.tprod _)
+  productMap_tprod _ x
 
 /-- `PiTensorProduct.fiberwiseMul f` sends the factor inclusion at `i` to the factor inclusion at
 `f i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the inner
 factor inclusion first. -/
 @[simp↓]
 theorem fiberwiseMul_singleAlgHom [DecidableEq σ] (f : σ → τ) (i : σ) (a : A (f i)) :
-    fiberwiseMul f (singleAlgHom (R := R) (A := fun i ↦ A (f i)) i a) = singleAlgHom (f i) a := by
-  rw [singleAlgHom_apply, fiberwiseMul_tprod, Finset.prod_eq_single i (fun j _ hj ↦ ?_) (by simp),
-    MonoidHom.mulSingle_apply, Pi.mulSingle_eq_same]
-  rw [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne hj, map_one]
+    fiberwiseMul f (singleAlgHom (R := R) (A := fun i ↦ A (f i)) i a) = singleAlgHom (f i) a :=
+  productMap_singleAlgHom (fun i ↦ singleAlgHom (A := A) (f i)) i a
 
 variable (R A) in
 /-- `PiTensorProduct.fiberwiseMul` along the identity is the identity. -/
@@ -127,13 +164,12 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 /-- Multiplication of the tensor factors, as an algebra map from a finite tensor power of `B` to
 `B`. It is the indexed analogue of `Algebra.TensorProduct.lmul'`. -/
 noncomputable def mulAlgHom : (⨂[R] _ : σ, B) →ₐ[R] B :=
-  liftAlgHom (MultilinearMap.mkPiAlgebra R σ B) (by simp) fun x y ↦ by
-    simp [Finset.prod_mul_distrib]
+  productMap fun _ ↦ AlgHom.id R B
 
 /-- `PiTensorProduct.mulAlgHom` multiplies the factors of a pure tensor. -/
 @[simp]
 theorem mulAlgHom_tprod (x : σ → B) : mulAlgHom (R := R) (tprod R x) = ∏ i, x i :=
-  (liftAlgHom_apply _ _ _ _).trans (lift.tprod _)
+  productMap_tprod _ x
 
 /-- `PiTensorProduct.mulAlgHom` is a left inverse of each factor inclusion. It is a pre-simp lemma
 since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
