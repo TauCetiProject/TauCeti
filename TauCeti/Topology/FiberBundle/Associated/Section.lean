@@ -181,6 +181,14 @@ theorem continuousSectionEquiv_apply
     (continuousSectionEquiv s).1 p = sectionFunction s.1 p :=
   (rfl)
 
+/-- The continuous inverse correspondence has the same underlying section as the raw one. -/
+@[simp]
+theorem continuousSectionEquiv_symm_val
+    (u : {u : C(TotalSpace G P, F) // ∀ (b : B) (p : P b) (g : G),
+      u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩}) :
+    (continuousSectionEquiv.symm u).1 = sectionEquiv.symm ⟨u.1, u.2⟩ :=
+  (rfl)
+
 /-- Evaluate the continuous inverse correspondence in any frame. -/
 theorem continuousSectionEquiv_symm_apply
     (u : {u : C(TotalSpace G P, F) // ∀ (b : B) (p : P b) (g : G),

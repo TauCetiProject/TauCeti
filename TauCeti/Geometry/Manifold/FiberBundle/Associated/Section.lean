@@ -11,7 +11,8 @@ public import TauCeti.Topology.FiberBundle.Associated.Section
 /-!
 # Smooth sections and equivariant functions
 
-The section/function dictionary for associated bundles preserves finite-order smoothness:
+The section/function dictionary for associated bundles preserves smoothness at every regularity
+`n` (including `∞` and `ω`):
 `s(b) = [p,u(p)]` identifies `C^n` sections with `C^n` functions satisfying
 `u(p • g) = g⁻¹ • u(p)`. Smoothness uses the existing charts through the fibre on both total
 spaces, without changing their topology or introducing vector-bundle structures.
@@ -118,6 +119,17 @@ theorem contMDiffSectionEquiv_apply
     (p : ManifoldTotalSpace G P) :
     (contMDiffSectionEquiv (IG := IG) s).1 p =
       sectionFunction s.1 ((ManifoldTotalSpace.homeomorph G P).symm p) :=
+  (rfl)
+
+/-- The smooth inverse correspondence has the same underlying section as the raw one. -/
+@[simp]
+theorem contMDiffSectionEquiv_symm_val
+    (u : {u : ManifoldTotalSpace G P → F // ContMDiff (IB.prod IG) IF n u ∧
+      ∀ (b : B) (p : P b) (g : G),
+        u (ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) =
+          g⁻¹ • u (ManifoldTotalSpace.homeomorph G P ⟨b, p⟩)}) :
+    (contMDiffSectionEquiv.symm u).1 =
+      sectionEquiv.symm ⟨fun p ↦ u.1 (ManifoldTotalSpace.homeomorph G P p), u.2.2⟩ :=
   (rfl)
 
 /-- Evaluate the smooth inverse correspondence using any principal frame. -/
