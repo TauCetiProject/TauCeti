@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Interior
 public import TauCeti.Topology.Constructions.DoubleAlong.Disc
 
@@ -116,12 +117,6 @@ theorem coe_mk (z : ℂ) (hz : ‖z‖ ≤ 1) : (mk z hz : ℂ) = z :=
 
 /-! ### Algebra of the Cayley transform -/
 
-private theorem I_add_ne_zero {w : ℂ} (hw : 0 ≤ w.im) : I + w ≠ 0 := by
-  intro h
-  have := congrArg Complex.im h
-  simp only [add_im, I_im, zero_im] at this
-  linarith
-
 private theorem normSq_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) : normSq ζ = 1 := by
   rw [normSq_eq_norm_sq, hζ, one_pow]
 
@@ -147,18 +142,15 @@ private theorem norm_cayleyInv {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : ℂ) :
 disc. -/
 theorem norm_cayleyInv_le_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) {w : ℂ} (hw : 0 ≤ w.im) :
     ‖ζ * (I - w) / (I + w)‖ ≤ 1 := by
-  rw [norm_cayleyInv hζ, div_le_one (norm_pos_iff.2 (I_add_ne_zero hw)),
-    ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.sq_norm,
-    normSq_apply, normSq_apply]
-  simp only [sub_re, sub_im, add_re, add_im, I_re, I_im]
-  nlinarith
+  rw [norm_cayleyInv hζ, norm_sub_rev, add_comm]
+  exact (norm_sub_I_div_norm_add_I_le_one_iff (add_I_ne_zero_of_im_nonneg hw)).2 hw
 
 /-- The inverse Cayley transform with center `ζ` never takes the value `-ζ`. -/
 theorem cayleyInv_ne_neg {ζ : ℂ} (hζ : ‖ζ‖ = 1) {w : ℂ} (hw : 0 ≤ w.im) :
     ζ * (I - w) / (I + w) ≠ -ζ := by
   intro h
   have hζ0 := ne_zero_of_norm_eq_one hζ
-  have hw0 := I_add_ne_zero hw
+  have hw0 := add_comm I w ▸ add_I_ne_zero_of_im_nonneg hw
   rw [div_eq_iff hw0] at h
   have : ζ * (2 * I) = 0 := by linear_combination h
   simp [hζ0, I_ne_zero] at this
@@ -179,7 +171,7 @@ theorem cayleyInv_cayley {ζ z : ℂ} (hζ : ‖ζ‖ = 1) (hz : z ≠ -ζ) :
 theorem cayley_cayleyInv {ζ w : ℂ} (hζ : ‖ζ‖ = 1) (hw : 0 ≤ w.im) :
     I * (ζ - ζ * (I - w) / (I + w)) / (ζ + ζ * (I - w) / (I + w)) = w := by
   have hζ0 := ne_zero_of_norm_eq_one hζ
-  have hw0 := I_add_ne_zero hw
+  have hw0 := add_comm I w ▸ add_I_ne_zero_of_im_nonneg hw
   have h2 : ζ + ζ * (I - w) / (I + w) = 2 * I * ζ / (I + w) := by
     field_simp
     ring
@@ -222,7 +214,8 @@ def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     refine (isInducing_coe.continuousOn_iff).2 ?_
     refine Continuous.continuousOn (continuous_iff_continuousAt.2 fun w ↦ ?_)
     exact (continuousAt_const.mul (continuousAt_const.sub continuous_subtype_val.continuousAt)).div
-      (continuousAt_const.add continuous_subtype_val.continuousAt) (I_add_ne_zero w.2)
+      (continuousAt_const.add continuous_subtype_val.continuousAt)
+      (add_comm I (w : ℂ) ▸ add_I_ne_zero_of_im_nonneg w.2)
 
 variable {ζ : ℂ} {hζ : ‖ζ‖ = 1}
 
@@ -355,7 +348,7 @@ private theorem transition_property (ζ ζ' : ℂ) (hζ : ‖ζ‖ = 1) (hζ' : 
     cayleyChart_target, univ_inter, mem_preimage, cayleyChart_source, mem_ofPred_eq,
     coe_cayleyChart_symm_apply] at hw
   refine ⟨?_, rfl⟩
-  have hw0 := I_add_ne_zero w.2
+  have hw0 := add_comm I (w : ℂ) ▸ add_I_ne_zero_of_im_nonneg w.2
   have hu : ContDiffAt ℂ ∞ (fun w : ℂ ↦ ζ * (I - w) / (I + w)) w :=
     (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
       (contDiffAt_const.add contDiffAt_id) hw0
@@ -430,7 +423,7 @@ theorem contMDiff_coe_borderedInterior :
     rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hvim]
   refine ContDiffAt.congr_of_eventuallyEq ?_ hev
   exact (contDiffAt_const.mul (contDiffAt_const.sub contDiffAt_id)).div
-    (contDiffAt_const.add contDiffAt_id) (I_add_ne_zero himw.le)
+    (contDiffAt_const.add contDiffAt_id) (add_comm I w ▸ add_I_ne_zero_of_im_nonneg himw.le)
 
 end ClosedUnitDisc
 
