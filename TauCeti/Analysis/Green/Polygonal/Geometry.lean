@@ -9,6 +9,9 @@ public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Convex.Measure
+import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.Normed.Operator.Mul
 
@@ -62,9 +65,19 @@ theorem im_div_sub_pos_of_triangleDet_pos {p q r : ℂ} (h : 0 < triangleDet p q
   exact div_pos h (Complex.normSq_pos.mpr (sub_ne_zero_of_triangleDet_pos h))
 
 /-- An interior point lies strictly on the side of an edge containing the third vertex. -/
-theorem im_div_pos_of_mem_interior_convexHull_triangle {p q r z : ℂ} (hpq : q - p ≠ 0)
+theorem im_div_pos_of_mem_interior_convexHull_triangle {p q r z : ℂ}
     (hr : 0 ≤ ((r - p) / (q - p)).im)
     (hz : z ∈ interior (convexHull ℝ {p, q, r})) : 0 < ((z - p) / (q - p)).im := by
+  by_cases hpq : q - p = 0
+  · -- The triangle is contained in a line, so its interior is empty.
+    rw [sub_eq_zero.1 hpq, Set.insert_eq_of_mem (Set.mem_insert p {r})] at hz
+    have h := interior_convexHull_nonempty_iff_affineSpan_eq_top.1 ⟨z, hz⟩
+    have hv : vectorSpan ℝ (Set.range ![p, r]) = ⊤ := by
+      rw [show Set.range ![p, r] = {p, r} by simp [Set.pair_comm], ← direction_affineSpan, h,
+        AffineSubspace.direction_top]
+    have := finrank_vectorSpan_range_le ℝ ![p, r] (n := 1) (by simp)
+    rw [hv, finrank_top, Complex.finrank_real_complex] at this
+    omega
   let L : ℂ →L[ℝ] ℝ := Complex.imCLM.comp ((ContinuousLinearMap.mul ℝ ℂ).flip (q - p)⁻¹)
   have hL (w : ℂ) : L w = (w / (q - p)).im := by
     simp [L, div_eq_mul_inv]
@@ -121,7 +134,7 @@ private theorem interior_triangle_eq_empty_of_height_eq_zero {c p q : ℂ}
     · subst z; exact hq
   apply Set.eq_empty_iff_forall_notMem.mpr
   intro z hz
-  have hpos := im_div_pos_of_mem_interior_convexHull_triangle hpc hq.ge hz
+  have hpos := im_div_pos_of_mem_interior_convexHull_triangle hq.ge hz
   exact hpos.ne' (hsub (interior_subset hz))
 
 /-- A degenerate planar triangle has empty interior. -/

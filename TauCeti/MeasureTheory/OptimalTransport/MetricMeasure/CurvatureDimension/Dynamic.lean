@@ -146,8 +146,8 @@ theorem DynamicCurvatureDimension.mono (h : M.DynamicCurvatureDimension K N) (hK
   refine ⟨η, hη, fun t N'' hN'' ↦ (hle t N'' (hN.trans hN'')).trans ?_⟩
   rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
   refine lintegral_mono fun γ ↦ add_le_add (mul_le_mul_left ?_ _) (mul_le_mul_left ?_ _)
-  · exact distortionTau_left_monotone (sub_nonneg.2 t.2.2) (sub_le_self _ t.2.1) hK
-  · exact distortionTau_left_monotone t.2.1 t.2.2 hK
+  · exact distortionTau_left_monotone (sub_le_self _ t.2.1) hK
+  · exact distortionTau_left_monotone t.2.2 hK
 
 /-- In the flat case, the right side of the curvature-dimension inequality is the convex
 combination of the endpoint Rényi entropies. -/
@@ -262,7 +262,7 @@ private theorem half_le_rpow_of_dynamicCurvatureDimension_zero
   have hent {s : ℝ} (hs : 0 < s) : renyiEntropy N M.reference M.reference[|closedBall 0 s] =
       -((M.reference (closedBall 0 s) ^ N⁻¹ : ℝ≥0∞) : EReal) := by
     rw [ProbabilityTheory.cond]
-    exact renyiEntropy_smul_restrict hN₀ measurableSet_closedBall
+    exact renyiEntropy_smul_restrict measurableSet_closedBall
       (measure_closedBall_pos _ _ hs).ne' (M.finite_bounded _ isBounded_closedBall).ne
   obtain ⟨η, hη, hle⟩ :=
     ((dynamicCurvatureDimension_zero_iff hN₀).1 h).2 (hμ₀ ▸ cond_absolutelyContinuous)
@@ -325,7 +325,7 @@ theorem dynamicCurvatureDimension_zero_of_finrank_le [Nontrivial E] (hN : (finra
     M.DynamicCurvatureDimension 0 N := by
   have hn : (1 : ℝ) ≤ finrank ℝ E := Nat.one_le_cast.2 finrank_pos
   refine (dynamicCurvatureDimension_zero_iff (zero_lt_one.trans_le (hn.trans hN))).2
-    ⟨by rw [support_def, Measure.support_eq_univ], fun μ₀ μ₁ h₀ h₁ hb₀ hb₁ ↦ ?_⟩
+    ⟨by rw [support_def, Measure.support_eq_univ], fun μ₀ μ₁ h₀ _ hb₀ hb₁ ↦ ?_⟩
   -- Bounded supports give finite second moments, hence a finite quadratic transport cost.
   have hm (μ : ProbabilityMeasure E) (hb : Bornology.IsBounded (μ : Measure E).support) :
       HasFiniteMoment 2 (μ : Measure E) :=
