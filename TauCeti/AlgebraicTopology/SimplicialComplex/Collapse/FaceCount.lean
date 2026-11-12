@@ -16,11 +16,11 @@ turns that description into cardinality control: every elementary collapse remov
 while an arbitrary collapse can only decrease the face cardinality.  For finite complexes this
 also gives subtraction, strictness, and parity results for natural-valued face counts.
 
-These facts are basic bookkeeping for the collapse track in layer 11 of the geometric-topology
-roadmap.  In particular, they provide a termination measure for finite collapse arguments and
-the parity obstruction that any proposed collapse certificate must satisfy.  The definitions of
-free pairs and collapse are those in `ElementaryCollapse` and `Collapse.Basic`, following
-Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3.
+These facts are basic bookkeeping for collapse arguments.  In particular, they provide a
+termination measure for finite collapse arguments and the parity obstruction that any proposed
+collapse certificate must satisfy.  The definitions of free pairs and collapse are those in
+`ElementaryCollapse` and `Collapse.Basic`, following Rourke--Sanderson, *Introduction to
+Piecewise-Linear Topology*, Chapter 3.
 
 ## Main results
 

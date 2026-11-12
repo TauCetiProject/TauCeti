@@ -30,6 +30,9 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
   `FirstOrder.Language.LHom.mem_range_sumInl_onRelation_of_mem_range_sumMap`: the symbols of
   `L.sum (L₁.sum L₂)` shared by the images of `L.sum L₁` and `L.sum L₂` come from `L`.
 
+Adjoining constants to an algebraic language gives an algebraic language
+(`FirstOrder.Language.isAlgebraic_withConstants`).
+
 The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
 `L[[γ]].Relations n` by `Equiv.sumEmpty`
 (`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`), symbol sets of `L[[γ]]` avoiding the
@@ -139,6 +142,10 @@ end FirstOrder
 namespace FirstOrder.Language
 
 variable {L : Language} {γ : Type*}
+
+/-- Adjoining constants to a language without relation symbols adds no relation symbols. -/
+instance isAlgebraic_withConstants [L.IsAlgebraic] : L[[γ]].IsAlgebraic :=
+  isAlgebraic_sum
 
 theorem lhomWithConstants_onRelation_sumEmpty {l : ℕ} (R : L[[γ]].Relations l) :
     (L.lhomWithConstants γ).onRelation ((Equiv.sumEmpty _ _) R) = R := by
