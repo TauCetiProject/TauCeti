@@ -27,10 +27,9 @@ all of their binomial coefficients preserve the same lattice. These two facts gi
 under every generator of the Serre Kostant form.
 
 The full exterior algebra, rather than either parity summand alone, is used because its weights
-span the full simply connected type-`D` character lattice. Thus this is the admissible-lattice
-input for the full-weight type-`D` Chevalley--Demazure carrier in Layer 9 of the ReductiveGroups
-roadmap. That carrier is consumed by the `Dₙ(q)` and `²Dₙ(q)` branches of milestone L0 in the
-CFSGStatement roadmap.
+span the full simply connected type-`D` character lattice. A Kostant-stable lattice with that
+property is the integral input from which the simply connected Chevalley--Demazure group of type `D`
+is built; no such group is constructed here.
 
 ## Main declarations
 
