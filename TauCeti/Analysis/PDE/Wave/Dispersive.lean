@@ -527,8 +527,8 @@ theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_l
     rw [norm_smul, SchwartzMap.fourierInv_coe]
     exact mul_le_mul_of_nonneg_right (hK _) (norm_nonneg _)
   have hB : 0 ≤ B := (norm_nonneg _).trans (hK 0)
-  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_enorm,
-    ← ofReal_integral_norm_eq_lintegral_enorm hf, ← ENNReal.ofReal_mul hB]
+  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_eNorm,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hf, ← ENNReal.ofReal_mul hB]
   · exact eLpNormEssSup_le_of_ae_bound hbound
   all_goals exact Lp.aestronglyMeasurable _
 
