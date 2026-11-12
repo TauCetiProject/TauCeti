@@ -27,10 +27,13 @@ pairing nontrivially with both `M *ᵥ x` and `M *ᵥ y`.
 
 ## Main results
 
-* `Matrix.SeparatingLeft.exists_ortho_and_not_ortho_of_notMem_span`: a vector orthogonal to `u` but
-  not to `x`, when `x` is not a multiple of `u`.
+* `Matrix.SeparatingLeft.exists_ortho_and_not_ortho_of_notMem_span` and
+  `Matrix.SeparatingLeft.exists_ortho_and_not_ortho_pair_of_notMem_span`: a vector orthogonal to
+  `u` but not to `x` (or to neither `x` nor `y`), when `x` (and `y`) do not lie on `K ∙ u`.
 * `Matrix.SeparatingRight.exists_not_ortho_and_not_ortho_of_ne_zero_of_ne_zero`: a vector `z` with
   `z ⬝ᵥ M *ᵥ x ≠ 0` and `z ⬝ᵥ M *ᵥ y ≠ 0`, for nonzero `x` and `y`.
+* `Matrix.notMem_span_of_dotProduct_mulVec`: if `v ⬝ᵥ M *ᵥ a = 0` and `v ⬝ᵥ M *ᵥ z ≠ 0`, then
+  `z ∉ R ∙ a`.
 -/
 
 public section
@@ -60,6 +63,20 @@ theorem exists_ortho_and_not_ortho_of_notMem_span (hM : M.SeparatingLeft) {u x :
   simpa [F, Matrix.toLinearMap₂'_apply', sub_dotProduct, smul_dotProduct, sub_eq_zero,
     eq_comm] using congr($hc w)
 
+/-- **A vector orthogonal to `u` and to neither `x` nor `y`**, for a left-separating matrix `M`,
+when neither `x` nor `y` lies on `K ∙ u`. -/
+theorem exists_ortho_and_not_ortho_pair_of_notMem_span (hM : M.SeparatingLeft) {u x y : m → K}
+    (hx : x ∉ K ∙ u) (hy : y ∉ K ∙ u) :
+    ∃ w, u ⬝ᵥ M *ᵥ w = 0 ∧ x ⬝ᵥ M *ᵥ w ≠ 0 ∧ y ⬝ᵥ M *ᵥ w ≠ 0 := by
+  obtain ⟨w₁, hw₁u, hw₁x⟩ := hM.exists_ortho_and_not_ortho_of_notMem_span hx
+  obtain ⟨w₂, hw₂u, hw₂y⟩ := hM.exists_ortho_and_not_ortho_of_notMem_span hy
+  by_cases h₁ : y ⬝ᵥ M *ᵥ w₁ = 0
+  · by_cases h₂ : x ⬝ᵥ M *ᵥ w₂ = 0
+    · exact ⟨w₁ + w₂, by simp [mulVec_add, hw₁u, hw₂u], by simp [mulVec_add, h₂, hw₁x],
+        by simp [mulVec_add, h₁, hw₂y]⟩
+    · exact ⟨w₂, hw₂u, h₂, hw₂y⟩
+  · exact ⟨w₁, hw₁u, hw₁x, h₁⟩
+
 end Matrix.SeparatingLeft
 
 namespace Matrix.SeparatingRight
@@ -82,3 +99,14 @@ theorem exists_not_ortho_and_not_ortho_of_ne_zero_of_ne_zero (hM : M.SeparatingR
   · exact ⟨v, hv, hvy⟩
 
 end Matrix.SeparatingRight
+
+namespace Matrix
+
+/-- If `v ⬝ᵥ M *ᵥ a = 0` and `v ⬝ᵥ M *ᵥ z ≠ 0`, then `z` is not a scalar multiple of `a`. -/
+theorem notMem_span_of_dotProduct_mulVec {m n R : Type*} [Fintype m] [Fintype n]
+    [CommSemiring R] {M : Matrix m n R} {v : m → R} {a z : n → R}
+    (ha : v ⬝ᵥ M *ᵥ a = 0) (hz : v ⬝ᵥ M *ᵥ z ≠ 0) : z ∉ R ∙ a := fun hza ↦ by
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hza
+  simp [mulVec_smul, ha] at hz
+
+end Matrix

@@ -44,8 +44,13 @@ the element is a scalar matrix. This scalar criterion,
 
 ## Main results
 
-* `Matrix.exists_mem_specialIsometryGroup_mulVec_eq`: a special isometry, a unitary transvection,
-  sends an isotropic `x` to an isotropic `y` when `h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`.
+* `Matrix.exists_mem_specialIsometryGroup_mulVec_eq` and
+  `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero`: a unitary
+  transvection in `Q.specialIsometryGroup σ` sends an isotropic `x` to an isotropic `y` when
+  `h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, and after rescaling sends `x` to a nonzero multiple of
+  `y` while fixing any `u` orthogonal to both.
+* `Matrix.smul_mk_eq_mk_of_mulVec_eq_smul`: a special isometry sending `x` to a nonzero multiple of
+  `y` sends `[x]` to `[y]`.
 * `Matrix.isPretransitive_isotropicPoints`: the special isometry group acts transitively on the
   isotropic points.
 * `Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`: if some point is isotropic, an
@@ -72,19 +77,20 @@ variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {Q : Matrix n n K} 
 
 /-! ### Transitivity -/
 
-/-- **A unitary transvection joins two isotropic vectors.** If `x` and `y` are isotropic,
-`h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, then the unitary transvection along `y - x` with
-parameter `h(y, x)⁻¹` is a special isometry sending `x` to `y`. -/
-theorem exists_mem_specialIsometryGroup_mulVec_eq (hσ : Function.Involutive σ)
-    (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) {x y : n → K}
+/-- If `x` and `y` are isotropic with `h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, the unitary
+transvection along `y - x` with parameter `h(y, x)⁻¹` lies in `Q.specialIsometryGroup σ` and sends
+`x` to `y`. -/
+private theorem exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_sub
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) {x y : n → K}
     (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
     (hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) ≠ 0)
     (hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) + (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0) :
-    ∃ g ∈ Q.specialIsometryGroup σ, (g : Matrix n n K) *ᵥ x = y := by
-  set b := (σ ∘ y) ⬝ᵥ (Q *ᵥ x)
-  have hcomp : σ ∘ (y - x) = σ ∘ y - σ ∘ x := funext fun i ↦ map_sub σ _ _
+    ∃ g ∈ Q.specialIsometryGroup σ,
+      (g : Matrix n n K) = Q.unitaryTransvection σ (y - x) ((σ ∘ y) ⬝ᵥ (Q *ᵥ x))⁻¹ ∧
+        (g : Matrix n n K) *ᵥ x = y := by
+  set b := (σ ∘ y) ⬝ᵥ (Q *ᵥ x) with hb
   have hw : (σ ∘ (y - x)) ⬝ᵥ (Q *ᵥ (y - x)) = 0 := by
-    rw [hcomp, mulVec_sub, sub_dotProduct, dotProduct_sub, dotProduct_sub, hx, hy]
+    simp only [comp_sub_dotProduct_mulVec, mulVec_sub, dotProduct_sub, hx, hy]
     linear_combination -hxy
   -- `h(x, y) = ε σ(b)`, so the condition says `σ(b) = -ε b`, and `b⁻¹` is an admissible
   -- parameter.
@@ -95,38 +101,57 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq (hσ : Function.Involutive σ)
     rw [map_inv₀, hσb, inv_neg, mul_inv, inv_eq_of_mul_eq_one_right hε, mul_neg, ← mul_assoc, hε,
       one_mul, add_neg_cancel]
   obtain ⟨g, hg, hga⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ hw ha
-  refine ⟨g, hg, ?_⟩
-  rw [hga, unitaryTransvection_mulVec, hcomp, sub_dotProduct, hx, sub_zero, inv_mul_cancel₀ hyx,
-    one_smul, add_sub_cancel]
+  refine ⟨g, hg, hga, ?_⟩
+  simp [hga, unitaryTransvection_mulVec, hx, ← hb, inv_mul_cancel₀ hyx]
 
-/-- A special isometry sends an isotropic `x` to a nonzero multiple of an isotropic `y` whenever
-`h(y, x) ≠ 0`, provided some nonzero `d` satisfies `d + ε σ(d) = 0`. -/
-private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul (hσ : Function.Involutive σ)
-    (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
-    {x y : n → K} (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
+/-- **A unitary transvection joins two isotropic vectors.** If `x` and `y` are isotropic,
+`h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, then the unitary transvection along `y - x` with
+parameter `h(y, x)⁻¹` is a special isometry sending `x` to `y`. -/
+theorem exists_mem_specialIsometryGroup_mulVec_eq (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) {x y : n → K}
+    (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
+    (hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) ≠ 0)
+    (hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) + (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0) :
+    ∃ g ∈ Q.specialIsometryGroup σ, (g : Matrix n n K) *ᵥ x = y :=
+  (exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_sub hσ hQ hε hx hy hyx hxy).imp
+    fun _ ⟨hg, _, hgx⟩ ↦ ⟨hg, hgx⟩
+
+/-- **One orthogonal transvection step.** If `x` and `y` are isotropic vectors orthogonal to `u`
+with `h(y, x) ≠ 0`, and some nonzero `d` satisfies `d + ε σ(d) = 0`, then a special isometry (a
+unitary transvection) fixes `u` and sends `x` to a nonzero multiple of `y`. -/
+theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1)
+    (hadm : ∃ d ≠ 0, d + ε * σ d = 0) {u x y : n → K}
+    (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
+    (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0) (huy : (σ ∘ u) ⬝ᵥ (Q *ᵥ y) = 0)
     (hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) ≠ 0) :
-    ∃ g ∈ Q.specialIsometryGroup σ, ∃ c ≠ (0 : K), (g : Matrix n n K) *ᵥ x = c • y := by
+    ∃ g ∈ Q.specialIsometryGroup σ, ∃ c ≠ (0 : K),
+      (g : Matrix n n K) *ᵥ u = u ∧ (g : Matrix n n K) *ᵥ x = c • y := by
   obtain ⟨d, hd, hdε⟩ := hadm
   set b := (σ ∘ y) ⬝ᵥ (Q *ᵥ x)
   -- Rescale `y` by `c = σ(d / b)`, so that `h(c y, x) = d`.
   set c := σ (d * b⁻¹)
-  have hσc : σ c = d * b⁻¹ := hσ _
   have hc : c ≠ 0 := (map_ne_zero σ).mpr (mul_ne_zero hd (inv_ne_zero hyx))
   have hcyx : (σ ∘ (c • y)) ⬝ᵥ (Q *ᵥ x) = d := by
-    rw [TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, hσc, mul_assoc, inv_mul_cancel₀ hyx,
-      mul_one]
+    rw [comp_smul_dotProduct_mulVec, hσ, mul_assoc, inv_mul_cancel₀ hyx, mul_one]
   have hcy : (σ ∘ (c • y)) ⬝ᵥ (Q *ᵥ (c • y)) = 0 := by
     rw [comp_smul_dotProduct_mulVec_smul, hy, mul_zero]
   have hxcy : (σ ∘ x) ⬝ᵥ (Q *ᵥ (c • y)) + (σ ∘ (c • y)) ⬝ᵥ (Q *ᵥ x) = 0 := by
     rw [comp_dotProduct_mulVec_swap hσ hQ hε (c • y) x, hcyx, add_comm]
     exact hdε
-  obtain ⟨g, hg, hgx⟩ :=
-    exists_mem_specialIsometryGroup_mulVec_eq hσ hQ hε hx hcy (hcyx ▸ hd) hxcy
-  exact ⟨g, hg, c, hc, hgx⟩
+  obtain ⟨g, hg, hga, hgx⟩ :=
+    exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_sub
+      hσ hQ hε hx hcy (hcyx ▸ hd) hxcy
+  have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) = 0 :=
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp hux
+  have hyu : (σ ∘ y) ⬝ᵥ (Q *ᵥ u) = 0 :=
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp huy
+  refine ⟨g, hg, c, hc, ?_, hgx⟩
+  simp [hga, unitaryTransvection_mulVec, hxu, hyu]
 
 /-- A special isometry `g` sending `x` to a nonzero multiple of `y` sends the point of `x` to
 the point of `y`. -/
-private theorem smul_mk_eq_mk_of_mulVec_eq_smul {g : Q.specialIsometryGroup σ} {x y : n → K}
+theorem smul_mk_eq_mk_of_mulVec_eq_smul {g : Q.specialIsometryGroup σ} {x y : n → K}
     (hx : x ≠ 0) (hy : y ≠ 0) {c : K} (hc : c ≠ 0)
     (h : ((g : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x = c • y) :
     g • Projectivization.mk K x hx = Projectivization.mk K y hy := by
@@ -147,8 +172,9 @@ theorem isPretransitive_isotropicPoints (hσ : Function.Involutive σ)
       (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0) (hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) ≠ 0) :
       ∃ g : Q.specialIsometryGroup σ,
         g • Projectivization.mk K x hx0 = Projectivization.mk K y hy0 := by
-    obtain ⟨g, hg, c, hc, hgx⟩ :=
-      exists_mem_specialIsometryGroup_mulVec_eq_smul hσ hQ hε hadm hx hy hyx
+    obtain ⟨g, hg, c, hc, -, hgx⟩ :=
+      exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+        hσ hQ hε hadm (u := 0) hx hy (by simp) (by simp) hyx
     exact ⟨⟨g, hg⟩, smul_mk_eq_mk_of_mulVec_eq_smul hx0 hy0 hc hgx⟩
   refine ⟨fun p q ↦ ?_⟩
   obtain ⟨p, hp⟩ := p
@@ -161,20 +187,16 @@ theorem isPretransitive_isotropicPoints (hσ : Function.Involutive σ)
     this.imp fun g hg ↦ Subtype.ext hg
   by_cases hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0
   · -- Pass through an isotropic `z = u + c x` with `h(z, x) ≠ 0` and `h(z, y) ≠ 0`.
-    have hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 0 := by
-      rw [← map_eq_zero σ, apply_comp_dotProduct_mulVec hσ hQ, hyx, mul_zero]
+    have hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 0 :=
+      (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp hyx
     obtain ⟨u, hux, huy⟩ := exists_comp_dotProduct_mulVec_ne_zero_pair (σ := σ) hdet hx0 hy0
     obtain ⟨c, hz⟩ :=
       exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr hp hux
-    have hpair (w : n → K) : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ w) =
-        (σ ∘ u) ⬝ᵥ (Q *ᵥ w) + σ c * ((σ ∘ x) ⬝ᵥ (Q *ᵥ w)) := by
-      rw [comp_add_dotProduct_mulVec, TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul]
-    have hzx : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by rwa [hpair, hp, mul_zero, add_zero]
-    have hzy : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ y) ≠ 0 := by rwa [hpair, hxy, mul_zero, add_zero]
-    have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ (u + c • x)) ≠ 0 := by
-      rw [comp_dotProduct_mulVec_swap hσ hQ hε]
-      exact mul_ne_zero (left_ne_zero_of_mul_eq_one hε) ((map_ne_zero σ).mpr hzy)
-    have hz0 : u + c • x ≠ 0 := fun h ↦ hzx (by rw [h]; simp)
+    have hzx : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by simpa [hp] using hux
+    have hzy : (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ y) ≠ 0 := by simpa [hxy] using huy
+    have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ (u + c • x)) ≠ 0 :=
+      (comp_dotProduct_mulVec_ne_zero_comm hσ hQ hε).mp hzy
+    have hz0 : u + c • x ≠ 0 := fun h ↦ hzx (by simp [h])
     obtain ⟨g, hg⟩ := hstep hx0 hz0 hp hz hzx
     obtain ⟨g', hg'⟩ := hstep hz0 hy0 hz hq hyz
     exact ⟨g' * g, by rw [mul_smul, hg, hg']⟩

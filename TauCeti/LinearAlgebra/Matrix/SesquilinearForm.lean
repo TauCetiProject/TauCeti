@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.Algebra.Group.Submonoid.Defs
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 
@@ -43,19 +44,26 @@ More generally, for a ring endomorphism `σ` and a Gram matrix `Q`, write
 `B(x, y) = σ(x)ᵀ Q y` for the coordinate form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. A matrix `g` with
 `σ(g)ᵀ Q g = Q` preserves it (`Matrix.comp_mulVec_dotProduct_mulVec_mulVec`), and if `σ` is an
 involution and `σ(Q)ᵀ = ε Q`, it is `ε`-Hermitian, `σ(B(x, y)) = ε B(y, x)`
-(`Matrix.apply_comp_dotProduct_mulVec`). With `ε * ε = 1`, this gives `B(y, x) = ε σ(B(x, y))`
-(`Matrix.comp_dotProduct_mulVec_swap`) and a formula for `B(u + c x, u + c x)` when `x` is
-isotropic (`Matrix.comp_add_smul_dotProduct_mulVec_add_smul`).
+(`Matrix.apply_comp_dotProduct_mulVec`), with transposed conjugate rank-one update
+`σ(x (σ(y)ᵀ Q))ᵀ = ε (Q y) σ(x)ᵀ` (`Matrix.transpose_map_vecMulVec_vecMul`). With `ε * ε = 1`, this
+gives `B(y, x) = ε σ(B(x, y))` (`Matrix.comp_dotProduct_mulVec_swap`), symmetry of orthogonality
+(`Matrix.comp_dotProduct_mulVec_eq_zero_comm`, `Matrix.comp_dotProduct_mulVec_ne_zero_comm`), and a
+formula for `B(u + c x, u + c x)` when `x` is isotropic
+(`Matrix.comp_add_smul_dotProduct_mulVec_add_smul`).
 
-Over a field, if the trace `t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s`, a vector
+Over a field, if the trace `t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s` (which
+forces `ε * ε = 1` when `Q ≠ 0` or `Q` is invertible over a nonempty index type,
+`Matrix.mul_self_eq_one_of_trace` and `Matrix.mul_self_eq_one_of_trace_of_det_ne_zero`), a vector
 `u` with `B(u, x) ≠ 0` corrects to an isotropic `u + c x`
-(`Matrix.exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero`). For invertible `Q`, a vector
-outside a line `K ∙ u` is separated from `u` by the form when `σ` is surjective
-(`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero`), and any two
-nonzero vectors pair nontrivially with a common vector
-(`Matrix.exists_comp_dotProduct_mulVec_ne_zero_pair`). If moreover the trace has a nonzero kernel
-element and some nonzero vector is isotropic, a matrix scaling every isotropic vector is scalar
-(`Matrix.exists_eq_scalar_of_forall_mulVec_eq_smul`).
+(`Matrix.exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero`). For invertible `Q`, one or two
+vectors outside a line `K ∙ u` are separated from `u` by the form when `σ` is surjective
+(`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero`,
+`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero_pair`), and when `u` is isotropic with
+`B(u, x) = 0` and `u ∉ K ∙ x` this yields an isotropic vector orthogonal to `x` and not to `u`
+(`Matrix.exists_isotropic_ortho_and_not_ortho`); any two nonzero vectors also pair nontrivially
+with a common vector (`Matrix.exists_comp_dotProduct_mulVec_ne_zero_pair`). If moreover the trace
+has a nonzero kernel element and some nonzero vector is isotropic, a matrix scaling every isotropic
+vector is scalar (`Matrix.exists_eq_scalar_of_forall_mulVec_eq_smul`).
 -/
 
 public section
@@ -159,8 +167,7 @@ theorem apply_comp_dotProduct_mulVec (hσ : Function.Involutive σ) {ε : R}
 /-- The form is additive in its first argument. -/
 theorem comp_add_dotProduct_mulVec (u v w : n → R) :
     (σ ∘ (u + v)) ⬝ᵥ (Q *ᵥ w) = (σ ∘ u) ⬝ᵥ (Q *ᵥ w) + (σ ∘ v) ⬝ᵥ (Q *ᵥ w) := by
-  rw [← add_dotProduct]
-  exact congrArg (· ⬝ᵥ (Q *ᵥ w)) (funext fun i ↦ map_add σ _ _)
+  rw [map_comp_add, add_dotProduct]
 
 /-- The form is `σ`-semilinear in its first argument. -/
 theorem comp_smul_dotProduct_mulVec (c : R) (u w : n → R) :
@@ -171,14 +178,40 @@ theorem comp_smul_dotProduct_mulVec (c : R) (u w : n → R) :
 theorem comp_sub_dotProduct_mulVec {R : Type*} [CommRing R] {Q : Matrix n n R} {σ : R →+* R}
     (u v w : n → R) :
     (σ ∘ (u - v)) ⬝ᵥ (Q *ᵥ w) = (σ ∘ u) ⬝ᵥ (Q *ᵥ w) - (σ ∘ v) ⬝ᵥ (Q *ᵥ w) := by
-  rw [← sub_dotProduct]
-  exact congrArg (· ⬝ᵥ (Q *ᵥ w)) (funext fun i ↦ map_sub σ _ _)
+  rw [map_comp_sub, sub_dotProduct]
+
+/-- For an involutive `σ` and `σ(Q)ᵀ = ε Q`, the transposed conjugate of `x (σ(y)ᵀ Q)` is
+`ε (Q y) σ(x)ᵀ`. -/
+theorem transpose_map_vecMulVec_vecMul (hσ : Function.Involutive σ) {ε : R}
+    (hQ : (Q.map σ)ᵀ = ε • Q) (x y : n → R) :
+    ((vecMulVec x ((σ ∘ y) ᵥ* Q)).map σ)ᵀ = ε • vecMulVec (Q *ᵥ y) (σ ∘ x) := by
+  have hσy : σ ∘ ((σ ∘ y) ᵥ* Q) = y ᵥ* Q.map σ := funext fun i ↦ by
+    rw [Function.comp_apply, RingHom.map_vecMul, ← Function.comp_assoc, hσ.comp_self,
+      Function.id_comp]
+  have hmap : (vecMulVec x ((σ ∘ y) ᵥ* Q)).map σ = vecMulVec (σ ∘ x) (σ ∘ ((σ ∘ y) ᵥ* Q)) := by
+    ext i j
+    simp [vecMulVec_apply]
+  rw [hmap, transpose_vecMulVec, hσy, ← mulVec_transpose, hQ, smul_mulVec, smul_vecMulVec]
 
 /-- With `ε * ε = 1`, the form is `ε`-Hermitian in the form `B(y, x) = ε σ(B(x, y))`. -/
 theorem comp_dotProduct_mulVec_swap (hσ : Function.Involutive σ) {ε : R}
     (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) (x y : n → R) :
     (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = ε * σ ((σ ∘ x) ⬝ᵥ (Q *ᵥ y)) := by
   rw [apply_comp_dotProduct_mulVec hσ hQ, ← mul_assoc, hε, one_mul]
+
+/-- With `ε * ε = 1`, orthogonality `B(x, y) = 0` is symmetric. -/
+theorem comp_dotProduct_mulVec_eq_zero_comm (hσ : Function.Involutive σ) {ε : R}
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) {x y : n → R} :
+    (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 0 ↔ (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0 := by
+  have aux {u v : n → R} (h : (σ ∘ u) ⬝ᵥ (Q *ᵥ v) = 0) : (σ ∘ v) ⬝ᵥ (Q *ᵥ u) = 0 := by
+    rw [comp_dotProduct_mulVec_swap hσ hQ hε, h, map_zero, mul_zero]
+  exact ⟨aux, aux⟩
+
+/-- With `ε * ε = 1`, non-orthogonality `B(x, y) ≠ 0` is symmetric. -/
+theorem comp_dotProduct_mulVec_ne_zero_comm (hσ : Function.Involutive σ) {ε : R}
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) {x y : n → R} :
+    (σ ∘ x) ⬝ᵥ (Q *ᵥ y) ≠ 0 ↔ (σ ∘ y) ⬝ᵥ (Q *ᵥ x) ≠ 0 :=
+  (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).not
 
 /-- The value of the form at `u + c • x` for an isotropic `x`. -/
 theorem comp_add_smul_dotProduct_mulVec_add_smul (hσ : Function.Involutive σ) {ε : R}
@@ -233,6 +266,15 @@ theorem mul_self_eq_one_of_trace (hσ : Function.Involutive σ) (hQ : (Q.map σ)
     refine mul_right_cancel₀ hs ?_
     linear_combination h1 + ε * hε'
 
+/-- Over a nonempty index type, an invertible `ε`-Hermitian matrix whose trace `t ↦ t + ε σ(t)` is
+onto the elements `s` with `σ(s) = ε s` satisfies `ε * ε = 1`. -/
+theorem mul_self_eq_one_of_trace_of_det_ne_zero [Nonempty n] (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) : ε * ε = 1 := by
+  refine mul_self_eq_one_of_trace hσ hQ htr ?_
+  rintro rfl
+  exact hdet det_zero
+
 omit [DecidableEq n] in
 /-- **Correcting a vector to an isotropic one.** If the trace `t ↦ t + ε σ(t)` is onto the
 elements `s` with `σ(s) = ε s`, then for isotropic `x` and `B(u, x) ≠ 0` some `u + c • x` is
@@ -263,6 +305,41 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero (hσ : Function.Surjec
   rw [dotProduct_transpose_mulVec] at hwu hwx
   have hv : (σ ∘ fun i ↦ (hσ (w i)).choose) = w := funext fun i ↦ (hσ (w i)).choose_spec
   exact ⟨fun i ↦ (hσ (w i)).choose, hv.symm ▸ hwu, hv.symm ▸ hwx⟩
+
+/-- **Separating two vectors from a line by a sesquilinear form.** If `σ` is surjective, `Q` is
+invertible, and neither `x` nor `y` lies on the line `K ∙ u`, then some vector `v` satisfies
+`B(v, u) = 0`, `B(v, x) ≠ 0`, and `B(v, y) ≠ 0`. -/
+theorem exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero_pair (hσ : Function.Surjective σ)
+    (hdet : Q.det ≠ 0) {u x y : n → K} (hx : x ∉ K ∙ u) (hy : y ∉ K ∙ u) :
+    ∃ v : n → K, (σ ∘ v) ⬝ᵥ (Q *ᵥ u) = 0 ∧ (σ ∘ v) ⬝ᵥ (Q *ᵥ x) ≠ 0 ∧
+      (σ ∘ v) ⬝ᵥ (Q *ᵥ y) ≠ 0 := by
+  obtain ⟨w, hwu, hwx, hwy⟩ := (nondegenerate_of_det_ne_zero hdet).separatingRight
+    |>.separatingLeft_transpose.exists_ortho_and_not_ortho_pair_of_notMem_span hx hy
+  rw [dotProduct_transpose_mulVec] at hwu hwx hwy
+  have hv : (σ ∘ fun i ↦ (hσ (w i)).choose) = w := funext fun i ↦ (hσ (w i)).choose_spec
+  exact ⟨fun i ↦ (hσ (w i)).choose, hv.symm ▸ hwu, hv.symm ▸ hwx, hv.symm ▸ hwy⟩
+
+/-- **An isotropic vector orthogonal to `x` and not to an isotropic `u`.** Let `σ` be an
+involution, let `Q` be an invertible `ε`-Hermitian matrix, and suppose that the trace
+`t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s`. If `u` is isotropic, `u ∉ K ∙ x`, and
+`B(u, x) = 0`, then some isotropic vector `s` satisfies `B(x, s) = 0` and `B(u, s) ≠ 0`. -/
+theorem exists_isotropic_ortho_and_not_ortho (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) {u x : n → K}
+    (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0) (hu_span : u ∉ K ∙ x)
+    (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0) :
+    ∃ s : n → K, (σ ∘ s) ⬝ᵥ (Q *ᵥ s) = 0 ∧ (σ ∘ x) ⬝ᵥ (Q *ᵥ s) = 0 ∧
+      (σ ∘ u) ⬝ᵥ (Q *ᵥ s) ≠ 0 := by
+  have : Nonempty n := let ⟨i, _⟩ := Function.ne_iff.mp (TauCeti.ne_zero_of_notMem hu_span); ⟨i⟩
+  have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
+  obtain ⟨v, hvx, hvu⟩ :=
+    exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero hσ.surjective hdet hu_span
+  obtain ⟨c, hs⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr hu hvu
+  refine ⟨v + c • u, hs, ?_, ?_⟩
+  · rw [comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε]
+    simp [hvx, hux]
+  · rw [comp_dotProduct_mulVec_ne_zero_comm hσ hQ hε]
+    simpa [hu] using hvu
 
 /-- For an invertible `Q`, two nonzero vectors pair nontrivially with a common vector. -/
 theorem exists_comp_dotProduct_mulVec_ne_zero_pair (hdet : Q.det ≠ 0) {x y : n → K}
@@ -297,11 +374,8 @@ theorem exists_eq_scalar_of_forall_mulVec_eq_smul (hσ : Function.Involutive σ)
     {x₀ : n → K} (hx₀ : x₀ ≠ 0) (hx₀iso : (σ ∘ x₀) ⬝ᵥ (Q *ᵥ x₀) = 0) (M : Matrix n n K)
     (hM : ∀ v, (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0 → ∃ c : K, M *ᵥ v = c • v) :
     ∃ c : K, M = scalar n c := by
-  have hε : ε * ε = 1 := by
-    refine mul_self_eq_one_of_trace hσ hQ htr ?_
-    have : Nonempty n := ⟨(Function.ne_iff.mp hx₀).choose⟩
-    rintro rfl
-    exact hdet det_zero
+  have : Nonempty n := let ⟨i, _⟩ := Function.ne_iff.mp hx₀; ⟨i⟩
+  have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
   obtain ⟨α, hα⟩ := hM x₀ hx₀iso
   -- Every isotropic `v` has the eigenvalue `α`: compare `x₀` with an isotropic `x₀ + c v`.
   have hiso {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) : M *ᵥ v = α • v := by

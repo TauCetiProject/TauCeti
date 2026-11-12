@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transit
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 public import TauCeti.LinearAlgebra.Projectivization.Basic
+import TauCeti.Algebra.Group.Submonoid.Defs
 
 /-!
 # The symplectic group acts primitively on projective space
@@ -83,18 +84,8 @@ theorem exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq {u x y : Fi
   swap
   · exact exists_smul_eq_self_and_smul_eq_of_ne_zero h hyx
   -- Pass through `z = x + w` with `ω(u, w) = 0` and `w` orthogonal to neither `x` nor `y`.
-  obtain ⟨w, hwu, hwx, hwy⟩ : ∃ w, u ⬝ᵥ (JFin m K *ᵥ w) = 0 ∧ x ⬝ᵥ (JFin m K *ᵥ w) ≠ 0 ∧
-      y ⬝ᵥ (JFin m K *ᵥ w) ≠ 0 := by
-    obtain ⟨w₁, hw₁u, hw₁x⟩ :=
-      nondegenerate_JFin.separatingLeft.exists_ortho_and_not_ortho_of_notMem_span hx
-    obtain ⟨w₂, hw₂u, hw₂y⟩ :=
-      nondegenerate_JFin.separatingLeft.exists_ortho_and_not_ortho_of_notMem_span hy
-    by_cases h₁ : y ⬝ᵥ (JFin m K *ᵥ w₁) = 0
-    · by_cases h₂ : x ⬝ᵥ (JFin m K *ᵥ w₂) = 0
-      · exact ⟨w₁ + w₂, by simp [mulVec_add, hw₁u, hw₂u], by simp [mulVec_add, h₂, hw₁x],
-          by simp [mulVec_add, h₁, hw₂y]⟩
-      · exact ⟨w₂, hw₂u, h₂, hw₂y⟩
-    · exact ⟨w₁, hw₁u, hw₁x, h₁⟩
+  obtain ⟨w, hwu, hwx, hwy⟩ :=
+    nondegenerate_JFin.separatingLeft.exists_ortho_and_not_ortho_pair_of_notMem_span hx hy
   have hz : u ⬝ᵥ (JFin m K *ᵥ x) = u ⬝ᵥ (JFin m K *ᵥ (x + w)) := by simp [mulVec_add, hwu]
   obtain ⟨g₁, hg₁u, hg₁x⟩ := exists_smul_eq_self_and_smul_eq_of_ne_zero hz (by
     simpa [add_dotProduct, dotProduct_JFin_mulVec_eq_neg x w] using hwx)
@@ -102,25 +93,15 @@ theorem exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq {u x y : Fi
     simpa [mulVec_add, hyx] using hwy)
   exact ⟨g₂ * g₁, by rw [mul_smul, hg₁u, hg₂u], by rw [mul_smul, hg₁x, hg₂z]⟩
 
-/-- A vector off the line of `u` is nonzero. -/
-private theorem ne_zero_of_notMem_span {u x : Fin (m + m) → K} (hx : x ∉ K ∙ u) : x ≠ 0 :=
-  (ne_of_mem_of_not_mem (Submodule.zero_mem _) hx).symm
-
-/-- A vector `z` not orthogonal to `u` is not a multiple of a vector `a` orthogonal to `u`. -/
-private theorem notMem_span_of_dotProduct_JFin_mulVec {u a z : Fin (m + m) → K}
-    (ha : u ⬝ᵥ (JFin m K *ᵥ a) = 0) (hz : u ⬝ᵥ (JFin m K *ᵥ z) ≠ 0) : z ∉ K ∙ a := fun hza ↦ by
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hza
-  simp [mulVec_smul, ha] at hz
-
 /-- **A block contains each orbit of a point stabilizer that it meets.** If a block contains `⟨u⟩`
 and another point `⟨x⟩`, it contains every point `⟨y⟩ ≠ ⟨u⟩` with `ω(u, y)` vanishing exactly when
 `ω(u, x)` does. -/
 private theorem mk_mem_of_isBlock {B : Set (ℙ K (Fin (m + m) → K))}
     (hB : IsBlock (GLSymplecticFin m K) B) {u x y : Fin (m + m) → K} (hu : u ≠ 0)
     (hx : x ∉ K ∙ u) (hy : y ∉ K ∙ u) (huB : Projectivization.mk K u hu ∈ B)
-    (hxB : Projectivization.mk K x (ne_zero_of_notMem_span hx) ∈ B)
+    (hxB : Projectivization.mk K x (ne_zero_of_notMem hx) ∈ B)
     (h : u ⬝ᵥ (JFin m K *ᵥ x) = 0 ↔ u ⬝ᵥ (JFin m K *ᵥ y) = 0) :
-    Projectivization.mk K y (ne_zero_of_notMem_span hy) ∈ B := by
+    Projectivization.mk K y (ne_zero_of_notMem hy) ∈ B := by
   -- Rescale `y` to a vector `a • y` on the same level set of `ω(u, ·)` as `x`.
   obtain ⟨a, ha, hay⟩ : ∃ a : K, a ≠ 0 ∧ u ⬝ᵥ (JFin m K *ᵥ x) = u ⬝ᵥ (JFin m K *ᵥ (a • y)) := by
     by_cases hy₀ : u ⬝ᵥ (JFin m K *ᵥ y) = 0
@@ -133,8 +114,8 @@ private theorem mk_mem_of_isBlock {B : Set (ℙ K (Fin (m + m) → K))}
   rw [Subgroup.smul_def] at hgu hgx
   have hgB : g • B = B := hB.smul_eq_of_mem huB (by
     simpa only [Subgroup.smul_def, Projectivization.smul_mk, hgu] using huB)
-  have hmk : Projectivization.mk K y (ne_zero_of_notMem_span hy) =
-      g • Projectivization.mk K x (ne_zero_of_notMem_span hx) := by
+  have hmk : Projectivization.mk K y (ne_zero_of_notMem hy) =
+      g • Projectivization.mk K x (ne_zero_of_notMem hx) := by
     rw [Subgroup.smul_def, Projectivization.smul_mk, Projectivization.mk_eq_mk_iff']
     exact ⟨a⁻¹, by rw [hgx, smul_smul, inv_mul_cancel₀ ha, one_smul]⟩
   rw [hmk, ← hgB]
@@ -163,10 +144,10 @@ instance isPreprimitive : IsPreprimitive (GLSymplecticFin m K) (ℙ K (Fin (m + 
       -- is `B`.
       obtain ⟨s, hsx, hsu⟩ :=
         nondegenerate_JFin.separatingLeft.exists_ortho_and_not_ortho_of_notMem_span hu'
-      have hsB := mk_mem_of_isBlock hB hx₀ hu' (notMem_span_of_dotProduct_JFin_mulVec hux hsu) hq
+      have hsB := mk_mem_of_isBlock hB hx₀ hu' (notMem_span_of_dotProduct_mulVec hux hsu) hq
         hp (iff_of_true (by simp [dotProduct_JFin_mulVec_eq_neg u x, hux]) hsx)
       exact mk_mem_of_isBlock hB hu
-        (notMem_span_of_dotProduct_JFin_mulVec (dotProduct_JFin_mulVec_self u) hsu) hyu hp hsB
+        (notMem_span_of_dotProduct_mulVec (dotProduct_JFin_mulVec_self u) hsu) hyu hp hsB
         (iff_of_false hsu huy)
     · -- `⟨x⟩` is not orthogonal to `⟨u⟩`, so `B` contains every point not orthogonal to `⟨u⟩`.
       by_cases huy : u ⬝ᵥ (JFin m K *ᵥ y) = 0
