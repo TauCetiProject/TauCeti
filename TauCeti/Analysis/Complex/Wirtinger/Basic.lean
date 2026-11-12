@@ -60,7 +60,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   derivatives of a `C^(m+1)` map are `C^m`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
-* `TauCeti.conjWirtingerDeriv_const_smul`: `\bar∂` commutes with complex scalar multiplication.
+* `TauCeti.wirtingerDeriv_const_smul`, `TauCeti.conjWirtingerDeriv_const_smul`: `∂` and `\bar∂`
+  commute with complex scalar multiplication.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
 * `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a finite sum of real-differentiable functions.
@@ -77,11 +78,13 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `ContDiffAt.hasFDerivAt_wirtingerDeriv_apply`, `ContDiffAt.hasFDerivAt_conjWirtingerDeriv_apply`:
   the derivatives of `y ↦ ∂g(y) u` and `y ↦ \bar∂g(y) u` for a `C²` map `g`, in terms of the
   second derivative of `g`.
-* `TauCeti.conjWirtingerDeriv_wirtingerDeriv_self`: `\bar∂_v ∂_v g` is a quarter of the sum of the
-  second real derivatives of `g` along `v` and `I • v`; in coordinates,
+* `TauCeti.conjWirtingerDeriv_wirtingerDeriv_self`,
+  `TauCeti.wirtingerDeriv_conjWirtingerDeriv_self`: `\bar∂_v ∂_v g` and `∂_v \bar∂_v g` are a
+  quarter of the sum of the second real derivatives of `g` along `v` and `I • v`; in coordinates,
   `4 ∑_j ∂²g / ∂(conj z_j) ∂z_j` is the real Laplacian of `g`.
-* `TauCeti.conjWirtingerDeriv_conjWirtingerDeriv_comm`: second conjugate Wirtinger derivatives
-  of a `C²` map commute.
+* `TauCeti.wirtingerDeriv_wirtingerDeriv_comm`, `TauCeti.wirtingerDeriv_conjWirtingerDeriv_comm`,
+  `TauCeti.conjWirtingerDeriv_conjWirtingerDeriv_comm`: second Wirtinger derivatives of a `C²`
+  map commute.
 
 ## Implementation notes
 
@@ -240,6 +243,13 @@ theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
     conjWirtingerDeriv (c • g) x = c • conjWirtingerDeriv g x := by
   ext v
   simp only [conjWirtingerDeriv_apply, fderiv_const_smul_field c, Pi.smul_apply, smul_apply]
+  module
+
+/-- The Wirtinger derivative commutes with multiplication by a complex constant. -/
+theorem wirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
+    wirtingerDeriv (c • g) x = c • wirtingerDeriv g x := by
+  ext v
+  simp only [wirtingerDeriv_apply, fderiv_const_smul_field c, Pi.smul_apply, smul_apply]
   module
 
 /-- The conjugate Wirtinger derivative in the direction `v` is the one-variable conjugate
@@ -548,6 +558,12 @@ theorem _root_.ContDiffOn.conjWirtingerDeriv_apply_of_isOpen {g : V → W} {s : 
     ContDiffOn ℝ m (fun y ↦ conjWirtingerDeriv g y v) s :=
   fun _ hy ↦ ((hg.contDiffAt (hs.mem_nhds hy)).conjWirtingerDeriv_apply hmn v).contDiffWithinAt
 
+/-- A Wirtinger derivative of a `C^{m+1}` map on an open set is `C^m` there. -/
+theorem _root_.ContDiffOn.wirtingerDeriv_apply_of_isOpen {g : V → W} {s : Set V}
+    {m n : WithTop ℕ∞} (hg : ContDiffOn ℝ n g s) (hs : IsOpen s) (hmn : m + 1 ≤ n) (v : V) :
+    ContDiffOn ℝ m (fun y ↦ wirtingerDeriv g y v) s :=
+  fun _ hy ↦ ((hg.contDiffAt (hs.mem_nhds hy)).wirtingerDeriv_apply hmn v).contDiffWithinAt
+
 /-- For a `C²` map, the conjugate Wirtinger derivative `y ↦ \bar∂g(y) u` in a fixed direction `u`
 is differentiable, with derivative built from the second derivative of `g`. -/
 theorem _root_.ContDiffAt.hasFDerivAt_conjWirtingerDeriv_apply {g : V → W} {x : V}
@@ -596,6 +612,50 @@ theorem conjWirtingerDeriv_wirtingerDeriv_self {g : V → W} {x : V} (hg : ContD
   · ring
   · ring
   · linear_combination (-4⁻¹ : ℂ) * I_mul_I
+
+/-- For a `C²` map, `∂_v \bar∂_v g` is also a quarter of the sum of the second real derivatives
+of `g` along `v` and along `I • v`. -/
+theorem wirtingerDeriv_conjWirtingerDeriv_self {g : V → W} {x : V} (hg : ContDiffAt ℝ 2 g x)
+    (v : V) :
+    wirtingerDeriv (fun y ↦ conjWirtingerDeriv g y v) x v =
+      (4 : ℂ)⁻¹ • (iteratedFDeriv ℝ 2 g x ![v, v] + iteratedFDeriv ℝ 2 g x ![I • v, I • v]) := by
+  have hsymm := hg.isSymmSndFDerivAt (by simp)
+  rw [wirtingerDeriv_apply, (hg.hasFDerivAt_conjWirtingerDeriv_apply v).fderiv,
+    iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
+  simp only [smul_apply, add_apply, ContinuousLinearMap.flip_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, hsymm v (I • v)]
+  match_scalars
+  · ring
+  · ring
+  · linear_combination (-4⁻¹ : ℂ) * I_mul_I
+
+/-- **Mixed Wirtinger derivatives commute.** For a `C²` map, `∂_w \bar∂_v g = \bar∂_v ∂_w g`; on
+coordinate vectors this is `∂²g / ∂z_k ∂(conj z_j) = ∂²g / ∂(conj z_j) ∂z_k`. -/
+theorem wirtingerDeriv_conjWirtingerDeriv_comm {g : V → W} {x : V}
+    (hg : ContDiffAt ℝ 2 g x) (v w : V) :
+    wirtingerDeriv (fun y ↦ conjWirtingerDeriv g y v) x w =
+      conjWirtingerDeriv (fun y ↦ wirtingerDeriv g y w) x v := by
+  have hsymm := hg.isSymmSndFDerivAt (by simp)
+  rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply,
+    (hg.hasFDerivAt_conjWirtingerDeriv_apply v).fderiv,
+    (hg.hasFDerivAt_wirtingerDeriv_apply w).fderiv]
+  simp only [smul_apply, add_apply, sub_apply, ContinuousLinearMap.flip_apply, hsymm w v,
+    hsymm (I • w) v, hsymm w (I • v), hsymm (I • w) (I • v)]
+  module
+
+/-- **Symmetry of second Wirtinger derivatives.** For a `C²` map, `∂_w ∂_v g = ∂_v ∂_w g`; on
+coordinate vectors this is `∂²g / ∂z_j ∂z_k = ∂²g / ∂z_k ∂z_j`. -/
+theorem wirtingerDeriv_wirtingerDeriv_comm {g : V → W} {x : V}
+    (hg : ContDiffAt ℝ 2 g x) (v w : V) :
+    wirtingerDeriv (fun y ↦ wirtingerDeriv g y v) x w =
+      wirtingerDeriv (fun y ↦ wirtingerDeriv g y w) x v := by
+  have hsymm := hg.isSymmSndFDerivAt (by simp)
+  rw [wirtingerDeriv_apply, wirtingerDeriv_apply,
+    (hg.hasFDerivAt_wirtingerDeriv_apply v).fderiv,
+    (hg.hasFDerivAt_wirtingerDeriv_apply w).fderiv]
+  simp only [smul_apply, sub_apply, ContinuousLinearMap.flip_apply, hsymm w v, hsymm (I • w) v,
+    hsymm w (I • v), hsymm (I • w) (I • v)]
+  module
 
 /-- **Symmetry of second conjugate Wirtinger derivatives.** For a `C²` map,
 `\bar∂_w \bar∂_v g = \bar∂_v \bar∂_w g`; on coordinate vectors this is
