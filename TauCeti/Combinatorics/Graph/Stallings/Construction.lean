@@ -105,7 +105,7 @@ theorem subgroup_stallingsGraph (ws : List (List (α × Bool))) :
         (flower_foldSequence ws)).trans (TauCeti.StallingsGraph.flower_subgroup ws)))
 
 /-- The Stallings graph of the empty generating list accepts the trivial subgroup. -/
-@[simp] theorem subgroup_stallingsGraph_nil (α : Type u) :
+theorem subgroup_stallingsGraph_nil (α : Type u) :
     (stallingsGraph ([] : List (List (α × Bool)))).subgroup
       (stallingsGraph ([] : List (List (α × Bool)))).base = ⊥ := by
   rw [subgroup_stallingsGraph]
@@ -113,7 +113,7 @@ theorem subgroup_stallingsGraph (ws : List (List (α × Bool))) :
 
 /-- The Stallings graph of a list of words has no darts exactly when every word of the list
 represents the identity. -/
-theorem isEmpty_dart_stallingsGraph_iff {ws : List (List (α × Bool))} :
+@[simp] theorem isEmpty_dart_stallingsGraph_iff {ws : List (List (α × Bool))} :
     IsEmpty (stallingsGraph ws).graph.E ↔ ∀ w ∈ ws, FreeGroup.mk w = 1 := by
   rw [(stallingsGraph_isFolded ws).isEmpty_dart_iff_subgroup_eq_bot (stallingsGraph_isCore ws),
     subgroup_stallingsGraph, Subgroup.closure_eq_bot_iff]
@@ -125,9 +125,10 @@ instance stallingsGraph_nil_isEmpty_dart :
   isEmpty_dart_stallingsGraph_iff.mpr (by simp)
 
 /-- The Stallings graph of the empty list of words has only its base vertex. -/
-instance stallingsGraph_nil_subsingleton_vertex :
-    Subsingleton (stallingsGraph ([] : List (List (α × Bool)))).graph.V :=
-  ((SerreGraph.connected_iff _).mp (stallingsGraph_connected _)).2.subsingleton_of_isEmpty
+noncomputable instance : Unique (stallingsGraph ([] : List (List (α × Bool)))).graph.V :=
+  haveI : Subsingleton (stallingsGraph ([] : List (List (α × Bool)))).graph.V :=
+    ((SerreGraph.connected_iff _).mp (stallingsGraph_connected _)).2.subsingleton_of_isEmpty
+  uniqueOfSubsingleton (stallingsGraph _).base
 
 /-- Every finitely generated subgroup of a free group is accepted at the base vertex of the
 Stallings graph of some finite list of words. -/

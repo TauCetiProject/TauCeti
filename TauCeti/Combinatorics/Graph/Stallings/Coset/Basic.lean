@@ -228,7 +228,7 @@ theorem subgroupGraph_connected : (subgroupGraph H).graph.Connected := by
   exact (subgroupGraph_isCore H).connected
 
 /-- The canonical graph of a subgroup has no darts exactly when the subgroup is trivial. -/
-theorem isEmpty_dart_subgroupGraph_iff : IsEmpty H.subgroupGraph.graph.E ↔ H = ⊥ := by
+@[simp] theorem isEmpty_dart_subgroupGraph_iff : IsEmpty H.subgroupGraph.graph.E ↔ H = ⊥ := by
   rw [H.subgroupGraph_isFolded.isEmpty_dart_iff_subgroup_eq_bot H.subgroupGraph_isCore,
     subgroupGraph_subgroup]
 
@@ -238,8 +238,9 @@ instance subgroupGraph_bot_isEmpty_dart :
   (isEmpty_dart_subgroupGraph_iff ⊥).mpr rfl
 
 /-- The canonical graph of the trivial subgroup has only its base vertex. -/
-instance subgroupGraph_bot_subsingleton_vertex :
-    Subsingleton (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.V :=
-  ((SerreGraph.connected_iff _).mp (subgroupGraph_connected ⊥)).2.subsingleton_of_isEmpty
+noncomputable instance : Unique (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.V :=
+  haveI : Subsingleton (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.V :=
+    ((SerreGraph.connected_iff _).mp (subgroupGraph_connected ⊥)).2.subsingleton_of_isEmpty
+  uniqueOfSubsingleton (subgroupGraph _).base
 
 end Subgroup

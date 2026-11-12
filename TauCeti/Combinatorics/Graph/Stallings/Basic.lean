@@ -225,7 +225,7 @@ theorem subgroup_eq_bot_of_isAcyclic (h : S.graph.IsAcyclic) (a : S.graph.V) :
   simp [(S.graph.isAcyclic_iff.mp h) a p hp]
 
 /-- A labelled graph without darts accepts only the trivial subgroup, at every vertex. -/
-theorem subgroup_eq_bot_of_isEmpty [IsEmpty S.graph.E] (a : S.graph.V) :
+@[simp] theorem subgroup_eq_bot_of_isEmpty [IsEmpty S.graph.E] (a : S.graph.V) :
     S.subgroup a = ⊥ :=
   S.subgroup_eq_bot_of_isAcyclic (S.graph.isAcyclic_iff.mpr fun _ p _ => by
     cases p with

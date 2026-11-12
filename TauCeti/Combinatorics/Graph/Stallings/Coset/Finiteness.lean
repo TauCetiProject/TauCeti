@@ -148,7 +148,7 @@ theorem nonempty_iso_stallingsGraph_nil [IsEmpty S.graph.E] [Subsingleton S.grap
     Nonempty (Iso (stallingsGraph ([] : List (List (α × Bool)))) S) := by
   refine (nonempty_iso_stallingsGraph_iff (S.isFolded_def.mpr fun e => isEmptyElim e)
     ((S.graph.isCore_iff S.base).mpr ⟨fun a => ?_, fun e => isEmptyElim e⟩)).mpr
-    (by simp [S.subgroup_eq_bot_of_isEmpty])
+    (by simp)
   rw [Subsingleton.elim a S.base]
   exact ⟨.nil⟩
 
@@ -170,17 +170,21 @@ theorem nonempty_iso_stallingsGraph_subgroupGraph_iff {ws : List (List (α × Bo
 
 /-- The canonical graph of a subgroup of a free group has finitely many darts exactly when
 the subgroup is finitely generated. No finiteness of the alphabet is assumed. -/
-theorem subgroupGraph_finite_dart_iff_fg : Finite H.subgroupGraph.graph.E ↔ H.FG := by
+@[simp] theorem subgroupGraph_finite_dart_iff_fg : Finite H.subgroupGraph.graph.E ↔ H.FG := by
   rw [H.subgroupGraph_isFolded.finite_dart_iff_fg H.subgroupGraph_isCore, subgroupGraph_subgroup]
 
+/-- The canonical graph of a finitely generated subgroup has finitely many darts. -/
+instance subgroupGraph_finite_dart_of_fg [H.FG] : Finite H.subgroupGraph.graph.E :=
+  (subgroupGraph_finite_dart_iff_fg H).mpr ‹_›
+
 /-- The canonical graph of a finitely generated subgroup has finitely many vertices. -/
-theorem subgroupGraph_finite_vertex_of_fg (h : H.FG) : Finite H.subgroupGraph.graph.V :=
+instance subgroupGraph_finite_vertex_of_fg [H.FG] : Finite H.subgroupGraph.graph.V :=
   H.subgroupGraph_isFolded.finite_vertex_of_fg H.subgroupGraph_isCore
     (by rwa [subgroupGraph_subgroup])
 
 /-- Over a finite alphabet, the canonical graph of a subgroup has finitely many vertices
 exactly when the subgroup is finitely generated. -/
-theorem subgroupGraph_finite_vertex_iff_fg [Finite α] :
+@[simp] theorem subgroupGraph_finite_vertex_iff_fg [Finite α] :
     Finite H.subgroupGraph.graph.V ↔ H.FG := by
   rw [H.subgroupGraph_isFolded.finite_vertex_iff_fg H.subgroupGraph_isCore,
     subgroupGraph_subgroup]
