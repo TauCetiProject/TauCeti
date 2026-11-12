@@ -83,7 +83,7 @@ theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
     apply Measurable.of_eval
     intro i
     apply Finset.measurable_sum
-    intro j hj
+    intro j _
     split_ifs <;> fun_prop
   have hrec : (fun ω ↦ f (fun i ↦ D i ω)) =ᵐ[P] (fun ω (i : I) ↦ X i ω) := by
     filter_upwards [h0] with ω hω
@@ -116,7 +116,7 @@ theorem HasIndepIncrements.indepFun_past_sub (hX : HasIndepIncrements X P)
   let J : Finset T := I.image Subtype.val
   have hj : ∀ i ∈ J, i ≤ s := by
     simp only [J, Finset.mem_image]
-    rintro i ⟨j, hj, rfl⟩
+    rintro i ⟨j, -, rfl⟩
     exact j.property
   have h := hX.indepFun_finset_sub hm h0 J hj hst
   exact h.comp (Measurable.of_eval fun (i : I) ↦ measurable_pi_apply

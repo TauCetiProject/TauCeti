@@ -289,13 +289,13 @@ private lemma cupLift_g_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   have hgx := hg
   rw [HomologicalComplex.biprod_desc_f_apply, HomologicalComplex.neg_f_apply, ModuleCat.hom_neg,
     LinearMap.neg_apply] at hgx
@@ -389,13 +389,13 @@ private lemma cupLift_d_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   have hdb : ((unionPair hAU hBV).singularChainComplex S).d
       (q + 1) q ≫ b' = 0 := d_comp_linearYonedaObj_iCycles q (q + 1) β
   refine (HomologicalComplex.biprod_lift_f_apply _ _ _ _).trans (Eq.trans ?_
@@ -468,13 +468,13 @@ private lemma pairMayerVietorisδ_cup_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   -- The pair sequence: `x₂ ⌣ β|` lifts `α ⌣ β|`, and its coboundary is the restriction of
   -- `ζ ⌣ β`.
   refine (SSetPair.shortExact_mayerVietorisCochainShortComplex T k L

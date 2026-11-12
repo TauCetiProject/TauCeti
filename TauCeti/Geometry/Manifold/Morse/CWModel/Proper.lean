@@ -106,7 +106,7 @@ private theorem IsMorse.exists_sublevelCWModel_extension (hf : IsMorse I f) {a b
       ∃ e : ∀ m, cell (univ : Set S'.W) m ≃ cell (univ : Set S.W) m ⊕
           ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
         ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
-  obtain ⟨W', _, _, _, ι, h', _, hι, hh, e, he⟩ :=
+  obtain ⟨W', _, _, _, ι, h', _, hι, -, hh, e, he⟩ :=
     hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb S.W S.h
   exact ⟨⟨W', h'⟩, ι, hι, hh, e, he⟩
 
