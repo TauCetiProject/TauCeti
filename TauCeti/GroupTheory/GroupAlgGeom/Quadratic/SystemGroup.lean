@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.GroupTheory.GroupAlgGeom.CoefficientFree
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.SurfaceGroup.LowGenus
+import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Surface
 import TauCeti.Logic.Equiv.Set
 
 /-!
@@ -39,9 +40,6 @@ When every variable of `X` occurs in the equation, this is `G_S ≃* G ∗ S^±(
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_orientable`,
-  `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_nonorientable`: the left sides of the equations
-  of types (1) and (3) are the surface words in the variables.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.orderOf_mk_inr_of_nonorientable_one`: in the group of
   the equation `x² = 1`, the variable `x` has order `2`.
 
@@ -67,14 +65,6 @@ section Orientable
 
 variable {x y : Fin n → X}
 
-/-- The left side of the standard quadratic equation `[x₁, y₁] ⋯ [xₙ, yₙ] = 1` is the orientable
-surface word in the variables. -/
-theorem toWord_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
-    (orientable (G := G) n hn x y inj).toWord =
-      inr (orientableWord (fun i => FreeGroup.of (x i)) (fun i => FreeGroup.of (y i)) ![]) := by
-  simp [toWord_def, orientableWord_def, commutatorElement_def, map_list_prod, List.map_ofFn,
-    Function.comp_def]
-
 /-- The variables of `X` are the generators of the closed orientable surface group, sent to the
 variables of the equation, together with the variables that do not occur in the equation. -/
 private noncomputable def orientableVarEquiv (inj : (Sum.elim x y).Injective) :
@@ -99,7 +89,7 @@ private theorem normalClosure_toWord_orientable (hn : 0 < n) (inj : (Sum.elim x 
       normalClosure ((inr : FreeGroup X →* GX G X) ''
         (FreeGroup.map (orientableVarEquiv inj ∘ Sum.inl) '' {orientableRelator n 0})) := by
   rw [Set.image_singleton, Set.image_singleton, toWord_orientable, orientableRelator_def,
-    map_orientableWord (FreeGroup.map _)]
+    map_orientableWord (FreeGroup.map _), map_orientableWord (inr : FreeGroup X →* GX G X)]
   simp [orientableWord_def, orientableVarEquiv_a, orientableVarEquiv_b]
 
 variable (G) in
@@ -222,13 +212,6 @@ section Nonorientable
 
 variable {x : Fin n → X}
 
-/-- The left side of the standard quadratic equation `x₁² ⋯ xₙ² = 1` is the non-orientable surface
-word in the variables. -/
-theorem toWord_nonorientable (hn : 0 < n) (inj : x.Injective) :
-    (nonorientable (G := G) n hn x inj).toWord =
-      inr (nonorientableWord (fun i => FreeGroup.of (x i)) ![]) := by
-  simp [toWord_def, nonorientableWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
-
 /-- The variables of `X` are the generators of the closed non-orientable surface group, sent to
 the variables of the equation, together with the variables that do not occur in the equation. -/
 private noncomputable def nonorientableVarEquiv (inj : x.Injective) :
@@ -249,7 +232,7 @@ private theorem normalClosure_toWord_nonorientable (hn : 0 < n) (inj : x.Injecti
       normalClosure ((inr : FreeGroup X →* GX G X) ''
         (FreeGroup.map (nonorientableVarEquiv inj ∘ Sum.inl) '' {nonorientableRelator n 0})) := by
   rw [Set.image_singleton, Set.image_singleton, toWord_nonorientable, nonorientableRelator_def,
-    map_nonorientableWord (FreeGroup.map _)]
+    map_nonorientableWord (FreeGroup.map _), map_nonorientableWord (inr : FreeGroup X →* GX G X)]
   simp [nonorientableWord_def, nonorientableVarEquiv_c]
 
 variable (G) in
