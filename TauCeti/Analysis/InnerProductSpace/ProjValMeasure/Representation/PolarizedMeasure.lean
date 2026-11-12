@@ -229,8 +229,6 @@ theorem variation_representationPolarizedMeasure_univ_le (ψ ξ : H) :
   · simp
   rcases eq_or_ne ξ 0 with rfl | hξ
   · simp
-  have hψ' : 0 < ‖ψ‖ := norm_pos_iff.2 hψ
-  have hξ' : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
   set t := Real.sqrt (‖ξ‖ / ‖ψ‖)
   have ht : 0 < t := Real.sqrt_pos.2 (by positivity)
   have ht2 : t ^ 2 = ‖ξ‖ / ‖ψ‖ := Real.sq_sqrt (by positivity)

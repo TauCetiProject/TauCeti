@@ -133,7 +133,7 @@ private theorem substitution_hypotheses (φ : Isogeny W₁ W₂) {c : ℝ}
     rw [oddPart]
     field_simp
   · rw [oddPart, div_pow, div_mul_eq_mul_div,
-      eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD]
+      eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x]
     field_simp
 
 /-- **The real period integral under an isogeny, counting fibres.** Let `φ : W₁ → W₂` be an
@@ -392,7 +392,7 @@ private theorem nonneg_eval_Ψ₂Sq_div
     (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
     {x : ℝ} (hD : φ.xRatFunc.denom.eval x ≠ 0) (hx : 0 ≤ W₁.Ψ₂Sq.eval x) :
     0 ≤ W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) := by
-  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD
+  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x
   have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
   have hpos : 0 < c ^ 2 * φ.xRatFunc.denom.eval x ^ 4 := by positivity
   exact (mul_nonneg_iff_of_pos_left hpos).mp (h ▸ mul_nonneg (sq_nonneg _) hx)
@@ -403,7 +403,7 @@ private theorem eval_Ψ₂Sq_div_eq_zero
     {x : ℝ} (hD : φ.xRatFunc.denom.eval x ≠ 0)
     (hx : (wronskian φ.xRatFunc.denom φ.xRatFunc.num).eval x * W₁.Ψ₂Sq.eval x = 0) :
     W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) = 0 := by
-  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD
+  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc x
   have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
   rw [sq, mul_assoc, hx, mul_zero] at h
   simpa [hc0, hD] using h.symm

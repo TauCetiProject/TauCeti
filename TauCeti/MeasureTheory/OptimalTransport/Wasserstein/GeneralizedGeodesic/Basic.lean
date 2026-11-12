@@ -227,7 +227,7 @@ theorem wassersteinEDist_generalizedGeodesic_sq_add_le (hγ : γ.fst = μ) (ht :
         ENNReal.ofReal (t * (1 - t)) * ∫⁻ w, edist w.2.1 w.2.2 ^ 2 ∂γ ≤
       ENNReal.ofReal (1 - t) * ∫⁻ w, edist w.1 w.2.1 ^ 2 ∂γ +
         ENNReal.ofReal t * ∫⁻ w, edist w.1 w.2.2 ^ 2 ∂γ := by
-  have hf : Measurable fun w : E × E × E ↦ (1 - t) • w.2.1 + t • w.2.2 := by fun_prop
+  have _ : Measurable fun w : E × E × E ↦ (1 - t) • w.2.1 + t • w.2.2 := by fun_prop
   -- The plan couples its base marginal `μ` with the generalized geodesic at time `t`.
   have hπ : IsCoupling (γ.map fun w ↦ (w.1, (1 - t) • w.2.1 + t • w.2.2)) μ
       (generalizedGeodesic γ t) := by
