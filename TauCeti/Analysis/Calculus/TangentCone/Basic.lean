@@ -19,10 +19,7 @@ Basic facts about Mathlib's tangent cone `tangentConeAt` in topological modules.
 The subspace calculation lets flattening charts identify their model subspaces with intrinsic
 tangent spaces, while the curve lemma places velocities of invariant flows in the tangent cones
 of their invariant sets. Differentials carry positive tangent cones into positive tangent cones,
-which lets chart transitions of a manifold with corners compare the corners of the model. A
-Lipschitz bound at a point along a set bounds the differential on the tangent cone of the set,
-which turns contraction estimates for a flow on an invariant set into decay estimates for its
-linearization in the tangent directions of that set.
+which lets chart transitions of a manifold with corners compare the corners of the model.
 
 ## Main results
 
@@ -37,8 +34,6 @@ linearization in the tangent directions of that set.
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 * `HasFDerivWithinAt.mapsTo_posTangentConeAt`: a differential carries positive tangent cones into
   positive tangent cones.
-* `HasFDerivWithinAt.norm_apply_le_of_mem_tangentConeAt`: a Lipschitz bound at a point along a set
-  bounds the differential on the tangent cone of the set.
 -/
 
 public section
@@ -131,23 +126,3 @@ theorem HasFDerivWithinAt.mapsTo_posTangentConeAt {E F : Type*} [NormedAddCommGr
     simpa using tendsto_const_nhds.add hd₀
   · exact hds.mono fun n hn ↦ ⟨x + d n, hn, by simp⟩
   · exact h.lim hd₀ hds hcd
-
-/-- **A Lipschitz bound along a set bounds the differential on its tangent cone.** If `f` is
-differentiable within `s` at `x`, and `‖f y - f x‖ ≤ M * ‖y - x‖` for the points `y` of `s` near
-`x`, then `‖f' v‖ ≤ M * ‖v‖` for every vector `v` tangent to `s` at `x`. Compare
-`HasFDerivAt.le_of_lipschitzOn`, which bounds the whole differential by a Lipschitz bound on a
-neighbourhood of `x`. -/
-theorem HasFDerivWithinAt.norm_apply_le_of_mem_tangentConeAt {𝕜 E F : Type*}
-    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] {f : E → F} {f' : E →L[𝕜] F} {s : Set E} {x : E}
-    (hf : HasFDerivWithinAt f f' s x) {M : ℝ} (hM : ∀ᶠ y in 𝓝[s] x, ‖f y - f x‖ ≤ M * ‖y - x‖)
-    {v : E} (hv : v ∈ tangentConeAt 𝕜 s x) : ‖f' v‖ ≤ M * ‖v‖ := by
-  obtain ⟨ι, l, hl, c, d, hd₀, hds, hcd⟩ := exists_fun_of_mem_tangentConeAt hv
-  have harg : Tendsto (fun n ↦ x + d n) l (𝓝[s] x) :=
-    tendsto_nhdsWithin_iff.2 ⟨by simpa using tendsto_const_nhds.add hd₀, hds⟩
-  refine le_of_tendsto_of_tendsto (hf.lim hd₀ hds hcd).norm (hcd.norm.const_mul M) ?_
-  filter_upwards [harg.eventually hM] with n hn
-  rw [add_sub_cancel_left] at hn
-  rw [norm_smul, norm_smul]
-  calc ‖c n‖ * ‖f (x + d n) - f x‖ ≤ ‖c n‖ * (M * ‖d n‖) := by gcongr
-    _ = M * (‖c n‖ * ‖d n‖) := by ring

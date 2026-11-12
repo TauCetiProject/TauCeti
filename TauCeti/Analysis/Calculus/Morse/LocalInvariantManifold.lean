@@ -62,8 +62,6 @@ radii are nonnegative, belongs to both sets.
 * `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph_of_contDiffAt` and
   `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt`: the same
   graph maps are `C^n` when `f` is `C^(n+1)` at the critical point.
-* `IsNondegenerateCriticalPoint.exists_norm_sub_le_of_isIntegralCurveOn_mapsTo_closedBall`: two
-  forward trajectories confined to a small ball approach each other exponentially.
 * `IsNondegenerateCriticalPoint.exists_localStableSet_homeomorph_closedBall` and
   `IsNondegenerateCriticalPoint.exists_localUnstableSet_homeomorph_closedBall`: the two sets are
   closed disks of dimension the ambient dimension minus the Morse index, respectively the Morse
@@ -384,38 +382,6 @@ theorem exists_localStableSet_eq_lipschitzGraph
     h.exists_localStableSet_eq_lipschitzGraph_of_contDiffAt
       (n := 1) (by simpa [one_add_one_eq_two] using h.contDiffAt) C hC
   exact ⟨r, hr, rho, hrho, g, by simpa only [Nat.cast_one] using hg⟩
-
-/-- **Confined forward trajectories at a Morse critical point approach each other
-exponentially.** There are a radius `r > 0`, a constant `C ≥ 0` and a rate `β > 0` such that any
-two forward solutions of the centred negative-gradient equation that remain in `closedBall 0 r`
-satisfy `‖y₁ t - y₂ t‖ ≤ C * exp (-β t) * ‖y₁ 0 - y₂ 0‖` at every time `t ≥ 0`. In particular
-the flow contracts the local stable set exponentially. -/
-theorem exists_norm_sub_le_of_isIntegralCurveOn_mapsTo_closedBall
-    (h : IsNondegenerateCriticalPoint f x) :
-    ∃ r > 0, ∃ C ≥ (0 : ℝ), ∃ β > (0 : ℝ), ∀ y₁ y₂ : ℝ → E,
-      IsIntegralCurveOn y₁ (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
-      MapsTo y₁ (Ici 0) (closedBall 0 r) →
-      IsIntegralCurveOn y₂ (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
-      MapsTo y₂ (Ici 0) (closedBall 0 r) →
-      ∀ t, 0 ≤ t → ‖y₁ t - y₂ t‖ ≤ C * Real.exp (-β * t) * ‖y₁ 0 - y₂ 0‖ := by
-  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, -, -, -⟩ :=
-    h.exists_lyapunovPerronData (n := 1) (by simpa [one_add_one_eq_two] using h.contDiffAt) 1
-      one_pos
-  have hfield_time := neg_gradient_centered_time_eq (f := f) (x := x)
-  have hsmall' : 2 * (K : ℝ) * ((epsilon : ℝ) * 2) < alpha := by exact_mod_cast hsmall
-  -- Half of the spectral gap left by the nonlinearity serves as the rate.
-  set β : ℝ := (alpha - 2 * K * ((epsilon : ℝ) * 2)) / 2 with hβdef
-  have hβ : 0 < β := by rw [hβdef]; linarith
-  have hβα : 2 * (K : ℝ) * ((epsilon : ℝ) * 2) < alpha - β := by rw [hβdef]; linarith
-  have hKε : (0 : ℝ) ≤ 2 * K * ((epsilon : ℝ) * 2) := by positivity
-  have hden : 0 < 1 - 2 * (K : ℝ) * ((epsilon : ℝ) * 2) / (alpha - β) :=
-    sub_pos.2 ((div_lt_one (hKε.trans_lt hβα)).2 hβα)
-  refine ⟨r, hr, K / (1 - 2 * (K : ℝ) * ((epsilon : ℝ) * 2) / (alpha - β)),
-    div_nonneg K.coe_nonneg hden.le, β, hβ, fun y₁ y₂ hy₁ hm₁ hy₂ hm₂ t ht ↦ ?_⟩
-  rw [← hfield_time] at hy₁ hy₂
-  exact ContinuousLinearMap.norm_sub_le_of_isIntegralCurveOn_mapsTo_closedBall hs hu hN hsmall
-    h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection hβ.le hβα
-    hy₁ hm₁ hy₂ hm₂ ht
 
 /-- **Confined backward trajectories at a Morse critical point form a `C^n` Lipschitz graph.** For
 every positive Lipschitz constant `C`, there are positive radii `r` and `rho` such that the

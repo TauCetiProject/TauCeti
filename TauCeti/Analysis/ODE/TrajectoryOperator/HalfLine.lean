@@ -27,10 +27,9 @@ determined by their values at time `0`, and three subspaces of `E` record their 
   intersection of the first two (`TauCeti.squareIntegrableSolutionsOn_Iio_inf_Ioi`) and models the
   kernel of the trajectory operator `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)`.
 
-For the linearization `A(s) = Hess f(γ s)` along a gradient trajectory `γ` from `p` to `q`, the
-stable and unstable solutions are the tangent spaces at `γ 0` of the stable set of `q` and of the
-unstable set of `p`; that identification is
-`TauCeti.Analysis.Calculus.Morse.MorseSmale.LinearizedOperator`.
+For the linearization `A(s) = Hess f(γ s)` along a gradient trajectory `γ` from `p` to `q`,
+classically the stable and unstable solutions are the tangent spaces at `γ 0` of the stable set of
+`q` and of the unstable set of `p`; that identification is not formalized here.
 
 For a continuous family of symmetric operators with invertible limits `A±` at `±∞` this file
 computes their dimensions and identifies the cokernel of `D_A` with the failure of the stable and
