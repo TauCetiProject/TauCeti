@@ -36,7 +36,10 @@ the full idele groups `J(Λ)`, whose archimedean factors do not involve the orde
 * `TauCeti.OrderIdeles.eventually_baseChange_eq`: two orders have the same completion at all but
   finitely many places.
 * `TauCeti.OrderIdeles.changeOrder_principal`: changing the order preserves principal ideles.
-* `TauCeti.OrderIdeles.mem_map_unitIdeles_changeOrder`: the image of `U_f(Λ)` in `J_f(Γ)` is the
+* `TauCeti.OrderIdeles.unitIdeles_eq_integralSubgroup`: `U_f(Λ)` is the everywhere-integral
+  subgroup of the restricted product `J_f(Λ)`.
+* `TauCeti.OrderIdeles.map_unitIdeles_changeOrder`,
+  `TauCeti.OrderIdeles.mem_map_unitIdeles_changeOrder`: the image of `U_f(Λ)` in `J_f(Γ)` is the
   subgroup of ideles with every component a unit of `Λ_v`.
 * `TauCeti.OrderIdeles.map_unitIdeles_changeOrder_le`: for orders `Λ ≤ Γ`, `U_f(Λ) ≤ U_f(Γ)`.
 * `TauCeti.OrderIdeles.lattice_le_lattice_changeOrder`: for orders `Λ ≤ Γ`, `I(α) ⊆ I_Γ(α)`.
@@ -74,6 +77,15 @@ theorem eventually_baseChange_eq (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) :
   rw [Subalgebra.toSubmodule_baseChange, Subalgebra.toSubmodule_baseChange]
   exact h₁.antisymm h₂
 
+omit [Algebra F B] [IsScalarTower A F B] in
+variable (F Λ) in
+/-- `U_f(Λ)` is the everywhere-integral subgroup of the restricted product `J_f(Λ)`. -/
+theorem unitIdeles_eq_integralSubgroup :
+    unitIdeles F Λ =
+      integralSubgroup fun v : HeightOneSpectrum A ↦
+        (Λ.baseChange (v.adicCompletionIntegers F)).toSubmonoid.units :=
+  Subgroup.ext fun α ↦ mem_unitIdeles.trans (mem_integralSubgroup _ α).symm
+
 /-- **Changing the reference order.** For two `A`-orders `Λ` and `Γ` in `B`, the finite idele
 groups `J_f(Λ)` and `J_f(Γ)` are the same restricted product of the `(𝒪_v ⊗[A] B)ˣ`, since the
 completions of `Λ` and `Γ` differ at only finitely many places. This is the identity in every
@@ -86,6 +98,10 @@ noncomputable def changeOrder (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) :
 theorem changeOrder_apply (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) (α : FiniteIdeles F Λ)
     (v : HeightOneSpectrum A) : changeOrder hΛ hΓ α v = α v :=
   restrictedProductCongr_apply _ _ _ α v
+
+@[simp]
+theorem changeOrder_refl (hΛ : IsOrder F Λ) : changeOrder hΛ hΛ = MulEquiv.refl _ :=
+  restrictedProductCongr_refl _
 
 @[simp]
 theorem changeOrder_symm (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) :
@@ -104,20 +120,28 @@ theorem changeOrder_principal (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) (b : Bˣ
   RestrictedProduct.ext _ _ fun v ↦ Units.ext (by simp)
 
 /-- **The unit ideles of one order inside the ideles of another.** The image of `U_f(Λ)` in
-`J_f(Γ)` consists of the ideles whose every component is a unit of `Λ_v`. -/
+`J_f(Γ)` is the subgroup of ideles whose every component is a unit of `Λ_v`. -/
+theorem map_unitIdeles_changeOrder (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) :
+    (unitIdeles F Λ).map (changeOrder hΛ hΓ : FiniteIdeles F Λ →* FiniteIdeles F Γ) =
+      integralSubgroupOf _ fun v : HeightOneSpectrum A ↦
+        (Λ.baseChange (v.adicCompletionIntegers F)).toSubmonoid.units := by
+  rw [unitIdeles_eq_integralSubgroup]
+  exact map_integralSubgroup_restrictedProductCongr _ _ _
+
+/-- An idele of `J_f(Γ)` comes from `U_f(Λ)` exactly when every component is a unit of `Λ_v`. -/
 theorem mem_map_unitIdeles_changeOrder (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ)
     {α : FiniteIdeles F Γ} :
     α ∈ (unitIdeles F Λ).map (changeOrder hΛ hΓ) ↔
       ∀ v, α v ∈ (Λ.baseChange (v.adicCompletionIntegers F)).toSubmonoid.units := by
-  rw [Subgroup.map_equiv_eq_comap_symm, Subgroup.mem_comap, mem_unitIdeles]
-  simp
+  rw [map_unitIdeles_changeOrder, mem_integralSubgroupOf]
 
 /-- **Unit ideles grow with the order.** For orders `Λ ≤ Γ`, the image of `U_f(Λ)` in `J_f(Γ)` lies
 in `U_f(Γ)`. -/
 theorem map_unitIdeles_changeOrder_le (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) (hle : Λ ≤ Γ) :
-    (unitIdeles F Λ).map (changeOrder hΛ hΓ) ≤ unitIdeles F Γ := fun _ hα ↦
-  mem_unitIdeles.2 fun v ↦ Submonoid.units_mono (fun _ hx ↦ Subalgebra.baseChange_mono _ hle hx)
-    ((mem_map_unitIdeles_changeOrder hΛ hΓ).1 hα v)
+    (unitIdeles F Λ).map (changeOrder hΛ hΓ) ≤ unitIdeles F Γ := by
+  rw [map_unitIdeles_changeOrder, unitIdeles_eq_integralSubgroup, ← integralSubgroupOf_self,
+    integralSubgroupOf_le_integralSubgroupOf_iff]
+  exact fun v ↦ Submonoid.units_mono fun _ hx ↦ Subalgebra.baseChange_mono _ hle hx
 
 /-- **Lattices grow with the order.** For orders `Λ ≤ Γ`, the lattice `I(α)` of a finite idele
 relative to `Λ` lies in its lattice relative to `Γ`. -/
@@ -152,6 +176,10 @@ theorem changeOrder_fst (hΛ : IsOrder K Λ) (hΓ : IsOrder K Γ) (α : Ideles K
 theorem changeOrder_snd (hΛ : IsOrder K Λ) (hΓ : IsOrder K Γ) (α : Ideles K Λ) :
     (changeOrder hΛ hΓ α).2 = OrderIdeles.changeOrder hΛ hΓ α.2 :=
   (rfl)
+
+@[simp]
+theorem changeOrder_refl (hΛ : IsOrder K Λ) : changeOrder hΛ hΛ = MulEquiv.refl _ :=
+  MulEquiv.ext fun α ↦ Prod.ext rfl <| by ext; simp
 
 @[simp]
 theorem changeOrder_symm (hΛ : IsOrder K Λ) (hΓ : IsOrder K Γ) :
