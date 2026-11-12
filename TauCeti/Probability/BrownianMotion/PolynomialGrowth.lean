@@ -59,13 +59,12 @@ theorem lintegral_iSup_sq_price_geometricBrownianMotion_lt_top
     have hg : |C 1 0| ≤ A * (1 + 1) := by
       simpa using hC 1 one_pos 0 (by positivity)
     linarith [abs_nonneg (C 1 0)]
-  have hmax := hW.lintegral_iSup_rpow_geometricBrownianMotion_lt_top hcont hs.le μ σ (p * 2)
+  have hmax := hW.lintegral_iSup_rpow_geometricBrownianMotion_lt_top hcont s μ σ (p * 2)
   have hbound (ω : Ω) (t : ℝ≥0) (ht : t ≤ T) :
       C (geometricBrownianMotion s μ σ W t ω) t ^ 2 ≤
         2 * A ^ 2 * (1 + geometricBrownianMotion s μ σ W t ω ^ (p * 2)) := by
     have hS := geometricBrownianMotion_pos hs μ σ W t ω
     have hg := hC _ hS t ht
-    have hr := rpow_nonneg hS.le p
     have hsq := sq_le_sq₀ (abs_nonneg _) (mul_nonneg hA (by positivity)) |>.2 hg
     rw [sq_abs] at hsq
     rw [rpow_mul hS.le, rpow_two]

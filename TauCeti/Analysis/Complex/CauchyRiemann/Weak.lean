@@ -230,6 +230,13 @@ theorem isWeakLinearCauchyRiemannOn_iff :
         ∀ᵐ z ∂volume.restrict (interior U), D z 1 + A z (D z I) + C z (ξ z) = 0 := by
   simp only [IsWeakLinearCauchyRiemannOn, isWeakCauchyRiemannOn_iff, add_eq_zero_iff_eq_neg]
 
+/-- On an open set `Ω`, the linear equation with the weak derivative taken on `Ω` itself. -/
+theorem isWeakLinearCauchyRiemannOn_iff_of_isOpen :
+    IsWeakLinearCauchyRiemannOn p (Ω : Set ℂ) A C ξ ↔ ContinuousOn ξ Ω ∧ MemLpLoc p Ω ξ ∧
+      ∃ D : ℂ → ℂ →L[ℝ] V, HasWeakFDerivOn volume Ω ξ D ∧ MemLpLoc p Ω D ∧
+        ∀ᵐ z ∂volume.restrict (Ω : Set ℂ), D z 1 + A z (D z I) + C z (ξ z) = 0 := by
+  rw [isWeakLinearCauchyRiemannOn_iff, Opens.interior_coe, Ω.isOpen.interior_eq]
+
 namespace IsWeakLinearCauchyRiemannOn
 
 /-- Weak solutions of the linear equation are closed under addition. -/

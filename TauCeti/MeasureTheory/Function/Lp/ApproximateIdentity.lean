@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
 import TauCeti.Analysis.Convolution.Basic
+import TauCeti.MeasureTheory.Function.Lp.Holder
 import Mathlib.MeasureTheory.Function.Holder
 
 /-!
@@ -60,6 +61,9 @@ integrability or compact support assumption on the function.
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
   these convolutions converge in `L¹(K)` on every compact set `K`.
+* `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors
+  of a bilinear product of `Lᵖ` and `Lᵠ` functions converges in `L¹(W)` to the product of the
+  limits.
 
 ## References
 
@@ -76,10 +80,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open ContinuousLinearMap Filter MeasureTheory Metric Set
 open scoped Convolution ENNReal
+
+namespace TauCeti
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -262,5 +266,36 @@ theorem tendsto_setLIntegral_enorm_normed_convolution_sub [CompleteSpace F] {I :
     exact ht.le.trans hi.le
   rw [setLIntegral_congr_fun hK.measurableSet fun x hx ↦ by rw [hKs x hx]]
   exact (setLIntegral_le_lintegral _ _).trans lintegral_enorm_le_eLpNorm_one
+
+section Bilinear
+
+open scoped Topology
+
+variable {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H]
+  [NormedSpace ℝ H]
+
+/-- Mollifying both factors of a product by a shrinking normalized bump converges in `L¹(W)` to
+the product of their limits, when the limits are represented on `W` by the classes of `U` and
+`V`. -/
+theorem _root_.ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub
+    (B : F →L[ℝ] G →L[ℝ] H)
+    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
+    [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤) [CompleteSpace F] [CompleteSpace G]
+    {U : E → F} {V : E → G} (hU : MemLp U p mu) (hV : MemLp V q mu)
+    {I : Type*} {l : Filter I} {φ : I → ContDiffBump (0 : E)}
+    (hφ : Tendsto (fun i => (φ i).rOut) l (𝓝 0))
+    {W : Set E} (hWmu : mu W < ⊤) {f : E → F} {g : E → G}
+    (hUae : hU.toLp U =ᵐ[mu.restrict W] f) (hVae : hV.toLp V =ᵐ[mu.restrict W] g) :
+    Tendsto (fun i => ∫⁻ x in W,
+      ‖B (((φ i).normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] U) x)
+        ((((φ i).normed mu) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] V) x) - B (f x) (g x)‖ₑ ∂mu)
+      l (𝓝 0) :=
+  tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWmu
+    (tendsto_normedBumpLp (mu := mu) hp hφ (hU.toLp U))
+    (tendsto_normedBumpLp (mu := mu) hq hφ (hV.toLp V))
+    (fun i => normedBumpLp_ae_eq_convolution hp (φ i) hU)
+    hUae (fun i => normedBumpLp_ae_eq_convolution hq (φ i) hV) hVae
+
+end Bilinear
 
 end TauCeti

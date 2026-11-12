@@ -48,9 +48,7 @@ barycentric coordinates by the coordinates of `x`. -/
 theorem toMatrix_update [DecidableEq ι'] (q : ι' → P) (i : ι') (x : P) :
     b.toMatrix (Function.update q i x) = (b.toMatrix q).updateRow i (b.coords x) := by
   ext j l
-  rcases eq_or_ne j i with rfl | hj
-  · simp [toMatrix_apply]
-  · simp [toMatrix_apply, hj]
+  obtain rfl | hj := eq_or_ne j i <;> simp [toMatrix_apply, *]
 
 end Ring
 
@@ -63,10 +61,8 @@ of the matrix of barycentric coordinates relative to `b` by the barycentric coor
 `i` with respect to `b₂`. -/
 theorem det_toMatrix_update (i : ι) (x : P) :
     (b.toMatrix (Function.update b₂ i x)).det = (b.toMatrix b₂).det * b₂.coord i x := by
-  have h := congr_fun (b.det_smul_coords_eq_cramer_coords b₂ x) i
-  rw [Pi.smul_apply, coords_apply, smul_eq_mul, cramer_apply, updateCol_transpose,
-    det_transpose] at h
-  rw [toMatrix_update, h]
+  simpa [cramer_apply, updateCol_transpose] using
+    (congr_fun (b.det_smul_coords_eq_cramer_coords b₂ x) i).symm
 
 end CommRing
 
