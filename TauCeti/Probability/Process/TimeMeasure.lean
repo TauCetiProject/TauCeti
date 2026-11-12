@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -62,6 +64,36 @@ theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
 /-- Finite time horizons have finite time mass. -/
 instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
   ⟨by simp⟩
+
+/-- Finite linear combinations of initial-interval indicators are dense in the
+finite-horizon time `L²` space. -/
+theorem topologicalClosure_span_indicatorConstLp_Iic (T : ℝ≥0) :
+    (Submodule.span ℝ (range fun t : ℝ≥0 ↦
+      indicatorConstLp (μ := timeMeasure T) 2 (measurableSet_Iic (a := t))
+        (measure_ne_top _ _) (1 : ℝ))).topologicalClosure = ⊤ := by
+  have hgen : (inferInstance : MeasurableSpace ℝ≥0) =
+      MeasurableSpace.generateFrom (range Iic) := by
+    exact (BorelSpace.measurable_eq (α := ℝ≥0)).trans (borel_eq_generateFrom_Iic ℝ≥0)
+  have hcover : IsCountablySpanning (range (Iic : ℝ≥0 → Set ℝ≥0)) := by
+    refine ⟨fun n : ℕ ↦ Iic (n : ℝ≥0), fun n ↦ mem_range_self _, ?_⟩
+    ext t
+    simp only [mem_iUnion, mem_Iic, mem_univ, iff_true]
+    exact exists_nat_ge t
+  have hdense := TauCeti.topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    (μ := timeMeasure T) hgen isPiSystem_Iic hcover (fun _ _ ↦ measure_ne_top _ _)
+  have hset : {g : Lp ℝ 2 (timeMeasure T) |
+      ∃ (s : Set ℝ≥0) (hs : s ∈ range Iic),
+        g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
+          (measure_ne_top _ _) 1} = range (fun t : ℝ≥0 ↦
+        indicatorConstLp (μ := timeMeasure T) 2 (measurableSet_Iic (a := t))
+          (measure_ne_top _ _) (1 : ℝ)) := by
+    ext g
+    constructor
+    · rintro ⟨_, ⟨t, rfl⟩, rfl⟩
+      exact mem_range_self t
+    · rintro ⟨t, rfl⟩
+      exact ⟨Iic t, mem_range_self t, rfl⟩
+  rwa [hset] at hdense
 
 /-- The horizon of length zero carries the zero measure. -/
 @[simp]

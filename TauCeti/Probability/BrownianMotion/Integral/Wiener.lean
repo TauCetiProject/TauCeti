@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.BrownianMotion.TimeIntegral
 public import TauCeti.Probability.Process.TimeMeasure
-import TauCeti.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.MeasureTheory.Measure.LevyConvergence
@@ -62,28 +61,8 @@ private def timeStep (T : ℝ≥0) :
   Finsupp.linearCombination ℝ (timeIndicator T)
 
 private theorem denseRange_timeStep (T : ℝ≥0) : DenseRange (timeStep T) := by
-  have hgen : (inferInstance : MeasurableSpace ℝ≥0) =
-      MeasurableSpace.generateFrom (range Iic) := by
-    exact (BorelSpace.measurable_eq (α := ℝ≥0)).trans (borel_eq_generateFrom_Iic ℝ≥0)
-  have hcover : IsCountablySpanning (range (Iic : ℝ≥0 → Set ℝ≥0)) := by
-    refine ⟨fun n : ℕ ↦ Iic (n : ℝ≥0), fun n ↦ mem_range_self _, ?_⟩
-    ext t
-    simp only [mem_iUnion, mem_Iic, mem_univ, iff_true]
-    exact exists_nat_ge t
-  have hdense := TauCeti.topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
-    (μ := TauCeti.Probability.timeMeasure T) hgen isPiSystem_Iic hcover
-    (fun _ _ ↦ measure_ne_top _ _)
-  have hset : {g : Lp ℝ 2 (TauCeti.Probability.timeMeasure T) |
-      ∃ (s : Set ℝ≥0) (hs : s ∈ range Iic),
-        g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
-          (measure_ne_top _ _) 1} = range (timeIndicator T) := by
-    ext g
-    constructor
-    · rintro ⟨_, ⟨t, rfl⟩, rfl⟩
-      exact mem_range_self t
-    · rintro ⟨t, rfl⟩
-      exact ⟨Iic t, mem_range_self t, rfl⟩
-  rw [hset] at hdense
+  have hdense : (Submodule.span ℝ (range (timeIndicator T))).topologicalClosure = ⊤ :=
+    TauCeti.Probability.topologicalClosure_span_indicatorConstLp_Iic T
   rw [denseRange_iff_closure_range, ← LinearMap.coe_range, timeStep,
     Finsupp.range_linearCombination, ← Submodule.topologicalClosure_coe, hdense]
   rfl
@@ -131,12 +110,12 @@ theorem eq_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
     (hA : ∀ t : ℝ≥0,
       A (indicatorConstLp 2 (measurableSet_Iic (a := t)) (measure_ne_top _ _) 1) =
         hB.toL2 (min t T)) : A = (hB.wienerIntegral T).toContinuousLinearMap := by
-  apply DFunLike.coe_injective
-  apply (denseRange_timeStep T).equalizer A.continuous
-    (hB.wienerIntegral T).toContinuousLinearMap.continuous
-  ext v
-  simp [timeStep, Finsupp.linearCombination_apply, Finsupp.sum, map_sum, map_smul,
-    timeIndicator, hA]
+  rw [wienerIntegral, LinearMap.toContinuousLinearMap_extendOfIsometry]
+  exact (LinearMap.extendOfNorm_unique (denseRange_timeStep T) 1
+    (by simp [norm_brownianStep]) A (by
+      ext v
+      simp [timeStep, brownianStep, Finsupp.linearCombination_apply, Finsupp.sum,
+        timeIndicator, hA])).symm
 
 /-- Integrating an interval indicator gives the corresponding Brownian increment,
 with both endpoints clipped to the horizon. -/
@@ -163,12 +142,8 @@ theorem integral_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
   let one : Lp ℝ 2 P := Lp.const 2 P 1
   have hexpect (g : Lp ℝ 2 P) : ⟪one, g⟫_ℝ = ∫ ω, g ω ∂P := by
-    rw [L2.inner_def]
-    apply integral_congr_ae
-    filter_upwards [Lp.coeFn_const (p := 2) P (1 : ℝ)] with ω hω
     dsimp only [one]
-    rw [hω]
-    simp
+    rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_one, setIntegral_univ]
   have hz : ∀ t : ℝ≥0, ⟪one, hB.toL2 t⟫_ℝ = 0 := by
     intro t
     rw [hexpect, integral_congr_ae (hB.coeFn_toL2 t), hB.integral_eval]
@@ -228,5 +203,35 @@ theorem hasLaw_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
     fun_prop
   exact tendsto_nhds_unique hlim (by
     simpa only [Function.comp_def] using hc.tendsto f |>.comp hvlim)
+
+/-- The Wiener integrals form a jointly Gaussian family indexed by deterministic
+`L²` integrands. Their covariance is the inner product, by the bundled isometry. -/
+theorem isGaussianProcess_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0) :
+    IsGaussianProcess (fun f ↦ ⇑(hB.wienerIntegral T f)) P where
+  hasGaussianLaw I := by
+    classical
+    have hmeas : AEMeasurable (fun ω ↦ I.restrict (fun f ↦ hB.wienerIntegral T f ω)) P :=
+      AEMeasurable.of_eval (fun _ ↦ (Lp.memLp _).aemeasurable)
+    refine ⟨hmeas, isGaussian_of_isGaussian_map (fun L ↦ ?_)⟩
+    rw [AEMeasurable.map_map_of_aemeasurable (by fun_prop) hmeas]
+    have hg := (hB.hasLaw_wienerIntegral T
+      (∑ f : I, L (Pi.single f 1) • f.1)).hasGaussianLaw
+    have heq : (fun ω ↦ hB.wienerIntegral T
+        (∑ f : I, L (Pi.single f 1) • f.1) ω) =ᵐ[P]
+        L ∘ (fun ω ↦ I.restrict (fun f ↦ hB.wienerIntegral T f ω)) := by
+      simp only [map_sum, map_smul]
+      filter_upwards [Lp.coeFn_finsetSum Finset.univ
+        (fun f : I ↦ L (Pi.single f 1) • hB.wienerIntegral T f.1),
+        ae_all_iff.2 (fun f : I ↦ Lp.coeFn_smul (L (Pi.single f 1))
+          (hB.wienerIntegral T f.1))] with ω hsum hsmul
+      rw [hsum]
+      simp only [Finset.sum_apply, hsmul, Pi.smul_apply, smul_eq_mul]
+      calc
+        _ = ∑ f : I, L (hB.wienerIntegral T f.1 ω • Pi.single f 1) := by
+          simp [mul_comm]
+        _ = L (∑ f : I, hB.wienerIntegral T f.1 ω • Pi.single f 1) :=
+          (map_sum L _ _).symm
+        _ = _ := congrArg L (by ext f; simp [Pi.single_apply])
+    exact (hg.congr heq).isGaussian_map
 
 end ProbabilityTheory.IsPreBrownianReal
