@@ -586,7 +586,7 @@ private lemma ambientCup_restrict_component {W D : Set X} (hDW : D ⊆ W) (hW : 
   (TopPair.singularChainComplexMap_f_cupCochain_rightAlexanderWhitneyDiagonal (k := k)
     _ u μ p q n h _ _).trans (congrArg (fun a ↦ cupCochain k
       ((interPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q n h a _)
-        (chainComplexMap_f_comp_subtypeVal (S' := U ∩ V) (T' := W)
+        (chainComplexMap_f_comp_subtypeVal_assoc (S' := U ∩ V) (T' := W)
           (TopPair.Hom.fst (TopPair.ofInclusionMap (Set.inter_subset_inter hAU hBV) hDW
             (ContinuousMap.inclusion hW) fun _ hx ↦ hD hx))
           (fun x ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)) p z))
