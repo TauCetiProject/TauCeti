@@ -47,9 +47,9 @@ no homology above degree `n`
 `TauCeti.isZero_singularHomology_of_isClosedEmbedding`). This applies in particular to a smooth
 affine complete intersection (`TauCeti.isZero_singularHomology_affineZeroLocus`). The same
 proper Morse function, of index at most `n`
-(`TauCeti.exists_isMorse_isProperMap_and_manifoldMorseIndex_norm_sq_sub_comp_le`), makes the top
-homology `Hₙ(M; V)` free for every free module `V` over a principal ideal ring without zero divisors
-and kills the cohomology `Hᵏ(M; V, N)` for `k > n`
+(`TauCeti.exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le`),
+makes the top homology `Hₙ(M; V)` free for every free module `V` over a principal ideal ring
+without zero divisors and kills the cohomology `Hᵏ(M; V, N)` for `k > n`
 (`TauCeti.free_singularHomology_of_isProperMap_holomorphic_immersion`,
 `TauCeti.isZero_singularCohomology_of_isProperMap_holomorphic_immersion`, and their
 closed-embedding and affine complete intersection forms). These are the
@@ -80,8 +80,9 @@ dimension at most `n + q`.
   finite-dimensional complex inner product space has no homology above its complex dimension.
 * `TauCeti.isZero_singularHomology_affineZeroLocus`: a smooth affine complete intersection has no
   homology above its complex dimension.
-* `TauCeti.exists_isMorse_isProperMap_and_manifoldMorseIndex_norm_sq_sub_comp_le`: along a proper
-  holomorphic immersion, some squared distance is a proper Morse exhaustion of index at most `n`.
+* `TauCeti.exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le`:
+  along a proper holomorphic immersion, some squared distance is a proper Morse exhaustion,
+  bounded below, of index at most `n`.
 * `TauCeti.free_singularHomology_of_isProperMap_holomorphic_immersion`,
   `TauCeti.free_singularHomology_of_isClosedEmbedding`,
   `TauCeti.free_singularHomology_affineZeroLocus`: the homology in the complex dimension is free.
@@ -220,7 +221,7 @@ immersion.** If `i` is a smooth proper holomorphic immersion of a complex manifo
 dimension `n` into a proper complex inner product space, then for some centre `a` the squared
 distance `x ↦ ‖i x - a‖²` is a proper Morse function, bounded below, all of whose critical points
 have Morse index at most `n`. -/
-theorem exists_isMorse_isProperMap_and_manifoldMorseIndex_norm_sq_sub_comp_le {F : Type*}
+theorem exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le {F : Type*}
     [NormedAddCommGroup F] [InnerProductSpace ℂ F] [ProperSpace F]
     {i : M → F} (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
     (hinj : ∀ x, Function.Injective (mvfderiv 𝓘(ℂ, E) i x)) (hip : IsProperMap i) :
@@ -250,7 +251,7 @@ theorem isZero_singularHomology_of_isProperMap_holomorphic_immersion {A : Type v
   have : IsManifold 𝓘(ℝ, E) ∞ M :=
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   obtain ⟨a, ha, hap, hbdd, hidx⟩ :=
-    exists_isMorse_isProperMap_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj hip
+    exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj hip
   exact ha.isZero_singularHomology_of_manifoldMorseIndex_le hap hbdd hidx R hk
 
 /-- **Free top homology along a proper holomorphic immersion.** If a complex manifold `M` of
@@ -270,7 +271,7 @@ theorem free_singularHomology_of_isProperMap_holomorphic_immersion {F : Type*}
   have : IsManifold 𝓘(ℝ, E) ∞ M :=
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   obtain ⟨a, ha, hap, hbdd, hidx⟩ :=
-    exists_isMorse_isProperMap_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj hip
+    exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj hip
   exact ha.free_singularHomology_of_manifoldMorseIndex_le hap hbdd hidx V
 
 /-- **Cohomology vanishing along a proper holomorphic immersion.** If a complex manifold `M` of
@@ -289,7 +290,7 @@ theorem isZero_singularCohomology_of_isProperMap_holomorphic_immersion {F : Type
   have : IsManifold 𝓘(ℝ, E) ∞ M :=
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
   obtain ⟨a, ha, hap, hbdd, hidx⟩ :=
-    exists_isMorse_isProperMap_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj hip
+    exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le hi hinj hip
   exact ha.isZero_singularCohomology_of_manifoldMorseIndex_le hap hbdd hidx V N hk
 
 /-- **A closed complex submanifold of a complex inner product space has no homology above its
