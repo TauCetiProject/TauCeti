@@ -289,59 +289,23 @@ private theorem single_algebraMap_intCast_mul_div (h : H) (c : ℕ) (e : ℤ) (m
   push_cast
   ring
 
-/-- Listing an orbit `c i` times does not change whether the terms of the orbit logarithm are
-summable: the terms of the repeated family are those of the original one, and a nonzero natural
-multiple of a series lies in a period neighbourhood of `0` exactly when the series does, since a
-`ℚ`-algebra has no additive torsion. -/
-private theorem summable_repeated_iff (ε : ι → ℕ → ℤ) (c : ι → ℕ) :
-    (Summable fun x : (p : ι × ℕ) × Fin (c p.1) => (single ((x.1.2 + 1) • γ x.1.1)
-      (algebraMap ℚ K ((ε x.1.1 (x.1.2 + 1) : ℚ) / (x.1.2 + 1 : ℕ))) : NovikovSeries K H N)) ↔
-    Summable fun p : ι × ℕ => (single ((p.2 + 1) • γ p.1)
-      (algebraMap ℚ K (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ))) :
-        NovikovSeries K H N) := by
-  have : HasUniqueDiv K := .of_module_rat K
-  simp only [single_algebraMap_intCast_mul_div]
-  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
-    NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
-    hasBasis_nhds_zero.tendsto_right_iff, hasBasis_nhds_zero.tendsto_right_iff]
-  refine forall₂_congr fun C _ => ?_
-  simp only [eventually_cofinite, SetLike.mem_coe]
-  exact finite_notMem_periodFiltration_sigma_iff (fun p : ι × ℕ => c p.1) fun p =>
-    (single ((p.2 + 1) • γ p.1) (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) :
-      NovikovSeries K H N)
-
 /-- **Repeated orbits.** The orbit logarithm of the family in which the `i`-th orbit is listed
 `c i` times is the orbit logarithm of the original family with the signs of the `i`-th orbit
 multiplied by `c i`. -/
 theorem orbitLog_sigma (ε : ι → ℕ → ℤ) (c : ι → ℕ) :
     orbitLog K N (fun p : (i : ι) × Fin (c i) => γ p.1) (fun p => ε p.1) =
       orbitLog K N γ (fun i n => c i * ε i n) := by
+  have : HasUniqueDiv K := .of_module_rat K
   -- Group the terms of the repeated family by orbit and iterate: each group has `c i` equal terms.
   let e : ((p : ι × ℕ) × Fin (c p.1)) ≃ ((i : ι) × Fin (c i)) × ℕ :=
     { toFun q := (⟨q.1.1, q.2⟩, q.1.2)
       invFun q := ⟨(q.1.1, q.2), q.1.2⟩
       left_inv _ := rfl
       right_inv _ := rfl }
-  have hiff := summable_repeated_iff (K := K) (N := N) (γ := γ) ε c
-  by_cases hs : Summable fun p : ι × ℕ => (single ((p.2 + 1) • γ p.1)
-      (algebraMap ℚ K (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ))) :
-        NovikovSeries K H N)
-  · have hF := (e.summable_iff (f := fun q : ((i : ι) × Fin (c i)) × ℕ =>
-      (single ((q.2 + 1) • γ q.1.1)
-        (algebraMap ℚ K ((ε q.1.1 (q.2 + 1) : ℚ) / (q.2 + 1 : ℕ))) : NovikovSeries K H N))).1
-      (hiff.2 hs)
-    have h := e.hasSum_iff.2 hF.hasSum
-    refine (h.sigma fun p => ?_).unique hs.hasSum
-    have hc : (single ((p.2 + 1) • γ p.1)
-        (algebraMap ℚ K (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ))) :
-          NovikovSeries K H N) = ∑ _j : Fin (c p.1),
-        single ((p.2 + 1) • γ p.1) (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) := by
-      rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, single_algebraMap_intCast_mul_div]
-    rw [hc]
-    exact hasSum_fintype _
-  · rw [orbitLog, orbitLog, tsum_eq_zero_of_not_summable hs, tsum_eq_zero_of_not_summable]
-    intro h
-    exact hs (hiff.1 (e.summable_iff.2 h))
+  rw [orbitLog, orbitLog, ← e.tsum_eq]
+  simpa only [e, Equiv.coe_fn_mk, single_algebraMap_intCast_mul_div] using
+    tsum_sigma_fin (fun p : ι × ℕ => c p.1) fun p => (single ((p.2 + 1) • γ p.1)
+      (algebraMap ℚ K ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ))) : NovikovSeries K H N)
 
 /-- **Repeated orbits.** The orbit zeta function of the family in which the `i`-th orbit is listed
 `c i` times is the orbit zeta function of the original family with the signs of the `i`-th orbit

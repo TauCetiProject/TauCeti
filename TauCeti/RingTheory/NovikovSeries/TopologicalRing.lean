@@ -116,25 +116,6 @@ namespace NovikovSeries
 
 variable {R H : Type*}
 
-section Additive
-
-variable [AddZeroClass H] {N : H →+ ℝ} [AddCommGroup R]
-
-/-- If every term of a family of Novikov series has coefficient `0` at the exponent `h`, so does
-its sum. -/
-theorem coeff_tsum_eq_zero {ι : Type*} {f : ι → NovikovSeries R H N} {h : H}
-    (hf : ∀ i, (f i).coeff h = 0) : (∑' i, f i).coeff h = 0 := by
-  -- The series with coefficient `0` at `h` form the kernel of the coefficient map at `h`, a closed
-  -- additive subgroup.
-  have hker : (((Pi.evalAddMonoidHom (fun _ => R) h).comp (coeffAddMonoidHom (N := N))).ker :
-      Set (NovikovSeries R H N)) = {a | a.coeff h = 0} := by
-    ext
-    simp
-  exact hker.subset (tsum_mem (hker ▸ (isLocallyConstant_coeff h).isClosed_fiber 0)
-    fun i => hker.superset (hf i))
-
-end Additive
-
 section NonUnitalNonAssocRing
 
 variable [AddZeroClass H] {N : H →+ ℝ} [NonUnitalNonAssocRing R] {A B C D : ℝ}

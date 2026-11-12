@@ -44,7 +44,7 @@ basis is the restriction of `a` to `K`, so the trace of `a` is `[H : K]` times t
   the basis vectors and the coefficients of the coordinates.
 * `TauCeti.NovikovSeries.finite_support_iff_forall_finite_support_cosetBasis_repr`: a series has
   finite support exactly when its coordinates do.
-* `TauCeti.NovikovSeries.linearIndependent_single_one`: for any subgroup `K` and coset
+* `TauCeti.NovikovSeries.linearIndependent_coset_single_one`: for any subgroup `K` and coset
   representatives `s`, the monomials `e^(s q)` are linearly independent over `Nov(R, K, N|K)`.
 * `TauCeti.NovikovSeries.finrank_eq_index`: over a nontrivial commutative ring, the natural-valued
   `Module.finrank` of `Nov(R, H, N)` over `Nov(R, K, N|K)` is the index `[H : K]` (both are `0` for
@@ -132,7 +132,7 @@ private theorem cosetCoord_single_mul_algebraMap [DecidableEq (H ⧸ K)] (q : H 
 
 /-- If `s` picks a representative of each coset of `K`, the monomials `e^(s q)` are linearly
 independent over the Novikov series on `K`. -/
-theorem linearIndependent_single_one :
+theorem linearIndependent_coset_single_one :
     LinearIndependent (NovikovSeries R K (N.comp K.subtype))
       fun q : H ⧸ K => (single (s q) 1 : NovikovSeries R H N) := by
   classical
@@ -169,10 +169,8 @@ private def cosetEquiv :
   right_inv c := by
     classical
     have := Fintype.ofFinite (H ⧸ K)
-    change cosetCoord K s (∑ᶠ q, single (s q) 1 * algebraMap _ _ (c q)) = c
-    rw [finsum_eq_sum_of_fintype, map_sum]
-    simp_rw [cosetCoord_single_mul_algebraMap K hs]
-    exact univ_sum_single c
+    simp only [LinearMap.toFun_eq_coe, finsum_eq_sum_of_fintype, map_sum,
+      cosetCoord_single_mul_algebraMap K hs, univ_sum_single]
 
 private theorem cosetEquiv_apply (a : NovikovSeries R H N) (q : H ⧸ K) :
     cosetEquiv K s hs a q = comap K.subtype (exists_period_rescale_subtype K)
@@ -251,7 +249,7 @@ theorem finrank_eq_index [Nontrivial R] :
     Module.finrank (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) = K.index := by
   by_cases hK : K.index = 0
   · have := AddSubgroup.index_eq_zero_iff_infinite.1 hK
-    rw [hK, (linearIndependent_single_one (R := R) (N := N) K
+    rw [hK, (linearIndependent_coset_single_one (R := R) (N := N) K
       QuotientAddGroup.out_eq').finrank_eq_zero_of_infinite]
   · have : K.FiniteIndex := ⟨hK⟩
     rw [Module.finrank_eq_nat_card_basis (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),

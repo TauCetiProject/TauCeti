@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.FilterBasis
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.UniformSpace.AbstractCompletion
 public import TauCeti.RingTheory.NovikovSeries.Basic
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 /-!
 # The period-filtration topology on Novikov series
@@ -58,6 +60,11 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
 * The instances `T2Space` and `CompleteSpace`: the period topology is separated and complete.
 * The instances `NonarchimedeanAddGroup` and `ContinuousConstSMul`: the period topology has a
   basis of open subgroups, and coefficientwise scalar multiplication is continuous.
+* `TauCeti.NovikovSeries.coeff_tsum_eq_zero`: a sum of series vanishing at an exponent vanishes
+  there.
+* `TauCeti.NovikovSeries.summable_sigma_fin_iff` and `TauCeti.NovikovSeries.tsum_sigma_fin`:
+  over coefficients without additive torsion, listing the `i`-th series of a family `c i` times
+  has the summability and the sum of scaling it by `c i`.
 * `TauCeti.NovikovSeries.tendsto_ofFinsupp_trunc` and
   `TauCeti.NovikovSeries.denseRange_ofFinsupp`: the truncations of a series converge to it, so the
   finitely supported series are dense.
@@ -294,6 +301,19 @@ theorem isLocallyConstant_coeff (h : H) :
     filter_upwards [tendsto_nhds_iff.1 (tendsto_id (x := 𝓝 a)) (N h + 1)] with b hb
     exact hb h (lt_add_one _)
 
+/-- If every term of a family of Novikov series has coefficient `0` at the exponent `h`, so does
+its sum. -/
+theorem coeff_tsum_eq_zero {ι : Type*} {f : ι → NovikovSeries R H N} {h : H}
+    (hf : ∀ i, (f i).coeff h = 0) : (∑' i, f i).coeff h = 0 := by
+  -- The series with coefficient `0` at `h` form the kernel of the coefficient map at `h`, a closed
+  -- additive subgroup.
+  have hker : (((Pi.evalAddMonoidHom (fun _ => R) h).comp (coeffAddMonoidHom (N := N))).ker :
+      Set (NovikovSeries R H N)) = {a | a.coeff h = 0} := by
+    ext
+    simp
+  exact hker.subset (tsum_mem (hker ▸ (isLocallyConstant_coeff h).isClosed_fiber 0)
+    fun i => hker.superset (hf i))
+
 /-- The Novikov series are complete for the period topology: the limit of a Cauchy filter has, at
 each exponent, the coefficient on which the filter eventually agrees. -/
 instance : CompleteSpace (NovikovSeries R H N) := by
@@ -316,6 +336,29 @@ instance : CompleteSpace (NovikovSeries R H N) := by
       exact hh.1⟩
   refine ⟨lim, (hasBasis_nhds lim).ge_iff.2 fun C _ => mem_of_superset (hSF C) fun a ha h hh => ?_⟩
   simp [lim, hcoeff C a ha h hh]
+
+/-- Over coefficients without additive torsion, the family in which the `i`-th series is listed
+`c i` times is summable exactly when the family of the `i`-th series scaled by `c i` is. -/
+theorem summable_sigma_fin_iff [IsAddTorsionFree R] {ι : Type*} (c : ι → ℕ)
+    (f : ι → NovikovSeries R H N) :
+    (Summable fun x : (i : ι) × Fin (c i) => f x.1) ↔ Summable fun i => c i • f i := by
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    hasBasis_nhds_zero.tendsto_right_iff, hasBasis_nhds_zero.tendsto_right_iff]
+  refine forall₂_congr fun C _ => ?_
+  simp only [eventually_cofinite, SetLike.mem_coe]
+  exact finite_notMem_periodFiltration_sigma_iff c f
+
+/-- Over coefficients without additive torsion, the sum of the family in which the `i`-th series
+is listed `c i` times is the sum of the `i`-th series scaled by `c i`. -/
+theorem tsum_sigma_fin [IsAddTorsionFree R] {ι : Type*} (c : ι → ℕ)
+    (f : ι → NovikovSeries R H N) :
+    ∑' x : (i : ι) × Fin (c i), f x.1 = ∑' i, c i • f i := by
+  by_cases hs : Summable fun i => c i • f i
+  · refine (((summable_sigma_fin_iff c f).2 hs).hasSum.sigma fun i => ?_).unique hs.hasSum
+    simpa using hasSum_fintype fun _ : Fin (c i) => f i
+  · rw [tsum_eq_zero_of_not_summable hs,
+      tsum_eq_zero_of_not_summable (mt (summable_sigma_fin_iff c f).1 hs)]
 
 end Topology
 
