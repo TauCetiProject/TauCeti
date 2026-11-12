@@ -52,6 +52,9 @@ and proves:
   smoothing symbol exactly when their homogeneous terms agree;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`;
+* `TauCeti.ClassicalSymbol.ofHomogeneousOfContDiff`: a smooth function that agrees with a
+  homogeneous symbol `a` at every nonzero frequency, such as a homogeneous polynomial in `ξ`, is a
+  classical symbol whose only homogeneous term is `a`;
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
   of order `m`, with `k` leading terms equal to zero;
 * `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
@@ -434,6 +437,50 @@ theorem term_ofHomogeneous_succ (j : ℕ) : (ofHomogeneous χ a).term (j + 1) = 
 theorem ofHomogeneous_zero : ofHomogeneous χ (0 : HomogeneousSymbol _ _ V W m) = 0 :=
   ext (map_zero (cutoffSymbol χ))
 
+section OfContDiff
+
+variable (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+  {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+  (hfa : ∀ x ξ, ξ ≠ 0 → f (x, ξ) = a.coefficient (x, ξ))
+
+/-- A smooth function `f` that agrees at every nonzero frequency with a homogeneous symbol `a` of
+degree `m` is a classical symbol of order `m`, with principal symbol `a`
+(`TauCeti.ClassicalSymbol.principal_ofHomogeneousOfContDiff`) and no lower order terms
+(`TauCeti.ClassicalSymbol.term_ofHomogeneousOfContDiff_succ`): it differs from the cut-off term
+`χ(ξ) a(x, ξ)` by a smooth function vanishing at all frequencies of norm at least `2`. -/
+def ofHomogeneousOfContDiff : ClassicalSymbol n V W m :=
+  ofHomogeneous default a +
+    ofIsSmoothing (Symbol.ofBoundedFrequencySupport
+      (fun p ↦ f p - (default : FrequencyCutoff (CoordinateSpace n)) p.2 • a.coefficient p)
+      (hf.sub (a.contDiff_smul_coefficient default)) 2 fun x ξ hξ ↦ by
+        rw [FrequencyCutoff.apply_eq_one_of_two_le_norm _ hξ, one_smul,
+          hfa x ξ (norm_pos_iff.1 (by linarith)), sub_self])
+      (Symbol.isSmoothing_ofBoundedFrequencySupport _ _ _ _)
+
+@[simp]
+theorem coefficient_toSymbol_ofHomogeneousOfContDiff :
+    (ofHomogeneousOfContDiff a hf hfa).toSymbol.coefficient = f := by
+  funext p
+  simp [ofHomogeneousOfContDiff]
+
+@[simp]
+theorem principal_ofHomogeneousOfContDiff : (ofHomogeneousOfContDiff a hf hfa).principal = a := by
+  rw [ofHomogeneousOfContDiff, principal_add, principal_ofHomogeneous, add_eq_left]
+  ext1
+  simp [coefficient_principal]
+
+@[simp]
+theorem term_ofHomogeneousOfContDiff_succ (j : ℕ) :
+    (ofHomogeneousOfContDiff a hf hfa).term (j + 1) = 0 := by
+  simp [ofHomogeneousOfContDiff]
+
+/-- The leading homogeneous term of `TauCeti.ClassicalSymbol.ofHomogeneousOfContDiff a` is `a`. -/
+theorem coefficient_term_zero_ofHomogeneousOfContDiff :
+    ((ofHomogeneousOfContDiff a hf hfa).term 0).coefficient = a.coefficient := by
+  rw [← coefficient_principal, principal_ofHomogeneousOfContDiff]
+
+end OfContDiff
+
 end Examples
 
 section PrincipalKernel
@@ -542,6 +589,26 @@ theorem principal_inclusion_succ (k : ℕ) (hk : m' = m - (k + 1 : ℕ)) :
 theorem inclusion_injective :
     Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
   ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
+
+omit hk b in
+/-- Included into order `m' + k`, the classical symbol
+`TauCeti.ClassicalSymbol.ofHomogeneousOfContDiff a` has the single nonzero homogeneous term `a`,
+in position `k`. -/
+theorem coefficient_term_inclusion_ofHomogeneousOfContDiff
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m')
+    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (hfa : ∀ x ξ, ξ ≠ 0 → f (x, ξ) = a.coefficient (x, ξ)) (hk : m' = m - k) (j : ℕ) :
+    ((inclusion k hk (ofHomogeneousOfContDiff a hf hfa)).term j).coefficient =
+      if j = k then a.coefficient else 0 := by
+  rw [term_inclusion]
+  split_ifs with h hjk hjk
+  · rw [coefficient_castDegree, coefficient_congr_index _ (show j - k = 0 by omega),
+      coefficient_term_zero_ofHomogeneousOfContDiff]
+  · obtain ⟨l, hl⟩ : ∃ l, j - k = l + 1 := ⟨j - k - 1, by omega⟩
+    rw [coefficient_castDegree, coefficient_congr_index _ hl, term_ofHomogeneousOfContDiff_succ,
+      HomogeneousSymbol.coefficient_zero]
+  · omega
+  · rfl
 
 end Inclusion
 
