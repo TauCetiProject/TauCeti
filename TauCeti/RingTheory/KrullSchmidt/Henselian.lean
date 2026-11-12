@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
-public import TauCeti.RingTheory.Henselian.Idempotent
+public import Mathlib.RingTheory.Henselian
 public import TauCeti.RingTheory.KrullSchmidt.Noetherian
 import TauCeti.RingTheory.Henselian.Integral
 
@@ -25,7 +25,7 @@ finite `R`-module. It is therefore Henselian along the extension of the maximal 
 (`Ideal.henselianRing_map_of_isIntegral`), and its reduction is a finite-dimensional algebra over
 the residue field. Idempotents of `R[f]` are idempotents of `End_A(M)`, so indecomposability of `M`
 leaves `R[f]` only the trivial ones, and `R[f]` is local by
-`TauCeti.isLocalRing_of_finite_of_forall_isIdempotentElem`. So `f` or `1 - f` is a unit.
+`TauCeti.isLocalRing_of_isIntegral_of_forall_isIdempotentElem`. So `f` or `1 - f` is a unit.
 
 The Henselian hypothesis is stated as `HenselianRing R (maximalIdeal R)`, which holds both for a
 ring with Mathlib's `HenselianLocalRing` and for a local ring complete along its maximal ideal.
@@ -50,7 +50,6 @@ group rings (Swan's stably free non-free modules over generalized quaternion gro
 public section
 
 open IsLocalRing
-open scoped IsMulCommutative
 
 namespace TauCeti
 
@@ -65,26 +64,17 @@ theorem isLocalRing_end_of_isIndecomposable_of_henselianRing {M : Type*} [AddCom
     [Module A M] [Module R M] [IsScalarTower R A M] [Module.Finite R M]
     (hM : IsIndecomposableModule A M) : IsLocalRing (Module.End A M) := by
   have := hM.nontrivial
-  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun f ↦ ?_
-  -- `f` is integral over `R`, being an `R`-linear endomorphism of the finite `R`-module `M`.
-  have hint : IsIntegral R f := by
-    let ρ : Module.End A M →ₐ[R] Module.End R M :=
-      { toFun g := g.restrictScalars R
-        map_one' := rfl
-        map_mul' _ _ := rfl
-        map_zero' := rfl
-        map_add' _ _ := rfl
-        commutes' _ := rfl }
-    exact (isIntegral_algHom_iff ρ fun _ _ h ↦ LinearMap.restrictScalars_injective R h).mp
-      (Algebra.IsIntegral.isIntegral (ρ f))
-  -- The commutative subalgebra `S = R[f]` is finite over `R`.
-  let S := Algebra.adjoin R {f}
-  have : Module.Finite R S := Algebra.finite_adjoin_simple_of_isIntegral hint
-  -- Its idempotents are idempotents of `End_A(M)`, hence trivial, so `S` is local.
-  have : IsLocalRing S := isLocalRing_of_finite_of_forall_isIdempotentElem R S fun e he ↦
-    (hM.eq_zero_or_eq_one_of_isIdempotentElem (he.map S.val)).imp Subtype.ext Subtype.ext
-  exact (IsLocalRing.isUnit_or_isUnit_one_sub_self
-    (⟨f, Algebra.self_mem_adjoin_singleton R f⟩ : S)).imp (·.map S.val) (·.map S.val)
+  let ρ : Module.End A M →ₐ[R] Module.End R M :=
+    { toFun g := g.restrictScalars R
+      map_one' := rfl
+      map_mul' _ _ := rfl
+      map_zero' := rfl
+      map_add' _ _ := rfl
+      commutes' _ := rfl }
+  have : Algebra.IsIntegral R (Module.End A M) :=
+    .of_injective ρ fun _ _ h ↦ LinearMap.restrictScalars_injective R h
+  exact isLocalRing_of_isIntegral_of_forall_isIdempotentElem R (Module.End A M) fun _ hf ↦
+    hM.eq_zero_or_eq_one_of_isIdempotentElem hf
 
 include R in
 /-- **Krull-Schmidt cancellation over a Henselian local ring.** Let `R` be a Henselian Noetherian
