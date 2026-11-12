@@ -173,14 +173,6 @@ theorem range_fromBlocksOne_eq_unitaryStabilizer (m : ℕ) :
     funext_iff, coe_unitaryMap, coe_standard]
   rfl
 
-/-- The block embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)` is continuous. -/
-theorem _root_.Matrix.UnitaryGroup.continuous_fromBlocksOne (m : ℕ) :
-    Continuous (UnitaryGroup.fromBlocksOne 𝕜 r m) := by
-  refine continuous_induced_rng.2 ?_
-  simp only [Function.comp_def, UnitaryGroup.coe_fromBlocksOne]
-  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
-    continuous_subtype_val).matrix_reindex _ _
-
 variable (𝕜 r) in
 /-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `U(m)` onto the stabilizer of the
 standard `r`-frame in `U(r + m)`. -/
