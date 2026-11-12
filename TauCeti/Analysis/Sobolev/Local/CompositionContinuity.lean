@@ -83,7 +83,7 @@ theorem eLpNormWkp_one_comp_le {u : ℂ → F} {g : F → G} {W : Set F} {C₀ C
     (huW.mono_left interior_subset))).trans ?_
   simp only [eLpNormWkp_zero]
   gcongr ?_ + ?_
-  · have := eLpNorm_le_of_ae_nnnorm_bound (p := p) (μ := volume.restrict K)
+  · have := eLpNorm_le_of_ae_nnNorm_bound (p := p) (μ := volume.restrict K)
       ((hg.continuousOn.comp huc huW).aestronglyMeasurable hK)
       ((ae_restrict_mem hK).mono fun z hz => hC₀ z hz)
     simpa [Measure.restrict_apply_univ, ENNReal.smul_def, smul_eq_mul, Function.comp_def] using this
@@ -111,9 +111,9 @@ theorem exists_eLpNormWkp_one_comp_le {g : F → G} {W L : Set F} (hW : IsOpen W
   refine ⟨M₀.toNNReal, M₁.toNNReal, fun p K u hK hu huc huL =>
     eLpNormWkp_one_comp_le hK hu huc hW hg (huL.mono_right hLW) (fun z hz => ?_)
       fun z hz => ?_⟩
-  · rw [← NNReal.coe_le_coe, coe_nnnorm]
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hM₀ _ (huL hz)).trans (Real.le_coe_toNNReal M₀)
-  · rw [← NNReal.coe_le_coe, coe_nnnorm]
+  · rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact (hM₁ _ (huL hz)).trans (Real.le_coe_toNNReal M₁)
 
 /-- **The `W^{1,p}` bound for a difference of compositions with a `C¹` map.** Let `g` be `C¹` on an
@@ -192,7 +192,7 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hDgc.comp hu₀c hu₀W)
   have hbound : ∀ᶠ n in l, ∀ z ∈ K, ‖fderiv ℝ g (u n z)‖₊ ≤ (M + 1).toNNReal := by
     filter_upwards [Metric.tendstoUniformlyOn_iff.1 hDgu 1 one_pos] with n hn z hz
-    rw [← NNReal.coe_le_coe, coe_nnnorm]
+    rw [← NNReal.coe_le_coe, coe_nnNorm]
     have h1 : dist (fderiv ℝ g (u n z)) (fderiv ℝ g (u₀ z)) ≤ 1 := by
       rw [dist_comm]; exact (hn z hz).le
     exact ((norm_le_norm_add_const_of_dist_le h1).trans (by gcongr; exact hM z hz)).trans
@@ -231,7 +231,7 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
     filter_upwards [ae_restrict_mem hKm] with z hz
     refine (ContinuousLinearMap.opNNNorm_comp_le _ _).trans ?_
     gcongr
-    rw [← NNReal.coe_le_coe, coe_nnnorm, ← dist_eq_norm, dist_comm]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, ← dist_eq_norm, dist_comm]
     exact (hn z hz).le
   have hA := (ENNReal.LpAddConst_lt_top p).ne
   have hsum := (h1.add (ENNReal.Tendsto.const_mul h2 (Or.inr hA))).add

@@ -51,6 +51,6 @@ theorem tendsto_eLpNorm_zero_of_eventually_ae_le [IsFiniteMeasure μ]
     (memLp_const 1).eLpNorm_ne_top hf fun δ hδ => ?_
   filter_upwards [h δ hδ] with i hi
   filter_upwards [hi] with x hx
-  rwa [nnnorm_one, mul_one, ← NNReal.coe_le_coe, coe_nnnorm]
+  rwa [nnNorm_one, mul_one, ← NNReal.coe_le_coe, coe_nnNorm]
 
 end TauCeti
