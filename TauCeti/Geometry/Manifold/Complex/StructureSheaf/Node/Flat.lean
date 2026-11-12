@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Node.NormalForm
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.OffNodeChart
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Flat
-import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 
 /-!
@@ -19,8 +18,8 @@ The local model for smoothing a node over a base `E` is the hypersurface
 flat over the base at every point, for every `s`: pulling base germs back along `(b, x, y) ↦ b`
 makes the local ring of `N_s` a flat algebra over the holomorphic stalk of the base
 (`TauCeti.holomorphicStructureSheaf.flat_quotientMk_comp_stalkPrecomp_smoothingEquation`). No
-condition is imposed on `s`: it may vanish identically (a permanent node) or to any order, as in
-`xy = b²`, and then the total space is singular at the node.
+condition is imposed on `s`: it may vanish identically (a permanent node). When `s` and its
+differential both vanish at `b`, as for `xy = b²`, the total space is singular at the node.
 
 At the node the local ring is flat over the germs `𝒪_{E × ℂ, (b, 0)}` in the transverse
 coordinates `(b, v)` (`nodeTransverseHom_flat`), and these are flat over `𝒪_{E, b}`
