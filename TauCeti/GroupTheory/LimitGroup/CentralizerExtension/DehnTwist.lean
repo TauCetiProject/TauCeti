@@ -52,21 +52,17 @@ def twist : MulAut (CentralizerExt u 1) :=
   MulAut.congr equivHNNExtension.symm (HNNExtension.dehnTwist (.refl (centralizer {u}))
     ⟨u, mem_centralizer_iff.2 fun _ hc => mem_centralizer_singleton_iff.1 hc⟩)
 
-private theorem twist_zpow (k : ℤ) :
-    twist u ^ k = MulAut.congr equivHNNExtension.symm
-      (HNNExtension.dehnTwist (.refl (centralizer {u}))
-        (⟨u, mem_centralizer_iff.2 fun _ hc => mem_centralizer_singleton_iff.1 hc⟩ ^ k)) := by
-  rw [twist, ← map_zpow, ← HNNExtension.dehnTwist_zpow]
-
 /-- The powers of the twist fix `G`. -/
 @[simp]
 theorem twist_zpow_of (k : ℤ) (g : G) : (twist u ^ k) (of g) = of g := by
-  simp [twist_zpow, -HNNExtension.dehnTwist_zpow]
+  rw [twist, ← map_zpow]
+  simp
 
 /-- The `k`-th power of the twist sends the new letter `t` to `t * u ^ k`. -/
 @[simp]
 theorem twist_zpow_t (k : ℤ) (i : Fin 1) : (twist u ^ k) (t i) = t i * of (u ^ k) := by
-  simp [twist_zpow, -HNNExtension.dehnTwist_zpow, Subsingleton.elim i 0]
+  rw [twist, ← map_zpow]
+  simp [Subsingleton.elim i 0]
 
 /-- The twist fixes `G`. -/
 @[simp]

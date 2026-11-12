@@ -93,6 +93,17 @@ def dehnTwist (z : Subgroup.centralizer (A : Set G)) : MulAut (HNNExtension G A 
     dehnTwist φ (z ^ k) = dehnTwist φ z ^ k :=
   map_zpow (MonoidHom.mk' (dehnTwist φ) (dehnTwist_mul φ)) z k
 
+/-- The powers of an HNN twist fix every element of the base group. -/
+@[simp] theorem dehnTwist_zpow_apply_of (z : Subgroup.centralizer (A : Set G)) (k : ℤ) (g : G) :
+    (dehnTwist φ z ^ k) (of g) = of g := by
+  rw [← dehnTwist_zpow, dehnTwist_of]
+
+/-- The `k`-th power of an HNN twist multiplies the stable letter on the right by the `k`-th
+power of the parameter. -/
+@[simp] theorem dehnTwist_zpow_apply_t (z : Subgroup.centralizer (A : Set G)) (k : ℤ) :
+    (dehnTwist φ z ^ k) t = t * of ((z : G) ^ k) := by
+  rw [← dehnTwist_zpow, dehnTwist_t, Subgroup.coe_zpow]
+
 /-- The stable-letter formula recovers the parameter, so the family of twists is faithful. -/
 theorem dehnTwist_injective : Function.Injective (dehnTwist φ) := by
   intro z w h
