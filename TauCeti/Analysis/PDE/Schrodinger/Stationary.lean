@@ -16,6 +16,11 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 import TauCeti.Analysis.InnerProductSpace.WeakSolution
 import TauCeti.Analysis.Sobolev.Poincare.Schrodinger
+import TauCeti.Analysis.PDE.Regularity.PlanarPoisson
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -51,6 +56,14 @@ Together, every `g ∈ L²(E)` has a weak solution `h ∈ H²(E)`
 for the real and imaginary parts of a complex right-hand side separately gives a complex weak
 solution (`TauCeti.integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im`).
 
+In the plane, a smooth potential and a smooth right-hand side give a smooth solution: the
+`H²` solution has a continuous representative by the Sobolev embedding
+(`TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`), interior regularity for the
+semilinear Poisson equation `Δh = P h - g`
+(`TauCeti.contDiffOn_succ_of_forall_integral_laplacian_mul_eq_comp`) makes it smooth, and Green's
+identity turns the weak equation into a pointwise one
+(`TauCeti.exists_contDiff_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq`).
+
 The potential may vanish on a large set inside the ball, so `-Δ + P` need not be bounded below
 by a positive constant pointwise. A potential of this kind is `P = |α|² / 4` for the section `α`
 of a plane vortex, which vanishes at the zeros of `α` and tends to `1 / 4` at infinity; the
@@ -68,6 +81,8 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
   for the real and imaginary parts combine into a complex weak solution.
 * `TauCeti.memLp_neg_laplacian_add_mul`: the Schrödinger operator with a bounded potential maps
   compactly supported `C²` functions into `L²`.
+* `TauCeti.exists_contDiff_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq`: in the plane,
+  a smooth `H²` solution solving the equation pointwise, for smooth `P` and `g`.
 
 ## References
 
@@ -83,6 +98,7 @@ namespace TauCeti
 
 open MeasureTheory Filter Metric TemperedDistribution
 open scoped Laplacian ContDiff Gradient InnerProductSpace RealInnerProductSpace SchwartzMap
+open scoped Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -339,5 +355,102 @@ theorem integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im {P : E →
     push_cast
     ring
   rw [hl, hr, hsplit _ _ j₁ j₂, hsplit _ _ j₃ j₄, hw₁ φ hφ hφc, hw₂ φ hφ hφc]
+
+/-! ### Smooth solutions in the plane -/
+
+/-- **Smooth solutions in the plane.** Let `P` be a smooth bounded potential on `ℂ`, almost
+everywhere nonnegative and almost everywhere at least `a > 0` outside the closed ball of radius
+`R`, and let `g` be a smooth function in `L²(ℂ)`. Then `-Δh + P h = g` has a smooth solution
+`h ∈ H²(ℂ)`, which solves the equation at every point. -/
+theorem exists_contDiff_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq {P : ℂ → ℝ}
+    (hPs : ContDiff ℝ ∞ P) (hP : MemLp P ⊤ volume) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ}
+    (ha : 0 < a) (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z) {g : ℂ → ℝ} (hgs : ContDiff ℝ ∞ g)
+    (hg : MemLp g 2 volume) :
+    ∃ h : ℂ → ℝ, ContDiff ℝ ∞ h ∧ h ∈ realSobolevFunctions ℂ 2 2 ∧
+      ∀ z, -Δ h z + P z * h z = g z := by
+  obtain ⟨h₀, hh₀, hw₀⟩ :=
+    exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq hP hP₀ ha hPa hg
+  -- `H²(ℂ)` embeds into the continuous functions: pass to the continuous representative `h`.
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hh₀
+  obtain ⟨c, hc, huc⟩ :=
+    hS.exists_contDiff_ae_eq (k := 0) (by norm_num [Complex.finrank_real_complex])
+  set h : ℂ → ℝ := fun z ↦ (c z).re with hdef
+  have hae : h₀ =ᵐ[volume] h := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) u, hu, huc]
+      with z h₁ h₂ h₃
+    simp [hdef, ← h₃, h₁, h₂]
+  have hh : h ∈ realSobolevFunctions ℂ 2 2 := mem_realSobolevFunctions_of_ae_eq hh₀ hae
+  have hcont : Continuous h := Complex.continuous_re.comp hc.continuous
+  have hh2 : MemLp h 2 volume := memLp_of_mem_realSobolevFunctions hh
+  have hw (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
+      ∫ z, h z * (-Δ φ z + P z * φ z) = ∫ z, g z * φ z := by
+    rw [← hw₀ φ hφ hφc]
+    refine integral_congr_ae ?_
+    filter_upwards [hae] with z hz
+    rw [hz]
+  -- Integrability of the pieces of the weak equation against a test function.
+  have hint (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
+      Integrable (fun z ↦ Δ φ z * h z) volume ∧ Integrable (fun z ↦ φ z * (P z * h z)) volume ∧
+        Integrable (fun z ↦ φ z * g z) volume := by
+    have hφ2 : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hφc
+    have hΔ2 : MemLp (Δ φ) 2 volume :=
+      hφ.continuous_laplacian.memLp_of_hasCompactSupport hφc.laplacian
+    have hPh : MemLp (fun z ↦ P z * h z) 2 volume := hP.mul hh2
+    have j₁ : Integrable (fun z ↦ Δ φ z * h z) volume := MemLp.integrable_mul hΔ2 hh2
+    have j₂ : Integrable (fun z ↦ φ z * (P z * h z)) volume := MemLp.integrable_mul hφ2 hPh
+    have j₃ : Integrable (fun z ↦ φ z * g z) volume := MemLp.integrable_mul hφ2 hg
+    exact ⟨j₁, j₂, j₃⟩
+  -- Interior regularity for `Δh = P h - g`.
+  have hsmooth : ContDiff ℝ ∞ h := by
+    have hF : ContDiffOn ℝ (⊤ : ℕ∞) (fun p : ℂ × ℝ ↦ P p.1 * p.2 - g p.1)
+        ((⊤ : TopologicalSpace.Opens ℂ) ×ˢ Set.univ) :=
+      (((hPs.comp contDiff_fst).mul contDiff_snd).sub (hgs.comp contDiff_fst)).contDiffOn
+    have hreg := contDiffOn_succ_of_forall_integral_laplacian_mul_eq_comp (U := ⊤) (w := h) hF
+      hcont.continuousOn fun φ ↦ by
+        have hφ2 : ContDiff ℝ 2 (φ : ℂ → ℝ) := φ.contDiff.of_le (by simp)
+        obtain ⟨i₁, i₂, i₃⟩ := hint φ hφ2 φ.hasCompactSupport
+        have e := hw φ hφ2 φ.hasCompactSupport
+        have e₁ : ∫ z, h z * (-Δ (φ : ℂ → ℝ) z + P z * φ z) =
+            -(∫ z, Δ (φ : ℂ → ℝ) z * h z) + ∫ z, φ z * (P z * h z) := by
+          rw [← integral_neg, ← integral_add (f := fun z ↦ -(Δ (φ : ℂ → ℝ) z * h z)) i₁.neg i₂]
+          exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
+        have e₂ : ∫ z, (φ : ℂ → ℝ) z * (P z * h z - g z) =
+            (∫ z, φ z * (P z * h z)) - ∫ z, φ z * g z := by
+          rw [← integral_sub i₂ i₃]
+          exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
+        have e₃ : ∫ z, g z * (φ : ℂ → ℝ) z = ∫ z, φ z * g z :=
+          integral_congr_ae (ae_of_all _ fun z ↦ by ring)
+        simp only [e₂]
+        linarith
+    simpa [contDiffOn_univ] using hreg.of_le le_self_add
+  refine ⟨h, hsmooth, hh, fun z ↦ ?_⟩
+  -- Green's identity turns the weak equation into a pointwise one.
+  have hΔc : Continuous (Δ h) := (hsmooth.of_le (by simp)).continuous_laplacian
+  have hPc : Continuous P := hPs.continuous
+  have hcl : Continuous fun z ↦ -Δ h z + P z * h z := (hΔc.neg).add (hPc.mul hcont)
+  have hae' := ae_eq_of_integral_contDiff_smul_eq (μ := volume)
+    hcl.locallyIntegrable hgs.continuous.locallyIntegrable fun φ hφ hφc ↦ by
+      have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
+      let ψ : 𝓓((⊤ : TopologicalSpace.Opens ℂ), ℝ) := ⟨φ, hφ, hφc, by simp⟩
+      have hG := (hsmooth.of_le (by simp) : ContDiff ℝ 2 h).contDiffOn
+        |>.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume) (Ω := ⊤) ψ
+      obtain ⟨i₁, i₂, -⟩ := hint φ hφ2 hφc
+      have i₄ : Integrable (fun z ↦ φ z * Δ h z) volume :=
+        (hφ.continuous.mul hΔc).integrable_of_hasCompactSupport hφc.mul_right
+      simp only [smul_eq_mul] at hG ⊢
+      calc ∫ z, φ z * (-Δ h z + P z * h z)
+          = -(∫ z, φ z * Δ h z) + ∫ z, φ z * (P z * h z) := by
+            rw [← integral_neg, ← integral_add (f := fun z ↦ -(φ z * Δ h z)) i₄.neg i₂]
+            exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
+        _ = -(∫ z, Δ φ z * h z) + ∫ z, φ z * (P z * h z) := by
+            have hG' : ∫ z, Δ φ z * h z = ∫ z, φ z * Δ h z := hG
+            rw [hG']
+        _ = ∫ z, h z * (-Δ φ z + P z * φ z) := by
+            rw [← integral_neg, ← integral_add (f := fun z ↦ -(Δ (φ : ℂ → ℝ) z * h z)) i₁.neg i₂]
+            exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
+        _ = ∫ z, φ z * g z := by
+            rw [hw φ hφ2 hφc]
+            exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
+  exact congrFun ((hcl.ae_eq_iff_eq volume hgs.continuous).1 hae') z
 
 end TauCeti

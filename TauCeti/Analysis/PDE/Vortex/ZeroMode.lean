@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Stationary
 public import TauCeti.Analysis.PDE.Vortex.Deformation
+public import TauCeti.Analysis.PDE.Vortex.LogVariation
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
+import TauCeti.Analysis.Sobolev.BesselPotential.Basic
+import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -57,10 +60,27 @@ Only the vanishing order of `α` at `a` and the limit `|α| → 1` at infinity e
 vortex equations nor the smoothness of the field are used beyond continuity. The equation is
 stated weakly, for test functions supported away from `a`.
 
+**Kernel elements.** For a smooth field with `∂bar_a α = 0` the zero mode is a classical kernel
+element of the gauge-fixed operator `L_x = d₀* ⊕ d₁`
+(`TauCeti.Vortex.exists_gaugeFixedOperator_eq_zero_eq_logVariation`). Suppose now that
+`α = (z - a)^k ψ` with `ψ` smooth. Then `g` is smooth: off `a`, `ρ c / (z - a)^k = u - v` with
+`u = c / (z - a)^k` harmonic and `v = (1 - ρ) u` smooth on the whole plane, so `Δη₀ = -Δv`, and
+`P η₀ = ρ conj(α) c ψ / 4`. The solution `h` of `-Δh + P h = g` is then smooth
+(`TauCeti.exists_contDiff_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq`) and `η` solves
+`Δη = P η` classically off `a`. Its logarithmic variation (`TauCeti.Vortex.logVariation`), with
+section variation `δα = α η` and connection variation `δb₁ + i δb₂ = 2 i ∂bar η`, lies in the
+kernel of `L_x` off `a` (`TauCeti.Vortex.gaugeFixedOperator_logVariation_eq_zero_iff`). It extends
+smoothly across `a`: the logarithmic variation of `u` has no connection part, and its section
+variation `α u = c ψ` is smooth. By continuity the extension `y` satisfies `L_x y = 0` everywhere.
+It is square integrable, because `h ∈ H²` and the remaining part is supported in the support of
+`ρ`. Its section variation is `α η`, so `δα / α` has principal part `c / (z - a)^k` at `a`.
+
 ## Main results
 
 * `TauCeti.Vortex.exists_integral_mul_laplacian_sub_mul_eq_zero`: the zero mode with principal
   part `c / (z - a)^k`.
+* `TauCeti.Vortex.exists_gaugeFixedOperator_eq_zero_eq_logVariation`: a smooth square-integrable
+  kernel element of `L_x` whose `δα / α` has principal part `c / (z - a)^k`.
 
 ## References
 
@@ -79,6 +99,22 @@ open scoped Laplacian ContDiff Topology Distributions
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
+/-- The potential `P = |α|² / 4` of a continuous field whose section has unit modulus at infinity
+is bounded above. -/
+private theorem exists_forall_potential_le (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ M, ∀ z, x z 2 ^ 2 + x z 3 ^ 2 ≤ M := by
+  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
+  have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
+    have := hxi 2; have := hxi 3; fun_prop
+  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1 (hlim.eventually (ge_mem_nhds (by norm_num : (1 : ℝ) < 2)))
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hPc.continuousOn
+  refine ⟨max M 1, fun z ↦ ?_⟩
+  by_cases hz : z ∈ K
+  · exact (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hM z hz).trans (le_max_left _ _))
+  · have h2 : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 2 := hKc hz
+    linarith [le_max_right M 1]
+
 /-- The potential `P = |α|² / 4` of a field whose section has unit modulus at infinity is
 bounded. -/
 private theorem memLp_top_potential (hx : Continuous x)
@@ -87,15 +123,10 @@ private theorem memLp_top_potential (hx : Continuous x)
   have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
   have hPc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
     have := hxi 2; have := hxi 3; fun_prop
-  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1 (hlim.eventually (ge_mem_nhds (by norm_num : (1 : ℝ) < 2)))
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hPc.continuousOn
-  refine memLp_top_of_bound hPc.aestronglyMeasurable (max M 1) (ae_of_all _ fun z ↦ ?_)
-  by_cases hz : z ∈ K
-  · exact (hM z hz).trans (le_max_left _ _)
-  · have h2 : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 2 := hKc hz
-    have h0 : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
-    rw [Real.norm_of_nonneg h0]
-    linarith [le_max_right M 1]
+  obtain ⟨M, hM⟩ := exists_forall_potential_le hx hlim
+  exact memLp_top_of_bound hPc.aestronglyMeasurable M (ae_of_all _ fun z ↦ by
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact hM z)
 
 /-- Where the section vanishes to order `k`, `‖α‖ ≤ C ‖z - a‖ ^ k`, the potential
 `P = |α|² / 4` vanishes to order `2k`. -/
@@ -305,5 +336,264 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
           (h₁ z + h₂ z * I) * ((-Δ φ z + P z * φ z : ℝ) : ℂ)) :=
         integral_congr_ae (ae_of_all _ fun z ↦ by push_cast; ring)
     _ = 0 := by rw [integral_sub k₁ k₂, hA, hB, sub_self]
+
+/-! ### Smooth kernel elements with a prescribed principal part -/
+
+/-- The section coordinates of a continuous field whose section has unit modulus at infinity are
+bounded. -/
+private theorem memLp_top_apply (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {i : Fin 4}
+    (hi : i = 2 ∨ i = 3) : MemLp (fun z ↦ x z i) ⊤ volume := by
+  obtain ⟨M, hM⟩ := exists_forall_potential_le hx hlim
+  have hxi : Continuous fun z ↦ x z i := by fun_prop
+  refine memLp_top_of_bound hxi.aestronglyMeasurable (M + 1) (ae_of_all _ fun z ↦ ?_)
+  rw [Real.norm_eq_abs]
+  have hz := hM z
+  rcases hi with rfl | rfl
+  · nlinarith [sq_nonneg (|x z 2| - 1), sq_abs (x z 2), sq_nonneg (x z 3), abs_nonneg (x z 2)]
+  · nlinarith [sq_nonneg (|x z 3| - 1), sq_abs (x z 3), sq_nonneg (x z 2), abs_nonneg (x z 3)]
+
+/-- `σ c / (z - a)^k` is smooth when the smooth function `σ` vanishes near `a`. -/
+private theorem contDiff_mul_div_sub_pow {σ : ℂ → ℝ} (hσ : ContDiff ℝ ∞ σ) {a : ℂ}
+    (hσa : σ =ᶠ[𝓝 a] 0) (c : ℂ) (k : ℕ) :
+    ContDiff ℝ ∞ (fun w ↦ (σ w : ℂ) * (c / (w - a) ^ k)) := by
+  refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
+  rcases eq_or_ne z a with rfl | hz
+  · exact contDiffAt_const (c := (0 : ℂ)).congr_of_eventuallyEq <| by
+      filter_upwards [hσa] with w hw
+      simp [hw]
+  · exact contDiffAt_principalPart hσ c a k hz
+
+/-- The logarithmic variation of a `C¹` function `η ∈ H²(ℂ; ℂ)` along a continuous field whose
+section has unit modulus at infinity is square integrable: its connection part consists of first
+derivatives of `η`, and its section part `α η` has a bounded factor `α`. -/
+private theorem memLp_logVariation (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {η : ℂ → ℂ}
+    (hη : ContDiff ℝ 1 η) (hre : (fun z ↦ (η z).re) ∈ realSobolevFunctions ℂ 2 2)
+    (him : (fun z ↦ (η z).im) ∈ realSobolevFunctions ℂ 2 2) :
+    MemLp (logVariation x η) 2 volume := by
+  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ 1 f) (hf2 : f ∈ realSobolevFunctions ℂ 2 2) (v : ℂ) :
+      MemLp (fun z ↦ fderiv ℝ f z v) 2 volume := by
+    refine memLp_of_mem_realSobolevFunctions (s := 1)
+      (fderiv_apply_mem_realSobolevFunctions (by norm_num) (by simp) zero_le_one hf ?_ v)
+    norm_num
+    exact hf2
+  have hu : ContDiff ℝ 1 (fun z ↦ (η z).re) := reCLM.contDiff.comp hη
+  have hv : ContDiff ℝ 1 (fun z ↦ (η z).im) := imCLM.contDiff.comp hη
+  have hu2 := memLp_of_mem_realSobolevFunctions hre
+  have hv2 := memLp_of_mem_realSobolevFunctions him
+  have hx2 := memLp_top_apply hx hlim (i := 2) (by simp)
+  have hx3 := memLp_top_apply hx hlim (i := 3) (by simp)
+  refine MemLp.of_eval_piLp fun i ↦ ?_
+  fin_cases i
+  · exact ((hd _ hv him 1).neg.sub (hd _ hu hre I)).ae_eq (ae_of_all _ fun z ↦ by simp)
+  · exact ((hd _ hu hre 1).sub (hd _ hv him I)).ae_eq (ae_of_all _ fun z ↦ by simp)
+  · exact ((hx2.mul hu2 : MemLp (fun z ↦ x z 2 * (η z).re) 2 volume).sub
+      (hx3.mul hv2 : MemLp (fun z ↦ x z 3 * (η z).im) 2 volume)).ae_eq
+      (ae_of_all _ fun z ↦ by simp)
+  · exact ((hx2.mul hv2 : MemLp (fun z ↦ x z 2 * (η z).im) 2 volume).add
+      (hx3.mul hu2 : MemLp (fun z ↦ x z 3 * (η z).re) 2 volume)).ae_eq
+      (ae_of_all _ fun z ↦ by simp)
+
+/-- For a smooth field whose section has unit modulus at infinity and a smooth `g ∈ L²(ℂ; ℂ)`,
+the equation `Δh = P h - g`, `P = |α|² / 4`, has a smooth solution `h ∈ H²(ℂ; ℂ)`. -/
+private theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {g : ℂ → ℂ}
+    (hgs : ContDiff ℝ ∞ g) (hg2 : MemLp g 2 volume) :
+    ∃ h : ℂ → ℂ, ContDiff ℝ ∞ h ∧ (fun z ↦ (h z).re) ∈ realSobolevFunctions ℂ 2 2 ∧
+      (fun z ↦ (h z).im) ∈ realSobolevFunctions ℂ 2 2 ∧
+      ∀ z, Δ h z = ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) * h z - g z := by
+  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2
+  have hxi (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hPs : ContDiff ℝ ∞ P := ((hxi 2).pow 2).add ((hxi 3).pow 2)
+  have hP : MemLp P ⊤ volume := memLp_top_potential hx.continuous hlim
+  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
+  have hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z := ae_of_all _ fun z ↦ by positivity
+  have hPa : ∀ᵐ z ∂(volume : Measure ℂ), R < ‖z‖ → 1 / 8 ≤ P z :=
+    ae_of_all _ fun z hz ↦ (hR z hz).le
+  -- Solve for the real and imaginary parts separately.
+  obtain ⟨h₁, hh₁s, hh₁, he₁⟩ :=
+    exists_contDiff_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq hPs hP hP₀
+      (by norm_num : (0 : ℝ) < 1 / 8) hPa (reCLM.contDiff.comp hgs) hg2.re
+  obtain ⟨h₂, hh₂s, hh₂, he₂⟩ :=
+    exists_contDiff_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq hPs hP hP₀
+      (by norm_num : (0 : ℝ) < 1 / 8) hPa (imCLM.contDiff.comp hgs) hg2.im
+  set h : ℂ → ℂ := fun z ↦ (h₁ z : ℂ) + h₂ z * I with hdef
+  have hhs : ContDiff ℝ ∞ h :=
+    (ofRealCLM.contDiff.comp hh₁s).add ((ofRealCLM.contDiff.comp hh₂s).mul contDiff_const)
+  have hre : (fun z ↦ (h z).re) = h₁ := funext fun z ↦ by simp [hdef]
+  have him : (fun z ↦ (h z).im) = h₂ := funext fun z ↦ by simp [hdef]
+  refine ⟨h, hhs, hre ▸ hh₁, him ▸ hh₂, fun z ↦ ?_⟩
+  have hc : ContDiffAt ℝ 2 h z := (hhs.of_le (by simp) : ContDiff ℝ 2 h).contDiffAt
+  have hΔre : (Δ h z).re = Δ h₁ z := by
+    rw [← hre]; exact (hc.laplacian_CLM_comp_left (l := reCLM)).symm
+  have hΔim : (Δ h z).im = Δ h₂ z := by
+    rw [← him]; exact (hc.laplacian_CLM_comp_left (l := imCLM)).symm
+  have e₁ := he₁ z
+  have e₂ := he₂ z
+  simp only [Function.comp_apply, reCLM_apply, imCLM_apply] at e₁ e₂
+  have hh₁z : (h z).re = h₁ z := by simp [hdef]
+  have hh₂z : (h z).im = h₂ z := by simp [hdef]
+  apply Complex.ext
+  · rw [hΔre, sub_re, re_ofReal_mul, hh₁z]
+    linarith
+  · rw [hΔim, sub_im, im_ofReal_mul, hh₂z]
+    linarith
+
+/-- **Kernel elements of the gauge-fixed operator with a prescribed principal part.** Let `x` be
+a smooth field whose holomorphicity rows vanish, `∂bar_a α = 0`, and whose section has unit
+modulus at infinity. Suppose that `α` vanishes to order `k` at `a` in the sense that
+`α = (z - a)^k ψ` with `ψ` smooth. Let `c ∈ ℂ` and let `ρ` be a smooth compactly supported
+cutoff equal to one near `a`. Then there are a smooth `h ∈ H²(ℂ; ℂ)` and a smooth square-integrable
+field `y` with `L_x y = 0` which, off `a`, is the logarithmic variation of
+`η = ρ c / (z - a)^k + h`: its section variation is `δα = α η`, so `δα / α` has principal part
+`c / (z - a)^k` at `a`. -/
+theorem exists_gaugeFixedOperator_eq_zero_eq_logVariation (hx : ContDiff ℝ ∞ x)
+    (hhol : ∀ z, equation x z 1 = 0 ∧ equation x z 2 = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    {a : ℂ} {k : ℕ} {ψ : ℂ → ℂ} (hψ : ContDiff ℝ ∞ ψ)
+    (hαψ : ∀ z, sectionValue x z = (z - a) ^ k * ψ z)
+    {ρ : ℂ → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hρa : ρ =ᶠ[𝓝 a] 1) (c : ℂ) :
+    ∃ h : ℂ → ℂ, ContDiff ℝ ∞ h ∧ (fun z ↦ (h z).re) ∈ realSobolevFunctions ℂ 2 2 ∧
+      (fun z ↦ (h z).im) ∈ realSobolevFunctions ℂ 2 2 ∧
+      ∃ y : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ y ∧ MemLp y 2 volume ∧
+        (∀ z, gaugeFixedOperator x y z = 0) ∧
+        ∀ z, z ≠ a → y z = logVariation x (fun w ↦ (ρ w : ℂ) * (c / (w - a) ^ k) + h w) z := by
+  -- Outline: write `ρ u = u - v` with `u = c / (z - a)^k` and `v` smooth; solve for `h` against
+  -- the smooth compactly supported defect `g` of `ρ u`; check `Δη = P η` off `a`; and continue
+  -- the logarithmic variation of `η` smoothly across `a`.
+  set P : ℂ → ℝ := fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 with hPdef
+  have hxi (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hαs : ContDiff ℝ ∞ (sectionValue x) := contDiff_sectionValue (hxi 2) (hxi 3)
+  -- The principal part `u = c / (z - a)^k`, holomorphic off `a`, and its smooth part
+  -- `v = (1 - ρ) u` away from `a`, so that `ρ u = u - v`.
+  set u : ℂ → ℂ := fun w ↦ c / (w - a) ^ k with hudef
+  have hu (z : ℂ) (hz : z ≠ a) : AnalyticAt ℂ u z :=
+    analyticAt_const.div ((analyticAt_id.sub analyticAt_const).pow k)
+      (pow_ne_zero k (sub_ne_zero.2 hz))
+  have hαu (z : ℂ) (hz : z ≠ a) : sectionValue x z * u z = c * ψ z := by
+    rw [hαψ, hudef]
+    field_simp [pow_ne_zero k (sub_ne_zero.2 hz)]
+  set σ : ℂ → ℝ := fun w ↦ 1 - ρ w with hσdef
+  have hσa : σ =ᶠ[𝓝 a] 0 := by
+    filter_upwards [hρa] with w hw
+    simp [hσdef, hw]
+  set v : ℂ → ℂ := fun w ↦ (σ w : ℂ) * u w with hvdef
+  have hv : ContDiff ℝ ∞ v := contDiff_mul_div_sub_pow (contDiff_const.sub hρ) hσa c k
+  have hρu (w : ℂ) : (ρ w : ℂ) * u w = u w - v w := by
+    simp only [hvdef, hσdef]
+    push_cast
+    ring
+  have haρ (w : ℂ) (hw : w ∉ tsupport ρ) : w ≠ a := by
+    rintro rfl
+    exact hw (subset_tsupport _ (by simp [hρa.self_of_nhds]))
+  have hvu (w : ℂ) (hw : w ∉ tsupport ρ) : v =ᶠ[𝓝 w] u := by
+    filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hw] with w' hw'
+    simp [hvdef, hσdef, hw']
+  -- The defect `g = Δ(ρ u) - P ρ u` of the principal part, written smoothly across `a`.
+  set g : ℂ → ℂ := fun w ↦
+    -Δ v w - (ρ w : ℂ) * starRingEnd ℂ (sectionValue x w) * (c * ψ w) / 4 with hgdef
+  have hgs : ContDiff ℝ ∞ g := by
+    have hΔv : ContDiff ℝ ∞ (Δ v) := hv.laplacian (by simp)
+    exact hΔv.neg.sub ((((ofRealCLM.contDiff.comp hρ).mul
+      (conjCLE.contDiff.comp hαs)).mul (contDiff_const.mul hψ)).div_const 4)
+  have hgc : HasCompactSupport g := by
+    refine hρc.mono' fun w hw ↦ ?_
+    by_contra hn
+    apply hw
+    have hΔ : Δ v w = 0 := by
+      rw [(InnerProductSpace.laplacian_congr_nhds (hvu w hn)).eq_of_nhds]
+      exact (hu w (haρ w hn)).harmonicAt.2.eq_of_nhds
+    simp [hgdef, hΔ, image_eq_zero_of_notMem_tsupport hn]
+  have hg2 : MemLp g 2 volume := hgs.continuous.memLp_of_hasCompactSupport hgc
+  -- Solve `-Δh + P h = g` with a smooth `h ∈ H²`.
+  obtain ⟨h, hhs, hh₁, hh₂, hΔh⟩ := exists_contDiff_laplacian_eq_mul_sub hx hlim hgs hg2
+  refine ⟨h, hhs, hh₁, hh₂, ?_⟩
+  have hv2 : ContDiff ℝ 2 v := hv.of_le (by simp)
+  have hh2 : ContDiff ℝ 2 h := hhs.of_le (by simp)
+  -- The zero mode `η = ρ u + h` solves `Δη = P η` off `a`.
+  set η : ℂ → ℂ := fun w ↦ (ρ w : ℂ) * u w + h w with hηdef
+  have hηeq : η = (h + u) + (-1 : ℝ) • v := funext fun w ↦ by
+    simp only [hηdef, hρu, Pi.add_apply, Pi.smul_apply]
+    rw [Complex.real_smul]
+    push_cast
+    ring
+  have hηs (z : ℂ) (hz : z ≠ a) : ContDiffAt ℝ 2 η z := by
+    rw [hηeq]
+    exact (hh2.contDiffAt.add
+      (((hu z hz).contDiffAt (n := 2)).restrict_scalars ℝ)).add
+      (hv2.contDiffAt.const_smul (-1 : ℝ))
+  have hΔη (z : ℂ) (hz : z ≠ a) : Δ η z = P z • η z := by
+    have hc₁ : ContDiffAt ℝ 2 (h + u) z := hh2.contDiffAt.add
+      (((hu z hz).contDiffAt (n := 2)).restrict_scalars ℝ)
+    have hc₂ : ContDiffAt ℝ 2 ((-1 : ℝ) • v) z := (hv2.contDiffAt.const_smul (-1 : ℝ))
+    have hΔu : Δ u z = 0 := (hu z hz).harmonicAt.2.eq_of_nhds
+    rw [hηeq, hc₁.laplacian_add hc₂, (hh2.contDiffAt).laplacian_add
+      (((hu z hz).contDiffAt (n := 2)).restrict_scalars ℝ), hΔu, hΔh z,
+      InnerProductSpace.laplacian_smul _ hv2.contDiffAt, ← hηeq]
+    have hPz : (P z : ℂ) = starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 := by
+      apply Complex.ext <;> simp [hPdef, sectionValue_apply, sq] <;> ring
+    simp only [hηdef, hgdef, Complex.real_smul]
+    rw [hPz]
+    push_cast
+    linear_combination (-(ρ z : ℂ) * starRingEnd ℂ (sectionValue x z) / 4) * hαu z hz
+  -- The kernel element: `y = logVariation x h + (Y - logVariation x v)`, where `Y` is the smooth
+  -- continuation of `logVariation x u` across `a`: its connection part vanishes since `u` is
+  -- holomorphic off `a`, and its section part is `α u / 2 = c ψ / 2`.
+  set Y : ℂ → EuclideanSpace ℝ (Fin 4) := fun w ↦
+    !₂[0, 0, (c * ψ w / 2).re, (c * ψ w / 2).im] with hYdef
+  have hYu (z : ℂ) (hz : z ≠ a) : logVariation x u z = Y z := by
+    rw [logVariation_eq_of_differentiableAt x (hu z hz).differentiableAt, mul_div_assoc,
+      ← mul_div_assoc, hαu z hz]
+  set y : ℂ → EuclideanSpace ℝ (Fin 4) := fun w ↦
+    logVariation x h w + (Y w - logVariation x v w) with hydef
+  have hYs : ContDiff ℝ ∞ Y := by
+    have hcψ : ContDiff ℝ ∞ (fun w ↦ c * ψ w / 2) := (contDiff_const.mul hψ).div_const 2
+    refine contDiff_euclidean.mpr fun i ↦ ?_
+    fin_cases i
+    · simpa [hYdef] using (contDiff_const : ContDiff ℝ ∞ fun _ : ℂ ↦ (0 : ℝ))
+    · simpa [hYdef] using (contDiff_const : ContDiff ℝ ∞ fun _ : ℂ ↦ (0 : ℝ))
+    · convert reCLM.contDiff.comp hcψ using 1
+      funext w
+      simp [hYdef]
+    · convert imCLM.contDiff.comp hcψ using 1
+      funext w
+      simp [hYdef]
+  have hLh : ContDiff ℝ ∞ (logVariation x h) := contDiff_logVariation hx (hhs.of_le (by simp))
+  have hLv : ContDiff ℝ ∞ (logVariation x v) := contDiff_logVariation hx (hv.of_le (by simp))
+  have hys : ContDiff ℝ ∞ y := hLh.add (hYs.sub hLv)
+  have hyη (z : ℂ) (hz : z ≠ a) : y z = logVariation x η z := by
+    rw [hηeq, logVariation_add_apply x ((hhs.differentiable (by simp) z).add
+      ((hu z hz).differentiableAt.restrictScalars ℝ))
+      ((hv.differentiable (by simp)).const_smul (-1 : ℝ) z),
+      logVariation_add_apply x (hhs.differentiable (by simp) z)
+      ((hu z hz).differentiableAt.restrictScalars ℝ), logVariation_smul, hYu z hz]
+    simp only [hydef, Pi.smul_apply, neg_smul, one_smul]
+    abel
+  refine ⟨y, hys, ?_, ?_, hyη⟩
+  · -- `logVariation x h` is square integrable since `h ∈ H²`; `Y - logVariation x v` is
+    -- continuous and vanishes outside the support of `ρ`.
+    have hL : MemLp (logVariation x h) 2 volume :=
+      memLp_logVariation hx.continuous hlim (hhs.of_le (by simp)) hh₁ hh₂
+    have hc : HasCompactSupport (fun w ↦ Y w - logVariation x v w) := by
+      refine hρc.mono' fun w hw ↦ ?_
+      by_contra hn
+      apply hw
+      beta_reduce
+      rw [logVariation_congr_nhds x (hvu w hn), hYu w (haρ w hn), sub_self]
+    exact hL.add ((hYs.sub hLv).continuous.memLp_of_hasCompactSupport hc)
+  · -- Off `a`, `y` is the logarithmic variation of the zero mode `η`; at `a`, by continuity.
+    have hcont : Continuous (gaugeFixedOperator x y) :=
+      continuous_gaugeFixedOperator hx.continuous (hys.of_le (by simp))
+    have hoff (z : ℂ) (hz : z ≠ a) : gaugeFixedOperator x y z = 0 := by
+      have hrep : y =ᶠ[𝓝 z] logVariation x η := by
+        filter_upwards [eventually_ne_nhds hz] with w hw
+        exact hyη w hw
+      rw [gaugeFixedOperator_congr_nhds x hrep]
+      exact (gaugeFixedOperator_logVariation_eq_zero_iff (hx.differentiable (by simp) z)
+        (hηs z hz) (hhol z).1 (hhol z).2).2 (hΔη z hz)
+    intro z
+    exact congrFun (hcont.ext_on (dense_compl_singleton a) continuous_const
+      fun w hw ↦ hoff w hw) z
 
 end TauCeti.Vortex
