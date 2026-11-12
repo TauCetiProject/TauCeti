@@ -16,16 +16,16 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
 Let `Ω ⊆ ℂ` be open, let `F` be a finite-dimensional real normed space, let `2 < p ≤ ∞` and let
 `k ≥ 0`. This file proves that a map `u ∈ W^{k+1,p}_loc(Ω, F)`, in the sense of
 `TauCeti.MemWkpLoc p Ω (k + 1)`, agrees almost everywhere on `Ω` with a map `g` of class `Cᵏ` on
-`Ω`, whose classical derivatives are the weak derivatives of `u` and whose `k`-th derivative is
-Hölder continuous with exponent `α = 1 - 2 / p` on compact subsets of `Ω`, with the local bound
+`Ω`, whose first derivative is a weak derivative of `u` (for `k ≥ 1`) and whose `k`-th derivative
+lies in `W^{1,p}_loc` and is Hölder continuous with exponent `α = 1 - 2 / p` on compact subsets of
+`Ω`, with the local bound
 
 `‖Dᵏg(x) - Dᵏg(y)‖ ≤ C ‖D(Dᵏg)‖_{Lᵖ(B(x, 2|x - y|))} |x - y|^α`
 whenever `closedBall x (2|x - y|) ⊆ Ω`.
 
-Here `Dᵏg = iteratedFDeriv ℝ k g`, and its weak derivative `D(Dᵏg)` is the `(k + 1)`-st weak
-derivative of `u`, written with the first `k` slots uncurried. The constant `C` depends only on
-`p`, `k` and `F`. In the README's indexing this is the statement that `W^{k,p}_loc` maps have
-`C^{k-1, 1-2/p}` representatives for `k ≥ 1`.
+Here `Dᵏg = iteratedFDeriv ℝ k g` and `D(Dᵏg)` is any weak derivative of it on `Ω`. The constant
+`C` depends only on `p`, `k` and `F`. Equivalently, `W^{k,p}_loc` maps have `C^{k-1, 1-2/p}`
+representatives for `k ≥ 1`.
 
 ## Proof
 
@@ -36,9 +36,9 @@ it has a `Cᵏ` representative by induction, and a function whose weak derivativ
 `Cᵏ⁺¹` representative (`TauCeti.HasWeakFDerivOn.exists_contDiffOn_succ_ae_eq`).
 
 For the Hölder bound, the classical derivative of a `C¹` representative `g` of `u` is a weak
-derivative of `u` (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`), so by induction
-`iteratedFDeriv ℝ k g` agrees, up to the currying isometries, with the `k`-th weak derivative of
-`u` and lies in `W^{1,p}_loc` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`). The order-one
+derivative of `u` lying in the preceding local Sobolev class
+(`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`), so by induction `iteratedFDeriv ℝ k g`
+lies in `W^{1,p}_loc` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`). The order-one
 estimates then apply to it. These two derivative results hold for every `p` and live in
 `TauCeti.Analysis.Sobolev.Local.Basic`. The finite-dimensionality of the space of `k`-multilinear
 maps needed by the order-one estimates is `ContinuousMultilinearMap.instModuleFinite`.
@@ -75,9 +75,10 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞}
 variable [FiniteDimensional ℝ F]
 
 /-- **Morrey's embedding `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`.** A map `u ∈ MemWkpLoc p Ω (k + 1)`
-agrees almost everywhere on `Ω` with a map `g` that is `Cᵏ` on `Ω`. The classical derivatives of
-`g` are the weak derivatives of `u` (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`),
-and its `k`-th derivative is Hölder continuous with exponent `1 - 2 / p` on compact subsets of `Ω`
+agrees almost everywhere on `Ω` with a map `g` that is `Cᵏ` on `Ω`. For `k ≥ 1` the classical
+derivative of `g` is a weak derivative of `u`
+(`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`), and the `k`-th derivative of `g` is
+Hölder continuous with exponent `1 - 2 / p` on compact subsets of `Ω`
 (`TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact`). -/
 theorem MemWkpLoc.exists_contDiffOn_ae_eq (hp : 2 < p) (hu : MemWkpLoc p Ω (k + 1) u) :
     ∃ g : ℂ → F, ContDiffOn ℝ k g Ω ∧ u =ᵐ[volume.restrict Ω] g := by
@@ -108,8 +109,9 @@ private theorem iteratedFDeriv_memWkpLoc_one_and_eqOn (hu : MemWkpLoc p Ω (k + 
 /-- **The local Morrey inequality at higher order.** Let `2 < p ≤ ∞`, `α = 1 - 2 / p` and
 `k ≥ 0`. There is a constant `C > 0`, depending only on `p`, `k` and `F`, such that the following
 holds. Let `u ∈ MemWkpLoc p Ω (k + 1)`, let `g` be `Cᵏ` on `Ω` and equal to `u` almost everywhere
-on `Ω`, and let `E` be a weak derivative of `Dᵏg = iteratedFDeriv ℝ k g` on `Ω` (the
-`(k + 1)`-st weak derivative of `u`). If `closedBall x (2 |x - y|) ⊆ Ω`, then
+on `Ω`, and let `E` be a weak derivative of `Dᵏg = iteratedFDeriv ℝ k g` on `Ω`, which exists
+since `Dᵏg ∈ MemWkpLoc p Ω 1` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`).
+If `closedBall x (2 |x - y|) ⊆ Ω`, then
 
 `‖Dᵏg(x) - Dᵏg(y)‖ ≤ C ‖E‖_{Lᵖ(B(x, 2 |x - y|))} |x - y|^α`. -/
 theorem MemWkpLoc.exists_dist_iteratedFDeriv_le (hp : 2 < p) (k : ℕ) :

@@ -565,8 +565,7 @@ theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn (hu : MemWkpLoc p Ω (k +
 
 /-- **Iterated derivatives of a `Cᵏ` representative.** If `g` is `Cᵏ` on `Ω` and agrees almost
 everywhere on `Ω` with `u ∈ MemWkpLoc p Ω (k + m)`, then `iteratedFDeriv ℝ k g` lies in
-`MemWkpLoc p Ω m`. It is, up to the currying isometries, the `k`-th weak derivative of `u`.
-No restriction on `p` is needed. -/
+`MemWkpLoc p Ω m`. No restriction on `p` is needed. -/
 theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p Ω (k + m) u)
     (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
     MemWkpLoc p Ω m (iteratedFDeriv ℝ k g) := by
