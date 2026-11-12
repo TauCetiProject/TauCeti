@@ -48,6 +48,22 @@ public section
 
 open MulAction
 
+/-- The cardinality of a sigma type of finite fibres is the finite sum of the fibre cardinalities:
+if infinitely many fibres are nonempty, both sides are `0`. -/
+theorem Nat.card_sigma_eq_finsum {ι : Type*} (β : ι → Type*) [∀ i, Finite (β i)] :
+    Nat.card (Σ i, β i) = ∑ᶠ i, Nat.card (β i) := by
+  set s := Function.support fun i ↦ Nat.card (β i)
+  have e : (Σ i : s, β i) ≃ Σ i, β i := Equiv.sigmaSubtypeEquivOfSubset β (· ∈ s)
+    fun i x ↦ have : Nonempty (β i) := ⟨x⟩; Nat.card_pos.ne'
+  rw [← Nat.card_congr e]
+  by_cases hs : s.Finite
+  · have := hs.fintype
+    rw [Nat.card_sigma, ← finsum_mem_support, ← finsum_set_coe_eq_finsum_mem,
+      finsum_eq_sum_of_fintype]
+  · have : Infinite s := Set.infinite_coe_iff.mpr hs
+    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.2).1
+    rw [Nat.card_eq_zero_of_infinite, finsum_of_infinite_support hs]
+
 namespace TauCeti
 
 variable {G : Type*} (X Y : Type*)
@@ -97,36 +113,7 @@ theorem card_fixedBy_sigma {ι : Type*} (X : ι → Type*) [∀ i, MulAction G (
     rw [hset]
     exact Nat.card_congr <| (Equiv.Set.sigma _ _).trans <|
       .sigmaCongrLeft (β := fun i ↦ fixedBy (X i) g) (Equiv.Set.univ ι)
-  rw [hcard]
-  by_cases hs : (Function.support fun i ↦ Nat.card (fixedBy (X i) g)).Finite
-  · have := hs.fintype
-    have hempty : ∀ i ∉ hs.toFinset, IsEmpty (fixedBy (X i) g) := fun i hi ↦
-      (Nat.card_eq_zero.mp (Function.notMem_support.mp (hs.mem_toFinset.not.mp hi))).resolve_right
-        (not_infinite_iff_finite.mpr inferInstance)
-    rw [finsum_eq_sum_of_support_subset _ (s := hs.toFinset) (by simp), ← Finset.sum_coe_sort,
-      ← Nat.card_sigma]
-    refine (Nat.card_congr (Equiv.ofBijective
-      (fun p : Σ i : hs.toFinset, fixedBy (X i) g ↦ (⟨p.1.1, p.2⟩ : Σ i, fixedBy (X i) g))
-      ⟨?_, ?_⟩)).symm
-    · rintro ⟨⟨i, hi⟩, x⟩ ⟨⟨j, hj⟩, y⟩ h
-      simp only [Sigma.mk.inj_iff] at h
-      obtain ⟨rfl, h⟩ := h
-      simp_all
-    · rintro ⟨i, x⟩
-      by_cases hi : i ∈ hs.toFinset
-      · exact ⟨⟨⟨i, hi⟩, x⟩, rfl⟩
-      · exact (hempty i hi).elim x
-  · rw [finsum_of_infinite_support hs]
-    have : Infinite (Function.support fun i ↦ Nat.card (fixedBy (X i) g)) :=
-      Set.infinite_coe_iff.mpr hs
-    have hne : ∀ i : Function.support fun i ↦ Nat.card (fixedBy (X i) g),
-        Nonempty (fixedBy (X i) g) := fun i ↦
-      (Nat.card_pos_iff.mp (Nat.pos_of_ne_zero i.2)).1
-    have : Infinite (Σ i, fixedBy (X i) g) :=
-      Infinite.of_injective (fun i : Function.support fun i ↦ Nat.card (fixedBy (X i) g) ↦
-        (⟨i.1, (hne i).some⟩ : Σ i, fixedBy (X i) g))
-        fun i j h ↦ Subtype.ext (congrArg Sigma.fst h)
-    exact Nat.card_eq_zero_of_infinite
+  rw [hcard, Nat.card_sigma_eq_finsum]
 
 /-- The fixed-point count on a fiberwise indexed disjoint union, in simp normal form. -/
 @[simp]
