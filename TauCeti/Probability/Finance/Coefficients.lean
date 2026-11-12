@@ -43,7 +43,7 @@ noncomputable section
 open MeasureTheory Set
 open scoped NNReal
 
-namespace TauCeti.Finance
+namespace MeasureTheory.IsStronglyProgressive
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {P : Measure Ω} [SFinite P] {μ σ : ℝ≥0 → Ω → ℝ} {r : ℝ≥0 → ℝ}
@@ -130,4 +130,4 @@ theorem exists_isStronglyPredictable_marketCoefficients
     field_simp
     ring
 
-end TauCeti.Finance
+end MeasureTheory.IsStronglyProgressive
