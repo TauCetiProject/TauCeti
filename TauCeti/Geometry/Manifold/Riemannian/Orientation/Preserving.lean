@@ -14,15 +14,15 @@ public import Mathlib.Analysis.InnerProductSpace.TwoDim
 # Orientation-preserving maps into an oriented vector space
 
 Let `M` be an oriented Riemannian manifold and `F` an oriented real inner product space of the
-same dimension, with its constant orientation. A map `f : M → F` preserving orientations at `x`
-sends a family of tangent vectors at `x` on which the Riemannian volume form is positive to a
-family on which the volume form of `F` is positive, and conversely
+same dimension, with its constant orientation. If `f : M → F` preserves orientations at `x`,
+its derivative `mvfderiv I f x` sends a family of tangent vectors at `x` on which the Riemannian
+volume form is positive to a family on which the volume form of `F` is positive, and conversely
 (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.volumeForm_mvfderiv_comp_pos_iff`).
 
-For an oriented Riemannian surface and a map `φ` into `ℂ`, a complex chart for instance, the
-volume form of `ℂ` is the area form `(w, z) ↦ Im (conj w * z)`. So `φ` preserves orientations at
-`x` only if the pairs of tangent vectors on which the area form is positive are those whose
-images `(w, z)` satisfy `0 < Im (conj w * z)`
+For an oriented Riemannian surface and a map `φ` into `ℂ` with its constant standard orientation
+`Complex.orientation`, the volume form of `ℂ` is the area form `(w, z) ↦ Im (conj w * z)`.
+If `φ` preserves orientations at `x`, a pair of tangent vectors has positive area form exactly
+when its image `(w, z)` under `mvfderiv I φ x` satisfies `0 < Im (conj w * z)`
 (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.im_conj_mvfderiv_mul_pos_iff`).
 -/
 
@@ -39,10 +39,9 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- A map `f` from an oriented Riemannian manifold to an oriented inner product space `F`, with
-its constant orientation, that preserves orientations at `x` carries families of tangent vectors
-on which the Riemannian volume form is positive exactly to families on which the volume form of
-`F` is positive. -/
+/-- If `f` maps an oriented Riemannian manifold into `F` with its constant orientation `oF`
+and preserves orientations at `x`, then `oF.volumeForm (mvfderiv I f x ∘ v)` is positive exactly
+when the Riemannian volume form is positive on the family of tangent vectors `v`. -/
 theorem IsOrientationPreservingAt.volumeForm_mvfderiv_comp_pos_iff {n : ℕ} {F : Type*}
     [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
     [Fact (Module.finrank ℝ F = n)] {o : Manifold.Orientation I M (Fin n)}
@@ -52,19 +51,20 @@ theorem IsOrientationPreservingAt.volumeForm_mvfderiv_comp_pos_iff {n : ℕ} {F 
     0 < oF.volumeForm (mvfderiv I f x ∘ v) ↔ 0 < riemannianVolumeForm o x v := by
   let := o.fact_finrank_tangentSpace x
   obtain ⟨e, he, hmap⟩ := (isOrientationPreservingAt_iff _ _ _ _).mp hf
-  let e' : TangentSpace I x ≃ₗ[ℝ] F := e.toLinearEquiv
-  have hmap' : _root_.Orientation.map (Fin n) e' (o.orientationAt x) = oF :=
-    hmap.trans (orientationAt_model _ _ _)
+  let e' : TangentSpace I x ≃ₗ[ℝ] F :=
+    (e.trans (NormedSpace.fromTangentSpace (f x))).toLinearEquiv
+  have hmap' : _root_.Orientation.map (Fin n) e' (o.orientationAt x) = oF := by
+    simp only [e', ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans,
+      hmap, map_orientationAt_model]
   have hv : mvfderiv I f x ∘ v = e' ∘ v := by
     ext i
-    rw [Function.comp_apply, mvfderiv_apply_eq_mfderiv_apply, ← he]
-    -- `e'` is `e` viewed as a linear equivalence, so both sides evaluate `e` at `v i`.
-    rfl
+    simp [e', mvfderiv, ← he]
   rw [riemannianVolumeForm_apply, hv, ← hmap', _root_.Orientation.volumeForm_map_comp_pos_iff]
 
-/-- A map `φ` from an oriented Riemannian surface to `ℂ` that preserves orientations at `x`
-carries a pair of tangent vectors on which the area form is positive to a pair `(w, z)` with
-`0 < Im (conj w * z)`, and conversely. -/
+/-- If `φ` maps an oriented Riemannian surface into `ℂ` with its constant standard orientation
+`Complex.orientation` and preserves orientations at `x`, then
+`0 < Im (conj (mvfderiv I φ x X) * mvfderiv I φ x Y)` exactly when the area form is positive on
+the pair of tangent vectors `(X, Y)`. -/
 theorem IsOrientationPreservingAt.im_conj_mvfderiv_mul_pos_iff
     {o : Manifold.Orientation I M (Fin 2)}
     {hn : Fintype.card (Fin 2) = Module.finrank ℝ ℂ} {φ : M → ℂ} {x : M}

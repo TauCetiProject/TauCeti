@@ -24,7 +24,7 @@ its absolute value is the square root of the Gram determinant, it vanishes exact
 dependent families, and on a basis its sign records whether the basis is positively oriented. In
 a coordinate frame of a Riemannian manifold this is the familiar formula
 `vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`. A linear equivalence to another inner product space, oriented
-by transport, preserves the sign of the volume form (`Orientation.volumeForm_map_comp_pos_iff`).
+by transport, preserves positivity of the volume form (`Orientation.volumeForm_map_comp_pos_iff`).
 
 Two oriented inner product spaces of the same positive finite dimension are related by an
 orientation-preserving linear isometric equivalence
@@ -140,7 +140,7 @@ theorem volumeForm_apply_eq_neg_sqrt_det_gram (o : Orientation ℝ E (Fin n))
   have h := (-o).volumeForm_apply_eq_sqrt_det_gram b hb'
   rwa [volumeForm_neg_orientation, neg_apply, neg_eq_iff_eq_neg] at h
 
-/-- A linear equivalence `f` preserves the sign of the volume form when the target carries the
+/-- A linear equivalence `f` preserves positivity of the volume form when the target carries the
 transported orientation: the volume form of `o.map f` is positive on the image of a family of
 vectors exactly when the volume form of `o` is positive on the family. -/
 theorem volumeForm_map_comp_pos_iff {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
