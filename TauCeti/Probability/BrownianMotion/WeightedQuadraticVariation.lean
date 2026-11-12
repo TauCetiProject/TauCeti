@@ -155,7 +155,7 @@ theorem integral_sq_sum_eval_mul_sq_sub_sub (hB : IsPreBrownianReal B P)
     (fun i _ ↦ hf.adapted (t i)) (fun i _ ↦ hB'.memLp_eval (t i) (by norm_num))]
   congr 1
   apply sum_congr rfl
-  intro i hi
+  intro i _
   have h := (hB'.hasLaw_eval (t i)).integral_comp
     (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
   have hm : (∫ ω, B' (t i) ω ^ 2 ∂P) = t i := by

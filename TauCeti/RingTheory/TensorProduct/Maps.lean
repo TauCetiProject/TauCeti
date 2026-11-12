@@ -188,6 +188,20 @@ theorem liftRingHom_comp_includeRight :
 
 end LiftRingHom
 
+/-- Applying `liftRingHom` after tensor reassociation separates the first factor from the
+remaining two factors. -/
+theorem liftRingHom_assoc_symm_tmul {R A B C T : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
+    [CommSemiring T] (x : A ⊗[R] B →+* T) (τ : C →+* T)
+    (hτ : x.comp (algebraMap R (A ⊗[R] B)) = τ.comp (algebraMap R C))
+    (hτ' : (x.comp (includeRight : B →ₐ[R] A ⊗[R] B).toRingHom).comp (algebraMap R B) =
+      τ.comp (algebraMap R C)) (a : A) (v : B ⊗[R] C) :
+    liftRingHom x τ hτ ((_root_.TensorProduct.assoc R A B C).symm (a ⊗ₜ v)) =
+      x (a ⊗ₜ 1) * liftRingHom (x.comp (includeRight : B →ₐ[R] A ⊗[R] B).toRingHom) τ hτ' v := by
+  induction v using TensorProduct.inductionOn with
+  | add v v' hv hv' => simp [mul_add, tmul_add, hv, hv']
+  | tmul b c => simp [← mul_assoc, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
+
 variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Semiring A] [Algebra R A]
   [Semiring B] [Algebra R B]
 
