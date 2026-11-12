@@ -163,12 +163,15 @@ field `K = ℚ(√d)` with prime-discriminant factorization `s`, the narrow clas
 `Cl⁺(K)²` if and only if every `P ∈ s` is positive. -/
 theorem isSquare_mkPrincipal_gen_iff {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d) :
     IsSquare (NarrowClassGroup.mkPrincipal (Units.mk0 (θ : K) (coe_gen_ne_zero hmin))) ↔
       ∀ P ∈ s, 0 < P := by
+  have heven : ∀ P ∈ s, ∀ P' ∈ s,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P' := fun _ hP _ hP' hPe hPe' =>
+    eq_of_isEvenPrimeDiscriminant_of_prod_eq (isFundamentalDiscr_fundamentalDiscriminant hsf) hprod
+      hP hP' hPe hPe'
   rw [isSquare_iff_forall_genusCharFunNarrowClassGroupHom_eq_one hs heven hprod hmin hgen hsf]
   refine forall₂_congr fun P hP => ?_
   rw [Units.ext_iff, Units.val_one,
@@ -181,14 +184,13 @@ kernel of the forgetful surjection `Cl⁺(K) → Cl(K)` consists of squares if a
 `P ∈ s` is positive. -/
 theorem ker_toClassGroup_le_square_iff {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d) :
     MonoidHom.ker (NarrowClassGroup.toClassGroup (K := K)) ≤
         Subgroup.square (NarrowClassGroup K) ↔
       ∀ P ∈ s, 0 < P := by
-  rw [← isSquare_mkPrincipal_gen_iff hs heven hprod hmin hgen hsf hd,
+  rw [← isSquare_mkPrincipal_gen_iff hs hprod hmin hgen hsf hd,
     NarrowClassGroup.toClassGroup_ker]
   refine ⟨fun h => h ⟨_, rfl⟩, ?_⟩
   rintro h _ ⟨x, rfl⟩
@@ -205,12 +207,11 @@ prime-discriminant factorization of its discriminant, and let `t` be the number 
 ramifying in `K`. Then `2-rank Cl(K) = t - 1` if and only if every `P ∈ s` is positive. -/
 theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_iff {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d) :
     TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 1 ↔ ∀ P ∈ s, 0 < P := by
-  rw [← ker_toClassGroup_le_square_iff hs heven hprod hmin hgen hsf hd,
+  rw [← ker_toClassGroup_le_square_iff hs hprod hmin hgen hsf hd,
     ← MonoidHom.twoRank_eq_twoRank_iff_ker_le_square _
       NarrowClassGroup.toClassGroup_surjective,
     ← narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf,
@@ -222,7 +223,6 @@ field `K = ℚ(√d)` whose discriminant has a negative prime-discriminant facto
 `2`-rank of `Cl(K)` is `t - 2`, where `t` is the number of ramified rational primes. -/
 theorem twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : 0 < d) {P : ℤ} (hP : P ∈ s) (hneg : P < 0) :
@@ -230,7 +230,7 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg {s : Finset ℤ}
   refine (twoRank_eq_ncard_ramifiedPrimes_sub_one_or_sub_two
     (finrank_rat_eq_two hmin hgen)).resolve_left fun h => ?_
   have hpos :=
-    (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs heven hprod hmin hgen hsf hd).mp h P hP
+    (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs hprod hmin hgen hsf hd).mp h P hP
   omega
 
 /-! ### Worked examples -/
@@ -253,10 +253,6 @@ theorem twoRank_eq_one_of_minpoly_eq_X_sq_sub_thirty_four
     · exact isPrimeDiscriminant_eight
     · simpa [oddPrimeDiscriminant_of_mod_four_eq_one (by norm_num : 17 % 4 = 1)]
         using isPrimeDiscriminant_oddPrimeDiscriminant (p := 17) (by decide) (by decide)
-  have heven : ∀ P ∈ ({8, 17} : Finset ℤ), ∀ Q ∈ ({8, 17} : Finset ℤ),
-      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q := by
-    intro P hP Q hQ
-    fin_cases hP <;> fin_cases hQ <;> simp only [IsEvenPrimeDiscriminant] <;> decide
   have hprod : ∏ P ∈ ({8, 17} : Finset ℤ), P = fundamentalDiscriminant (34 : ℤ) := by
     rw [Finset.prod_pair (by decide : (8 : ℤ) ≠ 17),
       fundamentalDiscriminant_of_mod_four_ne_one (by decide : (34 : ℤ) % 4 ≠ 1)]
@@ -264,7 +260,7 @@ theorem twoRank_eq_one_of_minpoly_eq_X_sq_sub_thirty_four
   have hncard : (ramifiedPrimes K).ncard = 2 := by
     rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod,
       Finset.card_pair (by decide : (8 : ℤ) ≠ 17)]
-  have hrank := (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs heven hprod hmin hgen hsf
+  have hrank := (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs hprod hmin hgen hsf
     (by norm_num)).mpr (by simp)
   rw [hrank, hncard]
 

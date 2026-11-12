@@ -44,8 +44,7 @@ subfields**: `F` has degree `2` over `K` exactly when its subspace `U` is a hype
 
 ## Provenance
 
-The subfield/subspace dictionary this refines is migrated, with the rest of the multiquadratic
-Layer 0, from
+The subfield/subspace dictionary this refines is migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The degree reading
 assembles Mathlib's Galois index formula (`IntermediateField.finrank_eq_fixingSubgroup_index`) with

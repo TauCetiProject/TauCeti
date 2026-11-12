@@ -78,8 +78,6 @@ defined for all time.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5, Prop. 5.19.
 -/
 
--- Roadmap: HopfRinow
-
 public section
 
 open Bundle Manifold Set
