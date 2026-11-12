@@ -86,12 +86,15 @@ instance faithfulSMulNonzeroVectors [Nontrivial R] :
       Matrix.mulVec_single_one] at hcol
     exact congrFun hcol i
 
-/-- **The number of nonzero vectors** is `|R| ^ |n| - 1`. For an infinite ring both sides are
-`0`, as `Nat.card` of an infinite type. -/
+/-- **The number of nonzero vectors** is `|R| ^ |n| - 1`. Over an infinite semiring both sides are
+`0`: `Nat.card R = 0`, and `nonzeroVectors n R` is empty (when `n` is empty) or infinite. -/
 theorem natCard_nonzeroVectors :
     Nat.card (nonzeroVectors n R) = Nat.card R ^ Nat.card n - 1 := by
   rw [← Nat.card_fun, ← Set.ncard_singleton (0 : n → R), ← Set.ncard_compl {0}]
-  rfl
+  have h : (nonzeroVectors n R : Set (n → R)) = {0}ᶜ := by
+    ext v
+    simp [mem_nonzeroVectors]
+  rw [← SetLike.coe_sort_coe, h, Nat.card_coe_set_eq]
 
 /-- **A plane over a semiring with two elements has three nonzero vectors.** -/
 theorem natCard_nonzeroVectors_fin_two_of_card_eq_two (hR : Nat.card R = 2) :
