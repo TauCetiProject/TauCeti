@@ -202,8 +202,9 @@ theorem comap_codRestrict (ψ : H →* G) :
 /-- A Lyndon length function with values in a subgroup `S` is regular as a length function with
 values in `S` exactly when it is regular. -/
 @[simp]
-theorem isRegular_codRestrict_iff : (l.codRestrict S h).IsRegular ↔ l.IsRegular :=
-  (isRegular_map_iff (φ := ⟨S.subtype, fun _ _ hab => hab⟩) S.subtype_injective).symm
+theorem isRegular_codRestrict_iff : (l.codRestrict S h).IsRegular ↔ l.IsRegular := by
+  simpa only [map_codRestrict] using (isRegular_map_iff (l := l.codRestrict S h)
+    (φ := ⟨S.subtype, fun _ _ hab => hab⟩) S.subtype_injective).symm
 
 /-- A Lyndon length function with values in a subgroup `S` is free as a length function with
 values in `S` exactly when it is free and all its Gromov products lie in `S`. -/
