@@ -209,15 +209,11 @@ manifolds of `X` meet transversally, and so do those of `Y`, then so do those of
 theorem IsMorseSmale.prod (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseSmale) :
     (hX.prod hY hf hg).IsMorseSmale := by
   refine IsMorseSmale.of_forall ?_
-  rintro a b ⟨p₁, p₂⟩ ha hb hp
-  have hfd := hf.contMDiff.mdifferentiable (by simp)
-  have hgd := hg.contMDiff.mdifferentiable (by simp)
-  rw [mfderiv_comp_fst_add_comp_snd_eq_zero_iff (hfd _) (hgd _)] at ha hb
+  rintro a b ⟨p₁, p₂⟩ - - hp
   rw [hX.unstableSet_prod hY hf hg, hX.stableSet_prod hY hf hg] at hp ⊢
   obtain ⟨⟨hu₁, hu₂⟩, hs₁, hs₂⟩ := hp
-  rw [eq_top_iff, ← Submodule.prod_top,
-    ← hXs.span_mtangentConeAt_sup_eq_top ha.1 hb.1 ⟨hu₁, hs₁⟩,
-    ← hYs.span_mtangentConeAt_sup_eq_top ha.2 hb.2 ⟨hu₂, hs₂⟩, ← Submodule.prod_sup_prod,
+  rw [eq_top_iff, ← Submodule.prod_top, ← hXs.span_mtangentConeAt_sup_eq_top ⟨hu₁, hs₁⟩,
+    ← hYs.span_mtangentConeAt_sup_eq_top ⟨hu₂, hs₂⟩, ← Submodule.prod_sup_prod,
     modelWithCornersSelf_prod]
   exact sup_le_sup (prod_span_mtangentConeAt_le hu₁ hu₂) (prod_span_mtangentConeAt_le hs₁ hs₂)
 
