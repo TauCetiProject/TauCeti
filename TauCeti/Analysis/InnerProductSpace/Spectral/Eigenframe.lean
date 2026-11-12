@@ -231,7 +231,7 @@ theorem CorrespondingEigenblocks.finrank_left [Fintype ι] {hT : T.IsSymmetric} 
     {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {U V : Submodule 𝕜 E}
     (h : CorrespondingEigenblocks hT hS hn e U V) :
     finrank 𝕜 U = Fintype.card ι := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, hw, _, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact hw.finrank_span
 
 /-- The second corresponding block has dimension equal to the cardinality of its indices. -/
@@ -239,21 +239,21 @@ theorem CorrespondingEigenblocks.finrank_right [Fintype ι] {hT : T.IsSymmetric}
     {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {U V : Submodule 𝕜 E}
     (h : CorrespondingEigenblocks hT hS hn e U V) :
     finrank 𝕜 V = Fintype.card ι := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, _, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact hu.finrank_span
 
 /-- The first corresponding block is invariant under the first operator. -/
 theorem CorrespondingEigenblocks.map_left_le {hT : T.IsSymmetric} {hS : S.IsSymmetric}
     {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {U V : Submodule 𝕜 E}
     (h : CorrespondingEigenblocks hT hS hn e U V) : Submodule.map T U ≤ U := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, hw, _, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact (isOrderedEigenframe_iff.mp hw).map_span_le
 
 /-- The second corresponding block is invariant under the second operator. -/
 theorem CorrespondingEigenblocks.map_right_le {hT : T.IsSymmetric} {hS : S.IsSymmetric}
     {hn : finrank 𝕜 E = n} {e : ι ↪ Fin n} {U V : Submodule 𝕜 E}
     (h : CorrespondingEigenblocks hT hS hn e U V) : Submodule.map S V ≤ V := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, _, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact (isOrderedEigenframe_iff.mp hu).map_span_le
 
 /-- Applying the first operator to a vector in its corresponding block stays in that block. -/
@@ -277,7 +277,7 @@ theorem CorrespondingEigenblocks.restrictedPointSpectrum_left_eq
     (h : CorrespondingEigenblocks hT hS hn e U V) :
     Module.End.restrictedPointSpectrum T U =
       Set.range (fun i : ι => hT.eigenvalues hn (e i)) := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, hw, _, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact (isOrderedEigenframe_iff.mp hw).restrictedPointSpectrum_span_eq
 
 /-- The second block's restricted point spectrum is exactly its selected eigenvalues. -/
@@ -287,7 +287,7 @@ theorem CorrespondingEigenblocks.restrictedPointSpectrum_right_eq
     (h : CorrespondingEigenblocks hT hS hn e U V) :
     Module.End.restrictedPointSpectrum S V =
       Set.range (fun i : ι => hS.eigenvalues hn (e i)) := by
-  obtain ⟨w, u, hw, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
+  obtain ⟨w, u, _, hu, rfl, rfl⟩ := correspondingEigenblocks_iff.mp h
   exact (isOrderedEigenframe_iff.mp hu).restrictedPointSpectrum_span_eq
 
 /-! ### Canonical eigenframe constructors -/

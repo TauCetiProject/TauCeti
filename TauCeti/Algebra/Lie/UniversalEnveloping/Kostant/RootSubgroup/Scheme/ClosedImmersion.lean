@@ -50,6 +50,8 @@ criterion supplies the same closed subgroup.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix`: the represented generator
   in an integral lattice basis, shared with the matrix construction of
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.AlternatingForm`.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_apply`: the entries of the
+  integral matrix are the coordinates of the images of the basis vectors.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_eq_of_action`: the basis
   action determines the integral root matrix.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_mul_self`: square-zero
@@ -58,8 +60,6 @@ criterion supplies the same closed subgroup.
   `TauCeti.UniversalEnvelopingAlgebra.lie_lie_kostantRootGeneratorIntMatrix_eq_smul` and
   `TauCeti.UniversalEnvelopingAlgebra.lie_kostantRootGeneratorIntMatrix_lie_eq_zero`:
   bracket relations among root generators hold for their integral matrices.
-* `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_baseChange`: the coordinates
-  of a root-subgroup point on a base-changed basis vector.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_of_isRootStep`: a root step
   makes one coordinate equal to the parameter, scaled by the unit `c`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_apply_of_isRootStep`: the same
@@ -69,8 +69,6 @@ criterion supplies the same closed subgroup.
   rest.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action`:
   a root operator with one nonzero basis column exponentiates to a transvection.
-* `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_sum`: a nilpotent root
-  operator exponentiates to the finite sum of its integral divided-power matrices.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul` and, in the same
   namespace,
   `map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul`:
@@ -182,15 +180,22 @@ variable {V : Type v} [AddCommGroup V] [Module ℚ V] (e : ι → L) (h : κ →
     ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
       hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩
 
+/-- The `(r, s)` entry of the integral root matrix is the `r`-th coordinate of the image of the
+`s`-th basis vector under the lattice endomorphism. -/
+theorem kostantRootGeneratorIntMatrix_apply (r s : η) :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b r s =
+      b.repr (kostantRootOperator e h ρ M hM i (b s)) r := by
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply]
+  congr 2
+  apply Subtype.ext
+  rw [coe_kostantRootOperator_apply]
+
 /-- The represented integral root matrix is the matrix of its lattice endomorphism. -/
 theorem kostantRootGeneratorIntMatrix_eq_toMatrix [Fintype η] [DecidableEq η] :
     kostantRootGeneratorIntMatrix e h ρ M hM i b =
       LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i) := by
   ext r s
-  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, LinearMap.toMatrix_apply]
-  congr 2
-  apply Subtype.ext
-  rw [coe_kostantRootOperator_apply]
+  rw [kostantRootGeneratorIntMatrix_apply, LinearMap.toMatrix_apply]
 
 section MatrixRelations
 
@@ -305,25 +310,6 @@ theorem kostantRootGeneratorIntMatrix_apply_of_eq [DecidableEq η] {a a' : η} {
   by_cases hr : r = a'
   · simp [hr]
   · simp [hr, Ne.symm hr]
-
-/-- The coordinates of a root-subgroup point on a base-changed basis vector: the `r`-th
-coordinate of `xᵢ(t) (1 ⊗ b s)` is the divided-power polynomial in `t` whose coefficients are the
-`r`-th coordinates of the integral divided powers of `b s`. -/
-theorem repr_kostantRootSubgroupPoints_baseChange {A : Type*} [CommRing A]
-    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) (r s : η) :
-    (b.baseChange A).repr
-        ((kostantRootSubgroupPoints e h ρ M hM i hnil f).val (b.baseChange A s)) r =
-      ∑ k ∈ Finset.range
-          (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))),
-        b.repr (integralDividedPower
-            (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
-            (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem
-              e h ρ hM i k hv) (b s)) r •
-          Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k := by
-  rw [Module.Basis.baseChange_apply, kostantRootSubgroupPoints_tmul, map_sum,
-    Finsupp.finsetSum_apply]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [Module.Basis.baseChange_repr_tmul, mul_one]
 
 section IsRootStep
 
@@ -459,65 +445,6 @@ theorem kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
   · subst col
     simp [Module.Basis.repr_self, Finsupp.single_apply, eq_comm]
   · simp [hcol, Ne.symm hcol, eq_comm]
-
-/-- The zeroth divided power has the identity matrix in an integral lattice basis. -/
-theorem integralDividedPower_zero_basis_eq_sum (s : η) :
-    integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 0
-        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 0 hv) (b s) =
-      ∑ r, (1 : Matrix η η ℤ) r s • b r := by
-  rw [integralDividedPower_zero]
-  -- The rewrite leaves the identity endomorphism acting on the lattice subtype; exposing its
-  -- underlying function is the definitional step needed before applying the basis expansion.
-  change b s = ∑ r, (1 : Matrix η η ℤ) r s • b r
-  convert (b.sum_repr (b s)).symm using 1
-  apply Finset.sum_congr rfl
-  intro r _
-  by_cases hrs : r = s
-  · subst r
-    simp
-  · simp [hrs]
-
-/-- **A nilpotent root-subgroup matrix is the finite divided-power sum.** If `X k` is the
-integral matrix of the `k`th divided power for every `k < d`, and the nilpotency class is at most
-`d`, then evaluation at `t` is `∑ k < d, t ^ k • X k`. -/
-theorem kostantRootSubgroupMatrix_eq_sum {A : Type*} [CommRing A]
-    (d : ℕ) (X : ℕ → Matrix η η ℤ)
-    (hclass : nilpotencyClass
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ≤ d)
-    (haction : ∀ k < d, ∀ s, integralDividedPower
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
-      (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
-      (b s) = ∑ r, X k r s • b r)
-    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
-    (kostantRootSubgroupMatrix e h ρ M hM i hnil b f).val =
-      ∑ k ∈ Finset.range d,
-        Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k •
-          (X k).map (Int.cast : ℤ → A) := by
-  classical
-  ext r s
-  have hpad : ∑ k ∈ Finset.range
-        (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))),
-      b.repr (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
-          (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
-          (b s)) r • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k =
-      ∑ k ∈ Finset.range d,
-        b.repr (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
-            (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
-            (b s)) r • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k := by
-    refine Finset.sum_subset (Finset.range_subset_range.2 hclass) fun k _ hk => ?_
-    rw [Finset.mem_range, not_lt] at hk
-    rw [integralDividedPower_eq_zero_of_le _ _ _ _ (pow_nilpotencyClass hnil) hk]
-    simp
-  rw [kostantRootSubgroupMatrix_apply, repr_kostantRootSubgroupPoints_baseChange, hpad,
-    Matrix.sum_apply]
-  apply Finset.sum_congr rfl
-  intro k hk
-  rw [Matrix.smul_apply, Matrix.map_apply, haction k (Finset.mem_range.1 hk) s,
-    map_sum]
-  simp only [Finsupp.coe_finsetSum, Finset.sum_apply, map_zsmul, Module.Basis.repr_self,
-    Finsupp.smul_single, Finsupp.single_apply, smul_eq_mul, mul_one]
-  rw [Finset.sum_ite_eq' Finset.univ r fun x => X k x s]
-  simp [mul_comm]
 
 /-- **The matrix of a square-zero root subgroup is `1 + t X`.** When the root operator squares to
 zero its divided-power exponential stops after the linear term, so the root-subgroup matrix at

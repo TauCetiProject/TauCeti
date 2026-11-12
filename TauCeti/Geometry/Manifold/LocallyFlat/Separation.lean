@@ -40,6 +40,11 @@ Conversely, the two sides of a global bicollar of a map from a preconnected spac
 preconnected space lie on opposite sides of any separation of the complement of its image
 (`TauCeti.IsBicollar.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo`): if both lay in one part, the
 collar would be a neighbourhood of the image missing the other part, which would then be clopen.
+The closure of the part `A` containing one side of a bicollar is `A` together with the image, and
+its frontier is the image (`TauCeti.IsBicollar.closure_eq_union_range` and
+`TauCeti.IsBicollar.frontier_eq_range`). Each side of a bicollar of a preconnected space lies in a
+single connected component of the complement of the image
+(`TauCeti.IsBicollar.image_subset_connectedComponentIn`).
 
 ## Main results
 
@@ -58,6 +63,10 @@ collar would be a neighbourhood of the image missing the other part, which would
 * `TauCeti.IsBicollar.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo` and
   `TauCeti.IsBicollar.exists_isOpen_compl_range_eq_union`: the two sides of a bicollar lie on
   opposite sides of a separation of the complement of the image.
+* `TauCeti.IsBicollar.closure_eq_union_range` and `TauCeti.IsBicollar.frontier_eq_range`: the
+  closure and the frontier of a part of such a separation containing one side of a bicollar.
+* `TauCeti.IsBicollar.image_subset_connectedComponentIn`: each side of a bicollar lies in one
+  connected component of the complement of the image.
 
 ## References
 
@@ -218,12 +227,12 @@ theorem isLocallyBicollaredWithSides_of_range_subset_closure [LocallyConnectedSp
 
 /-- **The image of a separating map lies in the closure of each side.** Let `f` be a locally
 bicollared embedding of a preconnected, locally connected space into a preconnected space, and
-write the complement of its image as the union of disjoint nonempty open sets `A` and `B`. Then
-every point of the image lies in the closure of `A`. -/
+write the complement of its image as the union of disjoint open sets `A` and `B`, with `A`
+nonempty. Then every point of the image lies in the closure of `A`. -/
 theorem range_subset_closure [PreconnectedSpace N] [LocallyConnectedSpace N]
     [PreconnectedSpace M] (h : IsLocallyBicollared f) (hf : IsEmbedding f) (hA : IsOpen A)
-    (hB : IsOpen B) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) (hA₀ : A.Nonempty)
-    (hB₀ : B.Nonempty) : range f ⊆ closure A := by
+    (hB : IsOpen B) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) (hA₀ : A.Nonempty) :
+    range f ⊆ closure A := by
   have hAf : Disjoint A (range f) := by
     rw [disjoint_comm, ← subset_compl_iff_disjoint_left, hcompl]
     exact subset_union_left
@@ -247,7 +256,7 @@ theorem range_subset_closure [PreconnectedSpace N] [LocallyConnectedSpace N]
         (hb.apply_mem_closure_image (by simp) ⟨y, hy⟩)
   rcases isClopen_iff.1 ⟨isClosed_closure.preimage hf.continuous, hopen⟩ with h0 | h1
   · -- If the set is empty, `A` is closed, as its closure misses `B` and the image of `f`. Then
-    -- `A` is clopen in the preconnected space `M`, which `B` rules out.
+    -- `A` is clopen in the preconnected space `M`, hence `A` is `univ`, and then `N` is empty.
     have hcl : closure A = A := by
       refine Subset.antisymm (fun p hp => ?_) subset_closure
       have hpB : p ∉ B := disjoint_left.1 (hAB.closure_left hB) hp
@@ -258,8 +267,8 @@ theorem range_subset_closure [PreconnectedSpace N] [LocallyConnectedSpace N]
       exact hp'.resolve_right hpB
     rcases isClopen_iff.1 ⟨hcl ▸ isClosed_closure, hA⟩ with hA' | hA'
     · exact absurd hA' hA₀.ne_empty
-    · obtain ⟨p, hp⟩ := hB₀
-      exact absurd (hA' ▸ mem_univ p) (disjoint_right.1 hAB hp)
+    · rintro _ ⟨y, rfl⟩
+      exact absurd (by rw [mem_preimage, hcl, hA']; trivial) (eq_empty_iff_forall_notMem.1 h0 y)
   · rintro _ ⟨y, rfl⟩
     exact (h1 ▸ mem_univ y : y ∈ f ⁻¹' closure A)
 
@@ -272,8 +281,8 @@ theorem isLocallyBicollaredWithSides [PreconnectedSpace N] [LocallyConnectedSpac
     (hB : IsOpen B) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) (hA₀ : A.Nonempty)
     (hB₀ : B.Nonempty) : IsLocallyBicollaredWithSides f A B :=
   h.isLocallyBicollaredWithSides_of_range_subset_closure hf hA hB hAB hcompl
-    (h.range_subset_closure hf hA hB hAB hcompl hA₀ hB₀)
-    (h.range_subset_closure hf hB hA hAB.symm (hcompl.trans (union_comm _ _)) hB₀ hA₀)
+    (h.range_subset_closure hf hA hB hAB hcompl hA₀)
+    (h.range_subset_closure hf hB hA hAB.symm (hcompl.trans (union_comm _ _)) hB₀)
 
 /-- **Brown's bicollaring theorem for separating maps.** Let `f` be an injective locally
 bicollared map from a compact, preconnected, locally connected space into a preconnected
@@ -364,6 +373,47 @@ theorem exists_isOpen_compl_range_eq_union [CompactSpace N] [PreconnectedSpace N
     ⟨hpos, hneg⟩ | ⟨hpos, hneg⟩
   · exact ⟨A, B, hA, hB, hAB, hcompl, hpos, hneg⟩
   · exact ⟨B, A, hB, hA, hAB.symm, hcompl.trans (union_comm _ _), hpos, hneg⟩
+
+/-- **The closure of a side of a bicollared map.** Let `b` be a bicollar of `f`, and write the
+complement of the image of `f` as the union of disjoint sets `A` and `B`, with `B` open. If the
+part of the collar at depths in a set `s` accumulating at `0` lies in `A`, then the closure of `A`
+is `A` together with the image of `f`. -/
+theorem closure_eq_union_range (h : IsBicollar f b) (hB : IsOpen B) (hAB : Disjoint A B)
+    (hcompl : (range f)ᶜ = A ∪ B) {s : Set ℝ} (hs : (0 : ℝ) ∈ closure s)
+    (hside : MapsTo b (univ ×ˢ s) A) : closure A = A ∪ range f := by
+  refine Subset.antisymm (fun z hz => ?_) (union_subset subset_closure ?_)
+  · -- The closure of `A` misses the open set `B`, so off the image of `f` it lies in `A`.
+    by_cases hzf : z ∈ range f
+    · exact Or.inr hzf
+    · exact Or.inl ((hcompl ▸ hzf : z ∈ A ∪ B).resolve_right
+        (disjoint_left.1 (hAB.closure_left hB) hz))
+  · rintro _ ⟨x, rfl⟩
+    exact closure_mono hside.image_subset (h.apply_mem_closure_image hs x)
+
+/-- **The frontier of a side of a bicollared map.** Let `b` be a bicollar of `f`, and write the
+complement of the image of `f` as the union of disjoint open sets `A` and `B`. If the part of the
+collar at depths in a set `s` accumulating at `0` lies in `A`, then the frontier of `A` is the
+image of `f`. -/
+theorem frontier_eq_range (h : IsBicollar f b) (hA : IsOpen A) (hB : IsOpen B)
+    (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) {s : Set ℝ} (hs : (0 : ℝ) ∈ closure s)
+    (hside : MapsTo b (univ ×ˢ s) A) : frontier A = range f := by
+  have hfA : Disjoint (range f) A := by
+    rw [← subset_compl_iff_disjoint_left, hcompl]
+    exact subset_union_left
+  rw [frontier, h.closure_eq_union_range hB hAB hcompl hs hside, hA.interior_eq, union_sdiff_left,
+    hfA.sdiff_eq_left]
+
+/-- **A side of a bicollar lies in one complementary domain.** Let `b` be a bicollar of a map `f`
+from a preconnected space, and let `s` be a preconnected set of depths not containing `0`. The
+part `b (N × s)` of the collar is preconnected and misses the image of `f`, so it lies in the
+connected component, in the complement of that image, of any of its points. -/
+theorem image_subset_connectedComponentIn [PreconnectedSpace N] (h : IsBicollar f b) {s : Set ℝ}
+    (hs : IsPreconnected s) (h0 : (0 : ℝ) ∉ s) (x : N) {t : ℝ} (ht : t ∈ s) :
+    b '' (univ ×ˢ s) ⊆ connectedComponentIn (range f)ᶜ (b (x, t)) :=
+  ((isPreconnected_univ.prod hs).image b
+    h.isOpenEmbedding.continuous.continuousOn).subset_connectedComponentIn
+    (mem_image_of_mem b ⟨mem_univ x, ht⟩)
+    (image_subset_iff.2 fun _ hp hpf => h0 ((h.preimage_range.subset hpf).2 ▸ hp.2))
 
 end IsBicollar
 

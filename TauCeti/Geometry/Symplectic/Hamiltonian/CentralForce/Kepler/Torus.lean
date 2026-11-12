@@ -74,7 +74,7 @@ theorem centralForceHamiltonian_kepler_min_le (hm : 0 < m) {x : V × V} (hq : x.
     -(m * κ ^ 2) / (2 * angularMomentum (b 0) (b 1) x ^ 2) ≤
       centralForceHamiltonian m (fun r ↦ -κ / r) x :=
   (effectivePotential_kepler_min_le hm hℓ (norm_ne_zero_iff.2 hq)).trans
-    (effectivePotential_le_centralForceHamiltonian hm.le hq (sq_angularMomentum b x))
+    (effectivePotential_le_centralForceHamiltonian hm.le (sq_angularMomentum b x))
 
 /-- **Bound Kepler motions avoid collision and escape.** Off the collision set, at a state of
 negative energy `E` and nonzero angular momentum `ℓ`, the distance `‖q‖` lies between the
@@ -89,7 +89,7 @@ theorem norm_fst_mem_Icc_keplerPeriapsisRadius_keplerApoapsisRadius (hm : 0 < m)
       (keplerApoapsisRadius m κ (angularMomentum (b 0) (b 1) x)
         (centralForceHamiltonian m (fun r ↦ -κ / r) x)) :=
   (effectivePotential_kepler_le_iff hm hκ hℓ (centralForceHamiltonian_kepler_min_le b hm hq hℓ) hE
-    (norm_pos_iff.2 hq)).1 (effectivePotential_le_centralForceHamiltonian hm.le hq
+    (norm_pos_iff.2 hq)).1 (effectivePotential_le_centralForceHamiltonian hm.le
       (sq_angularMomentum b x))
 
 /-- The energy and the angular momentum of the Kepler problem are jointly continuous off the
@@ -238,7 +238,7 @@ theorem isCompact_keplerBoundPhaseSpace_preimage_singleton [FiniteDimensional �
     IsCompact ((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
       (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
       {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) := by
-  obtain ⟨hq, hE, hℓ⟩ := x.2
+  obtain ⟨_, hE, hℓ⟩ := x.2
   rw [Subtype.isCompact_iff]
   convert isCompact_setOf_centralForceHamiltonian_kepler_eq b hm hκ hE hℓ using 1
   ext y
@@ -278,7 +278,6 @@ theorem isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   intro x
   refine maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt)
     (isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ x) fun t ht ↦ funext fun j ↦ ?_
   -- Both integrals are first integrals of each other, so the curves stay in the level of `x`.
   have hfirst := SmoothTwoForm.isFirstIntegral_iff.2
