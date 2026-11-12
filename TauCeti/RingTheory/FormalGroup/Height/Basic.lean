@@ -397,7 +397,7 @@ order, since `[n]_G = e ∘ [n]_F ∘ e⁻¹` and substitution into or of a seri
 does not lower the order. -/
 theorem FormalGroupIso.order_nsmulSeries_eq {R : Type*} [CommRing R] {F G : FormalGroup R}
     (e : FormalGroupIso F G) (n : ℕ) : (F.nsmulSeries n).order = (G.nsmulSeries n).order := by
-  suffices h : ∀ {F G : FormalGroup R} (e : FormalGroupIso F G),
+  suffices h : ∀ {F G : FormalGroup R}, FormalGroupIso F G →
       (F.nsmulSeries n).order ≤ (G.nsmulSeries n).order from le_antisymm (h e) (h e.symm)
   intro F G e
   have hn₀ := F.constantCoeff_nsmulSeries n

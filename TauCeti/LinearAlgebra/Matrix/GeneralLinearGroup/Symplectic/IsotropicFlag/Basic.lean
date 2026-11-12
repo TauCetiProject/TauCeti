@@ -217,7 +217,7 @@ theorem isUnit_toBlocks₁₁_mulEquivGLSymplectic (g : matrixSubgroup m (A := A
       GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A).toBlocks₁₁ := by
   set M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A :=
     (((mulEquivGLSymplectic m A g.val : GLSymplectic (Fin m) A) :
-      GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A) with hM
+      GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A)
   have h : IsUnit M := Units.isUnit _
   rw [← M.fromBlocks_toBlocks, toBlocks₂₁_mulEquivGLSymplectic_eq_zero g] at h
   exact (Matrix.isUnit_fromBlocks_zero₂₁.mp h).1

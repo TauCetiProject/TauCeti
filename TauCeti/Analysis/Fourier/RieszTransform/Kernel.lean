@@ -170,7 +170,6 @@ private theorem abs_inner_mul_pow_sub_pow_div_le (v : E) (n : ℕ)
         rw [mul_pow, show (4 : ℝ) ^ (n + 1) = 2 ^ (n + 1) * 2 ^ (n + 1) by
           rw [← mul_pow]; norm_num]
         have : (2 : ℝ) ^ n ≤ 2 ^ (n + 1) := pow_le_pow_right₀ one_le_two n.le_succ
-        have h0 : 0 ≤ ‖v‖ * ‖a - b‖ * ‖a‖ ^ (n + 1) * ‖b‖ ^ (n + 1) := by positivity
         nlinarith [mul_le_mul_of_nonneg_left this
           (by positivity : 0 ≤ ((n : ℝ) + 1) * 2 ^ (n + 1) * (‖v‖ * ‖a - b‖ * ‖a‖ ^ (n + 1) *
             ‖b‖ ^ (n + 1)))]
@@ -738,7 +737,7 @@ theorem exists_mul_volume_lt_enorm_rieszTransform_le [Nontrivial E] (v : E) :
     rw [norm_smul, Real.norm_eq_abs]
     exact mul_le_of_le_one_right (abs_nonneg _) ContinuousLinearMap.norm_id_le
   have hsize : ∀ x y, x ≠ y → ‖k x y‖ ≤ (c * ‖v‖).toNNReal * dist x y ^ (-(n : ℝ)) :=
-    fun x y hxy ↦ by
+    fun x y _ ↦ by
       rw [Real.coe_toNNReal _ (by positivity), Real.rpow_neg dist_nonneg, Real.rpow_natCast,
         dist_eq_norm, ← div_eq_mul_inv]
       exact (hk x y).trans (abs_rieszKernel_le v _)
