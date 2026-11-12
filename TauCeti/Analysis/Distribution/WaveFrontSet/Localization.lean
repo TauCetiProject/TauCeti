@@ -298,7 +298,7 @@ theorem exists_isOpen_cone_forall_decay_of_isCompact {T : 𝓓'(Ω, ℂ)} {K : S
     cases i with
     | none => exact ⟨0, fun η _ ↦ by
         simp [localFourier_eq_zero_of_disjoint_dsupport
-          (disjoint_left.2 fun z hz ↦ hψs ⟨none, hi⟩ hz)]⟩
+          (disjoint_left.2 fun _ hz ↦ hψs ⟨none, hi⟩ hz)]⟩
     | some x =>
       obtain ⟨C, hC⟩ := hdecay x (ψs ⟨some x, hi⟩) ((hψs _).trans interior_subset) N
       exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη x x.2)⟩

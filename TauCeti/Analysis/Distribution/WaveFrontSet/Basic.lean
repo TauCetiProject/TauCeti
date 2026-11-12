@@ -392,7 +392,7 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (
   refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
     (fun N => ⟨0, fun η => ?_⟩) ξ
   simp [localFourier_eq_zero_of_disjoint_dsupport
-    (disjoint_left.2 fun y hy => (hφ hy).1 : Disjoint (tsupport φ) (dsupport T)) η]
+    (disjoint_left.2 fun _ hy => (hφ hy).1 : Disjoint (tsupport φ) (dsupport T)) η]
 
 /-- The wave front set lies over the support of the distribution. -/
 theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
