@@ -72,7 +72,6 @@ restated through `Matrix.PosSemidef`.
 
 * W. Rudin, *Fourier Analysis on Groups* (1962), Theorem 1.4.3.
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, §4.2, Lemma 4.8.
-* Roadmap: TauCetiRoadmap/OneParameterSemigroups/README.md, Part C (Bochner milestone).
 -/
 
 public section
