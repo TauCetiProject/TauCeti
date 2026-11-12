@@ -56,7 +56,8 @@ statement.
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` and
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
-  constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights.
+  constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights. The same bound for weak
+  derivatives of every order is in `TauCeti.Analysis.Sobolev.Local.Reflection.Bound`.
 
 ## References
 
@@ -233,7 +234,7 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
     ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
       -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
   have := hgW.completeSpace
-  set H := {z : ℂ | 0 < z.im} with hHdef
+  set H := {z : ℂ | 0 < z.im}
   have hHm : MeasurableSet H := measurableSet_lt measurable_const measurable_im
   set K := tsupport χ ∩ {z : ℂ | 0 ≤ z.im}
   have hK : IsCompact K := hχc.isCompact.inter_right (isClosed_le continuous_const continuous_im)
@@ -265,8 +266,6 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
   have I2 (n : ℕ) : IntegrableOn (fun z => D n z • g z) H :=
     hint hg (hχ.continuous.mul ((hdst.comp ((continuous_const.mul continuous_im).sub
       continuous_const)).mul continuous_const)) tsupport_mul_subset_left
-  have I3' (n : ℕ) : IntegrableOn (fun z => (imCutoff n z * χ z) • g' z) H :=
-    hint hg' ((contDiff_imCutoff n).continuous.mul hχ.continuous) tsupport_mul_subset_right
   -- The weak derivative identity, tested against `imCutoff n * χ`.
   have key (n : ℕ) : (∫ z in H, (imCutoff n z * fderiv ℝ χ z v) • g z) +
       ∫ z in H, D n z • g z = -∫ z in H, (imCutoff n z * χ z) • g' z := by
@@ -746,6 +745,12 @@ weights times the Jacobian factors `|higherReflectionNode j|^(-1 / p)` of the re
 With the Vandermonde weights it is `TauCeti.higherReflectionBound k p`. -/
 def planarReflectionBound (d : Fin k → ℝ) (p : ℝ≥0∞) : ℝ≥0∞ :=
   1 + ∑ j, ‖d j‖ₑ * ENNReal.ofReal |(higherReflectionNode j)⁻¹| ^ (1 / p).toReal
+
+/-- The constant only sees the absolute values of the weights. -/
+@[simp]
+theorem planarReflectionBound_abs (d : Fin k → ℝ) (p : ℝ≥0∞) :
+    planarReflectionBound (fun j => |d j|) p = planarReflectionBound d p := by
+  simp [planarReflectionBound]
 
 /-- With the Vandermonde weights the constant is the one of the normal-slice reflection. -/
 theorem planarReflectionBound_higherReflectionCoeff (k : ℕ) (p : ℝ≥0∞) :

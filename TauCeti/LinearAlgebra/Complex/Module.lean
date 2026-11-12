@@ -32,8 +32,11 @@ Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex
 (`Complex.toLinearMap_I_comp_toLinearMap_I`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`). The non-instance `RestrictScalars.realModule` normalizes
-the restricted real module at the additive-group parent for use in constructions on real modules.
+linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
+(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). Conversely, a conjugate-linear equivalence
+between complex modules is real-linear (`LinearEquiv.toRealLinearEquiv`). The non-instance
+`RestrictScalars.realModule` normalizes the restricted real module at the additive-group parent
+for use in constructions on real modules.
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
@@ -194,7 +197,41 @@ theorem restrictScalars_complexOfMapISmul (u : V →ₗ[ℝ] W)
     (u.complexOfMapISmul h).restrictScalars ℝ = u :=
   LinearMap.ext fun _ ↦ rfl
 
+/-- A real-linear map between complex modules that anticommutes with multiplication by `I` is
+conjugate-linear: `u (z • v) = conj z • u v`. -/
+theorem map_smul_eq_conj_smul_of_map_I_smul (u : V →ₗ[ℝ] W)
+    (h : ∀ v, u (Complex.I • v) = -(Complex.I • u v)) (z : ℂ) (v : V) :
+    u (z • v) = starRingEnd ℂ z • u v := by
+  conv_rhs => rw [← Complex.re_smul_add_im_smul]
+  rw [← Complex.re_smul_add_im_smul z v, map_add, map_smul, map_smul, h, Complex.conj_re,
+    Complex.conj_im, smul_neg, neg_smul]
+
 end LinearMap
+
+namespace LinearEquiv
+
+/-- A conjugate-linear equivalence of complex vector spaces is real-linear, since complex
+conjugation fixes the real scalars. -/
+def toRealLinearEquiv (f : V ≃ₛₗ[starRingEnd ℂ] W) : V ≃ₗ[ℝ] W where
+  toFun := f
+  invFun := f.symm
+  map_add' := map_add f
+  map_smul' r x := by
+    rw [RingHom.id_apply, ← algebraMap_smul ℂ r x, map_smulₛₗ, ← algebraMap_smul ℂ r (f x),
+      Complex.coe_algebraMap, Complex.conj_ofReal]
+  left_inv := f.left_inv
+  right_inv := f.right_inv
+
+@[simp]
+theorem coe_toRealLinearEquiv (f : V ≃ₛₗ[starRingEnd ℂ] W) : ⇑f.toRealLinearEquiv = f :=
+  (rfl)
+
+@[simp]
+theorem toRealLinearEquiv_symm (f : V ≃ₛₗ[starRingEnd ℂ] W) :
+    f.toRealLinearEquiv.symm = f.symm.toRealLinearEquiv :=
+  (rfl)
+
+end LinearEquiv
 
 end ComplexOfMapISmul
 

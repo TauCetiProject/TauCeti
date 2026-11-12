@@ -42,7 +42,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Every spatial slice of the bounded Hölder Duhamel potential is `C²`, including time zero.
 Only positivity of the spatial Hölder exponent is needed for this regularity. -/
-theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL [CompleteSpace F]
+theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL
     (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) (t : Icc (0 : ℝ) T) :
     ContDiff ℝ 2 (fun x => heatDuhamelPotentialHolderL hα hα₂ f (slabMk x t)) := by
