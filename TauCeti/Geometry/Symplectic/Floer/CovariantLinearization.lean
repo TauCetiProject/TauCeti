@@ -276,9 +276,9 @@ theorem floerLinearization_mfderiv_timeDependentFlowOf [I.Boundaryless] (ω : Sm
   have hvel : curveVelocity I
       (fun t ↦ timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (G t)) s₀ t x) z.2 =
         ω.hamiltonianVectorField (G z.2)
-          (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (G t)) s₀ z.2 x) := by
-    simpa only [curveVelocityWithin_univ] using curveVelocityWithin_eq_of_hasMFDerivWithinAt
-      (hasMFDerivAt_timeDependentFlowOf hX₁ h).hasMFDerivWithinAt uniqueDiffWithinAt_univ
+          (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (G t)) s₀ z.2 x) :=
+    (eventually_curveVelocity_timeDependentFlowOf_eq hX₁ (c := fun _ ↦ x) (q := 0)
+      continuousAt_const h).self_of_nhds
   rw [floerLinearization_def]
   dsimp only
   rw [hvel, alongCurve_mfderiv_timeDependentFlowOf (X := fun t ↦ ω.hamiltonianVectorField (G t)) cov

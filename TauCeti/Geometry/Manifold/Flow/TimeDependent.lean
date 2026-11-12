@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Complete
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
@@ -706,15 +707,7 @@ theorem injective_mfderiv_timeDependentFlowOf (h : ((s, t), x) ∈ timeDependent
     filter_upwards [(continuousAt_const.prodMk continuousAt_id).preimage_mem_nhds
       ((isOpen_timeDependentFlowDomain hX).mem_nhds h)] with y hy
     exact (timeDependentFlowOf_symm_of_mem hX hy).2
-  -- Applied to `v`, the derivative of the composite is `v`, up to the identity cast.
-  have hleft (v : TangentSpace I x) : mfderiv I I (timeDependentFlowOf X t s)
-      (timeDependentFlowOf X s t x) (mfderiv I I (timeDependentFlowOf X s t) x v) = v := by
-    have hv := congrArg (fun L ↦ L v) (heq.mfderiv_eq (I := I) (I' := I))
-    simp only [mfderiv_comp x hψ hφ, mfderiv_id, ContinuousLinearMap.coe_comp,
-      Function.comp_apply, ContinuousLinearMap.id_apply] at hv
-    exact hv
-  intro v w hvw
-  rw [← hleft v, ← hleft w, hvw]
+  exact mfderiv_injective_of_leftInverse hψ hφ heq
 
 end Local
 

@@ -168,6 +168,6 @@ theorem mfderiv_injective_of_proj_comp_eq_id {s : B → TotalSpace F V} {b : B}
     (hs : MDifferentiableAt IB (IB.prod 𝓘(𝕜, F)) s b) (hπs : π F V ∘ s = id) :
     Function.Injective (mfderiv IB (IB.prod 𝓘(𝕜, F)) s b) :=
   TauCeti.mfderiv_injective_of_leftInverse
-    ((contMDiff_proj V (s b)).mdifferentiableAt one_ne_zero) hs (congrFun hπs)
+    ((contMDiff_proj V (s b)).mdifferentiableAt one_ne_zero) hs (.of_eq hπs)
 
 end Bundle
