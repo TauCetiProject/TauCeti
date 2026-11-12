@@ -304,7 +304,7 @@ theorem le_exp_mul_mul_add_mul_of_le_weightedLogSpotPricingOperatorL (ha : ∀ p
     (fun τ _ y ↦ (u.contDiff_spatialSlice _).contDiffAt)
     (fun τ _ y ↦ contDiffAt_const)
     (fun τ h y ↦ (u.hasDerivAt_timeSlice_const_sub y h).differentiableAt)
-    (fun τ _ y ↦ (hbar τ).differentiableAt)
+    (fun τ _ _ ↦ (hbar τ).differentiableAt)
     -- The reversed operator of `u` is `-P u ≤ K`, which the barrier's operator dominates.
     (fun τ h y ↦ by
       rw [reverse_operator_eq hα u h y, (hbar τ).deriv]

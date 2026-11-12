@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.EventuallyConst
+public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -33,6 +34,15 @@ open Filter Set Topology
 namespace OpenPartialHomeomorph
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The parametrization `z ↦ φ.symm (φ x + z)` of the source of a chart `φ` around `x` is
+continuous at `0`. -/
+theorem continuousAt_symm_add {F : Type*} [TopologicalSpace F] [AddCommGroup F]
+    [IsTopologicalAddGroup F] {φ : OpenPartialHomeomorph X F} {x : X} (hxφ : x ∈ φ.source) :
+    ContinuousAt (fun z : F ↦ φ.symm (φ x + z)) 0 := by
+  have hcont : Continuous fun z : F ↦ φ x + z := continuous_const.add continuous_id
+  refine ContinuousAt.comp (f := fun z : F ↦ φ x + z) ?_ hcont.continuousAt
+  simpa using φ.continuousAt_symm (φ.map_source hxφ)
 
 /-- An open partial homeomorphism sends the punctured neighbourhoods of a point of its source to
 the punctured neighbourhoods of its image. -/
