@@ -11,11 +11,9 @@ public import TauCeti.Probability.Exchangeability.L2.Covariance
 /-!
 # Two-window L² bounds for block averages of a contractable sequence
 
-This file continues the Layer 3 (L²) lane of the Exchangeability roadmap
-(`TauCetiRoadmap/Exchangeability/README.md`, "Layer 3: L² averaging library and the
-standard-Borel de Finetti route"), building the "two-window L² bounds for block averages"
-milestone (`l2_bound_two_windows_uniform`) on top of the uniform covariance structure of a
-contractable L² sequence (`contractable_covariance_structure`).
+This file continues the L² route to de Finetti's theorem, building two-window L² bounds for block
+averages on top of the uniform covariance structure of a contractable L² sequence
+(`contractable_covariance_structure`).
 
 For a real-valued process `X : ℕ → Ω → ℝ` and a finite selection `k : Fin n → ℕ`, the
 *block average* `blockAverage X k = n⁻¹ • ∑ i, X (k i)` is the empirical mean of the block
@@ -49,7 +47,7 @@ Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005
 
 The covariance/variance bilinearity (`ProbabilityTheory.covariance_sum_sum`,
 `variance_sum`, `covariance_smul_left`, `variance_const_mul`) and the integral manipulations are
-Mathlib's; the contractability input is the Layer 0/3 API in
+Mathlib's; the contractability input is the API in
 `TauCeti.Probability.Exchangeability.Contractability` and
 `TauCeti.Probability.Exchangeability.L2.Covariance`. No material from
 `cameronfreer/exchangeability` is reused: the source carries the block-average bounds through a

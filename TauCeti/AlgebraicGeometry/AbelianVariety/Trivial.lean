@@ -30,23 +30,21 @@ category of abelian varieties over `K`.
 * `AbelianVariety.baseChangeTrivialIso`: base change along `K → L` carries the trivial abelian
   variety over `K` to the trivial abelian variety over `L`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API, `dim`", and the roadmap's
-base-change compatibility. Mathematically this is the degenerate case of the Jacobian: a curve of
-genus `0` has trivial Jacobian, and there the acceptance criterion `dim (Jac X) = genus X` reads
-`dim (trivial K) = 0`. No external mathematics is vendored; the proofs reuse Mathlib's group-object
-structure on the monoidal unit together with its uniqueness API for the trivial group object
-(`CommGrp.uniqueHomFromTrivial`, `Grp.uniqueHomToTrivial`), the terminal object of `Over S`,
-preservation of terminal objects by the right adjoint `Over.pullback`, and
-`PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim` together with `ringKrullDim_eq_zero_of_field`.
+Mathematically this is the degenerate case of the Jacobian (not formalized here): a curve of genus
+`0` has trivial Jacobian, and there the equality `dim (Jac X) = genus X` reads
+`dim (trivial K) = 0`. No external
+mathematics is vendored; the proofs reuse Mathlib's group-object structure on the monoidal unit
+together with its uniqueness API for the trivial group object (`CommGrp.uniqueHomFromTrivial`,
+`Grp.uniqueHomToTrivial`), the terminal object of `Over S`, preservation of terminal objects by
+the right adjoint `Over.pullback`, and `PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim`
+together with `ringKrullDim_eq_zero_of_field`.
 The geometric-integrality input is `TauCeti.AlgebraicGeometry.geometricallyIntegral_of_isIso`.
 The abelian variety itself is assembled by the existing constructor
 `AbelianVariety.ofGeometricallyIntegral`; its characteristic lemmas identify the underlying group
 scheme and operations without exposing the constructor's implementation.
 
-An earlier Tau Ceti formalization of this target,
-[PR #1030](https://github.com/TauCetiProject/TauCeti/pull/1030), was retired by queue housekeeping
-at the review round cap without an all-green review. This file follows its overall design: the same
+This file follows the overall design of an earlier, unmerged Tau Ceti formalization of the trivial
+abelian variety, [PR #1030](https://github.com/TauCetiProject/TauCeti/pull/1030): the same
 carrier `𝟙_ (Over (Spec K))` passed to `ofGeometricallyIntegral`, the same `trivial_toOver` /
 `trivial_toScheme` / `isTerminalTrivialToOver` interface, and its
 `geometricallyIntegral_of_isIso` (revised here from a low-priority instance to a plain lemma, and
