@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.FieldTheory.RatFunc.Automorphism
+public import TauCeti.FieldTheory.RatFunc.Basic
 -- Non-public: `Matrix.GeneralLinearGroup.mem_center_iff_entries` identifies the kernel of the
 -- action below with the centre of `GL₂(k)`, in the proofs only.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
@@ -76,25 +77,6 @@ variable {K : Type*}
 section Domain
 
 variable [CommRing K] [IsDomain K]
-
-/-- A nonzero linear polynomial in `X`, read in `k(X)`, is nonzero. -/
-theorem mul_X_add_C_ne_zero {c d : K} (hcd : c ≠ 0 ∨ d ≠ 0) : C c * X + C d ≠ 0 := by
-  have hmap : C c * X + C d =
-      algebraMap (Polynomial K) (RatFunc K) (Polynomial.C c * Polynomial.X + Polynomial.C d) := by
-    rw [map_add, map_mul, algebraMap_C, algebraMap_C, algebraMap_X]
-  rw [hmap, Ne, map_eq_zero_iff _ (algebraMap_injective K)]
-  intro h0
-  have h1 : c = 0 := by simpa using congrArg (fun p : Polynomial K ↦ p.coeff 1) h0
-  have h0' : d = 0 := by simpa using congrArg (fun p : Polynomial K ↦ p.coeff 0) h0
-  rcases hcd with h | h
-  · exact h h1
-  · exact h h0'
-
-/-- A linear polynomial in `X`, read in `k(X)`, vanishes exactly when both coefficients do. -/
-theorem mul_X_add_C_eq_zero_iff {c d : K} : C c * X + C d = 0 ↔ c = 0 ∧ d = 0 := by
-  refine ⟨fun h ↦ ?_, fun ⟨hc, hd⟩ ↦ by simp [hc, hd]⟩
-  by_contra hne
-  exact mul_X_add_C_ne_zero (not_and_or.mp hne) h
 
 section MobiusOf
 
