@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Action.ULift
 public import TauCeti.Algebra.Module.Equiv.SpanSingleton
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 
@@ -149,9 +150,7 @@ theorem not_isFundamentalClass_zero [T1Space M] [Nonempty M] {R : Type u} [Ring 
 include hn in
 /-- **Multiples of a fundamental class.** On a nonempty `n`-manifold, with faithful coefficients
 `N` over a commutative ring `R`, a multiple `r • μ` of a fundamental class `μ ∈ Hₙ(M; N)` is a
-fundamental class exactly when `r` is a unit. If some `s` carries the image of `r • μ` at a point
-back to the image of `μ`, then `s * r` acts trivially on the local homology there, which is a copy
-of `N`, so `s * r = 1`. -/
+fundamental class exactly when `r` is a unit. -/
 theorem IsFundamentalClass.isFundamentalClass_smul_iff [T1Space M] [Nonempty M] {R : Type u}
     [CommRing R] {N : ModuleCat.{w} R} [FaithfulSMul R N]
     {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)}
@@ -230,8 +229,6 @@ theorem isFundamentalClass_fundamentalClass : IsFundamentalClass (o.fundamentalC
 a fundamental class exactly when `c` is a unit, that is `c = ±1`. -/
 theorem isFundamentalClass_zsmul_fundamentalClass_iff [Nonempty M] (c : ℤ) :
     IsFundamentalClass (c • o.fundamentalClass hn) ↔ IsUnit c := by
-  have : FaithfulSMul ℤ (ULift.{0} ℤ) :=
-    ⟨fun h ↦ by simpa using congrArg ULift.down (h 1)⟩
   rw [← int_smul_eq_zsmul]
   exact (o.isFundamentalClass_fundamentalClass hn).isFundamentalClass_smul_iff hn c
 
