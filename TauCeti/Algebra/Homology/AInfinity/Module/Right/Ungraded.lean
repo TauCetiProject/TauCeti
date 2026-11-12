@@ -361,9 +361,9 @@ private theorem act_eq_act_cast {j j' : ℕ} (h : j = j') (b : Fin j → A) :
 
 /-- **`m₁` commutes with the action of a cycle.** If `d e = 0`, over a ring of characteristic two,
 `m₂(m₁(m), e) = m₁(m₂(m, e))`: this is the `A∞` relation of length one along `e`. -/
-theorem act_one_act_zero [CharP R 2] {e : A} (hde : d e = 0) (a : Fin 0 → A) (m : M) :
-    Mm.act 1 (fun _ => e) (Mm.act 0 a m) = Mm.act 0 a (Mm.act 1 (fun _ => e) m) := by
-  obtain rfl : a = fun _ => e := Subsingleton.elim _ _
+theorem act_one_act_zero [CharP R 2] {e : A} (hde : d e = 0) (m : M) :
+    Mm.act 1 (fun _ => e) (Mm.act 0 ![] m) = Mm.act 0 ![] (Mm.act 1 (fun _ => e) m) := by
+  rw [Subsingleton.elim ![] fun _ : Fin 0 => e]
   have h := Mm.stasheff 1 (fun _ => e) m
   have hupd : Function.update (fun _ : Fin 1 => e) 0 (d e) = 0 := by
     funext t
@@ -398,20 +398,21 @@ theorem HigherVanishingOn.act_one_act [CharP R 2] {s : Set A} (hM : Mm.HigherVan
   -- Among the composite terms only `m₂(m_{n+2}(m, a), e)` survives.
   have hcomp : ungradedStasheffComp Mm.act (n + 2) a' m =
       Mm.act 1 (fun _ => e) (Mm.act (n + 1) a m) := by
-    rw [ungradedStasheffComp, Fin.sum_univ_castSucc, Fin.sum_univ_castSucc]
-    refine Eq.trans (congrArg₂ (· + ·) (y' := (0 : M)) (congrArg₂ (· + ·) (x' := (0 : M))
-      (y' := Mm.act 1 (fun _ => e) (Mm.act (n + 1) a m)) ?_ ?_) ?_) (by rw [zero_add, add_zero])
-    · exact sum_eq_zero fun k _ => hz _ _ _ (by simp; omega) ⟨n + 1 - k, by simp; omega⟩
-        (hlast _ (by simp))
-    · rw [Mm.act_eq_act_cast (j' := 1) (by simp),
-        Mm.act_eq_act_cast (j := ((Fin.last (n + 1)).castSucc : ℕ)) (j' := n + 1) (by simp)]
-      congr 3
+    -- The last term feeds `e` to `m_{n+3}` inside `m₁`.
+    have hlast_term : Mm.act (n + 2 - (Fin.last (n + 2) : ℕ))
+        (fun t => a' ⟨(Fin.last (n + 2) : ℕ) + t, by have := t.isLt; omega⟩)
+        (Mm.act (Fin.last (n + 2) : ℕ) (fun t => a' ⟨t, by simp⟩) m) = 0 := by
+      refine (congrArg (Mm.act _ _) ?_).trans (map_zero _)
+      exact hz _ _ _ (by simp) ⟨n + 1, by simp⟩ (hlast _ rfl)
+    rw [ungradedStasheffComp, Fin.sum_univ_castSucc, Fin.sum_univ_castSucc, hlast_term, add_zero,
+      sum_eq_zero fun k _ => ?_, zero_add, Mm.act_eq_act_cast (j' := 1) (by simp),
+      Mm.act_eq_act_cast (j := ((Fin.last (n + 1)).castSucc : ℕ)) (j' := n + 1) (by simp)]
+    · congr 3
       · funext l
         exact hlast _ (by simp)
       · funext l
         exact hinit l _ (by simp)
-    · refine (congrArg (Mm.act _ _) ?_).trans (map_zero _)
-      exact hz _ _ _ (by simp) ⟨n + 1, by simp⟩ (hlast _ rfl)
+    · exact hz _ _ _ (by simp; omega) ⟨n + 1 - k, by simp; omega⟩ (hlast _ (by simp))
   -- Every differential term contains `e` or `d e = 0`.
   have hdiff : ungradedStasheffDiff Mm.act d (n + 2) a' m = 0 := by
     refine sum_eq_zero fun l _ => ?_
@@ -453,7 +454,7 @@ theorem HigherVanishingOn.act_one_twistedDifferential [CharP R 2] {s : Set A}
   have hterm (n : ℕ) :
       Mm.act 1 (fun _ => e) (Mm.act n (fun _ => β) m) = Mm.act n (fun _ => β) m := by
     cases n with
-    | zero => rw [Mm.act_one_act_zero hde, hm]
+    | zero => rw [Subsingleton.elim (fun _ : Fin 0 => β) ![], Mm.act_one_act_zero hde, hm]
     | succ n => exact hM.act_one_act_const he hde hβe n m
   rw [twistedDifferential_def]
   by_cases hfin : (Function.support fun n => Mm.act n fun _ => β).Finite
@@ -654,7 +655,7 @@ theorem matrixAct_one_apply (F : Matrix X X A) (φ : X → M) (z : X) :
   congr 2
   funext l
   rw [Fin.fin_one_eq_zero l]
-  rfl
+  simp
 
 /-- In the matrix module, `m₂` with a diagonal matrix acts componentwise. -/
 theorem matrixAct_one_diagonal_apply (v : X → A) (φ : X → M) (z : X) :
@@ -678,21 +679,6 @@ theorem HigherVanishingOn.matrix {Mm : UngradedAInfinityRightModule d M} {s : Se
     · rw [(Mm.act n).map_coord_zero i h0, LinearMap.zero_apply]
     · rw [hM n hn _ ⟨i, hs⟩, LinearMap.zero_apply]
   · rfl
-
-/-- **Comparing twisted differentials of matrix modules componentwise.** Two twisted
-differentials of matrix modules agree at given components when their operations agree there in
-every arity and both vanish from some arity on. -/
-theorem twistedDifferential_apply_eq_of_forall {Z₁ Z₂ : Type*} [Fintype Z₁] [DecidableEq Z₁]
-    [Fintype Z₂] [DecidableEq Z₂] {β₁ : Matrix Z₁ Z₁ A} {β₂ : Matrix Z₂ Z₂ A} {K₁ K₂ : ℕ}
-    (h₁ : ∀ n, K₁ ≤ n → ((Mm.matrix Z₁).act n fun _ => β₁) = 0)
-    (h₂ : ∀ n, K₂ ≤ n → ((Mm.matrix Z₂).act n fun _ => β₂) = 0) {ψ₁ : Z₁ → M} {ψ₂ : Z₂ → M}
-    {z₁ : Z₁} {z₂ : Z₂}
-    (h : ∀ n, Mm.matrixAct Z₁ n (fun _ => β₁) ψ₁ z₁ = Mm.matrixAct Z₂ n (fun _ => β₂) ψ₂ z₂) :
-    (Mm.matrix Z₁).twistedDifferential β₁ ψ₁ z₁ = (Mm.matrix Z₂).twistedDifferential β₂ ψ₂ z₂ := by
-  rw [twistedDifferential_eq_sum (K := max K₁ K₂) _ fun n hn => h₁ n (le_of_max_le_left hn),
-    twistedDifferential_eq_sum (K := max K₁ K₂) _ fun n hn => h₂ n (le_of_max_le_right hn)]
-  simp only [LinearMap.sum_apply, Finset.sum_apply, matrix_act]
-  exact sum_congr rfl fun n _ => h n
 
 end Matrix
 
@@ -970,8 +956,7 @@ theorem higherVanishingOn_toUngradedAInfinityRightModule [CharP R 2]
     hM.toUngradedAInfinityRightModule.HigherVanishingOn s := by
   intro n hn a _
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  rw [hM.toUngradedAInfinityRightModule_act_add_two n]
-  rfl
+  rw [hM.toUngradedAInfinityRightModule_act_add_two n, zero_apply]
 
 end IsUngradedDGRightModule
 
