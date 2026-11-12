@@ -13,7 +13,9 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 
 Terms in the group language with named coefficients denote words in the variables and
 coefficient names. A reduced word has a canonical left-associated term representative, and
-translating that term back to a word recovers the original group element. In every group,
+translating that term back to a word recovers the original group element. The correspondence is
+a bijection only up to the group axioms: the distinct terms `t * t⁻¹` and `1` denote the same
+word, so the word of a term does not determine the term. In every group,
 evaluation of a term agrees with evaluation of its word. This translates atomic equalities into
 word equations. Words in the variables alone likewise have canonical terms in the group language
 without coefficients, evaluating to the same group elements.
@@ -108,6 +110,24 @@ private theorem toWord_foldl (l : List ((X ⊕ A) × Bool))
   classical
   simp [Term.ofWord]
 
+example (t : Language.group[[A]].Term X) : Term.toWord (t * t⁻¹) = 1 := by
+  simp
+
+/-- The canonical term of the word of `t * t⁻¹` is the identity term, which is a different term:
+translating a term to a word and back does not recover the term. -/
+theorem Term.ofWord_toWord_ne (t : Language.group[[A]].Term X) :
+    Term.ofWord (Term.toWord (t * t⁻¹)) ≠ t * t⁻¹ := by
+  simp only [Term.toWord_mul, Term.toWord_inv, mul_inv_cancel, Term.ofWord_one]
+  -- The identity term and a product have different head symbols, of arities zero and two.
+  intro h
+  cases h
+
+/-- Distinct terms can denote the same word: terms correspond to words only up to the group
+axioms. -/
+theorem Term.toWord_not_injective :
+    ¬ Function.Injective (Term.toWord : Language.group[[A]].Term X → FreeGroup (X ⊕ A)) :=
+  fun h => Term.ofWord_toWord_ne 1 (h (Term.toWord_ofWord _))
+
 private theorem coeff_funMap_one {G : Type*} [Group G] (c : A → G) (xs : Fin 0 → G) :
     letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
     letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
@@ -193,6 +213,14 @@ theorem Term.realize_equal_iff {G : Type*} [Group G] (c : A → G) (v : X → G)
   rw [Term.realize_eq_lift (G := G) c v t, Term.realize_eq_lift (G := G) c v s]
   simp only [map_mul, map_inv, mul_inv_eq_one]
 
+/-- The canonical term of a word evaluates to the value of the word. -/
+@[simp] theorem Term.realize_ofWord {G : Type*} [Group G] (c : A → G) (v : X → G)
+    (w : FreeGroup (X ⊕ A)) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    (Term.ofWord w).realize v = FreeGroup.lift (Sum.elim v c) w := by
+  rw [Term.realize_eq_lift c v, Term.toWord_ofWord]
+
 example (a : A) (x : X) :
     Term.toWord ((Language.Constants.term (Sum.inr a) : Language.group[[A]].Term X)⁻¹ *
       (Language.Term.var x * Language.Constants.term (Sum.inr a))) =
@@ -220,7 +248,7 @@ attribute [local instance] TauCeti.Group.structureOfGroup
   let : (Language.constantsOn Empty).Structure G := Language.constantsOn.structure isEmptyElim
   have : (LEquiv.addEmptyConstants Language.group Empty).invLHom.IsExpansionOn G :=
     LHom.sumElim_isExpansionOn _ _ G
-  rw [wordTerm, LHom.realize_onTerm, Term.realize_eq_lift isEmptyElim, Term.toWord_ofWord]
+  rw [wordTerm, LHom.realize_onTerm, Term.realize_ofWord isEmptyElim]
   induction w using FreeGroup.induction_on <;> simp_all
 
 end WordTerm
