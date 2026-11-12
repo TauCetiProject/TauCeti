@@ -19,15 +19,16 @@ whose image lies in a single member of `U` form the subcomplex
 `S ⊓ X.smallSingularSubcomplex U`. The inclusion of its chains into the chains of `S` is a chain
 homotopy equivalence whose homotopy inverse is a strict retraction
 (`TauCeti.subcomplexSmallChainHomotopyEquiv`). For the smooth singular simplices of a manifold this
-is the small-chain theorem for smooth chains: every smooth singular chain is homologous, through
-smooth chains, to a chain of smooth simplices each lying in a member of the cover. It is the input
+is the small-chain theorem for smooth chains: every smooth singular cycle is homologous, through
+smooth chains, to a cycle of smooth simplices each lying in a member of the cover. It is the input
 to Mayer–Vietoris for smooth singular chains.
 
 The construction restricts Hatcher's operator from the singular small-chain theorem
 (`TauCeti.smallSingularChainHomotopyEquiv`) to `S`. On the summand of a simplex `σ` of `S`, the
-chain-homotopy operator `D` (`TauCeti.subcomplexSmallApproxHom`) iterates the prism operator of the
-restricted subdivision homotopy (`TauCeti.subcomplexSubdivisionHomotopy`); the number of iterations
-is the subdivision depth `TauCeti.singularSubdivisionDepth` of `σ` as a singular simplex. Restricted
+chain-homotopy operator `D` (`TauCeti.subcomplexSmallApproxHom`, an instance of
+`SSet.idPowApproxHom`) iterates the prism operator of the restricted subdivision homotopy
+(`TauCeti.subcomplexSubdivisionHomotopy`); the number of iterations is the subdivision depth
+`TauCeti.singularSubdivisionDepth` of `σ` as a singular simplex. Restricted
 subdivision and prism are compatible with the inclusion into singular chains, so `D` and the
 approximation `ρ = 1 - ∂D - D∂` (`TauCeti.subcomplexSmallApprox`) restrict the corresponding
 singular operators. By the singular theorem, `ρ σ` is a singular chain subordinate to `U`. A
@@ -75,24 +76,15 @@ summand of a simplex `σ` it is the iterated prism operator of the chain homotop
 to the `singularSubdivisionDepth`-fold restricted barycentric subdivision. -/
 def subcomplexSmallApproxHom (i j : ℕ) :
     ((S : SSet).chainComplex R).X i ⟶ ((S : SSet).chainComplex R).X j :=
-  Cofan.IsColimit.desc ((S : SSet).isColimitChainComplexXCofan R i) fun σ ↦
-    (S : SSet).ιChainComplex σ ≫
-      ((subcomplexSubdivisionHomotopy R S).idPow (singularSubdivisionDepth R U i σ.1)).hom i j
+  SSet.idPowApproxHom R (subcomplexSubdivisionHomotopy R S)
+    (fun n σ ↦ singularSubdivisionDepth R U n σ.1) i j
 
 @[reassoc (attr := simp)]
 lemma ιChainComplex_subcomplexSmallApproxHom {i j : ℕ} (σ : (S : SSet) _⦋i⦌) :
     (S : SSet).ιChainComplex σ ≫ subcomplexSmallApproxHom R S U i j =
       (S : SSet).ιChainComplex σ ≫
         ((subcomplexSubdivisionHomotopy R S).idPow (singularSubdivisionDepth R U i σ.1)).hom i j :=
-  Cofan.IsColimit.fac _ _ σ
-
-/-- The operator vanishes outside the bidegrees `(i, i + 1)` of a chain homotopy. -/
-lemma subcomplexSmallApproxHom_eq_zero (i j : ℕ) (hij : ¬ (ComplexShape.down ℕ).Rel j i) :
-    subcomplexSmallApproxHom R S U i j = 0 := by
-  ext σ
-  rw [ιChainComplex_subcomplexSmallApproxHom,
-    ((subcomplexSubdivisionHomotopy R S).idPow (singularSubdivisionDepth R U i σ.1)).zero i j hij,
-    comp_zero]
+  SSet.ιChainComplex_idPowApproxHom _ _ _ σ
 
 /-- The operator on the chains of `S` restricts the operator of the singular small-chain
 approximation. -/
@@ -105,30 +97,24 @@ lemma subcomplexSmallApproxHom_ι (i j : ℕ) :
     Homotopy.idPow_hom_comp_eq_comp_idPow_hom _ (singularSubdivisionHomotopy R X)
       (subcomplexSubdivisionChainMap_ι R S) (subcomplexSubdivisionHomotopy_hom_ι R S),
     SSet.ι_chainComplexMap_f_assoc, SSet.ι_chainComplexMap_f_assoc,
-    ιChainComplex_singularSmallApproxHom]
-  -- `S.ι.app _ σ` is `σ.1` by definition of `Subfunctor.ι`.
-  rfl
+    ιChainComplex_singularSmallApproxHom, Subfunctor.ι_app, TypeCat.ofHom_apply]
 
 /-- The small-chain approximation of the chains of `S`: Hatcher's operator `ρ = 1 - ∂D - D∂`,
 where `D` is `TauCeti.subcomplexSmallApproxHom`. -/
 def subcomplexSmallApprox : (S : SSet).chainComplex R ⟶ (S : SSet).chainComplex R :=
-  𝟙 _ - Homotopy.nullHomotopicMap (subcomplexSmallApproxHom R S U)
+  SSet.idPowApprox R (subcomplexSubdivisionHomotopy R S)
+    (fun n σ ↦ singularSubdivisionDepth R U n σ.1)
 
 /-- The small-chain approximation of the chains of `S` in degree `n`. -/
 lemma subcomplexSmallApprox_f (n : ℕ) :
     (subcomplexSmallApprox R S U).f n = 𝟙 _ -
-      (dNext n (subcomplexSmallApproxHom R S U) + prevD n (subcomplexSmallApproxHom R S U)) := by
-  rw [subcomplexSmallApprox, HomologicalComplex.sub_f_apply, HomologicalComplex.id_f,
-    (Homotopy.nullHomotopy _ (subcomplexSmallApproxHom_eq_zero R S U)).comm n]
-  simp [Homotopy.nullHomotopy]
+      (dNext n (subcomplexSmallApproxHom R S U) + prevD n (subcomplexSmallApproxHom R S U)) :=
+  SSet.idPowApprox_f _ _ _ n
 
 /-- The small-chain approximation of the chains of `S` is chain homotopic to the identity. -/
-def subcomplexSmallApproxHomotopy : Homotopy (𝟙 _) (subcomplexSmallApprox R S U) where
-  hom := subcomplexSmallApproxHom R S U
-  zero := subcomplexSmallApproxHom_eq_zero R S U
-  comm n := by
-    rw [subcomplexSmallApprox_f]
-    abel
+def subcomplexSmallApproxHomotopy : Homotopy (𝟙 _) (subcomplexSmallApprox R S U) :=
+  SSet.idPowApproxHomotopy R (subcomplexSubdivisionHomotopy R S)
+    (fun n σ ↦ singularSubdivisionDepth R U n σ.1)
 
 /-- The small-chain approximation of the chains of `S` restricts the singular small-chain
 approximation. -/
@@ -163,20 +149,8 @@ lemma homOfLE_comp_subcomplexSmallApprox :
         (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R ≫
       subcomplexSmallApprox R S U =
     SSet.chainComplexMap
-        (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R := by
-  ext n : 1
-  have hd : (SSet.chainComplexMap
-      (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R).f n ≫
-        dNext n (subcomplexSmallApproxHom R S U) = 0 := by
-    rw [dNext, AddMonoidHom.mk'_apply, ← Category.assoc, HomologicalComplex.Hom.comm,
-      Category.assoc, homOfLE_comp_subcomplexSmallApproxHom, comp_zero]
-  have hp : (SSet.chainComplexMap
-      (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R).f n ≫
-        prevD n (subcomplexSmallApproxHom R S U) = 0 := by
-    rw [prevD, AddMonoidHom.mk'_apply, ← Category.assoc, homOfLE_comp_subcomplexSmallApproxHom,
-      zero_comp]
-  rw [HomologicalComplex.comp_f, subcomplexSmallApprox_f, Preadditive.comp_sub, Category.comp_id,
-    Preadditive.comp_add, hd, hp, add_zero, sub_zero]
+        (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R :=
+  SSet.comp_idPowApprox _ _ _ _ (homOfLE_comp_subcomplexSmallApproxHom R S U)
 
 variable (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ)
 
@@ -194,9 +168,8 @@ theorem exists_comp_eq_ιChainComplex_comp_subcomplexSmallApprox {n : ℕ}
     (mem_smallSingularChains_ιChainComplex_comp_singularSmallApprox R U hU hcov σ.1)
   refine SSet.Subcomplex.exists_comp_chainComplexMap_homOfLE_eq_of_comp_eq R S _ (h := g₀) ?_
   rw [hg₀, Category.assoc, ← HomologicalComplex.comp_f, subcomplexSmallApprox_ι,
-    HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc]
-  -- `S.ι.app _ σ` is `σ.1` by definition of `Subfunctor.ι`.
-  rfl
+    HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc, Subfunctor.ι_app,
+    TypeCat.ofHom_apply]
 
 /-! ### The retraction onto the chains of `S` subordinate to the cover -/
 

@@ -203,44 +203,34 @@ simplex `σ` it is the iterated prism operator of the chain homotopy from the id
 `singularSubdivisionDepth`-fold barycentric subdivision. -/
 def singularSmallApproxHom (i j : ℕ) :
     ((TopCat.toSSet.obj X).chainComplex R).X i ⟶ ((TopCat.toSSet.obj X).chainComplex R).X j :=
-  Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan R i) fun σ ↦
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫
-      ((singularSubdivisionHomotopy R X).idPow (singularSubdivisionDepth R U i σ)).hom i j
+  SSet.idPowApproxHom R (singularSubdivisionHomotopy R X) (singularSubdivisionDepth R U) i j
 
 @[reassoc (attr := simp)]
 lemma ιChainComplex_singularSmallApproxHom {i j : ℕ} (σ : TopCat.toSSet.obj X _⦋i⦌) :
     (TopCat.toSSet.obj X).ιChainComplex σ ≫ singularSmallApproxHom R U i j =
       (TopCat.toSSet.obj X).ιChainComplex σ ≫
         ((singularSubdivisionHomotopy R X).idPow (singularSubdivisionDepth R U i σ)).hom i j :=
-  Cofan.IsColimit.fac _ _ σ
+  SSet.ιChainComplex_idPowApproxHom _ _ _ σ
 
 lemma singularSmallApproxHom_eq_zero (i j : ℕ) (hij : ¬ (ComplexShape.down ℕ).Rel j i) :
-    singularSmallApproxHom R U i j = 0 := by
-  ext σ
-  rw [ιChainComplex_singularSmallApproxHom,
-    ((singularSubdivisionHomotopy R X).idPow (singularSubdivisionDepth R U i σ)).zero i j hij]
+    singularSmallApproxHom R U i j = 0 :=
+  SSet.idPowApproxHom_eq_zero _ _ _ i j hij
 
 /-- The small-chain approximation of the singular chain complex: a chain endomorphism homotopic
 to the identity all of whose values are chains subordinate to `U`.  It is Hatcher's operator
 `ρ = 1 - ∂D - D∂`, where `D` is `TauCeti.singularSmallApproxHom`. -/
 def singularSmallApprox :
     (TopCat.toSSet.obj X).chainComplex R ⟶ (TopCat.toSSet.obj X).chainComplex R :=
-  𝟙 _ - Homotopy.nullHomotopicMap (singularSmallApproxHom R U)
+  SSet.idPowApprox R (singularSubdivisionHomotopy R X) (singularSubdivisionDepth R U)
 
 lemma singularSmallApprox_f (n : ℕ) :
     (singularSmallApprox R U).f n = 𝟙 _ -
-      (dNext n (singularSmallApproxHom R U) + prevD n (singularSmallApproxHom R U)) := by
-  rw [singularSmallApprox, HomologicalComplex.sub_f_apply, HomologicalComplex.id_f,
-    (Homotopy.nullHomotopy _ (singularSmallApproxHom_eq_zero R U)).comm n]
-  simp [Homotopy.nullHomotopy]
+      (dNext n (singularSmallApproxHom R U) + prevD n (singularSmallApproxHom R U)) :=
+  SSet.idPowApprox_f _ _ _ n
 
 /-- The small-chain approximation is chain homotopic to the identity. -/
-def singularSmallApproxHomotopy : Homotopy (𝟙 _) (singularSmallApprox R U) where
-  hom := singularSmallApproxHom R U
-  zero := singularSmallApproxHom_eq_zero R U
-  comm n := by
-    rw [singularSmallApprox_f]
-    abel
+def singularSmallApproxHomotopy : Homotopy (𝟙 _) (singularSmallApprox R U) :=
+  SSet.idPowApproxHomotopy R (singularSubdivisionHomotopy R X) (singularSubdivisionDepth R U)
 
 /-- The approximation operator kills the chains that are already subordinate to `U`. -/
 lemma ι_comp_singularSmallApproxHom (i j : ℕ) :
@@ -254,17 +244,8 @@ lemma ι_comp_singularSmallApproxHom (i j : ℕ) :
 @[reassoc (attr := simp)]
 lemma ι_comp_singularSmallApprox :
     SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R ≫ singularSmallApprox R U =
-      SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R := by
-  ext n : 1
-  have hd : (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n ≫
-      dNext n (singularSmallApproxHom R U) = 0 := by
-    rw [dNext, AddMonoidHom.mk'_apply, ← Category.assoc, HomologicalComplex.Hom.comm,
-      Category.assoc, ι_comp_singularSmallApproxHom, comp_zero]
-  have hp : (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n ≫
-      prevD n (singularSmallApproxHom R U) = 0 := by
-    rw [prevD, AddMonoidHom.mk'_apply, ← Category.assoc, ι_comp_singularSmallApproxHom, zero_comp]
-  rw [HomologicalComplex.comp_f, singularSmallApprox_f, Preadditive.comp_sub, Category.comp_id,
-    Preadditive.comp_add, hd, hp, add_zero, sub_zero]
+      SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R :=
+  SSet.comp_idPowApprox _ _ _ _ (ι_comp_singularSmallApproxHom R U)
 
 variable (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ)
 

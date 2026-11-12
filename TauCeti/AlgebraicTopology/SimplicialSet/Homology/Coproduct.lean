@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
-public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import Mathlib.CategoryTheory.Limits.Preserves.SigmaConst
+public import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # The simplicial chain complex preserves colimits
@@ -24,7 +24,10 @@ simplicial sets is the coproduct of the chain complexes of the summands.
 The chain map induced by a monomorphism of simplicial sets is also a monomorphism. It is a chain
 homotopy equivalence with a strict retraction (`SSet.chainComplexMapHomotopyEquiv`) when the chains
 of the target admit an endomorphism homotopic to the identity, restricting to the identity on the
-chains of the source, and sending each simplex to a chain of the source. For two
+chains of the source, and sending each simplex to a chain of the source. Such an endomorphism
+arises as `SSet.idPowApprox`: iterating a chain homotopy from the identity to an endomorphism `s`
+a number of times that depends on the simplex gives an operator `D`, and `𝟙 - ∂D - D∂` is
+homotopic to the identity (`SSet.idPowApproxHomotopy`). For two
 subcomplexes `S` and `T` of a simplicial set, a chain of `S` whose image is a chain of `T` is a
 chain of `S ⊓ T` (`SSet.Subcomplex.exists_comp_chainComplexMap_homOfLE_eq_of_comp_eq`), because in
 each degree all three chain objects are coproducts of copies of `R` indexed by simplices.
@@ -152,6 +155,67 @@ lemma chainComplexMapHomotopyEquiv_inv [Mono f] (H : Homotopy (𝟙 _) ρ)
 
 end Retraction
 
+section IdPowApprox
+
+variable {s : Y.chainComplex R ⟶ Y.chainComplex R} (H : Homotopy (𝟙 _) s)
+  (d : ∀ n, Y _⦋n⦌ → ℕ)
+
+/-- The chain-homotopy operator iterating a chain homotopy `H` from the identity to `s` a number of
+times depending on the simplex: on the summand of an `i`-simplex `σ` it is the component of
+`H.idPow (d i σ)`. -/
+def idPowApproxHom (i j : ℕ) : (Y.chainComplex R).X i ⟶ (Y.chainComplex R).X j :=
+  Cofan.IsColimit.desc (Y.isColimitChainComplexXCofan R i) fun σ ↦
+    Y.ιChainComplex σ ≫ (H.idPow (d i σ)).hom i j
+
+@[reassoc (attr := simp)]
+lemma ιChainComplex_idPowApproxHom {i j : ℕ} (σ : Y _⦋i⦌) :
+    Y.ιChainComplex σ ≫ idPowApproxHom R H d i j =
+      Y.ιChainComplex σ ≫ (H.idPow (d i σ)).hom i j :=
+  Cofan.IsColimit.fac _ _ σ
+
+/-- The operator vanishes outside the bidegrees `(i, i + 1)` of a chain homotopy. -/
+lemma idPowApproxHom_eq_zero (i j : ℕ) (hij : ¬ (ComplexShape.down ℕ).Rel j i) :
+    idPowApproxHom R H d i j = 0 := by
+  ext σ
+  rw [ιChainComplex_idPowApproxHom, (H.idPow (d i σ)).zero i j hij, comp_zero]
+
+/-- The chain endomorphism `ρ = 1 - ∂D - D∂` of the chains of `Y`, where `D` is
+`SSet.idPowApproxHom`. -/
+def idPowApprox : Y.chainComplex R ⟶ Y.chainComplex R :=
+  𝟙 _ - Homotopy.nullHomotopicMap (idPowApproxHom R H d)
+
+lemma idPowApprox_f (n : ℕ) :
+    (idPowApprox R H d).f n = 𝟙 _ -
+      (dNext n (idPowApproxHom R H d) + prevD n (idPowApproxHom R H d)) := by
+  rw [idPowApprox, HomologicalComplex.sub_f_apply, HomologicalComplex.id_f,
+    (Homotopy.nullHomotopy _ (idPowApproxHom_eq_zero R H d)).comm n]
+  simp [Homotopy.nullHomotopy]
+
+/-- The endomorphism `SSet.idPowApprox` is chain homotopic to the identity. -/
+def idPowApproxHomotopy : Homotopy (𝟙 _) (idPowApprox R H d) where
+  hom := idPowApproxHom R H d
+  zero := idPowApproxHom_eq_zero R H d
+  comm n := by
+    rw [idPowApprox_f]
+    abel
+
+/-- If the operator `D` vanishes after a chain map `g`, then `SSet.idPowApprox` restricts to the
+identity along `g`. -/
+@[reassoc]
+lemma comp_idPowApprox {K : ChainComplex C ℕ} (g : K ⟶ Y.chainComplex R)
+    (hg : ∀ i j, g.f i ≫ idPowApproxHom R H d i j = 0) :
+    g ≫ idPowApprox R H d = g := by
+  ext n : 1
+  have hd : g.f n ≫ dNext n (idPowApproxHom R H d) = 0 := by
+    rw [dNext, AddMonoidHom.mk'_apply, ← Category.assoc, HomologicalComplex.Hom.comm,
+      Category.assoc, hg, comp_zero]
+  have hp : g.f n ≫ prevD n (idPowApproxHom R H d) = 0 := by
+    rw [prevD, AddMonoidHom.mk'_apply, ← Category.assoc, hg, zero_comp]
+  rw [HomologicalComplex.comp_f, idPowApprox_f, Preadditive.comp_sub, Category.comp_id,
+    Preadditive.comp_add, hd, hp, add_zero, sub_zero]
+
+end IdPowApprox
+
 namespace Subcomplex
 
 variable {K : SSet.{w}} (S T : K.Subcomplex)
@@ -184,10 +248,7 @@ theorem exists_comp_chainComplexMap_homOfLE_eq_of_comp_eq {n : ℕ} {A : C}
   have hπK : (chainComplexMap T.ι R).f n ≫ πK = 𝟙 _ := by
     ext τ
     rw [← Category.assoc, ι_chainComplexMap_f, hπKσ, Category.comp_id]
-    split_ifs with hτ
-    -- `T.ι.app _ τ` is `τ.1` by definition of `Subfunctor.ι`, so the two simplices agree.
-    · rfl
-    · exact (hτ τ.2).elim
+    simp only [Subfunctor.ι_app, TypeCat.ofHom_apply, τ.2, dite_true, Subtype.coe_eta]
   have hπ : π ≫ (chainComplexMap (homOfLE (inf_le_left : S ⊓ T ≤ S)) R).f n ≫
         (chainComplexMap S.ι R).f n =
       (chainComplexMap S.ι R).f n ≫ πK ≫ (chainComplexMap T.ι R).f n := by
@@ -195,9 +256,7 @@ theorem exists_comp_chainComplexMap_homOfLE_eq_of_comp_eq {n : ℕ} {A : C}
     rw [reassoc_of% (hπσ σ), ι_chainComplexMap_f_assoc, reassoc_of% (hπKσ _)]
     split_ifs with h₁ h₂ h₂
     · rw [ι_chainComplexMap_f_assoc, ι_chainComplexMap_f, ι_chainComplexMap_f]
-      -- `homOfLE` and `ι` act on simplices as the identity on underlying values
-      -- (`homOfLE_app_val` and `Subfunctor.ι_app` are `rfl`).
-      rfl
+      simp only [Subfunctor.ι_app, Subfunctor.homOfLe_app, TypeCat.ofHom_apply]
     · exact (h₂ h₁).elim
     · exact (h₁ h₂).elim
     · rw [zero_comp, zero_comp]
