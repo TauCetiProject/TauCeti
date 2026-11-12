@@ -50,8 +50,7 @@ the end of this file).
 
 * For the Riemann sphere the Euler characteristic of this file is `2`, as computed by
   `TauCeti.eulerChar_onePoint`.
-* `TauCeti.ComplexManifold.finrank_singularHomology_two_onePoint_complex`: hence
-  `b₂ = b₁ + 1` for the Riemann sphere.
+* Hence `b₂ = b₁ + 1` for the Riemann sphere, over every division ring.
 
 ## References
 
@@ -113,7 +112,7 @@ example :
 /-- **Check: Betti numbers of the Riemann sphere.** By
 `TauCeti.eulerChar_eq_one_sub_finrank_add_finrank` and `TauCeti.eulerChar_onePoint`, the Riemann
 sphere has `b₂ = b₁ + 1` over every division ring. -/
-theorem finrank_singularHomology_two_onePoint_complex (k : Type) [DivisionRing k] :
+example (k : Type) [DivisionRing k] :
     finrank k (((singularHomologyFunctor (ModuleCat.{0} k) 2).obj (ModuleCat.of k k)).obj
         (TopCat.of (OnePoint ℂ))) =
       finrank k (((singularHomologyFunctor (ModuleCat.{0} k) 1).obj (ModuleCat.of k k)).obj
