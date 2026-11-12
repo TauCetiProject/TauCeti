@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.FieldTheory.Finiteness
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Rank
+import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
 # Prime torsion for a numerical type
@@ -57,11 +58,6 @@ abbrev cokerTorsion (ℓ : ℕ) : AddSubgroup T.Coker :=
 /-- The canonical `ZMod ℓ`-module structure on the `ℓ`-torsion of `Coker(A)`. -/
 noncomputable instance cokerTorsionModule (ℓ : ℕ) : Module (ZMod ℓ) (T.cokerTorsion ℓ) :=
   AddSubgroup.torsionBy.zmodModule
-
-/-- The `ℓ`-torsion subgroup of `Pic(T)` is a finitely generated abelian group, for every `ℓ`:
-it embeds into `Pic(T)`, which is finitely generated over the noetherian ring `ℤ`. -/
-private instance torsionModuleFiniteInt (ℓ : ℕ) : Module.Finite ℤ (T.torsion ℓ) :=
-  Module.Finite.of_injective (T.torsion ℓ).subtype.toIntLinearMap (T.torsion ℓ).subtype_injective
 
 /-- If `ℓ` is nonzero, then the `ℓ`-torsion subgroup of `Pic(T)` is finite.
 
