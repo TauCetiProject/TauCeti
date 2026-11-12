@@ -44,6 +44,7 @@ taking invariants under it.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
 * `Representation.Equiv.ofBasisAction`: build an equivalence from matching coordinate actions.
+* `Representation.Equiv.ofClosureEqTop`: build an equivalence from equivariance on generators.
 
 ## Main results
 
@@ -354,6 +355,29 @@ theorem isIntertwiningMap_iff_of_closure_eq_top {A G V W : Type*} [Semiring A] [
     intro v
     calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := (σ.inv_self_apply g _).symm
       _ = σ g⁻¹ (f v) := by rw [← hg, ρ.self_inv_apply]
+
+namespace Equiv
+
+variable {A G V W : Type*} [Semiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- A linear equivalence commuting with the action of a generating set is an equivalence of
+representations. -/
+def ofClosureEqTop (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) : ρ.Equiv σ :=
+  .mk f fun g => LinearMap.ext
+    (((isIntertwiningMap_iff_of_closure_eq_top ρ σ hs f.toLinearMap).2 h).isIntertwining g)
+
+/-- The equivalence constructed from equivariance on generators acts by the given linear
+equivalence. -/
+@[simp]
+theorem ofClosureEqTop_apply (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) (v : V) :
+    ofClosureEqTop f hs h v = f v :=
+  (rfl)
+
+end Equiv
 
 end Representation
 

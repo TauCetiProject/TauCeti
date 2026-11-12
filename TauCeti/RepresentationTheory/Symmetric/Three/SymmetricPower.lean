@@ -308,18 +308,6 @@ theorem symmetricPower_finRotate_tprod_symmetricGroupThreeAlpha_beta :
   simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [← pow_succ, hω.pow_eq_one, one_smul]
 
-/-- An equivalence of representations of `S₃` may be built from a linear equivalence commuting
-with the generators `τ = (0 1 2)` and `σ = (0 1)`. -/
-private noncomputable def equivOfFinRotateSwap {W W' : Type*} [AddCommMonoid W] [Module k W]
-    [AddCommMonoid W'] [Module k W'] {π : Representation k (Equiv.Perm (Fin 3)) W}
-    {π' : Representation k (Equiv.Perm (Fin 3)) W'} (f : W ≃ₗ[k] W')
-    (hτ : ∀ v, f (π (finRotate 3) v) = π' (finRotate 3) (f v))
-    (hσ : ∀ v, f (π (Equiv.swap 0 1) v) = π' (Equiv.swap 0 1) (f v)) : π.Equiv π' :=
-  .mk f fun g => LinearMap.ext
-    (((Representation.isIntertwiningMap_iff_of_closure_eq_top π π'
-      closure_finRotate_three_swap_eq_top f.toLinearMap).2
-        (by rintro g (rfl | rfl); exacts [hτ, hσ])).isIntertwining g)
-
 /-! ### The symmetric square: `1 ⊕ V₃ ≃ Sym² V₃` -/
 
 /-- The linear map `1 ⊕ V₃ → Sym² V₃` sending the generator of the trivial line to `αβ`, and `α`
@@ -413,14 +401,17 @@ noncomputable def symmetricGroupThreeSymSqEquiv :
     ((Representation.trivial k (Equiv.Perm (Fin 3)) k).prod
       (standardRepresentation k (Fin 3))).Equiv
       ((standardRepresentation k (Fin 3)).symmetricPower 2) :=
-  equivOfFinRotateSwap (LinearEquiv.ofBijective (symSqMap hω) (symSqMap_bijective hω))
-    (LinearMap.congr_fun (symSqMap_comp hω (.inl rfl)))
-    (LinearMap.congr_fun (symSqMap_comp hω (.inr rfl)))
+  Representation.Equiv.ofClosureEqTop
+    (LinearEquiv.ofBijective (symSqMap hω) (symSqMap_bijective hω))
+    closure_finRotate_three_swap_eq_top (by
+      rintro g (rfl | rfl)
+      · exact LinearMap.congr_fun (symSqMap_comp hω (.inl rfl))
+      · exact LinearMap.congr_fun (symSqMap_comp hω (.inr rfl)))
 
 private theorem symmetricGroupThreeSymSqEquiv_apply
     (v : k × (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule) :
     symmetricGroupThreeSymSqEquiv hω v = symSqMap hω v :=
-  (rfl)
+  Representation.Equiv.ofClosureEqTop_apply _ _ _ _
 
 /-- **`1 ↦ αβ`.** -/
 @[simp]
@@ -632,14 +623,17 @@ noncomputable def symmetricGroupThreeSymCubeEquiv (h2 : (2 : k) ≠ 0) :
       ((Representation.ofLinearCharacter (signLinearCharacter k (Fin 3))).prod
         (standardRepresentation k (Fin 3)))).Equiv
       ((standardRepresentation k (Fin 3)).symmetricPower 3) :=
-  equivOfFinRotateSwap (LinearEquiv.ofBijective (symCubeMap hω) (symCubeMap_bijective hω h2))
-    (LinearMap.congr_fun (symCubeMap_comp hω (.inl rfl)))
-    (LinearMap.congr_fun (symCubeMap_comp hω (.inr rfl)))
+  Representation.Equiv.ofClosureEqTop
+    (LinearEquiv.ofBijective (symCubeMap hω) (symCubeMap_bijective hω h2))
+    closure_finRotate_three_swap_eq_top (by
+      rintro g (rfl | rfl)
+      · exact LinearMap.congr_fun (symCubeMap_comp hω (.inl rfl))
+      · exact LinearMap.congr_fun (symCubeMap_comp hω (.inr rfl)))
 
 private theorem symmetricGroupThreeSymCubeEquiv_apply (h2 : (2 : k) ≠ 0)
     (v : k × k × (augmentationSubrepresentation k (Equiv.Perm (Fin 3)) (Fin 3)).toSubmodule) :
     symmetricGroupThreeSymCubeEquiv hω h2 v = symCubeMap hω v :=
-  (rfl)
+  Representation.Equiv.ofClosureEqTop_apply _ _ _ _
 
 /-- The basis vector `α³` of the monomial basis of `Sym³ V₃`, as a pure tensor. -/
 private theorem symmetricPower_symmetricGroupThreeBasis_three_alpha :
