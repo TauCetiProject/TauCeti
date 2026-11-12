@@ -202,12 +202,11 @@ norm of `A`. -/
 theorem norm_operatorMultiplication [SigmaFinite μ] (A : Lp (E →L[𝕜] F) ∞ μ) :
     ‖operatorMultiplication p A‖ = ‖A‖ := by
   apply le_antisymm (norm_operatorMultiplication_le A)
-  by_contra hle
-  have hlt : ‖operatorMultiplication p A‖ < ‖A‖ := lt_of_not_ge hle
+  by_contra! hlt
   set c := (‖operatorMultiplication p A‖ + ‖A‖) / 2 with hc_def
   have hc_nonneg : 0 ≤ c := by positivity
   obtain ⟨u, t, ht, hts, hμt_pos, hμt_top⟩ :=
-    exists_subset_measure_lt_norm_apply A hc_nonneg (by linarith [hc_def])
+    exists_subset_measure_lt_norm_apply A hc_nonneg (by linarith [hc_def, hlt])
   have hu_ne : u ≠ 0 := by
     obtain ⟨x₀, hx₀⟩ := nonempty_of_measure_ne_zero hμt_pos.ne'
     rintro rfl; exact absurd (hts x₀ hx₀) (by simp)
@@ -234,7 +233,7 @@ theorem norm_operatorMultiplication [SigmaFinite μ] (A : Lp (E →L[𝕜] F) �
     · simp [Set.indicator_of_notMem hx]
   have hcancel : c * ‖f‖ ≤ ‖operatorMultiplication p A‖ * ‖f‖ :=
     hfg ▸ (Lp.norm_le_norm_of_ae_le hpoint).trans (le_opNorm _ _)
-  exact (not_le_of_gt (by linarith [hc_def] : ‖operatorMultiplication p A‖ < c))
+  exact (not_le_of_gt (by linarith [hc_def, hlt] : ‖operatorMultiplication p A‖ < c))
     (le_of_mul_le_mul_right hcancel hf_pos)
 
 end ExactNorm
