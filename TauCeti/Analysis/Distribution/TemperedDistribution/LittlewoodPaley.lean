@@ -49,9 +49,10 @@ first dyadic kernel, since `ψ_{j+1} = ψ₁ (2^{-j} ·)`; so all the kernels ha
 The same dilation makes the first moment `∫ ‖x‖ ‖𝓕⁻ ψⱼ x‖` of the kernel `O(2^{-j})`: the kernel
 lives at the spatial scale `2^{-j}`. Hence the commutator of `Δⱼ` with multiplication by a
 `K`-Lipschitz function `f` gains one derivative,
-`‖Δⱼ (f • g) - f • Δⱼ g‖_p ≤ C 2^{-j} K ‖g‖_p` for `1 ≤ p ≤ ∞`, with `C` depending only on `φ`,
-although neither `Δⱼ` nor multiplication by `f` is smoothing. This is the commutator estimate used
-for paraproducts and transport equations (Bahouri–Chemin–Danchin, Lemma 2.97).
+`‖Δⱼ (f • g) - f • Δⱼ g‖_p ≤ C 2^{-j} K ‖g‖_p` for `1 ≤ p ≤ ∞`, with `C` depending only on `φ`:
+the commutator gains the factor `2^{-j}` over the uniform bound `‖Δⱼ g‖_p ≤ C ‖g‖_p`, and the
+estimate involves only the Lipschitz constant of `f`, not its size. This is the commutator
+estimate used for paraproducts and transport equations (Bahouri–Chemin–Danchin, Lemma 2.97).
 
 This decomposition underlies the dyadic description of Besov spaces and of the Bessel-potential
 spaces `H^{s,p}`: the Besov norm of `u` is a weighted sequence norm of the `Lᵖ` norms of the
@@ -389,9 +390,9 @@ by `fg`. If `u` and `w` are the `Lᵖ` functions `Δⱼ g` and `Δⱼ (f • g)`
 
 `‖Δⱼ (f • g) - f • Δⱼ g‖_p ≤ C 2^{-j} K ‖g‖_p`.
 
-Each of `Δⱼ` and multiplication by `f` is merely bounded on `Lᵖ`; the commutator gains the factor
-`2^{-j}`, one derivative at the frequency scale `2^j` of the block. The bound does not involve
-the size of `f`, only its Lipschitz constant. -/
+Compared with the uniform bound `‖Δⱼ g‖_p ≤ C ‖g‖_p`, the commutator gains the factor `2^{-j}`,
+one derivative at the frequency scale `2^j` of the block. The bound does not involve the size of
+`f`, which may be unbounded, only its Lipschitz constant. -/
 theorem exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le [CompleteSpace F] :
     ∃ C : ℝ≥0, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) {f : E → ℂ} {K : ℝ≥0}, LipschitzWith K f →
       ∀ g fg u w : Lp F p (volume : Measure E), fg =ᵐ[volume] (fun x ↦ f x • g x) →

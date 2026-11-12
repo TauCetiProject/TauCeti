@@ -144,14 +144,12 @@ theorem integral_norm_mul_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc 
   have hc' : |c ^ finrank ℝ E| ≠ 0 := abs_ne_zero.2 (pow_ne_zero _ hc)
   have h (y : E) : ‖y‖ * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ =
       (|c ^ finrank ℝ E|⁻¹ * |c|) * (‖c⁻¹ • y‖ * ‖𝓕⁻ f (c⁻¹ • y)‖) := by
-    have hc0 : |c| ≠ 0 := abs_ne_zero.2 hc
-    rw [fourierInv_comp_smul f, norm_smul, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs,
-      norm_inv, Real.norm_eq_abs]
+    simp only [fourierInv_comp_smul f, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs]
     field_simp
   simp_rw [h]
   rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖y‖ * ‖𝓕⁻ f y‖),
-    smul_eq_mul, mul_comm (|c ^ finrank ℝ E|⁻¹), mul_assoc, ← mul_assoc (|c ^ finrank ℝ E|⁻¹),
-    inv_mul_cancel₀ hc', one_mul]
+    smul_eq_mul]
+  field_simp
 
 /-- **Dilating a function rescales the `Lʳ` norm of its inverse Fourier transform:** for `R > 0`,
 the inverse Fourier transform of `ξ ↦ g (R⁻¹ • ξ)` has `Lʳ` norm `R ^ (n - n / r)` times that of

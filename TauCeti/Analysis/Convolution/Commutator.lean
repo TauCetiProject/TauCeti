@@ -29,10 +29,11 @@ the kernel. Young's inequality then gives, for `1 ≤ p ≤ ∞`,
 `‖[κ ⋆ ·, f] g‖_p ≤ K (∫ ‖t‖ ‖κ t‖ dt) ‖g‖_p`
 
 (`MeasureTheory.eLpNorm_integral_sub_smul_smul_le`). When `κ` is concentrated at scale `ε`, its
-first moment is of order `ε` times its `L¹` norm. So, while `κ ⋆ ·` and multiplication by `f` are
-each only bounded on `Lᵖ`, their commutator gains a factor `ε`: a derivative, for a frequency
-localization at frequencies of size `ε⁻¹`. This is the basic commutator estimate of Littlewood–Paley
-theory, used for paraproducts and for transport equations.
+first moment is of order `ε` times its `L¹` norm, which bounds `κ ⋆ ·` on `Lᵖ`. So the
+commutator gains a factor `ε` over that bound: a derivative, for a frequency localization at
+frequencies of size `ε⁻¹`. The estimate involves only the Lipschitz constant `K` of `f`, not the
+size of `f`. This is the basic commutator estimate of Littlewood–Paley theory, used for paraproducts
+and for transport equations.
 
 The estimate is stated for the integral on the right, which is defined for every `x` and needs no
 integrability or boundedness hypothesis on `f` or `g`: a Lipschitz function need not be bounded,
