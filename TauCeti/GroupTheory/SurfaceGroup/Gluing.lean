@@ -78,7 +78,7 @@ variable {G : Type*} [Group G]
 
 section Words
 
-variable {g g₁ g₂ m m₁ m₂ : ℕ}
+variable {g₁ g₂ m₁ m₂ : ℕ}
 
 /-- **The surface word of a glued surface.** The product of the orientable surface words of two
 pieces is the orientable surface word of the concatenated families, once the handle elements of
@@ -101,12 +101,6 @@ theorem orientableWord_mul_orientableWord (α₁ β₁ : Fin g₁ → G) (γ₁ 
     Fin.append_right, hconj]
   group
 
-/-- The surface word whose last boundary element closes up the others is trivial. -/
-private theorem orientableWord_lastCases_inv (α β : Fin g → G) (γ : Fin m → G) :
-    orientableWord α β (Fin.lastCases (orientableWord α β γ)⁻¹ γ) = 1 := by
-  rw [orientableWord_def, List.ofFn_succ', List.prod_concat]
-  simp [orientableWord_def, ← mul_assoc]
-
 end Words
 
 namespace Orientable
@@ -125,10 +119,12 @@ components cut along a separating curve, as a `Bool`-indexed family: `S⁺(g₁,
 and `S⁺(g₂, m₂ + 1)` at `true`. -/
 abbrev GluingFactor (b : Bool) : Type := cond b (Orientable g₂ (m₂ + 1)) (Orientable g₁ (m₁ + 1))
 
+-- `inferInstanceAs` would rebuild the group structure from new auxiliary definitions; keeping
+-- the instances of `Orientable` lets `simp` and `rw` identify each factor with its piece.
 instance (b : Bool) : Group (GluingFactor g₁ m₁ g₂ m₂ b) :=
   Bool.rec (motive := fun b ↦ Group (GluingFactor g₁ m₁ g₂ m₂ b))
-    (inferInstanceAs (Group (Orientable g₁ (m₁ + 1))))
-    (inferInstanceAs (Group (Orientable g₂ (m₂ + 1)))) b
+    (inferInstance : Group (Orientable g₁ (m₁ + 1)))
+    (inferInstance : Group (Orientable g₂ (m₂ + 1))) b
 
 /-- The maps from the edge group `ℤ` into the two pieces: the generator goes to the last
 peripheral element of `S⁺(g₁, m₁ + 1)` and to the inverse of the last peripheral element of
@@ -220,16 +216,18 @@ private def toPushoutI :
 /-- The map `S⁺(g₁, m₁ + 1) → S⁺(g₁ + g₂, m₁ + m₂)` of the first piece. -/
 private def ofFirst : Orientable g₁ (m₁ + 1) →* Orientable (g₁ + g₂) (m₁ + m₂) :=
   lift (fun i ↦ a _ _ (Fin.castAdd g₂ i)) (fun i ↦ b _ _ (Fin.castAdd g₂ i))
-    (Fin.lastCases (firstWord g₁ m₁ g₂ m₂)⁻¹ fun j ↦ peripheral _ _ (Fin.castAdd m₂ j))
-    (orientableWord_lastCases_inv _ _ _)
+    (Fin.snoc (α := fun _ ↦ Orientable (g₁ + g₂) (m₁ + m₂))
+      (fun j ↦ peripheral _ _ (Fin.castAdd m₂ j)) (firstWord g₁ m₁ g₂ m₂)⁻¹)
+    (by rw [orientableWord_snoc, mul_inv_cancel])
 
 /-- The map `S⁺(g₂, m₂ + 1) → S⁺(g₁ + g₂, m₁ + m₂)` of the second piece. -/
 private def ofSecond : Orientable g₂ (m₂ + 1) →* Orientable (g₁ + g₂) (m₁ + m₂) :=
   lift
     (fun i ↦ (boundaryProd' g₁ m₁ g₂ m₂)⁻¹ * a _ _ (Fin.natAdd g₁ i) * boundaryProd' g₁ m₁ g₂ m₂)
     (fun i ↦ (boundaryProd' g₁ m₁ g₂ m₂)⁻¹ * b _ _ (Fin.natAdd g₁ i) * boundaryProd' g₁ m₁ g₂ m₂)
-    (Fin.lastCases (secondWord g₁ m₁ g₂ m₂)⁻¹ fun j ↦ peripheral _ _ (Fin.natAdd m₁ j))
-    (orientableWord_lastCases_inv _ _ _)
+    (Fin.snoc (α := fun _ ↦ Orientable (g₁ + g₂) (m₁ + m₂))
+      (fun j ↦ peripheral _ _ (Fin.natAdd m₁ j)) (secondWord g₁ m₁ g₂ m₂)⁻¹)
+    (by rw [orientableWord_snoc, mul_inv_cancel])
 
 private theorem ofFirst_peripheral_last :
     ofFirst g₁ m₁ g₂ m₂ (peripheral g₁ (m₁ + 1) (Fin.last m₁)) = (firstWord g₁ m₁ g₂ m₂)⁻¹ := by
@@ -237,7 +235,7 @@ private theorem ofFirst_peripheral_last :
 
 private theorem ofSecond_inv_peripheral_last :
     ofSecond g₁ m₁ g₂ m₂ (peripheral g₂ (m₂ + 1) (Fin.last m₂))⁻¹ = (firstWord g₁ m₁ g₂ m₂)⁻¹ := by
-  rw [map_inv, ofSecond, lift_peripheral, Fin.lastCases_last, inv_inv]
+  rw [map_inv, ofSecond, lift_peripheral, Fin.snoc_last, inv_inv]
   exact eq_inv_of_mul_eq_one_right (firstWord_mul_secondWord g₁ m₁ g₂ m₂)
 
 /-- The map `S⁺(g₁, m₁ + 1) ∗_ℤ S⁺(g₂, m₂ + 1) → S⁺(g₁ + g₂, m₁ + m₂)`. -/
