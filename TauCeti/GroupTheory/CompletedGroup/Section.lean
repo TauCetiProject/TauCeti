@@ -41,11 +41,20 @@ variable (F : ℕᵒᵖ ⥤ GrpCat.{w})
 noncomputable def completedGroupAutEquiv : completedGroup F ≃* Aut F.singleObjSection :=
   (sectionsSubgroupEquiv F).trans F.singleObjSectionAutEquiv
 
-/-- Each fiber arrow is the corresponding finite-order projection. -/
+/-- The completed-group identification is the composition of the section-subgroup
+identification with the one-object section-automorphism identification. -/
+theorem completedGroupAutEquiv_def :
+    completedGroupAutEquiv F =
+      (sectionsSubgroupEquiv F).trans F.singleObjSectionAutEquiv := by
+  rw [completedGroupAutEquiv]
+
+/-- Each fiber arrow is the corresponding finite-order projection, at every object
+of the opposite index category. -/
 @[simp]
-theorem completedGroupAutEquiv_hom_app (g : completedGroup F) (k : ℕ) :
-    (completedGroupAutEquiv F g).asIso.hom.app (op k) = projection k g := by
-  rw [completedGroupAutEquiv, MulEquiv.trans_apply, singleObjSectionAutEquiv_hom_app]
+theorem completedGroupAutEquiv_hom_app (g : completedGroup F) (j : ℕᵒᵖ) :
+    (completedGroupAutEquiv F g).asIso.hom.app j = projection j.unop g := by
+  obtain ⟨k⟩ := j
+  rw [completedGroupAutEquiv_def, MulEquiv.trans_apply, singleObjSectionAutEquiv_hom_app]
   exact sectionsSubgroupEquiv_apply_val F g (op k)
 
 /-- Recovering a completed group element from a label retains every finite projection. -/

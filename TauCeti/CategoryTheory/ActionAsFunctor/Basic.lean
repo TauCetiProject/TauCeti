@@ -98,6 +98,11 @@ theorem faithful_iff_faithfulSMul : (actionAsFunctor G X).Faithful ↔ FaithfulS
     exact (actionAsFunctor_map_apply G X g x).symm.trans
       ((congrArg (fun f => f x) hgg').trans (actionAsFunctor_map_apply G X g' x))
 
+/-- A faithful multiplicative action yields a faithful action viewed as a functor on
+one-object categories. -/
+instance instFaithful_of_faithfulSMul [FaithfulSMul G X] : (actionAsFunctor G X).Faithful :=
+  (faithful_iff_faithfulSMul G X).mpr inferInstance
+
 end actionAsFunctor
 
 end CategoryTheory
