@@ -234,7 +234,7 @@ theorem LocallyLipschitz.exists_eq_forall_mem_Icc_hasDerivWithinAt [CompleteSpac
       (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hz) C.2)
     calc ‖v z‖ ≤ ‖v z - v y‖ + ‖v y‖ := norm_le_norm_sub_add _ _
       _ ≤ B := by
-        simp only [B, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_one, coe_nnnorm]
+        simp only [B, NNReal.coe_add, NNReal.coe_mul, NNReal.coe_one, coe_nnNorm]
         linarith
   refine ⟨a / B, div_pos ha hB, fun t₀ ↦ ?_⟩
   have hPL : IsPicardLindelof (fun _ ↦ v) (tmin := t₀ - a / B) (tmax := t₀ + a / B)
