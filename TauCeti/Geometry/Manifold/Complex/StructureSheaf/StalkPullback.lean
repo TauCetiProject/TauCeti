@@ -205,10 +205,8 @@ def stalkEquivModelSpace [FiniteDimensional ℂ E] [IsManifold I 1 X]
   let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   exact (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x e)).symm
 
--- Normalize chart comparison before simp expands the extended chart in the stalk's base point.
 omit [IsManifold I ω X] in
 /-- The inverse chart comparison is pullback along the chart followed by `e`. -/
-@[simp↓]
 theorem stalkEquivModelSpace_symm_apply [FiniteDimensional ℂ E] [IsManifold I 1 X]
     (x : X) (e : E ≃L[ℂ] V)
     (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (e (extChartAt I x x))) :
@@ -217,6 +215,24 @@ theorem stalkEquivModelSpace_symm_apply [FiniteDimensional ℂ E] [IsManifold I 
         let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
         exact ((chartAt H x).open_source.eventually_mem (mem_chart_source H x)).mono fun _ hy ↦
           e.contDiff.contMDiff.contMDiffAt.comp _ (contMDiffAt_extChartAt' hy)) s := (rfl)
+
+-- Normalize chart comparison before simp expands the extended chart in the stalk's base point.
+omit [IsManifold I ω X] in
+/-- Inverse chart comparison cancels chart comparison. -/
+@[simp↓]
+theorem stalkEquivModelSpace_symm_apply_apply [FiniteDimensional ℂ E] [IsManifold I 1 X]
+    (x : X) (e : E ≃L[ℂ] V) (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    (stalkEquivModelSpace x e).symm (stalkEquivModelSpace x e s) = s :=
+  (stalkEquivModelSpace x e).symm_apply_apply s
+
+omit [IsManifold I ω X] in
+/-- Chart comparison cancels inverse chart comparison. -/
+@[simp↓]
+theorem stalkEquivModelSpace_apply_symm_apply [FiniteDimensional ℂ E] [IsManifold I 1 X]
+    (x : X) (e : E ≃L[ℂ] V)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (e (extChartAt I x x))) :
+    stalkEquivModelSpace x e ((stalkEquivModelSpace x e).symm s) = s :=
+  (stalkEquivModelSpace x e).apply_symm_apply s
 
 omit [IsManifold I ω X] in
 /-- The inverse chart comparison preserves evaluation. -/
@@ -229,6 +245,15 @@ theorem eval_stalkEquivModelSpace_symm [FiniteDimensional ℂ E] [IsManifold I 1
   simp only [stalkEquivModelSpace_symm_apply, eval_stalkPullback, Function.comp_apply]
 
 omit [IsManifold I ω X] in
+/-- Chart comparison preserves evaluation. -/
+@[simp↓]
+theorem eval_stalkEquivModelSpace [FiniteDimensional ℂ E] [IsManifold I 1 X]
+    (x : X) (e : E ≃L[ℂ] V) (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    eval 𝓘(ℂ, V) V (e (extChartAt I x x)) (stalkEquivModelSpace x e s) =
+      eval I X x s := by
+  rw [← eval_stalkEquivModelSpace_symm, stalkEquivModelSpace_symm_apply_apply]
+
+omit [IsManifold I ω X] in
 /-- On function germs, the inverse chart comparison is composition with the chart and `e`. -/
 @[simp↓]
 theorem toFilterGerm_stalkEquivModelSpace_symm [FiniteDimensional ℂ E] [IsManifold I 1 X]
@@ -239,6 +264,30 @@ theorem toFilterGerm_stalkEquivModelSpace_symm [FiniteDimensional ℂ E] [IsMani
         (𝓝 (e (extChartAt I x x))) le_rfl s).compTendsto (e ∘ extChartAt I x)
           (e.continuous.continuousAt.comp (continuousAt_extChartAt x)).tendsto := by
   simp only [stalkEquivModelSpace_symm_apply, toFilterGerm_stalkPullback, Function.comp_apply]
+
+omit [IsManifold I ω X] in
+/-- On function germs, chart comparison is composition with the inverse chart and `e.symm`. -/
+@[simp↓]
+theorem toFilterGerm_stalkEquivModelSpace [FiniteDimensional ℂ E] [IsManifold I 1 X]
+    (x : X) (e : E ≃L[ℂ] V) (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    toFilterGerm 𝓘(ℂ, V) V (e (extChartAt I x x))
+        (𝓝 (e (extChartAt I x x))) le_rfl (stalkEquivModelSpace x e s) =
+      (toFilterGerm I X x (𝓝 x) le_rfl s).compTendsto ((extChartAt I x).symm ∘ e.symm)
+        (by
+          have he := e.symm.continuous.tendsto (e (extChartAt I x x))
+          rw [e.symm_apply_apply] at he
+          simpa only [extChartAt_to_inv] using
+            (continuousAt_extChartAt_symm x).tendsto.comp he) := by
+  have h := toFilterGerm_stalkEquivModelSpace_symm x e (stalkEquivModelSpace x e s)
+  rw [stalkEquivModelSpace_symm_apply_apply] at h
+  rw [h]
+  generalize toFilterGerm 𝓘(ℂ, V) V _ _ _ (stalkEquivModelSpace x e s) = t
+  refine Germ.inductionOn t fun u ↦ ?_
+  rw [Germ.coe_compTendsto, Germ.coe_compTendsto, Germ.coe_eq]
+  have he := e.symm.continuous.tendsto (e (extChartAt I x x))
+  rw [e.symm_apply_apply] at he
+  filter_upwards [he.eventually (extChartAt_target_mem_nhds x)] with z hz
+  simp only [Function.comp_apply, (extChartAt I x).right_inv hz, e.apply_symm_apply]
 
 end TauCeti.holomorphicStructureSheaf
 
