@@ -428,8 +428,8 @@ theorem morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTraje
     rintro rfl; omega
   have hempty : hX.morseBrokenTrajectorySet p r = ∅ := eq_empty_of_forall_notMem fun x hx ↦ by
     obtain ⟨hpq, hqr, hy, hz⟩ := (hX.mem_morseBrokenTrajectorySet).1 hx
-    exact hrp ((hX.value_lt_of_mem_morseTrajectorySlice hdf (hne hqr) hz).trans
-      (hX.value_lt_of_mem_morseTrajectorySlice hdf (hne hpq) hy))
+    exact hrp ((hX.value_lt_of_mem_morseTrajectorySlice (hne hqr) hz).trans
+      (hX.value_lt_of_mem_morseTrajectorySlice (hne hpq) hy))
   rw [hempty, ncard_empty]
   exact Even.zero
 

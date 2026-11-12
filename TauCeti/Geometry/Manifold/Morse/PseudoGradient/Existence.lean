@@ -614,6 +614,23 @@ theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
   obtain ⟨φ, -, hφ⟩ := hchart x (mem_univ x) hx
   exact ⟨φ, fun y hy ↦ hφ y hy ▸ φ.coord_mfderiv_field hy⟩
 
+namespace IsAdaptedPseudoGradient
+
+omit [FiniteDimensional ℝ E] in
+/-- **An adapted pseudo-gradient makes `f` differentiable.** An adapted pseudo-gradient supplies
+`MDifferentiable f`, so results about it need no separate differentiability hypothesis. -/
+theorem mdifferentiable {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} (hX : IsAdaptedPseudoGradient f X) :
+    MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := fun y ↦ by
+  -- At a point where `f` is not differentiable, `mfderiv` vanishes, so the point is critical and
+  -- `f` is a quadratic form in a Morse chart around it, which is differentiable.
+  by_contra hy
+  obtain ⟨φ, -⟩ := hX.exists_morseChart y (mfderiv_zero_of_not_mdifferentiableAt hy)
+  exact hy (((φ.differentiableAt_quadratic _).mdifferentiableAt.comp y
+    (φ.mdifferentiableAt_toChart φ.mem_source)).congr_of_eventuallyEq
+      (φ.eqOn_quadratic.eventuallyEq_of_mem (φ.toChart.open_source.mem_nhds φ.mem_source)))
+
+end IsAdaptedPseudoGradient
+
 end Existence
 
 end TauCeti
