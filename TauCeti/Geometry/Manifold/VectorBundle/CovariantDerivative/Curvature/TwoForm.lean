@@ -180,7 +180,6 @@ private theorem contMDiffAt_inner_curvatureTensor_chartDualFrame (x : M) {y : M}
       cov.curvatureTensor z (D i z) (D j z) (e.symmL ℝ z w))) y := by
     simpa only [curvatureTensorCLM_apply] using
       (((contMDiff_curvatureTensorCLM (F := E) (V := fun z : M ↦ TangentSpace I z)
-        (fiberNorm := fun z ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I z)))
         cov y).clm_bundle_apply (hD i)).clm_bundle_apply (hD j)).clm_bundle_apply (hframe w)
   exact hR.inner_bundle (IB := I) (F := E) (E := fun z : M ↦ TangentSpace I z)
     (b := fun z : M ↦ z)

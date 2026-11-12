@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Uniqueness
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
-import TauCeti.Geometry.Manifold.Riemannian.IndexForm.Basic
 import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Convex.Jensen
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -67,7 +66,7 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin_self
       (‖alongCurveWithin (leviCivitaConnection I M) γ V s t‖ ^ 2 -
         ⟪(leviCivitaConnection I M).curvatureTensor (γ t) (V t)
           (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t), V t⟫_ℝ) s t := by
-  simpa only [indexFormIntegrandWithin_def, real_inner_self_eq_norm_sq] using
+  simpa only [real_inner_self_eq_norm_sq] using
     h.hasDerivWithinAt_inner_alongCurveWithin ht
       ((h.contMDiffOn t ht).mdifferentiableWithinAt (by norm_num))
 

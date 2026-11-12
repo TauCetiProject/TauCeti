@@ -464,13 +464,8 @@ that set, together with its value at the parameter under consideration. -/
 theorem alongCurveWithin_congr {W : ∀ t, TangentSpace I (γ t)} {s : Set 𝕜} {t : 𝕜}
     (h : ∀ᶠ r in 𝓝[s] t, V r = W r) (ht : V t = W t) :
     alongCurveWithin cov γ V s t = alongCurveWithin cov γ W s t := by
-  have hpoint : sectionCoord (F := E) γ V (γ t) t = sectionCoord (F := E) γ W (γ t) t := by
-    rw [sectionCoord_apply, sectionCoord_apply, ht]
-  have hcoord : sectionCoord (F := E) γ V (γ t) =ᶠ[𝓝[s] t]
-      sectionCoord (F := E) γ W (γ t) := h.mono fun r hr ↦ by
-    rw [sectionCoord_apply, sectionCoord_apply, hr]
-  rw [alongCurveWithin_apply, alongCurveWithin_apply, alongCurveInChartWithin_apply,
-    alongCurveInChartWithin_apply, hcoord.derivWithin_eq hpoint, hpoint]
+  exact eq_of_heq (alongCurveWithin_congr_heq cov V Filter.EventuallyEq.rfl rfl
+    (h.mono fun _ ↦ heq_of_eq) (heq_of_eq ht))
 
 /-- The unrestricted moving-chart candidate depends only on the germ of the field at the parameter
 under consideration. -/
@@ -478,6 +473,15 @@ theorem alongCurve_congr {W : ∀ t, TangentSpace I (γ t)} {t : 𝕜}
     (h : ∀ᶠ r in 𝓝 t, V r = W r) : alongCurve cov γ V t = alongCurve cov γ W t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ]
   exact alongCurveWithin_congr cov γ V (by rwa [nhdsWithin_univ]) h.self_of_nhds
+
+variable {γ} in
+/-- Covariant derivatives along locally equal curves agree after identifying their fibres. -/
+theorem alongCurve_congr_heq {δ : 𝕜 → M} {W : ∀ r, TangentSpace I (δ r)} {t : 𝕜}
+    (hγ : γ =ᶠ[𝓝 t] δ) (hV : ∀ᶠ r in 𝓝 t, HEq (V r) (W r)) :
+    HEq (alongCurve cov γ V t) (alongCurve cov δ W t) := by
+  rw [← alongCurveWithin_univ, ← alongCurveWithin_univ]
+  exact alongCurveWithin_congr_heq cov V (by rwa [nhdsWithin_univ]) hγ.eq_of_nhds
+    (by rwa [nhdsWithin_univ]) hV.self_of_nhds
 
 /-- The moving-chart candidate within a parameter set is natural under differentiable
 reparametrization mapping that set into the parameter set of the original curve. The curve and the

@@ -214,6 +214,26 @@ theorem IsJacobiFieldOn.mono (h : IsJacobiFieldOn I γ V s)
   rw [hvel]
   exact h.equation r (hus hr)
 
+/-- The pairing `⟪D_t V, W⟫` of a Jacobi field with a differentiable field has derivative
+`⟪D_t V, D_t W⟫ - ⟪R(V, γ')γ', W⟫`. -/
+theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin
+    (h : IsJacobiFieldOn I γ V s) {t : ℝ} (ht : t ∈ s)
+    (hW : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I.tangent
+      (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s t) :
+    HasDerivWithinAt (fun r ↦ inner ℝ
+        (alongCurveWithin (leviCivitaConnection I M) γ V s r) (W r))
+      (inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s t)
+          (alongCurveWithin (leviCivitaConnection I M) γ W s t) -
+        inner ℝ ((leviCivitaConnection I M).curvatureTensor (γ t) (V t)
+          (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) (W t)) s t := by
+  have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
+  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.isGeodesicCurveOn.mdifferentiableOn t ht)
+      (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
+      (TauCeti.Manifold.differentiableWithinAt_sectionCoord γ W hW
+        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
+  simpa only [h.alongCurveWithin_alongCurveWithin_eq ht, inner_neg_left, neg_add_eq_sub]
+    using hd
+
 /-- The Wronskian of two Jacobi fields has zero derivative, including within a closed interval. -/
 theorem IsJacobiFieldOn.hasDerivWithinAt_wronskian (hV : IsJacobiFieldOn I γ V s)
     (hW : IsJacobiFieldOn I γ W s) (ht : t ∈ s) :

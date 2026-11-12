@@ -456,4 +456,17 @@ theorem differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnectio
       (by norm_num) (by norm_num) hs ht hV).mdifferentiableWithinAt one_ne_zero)
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
 
+/-- The unrestricted covariant derivative of a section with a `C²` lift has differentiable
+coordinate readings at the tested parameter. -/
+theorem differentiableAt_sectionCoord_alongCurve_leviCivitaConnection
+    [IsManifold I 3 M] [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
+    (hV : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t) :
+    DifferentiableAt ℝ
+      (sectionCoord (F := E) γ (alongCurve (leviCivitaConnection I M) γ V) (γ t)) t := by
+  simpa only [differentiableWithinAt_univ,
+    funext (alongCurveWithin_univ (leviCivitaConnection I M) γ V)] using
+    differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
+      uniqueDiffOn_univ hV.contMDiffWithinAt (mem_univ t)
+
 end TauCeti.Manifold
