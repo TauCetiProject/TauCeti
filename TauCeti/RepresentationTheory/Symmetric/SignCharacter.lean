@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Sign
+public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.Algebra.MonoidAlgebra.CharacterTwist
 
 /-!
@@ -38,6 +39,8 @@ Twisting the group algebra by the sign character gives the **sign automorphism**
 * `TauCeti.signLinearCharacter_swap`: it sends a transposition to `-1`.
 * `TauCeti.signLinearCharacter_mul_self`: its square is the trivial character.
 * `TauCeti.signLinearCharacter_comp_permCongrHom`: it is invariant under relabelling.
+* `TauCeti.signLinearCharacter_comp_alternatingGroup_subtype`: it is trivial on the alternating
+  group.
 * `TauCeti.signTwist_signTwist`: the sign automorphism is an involution.
 
 ## References
@@ -94,6 +97,15 @@ theorem signLinearCharacter_comp_permCongrHom {β : Type*} [DecidableEq β] [Fin
       signLinearCharacter k α := by
   ext σ
   simp [Equiv.Perm.sign_permCongr]
+
+/-- **The sign character is trivial on the alternating group.** With
+`FDRep.actionRes_obj_ofLinearCharacter`, the sign representation restricts to the trivial
+one-dimensional representation `FDRep.ofLinearCharacter 1` of the alternating group. -/
+@[simp]
+theorem signLinearCharacter_comp_alternatingGroup_subtype :
+    (signLinearCharacter k α).comp (alternatingGroup α).subtype = 1 :=
+  MonoidHom.ext fun g => Units.ext <| by
+    simp [coe_signLinearCharacter_apply, Equiv.Perm.mem_alternatingGroup.mp g.property]
 
 /-! ## The sign automorphism -/
 

@@ -484,25 +484,13 @@ theorem isPrimitivizationOf_torusPassportRecord :
     refine (equivalent_iff_cycleData_eq_of_degree_le_four (by norm_num) ⟨_, hs0⟩ Q).mpr ?_
     rw [hQ, Subtype.coe_mk, toTriple_doubleCoverStoredTriple]
     decide
-  exact
-    { deg_eq := rfl
-      orbitSize_eq := by
-        rw [BelyiRecord.storedEmbeddingCount_def]
-        rfl
-      triples_ne_nil := List.cons_ne_nil _ _
-      hasPassport s hs := by
-        obtain rfl := List.mem_singleton.mp hs
-        exact ⟨hs0, hs0Q⟩
-      forall₂_isCycleNotation := .cons ⟨⟨by decide, by decide, by decide⟩,
-        ⟨by decide, by decide, by decide⟩, Perm.isCycleNotation_nil_iff.mpr rfl⟩ .nil
-      lambdas_eq := by
-        rw [ConnectedTriple.passportOf_lam0, ConnectedTriple.passportOf_lam1,
-          ConnectedTriple.passportOf_laminf, hQ]
-        rfl
-      g_eq s hs := by
-        obtain rfl := List.mem_singleton.mp hs
-        rw [toTriple_doubleCoverStoredTriple, ← computedGenus_eq]
-        decide }
+  refine BelyiRecord.isValidFor_of_triples_eq_singleton rfl rfl rfl rfl
+    ⟨⟨by decide, by decide, by decide⟩, ⟨by decide, by decide, by decide⟩,
+      Perm.isCycleNotation_nil_iff.mpr rfl⟩ hs0 hs0Q ?_ ?_
+  · rw [toTriple_doubleCoverStoredTriple]
+    decide
+  · rw [toTriple_doubleCoverStoredTriple, ← computedGenus_eq]
+    decide
 
 /-! ### The map label `2T1-2_2_1.1-a` -/
 

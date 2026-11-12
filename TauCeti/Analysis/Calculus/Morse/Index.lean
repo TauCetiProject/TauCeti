@@ -43,8 +43,8 @@ index zero at every point.
 The index depends only on the germ of the function and is invariant under a twice continuously
 differentiable change of coordinates with invertible derivative.  Finally, Sylvester's law of
 inertia puts the Hessian into a diagonal normal form with weights `±1`; the number of negative
-weights is exactly the Morse index.  This supplies the integer grading of critical points needed
-by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
+weights is exactly the Morse index.  This is the integer grading of critical points used by the
+Morse complex.
 
 ## Main declarations
 
@@ -80,8 +80,6 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 1.
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, §2.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section

@@ -25,6 +25,10 @@ normalized scalar rescaling, on a central extension with kernel the `n`-th roots
 We use the existing factor-set classification, restriction to roots of unity, and
 linearization constructions.
 
+Generators of second cohomology of prescribed orders `n i` are the transgressions of the
+coordinate characters of one factor set with values in `∏ i, μ_{n i}`
+(`TauCeti.exists_factorSet_surjective_characterTransgression`).
+
 ## References
 
 * G. Karpilovsky, *Projective Representations of Finite Groups* (1985), Chapters 2–3.
@@ -96,5 +100,56 @@ theorem IsProjectiveRep.exists_rootsOfUnityExtension_linearization
     (by rw [hmap, IsProjectiveRep.cohomologyClass_def]; exact hγ)
   refine ⟨β, π, c, hc, fun x ↦ ?_⟩
   simpa only [FactorSet.rightHom_apply, hf] using hπ x
+
+variable (k G) in
+/-- If elements `x i` killed by `n i` generate `H²(G, kˣ)`, then some factor set with values in
+`∏ i, μ_{n i}` has surjective character transgression. -/
+theorem exists_factorSet_surjective_characterTransgression {ι : Type} [Fintype ι]
+    (n : ι → ℕ)
+    (x : ι → groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) (hx : ∀ i, n i • x i = 0)
+    (hgen : ∀ y, ∃ c : ι → ℕ, y = ∑ i, c i • x i) :
+    ∃ α : FactorSet G (∀ i, rootsOfUnity (n i) k),
+      Function.Surjective (α.characterTransgression (A := kˣ)) := by
+  classical
+  choose β hβ hpow using fun i ↦
+    (FactorSet.nsmul_eq_zero_iff_exists_factorSet_pow_eq_one (x i)).mp (hx i)
+  let γ (i : ι) : FactorSet G (rootsOfUnity (n i) k) :=
+    ((β i).isFactorSet_curry trivialMulDistribMulAction_smul).toRootsOfUnityFactorSet
+      (fun g h ↦ hpow i (g, h))
+  -- Assemble their root-valued representatives into one central extension.
+  let M := ∀ i, rootsOfUnity (n i) k
+  let : MulDistribMulAction G M := trivialMulDistribMulAction G M
+  -- Use the same action for characters and transgression: otherwise bare scalar-action
+  -- inference on the function type M can select the pointwise Pi instance.
+  let : SMul G M := (inferInstance : MulDistribMulAction G M).toMulAction.toSMul
+  let α : FactorSet G M :=
+    { toFun p i := γ i p
+      isMulCocycle₂' g h j := by
+        funext i
+        exact (γ i).isMulCocycle₂ g h j
+      map_one_one' := by
+        funext i
+        exact (γ i).map_one_one }
+  have hα (p : G × G) (i : ι) : α p i = γ i p := rfl
+  have hγ (i : ι) (p : G × G) : (γ i p : kˣ) = β i p :=
+    IsFactorSet.coe_toRootsOfUnityFactorSet_apply _ _ p
+  let ev (i : ι) : M →*[G] kˣ :=
+    { (rootsOfUnity (n i) k).subtype.comp (Pi.evalMonoidHom _ i) with
+      map_smul' _ _ := rfl }
+  have hev (i : ι) (a : M) : ev i a = (a i : kˣ) := rfl
+  let χ (i : ι) : Additive (equivariantCharacterSubgroup G M kˣ) :=
+    Additive.ofMul ((equivariantCharacterEquiv G M kˣ).symm (ev i))
+  have hχ (i : ι) : α.characterTransgression (χ i) = x i := by
+    rw [FactorSet.characterTransgression_apply]
+    have heq : α.map (equivariantCharacterEquiv G M kˣ (χ i).toMul) = β i := by
+      ext p
+      simp only [χ, toMul_ofMul, Equiv.apply_symm_apply, FactorSet.map_apply]
+      simp only [hev, hα, hγ]
+    rw [heq]
+    exact hβ i
+  -- Every cyclic generator is the transgression of its coordinate character.
+  refine ⟨α, fun y ↦ ?_⟩
+  obtain ⟨c, rfl⟩ := hgen y
+  exact ⟨∑ i, c i • χ i, by simp only [map_sum, map_nsmul, hχ]⟩
 
 end TauCeti

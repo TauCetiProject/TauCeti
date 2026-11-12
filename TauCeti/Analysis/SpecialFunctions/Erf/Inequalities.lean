@@ -174,7 +174,6 @@ theorem millsRatio_bounds {x : ℝ} (hx : 0 ≤ x) :
         = (c - 1 - y * (Real.sqrt (y ^ 2 + c) - y)) / (Real.sqrt (y ^ 2 + c) * (y +
             Real.sqrt (y ^ 2 + c))) := by
     intro c y hc hy
-    have h1 := hsp c y hc
     have h2 : y + Real.sqrt (y ^ 2 + c) ≠ 0 := by positivity
     have h3 := hsq c y hc
     rw [show c - 1 - y * (Real.sqrt (y ^ 2 + c) - y) = Real.sqrt (y ^ 2 + c) ^ 2 - y *
@@ -212,7 +211,6 @@ theorem millsRatio_bounds {x : ℝ} (hx : 0 ≤ x) :
     have hEP : ∀ y, 0 ≤ y → (0 ≤ N y ↔ 0 ≤ Real.exp (-y ^ 2) *
         (N y / (Real.sqrt (y ^ 2 + c) * (y + Real.sqrt (y ^ 2 + c))))) := by
       intro y hy
-      have h1 := hsp c y hc
       have hq : 0 < Real.sqrt (y ^ 2 + c) * (y + Real.sqrt (y ^ 2 + c)) := by positivity
       rw [mul_nonneg_iff_of_pos_left (Real.exp_pos _), div_nonneg_iff]
       constructor
@@ -231,7 +229,6 @@ theorem millsRatio_bounds {x : ℝ} (hx : 0 ≤ x) :
               (mem_Ici.mpr (hx.trans hy.le)) hy.le
             beta_reduce at this
             simp only [hN]; linarith
-          have h1 := hsp c y (hc)
           have hq : 0 < Real.sqrt (y ^ 2 + c) * (y + Real.sqrt (y ^ 2 + c)) := by
             have := hx.trans hy.le; positivity
           exact mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos _).le
@@ -259,9 +256,8 @@ theorem millsRatio_bounds_affine {x : ℝ} (hx : 0 ≤ x) :
       Real.sqrt π / 2 * Real.exp (x ^ 2) * erfc x < 1 / (x + 1) := by
   rw [← millsRatio_def]
   constructor
-  · set k := Real.sqrt π with hk
+  · set k := Real.sqrt π
     have hk0 : 0 < k := Real.sqrt_pos.mpr Real.pi_pos
-    have hk2 : k ^ 2 = π := Real.sq_sqrt Real.pi_pos.le
     set N : ℝ → ℝ := fun y => 4 - 2 * k ^ 2 + 4 * k * y with hN
     set F : ℝ → ℝ := fun y => -(Real.exp (-y ^ 2) * (k / (2 * k * y + 2)) - k / 2 *
         TauCeti.Real.erfc y) with hF
@@ -337,8 +333,7 @@ theorem millsRatio_lt_two_div {x : ℝ} (hx : -Real.sqrt 2 / 2 < x) :
     intro y hy
     rcases le_or_gt 0 y with h | h
     · have := hsp y; linarith
-    · have hy2 : y ^ 2 < 1 / 2 := by nlinarith
-      nlinarith [hsq y, hsp y]
+    · nlinarith [hsq y, hsp y]
   refine millsRatio_lt (g := fun y => 2 / (3 * y + Real.sqrt (y ^ 2 + 4)))
     (fun y hy => Real.hasDerivAt_div_mul_add_sqrt_sq_add 2 3 (by norm_num) (hD y hy).ne')
     (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 2 (by norm_num) (by norm_num)) ?_
@@ -346,7 +341,7 @@ theorem millsRatio_lt_two_div {x : ℝ} (hx : -Real.sqrt 2 / 2 < x) :
   have hDy := hD y hy.le
   have h1 := hsp y
   have h3 := hsq y
-  set s := Real.sqrt (y ^ 2 + 4) with hs
+  set s := Real.sqrt (y ^ 2 + 4)
   have hid : -2 * (3 + y / s) / (3 * y + s) ^ 2 - 2 * y * (2 / (3 * y + s)) + 1 =
       (2 * y * (3 + y ^ 2) - 2 * s * (1 + y ^ 2)) / (s * (3 * y + s) ^ 2) := by
     field_simp
@@ -517,12 +512,9 @@ theorem erf_lt_sqrt_one_sub_exp {x : ℝ} (hx : 0 < x) :
   set k : ℝ := 4 / π with hk
   set c : ℝ := 2 / Real.sqrt π with hc
   have hπ := Real.pi_pos
-  have hsπ : 0 < Real.sqrt π := Real.sqrt_pos.mpr hπ
   have hk0 : 0 < k := by positivity
-  have hc0 : 0 < c := by positivity
   have hck : c ^ 2 = k := by
     simp only [hc, hk, div_pow, Real.sq_sqrt hπ.le]; norm_num
-  have hk1 : 1 < k := by rw [hk, lt_div_iff₀ hπ]; linarith [Real.pi_lt_four]
   set m : ℝ := 2 * (k - 1) with hm
   have hk2 : 0 < 2 - k := by
     have : k < 2 := by rw [hk, div_lt_iff₀ hπ]; linarith [Real.pi_gt_three]
