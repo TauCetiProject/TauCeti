@@ -46,9 +46,13 @@ needed for the statements below.
   the class used in the proof of Theorem 6.12 of the source.
 * **The trivial fibration.** For the identity of a compact oriented `n`-manifold `M` and integer
   coefficients, the localization of `Hₙ(M)` at a point is the map to the local homology
-  `Hₙ(M, M ∖ {b})`, and the multiple `d • [M]` of the fundamental class lives over the
-  fundamental class exactly when `d ≠ 0`
-  (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_id_zsmul_fundamentalClass_iff`). When
+  `Hₙ(M, M ∖ {b})`, sending `[M]` to the local orientation at `b`
+  (`TauCeti.HomologicalOrientation.fiberLocalization_id_fundamentalClass`), and the multiple
+  `d • [M]` of the fundamental class lives over the fundamental class exactly when `d ≠ 0`
+  (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_id_zsmul_fundamentalClass_iff`). So
+  for a section `s` of a map `p` to `M`, a class of `Hₙ(E; ℤ)` lives over the fundamental class
+  modulo all classes `s_* β` exactly when it does so modulo the multiples of `s_*[M]`
+  (`TauCeti.HomologicalOrientation.forall_livesOverFundamentalClass_sub_iff`). When
   `M` is moreover connected, the classes of `Hₙ(M)` that live over the fundamental class are
   exactly the nonzero ones (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_id_iff`).
   This is the remark following the source's Definition 2.3: for trivial coefficients these are
@@ -116,14 +120,6 @@ theorem homologyMap_comp_fiberLocalization (σ : C(E, E')) {p : E → M} {p' : E
   rw [localHomologyMap_def]
   exact h'
 
-/-- A section `s` of `p : E → M` induces a section on singular homology: `p_* ∘ s_* = id`. -/
-theorem homologyMap_comp_homologyMap_of_comp_eq_id [TopologicalSpace M] (p : C(E, M))
-    (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M) (k : ℕ) :
-    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k ≫
-        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k = 𝟙 _ := by
-  rw [← SSet.homologyMap_comp, ← CategoryTheory.Functor.map_comp, ← TopCat.ofHom_comp, hs,
-    TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id]
-
 /-- For the identity of `M`, the localization at the fibre over `b` is the quotient map to
 `Hₖ(M, M ∖ M)` followed by restriction to the local homology `Hₖ(M, M ∖ {b})` at `b`. -/
 theorem fiberLocalization_id [TopologicalSpace M] (b : M) (k : ℕ) :
@@ -155,16 +151,6 @@ theorem homologyMap_comp_fiberLocalization_apply (σ : C(E, E')) {p : E → M} {
       (localHomologyMap R σ (by rw [← preimage_comp, h]) k).hom
         ((fiberLocalization R p b k).hom α) := by
   rw [← ModuleCat.comp_apply, homologyMap_comp_fiberLocalization R σ h b k, ModuleCat.comp_apply]
-
-/-- Pointwise form of `TauCeti.homologyMap_comp_homologyMap_of_comp_eq_id`: for a section `s` of
-`p : E → M`, `p_* (s_* β) = β`. -/
-theorem homologyMap_comp_homologyMap_of_comp_eq_id_apply [TopologicalSpace M] (p : C(E, M))
-    (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M) {k : ℕ}
-    (β : ((TopCat.toSSet.obj (TopCat.of M)).homology R k : ModuleCat.{w} Λ)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
-      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β) = β := by
-  rw [← ModuleCat.comp_apply, homologyMap_comp_homologyMap_of_comp_eq_id R p s hs,
-    ModuleCat.id_apply]
 
 /-- A class `α ∈ Hₖ(E)` **lives over the fundamental class** of `M` at `b`, for a map
 `p : E → M`, if its localization `Hₖ(E) → Hₖ(E, E ∖ p⁻¹(b))` at the fibre over `b` is nonzero.
@@ -242,7 +228,7 @@ theorem LivesOverFundamentalClass.sub_homologyMap_section [TopologicalSpace M] (
         = (localHomologyMap R p subset_rfl k).hom ((fiberLocalization R p b k).hom
             ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom β)) := by
       rw [← homologyMap_comp_fiberLocalization_apply R p (Function.id_comp _),
-        homologyMap_comp_homologyMap_of_comp_eq_id_apply R p s hs]
+        homologyMap_comp_homologyMap_of_comp_eq_id_apply R p s hs k]
     _ = (localHomologyMap R p subset_rfl k).hom ((fiberLocalization R p b k).hom α) := by rw [h]
     _ = 0 := by
       rw [← homologyMap_comp_fiberLocalization_apply R p (Function.id_comp _), hα₀, map_zero]
@@ -266,7 +252,7 @@ theorem exists_forall_livesOverFundamentalClass_sub_iff [TopologicalSpace M] (p 
   refine ⟨fun ⟨α, hα⟩ ↦
     ⟨_, ?_, hα ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)⟩,
     fun ⟨α, hα₀, hα⟩ ↦ ⟨α, hα.sub_homologyMap_section R p s hs hα₀⟩⟩
-  rw [map_sub, homologyMap_comp_homologyMap_of_comp_eq_id_apply R p s hs, sub_self]
+  rw [map_sub, homologyMap_comp_homologyMap_of_comp_eq_id_apply R p s hs k, sub_self]
 
 end LivesOver
 
@@ -278,6 +264,15 @@ variable {M E V : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [ChartedSpace V M]
   [TopologicalSpace E] {n : ℕ} (o : HomologicalOrientation M V n) (hn : Module.finrank ℝ V = n)
 
+/-- For the identity of a compact oriented manifold, the localization of the fundamental class at
+`b` is the local orientation at `b`. -/
+theorem fiberLocalization_id_fundamentalClass (b : M) :
+    (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) id b n).hom (o.fundamentalClass hn) =
+      (o b).val := by
+  rw [fiberLocalization_id]
+  erw [ModuleCat.comp_apply]
+  exact o.localHomologyRestriction_singularHomologyπ_fundamentalClass hn b
+
 include hn in
 /-- **Multiples of the fundamental class.** For the identity of a compact oriented manifold, the
 multiple `d • [M]` of the fundamental class lives over the fundamental class at any point exactly
@@ -287,10 +282,7 @@ infinite order. -/
 theorem livesOverFundamentalClass_id_zsmul_fundamentalClass_iff (b : M) (d : ℤ) :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) id b (d • o.fundamentalClass hn) ↔
       d ≠ 0 := by
-  rw [livesOverFundamentalClass_iff, fiberLocalization_id, map_zsmul]
-  erw [ModuleCat.comp_apply]
-  erw [localHomologyRestriction_singularHomologyπ_fundamentalClass]
-  rw [not_iff_not]
+  rw [livesOverFundamentalClass_iff, map_zsmul, fiberLocalization_id_fundamentalClass, not_iff_not]
   exact ⟨fun h ↦ o.zsmul_left_injective hn b (h.trans (zero_smul ℤ _).symm),
     fun h ↦ h ▸ zero_smul ℤ _⟩
 
@@ -300,6 +292,34 @@ include hn in
 theorem livesOverFundamentalClass_id_fundamentalClass (b : M) :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) id b (o.fundamentalClass hn) := by
   simpa using (o.livesOverFundamentalClass_id_zsmul_fundamentalClass_iff hn b 1).2 one_ne_zero
+
+/-- **Classes over a section, modulo the fundamental class.** Let `s` be a section of a map
+`p : E → M` to a compact oriented `n`-manifold. A class `α ∈ Hₙ(E; ℤ)` keeps living over the
+fundamental class at `b` after subtracting any class `s_* β`, `β ∈ Hₙ(M; ℤ)`, exactly when it does
+so after subtracting every multiple `d • s_*[M]`. Indeed the localization of `β` at `b` is a
+multiple of the local orientation at `b`, which is the localization of `[M]`. -/
+theorem forall_livesOverFundamentalClass_sub_iff (p : C(E, M)) (s : C(M, E))
+    (hs : p.comp s = ContinuousMap.id M) (b : M)
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)) :
+    (∀ β : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+        ModuleCat.{0} ℤ),
+      LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) p b
+        (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom β)) ↔
+      ∀ d : ℤ, LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) p b
+        (α - d • (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.fundamentalClass hn)) := by
+  refine ⟨fun h d ↦ by simpa using h (d • o.fundamentalClass hn), fun h β ↦ ?_⟩
+  have hs' : (p ∘ s : M → M) = id := congrArg DFunLike.coe hs
+  obtain ⟨d, hd⟩ := (isLocalOrientation_iff _ _ _).1 (o b).property
+    ((fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) id b n).hom β)
+  rw [← o.fiberLocalization_id_fundamentalClass hn b, ← map_zsmul] at hd
+  intro h0
+  apply h d
+  rw [← map_zsmul, map_sub, homologyMap_comp_fiberLocalization_apply _ s hs', hd,
+    ← homologyMap_comp_fiberLocalization_apply _ s hs', ← map_sub]
+  exact h0
 
 include o hn in
 /-- **The trivial fibration** (the remark after Barraud–Damian–Humilière–Oancea, Definition 2.3).

@@ -68,7 +68,7 @@ of the localization along `σ` and `ev`. So abundance is exactly the existence o
 * `TauCeti.isAbundantWithTwoSpheres_of_livesOverFundamentalClass_of_lt`: for a compact
   `n`-manifold, a class of degree `k > n` living over the fundamental class makes it abundant.
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub_zsmul`:
-  for a compact connected oriented `n`-manifold, a class of degree `n` makes it abundant when it
+  for a compact oriented `n`-manifold, a class of degree `n` makes it abundant when it
   lives over the fundamental class modulo the multiples of the class `σ_*[Q]` of constant spheres.
 
 ## References
@@ -173,12 +173,12 @@ namespace HomologicalOrientation
 
 open AlgebraicTopology
 
-variable {Q V : Type} [TopologicalSpace Q] [T2Space Q] [CompactSpace Q] [ConnectedSpace Q]
+variable {Q V : Type} [TopologicalSpace Q] [T2Space Q] [CompactSpace Q]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [ChartedSpace V Q] {n : ℕ}
   (o : HomologicalOrientation Q V n) (hn : Module.finrank ℝ V = n)
 
 include o hn in
-/-- **Classes in the dimension.** Let `Q` be a compact connected oriented `n`-manifold. A class
+/-- **Classes in the dimension.** Let `Q` be a compact oriented `n`-manifold. A class
 `α ∈ Hₙ(Map(S², Q); ℤ)` such that `α - d • σ_*[Q]` lives over the fundamental class at `b` for
 every integer `d`, where `σ_*[Q]` is the class of the constant spheres, makes `Q` abundant with
 2-spheres at `b`. Read through Lemma 2.9 of Barraud–Damian–Humilière–Oancea, the hypothesis is
@@ -191,11 +191,9 @@ theorem isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub_zsmul {b : Q}
       (mappingSpaceEval Sphere2.north) b
         (α - d • (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ContinuousMap.const'))
           (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.fundamentalClass hn))) :
-    IsAbundantWithTwoSpheres (ModuleCat.of ℤ (ULift.{0} ℤ)) b := by
-  refine ⟨n, α, fun β ↦ ?_⟩
-  obtain ⟨d, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hn β
-  rw [map_zsmul]
-  exact hα d
+    IsAbundantWithTwoSpheres (ModuleCat.of ℤ (ULift.{0} ℤ)) b :=
+  ⟨n, α, (o.forall_livesOverFundamentalClass_sub_iff hn _ _ (mappingSpaceEval_comp_const' _) b
+    α).2 hα⟩
 
 end HomologicalOrientation
 
