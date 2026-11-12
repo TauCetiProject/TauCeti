@@ -71,21 +71,19 @@ separability hypothesis; Dedekindness is in `IntermediateRing/Dedekind.lean` as
 `IntermediateRing/IntegrallyClosed.lean` as `isIntegrallyClosed_intermediateRing`. Its fraction
 field, rank, projectivity, and prime-counting theory are in `IntermediateRing/Rank.lean`.
 
-This opens the "points come along" milestone of Layer 1 of
-`TauCetiRoadmap/EllipticCurves/README.md`, which names this object as "the **intermediate ring**
-— the integral closure of `W₂.CoordinateRing` in `W₁.FunctionField`, the normalization
-`mapsInfinity` names", receiving both coordinate rings on the way to `pushClass` and
-`toPointHom`. It follows Silverman, *The Arithmetic of Elliptic Curves*, II.2.
+This is the first step towards the map an isogeny induces on points: the intermediate ring — the
+integral closure of `W₂.CoordinateRing` in `W₁.FunctionField`, the normalization `MapsInfinity`
+names — receives both coordinate rings on the way to `pushClass` and `toPointHom`. It follows
+Silverman, *The Arithmetic of Elliptic Curves*, II.2.
 
 ## Provenance
 
-⚠ *mathlib-track*. `TauCetiRoadmap/EllipticCurves/README.md:1092` lists the `IntermediateRing`,
-and `pushClass` by ideal extension and relative norm (`ClassGroup.extendedRelNormHom`), among the
-components of D. Angdinata's shared isogeny development, on the way to `toPointHom`; the two
-embeddings added here are what that relative-norm step requires of the intermediate ring, since
-ideal extension along a non-injective map loses the information the class-group route needs. The
-siblings `Finite.lean`, `Dedekind.lean`, `IntegrallyClosed.lean`, and `Rank.lean` carry the same
-flag for the same object.
+⚠ *mathlib-track*. D. Angdinata's shared isogeny development carries the `IntermediateRing`, and
+builds `pushClass` from it by ideal extension and relative norm (`ClassGroup.extendedRelNormHom`)
+on the way to `toPointHom`; the two embeddings added here are what that relative-norm step
+requires of the intermediate ring, since ideal extension along a non-injective map loses the
+information the class-group route needs. The siblings `Finite.lean`, `Dedekind.lean`,
+`IntegrallyClosed.lean`, and `Rank.lean` carry the same flag for the same object.
 
 The choice of object is taken from the AINTLIB project (`github.com/CBirkbeck/AINTLIB`, at
 revision `2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache 2.0 per the source file's header, by

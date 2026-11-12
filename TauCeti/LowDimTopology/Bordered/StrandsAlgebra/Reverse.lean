@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.LinearAlgebra.Basis.MulOpposite
 public import Mathlib.Order.Fin.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
 
 /-!
 # Orientation reversal of the strands algebra
@@ -30,6 +31,16 @@ resolving the other (`TauCeti.StrandDiagram.reverse_resolve`). The corresponding
 algebra `A(Z)` of a pointed matched circle are in
 `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Opposite`.
 
+Both maps respect the grading of `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading`, through
+maps of grading groups. Relabelling transports the boundary of a class and keeps the Maslov
+component. Rotation keeps the Maslov component and negates the boundary, since the strands of the
+rotated diagram run from the old end points to the old starting points; the multiplicities of a
+class are unchanged, because the total sum of its boundary vanishes. As the rotation reverses
+products, so does the induced map of grading groups: it is an isomorphism onto the opposite group,
+`R(g h) = R(h) R(g)`, because for the reversed order the form `L` defining the product becomes
+`(β₁, β₂) ↦ L(β₂, β₁)` (`TauCeti.StrandGradingGroup.linking_reverse`). It fixes the central element
+`λ`, so the differential keeps its degree `λ⁻¹`.
+
 ## Main definitions
 
 * `TauCeti.StrandDiagram.map e φ`: the diagram `φ` with its points relabelled along an order
@@ -40,6 +51,11 @@ algebra `A(Z)` of a pointed matched circle are in
 * `TauCeti.StrandsAlgebra.reverseAlgEquiv`: the algebra isomorphism `A(α) ≃ A(αᵒᵈ)ᵐᵒᵖ`.
 * `TauCeti.StrandsAlgebra.revAlgEquiv`: the anti-automorphism `A(n) ≃ A(n)ᵐᵒᵖ` of the strands
   algebra on `{1, …, n}`, rotating diagrams by half a turn.
+* `TauCeti.StrandGradingGroup.map e`: the isomorphism of grading groups induced by `e : α ≃o β`.
+* `TauCeti.StrandGradingGroup.reverse`: the orientation reversal `G(α) ≃ G(αᵒᵈ)ᵐᵒᵖ` of the
+  grading group.
+* `TauCeti.StrandGradingGroup.rev`: the anti-automorphism `G(n) ≃ G(n)ᵐᵒᵖ` of the grading group
+  of the strands algebra on `{1, …, n}`.
 
 ## Main results
 
@@ -55,6 +71,16 @@ algebra `A(Z)` of a pointed matched circle are in
   `TauCeti.StrandsAlgebra.unop_reverseAlgEquiv_differential`,
   `TauCeti.StrandsAlgebra.unop_revAlgEquiv_differential`: relabelling and rotation commute with the
   differential.
+* `TauCeti.StrandDiagram.grading_map`, `TauCeti.StrandDiagram.grading_reverse`: relabelling and
+  rotation transform the grading of a diagram by `StrandGradingGroup.map` and
+  `StrandGradingGroup.reverse`.
+* `TauCeti.StrandsAlgebra.mapAlgEquiv_mem_gradedPart_iff`,
+  `TauCeti.StrandsAlgebra.unop_reverseAlgEquiv_mem_gradedPart_iff`,
+  `TauCeti.StrandsAlgebra.unop_revAlgEquiv_mem_gradedPart_iff`: the isomorphisms of strands
+  algebras carry the part of grading `g` onto the part of the transformed grading.
+* `TauCeti.StrandGradingGroup.reverse_lambda`,
+  `TauCeti.StrandGradingGroup.unop_reverse_mem_gPrime_iff`: the reversal fixes `λ` and preserves
+  the subgroup `G'(n)`.
 
 ## References
 
@@ -217,7 +243,7 @@ theorem reverse_apply (φ : StrandDiagram α) (i : αᵒᵈ) :
   ext j
   rw [← Option.mem_def, mem_reverse, ← Option.mem_def, Option.mem_map]
   simp only [PEquiv.mem_iff_mem, coe_toPEquiv]
-  exact ⟨fun h ↦ ⟨_, h, rfl⟩, fun ⟨k, hk, hj⟩ ↦ hj ▸ hk⟩
+  exact ⟨fun h ↦ ⟨_, h, rfl⟩, fun ⟨_, hk, hj⟩ ↦ hj ▸ hk⟩
 
 theorem toDual_mem_reverse_toDual {φ : StrandDiagram α} {i j : α} :
     toDual j ∈ φ.reverse (toDual i) ↔ i ∈ φ j :=
@@ -588,6 +614,310 @@ theorem unop_revAlgEquiv_differential {n : ℕ} (x : StrandsAlgebra R (Fin n)) :
       differential R (Fin n) (unop (revAlgEquiv n x)) := by
   rw [unop_revAlgEquiv_apply, unop_revAlgEquiv_apply, unop_reverseAlgEquiv_differential,
     mapAlgEquiv_differential]
+
+end StrandsAlgebra
+
+/-! ### Relabelling and reversing the grading group -/
+
+namespace StrandGradingGroup
+
+variable {α β γ : Type*} [LinearOrder α] [Fintype α] [LinearOrder β] [Fintype β]
+  [LinearOrder γ] [Fintype γ]
+
+/-- The multiplicity of a class at a point does not change when the points are relabelled along
+an order isomorphism. -/
+theorem pointMultiplicity_comp_symm (e : α ≃o β) (p : α) (δ : α → ℤ) :
+    pointMultiplicity (e p) (δ ∘ e.symm) = pointMultiplicity p δ := by
+  have h : ∑ y ∈ ({y | y < e p} : Finset β), (δ (e.symm y) : ℚ) =
+      ∑ y ∈ ({y | y < p} : Finset α), (δ y : ℚ) := by
+    rw [Finset.sum_filter, Finset.sum_filter]
+    exact Fintype.sum_equiv e.symm.toEquiv _ _ fun y ↦ by simp [e.symm_apply_lt]
+  simp only [pointMultiplicity_apply, Function.comp_apply, OrderIso.symm_apply_apply, h]
+
+/-- The form `L` does not change when the points are relabelled along an order isomorphism. -/
+theorem linking_comp_symm (e : α ≃o β) (δ₁ δ₂ : α → ℤ) :
+    linking (δ₁ ∘ e.symm) (δ₂ ∘ e.symm) = linking δ₁ δ₂ := by
+  rw [linking_apply, linking_apply]
+  exact Fintype.sum_equiv e.symm.toEquiv _ _ fun q ↦ by
+    simp [← pointMultiplicity_comp_symm e (e.symm q) δ₂]
+
+/-- Relabelling the points along an order isomorphism `e : α ≃o β` is an isomorphism of grading
+groups: it keeps the Maslov component and transports the boundary along `e`. -/
+def map (e : α ≃o β) : StrandGradingGroup α ≃* StrandGradingGroup β where
+  toFun g := mk g.maslov (g.boundary ∘ e.symm)
+  invFun g := mk g.maslov (g.boundary ∘ e)
+  left_inv g := by ext <;> simp [Function.comp_def]
+  right_inv g := by ext <;> simp [Function.comp_def]
+  map_mul' g h := by
+    ext
+    · simp [linking_comp_symm]
+    · simp [Function.comp_def, Pi.add_def]
+
+@[simp]
+theorem map_maslov (e : α ≃o β) (g : StrandGradingGroup α) : (map e g).maslov = g.maslov := by
+  simp [map]
+
+@[simp]
+theorem map_boundary (e : α ≃o β) (g : StrandGradingGroup α) (y : β) :
+    (map e g).boundary y = g.boundary (e.symm y) := by
+  simp [map]
+
+@[simp]
+theorem map_symm (e : α ≃o β) : (map e).symm = map e.symm := by
+  ext g y
+  · simp [map]
+  · simp [map]
+
+@[simp]
+theorem map_refl : map (OrderIso.refl α) = MulEquiv.refl (StrandGradingGroup α) := by
+  ext g y
+  · simp [map]
+  · simp [map]
+
+theorem map_trans (e : α ≃o β) (e' : β ≃o γ) : map (e.trans e') = (map e).trans (map e') := by
+  ext g y
+  · simp [map]
+  · simp [map]
+
+@[simp]
+theorem map_lambda (e : α ≃o β) : map e lambda = lambda := by
+  ext <;> simp
+
+/-- Relabelling preserves the subgroup `G'(n)`. -/
+@[simp]
+theorem map_mem_gPrime_iff (e : α ≃o β) {g : StrandGradingGroup α} :
+    map e g ∈ gPrime ↔ g ∈ gPrime := by
+  have h : #{y | Odd (g.boundary (e.symm y))} = #{x | Odd (g.boundary x)} := by
+    simp only [Finset.card_filter]
+    exact Fintype.sum_equiv e.symm.toEquiv _ _ fun _ ↦ rfl
+  simp only [mem_gPrime, map_maslov, map_boundary, h]
+  rw [Fintype.sum_equiv e.symm.toEquiv (fun y ↦ g.boundary (e.symm y)) g.boundary fun _ ↦ rfl]
+
+/-- The multiplicity of the reversed class, with boundary `x ↦ -δ x`, at `p` for the reversed
+order exceeds `m(β, p)` by the total sum of `δ`. For the classes of diagrams, whose boundaries
+have total sum zero, the two multiplicities agree. -/
+theorem pointMultiplicity_toDual (p : α) (δ : α → ℤ) :
+    pointMultiplicity (toDual p) (fun x ↦ -δ (ofDual x)) =
+      pointMultiplicity p δ + ∑ x, (δ x : ℚ) := by
+  have h : ∑ y ∈ ({y | y < toDual p} : Finset αᵒᵈ), ((-δ (ofDual y) : ℤ) : ℚ) =
+      -∑ y ∈ ({y | p < y} : Finset α), (δ y : ℚ) := by
+    rw [Finset.sum_filter, Finset.sum_filter, ← Finset.sum_neg_distrib]
+    exact Fintype.sum_equiv ofDual _ _ fun y ↦ by split_ifs <;> simp_all [lt_toDual]
+  rw [pointMultiplicity_apply, h, pointMultiplicity_eq_sum_gt, ofDual_toDual]
+  push_cast
+  ring
+
+/-- **Reversal turns `L` around**: for the reversed order and the reversed classes, with
+boundaries `x ↦ -δ x`, the form `L` takes the value `L(β₂, β₁)`. -/
+theorem linking_reverse (δ₁ δ₂ : α → ℤ) :
+    linking (fun x : αᵒᵈ ↦ -δ₁ (ofDual x)) (fun x ↦ -δ₂ (ofDual x)) = linking δ₂ δ₁ := by
+  have h : linking (fun x : αᵒᵈ ↦ -δ₁ (ofDual x)) (fun x ↦ -δ₂ (ofDual x)) =
+      -∑ p, (δ₁ p : ℚ) * (pointMultiplicity p δ₂ + ∑ x, (δ₂ x : ℚ)) := by
+    rw [linking_apply, ← Finset.sum_neg_distrib]
+    exact Fintype.sum_equiv ofDual _ _ fun x ↦ by
+      simp [← pointMultiplicity_toDual (ofDual x) δ₂]
+  rw [h]
+  simp only [mul_add, Finset.sum_add_distrib, ← Finset.sum_mul, ← linking_apply]
+  linear_combination (-1 : ℚ) * linking_add_linking_swap δ₁ δ₂
+
+/-- **Orientation reversal of the grading group.** Reversing the order of the points, and with it
+the orientation of the classes, is an isomorphism from the grading group of `α` onto the opposite
+of the grading group of `αᵒᵈ`: it keeps the Maslov component and negates the boundary. So it is an
+anti-isomorphism, `R(g h) = R(h) R(g)`, matching the orientation reversal of the strands algebra
+`TauCeti.StrandsAlgebra.reverseAlgEquiv`. -/
+def reverse : StrandGradingGroup α ≃* (StrandGradingGroup αᵒᵈ)ᵐᵒᵖ where
+  toFun g := op (mk g.maslov fun x ↦ -g.boundary (ofDual x))
+  invFun g := mk g.unop.maslov fun x ↦ -g.unop.boundary (toDual x)
+  left_inv g := by ext <;> simp
+  right_inv g := unop_injective <| by ext <;> simp
+  map_mul' g h := unop_injective <| by
+    ext
+    · simp only [mul_maslov, mk_maslov, mk_boundary, unop_mul, unop_op, linking_reverse]
+      ring
+    · simp only [mul_boundary, mk_boundary, unop_mul, unop_op, Pi.add_apply]
+      ring
+
+@[simp]
+theorem reverse_maslov (g : StrandGradingGroup α) : (reverse g).unop.maslov = g.maslov := by
+  simp [reverse]
+
+@[simp]
+theorem reverse_boundary (g : StrandGradingGroup α) (x : αᵒᵈ) :
+    (reverse g).unop.boundary x = -g.boundary (ofDual x) := by
+  simp [reverse]
+
+@[simp]
+theorem reverse_symm_maslov (g : (StrandGradingGroup αᵒᵈ)ᵐᵒᵖ) :
+    (reverse.symm g).maslov = g.unop.maslov := by
+  simp [reverse]
+
+@[simp]
+theorem reverse_symm_boundary (g : (StrandGradingGroup αᵒᵈ)ᵐᵒᵖ) (x : α) :
+    (reverse.symm g).boundary x = -g.unop.boundary (toDual x) := by
+  simp [reverse]
+
+/-- Reversal commutes with relabelling, which becomes relabelling along the dual order
+isomorphism `e.dual : αᵒᵈ ≃o βᵒᵈ`. -/
+theorem reverse_map (e : α ≃o β) (g : StrandGradingGroup α) :
+    (reverse (map e g)).unop = map e.dual (reverse g).unop := by
+  ext x
+  · simp
+  · simp
+
+/-- Reversing twice is the identity, up to the identification `α ≃o αᵒᵈᵒᵈ`. -/
+theorem reverse_reverse (g : StrandGradingGroup α) :
+    (reverse (reverse g).unop).unop = map (OrderIso.dualDual α) g := by
+  ext x
+  · simp
+  · simp
+
+/-- Reversal fixes the central element `λ`, so the differential keeps its degree `λ⁻¹`. -/
+@[simp]
+theorem reverse_lambda : reverse (lambda : StrandGradingGroup α) = op lambda :=
+  unop_injective <| by ext <;> simp
+
+/-- Reversal preserves the subgroup `G'(n)`. -/
+@[simp]
+theorem unop_reverse_mem_gPrime_iff {g : StrandGradingGroup α} :
+    (reverse g).unop ∈ gPrime ↔ g ∈ gPrime := by
+  have h : #{x : αᵒᵈ | Odd (g.boundary (ofDual x))} = #{x | Odd (g.boundary x)} := by
+    simp only [Finset.card_filter]
+    exact Fintype.sum_equiv ofDual _ _ fun _ ↦ rfl
+  simp only [mem_gPrime, reverse_maslov, reverse_boundary, Finset.sum_neg_distrib, neg_eq_zero,
+    odd_neg, h]
+  rw [Fintype.sum_equiv ofDual (fun x ↦ g.boundary (ofDual x)) g.boundary fun _ ↦ rfl]
+
+variable (n : ℕ)
+
+/-- The orientation reversal of the grading group of the strands algebra on `{1, …, n}`: reverse
+the order and relabel it by `i ↦ n + 1 - i` (here `Fin.rev`). It is the anti-automorphism matching
+`TauCeti.StrandsAlgebra.revAlgEquiv`. -/
+def rev : StrandGradingGroup (Fin n) ≃* (StrandGradingGroup (Fin n))ᵐᵒᵖ :=
+  reverse.trans (MulEquiv.op (map Fin.revOrderIso))
+
+variable {n}
+
+@[simp]
+theorem rev_maslov (g : StrandGradingGroup (Fin n)) : (rev n g).unop.maslov = g.maslov := by
+  simp [rev, MulEquiv.op]
+
+@[simp]
+theorem rev_boundary (g : StrandGradingGroup (Fin n)) (i : Fin n) :
+    (rev n g).unop.boundary i = -g.boundary i.rev := by
+  simp [rev, MulEquiv.op]
+
+@[simp]
+theorem rev_symm_maslov (g : (StrandGradingGroup (Fin n))ᵐᵒᵖ) :
+    ((rev n).symm g).maslov = g.unop.maslov := by
+  simp [rev, MulEquiv.op]
+
+@[simp]
+theorem rev_symm_boundary (g : (StrandGradingGroup (Fin n))ᵐᵒᵖ) (i : Fin n) :
+    ((rev n).symm g).boundary i = -g.unop.boundary i.rev := by
+  simp [rev, MulEquiv.op]
+
+@[simp]
+theorem rev_lambda : rev n lambda = op lambda := by
+  simp [rev, MulEquiv.op]
+
+@[simp]
+theorem unop_rev_mem_gPrime_iff {g : StrandGradingGroup (Fin n)} :
+    (rev n g).unop ∈ gPrime ↔ g ∈ gPrime := by
+  simp [rev, MulEquiv.op]
+
+end StrandGradingGroup
+
+namespace StrandDiagram
+
+open StrandGradingGroup
+
+variable {α β : Type*} [LinearOrder α] [Fintype α] [LinearOrder β] [Fintype β]
+
+/-- The boundary of the class of a relabelled diagram is the relabelled boundary. -/
+@[simp]
+theorem boundary_map (e : α ≃o β) (φ : StrandDiagram α) (y : β) :
+    (φ.map e).boundary y = φ.boundary (e.symm y) := by
+  simp [boundary_apply]
+
+/-- Relabelling a diagram along an order isomorphism relabels its grading. -/
+@[simp]
+theorem grading_map (e : α ≃o β) (φ : StrandDiagram α) :
+    (φ.map e).grading = StrandGradingGroup.map e φ.grading := by
+  have hb : (φ.map e).boundary = φ.boundary ∘ e.symm := funext (boundary_map e φ)
+  ext
+  · simp [hb, Finset.sum_map, pointMultiplicity_comp_symm]
+  · simp
+
+/-- The class of a rotated diagram has the negated boundary: its strands run from the end points
+of `φ` to its starting points. -/
+@[simp]
+theorem boundary_reverse (φ : StrandDiagram α) (x : αᵒᵈ) :
+    φ.reverse.boundary x = -φ.boundary (ofDual x) := by
+  simp only [boundary_apply, source_reverse, target_reverse, Finset.mem_map_equiv,
+    toDual_symm_eq]
+  ring
+
+/-- **Rotation reverses the grading.** The grading of a diagram rotated by half a turn is the
+orientation reversal of its grading. Its Maslov component is unchanged: rotation preserves the
+crossings, and the multiplicities of the class of a diagram at its starting points have the same
+sum as its multiplicities at its end points, because `L` vanishes on the class. -/
+@[simp]
+theorem grading_reverse (φ : StrandDiagram α) :
+    φ.reverse.grading = (StrandGradingGroup.reverse φ.grading).unop := by
+  have hb : φ.reverse.boundary = fun x ↦ -φ.boundary (ofDual x) := funext φ.boundary_reverse
+  have hsum : ∑ x, (φ.boundary x : ℚ) = 0 := by exact_mod_cast φ.sum_boundary
+  -- The multiplicities at the end points and at the starting points have the same sum.
+  have hST : ∑ t ∈ φ.target, pointMultiplicity t φ.boundary =
+      ∑ s ∈ φ.source, pointMultiplicity s φ.boundary := by
+    have h := linking_boundary φ φ.boundary
+    rw [linking_self, hsum] at h
+    linear_combination -h
+  ext
+  · simp only [grading_maslov, inversionCount_reverse, source_reverse, Finset.sum_map, hb,
+      reverse_maslov]
+    simp [pointMultiplicity_toDual, hsum, hST]
+  · simp
+
+end StrandDiagram
+
+namespace StrandsAlgebra
+
+open StrandDiagram StrandGradingGroup
+
+variable {R : Type*} [CommSemiring R]
+variable {α β : Type*} [LinearOrder α] [Fintype α] [LinearOrder β] [Fintype β]
+
+/-- Relabelling along an order isomorphism `e` carries the part of grading `g` onto the part of
+grading `StrandGradingGroup.map e g`. -/
+@[simp]
+theorem mapAlgEquiv_mem_gradedPart_iff (e : α ≃o β) {g : StrandGradingGroup α}
+    {x : StrandsAlgebra R α} :
+    mapAlgEquiv e x ∈ gradedPart R (StrandGradingGroup.map e g) ↔ x ∈ gradedPart R g :=
+  mem_gradedPart_iff_of_basis (mapAlgEquiv e).toLinearEquiv (mapEquiv e)
+    (StrandGradingGroup.map e).injective
+    (mapAlgEquiv_of e) (grading_map e)
+
+/-- **Orientation reversal of the strands algebra is graded by the reversal of the grading
+group**: it carries the part of grading `g` onto the part of grading `R(g)`. -/
+@[simp]
+theorem unop_reverseAlgEquiv_mem_gradedPart_iff {g : StrandGradingGroup α}
+    {x : StrandsAlgebra R α} :
+    (reverseAlgEquiv x).unop ∈ gradedPart R (StrandGradingGroup.reverse g).unop ↔
+      x ∈ gradedPart R g :=
+  mem_gradedPart_iff_of_basis (reverseAlgEquiv.toLinearEquiv.trans (opLinearEquiv R).symm)
+    reverseEquiv (unop_injective.comp StrandGradingGroup.reverse.injective)
+    (fun φ ↦ by simp) grading_reverse
+
+/-- The anti-automorphism of the strands algebra on `{1, …, n}` carries the part of grading `g`
+onto the part of grading `TauCeti.StrandGradingGroup.rev n g`. -/
+@[simp]
+theorem unop_revAlgEquiv_mem_gradedPart_iff {n : ℕ} {g : StrandGradingGroup (Fin n)}
+    {x : StrandsAlgebra R (Fin n)} :
+    (revAlgEquiv n x).unop ∈ gradedPart R (rev n g).unop ↔ x ∈ gradedPart R g :=
+  mem_gradedPart_iff_of_basis ((revAlgEquiv n).toLinearEquiv.trans (opLinearEquiv R).symm)
+    (reverseEquiv.trans (mapEquiv Fin.revOrderIso))
+    (unop_injective.comp (rev n).injective) (fun φ ↦ by simp)
+    (fun φ ↦ by simp [rev, MulEquiv.op])
 
 end StrandsAlgebra
 

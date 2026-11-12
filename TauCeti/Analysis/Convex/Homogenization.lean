@@ -137,7 +137,7 @@ theorem homogenization_height_nonneg {P : Set V} {z : V × ℝ}
   have hcone : PointedCone.hull ℝ ((fun p : V => (p, (1 : ℝ))) '' P) ≤
       (PointedCone.positive ℝ ℝ).comap (LinearMap.snd ℝ V ℝ) := by
     apply Submodule.span_le.mpr
-    rintro _ ⟨p, hp, rfl⟩
+    rintro _ ⟨p, _, rfl⟩
     simpa only [SetLike.mem_coe, PointedCone.mem_comap, LinearMap.snd_apply,
       PointedCone.mem_positive, Set.mem_ofPred_eq]
       using (zero_le_one : (0 : ℝ) ≤ 1)

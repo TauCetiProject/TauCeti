@@ -135,7 +135,6 @@ theorem bijective_fromNerve_app {n : SimplexCategoryᵒᵖ} (hn : n.unop.len ≤
     SimplicialThickening.Path.subsingleton_of_forall_not_lt fun k hik hkj ↦ by
       have h₁ : i.down.val < k.down.val := hik
       have h₂ : k.down.val < j.down.val := hkj
-      have h₃ := j.down.isLt
       omega
   let U := Monotone.functor (f := (ULift.down : ULift.{v} (Fin (n.unop.len + 1)) → _))
     fun _ _ h ↦ h
