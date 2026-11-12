@@ -74,6 +74,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
   the section whose readings its chart data are.
 * `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
   section whose coordinates its chart data are.
+* `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
+  a measure that is finite on compact sets.
 
 ## References
 
@@ -614,6 +616,32 @@ theorem sectionChartData_coord_ae_eq [MeasurableSpace E] [OpensMeasurableSpace E
     A.sectionChartData.coord i s =ᵐ[μ.restrict (A.image i)] A.coord i s := by
   filter_upwards [ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy
   exact A.sectionChartData_coord_of_mem s hy
+
+section FiniteMeasure
+
+variable [T2Space E] [MeasurableSpace E] (μ : Measure E) [IsFiniteMeasureOnCompacts μ]
+
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
+/-- The image of a chart of a finite bundle atlas has finite measure for a measure that is finite on
+compact sets, such as a Haar measure, since its closure is compact. -/
+instance isFiniteMeasure_restrict_image (i : Fin A.n) :
+    IsFiniteMeasure (μ.restrict (A.image i)) :=
+  isFiniteMeasure_restrict.2
+    ((measure_mono subset_closure).trans_lt (A.isCompact_closure_image i).measure_lt_top).ne
+
+/-- The image of chart `i` in the chart data of a finite bundle atlas has finite measure. -/
+instance isFiniteMeasure_restrict_sectionChartData_image (i : Fin A.sectionChartData.n) :
+    IsFiniteMeasure (μ.restrict (A.sectionChartData.image i)) :=
+  A.isFiniteMeasure_restrict_image μ i
+
+/-- The image of chart `i` in the chart data of a finite bundle atlas has finite measure, for
+`i` indexed by the charts of the atlas. Instance search does not identify `Fin A.n` with
+`Fin A.sectionChartData.n`, so this is a separate instance. -/
+instance isFiniteMeasure_restrict_sectionChartData_image' (i : Fin A.n) :
+    IsFiniteMeasure (μ.restrict (A.sectionChartData.image i)) :=
+  A.isFiniteMeasure_restrict_image μ i
+
+end FiniteMeasure
 
 end FiniteBundleAtlas
 

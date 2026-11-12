@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.Analysis.Normed.Lp.ProdLp
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 import TauCeti.MeasureTheory.Function.Lp.Norm
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
@@ -84,6 +85,7 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   function is an element of `W^{1,p}(E)`, with the `Lᵖ` norms of the function and its gradient.
 * `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
   `p ≤ q`.
+* `TauCeti.W1p.ofExponentLEL`: the same inclusion as a continuous linear map.
 
 ## References
 
@@ -982,6 +984,23 @@ theorem W1p.ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
     W1p.ofExponentLE hpq (W1p.ofExponentLE hqr u) =
       W1p.ofExponentLE (hpq.trans hqr) u :=
   Subtype.ext (W1p.coe_ofExponentLE_ofExponentLE hpq hqr u)
+
+/-- On a domain of finite measure, the continuous inclusion `W^{1,q}(Ω) → W^{1,p}(Ω)` for
+`p ≤ q`; it does not change the value or the weak gradient (`TauCeti.W1p.ofExponentLE`). -/
+def W1p.ofExponentLEL (hpq : p ≤ q) : W1p mu Omega q →L[ℝ] W1p mu Omega p :=
+  LinearMap.mkContinuous
+    { toFun := W1p.ofExponentLE hpq
+      map_add' := W1p.ofExponentLE_add hpq
+      map_smul' := W1p.ofExponentLE_smul hpq }
+    ‖Lp.ofExponentLEL (ν := mu.restrict Omega) (Sobolev1Jet E) hpq‖ fun u => by
+      rw [LinearMap.coe_mk, AddHom.coe_mk, ← Submodule.norm_coe, ← Submodule.norm_coe u,
+        W1p.coe_ofExponentLE, ← Lp.ofExponentLEL_apply]
+      exact (Lp.ofExponentLEL (Sobolev1Jet E) hpq).le_opNorm _
+
+@[simp]
+theorem W1p.ofExponentLEL_apply (hpq : p ≤ q) (u : W1p mu Omega q) :
+    W1p.ofExponentLEL hpq u = W1p.ofExponentLE hpq u :=
+  (rfl)
 
 end Exponent
 

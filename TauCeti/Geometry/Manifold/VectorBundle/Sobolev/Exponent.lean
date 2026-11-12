@@ -55,30 +55,6 @@ variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
   (A : FiniteBundleAtlas E M F V) (μ : Measure E) [μ.IsAddHaarMeasure]
   {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (k : ℕ)
 
-omit [FiniteDimensional ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [VectorBundle ℝ F V] in
-/-- The image of a chart of a finite bundle atlas has finite Haar measure, since its closure is
-compact. -/
-instance FiniteBundleAtlas.isFiniteMeasure_restrict_image (i : Fin A.n) :
-    IsFiniteMeasure (μ.restrict (A.image i)) :=
-  isFiniteMeasure_restrict.2
-    ((measure_mono subset_closure).trans_lt (A.isCompact_closure_image i).measure_lt_top).ne
-
-omit [FiniteDimensional ℝ F] in
-/-- The image of chart `i` in the chart data of a finite bundle atlas has finite Haar measure. -/
-instance FiniteBundleAtlas.isFiniteMeasure_restrict_sectionChartData_image
-    (i : Fin A.sectionChartData.n) :
-    IsFiniteMeasure (μ.restrict (A.sectionChartData.image i)) :=
-  A.isFiniteMeasure_restrict_image μ i
-
-omit [FiniteDimensional ℝ F] in
-/-- The image of chart `i` in the chart data of a finite bundle atlas has finite Haar measure, for
-`i` indexed by the charts of the atlas. Instance search does not identify `Fin A.n` with
-`Fin A.sectionChartData.n`, so this is a separate instance. -/
-instance FiniteBundleAtlas.isFiniteMeasure_restrict_sectionChartData_image' (i : Fin A.n) :
-    IsFiniteMeasure (μ.restrict (A.sectionChartData.image i)) :=
-  A.isFiniteMeasure_restrict_image μ i
-
 namespace SobolevSection
 
 /-- **Lowering the exponent.** For `p ≤ q`, the continuous inclusion `W^{k,q}(V) → W^{k,p}(V)`
