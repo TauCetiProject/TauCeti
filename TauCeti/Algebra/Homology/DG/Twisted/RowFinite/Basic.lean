@@ -43,6 +43,8 @@ is a cycle.
   `RowFiniteTwistingCocycle.sum_subtype_m_mul_m_of_eq_add_two`: for a one-sided cocycle, the
   entries between generators of adjacent indices are cycles of degree zero, and the twisting
   equation at index difference two is a finite sum over the intermediate generators.
+* `RowFiniteTwistingCocycle.indexRowSupport`: the finite set of generators of a given index
+  occurring in the row of a generator.
 * `rowFiniteTotalGrading` and `rowFiniteTwistedDifferential`: the graded free left module
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
@@ -319,6 +321,17 @@ theorem sum_subtype_m_mul_m_of_eq_add_two (m : RowFiniteTwistingCocycle 𝒜 d P
   · rw [show ind x - ind y = 1 by omega]
     simp
   · rw [m.m_mul_m_eq_zero_of_not_lt_lt hm (by omega), smul_zero, neg_zero]
+
+/-- The finite set of generators `y` of index `q` occurring in the row of a generator `x`. -/
+noncomputable def indexRowSupport (m : RowFiniteTwistingCocycle 𝒜 d P ind) (q : ℤ) (x : P) :
+    Finset {y : P // ind y = q} :=
+  ((m.m x).subtypeDomain fun y ↦ ind y = q).support
+
+omit [GradedAlgebra 𝒜] in
+@[simp]
+theorem mem_indexRowSupport_iff (m : RowFiniteTwistingCocycle 𝒜 d P ind) {q : ℤ} {x : P}
+    {y : {y : P // ind y = q}} : y ∈ m.indexRowSupport q x ↔ m.m x y ≠ 0 := by
+  simp [indexRowSupport]
 
 end RowFiniteTwistingCocycle
 

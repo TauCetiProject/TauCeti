@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.SpectralSequence.Splitting
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Action
-public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.ShortExact
 import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
 
@@ -76,16 +75,6 @@ variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}
 namespace RowFiniteTwistingCocycle
 
 variable (m : RowFiniteTwistingCocycle 𝒜 dA P ind) (hM : IsDGRightModule hA ℳ dM)
-
-/-- The finite set of generators `y` of index `q` occurring in the row of a generator `x`. -/
-noncomputable def indexRowSupport (q : ℤ) (x : P) : Finset {y : P // ind y = q} :=
-  ((m.m x).subtypeDomain fun y ↦ ind y = q).support
-
-omit [GradedAlgebra 𝒜] in
-@[simp]
-theorem mem_indexRowSupport_iff {q : ℤ} {x : P} {y : {y : P // ind y = q}} :
-    y ∈ m.indexRowSupport q x ↔ m.m x y ≠ 0 := by
-  simp [indexRowSupport]
 
 /-! ### The differential between two graded pieces -/
 
