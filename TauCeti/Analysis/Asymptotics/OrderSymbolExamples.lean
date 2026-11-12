@@ -6,10 +6,9 @@ Authors: Bastiaan J Braams
 module
 
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
-public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.Analysis.Analytic.OfScalars
 public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
@@ -22,15 +21,15 @@ sector `|ph z| ≤ π/2 - δ` but not in the open half-plane `|ph z| < π/2`.
 
 ## Main results
 
-* `Complex.tanh_isEquivalent_id`: `tanh z ∼ z` as `z → 0` (DLMF 2.1.4).
-* `Real.exp_neg_isLittleO_one`: `e^{-x} = o(1)` as `x → +∞` (DLMF 2.1.5).
-* `Complex.exp_neg_isLittleO_one_sector`, `Complex.not_exp_neg_isLittleO_one_halfPlane`:
+* `TauCeti.tanh_isEquivalent_id`: `tanh z ∼ z` as `z → 0` (DLMF 2.1.4).
+* `TauCeti.exp_neg_isLittleO_one`: `e^{-x} = o(1)` as `x → +∞` (DLMF 2.1.5).
+* `TauCeti.exp_neg_isLittleO_one_sector`, `TauCeti.not_exp_neg_isLittleO_one_halfPlane`:
   `e^{-z} = o(1)` as `z → ∞` in `|ph z| ≤ π/2 - δ`, and not in `|ph z| < π/2`.
-* `Real.sin_pi_mul_add_inv_isBigO`: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ` (DLMF 2.1.6).
-* `Complex.exp_ofReal_mul_I_isBigO_one`: `e^{ix} = O(1)` on all of `ℝ` (DLMF 2.1.7).
-* `Complex.tsum_tail_isBigO_pow`: the tail from index `n` of a power series that converges near
+* `TauCeti.sin_pi_mul_add_inv_isBigO`: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ` (DLMF 2.1.6).
+* `TauCeti.exp_ofReal_mul_I_isBigO_one`: `e^{ix} = O(1)` on all of `ℝ` (DLMF 2.1.7).
+* `TauCeti.tsum_tail_isBigO_pow`: the tail from index `n` of a power series that converges near
   `0` is `O(zⁿ)` (DLMF 2.1.8).
-* `Complex.exp_sub_one_sub_isBigO_sq`: `e^z = 1 + z + O(z²)` as `z → 0` (DLMF 2.1.9).
+* `TauCeti.exp_sub_one_sub_isBigO_sq`: `e^z = 1 + z + O(z²)` as `z → 0` (DLMF 2.1.9).
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
@@ -38,10 +37,10 @@ The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/
 
 @[expose] public section
 
-open Filter Asymptotics
+open Filter Asymptotics Complex
 open scoped Topology Real
 
-namespace Complex
+namespace TauCeti
 
 /-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, along the full neighbourhood filter (both sides
 vanish at `0`). -/
@@ -55,14 +54,10 @@ theorem tanh_isEquivalent_id : (fun z : ℂ => tanh z) ~[𝓝 0] fun z => z := b
   simp only [tanh_zero, sub_zero, smul_eq_mul, mul_one] at h
   exact h
 
-end Complex
-
 /-- DLMF 2.1.5: `e^{-x} = o(1)` as `x → +∞` in `ℝ`. -/
-theorem Real.exp_neg_isLittleO_one :
+theorem exp_neg_isLittleO_one :
     (fun x : ℝ => Real.exp (-x)) =o[atTop] fun _ => (1 : ℝ) :=
   (isLittleO_one_iff ℝ).mpr Real.tendsto_exp_neg_atTop_nhds_zero
-
-namespace Complex
 
 /-- DLMF §2.1(i), after 2.1.7: `e^{-z} = o(1)` as `z → ∞` in the closed sector
 `|ph z| ≤ π/2 - δ`, for every `δ > 0`. -/
@@ -111,20 +106,14 @@ theorem not_exp_neg_isLittleO_one_halfPlane :
   simp only [Function.comp_def, h3, norm_zero] at h2
   exact (Real.exp_pos (-1)).ne' (tendsto_nhds_unique tendsto_const_nhds h2)
 
-end Complex
-
 /-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ`. The bound holds for every integer,
 with constant `1`. -/
-theorem Real.sin_pi_mul_add_inv_isBigO :
+theorem sin_pi_mul_add_inv_isBigO :
     (fun n : ℤ => Real.sin (π * n + (n : ℝ)⁻¹)) =O[atTop ⊔ atBot] fun n => (n : ℝ)⁻¹ := by
   refine IsBigO.of_bound 1 (Eventually.of_forall fun n => ?_)
-  have h1 : |((-1 : ℝ) ^ n)| = 1 := by simp
-  rw [one_mul, Real.norm_eq_abs, Real.norm_eq_abs,
-    show π * n + (n : ℝ)⁻¹ = (n : ℝ)⁻¹ + n * π by ring, Real.sin_add_int_mul_pi, abs_mul, h1,
-    one_mul]
-  exact Real.abs_sin_le_abs
-
-namespace Complex
+  -- `sin(πn + n⁻¹) = (−1)ⁿ sin(n⁻¹)`, and `|sin x| ≤ |x|`.
+  rw [add_comm, mul_comm π]
+  simpa [Real.sin_add_int_mul_pi, abs_mul] using Real.abs_sin_le_abs (x := (n : ℝ)⁻¹)
 
 /-- DLMF 2.1.7: `e^{ix} = O(1)` for `x ∈ ℝ`, on the whole real line (the filter `⊤`). -/
 theorem exp_ofReal_mul_I_isBigO_one :
@@ -134,46 +123,37 @@ theorem exp_ofReal_mul_I_isBigO_one :
 /-- DLMF 2.1.8: if `∑ aₛ zˢ` converges for all sufficiently small `|z|`, then for each `n`,
 `∑_{s ≥ n} aₛ zˢ = O(zⁿ)` as `z → 0`. For a function with a power series in Mathlib's sense this
 is `HasFPowerSeriesAt.isBigO_sub_partialSum_pow`; here the hypothesis is the convergence of the
-scalar series. -/
+scalar series, and the proof applies that lemma to `FormalMultilinearSeries.ofScalars ℂ a`. -/
 theorem tsum_tail_isBigO_pow {a : ℕ → ℂ}
     (ha : ∃ r > 0, ∀ z : ℂ, ‖z‖ < r → Summable fun s => a s * z ^ s) (n : ℕ) :
     (fun z : ℂ => ∑' s, a (s + n) * z ^ (s + n)) =O[𝓝 0] fun z => z ^ n := by
   obtain ⟨r, hr, hs⟩ := ha
-  set ρ : ℝ := r / 2 with hρ
-  have hρ0 : 0 < ρ := by positivity
-  have hsρ : Summable fun s => a s * (ρ : ℂ) ^ s :=
-    hs ρ (by rw [norm_real, Real.norm_eq_abs, abs_of_pos hρ0]; linarith)
-  clear_value ρ
-  obtain ⟨C, hC⟩ : ∃ C, ∀ s, ‖a s‖ * ρ ^ s ≤ C := by
-    have ht := hsρ.tendsto_atTop_zero.norm
-    rw [← Nat.cofinite_eq_atTop] at ht
-    obtain ⟨C, hC⟩ := ht.bddAbove_range_of_cofinite
-    refine ⟨C, fun s => ?_⟩
-    have := hC ⟨s, rfl⟩
-    simpa [norm_mul, norm_pow, norm_real, Real.norm_eq_abs, abs_of_pos hρ0] using this
-  have hC0 : 0 ≤ C := (by positivity : 0 ≤ ‖a 0‖ * ρ ^ 0).trans (hC 0)
-  refine IsBigO.of_bound (2 * C / ρ ^ n) ?_
-  filter_upwards [Metric.ball_mem_nhds (0 : ℂ) (half_pos hρ0)] with z hz
-  rw [mem_ball_zero_iff] at hz
-  have hq : ‖z‖ / ρ < 1 / 2 := by rw [div_lt_iff₀ hρ0]; linarith
-  have hq0 : 0 ≤ ‖z‖ / ρ := by positivity
-  have hgeom : HasSum (fun s : ℕ => C / ρ ^ n * ‖z‖ ^ n * (‖z‖ / ρ) ^ s)
-      (C / ρ ^ n * ‖z‖ ^ n * (1 - ‖z‖ / ρ)⁻¹) :=
-    (hasSum_geometric_of_lt_one hq0 (by linarith)).mul_left _
-  have hb : ∀ s, ‖a (s + n) * z ^ (s + n)‖ ≤ C / ρ ^ n * ‖z‖ ^ n * (‖z‖ / ρ) ^ s := by
-    intro s
-    have h1 : ‖a (s + n)‖ ≤ C / ρ ^ (s + n) := by
-      rw [le_div_iff₀ (by positivity)]; exact hC _
-    rw [norm_mul, norm_pow]
-    calc ‖a (s + n)‖ * ‖z‖ ^ (s + n) ≤ C / ρ ^ (s + n) * ‖z‖ ^ (s + n) := by gcongr
-      _ = C / ρ ^ n * ‖z‖ ^ n * (‖z‖ / ρ) ^ s := by
-        rw [div_pow, pow_add, pow_add]; ring
-  refine (tsum_of_norm_bounded hgeom hb).trans ?_
-  rw [norm_pow]
-  have h2 : (1 - ‖z‖ / ρ)⁻¹ ≤ 2 := by
-    rw [inv_le_comm₀ (by linarith) (by norm_num)]; linarith
-  calc C / ρ ^ n * ‖z‖ ^ n * (1 - ‖z‖ / ρ)⁻¹ ≤ C / ρ ^ n * ‖z‖ ^ n * 2 := by gcongr
-    _ = 2 * C / ρ ^ n * ‖z‖ ^ n := by ring
+  set p := FormalMultilinearSeries.ofScalars ℂ a with hp
+  -- `p` has positive radius: its terms at `ρ = r / 2` tend to `0`.
+  set ρ : NNReal := ⟨r / 2, by positivity⟩ with hρ
+  have hρr : (ρ : ℝ) = r / 2 := rfl
+  have hρ0 : (0 : ENNReal) < ρ := by
+    rw [ENNReal.coe_pos, ← NNReal.coe_pos, hρr]; positivity
+  have hsρ := hs ρ (by
+    rw [norm_real, Real.norm_eq_abs, hρr, abs_of_pos (by positivity)]; linarith)
+  have hrad : (ρ : ENNReal) ≤ p.radius := p.le_radius_of_tendsto (l := 0) <| by
+    simpa [hp, FormalMultilinearSeries.ofScalars_norm] using hsρ.tendsto_atTop_zero.norm
+  have h := ((FormalMultilinearSeries.hasFPowerSeriesOnBall p
+    (hρ0.trans_le hrad)).hasFPowerSeriesAt).isBigO_sub_partialSum_pow n
+  -- Near `0` the remainder after `n` terms is the tail of the scalar series.
+  have heq : (fun z : ℂ => p.sum (0 + z) - p.partialSum n z) =ᶠ[𝓝 0]
+      fun z => ∑' s, a (s + n) * z ^ (s + n) := by
+    filter_upwards [Metric.ball_mem_nhds (0 : ℂ) hr] with z hz
+    rw [mem_ball_zero_iff] at hz
+    have hsum := (hs z hz).sum_add_tsum_nat_add n
+    simp only [zero_add, FormalMultilinearSeries.partialSum, hp,
+      FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul]
+    rw [show p.sum z = ∑' s, a s * z ^ s by
+      simpa [hp, FormalMultilinearSeries.ofScalarsSum] using
+        FormalMultilinearSeries.ofScalars_sum_eq a z]
+    rw [← hsum]; ring
+  refine (h.congr' heq EventuallyEq.rfl).trans ?_
+  simpa [norm_pow] using (isBigO_refl (fun z : ℂ => z ^ n) (𝓝 0)).norm_left
 
 /-- DLMF 2.1.9: `e^z = 1 + z + O(z²)` as `z → 0` in `ℂ`. -/
 theorem exp_sub_one_sub_isBigO_sq :
@@ -183,4 +163,4 @@ theorem exp_sub_one_sub_isBigO_sq :
   rw [mem_closedBall_zero_iff] at hz
   simpa [norm_pow] using norm_exp_sub_one_sub_id_le hz
 
-end Complex
+end TauCeti
