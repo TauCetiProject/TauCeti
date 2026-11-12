@@ -92,7 +92,7 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le
         A * ω.floerEnergyDensity Ks Kt u z + B := by
   set e := extChartAt I α with he
   set T := trivializationAt E (TangentSpace I) α with hT
-  set Jc := Floer.almostComplexInChartAt I α J with hJc_def
+  set Jc := Floer.almostComplexInChartAt I α J
   have hDK : IsCompact (D ×ˢ K) := hD.prod hK
   have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet := by
     simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
