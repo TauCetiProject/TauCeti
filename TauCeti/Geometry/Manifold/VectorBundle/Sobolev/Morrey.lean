@@ -85,7 +85,7 @@ private theorem exists_continuous_eqOn_preciseRepresentative (hp : 2 < p) {s : �
     ∃ t : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (t x)) ∧
       ∀ i, EqOn (A.coord i t) (preciseRepresentative volume (A.coord i s)) (A.image i) := by
   classical
-  set g : Fin A.n → ℂ → F := fun i ↦ preciseRepresentative volume (A.coord i s) with hg_def
+  set g : Fin A.n → ℂ → F := fun i ↦ preciseRepresentative volume (A.coord i s)
   have hg_cont (i : Fin A.n) : ContinuousOn (g i) (A.image i) :=
     (hs i).continuousOn_preciseRepresentative hp
   have hg_ae (i : Fin A.n) : A.coord i s =ᵐ[volume.restrict (A.image i)] g i :=
