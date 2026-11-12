@@ -76,6 +76,8 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
   whose Fourier transform is carried by the region where `ψⱼ = 1` is its own `j`-th block and has
   no other block.
+* `ContDiffBump.inhomogeneousLittlewoodPaleySchwartz`: the symbol `ψⱼ` as a complex Schwartz
+  function.
 * `ContDiffBump.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels
   `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
@@ -109,6 +111,26 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace ContDiffBump
 
 variable (φ : ContDiffBump (0 : E))
+
+/-- The piece `ψⱼ` of the inhomogeneous Littlewood–Paley partition, as a complex Schwartz
+function: it is smooth and compactly supported. -/
+noncomputable def inhomogeneousLittlewoodPaleySchwartz (j : ℕ) : 𝓢(E, ℂ) :=
+  ((φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero).toSchwartzMap
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The values of the Schwartz function `ψⱼ`. -/
+@[simp]
+theorem inhomogeneousLittlewoodPaleySchwartz_apply (j : ℕ) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaleySchwartz j ξ = (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  (rfl)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The Schwartz function `ψⱼ`, as a function. -/
+theorem coe_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
+    ⇑(φ.inhomogeneousLittlewoodPaleySchwartz j) =
+      fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  (rfl)
 
 /-- **The dyadic kernels are `L¹`-dilates of one another.** Since `ψ_{j+1} = ψ₁ (2^{-j} ·)`, the
 kernel `𝓕⁻ ψ_{j+1}` is `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, so it has the same `L¹` norm as
@@ -347,14 +369,9 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
     · exact le_max_left _ _
     · exact (φ.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ j).le.trans
         (le_max_right _ _)
-  -- The symbol `ψⱼ` is smooth and compactly supported, hence a Schwartz function.
-  have hσ := (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero
-  set σ : 𝓢(E, ℂ) :=
-    hσ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
-  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
-  rw [hσ_coe] at hg hgf
+  obtain ⟨g, hg, hgf⟩ :=
+    exists_fourierMultiplierCLM_eq_and_norm_le (φ.inhomogeneousLittlewoodPaleySchwartz j) f
+  rw [φ.coe_inhomogeneousLittlewoodPaleySchwartz] at hg hgf
   exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
 
 open ContinuousLinearMap in
@@ -367,17 +384,14 @@ theorem ae_eq_convolution_of_littlewoodPaleyBlock_eq [CompleteSpace F] (j : ℕ)
     (hv : littlewoodPaleyBlock F φ j (h : 𝓢'(E, F)) = v) :
     (v : E → F) =ᵐ[volume]
       𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) ⋆[lsmul ℂ ℂ] (h : E → F) := by
-  have hσ := (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero
-  set σ : 𝓢(E, ℂ) :=
-    hσ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
-  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  obtain ⟨v', hv', hv'h, -⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq σ h
-    (q := p) (r := 1) le_rfl (by rw [inv_one, add_comm])
-  rw [littlewoodPaleyBlock_apply, ← hσ_coe, hv'] at hv
+  obtain ⟨v', hv', hv'h, -⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq
+    (φ.inhomogeneousLittlewoodPaleySchwartz j) h (q := p) (r := 1) le_rfl
+    (by rw [inv_one, add_comm])
+  rw [φ.coe_inhomogeneousLittlewoodPaleySchwartz] at hv' hv'h
+  rw [littlewoodPaleyBlock_apply, hv'] at hv
   have hvv : v' = v := LinearMap.ker_eq_bot.mp
     (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F) (μ := (volume : Measure E)) (p := p)) hv
-  rw [← hvv, ← hσ_coe]
+  rw [← hvv]
   exact hv'h
 
 open ContinuousLinearMap in
@@ -403,12 +417,9 @@ theorem exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le [CompleteSpace F] :
   obtain ⟨C, hC⟩ := φ.exists_integral_norm_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le
   refine ⟨C, fun {p} _ j f K hf g fg u w hfg hu hw ↦ ?_⟩
   -- The kernel `κ = 𝓕⁻ ψⱼ` of `Δⱼ` is a Schwartz function.
-  have hσ := (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero
-  set κ : 𝓢(E, ℂ) := 𝓕⁻ (hσ.toSchwartzMap
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j)))
+  set κ : 𝓢(E, ℂ) := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)
   have hκ : (κ : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-    rw [SchwartzMap.fourierInv_coe]
-    exact congrArg _ (funext (HasCompactSupport.toSchwartzMap_toFun _ _))
+    rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
   -- Both convolutions with `κ` exist everywhere, by Hölder's inequality, so the commutator is
   -- the integral of `MeasureTheory.eLpNorm_integral_sub_smul_smul_le`.
   have : ((1 - p⁻¹)⁻¹).HolderConjugate p :=
