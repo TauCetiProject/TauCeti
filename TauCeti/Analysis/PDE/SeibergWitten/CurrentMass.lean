@@ -171,7 +171,7 @@ theorem _root_.Module.Basis.exists_mass_integral_wedge_le_of_le_mul_max_one_sub
     image_eq_zero_of_notMem_tsupport fun h ↦ hx (ζ.tsupport_subset h)
   have h := hI Ω.isOpen.measurableSet hΩ hr hC hCr hδ hL1 hβ hω hωΩ hζΩ hζ
   rw [one_mul] at h
-  rw [Real.enorm_eq_ofReal_abs]
+  rw [Real.eNorm_eq_ofReal_abs]
   exact ENNReal.ofReal_le_ofReal h
 
 /-! ### Solutions of the large-parameter equations in a unitary frame -/

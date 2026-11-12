@@ -17,10 +17,9 @@ induced by a ring equivalence `f : R ≃+* S`. This file supplies its basic func
 induced map respects identity, composition, and inverses, and computes on the class of a unit
 fractional ideal.
 
-This is a prerequisite for the genus-field layer of the multiquadratic roadmap. For a quadratic
-field, conjugation is a ring automorphism of its ring of integers; the roadmap's proof that
-conjugation acts on the class group by inversion first needs to treat that action functorially and
-compute it on ideal classes.
+For a quadratic field, conjugation is a ring automorphism of its ring of integers; showing that
+conjugation acts on the class group by inversion first needs that action treated functorially and
+computed on ideal classes.
 
 ## Main results
 
@@ -172,8 +171,7 @@ theorem mulEquiv_symm_apply' (f : R ≃+* S) (x : ClassGroup S) :
   DFunLike.congr_fun (mulEquiv_symm f) x
 
 /-- The action of ring automorphisms of `R` on `ClassGroup R`, bundled as a monoid homomorphism
-`(R ≃+* R) →* MulAut (ClassGroup R)`. This is the object the roadmap's Galois action on ideal
-classes transports along; it is the class-group analogue of
+`(R ≃+* R) →* MulAut (ClassGroup R)`. It is the class-group analogue of
 `IsFractionRing.ringEquivOfRingEquivHom`. -/
 noncomputable def mulEquivHom : (R ≃+* R) →* MulAut (ClassGroup R) where
   toFun := ClassGroup.mulEquiv
