@@ -9,10 +9,12 @@ public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
 
 /-!
-# Checks for the Čech cohomology of the structure sheaf, a point skyscraper and the zero sheaf
+# Čech cohomology of the structure sheaf, a point skyscraper and the zero sheaf
 
-This file records the boundary cases of the Čech cohomology of sheaves of complex vector spaces
-on a complex curve that test the hypotheses of the cohomology layer.
+This file computes the Čech cohomology of three basic sheaves of complex vector spaces on a
+complex curve. The computations show that the curve must be nonempty for `H⁰(𝒪) = ℂ`, and that
+the skyscraper `ℂ_x` cannot be replaced by the zero sheaf, as it would be if its support were
+empty.
 
 * **The structure sheaf.** On a nonempty compact connected complex curve the degree-zero Čech
   cohomology of the holomorphic structure sheaf `𝒪` is one-dimensional, since global holomorphic
@@ -23,7 +25,7 @@ on a complex curve that test the hypotheses of the cohomology layer.
   is the cokernel sheaf in the point-twist sequence `0 → 𝒪(D) → 𝒪(D + x) → ℂ_x → 0`, the
   degree-zero Čech cohomology is one-dimensional and every positive-degree group vanishes. In
   particular `H⁰(ℂ_x)` is not zero.
-* **The zero sheaf.** A sheaf all of whose sections are zero has vanishing Čech cohomology in
+* **The zero sheaf.** A presheaf all of whose sections are zero has vanishing Čech cohomology in
   every degree (`TauCeti.Topology.isZero_cechCohomology_obj_of_isZero`). This is what treating
   the support of `ℂ_x` as empty would produce, and it disagrees with `H⁰(ℂ_x) = ℂ`.
 
@@ -37,9 +39,9 @@ statements.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_zero_holomorphicStructureSheafModules_of_isEmpty`:
   on the empty curve `dim H⁰(X, 𝒪) = 0`.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_zero_skyscraperSheaf`: `dim H⁰(X, ℂ_x) = 1`.
-* `TauCeti.RiemannSurface.finrank_cechCohomology_skyscraperSheaf`: `dim Hⁿ⁺¹(X, ℂ_x) = 0`.
-* `TauCeti.RiemannSurface.finrank_cechCohomology_of_isZero_sections`: a sheaf with zero sections
-  has `dim Hⁿ = 0` for every `n`.
+* `TauCeti.RiemannSurface.finrank_cechCohomology_succ_skyscraperSheaf`: `dim Hⁿ⁺¹(X, ℂ_x) = 0`.
+* `TauCeti.RiemannSurface.finrank_cechCohomology_of_isZero_sections`: a presheaf with zero
+  sections has `dim Hⁿ = 0` for every `n`.
 
 ## References
 
@@ -108,7 +110,7 @@ theorem not_isZero_cechCohomology_zero_skyscraperSheaf :
 open Classical in
 /-- **The point skyscraper is acyclic.** Every positive-degree Čech cohomology group of the
 skyscraper sheaf with stalk `ℂ` at `x` has dimension zero. -/
-theorem finrank_cechCohomology_skyscraperSheaf (n : ℕ) :
+theorem finrank_cechCohomology_succ_skyscraperSheaf (n : ℕ) :
     Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) (n + 1)).obj
       (skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift ℂ))).obj) = 0 :=
   ModuleCat.finrank_eq_zero_of_isZero
@@ -116,13 +118,13 @@ theorem finrank_cechCohomology_skyscraperSheaf (n : ℕ) :
 
 /-! ### The zero sheaf -/
 
-/-- **The zero sheaf has no cohomology.** If every section of `F` is zero, every Čech
-cohomology group of `F` has dimension zero. This is the answer that treating the support of the
+/-- **The zero sheaf has no cohomology.** If every section of `P` is zero, every Čech
+cohomology group of `P` has dimension zero. This is the answer that treating the support of the
 point skyscraper as empty would give, which `not_isZero_cechCohomology_zero_skyscraperSheaf`
 rules out in degree zero. -/
 theorem finrank_cechCohomology_of_isZero_sections
-    (F : TopCat.Sheaf (ModuleCat.{0} ℂ) (TopCat.of X)) (hF : ∀ U, IsZero (F.obj.obj U)) (n : ℕ) :
-    Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj F.obj) = 0 :=
-  ModuleCat.finrank_eq_zero_of_isZero (isZero_cechCohomology_obj_of_isZero _ _ n _ hF)
+    (P : (Opens (TopCat.of X))ᵒᵖ ⥤ ModuleCat.{0} ℂ) (hP : ∀ U, IsZero (P.obj U)) (n : ℕ) :
+    Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj P) = 0 :=
+  ModuleCat.finrank_eq_zero_of_isZero (isZero_cechCohomology_obj_of_isZero _ _ n _ hP)
 
 end TauCeti.RiemannSurface
