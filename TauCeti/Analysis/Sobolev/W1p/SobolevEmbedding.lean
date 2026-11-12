@@ -180,7 +180,7 @@ theorem W1p.exists_lpEmbeddingL_of_eLpNorm_value_le {r : ℝ≥0∞} [Fact (1 �
   -- lets the public norm_toLp law apply without unfolding the representative itself.
   change ‖(hm u).toLp (W1p.value u)‖ ≤ _
   rw [Lp.norm_toLp]
-  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] using
+  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] using
     ENNReal.toReal_mono (by finiteness : C * ‖u‖ₑ ≠ ∞) (hC u)
 
 /-! ### The interior of a domain -/
@@ -331,7 +331,7 @@ theorem W1p.exists_eLpNorm_value_le_of_gain_le
     rw [ENNReal.coe_one, one_mul]
     calc eLpNorm (W1p.value u) q (μ.restrict V)
         ≤ ‖W1p.value u‖ₑ := (eLpNorm_mono_measure _
-          (Measure.restrict_mono_set μ (subset_closure.trans hVΩ))).trans_eq (Lp.enorm_def _).symm
+          (Measure.restrict_mono_set μ (subset_closure.trans hVΩ))).trans_eq (Lp.eNorm_def _).symm
       _ ≤ ‖u‖ₑ := W1p.enorm_value_le u
   rcases hgap.lt_or_eq with hlt | heq
   · exact W1p.exists_eLpNorm_value_le_of_subcritical_gain hqs hlt hVc hVΩ

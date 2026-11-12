@@ -128,7 +128,7 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p {t : ℝ≥0∞} (ht
         push_cast
         rw [Finset.sum_mul]
         refine Finset.sum_congr rfl fun i _ => ?_
-        simp only [enorm_eq_nnnorm]
+        simp only [eNorm_eq_nnNorm]
         ring
 
 /-- **The local Sobolev inequality.** Let `1 ≤ q ≤ s < ∞` with `1/q - 1/s ≤ 1/2`, and let `V` have
@@ -153,7 +153,7 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_one (hq : 2 < q) (hVc : IsCompact (
   obtain ⟨S, hS⟩ := W1p.exists_lpInftyEmbeddingL_of_isCompact_closure (μ := volume) (Ω := W)
     (q := q) (by rwa [Complex.finrank_real_complex, Nat.cast_ofNat]) hVc hVW
   refine ⟨‖S‖₊, fun v => ?_⟩
-  rw [← eLpNorm_congr_ae (hS v), ← Lp.enorm_def, ← enorm_eq_nnnorm]
+  rw [← eLpNorm_congr_ae (hS v), ← Lp.eNorm_def, ← eNorm_eq_nnNorm]
   exact S.le_opENorm v
 
 /-- **The local Sobolev embedding.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/2`, every

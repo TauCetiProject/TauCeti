@@ -87,9 +87,9 @@ private theorem torsionBracket_of_shift {j : ℤ} (h : D.ExactAt (j + 1 + 1))
     (s : Fin q → D.X (j + 1 + 1)) (hs : ∀ k, (D.d (j + 1 + 1) (j + 1)).hom (s k) = b₀ k)
     (hs' : ∀ k, (C.d (j + 1) j).hom (-e (j + 1) (s k)) =
       b₀.map (boundaryEquivOfShift e he j) k) :
-    torsionBracket c h' (b₁.map (boundaryEquivOfShift e he (j + 1)))
+    torsionBracket c (by simp) (by simp) h' (b₁.map (boundaryEquivOfShift e he (j + 1)))
         (b₀.map (boundaryEquivOfShift e he j)) (fun k ↦ -e (j + 1) (s k)) hs' =
-      (-1) ^ q * torsionBracket d h b₁ b₀ s hs := by
+      (-1) ^ q * torsionBracket d (by simp) (by simp) h b₁ b₀ s hs := by
   have : Module.Finite F (D.X (j + 1 + 1)) := .of_basis (d _)
   have hn : m (j + 1 + 1) = p + q := by
     have := (exactAt_iff_finrank_add_finrank D (i := j + 1 + 1 + 1) (k := j + 1) (by simp)
@@ -99,8 +99,8 @@ private theorem torsionBracket_of_shift {j : ℤ} (h : D.ExactAt (j + 1 + 1))
   -- The basis of `C.X (j + 1)` is the transport along `e` of the basis of `D.X (j + 1 + 1)`.
   have hc : c (j + 1) = ((d (j + 1 + 1)).map (e (j + 1))).reindex (finCongr (hm (j + 1))) :=
     Basis.eq_of_apply_eq fun k ↦ by simp [hd]
-  rw [torsionBracket_eq_det_append c h' _ _ _ hs' ((hm (j + 1)).symm.trans hn),
-    torsionBracket_eq_det_append d h _ _ _ hs hn, hc, Basis.det_reindex, Basis.det_map]
+  rw [torsionBracket_eq_det_append c _ _ h' _ _ _ hs' ((hm (j + 1)).symm.trans hn),
+    torsionBracket_eq_det_append d _ _ h _ _ _ hs hn, hc, Basis.det_reindex, Basis.det_map]
   have hneg := ((d (j + 1 + 1)).det.domDomCongr (finCongr hn)).map_append_neg
     (fun k ↦ (b₁ k : D.X (j + 1 + 1))) s
   have hcast : (finCongr hn : Fin (m (j + 1 + 1)) → Fin (p + q)) = Fin.cast hn := rfl
@@ -161,10 +161,11 @@ theorem reidemeisterTorsion_eq_mul_inv_of_shift :
       (-1 : F) ^ finrank F (LinearMap.range (C.d (j + 1) j).hom) := by
     simpa using hasFiniteMulSupport_neg_one_pow_finrank_mul C c hn fun _ ↦ 1
   have hτ : Function.HasFiniteMulSupport fun j : ℤ ↦
-      (torsionBracket c (hC (j + 1)) (b (j + 1)) (b j) _ (hs j) ^ (j.negOnePow : ℤ))⁻¹ :=
+      (torsionBracket c (by simp) (by simp) (hC (j + 1)) (b (j + 1)) (b j) _ (hs j) ^
+        (j.negOnePow : ℤ))⁻¹ :=
     (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
       Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-        rw [torsionBracket_eq_one c _ _ _ _ _ (by simpa using hj), one_zpow, inv_one]
+        rw [torsionBracket_eq_one c _ _ _ _ _ _ _ (by simpa using hj), one_zpow, inv_one]
   rw [reidemeisterTorsion_eq_finprod (hfin.2 hn) hD b' s' hs',
     reidemeisterTorsion_eq_finprod hn hC b _ hs, ← finprod_inv_distrib,
     ← finprod_mul_distrib hε hτ, ← finprod_comp_equiv (Equiv.addRight (1 : ℤ))]
