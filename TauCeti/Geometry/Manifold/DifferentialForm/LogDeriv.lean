@@ -10,9 +10,10 @@ public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
--- Private: the derivative of the squared norm and the square-zero property of the exterior
--- derivative are used only inside proofs.
+-- Private: pointwise regularity of derivatives, the derivative of the squared norm, and the
+-- square-zero property of the exterior derivative are used only inside proofs.
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 
 /-!
@@ -178,20 +179,28 @@ theorem mlogDeriv_mul {u v : M → ℂ} {x : M} (hu : MDifferentiableAt I 𝓘(�
 
 /-- Near a point `x` where it does not vanish, a `C^n` complex function `u` is `u x` times the
 exponential of a `C^n` function `g`, the branch `log (u / u x)` on the open set where `u / u x`
-lies in the slit plane. There `dlog u` is the exterior derivative of `g` within that set. -/
-private theorem exists_mlogDeriv_eq_mextDerivWithin {n : WithTop ℕ∞} (hn : n ≠ 0) {u : M → ℂ}
-    (hu : ContMDiff I 𝓘(ℝ, ℂ) n u) {x : M} (hx : u x ≠ 0) :
+lies in the slit plane, intersected with a neighborhood on which `u` is `C^n`. Here `n ≠ ∞`
+so pointwise regularity extends to such a neighborhood. There `dlog u` is the exterior derivative
+of `g` within that set. -/
+private theorem exists_mlogDeriv_eq_mextDerivWithin {n : WithTop ℕ∞} [IsManifold I n M]
+    (hn : n ≠ 0) (hn' : n ≠ ∞) {u : M → ℂ} {x : M}
+    (hu : ContMDiffAt I 𝓘(ℝ, ℂ) n u x) (hx : u x ≠ 0) :
     ∃ V : Set M, IsOpen V ∧ x ∈ V ∧ ∃ g : M → ℂ, (∀ y ∈ V, ContMDiffAt I 𝓘(ℝ, ℂ) n g y) ∧
       (∀ y ∈ V, u y = u x * exp (g y)) ∧
       ∀ y ∈ V, mlogDeriv I u y = mextDerivWithin (RoughForm.ofFunction I g) V y := by
-  set V := (fun y ↦ u y / u x) ⁻¹' slitPlane with hV_def
-  have hV : IsOpen V := isOpen_slitPlane.preimage (hu.continuous.div_const _)
+  obtain ⟨U, hxU, huU⟩ := (contMDiffAt_iff_contMDiffOn_nhds hn').mp hu
+  obtain ⟨W, hWU, hW, hxW⟩ := mem_nhds_iff.mp hxU
+  have huW (y : M) (hy : y ∈ W) : ContMDiffAt I 𝓘(ℝ, ℂ) n u y :=
+    (huU y (hWU hy)).contMDiffAt (mem_of_superset (hW.mem_nhds hy) hWU)
+  set V := W ∩ (fun y ↦ u y / u x) ⁻¹' slitPlane with hV_def
+  have hV : IsOpen V :=
+    ((huU.continuousOn.mono hWU).div_const _).isOpen_inter_preimage hW isOpen_slitPlane
   have hg (y : M) (hy : y ∈ V) : ContMDiffAt I 𝓘(ℝ, ℂ) n (fun z ↦ log (u z / u x)) y :=
-    (((contDiffAt_log hy).comp (u y) (contDiffAt_id.div_const (u x))).restrict_scalars ℝ)
-      |>.comp_contMDiffAt (hu y)
+    (((contDiffAt_log hy.2).comp (u y) (contDiffAt_id.div_const (u x))).restrict_scalars ℝ)
+      |>.comp_contMDiffAt (huW y hy.1)
   have hug (y : M) (hy : y ∈ V) : u y = u x * exp (log (u y / u x)) := by
-    rw [exp_log (slitPlane_ne_zero hy), mul_div_cancel₀ _ hx]
-  refine ⟨V, hV, by simp [hV_def, div_self hx], _, hg, hug, fun y hy ↦ ?_⟩
+    rw [exp_log (slitPlane_ne_zero hy.2), mul_div_cancel₀ _ hx]
+  refine ⟨V, hV, by simp [hV_def, hxW, div_self hx], _, hg, hug, fun y hy ↦ ?_⟩
   rw [mextDerivWithin_of_isOpen hV hy]
   exact mlogDeriv_eq_of_eventuallyEq_mul_exp hx ((hg y hy).mdifferentiableAt hn)
     (eventually_of_mem (hV.mem_nhds hy) hug)
@@ -200,29 +209,42 @@ section Regularity
 
 variable [IsManifold I 2 M]
 
-/-- At a point where it does not vanish, the logarithmic derivative of a `C^(n+1)` function is a
-`C^n` section of the bundle of `1`-forms. -/
-theorem contMDiffAt_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) (n + 1) u)
-    {x : M} (hx : u x ≠ 0) :
+/-- If `u` is `C^(n+1)` at a point where it does not vanish, its logarithmic derivative is a
+`C^n` section of the bundle of `1`-forms at that point. -/
+theorem contMDiffAt_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} {x : M}
+    (hu : ContMDiffAt I 𝓘(ℝ, ℂ) (n + 1) u x) (hx : u x ≠ 0) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℂ)) n
       (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℂ) y (mlogDeriv I u y)) x := by
-  obtain ⟨V, hV, hxV, g, hg, -, hdg⟩ := exists_mlogDeriv_eq_mextDerivWithin (by simp) hu hx
-  have hd := contMDiffOn_mextDerivWithin (RoughForm.ofFunction I g)
-    (fun y hy ↦ (contMDiffAt_ofFunction_iff.mpr (hg y hy)).contMDiffWithinAt) hV.uniqueMDiffOn
-    (hV.interior_eq.symm ▸ subset_closure)
-  exact (hd.contMDiffAt (hV.mem_nhds hxV)).congr_of_eventuallyEq
-    (eventually_of_mem (hV.mem_nhds hxV) fun y hy ↦ by simp only [hdg y hy])
+  rw [Bundle.contMDiffAt_section]
+  have hd := (ContinuousAlternatingMap.ofSubsingletonLIE
+    (𝕜 := ℝ) (E := E) (F := ℂ) (0 : Fin 1)).toContinuousLinearEquiv.contDiff
+    |>.comp_contMDiffAt (hu.mfderiv_const (m := n) le_rfl)
+  have h := contDiff_smul.comp_contMDiffAt
+    (((contDiffAt_inv ℝ hx).comp_contMDiffAt hu.of_succ).prodMk_space hd)
+  refine h.congr_of_eventuallyEq ?_
+  filter_upwards [] with y
+  simp only [FiberBundle.trivializationAt_continuousAlternatingMap_apply, Function.comp_apply,
+    ContinuousAlternatingMap.inCoordinates, inTangentCoordinates,
+    ContinuousLinearMap.inCoordinates, mlogDeriv, mextDeriv_ofFunction]
+  ext v
+  simp [ContinuousAlternatingMap.ofSubsingletonLIE, mvfderiv, NormedSpace.fromTangentSpace,
+    -mul_eq_mul_left_iff]
+  -- The remaining identifications between the tangent space of ℂ and ℂ are identity maps.
+  rfl
 
 /-- The logarithmic derivative of a nowhere-vanishing `C^(n+1)` function is a `C^n` form. -/
 theorem isSmoothForm_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) (n + 1) u)
     (hu₀ : ∀ x, u x ≠ 0) : IsSmoothForm I n (mlogDeriv I u) :=
-  (isSmoothForm_def n _).mpr fun x ↦ contMDiffAt_mlogDeriv hu (hu₀ x)
+  (isSmoothForm_def n _).mpr fun x ↦ contMDiffAt_mlogDeriv (hu x) (hu₀ x)
 
-/-- The logarithmic derivative of a `C²` function is closed at every point where the function does
-not vanish. -/
-theorem mextDeriv_mlogDeriv_apply {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) 2 u) {x : M}
-    (hx : u x ≠ 0) : mextDeriv (mlogDeriv I u) x = 0 := by
-  obtain ⟨V, hV, hxV, g, hg, -, hdg⟩ := exists_mlogDeriv_eq_mextDerivWithin (by simp) hu hx
+/-- If `u` is `C²` at a point where it does not vanish, its logarithmic derivative is closed
+at that point. -/
+@[simp]
+theorem mextDeriv_mlogDeriv_apply {u : M → ℂ} {x : M}
+    (hu : ContMDiffAt I 𝓘(ℝ, ℂ) 2 u x) (hx : u x ≠ 0) :
+    mextDeriv (mlogDeriv I u) x = 0 := by
+  obtain ⟨V, hV, hxV, g, hg, -, hdg⟩ :=
+    exists_mlogDeriv_eq_mextDerivWithin (by simp) (by simp) hu hx
   rw [mextDeriv_congr_of_eventuallyEq (eventually_of_mem (hV.mem_nhds hxV) hdg),
     ← mextDerivWithin_of_isOpen hV hxV]
   exact mextDerivWithin_mextDerivWithin _
@@ -234,7 +256,7 @@ function `u`. -/
 @[simp]
 theorem mextDeriv_mlogDeriv {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) 2 u) (hu₀ : ∀ x, u x ≠ 0) :
     mextDeriv (mlogDeriv I u) = 0 :=
-  funext fun x ↦ mextDeriv_mlogDeriv_apply hu (hu₀ x)
+  funext fun x ↦ mextDeriv_mlogDeriv_apply (hu x) (hu₀ x)
 
 end Regularity
 
