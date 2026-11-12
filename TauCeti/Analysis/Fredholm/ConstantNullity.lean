@@ -229,7 +229,7 @@ theorem IsFredholm.exists_continuousOn_ker_parametrization {s : Set X} (hT₀ : 
         Injective (κ x) ∧ (κ x).range = (T x).ker := by
   obtain ⟨S, hSfin, q, U, hU, hx₀U, hU'⟩ :=
     hT₀.exists_ker_parametrization (hT.continuousAt (hs.mem_nhds hx₀))
-  have : CompleteSpace S := FiniteDimensional.complete 𝕜 S
+  have : CompleteSpace S := FiniteDimensional.completeSpace 𝕜 S
   refine ⟨U ∩ s, inter_subset_right, hU.inter hs, ⟨hx₀U, hx₀⟩, _, fun x hx ↦ ?_,
     fun x hx ↦ (hU' x hx.1).2⟩
   have hsec : ContinuousAt (fun y ↦ ((T y).coprod S.subtypeL).kerSection q) x :=
@@ -248,7 +248,7 @@ theorem IsFredholm.exists_contDiffOn_ker_parametrization {X : Type*} [NormedAddC
         Injective (κ x) ∧ (κ x).range = (T x).ker := by
   obtain ⟨S, hSfin, q, U, hU, hx₀U, hU'⟩ := hT₀.exists_ker_parametrization
     (hT.continuousOn.continuousAt (hs.mem_nhds hx₀))
-  have : CompleteSpace S := FiniteDimensional.complete 𝕜 S
+  have : CompleteSpace S := FiniteDimensional.completeSpace 𝕜 S
   refine ⟨U ∩ s, inter_subset_right, hU.inter hs, ⟨hx₀U, hx₀⟩, _, fun x hx ↦ ?_,
     fun x hx ↦ (hU' x hx.1).2⟩
   have hsec : ContDiffAt 𝕜 n (fun y ↦ ((T y).coprod S.subtypeL).kerSection q) x :=
@@ -298,7 +298,7 @@ theorem IsFredholm.exists_continuousOn_rightInverse {s : Set X} (hT₀ : IsFredh
             ∃ hS : S.IsTopCompl (T x).range, P x = S.projectionOntoL (T x).range hS) := by
   obtain ⟨S, hSD, hSfin, q, U, hU, hx₀U, hU'⟩ :=
     hT₀.exists_splitting (hT.continuousAt (hs.mem_nhds hx₀)) hD
-  have : CompleteSpace S := FiniteDimensional.complete 𝕜 S
+  have : CompleteSpace S := FiniteDimensional.completeSpace 𝕜 S
   have hsec {x} (hx : x ∈ U ∩ s) :=
     continuousAt_kerSection_coprod (hT.continuousAt (hs.mem_nhds hx.2)) (hU' x hx.1).1
   exact ⟨S, hSD, hSfin, U ∩ s, inter_subset_right, hU.inter hs, ⟨hx₀U, hx₀⟩, _, _,
@@ -320,7 +320,7 @@ theorem IsFredholm.exists_contDiffOn_rightInverse {X : Type*} [NormedAddCommGrou
             ∃ hS : S.IsTopCompl (T x).range, P x = S.projectionOntoL (T x).range hS) := by
   obtain ⟨S, hSD, hSfin, q, U, hU, hx₀U, hU'⟩ :=
     hT₀.exists_splitting (hT.continuousOn.continuousAt (hs.mem_nhds hx₀)) hD
-  have : CompleteSpace S := FiniteDimensional.complete 𝕜 S
+  have : CompleteSpace S := FiniteDimensional.completeSpace 𝕜 S
   have hsec {x} (hx : x ∈ U ∩ s) :=
     contDiffAt_kerSection_coprod (hT.contDiffAt (hs.mem_nhds hx.2)) (hU' x hx.1).1
   exact ⟨S, hSD, hSfin, U ∩ s, inter_subset_right, hU.inter hs, ⟨hx₀U, hx₀⟩, _, _,
