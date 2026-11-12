@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.ZMod.Basic
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.LinearAlgebra.Pi
+import TauCeti.GroupTheory.Torsion
 
 /-!
 # Abelianizations of closed surface groups
@@ -213,19 +214,10 @@ nonorientable surface group `S⁻(g + 1, 0)` is isomorphic to a closed orientabl
 abelianization `ℤ ^ (2 h)` of the latter has none. For `g = h = 1` the Klein bottle group `S⁻(2, 0)`
 is not the torus group `S⁺(1, 0)`, although both surfaces have Euler characteristic zero. -/
 theorem isEmpty_nonorientable_mulEquiv_orientable (g h : ℕ) :
-    IsEmpty (Nonorientable (g + 1) 0 ≃* Orientable h 0) := by
-  refine ⟨fun e ↦ ?_⟩
-  set f := ((Nonorientable.closedAbelianizationEquiv g).symm.trans
-    e.abelianizationCongr).trans (Orientable.closedAbelianizationEquiv h)
-  obtain ⟨v, hv⟩ : ∃ v, f (.ofAdd (0, 1)) = .ofAdd v := ⟨_, (ofAdd_toAdd _).symm⟩
-  have hv2 : 2 • v = 0 := by
-    rw [← ofAdd_eq_one, ofAdd_nsmul, ← hv, ← map_pow, ← ofAdd_nsmul,
-      Nonorientable.two_nsmul_zero_one, ofAdd_zero, map_one]
-  have hv0 : v ≠ 0 := by
-    rintro rfl
-    rw [ofAdd_zero, map_eq_one_iff _ f.injective, ofAdd_eq_one] at hv
-    simp at hv
-  exact hv0 (funext fun i ↦ by simpa using congrFun hv2 i)
+    IsEmpty (Nonorientable (g + 1) 0 ≃* Orientable h 0) :=
+  ⟨fun e ↦ not_subsingleton (ZMod 2) <| subsingleton_of_mulEquiv isAddTorsion_of_finite <|
+    ((Orientable.closedAbelianizationEquiv h).symm.trans e.symm.abelianizationCongr).trans
+      (Nonorientable.closedAbelianizationEquiv g)⟩
 
 end SurfaceGroup
 
