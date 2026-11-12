@@ -170,6 +170,8 @@ jobs:
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
+          ZULIP_CHANNEL: rss
+          ZULIP_TOPIC: Tau Ceti PRs
           SINCE: ${{ steps.since.outputs.since }}
           # The event's own PR, when its payload names one, goes first.
           PR: ${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number }}

@@ -7,20 +7,39 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Probability.Independence.Integration
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
-# Expectations of quadratic forms in independent coordinates
+# Integrability and expectations of products and quadratic forms under independence
 
-For a finite family of pairwise independent mean-zero square-integrable `RCLike`-valued random
-variables `W` and `A : Matrix ι ι 𝕜`, `star W ⬝ᵥ A *ᵥ W` is integrable with expectation
-`∑ i, A i i * E[‖W i‖ ^ 2]`.
+The product of two independent square-integrable real random variables is square integrable
+(`ProbabilityTheory.IndepFun.memLp_two_mul`). For a finite family of pairwise independent
+mean-zero square-integrable `RCLike`-valued random variables `W` and `A : Matrix ι ι 𝕜`,
+`star W ⬝ᵥ A *ᵥ W` is integrable with expectation `∑ i, A i i * E[‖W i‖ ^ 2]`
+(`TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_indepFun`).
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory Matrix
+open MeasureTheory
+
+namespace ProbabilityTheory.IndepFun
+
+/-- The product of independent square-integrable real random variables is square integrable. -/
+theorem memLp_two_mul {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    {X Y : Ω → ℝ} (h : IndepFun X Y P) (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
+    MemLp (X * Y) 2 P := by
+  refine (memLp_two_iff_integrable_sq
+    (hX.aestronglyMeasurable.mul hY.aestronglyMeasurable)).2 ?_
+  simpa only [Pi.mul_def, mul_pow, Function.comp_def, id_eq] using
+    (h.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2)).integrable_mul
+      hX.integrable_sq hY.integrable_sq
+
+end ProbabilityTheory.IndepFun
+
+open ProbabilityTheory Matrix
 
 namespace TauCeti
 
