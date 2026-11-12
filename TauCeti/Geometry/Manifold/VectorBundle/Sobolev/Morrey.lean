@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.AEEq
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # Morrey's embedding for Sobolev sections over surfaces
@@ -47,6 +47,9 @@ functions.
   `p > 2`, has a unique continuous representative.
 * `TauCeti.SobolevSection.toSection`: that continuous section; it is linear in the element of
   `W^{1,p}(V)`, and `TauCeti.SobolevSection.toSectionₗ` packages it as a real-linear map.
+* `TauCeti.SobolevSection.toSection_injective`: distinct elements have distinct continuous
+  representatives, and `TauCeti.SobolevSection.toSection_ofContMDiffSection`: a `C¹` section is
+  its own continuous representative.
 * `TauCeti.SobolevSection.exists_holderOnWith_coord_toSection`: its chart expressions are
   `(1 - 2 / p)`-Hölder on compact subsets of the chart images.
 
@@ -203,6 +206,23 @@ theorem eq_toSection (hp : 2 < p) {w : SobolevSection A volume p 1} {s : ∀ x, 
     s = toSection hp w :=
   (existsUnique_continuous_ae_eq_coord hp w).unique ⟨hs, hw⟩
     ⟨continuous_toSection hp w, chartValueL_ae_eq_coord_toSection hp w⟩
+
+/-- **Injectivity.** Distinct elements of `W^{1,p}(V)` have distinct continuous
+representatives. -/
+theorem toSection_injective (hp : 2 < p) :
+    Function.Injective (toSection hp : SobolevSection A volume p 1 → ∀ x, V x) :=
+  fun w w' h ↦ eq_of_ae_eq_coord (chartValueL_ae_eq_coord_toSection hp w)
+    (h ▸ chartValueL_ae_eq_coord_toSection hp w')
+
+/-- The continuous representative of a `C¹` section, viewed as an element of `W^{1,p}(V)`, is the
+section itself. The smoothness instances are stated at `(1 : ℕ)`, as in
+`TauCeti.SobolevSection.ofContMDiffSection`. -/
+@[simp]
+theorem toSection_ofContMDiffSection [IsManifold 𝓘(ℝ, ℂ) (1 : ℕ) M]
+    [ContMDiffVectorBundle (1 : ℕ) F V 𝓘(ℝ, ℂ)] (hp : 2 < p) (s : Cₛ^(1 : ℕ)⟮𝓘(ℝ, ℂ); F, V⟯) :
+    toSection hp (ofContMDiffSection A volume p 1 s) = s :=
+  (eq_toSection hp s.contMDiff.continuous
+    (chartValueL_ofContMDiffSection_ae A volume p 1 s)).symm
 
 /-- Taking continuous representatives is additive. -/
 @[simp]
