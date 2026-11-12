@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
+public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Module.Defs
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
 # Sums and products over the antidiagonals of `ℕ × ℕ`
@@ -28,7 +30,10 @@ derivation `D` acts on one factor at a time, into a recursion for the degree-`k`
 double product, as in generating-function arguments.
 
 The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the triangle `i < N`,
-`j < N - i`, so that the inner sum can be evaluated for each fixed `i`.
+`j < N - i`, so that the inner sum can be evaluated for each fixed `i`. Regrouping a triangle by
+its antidiagonals in this way is the bookkeeping of a formal inversion: if the terms `f i j` of a
+formal composition cancel along every antidiagonal `i + j = l + 1` modulo a family of subgroups
+`S N`, the partial sums of the composition agree with its leading term `f 0 0` modulo `S N`.
 
 ## Main results
 
@@ -38,6 +43,8 @@ The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the tria
   `i + j = k + 1`.
 * `Finset.Nat.sum_range_sum_antidiagonal`: the sum over the antidiagonals below `N` as a sum over a
   triangle.
+* `Finset.Nat.sub_sum_range_mem_of_sum_antidiagonal_mem`: the antidiagonal cancellation of a
+  formal inversion modulo a family of subgroups.
 -/
 
 public section
@@ -84,5 +91,27 @@ theorem sum_range_sum_antidiagonal [AddCommMonoid M] (g : ℕ → ℕ → M) (N 
       ∑ i ∈ range N, ∑ j ∈ range (N - i), g i j := by
   simp_rw [sum_antidiagonal_eq_sum_range_succ g]
   exact sum_range_diag_flip N g
+
+/-- **Antidiagonal cancellation modulo subgroups.** Let `S N` be additive subgroups, for instance
+the terms of order `-N` of a formal expansion, and let `g k` agree with `∑_{j < N - k} f k j`
+modulo `S N` for every `k < N`. If `e` agrees with `f 0 0` modulo every `S N`, lies in `S 0`, and
+every antidiagonal sum `∑_{i + j = l + 1} f i j` lies in every `S N`, then `e` agrees with
+`∑_{k < N} g k` modulo `S N`. -/
+theorem sub_sum_range_mem_of_sum_antidiagonal_mem {σ : Type*} [AddCommGroup M] [SetLike σ M]
+    [AddSubgroupClass σ M] (S : ℕ → σ) (e : M) (g : ℕ → M) (f : ℕ → ℕ → M)
+    (hg : ∀ N k, k < N → g k - ∑ j ∈ range (N - k), f k j ∈ S N)
+    (h₀ : ∀ N, e - f 0 0 ∈ S N) (hf : ∀ l N, ∑ p ∈ antidiagonal (l + 1), f p.1 p.2 ∈ S N)
+    (he : e ∈ S 0) (N : ℕ) : e - ∑ k ∈ range N, g k ∈ S N := by
+  have hsum : e - ∑ k ∈ range N, g k =
+      (e - ∑ k ∈ range N, ∑ p ∈ antidiagonal k, f p.1 p.2) -
+        ∑ k ∈ range N, (g k - ∑ j ∈ range (N - k), f k j) := by
+    rw [sum_range_sum_antidiagonal, sum_sub_distrib, sub_sub_sub_cancel_right]
+  rw [hsum]
+  refine sub_mem ?_ (sum_mem fun k hk ↦ hg N k (mem_range.1 hk))
+  cases N with
+  | zero => simpa using he
+  | succ N =>
+    rw [sum_range_succ', antidiagonal_zero, sum_singleton, sub_add_eq_sub_sub_swap]
+    exact sub_mem (h₀ _) (sum_mem fun l _ ↦ hf l _)
 
 end Finset.Nat

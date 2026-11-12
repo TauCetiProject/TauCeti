@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
+import TauCeti.Algebra.BigOperators.NatAntidiagonal
 
 /-!
 # The inverse-symbol recursions
@@ -93,40 +93,6 @@ private theorem IsSmoothing.coefficient_mem_orderSubmodule {s : Symbol n V W m}
     (hs : s.IsSmoothing) (μ' : ℝ) : s.coefficient ∈ orderSubmodule n V W μ' :=
   isSmoothing_iff.1 hs μ'
 
-/-- The bookkeeping behind the inverse-symbol recursions. Let `g k` be the terms of a formal
-composition, `f k j` the contribution of order `-(j + k)` to `g k`, and `S N` the coefficients of
-order `-N`. If `g k ≡ ∑_{j < N - k} f k j` modulo `S N`, the part `f 0 0` of order `0` is `1`
-modulo `S N` and the parts `f 0 l + ∑_{j < l} f (l - j) j` of order `-l` vanish modulo `S N` for
-`l ≥ 1`, then `1 ≡ ∑_{k < N} g k` modulo `S N`. -/
-private theorem sub_sum_mem_of_sum_antidiagonal_mem {M : Type*} [AddCommGroup M] [Module ℂ M]
-    (S : ℕ → Submodule ℂ M) (e : M) (g : ℕ → M) (f : ℕ → ℕ → M)
-    (hg : ∀ N k, k < N → g k - ∑ j ∈ range (N - k), f k j ∈ S N)
-    (h₀ : ∀ N, e - f 0 0 ∈ S N)
-    (hf : ∀ l N, f 0 (l + 1) + ∑ j : Fin (l + 1), f (l + 1 - j) j ∈ S N)
-    (he : e ∈ S 0) (N : ℕ) : e - ∑ k ∈ range N, g k ∈ S N := by
-  -- The part of order `-(l + 1)`, as a sum over the antidiagonal `k + j = l + 1`.
-  have hf' : ∀ l N, ∑ k ∈ range (l + 2), f k (l + 1 - k) ∈ S N := fun l N ↦ by
-    convert hf l N using 1
-    rw [sum_range_succ', Fin.sum_univ_eq_sum_range (fun j ↦ f (l + 1 - j) j), ← sum_range_reflect,
-      add_comm]
-    refine congrArg _ (sum_congr rfl fun k hk ↦ ?_)
-    have hk := mem_range.1 hk
-    congr 1 <;> omega
-  cases N with
-  | zero => simpa using he
-  | succ N =>
-    -- Regroup `∑_{k ≤ N} ∑_{j ≤ N - k} f k j` by the total order `l = j + k`.
-    have hsum : e - ∑ k ∈ range (N + 1), g k = (e - f 0 0) -
-        ∑ l ∈ range N, ∑ k ∈ range (l + 2), f k (l + 1 - k) -
-        ∑ k ∈ range (N + 1), (g k - ∑ j ∈ range (N + 1 - k), f k j) := by
-      rw [sum_sub_distrib, ← sum_range_diag_flip,
-        sum_range_succ' (fun l ↦ ∑ k ∈ range (l + 1), f k (l - k))]
-      simp
-      abel
-    rw [hsum]
-    refine sub_mem (sub_mem (h₀ _) (sum_mem fun l _ ↦ hf' l _)) (sum_mem fun k hk ↦ ?_)
-    exact hg _ k (mem_range.1 hk)
-
 /-- The orders in the right recursion: the term of index `l + 1 - j` of the formal composition of
 `a`, of order `m`, with a symbol of order `-m - j` has order `-(l + 1)`. -/
 private theorem order_le (m : ℝ) {l : ℕ} (j : Fin (l + 1)) :
@@ -190,7 +156,7 @@ theorem isAsymptoticSum_sharpTerm_of_isAsymptoticSum_rightInverseTerm
   set f : ℕ → ℕ → CoordinateSpace n × CoordinateSpace n → W →L[ℂ] W :=
     fun k j ↦ (a.sharpTerm (a.rightInverseTerm b₀ j) k).coefficient with hf
   refine isAsymptoticSum_iff.2 fun N ↦ mem_orderSubmodule.1 ?_
-  refine sub_sum_mem_of_sum_antidiagonal_mem (fun N ↦ orderSubmodule n W W (m + -m - N))
+  refine Nat.sub_sum_range_mem_of_sum_antidiagonal_mem (fun N ↦ orderSubmodule n W W (m + -m - N))
     (inclusion (by simp) (const (.id ℂ W)) : Symbol n W W (m + -m - (0 : ℕ))).coefficient
     (fun k ↦ (a.sharpTerm b k).coefficient) f (fun N k hk ↦ ?_) (fun N ↦ ?_) (fun l N ↦ ?_)
     (coefficient_mem_orderSubmodule le_rfl _) N
@@ -212,6 +178,12 @@ theorem isAsymptoticSum_sharpTerm_of_isAsymptoticSum_rightInverseTerm
     funext p
     simp [hf]
   · -- The part of order `-(l + 1)` is `-(a ∘ b₀ - 1) ∘ c` for the sum `c` in the recursion.
+    -- Write the antidiagonal `k + j = l + 1` as `f 0 (l + 1) + ∑_{j < l + 1} f (l + 1 - j) j`.
+    rw [← Nat.sum_antidiagonal_swap]
+    simp only [Prod.fst_swap, Prod.snd_swap]
+    rw [Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ f j i),
+      sum_range_succ, Nat.sub_self, add_comm _ (f 0 _),
+      ← Fin.sum_univ_eq_sum_range (fun j ↦ f (l + 1 - j) j)]
     have h := IsSmoothing.coefficient_mem_orderSubmodule
       ((h₀.comp_right (∑ j : Fin (l + 1), inclusion (order_le m j)
         (a.sharpTerm (a.rightInverseTerm b₀ j) (l + 1 - j)) :
@@ -294,7 +266,7 @@ theorem isAsymptoticSum_sharpTerm_of_isAsymptoticSum_leftInverseTerm
   set f : ℕ → ℕ → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] V :=
     fun k j ↦ ((a.leftInverseTerm b₀ j).sharpTerm a k).coefficient with hf
   refine isAsymptoticSum_iff.2 fun N ↦ mem_orderSubmodule.1 ?_
-  refine sub_sum_mem_of_sum_antidiagonal_mem (fun N ↦ orderSubmodule n V V (-m + m - N))
+  refine Nat.sub_sum_range_mem_of_sum_antidiagonal_mem (fun N ↦ orderSubmodule n V V (-m + m - N))
     (inclusion (by simp) (const (.id ℂ V)) : Symbol n V V (-m + m - (0 : ℕ))).coefficient
     (fun k ↦ (b.sharpTerm a k).coefficient) f (fun N k hk ↦ ?_) (fun N ↦ ?_) (fun l N ↦ ?_)
     (coefficient_mem_orderSubmodule le_rfl _) N
@@ -316,6 +288,12 @@ theorem isAsymptoticSum_sharpTerm_of_isAsymptoticSum_leftInverseTerm
     funext p
     simp [hf]
   · -- The part of order `-(l + 1)` is `-c ∘ (b₀ ∘ a - 1)` for the sum `c` in the recursion.
+    -- Write the antidiagonal `k + j = l + 1` as `f 0 (l + 1) + ∑_{j < l + 1} f (l + 1 - j) j`.
+    rw [← Nat.sum_antidiagonal_swap]
+    simp only [Prod.fst_swap, Prod.snd_swap]
+    rw [Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ f j i),
+      sum_range_succ, Nat.sub_self, add_comm _ (f 0 _),
+      ← Fin.sum_univ_eq_sum_range (fun j ↦ f (l + 1 - j) j)]
     have h := IsSmoothing.coefficient_mem_orderSubmodule
       ((h₀.comp_left (∑ j : Fin (l + 1), inclusion (order_le' m j)
         ((a.leftInverseTerm b₀ j).sharpTerm a (l + 1 - j)) :
