@@ -262,6 +262,18 @@ instance instIsManifold : IsManifold 𝓘(𝕜) ω (OnePoint 𝕜) := by
     simp [invChart_symm_of_ne_zero (hsub hw)]
   · exact hself _
 
+/-- The affine chart belongs to the maximal atlas of `OnePoint 𝕜`, at every smoothness level. -/
+theorem affineChart_mem_maximalAtlas {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜) n (OnePoint 𝕜)] :
+    (affineChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) :=
+  IsManifold.subset_maximalAtlas (Or.inl rfl)
+
+/-- The inverted chart belongs to the maximal atlas of `OnePoint 𝕜`, at every smoothness level. -/
+theorem invChart_mem_maximalAtlas {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜) n (OnePoint 𝕜)] :
+    (invChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) :=
+  IsManifold.subset_maximalAtlas (Or.inr rfl)
+
 /-! ### Differentiable maps into the projective line
 
 For `𝕜 = ℂ`, differentiability of a map into `OnePoint ℂ` is holomorphy into the Riemann sphere.

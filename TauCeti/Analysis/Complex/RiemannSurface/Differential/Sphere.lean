@@ -13,7 +13,9 @@ import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
 
 The differential `dz` of the affine coordinate on `OnePoint ℂ` has no zeros or poles at
 finite points and has a double pole at infinity. In the coordinate `w = 1/z` it is
-`-w⁻² dw`. Thus its divisor is `-2[∞]`, an explicit canonical divisor of degree `-2`.
+`-w⁻² dw`, an instance of the transformation law `ω = -g(1/w) / w² dw` for a `1`-form
+`ω = g(z) dz` (`TauCeti.RiemannSurface.OneForm.coeff_invChart_eq_neg_inv_sq_mul`). Thus its
+divisor is `-2[∞]`, an explicit canonical divisor of degree `-2`.
 This is the sphere contribution in the canonical-divisor form of Riemann–Hurwitz.
 
 The affine coordinate itself is assigned the value zero at infinity. Its manifold
@@ -45,12 +47,21 @@ def sphereCoordinateDifferential : OneForm (OnePoint ℂ) :=
 theorem coeff_sphereCoordinateDifferential_affineChart :
     sphereCoordinateDifferential.coeff affineChart = fun _ => 1 := by
   funext z
-  have he : affineChart ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 (OnePoint ℂ) := by
-    simpa only [chartAt_coe] using
-      (IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) (z : OnePoint ℂ))
+  have he := affineChart_mem_maximalAtlas (𝕜 := ℂ) (n := 1)
   rw [sphereCoordinateDifferential, OneForm.coeff_mvfderiv he (by simp)
     (mdifferentiableAt_of_mem_maximalAtlas he (by simp))]
   simp [comp_def]
+
+/-- **The transformation law between the two charts of the sphere.** If `ω = g(z) dz` in the
+affine chart, then `ω = -g(1/w) / w² dw` in the inverted chart, at every `w ≠ 0`. -/
+theorem OneForm.coeff_invChart_eq_neg_inv_sq_mul (ω : OneForm (OnePoint ℂ)) {w : ℂ}
+    (hw : w ≠ 0) : ω.coeff invChart w = -(w ^ 2)⁻¹ * ω.coeff affineChart w⁻¹ := by
+  have hw' : w⁻¹ ≠ 0 := inv_ne_zero hw
+  have h := ω.coeff_eq_coeff_mul_deriv affineChart_mem_maximalAtlas invChart_mem_maximalAtlas
+    (y := ((w⁻¹ : ℂ) : OnePoint ℂ)) (by simp)
+    (by simpa using fun h ↦ hw' (coe_injective h))
+  rw [invChart_coe, inv_inv, affineChart_coe, affineChart_comp_invChart_symm, deriv_inv] at h
+  rw [h, mul_comm]
 
 /-- The differential `dz` is holomorphic at every finite point of the sphere. -/
 theorem holomorphicAt_sphereCoordinateDifferential_coe (z : ℂ) :

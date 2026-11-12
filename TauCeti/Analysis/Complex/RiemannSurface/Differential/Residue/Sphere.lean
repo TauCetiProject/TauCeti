@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Pullback
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sphere
-public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
+public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import TauCeti.Analysis.Contour.Residue.Theorem
 import TauCeti.Analysis.Contour.Residue.SimplePole
 
@@ -26,17 +26,11 @@ and `h` has no pole other than `0` in the disc `|w| ≤ 1/R`. The classical resi
 `w = 1/z`, which reverses the orientation of the circle, gives `∮_{|w| = 1/R} h = -∮_{|z| = R} g`
 (`TauCeti.Contour.circleIntegral_neg_inv_sq_smul_comp_inv`).
 
-Two consequences on a compact Riemann surface `X` follow.
-
-* For a finite holomorphic map `F : X → ℙ¹` and a `1`-form `η` meromorphic on `ℙ¹`, the residues
-  of the pullback `F^* η` add up to zero over the preimage of the poles of `η`
-  (`TauCeti.RiemannSurface.OneForm.sum_residue_pullback_sphere`) and over the divisor of `F^* η`
-  (`TauCeti.RiemannSurface.OneForm.sum_residue_divisor_pullback_sphere`): over a fibre the
-  residues add up to `deg F` times the residue downstairs.
-* For a nonzero meromorphic function `f` on a compact connected Riemann surface, the residues of
-  the logarithmic differential `df / f` add up to zero
-  (`TauCeti.RiemannSurface.OneForm.sum_residue_logDeriv`). The residue of `df / f` at `x` is the
-  order of `f` at `x`, so this is the statement that a principal divisor has degree zero.
+For a finite holomorphic map `F : X → ℙ¹` from a compact Riemann surface `X` and a `1`-form `η`
+meromorphic on `ℙ¹`, the residues of the pullback `F^* η` add up to zero over the preimage of the
+poles of `η` (`TauCeti.RiemannSurface.OneForm.sum_residue_pullback_sphere`) and over the divisor
+of `F^* η` (`TauCeti.RiemannSurface.OneForm.sum_residue_divisor_pullback_sphere`): over a fibre
+the residues add up to `deg F` times the residue downstairs.
 
 The general residue theorem on a compact Riemann surface is not proved here.
 
@@ -55,67 +49,57 @@ open Complex Filter Function IsManifold Metric OnePoint Set Topology
 
 open scoped Manifold Real
 
-namespace TauCeti.Contour
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- **Inversion of a circle integral.** Substituting `w = 1/z` turns the circle `|w| = r` into the
-circle `|z| = 1/r` traversed in the opposite direction, and `dw = -dz / z²`. So if
-`h(w) = -g(1/w) / w²`, then `∮_{|w| = r} h(w) dw = -∮_{|z| = 1/r} g(z) dz`. -/
-theorem circleIntegral_neg_inv_sq_smul_comp_inv (g : ℂ → E) (r : ℝ) :
-    (∮ w in C(0, r), (-(w ^ 2)⁻¹) • g w⁻¹) = -∮ z in C(0, r⁻¹), g z := by
-  set F : ℝ → E := fun θ ↦ (circleMap 0 r⁻¹ θ * I) • g (circleMap 0 r⁻¹ θ) with hF
-  have hpt : ∀ θ : ℝ, (circleMap 0 r θ * I) • ((-(circleMap 0 r θ ^ 2)⁻¹) •
-      g (circleMap 0 r θ)⁻¹) = -F (-θ) := by
-    intro θ
-    simp only [hF]
-    rw [← circleMap_zero_inv, smul_smul, ← neg_smul]
-    congr 1
-    rcases eq_or_ne (circleMap 0 r θ) 0 with h | h
-    · simp [h]
-    · field_simp
-  have hper : Periodic F (2 * π) := fun θ ↦ by
-    simp only [hF, periodic_circleMap 0 r⁻¹ θ]
-  simp only [circleIntegral, deriv_circleMap, hpt, intervalIntegral.integral_neg,
-    intervalIntegral.integral_comp_neg, neg_zero]
-  congr 1
-  simpa using hper.intervalIntegral_add_eq (-(2 * π)) 0
-
-end TauCeti.Contour
-
 namespace TauCeti.RiemannSurface.OneForm
 
 open AlgebraicGeometry WeilDivisor
 
-/-! ### The two charts of the sphere -/
-
-private theorem affineChart_mem_maximalAtlas_sphere :
-    (affineChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ) ∈ maximalAtlas 𝓘(ℂ) 1 (OnePoint ℂ) := by
-  simpa only [chartAt_coe] using chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) ((0 : ℂ) : OnePoint ℂ)
-
-private theorem invChart_mem_maximalAtlas_sphere :
-    (invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ) ∈ maximalAtlas 𝓘(ℂ) 1 (OnePoint ℂ) :=
-  chartAt_infty (𝕜 := ℂ) ▸ chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) ∞
-
-/-- The transformation law between the two charts of the sphere: if `ω = g(z) dz` in the affine
-chart, then `ω = -g(1/w) / w² dw` in the inverted chart, at every `w ≠ 0`. -/
-private theorem coeff_invChart_eq_neg_inv_sq_mul (ω : OneForm (OnePoint ℂ)) {w : ℂ} (hw : w ≠ 0) :
-    ω.coeff invChart w = -(w ^ 2)⁻¹ * ω.coeff affineChart w⁻¹ := by
-  have hw' : w⁻¹ ≠ 0 := inv_ne_zero hw
-  have h := ω.coeff_eq_coeff_mul_deriv affineChart_mem_maximalAtlas_sphere
-    invChart_mem_maximalAtlas_sphere
-    (y := ((w⁻¹ : ℂ) : OnePoint ℂ)) (by simp)
-    (by simpa using fun h ↦ hw' (coe_injective h))
-  rw [invChart_coe, inv_inv, affineChart_coe, affineChart_comp_invChart_symm, deriv_inv] at h
-  rw [h, mul_comm]
-
 variable {ω : OneForm (OnePoint ℂ)}
 
-/-- Off the support of its divisor, an everywhere meromorphic `1`-form has nonnegative order. -/
-private theorem order_nonneg_of_notMem_support (hω : ∀ x, ω.MeromorphicAt x) {x : OnePoint ℂ}
-    (hx : x ∉ ω.divisor.support) : 0 ≤ ω.order x := by
-  rw [mem_support_iff, not_not, coeff_divisor hω, WithTop.untop₀_eq_zero] at hx
-  rcases hx with h | h <;> simp [h]
+/-! ### The two charts of the sphere -/
+
+/-- The coefficient of an everywhere meromorphic `1`-form in the inverted chart is meromorphic. -/
+private theorem meromorphicAt_coeff_invChart (hω : ∀ x, ω.MeromorphicAt x) (w : ℂ) :
+    _root_.MeromorphicAt (ω.coeff invChart) w := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simpa only [meromorphicAt_def, chartAt_infty, invChart_infty] using hω ∞
+  · have hsrc : ((w⁻¹ : ℂ) : OnePoint ℂ) ∈ invChart.source := by
+      simpa using fun h ↦ inv_ne_zero hw (coe_injective h)
+    simpa only [invChart_coe, inv_inv] using
+      (meromorphicAt_iff_of_mem_maximalAtlas invChart_mem_maximalAtlas hsrc).1 (hω _)
+
+/-- Off the support of the divisor, the coefficient in the affine chart has no pole. -/
+private theorem meromorphicOrderAt_coeff_affineChart_nonneg (hω : ∀ x, ω.MeromorphicAt x) {z : ℂ}
+    (hz : (z : OnePoint ℂ) ∉ ω.divisor.support) :
+    0 ≤ _root_.meromorphicOrderAt (ω.coeff affineChart) z := by
+  simpa only [order_def, chartAt_coe, affineChart_coe] using order_nonneg_of_notMem_support hω hz
+
+/-- Off the support of the divisor, the coefficient in the inverted chart has no pole at a nonzero
+point. -/
+private theorem meromorphicOrderAt_coeff_invChart_nonneg (hω : ∀ x, ω.MeromorphicAt x) {w : ℂ}
+    (hw : w ≠ 0) (hwS : ((w⁻¹ : ℂ) : OnePoint ℂ) ∉ ω.divisor.support) :
+    0 ≤ _root_.meromorphicOrderAt (ω.coeff invChart) w := by
+  have hsrc : ((w⁻¹ : ℂ) : OnePoint ℂ) ∈ invChart.source := by
+    simpa using fun h ↦ inv_ne_zero hw (coe_injective h)
+  have := order_nonneg_of_notMem_support hω hwS
+  rwa [order_eq_of_mem_maximalAtlas invChart_mem_maximalAtlas hsrc, invChart_coe, inv_inv] at this
+
+/-- The sum of the residues over the support of the divisor splits into the residue at `∞` and the
+sum over the finite points of the support. -/
+private theorem sum_residue_support_eq_residue_infty_add (hω : ∀ x, ω.MeromorphicAt x) :
+    ∑ x ∈ ω.divisor.support, ω.residue x =
+      ω.residue ∞ + ∑ z ∈ ω.divisor.support.preimage ((↑) : ℂ → OnePoint ℂ) coe_injective.injOn,
+        ω.residue (z : OnePoint ℂ) := by
+  classical
+  set T : Finset ℂ := ω.divisor.support.preimage (↑) coe_injective.injOn
+  have hsub : ω.divisor.support ⊆ insert ∞ (T.map ⟨(↑), coe_injective⟩) := by
+    intro x hx
+    induction x using OnePoint.rec with
+    | infty => exact Finset.mem_insert_self _ _
+    | coe z => exact Finset.mem_insert_of_mem (Finset.mem_map_of_mem _ (by simpa [T] using hx))
+  rw [Finset.sum_subset hsub fun x _ hx ↦
+      residue_eq_zero_of_order_nonneg (order_nonneg_of_notMem_support hω hx),
+    Finset.sum_insert (by simp), Finset.sum_map]
+  rfl
 
 /-! ### The residue theorem on the sphere -/
 
@@ -133,19 +117,6 @@ theorem sum_residue_sphere (hω : ∀ x, ω.MeromorphicAt x) :
   set R := max r 1
   have hR : 0 < R := lt_max_of_lt_right one_pos
   have hTR : (T : Set ℂ) ⊆ ball 0 R := hr.trans (ball_subset_ball (le_max_left _ _))
-  have hres0 : ∀ x ∉ S, ω.residue x = 0 := fun x hx ↦
-    residue_eq_zero_of_order_nonneg (order_nonneg_of_notMem_support hω hx)
-  -- Split the sum into the finite points and `∞`.
-  have hsplit : ∑ x ∈ S, ω.residue x =
-      ω.residue ∞ + ∑ z ∈ T, ω.residue (z : OnePoint ℂ) := by
-    have hsub : S ⊆ insert ∞ (T.map ⟨(↑), coe_injective⟩) := by
-      intro x hx
-      induction x using OnePoint.rec with
-      | infty => exact Finset.mem_insert_self _ _
-      | coe z => exact Finset.mem_insert_of_mem (Finset.mem_map_of_mem _ (by simpa [T] using hx))
-    rw [Finset.sum_subset hsub fun x _ hx ↦ hres0 x hx, Finset.sum_insert (by simp),
-      Finset.sum_map]
-    rfl
   have hfin : ∀ z : ℂ, ω.residue (z : OnePoint ℂ) = Contour.residue g z := fun z ↦ by
     rw [residue_def, chartAt_coe, affineChart_coe]
   have hinf : ω.residue ∞ = Contour.residue h 0 := by
@@ -157,42 +128,25 @@ theorem sum_residue_sphere (hω : ∀ x, ω.MeromorphicAt x) :
     intro z _ hz
     by_contra hzT
     have hzS : (z : OnePoint ℂ) ∉ S := by simpa [T] using hzT
-    have := order_nonneg_of_notMem_support hω hzS
-    rw [order_def, chartAt_coe, affineChart_coe] at this
-    exact (not_lt.2 this) hz
+    exact (not_lt.2 (meromorphicOrderAt_coeff_affineChart_nonneg hω hzS)) hz
   have hG := Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hR T hg hTR hgsupp
-  -- The residue theorem on the small circle `|w| = 1/R` in the inverted chart.
+  -- The residue theorem on the small circle `|w| = 1/R` in the inverted chart: a point `w ≠ 0`
+  -- of that disc has `|1/w| ≥ R`, so `1/w` is not in the support.
   have hRinv : 0 < R⁻¹ := inv_pos.2 hR
-  have hh : MeromorphicOn h (closedBall 0 R⁻¹) := by
-    intro w _
-    rcases eq_or_ne w 0 with rfl | hw
-    · simpa only [meromorphicAt_def, chartAt_infty, invChart_infty] using hω ∞
-    · have hsrc : ((w⁻¹ : ℂ) : OnePoint ℂ) ∈ invChart.source := by
-        simpa using fun h ↦ inv_ne_zero hw (coe_injective h)
-      simpa only [invChart_coe, inv_inv] using
-        (meromorphicAt_iff_of_mem_maximalAtlas invChart_mem_maximalAtlas_sphere hsrc).1 (hω _)
   have hhsupp : ∀ w ∈ closedBall (0 : ℂ) R⁻¹, _root_.meromorphicOrderAt h w < 0 →
       w ∈ ({0} : Finset ℂ) := by
     intro w hwR hw
     rw [Finset.mem_singleton]
     by_contra hw0
-    have hsrc : ((w⁻¹ : ℂ) : OnePoint ℂ) ∈ invChart.source := by
-      simpa using fun h ↦ inv_ne_zero hw0 (coe_injective h)
     have hwT : w⁻¹ ∉ T := fun hT ↦ by
       have h1 := hTR hT
       rw [mem_ball_zero_iff, norm_inv] at h1
-      rw [mem_closedBall_zero_iff] at hwR
-      have h2 : R ≤ ‖w‖⁻¹ := by
-        rw [le_inv_comm₀ hR (norm_pos_iff.2 hw0)]
-        exact hwR
-      exact (not_lt.2 h2) h1
+      rw [mem_closedBall_zero_iff, ← le_inv_comm₀ hR (norm_pos_iff.2 hw0)] at hwR
+      exact (not_lt.2 hwR) h1
     have hwS : ((w⁻¹ : ℂ) : OnePoint ℂ) ∉ S := by simpa [T] using hwT
-    have := order_nonneg_of_notMem_support hω hwS
-    rw [order_eq_of_mem_maximalAtlas invChart_mem_maximalAtlas_sphere hsrc, invChart_coe,
-      inv_inv] at this
-    exact (not_lt.2 this) hw
-  have hH := Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hRinv {0} hh
-    (by simpa using hRinv) hhsupp
+    exact (not_lt.2 (meromorphicOrderAt_coeff_invChart_nonneg hω hw0 hwS)) hw
+  have hH := Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hRinv {0}
+    (fun w _ ↦ meromorphicAt_coeff_invChart hω w) (by simpa using hRinv) hhsupp
   -- The circle inversion relates the two contour integrals.
   have hinv : (∮ w in C(0, R⁻¹), h w) = -∮ z in C(0, R), g z := by
     rw [show (∮ z in C(0, R), g z) = ∮ z in C(0, R⁻¹⁻¹), g z by rw [inv_inv],
@@ -202,7 +156,7 @@ theorem sum_residue_sphere (hω : ∀ x, ω.MeromorphicAt x) :
     exact coeff_invChart_eq_neg_inv_sq_mul ω (ne_of_mem_sphere hw hRinv.ne')
   rw [Finset.sum_singleton, hinv, hG] at hH
   have hpi : (2 * (π : ℂ) * I) ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
-  rw [hsplit, hinf, Finset.sum_congr rfl fun z _ ↦ hfin z]
+  rw [sum_residue_support_eq_residue_infty_add hω, hinf, Finset.sum_congr rfl fun z _ ↦ hfin z]
   have := hH.symm
   rw [← mul_neg, mul_right_inj' hpi] at this
   linear_combination this
@@ -253,10 +207,9 @@ theorem sum_residue_divisor_pullback_sphere (F : FiniteHolomorphicMap X (OnePoin
     have hpull : ∀ x, (η.pullback F).residue x = localMultiplicity F x * η.residue (F x) :=
       fun x ↦ residue_pullback (hη (F x)) (.of_forall fun z ↦ F.holomorphic z)
     have h1 : ∑ x ∈ (η.pullback F).divisor.support, (η.pullback F).residue x =
-        ∑ x ∈ (η.pullback F).divisor.support ∪ P, (η.pullback F).residue x := by
-      refine Finset.sum_subset Finset.subset_union_left fun x _ hx ↦ ?_
-      rw [mem_support_iff, not_not, coeff_divisor hm, WithTop.untop₀_eq_zero] at hx
-      exact residue_eq_zero_of_order_nonneg (by rcases hx with h | h <;> simp [h])
+        ∑ x ∈ (η.pullback F).divisor.support ∪ P, (η.pullback F).residue x :=
+      Finset.sum_subset Finset.subset_union_left fun x _ hx ↦
+        residue_eq_zero_of_order_nonneg (order_nonneg_of_notMem_support hm hx)
     have h2 : ∑ x ∈ P, (η.pullback F).residue x =
         ∑ x ∈ (η.pullback F).divisor.support ∪ P, (η.pullback F).residue x := by
       refine Finset.sum_subset Finset.subset_union_right fun x _ hx ↦ ?_
@@ -265,30 +218,6 @@ theorem sum_residue_divisor_pullback_sphere (F : FiniteHolomorphicMap X (OnePoin
         mul_zero]
     rw [h1, ← h2, sum_residue_pullback_sphere F hη]
   · simp [divisor_of_not_forall_meromorphicAt hm]
-
-/-! ### The logarithmic differential -/
-
-/-- **The residue theorem for `df / f`.** On a compact connected Riemann surface, the residues of
-the logarithmic differential `f⁻¹ df` of a nonzero meromorphic function `f` add up to zero over
-the zeros and poles of `f`. The residue at `x` is the order of `f` at `x`
-(`TauCeti.RiemannSurface.OneForm.residue_inv_smul_mvfderiv`), so the sum is the degree of the
-principal divisor of `f`, which vanishes
-(`TauCeti.RiemannSurface.MeromorphicFunction.degree_principalDivisor`). -/
-theorem sum_residue_logDeriv [ConnectedSpace X] {f : MeromorphicFunction X} (hf : f ≠ 0) :
-    ∑ x ∈ ((MeromorphicFunction.orderSystem X).principalDivisor
-        (Additive.ofMul (Units.mk0 f hf))).support,
-      residue (f.finitePart⁻¹ • mvfderiv 𝓘(ℂ) f.finitePart) x = 0 := by
-  set D := (MeromorphicFunction.orderSystem X).principalDivisor (Additive.ofMul (Units.mk0 f hf))
-  have hres : ∀ x, residue (f.finitePart⁻¹ • mvfderiv 𝓘(ℂ) f.finitePart) x =
-      (WeilDivisor.coeff D x : ℂ) :=
-    fun x ↦ residue_inv_smul_mvfderiv (f.meromorphicAt_finitePart x) (by
-      rw [← MeromorphicFunction.order_apply]
-      exact (MeromorphicFunction.coe_coeff_principalDivisor_orderSystem
-        (Additive.ofMul (Units.mk0 f hf)) x).symm)
-  rw [Finset.sum_congr rfl fun x _ ↦ hres x]
-  have hdeg := MeromorphicFunction.degree_principalDivisor (Additive.ofMul (Units.mk0 f hf))
-  rw [degree_apply] at hdeg
-  exact_mod_cast hdeg
 
 /-! ### Check: the form `dz / z` on the sphere -/
 
