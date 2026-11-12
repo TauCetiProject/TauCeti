@@ -90,7 +90,7 @@ theorem prod_range_cyclotomic_prime_pow_comp_X_add_one (n : ℕ) :
 
 omit hp in
 /-- `ξ_m` divides `ω_n` for `m ≤ n`. -/
-theorem cyclotomic_prime_pow_comp_X_add_one_dvd {m n : ℕ} (h : m ≤ n) :
+theorem cyclotomic_pow_comp_X_add_one_dvd {m n : ℕ} (h : m ≤ n) :
     (cyclotomic (p ^ m) R).comp (X + 1) ∣ (1 + X) ^ p ^ n - 1 := by
   have hX := dvd_pow_sub_one_of_dvd (r := (X : R[X])) (pow_dvd_pow p h)
   simpa [add_comm (1 : R[X]) X] using
