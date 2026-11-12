@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Preadditive
+public import Mathlib.CategoryTheory.Monoidal.Linear
 
 /-!
 # Negatives, differences and integer multiples in a monoidal preadditive category
@@ -23,6 +23,11 @@ morphisms.
 Consequently, if a natural number `e` kills an object `X`, in the sense that `e • 𝟙 X = 0`, then it
 kills `X ⊗ Y` and `Y ⊗ X` (`CategoryTheory.nsmul_id_tensor_eq_zero_of_left` and
 `CategoryTheory.nsmul_id_tensor_eq_zero_of_right`).
+
+In particular whiskering is `ℤ`-linear for the `ℤ`-linear structure of a preadditive category
+(`CategoryTheory.monoidalLinearInt`). This is not an instance: a category such as `ModuleCat ℤ`
+also carries its own `ℤ`-linear structure, for which Mathlib states `MonoidalLinear ℤ`, while
+instance search finds the preadditive one; files needing the latter use it as a local instance.
 -/
 
 public section
@@ -96,5 +101,12 @@ lemma tensorHom_zsmul {W X Y Z : C} (m : ℤ) (f : W ⟶ X) (g : Y ⟶ Z) :
     f ⊗ₘ (m • g) = m • (f ⊗ₘ g) := by
   rw [tensorHom_def', tensorHom_def', ← Preadditive.zsmul_comp]
   exact congrArg (· ≫ f ▷ Z) ((tensorLeft W).map_zsmul (f := g) (r := m))
+
+variable (C) in
+/-- Whiskering commutes with the integer multiples of a monoidal preadditive category, that is,
+it is linear for the `ℤ`-linear structure `CategoryTheory.Linear.preadditiveIntLinear`. -/
+abbrev monoidalLinearInt : MonoidalLinear ℤ C where
+  whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
+  smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
 
 end CategoryTheory

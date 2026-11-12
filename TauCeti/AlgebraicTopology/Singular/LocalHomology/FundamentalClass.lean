@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 
@@ -22,7 +22,8 @@ For a compact subset `A ⊆ M`, the local orientations of `o` glue to a unique c
 each point `x ∈ A`. These classes are compatible with restriction to smaller compact subsets.
 Along a finite set `Z`, the fundamental class is the sum over `z ∈ Z` of the local orientations
 `o z`, each read through excision in an open neighbourhood of `z` containing no other point of
-`Z` and pushed into `Hₙ(M, M ∖ Z; ℤ)`.
+`Z` and pushed into `Hₙ(M, M ∖ Z; ℤ)`. An open embedding `j : U → M` carries the fundamental
+class along a compact `K ⊆ U` of the pulled-back orientation to the fundamental class along `j(K)`.
 
 For `M` compact, there is a unique class `o.fundamentalClass hn` of `Hₙ(M; ℤ)`, the *fundamental
 class* of `M` for the orientation `o`, whose image in `Hₙ(M, M ∖ {x}; ℤ)` is `o x` for every
@@ -66,6 +67,8 @@ homology isomorphism directly, without requiring Poincaré duality.
   `ℚ ≃ₗ[ℚ] Hₙ(M; ℚ)` on a compact connected oriented manifold.
 * `TauCeti.HomologicalOrientation.fundamentalClassOn_eq_sum_localOrientationAlong`: the
   fundamental class along a finite set is the sum of the local orientations at its points.
+* `TauCeti.HomologicalOrientation.localHomologyMap_fundamentalClassOn_comap`: open embeddings
+  carry fundamental classes along compact sets to fundamental classes.
 * `TauCeti.HomologicalOrientation.eq_fundamentalClass`: the fundamental class is the only class
   restricting to the orientation at every point.
 * `TauCeti.HomologicalOrientation.fundamentalClass_neg`: the fundamental class of the reversed
@@ -203,6 +206,39 @@ theorem fundamentalClassOn_neg :
     LocalOrientation.coe_neg]
 
 end Compact
+
+section OpenEmbedding
+
+open Topology
+
+variable {U : Type} [TopologicalSpace U] [T2Space U] [ChartedSpace E U]
+
+/-- **Open embeddings carry fundamental classes to fundamental classes**: for an open embedding
+`j : U → M` and compact `K ⊆ U`, the map `Hₙ(U, U ∖ K; ℤ) ⟶ Hₙ(M, M ∖ j(K); ℤ)` induced by `j`
+carries the fundamental class along `K` of the pulled-back orientation `o.comap hj` to the
+fundamental class of `o` along `j(K)`. -/
+theorem localHomologyMap_fundamentalClassOn_comap {j : C(U, M)} (hj : IsOpenEmbedding j)
+    {K : Set U} (hK : IsCompact K) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j (hj.injective.preimage_image K).subset n
+        ((o.comap hj).fundamentalClassOn hn hK) =
+      o.fundamentalClassOn hn (hK.image j.continuous) := by
+  refine o.eq_fundamentalClassOn hn _ ?_
+  rintro _ ⟨x, hx, rfl⟩
+  have hjx : j ⁻¹' {j x} ⊆ {x} := by
+    rw [← image_singleton, hj.injective.preimage_image]
+  -- The map induced by `j` carries the local orientation of `o.comap hj` at `x` to that of `o`
+  -- at `j x`.
+  have hox : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j hjx n (o.comap hj x).val =
+      (o (j x)).val := by
+    rw [← localOrientationEquiv_comap_apply o hj x, IsOpenEmbedding.coe_localOrientationEquiv,
+      localHomologyIsoOfIsOpenEmbedding_hom,
+      localHomologyMap_congr _ (ContinuousMap.ext fun _ ↦ rfl : ⟨j, hj.continuous⟩ = j)]
+  -- Restricting to `j x` after the map induced by `j` is restricting to `x` before it.
+  rw [← hox, ← (o.comap hj).localHomologyRestriction_fundamentalClassOn hn hK hx,
+    ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+    localHomologyMap_comp_localHomologyRestriction, localHomologyRestriction_comp_localHomologyMap]
+
+end OpenEmbedding
 
 section Finite
 
