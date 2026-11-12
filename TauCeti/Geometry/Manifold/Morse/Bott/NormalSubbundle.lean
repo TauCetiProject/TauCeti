@@ -317,7 +317,7 @@ theorem contMDiff_projection_negativeNormalSpace
   have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
   let := i.normalSpaceContMDiffVectorBundle hn hk hdim
   intro w₀
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨(Bundle.contMDiff_proj _).contMDiffAt, ?_⟩
   obtain ⟨p, hp, hps⟩ := exists_contMDiffOn_negativeNormalSpace_eq_map hn h hk hf hdim g w₀.proj
   set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj
@@ -378,9 +378,9 @@ theorem contMDiff_projection_positiveNormalSpace
   have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
   let := i.normalSpaceContMDiffVectorBundle hn hk hdim
   intro w₀
-  have hA := Bundle.contMDiffAt_totalSpace.mp
+  have hA := Bundle.contMDiffAt_totalSpace_iff.mp
     (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g w₀)
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨hA.1, ?_⟩
   set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj
   have hw₀ : w₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt P _ w₀.proj

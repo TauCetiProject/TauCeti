@@ -97,7 +97,7 @@ theorem contMDiff_normalRepresentative_normalClass
     Module.Finite.of_injective (mfderiv I J f x₀ : E →L[ℝ] V).toLinearMap
       (f.isImmersion.mfderiv_injective hn x₀)
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   -- The induced metric identifies tangent vectors with covectors on the source.
   let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
     (IB := J) (n := m) (F := V) (V := fun y : N => TangentSpace J y)

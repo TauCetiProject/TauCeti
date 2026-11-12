@@ -373,7 +373,8 @@ theorem hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff (x : E) :
 /-- The coboundary of a degree-one cochain `D`:
 `(δD)(a₀, a₁) = L a₀ (D a₁) - D (a₀ a₁) + R a₁ (D a₀)`. -/
 theorem hochschildBimoduleCoboundary_ofSubsingleton (D : A →L[𝕜] E) (a : Fin 2 → A) :
-    hochschildBimoduleCoboundary L R 1 (ContinuousMultilinearMap.ofSubsingleton 𝕜 A E 0 D) a =
+    hochschildBimoduleCoboundary L R 1 (ContinuousMultilinearMap.ofSubsingleton 𝕜 A E
+        0 D) a =
       L (a 0) (D (a 1)) - D (a 0 * a 1) + R (a 1) (D (a 0)) := by
   rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_one]
   simp only [ContinuousMultilinearMap.ofSubsingleton_apply_apply, Fin.tail_def, Fin.init_def,
@@ -383,7 +384,8 @@ theorem hochschildBimoduleCoboundary_ofSubsingleton (D : A →L[𝕜] E) (a : Fi
 /-- A degree-one cochain is a cocycle exactly when it is a bounded derivation into the bimodule:
 `D (a * b) = L a (D b) + R b (D a)`. -/
 theorem hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff (D : A →L[𝕜] E) :
-    hochschildBimoduleCoboundary L R 1 (ContinuousMultilinearMap.ofSubsingleton 𝕜 A E 0 D) = 0 ↔
+    hochschildBimoduleCoboundary L R 1 (ContinuousMultilinearMap.ofSubsingleton 𝕜 A E
+        0 D) = 0 ↔
       ∀ a b : A, D (a * b) = L a (D b) + R b (D a) := by
   refine ⟨fun h a b ↦ ?_, fun h ↦ ?_⟩
   · have hab := congrArg (fun T ↦ T ![a, b]) h

@@ -106,7 +106,7 @@ section Cap
 implementation detail of `TauCeti.orthogonalCap`; the public interface is
 `TauCeti.orthogonalCap_tprod`. -/
 private noncomputable def orthogonalCapMultilinear :
-    MultilinearMap k (fun _ : Fin 2 => (Fin n → k)) k :=
+    MultilinearMap (RingHom.id k) (fun _ : Fin 2 => (Fin n → k)) k :=
   ∑ j : Fin n,
     (MultilinearMap.mkPiAlgebra k (Fin 2) k).compLinearMap fun _ : Fin 2 => LinearMap.proj j
 
