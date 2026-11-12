@@ -110,8 +110,8 @@ algebra homomorphism and bijectivity proof it is assembled from are private to t
 
 Centrality is asked of `B` and not of `A`, exactly as in
 `TauCeti/Algebra/CentralSimple/SkolemNoether.lean`, and for the same reason: what the proof needs is
-that `B ⊗[K] Aᵐᵒᵖ` is simple, which `IsSimpleRing.tensorProduct` gets from `B` central
-simple and `A` simple. The roadmap's central simple form is the case `Algebra.IsCentral K A`, which
+that `B ⊗[K] Aᵐᵒᵖ` is simple, which `IsSimpleRing.tensorProduct` gets from `B` central simple and
+`A` simple. The form with `A` central simple as well is the case `Algebra.IsCentral K A`, which
 these statements cover. Centrality of `B` cannot be dropped: for `K = ℝ`, `A = ℂ` and `B = A`, the
 centralizer is all of `ℂ`, so `finrank ℝ B * finrank ℝ C = 4 ≠ 2 = finrank ℝ A`; the worked example
 at the end of the file records this.

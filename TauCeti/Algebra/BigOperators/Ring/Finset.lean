@@ -33,6 +33,11 @@ Let `M : ι₁ → ι₂ → A` be a matrix of coefficients over finite types, a
 `Q` of linear maps on both inputs regroups as `∑ᵢ ∑ⱼ xᵢ yⱼ ∑ᵢ' ∑ⱼ' Pᵢᵢ' Qⱼⱼ' Mᵢ'ⱼ'`
 (`TauCeti.sum_sum_sum_mul_sum_mul`). This is the coordinate computation behind comparison
 homotopies for products given by matrices.
+
+## Restricting a weighted sum to the points in a set
+
+`Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
+`∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
 -/
 
 public section
@@ -105,3 +110,14 @@ theorem sum_sum_sum_mul_sum_mul (x : κ₁ → A) (y : κ₂ → A) (P : κ₁ �
 end Regroup
 
 end TauCeti
+
+namespace Finset
+
+/-- If the weight `w` vanishes outside `U`, then the weighted sum over the points of `S` lying in
+`U` is the weighted sum over all of `S`. -/
+theorem sum_filter_mem_mul_eq {α R : Type*} [NonUnitalNonAssocSemiring R] (S : Finset α)
+    (U : Set α) [DecidablePred (· ∈ U)] {w r : α → R} (hw : ∀ s ∉ U, w s = 0) :
+    ∑ s ∈ S.filter (· ∈ U), w s * r s = ∑ s ∈ S, w s * r s :=
+  sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by rw [hw s hsU, zero_mul]
+
+end Finset
