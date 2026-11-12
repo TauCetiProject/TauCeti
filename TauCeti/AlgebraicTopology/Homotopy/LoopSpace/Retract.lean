@@ -21,11 +21,11 @@ the identity (`TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_h
 
 The case of interest is a sphere. Let `s : Sⁿ⁺² → Q` and `c : Q → Sⁿ⁺²` be maps such that
 `c ∘ s` has degree `±1`, that is, induces a surjection on `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`; no base point
-condition is imposed on either map. Rotations `a`, `b` of the sphere move a base point `x` of the
-source and the image of `s x` to the north pole, making `δ = b ∘ c ∘ s ∘ a` a pointed self-map of
-degree `±1`. By Hopf's theorem for pointed self-maps of the sphere, `δ ∘ δ ≃ id`
-(`ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`), so
-`a ∘ δ ∘ b ∘ c` is a pointed left homotopy inverse of `s` at `x`, and
+condition is imposed on either map. A homeomorphism `a` of the sphere moving `c (s x)` to a base
+point `x` (`TauCeti.Sphere.exists_homeomorph_apply_eq`) makes `δ = a ∘ c ∘ s` a self-map of
+degree `±1` fixing `x`. By Hopf's theorem for pointed self-maps of the sphere, `δ ∘ δ ≃ id`
+relative to `x` (`ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`), so
+`δ ∘ a ∘ c` is a pointed left homotopy inverse of `s` at `x`, and
 `(Ω²s)_* : H_*(Ω²Sⁿ⁺²) → H_*(Ω²Q)` is injective at every base point
 (`TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_surjective_singularHomologyMap`).
 
@@ -85,63 +85,23 @@ theorem injective_singularHomologyMap_map_map_of_surjective_singularHomologyMap 
     Function.Injective (ContinuousMap.singularHomologyMap k m
       (map (map s hs : C(MooreLoopSpace _ x, MooreLoopSpace Q q)) (map_one (map s hs)) :
         C(MooreLoopSpace (MooreLoopSpace _ x) 1, MooreLoopSpace (MooreLoopSpace Q q) 1))) := by
-  -- Rotations `a` and `b` of the sphere move the base points to the north pole `N`: `a N = x`
-  -- and `b (c q) = N`.
-  have hrot (y z : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :
-      ∃ e : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1 ≃ₜ
-        sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, e y = z := by
-    obtain ⟨e, he⟩ := MulAction.exists_smul_eq (EuclideanSpace ℝ (Fin (n + 3)) ≃ₗᵢ[ℝ]
-      EuclideanSpace ℝ (Fin (n + 3))) y z
-    exact ⟨e.unitSphereIsometryEquiv.toHomeomorph, by simpa using he⟩
-  obtain ⟨a, ha⟩ := hrot (sphereNorthPole (n + 2)) x
-  obtain ⟨b, hb⟩ := hrot (c q) (sphereNorthPole (n + 2))
-  -- Homeomorphisms are surjective on homology.
-  have hsurj (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1 ≃ₜ
-      sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :
-      Function.Surjective (ContinuousMap.singularHomologyMap ℤ (n + 2)
-        (e : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
-          sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1))) :=
-    Function.RightInverse.surjective (g := ContinuousMap.singularHomologyMap ℤ (n + 2)
-      (e.symm : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
-        sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1))) fun y ↦ by
-        rw [← ContinuousMap.singularHomologyMap_comp, Homeomorph.toContinuousMap_comp_symm,
-          ContinuousMap.singularHomologyMap_id]
+  -- A homeomorphism `a` of the sphere with `a (c q) = x` makes `δ = a ∘ c ∘ s` a self-map of
+  -- degree `±1` fixing `x`, so `δ ∘ δ ≃ id` relative to `x`.
+  obtain ⟨a, ha⟩ := TauCeti.Sphere.exists_homeomorph_apply_eq (c q) x
   let A : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
     sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) := a
-  let A' : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
-    sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) := a.symm
-  let B : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
-    sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) := b
-  -- The pointed self-map `δ = b ∘ c ∘ s ∘ a` of `(Sⁿ⁺², N)` has degree `±1`, so `δ ∘ δ ≃ id`.
-  obtain ⟨δ, hδdef⟩ : ∃ δ, δ = B.comp ((c.comp s).comp A) := ⟨_, rfl⟩
-  have hδ : δ (sphereNorthPole (n + 2)) = sphereNorthPole (n + 2) := by
-    simp [hδdef, A, B, ha, hs, hb]
-  have hδδ := ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap hδ
-    (by
-      have hcomp : ⇑(ContinuousMap.singularHomologyMap ℤ (n + 2) δ) =
-          ContinuousMap.singularHomologyMap ℤ (n + 2) B ∘
-            ContinuousMap.singularHomologyMap ℤ (n + 2) (c.comp s) ∘
-              ContinuousMap.singularHomologyMap ℤ (n + 2) A := by
-        funext y
-        simp only [hδdef, Function.comp_apply, ContinuousMap.singularHomologyMap_comp]
-      rw [hcomp]
-      exact (hsurj b).comp (h.comp (hsurj a)))
-  -- Then `r = a ∘ δ ∘ b ∘ c` is a pointed left homotopy inverse of `s`: `r ∘ s = a ∘ δ² ∘ a⁻¹`.
-  refine injective_singularHomologyMap_map_map_of_homotopicRel hs
-    (r := A.comp (δ.comp (B.comp c))) (by
-      have hB : B (c q) = sphereNorthPole (n + 2) := by simp [B, hb]
-      simp only [ContinuousMap.comp_apply]
-      rw [hB, hδ]
-      exact ha) ?_ k m
-  have hr : (A.comp (δ.comp (B.comp c))).comp s = A.comp ((δ.comp δ).comp A') := by
-    ext1 y
-    simp [hδdef, A, A', B]
-  have hpre : A' ⁻¹' {sphereNorthPole (n + 2)} = {x} := by
-    ext y
-    simp [A', ← ha, a.symm_apply_eq]
-  have hid : A.comp ((ContinuousMap.id _).comp A') = ContinuousMap.id _ := by
-    ext1 y
-    simp [A, A']
-  simpa only [hr, hpre, hid] using (hδδ.precomp A').comp_continuousMap A
+  have hδ : (A.comp c).comp s x = x := by simp [A, hs, ha]
+  have hδδ := ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap hδ (by
+    have hcomp : ⇑(ContinuousMap.singularHomologyMap ℤ (n + 2) ((A.comp c).comp s)) =
+        ContinuousMap.singularHomologyMap ℤ (n + 2) A ∘
+          ContinuousMap.singularHomologyMap ℤ (n + 2) (c.comp s) := by
+      funext y
+      simp only [ContinuousMap.comp_assoc, Function.comp_apply,
+        ContinuousMap.singularHomologyMap_comp]
+    rw [hcomp]
+    exact (a.toHomotopyEquiv.bijective_singularHomologyMap ℤ (n + 2)).2.comp h)
+  -- Then `r = δ ∘ a ∘ c` is a pointed left homotopy inverse of `s`: `r ∘ s = δ ∘ δ`.
+  exact injective_singularHomologyMap_map_map_of_homotopicRel hs
+    (r := ((A.comp c).comp s).comp (A.comp c)) (by simp [A, ha, hs]) hδδ k m
 
 end TauCeti.MooreLoopSpace
