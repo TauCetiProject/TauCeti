@@ -37,7 +37,7 @@ private lemma fourier_moment_bound (n : ℕ) (y : ℝ) :
     Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom ℤ ℝ ℂ) y _
   have hn := norm_integral_le_integral_norm (μ := volume)
     (fun s : ℝ => (s : ℂ) ^ n * Complex.exp (-(s : ℂ) ^ 2 / 2 - Complex.I * y * s))
-  rw [integral_pow_mul_cexp_gaussian] at hn
+  rw [integral_pow_mul_cexp_neg_sq_div_two_sub_I_mul] at hn
   simp only [norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs,
     abs_of_nonneg (Real.sqrt_nonneg _), norm_neg, Complex.norm_I, one_pow,
     mul_one, heval, Complex.norm_exp] at hn
