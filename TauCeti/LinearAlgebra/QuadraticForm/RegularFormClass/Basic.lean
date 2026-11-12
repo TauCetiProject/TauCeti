@@ -75,9 +75,6 @@ rank is additive.
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I §2 and §5.
 -/
 
--- The presentation-and-quotient design realised here, and the names of the declarations that
--- carry it, follow the `TauCetiRoadmap/QuadraticFormInvariants` README and its `Suggested.lean`.
-
 public section
 
 open QuadraticMap QuadraticForm

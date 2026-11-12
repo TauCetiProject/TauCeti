@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
@@ -98,8 +98,8 @@ theorem exists_pos_norm_fderiv_le_rpow
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound _ hmem)
   -- Normalize the energy power bound, then choose a radius below the mean-value threshold.
   let β := c / (1 + M) ^ 2
-  have hβ : 0 < β := by dsimp [β]; positivity
-  obtain ⟨A, hA, hpower⟩ := exists_energy_power_bound hg hc hR
+  have _ : 0 < β := by dsimp [β]; positivity
+  obtain ⟨A, _, hpower⟩ := exists_energy_power_bound hg hc hR
     (hu.of_le (by norm_num)) hCR htame hbound henergy
   obtain ⟨δ, hδ, hmean⟩ :=
     exists_pos_sq_norm_fderiv_one_le_energy hW hJ hK hKW hJsq hu hCR huK henergy
@@ -114,7 +114,6 @@ theorem exists_pos_norm_fderiv_le_rpow
   have hε : 0 < ε := lt_min hη (by positivity)
   have hεR : ε < R := (min_le_right _ _).trans_lt (by linarith)
   let B := 32 * A * (2 : ℝ) ^ (2 * β) / Real.pi
-  have hB : 0 ≤ B := by dsimp [B]; positivity
   let C := (1 + M) * (Real.sqrt B + 1)
   have hC : 0 < C := by dsimp [C]; positivity
   refine ⟨ε, hε, hεR, C, hC, fun z hz ↦ ?_⟩
