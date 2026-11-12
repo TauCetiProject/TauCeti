@@ -456,8 +456,8 @@ theorem dist_smul_eq_translationLength_add (g : G) (v : T.V) :
 theorem line_translationLength (k : Multiplicative ℤ) :
     line.translationLength k = k.toAdd.natAbs :=
   translationLength_eq_natAbs_of_smul_eq_add (c := fun n => (lineVertexEquiv.symm n : line.V))
-    (fun m n => (line_dist_eq_natAbs _ _).trans (by
-      rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply]))
+    (fun m n => Int.ofNat_inj.mp <| by
+      rw [line_dist, Int.natCast_natAbs, Equiv.apply_symm_apply, Equiv.apply_symm_apply])
     fun n => lineVertexEquiv.injective ((lineVertexEquiv_line_smul k _).trans (by
       rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, add_comm]))
 
@@ -465,8 +465,8 @@ theorem line_translationLength (k : Multiplicative ℤ) :
 theorem line_axis (k : Multiplicative ℤ) : line.axis k = Set.univ := by
   refine Set.eq_univ_of_forall fun v => ?_
   rw [mem_axis_iff, line_translationLength]
-  refine (line_dist_eq_natAbs _ _).trans ?_
-  rw [lineVertexEquiv_line_smul]
+  refine Int.ofNat_inj.mp ?_
+  rw [line_dist, Int.natCast_natAbs, lineVertexEquiv_line_smul]
   omega
 
 end GTree

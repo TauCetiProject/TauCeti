@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Tree
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import TauCeti.Combinatorics.Quiver.Symmetric
+public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Order.Lattice.Nat
 
 /-!
@@ -16,7 +17,9 @@ public import Mathlib.Order.Lattice.Nat
 The distance between two vertices of a Serre graph is the least length of a path joining them,
 and `0` when there is no such path, following Mathlib's `SimpleGraph.dist`. Between joined
 vertices it vanishes exactly on the diagonal, is symmetric, and satisfies the triangle
-inequality. Graph morphisms do not increase it.
+inequality. Graph morphisms do not increase it. Every piece of a shortest path is a shortest path,
+so that along a shortest path the distance between two vertices is the difference of their
+positions.
 
 A path no longer than the distance between its endpoints is reduced. In an acyclic graph the
 unique reduced path between two vertices realizes their distance, since free reduction never
@@ -120,6 +123,40 @@ theorem exists_forall_dist_succ_le_one {a b : Γ.V} (h : Nonempty (Γ.Path a b))
   obtain ⟨p, hp⟩ := exists_length_eq_dist h
   exact hp ▸ key p
 
+/-! ### Shortest paths -/
+
+/-- An initial piece of a shortest path is a shortest path. -/
+theorem length_eq_dist_of_comp_left {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Path b c}
+    (h : (p.comp q).length = Γ.dist a c) : p.length = Γ.dist a b := by
+  have := dist_triangle ⟨p⟩ ⟨q⟩
+  have := dist_le_length p
+  have := dist_le_length q
+  rw [Quiver.Path.length_comp] at h
+  omega
+
+/-- A final piece of a shortest path is a shortest path. -/
+theorem length_eq_dist_of_comp_right {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Path b c}
+    (h : (p.comp q).length = Γ.dist a c) : q.length = Γ.dist b c := by
+  have := dist_triangle ⟨p⟩ ⟨q⟩
+  have := dist_le_length p
+  have := dist_le_length q
+  rw [Quiver.Path.length_comp] at h
+  omega
+
+/-- Along a shortest path, the distance between two vertices is the difference of their
+positions. -/
+theorem dist_getElem_vertices {a b : Γ.V} {p : Γ.Path a b} (hp : p.length = Γ.dist a b)
+    {i j : ℕ} (hij : i ≤ j) (hj : j < p.vertices.length) :
+    Γ.dist p.vertices[i] p.vertices[j] = j - i := by
+  obtain ⟨y, p₁, p₂, rfl, rfl, hy⟩ := p.exists_eq_comp_and_length_eq_of_lt_length j hj
+  obtain ⟨x, q, r, rfl, rfl⟩ := p₁.exists_eq_comp_of_le_length hij
+  have hx : ((q.comp r).comp p₂).vertices[q.length] = x := by
+    simpa only [Quiver.Path.comp_assoc, List.get_eq_getElem] using
+      q.vertices_comp_get_length_eq (r.comp p₂)
+  have h₁ := length_eq_dist_of_comp_left hp
+  rw [hx, ← hy, ← length_eq_dist_of_comp_right h₁, Quiver.Path.length_comp,
+    Nat.add_sub_cancel_left]
+
 /-- A graph morphism does not increase the distance between joined vertices. -/
 theorem Hom.dist_le {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} (h : Nonempty (Γ.Path a b)) :
     Δ.dist (f.mapV a) (f.mapV b) ≤ Γ.dist a b := by
@@ -147,8 +184,6 @@ theorem Path.dist_tgt_src_add_two_le {a b : Γ.V} (p : Γ.Path a b) {e f : Γ.E}
     rw [f'.2.2, e'.2.1, Quiver.Path.length_comp, Quiver.Path.length_toPath,
       Quiver.Path.length_cons]
     omega
-
-/-! ### Shortest paths are reduced -/
 
 /-- A path no longer than the distance between its endpoints is reduced. -/
 theorem Path.isReduced_of_length_le_dist {a b : Γ.V} {p : Γ.Path a b}
