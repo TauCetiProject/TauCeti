@@ -28,12 +28,6 @@ general. The pointwise form `Op(a) (Op(b) u) = Op(a # b) u`
 (`TauCeti.Symbol.quantizeSchwartzValue_quantizeUniformCLM`) holds for every symbol `a`, uniform
 or not, since `Op(b) u` is a Schwartz function.
 
-Since a symbol is determined by its quantization
-(`TauCeti.Symbol.quantizeSchwartzValue_injective`), the composition of operators gives the
-**associativity** of the composition symbol, `(a # b) # c = a # (b # c)`
-(`TauCeti.Symbol.sharp_assoc`), derived from the actual operators rather than from the integral
-formula for `#`.
-
 Composition with frequency multipliers stays in this calculus on both sides. On the right it is
 exact, `Op(a) ∘ b(D) = Op(a ∘ b)` with the pointwise product of the symbols
 (`TauCeti.Symbol.quantizeUniformCLM_comp_quantizeFrequencyCLM`); on the left,
@@ -64,9 +58,8 @@ namespace TauCeti
 
 namespace Symbol
 
-variable {n : ℕ} {m m' m'' : ℝ} {V W U U' : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+variable {n : ℕ} {m m' : ℝ} {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U]
-  [NormedAddCommGroup U'] [NormedSpace ℂ U']
 
 /-! ### Composition of quantizations -/
 
@@ -94,22 +87,6 @@ theorem quantizeUniformCLM_sharp {a : Symbol n W U m'} (ha : a.IsUniform)
   ext u x
   rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply,
     quantizeSchwartzValue_quantizeUniformCLM]
-
-/-- **Associativity of the composition symbol**, up to the identification of the orders
-`(m'' + m') + m = m'' + (m' + m)`: `(a # b) # c = a # (b # c)` for symbols `b` and `c` with
-compact spatial support. Both sides quantize to `Op(a) ∘ Op(b) ∘ Op(c)`. -/
-theorem sharp_assoc [CompleteSpace V] [CompleteSpace U'] (a : Symbol n U U' m'')
-    {b : Symbol n W U m'} {c : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
-    (hc : c.HasCompactSpatialSupport) :
-    (a.sharp b hb).sharp c hc =
-      inclusion (add_assoc m'' m' m).ge (a.sharp (b.sharp c hc) (hb.sharp hc)) := by
-  ext1
-  rw [coefficient_inclusion]
-  refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦ ?_
-  rw [← quantizeSchwartzValue_quantizeUniformCLM (a.sharp b hb) hc,
-    ← quantizeSchwartzValue_quantizeUniformCLM a hb,
-    ← quantizeSchwartzValue_quantizeUniformCLM a (hb.sharp hc),
-    quantizeUniformCLM_sharp hb.isUniform hc, ContinuousLinearMap.comp_apply]
 
 end Sharp
 
