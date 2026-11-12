@@ -90,27 +90,27 @@ variable (X Y) in
 inverse includes `X` at a point of `Y` to which `Y` contracts. -/
 noncomputable def HomotopyEquiv.prodContractible [ContractibleSpace Y] :
     (X × Y) ≃ₕ X where
-  toFun := ContinuousMap.fst
-  invFun := (ContinuousMap.id X).prodMk (ContinuousMap.const X (id_nullhomotopic Y).choose)
+  toFun := fst
+  invFun := (ContinuousMap.id X).prodMk (const X (id_nullhomotopic Y).choose)
   left_inv := by
     obtain ⟨H⟩ := (id_nullhomotopic Y).choose_spec
-    exact ContinuousMap.Homotopic.symm ⟨{
+    exact Homotopic.symm ⟨{
       toFun q := (q.2.1, H (q.1, q.2.2))
       continuous_toFun := by fun_prop
       map_zero_left _ := by simp
       map_one_left _ := by simp }⟩
-  right_inv := ContinuousMap.Homotopic.refl _
+  right_inv := Homotopic.refl _
 
 /-- The underlying map of the homotopy equivalence `X × Y ≃ₕ X` for contractible `Y` is the
 projection. -/
 theorem HomotopyEquiv.prodContractible_toFun [ContractibleSpace Y] :
-    (ContinuousMap.HomotopyEquiv.prodContractible X Y).toFun = ContinuousMap.fst :=
+    (HomotopyEquiv.prodContractible X Y).toFun = fst :=
   (rfl)
 
 /-- The homotopy equivalence `X × Y ≃ₕ X` for contractible `Y` is the projection. -/
 @[simp]
 theorem HomotopyEquiv.coe_prodContractible [ContractibleSpace Y] :
-    ⇑(ContinuousMap.HomotopyEquiv.prodContractible X Y) = Prod.fst :=
+    ⇑(HomotopyEquiv.prodContractible X Y) = Prod.fst :=
   (rfl)
 
 /-- **A cylinder deforms onto each of its slices.** For a point `t` of the interval `[a, b]`, the
@@ -133,13 +133,13 @@ def HomotopyEquiv.prodIcc {a b : ℝ} (t : Set.Icc a b) :
 /-- The slice homotopy equivalence at `t` sends `x` to `(x, t)`. -/
 @[simp]
 theorem HomotopyEquiv.prodIcc_apply {a b : ℝ} (t : Set.Icc a b) (x : X) :
-    ContinuousMap.HomotopyEquiv.prodIcc t x = (x, t) :=
+    HomotopyEquiv.prodIcc t x = (x, t) :=
   (rfl)
 
 /-- The homotopy inverse of a slice homotopy equivalence is the projection. -/
 @[simp]
 theorem HomotopyEquiv.prodIcc_symm_apply {a b : ℝ} (t : Set.Icc a b)
-    (p : X × Set.Icc a b) : (ContinuousMap.HomotopyEquiv.prodIcc t).symm p = p.1 :=
+    (p : X × Set.Icc a b) : (HomotopyEquiv.prodIcc t).symm p = p.1 :=
   (rfl)
 
 /-- **Left and right homotopy inverses are homotopic.** If `l ∘ f ≃ id` and `f ∘ r ≃ id`, then
@@ -148,9 +148,9 @@ homotopy inverses. -/
 theorem Homotopic.homotopic_of_comp_homotopic_id {f : C(X, Y)}
     {l r : C(Y, X)} (hl : (l.comp f).Homotopic (ContinuousMap.id X))
     (hr : (f.comp r).Homotopic (ContinuousMap.id Y)) : l.Homotopic r := by
-  have h₁ := (ContinuousMap.Homotopic.refl l).comp hr.symm
-  have h₂ := hl.comp (ContinuousMap.Homotopic.refl r)
-  simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at h₁ h₂
+  have h₁ := (Homotopic.refl l).comp hr.symm
+  have h₂ := hl.comp (Homotopic.refl r)
+  simp only [comp_id, id_comp, comp_assoc] at h₁ h₂
   exact h₁.trans h₂
 
 /-- **A left homotopy inverse with its own left homotopy inverse is a right homotopy inverse.** If
@@ -169,7 +169,7 @@ theorem HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id
     (e : X ≃ₕ Y) {g : C(Y, X)}
     (hg : (g.comp e.toFun).Homotopic (ContinuousMap.id X)) :
     (e.toFun.comp g).Homotopic (ContinuousMap.id Y) :=
-  ((ContinuousMap.Homotopic.refl e.toFun).comp
+  ((Homotopic.refl e.toFun).comp
     (hg.homotopic_of_comp_homotopic_id e.right_inv)).trans e.right_inv
 
 end ContinuousMap
