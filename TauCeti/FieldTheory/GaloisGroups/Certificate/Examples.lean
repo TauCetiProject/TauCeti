@@ -5,26 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.GaloisGroups.Certificate.Check
-public import TauCeti.FieldTheory.GaloisGroups.Symmetric.Basic
+public import TauCeti.FieldTheory.GaloisGroups.Certificate.Solvable
 
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.SpecificDegree
-import TauCeti.FieldTheory.GaloisGroups.Certificate.Generic
+import TauCeti.FieldTheory.GaloisGroups.Certificate.Frobenius
 import TauCeti.FieldTheory.GaloisGroups.FactorDegrees
 
 /-!
-# Examples of quintic Galois-group certificate evidence
+# Examples of Galois-group and solvability certificates
 
 This module works out the two standard Frobenius-cycle routes to the symmetric quintic Galois group
-`S₅` (label `5T5`):
+`S₅` (label `5T5`), alongside worked `TauCeti.SolvabilityCertificate.check` witnesses covering every
+constructor:
 
 * `X⁵ - X - 1`, certified by `QuinticCertificate.symmetric 5 2` from its factorizations of degrees
   `{5}` modulo `5` and `{2, 3}` modulo `2`;
 * `X⁵ - X + 3`, certified from its factorizations of degrees `{5}` modulo `5` and `{1, 1, 1, 2}`
   modulo `3` via `TauCeti.hasFullSymmetricGaloisGroup_of_prime_and_replicate_one_add_two` and
-  `TauCeti.hasGaloisLabel_five_four_of_factorDegrees_five_and_one_one_one_two`.
+  `TauCeti.hasGaloisLabel_five_four_of_factorDegrees_five_and_one_one_one_two`;
+* `SolvabilityCertificate` witnesses on `X + 24` (`smallDegree`), `X⁵ - 2` and `X⁵ - X - 1`
+  (`quintic`), and `X⁵ - X + 3` (`primeLinearQuadratic 5 5 3`).
 
 ## Main results
 
@@ -38,6 +40,11 @@ This module works out the two standard Frobenius-cycle routes to the symmetric q
 * `TauCeti.hasFullSymmetricGaloisGroup_X_pow_five_sub_X_add_three`,
   `TauCeti.hasGaloisLabel_X_pow_five_sub_X_add_three`: full symmetric Galois group `S₅` and label
   `5T5` for `X⁵ - X + 3`.
+* `TauCeti.SolvabilityCertificate.check_smallDegree_X_add_twenty_four`,
+  `TauCeti.SolvabilityCertificate.check_quintic_X_pow_five_sub_two`,
+  `TauCeti.SolvabilityCertificate.check_quintic_X_pow_five_sub_X_sub_one`,
+  `TauCeti.SolvabilityCertificate.check_primeLinearQuadratic_X_pow_five_sub_X_add_three`:
+  worked `SolvabilityCertificate.check` witnesses covering every constructor.
 -/
 
 public section
@@ -193,5 +200,50 @@ theorem hasGaloisLabel_X_pow_five_sub_X_add_three :
     monic_X_pow_five_sub_X_add_three
     (HasFactorDegrees.mk hgood5 factorDegrees_X_pow_five_sub_X_add_three_five)
     (HasFactorDegrees.mk hgood3 factorDegrees_X_pow_five_sub_X_add_three_three)
+
+/-! ### Worked `SolvabilityCertificate` witnesses -/
+
+namespace SolvabilityCertificate
+
+/-- `smallDegree` checks on `X + 24` (the Hecke polynomial `X - τ(2)` of the Ramanujan Δ-form at
+`p = 2`), certifying solvability. -/
+theorem check_smallDegree_X_add_twenty_four :
+    smallDegree.check (X + 24 : ℤ[X]) = true := by
+  rw [check_eq_true_iff, verifies_smallDegree_iff]
+  compute_degree!
+
+/-- `quintic (.frobeniusF20 11 0)` checks on the Kummer quintic `X ^ 5 - 2`, certifying solvability
+of its `F₂₀` Galois group. -/
+theorem check_quintic_X_pow_five_sub_two :
+    (quintic (.frobeniusF20 11 0)).check (X ^ 5 - 2) = true := by
+  rw [check_eq_true_iff, verifies_quintic_iff, ← QuinticCertificate.check_eq_true_iff]
+  exact QuinticCertificate.check_X_pow_five_sub_two
+
+/-- `quintic (.symmetric 5 2)` checks on `X ^ 5 - X - 1`, certifying non-solvability via `{5}` mod
+`5` and `{2, 3}` mod `2`. -/
+theorem check_quintic_X_pow_five_sub_X_sub_one :
+    (quintic (.symmetric 5 2)).check (X ^ 5 - X - 1) = true := by
+  rw [check_eq_true_iff, verifies_quintic_iff, ← QuinticCertificate.check_eq_true_iff]
+  exact QuinticCertificate.check_symmetric_X_pow_five_sub_X_sub_one
+
+/-- The `{5}` + `{1, 1, 1, 2}` Frobenius-cycle certificate `primeLinearQuadratic 5 5 3` checks on
+`X ^ 5 - X + 3`. -/
+theorem check_primeLinearQuadratic_X_pow_five_sub_X_add_three :
+    (primeLinearQuadratic 5 5 3).check (X ^ 5 - X + 3) = true := by
+  have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+  have hgood5 : IsGoodPrime (X ^ 5 - X + 3) 5 := by
+    rw [isGoodPrime_iff, discr_X_pow_five_sub_X_add_three]
+    decide
+  have hgood3 : IsGoodPrime (X ^ 5 - X + 3) 3 := by
+    rw [isGoodPrime_iff, discr_X_pow_five_sub_X_add_three]
+    decide
+  rw [check_eq_true_iff, verifies_primeLinearQuadratic_iff]
+  refine ⟨Nat.prime_five, le_rfl,
+    HasFactorDegrees.mk hgood5 factorDegrees_X_pow_five_sub_X_add_three_five,
+    HasFactorDegrees.mk hgood3 ?_⟩
+  rw [factorDegrees_X_pow_five_sub_X_add_three_three]
+  decide
+
+end SolvabilityCertificate
 
 end TauCeti

@@ -101,13 +101,13 @@ theorem isSolvable_CoefficientFieldGaloisClosure_discriminantNewform :
     rw [h2, coe_discriminantNewform, map_add, aeval_X, map_ofNat,
       TauCeti.ModularForm.discriminant_qExpansion_coeff_two]
     norm_num
+  have hd1 : (X + 24 : ℤ[X]).natDegree = 1 := by compute_degree!
   have hdeg : (letI := finiteDimensional_CoefficientField discriminantNewform (by decide)
       Module.finrank ℚ (CoefficientField discriminantNewform)) ≤ (X + 24 : ℤ[X]).natDegree := by
-    have hd1 : (X + 24 : ℤ[X]).natDegree = 1 := by compute_degree!
     rw [CoefficientField_discriminantNewform, IntermediateField.finrank_bot, hd1]
   exact (isSolvable_CoefficientFieldGaloisClosure_iff_of_check_eq_true
     discriminantNewform (by decide) 2 hP hirr hroot hdeg
-    SolvabilityCertificate.check_smallDegree_X_add_twenty_four).mpr
+    (by simp [hd1] : SolvabilityCertificate.smallDegree.check _ = true)).mpr
     SolvabilityCertificate.isSolvable_smallDegree
 
 end TauCeti

@@ -10,9 +10,6 @@ public import TauCeti.FieldTheory.GaloisGroups.Certificate.Generic
 public import TauCeti.FieldTheory.GaloisGroups.NormalClosure
 public import TauCeti.FieldTheory.GaloisGroups.Symmetric.Basic
 
-import Mathlib.Tactic.ComputeDegree
-import TauCeti.FieldTheory.GaloisGroups.Certificate.Examples
-import TauCeti.FieldTheory.GaloisGroups.Certificate.Frobenius
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.Minpoly
 
@@ -50,6 +47,9 @@ single-element generation, and Galois-group order theorems for
 `IntermediateField.normalClosure ℚ K Ω` of any algebraic or finite-dimensional intermediate field
 `K / ℚ` inside `[IsAlgClosed Ω]`.
 
+For concrete `check` witnesses covering every constructor (`X + 24`, `X ^ 5 - 2`, `X ^ 5 - X - 1`,
+and `X ^ 5 - X + 3`), see `TauCeti.FieldTheory.GaloisGroups.Certificate.Examples`.
+
 ## Main definitions and results
 
 * `TauCeti.QuinticCertificate.isSolvable`,
@@ -66,8 +66,6 @@ single-element generation, and Galois-group order theorems for
   `TauCeti.SolvabilityCertificate.adjoin_simple_eq_of_primeSymmetric`,
   `TauCeti.SolvabilityCertificate.natCard_gal_normalClosure_of_primeSymmetric`:
   certificate-to-Galois-closure transfer for intermediate fields `K : IntermediateField ℚ Ω`.
-* Worked `check` witnesses covering every constructor: `X + 24`, `X ^ 5 - 2`, `X ^ 5 - X - 1`, and
-  the `{5}` + `{1, 1, 1, 2}` Frobenius-cycle certificate on `X ^ 5 - X + 3`.
 
 ## References
 
@@ -412,47 +410,6 @@ theorem natCard_gal_normalClosure_of_primeSymmetric [IsAlgClosed Ω]
     hP.natDegree_map, check_natDegree_eq_of_primeSymmetric hP hcheck]
 
 end NormalClosure
-
-/-! ### Worked examples covering every `SolvabilityCertificate` constructor -/
-
-/-- `smallDegree` checks on `X + 24` (the Hecke polynomial `X - τ(2)` of the Ramanujan Δ-form at
-`p = 2`), certifying solvability. -/
-theorem check_smallDegree_X_add_twenty_four :
-    smallDegree.check (X + 24 : ℤ[X]) = true := by
-  rw [check_eq_true_iff, verifies_smallDegree_iff]
-  compute_degree!
-
-/-- `quintic (.frobeniusF20 11 0)` checks on the Kummer quintic `X ^ 5 - 2`, certifying solvability
-of its `F₂₀` Galois group. -/
-theorem check_quintic_X_pow_five_sub_two :
-    (quintic (.frobeniusF20 11 0)).check (X ^ 5 - 2) = true := by
-  rw [check_eq_true_iff, verifies_quintic_iff, ← QuinticCertificate.check_eq_true_iff]
-  exact QuinticCertificate.check_X_pow_five_sub_two
-
-/-- `quintic (.symmetric 5 2)` checks on `X ^ 5 - X - 1`, certifying non-solvability via `{5}` mod
-`5` and `{2, 3}` mod `2`. -/
-theorem check_quintic_X_pow_five_sub_X_sub_one :
-    (quintic (.symmetric 5 2)).check (X ^ 5 - X - 1) = true := by
-  rw [check_eq_true_iff, verifies_quintic_iff, ← QuinticCertificate.check_eq_true_iff]
-  exact QuinticCertificate.check_symmetric_X_pow_five_sub_X_sub_one
-
-/-- The `{5}` + `{1, 1, 1, 2}` Frobenius-cycle certificate `primeLinearQuadratic 5 5 3` checks on
-`X ^ 5 - X + 3`. -/
-theorem check_primeLinearQuadratic_X_pow_five_sub_X_add_three :
-    (primeLinearQuadratic 5 5 3).check (X ^ 5 - X + 3) = true := by
-  have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
-  have hgood5 : IsGoodPrime (X ^ 5 - X + 3) 5 := by
-    rw [isGoodPrime_iff, discr_X_pow_five_sub_X_add_three]
-    decide
-  have hgood3 : IsGoodPrime (X ^ 5 - X + 3) 3 := by
-    rw [isGoodPrime_iff, discr_X_pow_five_sub_X_add_three]
-    decide
-  rw [check_eq_true_iff, verifies_primeLinearQuadratic_iff]
-  refine ⟨Nat.prime_five, le_rfl,
-    HasFactorDegrees.mk hgood5 factorDegrees_X_pow_five_sub_X_add_three_five,
-    HasFactorDegrees.mk hgood3 ?_⟩
-  rw [factorDegrees_X_pow_five_sub_X_add_three_three]
-  decide
 
 end SolvabilityCertificate
 
