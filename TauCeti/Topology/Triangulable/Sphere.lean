@@ -25,6 +25,11 @@ as the boundary of a tetrahedron.
   triangulable.
 * `TauCeti.isTriangulable_onePoint`: the one-point compactification of a finite-dimensional real
   vector space is triangulable.
+
+## References
+
+* J. R. Munkres, *Elements of Algebraic Topology*, Addison-Wesley, 1984, §1 (the boundary of a
+  simplex as a triangulation of a sphere).
 -/
 
 public section
