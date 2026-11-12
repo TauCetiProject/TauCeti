@@ -51,8 +51,9 @@ equality case of the triangle inequality the whole curve lies in the segment bet
 coordinate along the segment, where its derivative vanishes, which is excluded. With the
 consecutive vertices distinct, each term of `P` is differentiable, and Fermat's rule in the
 parameter `s_k` is the reflection law (`TauCeti.inner_eq_inner_of_isMaxOn_inscribedPerimeter`).
-For `N = 2` it says that the chord is orthogonal to the curve at both ends: every such curve has
-a double normal (`TauCeti.exists_double_normal`).
+For `N = 2` it says that the chord is orthogonal to the curve at both ends. There nonconstancy of
+the curve suffices for the maximal chord to be nondegenerate, so every nonconstant differentiable
+periodic curve has a double normal (`TauCeti.exists_double_normal`).
 
 Neither convexity of the curve nor injectivity of the parametrization is used. For the boundary
 of a bounded strictly convex planar table, positively oriented and parametrized by arclength,
@@ -231,24 +232,41 @@ theorem exists_billiard_periodic_reflection (hχ : Differentiable ℝ χ) (hper 
     (by simpa only [sub_add_cancel] using hne (k - 1)) (hne k)⟩⟩
 
 omit [NeZero N] in
-/-- **Double normals.** A differentiable periodic curve with nowhere vanishing derivative has a
-chord, between distinct points `χ(a)` and `χ(b)`, that is orthogonal to the curve at both of its
-endpoints. This is the case `N = 2` of `TauCeti.exists_billiard_periodic_reflection`: a billiard
-trajectory bouncing back and forth along one chord. -/
+/-- **Double normals.** A nonconstant differentiable periodic curve has a chord, between distinct
+points `χ(a)` and `χ(b)`, that is orthogonal to the curve at both of its endpoints: a billiard
+trajectory bouncing back and forth along one chord. It is a chord of maximal length, the case
+`N = 2` of perimeter maximization; nonconstancy of the curve already makes that chord
+nondegenerate. -/
 theorem exists_double_normal (hχ : Differentiable ℝ χ) (hper : Periodic χ L) (hL : 0 < L)
-    (hχ' : ∀ t, deriv χ t ≠ 0) :
+    (hχc : ∃ a b, χ a ≠ χ b) :
     ∃ a b, χ a ≠ χ b ∧ ⟪χ b - χ a, deriv χ a⟫ = 0 ∧ ⟪χ b - χ a, deriv χ b⟫ = 0 := by
-  obtain ⟨s, hs⟩ := exists_billiard_periodic_reflection hχ hper hL hχ' (N := 2) le_rfl
+  obtain ⟨s, hs⟩ := exists_isMaxOn_inscribedPerimeter hχ.continuous hper hL (N := 2)
+  -- The chord of a maximizer is nondegenerate: otherwise the maximal perimeter would be `0`, but
+  -- the chord between distinct points `χ(a)` and `χ(b)` has positive perimeter.
+  have hne (k : ZMod 2) : χ (s (k + 1)) ≠ χ (s k) := by
+    intro hk
+    obtain ⟨a, b, hab⟩ := hχc
+    have hzero (r : ℝ) : inscribedPerimeter χ (fun _ : ZMod 2 ↦ r) = 0 := by
+      simp [inscribedPerimeter_def]
+    have hall (j : ZMod 2) : χ (s j) = χ (s k) := by
+      rcases (by decide : ∀ j k : ZMod 2, j = k ∨ j = k + 1) j k with rfl | rfl
+      exacts [rfl, hk]
+    have hle := isMaxOn_iff.1 hs (update (fun _ ↦ a) 1 b) (mem_univ _)
+    rw [inscribedPerimeter_update le_rfl, inscribedPerimeter_congr (s' := fun _ ↦ s k) hall,
+      hzero, hzero] at hle
+    simp only [sub_self, norm_zero, add_zero, zero_add] at hle
+    linarith [norm_pos_iff.2 (sub_ne_zero.2 hab.symm), norm_nonneg (χ a - χ b)]
   -- In `ℤ/2`, `k - 1 = k + 1`, so the two sides at a vertex are the same chord, reversed.
   have h (k : ZMod 2) : ⟪χ (s (k + 1)) - χ (s k), deriv χ (s k)⟫ = 0 := by
-    have hk := (hs k).2
     have hk' : k - 1 = k + 1 := (by decide : ∀ k : ZMod 2, k - 1 = k + 1) k
+    have hk := inner_eq_inner_of_isMaxOn_inscribedPerimeter le_rfl hs (hχ (s k))
+      (hk' ▸ (hne k).symm) (hne k)
     rw [hk', ← neg_sub (χ (s (k + 1))), norm_neg, smul_neg, inner_neg_left,
       real_inner_smul_left] at hk
     have hpos : 0 < ‖χ (s (k + 1)) - χ (s k)‖⁻¹ :=
-      inv_pos.2 (norm_pos_iff.2 (sub_ne_zero.2 (hs k).1))
+      inv_pos.2 (norm_pos_iff.2 (sub_ne_zero.2 (hne k)))
     nlinarith [hk, hpos]
-  refine ⟨s 0, s 1, (hs 0).1.symm, by simpa using h 0, ?_⟩
+  refine ⟨s 0, s 1, (hne 0).symm, by simpa using h 0, ?_⟩
   have h1 := h 1
   have h11 : (1 : ZMod 2) + 1 = 0 := by decide
   rw [h11, ← neg_sub, inner_neg_left, neg_eq_zero] at h1
