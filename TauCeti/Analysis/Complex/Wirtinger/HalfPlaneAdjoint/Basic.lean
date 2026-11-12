@@ -156,31 +156,21 @@ theorem setIntegral_im_pos_re_inner_conjWirtingerDeriv (hξ : ContDiff ℝ 1 ξ)
 `r` and `η` only `C¹` there, the formula of `setIntegral_im_pos_re_inner_cauchyRiemann` holds on
 the half-disc `D⁺_r = {|z| < r, 0 < t}`, with boundary term over `(-r, r)`. -/
 theorem setIntegral_halfDisc_re_inner_cauchyRiemann {r : ℝ} (hξ : ContDiff ℝ 1 ξ)
-    (hξc : HasCompactSupport ξ) (hη : ContDiffOn ℝ 1 η (ball 0 r))
+    (hη : ContDiffOn ℝ 1 η (ball 0 r))
     (hξr : tsupport ξ ⊆ ball 0 r) :
     ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im}, re ⟪η z, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I⟫_ℂ =
       (∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im},
         re ⟪-fderiv ℝ η z 1 + I • fderiv ℝ η z I, ξ z⟫_ℂ) -
         ∫ s in Ioo (-r) r, re ⟪I • ξ s, η s⟫_ℂ := by
-  have hS : MeasurableSet {z : ℂ | 0 < z.im} :=
-    measurableSet_lt measurable_const Complex.measurable_im
   have hout {z : ℂ} (hz : z ∉ ball 0 r) : z ∉ tsupport ξ := fun h ↦ hz (hξr h)
-  have h₁ : ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im},
-      re ⟪η z, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I⟫_ℂ =
-        ∫ z in {z : ℂ | 0 < z.im}, re ⟪η z, fderiv ℝ ξ z 1 + I • fderiv ℝ ξ z I⟫_ℂ :=
-    (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hS inter_subset_right fun z hz ↦ by
-      simp [fderiv_of_notMem_tsupport ℝ (hout fun h ↦ hz.2 ⟨h, hz.1⟩)]).symm
-  have h₂ : ∫ z in ball 0 r ∩ {z : ℂ | 0 < z.im},
-      re ⟪-fderiv ℝ η z 1 + I • fderiv ℝ η z I, ξ z⟫_ℂ =
-        ∫ z in {z : ℂ | 0 < z.im}, re ⟪-fderiv ℝ η z 1 + I • fderiv ℝ η z I, ξ z⟫_ℂ :=
-    (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hS inter_subset_right fun z hz ↦ by
-      simp [image_eq_zero_of_notMem_tsupport (hout fun h ↦ hz.2 ⟨h, hz.1⟩)]).symm
-  have h₃ : ∫ s in Ioo (-r) r, re ⟪I • ξ s, η s⟫_ℂ = ∫ s : ℝ, re ⟪I • ξ s, η s⟫_ℂ := by
-    refine setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦ ?_
-    have hs' : (s : ℂ) ∉ ball 0 r := fun h ↦ hs (by
-      rwa [mem_ball_zero_iff, Complex.norm_real, Real.norm_eq_abs, abs_lt] at h)
-    simp [image_eq_zero_of_notMem_tsupport (hout hs')]
-  rw [h₁, h₂, h₃]
+  have hξc : HasCompactSupport ξ := (isCompact_closedBall (0 : ℂ) r).of_isClosed_subset
+    (isClosed_tsupport ξ) (hξr.trans ball_subset_closedBall)
+  rw [setIntegral_inter_im_pos_eq_setIntegral_im_pos fun z _ hz ↦ by
+      simp [fderiv_of_notMem_tsupport ℝ (hout hz)],
+    setIntegral_inter_im_pos_eq_setIntegral_im_pos fun z _ hz ↦ by
+      simp [image_eq_zero_of_notMem_tsupport (hout hz)],
+    setIntegral_Ioo_eq_integral_of_ofReal_notMem_ball fun s hs ↦ by
+      simp [image_eq_zero_of_notMem_tsupport (hout hs)]]
   exact setIntegral_im_pos_re_inner_cauchyRiemann hξ hξc isOpen_ball hη hξr
 
 /-- **The dual boundary condition.** The boundary term `∫_ℝ Re ⟪i ξ, η⟫` vanishes for every
