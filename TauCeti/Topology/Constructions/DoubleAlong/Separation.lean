@@ -65,6 +65,20 @@ theorem image_compl_inl : inl A '' Aᶜ = (range (inr A))ᶜ := by
   change inl A '' (range (Subtype.val : A → X))ᶜ = (range (inr A))ᶜ at h
   simpa only [Subtype.range_val] using h
 
+/-- Along a closed subset, the frontier of the first sheet lies in the glued subset. -/
+theorem frontier_range_inl_subset (hA : IsClosed A) : frontier (range (inl A)) ⊆ inl A '' A := by
+  intro z hz
+  obtain ⟨x, rfl⟩ := (isClosedEmbedding_inl A hA).isClosed_range.frontier_subset hz
+  have hr : inl A x ∈ range (inr A) := by
+    rw [← frontier_compl] at hz
+    refine closure_minimal ?_ (isClosedEmbedding_inr A hA).isClosed_range
+      (frontier_subset_closure hz)
+    rw [← image_compl_inr]
+    exact image_subset_range _ _
+  obtain ⟨y, hy⟩ := hr
+  obtain ⟨rfl, hx⟩ := (inl_eq_inr_iff A).1 hy.symm
+  exact mem_image_of_mem _ hx
+
 /-- The complement of the glued subset is an open embedded part of the first sheet. -/
 theorem isOpenEmbedding_inl_compl (hA : IsClosed A) :
     IsOpenEmbedding (Aᶜ.domRestrict (inl A)) := by

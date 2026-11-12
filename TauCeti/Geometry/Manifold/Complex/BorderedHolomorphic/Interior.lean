@@ -42,6 +42,8 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
   of a Riemann surface with boundary is an analytic manifold modelled on `ℂ`.
 * `TauCeti.mem_borderedInterior_iff_im_pos`: a point is in the interior exactly when one, or any,
   chart of the atlas sends it to a point of positive imaginary part.
+* `TauCeti.im_eq_zero_iff_notMem_borderedInterior`: a chart of the atlas is real exactly at the
+  boundary points of its source.
 * `TauCeti.chartAt_borderedInterior_source`, `TauCeti.chartAt_borderedInterior_target` and
   `TauCeti.chartAt_borderedInterior_symm_apply`: the domain, image and inverse of the chart of the
   interior, in terms of the chart of `M`.
@@ -127,6 +129,18 @@ theorem mem_borderedInterior_iff_im_pos {e : OpenPartialHomeomorph M ClosedUpper
     (chart_mem_atlas ClosedUpperHalfPlane x) he
   simpa [hx] using im_pos_iff_of_mem_contDiffGroupoid hc one_ne_zero
     (z := chartAt ClosedUpperHalfPlane x x) (by simp [hx])
+
+/-- A chart of the atlas is real exactly at the boundary points of its source. -/
+theorem im_eq_zero_iff_notMem_borderedInterior {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ atlas ClosedUpperHalfPlane M) {x : M} (hx : x ∈ e.source) :
+    (e x : ℂ).im = 0 ↔ x ∉ borderedInterior M := by
+  rw [mem_borderedInterior_iff_im_pos he hx, not_lt]
+  exact ⟨le_of_eq, fun h ↦ le_antisymm h (e x).property⟩
+
+variable (M) in
+/-- The boundary of `M`, the complement of its interior, is closed. -/
+theorem isClosed_compl_borderedInterior : IsClosed (borderedInterior M : Set M)ᶜ :=
+  (borderedInterior M).isOpen.isClosed_compl
 
 /-- The interior of a `C^1` manifold modelled on the closed upper half-plane is a charted space
 modelled on `ℂ`: the chart at `x` restricts the chart of `M` at `x` to the interior and reads it

@@ -91,18 +91,7 @@ abbrev SchottkyDouble : Type _ :=
 
 namespace SchottkyDouble
 
-/-- The boundary of `M`, along which the Schottky double is glued, is closed. -/
-theorem isClosed_boundary : IsClosed (borderedInterior M : Set M)ᶜ :=
-  (borderedInterior M).isOpen.isClosed_compl
-
 variable {M}
-
-/-- A chart of the atlas is real exactly at the boundary points of its source. -/
-theorem im_eq_zero_iff_notMem_borderedInterior {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
-    (he : e ∈ atlas ClosedUpperHalfPlane M) {x : M} (hx : x ∈ e.source) :
-    (e x : ℂ).im = 0 ↔ x ∉ borderedInterior M := by
-  rw [mem_borderedInterior_iff_im_pos he hx, not_lt]
-  exact ⟨le_of_eq, fun h ↦ le_antisymm h (e x).property⟩
 
 /-! ### The doubled chart -/
 
@@ -215,26 +204,11 @@ def doubleChart (e : OpenPartialHomeomorph M ClosedUpperHalfPlane)
     refine ContinuousOn.piecewise ?_ (hc.mono inter_subset_left)
       ((continuous_conj.comp_continuousOn hc).mono inter_subset_left)
     rintro z ⟨hz, hfr⟩
-    have hcl : IsClosed (range (DoubleAlong.inl (borderedInterior M : Set M)ᶜ)) :=
-      (DoubleAlong.isClosedEmbedding_inl _ (isClosed_boundary M)).isClosed_range
-    have hcl' : IsClosed (range (DoubleAlong.inr (borderedInterior M : Set M)ᶜ)) :=
-      (DoubleAlong.isClosedEmbedding_inr _ (isClosed_boundary M)).isClosed_range
-    obtain ⟨x, rfl⟩ := hcl.frontier_subset hfr
-    have hr : DoubleAlong.inl _ x ∈ range (DoubleAlong.inr (borderedInterior M : Set M)ᶜ) := by
-      have hfr' : DoubleAlong.inl _ x ∈
-          frontier (range (DoubleAlong.inl (borderedInterior M : Set M)ᶜ))ᶜ := by
-        rwa [frontier_compl]
-      refine closure_minimal ?_ hcl' (frontier_subset_closure hfr')
-      rw [← DoubleAlong.image_compl_inr]
-      exact image_subset_range _ _
-    obtain ⟨y, hy⟩ := hr
-    have hA := ((DoubleAlong.inl_eq_inr_iff _).1 hy.symm).2
+    obtain ⟨x, hA, rfl⟩ :=
+      DoubleAlong.frontier_range_inl_subset _ (isClosed_compl_borderedInterior M) hfr
     rw [mem_preimage, DoubleAlong.fold_inl] at hz
     simp only [DoubleAlong.fold_inl]
-    have h0 : (e x : ℂ).im = 0 := by
-      obtain rfl := ((DoubleAlong.inl_eq_inr_iff _).1 hy.symm).1
-      exact (im_eq_zero_iff_notMem_borderedInterior he hz).2 hA
-    exact (conj_eq_iff_im.2 h0).symm
+    exact (conj_eq_iff_im.2 ((im_eq_zero_iff_notMem_borderedInterior he hz).2 hA)).symm
   continuousOn_invFun := by
     have hc : ContinuousOn (fun w ↦ e.symm (ClosedUpperHalfPlane.fold w))
         (ClosedUpperHalfPlane.fold ⁻¹' e.target) :=
@@ -290,7 +264,9 @@ theorem fold_doubleChart {z : SchottkyDouble M} (hz : z ∈ (doubleChart e he).s
     ClosedUpperHalfPlane.fold (doubleChart e he z) = e (DoubleAlong.fold _ z) :=
   fold_doubleChartFun he hz
 
-/-- The doubled chart intertwines the sheet swap with complex conjugation. -/
+/-- The doubled chart intertwines the sheet swap with complex conjugation. Read between two
+doubled charts, the swap is complex conjugation after a holomorphic chart change, so it is
+antiholomorphic. -/
 theorem doubleChart_swap {z : SchottkyDouble M} (hz : z ∈ (doubleChart e he).source) :
     doubleChart e he (DoubleAlong.swap _ z) = conj (doubleChart e he z) := by
   induction z using DoubleAlong.induction_on with
@@ -321,11 +297,11 @@ theorem doubleChart_symm_trans_eqOnSource {e' : OpenPartialHomeomorph M ClosedUp
       Function.comp_apply]
     rcases le_or_gt 0 w.im with hnn | hneg
     · rw [doubleChart_symm_apply_of_im_nonneg he hnn, doubleChart_inl,
-        ClosedUpperHalfPlane.schwarzDouble_apply_of_im_nonneg h hnn]
-      rfl
+        ClosedUpperHalfPlane.schwarzDouble_apply_of_im_nonneg h hnn,
+        OpenPartialHomeomorph.trans_apply]
     · rw [doubleChart_symm_apply_of_im_neg he hneg, doubleChart_inr he' hw'.2,
-        ClosedUpperHalfPlane.schwarzDouble_apply_of_im_neg h hneg]
-      rfl
+        ClosedUpperHalfPlane.schwarzDouble_apply_of_im_neg h hneg,
+        OpenPartialHomeomorph.trans_apply]
 
 end doubleChart
 
@@ -388,27 +364,16 @@ instance instHasGroupoid : HasGroupoid (SchottkyDouble M) (contDiffGroupoid ω �
 instance instIsManifold : IsManifold 𝓘(ℂ) ω (SchottkyDouble M) :=
   IsManifold.mk' _ _ _
 
+end holomorphic
+
 /-- The Schottky double of a Hausdorff Riemann surface with boundary is Hausdorff. -/
 instance instT2Space [T2Space M] : T2Space (SchottkyDouble M) :=
-  DoubleAlong.t2Space _ (isClosed_boundary M)
+  DoubleAlong.t2Space _ (isClosed_compl_borderedInterior M)
 
 /-- The Schottky double of a second-countable Riemann surface with boundary is second countable. -/
 instance instSecondCountableTopology [SecondCountableTopology M] :
     SecondCountableTopology (SchottkyDouble M) :=
-  DoubleAlong.secondCountableTopology _ (isClosed_boundary M)
-
-end holomorphic
-
-/-! ### The antiholomorphic involution -/
-
-/-- The sheet swap reads as `z ↦ conj z` in every pair of doubled charts: in charts it is complex
-conjugation after a holomorphic chart change, so it is antiholomorphic. -/
-theorem doubleChart_swap_doubleChart_symm {e e' : OpenPartialHomeomorph M ClosedUpperHalfPlane}
-    (he : e ∈ atlas ClosedUpperHalfPlane M) (he' : e' ∈ atlas ClosedUpperHalfPlane M) {w : ℂ}
-    (hw : w ∈ ((doubleChart e he).symm.trans (doubleChart e' he')).source) :
-    doubleChart e' he' (DoubleAlong.swap _ ((doubleChart e he).symm w)) =
-      conj (doubleChart e' he' ((doubleChart e he).symm w)) :=
-  doubleChart_swap he' hw.2
+  DoubleAlong.secondCountableTopology _ (isClosed_compl_borderedInterior M)
 
 /-! ### The first copy of the interior -/
 
@@ -424,7 +389,7 @@ theorem interiorInl_apply (x : borderedInterior M) :
 
 /-- The first copy of the interior is an open embedded subset of the double. -/
 theorem isOpenEmbedding_interiorInl : IsOpenEmbedding (interiorInl M) := by
-  have h := DoubleAlong.isOpenEmbedding_inl_compl _ (isClosed_boundary M)
+  have h := DoubleAlong.isOpenEmbedding_inl_compl _ (isClosed_compl_borderedInterior M)
   have hc : ((borderedInterior M : Set M)ᶜᶜ) = (borderedInterior M : Set M) := compl_compl _
   exact h.comp (Homeomorph.setCongr hc.symm).isOpenEmbedding
 
