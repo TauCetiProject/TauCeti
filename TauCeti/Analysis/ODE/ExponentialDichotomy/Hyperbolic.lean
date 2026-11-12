@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import TauCeti.Analysis.Complex.Polynomial.ImaginaryAxis
+public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Basic
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import TauCeti.Algebra.Polynomial.Semiconj
@@ -15,6 +16,7 @@ import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Module.Complexification
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Analysis.ODE.ExponentialDichotomy
+import TauCeti.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
@@ -34,6 +36,15 @@ hypotheses of the Lyapunov–Perron construction of stable and unstable manifold
 (`ContinuousLinearMap.lyapunovPerronIntegral`). For symmetric operators they are supplied by
 `TauCeti.Analysis.ODE.ExponentialDichotomy`, from an orthonormal eigenbasis; the operators here
 need not be symmetric or diagonalizable.
+
+Over `ℝ`, hyperbolicity can also be stated without complex numbers: there are no `ω : ℝ` and
+vectors `v, w`, not both zero, with `A v = -ω • w` and `A w = ω • v`, since such a pair spans the
+real and imaginary parts of an eigenvector `v + i w` with eigenvalue `i ω`. This form of the
+hypothesis also gives an exponential dichotomy
+(`ContinuousLinearMap.exists_projection_exponential_bounds`), through the minimal polynomial
+(`Module.End.re_ne_zero_of_aeval_minpoly_eq_zero`). In particular an operator with a Lyapunov
+form has an exponential dichotomy
+(`ContinuousLinearMap.HasLyapunovForm.exists_projection_exponential_bounds`).
 
 The projection `P` is a polynomial in `A`, the projection onto the stable subspace `ker pₛ(A)`
 along the unstable subspace `ker pᵤ(A)`, where `p = pₛ * pᵤ` is the factorization of
@@ -77,6 +88,12 @@ on the range and kernel of `P` are put in projection form by
   dichotomy for an operator annihilated by a polynomial without roots on the imaginary axis, and
   `ContinuousLinearMap.exists_projection_exponential_bounds_of_charpoly` for the characteristic
   polynomial.
+* `Module.End.re_ne_zero_of_aeval_minpoly_eq_zero`: if no real pair `v, w`, not both zero,
+  rotates under `f`, then no complex root of the minimal polynomial of `f` is purely imaginary.
+* `ContinuousLinearMap.exists_projection_exponential_bounds`: the exponential dichotomy under that
+  real form of hyperbolicity, and
+  `ContinuousLinearMap.HasLyapunovForm.exists_projection_exponential_bounds` for an operator with a
+  Lyapunov form.
 
 ## References
 
@@ -90,6 +107,44 @@ public section
 
 open Polynomial NormedSpace Filter Topology
 open scoped NNReal
+
+namespace Module.End
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [FiniteDimensional ℝ E]
+
+/-- **No root of the minimal polynomial of a hyperbolic operator is purely imaginary.** If there
+are no `ω` and `v, w`, not both zero, with `f v = -ω • w` and `f w = ω • v`, then every complex
+root of the minimal polynomial of `f` has nonzero real part. -/
+theorem re_ne_zero_of_aeval_minpoly_eq_zero {f : End ℝ E}
+    (hf : ∀ (ω : ℝ) (v w : E), f v = -ω • w → f w = ω • v → v = 0 ∧ w = 0) {z : ℂ}
+    (hz : aeval z (minpoly ℝ f) = 0) : z.re ≠ 0 := by
+  intro hre
+  by_cases him : z.im = 0
+  · -- `z = 0` is a root, so `f` has a nonzero kernel vector.
+    have hz0 : z = algebraMap ℝ ℂ 0 := Complex.ext (by simpa using hre) (by simpa using him)
+    rw [hz0, aeval_algebraMap_apply_eq_algebraMap_eval, map_eq_zero, ← IsRoot,
+      ← dvd_iff_isRoot] at hz
+    obtain ⟨v, hv, hfv⟩ := exists_ne_zero_aeval_apply_eq_zero_of_dvd_minpoly hz (by simp)
+    simp only [aeval_X, map_zero, sub_zero] at hfv
+    exact hv (hf 0 v 0 (by simp [hfv]) (by simp)).1
+  · -- `z = ± i ‖z‖`, so `f ^ 2 + ‖z‖ ^ 2` has a nonzero kernel vector `v`, and
+    -- `(v, -‖z‖⁻¹ • f v)` rotates under `f` with angular speed `‖z‖`.
+    have hdvd := quadratic_dvd_of_aeval_eq_zero_im_ne_zero _ hz him
+    have hdeg : (X ^ 2 - C (2 * z.re) * X + C (‖z‖ ^ 2)).natDegree = 2 := by compute_degree!
+    obtain ⟨v, hv, hfv⟩ := exists_ne_zero_aeval_apply_eq_zero_of_dvd_minpoly hdvd (by lia)
+    have hc : ‖z‖ ≠ 0 := norm_ne_zero_iff.mpr fun h ↦ him (by simp [h])
+    simp only [hre, mul_zero, map_zero, zero_mul, sub_zero, map_add, aeval_X_pow, aeval_C,
+      LinearMap.add_apply, algebraMap_end_apply] at hfv
+    have hffv : f (f v) = -(‖z‖ ^ 2) • v := by
+      rw [neg_smul, eq_neg_iff_add_eq_zero, ← hfv, pow_two f, _root_.mul_apply_eq_comp]
+    refine hv (hf ‖z‖ v (-‖z‖⁻¹ • f v) ?_ ?_).1
+    · match_scalars
+      field_simp
+    · rw [map_smul, hffv]
+      match_scalars
+      field_simp
+
+end Module.End
 
 namespace ContinuousLinearMap
 
@@ -108,7 +163,7 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
   · refine ⟨1, 1, one_pos, one_pos, fun t _ ↦ ?_⟩
     rw [Subsingleton.elim (exp ((t : ℂ) • T)) 0, norm_zero]
     positivity
-  have := FiniteDimensional.complete ℂ V
+  have := FiniteDimensional.completeSpace ℂ V
   let +nondep : NormedAlgebra ℚ (V →L[ℂ] V) := .restrictScalars ℚ ℂ _
   -- A uniform margin `β` between the roots of `q` and the imaginary axis.
   obtain ⟨β, hβ, hβq⟩ := exists_pos_forall_re_lt_neg_of_re_lt_zero hroots
@@ -132,7 +187,7 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
     have hrμ : r.eval μ = 0 := by
       have := spectrum.subset_polynomial_aeval N r ⟨μ, hμ, rfl⟩
       rwa [hNr, spectrum.zero_eq, Set.mem_singleton_iff] at this
-    rw [← NNReal.coe_lt_coe, coe_nnnorm, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp,
+    rw [← NNReal.coe_lt_coe, coe_nnNorm, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp,
       NNReal.coe_one, Real.exp_lt_one_iff]
     exact hrroots μ hrμ
   have hρ := spectrum.spectralRadius_lt_of_forall_lt _ hspec
@@ -163,7 +218,7 @@ part. Then `‖exp (t • B)‖ ≤ K * exp (-α t)` for `t ≥ 0`, with `K, α 
 theorem exists_norm_exp_smul_le_of_aeval_eq_zero (B : E →L[ℝ] E) {p : ℝ[X]}
     (hp : aeval B p = 0) (hroots : ∀ z : ℂ, aeval z p = 0 → z.re < 0) :
     ∃ K α : ℝ, 0 < K ∧ 0 < α ∧ ∀ t : ℝ, 0 ≤ t → ‖exp (t • B)‖ ≤ K * Real.exp (-α * t) := by
-  have := FiniteDimensional.complete ℝ E
+  have := FiniteDimensional.completeSpace ℝ E
   have : FiniteDimensional ℝ (TauCeti.Complexification E) :=
     (TauCeti.Complexification.equivProd E).symm.toLinearEquiv.finiteDimensional
   have : FiniteDimensional ℂ (TauCeti.Complexification E) :=
@@ -270,7 +325,7 @@ theorem exists_projection_exponential_bounds_of_aeval_eq_zero (A : E →L[ℝ] E
       hvanish]) hps
   -- The backward bound on the kernel of `P` is the forward bound for `-A`, the projection
   -- `1 - P` and the polynomial `pᵤ(-X)`.
-  obtain ⟨K₂, α₂, hK₂, hα₂, h₂⟩ := exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero
+  obtain ⟨K₂, α₂, _, hα₂, h₂⟩ := exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero
     (A := -A) hP.one_sub ((Commute.one_right _).sub_right hAP).neg_left (p := pu.comp (-X))
     (by rw [aeval_comp, map_neg, aeval_X, neg_neg, hP1, ← map_mul,
       show pu * (a * ps) = a * p by rw [← hmul]; ring, hvanish])
@@ -278,7 +333,7 @@ theorem exists_projection_exponential_bounds_of_aeval_eq_zero (A : E →L[ℝ] E
       rw [aeval_comp, map_neg, aeval_X] at hz
       simpa using hpu _ hz
   refine ⟨P, hP, hAP, IsIdempotentElem.exists_projection_exponential_bounds hP (C := max K₁ K₂)
-    (lt_max_of_lt_left hK₁) (lt_min hα₁ hα₂) (fun t ht w hw ↦ (h₁ t ht w hw).trans ?_)
+    (lt_min hα₁ hα₂) (fun t ht w hw ↦ (h₁ t ht w hw).trans ?_)
     fun t ht w hw ↦ ?_⟩
   · gcongr
     · exact le_max_left _ _
@@ -310,6 +365,39 @@ theorem exists_projection_exponential_bounds_of_charpoly (A : E →L[ℝ] E)
   rw [toLinearMap_aeval, toLinearMap_zero]
   exact LinearMap.aeval_self_charpoly _
 
+/-- **Exponential dichotomy of a hyperbolic operator**, with hyperbolicity stated over `ℝ`: if
+there are no `ω` and `v, w`, not both zero, with `A v = -ω • w` and `A w = ω • v`, then the flow
+of `A` has an exponential dichotomy, as in
+`ContinuousLinearMap.exists_projection_exponential_bounds_of_aeval_eq_zero`. -/
+theorem exists_projection_exponential_bounds (A : E →L[ℝ] E)
+    (hA : ∀ (ω : ℝ) (v w : E), A v = -ω • w → A w = ω • v → v = 0 ∧ w = 0) :
+    ∃ P : E →L[ℝ] E, IsIdempotentElem P ∧ Commute A P ∧ ∃ K α : ℝ≥0, 0 < K ∧ 0 < α ∧
+      (∀ t : ℝ, 0 ≤ t → ∀ v : E, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖) ∧
+      (∀ t : ℝ, t ≤ 0 → ∀ v : E, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖) := by
+  refine A.exists_projection_exponential_bounds_of_aeval_eq_zero ?_
+    fun z ↦ Module.End.re_ne_zero_of_aeval_minpoly_eq_zero (f := (A : E →ₗ[ℝ] E)) hA
+  refine coe_injective ?_
+  rw [toLinearMap_aeval, toLinearMap_zero]
+  exact minpoly.aeval ℝ _
+
 end Dichotomy
 
 end ContinuousLinearMap
+
+namespace ContinuousLinearMap.HasLyapunovForm
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {A : E →L[ℝ] E}
+
+/-- **An operator with a Lyapunov form has an exponential dichotomy.** If `A` has a Lyapunov
+form, then there are an idempotent `P` commuting with `A` and constants `K, α > 0` such that
+`exp (t • A)` contracts the range of `P` at rate `α` for `t ≥ 0` and the kernel of `P` at rate `α`
+for `t ≤ 0`. -/
+theorem exists_projection_exponential_bounds (h : A.HasLyapunovForm) :
+    ∃ P : E →L[ℝ] E, IsIdempotentElem P ∧ Commute A P ∧ ∃ K α : ℝ≥0, 0 < K ∧ 0 < α ∧
+      (∀ t : ℝ, 0 ≤ t → ∀ v : E, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖) ∧
+      (∀ t : ℝ, t ≤ 0 → ∀ v : E, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖) :=
+  A.exists_projection_exponential_bounds fun _ _ _ hv hw ↦
+    h.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul hv hw
+
+end ContinuousLinearMap.HasLyapunovForm

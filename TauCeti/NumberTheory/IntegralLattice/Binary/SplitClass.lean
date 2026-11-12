@@ -91,7 +91,7 @@ theorem hyperbolicPlane_binarySplitProperClass (o : Orientation ℤ hyperbolicPl
     BinaryQuadraticForm.splitProperClassToProperClass_splitProperClassMk]
   simpa only [Nat.cast_one, BinaryQuadraticForm.splitPrincipalForm_def,
     BinaryQuadraticForm.splitTriangularForm_def] using
-    (BinaryQuadraticForm.properClass_splitTriangularForm_eq_iff 1 0 1 one_ne_zero).mpr
+    (BinaryQuadraticForm.properClass_splitTriangularForm_eq_iff 1 0 1).mpr
       (one_dvd _)
 
 /-- The existing raw proper class of the hyperbolic plane is the image of its principal

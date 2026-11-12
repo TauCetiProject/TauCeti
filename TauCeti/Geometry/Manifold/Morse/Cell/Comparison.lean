@@ -217,34 +217,15 @@ variable (hε : 0 ≤ ε) {Y : Type u} [TopologicalSpace Y] (L : C(I × {x | f x
   (hC : ∀ i t s, C i (t, TopCat.diskBoundaryInclusion (k i) s) =
     L (t, (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s))
 
-/-- The map `⨆ᵢ D^{k i} → C(I, Y)` glued from the curried maps `C i`. -/
-private def morseCellAttachmentCellsCurry : (∐ fun i ↦ TopCat.disk.{u} (k i)) ⟶ TopCat.of C(I, Y) :=
-  Sigma.desc fun i ↦ TopCat.ofHom ((C i).comp ContinuousMap.prodSwap).curry
-
-/-- The map `I × ⨆ᵢ D^{k i} → Y` which is `C i` on the cylinder over the `i`-th disc. -/
-private def morseCellAttachmentCellsDesc :
-    C(I × (∐ fun i ↦ TopCat.disk.{u} (k i) : TopCat.{u}), Y) :=
-  (morseCellAttachmentCellsCurry k C).hom.uncurry.comp ContinuousMap.prodSwap
-
-private theorem morseCellAttachmentCellsDesc_ι (t : I) (i : ι) (w : TopCat.disk.{u} (k i)) :
-    morseCellAttachmentCellsDesc k C (t, Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w) =
-      C i (t, w) := by
-  have hw : morseCellAttachmentCellsCurry k C (Sigma.ι (fun i ↦ TopCat.disk.{u} (k i)) i w) =
-      ((C i).comp ContinuousMap.prodSwap).curry w :=
-    ConcreteCategory.congr_hom
-      (Sigma.ι_comp_desc (fun i ↦ TopCat.ofHom ((C i).comp ContinuousMap.prodSwap).curry) i) w
-  exact congrArg (fun g : C(I, Y) ↦ g t) hw
-
 /-- The map `I × (M_{c-ε} ∪_α ⨆ᵢ D^{k i}) → Y` glued from a map `L : I × M_{c-ε} → Y` and maps
 `C i : I × D^{k i} → Y` that agree with `L` along the attaching maps: the form of
 `TauCeti.morseCellAttachmentDesc` for homotopies out of `TauCeti.morseCellAttachment`, given by
 `CategoryTheory.IsPushout.cylinderDesc`. -/
 def morseCellAttachmentProdDesc : C(I × morseCellAttachment φ k hk hε hball hf, Y) :=
-  (isPushout_morseCellAttachment φ k hk hball hf hε).cylinderDesc L
-    (morseCellAttachmentCellsDesc k C) fun t b ↦ by
-      obtain ⟨i, s, rfl⟩ : ∃ i s, Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (k i)) i s = b :=
-        let ⟨⟨i⟩, s, hs⟩ := Concrete.colimit_exists_rep _ b; ⟨i, s, hs⟩
-      simpa [Sigma.ι_map_apply, morseCellAttachmentCellsDesc_ι] using (hC i t s).symm
+  (isPushout_morseCellAttachment φ k hk hball hf hε).cylinderDesc L (TopCat.sigmaCylinderDesc C)
+    fun t b ↦ by
+      obtain ⟨i, s, rfl⟩ := TopCat.exists_sigma_ι_eq _ b
+      simpa [Sigma.ι_map_apply] using (hC i t s).symm
 
 /-- On the lower sublevel, the map glued by `TauCeti.morseCellAttachmentProdDesc` is `L`. -/
 @[simp]
@@ -263,7 +244,7 @@ theorem morseCellAttachmentProdDesc_morseCellAttachmentCell (t : I) (i : ι)
   rw [← Sigma.ι_comp_desc (morseCellAttachmentCell φ k hk hε hball hf) i,
     ConcreteCategory.comp_apply]
   exact ((isPushout_morseCellAttachment φ k hk hball hf hε).cylinderDesc_inr L _ _ t _).trans
-    (morseCellAttachmentCellsDesc_ι k C t i w)
+    (TopCat.sigmaCylinderDesc_ι C t i w)
 
 end ProdDesc
 
@@ -574,7 +555,7 @@ theorem exists_morseCellAttachment_deformation [Finite ι] (hfs : ContMDiff I �
   set φ := fun i ↦ (ψ i).toOpenPartialHomeomorph
   set Φ := morseCellComparison φ k hk hε.le hball' hf
   obtain ⟨r, hr, ⟨G⟩⟩ :=
-    exists_sublevel_union_cells_deformation hfs ψ hψ k hε hball hf hcompact hcrit
+    exists_sublevel_union_cells_deformation hfs ψ hψ k hball hf hcompact hcrit
   have hΦ := isClosedEmbedding_morseCellComparison φ k hk hball' hf hfs.continuous hψ hε
   have hrange := range_morseCellComparison φ k hk hball' hf hε
   -- The retraction `r` lands in the image of `Φ`, which `Φ` identifies with the attachment.

@@ -85,7 +85,7 @@ theorem different_eq :
         WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).1 +
         WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).1 := by
   classical
-  rw [Affine.different_eq_sum_of_card_eq_four (NeZero.ne 2) neg_eq_self_of_mem card_twoTorsion,
+  rw [Affine.different_eq_sum_of_card_eq_four neg_eq_self_of_mem card_twoTorsion,
     Finset.sum_insert (by simp [eq_comm (a := (0 : (curve K).toAffine.Point))]),
     Finset.sum_insert (by simp), Finset.sum_pair pointOne_ne_pointNegOne, Affine.Point.zero_def,
     Affine.coe_pointEquivDegreeOnePlace_zero, add_assoc, add_assoc]
@@ -99,7 +99,7 @@ theorem one_lt_ramificationIdx_iff (P : Place K (curve K).toAffine.FunctionField
         P = ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).1 ∨
         P = ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).1 := by
   classical
-  rw [Affine.one_lt_ramificationIdx_iff_of_card_eq_four (NeZero.ne 2) neg_eq_self_of_mem
+  rw [Affine.one_lt_ramificationIdx_iff_of_card_eq_four neg_eq_self_of_mem
     card_twoTorsion]
   simp only [Finset.mem_insert, Finset.mem_singleton, exists_eq_or_imp, exists_eq_left,
     Affine.Point.zero_def, Affine.coe_pointEquivDegreeOnePlace_zero]
@@ -109,7 +109,7 @@ theorem one_lt_ramificationIdx_iff (P : Place K (curve K).toAffine.FunctionField
 private theorem ramificationIdx_place_of_mem [DecidableEq K] {T : (curve K).toAffine.Point}
     (hT : T ∈ ({0, pointZero K, pointOne K, pointNegOne K} : Finset (curve K).toAffine.Point)) :
     Place.ramificationIdx (RatFunc K) ((curve K).toAffine.pointEquivDegreeOnePlace T).1 = 2 :=
-  Affine.ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four (NeZero.ne 2) neg_eq_self_of_mem
+  Affine.ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four neg_eq_self_of_mem
     card_twoTorsion hT
 
 /-- The place of `(0, 0)` has ramification index `2` over `K(x)`. -/

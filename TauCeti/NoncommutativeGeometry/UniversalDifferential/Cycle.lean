@@ -73,7 +73,7 @@ variable {k A M : Type*} [CommRing k] [NonUnitalRing A] [Module k A] [AddCommGro
 /-- The functional `∫_φ` on universal forms defined by an `n`-cochain `φ`: it vanishes outside
 degree `n`, and sends the word `x da₁ ⋯ daₙ` to `φ(x₊, a₁, …, aₙ)`, where `x₊` is the part of the
 coefficient `x ∈ A⁺` in `A`. -/
-def trace (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
+def trace (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) :
     (⨁ m, UniversalForms k A m) →ₗ[k] M :=
   TensorProduct.lift (PiTensorProduct.lift.toLinearMap ∘ₗ φ.curryLeft ∘ₗ
     Unitization.sndHom k k A) ∘ₗ DirectSum.component k ℕ (UniversalForms k A) n
@@ -81,7 +81,8 @@ def trace (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
 /-- On a word of degree `n`, the functional `∫_φ` evaluates `φ` on the part of the coefficient in
 `A` followed by the letters. -/
 @[simp]
-theorem trace_of_word (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) (x : Unitization k A)
+theorem trace_of_word (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) (x :
+    Unitization k A)
     (a : Fin n → A) :
     trace φ (DirectSum.of _ n (word k A x a)) = φ (Fin.cons x.snd a) := by
   rw [trace, LinearMap.comp_apply, ← DirectSum.lof_eq_of k, DirectSum.component.lof_self,
@@ -90,13 +91,14 @@ theorem trace_of_word (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) (x :
 
 /-- The functional `∫_φ` vanishes on forms of degree other than `n`. -/
 @[simp]
-theorem trace_of_of_ne (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) {m : ℕ} (h : m ≠ n)
+theorem trace_of_of_ne (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) {m : ℕ} (h :
+    m ≠ n)
     (ω : UniversalForms k A m) : trace φ (DirectSum.of _ m ω) = 0 := by
   simp [trace, ← DirectSum.lof_eq_of k, DirectSum.component.of, h]
 
 /-- The functional `∫_φ` vanishes on exact forms, since exact words have scalar coefficient. -/
 @[simp]
-theorem trace_differential (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M)
+theorem trace_differential (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M)
     (x : ⨁ m, UniversalForms k A m) : trace φ (differential k A x) = 0 := by
   induction x using DirectSum.induction_on with
   | zero => rw [map_zero, map_zero]
@@ -114,7 +116,7 @@ theorem trace_differential (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M)
 
 /-- The functional `∫_φ` is additive in the cochain `φ`. -/
 @[simp]
-theorem trace_add (φ ψ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
+theorem trace_add (φ ψ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) :
     trace (φ + ψ) = trace φ + trace ψ := by
   refine DirectSum.linearMap_ext k fun m ↦ LinearMap.ext fun ω ↦ ?_
   simp only [LinearMap.comp_apply, LinearMap.add_apply, DirectSum.lof_eq_of]
@@ -127,7 +129,7 @@ theorem trace_add (φ ψ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
 
 /-- The functional `∫_φ` is homogeneous in the cochain `φ`. -/
 @[simp]
-theorem trace_smul (c : k) (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
+theorem trace_smul (c : k) (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) :
     trace (c • φ) = c • trace φ := by
   refine DirectSum.linearMap_ext k fun m ↦ LinearMap.ext fun ω ↦ ?_
   simp only [LinearMap.comp_apply, LinearMap.smul_apply, DirectSum.lof_eq_of]
@@ -142,7 +144,7 @@ variable [IsScalarTower k A A] [SMulCommClass k A A]
 
 /-- On a zero-form `ι(a)`, the functional `∫_φ` of a `0`-cochain `φ` is `φ(a)`. -/
 @[simp]
-theorem trace_ι (φ : MultilinearMap k (fun _ : Fin 1 ↦ A) M) (a : A) :
+theorem trace_ι (φ : MultilinearMap (RingHom.id k) (fun _ : Fin 1 ↦ A) M) (a : A) :
     trace φ (ι k A a) = φ fun _ ↦ a := by
   rw [ι_apply, trace_of_word, Unitization.snd_inr]
   congr 1
@@ -166,7 +168,7 @@ theorem cycleForm_ι (a : Fin (n + 1) → A) :
 
 /-- **The character of the universal-form cycle defined by `φ` is `φ`.** -/
 @[simp]
-theorem cycleCharacter_trace (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
+theorem cycleCharacter_trace (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M) :
     cycleCharacter (R := k) (Ω := ⨁ m, UniversalForms k A m) (differential k A) (trace φ)
       (ι k A) n = φ := by
   ext a
@@ -176,7 +178,7 @@ theorem cycleCharacter_trace (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) 
 
 section Trace
 
-variable {φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M}
+variable {φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A) M}
 
 /-- For a cyclic cocycle `φ`, the functional `∫_φ` commutes with the image of a letter. -/
 private theorem trace_mul_ι (hφ : φ ∈ cyclicCochains k A M n)
@@ -274,7 +276,8 @@ end Trace
 /-! ### Cyclic cocycles as characters -/
 
 /-- **The functional `∫_φ` is a closed graded trace exactly when `φ` is a cyclic cocycle.** -/
-theorem isClosedGradedTrace_trace_iff (φ : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M) :
+theorem isClosedGradedTrace_trace_iff (φ : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦ A)
+    M) :
     IsClosedGradedTrace (R := k) (Ω := ⨁ m, UniversalForms k A m) (grading k A)
         (differential k A) n (trace φ) ↔
       φ ∈ cyclicCochains k A M n ∧ hochschildCoboundary k A M n φ = 0 := by
@@ -296,7 +299,8 @@ theorem isClosedGradedTrace_trace_iff (φ : MultilinearMap k (fun _ : Fin (n + 1
 theorem isClosedGradedTrace_trace (φ : cyclicCocycles k A M n) :
     IsClosedGradedTrace (R := k) (Ω := ⨁ m, UniversalForms k A m) (grading k A)
       (differential k A) n
-      (trace ((φ : cyclicCochains k A M n) : MultilinearMap k (fun _ : Fin (n + 1) ↦ A) M)) :=
+      (trace ((φ : cyclicCochains k A M n) : MultilinearMap (RingHom.id k) (fun _ : Fin (n + 1) ↦
+          A) M)) :=
   (isClosedGradedTrace_trace_iff _).2
     ⟨(φ : cyclicCochains k A M n).2, (mem_cyclicCocycles_iff k A M).1 φ.2⟩
 

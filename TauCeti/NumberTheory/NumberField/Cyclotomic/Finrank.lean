@@ -64,7 +64,7 @@ theorem prime_dvd_of_dvd_natAbs_discr (E : Type*) [Field E] [NumberField E] (m :
     [IsCyclotomicExtension {m} ℚ E] {p : ℕ} (hp : p.Prime)
     (hpd : p ∣ (NumberField.discr E).natAbs) : p ∣ m := by
   refine hp.dvd_of_dvd_pow (n := m.totient) (hpd.trans ?_)
-  obtain ⟨c, hc⟩ := Nat.prod_primeFactors_pow_totient_ediv_dvd (NeZero.pos m)
+  obtain ⟨c, hc⟩ := Nat.prod_primeFactors_pow_totient_ediv_dvd m
   rw [IsCyclotomicExtension.Rat.natAbs_discr (K := E) (n := m), hc,
     Nat.mul_div_cancel_left _ (Finset.prod_pos fun q hq ↦
       pow_pos (Nat.prime_of_mem_primeFactors hq).pos _)]

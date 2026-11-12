@@ -109,7 +109,7 @@ theorem pontryaginThomCollapse_eq_infty_iff (hτ : Injective τ) {m : M} :
 theorem pontryaginThomCollapse_eq_coe_iff (hτ : Injective τ) {m : M} {v : V} :
     pontryaginThomCollapse τ m = v ↔ ∃ x, τ (x, v) = m := by
   rw [pontryaginThomCollapse, onePointCollapse_eq_coe_iff hτ]
-  exact ⟨fun ⟨⟨x, w⟩, hw, hm⟩ ↦ ⟨x, hw ▸ hm⟩, fun ⟨x, hm⟩ ↦ ⟨(x, v), rfl, hm⟩⟩
+  exact ⟨fun ⟨⟨x, _⟩, hw, hm⟩ ↦ ⟨x, hw ▸ hm⟩, fun ⟨x, hm⟩ ↦ ⟨(x, v), rfl, hm⟩⟩
 
 /-- Near a point where a map reads in the tube as `τ ∘ g`, its Pontryagin–Thom collapse is the
 normal coordinate `Prod.snd ∘ g` followed by the inclusion `V → OnePoint V`. -/
