@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Incidence.Union
-public import TauCeti.Combinatorics.Graph.Incidence.EdgeSetsUnion
+public import TauCeti.Combinatorics.Graph.Incidence.EdgeSets
 
 /-!
 # Counting parallel edges and loops in a union
@@ -109,55 +109,58 @@ private noncomputable instance : Fintype E(parallel) :=
 private noncomputable instance : Fintype E(loop) :=
   Fintype.ofFinset {2} (by simp [loop])
 
+open Classical in
 /-- Only the loop is internal to the singleton vertex set. -/
 theorem internal_singleton :
-    (graph.internalEdges (({0} : Finset ℕ).preimage Subtype.val
-      Subtype.val_injective.injOn)).map (Function.Embedding.subtype _) = {2} := by
+    (graph.internalEdges (({0} : Finset ℕ).subtype (· ∈ V(graph)))).map
+      (Function.Embedding.subtype _) = {2} := by
   ext e
-  simp [graph_isLink, eq_comm]
+  rw [Graph.mem_map_internalEdges_subtype]
+  simp [graph_isLink]
 
+open Classical in
 /-- The loop and both parallel edges are incident with `0`. -/
 theorem incident_singleton :
-    (graph.incidentEdges (({0} : Finset ℕ).preimage Subtype.val
-      Subtype.val_injective.injOn)).map (Function.Embedding.subtype _) = {0, 1, 2} := by
+    (graph.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(graph)))).map
+      (Function.Embedding.subtype _) = {0, 1, 2} := by
   ext e
+  rw [Graph.mem_map_incidentEdges_subtype]
   simp [Graph.Inc, graph_isLink]
   aesop
 
+open Classical in
 /-- Selecting both endpoints still counts each edge identity only once. -/
 theorem internal_pair :
-    (graph.internalEdges (({0, 1} : Finset ℕ).preimage Subtype.val
-      Subtype.val_injective.injOn)).map (Function.Embedding.subtype _) = {0, 1, 2} := by
+    (graph.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(graph)))).map
+      (Function.Embedding.subtype _) = {0, 1, 2} := by
   ext e
+  rw [Graph.mem_map_internalEdges_subtype]
   simp [graph_isLink]
   tauto
 
+open Classical in
 /-- An ambient vertex outside the graph cannot contribute an incident edge. -/
 theorem incident_outside :
-    graph.incidentEdges (({42} : Finset ℕ).preimage Subtype.val
-      Subtype.val_injective.injOn) = ∅ := by
+    graph.incidentEdges (({42} : Finset ℕ).subtype (· ∈ V(graph))) = ∅ := by
   apply Finset.map_injective (Function.Embedding.subtype _)
   ext e
+  rw [Graph.mem_map_incidentEdges_subtype]
   simp [Graph.Inc, graph_isLink]
 
 -- Exercise the additive formulas themselves, not just the union's incidence characterization.
+open Classical in
 example :
-    (graph.internalEdges (({0, 1} : Finset ℕ).preimage Subtype.val
-      Subtype.val_injective.injOn)).card =
-    (parallel.internalEdges
-      (({0, 1} : Finset ℕ).preimage Subtype.val Subtype.val_injective.injOn)).card +
-    (loop.internalEdges
-      (({0, 1} : Finset ℕ).preimage Subtype.val Subtype.val_injective.injOn)).card := by
+    (graph.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(graph)))).card =
+    (parallel.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(parallel)))).card +
+    (loop.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(loop)))).card := by
   let : Fintype E(compatible.union) := inferInstanceAs (Fintype E(graph))
   exact compatible.card_internalEdges_union disjoint_edges _
 
+open Classical in
 example :
-    (graph.incidentEdges (({0} : Finset ℕ).preimage Subtype.val
-      Subtype.val_injective.injOn)).card =
-    (parallel.incidentEdges
-      (({0} : Finset ℕ).preimage Subtype.val Subtype.val_injective.injOn)).card +
-    (loop.incidentEdges
-      (({0} : Finset ℕ).preimage Subtype.val Subtype.val_injective.injOn)).card := by
+    (graph.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(graph)))).card =
+    (parallel.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(parallel)))).card +
+    (loop.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(loop)))).card := by
   let : Fintype E(compatible.union) := inferInstanceAs (Fintype E(graph))
   exact compatible.card_incidentEdges_union disjoint_edges _
 

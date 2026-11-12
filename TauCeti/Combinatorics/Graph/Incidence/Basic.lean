@@ -8,7 +8,6 @@ module
 public import Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Finite
-public import Mathlib.Data.Finset.Preimage
 
 /-!
 # Incidence counts for multigraphs
@@ -259,13 +258,13 @@ theorem mem_incidentEdges {S : Finset G.vertexSet} {e : G.edgeSet} :
   classical
   simp [incidentEdges]
 
+open Classical in
 /-- Reading internal edges as ambient identities removes the vertex subtype from membership.
-The preimage selects the actual vertices lying in the ambient finite set `S`. -/
-theorem mem_map_internalEdges_preimage (S : Finset α) (e : β) :
-    e ∈ (G.internalEdges (S.preimage Subtype.val Subtype.val_injective.injOn)).map
+Restrict `S` to the graph's actual vertices. -/
+theorem mem_map_internalEdges_subtype (S : Finset α) (e : β) :
+    e ∈ (G.internalEdges (S.subtype (· ∈ V(G)))).map
       (Function.Embedding.subtype _) ↔ ∃ x ∈ S, ∃ y ∈ S, G.IsLink e x y := by
-  classical
-  simp only [Finset.mem_map, mem_internalEdges, Finset.mem_preimage,
+  simp only [Finset.mem_map, mem_internalEdges, Finset.mem_subtype,
     Function.Embedding.subtype_apply]
   constructor
   · rintro ⟨⟨e, he⟩, ⟨x, hx, y, hy, hxy⟩, rfl⟩
@@ -274,13 +273,13 @@ theorem mem_map_internalEdges_preimage (S : Finset α) (e : β) :
     exact ⟨⟨e, hxy.edge_mem⟩,
       ⟨⟨x, hxy.left_mem⟩, hx, ⟨y, hxy.right_mem⟩, hy, hxy⟩, rfl⟩
 
+open Classical in
 /-- Reading incident edges as ambient identities removes the vertex subtype from membership.
 Vertices of `S` outside the graph do not contribute. -/
-theorem mem_map_incidentEdges_preimage (S : Finset α) (e : β) :
-    e ∈ (G.incidentEdges (S.preimage Subtype.val Subtype.val_injective.injOn)).map
+theorem mem_map_incidentEdges_subtype (S : Finset α) (e : β) :
+    e ∈ (G.incidentEdges (S.subtype (· ∈ V(G)))).map
       (Function.Embedding.subtype _) ↔ ∃ x ∈ S, G.Inc e x := by
-  classical
-  simp only [Finset.mem_map, mem_incidentEdges, Finset.mem_preimage,
+  simp only [Finset.mem_map, mem_incidentEdges, Finset.mem_subtype,
     Function.Embedding.subtype_apply]
   constructor
   · rintro ⟨⟨e, he⟩, ⟨x, hx, hex⟩, rfl⟩
