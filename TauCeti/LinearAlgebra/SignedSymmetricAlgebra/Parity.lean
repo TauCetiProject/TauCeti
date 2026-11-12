@@ -65,6 +65,13 @@ def generator : V →ₗ[R] ParitySignedSym G :=
 @[simp]
 theorem quotient_ι (x : V) : quotient G (TensorAlgebra.ι R x) = generator G x := (rfl)
 
+/-- The class of a tensor word is the product of its generators in the same order. -/
+theorem quotient_tprod {n : ℕ} (x : Fin n → V) :
+    quotient G (TensorAlgebra.tprod R V n x) =
+      (List.ofFn fun i => generator G (x i)).prod := by
+  simp only [TensorAlgebra.tprod_apply, map_list_prod, List.map_ofFn,
+    Function.comp_def, quotient_ι]
+
 /-- Homogeneous generators satisfy the sign rule determined by their parities. -/
 theorem generator_mul_generator {i j : ZMod 2} {x y : V}
     (hx : x ∈ G.piece i) (hy : y ∈ G.piece j) :
@@ -72,6 +79,20 @@ theorem generator_mul_generator {i j : ZMod 2} {x y : V}
       (generator G y * generator G x) := by
   simpa only [← quotient_ι, ← map_mul, Units.smul_def, ← map_zsmul] using
     (RingQuot.mkAlgHom_rel R (paritySignedSwapRel.swap i j x y hx hy))
+
+/-- Induction on expressions in the generating module and the coefficient ring. -/
+@[elab_as_elim]
+theorem induction {P : ParitySignedSym G → Prop}
+    (algebraMap : ∀ r, P (algebraMap R (ParitySignedSym G) r))
+    (generator : ∀ x, P (ParitySignedSym.generator G x))
+    (mul : ∀ a b, P a → P b → P (a * b))
+    (add : ∀ a b, P a → P b → P (a + b)) (a : ParitySignedSym G) : P a := by
+  obtain ⟨a, rfl⟩ := quotient_surjective G a
+  induction a using TensorAlgebra.induction with
+  | algebraMap r => simpa only [AlgHom.commutes] using algebraMap r
+  | ι x => exact generator x
+  | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
+  | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
 variable {A : Type w} [Ring A] [Algebra R A]
 
