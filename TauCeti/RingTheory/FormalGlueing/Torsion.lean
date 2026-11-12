@@ -318,8 +318,6 @@ theorem quotientMap_bijective_of_primaryComponent_eq_top (I J : Ideal R)
   convert h using 1
   funext q
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp only [quotientMap_mk, Function.comp_apply, TensorProduct.mk_apply, e,
-    Algebra.TensorProduct.quotIdealMapEquivTensorQuot_symm_tmul, Algebra.smul_def, mul_one]
-  exact (IsScalarTower.algebraMap_apply R S (S ⧸ J.map (algebraMap R S)) r).symm
+  simp [e, Algebra.smul_def]
 
 end Ideal
