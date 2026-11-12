@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
 import TauCeti.MeasureTheory.Integral.RieszThorin
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The kernel of the Schrödinger propagator and the dispersive estimate
@@ -347,13 +348,9 @@ theorem norm_fourierInv_phaseSymbol_smul_fourier_le {t : ℝ} (ht : t ≠ 0) (f 
     filter_upwards [hae, G.coeFn_toLp 2] with y h₁ h₂
     rwa [h₂] at h₁
   -- `G` is continuous, so the almost-everywhere bound holds everywhere.
-  have hU : IsOpen {y | c < ‖G y‖} := isOpen_lt continuous_const G.continuous.norm
-  have h0 : volume {y | c < ‖G y‖} = 0 := by
-    rw [ae_iff] at hae'
-    simpa only [not_le] using hae'
-  rw [hU.measure_eq_zero_iff (μ := volume)] at h0
   rw [← hG]
-  exact not_lt.1 fun hx ↦ (Set.eq_empty_iff_forall_notMem.1 h0 x) hx
+  exact (Continuous.ae_le_iff_le volume (f := fun y ↦ ‖G y‖) G.continuous.norm
+    continuous_const).1 hae' x
 
 open scoped RealInnerProductSpace in
 /-- **The dispersive estimate as an oscillatory integral bound.** For a Schwartz function `ψ` and
