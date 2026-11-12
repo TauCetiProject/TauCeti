@@ -264,6 +264,13 @@ theorem classMap_apply (a : A) :
 theorem classMap_surjective : Function.Surjective φ.classMap :=
   SeparationQuotient.surjective_mk.comp φ.toPreGNS.surjective
 
+/-- The algebraic GNS space of a finite-dimensional algebra is finite-dimensional. -/
+instance [Module.Finite ℂ A] : Module.Finite ℂ φ.GNS :=
+  Module.Finite.of_surjective φ.classMap φ.classMap_surjective
+
+/-- The algebraic GNS space is complete when the original algebra is finite-dimensional. -/
+instance [Module.Finite ℂ A] : CompleteSpace φ.GNS := FiniteDimensional.complete ℂ _
+
 /-- Two algebra elements have the same class exactly when their difference is null. -/
 theorem classMap_eq_classMap_iff (a b : A) :
     φ.classMap a = φ.classMap b ↔ a - b ∈ φ.nullSubmodule := by
