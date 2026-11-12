@@ -216,23 +216,6 @@ theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → M
   rw [energyFormH1_add_const_left]
   exact energyFormH1_restrictL_nonneg hU hu v hv
 
-/-- Pairing over `t` against the zero extension of `g ∈ Lᵖ(s)`, through a pairing `φ` vanishing at
-`0`, is pairing against `g` over `s`. -/
-private theorem setIntegral_extendByZeroLpₗᵢ {α E : Type*} [MeasurableSpace α] {μ : Measure α}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {s t : Set α}
-    (hs : MeasurableSet s) (hst : s ⊆ t) (φ : α → E → ℝ) (hφ : ∀ x, φ x 0 = 0)
-    (g : Lp E p (μ.restrict s)) :
-    ∫ x in t, φ x (extendByZeroLpₗᵢ ℝ μ hs hst g x) ∂μ = ∫ x in s, φ x (g x) ∂μ := by
-  calc _ = ∫ x in t, s.indicator (fun x => φ x (g x)) x ∂μ := by
-        refine integral_congr_ae ?_
-        filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hs hst g] with x hx
-        rw [hx]
-        by_cases hxs : x ∈ s
-        · rw [indicator_of_mem hxs, indicator_of_mem hxs]
-        · rw [indicator_of_notMem hxs, indicator_of_notMem hxs, hφ]
-    _ = ∫ x in s, φ x (g x) ∂μ := by
-        rw [integral_indicator hs, Measure.restrict_restrict hs, inter_eq_left.2 hst]
-
 /-- Pairing a function `f` over `Ω` with the zero extension of `v ∈ W^{1,p}_0(U)` is pairing it with
 `v` over `U`. -/
 theorem setIntegral_mul_value_extendByZeroL {p : ℝ≥0∞} [Fact (1 ≤ p)] (hU : U ≤ Omega)
@@ -240,7 +223,7 @@ theorem setIntegral_mul_value_extendByZeroL {p : ℝ≥0∞} [Fact (1 ≤ p)] (h
     ∫ x in Omega, f x * W1p.value (W1p0.extendByZeroL hU v : W1p mu Omega p) x ∂mu =
       ∫ x in U, f x * W1p.value (v : W1p mu U p) x ∂mu := by
   rw [W1p0.value_extendByZeroL]
-  exact setIntegral_extendByZeroLpₗᵢ _ _ (fun x y => f x * y) (fun _ => mul_zero _) _
+  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _) _
 
 open scoped InnerProductSpace in
 /-- Pairing a vector field `F` over `Ω` with the gradient of the zero extension of
@@ -250,7 +233,7 @@ theorem setIntegral_inner_gradient_extendByZeroL {p : ℝ≥0∞} [Fact (1 ≤ p
     ∫ x in Omega, ⟪F x, W1p.gradient (W1p0.extendByZeroL hU v : W1p mu Omega p) x⟫_ℝ ∂mu =
       ∫ x in U, ⟪F x, W1p.gradient (v : W1p mu U p) x⟫_ℝ ∂mu := by
   rw [W1p0.gradient_extendByZeroL]
-  exact setIntegral_extendByZeroLpₗᵢ _ _ (fun x y => ⟪F x, y⟫_ℝ) (fun _ => inner_zero_right _) _
+  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => ⟪F x, y⟫_ℝ) (fun _ => inner_zero_right _) _
 
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U`
