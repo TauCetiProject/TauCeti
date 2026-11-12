@@ -38,11 +38,17 @@ for Hölder conjugate exponents `q, q'`, so the weighted integral is small when 
 small. This is how the mean oscillation of the coefficients enters regularity estimates for
 divergence-form equations.
 
+For a product of `k` functions, the norm of its integral is at most the average of their `k`th
+absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
+expected products without any independence assumption.
+
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
+* `MeasureTheory.norm_integral_prod_le_average_integral_norm_pow`: the absolute-moment bound
+  for an integral of a finite product.
 
 ## References
 
@@ -179,3 +185,35 @@ theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
     hθq hq.symm.inv_nonneg) (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
 
 end TauCeti
+
+namespace MeasureTheory
+
+/-- The norm of the integral of a product of `k` functions is bounded by the average of their
+`k`th absolute moments. No independence or finiteness of the underlying measure is needed. -/
+theorem norm_integral_prod_le_average_integral_norm_pow {Ω ι 𝕜 : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [Fintype ι] [Nonempty ι] [NormedCommRing 𝕜] [NormedSpace ℝ 𝕜]
+    (f : ι → Ω → 𝕜) (hf : ∀ i, Integrable (fun x ↦ ‖f i x‖ ^ Fintype.card ι) μ) :
+    ‖∫ x, ∏ i, f i x ∂μ‖ ≤
+      (Fintype.card ι : ℝ)⁻¹ * ∑ i, ∫ x, ‖f i x‖ ^ Fintype.card ι ∂μ := by
+  classical
+  have hk : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hpoint (x : Ω) : ‖∏ i, f i x‖ ≤
+      ∑ i, (Fintype.card ι : ℝ)⁻¹ * ‖f i x‖ ^ Fintype.card ι := by
+    refine (Finset.norm_prod_le' Finset.univ Finset.univ_nonempty (fun i ↦ f i x)).trans ?_
+    have h := Real.geom_mean_le_arith_mean_weighted Finset.univ
+      (fun _ : ι ↦ (Fintype.card ι : ℝ)⁻¹)
+      (fun i ↦ ‖f i x‖ ^ Fintype.card ι)
+      (fun _ _ ↦ inv_nonneg.mpr (Nat.cast_nonneg _))
+      (by simp [hk]) (fun _ _ ↦ by positivity)
+    convert h using 1
+    apply Finset.prod_congr rfl
+    intro i _
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), mul_inv_cancel₀ hk,
+      Real.rpow_one]
+  have hbound := norm_integral_le_of_norm_le
+    (integrable_finsetSum _ fun i _ ↦ (hf i).const_mul (Fintype.card ι : ℝ)⁻¹)
+    (Filter.Eventually.of_forall hpoint)
+  simpa only [integral_finsetSum _ fun i _ ↦ (hf i).const_mul _, integral_const_mul,
+    Finset.mul_sum] using hbound
+
+end MeasureTheory
