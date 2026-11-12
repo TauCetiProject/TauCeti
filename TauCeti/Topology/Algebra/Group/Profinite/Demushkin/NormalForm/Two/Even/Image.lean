@@ -85,7 +85,7 @@ theorem exists_topologicalClosure_zpowers_eq_range_demushkinCharacter_of_demushk
       hG.exists_continuousMulEquiv_presentedProP_padicPow_mul_labuteComm_mul_demushkinWordNeTwo
         (by rw [hn]; exact even_two) hq
     rw [hn, ← demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul (isProP_freeProP 2 (Fin 2))
-      α q 2 (freeProPGen 2 2) le_rfl] at e
+      α q 2 (freeProPGen 2 2)] at e
     -- The canonical character, read on the presented group, generates its image by `χ(x₂)`.
     have hχ := (hasPrescriptionProperty_demushkinCharacter hG).comp_equiv (e := e.symm)
     exact ⟨_,
