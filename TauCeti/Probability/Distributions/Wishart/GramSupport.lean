@@ -58,8 +58,7 @@ theorem support_wishartGramMeasure_one (ν p : ℕ) :
   rw [wishartGramMeasure_eq_map_pi,
     Measure.support_map_eq_closure_range _ hfull continuous_wishartGram,
     range_wishartGram, Fintype.card_fin]
-  exact ((isClosed_setOfPred_posSemidef.preimage continuous_subtype_val).inter
-    (TauCeti.isClosed_setOfPred_rank_le ν)).closure_eq
+  exact (Matrix.isClosed_setOf_posSemidef_rank_le ν).closure_eq
 
 /-- For every positive-semidefinite scale, the Gaussian-Gram support is the square-root
 congruence image of the positive-semidefinite rank-at-most-degree cone. The image is already

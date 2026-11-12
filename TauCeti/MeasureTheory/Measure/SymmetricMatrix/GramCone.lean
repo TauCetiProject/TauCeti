@@ -25,6 +25,33 @@ namespace Matrix
 
 variable {p q : ℕ}
 
+/-- The positive-semidefinite cone with a fixed upper rank bound is closed in the
+space of self-adjoint matrices. -/
+theorem isClosed_setOf_posSemidef_rank_le (r : ℕ) :
+    IsClosed {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
+        (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ r} :=
+  (isClosed_setOfPred_posSemidef.preimage continuous_subtype_val).inter
+    (TauCeti.isClosed_setOfPred_rank_le r)
+
+/-- Rectangular congruence preserves positive semidefiniteness and an upper rank bound. -/
+theorem mapsTo_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le
+    (M : Matrix (Fin q) (Fin p) ℝ) (r : ℕ) :
+    MapsTo (symmetricCongruenceLinearMap M)
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
+          (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ r}
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ) |
+        (A : Matrix (Fin q) (Fin q) ℝ).PosSemidef ∧
+          (A : Matrix (Fin q) (Fin q) ℝ).rank ≤ r} := by
+  rintro A ⟨hA, hr⟩
+  constructor
+  · rw [coe_symmetricCongruenceLinearMap_apply]
+    exact (conjTranspose_eq_transpose_of_trivial M) ▸ hA.mul_mul_conjTranspose_same M
+  · rw [coe_symmetricCongruenceLinearMap_apply]
+    exact ((rank_mul_le_left (M * (A : Matrix (Fin p) (Fin p) ℝ)) Mᵀ).trans
+      (rank_mul_le_right M (A : Matrix (Fin p) (Fin p) ℝ))).trans hr
+
 /-- With an inner inverse `N` satisfying `M * N * M = M`, the congruence image of the
 positive-semidefinite rank-at-most-`r` cone consists exactly of the matrices in that cone
 fixed by congruence with `M * N`. -/
@@ -41,22 +68,14 @@ theorem image_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le
           symmetricCongruenceLinearMap (M * N) A = A} := by
   ext A
   constructor
-  · rintro ⟨B, ⟨hB, hr⟩, rfl⟩
-    refine ⟨?_, ?_, ?_⟩
-    · rw [coe_symmetricCongruenceLinearMap_apply]
-      exact (conjTranspose_eq_transpose_of_trivial M) ▸ hB.mul_mul_conjTranspose_same M
-    · rw [coe_symmetricCongruenceLinearMap_apply]
-      exact ((rank_mul_le_left (M * (B : Matrix (Fin p) (Fin p) ℝ)) Mᵀ).trans
-        (rank_mul_le_right M (B : Matrix (Fin p) (Fin p) ℝ))).trans hr
-    · rw [← LinearMap.comp_apply, ← symmetricCongruenceLinearMap_mul, hMNM]
+  · rintro ⟨B, hB, rfl⟩
+    obtain ⟨hpos, hr⟩ := mapsTo_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le M r hB
+    refine ⟨hpos, hr, ?_⟩
+    rw [← LinearMap.comp_apply, ← symmetricCongruenceLinearMap_mul, hMNM]
   · rintro ⟨hA, hr, hfix⟩
-    refine ⟨symmetricCongruenceLinearMap N A, ⟨?_, ?_⟩, ?_⟩
-    · rw [coe_symmetricCongruenceLinearMap_apply]
-      exact (conjTranspose_eq_transpose_of_trivial N) ▸ hA.mul_mul_conjTranspose_same N
-    · rw [coe_symmetricCongruenceLinearMap_apply]
-      exact ((rank_mul_le_left (N * (A : Matrix (Fin q) (Fin q) ℝ)) Nᵀ).trans
-        (rank_mul_le_right N (A : Matrix (Fin q) (Fin q) ℝ))).trans hr
-    · rw [← LinearMap.comp_apply, ← symmetricCongruenceLinearMap_mul, hfix]
+    refine ⟨symmetricCongruenceLinearMap N A,
+      mapsTo_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le N r ⟨hA, hr⟩, ?_⟩
+    rw [← LinearMap.comp_apply, ← symmetricCongruenceLinearMap_mul, hfix]
 
 /-- Congruence with a matrix admitting an inner inverse has closed image on every
 positive-semidefinite cone with a rank bound, even when the congruence is singular. -/
@@ -68,8 +87,9 @@ theorem isClosed_image_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le
         (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
           (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ r}) := by
   rw [image_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le M N hMNM]
-  exact (isClosed_setOfPred_posSemidef.preimage continuous_subtype_val).inter
-    ((TauCeti.isClosed_setOfPred_rank_le r).inter
-      (isClosed_eq (LinearMap.continuous_of_finiteDimensional _) continuous_id))
+  simpa only [← Set.ofPred_and, id_eq, and_assoc] using
+    (isClosed_setOf_posSemidef_rank_le r).inter
+    (isClosed_eq (LinearMap.continuous_of_finiteDimensional
+      (symmetricCongruenceLinearMap (M * N))) continuous_id)
 
 end Matrix
