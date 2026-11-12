@@ -38,7 +38,7 @@ def liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
     ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b) := by
   induction p with
   | nil => exact (ArrowWalk.nil _).cons (source ha)
-  | cons p e ih => exact ih.cons (original e)
+  | cons _ e ih => exact ih.cons (original e)
 
 @[simp]
 theorem liftFromSource_nil {a : V} (ha : a ∈ A) :
