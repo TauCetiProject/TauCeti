@@ -223,8 +223,11 @@ lemma toSSet_map_inclusion_app_bijective (hs : Pairwise (Disjoint on s)) : Funct
   refine ⟨?_, fun τ ↦ ?_⟩
   · rintro ⟨i, σ⟩ ⟨j, σ'⟩ h
     have h' (x) : ((toSSetObjEquiv (of (s i)) n σ x : s i) : M) =
-        ((toSSetObjEquiv (of (s j)) n σ' x : s j) : M) :=
-      congrArg (fun f ↦ (f x : M)) (congrArg (toSSetObjEquiv (of ↥(⨆ i, s i)) n) h)
+        ((toSSetObjEquiv (of (s j)) n σ' x : s j) : M) := by
+      have h₁ := congrArg (toSSetObjEquiv (of ↥(⨆ i, s i)) n) h
+      dsimp only at h₁
+      rw [TopCat.toSSetObjEquiv_toSSet_map_app, TopCat.toSSetObjEquiv_toSSet_map_app] at h₁
+      simpa using congrArg (fun f ↦ (f x : M)) h₁
     obtain rfl : i = j := by
       by_contra hij
       exact (hs' hij).ne_of_mem (toSSetObjEquiv _ n σ x₀).2 (toSSetObjEquiv _ n σ' x₀).2 (h' x₀)
@@ -242,7 +245,8 @@ lemma toSSet_map_inclusion_app_bijective (hs : Pairwise (Disjoint on s)) : Funct
       ⟨fun x ↦ ⟨f x, hrange ⟨x, rfl⟩⟩, by fun_prop⟩⟩, ?_⟩
     apply (toSSetObjEquiv (of ↥(⨆ i, s i)) n).injective
     rw [TopCat.toSSetObjEquiv_toSSet_map_app, Equiv.apply_symm_apply]
-    rfl
+    ext x
+    simp [f]
 
 /-- The singular simplicial set of a union of pairwise disjoint open sets `s i` is the coproduct
 of the singular simplicial sets of the `s i`, with the inclusions as the cofan legs. -/

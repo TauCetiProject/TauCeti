@@ -29,9 +29,9 @@ coefficient category, as for modules over a ring, so is smooth singular homology
 decompose in the same way (`TauCeti.isColimitCofanSingularChainComplexOpens`), compatibly with
 the inclusion of smooth chains into singular chains. So that inclusion is a quasi-isomorphism on
 the union as soon as it is one on every `s i`
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`). This is the step for
-countable disjoint unions in the Mayer–Vietoris induction (`TauCeti.mayerVietoris_induction`)
-proving that smooth and singular chains have the same homology.
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`). This is the input for
+countable disjoint unions to a Mayer–Vietoris induction over open sets
+(`TauCeti.mayerVietoris_induction`) comparing smooth and singular homology.
 
 The index type lives in the universe of `M`, as for the additivity of singular chains; for the
 induction it is `ℕ`, and `M` is a type in `Type`.
@@ -146,8 +146,7 @@ def isColimitCofanSmoothSingularHomologyOpens (hs : Pairwise (Disjoint on s)) :
 /-- **The disjoint-union step of the smoothing theorem.** If coproducts indexed by `ι` are exact
 in `C` and, for every member of a family of pairwise disjoint open sets `s i`, the inclusion of
 smooth singular chains into singular chains with coefficients in `R` is a quasi-isomorphism, then
-so is the inclusion for the union `⨆ i, s i`. Both homologies of the union are coproducts over
-`ι`, and the inclusion acts on them summand by summand. -/
+so is the inclusion for the union `⨆ i, s i`. -/
 theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup (hs : Pairwise (Disjoint on s))
     (h : ∀ i, QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I (s i)).ι R)) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I ↥(⨆ i, s i)).ι R) := by

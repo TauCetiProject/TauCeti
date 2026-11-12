@@ -113,13 +113,15 @@ theorem prodMk {g : s → N} (hf : ContMDiffOnSubset I n f) (hg : ContMDiffOnSub
     fun y hy ↦ Prod.ext (hff y hy.1) (hgg y hy.2)⟩
 
 /-- A map into an open submanifold `V` is `C^n` on `s` exactly when its composition with the
-inclusion of `V` is. A local extension into the ambient manifold takes values in `V` near each
-point, by continuity, and there it is a local extension into `V`. -/
+inclusion of `V` is. -/
+@[simp]
 theorem subtypeVal_comp_iff {V : TopologicalSpace.Opens M} {f : s → V} :
     ContMDiffOnSubset I n (Subtype.val ∘ f) ↔ ContMDiffOnSubset I n f := by
   classical
   refine ⟨fun hf x ↦ ?_, fun hf x ↦ ?_⟩
-  · obtain ⟨U, hU, g, hg, hgf⟩ := hf x
+  · -- A local extension into `M` takes values in the open set `V` near `x`, by continuity, and
+    -- there it is a local extension into `V`.
+    obtain ⟨U, hU, g, hg, hgf⟩ := hf x
     have hgx : g x ∈ V := by
       rw [hgf x (mem_of_mem_nhds hU)]
       exact (f x).2

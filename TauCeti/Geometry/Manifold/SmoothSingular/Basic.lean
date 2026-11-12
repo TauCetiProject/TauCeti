@@ -393,7 +393,7 @@ theorem coe_smoothSingularSubcomplexMap_app (hφ : ContMDiff I J ∞ φ) {k : Si
   (rfl)
 
 /-- For open sets `U ≤ V` of `M`, a singular simplex of `U` is smooth exactly when its image in
-`V` is: smoothness into an open submanifold is smoothness into the ambient manifold. -/
+`V` is. -/
 theorem smoothSingularSubcomplex_preimage_inclusion {U V : TopologicalSpace.Opens M} (h : U ≤ V) :
     (smoothSingularSubcomplex I V).preimage
         (TopCat.toSSet.map (TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion h,
@@ -402,10 +402,12 @@ theorem smoothSingularSubcomplex_preimage_inclusion {U V : TopologicalSpace.Open
   refine le_antisymm (fun k σ hσ ↦ ?_)
     (smoothSingularSubcomplex_le_preimage (contMDiff_inclusion h))
   rw [SSet.Subcomplex.preimage_obj, Set.mem_preimage, mem_smoothSingularSubcomplex_iff,
-    TopCat.toSSetObjEquiv_toSSet_map_app] at hσ
+    TopCat.toSSetObjEquiv_toSSet_map_app, ConcreteCategory.hom_ofHom, ContinuousMap.coe_comp,
+    ContinuousMap.coe_mk] at hσ
   rw [mem_smoothSingularSubcomplex_iff, ← ContMDiffOnSubset.subtypeVal_comp_iff]
   convert contMDiff_subtype_val.comp_contMDiffOnSubset hσ using 1
-  rfl
+  ext x
+  simp
 
 /-- The identity of `M` induces the identity of its smooth singular subcomplex. -/
 @[simp]
