@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.IceQuiver.Basic
+public import TauCeti.Data.Int.Cast.Basic
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
 
 import Mathlib.Tactic.Ring
@@ -19,7 +20,8 @@ these arrow counts directly. Its rectangular matrix is then proved to be matrix 
 
 ## References
 
-* S. Fomin and A. Zelevinsky, *Cluster algebras I: Foundations*, §4.
+* S. Fomin, L. Williams and A. Zelevinsky, *Introduction to Cluster Algebras. Chapters 1–3*,
+  [arXiv:1608.05735](https://arxiv.org/abs/1608.05735), Definition 2.1.2 and Lemma 2.7.3.
 -/
 
 public section
@@ -28,8 +30,8 @@ namespace TauCeti.IceQuiver
 
 variable {I K : Type*} {row : K ↪ I}
 
-/-- Ice-quiver mutation at a mutable vertex: reverse incident arrows, add the paths through
-that vertex, cancel two-cycles, and discard arrows between two frozen vertices. -/
+/-- Ice-quiver mutation at a mutable vertex: reverse incident arrows, add paths of length two
+through the mutated vertex, cancel two-cycles, and discard arrows between two frozen vertices. -/
 noncomputable def mutation (q : IceQuiver row) (k : K) : IceQuiver row := by
   classical
   refine
@@ -41,7 +43,7 @@ noncomputable def mutation (q : IceQuiver row) (k : K) : IceQuiver row := by
       noTwoCycles := ?_
       frozen := ?_ }
   · intro i
-    simp [q.noLoops]
+    simp
   · intro i j
     by_cases hf : i ∉ Set.range row ∧ j ∉ Set.range row
     · simp [hf.1, hf.2]
@@ -58,13 +60,8 @@ noncomputable def mutation (q : IceQuiver row) (k : K) : IceQuiver row := by
   · intro i j hi hj
     simp [hi, hj]
 
-/-- Mutation deletes arrows between frozen vertices. -/
-theorem mutation_arrows_frozen (q : IceQuiver row) (k : K) (i j : I)
-    (hi : i ∉ Set.range row) (hj : j ∉ Set.range row) :
-    (q.mutation k).arrows i j = 0 :=
-  (q.mutation k).frozen i j hi hj
-
-/-- Mutation reverses each arrow beginning at the mutated vertex. -/
+/-- Arrows beginning at the mutated vertex after mutation are the arrows ending at it before
+mutation. -/
 @[simp]
 theorem mutation_arrows_row (q : IceQuiver row) (k : K) (j : I) :
     (q.mutation k).arrows (row k) j = q.arrows j (row k) := by
@@ -73,7 +70,8 @@ theorem mutation_arrows_row (q : IceQuiver row) (k : K) (j : I) :
   have hf : ¬(row k ∉ Set.range row ∧ j ∉ Set.range row) := fun hf ↦ hf.1 h
   simp only [mutation, hf, ite_false, eq_self, true_or, ite_true]
 
-/-- Mutation reverses each arrow ending at the mutated vertex. -/
+/-- Arrows ending at the mutated vertex after mutation are the arrows beginning at it before
+mutation. -/
 @[simp]
 theorem mutation_arrows_col (q : IceQuiver row) (k : K) (i : I) :
     (q.mutation k).arrows i (row k) = q.arrows (row k) i := by
@@ -82,8 +80,19 @@ theorem mutation_arrows_col (q : IceQuiver row) (k : K) (i : I) :
   have hf : ¬(i ∉ Set.range row ∧ row k ∉ Set.range row) := fun hf ↦ hf.2 h
   simp only [mutation, hf, ite_false, eq_self, or_true, ite_true]
 
+/-- The incident-row formula for an unfrozen quiver. -/
+@[simp]
+theorem mutation_refl_arrows_row (q : IceQuiver (Function.Embedding.refl K)) (k j : K) :
+    (q.mutation k).arrows k j = q.arrows j k := q.mutation_arrows_row k j
+
+/-- The incident-column formula for an unfrozen quiver. -/
+@[simp]
+theorem mutation_refl_arrows_col (q : IceQuiver (Function.Embedding.refl K)) (k i : K) :
+    (q.mutation k).arrows i k = q.arrows k i := q.mutation_arrows_col k i
+
 /-- Away from the mutated vertex, retain the excess of forward arrows over reverse arrows
-after adding all paths of length two. At least one endpoint must be mutable. -/
+after adding all paths of length two through the mutated vertex. At least one endpoint must be
+mutable. -/
 theorem mutation_arrows_of_ne (q : IceQuiver row) (k : K) {i j : I}
     (hi : i ≠ row k) (hj : j ≠ row k)
     (hm : i ∈ Set.range row ∨ j ∈ Set.range row) :
@@ -94,13 +103,20 @@ theorem mutation_arrows_of_ne (q : IceQuiver row) (k : K) {i j : I}
   have hf : ¬(i ∉ Set.range row ∧ j ∉ Set.range row) := by tauto
   simp only [mutation, hf, hi, hj, false_or, ite_false]
 
-private theorem cast_sub_sub (a b : ℕ) :
-    ((a - b : ℕ) : ℤ) - ((b - a : ℕ) : ℤ) = (a : ℤ) - b := by omega
+/-- Away from the mutated vertex of an unfrozen quiver, add paths of length two through that
+vertex and cancel opposite arrows. -/
+theorem mutation_refl_arrows_of_ne (q : IceQuiver (Function.Embedding.refl K)) (k : K)
+    {i j : K} (hi : i ≠ k) (hj : j ≠ k) :
+    (q.mutation k).arrows i j =
+      (q.arrows i j + q.arrows i k * q.arrows k j) -
+        (q.arrows j i + q.arrows j k * q.arrows k i) :=
+  q.mutation_arrows_of_ne k hi hj (Or.inl ⟨i, rfl⟩)
 
 /-- Rectangular quiver matrices intertwine direct ice-quiver mutation and integer matrix
-mutation. The products in the matrix formula count paths through the mutable vertex. -/
+mutation. The products in the matrix formula count paths of length two through the mutated
+vertex. -/
 @[simp]
-theorem mutation_matrix [DecidableEq I] [DecidableEq K] (q : IceQuiver row) (k : K) :
+theorem matrix_mutation [DecidableEq I] [DecidableEq K] (q : IceQuiver row) (k : K) :
     (q.mutation k).matrix = matrixMutation row q.matrix k := by
   ext i j
   by_cases hi : i = row k
@@ -115,11 +131,26 @@ theorem mutation_matrix [DecidableEq I] [DecidableEq K] (q : IceQuiver row) (k :
     omega
   have hr : row j ≠ row k := fun h ↦ hj (row.injective h)
   rw [matrix_apply, mutation_arrows_of_ne q k hi hr (Or.inr ⟨j, rfl⟩),
-    mutation_arrows_of_ne q k hr hi (Or.inl ⟨j, rfl⟩), cast_sub_sub,
-    matrixMutation_apply_of_ne hi hj, matrix_posPart, matrix_posPart,
-    matrix_negPart, matrix_negPart, matrix_apply]
+    mutation_arrows_of_ne q k hr hi (Or.inl ⟨j, rfl⟩), Nat.cast_sub_sub,
+    matrixMutation_apply_of_ne hi hj, posPart_matrix, posPart_matrix,
+    negPart_matrix, negPart_matrix, matrix_apply]
   push_cast
   ring
+
+/-- Reconstructing the mutated raw matrix gives the directly mutated quiver. -/
+theorem mutation_ofMatrix [DecidableEq I] [DecidableEq K] (B : Matrix I K ℤ)
+    (hB : ∀ i j, B (row i) j = -B (row j) i) (k : K) :
+    (ofMatrix B hB).mutation k =
+      ofMatrix (matrixMutation row B k) (matrixMutation_skew hB k) := by
+  apply matrix_injective
+  simp
+
+/-- The inverse matrix bijection intertwines raw matrix mutation and quiver mutation. -/
+theorem mutation_matrixEquiv_symm [DecidableEq I] [DecidableEq K]
+    (B : {B : Matrix I K ℤ // ∀ i j, B (row i) j = -B (row j) i}) (k : K) :
+    (matrixEquiv.symm B).mutation k =
+      matrixEquiv.symm ⟨matrixMutation row B.val k, matrixMutation_skew B.property k⟩ := by
+  simpa only [matrixEquiv_symm_apply] using mutation_ofMatrix B.val B.property k
 
 /-- Quiver mutation is involutive, including the frozen-vertex deletion convention. -/
 @[simp]
@@ -135,13 +166,12 @@ theorem mutation_involutive (k : K) : Function.Involutive (fun q : IceQuiver row
 
 /-- The canonical symmetrizer-one exchange matrix commutes with quiver mutation. -/
 @[simp]
-theorem mutation_toExchangeMatrix [DecidableEq I] [DecidableEq K]
+theorem toExchangeMatrix_mutation [DecidableEq I] [DecidableEq K]
     (q : IceQuiver row) (k : K) :
     (q.mutation k).toExchangeMatrix = q.toExchangeMatrix.mutation k := by
   ext : 1
   · simp
-  · funext j
-    simp
+  · simp
 
 /-- Relabelling quiver vertices and mutable directions intertwines mutation. -/
 theorem mutation_reindex {I' K' : Type*} {row' : K' ↪ I'}
@@ -149,10 +179,8 @@ theorem mutation_reindex {I' K' : Type*} {row' : K' ↪ I'}
     (q : IceQuiver row) (k : K) :
     (reindex eI eK h q).mutation (eK k) = reindex eI eK h (q.mutation k) := by
   classical
-  apply matrix_injective
-  rw [mutation_matrix, reindex_matrix, reindex_matrix, mutation_matrix]
-  have h' (j : K') : eI.symm (row' j) = row (eK.symm j) := by
-    simp [Equiv.symm_apply_eq, h]
-  simpa using matrixMutation_submatrix eI.symm.injective eK.symm.injective h' q.matrix (eK k)
+  apply toExchangeMatrix_injective
+  simpa only [toExchangeMatrix_mutation, toExchangeMatrix_reindex] using
+    q.toExchangeMatrix.mutation_reindex eI eK h k
 
 end TauCeti.IceQuiver

@@ -15,12 +15,16 @@ with mutable vertices specified by an embedding. It has no loops, oriented two-c
 arrows between two frozen vertices. No finiteness of the vertex sets is required.
 
 The matrix convention is `bᵢₖ = qᵢₖ - qₖᵢ`, where a positive entry records arrows from
-the row vertex to the mutable column vertex. The matrix side retains only the raw matrix and
-skew-symmetry of its principal block, not an additional chosen symmetrizer.
+the row vertex to the mutable column vertex.
+The bijection `IceQuiver.matrixEquiv` identifies ice quivers with raw rectangular integer
+matrices whose principal block is skew-symmetric, without an additional chosen symmetrizer.
+`IceQuiver.toExchangeMatrix` supplies the canonical symmetrizer-one exchange matrix for
+skew-symmetric seeds with frozen variables, and `IceQuiver.reindex` relabels vertices compatibly.
 
 ## References
 
-* S. Fomin and A. Zelevinsky, *Cluster algebras I: Foundations*, §4.
+* S. Fomin, L. Williams and A. Zelevinsky, *Introduction to Cluster Algebras. Chapters 1–3*,
+  [arXiv:1608.05735](https://arxiv.org/abs/1608.05735), §§2.1, 2.6–2.7.
 -/
 
 public section
@@ -42,6 +46,8 @@ structure IceQuiver {I K : Type*} (row : K ↪ I) where
 
 namespace IceQuiver
 
+attribute [simp] noLoops
+
 variable {I K : Type*} {row : K ↪ I}
 
 /-- The rectangular integer matrix of an ice quiver, with columns indexed by mutable
@@ -58,6 +64,16 @@ theorem matrix_skew (q : IceQuiver row) (i j : K) :
   simp only [matrix_apply]
   omega
 
+/-- The mutable diagonal entries of a quiver matrix vanish. -/
+@[simp]
+theorem matrix_row_self (q : IceQuiver row) (k : K) : q.matrix (row k) k = 0 := by
+  simp [matrix_apply]
+
+/-- The diagonal entries of an unfrozen quiver matrix vanish. -/
+@[simp]
+theorem matrix_refl_self (q : IceQuiver (Function.Embedding.refl K)) (k : K) :
+    q.matrix k k = 0 := q.matrix_row_self k
+
 /-- Regard the quiver matrix as an exchange matrix with canonical symmetrizer one. This does
 not identify quivers with exchange matrices carrying arbitrary chosen symmetrizers. -/
 def toExchangeMatrix (q : IceQuiver row) : ExchangeMatrix row where
@@ -71,12 +87,12 @@ theorem toExchangeMatrix_matrix (q : IceQuiver row) : q.toExchangeMatrix.matrix 
   (rfl)
 
 @[simp]
-theorem toExchangeMatrix_symmetrizer (q : IceQuiver row) (k : K) :
-    q.toExchangeMatrix.symmetrizer k = 1 := (rfl)
+theorem toExchangeMatrix_symmetrizer (q : IceQuiver row) :
+    q.toExchangeMatrix.symmetrizer = 1 := (rfl)
 
 /-- The positive part of a quiver matrix entry is its forward arrow count. -/
 @[simp]
-theorem matrix_posPart (q : IceQuiver row) (i : I) (k : K) :
+theorem posPart_matrix (q : IceQuiver row) (i : I) (k : K) :
     (q.matrix i k)⁺ = (q.arrows i (row k) : ℤ) := by
   rcases Nat.mul_eq_zero.mp (q.noTwoCycles i (row k)) with h | h
   · simp [matrix_apply, h]
@@ -84,7 +100,7 @@ theorem matrix_posPart (q : IceQuiver row) (i : I) (k : K) :
 
 /-- The negative part of a quiver matrix entry is its reverse arrow count. -/
 @[simp]
-theorem matrix_negPart (q : IceQuiver row) (i : I) (k : K) :
+theorem negPart_matrix (q : IceQuiver row) (i : I) (k : K) :
     (q.matrix i k)⁻ = (q.arrows (row k) i : ℤ) := by
   rcases Nat.mul_eq_zero.mp (q.noTwoCycles i (row k)) with h | h
   · simp [matrix_apply, h]
@@ -118,31 +134,36 @@ theorem matrix_injective : Function.Injective (matrix (row := row)) := by
       rw [← q.toNat_neg_matrix j k, ← q'.toNat_neg_matrix j k, h]
     · rw [q.frozen i j hi hj, q'.frozen i j hi hj]
 
+@[simp]
+theorem matrix_inj {q q' : IceQuiver row} : q.matrix = q'.matrix ↔ q = q' :=
+  matrix_injective.eq_iff
+
+/-- The canonical exchange-matrix construction is injective. -/
+theorem toExchangeMatrix_injective : Function.Injective (toExchangeMatrix (row := row)) := by
+  intro q q' h
+  exact matrix_injective (congrArg ExchangeMatrix.matrix h)
+
+@[simp]
+theorem toExchangeMatrix_inj {q q' : IceQuiver row} :
+    q.toExchangeMatrix = q'.toExchangeMatrix ↔ q = q' := toExchangeMatrix_injective.eq_iff
+
 /-! ### Recovering a quiver from a rectangular matrix -/
 
-private noncomputable def completion (row : K ↪ I) (B : Matrix I K ℤ) (i j : I) : ℤ := by
-  classical
-  exact if hj : j ∈ Set.range row then B i (Classical.choose hj)
-    else if hi : i ∈ Set.range row then -B j (Classical.choose hi) else 0
+private noncomputable def completion (row : K ↪ I) (B : Matrix I K ℤ) (i j : I) : ℤ :=
+  Function.extend row (B i) (fun j ↦ Function.extend row (-B j ·) 0 i) j
 
 private theorem completion_col (B : Matrix I K ℤ) (i : I) (k : K) :
-    completion row B i (row k) = B i k := by
-  classical
-  have h : row k ∈ Set.range row := ⟨k, rfl⟩
-  simp only [completion, dite_eq_left h]
-  exact congrArg (B i) (row.injective (Classical.choose_spec h))
+    completion row B i (row k) = B i k :=
+  row.injective.extend_apply _ _ k
 
 private theorem completion_row (B : Matrix I K ℤ) (k : K) (j : I)
     (hj : j ∉ Set.range row) : completion row B (row k) j = -B j k := by
-  classical
-  have h : row k ∈ Set.range row := ⟨k, rfl⟩
-  simp only [completion, dite_eq_right hj, dite_eq_left h]
-  exact congrArg (fun k ↦ -B j k) (row.injective (Classical.choose_spec h))
+  rw [completion, Function.extend_apply' _ _ j hj, row.injective.extend_apply]
 
 private theorem completion_frozen (B : Matrix I K ℤ) (i j : I)
     (hi : i ∉ Set.range row) (hj : j ∉ Set.range row) : completion row B i j = 0 := by
-  classical
-  simp [completion, hi, hj]
+  rw [completion, Function.extend_apply' _ _ j hj, Function.extend_apply' _ _ i hi,
+    Pi.zero_apply]
 
 private theorem completion_skew (B : Matrix I K ℤ)
     (hB : ∀ i j, B (row i) j = -B (row j) i) (i j : I) :
@@ -183,12 +204,22 @@ theorem ofMatrix_arrows_col (B : Matrix I K ℤ)
     (ofMatrix B hB).arrows i (row k) = (B i k).toNat := by
   exact congrArg Int.toNat (completion_col B i k)
 
+/-- Without frozen vertices every arrow count is a nonnegative matrix entry.
+The skew hypothesis retains the form used by `ofMatrix`, rather than an unrestricted entry
+rewrite rule during contextual simplification. -/
+@[simp]
+theorem ofMatrix_refl_arrows (B : Matrix K K ℤ)
+    (hB : ∀ i j, B ((Function.Embedding.refl K) i) j =
+      -B ((Function.Embedding.refl K) j) i) (i j : K) :
+    (ofMatrix (row := Function.Embedding.refl K) B hB).arrows i j = (B i j).toNat :=
+  ofMatrix_arrows_col B hB i j
+
 /-- The backward arrows of the recovered quiver are the negative entries of `B`. -/
 @[simp]
 theorem ofMatrix_arrows_row (B : Matrix I K ℤ)
     (hB : ∀ i j, B (row i) j = -B (row j) i) (k : K) (i : I) :
     (ofMatrix B hB).arrows (row k) i = (-B i k).toNat := by
-  change (completion row B (row k) i).toNat = _
+  simp only [ofMatrix]
   rw [completion_skew B hB, completion_col]
 
 /-- The reconstructed quiver has exactly the original rectangular matrix. -/
@@ -213,7 +244,6 @@ noncomputable def matrixEquiv : IceQuiver row ≃
   left_inv q := q.ofMatrix_matrix
   right_inv B := by
     apply Subtype.ext
-    change (ofMatrix B.val B.property).matrix = B.val
     exact matrix_ofMatrix B.val B.property
 
 @[simp]
@@ -255,12 +285,36 @@ theorem reindex_arrows {I' K' : Type*} {row' : K' ↪ I'} (eI : I ≃ I') (eK : 
     (reindex eI eK h q).arrows i j = q.arrows (eI.symm i) (eI.symm j) := (rfl)
 
 /-- Quiver matrices commute with relabelling the mutable and ambient vertices. -/
-theorem reindex_matrix {I' K' : Type*} {row' : K' ↪ I'} (eI : I ≃ I') (eK : K ≃ K')
+@[simp]
+theorem matrix_reindex {I' K' : Type*} {row' : K' ↪ I'} (eI : I ≃ I') (eK : K ≃ K')
     (h : ∀ k, eI (row k) = row' (eK k)) (q : IceQuiver row) :
     (reindex eI eK h q).matrix = q.matrix.submatrix eI.symm eK.symm := by
   ext i k
   have hm : eI.symm (row' k) = row (eK.symm k) := by simp [Equiv.symm_apply_eq, h]
   simp only [matrix_apply, reindex_arrows, Matrix.submatrix_apply, hm]
+
+/-- Canonical exchange-matrix conversion commutes with compatible relabelling. -/
+@[simp]
+theorem toExchangeMatrix_reindex {I' K' : Type*} {row' : K' ↪ I'}
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (q : IceQuiver row) :
+    (reindex eI eK h q).toExchangeMatrix = ExchangeMatrix.reindex eI eK h q.toExchangeMatrix := by
+  ext : 1
+  · simp
+  · ext k
+    simp
+
+/-- Reconstruction from a raw matrix commutes with compatible relabelling. -/
+theorem reindex_ofMatrix {I' K' : Type*} {row' : K' ↪ I'}
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (B : Matrix I K ℤ) (hB : ∀ i j, B (row i) j = -B (row j) i) :
+    reindex eI eK h (ofMatrix B hB) = ofMatrix (B.submatrix eI.symm eK.symm)
+      (fun i j ↦ by
+        have hm (k : K') : eI.symm (row' k) = row (eK.symm k) := by
+          simp [Equiv.symm_apply_eq, h]
+        simpa only [Matrix.submatrix_apply, hm] using hB (eK.symm i) (eK.symm j)) := by
+  apply matrix_injective
+  simp
 
 @[simp]
 theorem reindex_refl : reindex (Equiv.refl I) (Equiv.refl K) (fun _ ↦ rfl) =
@@ -269,6 +323,7 @@ theorem reindex_refl : reindex (Equiv.refl I) (Equiv.refl K) (fun _ ↦ rfl) =
   rfl
 
 /-- Successive compatible relabellings compose. -/
+@[simp]
 theorem reindex_trans {I' K' I'' K'' : Type*} {row' : K' ↪ I'} {row'' : K'' ↪ I''}
     (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
     (eI' : I' ≃ I'') (eK' : K' ≃ K'') (h' : ∀ k, eI' (row' k) = row'' (eK' k)) :
@@ -276,6 +331,17 @@ theorem reindex_trans {I' K' I'' K'' : Type*} {row' : K' ↪ I'} {row'' : K'' �
       reindex (eI.trans eI') (eK.trans eK') (fun k ↦ by simp [h, h']) := by
   ext q i j
   simp
+
+/-- Successive compatible relabellings of a quiver compose. -/
+@[simp]
+theorem reindex_reindex {I' K' I'' K'' : Type*} {row' : K' ↪ I'} {row'' : K'' ↪ I''}
+    (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
+    (eI' : I' ≃ I'') (eK' : K' ≃ K'') (h' : ∀ k, eI' (row' k) = row'' (eK' k))
+    (q : IceQuiver row) :
+    reindex eI' eK' h' (reindex eI eK h q) =
+      reindex (eI.trans eI') (eK.trans eK') (fun k ↦ by simp [h, h']) q := by
+  ext i j
+  rfl
 
 @[simp]
 theorem reindex_symm {I' K' : Type*} {row' : K' ↪ I'} (eI : I ≃ I') (eK : K ≃ K')
