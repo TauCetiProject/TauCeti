@@ -6,14 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Binomial
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.RingTheory.Binomial
 
 /-!
-# Convergence of multichoose power series
+# Convergence of multichoose power series and the binomial error
 
 This file determines the exact unconditional summability domain of the power series with
 generalized multichoose coefficients and positive real parameter.  The result applies to both real
 and complex arguments.  These results supply the analytic criterion used to determine the exact
 integrability domain of the negative-binomial probability-generating function.
+
+It also bounds the error `(1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of the real binomial series
+after `K` terms by `C |t| ^ K` on every compact interval inside `(-1, ∞)`, for every real
+exponent `a`. Its derivative is `a` times the error for the exponent `a - 1` with one term fewer,
+so the bound follows from the mean value theorem by induction on `K`.
 
 ## Main declarations
 
@@ -23,6 +31,12 @@ integrability domain of the negative-binomial probability-generating function.
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
+* `TauCeti.binomialError` — the error `(1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of the
+  binomial series after `K` terms.
+* `TauCeti.hasDerivAt_binomialError` — the derivative of the error after `K + 1` terms is `a`
+  times the error for the exponent `a - 1` after `K` terms.
+* `TauCeti.exists_abs_binomialError_le` — the error after `K` terms is `O(|t| ^ K)` on every
+  interval `[l, u]` with `-1 < l`.
 -/
 
 public section
@@ -82,6 +96,74 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
   refine ⟨fun hs => not_le.1 fun hq => hnot (hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le)
     fun n => le_mul_of_one_le_right (hcoeff_pos n).le (one_le_pow₀ hq)), fun hq => ?_⟩
   exact (hasSum_multichoose_mul_geometric_of_abs_lt_one (by simpa using hq)).summable
+
+/-! ### The error of the real binomial series -/
+
+/-- The error `(1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of the binomial series after `K`
+terms. -/
+@[expose] noncomputable def binomialError (a : ℝ) (K : ℕ) (t : ℝ) : ℝ :=
+  (1 + t) ^ a - ∑ k ∈ Finset.range K, Ring.choose a k * t ^ k
+
+/-- The derivative of the binomial error is `a` times the error for the exponent `a - 1`, with one
+term fewer. -/
+theorem hasDerivAt_binomialError (a : ℝ) (K : ℕ) {t : ℝ} (ht : -1 < t) :
+    HasDerivAt (binomialError a (K + 1)) (a * binomialError (a - 1) K t) t := by
+  have h1 : HasDerivAt (fun t : ℝ ↦ (1 + t) ^ a) (a * (1 + t) ^ (a - 1)) t := by
+    simpa using ((hasDerivAt_id' t).const_add 1).rpow_const (p := a)
+      (Or.inl (ne_of_gt (by linarith : (0 : ℝ) < 1 + t)))
+  have h2 : HasDerivAt (fun t : ℝ ↦ ∑ k ∈ Finset.range (K + 1), Ring.choose a k * t ^ k)
+      (∑ k ∈ Finset.range K, a * Ring.choose (a - 1) k * t ^ k) t := by
+    have hsum : (fun t : ℝ ↦ ∑ k ∈ Finset.range (K + 1), Ring.choose a k * t ^ k) =
+        fun t ↦ ∑ k ∈ Finset.range K, Ring.choose a (k + 1) * t ^ (k + 1) + 1 := by
+      funext t
+      rw [Finset.sum_range_succ']
+      simp
+    rw [hsum]
+    refine (HasDerivAt.fun_sum fun k _ ↦ ?_).add_const 1
+    convert ((hasDerivAt_pow (k + 1) t).const_mul (Ring.choose a (k + 1))) using 1
+    rw [← Ring.succ_nsmul_choose_succ, nsmul_eq_mul]
+    push_cast
+    ring
+  refine (h1.sub h2).congr_deriv ?_
+  rw [binomialError, mul_sub, Finset.mul_sum]
+  simp [mul_assoc]
+
+/-- On every interval `[l, u]` with `-1 < l`, the binomial error after `K` terms is
+`O(|t| ^ K)`. -/
+theorem exists_abs_binomialError_le (a : ℝ) (K : ℕ) {l u : ℝ} (hl : -1 < l) :
+    ∃ C, 0 ≤ C ∧ ∀ t ∈ Icc l u, |binomialError a K t| ≤ C * |t| ^ K := by
+  induction K generalizing a l u with
+  | zero =>
+    obtain ⟨C, hC⟩ := (isCompact_Icc (a := l) (b := u)).exists_bound_of_continuousOn
+      (f := binomialError a 0) (by
+        refine ContinuousOn.sub ?_ continuousOn_const
+        exact (continuousOn_const.add continuousOn_id).rpow_const fun t ht ↦ Or.inl
+          (ne_of_gt (by linarith [ht.1] : (0 : ℝ) < 1 + t)))
+    refine ⟨max C 0, le_max_right _ _, fun t ht ↦ ?_⟩
+    rw [pow_zero, mul_one, ← Real.norm_eq_abs]
+    exact (hC t ht).trans (le_max_left _ _)
+  | succ K ih =>
+    -- The error vanishes at `0` and its derivative is `O(|t| ^ K)` between `0` and `t`.
+    obtain ⟨C, hC0, hC⟩ := ih (a - 1) (l := min l 0) (u := max u 0) (lt_min hl (by norm_num))
+    refine ⟨|a| * C, by positivity, fun t ht ↦ ?_⟩
+    have h0 : binomialError a (K + 1) 0 = 0 := by
+      simp [binomialError, Finset.sum_range_succ']
+    have hsub : uIcc 0 t ⊆ Icc (min l 0) (max u 0) :=
+      uIcc_subset_Icc ⟨min_le_right _ _, le_max_right _ _⟩
+        ⟨min_le_of_left_le ht.1, le_max_of_le_left ht.2⟩
+    have hmvt := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
+      (f := binomialError a (K + 1)) (C := |a| * C * |t| ^ K)
+      (fun τ hτ ↦ (hasDerivAt_binomialError a K
+        ((lt_min hl (by norm_num)).trans_le (hsub hτ).1)).hasDerivWithinAt)
+      (fun τ hτ ↦ by
+        rw [Real.norm_eq_abs, abs_mul, mul_assoc]
+        gcongr
+        refine (hC τ (hsub hτ)).trans (mul_le_mul_of_nonneg_left ?_ hC0)
+        exact pow_le_pow_left₀ (abs_nonneg _) (by simpa using abs_sub_left_of_mem_uIcc hτ) K)
+      (convex_uIcc 0 t) left_mem_uIcc right_mem_uIcc
+    rw [h0, sub_zero, Real.norm_eq_abs, sub_zero, Real.norm_eq_abs] at hmvt
+    rw [pow_succ]
+    linarith
 
 end TauCeti
 

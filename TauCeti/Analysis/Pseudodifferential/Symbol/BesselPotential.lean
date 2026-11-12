@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 public import Mathlib.RingTheory.Binomial
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.RingTheory.Binomial
 
@@ -39,8 +40,8 @@ Write `u = ‖ξ / 2π‖ ^ 2`, `a = s / 2` and, for a frequency cutoff `χ`,
 
 for the remainder after the first `K` nonzero terms. Where `‖ξ‖ ≥ 2π`, so that `u ≥ 1`, it equals
 `u ^ a e(1 / u)` with the error `e(t) = (1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of the binomial
-series, and `|e(t)| ≤ C t ^ K` on `[0, 1]`: since `e' = a e_{a - 1}` with one term fewer, this
-follows from the mean value theorem by induction on `K`. Hence `|r_a(ξ)| ≤ C ⟨ξ⟩ ^ (2a - 2K)`.
+series (`TauCeti.binomialError`), and `|e(t)| ≤ C t ^ K` on `[0, 1]`
+(`TauCeti.exists_abs_binomialError_le`). Hence `|r_a(ξ)| ≤ C ⟨ξ⟩ ^ (2a - 2K)`.
 For the derivatives, the absorption identities of the binomial coefficients give
 
 `∂ⱼ r_a = 2 (2π)⁻² a ξⱼ r_{a - 1}` at frequencies of norm greater than `2`,
@@ -69,69 +70,6 @@ open scoped ContDiff
 namespace TauCeti
 
 variable {n : ℕ} {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-! ### The binomial series -/
-
-/-- The error `(1 + t) ^ a - ∑_{k<K} (a choose k) t ^ k` of the binomial series after `K`
-terms. -/
-private def binomialError (a : ℝ) (K : ℕ) (t : ℝ) : ℝ :=
-  (1 + t) ^ a - ∑ k ∈ Finset.range K, Ring.choose a k * t ^ k
-
-/-- The derivative of the binomial error is `a` times the error for the exponent `a - 1`, with one
-term fewer. -/
-private theorem hasDerivAt_binomialError (a : ℝ) (K : ℕ) {t : ℝ} (ht : -1 < t) :
-    HasDerivAt (binomialError a (K + 1)) (a * binomialError (a - 1) K t) t := by
-  have h1 : HasDerivAt (fun t : ℝ ↦ (1 + t) ^ a) (a * (1 + t) ^ (a - 1)) t := by
-    simpa using ((hasDerivAt_id' t).const_add 1).rpow_const (p := a)
-      (Or.inl (ne_of_gt (by linarith : (0 : ℝ) < 1 + t)))
-  have h2 : HasDerivAt (fun t : ℝ ↦ ∑ k ∈ Finset.range (K + 1), Ring.choose a k * t ^ k)
-      (∑ k ∈ Finset.range K, a * Ring.choose (a - 1) k * t ^ k) t := by
-    have hsum : (fun t : ℝ ↦ ∑ k ∈ Finset.range (K + 1), Ring.choose a k * t ^ k) =
-        fun t ↦ ∑ k ∈ Finset.range K, Ring.choose a (k + 1) * t ^ (k + 1) + 1 := by
-      funext t
-      rw [Finset.sum_range_succ']
-      simp
-    rw [hsum]
-    refine (HasDerivAt.fun_sum fun k _ ↦ ?_).add_const 1
-    convert ((hasDerivAt_pow (k + 1) t).const_mul (Ring.choose a (k + 1))) using 1
-    rw [← Ring.succ_nsmul_choose_succ, nsmul_eq_mul]
-    push_cast
-    ring
-  refine (h1.sub h2).congr_deriv ?_
-  rw [binomialError, mul_sub, Finset.mul_sum]
-  simp [mul_assoc]
-
-/-- The binomial error after `K` terms is `O(t ^ K)` on `[0, 1]`. -/
-private theorem exists_abs_binomialError_le (K : ℕ) (a : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ t ∈ Icc (0 : ℝ) 1, |binomialError a K t| ≤ C * t ^ K := by
-  induction K generalizing a with
-  | zero =>
-    obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-      (f := binomialError a 0) (by
-        refine ContinuousOn.sub ?_ continuousOn_const
-        exact (continuousOn_const.add continuousOn_id).rpow_const fun t ht ↦ Or.inl
-          (ne_of_gt (by linarith [ht.1] : (0 : ℝ) < 1 + t)))
-    refine ⟨max C 0, le_max_right _ _, fun t ht ↦ ?_⟩
-    rw [pow_zero, mul_one, ← Real.norm_eq_abs]
-    exact (hC t ht).trans (le_max_left _ _)
-  | succ K ih =>
-    -- The error vanishes at `0` and its derivative is `O(t ^ K)`.
-    obtain ⟨C, hC0, hC⟩ := ih (a - 1)
-    refine ⟨|a| * C, by positivity, fun t ht ↦ ?_⟩
-    have h0 : binomialError a (K + 1) 0 = 0 := by
-      simp [binomialError, Finset.sum_range_succ']
-    have hmvt := norm_image_sub_le_of_norm_deriv_le_segment' (f := binomialError a (K + 1))
-      (C := |a| * C * t ^ K) (a := 0) (b := t)
-      (fun τ hτ ↦ (hasDerivAt_binomialError a K (by linarith [hτ.1])).hasDerivWithinAt)
-      (fun τ hτ ↦ by
-        rw [Real.norm_eq_abs, abs_mul, mul_assoc]
-        gcongr
-        refine (hC τ ⟨hτ.1, hτ.2.le.trans ht.2⟩).trans ?_
-        gcongr
-        exacts [hτ.1, hτ.2.le]) t ⟨ht.1, le_rfl⟩
-    rw [h0, sub_zero, Real.norm_eq_abs, sub_zero] at hmvt
-    rw [pow_succ]
-    linarith
 
 /-! ### The remainders of the expansion -/
 
@@ -234,10 +172,11 @@ private theorem exists_norm_besselRem_le (χ : FrequencyCutoff (CoordinateSpace 
     (K : ℕ) :
     ∃ C, ∀ ξ : CoordinateSpace n, 2 * π < ‖ξ‖ →
       ‖besselRem χ a K ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (a - K) := by
-  obtain ⟨C, hC0, hC⟩ := exists_abs_binomialError_le K a
-  set κ : ℝ := (2 * π)⁻¹ ^ 2
-  have hκ : 0 < κ := by positivity
-  refine ⟨C * max (κ ^ (a - K)) ((κ / 2) ^ (a - K)), fun ξ hξ ↦ ?_⟩
+  obtain ⟨C, hC0, hC⟩ := exists_abs_binomialError_le a K (l := 0) (u := 1) (by norm_num)
+  set p : ℝ := a - K
+  obtain ⟨C', hC'⟩ := exists_one_add_norm_smul_sq_rpow_le (E := CoordinateSpace n)
+    (inv_ne_zero (by positivity : (2 * π : ℝ) ≠ 0)) p
+  refine ⟨C * (2 ^ |p| * C'), fun ξ hξ ↦ ?_⟩
   have h2π : 2 ≤ 2 * π := by linarith [Real.two_le_pi]
   have hu := besselSq_pos (norm_pos_iff.1 (by linarith) : ξ ≠ 0)
   have hu1 : 1 ≤ besselSq ξ := by
@@ -245,36 +184,30 @@ private theorem exists_norm_besselRem_le (χ : FrequencyCutoff (CoordinateSpace 
     refine one_le_pow₀ ?_
     rw [inv_mul_eq_div, le_div_iff₀ (by positivity)]
     linarith
-  -- Once `‖ξ‖ ≥ 1`, `u = κ ‖ξ‖ ^ 2` is comparable with `1 + ‖ξ‖ ^ 2`.
-  have hlow : κ / 2 * (1 + ‖ξ‖ ^ 2) ≤ besselSq ξ := by
-    rw [besselSq_eq]
-    nlinarith [hκ, show (1 : ℝ) ≤ ‖ξ‖ ^ 2 by nlinarith]
-  have hup : besselSq ξ ≤ κ * (1 + ‖ξ‖ ^ 2) := by
-    rw [besselSq_eq]
-    nlinarith [hκ]
-  have hpow : besselSq ξ ^ (a - K) ≤
-      max (κ ^ (a - K)) ((κ / 2) ^ (a - K)) * (1 + ‖ξ‖ ^ 2) ^ (a - K) := by
-    rcases le_total 0 (a - K) with hp | hp
-    · calc besselSq ξ ^ (a - K) ≤ (κ * (1 + ‖ξ‖ ^ 2)) ^ (a - K) :=
-            Real.rpow_le_rpow hu.le hup hp
-        _ = κ ^ (a - K) * (1 + ‖ξ‖ ^ 2) ^ (a - K) := Real.mul_rpow hκ.le (by positivity)
-        _ ≤ _ := by gcongr; exact le_max_left _ _
-    · calc besselSq ξ ^ (a - K) ≤ (κ / 2 * (1 + ‖ξ‖ ^ 2)) ^ (a - K) :=
-            Real.rpow_le_rpow_of_nonpos (by positivity) hlow hp
-        _ = (κ / 2) ^ (a - K) * (1 + ‖ξ‖ ^ 2) ^ (a - K) :=
-            Real.mul_rpow (by positivity) (by positivity)
-        _ ≤ _ := by gcongr; exact le_max_right _ _
+  -- Since `u ≥ 1`, `u` is comparable with `1 + u = 1 + ‖(2π)⁻¹ • ξ‖ ^ 2`.
+  have hpow : besselSq ξ ^ p ≤ 2 ^ |p| * (1 + besselSq ξ) ^ p := by
+    rcases le_total 0 p with hp | hp
+    · calc besselSq ξ ^ p ≤ (1 + besselSq ξ) ^ p := Real.rpow_le_rpow hu.le (by linarith) hp
+        _ ≤ _ := le_mul_of_one_le_left (by positivity) (Real.one_le_rpow (by norm_num)
+            (abs_nonneg _))
+    · calc besselSq ξ ^ p ≤ ((1 + besselSq ξ) / 2) ^ p :=
+            Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hp
+        _ = _ := by
+            rw [Real.div_rpow (by positivity) (by norm_num), abs_of_nonpos hp,
+              Real.rpow_neg (by norm_num), div_eq_inv_mul]
   have he := hC (besselSq ξ)⁻¹ ⟨by positivity, inv_le_one_of_one_le₀ hu1⟩
+  rw [abs_of_pos (inv_pos.2 hu)] at he
   rw [Real.norm_eq_abs, besselRem_eq_mul_binomialError χ a K (by linarith), abs_mul,
     abs_of_pos (Real.rpow_pos_of_pos hu a)]
   calc besselSq ξ ^ a * |binomialError a K (besselSq ξ)⁻¹|
       ≤ besselSq ξ ^ a * (C * (besselSq ξ)⁻¹ ^ K) := by gcongr
-    _ = C * besselSq ξ ^ (a - K) := by
+    _ = C * besselSq ξ ^ p := by
         rw [Real.rpow_sub hu, Real.rpow_natCast, inv_pow, div_eq_mul_inv]
         ring
-    _ ≤ _ := by
-        rw [mul_assoc]
+    _ ≤ C * (2 ^ |p| * (C' * (1 + ‖ξ‖ ^ 2) ^ p)) := by
         gcongr
+        exact hpow.trans (mul_le_mul_of_nonneg_left (hC' ξ) (by positivity))
+    _ = _ := by ring
 
 /-- The derivative bounds `‖D^k r_a(ξ)‖ ≤ C ⟨ξ⟩ ^ (2a - 2K - k)` of the remainder after `K`
 terms. -/
