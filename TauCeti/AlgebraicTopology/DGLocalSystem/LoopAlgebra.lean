@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.GradedAlgebra.Trivial
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
 # The augmented DG algebra of chains on the Moore loop space
@@ -54,6 +55,7 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
   sees the component of dimension zero, and it is surjective.
 * `TauCeti.augmentation_loopChainToGroupAlgebra`: it is compatible with the augmentations.
+* `TauCeti.loopChainToGroupAlgebra_koszulTwist`: it is invariant under the Koszul sign twists.
 * `TauCeti.groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom`: the basis element of the
   class of a Moore loop goes to the cohomology class of its point chain.
 * `TauCeti.groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero`: the group ring lands in
@@ -271,6 +273,24 @@ theorem augmentation_loopChainToGroupAlgebra (a : loopChainAlgebra B b R) :
           _root_.MonoidAlgebra.augmentationLinearMap_apply, hy, smul_eq_mul]
       | ofCube c => simp
     | succ k => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The degree-zero ring map is invariant under the Koszul sign twists, which only change the
+signs of chains of nonzero dimension. -/
+@[simp]
+theorem loopChainToGroupAlgebra_koszulTwist (q : ℤ) (a : loopChainAlgebra B b R) :
+    loopChainToGroupAlgebra B b R
+        ((InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist
+          q a) =
+      loopChainToGroupAlgebra B b R a := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    rw [← DirectSum.lof_eq_of R, InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _
+      (cubicalChainLof_mem _ R y), map_smul]
+    cases n with
+    | zero => simp
+    | succ k => rw [loopChainToGroupAlgebra_lof_succ, smul_zero]
   | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The degree-zero ring map kills boundaries. -/

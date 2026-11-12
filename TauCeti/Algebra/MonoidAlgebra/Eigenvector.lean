@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.GroupTheory.OrderOfElement
 
+import Mathlib.Algebra.MonoidAlgebra.Opposite
+
 /-!
 # Eigenvectors of right multiplication by a monoid element
 
@@ -19,7 +21,8 @@ unity of order dividing `orderOf g`. The equality `c ^ orderOf g = 1` also holds
 infinite order, but is then vacuous because `orderOf g = 0`. In characteristic zero the only
 natural number that is such a root of unity is `1`. At the other extreme, an element of infinite
 order has no nonzero eigenvector of eigenvalue `1`: the support of such an eigenvector would be
-stable under right translation by `g`, hence infinite.
+stable under right translation by `g`, hence infinite. Over a ring, it follows that `g - 1` is
+then not a zero divisor of `R[G]`.
 
 ## Main statements
 
@@ -30,6 +33,9 @@ stable under right translation by `g`, hence infinite.
 * `TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder`: if `g` has infinite order, then
   `x * g = x` forces `x = 0`; its additive form is
   `TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder`.
+* `TauCeti.isRegular_single_sub_one_of_not_isOfFinOrder`: over a ring, if `g` has infinite order,
+  then `g - 1` is regular; for `G = ℤ` this says that `t - 1` is not a zero divisor in
+  `R[t, t⁻¹]`.
 -/
 
 public section
@@ -110,5 +116,35 @@ theorem eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder {x : MonoidAlgebra R G
   simpa [hpow n] using hy
 
 end CancelMonoid
+
+section Ring
+
+variable {R : Type*} [Ring R] {G : Type*} [CancelMonoid G]
+
+/-- Over a ring, right multiplication by `g - 1` is injective when `g` has infinite order. -/
+@[to_additive (dont_translate := R) isRightRegular_single_sub_one_of_not_isOfFinAddOrder
+  /-- Over a ring, multiplication by `e^a - 1` on the right is injective when `a` has infinite
+  order. -/]
+theorem isRightRegular_single_sub_one_of_not_isOfFinOrder {g : G} (hg : ¬IsOfFinOrder g) :
+    IsRightRegular (single g (1 : R) - 1) := fun x y hxy ↦ sub_eq_zero.mp <|
+  eq_zero_of_mul_single_eq_self_of_not_isOfFinOrder hg <| by
+    rw [← sub_eq_zero, ← mul_sub_one, sub_mul]
+    exact sub_eq_zero.mpr hxy
+
+/-- Over a ring, `g - 1` is regular when `g` has infinite order: left regularity is right
+regularity in the opposite monoid algebra `Rᵐᵒᵖ[Gᵐᵒᵖ]`. -/
+@[to_additive (dont_translate := R) isRegular_single_sub_one_of_not_isOfFinAddOrder
+  /-- Over a ring, `e^a - 1` is regular when `a` has infinite order. -/]
+theorem isRegular_single_sub_one_of_not_isOfFinOrder {g : G} (hg : ¬IsOfFinOrder g) :
+    IsRegular (single g (1 : R) - 1) := by
+  refine ⟨fun x y hxy ↦ ?_, isRightRegular_single_sub_one_of_not_isOfFinOrder hg⟩
+  have hg' : ¬IsOfFinOrder (MulOpposite.op g) := by
+    simpa [isOfFinOrder_iff_pow_eq_one, ← MulOpposite.op_pow] using hg
+  have h := congrArg (fun z ↦ MonoidAlgebra.opRingEquiv (MulOpposite.op z)) hxy
+  simp only [MulOpposite.op_mul, map_mul, MulOpposite.op_sub, map_sub, opRingEquiv_single,
+    MulOpposite.op_one, map_one] at h
+  simpa using isRightRegular_single_sub_one_of_not_isOfFinOrder hg' h
+
+end Ring
 
 end TauCeti
