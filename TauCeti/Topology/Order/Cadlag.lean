@@ -23,7 +23,7 @@ namespace TauCeti
 
 /-- A single step, with the right-hand value at the jump, is càdlàg. -/
 theorem isCadlag_ite_le {ι E : Type*} [LinearOrder ι] [TopologicalSpace ι]
-    [OrderTopology ι] [TopologicalSpace E] (a : ι) (x y : E) :
+    [OrderClosedTopology ι] [TopologicalSpace E] (a : ι) (x y : E) :
     IsCadlag (fun t => if a ≤ t then x else y) := by
   constructor
   · intro t
