@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
+public import Mathlib.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Scalar actions and pointwise norms on `C₀(α, β)`
@@ -25,6 +27,9 @@ needed for scalar actions beyond normed fields:
   arbitrary semiring of scalars;
 * `ZeroAtInftyContinuousMap.compLeft`: a continuous linear map `u : E →L[R] F` with a uniform
   bound `‖u x‖ ≤ C * ‖x‖` acts pointwise as a continuous linear map `C₀(α, E) →L[R] C₀(α, F)`;
+* `ZeroAtInftyContinuousMap.compLeftFamily`: more generally, a strongly continuous family
+  `u : α → E →L[𝕜] F` of operators with a uniform operator-norm bound acts pointwise by
+  `f ↦ (x ↦ u x (f x))`;
 * `ZeroAtInftyContinuousMap.congrLeft`: a homeomorphism `α ≃ₜ β` induces a linear isometry
   equivalence `C₀(α, E) ≃ₗᵢ[R] C₀(β, E)`.
 
@@ -204,5 +209,52 @@ theorem congrLeft_compLeft (e : α ≃ₜ β) (u : E →L[R] F) (hu : ∃ C, ∀
     (f : C₀(α, E)) : congrLeft R F e (compLeft u hu f) = compLeft u hu (congrLeft R E e f) := (rfl)
 
 end Comparison
+
+section Family
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Pointwise action of a strongly continuous family.** A family `u : α → E →L[𝕜] F` of
+operators that is strongly continuous (`x ↦ u x e` is continuous for every `e`) and uniformly
+bounded in operator norm acts on `C₀(α, E)` by `f ↦ (x ↦ u x (f x))`, giving a continuous linear
+map `C₀(α, E) →L[𝕜] C₀(α, F)`. For a constant family this is the action `compLeft`. -/
+def compLeftFamily (u : α → E →L[𝕜] F) (hu : ∀ e, Continuous fun x => u x e)
+    (hC : ∃ C, ∀ x, ‖u x‖ ≤ C) : C₀(α, E) →L[𝕜] C₀(α, F) :=
+  let L : C₀(α, E) →ₗ[𝕜] C₀(α, F) :=
+    { toFun f :=
+        { toFun x := u x (f x)
+          continuous_toFun := by
+            obtain ⟨C, hC⟩ := hC
+            exact ContinuousLinearMap.continuous_apply_of_norm_le hu hC (map_continuous f)
+          zero_at_infty' := by
+            obtain ⟨C, hC⟩ := hC
+            refine squeeze_zero_norm (fun x => (u x).le_of_opNorm_le (hC x) (f x)) ?_
+            simpa using (zero_at_infty f).norm.const_mul C }
+      map_add' _ _ := by ext; simp
+      map_smul' _ _ := by ext; simp }
+  { L with
+    cont := by
+      obtain ⟨C, hC⟩ := hC
+      refine AddMonoidHomClass.continuous_of_bound L (max C 0) fun f ↦
+        (norm_le (by positivity)).2 fun x ↦ ((u x).le_of_opNorm_le (hC x) (f x)).trans ?_
+      exact mul_le_mul (le_max_left C 0) (norm_coe_le_norm f x) (norm_nonneg _)
+        (le_max_right C 0) }
+
+/-- `compLeftFamily u hu hC` applies `u x` at each point `x`. -/
+@[simp]
+theorem compLeftFamily_apply (u : α → E →L[𝕜] F) (hu : ∀ e, Continuous fun x => u x e)
+    (hC : ∃ C, ∀ x, ‖u x‖ ≤ C) (f : C₀(α, E)) (x : α) :
+    compLeftFamily u hu hC f x = u x (f x) := (rfl)
+
+/-- A nonnegative uniform bound `C` for the family `u` is also a bound for its pointwise
+action. -/
+theorem norm_compLeftFamily_apply_le (u : α → E →L[𝕜] F) (hu : ∀ e, Continuous fun x => u x e)
+    (hC : ∃ C, ∀ x, ‖u x‖ ≤ C) {C : ℝ} (hC₀ : 0 ≤ C) (hCu : ∀ x e, ‖u x e‖ ≤ C * ‖e‖)
+    (f : C₀(α, E)) : ‖compLeftFamily u hu hC f‖ ≤ C * ‖f‖ :=
+  (norm_le (by positivity)).2 fun x ↦
+    (hCu x (f x)).trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm f x) hC₀)
+
+end Family
 
 end ZeroAtInftyContinuousMap

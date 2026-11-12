@@ -27,7 +27,10 @@ spaces. It lets an evaluation `T i (g i)` pass to the limit when the operators `
 uniformly bounded, their values at the limiting argument converge, and the arguments `g i` converge.
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
-`StronglyContinuousGroup.tendsto_apply`.
+`StronglyContinuousGroup.tendsto_apply`. Consequently a strongly continuous, uniformly bounded
+family of operators `T a` sends a continuous function `f` to the continuous function
+`a ↦ T a (f a)` (`ContinuousLinearMap.continuousOn_apply_of_norm_le`,
+`ContinuousLinearMap.continuous_apply_of_norm_le`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -158,6 +161,22 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
       exact (T i).le_of_opNorm_le hi _
     · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
   simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+
+/-- A family of operators `T a` that is strongly continuous on `s` and uniformly bounded there
+sends a function continuous on `s` to a function continuous on `s`: `a ↦ T a (f a)`. -/
+theorem continuousOn_apply_of_norm_le {α : Type*} [TopologicalSpace α] {T : α → X →L[𝕜] Y}
+    {f : α → X} {s : Set α} {C : ℝ} (hT : ∀ x, ContinuousOn (fun a => T a x) s)
+    (hC : ∀ a ∈ s, ‖T a‖ ≤ C) (hf : ContinuousOn f s) : ContinuousOn (fun a => T a (f a)) s :=
+  fun a ha => tendsto_apply_of_eventually_norm_le (eventually_mem_nhdsWithin.mono hC)
+    (hT (f a) a ha) (hf a ha)
+
+/-- A strongly continuous, uniformly bounded family of operators `T a` sends a continuous
+function `f` to the continuous function `a ↦ T a (f a)`. -/
+theorem continuous_apply_of_norm_le {α : Type*} [TopologicalSpace α] {T : α → X →L[𝕜] Y}
+    {f : α → X} {C : ℝ} (hT : ∀ x, Continuous fun a => T a x) (hC : ∀ a, ‖T a‖ ≤ C)
+    (hf : Continuous f) : Continuous fun a => T a (f a) :=
+  continuousOn_univ.1 <| continuousOn_apply_of_norm_le (fun x => (hT x).continuousOn)
+    (fun a _ => hC a) hf.continuousOn
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
