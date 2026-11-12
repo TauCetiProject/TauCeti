@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Compactness.Parameter
+public import TauCeti.Geometry.Symplectic.Floer.Compactness
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Capped
 
 /-!

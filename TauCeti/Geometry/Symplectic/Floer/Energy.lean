@@ -312,18 +312,6 @@ theorem hamiltonianOneForm_apply (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ →
       v.1 • ω.hamiltonianVectorField (Ks z) x + v.2 • ω.hamiltonianVectorField (Kt z) x :=
   (rfl)
 
-/-- On an open set of `(ℝ × ℝ) × V`, the Hamiltonian one-form of a jointly `C^(n+1)` perturbation
-is jointly `Cⁿ`. -/
-theorem contDiffOn_hamiltonianOneForm (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
-    {W : Set ((ℝ × ℝ) × V)} {n : WithTop ℕ∞} (hW : IsOpen W)
-    (hKs : ContDiffOn ℝ (n + 1) (uncurry Ks) W) (hKt : ContDiffOn ℝ (n + 1) (uncurry Kt) W) :
-    ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt p.1 p.2) W := by
-  have hX {K : ℝ × ℝ → V → ℝ} (hK : ContDiffOn ℝ (n + 1) (uncurry K) W) :
-      ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianVectorField (K p.1) p.2) W :=
-    fun p hp ↦ (ω.contDiffAt_hamiltonianVectorField_uncurry
-      ((hK p hp).contDiffAt (hW.mem_nhds hp))).contDiffWithinAt
-  exact (contDiffOn_const.smulRight (hX hKs)).add (contDiffOn_const.smulRight (hX hKt))
-
 /-- On an open set of `P × ((ℝ × ℝ) × V)`, the Hamiltonian one-form of a perturbation depending
 jointly `C^(n+1)` on a parameter `p ∈ P`, the domain point and the target point is `C^n` jointly in
 all three. -/
@@ -354,6 +342,18 @@ theorem contDiffOn_hamiltonianOneForm_parameter {P : Type*} [NormedAddCommGroup 
     ((contDiffOn_const (c := ContinuousLinearMap.snd ℝ ℝ ℝ)).smulRight (hX hKt))).congr
     fun q _ ↦ ?_
   ext <;> simp [hamiltonianOneForm_apply]
+
+/-- On an open set of `(ℝ × ℝ) × V`, the Hamiltonian one-form of a jointly `C^(n+1)` perturbation
+is jointly `Cⁿ`. -/
+theorem contDiffOn_hamiltonianOneForm (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {W : Set ((ℝ × ℝ) × V)} {n : WithTop ℕ∞} (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ (n + 1) (uncurry Ks) W) (hKt : ContDiffOn ℝ (n + 1) (uncurry Kt) W) :
+    ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt p.1 p.2) W :=
+  -- The constant family over the parameter space `ℝ`, at the parameter `0`.
+  (ω.contDiffOn_hamiltonianOneForm_parameter (P := ℝ) (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt)
+    (hW.preimage continuous_snd) (hKs.comp contDiff_snd.contDiffOn (mapsTo_preimage _ _))
+    (hKt.comp contDiff_snd.contDiffOn (mapsTo_preimage _ _))).comp
+    (contDiff_const (c := (0 : ℝ)).prodMk contDiff_id).contDiffOn fun _ hp ↦ hp
 
 /-- The perturbed derivative is `du - X_K(u)`. -/
 theorem perturbedFDeriv_eq_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
