@@ -110,6 +110,7 @@ noncomputable def negativeExtend : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] 
     Function.ExtendByZero.linearMap ℝ ℝ Subtype.val
 
 /-- The coordinates of negative weight of `φ.negativeExtend c` are `c`. -/
+@[simp]
 theorem coord_negativeExtend_of_weight_neg (c : {i // φ.weight i < 0} → ℝ)
     (i : {i // φ.weight i < 0}) : φ.coord (φ.negativeExtend c) i = c i := by
   simp [negativeExtend, Function.ExtendByZero.linearMap_apply_of_injective ℝ

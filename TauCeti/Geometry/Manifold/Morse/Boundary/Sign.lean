@@ -233,6 +233,7 @@ theorem trajectorySign_eq_one_or_eq_neg_one_of_bijective {y : M}
   split_ifs <;> simp
 
 /-- **Reversing the orientation at the source reverses the sign.** -/
+@[simp]
 theorem trajectorySign_neg_left (y : M) :
     hX.trajectorySign φp φq (-op) oq hpq y = -hX.trajectorySign φp φq op oq hpq y := by
   by_cases h : Bijective (hX.trajectoryComparison φp φq y)
@@ -244,6 +245,7 @@ theorem trajectorySign_neg_left (y : M) :
   · rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h, neg_zero]
 
 /-- **Reversing the orientation at the target reverses the sign.** -/
+@[simp]
 theorem trajectorySign_neg_right (y : M) :
     hX.trajectorySign φp φq op (-oq) hpq y = -hX.trajectorySign φp φq op oq hpq y := by
   by_cases h : Bijective (hX.trajectoryComparison φp φq y)
@@ -254,6 +256,18 @@ theorem trajectorySign_neg_right (y : M) :
     · simp [Module.Ray.ne_neg_self]
     · simp [(Module.Ray.ne_neg_self _).symm]
   · rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h, neg_zero]
+
+/-- Reversing the orientation at the source reverses the signed count. -/
+@[simp]
+theorem signedTrajectoryCount_neg_left :
+    hX.signedTrajectoryCount φp φq (-op) oq hpq = -hX.signedTrajectoryCount φp φq op oq hpq := by
+  simp only [signedTrajectoryCount_def, trajectorySign_neg_left, finsum_neg_distrib]
+
+/-- Reversing the orientation at the target reverses the signed count. -/
+@[simp]
+theorem signedTrajectoryCount_neg_right :
+    hX.signedTrajectoryCount φp φq op (-oq) hpq = -hX.signedTrajectoryCount φp φq op oq hpq := by
+  simp only [signedTrajectoryCount_def, trajectorySign_neg_right, finsum_neg_distrib]
 
 variable (hφp : ∀ y ∈ φp.toChart.source,
     φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
