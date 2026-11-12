@@ -492,9 +492,9 @@ theorem proj_map_discBundleRelCWComplex {x : Fin m → ℝ} (hx : x ∈ closedBa
   have hy := ((Fin.mem_closedBall_iff_appendIsometryOfEq_symm h).1 hx).1
   exact congrArg TotalSpace.proj (coe_discCellFun_of_mem (E := E) j h hx hy)
 
-/-- The characteristic maps of the cells of the disc bundle `D(E)` read the last `r` coordinates
-as a fibre vector, through the radial homeomorphism of the sup-norm and Euclidean unit balls of
-`ℝʳ` followed by a linear isometry onto the fibre. -/
+/-- On the closed unit ball, the fibre vector of the image of a point under a characteristic map
+of the disc bundle `D(E)` has the norm of the radial image `ρ z` of its last `r` coordinates `z`,
+where `ρ` is the radial homeomorphism of the sup-norm and Euclidean unit balls of `ℝʳ`. -/
 theorem norm_map_discBundleRelCWComplex {x : Fin m → ℝ} (hx : x ∈ closedBall 0 1) :
     ‖((@map (discBundle F E) _ univ _ (discBundleRelCWComplex F E A) m c x : discBundle F E) :
         TotalSpace F E).2‖ =
