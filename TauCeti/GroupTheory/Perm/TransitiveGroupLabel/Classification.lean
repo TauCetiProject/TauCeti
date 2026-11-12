@@ -139,13 +139,14 @@ theorem not_referenceSubgroup_three_one_le_alternatingGroup :
   rw [referenceSubgroup_three_one]
   exact fun h => by simpa [mem_alternatingGroup] using h (Subgroup.mem_top (swap 0 1))
 
-/-- Every transitive subgroup of the symmetric group on three points carries a label. -/
-theorem exists_transitiveGroupLabel_three (G : Subgroup (Perm (Fin 3)))
-    [IsPretransitive G (Fin 3)] : ∃ j, TransitiveGroupLabel j G := by
-  have hG := card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive G
-  rw [Fintype.card_fin] at hG
-  obtain ⟨⟨k, hk⟩, h6⟩ := hG
-  have h6 : 3 * k ∣ 3 * 2 := by simpa [hk, Nat.factorial] using h6
+/-- Every subgroup of the symmetric group on three points of order divisible by three carries a
+label. -/
+theorem _root_.Subgroup.exists_transitiveGroupLabel_three_of_three_dvd_natCard
+    (G : Subgroup (Perm (Fin 3))) (h3 : 3 ∣ Nat.card G) : ∃ j, TransitiveGroupLabel j G := by
+  have h6 : Nat.card G ∣ 3 * 2 := by
+    simpa [Fintype.card_perm, Nat.factorial] using Subgroup.card_subgroup_dvd_card G
+  obtain ⟨k, hk⟩ := h3
+  have h6 : 3 * k ∣ 3 * 2 := hk ▸ h6
   rcases (Nat.dvd_prime Nat.prime_two).1 (Nat.dvd_of_mul_dvd_mul_left (by decide) h6) with
     rfl | rfl
   · refine ⟨⟨0, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
@@ -158,6 +159,12 @@ theorem exists_transitiveGroupLabel_three (G : Subgroup (Perm (Fin 3)))
   · refine ⟨⟨1, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
     rw [referenceSubgroup_three_one]
     exact Subgroup.eq_top_of_card_eq _ (by rw [hk, Nat.card_perm]; simp [Nat.factorial])
+
+/-- Every transitive subgroup of the symmetric group on three points carries a label. -/
+theorem exists_transitiveGroupLabel_three (G : Subgroup (Perm (Fin 3)))
+    [IsPretransitive G (Fin 3)] : ∃ j, TransitiveGroupLabel j G :=
+  G.exists_transitiveGroupLabel_three_of_three_dvd_natCard
+    (by simpa using natCard_dvd_natCard_of_isPretransitive (G := G) (X := Fin 3))
 
 /-- A subgroup of the symmetric group on three points carries at most one label. -/
 theorem TransitiveGroupLabel.eq_of_three {j k : TransitiveGroupIndex 3}
@@ -413,21 +420,15 @@ private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgrou
     exact (Set.ext_iff.1 (alternatingGroup.coe_kleinFour_of_card_eq_four (by simp)) _).2
       (Or.inr hcycle)
 
-/-- Every transitive subgroup of the symmetric group on four points carries a label. -/
-theorem exists_transitiveGroupLabel_four (G : Subgroup (Perm (Fin 4)))
-    [IsPretransitive G (Fin 4)] : ∃ j, TransitiveGroupLabel j G := by
-  have hG := card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive G
-  rw [Fintype.card_fin] at hG
-  obtain ⟨⟨k, hk⟩, h24⟩ := hG
-  have h24 : 4 * k ∣ 4 * 6 := by simpa [hk, Nat.factorial] using h24
-  have hk6 : k ∣ 6 := Nat.dvd_of_mul_dvd_mul_left (by decide) h24
-  have hmul : G.index * (4 * k) = 24 := by
-    simpa [hk, Fintype.card_perm, Nat.factorial] using G.index_mul_card
-  have hk' : k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 6 := by
-    have := Nat.le_of_dvd (by decide) hk6
-    interval_cases k <;> simp_all
-  rcases hk' with rfl | rfl | rfl | rfl
-  · exact exists_transitiveGroupLabel_four_of_natCard_eq_four G hk
+/-- A subgroup of the symmetric group on four points of order `8`, `12` or `24` carries a label:
+`4T3`, `4T4` or `4T5` respectively. -/
+theorem _root_.Subgroup.exists_transitiveGroupLabel_four_of_natCard_eq
+    (G : Subgroup (Perm (Fin 4)))
+    (hG : Nat.card G = 8 ∨ Nat.card G = 12 ∨ Nat.card G = 24) :
+    ∃ j, TransitiveGroupLabel j G := by
+  have hmul : G.index * Nat.card G = 24 := by
+    simpa [Fintype.card_perm, Nat.factorial] using G.index_mul_card
+  rcases hG with hk | hk | hk <;> rw [hk] at hmul
   · -- Order eight: `G` and the reference subgroup of `4T3` are Sylow `2`-subgroups.
     have hindex : G.index = 3 := by omega
     let P : Sylow 2 (Perm (Fin 4)) :=
@@ -448,6 +449,21 @@ theorem exists_transitiveGroupLabel_four (G : Subgroup (Perm (Fin 4)))
   · refine ⟨⟨4, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
     rw [referenceSubgroup_four_four]
     exact Subgroup.index_eq_one.1 (by omega)
+
+/-- Every transitive subgroup of the symmetric group on four points carries a label. -/
+theorem exists_transitiveGroupLabel_four (G : Subgroup (Perm (Fin 4)))
+    [IsPretransitive G (Fin 4)] : ∃ j, TransitiveGroupLabel j G := by
+  have hG := card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive G
+  rw [Fintype.card_fin] at hG
+  obtain ⟨⟨k, hk⟩, h24⟩ := hG
+  have h24 : 4 * k ∣ 4 * 6 := by simpa [hk, Nat.factorial] using h24
+  have hk6 : k ∣ 6 := Nat.dvd_of_mul_dvd_mul_left (by decide) h24
+  have hk' : k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 6 := by
+    have := Nat.le_of_dvd (by decide) hk6
+    interval_cases k <;> simp_all
+  rcases hk' with rfl | rfl | rfl | rfl
+  · exact exists_transitiveGroupLabel_four_of_natCard_eq_four G hk
+  all_goals exact G.exists_transitiveGroupLabel_four_of_natCard_eq (by omega)
 
 /-- A transitive subgroup of the symmetric group on four points carries exactly one label, one of
 `4T1`, …, `4T5`. -/

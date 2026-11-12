@@ -86,25 +86,25 @@ theorem transitiveGroupLabel_three_iff_natCard_eq (j : TransitiveGroupIndex 3)
     (G : Subgroup (Perm (Fin 3))) :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 3 j) :=
   ⟨fun h => h.natCard_eq, fun h => by
-    have hmul := G.index_mul_card
-    rw [Nat.card_perm, Nat.card_fin] at hmul
-    simp only [Nat.factorial] at hmul
-    obtain ⟨a, ha⟩ := j
-    rw [numTransitiveGroups_three] at ha
-    interval_cases a
-    · rw [natCard_referenceSubgroup_three_zero] at h
-      rw [h] at hmul
-      have hG : G = referenceSubgroup 3 ⟨0, by simp⟩ := by
-        rw [referenceSubgroup_three_zero, closure_finRotate_three_eq_alternatingGroup]
-        exact eq_alternatingGroup_of_index_eq_two (by omega)
-      rw [hG]
-      exact transitiveGroupLabel_referenceSubgroup 3 _
-    · rw [natCard_referenceSubgroup_three_one] at h
-      have hG : G = referenceSubgroup 3 ⟨1, by simp⟩ := by
-        rw [referenceSubgroup_three_one]
-        exact Subgroup.eq_top_of_card_eq _ (by rw [h, Nat.card_perm]; simp [Nat.factorial])
-      rw [hG]
-      exact transitiveGroupLabel_referenceSubgroup 3 _⟩
+    -- The reference subgroup is transitive, so its order is divisible by three.
+    have h3 : 3 ∣ Nat.card G := by
+      have := (transitiveGroupLabel_referenceSubgroup 3 j).isPretransitive
+      simpa [h] using natCard_dvd_natCard_of_isPretransitive (G := referenceSubgroup 3 j)
+        (X := Fin 3)
+    obtain ⟨k, hk⟩ := G.exists_transitiveGroupLabel_three_of_three_dvd_natCard h3
+    have hjk : j = k := by
+      have h2 : Nat.card (referenceSubgroup 3 j) = Nat.card (referenceSubgroup 3 k) :=
+        h.symm.trans hk.natCard_eq
+      obtain ⟨a, ha⟩ := j
+      obtain ⟨b, hb⟩ := k
+      rw [numTransitiveGroups_three] at ha hb
+      interval_cases a <;> interval_cases b <;> first
+        | rfl
+        | simp only [natCard_referenceSubgroup_three_zero,
+            natCard_referenceSubgroup_three_one] at h2
+          omega
+    rw [hjk]
+    exact hk⟩
 
 /-- **Order recognition in degree five.** A subgroup of `S₅` is labelled `5Tj` exactly when its
 order is that of `5Tj`: the orders `5, 10, 20, 60, 120` of `5T1` through `5T5` are pairwise
@@ -189,15 +189,24 @@ theorem transitiveGroupLabel_four_one_iff_isKleinFour (G : Subgroup (Perm (Fin 4
   ⟨TransitiveGroupLabel.isKleinFour_four_one, fun _ ↦ (transitiveGroupLabel_four_one_iff G).mpr
     ⟨IsKleinFour.card_four, IsKleinFour.not_isCyclic⟩⟩
 
-/-- **Order recognition in degree four away from order four.** A transitive subgroup of `S₄` is
-labelled `4Tj`, `2 ≤ j`, exactly when its order is that of `4Tj`: the orders `8, 12, 24` of
-`4T3`, `4T4` and `4T5` are pairwise distinct and differ from the order four of `4T1` and `4T2`. -/
+/-- **Order recognition in degree four away from order four.** A subgroup of `S₄` is labelled
+`4Tj`, `2 ≤ j`, exactly when its order is that of `4Tj`: the orders `8, 12, 24` of `4T3`, `4T4`
+and `4T5` are pairwise distinct and differ from the order four of `4T1` and `4T2`. -/
 @[simp]
 theorem transitiveGroupLabel_four_iff_natCard_eq_of_two_le (j : TransitiveGroupIndex 4)
-    (hj : 2 ≤ (j : ℕ)) (G : Subgroup (Perm (Fin 4))) [IsPretransitive G (Fin 4)] :
+    (hj : 2 ≤ (j : ℕ)) (G : Subgroup (Perm (Fin 4))) :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 4 j) :=
   ⟨fun h => h.natCard_eq, fun h => by
-    obtain ⟨k, hk, -⟩ := existsUnique_transitiveGroupLabel_four G
+    have hG : Nat.card G = 8 ∨ Nat.card G = 12 ∨ Nat.card G = 24 := by
+      obtain ⟨a, ha⟩ := j
+      rw [numTransitiveGroups_four] at ha
+      have hj' : 2 ≤ a := by simpa using hj
+      rw [h]
+      interval_cases a
+      · exact Or.inl natCard_referenceSubgroup_four_two
+      · exact Or.inr (Or.inl natCard_referenceSubgroup_four_three)
+      · exact Or.inr (Or.inr natCard_referenceSubgroup_four_four)
+    obtain ⟨k, hk⟩ := G.exists_transitiveGroupLabel_four_of_natCard_eq hG
     have hjk : j = k := by
       have h2 : Nat.card (referenceSubgroup 4 j) = Nat.card (referenceSubgroup 4 k) :=
         h.symm.trans hk.natCard_eq
