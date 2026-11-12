@@ -83,6 +83,9 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.mfderiv_comp_snd_apply_one_zero` and
   `TauCeti.Manifold.mfderiv_comp_snd_apply_zero_one`: the coordinate derivatives of a map
   `(a, b) ↦ x b` are `0` and the velocity of `x`.
+* `TauCeti.Manifold.mfderiv_comp_fst_apply_one_zero` and
+  `TauCeti.Manifold.mfderiv_comp_fst_apply_zero_one`: the coordinate derivatives of a map
+  `(a, b) ↦ x a` are the velocity of `x` and `0`.
 * `TauCeti.Manifold.mfderiv_apply_one_zero_eq_zero_of_apply_eq` and
   `TauCeti.Manifold.apply_eq_of_mfderiv_apply_one_zero_eq_zero`: a map of the plane is constant
   along a horizontal line exactly when its derivative in the first coordinate direction vanishes
@@ -474,6 +477,26 @@ theorem mfderiv_comp_snd_apply_zero_one {x : 𝕜 → M} {p : 𝕜 × 𝕜}
     mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.2) p (0, 1) = curveVelocity I x p.2 :=
   (curveVelocity_eq_mfderiv_snd (I := I) (f := fun _ b ↦ x b) (u := p.1) (t := p.2)
     (hx.comp p differentiableAt_snd.mdifferentiableAt)).symm
+
+/-- The differential of a map `(a, b) ↦ x a` of the plane in the direction of the first
+coordinate is the velocity of `x`. -/
+@[simp]
+theorem mfderiv_comp_fst_apply_one_zero {x : 𝕜 → M} {p : 𝕜 × 𝕜}
+    (hx : MDifferentiableAt 𝓘(𝕜, 𝕜) I x p.1) :
+    mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.1) p (1, 0) = curveVelocity I x p.1 :=
+  (curveVelocity_eq_mfderiv_fst (I := I) (f := fun a _ ↦ x a) (u := p.1) (t := p.2)
+    (hx.comp p differentiableAt_fst.mdifferentiableAt)).symm
+
+/-- A map `(a, b) ↦ x a` of the plane, which depends only on the first coordinate, has zero
+differential in the direction of the second coordinate. -/
+@[simp]
+theorem mfderiv_comp_fst_apply_zero_one {x : 𝕜 → M} {p : 𝕜 × 𝕜}
+    (hx : MDifferentiableAt 𝓘(𝕜, 𝕜) I x p.1) :
+    mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ x z.1) p (0, 1) = 0 := by
+  have h := curveVelocity_eq_mfderiv_snd (I := I) (f := fun a _ ↦ x a) (u := p.1) (t := p.2)
+    (hx.comp p differentiableAt_fst.mdifferentiableAt)
+  rw [curveVelocity_const] at h
+  exact h.symm
 
 /-- A map `w` of the plane that is constant along the line at height `t` has zero differential
 at `(u, t)` in the direction of the first coordinate. -/
