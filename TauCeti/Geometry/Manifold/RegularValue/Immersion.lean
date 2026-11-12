@@ -85,17 +85,14 @@ theorem IsRegularValue.eventually_mem_range (hreg : IsRegularValue I 𝓘(𝕜, 
   have hg' : ContMDiff J 𝓘(𝕜, Fin (finrank 𝕜 G) → 𝕜) 1 g' :=
     (ContMDiff.iff_comp_isImmersion hi).2 ⟨hg.continuous.subtype_mk _, hg⟩
   have hinj' : Injective (mfderiv J 𝓘(𝕜, Fin (finrank 𝕜 G) → 𝕜) g' q₀) := by
+    -- Expose the factorization through the subtype so that mfderiv_comp matches syntactically.
     rw [show g = Subtype.val ∘ g' from rfl, mfderiv_comp q₀
       (hi.contMDiff.mdifferentiableAt one_ne_zero) (hg'.mdifferentiableAt one_ne_zero),
       ContinuousLinearMap.coe_comp] at hinj
     exact hinj.of_comp
-  have hrank : finrank 𝕜 (TangentSpace J q₀) =
-      finrank 𝕜 (TangentSpace 𝓘(𝕜, Fin (finrank 𝕜 G) → 𝕜) (g' q₀)) := by
-    rw [finrank_tangentSpace, finrank_tangentSpace, finrank_fin_fun]
   have hloc : IsLocalDiffeomorphAt J 𝓘(𝕜, Fin (finrank 𝕜 G) → 𝕜) 1 g' q₀ :=
-    isLocalDiffeomorphAt_of_mfderiv_eq hg'.contMDiffOn isOpen_univ (mem_univ q₀) hq₀ le_rfl
-      (e := ((mfderiv J _ g' q₀).toLinearMap.linearEquivOfInjective hinj'
-        hrank).toContinuousLinearEquiv) rfl
+    isLocalDiffeomorphAt_of_injective_mfderiv hg'.contMDiffOn isOpen_univ (mem_univ q₀) hq₀
+      le_rfl hinj' (by simp)
   have hmem : ∀ᶠ y in 𝓝 (g' q₀), y ∈ range g' :=
     hloc.localInverse_eventuallyEq_right.mono fun y hy ↦ ⟨hloc.localInverse y, hy⟩
   rw [nhds_subtype_eq_comap, eventually_comap] at hmem
