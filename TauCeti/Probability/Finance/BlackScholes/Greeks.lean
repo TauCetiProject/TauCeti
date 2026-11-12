@@ -178,9 +178,15 @@ theorem hasDerivAt_callPrice_maturity (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0)
 
 /-- **Call vega.** The derivative of the Black–Scholes call price in the volatility is
 `s φ(d₊) √τ`. -/
-theorem hasDerivAt_callPrice_volatility (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
+theorem hasDerivAt_callPrice_volatility (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) :
     HasDerivAt (fun v => callPrice s r v K τ)
       (s * gaussianPDFReal 0 1 (dPlus s r σ K τ) * √τ) σ := by
+  rcases le_or_gt τ 0 with hτ | hτ
+  · -- At or after maturity `√τ = 0`, so the price does not depend on the volatility.
+    rw [sqrt_eq_zero_of_nonpos hτ, mul_zero]
+    convert hasDerivAt_const σ ((s - K * exp (-r * τ)) / 2) using 1
+    ext v
+    exact callPrice_of_mul_sqrt_eq_zero (by rw [sqrt_eq_zero_of_nonpos hτ, mul_zero])
   have hlin : HasDerivAt (fun v => v * √τ) (1 * √τ) σ := (hasDerivAt_id σ).mul_const √τ
   -- The value of `∂d₊/∂σ` is irrelevant: its two contributions cancel.
   obtain ⟨D, hd⟩ : ∃ D, HasDerivAt (fun v => dPlus s r v K τ) D σ := by
@@ -202,7 +208,7 @@ theorem hasDerivAt_callPrice_volatility (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 
 /-- Call vega is positive. -/
 theorem deriv_callPrice_volatility_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     0 < deriv (fun v => callPrice s r v K τ) σ := by
-  rw [(hasDerivAt_callPrice_volatility hs hK hσ hτ).deriv]
+  rw [(hasDerivAt_callPrice_volatility hs hK hσ).deriv]
   have := gaussianPDFReal_pos 0 1 (dPlus s r σ K τ) one_ne_zero
   have := sqrt_pos.2 hτ
   positivity
@@ -275,10 +281,10 @@ theorem hasDerivAt_putPrice_maturity (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) 
 
 /-- **Put vega.** The derivative of the Black–Scholes put price in the volatility is
 `s φ(d₊) √τ`, the call vega. -/
-theorem hasDerivAt_putPrice_volatility (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
+theorem hasDerivAt_putPrice_volatility (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) :
     HasDerivAt (fun v => putPrice s r v K τ)
       (s * gaussianPDFReal 0 1 (dPlus s r σ K τ) * √τ) σ := by
-  have h := ((hasDerivAt_callPrice_volatility (r := r) hs hK hσ hτ).sub_const s).add_const
+  have h := ((hasDerivAt_callPrice_volatility (r := r) (τ := τ) hs hK hσ).sub_const s).add_const
     (K * exp (-r * τ))
   convert h using 1
   ext v
@@ -287,8 +293,8 @@ theorem hasDerivAt_putPrice_volatility (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0
 /-- Put vega is positive. -/
 theorem deriv_putPrice_volatility_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
     0 < deriv (fun v => putPrice s r v K τ) σ := by
-  rw [(hasDerivAt_putPrice_volatility hs hK hσ hτ).deriv,
-    ← (hasDerivAt_callPrice_volatility hs hK hσ hτ).deriv]
+  rw [(hasDerivAt_putPrice_volatility hs hK hσ).deriv,
+    ← (hasDerivAt_callPrice_volatility hs hK hσ).deriv]
   exact deriv_callPrice_volatility_pos hs hK hσ hτ
 
 /-! ### The Black–Scholes equation -/
