@@ -28,9 +28,10 @@ endomorphism of the stalk at `x` of every étale sheaf on `Spec K`. This is a le
 
 `Sheaf (smallEtaleTopology (Spec K)) A ⥤ Action A Gal(Ω/K)`
 
-for every coefficient category `A` with colimits. For sheaves of sets the action is continuous
-for the discrete topology on the stalk and the Krull topology on `Gal(Ω/K)`: every element of the
-stalk has an open stabilizer (`AlgebraicGeometry.Scheme.isOpen_stabilizer_galoisStalk`). Indeed,
+for every coefficient category `A` with colimits. For concrete coefficients whose forgetful
+functor preserves filtered colimits, such as sets or modules, the action is continuous for the
+discrete topology on the stalk and the Krull topology on `Gal(Ω/K)`: every element of the stalk
+has an open stabilizer (`AlgebraicGeometry.Scheme.isOpen_stabilizer_galoisStalk`). Indeed,
 an element of the stalk is represented by a section over an étale `K`-scheme `X` together with a
 lift `t : Spec Ω ⟶ X` of `x`. The lift `t` is a point `y` of `X` with an embedding `κ(y) → Ω`,
 and `κ(y)` is a finite extension of `K` because étale morphisms are locally quasi-finite. Every
@@ -51,8 +52,8 @@ classification of étale sheaves on a field (SGA 4, Exposé VIII, §2).
 
 * `AlgebraicGeometry.Scheme.pointSmallEtaleHom_id`,
   `AlgebraicGeometry.Scheme.pointSmallEtaleHom_comp`: functoriality in the geometric point.
-* `AlgebraicGeometry.Scheme.isOpen_stabilizer_galoisStalk`: for an étale sheaf of sets, the
-  stabilizer in `Gal(Ω/K)` of every element of the stalk is open.
+* `AlgebraicGeometry.Scheme.isOpen_stabilizer_galoisStalk`: for an étale sheaf of sets or
+  modules, the stabilizer in `Gal(Ω/K)` of every element of the stalk is open.
 
 ## References
 
@@ -95,11 +96,10 @@ site. -/
 @[simp]
 theorem pointSmallEtaleHom_id (s : Spec (.of Ω) ⟶ S) (h : 𝟙 _ ≫ s = s) :
     pointSmallEtaleHom (𝟙 _) h = 𝟙 (pointSmallEtale s) := by
-  have : (Over.homMk (𝟙 (Spec (.of Ω))) h : Over.mk s ⟶ Over.mk s) = 𝟙 _ := by cat_disch
-  ext1
-  rw [pointSmallEtaleHom_hom, this]
-  simp only [op_id]
-  rfl
+  ext X : 3
+  refine ConcreteCategory.hom_ext _ _ fun t ↦ Over.OverMorphism.ext ?_
+  simp only [pointSmallEtaleHom_hom_app_left, GrothendieckTopology.Point.id_hom, NatTrans.id_app,
+    ConcreteCategory.id_apply, Category.id_comp]
 
 /-- The morphism of points induced by a composite of geometric points is the composite of the
 induced morphisms. -/
@@ -108,14 +108,10 @@ theorem pointSmallEtaleHom_comp {s : Spec (.of Ω) ⟶ S} {s' : Spec (.of Ω') �
     (b : Spec (.of Ω') ⟶ Spec (.of Ω)) (ha : a ≫ s' = s'') (hb : b ≫ s = s')
     (hab : (a ≫ b) ≫ s = s'') :
     pointSmallEtaleHom (a ≫ b) hab = pointSmallEtaleHom a ha ≫ pointSmallEtaleHom b hb := by
-  have : (Over.homMk (a ≫ b) hab : Over.mk s'' ⟶ Over.mk s) =
-      (Over.homMk a ha : Over.mk s'' ⟶ Over.mk s') ≫
-        (Over.homMk b hb : Over.mk s' ⟶ Over.mk s) := by cat_disch
-  ext1
-  rw [GrothendieckTopology.Point.comp_hom, pointSmallEtaleHom_hom, pointSmallEtaleHom_hom,
-    pointSmallEtaleHom_hom, this]
-  simp only [op_comp, Functor.map_comp, Functor.whiskerLeft_comp]
-  rfl
+  ext X : 3
+  refine ConcreteCategory.hom_ext _ _ fun t ↦ Over.OverMorphism.ext ?_
+  simp only [pointSmallEtaleHom_hom_app_left, GrothendieckTopology.Point.comp_hom,
+    NatTrans.comp_app, ConcreteCategory.comp_apply, Category.assoc]
 
 /-- Equal morphisms of geometric points induce equal morphisms of points. -/
 theorem pointSmallEtaleHom_congr {s : Spec (.of Ω) ⟶ S} {s' : Spec (.of Ω') ⟶ S}
@@ -165,42 +161,22 @@ theorem exists_finiteDimensional_forall_fixingSubgroup {X : Scheme.{u}} (f : X �
   have hφ (k : K) : φ (f.residueFieldMap y ((Spec.residueFieldIso (.of K) (f y)).inv
       (algebraMap K (f y).asIdeal.ResidueField k))) = algebraMap K Ω k := by
     simpa only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom] using congr($h k)
-  have hK (c : (Spec (.of K)).residueField (f y)) :
-      φ (f.residueFieldMap y c) ∈ Set.range (algebraMap K Ω) := by
-    obtain ⟨d, rfl⟩ :=
-      (Spec.residueFieldIso (.of K) (f y)).commRingCatIsoToRingEquiv.symm.surjective c
-    obtain ⟨k, rfl⟩ := (Ideal.algEquivResidueFieldOfField (f y).asIdeal).surjective d
-    refine ⟨k, ?_⟩
-    rw [Ideal.algEquivResidueFieldOfField_apply]
-    exact (hφ k).symm
-  -- The image of `φ` is an intermediate field of `Ω / K`.
-  let L : IntermediateField K Ω := φ.hom.fieldRange.toIntermediateField fun k ↦
-    hφ k ▸ RingHom.mem_fieldRange_self _ _
-  -- It lies in the `K`-span of the images of generators of `κ(y)` over the residue field of
-  -- `Spec K`, which exist because `f` is locally quasi-finite.
-  algebraize [(f.residueFieldMap y).hom]
-  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin
-    (R := (Spec (.of K)).residueField (f y)) (M := X.residueField y)
-  have hLV : Subalgebra.toSubmodule L.toSubalgebra ≤
-      Submodule.span K (Set.range fun i ↦ φ (g i)) := by
-    rintro _ ⟨a, rfl⟩
-    have ha : a ∈ Submodule.span ((Spec (.of K)).residueField (f y)) (Set.range g) := hg ▸ trivial
-    induction ha using Submodule.span_induction with
-    | mem b hb =>
-      obtain ⟨i, rfl⟩ := hb
-      exact Submodule.subset_span ⟨i, rfl⟩
-    | zero => simp
-    | add b b' _ _ hb hb' =>
-      rw [map_add]
-      exact add_mem hb hb'
-    | smul c b _ hb =>
-      obtain ⟨k, hk⟩ := hK c
-      rw [Algebra.smul_def, map_mul, RingHom.algebraMap_toAlgebra, ← hk, ← Algebra.smul_def]
-      exact Submodule.smul_mem _ k hb
-  have := FiniteDimensional.span_of_finite K (Set.finite_range fun i ↦ φ (g i))
-  have : FiniteDimensional K (Subalgebra.toSubmodule L.toSubalgebra) :=
-    Submodule.finiteDimensional_of_le hLV
-  refine ⟨L, this, fun σ hσ ↦ ?_⟩
+  -- Make `κ(y)` a `K`-algebra through the residue field of `Spec K` at the image of `y`, which is
+  -- finite over `K`. Then `κ(y)` is finite over `K`, because `f` is locally quasi-finite, and `φ`
+  -- is a `K`-algebra map.
+  let ψ : K →+* (Spec (.of K)).residueField (f y) :=
+    (Spec.residueFieldIso (.of K) (f y)).inv.hom.comp (algebraMap K (f y).asIdeal.ResidueField)
+  have hψ : Function.Surjective ψ :=
+    (Spec.residueFieldIso (.of K) (f y)).commRingCatIsoToRingEquiv.symm.surjective.comp
+      (Ideal.algEquivResidueFieldOfField (f y).asIdeal).surjective
+  algebraize [ψ, (f.residueFieldMap y).hom, (f.residueFieldMap y).hom.comp ψ]
+  have : Module.Finite K ((Spec (.of K)).residueField (f y)) :=
+    Module.Finite.of_surjective (Algebra.linearMap K _) hψ
+  have : Module.Finite K (X.residueField y) :=
+    Module.Finite.trans ((Spec (.of K)).residueField (f y)) _
+  let φ' : X.residueField y →ₐ[K] Ω := { φ.hom with commutes' := hφ }
+  -- Every `σ` fixing the image of `φ` fixes `t`.
+  refine ⟨φ'.fieldRange, φ'.toLinearMap.finiteDimensional_range, fun σ hσ ↦ ?_⟩
   rw [← Category.assoc, ← Spec.map_comp]
   congr 2
   ext a
@@ -210,7 +186,7 @@ variable [IsSepClosed Ω] (A : Type v) [Category.{w} A] [HasColimitsOfSize.{u, u
 
 /-- The endomorphism of the stalk at `Spec Ω ⟶ Spec K` of an étale sheaf on `Spec K` induced by
 `σ ∈ Gal(Ω/K)`, natural in the sheaf. -/
-@[expose] noncomputable def galoisStalkMap (σ : Gal(Ω/K)) :
+noncomputable def galoisStalkMap (σ : Gal(Ω/K)) :
     (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber (A := A) ⟶
       (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber :=
   GrothendieckTopology.Point.Hom.sheafFiber
@@ -247,7 +223,7 @@ theorem galoisStalkMap_mul (σ τ : Gal(Ω/K)) :
 
 /-- `σ ∈ Gal(Ω/K)` sends the germ at a lift `t` of a section of an étale sheaf on `Spec K` to its
 germ at the lift `Spec σ ≫ t`. -/
-@[reassoc]
+@[simp, reassoc]
 theorem toPresheafFiber_galoisStalkMap_app (σ : Gal(Ω/K))
     (F : Sheaf (smallEtaleTopology (Spec (.of K))) A) (X : (Spec (.of K)).Etale)
     (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X) :
@@ -278,13 +254,20 @@ noncomputable def galoisStalk :
     { hom := (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber.map f
       comm σ := ((galoisStalkMap K Ω A σ).naturality f).symm }
 
-/-- **Stalks of étale sheaves of sets on `Spec K` are discrete continuous `Gal(Ω/K)`-sets**:
-every element of the stalk at `Spec Ω ⟶ Spec K` has an open stabilizer in `Gal(Ω/K)`. An element
-of the stalk is the germ of a section over an étale `K`-scheme `X` at a lift `t` of the geometric
-point, and an open subgroup of `Gal(Ω/K)` fixes `t`
+section Concrete
+
+variable {A : Type (u + 1)} [LargeCategory A] {FA : A → A → Type*} {CA : A → Type u}
+  [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA] [HasColimitsOfSize.{u, u} A]
+  [PreservesFilteredColimitsOfSize.{u, u} (CategoryTheory.forget A)]
+
+/-- **Stalks of étale sheaves on `Spec K` are discrete continuous `Gal(Ω/K)`-sets**: for a
+concrete coefficient category whose forgetful functor preserves filtered colimits, such as sets or
+modules, every element of the stalk at `Spec Ω ⟶ Spec K` has an open stabilizer in `Gal(Ω/K)`. An
+element of the stalk is the germ of a section over an étale `K`-scheme `X` at a lift `t` of the
+geometric point, and an open subgroup of `Gal(Ω/K)` fixes `t`
 (`exists_finiteDimensional_forall_fixingSubgroup`). -/
-theorem isOpen_stabilizer_galoisStalk (F : Sheaf (smallEtaleTopology (Spec (.of K))) (Type u))
-    (p : ToType ((galoisStalk K Ω (Type u)).obj F)) :
+theorem isOpen_stabilizer_galoisStalk (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
+    (p : ToType ((galoisStalk K Ω A).obj F)) :
     IsOpen (MulAction.stabilizer Gal(Ω/K) p : Set Gal(Ω/K)) := by
   obtain ⟨X, t, z, hp⟩ := (pointSmallEtale _).toPresheafFiber_jointly_surjective (P := F.obj) p
   have : Etale X.hom := X.prop
@@ -295,13 +278,17 @@ theorem isOpen_stabilizer_galoisStalk (F : Sheaf (smallEtaleTopology (Spec (.of 
   have ht : (pointSmallEtaleHom _ (SpecMap_algEquiv_comp K Ω σ)).hom.app X t = t :=
     Over.OverMorphism.ext ((pointSmallEtaleHom_hom_app_left _ _ X t).trans (hL σ hσ))
   -- `σ` acts on `p` through `galoisStalkMap`, which sends the germ at `t` to the germ at `t`.
-  refine (Action.ρ_apply_eq_smul ((galoisStalk K Ω (Type u)).obj F) σ p).symm.trans ?_
-  refine (ConcreteCategory.congr_hom (galoisStalk_obj_ρ_apply_asHom K Ω (Type u) F σ) p).trans ?_
+  refine (Action.ρ_apply_eq_smul ((galoisStalk K Ω A).obj F) σ p).symm.trans ?_
+  refine (ConcreteCategory.congr_hom (galoisStalk_obj_ρ_apply_asHom K Ω A F σ) p).trans ?_
   -- The stalk of `F` is by definition the stalk of its underlying presheaf, which is the type
   -- of the germs `toPresheafFiber`.
   rw [← hp]
-  exact (ConcreteCategory.congr_hom (toPresheafFiber_galoisStalkMap_app K Ω (Type u) σ F X t)
-    z).trans (congrArg (fun t' ↦ (pointSmallEtale _).toPresheafFiber X t' F.obj z) ht)
+  exact (ConcreteCategory.comp_apply ((pointSmallEtale _).toPresheafFiber X t F.obj)
+    ((galoisStalkMap K Ω A σ).app F) z).symm.trans <|
+      (ConcreteCategory.congr_hom (toPresheafFiber_galoisStalkMap_app K Ω A σ F X t) z).trans
+        (congrArg (fun t' ↦ (pointSmallEtale _).toPresheafFiber X t' F.obj z) ht)
+
+end Concrete
 
 end Galois
 
