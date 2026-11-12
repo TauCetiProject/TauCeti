@@ -12,11 +12,11 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Center
 /-!
 # The scheme-theoretic center of the special orthogonal group
 
-For `n ≥ 3`, over a commutative value algebra where two is a non-zero-divisor, universal centrality
+Over a commutative value algebra where two is a non-zero-divisor, universal centrality
 of an `SOₙ`-point is equivalent to membership in the center of its special orthogonal matrix group.
-The matrix-center computation in
+For `n ≥ 3`, the matrix-center computation in
 `TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Center` identifies these as the scalar
-matrices `c • 1` with `c² = 1` and `c^n = 1`.
+matrices `c • 1` with `c² = 1` and `c^n = 1`; for `n ≤ 2` the matrix group is commutative.
 
 In odd dimension these conditions force `c = 1`. Thus the full scheme-theoretic center of `SOₙ` for
 odd `n`, dimension one included, is trivial over every field of characteristic different from two: a
@@ -39,12 +39,12 @@ universe u v
 
 section Ring
 
-variable {R : Type u} [CommRing R] (n : ℕ) (hn : 3 ≤ n)
+variable {R : Type u} [CommRing R] (n : ℕ)
 variable {A : Type v} [CommRing A] [Algebra R A] (h2 : IsRegular (2 : A))
 
-include hn h2 in
-/-- In dimension at least three, a special orthogonal point over a ring where two is
-a non-zero-divisor is universally central exactly when its matrix is central. -/
+include h2 in
+/-- A special orthogonal point over a ring where two is a non-zero-divisor is universally central
+exactly when its matrix is central. -/
 theorem isCentralPoint_iff_mem_center_pointsMulEquiv
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
     HopfAlgebra.IsCentralPoint g ↔
@@ -54,13 +54,16 @@ theorem isCentralPoint_iff_mem_center_pointsMulEquiv
   · exact fun hg ↦ MulEquivClass.apply_mem_center (pointsMulEquiv R n (A := A))
       (HopfAlgebra.center_le_center (HopfAlgebra.mem_center.mpr hg))
   · intro hg
-    obtain ⟨c, hc, _, _⟩ :=
-      (Matrix.SpecialOrthogonalGroup.mem_center_iff h2 (pointsMulEquiv R n (A := A) g)
-        (by simpa using hn)).mp hg
     rw [HopfAlgebra.isCentralPoint_def]
     intro B _ _ φ h
     apply (pointsMulEquiv R n (A := B)).injective
     rw [map_mul, map_mul]
+    by_cases hn : 3 ≤ n
+    swap
+    · exact Matrix.SpecialOrthogonalGroup.mul_comm_of_le_two (by omega) _ _
+    obtain ⟨c, hc, _, _⟩ :=
+      (Matrix.SpecialOrthogonalGroup.mem_center_iff h2 (pointsMulEquiv R n (A := A) g)
+        (by simpa using hn)).mp hg
     have hscalar : (pointsMulEquiv R n (A := B) (AlgHom.mapValue φ g) :
         Matrix (Fin n) (Fin n) B) = Matrix.scalar (Fin n) (φ c) := by
       rw [pointsMulEquiv_mapValue, Matrix.SpecialOrthogonalGroup.coe_map, hc]

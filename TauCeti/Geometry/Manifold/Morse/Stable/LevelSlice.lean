@@ -128,17 +128,17 @@ theorem strictAnti_flow_of_mem_unstableSet_inter_stableSet
 `y` on a trajectory from a critical point `a` to a different critical point `b` satisfies
 `f b < f y < f a`. -/
 theorem mem_Ioo_of_mem_unstableSet_inter_stableSet
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
     f y ∈ Ioo (f b) (f a) := by
+  have hf := hX.mdifferentiable
   have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy
   -- Compare `y` with its images at times `1` and `-1`, which lie on the same trajectory.
   have hb : f b ≤ f (hX.flow 1 y) := Flow.le_of_mem_stableSet_of_antitone
     ((Flow.apply_mem_stableSet_iff _ 1).2 hy.2) hf.continuous.continuousAt
-    (hX.antitone_flow hf _)
+    (hX.antitone_flow _)
   have ha : f (hX.flow (-1) y) ≤ f a := Flow.le_of_mem_unstableSet_of_antitone
     ((Flow.apply_mem_unstableSet_iff _ (-1)).2 hy.1) hf.continuous.continuousAt
-    (hX.antitone_flow hf _)
+    (hX.antitone_flow _)
   have h₁ : f (hX.flow 1 y) < f y := by
     simpa only [Flow.map_zero_apply] using hanti zero_lt_one
   have h₂ : f y < f (hX.flow (-1) y) := by
@@ -149,11 +149,11 @@ theorem mem_Ioo_of_mem_unstableSet_inter_stableSet
 critical point `a` to a different critical point `b`, the function `f` strictly decreases from
 `f a` to `f b`, so it takes each value `c` with `f b < c < f a` at exactly one time. -/
 theorem existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (hbc : f b < c)
     (hca : c < f a) :
-    ∃! t : ℝ, f (hX.flow t y) = c :=
-  Flow.existsUnique_apply_flow_eq_of_mem_unstableSet_inter_stableSet
+    ∃! t : ℝ, f (hX.flow t y) = c := by
+  have hf := hX.mdifferentiable
+  exact Flow.existsUnique_apply_flow_eq_of_mem_unstableSet_inter_stableSet
     (hf.continuous.comp (hX.flow.continuous continuous_id continuous_const))
     hf.continuous.continuousAt hf.continuous.continuousAt
     (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy) hy ⟨hbc, hca⟩
@@ -162,11 +162,10 @@ theorem existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet
 point `a` to a different critical point `b`, the function `f` takes the value `(f a + f b) / 2`
 at exactly one time. -/
 theorem existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
     ∃! t : ℝ, f (hX.flow t y) = (f a + f b) / 2 := by
-  have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab hy
-  exact hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy
+  have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab hy
+  exact hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hy
     (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])
 
 /-- **A point of a trajectory is determined by its orbit and its level.** Two points that lie on a
@@ -186,16 +185,16 @@ theorem eq_of_flow_eq_of_value_eq {y' : M}
 and `f b < c < f a`. Sending a point of the middle slice `W^u(a) ∩ W^s(b) ∩ {f = (f a + f b) / 2}`
 to the point of its trajectory on the level `c` is a bijection onto the slice
 `W^u(a) ∩ W^s(b) ∩ {f = c}`. -/
-theorem bijOn_flow_levelCrossingTime_midpoint (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem bijOn_flow_levelCrossingTime_midpoint
     (hab : a ≠ b) (hbc : f b < c) (hca : c < f a) :
     BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c z) z)
       ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
       ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = c}) :=
   Flow.bijOn_flow_levelCrossingTime
     (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy)
-    (fun _ hy ↦ (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf hab
+    (fun _ hy ↦ (hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hab
       hy).exists)
-    (fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy hbc
+    (fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hy hbc
       hca).exists)
 
 /-- **Level-crossing times depend continuously on the point.** Let `y` lie on a trajectory from a
@@ -203,9 +202,10 @@ critical point `a` to a different critical point `b`, and let `w` tend to `y`. I
 `w i` meets the level of `y` at the time `σ i`, then `σ i` tends to `0`, the time at which the orbit
 of `y` meets that level. -/
 theorem tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} {l : Filter ι}
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b)
+    (hab : a ≠ b)
     (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {w : ι → M} (hw : Tendsto w l (𝓝 y))
     {σ : ι → ℝ} (hσ : ∀ i, f (hX.flow (σ i) (w i)) = f y) : Tendsto σ l (𝓝 0) := by
+  have hf := hX.mdifferentiable
   have hfw : ∀ t, Tendsto (fun i ↦ f (hX.flow t (w i))) l (𝓝 (f (hX.flow t y))) := fun t ↦
     ((hf.continuous.comp (hX.contMDiff_flow_apply t).continuous).tendsto y).comp hw
   have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy
@@ -215,28 +215,28 @@ theorem tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} 
   · have hlt : f y < f (hX.flow t y) := by simpa using hanti ht
     filter_upwards [(hfw t).eventually (lt_mem_nhds hlt)] with i hi
     by_contra! hle
-    exact (hX.antitone_flow hf (w i) hle).not_gt ((hσ i).trans_lt hi)
+    exact (hX.antitone_flow (w i) hle).not_gt ((hσ i).trans_lt hi)
   · have hlt : f (hX.flow t y) < f y := by simpa using hanti ht
     filter_upwards [(hfw t).eventually (gt_mem_nhds hlt)] with i hi
     by_contra! hle
-    exact (hX.antitone_flow hf (w i) hle).not_gt (hi.trans_eq (hσ i).symm)
+    exact (hX.antitone_flow (w i) hle).not_gt (hi.trans_eq (hσ i).symm)
 
 /-- **Level crossings converge along converging orbits.** Let `w` lie on a trajectory from `a` to
 `b`, and `c` a value strictly between `f b` and `f a`. If `u i → w` and the orbit of `u i` meets
 the level `c` at time `s i`, then the crossing points converge to the point where the orbit of `w`
 meets the level `c`. -/
-theorem exists_tendsto_flow_of_tendsto (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {w : M}
+theorem exists_tendsto_flow_of_tendsto {w : M}
     (hw : w ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (hbc : f b < c)
     (hca : c < f a) {ι : Type*} {l : Filter ι} {u : ι → M} (hu : Tendsto u l (𝓝 w))
     {s : ι → ℝ} (hs : ∀ i, f (hX.flow (s i) (u i)) = c) :
     ∃ σ : ℝ, f (hX.flow σ w) = c ∧
       Tendsto (fun i ↦ hX.flow (s i) (u i)) l (𝓝 (hX.flow σ w)) := by
   have hab : a ≠ b := by rintro rfl; exact (hbc.trans hca).false
-  obtain ⟨σ, hσ, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hw hbc hca
+  obtain ⟨σ, hσ, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hw hbc hca
   -- Move everything to the crossing point `flow σ w`, where the crossing time is `0`.
   have hu' : Tendsto (fun i ↦ hX.flow σ (u i)) l (𝓝 (hX.flow σ w)) :=
     ((hX.flow.continuous continuous_const continuous_id).tendsto w).comp hu
-  have ht := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hf hab
+  have ht := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hab
     (hX.flow.isInvariant_unstableSet_inter_stableSet a b σ hw) hu' (σ := fun i ↦ s i - σ)
     fun i ↦ by rw [← Flow.map_add, sub_add_cancel, hs, hσ]
   refine ⟨σ, hσ, ?_⟩
@@ -249,14 +249,14 @@ point `a` to a different critical point `b`, whose orbit meets the level `c` at 
 let `w` tend to `y`. If the orbit of each `w i` meets the level `c` at the time `s i`, then these
 level points tend to the level point of the orbit of `y`. -/
 theorem tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} {l : Filter ι}
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b)
+    (hab : a ≠ b)
     (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {σ : ℝ} (hσ : f (hX.flow σ y) = c)
     {w : ι → M} (hw : Tendsto w l (𝓝 y)) {s : ι → ℝ} (hs : ∀ i, f (hX.flow (s i) (w i)) = c) :
     Tendsto (fun i ↦ hX.flow (s i) (w i)) l (𝓝 (hX.flow σ y)) := by
   have hw' : Tendsto (fun i ↦ hX.flow σ (w i)) l (𝓝 (hX.flow σ y)) :=
     ((hX.contMDiff_flow_apply σ).continuous.tendsto y).comp hw
   -- Measured from the level point of `y`, the crossing times tend to `0`.
-  have h0 := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hf hab
+  have h0 := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hab
     (hX.flow.isInvariant_unstableSet_inter_stableSet a b σ hy) hw' (σ := fun i ↦ s i - σ)
     fun i ↦ by rw [← Flow.map_add, sub_add_cancel, hs, hσ]
   have hlim := (hX.contMDiff_flow_uncurry.continuous.tendsto ((0 : ℝ), hX.flow σ y)).comp
@@ -266,9 +266,10 @@ theorem tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} 
 
 /-- Orbits through points near a point `y` of a trajectory between distinct critical points cross
 the level of `y` at times in `[-δ, δ]`. -/
-theorem eventually_exists_mem_Icc_apply_flow_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem eventually_exists_mem_Icc_apply_flow_eq
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {δ : ℝ} (hδ : 0 < δ) :
     ∀ᶠ w in 𝓝 y, ∃ σ ∈ Icc (-δ) δ, f (hX.flow σ w) = f y := by
+  have hf := hX.mdifferentiable
   have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy
   have hcont : ∀ t, Continuous fun w ↦ f (hX.flow t w) := fun t ↦
     hf.continuous.comp (hX.contMDiff_flow_apply t).continuous
@@ -284,7 +285,7 @@ theorem eventually_exists_mem_Icc_apply_flow_eq (hf : MDifferentiable 𝓘(ℝ, 
 between distinct critical points, with `f (flow σ₀ y) = c`. For points `w i` tending to `y` along
 whose orbits `f` strictly decreases, the points where these orbits cross the level `c` tend to
 `flow σ₀ y`. -/
-theorem tendsto_flow_levelCrossingTime (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b)
+theorem tendsto_flow_levelCrossingTime (hab : a ≠ b)
     (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {σ₀ : ℝ}
     (hσ₀ : f (hX.flow σ₀ y) = c) {ι : Type*} {l : Filter ι} {w : ι → M}
     (hw : Tendsto w l (𝓝 y)) (hanti : ∀ᶠ i in l, StrictAnti fun t ↦ f (hX.flow t (w i))) :
@@ -298,7 +299,7 @@ theorem tendsto_flow_levelCrossingTime (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(�
   set τ := fun i ↦ Flow.levelCrossingTime hX.flow f c (w i) - σ₀
   -- The crossing time of `w i` differs from `σ₀` by a crossing time of `flow σ₀ (w i)` near `0`.
   have hτ : ∀ δ > 0, ∀ᶠ i in l, τ i ∈ Icc (-δ) δ := fun δ hδ ↦ by
-    filter_upwards [hw'.eventually (hX.eventually_exists_mem_Icc_apply_flow_eq hf hab hz hδ),
+    filter_upwards [hw'.eventually (hX.eventually_exists_mem_Icc_apply_flow_eq hab hz hδ),
       hanti] with i ⟨σ, hσ, hσc⟩ hi
     rw [hσ₀, ← Flow.map_add] at hσc
     have := (Flow.eq_levelCrossingTime_iff hi ⟨_, hσc⟩).2 hσc
@@ -361,7 +362,7 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (hab : a ≠ b)
     hab hy
   -- In finite dimensions every subspace is complemented.
   have hcc (p : Submodule ℝ E) : p.ClosedComplemented :=
-    .of_finiteDimensional_quotient (Submodule.closed_of_finiteDimensional _)
+    .of_finiteDimensional_quotient (Submodule.isClosed_of_finiteDimensional _)
   rw [hlevel]
   exact ⟨exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (by simp) hq hs
       hyq isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'

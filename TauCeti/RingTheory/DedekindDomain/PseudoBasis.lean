@@ -23,6 +23,8 @@ onto the product of the ideals `J i`.
 
 ## Main results
 
+* `Module.Basis.repr_smul_self_mem_coeSubmodule`: scaling the `k`-th basis vector `b k` by a
+  scalar in `J k` gives a vector whose `b`-coordinates lie in `J k'` for every `k'`.
 * `Submodule.exists_apply_eq_one_forall_smul_mem`: an `R`-submodule `Λ` splits off its image
   `I` under a `K`-linear functional `f` when `I` is finitely generated and nonzero: some `v`
   has `f v = 1` and `x • v ∈ Λ` for all `x ∈ I`.
@@ -47,6 +49,18 @@ public section
 
 open Module Submodule
 open scoped nonZeroDivisors
+
+/-- Scaling the `k`-th vector of a `K`-basis `b` by `c ∈ J k` gives a vector whose `b`-coordinates
+lie in `J k'` for every `k'`: the `k`-th coordinate is `c` and all others vanish. -/
+theorem Module.Basis.repr_smul_self_mem_coeSubmodule {R K V κ : Type*} [CommSemiring R]
+    [CommSemiring K] [Algebra R K] [AddCommMonoid V] [Module K V] (b : Basis κ K V)
+    (J : κ → Ideal R) {k : κ} {c : K} (hc : c ∈ IsLocalization.coeSubmodule K (J k)) (k' : κ) :
+    b.repr (c • b k) k' ∈ IsLocalization.coeSubmodule K (J k') := by
+  classical
+  rw [map_smul, b.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply]
+  split_ifs with h
+  · exact h ▸ hc
+  · exact zero_mem _
 
 variable {R K V : Type*} [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
   [IsFractionRing R K] [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]

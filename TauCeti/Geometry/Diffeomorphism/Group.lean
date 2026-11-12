@@ -19,14 +19,13 @@ instances and proves the `Group` axioms, exactly as Mathlib does for `Equiv.Perm
 (`Mathlib/Algebra/Group/End.lean`). The multiplication is `f * g = g.trans f`, so that `f * g`
 acts as the function composition `f ∘ g`, matching the `Equiv.Perm` convention.
 
-This is the group object the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
-topology") asks for as its first deliverable: "The **group** `Diff(M) := M ≃ₘ^∞⟮I, I⟯ M` under
-composition (the `Group` instance is routine from the existing `Diffeomorph` composition and
-inverse)." It is the underlying group of the topological group `Diff(M)` whose homotopy type the
-Smale conjecture `[Kir97, Problem 4.34]` is about; the C^∞ topology making it a topological group is
-a separate, later layer-3 deliverable, so this file stops at the bare group structure. The
-construction works for every smoothness exponent `n`, with `n = ∞` the case named by the roadmap.
+For `n = ∞` this is the group `Diff(M) := M ≃ₘ^∞⟮I, I⟯ M` under composition, the underlying group
+of the topological group `Diff(M)` whose homotopy type the Smale conjecture
+`[Kir97, Problem 4.34]` is about. This file stops at the bare group structure; for a compact
+Hausdorff manifold with a locally compact model space, the weak Whitney topology makes it a
+topological group (`Diffeomorph.isTopologicalGroup`, in
+`TauCeti.Geometry.Diffeomorphism.Inversion`). The construction works for every smoothness exponent
+`n`.
 
 ## Main definitions
 
@@ -44,6 +43,8 @@ construction works for every smoothness exponent `n`, with `n = ∞` the case na
   operations act by composition, the identity, and the inverse diffeomorphism.
 * `Diffeomorph.contMDiff_mul_apply`, `Diffeomorph.contMDiff_list_prod_apply`: pointwise products
   of jointly smooth families of self-diffeomorphisms are jointly smooth.
+* `Diffeomorph.contMDiff_zpow_apply`: the integer powers of a jointly smooth family of
+  self-diffeomorphisms with jointly smooth inverses are jointly smooth.
 * `Function.Semiconj.diffeomorph_zpow_right`: a map intertwining two self-diffeomorphisms
   intertwines all of their integer powers.
 -/
@@ -221,6 +222,20 @@ theorem contMDiff_list_prod_apply (l : List (P → M ≃ₘ^n⟮I, I⟯ M))
     exact contMDiff_mul_apply (g := fun p ↦ (l.map (· p)).prod) (hl f List.mem_cons_self)
       (ih fun g hg ↦ hl g (List.mem_cons_of_mem f hg))
 
+/-- The integer powers of a jointly `C^m` family of self-diffeomorphisms whose inverses are also
+jointly `C^m` are jointly `C^m`. -/
+theorem contMDiff_zpow_apply {f : P → M ≃ₘ^n⟮I, I⟯ M}
+    (hf : ContMDiff (I'.prod I) I m fun q : P × M ↦ f q.1 q.2)
+    (hf' : ContMDiff (I'.prod I) I m fun q : P × M ↦ (f q.1).symm q.2) (k : ℤ) :
+    ContMDiff (I'.prod I) I m fun q : P × M ↦ (f q.1 ^ k) q.2 := by
+  induction k using Int.induction_on with
+  | zero => simpa using contMDiff_snd
+  | succ k ih =>
+    simpa only [zpow_add_one] using contMDiff_mul_apply (f := fun p ↦ f p ^ (k : ℤ)) ih hf
+  | pred k ih =>
+    simpa only [zpow_sub_one] using
+      contMDiff_mul_apply (f := fun p ↦ f p ^ (-k : ℤ)) (g := fun p ↦ (f p)⁻¹) ih hf'
+
 end SmoothFamily
 
 end Diffeomorph
@@ -239,8 +254,7 @@ theorem Function.Semiconj.diffeomorph_zpow_right {E' : Type*} [NormedAddCommGrou
 namespace TauCeti
 
 /-- `Diff I M n` is the group of `Cⁿ` self-diffeomorphisms of the manifold `M` modelled on `I`,
-under composition. With `n = ∞` this is the group underlying `Diff(M)` of the geometric-topology
-roadmap. -/
+under composition. With `n = ∞` this is the group underlying the diffeomorphism group `Diff(M)`. -/
 abbrev Diff (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M] [ChartedSpace H M]
     (n : ℕ∞ω) : Type _ := M ≃ₘ^n⟮I, I⟯ M
 

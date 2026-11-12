@@ -13,7 +13,8 @@ import TauCeti.NumberTheory.QuadraticForm.Global.SignPrescription
 /-!
 # Realization of binary global invariant systems
 
-Every admissible rank-two system over a number field is realized by a regular binary form.
+Every admissible rank-two system over a number field in any universe is realized by a regular
+binary form.
 For a representative `d` of its plain discriminant, Hilbert sign prescription supplies `a`
 and the form is `⟨a, ad⟩`, written as the scaled norm plane `⟨a, -ab⟩` with `b = -d`.
 The binary local realization exception ensures that `b` is nonsquare at each finite place
@@ -33,7 +34,7 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 
 namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
 
-variable {K : Type} [Field K] [NumberField K] {I : GlobalFormInvariants K}
+variable {K : Type*} [Field K] [NumberField K] {I : GlobalFormInvariants K}
 
 /-- An admissible binary system prescribes the Hilbert symbols of one scaled norm plane.
 The second argument is the negative of a representative of the plain discriminant. -/

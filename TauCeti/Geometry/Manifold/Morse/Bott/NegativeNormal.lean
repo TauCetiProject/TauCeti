@@ -16,7 +16,7 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 Let `i : S → M` be a nondegenerate critical submanifold of a function `f`. At each point of `S`
 the normal Hessian is a nondegenerate symmetric bilinear form on the normal space, whose negative
 index of inertia is the Morse index of `f` at `i s`
-(`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.sigNeg_normalHessian`). Given a fibre
+(`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.sigNeg_normalHessian`). Given a fibre
 metric on the normal bundle, the normal space therefore splits, orthogonally for the metric and for
 the normal Hessian, into a **negative normal space**, on which the normal Hessian is negative
 definite, and a positive normal space, on which it is positive definite. The negative normal
