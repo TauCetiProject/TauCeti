@@ -27,15 +27,14 @@ namespace TauCeti.DynkinType
 root table, just as for the integral datum. -/
 theorem mem_posRoots_rational_g2_iff (ht : G2.Valid) (k : Fin G2.numRoots) :
     k ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ↔ (k : ℕ) < 6 := by
-  rw [mem_posRoots, RootPairing.Base.isPos_iff, height_rationalBase]
+  rw [posRoots_rationalRootSystem]
   -- The uniform integral base is transported to the native G₂ datum by its assembly equation.
-  have hb := simplyConnectedBase_G2 ht
-  have h : ∀ i : Fin 12, 0 < g2SimplyConnectedBase.height i ↔ (i : ℕ) < 6 := by
-    intro i
-    simpa only [mem_posRoots, RootPairing.Base.isPos_iff] using mem_posRoots_g2_iff i
-  convert h k using 2
-  congr 1
-  · exact simplyConnectedRootDatum_G2 ht
-  · exact heq_of_eqRec_eq _ hb
+  have hpos : posRoots (G2.simplyConnectedRootDatum ht) (G2.simplyConnectedBase ht) =
+      posRoots g2SimplyConnectedRootDatum g2SimplyConnectedBase := by
+    congr 1
+    · exact simplyConnectedRootDatum_G2 ht
+    · exact heq_of_eqRec_eq _ (simplyConnectedBase_G2 ht)
+  rw [hpos]
+  exact mem_posRoots_g2_iff k
 
 end TauCeti.DynkinType
