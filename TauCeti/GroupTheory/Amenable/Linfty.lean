@@ -162,8 +162,7 @@ theorem Amenable.of_lpTop [μ.IsMulLeftInvariant] (M : Lp ℝ ∞ μ →ₚ[ℝ]
   (amenable_iff G).2 ⟨Mean.ofLpTop M hM, Mean.isLeftInvariant_ofLpTop hM h⟩
 
 /-- A topological group is amenable if there is a left-invariant finitely additive probability
-`ν` on its Borel sets. Integration against `ν` is then a left-invariant mean on `L∞(G, μ)` for
-the counting measure `μ`, which is left invariant and has no nonempty null sets. -/
+`ν` on its Borel sets. -/
 theorem Amenable.of_addContent
     (ν : AddContent ℝ {s : Set G | MeasurableSet s}) (hν₀ : ∀ s, MeasurableSet s → 0 ≤ ν s)
     (hν₁ : ν Set.univ = 1) (hν : ∀ (g : G) s, MeasurableSet s → ν (g • s) = ν s) :
