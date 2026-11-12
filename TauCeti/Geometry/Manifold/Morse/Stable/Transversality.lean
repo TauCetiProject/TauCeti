@@ -159,7 +159,7 @@ theorem span_mtangentConeAt_unstableSet_sup_span_mtangentConeAt_stableSet_self
     Flow.mem_unstableSet.2 (by simp [hX.flow_apply_of_mfderiv_eq_zero hx])
   exact hsliceu.span_mtangentConeAt_sup_eq_top (by simp)
     (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD) hslices
-    (Submodule.closed_of_finiteDimensional _) (Submodule.closed_of_finiteDimensional _)
+    (Submodule.isClosed_of_finiteDimensional _) (Submodule.isClosed_of_finiteDimensional _)
     (by rw [hsrc]; exact hxD) hxu hxs
     (by rw [sup_comm]; exact φ.stableSubspace_sup_stableSubspace_neg hnd)
 

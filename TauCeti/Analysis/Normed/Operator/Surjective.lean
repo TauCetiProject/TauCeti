@@ -81,7 +81,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 /-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear
 maps. -/
 theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := by
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   rw [Metric.isOpen_iff]
   rintro A (hA : Surjective A)
   obtain ⟨R, hAR⟩ := A.exists_rightInverse_of_surjective (A.range_eq_top_of_surjective hA)
