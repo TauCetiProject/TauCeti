@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
+public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
@@ -56,9 +57,7 @@ instead deduced over `ℚ` from connectedness of the pinned Dynkin diagram.
 
 The passage from a root datum over `ℤ` to the root system over `ℚ` it determines is standard; see
 N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1. This supplies the
-root-system input of the Chevalley basis in Layer 9, "pinned Chevalley--Demazure group schemes over
-`ℤ`", of `TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is milestone L0 of the
-`CFSGStatement` roadmap.
+root-system input of the Chevalley basis of the pinned Chevalley--Demazure group schemes over `ℤ`.
 -/
 
 public section
@@ -145,6 +144,24 @@ theorem height_rationalBase_add {α β γ : Fin t.numRoots}
     (t.rationalBase ht).support = (t.simplyConnectedBase ht).support :=
   support_rootPairingBaseChangeBase ..
 
+/-- Rational base change preserves the height of every root in the pinned base. -/
+@[simp] theorem height_rationalBase (i : Fin t.numRoots) :
+    (t.rationalBase ht).height i = (t.simplyConnectedBase ht).height i := by
+  obtain ⟨f, -, -, hf⟩ := (t.simplyConnectedBase ht).exists_root_eq_sum_int i
+  rw [RootPairing.Base.height_eq_sum hf, ← support_rationalBase t ht]
+  apply RootPairing.Base.height_eq_sum
+  rw [support_rationalBase]
+  ext k
+  have hk := congrFun hf k
+  simpa [root_rationalRootSystem, smul_eq_mul] using congrArg (fun z : ℤ => (z : ℚ)) hk
+
+/-- The rational and integral pinned bases define the same set of positive root indices. -/
+theorem posRoots_rationalRootSystem :
+    posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      posRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) := by
+  ext i
+  simp only [mem_posRoots, RootPairing.Base.isPos_iff, height_rationalBase]
+
 instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..
 
@@ -202,7 +219,7 @@ instance instIsReducedRationalRootSystem : (t.rationalRootSystem ht).IsReduced :
   let _ := isReduced_simplyConnectedRootDatum t ht
   exact isReduced_rootPairingBaseChange ℚ _ _
 
-/-! ## Acceptance: the rational system realizes its own Dynkin type -/
+/-! ## The rational system realizes its own Dynkin type -/
 
 /-- **The rational system has Cartan type `t`.** The base change leaves both the support of the
 pinned base and every Cartan integer alone, so the relabelling exhibited by the integral datum

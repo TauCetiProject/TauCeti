@@ -235,7 +235,7 @@ noncomputable def h2DualEquiv :
   ((h2QuotientEquiv e htrivF htriv).symm.trans (AddEquiv.ofBijective _
     (transgression_bijective_of_le_proPFrattini hRc hR htrivF
       (ZModModule.char_nsmul_eq_zero p))).symm).trans
-    (H1ConjInvariantsEquivOfSmulEqSelf htrivF p hRc (ZModModule.char_nsmul_eq_zero p))
+    (H1ConjInvariantsEquivOfSmulEqSelf htrivF p (ZModModule.char_nsmul_eq_zero p))
 
 /-- **The dual equivalence inverts the transgression**: the class of `H²(G, 𝔽_p)` transgressed
 from an invariant class `y ∈ H¹(R, 𝔽_p)^F` is sent to the character of `R ⧸ Rᵖ[R, F]` that `y`
@@ -244,7 +244,7 @@ theorem h2DualEquiv_h2QuotientEquiv_transgression
     (y : H1ConjInvariants (freeProP p X) (ZMod p) R) :
     h2DualEquiv hRc hR e htrivF htriv
         (h2QuotientEquiv e htrivF htriv (transgression (freeProP p X) (ZMod p) R hRc y)) =
-      H1ConjInvariantsEquivOfSmulEqSelf htrivF p hRc (ZModModule.char_nsmul_eq_zero p) y := by
+      H1ConjInvariantsEquivOfSmulEqSelf htrivF p (ZModModule.char_nsmul_eq_zero p) y := by
   rw [h2DualEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply, AddEquiv.symm_apply_apply]
   congr 1
   exact (AddEquiv.ofBijective _ _).symm_apply_eq.2 rfl

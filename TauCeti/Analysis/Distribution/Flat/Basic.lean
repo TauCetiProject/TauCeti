@@ -204,7 +204,7 @@ theorem normalFlatMass_comp_extDerivCLM_le
     (V : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ) :
     (V ∘L extDerivCLM).normalFlatMass ≤ V.normalFlatMass := by
   conv_rhs => rw [normalFlatMass_def]
-  refine le_iInf fun S => le_iInf fun hS => le_iInf fun hR => ?_
+  refine le_iInf fun S => le_iInf fun _ => le_iInf fun hR => ?_
   have heq : V ∘L extDerivCLM = 0 + (V - S ∘L extDerivCLM) ∘L extDerivCLM := by
     simp [sub_comp, comp_assoc, extDerivCLM_comp_extDerivCLM]
   simpa using (normalFlatMass_le_of_eq_add_comp_extDerivCLM _ isNormal_zero hR heq).trans
@@ -219,10 +219,10 @@ theorem normalFlatMass_comp_monoCLM_le {Ω' : Opens E} (h : Ω' ≤ Ω) :
   have heq : T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] _) =
       (T - S ∘L extDerivCLM) ∘L monoCLM ℝ +
         (S ∘L monoCLM ℝ) ∘L extDerivCLM := by
-    rw [comp_monoCLM_comp_extDerivCLM h, sub_comp]
+    rw [comp_monoCLM_comp_extDerivCLM, sub_comp]
     abel
   refine (normalFlatMass_le_of_eq_add_comp_extDerivCLM _
-    (hR.comp_monoCLM h) (hS.comp_monoCLM h) heq).trans ?_
+    hR.comp_monoCLM hS.comp_monoCLM heq).trans ?_
   simp only [coe_comp, mass_comp_monoCLM h]
   exact add_le_add localMass_le_mass localMass_le_mass
 

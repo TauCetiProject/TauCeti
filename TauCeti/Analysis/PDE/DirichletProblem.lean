@@ -122,6 +122,8 @@ the constructed one, so it is available before, and independently of, uniqueness
   under the geometric hypotheses that make the energy form coercive.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball`: the Poisson
   problem `-Δu = f` on a ball-contained domain.
+* `TauCeti.PDE.exists_isCoercive_laplacian_of_isBounded`: the energy form of `-Δ` is coercive on
+  `H¹₀(Ω)` for every bounded `Ω`.
 
 ## References
 
@@ -213,6 +215,16 @@ def IsWeakSolutionDirichlet (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
         energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2)
           = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
   simp only [IsWeakSolutionDirichlet, dirichletForcing_apply_eq_setIntegral]
+
+/-- Being a weak solution, written with the `L²(Ω)` inner product: `a(u, v) = ⟪f, v⟫_{L²(Ω)}`
+for every `v ∈ H¹₀(Ω)`. -/
+theorem isWeakSolutionDirichlet_iff_inner (f : Lp ℝ 2 (mu.restrict Omega))
+    (u : W1p0 mu Omega 2) :
+    IsWeakSolutionDirichlet a b c f u ↔
+      ∀ v : W1p0 mu Omega 2,
+        energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+          ⟪f, W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
+  simp only [IsWeakSolutionDirichlet, dirichletForcing_apply]
 
 /-- A weak solution satisfies its weak equation against every `v ∈ H¹₀(Ω)`, with the right-hand
 side read as the forcing functional. -/
@@ -765,6 +777,29 @@ theorem existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball
     (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const aestronglyMeasurable_const
     aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
     (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) f
+
+/-- **The energy form of `-Δ` is coercive on a bounded domain.** On a bounded open
+`Ω ⊆ ℝ^{n+1}` the coefficients of `-Δ` satisfy the integrability condition of the energy form, and
+the form is coercive on `H¹₀(Ω)` by the Poincaré inequality on a ball containing `Ω`. -/
+theorem exists_isCoercive_laplacian_of_isBounded
+    (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
+    ∃ hcoeff : MemLp (fun x ↦ energyIntegrand
+        ((fun _ ↦ (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) x)
+        ((0 : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x)
+        ((0 : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)) ⊤
+        (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))),
+      IsCoercive (energyFormH1L0 hcoeff) := by
+  have h1 := uniformlyEllipticOn_const_one_one (n := Fin (n + 1))
+    (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) h1.upper_nonneg
+    aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _x hx eta xi ↦ h1.upper_bound hx eta xi) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
+  obtain ⟨R, -, hball⟩ := hOmega.subset_ball_lt 0 0
+  exact ⟨hcoeff, UniformlyEllipticOn.isCoercive_energyFormH1L0_of_subset_ball h1
+    aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
+    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp) (fun _ _ ↦ le_rfl) hball
+    (by simp) hcoeff⟩
 
 /-- The weak solution in `H¹₀(Ω)` of `-Δw = h`, for a domain `Ω` contained in a ball and a
 right-hand side `h` in `L²(Ω)`, tested against `H¹₀(Ω)`. -/

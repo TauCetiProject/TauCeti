@@ -19,11 +19,10 @@ and pairing operation exhibit this construction as the categorical binary produc
 (`TauCeti.AlgebraicGeometry.AbelianVariety.dim_prod`), since a product of smooth schemes of
 relative dimensions `m` and `n` is smooth of relative dimension `m + n`.
 
-Finite products are part of the basic abelian-variety API required in Layer E of
-`TauCetiRoadmap/JacobianChallenge/README.md`. In particular, the theorem of the cube and the
-duality and polarization theory in that layer use powers of an abelian variety. No external
-formalization is vendored; the construction reuses Mathlib's cartesian monoidal structures on
-`Over (Spec K)` and on internal commutative groups.
+Powers of an abelian variety appear, for example, in the theorem of the cube and in the theory of
+duality and polarizations, none of which is formalized here. No external formalization is
+vendored; the construction reuses Mathlib's cartesian monoidal structures on `Over (Spec K)` and
+on internal commutative groups.
 -/
 
 public section

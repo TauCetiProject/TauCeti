@@ -40,6 +40,7 @@ import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.Semisimple.EndAlgebra
 
 /-!
@@ -109,8 +110,8 @@ algebra homomorphism and bijectivity proof it is assembled from are private to t
 
 Centrality is asked of `B` and not of `A`, exactly as in
 `TauCeti/Algebra/CentralSimple/SkolemNoether.lean`, and for the same reason: what the proof needs is
-that `B ⊗[K] Aᵐᵒᵖ` is simple, which `IsSimpleRing.tensorProduct` gets from `B` central
-simple and `A` simple. The roadmap's central simple form is the case `Algebra.IsCentral K A`, which
+that `B ⊗[K] Aᵐᵒᵖ` is simple, which `IsSimpleRing.tensorProduct` gets from `B` central simple and
+`A` simple. The form with `A` central simple as well is the case `Algebra.IsCentral K A`, which
 these statements cover. Centrality of `B` cannot be dropped: for `K = ℝ`, `A = ℂ` and `B = A`, the
 centralizer is all of `ℂ`, so `finrank ℝ B * finrank ℝ C = 4 ≠ 2 = finrank ℝ A`; the worked example
 at the end of the file records this.
@@ -297,12 +298,13 @@ end Identification
 
 section DimensionCount
 
-variable {K A : Type*} [Field K] [Ring A] [Nontrivial A] [Algebra K A] [FiniteDimensional K A]
+variable {K A : Type*} [Field K] [Ring A] [Algebra K A] [FiniteDimensional K A]
   (B : Subalgebra K A) [IsSimpleRing (↥B ⊗[K] Aᵐᵒᵖ)]
 
 /-- **The dimension count behind the centralizer theorem**, asking only for what it uses: that `A`
-is finite-dimensional and nonzero over the field `K` — so that the factor of `finrank K A` cancelled
-at the end is nonzero — and that the ring `R = B ⊗[K] Aᵐᵒᵖ` acting on `A` is simple. Then
+is finite-dimensional over the field `K` and that the ring `R = B ⊗[K] Aᵐᵒᵖ` acting on `A` is
+simple, which makes `A` nonzero, so that the factor of `finrank K A` cancelled at the end is
+nonzero. Then
 
   `finrank K B * finrank K C_A(B) = finrank K A`.
 
@@ -320,6 +322,8 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
     (MulOpposite.opLinearEquiv K (M := A)).finrank_eq.symm,
     ← (centralizerAlgEquivEnd B).toLinearEquiv.finrank_eq] at key
   -- `key : c * (b * a) = a ^ 2`; cancel one factor of `a = finrank K A`.
+  have : Nontrivial Aᵐᵒᵖ := TensorProduct.nontrivial_right (R := K) (M := ↥B)
+  have : Nontrivial A := MulOpposite.unop_injective.nontrivial
   have ha : 0 < finrank K A := Module.finrank_pos
   refine Nat.eq_of_mul_eq_mul_right ha ?_
   rw [sq] at key
@@ -330,6 +334,8 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
 ambient algebra is simple. No centrality hypothesis on the subalgebra is needed. -/
 theorem _root_.Subalgebra.isSimpleRing_centralizer_of_isSimpleRing_tensorProduct :
     IsSimpleRing (Subalgebra.centralizer K (B : Set A)) := by
+  have : Nontrivial Aᵐᵒᵖ := TensorProduct.nontrivial_right (R := K) (M := ↥B)
+  have : Nontrivial A := MulOpposite.unop_injective.nontrivial
   have : FiniteDimensional K ↥B :=
     FiniteDimensional.of_injective B.val.toLinearMap Subtype.val_injective
   have : IsArtinianRing (↥B ⊗[K] Aᵐᵒᵖ) := IsArtinianRing.of_finite K _
