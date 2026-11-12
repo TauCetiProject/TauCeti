@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.ModEq
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
@@ -169,9 +169,7 @@ theorem mem_criticalPoints_iff_fderiv_eq_zero {f : E → ℝ} {x : E} :
 theorem criticalPoints_pow {m : ℕ} (hm : 2 ≤ m) :
     criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ m) = {0} := by
   ext y
-  have hderiv : deriv (fun y : ℝ ↦ y ^ m) y = m * y ^ (m - 1) := by
-    have h := iteratedDeriv_pow (𝕜 := ℝ) (x := y) m 1
-    rwa [iteratedDeriv_one, Nat.descFactorial_one] at h
+  have hderiv : deriv (fun y : ℝ ↦ y ^ m) y = m * y ^ (m - 1) := deriv_pow_field m
   rw [mem_criticalPoints_iff_fderiv_eq_zero, mem_singleton_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have h1 := fderiv_apply_one_eq_deriv (f := fun y : ℝ ↦ y ^ m) (x := y)

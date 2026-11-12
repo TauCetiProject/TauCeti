@@ -394,7 +394,7 @@ degenerate, that is, at which `q` is not a nondegenerate critical point. Then fo
 family of smooth embeddings exhibits `(x, v) ↦ q v` as a Morse–Bott function on `M × V`: along
 the critical slice `M × {y}` the kernel of the critical Hessian is larger than the tangent space of
 any piece through it. -/
-theorem not_isMorseBottFamily_comp_snd [Nonempty M] {y : V} (hn : n ≠ 0)
+theorem not_isMorseBottFamily_comp_snd [Nonempty M] {y : V}
     (hy : y ∈ criticalPoints 𝓘(ℝ, V) q)
     (hiso : ∀ᶠ z in 𝓝 y, z ∈ criticalPoints 𝓘(ℝ, V) q → z = y)
     (hdeg : ¬IsNondegenerateCriticalPoint q y)
@@ -402,15 +402,6 @@ theorem not_isMorseBottFamily_comp_snd [Nonempty M] {y : V} (hn : n ≠ 0)
     ¬IsMorseBottFamily i (q ∘ Prod.snd) := by
   intro h
   obtain ⟨x⟩ := ‹Nonempty M›
-  -- `q` is the restriction of the smooth function `q ∘ Prod.snd` to the vertical slice through
-  -- `x`, so it is `C²` at `y`, and its Hessian there has a nonzero kernel vector `w`.
-  have hq₂ : ContDiffAt ℝ 2 q y := contMDiffAt_iff_contDiffAt.1
-    (((h.contMDiff (x, y)).of_le (by simp)).comp y (contMDiffAt_const.prodMk contMDiffAt_id))
-  obtain ⟨w, hw, hw0⟩ : ∃ w, fderiv ℝ (fderiv ℝ q) y w = 0 ∧ w ≠ 0 := by
-    by_contra! hinj
-    exact hdeg ⟨hq₂, mem_criticalPoints_iff_fderiv_eq_zero.1 hy,
-      ContinuousLinearMap.isInvertible_of_injective <|
-        (injective_iff_map_eq_zero _).2 fun w hw ↦ hinj w hw⟩
   have hxy : (x, y) ∈ criticalPoints (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) := by
     rw [criticalPoints_comp_snd]
     exact ⟨mem_univ x, hy⟩
@@ -430,28 +421,10 @@ theorem not_isMorseBottFamily_comp_snd [Nonempty M] {y : V} (hn : n ≠ 0)
     refine hsub ⟨i a t, ?_, rfl⟩
     rw [← hs, ← h.range_eq_connectedComponentIn a s]
     exact mem_range_self t
-  -- Hence the tangent vectors of the piece have zero second component.
-  have hd : (mfderiv (I.prod 𝓘(ℝ, V)) 𝓘(ℝ, V) Prod.snd (i a s)).comp
-      (mfderiv (J a) (I.prod 𝓘(ℝ, V)) (i a) s) = 0 := by
-    rw [← mfderiv_comp s mdifferentiableAt_snd (((i a).contMDiff s).mdifferentiableAt hn),
-      show Prod.snd ∘ i a = fun _ ↦ y from funext hslice, mfderiv_const]
-    -- The two zero maps differ only in reading their target as the tangent space at `y` or at
-    -- `(i a s).2`, both of which are `V`.
-    rfl
-  -- But `(0, w)` lies in the kernel of the critical Hessian at `i a s = (x, y)`, so it is tangent
-  -- to the piece, which forces `w = 0`.
-  have hw' : fderiv ℝ (fderiv ℝ q) (i a s).2 w = 0 := by
-    rw [hslice s]
-    exact hw
-  have hHess : criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (i a s) ((0 : E), w) = 0 :=
-    ContinuousLinearMap.ext fun u ↦
-      (criticalHessian_comp_snd_apply (I := I) ((hslice s).symm ▸ hq₂) (i a s).1 _ u).trans
-        congr($hw' u.2)
-  obtain ⟨u, hu⟩ :=
-    (h.isNondegenerateCriticalSubmanifold a).ker_criticalHessian_le s (LinearMap.mem_ker.2 hHess)
-  have hu₂ := congr($hd u)
-  rw [ContinuousLinearMap.comp_apply, mfderiv_snd] at hu₂
-  exact hw0 (congrArg Prod.snd hu.symm |>.trans hu₂)
+  -- A Morse–Bott piece inside the slice `M × {y}` forces `q` to be nondegenerate at `y`.
+  have : Nonempty (S a) := ⟨s⟩
+  exact hdeg <|
+    (h.isNondegenerateCriticalSubmanifold a).isNondegenerateCriticalPoint_of_snd_eq hslice
 
 end Prod
 

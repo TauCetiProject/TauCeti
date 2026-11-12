@@ -78,20 +78,8 @@ when its second component vanishes, that is, when `v` is a multiple of `(1, 0)`.
 theorem criticalHessian_snd_sq_apply_eq_zero_iff (x : ℝ)
     (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) ((x, 0) : ℝ × ℝ)) :
     criticalHessian (𝓘(ℝ).prod 𝓘(ℝ)) (fun p : ℝ × ℝ ↦ p.2 ^ 2) (x, 0) v = 0 ↔ v.2 = 0 := by
-  -- The Hessian pairs `v` with `u` to `2 v₂ u₂`.
-  have hv (u : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) ((x, 0) : ℝ × ℝ)) :
-      criticalHessian (𝓘(ℝ).prod 𝓘(ℝ)) (fun p : ℝ × ℝ ↦ p.2 ^ 2) (x, 0) v u = 2 * (v.2 * u.2) := by
-    rw [snd_pow_eq_comp, criticalHessian_comp_snd_apply (I := 𝓘(ℝ)) (by fun_prop) x,
-      fderiv_fderiv_apply_eq_smul_iteratedDeriv, iteratedDeriv_pow, smul_eq_mul]
-    norm_num
-    ring
-  refine ⟨fun h ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun u ↦ ?_⟩
-  · have h2 : (2 : ℝ) * (v.2 * 1) = 0 := by
-      rw [← hv (0, 1), h]
-      -- The zero form vanishes on `(0, 1)`, read as a tangent vector at `(x, 0)`.
-      rfl
-    simpa using h2
-  · rw [hv, h, zero_mul, mul_zero, zero_apply]
+  rw [snd_pow_eq_comp, criticalHessian_comp_snd_apply_eq_zero_iff (by fun_prop)]
+  exact isNondegenerateCriticalPoint_sq.isInvertible.injective.eq_iff' (map_zero _)
 
 section NormalSpaces
 
@@ -142,11 +130,11 @@ line. -/
 theorem not_isMorseBottFamily_snd_pow_four {ι : Type*} {E' : ι → Type*}
     [∀ a, NormedAddCommGroup (E' a)] [∀ a, NormedSpace ℝ (E' a)] {H' : ι → Type*}
     [∀ a, TopologicalSpace (H' a)] {J : ∀ a, ModelWithCorners ℝ (E' a) (H' a)} {S : ι → Type*}
-    [∀ a, TopologicalSpace (S a)] [∀ a, ChartedSpace (H' a) (S a)] {n : ℕ∞ω} (hn : n ≠ 0)
+    [∀ a, TopologicalSpace (S a)] [∀ a, ChartedSpace (H' a) (S a)] {n : ℕ∞ω}
     (i : ∀ a, SmoothEmbedding (J a) (𝓘(ℝ).prod 𝓘(ℝ)) n (S a) (ℝ × ℝ)) :
     ¬IsMorseBottFamily i (fun p : ℝ × ℝ ↦ p.2 ^ 4) := by
   have hcrit := criticalPoints_pow (m := 4) (by norm_num)
-  refine not_isMorseBottFamily_comp_snd (M := ℝ) (q := fun y : ℝ ↦ y ^ 4) (y := 0) hn
+  refine not_isMorseBottFamily_comp_snd (M := ℝ) (q := fun y : ℝ ↦ y ^ 4) (y := 0)
     (by simp [hcrit])
     (Filter.Eventually.of_forall fun z hz ↦ by rwa [hcrit] at hz) (fun h ↦ ?_) i
   rw [isNondegenerateCriticalPoint_real_iff (by fun_prop)] at h
