@@ -27,6 +27,8 @@ which is the form in which it is applied to concrete words.
 
 * `Monoid.PushoutI.exists_eq_base_mul_ofCoprodI_prod`: every element is `h * w` with `h` in the
   amalgamated subgroup and `w` the product of a reduced word.
+* `Monoid.PushoutI.exists_eq_of_mul_list_prod`: every element is `g * w` with `g` in a given
+  factor `G i` and `w` the product of a reduced list of letters not starting in `G i`.
 * `Monoid.PushoutI.list_prod_notMem_range_base`: the product of a nonempty reduced list of letters
   is not in the amalgamated subgroup.
 * `Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_base`: the conjugate
@@ -91,6 +93,27 @@ theorem exists_eq_base_mul_ofCoprodI_prod (x : PushoutI φ) :
     intro z hz
     rw [mul_assoc]
     exact hx _ (hy z hz)
+
+/-- The normal form in an amalgamated product of groups, seen from a factor `G i`: every element
+is `g * a₁ * ⋯ * aᵣ` with `g ∈ G i` and letters `aⱼ`, consecutive ones from different factors, none
+of them in the amalgamated subgroup and the first one not in `G i`. -/
+theorem exists_eq_of_mul_list_prod (i : ι) (x : PushoutI φ) :
+    ∃ (g : G i) (L : List (Σ j, G j)), L.IsChain (fun l l' => l.1 ≠ l'.1) ∧
+      (∀ l ∈ L, l.2 ∉ (φ l.1).range) ∧ (∀ l ∈ L.head?, l.1 ≠ i) ∧
+      x = of i g * (L.map fun l => of l.1 l.2).prod := by
+  obtain ⟨h, ⟨L, _, hc⟩, hred, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod x
+  simp only [Reduced] at hred
+  rw [← of_apply_eq_base φ i, Word.prod, map_list_prod, List.map_map]
+  simp only [Function.comp_def, ofCoprodI_of]
+  rcases L with _ | ⟨⟨j, a⟩, L⟩
+  · exact ⟨φ i h, [], hc, hred, by simp, rfl⟩
+  by_cases hj : j = i
+  · -- A leading letter of `G i` is absorbed into `g`.
+    subst hj
+    refine ⟨φ j h * a, L, hc.tail, fun l hl => hred l (List.mem_cons_of_mem _ hl),
+      fun l hl => ((List.isChain_cons.1 hc).1 l hl).symm, ?_⟩
+    simp only [List.map_cons, List.prod_cons, map_mul, mul_assoc]
+  · exact ⟨φ i h, _, hc, hred, by simpa using hj, rfl⟩
 
 /-- In an amalgamated product of groups, the product of a nonempty list of letters, consecutive
 ones from different factors and none of them in the amalgamated subgroup, is not in the

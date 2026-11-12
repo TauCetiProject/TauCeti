@@ -183,7 +183,8 @@ theorem IsCSA.mem_centralizer_of_conj_mem_centralizer (hG : IsCSA G) {u g : G}
   · exact Subgroup.mem_centralizer_singleton_iff.2 (by simp)
   have huu : u ∈ Subgroup.centralizer {u} := Subgroup.mem_centralizer_singleton_iff.2 rfl
   refine inv_mem_iff.1 (hG.mem_centralizer_of_commute_conj huu hu huu hu ?_)
-  simpa using (show Commute (g⁻¹ * u * g) u from Subgroup.mem_centralizer_singleton_iff.1 h).symm
+  rw [inv_inv, commute_iff_eq]
+  exact (Subgroup.mem_centralizer_singleton_iff.1 h).symm
 
 /-- In a torsion-free CSA group, conjugates of nonzero powers of `u` by `y` and `y'` do not
 commute unless `y⁻¹ * y'` centralizes `u`. -/

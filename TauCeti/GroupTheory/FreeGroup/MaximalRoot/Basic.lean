@@ -94,6 +94,14 @@ noncomputable def intEquivCentralizer {u : G} (hu : ¬IsProperPower u) :
     (k : Multiplicative ℤ) : (intEquivCentralizer hu k : G) = u ^ k.toAdd :=
   (rfl)
 
+@[simp] theorem intEquivCentralizer_symm_apply_zpow {u : G} (hu : ¬IsProperPower u) (k : ℤ)
+    (hk : u ^ k ∈ centralizer {u}) : (intEquivCentralizer hu).symm ⟨u ^ k, hk⟩ = .ofAdd k :=
+  (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp] theorem intEquivCentralizer_symm_apply_self {u : G} (hu : ¬IsProperPower u)
+    (hk : u ∈ centralizer {u}) : (intEquivCentralizer hu).symm ⟨u, hk⟩ = .ofAdd 1 :=
+  (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
 /-- Uniqueness of maximal roots in a free group: if `r` and `s` are not proper powers and the
 exponent `l` is nonzero, then `r ^ k = s ^ l` exactly when `r = s` and `k = l`. The exponent `l`
 cannot be dropped as well: `r ^ 0 = s ^ 0` for all `r` and `s`. -/
