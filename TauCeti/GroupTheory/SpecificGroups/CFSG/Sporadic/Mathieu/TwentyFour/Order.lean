@@ -408,6 +408,9 @@ private theorem siftPairCheck_6_6 : siftPairCheck 6 6 = true := by
 private theorem siftCheck_eq_true :
     ∀ i < 7, TauCeti.siftCheck (Fin.ofNat 24) transversal 7 i = true := by
   intro i hi
+  -- By definition, `TauCeti.siftCheck … 7 i` is `((List.range 7).filter (i ≤ ·)).all
+  -- (siftPairCheck i)`. At each numeral `i` the filtered range reduces to the literal list
+  -- `[i, …, 6]`, so each `change` below only unfolds that definition.
   interval_cases i
   · change [0, 1, 2, 3, 4, 5, 6].all (siftPairCheck 0) = true
     simp only [List.all_cons, List.all_nil, siftPairCheck_0_0, siftPairCheck_0_1,
