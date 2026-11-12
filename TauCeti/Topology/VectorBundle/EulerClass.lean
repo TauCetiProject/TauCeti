@@ -138,12 +138,14 @@ def thomPairOverUnivIso : thomPairOver F E univ ≅ thomPair F E :=
 @[simp]
 theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
     TopPair.Hom.fst (thomPairOverUnivIso F E).hom v = v.1 :=
-  (rfl)
+  TopCat.restrictPreimagePairMap_fst_apply (X := TopCat.of (TotalSpace F E)) (π F E)
+    (zeroSectionCompl F E) univ v
 
 @[simp]
 theorem thomPairOverUnivIso_hom_snd_apply (v : ↥(π F E ⁻¹' univ ∩ zeroSectionCompl F E)) :
     TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.1, v.2.2⟩ :=
-  (rfl)
+  TopCat.restrictPreimagePairMap_snd_apply (X := TopCat.of (TotalSpace F E)) (π F E)
+    (zeroSectionCompl F E) univ v
 
 @[simp]
 theorem thomPairOverUnivIso_inv_fst_apply (v : TotalSpace F E) :
@@ -323,7 +325,8 @@ Thom pair `(E, E₀)`. -/
 theorem fiberThomPairOverMap_comp_thomPairOverUnivIso_hom (b : B) :
     fiberThomPairOverMap F E (mem_univ b) ≫ (thomPairOverUnivIso F E).hom =
       fiberThomPairMap F E b :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ (fiberThomPairMap_fst_apply F E b x).symm)
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦
+    (thomPairOverUnivIso_hom_fst_apply F E _).trans (fiberThomPairMap_fst_apply F E b x).symm)
 
 /-- The fibre inclusion over `b` into the Thom pair `(E, E₀)`, followed by the inclusion of the
 pair over the whole base into the pair over a set `W'` covering the base, is the fibre inclusion

@@ -209,10 +209,11 @@ private theorem ofInclusionMap_comp_restrictPreimagePairUnionIso_hom_left :
         (fun _ hx ↦ subset_union_left hx) ≫ (TopCat.restrictPreimagePairUnionIso
           (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).hom =
       thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V) :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
-    rfl)
+  TopPair.hom_ext_of_fst _ (by
+    rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+      TopCat.restrictPreimagePairUnionIso_hom_fst]
+    exact TopCat.ext fun v ↦
+      (thomPairOverMap_fst_apply F E (subset_union_left : U ⊆ U ∪ V) v).symm)
 
 /-- The restriction from the union pair of the Mayer–Vietoris sequence to the pair over `V` is the
 restriction from `U ∪ V` to `V`. -/
@@ -221,10 +222,11 @@ private theorem ofInclusionMap_comp_restrictPreimagePairUnionIso_hom_right :
         (fun _ hx ↦ subset_union_right hx) ≫ (TopCat.restrictPreimagePairUnionIso
           (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) U V).hom =
       thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V) :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
-    rfl)
+  TopPair.hom_ext_of_fst _ (by
+    rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+      TopCat.restrictPreimagePairUnionIso_hom_fst]
+    exact TopCat.ext fun v ↦
+      (thomPairOverMap_fst_apply F E (subset_union_right : V ⊆ U ∪ V) v).symm)
 
 /-- The restriction from the pair over `U ∩ V` to the pair over `U`, through the intersection pair
 of the Mayer–Vietoris sequence. -/
@@ -233,10 +235,11 @@ private theorem restrictPreimagePairInterIso_inv_comp_ofInclusionMap_left :
         (zeroSectionCompl F E) U V).inv ≫ TopPair.ofInclusionMap _ _
         (ContinuousMap.inclusion inter_subset_left) (fun _ hx ↦ inter_subset_left hx) =
       thomPairOverMap F E (inter_subset_left : U ∩ V ⊆ U) :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
-    rfl)
+  TopPair.hom_ext_of_fst _ (by
+    rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+      TopCat.restrictPreimagePairInterIso_inv_fst]
+    exact TopCat.ext fun v ↦
+      (thomPairOverMap_fst_apply F E (inter_subset_left : U ∩ V ⊆ U) v).symm)
 
 /-- The restriction from the pair over `U ∩ V` to the pair over `V`, through the intersection pair
 of the Mayer–Vietoris sequence. -/
@@ -245,10 +248,11 @@ private theorem restrictPreimagePairInterIso_inv_comp_ofInclusionMap_right :
         (zeroSectionCompl F E) U V).inv ≫ TopPair.ofInclusionMap _ _
         (ContinuousMap.inclusion inter_subset_right) (fun _ hx ↦ inter_subset_right hx) =
       thomPairOverMap F E (inter_subset_right : U ∩ V ⊆ V) :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ by
-    -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
-    erw [CategoryTheory.comp_apply, TopPair.ofInclusionMap_fst_apply, thomPairOverMap_fst_apply]
-    rfl)
+  TopPair.hom_ext_of_fst _ (by
+    rw [TopPair.Hom.fst_comp, TopPair.ofInclusionMap_fst,
+      TopCat.restrictPreimagePairInterIso_inv_fst]
+    exact TopCat.ext fun v ↦
+      (thomPairOverMap_fst_apply F E (inter_subset_right : U ∩ V ⊆ V) v).symm)
 
 variable {R} {k : Type*} [Ring k] [Linear k C] {M : C}
 
