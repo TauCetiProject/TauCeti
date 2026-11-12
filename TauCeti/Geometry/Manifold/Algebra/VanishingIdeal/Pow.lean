@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
+import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -53,6 +54,8 @@ target, which lets one chart serve all nearby points. The converse is Hadamard's
 * `TauCeti.differentialOperators_apply_eq_of_eventuallyEq`,
   `TauCeti.tsupport_apply_subset_of_mem_differentialOperators`: differential operators are local,
   so they do not enlarge supports.
+* `TauCeti.eq_of_forall_hasCompactSupport_apply_eq`: on a boundaryless manifold, a differential
+  operator is determined by its values on compactly supported functions.
 
 ## References
 
@@ -225,5 +228,27 @@ theorem hasCompactSupport_apply_of_mem_differentialOperators [BoundarylessManifo
     (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     {f : C^∞⟮I, M; ℝ⟯} (hf : HasCompactSupport f) : HasCompactSupport (D f) :=
   hf.mono' ((subset_tsupport _).trans (tsupport_apply_subset_of_mem_differentialOperators hD f))
+
+/-- A differential operator on `C^∞(M)` is determined by its values on compactly supported
+functions, on a boundaryless manifold: two differential operators agreeing there are equal, since
+they are local. -/
+theorem eq_of_forall_hasCompactSupport_apply_eq [BoundarylessManifold I M] {m₁ m₂ : ℕ}
+    {D₁ D₂ : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m₁)
+    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m₂)
+    (h : ∀ f : C^∞⟮I, M; ℝ⟯, HasCompactSupport f → D₁ f = D₂ f) : D₁ = D₂ := by
+  refine LinearMap.ext fun g ↦ ContMDiffMap.ext fun x ↦ ?_
+  -- Cut `g` off by a bump function equal to one near `x`.
+  let χ : SmoothBumpFunction I x := Classical.choice inferInstance
+  let φ : C^∞⟮I, M; ℝ⟯ := ⟨χ, χ.contMDiff⟩
+  have hφg : ((φ * g : C^∞⟮I, M; ℝ⟯) : M → ℝ) =ᶠ[𝓝 x] g := by
+    filter_upwards [χ.eventuallyEq_one] with y hy
+    rw [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coeFn_mk, hy, Pi.one_apply, one_mul]
+  have hφgc : HasCompactSupport (φ * g : C^∞⟮I, M; ℝ⟯) := by
+    rw [ContMDiffMap.coe_mul, ContMDiffMap.coeFn_mk]
+    exact χ.hasCompactSupport.mul_right
+  rw [← differentialOperators_apply_eq_of_eventuallyEq hD₁ BoundarylessManifold.isInteriorPoint hφg,
+    ← differentialOperators_apply_eq_of_eventuallyEq hD₂ BoundarylessManifold.isInteriorPoint hφg,
+    h _ hφgc]
 
 end TauCeti

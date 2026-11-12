@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
@@ -237,8 +236,9 @@ private theorem exists_isFormalTranspose_multiIndexDeriv {ι : Type*} [Fintype �
   | zero =>
     obtain rfl : α = 0 := funext fun i ↦ by simpa using (sum_eq_zero_iff.mp hN) i (mem_univ i)
     refine ⟨1, ?_, ?_⟩
-    · simpa using mem_differentialOperators_zero_iff.2 fun (_ _ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ↦ rfl
-    · rw [multiIndexDeriv_zero]
+    · simpa only [Pi.zero_apply, sum_const_zero, Module.End.one_eq_id, LinearMap.mulLeft_one]
+        using mulLeft_mem_differentialOperators_zero (R := ℝ) (1 : C^∞⟮𝓘(ℝ, E), E; ℝ⟯)
+    · rw [multiIndexDeriv_zero, Module.End.one_eq_id]
       exact isFormalTranspose_id
   | succ N ih =>
     obtain ⟨i, -, hi⟩ := exists_ne_zero_of_sum_ne_zero (s := univ) (f := α) (by omega)
@@ -294,7 +294,7 @@ theorem exists_isFormalTranspose {m : ℕ} {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ 
     · exact (isFormalTranspose_mulLeft (c α)).comp hT
         (fun _ ↦ hasCompactSupport_apply_of_mem_differentialOperators
           (multiIndexDeriv_mem_differentialOperators _ _ α))
-        (fun _ hg ↦ hg.mul_left)
+        (fun _ hg ↦ by rw [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul]; exact hg.mul_left)
   choose! T hTm hT using hterm
   refine ⟨∑ k ∈ range (m + 1), ∑ α ∈ piAntidiag univ k, T k α,
     sum_mem fun k hk ↦ sum_mem fun α hα ↦ hTm k hk α hα, ?_⟩
@@ -308,28 +308,6 @@ end Existence
 section Uniqueness
 
 variable [FiniteDimensional ℝ E]
-
-omit [MeasurableSpace E] in
-/-- A differential operator on `C^∞(E)` is determined by its values on compactly supported
-functions: two differential operators agreeing there are equal, since they are local. -/
-theorem eq_of_forall_hasCompactSupport_apply_eq {m₁ m₂ : ℕ}
-    {D₁ D₂ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
-    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
-      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m₁)
-    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
-      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m₂)
-    (h : ∀ f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯, HasCompactSupport f → D₁ f = D₂ f) : D₁ = D₂ := by
-  refine LinearMap.ext fun g ↦ ContMDiffMap.ext fun x ↦ ?_
-  -- Cut `g` off by a bump function equal to one near `x`.
-  let χ : ContDiffBump x := ⟨1, 2, one_pos, one_lt_two⟩
-  let φ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ := ⟨χ, χ.contDiff.contMDiff⟩
-  have hφg : ((φ * g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : E → ℝ) =ᶠ[𝓝 x] g := by
-    filter_upwards [χ.eventuallyEq_one] with y hy
-    rw [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coeFn_mk, hy, Pi.one_apply, one_mul]
-  have hint : (𝓘(ℝ, E)).IsInteriorPoint x := BoundarylessManifold.isInteriorPoint
-  rw [← differentialOperators_apply_eq_of_eventuallyEq hD₁ hint hφg,
-    ← differentialOperators_apply_eq_of_eventuallyEq hD₂ hint hφg,
-    h _ (χ.hasCompactSupport.mul_right (f' := g))]
 
 variable [BorelSpace E]
 
@@ -352,15 +330,12 @@ theorem IsFormalTranspose.eq_of_mem_differentialOperators [IsFiniteMeasureOnComp
     refine ae_eq_zero_of_integral_contDiff_smul_eq_zero hcont.locallyIntegrable
       fun φ hφ hφc ↦ ?_
     let f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ := ⟨φ, hφ.contMDiff⟩
-    have hf : HasCompactSupport f := hφc
-    have e₁ : ∫ x, D f x * g x ∂μ = ∫ x, φ x * D₁ g x ∂μ := h₁ f g hf hg
-    have e₂ : ∫ x, D f x * g x ∂μ = ∫ x, φ x * D₂ g x ∂μ := h₂ f g hf hg
-    have i₁ : Integrable (fun x ↦ φ x * D₁ g x) μ :=
-      integrable_mul_of_hasCompactSupport_left hf (D₁ g)
-    have i₂ : Integrable (fun x ↦ φ x * D₂ g x) μ :=
-      integrable_mul_of_hasCompactSupport_left hf (D₂ g)
-    simp only [smul_eq_mul, mul_sub]
-    rw [integral_sub i₁ i₂, ← e₁, ← e₂, sub_self]
+    have hfφ : (f : E → ℝ) = φ := ContMDiffMap.coeFn_mk φ hφ.contMDiff
+    have hf : HasCompactSupport f := hfφ ▸ hφc
+    simp only [smul_eq_mul, mul_sub, ← hfφ]
+    rw [integral_sub (integrable_mul_of_hasCompactSupport_left hf (D₁ g))
+      (integrable_mul_of_hasCompactSupport_left hf (D₂ g)), ← h₁ f g hf hg, ← h₂ f g hf hg,
+      sub_self]
   have hzero := (Continuous.ae_eq_iff_eq μ hcont continuous_zero).mp hae
   exact ContMDiffMap.ext fun x ↦ sub_eq_zero.mp (congrFun hzero x)
 
@@ -407,6 +382,21 @@ theorem IsFormalTranspose.formalTranspose_eq [IsFiniteMeasureOnCompacts μ] [μ.
     formalTranspose μ D = D' := by
   obtain ⟨⟨m, hm⟩, hT⟩ := formalTranspose_spec ⟨D', ⟨k, hD'⟩, h⟩
   exact hT.eq_of_mem_differentialOperators h hm hD'
+
+/-- The zero operator is its own formal transpose. -/
+@[simp]
+theorem formalTranspose_zero [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] :
+    formalTranspose μ (0 : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) = 0 :=
+  isFormalTranspose_zero.formalTranspose_eq (k := 0) (zero_mem _)
+
+/-- The identity is its own formal transpose. -/
+@[simp]
+theorem formalTranspose_id [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] :
+    formalTranspose μ (LinearMap.id : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) =
+      LinearMap.id :=
+  isFormalTranspose_id.formalTranspose_eq (k := 0) <| by
+    simpa only [LinearMap.mulLeft_one] using
+      mulLeft_mem_differentialOperators_zero (R := ℝ) (1 : C^∞⟮𝓘(ℝ, E), E; ℝ⟯)
 
 variable [μ.IsAddHaarMeasure]
 
@@ -469,6 +459,34 @@ theorem formalTranspose_smul (r : ℝ)
   ((isFormalTranspose_formalTranspose hD).smul r).formalTranspose_eq
     (Submodule.smul_mem _ r (formalTranspose_mem_differentialOperators hD))
 
+/-- Formal transposition commutes with negation of differential operators. -/
+theorem formalTranspose_neg
+    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m) :
+    formalTranspose μ (-D) = -formalTranspose μ D :=
+  (isFormalTranspose_formalTranspose hD).neg.formalTranspose_eq
+    (neg_mem (formalTranspose_mem_differentialOperators hD))
+
+/-- Formal transposition commutes with subtraction of differential operators. -/
+theorem formalTranspose_sub
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ k)
+    (hQ : Q ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ l) :
+    formalTranspose μ (P - Q) = formalTranspose μ P - formalTranspose μ Q := by
+  rw [sub_eq_add_neg, formalTranspose_add hP (neg_mem hQ), formalTranspose_neg hQ, sub_eq_add_neg]
+
+/-- Formal transposition commutes with finite sums of differential operators. -/
+theorem formalTranspose_sum {ι : Type*} (s : Finset ι) {m : ι → ℕ}
+    {D : ι → C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
+    (hD : ∀ i ∈ s, D i ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ (m i)) :
+    formalTranspose μ (∑ i ∈ s, D i) = ∑ i ∈ s, formalTranspose μ (D i) :=
+  (IsFormalTranspose.sum s fun i hi ↦
+    isFormalTranspose_formalTranspose (hD i hi)).formalTranspose_eq
+    (sum_mem fun i hi ↦ differentialOperators_mono (le_sup (f := m) hi)
+      (formalTranspose_mem_differentialOperators (hD i hi)))
+
 /-- Multiplication by a smooth function is its own formal transpose. -/
 @[simp]
 theorem formalTranspose_mulLeft (c : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
@@ -524,7 +542,7 @@ theorem isFormalTranspose_withDensity_iff (ρ : (C^∞⟮𝓘(ℝ, E), E; ℝ⟯
     LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply]
   constructor
   · intro h f g hf hg
-    have key := h f (↑ρ⁻¹ * g) hf hg.mul_left
+    have key := h f (↑ρ⁻¹ * g) hf (by rw [ContMDiffMap.coe_mul]; exact hg.mul_left)
     simp only [ContMDiffMap.coe_mul, Pi.mul_apply] at key
     calc ∫ x, D f x * g x ∂μ
         = ∫ x, (ρ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) x * (D f x * ((↑ρ⁻¹ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) x * g x)) ∂μ := by
@@ -533,12 +551,20 @@ theorem isFormalTranspose_withDensity_iff (ρ : (C^∞⟮𝓘(ℝ, E), E; ℝ⟯
       _ = _ := key
       _ = _ := by congr 1 with x; ring
   · intro h f g hf hg
-    have key := h f (↑ρ * g) hf hg.mul_left
+    have key := h f (↑ρ * g) hf (by rw [ContMDiffMap.coe_mul]; exact hg.mul_left)
     simp only [ContMDiffMap.coe_mul, Pi.mul_apply, Units.inv_mul_cancel_left] at key
     calc ∫ x, (ρ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) x * (D f x * g x) ∂μ
         = ∫ x, D f x * ((ρ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) x * g x) ∂μ := by congr 1 with x; ring
       _ = _ := key
       _ = _ := by congr 1 with x; ring
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- Multiplication by a unit `u` cancels multiplication by `u⁻¹`. -/
+private theorem mulLeft_units_comp_mulLeft_inv_comp (u : (C^∞⟮𝓘(ℝ, E), E; ℝ⟯)ˣ)
+    (X : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    LinearMap.mulLeft ℝ (u : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ∘ₗ LinearMap.mulLeft ℝ ↑u⁻¹ ∘ₗ X = X := by
+  rw [← LinearMap.comp_assoc, ← LinearMap.mulLeft_mul, u.mul_inv, LinearMap.mulLeft_one,
+    LinearMap.id_comp]
 
 variable [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] {m : ℕ}
 
@@ -552,20 +578,13 @@ theorem formalTranspose_withDensity (ρ : (C^∞⟮𝓘(ℝ, E), E; ℝ⟯)ˣ)
     formalTranspose (μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) x)) D =
       LinearMap.mulLeft ℝ ↑ρ⁻¹ ∘ₗ formalTranspose μ D ∘ₗ LinearMap.mulLeft ℝ ↑ρ := by
   -- Multiplication by `ρ` and by `ρ⁻¹` are inverse operators of order `0`.
-  have hM : LinearMap.mulLeft ℝ (ρ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ∘ₗ LinearMap.mulLeft ℝ ↑ρ⁻¹ =
-      LinearMap.id := by
-    rw [← LinearMap.mulLeft_mul, ρ.mul_inv, LinearMap.mulLeft_one]
-  have hM' : LinearMap.mulLeft ℝ (↑ρ⁻¹ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ∘ₗ LinearMap.mulLeft ℝ ↑ρ =
-      LinearMap.id := by
-    rw [← LinearMap.mulLeft_mul, ρ.inv_mul, LinearMap.mulLeft_one]
-  have hL : ∀ X : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯,
-      LinearMap.mulLeft ℝ (ρ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ∘ₗ LinearMap.mulLeft ℝ ↑ρ⁻¹ ∘ₗ X = X := by
-    intro X
-    rw [← LinearMap.comp_assoc, hM, LinearMap.id_comp]
+  have hL := mulLeft_units_comp_mulLeft_inv_comp ρ
   have hL' : ∀ X : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯,
       LinearMap.mulLeft ℝ (↑ρ⁻¹ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ∘ₗ LinearMap.mulLeft ℝ ↑ρ ∘ₗ X = X := by
-    intro X
-    rw [← LinearMap.comp_assoc, hM', LinearMap.id_comp]
+    simpa only [inv_inv] using mulLeft_units_comp_mulLeft_inv_comp ρ⁻¹
+  have hM := hL LinearMap.id
+  have hM' := hL' LinearMap.id
+  rw [LinearMap.comp_id] at hM hM'
   have hm : ∀ u : C^∞⟮𝓘(ℝ, E), E; ℝ⟯, LinearMap.mulLeft ℝ u ∈ differentialOperators ℝ
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ 0 :=
     mulLeft_mem_differentialOperators_zero
