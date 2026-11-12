@@ -143,14 +143,21 @@ variable (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj 
 theorem thomPairIsoOfFiberwise_hom :
     (thomPairIsoOfFiberwise hφ hφ').hom = thomPairMapOfFiberwise (g := ContinuousMap.id B) hφ := by
   rw [thomPairIsoOfFiberwise, TopPair.ofSubsetIso_hom]
-  rfl
+  -- Both maps send `v` to `(π v, φ (π v) v)`; compare them on the total space.
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ ?_)
+  exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F' E')) _ _ v).trans
+    (thomPairMapOfFiberwise_fst_apply (g := ContinuousMap.id B) hφ v).symm
 
 @[simp]
 theorem thomPairIsoOfFiberwise_inv :
     (thomPairIsoOfFiberwise hφ hφ').inv =
       thomPairMapOfFiberwise (g := ContinuousMap.id B) (φ := fun b ↦ (φ b).symm) hφ' := by
   rw [thomPairIsoOfFiberwise, TopPair.ofSubsetIso_inv]
-  rfl
+  -- Both maps send `v` to `(π v, (φ (π v))⁻¹ v)`; compare them on the total space.
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦ ?_)
+  exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E)) _ _ v).trans
+    (thomPairMapOfFiberwise_fst_apply (g := ContinuousMap.id B) (φ := fun b ↦ (φ b).symm) hφ'
+      v).symm
 
 end Iso
 
