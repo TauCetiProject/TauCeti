@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.OrdinarySteinberg
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.CharacterMap
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.CharacterMap
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.CharacterMap
@@ -48,6 +49,18 @@ modules; in the untwisted Geck branches they use `steinberg_geckWeightTorus`.
 -/
 
 public section
+
+namespace TauCeti.UnimodularExceptionalIndex
+
+/-- The native datum Steinberg map is the character pullback of the represented Steinberg
+map on the full-weight Geck torus of an untwisted unimodular exceptional index. -/
+theorem isCharacterMap_steinberg (d : UnimodularExceptionalIndex) :
+    IsCharacterMap d.1.1.geckWeightTorus d.steinberg d.1.1.datumSteinberg.weightMap := by
+  rw [d.1.1.datumSteinberg_weightMap_of_diagramPerm_eq_one
+    d.2 d.diagramPerm_toGraphTwistedIndex]
+  exact IsCharacterMap.of_map_eq_pow d.steinberg_geckWeightTorus
+
+end TauCeti.UnimodularExceptionalIndex
 
 namespace TauCeti.ValidLieTypeIndex
 
@@ -185,21 +198,12 @@ theorem isCharacterMap_steinberg (d : ValidLieTypeIndex) :
     exact TypeE6LieIndex.isCharacterMap_steinberg _
   · rw [weightTorus_E7, steinberg_E7, GraphTwistedIndex.steinberg_E7]
     exact TypeE7LieIndex.isCharacterMap_steinberg _
-  · rw [weightTorus_E8, steinberg_E8, GraphTwistedIndex.steinberg_E8,
-      datumSteinberg_weightMap_of_diagramPerm_eq_one _ (by simp)
-      (GraphTwistedIndex.diagramPerm_E8 hv)]
-    exact IsCharacterMap.of_map_eq_pow
-      (UnimodularExceptionalIndex.steinberg_geckWeightTorus ⟨⟨⟨_, hv⟩, by simp⟩, by simp⟩)
-  · rw [weightTorus_F4, steinberg_F4, GraphTwistedIndex.steinberg_F4,
-      datumSteinberg_weightMap_of_diagramPerm_eq_one _ (by simp)
-      (GraphTwistedIndex.diagramPerm_F4 hv)]
-    exact IsCharacterMap.of_map_eq_pow
-      (UnimodularExceptionalIndex.steinberg_geckWeightTorus ⟨⟨⟨_, hv⟩, by simp⟩, by simp⟩)
-  · rw [weightTorus_G2, steinberg_G2, GraphTwistedIndex.steinberg_G2,
-      datumSteinberg_weightMap_of_diagramPerm_eq_one _ (by simp)
-      (GraphTwistedIndex.diagramPerm_G2 hv)]
-    exact IsCharacterMap.of_map_eq_pow
-      (UnimodularExceptionalIndex.steinberg_geckWeightTorus ⟨⟨⟨_, hv⟩, by simp⟩, by simp⟩)
+  · rw [weightTorus_E8, steinberg_E8, GraphTwistedIndex.steinberg_E8]
+    exact UnimodularExceptionalIndex.isCharacterMap_steinberg ⟨⟨⟨_, hv⟩, by simp⟩, by simp⟩
+  · rw [weightTorus_F4, steinberg_F4, GraphTwistedIndex.steinberg_F4]
+    exact UnimodularExceptionalIndex.isCharacterMap_steinberg ⟨⟨⟨_, hv⟩, by simp⟩, by simp⟩
+  · rw [weightTorus_G2, steinberg_G2, GraphTwistedIndex.steinberg_G2]
+    exact UnimodularExceptionalIndex.isCharacterMap_steinberg ⟨⟨⟨_, hv⟩, by simp⟩, by simp⟩
   · rw [weightTorus_twistedE6, steinberg_twistedE6, GraphTwistedIndex.steinberg_twistedE6]
     exact TypeTwistedE6LieIndex.isCharacterMap_steinberg _
   · rw [weightTorus_trialityD4, steinberg_trialityD4, GraphTwistedIndex.steinberg_trialityD4]
