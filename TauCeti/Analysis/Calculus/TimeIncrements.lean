@@ -18,7 +18,8 @@ or variation bound on the path is required.
 This is the deterministic time-coordinate limit in time-dependent change-of-variables
 formulas. Tags may be either endpoint or any point of the cell, and grids may have repeated
 dates. Time derivatives are taken within the closed horizon, allowing one-sided derivatives
-at its endpoints. The estimates hold for Banach-valued functions and metric-valued states.
+at its endpoints. The estimates hold for Banach-valued functions, with topological states
+for the error bound and pseudometric states for convergence.
 
 ## References
 
@@ -33,13 +34,13 @@ open scoped Topology
 
 namespace TauCeti
 
-variable {E F : Type*} [PseudoMetricSpace E]
+variable {E F : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {f g : ℝ → E → F} {X : ℝ → E} {K : Set E} {a b : ℝ}
 
 /-- A uniform bound on the error in the frozen-state time derivative bounds the error
 of the summed time increments by that bound times the elapsed time. -/
-theorem norm_sum_time_increment_sub_integral_le
+theorem norm_sum_time_increment_sub_integral_le [TopologicalSpace E]
     (hg : ContinuousOn (Function.uncurry g) (Icc a b ×ˢ K))
     (hf : ∀ x ∈ K, ∀ t ∈ Icc a b,
       HasDerivWithinAt (fun u ↦ f u x) (g t x) (Icc a b) t)
@@ -51,10 +52,8 @@ theorem norm_sum_time_increment_sub_integral_le
     ‖(∑ i ∈ Finset.range n, (f (τ (i + 1)) (z i) - f (τ i) (z i))) -
       ∫ t in a..b, g t (X t)‖ ≤ ε * (b - a) := by
   have hcell (i : ℕ) (hi : i < n) : Icc (τ i) (τ (i + 1)) ⊆ Icc a b := by
-    intro t ht
-    have hl := hτ (show 0 ∈ Iic n by simp) (show i ∈ Iic n from hi.le) (Nat.zero_le i)
-    have hr := hτ (show i + 1 ∈ Iic n from hi) (show n ∈ Iic n by simp) hi
-    exact ⟨hτ₀ ▸ hl.trans ht.1, hτn ▸ ht.2.trans hr⟩
+    exact Icc_subset_Icc (hτ₀ ▸ hτ (by simp) hi.le (Nat.zero_le i))
+      (hτn ▸ hτ hi (by simp) hi)
   have hpath : ContinuousOn (fun t ↦ g t (X t)) (Icc a b) :=
     hg.comp (continuousOn_id.prodMk hX) (fun t ht ↦ ⟨ht, hXK ht⟩)
   have hint (i : ℕ) (hi : i < n) :
@@ -88,7 +87,7 @@ theorem norm_sum_time_increment_sub_integral_le
 /-- Freezing a continuous state path at arbitrary tags in vanishing time cells gives the
 correct integral of the time derivative. The index filter and grids need not be countable
 or nested, and no spatial differentiability is assumed. -/
-theorem tendsto_sum_time_increment
+theorem tendsto_sum_time_increment [PseudoMetricSpace E]
     (hX : ContinuousOn X (Icc a b))
     (hg : ContinuousOn (Function.uncurry g) (Icc a b ×ˢ (X '' Icc a b)))
     (hf : ∀ x ∈ X '' Icc a b, ∀ t ∈ Icc a b,
@@ -114,10 +113,8 @@ theorem tendsto_sum_time_increment
     (isCompact_Icc.uniformContinuousOn_of_continuous hX) δ hδ
   filter_upwards [(tendsto_order.mp hlim).2 η hη] with k hk
   have hcell (i : ℕ) (hi : i < n k) : Icc (τ k i) (τ k (i + 1)) ⊆ Icc a b := by
-    intro t ht
-    have hl := hτ k (show 0 ∈ Iic (n k) by simp) hi.le (Nat.zero_le i)
-    have hr := hτ k hi (show n k ∈ Iic (n k) by simp) hi
-    exact ⟨hτ₀ k ▸ hl.trans ht.1, hτn k ▸ ht.2.trans hr⟩
+    exact Icc_subset_Icc (hτ₀ k ▸ hτ k (by simp) hi.le (Nat.zero_le i))
+      (hτn k ▸ hτ k hi (by simp) hi)
   have hXK : MapsTo X (Icc a b) (X '' Icc a b) := fun _ ht ↦ mem_image_of_mem X ht
   have hbound := norm_sum_time_increment_sub_integral_le hg hf hX hXK (hτ k) (hτ₀ k)
     (hτn k) (fun i hi ↦ hXK (hcell i hi (hθ k i hi))) (ε := c) (fun i hi t ht ↦ ?_)
