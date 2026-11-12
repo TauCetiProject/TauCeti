@@ -62,11 +62,6 @@ The statements follow the type-`A` identifications in
 `TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/RootDatum.lean`, added in
 [TauCetiProject/TauCeti#5198](https://github.com/TauCetiProject/TauCeti/pull/5198), specialized to
 the type-`C` standard carrier.
-
-This advances the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone `L0` of
-`TauCetiRoadmap/CFSGStatement/README.md`, which requires each carrier to be traceable to
-`DynkinType.simplyConnectedRootDatum` through `ValidLieTypeIndex.dynkinType`.
 -/
 
 public section

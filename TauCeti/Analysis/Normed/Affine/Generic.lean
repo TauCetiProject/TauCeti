@@ -12,15 +12,19 @@ public import TauCeti.LinearAlgebra.AffineSpace.Generic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.GroupTheory.CosetCover
 public import Mathlib.Topology.Baire.CompleteMetrizable
+public import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Generic points for affine arrangements
 
-Adapted from `Mei/Geometry/Affine/Generic.lean` at commit `7f1e4c7`.
+Adapted from `Mei/Geometry/Affine/Generic.lean` at commit `7f1e4c7`. The non-openness example is
+adapted from `Mei/Geometry/Affine/Generic/Examples.lean` at commit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`; original copyright and author credit are retained.
 
 The common complement of countably many proper affine subspaces of a
 real normed affine space with finite-dimensional direction is dense and is a Gδ set. For a finite
-family the complement is open. These statements allow arbitrarily small
+family the complement is open, whereas the common generic locus of infinitely many point
+arrangements need not be open. These statements allow arbitrarily small
 perturbations avoiding all the prescribed affine exceptions. Countably many affine
 subspaces not containing `A` can also be avoided in any nonempty relatively open subset
 of `A`, using `AffineIsometryEquiv.constVSub` to pass to its direction space.
@@ -101,20 +105,20 @@ theorem dense_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspac
     (AffineIsometryEquiv.constVSub ℝ (Classical.arbitrary P)).toIsometryEquiv.completeSpace
   rw [genericLocus_eq_iInter]
   exact dense_iInter_of_isOpen
-    (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+    (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
     (fun i => (A i).dense_compl_of_ne_top (hA i))
 
 /-- The common complement is a countable intersection of open sets. -/
 theorem isGδ_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspace ℝ P) :
     IsGδ (genericLocus A) := by
   rw [genericLocus_eq_iInter]
-  exact IsGδ.iInter_of_isOpen (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+  exact IsGδ.iInter_of_isOpen (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
 
 /-- For a finite family, the common complement is open. -/
 theorem isOpen_genericLocus {ι : Sort*} [Finite ι] (A : ι → AffineSubspace ℝ P) :
     IsOpen (genericLocus A) := by
   rw [genericLocus_eq_iInter]
-  exact isOpen_iInter_of_finite (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+  exact isOpen_iInter_of_finite (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
 
 /-- A generic point can be chosen in any prescribed nonempty open set. -/
 theorem exists_mem_open_genericLocus {ι : Sort*} [Countable ι]
@@ -317,6 +321,26 @@ theorem isGδ_iInter_isGeneric {ι : Type*} [Countable ι]
   simp [isGeneric_iff, Sigma.forall]
 
 end Topology
+
+section Example
+
+/-- The common generic locus of the arrangements `point (1 / (j + 1))` of the real line is not
+open: the exceptional points `1 / (j + 1)` accumulate at `0`, which is a common generic point.
+This contrasts with the finite case `isOpen_isGeneric`. -/
+theorem not_isOpen_setOf_forall_isGeneric_point :
+    ¬ IsOpen {x : ℝ | ∀ j : ℕ,
+      (point (1 / ((j : ℝ) + 1)) : ExceptionalArrangement ℝ ℝ).IsGeneric x} := by
+  intro hopen
+  have h0 : (0 : ℝ) ∈
+      {x : ℝ | ∀ j : ℕ, (point (1 / ((j : ℝ) + 1)) : ExceptionalArrangement ℝ ℝ).IsGeneric x} := by
+    intro j
+    rw [isGeneric_point_iff]
+    positivity
+  obtain ⟨j, hj⟩ := ((tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).eventually
+    (hopen.mem_nhds h0)).exists
+  exact isGeneric_point_iff.mp (hj j) rfl
+
+end Example
 
 end ExceptionalArrangement
 

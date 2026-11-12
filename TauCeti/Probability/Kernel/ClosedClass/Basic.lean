@@ -186,7 +186,7 @@ theorem communicates_subtype_iff (hs : MeasurableSet s)
 
 /-- A kernel on a closed set is irreducible precisely when its states communicate in
 the ambient chain. -/
-theorem isIrreducible_subtype_iff [MeasurableSingletonClass S] (hs : MeasurableSet s)
+theorem isIrreducible_subtype_iff (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) :
     IsIrreducible Measure.count (κ.subtype hs) ↔
       ∀ x ∈ s, ∀ y ∈ s, κ.Communicates x y := by

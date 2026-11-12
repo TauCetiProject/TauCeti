@@ -21,7 +21,8 @@ computation of a normalised angle: the identity is proved in `Real.Angle`, where
 invisible, and then read back as an equality of representatives.
 
 It also records how the representative `Real.Angle.toReal ∈ (-π, π]` behaves on differences of
-angles of the same sign, the difference counterpart of Mathlib's `toReal_add_of_sign_eq_neg_sign`.
+angles of the same sign, the difference counterpart of Mathlib's `toReal_add_of_sign_eq_neg_sign`,
+and on sums of two angles that add up to a third angle plus `π`.
 
 For a natural number `m ≠ 0`, if the cosine of `2 n π / m` is one then `m ∣ n`; this bounds the
 order of the rank-two rotations in the geometric representation of a Coxeter group.
@@ -38,6 +39,10 @@ order of the rank-two rotations in the geometric representation of a Coxeter gro
   `toReal` of the difference is the difference of the `toReal`s.
 * `Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq`: for angles of the same nonzero sign, the
   difference has positive sign exactly when the representatives increase.
+* `Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi`: if `θ₁ + θ₂ = θ + π`, then the sum of the
+  representatives of `θ₁` and `θ₂` is that of `θ` plus or minus `π`; the sign is `+` exactly when
+  this sum is positive (`Real.Angle.toReal_add_toReal_eq_add_pi_iff`) and `-` exactly when it is
+  nonpositive (`Real.Angle.toReal_add_toReal_eq_sub_pi_iff`).
 * `Real.Angle.eq_two_mul_of_abs_toReal_eq`: if `θ + α = β ∈ (0, π)` with `|θ| = α`, then
   `β = 2α`.
 -/
@@ -78,6 +83,38 @@ theorem _root_.Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq {θ ψ : Real.An
     Real.Angle.toReal_sub_of_sign_eq (Real.Angle.sign_ne_zero_iff.1 h0).2 hs.symm, sign_eq_one_iff,
     sub_pos]
 
+/-- If two angles add up to a third one plus `π`, the sum of their representatives is the
+representative of the third angle plus `π` exactly when this sum is positive. -/
+theorem _root_.Real.Angle.toReal_add_toReal_eq_add_pi_iff {θ₁ θ₂ θ : Real.Angle}
+    (h : θ₁ + θ₂ = θ + Real.pi) :
+    θ₁.toReal + θ₂.toReal = θ.toReal + Real.pi ↔ 0 < θ₁.toReal + θ₂.toReal := by
+  refine ⟨fun he ↦ by linarith [θ.neg_pi_lt_toReal], fun hpos ↦ ?_⟩
+  have hθ : θ = ((θ₁.toReal + θ₂.toReal - Real.pi : ℝ) : Real.Angle) := by simp [h]
+  rw [hθ, Real.Angle.toReal_coe_eq_self_iff.2
+    ⟨by linarith, by linarith [θ₁.toReal_le_pi, θ₂.toReal_le_pi]⟩]
+  ring
+
+/-- If two angles add up to a third one plus `π`, the sum of their representatives is the
+representative of the third angle minus `π` exactly when this sum is nonpositive. -/
+theorem _root_.Real.Angle.toReal_add_toReal_eq_sub_pi_iff {θ₁ θ₂ θ : Real.Angle}
+    (h : θ₁ + θ₂ = θ + Real.pi) :
+    θ₁.toReal + θ₂.toReal = θ.toReal - Real.pi ↔ θ₁.toReal + θ₂.toReal ≤ 0 := by
+  refine ⟨fun he ↦ by linarith [θ.toReal_le_pi], fun hnonpos ↦ ?_⟩
+  have hθ : θ = ((θ₁.toReal + θ₂.toReal + Real.pi : ℝ) : Real.Angle) := by
+    rw [← add_zero θ, ← Real.Angle.coe_pi_add_coe_pi, ← add_assoc, ← h]
+    simp
+  rw [hθ, Real.Angle.toReal_coe_eq_self_iff.2
+    ⟨by linarith [θ₁.neg_pi_lt_toReal, θ₂.neg_pi_lt_toReal], by linarith⟩]
+  ring
+
+/-- If two angles add up to a third one plus `π`, the sum of their representatives is the
+representative of the third angle plus `π` or minus `π`. -/
+theorem _root_.Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi {θ₁ θ₂ θ : Real.Angle}
+    (h : θ₁ + θ₂ = θ + Real.pi) :
+    θ₁.toReal + θ₂.toReal = θ.toReal + Real.pi ∨ θ₁.toReal + θ₂.toReal = θ.toReal - Real.pi :=
+  (lt_or_ge 0 (θ₁.toReal + θ₂.toReal)).imp (Real.Angle.toReal_add_toReal_eq_add_pi_iff h).2
+    (Real.Angle.toReal_add_toReal_eq_sub_pi_iff h).2
+
 /-- If `cos` and `sin` agree at `2πa` and `2πb`, then `a` and `b` differ by an integer: this is
 Mathlib's `Real.Angle.cos_sin_inj` read through `Real.Angle.angle_eq_iff_two_pi_dvd_sub`. -/
 theorem _root_.Real.exists_int_eq_add_of_cos_sin_eq {a b : ℝ}
@@ -111,7 +148,6 @@ theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β :
     β = 2 * α := by
   have hα₀ : 0 ≤ α := hθ ▸ abs_nonneg _
   have hαπ : α ≤ Real.pi := hθ ▸ θ.abs_toReal_le_pi
-  have hπ := Real.pi_pos
   have hβrep : (β : Real.Angle).toReal = β :=
     Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, hβπ.le⟩
   have hsum : ((θ.toReal + α : ℝ) : Real.Angle) = β := by

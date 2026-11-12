@@ -17,8 +17,9 @@ import Mathlib.Analysis.SpecificLimits.Basic
 The special linear group `SL(n, R)` carries the topology induced from the matrices, which is the
 product topology on the entries. So a sequence, or more generally a function along any filter,
 converges in `SL(n, R)` exactly when each of its entries converges. For the same reason `SL(n, R)`
-acts jointly continuously on column vectors. Over a `T1` topological ring it is a closed subset of
-the matrices, so it is σ-compact when `R` is.
+acts jointly continuously on column vectors, and it is second countable when `R` is; over a
+topological ring, so then is its quotient `PSL(n, R)`. Over a `T1` topological ring it is a closed
+subset of the matrices, so it is σ-compact when `R` is.
 
 ## Main results
 
@@ -28,6 +29,8 @@ the matrices, so it is σ-compact when `R` is.
   column vectors.
 * `Matrix.SpecialLinearGroup.instSigmaCompactSpace`: over a σ-compact `T1` topological ring,
   `SL(n, R)` is σ-compact.
+* `Matrix.SpecialLinearGroup.instSecondCountableTopology`: over a second-countable ring,
+  `SL(n, R)` is second countable, and hence so is its quotient `PSL(n, R)`.
 * `Matrix.SpecialLinearGroup.exists_tendsto_dilation_conj`: a sequence in `SL(2, ℝ)` whose first
   diagonal entry converges to that of a diagonal matrix `D`, and whose off-diagonal products tend
   to `0`, converges to `D` after conjugating each term by a suitable power of a dilation.
@@ -61,6 +64,16 @@ instance instContinuousSMulVec [ContinuousAdd R] [ContinuousMul R] :
 instance instSigmaCompactSpace [IsTopologicalRing R] [T1Space R] [SigmaCompactSpace R] :
     SigmaCompactSpace (SpecialLinearGroup n R) :=
   isClosedEmbedding_val.sigmaCompactSpace
+
+/-- Over a second-countable ring, `SL(n, R)` is second countable, as a subspace of the
+second-countable space of matrices.
+
+Over a topological ring, `PSL(n, R)` is the quotient of `SL(n, R)` by its centre, so it is then
+second countable as well, by `QuotientGroup.instSecondCountableTopology`; in particular `SL(2, ℝ)`
+and `PSL(2, ℝ)` are second countable. -/
+instance instSecondCountableTopology [SecondCountableTopology R] :
+    SecondCountableTopology (SpecialLinearGroup n R) :=
+  (IsInducing.subtypeVal (t := {A : Matrix n n R | A.det = 1})).secondCountableTopology
 
 /-- If the first diagonal entry of a sequence of matrices of `SL(2, ℝ)` converges to that of a
 diagonal matrix `D` and the products of its off-diagonal entries tend to `0`, then conjugating each
