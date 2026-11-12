@@ -43,8 +43,9 @@ the unit filtration is carried onto itself by the `n`-th power map.
 Without assuming `2` invertible, every element of `1 + 4J` is a square. This supplies deep
 square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ J`.
 
-Finally, a monic quadratic whose discriminant is a unit modulo `J` has a simple root modulo `J`
-as soon as it has any root, and so its roots in a domain algebra already lie in the ring.
+Finally, for a monic quadratic whose discriminant is a unit modulo `J`, any root modulo `J` is
+simple and lifts to a root in the ring; when it has a root modulo `J`, all its roots in a domain
+algebra already lie in the ring.
 
 ## Main results
 
@@ -62,8 +63,8 @@ as soon as it has any root, and so its roots in a domain algebra already lie in 
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
 * `TauCeti.HenselianRing.exists_quadratic_root_of_isUnit_discrim`: a root modulo `I` of a monic
   quadratic `X ^ 2 + b X + c` with discriminant a unit modulo `I` lifts to a root in `R`.
-* `TauCeti.HenselianRing.mem_range_algebraMap_of_isUnit_discrim`: such a quadratic has all its
-  roots in domain `R`-algebras already in `R`.
+* `TauCeti.HenselianRing.mem_range_algebraMap_of_isUnit_discrim`: when such a quadratic has a root
+  modulo `I`, all its roots in domain `R`-algebras already lie in `R`.
 * `TauCeti.HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit`: its case `b` a
   unit modulo `I` and `c ∈ I`, where the root modulo `I` is `0`.
 

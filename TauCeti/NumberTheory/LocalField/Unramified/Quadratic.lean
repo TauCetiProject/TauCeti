@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.Norm.Quadratic
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 import TauCeti.NumberTheory.LocalField.Henselian
-import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
 # Integral bases of unramified quadratic extensions
