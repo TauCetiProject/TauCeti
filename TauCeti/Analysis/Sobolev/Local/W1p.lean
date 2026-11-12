@@ -68,14 +68,13 @@ norm `TauCeti.eLpNormWkp p Ω 1 u` is finite is represented by an element of `W1
 extended norm is at most `eLpNormWkp p Ω 1 u`. -/
 theorem exists_w1p_enorm_le_eLpNormWkp {u : ℂ → ℝ} (hu : eLpNormWkp p Ω 1 u ≠ ∞) :
     ∃ v : W1p volume Ω p, W1p.value v =ᵐ[volume.restrict Ω] u ∧ ‖v‖ₑ ≤ eLpNormWkp p Ω 1 u := by
-  rw [eLpNormWkp_succ, Opens.interior_coe] at hu
-  obtain ⟨hu0, hD0⟩ := ENNReal.add_ne_top.1 hu
-  obtain ⟨D, hD, hDfin⟩ : ∃ D : ℂ → ℂ →L[ℝ] ℝ, HasWeakFDerivOn volume Ω u D ∧
-      eLpNormWkp p Ω 0 D < ∞ := by
-    simpa only [iInf_lt_iff, exists_prop] using lt_top_iff_ne_top.2 hD0
-  rw [eLpNormWkp_zero] at hDfin
-  have hu1 : MemLp u p (volume.restrict Ω) := lt_top_iff_ne_top.2 hu0
-  obtain ⟨v, hv, hg⟩ := W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn hu1 hDfin hD
+  obtain ⟨D, hD, hDfin⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hu
+  rw [Opens.interior_coe] at hD
+  rw [eLpNormWkp_zero, ← lt_top_iff_ne_top] at hDfin
+  have hu1 : MemLp u p (volume.restrict Ω) :=
+    memLp_iff.2 (lt_top_iff_ne_top.2 (ne_top_of_le_ne_top hu eLpNorm_le_eLpNormWkp))
+  obtain ⟨v, hv, hg⟩ :=
+    W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn hu1 (memLp_iff.2 hDfin) hD
   rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD, eLpNormWkp_zero]
   exact ⟨v, hv, W1p.enorm_le_eLpNorm_add_eLpNorm_of_ae_eq hv hg⟩
 

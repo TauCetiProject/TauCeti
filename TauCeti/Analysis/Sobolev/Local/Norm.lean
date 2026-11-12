@@ -24,7 +24,8 @@ This is the quantity in which interior estimates of elliptic equations are state
 supplies its unfolding, its value through a given weak derivative on an open set, monotonicity
 in the set, invariance under almost-everywhere change, the triangle inequality, the
 operator-norm bound under a continuous linear map of the codomain, monotonicity in the derivative
-order, and finiteness on relatively compact open subsets for members of `TauCeti.MemWkpLoc`.
+order, a weak derivative of finite norm whenever the norm is finite, and finiteness on subsets with
+compact closure inside the domain for members of `TauCeti.MemWkpLoc`.
 
 ## References
 
@@ -121,20 +122,31 @@ theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ 
   gcongr
   exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
 
-/-- A member of `W^{k,p}_loc(Ω)` has finite `W^{k,p}(W)` norm on every open `W` whose closure is
-compact and contained in `Ω`. -/
-theorem MemWkpLoc.eLpNormWkp_ne_top {Ω W : Opens ℂ} (hf : MemWkpLoc p Ω k f)
-    (hWc : IsCompact (closure (W : Set ℂ))) (hWΩ : closure (W : Set ℂ) ⊆ Ω) :
-    eLpNormWkp p W k f ≠ ∞ := by
+/-- A function of finite `W^{k+1,p}(U)` norm has a weak derivative on the interior of `U` of
+finite `W^{k,p}(U)` norm. -/
+theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf : eLpNormWkp p U (k + 1) f ≠ ∞) :
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧
+      eLpNormWkp p U k D ≠ ∞ := by
+  rw [eLpNormWkp_succ] at hf
+  obtain ⟨D, hD, hDk⟩ : ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧
+      eLpNormWkp p U k D < ∞ := by
+    simpa only [iInf_lt_iff, exists_prop] using lt_top_iff_ne_top.2 (ENNReal.add_ne_top.1 hf).2
+  exact ⟨D, hD, hDk.ne⟩
+
+/-- A member of `W^{k,p}_loc(U)` has finite `W^{k,p}(V)` norm on every `V` whose closure is
+compact and contained in `U`. -/
+theorem MemWkpLoc.eLpNormWkp_ne_top (hf : MemWkpLoc p U k f) (hVc : IsCompact (closure V))
+    (hVU : closure V ⊆ U) : eLpNormWkp p V k f ≠ ∞ := by
   induction k generalizing F with
   | zero =>
     rw [eLpNormWkp_zero]
-    exact (hf.memLpLoc.memLp_of_closure_subset hWc hWΩ).eLpNorm_ne_top
+    exact (hf.memLpLoc.memLp_of_closure_subset hVc hVU).eLpNorm_ne_top
   | succ k ih =>
-    obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv_of_isOpen
-    rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn (hD.mono (subset_closure.trans hWΩ))]
+    obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv
+    refine ne_top_of_le_ne_top ?_
+      (eLpNormWkp_succ_le (hD.mono (interior_mono (subset_closure.trans hVU))))
     exact ENNReal.add_ne_top.2
-      ⟨(hf.memLpLoc.memLp_of_closure_subset hWc hWΩ).eLpNorm_ne_top, ih hDk⟩
+      ⟨(hf.memLpLoc.memLp_of_closure_subset hVc hVU).eLpNorm_ne_top, ih hDk⟩
 
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]

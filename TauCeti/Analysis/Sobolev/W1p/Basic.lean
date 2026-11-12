@@ -506,6 +506,10 @@ theorem W1p.enorm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ₑ ≤ ‖u�
 theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_gradient_le u.1
 
+/-- The extended norm of a Sobolev function controls the extended norm of its weak gradient. -/
+theorem W1p.enorm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ₑ ≤ ‖u‖ₑ :=
+  eNorm_le_iff_norm_le.2 (W1p.norm_gradient_le u)
+
 /-- The `Lᵖ` norm of the weak gradient on subsets of `Ω` is monotone in the subset. -/
 theorem W1p.toReal_eLpNorm_gradient_mono (u : W1p mu Omega p) {s t : Set E} (hst : s ⊆ t)
     (ht : t ⊆ (Omega : Set E)) :
