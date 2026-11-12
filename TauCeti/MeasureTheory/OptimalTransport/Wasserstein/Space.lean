@@ -449,10 +449,10 @@ theorem exists_coe_eq_cond [OpensMeasurableSpace X] {m : Measure X} {s : Set X}
     (ae_cond_mem hs).mono fun _ hy ↦ hr hy
   -- The law is carried by `Metric.closedBall x r`, so its distance from `x` is bounded by `r`.
   have hmom : HasFiniteMoment p m[|s] :=
-    hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal r)
+    hasFiniteMoment_def.2 ⟨x, MemLp.of_eNorm_bound (C := ENNReal.ofReal r)
       measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
       (hae.mono fun y hy ↦ by
-        rw [enorm_eq_self, edist_comm, edist_dist]
+        rw [eNorm_eq_self, edist_comm, edist_dist]
         exact ENNReal.ofReal_le_ofReal (Metric.mem_closedBall.1 hy))⟩
   have hcoe : ((mk (p := p) ⟨_, hprob⟩ hmom : ProbabilityMeasure X) : Measure X) = m[|s] :=
     (congrArg ProbabilityMeasure.toMeasure (coe_mk _ _)).trans (ProbabilityMeasure.coe_mk _ _)

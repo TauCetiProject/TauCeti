@@ -282,7 +282,7 @@ private theorem prod_map_ι_mem_filtration_pred_of_not_nodup :
 
 /-- The multilinear product of `k + 1` Clifford generators. -/
 private noncomputable def filtrationLeadingTermRaw (k : ℕ) :
-    MultilinearMap R (fun _ : Fin (k + 1) => M) (CliffordAlgebra Q) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) => M) (CliffordAlgebra Q) :=
   (MultilinearMap.mkPiAlgebraFin R (k + 1) (CliffordAlgebra Q)).compLinearMap fun _ => ι Q
 
 private theorem filtrationLeadingTermRaw_mem (k : ℕ) (v : Fin (k + 1) → M) :
