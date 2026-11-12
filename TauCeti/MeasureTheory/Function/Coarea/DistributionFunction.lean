@@ -47,10 +47,21 @@ of the Pólya–Szegő inequality: by the coarea formula, a convex integral of t
 isoperimetric inequality bound the level contribution below in terms of `m(t)` and the perimeter
 of `{h > t}`.
 
+Equality holds when the critical values are negligible. If `h` is almost everywhere measurable
+and the image `h({Dh = 0})` is a null set, then `m(t) = -μ'(t)` at almost every `t > 0`
+(`MeasureTheory.ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv`). The critical set may
+still have positive volume. Its contribution to the distribution function is the cumulative
+function of the pushforward of volume on it under `h`. That measure is carried by the null set of
+critical values, so it is singular, and by the Besicovitch differentiation theorem its ratio to
+Lebesgue measure on small intervals tends to zero almost everywhere. This is the case of a radial
+rearrangement, whose critical values form a null set.
+
 ## Main results
 
 * `MeasureTheory.ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv`: `m(t) ≤ -μ'(t)` for almost
   every `t > 0`.
+* `MeasureTheory.ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv`: `m(t) = -μ'(t)` for almost
+  every `t > 0` when the critical values form a null set.
 
 ## References
 
@@ -62,7 +73,7 @@ of `{h > t}`.
 
 public section
 
-open MeasureTheory Measure Set Filter Module Function
+open MeasureTheory Measure Set Filter Module Function Metric
 open scoped ENNReal Topology
 
 namespace MeasureTheory
@@ -91,38 +102,62 @@ private theorem measureReal_setOf_lt_add_toReal_setLIntegral_le {u v : ℝ} (huv
     (ne_top_of_le_ne_top hu (le_add_self.trans hle))]
   exact ENNReal.toReal_mono hu hle
 
+/-- The level integrals depend almost everywhere measurably on the level. -/
+private theorem aemeasurable_setLIntegral_inv_enorm_fderiv :
+    AEMeasurable fun t ↦
+      ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] := by
+  have hR : MeasurableSet {x | fderiv ℝ h x ≠ 0} :=
+    (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
+  have := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt (F := ℝ) volume
+    hR.nullMeasurableSet
+    (fun x hx ↦ (TauCeti.differentiableAt_of_fderiv_ne_zero hx).hasFDerivAt.hasFDerivWithinAt)
+    (measurable_fderiv ℝ h).enorm.inv
+  simpa only [finrank_self, Pi.inv_apply] using this
+
+/-- Above a positive level `c`, the level integrals are a.e. finite and their real parts form an
+integrable function whose interval integrals are the integrals of the level integrals. -/
+private theorem integrable_indicator_Ioi_toReal_setLIntegral_inv_enorm_fderiv {c : ℝ}
+    (hfin : volume {x | c < h x} ≠ ∞) :
+    (∀ᵐ t ∂volume.restrict (Ioi c),
+      ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] < ∞) ∧
+    Integrable ((Ioi c).indicator fun t ↦ (∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t},
+      ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]).toReal) ∧
+    ∀ u v, c ≤ u → u ≤ v →
+      ∫ t in u..v, (Ioi c).indicator (fun t ↦ (∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t},
+        ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]).toReal) t =
+      (∫⁻ t in Ioc u v, ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t},
+        ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]).toReal := by
+  set m : ℝ → ℝ≥0∞ := fun t ↦
+    ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]
+  have hm : AEMeasurable m := aemeasurable_setLIntegral_inv_enorm_fderiv
+  -- The level integrals have finite integral over `(c, ∞)`.
+  have hmc : ∫⁻ t in Ioi c, m t ≠ ∞ := by
+    rw [← volume_preimage_inter_setOf_fderiv_ne_zero measurableSet_Ioi]
+    exact ne_top_of_le_ne_top hfin (measure_mono fun x hx ↦ hx.1)
+  have hfinite : ∀ᵐ t ∂volume.restrict (Ioi c), m t < ∞ := ae_lt_top' hm.restrict hmc
+  refine ⟨hfinite, IntegrableOn.integrable_indicator
+    (integrable_toReal_of_lintegral_ne_top hm.restrict hmc) measurableSet_Ioi,
+    fun u v hu huv ↦ ?_⟩
+  have hsub : Ioc u v ⊆ Ioi c := fun t ht ↦ hu.trans_lt ht.1
+  rw [intervalIntegral.integral_of_le huv,
+    setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ indicator_of_mem (hsub ht) _,
+    integral_toReal hm.restrict (ae_restrict_of_ae_restrict_of_subset hsub hfinite)]
+
 /-- The comparison `m(t) ≤ -μ'(t)` at almost every `t > c`, for a fixed `c > 0`. -/
 private theorem ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv_of_lt {c : ℝ} (hc : 0 < c)
     (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) :
     ∀ᵐ t, c < t →
       ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] ≤
         ENNReal.ofReal (-deriv (fun s ↦ volume.real {x | s < h x}) t) := by
-  set R := {x | fderiv ℝ h x ≠ 0}
-  set m : ℝ → ℝ≥0∞ := fun t ↦ ∫⁻ x in R ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]
+  obtain ⟨hfinite, hg, hint⟩ :=
+    integrable_indicator_Ioi_toReal_setLIntegral_inv_enorm_fderiv (h := h) (hfin c hc)
+  set m : ℝ → ℝ≥0∞ := fun t ↦
+    ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]
   set μr : ℝ → ℝ := fun s ↦ volume.real {x | s < h x}
-  have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
-  have hm : AEMeasurable m := by
-    have := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt (F := ℝ) volume
-      hR.nullMeasurableSet
-      (fun x hx ↦ (TauCeti.differentiableAt_of_fderiv_ne_zero hx).hasFDerivAt.hasFDerivWithinAt)
-      (measurable_fderiv ℝ h).enorm.inv
-    simpa only [finrank_self, Pi.inv_apply] using this
-  -- The level integrals have finite integral over `(c, ∞)`.
-  have hmc : ∫⁻ t in Ioi c, m t ≠ ∞ := by
-    rw [← volume_preimage_inter_setOf_fderiv_ne_zero measurableSet_Ioi]
-    exact ne_top_of_le_ne_top (hfin c hc) (measure_mono fun x hx ↦ hx.1)
-  have hfinite : ∀ᵐ t ∂volume.restrict (Ioi c), m t < ∞ := ae_lt_top' hm.restrict hmc
-  let g : ℝ → ℝ := (Ioi c).indicator fun t ↦ (m t).toReal
-  have hg : Integrable g := IntegrableOn.integrable_indicator
-    (integrable_toReal_of_lintegral_ne_top hm.restrict hmc) measurableSet_Ioi
+  set g : ℝ → ℝ := (Ioi c).indicator fun t ↦ (m t).toReal
   -- Between levels above `c`, `μr` drops by at least the integral of `g`.
   have hdrop {u v : ℝ} (hu : c < u) (huv : u ≤ v) : μr v + ∫ t in u..v, g t ≤ μr u := by
-    have hsub : Ioc u v ⊆ Ioi c := fun t ht ↦ hu.trans ht.1
-    have hint : ∫ t in u..v, g t = (∫⁻ t in Ioc u v, m t).toReal := by
-      rw [intervalIntegral.integral_of_le huv,
-        setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ indicator_of_mem (hsub ht) _,
-        integral_toReal hm.restrict (ae_restrict_of_ae_restrict_of_subset hsub hfinite)]
-    rw [hint]
+    rw [hint u v hu.le huv]
     exact measureReal_setOf_lt_add_toReal_setLIntegral_le huv (hfin u (hc.trans hu))
   -- Hence `μr + ∫_c g` is antitone above `c`.
   have hanti : AntitoneOn (fun u ↦ μr u + ∫ t in c..u, g t) (Ioi c) := fun u hu v _ huv ↦ by
@@ -161,6 +196,139 @@ theorem ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv
         ENNReal.ofReal (-deriv (fun s ↦ volume.real {x | s < h x}) t) := by
   have hk (k : ℕ) := ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv_of_lt
     (Nat.one_div_pos_of_nat (n := k)) hfin
+  filter_upwards [ae_all_iff.2 hk] with t ht htpos
+  obtain ⟨k, hk⟩ := exists_nat_one_div_lt htpos
+  exact ht k hk
+
+/-- The exact drop of the distribution function between two levels `c ≤ u ≤ v`: the regular part
+of the slab `{u < h ≤ v}` contributes the integral of the level integrals over `(u, v]`, and its
+critical part is measured by the pushforward under `h` of volume on `{Dh = 0} ∩ {h > c}`. -/
+private theorem measureReal_setOf_lt_eq_add_add {c u v : ℝ} (hh : AEMeasurable h)
+    (hcu : c ≤ u) (huv : u ≤ v) (hu : volume {x | u < h x} ≠ ∞) :
+    volume.real {x | u < h x} = volume.real {x | v < h x} +
+      (∫⁻ t in Ioc u v, ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹
+          ∂μHE[finrank ℝ E - 1]).toReal +
+      ((volume.restrict ({x | fderiv ℝ h x = 0} ∩ {x | c < h x})).map h).real (Ioc u v) := by
+  have hR : MeasurableSet {x | fderiv ℝ h x ≠ 0} :=
+    (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
+  have hI : NullMeasurableSet (h ⁻¹' Ioc u v) := hh.nullMeasurable measurableSet_Ioc
+  -- The superlevel set `{h > u}` splits into `{h > v}` and the slab `{u < h ≤ v}`.
+  have hsplit : volume {x | u < h x} = volume {x | v < h x} + volume (h ⁻¹' Ioc u v) := by
+    have hunion : {x | u < h x} = h ⁻¹' Ioc u v ∪ {x | v < h x} :=
+      (congrArg (h ⁻¹' ·) (Ioc_union_Ioi_eq_Ioi huv)).symm
+    rw [hunion, measure_union₀' (t := {x | v < h x}) hI
+      (Ioc_disjoint_Ioi_same.preimage h).aedisjoint, add_comm]
+  -- The slab splits into its regular and critical parts.
+  have hcrit : ((volume.restrict ({x | fderiv ℝ h x = 0} ∩ {x | c < h x})).map h) (Ioc u v) =
+      volume (h ⁻¹' Ioc u v \ {x | fderiv ℝ h x ≠ 0}) := by
+    rw [map_apply_of_aemeasurable hh.restrict measurableSet_Ioc,
+      restrict_apply₀ (hh.restrict.nullMeasurable measurableSet_Ioc)]
+    congr 1
+    ext x
+    simp only [mem_inter_iff, mem_preimage, mem_Ioc, mem_ofPred_eq, Set.mem_sdiff, not_not]
+    exact ⟨fun hx ↦ ⟨hx.1, hx.2.1⟩, fun hx ↦ ⟨hx.1, hx.2, hcu.trans_lt hx.1.1⟩⟩
+  have hslab : volume (h ⁻¹' Ioc u v) = (∫⁻ t in Ioc u v,
+        ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]) +
+      ((volume.restrict ({x | fderiv ℝ h x = 0} ∩ {x | c < h x})).map h) (Ioc u v) := by
+    rw [hcrit, ← volume_preimage_inter_setOf_fderiv_ne_zero (h := h) measurableSet_Ioc,
+      measure_inter_add_sdiff _ hR]
+  rw [hslab, ← add_assoc] at hsplit
+  have hfin := hsplit ▸ hu
+  rw [measureReal_def, measureReal_def, measureReal_def, hsplit,
+    ENNReal.toReal_add (ne_top_of_le_ne_top hfin le_self_add)
+      (ne_top_of_le_ne_top hfin le_add_self),
+    ENNReal.toReal_add (ne_top_of_le_ne_top hfin (le_self_add.trans le_self_add))
+      (ne_top_of_le_ne_top hfin (le_add_self.trans le_self_add))]
+
+/-- The equality `m(t) = -μ'(t)` at almost every `t > c`, for a fixed `c > 0`, when the critical
+values of `h` form a null set. -/
+private theorem ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv_of_lt (hh : AEMeasurable h)
+    {c : ℝ} (hc : 0 < c) (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞)
+    (hcrit : volume (h '' {x | fderiv ℝ h x = 0}) = 0) :
+    ∀ᵐ t, c < t →
+      ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] =
+        ENNReal.ofReal (-deriv (fun s ↦ volume.real {x | s < h x}) t) := by
+  obtain ⟨hfinite, hg, hint⟩ :=
+    integrable_indicator_Ioi_toReal_setLIntegral_inv_enorm_fderiv (h := h) (hfin c hc)
+  set m : ℝ → ℝ≥0∞ := fun t ↦
+    ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]
+  set μr : ℝ → ℝ := fun s ↦ volume.real {x | s < h x}
+  set g : ℝ → ℝ := (Ioi c).indicator fun t ↦ (m t).toReal
+  -- The critical part of `{h > c}`, pushed forward to the levels, is a finite measure.
+  set S := {x | fderiv ℝ h x = 0} ∩ {x | c < h x}
+  set ρ := (volume.restrict S).map h
+  have : IsFiniteMeasure ρ := ⟨by
+    rw [map_apply_of_aemeasurable hh.restrict MeasurableSet.univ, preimage_univ,
+      Measure.restrict_apply_univ]
+    exact (measure_mono inter_subset_right).trans_lt (hfin c hc).lt_top⟩
+  -- It is carried by the null set of critical values, so it is singular.
+  have hsing : ρ ⟂ₘ volume := by
+    obtain ⟨N, hCN, hN, hN0⟩ := exists_measurable_superset_of_null hcrit
+    refine ⟨Nᶜ, hN.compl, ?_, by rwa [compl_compl]⟩
+    have hS : NullMeasurableSet S :=
+      ((measurableSet_singleton 0).preimage (measurable_fderiv ℝ h)).nullMeasurableSet.inter
+        (nullMeasurableSet_lt aemeasurable_const hh)
+    rw [map_apply_of_aemeasurable hh.restrict hN.compl]
+    refine measure_mono_null ?_ (ae_iff.1 (ae_restrict_mem₀ hS))
+    exact fun x hx hxS ↦ hx (hCN (mem_image_of_mem h hxS.1))
+  -- Above `c`, the distribution function plus the integral of `g` drops exactly by `ρ`.
+  have hdrop {u v : ℝ} (hu : c < u) (huv : u ≤ v) :
+      (μr v + ∫ s in c..v, g s) - (μr u + ∫ s in c..u, g s) = -ρ.real (Ioc u v) := by
+    have hadd := intervalIntegral.integral_add_adjacent_intervals (a := c) (b := u) (c := v)
+      hg.intervalIntegrable hg.intervalIntegrable
+    have heq : μr u = μr v + (∫⁻ t in Ioc u v, m t).toReal + ρ.real (Ioc u v) :=
+      measureReal_setOf_lt_eq_add_add hh hu.le huv (hfin u (hc.trans hu))
+    linarith [hint u v hu.le huv]
+  have hμr : AntitoneOn μr (Ioi 0) := fun u hu v _ huv ↦
+    measureReal_mono (fun x hx ↦ huv.trans_lt hx) (hfin u hu)
+  filter_upwards [hμr.neg.ae_differentiableWithinAt_of_mem,
+    LocallyIntegrable.ae_hasDerivAt_integral hg.locallyIntegrable,
+    (ae_restrict_iff' measurableSet_Ioi).1 hfinite, hsing.rnDeriv_ae_eq_zero,
+    Besicovitch.ae_tendsto_rnDeriv ρ volume] with t hdiff hderiv hfin_t hρt hbt hct
+  have hdμ : DifferentiableAt ℝ μr t := by
+    simpa using ((hdiff (hc.trans hct)).differentiableAt (Ioi_mem_nhds (hc.trans hct))).neg
+  have hF := (hdμ.hasDerivAt.add (hderiv c)).tendsto_slope_zero_right
+  -- The right difference quotients of `μr + ∫_c g` at `t` are bounded by twice the ratio of
+  -- `ρ` to volume on balls around `t`, which tends to the density `0` of the singular `ρ`.
+  have hlim : Tendsto (fun δ ↦ 2 * (ρ (closedBall t δ) / volume (closedBall t δ)).toReal)
+      (𝓝[>] 0) (𝓝 0) := by
+    rw [hρt, Pi.zero_apply] at hbt
+    simpa using ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hbt).const_mul 2
+  have hzero : Tendsto (fun δ : ℝ ↦ δ⁻¹ •
+      ((μr (t + δ) + ∫ s in c..t + δ, g s) - (μr t + ∫ s in c..t, g s))) (𝓝[>] 0) (𝓝 0) := by
+    refine squeeze_zero_norm' ?_ hlim
+    filter_upwards [self_mem_nhdsWithin] with δ (hδ : 0 < δ)
+    have hball : ρ.real (Ioc t (t + δ)) ≤ ρ.real (closedBall t δ) :=
+      measureReal_mono (fun s hs ↦ by
+        rw [Real.closedBall_eq_Icc]; exact ⟨by linarith [hs.1], by linarith [hs.2]⟩)
+    rw [hdrop hct (by linarith), smul_eq_mul, norm_mul, norm_neg, Real.norm_of_nonneg
+      measureReal_nonneg, norm_inv, Real.norm_of_nonneg hδ.le, Real.volume_closedBall,
+      ENNReal.toReal_div, ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+    calc δ⁻¹ * ρ.real (Ioc t (t + δ)) ≤ δ⁻¹ * ρ.real (closedBall t δ) := by gcongr
+      _ = 2 * (ρ.real (closedBall t δ) / (2 * δ)) := by field_simp
+  have hsum : deriv μr t + g t = 0 := tendsto_nhds_unique hF hzero
+  rw [show g t = (m t).toReal from indicator_of_mem hct _] at hsum
+  calc m t = ENNReal.ofReal (m t).toReal := (ENNReal.ofReal_toReal (hfin_t hct).ne).symm
+    _ = ENNReal.ofReal (-deriv μr t) := by congr 1; linarith
+
+/-- **The level integrals equal the derivative of the distribution function** when the critical
+values are negligible. Let `h` be almost everywhere measurable, with superlevel sets `{h > t}` of
+finite volume for `t > 0`, and suppose that the image under `h` of its critical set `{Dh = 0}` is
+a null set. Then at almost every `t > 0`
+
+`∫_{{h = t} ∩ {Dh ≠ 0}} ‖Dh‖⁻¹ dHⁿ⁻¹ = -μ'(t)`,
+
+where `μ(t) = |{h > t}|` is the distribution function. The critical set may have positive volume;
+its contribution to `μ` is then a singular function of the level, with derivative zero almost
+everywhere. -/
+theorem ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv (hh : AEMeasurable h)
+    (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞)
+    (hcrit : volume (h '' {x | fderiv ℝ h x = 0}) = 0) :
+    ∀ᵐ t, 0 < t →
+      ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] =
+        ENNReal.ofReal (-deriv (fun s ↦ volume.real {x | s < h x}) t) := by
+  have hk (k : ℕ) := ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv_of_lt hh
+    (Nat.one_div_pos_of_nat (n := k)) hfin hcrit
   filter_upwards [ae_all_iff.2 hk] with t ht htpos
   obtain ⟨k, hk⟩ := exists_nat_one_div_lt htpos
   exact ht k hk
