@@ -50,6 +50,9 @@ target, which lets one chart serve all nearby points. The converse is Hadamard's
 * `TauCeti.differentialOperators_apply_eq_of_iteratedFDeriv_eq`: a differential operator of order
   at most `m` on `C^∞(M)` takes the same value at `x` on two functions with the same `m`-jet at
   `x`.
+* `TauCeti.differentialOperators_apply_eq_of_eventuallyEq`,
+  `TauCeti.tsupport_apply_subset_of_mem_differentialOperators`: differential operators are local,
+  so they do not enlarge supports.
 
 ## References
 
@@ -190,5 +193,37 @@ theorem differentialOperators_apply_eq_of_iteratedFDeriv_eq {m : ℕ}
   rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
     Pi.sub_apply, sub_eq_zero] at h
   exact h
+
+/-- **Differential operators are local.** At an interior point `x`, a differential operator on
+`C^∞(M)` takes the same value at `x` on two smooth functions that agree near `x`. -/
+theorem differentialOperators_apply_eq_of_eventuallyEq {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
+    (hx : I.IsInteriorPoint x) {f g : C^∞⟮I, M; ℝ⟯} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) :
+    D f x = D g x := by
+  have h := (continuousAt_extChartAt_symm (I := I) x).tendsto
+  rw [extChartAt_to_inv] at h
+  exact differentialOperators_apply_eq_of_iteratedFDeriv_eq hD hx fun k _ ↦
+    ((hfg.comp_tendsto h).iteratedFDeriv ℝ k).eq_of_nhds
+
+/-- A differential operator on `C^∞(M)` does not enlarge supports: on a boundaryless manifold,
+`tsupport (D f) ⊆ tsupport f`. -/
+theorem tsupport_apply_subset_of_mem_differentialOperators [BoundarylessManifold I M] {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (f : C^∞⟮I, M; ℝ⟯) : tsupport (D f) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
+  by_contra hxf
+  refine hx ?_
+  simpa using differentialOperators_apply_eq_of_eventuallyEq hD
+    BoundarylessManifold.isInteriorPoint (g := 0) (notMem_tsupport_iff_eventuallyEq.mp hxf)
+
+/-- A differential operator on `C^∞(M)` maps compactly supported functions to compactly
+supported functions, on a boundaryless manifold. -/
+theorem hasCompactSupport_apply_of_mem_differentialOperators [BoundarylessManifold I M] {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    {f : C^∞⟮I, M; ℝ⟯} (hf : HasCompactSupport f) : HasCompactSupport (D f) :=
+  hf.mono' ((subset_tsupport _).trans (tsupport_apply_subset_of_mem_differentialOperators hD f))
 
 end TauCeti
