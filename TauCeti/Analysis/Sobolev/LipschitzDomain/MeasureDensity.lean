@@ -207,7 +207,7 @@ theorem exists_ball_subset_compl_closure_inter_ball (hΩ : Ω.IsLipschitzDomain 
     ∃ δ > 0, ∀ x ∉ Ω, ∀ r : ℝ, 0 < r → r ≤ R →
       ∃ y, ball y (δ * r) ⊆ (closure Ω)ᶜ ∩ ball x r := by
   obtain ⟨δ, hδ, hball⟩ := hΩ.compl_closure.exists_ball_subset_inter_ball
-    (by rwa [frontier_compl, hΩ.frontier_closure]) hR
+    (hΩ.frontier_compl_closure ▸ hK) hR
   exact ⟨δ, hδ, fun x hx ↦ hball x (hΩ.closure_compl_closure ▸ mem_compl hx)⟩
 
 variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] (μ : Measure F)
@@ -254,7 +254,7 @@ theorem exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure
     ∃ c : ℝ≥0, 0 < c ∧ ∀ x ∉ Ω, ∀ r : ℝ, 0 < r → r ≤ R →
       (c : ℝ≥0∞) * μ (ball x r) ≤ μ (ball x r \ closure Ω) := by
   obtain ⟨c, hc, hdens⟩ := hΩ.compl_closure.exists_pos_mul_measure_ball_le_measure_ball_inter
-    μ (by rwa [frontier_compl, hΩ.frontier_closure]) hR
+    μ (hΩ.frontier_compl_closure ▸ hK) hR
   refine ⟨c, hc, fun x hx r hr hrR ↦ ?_⟩
   rw [sdiff_eq]
   exact hdens x (hΩ.closure_compl_closure ▸ mem_compl hx) r hr hrR
@@ -269,7 +269,7 @@ theorem exists_pos_mul_measure_closedBall_le_measure_closedBall_sdiff_closure
       (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r \ closure Ω) := by
   obtain ⟨c, hc, hdens⟩ :=
     hΩ.compl_closure.exists_pos_mul_measure_closedBall_le_measure_closedBall_inter
-      μ (by rwa [frontier_compl, hΩ.frontier_closure]) hR
+      μ (hΩ.frontier_compl_closure ▸ hK) hR
   refine ⟨c, hc, fun x hx r hr hrR ↦ ?_⟩
   rw [sdiff_eq]
   exact hdens x (hΩ.closure_compl_closure ▸ mem_compl hx) r hr hrR

@@ -56,6 +56,8 @@ support-containment lemmas provide the shared geometry for chart trace and exten
 * `Set.IsLipschitzDomain.interior_closure`: a Lipschitz domain is regular open.
 * `Set.IsLipschitzDomain.frontier_closure`: the closure of a Lipschitz domain has the same
   frontier.
+* `Set.IsLipschitzDomain.frontier_compl_closure`: the exterior of a Lipschitz domain has the same
+  frontier.
 * `Set.IsLipschitzChartWith`: a Lipschitz boundary chart with given coordinates, graph and radii.
 * `Set.IsLipschitzDomainAtWith`: the existence of a Lipschitz boundary chart centred at one point.
 * `Set.IsLipschitzDomainWith`: an open set with the local graph condition at every frontier point.
@@ -434,6 +436,11 @@ theorem closure_compl_closure (hΩ : Ω.IsLipschitzDomain E) : closure (closure 
 /-- The closure of a Lipschitz domain `Ω` has the same frontier as `Ω`. -/
 theorem frontier_closure (hΩ : Ω.IsLipschitzDomain E) : frontier (closure Ω) = frontier Ω := by
   rw [isClosed_closure.frontier_eq, hΩ.interior_closure, ← hΩ.isOpen.frontier_eq]
+
+/-- The exterior of a Lipschitz domain `Ω` has the same frontier as `Ω`. -/
+theorem frontier_compl_closure (hΩ : Ω.IsLipschitzDomain E) :
+    frontier (closure Ω)ᶜ = frontier Ω := by
+  rw [frontier_compl, hΩ.frontier_closure]
 
 /-- A Lipschitz domain with compact frontier has a finite cover of its frontier by the
 cylinders of Lipschitz charts sharing a common Lipschitz constant. -/
