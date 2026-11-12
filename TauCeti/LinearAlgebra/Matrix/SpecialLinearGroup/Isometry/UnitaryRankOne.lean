@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 
 /-!
 # The diagonal torus and Weyl representative of the rank-one unitary group
@@ -63,11 +63,9 @@ def torusHom (hσ : Function.Involutive σ) : Rˣ →* Group R σ where
   map_mul' s t := by
     apply Subtype.ext
     simp only [Subgroup.coe_mul]
-    apply Matrix.SpecialLinearGroup.ext
-    intro i j
-    -- Coercions from the special linear group expose the matrix multiplication here.
-    change torusMatrix R σ (s * t) i j =
-      (torusMatrix R σ s * torusMatrix R σ t) i j
+    apply Subtype.ext
+    erw [Matrix.SpecialLinearGroup.coe_mul]
+    ext i j
     fin_cases i <;> fin_cases j <;>
       simp [torusMatrix, Matrix.mul_apply, Fin.sum_univ_succ,
         map_mul, mul_assoc, mul_left_comm, mul_comm]
@@ -115,10 +113,9 @@ theorem coe_weyl :
 theorem weyl_mul_self : weyl R σ * weyl R σ = 1 := by
   apply Subtype.ext
   apply Subtype.ext
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_succ,
-      typeAGraphConjugator_apply]
+  simpa only [Subgroup.coe_mul, Subgroup.coe_one, Matrix.SpecialLinearGroup.coe_mul,
+    coe_weyl, Matrix.SpecialLinearGroup.coe_one, Units.val_mul, neg_one_sq, map_one,
+    Units.val_one] using congrArg Units.val (typeAGraphConjugator_mul_self (A := R) 2)
 
 /-- The Weyl representative is its own inverse. -/
 @[simp]
@@ -146,11 +143,9 @@ theorem mem_torus_iff_isDiag (hσ : Function.Involutive σ) (g : Group R σ) :
   refine ⟨?_, fun hg => ?_⟩
   · rintro ⟨t, rfl⟩
     exact isDiag_diagonal _
-  · have hGL : ((g : SpecialLinearGroup (Fin 3) R).toGL :
-        Matrix (Fin 3) (Fin 3) R).IsDiag := by
-      simpa only [Matrix.SpecialLinearGroup.coe_GL_coe_matrix] using hg
-    obtain ⟨d, hd⟩ := mem_diagonalTorus_iff_exists_diagGL.mp
-      (mem_diagonalTorus_iff.mpr hGL)
+  · obtain ⟨d, hd⟩ := mem_diagonalTorus_iff_exists_diagGL.mp
+      (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff_toGL_mem.mp
+        (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff.mpr hg))
     have hmat : ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
         diagonal (fun i => (d i : R)) := by
       simpa only [diagGL_coe, Matrix.SpecialLinearGroup.coe_GL_coe_matrix] using
@@ -175,10 +170,8 @@ theorem mem_torus_iff_isDiag (hσ : Function.Involutive σ) (g : Group R σ) :
     apply Subtype.ext
     apply Matrix.SpecialLinearGroup.ext
     intro i j
-    -- Express both sides as matrices, rather than the special-linear function coercion.
-    change torusMatrix R σ (d 0) i j = _
-    rw [hmat]
-    fin_cases i <;> fin_cases j <;> simp [torusMatrix, h1, h2, -map_inv]
+    rw [coe_torusHom, hmat]
+    fin_cases i <;> fin_cases j <;> simp [h1, h2, -map_inv]
 
 /-- The fixed Weyl representative normalizes the diagonal torus. -/
 theorem weyl_mem_normalizer_torus (hσ : Function.Involutive σ) :

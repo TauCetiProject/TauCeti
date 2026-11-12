@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TwistedA
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TwistedA.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.UnitaryRankOne
 
 /-!
@@ -105,8 +105,15 @@ theorem unitaryFixedWeylRepresentative_mul_self :
     unitaryFixedWeylRepresentative q hv * unitaryFixedWeylRepresentative q hv = 1 := by
   rw [unitaryFixedWeylRepresentative, ← map_mul, UnitaryRankOne.weyl_mul_self, map_one]
 
+/-- The fixed Weyl representative is its own inverse. -/
+@[simp]
+theorem unitaryFixedWeylRepresentative_inv :
+    (unitaryFixedWeylRepresentative q hv)⁻¹ = unitaryFixedWeylRepresentative q hv :=
+  inv_eq_of_mul_eq_one_right (unitaryFixedWeylRepresentative_mul_self q hv)
+
 /-- Weyl conjugation of the exact torus acts on parameters by inverse field conjugation. -/
-theorem unitaryFixedWeylRepresentative_mul_unitaryTorusHom_mul (t : Kˣ) :
+theorem unitaryFixedWeylRepresentative_mul_unitaryTorusHom_mul_unitaryFixedWeylRepresentative
+    (t : Kˣ) :
     unitaryFixedWeylRepresentative q hv * unitaryTorusHom q hv t *
         unitaryFixedWeylRepresentative q hv =
       unitaryTorusHom q hv ((Units.map (σ).toMonoidHom t)⁻¹) := by
@@ -115,8 +122,22 @@ theorem unitaryFixedWeylRepresentative_mul_unitaryTorusHom_mul (t : Kˣ) :
       congrArg (unitaryRankOneEquivFixedPoints q hv)
         (UnitaryRankOne.weyl_mul_torusHom_mul_weyl K σ hσ t)
 
+/-- The fixed Weyl representative normalizes the parametrized torus on the exact carrier. -/
+theorem unitaryFixedWeylRepresentative_mem_normalizer_range_unitaryTorusHom :
+    unitaryFixedWeylRepresentative q hv ∈
+      Subgroup.normalizer ((unitaryTorusHom q hv).range : Set (d).FixedPoints) := by
+  have htorus : UnitaryRankOne.torus K σ hσ = (UnitaryRankOne.torusHom K σ hσ).range := by
+    ext g
+    exact UnitaryRankOne.mem_torus_iff K σ hσ g
+  simpa only [unitaryTorusHom, MonoidHom.range_comp, ← htorus,
+    unitaryFixedWeylRepresentative, MulEquiv.coe_toMonoidHom] using
+      Subgroup.le_normalizer_map (H := UnitaryRankOne.torus K σ hσ)
+        (unitaryRankOneEquivFixedPoints q hv).toMonoidHom
+        (Subgroup.mem_map.mpr ⟨UnitaryRankOne.weyl K σ,
+          UnitaryRankOne.weyl_mem_normalizer_torus K σ hσ, rfl⟩)
+
 /-- The fixed Weyl representative lies outside the parametrized torus. -/
-theorem unitaryFixedWeylRepresentative_notMem_range :
+theorem unitaryFixedWeylRepresentative_notMem_range_unitaryTorusHom :
     unitaryFixedWeylRepresentative q hv ∉ (unitaryTorusHom q hv).range := by
   rintro ⟨t, ht⟩
   apply UnitaryRankOne.weyl_notMem_torus K σ hσ
