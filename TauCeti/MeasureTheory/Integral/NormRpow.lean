@@ -43,6 +43,9 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
+* `TauCeti.tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow`,
+  `TauCeti.memLp_restrict_of_norm_le_mul_norm_rpow`: dominated convergence and `Lᵖ` membership for
+  fields dominated by a multiple of the kernel.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
@@ -299,6 +302,42 @@ theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
     _ = _ := by
       rw [setLIntegral_closedBall_enorm_sub_rpow (by linarith) diam_nonneg, add_sub_cancel,
         Real.rpow_one, div_one]
+
+open Filter Topology in
+/-- **Dominated convergence for fields dominated by the kernel.** On a ball centred at the origin
+of a nontrivial space, fields bounded away from the origin by a common multiple `C ‖x‖ ^ s` of the
+kernel, `s > -dim E`, and converging away from the origin, converge in `L¹`. -/
+theorem tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow [Nontrivial E] {F : Type*}
+    [NormedAddCommGroup F] {f : ℕ → E → F} {g : E → F} {C s R : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s)
+    (hf : ∀ k, AEStronglyMeasurable (f k) (mu.restrict (ball 0 R)))
+    (hbound : ∀ k, ∀ x : E, x ≠ 0 → ‖f k x‖ ≤ C * ‖x‖ ^ s)
+    (hlim : ∀ x : E, x ≠ 0 → Tendsto (fun k => f k x) atTop (𝓝 (g x))) :
+    Tendsto (fun k => ∫⁻ x in ball 0 R, ‖f k x - g x‖ₑ ∂mu) atTop (𝓝 0) := by
+  have hae : ∀ᵐ x ∂mu.restrict (ball 0 R), x ≠ 0 :=
+    ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton 0))
+  simpa only [ofReal_norm] using tendsto_lintegral_norm_of_dominated_convergence hf
+    (((integrableOn_norm_rpow_ball (mu := mu) hs).const_mul C).hasFiniteIntegral)
+    (fun k => hae.mono fun x hx => hbound k x hx) (hae.mono hlim)
+
+/-- On a bounded set of a nontrivial space, a field bounded away from the origin by a multiple
+`C ‖x‖ ^ s` of the kernel is `p`-integrable when `s p > -dim E`. -/
+theorem memLp_restrict_of_norm_le_mul_norm_rpow [Nontrivial E] {F : Type*}
+    [NormedAddCommGroup F] {f : E → F} {C s : ℝ} {p : ENNReal} (hp0 : p ≠ 0) (hp : p ≠ ⊤)
+    {Ω : Set E} (hb : Bornology.IsBounded Ω) (hf : AEStronglyMeasurable f (mu.restrict Ω))
+    (hle : ∀ x : E, x ≠ 0 → ‖f x‖ ≤ C * ‖x‖ ^ s)
+    (hs : -(Module.finrank ℝ E : ℝ) < s * p.toReal) : MemLp f p (mu.restrict Ω) := by
+  obtain ⟨R, hR⟩ := hb.subset_ball 0
+  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  refine (integrable_norm_rpow_iff hf hp0 hp).1 ?_
+  refine (((integrableOn_norm_rpow_ball (mu := mu) hs).mono_set hR).const_mul
+    (|C| ^ p.toReal)).mono' (hf.norm.aemeasurable.pow_const _).aestronglyMeasurable ?_
+  filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (μ := mu) 0))]
+    with x hx
+  rw [Real.norm_of_nonneg (by positivity), Real.rpow_mul (norm_nonneg x),
+    ← Real.mul_rpow (abs_nonneg C) (by positivity)]
+  exact Real.rpow_le_rpow (norm_nonneg _)
+    ((hle x hx).trans (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity))) hpr.le
 
 end TauCeti
 

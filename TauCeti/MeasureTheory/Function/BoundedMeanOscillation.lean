@@ -636,4 +636,35 @@ theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStron
 
 end ConcentricBalls
 
+/-! ### Lower bounds for mean oscillation -/
+
+section LowerBound
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F]
+
+/-- **Mean oscillation from a sub-ball.** For an additive Haar measure on a real normed space of
+finite dimension `n`, if `‖f - a‖ ≥ δ` on a ball `B(z, ρ) ⊆ B(c, r)`, then the mean of `‖f - a‖`
+over `B(c, r)` is at least `δ (ρ / r)ⁿ`. With `a` the average of `f` over `B(c, r)`, this bounds
+the mean oscillation of `f` on `B(c, r)` from below. -/
+theorem ofReal_mul_div_pow_le_setLAverage_enorm_sub {f : E → F} {a : F} {c z : E} {r ρ δ : ℝ}
+    (hρ : 0 < ρ) (hsub : ball z ρ ⊆ ball c r)
+    (h : ∀ y ∈ ball z ρ, ENNReal.ofReal δ ≤ ‖f y - a‖ₑ) :
+    ENNReal.ofReal (δ * (ρ / r) ^ Module.finrank ℝ E) ≤ ⨍⁻ y in ball c r, ‖f y - a‖ₑ ∂μ := by
+  have hr : 0 < r := pos_of_mem_ball (hsub (mem_ball_self hρ))
+  have hpos : μ (ball c r) ≠ 0 := (measure_ball_pos μ c hr).ne'
+  have htop : μ (ball c r) ≠ ∞ := measure_ball_lt_top.ne
+  have hball : μ (ball z ρ) = ENNReal.ofReal ((ρ / r) ^ Module.finrank ℝ E) * μ (ball c r) := by
+    rw [μ.addHaar_ball_of_pos z hρ, μ.addHaar_ball_of_pos c hr, ← mul_assoc,
+      ← ENNReal.ofReal_mul (by positivity), div_pow, div_mul_cancel₀ _ (by positivity)]
+  rw [setLAverage_eq, ENNReal.le_div_iff_mul_le (Or.inl hpos) (Or.inl htop)]
+  calc ENNReal.ofReal (δ * (ρ / r) ^ Module.finrank ℝ E) * μ (ball c r)
+      = ENNReal.ofReal δ * μ (ball z ρ) := by
+        rw [hball, ← mul_assoc, ← ENNReal.ofReal_mul' (by positivity)]
+    _ = ∫⁻ _ in ball z ρ, ENNReal.ofReal δ ∂μ := (setLIntegral_const _ _).symm
+    _ ≤ ∫⁻ y in ball z ρ, ‖f y - a‖ₑ ∂μ := setLIntegral_mono' measurableSet_ball h
+    _ ≤ ∫⁻ y in ball c r, ‖f y - a‖ₑ ∂μ := lintegral_mono_set hsub
+
+end LowerBound
+
 end TauCeti
