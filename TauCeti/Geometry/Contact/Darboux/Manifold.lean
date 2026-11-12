@@ -136,39 +136,18 @@ theorem IsContactFormAt.exists_darbouxChart_of_isInteriorPoint
   set V₀ : Set E := interior t ∩ W
   have hV₀ : IsOpen V₀ := isOpen_interior.inter isOpen_interior
   have hy₀V₀ : y₀ ∈ V₀ := ⟨mem_interior_iff_mem_nhds.2 ht, hy₀W⟩
-  obtain ⟨chart₀, hsrc₀, hcoe₀, hmvf₀⟩ :=
-    exists_partialDiffeomorph_comp_extChartAt I ∞ x₀ hV₀ inter_subset_right (by simp)
-      (Diffeomorph.refl 𝓘(ℝ, E) E ∞)
-  let chart : PartialDiffeomorph I 𝓘(ℝ, P) M P ∞ := chart₀.trans Φ.toPartialDiffeomorph
-  have hsrc : chart.source = chart₀.source := by simp [chart]
-  have hcoe (y : M) : chart y = Φ (extChartAt I x₀ y) := by simp [chart, hcoe₀]
-  -- The differential of `chart` is that of `Φ` after the differential of the extended chart.
-  have hmvf (x : M) (hx : x ∈ chart.source) (v : TangentSpace I x) :
-      mvfderiv I chart x v =
-        fderiv ℝ Φ (extChartAt I x₀ x) (mvfderiv I (extChartAt I x₀) x v) := by
-    have hx₀' : x ∈ chart₀.source := hsrc ▸ hx
-    have hmd : MDifferentiableAt I 𝓘(ℝ, E) chart₀ x :=
-      (chart₀.contMDiffOn_toFun.contMDiffAt (chart₀.open_source.mem_nhds hx₀')).mdifferentiableAt
-        (by simp)
-    have hcomp : ⇑chart = ⇑Φ ∘ ⇑chart₀ := by
-      funext y
-      simp [hcoe, hcoe₀]
-    rw [hcomp, mvfderiv_comp_apply_of_differentiableAt
-      ((Φ.differentiable (by simp)) _) hmd, hmvf₀ x hx₀' v, hcoe₀]
-    -- `simp` reduces the derivative of the identity diffeomorphism to the identity of `E`, which
-    -- is then applied to a vector of its synonym `TangentSpace 𝓘(ℝ, E) _`.
-    simp
-    rfl
+  obtain ⟨chart, hsrc, hcoe, hmvf⟩ :=
+    exists_partialDiffeomorph_comp_extChartAt I ∞ x₀ hV₀ inter_subset_right (by simp) Φ
   -- The dimension count, from the derivative of `Φ`.
   have hdim : finrank ℝ E = 2 * n + 1 := by
     have e : E ≃ₗ[ℝ] P := (Φ.mfderivToContinuousLinearEquiv (by simp) y₀).toLinearEquiv
     rw [e.finrank_eq, finrank_prod, finrank_prod, finrank_euclideanSpace_fin, Module.finrank_self]
     ring
   refine ⟨n, chart, fun x ↦ g (extChartAt I x₀ x), hdim, ?_, ?_, fun x hx ↦ ?_⟩
-  · rw [hsrc, hsrc₀]
+  · rw [hsrc]
     exact ⟨mem_extChartAt_source x₀, hy₀V₀⟩
   · rw [hcoe, hΦ₀]
-  · have hxS : x ∈ (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ := hsrc₀ ▸ hsrc ▸ hx
+  · have hxS : x ∈ (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ := hsrc ▸ hx
     obtain ⟨hg, hΦx⟩ := htΦ _ (interior_subset hxS.2.1)
     refine ⟨hg, fun v ↦ ?_⟩
     have hvec : (fun i ↦ mvfderiv I (extChartAt I x₀) x (![v] i)) =
