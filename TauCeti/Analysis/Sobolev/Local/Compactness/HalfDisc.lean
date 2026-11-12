@@ -81,16 +81,6 @@ conjugate, lies in `V`. -/
 private def verticalCore (V : Set ℂ) : Set ℂ :=
   {z | ∀ c ∈ Icc (-1 : ℝ) 1, imDilation c z ∈ V}
 
-/-- The normal dilation depends continuously on the factor and the point together. -/
-private theorem continuous_imDilation_uncurry :
-    Continuous fun q : ℝ × ℂ => imDilation q.1 q.2 := by
-  have h : (fun q : ℝ × ℂ => imDilation q.1 q.2) =
-      fun q => (q.2.re : ℂ) + ((q.1 * q.2.im : ℝ) : ℂ) * Complex.I := by
-    funext q
-    apply Complex.ext <;> simp
-  rw [h]
-  fun_prop
-
 /-- The vertical core of an open set is open, by compactness of `[-1, 1]`. -/
 private theorem isOpen_verticalCore {V : Set ℂ} (hV : IsOpen V) : IsOpen (verticalCore V) := by
   refine isOpen_iff_mem_nhds.2 fun z hz => ?_
@@ -113,9 +103,10 @@ private theorem reflectionHull_le (V : Opens ℂ) : reflectionHull V ≤ V := by
 private theorem inter_setOf_im_nonneg_subset_reflectionHull (V : Opens ℂ) :
     (V : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ reflectionHull V := by
   rintro z ⟨hzV, hz⟩
-  rcases (show 0 ≤ z.im from hz).lt_or_eq with hz | hz
-  · exact Or.inl ⟨hzV, hz⟩
-  · exact Or.inr fun c _ => by rwa [imDilation_of_im_eq_zero c hz.symm]
+  have him : 0 ≤ z.im := hz
+  rcases him.lt_or_eq with hpos | hzero
+  · exact Or.inl ⟨hzV, hpos⟩
+  · exact Or.inr fun c _ => by rwa [imDilation_of_im_eq_zero c hzero.symm]
 
 private theorem mem_verticalCore_of_mem_reflectionHull {V : Opens ℂ} {z : ℂ}
     (hz : z ∈ reflectionHull V) (him : z.im ≤ 0) : z ∈ verticalCore V :=
@@ -182,20 +173,6 @@ private theorem memLpLoc_inter_of_memLp_upperPart {E : Type*} [NormedAddCommGrou
     MemLpLoc p ((V : Set ℂ) ∩ {z | 0 ≤ z.im}) f :=
   memLpLoc_iff.2 fun _ hK _ => hf.mono_measure (Measure.restrict_mono_ae (ae_le_upperPart hK))
 
-/-- A chain of iterated gradients, each the weak derivative of the previous one on the interior of
-`U` and each locally `Lᵖ` on `U`, gives local Sobolev membership on `U`. -/
-private theorem memWkpLoc_of_iteratedGradient_chain {U : Set ℂ} (n : ℕ) :
-    ∀ (j : ℕ) (G : (i : ℕ) → ℂ → IteratedGradient ℂ i),
-      (∀ i, j ≤ i → i < j + n → HasWeakFDerivOn volume (Opens.interior U) (G i) (G (i + 1))) →
-      (∀ i, j ≤ i → i ≤ j + n → MemLpLoc p U (G i)) → MemWkpLoc p U n (G j) := by
-  induction n with
-  | zero => exact fun j G _ hGp => memWkpLoc_zero_iff.2 (hGp j le_rfl (by omega))
-  | succ n ih =>
-    intro j G hG hGp
-    exact memWkpLoc_succ_iff.2 ⟨hGp j le_rfl (by omega), G (j + 1), hG j le_rfl (by omega),
-      ih (j + 1) G (fun i hji hi => hG i (by omega) (by omega))
-        fun i hji hi => hGp i (by omega) (by omega)⟩
-
 /-- An `Lᵖ` chain of iterated weak gradients on the upper half of `V` gives local Sobolev
 membership on `A ∩ {0 ≤ im}` for every open `A ⊆ V`, up to the real axis. -/
 private theorem memWkpLoc_inter_of_iteratedGradient_chain {A V : Opens ℂ} (hAV : A ≤ V) (n : ℕ)
@@ -216,142 +193,6 @@ private theorem memWkpLoc_inter_of_iteratedGradient_chain {A V : Opens ℂ} (hAV
   exact (memWkpLoc_of_iteratedGradient_chain n 0 G (fun i _ hi => (hG i (by omega)).mono hint)
     fun i _ hi => (memLpLoc_inter_of_memLp_upperPart (hGp i (by omega))).mono_set hsub).clm_comp
       (innerSL ℝ)
-
-/-! ### Chains of weak gradients with norm bounds -/
-
-section Norms
-
-variable [Fact (1 ≤ p)]
-
-/-- The iterated weak gradients of an element `v` of `W^{n+1,p}(V)` have `Lᵖ` norms at most the
-norm of `v`. -/
-private theorem exists_iteratedGradient_chain_eLpNorm_le {V : Opens ℂ} (n : ℕ)
-    (v : Wkp volume V p (n + 1)) :
-    ∃ G : (i : ℕ) → ℂ → IteratedGradient ℂ i,
-      HasWeakFDerivOn volume V (Wkp.value (n + 1) v) (fun z => innerSL ℝ (G 0 z)) ∧
-      (∀ i < n, HasWeakFDerivOn volume V (G i) (G (i + 1))) ∧
-      (∀ i ≤ n, MemLp (G i) p (volume.restrict V)) ∧
-      (∀ i ≤ n, eLpNorm (G i) p (volume.restrict V) ≤ ENNReal.ofReal ‖v‖) ∧
-      G n =ᵐ[volume.restrict V] Wkp.iteratedGradient n v := by
-  induction n with
-  | zero =>
-    refine ⟨Function.update (fun i _ => 0) 0 (Wkp.iteratedGradient 0 v), ?_,
-      fun i hi => absurd hi (Nat.not_lt_zero i), fun i hi => ?_, fun i hi => ?_, ?_⟩
-    · simpa only [Function.update_self] using Wkp.hasWeakFDerivOn_value v
-    · obtain rfl := Nat.le_zero.1 hi
-      simpa only [Function.update_self] using Lp.memLp (Wkp.iteratedGradient 0 v)
-    · obtain rfl := Nat.le_zero.1 hi
-      rw [Function.update_self, ← Lp.enorm_def, ← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal (Wkp.norm_iteratedGradient_le 0 v)
-    · simp only [Function.update_self, Filter.EventuallyEq.rfl]
-  | succ n ih =>
-    obtain ⟨G, h0, hG, hGp, hGn, htop⟩ := ih (Wkp.lowerOrder (n + 1) v)
-    have hlow : ENNReal.ofReal ‖Wkp.lowerOrder (n + 1) v‖ ≤ ENNReal.ofReal ‖v‖ :=
-      ENNReal.ofReal_le_ofReal (Wkp.norm_lowerOrder_le (n + 1) v)
-    refine ⟨Function.update G (n + 1) (Wkp.iteratedGradient (n + 1) v), ?_, fun i hi => ?_,
-      fun i hi => ?_, fun i hi => ?_, ?_⟩
-    · rw [Function.update_of_ne (Nat.succ_ne_zero n).symm, Wkp.value_succ]
-      exact h0
-    · rw [Function.update_of_ne (by omega)]
-      rcases Nat.lt_succ_iff_lt_or_eq.1 hi with hi | rfl
-      · rw [Function.update_of_ne (by omega)]
-        exact hG i hi
-      · rw [Function.update_self]
-        exact (Wkp.hasWeakFDerivOn_iteratedGradient i v).congr_ae htop.symm
-    · rcases Nat.lt_or_eq_of_le hi with hi | rfl
-      · rw [Function.update_of_ne (by omega)]
-        exact hGp i (by omega)
-      · rw [Function.update_self]
-        exact Lp.memLp _
-    · rcases Nat.lt_or_eq_of_le hi with hi | rfl
-      · rw [Function.update_of_ne (by omega)]
-        exact (hGn i (by omega)).trans hlow
-      · rw [Function.update_self, ← Lp.enorm_def, ← ofReal_norm]
-        exact ENNReal.ofReal_le_ofReal (Wkp.norm_iteratedGradient_le (n + 1) v)
-    · simp only [Function.update_self, Filter.EventuallyEq.rfl]
-
-/-- An `Lᵖ` chain of iterated weak gradients on `W` is represented by an element of
-`W^{n+1,p}(W)` whose norm is at most the sum of the `Lᵖ` norms of the function and the gradients. -/
-private theorem exists_wkp_of_chain_norm_le {W : Opens ℂ} (n : ℕ) {u : ℂ → ℝ}
-    {G : (i : ℕ) → ℂ → IteratedGradient ℂ i} (hu : MemLp u p (volume.restrict W))
-    (h0 : HasWeakFDerivOn volume W u (fun z => innerSL ℝ (G 0 z)))
-    (hG : ∀ i < n, HasWeakFDerivOn volume W (G i) (G (i + 1)))
-    (hGp : ∀ i ≤ n, MemLp (G i) p (volume.restrict W)) :
-    ∃ v : Wkp volume W p (n + 1), Wkp.value (n + 1) v =ᵐ[volume.restrict W] u ∧
-      Wkp.iteratedGradient n v =ᵐ[volume.restrict W] G n ∧
-      ENNReal.ofReal ‖v‖ ≤ eLpNorm u p (volume.restrict W) +
-        ∑ i ∈ Finset.range (n + 1), eLpNorm (G i) p (volume.restrict W) := by
-  induction n with
-  | zero =>
-    obtain ⟨v, hv, htop⟩ := Wkp.exists_value_iteratedGradient_ae_eq_of_chain 0 hu h0 hG hGp
-    refine ⟨v, hv, htop, ?_⟩
-    have h := Wkp.norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 v
-    have hlow : ENNReal.ofReal ‖Wkp.lowerOrder 0 v‖ = eLpNorm u p (volume.restrict W) := by
-      have hval : Wkp.value 1 v = Wkp.lowerOrder 0 v := by rw [Wkp.value_succ, Wkp.value_zero]
-      rw [← eLpNorm_congr_ae hv, ← Lp.enorm_def, ← ofReal_norm, hval]
-    have hgrad : ENNReal.ofReal ‖Wkp.iteratedGradient 0 v‖ =
-        eLpNorm (G 0) p (volume.restrict W) := by
-      rw [← eLpNorm_congr_ae htop, ← Lp.enorm_def, ← ofReal_norm]
-    have hs : ∑ i ∈ Finset.range (0 + 1), eLpNorm (G i) p (volume.restrict W) =
-        eLpNorm (G 0) p (volume.restrict W) := Finset.sum_range_one _
-    rw [hs, ← hlow, ← hgrad]
-    exact (ENNReal.ofReal_le_ofReal h).trans ENNReal.ofReal_add_le
-  | succ n ih =>
-    obtain ⟨v, hv, htop, hvn⟩ := ih (fun i hi => hG i (by omega)) (fun i hi => hGp i (by omega))
-    have hg := hGp (n + 1) le_rfl
-    have hD : HasWeakFDerivOn volume W (Wkp.iteratedGradient n v) (hg.toLp (G (n + 1))) :=
-      ((hG n (Nat.lt_succ_self n)).congr_ae htop.symm).congr_ae_deriv hg.coeFn_toLp.symm
-    refine ⟨Wkp.mk n v _ hD, ?_, ?_, ?_⟩
-    · rw [Wkp.value_mk]
-      exact hv
-    · rw [Wkp.iteratedGradient_mk]
-      exact hg.coeFn_toLp
-    · have h := Wkp.norm_le_norm_lowerOrder_add_norm_iteratedGradient (n + 1) (Wkp.mk n v _ hD)
-      rw [Wkp.lowerOrder_mk, Wkp.iteratedGradient_mk, Lp.norm_toLp] at h
-      rw [Finset.sum_range_succ, ← add_assoc]
-      exact (ENNReal.ofReal_le_ofReal h).trans (ENNReal.ofReal_add_le.trans
-        (add_le_add hvn ENNReal.ofReal_toReal_le))
-
-end Norms
-
-/-- A chain bound for two chains of iterated weak gradients, read through a linear isometry at the
-first level, bounds the `Lᵖ` norm of every later level of the first chain by the bound constant
-times the `Lᵖ` norm of the same level of the second chain. -/
-private theorem eLpNorm_le_of_weakDerivChainLe_iteratedGradient {S T : Set ℂ} {C : ℝ≥0∞}
-    (n : ℕ) : ∀ (j : ℕ) {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-      (L : IteratedGradient ℂ j →ₗᵢ[ℝ] F) (Gf Gg : (i : ℕ) → ℂ → IteratedGradient ℂ i),
-      WeakDerivChainLe p S T C n (fun z => L (Gf j z)) (fun z => L (Gg j z)) →
-      (∀ i, j ≤ i → i < j + n →
-        HasWeakFDerivOn volume (Opens.interior S) (Gf i) (Gf (i + 1))) →
-      (∀ i, j ≤ i → i < j + n →
-        HasWeakFDerivOn volume (Opens.interior T) (Gg i) (Gg (i + 1))) →
-      ∀ i, j ≤ i → i ≤ j + n →
-        eLpNorm (Gf i) p (volume.restrict S) ≤ C * eLpNorm (Gg i) p (volume.restrict T) := by
-  have hL : ∀ {j : ℕ} {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
-      (L : IteratedGradient ℂ j →ₗᵢ[ℝ] F) (g : ℂ → IteratedGradient ℂ j) (μ : Measure ℂ),
-      eLpNorm (fun z => L (g z)) p μ = eLpNorm g p μ := fun L g μ => by
-    have h : ∀ z, ‖L (g z)‖ₑ = ‖g z‖ₑ := fun z => by
-      simp only [enorm, LinearIsometry.nnnorm_map]
-    have hm : AEStronglyMeasurable (fun z => L (g z)) μ ↔ AEStronglyMeasurable g μ :=
-      L.isometry.isEmbedding.aestronglyMeasurable_comp_iff
-    by_cases hg : AEStronglyMeasurable g μ
-    · simp only [eLpNorm, eLpNorm', eLpNormEssSup, h, hm.2 hg, hg, ite_true]
-    · simp only [eLpNorm, eLpNorm', eLpNormEssSup, h, mt hm.1 hg, hg, ite_false]
-  induction n with
-  | zero =>
-    intro j F _ _ _ L Gf Gg h _ _ i hji hi
-    obtain rfl : i = j := by omega
-    simpa only [hL] using h.eLpNorm_le
-  | succ n ih =>
-    intro j F _ _ _ L Gf Gg h hGf hGg i hji hi
-    rcases Nat.lt_or_eq_of_le hji with hji | rfl
-    · have hc := h.weakFDeriv ((hGf j le_rfl (by omega)).clm_comp L.toContinuousLinearMap)
-        ((hGg j le_rfl (by omega)).clm_comp L.toContinuousLinearMap)
-      let L' : IteratedGradient ℂ (j + 1) →ₗᵢ[ℝ] (ℂ →L[ℝ] F) := LinearIsometry.postcomp L
-      exact ih (j + 1) L' Gf Gg hc
-        (fun i hji hi => hGf i (by omega) (by omega)) (fun i hji hi => hGg i (by omega) (by omega))
-        i (by omega) (by omega)
-    · simpa only [hL] using h.eLpNorm_le
 
 /-! ### Uniform bounds for the reflected sequence -/
 
@@ -379,7 +220,7 @@ private theorem exists_wkp_planarReflection_norm_le {Ω : Opens ℂ} {u : ℕ �
       ENNReal.ofReal_ne_top)
   refine ⟨(((k : ℝ≥0∞) + 2) * (C * ENNReal.ofReal R)).toReal, fun m => ?_⟩
   obtain ⟨v, hvR, hv⟩ := hR m
-  obtain ⟨G, h0, hG, hGp, hGn, -⟩ := exists_iteratedGradient_chain_eLpNorm_le k v
+  obtain ⟨G, h0, hG, hGp, hGn, -⟩ := Wkp.exists_iteratedGradient_chain k v
   have hum : MemLp (u m) p (volume.restrict (upperPart V : Set ℂ)) := (Lp.memLp _).ae_eq hv
   have h0' := h0.congr_ae hv
   set H := reflectionHull V
@@ -411,7 +252,7 @@ private theorem exists_wkp_planarReflection_norm_le {Ω : Opens ℂ} {u : ℕ �
   have hWH : W ≤ H := SetLike.coe_subset_coe.1 (subset_closure.trans hWV)
   have hWS : volume.restrict (W : Set ℂ) ≤ volume.restrict (H : Set ℂ) :=
     Measure.restrict_mono (SetLike.coe_subset_coe.2 hWH) le_rfl
-  obtain ⟨w, hw, -, hwn⟩ := exists_wkp_of_chain_norm_le (W := W) k
+  obtain ⟨w, hw, -, hwn⟩ := Wkp.exists_value_iteratedGradient_ae_eq_of_chain (Omega := W) k
     (hrp.memLp_of_closure_subset hWc hWV) (hf0.mono hWH) (fun i hi => (hfG i hi).mono hWH)
     fun i hi => (hfGp i hi).memLp_of_closure_subset hWc hWV
   refine ⟨w, (ENNReal.ofReal_le_iff_le_toReal hne).1 (hwn.trans ?_), hw⟩
@@ -468,16 +309,6 @@ theorem exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendsto_wkp {u : ℕ → �
   filter_upwards [ae_restrict_mem (upperPart W).isOpen.measurableSet] with z hz
   exact (planarReflection_of_nonneg _ _ hz.2.le).symm
 
-/-- The coordinates of a reflection are the reflections of the coordinates. -/
-private theorem repr_planarReflection {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {ι : Type*} (b : Module.Basis ι ℝ F) {n : ℕ} (d : Fin n → ℝ) (g : ℂ → F) (i : ι) :
-    (fun z => b.repr (planarReflection d g z) i) =
-      planarReflection d fun z => b.repr (g z) i := by
-  funext z
-  by_cases hz : 0 ≤ z.im
-  · simp [hz]
-  · simp [planarReflection_of_neg _ _ (not_le.1 hz)]
-
 /-- **Local Rellich compactness up to the real axis for vector-valued functions.** Let `F` be a
 finite-dimensional real vector space with basis `b`, let `1 ≤ p ≤ ∞`, and let `u m : ℂ → F` have
 coordinates bounded in `W^{k+1,p}` on the upper half `W ∩ {0 < im}` of every relatively compact
@@ -506,7 +337,7 @@ theorem _root_.Module.Basis.exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendst
   obtain ⟨φ, hφ, v, hv, hlim⟩ := b.exists_subseq_memWkpLoc_tendsto_wkp (Ω := reflectionHull Ω)
     (u := fun m => planarReflection (higherReflectionCoeff (k + 1)) (u m))
     fun W hWc hWΩ i => by
-      simpa only [repr_planarReflection] using
+      simpa only [← Module.Basis.coord_apply, LinearMap.map_planarReflection] using
         exists_wkp_planarReflection_norm_le (u := fun m z => b.repr (u m z) i)
           (fun W' hW'c hW'Ω => hu W' hW'c hW'Ω i) hWc hWΩ
   refine ⟨φ, hφ, v, hv.mono (inter_setOf_im_nonneg_subset_reflectionHull Ω),
@@ -515,7 +346,6 @@ theorem _root_.Module.Basis.exists_subseq_memWkpLoc_inter_setOf_im_nonneg_tendst
   refine hlim (upperPart W) hWc' hWΩ' i y w (fun j => (hy j).trans ?_) hw
   filter_upwards [ae_restrict_mem (upperPart W).isOpen.measurableSet] with z hz
   simp [planarReflection_of_nonneg _ _ hz.2.le]
-
 
 /-! ### The oscillating example on the half-disc -/
 
@@ -565,7 +395,7 @@ theorem exists_wkp_halfSine_norm_le {W : Opens ℂ} (hWc : IsCompact (closure (W
     rw [hD]
     exact hasWeakFDerivOn_of_differentiableOn (hcont.locallyIntegrable.locallyIntegrableOn _)
       fun z _ => (contDiff_halfSine m (n := 1)).differentiable one_ne_zero z
-  obtain ⟨v, hv, -, hvn⟩ := exists_wkp_of_chain_norm_le (W := P) 0 hu h0
+  obtain ⟨v, hv, -, hvn⟩ := Wkp.exists_value_iteratedGradient_ae_eq_of_chain (Omega := P) 0 hu h0
     (fun i hi => absurd hi (Nat.not_lt_zero i)) fun i hi => by
       obtain rfl := Nat.le_zero.1 hi
       exact memLp_iff.2 (hG1.trans_lt (lt_top_iff_ne_top.2 hc))

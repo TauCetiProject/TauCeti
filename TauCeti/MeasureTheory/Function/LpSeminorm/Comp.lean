@@ -38,6 +38,7 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
   quasi-measure-preserving map preserves `L^∞`.
 * `MeasureTheory.eLpNorm_clm_comp_le`: postcomposition with a continuous linear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
+* `LinearIsometry.eLpNorm_comp`: postcomposition with a linear isometry preserves `eLpNorm`.
 * `Homeomorph.memLp_comp_restrict_of_forall_isCompact`: precomposition with a measure-preserving
   homeomorphism preserves `Lᵖ` integrability on compact subsets.
 -/
@@ -114,6 +115,24 @@ theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace �
 end MeasureTheory
 
 open MeasureTheory Set
+
+namespace LinearIsometry
+
+variable {α R R₂ F G : Type*} [MeasurableSpace α] [Semiring R] [Semiring R₂] {σ : R →+* R₂}
+  [NormedAddCommGroup F] [Module R F] [NormedAddCommGroup G] [Module R₂ G]
+
+/-- **`eLpNorm` is invariant under postcomposition with a linear isometry.** No measurability
+assumption is needed: `u` and `L ∘ u` are almost everywhere strongly measurable together, since
+`L` is an embedding. -/
+theorem eLpNorm_comp (L : F →ₛₗᵢ[σ] G) (u : α → F) (p : ℝ≥0∞) (μ : Measure α) :
+    eLpNorm (fun x => L (u x)) p μ = eLpNorm u p μ := by
+  have hm : AEStronglyMeasurable (fun x => L (u x)) μ ↔ AEStronglyMeasurable u μ :=
+    L.isometry.isEmbedding.aestronglyMeasurable_comp_iff
+  by_cases hu : AEStronglyMeasurable u μ
+  · exact eLpNorm_congr_norm_ae (hm.2 hu) hu (ae_of_all _ fun x => L.norm_map (u x))
+  · rw [eLpNorm_of_not_aestronglyMeasurable hu, eLpNorm_of_not_aestronglyMeasurable (mt hm.1 hu)]
+
+end LinearIsometry
 
 namespace Homeomorph
 

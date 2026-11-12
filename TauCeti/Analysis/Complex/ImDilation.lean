@@ -61,6 +61,15 @@ theorem imDilation_imDilation (c c' : ℝ) (z : ℂ) :
     imDilation c (imDilation c' z) = imDilation (c * c') z :=
   Complex.ext rfl (by simp [mul_assoc])
 
+/-- The normal dilation depends continuously on the factor and the point together. -/
+theorem continuous_imDilation_uncurry : Continuous fun q : ℝ × ℂ => imDilation q.1 q.2 := by
+  have h : (fun q : ℝ × ℂ => imDilation q.1 q.2) =
+      fun q => (q.2.re : ℂ) + ((q.1 * q.2.im : ℝ) : ℂ) * I := by
+    funext q
+    apply Complex.ext <;> simp
+  rw [h]
+  fun_prop
+
 /-- The dilation by one is the identity. -/
 @[simp]
 theorem imDilation_one_apply (z : ℂ) : imDilation 1 z = z :=

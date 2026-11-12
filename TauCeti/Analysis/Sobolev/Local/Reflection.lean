@@ -48,6 +48,7 @@ statement.
 
 * `TauCeti.planarReflection`, `TauCeti.planarReflectionFDeriv`: the reflection with weights and
   its candidate weak derivative.
+* `LinearMap.map_planarReflection`: linear maps commute with the reflection.
 * `TauCeti.HasWeakLineDerivOn.planarReflection_one`, `TauCeti.HasWeakLineDerivOn.planarReflection_I`
   and `TauCeti.HasWeakFDerivOn.planarReflection`: weak gluing across the real axis.
 * `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff`: a map in `W^{k,p}_loc(Ω ∩ {0 ≤ im})`
@@ -98,6 +99,16 @@ theorem planarReflection_of_nonneg (d : Fin k → ℝ) (g : ℂ → F) {z : ℂ}
 theorem planarReflection_of_neg (d : Fin k → ℝ) (g : ℂ → F) {z : ℂ} (hz : z.im < 0) :
     planarReflection d g z = ∑ j, d j • g (imDilation (higherReflectionNode j) z) :=
   ite_eq_right hz.not_ge
+
+/-- A linear map commutes with the reflection: applying `A` to the reflection of `g` gives the
+reflection of `A ∘ g`. In particular the coordinates of a reflection in a basis are the reflections
+of the coordinates. -/
+theorem _root_.LinearMap.map_planarReflection {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (A : F →ₗ[ℝ] G) (d : Fin k → ℝ) (g : ℂ → F) (z : ℂ) :
+    A (planarReflection d g z) = planarReflection d (fun w => A (g w)) z := by
+  by_cases hz : 0 ≤ z.im
+  · simp [hz]
+  · simp [planarReflection_of_neg _ _ (not_le.1 hz)]
 
 /-- The two branches of the reflection as indicator functions. -/
 theorem planarReflection_eq_indicator (d : Fin k → ℝ) (g : ℂ → F) :
