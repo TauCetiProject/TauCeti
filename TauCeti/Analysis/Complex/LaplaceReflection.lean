@@ -19,6 +19,8 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -124,29 +126,17 @@ private abbrev upper : Set ℂ := {z : ℂ | 0 < z.im}
 private theorem measurableSet_upper : MeasurableSet upper :=
   measurableSet_lt measurable_const Complex.measurable_im
 
-omit [NormedSpace ℝ V] in
-/-- A function locally integrable on `Ω` up to the real axis, cut off to the open upper
-half-plane, is locally integrable on `Ω`. -/
-private theorem locallyIntegrableOn_indicator_upper {Ω : Opens ℂ}
-    (hξ : LocallyIntegrableOn ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
-    LocallyIntegrableOn (upper.indicator ξ) Ω := by
-  rw [locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed]
-  intro k hkΩ hk
-  rw [integrableOn_indicator_iff measurableSet_upper.nullMeasurableSet]
-  have hk' : IsCompact (k ∩ {z : ℂ | 0 ≤ z.im}) :=
-    hk.inter_right (isClosed_le continuous_const continuous_im)
-  refine (hξ.integrableOn_compact_subset (inter_subset_inter_left _ hkΩ) hk').mono_set ?_
-  rintro z ⟨hz, hzk⟩
-  exact ⟨hzk, (mem_ofPred.1 hz).le⟩
-
-/-- **Local integrability of the twisted reflection.** If `ξ` is locally integrable on `Ω` up to
-the real axis, its twisted reflection is locally integrable on the conjugation-invariant open set
-`Ω`. -/
-theorem locallyIntegrableOn_twistedReflection {Ω : Opens ℂ} (hΩ : ∀ z ∈ Ω, conj z ∈ Ω)
-    (R : V →L[ℝ] V) (hξ : LocallyIntegrableOn ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
-    LocallyIntegrableOn (twistedReflection R ξ) Ω := by
-  have h := locallyIntegrableOn_indicator_upper hξ
-  exact h.add (R.locallyIntegrableOn_comp (Complex.locallyIntegrableOn_comp_conj hΩ h))
+/-- **Local integrability of the twisted reflection.** If `ξ` is locally integrable on `s` up to
+the real axis, its twisted reflection is locally integrable on the conjugation-invariant set
+`s`. -/
+theorem locallyIntegrableOn_twistedReflection {s : Set ℂ} (hs : ∀ z ∈ s, conj z ∈ s)
+    (R : V →L[ℝ] V) (hξ : LocallyIntegrableOn ξ (s ∩ {z | 0 ≤ z.im})) :
+    LocallyIntegrableOn (twistedReflection R ξ) s := by
+  have h := locallyIntegrableOn_indicator_setOf_pos_im hξ
+  have hc : LocallyIntegrableOn (fun z ↦ upper.indicator ξ (conj z)) s := by
+    simpa only [conjCLE_apply] using h.comp_continuousLinearEquiv_of_mapsTo conjCLE
+      (fun z hz ↦ by simpa only [conjCLE_apply] using hs z hz)
+  exact h.add (R.locallyIntegrableOn_comp hc)
 
 /-! ### The doubled weak Laplace equation -/
 
@@ -159,8 +149,12 @@ private def lapIntegrand (φ : ℂ → ℝ) (a b c : ℂ → V) (z : ℂ) : V :=
 
 private theorem integrable_rhs (φ : 𝓓(Ω, ℝ)) {b c : ℂ → V} (hb : LocallyIntegrableOn b Ω)
     (hc : LocallyIntegrableOn c Ω) :
-    Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • b z + fderiv ℝ (φ : ℂ → ℝ) z I • c z :=
-  (φ.integrable_fderiv_smul 1 hb).add (φ.integrable_fderiv_smul I hc)
+    Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • b z + fderiv ℝ (φ : ℂ → ℝ) z I • c z := by
+  have hd (z v : ℂ) := (φ.contDiff.differentiable (by simp) z).lineDeriv_eq_fderiv (v := v)
+  have h1 := integrable_lineDeriv_smul_of_locallyIntegrableOn hb φ 1
+  have h2 := integrable_lineDeriv_smul_of_locallyIntegrableOn hc φ I
+  simp only [hd] at h1 h2
+  exact h1.add h2
 
 private theorem integrable_lapIntegrand (φ : 𝓓(Ω, ℝ)) {a b c : ℂ → V}
     (ha : LocallyIntegrableOn a Ω) (hb : LocallyIntegrableOn b Ω)
@@ -266,9 +260,9 @@ private theorem integral_lapIntegrand_twistedReflection (hΩ : ∀ z ∈ Ω, con
           (upper.indicator g) z) +
         ∫ z, lapIntegrand (conjTest hΩ φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
           (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w)) z := by
-  have hξ' := locallyIntegrableOn_indicator_upper hξ
-  have hf' := locallyIntegrableOn_indicator_upper hf
-  have hg' := locallyIntegrableOn_indicator_upper hg
+  have hξ' := locallyIntegrableOn_indicator_setOf_pos_im hξ
+  have hf' := locallyIntegrableOn_indicator_setOf_pos_im hf
+  have hg' := locallyIntegrableOn_indicator_setOf_pos_im hg
   set J := lapIntegrand (conjTest hΩ φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
     (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w))
   have hJ : Integrable J :=
@@ -311,9 +305,9 @@ theorem forall_integral_laplacian_smul_twistedReflection_eq_iff (hΩ : ∀ z ∈
       ∫ z in {z : ℂ | 0 < z.im}, Δ (φ : ℂ → ℝ) z • (ξ z - R (ξ z)) =
         -∫ z in {z : ℂ | 0 < z.im}, (fderiv ℝ (φ : ℂ → ℝ) z 1 • (f z - R (f z)) +
           fderiv ℝ (φ : ℂ → ℝ) z I • (g z - R (g z)))) := by
-  have hξ' := locallyIntegrableOn_indicator_upper hξ
-  have hf' := locallyIntegrableOn_indicator_upper hf
-  have hg' := locallyIntegrableOn_indicator_upper hg
+  have hξ' := locallyIntegrableOn_indicator_setOf_pos_im hξ
+  have hf' := locallyIntegrableOn_indicator_setOf_pos_im hf
+  have hg' := locallyIntegrableOn_indicator_setOf_pos_im hg
   have hRξ : LocallyIntegrableOn (fun z ↦ R (upper.indicator ξ z)) Ω :=
     R.locallyIntegrableOn_comp hξ'
   have hRf : LocallyIntegrableOn (fun z ↦ R (upper.indicator f z)) Ω :=
@@ -481,25 +475,20 @@ theorem exists_integral_laplacian_smul_twistedReflection_id_ne_zero :
   have hharm : WeaklyHarmonicOn volume (⊤ : Opens ℂ)
       (twistedReflection (ContinuousLinearMap.id ℝ ℂ) id) :=
     weaklyHarmonicOn_iff.2 ⟨hloc, h⟩
-  obtain ⟨v, hv, hae⟩ := hharm.exists_harmonicOnNhd_ae_eq
-  have hwae : w =ᵐ[volume.restrict ((⊤ : Opens ℂ) : Set ℂ)] v := by
-    refine Filter.EventuallyEq.trans ?_ hae
+  have hwae : twistedReflection (ContinuousLinearMap.id ℝ ℂ) id
+      =ᵐ[volume.restrict ((⊤ : Opens ℂ) : Set ℂ)] w := by
     rw [Opens.coe_top, Measure.restrict_univ]
     filter_upwards [measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_im_eq 0)] with z hz
-    exact (twistedReflection_id_id hz).symm
-  have heq : EqOn w v (⊤ : Opens ℂ) :=
-    Measure.eqOn_open_of_ae_eq hwae (⊤ : Opens ℂ).isOpen hwc.continuousOn
-      hv.contDiffOn.continuousOn
-  have hvd : DifferentiableAt ℝ v 0 :=
-    ((hv 0 (by simp)).1.differentiableAt (by norm_num))
-  have hwd : DifferentiableAt ℝ w 0 := by
-    have : w = v := funext fun z ↦ heq (by simp)
-    rwa [this]
+    exact twistedReflection_id_id hz
+  have hwh : HarmonicOnNhd w (⊤ : Opens ℂ) :=
+    (harmonicOnNhd_iff_weaklyHarmonicOn (μ := volume) hwc.continuousOn).2 (hharm.congr_ae hwae)
+  have hwd : DifferentiableAt ℝ w 0 := (hwh 0 (by simp)).1.differentiableAt (by norm_num)
   have habs : DifferentiableAt ℝ (fun t : ℝ ↦ (w (t * I)).im) 0 := by
-    have hlin : DifferentiableAt ℝ (fun t : ℝ ↦ (t : ℂ) * I) 0 :=
+    have hlin : DifferentiableAt ℝ (fun t : ℝ ↦ ofRealCLM t * I) 0 :=
       (ofRealCLM.differentiable.mul_const I) 0
-    have hw' : DifferentiableAt ℝ w (((0 : ℝ) : ℂ) * I) := by simpa using hwd
-    exact (Complex.imCLM.differentiableAt).comp (0 : ℝ) (hw'.comp (0 : ℝ) hlin)
+    have hw' : DifferentiableAt ℝ w (ofRealCLM 0 * I) := by simpa using hwd
+    simpa only [Function.comp_def, imCLM_apply, ofRealCLM_apply] using
+      imCLM.differentiableAt.comp (0 : ℝ) (hw'.comp (0 : ℝ) hlin)
   have hfun : (fun t : ℝ ↦ (w (t * I)).im) = abs := by
     ext t
     simp [hw]
