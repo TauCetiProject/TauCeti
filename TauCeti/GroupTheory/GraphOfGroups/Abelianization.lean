@@ -53,8 +53,9 @@ of that dart. -/
       (Additive.ofMul (Group.Abelianization.of (T.loop v e.1))) = FreeAbelianGroup.of e := by
   -- `FreeAbelianGroup.of e` is by definition the additive class of `FreeGroup.of e`.
   change Additive.ofMul ((T.pathGroupEquivFreeGroup v hO).abelianizationCongr
-    (Group.Abelianization.of (T.loop v e.1))) = Additive.ofMul (Group.Abelianization.of (FreeGroup.of e))
-  rw [abelianizationCongr_of, pathGroupEquivFreeGroup_loop]
+    (Group.Abelianization.of (T.loop v e.1))) =
+      Additive.ofMul (Group.Abelianization.of (FreeGroup.of e))
+  rw [Group.abelianizationCongr_of, pathGroupEquivFreeGroup_loop]
 
 /-- A free generator corresponds to the class of its tree loop. -/
 @[simp] theorem abelianizationEquivFreeAbelianGroup_symm_of (hO : Γ.IsOrientation O)
