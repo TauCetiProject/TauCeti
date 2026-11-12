@@ -77,7 +77,7 @@ private theorem markovChainKernel_forall_notMem_eq_zero [Finite S] {A : Set S}
     κ.markovChainKernel x {w : ℕ → S | ∀ n, w n ∉ A} = 0 := by
   -- Take a maximizer of the failure probability `q`: positive mass entering the target forces a
   -- strict decrease unless the maximum is zero. Finiteness is used only to obtain the maximizer.
-  set q : S → ℝ≥0∞ := fun x => κ.markovChainKernel x {w : ℕ → S | ∀ n, w n ∉ A} with hqdef
+  set q : S → ℝ≥0∞ := fun x => κ.markovChainKernel x {w : ℕ → S | ∀ n, w n ∉ A}
   have hzero : ∀ x ∈ A, q x = 0 := fun x hx => markovChainKernel_forall_notMem_eq_zero_of_mem hA hx
   have hq : ∀ x, q x = 0 := by
     cases isEmpty_or_nonempty S with
