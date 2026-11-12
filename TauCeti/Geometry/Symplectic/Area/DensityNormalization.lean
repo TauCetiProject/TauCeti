@@ -123,12 +123,23 @@ def stripNormalizedAngle (ρ : ℝ × ℝ → ℝ) (x : ℝ) : ℝ :=
   (∫ t in (0 : ℝ)..x, stripColumnMass ρ t) / stripMass ρ
 
 /-- The **normalization** `Φ(x, y) = (a⁻¹ ∫₀ˣ s(t) dt, s(x)⁻¹ ∫₀ʸ ρ(x, r) dr)` of a density `ρ` on
-the strip. For a positive periodic density it is a bijection of the strip with
-`a · det dΦ = ρ`, which commutes with the deck translation and fixes each boundary line. -/
+the strip. For a positive periodic density it is a bijection of the strip that commutes with the
+deck translation and fixes each boundary line; if the density is also `C^1`, then
+`a · det dΦ = ρ`. -/
 def stripNormalization (ρ : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ × ℝ :=
   (stripNormalizedAngle ρ p.1, (∫ r in (0 : ℝ)..p.2, ρ (p.1, r)) / stripColumnMass ρ p.1)
 
 variable {ρ : ℝ × ℝ → ℝ}
+
+theorem stripColumnMass_def (x : ℝ) : stripColumnMass ρ x = ∫ r in (0 : ℝ)..1, ρ (x, r) :=
+  (rfl)
+
+theorem stripMass_def : stripMass ρ = ∫ x in (0 : ℝ)..1, stripColumnMass ρ x :=
+  (rfl)
+
+theorem stripNormalizedAngle_def (x : ℝ) :
+    stripNormalizedAngle ρ x = (∫ t in (0 : ℝ)..x, stripColumnMass ρ t) / stripMass ρ :=
+  (rfl)
 
 @[simp]
 theorem stripNormalization_fst (p : ℝ × ℝ) :
@@ -169,7 +180,7 @@ theorem contDiff_stripColumnMass {n : ℕ∞} (hρ : ContDiffOn ℝ n ρ unitStr
   refine (convex_univ.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     (g := fun _ ↦ (1 : ℝ)) (integrable_const 1) continuous_subtype_val uniqueDiffOn_univ
     uniqueDiffOn_unitStrip hρ fun _ _ t ↦ mem_unitStrip.2 t.2).congr fun x _ ↦ ?_
-  simp [stripColumnMass, intervalIntegral_eq_integral_unitInterval]
+  simp [stripColumnMass_def, intervalIntegral_eq_integral_unitInterval]
 
 theorem continuous_stripColumnMass (hρ : ContinuousOn ρ unitStrip) :
     Continuous (stripColumnMass ρ) :=
@@ -185,7 +196,7 @@ theorem stripMass_pos (hρ : ContinuousOn ρ unitStrip) (hpos : ∀ p ∈ unitSt
 
 @[simp]
 theorem stripNormalizedAngle_zero : stripNormalizedAngle ρ 0 = 0 := by
-  simp [stripNormalizedAngle]
+  simp [stripNormalizedAngle_def]
 
 /-- The derivative of the first coordinate of the normalization is `s(x) / a`. -/
 theorem hasDerivAt_stripNormalizedAngle (hρ : ContinuousOn ρ unitStrip) (x : ℝ) :
@@ -220,9 +231,9 @@ theorem stripNormalizedAngle_add_one (hρ : ContinuousOn ρ unitStrip)
     (x : ℝ) : stripNormalizedAngle ρ (x + 1) = stripNormalizedAngle ρ x + 1 := by
   have hs := continuous_stripColumnMass hρ
   have hperiodic : Function.Periodic (stripColumnMass ρ) 1 := stripColumnMass_add_one hper
-  rw [stripNormalizedAngle, stripNormalizedAngle,
+  rw [stripNormalizedAngle_def, stripNormalizedAngle_def,
     ← integral_add_adjacent_intervals (hs.intervalIntegrable 0 x) (hs.intervalIntegrable x (x + 1)),
-    hperiodic.intervalIntegral_add_eq x 0, zero_add, add_div, ← stripMass,
+    hperiodic.intervalIntegral_add_eq x 0, zero_add, add_div, ← stripMass_def,
     div_self (stripMass_pos hρ hpos).ne']
 
 /-- For a positive periodic density the first coordinate of the normalization is onto `ℝ`: it is
@@ -329,7 +340,7 @@ theorem stripNormalization_add_one (hρ : ContinuousOn ρ unitStrip)
 @[simp]
 theorem stripNormalization_one : stripNormalization 1 = id := by
   funext p
-  simp [stripNormalization, stripNormalizedAngle, stripMass, stripColumnMass]
+  simp [stripNormalization, stripNormalizedAngle_def, stripMass_def, stripColumnMass_def]
 
 /-- For the density `1 + y`, with column masses `3 / 2`, the normalization is
 `(x, y) ↦ (x, (2 y + y²) / 3)`. -/
@@ -340,12 +351,12 @@ theorem stripNormalization_one_add_snd (p : ℝ × ℝ) :
       intervalIntegral.integral_const, integral_id]
     simp
   have hs (x : ℝ) : stripColumnMass (fun q : ℝ × ℝ ↦ 1 + q.2) x = 3 / 2 := by
-    rw [stripColumnMass, hint]
+    rw [stripColumnMass_def, hint]
     norm_num
   have ha : stripMass (fun q : ℝ × ℝ ↦ 1 + q.2) = 3 / 2 := by
-    simp [stripMass, hs]
+    simp [stripMass_def, hs]
   refine Prod.ext ?_ ?_
-  · simp only [stripNormalization_fst, stripNormalizedAngle, hs, ha,
+  · simp only [stripNormalization_fst, stripNormalizedAngle_def, hs, ha,
       intervalIntegral.integral_const]
     field_simp
     ring
