@@ -575,7 +575,11 @@ variable {n : ℕ} {a a' s t : Fin n} {x z : GridState n}
 
 /-- The replaced grid line is a common side of the two rectangles of a pair of pentagons at the
 same column, whatever their turn rows: the terminal side of a terminal-side pentagon and the
-initial side of an initial-side one. -/
+initial side of an initial-side one.
+
+The separate column `a'` and equality `ha'` allow application to a reverse commutation using
+`ColumnCommutationData.reverse_column`: its column is propositionally, but not definitionally,
+equal to the forward column across module boundaries. -/
 theorem finRotate_mem_commonSideColumns (D : GridPentagonPairDecomposition a s a' t x z)
     (ha' : a' = a) : finRotate n a ∈ D.toRectangleDecomposition.commonSideColumns := by
   subst ha'

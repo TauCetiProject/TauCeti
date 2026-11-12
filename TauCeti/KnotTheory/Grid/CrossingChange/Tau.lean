@@ -151,16 +151,15 @@ theorem tau_swapColumns_mem_Icc_of_homotopy
     exact ⟨by linarith, h₁⟩
 
 /-- **The crossing change inequality for `τ`.** Let the segments of the columns `a` and
-`b = finRotate n a` of a knot grid `G` interleave with `O_a` on the arc of column `b`, and let `C`
-turn in the row of `O_a`. Then `τ(G) - 1 ≤ τ(G') ≤ τ(G)` for `G' = G.swapColumns a b`, over every
-commutative ring of characteristic two. -/
-theorem tau_swapColumns_mem_Icc (h : G.ColumnsInterleaving a b) (hO : G.O a ∈ G.columnArc b)
-    (hs : C.turnRow = G.O a) :
+`b = finRotate n a` of a knot grid `G` interleave with `O_a` on the arc of column `b`. Then
+`τ(G) - 1 ≤ τ(G') ≤ τ(G)` for `G' = G.swapColumns a b`, over every commutative ring of
+characteristic two. -/
+theorem tau_swapColumns_mem_Icc (h : G.ColumnsInterleaving a b) (hO : G.O a ∈ G.columnArc b) :
     (hG.swapColumns a b).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) :=
-  hG.tau_swapColumns_mem_Icc_of_homotopy h hO hs
-    ⟨G.crossingChangeHomotopy K C (G.X b),
-      unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc K h hO hs rfl⟩
-    ⟨(G').crossingChangeHomotopy K (C.withTurnRow (G.X b)) (G.O a),
+  hG.tau_swapColumns_mem_Icc_of_homotopy (C := C.withTurnRow (G.O a)) h hO rfl
+    ⟨G.crossingChangeHomotopy K (C.withTurnRow (G.O a)) (G.X b),
+      unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc K h hO rfl rfl⟩
+    ⟨(G').crossingChangeHomotopy K ((C.withTurnRow (G.O a)).withTurnRow (G.X b)) (G.O a),
       unblockedDifferential_crossingChangeHomotopy_add_eq_of_notMem_columnArc K
         ((columnsInterleaving_swapColumns G _ _).mpr h.symm)
         (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)

@@ -38,7 +38,11 @@ namespace TauCeti.GridPentagonPairDecomposition
 variable {n : ℕ} {a a' s t : Fin n} {x z : GridState n}
 
 /-- The recut of a pair of pentagons at the same column turning on the same side does not have
-the replaced grid line as a common side column, whatever the turn rows of the two pentagons. -/
+the replaced grid line as a common side column, whatever the turn rows of the two pentagons.
+
+The separate column `a'` and equality `ha'` allow application to a reverse commutation using
+`ColumnCommutationData.reverse_column`: its column is propositionally, but not definitionally,
+equal to the forward column across module boundaries. -/
 theorem finRotate_notMem_commonSideColumns_of_isRecut
     {D : GridPentagonPairDecomposition a s a' t x z} (ha' : a' = a)
     (hside : D.first.isLeft = D.second.isLeft) {E : GridRectangleDecomposition x z}
