@@ -523,9 +523,9 @@ theorem abs_integral_floerEnergyDensity_puncturedSpherePerturbation_truncation_s
   rw [integral_floerEnergyDensity_puncturedSpherePerturbation_truncation ω hH hHs hHout hHouts ha
     hsep hout hu hR, hsub, abs_neg]
   have hsum : 0 ≤ ∑ i, B i := Finset.sum_nonneg fun i _ ↦ hB₀ i
-  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg hsum hBout₀), ← Real.enorm_eq_ofReal_abs,
+  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg hsum hBout₀), ← Real.eNorm_eq_ofReal_abs,
     ENNReal.ofReal_add hsum hBout₀, ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hB₀ i]
-  refine (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le ω hH hHs hHout hHouts ha
       (fun i j hij ↦ ?_) (fun i ↦ ?_) hB hBout u))
   · nlinarith [hsep hij, norm_nonneg (a i), norm_nonneg (a j)]

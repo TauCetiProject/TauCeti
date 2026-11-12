@@ -496,7 +496,7 @@ private theorem integral_floerEnergyDensity_comp_realChart_Icc_prod_Ico (ω : Sy
   have hae : Icc α β ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) =ᵐ[volume]
       Icc ((α, -1 / 2) : ℝ × ℝ) (β, 1 / 2) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ico_ae_eq_Icc
+    exact Measure.set_prod_ae_eq .rfl Ico_ae_eq_Icc
   simp only [setIntegral_congr_set hae]
   have hIccU : Icc ((α, -1 / 2) : ℝ × ℝ) (β, 1 / 2) ⊆ realChart f ⁻¹' Ω := fun z hz ↦ hfΩ z (by
     rw [Icc_prod_eq] at hz
