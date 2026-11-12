@@ -24,8 +24,8 @@ valuation. The successive-approximation argument, however, produces the relator 
 `x₃^q (x₃, x₄) ⋯ (x_{n-1}, x_n)` for a natural number `q`, so that `q = 2^f` is Labute's level `f`
 and `q = 0` is the level `f = ∞`, on an arbitrary tuple of elements of a pro-`2` group, and proves
 its elementary properties: it is the natural-exponent word at `α = a`, `q = 2^f`, it is carried by
-continuous homomorphisms of pro-`2` groups, it is killed by the characters into commutative
-pro-`2` groups which are trivial on `x₁` and whose value on `x₃` has trivial `q`-th power, and for
+continuous homomorphisms of pro-`2` groups, it is killed by the characters into commutative `T1`
+groups which are trivial on `x₁` and whose value on `x₃` has trivial `q`-th power, and for
 `α` and `q` even it lies in the pro-`2` Frattini subgroup.
 
 ## Main definitions
