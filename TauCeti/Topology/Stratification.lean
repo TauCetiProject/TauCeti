@@ -5,231 +5,231 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finset.Image
-public import Mathlib.Data.Finset.NAry
+public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Topology.LocallyClosed
 
 /-!
 # Finite locally closed stratifications
 
-A finite locally closed stratification of a topological space `X` is a finite set of pairwise
-disjoint locally closed subsets of `X`, its strata, whose union is `X`. Constructible étale
-sheaves on a Noetherian scheme are those whose restrictions to the strata of some such
-stratification are finite locally constant (SGA 4, Exposé IX, §2; Stacks, Section 59.71), so
-these stratifications are the combinatorial carrier of constructibility.
+A finite locally closed stratification of a topological space `X` is a finite partition of `X`
+into nonempty locally closed subsets, its strata. Constructible étale sheaves on a Noetherian
+scheme are those whose restrictions to the strata of some such stratification are finite locally
+constant (SGA 4, Exposé IX, §2; Stacks, Section 59.71), so these stratifications are the
+combinatorial carrier of constructibility.
+
+A stratification is a `Finpartition (univ : Set X)` whose parts are locally closed. Refinement,
+the single-stratum stratification and common refinement are inherited from the order on
+`Finpartition`: the parts of a finite partition by locally closed sets stay locally closed under
+`⊓`, and the single part `univ` is closed.
 
 ## Main declarations
 
-* `FiniteStratification X`: finite locally closed stratifications of `X`, with
+* `TauCeti.FiniteStratification X`: finite locally closed stratifications of `X`, with
   `FiniteStratification.exists_unique_mem` (every point lies in exactly one stratum).
-* `FiniteStratification.Refines S T`: every stratum of `S` lies in a stratum of `T`; a preorder.
-* `FiniteStratification.top X`: the stratification with the single stratum `X`, refined by every
-  stratification.
-* `FiniteStratification.inf S T`: the common refinement, whose strata are the intersections of a
-  stratum of `S` with a stratum of `T`. It refines both, and every common refinement of `S` and
-  `T` refines it (`FiniteStratification.refines_inf_iff`).
+* The `PartialOrder`, `OrderTop` and `SemilatticeInf` instances: `S ≤ T` when every stratum of `S`
+  lies in a stratum of `T`, `⊤` has the single stratum `X` (when `X` is nonempty), and `S ⊓ T` is
+  the common refinement, whose strata are the nonempty intersections of a stratum of `S` with a
+  stratum of `T`.
 * `FiniteStratification.comap f hf S`: the pullback along a continuous map, whose strata are the
-  preimages of the strata of `S`. It is monotone for refinement and commutes with `inf`; on a
-  subspace it is the restriction of the stratification.
-
-Strata may be empty: the definitions do not require nonemptiness, so pulling back and taking
-intersections need no case distinction.
+  nonempty preimages of the strata of `S`. It is monotone and commutes with `⊤` and `⊓`.
 -/
 
 public section
 
 open Set
 
+namespace TauCeti
+
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
 
 variable (X) in
-/-- A finite locally closed stratification of a topological space: a finite set of pairwise
-disjoint locally closed subsets, its strata, whose union is the whole space (SGA 4, Exposé IX,
-§2). Strata may be empty. -/
-@[ext]
-structure FiniteStratification where
-  /-- The strata. -/
-  strata : Finset (Set X)
+/-- A finite locally closed stratification of a topological space: a finite partition of the
+whole space into nonempty locally closed subsets, its strata (SGA 4, Exposé IX, §2). -/
+structure FiniteStratification extends Finpartition (univ : Set X) where
   /-- Every stratum is locally closed. -/
-  isLocallyClosed : ∀ s ∈ strata, IsLocallyClosed s
-  /-- Distinct strata are disjoint. -/
-  pairwiseDisjoint : (strata : Set (Set X)).PairwiseDisjoint id
-  /-- The strata cover the space. -/
-  sUnion_eq : ⋃₀ (strata : Set (Set X)) = univ
+  isLocallyClosed : ∀ s ∈ parts, IsLocallyClosed s
 
 namespace FiniteStratification
 
-variable (S T U : FiniteStratification X)
+lemma toFinpartition_injective :
+    Function.Injective (toFinpartition : FiniteStratification X → Finpartition univ) := by
+  rintro ⟨S, hS⟩ ⟨T, hT⟩ rfl
+  rfl
+
+@[ext]
+lemma ext {S T : FiniteStratification X} (h : S.parts = T.parts) : S = T :=
+  toFinpartition_injective (Finpartition.ext h)
+
+variable (S T : FiniteStratification X)
 
 /-- Every point lies in some stratum. -/
-lemma exists_mem (x : X) : ∃ s ∈ S.strata, x ∈ s := by
-  have hx : x ∈ ⋃₀ (S.strata : Set (Set X)) := S.sUnion_eq ▸ mem_univ x
-  simpa using hx
+lemma exists_mem (x : X) : ∃ s ∈ S.parts, x ∈ s := by
+  have hx : x ∈ S.parts.sup id := by rw [S.sup_parts]; exact mem_univ x
+  simpa [Finset.sup_set_eq_biUnion] using hx
 
 /-- Two strata containing a common point are equal. -/
-lemma eq_of_mem {s t : Set X} (hs : s ∈ S.strata) (ht : t ∈ S.strata) {x : X} (hxs : x ∈ s)
-    (hxt : x ∈ t) : s = t := by
-  by_contra hst
-  exact Set.disjoint_left.1 (S.pairwiseDisjoint hs ht hst) hxs hxt
+lemma eq_of_mem {s t : Set X} (hs : s ∈ S.parts) (ht : t ∈ S.parts) {x : X} (hxs : x ∈ s)
+    (hxt : x ∈ t) : s = t :=
+  S.disjoint.elim_set hs ht x hxs hxt
 
 /-- Every point lies in exactly one stratum. -/
-lemma exists_unique_mem (x : X) : ∃! s, s ∈ S.strata ∧ x ∈ s := by
+lemma exists_unique_mem (x : X) : ∃! s, s ∈ S.parts ∧ x ∈ s := by
   obtain ⟨s, hs, hx⟩ := S.exists_mem x
   exact ⟨s, ⟨hs, hx⟩, fun t ⟨ht, hxt⟩ ↦ S.eq_of_mem ht hs hxt hx⟩
 
-/-- `S` refines `T` when every stratum of `S` lies in some stratum of `T`. -/
-def Refines : Prop :=
-  ∀ s ∈ S.strata, ∃ t ∈ T.strata, s ⊆ t
+/-- Refinement: `S ≤ T` when every stratum of `S` lies in some stratum of `T`. -/
+instance : PartialOrder (FiniteStratification X) :=
+  PartialOrder.lift toFinpartition toFinpartition_injective
 
-variable {S T U}
+variable {S T}
 
-lemma Refines.refl : S.Refines S := fun s hs ↦ ⟨s, hs, subset_rfl⟩
+lemma toFinpartition_le_toFinpartition : S.toFinpartition ≤ T.toFinpartition ↔ S ≤ T :=
+  Iff.rfl
 
-lemma Refines.trans (hST : S.Refines T) (hTU : T.Refines U) : S.Refines U := fun s hs ↦ by
-  obtain ⟨t, ht, hst⟩ := hST s hs
-  obtain ⟨u, hu, htu⟩ := hTU t ht
-  exact ⟨u, hu, hst.trans htu⟩
+lemma le_def : S ≤ T ↔ ∀ s ∈ S.parts, ∃ t ∈ T.parts, s ⊆ t :=
+  Iff.rfl
 
 /-- If `S` refines `T`, each stratum of `T` is the union of the strata of `S` inside it. -/
-lemma Refines.eq_sUnion (hST : S.Refines T) {t : Set X} (ht : t ∈ T.strata) :
-    t = ⋃₀ {s ∈ (S.strata : Set (Set X)) | s ⊆ t} := by
+lemma eq_sUnion_of_le (hST : S ≤ T) {t : Set X} (ht : t ∈ T.parts) :
+    t = ⋃₀ {s ∈ (S.parts : Set (Set X)) | s ⊆ t} := by
   refine Subset.antisymm (fun x hxt ↦ ?_) (sUnion_subset fun s hs ↦ hs.2)
   obtain ⟨s, hs, hxs⟩ := S.exists_mem x
-  obtain ⟨t', ht', hst'⟩ := hST s hs
+  obtain ⟨t', ht', hst'⟩ := le_def.1 hST s hs
   obtain rfl := T.eq_of_mem ht ht' hxt (hst' hxs)
   exact ⟨s, ⟨hs, hst'⟩, hxs⟩
 
-variable (X) in
-/-- The stratification with the single stratum `X`. -/
-def top : FiniteStratification X where
-  strata := {univ}
-  isLocallyClosed s hs := by
-    rw [Finset.mem_singleton.1 hs]
-    exact isClosed_univ.isLocallyClosed
-  pairwiseDisjoint := by
-    simp only [Finset.coe_singleton, pairwiseDisjoint_singleton]
-  sUnion_eq := by simp
+open Classical in
+/-- The stratification with the single stratum `X` (no strata when `X` is empty). -/
+noncomputable instance : OrderTop (FiniteStratification X) where
+  top :=
+    { toFinpartition := ⊤
+      isLocallyClosed s hs := by
+        rw [Finset.mem_singleton.1 (Finpartition.parts_top_subset _ hs)]
+        exact isClosed_univ.isLocallyClosed }
+  le_top S := le_top (a := S.toFinpartition)
 
 @[simp]
-lemma strata_top : (top X).strata = {univ} :=
-  (rfl)
-
-/-- Every stratification refines the stratification with a single stratum. -/
-lemma refines_top (S : FiniteStratification X) : S.Refines (top X) :=
-  fun s _ ↦ ⟨univ, Finset.mem_singleton_self _, subset_univ s⟩
-
-open Classical in
-/-- The common refinement of two stratifications: its strata are the intersections of a stratum
-of `S` with a stratum of `T`. -/
-noncomputable def inf (S T : FiniteStratification X) : FiniteStratification X where
-  strata := Finset.image₂ (· ∩ ·) S.strata T.strata
-  isLocallyClosed u hu := by
-    obtain ⟨s, hs, t, ht, rfl⟩ := Finset.mem_image₂.1 hu
-    exact (S.isLocallyClosed s hs).inter (T.isLocallyClosed t ht)
-  pairwiseDisjoint := by
-    rintro _ hu _ hu' huu'
-    obtain ⟨s, hs, t, ht, rfl⟩ := Finset.mem_image₂.1 hu
-    obtain ⟨s', hs', t', ht', rfl⟩ := Finset.mem_image₂.1 hu'
-    refine Set.disjoint_left.2 fun x hx hx' ↦ huu' ?_
-    rw [S.eq_of_mem hs hs' hx.1 hx'.1, T.eq_of_mem ht ht' hx.2 hx'.2]
-  sUnion_eq := by
-    refine eq_univ_of_forall fun x ↦ ?_
-    obtain ⟨s, hs, hxs⟩ := S.exists_mem x
-    obtain ⟨t, ht, hxt⟩ := T.exists_mem x
-    exact ⟨s ∩ t, Finset.mem_coe.2 (Finset.mem_image₂_of_mem hs ht), hxs, hxt⟩
-
-lemma mem_inf_strata {S T : FiniteStratification X} {u : Set X} :
-    u ∈ (S.inf T).strata ↔ ∃ s ∈ S.strata, ∃ t ∈ T.strata, s ∩ t = u := by
+lemma mem_top_parts {s : Set X} :
+    s ∈ (⊤ : FiniteStratification X).parts ↔ s.Nonempty ∧ s = univ := by
   classical
-  simp [inf, Finset.mem_image₂]
-
-/-- The common refinement refines the first stratification. -/
-lemma inf_refines_left (S T : FiniteStratification X) : (S.inf T).Refines S := fun u hu ↦ by
-  obtain ⟨s, hs, t, -, rfl⟩ := mem_inf_strata.1 hu
-  exact ⟨s, hs, inter_subset_left⟩
-
-/-- The common refinement refines the second stratification. -/
-lemma inf_refines_right (S T : FiniteStratification X) : (S.inf T).Refines T := fun u hu ↦ by
-  obtain ⟨-, -, t, ht, rfl⟩ := mem_inf_strata.1 hu
-  exact ⟨t, ht, inter_subset_right⟩
-
-/-- A stratification refines the common refinement of `S` and `T` exactly when it refines both. -/
-lemma refines_inf_iff : U.Refines (S.inf T) ↔ U.Refines S ∧ U.Refines T := by
-  refine ⟨fun h ↦ ⟨h.trans (inf_refines_left S T), h.trans (inf_refines_right S T)⟩, ?_⟩
-  rintro ⟨hS, hT⟩ u hu
-  obtain ⟨s, hs, hus⟩ := hS u hu
-  obtain ⟨t, ht, hut⟩ := hT u hu
-  exact ⟨s ∩ t, mem_inf_strata.2 ⟨s, hs, t, ht, rfl⟩, subset_inter hus hut⟩
+  refine ⟨fun hs ↦ ⟨nonempty_iff_ne_empty.2 (Finpartition.ne_bot _ hs),
+    Finset.mem_singleton.1 (Finpartition.parts_top_subset _ hs)⟩, ?_⟩
+  rintro ⟨⟨x, -⟩, rfl⟩
+  obtain ⟨t, ht, -⟩ := (⊤ : FiniteStratification X).exists_mem x
+  obtain rfl := Finset.mem_singleton.1 (Finpartition.parts_top_subset _ ht)
+  exact ht
 
 open Classical in
-/-- The pullback of a stratification along a continuous map: its strata are the preimages of the
-strata. For the inclusion of a subspace it is the restriction of the stratification. -/
+/-- The common refinement of two stratifications: its strata are the nonempty intersections of a
+stratum of `S` with a stratum of `T`. -/
+noncomputable instance : Min (FiniteStratification X) where
+  min S T :=
+    { toFinpartition := S.toFinpartition ⊓ T.toFinpartition
+      isLocallyClosed u hu := by
+        obtain ⟨⟨s, t⟩, hst, rfl⟩ := Finset.mem_image.1 (Finset.mem_of_mem_erase hu)
+        obtain ⟨hs, ht⟩ := Finset.mem_product.1 hst
+        exact (S.isLocallyClosed s hs).inter (T.isLocallyClosed t ht) }
+
+open Classical in
+lemma toFinpartition_inf (S T : FiniteStratification X) :
+    (S ⊓ T).toFinpartition = S.toFinpartition ⊓ T.toFinpartition :=
+  rfl
+
+@[simp]
+lemma mem_inf_parts {u : Set X} :
+    u ∈ (S ⊓ T).parts ↔ u.Nonempty ∧ ∃ s ∈ S.parts, ∃ t ∈ T.parts, s ∩ t = u := by
+  classical
+  rw [toFinpartition_inf, Finpartition.parts_inf, Finset.mem_erase, Finset.mem_image,
+    ← nonempty_iff_ne_empty.symm.eq]
+  simp only [Finset.mem_product, Prod.exists]
+  exact and_congr_right' ⟨fun ⟨s, t, ⟨hs, ht⟩, h⟩ ↦ ⟨s, hs, t, ht, h⟩,
+    fun ⟨s, hs, t, ht, h⟩ ↦ ⟨s, t, ⟨hs, ht⟩, h⟩⟩
+
+/-- Common refinement is the meet for refinement. -/
+noncomputable instance : SemilatticeInf (FiniteStratification X) where
+  inf := min
+  inf_le_left S T := inf_le_left (a := S.toFinpartition) (b := T.toFinpartition)
+  inf_le_right S T := inf_le_right (a := S.toFinpartition) (b := T.toFinpartition)
+  le_inf _ _ _ := le_inf (α := Finpartition (univ : Set X))
+
+open Classical in
+/-- The pullback of a stratification along a continuous map: its strata are the nonempty
+preimages of the strata. -/
 noncomputable def comap (f : Y → X) (hf : Continuous f) (S : FiniteStratification X) :
     FiniteStratification Y where
-  strata := S.strata.image (f ⁻¹' ·)
+  toFinpartition := Finpartition.ofErase (S.parts.image (f ⁻¹' ·))
+    (Finset.supIndep_iff_pairwiseDisjoint.2 <| by
+      rintro _ hu _ hu' huu'
+      obtain ⟨s, hs, rfl⟩ := Finset.mem_image.1 hu
+      obtain ⟨s', hs', rfl⟩ := Finset.mem_image.1 hu'
+      refine Set.disjoint_left.2 fun y hy hy' ↦ huu' ?_
+      rw [S.eq_of_mem hs hs' hy hy'])
+    (by
+      refine eq_univ_of_forall fun y ↦ ?_
+      obtain ⟨s, hs, hys⟩ := S.exists_mem (f y)
+      simp only [Finset.sup_set_eq_biUnion, Finset.mem_image, mem_iUnion]
+      exact ⟨f ⁻¹' s, ⟨s, hs, rfl⟩, hys⟩)
   isLocallyClosed u hu := by
-    obtain ⟨s, hs, rfl⟩ := Finset.mem_image.1 hu
+    obtain ⟨s, hs, rfl⟩ := Finset.mem_image.1 (Finset.mem_of_mem_erase hu)
     exact (S.isLocallyClosed s hs).preimage hf
-  pairwiseDisjoint := by
-    rintro _ hu _ hu' huu'
-    obtain ⟨s, hs, rfl⟩ := Finset.mem_image.1 hu
-    obtain ⟨s', hs', rfl⟩ := Finset.mem_image.1 hu'
-    refine Set.disjoint_left.2 fun y hy hy' ↦ huu' ?_
-    rw [S.eq_of_mem hs hs' hy hy']
-  sUnion_eq := by
-    refine eq_univ_of_forall fun y ↦ ?_
-    obtain ⟨s, hs, hys⟩ := S.exists_mem (f y)
-    exact ⟨f ⁻¹' s, Finset.mem_coe.2 (Finset.mem_image_of_mem _ hs), hys⟩
 
-lemma mem_comap_strata {f : Y → X} {hf : Continuous f} {u : Set Y} :
-    u ∈ (S.comap f hf).strata ↔ ∃ s ∈ S.strata, f ⁻¹' s = u := by
+@[simp]
+lemma mem_comap_parts {f : Y → X} {hf : Continuous f} {u : Set Y} :
+    u ∈ (S.comap f hf).parts ↔ u.Nonempty ∧ ∃ s ∈ S.parts, f ⁻¹' s = u := by
   classical
-  simp [comap, Finset.mem_image]
+  simp [comap, nonempty_iff_ne_empty]
 
 /-- Pullback preserves refinement. -/
-lemma Refines.comap (hST : S.Refines T) (f : Y → X) (hf : Continuous f) :
-    (S.comap f hf).Refines (T.comap f hf) := fun u hu ↦ by
-  obtain ⟨s, hs, rfl⟩ := mem_comap_strata.1 hu
-  obtain ⟨t, ht, hst⟩ := hST s hs
-  exact ⟨f ⁻¹' t, mem_comap_strata.2 ⟨t, ht, rfl⟩, preimage_mono hst⟩
+@[gcongr]
+lemma comap_mono (hST : S ≤ T) (f : Y → X) (hf : Continuous f) :
+    S.comap f hf ≤ T.comap f hf := le_def.2 fun u hu ↦ by
+  obtain ⟨hne, s, hs, rfl⟩ := mem_comap_parts.1 hu
+  obtain ⟨t, ht, hst⟩ := le_def.1 hST s hs
+  exact ⟨f ⁻¹' t, mem_comap_parts.2 ⟨hne.mono (preimage_mono hst), t, ht, rfl⟩, preimage_mono hst⟩
 
 /-- Pulling back the single-stratum stratification gives the single-stratum stratification. -/
 @[simp]
-lemma comap_top (f : Y → X) (hf : Continuous f) : (top X).comap f hf = top Y := by
-  classical
-  ext1
-  simp [comap, top]
+lemma comap_top (f : Y → X) (hf : Continuous f) :
+    (⊤ : FiniteStratification X).comap f hf = ⊤ := by
+  ext u
+  simp only [mem_comap_parts, mem_top_parts]
+  constructor
+  · rintro ⟨hne, _, ⟨-, rfl⟩, rfl⟩
+    exact ⟨hne, preimage_univ⟩
+  · rintro ⟨⟨y, hy⟩, rfl⟩
+    exact ⟨⟨y, hy⟩, univ, ⟨⟨f y, mem_univ _⟩, rfl⟩, preimage_univ⟩
 
 /-- Pullback commutes with common refinement. -/
 lemma comap_inf (f : Y → X) (hf : Continuous f) (S T : FiniteStratification X) :
-    (S.inf T).comap f hf = (S.comap f hf).inf (T.comap f hf) := by
-  ext1
+    (S ⊓ T).comap f hf = S.comap f hf ⊓ T.comap f hf := by
   ext u
-  simp only [mem_comap_strata, mem_inf_strata]
+  simp only [mem_comap_parts, mem_inf_parts]
   constructor
-  · rintro ⟨_, ⟨s, hs, t, ht, rfl⟩, rfl⟩
-    exact ⟨f ⁻¹' s, ⟨s, hs, rfl⟩, f ⁻¹' t, ⟨t, ht, rfl⟩, rfl⟩
-  · rintro ⟨_, ⟨s, hs, rfl⟩, _, ⟨t, ht, rfl⟩, rfl⟩
-    exact ⟨s ∩ t, ⟨s, hs, t, ht, rfl⟩, rfl⟩
+  · rintro ⟨hne, _, ⟨-, s, hs, t, ht, rfl⟩, rfl⟩
+    exact ⟨hne, f ⁻¹' s, ⟨hne.mono (preimage_mono inter_subset_left), s, hs, rfl⟩, f ⁻¹' t,
+      ⟨hne.mono (preimage_mono inter_subset_right), t, ht, rfl⟩, rfl⟩
+  · rintro ⟨hne, _, ⟨-, s, hs, rfl⟩, _, ⟨-, t, ht, rfl⟩, rfl⟩
+    exact ⟨hne, s ∩ t, ⟨(hne.image f).mono (image_preimage_subset f _), s, hs, t, ht, rfl⟩, rfl⟩
 
 /-- Pulling back along the identity does nothing. -/
 @[simp]
 lemma comap_id (S : FiniteStratification X) : S.comap id continuous_id = S := by
-  classical
-  ext1
-  simp [comap]
+  ext u
+  simp only [mem_comap_parts, preimage_id_eq, id_eq, exists_eq_right]
+  exact ⟨And.right, fun hu ↦ ⟨nonempty_iff_ne_empty.2 (S.ne_bot hu), hu⟩⟩
 
 /-- Pullback is functorial. -/
 lemma comap_comp (g : Z → Y) (hg : Continuous g) (f : Y → X) (hf : Continuous f)
     (S : FiniteStratification X) :
     S.comap (f ∘ g) (hf.comp hg) = (S.comap f hf).comap g hg := by
-  ext1
   ext u
-  simp only [mem_comap_strata]
+  simp only [mem_comap_parts]
   constructor
-  · rintro ⟨s, hs, rfl⟩
-    exact ⟨f ⁻¹' s, ⟨s, hs, rfl⟩, rfl⟩
-  · rintro ⟨_, ⟨s, hs, rfl⟩, rfl⟩
-    exact ⟨s, hs, rfl⟩
+  · rintro ⟨hne, s, hs, rfl⟩
+    exact ⟨hne, f ⁻¹' s, ⟨(hne.image g).mono (image_preimage_subset g _), s, hs, rfl⟩, rfl⟩
+  · rintro ⟨hne, _, ⟨-, s, hs, rfl⟩, rfl⟩
+    exact ⟨hne, s, hs, rfl⟩
 
 end FiniteStratification
+
+end TauCeti
