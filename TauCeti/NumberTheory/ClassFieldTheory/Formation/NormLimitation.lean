@@ -256,7 +256,7 @@ theorem normSubgroup_le_range_levelNorm {V : OpenNormalSubgroup G} {W : OpenSubg
   -- the norm from `A^W` to `A^G` are compared on the ambient module after substituting.
   have key : ∀ {U U' : OpenSubgroup G} (_ : U = U') (hU : W ≤ U) (hU' : W ≤ U'),
       (F.levelNorm hU y : F.toRep.V) = (F.levelNorm hU' y : F.toRep.V) := by
-    rintro U _ rfl hU hU'
+    rintro U _ rfl hU _
     rfl
   rw [key (NormalLayer.ground_ofOpenNormal V).symm le_top hW, hy,
     NormalLayer.groundEquivOfOpenNormal_apply_coe]
@@ -276,10 +276,10 @@ two abelianized Galois groups, and the norm subgroup of the refined layer lies i
 original one. -/
 theorem map_normSubgroup_eq_iff (T : LayerRefinement old new) :
     (old.normSubgroup F).map (T.groundEquiv F).toLinearMap = new.normSubgroup F ↔
-      Nat.card (Abelianization old.Gal) = Nat.card (Abelianization new.Gal) := by
+      Nat.card (Group.Abelianization old.Gal) = Nat.card (Group.Abelianization new.Gal) := by
   have hP : Nat.card (F.level new.ground ⧸
       (old.normSubgroup F).map (T.groundEquiv F).toLinearMap) =
-        Nat.card (Abelianization old.Gal) := by
+        Nat.card (Group.Abelianization old.Gal) := by
     rw [← cf.natCard_normQuotient_eq_natCard_abelianization old]
     exact Nat.card_congr (Submodule.Quotient.equiv _ _ (T.groundEquiv F) rfl).toEquiv.symm
   rw [← hP, ← cf.natCard_normQuotient_eq_natCard_abelianization new]

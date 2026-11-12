@@ -21,8 +21,8 @@ construction remember exactly which vertices occur, unlike `AbstractSimplicialCo
 must contain every singleton of its ambient type.
 
 The boundary consists of the nonempty proper subsets of the spanning vertex set. These
-constructions provide the standard models needed for the recursive definitions of combinatorial
-spheres and balls in layer 11 of the geometric-topology roadmap.
+constructions provide the standard models against which combinatorial spheres and balls are
+defined (`CombinatorialManifold.Basic`).
 
 The definitions follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2.
 

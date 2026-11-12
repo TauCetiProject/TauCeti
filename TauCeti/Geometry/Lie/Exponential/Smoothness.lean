@@ -238,7 +238,7 @@ private theorem contDiffAt_extChartAt_mulInvariantExp_zero
     ContDiffAt ℝ n
       (fun v : E => extChartAt I (1 : G)
         (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) 0 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   let _ : ContMDiffMul I (∞ + 1) G := by
     simpa using (inferInstance : ContMDiffMul I ∞ G)
   let center : E := extChartAt I (1 : G) (1 : G)
@@ -288,7 +288,7 @@ theorem contMDiffAt_mulInvariantExp_modelSpace_zero
     ContMDiffAt 𝓘(ℝ, E) I ∞
       (fun v : E => mulInvariantExp (I := I) (G := G)
         (v : GroupLieAlgebra I G)) 0 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   rw [contMDiffAt_infty]
   intro n
   rw [contMDiffAt_iff_target_of_mem_source (y := (1 : G)) (by
@@ -304,7 +304,7 @@ theorem contMDiff_mulInvariantExp
     ContMDiff 𝓘(ℝ, E) I ∞
       (fun v : E => mulInvariantExp (I := I) (G := G)
         (v : GroupLieAlgebra I G)) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   rw [contMDiff_infty]
   intro n x
   -- Divide `x` by a large natural number, use smoothness near zero, then recover `exp x` through

@@ -130,18 +130,18 @@ private theorem sum_faces_eq_zero_of_not_injOn (g : K.SimplexChainMap n)
     intro T _ hxT hbT h
     rw [card_image_iff] at h
     exact hb.2.ne (h hxT hbT hαb)
-  rw [sum_eq_add_of_mem x b hx hb.1 hb.2.ne fun c hc hcxb ↦ by
+  rw [sum_eq_add_of_mem x b hx hb.1 hb.2.ne fun c _ hcxb ↦ by
     rw [ite_eq_right (hnot _ (erase_subset _ _) (mem_erase.2 ⟨hcxb.1.symm, hx⟩)
       (mem_erase.2 ⟨hcxb.2.symm, hb.1⟩)), smul_zero]]
   have himage : (J.erase x).image α = (J.erase b).image α := by
     ext z
     simp only [mem_image, mem_erase]
     constructor
-    · rintro ⟨w, ⟨hwx, hw⟩, rfl⟩
+    · rintro ⟨w, ⟨_, hw⟩, rfl⟩
       by_cases hwb : w = b
       · exact ⟨x, ⟨hb.2.ne, hx⟩, hwb ▸ hαb⟩
       · exact ⟨w, ⟨hwb, hw⟩, rfl⟩
-    · rintro ⟨w, ⟨hwb, hw⟩, rfl⟩
+    · rintro ⟨w, ⟨_, hw⟩, rfl⟩
       by_cases hwx : w = x
       · exact ⟨b, ⟨hb.2.ne', hb.1⟩, hwx ▸ hαb.symm⟩
       · exact ⟨w, ⟨hwx, hw⟩, rfl⟩

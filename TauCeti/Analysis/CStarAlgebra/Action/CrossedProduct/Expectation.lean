@@ -18,9 +18,10 @@ product is positive and faithful. Its quadratic form on `x* x` is the squared no
 without a countability assumption on the group or nondegeneracy of the faithful inducing
 representation. Coefficients may be nonunital.
 
-The identity coefficient `RegularCrossedProduct.fourierCoeff α ρ hρ 1` is the candidate
-for the canonical conditional expectation from the regular crossed product to `A`;
-these are its positivity and faithfulness properties.
+The identity coefficient `RegularCrossedProduct.fourierCoeff α ρ hρ 1` is the canonical
+conditional expectation from the regular crossed product to `A`. Its retraction and bimodule
+laws over `RegularCrossedProduct.coefficient` are established in `CrossedProduct.Coefficient`;
+here we prove positivity and faithfulness.
 
 ## References
 
