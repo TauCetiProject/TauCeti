@@ -34,8 +34,7 @@ open CategoryTheory CategoryTheory.Limits
 
 universe u v
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G]
-  [NeZero (Nat.card G : k)]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [NeZero (Nat.card G : k)]
 
 /-- The Green ring is canonically isomorphic to the exact Grothendieck ring when the group
 order is invertible in the coefficient field. -/
