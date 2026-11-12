@@ -10,6 +10,7 @@ public import Mathlib.Probability.Martingale.Basic
 import Mathlib.Probability.ConditionalExpectation
 import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import TauCeti.Probability.Distributions.Poisson.Basic
+import TauCeti.Probability.Martingale.Basic
 
 /-!
 # Compensated Poisson martingales
@@ -25,7 +26,8 @@ They use independence from the
 entire earlier sigma algebra, not just the Poisson marginal laws. No path regularity,
 completeness or right continuity of the filtration is assumed. In particular the results
 apply after ambient-null augmentation through `IsFilteredPoissonProcess.ambientNullAugmentation`.
-The conditional-square expansion parallels
+The conditional square follows from the martingale identity
+`MeasureTheory.Martingale.condExp_sq`, shared with
 `TauCeti.Probability.IsFilteredPreBrownianReal.condExp_sq`, using centered Poisson increments.
 
 ## References
@@ -51,7 +53,7 @@ theorem memLp_compensated (hN : IsFilteredPoissonProcess ℱ α N P) (t p : ℝ�
   exact (hN.memLp_eval t p).sub (memLp_const _)
 
 /-- The compensated square of the compensated Poisson count has every finite moment. -/
-theorem memLp_compensated_sq_sub_drift (hN : IsFilteredPoissonProcess ℱ α N P) (t p : ℝ≥0) :
+theorem memLp_compensated_sq_sub (hN : IsFilteredPoissonProcess ℱ α N P) (t p : ℝ≥0) :
     MemLp (fun ω ↦ (N t ω - (α : ℝ) * t) ^ 2 - (α : ℝ) * t) p P := by
   have := hN.isProbabilityMeasure
   have h := hN.memLp_compensated t (p * 2)
@@ -79,7 +81,7 @@ theorem condExp_sub (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t) :
     NNReal.coe_mul, NNReal.coe_sub hst] using h
 
 /-- A compensated Poisson increment has conditional second moment equal to its intensity. -/
-theorem condExp_sub_drift_sq (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t) :
+theorem condExp_sub_sub_mul_sq (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t) :
     P[fun ω ↦ (N t ω - N s ω - (α : ℝ) * ((t : ℝ) - s)) ^ 2 | ℱ s] =ᵐ[P]
       fun _ ↦ (α : ℝ) * ((t : ℝ) - s) := by
   have := hN.isProbabilityMeasure
@@ -111,7 +113,7 @@ theorem martingale_compensated (hN : IsFilteredPoissonProcess ℱ α N P) :
   linarith
 
 /-- A compensated Poisson increment has conditional mean zero given the past. -/
-theorem condExp_sub_drift (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t) :
+theorem condExp_sub_sub_mul (hN : IsFilteredPoissonProcess ℱ α N P) (hst : s ≤ t) :
     P[fun ω ↦ N t ω - N s ω - (α : ℝ) * ((t : ℝ) - s) | ℱ s] =ᵐ[P] fun _ ↦ 0 := by
   have := hN.isProbabilityMeasure
   have hi := ((hN.memLp_eval t 1).sub (hN.memLp_eval s 1)).integrable (by simp)
@@ -128,48 +130,16 @@ theorem condExp_compensated_sq (hN : IsFilteredPoissonProcess ℱ α N P) (hst :
     P[fun ω ↦ (N t ω - (α : ℝ) * t) ^ 2 | ℱ s] =ᵐ[P]
       fun ω ↦ (N s ω - (α : ℝ) * s) ^ 2 + (α : ℝ) * ((t : ℝ) - s) := by
   have := hN.isProbabilityMeasure
-  let M := fun u ω ↦ N u ω - (α : ℝ) * u
-  let D := M t - M s
-  have hDeq : D = fun ω ↦ N t ω - N s ω - (α : ℝ) * ((t : ℝ) - s) := by
-    ext ω
-    dsimp [D, M]
-    ring
-  have hS : MemLp (M s) 2 P := hN.memLp_compensated s 2
-  have hD : MemLp D 2 P := (hN.memLp_compensated t 2).sub hS
-  have hzero : P[D | ℱ s] =ᵐ[P] fun _ ↦ 0 := by
-    rw [hDeq]
-    exact hN.condExp_sub_drift hst
-  have hsq : P[fun ω ↦ D ω ^ 2 | ℱ s] =ᵐ[P]
-      fun _ ↦ (α : ℝ) * ((t : ℝ) - s) := by
-    rw [hDeq]
-    exact hN.condExp_sub_drift_sq hst
-  have hpull := condExp_mul_of_stronglyMeasurable_left (m := ℱ s)
-    (hN.martingale_compensated.stronglyAdapted s) (hS.integrable_mul hD)
-    (hD.integrable (by norm_num))
-  have hcross : P[M s * D | ℱ s] =ᵐ[P] fun _ ↦ 0 := by
-    filter_upwards [hpull, hzero] with ω hp hz
-    rw [hp, Pi.mul_apply, hz, mul_zero]
-  have heq : (fun ω ↦ M t ω ^ 2) =
-      (fun ω ↦ M s ω ^ 2) + (2 : ℝ) • (M s * D) + (fun ω ↦ D ω ^ 2) := by
-    ext ω
-    dsimp [D]
-    ring
-  have hsum := condExp_add (m := ℱ s)
-    (hS.integrable_sq.add ((hS.integrable_mul hD).const_mul 2)) hD.integrable_sq
-  have hsum' := condExp_add (m := ℱ s) hS.integrable_sq
-    ((hS.integrable_mul hD).const_mul 2)
-  have hscale := condExp_smul (μ := P) (2 : ℝ) (M s * D) (ℱ s)
-  have hself := condExp_of_stronglyMeasurable (ℱ.le s)
-    ((hN.adapted s).sub measurable_const |>.pow_const 2).stronglyMeasurable hS.integrable_sq
-  simp only [Pi.sub_apply] at hself
-  simp only [Pi.add_def, Pi.smul_def, Pi.mul_def, smul_eq_mul]
-    at heq hsum hsum' hscale hcross
-  rw [heq]
-  filter_upwards [hsum, hsum', hscale, hcross, hsq] with ω h₁ h₂ h₃ hc hd
-  rw [h₁, h₂, h₃, hc, mul_zero, add_zero, hself, hd]
+  have hsq := hN.martingale_compensated.condExp_sq hst (hN.memLp_compensated t 2)
+  have hinc : (fun ω ↦ (N t ω - (α : ℝ) * t - (N s ω - (α : ℝ) * s)) ^ 2) =
+      fun ω ↦ (N t ω - N s ω - (α : ℝ) * ((t : ℝ) - s)) ^ 2 :=
+    funext fun ω ↦ by ring
+  simp only [hinc] at hsq
+  filter_upwards [hsq, hN.condExp_sub_sub_mul_sq hst] with ω h₁ h₂
+  rw [h₁, h₂]
 
 /-- The compensated square `(N t - α * t)² - α * t` is a martingale. -/
-theorem martingale_compensated_sq_sub_drift (hN : IsFilteredPoissonProcess ℱ α N P) :
+theorem martingale_compensated_sq_sub (hN : IsFilteredPoissonProcess ℱ α N P) :
     Martingale (fun t ω ↦ (N t ω - (α : ℝ) * t) ^ 2 - (α : ℝ) * t) ℱ P := by
   have := hN.isProbabilityMeasure
   refine ⟨fun t ↦ ((hN.martingale_compensated.stronglyAdapted t).pow 2).sub

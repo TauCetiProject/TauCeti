@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Martingale.Basic
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
+import Mathlib.Probability.CondVar
 
 /-!
 # Martingale closure properties, division by a process, norms, and submartingale bounds
@@ -35,6 +36,9 @@ The following results need only a preordered time index. The norm of a Banach-va
 martingale is a submartingale (`MeasureTheory.Martingale.norm`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
 inequality when both products are integrable (`MeasureTheory.Submartingale.integral_mul_le`).
+On a finite measure, a square-integrable real martingale has conditional square equal to its
+current square plus the conditional square of its future increment
+(`MeasureTheory.Martingale.condExp_sq`).
 In particular, positions need not be bounded. Nonnegative submartingale values inherit Lᵖ
 integrability from later values for `p ≥ 1` (`MeasureTheory.Submartingale.memLp_of_le`).
 
@@ -128,6 +132,21 @@ theorem Martingale.norm (hX : Martingale X ℱ μ) :
     fun t => (hX.integrable t).norm⟩
   filter_upwards [hX.condExp_ae_eq hst, norm_condExp_le (m := ℱ s) (X t)] with ω he hle
   simpa only [he] using hle
+
+/-- On a finite measure, the conditional square of a square-integrable real martingale value is
+the current square plus the conditional square of the future increment. -/
+theorem Martingale.condExp_sq [IsFiniteMeasure μ] (hY : Martingale Y ℱ μ) {i j : ι}
+    (hij : i ≤ j) (hj : MemLp (Y j) 2 μ) :
+    μ[fun ω ↦ Y j ω ^ 2 | ℱ i] =ᵐ[μ]
+      fun ω ↦ Y i ω ^ 2 + μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] ω := by
+  have hc := hY.condExp_ae_eq hij
+  have hvar : ProbabilityTheory.condVar (ℱ i) (Y j) μ =ᵐ[μ]
+      μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] :=
+    condExp_congr_ae (by filter_upwards [hc] with ω h; simp only [Pi.pow_apply, Pi.sub_apply, h])
+  filter_upwards [ProbabilityTheory.condVar_ae_eq_condExp_sq_sub_sq_condExp (ℱ.le i) hj, hc,
+    hvar] with ω h₁ h₂ h₃
+  rw [← h₃, h₁, Pi.sub_apply, Pi.pow_apply, h₂]
+  exact (add_sub_cancel _ _).symm
 
 /-- A nonnegative position known at time `i` preserves a submartingale's expectation inequality
 between `i` and `j`, provided its products with both values are integrable. -/
