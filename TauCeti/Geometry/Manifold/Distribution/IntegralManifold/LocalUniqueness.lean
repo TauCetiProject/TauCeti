@@ -32,6 +32,9 @@ their common image must be interior points.
 * `TauCeti.IsIntegralManifold.exists_partialDiffeomorph`: local equivalence of integral
   parametrizations of a constant-rank involutive distribution.
 
+* `TauCeti.IsIntegralManifold.continuousWithinAt_factor_of_flatChart`: continuity of a factor
+  whose ambient map eventually stays in one affine plaque.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition (2013), Proposition 19.16,
@@ -171,5 +174,57 @@ theorem IsIntegralManifold.exists_partialDiffeomorph
     f z = Φ.symm (Φ (f z)) := (Φ.left_inv (hcsrc (hτc hz))).symm
     _ = Φ.symm (Φ (g (τ z))) := congrArg Φ.symm hcoord
     _ = g (τ z) := Φ.left_inv (hdsrc (hτd hz))
+
+/-- A factor through an injective integral immersion is continuous within a set when its
+ambient map is continuous there and eventually stays in one affine plaque of a flat chart.
+No second countability or local connectedness is required. -/
+theorem IsIntegralManifold.continuousWithinAt_factor_of_flatChart
+    {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
+    {D : ∀ z : M, Submodule ℝ (TangentSpace I z)} {f : N → M}
+    (hf : IsIntegralManifold J n D f) (hn : 1 ≤ n) (hinj : Injective f)
+    (Φ : PartialEquiv M E) (hΦopen : IsOpen Φ.source)
+    (hΦsmooth : ContMDiffOn I 𝓘(ℝ, E) n Φ Φ.source) (W : Submodule ℝ E)
+    [FiniteDimensional ℝ W]
+    (hflatΦ : ∀ z ∈ Φ.source, (D z).map (mfderiv I 𝓘(ℝ, E) Φ z).toLinearMap = W)
+    {P : Type*} [TopologicalSpace P] {g : P → M} {h : P → N} {S : Set P} {x : P}
+    (hg : ContinuousWithinAt g S x) (hcomp : f ∘ h = g) (hx : J.IsInteriorPoint (h x))
+    (hxΦ : g x ∈ Φ.source)
+    (hΦinj : Injective (mfderiv I 𝓘(ℝ, E) Φ (f (h x))))
+    (hstay : ∀ᶠ y in 𝓝[S] x, Φ (g y) - Φ (g x) ∈ W) :
+    ContinuousWithinAt h S x := by
+  have hpoint (y : P) : f (h y) = g y := congrFun hcomp y
+  have hfxΦ : f (h x) ∈ Φ.source := (hpoint x).symm ▸ hxΦ
+  obtain ⟨c, hxc, hc0, hcsrc, hfc⟩ :=
+    hf.exists_plaque_chart_of_flatChart Φ hΦopen hΦsmooth hn W hflatΦ
+      hx hfxΦ hΦinj
+  obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional W
+  let a : P → W := fun y ↦ p (Φ (g y) - Φ (g x))
+  have ha : ContinuousWithinAt a S x := p.continuous.continuousAt.comp_continuousWithinAt
+    (((hΦsmooth.continuousOn.continuousAt (hΦopen.mem_nhds hxΦ)).comp_continuousWithinAt
+      hg).sub continuousWithinAt_const)
+  have ha0 : a x = 0 := by simp only [a, sub_self, map_zero]
+  have hxct : a x ∈ c.target := by rw [ha0, ← hc0]; exact c.map_source hxc
+  have hct : ∀ᶠ y in 𝓝[S] x, a y ∈ c.target :=
+    ha.eventually (c.open_target.mem_nhds hxct)
+  have hlift : (fun y ↦ c.symm (a y)) =ᶠ[𝓝[S] x] h := by
+    filter_upwards [hct, hstay,
+      hg.eventually (hΦopen.mem_nhds hxΦ)]
+      with y hyc hyW hyΦ
+    apply hinj
+    apply Φ.injOn (hcsrc (c.map_target hyc))
+      (by rw [hpoint y]; exact hyΦ)
+    rw [hfc _ (c.map_target hyc), c.right_inv hyc, hpoint x, hpoint y]
+    have hpval := congrArg Subtype.val (hp ⟨Φ (g y) - Φ (g x), hyW⟩)
+    calc
+      Φ (g x) + (a y : E) = Φ (g x) + (Φ (g y) - Φ (g x)) :=
+        congrArg (fun v : E ↦ Φ (g x) + v) hpval
+      _ = Φ (g y) := by abel
+  have hccont : ContinuousWithinAt (fun y ↦ c.symm (a y)) S x :=
+    (c.symm.contMDiffOn.continuousOn.continuousAt
+      (c.open_target.mem_nhds hxct)).comp_continuousWithinAt ha
+  have heq : (fun y ↦ c.symm (a y)) x = h x := by
+    apply c.injOn (c.map_target hxct) hxc
+    rw [c.right_inv hxct, ha0, hc0]
+  exact hccont.congr_of_eventuallyEq hlift.symm heq.symm
 
 end TauCeti

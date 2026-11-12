@@ -111,49 +111,6 @@ private theorem eventually_sub_mem_of_range_subset
 
 variable [BoundarylessManifold I M] [BoundarylessManifold J N]
 
-omit [IsManifold I r M] [BoundarylessManifold I M] in
-private theorem continuousAt_factor_of_flatChart [IsManifold I (m : ℕ∞ω) M]
-    (hf : IsIntegralManifold J m D f) (hm : 1 ≤ m) (hinj : Injective f)
-    (Φ : PartialEquiv M E) (hΦopen : IsOpen Φ.source)
-    (hΦsmooth : ContMDiffOn I 𝓘(ℝ, E) m Φ Φ.source) (W : Submodule ℝ E)
-    (hflatΦ : ∀ z ∈ Φ.source, (D z).map (mfderiv I 𝓘(ℝ, E) Φ z).toLinearMap = W)
-    {P : Type*} [TopologicalSpace P] [LocallyConnectedSpace P]
-    {g : P → M} {h : P → N} (hg : Continuous g) (hcomp : f ∘ h = g)
-    {x : P} (hxΦ : g x ∈ Φ.source)
-    (hΦinj : Injective (mfderiv I 𝓘(ℝ, E) Φ (f (h x)))) : ContinuousAt h x := by
-  have hpoint (y : P) : f (h y) = g y := congrFun hcomp y
-  have hr : range g ⊆ range f := by
-    rintro _ ⟨y, rfl⟩
-    exact ⟨h y, hpoint y⟩
-  have hfxΦ : f (h x) ∈ Φ.source := (hpoint x).symm ▸ hxΦ
-  obtain ⟨c, hxc, hc0, hcsrc, hfc⟩ :=
-    hf.exists_plaque_chart_of_flatChart Φ hΦopen hΦsmooth (by exact_mod_cast hm) W hflatΦ
-      (BoundarylessManifold.isInteriorPoint (I := J)) hfxΦ hΦinj
-  obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional W
-  let a : P → W := fun y ↦ p (Φ (g y) - Φ (g x))
-  have ha : ContinuousAt a x := p.continuous.continuousAt.comp
-    (((hΦsmooth.continuousOn.continuousAt (hΦopen.mem_nhds hxΦ)).comp hg.continuousAt).sub
-      continuousAt_const)
-  have ha0 : a x = 0 := by simp only [a, sub_self, map_zero]
-  have hxct : a x ∈ c.target := by rw [ha0, ← hc0]; exact c.map_source hxc
-  have hct : ∀ᶠ y in 𝓝 x, a y ∈ c.target := ha.preimage_mem_nhds (c.open_target.mem_nhds hxct)
-  have hstay := eventually_sub_mem_of_range_subset hf hm Φ hΦopen hΦsmooth W hflatΦ hg hr hxΦ
-  have hlift : (fun y ↦ c.symm (a y)) =ᶠ[𝓝 x] h := by
-    filter_upwards [hct, hstay, hg.continuousAt.preimage_mem_nhds (hΦopen.mem_nhds hxΦ)]
-      with y hyc hyW hyΦ
-    apply hinj
-    apply Φ.injOn (hcsrc (c.map_target hyc))
-      (by simpa only [mem_preimage, hpoint y] using hyΦ)
-    rw [hfc _ (c.map_target hyc), c.right_inv hyc, hpoint x, hpoint y]
-    have hpval := congrArg Subtype.val (hp ⟨Φ (g y) - Φ (g x), hyW⟩)
-    calc
-      Φ (g x) + (a y : E) = Φ (g x) + (Φ (g y) - Φ (g x)) :=
-        congrArg (fun v : E ↦ Φ (g x) + v) hpval
-      _ = Φ (g y) := by abel
-  have hccont : ContinuousAt (fun y ↦ c.symm (a y)) x :=
-    (c.symm.contMDiffOn.continuousOn.continuousAt (c.open_target.mem_nhds hxct)).comp ha
-  exact hccont.congr hlift
-
 /-- A factor of a continuous map through an injective integral immersion of an involutive
 constant-rank distribution is continuous when the integral carrier is second countable and the
 source is locally connected. The manifolds are boundaryless; the integral immersion is `C^m`,
@@ -178,8 +135,15 @@ theorem IsIntegralManifold.continuous_of_comp_eq
   obtain ⟨Φ, W, hΦopen, hxΦ, _, hΦsmooth, hflatΦ, hΦinj⟩ :=
     hinv.exists_flatChart_extend (m := m) (n := r) hm hmr hD
       (BoundarylessManifold.isInteriorPoint (I := I) (x := g x))
-  exact continuousAt_factor_of_flatChart hf hm hinj Φ hΦopen hΦsmooth W hflatΦ
-    hg hcomp hxΦ (hΦinj _ ((hpoint x).symm ▸ hxΦ))
+  have hr : range g ⊆ range f := by
+    rintro _ ⟨y, rfl⟩
+    exact ⟨h y, hpoint y⟩
+  rw [← continuousWithinAt_univ]
+  apply hf.continuousWithinAt_factor_of_flatChart (by exact_mod_cast hm) hinj
+    Φ hΦopen hΦsmooth W hflatΦ hg.continuousAt.continuousWithinAt hcomp
+    BoundarylessManifold.isInteriorPoint hxΦ (hΦinj _ ((hpoint x).symm ▸ hxΦ))
+  simpa only [nhdsWithin_univ] using
+    eventually_sub_mem_of_range_subset hf hm Φ hΦopen hΦsmooth W hflatΦ hg hr hxΦ
 
 /-- A `C^m` map into the image of an injective integral immersion of an involutive constant-rank
 distribution has a `C^m` factorization through its intrinsic carrier when that carrier is second

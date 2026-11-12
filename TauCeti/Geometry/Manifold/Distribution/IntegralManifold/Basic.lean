@@ -11,6 +11,8 @@ public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.Immersion.ModelChange
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Submodule
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
@@ -53,6 +55,14 @@ interior source points with the same ambient image, intertwining the two integra
   prescribed ambient inclusion.
 * `TauCeti.IsIntegralManifold.exists_plaque_transition`: a local change of integral parameters
   intertwining their ambient maps.
+
+* `TauCeti.IsIntegralManifold.comp_isLocalDiffeomorph`: integral immersions are preserved
+  by precomposition with local diffeomorphisms of the same source model.
+
+* `TauCeti.IsIntegralManifold.comp_diffeomorph_of_image_range_eq`: preservation under
+  explicit source model changes.
+* `TauCeti.IsIntegralManifold.comp_subtype_connectedComponent`: restriction to a source
+  connected component is a connected integral immersion.
 
 ## References
 
@@ -143,6 +153,48 @@ theorem isIntegralManifold_id [IsManifold I n M] [Nonempty M] :
   refine ⟨inferInstance, Manifold.IsImmersion.id, fun x ↦ ?_⟩
   rw [mfderiv_id]
   exact LinearMap.range_id
+
+/-- Precomposing an integral immersion by a local diffeomorphism with the same source model
+preserves integrality. The new source must be nonempty. -/
+theorem IsIntegralManifold.comp_isLocalDiffeomorph
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J n P] [Nonempty P]
+    (hf : IsIntegralManifold J n D f) (hn : n ≠ 0)
+    {g : P → N} (hg : IsLocalDiffeomorph J J n g) :
+    IsIntegralManifold J n D (f ∘ g) := by
+  refine isIntegralManifold_iff.mpr
+    ⟨inferInstance, isImmersion_comp_isLocalDiffeomorph hg hf.isImmersion, ?_⟩
+  intro x
+  exact ((hg x).range_mfderiv_comp (K := I) (g := f) hn).trans (hf.range_mfderiv (g x))
+
+/-- Precomposing an integral immersion by a diffeomorphism preserves integrality when a
+continuous linear equivalence identifies the ranges of the two source models. -/
+theorem IsIntegralManifold.comp_diffeomorph_of_image_range_eq
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ V H''}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K n P]
+    (hf : IsIntegralManifold J n D f) (hn : n ≠ 0)
+    (A : V ≃L[ℝ] E') (hA : A '' Set.range K = Set.range J) (e : P ≃ₘ^n⟮K, J⟯ N) :
+    IsIntegralManifold K n D (f ∘ e) := by
+  let _ : Nonempty P := Nonempty.map e.symm hf.nonempty
+  refine isIntegralManifold_iff.mpr ⟨inferInstance, ?_, ?_⟩
+  · exact Manifold.IsImmersionOfComplement.isImmersion fun x ↦
+      isImmersionAtOfComplement_comp_diffeomorph_of_image_range_eq A hA e le_rfl
+        (hf.isImmersion.isImmersionOfComplement_complement (e x))
+  · intro x
+    exact ((e.isLocalDiffeomorph x).range_mfderiv_comp (K := I) (g := f) hn).trans
+      (hf.range_mfderiv (e x))
+
+/-- Restricting an integral immersion to the open connected component of a source point
+gives a connected integral immersion. The source is locally connected so that its component
+is open, and its intrinsic topology is retained. -/
+theorem IsIntegralManifold.comp_subtype_connectedComponent [IsManifold J n N]
+    [LocallyConnectedSpace N] (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) (x : N) :
+    let C : TopologicalSpace.Opens N := ⟨connectedComponent x, isOpen_connectedComponent⟩
+    IsIntegralManifold J n D (f ∘ (Subtype.val : C → N)) ∧ ConnectedSpace C := by
+  let C : TopologicalSpace.Opens N := ⟨connectedComponent x, isOpen_connectedComponent⟩
+  let _ : Nonempty C := ⟨⟨x, mem_connectedComponent⟩⟩
+  exact ⟨hf.comp_isLocalDiffeomorph hn isLocalDiffeomorph_subtype_val,
+    isConnected_iff_connectedSpace.mp isConnected_connectedComponent⟩
 
 end Unbundled
 

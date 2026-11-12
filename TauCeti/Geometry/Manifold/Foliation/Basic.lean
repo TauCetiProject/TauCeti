@@ -15,9 +15,12 @@ submanifolds, its leaves. This library defines a foliation by its tangent distri
 of tangent spaces of the leaves: here a `C^n` foliation of rank `k`, for `1 ≤ n`, is by definition
 a `C^n` involutive distribution of rank `k`, over any nontrivially normed field and model space.
 In the classical setting of a real manifold modelled on a finite-dimensional space, the Frobenius
-theorem, which is not proved here, makes such a distribution the tangent field of a unique
-foliation in the chart sense, the leaves being its maximal connected integral manifolds, so that
-there the distribution is the data of the foliation.
+theorem makes such a distribution the tangent field of a unique foliation in the chart sense,
+whose leaves are maximal connected integral manifolds. The global chart-sense foliation atlas
+and its uniqueness are not formalized here. The construction in
+`TauCeti.Geometry.Manifold.Foliation.Global` supplies these intrinsic integral manifolds for
+finite or smooth regularity and a boundaryless ambient model, with second countability when
+the ambient manifold is second countable.
 The regularity `1 ≤ n` is required: a `C⁰` foliation need not have a continuous tangent field,
 and for a merely continuous distribution the involutivity condition, which tests only
 differentiable tangent vector fields, need not constrain it. The manifold `M` is required to be

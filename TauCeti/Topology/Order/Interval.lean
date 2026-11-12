@@ -10,6 +10,7 @@ import Mathlib.Topology.Algebra.Order.Group
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.ProjIcc
+import Mathlib.Topology.Order.LeftRightNhds
 
 /-!
 # Intervals in order topologies
@@ -33,6 +34,8 @@ A path that starts in an open set and leaves it has a first exit time.
 
 ## Main results
 
+* `TauCeti.exists_Icc_subset_mem_nhdsWithin_Icc` — a nondegenerate closed subinterval inside a
+  relative neighborhood, including at endpoints in a densely ordered space.
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
@@ -65,6 +68,46 @@ public section
 open Filter Set Topology
 
 namespace TauCeti
+
+/-- A relative neighborhood in a nondegenerate closed interval of a densely ordered space
+contains a nondegenerate closed subinterval through the point, itself a relative neighborhood.
+The point may be an endpoint of the original interval. -/
+theorem exists_Icc_subset_mem_nhdsWithin_Icc {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
+    {A B x : α} (hAB : A < B) (hx : x ∈ Icc A B)
+    {U : Set α} (hU : U ∈ 𝓝[Icc A B] x) :
+    ∃ a b, a < b ∧ x ∈ Icc a b ∧ Icc a b ⊆ Icc A B ∧ Icc a b ⊆ U ∧
+      Icc a b ∈ 𝓝[Icc A B] x := by
+  by_cases hxA : x = A
+  · subst x
+    rw [nhdsWithin_Icc_eq_nhdsGE hAB] at hU ⊢
+    obtain ⟨b, hb, hsub⟩ := (mem_nhdsGE_iff_exists_Ico_subset' hAB).mp hU
+    obtain ⟨c, hAc, hcb⟩ := exists_between (lt_min hb hAB)
+    exact ⟨A, c, hAc, ⟨le_rfl, hAc.le⟩,
+      Icc_subset_Icc le_rfl (hcb.le.trans (min_le_right b B)),
+      (Icc_subset_Ico_right (hcb.trans_le (min_le_left b B))).trans hsub, Icc_mem_nhdsGE hAc⟩
+  by_cases hxB : x = B
+  · subst x
+    rw [nhdsWithin_Icc_eq_nhdsLE hAB] at hU ⊢
+    obtain ⟨a, ha, hsub⟩ := (mem_nhdsLE_iff_exists_Ioc_subset' hAB).mp hU
+    obtain ⟨c, hac, hcB⟩ := exists_between (max_lt ha hAB)
+    exact ⟨c, B, hcB, ⟨hcB.le, le_rfl⟩,
+      Icc_subset_Icc ((le_max_right a A).trans hac.le) le_rfl,
+      (Icc_subset_Ioc_left ((le_max_left a A).trans_lt hac)).trans hsub, Icc_mem_nhdsLE hcB⟩
+  have hAx : A < x := lt_of_le_of_ne hx.1 (Ne.symm hxA)
+  have hxB : x < B := lt_of_le_of_ne hx.2 hxB
+  have hUx : U ∈ 𝓝 x := by
+    simpa only [nhdsWithin_eq_nhds.mpr (Icc_mem_nhds hAx hxB)] using hU
+  obtain ⟨l, u, hxu, hsub⟩ :=
+    (mem_nhds_iff_exists_Ioo_subset' ⟨A, hAx⟩ ⟨B, hxB⟩).mp
+      (inter_mem hUx (Ioo_mem_nhds hAx hxB))
+  obtain ⟨a, hla, hax⟩ := exists_between hxu.1
+  obtain ⟨b, hxb, hbu⟩ := exists_between hxu.2
+  have hsmall : Icc a b ⊆ Ioo l u := Icc_subset_Ioo hla hbu
+  refine ⟨a, b, hax.trans hxb, ⟨hax.le, hxb.le⟩, ?_, ?_, ?_⟩
+  · exact fun y hy ↦ ⟨(hsub (hsmall hy)).2.1.le, (hsub (hsmall hy)).2.2.le⟩
+  · exact fun y hy ↦ (hsub (hsmall hy)).1
+  · exact nhdsWithin_le_nhds (Icc_mem_nhds hax hxb)
 
 /-- An unordered closed interval `uIcc a b` is a neighbourhood of each of its points other than
 its endpoints `a` and `b`. -/
