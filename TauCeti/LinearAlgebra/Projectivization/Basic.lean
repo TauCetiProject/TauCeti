@@ -37,7 +37,8 @@ The projectivization of a vector space of dimension at most one, such as
 (`Projectivization.subsingleton_of_rank_le_one`), and two nonzero vectors of a subspace of
 dimension at most one give the same point (`Projectivization.mk_eq_mk_of_mem_of_rank_le_one`).
 So a nonzero singular `2 × 2` matrix has rank one: it kills exactly the vectors of one line and
-sends every other vector into another line (`Matrix.exists_ker_range_of_det_eq_zero`).
+sends every other vector into a single line
+(`Projectivization.exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero`).
 
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
 point under an injective semilinear map is the image of its line.
@@ -97,9 +98,9 @@ end DivisionRing
 open scoped Matrix in
 /-- A nonzero `2 × 2` matrix `B` of determinant zero has rank one: there are lines `a` and `b`
 such that `B` kills exactly the vectors of `a`, and sends every other vector into `b`. -/
-theorem _root_.Matrix.exists_ker_range_of_det_eq_zero {K : Type*} [Field K]
+theorem exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero {K : Type*} [Field K]
     {B : Matrix (Fin 2) (Fin 2) K} (hB : B ≠ 0) (hdet : B.det = 0) :
-    ∃ a b : Projectivization K (Fin 2 → K), (∀ w (hw : w ≠ 0), B *ᵥ w = 0 → mk K w hw = a) ∧
+    ∃ a b : Projectivization K (Fin 2 → K), (∀ w (hw : w ≠ 0), B *ᵥ w = 0 ↔ mk K w hw = a) ∧
       ∀ w (hw : B *ᵥ w ≠ 0), mk K (B *ᵥ w) hw = b := by
   obtain ⟨v, hv, hBv⟩ := Matrix.exists_mulVec_eq_zero_iff.2 hdet
   obtain ⟨w₀, hw₀⟩ : ∃ w₀, B *ᵥ w₀ ≠ 0 := by
@@ -117,12 +118,13 @@ theorem _root_.Matrix.exists_ker_range_of_det_eq_zero {K : Type*} [Field K]
     fun S h ↦ by
       rw [← Module.finrank_eq_rank]
       exact_mod_cast h
-  refine ⟨mk K v hv, mk K (B *ᵥ w₀) hw₀,
-    fun w hw hBw ↦ mk_eq_mk_of_mem_of_rank_le_one
-      (S := LinearMap.ker B.mulVecLin) (hle _ (by omega)) hBw hBv hw hv,
+  refine ⟨mk K v hv, mk K (B *ᵥ w₀) hw₀, fun w hw ↦ ⟨fun hBw ↦ mk_eq_mk_of_mem_of_rank_le_one
+      (S := LinearMap.ker B.mulVecLin) (hle _ (by omega)) hBw hBv hw hv, fun h ↦ ?_⟩,
     fun w hw ↦ mk_eq_mk_of_mem_of_rank_le_one
       (S := LinearMap.range B.mulVecLin) (hle _ (by omega)) (LinearMap.mem_range.2 ⟨w, rfl⟩)
       (LinearMap.mem_range.2 ⟨w₀, rfl⟩) hw hw₀⟩
+  obtain ⟨c, rfl⟩ := (mk_eq_mk_iff' K _ _ hw hv).1 h
+  rw [Matrix.mulVec_smul, hBv, smul_zero]
 
 section LinearProjection
 
