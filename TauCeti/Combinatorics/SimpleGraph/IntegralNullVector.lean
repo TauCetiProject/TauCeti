@@ -49,15 +49,18 @@ theorem Preconnected.pos_of_sum_eq_two_mul (hG : G.Preconnected) {a : V → ℕ}
   exact_mod_cast hG.pos_of_graphCartanMatrix_mulVec_nonneg
     (fun j ↦ Int.natCast_nonneg (a j)) hnull.ge hne' i
 
-/-- Every natural-valued additive function is its coordinate gcd times any positive primitive
-additive function. The gcd identity supplies the integral, not just rational, multiplier. -/
+/-- Every natural-valued additive function is its coordinate gcd times any primitive
+additive function. -/
 theorem Preconnected.eq_gcd_smul_of_sum_eq_two_mul (hG : G.Preconnected) {δ a : V → ℕ}
-    (hpos : ∀ i, 0 < δ i)
     (hδ : ∀ i, ∑ j ∈ G.neighborFinset i, δ j = 2 * δ i)
     (hprim : univ.gcd δ = 1)
     (ha : ∀ i, ∑ j ∈ G.neighborFinset i, a j = 2 * a i) :
     a = univ.gcd a • δ := by
   classical
+  have hpos := hG.pos_of_sum_eq_two_mul hδ (by
+    intro hz
+    have hg : univ.gcd δ = 0 := Finset.gcd_eq_zero_iff.mpr (by simp [hz])
+    exact Nat.one_ne_zero (hprim.symm.trans hg))
   have hδQ : ∀ i, ∑ j ∈ G.neighborFinset i, (δ j : ℚ) = 2 * (δ i : ℚ) :=
     fun i ↦ by exact_mod_cast hδ i
   have haQ : G.graphCartanMatrix ℚ *ᵥ (fun i ↦ (a i : ℚ)) = 0 :=
@@ -79,24 +82,24 @@ theorem Preconnected.eq_gcd_smul_of_sum_eq_two_mul (hG : G.Preconnected) {δ a :
   simpa only [Pi.smul_apply, smul_eq_mul, mul_comm] using hg
 
 /-- The natural null cone of the graph Cartan matrix is precisely the natural multiples of a
-positive primitive additive function. This includes the zero multiple. -/
+primitive additive function. This includes the zero multiple. -/
 theorem Preconnected.sum_eq_two_mul_iff_exists_smul (hG : G.Preconnected) {δ : V → ℕ}
-    (hpos : ∀ i, 0 < δ i)
     (hδ : ∀ i, ∑ j ∈ G.neighborFinset i, δ j = 2 * δ i)
     (hprim : univ.gcd δ = 1) (a : V → ℕ) :
     (∀ i, ∑ j ∈ G.neighborFinset i, a j = 2 * a i) ↔ ∃ m : ℕ, a = m • δ := by
   constructor
   · intro ha
-    exact ⟨univ.gcd a, hG.eq_gcd_smul_of_sum_eq_two_mul hpos hδ hprim ha⟩
+    exact ⟨univ.gcd a, hG.eq_gcd_smul_of_sum_eq_two_mul hδ hprim ha⟩
   · rintro ⟨m, rfl⟩ i
     simp only [Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum, hδ i]
     ring
 
-/-- A nonzero natural-valued additive function determines a unique positive primitive integral
-null vector. No vertex is assumed to have coefficient one. -/
-theorem Preconnected.existsUnique_pos_sum_eq_two_mul_gcd_eq_one (hG : G.Preconnected)
+/-- A nonzero natural-valued additive function determines a unique primitive integral null vector.
+It is positive by `Preconnected.pos_of_sum_eq_two_mul`; no vertex is assumed to have coefficient
+one. -/
+theorem Preconnected.existsUnique_sum_eq_two_mul_gcd_eq_one (hG : G.Preconnected)
     {a : V → ℕ} (ha : ∀ i, ∑ j ∈ G.neighborFinset i, a j = 2 * a i) (hne : a ≠ 0) :
-    ∃! δ : V → ℕ, (∀ i, 0 < δ i) ∧
+    ∃! δ : V → ℕ,
       (∀ i, ∑ j ∈ G.neighborFinset i, δ j = 2 * δ i) ∧ univ.gcd δ = 1 := by
   obtain ⟨i, hi⟩ := Function.ne_iff.mp hne
   obtain ⟨δ, hfactor, hprim⟩ := univ.extract_gcd a ⟨i, mem_univ i⟩
@@ -104,10 +107,6 @@ theorem Preconnected.existsUnique_pos_sum_eq_two_mul_gcd_eq_one (hG : G.Preconne
     intro hg
     exact hi (by simpa [hg] using hfactor i (mem_univ i))
   have hfactor' (j : V) : a j = univ.gcd a * δ j := hfactor j (mem_univ j)
-  have hpos (j : V) : 0 < δ j := by
-    have hp := hG.pos_of_sum_eq_two_mul ha hne j
-    rw [hfactor'] at hp
-    exact pos_of_mul_pos_right hp (Nat.zero_le _)
   have hδ (j : V) : ∑ l ∈ G.neighborFinset j, δ l = 2 * δ j := by
     apply Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hg)
     calc
@@ -115,8 +114,8 @@ theorem Preconnected.existsUnique_pos_sum_eq_two_mul_gcd_eq_one (hG : G.Preconne
           ∑ l ∈ G.neighborFinset j, a l := by simp_rw [hfactor', mul_sum]
       _ = 2 * a j := ha j
       _ = univ.gcd a * (2 * δ j) := by rw [hfactor']; ring
-  refine ⟨δ, ⟨hpos, hδ, hprim⟩, ?_⟩
-  rintro η ⟨hηpos, hη, hηprim⟩
-  simpa [hηprim] using hG.eq_gcd_smul_of_sum_eq_two_mul hpos hδ hprim hη
+  refine ⟨δ, ⟨hδ, hprim⟩, ?_⟩
+  rintro η ⟨hη, hηprim⟩
+  simpa [hηprim] using hG.eq_gcd_smul_of_sum_eq_two_mul hδ hprim hη
 
 end SimpleGraph

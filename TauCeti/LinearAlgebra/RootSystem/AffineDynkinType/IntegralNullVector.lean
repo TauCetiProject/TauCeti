@@ -50,10 +50,6 @@ theorem Iso.eq_gcd_smul_marks_comp (e : G ≃g t.graph) (ht : t.Valid) (hg : t.I
   let δ : V → ℕ := fun i ↦ (t.marks (e i)).toNat
   have hcast (i : V) : (δ i : ℤ) = t.marks (e i) :=
     Int.toNat_of_nonneg (t.marks_pos (e i)).le
-  have hpos (i : V) : 0 < δ i := by
-    have hp := t.marks_pos (e i)
-    rw [← hcast] at hp
-    exact_mod_cast hp
   have hmarks (i : V) : ∑ j ∈ G.neighborFinset i, δ j = 2 * δ i := by
     have hs : ∑ j ∈ G.neighborFinset i, t.marks (e j) = 2 * t.marks (e i) := by
       rw [e.sum_neighborFinset_comp]
@@ -62,19 +58,20 @@ theorem Iso.eq_gcd_smul_marks_comp (e : G ≃g t.graph) (ht : t.Valid) (hg : t.I
     exact_mod_cast hs
   have hprim : univ.gcd δ = 1 := by
     apply Nat.dvd_one.mp
-    obtain ⟨i, hi⟩ := e.surjective t.affineNode
-    have hi' : δ i = 1 := by
-      have hc := hcast i
-      rw [hi, t.marks_affineNode] at hc
-      exact_mod_cast hc
-    simpa [hi'] using (univ.gcd_dvd (f := δ) (mem_univ i))
+    have hdvd : ((univ.gcd δ : ℕ) : ℤ) ∣ univ.gcd t.marks := by
+      apply Finset.dvd_gcd
+      intro j _
+      obtain ⟨i, rfl⟩ := e.surjective j
+      rw [← hcast]
+      exact_mod_cast (univ.gcd_dvd (f := δ) (mem_univ i))
+    rw [t.gcd_marks] at hdvd
+    exact_mod_cast hdvd
   have hG := e.preconnected_iff.mpr
     (TauCeti.AffineDynkinType.graph_connected ht).preconnected
-  have heq := hG.eq_gcd_smul_of_sum_eq_two_mul hpos hmarks hprim ha
+  have heq := hG.eq_gcd_smul_of_sum_eq_two_mul hmarks hprim ha
   ext i
   have hi := congrFun heq i
-  simp only [Pi.smul_apply, smul_eq_mul] at hi ⊢
+  simp only [Pi.smul_apply, smul_eq_mul, Function.comp_apply] at hi ⊢
   rw [hi, Nat.cast_mul, hcast]
-  rfl
 
 end SimpleGraph
