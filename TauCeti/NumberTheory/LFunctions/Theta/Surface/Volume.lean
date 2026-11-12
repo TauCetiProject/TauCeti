@@ -89,7 +89,7 @@ open scoped Classical in
 /-- In the coordinates of `expMapBasis`, the unit `∏_i η_i ^ c_i` acts on the archimedean
 parameters by the translation by `2 c`. -/
 theorem unitScale_expMapBasis (c : {w : InfinitePlace K // w ≠ w₀} → ℤ) (z : realSpace K) :
-    unitScale (∏ i, fundSystem K (equivFinRank.symm i) ^ c i) (expMapBasis z) =
+    unitScale (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c i) (expMapBasis z) =
       expMapBasis (2 • intCoord c + z) := by
   ext w
   rw [unitScale_apply, two_smul, expMapBasis_add, expMapBasis_add, expMapBasis_intCoord]
@@ -259,7 +259,7 @@ private theorem isAddFundamentalDomain_coordCylinder {D : Set (realSpace K)}
   -- translating by a lattice point is acting by the corresponding unit
   have htrans (c : {w : InfinitePlace K // w ≠ w₀} → ℤ) :
       unitTranslation c +ᵥ z ∈ coordCylinder D ↔
-        unitScale (∏ i, fundSystem K (equivFinRank.symm i) ^ c i) y ∈ D := by
+        unitScale (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c i) y ∈ D := by
     rw [unitScale_expMapBasis, coordCylinder, mem_preimage, AddSubgroup.vadd_def, vadd_eq_add,
       unitTranslation]
     congr! 2
@@ -267,25 +267,25 @@ private theorem isAddFundamentalDomain_coordCylinder {D : Set (realSpace K)}
     by_cases hw : w = w₀ <;> simp [p, hw]
   obtain ⟨u, hu⟩ := hD.exists_unitScale_mem y hy
   obtain ⟨⟨ζ, e⟩, rfl, -⟩ := exist_unique_eq_mul_prod K u
-  set c₀ : {w : InfinitePlace K // w ≠ w₀} → ℤ := fun i ↦ e (equivFinRank.symm i)
-  have hc₀ : unitScale (∏ i, fundSystem K (equivFinRank.symm i) ^ c₀ i) y ∈ D := by
+  set c₀ : {w : InfinitePlace K // w ≠ w₀} → ℤ := fun i ↦ e ((equivFinRank K).symm i)
+  have hc₀ : unitScale (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c₀ i) y ∈ D := by
     rw [mul_comm, ← unitScale_unitScale,
       (unitScale_eq_self_iff (fun w ↦ ((mem_normOneSurface.mp hy).1 w).ne') _).mpr ζ.2] at hu
     convert hu using 2
-    exact Fintype.prod_equiv equivFinRank.symm _ _ fun _ ↦ rfl
+    exact Fintype.prod_equiv (equivFinRank K).symm _ _ fun _ ↦ rfl
   refine ⟨unitTranslation c₀, (htrans c₀).mpr hc₀, ?_⟩
   rintro ⟨_, c, rfl⟩ hc
   have hc' := (htrans c).mp hc
-  rw [← inv_mul_cancel_right (∏ i, fundSystem K (equivFinRank.symm i) ^ c i)
-    (∏ i, fundSystem K (equivFinRank.symm i) ^ c₀ i), ← unitScale_unitScale,
+  rw [← inv_mul_cancel_right (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c i)
+    (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c₀ i), ← unitScale_unitScale,
     hD.unitScale_mem_iff _ hc₀, ← Finset.prod_inv_distrib, ← Finset.prod_mul_distrib] at hc'
   simp_rw [← zpow_neg, ← zpow_add, ← sub_eq_add_neg] at hc'
-  have h0 : (fun j ↦ c (equivFinRank j) - c₀ (equivFinRank j)) = 0 := by
+  have h0 : (fun j ↦ c (equivFinRank K j) - c₀ (equivFinRank K j)) = 0 := by
     refine prod_fundSystem_zpow_mem_torsion_iff.mp ?_
     convert hc' using 1
-    exact (Fintype.prod_equiv equivFinRank.symm _ _ fun _ ↦ by simp).symm
+    exact (Fintype.prod_equiv (equivFinRank K).symm _ _ fun _ ↦ by simp).symm
   have hcc : c = c₀ := funext fun i ↦ by
-    simpa [sub_eq_zero] using congrFun h0 (equivFinRank.symm i)
+    simpa [sub_eq_zero] using congrFun h0 ((equivFinRank K).symm i)
   subst hcc
   rfl
 

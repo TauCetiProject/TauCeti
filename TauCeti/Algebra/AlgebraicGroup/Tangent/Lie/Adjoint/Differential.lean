@@ -53,9 +53,6 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   -- The proof combines `Derivation.adDerivation_dualNumber_apply` with
   -- `TauCeti.Comodule.snd_endOfPoint_derivationToTrivSqZeroExtEquivLift`.
   let C := Bialgebra.CounitAlgebra R H R
-  let V := Module.Dual R (Bialgebra.CotangentSpace R H)
-  let s : DualNumber C →ₗ[R] R := (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
-    (sndHom C C).restrictScalars R
   -- Extract the infinitesimal coefficient after scalar extension, so both descriptions
   -- of the differentiated action can be compared in the cotangent-dual model.
   have hcoeff := algEquivSelf_cotangentLinearEquiv_rTensor_sndHom (R := R) (A := H)

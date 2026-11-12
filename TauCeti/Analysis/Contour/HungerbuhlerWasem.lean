@@ -19,6 +19,9 @@ import TauCeti.Analysis.Contour.ConditionDischarge
 import TauCeti.Analysis.Contour.InvSubCPVExistence
 import TauCeti.Analysis.Contour.Residue.Assembly
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
+import TauCeti.Analysis.Meromorphic.Order
+import TauCeti.Algebra.BigOperators.Ring.Finset
+import TauCeti.Data.Finset.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Contour.Crossing.Finiteness
 import TauCeti.Analysis.Contour.FlatnessOne
@@ -27,21 +30,21 @@ import TauCeti.Analysis.Contour.FlatnessOne
 # The Hungerbühler–Wasem generalized residue theorem
 
 The summit of the contour-integration roadmap (HW Thm 3.3): for `f` holomorphic on `U ∖ S`
-and meromorphic at each point of the finite `S ⊆ U`, and a **null-homologous, closed**
+and meromorphic at each point of the finite `S` lying in `U`, and a **null-homologous, closed**
 piecewise-`C¹` **immersion** `γ` in `U` rooted off the poles, under the regularity conditions
 (A′) and (B), the set-level Cauchy principal value of `f` along `γ` exists and equals
 `2πi · Σ_{s ∈ S} n_s(γ) · Res_s f` — with the generalized (non-integer) winding numbers as
-weights, valid when singularities lie **on** the curve. The half-residue case
+weights, valid when singularities lie **on** the curve; a point of `S` outside `U` has winding
+number `0` and contributes nothing. The half-residue case
 (`S = {s}`, `n_s(γ) = ½`) evaluates to `πi · Res_s f` — the on-cycle acceptance gate, and the
 value the valence formula uses at `i` and `ρ`.
 
-Both statements follow the roadmap signatures. The proof instantiates the canonical polar
-decomposition, discharges the conditions into the per-pole hypotheses, and assembles the
-residue sum; a reversed parametrization (`b ≤ a`) reduces to the oriented case through the
-orientation lemmas, every ingredient being endpoint-swap invariant. That assembly is kept
-separate from the null-homology hypothesis, which enters only at the last step to kill the
-analytic remainder — so the splitting it factors through is available to callers that must add
-several curves up before any of them bounds.
+The proof instantiates the canonical polar decomposition, discharges the conditions into the
+per-pole hypotheses, and assembles the residue sum; a reversed parametrization (`b ≤ a`) reduces to
+the oriented case through the orientation lemmas, every ingredient being endpoint-swap invariant.
+That assembly is kept separate from the null-homology hypothesis, which enters only at the last step
+to kill the analytic remainder — so the splitting it factors through is available to callers that
+must add several curves up before any of them bounds.
 
 ## Main results
 
@@ -91,12 +94,12 @@ theorem PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_
     (hU : IsOpen U) (h_ord : ∀ s : S, decomp.order s = meromorphicPolarOrderAt f ↑s)
     (hSU : (S : Set ℂ) ⊆ U) {γ : ℝ → ℂ} {a b : ℝ} (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ)) (hγU : ∀ t ∈ Set.uIcc a b, γ t ∈ U)
-    (hmero : ∀ s ∈ S, MeromorphicAt f s) (hA : ConditionAprime γ a b f S)
-    (hB : ConditionB γ a b f) :
+    (hA : ConditionAprime γ a b f S) (hB : ConditionB γ a b f) :
     HasCauchyPV γ a b f
       ((∫ t in a..b, deriv γ t • decomp.analyticRemainder (γ t))
         + 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ a b s * residue f s) := by
   classical
+  have hmero : ∀ s ∈ S, MeromorphicAt f s := fun s hs ↦ decomp.meromorphicAt hU (hSU hs)
   -- The oriented case: instantiate the null-homology-free splitting of the polar decomposition,
   -- discharging conditions (A′) and (B) into its per-pole hypotheses.
   have core : ∀ c d : ℝ, c ≤ d → IsPwC1ImmersionOn γ c d → γ c = γ d → γ c ∉ (S : Set ℂ) →
@@ -137,40 +140,60 @@ theorem PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_
     rwa [h_val, neg_neg] at h
 
 /-- **The Hungerbühler–Wasem generalized residue theorem** (HW Thm 3.3): for `f` holomorphic
-on `U ∖ S` and meromorphic at each point of the finite `S ⊆ U`, and a null-homologous closed
-piecewise-`C¹` immersion `γ` in `U` rooted off the poles, under conditions (A′) and (B) the
-set-level Cauchy principal value of `f` along `γ` is
+on `U ∖ S` and meromorphic at each point of the finite `S` lying in `U`, and a null-homologous
+closed piecewise-`C¹` immersion `γ` in `U` rooted off the poles, under conditions (A′) and (B)
+the set-level Cauchy principal value of `f` along `γ` is
 `2πi · Σ_{s ∈ S} n_s(γ) · Res_s f`, with the generalized (non-integer) winding numbers as
-weights — valid when singularities of `f` lie **on** the curve. -/
+weights — valid when singularities of `f` lie **on** the curve. A point of `S` outside `U` has
+winding number `0` by null-homology, so neither `S ⊆ U` nor meromorphy of `f` at such a point is
+assumed. -/
 theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
     (S : Finset ℂ) (γ : ℝ → ℂ) (a b : ℝ) (hγ_imm : IsPwC1ImmersionOn γ a b)
-    (hSU : (S : Set ℂ) ⊆ U) (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))
+    (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))
     (hγU : ∀ t ∈ Set.uIcc a b, γ t ∈ U) (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
-    (hmero : ∀ s ∈ S, MeromorphicAt f s) (hnull : IsNullHomologous γ a b U)
+    (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) (hnull : IsNullHomologous γ a b U)
     (hA : ConditionAprime γ a b f S) (hB : ConditionB γ a b f) :
     HasCauchyPV γ a b f
       (2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, windingNumber γ a b s * residue f s)) := by
+  classical
+  -- Restrict to the singularities inside `U`; the others have winding number `0`.
+  have hsub : S.filter (· ∈ U) ⊆ S := Finset.filter_subset _ _
+  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) := by
+    rwa [Finset.sdiff_coe_filter_mem_eq]
+  have hmero' : ∀ s ∈ S.filter (· ∈ U), MeromorphicAt f s := fun s hs ↦
+    hmero s (hsub hs) (Finset.mem_filter.mp hs).2
   have h := PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_conditions
-    (PolarPartDecomposition.ofMeromorphic hU hf hmero) hU
-    (fun s => PolarPartDecomposition.ofMeromorphic_order s) hSU hγ_imm hclosed hγa hγU hmero hA hB
+    (PolarPartDecomposition.ofMeromorphic hU hf' hmero') hU
+    (fun s => PolarPartDecomposition.ofMeromorphic_order s)
+    (fun s hs ↦ (Finset.mem_filter.mp hs).2) hγ_imm hclosed (fun h ↦ hγa (hsub h)) hγU
+    (hA.mono hsub) hB
+  have hsum : ∑ s ∈ S.filter (· ∈ U), windingNumber γ a b s * residue f s =
+      ∑ s ∈ S, windingNumber γ a b s * residue f s :=
+    Finset.sum_filter_mem_mul_eq S U fun s hsU ↦ isNullHomologous_iff.mp hnull s hsU
   rwa [PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero
-    (PolarPartDecomposition.ofMeromorphic hU hf hmero) hU hγ_imm.isPiecewiseC1On hγU hclosed
-    hnull, zero_add] at h
+    (PolarPartDecomposition.ofMeromorphic hU hf' hmero') hU hγ_imm.isPiecewiseC1On hγU hclosed
+    hnull, zero_add, hsum] at h
 
 /-- **Half-residue: the winding-`½` on-cycle case of HW Thm 3.3** — the `S = {s}`
 specialisation: when the generalized winding number of the closed, null-homologous immersion
-about the on-cycle singularity `s` is `½`, the principal value is `πi · Res_s f`. -/
+about the on-cycle singularity `s` is `½`, the principal value is `πi · Res_s f`. (Then `s ∈ U`
+automatically, since the winding number about a point outside `U` vanishes, so meromorphy is only
+asked of `f` at `s` when `s ∈ U`.) -/
 theorem hasCauchyPV_half_residue {f : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U) (γ : ℝ → ℂ)
-    (a b : ℝ) (s : ℂ) (hγ_imm : IsPwC1ImmersionOn γ a b) (hsU : s ∈ U)
+    (a b : ℝ) (s : ℂ) (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ≠ s)
     (hγU : ∀ t ∈ Set.uIcc a b, γ t ∈ U) (hf : DifferentiableOn ℂ f (U \ {s}))
-    (hmero : MeromorphicAt f s) (hnull : IsNullHomologous γ a b U)
+    (hmero : s ∈ U → MeromorphicAt f s) (hnull : IsNullHomologous γ a b U)
     (hA : ConditionAprime γ a b f {s}) (hB : ConditionB γ a b f)
     (hwind : windingNumber γ a b s = 1 / 2) :
     HasCauchyPV γ a b f ((Real.pi : ℂ) * Complex.I * residue f s) := by
-  have h := hungerbuhlerWasem_residueTheorem hU {s} γ a b hγ_imm
-    (by simpa using hsU) hclosed (by simpa using hγa) hγU (by simpa using hf)
-    (fun s' hs' => (Finset.mem_singleton.mp hs') ▸ hmero) hnull hA hB
+  have hsU : s ∈ U := by
+    by_contra h
+    rw [isNullHomologous_iff.mp hnull s h] at hwind
+    norm_num at hwind
+  have h := hungerbuhlerWasem_residueTheorem hU {s} γ a b hγ_imm hclosed
+    (by simpa using hγa) hγU (by simpa using hf)
+    (fun s' hs' _ => (Finset.mem_singleton.mp hs') ▸ hmero hsU) hnull hA hB
   rw [Finset.sum_singleton, hwind] at h
   rw [show (Real.pi : ℂ) * Complex.I * residue f s
     = 2 * (Real.pi : ℂ) * Complex.I * (1 / 2 * residue f s) by ring]
@@ -178,26 +201,12 @@ theorem hasCauchyPV_half_residue {f : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
 
 /-! ### The simple-pole form
 
-When every prescribed singularity is at worst a simple pole, conditions (A′) and (B) hold
+When every prescribed singularity in `U` is at worst a simple pole, conditions (A′) and (B) hold
 automatically — first-order flatness is every immersion's geometry, and the sector condition
 only constrains poles of order `> 1`. This is HW's own base regime (Thm 3.3's unconditional
 case, "`C` only contains singularities of `f` which are poles of order `1`"), and the form
 the argument principle and the valence formula consume: a logarithmic derivative has only
 simple poles. -/
-
-/-- Everywhere on `U`, the order of `f` is at least `-1`: at the prescribed singularities by
-hypothesis, elsewhere by analyticity on the open complement. -/
-private theorem neg_one_le_meromorphicOrderAt {f : ℂ → ℂ} {U : Set ℂ} {S : Finset ℂ}
-    (hU : IsOpen U) (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
-    (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
-    ∀ w ∈ U, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f w := by
-  intro w hw
-  by_cases hwS : w ∈ S
-  · exact h_simple w hwS
-  · have h_an : AnalyticAt ℂ f w :=
-      hf.analyticOnNhd (hU.sdiff S.finite_toSet.isClosed) w ⟨hw, hwS⟩
-    exact le_trans (by exact_mod_cast (by norm_num : (-1 : ℤ) ≤ 0))
-      h_an.meromorphicOrderAt_nonneg
 
 /-- **Condition (A′) is automatic at simple poles.** The only pole order the interior clause can
 meet is `1`, discharged by the first-order flatness of the immersion, and the basepoint
@@ -215,14 +224,13 @@ occurs the flatness clause is met with content rather than by vacuity: the pole 
 forced to `1` and `IsPwC1ImmersionOn.flatOfOrder_one` supplies the first-order flatness. On a
 curve with no interior crossing the clause holds because there is nothing to discharge. -/
 theorem conditionAprime_of_simple_poles {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
-    {U : Set ℂ} {S : Finset ℂ} (hU : IsOpen U) (hγ_imm : IsPwC1ImmersionOn γ a b)
-    (hymin : γ (min a b) ∉ (S : Set ℂ)) (hγU : ∀ t ∈ Set.uIcc a b, γ t ∈ U)
-    (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
-    (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
+    {U : Set ℂ} {S : Finset ℂ} (hγ_imm : IsPwC1ImmersionOn γ a b)
+    (hγU : ∀ t ∈ Set.uIcc a b, γ t ∈ U) (hymin : γ (min a b) ∉ (S : Set ℂ))
+    (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     ConditionAprime γ a b f S := by
-  have h_ge := neg_one_le_meromorphicOrderAt hU hf h_simple
-  refine ⟨fun s _ => hγ_imm.finite_crossings, fun t₀ ht₀ _ n hn h_ord => ?_, fun hmem => ?_⟩
-  · have h_le := h_ge (γ t₀) (hγU t₀ (by rw [← Set.Icc_min_max]; exact Set.Ioo_subset_Icc_self ht₀))
+  refine ⟨fun s _ => hγ_imm.finite_crossings, fun t₀ ht₀ hmem n hn h_ord => ?_, fun hmem => ?_⟩
+  · have h_le := h_simple _ hmem
+      (hγU t₀ (by rw [← Set.Icc_min_max]; exact Set.Ioo_subset_Icc_self ht₀))
     rw [h_ord] at h_le
     have h_n : n = 1 := by
       have : (-1 : ℤ) ≤ -(n : ℤ) := by exact_mod_cast h_le
@@ -240,51 +248,51 @@ is what makes `hungerbuhlerWasem_residueTheorem_of_simple_poles` unconditional. 
 theorem conditionB_of_simple_poles {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
     {U : Set ℂ} {S : Finset ℂ} (hU : IsOpen U) (hγU : ∀ t ∈ Set.uIcc a b, γ t ∈ U)
     (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
-    (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
+    (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     ConditionB γ a b f := by
-  have h_ge := neg_one_le_meromorphicOrderAt hU hf h_simple
+  have h_ge := hf.neg_one_le_meromorphicOrderAt hU S.finite_toSet.isClosed h_simple
   refine ⟨fun t₀ ht₀ h_lt => absurd h_lt (not_lt.mpr
       (h_ge (γ t₀) (hγU t₀ (by rw [← Set.Icc_min_max]; exact Set.Ioo_subset_Icc_self ht₀)))),
     fun h_lt => absurd h_lt (not_lt.mpr (h_ge (γ (min a b))
       (hγU (min a b) (by rw [← Set.Icc_min_max]; exact Set.left_mem_Icc.mpr min_le_max))))⟩
 
 /-- **The generalized residue theorem for simple poles** — HW Thm 3.3's unconditional regime:
-when every prescribed singularity is at worst a simple pole
+when every prescribed singularity in `U` is at worst a simple pole
 (`meromorphicOrderAt f s ≥ -1`), conditions (A′) and (B) hold automatically, and the
 principal value is the winding-weighted residue sum with no regularity hypotheses beyond the
-immersion. The form the argument principle and the valence formula consume. -/
+immersion. A point of `S` outside `U` has winding number `0` by null-homology and contributes
+nothing. The form the argument principle and the valence formula consume. -/
 theorem hungerbuhlerWasem_residueTheorem_of_simple_poles {f : ℂ → ℂ} {U : Set ℂ}
     (hU : IsOpen U) (S : Finset ℂ) (γ : ℝ → ℂ) (a b : ℝ) (hγ_imm : IsPwC1ImmersionOn γ a b)
-    (hSU : (S : Set ℂ) ⊆ U) (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))
+    (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))
     (hγU : ∀ t ∈ Set.uIcc a b, γ t ∈ U) (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
-    (hmero : ∀ s ∈ S, MeromorphicAt f s) (hnull : IsNullHomologous γ a b U)
-    (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
+    (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) (hnull : IsNullHomologous γ a b U)
+    (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV γ a b f
       (2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, windingNumber γ a b s * residue f s)) :=
-  hungerbuhlerWasem_residueTheorem hU S γ a b hγ_imm hSU hclosed hγa hγU hf hmero hnull
-    (conditionAprime_of_simple_poles hU hγ_imm
+  hungerbuhlerWasem_residueTheorem hU S γ a b hγ_imm hclosed hγa hγU hf hmero hnull
+    (conditionAprime_of_simple_poles hγ_imm hγU
       (by rcases le_total a b with h | h
           · rwa [min_eq_left h]
-          · rwa [min_eq_right h, ← hclosed]) hγU hf h_simple)
+          · rwa [min_eq_right h, ← hclosed]) h_simple)
     (conditionB_of_simple_poles hU hγU hf h_simple)
 
 /-- **The half-residue theorem at a simple pole**: the winding-`½` case with the conditions
 discharged automatically — an on-cycle simple pole crossed by the immersion contributes
-`πi · Res_s f`. The acceptance form for the valence formula's `i` and `ρ`. -/
+`πi · Res_s f`. This is the form the valence formula uses at `i` and `ρ`. -/
 theorem hasCauchyPV_half_residue_of_simple_pole {f : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
-    (γ : ℝ → ℂ) (a b : ℝ) (s : ℂ) (hγ_imm : IsPwC1ImmersionOn γ a b) (hsU : s ∈ U)
+    (γ : ℝ → ℂ) (a b : ℝ) (s : ℂ) (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ≠ s)
     (hγU : ∀ t ∈ Set.uIcc a b, γ t ∈ U) (hf : DifferentiableOn ℂ f (U \ {s}))
-    (hmero : MeromorphicAt f s) (hnull : IsNullHomologous γ a b U)
-    (h_simple : ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s)
+    (hmero : s ∈ U → MeromorphicAt f s) (hnull : IsNullHomologous γ a b U)
+    (h_simple : s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s)
     (hwind : windingNumber γ a b s = 1 / 2) :
     HasCauchyPV γ a b f ((Real.pi : ℂ) * Complex.I * residue f s) :=
-  hasCauchyPV_half_residue hU γ a b s hγ_imm hsU hclosed hγa hγU hf hmero hnull
-    (conditionAprime_of_simple_poles hU hγ_imm
+  hasCauchyPV_half_residue hU γ a b s hγ_imm hclosed hγa hγU hf hmero hnull
+    (conditionAprime_of_simple_poles hγ_imm hγU
       (by rcases le_total a b with h | h
           · simpa [min_eq_left h] using hγa
           · simpa [min_eq_right h, ← hclosed] using hγa)
-      hγU (by simpa using hf)
       (fun s' hs' => (Finset.mem_singleton.mp hs') ▸ h_simple))
     (conditionB_of_simple_poles hU hγU (S := {s}) (by simpa using hf)
       (fun s' hs' => (Finset.mem_singleton.mp hs') ▸ h_simple))

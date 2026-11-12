@@ -19,9 +19,8 @@ when every piece is finite-dimensional and only finitely many pieces are nonzero
 packages those two conditions as `TauCeti.HasFiniteLaurentSupport` and defines
 `TauCeti.gradedDimension` without using a totalized infinite sum.
 
-For a family `V`, `gradedDimension k V h` has coefficient
-`dim_k(V j)` in degree `j`.  The companion `targetShiftGradedDimension` implements the convention
-used by the Grothendieck--Euler roadmap for target shifts:
+For a family `V`, `gradedDimension k V h` has coefficient `dim_k(V j)` in degree `j`.  The
+companion `targetShiftGradedDimension` implements the target-shift convention:
 
 ```text
 qdim(V) = ∑ j, q⁻ʲ dim_k(V j).
@@ -52,7 +51,6 @@ additive on degreewise short exact sequences.
 * Zsuzsanna Dancso and Anthony Licata, "Koszul algebras and flow lattices", *Journal of
   Combinatorial Theory, Series A* 185 (2022), Section 2.2, for graded dimensions and the
   target-shift convention.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 6, "Finite Laurent support".
 -/
 
 public section
