@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 
 /-!
 # Bounded `C^{k,α}` maps of every order
