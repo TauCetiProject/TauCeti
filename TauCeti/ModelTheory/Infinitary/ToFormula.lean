@@ -146,6 +146,7 @@ theorem realize_toFormula {M : Type w} [L.Structure M] (φ : L.BoundedFormulaInf
     have h := ih (Sum.elim (v ∘ Sum.inl) (Fin.snoc (v ∘ Sum.inr) a))
     simp only [Sum.elim_comp_inl, Sum.elim_comp_inr] at h
     rw [← h, TauCeti.BoundedFormulaInf.realize_relabel, FormulaInf.realize_def, iff_iff_eq]
+    -- Compare the free-variable assignments and the empty bound assignments of type Fin 0 → M.
     congr 1
     · funext x
       rcases x with x | x
@@ -172,7 +173,6 @@ theorem toFormula_toInf (φ : L.BoundedFormula α n) :
   | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
   | all φ ih =>
     simp only [BoundedFormula.toInf_all, toFormula_all, ih,
-      TauCeti.BoundedFormulaInf.relabel_toInf, BoundedFormula.toFormula,
-      BoundedFormula.toInf_all]
+      TauCeti.BoundedFormulaInf.relabel_toInf, BoundedFormula.toFormula]
 
 end FirstOrder.Language.BoundedFormulaInf
