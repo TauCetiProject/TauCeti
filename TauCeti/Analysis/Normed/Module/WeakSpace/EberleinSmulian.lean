@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Sequences
 public import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 public import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Operator.Norming
@@ -12,7 +13,7 @@ import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Module.Mazur
 
 /-!
-# The Eberlein–Šmulian theorem
+# The Eberlein–Šmulian theorem and sequential weak closures
 
 Weak compactness and weak sequential compactness agree in real and complex normed spaces,
 without completeness or separability assumptions. The relative version allows subsequential
@@ -23,9 +24,19 @@ point, recursively choose vectors and finite norming sets for their finite-dimen
 together with that point. Any weak subsequential limit of the resulting sequence represents
 the original bidual point. Banach–Alaoglu then supplies compactness.
 
+Combined with Šmulian's subsequential compactness, the same sequence converges weakly to the
+prescribed closure point (`TauCeti.exists_seq_tendsto_toWeakSpace_of_mem_closure`), because
+every subsequence has a further subsequence converging to that unique cluster point. Consequently,
+for any relatively weakly compact set `A` (in particular, any `A ⊆ K` with `K` weakly compact),
+the weak closure coincides with the weak sequential closure
+(`TauCeti.seqClosure_toWeakSpace_eq_closure`), weak closedness agrees with weak sequential
+closedness, and every weakly compact subspace is a Fréchet–Urysohn space
+(`TauCeti.frechetUrysohnSpace_toWeakSpace_of_isCompact`).
+
 ## References
 
-* R. E. Megginson, *An Introduction to Banach Space Theory*, §2.8, Theorem 2.8.6.
+* R. E. Megginson, *An Introduction to Banach Space Theory*, §2.8, Theorem 2.8.6 and
+  Corollary 2.8.9.
 -/
 
 public section
@@ -173,5 +184,87 @@ theorem isCompact_toWeakSpace_iff_isSeqCompact {K : Set E} :
       exact huniq x σ hσ hlim
     exact hxz ▸ mem_image_of_mem (toWeakSpace 𝕜 E) hx
   simpa only [hclosed.closure_eq] using isCompact_closure_toWeakSpace_iff.mpr hrelative
+
+/-- **Sequential-closure Eberlein–Šmulian, relative form.** If `A` has weakly compact closure in a
+real or complex normed space, every point in the weak closure of `A` is the weak limit of a
+sequence in `A`. -/
+theorem exists_seq_tendsto_toWeakSpace_of_mem_closure {A : Set E}
+    (hA : IsCompact (closure (toWeakSpace 𝕜 E '' A))) {x : E}
+    (hx : toWeakSpace 𝕜 E x ∈ closure (toWeakSpace 𝕜 E '' A)) :
+    ∃ u : ℕ → E, (∀ n, u n ∈ A) ∧
+      Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) := by
+  have hφ := mem_closure_image
+    (NormedSpace.inclusionInDoubleDualWeak 𝕜 E).continuous.continuousAt hx
+  obtain ⟨u, hu, huniq⟩ := exists_seq_inclusionInDoubleDualWeak_eq_of_mem_closure hφ
+  refine ⟨u, hu, tendsto_of_subseq_tendsto fun ns hns ↦ ?_⟩
+  obtain ⟨ψ, -, hnsψ⟩ := strictMono_subseq_of_tendsto_atTop hns
+  obtain ⟨y, θ, hθ, hlim⟩ :=
+    tendsto_subseq_toWeakSpace_of_isCompact_closure hA (fun n ↦ hu (ns (ψ n)))
+  have hyx : toWeakSpace 𝕜 E y = toWeakSpace 𝕜 E x :=
+    (NormedSpace.isEmbedding_inclusionInDoubleDualWeak 𝕜 E).injective
+      (huniq y ((ns ∘ ψ) ∘ θ) (hnsψ.comp hθ) hlim)
+  exact ⟨ψ ∘ θ, hyx ▸ hlim⟩
+
+/-- **Sequential-closure Eberlein–Šmulian.** If `K` is weakly compact in a real or complex normed
+space and `A ⊆ K`, every point in the weak closure of `A` lies in `K` and is the weak limit of a
+sequence in `A`. -/
+theorem exists_seq_tendsto_toWeakSpace_of_mem_closure_of_subset {K A : Set E}
+    (hK : IsCompact (toWeakSpace 𝕜 E '' K)) (hAK : A ⊆ K) {x : E}
+    (hx : toWeakSpace 𝕜 E x ∈ closure (toWeakSpace 𝕜 E '' A)) :
+    x ∈ K ∧ ∃ u : ℕ → E, (∀ n, u n ∈ A) ∧
+      Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) := by
+  have hsub : closure (toWeakSpace 𝕜 E '' A) ⊆ toWeakSpace 𝕜 E '' K :=
+    closure_minimal (image_mono hAK) hK.isClosed
+  have hxK : x ∈ K := (toWeakSpace 𝕜 E).injective.mem_set_image.mp (hsub hx)
+  exact ⟨hxK, exists_seq_tendsto_toWeakSpace_of_mem_closure
+    (hK.of_isClosed_subset isClosed_closure hsub) hx⟩
+
+/-- For a relatively weakly compact subset of a real or complex normed space, the weak sequential
+closure equals the weak closure. -/
+theorem seqClosure_toWeakSpace_eq_closure {A : Set E}
+    (hA : IsCompact (closure (toWeakSpace 𝕜 E '' A))) :
+    seqClosure (toWeakSpace 𝕜 E '' A) = closure (toWeakSpace 𝕜 E '' A) := by
+  refine seqClosure_subset_closure.antisymm fun w hw ↦ ?_
+  have hw' : toWeakSpace 𝕜 E ((toWeakSpace 𝕜 E).symm w) ∈ closure (toWeakSpace 𝕜 E '' A) := by
+    simpa only [LinearEquiv.apply_symm_apply] using hw
+  obtain ⟨u, hu, hlim⟩ := exists_seq_tendsto_toWeakSpace_of_mem_closure hA hw'
+  refine ⟨fun n ↦ toWeakSpace 𝕜 E (u n), fun n ↦ mem_image_of_mem _ (hu n), ?_⟩
+  simpa only [LinearEquiv.apply_symm_apply] using hlim
+
+/-- A relatively weakly compact subset of a real or complex normed space is weakly closed if and
+only if it is weakly sequentially closed. -/
+theorem isClosed_toWeakSpace_iff_isSeqClosed_of_isCompact_closure {A : Set E}
+    (hA : IsCompact (closure (toWeakSpace 𝕜 E '' A))) :
+    IsClosed (toWeakSpace 𝕜 E '' A) ↔ IsSeqClosed (toWeakSpace 𝕜 E '' A) :=
+  ⟨IsClosed.isSeqClosed, fun hseq ↦ by
+    rw [← closure_eq_iff_isClosed, ← seqClosure_toWeakSpace_eq_closure hA, hseq.seqClosure_eq]⟩
+
+/-- A subset `A` of a weakly compact set `K` in a real or complex normed space is weakly closed if
+and only if it is weakly sequentially closed. -/
+theorem isClosed_toWeakSpace_iff_isSeqClosed_of_subset {K A : Set E}
+    (hK : IsCompact (toWeakSpace 𝕜 E '' K)) (hAK : A ⊆ K) :
+    IsClosed (toWeakSpace 𝕜 E '' A) ↔ IsSeqClosed (toWeakSpace 𝕜 E '' A) :=
+  isClosed_toWeakSpace_iff_isSeqClosed_of_isCompact_closure <|
+    hK.of_isClosed_subset isClosed_closure (closure_minimal (image_mono hAK) hK.isClosed)
+
+/-- **Kaplansky's theorem.** Every weakly compact subset of a real or complex normed space is a
+Fréchet–Urysohn space in the weak topology, hence in particular a sequential space. -/
+theorem frechetUrysohnSpace_toWeakSpace_of_isCompact {K : Set E}
+    (hK : IsCompact (toWeakSpace 𝕜 E '' K)) :
+    FrechetUrysohnSpace (toWeakSpace 𝕜 E '' K) where
+  closure_subset_seqClosure s z hz := by
+    set A : Set E := toWeakSpace 𝕜 E ⁻¹' (Subtype.val '' s)
+    have hAs : toWeakSpace 𝕜 E '' A = Subtype.val '' s :=
+      (toWeakSpace 𝕜 E).surjective.image_preimage _
+    have hAK : A ⊆ K := by
+      rintro y ⟨w, -, hw⟩
+      exact (toWeakSpace 𝕜 E).injective.mem_set_image.mp (hw ▸ w.2)
+    have hz' : toWeakSpace 𝕜 E ((toWeakSpace 𝕜 E).symm z.1) ∈ closure (toWeakSpace 𝕜 E '' A) := by
+      rw [LinearEquiv.apply_symm_apply, hAs]
+      exact mem_closure_image continuous_subtype_val.continuousAt hz
+    obtain ⟨-, u, huA, hlim⟩ := exists_seq_tendsto_toWeakSpace_of_mem_closure_of_subset hK hAK hz'
+    choose v hvs hvu using fun n ↦ (huA n : toWeakSpace 𝕜 E (u n) ∈ Subtype.val '' s)
+    refine ⟨v, hvs, IsInducing.subtypeVal.tendsto_nhds_iff.2 ?_⟩
+    simpa only [Function.comp_def, hvu, LinearEquiv.apply_symm_apply] using hlim
 
 end TauCeti
