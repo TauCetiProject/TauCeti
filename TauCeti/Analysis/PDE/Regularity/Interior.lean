@@ -136,24 +136,13 @@ theorem exists_lipschitzWith_matrixBilinearForm_gradient
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) {ψ : EuclideanSpace ℝ ι → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (η : EuclideanSpace ℝ ι) :
     ∃ L : ℝ≥0, LipschitzWith L fun y => matrixBilinearForm (a y) η (∇ ψ y) := by
-  have hgc : HasCompactSupport (∇ ψ) :=
-    hψc.mono' fun x hx => by_contra fun h => hx (gradient_of_notMem_tsupport h)
   obtain ⟨Lg, hLg⟩ := (hψ.gradient_right (m := ∞) (by simp)).lipschitzWith_of_hasCompactSupport
-    hgc (by simp)
+    hψc.gradient (by simp)
   obtain ⟨N, -, -, hN⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
   obtain ⟨B, hB0, hB⟩ := exists_norm_matrixBilinearForm_le_of_gradient_ne_zero hK.continuous hψc
   -- The conormal component is the functional `⟨η, a ·⟩` evaluated at `∇ ψ`, which vanishes
   -- off `{x | ∇ ψ x ≠ 0}`, where the field is bounded.
-  have hf : LipschitzWith (K * ‖η‖₊) fun y => matrixBilinearForm (a y) η :=
-    LipschitzWith.of_dist_le_mul fun x y => by
-      rw [dist_eq_norm]
-      change ‖(matrixBilinearForm (a x) - matrixBilinearForm (a y)) η‖ ≤ _
-      calc _ ≤ ‖matrixBilinearForm (a x) - matrixBilinearForm (a y)‖ * ‖η‖ :=
-            ContinuousLinearMap.le_opNorm _ _
-        _ ≤ (K * dist x y) * ‖η‖ :=
-          mul_le_mul_of_nonneg_right (by simpa [dist_eq_norm] using hK.dist_le_mul x y)
-            (norm_nonneg η)
-        _ = _ := by push_cast; ring
+  have hf := (ContinuousLinearMap.lipschitzWith_apply η).comp hK
   let ev : (EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ :=
     (ContinuousLinearMap.apply ℝ ℝ).flip
   have hmain := ev.holderWith_comp₂_of_eq_zero
