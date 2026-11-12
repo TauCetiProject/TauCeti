@@ -226,6 +226,8 @@ the ambient space `α →ₘ[μ] E` of the couple `(L¹, L^∞)`. It is injectiv
 (`TauCeti.L1AddLinfty.toAEEqFun_injective`) and sends `f ∈ Lᵖ` to its class
 (`TauCeti.L1AddLinfty.toAEEqFun_ofLp`). -/
 def toAEEqFun : L1AddLinfty 𝕜 E μ →ₗ[𝕜] α →ₘ[μ] E where
+  -- `Ambient E μ` is by definition `α →ₘ[μ] E`, with the same additive group and module
+  -- structures (only the topology differs), so the embedding is read in `α →ₘ[μ] E` as it is.
   toFun u := ((l1Linfty 𝕜 E μ).sumSpaceEmbed u : Ambient E μ)
   map_add' := map_add _
   map_smul' := map_smul _
@@ -235,6 +237,7 @@ theorem toAEEqFun_injective : Function.Injective (toAEEqFun 𝕜 : L1AddLinfty �
 
 @[simp]
 theorem toAEEqFun_ofLp (f : Lp E p μ) : toAEEqFun 𝕜 (ofLp f : L1AddLinfty 𝕜 E μ) = f :=
+  -- As in `toAEEqFun`, an element of `Ambient E μ` is read in `α →ₘ[μ] E` by definition.
   congrArg (fun v : Ambient E μ => (v : α →ₘ[μ] E)) (sumSpaceEmbed_ofLp f)
 
 @[simp]

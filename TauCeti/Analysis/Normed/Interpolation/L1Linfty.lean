@@ -51,7 +51,17 @@ open scoped ENNReal
 namespace TauCeti.CompatibleCouple
 
 variable {𝕜 E : Type*} {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] {t : ℝ}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] {t : ℝ}
+
+/-- The cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions, in terms of `eLpNorm`. -/
+private theorem ofReal_norm_add_mul_norm {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+    (g : Lp E p μ) (h : Lp E q μ) (ht : 0 ≤ t) :
+    ENNReal.ofReal (‖g‖ + t * ‖h‖) = eLpNorm g p μ + ENNReal.ofReal t * eLpNorm h q μ := by
+  rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), ENNReal.ofReal_mul ht, Lp.norm_def,
+    Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g),
+    ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
+
+variable [NormedSpace ℝ E]
 
 /-- **The `K`-functional of `(L¹, L^∞)`.** For `t > 0` and an element `u` of `L¹ + L^∞`
 represented by `f`, `K(t, u) = ∫₀ᵗ ‖f‖*`. -/
@@ -81,9 +91,8 @@ theorem ofReal_kFunctional_l1Linfty {u : L1AddLinfty 𝕜 E μ} {f : α → E}
         ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
           ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
       _ = eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ := by
-          rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), ENNReal.ofReal_mul ht.le,
-            Lp.norm_toLp, Lp.norm_toLp, ENNReal.ofReal_toReal h₀.eLpNorm_ne_top,
-            ENNReal.ofReal_toReal h₁.eLpNorm_ne_top]
+          rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
+            eLpNorm_congr_ae h₁.coeFn_toLp]
   · -- Every decomposition `u = g + h` bounds `∫₀ᵗ ‖f‖*` by `‖g‖₁ + t ‖h‖_∞`.
     obtain ⟨g, h, hgh, hlt⟩ := (kFunctional_lt_iff ht.le).1
       (lt_add_of_pos_right ((l1Linfty 𝕜 E μ).kFunctional t u) (NNReal.coe_pos.2 hε))
@@ -96,9 +105,7 @@ theorem ofReal_kFunctional_l1Linfty {u : L1AddLinfty 𝕜 E μ} {f : α → E}
               rw [← hy]
               exact enorm_add_le (g y) (h y))
       _ = ENNReal.ofReal (‖g‖ + t * ‖h‖) := by
-          rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), ENNReal.ofReal_mul ht.le,
-            Lp.norm_def, Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g),
-            ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h),
+          rw [ofReal_norm_add_mul_norm _ _ ht.le,
             eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable g),
             eLpNorm_exponent_top (Lp.aestronglyMeasurable h),
             eLpNormEssSup_eq_essSup_enorm]
