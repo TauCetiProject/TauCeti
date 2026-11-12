@@ -405,8 +405,6 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
     generalize Λ / lam = u₁ at h1 ⊢
     generalize (β * R + γ * R ^ 2) / lam = u₂ at h2 ⊢
     generalize (C : ℝ) * n ^ 2 = m at hn2 ⊢
-    have hexp : (m + C + 1) * (1 + (u₁ + u₂)) =
-        m * u₁ + C * u₂ + 1 + (m + C + (C + 1) * u₁ + (m + 1) * u₂) := by ring
     linarith [mul_nonneg (by linarith : (0 : ℝ) ≤ C + 1) h1,
       mul_nonneg (by linarith : 0 ≤ m + 1) h2]
   set X := R ^ 2 / lam * F with hX

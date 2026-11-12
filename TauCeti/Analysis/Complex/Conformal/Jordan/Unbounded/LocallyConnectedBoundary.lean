@@ -89,7 +89,7 @@ theorem exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_i
   refine ⟨fun z => q + (g z)⁻¹, g,
     (differentiableOn_const q).add (hgd.inv hgne), (bijOn_add_inv_image_inv_sub U).comp hgV, hgc,
     hgd, ?_, hgne, hgK, hgR, hg0⟩
-  intro z hz
+  intro z _
   simp only [add_sub_cancel_left]
   simp
 

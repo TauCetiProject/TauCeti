@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Local frames: duality with the coefficient functionals, and testing hom-bundle sections
@@ -94,6 +95,18 @@ theorem localFrameCoeff_localFrame [DecidableEq ι] (hx : x ∈ e.baseSet) (i j 
 theorem localFrameCoeff_basisAt [DecidableEq ι] (hx : x ∈ e.baseSet) (i j : ι) :
     e.localFrameCoeff I b i x (e.basisAt b hx j) = if i = j then 1 else 0 := by
   rw [← e.localFrame_apply_of_mem_baseSet b hx, localFrameCoeff_localFrame b hx]
+
+/-- If the coefficient of a section in the frame of `e` agrees near `x` with a scalar map `g` that
+has derivative `A` at `x`, then the derivative of the coefficient at `x` is `A`. -/
+theorem mvfderiv_localFrameCoeff_apply {σ : Π x : M, V x} {g : M → 𝕜}
+    {A : TangentSpace I x →L[𝕜] 𝕜} (hg : HasMFDerivAt I 𝓘(𝕜, 𝕜) g x A) (i : ι)
+    (hcoeff : (fun z ↦ e.localFrameCoeff I b i z (σ z)) =ᶠ[𝓝 x] g) (v : TangentSpace I x) :
+    mvfderiv I (LinearMap.piApply (e.localFrameCoeff I b i) σ) x v = A v := by
+  have h := (hg.congr_of_eventuallyEq hcoeff).mfderiv
+  rw [mvfderiv_apply_eq_mfderiv_apply, LinearMap.piApply_apply, h]
+  -- `tangentSpaceCast` and `fromTangentSpace` are the identity of the model space `𝕜`, so the
+  -- two sides are definitionally equal.
+  rfl
 
 variable (I) in
 /-- Over the base set of a trivialization, the trace of a fibre endomorphism is the sum of its

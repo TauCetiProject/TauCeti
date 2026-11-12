@@ -145,7 +145,7 @@ theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset
       exact ⟨min δ ε, lt_min hδ hε, ∅, empty_subset _, isPreconnected_empty, fun z hz =>
         absurd (subset_closure hz.1) (hdisj (ball_subset_ball (min_le_left _ _) hz.2))⟩
   obtain ⟨S, hSJ, hScompact, hSpre, haS, hball⟩ :=
-    hU.isJordanCurve_frontier.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball ha hε
+    hU.isJordanCurve_frontier.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball hε
   have hcancel : frontier U \ (frontier U \ S) = S := sdiff_sdiff_cancel_left hSJ
   refine hU.exists_isPreconnected_inter_ball_subset_of_arc hε (W := frontier U \ S)
     (fun z hz => ⟨hz.1, hball hz⟩) ⟨ha, haS⟩ ?_ ?_

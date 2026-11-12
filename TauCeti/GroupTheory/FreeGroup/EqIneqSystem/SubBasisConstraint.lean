@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.Basic
 public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem.Basic
+import TauCeti.GroupTheory.FreeGroup.Reduce
 
 /-!
 # Systems of equations and inequations with sub-basis constraints
@@ -142,7 +142,7 @@ theorem isConstrainedSolution_iff_toWord [DecidableEq A] (S : EqIneqSystem X A) 
     (v : X → FreeGroup A) :
     S.IsConstrainedSolution C v of ↔
       S.IsSolution v of ∧ ∀ x, ∀ p ∈ (v x).toWord, p.1 ∈ C x := by
-  simp only [isConstrainedSolution_iff, FreeGroup.mem_closure_image_of_iff_toWord]
+  simp only [isConstrainedSolution_iff, FreeGroup.mem_closure_image_of_iff]
 
 /-- The constrained solutions of the empty system are the assignments satisfying the
 constraints. -/
