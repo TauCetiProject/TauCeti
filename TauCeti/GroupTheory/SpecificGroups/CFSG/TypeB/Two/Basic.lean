@@ -76,10 +76,11 @@ The same carrier-and-Frobenius material on the branches already assembled is in
 * `TauCeti.RankTwoBLieIndex.carrierNode`: the node correspondence `Fin d.1.rank ≃ Fin 2` between the
   Bourbaki numbering of `B₂` and the numbering of the rank-two type-`C` carrier.
 * `TauCeti.RankTwoBLieIndex.AmbientGroup`: the algebraic-closure-valued points of that carrier.
-* `TauCeti.RankTwoBLieIndex.simpleRootSubgroup`: the positive simple-root subgroup at a Bourbaki
-  node.
+* `TauCeti.RankTwoBLieIndex.simpleRootSubgroup` and
+  `TauCeti.RankTwoBLieIndex.negSimpleRootSubgroup`: the positive and negative simple-root
+  subgroups at a Bourbaki node.
 * `TauCeti.RankTwoBLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex`: the character of
-  that subgroup is the corresponding simple root of the `B₂` root datum.
+  that positive subgroup is the corresponding simple root of the `B₂` root datum.
 * `TauCeti.RankTwoBLieIndex.frobenius`, `TauCeti.RankTwoBLieIndex.coe_frobenius_apply` and
   `TauCeti.RankTwoBLieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius, its entrywise
   description, and its simple-root-subgroup action formula `Frob_q (x_i(u)) = x_i(u ^ q)`.
@@ -170,6 +171,18 @@ the simple-root-subgroup action equations of this file are stated against, and u
 `TauCeti.SpStd.rootSubgroupPoints` would keep it from firing. -/
 theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inl (d.carrierNode i)) d.1.Closure :=
+  (rfl)
+
+/-- The negative simple-root subgroup at the Bourbaki-numbered node `i` of the `B₂` diagram.
+It is the carrier's numbered lowering subgroup at the node that `carrierNode` names. -/
+def negSimpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
+  SpStd.rootSubgroupPoints 1 (.inr (d.carrierNode i)) d.1.Closure
+
+/-- The negative simple-root subgroup is the carrier's numbered lowering subgroup at the
+corresponding carrier node. This unfolding equation is not a `simp` lemma, so that action
+formulas stated against `negSimpleRootSubgroup` can fire without expanding the node adapter. -/
+theorem negSimpleRootSubgroup_def (i : Fin d.1.rank) :
+    d.negSimpleRootSubgroup i = SpStd.rootSubgroupPoints 1 (.inr (d.carrierNode i)) d.1.Closure :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the `B₂` root datum.** The character
