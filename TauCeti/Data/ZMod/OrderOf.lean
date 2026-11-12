@@ -26,9 +26,9 @@ For the residue `a = 𝔑𝔭` of a prime `𝔭 ∤ ℓ` of a number field, this
 of `𝔭` in the cyclotomic extension of level `ℓ ^ r`, so the statement says that these residue
 degrees become divisible by any given power of `ℓ` along the cyclotomic tower.
 
-A residue whose order is `φ(n)` is a primitive root modulo `n`. A primitive root modulo `n` is
-one modulo every divisor of `n`, and for an odd prime `p` a primitive root modulo `p ²` is one
-modulo every power of `p`.
+For `n ≠ 0`, a residue whose order is `φ(n)` is a primitive root modulo `n`. A primitive root
+modulo `n` is one modulo every divisor of `n`, and for an odd prime `p` a primitive root modulo
+`p ²` is one modulo every power of `p`.
 
 The order of `q` modulo `n` decides which of the numbers `q ^ k - 1` are divisible by `n`: those
 with `k` a multiple of the order. Modulo a prime `p`, an element of even order `2 * m` has `m`-th
@@ -43,8 +43,9 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
   modulo `ℓ ^ r` for all large `r`.
 * `ZMod.isUnit_of_orderOf_eq_totient`, `ZMod.zpowers_eq_top_of_orderOf_eq_totient`: a residue of
   order `φ(n)` is a unit, and generates `(ℤ/n)ˣ`.
-* `ZMod.exists_orderOf_natCast_eq_totient`: if `(ℤ/n)ˣ` is cyclic, some natural number is a
-  primitive root modulo `n`.
+* `ZMod.exists_orderOf_natCast_eq_totient`: if `(ℤ/n)ˣ` is cyclic, some natural number has order
+  `φ(n)` modulo `n`, that is, is a primitive root modulo `n` when `n ≠ 0`; for `n = 0` the
+  witness is the junk value `0`.
 * `ZMod.orderOf_natCast_eq_totient_of_dvd`: a primitive root modulo `n` is a primitive root
   modulo every divisor of `n`.
 * `ZMod.orderOf_natCast_prime_pow_eq_totient`: for odd `p`, a primitive root modulo `p ²` is a
@@ -138,14 +139,25 @@ theorem isUnit_of_orderOf_eq_totient {n : ℕ} [NeZero n] {x : ZMod n}
   (orderOf_pos_iff.mp (h ▸ Nat.totient_pos.mpr (NeZero.pos n))).isUnit
 
 /-- A unit modulo `n` whose order is `φ(n)` generates `(ℤ/n)ˣ`. -/
-theorem zpowers_eq_top_of_orderOf_eq_totient {n : ℕ} [NeZero n] {u : (ZMod n)ˣ}
-    (h : orderOf u = n.totient) : Subgroup.zpowers u = ⊤ :=
-  (Subgroup.card_eq_iff_eq_top _).mp <| by
-    rw [Nat.card_zpowers, h, Nat.card_eq_fintype_card, card_units_eq_totient]
+theorem zpowers_eq_top_of_orderOf_eq_totient {n : ℕ} {u : (ZMod n)ˣ}
+    (h : orderOf u = n.totient) : Subgroup.zpowers u = ⊤ := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- `ℤˣ` is finite, so the order of `u` is positive, while `φ 0 = 0`.
+    have : Finite (ZMod 0)ˣ := inferInstanceAs (Finite ℤˣ)
+    exact absurd (h.trans Nat.totient_zero) (orderOf_pos u).ne'
+  · have : NeZero n := ⟨hn.ne'⟩
+    exact (Subgroup.card_eq_iff_eq_top _).mp <| by
+      rw [Nat.card_zpowers, h, Nat.card_eq_fintype_card, card_units_eq_totient]
 
-/-- If `(ℤ/n)ˣ` is cyclic, some natural number is a primitive root modulo `n`. -/
-theorem exists_orderOf_natCast_eq_totient {n : ℕ} [NeZero n] [IsCyclic (ZMod n)ˣ] :
+/-- If `(ℤ/n)ˣ` is cyclic, some natural number has order `φ(n)` modulo `n`, that is, is a primitive
+root modulo `n` when `n ≠ 0`. For `n = 0` the statement holds with the junk witness `g = 0`, since
+`φ 0 = 0`; it says nothing about generators of `ℤˣ`. -/
+theorem exists_orderOf_natCast_eq_totient {n : ℕ} [IsCyclic (ZMod n)ˣ] :
     ∃ g : ℕ, orderOf (g : ZMod n) = n.totient := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- `φ 0 = 0` and `0 : ℤ` has order `0`.
+    exact ⟨0, by simp [Nat.totient_zero]⟩
+  have : NeZero n := ⟨hn.ne'⟩
   obtain ⟨u, hu⟩ := isCyclic_iff_exists_orderOf_eq_natCard.mp ‹IsCyclic (ZMod n)ˣ›
   refine ⟨(u : ZMod n).val, ?_⟩
   rw [natCast_zmod_val, orderOf_units, hu, Nat.card_eq_fintype_card, card_units_eq_totient]
