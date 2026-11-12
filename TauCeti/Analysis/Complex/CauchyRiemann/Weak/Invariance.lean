@@ -8,9 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Complex.RealDeriv
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.MeasureTheory.Function.Jacobian
@@ -118,10 +116,7 @@ theorem IsWeakCauchyRiemannOn.comp_differentiableOn (h : IsWeakCauchyRiemannOn p
   refine isWeakCauchyRiemannOn_iff.2 ⟨hc, hu, _, hD, hDp, ?_⟩
   filter_upwards [hae, self_mem_ae_restrict isOpen_interior.measurableSet] with z hz hzU
   have hd := hφ.differentiableAt (hO.mem_nhds (hUO (interior_subset hzU)))
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    hd.fderiv_restrictScalars_eq_smul_deriv ℝ, hd.fderiv_restrictScalars_eq_smul_deriv ℝ,
-    smul_eq_mul, smul_eq_mul, mul_comm (1 : ℂ), mul_comm I,
-    ContinuousLinearMap.apply_mul_one_add_apply_mul_I, hz,
+  rw [hd.comp_fderiv_apply_one_add_apply_I, hz,
     ((ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply (hJ z hzU)).1 hz), smul_neg,
     ← sub_eq_add_neg]
 
@@ -166,10 +161,7 @@ theorem IsWeakCauchyRiemannOn.comp_real_mul_add (h : IsWeakCauchyRiemannOn p U' 
     hmaps
   refine isWeakCauchyRiemannOn_iff.2 ⟨hcU, hu, _, hD, hDp, ?_⟩
   filter_upwards [hae] with z hz
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    (hφ z).fderiv_restrictScalars_eq_smul_deriv ℝ, (hφ z).fderiv_restrictScalars_eq_smul_deriv ℝ,
-    smul_eq_mul, smul_eq_mul, mul_comm (1 : ℂ), mul_comm I,
-    ContinuousLinearMap.apply_mul_one_add_apply_mul_I, hz, hderiv]
+  rw [(hφ z).comp_fderiv_apply_one_add_apply_I, hz, hderiv]
   simp
 
 /-! ### Changes of the target -/
