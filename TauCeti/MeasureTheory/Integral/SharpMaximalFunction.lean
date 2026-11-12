@@ -262,7 +262,7 @@ private theorem volume_lt_enorm_le_volume_czUnion [Nonempty ι] {f : (ι → ℝ
     {t : ℝ≥0∞} (ht : t ≠ 0) :
     volume {x | t < ‖f x‖ₑ} ≤ volume (czUnion f t) := by
   refine measure_mono_ae ?_
-  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.enorm hp₀ hfp₀ ht]
+  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.eNorm hp₀ hfp₀ ht]
     with x hx (hxt : t < ‖f x‖ₑ)
   by_contra hxU
   refine (hx fun q hq hxq => hxU ?_).not_gt hxt
@@ -280,7 +280,7 @@ private theorem mul_volume_le_setLIntegral_enorm_sub {f : (ι → ℝ) → F} {t
   calc t * volume P + t * volume P = 2 * t * volume P := by ring
     _ ≤ ∫⁻ y in P, ‖f y‖ₑ := (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hp).le
     _ ≤ ∫⁻ y in P, (‖f y - a‖ₑ + ‖a‖ₑ) :=
-        lintegral_mono fun y => by simpa using enorm_add_le (f y - a) a
+        lintegral_mono fun y => by simpa using eNorm_add_le (f y - a) a
     _ = (∫⁻ y in P, ‖f y - a‖ₑ) + ‖a‖ₑ * volume P := by
         rw [lintegral_add_right _ measurable_const, setLIntegral_const]
     _ ≤ (∫⁻ y in P, ‖f y - a‖ₑ) + t * volume P := by gcongr
@@ -470,7 +470,7 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_ne_top_of_one_lt {f : (ι �
     simp_rw [g, ENNReal.mul_rpow_of_nonneg _ _ (zero_le_one.trans hp₀.le)]
     rw [lintegral_const_mul _ (hMf.pow_const _)]
     refine ENNReal.mul_ne_top (by simp) (ne_top_of_le_ne_top ?_
-      (lintegral_rpow_maximalFunction_le volume hf.enorm hp₀))
+      (lintegral_rpow_maximalFunction_le volume hf.eNorm hp₀))
     exact ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (by simp)) hfp₀
   -- Hence its layer cake integral is finite.
   have hJ : ∫⁻ t in Ioi (0 : ℝ), volume {x | ENNReal.ofReal t < g x} *
@@ -551,7 +551,7 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le {f : (ι → ℝ) → F}
   -- `f` is locally integrable, since it lies in `L^p₀` with `p₀ ≥ 1`.
   have hloc : LocallyIntegrable f := by
     have hp₀' : ENNReal.ofReal p₀ ≠ 0 := (ENNReal.ofReal_pos.2 (zero_lt_one.trans_le hp₀)).ne'
-    refine MemLp.locallyIntegrable ((eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp₀'
+    refine MemLp.locallyIntegrable ((eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp₀'
       ENNReal.ofReal_ne_top hf).2 ?_) (ENNReal.one_le_ofReal.2 hp₀)
     rw [ENNReal.toReal_ofReal (zero_le_one.trans hp₀)]
     exact hfp₀.lt_top
@@ -625,7 +625,7 @@ theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι
     Monotone.directed_le fun _ _ h => Ioo_subset_Ioo_right (by exact_mod_cast h)
   calc ∫⁻ x, ‖f x‖ₑ ^ p
       = ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ), volume {x | ENNReal.ofReal t < ‖f x‖ₑ} * w t :=
-        lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hf.enorm hp0
+        lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hf.eNorm hp0
     _ ≤ ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ), m t * w t := by
         refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioi fun t ht => ?_)
         gcongr
@@ -669,14 +669,14 @@ theorem eLpNorm_le_eLpNorm_sharpMaximalFunction [Nonempty ι] {f : (ι → ℝ) 
   have hp₀r : 1 ≤ p₀.toReal := by
     simpa using ENNReal.toReal_mono hp₀_top hp₀
   have hfp₀ : ∫⁻ x, ‖f x‖ₑ ^ p₀.toReal ≠ ∞ :=
-    (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp₀).ne' hp₀_top
+    (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp₀).ne' hp₀_top
       hf.eLpNorm_lt_top).ne
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hf.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hf.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top
       (measurable_sharpMaximalFunction volume f).aestronglyMeasurable,
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
-  simpa only [enorm_eq_self] using
+  simpa only [eNorm_eq_self] using
     lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow hf.aestronglyMeasurable hp₀r
       (ENNReal.toReal_mono hp_top hp₀p) hpr hfp₀
 

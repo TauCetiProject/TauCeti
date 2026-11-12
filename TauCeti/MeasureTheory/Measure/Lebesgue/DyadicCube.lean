@@ -328,7 +328,7 @@ theorem ae_tendsto_setLAverage_dyadicCube {g : (ι → ℝ) → ℝ≥0∞} (hg 
     have hint : ∫⁻ x, (dyadicCube 0 m).indicator g x ≠ ∞ := by
       rw [lintegral_indicator hm]
       refine ne_top_of_le_ne_top ?_ (lintegral_mono_set (dyadicCube_subset_closedBall 0 m))
-      simpa only [enorm_eq_self] using (hg.integrableOn_isCompact (isCompact_closedBall _ _)).2.ne
+      simpa only [eNorm_eq_self] using (hg.integrableOn_isCompact (isCompact_closedBall _ _)).2.ne
     filter_upwards [ae_tendsto_setLAverage_dyadicCube_of_lintegral_ne_top
       (hg.aestronglyMeasurable.aemeasurable.indicator hm) hint]
       with x hx hxm

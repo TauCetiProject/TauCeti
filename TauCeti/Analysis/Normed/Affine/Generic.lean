@@ -105,20 +105,20 @@ theorem dense_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspac
     (AffineIsometryEquiv.constVSub ℝ (Classical.arbitrary P)).toIsometryEquiv.completeSpace
   rw [genericLocus_eq_iInter]
   exact dense_iInter_of_isOpen
-    (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+    (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
     (fun i => (A i).dense_compl_of_ne_top (hA i))
 
 /-- The common complement is a countable intersection of open sets. -/
 theorem isGδ_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspace ℝ P) :
     IsGδ (genericLocus A) := by
   rw [genericLocus_eq_iInter]
-  exact IsGδ.iInter_of_isOpen (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+  exact IsGδ.iInter_of_isOpen (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
 
 /-- For a finite family, the common complement is open. -/
 theorem isOpen_genericLocus {ι : Sort*} [Finite ι] (A : ι → AffineSubspace ℝ P) :
     IsOpen (genericLocus A) := by
   rw [genericLocus_eq_iInter]
-  exact isOpen_iInter_of_finite (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+  exact isOpen_iInter_of_finite (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
 
 /-- A generic point can be chosen in any prescribed nonempty open set. -/
 theorem exists_mem_open_genericLocus {ι : Sort*} [Countable ι]

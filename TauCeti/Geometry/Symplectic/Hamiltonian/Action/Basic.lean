@@ -55,7 +55,8 @@ The action depends on the reference cylinder in general. It only depends on the 
   gives the action functional `TauCeti.SmoothTwoForm.referenceAction` relative to `γ₀`
   (`TauCeti.SmoothTwoForm.referenceAction_eq`). Choosing one reference loop in each free homotopy
   class gives the action functional on all loops admitting smooth cylinders to their reference
-  loops.
+  loops. Its first variation and critical loops are in
+  `TauCeti.Geometry.Symplectic.Hamiltonian.Action.FirstVariation`.
 
 Both area conditions hold for exact forms (`TauCeti.vanishesOnSpheres_mextDeriv`,
 `TauCeti.vanishesOnTori_mextDeriv`). Under the respective area condition, a constant loop at `x`
