@@ -61,6 +61,8 @@ interior source points with the same ambient image, intertwining the two integra
 
 * `TauCeti.IsIntegralManifold.comp_diffeomorph_of_image_range_eq`: preservation under
   explicit source model changes.
+* `TauCeti.IsIntegralManifold.comp_subtype_connectedComponent`: restriction to a source
+  connected component is a connected integral immersion.
 
 ## References
 
@@ -181,6 +183,18 @@ theorem IsIntegralManifold.comp_diffeomorph_of_image_range_eq
   · intro x
     exact ((e.isLocalDiffeomorph x).range_mfderiv_comp (K := I) (g := f) hn).trans
       (hf.range_mfderiv (e x))
+
+/-- Restricting an integral immersion to the open connected component of a source point
+gives a connected integral immersion. The source is locally connected so that its component
+is open, and its intrinsic topology is retained. -/
+theorem IsIntegralManifold.comp_subtype_connectedComponent [IsManifold J n N]
+    [LocallyConnectedSpace N] (hf : IsIntegralManifold J n D f) (hn : n ≠ 0) (x : N) :
+    let C : TopologicalSpace.Opens N := ⟨connectedComponent x, isOpen_connectedComponent⟩
+    IsIntegralManifold J n D (f ∘ (Subtype.val : C → N)) ∧ ConnectedSpace C := by
+  let C : TopologicalSpace.Opens N := ⟨connectedComponent x, isOpen_connectedComponent⟩
+  let _ : Nonempty C := ⟨⟨x, mem_connectedComponent⟩⟩
+  exact ⟨hf.comp_isLocalDiffeomorph hn isLocalDiffeomorph_subtype_val,
+    isConnected_iff_connectedSpace.mp isConnected_connectedComponent⟩
 
 end Unbundled
 

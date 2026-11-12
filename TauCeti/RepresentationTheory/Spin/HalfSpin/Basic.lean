@@ -96,8 +96,6 @@ belong to the complex theory and are not proved here.
   module `S = ⋀·W` of a maximal isotropic subspace and its splitting into the half-spin summands
   `S⁺` and `S⁻` (§20.1), and the pin and spin groups acting on it (§20.2) — the construction
   formalised here.
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 4, "The spin representation of the group" and "The half-spin summands".
 -/
 
 public section

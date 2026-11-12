@@ -95,15 +95,14 @@ theorem leaf_eq_image_connectedComponent (L : Foliation I m M k)
   let _ : IsManifold J 1 N := .of_le hm
   let C : TopologicalSpace.Opens N :=
     ⟨connectedComponent ((Equiv.ofBijective f hbij).symm x), isOpen_connectedComponent⟩
-  let _ : Nonempty C := ⟨⟨(Equiv.ofBijective f hbij).symm x, mem_connectedComponent⟩⟩
-  let _ : ConnectedSpace C := isConnected_iff_connectedSpace.mp isConnected_connectedComponent
-  have hi : IsLocalDiffeomorph J J m (Subtype.val : C → N) :=
-    TauCeti.isLocalDiffeomorph_subtype_val
-  have hparam := hf.comp_isLocalDiffeomorph (ne_of_gt (zero_lt_one.trans_le hm)) hi
+  obtain ⟨hparam, hconn⟩ := hf.comp_subtype_connectedComponent
+    (ne_of_gt (zero_lt_one.trans_le hm)) ((Equiv.ofBijective f hbij).symm x)
+  let _ : Nonempty C := hparam.nonempty
+  let _ : ConnectedSpace C := hconn
   have hhor : IsHorizontalMap J L.distribution (f ∘ (Subtype.val : C → N)) :=
     isHorizontalMap_iff_range_mfderiv_le.mpr fun z ↦ (hparam.range_mfderiv z).le
   have hfd : ContMDiff J I 1 (f ∘ (Subtype.val : C → N)) :=
-    ((hf.contMDiff).of_le hm).comp (hi.contMDiff.of_le hm)
+    hparam.contMDiff.of_le hm
   let x0 : C := ⟨(Equiv.ofBijective f hbij).symm x, mem_connectedComponent⟩
   have hx0 : (f ∘ (Subtype.val : C → N)) x0 = x := (Equiv.ofBijective f hbij).apply_symm_apply x
   have hrange := L.range_subset_leaf_of_isHorizontalMap hhor hfd x0
@@ -163,15 +162,14 @@ theorem leaf_eq_image_connectedComponent_of_coinduced (L : Foliation I m M k)
       BoundarylessManifold.isInteriorPoint⟩
   have hback := isIntegralManifold_ofTopology hf hm le_rfl L.isInvolutiveDistribution
     L.isContMDiffDistribution hinj hcover
-  let e := Equiv.ofBijective (WithTopology.ofTopology (X := M) (t := t))
-    (WithTopology.ofTopology_bijective t)
-  have he : e.symm x = WithTopology.toTopology t x :=
-    (WithTopology.ofTopology_injective t) (e.apply_symm_apply x)
+  have he : (Equiv.ofBijective (WithTopology.ofTopology (X := M) (t := t))
+      (WithTopology.ofTopology_bijective t)).symm x = WithTopology.toTopology t x :=
+    (WithTopology.ofTopology_injective t)
+      ((Equiv.ofBijective _ (WithTopology.ofTopology_bijective t)).apply_symm_apply x)
   have hleaf := L.leaf_eq_image_connectedComponent hback
     (WithTopology.ofTopology_bijective t) x
-  -- Identify the inverse of the underlying bijection with the canonical topology transfer.
-  change L.leaf x = WithTopology.ofTopology '' connectedComponent (e.symm x) at hleaf
-  simpa only [he] using hleaf
+  exact hleaf.trans (congrArg
+    (fun z : WithTopology M t ↦ WithTopology.ofTopology '' connectedComponent z) he)
 
 end Coinduced
 
