@@ -8,10 +8,6 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.LMFDB.CertificationLevel
 public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Examples
 public import TauCeti.Combinatorics.PermutationTriple.Passport.Cyclic
--- Full-label checks reduce character-list tokenization in the kernel.
-import all Init.Data.List.SplitOn.Basic
-import all Init.Data.ToString.Basic
-import all Init.Data.Repr
 
 /-!
 # The three map rows of the passport `5T1-5_5_5`
