@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Restriction
-public import TauCeti.Analysis.Normed.Operator.Compact.Pi
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Cech
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
 
@@ -32,10 +31,10 @@ This file constructs these spaces with the native holomorphic sections of the st
   (`BergmanSpace.evalCLM`) on triple overlaps, which needs no such bound; `cocycles₁` is closed and
   complete, and its membership is the native cocycle identity of section values
   (`mem_cocycles₁_iff_toSections₁`).
-* For a smaller family `W' i ⊆ W i` with the same charts, componentwise Bergman restriction is the
-  native restriction of sections (`toSections₁_restrictCochains₁`), preserves cocycles, and is a
-  compact operator when every `closure (W' i)` is compact and lies in `W i`
-  (`isCompactOperator_restrictCocycles₁`).
+* For a smaller family `W' i ⊆ W i` with the same charts, componentwise Bergman restriction
+  (`BergmanSpace.restrictPi`, `BergmanSpace.restrictPi₂`) is the native restriction of sections
+  (`toSections₁_restrictCochains₁`), preserves cocycles, and is a compact operator when every
+  `closure (W' i)` is compact and lies in `W i` (`isCompactOperator_restrictCocycles₁`).
 * For three nested families `W'' ≤ W' ≤ W` with the same charts, `compatibleTriples` is the space of
   `(ξ, ξ', η)`, with `ξ` and `ξ'` square-integrable cocycles on `W` and `W'` and `η` a
   square-integrable zero-cochain on `W''`, such that `ξ' = ξ + δη` on `W''`, with the Čech
@@ -126,61 +125,34 @@ instance completeSpace_cocycles₁ : CompleteSpace (cocycles₁ hW) :=
 
 /-! ### Restriction to a smaller family in the same charts -/
 
-/-- Componentwise restriction of zero-cochains to a smaller family in the same charts. -/
-def restrictCochains₀ (h : ∀ i, W' i ≤ W i) :
-    ((i : ι) → bergmanSpace ℂ ((e i).chartRead (W i))) →L[ℂ]
-      ((i : ι) → bergmanSpace ℂ ((e i).chartRead (W' i))) :=
-  ContinuousLinearMap.piMap fun i ↦ BergmanSpace.restrict (chartRead_mono (h i))
-
-omit hW in
-@[simp]
-theorem restrictCochains₀_apply (h : ∀ i, W' i ≤ W i)
-    (η : (i : ι) → bergmanSpace ℂ ((e i).chartRead (W i))) (i : ι) :
-    restrictCochains₀ h η i = BergmanSpace.restrict (chartRead_mono (h i)) (η i) := (rfl)
-
-omit hW in
-/-- Restricting zero-cochains to the same family is the identity. -/
-@[simp]
-theorem restrictCochains₀_refl :
-    restrictCochains₀ (e := e) (W := W) (fun _ ↦ le_rfl) = ContinuousLinearMap.id ℂ _ :=
-  ContinuousLinearMap.ext fun η ↦ funext fun i ↦ by simp
-
-omit hW in
-/-- Successive restrictions of zero-cochains agree with direct restriction. -/
-theorem restrictCochains₀_comp (h' : ∀ i, W' i ≤ W i) (h'' : ∀ i, W'' i ≤ W' i) :
-    (restrictCochains₀ h'').comp (restrictCochains₀ h') =
-      restrictCochains₀ (e := e) fun i ↦ (h'' i).trans (h' i) :=
-  ContinuousLinearMap.ext fun η ↦ funext fun i ↦
-    DFunLike.congr_fun (BergmanSpace.restrict_comp_restrict _ _) (η i)
-
 /-- Componentwise restriction of one-cochains to a smaller family in the same charts. -/
 def restrictCochains₁ (h : ∀ i, W' i ≤ W i) :
     ((i j : ι) → bergmanSpace ℂ ((e i).chartRead (W i ⊓ W j))) →L[ℂ]
       ((i j : ι) → bergmanSpace ℂ ((e i).chartRead (W' i ⊓ W' j))) :=
-  ContinuousLinearMap.piMap fun i ↦ ContinuousLinearMap.piMap fun j ↦
-    BergmanSpace.restrict (chartRead_mono (inf_le_inf (h i) (h j)))
+  BergmanSpace.restrictPi₂ fun i j ↦ chartRead_mono (inf_le_inf (h i) (h j))
 
 omit hW in
 @[simp]
 theorem restrictCochains₁_apply (h : ∀ i, W' i ≤ W i)
     (ξ : (i j : ι) → bergmanSpace ℂ ((e i).chartRead (W i ⊓ W j))) (i j : ι) :
     restrictCochains₁ h ξ i j = BergmanSpace.restrict (chartRead_mono (inf_le_inf (h i) (h j)))
-      (ξ i j) := (rfl)
+      (ξ i j) :=
+  BergmanSpace.restrictPi₂_apply _ ξ i j
 
 omit hW in
 /-- Restricting one-cochains to the same family is the identity. -/
 @[simp]
 theorem restrictCochains₁_refl :
     restrictCochains₁ (e := e) (W := W) (fun _ ↦ le_rfl) = ContinuousLinearMap.id ℂ _ :=
-  ContinuousLinearMap.ext fun ξ ↦ funext fun i ↦ funext fun j ↦ by simp
+  BergmanSpace.restrictPi₂_refl
 
 omit hW in
 /-- Successive restrictions of one-cochains agree with direct restriction. -/
-theorem restrictCochains₁_comp (h' : ∀ i, W' i ≤ W i) (h'' : ∀ i, W'' i ≤ W' i) :
+theorem restrictCochains₁_comp_restrictCochains₁ (h' : ∀ i, W' i ≤ W i)
+    (h'' : ∀ i, W'' i ≤ W' i) :
     (restrictCochains₁ h'').comp (restrictCochains₁ h') =
       restrictCochains₁ (e := e) fun i ↦ (h'' i).trans (h' i) :=
-  ContinuousLinearMap.ext fun ξ ↦ funext fun i ↦ funext fun j ↦
-    DFunLike.congr_fun (BergmanSpace.restrict_comp_restrict _ _) (ξ i j)
+  BergmanSpace.restrictPi₂_comp_restrictPi₂ _ _
 
 /-- Restricting a cocycle to a smaller family in the same charts gives a cocycle. -/
 theorem restrictCochains₁_mem_cocycles₁ (h : ∀ i, W' i ≤ W i)
@@ -214,12 +186,13 @@ theorem restrictCocycles₁_refl :
   ContinuousLinearMap.ext fun ξ ↦ Subtype.ext <| by simp
 
 /-- Successive restrictions of cocycles agree with direct restriction. -/
-theorem restrictCocycles₁_comp (h' : ∀ i, W' i ≤ W i) (hW' : ∀ i, (W' i : Set X) ⊆ (e i).source)
-    (h'' : ∀ i, W'' i ≤ W' i) (hW'' : ∀ i, (W'' i : Set X) ⊆ (e i).source) :
+theorem restrictCocycles₁_comp_restrictCocycles₁ (h' : ∀ i, W' i ≤ W i)
+    (hW' : ∀ i, (W' i : Set X) ⊆ (e i).source) (h'' : ∀ i, W'' i ≤ W' i)
+    (hW'' : ∀ i, (W'' i : Set X) ⊆ (e i).source) :
     (restrictCocycles₁ hW' h'' hW'').comp (restrictCocycles₁ hW h' hW') =
       restrictCocycles₁ hW (fun i ↦ (h'' i).trans (h' i)) hW'' :=
   ContinuousLinearMap.ext fun ξ ↦ Subtype.ext <|
-    DFunLike.congr_fun (restrictCochains₁_comp h' h'') ξ.val
+    DFunLike.congr_fun (restrictCochains₁_comp_restrictCochains₁ h' h'') ξ.val
 
 section Compact
 
@@ -231,17 +204,14 @@ operator. -/
 theorem isCompactOperator_restrictCochains₁ (hK : ∀ i, IsCompact (closure (W' i : Set X)))
     (hKW : ∀ i, closure (W' i : Set X) ⊆ W i) :
     IsCompactOperator (restrictCochains₁ (e := e) fun i ↦ subset_closure.trans (hKW i)) := by
-  apply IsCompactOperator.pi
-  intro i
-  apply IsCompactOperator.pi
-  intro j
-  have hKij : IsCompact (closure ((W' i ⊓ W' j : Opens X) : Set X)) :=
+  have hKij (i j : ι) : IsCompact (closure ((W' i ⊓ W' j : Opens X) : Set X)) :=
     (hK i).of_isClosed_subset isClosed_closure (closure_mono inter_subset_left)
-  have hKWij : closure ((W' i ⊓ W' j : Opens X) : Set X) ⊆ (W i ⊓ W j : Opens X) :=
+  have hKWij (i j : ι) : closure ((W' i ⊓ W' j : Opens X) : Set X) ⊆ (W i ⊓ W j : Opens X) :=
     fun x hx ↦ ⟨hKW i (closure_mono inter_subset_left hx),
       hKW j (closure_mono inter_subset_right hx)⟩
-  obtain ⟨hc, hsub⟩ := isCompact_closure_chartRead (inf_subset_source hW i j) hKij hKWij
-  exact (BergmanSpace.isCompactOperator_restrict (F := ℂ) hc hsub).comp_clm (proj₁ i j)
+  exact BergmanSpace.isCompactOperator_restrictPi₂ (F := ℂ)
+    (fun i j ↦ (isCompact_closure_chartRead (inf_subset_source hW i j) (hKij i j) (hKWij i j)).1)
+    fun i j ↦ (isCompact_closure_chartRead (inf_subset_source hW i j) (hKij i j) (hKWij i j)).2
 
 /-- If each `closure (W' i)` is compact and lies in `W i`, restriction of square-integrable
 cocycles is a compact operator. -/
@@ -432,12 +402,14 @@ theorem mem_cocycles₁_iff_toSections₁
   rw [toSections₁_apply, toSections₁_apply, toSections₁_apply]
 
 /-- Restriction of zero-cochains is the native restriction of their sections. -/
-theorem toSections₀_restrictCochains₀ (h : ∀ i, W' i ≤ W i)
+theorem toSections₀_restrictPi (h : ∀ i, W' i ≤ W i)
     (η : (i : ι) → bergmanSpace ℂ ((e i).chartRead (W i))) (i : ι) :
-    toSections₀ he (subset_source_of_le hW h) (restrictCochains₀ h η) i =
+    toSections₀ he (subset_source_of_le hW h)
+        (BergmanSpace.restrictPi (fun i ↦ chartRead_mono (h i)) η) i =
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.map (homOfLE (h i)).op
         (toSections₀ he hW η i) :=
-  chartSection_restrict (he i) (hW i) (h i) (η i)
+  (congrArg (chartSection (he i) _) (BergmanSpace.restrictPi_apply _ η i)).trans
+    (chartSection_restrict (he i) (hW i) (h i) (η i))
 
 /-- Restriction of one-cochains is the native restriction of their sections. -/
 theorem toSections₁_restrictCochains₁ (h : ∀ i, W' i ≤ W i)
@@ -445,7 +417,8 @@ theorem toSections₁_restrictCochains₁ (h : ∀ i, W' i ≤ W i)
     toSections₁ he (subset_source_of_le hW h) (restrictCochains₁ h ξ) i j =
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.map (homOfLE (inf_le_inf (h i) (h j))).op
         (toSections₁ he hW ξ i j) :=
-  chartSection_restrict (he i) (inf_subset_source hW i j) _ (ξ i j)
+  (congrArg (chartSection (he i) _) (restrictCochains₁_apply h ξ i j)).trans
+    (chartSection_restrict (he i) (inf_subset_source hW i j) _ (ξ i j))
 
 /-- A triple is compatible when `ξ` and `ξ'` are cocycles and the native sections satisfy
 `ξ' = ξ + δη` over each overlap `W'' i ⊓ W'' j`, with `(δη)ᵢⱼ = ηⱼ - ηᵢ`. -/

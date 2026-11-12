@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.Topology.Sets.OpenCover
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens

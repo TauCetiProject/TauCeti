@@ -18,6 +18,9 @@ The space of square-integrable holomorphic one-cocycles is closed and complete.
 Repetitions of indices are allowed, as in the full Čech complex; the differential has the convention
 `(δc)ᵢⱼₖ = cⱼₖ - cᵢₖ + cᵢⱼ` after restriction to the triple intersection.
 
+The componentwise restrictions `BergmanSpace.restrictPi` and `BergmanSpace.restrictPi₂` of singly
+and doubly indexed families of Bergman classes carry the identity, composition and compactness
+laws; the restriction of one-cochains is the doubly indexed one on pairwise intersections.
 For finite families and proper values `F` (equivalently, finite-dimensional values over `ℂ`),
 shrinking each open set relatively compactly gives a compact map on one-cochains and on the
 closed cocycle spaces. These provide analytic Banach stages for Čech arguments; they do not
@@ -33,7 +36,93 @@ public noncomputable section
 
 open TopologicalSpace Set
 
-namespace TauCeti.BergmanSpace.Cech
+namespace TauCeti.BergmanSpace
+
+/-! ### Componentwise restriction of families of Bergman classes -/
+
+section Pi
+
+variable {ι F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {U V W : ι → Opens ℂ}
+
+/-- Componentwise restriction of a family of Bergman classes to smaller open sets. -/
+def restrictPi (h : ∀ i, V i ≤ U i) :
+    ((i : ι) → bergmanSpace F (U i)) →L[ℂ] ((i : ι) → bergmanSpace F (V i)) :=
+  ContinuousLinearMap.piMap fun i ↦ restrict (h i)
+
+@[simp]
+theorem restrictPi_apply (h : ∀ i, V i ≤ U i) (u : (i : ι) → bergmanSpace F (U i)) (i : ι) :
+    restrictPi h u i = restrict (h i) (u i) := (rfl)
+
+/-- Componentwise restriction to the same family is the identity. -/
+@[simp]
+theorem restrictPi_refl :
+    restrictPi (F := F) (fun i ↦ le_refl (U i)) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun u ↦ funext fun i ↦ by simp
+
+/-- Successive componentwise restrictions agree with direct restriction. -/
+theorem restrictPi_comp_restrictPi (hVU : ∀ i, V i ≤ U i) (hWV : ∀ i, W i ≤ V i) :
+    (restrictPi (F := F) hWV).comp (restrictPi hVU) =
+      restrictPi fun i ↦ (hWV i).trans (hVU i) :=
+  ContinuousLinearMap.ext fun u ↦ funext fun i ↦
+    DFunLike.congr_fun (restrict_comp_restrict (hVU i) (hWV i)) (u i)
+
+/-- Relatively compact componentwise shrinking of a finite family gives a compact restriction,
+for proper values. -/
+theorem isCompactOperator_restrictPi [Finite ι] [ProperSpace F]
+    (hV : ∀ i, IsCompact (closure (V i : Set ℂ))) (hVU : ∀ i, closure (V i : Set ℂ) ⊆ U i) :
+    IsCompactOperator (restrictPi (F := F) fun i ↦ subset_closure.trans (hVU i)) := by
+  apply IsCompactOperator.pi
+  intro i
+  exact (isCompactOperator_restrict (F := F) (hV i) (hVU i)).comp_clm
+    (ContinuousLinearMap.proj (φ := fun i ↦ bergmanSpace F (U i)) i)
+
+end Pi
+
+section Pi₂
+
+variable {ι κ F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {U V W : ι → κ → Opens ℂ}
+
+/-- Componentwise restriction of a doubly indexed family of Bergman classes to smaller open
+sets. -/
+def restrictPi₂ (h : ∀ i j, V i j ≤ U i j) :
+    ((i : ι) → (j : κ) → bergmanSpace F (U i j)) →L[ℂ]
+      ((i : ι) → (j : κ) → bergmanSpace F (V i j)) :=
+  ContinuousLinearMap.piMap fun i ↦ restrictPi (h i)
+
+@[simp]
+theorem restrictPi₂_apply (h : ∀ i j, V i j ≤ U i j)
+    (u : (i : ι) → (j : κ) → bergmanSpace F (U i j)) (i : ι) (j : κ) :
+    restrictPi₂ h u i j = restrict (h i j) (u i j) := (rfl)
+
+/-- Componentwise restriction to the same doubly indexed family is the identity. -/
+@[simp]
+theorem restrictPi₂_refl :
+    restrictPi₂ (F := F) (fun i j ↦ le_refl (U i j)) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun u ↦ funext fun i ↦ funext fun j ↦ by simp
+
+/-- Successive componentwise restrictions of doubly indexed families agree with direct
+restriction. -/
+theorem restrictPi₂_comp_restrictPi₂ (hVU : ∀ i j, V i j ≤ U i j)
+    (hWV : ∀ i j, W i j ≤ V i j) :
+    (restrictPi₂ (F := F) hWV).comp (restrictPi₂ hVU) =
+      restrictPi₂ fun i j ↦ (hWV i j).trans (hVU i j) :=
+  ContinuousLinearMap.ext fun u ↦ funext fun i ↦
+    DFunLike.congr_fun (restrictPi_comp_restrictPi (hVU i) (hWV i)) (u i)
+
+/-- Relatively compact componentwise shrinking of a finite doubly indexed family gives a compact
+restriction, for proper values. -/
+theorem isCompactOperator_restrictPi₂ [Finite ι] [Finite κ] [ProperSpace F]
+    (hV : ∀ i j, IsCompact (closure (V i j : Set ℂ)))
+    (hVU : ∀ i j, closure (V i j : Set ℂ) ⊆ U i j) :
+    IsCompactOperator (restrictPi₂ (F := F) fun i j ↦ subset_closure.trans (hVU i j)) := by
+  apply IsCompactOperator.pi
+  intro i
+  exact (isCompactOperator_restrictPi (F := F) (hV i) (hVU i)).comp_clm
+    (ContinuousLinearMap.proj (φ := fun i ↦ (j : κ) → bergmanSpace F (U i j)) i)
+
+end Pi₂
+
+namespace Cech
 
 variable {ι F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
     {U V W : ι → Opens ℂ}
@@ -154,8 +243,7 @@ theorem coe_d₀₁ToCocycles₁ (c : (i : ι) → bergmanSpace F (U i)) :
 def restrictCochains₁ (h : ∀ i, V i ≤ U i) :
     ((i j : ι) → bergmanSpace F (U i ⊓ U j)) →L[ℂ]
       ((i j : ι) → bergmanSpace F (V i ⊓ V j)) :=
-  ContinuousLinearMap.piMap fun i ↦ ContinuousLinearMap.piMap fun j ↦
-    restrict (inf_le_inf (h i) (h j))
+  restrictPi₂ fun i j ↦ inf_le_inf (h i) (h j)
 
 @[simp]
 theorem restrictCochains₁_apply (h : ∀ i, V i ≤ U i)
@@ -165,19 +253,15 @@ theorem restrictCochains₁_apply (h : ∀ i, V i ≤ U i)
 /-- Restriction to the same family is the identity on one-cochains. -/
 @[simp]
 theorem restrictCochains₁_refl :
-    restrictCochains₁ (F := F) (fun i ↦ le_refl (U i)) = ContinuousLinearMap.id ℂ _ := by
-  ext c i j
-  simp only [restrictCochains₁_apply, restrict_refl, ContinuousLinearMap.id_apply]
+    restrictCochains₁ (F := F) (fun i ↦ le_refl (U i)) = ContinuousLinearMap.id ℂ _ :=
+  restrictPi₂_refl
 
 /-- Successive restrictions of one-cochains agree with direct restriction. -/
-theorem restrictCochains₁_comp (hVU : ∀ i, V i ≤ U i) (hWV : ∀ i, W i ≤ V i) :
+theorem restrictCochains₁_comp_restrictCochains₁ (hVU : ∀ i, V i ≤ U i)
+    (hWV : ∀ i, W i ≤ V i) :
     (restrictCochains₁ (F := F) hWV).comp (restrictCochains₁ hVU) =
-      restrictCochains₁ (fun i ↦ (hWV i).trans (hVU i)) := by
-  apply ContinuousLinearMap.ext
-  intro c
-  funext i j
-  exact congrArg (fun T ↦ T (c i j))
-    (restrict_comp_restrict (inf_le_inf (hVU i) (hVU j)) (inf_le_inf (hWV i) (hWV j)))
+      restrictCochains₁ (fun i ↦ (hWV i).trans (hVU i)) :=
+  restrictPi₂_comp_restrictPi₂ _ _
 
 /-- Restriction does not increase the finite-product (sup of componentwise `L²`) norm. -/
 theorem norm_restrictCochains₁_apply_le [Fintype ι] (h : ∀ i, V i ≤ U i)
@@ -231,13 +315,14 @@ theorem restrictCocycles₁_refl :
     ContinuousLinearMap.id_apply]
 
 /-- Successive restrictions of cocycles equal direct restriction. -/
-theorem restrictCocycles₁_comp (hVU : ∀ i, V i ≤ U i) (hWV : ∀ i, W i ≤ V i) :
+theorem restrictCocycles₁_comp_restrictCocycles₁ (hVU : ∀ i, V i ≤ U i)
+    (hWV : ∀ i, W i ≤ V i) :
     (restrictCocycles₁ (F := F) hWV).comp (restrictCocycles₁ hVU) =
       restrictCocycles₁ (fun i ↦ (hWV i).trans (hVU i)) := by
   apply ContinuousLinearMap.ext
   intro c
   apply Subtype.ext
-  exact congrArg (fun T ↦ T c.val) (restrictCochains₁_comp hVU hWV)
+  exact congrArg (fun T ↦ T c.val) (restrictCochains₁_comp_restrictCochains₁ hVU hWV)
 
 /-- The cocycle bonding map is a contraction for finite families. -/
 theorem norm_restrictCocycles₁_apply_le [Fintype ι] (h : ∀ i, V i ≤ U i)
@@ -250,21 +335,13 @@ variable [Finite ι] [ProperSpace F]
 theorem isCompactOperator_restrictCochains₁ (hV : ∀ i, IsCompact (closure (V i : Set ℂ)))
     (hVU : ∀ i, closure (V i : Set ℂ) ⊆ U i) :
     IsCompactOperator (restrictCochains₁ (F := F) (fun i ↦ subset_closure.trans (hVU i))) := by
-  apply IsCompactOperator.pi
-  intro i
-  apply IsCompactOperator.pi
-  intro j
-  have hK : IsCompact (closure ((V i ⊓ V j : Opens ℂ) : Set ℂ)) :=
+  have hK (i j : ι) : IsCompact (closure ((V i ⊓ V j : Opens ℂ) : Set ℂ)) :=
     (hV i).of_isClosed_subset isClosed_closure
       (closure_mono (show (V i ⊓ V j : Opens ℂ) ≤ V i from inf_le_left))
-  have hKU : closure ((V i ⊓ V j : Opens ℂ) : Set ℂ) ⊆ U i ⊓ U j :=
+  have hKU (i j : ι) : closure ((V i ⊓ V j : Opens ℂ) : Set ℂ) ⊆ U i ⊓ U j :=
     fun x hx ↦ ⟨hVU i (closure_mono inf_le_left hx),
       hVU j (closure_mono inf_le_right hx)⟩
-  let P : ((i j : ι) → bergmanSpace F (U i ⊓ U j)) →L[ℂ]
-      bergmanSpace F (U i ⊓ U j) :=
-    (ContinuousLinearMap.proj (φ := fun j ↦ bergmanSpace F (U i ⊓ U j)) j).comp
-      (ContinuousLinearMap.proj (φ := fun i ↦ (j : ι) → bergmanSpace F (U i ⊓ U j)) i)
-  exact (BergmanSpace.isCompactOperator_restrict (F := F) hK hKU).comp_clm P
+  exact isCompactOperator_restrictPi₂ hK hKU
 
 /-- Relatively compact shrinking gives a compact operator on the closed Bergman cocycle
 spaces. This compactness assertion does not assume that the coboundary range is closed. -/
@@ -274,4 +351,6 @@ theorem isCompactOperator_restrictCocycles₁ (hV : ∀ i, IsCompact (closure (V
   ((isCompactOperator_restrictCochains₁ hV hVU).comp_clm (cocycles₁ F U).subtypeL).codRestrict
     (fun c ↦ restrictCochains₁_mem_cocycles₁ _ c.property) isClosed_cocycles₁
 
-end TauCeti.BergmanSpace.Cech
+end Cech
+
+end TauCeti.BergmanSpace
