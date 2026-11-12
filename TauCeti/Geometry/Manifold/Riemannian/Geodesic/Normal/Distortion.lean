@@ -22,7 +22,8 @@ They require neither completeness nor a curvature bound. When the manifold carri
 intrinsic Riemannian distance, the exponential map on such a ball is bi-Lipschitz with both
 constants arbitrarily close to one. The lower bound compares a path between two points of a
 smaller ball with its logarithm when the path stays in the normal neighbourhood, and with the
-distance to the boundary of the normal neighbourhood when it leaves it.
+distance to the boundary of the normal neighbourhood when it leaves it
+(`TauCeti.Manifold.IsNormalDomain.ofReal_le_enorm_add_pathELength`).
 
 The logarithm bounds are differential estimates on the image of the normal ball under the
 exponential map.
@@ -165,6 +166,24 @@ theorem exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp (p : M) {c : �
     (fun z hz ↦ (hb z (hseg hz) (b - a)).2)
   simpa [edist_dist, dist_eq_norm, norm_sub_rev, ENNReal.ofReal_mul] using hle
 
+omit [T2Space M] in
+/-- A path that starts at `exp_p v` and leaves the normal neighbourhood `exp_p '' ball 0 R` has
+length at least `R - ‖v‖`. -/
+theorem IsNormalDomain.ofReal_le_enorm_add_pathELength {p : M} {R : ℝ}
+    (hn : IsNormalDomain I M p (Metric.ball 0 R)) {v : TangentSpace I p}
+    (hv : v ∈ Metric.ball 0 R) {γ : ℝ → M} (hγ : CMDiff[Icc 0 1] 1 γ)
+    (hγ0 : γ 0 = riemannianExp I M p v) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
+    (hγt : γ t ∉ riemannianExp I M p '' Metric.ball 0 R) :
+    ENNReal.ofReal R ≤ ‖v‖ₑ + pathELength I γ 0 1 := by
+  rw [hn.image_riemannianExp_ball subset_rfl, Metric.mem_eball, not_lt, edist_comm] at hγt
+  calc ENNReal.ofReal R ≤ edist p (γ t) := hγt
+    _ ≤ edist p (γ 0) + edist (γ 0) (γ t) := edist_triangle _ _ _
+    _ ≤ ‖v‖ₑ + pathELength I γ 0 1 := by
+      gcongr
+      · rw [hγ0, hn.edist_riemannianExp_eq_of_mem_ball subset_rfl hv]
+      exact (IsRiemannianManifold.edist_le_pathELength (hγ.mono (Icc_subset_Icc_right ht.2))
+        ht.1).trans (pathELength_mono le_rfl ht.2)
+
 /-- The exponential map is antilipschitz on a sufficiently small normal ball, with any prescribed
 constant greater than one: it shrinks distances by at most that factor. Distances on the target
 are its intrinsic Riemannian distances. -/
@@ -208,19 +227,11 @@ theorem exists_isNormalDomain_ball_antilipschitzWith_riemannianExp (p : M) {c : 
     -- longer than `2 R / 3`, while `v` and `w` are closer than that.
     push Not at hγU
     obtain ⟨t, ht, hγt⟩ := hγU
-    rw [hn.image_riemannianExp_ball subset_rfl, Metric.mem_eball, not_lt, edist_comm] at hγt
     have hvR : ‖v‖ₑ ≤ ENNReal.ofReal (R / 3) := by
       rw [← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (mem_ball_zero_iff.1 hv).le
     have hlen : ENNReal.ofReal R ≤ ENNReal.ofReal (R / 3) + pathELength I γ 0 1 :=
-      calc ENNReal.ofReal R ≤ edist p (γ t) := hγt
-        _ ≤ edist p (γ 0) + edist (γ 0) (γ t) := edist_triangle _ _ _
-        _ ≤ ENNReal.ofReal (R / 3) + pathELength I γ 0 1 := by
-          gcongr
-          · rw [hγ0, hn.edist_riemannianExp_eq_of_mem_ball subset_rfl (hsub hv)]
-            exact hvR
-          exact (IsRiemannianManifold.edist_le_pathELength (hγ.mono (Icc_subset_Icc_right ht.2))
-            ht.1).trans (pathELength_mono le_rfl ht.2)
+      (hn.ofReal_le_enorm_add_pathELength (hsub hv) hγ hγ0 ht hγt).trans (by gcongr)
     have hR3 : ENNReal.ofReal R = ENNReal.ofReal (R / 3) + ENNReal.ofReal (2 * R / 3) := by
       rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
       ring_nf

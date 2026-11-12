@@ -52,7 +52,7 @@ theorem exists_linearIsometry_eqOn_ball {A : E → F} {δ : ℝ} (hδ : 0 < δ)
   have hs₁ (v : E) : s v ≤ 1 :=
     (div_le_one (by positivity)).2 (le_add_of_nonneg_left (norm_nonneg v))
   have hmem {v : E} {u : ℝ} (hu₀ : 0 ≤ u) (hu : u ≤ s v) : u • v ∈ Metric.ball 0 δ := by
-    rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg hu₀]
+    simp only [mem_ball_zero_iff, norm_smul, Real.norm_eq_abs, abs_of_nonneg hu₀]
     calc u * ‖v‖ ≤ s v * ‖v‖ := by gcongr
       _ < δ := by
         rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
@@ -73,9 +73,8 @@ theorem exists_linearIsometry_eqOn_ball {A : E → F} {δ : ℝ} (hδ : 0 < δ)
     refine Isometry.of_dist_eq fun v w ↦ ?_
     have hu₀ : 0 < min (s v) (s w) := lt_min (hs₀ v) (hs₀ w)
     rw [hB hu₀ (min_le_left _ _), hB hu₀ (min_le_right _ _), dist_smul₀,
-      hdist _ (hmem hu₀.le (min_le_left _ _)) _ (hmem hu₀.le (min_le_right _ _)),
-      dist_smul₀, ← mul_assoc, Real.norm_of_nonneg (inv_nonneg.2 hu₀.le),
-      Real.norm_of_nonneg hu₀.le, inv_mul_cancel₀ hu₀.ne', one_mul]
+      hdist _ (hmem hu₀.le (min_le_left _ _)) _ (hmem hu₀.le (min_le_right _ _))]
+    simp [dist_smul₀, abs_of_pos hu₀, hu₀.ne']
   have hB0 : B 0 = 0 := by
     have h0 := Metric.mem_ball_self (x := (0 : E)) hδ
     rw [hBA h0, ← zero_smul ℝ (0 : E), hsmul 0 h0 0 ⟨le_rfl, zero_le_one⟩, zero_smul]
