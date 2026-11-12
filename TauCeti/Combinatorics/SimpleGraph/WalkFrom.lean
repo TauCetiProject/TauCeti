@@ -66,6 +66,7 @@ theorem IsWalkFrom.apply_zero {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom
 
 /-- A walk extended by one vertex is a walk exactly when the new vertex is adjacent to the old
 endpoint. -/
+@[simp]
 theorem isWalkFrom_snoc {m : ℕ} (s : Fin (m + 1) → V) (y : V) :
     IsWalkFrom G v₀ (Fin.snoc s y : Fin (m + 2) → V) ↔
       IsWalkFrom G v₀ s ∧ G.Adj (s (Fin.last m)) y := by
@@ -92,14 +93,15 @@ carry the same vertex, to another neighbour of that vertex gives a walk. -/
 theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
     {a b c : Fin (m + 1)} (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val) (hac : s a = s c)
     {x : V} (hx : G.Adj (s a) x) : IsWalkFrom G v₀ (update s b x) := by
-  refine ⟨by rw [update_of_ne (by rintro rfl; simp at hab)]; exact hs.1, fun i ↦ ?_⟩
+  refine ⟨by rw [update_of_ne (Fin.ne_of_val_ne (by rw [Fin.val_zero]; omega))]; exact hs.1,
+    fun i ↦ ?_⟩
   by_cases h₁ : i.succ = b
   · have ha : i.castSucc = a := Fin.ext (by simp [← h₁] at hab ⊢; omega)
-    rw [h₁, update_self, update_of_ne (by rw [ha]; exact fun h ↦ by simp [h] at hab), ha]
+    rw [h₁, update_self, update_of_ne (by rw [ha]; exact Fin.ne_of_val_ne (by omega)), ha]
     exact hx
   by_cases h₂ : i.castSucc = b
   · have hc : i.succ = c := Fin.ext (by simp [← h₂] at hbc ⊢; omega)
-    rw [h₂, update_self, update_of_ne (by rw [hc]; exact fun h ↦ by simp [h] at hbc), hc,
+    rw [h₂, update_self, update_of_ne (by rw [hc]; exact Fin.ne_of_val_ne (by omega)), hc,
       ← hac]
     exact hx.symm
   · rw [update_of_ne h₁, update_of_ne h₂]

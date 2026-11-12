@@ -197,6 +197,6 @@ theorem prod_fin_snoc {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, Fintype (α
     [CommMonoid M] (f : (∀ i, α i) → M) :
     ∏ s, f s = ∏ t : ∀ i : Fin n, α i.castSucc, ∏ y : α (Fin.last n), f (Fin.snoc t y) := by
   rw [← (Fin.snocEquiv α).prod_comp, Fintype.prod_prod_type, prod_comm]
-  rfl
+  simp only [Fin.snocEquiv_apply]
 
 end Fintype

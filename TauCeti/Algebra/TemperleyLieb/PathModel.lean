@@ -147,8 +147,8 @@ theorem pathGenerator_update_apply {a b c : Fin (m + 1)} (hab : a.val + 1 = b.va
     {x : V} (hx : G.Adj (s a) x) (u : Fin (m + 1) → V) :
     pathGenerator G v₀ r a b c (update s b x) u =
       if u = update s b (u b) ∧ G.Adj (s a) (u b) then r x * r (u b) / r (s a) ^ 2 else 0 := by
-  have ha : a ≠ b := fun h ↦ by simp [h] at hab
-  have hc : c ≠ b := fun h ↦ by simp [h] at hbc
+  have ha : a ≠ b := Fin.ne_of_val_ne (by omega)
+  have hc : c ≠ b := Fin.ne_of_val_ne (by omega)
   rw [pathGenerator_apply, update_of_ne ha, update_of_ne hc, update_self, update_idem]
   simp [hs.update hab hbc hac hx, hac]
 
@@ -190,10 +190,10 @@ theorem pathGenerator_zigzag_left {a b c d : Fin (m + 1)} (hab : a.val + 1 = b.v
     (hbc : b.val + 1 = c.val) (hcd : c.val + 1 = d.val) :
     pathGenerator G v₀ r a b c * pathGenerator G v₀ r b c d * pathGenerator G v₀ r a b c =
       pathGenerator G v₀ r a b c := by
-  have hab' : a ≠ b := fun h ↦ by simp [h] at hab
-  have hac : a ≠ c := fun h ↦ by simp [h] at hab hbc; omega
-  have hbd : b ≠ d := fun h ↦ by simp [h] at hbc hcd; omega
-  have hcb : c ≠ b := fun h ↦ by simp [h] at hbc
+  have hab' : a ≠ b := Fin.ne_of_val_ne (by omega)
+  have hac : a ≠ c := Fin.ne_of_val_ne (by omega)
+  have hbd : b ≠ d := Fin.ne_of_val_ne (by omega)
+  have hcb : c ≠ b := Fin.ne_of_val_ne (by omega)
   ext s v
   rw [mul_assoc, pathGenerator_mul_apply, pathGenerator_apply]
   by_cases hs : G.IsWalkFrom v₀ s ∧ s a = s c
@@ -230,10 +230,10 @@ theorem pathGenerator_zigzag_right {a b c d : Fin (m + 1)} (hab : a.val + 1 = b.
     (hbc : b.val + 1 = c.val) (hcd : c.val + 1 = d.val) :
     pathGenerator G v₀ r b c d * pathGenerator G v₀ r a b c * pathGenerator G v₀ r b c d =
       pathGenerator G v₀ r b c d := by
-  have hac : a ≠ c := fun h ↦ by simp [h] at hab hbc; omega
-  have hbc' : b ≠ c := fun h ↦ by simp [h] at hbc
-  have hdc : d ≠ c := fun h ↦ by simp [h] at hcd
-  have hdb : d ≠ b := fun h ↦ by simp [h] at hbc hcd; omega
+  have hac : a ≠ c := Fin.ne_of_val_ne (by omega)
+  have hbc' : b ≠ c := Fin.ne_of_val_ne (by omega)
+  have hdc : d ≠ c := Fin.ne_of_val_ne (by omega)
+  have hdb : d ≠ b := Fin.ne_of_val_ne (by omega)
   ext s v
   rw [mul_assoc, pathGenerator_mul_apply, pathGenerator_apply]
   by_cases hs : G.IsWalkFrom v₀ s ∧ s b = s d
@@ -581,8 +581,8 @@ private theorem pathGenerator_cond_symm {m : ℕ} {a b c : Fin (m + 1)} (hab : a
     (h : G.IsWalkFrom v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b)) :
     (G.IsWalkFrom v₀ t ∧ t a = t c ∧ s = update t b (s b) ∧ G.Adj (t a) (s b)) ∧ t a = s a := by
   obtain ⟨hs, hac, hst, hadj⟩ := h
-  have ha : t a = s a := by rw [hst, update_of_ne fun h ↦ by simp [h] at hab]
-  have hc : t c = s c := by rw [hst, update_of_ne fun h ↦ by simp [h] at hbc]
+  have ha : t a = s a := by rw [hst, update_of_ne (Fin.ne_of_val_ne (by omega))]
+  have hc : t c = s c := by rw [hst, update_of_ne (Fin.ne_of_val_ne (by omega))]
   refine ⟨⟨?_, by rw [ha, hc, hac], ?_, by rw [ha]; exact hs.adj hab⟩, ha⟩
   · rw [hst]
     exact hs.update hab hbc hac hadj
