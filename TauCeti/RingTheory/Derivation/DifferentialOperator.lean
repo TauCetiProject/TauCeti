@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.RingTheory.FilteredAlgebra.Basic
 import Mathlib.Data.Nat.Choose.Sum
+import TauCeti.RingTheory.Ideal.IsAugmentation
 
 /-!
 # Differential operators of finite order
@@ -41,6 +42,9 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
   `I ^ (m + 1) • M` into `I • N` for every ideal `I`, so the value of `D x` modulo `I` depends
   only on `x` modulo `I ^ (m + 1)`. For the vanishing ideal of a point this is the statement
   that a differential operator of order `m` factors through `m`-jets.
+  `mem_differentialOperators_iff_forall_apply_mem_smul_top` is the converse: when the points of
+  `A` separate `N`, an operator that factors through `m`-jets at every point has order at most
+  `m`.
 * `smulCommutator_pow_comp_of_mem`: the top iterated commutators of a composition multiply,
   `ad_a ^ (m + k) (P ∘ Q) = (m + k).choose m • (ad_a ^ m P ∘ ad_a ^ k Q)`. Dividing by
   factorials over a `ℚ`-algebra, this is multiplicativity of principal symbols.
@@ -385,6 +389,50 @@ theorem apply_mem_smul_top_of_mem_pow_smul_top {D : M →ₗ[R] N} {m : ℕ}
       (Submodule.smul_mem_smul ha Submodule.mem_top)
 
 end
+
+/-! ### Detecting the order at points -/
+
+section Points
+
+variable {R A M N : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module A M] [Module R M] [IsScalarTower R A M]
+  [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
+  {X : Type*} (ev : X → A →ₐ[R] R)
+
+/-- **Differential operators are detected at points.** Let the points `ev x : A →ₐ[R] R`
+separate `N`: an element of `N` lying in `ker (ev x) • N` for every `x` is zero. Then an
+`R`-linear map `D : M → N` is a differential operator of order at most `m` if and only if, for
+every point `x`, it sends `ker (ev x) ^ (m + 1) • M` into `ker (ev x) • N`, that is, the value of
+`D y` at `x` depends only on the `m`-jet of `y` at `x`. The forward implication is
+`TauCeti.apply_mem_smul_top_of_mem_pow_smul_top` and needs no points. -/
+theorem mem_differentialOperators_iff_forall_apply_mem_smul_top
+    (hsep : ∀ y : N, (∀ x, y ∈ RingHom.ker (ev x) • (⊤ : Submodule A N)) → y = 0)
+    {D : M →ₗ[R] N} {m : ℕ} :
+    D ∈ differentialOperators R A M N m ↔ ∀ x, ∀ y ∈ RingHom.ker (ev x) ^ (m + 1) •
+      (⊤ : Submodule A M), D y ∈ RingHom.ker (ev x) • (⊤ : Submodule A N) := by
+  refine ⟨fun hD x _ hy ↦ apply_mem_smul_top_of_mem_pow_smul_top hD _ hy, fun hD ↦ ?_⟩
+  induction m generalizing D with
+  | zero =>
+    refine mem_differentialOperators_zero_iff.2 fun a y ↦ sub_eq_zero.1 <| hsep _ fun x ↦ ?_
+    -- Modulo `ker (ev x)`, both `D (a • y)` and `a • D y` are `ev x a • D y`.
+    have h := hD x _ (by simpa using (ev x).smul_sub_smul_mem_smul_top a y)
+    rw [map_sub, D.map_smul] at h
+    convert sub_mem h ((ev x).smul_sub_smul_mem_smul_top a (D y)) using 1
+    abel
+  | succ m ih =>
+    refine mem_differentialOperators_succ_iff.2 fun a ↦ ih fun x y hy ↦ ?_
+    -- Replacing `a` by `a - ev x a`, which vanishes at `x`, does not change the commutator.
+    set a' := a - algebraMap R A (ev x a)
+    have ha' : a' ∈ RingHom.ker (ev x) := (ev x).sub_algebraMap_apply_mem_ker a
+    have hcomm : smulCommutator R a D y = D (a' • y) - a' • D y := by
+      simp only [smulCommutator_apply_apply, a', sub_smul, algebraMap_smul, map_sub, map_smul]
+      abel
+    rw [hcomm]
+    refine sub_mem (hD x _ ?_) (Submodule.smul_mem_smul ha' Submodule.mem_top)
+    rw [pow_succ', Submodule.mul_smul]
+    exact Submodule.smul_mem_smul ha' hy
+
+end Points
 
 /-! ### First-order operators on the algebra -/
 

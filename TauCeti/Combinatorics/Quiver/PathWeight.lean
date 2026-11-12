@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Hom.Defs
+public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 
 /-!
@@ -14,7 +16,8 @@ Mathlib's `Quiver.Path.addWeight w p` sums the weights `w e` of the arrows along
 file records its evaluation at a constant weight: a constant weight `c` sums to `p.length • c`.
 This identifies the path-length grading of a path algebra as the grading by the constant weight
 one. It also records that pushing a path along a prefunctor computes the pulled-back arrow weight,
-for both additive and multiplicative weights.
+for both additive and multiplicative weights, and that a monoid homomorphism commutes with
+multiplicative weights.
 
 ## Main results
 
@@ -22,6 +25,9 @@ for both additive and multiplicative weights.
 * `Prefunctor.addWeight_mapPath`: the weight of a pushed path is the pulled-back weight of the
   original path.
 * `Prefunctor.weight_mapPath`: the multiplicative analogue for monoid-valued weights.
+* `Quiver.Path.weight_ofAdd`: a weight valued in `Multiplicative M` is the additive weight.
+* `Quiver.Path.map_weight`: a monoid homomorphism applied to a weight is the weight of the
+  composed arrow weight.
 -/
 
 public section
@@ -40,6 +46,15 @@ theorem addWeight_const (c : M) {a b : V} (p : Quiver.Path a b) :
   induction p with
   | nil => simp
   | cons p e ih => simp [ih, succ_nsmul]
+
+/-- A monoid homomorphism sends the weight of a path to its weight for the composed arrow
+weight. -/
+theorem map_weight {N P F : Type*} [Monoid N] [Monoid P] [FunLike F N P] [MonoidHomClass F N P]
+    (f : F) (wt : ∀ {a b : V}, (a ⟶ b) → N) {a b : V} (p : Quiver.Path a b) :
+    f (p.weight wt) = p.weight fun e => f (wt e) := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
 
 end Quiver.Path
 
@@ -67,3 +82,15 @@ theorem weight_mapPath {N : Type*} [Monoid N] (φ : V ⥤q W)
   | cons p e ih => simp [ih]
 
 end Prefunctor
+
+namespace Quiver.Path
+
+/-- A multiplicative weight valued in `Multiplicative M` is the additive weight of the underlying
+additive arrow weights. -/
+theorem weight_ofAdd (w : ∀ {a b : V}, (a ⟶ b) → M) {a b : V} (p : Quiver.Path a b) :
+    p.weight (fun e => Multiplicative.ofAdd (w e)) = Multiplicative.ofAdd (p.addWeight w) := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
+
+end Quiver.Path

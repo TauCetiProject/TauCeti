@@ -69,7 +69,7 @@ theorem map_val_map_ofNat_digits {b : ℕ} [NeZero b] (hb : 2 ≤ b) (n : ℕ) :
     ((digits b n).map (Fin.ofNat b)).map Fin.val = digits b n := by
   rw [List.map_map]
   conv_rhs => rw [← List.map_id (digits b n)]
-  exact List.map_congr_left fun d hd ↦ Nat.mod_eq_of_lt (digits_lt_base hb hd)
+  exact List.map_congr_left fun d hd ↦ mod_eq_of_lt (digits_lt_base hb hd)
 
 /-- **Short redundant words cover a doubled radix interval.** For `n ≥ 1`, every `z ≤ 2 b ^ n` is
 the base-`b` value, read least significant digit first, of a word of length exactly `n` with digits
@@ -78,18 +78,18 @@ word of length `n`. -/
 theorem exists_length_eq_ofDigits_eq_of_le_two_mul_pow {b n z : ℕ} (hn : 0 < n)
     (hz : z ≤ 2 * b ^ n) :
     ∃ w : List (Fin (2 * b + 1)), w.length = n ∧ ofDigits b (w.map Fin.val) = z := by
-  induction n, hn using Nat.le_induction generalizing z with
-  | base => exact ⟨[⟨z, by simpa using Nat.lt_succ_of_le hz⟩], rfl, ofDigits_singleton⟩
-  | succ n hn ih =>
+  induction n, hn using le_induction generalizing z with
+  | base => exact ⟨[⟨z, by simpa using lt_succ_of_le hz⟩], rfl, ofDigits_singleton⟩
+  | succ n _ ih =>
     -- Split off the last digit `z % b`; the quotient `z / b` is at most `2 b ^ n`.
     obtain ⟨w, hw, hwz⟩ := ih (z := z / b) (Nat.div_le_of_le_mul (hz.trans_eq (by ring)))
     have hr : z % b < 2 * b + 1 := by
-      rcases Nat.eq_zero_or_pos b with rfl | hb
+      rcases eq_zero_or_pos b with rfl | hb
       · simp_all
-      · have := Nat.mod_lt z hb
+      · have := mod_lt z hb
         omega
     refine ⟨⟨z % b, hr⟩ :: w, by simp [hw], ?_⟩
-    rw [List.map_cons, ofDigits_cons, hwz, Nat.mod_add_div]
+    rw [List.map_cons, ofDigits_cons, hwz, mod_add_div]
 
 /-- The digit sum of `j + b * y`, for a digit `j < b`, is `j` plus the digit sum of `y`. -/
 theorem sum_digits_add_mul {b j : ℕ} (hj : j < b) (y : ℕ) :
@@ -147,7 +147,7 @@ theorem sub_one_mul_sum_div_pow_succ_eq_sub_sum_digits {b f a : ℕ} (ha : a < b
   congr 1
   refine (sum_subset (range_subset_range.2 (log_lt_of_lt_pow ha0 ha)) fun j _ hj => ?_).symm
   rw [mem_range, not_lt] at hj
-  exact Nat.div_eq_of_lt <| (lt_pow_succ_log_self hb a).trans_le <|
+  exact div_eq_of_lt <| (lt_pow_succ_log_self hb a).trans_le <|
     Nat.pow_le_pow_right (by omega) (by omega)
 
 /-- **Multiplication by `b ^ i` shifts digits cyclically modulo `b ^ (i + k) - 1`.** For
@@ -160,21 +160,21 @@ theorem pow_mul_mod_pow_add_sub_one {b i k a : ℕ} (ha : a < b ^ (i + k) - 1) :
   generalize b ^ k = w at ha ⊢
   have hw : w ≠ 0 := by rintro rfl; simp at ha
   have hA : a / w < u := Nat.div_lt_of_lt_mul (by rw [mul_comm]; omega)
-  have hB : a % w < w := Nat.mod_lt _ (Nat.pos_of_ne_zero hw)
-  rw [← Nat.div_add_mod a w] at ha ⊢
-  rw [Nat.mul_add_div (Nat.pos_of_ne_zero hw), Nat.mul_add_mod_self_left,
-    Nat.div_eq_of_lt hB, Nat.mod_eq_of_lt hB, add_zero]
+  have hB : a % w < w := mod_lt _ (Nat.pos_of_ne_zero hw)
+  rw [← div_add_mod a w] at ha ⊢
+  rw [mul_add_div (Nat.pos_of_ne_zero hw), mul_add_mod_self_left,
+    div_eq_of_lt hB, mod_eq_of_lt hB, add_zero]
   generalize a / w = A at *
   generalize a % w = B at *
   -- Write `u = A + 1 + X` and `w = B + 1 + Y`; then `a < u w - 1` says `X` or `Y` is positive.
   obtain ⟨X, rfl⟩ : ∃ X, u = A + 1 + X := ⟨u - 1 - A, by omega⟩
   obtain ⟨Y, rfl⟩ : ∃ Y, w = B + 1 + Y := ⟨w - 1 - B, by omega⟩
-  have h1 : 1 ≤ (A + 1 + X) * (B + 1 + Y) := Nat.one_le_iff_ne_zero.2 (by positivity)
+  have h1 : 1 ≤ (A + 1 + X) * (B + 1 + Y) := one_le_iff_ne_zero.2 (by positivity)
   have key : (A + 1 + X) * ((B + 1 + Y) * A + B) =
       (A + (A + 1 + X) * B) + ((A + 1 + X) * (B + 1 + Y) - 1) * A := by
     zify [h1]
     ring
-  rw [key, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt]
+  rw [key, add_mul_mod_self_left, mod_eq_of_lt]
   rw [Nat.lt_sub_iff_add_lt] at ha ⊢
   rcases Y with _ | Y
   · rcases X with _ | X
@@ -192,7 +192,7 @@ theorem sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits {b f a : ℕ} (ha : a < b 
   have hb : 1 < b := by
     by_contra hb
     interval_cases b <;> rcases f with _ | f <;> simp at ha
-  have hN : b ^ f = (b ^ f - 1) + 1 := by have := Nat.one_le_pow f b (by omega); omega
+  have hN : b ^ f = (b ^ f - 1) + 1 := by have := one_le_pow f b (by omega); omega
   generalize b ^ f - 1 = N at ha hN ⊢
   -- Each shift is `b ^ i * a` minus `N` times the quotient of `a` by `b ^ (f - i)`.
   have hterm (i : ℕ) (hi : i ∈ range f) :
@@ -202,7 +202,7 @@ theorem sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits {b f a : ℕ} (ha : a < b 
     rw [show b ^ (i + k) - 1 = N by omega] at hmod
     rw [show i + k - 1 - i + 1 = k by rw [mem_range] at hi; omega, hmod]
     have hNz : ((b : ℤ) ^ i * b ^ k) = N + 1 := by rw [← pow_add]; exact_mod_cast hN
-    conv_rhs => rw [← Nat.div_add_mod a (b ^ k)]
+    conv_rhs => rw [← div_add_mod a (b ^ k)]
     generalize a / b ^ k = A
     generalize a % b ^ k = B
     zify
@@ -233,16 +233,16 @@ theorem sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits_div_mul {b f m t : ℕ}
   obtain ⟨d, hd⟩ := hm
   have hm0 : 0 < m := by omega
   rw [hd, Nat.mul_div_cancel_left _ hm0]
-  rcases Nat.eq_zero_or_pos d with rfl | hd0
+  rcases eq_zero_or_pos d with rfl | hd0
   · -- If `b ^ f - 1 = 0` then `b ≤ 1` or `f = 0`, and both sides vanish.
     have : b - 1 = 0 ∨ f = 0 := by
       by_contra h
-      have := Nat.le_self_pow (by omega : f ≠ 0) b
+      have := le_self_pow (by omega : f ≠ 0) b
       omega
     rcases this with h | rfl <;> simp [*]
   have h := sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits (a := d * t) (b := b) (f := f)
-    (by rw [hd, mul_comm m d]; exact Nat.mul_lt_mul_of_pos_left ht hd0)
-  simp_rw [hd, mul_comm m d, mul_left_comm _ d t, Nat.mul_mod_mul_left, ← mul_sum,
+    (by rw [hd, mul_comm m d]; exact mul_lt_mul_of_pos_left ht hd0)
+  simp_rw [hd, mul_comm m d, mul_left_comm _ d t, mul_mod_mul_left, ← mul_sum,
     mul_left_comm _ d, mul_assoc d m] at h
   exact Nat.eq_of_mul_eq_mul_left hd0 h
 
@@ -256,6 +256,6 @@ example : ¬ ∃ w : List (Fin 5), w.length = 0 ∧ ofDigits 2 (w.map Fin.val) =
 -- Zero has a representation at every positive prescribed length.
 example {n : ℕ} (hn : 0 < n) :
     ∃ w : List (Fin 5), w.length = n ∧ ofDigits 2 (w.map Fin.val) = 0 :=
-  exists_length_eq_ofDigits_eq_of_le_two_mul_pow (b := 2) hn (Nat.zero_le _)
+  exists_length_eq_ofDigits_eq_of_le_two_mul_pow (b := 2) hn (zero_le _)
 
 end Nat

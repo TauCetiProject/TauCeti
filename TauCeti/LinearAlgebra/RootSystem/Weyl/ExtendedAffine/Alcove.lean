@@ -59,6 +59,8 @@ isomorphism `Ω ≃ P∨ / Q∨` (`RootPairing.fundamentalAlcoveStabilizerEquivQ
 * `RootPairing.affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot`: `Ω ∩ W_aff` is
   trivial, and `RootPairing.fundamentalAlcoveStabilizerToQuotient_injective`: `Ω → P∨ / Q∨` is
   injective.
+* `RootPairing.fundamentalAlcoveStabilizer_apply_zero_injective`: an element of `Ω` is
+  determined by its translation part `ω 0`.
 
 ## References
 
@@ -109,6 +111,13 @@ theorem mem_fundamentalAlcoveStabilizer {f : N ≃ᵃ[R] N} :
 /-- The stabilizer of the fundamental alcove is a subgroup of the extended affine Weyl group. -/
 theorem fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup :
     P.fundamentalAlcoveStabilizer b ≤ P.extendedAffineWeylGroup := fun _ hf ↦ hf.1
+
+variable {P} in
+/-- The translation part `ω 0` of an element of `Ω` lies in the coweight lattice. -/
+theorem apply_zero_mem_coweightLattice (ω : P.fundamentalAlcoveStabilizer b) :
+    ω.1 0 ∈ P.coweightLattice :=
+  (P.mem_extendedAffineWeylGroup_iff.1
+    (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b ω.2)).2
 
 end Definition
 
@@ -209,6 +218,16 @@ theorem fundamentalAlcoveStabilizerToQuotient_injective :
     Function.Injective (P.fundamentalAlcoveStabilizerToQuotient b) := by
   rw [← MonoidHom.ker_eq_bot_iff, ker_fundamentalAlcoveStabilizerToQuotient,
     affineWeylGroup_subgroupOf_fundamentalAlcoveStabilizer_eq_bot]
+
+/-- **An element of `Ω` is determined by its translation part** `ω 0`. -/
+theorem fundamentalAlcoveStabilizer_apply_zero_injective :
+    Function.Injective fun ω : P.fundamentalAlcoveStabilizer b ↦ ω.1 0 := by
+  -- Even the class of `ω 0` modulo the coroot lattice determines `ω`.
+  intro ω₁ ω₂ h
+  refine fundamentalAlcoveStabilizerToQuotient_injective b ?_
+  simp only [fundamentalAlcoveStabilizerToQuotient_apply]
+  congr 2
+  exact Subtype.ext h
 
 /-! ### `W_ext = W_aff ⊔ Ω`, and `Ω → P∨ / Q∨` is onto -/
 

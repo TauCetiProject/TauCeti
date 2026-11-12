@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import Mathlib.Probability.Distributions.Binomial
 
 /-!
@@ -118,23 +118,34 @@ private lemma measureReal_Ici_binomial (n : ℕ) (p : unitInterval) : ∀ m : �
     rw [measureReal_Ici_binomial_succ, ih hmn', Nat.cast_add, Nat.cast_one, hsub_succ]
     linear_combination hstep
 
-/-- **The binomial tail is a regularized incomplete beta value.** For `m ≤ n` the mass that
-`Bin(n, p)` puts on `{k | m ≤ k}` is `I_p(m, n - m + 1)`.
+/-- **The binomial tail is a regularized incomplete beta value.** The mass that
+`Bin(n, p)` puts on `{k | m ≤ k}` is `I_p(m, n - m + 1)`. For `n < m` both sides are `0`: the
+binomial law lives on `{k | k ≤ n}`, and `I_x(a, b)` takes the default value `0` for `b ≤ 0`.
 
 At `m = 0` both sides are `1`: the left-hand side because `Bin(n, p)` is a probability measure,
 the right-hand side by the boundary convention `I_x(0, b) = 1` built into
 `TauCeti.regularizedIncompleteBeta`. -/
 @[simp]
-theorem binomial_tail_eq_regularizedIncompleteBeta (hmn : m ≤ n) (p : unitInterval) :
-    Bin(n, p).real {k | m ≤ k} = regularizedIncompleteBeta m ((n : ℝ) - m + 1) (p : ℝ) :=
-  measureReal_Ici_binomial n p m hmn
+theorem binomial_tail_eq_regularizedIncompleteBeta (p : unitInterval) :
+    Bin(n, p).real {k | m ≤ k} = regularizedIncompleteBeta m ((n : ℝ) - m + 1) (p : ℝ) := by
+  rcases le_or_gt m n with hmn | hmn
+  · exact measureReal_Ici_binomial n p m hmn
+  · have hb : (n : ℝ) - m + 1 ≤ 0 := by
+      have : (n : ℝ) + 1 ≤ m := by exact_mod_cast hmn
+      linarith
+    rw [regularizedIncompleteBeta_eq_zero_of_nonpos_right hb]
+    have hae := ae_le_of_hasLaw_binomial (HasLaw.id (μ := Bin(n, p)))
+    have hsub : {k : ℕ | m ≤ k} ⊆ {k : ℕ | ¬ k ≤ n} := fun k hk => by
+      simp only [mem_ofPred_eq] at hk ⊢
+      omega
+    simp [measureReal_def, measure_mono_null hsub (ae_iff.1 hae)]
 
 /-- The classical form of the tail identity: a partial sum of binomial weights is a value of the
 regularized incomplete beta function. -/
-theorem sum_Icc_choose_mul_pow_eq_regularizedIncompleteBeta (hmn : m ≤ n) (p : unitInterval) :
+theorem sum_Icc_choose_mul_pow_eq_regularizedIncompleteBeta (p : unitInterval) :
     ∑ k ∈ Finset.Icc m n, (n.choose k : ℝ) * (p : ℝ) ^ k * (1 - p) ^ (n - k) =
       regularizedIncompleteBeta m ((n : ℝ) - m + 1) (p : ℝ) := by
-  rw [← binomial_tail_eq_regularizedIncompleteBeta hmn p,
+  rw [← binomial_tail_eq_regularizedIncompleteBeta p,
     ← integral_indicator_one (μ := Bin(n, p)) (s := {k | m ≤ k}) .of_discrete, integral_binomial,
     ← Finset.sum_subset Finset.Icc_subset_Iic_self]
   · refine Finset.sum_congr rfl fun k hk => ?_
@@ -160,7 +171,6 @@ theorem binomial_cumulative_eq_regularizedIncompleteBeta (hmn : m ≤ n) (p : un
   rcases hmn.eq_or_lt with rfl | hmn
   · have hsupport : {k : ℕ | k ≤ m} =ᵐ[Bin(m, p)] Set.univ := by
       filter_upwards [ae_le_of_hasLaw_binomial (P := Bin(m, p)) HasLaw.id] with k hk
-      apply propext
       exact iff_true_intro hk
     rw [measureReal_congr hsupport, probReal_univ, sub_self,
       regularizedIncompleteBeta_zero_left (by positivity)
@@ -171,7 +181,7 @@ theorem binomial_cumulative_eq_regularizedIncompleteBeta (hmn : m ≤ n) (p : un
     ext k
     simp only [mem_compl_iff, mem_ofPred_eq, not_le]
     omega
-  have htail := binomial_tail_eq_regularizedIncompleteBeta (m := m + 1) hmn p
+  have htail := binomial_tail_eq_regularizedIncompleteBeta (n := n) (m := m + 1) p
   have hsub_succ : (n : ℝ) - ((m : ℝ) + 1) + 1 = (n : ℝ) - m := by ring
   rw [Nat.cast_add, Nat.cast_one, hsub_succ] at htail
   have hsymm := regularizedIncompleteBeta_symm (by linarith : (0 : ℝ) < (m : ℝ) + 1) hb (p : ℝ)

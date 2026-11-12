@@ -73,12 +73,12 @@ theorem exists_isSplitFactorization_of_isUnit_det_submatrix
     have : (1 : Matrix ι₁ ι₁ R).submatrix e₁ id * A' = A.submatrix e₁ e₀ := by
       simpa only [Equiv.refl_symm, Equiv.coe_refl, A', submatrix_submatrix, Function.comp_id,
         Function.id_comp] using one_submatrix_mul e₁ (Equiv.refl ι₁) A'
-    rw [Matrix.mul_assoc, this, Matrix.nonsing_inv_mul _ hA]
+    rw [Matrix.mul_assoc, this, nonsing_inv_mul _ hA]
   have hBS : B' * S = 1 := by
     have : B' * (1 : Matrix ι₁ ι₁ R).submatrix id f₁ = B.submatrix f₂ f₁ := by
       simpa only [Equiv.refl_symm, Equiv.coe_refl, B', submatrix_submatrix, Function.comp_id,
         Function.id_comp] using mul_submatrix_one (Equiv.refl ι₁) f₁ B'
-    rw [← Matrix.mul_assoc, this, Matrix.mul_nonsing_inv _ hB]
+    rw [← Matrix.mul_assoc, this, mul_nonsing_inv _ hB]
   have hBA' : B' * A' = 0 := by
     rw [← hAs, ← htB, Matrix.mul_assoc, ← Matrix.mul_assoc B, hBA, Matrix.zero_mul,
       Matrix.mul_zero]

@@ -157,7 +157,6 @@ theorem MemSobolev.laplacianResolvent {c s : ℝ} (hc : 0 < c) {f : 𝓢'(E, F)}
   have hm : m.HasTemperateGrowth := by fun_prop
   have hmb : ∃ C, ∀ ξ, ‖m ξ‖ ≤ C := by
     refine ⟨c⁻¹ + ((2 * π) ^ 2)⁻¹, fun ξ ↦ ?_⟩
-    have ha : 0 < (2 * π) ^ 2 := by positivity
     have hd : 0 < (2 * π) ^ 2 * ‖ξ‖ ^ 2 + c := by positivity
     rw [Complex.norm_real, Real.norm_of_nonneg (by positivity), ← div_eq_mul_inv,
       div_le_iff₀ hd]
