@@ -181,16 +181,17 @@ end Estimate
 
 section Equicontinuity
 
-variable {F ι : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
-/-- **Solutions with bounded derivatives have equicontinuous derivatives.** There is `δ > 0` with
-the following property. Let `uᵢ` be smooth solutions of `∂ₛuᵢ + Aᵢ(z) ∂ₜuᵢ = fᵢ(z)` on an open
-set `Ω ⊆ ℂ`, with `Aᵢ` differentiable and `‖Aᵢ z w - i w‖ ≤ δ ‖w‖` on `Ω`. If `‖DAᵢ‖`, `‖Dfᵢ‖`
-and `‖Duᵢ‖` are bounded on each compact subset of `Ω`, uniformly in `i`, then the derivatives
-`Duᵢ` are equicontinuous on `Ω`. -/
+/-- **Solutions with bounded derivatives have equicontinuous derivatives.** There is `δ > 0`,
+depending only on `F` and not on the index type of the family, with the following property. Let
+`uᵢ` be smooth solutions of `∂ₛuᵢ + Aᵢ(z) ∂ₜuᵢ = fᵢ(z)` on an open set `Ω ⊆ ℂ`, with `Aᵢ`
+differentiable and `‖Aᵢ z w - i w‖ ≤ δ ‖w‖` on `Ω`. If `‖DAᵢ‖`, `‖Dfᵢ‖` and `‖Duᵢ‖` are bounded
+on each compact subset of `Ω`, uniformly in `i`, then the derivatives `Duᵢ` are equicontinuous on
+`Ω`. -/
 theorem exists_pos_forall_equicontinuousOn_fderiv :
-    ∃ δ : ℝ≥0, 0 < δ ∧ ∀ ⦃Ω : Set ℂ⦄ ⦃u f : ι → ℂ → F⦄ ⦃A : ι → ℂ → F →L[ℝ] F⦄, IsOpen Ω →
-      (∀ i, ContDiffOn ℝ ∞ (u i) Ω) → (∀ i, DifferentiableOn ℝ (A i) Ω) →
+    ∃ δ : ℝ≥0, 0 < δ ∧ ∀ ⦃ι : Type*⦄ ⦃Ω : Set ℂ⦄ ⦃u f : ι → ℂ → F⦄ ⦃A : ι → ℂ → F →L[ℝ] F⦄,
+      IsOpen Ω → (∀ i, ContDiffOn ℝ ∞ (u i) Ω) → (∀ i, DifferentiableOn ℝ (A i) Ω) →
       (∀ i, ∀ z ∈ Ω, ∀ w, ‖A i z w - I • w‖ ≤ δ * ‖w‖) →
       (∀ C, IsCompact C → C ⊆ Ω → ∃ M, ∀ i, ∀ z ∈ C,
         ‖fderiv ℝ (A i) z‖ ≤ M ∧ ‖fderiv ℝ (f i) z‖ ≤ M ∧ ‖fderiv ℝ (u i) z‖ ≤ M) →
@@ -213,7 +214,7 @@ theorem exists_pos_forall_equicontinuousOn_fderiv :
     positivity
   obtain ⟨δ, hδ0, hδ⟩ := exists_eLpNorm_fderiv_fderiv_apply_le (F := F)
     (p := ((4 : ℝ≥0) : ℝ≥0∞)) (by norm_num) ENNReal.coe_ne_top
-  refine ⟨δ, hδ0, fun Ω u f A hΩ hu hA hAI hb heq x hx ↦ ?_⟩
+  refine ⟨δ, hδ0, fun ι Ω u f A hΩ hu hA hAI hb heq x hx ↦ ?_⟩
   refine EquicontinuousAt.equicontinuousWithinAt ?_ Ω
   obtain ⟨R₀, hR₀, hR₀Ω⟩ := Metric.isOpen_iff.1 hΩ x hx
   have hRΩ : closedBall x (R₀ / 2) ⊆ Ω := (closedBall_subset_ball (by linarith)).trans hR₀Ω

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 
@@ -19,10 +20,20 @@ conjugate to multiplication by `i` through a real-linear automorphism: it sends 
 one `(w₁, A w₁, …, wₙ, A wₙ)` of `A`. This is the pointwise normal form behind the reduction of a
 variable complex structure to the standard one in the vector similarity principle.
 
+On a finite-dimensional real normed space `V` there is no multiplication by `i` to compare with,
+but a real-linear `A` with `A² = -1` makes `V` a complex vector space
+(`TauCeti.AlmostComplexStructure.complexModule`), and a basis of it identifies `V` with complex
+coordinate space. This gives a real-linear isomorphism `Φ` from `V` onto the Hilbert space
+`EuclideanSpace ℂ (Fin m)` with `Φ (A v) = i Φ v`: complex coordinates in which `A` is the
+standard complex structure. Such coordinates bring a nonlinear Cauchy–Riemann equation
+`∂ₛu + J(z, u) ∂ₜu = h(z, u)` on a real target into the standard form at one point.
+
 ## Main declarations
 
 * `ContinuousLinearMap.exists_continuousLinearEquiv_comp_eq_comp_I_smul`: `A Φ₁ = Φ₁ i` for some
   real-linear automorphism `Φ₁`.
+* `ContinuousLinearMap.exists_continuousLinearEquiv_euclideanSpace_apply_eq_I_smul`: on a real
+  space, `Φ (A v) = i Φ v` for some real-linear isomorphism `Φ` onto `EuclideanSpace ℂ (Fin m)`.
 
 ## References
 
@@ -65,5 +76,30 @@ theorem exists_continuousLinearEquiv_comp_eq_comp_I_smul (A : V →L[ℝ] V)
   refine ⟨e, coe_injective (bI.ext fun ⟨i, k⟩ => ?_)⟩
   -- Both sides send `bI (i, 0)` to `bA (i, 1)` and `bI (i, 1)` to `-bA (i, 0)`.
   fin_cases k <;> simp [he, hbI₀, hbI₁, hbA', hA']
+
+section Real
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Complex coordinates for a real complex structure.** A real-linear `A` with `A² = -1` on a
+finite-dimensional real normed space `V` is multiplication by `i` in suitable complex coordinates:
+some real-linear isomorphism `Φ` from `V` onto `EuclideanSpace ℂ (Fin m)` satisfies
+`Φ (A v) = i Φ v`. -/
+theorem exists_continuousLinearEquiv_euclideanSpace_apply_eq_I_smul (A : V →L[ℝ] V)
+    (hA : ∀ v, A (A v) = -v) :
+    ∃ (m : ℕ) (Φ : V ≃L[ℝ] EuclideanSpace ℂ (Fin m)), ∀ v, Φ (A v) = I • Φ v := by
+  let JA : AlmostComplexStructure V := ⟨A.toLinearMap, by ext v; exact hA v⟩
+  let := JA.complexModule
+  have := JA.complexModule_isScalarTower
+  have : Module.Finite ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
+  -- A complex basis of `(V, A)` gives complex coordinates, which are real-linear in particular.
+  let e : V ≃ₗ[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) :=
+    (Module.finBasis ℂ V).equivFun.trans (EuclideanSpace.equiv (Fin _) ℂ).symm.toLinearEquiv
+  refine ⟨_, (e.restrictScalars ℝ).toContinuousLinearEquiv, fun v ↦ ?_⟩
+  have hv : I • v = A v := JA.complexModule_I_smul v
+  simp only [LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.restrictScalars_apply, ← hv,
+    map_smul]
+
+end Real
 
 end ContinuousLinearMap

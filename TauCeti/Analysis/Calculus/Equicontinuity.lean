@@ -29,6 +29,11 @@ subset of a finite-dimensional space, with values in a finite-dimensional space,
 derivatives `Duₙ` are equicontinuous and bounded at each point, then along a subsequence
 `Duₙ → Dv` locally uniformly, and `v` is `C¹`. Equicontinuity of the derivatives is what interior
 estimates for second derivatives provide.
+
+Equicontinuity of the derivatives does not depend on the choice of linear coordinates on the
+target: composing every map of the family with a continuous linear equivalence `Φ` composes the
+derivatives with `Φ` (`ContinuousLinearEquiv.equicontinuousOn_fderiv_comp_iff`). Interior
+estimates proved in particular coordinates therefore apply in any others.
 -/
 
 public section
@@ -116,3 +121,23 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_fderiv [FiniteDimensional �
       contDiffOn_zero.2 (hGc.congr hfd)⟩
 
 end TauCeti
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
+  [NormedSpace 𝕜 G]
+
+/-- The derivatives of a family of maps are equicontinuous exactly when those of its composites
+with a continuous linear equivalence are. -/
+theorem equicontinuousOn_fderiv_comp_iff (Φ : F ≃L[𝕜] G) {u : ι → E → F} {S : Set E} :
+    EquicontinuousOn (fun i ↦ fderiv 𝕜 (Φ ∘ u i)) S ↔
+      EquicontinuousOn (fun i ↦ fderiv 𝕜 (u i)) S := by
+  -- `D(Φ ∘ uᵢ) = T (Duᵢ)` for the equivalence `T L = Φ ∘ L` of spaces of linear maps.
+  set T := (ContinuousLinearEquiv.refl 𝕜 E).arrowCongr Φ
+  have hT : (fun i ↦ fderiv 𝕜 (Φ ∘ u i)) = (T ∘ ·) ∘ fun i ↦ fderiv 𝕜 (u i) := by
+    ext i y v
+    simp [T, Φ.comp_fderiv]
+  rw [hT, ← T.isUniformEmbedding.isUniformInducing.equicontinuousOn_iff]
+
+end ContinuousLinearEquiv
