@@ -53,6 +53,8 @@ profile `f = A - exp (k cos θ)` in place of an eigenfunction of the spherical L
 
 ## Main declarations
 
+* `TauCeti.subharmonicOn_neg_norm_sub_rpow_mul_sub_exp`: the explicit barrier is superharmonic
+  on the open cone.
 * `TauCeti.isBarrier_norm_sub_rpow_mul_sub_exp`: the explicit barrier on a set contained in a cone
   with vertex `ξ`.
 * `TauCeti.exists_isBarrier_of_exterior_cone`: a boundary point satisfying the exterior cone
@@ -128,6 +130,24 @@ private lemma deriv_deriv_exp_mul_sub_const (k A : ℝ) :
   ring
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The cosine `⟪e, y⟫ / ‖y‖` of the angle between a unit vector `e` and `y` lies in `[-1, 1]`. -/
+private lemma abs_inner_div_norm_le_one (he : ‖e‖ = 1) (y : E) : |⟪e, y⟫_ℝ / ‖y‖| ≤ 1 := by
+  simpa [he] using abs_real_inner_div_norm_mul_norm_le_one e y
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- A point of the closed cone `{⟪e, y⟫ ≤ c ‖y‖}` other than the vertex has cosine at most `c`. -/
+private lemma inner_div_norm_le_of_le_mul_norm {y : E} (hy : y ≠ 0) (h : ⟪e, y⟫_ℝ ≤ c * ‖y‖) :
+    ⟪e, y⟫_ℝ / ‖y‖ ≤ c :=
+  (div_le_iff₀ (norm_pos_iff.2 hy)).2 h
+
+/-- `k ≥ 0` whenever `0 < μ A ≤ k exp (-k)`. -/
+private lemma nonneg_of_mul_le_mul_exp_neg (hμ0 : 0 < μ) (hApos : 0 < A)
+    (hμA : μ * A ≤ k * Real.exp (-k)) : 0 ≤ k := by
+  by_contra hneg
+  have : k * Real.exp (-k) < 0 := mul_neg_of_neg_of_pos (not_le.1 hneg) (Real.exp_pos _)
+  linarith [mul_pos hμ0 hApos]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The function `y ↦ ‖y‖ ^ μ * (A - exp (k ⟪e, y⟫ / ‖y‖))` is smooth away from the origin. -/
 private lemma contDiffAt_norm_rpow_mul_sub_exp {y : E} (hy : y ≠ 0) :
     ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ μ * (A - Real.exp (k * (⟪e, y⟫_ℝ / ‖y‖)))) y := by
@@ -151,8 +171,7 @@ private lemma continuous_norm_rpow_mul_sub_exp (he : ‖e‖ = 1) (hμ0 : 0 < μ
       simpa using this.mul_const (|A| + Real.exp k)
     rw [ContinuousAt, norm_zero, Real.zero_rpow hμ0.ne', zero_mul]
     refine squeeze_zero_norm (fun y ↦ ?_) hlim
-    have ht : ⟪e, y⟫_ℝ / ‖y‖ ≤ 1 := (abs_le.1 (by
-      simpa [he] using abs_real_inner_div_norm_mul_norm_le_one e y)).2
+    have ht : ⟪e, y⟫_ℝ / ‖y‖ ≤ 1 := (abs_le.1 (abs_inner_div_norm_le_one he y)).2
     have hexp : Real.exp (k * (⟪e, y⟫_ℝ / ‖y‖)) ≤ Real.exp k :=
       Real.exp_le_exp.2 (by nlinarith)
     rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg y) _)]
@@ -160,6 +179,45 @@ private lemma continuous_norm_rpow_mul_sub_exp (he : ‖e‖ = 1) (hμ0 : 0 < μ
     rw [abs_le]
     constructor <;> nlinarith [Real.exp_pos (k * (⟪e, y⟫_ℝ / ‖y‖)), le_abs_self A, neg_abs_le A]
   · exact (contDiffAt_norm_rpow_mul_sub_exp hy).continuousAt
+
+/-- **The exterior cone barrier is superharmonic on the cone.** Let `e` be a unit vector, `c` a
+real number, `0 < μ ≤ 1`, `dim E - 1 ≤ k (1 - c)`, `exp (k c) ≤ A` and `μ A ≤ k exp (-k)`. Then
+the function `x ↦ ‖x - ξ‖ ^ μ (A - exp (k ⟪e, x - ξ⟫ / ‖x - ξ‖))` is superharmonic, that is its
+negative is subharmonic, on the open cone `{x | ⟪e, x - ξ⟫ < c ‖x - ξ‖}`. -/
+theorem subharmonicOn_neg_norm_sub_rpow_mul_sub_exp (he : ‖e‖ = 1) (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
+    (hk : (Module.finrank ℝ E : ℝ) - 1 ≤ k * (1 - c))
+    (hA : Real.exp (k * c) ≤ A) (hμA : μ * A ≤ k * Real.exp (-k)) :
+    SubharmonicOn (-fun x ↦ ‖x - ξ‖ ^ μ * (A - Real.exp (k * (⟪e, x - ξ⟫_ℝ / ‖x - ξ‖))))
+      {x | ⟪e, x - ξ⟫_ℝ < c * ‖x - ξ‖} := by
+  have hn : (1 : ℝ) ≤ Module.finrank ℝ E := by
+    have : Nontrivial E := ⟨⟨e, 0, fun h ↦ by simp [h] at he⟩⟩
+    exact_mod_cast Module.finrank_pos (R := ℝ) (M := E)
+  have hk0 : 0 ≤ k := nonneg_of_mul_le_mul_exp_neg hμ0 ((Real.exp_pos _).trans_le hA) hμA
+  -- The open cone `V = {⟪e, x - ξ⟫ < c ‖x - ξ‖}` avoids `ξ`.
+  set V : Set E := {x | ⟪e, x - ξ⟫_ℝ < c * ‖x - ξ‖} with hV_def
+  have hV : IsOpen V := isOpen_lt (by fun_prop) (by fun_prop)
+  have hξV : ∀ x ∈ V, x - ξ ≠ 0 := fun x hx h ↦ by simp [hV_def, h] at hx
+  -- `-w` has nonnegative Laplacian on `V`, by the zonal formula and the bracket estimate.
+  refine ContDiffOn.subharmonicOn_of_laplacian_nonneg (fun x hx ↦
+    ((contDiffAt_norm_rpow_mul_sub_exp (hξV x hx)).comp x
+      (contDiffAt_id.sub contDiffAt_const)).neg.contDiffWithinAt) hV fun x hx ↦ ?_
+  set y := x - ξ
+  have hy : y ≠ 0 := hξV x hx
+  have hneg : (-fun x ↦ ‖x - ξ‖ ^ μ * (A - Real.exp (k * (⟪e, x - ξ⟫_ℝ / ‖x - ξ‖)))) =
+      fun x ↦ (fun y : E ↦ ‖y‖ ^ μ * (Real.exp (k * (⟪e, y⟫_ℝ / ‖y‖)) - A)) (x + -ξ) := by
+    funext x
+    simp only [Pi.neg_apply, ← sub_eq_add_neg]
+    ring
+  have hF : ContDiffAt ℝ 2 (fun s ↦ Real.exp (k * s) - A) (⟪e, y⟫_ℝ / ‖y‖) :=
+    ((contDiffAt_const.mul contDiffAt_id).exp).sub contDiffAt_const
+  have htr := congrFun (laplacian_comp_add_right
+    (fun y : E ↦ ‖y‖ ^ μ * (Real.exp (k * (⟪e, y⟫_ℝ / ‖y‖)) - A)) (-ξ)) x
+  rw [hneg, htr, ← sub_eq_add_neg,
+    laplacian_norm_rpow_mul_comp_inner_div_norm he hy μ hF, deriv_deriv_exp_mul_sub_const,
+    deriv_exp_mul_sub_const]
+  have htc : ⟪e, y⟫_ℝ / ‖y‖ ≤ c := inner_div_norm_le_of_le_mul_norm hy (le_of_lt hx)
+  exact mul_nonneg (Real.rpow_nonneg (norm_nonneg y) _) (zonal_bracket_nonneg hn hμ0 hμ1 hk0 hk
+    hA hμA (abs_le.1 (abs_inner_div_norm_le_one he y)).1 htc)
 
 /-- **The exterior cone barrier.** Let `e` be a unit vector and `c` a real number, and suppose
 `⟪e, x - ξ⟫ < c ‖x - ξ‖` at every point `x` of `Ω`, so that `Ω` lies in the open cone of axis
@@ -171,56 +229,16 @@ theorem isBarrier_norm_sub_rpow_mul_sub_exp (he : ‖e‖ = 1) (hμ0 : 0 < μ) (
     (hA : Real.exp (k * c) < A) (hμA : μ * A ≤ k * Real.exp (-k))
     (hcone : ∀ x ∈ Ω, ⟪e, x - ξ⟫_ℝ < c * ‖x - ξ‖) :
     IsBarrier Ω ξ fun x ↦ ‖x - ξ‖ ^ μ * (A - Real.exp (k * (⟪e, x - ξ⟫_ℝ / ‖x - ξ‖))) := by
-  set g : E → ℝ := fun y ↦ ‖y‖ ^ μ * (A - Real.exp (k * (⟪e, y⟫_ℝ / ‖y‖))) with hg_def
-  have hn : (1 : ℝ) ≤ Module.finrank ℝ E := by
-    have : Nontrivial E := ⟨⟨e, 0, fun h ↦ by simp [h] at he⟩⟩
-    exact_mod_cast Module.finrank_pos (R := ℝ) (M := E)
-  have hApos : 0 < A := (Real.exp_pos _).trans hA
-  -- `k > 0`, since `0 < μ A ≤ k exp (-k)`.
-  have hk0 : 0 ≤ k := by
-    by_contra hneg
-    have : k * Real.exp (-k) < 0 := mul_neg_of_neg_of_pos (not_le.1 hneg) (Real.exp_pos _)
-    linarith [mul_pos hμ0 hApos]
-  -- `w` is the translate of `g` by `ξ`; `change` only folds the local abbreviation `g`.
-  change IsBarrier Ω ξ fun x ↦ g (x - ξ)
-  -- The open cone `V = {⟪e, x - ξ⟫ < c ‖x - ξ‖}` contains `Ω` and avoids `ξ`.
-  set V : Set E := {x | ⟪e, x - ξ⟫_ℝ < c * ‖x - ξ‖} with hV_def
-  have hV : IsOpen V := isOpen_lt (by fun_prop) (by fun_prop)
-  have hξV : ∀ x ∈ V, x - ξ ≠ 0 := fun x hx h ↦ by simp [hV_def, h] at hx
-  have hcd : ∀ x ∈ V, ContDiffAt ℝ 2 (fun x ↦ g (x - ξ)) x := fun x hx ↦
-    (contDiffAt_norm_rpow_mul_sub_exp (hξV x hx)).comp x (contDiffAt_id.sub contDiffAt_const)
-  -- `-w` has nonnegative Laplacian on `V`, by the zonal formula and the bracket estimate.
-  have hsub : SubharmonicOn (-fun x ↦ g (x - ξ)) V := by
-    refine ContDiffOn.subharmonicOn_of_laplacian_nonneg
-      (fun x hx ↦ (hcd x hx).neg.contDiffWithinAt) hV fun x hx ↦ ?_
-    set y := x - ξ
-    have hy : y ≠ 0 := hξV x hx
-    have hneg : (-fun x ↦ g (x - ξ)) =
-        fun x ↦ (fun y : E ↦ ‖y‖ ^ μ * (Real.exp (k * (⟪e, y⟫_ℝ / ‖y‖)) - A)) (x + -ξ) := by
-      funext x
-      simp only [hg_def, Pi.neg_apply, ← sub_eq_add_neg]
-      ring
-    have hF : ContDiffAt ℝ 2 (fun s ↦ Real.exp (k * s) - A) (⟪e, y⟫_ℝ / ‖y‖) :=
-      ((contDiffAt_const.mul contDiffAt_id).exp).sub contDiffAt_const
-    have htr := congrFun (laplacian_comp_add_right
-      (fun y : E ↦ ‖y‖ ^ μ * (Real.exp (k * (⟪e, y⟫_ℝ / ‖y‖)) - A)) (-ξ)) x
-    rw [hneg, htr, ← sub_eq_add_neg,
-      laplacian_norm_rpow_mul_comp_inner_div_norm he hy μ hF, deriv_deriv_exp_mul_sub_const,
-      deriv_exp_mul_sub_const]
-    have ht : |⟪e, y⟫_ℝ / ‖y‖| ≤ 1 := by
-      simpa [he] using abs_real_inner_div_norm_mul_norm_le_one e y
-    have htc : ⟪e, y⟫_ℝ / ‖y‖ ≤ c :=
-      (div_le_iff₀ (norm_pos_iff.2 hy)).2 (le_of_lt (by simpa [hV_def] using hx))
-    exact mul_nonneg (Real.rpow_nonneg (norm_nonneg y) _)
-      (zonal_bracket_nonneg hn hμ0 hμ1 hk0 hk hA.le hμA (abs_le.1 ht).1 htc)
+  have hk0 : 0 ≤ k := nonneg_of_mul_le_mul_exp_neg hμ0 ((Real.exp_pos _).trans hA) hμA
   -- On `closure Ω` the cosine is at most `c`.
   have hcl : closure Ω ⊆ {x | ⟪e, x - ξ⟫_ℝ ≤ c * ‖x - ξ‖} :=
     closure_minimal (fun x hx ↦ (hcone x hx).le) (isClosed_le (by fun_prop) (by fun_prop))
-  refine ⟨hsub.mono hcone, ((continuous_norm_rpow_mul_sub_exp he hμ0 hk0).comp
-    (continuous_id.sub continuous_const)).continuousOn,
-    by simp [hg_def, Real.zero_rpow hμ0.ne'], fun x hx hxξ ↦ ?_⟩
+  refine ⟨(subharmonicOn_neg_norm_sub_rpow_mul_sub_exp he hμ0 hμ1 hk hA.le hμA).mono hcone,
+    ((continuous_norm_rpow_mul_sub_exp he hμ0 hk0).comp
+      (continuous_id.sub continuous_const)).continuousOn,
+    by simp [Real.zero_rpow hμ0.ne'], fun x hx hxξ ↦ ?_⟩
   have hy : x - ξ ≠ 0 := sub_ne_zero.2 hxξ
-  have htc : ⟪e, x - ξ⟫_ℝ / ‖x - ξ‖ ≤ c := (div_le_iff₀ (norm_pos_iff.2 hy)).2 (hcl hx)
+  have htc : ⟪e, x - ξ⟫_ℝ / ‖x - ξ‖ ≤ c := inner_div_norm_le_of_le_mul_norm hy (hcl hx)
   refine mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.2 hy) _) (sub_pos.2 ?_)
   exact (Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left htc hk0)).trans_lt hA
 
