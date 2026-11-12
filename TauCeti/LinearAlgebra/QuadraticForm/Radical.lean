@@ -203,7 +203,7 @@ theorem nondegenerate_of_isCompl {Q : QuadraticMap R M P} {A B : Submodule R M}
     simpa only [polarBilin_apply_apply, LinearMap.zero_apply] using LinearMap.congr_fun hx y
   have ha0 : a = 0 := hAB_sep a ha fun b' hb' ↦ by
     simpa only [polar_add_left, hB.polar_eq_zero hb hb', add_zero] using hx' b'
-  have hb0 : b = 0 := hBA_sep b hb fun a' ha' ↦ by
+  have hb0 : b = 0 := hBA_sep b hb fun a' _ ↦ by
     simpa only [ha0, zero_add, polar_comm Q b a', polar_zero_left] using hx' a'
   simp [ha0, hb0]
 

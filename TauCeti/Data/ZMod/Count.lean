@@ -132,10 +132,9 @@ theorem sum_Ico_mul {A : Type*} [AddCommMonoid A] [NeZero n] (l u : ℤ) (f : �
   · rintro ⟨z, a⟩ hp
     have hz := mem_Ico.mp (mem_product.mp hp).1
     have ha := a.val_lt
-    have hn := NeZero.pos n
     simp only [mem_Ico]
     constructor <;> nlinarith
-  · rintro ⟨z, a⟩ hp ⟨w, b⟩ hq hab
+  · rintro ⟨z, a⟩ _ ⟨w, b⟩ hq hab
     have hab' := congrArg (fun k : ℤ ↦ (k : ZMod n)) hab
     simp only [Int.cast_add, Int.cast_natCast, ZMod.natCast_zmod_val, Int.cast_mul,
       ZMod.natCast_self, zero_mul, add_zero] at hab'
@@ -147,7 +146,6 @@ theorem sum_Ico_mul {A : Type*} [AddCommMonoid A] [NeZero n] (l u : ℤ) (f : �
     obtain ⟨z, hz⟩ := (ZMod.intCast_eq_iff n k (k : ZMod n)).mp rfl
     refine ⟨(z, k), mem_product.mpr ⟨?_, mem_univ _⟩, hz.symm⟩
     have ha := (k : ZMod n).val_lt
-    have hn := NeZero.pos n
     have hk := mem_Ico.mp hk
     simp only [mem_Ico]
     constructor <;> nlinarith

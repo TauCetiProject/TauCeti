@@ -369,7 +369,7 @@ private theorem sym2_eq_iff_child (hs : IsDyckPattern k s) {i j : ℕ} (hi : i <
 private theorem card_child_eq_two (hs : IsDyckPattern k s) {c : ℕ} (hc1 : 1 ≤ c)
     (hc2 : c ≤ 2 * k)
     (hcW : walkOf s c = c) : #{j ∈ range (2 * k) | child s j = c} = 2 := by
-  obtain ⟨m, hcm, hm2k, hsm, hWm⟩ := hs.exists_down hc1 hc2 hcW
+  obtain ⟨m, _, hm2k, hsm, hWm⟩ := hs.exists_down hc1 hc2 hcW
   have hup : s (c - 1) = true := by
     have h := (walkOf_succ_eq_iff s (j := c - 1)).mp
     rw [Nat.sub_add_cancel hc1] at h
@@ -379,7 +379,7 @@ private theorem card_child_eq_two (hs : IsDyckPattern k s) {c : ℕ} (hc1 : 1 �
     ext j
     simp only [mem_filter, mem_range, mem_insert, mem_singleton]
     constructor
-    · rintro ⟨hj, hjc⟩
+    · rintro ⟨_, hjc⟩
       cases hsj : s j
       · right
         simp only [child, hsj, Bool.false_eq_true, ite_false] at hjc
@@ -452,7 +452,7 @@ private theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
     ∃ i < 2 * k, w (i + 1) = i + 1 ∧ s(w j, w (j + 1)) = s(w i, i + 1) := by
   set U := {j ∈ range (2 * k) | w (j + 1) = j + 1} with hU
   set e : ℕ → Sym2 ℕ := fun j => s(w j, w (j + 1)) with he
-  set E := (range (2 * k)).image e with hE
+  set E := (range (2 * k)).image e
   have hEcard : #E = k := by
     have h1 := card_eq_sum_card_image e (range (2 * k))
     have h2 : ∑ a ∈ E, #{x ∈ range (2 * k) | e x = a} = ∑ a ∈ E, 2 := by

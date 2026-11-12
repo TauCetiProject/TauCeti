@@ -49,7 +49,9 @@ The file develops:
   applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
   `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
   (`HomogeneousSymbol.exists_norm_mixedDeriv_le`), and these mixed derivatives are homogeneous of
-  degree `m - |β|` (`HomogeneousSymbol.mixedDeriv_coefficient_smul_frequency`);
+  degree `m - |β|` (`HomogeneousSymbol.mixedDeriv_coefficient_smul_frequency`); for positive degree
+  the growth bound makes a homogeneous symbol, with its value `0` at the zero frequency,
+  continuous on all of `X × E` (`HomogeneousSymbol.continuous_coefficient`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -740,6 +742,27 @@ theorem exists_norm_coefficient_le [ProperSpace E] {K : Set X} (hK : IsCompact K
   rw [h1, norm_smul, Real.norm_of_nonneg (by positivity), mul_comm]
   exact mul_le_mul_of_nonneg_right ((hC (x, _) (mk_mem_prod hx hs)).trans (le_max_left _ _))
     (by positivity)
+
+/-- **Continuity at the zero frequency.** A homogeneous symbol of positive degree on a proper
+frequency space is bounded by `C ‖ξ‖ ^ m` near each position, so it tends to its value `0` at the
+zero frequency. It is therefore continuous on all of `X × E`, for a weakly locally compact (for
+instance finite-dimensional) space of positions. -/
+theorem continuous_coefficient [ProperSpace E] [WeaklyLocallyCompactSpace X] (hm : 0 < m) :
+    Continuous a.coefficient := by
+  refine continuous_iff_continuousAt.2 fun ⟨x, ξ⟩ ↦ ?_
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · obtain ⟨K, hK, hKx⟩ := exists_compact_mem_nhds x
+    obtain ⟨C, -, hC⟩ := a.exists_norm_coefficient_le hK
+    have hlim : Tendsto (fun q : X × E ↦ C * ‖q.2‖ ^ m) (𝓝 (x, 0)) (𝓝 0) := by
+      have hcont : Continuous fun q : X × E ↦ C * ‖q.2‖ ^ m :=
+        continuous_const.mul ((continuous_norm.comp continuous_snd).rpow_const
+          fun _ ↦ Or.inr hm.le)
+      simpa [Real.zero_rpow hm.ne'] using hcont.tendsto (x, 0)
+    rw [ContinuousAt, a.zero_covector]
+    refine squeeze_zero_norm' ?_ hlim
+    filter_upwards [prod_mem_nhds hKx univ_mem] with q hq
+    exact hC q.1 hq.1 q.2
+  · exact (a.contDiffAt_coefficient hξ).continuousAt
 
 /-- For a frequency cutoff `χ`, the cut-off term `χ(ξ) • a(x, ξ)` is smooth on the whole space,
 including the zero frequency. -/
