@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.Fourier.SineSeries
-import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.Analysis.Fourier.Uniqueness
 
 /-!
 # Fourier coefficients on an interval
@@ -119,10 +118,7 @@ theorem eqOn_Icc_of_fourierCoeffOn_eq (hab : a < b) {f g : ℝ → ℂ} (hf : Co
     (hg : ContinuousOn g [[a, b]]) (h : ∀ n, fourierCoeffOn hab f n = fourierCoeffOn hab g n) :
     EqOn f g (Icc a b) := by
   have hfg : ContinuousOn (fun t ↦ f t - g t) [[a, b]] := hf.sub hg
-  have hL2 : MemLp (fun t ↦ f t - g t) 2 (volume.restrict (Ioc a b)) :=
-    (hfg.memLp_top_restrict_of_subset_isCompact isCompact_uIcc measurableSet_Ioc
-      (Ioc_subset_Icc_self.trans Icc_subset_uIcc)).mono_exponent le_top
-  have hae := ae_eq_zero_of_forall_fourierCoeffOn_eq_zero hab hL2 fun n ↦ by
+  have hae := hfg.intervalIntegrable.1.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero hab fun n ↦ by
     rw [fourierCoeffOn_sub hab hf.intervalIntegrable hg.intervalIntegrable, h, sub_self]
   rw [uIcc_of_le hab.le] at hfg
   intro t ht
@@ -219,7 +215,6 @@ theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff 
       ((hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable _ _)
     rw [hper.iteratedDeriv j a, sub_self, mul_zero, zero_sub, ih (by omega)] at h
     have hT0 : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
-    have hc : (2 * π * I * n : ℂ) ≠ 0 := by simp [hn, Real.pi_ne_zero, I_ne_zero]
     rw [pow_succ, mul_comm _ (2 * π * I * n / T), mul_assoc, h]
     push_cast
     field_simp

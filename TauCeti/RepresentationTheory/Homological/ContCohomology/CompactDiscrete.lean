@@ -42,9 +42,6 @@ contains an open subgroup, so the vanishing holds on an open subgroup containing
 (`TauCeti.ContinuousCohomology.exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero` in
 `ClosedSubgroup.lean`). This is how cohomological statements about a closed subgroup descend to the
 open subgroups containing it.
-
-This implements the "category of the comparison" milestone of Layer 3 of the human-authored
-roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`.
 -/
 
 public section
