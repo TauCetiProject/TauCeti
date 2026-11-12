@@ -94,6 +94,15 @@ def complexHomologicalOrientation : HomologicalOrientation M ℂ 2 :=
     (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex))
     ).toHomologicalOrientation (n := 1) Complex.finrank_real_complex
 
+/-- The canonical homological orientation of a Riemann surface is the homological orientation of
+its canonical orientation, reindexed from `Fin (2 * finrank ℂ ℂ)` to `Fin 2`. -/
+theorem complexHomologicalOrientation_def :
+    complexHomologicalOrientation M =
+      ((complexManifoldOrientation ℂ M).reindex
+        (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex))
+        ).toHomologicalOrientation (n := 1) Complex.finrank_real_complex :=
+  (rfl)
+
 omit [T2Space M] in
 /-- The reindexed canonical orientation is represented by the reindexed canonical lift. -/
 private theorem reindex_complexManifoldOrientation_eq_mk :
@@ -120,7 +129,7 @@ theorem complexHomologicalOrientation_apply_of_mem_maximalAtlas
       e.localOrientationOfOrientedChart hx (Orientation.reindex ℝ ℂ
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex))
         (complexOrientation ℂ)) (n := 1) Complex.finrank_real_complex := by
-  rw [complexHomologicalOrientation, Manifold.Orientation.toHomologicalOrientation_apply,
+  rw [complexHomologicalOrientation_def, Manifold.Orientation.toHomologicalOrientation_apply,
     reindex_complexManifoldOrientation_eq_mk, localOrientationOfManifoldOrientation_mk,
     Manifold.OrientationLift.chartOrientation_eq_ite]
   simp only [Manifold.OrientationLift.reindex_sign, complexOrientationLift_sign, ite_true,
