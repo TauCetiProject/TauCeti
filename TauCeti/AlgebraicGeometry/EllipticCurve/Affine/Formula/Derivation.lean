@@ -5,8 +5,8 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 public import Mathlib.RingTheory.Derivation.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.TwoTorsion
 
 /-!
 # Derivations and the addition law on a Weierstrass curve
@@ -60,27 +60,11 @@ open WeierstrassCurve
 
 namespace WeierstrassCurve.Affine
 
-/-! ### Two formulae, and the coefficient identities
+/-! ### The coefficient identities
 
 The coefficient identities are between elements of the base field: they are the coefficients of
 `D x₁` and `D x₂` in the derivation of the sum's `x`-coordinate, computed by the chain rule from
 the addition formulae, compared with the coefficients in `derivation_addX_slope`. -/
-
-section Formula
-
-variable {K : Type*} [CommRing K] (W : WeierstrassCurve.Affine K)
-
-/-- **The difference between a point and its negative is `W_Y`**: `y - negY x y = W_Y(x, y)`. -/
-theorem sub_negY (x y : K) : y - W.negY x y = W.polynomialY.evalEval x y := by
-  rw [evalEval_polynomialY, negY]
-  ring
-
-/-- **`W_Y` does not vanish at a point which is not its own negative.** -/
-theorem evalEval_polynomialY_ne_zero_of_Y_ne {x y : K} (hy : y ≠ W.negY x y) :
-    W.polynomialY.evalEval x y ≠ 0 :=
-  fun h ↦ hy (sub_eq_zero.1 ((W.sub_negY x y).trans h))
-
-end Formula
 
 section coefficients
 
@@ -223,10 +207,7 @@ theorem derivation_slope_self [DecidableEq K] (x y : K) :
           (-(W⁄K).toAffine.polynomialX.evalEval x y) •
             D ((W⁄K).toAffine.polynomialY.evalEval x y)) := by
   by_cases hy : y = (W⁄K).toAffine.negY x y
-  · have h0 : (W⁄K).toAffine.polynomialY.evalEval x y = 0 := by
-      rw [← (W⁄K).toAffine.sub_negY, sub_eq_zero]
-      exact hy
-    rw [slope_of_Y_eq rfl hy, map_zero, h0]
+  · rw [slope_of_Y_eq rfl hy, map_zero, evalEval_polynomialY_eq_zero_iff.2 hy]
     simp
   · rw [slope_of_Y_ne_eq_evalEval rfl hy, D.leibniz_div]
 
@@ -254,7 +235,7 @@ private theorem derivation_addX_slope_of_Y_ne [DecidableEq K] {x y : K}
           ((W⁄K).toAffine.addY x x y ((W⁄K).toAffine.slope x x y y)) •
         (((W⁄K).toAffine.polynomialY.evalEval x y)⁻¹ • D x +
           ((W⁄K).toAffine.polynomialY.evalEval x y)⁻¹ • D x) := by
-  have hu := (W⁄K).toAffine.evalEval_polynomialY_ne_zero_of_Y_ne hy
+  have hu := mt evalEval_polynomialY_eq_zero_iff.1 hy
   have c := (W⁄K).toAffine.tangent_coeff (x := x) (y := y)
     (N := -(W⁄K).toAffine.polynomialX.evalEval x y) (u := (W⁄K).toAffine.polynomialY.evalEval x y)
     (by rw [evalEval_polynomialX]; ring) (evalEval_polynomialY x y) hu
