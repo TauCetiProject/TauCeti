@@ -349,8 +349,7 @@ theorem summable_idealTerm_vonMangoldt_of_zeroFree
   refine Summable.of_norm ((summable_prod_of_nonneg fun _ ↦ norm_nonneg _).mpr ⟨fun P ↦ ?_, ?_⟩)
   · -- Each fibre converges by zero-freeness at `P`.
     have hloc := (summable_nat_add_iff 1).mpr
-      (D.summable_norm_coeff_localLogDerivSeries_of_zeroFree P
-        ((D.abscissaOfAbsConv_localArithmeticFactor_le P).trans_lt hσ) (hne P) hs)
+      (D.summable_norm_coeff_localLogDerivSeries_of_zeroFree P (hne P) hs)
     exact (hloc.mul_left (Real.log (Ideal.absNorm P.asIdeal))).congr fun k ↦
       (D.norm_idealTerm_vonMangoldt_primeIdealPow P s (k + 1)).symm
   · -- Away from finitely many primes, the fibre sums are dominated by the log-weighted terms of
@@ -404,8 +403,7 @@ theorem hasSum_idealTerm_vonMangoldt_of_zeroFree
       (-(-Complex.log (Ideal.absNorm P.asIdeal : ℂ) *
         ∑' e : ℕ, PowerSeries.coeff e (D.localLogDerivSeries P) *
           ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e)) := by
-    have hloc := (D.summable_coeff_localLogDerivSeries_of_zeroFree P
-      ((D.abscissaOfAbsConv_localArithmeticFactor_le P).trans_lt hσ) (hne P) hs).hasSum
+    have hloc := (D.summable_coeff_localLogDerivSeries_of_zeroFree P (hne P) hs).hasSum
     rw [← hasSum_nat_add_iff' 1, Finset.sum_range_one, coeff_zero_localLogDerivSeries, zero_mul,
       sub_zero] at hloc
     rw [neg_mul, neg_neg, ← Complex.ofReal_natCast, ← Complex.ofReal_log (Nat.cast_nonneg _)]
