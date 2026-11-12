@@ -386,10 +386,9 @@ theorem UniformlyEllipticOn.value_nonpos_of_small_drift_of_subset_ball
         energyFormH1 a b c u (v : W1p volume Omega 2) ≤ 0) :
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ 0 := by
   apply h.value_nonpos_of_small_drift_of_poincare ha hb hc
-    (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
-    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
-      (hOmega.trans (Metric.ball_subset_ball (le_max_left R 0))) w.property)
-    (max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall) hboundary hu
+    hb_bound hc_bound hc_nonneg
+    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball hOmega w.property)
+    hsmall hboundary hu
 
 /-- For `-div(a ∇u) + b · ∇u + cu` on `Ω ⊆ B(z, R)` with uniformly elliptic,
 bounded measurable coefficients, `c ≥ 0`, and `β(2R) < λ`, a weak subsolution with
@@ -412,10 +411,9 @@ theorem UniformlyEllipticOn.value_le_const_of_small_drift_of_subset_ball
         energyFormH1 a b c u (v : W1p volume Omega 2) ≤ 0) :
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ k := by
   apply h.value_le_const_of_small_drift_of_poincare ha hb hc
-    (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
-    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
-      (hOmega.trans (Metric.ball_subset_ball (le_max_left R 0))) w.property)
-    (max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall) hk hboundary hu
+    hb_bound hc_bound hc_nonneg
+    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball hOmega w.property)
+    hsmall hk hboundary hu
 
 /-- For `-div(a ∇u) + b · ∇u + cu` on `Ω ⊆ B(z, R)` with uniformly elliptic,
 bounded measurable coefficients, `c ≥ 0`, and `β(2R) < λ`, ordered weak operator values
@@ -439,10 +437,9 @@ theorem UniformlyEllipticOn.value_le_of_small_drift_of_subset_ball
           energyFormH1 a b c v (w : W1p volume Omega 2)) :
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ W1p.value v x := by
   apply h.value_le_of_small_drift_of_poincare ha hb hc
-    (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
-    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
-      (hOmega.trans (Metric.ball_subset_ball (le_max_left R 0))) w.property)
-    (max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall) hboundary huv
+    hb_bound hc_bound hc_nonneg
+    (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball hOmega w.property)
+    hsmall hboundary huv
 
 end Euclidean
 
