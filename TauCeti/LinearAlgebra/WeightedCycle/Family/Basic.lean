@@ -117,7 +117,7 @@ theorem repr_mem_fixedSubmodule (b : Module.Basis ι A V)
       (TauCeti.WeightedCycle.linearMap (a j) (M := A)).fixedSubmodule := by
   rw [mem_fixedSubmodule_iff]
   intro i
-  have hv : f v.val = v.val := v.property
+  have hv : f v.val = v.val := (LinearMap.mem_fixedSubmodule_iff).mp v.property
   simpa [hv] using repr_apply_rotate b e a f h v.val j i
 
 /-- All coefficients in a fixed vector are prefix products times their cycle's initial
