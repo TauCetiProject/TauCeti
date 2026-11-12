@@ -45,13 +45,13 @@ theorem map_pi_gaussianReal_to_vectors {ι κ : Type*} [Fintype ι] [Fintype κ]
         exact Prod.ext p.2.symm rfl }
   have hfiber (j : ι) :
       MeasurePreserving
-        (fun z : ∀ p : fiber j, ℝ ↦ WithLp.toLp 2 fun i : κ ↦ z (e j i))
+        (fun z : fiber j → ℝ ↦ WithLp.toLp 2 fun i : κ ↦ z (e j i))
         (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1)
         (multivariateGaussian 0 (1 : Matrix κ κ ℝ)) := by
     refine ⟨(WithLp.measurable_toLp 2 _).comp
       (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm.measurable, ?_⟩
     calc
-      Measure.map (fun z : ∀ p : fiber j, ℝ ↦ WithLp.toLp 2 fun i : κ ↦ z (e j i))
+      Measure.map (fun z : fiber j → ℝ ↦ WithLp.toLp 2 fun i : κ ↦ z (e j i))
           (Measure.pi fun _ : fiber j ↦ gaussianReal 0 1) =
         Measure.map (WithLp.toLp 2 ∘
           (MeasurableEquiv.piCongrLeft (fun _ : fiber j ↦ ℝ) (e j)).symm)
