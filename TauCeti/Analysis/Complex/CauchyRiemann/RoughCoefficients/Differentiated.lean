@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Examples
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Basic
 public import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
@@ -42,12 +42,12 @@ mixed-exponent products of higher order and is not addressed here.
 * `TauCeti.ae_differentiated_cauchyRiemann`: the differentiated system, almost everywhere.
 * `TauCeti.MemWkpLoc.differentiatedCRCoefficient`: the regularity of `S₂`.
 * `TauCeti.memLpLoc_differentiatedCR_rightSide`: the right side is locally `L^q`.
-* `TauCeti.differentiatedCRCoefficient_ne_prodMap`: `S₂ ≠ diag(S, S)` as soon as `∂_s J ≠ 0`.
 * `TauCeti.ae_differentiated_cauchyRiemann_const`: for a constant coefficient `J` and `S = 0`,
   the system is the original operator applied to each component of `Ξ`.
 
-The coefficient `S₂` is `TauCeti.differentiatedCRCoefficient`. The regularity of `J₂` is
-`TauCeti.MemWkpLoc.prodMap`, and `J₂² = -1` whenever `J² = -1` is
+The coefficient `S₂` is `TauCeti.differentiatedCRCoefficient`, and
+`TauCeti.differentiatedCRCoefficient_ne_prodMap` shows `S₂ ≠ diag(S, S)` as soon as `∂_s J ≠ 0`.
+The regularity of `J₂` is `TauCeti.MemWkpLoc.prodMap`, and `J₂² = -1` whenever `J² = -1` is
 `TauCeti.prodMap_mul_self_eq_neg_one`.
 
 ## References
@@ -64,20 +64,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- **Check: the coupling term cannot be dropped.** If `∂_s J ≠ 0` at a point, then the coefficient
-`S₂` differs from the plausible wrong `diag(S, S)`: its first row contains `∂_s J`. -/
-theorem differentiatedCRCoefficient_ne_prodMap (S : V →L[ℝ] V) {DJ : ℂ →L[ℝ] V →L[ℝ] V}
-    (hDJ : DJ 1 ≠ 0) : differentiatedCRCoefficient S DJ ≠ S.prodMap S := by
-  obtain ⟨b, hb⟩ := DFunLike.ne_iff.1 hDJ
-  intro h
-  exact hb (by simpa using congr(($h (0, b)).1))
-
-/-- For a constant complex structure and `S = 0` the coefficient `S₂` vanishes. -/
-@[simp]
-theorem differentiatedCRCoefficient_zero_zero :
-    differentiatedCRCoefficient (0 : V →L[ℝ] V) 0 = 0 := by
-  ext <;> simp
 
 variable [FiniteDimensional ℝ V] {Ω : Opens ℂ} {k : ℕ}
 

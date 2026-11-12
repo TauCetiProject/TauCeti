@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Basic
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
@@ -24,8 +25,6 @@ that the constant in an interior estimate for `D` must depend on a bound for `S`
 
 ## Main results
 
-* `TauCeti.differentiatedCRCoefficient`: the coefficient `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`,
-  as a function of `S` and of the derivative `DJ` of `J` at a point.
 * `TauCeti.crOperator_differentiated_system`: for `ξ` that is `C²` near `z`, `J, S`
   differentiable at `z` and `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
   at `z` the equation `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with
@@ -61,19 +60,6 @@ namespace TauCeti
 section Differentiated
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- The zeroth-order coefficient `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` of the differentiated
-Cauchy–Riemann system on `V × V`, built from the value `S` of the zeroth-order coefficient and the
-derivative `DJ` of the complex structure at a point, with `∂_s J = DJ 1` and `∂_t J = DJ I`. -/
-noncomputable def differentiatedCRCoefficient (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) :
-    V × V →L[ℝ] V × V :=
-  (S.coprod (DJ 1)).prod ((0 : V →L[ℝ] V).coprod (S + DJ I))
-
-/-- The two rows of `S₂`: `S₂ (a, b) = (S a + (∂_s J) b, S b + (∂_t J) b)`. -/
-@[simp]
-theorem differentiatedCRCoefficient_apply (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) (x : V × V) :
-    differentiatedCRCoefficient S DJ x = (S x.1 + DJ 1 x.2, S x.2 + DJ I x.2) := by
-  simp [differentiatedCRCoefficient]
 
 /-- **The differentiated system.** For a map `ξ` that is `C²` near `z`, coefficients `J, S`
 differentiable at `z` and `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
