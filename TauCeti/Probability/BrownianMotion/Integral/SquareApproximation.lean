@@ -20,7 +20,7 @@ For pre-Brownian motion `B`, the mean-square increment of `B²` is
 cell `[a,b]` gives `2a(b-a)² + (b-a)³`. Summing over a deterministic partition therefore
 computes the exact time-integrated mean-square error of its left-step approximation.
 For the equal `n`-grid of `[0,T]` the error is `T³/n`; for arbitrary nondecreasing grids
-it is bounded by a constant times the mesh and tends to zero with the mesh.
+it is bounded by a constant times the mesh and tends to zero with the mesh on a fixed interval.
 
 These estimates supply the integrand-convergence part of the polynomial stochastic-integral
 construction for `B²`. The time integrals here are iterated integrals, with expectation taken
@@ -147,7 +147,7 @@ theorem sum_integral_integral_sq_sq_sub_sq_le (hB : IsPreBrownianReal B P)
 
 /-- On a constant-step grid the integrated mean-square error is exactly the step length
 multiplied by the increment of squared time. In particular it is `T³/n` on the equal `n`-grid
-of `[0,T]`, for `n > 0`. -/
+of `[0,T]`. -/
 theorem sum_integral_integral_sq_sq_sub_sq_of_const_step (hB : IsPreBrownianReal B P)
     {n : ℕ} {τ : Fin (n + 1) → ℝ≥0} (hτ : Monotone τ) {δ : ℝ}
     (hstep : ∀ i : Fin n, (τ i.succ : ℝ) - τ i.castSucc = δ) :
@@ -163,13 +163,16 @@ theorem sum_integral_integral_sq_sq_sub_sq_of_const_step (hB : IsPreBrownianReal
     _ = _ := by rw [hstep i]
 
 /-- The time-integrated mean-square error on the equal `n`-grid of `[0,T]` is exactly `T³/n`.
-The grid is specified by its values, so no separate monotonicity premise is needed. -/
+The grid is specified by its values, so no separate monotonicity premise is needed.
+For `n = 0`, both sides are zero by the empty-sum and division-by-zero conventions. -/
 theorem sum_integral_integral_sq_sq_sub_sq_uniform (hB : IsPreBrownianReal B P)
-    {n : ℕ} (hn : 0 < n) (T : ℝ≥0) {τ : Fin (n + 1) → ℝ≥0}
+    {n : ℕ} (T : ℝ≥0) {τ : Fin (n + 1) → ℝ≥0}
     (hgrid : ∀ i, τ i = (i.val : ℝ≥0) * T / n) :
     (∑ i : Fin n, ∫ u in (τ i.castSucc : ℝ)..τ i.succ,
       ∫ ω, (B u.toNNReal ω ^ 2 - B (τ i.castSucc) ω ^ 2) ^ 2 ∂P) =
       (T : ℝ) ^ 3 / n := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
   have hn' : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
   have hτ : Monotone τ := by
     intro i j hij
@@ -186,8 +189,10 @@ theorem sum_integral_integral_sq_sq_sub_sq_uniform (hB : IsPreBrownianReal B P)
     zero_pow two_ne_zero, sub_zero, NNReal.coe_div, NNReal.coe_mul, NNReal.coe_natCast]
   field_simp [hn']
 
-/-- Every deterministic vanishing-mesh family approximates `B²` in time-integrated
-mean square. The grids may vary in length and need not be nested. -/
+/-- Along any deterministic family of nondecreasing grids of a fixed interval `[a,b]`
+whose step sizes are bounded by `δ k → 0`, the time-integrated mean-square error of the
+left-step approximation to `B²` tends to zero. The grids may vary in length and need not
+be nested. -/
 theorem tendsto_sum_integral_integral_sq_sq_sub_sq (hB : IsPreBrownianReal B P)
     {ι : Type*} {l : Filter ι} {N : ι → ℕ} {grid : ∀ k, Fin (N k + 1) → ℝ≥0}
     {a b : ℝ≥0} (hτ : ∀ k, Monotone (grid k)) (ha : ∀ k, grid k 0 = a)
