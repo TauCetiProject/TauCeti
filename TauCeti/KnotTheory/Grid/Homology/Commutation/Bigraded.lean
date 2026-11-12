@@ -49,36 +49,27 @@ local notation "Base" => ModuleCat.restrictScalars (MvPolynomial.C :
 local notation "Base'" => ModuleCat.restrictScalars (MvPolynomial.C :
   R →+* MvPolynomial {c : Fin n // c ≠ σ i} R)
 
-/-- The coefficient action on source homology is the action selected by
-`ModuleCat.restrictScalars` along the inclusion of constant polynomials. -/
-local instance : Module R (hG.simplyBlockedHomology R i) :=
-  Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
-/-- The coefficient action on commuted homology is the same restricted-scalar action,
-with the blocked column transported by the transposition. -/
-local instance : Module R ((hG').simplyBlockedHomology R (σ i)) :=
-  Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ σ i} R)
-
 /-- The specified commutation equivalence, restricted to coefficient scalars rather than
 surviving polynomial scalars. -/
 noncomputable def simplyBlockedHomologyCommutationCoefficientEquiv :
     (Base).obj (hG.simplyBlockedHomology R i) ≃ₗ[R]
       (Base').obj ((hG').simplyBlockedHomology R (σ i)) :=
-  (hG.simplyBlockedHomologyCommutationEquiv R C i).toAddEquiv.toLinearEquiv fun r y => by
-    have hr : (simplyBlockedRenameEquiv R σ i).toRingEquiv (MvPolynomial.C r) =
-        (MvPolynomial.C r : MvPolynomial {c : Fin n // c ≠ σ i} R) :=
-      (simplyBlockedRenameEquiv R σ i).commutes r
-    have he := (hG.simplyBlockedHomologyCommutationEquiv R C i).map_smulₛₗ
-      (MvPolynomial.C r) y
-    simp only [RingEquiv.coe_toRingHom, hr] at he
-    exact he
+  GridDiagram.oneVariableSpecializationHomologyCoefficientEquiv R i (σ i)
+    ((simplyBlockedRenameEquiv R σ i).toRingEquiv : _ →+* _)
+    (hG.simplyBlockedHomologyCommutationEquiv R C i)
+    (simplyBlockedRenameEquiv R σ i).commutes
 
 /-- Restriction of coefficient scalars does not change the specified pentagon comparison. -/
 @[simp]
 theorem simplyBlockedHomologyCommutationCoefficientEquiv_apply
     (y : (Base).obj (hG.simplyBlockedHomology R i)) :
     hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i y =
-      hG.simplyBlockedHomologyCommutationMap R C i y :=
-  congrFun (hG.coe_simplyBlockedHomologyCommutationEquiv R C i) y
+      hG.simplyBlockedHomologyCommutationMap R C i y := by
+  exact (GridDiagram.oneVariableSpecializationHomologyCoefficientEquiv_apply R i (σ i)
+    ((simplyBlockedRenameEquiv R σ i).toRingEquiv : _ →+* _)
+    (hG.simplyBlockedHomologyCommutationEquiv R C i)
+    (simplyBlockedRenameEquiv R σ i).commutes y).trans
+      (congrFun (hG.coe_simplyBlockedHomologyCommutationEquiv R C i) y)
 
 /-- The pentagon comparison sends a homogeneous class to one of the same bidegree. -/
 theorem simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece
@@ -86,11 +77,19 @@ theorem simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece
     (hy : y ∈ (H).bigradedHatHomologyPiece R i g) :
     hG.simplyBlockedHomologyCommutationMap R C i y ∈
       (H').bigradedHatHomologyPiece R (σ i) g := by
-  obtain ⟨z, hz, rfl⟩ := ((H).mem_bigradedHatHomologyPiece_iff R i).mp hy
-  rw [simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass]
-  apply (H').oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece
-  rw [simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap]
-  exact (H).simplyBlockedCommutationMap_mem_bigradedChainHatPiece R C i hz
+  have hf := (H).isHomogeneous_oneVariableSpecializationHomologyMap R i (H') (σ i)
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i).toLinearMap
+    (hG.simplyBlockedCommutationCyclesMap R C i)
+    (fun z => (hG.simplyBlockedHomologyCommutationCoefficientEquiv_apply R C i _).trans
+      (hG.simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass R C i z))
+    (fun g z hz => by
+      rw [simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap]
+      exact (H).simplyBlockedCommutationMap_mem_bigradedChainHatPiece R C i hz)
+  rw [← OddComponentGridDiagram.bigradedHatHomologyGrading_piece] at hy
+  have h := hf.map_mem hy
+  rw [add_zero, OddComponentGridDiagram.bigradedHatHomologyGrading_piece,
+    LinearEquiv.coe_coe, simplyBlockedHomologyCommutationCoefficientEquiv_apply] at h
+  exact h
 
 private theorem simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous :
     LinearMap.IsHomogeneous
@@ -111,30 +110,19 @@ theorem simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece_iff
     hG.simplyBlockedHomologyCommutationMap R C i y ∈
         (H').bigradedHatHomologyPiece R (σ i) g ↔
       y ∈ (H).bigradedHatHomologyPiece R i g := by
-  constructor
-  · intro hy
-    have hinv := (hG.simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous
-      R C i).linearEquiv_symm
-    rw [← OddComponentGridDiagram.bigradedHatHomologyGrading_piece] at hy
-    have hm := hinv.map_mem hy
-    rw [add_zero, OddComponentGridDiagram.bigradedHatHomologyGrading_piece,
-      LinearEquiv.coe_coe, ← simplyBlockedHomologyCommutationCoefficientEquiv_apply,
-      LinearEquiv.symm_apply_apply] at hm
-    exact hm
-  · exact hG.simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece R C i
+  rw [← simplyBlockedHomologyCommutationCoefficientEquiv_apply]
+  exact (H).homologyEquiv_mem_bigradedHatHomologyPiece_iff R i (H') (σ i)
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous R C i) g y
 
 /-- Commutation induces a coefficient-linear equivalence on every homogeneous homology piece.
 It is the restriction of the specified pentagon comparison, not an arbitrarily chosen
 isomorphism between modules of the same dimension. -/
 noncomputable def simplyBlockedHomologyCommutationPieceEquiv (g : ℤ × ℤ) :
     (H).bigradedHatHomologyPiece R i g ≃ₗ[R] (H').bigradedHatHomologyPiece R (σ i) g :=
-  (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i).ofSubmodules _ _ (by
-    ext y
-    rw [Submodule.mem_map_equiv,
-      ← hG.simplyBlockedHomologyCommutationMap_mem_bigradedHatHomologyPiece_iff R C i,
-      ← simplyBlockedHomologyCommutationCoefficientEquiv_apply,
-      LinearEquiv.apply_symm_apply]
-    rfl)
+  (H).oneVariableSpecializationHomologyPieceEquivOfHomogeneous R i (H') (σ i)
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv R C i)
+    (hG.simplyBlockedHomologyCommutationCoefficientEquiv_homogeneous R C i) g
 
 /-- On underlying classes, the equivalence of homogeneous pieces is the pentagon map. -/
 @[simp]
@@ -144,7 +132,8 @@ theorem coe_simplyBlockedHomologyCommutationPieceEquiv (g : ℤ × ℤ)
       (Base').obj ((hG').simplyBlockedHomology R (σ i))) =
       hG.simplyBlockedHomologyCommutationMap R C i
         (y : (Base).obj (hG.simplyBlockedHomology R i)) := by
-  rw [simplyBlockedHomologyCommutationPieceEquiv, LinearEquiv.ofSubmodules_apply,
+  rw [simplyBlockedHomologyCommutationPieceEquiv,
+    OddComponentGridDiagram.coe_oneVariableSpecializationHomologyPieceEquivOfHomogeneous_apply,
     simplyBlockedHomologyCommutationCoefficientEquiv_apply]
 
 section Field

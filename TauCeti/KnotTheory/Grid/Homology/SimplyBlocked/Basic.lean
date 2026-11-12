@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.KnotTheory.Grid.Chain.Complex
 public import TauCeti.KnotTheory.Grid.Diagram.Components
 
@@ -21,6 +22,9 @@ columns and the differential counts empty rectangles avoiding all `X`-markings a
 The public cycle-class API presents Mathlib's categorical homology as the explicit quotient of
 the kernel of the differential by its image.  Every homology class has a cycle representative,
 and two representatives determine the same class exactly when their difference is a boundary.
+An explicit semilinear chain equivalence intertwining the specialized differentials induces
+equivalences on cycles and homology, with forward and inverse cycle-class equations. This descent
+is available for arbitrary grid diagrams, including diagrams of different sizes.
 
 For a multi-component link, the standard simply blocked theory blocks one `O`-marking on every
 component.  The construction here is therefore named simply blocked homology only under the
@@ -31,6 +35,9 @@ every grid diagram as `GridDiagram.simplyBlockedComplex`.
 
 * `TauCeti.GridDiagram.oneVariableSpecializationHomologyClass`: the cycle-class map of the
   one-variable specialization for arbitrary grids.
+* `TauCeti.GridDiagram.oneVariableSpecializationCyclesEquivOfIntertwining` and
+  `TauCeti.GridDiagram.oneVariableSpecializationHomologyEquivOfIntertwining`: descent of an
+  intertwining semilinear equivalence on explicit chains.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedHomology`: the simply blocked homology `G-hat`.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedCycles`: its cycles as a kernel.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyQuotient`: the concrete cycles-modulo-boundaries
@@ -170,6 +177,148 @@ theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff (i : Fin n)
     apply (G.simplyBlockedChainEquiv R i).injective
     rw [hd, LinearEquiv.apply_symm_apply, hw]
 
+section Intertwining
+
+variable {n m : ℕ} {G : GridDiagram n} {H : GridDiagram m}
+  (R : Type*) [CommRing R] [CharP R 2] (i : Fin n) (j : Fin m)
+  (σ : MvPolynomial {c : Fin n // c ≠ i} R →+*
+    MvPolynomial {c : Fin m // c ≠ j} R)
+  {σ' : MvPolynomial {c : Fin m // c ≠ j} R →+*
+    MvPolynomial {c : Fin n // c ≠ i} R}
+  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  (e : GridChainHat R n i ≃ₛₗ[σ] GridChainHat R m j)
+  (h : ∀ z, H.simplyBlockedDifferential R j (e z) =
+    e (G.simplyBlockedDifferential R i z))
+
+/-- Transport an explicit chain equivalence to the categorical chain carriers. -/
+private noncomputable def oneVariableSpecializationChainEquivOfIntertwining :
+    (G.simplyBlockedComplex R i).X () ≃ₛₗ[σ]
+      (H.simplyBlockedComplex R j).X () :=
+  (G.simplyBlockedChainEquiv R i).trans <|
+    e.trans (H.simplyBlockedChainEquiv R j).symm
+
+include h in
+private theorem oneVariableSpecializationChainEquivOfIntertwining_d
+    (z : (G.simplyBlockedComplex R i).X ()) :
+    (H.simplyBlockedComplex R j).d () ()
+        (oneVariableSpecializationChainEquivOfIntertwining R i j σ e z) =
+      oneVariableSpecializationChainEquivOfIntertwining R i j σ e
+        ((G.simplyBlockedComplex R i).d () () z) := by
+  apply (H.simplyBlockedChainEquiv R j).injective
+  simp only [oneVariableSpecializationChainEquivOfIntertwining, LinearEquiv.trans_apply,
+    simplyBlockedChainEquiv_d, LinearEquiv.apply_symm_apply, h]
+
+/-- A semilinear equivalence intertwining the one-variable differentials restricts to cycles.
+The diagrams may have different sizes and need not be knots. -/
+noncomputable def oneVariableSpecializationCyclesEquivOfIntertwining :
+    LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom ≃ₛₗ[σ]
+      LinearMap.ker ((H.simplyBlockedComplex R j).d () ()).hom :=
+  (oneVariableSpecializationChainEquivOfIntertwining R i j σ e).ofSubmodules _ _
+    ((oneVariableSpecializationChainEquivOfIntertwining R i j σ e).map_ker_of_intertwine _ _
+      (oneVariableSpecializationChainEquivOfIntertwining_d R i j σ e h))
+
+/-- On explicit chains, the induced cycle equivalence is the given chain equivalence. -/
+@[simp]
+theorem simplyBlockedChainEquiv_oneVariableSpecializationCyclesEquivOfIntertwining
+    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
+    H.simplyBlockedChainEquiv R j
+        (oneVariableSpecializationCyclesEquivOfIntertwining R i j σ e h z) =
+      e (G.simplyBlockedChainEquiv R i z) := by
+  simp only [oneVariableSpecializationCyclesEquivOfIntertwining, LinearEquiv.ofSubmodules_apply,
+    oneVariableSpecializationChainEquivOfIntertwining, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply]
+
+/-- On explicit chains, the inverse cycle equivalence is the inverse chain equivalence. -/
+@[simp]
+theorem simplyBlockedChainEquiv_oneVariableSpecializationCyclesEquivOfIntertwining_symm
+    (z : LinearMap.ker ((H.simplyBlockedComplex R j).d () ()).hom) :
+    G.simplyBlockedChainEquiv R i
+        ((oneVariableSpecializationCyclesEquivOfIntertwining R i j σ e h).symm z) =
+      e.symm (H.simplyBlockedChainEquiv R j z) := by
+  apply e.injective
+  rw [← simplyBlockedChainEquiv_oneVariableSpecializationCyclesEquivOfIntertwining
+    R i j σ e h, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
+private theorem map_boundaries_oneVariableSpecializationCyclesEquivOfIntertwining :
+    (LinearMap.range ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles).map
+        (oneVariableSpecializationCyclesEquivOfIntertwining R i j σ e h).toLinearMap =
+      LinearMap.range ((H.simplyBlockedComplex R j).sc' () () ()).moduleCatToCycles := by
+  have : RingHomSurjective σ := RingHomSurjective.invPair
+  have hcomp : (oneVariableSpecializationCyclesEquivOfIntertwining R i j σ e h).toLinearMap.comp
+      ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles =
+      ((H.simplyBlockedComplex R j).sc' () () ()).moduleCatToCycles.comp
+        (oneVariableSpecializationChainEquivOfIntertwining R i j σ e).toLinearMap := by
+    ext z : 1
+    apply Subtype.ext
+    exact (oneVariableSpecializationChainEquivOfIntertwining_d R i j σ e h z).symm
+  rw [← LinearMap.range_comp, hcomp, LinearEquiv.range_comp]
+
+/-- The categorical homology isomorphism to the concrete quotient, used for descent. -/
+private noncomputable def oneVariableSpecializationHomologyIsoQuotient (G : GridDiagram n)
+    (R : Type*) [CommRing R] [CharP R 2] (i : Fin n) :
+    (G.simplyBlockedComplex R i).homology () ≅
+      ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R)
+        (LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom ⧸
+          LinearMap.range ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles) :=
+  (G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl ≪≫
+    ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso
+
+private theorem oneVariableSpecializationHomologyIsoQuotient_hom_class
+    (G : GridDiagram n) (R : Type*) [CommRing R] [CharP R 2] (i : Fin n)
+    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
+    (oneVariableSpecializationHomologyIsoQuotient G R i).hom
+        (G.oneVariableSpecializationHomologyClass R i z) = Submodule.Quotient.mk z := by
+  rw [G.oneVariableSpecializationHomologyClass_apply]
+  -- Expose the composite isomorphism so the inverse laws match the selected module carriers.
+  change ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.hom
+      (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).hom
+        (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv
+          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.inv
+            (Submodule.Quotient.mk z)))) = _
+  rw [ModuleCat.hom_inv_apply]
+  exact ModuleCat.hom_inv_apply _ _
+
+/-- An intertwining semilinear chain equivalence descends to one-variable-specialization homology.
+Its value on a class is specified by the induced cycle equivalence. -/
+noncomputable def oneVariableSpecializationHomologyEquivOfIntertwining :
+    (G.simplyBlockedComplex R i).homology () ≃ₛₗ[σ]
+      (H.simplyBlockedComplex R j).homology () :=
+  (oneVariableSpecializationHomologyIsoQuotient G R i).toLinearEquiv.trans <|
+    (Submodule.Quotient.equiv _ _
+      (oneVariableSpecializationCyclesEquivOfIntertwining R i j σ e h)
+      (map_boundaries_oneVariableSpecializationCyclesEquivOfIntertwining R i j σ e h)).trans
+        (oneVariableSpecializationHomologyIsoQuotient H R j).toLinearEquiv.symm
+
+/-- The induced homology equivalence sends a cycle class to its transported cycle class. -/
+@[simp]
+theorem oneVariableSpecializationHomologyEquivOfIntertwining_oneVariableSpecializationHomologyClass
+    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
+    oneVariableSpecializationHomologyEquivOfIntertwining R i j σ e h
+        (G.oneVariableSpecializationHomologyClass R i z) =
+      H.oneVariableSpecializationHomologyClass R j
+        (oneVariableSpecializationCyclesEquivOfIntertwining R i j σ e h z) := by
+  simp only [oneVariableSpecializationHomologyEquivOfIntertwining, LinearEquiv.trans_apply,
+    LinearEquiv.symm_apply_eq]
+  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    oneVariableSpecializationHomologyIsoQuotient_hom_class,
+    oneVariableSpecializationHomologyIsoQuotient_hom_class,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe]
+
+/-- The inverse homology equivalence transports cycle classes by the inverse cycle equivalence. -/
+@[simp]
+theorem
+    oneVariableSpecializationHomologyEquivOfIntertwining_symm_oneVariableSpecializationHomologyClass
+    (z : LinearMap.ker ((H.simplyBlockedComplex R j).d () ()).hom) :
+    (oneVariableSpecializationHomologyEquivOfIntertwining R i j σ e h).symm
+        (H.oneVariableSpecializationHomologyClass R j z) =
+      G.oneVariableSpecializationHomologyClass R i
+        ((oneVariableSpecializationCyclesEquivOfIntertwining R i j σ e h).symm z) := by
+  rw [LinearEquiv.symm_apply_eq,
+    oneVariableSpecializationHomologyEquivOfIntertwining_oneVariableSpecializationHomologyClass,
+    LinearEquiv.apply_symm_apply]
+
+end Intertwining
+
 end TauCeti.GridDiagram
 
 namespace TauCeti.GridDiagram.IsKnot
@@ -224,8 +373,7 @@ noncomputable def simplyBlockedHomologyIsoQuotient (hG : G.IsKnot) (i : Fin n) :
     hG.simplyBlockedHomology R i ≅
       ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R)
         (hG.simplyBlockedHomologyQuotient R i) :=
-  (G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl ≪≫
-    ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso
+  oneVariableSpecializationHomologyIsoQuotient G R i
 
 /-- Under the concrete cycles-modulo-boundaries identification, the class of a cycle is its
 quotient class. -/
@@ -234,15 +382,6 @@ theorem simplyBlockedHomologyIsoQuotient_hom_class (hG : G.IsKnot) (i : Fin n)
     (c : hG.simplyBlockedCycles R i) :
     (hG.simplyBlockedHomologyIsoQuotient R i).hom (G.oneVariableSpecializationHomologyClass R i c) =
       Submodule.Quotient.mk c := by
-  rw [G.oneVariableSpecializationHomologyClass_apply]
-  -- Expose the two components of the composite quotient isomorphism so the categorical
-  -- inverse laws match their actual module carriers.
-  change ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.hom
-      (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).hom
-        (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv
-          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.inv
-            (Submodule.Quotient.mk c)))) = _
-  rw [ModuleCat.hom_inv_apply]
-  exact ModuleCat.hom_inv_apply _ _
+  exact oneVariableSpecializationHomologyIsoQuotient_hom_class G R i c
 
 end TauCeti.GridDiagram.IsKnot

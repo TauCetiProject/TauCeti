@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
 public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
-public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.HalfTurn
 public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
 
 /-!
@@ -16,7 +16,10 @@ public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
 The half-turn identifies chains with the `O`-marking in column `i` blocked with chains for
 `G.rotate` blocked at `i.rev`. It moves states by `GridState.halfTurn` and renames the
 surviving variables along `Fin.revPerm`. Specialization from the unblocked complex commutes
-with this equivalence, which intertwines the two differentials.
+with this equivalence, which intertwines the two differentials over any commutative semiring.
+On odd-component diagrams it preserves the `(O-Maslov, Alexander)` chain bigrading. Its
+homology comparison exchanges the south-west and north-east stabilization corners while
+tracking the blocked marking.
 
 ## References
 
@@ -28,9 +31,8 @@ public section
 
 namespace TauCeti
 
-/-- Reverse surviving column indices, transporting the blocked column to `i.rev`.
-Using the native involution combinator keeps `i.rev` in the target carrier: elaboration does
-not unfold the application of `Fin.revPerm` at this dependent polynomial-ring boundary. -/
+/-- The `Fin.revPerm` specialization of `simplyBlockedRenameEquiv`, reversing surviving
+columns and transporting the blocked column to the target index `{c // c ≠ i.rev}`. -/
 noncomputable def simplyBlockedHalfTurnRenameEquiv {n : ℕ} (R : Type*) [CommSemiring R]
     (i : Fin n) :
     MvPolynomial {c : Fin n // c ≠ i} R ≃ₐ[R] MvPolynomial {c : Fin n // c ≠ i.rev} R := by
@@ -51,8 +53,25 @@ theorem simplyBlockedHalfTurnRenameEquiv_C {n : ℕ} (R : Type*) [CommSemiring R
     simplyBlockedHalfTurnRenameEquiv R i (MvPolynomial.C r) = MvPolynomial.C r :=
   (simplyBlockedHalfTurnRenameEquiv R i).commutes r
 
+/-- The inverse coefficient renaming takes a variable back to its reversed column. -/
+@[simp]
+theorem simplyBlockedHalfTurnRenameEquiv_symm_X {n : ℕ} (R : Type*) [CommSemiring R]
+    (i : Fin n) (c : {c : Fin n // c ≠ i.rev}) :
+    (simplyBlockedHalfTurnRenameEquiv R i).symm (MvPolynomial.X c) =
+      MvPolynomial.X ⟨c.1.rev,
+        fun h => c.2 ((Fin.rev_rev c.1).symm.trans (congrArg Fin.rev h))⟩ := by
+  apply (simplyBlockedHalfTurnRenameEquiv R i).injective
+  simp only [AlgEquiv.apply_symm_apply, simplyBlockedHalfTurnRenameEquiv_X, Fin.rev_rev]
+
+/-- The inverse coefficient renaming fixes constants. -/
+@[simp]
+theorem simplyBlockedHalfTurnRenameEquiv_symm_C {n : ℕ} (R : Type*) [CommSemiring R]
+    (i : Fin n) (r : R) :
+    (simplyBlockedHalfTurnRenameEquiv R i).symm (MvPolynomial.C r) = MvPolynomial.C r :=
+  (simplyBlockedHalfTurnRenameEquiv R i).symm.commutes r
+
 /-- Blocking commutes with the half-turn renaming of coefficients. -/
-theorem simplyBlockedRingHom_halfTurnRename {n : ℕ} (R : Type*) [CommSemiring R]
+theorem simplyBlockedRingHom_rename_rev {n : ℕ} (R : Type*) [CommSemiring R]
     (i : Fin n) (p : MvPolynomial (Fin n) R) :
     simplyBlockedRingHom R i.rev (MvPolynomial.rename Fin.rev p) =
       simplyBlockedHalfTurnRenameEquiv R i (simplyBlockedRingHom R i p) := by
@@ -122,6 +141,16 @@ theorem simplyBlockedHalfTurnEquiv_single (x : GridState n)
   simp only [simplyBlockedHalfTurnEquiv_apply, Finsupp.single_apply, ← hinv.eq_iff]
   split_ifs <;> simp
 
+/-- The inverse half-turn takes a single generator back with inverse-renamed coefficient. -/
+@[simp↓]
+theorem simplyBlockedHalfTurnEquiv_symm_single (x : GridState n)
+    (p : MvPolynomial {c : Fin n // c ≠ i.rev} R) :
+    (simplyBlockedHalfTurnEquiv R i).symm (Finsupp.single x p) =
+      Finsupp.single x.halfTurn ((simplyBlockedHalfTurnRenameEquiv R i).symm p) := by
+  apply (simplyBlockedHalfTurnEquiv R i).injective
+  rw [LinearEquiv.apply_symm_apply, simplyBlockedHalfTurnEquiv_single,
+    GridState.halfTurn_halfTurn, AlgEquiv.apply_symm_apply]
+
 /-- The half-turn commutes with specialization when the blocked marking is half-turned too. -/
 @[simp↓]
 theorem simplyBlockedSpecialization_halfTurnRenameEquiv (c : GridChainMinus R n) :
@@ -130,7 +159,15 @@ theorem simplyBlockedSpecialization_halfTurnRenameEquiv (c : GridChainMinus R n)
   ext y : 1
   simp only [simplyBlockedSpecialization_apply, GridChain.halfTurnRenameEquiv_apply,
     simplyBlockedHalfTurnEquiv_apply]
-  exact simplyBlockedRingHom_halfTurnRename R i (c y.halfTurn)
+  exact simplyBlockedRingHom_rename_rev R i (c y.halfTurn)
+
+/-- Inverse half-turn commutes with specialization of the unblocked half-turn. -/
+theorem simplyBlockedHalfTurnEquiv_symm_specialization (c : GridChainMinus R n) :
+    (simplyBlockedHalfTurnEquiv R i).symm (simplyBlockedSpecialization R i.rev c) =
+      simplyBlockedSpecialization R i (GridChain.halfTurnRenameEquiv R c) := by
+  apply (simplyBlockedHalfTurnEquiv R i).injective
+  rw [LinearEquiv.apply_symm_apply, ← simplyBlockedSpecialization_halfTurnRenameEquiv,
+    GridChain.halfTurnRenameEquiv_halfTurnRenameEquiv]
 
 end GridChain
 
@@ -163,13 +200,36 @@ namespace TauCeti.OddComponentGridDiagram
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
     (i : Fin n)
 
-/-- The half-turn preserves the full bigrading after blocking the transported marking. -/
-theorem simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece
-    {g : ℤ × ℤ} {c : GridChainHat R n i} (hc : c ∈ G.bigradedChainHatPiece R i g) :
-    GridChain.simplyBlockedHalfTurnEquiv R i c ∈ G.rotate.bigradedChainHatPiece R i.rev g := by
-  obtain ⟨b, hb, rfl⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp hc
-  rw [← GridChain.simplyBlockedSpecialization_halfTurnRenameEquiv]
-  exact G.rotate.simplyBlockedSpecialization_mem_bigradedChainHatPiece i.rev
-    (G.halfTurnRenameEquiv_mem_bigradedChainMinusPiece R hb)
+/-- Half-turn preserves and reflects membership in each chain bidegree. -/
+-- Simplify before membership expands into its monomial characterization.
+@[simp↓]
+theorem simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece_iff
+    {g : ℤ × ℤ} {c : GridChainHat R n i} :
+    GridChain.simplyBlockedHalfTurnEquiv R i c ∈ G.rotate.bigradedChainHatPiece R i.rev g ↔
+      c ∈ G.bigradedChainHatPiece R i g := by
+  constructor
+  · intro hc
+    obtain ⟨b, hb, he⟩ := G.rotate.mem_bigradedChainHatPiece_iff_exists.mp hc
+    have hinv := congrArg (GridChain.simplyBlockedHalfTurnEquiv R i).symm he
+    rw [LinearEquiv.symm_apply_apply,
+      GridChain.simplyBlockedHalfTurnEquiv_symm_specialization] at hinv
+    rw [← hinv]
+    apply G.simplyBlockedSpecialization_mem_bigradedChainHatPiece
+    simpa only [rotate_rotate] using
+      G.rotate.halfTurnRenameEquiv_mem_bigradedChainMinusPiece R hb
+  · intro hc
+    obtain ⟨b, hb, rfl⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp hc
+    rw [← GridChain.simplyBlockedSpecialization_halfTurnRenameEquiv]
+    exact G.rotate.simplyBlockedSpecialization_mem_bigradedChainHatPiece i.rev
+      (G.halfTurnRenameEquiv_mem_bigradedChainMinusPiece R hb)
+
+/-- Inverse half-turn preserves and reflects membership in each chain bidegree. -/
+@[simp↓]
+theorem simplyBlockedHalfTurnEquiv_symm_mem_bigradedChainHatPiece_iff
+    {g : ℤ × ℤ} {c : GridChainHat R n i.rev} :
+    (GridChain.simplyBlockedHalfTurnEquiv R i).symm c ∈ G.bigradedChainHatPiece R i g ↔
+      c ∈ G.rotate.bigradedChainHatPiece R i.rev g := by
+  rw [← G.simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece_iff R i,
+    LinearEquiv.apply_symm_apply]
 
 end TauCeti.OddComponentGridDiagram

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
 public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
-public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.HalfTurn
 
 /-!
 # The half-turn on unblocked grid homology
@@ -18,8 +18,6 @@ variables are renamed along `Fin.rev` (`Differential/HalfTurn.lean`). This file 
 symmetry to unblocked grid homology: `GH⁻(G)` and `GH⁻(G.rotate)` are identified by a
 semilinear equivalence along the renaming of the variables. It preserves the Alexander
 grading, so for a knot grid the two homologies are isomorphic as Alexander-graded `R[U]`-modules.
-On chains the half-turn preserves the
-full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees.
 
 ## Main definitions
 
