@@ -54,8 +54,6 @@ universe uR uA
 
 namespace TauCeti
 
--- Interface provenance: the first `A∞` algebra prototype in
--- `TauCetiRoadmap/DGAInfinity/Suggested.lean` supplied the public shape packaged below.
 /-- An uncurved nonunital `A∞` algebra over a commutative ring.
 
 The Taylor map is stored alongside the operations because suspension depends on the degrees of
