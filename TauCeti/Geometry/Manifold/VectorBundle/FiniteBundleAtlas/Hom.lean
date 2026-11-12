@@ -90,6 +90,10 @@ section Prod
 variable {A} {h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet}
 
 @[simp]
+theorem chart_prod (i : Fin A.n) : (A.prod h).chart i = A.chart i :=
+  rfl
+
+@[simp]
 theorem image_prod (i : Fin A.n) : (A.prod h).image i = A.image i :=
   image_ofBaseSet i
 

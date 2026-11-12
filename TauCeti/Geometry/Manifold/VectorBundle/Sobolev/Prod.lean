@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.SMul
-import all TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 
 /-!
 # Sobolev sections of a fibrewise product bundle
@@ -73,47 +72,45 @@ variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
   {G₁ : Type*} [NormedAddCommGroup G₁] [NormedSpace ℝ G₁] [FiniteDimensional ℝ G₁]
   {G₂ : Type*} [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [FiniteDimensional ℝ G₂]
 
-/-- The coordinate along the `c`th vector of `Module.finBasis ℝ G₂` of the image under `L` of the
-`a`th vector of `Module.finBasis ℝ G₁`. -/
-private def fibreCoeff (L : G₁ →L[ℝ] G₂) (a : Fin (finrank ℝ G₁)) (c : Fin (finrank ℝ G₂)) : ℝ :=
-  (finBasis ℝ G₂).repr (L (finBasis ℝ G₁ a)) c
-
-/-- Combining the vectors of `Module.finBasis ℝ G₂` with the coefficients of `L` applied to the
+/-- Combining the vectors of `Module.finBasis ℝ G₂` with the matrix of `L` applied to the
 coordinates `x` is applying `L` to the vector with coordinates `x`. -/
-private theorem sum_fibreCoeff_smul (L : G₁ →L[ℝ] G₂) (x : Fin (finrank ℝ G₁) → ℝ) :
-    ∑ c, (∑ a, fibreCoeff L a c * x a) • finBasis ℝ G₂ c = L (∑ a, x a • finBasis ℝ G₁ a) := by
-  rw [map_sum]
-  simp_rw [Finset.sum_smul]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun a _ ↦ ?_
-  conv_rhs => rw [map_smul, ← (finBasis ℝ G₂).sum_repr (L (finBasis ℝ G₁ a)), Finset.smul_sum]
-  refine Finset.sum_congr rfl fun c _ ↦ ?_
-  rw [fibreCoeff, mul_comm, mul_smul]
+private theorem sum_mulVec_toMatrix_smul (L : G₁ →L[ℝ] G₂) (x : Fin (finrank ℝ G₁) → ℝ) :
+    ∑ c, (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap).mulVec x c •
+      finBasis ℝ G₂ c = L (∑ a, x a • finBasis ℝ G₁ a) := by
+  have hx := LinearMap.toMatrix_mulVec_repr (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap
+    (∑ a, x a • finBasis ℝ G₁ a)
+  rw [(finBasis ℝ G₁).repr_sum_self] at hx
+  rw [hx]
+  exact (finBasis ℝ G₂).sum_repr _
 
 /-- The constant fibre map `L : G₁ →L[ℝ] G₂` on the components of a tuple of scalar Sobolev
 functions, followed by restriction to an open subset. -/
 private def fibreMap (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U) :
     (Fin (finrank ℝ G₁) → Wkp μ U p k) →L[ℝ] (Fin (finrank ℝ G₂) → Wkp μ U' p k) :=
-  ContinuousLinearMap.pi fun c ↦
-    ∑ a, fibreCoeff L a c • (Wkp.restrictL hU k).comp (ContinuousLinearMap.proj a)
+  ContinuousLinearMap.pi fun c ↦ ∑ a, LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂)
+    L.toLinearMap c a • (Wkp.restrictL hU k).comp (ContinuousLinearMap.proj a)
 
 private theorem fibreMap_apply (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U)
     (w : Fin (finrank ℝ G₁) → Wkp μ U p k) (c : Fin (finrank ℝ G₂)) :
-    fibreMap μ p k L hU w c = ∑ a, fibreCoeff L a c • Wkp.restrictL hU k (w a) := by
+    fibreMap μ p k L hU w c = ∑ a, LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂)
+      L.toLinearMap c a • Wkp.restrictL hU k (w a) := by
   simp [fibreMap]
 
 private theorem value_fibreMap_ae (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U)
     (w : Fin (finrank ℝ G₁) → Wkp μ U p k) :
     ∀ᵐ y ∂μ.restrict U', ∀ c, Wkp.value k (fibreMap μ p k L hU w c) y =
-      ∑ a, fibreCoeff L a c * Wkp.value k (w a) y := by
+      (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap).mulVec
+        (fun a ↦ Wkp.value k (w a) y) c := by
   refine ae_all_iff.2 fun c ↦ ?_
   have hsmul (a : Fin (finrank ℝ G₁)) :=
-    Lp.coeFn_smul (fibreCoeff L a c) (Wkp.value k (Wkp.restrictL hU k (w a)))
+    Lp.coeFn_smul (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap c a)
+      (Wkp.value k (Wkp.restrictL hU k (w a)))
   have hres (a : Fin (finrank ℝ G₁)) := Wkp.value_restrictL_ae hU k (w a)
-  filter_upwards [Wkp.value_finsetSum_ae k Finset.univ
-      fun a ↦ fibreCoeff L a c • Wkp.restrictL hU k (w a),
+  filter_upwards [Wkp.value_finsetSum_ae k Finset.univ fun a ↦
+      LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap c a •
+        Wkp.restrictL hU k (w a),
     ae_all_iff.2 hsmul, ae_all_iff.2 hres] with y hy hs hr
-  rw [fibreMap_apply, hy]
+  rw [fibreMap_apply, hy, Matrix.mulVec, dotProduct]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [Wkp.value_smul, hs a, Pi.smul_apply, hr a, smul_eq_mul]
 
@@ -146,15 +143,7 @@ private theorem chartValueL_ae_of_eq_fibreMap {C₁ : SectionChartData E G₁ S�
     value_fibreMap_ae μ p k L hU (w₁ i₁)] with y h₂ h₁ hv
   rw [h₂, h₁, hw]
   simp_rw [hv]
-  exact sum_fibreCoeff_smul L _
-
-/-- Two elements of the Sobolev sections with the same chart data are equal. -/
-private theorem eq_of_chartValueL_ae {C : SectionChartData E G₁ S₁}
-    {w w' : C.sobolevSections μ p k}
-    (h : ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.chartValueL μ p k i w') :
-    w = w' := by
-  obtain ⟨s, hs⟩ := C.exists_section μ p k w'
-  exact SectionChartData.eq_of_ae_eq_coord (fun i ↦ (h i).trans (hs i)) hs
+  exact sum_mulVec_toMatrix_smul L _
 
 end FibreMap
 
@@ -358,7 +347,7 @@ def prodEquiv :
     SobolevSection (A.prod h) μ p k ≃L[ℝ]
       SobolevSection A μ p k × SobolevSection (A.ofBaseSet h) μ p k :=
   ContinuousLinearEquiv.equivOfInverse ((fstL A h μ p k).prod (sndL A h μ p k)) (pairL A h μ p k)
-    (fun w ↦ eq_of_chartValueL_ae μ p k fun i ↦
+    (fun w ↦ SectionChartData.eq_of_chartValueL_ae fun i ↦
       (ae_restrict_image_prod_iff (A := A) (h := h)).2 <| by
       filter_upwards [chartValueL_inlData_add_inrData_ae (h := h) (fstData h μ p k w)
           (sndData h μ p k w) i,
@@ -369,8 +358,8 @@ def prodEquiv :
       exact h₁.trans (Prod.ext h₂ h₃))
     fun w ↦ by
       obtain ⟨u, v⟩ := w
-      refine Prod.ext (eq_of_chartValueL_ae μ p k fun i ↦ ?_)
-        (eq_of_chartValueL_ae μ p k fun i ↦
+      refine Prod.ext (SectionChartData.eq_of_chartValueL_ae fun i ↦ ?_)
+        (SectionChartData.eq_of_chartValueL_ae fun i ↦
           (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).2 ?_)
       · filter_upwards [chartValueL_fstData_ae (pairL A h μ p k (u, v) :
             (A.prod h).sectionChartData.SobolevData μ p k) i,
@@ -452,31 +441,24 @@ theorem chartValueL_prodEquiv_symm_ae_coord {u : SobolevSection A μ p k}
   filter_upwards [chartValueL_prodEquiv_symm_ae u v i, hs i, ht i] with y h₁ h₂ h₃
   exact h₁.trans ((Prod.ext h₂ h₃).trans (coord_prod A h i _ y).symm)
 
-omit [FiniteDimensional ℝ F'] [FiniteDimensional ℝ F] in
-/-- Forgetting the highest derivative does not change the chart data. -/
-private theorem chartValueL_lowerOrderL_coe {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [FiniteDimensional ℝ G] {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E G S)
-    (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
-    C.chartValueL μ p k i (C.lowerOrderL μ p k w) = C.chartValueL μ p (k + 1) i w := by
-  rw [← C.chartValueL_lowerOrderL μ p k i w]
-  congr 1
-  funext i j
-  rw [SectionChartData.lowerOrderL_apply, Wkp.lowerOrderL_apply]
-
 /-- `TauCeti.SobolevSection.prodEquiv` commutes with the inclusions of order `k + 1` into order
 `k`. -/
 theorem prodEquiv_lowerOrderL (w : SobolevSection (A.prod h) μ p (k + 1)) :
     prodEquiv A h μ p k ((A.prod h).sectionChartData.lowerOrderL μ p k w) =
       (A.sectionChartData.lowerOrderL μ p k (prodEquiv A h μ p (k + 1) w).1,
         (A.ofBaseSet h).sectionChartData.lowerOrderL μ p k (prodEquiv A h μ p (k + 1) w).2) := by
-  refine Prod.ext (eq_of_chartValueL_ae μ p k fun i ↦ ?_)
-    (eq_of_chartValueL_ae μ p k fun i ↦ (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).2 ?_)
+  refine Prod.ext (SectionChartData.eq_of_chartValueL_ae fun i ↦ ?_)
+    (SectionChartData.eq_of_chartValueL_ae fun i ↦
+      (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).2 ?_)
   · filter_upwards [chartValueL_prodEquiv_fst_ae ((A.prod h).sectionChartData.lowerOrderL μ p k w)
       i, chartValueL_prodEquiv_fst_ae w i] with y h₁ h₂
-    erw [h₁, chartValueL_lowerOrderL_coe, chartValueL_lowerOrderL_coe, h₂]
+    rw [h₁, (A.prod h).sectionChartData.chartValueL_coe_lowerOrderL μ p k w i,
+      A.sectionChartData.chartValueL_coe_lowerOrderL μ p k (prodEquiv A h μ p (k + 1) w).1 i, h₂]
   · filter_upwards [chartValueL_prodEquiv_snd_ae ((A.prod h).sectionChartData.lowerOrderL μ p k w)
       i, chartValueL_prodEquiv_snd_ae w i] with y h₁ h₂
-    erw [h₁, chartValueL_lowerOrderL_coe, chartValueL_lowerOrderL_coe, h₂]
+    rw [h₁, (A.prod h).sectionChartData.chartValueL_coe_lowerOrderL μ p k w i,
+      (A.ofBaseSet h).sectionChartData.chartValueL_coe_lowerOrderL μ p k
+        (prodEquiv A h μ p (k + 1) w).2 i, h₂]
 
 /-- `TauCeti.SobolevSection.prodEquiv` commutes with multiplication by a smooth function. -/
 theorem prodEquiv_contMDiffSMulL [IsManifold 𝓘(ℝ, E) ∞ M] {φ : M → ℝ}
@@ -486,30 +468,21 @@ theorem prodEquiv_contMDiffSMulL [IsManifold 𝓘(ℝ, E) ∞ M] {φ : M → ℝ
         contMDiffSMulL (A.ofBaseSet h) μ p k hφ (prodEquiv A h μ p k w).2) := by
   have hw (i : Fin A.n) := (ae_restrict_image_prod_iff (A := A) (h := h) (i := i)).1
     (chartValueL_contMDiffSMulL_ae hφ w i)
-  refine Prod.ext (eq_of_chartValueL_ae μ p k fun i ↦ ?_)
-    (eq_of_chartValueL_ae μ p k fun i ↦ (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).2 ?_)
+  refine Prod.ext (SectionChartData.eq_of_chartValueL_ae fun i ↦ ?_)
+    (SectionChartData.eq_of_chartValueL_ae fun i ↦
+      (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).2 ?_)
   · filter_upwards [chartValueL_prodEquiv_fst_ae (contMDiffSMulL (A.prod h) μ p k hφ w) i,
       chartValueL_prodEquiv_fst_ae w i, hw i,
       chartValueL_contMDiffSMulL_ae hφ (prodEquiv A h μ p k w).1 i] with y h₁ h₂ h₃ h₄
     rw [h₁, h₃, h₄, Prod.smul_fst, h₂]
-    rfl
+    exact congrArg (fun e : OpenPartialHomeomorph M E ↦ φ (e.symm y) • _) (chart_prod (h := h) i)
   · filter_upwards [chartValueL_prodEquiv_snd_ae (contMDiffSMulL (A.prod h) μ p k hφ w) i,
       chartValueL_prodEquiv_snd_ae w i, hw i,
       (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).1
         (chartValueL_contMDiffSMulL_ae hφ (prodEquiv A h μ p k w).2 i)] with y h₁ h₂ h₃ h₄
     rw [h₁, h₃, h₄, Prod.smul_snd, h₂]
-    rfl
-
-omit [FiniteDimensional ℝ F'] in
-/-- The chart data of the Sobolev section of a `Cᵏ` section `s` are the chart coordinates of `s`.
--/
-private theorem chartValueL_ofContMDiffSection_ae_coord [IsManifold 𝓘(ℝ, E) k M]
-    [ContMDiffVectorBundle k F V 𝓘(ℝ, E)] (A : FiniteBundleAtlas E M F V)
-    (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n) :
-    A.sectionChartData.chartValueL μ p k i (ofContMDiffSection A μ p k s)
-      =ᵐ[μ.restrict (A.image i)] A.coord i s :=
-  (A.sectionChartData.chartValueL_ofComponents_ae μ p k _ _ s i).trans
-    (A.sectionChartData_coord_ae_eq μ i s)
+    exact congrArg (fun e : OpenPartialHomeomorph M E ↦ φ (e.symm y) • _)
+      ((chart_prod (h := h) i).trans (chart_ofBaseSet (h := h) i).symm)
 
 /-- `TauCeti.SobolevSection.prodEquiv` sends the Sobolev section of a `Cᵏ` section
 `σ = (s, t)` of `V ×ᵇ V'` to the pair of the Sobolev sections of `s` and `t`. -/
@@ -522,12 +495,12 @@ theorem prodEquiv_ofContMDiffSection [IsManifold 𝓘(ℝ, E) k M]
   have hσ' : ∀ i, (A.prod h).sectionChartData.chartValueL μ p k i
       (ofContMDiffSection (A.prod h) μ p k σ) =ᵐ[μ.restrict (A.image i)] (A.prod h).coord i σ :=
     fun i ↦ (ae_restrict_image_prod_iff (A := A) (h := h) (i := i)).1
-      (chartValueL_ofContMDiffSection_ae_coord (A.prod h) σ i)
+      (chartValueL_ofContMDiffSection_ae_coord (A.prod h) μ p k σ i)
   have hs : (fun x ↦ (σ x).1) = s := funext fun x ↦ by rw [hσ]
   have ht : (fun x ↦ (σ x).2) = t := funext fun x ↦ by rw [hσ]
   refine Prod.ext (SobolevSection.eq_of_ae_eq_coord (s := s) (fun i ↦ ?_)
-    (chartValueL_ofContMDiffSection_ae_coord A s)) (SobolevSection.eq_of_ae_eq_coord (s := t)
-      (fun i ↦ ?_) (chartValueL_ofContMDiffSection_ae_coord (A.ofBaseSet h) t))
+    (chartValueL_ofContMDiffSection_ae_coord A μ p k s)) (SobolevSection.eq_of_ae_eq_coord (s := t)
+      (fun i ↦ ?_) (chartValueL_ofContMDiffSection_ae_coord (A.ofBaseSet h) μ p k t))
   · rw [← hs]
     exact chartValueL_prodEquiv_fst_ae_coord hσ' i
   · rw [← ht]

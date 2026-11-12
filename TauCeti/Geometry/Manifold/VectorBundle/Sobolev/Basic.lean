@@ -454,6 +454,14 @@ theorem eq_of_ae_eq_coord {w w' : C.sobolevSections μ p k} {s : S}
   C.sobolevSections_ext μ p k fun i j ↦ Lp.ext <|
     (value_ae_eq_repr_coord (hw i) j).trans (value_ae_eq_repr_coord (hw' i) j).symm
 
+variable {C μ p k} in
+/-- Two elements of the Sobolev sections with almost everywhere equal chart data are equal. -/
+theorem eq_of_chartValueL_ae {w w' : C.sobolevSections μ p k}
+    (h : ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.chartValueL μ p k i w') :
+    w = w' := by
+  obtain ⟨s, hs⟩ := C.exists_section μ p k w'
+  exact eq_of_ae_eq_coord (fun i ↦ (h i).trans (hs i)) hs
+
 /-- The norm of an element of the Sobolev sections, the maximum of its component norms, is at most
 any sum of bounds for the component norms. -/
 theorem norm_le_sum_of_norm_le {w : C.sobolevSections μ p k}
@@ -485,6 +493,13 @@ theorem lowerOrderL_apply (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n)
       Wkp.lowerOrder k ((w : C.SobolevData μ p (k + 1)) i j) := by
   rw [← Wkp.lowerOrderL_apply]
   rfl
+
+/-- Forgetting the highest derivative does not change the chart data. -/
+@[simp]
+theorem chartValueL_coe_lowerOrderL (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
+    C.chartValueL μ p k i (C.lowerOrderL μ p k w) = C.chartValueL μ p (k + 1) i w := by
+  rw [← C.chartValueL_lowerOrderL μ p k i w]
+  congr 1
 
 section Components
 
