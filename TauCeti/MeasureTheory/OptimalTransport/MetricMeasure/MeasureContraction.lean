@@ -131,7 +131,7 @@ theorem MeasureContraction.mono (h : M.MeasureContraction K N) (hK : K' ≤ K) (
   obtain ⟨η, hgeo, h₀, h₁, hle⟩ := h o ho A hA hpos hfin
   refine ⟨η, hgeo, h₀, h₁, fun t ↦
     (Measure.timeMarginal_mono (withDensity_mono (ae_of_all _ fun γ ↦ ?_)) t).trans (hle t)⟩
-  exact ENNReal.rpow_le_rpow (distortionTau_left_monotone (sub_nonneg.2 (unitInterval.le_one t))
+  exact ENNReal.rpow_le_rpow (distortionTau_left_monotone
     (sub_le_self _ (unitInterval.nonneg t)) hK) hN
 
 /-- **The Bonnet–Myers diameter bound under `MCP(K, N)`.** If `M` satisfies `MCP(K, N)` with
@@ -220,7 +220,7 @@ is the image of `m[|A]` under the homothety of ratio `1 - t` towards `o`. -/
 theorem measureContraction_of_nonpos_of_finrank_le [Nontrivial E] (hK : K ≤ 0)
     (hN : (finrank ℝ E : ℝ) ≤ N) : M.MeasureContraction K N := by
   have hN₀ : 0 < N := (Nat.cast_pos.2 finrank_pos).trans_le hN
-  intro o _ A hA hpos hfin
+  intro o _ A _ hpos hfin
   have hseg : Measurable fun y : E ↦ segmentPath (y, o) :=
     (segmentPath.continuous.comp (continuous_id.prodMk continuous_const)).measurable
   have hprob : IsProbabilityMeasure M.reference[|A] :=
@@ -245,7 +245,7 @@ theorem measureContraction_of_nonpos_of_finrank_le [Nontrivial E] (hK : K ≤ 0)
       ENNReal.ofReal (1 - t) ^ N • M.reference[|A].map fun y ↦ segmentPath (y, o) := by
     rw [← withDensity_const]
     exact withDensity_mono (ae_of_all _ fun γ ↦ ENNReal.rpow_le_rpow (distortionTau_le_ofReal
-      (sub_nonneg.2 (unitInterval.le_one t)) (sub_le_self _ (unitInterval.nonneg t)) hK) hN₀.le)
+      (sub_le_self _ (unitInterval.nonneg t)) hK) hN₀.le)
   refine (Measure.timeMarginal_mono hweight t).trans ?_
   rw [Measure.timeMarginal_smul, hmarg]
   rcases (unitInterval.le_one t).lt_or_eq with ht | ht

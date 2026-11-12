@@ -45,8 +45,7 @@ realized that way must insert to match this convention.
 * `TauCeti.Hodge.IsPolarizable`: existence of some polarizing form.
 
 The Hodge–Riemann relations follow Voisin, *Hodge Theory and Complex Algebraic Geometry I*,
-§7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2. This is the definition layer of
-Layer L1 of `TauCetiRoadmap/HodgeStructures/README.md`.
+§7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2.
 -/
 
 public section

@@ -22,8 +22,8 @@ K ⊗[k] SymmetricAlgebra k M ≃ₐc[K] SymmetricAlgebra K (K ⊗[k] M).
 The equivalence preserves the counit and comultiplication and is characterized in both directions
 on pure-tensor generators.
 
-This supplies the coordinate-bialgebra calculation used by the additive-group worked example in
-the ReductiveGroups roadmap's Layer 0 base-change milestone.
+In rank one this is the coordinate-bialgebra calculation behind base change of the additive
+group, in `TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.BaseChange`.
 
 ## Main declarations
 

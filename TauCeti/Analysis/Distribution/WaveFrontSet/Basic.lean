@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.Restriction
+public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
@@ -17,7 +18,6 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.InnerProductSpace.Adjoint
-import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.Topology.Algebra.Module.Cone
 
@@ -107,6 +107,13 @@ def localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) : ℂ :=
   T.complexPairing
     (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
 
+/-- The defining equation of `Distribution.localFourier`: `T` paired with the product of `φ` and
+the Fourier atom `e_η`. -/
+theorem localFourier_def (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    T.localFourier φ η = T.complexPairing
+      (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ) := by
+  rw [localFourier]
+
 /-- The localized Fourier transform at `η` pairs `T` with any test function equal to
 `x ↦ φ x * 𝐞 (-⟪x, η⟫)`. -/
 theorem localFourier_eq (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {η : E} {ψ : 𝓓(Ω, ℂ)}
@@ -153,6 +160,12 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 @[simp]
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
+
+/-- At the zero frequency the localized Fourier transform is the pairing `T φ` with the cutoff. -/
+@[simp]
+theorem localFourier_at_zero (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    T.localFourier φ 0 = T.complexPairing φ :=
+  localFourier_eq T φ fun x ↦ by simp
 
 /-- The localized Fourier transform `η ↦ T (φ e_η)` is continuous in the frequency. -/
 theorem continuous_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
@@ -381,6 +394,18 @@ theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
   rintro ⟨x, ξ⟩ ⟨hx, -, hT⟩
   exact ⟨by_contra fun hxT => hT (isMicrolocallySmoothAt_of_notMem_dsupport hx hxT ξ), trivial⟩
 
+omit [FiniteDimensional ℝ E] in
+/-- Near a point of the support of `T` there are complex cutoffs `φ` with `T φ ≠ 0`, that is, with
+localized Fourier transform nonzero at the zero frequency. -/
+theorem exists_tsupport_subset_localFourier_at_zero_ne_zero {T : 𝓓'(Ω, ℂ)} {x : E}
+    (hx : x ∈ dsupport T) {U : Set E} (hU : U ∈ 𝓝 x) :
+    ∃ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ U ∧ T.localFourier φ 0 ≠ 0 := by
+  obtain ⟨θ, hθ, hTθ⟩ := (mem_dsupport_iff_forall_exists_ne x).1 hx (interior U)
+    (mem_interior_iff_mem_nhds.2 hU) isOpen_interior
+  refine ⟨postcompCLM (𝕜 := ℝ) ofRealCLM θ, ?_, by simpa using hTθ⟩
+  rw [postcompCLM_apply]
+  exact (tsupport_comp_subset (map_zero ofRealCLM) θ).trans (hθ.trans interior_subset)
+
 /-- The zero distribution has empty wave front set. -/
 @[simp]
 theorem waveFrontSet_zero : (0 : 𝓓'(Ω, ℂ)).waveFrontSet = ∅ := by
@@ -485,7 +510,7 @@ supported. -/
 private theorem contDiff_and_hasCompactSupport_restrict (V : Submodule ℝ E) (φ : 𝓓(Ω, ℂ)) :
     ContDiff ℝ ∞ (fun v : V => φ v) ∧ HasCompactSupport (fun v : V => φ v) :=
   ⟨φ.contDiff.comp V.subtypeL.contDiff, φ.hasCompactSupport.comp_isClosedEmbedding
-    (V.isClosedEmbedding_subtype V.closed_of_finiteDimensional)⟩
+    (V.isClosedEmbedding_subtype V.isClosed_of_finiteDimensional)⟩
 
 /-- The localized Fourier transform of the surface measure of a subspace `V`, that is, Lebesgue
 measure of `V` pushed forward to `E`, is the Fourier transform on `V` of the restriction of the
@@ -495,7 +520,7 @@ theorem localFourier_ofFun_one_map_subtype (V : Submodule ℝ E) (φ : 𝓓(Ω, 
     (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).localFourier φ η =
       𝓕 (fun v : V => φ v) (V.orthogonalProjectionOnto η) := by
   have hce : Topology.IsClosedEmbedding ((↑) : V → E) :=
-    V.isClosedEmbedding_subtype V.closed_of_finiteDimensional
+    V.isClosedEmbedding_subtype V.isClosed_of_finiteDimensional
   -- The pushed-forward measure is finite on compact sets, so constants are locally integrable.
   have := MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap MeasureTheory.volume
     hce.isProperMap
@@ -513,7 +538,7 @@ private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem (V : Subm
     {x : E} (hx : x ∈ Ω) (hxV : x ∉ V) (ξ : E) :
     (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).IsMicrolocallySmoothAt x ξ := by
   obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
-    (inter_mem (V.closed_of_finiteDimensional.isOpen_compl.mem_nhds hxV) (Ω.isOpen.mem_nhds hx))
+    (inter_mem (V.isClosed_of_finiteDimensional.isOpen_compl.mem_nhds hxV) (Ω.isOpen.mem_nhds hx))
     inter_subset_right (1 : ℂ)
   -- The cutoff vanishes on `V`, so the localized Fourier transform vanishes identically.
   have hg : (fun v : V => φ v) = 0 :=
