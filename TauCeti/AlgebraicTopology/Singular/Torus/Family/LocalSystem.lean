@@ -260,11 +260,11 @@ end LocalSystem
 section BaseChange
 
 variable {Y Z E : Type} [TopologicalSpace Y] [TopologicalSpace Z]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 section
 
-variable {Λ : Type} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+variable [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {Λ : Type} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
   (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) (f : C(Z, Y))
@@ -324,10 +324,13 @@ theorem torusFamilyBaseChange_fiberLocalSystemMap_comp_firstHomologyIso :
 
 end
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- Base change of a continuous family of full lattices induces an isomorphism of fiber homology
-local systems in every degree. -/
-theorem isIso_torusFamilyBaseChangeCommSq_fiberLocalSystemMap {Λ : Type*} [AddCommGroup Λ]
+section
+
+variable [AddCommGroup E] [TopologicalSpace E] [ContinuousAdd E] {Λ : Type*} [AddCommGroup Λ]
+
+/-- Base change of a continuous period family induces an isomorphism of fiber homology local
+systems in every degree. -/
+theorem isIso_torusFamilyBaseChangeCommSq_fiberLocalSystemMap
     (P : Y → Λ →ₗ[ℤ] E) (hcont : ∀ l, Continuous fun y ↦ P y l) (f : C(Z, Y))
     (L : letI := periodAddAction P; LiftingFunction
       (TopCat.ofHom ⟨torusFamilyProjection P, continuous_torusFamilyProjection P⟩).hom)
@@ -339,6 +342,8 @@ theorem isIso_torusFamilyBaseChangeCommSq_fiberLocalSystemMap {Λ : Type*} [AddC
   letI := periodAddAction P; letI := periodAddAction (P ∘ f)
   @CommSq.isIso_fiberLocalSystemMap _ _ _ _ _ _ _ _ (torusFamilyBaseChangeCommSq P f) L' L ℤ _ n
     (isIso_torusFamilyBaseChangeCommSq_fiberMap P f hcont)
+
+end
 
 end BaseChange
 
