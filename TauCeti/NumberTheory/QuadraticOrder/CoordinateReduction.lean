@@ -27,17 +27,6 @@ namespace QuadraticAlgebra
 
 variable (a b : ℤ) (m : ℕ)
 
-/-- Reduction preserves the number of elements of a rectangle on whose coordinate sets
-integer casting is injective. This remains valid at modulus zero. -/
-theorem ncard_image_mapRingHom_setOf_re_mem_im_mem {U V : Set ℤ}
-    (hU : Set.InjOn (Int.cast : ℤ → ZMod m) U)
-    (hV : Set.InjOn (Int.cast : ℤ → ZMod m) V) :
-    ((mapRingHom (Int.castRingHom (ZMod m)) a b) ''
-      {z : QuadraticAlgebra ℤ a b | z.re ∈ U ∧ z.im ∈ V}).ncard =
-      U.ncard * V.ncard := by
-  rw [(injOn_mapRingHom_setOf_re_mem_im_mem a b _ hU hV).ncard_image,
-    ncard_setOf_re_mem_im_mem]
-
 /-- At positive modulus, a rectangle with injectively reduced coordinates has at most
 `m²` elements. The positivity hypothesis is essential for this finite ambient bound. -/
 theorem ncard_setOf_re_mem_im_mem_le_sq [NeZero m] {U V : Set ℤ}
@@ -49,7 +38,7 @@ theorem ncard_setOf_re_mem_im_mem_le_sq [NeZero m] {U V : Set ℤ}
   have h := Set.ncard_le_card
     ((mapRingHom (Int.castRingHom (ZMod m)) a b) ''
       {z : QuadraticAlgebra ℤ a b | z.re ∈ U ∧ z.im ∈ V})
-  rw [ncard_image_mapRingHom_setOf_re_mem_im_mem a b m hU hV] at h
+  rw [ncard_image_mapRingHom_setOf_re_mem_im_mem a b _ hU hV] at h
   simpa [Nat.card_congr (equivProd ((a : ZMod m)) ((b : ZMod m))),
     Nat.card_prod, Nat.card_zmod, pow_two, ncard_setOf_re_mem_im_mem] using h
 

@@ -51,4 +51,13 @@ theorem injOn_mapRingHom_setOf_re_mem_im_mem (f : R →+* S) {U V : Set R}
   · exact hU hz.1 hw.1 (by simpa using congrArg re h)
   · exact hV hz.2 hw.2 (by simpa using congrArg im h)
 
+/-- A coefficient map injective on each coordinate set preserves the number of elements
+of their rectangle. -/
+theorem ncard_image_mapRingHom_setOf_re_mem_im_mem (f : R →+* S) {U V : Set R}
+    (hU : Set.InjOn f U) (hV : Set.InjOn f V) :
+    (mapRingHom f a b '' {z : QuadraticAlgebra R a b | z.re ∈ U ∧ z.im ∈ V}).ncard =
+      U.ncard * V.ncard := by
+  rw [(injOn_mapRingHom_setOf_re_mem_im_mem a b f hU hV).ncard_image,
+    ncard_setOf_re_mem_im_mem]
+
 end QuadraticAlgebra
