@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.SchwartzSpace.WeightedPlancherel
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.TranslationTail
@@ -187,17 +189,6 @@ private theorem sqrt_sum_norm_toLp_iterate_lineDerivOp_smulLeftCLM_clm_sq_le {ι
         field_simp
         ring
 
-/-- A nonnegative quantity bounded by `A / t ^ k` with `t > 0` forces `0 ≤ A`. -/
-private theorem nonneg_of_le_div_pow {a A t : ℝ} {k : ℕ} (ht : 0 < t) (h : a ≤ A / t ^ k)
-    (ha : 0 ≤ a) : 0 ≤ A := by
-  simpa using (le_div_iff₀ (pow_pos ht k)).1 (ha.trans h)
-
-omit [MeasurableSpace V] [BorelSpace V] in
-/-- The space carrying an orthonormal basis indexed by an empty type is trivial. -/
-private theorem subsingleton_of_isEmpty {ι : Type*} [Fintype ι] [IsEmpty ι]
-    (b : OrthonormalBasis ι ℝ V) : Subsingleton V :=
-  Module.finrank_zero_iff.mp (by rw [Module.finrank_eq_card_basis b.toBasis, Fintype.card_eq_zero])
-
 end Real
 
 section Hilbert
@@ -224,7 +215,7 @@ theorem exists_setIntegral_norm_fourierInv_le_of_support_subset {ι : Type*} [Fi
   | inl _ =>
     -- `V` is the zero space, so the set `{x | R < ‖x‖}` is empty.
     refine ⟨0, le_rfl, fun σ _ _ _ _ _ R hR ↦ ?_⟩
-    have := subsingleton_of_isEmpty b
+    have := b.subsingleton_of_isEmpty
     have hs : {x : V | R < ‖x‖} = ∅ := Set.eq_empty_of_forall_notMem fun x hx ↦ by
       rw [Set.mem_ofPred_eq, Subsingleton.elim x 0, norm_zero] at hx
       exact absurd hx (not_lt.2 hR.le)
@@ -234,7 +225,7 @@ theorem exists_setIntegral_norm_fourierInv_le_of_support_subset {ι : Type*} [Fi
   obtain ⟨C₀, hC₀, hC⟩ := exists_setIntegral_norm_fourierInv_le (H := H) b hN
   refine ⟨C₀ * √(Fintype.card ι) * √(volume.real (ball (0 : V) 1)), by positivity,
     fun σ t A ht hσ hσN R hR ↦ ?_⟩
-  have hA : 0 ≤ A := nonneg_of_le_div_pow ht (hσN i₀ 0) (norm_nonneg _)
+  have hA : 0 ≤ A := TauCeti.nonneg_of_le_div_pow ht (hσN i₀ 0) (norm_nonneg _)
   have hsum := sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b σ N ht.le (by positivity)
     (closure_minimal hσ isClosed_closedBall) hσN
   have hte : t ^ ((finrank ℝ V : ℝ) / 2 - N) = t ^ ((finrank ℝ V : ℝ) / 2) / t ^ N := by
@@ -302,12 +293,12 @@ theorem exists_integral_norm_fourierInv_add_sub_le_of_support_subset {ι : Type*
   cases isEmpty_or_nonempty ι with
   | inl _ =>
     -- `V` is the zero space, so `h = 0` and the integrand vanishes.
-    have := subsingleton_of_isEmpty b
+    have := b.subsingleton_of_isEmpty
     simp only [Subsingleton.elim h 0, add_zero, sub_self, norm_zero, integral_zero, mul_zero,
       le_refl]
   | inr _ =>
   obtain ⟨i₀⟩ : Nonempty ι := inferInstance
-  have hA : 0 ≤ A := nonneg_of_le_div_pow ht (hσk 0 (Nat.zero_le _) i₀ 0) (norm_nonneg _)
+  have hA : 0 ≤ A := TauCeti.nonneg_of_le_div_pow ht (hσk 0 (Nat.zero_le _) i₀ 0) (norm_nonneg _)
   have hσt : tsupport σ ⊆ closedBall 0 t := closure_minimal hσ isClosed_closedBall
   -- The symbol `τ ξ = ⟪h, ξ⟫ σ ξ` of the derivative of the kernel along `h`.
   have hi : (inner ℝ · h : V → ℝ) = ⇑(innerSL ℝ h) := funext fun _ ↦ real_inner_comm _ _
@@ -363,9 +354,9 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
   obtain ⟨i₀⟩ : Nonempty ι := by
     by_contra hne
     rw [not_nonempty_iff] at hne
-    have := subsingleton_of_isEmpty b
+    have := b.subsingleton_of_isEmpty
     exact hh (Subsingleton.elim h 0)
-  have hA : 0 ≤ A := nonneg_of_le_div_pow ht (hσk 0 (Nat.zero_le _) i₀ 0) (norm_nonneg _)
+  have hA : 0 ≤ A := TauCeti.nonneg_of_le_div_pow ht (hσk 0 (Nat.zero_le _) i₀ 0) (norm_nonneg _)
   have hK := (𝓕⁻ σ).integrable (μ := volume)
   rw [mul_min_of_nonneg _ _ (mul_nonneg (hC₂.trans (le_max_right _ _)) hA)]
   refine le_min ?_ ?_

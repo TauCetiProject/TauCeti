@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
-import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 
 /-!
 # Cutting off a Schwartz function
@@ -73,14 +72,9 @@ theorem smulLeftCLM_comp_inv_smul_apply (hχ : χ.HasTemperateGrowth) (R : ℝ) 
 /-- A truncation of a Schwartz function by a compactly supported cutoff is compactly supported. -/
 theorem hasCompactSupport_smulLeftCLM_comp_inv_smul
     (hsupp : HasCompactSupport χ) {R : ℝ} (hR : R ≠ 0) (f : 𝓢(E, F)) :
-    HasCompactSupport (smulLeftCLM F (fun y ↦ χ (R⁻¹ • y)) f) := by
-  by_cases hg : (fun y ↦ χ (R⁻¹ • y)).HasTemperateGrowth
-  · have hχ : χ.HasTemperateGrowth := by
-      simpa [Function.comp_def, smul_smul, hR] using
-        hg.comp (R • ContinuousLinearMap.id ℝ E).hasTemperateGrowth
-    rw [funext (smulLeftCLM_comp_inv_smul_apply hχ R f)]
-    exact (hsupp.comp_smul (inv_ne_zero hR)).smul_right
-  · simpa [smulLeftCLM_of_not_hasTemperateGrowth hg] using HasCompactSupport.zero
+    HasCompactSupport (smulLeftCLM F (fun y ↦ χ (R⁻¹ • y)) f) :=
+  (hsupp.comp_smul (inv_ne_zero hR)).isCompact.of_isClosed_subset (isClosed_tsupport _)
+    ((tsupport_smulLeftCLM_subset _ f).trans Set.inter_subset_right)
 
 /-- Where `‖x‖ ≥ ρ > 0`, one power of `‖x‖` can be traded for `ρ⁻¹` against the next seminorm. -/
 private lemma pow_mul_norm_iteratedFDeriv_le_div (f : 𝓢(E, F)) (k j : ℕ) {ρ : ℝ} (hρ : 0 < ρ)
