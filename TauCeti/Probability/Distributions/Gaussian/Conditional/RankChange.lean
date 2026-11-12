@@ -154,8 +154,9 @@ theorem not_continuousAt_gaussianCondKernel_gaussianRankChangeCovariance_zero_ze
     dsimp only [u]
     exact one_div_ne_zero (by positivity)
   have hFδ (n : ℕ) : F (u n) = δ := by
-    exact Subtype.ext
-      (gaussianCondKernel_gaussianRankChangeCovariance_zero_of_ne_zero (hune n))
+    exact ProbabilityMeasure.toMeasure_injective (by
+      simpa only [F, δ, Measure.coe_toProbabilityMeasure] using
+        gaussianCondKernel_gaussianRankChangeCovariance_zero_of_ne_zero (hune n))
   have htoF : Tendsto (fun n ↦ F (u n)) atTop (𝓝 (F 0)) := by
     exact hcontinuous.tendsto.comp hu
   have htoδ : Tendsto (fun n ↦ F (u n)) atTop (𝓝 δ) := by
