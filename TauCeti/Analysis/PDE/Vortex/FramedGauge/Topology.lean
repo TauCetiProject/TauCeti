@@ -238,8 +238,7 @@ variable (hs) in
 /-- The increment embeds `G_s`, with its `H^s` topology, into `H^s(ℂ)`. -/
 theorem isEmbedding_sobolevGaugeIncrement :
     @Topology.IsEmbedding _ _ (sobolevGaugeTopology hs) _ (sobolevGaugeIncrement hs) :=
-  @Topology.IsEmbedding.mk _ _ (sobolevGaugeTopology hs) _ _
-    (@Topology.IsInducing.mk _ _ (sobolevGaugeTopology hs) _ _ rfl) sobolevGaugeIncrement_injective
+  sobolevGaugeIncrement_injective.isEmbedding_induced
 
 /-- In the `H^s` topology, `‖h_u - h_v‖ → 0` as `u → v`. -/
 private theorem tendsto_norm_sobolevGaugeIncrement_sub (v : sobolevGaugeGroup hs) :
@@ -294,7 +293,7 @@ theorem isTopologicalGroup_sobolevGaugeTopology :
 
 /-- **The Sobolev embedding for gauges.** There is `C` such that
 `|u(z) - v(z)| ≤ C ‖h_u - h_v‖_{H^s}` for all `u, v ∈ G_s` and all `z`: convergence in the `H^s`
-topology is uniform convergence. -/
+topology implies uniform convergence. -/
 theorem exists_norm_sub_le_mul_norm_sobolevGaugeIncrement_sub (hs : 1 < s) :
     ∃ C, 0 ≤ C ∧ ∀ (u v : sobolevGaugeGroup hs) (z : ℂ),
       ‖((u : ℂ → Circle) z : ℂ) - (v : ℂ → Circle) z‖ ≤

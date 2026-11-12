@@ -377,13 +377,13 @@ theorem toLp_inclusion_mul (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s) (u v : H^{
   toLp_inclusion_mulAux hs h u v
 
 /-- The product of `H^s`, `s > dim E / 2`, is commutative. -/
-theorem mul_comm (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) : mul hs u v = mul hs v u :=
+protected theorem mul_comm (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) : mul hs u v = mul hs v u :=
   mulAux_eq_of_ae_eq hs <| by
     filter_upwards [toLp_inclusion_mul hs (nonneg_of_finrank_lt hs) v u] with x hx
     rw [hx, _root_.mul_comm]
 
 /-- The product of `H^s`, `s > dim E / 2`, is associative. -/
-theorem mul_assoc (hs : finrank ℝ E < 2 * s) (u v w : H^{s}(E)) :
+protected theorem mul_assoc (hs : finrank ℝ E < 2 * s) (u v w : H^{s}(E)) :
     mul hs (mul hs u v) w = mul hs u (mul hs v w) :=
   mulAux_eq_of_ae_eq hs <| by
     have h := nonneg_of_finrank_lt hs
