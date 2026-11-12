@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Map
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Module
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Relative
-import TauCeti.Algebra.Homology.Ext.Basic
 
 /-!
 # Relative cohomology of a sheaf of modules and of its underlying abelian sheaf
@@ -72,6 +71,16 @@ variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) (R : Type v)
   [HasSheafify J AddCommGrpCat.{v}] [HasSheafify J (ModuleCat.{v} R)]
   [J.HasSheafCompose (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})]
 
+omit [HasSheafify J AddCommGrpCat.{v}] [HasSheafify J (ModuleCat.{v} R)] in
+/-- A section of a sheaf of `R`-modules lies in the kernel of a restriction map exactly when it
+lies in the kernel of the corresponding restriction map of the underlying abelian sheaf. -/
+private lemma mem_ker_sheafCompose_forget₂_map_iff {U V : C} (i : U ⟶ V)
+    (F : Sheaf J (ModuleCat.{v} R)) (s : F.obj.obj (op V)) :
+    s ∈ (((sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).obj F).obj.map
+        i.op).hom.ker ↔ s ∈ LinearMap.ker (F.obj.map i.op).hom :=
+  -- both say that `s` restricts to zero along `i`
+  AddMonoidHom.mem_ker.trans (LinearMap.mem_ker (f := (F.obj.map i.op).hom)).symm
+
 noncomputable section
 
 /-- The morphism of abelian sheaves `ℤ_{V,U} ⟶ R_{V,U}` from the relative free abelian sheaf of
@@ -82,9 +91,9 @@ def relativeFreeYonedaSheafToForget {U V : C} (i : U ⟶ V) :
       (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).obj
         (relativeFreeModuleYonedaSheaf J R i) :=
   (relativeFreeYonedaSheafHomEquiv J i _).symm
-    -- the underlying abelian group of a module of sections is the module itself
     ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).1,
-      (relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).2⟩
+      (mem_ker_sheafCompose_forget₂_map_iff J R i _ _).2
+        (relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).2⟩
 
 /-- Under the identification of morphisms out of `ℤ_{V,U}` with sections,
 `relativeFreeYonedaSheafToForget` is the section of `R_{V,U}` over `V` given by its identity. -/
@@ -218,7 +227,8 @@ theorem relativeExtToForget_zero_bijective {U V : C} (i : U ⟶ V)
   · rw [← coe_relativeH'_zeroEquiv_relativeExtToForget,
       ← coe_relativeH'_zeroEquiv_relativeExtToForget, hxy]
   · let s := Sheaf.relativeH'.zeroEquiv _ i c
-    refine ⟨(relativeFreeModuleYonedaExtZeroEquiv J R i F).symm ⟨s.1, s.2⟩,
+    refine ⟨(relativeFreeModuleYonedaExtZeroEquiv J R i F).symm
+        ⟨s.1, (mem_ker_sheafCompose_forget₂_map_iff J R i F s.1).1 s.2⟩,
       (Sheaf.relativeH'.zeroEquiv _ i).injective (Subtype.ext ?_)⟩
     rw [coe_relativeH'_zeroEquiv_relativeExtToForget, LinearEquiv.apply_symm_apply]
 

@@ -83,17 +83,16 @@ theorem relativeExtToForget_bijective {U V : Opens X} (i : U ⟶ V)
     have hS : S.ShortExact := TauCeti.injectiveCokernelSequence_shortExact F
     have hS' : (S.map Φ).ShortExact := Sheaf.shortExact_map_sheafCompose_forget₂_moduleCat hS
     -- the underlying abelian sheaf of `I` is flasque
-    have : TopCat.Presheaf.IsFlasque (S.map Φ).X₂.obj :=
-      inferInstanceAs (TopCat.Presheaf.IsFlasque (S.X₂.obj ⋙ forget₂ (ModuleCat.{u} R) _))
+    have : TopCat.Presheaf.IsFlasque (S.map Φ).X₂.obj := by
+      rw [ShortComplex.map_X₂, sheafCompose_obj_obj]
+      infer_instance
     exact AddMonoidHom.bijective_of_surjective_of_bijective_of_right_exact _ _ _ _
       (relativeExtToForget _ R i S.X₂ n) (relativeExtToForget _ R i S.X₃ n)
       (relativeExtToForget _ R i S.X₁ (n + 1))
       (AddMonoidHom.ext fun x ↦ by
         simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddCommGrpCat.hom_ofHom,
           AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply, relativeExtToForget_comp,
-          Ext.mapExactFunctor_mk₀]
-        -- `(S.map Φ).g` is `Φ.map S.g` by definition of `ShortComplex.map`
-        rfl)
+          Ext.mapExactFunctor_mk₀, ShortComplex.map_g, Φ])
       (AddMonoidHom.ext fun x ↦ by
         simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddCommGrpCat.hom_ofHom,
           AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply, relativeExtToForget_comp,
@@ -174,10 +173,19 @@ def supportedModuleHPresheafForgetIso (S : Closeds X) (n : ℕ) :
       ext x
       exact F.supportedModuleHAddEquiv_supportedModuleHPresheaf_map S h x
 
+@[simp↓]
 lemma supportedModuleHPresheafForgetIso_hom_app_apply (S : Closeds X) (n : ℕ) (W : (Opens X)ᵒᵖ)
     (x : F.supportedModuleH S W.unop n) :
     (F.supportedModuleHPresheafForgetIso S n).hom.app W x =
       F.supportedModuleHAddEquiv S W.unop n x :=
+  (rfl)
+
+@[simp↓]
+lemma supportedModuleHPresheafForgetIso_inv_app_apply (S : Closeds X) (n : ℕ) (W : (Opens X)ᵒᵖ)
+    (x : ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedH S
+      W.unop n) :
+    (F.supportedModuleHPresheafForgetIso S n).inv.app W x =
+      (F.supportedModuleHAddEquiv S W.unop n).symm x :=
   (rfl)
 
 end

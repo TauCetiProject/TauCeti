@@ -58,15 +58,6 @@ variable {X : TopCat.{u}} {R : Type u} [CommRing R]
 
 noncomputable section
 
-/-- If the local cohomology sheaf `𝓗_Sⁿ(F)` of `R`-modules vanishes, then every class in
-`H_Sⁿ(W, F)` vanishes locally: each point `x ∈ W` has an open neighbourhood `V ≤ W` on which the
-class restricts to zero. -/
-theorem exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSheaf {n : ℕ}
-    (h : IsZero (F.supportedModuleHSheaf S n)) {W : Opens X} (c : F.supportedModuleH S W n)
-    {x : X} (hx : x ∈ W) : ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧
-      (F.supportedModuleHPresheaf S n).map (homOfLE hVW).op c = 0 :=
-  TopCat.Presheaf.exists_map_eq_zero_of_isZero_presheafToSheaf_obj h c hx
-
 /-- If the local cohomology sheaf `𝓗_Sⁿ(F)` of `R`-modules vanishes, so does the local cohomology
 sheaf `𝓗_Sⁿ` of the underlying abelian sheaf of `F`. -/
 theorem isZero_supportedHSheaf_of_isZero_supportedModuleHSheaf {n : ℕ}
@@ -77,7 +68,7 @@ theorem isZero_supportedHSheaf_of_isZero_supportedModuleHSheaf {n : ℕ}
   -- `c` is the image of a module-valued class, which vanishes locally
   obtain ⟨c, rfl⟩ := (F.supportedModuleHAddEquiv S W n).surjective c
   obtain ⟨V, hVW, hxV, hV⟩ :=
-    F.exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSheaf S h c hx
+    TopCat.Presheaf.exists_map_eq_zero_of_isZero_presheafToSheaf_obj h c hx
   exact ⟨V, hVW, hxV,
     (F.supportedModuleHAddEquiv_supportedModuleHPresheaf_map S (homOfLE hVW).op c).symm.trans
       ((congrArg _ hV).trans (map_zero _))⟩

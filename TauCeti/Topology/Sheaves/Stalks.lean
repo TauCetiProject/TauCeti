@@ -133,6 +133,8 @@ theorem isZero_presheafToSheaf_obj_iff :
 /-- If the sheafification of a presheaf of modules vanishes, every section of the presheaf is
 locally zero: each point of its domain has a neighbourhood on which it restricts to zero. -/
 theorem exists_map_eq_zero_of_isZero_presheafToSheaf_obj {R : Type u} [Ring R]
+    [HasWeakSheafify (Opens.grothendieckTopology X) (ModuleCat.{u} R)]
+    [(Opens.grothendieckTopology X).WEqualsLocallyBijective (ModuleCat.{u} R)]
     {P : X.Presheaf (ModuleCat.{u} R)}
     (h : IsZero ((presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj P))
     {U : Opens X} (s : P.obj (op U)) {x : X} (hx : x ∈ U) :
