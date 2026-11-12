@@ -12,6 +12,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Algebra.BigOperators.Field
+import TauCeti.Data.Fintype.BigOperators
 
 /-!
 # Path models of the Temperley–Lieb algebras
@@ -168,22 +169,6 @@ theorem pathGenerator_apply (a b c : Fin (m + 1)) (s t : Fin (m + 1) → V) :
         r (s b) * r (t b) / r (s a) ^ 2
       else 0 := (rfl)
 
-/-- Summing over the configurations that differ from `s` at most at position `b` is summing over
-the vertex at that position. -/
-private theorem sum_ite_eq_update (s : Fin (m + 1) → V) (b : Fin (m + 1))
-    (g : (Fin (m + 1) → V) → K) :
-    ∑ t, (if t = update s b (t b) then g t else 0) = ∑ x, g (update s b x) := by
-  rw [← Finset.sum_filter]
-  have himage : Finset.univ.filter (fun t : Fin (m + 1) → V ↦ t = update s b (t b)) =
-      Finset.univ.image (update s b) := by
-    ext t
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_image]
-    constructor
-    · exact fun h ↦ ⟨t b, h.symm⟩
-    · rintro ⟨x, rfl⟩
-      simp
-  rw [himage, Finset.sum_image fun x _ y _ h ↦ update_injective s b h]
-
 variable {G v₀ r}
 
 /-- Left multiplication by a generator matrix: the row `s` of the product is a weighted sum of
@@ -204,7 +189,7 @@ theorem pathGenerator_mul_apply (a b c : Fin (m + 1))
       rw [pathGenerator_apply, ← ite_and, ite_mul, zero_mul]
       simp only [hs, true_and]
     simp_rw [h]
-    rw [sum_ite_eq_update s b, ← Finset.sum_filter]
+    rw [Fintype.sum_ite_eq_update s b, ← Finset.sum_filter]
     simp_rw [update_self]
     congr 1
     ext x
@@ -497,14 +482,6 @@ theorem pathWeight_def {m : ℕ} (s : Fin (m + 1) → V) :
     pathWeight G v₀ r s = if IsWalkFrom G v₀ s then (r (s (Fin.last m)) / r v₀) ^ 2 else 0 :=
   (rfl)
 
-omit [DecidableEq V] in
-/-- Sums over vertex sequences of length `m + 2` split as sums over their initial segment and their
-last vertex. -/
-private theorem sum_snoc {m : ℕ} (f : (Fin (m + 2) → V) → K) :
-    ∑ s, f s = ∑ t : Fin (m + 1) → V, ∑ y, f (Fin.snoc t y) := by
-  rw [← (Fin.snocEquiv fun _ ↦ V).sum_comp, Fintype.sum_prod_type, Finset.sum_comm]
-  rfl
-
 /-- Extending walks by one step multiplies the total weight by `δ`: the weights of the neighbours
 of a vertex `v` add up to `δ` times the weight of `v`. -/
 theorem sum_pathWeight_snoc {δ : K} (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
@@ -547,7 +524,8 @@ theorem pathTrace_one : pathTrace G v₀ hr hδ (1 : TemperleyLieb K δ n) = δ 
       ite_eq_left ⟨rfl, fun i ↦ i.elim0⟩, div_self (hr v₀), one_pow]
     rw [pathWeight_def, ite_eq_right fun h ↦ hs (funext fun i ↦ by
       rw [Fin.fin_one_eq_zero i]; exact h.1)]
-  | succ n ih => rw [sum_snoc, Finset.sum_congr rfl fun t _ ↦ sum_pathWeight_snoc hδ t,
+  | succ n ih =>
+    rw [Fintype.sum_fin_snoc, Finset.sum_congr rfl fun t _ ↦ sum_pathWeight_snoc hδ t,
       ← Finset.mul_sum, ih, pow_succ, mul_comm]
 
 /-- The weight matrix of the path model commutes with the path representation, since the latter
@@ -581,8 +559,8 @@ private theorem pathWeight_mul_pathRep_strandIncl (x : TemperleyLieb K δ (n + 1
 theorem pathTrace_strandIncl (x : TemperleyLieb K δ (n + 1)) :
     pathTrace G v₀ hr hδ (strandIncl x) = δ * pathTrace G v₀ hr hδ x := by
   simp only [pathTrace_apply, trace, Matrix.diag_apply, diagonal_mul]
-  rw [Finset.sum_congr rfl fun s _ ↦ pathWeight_mul_pathRep_strandIncl hr hδ x s s, sum_snoc,
-    Finset.mul_sum]
+  rw [Finset.sum_congr rfl fun s _ ↦ pathWeight_mul_pathRep_strandIncl hr hδ x s s,
+    Fintype.sum_fin_snoc, Finset.mul_sum]
   refine Finset.sum_congr rfl fun t _ ↦ ?_
   simp only [extendLast_apply, Fin.init_snoc, ite_true]
   rw [← Finset.sum_mul, sum_pathWeight_snoc hδ, mul_assoc]
@@ -599,7 +577,7 @@ private theorem trace_pathGenerator_mul_pathRep_strandIncl (x : TemperleyLieb K 
   obtain rfl : b = (Fin.last (n + 1)).castSucc := Fin.ext hb
   obtain rfl : c = Fin.last (n + 2) := Fin.ext hc
   simp only [trace, Matrix.diag_apply, pathGenerator_mul_apply, diagonal_mul]
-  rw [sum_snoc]
+  rw [Fintype.sum_fin_snoc]
   refine Finset.sum_congr rfl fun t _ ↦ ?_
   simp only [Fin.snoc_castSucc, Fin.snoc_last, isWalkFrom_snoc]
   have ha'l : a'.val + 1 = (Fin.last (n + 1)).val := by simp [ha']
@@ -675,8 +653,8 @@ theorem conjTranspose_pathGenerator (hrs : ∀ v, IsSelfAdjoint (r v)) {m : ℕ}
   rw [conjTranspose_apply, pathGenerator_apply, pathGenerator_apply]
   by_cases h : IsWalkFrom G v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b)
   · obtain ⟨h', ha⟩ := pathGenerator_cond_symm hab hbc h
-    rw [ite_eq_left h', ite_eq_left h, ha, star_div₀, star_mul, star_pow, (hrs _).star_eq,
-      (hrs _).star_eq, (hrs _).star_eq, mul_comm]
+    rw [ite_eq_left h', ite_eq_left h, ha]
+    simp [(hrs _).star_eq, mul_comm]
   · rw [ite_eq_right h, ite_eq_right fun h' ↦ h (pathGenerator_cond_symm hab hbc h').1,
       star_zero]
 
@@ -700,11 +678,7 @@ include hrs in
 theorem pathWeight_nonneg {m : ℕ} (s : Fin (m + 1) → V) : 0 ≤ pathWeight G v₀ r s := by
   rw [pathWeight_def]
   split_ifs
-  · have h : IsSelfAdjoint (r (s (Fin.last m)) / r v₀) := by
-      rw [IsSelfAdjoint, star_div₀, (hrs _).star_eq, (hrs _).star_eq]
-    rw [sq]
-    nth_rw 1 [← h.star_eq]
-    exact star_mul_self_nonneg (r (s (Fin.last m)) / r v₀)
+  · exact ((hrs _).div (hrs _)).sq_nonneg
   · exact le_rfl
 
 include hrs in

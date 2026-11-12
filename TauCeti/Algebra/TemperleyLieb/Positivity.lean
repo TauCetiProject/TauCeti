@@ -256,7 +256,8 @@ theorem lt_floor_of_forall_nonneg (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ :
 /-- **Positivity at the discrete loop parameters.** For `δ = 2 cos (π / m)` with `m ≥ 2`, the
 Hermitian forms `(x, y) ↦ tr n (x⋆ * y)` of a Markov trace are positive semidefinite on every
 number of strands. The trace is that of the path model on the Dynkin graph `A_(m-1)`, with the
-vertex `t` weighted by the quantum integer `[t + 1]`, all of which are positive. -/
+vertex `t` weighted by `√[t + 1]`, the square root of the quantum integer `[t + 1]`, all of which
+are positive. -/
 theorem map_star_mul_self_nonneg_of_eq_two_mul_cos (htr : IsMarkovTrace ℂ (δ : ℂ) tr) {m : ℕ}
     (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m)) {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
     0 ≤ tr n (star x * x) := by
