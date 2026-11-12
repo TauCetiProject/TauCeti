@@ -53,8 +53,8 @@ theorem ContDiffOn.parametric_invFun {P F : Type*} [NormedAddCommGroup P] [Norme
     (hn : 1 ≤ n) (hbij : ∀ p ∈ Ω, Bijective fun x ↦ g (p, x))
     (hinj : ∀ p ∈ Ω, ∀ x, Injective (fderiv 𝕂 (fun x ↦ g (p, x)) x)) :
     ContDiffOn 𝕂 n (fun q : P × F ↦ invFun (fun x ↦ g (q.1, x)) q.2) (Ω ×ˢ univ) := by
-  have : CompleteSpace P := FiniteDimensional.complete 𝕂 P
-  have : CompleteSpace F := FiniteDimensional.complete 𝕂 F
+  have : CompleteSpace P := FiniteDimensional.completeSpace 𝕂 P
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕂 F
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
   set S : Set (P × F) := Ω ×ˢ univ
   have hS : IsOpen S := hΩ.prod isOpen_univ
