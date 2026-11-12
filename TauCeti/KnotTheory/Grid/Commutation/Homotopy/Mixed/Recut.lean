@@ -89,7 +89,7 @@ theorem toRectangleDecomposition_ne_recut_of_right_eq_left {D : GridRectangleDec
   have hl : D.first.left ≠ finRotate n a := fun h => D.first.left_ne_right (h.trans hright.symm)
   have hr : D.second.right ≠ finRotate n a := fun h => D.second.left_ne_right (hleft.trans h.symm)
   rcases hdata.recut_geometry hone with
-      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
+      ⟨hrow, -, -, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, -, -, -, -, h2b, h2t⟩ <;>
     rcases F.side_turns with ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
   · rw [h1b, h1t] at hturn
     exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hs hturn
@@ -119,7 +119,7 @@ theorem toRectangleDecomposition_ne_recut_of_left_eq_right {D : GridRectangleDec
   have hl : D.second.left ≠ finRotate n a := fun h => D.second.left_ne_right (h.trans hright.symm)
   have hr : D.first.right ≠ finRotate n a := fun h => D.first.left_ne_right (hleft.trans h.symm)
   rcases hdata.recut_geometry hone with
-      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
+      ⟨hrow, -, -, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, -, -, -, -, h2b, h2t⟩ <;>
     rcases F.side_turns with ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
   · rw [h1b, h1t] at hturn
     exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn hs

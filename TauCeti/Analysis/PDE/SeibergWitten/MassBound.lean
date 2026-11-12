@@ -203,8 +203,6 @@ theorem exists_mapClusterPt_curvatureCurrent {k : ℕ}
       ‖extDeriv (b i) x‖ ≤ A * r i * max (1 - ‖α i x‖ ^ 2) 0 + 2 * C := by
     have hr₁ : 1 ≤ r i := le_of_max_le_left (hr i)
     have hsq : C / √(r i) ≤ C := div_le_self hC (by simpa using Real.sqrt_le_sqrt hr₁)
-    have hw : 0 ≤ max (1 - ‖α i x‖ ^ 2) 0 := le_max_right _ _
-    have hq : 0 ≤ r i / (4 * √2) := by positivity
     calc ‖extDeriv (b i) x‖ = ‖Fp i x + Fm i x‖ := by rw [← hsplit i x hx, norm_neg]
       _ ≤ ‖Fp i x‖ + ‖Fm i x‖ := norm_add_le _ _
       _ ≤ r i / (4 * √2) * max (1 - ‖α i x‖ ^ 2) 0 + C +

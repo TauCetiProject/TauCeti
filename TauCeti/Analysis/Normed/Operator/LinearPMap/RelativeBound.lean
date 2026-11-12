@@ -22,9 +22,14 @@ controlled by the graph of `A` rather than by `‖x‖` alone, and the Kato–Re
 
 This file sets up the predicate and its elementary calculus: the zero map is relatively bounded
 with constants `0, 0`; the constants may be increased; relative bounds add under sums and
-differences, scale under scalar multiplication and are unchanged by negation; and a bounded
-operator on the whole space is relatively bounded with constants `‖T‖, 0`. Sums and differences
-use Mathlib's addition of partial linear maps, whose domain is the intersection of the two domains.
+differences, scale under scalar multiplication and are unchanged by negation; and the restriction
+of a bounded operator `T` to a subspace containing the domain of `A` is relatively bounded with
+constants `‖T‖, 0`. Sums and differences use Mathlib's addition of partial linear maps, whose
+domain is the intersection of the two domains.
+
+The predicate only compares norms, so `V` and `A` may be semilinear over different ring
+homomorphisms out of a common scalar ring, and their codomains need no compatibility between norm
+and scalar multiplication.
 
 ## Main declarations
 
@@ -33,7 +38,7 @@ use Mathlib's addition of partial linear maps, whose domain is the intersection 
 * `LinearPMap.IsRelativelyBounded.domain_add`: the domain of `A + V` is the domain of `A`.
 * `LinearPMap.IsRelativelyBounded.add`, `.sub`, `.neg`, `.smul`: the linear calculus.
 * `LinearPMap.isRelativelyBounded_zero`, `ContinuousLinearMap.isRelativelyBounded_toPMap`: the
-  zero map and bounded operators.
+  zero map and restrictions of bounded operators.
 
 ## References
 
@@ -46,14 +51,14 @@ public section
 
 namespace LinearPMap
 
-variable {𝕜 E F G : Type*} [NormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+variable {R S T E F G : Type*} [Ring R] [Ring S] [Ring T] {σ : R →+* S} {τ : R →+* T}
+  [SeminormedAddCommGroup E] [Module R E] [SeminormedAddCommGroup F] [Module T F]
+  [SeminormedAddCommGroup G] [Module S G]
 
 /-- A partial linear map `V` is *relatively bounded* with respect to `A`, with constants `a` and
 `b`, when `A.domain ≤ V.domain` and `‖V x‖ ≤ a * ‖x‖ + b * ‖A x‖` for every `x` in the domain of
 `A`. -/
-structure IsRelativelyBounded (V : E →ₗ.[𝕜] G) (A : E →ₗ.[𝕜] F) (a b : ℝ) : Prop where
+structure IsRelativelyBounded (V : E →ₛₗ.[σ] G) (A : E →ₛₗ.[τ] F) (a b : ℝ) : Prop where
   /-- The domain of `A` lies in the domain of `V`. -/
   domain_le : A.domain ≤ V.domain
   /-- The relative bound `‖V x‖ ≤ a * ‖x‖ + b * ‖A x‖` on the domain of `A`. -/
@@ -61,17 +66,16 @@ structure IsRelativelyBounded (V : E →ₗ.[𝕜] G) (A : E →ₗ.[𝕜] F) (a
 
 namespace IsRelativelyBounded
 
-variable {V W : E →ₗ.[𝕜] G} {A : E →ₗ.[𝕜] F} {a b a' b' : ℝ}
+variable {V W : E →ₛₗ.[σ] G} {A : E →ₛₗ.[τ] F} {a b a' b' : ℝ}
 
 /-- A relative bound holds at any larger pair of constants. -/
 theorem mono (h : V.IsRelativelyBounded A a b) (ha : a ≤ a') (hb : b ≤ b') :
     V.IsRelativelyBounded A a' b' where
   domain_le := h.domain_le
-  norm_apply_le x := (h.norm_apply_le x).trans <| add_le_add
-    (mul_le_mul_of_nonneg_right ha (norm_nonneg _)) (mul_le_mul_of_nonneg_right hb (norm_nonneg _))
+  norm_apply_le x := (h.norm_apply_le x).trans (by gcongr)
 
 /-- If `V` is relatively bounded with respect to `A`, then `A + V` has the same domain as `A`. -/
-theorem domain_add {V A : E →ₗ.[𝕜] F} (h : V.IsRelativelyBounded A a b) :
+theorem domain_add {V : E →ₛₗ.[τ] F} (h : V.IsRelativelyBounded A a b) :
     (A + V).domain = A.domain :=
   inf_eq_left.2 h.domain_le
 
@@ -81,8 +85,7 @@ theorem add (hV : V.IsRelativelyBounded A a b) (hW : W.IsRelativelyBounded A a' 
   domain_le := le_inf hV.domain_le hW.domain_le
   norm_apply_le x := by
     rw [add_apply]
-    calc _ ≤ ‖V ⟨x, hV.domain_le x.2⟩‖ + ‖W ⟨x, hW.domain_le x.2⟩‖ := norm_add_le _ _
-      _ ≤ _ := by linarith [hV.norm_apply_le x, hW.norm_apply_le x]
+    exact (norm_add_le _ _).trans (by linarith [hV.norm_apply_le x, hW.norm_apply_le x])
 
 /-- Negation does not change a relative bound. -/
 theorem neg (h : V.IsRelativelyBounded A a b) : (-V).IsRelativelyBounded A a b where
@@ -93,28 +96,25 @@ theorem neg (h : V.IsRelativelyBounded A a b) : (-V).IsRelativelyBounded A a b w
 
 /-- Relative bounds add under the difference of two partial linear maps. -/
 theorem sub (hV : V.IsRelativelyBounded A a b) (hW : W.IsRelativelyBounded A a' b') :
-    (V - W).IsRelativelyBounded A (a + a') (b + b') where
-  domain_le := le_inf hV.domain_le hW.domain_le
-  norm_apply_le x := by
-    rw [sub_apply]
-    calc _ ≤ ‖V ⟨x, hV.domain_le x.2⟩‖ + ‖W ⟨x, hW.domain_le x.2⟩‖ := norm_sub_le _ _
-      _ ≤ _ := by linarith [hV.norm_apply_le x, hW.norm_apply_le x]
+    (V - W).IsRelativelyBounded A (a + a') (b + b') :=
+  sub_eq_add_neg V W ▸ hV.add hW.neg
 
 /-- A scalar multiple `c • V` is relatively bounded with the constants scaled by `‖c‖`. -/
-theorem smul (h : V.IsRelativelyBounded A a b) (c : 𝕜) :
+theorem smul {M : Type*} [SeminormedRing M] [DistribMulAction M G] [IsBoundedSMul M G]
+    [SMulCommClass S M G] (h : V.IsRelativelyBounded A a b) (c : M) :
     (c • V).IsRelativelyBounded A (‖c‖ * a) (‖c‖ * b) where
   domain_le := h.domain_le
   norm_apply_le x := by
-    rw [smul_apply, norm_smul]
-    calc ‖c‖ * ‖V ⟨x, h.domain_le x.2⟩‖ ≤ ‖c‖ * (a * ‖(x : E)‖ + b * ‖A x‖) :=
-          mul_le_mul_of_nonneg_left (h.norm_apply_le x) (norm_nonneg c)
+    rw [smul_apply]
+    calc ‖c • V ⟨x, h.domain_le x.2⟩‖ ≤ ‖c‖ * (a * ‖(x : E)‖ + b * ‖A x‖) :=
+          (norm_smul_le _ _).trans (by gcongr; exact h.norm_apply_le x)
       _ = _ := by ring
 
 end IsRelativelyBounded
 
 /-- The zero map is relatively bounded with constants `0, 0`. -/
-theorem isRelativelyBounded_zero (A : E →ₗ.[𝕜] F) :
-    (0 : E →ₗ.[𝕜] G).IsRelativelyBounded A 0 0 where
+theorem isRelativelyBounded_zero (A : E →ₛₗ.[τ] F) :
+    (0 : E →ₛₗ.[σ] G).IsRelativelyBounded A 0 0 where
   domain_le := le_top
   norm_apply_le x := by simp
 
@@ -122,15 +122,16 @@ end LinearPMap
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+variable {𝕜 𝕜₂ R E F G : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂] [Ring R]
+  {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] {τ : 𝕜 →+* R}
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [Module R F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜₂ G]
 
-/-- A bounded operator `T` on the whole space, viewed as a partial linear map with domain `⊤`, is
-relatively bounded with respect to every partial linear map, with constants `‖T‖, 0`. -/
-theorem isRelativelyBounded_toPMap (T : E →L[𝕜] G) (A : E →ₗ.[𝕜] F) :
-    ((T : E →ₗ[𝕜] G).toPMap ⊤).IsRelativelyBounded A ‖T‖ 0 where
-  domain_le := le_top
+/-- The restriction of a bounded operator `T` to a subspace `p` containing the domain of a partial
+linear map `A` is relatively bounded with respect to `A`, with constants `‖T‖, 0`. -/
+theorem isRelativelyBounded_toPMap (T : E →SL[σ] G) {A : E →ₛₗ.[τ] F} {p : Submodule 𝕜 E}
+    (hp : A.domain ≤ p) : ((T : E →ₛₗ[σ] G).toPMap p).IsRelativelyBounded A ‖T‖ 0 where
+  domain_le := hp
   norm_apply_le x := by simpa using T.le_opNorm x
 
 end ContinuousLinearMap

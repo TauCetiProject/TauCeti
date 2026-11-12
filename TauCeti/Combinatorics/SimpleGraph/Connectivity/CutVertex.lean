@@ -87,7 +87,7 @@ theorem not_isCutVertex_induce_singleton (G : SimpleGraph V) (v : V)
     (w : ↑({v} : Set V)) :
     ¬(G.induce {v}).IsCutVertex w := by
   apply Graph.not_isCutVertex_of_compl_subsingleton
-  intro x hx y hy
+  intro x _ y _
   apply Subtype.ext
   have hxv := x.property
   have hyv := y.property

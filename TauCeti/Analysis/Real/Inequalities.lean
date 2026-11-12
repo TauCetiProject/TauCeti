@@ -32,7 +32,6 @@ theorem le_add_sq_div_two_mul_of_sq_div_le {δ₀ d τ σ m b c' : ℝ} (hδ₀ 
     (hτ₀ : 0 < τ) (hτσ : τ ≤ σ)
     (hτK : c' - m + δ₀ ^ 2 / (2 * σ) ≤ δ₀ ^ 2 / 2 * τ⁻¹) (h : m ≤ b + d ^ 2 / (2 * σ)) :
     c' ≤ b + d ^ 2 / (2 * τ) := by
-  have hσ₀ : 0 < σ := hτ₀.trans_le hτσ
   have hw : 0 ≤ 1 / (2 * τ) - 1 / (2 * σ) := by
     rw [sub_nonneg]
     gcongr

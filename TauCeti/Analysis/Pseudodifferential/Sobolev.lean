@@ -188,8 +188,6 @@ private theorem HasCompactSpatialSupport.seminorm_slice_le (ha : a.HasCompactSpa
     SchwartzMap.seminorm ℂ k l (ha.sliceSchwartz ξ) ≤
         R ^ k * (∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a) *
           (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  have hP : 0 ≤ ∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a :=
-    Finset.sum_nonneg fun r _ ↦ apply_nonneg _ _
   refine SchwartzMap.seminorm_le_bound ℂ k l _ (by positivity) fun x ↦ ?_
   rw [ha.coe_sliceSchwartz]
   by_cases hx : x ∈ K
@@ -252,7 +250,6 @@ theorem exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm
   set g := ha.sliceSchwartz ξ
   set P := ∑ α ∈ t, Symbol.seminorm K α [] a
   set w := (1 + ‖ξ‖ ^ 2) ^ (m / 2)
-  have hP : 0 ≤ P := Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _
   -- Each seminorm of `g` occurring in `key` is bounded by `max R 0 ^ k * P * w`.
   have hs {k : ℕ} {s : Finset (ℕ × ℕ)} {c : ℝ} (hc : 0 ≤ c) (hss : s ⊆ s₀ ∪ s₁)
       (h : ∀ g : 𝓢(CoordinateSpace n, V →L[ℂ] W),
@@ -391,7 +388,7 @@ private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_apply
     Integrable (fun p : CoordinateSpace n × CoordinateSpace n ↦
       𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, g p.2) (𝓕 u p.2)) (volume.prod volume) := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient K hK
+  obtain ⟨C, _, hC⟩ := a.exists_bound_coefficient K hK
   have hFcont : Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
       𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, g p.2) (𝓕 u p.2) :=
     (Real.continuous_fourierChar.comp (by fun_prop)).smul
@@ -917,15 +914,12 @@ theorem toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply
         BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] V'))
         (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
       ∫ x, φ x • quantizeSchwartzValue a.coefficient u x := by
-  have hc : (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
-      fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
-    funext fun p ↦ by simp
   have hq (x : CoordinateSpace n) :
       quantizeSchwartzValue
           (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient
           (u.postcompCLM (e₁ : V →L[ℂ] V')) x =
         e₂ (quantizeSchwartzValue a.coefficient u x) := by
-    rw [hc, quantizeSchwartzValue_arrowCongr]
+    rw [coefficient_map_arrowCongr, quantizeSchwartzValue_arrowCongr]
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
     BesselPotentialSpace.toDistr_postcomp_apply, hT]
