@@ -386,7 +386,7 @@ theorem negPointTwistOfZero_pointTwistDiv {x : X}
   · subst h
     set σ := fun z' ↦ pointTwistDiv F E z z' (τ z')
     have hσz : σ z = 0 := by
-      change pointTwistDiv F E z z (τ z) = 0
+      dsimp only [σ]
       rw [pointTwistDiv_self]; exact zero_apply _
     set φ := chartAt ℂ z
     -- The chart reading `t` of `τ` at `x` is continuous at the chart coordinate of `x`.
