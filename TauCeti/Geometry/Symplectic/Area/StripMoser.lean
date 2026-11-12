@@ -60,10 +60,10 @@ along `X_t` satisfies `ψ₁^* (ρ dx ∧ dy) = ψ₀^* (dx ∧ dy)`
 the plane is closed, no closedness hypothesis is needed.
 
 This is the step that turns a smooth isotopy of the annulus into an area-preserving one: if
-`h^* (dx ∧ dy) = ρ dx ∧ dy`, then `h ∘ ψ₁` preserves `dx ∧ dy`. The flow `ψ` itself is not
-constructed here. For the density `ρ = 1 + ε sin(2π x)` the data are `m = 0`, `a = 0` and
-`b = ε (1 - cos(2π x)) / (2π)` (`TauCeti.stripMoserDyCoeff_sin`); the field then has zero second
-component everywhere.
+`h^* (dx ∧ dy) = ρ dx ∧ dy` and `ψ₀ = id`, then `h ∘ ψ₁` preserves `dx ∧ dy`. The flow
+`ψ` itself is not constructed here. For the density `ρ = 1 + ε sin(2π x)` the data are
+`m = 0`, `a = 0` and `b = ε (1 - cos(2π x)) / (2π)` (`TauCeti.stripMoserDyCoeff_sin`); the
+field then has zero second component everywhere.
 
 ## Main definitions
 
@@ -121,6 +121,20 @@ def stripMoserPrimitive (g : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : (ℝ × ℝ)
   stripMoserDxCoeff g p.2 • Prod.realPlaneDx p + stripMoserDyCoeff g p • Prod.realPlaneDy p
 
 variable {g : ℝ × ℝ → ℝ} {n : ℕ∞}
+
+/-- The row mean at height `y` is `∫₀¹ g(x, y) dx`. -/
+theorem stripRowMean_def (y : ℝ) : stripRowMean g y = ∫ x in (0 : ℝ)..1, g (x, y) := by
+  rw [stripRowMean]
+
+/-- The `dx`-coefficient of the Moser primitive is `a(y) = -∫₀ʸ m(r) dr`. -/
+theorem stripMoserDxCoeff_def (y : ℝ) :
+    stripMoserDxCoeff g y = -∫ r in (0 : ℝ)..y, stripRowMean g r := by
+  rw [stripMoserDxCoeff]
+
+/-- The `dy`-coefficient of the Moser primitive is `b(x, y) = ∫₀ˣ (g(s, y) - m(y)) ds`. -/
+theorem stripMoserDyCoeff_def (p : ℝ × ℝ) :
+    stripMoserDyCoeff g p = ∫ s in (0 : ℝ)..p.1, (g (s, p.2) - stripRowMean g p.2) := by
+  rw [stripMoserDyCoeff]
 
 /-- The Moser primitive `β = a dx + b dy` evaluates to `a w₁ + b w₂` on a vector `w`. -/
 @[simp]
@@ -378,12 +392,6 @@ theorem compContinuousLinearMap_fderiv_eq_of_stripMoserVectorField (hg : ContDif
 
 /-! ### The density `1 + ε sin(2π x)` -/
 
-private theorem integral_sin_two_pi_mul (x : ℝ) :
-    ∫ s in (0 : ℝ)..x, sin (2 * π * s) = (1 - cos (2 * π * x)) / (2 * π) := by
-  rw [integral_comp_mul_left (fun s ↦ sin s) (by positivity), integral_sin, mul_zero, cos_zero,
-    smul_eq_mul]
-  field_simp
-
 /-- For `g(x, y) = ε sin(2π x)`, the row means vanish. -/
 theorem stripRowMean_sin (ε : ℝ) : stripRowMean (fun p ↦ ε * sin (2 * π * p.1)) = 0 := by
   funext y
@@ -400,6 +408,8 @@ theorem stripMoserDyCoeff_sin (ε : ℝ) (p : ℝ × ℝ) :
     stripMoserDyCoeff (fun p ↦ ε * sin (2 * π * p.1)) p =
       ε * (1 - cos (2 * π * p.1)) / (2 * π) := by
   simp only [stripMoserDyCoeff, stripRowMean_sin, Pi.zero_apply, sub_zero]
-  rw [intervalIntegral.integral_const_mul, integral_sin_two_pi_mul, mul_div_assoc]
+  rw [intervalIntegral.integral_const_mul, integral_comp_mul_left (fun s ↦ sin s) (by positivity),
+    integral_sin, mul_zero, cos_zero, smul_eq_mul]
+  field_simp
 
 end TauCeti
