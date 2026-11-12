@@ -342,30 +342,15 @@ theorem IsBipartition.sum_flowMatching_incidentEdges_eq_source [Fintype V(G)]
     (v : V(G)) (hv : v ∈ L) :
     ∑ e ∈ G.incidentEdges {v}, (hLR.flowMatching f e : ℤ) =
       f.toFun (AuxTerminalHom.source hv) := by
-  have hin : ∑ w, ∑ e : G.BipartiteHom L w v,
-      f.toFun (AuxTerminalHom.original e) = 0 := by
-    apply Fintype.sum_eq_zero
-    intro w
-    apply Fintype.sum_eq_zero
-    intro e
-    exact (disjoint_left.1 hLR.disjoint hv (e.target_mem hLR)).elim
-  have hout : ∑ w, ∑ e : G.BipartiteHom L v w,
-      f.toFun (AuxTerminalHom.original e) =
-        ∑ e ∈ G.incidentEdges {v}, (hLR.flowMatching f e : ℤ) := by
-    rw [← BipartiteHom.sum_outgoing_eq_sum_incidentEdges v hv
-      (fun e ↦ (hLR.flowMatching f e : ℤ))]
-    apply Fintype.sum_congr
-    intro w
-    apply Fintype.sum_congr
-    intro e
-    exact (hLR.flowMatching_edge f e).symm
+  have hrestrict : auxTerminalRestrict f.toFun =
+      (fun {v w} (e : G.BipartiteHom L v w) ↦ (hLR.flowMatching f e.edge : ℤ)) := by
+    funext v w e
+    rw [auxTerminalRestrict_apply, hLR.flowMatching_edge]
   have h := f.conserve (inl v) inl_ne_inr inl_ne_inr
-  rw [AuxTerminalHom.excessAt_inl, excessAt_def] at h
-  simp only [auxTerminalRestrict_apply] at h
-  rw [hin, hout,
+  rw [AuxTerminalHom.excessAt_inl, hrestrict] at h
+  rw [hLR.excessAt_bipartiteHom_left (fun e ↦ (hLR.flowMatching f e : ℤ)) hv,
     AuxTerminalHom.sum_source hv,
-    AuxTerminalHom.sum_sink_of_notMem (disjoint_left.1 hLR.disjoint hv), zero_sub,
-    sub_zero] at h
+    AuxTerminalHom.sum_sink_of_notMem (disjoint_left.1 hLR.disjoint hv), sub_zero] at h
   omega
 
 /-- At a right-side vertex, the usage of the matching extracted from a flow equals the value on
@@ -377,29 +362,15 @@ theorem IsBipartition.sum_flowMatching_incidentEdges_eq_sink [Fintype V(G)]
     (v : V(G)) (hv : v ∈ R) :
     ∑ e ∈ G.incidentEdges {v}, (hLR.flowMatching f e : ℤ) =
       f.toFun (AuxTerminalHom.sink hv) := by
-  have hin : ∑ w, ∑ e : G.BipartiteHom L w v,
-      f.toFun (AuxTerminalHom.original e) =
-        ∑ e ∈ G.incidentEdges {v}, (hLR.flowMatching f e : ℤ) := by
-    rw [← BipartiteHom.sum_incoming_eq_sum_incidentEdges hLR v hv
-      (fun e ↦ (hLR.flowMatching f e : ℤ))]
-    apply Fintype.sum_congr
-    intro w
-    apply Fintype.sum_congr
-    intro e
-    exact (hLR.flowMatching_edge f e).symm
-  have hout : ∑ w, ∑ e : G.BipartiteHom L v w,
-      f.toFun (AuxTerminalHom.original e) = 0 := by
-    apply Fintype.sum_eq_zero
-    intro w
-    apply Fintype.sum_eq_zero
-    intro e
-    exact (disjoint_left.1 hLR.disjoint e.source_mem hv).elim
+  have hrestrict : auxTerminalRestrict f.toFun =
+      (fun {v w} (e : G.BipartiteHom L v w) ↦ (hLR.flowMatching f e.edge : ℤ)) := by
+    funext v w e
+    rw [auxTerminalRestrict_apply, hLR.flowMatching_edge]
   have h := f.conserve (inl v) inl_ne_inr inl_ne_inr
-  rw [AuxTerminalHom.excessAt_inl, excessAt_def] at h
-  simp only [auxTerminalRestrict_apply] at h
-  rw [hin, hout,
+  rw [AuxTerminalHom.excessAt_inl, hrestrict] at h
+  rw [hLR.excessAt_bipartiteHom_right (fun e ↦ (hLR.flowMatching f e : ℤ)) hv,
     AuxTerminalHom.sum_source_of_notMem (disjoint_right.1 hLR.disjoint hv),
-    AuxTerminalHom.sum_sink hv, sub_zero, add_zero] at h
+    AuxTerminalHom.sum_sink hv, add_zero] at h
   exact sub_eq_zero.mp h
 
 /-- Restricting an integral flow in the bipartite network to the original edges gives a multiset
