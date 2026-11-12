@@ -73,16 +73,6 @@ theorem circleMap_mem_halfAnnulus (z₀ : ℂ) {a b r θ : ℝ} (ha : 0 ≤ a) (
   · simpa [circleMap, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin] using
       mul_nonneg hr0 (Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2)
 
-/-- The circle of radius `r` about `z₀` starts at `z₀ + r`, the right end of the diameter
-bounding the upper half-disc. -/
-theorem circleMap_zero_angle (z₀ : ℂ) (r : ℝ) : circleMap z₀ r 0 = z₀ + r := by
-  simp [circleMap]
-
-/-- The circle of radius `r` about `z₀` reaches `z₀ - r`, the left end of the diameter bounding
-the upper half-disc, at angle `π`. -/
-theorem circleMap_pi (z₀ : ℂ) (r : ℝ) : circleMap z₀ r π = z₀ - r := by
-  simp [circleMap, Complex.exp_pi_mul_I, ← sub_eq_add_neg]
-
 /-- A closed annular sector, the points `z` with `a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀`
 lies in `[c, d]`, is measurable. -/
 theorem measurableSet_annularSector (z₀ : ℂ) (a b c d : ℝ) :

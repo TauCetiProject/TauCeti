@@ -107,12 +107,7 @@ theorem integral_norm_fderiv_one_sq_halfAnnulus_le {L : Submodule ℝ V} (hL : �
       π * ((∫ θ in 0..π, ‖deriv (fun θ ↦ u (circleMap z₀ b θ)) θ‖ ^ 2) +
         ∫ θ in 0..π, ‖deriv (fun θ ↦ u (circleMap z₀ a θ)) θ‖ ^ 2) / (4 * c) := by
   let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ 0 ≤ (z - z₀).im}
-  have hclosed : IsClosed A :=
-    (isClosed_le continuous_const (continuous_id.sub continuous_const).norm).inter
-      ((isClosed_le (continuous_id.sub continuous_const).norm continuous_const).inter
-        (isClosed_le continuous_const (continuous_im.comp (continuous_id.sub continuous_const))))
-  have hcompact : IsCompact A := (isCompact_closedBall z₀ b).of_isClosed_subset hclosed
-    (fun z hz ↦ by simpa only [Metric.mem_closedBall, dist_eq_norm] using hz.2.1)
+  have hcompact : IsCompact A := isCompact_halfAnnulus z₀ a b
   have hmono := mul_integral_norm_fderiv_one_sq_le_integral_apply hcompact hu hCR htame
   have hbound := ω.abs_integral_fderiv_apply_halfAnnulus_le hL z₀ hg ha hab hu huL
   have h := hmono.trans ((le_abs_self _).trans hbound)

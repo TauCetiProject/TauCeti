@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Topology.MetricSpace.ProperSpace
+public import Mathlib.Analysis.Complex.Basic
 
 /-!
 # Closed annuli in proper metric spaces
 
 The closed annulus `{z | a ≤ dist z c ∧ dist z c ≤ b}` about `c` is compact in a proper space
-(`Metric.isCompact_annulus`), and likewise when it is written with the norm.
+(`Metric.isCompact_annulus`), and likewise when it is written with the norm. In `ℂ`, so is its
+closed upper half about `z₀`, the points with `0 ≤ im (z - z₀)` (`TauCeti.isCompact_halfAnnulus`).
 -/
 
 public section
@@ -37,5 +39,14 @@ namespace TauCeti
 theorem isCompact_setOf_le_norm_sub_le {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E]
     (c : E) (a b : ℝ) : IsCompact {z : E | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} := by
   simpa only [dist_eq_norm] using Metric.isCompact_annulus c a b
+
+/-- A closed upper half-annulus, the points `z` with `a ≤ ‖z - z₀‖ ≤ b` and `0 ≤ im (z - z₀)`,
+is compact. -/
+theorem isCompact_halfAnnulus (z₀ : ℂ) (a b : ℝ) :
+    IsCompact {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ 0 ≤ (z - z₀).im} := by
+  have hclosed : IsClosed {z : ℂ | 0 ≤ (z - z₀).im} :=
+    isClosed_le continuous_const (Complex.continuous_im.comp (continuous_sub_right z₀))
+  simpa only [← ofPred_and, and_assoc] using
+    (isCompact_setOf_le_norm_sub_le z₀ a b).inter_right hclosed
 
 end TauCeti
