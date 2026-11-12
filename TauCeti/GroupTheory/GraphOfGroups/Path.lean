@@ -243,6 +243,11 @@ theorem comp_reverse_comp_comp {w : 𝔸.LetterVertex} (q : 𝔸.Path x y) (p : 
   rw [Quiver.Path.comp_assoc, ← Quiver.Path.comp_assoc p.reverse]
   simpa only [Quiver.Path.nil_comp] using ((reverse_comp p).comp_right r).comp_left q
 
+/-- A path followed by a path and its reverse is homotopic to the first path. -/
+theorem comp_comp_reverse (q : 𝔸.Path x y) (p : 𝔸.Path y z) :
+    Homotopic ((q.comp p).comp p.reverse) q := by
+  simpa only [Quiver.Path.comp_assoc, Quiver.Path.comp_nil] using (comp_reverse p).comp_left q
+
 /-- Reversing homotopic paths gives homotopic paths. -/
 theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse q.reverse := by
   -- `p⁻¹ ~ p⁻¹ (q q⁻¹) = (p⁻¹ q) q⁻¹ ~ (p⁻¹ p) q⁻¹ ~ q⁻¹`.
@@ -315,6 +320,15 @@ instance : Inv (π₁ 𝔸 a) where
 
 @[simp] theorem mk_reverse (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : mk p.reverse = (mk p)⁻¹ :=
   (rfl)
+
+/-- Splitting a closed path `q r t⁻¹` through a path `s` with the same ends as `q`: in `π₁(𝔸, a)`,
+`[q r t⁻¹] = [q s⁻¹] [s r t⁻¹]`. -/
+theorem mk_comp_comp_reverse {y z : 𝔸.LetterVertex} (q s : 𝔸.Path ⟨a⟩ y) (r : 𝔸.Path y z)
+    (t : 𝔸.Path ⟨a⟩ z) :
+    mk ((q.comp r).comp t.reverse) = mk (q.comp s.reverse) * mk ((s.comp r).comp t.reverse) := by
+  rw [← mk_comp, mk_eq_mk_iff]
+  simpa only [Quiver.Path.comp_assoc] using
+    (Path.Homotopic.comp_reverse_comp_comp q s (r.comp t.reverse)).symm
 
 instance : Group (π₁ 𝔸 a) where
   mul_assoc g h k := induction_on g fun p => induction_on h fun q => induction_on k fun r => by
