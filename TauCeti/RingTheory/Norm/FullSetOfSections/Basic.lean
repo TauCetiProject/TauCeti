@@ -238,10 +238,11 @@ end Free
 
 /-! ### Finite flat algebras
 
-For `B` finite over `A`, being a full set of sections is local on `Spec A`: it can be checked on
-the localizations at a family of elements generating the unit ideal
-(`IsFullSetOfSections.of_localizationSpan`). The characteristic-polynomial criterion likewise
-requires only finiteness when test algebras stay in the universe of `A`. If `B` is also flat over
+Being a full set of sections is local on `Spec A`, with no finiteness hypothesis on `B`: it can be
+checked on the localizations at a family of elements generating the unit ideal
+(`IsFullSetOfSections.of_localizationSpan`) or at every maximal ideal
+(`IsFullSetOfSections.of_localization_maximal`). The characteristic-polynomial criterion requires
+`B` finite over `A` when test algebras stay in the universe of `A`. If `B` is also flat over
 `A`, as it is when `Spec B → Spec A` is finite locally free, full sets of sections are stable
 under arbitrary base change and descend along injective ring maps, so that full sets of sections
 can be checked locally and transported to any base. -/
@@ -311,8 +312,8 @@ theorem IsFullSetOfSections.of_localizationSpan (t : Set A)
   rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
   exact (h r).algebraMap_norm_eq_prod f
 
-/-- A family of sections of a finite algebra is full if it is full after localization at
-every maximal ideal of the base. -/
+/-- A family of sections is full if it is full after localization at every maximal ideal of the
+base. -/
 theorem IsFullSetOfSections.of_localization_maximal
     (h : ∀ (P : Ideal A) [P.IsMaximal],
       IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.AtPrime P)) :

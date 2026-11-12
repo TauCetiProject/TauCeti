@@ -70,8 +70,8 @@ theorem of_tensorProduct_self [Module.Free R M] (h : Module.Finite R (M ⊗[R] M
 
 /-- A free module whose base change to a nontrivial algebra is finite is itself finite: the
 base change of a basis is a basis of the same index type. -/
-theorem of_baseChange (R : Type*) {S : Type*} (N : Type*) [CommSemiring R] [CommSemiring S]
-    [Algebra R S] [Nontrivial S] [AddCommMonoid N] [Module R N] [Module.Free R N]
+theorem of_baseChange {R S N : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    [Nontrivial S] [AddCommMonoid N] [Module R N] [Module.Free R N]
     (h : Module.Finite S (S ⊗[R] N)) : Module.Finite R N := by
   let b := Module.Free.chooseBasis R N
   have := Module.Finite.finite_basis (Algebra.TensorProduct.basis S b)
