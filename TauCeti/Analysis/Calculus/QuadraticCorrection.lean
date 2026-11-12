@@ -14,14 +14,16 @@ public import Mathlib.Analysis.Calculus.ImplicitContDiff
 Let `e p + D p x + N p x = 0` be a family of equations parametrized by `p` in a Banach space `P`,
 with right inverses `Q p` of `D p` satisfying `‖Q p y‖ ≤ C ‖y‖` and remainders `N p` satisfying the
 quadratic estimate `‖N p x - N p y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` on the ball of radius `δ`, with
-`C` and `L` independent of `p`. By `TauCeti.exists_mem_range_norm_le_add_add_eq_zero` each
-equation has a small solution `x p` in the range of `Q p`, unique among the solutions in that range
-of norm at most `r` whenever `r ≤ δ` and `C L r < 1` (`TauCeti.eq_of_add_add_eq_zero`). In gluing
-constructions `p` is a finite-dimensional gluing or obstruction parameter and `x p` the correction
-of an approximate solution; the finite-dimensional reduction needs `x` to be as smooth in `p` as the
-data.
+`C` and `L` independent of `p`. If moreover `N p 0 = 0` and the residuals are small,
+`2 C ‖e p‖ ≤ δ` and `2 C² L ‖e p‖ < 1`, then by `TauCeti.exists_mem_range_norm_le_add_add_eq_zero`
+each equation has a small solution `x p` in the range of `Q p`. Two solutions in that range of norm
+at most `r` coincide whenever `r ≤ δ` and `C L r < 1` (`TauCeti.eq_of_add_add_eq_zero`). In
+gluing constructions `p` is a finite-dimensional gluing or obstruction parameter and `x p` the
+correction of an approximate solution; the finite-dimensional reduction needs `x` to be as smooth
+in `p` as the data.
 
-This file proves that it is: if the fixed-point map `(p, z) ↦ Q p (e p + N p z)` is `C^n` at
+This file proves that it is. Let `x p` be solutions in the range of `Q p`, all of norm at most `r`,
+where `r < δ` and `C L r < 1`. If the fixed-point map `(p, z) ↦ Q p (e p + N p z)` is `C^n` at
 `(p₀, x p₀)`, with `n ≠ 0`, then `x` is `C^n` at `p₀`
 (`TauCeti.contDiffAt_of_forall_add_add_eq_zero`), and globally `C^n` if the fixed-point map is
 (`TauCeti.contDiff_of_forall_add_add_eq_zero`). No smoothness of `p ↦ D p` is needed, and the

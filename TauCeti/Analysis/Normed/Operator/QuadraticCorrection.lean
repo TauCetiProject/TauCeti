@@ -323,8 +323,9 @@ variable [NormedAddCommGroup E] [SeminormedAddCommGroup F] [AddMonoidHomClass G 
     ‖N p x - N p y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
 include hDQ hQ hN
 
-/-- **Existence of a continuous family of solutions.** If `E` is complete and the residuals satisfy
-`2 C ‖e p‖ ≤ r` for one `r ≤ δ` with `C L r < 1`, the solutions `x p` of
+/-- **Existence of a continuous family of solutions.** If `E` is complete, the remainders vanish
+at the origin, `N p 0 = 0`, and the residuals satisfy `2 C ‖e p‖ ≤ r` for one `r ≤ δ` with
+`C L r < 1`, the solutions `x p` of
 `e p + D p x + N p x = 0` constructed by `TauCeti.exists_mem_range_norm_le_add_add_eq_zero` depend
 continuously on `p`, provided every fixed-point map `p ↦ Q p (e p + N p z)` is continuous. By
 `TauCeti.eq_of_add_add_eq_zero`, `x p` is the only solution in the range of `Q p` of norm at
