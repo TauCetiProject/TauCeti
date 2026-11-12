@@ -132,7 +132,8 @@ def contDiffOnSMulL (hU : UniqueDiffOn ℝ U) (hΩ : IsCompact (closure (Omega :
       have hsub : value k (L (u n)) - value k (L x) = value k (L (u n - x)) := by
         simp only [← valueL_apply, map_sub]
       rw [hsub, contDiffOnSMulₗ_apply]
-      exact (Lp.norm_le_mul_norm_of_ae_eq_smul Omega.isOpen.measurableSet hC'
+      exact (Lp.norm_le_mul_norm_of_ae_eq_smul
+        (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hC')
         (value_contDiffOnSMulAux hU hΩ hΩU k hpsi (u n - x))).trans
         (mul_le_mul_of_nonneg_left (norm_value_le k _) (le_max_right _ _))
     have hy' : Tendsto (fun n => value k (L (u n))) atTop (𝓝 (value k y)) := by
@@ -212,7 +213,7 @@ theorem norm_value_contDiffOnSMulL_le (hU : UniqueDiffOn ℝ U)
     (hpsi : ContDiffOn ℝ ∞ psi U) {C : ℝ} (hC : ∀ x ∈ (Omega : Set E), ‖psi x‖ ≤ C)
     (u : Wkp mu Omega p k) :
     ‖value k (contDiffOnSMulL hU hΩ hΩU k hpsi u)‖ ≤ C * ‖value k u‖ :=
-  Lp.norm_le_mul_norm_of_ae_eq_smul Omega.isOpen.measurableSet hC
+  Lp.norm_le_mul_norm_of_ae_eq_smul (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hC)
     (value_contDiffOnSMulL_ae hU hΩ hΩU k hpsi u)
 
 end Wkp

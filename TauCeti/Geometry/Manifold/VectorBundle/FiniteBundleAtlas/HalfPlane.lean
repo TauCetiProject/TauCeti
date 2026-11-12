@@ -55,8 +55,8 @@ read as the function `A.halfCoord i s` on `ℂ`; for a `Cᵏ` section of a `Cᵏ
 * `TauCeti.FiniteBundleAtlas.isCompact_closure_halfImage`,
   `TauCeti.FiniteBundleAtlas.closure_halfImage_subset_extChartAt_target`: the interior of a chart
   image has compact closure inside the target of the extended chart.
-* `TauCeti.FiniteBundleAtlas.contDiffOn_comp_halfChart_symm`: the chart readings of a `Cⁿ`
-  function are `Cⁿ` up to the boundary.
+* `TauCeti.FiniteBundleAtlas.contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm`: the
+  chart readings of a `Cⁿ` function are `Cⁿ` up to the boundary.
 * `TauCeti.FiniteBundleAtlas.halfCoord_fun_smul`: chart readings of sections are linear over
   functions on `M`.
 -/
@@ -243,7 +243,8 @@ theorem closure_halfImage_subset_extChartAt_target (i : Fin A.n) :
 
 /-- **The chart readings of a `Cⁿ` function are `Cⁿ` up to the boundary**, on the target of the
 extended chart, a relatively open subset of the closed upper half-plane. -/
-theorem contDiffOn_comp_halfChart_symm {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+theorem contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G]
     {n : WithTop ℕ∞} [IsManifold closedUpperHalfPlaneModel n M] {φ : M → G}
     (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, G) n φ) (i : Fin A.n) :
     ContDiffOn ℝ n (fun z ↦ φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)))
@@ -344,14 +345,14 @@ theorem halfCoord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {z : ℂ}
   rw [halfCoord, halfCoord, symm_halfTransition]
   exact A.coord_eq_coordChange s hz.1
 
-/-- On the interior of the image of chart `i`, the chart reading of `x ↦ φ x • s x` is the chart
-reading of `φ` times that of `s`. -/
+/-- On the image of chart `i`, including its points on the real axis, the chart reading of
+`x ↦ φ x • s x` is the chart reading of `φ` times that of `s`. -/
 theorem halfCoord_fun_smul (i : Fin A.n) (φ : M → ℝ) (s : ∀ x, V x) {z : ℂ}
-    (hz : z ∈ A.halfImage i) :
+    (hz : closedUpperHalfPlaneModel.symm z ∈ A.image i) :
     A.halfCoord i (fun x ↦ φ x • s x) z =
       φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) • A.halfCoord i s z := by
   rw [halfCoord_def, halfCoord_def]
-  exact A.coord_fun_smul i φ s (A.mem_halfImage.1 hz).1
+  exact A.coord_fun_smul i φ s hz
 
 end FiniteBundleAtlas
 

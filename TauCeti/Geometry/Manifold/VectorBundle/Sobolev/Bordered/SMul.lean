@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.Structures
-public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.SMul
 
 /-!
 # Multiplication by a smooth function on Sobolev sections over a base with boundary
@@ -22,14 +21,17 @@ multiplication by `φ` is a continuous linear endomorphism of the Sobolev space 
 
 In chart `i` the function `φ` is read in `ℂ` as `z ↦ φ ((chart i).symm z)`, which is smooth up to
 the real axis on the target of the extended chart, a relatively open subset of the closed upper
-half-plane (`TauCeti.FiniteBundleAtlas.contDiffOn_comp_halfChart_symm`). This set contains the
-compact closure of the interior `A.halfImage i` of the chart image
+half-plane
+(`TauCeti.FiniteBundleAtlas.contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm`). This set
+contains the compact closure of the interior `A.halfImage i` of the chart image
 (`TauCeti.FiniteBundleAtlas.closure_halfImage_subset_extChartAt_target`) and is a set of unique
 differentiability, so each component of a tuple in chart `i` is multiplied by the chart reading of
-`φ` using `TauCeti.Wkp.contDiffOnSMulL`. The chart reading is in general not smooth on any open
-neighbourhood of that closure in `ℂ`, which is why that multiplier is stated for sets of unique
-differentiability rather than open sets. Since the bundle charts are fibrewise linear,
-multiplying the components of a section `s` gives the components of the section `x ↦ φ x • s x`
+`φ` using `TauCeti.Wkp.contDiffOnSMulL`, as in the chartwise construction
+`TauCeti.SectionChartData.contDiffOnSMulL` shared with bases without boundary. The chart reading
+is in general not smooth on any open neighbourhood of that closure in `ℂ`, which is why that
+multiplier is stated for sets of unique differentiability rather than open sets. Since the bundle
+charts are fibrewise linear, multiplying the components of a section `s` gives the components of
+the section `x ↦ φ x • s x`
 (`TauCeti.BorderedSobolevSection.chartValueL_contMDiffSMulL_ae_halfCoord`), so the product tuple
 is again an element of `W^{k,p}(V)`.
 
@@ -51,7 +53,6 @@ is again an element of `W^{k,p}(V)`.
 * `TauCeti.BorderedSobolevSection.chartValueL_contMDiffSMulL_ae_halfCoord`: if `w` consists of
   the components of a section `s`, then `φ • w` consists of the components of `x ↦ φ x • s x`.
 * `TauCeti.BorderedSobolevSection.contMDiffSMulL_const`,
-  `TauCeti.BorderedSobolevSection.contMDiffSMulL_one`,
   `TauCeti.BorderedSobolevSection.contMDiffSMulL_add`,
   `TauCeti.BorderedSobolevSection.contMDiffSMulL_mul`: multiplication by constants, additivity
   and multiplicativity in the multiplier.
@@ -95,24 +96,13 @@ to the real axis. If `w` consists of the components of a section `s`, then
 (`TauCeti.BorderedSobolevSection.chartValueL_contMDiffSMulL_ae_halfCoord`). -/
 def contMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ) :
     BorderedSobolevSection A p k →L[ℝ] BorderedSobolevSection A p k :=
-  ((SectionChartData.SobolevData.mapL fun i ↦ Wkp.contDiffOnSMulL
-      (uniqueDiffOn_extChartAt_target (I := closedUpperHalfPlaneModel) (A.center i))
-      (A.isCompact_closure_halfImage i) (A.closure_halfImage_subset_extChartAt_target i) k
-      (A.contDiffOn_comp_halfChart_symm hφ i)).comp
-        (A.halfSectionChartData.sobolevSections volume p k).subtypeL).codRestrict
-    (A.halfSectionChartData.sobolevSections volume p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := (A.halfSectionChartData.mem_sobolevSections_iff volume p k).1 w.2
-      refine (A.halfSectionChartData.mem_sobolevSections_iff volume p k).2
-        ⟨fun x ↦ φ x • s x, fun i ↦ ?_⟩
-      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
-      refine (A.halfSectionChartData.chartValueL_ae_eq_smul volume p k
-        (ψ := fun z ↦ φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)))
-        (w := (w : A.halfSectionChartData.SobolevData volume p k)) fun j ↦ ?_).trans ?_
-      · erw [SectionChartData.SobolevData.mapL_apply]
-        exact Wkp.value_contDiffOnSMulL_ae _ _ _ k _ _
-      · filter_upwards [hs i, ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hsz hz
-        rw [hsz, A.halfSectionChartData_coord_of_mem _ hz, A.halfSectionChartData_coord_of_mem _ hz,
-          A.halfCoord_fun_smul i φ s hz]
+  A.halfSectionChartData.contDiffOnSMulL volume p k
+    (fun i ↦ uniqueDiffOn_extChartAt_target (I := closedUpperHalfPlaneModel) (A.center i))
+    A.isCompact_closure_halfImage A.closure_halfImage_subset_extChartAt_target
+    (A.contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm hφ)
+    fun s ↦ ⟨fun x ↦ φ x • s x, fun i z hz ↦ by
+      rw [A.halfSectionChartData_coord_of_mem _ hz, A.halfSectionChartData_coord_of_mem _ hz,
+        A.halfCoord_fun_smul i φ s (A.mem_halfImage.1 hz).1]⟩
 
 /-- The components in chart `i` of `φ • w` are those of `w` multiplied by the chart reading of `φ`,
 using `TauCeti.Wkp.contDiffOnSMulL`. -/
@@ -122,12 +112,10 @@ theorem contMDiffSMulL_apply (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ
     (contMDiffSMulL A p k hφ w : A.halfSectionChartData.SobolevData volume p k) i j =
       Wkp.contDiffOnSMulL (uniqueDiffOn_extChartAt_target (I := closedUpperHalfPlaneModel)
         (A.center i)) (A.isCompact_closure_halfImage i)
-        (A.closure_halfImage_subset_extChartAt_target i) k (A.contDiffOn_comp_halfChart_symm hφ i)
-        ((w : A.halfSectionChartData.SobolevData volume p k) i j) := by
-  rw [contMDiffSMulL, ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
-    Submodule.subtypeL_apply]
-  erw [SectionChartData.SobolevData.mapL_apply]
-  rfl
+        (A.closure_halfImage_subset_extChartAt_target i) k
+        (A.contDiffOn_comp_chart_symm_closedUpperHalfPlaneModel_symm hφ i)
+        ((w : A.halfSectionChartData.SobolevData volume p k) i j) :=
+  A.halfSectionChartData.contDiffOnSMulL_apply volume p k _ _ _ _ _ w i j
 
 /-- The components in chart `i` of `φ • w` are those of `w` multiplied by the chart reading of `φ`,
 almost everywhere on the interior `A.halfImage i` of the chart image. -/
@@ -137,9 +125,8 @@ theorem value_contMDiffSMulL_ae (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(
       ((contMDiffSMulL A p k hφ w : A.halfSectionChartData.SobolevData volume p k) i j) : ℂ → ℝ)
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] fun z ↦
         φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) *
-          Wkp.value k ((w : A.halfSectionChartData.SobolevData volume p k) i j) z := by
-  rw [contMDiffSMulL_apply]
-  exact Wkp.value_contDiffOnSMulL_ae _ _ _ k _ _
+          Wkp.value k ((w : A.halfSectionChartData.SobolevData volume p k) i j) z :=
+  A.halfSectionChartData.value_contDiffOnSMulL_ae volume p k _ _ _ _ _ w i j
 
 /-- **Characterization.** An element of `W^{k,p}(V)` equals `φ • w` exactly when each of its
 components in chart `i` is the corresponding component of `w` multiplied by the chart reading of
@@ -150,11 +137,8 @@ theorem eq_contMDiffSMulL_iff (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(�
       (Wkp.value k ((w' : A.halfSectionChartData.SobolevData volume p k) i j) : ℂ → ℝ)
         =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] fun z ↦
           φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) *
-            Wkp.value k ((w : A.halfSectionChartData.SobolevData volume p k) i j) z := by
-  refine ⟨fun h ↦ h ▸ value_contMDiffSMulL_ae hφ w, fun h ↦ ?_⟩
-  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
-  rw [contMDiffSMulL_apply]
-  exact (Wkp.eq_contDiffOnSMulL_iff _ _ _ k _).2 (h i j)
+            Wkp.value k ((w : A.halfSectionChartData.SobolevData volume p k) i j) z :=
+  A.halfSectionChartData.eq_contDiffOnSMulL_iff volume p k _ _ _ _ _
 
 /-- The chart data in chart `i` of `φ • w` are those of `w` multiplied by the chart reading of `φ`,
 almost everywhere on the interior `A.halfImage i` of the chart image. -/
@@ -164,7 +148,7 @@ theorem chartValueL_contMDiffSMulL_ae (hφ : ContMDiff closedUpperHalfPlaneModel
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] fun z ↦
         φ ((A.chart i).symm (closedUpperHalfPlaneModel.symm z)) •
           A.halfSectionChartData.chartValueL volume p k i w z :=
-  A.halfSectionChartData.chartValueL_ae_eq_smul volume p k (value_contMDiffSMulL_ae hφ w i)
+  A.halfSectionChartData.chartValueL_contDiffOnSMulL_ae volume p k _ _ _ _ _ w i
 
 /-- **Sections.** If `w` consists of the chartwise components of a section `s`, then `φ • w`
 consists of the chartwise components of the section `x ↦ φ x • s x`. -/
@@ -178,52 +162,33 @@ theorem chartValueL_contMDiffSMulL_ae_halfCoord
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i fun x ↦ φ x • s x := by
   filter_upwards [chartValueL_contMDiffSMulL_ae hφ w i, hs i,
     ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z h hsz hz
-  rw [h, hsz, A.halfCoord_fun_smul i φ s hz]
+  rw [h, hsz, A.halfCoord_fun_smul i φ s (A.mem_halfImage.1 hz).1]
 
 /-- Multiplication by a constant function is scalar multiplication. -/
 @[simp]
 theorem contMDiffSMulL_const (c : ℝ) :
-    contMDiffSMulL A p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ := by
-  ext1 w
-  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
-  rw [contMDiffSMulL_apply]
-  exact Wkp.contDiffOnSMulL_const _ _ _ k c _
-
-/-- Multiplication by the constant function `1` is the identity. -/
-theorem contMDiffSMulL_one :
-    contMDiffSMulL A p k (contMDiff_const (c := (1 : ℝ))) = ContinuousLinearMap.id ℝ _ := by
-  rw [contMDiffSMulL_const, one_smul]
+    contMDiffSMulL A p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ :=
+  A.halfSectionChartData.contDiffOnSMulL_const volume p k _ _ _ c _
 
 /-- Smooth multiplication is additive in the multiplier: `(φ + ψ) • w = φ • w + ψ • w`. -/
 theorem contMDiffSMulL_add (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
-    contMDiffSMulL A p k (hφ.add hψ) = contMDiffSMulL A p k hφ + contMDiffSMulL A p k hψ := by
-  ext1 w
-  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
-  erw [add_apply, Submodule.coe_add, Pi.add_apply, Pi.add_apply,
-    contMDiffSMulL_apply, contMDiffSMulL_apply, contMDiffSMulL_apply]
-  exact DFunLike.congr_fun (Wkp.contDiffOnSMulL_add (mu := volume) (p := p) _ _ _ k _ _) _
+    contMDiffSMulL A p k (hφ.add hψ) = contMDiffSMulL A p k hφ + contMDiffSMulL A p k hψ :=
+  A.halfSectionChartData.contDiffOnSMulL_add volume p k _ _ _ _ _ _ _ _
 
 /-- Smooth multiplication is multiplicative in the multiplier: `(φ ψ) • w = φ • (ψ • w)`. -/
 theorem contMDiffSMulL_mul (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     contMDiffSMulL A p k (hφ.mul hψ) =
-      (contMDiffSMulL A p k hφ).comp (contMDiffSMulL A p k hψ) := by
-  ext1 w
-  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, contMDiffSMulL_apply, contMDiffSMulL_apply,
-    contMDiffSMulL_apply]
-  exact DFunLike.congr_fun (Wkp.contDiffOnSMulL_mul (mu := volume) (p := p) _ _ _ k _ _) _
+      (contMDiffSMulL A p k hφ).comp (contMDiffSMulL A p k hψ) :=
+  A.halfSectionChartData.contDiffOnSMulL_mul volume p k _ _ _ _ _ _ _ _
 
 /-- Smooth multiplication commutes with the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`. -/
 theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (w : BorderedSobolevSection A p (k + 1)) :
     A.halfSectionChartData.lowerOrderL volume p k (contMDiffSMulL A p (k + 1) hφ w) =
-      contMDiffSMulL A p k hφ (A.halfSectionChartData.lowerOrderL volume p k w) := by
-  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
-  erw [SectionChartData.lowerOrderL_apply, contMDiffSMulL_apply, contMDiffSMulL_apply,
-    SectionChartData.lowerOrderL_apply]
-  exact Wkp.lowerOrder_contDiffOnSMulL _ _ _ k _ _
+      contMDiffSMulL A p k hφ (A.halfSectionChartData.lowerOrderL volume p k w) :=
+  A.halfSectionChartData.lowerOrderL_contDiffOnSMulL volume p k _ _ _ _ _ w
 
 end BorderedSobolevSection
 
