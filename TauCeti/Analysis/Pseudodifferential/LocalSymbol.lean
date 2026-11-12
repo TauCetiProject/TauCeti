@@ -49,6 +49,11 @@ global one. It does extend after multiplication by a cutoff:
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
+Being a local symbol is a local property of the coefficient: `TauCeti.LocalSymbol.ofLocal` builds
+a local symbol from a function that vanishes outside `U` and near every compact subset of `U`
+agrees with a symbol on `ℝⁿ`, and conversely every local symbol does so
+(`TauCeti.LocalSymbol.exists_symbol_eventually_eq`).
+
 ## References
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
@@ -210,6 +215,11 @@ instance : AddCommGroup (LocalSymbol U V W m) :=
 instance : Module ℂ (LocalSymbol U V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
+
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → LocalSymbol U V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ : LocalSymbol U V W m →+ _) a s
 
 end Module
 
@@ -489,6 +499,48 @@ theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
   ext_of_mem fun x hx ξ => by simp [hx, (hψ1 hx).trans (Pi.one_apply x)]
 
 end Extend
+
+section OfLocal
+
+/-- A function on `ℝⁿ × ℝⁿ` that vanishes at the positions outside `U`, and that near every
+compact set `K ⊆ U` of positions agrees with a symbol of order `m` on `ℝⁿ`, is a local symbol of
+order `m` on `U`. Conversely every local symbol is of this form
+(`TauCeti.LocalSymbol.exists_symbol_eventually_eq`). -/
+def ofLocal (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ K ⊆ (U : Set (CoordinateSpace n)), IsCompact K → ∃ b : Symbol n V W m,
+      ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ ξ, f (y, ξ) = b.coefficient (y, ξ)) :
+    LocalSymbol U V W m where
+  coefficient := f
+  contDiffOn_coefficient := by
+    rintro ⟨x, ξ⟩ ⟨hx, -⟩
+    obtain ⟨b, hb⟩ := h {x} (singleton_subset_iff.2 hx) isCompact_singleton
+    refine (b.contDiff_coefficient.contDiffAt.congr_of_eventuallyEq ?_).contDiffWithinAt
+    exact (continuous_fst.tendsto (x, ξ)).eventually (hb x rfl) |>.mono fun p hp => hp p.2
+  coefficient_of_notMem := hf
+  exists_bound K hKU hK α β := by
+    obtain ⟨b, hb⟩ := h K hKU hK
+    obtain ⟨C, hC, hbC⟩ := b.exists_bound K hK α β
+    exact ⟨C, hC, fun x hx ξ => (mixedDeriv_congr_of_eventually (hb x hx) α β ξ).symm ▸
+      hbC x hx ξ⟩
+
+@[simp]
+theorem coefficient_ofLocal (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ K ⊆ (U : Set (CoordinateSpace n)), IsCompact K → ∃ b : Symbol n V W m,
+      ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ ξ, f (y, ξ) = b.coefficient (y, ξ)) :
+    (ofLocal f hf h).coefficient = f :=
+  (rfl)
+
+/-- Near every compact set `K ⊆ U` of positions, a local symbol on `U` agrees with a symbol on
+`ℝⁿ`: its extension by a cutoff equal to `1` near `K`. -/
+theorem exists_symbol_eventually_eq (a : LocalSymbol U V W m) {K : Set (CoordinateSpace n)}
+    (hKU : K ⊆ U) (hK : IsCompact K) : ∃ b : Symbol n V W m,
+      ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ ξ, a.coefficient (y, ξ) = b.coefficient (y, ξ) := by
+  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one U.isOpen hKU
+  exact ⟨extend ψ hψ hψU a, fun x hx => (hψ1 x hx).mono fun y hy ξ => by simp [hy]⟩
+
+end OfLocal
 
 end LocalSymbol
 
