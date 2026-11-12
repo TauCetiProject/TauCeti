@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Geometry.Manifold.Immersion.Basic
+public import TauCeti.Geometry.Manifold.Immersion.Units
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
@@ -58,9 +59,12 @@ a parameter likewise acts smoothly on the sphere.
 Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
 loop and its lift to `ℝ` have the same tangent lines, and its local inverse, the argument, is smooth
 away from `-1`. A differentiable path or loop in a sphere of dimension at least two omits a point,
-allowing the entire path or loop to be read in one stereographic chart.
+allowing the entire path or loop to be read in one stereographic chart. The native inclusion
+`Circle.toUnits : Circle → ℂˣ` is a smooth immersion.
 
 ## Main results
+
+* `Circle.isImmersion_toUnits`: the native circle inclusion into complex units is an immersion.
 
 * `TauCeti.finrank_euclideanSpace_fin_succ_fact`: the dimension of `ℝⁿ⁺¹`, in the form the
   stereographic charts of its unit sphere take it.
@@ -472,6 +476,13 @@ namespace TauCeti
 
 attribute [local instance] finrank_real_complex_fact'
 
+/-- The native circle inclusion into the complex plane has injective derivative. -/
+theorem _root_.Circle.injective_mfderiv_coe (z : Circle) :
+    Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun w : Circle ↦ (w : ℂ)) z :
+      EuclideanSpace ℝ (Fin 1) →L[ℝ] ℂ) :=
+  (TauCeti.injective_mvfderiv_iff).mp
+    (injective_mvfderiv_subtypeVal_sphere (E := ℂ) (n := 1) z)
+
 /-- The derivative of `Circle.exp : ℝ → S¹` is injective at every point. -/
 theorem injective_mfderiv_circleExp (t : ℝ) :
     Injective (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1)) := by
@@ -498,6 +509,21 @@ theorem injective_mfderiv_circleExp (t : ℝ) :
   refine (injective_iff_map_eq_zero e).mpr fun s hs => ?_
   have hs' : s • e 1 = 0 := by rw [← map_smul, smul_eq_mul, mul_one]; exact hs
   exact (smul_eq_zero.mp hs').resolve_right hne
+
+/-- The complex-valued circle exponential has injective derivative at every real point. -/
+theorem injective_mfderiv_coe_circleExp (t : ℝ) :
+    Injective (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) (fun s : ℝ ↦ (Circle.exp s : ℂ)) t) := by
+  have hcoe : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) ω (fun z : Circle ↦ (z : ℂ)) :=
+    contMDiff_coe_sphere
+  have hcomp : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) (fun s : ℝ ↦ (Circle.exp s : ℂ)) t =
+      (mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) (Circle.exp t)).comp
+        (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t) := by
+    simpa only [Function.comp_def] using mfderiv_comp t
+      (f := Circle.exp) (g := fun z : Circle ↦ (z : ℂ))
+      (hcoe.mdifferentiableAt (by simp))
+      ((contMDiff_circleExp (m := ω)).mdifferentiableAt (by simp))
+  rw [hcomp]
+  exact (Circle.injective_mfderiv_coe (Circle.exp t)).comp (injective_mfderiv_circleExp t)
 
 /-- The derivative of `Circle.exp : ℝ → S¹` is surjective at every point, both spaces being
 one-dimensional. -/
@@ -971,3 +997,22 @@ theorem contMDiff_conjSphere {m : ℕ∞ω} : ContMDiff (𝓡 1) (𝓡 1) m conj
 end Conj
 
 end TauCeti
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- The native circle inclusion into complex units is a smooth immersion. -/
+theorem Circle.isImmersion_toUnits {m : ℕ∞ω} :
+    Manifold.IsImmersion (𝓡 1) 𝓘(ℝ, ℂ) m Circle.toUnits := by
+  suffices h : Manifold.IsImmersion (𝓡 1) 𝓘(ℝ, ℂ) ω Circle.toUnits from h.of_le le_top
+  have hval : (fun z : Circle ↦ ((Circle.toUnits z : ℂˣ) : ℂ)) =
+      (fun z : Circle ↦ (z : ℂ)) := by
+    funext z
+    simp [Circle.toUnits_apply]
+  have hs : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) ω Circle.toUnits := by
+    apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
+    rw [Function.comp_def, hval]
+    exact contMDiff_coe_sphere
+  apply hs.isImmersion_units_of_injective_mfderiv_val (by simp)
+  intro z
+  rw [hval]
+  exact Circle.injective_mfderiv_coe z
