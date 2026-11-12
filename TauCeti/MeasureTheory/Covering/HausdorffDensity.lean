@@ -187,7 +187,7 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ} (hd
   · simp [hUtop]
   refine le_trans ?_ (ENNReal.mul_div_le (a := c) (b := μ U))
   gcongr
-  refine TauCeti.hausdorffMeasure_le_of_forall_exists_closedBall_cover hd fun δ hδ ε hε => ?_
+  refine TauCeti.hausdorffMeasure_le_of_forall_exists_closedBall_cover fun δ hδ ε hε => ?_
   -- The admissible balls: centred in `A`, of radius at most `δ / 3`, inside `U`, and large for `μ`.
   set T : Set (X × ℝ) := {p | p.1 ∈ A ∧ 0 < p.2 ∧ p.2 ≤ δ / 3 ∧ closedBall p.1 p.2 ⊆ U ∧
     c * ENNReal.ofReal (2 * p.2) ^ d ≤ μ (closedBall p.1 p.2)}

@@ -320,6 +320,18 @@ theorem hom_additive_iff {g : PowerSeries R} :
   simp only [map_add, MvPolynomial.aeval_X, MvPolynomial.coe_X,
     PowerSeries.toMvPowerSeries_eq_subst]
 
+/-- A power series that is additive along a formal group law has zero constant coefficient:
+evaluating the additivity equation at the origin gives `g(0) = g(0) + g(0)`. -/
+theorem constantCoeff_eq_zero_of_additive {g : PowerSeries R}
+    (h : PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g) :
+    PowerSeries.constantCoeff g = 0 := by
+  have := congrArg MvPowerSeries.constantCoeff h
+  rw [PowerSeries.constantCoeff_subst_of_constantCoeff_zero F.zero_constantCoeff, map_add,
+    PowerSeries.constantCoeff_subst_of_constantCoeff_zero (by simp),
+    PowerSeries.constantCoeff_subst_of_constantCoeff_zero (by simp)] at this
+  exact left_eq_add.mp this
+
 /-- A homomorphism of formal group laws has zero homomorphism defect. -/
 @[simp]
 theorem homDefect_toPowerSeries (f : FormalGroupHom F G) : F.homDefect G f.toPowerSeries = 0 :=

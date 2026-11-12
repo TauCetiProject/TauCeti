@@ -187,7 +187,9 @@ near `F x`:
 * the functions `λ⁽ⁱ⁾` are smooth at `c`;
 * the vectors `λ⁽ⁱ⁾ c` are linearly independent and generate the period lattice of `s c`;
 * the differential of `Aᵢ` at `c` is `(2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ(c) dcⱼ`;
-* a vector `v` is a period of `s c` exactly when `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`;
+* the period lattice of `s c` is the transpose lattice `2π (DA_c)ᵀ ℤⁿ`
+  (`ContinuousLinearMap.transposeLattice`): a vector `v` is a period of `s c` exactly when
+  `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`;
 * the angle map `Ψ(θ, c) = (∑ᵢ (θᵢ / 2π) λ⁽ⁱ⁾(c)) • s(c)` pulls `σ` back to `∑ᵢ dθᵢ ∧ dAᵢ` at
   `(θ, c)`, for every `θ`. -/
 theorem exists_eval₂_mfderiv_angleMap_eq_of_isCompact (hdim : 2 * Fintype.card ι = finrank ℝ E)
@@ -204,8 +206,8 @@ theorem exists_eval₂_mfderiv_angleMap_eq_of_isCompact (hdim : 2 * Fintype.card
           AddSubgroup.closure (range fun i ↦ p i c) ∧
         (∀ i, HasFDerivAt (fun c ↦ A c i)
           ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c) ∧
-        (∀ v, v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) ↔
-          ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A c i) c w) ∧
+        hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
+          ((2 * π) • fderiv ℝ A c).transposeLattice ∧
         ∀ θ a a' b b' : ι → ℝ,
           SmoothBundleForm.eval₂ σ (hσ.angleMap hF hcomm hc s p (θ, c))
             (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, c) (a, b))

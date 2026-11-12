@@ -118,25 +118,18 @@ theorem limsup_eLpNorm_restrict_le {α E : Type*} [MeasurableSpace α] {μ : Mea
     (hs : ∀ n, MeasurableSet (s n)) (hst : ∀ n, s n ⊆ t) :
     limsup (fun n ↦ eLpNorm g p (μ.restrict (s n))) atTop ≤
       eLpNorm g p (μ.restrict (limsup s atTop)) := by
-  -- Replace `g` by a strongly measurable function equal to it almost everywhere on `t`.
-  set h := hg.aestronglyMeasurable.mk g
   have hlim : limsup s atTop ⊆ t := fun x hx ↦
     (Filter.mem_limsup_iff_frequently_mem.1 hx).exists.elim fun n hn ↦ hst n hn
-  have hgh {u : Set α} (hu : u ⊆ t) : eLpNorm g p (μ.restrict u) = eLpNorm h p (μ.restrict u) :=
-    eLpNorm_congr_ae (ae_restrict_of_ae_restrict_of_subset hu hg.aestronglyMeasurable.ae_eq_mk)
-  have hmeas : StronglyMeasurable h := hg.aestronglyMeasurable.stronglyMeasurable_mk
   have heq {u : Set α} (hu : u ⊆ t) : eLpNorm g p (μ.restrict u) =
-      (∫⁻ x in u, ‖h x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
-    rw [hgh hu, eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hmeas.aestronglyMeasurable]
+      (∫⁻ x in u, ‖g x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop (hg.aestronglyMeasurable.mono_set hu)
   simp_rw [heq (hst _), heq hlim]
   have hpos : 0 ≤ 1 / p.toReal := by positivity
   have hmap := (ENNReal.monotone_rpow_of_nonneg hpos).map_limsup_of_continuousAt (F := atTop)
-    (fun n ↦ ∫⁻ x in s n, ‖h x‖ₑ ^ p.toReal ∂μ) ENNReal.continuous_rpow_const.continuousAt
+    (fun n ↦ ∫⁻ x in s n, ‖g x‖ₑ ^ p.toReal ∂μ) ENNReal.continuous_rpow_const.continuousAt
   rw [Function.comp_def] at hmap
   rw [← hmap]
-  refine ENNReal.rpow_le_rpow (limsup_setLIntegral_le
-    (hmeas.enorm.pow_const _) hs hst ?_) hpos
-  exact (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 hptop
-    ((hgh le_rfl).symm.trans_lt hg.eLpNorm_lt_top)).ne
+  exact ENNReal.rpow_le_rpow (limsup_setLIntegral_le (hg.aestronglyMeasurable.enorm.pow_const _)
+    hs hst (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 hptop hg.eLpNorm_lt_top).ne) hpos
 
 end TauCeti

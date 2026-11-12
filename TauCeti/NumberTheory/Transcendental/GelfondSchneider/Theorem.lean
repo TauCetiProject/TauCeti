@@ -145,10 +145,6 @@ private theorem eventually_schneider_exponent_neg (c₄ c₅ c₆ : ℝ) {e : �
         field_simp
   have hlt : K₀ / (K₀ + 1) * x ^ 2 < x ^ 2 :=
     mul_lt_of_lt_one_left (pow_pos hx0 2) ((div_lt_one (by positivity)).2 (by linarith))
-  have hsum : K₀ * X * Real.log x = |c₄| * X * Real.log x + |c₆| * X * Real.log x +
-      e * (|c₆| * X * Real.log x + |c₅| * X * Real.log x) := by
-    simp only [K₀]
-    ring
   linarith [mul_le_mul_of_nonneg_left h₆ he, mul_le_mul_of_nonneg_left h₅ he]
 
 /-- **Schneider's auxiliary function with more zeros than coefficients.** Let `K` be a number field
@@ -190,7 +186,7 @@ private theorem exists_schneider_auxiliary_mul_le_sq {K : Type*} [Field K] [Numb
     le_trans (by norm_num) (Nat.mul_le_mul (Nat.mul_le_mul_left 2 hd) (Nat.pow_le_pow_left hM 2))
   obtain ⟨a, ha0, ha, hzero⟩ := haux L ((2 * d) ^ 2 * M ^ 3) (2 * d * M) (by omega)
     (le_of_eq (by ring))
-  refine ⟨_, _, c * L, ?_, a, ha0, fun u v hu₁ hu hv₁ hv ↦ ?_⟩
+  refine ⟨_, _, c * L, ?_, a, ha0, fun u v _ hu _ hv ↦ ?_⟩
   · -- `D₁ D₂ = 2 d L² ≤ (2 d L)²`.
     calc (2 * d) ^ 2 * M ^ 3 * (2 * d * M) = c * L ^ 2 := by simp only [c, L]; ring
       _ ≤ c ^ 2 * L ^ 2 := Nat.mul_le_mul_right _ (Nat.le_self_pow two_ne_zero c)

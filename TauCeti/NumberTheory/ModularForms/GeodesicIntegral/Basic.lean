@@ -209,7 +209,7 @@ theorem geodesicIntegral_mul_S (g : GL (Fin 2) ℚ) (F : ℍ → ℂ) :
     -- the Jacobian `|p| t ^ (p - 1)` of `t ↦ t ^ p` at `p = -1` is `t⁻²`
     have hexp : (-1 : ℝ) - 1 = -2 := by norm_num
     simp only
-    rw [resToImagAxis_slash_two_S G ht, Real.rpow_neg_one, hexp, Real.rpow_neg ht.le,
+    rw [resToImagAxis_slash_two_S G t, Real.rpow_neg_one, hexp, Real.rpow_neg ht.le,
       Real.rpow_two, abs_neg, abs_one, one_mul]
     push_cast
     ring

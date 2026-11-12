@@ -186,7 +186,8 @@ theorem maslovIndex_symplecticGraphLoop (hK : ∀ z, K (Complex.I • z) = -(Com
     exact hδ t
   -- Deform the frame `(u, w) ↦ (u, s Q u + P w)` from `s = 0` to `s = 1`.
   rw [← hΛ]
-  refine (TotallyRealLoop.maslovIndex_eq_of_homotopy _ _ hL₀
+  refine (TotallyRealLoop.maslovIndex_eq_of_homotopy _ _
+    (L₀ := conjGraph K (ContinuousLinearMap.id ℝ E))
     (fun p => graphFrame K Ψ hsymp ((p.1 : ℝ) : ℂ) p.2)
     (continuous_graphFrame (hΨ.comp continuous_snd) (fun p => hsymp p.2)
       (Complex.continuous_ofReal.comp (continuous_subtype_val.comp continuous_fst)))
@@ -312,8 +313,9 @@ theorem maslovIndex_symplecticGraphLoop_eq_of_homotopy
         (hΨ01 0)).maslovIndex =
       (symplecticGraphLoop K hK (fun t => Ψ (1, t)) (by fun_prop) (fun t => hsymp (1, t))
         (hΨ01 1)).maslovIndex := by
-  refine TotallyRealLoop.maslovIndex_eq_of_homotopy _ _ (isMaximalTotallyReal_conjGraph_id hK)
-    (graphFrame K Ψ hsymp 1) (continuous_graphFrame hΨ hsymp continuous_const)
+  refine TotallyRealLoop.maslovIndex_eq_of_homotopy _ _
+    (L₀ := conjGraph K (ContinuousLinearMap.id ℝ E)) (graphFrame K Ψ hsymp 1)
+    (continuous_graphFrame hΨ hsymp continuous_const)
     (fun t => (map_graphFrame_one hK Ψ hsymp (0, t)).symm)
     (fun t => (map_graphFrame_one hK Ψ hsymp (1, t)).symm) fun s => ?_
   rw [map_graphFrame_one hK Ψ hsymp, map_graphFrame_one hK Ψ hsymp, hΨ01]

@@ -67,8 +67,7 @@ theorem exists_inertiaDeg_eq_iff_of_mem_frobeniusPrimeSet
     obtain ⟨Q, hQ⟩ := HeightOneSpectrum.under_surjective (𝓞 ↥(fixedField H)) (𝓞 L) 𝔓
     have hQp : Q.under (𝓞 K) = 𝔭 := by
       rw [← HeightOneSpectrum.under_under (𝓞 ↥(fixedField H)) (A := 𝓞 K) Q, hQ, h𝔓]
-    have : Q.asIdeal.LiesOver 𝔭.asIdeal :=
-      ⟨(congrArg HeightOneSpectrum.asIdeal hQp).symm⟩
+    have : Q.asIdeal.LiesOver 𝔭.asIdeal := HeightOneSpectrum.under_eq_iff_liesOver.mp hQp
     have : Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal :=
       isUnramifiedAt_of_mem_frobeniusPrimeSet h𝔭 Q.asIdeal
     obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q.asIdeal Q.ne_bot
@@ -88,7 +87,7 @@ theorem exists_inertiaDeg_eq_iff_of_mem_frobeniusPrimeSet
       (Ideal.prime_of_isPrime hσ.ne_bot inferInstance)
     refine ⟨Q'.under (𝓞 ↥(fixedField H)), ?_, ?_⟩
     · rw [HeightOneSpectrum.under_under]
-      exact HeightOneSpectrum.ext Q.2.2.over.symm
+      exact HeightOneSpectrum.under_eq_iff_liesOver.mpr Q.2.2
     · rw [HeightOneSpectrum.under_asIdeal]
       exact (Ideal.inertiaDeg_under_fixedField_eq_relIndex Q.1 H hσ).trans hn
 
