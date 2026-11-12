@@ -36,6 +36,7 @@ namespace Real
 variable {b x : ℝ} {m n : ℕ}
 
 /-- A nontrivial positive base `b` has `logb b (b ^ n) = n` for an integer `n`. -/
+@[simp]
 theorem logb_zpow_self (b_pos : 0 < b) (b_ne_one : b ≠ 1) (n : ℤ) : logb b (b ^ n) = n := by
   rw [← rpow_intCast, logb_rpow b_pos b_ne_one]
 

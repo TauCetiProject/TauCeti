@@ -104,6 +104,7 @@ theorem zpowCeil_pos_iff (hc₀ : 0 < c) : 0 < zpowCeil c x ↔ 0 < x := by
   · simpa using hx
 
 /-- The rounding of `x` vanishes exactly when `x ≤ 0`. -/
+@[simp]
 theorem zpowCeil_eq_zero_iff : zpowCeil c x = 0 ↔ x ≤ 0 := by
   unfold zpowCeil
   split_ifs with hx
