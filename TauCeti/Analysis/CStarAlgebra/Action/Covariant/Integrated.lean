@@ -43,6 +43,22 @@ noncomputable section
 open MeasureTheory
 open scoped CompactlySupported InnerProductSpace CStarAlgebra
 
+namespace NonUnitalStarAlgHom
+
+variable {A H X : Type*} [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+  [CompleteSpace H] [MeasurableSpace X] {ν : Measure X}
+
+/-- Vector evaluation of a Hilbert-space representation of a C⋆-algebra commutes with Bochner
+integration. -/
+theorem integral_apply (φ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) {F : X → A} (hF : Integrable F ν) (w : H) :
+    ∫ x, φ (F x) w ∂ν = φ (∫ x, F x ∂ν) w := by
+  let L : A →L[ℂ] H := (ContinuousLinearMap.apply ℂ H w).comp
+    { toLinearMap := (φ : A →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
+  have hL (a : A) : L a = φ a w := rfl
+  simpa only [hL] using L.integral_comp_comm hF
+
+end NonUnitalStarAlgHom
+
 namespace TauCeti.CStarAction.CovariantRepresentation
 
 variable {G A H : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
@@ -141,16 +157,6 @@ theorem integratedOperator_smul (a : A) (f : C_c(G, A)) :
     map_mul, mul_apply_eq_comp]
   exact (P.coefficient a).integral_comp_comm (P.integrable_integrand μ f v)
 
-omit [MeasurableSpace G] [OpensMeasurableSpace G] in
-/-- Vector evaluation of the coefficient representation commutes with Bochner integration. -/
-theorem integral_coefficient_apply {X : Type*} [MeasurableSpace X] {ν : Measure X} {F : X → A}
-    (hF : Integrable F ν) (w : H) :
-    ∫ x, P.coefficient (F x) w ∂ν = P.coefficient (∫ x, F x ∂ν) w := by
-  let L : A →L[ℂ] H := (ContinuousLinearMap.apply ℂ H w).comp
-    { toLinearMap := (P.coefficient : A →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
-  have hL (a : A) : L a = P.coefficient a w := rfl
-  simpa only [hL] using L.integral_comp_comm hF
-
 section Convolution
 
 variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
@@ -176,7 +182,7 @@ theorem integratedOperator_convolution (f g : C_c(G, A)) :
       = ∫ s, ∫ r, Ψ s r ∂μ ∂μ := by
         rw [integratedOperator_apply]
         congr 1 with s
-        rw [convolution_apply, ← P.integral_coefficient_apply (α.integrable_integrand f g μ s)]
+        rw [convolution_apply, ← P.coefficient.integral_apply (α.integrable_integrand f g μ s)]
     _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
     _ = ∫ r, (P.coefficient (f r) * P.group r) (P.integratedOperator μ g v) ∂μ := by
         congr 1 with r
