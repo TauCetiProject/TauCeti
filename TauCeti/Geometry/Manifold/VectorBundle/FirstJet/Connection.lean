@@ -128,7 +128,9 @@ private theorem christoffelAt_apply (hcov : IsCovariantDerivativeOn F cov U) (hx
 at each point `x`, the continuous linear map `J¹Vₓ → Hom(TₓM, Vₓ)` that sends the first jet
 `j¹s(x)` of a section differentiable at `x` to `∇s(x)` when `x ∈ U`
 (`TauCeti.FirstJetBundle.covariantDerivative_jet`). It is a left inverse of
-`TauCeti.FirstJetBundle.ofDeriv`, so it splits the first-jet sequence. -/
+`TauCeti.FirstJetBundle.ofDeriv`, so it splits the first-jet sequence. For `x ∉ U` it is the
+flat derivative of the trivialization `trivializationAt F V x`: it depends on that choice and
+carries no information about `∇`. -/
 def covariantDerivative (hcov : IsCovariantDerivativeOn F cov U) (x : M) :
     FirstJetBundle I F V x →L[𝕜] TangentSpace I x →L[𝕜] V x :=
   -- A jet is a pair `(v, A)` in `F × (E →L[𝕜] F)` and `TangentSpace I x` is `E`, as in
@@ -239,7 +241,8 @@ private theorem value_flatLift (v : V x) : value I F x (flatLift I F x v) = v :=
 
 /-- The **horizontal lift** `Vₓ → J¹Vₓ` of a covariant derivative over a set: the jet with value
 `v` and covariant derivative zero. It is the right inverse of the projection `J¹Vₓ → Vₓ` that
-corresponds to the splitting `TauCeti.FirstJetBundle.covariantDerivative`. -/
+corresponds to the splitting `TauCeti.FirstJetBundle.covariantDerivative`; like that splitting, it
+only reflects `∇` when `x ∈ U`. -/
 def horizontalLift (hcov : IsCovariantDerivativeOn F cov U) (x : M) :
     V x →L[𝕜] FirstJetBundle I F V x :=
   flatLift I F x - ofDeriv I F x ∘L covariantDerivative hcov x ∘L flatLift I F x
@@ -298,7 +301,8 @@ theorem ker_covariantDerivative (hcov : IsCovariantDerivativeOn F cov U) :
 
 /-- **The splitting isomorphism of a covariant derivative**: a first jet is determined by its
 value and its covariant derivative, and every pair of a value and a homomorphism occurs, so
-`J¹Vₓ ≃ Vₓ × Hom(TₓM, Vₓ)`. -/
+`J¹Vₓ ≃ Vₓ × Hom(TₓM, Vₓ)`. As for `TauCeti.FirstJetBundle.covariantDerivative`, it only reflects
+`∇` when `x ∈ U`. -/
 def connectionEquiv (hcov : IsCovariantDerivativeOn F cov U) (x : M) :
     FirstJetBundle I F V x ≃L[𝕜] V x × (TangentSpace I x →L[𝕜] V x) :=
   ContinuousLinearEquiv.equivOfInverse ((value I F x).prod (covariantDerivative hcov x))
