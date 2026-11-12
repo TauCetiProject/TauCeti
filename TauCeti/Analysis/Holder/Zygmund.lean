@@ -182,31 +182,29 @@ private theorem norm_iteratedFDeriv_smoothBlock_le (n₀ j m : ℕ)
     (g : Lp F ∞ (volume : Measure E)) (x : E) :
     ‖iteratedFDeriv ℝ m (smoothBlock φ n₀ j g) x‖ ≤
       (∫ y, ‖iteratedFDeriv ℝ m (kernel φ 0) y‖) * ((2 : ℝ) ^ (j + n₀)) ^ m * ‖g‖ := by
-  have hae : ∀ᵐ t ∂(volume : Measure E), ‖g (x - t)‖ ≤ ‖g‖ :=
-    ((volume : Measure E).measurePreserving_sub_left x).quasiMeasurePreserving.ae
-      (p := fun y ↦ ‖g y‖ ≤ ‖g‖) (Lp.ae_norm_le_norm_top g)
   -- The bilinear map of the differentiated convolution, `(A, b) ↦ (v ↦ A v • b)`, is bounded by
   -- the product of the norms.
   set L := ((compContinuousMultilinearMapL ℝ (fun _ : Fin m ↦ E) ℂ F).comp
     (lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F).flip).flip
   have hL : ∀ A b, ‖L A b‖ ≤ ‖A‖ * ‖b‖ := fun A b ↦ by
-    calc ‖L A b‖ = ‖((lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F).flip b).compContinuousMultilinearMap A‖ :=
-          rfl
-      _ ≤ ‖(lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F).flip b‖ * ‖A‖ :=
+    simp only [L, flip_apply, comp_apply, compContinuousMultilinearMapL_apply]
+    calc ‖((lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F).flip b).compContinuousMultilinearMap A‖
+        ≤ ‖(lsmul ℝ ℂ : ℂ →L[ℝ] F →L[ℝ] F).flip b‖ * ‖A‖ :=
           norm_compContinuousMultilinearMap_le _ _
       _ ≤ ‖b‖ * ‖A‖ := by
           gcongr
           exact opNorm_le_bound _ (norm_nonneg b) fun a ↦ by
             rw [flip_apply, lsmul_apply, norm_smul, mul_comm]
       _ = ‖A‖ * ‖b‖ := mul_comm _ _
+  have hK : Integrable (iteratedFDeriv ℝ m (kernel φ (j + n₀))) :=
+    (integrable_norm_iff (((kernel φ (j + n₀)).smooth ⊤).continuous_iteratedFDeriv
+      (by exact_mod_cast le_top)).aestronglyMeasurable).1
+      ((kernel φ (j + n₀)).integrable_norm_iteratedFDeriv m)
   rw [smoothBlock, iteratedFDeriv_convolution_left_of_dominated _ ((kernel φ (j + n₀)).smooth ⊤)
     (fun n _ ↦ (kernel φ (j + n₀)).exists_integrable_norm_iteratedFDeriv_add_le n)
     (Lp.aestronglyMeasurable g) (Lp.ae_norm_le_norm_top g) (by exact_mod_cast le_top),
-    convolution_def, mul_comm (∫ y, _), ← integral_norm_iteratedFDeriv_kernel,
-    ← integral_mul_const]
-  refine norm_integral_le_of_norm_le
-    (((kernel φ (j + n₀)).integrable_norm_iteratedFDeriv m).mul_const _) (hae.mono fun t ht ↦ ?_)
-  exact (hL _ _).trans (by gcongr)
+    mul_comm (∫ y, _), ← integral_norm_iteratedFDeriv_kernel]
+  exact norm_convolution_le_integral_norm_mul_norm L hL hK g x
 
 /-- The constant `2^{n₀ m} ‖D^m K₀‖₁`, which bounds the `m`-th derivatives of the smoothing of a
 block `Δⱼ u` at scale `2^{j + n₀}` by `2^{jm} ‖Δⱼ u‖_∞` times itself. -/
@@ -235,6 +233,32 @@ private theorem ae_eq_smoothBlock {n₀ : ℕ} (hn₀ : φ.rOut ≤ 2 ^ n₀ * �
   rwa [hgg', hconv] at hae
 
 end Kernel
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- **A geometric series of smooth functions.** If the derivatives of order `m ≤ k` of `Gⱼ` are
+bounded by `B m * q ^ j` with `0 ≤ q < 1`, then `∑ⱼ Gⱼ` is `C^k`, its derivatives through order `k`
+are the sums of the derivatives, and they are bounded by `(∑_{i ≤ k} B i) / (1 - q)`. -/
+private theorem contDiff_tsum_and_norm_iteratedFDeriv_tsum_le {k : ℕ} {G : ℕ → E → F}
+    {B : ℕ → ℝ} {q : ℝ} (hG : ∀ j, ContDiff ℝ k (G j)) (hB : ∀ m, 0 ≤ B m) (hq0 : 0 ≤ q)
+    (hq1 : q < 1) (hbd : ∀ m ≤ k, ∀ j x, ‖iteratedFDeriv ℝ m (G j) x‖ ≤ B m * q ^ j) :
+    ContDiff ℝ k (fun x ↦ ∑' j, G j x) ∧
+      (∀ i ≤ k, iteratedFDeriv ℝ i (fun x ↦ ∑' j, G j x) =
+        fun x ↦ ∑' j, iteratedFDeriv ℝ i (G j) x) ∧
+      ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i (fun x ↦ ∑' j, G j x) x‖ ≤
+        (∑ m ∈ Finset.range (k + 1), B m) * (1 - q)⁻¹ := by
+  have hsummable : ∀ m, Summable fun j ↦ B m * q ^ j := fun m ↦
+    (summable_geometric_of_lt_one hq0 hq1).mul_left _
+  have hbd' : ∀ (m j : ℕ) (x : E), (m : ℕ∞) ≤ k → ‖iteratedFDeriv ℝ m (G j) x‖ ≤ B m * q ^ j :=
+    fun m j x hm ↦ hbd m (by exact_mod_cast hm) j x
+  have hD : ∀ i ≤ k, iteratedFDeriv ℝ i (fun x ↦ ∑' j, G j x) =
+      fun x ↦ ∑' j, iteratedFDeriv ℝ i (G j) x :=
+    fun i hi ↦ iteratedFDeriv_tsum hG (fun m _ ↦ hsummable m) hbd' (by exact_mod_cast hi)
+  refine ⟨contDiff_tsum hG (fun m _ ↦ hsummable m) hbd', hD, fun i hi x ↦ ?_⟩
+  rw [hD i hi]
+  refine (tsum_of_norm_bounded ((hasSum_geometric_of_lt_one hq0 hq1).mul_left (B i))
+    fun j ↦ hbd i hi j x).trans ?_
+  gcongr
+  exact Finset.single_le_sum (fun i _ ↦ hB i) (Finset.mem_range.2 (Nat.lt_succ_of_le hi))
 
 namespace BesovSpace
 
@@ -363,26 +387,13 @@ theorem exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith
     rw [Real.rpow_mul_natCast zero_le_two, ← inv_inv ((2 : ℝ) ^ (α : ℝ)), ← hq_def, inv_pow,
       inv_mul_le_iff₀ (by positivity)] at h
     exact h.trans_eq (mul_comm _ _)
-  have hsummable : ∀ m, Summable fun j ↦ B m * ‖u‖ * q ^ j := fun m ↦
-    (summable_geometric_of_lt_one hq0 hq1).mul_left _
-  have hGk : ∀ j, ContDiff ℝ (k : ℕ∞) (G j) := fun j ↦ (hG j).of_le (by exact_mod_cast le_top)
-  have hbd : ∀ (m j : ℕ) (x : E), (m : ℕ∞) ≤ k →
-      ‖iteratedFDeriv ℝ m (G j) x‖ ≤ B m * ‖u‖ * q ^ j :=
-    fun m j x hm ↦ hgeom m (by exact_mod_cast hm) j x
   -- The sum `f = ∑ⱼ Gⱼ` is `C^k`, and its derivatives are the sums of the derivatives.
   set f₀ : E → F := fun x ↦ ∑' j, G j x
-  have hf₀ : ContDiff ℝ k f₀ := contDiff_tsum hGk (fun m _ ↦ hsummable m) hbd
-  have hDf₀ : ∀ i ≤ k, iteratedFDeriv ℝ i f₀ = fun x ↦ ∑' j, iteratedFDeriv ℝ i (G j) x :=
-    fun i hi ↦ iteratedFDeriv_tsum hGk (fun m _ ↦ hsummable m) hbd (by exact_mod_cast hi)
-  have hDf₀_le : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i f₀ x‖ ≤ D * ‖u‖ := by
-    intro i hi x
-    rw [hDf₀ i hi]
-    refine (tsum_of_norm_bounded ((hasSum_geometric_of_lt_one hq0 hq1).mul_left (B i * ‖u‖))
-      fun j ↦ hgeom i hi j x).trans ?_
-    calc B i * ‖u‖ * (1 - q)⁻¹ ≤ (∑ i ∈ Finset.range (k + 1), B i) * ‖u‖ * (1 - q)⁻¹ := by
-          gcongr
-          exact Finset.single_le_sum (fun i _ ↦ hB i) (Finset.mem_range.2 (Nat.lt_succ_of_le hi))
-      _ = D * ‖u‖ := by ring
+  obtain ⟨hf₀, hDf₀, hDf₀_le'⟩ := contDiff_tsum_and_norm_iteratedFDeriv_tsum_le
+    (fun j ↦ (hG j).of_le (by exact_mod_cast le_top)) (fun m ↦ mul_nonneg (hB m) (norm_nonneg u))
+    hq0 hq1 hgeom
+  have hDf₀_le : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i f₀ x‖ ≤ D * ‖u‖ := fun i hi x ↦
+    (hDf₀_le' i hi x).trans_eq (by rw [← Finset.sum_mul]; ring)
   -- The `k`-th derivative is `α`-Hölder: the sup bounds of order `k` and the Lipschitz bounds
   -- coming from order `k + 1`.
   have ha : ∀ (j : ℕ) x, 2 ^ ((α : ℝ) * j) * ‖iteratedFDeriv ℝ k (G j) x‖ ≤
@@ -404,7 +415,8 @@ theorem exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith
   have hbound : ∀ x, ‖f₀ x‖ ≤ D * ‖u‖ := fun x ↦ by
     simpa only [norm_iteratedFDeriv_zero] using hDf₀_le 0 (Nat.zero_le k) x
   have hsum : ∀ x, HasSum (fun j ↦ G j x) (f₀ x) := fun x ↦
-    (Summable.of_norm_bounded (hsummable 0) fun j ↦ by
+    (Summable.of_norm_bounded ((summable_geometric_of_lt_one hq0 hq1).mul_left (B 0 * ‖u‖))
+      fun j ↦ by
       simpa only [norm_iteratedFDeriv_zero] using hgeom 0 (Nat.zero_le k) j x).hasSum
   have htail : ∀ (N : ℕ) x, ‖∑ j ∈ Finset.range N, G j x - f₀ x‖ ≤
       B 0 * ‖u‖ * q ^ N / (1 - q) := fun N x ↦
@@ -440,6 +452,31 @@ theorem exists_toLpTop_eq_and_norm_le_and_holderWith (hα0 : 0 < α) (hα1 : α 
   rwa [iteratedFDeriv_zero_eq_comp, Function.comp_apply, Function.comp_apply,
     LinearIsometryEquiv.edist_map] at h
 
+/-- A bounded continuous function representing `u` is the value at `u` of any map `R` choosing a
+representative of every element. -/
+private theorem repr_eq {s : ℝ} {R : BesovSpace F φ s ∞ ∞ → E →ᵇ F}
+    (hR : ∀ u, (toLpTop volume ℂ (R u) : 𝓢'(E, F)) = u.toDistr) {u : BesovSpace F φ s ∞ ∞}
+    {f : E →ᵇ F} (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) :
+    R u = f :=
+  toTemperedDistribution_toLpTop_injective (μ := volume) <| by
+    dsimp only
+    rw [hR, hf]
+
+/-- A map choosing a bounded continuous representative of every element is additive. -/
+private theorem repr_add {s : ℝ} {R : BesovSpace F φ s ∞ ∞ → E →ᵇ F}
+    (hR : ∀ u, (toLpTop volume ℂ (R u) : 𝓢'(E, F)) = u.toDistr) (u v : BesovSpace F φ s ∞ ∞) :
+    R (u + v) = R u + R v :=
+  repr_eq φ hR <| by rw [map_add, Lp.toTemperedDistribution_add, hR, hR, toDistr_add]
+
+/-- A map choosing a bounded continuous representative of every element is homogeneous. -/
+private theorem repr_smul {s : ℝ} {R : BesovSpace F φ s ∞ ∞ → E →ᵇ F}
+    (hR : ∀ u, (toLpTop volume ℂ (R u) : 𝓢'(E, F)) = u.toDistr) (c : ℝ)
+    (u : BesovSpace F φ s ∞ ∞) :
+    R (c • u) = c • R u :=
+  repr_eq φ hR <| by
+    rw [← Complex.coe_smul c (R u), map_smul, Lp.toTemperedDistribution_smul, hR,
+      ← Complex.coe_smul c u, toDistr_smul]
+
 /-- The constant of `exists_toLpTop_eq_and_norm_le_and_holderWith`. -/
 private def holderConst (hα0 : 0 < α) (hα1 : α < 1) : ℝ≥0 :=
   (exists_toLpTop_eq_and_norm_le_and_holderWith (F := F) φ hα0 hα1).choose
@@ -455,14 +492,6 @@ private theorem holderRepr_spec (hα0 : 0 < α) (hα1 : α < 1) (u : BesovSpace 
         HolderWith (holderConst (F := F) φ hα0 hα1 * ‖u‖₊) α (holderRepr φ hα0 hα1 u) :=
   ((exists_toLpTop_eq_and_norm_le_and_holderWith (F := F) φ hα0 hα1).choose_spec u).choose_spec
 
-/-- A bounded continuous function representing `u` is `holderRepr u`. -/
-private theorem holderRepr_eq (hα0 : 0 < α) (hα1 : α < 1) {u : BesovSpace F φ α ∞ ∞}
-    {f : E →ᵇ F} (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) :
-    holderRepr φ hα0 hα1 u = f :=
-  toTemperedDistribution_toLpTop_injective (μ := volume) <| by
-    dsimp only
-    rw [(holderRepr_spec φ hα0 hα1 u).1, hf]
-
 variable (F) in
 /-- **The inclusion `𝒞^α ⊆ C^{0,α}`** for `0 < α < 1`: an element of the Hölder–Zygmund space
 `B^α_{∞,∞}`, as the bounded continuous `α`-Hölder function representing it. -/
@@ -476,17 +505,12 @@ def toHolderSpace (hα0 : 0 < α) (hα1 : α < 1) :
           HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction,
           HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction,
           HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction]
-        refine holderRepr_eq φ hα0 hα1 ?_
-        rw [map_add, Lp.toTemperedDistribution_add, (holderRepr_spec φ hα0 hα1 _).1,
-          (holderRepr_spec φ hα0 hα1 _).1, toDistr_add]
+        exact repr_add φ (fun u ↦ (holderRepr_spec φ hα0 hα1 u).1) u v
       map_smul' c u := HolderSpace.toBoundedContinuousFunction_injective <| by
         rw [RingHom.id_apply, HolderSpace.toBoundedContinuousFunction_smul,
           HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction,
           HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction]
-        refine holderRepr_eq φ hα0 hα1 ?_
-        rw [← Complex.coe_smul c (holderRepr φ hα0 hα1 u), map_smul,
-          Lp.toTemperedDistribution_smul, (holderRepr_spec φ hα0 hα1 _).1,
-          ← Complex.coe_smul c u, toDistr_smul] }
+        exact repr_smul φ (fun u ↦ (holderRepr_spec φ hα0 hα1 u).1) c u }
     (2 * holderConst (F := F) φ hα0 hα1) fun u ↦ by
       obtain ⟨-, hnorm, hH⟩ := holderRepr_spec φ hα0 hα1 u
       rw [LinearMap.coe_mk, AddHom.coe_mk]
@@ -528,7 +552,7 @@ theorem toHolderSpace_eq_iff (hα0 : 0 < α) (hα1 : α < 1) {u : BesovSpace F �
   refine ⟨fun h ↦ h ▸ toLpTop_toHolderSpace φ hα0 hα1 u, fun h ↦ ?_⟩
   refine HolderSpace.toBoundedContinuousFunction_injective ?_
   rw [toBoundedContinuousFunction_toHolderSpace]
-  exact holderRepr_eq φ hα0 hα1 h
+  exact repr_eq φ (fun u ↦ (holderRepr_spec φ hα0 hα1 u).1) h
 
 
 /-- The constant of `exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith`. -/
@@ -553,15 +577,6 @@ private theorem ckRepr_spec (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
   ((exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith (F := F) φ k hα0
     hα1).choose_spec u).choose_spec
 
-/-- A bounded continuous function representing `u` is `ckRepr u`. -/
-private theorem ckRepr_eq (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
-    {u : BesovSpace F φ (k + α) ∞ ∞} {f : E →ᵇ F}
-    (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) :
-    ckRepr φ k hα0 hα1 u = f :=
-  toTemperedDistribution_toLpTop_injective (μ := volume) <| by
-    dsimp only
-    rw [(ckRepr_spec φ k hα0 hα1 u).1, hf]
-
 /-- The bounded `C^{k,α}` map representing `u`. -/
 private def ckHolderRepr (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) (u : BesovSpace F φ (k + α) ∞ ∞) :
     CkHolderSpace k α E F :=
@@ -583,20 +598,11 @@ def toCkHolderSpace (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
   LinearMap.mkContinuous
     { toFun := ckHolderRepr φ k hα0 hα1
       map_add' u v := CkHolderSpace.ext fun x ↦ by
-        have h : ckRepr φ k hα0 hα1 (u + v) = ckRepr φ k hα0 hα1 u + ckRepr φ k hα0 hα1 v := by
-          refine ckRepr_eq φ k hα0 hα1 ?_
-          rw [map_add, Lp.toTemperedDistribution_add, (ckRepr_spec φ k hα0 hα1 _).1,
-            (ckRepr_spec φ k hα0 hα1 _).1, toDistr_add]
-        simp only [CkHolderSpace.coe_add, Pi.add_apply, coe_ckHolderRepr, h,
-          FunLike.coe_add]
+        simp only [CkHolderSpace.coe_add, Pi.add_apply, coe_ckHolderRepr,
+          repr_add φ (fun u ↦ (ckRepr_spec φ k hα0 hα1 u).1), FunLike.coe_add]
       map_smul' c u := CkHolderSpace.ext fun x ↦ by
-        have h : ckRepr φ k hα0 hα1 (c • u) = c • ckRepr φ k hα0 hα1 u := by
-          refine ckRepr_eq φ k hα0 hα1 ?_
-          rw [← Complex.coe_smul c (ckRepr φ k hα0 hα1 u), map_smul,
-            Lp.toTemperedDistribution_smul, (ckRepr_spec φ k hα0 hα1 _).1,
-            ← Complex.coe_smul c u, toDistr_smul]
-        simp only [RingHom.id_apply, CkHolderSpace.coe_smul, Pi.smul_apply, coe_ckHolderRepr, h,
-          FunLike.coe_smul] }
+        simp only [RingHom.id_apply, CkHolderSpace.coe_smul, Pi.smul_apply, coe_ckHolderRepr,
+          repr_smul φ (fun u ↦ (ckRepr_spec φ k hα0 hα1 u).1), FunLike.coe_smul] }
     ((k + 2) * ckConst (F := F) φ k hα0 hα1) fun u ↦ by
       obtain ⟨-, -, hbd, hH⟩ := ckRepr_spec φ k hα0 hα1 u
       rw [LinearMap.coe_mk, AddHom.coe_mk]
@@ -635,7 +641,7 @@ theorem toCkHolderSpace_eq_iff (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
     toCkHolderSpace F φ k hα0 hα1 u = f ↔
       (toLpTop volume ℂ f.toBoundedContinuousFunction : 𝓢'(E, F)) = u.toDistr := by
   refine ⟨fun h ↦ h ▸ toLpTop_toCkHolderSpace φ k hα0 hα1 u, fun h ↦ CkHolderSpace.ext fun x ↦ ?_⟩
-  rw [toCkHolderSpace_apply, coe_ckHolderRepr, ckRepr_eq φ k hα0 hα1 h,
+  rw [toCkHolderSpace_apply, coe_ckHolderRepr, repr_eq φ (fun u ↦ (ckRepr_spec φ k hα0 hα1 u).1) h,
     CkHolderSpace.coe_toBoundedContinuousFunction]
 
 end BesovSpace

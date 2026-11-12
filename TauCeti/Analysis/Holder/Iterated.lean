@@ -47,7 +47,9 @@ conditions are closed under uniform convergence, which gives completeness.
   through order `k` and the `α`-Hölder seminorm of the `k`-th derivative.
 * `TauCeti.CkHolderSpace.norm_le_of_norm_iteratedFDeriv_le_of_holderWith`: the norm is controlled
   by uniform bounds on the derivatives and a Hölder constant of the `k`-th derivative.
-* `TauCeti.CkHolderSpace.toBoundedContinuousFunction`: the underlying bounded continuous function.
+* `TauCeti.CkHolderSpace.toBoundedContinuousFunction`: the underlying bounded continuous function,
+  and `TauCeti.CkHolderSpace.toBoundedContinuousFunctionCLM`, the same map as a continuous linear
+  map of operator norm at most one.
 * `TauCeti.CkHolderSpace.norm_fderiv_le_iteratedFDeriv_one`,
   `TauCeti.CkHolderSpace.norm_fderiv_fderiv_le_iteratedFDeriv_two` and
   `TauCeti.CkHolderSpace.holderWith_fderiv_fderiv`: bounds on the curried derivatives `Df` and
@@ -413,7 +415,17 @@ def toBoundedContinuousFunction (f : CkHolderSpace k α E F) : E →ᵇ F :=
 @[simp]
 theorem coe_toBoundedContinuousFunction (f : CkHolderSpace k α E F) :
     ⇑f.toBoundedContinuousFunction = f :=
-  (rfl)
+  BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _
+
+/-- The underlying bounded continuous function has norm at most the `C^{k,α}` norm. -/
+theorem norm_toBoundedContinuousFunction_le (f : CkHolderSpace k α E F) :
+    ‖f.toBoundedContinuousFunction‖ ≤ ‖f‖ :=
+  BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (norm_nonneg f) _
+
+/-- A `C^{k,α}` map is determined by its underlying bounded continuous function. -/
+theorem toBoundedContinuousFunction_injective :
+    Function.Injective (toBoundedContinuousFunction : CkHolderSpace k α E F → E →ᵇ F) :=
+  fun _ _ h ↦ ext fun x ↦ by simpa using DFunLike.congr_fun h x
 
 /-- The values of a bounded `C^{k,α}` map are controlled by the supremum norm of its order-zero
 field. -/
@@ -541,6 +553,39 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • �
   simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, Pi.smul_apply,
     _root_.smul_apply]
   simp
+
+/-- The underlying bounded continuous function of a sum. -/
+@[simp]
+theorem toBoundedContinuousFunction_add (f g : CkHolderSpace k α E F) :
+    (f + g).toBoundedContinuousFunction =
+      f.toBoundedContinuousFunction + g.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- The underlying bounded continuous function of a scalar multiple. -/
+@[simp]
+theorem toBoundedContinuousFunction_smul (c : ℝ) (f : CkHolderSpace k α E F) :
+    (c • f).toBoundedContinuousFunction = c • f.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- Forgetting the derivatives is a continuous linear map to bounded continuous functions. -/
+def toBoundedContinuousFunctionCLM : CkHolderSpace k α E F →L[ℝ] (E →ᵇ F) :=
+  LinearMap.mkContinuous
+    { toFun := toBoundedContinuousFunction
+      map_add' := toBoundedContinuousFunction_add
+      map_smul' := toBoundedContinuousFunction_smul } 1 fun f ↦ by
+        rw [one_mul]
+        exact norm_toBoundedContinuousFunction_le f
+
+@[simp]
+theorem toBoundedContinuousFunctionCLM_apply (f : CkHolderSpace k α E F) :
+    toBoundedContinuousFunctionCLM f = f.toBoundedContinuousFunction := (rfl)
+
+/-- Forgetting the derivatives has operator norm at most one. -/
+theorem norm_toBoundedContinuousFunctionCLM_le_one :
+    ‖toBoundedContinuousFunctionCLM (k := k) (α := α) (E := E) (F := F)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 /-- A bounded continuous field built from a continuous function with a uniform bound. -/
 private def bcfOf {G : Type*} [NormedAddCommGroup G] (g : E → G) (hg : Continuous g)
