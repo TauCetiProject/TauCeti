@@ -67,9 +67,11 @@ private theorem apply_eq_zero_of_mem_proPFrattini (htriv : ∀ (g : G) (m : M), 
     (hpM : ∀ m : M, p • m = 0) (c : Z1 G M) {g : G} (hg : g ∈ proPFrattini p G) :
     (c : G → M) g = 0 := by
   let φ := Additive.toMul (Z1EquivOfSmulEqSelf htriv c)
+  have hexp : Monoid.exponent (Multiplicative M) ∣ p :=
+    Monoid.exponent_multiplicative (G := M) ▸ AddMonoid.exponent_dvd_of_forall_nsmul_eq_zero hpM
   have h := φ.toMonoidHom.proPFrattini_le_comap_of_prime Fact.out φ.continuous hg
-  rw [Subgroup.mem_comap, proPFrattini_multiplicative_eq_bot Fact.out hpM,
-    Subgroup.mem_bot] at h
+  rw [Subgroup.mem_comap, (proPFrattini_eq_bot_iff_of_discreteTopology Fact.out).mpr
+    ⟨inferInstance, hexp⟩, Subgroup.mem_bot] at h
   simpa [φ] using h
 
 omit [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] in
