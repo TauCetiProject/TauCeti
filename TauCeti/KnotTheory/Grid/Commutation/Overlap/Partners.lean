@@ -271,7 +271,6 @@ theorem crossOverlapPartners_subset_filter :
     · exact G.terminalCrossOverlapPartners_subset_pentagonRectangleDecompositions C hF
     · exact G.leftRightOverlapPartners_subset C hF
     · exact G.rightLeftOverlapPartners_subset C hF
-  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hr
   have hback : F.toRectangleDecomposition.IsRecut D.toRectangleDecomposition :=
     hr.symm
       (G.toRectangleDecomposition_first_isEmpty_of_mem_rectanglePentagonDecompositions C hD)
@@ -305,7 +304,6 @@ theorem initialPentagonCrossOverlapPartners_subset_filter :
     · exact G.initialPentagonTerminalOverlapPartners_subset C hF
     · exact G.initialPentagonLeftRightOverlapPartners_subset C hF
     · exact G.initialPentagonRightLeftOverlapPartners_subset C hF
-  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hr
   have hback : F.toGridRectangleDecomposition.IsRecut D.toGridRectangleDecomposition :=
     hr.symm
       (G.toGridRectangleDecomposition_first_isEmpty_of_mem_rectangleInitialPentagonDecompositions

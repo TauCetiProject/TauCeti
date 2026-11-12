@@ -119,6 +119,23 @@ theorem universalGSpaceCellularChainComplexIso_hom_f (n : ℕ) :
   ext x
   simp [LinearEquiv.trans_apply]
 
+/-- The scaled cellular comparison intertwines the geometric differential and the ordered
+simplicial boundary, at the level of underlying modules. -/
+@[reassoc]
+theorem universalGSpaceCellularChainLinearEquiv_comp_boundary (n : ℕ) :
+    (universalGSpaceCellularChainLinearEquiv k G (n + 1)).toModuleIso.hom ≫
+        (forget₂ (Rep k G) (ModuleCat k)).map (universalGSpaceBoundary k G n) =
+      cellularDifferential (univ : Set (universalGSpace G)) (ModuleCat.of k k) n ≫
+        (universalGSpaceCellularChainLinearEquiv k G n).toModuleIso.hom := by
+  have h := (universalGSpaceCellularChainComplexIso k G).hom.comm (n + 1) n
+  simp only [universalGSpaceCellularChainComplexIso_hom_f, cellularChainComplex_d,
+    Functor.mapHomologicalComplex_obj_d, universalGSpaceChainComplex_d] at h
+  -- Reduce the exposed ordered-chain terms so the cellular transports compose in ModuleCat.
+  dsimp only [universalGSpaceChainComplex] at h
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp] at h
+  exact (cancel_epi (eqToHom (cellularChainComplex_X
+    (univ : Set (universalGSpace G)) (ModuleCat.of k k) (n + 1)))).mp h
+
 /-- Evaluating the chain comparison gives the linear comparison after identifying the cellular
 chain group. The target is the underlying permutation module of the ordered-chain complex. -/
 -- Specify the target of `Hom.hom` to keep the implicit codomain in simp normal form.

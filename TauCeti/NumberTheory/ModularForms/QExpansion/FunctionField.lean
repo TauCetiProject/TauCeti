@@ -289,8 +289,7 @@ scaling, the pullback of `F` has its coefficients at `D` in a subfield `K` of `�
 theorem compactifiedQuotientComap_mem_coeffSubfield_iff (hσ : D.scaling = E.scaling)
     {K : Subfield ℂ} :
     compactifiedQuotientComap h F ∈ coeffSubfield D K ↔ F ∈ coeffSubfield E K := by
-  obtain ⟨d, hd, hw⟩ := TauCeti.Subgroup.CuspDatum.exists_width_eq_nat_mul h D E
-    (D.cusp_eq_of_scaling_eq E hσ) hσ
+  obtain ⟨d, hd, hw⟩ := TauCeti.Subgroup.CuspDatum.exists_width_eq_nat_mul h D E hσ
   lift d to ℕ+ using hd
   rw [mem_coeffSubfield, mem_coeffSubfield, laurentQExpansion_compactifiedQuotientComap h hσ hw]
   refine ⟨fun hF n ↦ by simpa using hF (d * n), fun hF n ↦ ?_⟩
