@@ -44,13 +44,11 @@ equivalence; and it takes the point masses of
 canonical decomposition of an exchangeable law over the extreme — equivalently the
 i.i.d. — exchangeable laws: the mixing law is unique, and the path laws it averages are extreme.
 
-This settles the Layer 8 bullet "the affine and ergodic decomposition of exchangeable laws" in
-`TauCetiRoadmap/Exchangeability/README.md`. Together with `exchangeableSigma_trivial_iff_iid`,
-`exchangeableSigma_trivial_iff_ergodicSMul` and `exchangeable_extreme_iff_iid`, this correspondence
-identifies the product — equivalently extreme — components with the ergodic components for the
-finitely supported permutation action, which that bullet sequences after the `ErgodicSMul` interface
-of Layer 6. Those equivalences compose directly; no additional correspondence declaration is
-required.
+Together with `exchangeableSigma_trivial_iff_iid`, `exchangeableSigma_trivial_iff_ergodicSMul` and
+`exchangeable_extreme_iff_iid`, this correspondence gives the affine and ergodic decomposition of
+exchangeable laws: it identifies the product — equivalently extreme — components with the ergodic
+components for the finitely supported permutation action. Those equivalences compose directly, so
+no separate declaration states the combination.
 
 ⚠ The action is the finitely supported permutations of the *time index*. Ergodicity for it is a
 different statement from ergodicity of the one-sided shift, which concerns the smaller σ-algebra of
