@@ -34,8 +34,11 @@ polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records t
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
 by `d`, and `hp.not_dvd_X` records that over a domain a homogeneous polynomial of degree at least
 two divides no variable. Without zero divisors, the factors of a nonzero homogeneous product are
-homogeneous (`hp.of_mul_left`, `hp.of_mul_right`). `TauCeti.eval_coe_homogeneousSubmodule_eq_sum`
-restates the expansion of values for `eval` on elements of `homogeneousSubmodule`.
+homogeneous (`hp.of_mul_left`, `hp.of_mul_right`). Evaluated at elements of an ideal `I`, a
+homogeneous polynomial of degree `n` takes a value in `I ^ n` (`hp.eval_mem_pow`), and in
+`J * I ^ n` if its coefficients lie in an ideal `J` (`hp.eval_mem_mul_pow`).
+`TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for `eval` on
+elements of `homogeneousSubmodule`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -221,6 +224,31 @@ degree its total degree. -/
 theorem of_mul_right {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : MvPolynomial σ R}
     {n : ℕ} (h : (p * q).IsHomogeneous n) (hpq : p * q ≠ 0) : q.IsHomogeneous q.totalDegree :=
   of_mul_left (mul_comm p q ▸ h) (mul_comm p q ▸ hpq)
+
+/-- A homogeneous polynomial of degree `n` evaluated at elements of an ideal `I` lies in
+`I ^ n`. -/
+theorem eval_mem_pow {σ R : Type*} [CommSemiring R] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) {I : Ideal R} {x : σ → R} (hx : ∀ i, x i ∈ I) :
+    _root_.MvPolynomial.eval x p ∈ I ^ n :=
+  Ideal.pow_right_mono (Ideal.span_le.2 (Set.range_subset_iff.2 hx)) n
+    ((Ideal.mem_span_pow_iff_exists_isHomogeneous x _).2 ⟨p, hp, rfl⟩)
+
+/-- A homogeneous polynomial of degree `n` with coefficients in an ideal `J`, evaluated at
+elements of an ideal `I`, lies in `J * I ^ n`. -/
+theorem eval_mem_mul_pow {σ R : Type*} [CommSemiring R] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) {I J : Ideal R} {x : σ → R} (hx : ∀ i, x i ∈ I)
+    (hJ : ∀ d, p.coeff d ∈ J) :
+    _root_.MvPolynomial.eval x p ∈ J * I ^ n := by
+  rw [p.as_sum, map_sum]
+  refine Ideal.sum_mem _ fun d hd ↦ ?_
+  have hmono : (_root_.MvPolynomial.monomial d (1 : R)).IsHomogeneous n :=
+    isHomogeneous_monomial _ (by
+      rw [Finsupp.degree_eq_weight_one]
+      exact hp (mem_support_iff.1 hd))
+  have hd' := hmono.eval_mem_pow hx
+  rw [_root_.MvPolynomial.eval_monomial, one_mul] at hd'
+  rw [_root_.MvPolynomial.eval_monomial]
+  exact Ideal.mul_mem_mul (hJ d) hd'
 
 end MvPolynomial.IsHomogeneous
 
