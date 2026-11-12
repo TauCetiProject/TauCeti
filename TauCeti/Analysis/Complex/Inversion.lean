@@ -27,7 +27,7 @@ Riemann map of a domain `W` and the Riemann map of the exterior of the inverted 
 ## Main results
 
 * `TauCeti.differentiableOn_add_inv_comp_inv`: the map is holomorphic off the closed unit disc if
-  `G` is holomorphic on the open disc.
+  `G` is holomorphic on the punctured open disc.
 * `TauCeti.tendsto_add_inv_comp_inv`: the map tends to infinity at infinity if `G` is continuous at
   `0`.
 * `TauCeti.exists_homeomorph_compl_ball_add_inv_comp_inv`: if `G` is a bijection of the closed disc
@@ -42,31 +42,32 @@ open Bornology Filter Function Metric Set Topology
 namespace TauCeti
 
 /-- The map `w ↦ p + (G w⁻¹)⁻¹` is holomorphic off the closed unit disc when `G` is holomorphic on
-the open disc and does not vanish on the punctured disc. -/
+the punctured open disc and does not vanish there. -/
 theorem differentiableOn_add_inv_comp_inv {G : ℂ → ℂ} (p : ℂ)
-    (hGd : DifferentiableOn ℂ G (ball 0 1)) (hne : ∀ x ∈ ball (0 : ℂ) 1, x ≠ 0 → G x ≠ 0) :
+    (hGd : DifferentiableOn ℂ G (ball 0 1 \ {0}))
+    (hne : ∀ x ∈ ball (0 : ℂ) 1, x ≠ 0 → G x ≠ 0) :
     DifferentiableOn ℂ (fun w : ℂ => p + (G w⁻¹)⁻¹) (closedBall 0 1)ᶜ := by
   have hI := bijOn_inv_compl_closedBall_one (𝕜 := ℂ)
   have hw0 : (closedBall (0 : ℂ) 1)ᶜ ⊆ {x | x ≠ 0} := fun w hw h =>
     hw (h ▸ mem_closedBall_self zero_le_one)
   exact (differentiableOn_const p).add ((hGd.comp (differentiableOn_inv.mono hw0)
-    fun w hw => (hI.mapsTo hw).1).inv fun w hw => hne _ (hI.mapsTo hw).1 (hI.mapsTo hw).2)
+    fun w hw => hI.mapsTo hw).inv fun w hw => hne _ (hI.mapsTo hw).1 (hI.mapsTo hw).2)
 
 /-- The map `w ↦ p + (G w⁻¹)⁻¹` tends to infinity at infinity when `G` is continuous at `0` with
-`G 0 = 0` and does not vanish on the punctured disc. -/
+`G 0 = 0` and does not vanish on a punctured neighbourhood of `0`. -/
 theorem tendsto_add_inv_comp_inv {G : ℂ → ℂ} (p : ℂ)
     (hGc : ContinuousAt G 0) (hG0 : G 0 = 0)
-    (hne : ∀ x ∈ ball (0 : ℂ) 1, x ≠ 0 → G x ≠ 0) :
+    (hne : ∀ᶠ x in 𝓝[≠] (0 : ℂ), G x ≠ 0) :
     Tendsto (fun w : ℂ => p + (G w⁻¹)⁻¹) (cobounded ℂ) (cobounded ℂ) := by
   have hG0t : Tendsto G (𝓝 0) (𝓝 0) := by
     have := hGc.tendsto
     rwa [hG0] at this
-  have hev : ∀ᶠ w in cobounded ℂ, G w⁻¹ ∈ ({0} : Set ℂ)ᶜ :=
-    Filter.mem_of_superset (isBounded_def.mp (isBounded_closedBall (x := (0 : ℂ)) (r := 1)))
-      fun w hw => hne _ (bijOn_inv_compl_closedBall_one.mapsTo hw).1
-        (bijOn_inv_compl_closedBall_one.mapsTo hw).2
+  have hinv : Tendsto (fun w : ℂ => w⁻¹) (cobounded ℂ) (𝓝[≠] 0) :=
+    tendsto_nhdsWithin_iff.mpr ⟨tendsto_inv₀_cobounded,
+      Filter.mem_of_superset (isBounded_def.mp (isBounded_closedBall (x := (0 : ℂ)) (r := 1)))
+        fun w hw => (bijOn_inv_compl_closedBall_one.mapsTo hw).2⟩
   exact (tendsto_const_add_cobounded p).comp (tendsto_inv₀_nhdsNE_zero.comp
-    (tendsto_nhdsWithin_iff.mpr ⟨hG0t.comp tendsto_inv₀_cobounded, hev⟩))
+    (tendsto_nhdsWithin_iff.mpr ⟨hG0t.comp tendsto_inv₀_cobounded, hinv.eventually hne⟩))
 
 /-- **Reading a Riemann map of an inverted set back.** Let `K` be a set whose punctured copy
 `K \ {0}` is the inversion `z ↦ (z - p)⁻¹` of a set `S`, and `G` a bijection of the closed unit disc

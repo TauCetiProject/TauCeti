@@ -123,12 +123,15 @@ theorem IsJordanCurve.exists_homeomorph_compl_ball_compl_filledHull_sdiff (hC : 
   have hG2 : BijOn G (ball 0 1 \ {0}) (W \ {0}) := by
     simpa only [hG0] using hGbij.sdiff_singleton (mem_ball_self one_pos)
   have hne : ∀ x ∈ ball (0 : ℂ) 1, x ≠ 0 → G x ≠ 0 := fun x hx hx0 => (hG2.mapsTo ⟨hx, hx0⟩).2
+  have hev : ∀ᶠ x in 𝓝[≠] (0 : ℂ), G x ≠ 0 :=
+    eventually_nhdsWithin_iff.2 (Filter.mem_of_superset
+      (isOpen_ball.mem_nhds (mem_ball_self one_pos)) fun x hx hx0 => hne x hx hx0)
   obtain ⟨hhc, e, he⟩ := exists_homeomorph_compl_ball_add_inv_comp_inv
     hG0 hGc hGcl hclW
-  refine ⟨_, hhc, differentiableOn_add_inv_comp_inv p hGd hne,
+  refine ⟨_, hhc, differentiableOn_add_inv_comp_inv p (hGd.mono sdiff_subset) hne,
     (bijOn_add_inv_image_inv_sub _).comp ((hW0 ▸ hG2).comp bijOn_inv_compl_closedBall_one),
     (bijOn_add_inv_image_inv_sub _).comp (hGS.comp bijOn_inv_sphere_one),
     tendsto_add_inv_comp_inv p
-      (hGd.continuousOn.continuousAt (isOpen_ball.mem_nhds (mem_ball_self one_pos))) hG0 hne, e, he⟩
+      (hGd.continuousOn.continuousAt (isOpen_ball.mem_nhds (mem_ball_self one_pos))) hG0 hev, e, he⟩
 
 end TauCeti
