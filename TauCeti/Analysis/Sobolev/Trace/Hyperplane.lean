@@ -125,7 +125,7 @@ theorem integral_hyperplane_abs_rpow_le_integral_halfSpace
     (∫ y : E, |u (WithLp.toLp 2 (a, y))| ^ r) ≤
       ∫ x : WithLp 2 (ℝ × E) in {x | a < (WithLp.ofLp x).1},
         (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
-  set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r with hF
+  set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r
   have hFc : Continuous F := continuous_rpow_energy hu hr
   have hs : HasCompactSupport F := hasCompactSupport_rpow_energy hsupp hr
   have hint : Integrable F volume := hFc.integrable_of_hasCompactSupport hs
@@ -168,6 +168,7 @@ theorem integral_hyperplane_abs_rpow_le_integral
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+omit [Fact (1 ≤ p)] in
 /-- If `V` and `G` represent `u` and its gradient `μ`-almost everywhere, the integral of the `Lᵖ`
 energy density `(p - 1) |u|ᵖ + ‖Du‖ᵖ` is `(p - 1) ‖V‖ᵖ + ‖G‖ᵖ`. With `μ` the volume restricted to
 a domain, this evaluates the right side of the flat trace inequality on test functions. -/
@@ -177,7 +178,8 @@ theorem integral_rpow_energy_eq_of_ae_eq {F : Type*} [NormedAddCommGroup F]
     (hG : G =ᵐ[μ] ∇ u) :
     ∫ x, (p.toReal - 1) * |u x| ^ p.toReal + ‖fderiv ℝ u x‖ ^ p.toReal ∂μ =
       (p.toReal - 1) * ‖V‖ ^ p.toReal + ‖G‖ ^ p.toReal := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp
   have hv : (fun x ↦ ‖V x‖ ^ p.toReal) =ᵐ[μ] fun x ↦ |u x| ^ p.toReal := by
     filter_upwards [hV] with x hx
     rw [hx, Real.norm_eq_abs]

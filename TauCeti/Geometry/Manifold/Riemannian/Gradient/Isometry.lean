@@ -13,7 +13,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 
 The differential of a local Riemannian isometry carries the gradient of a pulled-back real
 function to its target gradient, and preserves its norm. Differentiability is required only at
-the target point.
+the target point. Consequently the pointwise inner product `⟪∇u, ∇v⟫` of two gradients, the
+integrand of the Dirichlet energy, is natural:
+`⟪∇(u ∘ f), ∇(v ∘ f)⟫ = ⟪∇u, ∇v⟫ ∘ f`.
 
 See J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 2.
 -/
@@ -53,5 +55,14 @@ theorem norm_mgradient_comp (hf : IsLocalRiemannianIsometry I J f)
     ‖mgradient I (φ ∘ f) x‖ = ‖mgradient J φ (f x)‖ := by
   obtain ⟨e, he⟩ := hf.exists_linearIsometryEquiv_eq_mfderiv x
   rw [← e.norm_map, he, hf.mfderiv_mgradient_comp hφ]
+
+/-- A local isometry pulls back the pointwise inner product of two gradients:
+`⟪∇(φ ∘ f), ∇(ψ ∘ f)⟫ = ⟪∇φ, ∇ψ⟫ ∘ f`. -/
+theorem inner_mgradient_comp_comp (hf : IsLocalRiemannianIsometry I J f)
+    {φ ψ : N → ℝ} {x : M} (hφ : MDifferentiableAt J 𝓘(ℝ) φ (f x))
+    (hψ : MDifferentiableAt J 𝓘(ℝ) ψ (f x)) :
+    inner ℝ (mgradient I (φ ∘ f) x) (mgradient I (ψ ∘ f) x) =
+      inner ℝ (mgradient J φ (f x)) (mgradient J ψ (f x)) := by
+  rw [← hf.inner_mfderiv, hf.mfderiv_mgradient_comp hφ, hf.mfderiv_mgradient_comp hψ]
 
 end TauCeti.IsLocalRiemannianIsometry

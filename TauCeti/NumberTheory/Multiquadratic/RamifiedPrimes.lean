@@ -56,7 +56,7 @@ open scoped NumberField
 
 namespace TauCeti.Multiquadratic
 
-variable {ι : Type*} [Finite ι] {L : Type*} [Field L] [NumberField L]
+variable {ι : Type*} {L : Type*} [Field L] [NumberField L]
   {d : ι → ℤ} {r : ι → L}
 
 /-- **The ramified primes of a multiquadratic field.** Let `r i` be square roots of squarefree

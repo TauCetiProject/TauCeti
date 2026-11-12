@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.VonNeumannAlgebra.Basic
+public import TauCeti.Analysis.VonNeumannAlgebra.Basic
 import TauCeti.Algebra.Group.Center
 
 /-!

@@ -22,8 +22,7 @@ If `f` and `g` are holomorphic on a closed disc and `‖f - g‖ < ‖f‖ + ‖
 bounding circle, then `f` and `g` have the same number of zeros inside, counted with multiplicity.
 This *symmetric* hypothesis — Estermann's form of Rouché's theorem — is the one proved here; the
 familiar asymmetric hypothesis `‖f - g‖ < ‖f‖` implies it, so the classical statement is a
-corollary. Rouché is the first target of layer **L0 (the local-mapping engine)** of the
-conformal-mapping roadmap.
+corollary.
 
 The proof is the classical argument-principle one. On the circle the hypothesis forces both `f ≠ 0`
 and `g ≠ 0`, so the quotient `h = g / f` is defined and nonzero there; moreover `h` avoids the

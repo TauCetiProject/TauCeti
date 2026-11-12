@@ -333,7 +333,7 @@ theorem exists_integerRing_eq_and_isUnit_norm {z : L}
   simpa only [Algebra.algebraMap_ofSubsemiring_apply, coe_norm_integerRing] using hz
 
 /-- An integer of `L` has unit norm in `𝒪[K]` exactly when it is a unit of `𝒪[L]`. -/
-@[simp]
+-- Not a simp lemma: the general simp lemma `Algebra.isUnit_norm_iff` subsumes it.
 theorem isUnit_norm_integerRing_iff {w : 𝒪[L]} :
     IsUnit (Algebra.norm 𝒪[K] w) ↔ IsUnit w := by
   rw [(Valuation.integer.integers (valuation K)).isUnit_iff_valuation_eq_one,
@@ -567,8 +567,8 @@ the Galois conjugates of `z`. -/
 theorem algebraMap_norm_integerRing_eq_prod_automorphisms (z : 𝒪[L]) :
     algebraMap 𝒪[K] 𝒪[L] (Algebra.norm 𝒪[K] z) = ∏ σ : L ≃ₐ[K] L, σ • z := by
   apply Subtype.ext
-  rw [coe_algebraMap_integerRing, coe_norm_integerRing, Algebra.norm_eq_prod_automorphisms,
-    SubmonoidClass.coe_finsetProd]
+  rw [Valuation.HasExtension.val_algebraMap, coe_norm_integerRing,
+    Algebra.norm_eq_prod_automorphisms, SubmonoidClass.coe_finsetProd]
   simp only [AlgEquiv.coe_smul_integerRing]
 
 /-- In a Galois extension, the trace of an integer `z` of `L`, read in `𝒪[L]`, is the sum of the
@@ -576,8 +576,8 @@ Galois conjugates of `z`. -/
 theorem algebraMap_trace_integerRing_eq_sum_automorphisms (z : 𝒪[L]) :
     algebraMap 𝒪[K] 𝒪[L] (Algebra.trace 𝒪[K] 𝒪[L] z) = ∑ σ : L ≃ₐ[K] L, σ • z := by
   apply Subtype.ext
-  rw [coe_algebraMap_integerRing, coe_trace_integerRing, _root_.trace_eq_sum_automorphisms,
-    AddSubmonoidClass.coe_finsetSum]
+  rw [Valuation.HasExtension.val_algebraMap, coe_trace_integerRing,
+    _root_.trace_eq_sum_automorphisms, AddSubmonoidClass.coe_finsetSum]
   simp only [AlgEquiv.coe_smul_integerRing]
 
 end Galois
