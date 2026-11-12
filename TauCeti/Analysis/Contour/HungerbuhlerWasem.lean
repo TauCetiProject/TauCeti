@@ -39,13 +39,12 @@ number `0` and contributes nothing. The half-residue case
 (`S = {s}`, `n_s(γ) = ½`) evaluates to `πi · Res_s f` — the on-cycle acceptance gate, and the
 value the valence formula uses at `i` and `ρ`.
 
-Both statements follow the roadmap signatures. The proof instantiates the canonical polar
-decomposition, discharges the conditions into the per-pole hypotheses, and assembles the
-residue sum; a reversed parametrization (`b ≤ a`) reduces to the oriented case through the
-orientation lemmas, every ingredient being endpoint-swap invariant. That assembly is kept
-separate from the null-homology hypothesis, which enters only at the last step to kill the
-analytic remainder — so the splitting it factors through is available to callers that must add
-several curves up before any of them bounds.
+The proof instantiates the canonical polar decomposition, discharges the conditions into the
+per-pole hypotheses, and assembles the residue sum; a reversed parametrization (`b ≤ a`) reduces to
+the oriented case through the orientation lemmas, every ingredient being endpoint-swap invariant.
+That assembly is kept separate from the null-homology hypothesis, which enters only at the last step
+to kill the analytic remainder — so the splitting it factors through is available to callers that
+must add several curves up before any of them bounds.
 
 ## Main results
 
@@ -280,7 +279,7 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles {f : ℂ → ℂ} {U : 
 
 /-- **The half-residue theorem at a simple pole**: the winding-`½` case with the conditions
 discharged automatically — an on-cycle simple pole crossed by the immersion contributes
-`πi · Res_s f`. The acceptance form for the valence formula's `i` and `ρ`. -/
+`πi · Res_s f`. This is the form the valence formula uses at `i` and `ρ`. -/
 theorem hasCauchyPV_half_residue_of_simple_pole {f : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
     (γ : ℝ → ℂ) (a b : ℝ) (s : ℂ) (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ≠ s)
