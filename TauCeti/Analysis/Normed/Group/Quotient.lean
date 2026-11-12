@@ -19,11 +19,12 @@ every class in `M ⧸ S` has a representative of the same norm
 give the corresponding characterisations of strict closedness for submodules and for two-sided
 ideals of possibly noncommutative seminormed rings.
 
-If every nontrivial element of `S` has seminorm at least twice that of `m`, then `m` attains the
-quotient seminorm of its class (`QuotientGroup.norm_mk_eq_norm`). So the projection `M → M ⧸ S`
-preserves the distance between two points whose distance is at most half the least seminorm of a
-nontrivial element of `S` (`QuotientGroup.dist_mk_eq_dist`); for a lattice in a normed space this
-says that the projection to the torus is an isometry on small sets.
+If every element of `S` of positive seminorm has seminorm at least twice that of `m`, then `m`
+attains the quotient seminorm of its class (`QuotientGroup.norm_mk_eq_norm`); elements of seminorm
+zero impose no condition. So the projection `M → M ⧸ S` preserves the distance between two points
+whose distance is at most half the seminorm of every element of `S` of positive seminorm
+(`QuotientGroup.dist_mk_eq_dist`); for a lattice in a normed space this says that the projection to
+the torus is an isometry on small sets.
 
 When `M` is ultrametric, the quotient seminorm on `M ⧸ S` is again ultrametric: each class has
 representatives whose norms approximate its quotient norm, and the ultrametric inequality for a
@@ -91,28 +92,28 @@ section Small
 
 variable {M : Type*} [SeminormedCommGroup M] {S : Subgroup M}
 
-/-- If every nontrivial element of `S` has at least twice the seminorm of `m`, then the quotient
-seminorm of `m` modulo `S` is the seminorm of `m`. -/
-@[to_additive /-- If every nonzero element of `S` has at least twice the seminorm of `m`, then the
-quotient seminorm of `m` modulo `S` is the seminorm of `m`. -/]
-theorem norm_mk_eq_norm {m : M} (h : ∀ s ∈ S, s ≠ 1 → 2 * ‖m‖ ≤ ‖s‖) :
+/-- If every element of `S` of positive seminorm has at least twice the seminorm of `m`, then the
+quotient seminorm of `m` modulo `S` is the seminorm of `m`. -/
+@[to_additive /-- If every element of `S` of positive seminorm has at least twice the seminorm of
+`m`, then the quotient seminorm of `m` modulo `S` is the seminorm of `m`. -/]
+theorem norm_mk_eq_norm {m : M} (h : ∀ s ∈ S, 0 < ‖s‖ → 2 * ‖m‖ ≤ ‖s‖) :
     ‖(m : M ⧸ S)‖ = ‖m‖ := by
   refine le_antisymm norm_mk_le_norm (le_norm_iff.2 fun m' hm' ↦ ?_)
-  have hs : m⁻¹ * m' ∈ S := QuotientGroup.eq.1 hm'.symm
-  by_cases hs1 : m⁻¹ * m' = 1
-  · rw [inv_mul_eq_one.1 hs1]
-  · have := (h _ hs hs1).trans (norm_mul_le' m⁻¹ m')
-    rw [norm_inv'] at this
-    linarith
+  have hs : m' / m ∈ S := inv_mul_eq_div m m' ▸ QuotientGroup.eq.1 hm'.symm
+  rcases (norm_nonneg' (m' / m)).eq_or_lt with h0 | hpos
+  · -- `m` and `m'` are at distance zero, so they have the same seminorm
+    have := norm_le_norm_add_norm_div' m m'
+    rwa [norm_div_rev, ← h0, add_zero] at this
+  · linarith [h _ hs hpos, norm_div_le m' m]
 
-/-- The projection to `M ⧸ S` preserves the distance between `x` and `y` when every nontrivial
-element of `S` has at least twice that distance as seminorm. -/
+/-- The projection to `M ⧸ S` preserves the distance between `x` and `y` when every element of `S`
+of positive seminorm has at least twice that distance as seminorm. -/
 @[to_additive /-- The projection to `M ⧸ S` preserves the distance between `x` and `y` when every
-nonzero element of `S` has at least twice that distance as seminorm. -/]
-theorem dist_mk_eq_dist {x y : M} (h : ∀ s ∈ S, s ≠ 1 → 2 * dist x y ≤ ‖s‖) :
+element of `S` of positive seminorm has at least twice that distance as seminorm. -/]
+theorem dist_mk_eq_dist {x y : M} (h : ∀ s ∈ S, 0 < ‖s‖ → 2 * dist x y ≤ ‖s‖) :
     dist (x : M ⧸ S) y = dist x y := by
   rw [dist_eq_norm_div, dist_eq_norm_div, ← QuotientGroup.mk_div]
-  exact norm_mk_eq_norm fun s hs hs1 ↦ (dist_eq_norm_div x y) ▸ h s hs hs1
+  exact norm_mk_eq_norm fun s hs hs0 ↦ (dist_eq_norm_div x y) ▸ h s hs hs0
 
 end Small
 

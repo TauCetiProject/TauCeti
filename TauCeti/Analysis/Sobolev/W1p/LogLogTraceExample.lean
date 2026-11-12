@@ -291,7 +291,7 @@ theorem not_continuousWithinAt_of_ae_eq_logLogTraceExample {g : ℂ → ℝ}
       (by rw [closure_ball (0 : ℂ) one_ne_zero]; simp)
     exact Filter.nonempty_of_mem (mem_nhdsWithin.2 ⟨u, huo, hu1, subset_rfl⟩)
   have hpos : 0 < volume (u ∩ ball (0 : ℂ) 1) := (huo.inter isOpen_ball).measure_pos _ hS
-  have hfalse : ∀ᵐ z ∂volume.restrict (u ∩ ball (0 : ℂ) 1), False := by
+  have hfalse : ∀ᵐ _ ∂volume.restrict (u ∩ ball (0 : ℂ) 1), False := by
     filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_right hg,
       ae_restrict_mem (huo.inter isOpen_ball).measurableSet] with z hz hzS
     have := hus hzS
