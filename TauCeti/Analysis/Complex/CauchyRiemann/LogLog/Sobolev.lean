@@ -74,11 +74,8 @@ disc for the graph structure `J_f`, which is `C¹` there
 theorem isWeakCauchyRiemannOn_graph_logLogExample (p : ℝ≥0∞) :
     IsWeakCauchyRiemannOn p (ball 0 1) (fun _ ↦ conjWirtingerGraphStructure logLogExample)
       (fun _ _ ↦ 0) (fun z ↦ WithLp.toLp 2 (z, logLogExample z)) :=
-  isWeakCauchyRiemannOn_of_contDiffOn (Ω := ⟨ball 0 1, isOpen_ball⟩)
-    contDiffOn_graph_logLogExample fun z hz ↦ by
-      rw [fderiv_graph_I_eq_conjWirtingerGraphStructure
-        ((contDiffOn_logLogExample.contDiffAt (isOpen_ball.mem_nhds hz)).differentiableAt
-          one_ne_zero), conjWirtingerGraphStructure_apply_apply, add_neg_cancel]
+  isWeakCauchyRiemannOn_graph_conjWirtingerGraphStructure (Ω := ⟨ball 0 1, isOpen_ball⟩) p
+    contDiffOn_logLogExample
 
 /-- **The example is not `W^{2,∞}_loc` on any neighbourhood of the origin.** -/
 theorem not_memWkpLoc_two_top_logLogExample {U : Set ℂ} (hU : U ∈ 𝓝 0) :
