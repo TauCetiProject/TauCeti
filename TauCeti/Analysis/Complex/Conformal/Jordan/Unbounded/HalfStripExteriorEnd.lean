@@ -223,7 +223,7 @@ private theorem false_of_inverted_coordinate_eq_zero_of_rays
     (hlim _ ?_)
   · exact ((continuousOn_const.add (hgR.continuousOn.inv₀ hgap)).sub continuousOn_const).div_const b
   · intro s hs s' hs' h
-    simp only [div_left_inj' hb, sub_left_inj, add_right_inj, inv_inj] at h
+    simp only [div_left_inj₀ hb, sub_left_inj, add_right_inj, inv_inj] at h
     exact ofReal_injective (hgi ⟨by simp, hgap s hs⟩ ⟨by simp, hgap s' hs'⟩ h)
   · refine tendsto_nhdsWithin_iff.mpr ⟨hA.2 ▸ hgR.continuousAt.tendsto.mono_left
       nhdsWithin_le_nhds, ?_⟩

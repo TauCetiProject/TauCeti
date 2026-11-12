@@ -82,7 +82,7 @@ most like `t^{n/2}`, from the count of lattice points in a ball, which is `O(R^n
 public section
 
 open Filter Asymptotics Metric Module MeasureTheory
-open scoped RealInnerProductSpace
+open scoped RealInnerProductSpace Pointwise
 
 namespace ZLattice
 
