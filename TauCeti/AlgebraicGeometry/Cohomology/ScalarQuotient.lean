@@ -86,32 +86,32 @@ theorem scalarPowerQuotient_shortExact [Mono (M.globalSectionsSmul f)] (n : ℕ)
 variable [Mono (M.globalSectionsSmul f)]
 
 /-- The connecting map for `0 → M → M → M/fⁿM → 0`, linear over global functions. -/
-def scalarPowerBoundary (n i : ℕ) :
+def scalarPowerδ (n i : ℕ) :
     Cohomology (M.scalarPowerQuotient f n) i →ₗ[Γ(X, ⊤)] Cohomology M (i + 1) :=
   cohomologyδLinear (M.scalarPowerQuotient_shortExact f n) i (i + 1) rfl
 
 /-- The boundary is the connecting map of the coefficient short exact sequence. -/
-lemma scalarPowerBoundary_apply (n i : ℕ)
+lemma scalarPowerδ_apply (n i : ℕ)
     (x : Cohomology (M.scalarPowerQuotient f n) i) :
-    M.scalarPowerBoundary f n i x =
+    M.scalarPowerδ f n i x =
       cohomologyδ (M.scalarPowerQuotient_shortExact f n) i (i + 1) rfl x := by
   exact cohomologyδLinear_apply (M.scalarPowerQuotient_shortExact f n) i (i + 1) rfl x
 
 /-- A class on `M/fⁿM` has zero boundary exactly when it lifts to a class on `M`. -/
-theorem exact_cohomologyMap_scalarPowerBoundary (n i : ℕ) :
+theorem exact_cohomologyMapLinear_scalarPowerδ (n i : ℕ) :
     Function.Exact (cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ n))) i)
-      (M.scalarPowerBoundary f n i) := by
+      (M.scalarPowerδ f n i) := by
   rw [coe_cohomologyMapLinear]
-  have hδ := funext (M.scalarPowerBoundary_apply f n i)
+  have hδ := funext (M.scalarPowerδ_apply f n i)
   rw [hδ]
   exact exact_cohomologyMap_cohomologyδ (M.scalarPowerQuotient_shortExact f n)
     i (i + 1) rfl
 
 /-- The image of the connecting map consists exactly of the classes annihilated by `fⁿ`. -/
-theorem exact_scalarPowerBoundary_smul (n i : ℕ) :
-    Function.Exact (M.scalarPowerBoundary f n i)
+theorem exact_scalarPowerδ_smul (n i : ℕ) :
+    Function.Exact (M.scalarPowerδ f n i)
       (f ^ n • LinearMap.id : Cohomology M (i + 1) →ₗ[Γ(X, ⊤)] Cohomology M (i + 1)) := by
-  have hδ := funext (M.scalarPowerBoundary_apply f n i)
+  have hδ := funext (M.scalarPowerδ_apply f n i)
   have hs : ⇑(f ^ n • (LinearMap.id : Cohomology M (i + 1) →ₗ[Γ(X, ⊤)] _)) =
       ⇑(cohomologyMap (M.globalSectionsSmul (f ^ n)) (i + 1)) :=
     funext fun x ↦ (cohomologyMap_globalSectionsSmul_apply M (i + 1) (f ^ n) x).symm
@@ -120,12 +120,12 @@ theorem exact_scalarPowerBoundary_smul (n i : ℕ) :
     i (i + 1) rfl
 
 /-- Under reduction of the quotient exponent, the boundary class is multiplied by `f`. -/
-theorem scalarPowerBoundary_transition (n i : ℕ)
+theorem scalarPowerδ_transition (n i : ℕ)
     (x : Cohomology (M.scalarPowerQuotient f (n + 1)) i) :
-    M.scalarPowerBoundary f n i
+    M.scalarPowerδ f n i
         (cohomologyMapLinear (M.scalarPowerQuotientTransition f n) i x) =
-      f • M.scalarPowerBoundary f (n + 1) i x := by
-  rw [coe_cohomologyMapLinear, scalarPowerBoundary_apply, scalarPowerBoundary_apply]
+      f • M.scalarPowerδ f (n + 1) i x := by
+  rw [coe_cohomologyMapLinear, scalarPowerδ_apply, scalarPowerδ_apply]
   exact (cohomologyδ_naturality (M.scalarPowerQuotient_shortExact f (n + 1))
     (M.scalarPowerQuotient_shortExact f n)
     (M.scalarPowerQuotientSequenceMap f n) i (i + 1) rfl x).symm.trans
@@ -139,19 +139,20 @@ theorem exists_cohomology_lift_of_scalarPowerQuotient_compatible (i : ℕ)
     {k : ℕ} (hk : ∀ y : Cohomology M (i + 1), f ^ k • y = 0) (n : ℕ) :
     ∃ y : Cohomology M i,
       cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ n))) i y = x n := by
-  have hstep (m : ℕ) : M.scalarPowerBoundary f m i (x m) =
-      f • M.scalarPowerBoundary f (m + 1) i (x (m + 1)) := by
+  have hstep (m : ℕ) : M.scalarPowerδ f m i (x m) =
+      f • M.scalarPowerδ f (m + 1) i (x (m + 1)) := by
     rw [← hx m]
-    exact M.scalarPowerBoundary_transition f m i (x (m + 1))
-  have hiter (j : ℕ) : ∀ m, M.scalarPowerBoundary f m i (x m) =
-      f ^ j • M.scalarPowerBoundary f (m + j) i (x (m + j)) := by
+    exact M.scalarPowerδ_transition f m i (x (m + 1))
+  have hiter (j : ℕ) : ∀ m, M.scalarPowerδ f m i (x m) =
+      f ^ j • M.scalarPowerδ f (m + j) i (x (m + j)) := by
     induction j with
     | zero => intro m; simp
     | succ j ih =>
       intro m
-      rw [hstep m, ih (m + 1), smul_smul, ← pow_succ', Nat.add_right_comm m 1 j,
-        Nat.add_assoc]
-  have hzero : M.scalarPowerBoundary f n i (x n) = 0 := (hiter k n).trans (hk _)
-  exact (M.exact_cohomologyMap_scalarPowerBoundary f n i (x n)).mp hzero
+      rw [hstep m, ih (m + 1), smul_smul, ← pow_succ']
+      have hindex : m + 1 + j = m + (j + 1) := by omega
+      rw [hindex]
+  have hzero : M.scalarPowerδ f n i (x n) = 0 := (hiter k n).trans (hk _)
+  exact (M.exact_cohomologyMapLinear_scalarPowerδ f n i (x n)).mp hzero
 
 end AlgebraicGeometry.Scheme.Modules

@@ -117,7 +117,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.coe_cohomologyMapLinear {M N : X.M
     ⇑(cohomologyMapLinear f n) = ⇑(cohomologyMap f n) := by
   funext x
   rw [cohomologyMapLinear_apply, cohomologyFunctor_map]
-  rfl
+  exact AddCommGrpCat.ofHom_apply (cohomologyMap f n) x
 
 private lemma sections_ladder {M N : X.Modules} (f : M ⟶ N) :
     (f.app ⊤).hom.comp (cohomologyZeroEquiv M) =
