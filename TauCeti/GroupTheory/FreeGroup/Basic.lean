@@ -18,6 +18,7 @@ free group.
 ## Main results
 
 * `MonoidHom.apply_freeGroup_mk`: a homomorphism evaluates a signed word letter by letter.
+* `FreeGroup.lift_mk_singleton`: the value of a lift on a one-letter word.
 * `FreeGroup.lift_inv_mk`: inverting the image of every generator flips every sign in a word.
 -/
 
@@ -38,6 +39,12 @@ theorem apply_freeGroup_mk {α M : Type*} [DivisionMonoid M] (F : FreeGroup α �
 end MonoidHom
 
 namespace FreeGroup
+
+/-- Lifting `f` evaluates a one-letter word as the image of its generator, or the inverse of that
+image for a negative letter. -/
+theorem lift_mk_singleton {α G : Type*} [Group G] (f : α → G) (y : α × Bool) :
+    lift f (mk [y]) = cond y.2 (f y.1) (f y.1)⁻¹ := by
+  simp [lift_mk]
 
 /-- Lifting the pointwise inverse of `f` evaluates on the word `L` as lifting `f` evaluates on the
 word with every sign flipped. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Computability
+public import TauCeti.GroupTheory.FreeGroup.Reduce
 
 /-!
 # Primitive-recursive substitution of free-group words
@@ -135,6 +136,20 @@ theorem substituteVars_map_inl (U : X → List (A × Bool)) (l : List X) :
 theorem substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
     substituteVars U (invRev w) = invRev (substituteVars U w) :=
   flatMap_substituteLetter_invRev _ w
+
+/-- Substituting into a formal inverse gives a reduced word exactly when substituting into the
+original word does. -/
+@[simp]
+theorem isReduced_substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
+    IsReduced (substituteVars U (invRev w)) ↔ IsReduced (substituteVars U w) := by
+  rw [substituteVars_invRev, isReduced_invRev]
+
+/-- If substituting into a word gives a reduced word, so does substituting into the word raised
+to a sign. -/
+theorem isReduced_substituteVars_cond (U : X → List (A × Bool)) (s : Bool)
+    (w : List ((X ⊕ A) × Bool)) (h : IsReduced (substituteVars U w)) :
+    IsReduced (substituteVars U (cond s w (invRev w))) := by
+  cases s <;> simpa
 
 /-- Substitution followed by free reduction is evaluation in the free group. -/
 theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
