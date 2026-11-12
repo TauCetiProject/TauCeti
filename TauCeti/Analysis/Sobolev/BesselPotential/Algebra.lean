@@ -287,12 +287,6 @@ private theorem nonneg_of_finrank_lt (hs : finrank ℝ E < 2 * s) : 0 ≤ s := b
   have := (finrank ℝ E).cast_nonneg (α := ℝ)
   linarith
 
-/-- The `L²` function of `u ∈ H^s`, `s ≥ 0`, lies in `H^s`. -/
-private theorem memSobolev_toLp_inclusion (hs : 0 ≤ s) (u : H^{s}(E)) :
-    MemSobolev s 2 ((inclusion hs u).toLp : 𝓢'(E, ℂ)) := by
-  rw [toTemperedDistribution_toLp_inclusion]
-  exact u.memSobolev_toDistr
-
 /-- The pointwise product on `H^s`, before bundling. -/
 private def mulAux (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) : H^{s}(E) :=
   ((memSobolev_toLp_inclusion (nonneg_of_finrank_lt hs) u).mul hs

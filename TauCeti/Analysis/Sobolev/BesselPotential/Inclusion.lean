@@ -36,6 +36,8 @@ common compact support, are statements about this map.
   functions.
 * `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the image of
   `u ∈ H^s` in `H^0` is the `L²` function representing `u`.
+* `BesselPotentialSpace.memSobolev_toLp_inclusion`: for `s ≥ 0`, this `L²` function lies in
+  `H^s`.
 -/
 
 public section
@@ -139,6 +141,12 @@ theorem toTemperedDistribution_toLp_inclusion (h : 0 ≤ s) (u : H^{s}(E, F)) :
     ((inclusion h u).toLp : 𝓢'(E, F)) = u.toDistr := by
   rw [← (inclusion h u).bessel_toDistr_eq_toLp, besselPotential_zero, ContinuousLinearMap.id_apply,
     toDistr_inclusion]
+
+/-- For `s ≥ 0`, the `L²` function of `u ∈ H^s` lies in `H^s`. -/
+theorem memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s}(E, F)) :
+    MemSobolev s 2 ((inclusion h u).toLp : 𝓢'(E, F)) := by
+  rw [toTemperedDistribution_toLp_inclusion]
+  exact u.memSobolev_toDistr
 
 /-- For `s ≥ 0`, the `L²` function of the element of `H^s` defined by an `L²` function `u` is `u`.
 -/

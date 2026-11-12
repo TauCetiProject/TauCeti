@@ -37,9 +37,10 @@ ingredients of a chart of `G_s` at the identity modelled on `H^s(ℂ; ℝ)`.
 
 Since `G_s` is abelian and `exp (i (f + g)) = exp (i f) exp (i g)`, the exponential is an
 injective homomorphism from the additive group of continuous real `H^s` phases into `G_s`, whose
-image contains every element of `G_s` that is `H^s`-close to `1`. No topology on `G_s` is
-constructed here, and the continuity of the exponential and of its inverse is not treated, so
-these results do not yet make the exponential a chart.
+image contains every element of `G_s` that is `H^s`-close to `1`. The `H^s` topology on `G_s` is
+`TauCeti.Vortex.sobolevGaugeTopology` (in `TauCeti.Analysis.PDE.Vortex.FramedGauge.Topology`).
+The continuity of the exponential and of its inverse for that topology is not treated, so these
+results do not yet make the exponential a chart.
 
 ## Main results
 

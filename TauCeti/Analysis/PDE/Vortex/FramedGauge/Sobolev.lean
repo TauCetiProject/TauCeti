@@ -48,8 +48,11 @@ multiplication. Composition of the action is multiplication of gauges
 
 The file `TauCeti.Analysis.PDE.Vortex.FramedGauge.Exponential` shows that the exponential
 `f ↦ exp (i f)` maps continuous real `H^s` phases injectively into `G_s`, and that its image
-contains an `H^s` ball around the identity. No topology or Banach Lie group charts on `G_s` are
-constructed here, and neither continuity nor smoothness of the action is asserted.
+contains an `H^s` ball around the identity. The file
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.Topology` gives `G_s` the topology of `H^s` convergence
+(`TauCeti.Vortex.sobolevGaugeTopology`) and shows that it is a topological group
+(`TauCeti.Vortex.isTopologicalGroup_sobolevGaugeTopology`). Banach Lie group charts on `G_s` are
+not constructed, and neither continuity nor smoothness of the action is asserted.
 
 ## Main definitions
 
@@ -61,6 +64,8 @@ constructed here, and neither continuity nor smoothness of the action is asserte
 
 * `TauCeti.Vortex.exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup`: for `u ∈ G_s`, the complex
   function `u - 1` lies in `H^s(ℂ; ℂ)`.
+* `TauCeti.Vortex.continuous_of_mem_sobolevGaugeGroup`: elements of `G_s` are continuous as
+  complex-valued maps.
 * `TauCeti.Vortex.tendsto_cocompact_of_mem_sobolevGaugeGroup`: elements of `G_s` tend to one at
   infinity.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_inf_framedGaugeGroup`: the smooth subgroup of `G_s` is
@@ -152,6 +157,11 @@ theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} 
   obtain ⟨h, hae, hh⟩ := exists_memSobolev_ae_eq_of_mem_realSobolevFunctions h₁ h₂
   refine ⟨h, hae.trans (Eventually.of_forall fun z ↦ ?_), hh⟩
   apply Complex.ext <;> simp
+
+/-- Elements of `G_s` are continuous as complex-valued maps. -/
+theorem continuous_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) : Continuous fun z ↦ (u z : ℂ) :=
+  continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs u).1 hu).1
 
 /-- The Sobolev gauge groups decrease as the order increases: `G_s ≤ G_s'` for `1 < s' ≤ s`. -/
 theorem sobolevGaugeGroup_mono {s s' : ℝ} (hs' : 1 < s') (h : s' ≤ s) :

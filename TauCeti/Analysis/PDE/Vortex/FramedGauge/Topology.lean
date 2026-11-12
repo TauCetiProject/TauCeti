@@ -97,11 +97,6 @@ theorem toLp_inclusion_sobolevGaugeIncrement (h : 0 ≤ s) (u : sobolevGaugeGrou
   rw [sobolevGaugeIncrement_eq u hg hgs, toLp_inclusion_toBesselPotentialSpace]
   exact hg
 
-/-- Elements of `G_s` are continuous as complex-valued maps. -/
-private theorem continuous_coe (u : sobolevGaugeGroup hs) :
-    Continuous fun z ↦ ((u : ℂ → Circle) z : ℂ) :=
-  continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 u.2).1
-
 /-- **The increment determines the gauge.** Two elements of `G_s` with the same increment in
 `H^s(ℂ)` are equal. -/
 theorem sobolevGaugeIncrement_injective : Function.Injective (sobolevGaugeIncrement hs) := by
@@ -109,8 +104,8 @@ theorem sobolevGaugeIncrement_injective : Function.Injective (sobolevGaugeIncrem
   have h0 : (0 : ℝ) ≤ s := by linarith
   have hae := (toLp_inclusion_sobolevGaugeIncrement h0 u).symm.trans
     (huv ▸ toLp_inclusion_sobolevGaugeIncrement h0 v)
-  have heq := ((continuous_coe u).sub continuous_const).ae_eq_iff_eq volume
-    ((continuous_coe v).sub continuous_const) |>.1 hae
+  have heq := ((continuous_of_mem_sobolevGaugeGroup u.2).sub continuous_const).ae_eq_iff_eq volume
+    ((continuous_of_mem_sobolevGaugeGroup v.2).sub continuous_const) |>.1 hae
   exact Subtype.ext <| funext fun z ↦ Subtype.ext <| sub_left_inj.1 (congrFun heq z)
 
 /-- The increment of the identity is `0`. -/
@@ -310,7 +305,7 @@ theorem exists_norm_sub_le_mul_norm_sobolevGaugeIncrement_sub (hs : 1 < s) :
   set K := C * ‖hes.toBesselPotentialSpace‖
   -- The bound holds almost everywhere, and both sides are continuous.
   have hf : Continuous fun z ↦ ‖((u : ℂ → Circle) z : ℂ) - (v : ℂ → Circle) z‖ :=
-    ((continuous_coe u).sub (continuous_coe v)).norm
+    ((continuous_of_mem_sobolevGaugeGroup u.2).sub (continuous_of_mem_sobolevGaugeGroup v.2)).norm
   have hae : (fun z ↦ min ‖((u : ℂ → Circle) z : ℂ) - (v : ℂ → Circle) z‖ K) =ᵐ[volume]
       fun z ↦ ‖((u : ℂ → Circle) z : ℂ) - (v : ℂ → Circle) z‖ := by
     filter_upwards [hsup hes, Lp.coeFn_sub a b, ha, hb] with z hz h₁ h₂ h₃
