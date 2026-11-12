@@ -117,11 +117,23 @@ private theorem valuation_Δ_eq_exp_neg_count (v : HeightOneSpectrum O) {W : Wei
 
 /-- **The exponent of `𝔭ᵥ` in the discriminant ideal is the additive valuation of the
 discriminant.** This is the bridge between unique factorisation of the principal ideal `(d)` and
-the order function used by the local obstruction exponent. -/
+the order function used by the local obstruction exponent. For a singular equation (`Δ = 0`) both
+sides are `0`. -/
 theorem count_span_Δ_eq_ord_Δ (W : WeierstrassCurve K) (v : HeightOneSpectrum O)
-    [W.IsElliptic] {d : O} (hd : algebraMap O K d = W.Δ) :
+    {d : O} (hd : algebraMap O K d = W.Δ) :
     ((Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors : ℤ) =
       (v.valuation K).ord W.Δ := by
+  by_cases hΔ : W.Δ = 0
+  · -- both sides vanish for a singular equation
+    have hd0 : d = 0 := (map_eq_zero_iff _ (IsFractionRing.injective O K)).1 (hd.trans hΔ)
+    have h0 : Associates.mk (Ideal.span {d}) = 0 := by
+      rw [hd0, Set.singleton_zero, Ideal.span_zero, ← Ideal.zero_eq_bot]
+      exact Associates.mk_zero
+    have hc : (Associates.mk v.asIdeal).count (⊤ : Associates.FactorSet (Ideal O)) = 0 := by
+      unfold Associates.count
+      split_ifs <;> rfl
+    rw [h0, Associates.factors_zero, hc, hΔ, Valuation.ord_zero, Nat.cast_zero]
+  have : W.IsElliptic := ⟨isUnit_iff_ne_zero.2 hΔ⟩
   symm
   exact (Valuation.ord_eq_iff_valuation_eq_exp_neg _
     ((v.valuation K).ne_zero_iff.mpr W.isUnit_Δ.ne_zero)).2

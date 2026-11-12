@@ -230,7 +230,7 @@ the two slots against the dot product and re-expanding them through its copairin
 theorem brauerActionOrth_of_capCup {a b : Fin k} (hab : a ≠ b) :
     brauerActionOrth R n k (BrauerAlgebra.of (capCup a b)) = orthogonalCupCapAt R n k a b := by
   refine (tensorPowerBasis R n k).ext fun u => ?_
-  rw [brauerActionOrth_of_tensorPowerBasis, orthogonalCupCapAt_tensorPowerBasis hab]
+  rw [brauerActionOrth_of_tensorPowerBasis, orthogonalCupCapAt_tensorPowerBasis]
   split_ifs with hu
   · have hfilter : Finset.univ.filter (fun v => (capCup a b).IsConstantOnArcs (Sum.elim u v)) =
         Finset.univ.image fun c : Fin n => Function.update (Function.update u a c) b c := by

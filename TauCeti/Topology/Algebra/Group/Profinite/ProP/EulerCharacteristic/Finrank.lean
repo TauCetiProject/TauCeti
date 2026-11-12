@@ -137,7 +137,7 @@ theorem finrank_cohomFp_zero_sub_finrank_cohomFp_one_add_finrank_cohomFp_two_ope
     (hG.subgroup U.toSubgroup).finrank_cohomFp_one (hfg.of_openSubgroup U),
     hG.finrank_cohomFp_one hfg, (cohomFpLinearEquivH2 p G htriv).finrank_eq,
     (cohomFpLinearEquivH2 p U.toSubgroup fun u ↦ htriv u).finrank_eq, Nat.cast_one]
-  exact hG.one_sub_topologicalGeneratorRankNat_add_finrank_H2 hfg htriv h3 U
+  exact hG.one_sub_topologicalGeneratorRankNat_add_finrank_H2 hfg h3 U
 
 end ThreeTerm
 

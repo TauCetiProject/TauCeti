@@ -23,6 +23,8 @@ roadmap-facing Lie-group exponential.
 * `mulInvariantExp_smul`: scaling a tangent vector is evaluation at the corresponding time.
 * `mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul`: the bundled subgroup is the
   exponential along a line.
+* `range_mulInvariantOneParameterSubgroup`: the bundled subgroup traces out the curve
+  `t ↦ mulInvariantExp (t • v)`.
 * `mulInvariantExp_add_smul`: the exponential along a fixed line is a one-parameter subgroup.
 * `mulInvariantExp_nsmul`: natural scaling of a tangent vector becomes a group power.
 * `mulInvariantExp_zero`, `mulInvariantExp_neg`: the identity and inverse laws.
@@ -81,6 +83,15 @@ theorem mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul [CompleteSpace 
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (t : ℝ) :
     mulInvariantOneParameterSubgroup v (Multiplicative.ofAdd t) = mulInvariantExp (t • v) := by
   rw [mulInvariantOneParameterSubgroup_apply, mulInvariantExp_smul]
+
+/-- The canonical one-parameter subgroup traces out the curve `t ↦ exp (t v)`. -/
+theorem range_mulInvariantOneParameterSubgroup [CompleteSpace E]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
+    [BoundarylessManifold I G] (v : GroupLieAlgebra I G) :
+    Set.range (mulInvariantOneParameterSubgroup v) =
+      Set.range fun t : ℝ ↦ mulInvariantExp (t • v) := by
+  rw [← Multiplicative.ofAdd.surjective.range_comp]
+  exact congrArg Set.range (funext (mulInvariantOneParameterSubgroup_eq_mulInvariantExp_smul v))
 
 /-- The exponential along a line satisfies the one-parameter subgroup law. -/
 @[simp]
