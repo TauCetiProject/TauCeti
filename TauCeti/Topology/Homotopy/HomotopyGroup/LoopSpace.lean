@@ -459,7 +459,8 @@ theorem pathLoopSpaceMulEquiv_mk_eq_fromLoopFamily (m : ℕ)
   simp only [GenLoop.congr_apply, GenLoop.genLoopGenLoopEquiv_apply,
     GenLoop.map_apply, ContinuousMap.coe_mk, GenLoop.homeomorphOfUnique_symm_apply,
     finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, GenLoop.fromLoopFamily_apply]
-  rfl
+  -- `Fin.castSucc` is `Fin.castAdd 1`, and `Fin.natAdd` sends the point of `Fin 1` to `Fin.last`
+  rw [Fin.init_def, Fin.castSucc, Subsingleton.elim (default : Fin 1) (Fin.last 0), Fin.natAdd_last]
 
 /-- **The fundamental group of the loop space is the second homotopy group**:
 `π₁(Ω X x, refl x) ≃* π₂(X, x)`, the case `m = 0` of `pathLoopSpaceMulEquiv` read through
@@ -501,16 +502,13 @@ theorem fundamentalGroupLoopSpaceMulEquiv_fromPath_mk (β : Ω (Ω X x) (Path.re
   -- representatives
   have h : pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk β)) =
       ⟦(genLoopEquivOfUnique (Fin 1)).symm β⟧ := rfl
-  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h, pathLoopSpaceMulEquiv_mk]
-  congr 1
-  ext z
-  simp only [GenLoop.congr_apply, GenLoop.genLoopGenLoopEquiv_apply,
-    GenLoop.map_apply, ContinuousMap.coe_mk, GenLoop.homeomorphOfUnique_symm_apply,
-    GenLoop.genLoopEquivOfUnique_symm_apply, finSumFinEquiv_apply_left, finSumFinEquiv_apply_right]
-  rw [GenLoop.fromDoubleLoop_apply]
-  -- `finSumFinEquiv` sends `inl 0` and `inr 0` to `0` and `1`
-  simp only [Nat.reduceAdd, Fin.default_eq_zero, Fin.isValue, Fin.reduceCastAdd,
-    Fin.natAdd_eq_addNat, Fin.addNat_one, Fin.succ_zero_eq_one]
+  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h, pathLoopSpaceMulEquiv_mk_eq_fromLoopFamily]
+  refine congrArg _ (GenLoop.ext _ _ fun z => ?_)
+  rw [GenLoop.fromDoubleLoop_apply, GenLoop.fromLoopFamily_apply,
+    GenLoop.genLoopEquivOfUnique_symm_apply]
+  -- the cube coordinates `Fin.init z default` and `Fin.last 1` are `0` and `1`
+  simp only [Nat.reduceAdd, Fin.default_eq_zero, Fin.isValue, Fin.init_def, Fin.castSucc_zero,
+    Fin.reduceLast]
 
 section Natural
 

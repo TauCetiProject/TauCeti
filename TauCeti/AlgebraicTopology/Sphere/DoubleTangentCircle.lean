@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.TangentCircle
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # Double loops of a sphere swept by tangent circles
@@ -121,60 +122,38 @@ theorem tangentCircleDoubleLoop_self (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (p₀
 
 /-! ### The class of the double loops -/
 
-/-- The reordering `w ↦ (w_{k+1}, w_k, w_0, …, w_{k-1})` of the coordinates of a cube, which moves
-the last two coordinates to the front in reverse order. -/
-private def frontLastTwo {k : ℕ} (w : I^(Fin (k + 2))) : I^(Fin (k + 2)) :=
-  Fin.cons (w (Fin.last _)) (Fin.cons (w (Fin.last _).castSucc) (Fin.init (Fin.init w)))
-
-private theorem frontLastTwo_injective {k : ℕ} :
-    Function.Injective (frontLastTwo (k := k)) := by
-  intro y z h
-  have h0 := congrFun h 0
-  have h1 := congrFun h 1
-  have h2 (j : Fin k) := congrFun h j.succ.succ
-  simp only [frontLastTwo, Fin.cons_zero, Fin.cons_one, Fin.cons_succ, Fin.init] at h0 h1 h2
-  funext i
-  induction i using Fin.lastCases with
-  | last => exact h0
-  | cast i =>
-    induction i using Fin.lastCases with
-    | last => exact h1
-    | cast j => exact h2 j
-
-private theorem mem_boundary_of_frontLastTwo_mem {k : ℕ} {w : I^(Fin (k + 2))}
-    (h : frontLastTwo w ∈ Cube.boundary (Fin (k + 2))) : w ∈ Cube.boundary (Fin (k + 2)) := by
-  obtain ⟨i, hi⟩ := h
-  induction i using Fin.cases with
-  | zero => exact ⟨_, by simpa [frontLastTwo] using hi⟩
-  | succ i =>
-    induction i using Fin.cases with
-    | zero => exact ⟨_, by simpa [frontLastTwo] using hi⟩
-    | succ j => exact ⟨_, by simpa [frontLastTwo, Fin.init] using hi⟩
-
-private theorem frontLastTwo_surjective {k : ℕ} :
-    Function.Surjective (frontLastTwo (k := k)) := by
-  intro y
-  refine ⟨Fin.snoc (Fin.snoc (Fin.tail (Fin.tail y)) (y 1)) (y 0), ?_⟩
-  funext i
-  induction i using Fin.cases with
-  | zero => simp [frontLastTwo]
-  | succ i =>
-    induction i using Fin.cases with
-    | zero => simp [frontLastTwo]
-    | succ j => simp [frontLastTwo, Fin.tail]
-
 /-- Under the two loop-space shifts, a generalized loop `c` of `Σ` read through the double loops
 `σ` becomes the circles through the circles through the points of `c`, with the cube coordinates
-reordered by `frontLastTwo`. -/
+reordered by `GenLoop.congr` along the permutation of `Fin (k + 3)` sending `0`, `1` and `j + 2`
+to `k + 2`, `k + 1` and `j`. -/
 private theorem fromLoopFamily_fromLoopFamily_map_tangentCircleDoubleLoop (hu : ‖u‖ = 1)
-    (hv : ‖v‖ = 1) {p₀ : sphereEquator v} {k : ℕ} (c : Ω^ (Fin (k + 1)) (sphereEquator v) p₀)
-    (w : I^(Fin (k + 3))) :
+    (hv : ‖v‖ = 1) {p₀ : sphereEquator v} {k : ℕ} (c : Ω^ (Fin (k + 1)) (sphereEquator v) p₀) :
     GenLoop.fromLoopFamily (GenLoop.fromLoopFamily (GenLoop.map (tangentCircleDoubleLoop hu hv p₀)
-        (tangentCircleDoubleLoop_self hu hv p₀) c)) w =
-      tangentCircleGenLoop hu (GenLoop.map (orthogonalSphereToEquator u) rfl
-        (tangentCircleGenLoop hv c)) (frontLastTwo w) := by
-  rw [tangentCircleGenLoop_apply, GenLoop.map_apply, tangentCircleGenLoop_apply]
-  simp [frontLastTwo, Fin.tail, Fin.init, tangentCircleDoubleLoop_apply]
+        (tangentCircleDoubleLoop_self hu hv p₀) c)) =
+      GenLoop.congr _ ((Equiv.swap 0 1).trans
+          ((Fin.last (k + 2)).cycleRange.symm.trans (Fin.last (k + 2)).cycleRange.symm))
+        (tangentCircleGenLoop hu (GenLoop.map (orthogonalSphereToEquator u) rfl
+          (tangentCircleGenLoop hv c))) := by
+  set e : Fin (k + 3) ≃ Fin (k + 3) := (Equiv.swap 0 1).trans
+    ((Fin.last (k + 2)).cycleRange.symm.trans (Fin.last (k + 2)).cycleRange.symm)
+  have he₀ : e 0 = Fin.last _ := by
+    rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.swap_apply_left, ← Fin.succ_zero_eq_one,
+      Fin.cycleRange_symm_succ, Fin.succAbove_last_apply, Fin.castSucc_zero,
+      Fin.cycleRange_symm_zero]
+  have he₁ : e (0 : Fin (k + 2)).succ = (Fin.last _).castSucc := by
+    rw [Equiv.trans_apply, Equiv.trans_apply, Fin.succ_zero_eq_one, Equiv.swap_apply_right,
+      Fin.cycleRange_symm_zero, Equiv.symm_apply_eq, Fin.cycleRange_last, finRotate_apply,
+      Fin.coeSucc_eq_succ, Fin.succ_last]
+  have he₂ (j : Fin (k + 1)) : e j.succ.succ = j.castSucc.castSucc := by
+    rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _)
+        (by rw [← Fin.succ_zero_eq_one]; exact (Fin.succ_injective _).ne (Fin.succ_ne_zero j)),
+      Fin.cycleRange_symm_succ, Fin.succAbove_last_apply, ← Fin.succ_castSucc,
+      Fin.cycleRange_symm_succ, Fin.succAbove_last_apply]
+  refine GenLoop.ext _ _ fun w => ?_
+  rw [GenLoop.congr_apply, tangentCircleGenLoop_apply, GenLoop.map_apply,
+    tangentCircleGenLoop_apply, GenLoop.fromLoopFamily_apply, GenLoop.fromLoopFamily_apply,
+    GenLoop.map_apply, tangentCircleDoubleLoop_apply]
+  simp only [Fin.tail_def, Fin.init_def, he₀, he₁, he₂]
 
 /-- If a generalized loop `c` of `Σ` covers `Σ` off its base point and identifies only points of
 the boundary of its cube, then so does the cube of `Sⁿ` that the two loop-space shifts attach to
@@ -189,7 +168,7 @@ private theorem bijective_toSphere_fromLoopFamily_fromLoopFamily (hu : ‖u‖ =
       (GenLoop.map (tangentCircleDoubleLoop hu hv p₀) (tangentCircleDoubleLoop_self hu hv p₀)
         c)))) := by
   -- The circles `c₁` of the unit sphere of `u⊥` through the points of `c`, read in the equator
-  -- `c₂` of `Sⁿ`, and the circles `c₃` of `Sⁿ` through the points of `c₂`.
+  -- `c₂` of `Sⁿ`; the cube is the circles of `Sⁿ` through the points of `c₂`, reordered.
   set c₁ := tangentCircleGenLoop hv c
   have hc₁i : ∀ y z, c₁ y = c₁ z →
       y = z ∨ y ∈ Cube.boundary (Fin (k + 2)) ∧ z ∈ Cube.boundary (Fin (k + 2)) :=
@@ -204,17 +183,19 @@ private theorem bijective_toSphere_fromLoopFamily_fromLoopFamily (hu : ‖u‖ =
       y = z ∨ y ∈ Cube.boundary (Fin (k + 2)) ∧ z ∈ Cube.boundary (Fin (k + 2)) :=
     fun y z h ↦ hc₁i y z (injective_orthogonalSphereToEquator u (by
       rwa [GenLoop.map_apply, GenLoop.map_apply] at h))
-  set c₃ := tangentCircleGenLoop hu c₂
-  have hQ := fromLoopFamily_fromLoopFamily_map_tangentCircleDoubleLoop hu hv c
+  rw [fromLoopFamily_fromLoopFamily_map_tangentCircleDoubleLoop hu hv c]
+  generalize (Equiv.swap (0 : Fin (k + 3)) 1).trans
+    ((Fin.last (k + 2)).cycleRange.symm.trans (Fin.last (k + 2)).cycleRange.symm) = e
+  -- Reordering the cube coordinates along `e` preserves the boundary of the cube.
   refine ⟨(GenLoop.injective_toSphere_iff _).2 fun y z h ↦ ?_,
     (GenLoop.surjective_toSphere_iff _).2 fun q ↦ ?_⟩
-  · rw [hQ, hQ] at h
-    rcases eq_or_of_tangentCircleGenLoop_eq hu c₂ hc₂s hc₂i h with h | ⟨hy, hz⟩
-    · exact Or.inl (frontLastTwo_injective h)
-    · exact Or.inr ⟨mem_boundary_of_frontLastTwo_mem hy, mem_boundary_of_frontLastTwo_mem hz⟩
+  · rw [GenLoop.congr_apply, GenLoop.congr_apply] at h
+    rcases eq_or_of_tangentCircleGenLoop_eq hu c₂ hc₂s hc₂i h with h | ⟨⟨i, hi⟩, ⟨j, hj⟩⟩
+    · exact Or.inl (funext fun i ↦ by simpa using congrFun h (e.symm i))
+    · exact Or.inr ⟨⟨e i, hi⟩, ⟨e j, hj⟩⟩
   · obtain ⟨y, rfl⟩ := surjective_tangentCircleGenLoop hu c₂ hc₂s q
-    obtain ⟨w, rfl⟩ := frontLastTwo_surjective y
-    exact ⟨w, hQ w⟩
+    refine ⟨fun i ↦ y (e.symm i), ?_⟩
+    simp only [GenLoop.congr_apply, Equiv.symm_apply_apply, c₂, c₁]
 
 /-- **The double loops generate the homology of the double loop space** (Proposition 6.21 of
 Barraud–Damian–Humilière–Oancea). For a unit vector `u` of a real inner product space `E` of
@@ -228,13 +209,6 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
     IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)).map
       (TopCat.ofHom (tangentCircleDoubleLoop hu hv p₀))) := by
   let R := ModuleCat.of ℤ ℤ
-  -- Free generation is transported along additive equivalences.
-  have hgen {A B : Type} [AddGroup A] [AddGroup B] (f : A ≃+ B) (a : A) :
-      Function.Bijective (zmultiplesHom B (f a)) ↔ Function.Bijective (zmultiplesHom A a) := by
-    have : ⇑(zmultiplesHom B (f a)) = f ∘ zmultiplesHom A a := by
-      funext t
-      simp
-    rw [this, EquivLike.comp_bijective]
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   have hu0 : u ≠ 0 := by
     rintro rfl
@@ -278,9 +252,12 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
   have hF : ((HomotopyGroup.pathLoopSpaceMulEquiv (m + 1)).trans
       (HomotopyGroup.pathLoopSpaceMulEquiv (m + 2))).toAdditive
         (Additive.ofMul (α := π_ (m + 1 + 1) (Ω (Ω (sphere (0 : E) 1) _) (Path.refl _)) _) ⟦γ⟧) =
-      Additive.ofMul (α := π_ (m + 2 + 2) (sphere (0 : E) 1) _) ⟦Q⟧ :=
-    congrArg (Additive.ofMul (α := π_ (m + 2 + 2) (sphere (0 : E) 1) _)) hshift
-  have hγgen := (hgen _ _).1 (hF ▸ hQgen)
+      Additive.ofMul (α := π_ (m + 2 + 2) (sphere (0 : E) 1) _) ⟦Q⟧ := by
+    -- `toMul (ofMul ⟦γ⟧)` is `⟦γ⟧`, read in `π_ (m + 1 + 1)`
+    rw [MulEquiv.toAdditive_apply_apply, MulEquiv.trans_apply]
+    exact congrArg Additive.ofMul hshift
+  rw [← hF] at hQgen
+  have hγgen := (AddEquiv.bijective_zmultiplesHom_apply_iff _ _).1 hQgen
   have hγ := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom (hΩ _) γ).2 hγgen
   rw [GenLoop.hurewicz_map] at hγ
   exact IsIso.of_isIso_comp_left (GenLoop.hurewicz R c) _

@@ -187,11 +187,10 @@ theorem isIso_hurewicz_iff_bijective_zmultiplesHom
       Function.Bijective
         (zmultiplesHom (Additive (HomotopyGroup (Fin (n + 2)) X x)) (Additive.ofMul ⟦p⟧)) := by
   have h : ⇑(GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom =
-      hurewiczAddEquiv hX ∘
-        zmultiplesHom (Additive (HomotopyGroup (Fin (n + 2)) X x)) (Additive.ofMul ⟦p⟧) := by
+      zmultiplesHom _ ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1) := by
     funext t
-    rw [Function.comp_apply, zmultiplesHom_apply, map_zsmul, hurewiczAddEquiv_ofMul_mk,
-      ← map_zsmul, smul_eq_mul, mul_one]
-  rw [ConcreteCategory.isIso_iff_bijective, ← EquivLike.comp_bijective _ (hurewiczAddEquiv hX), ← h]
+    rw [zmultiplesHom_apply, ← map_zsmul, smul_eq_mul, mul_one]
+  rw [ConcreteCategory.isIso_iff_bijective, h,
+    ← (hurewiczAddEquiv hX).bijective_zmultiplesHom_apply_iff, hurewiczAddEquiv_ofMul_mk]
 
 end HomotopyGroup
