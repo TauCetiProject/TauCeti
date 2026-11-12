@@ -817,7 +817,7 @@ theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
   obtain ⟨x₀, a, ha⟩ := hfin
   set ψ := cTransform c φ
   have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
-  obtain ⟨y₀, b, hb, hψ_le, hφ_le⟩ := hφ.exists_transform_eq_coe_and_le hM' ha
+  obtain ⟨y₀, b, _, hψ_le, hφ_le⟩ := hφ.exists_transform_eq_coe_and_le hM' ha
   have : Nonempty X := ⟨x₀⟩
   have : Nonempty Y := ⟨y₀⟩
   -- Each transform is an infimum of the cost minus a potential bounded above, hence bounded

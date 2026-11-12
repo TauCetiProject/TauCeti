@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
+import Mathlib.Analysis.Calculus.BumpFunction.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -59,6 +60,8 @@ by approximation, and the *order* of the two limits matters.
 ## Main declarations
 
 * `TauCeti.W1p.hasWeakFDerivOn_comp`: the chain rule, as a weak-derivative statement.
+* `TauCeti.W1p.hasWeakFDerivOn_comp_of_ae_abs_le`: the chain rule for an essentially bounded `u`
+  and a `C¹` function with no bound on its derivative.
 * `TauCeti.W1p.contDiffComp`: `F ∘ u` as an element of `W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_comp_of_le`: the chain rule for `φ ∘ u` when `u` is
   bounded below by a positive constant `ε` and `φ` is only `C¹` on some `(δ, ∞)` with `δ < ε`,
@@ -275,6 +278,37 @@ theorem W1p.hasWeakFDerivOn_comp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
   hasWeakFDerivOn_iff_forall_isCompact_closure.2 fun _ hVc hVO =>
     hasWeakFDerivOn_comp_aux hp hF hM u hVc hVO
 
+/-- **The chain rule for essentially bounded Sobolev functions.** Let `1 ≤ p < ∞` and let
+`u ∈ W^{1,p}(Ω)` be essentially bounded on `Ω`. For every `C¹` function `Φ`, the composition
+`Φ ∘ u` has the weak gradient `Φ'(u) ∇u` on `Ω`.
+
+Unlike `TauCeti.W1p.hasWeakFDerivOn_comp`, no bound on `Φ'` is assumed: only the values of `Φ`
+near the essential range of `u` matter. -/
+theorem W1p.hasWeakFDerivOn_comp_of_ae_abs_le (hp : p ≠ ∞) {Φ : ℝ → ℝ}
+    (hΦ : ContDiff ℝ 1 Φ) {u : W1p mu Omega p} {M : ℝ}
+    (hM : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M) :
+    HasWeakFDerivOn mu Omega (fun x => Φ (W1p.value u x))
+      fun x => innerSL ℝ (deriv Φ (W1p.value u x) • W1p.gradient u x) := by
+  -- Replace `Φ` by `F = ψ Φ`, with `ψ` a bump equal to one near `[-M, M]`; `F'` is bounded.
+  set R := |M| + 1
+  let ψ : ContDiffBump (0 : ℝ) := ⟨R, R + 1, by positivity, by linarith⟩
+  have hF : ContDiff ℝ 1 fun t => ψ t * Φ t := ψ.contDiff.mul hΦ
+  obtain ⟨K, hK⟩ := (hF.continuous_deriv le_rfl).bounded_above_of_compact_support
+    (ψ.hasCompactSupport.mul_right (f' := Φ)).deriv
+  have hFΦ : ∀ t, |t| ≤ M → (fun s => ψ s * Φ s) =ᶠ[𝓝 t] Φ := fun t ht => by
+    have ht' : t ∈ Metric.ball (0 : ℝ) R := by
+      rw [Metric.mem_ball, Real.dist_eq, sub_zero]
+      linarith [le_abs_self M]
+    filter_upwards [Metric.isOpen_ball.mem_nhds ht'] with s hs
+    rw [ψ.one_of_mem_closedBall (Metric.ball_subset_closedBall hs), one_mul]
+  refine ((W1p.hasWeakFDerivOn_comp hp hF (M := K.toNNReal) (fun t => ?_) u).congr_ae
+    ?_).congr_ae_deriv ?_
+  · rw [← NNReal.coe_le_coe, coe_nnnorm]
+    exact (hK t).trans (Real.le_coe_toNNReal K)
+  · filter_upwards [hM] with x hx using (hFΦ _ hx).eq_of_nhds
+  · filter_upwards [hM] with x hx
+    rw [(hFΦ _ hx).deriv_eq]
+
 /-- **For `1 ≤ p < ∞`, `W^{1,p}(Ω)` is stable under composition with a Lipschitz `C¹` function
 vanishing at `0`.**  Its value and weak gradient are `F ∘ u` and `F'(u) ∇u`, by
 `TauCeti.W1p.value_contDiffComp_ae` and `TauCeti.W1p.gradient_contDiffComp_ae`. -/
@@ -466,7 +500,6 @@ theorem W1p.integrable_norm_gradient_div_value_sq {u : W1p mu Omega 2} (hε : 0 
   · exact (((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.div
       (Lp.aestronglyMeasurable (W1p.value u)).aemeasurable).pow_const 2).aestronglyMeasurable
   · filter_upwards [hu] with x hx
-    have hU : 0 < W1p.value u x := hε.trans_le hx
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_pow, div_eq_inv_mul]
     gcongr
 

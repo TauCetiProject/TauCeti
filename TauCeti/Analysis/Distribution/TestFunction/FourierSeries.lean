@@ -191,7 +191,7 @@ theorem seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (w : E) (k : ℕ) :
   calc ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) *
         ‖iteratedFDeriv ℝ i (fun y ↦ cexp (phase w y)) x‖ * ‖iteratedFDeriv ℝ (k - i) χ x‖
       ≤ ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * (2 * π * ‖w‖) ^ i * S := by
-        gcongr with i hi
+        gcongr with i _
         · simpa [exp_phase_eq_fourierAtom] using TauCeti.norm_iteratedFDeriv_fourierAtom_le (-w) x i
         · exact hχ _ (Nat.sub_le k i)
     _ = S * (1 + 2 * π * ‖w‖) ^ k := by
