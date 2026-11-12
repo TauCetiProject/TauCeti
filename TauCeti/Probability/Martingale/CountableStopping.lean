@@ -75,8 +75,7 @@ theorem Martingale.condExp_stoppedValue_stopping_time_ae_eq_restrict_le_of_count
     μ[stoppedValue X τ | hσ.measurableSpace] =ᵐ[μ.restrict {ω | τ ω ≤ σ ω}]
       stoppedValue X τ := by
   have hint := hX.integrable_stoppedValue_of_countable_range hτ hc hb
-  have hm := hX.stronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range_of_le_const
-    hτ hc hb
+  have hm := hX.stronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range hτ hc
   have hA := hτ.measurableSet_le_stopping_time hσ
   have hB := hτ.measurableSet_stopping_time_le hσ
   rw [ae_eq_restrict_iff_indicator_ae_eq (hτ.measurableSpace_le _ hA)]
@@ -105,8 +104,7 @@ theorem Martingale.stoppedValue_min_ae_eq_condExp_of_countable_range (hX : Marti
   · exact condExp_min_stopping_time_ae_eq_restrict_le hσ hτ
   · have heq : μ[stoppedValue X τ | (hσ.min hτ).measurableSpace]
         =ᵐ[μ.restrict {ω | τ ω ≤ σ ω}] μ[stoppedValue X τ | hσ.measurableSpace] := by
-      have hm :=
-        hX.stronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range_of_le_const hτ hcτ hb
+      have hm := hX.stronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range hτ hcτ
       have hcond : μ[stoppedValue X τ | hτ.measurableSpace] = stoppedValue X τ :=
         condExp_of_stronglyMeasurable hτ.measurableSpace_le hm
           (hX.integrable_stoppedValue_of_countable_range hτ hcτ hb)

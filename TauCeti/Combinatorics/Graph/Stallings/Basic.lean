@@ -23,6 +23,10 @@ conjugates the accepted subgroup. Every accepted word also has a reduced-path wi
 labelled graph without nonempty reduced closed paths accepts only the identity.
 A graph with finitely many darts accepts a finitely generated subgroup at every vertex.
 
+The accepted subgroup is bounded by a subgroup `H` as soon as some assignment `r` of group
+elements to the vertices puts `r` of the base vertex in `H`, together with
+`r (src e) * label e * (r (tgt e))⁻¹` for one dart `e` of each reversal pair.
+
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*, Sections 2–3.
@@ -69,6 +73,13 @@ def word {a : S.graph.V} : ∀ {b : S.graph.V}, S.graph.Path a b → List (α ×
   induction q with
   | nil => simp
   | cons q e ih => simp [ih, List.append_assoc]
+
+/-- The label word of a path is read off its list of darts. -/
+theorem word_eq_map_darts {a b : S.graph.V} (p : S.graph.Path a b) :
+    S.word p = (SerreGraph.Path.darts S.graph p).map S.label := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
 
 /-- The free-group element represented by the word of a path. -/
 def read {a b : S.graph.V} (p : S.graph.Path a b) : FreeGroup α :=
@@ -210,6 +221,48 @@ theorem subgroup_conj {a b : S.graph.V} (p : S.graph.Path a b) :
     simp only [MulAut.conj_symm_apply, inv_inv] at hq
     rw [hq]
     simp [mul_assoc]
+
+/-- The labels of a closed list of consecutive darts at a vertex spell a word accepted at that
+vertex. -/
+theorem mk_map_label_mem_subgroup {a : S.graph.V} (l : List S.graph.E)
+    (h : a :: l.map S.graph.tgt = l.map S.graph.src ++ [a]) :
+    FreeGroup.mk (l.map S.label) ∈ S.subgroup a := by
+  obtain ⟨p, rfl⟩ := S.graph.exists_path_darts_eq l h
+  rw [← S.word_eq_map_darts, ← S.read_eq_mk_word]
+  exact S.read_mem_subgroup p
+
+/-- Let `r` assign a group element to every vertex, and suppose that
+`r (src e) * label e * (r (tgt e))⁻¹` lies in a subgroup `H` for one dart `e` of each reversal
+pair. Then the reading of every path, corrected by the values of `r` at its endpoints, lies
+in `H`. -/
+theorem mul_read_mul_inv_mem {H : Subgroup (FreeGroup α)} (r : S.graph.V → FreeGroup α)
+    {O : Set S.graph.E} (hO : ∀ e, e ∈ O ∨ S.graph.rev e ∈ O)
+    (h : ∀ e ∈ O, r (S.graph.src e) * FreeGroup.mk [S.label e] * (r (S.graph.tgt e))⁻¹ ∈ H)
+    {a b : S.graph.V} (p : S.graph.Path a b) : r a * S.read p * (r b)⁻¹ ∈ H := by
+  have h' : ∀ e, r (S.graph.src e) * FreeGroup.mk [S.label e] * (r (S.graph.tgt e))⁻¹ ∈ H := by
+    intro e
+    rcases hO e with he | he
+    · exact h e he
+    · simpa [S.label_rev, FreeGroup.inv_mk, FreeGroup.invRev, mul_assoc] using
+        H.inv_mem (h _ he)
+  induction p with
+  | nil => simp
+  | @cons b c p e ih =>
+    have he := h' e.1
+    rw [e.2.1, e.2.2] at he
+    simpa [mul_assoc] using H.mul_mem ih he
+
+/-- A bound on the subgroup accepted at a vertex `a`: if `r a` lies in a subgroup `H`, and so
+does `r (src e) * label e * (r (tgt e))⁻¹` for one dart `e` of each reversal pair, then every
+closed path at `a` reads an element of `H`. -/
+theorem subgroup_le_of_forall_dart {H : Subgroup (FreeGroup α)} (r : S.graph.V → FreeGroup α)
+    {O : Set S.graph.E} (hO : ∀ e, e ∈ O ∨ S.graph.rev e ∈ O)
+    (h : ∀ e ∈ O, r (S.graph.src e) * FreeGroup.mk [S.label e] * (r (S.graph.tgt e))⁻¹ ∈ H)
+    {a : S.graph.V} (ha : r a ∈ H) : S.subgroup a ≤ H := by
+  intro g hg
+  obtain ⟨p, rfl⟩ := S.mem_subgroup_iff.mp hg
+  simpa [mul_assoc] using
+    H.mul_mem (H.mul_mem (H.inv_mem ha) (S.mul_read_mul_inv_mem r hO h p)) ha
 
 open Classical in
 /-- The reading of a chosen path from `a` to `b`, or `1` when there is no such path. -/
