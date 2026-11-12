@@ -44,6 +44,8 @@ absorb lower-order terms in parabolic Schauder estimates.
   interpolation inequalities.
 * `TauCeti.ParabolicC2HolderSpace.timeEHolderNorm_le`: for `γ ≤ 1`, the temporal
   `γ`-seminorm is at most `‖∂ₜ u‖_∞ + 2 ‖u‖_∞`.
+* `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_add_mul`: the scale-invariant form
+  `‖u‖_{α,par} ≤ (1 + 40 r^(-α/2)) ‖u‖_∞ + 2 r ‖u‖` for every time step `r` with `2 r ≤ b - a`.
 * `TauCeti.ParabolicC2HolderSpace.valueHolderL` and
   `TauCeti.ParabolicC2HolderSpace.spatialFDerivHolderL`: the value and the spatial gradient as
   continuous linear maps into the bounded parabolic Hölder space.
@@ -397,6 +399,106 @@ theorem norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1) (f : ParabolicC2Holder
     ‖spatialFDerivHolderL hα f‖ ≤ 24 * ‖f‖ :=
   (le_add_of_nonneg_left (norm_nonneg _)).trans
     (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα f)
+
+/-- **Scale-invariant interpolation for the value.** For `α ≤ 1` and every time step `r > 0` with
+`2 r ≤ b - a`,
+
+`‖u‖_{α,par} ≤ (1 + 40 r^(-α/2)) ‖u‖_∞ + 2 r ‖u‖`,
+
+where `‖u‖` is the order-two norm. Both sides scale alike under the parabolic dilation
+`(x, t) ↦ (√r x, r t)`, unlike in `norm_valueHolderL_add_norm_spatialFDerivHolderL_le`. This is the
+form of the interpolation inequality used for estimates weighted by powers of the time elapsed
+since the initial slice. -/
+theorem norm_valueHolderL_le_add_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab) {r : ℝ}
+    (hr : 0 < r) (hrab : 2 * r ≤ b - a) :
+    ‖valueHolderL hα f‖ ≤ (1 + 40 * r ^ (-(α : ℝ) / 2)) * ‖valueL f‖ + 2 * r * ‖f‖ := by
+  set ε := √r
+  have hε : 0 < ε := Real.sqrt_pos.2 hr
+  have hεr : ε ^ 2 = r := Real.sq_sqrt hr.le
+  set q := r ^ (-(α : ℝ) / 2) with hqdef
+  -- The powers of `ε` that occur, in terms of `q = r^(-α/2) = ε^(-α)`.
+  have hεq : ε ^ (-(α : ℝ)) = q := by
+    rw [hqdef, ← hεr, ← Real.rpow_natCast, ← Real.rpow_mul hε.le]
+    congr 1
+    push_cast
+    ring
+  have hq₁ : ε ^ (1 - (α : ℝ)) = ε * q := by
+    rw [sub_eq_add_neg, Real.rpow_add hε, Real.rpow_one, hεq]
+  have hq₂ : r ^ (1 - (α : ℝ) / 2) = r * q := by
+    rw [sub_eq_add_neg, Real.rpow_add hr, Real.rpow_one, hqdef, neg_div]
+  have hq₃ : ε ^ (α : ℝ) * q = 1 := by
+    rw [← hεq, ← Real.rpow_add hε, add_neg_cancel, Real.rpow_zero]
+  have hq₄ : r ^ (-((α : ℝ) / 2)) = q := by
+    rw [hqdef, neg_div]
+  -- The spatial and temporal Lipschitz seminorms of the value are the suprema of the gradient
+  -- and of the time derivative.
+  have hx : ∀ t ∈ Icc a b, ∀ y,
+      HasFDerivAt (fun z ↦ timeExtension hab.le f z t)
+        (timeExtension hab.le (spatialFDerivL f) y t) y := by
+    intro t ht y
+    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ y
+  have ht : ∀ y, ∀ t ∈ Icc a b,
+      HasDerivWithinAt (timeExtension hab.le f y)
+        (timeExtension hab.le (timeDerivL f) y t) (Icc a b) t := by
+    intro y t ht
+    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasTimeDerivWithinAt y ⟨t, ht⟩
+  have h₁ := spaceEHolderNorm_one_le_of_hasFDerivAt hx (C := ‖spatialFDerivL f‖₊)
+    fun y t _ ↦ by
+      rw [timeExtension_def, coe_nnnorm]
+      exact (spatialFDerivL f).norm_coe_le_norm _
+  have h₂ := timeEHolderNorm_one_le_of_hasDerivWithinAt ht
+    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) fun y t _ ↦ by
+      simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm]
+        using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
+  rw [timeExtension_space_slabTime] at h₁ h₂
+  -- Interpolate between the Lipschitz bounds and the oscillation bound, at the spatial scale `ε`
+  -- and the temporal scale `r = ε²`.
+  obtain ⟨ε', hε'⟩ : ∃ ε' : ℝ≥0, (ε' : ℝ) = ε := ⟨⟨ε, hε.le⟩, rfl⟩
+  obtain ⟨r', hr'⟩ : ∃ r' : ℝ≥0, (r' : ℝ) = r := ⟨⟨r, hr.le⟩, rfl⟩
+  have h := eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le h₁ h₂
+    (D := 2 * ‖valueL f‖₊) (fun p q ↦ by simpa using (valueL f).dist_le_two_norm p q)
+    hα ((NNReal.half_le_self α).trans hα) (δ₁ := ε') (δ₂ := r')
+    (NNReal.coe_pos.1 (hε'.symm ▸ hε)) (NNReal.coe_pos.1 (hr'.symm ▸ hr))
+  rw [← (memHolder_valueL hα f).coe_nnHolderNorm_eq_eHolderNorm, ENNReal.coe_le_coe,
+    ← NNReal.coe_le_coe] at h
+  push_cast at h
+  rw [hε', hr'] at h
+  rw [hq₁, hεq, hq₂, hq₄] at h
+  -- The three supremum-norm interpolation inequalities, at the scale `ε`.
+  have hD := f.norm_spatialFDerivL_le hε
+  have hH := f.norm_toBoundedContinuousFunction_spatialSecondFDerivL_le (α := α) hε
+  have hT := f.norm_toBoundedContinuousFunction_timeDerivL_le hε (by rwa [hεr])
+  rw [hεr] at hH hT
+  rw [HolderSpace.norm_def, toBoundedContinuousFunction_valueHolderL]
+  set V := ‖valueL f‖
+  set H₂ := (nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) : ℝ)
+  set Hₜ := (nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _) : ℝ)
+  have e₁ : ε * q * ‖spatialFDerivL f‖ ≤
+      2 * q * V + r * q * ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ := by
+    calc
+      _ ≤ ε * q * (2 * V / ε + ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ * ε) :=
+        mul_le_mul_of_nonneg_left hD (by positivity)
+      _ = _ := by rw [← hεr]; field_simp
+  have e₂ : r * q * ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ ≤
+      32 * q * V + 2 * r * H₂ := by
+    calc
+      _ ≤ r * q * (32 * V / r + 2 * H₂ * ε ^ (α : ℝ)) :=
+        mul_le_mul_of_nonneg_left hH (by positivity)
+      _ = 32 * q * V + 2 * r * H₂ * (ε ^ (α : ℝ) * q) := by field_simp
+      _ = _ := by rw [hq₃, mul_one]
+  have e₃ : r * q * ‖(timeDerivL f).toBoundedContinuousFunction‖ ≤ 2 * q * V + r * Hₜ := by
+    calc
+      _ ≤ r * q * (2 * V / r + Hₜ * ε ^ (α : ℝ)) := mul_le_mul_of_nonneg_left hT (by positivity)
+      _ = 2 * q * V + r * Hₜ * (ε ^ (α : ℝ) * q) := by field_simp
+      _ = _ := by rw [hq₃, mul_one]
+  -- The top-order seminorms are bounded by the order-two norm.
+  have hN : H₂ + Hₜ ≤ ‖f‖ := by
+    have := f.norm_spatialSecondFDerivL_add_norm_timeDerivL_le
+    rw [HolderSpace.norm_def, HolderSpace.norm_def] at this
+    linarith [norm_nonneg (spatialSecondFDerivL f).toBoundedContinuousFunction,
+      norm_nonneg (timeDerivL f).toBoundedContinuousFunction]
+  linarith [mul_le_mul_of_nonneg_left hN (by positivity : (0 : ℝ) ≤ 2 * r),
+    mul_nonneg hr.le (NNReal.coe_nonneg _ : (0 : ℝ) ≤ Hₜ)]
 
 /-- **Absorption with a prescribed small constant.** For `α < 1` and every `η > 0` there is a
 constant `C`, depending only on `α` and `η`, such that on every slab

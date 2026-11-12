@@ -53,6 +53,8 @@ distance.
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_le_timeEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.memHolder_timeSlice_of_timeEHolderNorm_lt_top`: each time slice is
   controlled by the temporal seminorm.
+* `TauCeti.ParabolicSpaceTime.holderWith_comp_time`: an `(α/2)`-Hölder function of time is
+  parabolically `α`-Hölder on the slab, with the same constant.
 * `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_of_lipschitzWith`: reparametrizing time by a
   `1`-Lipschitz map, such as a restriction or a time reversal, does not increase the temporal
   seminorm.
@@ -257,6 +259,26 @@ theorem memHolder_slab_iff {α : ℝ≥0} {v : slab (E := E) a b → F} :
     (timeEHolderNorm_div_two_le_eHolderNorm α v).trans_lt h⟩, fun h => ?_⟩
   exact (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α v).trans_lt
     (ENNReal.add_lt_top.2 h)
+
+/-- **Hölder functions of time are parabolically Hölder.** An `(α/2)`-Hölder function of time,
+viewed as a function on the slab `E × [a, b]`, is `α`-Hölder for the parabolic distance, with the
+same constant. -/
+theorem holderWith_comp_time {g : ℝ → F} {K α : ℝ≥0} (hg : HolderWith K (α / 2) g) :
+    HolderWith K α fun p : slab (E := E) a b ↦ g (p : ParabolicSpaceTime E).time := by
+  intro p q
+  refine (hg _ _).trans ?_
+  gcongr
+  rw [Subtype.edist_eq]
+  calc
+    edist (p : ParabolicSpaceTime E).time (q : ParabolicSpaceTime E).time ^
+        ((α / 2 : ℝ≥0) : ℝ) =
+        (edist (p : ParabolicSpaceTime E).time (q : ParabolicSpaceTime E).time ^ (1 / 2 : ℝ)) ^
+          (α : ℝ) := by
+      rw [← ENNReal.rpow_mul]
+      congr 1
+      push_cast
+      ring
+    _ ≤ _ := ENNReal.rpow_le_rpow (edist_time_rpow_le _ _) α.coe_nonneg
 
 end TauCeti.ParabolicSpaceTime
 
