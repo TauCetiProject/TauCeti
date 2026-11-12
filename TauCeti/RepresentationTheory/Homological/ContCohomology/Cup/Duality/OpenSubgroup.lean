@@ -506,6 +506,7 @@ theorem dualityMap0_bijective_discreteCoind_of_bijective
     rw [← hc, explicitDualityPairing20_explicitCoeff2_toInternalHom G U hU]
     simp only [eY, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, hec]
 
+omit [ContinuousSMul U (InternalHom U A N)] in
 /-- **Perfectness of `α₁` ascends from an open subgroup to a coinduced module.** -/
 theorem dualityMap1_bijective_discreteCoind_of_bijective
     (hcor : Function.Bijective (explicitCor2 G N U hU))

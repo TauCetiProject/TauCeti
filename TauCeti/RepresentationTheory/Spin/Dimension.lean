@@ -51,8 +51,6 @@ is the one that matters.
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §20.1: the spin module
   `S = ⋀·W` of dimension `2ˡ` and its half-spin summands `S⁺`, `S⁻` of dimension `2ˡ⁻¹`.
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 5, "The half-spin representation of `𝔰𝔬(2l)` has dimension `2^{l-1}`".
 -/
 
 public section
