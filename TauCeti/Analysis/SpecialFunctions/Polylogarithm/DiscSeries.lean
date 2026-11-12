@@ -301,7 +301,7 @@ theorem hasFPowerSeriesOnBall_polylog (n : ℤ) :
   r_pos := zero_lt_one
   hasSum := by
     intro y hy
-    rw [Metric.mem_eball, edist_zero_right, enorm_eq_nnnorm] at hy
+    rw [Metric.mem_eball, edist_zero_right, eNorm_eq_nnNorm] at hy
     have hy' : ‖y‖ < 1 := by exact_mod_cast hy
     rw [zero_add, ← hasSum_nat_add_iff' 1]
     simp only [Finset.sum_range_one, FormalMultilinearSeries.ofScalars_apply_eq, ↓reduceIte,
