@@ -23,8 +23,8 @@ the `C^k` norm, `x ↦ (f ↦ f x)` is in general only `C^(k - 1)` into the dual
 `k`th derivatives of the unit ball are not equicontinuous. In a chart the statement is the joint
 regularity theorem for pointwise smooth families of operators,
 `TauCeti.contDiffOn_apply_of_forall_norm_iteratedFDeriv_le`, applied to evaluation at the points
-of the chart: the finite-atlas norm bounds the coordinate derivatives of order at most `k` on
-every compact subset of a chart target.
+of the chart: the finite-atlas norm bounds the coordinate derivatives of order at most `k` near
+each point of a chart target (`ContMDiffMap.exists_norm_iteratedFDeriv_extChartAt_symm_le`).
 
 Joint regularity of evaluation is what makes universal constructions over spaces of `C^k` maps
 smooth, such as the section `(f, x) ↦ df_x` over the product of `C^k` functions on a compact
@@ -32,8 +32,6 @@ manifold with the manifold, whose regular zeros give Morse functions by the Sard
 
 ## Main results
 
-* `ContMDiffMap.exists_norm_iteratedFDeriv_extChartAt_symm_le`: near each point of a chart target,
-  the finite-atlas norm bounds the coordinate derivatives of order at most `k`.
 * `ContMDiffMap.contMDiff_eval_finiteAtlas`: evaluation is `C^k` for the finite-atlas `C^k` norm.
 
 ## References
@@ -60,31 +58,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜
   (hK : ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (c i)).source,
     (⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ :
       (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
-
-omit [IsRCLikeNormedField 𝕜] in
-include hK in
-/-- **Coordinate derivatives are locally bounded by the finite-atlas norm.** Near each point of a
-chart target, the coordinate derivatives of order at most `k` of the vector-valued `C^k` maps are
-bounded by one multiple of their finite-atlas seminorms. -/
-theorem exists_norm_iteratedFDeriv_extChartAt_symm_le (x : M) {w₀ : E}
-    (hw₀ : w₀ ∈ (extChartAt I x).target) {m : ℕ} (hm : m ≤ k) :
-    ∃ C, ∀ᶠ z in 𝓝 w₀, ∀ f : C^k⟮I, M; 𝓘(𝕜, F), F⟯,
-      ‖iteratedFDeriv 𝕜 m (fun w ↦ f ((extChartAt I x).symm w)) z‖ ≤
-        C * finiteAtlasSeminorm c K k le_rfl f := by
-  have ht : IsOpen (extChartAt I x).target := isOpen_extChartAt_target x
-  -- A compact neighbourhood of `w₀` in the chart target gives a compact chart seminorm.
-  obtain ⟨L, hL, hw₀L, hLt⟩ := exists_compact_subset ht hw₀
-  let L' : TopologicalSpace.Compacts (extChartAt I x).target := ⟨Subtype.val ⁻¹' L,
-    Topology.IsEmbedding.subtypeVal.isCompact_iff.2 (by
-      rwa [Subtype.image_preimage_coe, inter_eq_right.2 hLt])⟩
-  obtain ⟨C, -, hC⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (F := F) hK x L' k le_rfl
-  refine ⟨C, ?_⟩
-  filter_upwards [mem_interior_iff_mem_nhds.1 hw₀L] with z hz f
-  have hz' := (chartCkSeminorm_le_iff x L' k le_rfl f (apply_nonneg _ _)).mp le_rfl m hm
-    ⟨z, hLt hz⟩ hz
-  rw [chartIteratedFDeriv_self_target_apply, iteratedFDerivWithin_of_isOpen m ht (hLt hz)]
-    at hz'
-  exact hz'.trans (hC f)
 
 include hK in
 /-- **Evaluation is `C^k`.** Let `M` be a boundaryless manifold modelled on a locally compact
@@ -115,7 +88,7 @@ theorem contMDiff_eval_finiteAtlas :
   have hΦ (w : E) (f : C^k⟮I, M; 𝓘(𝕜, F), F⟯) : Φ w f = f (φ.symm w) := rfl
   have hbd : ∀ m ≤ k, ∀ w₀ ∈ φ.target, ∃ C, ∀ᶠ z in 𝓝 w₀, ∀ f : C^k⟮I, M; 𝓘(𝕜, F), F⟯,
       ‖iteratedFDeriv 𝕜 m (fun w ↦ Φ w f) z‖ ≤ C * ‖f‖ := fun m hm w₀ hw₀ ↦ by
-    simpa only [hΦ, hnorm] using exists_norm_iteratedFDeriv_extChartAt_symm_le k hK x₀ hw₀ hm
+    simpa only [hΦ, hnorm] using exists_norm_iteratedFDeriv_extChartAt_symm_le hK x₀ hw₀ k le_rfl hm
   have hG := TauCeti.contDiffOn_apply_of_forall_norm_iteratedFDeriv_le hφt
     (fun f ↦ (f.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt_symm x₀)).contDiffOn) hbd
   -- Near `(f₀, x₀)`, evaluation is the composite of `(f, x) ↦ (f, φ x)` and this smooth map.

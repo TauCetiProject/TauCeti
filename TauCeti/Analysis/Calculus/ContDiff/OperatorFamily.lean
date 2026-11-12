@@ -42,7 +42,7 @@ differentiability comes from the criterion of continuous partial derivatives,
 for the operator norm by the first statement one order lower, and the partial derivative in `y`
 is the derivative family, jointly continuous by the second statement applied to it.
 Operator-norm estimates come from the mean value inequality applied to each `y ↦ Φ y f`
-separately.
+separately (`TauCeti.norm_sub_sub_flip_le_of_hasFDerivAt`).
 
 ## References
 
@@ -153,11 +153,12 @@ private theorem PointwiseContDiffOn.continuousOn_apply {U : Set E} {Φ : E → �
 
 variable [IsRCLikeNormedField 𝕜]
 
-/-- **The mean value inequality for the operator norm.** If each `w ↦ Φ w f` has derivative
-`D w f` on a ball, and `D w` stays within `C` of `L` there, then `Φ` stays within `C ‖z - y‖`
-of its first-order approximation by `L`. -/
-private theorem norm_sub_sub_flip_le {Φ : E → Λ →L[𝕜] F} {D : E → Λ →L[𝕜] E →L[𝕜] F}
-    {L : Λ →L[𝕜] E →L[𝕜] F} {y : E} {r C : ℝ}
+/-- **The mean value inequality for the operator norm.** Let `Φ : E → Λ →L[𝕜] F` be a family of
+operators such that each `w ↦ Φ w f` has derivative `D w f` on a ball, where `D w` stays within
+`C` of `L` in operator norm there. Then on the ball, `Φ` stays within `C ‖z - y‖` of its
+first-order approximation `Φ y + L.flip (z - y)`, for the operator norm. -/
+theorem norm_sub_sub_flip_le_of_hasFDerivAt {Φ : E → Λ →L[𝕜] F}
+    {D : E → Λ →L[𝕜] E →L[𝕜] F} {L : Λ →L[𝕜] E →L[𝕜] F} {y : E} {r C : ℝ}
     (hD : ∀ w ∈ Metric.ball y r, ∀ f, HasFDerivAt (fun w ↦ Φ w f) (D w f) w)
     (hC : ∀ w ∈ Metric.ball y r, ‖D w - L‖ ≤ C) {z : E} (hz : z ∈ Metric.ball y r) :
     ‖Φ z - Φ y - L.flip (z - y)‖ ≤ C * ‖z - y‖ := by
@@ -191,7 +192,7 @@ private theorem PointwiseContDiffOn.continuousOn {U : Set E} {Φ : E → Λ →L
       exact ((hball w hw).1 f).trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
         (norm_nonneg f))
   have hlip : ∀ z ∈ Metric.ball y r, ‖Φ z - Φ y‖ ≤ max C 0 * ‖z - y‖ := fun z hz ↦ by
-    simpa using norm_sub_sub_flip_le (L := 0)
+    simpa using norm_sub_sub_flip_le_of_hasFDerivAt (L := 0)
       (fun w hw f ↦ h.hasFDerivAt (k := 0) hU (hball w hw).2 f) (by simpa using hD) hz
   rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
   refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _)
@@ -221,7 +222,7 @@ private theorem PointwiseContDiffOn.contDiffOn {k : ℕ} {U : Set E}
           ((hΨc y hy).continuousAt (hU.mem_nhds hy))).eventually (ge_mem_nhds hε))
       obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1 hnear
       filter_upwards [Metric.ball_mem_nhds y hr] with z hz
-      exact norm_sub_sub_flip_le (fun w hw f ↦ h.hasFDerivAt hU (hball w hw).1 f)
+      exact norm_sub_sub_flip_le_of_hasFDerivAt (fun w hw f ↦ h.hasFDerivAt hU (hball w hw).1 f)
         (fun w hw ↦ (hball w hw).2) hz
     rw [Nat.cast_succ, contDiffOn_succ_iff_fderiv_of_isOpen hU]
     refine ⟨fun y hy ↦ (hderiv y hy).differentiableAt.differentiableWithinAt, by simp, ?_⟩
