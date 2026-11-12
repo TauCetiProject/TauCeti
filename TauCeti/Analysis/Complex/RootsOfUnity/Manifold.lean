@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Power
-public import TauCeti.Geometry.Manifold.Instances.Ball
+public import TauCeti.Geometry.Manifold.Instances.OpenBall.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
