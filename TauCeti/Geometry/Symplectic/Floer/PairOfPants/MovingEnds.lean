@@ -446,7 +446,7 @@ variable {H : ℝ → M → ℝ} {c a : ℂ}
 
 /-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
 differentiable in the domain point. -/
-private theorem differentiableAt_inputEndPerturbation_domain (hH : Periodic H 1)
+theorem differentiableAt_inputEndPerturbation_domain (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (ha : a ≠ 0) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ c) (x : M) (v : ℂ) :
     DifferentiableAt ℝ
@@ -461,7 +461,7 @@ private theorem differentiableAt_inputEndPerturbation_domain (hH : Periodic H 1)
 
 /-- Off its center, the components of the input end datum of a `C¹` Hamiltonian on a manifold are
 differentiable in the target point. -/
-private theorem mdifferentiableAt_inputEndPerturbation_target (hH : Periodic H 1)
+theorem mdifferentiableAt_inputEndPerturbation_target (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (ha : a ≠ 0) {w : ℂ} (hw : w ≠ c)
     (x : M) (v : ℂ) :
     MDifferentiableAt I 𝓘(ℝ) (fun y ↦ inputEndPerturbation c a H w y v) x :=
