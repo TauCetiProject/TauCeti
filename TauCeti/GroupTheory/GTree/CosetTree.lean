@@ -34,6 +34,9 @@ generated group fixing an end and no vertex.
 * `TauCeti.GTree.cosetTree`: the coset tree of an increasing union of subgroups.
 * `TauCeti.GTree.cosetTreeVertexEquiv`, `TauCeti.GTree.mem_stabilizer_cosetTreeVertexEquiv_symm`:
   its vertices and their stabilizers.
+* `TauCeti.GTree.cosetTreeDartEquiv`, `TauCeti.GTree.cosetTreeVertexEquiv_src`,
+  `TauCeti.GTree.mem_stabilizer_cosetTreeDartEquiv_symm`: its darts, their endpoints and their
+  stabilizers.
 * `TauCeti.GTree.cosetTree_isElliptic`: every element is elliptic.
 * `TauCeti.GTree.cosetTree_isEllipticSubgroup_top_iff`: the group fixes a vertex exactly when
   the sequence of subgroups reaches the whole group.
@@ -65,8 +68,14 @@ variable {G : Type w} [Group G] (H : ℕ →o Subgroup G)
 def cosetParent (x : Σ n, G ⧸ H n) : Σ n, G ⧸ H n :=
   ⟨x.1 + 1, Subgroup.quotientMapOfLE (H.monotone x.1.le_succ) x.2⟩
 
+theorem cosetParent_def (x : Σ n, G ⧸ H n) :
+    cosetParent H x = ⟨x.1 + 1, Subgroup.quotientMapOfLE (H.monotone x.1.le_succ) x.2⟩ := (rfl)
+
+@[simp] theorem cosetParent_fst (x : Σ n, G ⧸ H n) : (cosetParent H x).1 = x.1 + 1 := (rfl)
+
 @[simp] theorem cosetParent_mk (n : ℕ) (g : G) :
-    cosetParent H ⟨n, (g : G ⧸ H n)⟩ = ⟨n + 1, (g : G ⧸ H (n + 1))⟩ := (rfl)
+    cosetParent H ⟨n, (g : G ⧸ H n)⟩ = ⟨n + 1, (g : G ⧸ H (n + 1))⟩ := by
+  rw [cosetParent_def, Subgroup.quotientMapOfLE_apply_mk]
 
 /-- The `k`-th iterated parent of the coset `g H n` is the coset `g H (n + k)`. -/
 theorem cosetParent_iterate_mk (k n : ℕ) (g : G) :
@@ -76,11 +85,11 @@ theorem cosetParent_iterate_mk (k n : ℕ) (g : G) :
   | succ k ih => rw [Function.iterate_succ_apply', ih, cosetParent_mk, add_assoc]
 
 /-- Left translation commutes with the parent map. -/
-theorem cosetParent_smul (g : G) (x : Σ n, G ⧸ H n) :
+@[simp] theorem cosetParent_smul (g : G) (x : Σ n, G ⧸ H n) :
     cosetParent H (g • x) = g • cosetParent H x := by
   obtain ⟨n, x⟩ := x
   induction x using QuotientGroup.induction_on
-  rfl
+  simp only [Sigma.smul_mk, MulAction.Quotient.smul_mk, cosetParent_mk]
 
 /-- No coset is a proper iterated parent of itself. -/
 theorem eq_of_cosetParent_iterate_eq (x : Σ n, G ⧸ H n) (k l : ℕ)
@@ -106,6 +115,8 @@ theorem exists_cosetParent_iterate_eq (hH : ∀ g, ∃ n, g ∈ H n) (x y : Σ n
 
 variable (hH : ∀ g, ∃ n, g ∈ H n)
 
+-- The body is exposed because the compiler needs the vertex and dart types to compile
+-- `cosetTreeVertexEquiv` and `cosetTreeDartEquiv` for importing modules.
 /-- The coset tree of a group `G` which is the union of an increasing sequence of subgroups
 `H n`: the vertices are the cosets `g H n`, an edge joins `g H n` to `g H (n + 1)`, and `G` acts
 by left translation. -/
@@ -119,10 +130,41 @@ by left translation. -/
 /-- The vertices of the coset tree are the cosets of the subgroups `H n`. -/
 def cosetTreeVertexEquiv : (cosetTree H hH).V ≃ Σ n, G ⧸ H n := Equiv.refl _
 
+/-- The darts of the coset tree: `(x, true)` runs from the coset `x` to its parent, and
+`(x, false)` runs back. -/
+def cosetTreeDartEquiv : (cosetTree H hH).E ≃ (Σ n, G ⧸ H n) × Bool := Equiv.refl _
+
+/-- The dart `(x, true)` of the coset tree starts at the coset `x`, and the dart `(x, false)`
+starts at the parent of `x`. -/
+@[simp] theorem cosetTreeVertexEquiv_src (e : (cosetTree H hH).E) :
+    cosetTreeVertexEquiv H hH ((cosetTree H hH).src e) =
+      if (cosetTreeDartEquiv H hH e).2 then (cosetTreeDartEquiv H hH e).1
+      else cosetParent H (cosetTreeDartEquiv H hH e).1 := (rfl)
+
+/-- Reversing a dart of the coset tree changes its orientation. -/
+@[simp] theorem cosetTreeDartEquiv_rev (e : (cosetTree H hH).E) :
+    cosetTreeDartEquiv H hH ((cosetTree H hH).rev e) =
+      ((cosetTreeDartEquiv H hH e).1, !(cosetTreeDartEquiv H hH e).2) := (rfl)
+
+/-- The dart `(x, true)` of the coset tree ends at the parent of the coset `x`, and the dart
+`(x, false)` ends at `x`. -/
+@[simp] theorem cosetTreeVertexEquiv_tgt (e : (cosetTree H hH).E) :
+    cosetTreeVertexEquiv H hH ((cosetTree H hH).tgt e) =
+      if (cosetTreeDartEquiv H hH e).2 then cosetParent H (cosetTreeDartEquiv H hH e).1
+      else (cosetTreeDartEquiv H hH e).1 := by
+  rw [tgt_def, cosetTreeVertexEquiv_src, cosetTreeDartEquiv_rev]
+  cases (cosetTreeDartEquiv H hH e).2 <;> simp
+
 /-- The group acts on the vertices of the coset tree by left translation of cosets. -/
 @[simp] theorem cosetTreeVertexEquiv_smul (g : G) (v : (cosetTree H hH).V) :
     cosetTreeVertexEquiv H hH (g • v) = g • cosetTreeVertexEquiv H hH v :=
   ofParentAction_equivV (cosetParent_smul H) g v
+
+/-- The group acts on the darts of the coset tree by left translation, preserving orientations. -/
+@[simp] theorem cosetTreeDartEquiv_smul (g : G) (e : (cosetTree H hH).E) :
+    cosetTreeDartEquiv H hH (g • e) =
+      (g • (cosetTreeDartEquiv H hH e).1, (cosetTreeDartEquiv H hH e).2) :=
+  ofParentAction_equivE (cosetParent_smul H) g e
 
 /-- The stabilizer of the vertex `a H n` of the coset tree is the conjugate `a (H n) a⁻¹`. -/
 theorem mem_stabilizer_cosetTreeVertexEquiv_symm {g a : G} {n : ℕ} :
@@ -138,11 +180,26 @@ theorem mem_stabilizer_cosetTreeVertexEquiv_symm {g a : G} {n : ℕ} :
   ext g
   rw [mem_stabilizer_cosetTreeVertexEquiv_symm, inv_one, one_mul, mul_one]
 
+/-- The stabilizer of a dart of the coset tree is the stabilizer of the coset it is attached to:
+for the darts joining `a H n` and `a H (n + 1)`, the conjugate `a (H n) a⁻¹`. -/
+theorem mem_stabilizer_cosetTreeDartEquiv_symm {g a : G} {n : ℕ} {d : Bool} :
+    g ∈ stabilizer G ((cosetTreeDartEquiv H hH).symm (⟨n, (a : G ⧸ H n)⟩, d)) ↔
+      a⁻¹ * g * a ∈ H n := by
+  rw [← mem_stabilizer_cosetTreeVertexEquiv_symm H hH, mem_stabilizer_iff, mem_stabilizer_iff,
+    ← (cosetTreeDartEquiv H hH).apply_eq_iff_eq, ← (cosetTreeVertexEquiv H hH).apply_eq_iff_eq]
+  simp
+
+/-- The stabilizer of the darts of the coset tree joining `H n` and `H (n + 1)` is `H n`. -/
+@[simp] theorem stabilizer_cosetTreeDartEquiv_symm_one (n : ℕ) (d : Bool) :
+    stabilizer G ((cosetTreeDartEquiv H hH).symm (⟨n, ((1 : G) : G ⧸ H n)⟩, d)) = H n := by
+  ext g
+  rw [mem_stabilizer_cosetTreeDartEquiv_symm, inv_one, one_mul, mul_one]
+
 variable {H hH}
 
 /-- Every element is elliptic in the coset tree: it fixes the vertex `H n` as soon as it lies in
 `H n`. -/
-theorem cosetTree_isElliptic (g : G) : (cosetTree H hH).IsElliptic g := by
+@[simp] theorem cosetTree_isElliptic (g : G) : (cosetTree H hH).IsElliptic g := by
   obtain ⟨n, hn⟩ := hH g
   refine isElliptic_iff.mpr ⟨(cosetTreeVertexEquiv H hH).symm ⟨n, ((1 : G) : G ⧸ H n)⟩,
     mem_stabilizer_iff.mp ?_⟩
@@ -162,7 +219,7 @@ theorem cosetTree_isEllipticSubgroup_iff {K : Subgroup G} :
 
 /-- The whole group fixes a vertex of the coset tree exactly when some `H n` is the whole
 group. -/
-theorem cosetTree_isEllipticSubgroup_top_iff :
+@[simp] theorem cosetTree_isEllipticSubgroup_top_iff :
     (cosetTree H hH).IsEllipticSubgroup ⊤ ↔ ∃ n, H n = ⊤ := by
   rw [cosetTree_isEllipticSubgroup_iff]
   refine ⟨fun ⟨n, a, h⟩ => ⟨n, eq_top_iff.mpr fun g _ => ?_⟩,
@@ -180,6 +237,9 @@ def ratChain : ℕ →o Subgroup (Multiplicative ℚ) where
       rw [← ofAdd_zsmul, zsmul_eq_mul, Nat.factorial_succ]
       push_cast
       field_simp⟩
+
+theorem ratChain_apply (n : ℕ) :
+    ratChain n = Subgroup.zpowers (Multiplicative.ofAdd ((n.factorial : ℚ)⁻¹)) := (rfl)
 
 /-- A rational number lies in `(1 / n!) ℤ` exactly when it is an integer divided by `n!`. -/
 theorem mem_ratChain_iff {n : ℕ} {q : Multiplicative ℚ} :
@@ -200,14 +260,16 @@ theorem exists_mem_ratChain (q : Multiplicative ℚ) : ∃ n, q ∈ ratChain n :
   field_simp
 
 /-- No `(1 / n!) ℤ` contains every rational number. -/
-theorem ratChain_ne_top (n : ℕ) : ratChain n ≠ ⊤ := by
+@[simp] theorem ratChain_ne_top (n : ℕ) : ratChain n ≠ ⊤ := by
   intro h
   obtain ⟨k, hk⟩ := mem_ratChain_iff.mp
     (h ▸ Subgroup.mem_top (Multiplicative.ofAdd ((2 * n.factorial : ℚ)⁻¹)))
   have hn : (n.factorial : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
-  rw [toAdd_ofAdd] at hk
-  field_simp at hk
-  have hk' : k * 2 = 1 := by exact_mod_cast hk
+  rw [toAdd_ofAdd, div_eq_iff hn] at hk
+  have hk' : (k : ℚ) * 2 = 1 := by
+    rw [hk]
+    field_simp
+  have hk'' : k * 2 = 1 := by exact_mod_cast hk'
   omega
 
 /-- The coset tree of the rational numbers, the union of the subgroups `(1 / n!) ℤ`. -/
@@ -217,12 +279,12 @@ def ratTree : GTree.{0, 0} (Multiplicative ℚ) :=
 theorem ratTree_def : ratTree = cosetTree ratChain exists_mem_ratChain := (rfl)
 
 /-- Every rational number acts on the tree `ratTree` as an elliptic automorphism. -/
-theorem ratTree_isElliptic (q : Multiplicative ℚ) : ratTree.IsElliptic q :=
+@[simp] theorem ratTree_isElliptic (q : Multiplicative ℚ) : ratTree.IsElliptic q :=
   cosetTree_isElliptic q
 
 /-- The rational numbers have no global fixed point in the tree `ratTree`, although each of them
 is elliptic. -/
-theorem not_ratTree_isEllipticSubgroup_top : ¬ratTree.IsEllipticSubgroup ⊤ := fun h =>
+@[simp] theorem not_ratTree_isEllipticSubgroup_top : ¬ratTree.IsEllipticSubgroup ⊤ := fun h =>
   let ⟨n, hn⟩ := cosetTree_isEllipticSubgroup_top_iff.mp h
   ratChain_ne_top n hn
 

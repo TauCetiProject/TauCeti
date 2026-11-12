@@ -12,11 +12,14 @@ public import Mathlib.Algebra.Group.Action.Basic
 # The Serre graph of a parent map
 
 A map `p : V → V` defines a Serre graph on `V` with one geometric edge joining each vertex `v` to
-its parent `p v`. A reduced path in this graph first climbs along the parent map and then
-descends, without passing twice through the same edge at its top. Hence the graph is a forest as
-soon as no vertex is a proper iterated parent of itself, and it is a tree when moreover any two
-vertices have a common iterated parent. Every vertex has a parent, so rooted trees, whose root
-has none, are not of this form; the tree attached by Serre to an increasing union of subgroups is.
+its parent `p v`. A reduced path from `a` to `b` in this graph has length `k + l` for some `k` and
+`l` with `p^[k] a = p^[l] b`, and when `k` and `l` are both positive the vertices `p^[k - 1] a`
+and `p^[l - 1] b` just below this common iterated parent are distinct. Hence the graph is a forest
+as soon as no vertex is a proper iterated parent of itself, and a nonempty such graph is a tree
+when moreover any two vertices have a common iterated parent. Under the first hypothesis the
+iterated parents of a vertex are pairwise distinct, so these trees are infinite. Examples are the
+line, with parent map `n ↦ n + 1` on the integers, and the tree attached by Serre to an
+increasing union of subgroups.
 
 A group acting on `V` and commuting with the parent map acts on the graph by automorphisms that
 preserve the orientation of every edge towards the parent.
@@ -24,7 +27,10 @@ preserve the orientation of every edge towards the parent.
 ## Main declarations
 
 * `TauCeti.SerreGraph.ofParent`: the Serre graph of a parent map.
-* `TauCeti.SerreGraph.exists_iterate_eq_of_isReduced`: the shape of reduced paths.
+* `TauCeti.SerreGraph.exists_iterate_eq_of_isReduced`: the length of a reduced path and the common
+  iterated parent of its endpoints.
+* `TauCeti.SerreGraph.ofParent_nonempty_path_iff`: two vertices are joined by a path exactly when
+  they have a common iterated parent.
 * `TauCeti.SerreGraph.ofParent_isAcyclic`, `TauCeti.SerreGraph.ofParent_preconnected_iff`,
   `TauCeti.SerreGraph.ofParent_isTree`: forests and trees among these graphs.
 * `TauCeti.SerreGraph.ofParentAction`: the action of a group commuting with the parent map.
@@ -75,12 +81,18 @@ theorem ofParent_nonempty_path_iterate (v : V) (n : ℕ) :
     rw [Function.iterate_succ_apply']
     exact ⟨ih.some.cons ⟨(p^[n] v, true), rfl, rfl⟩⟩
 
-/-- The parent map, as a map on the vertices of its graph. -/
+/-- The parent map, as a map on the vertices of its graph. The arrows of the quiver of
+`ofParent p` join elements of `(ofParent p).V`, and `p v` has type `V`, so the darts below are
+stated between `v` and `parent p v`. Its iterates are converted back by `parent_iterate`. -/
 private def parent (v : (ofParent p).V) : (ofParent p).V := p v
 
-/-- The shape of a reduced path, together with the constraints on the darts that can extend it:
-the path climbs `k` steps and then descends `l` steps, after a descent it cannot climb again,
-and a descent from the top of a climb does not return along the last dart. -/
+private theorem parent_iterate (k : ℕ) (v : (ofParent p).V) : (parent p)^[k] v = p^[k] v := rfl
+
+/-- The invariant of a reduced path `q` from `a` to `b`: its length is `k + l`, where the
+iterated parents `parent^[k] a` and `parent^[l] b` agree and the vertices `parent^[k - 1] a` and
+`parent^[l - 1] b` differ when `k` and `l` are positive; moreover a dart towards a parent extends
+`q` to a reduced path only if `l = 0`, and a dart away from a parent that does so ends at a
+vertex other than `parent^[k - 1] a` when `l = 0` and `0 < k`. -/
 private def IsClimbDescent {a b : (ofParent p).V} (q : (ofParent p).Path a b) (k l : ℕ) : Prop :=
   k + l = q.length ∧ (parent p)^[k] a = (parent p)^[l] b ∧
     (0 < k → 0 < l → (parent p)^[k - 1] a ≠ (parent p)^[l - 1] b) ∧
@@ -88,7 +100,7 @@ private def IsClimbDescent {a b : (ofParent p).V} (q : (ofParent p).Path a b) (k
       if e.1.2 then l = 0 else l = 0 → 0 < k → (parent p)^[k - 1] a ≠ c
 
 variable {p} in
-/-- Extending a reduced path by a descending dart lengthens its descent. -/
+/-- Extending a reduced path by a dart away from a parent increases `l`. -/
 private theorem IsClimbDescent.cons_false {a c : (ofParent p).V}
     {q : (ofParent p).Path a (parent p c)} {k l : ℕ} (h : IsClimbDescent p q k l)
     (hq : Path.IsReduced (ofParent p)
@@ -103,7 +115,7 @@ private theorem IsClimbDescent.cons_false {a c : (ofParent p).V}
     · exact hf rfl hk
     · rw [← Nat.sub_add_cancel hl, Function.iterate_succ_apply]
       exact hne hk hl
-  · -- A dart climbing from `c` would reverse the last dart.
+  · -- A dart towards the parent of `c` would reverse the last dart.
     obtain ⟨⟨x, d⟩, hs, ht⟩ := e
     cases d
     · simp
@@ -111,8 +123,8 @@ private theorem IsClimbDescent.cons_false {a c : (ofParent p).V}
       exact absurd rfl ((Path.isReduced_cons_cons _ _ _ _).mp he).2
 
 variable {p} in
-/-- A reduced path can only be extended by a climbing dart if it has not descended yet, and
-then its climb is lengthened. -/
+/-- A reduced path can only be extended by a dart towards a parent if `l = 0`, and then `k`
+increases. -/
 private theorem IsClimbDescent.cons_true {a b : (ofParent p).V} {q : (ofParent p).Path a b}
     {k l : ℕ} (h : IsClimbDescent p q k l)
     (hq : Path.IsReduced (ofParent p)
@@ -120,18 +132,20 @@ private theorem IsClimbDescent.cons_true {a b : (ofParent p).V} {q : (ofParent p
     IsClimbDescent p (q.cons (⟨(b, true), rfl, rfl⟩ : Quiver.Hom b (parent p b))) (k + 1) 0 := by
   obtain ⟨hkl, heq, -, hext⟩ := h
   obtain rfl : l = 0 := hext _ hq
-  refine ⟨by rw [Quiver.Path.length_cons]; omega,
-    by rw [Function.iterate_succ_apply', heq]; rfl, by simp, fun e he => ?_⟩
-  -- A dart descending from the parent of `b` does not return to `b`.
+  refine ⟨by rw [Quiver.Path.length_cons]; omega, by
+      rw [Function.iterate_succ_apply', heq, Function.iterate_zero_apply,
+        Function.iterate_zero_apply],
+    by simp, fun e he => ?_⟩
+  -- A dart away from the parent of `b` does not return to `b`.
   obtain ⟨⟨x, d⟩, hs, ht⟩ := e
   cases d
   · have hx : (x, false) ≠ (b, false) := ((Path.isReduced_cons_cons _ _ _ _).mp he).2
     obtain rfl : x = _ := ht
     intro _ _ h
-    exact hx (by rw [← h, Nat.add_sub_cancel, heq]; rfl)
-  · rfl
+    exact hx (Prod.ext (by rw [← h, Nat.add_sub_cancel, heq, Function.iterate_zero_apply]) rfl)
+  · simp
 
-/-- Every reduced path climbs and then descends. -/
+/-- Every reduced path satisfies the invariant `IsClimbDescent`. -/
 private theorem exists_isClimbDescent {a b : (ofParent p).V} (q : (ofParent p).Path a b)
     (hq : Path.IsReduced (ofParent p) q) : ∃ k l, IsClimbDescent p q k l := by
   induction q with
@@ -147,14 +161,16 @@ private theorem exists_isClimbDescent {a b : (ofParent p).V} (q : (ofParent p).P
       obtain rfl : c = parent p b := ht.symm
       exact ⟨k + 1, 0, IsClimbDescent.cons_true h hq⟩
 
-/-- A reduced path of the graph of a parent map climbs `k` steps and then descends `l` steps,
-and the last vertex of the climb below the top differs from the first vertex of the descent. -/
+/-- A reduced path from `a` to `b` in the graph of a parent map has length `k + l`, where
+`p^[k] a = p^[l] b`, and when `k` and `l` are both positive the two vertices `p^[k - 1] a` and
+`p^[l - 1] b` just below this common iterated parent are distinct. -/
 theorem exists_iterate_eq_of_isReduced {a b : V} (q : (ofParent p).Path a b)
     (hq : Path.IsReduced (ofParent p) q) :
     ∃ k l, k + l = q.length ∧ p^[k] a = p^[l] b ∧
       (0 < k → 0 < l → p^[k - 1] a ≠ p^[l - 1] b) := by
   obtain ⟨k, l, hkl, heq, hne, -⟩ := exists_isClimbDescent p q hq
-  exact ⟨k, l, hkl, heq, hne⟩
+  exact ⟨k, l, hkl, (parent_iterate p k a).symm.trans (heq.trans (parent_iterate p l b)),
+    fun hk hl h => hne hk hl ((parent_iterate p _ a).trans (h.trans (parent_iterate p _ b).symm))⟩
 
 /-! ### Forests and trees -/
 
@@ -171,19 +187,22 @@ theorem ofParent_isAcyclic (hp : ∀ v m n, p^[m] v = p^[n] v → m = n) :
 
 /-- Two vertices of the graph of a parent map are joined by a path exactly when they have a
 common iterated parent. -/
-theorem ofParent_preconnected_iff :
-    (ofParent p).Preconnected ↔ ∀ a b : V, ∃ m n, p^[m] a = p^[n] b := by
-  rw [preconnected_iff]
-  refine ⟨fun h a b => ?_, fun h a b => ?_⟩
-  · obtain ⟨q⟩ := h a b
-    obtain ⟨k, l, -, heq, -⟩ :=
+theorem ofParent_nonempty_path_iff {a b : V} :
+    Nonempty ((ofParent p).Path a b) ↔ ∃ m n, p^[m] a = p^[n] b := by
+  refine ⟨fun ⟨q⟩ => ?_, fun ⟨m, n, hmn⟩ => ?_⟩
+  · obtain ⟨k, l, -, heq, -⟩ :=
       exists_iterate_eq_of_isReduced p _ (Path.isReduced_reduce (ofParent p) q)
     exact ⟨k, l, heq⟩
-  · obtain ⟨m, n, hmn⟩ := h a b
-    obtain ⟨q⟩ := ofParent_nonempty_path_iterate p a m
+  · obtain ⟨q⟩ := ofParent_nonempty_path_iterate p a m
     obtain ⟨r⟩ := ofParent_nonempty_path_iterate p b n
     rw [hmn] at q
     exact ⟨q.comp r.reverse⟩
+
+/-- The graph of a parent map is preconnected exactly when any two vertices have a common
+iterated parent. -/
+theorem ofParent_preconnected_iff :
+    (ofParent p).Preconnected ↔ ∀ a b : V, ∃ m n, p^[m] a = p^[n] b :=
+  (preconnected_iff _).trans (forall₂_congr fun _ _ => ofParent_nonempty_path_iff p)
 
 /-- The graph of a parent map on a nonempty type is a tree when no vertex is a proper iterated
 parent of itself and any two vertices have a common iterated parent. -/
@@ -220,6 +239,16 @@ variable {p}
 
 @[simp] theorem ofParentAction_equivE (h : ∀ (g : G) (v : V), p (g • v) = g • p v) (g : G)
     (e : V × Bool) : (ofParentAction p h g).equivE e = (g • e.1, e.2) := (rfl)
+
+/-- The automorphism attached to `g` moves a vertex `v` to `g • v`. The right-hand side names
+the action of `G` on `V` explicitly, since `v` has type `(ofParent p).V`. -/
+@[simp] theorem ofParentAction_smul_vertex (h : ∀ (g : G) (v : V), p (g • v) = g • p v) (g : G)
+    (v : (ofParent p).V) : ofParentAction p h g • v = @HSMul.hSMul G V V _ g v := (rfl)
+
+/-- The automorphism attached to `g` moves the dart `(v, b)` to `(g • v, b)`. -/
+@[simp] theorem ofParentAction_smul_dart (h : ∀ (g : G) (v : V), p (g • v) = g • p v) (g : G)
+    (e : (ofParent p).E) : ofParentAction p h g • e = Prod.mk (g • Prod.fst e) (Prod.snd e) :=
+  (rfl)
 
 /-- The action on the graph of a parent map has no inversions: it preserves the orientation of
 each edge towards the parent. -/
