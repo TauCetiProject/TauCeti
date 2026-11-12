@@ -41,6 +41,8 @@ period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its are
 minus the loop area of the counterclockwise circle
 (`TauCeti.SymplecticForm.loopArea_comp_circleMap_sub_mul`). Traversing a loop of period one
 backwards negates its area (`TauCeti.SymplecticForm.loopArea_comp_neg`).
+The area of `u` vanishes when `u` vanishes on the slices `s = a` and `s = b`
+(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
 Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
@@ -70,7 +72,7 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     (ω : SymplecticForm V) {u : ℂ → V} {D : Set ℂ}
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) D) :
     IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) D := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let : MeasurableSpace V := borel V
   let : BorelSpace V := ⟨rfl⟩
   let B := ω.toBilinForm.toContinuousBilinearMap
@@ -273,6 +275,18 @@ theorem integral_symplecticForm_fderiv_eq_loopArea_sub (ω : SymplecticForm V) (
   rw [hvert ⟨hab, le_rfl⟩, hvert ⟨le_rfl, hab⟩, hhor, ← hR] at harea
   rw [loopArea_def, loopArea_def, stdComplexLineReal_eq, stdComplexLineImag_eq, harea]
   ring
+
+/-- **The symplectic area of a cylinder with vanishing ends.** Let `u` be `C²` near
+`[a, b] × [0, 1]`, with `u(s, 1) = u(s, 0)` for `s ∈ [a, b]`, and let `u` vanish on the slices
+`s = a` and `s = b`. Then the symplectic area of `u` over the rectangle is zero. -/
+theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic (ω : SymplecticForm V)
+    (hab : a ≤ b) (hu : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 2 u z)
+    (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) (ha : ∀ t, u (a, t) = 0)
+    (hb : ∀ t, u (b, t) = 0) :
+    ∫ z in Icc a b ×ˢ Icc 0 1,
+      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) = 0 := by
+  rw [ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab hu hper]
+  simp only [ha, hb, loopArea_const, sub_self]
 
 /-- **The loop area is the area of a cap.** For a loop `x` that is `C²` near `[0, 1]` with
 `x 1 = x 0`, the symplectic area of the cone `D(r, t) = r x(t)` over `[0, 1] × [0, 1]`, a disc
