@@ -18,7 +18,9 @@ every time map of the flow of `v` preserves `w`. If `w` is also globally Lipschi
 equivalent to commutation of the two flows.
 
 Both consequences are local along orbits. If `[v, w]` vanishes along the orbit segment
-`{Φ_σ x | σ ∈ [[0, t]]}` of the flow `Φ` of `v`, then `dΦ_t` sends `w x` to `w (Φ_t x)`
+`{Φ_σ x | σ ∈ [[0, t]]}` of the flow `Φ` of `v`, then the pullback of `w` by `Φ_t` agrees with
+`w` at `x` (`TauCeti.pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on`), that is,
+`dΦ_t` sends `w x` to `w (Φ_t x)`
 (`TauCeti.fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero_on`). If `[v, w]` vanishes at the
 points `Φ_σ (Ψ_τ x)` with `σ ∈ [[0, s]]` and `τ ∈ [[0, t]]`, where `Ψ` is the flow of `w`, then
 `Φ_s (Ψ_t x) = Ψ_t (Φ_s x)` (`TauCeti.flowOfLipschitz_comm_of_lieBracket_eq_zero_on`). So if
@@ -65,18 +67,31 @@ theorem hasDerivAt_pullback_flowOfLipschitz (x : E) (t : ℝ)
   simpa only [pullback, lieBracket, ContinuousLinearMap.comp_apply, Function.comp_apply,
     hi.self_apply_inverse, map_sub] using h
 
+/-- **Local preservation of a field with vanishing bracket.** If `[v, w]` vanishes along the
+orbit segment `{Φ_σ x | σ ∈ [[0, t]]}` of the flow `Φ` of `v`, and `w` is differentiable there,
+then the pullback of `w` by the time-`t` map agrees with `w` at `x`. -/
+theorem pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on {t : ℝ} {x : E}
+    (hw : ∀ σ ∈ Set.uIcc 0 t, DifferentiableAt ℝ w (flowOfLipschitz v hv σ x))
+    (hvw : ∀ σ ∈ Set.uIcc 0 t, lieBracket ℝ v w (flowOfLipschitz v hv σ x) = 0) :
+    pullback ℝ (flowOfLipschitz v hv t) w x = w x := by
+  -- The pullback of `w` along the flow has zero derivative on `[[0, t]]`, so it is constant there.
+  have hF : ∀ σ ∈ Set.uIcc 0 t, HasDerivWithinAt
+      (fun s ↦ pullback ℝ (flowOfLipschitz v hv s) w x) 0 (Set.uIcc 0 t) σ := fun σ hσ ↦ by
+    have h := hasDerivAt_pullback_flowOfLipschitz hv hvs x σ (hw σ hσ)
+    rw [pullback, hvw σ hσ, map_zero] at h
+    exact h.hasDerivWithinAt
+  have hconst := (convex_uIcc 0 t).norm_image_sub_le_of_norm_hasDerivWithin_le (C := 0) hF
+    (fun _ _ ↦ by simp) Set.left_mem_uIcc Set.right_mem_uIcc
+  rw [zero_mul, norm_le_zero_iff, sub_eq_zero] at hconst
+  simpa only [Flow.map_zero, pullback, fderiv_id, ContinuousLinearMap.inverse_id,
+    ContinuousLinearMap.id_apply, id_eq] using hconst
+
 /-- Vanishing bracket implies that every time map of the flow preserves the other field. -/
 theorem pullback_flowOfLipschitz_eq_of_lieBracket_eq_zero (hw : Differentiable ℝ w)
     (hvw : lieBracket ℝ v w = 0) (t : ℝ) :
-    pullback ℝ (flowOfLipschitz v hv t) w = w := by
-  funext x
-  have hd (s : ℝ) : HasDerivAt (fun s ↦ pullback ℝ (flowOfLipschitz v hv s) w x) 0 s := by
-    simpa only [hvw, pullback, Pi.zero_apply, map_zero] using
-      hasDerivAt_pullback_flowOfLipschitz hv hvs x s (hw _)
-  have h := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt)
-    (fun s ↦ (hd s).deriv) t 0
-  simpa only [Flow.map_zero, pullback, fderiv_id, ContinuousLinearMap.inverse_id,
-    ContinuousLinearMap.id_apply, id_eq] using h
+    pullback ℝ (flowOfLipschitz v hv t) w = w :=
+  funext fun _ ↦ pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on hv hvs
+    (fun _ _ ↦ hw _) fun _ _ ↦ congrFun hvw _
 
 /-- A differentiable field has zero bracket with `v` exactly when the flow of `v` preserves it. -/
 theorem lieBracket_eq_zero_iff_pullback_flowOfLipschitz_eq (hw : Differentiable ℝ w) :
@@ -101,19 +116,8 @@ theorem fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero_on {t : ℝ} {x : E}
     fderiv ℝ (flowOfLipschitz v hv t) x (w x) = w (flowOfLipschitz v hv t x) := by
   have hd := differentiable_flowOfLipschitz_apply hv hvs
   have hi := (flowOfLipschitz v hv).isInvertible_fderiv (hd (-t) _) (hd t x)
-  -- The pullback of `w` along the flow has zero derivative on `[[0, t]]`, so it is constant there.
-  have hF : ∀ σ ∈ Set.uIcc 0 t, HasDerivWithinAt
-      (fun s ↦ pullback ℝ (flowOfLipschitz v hv s) w x) 0 (Set.uIcc 0 t) σ := fun σ hσ ↦ by
-    have h := hasDerivAt_pullback_flowOfLipschitz hv hvs x σ (hw σ hσ)
-    rw [pullback, hvw σ hσ, map_zero] at h
-    exact h.hasDerivWithinAt
-  have hconst := (convex_uIcc 0 t).norm_image_sub_le_of_norm_hasDerivWithin_le (C := 0) hF
-    (fun _ _ ↦ by simp) Set.left_mem_uIcc Set.right_mem_uIcc
-  rw [zero_mul, norm_le_zero_iff, sub_eq_zero] at hconst
-  have h : pullback ℝ (flowOfLipschitz v hv t) w x = w x := by
-    simpa only [Flow.map_zero, pullback, fderiv_id, ContinuousLinearMap.inverse_id,
-      ContinuousLinearMap.id_apply, id_eq] using hconst
-  rw [← h, pullback, hi.self_apply_inverse]
+  rw [← pullback_flowOfLipschitz_apply_eq_of_lieBracket_eq_zero_on hv hvs hw hvw, pullback,
+    hi.self_apply_inverse]
 
 /-- If the bracket vanishes, the differential of each time map carries `w` to `w`. -/
 theorem fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero (hw : Differentiable ℝ w)
@@ -123,10 +127,12 @@ theorem fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero (hw : Differentiable 
     fun _ _ ↦ congrFun hvw _
 
 /-- **Local commutation of flows with vanishing bracket.** Let `Φ` and `Ψ` be the flows of `v`
-and of a globally Lipschitz differentiable field `w`. If `[v, w]` vanishes at every point
-`Φ_σ (Ψ_τ x)` with `σ ∈ [[0, s]]` and `τ ∈ [[0, t]]`, then `Φ_s (Ψ_t x) = Ψ_t (Φ_s x)`. -/
-theorem flowOfLipschitz_comm_of_lieBracket_eq_zero_on (hw : LipschitzWith L w)
-    (hwd : Differentiable ℝ w) {s t : ℝ} {x : E}
+and of a globally Lipschitz field `w`. If `[v, w]` vanishes at every point
+`Φ_σ (Ψ_τ x)` with `σ ∈ [[0, s]]` and `τ ∈ [[0, t]]`, and `w` is differentiable at these points,
+then `Φ_s (Ψ_t x) = Ψ_t (Φ_s x)`. -/
+theorem flowOfLipschitz_comm_of_lieBracket_eq_zero_on (hw : LipschitzWith L w) {s t : ℝ} {x : E}
+    (hwd : ∀ σ ∈ Set.uIcc 0 s, ∀ τ ∈ Set.uIcc 0 t,
+      DifferentiableAt ℝ w (flowOfLipschitz v hv σ (flowOfLipschitz w hw τ x)))
     (hvw : ∀ σ ∈ Set.uIcc 0 s, ∀ τ ∈ Set.uIcc 0 t,
       lieBracket ℝ v w (flowOfLipschitz v hv σ (flowOfLipschitz w hw τ x)) = 0) :
     flowOfLipschitz v hv s (flowOfLipschitz w hw t x) =
@@ -137,7 +143,7 @@ theorem flowOfLipschitz_comm_of_lieBracket_eq_zero_on (hw : LipschitzWith L w)
     have h := (differentiable_flowOfLipschitz_apply hv hvs s _).hasFDerivAt.comp_hasDerivAt τ
       (hasDerivAt_flowOfLipschitz hw x τ)
     rw [Function.comp_def, fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero_on hv hvs
-      (fun _ _ ↦ hwd _) fun σ hσ ↦ hvw σ hσ τ hτ] at h
+      (fun σ hσ ↦ hwd σ hσ τ hτ) fun σ hσ ↦ hvw σ hσ τ hτ] at h
     exact h.hasDerivWithinAt
   simpa only [Flow.map_zero_apply] using eq_flowOfLipschitz_of_isIntegralCurveOn hw hγ le_rfl
 
@@ -165,7 +171,8 @@ theorem eventually_flowOfLipschitz_comm (hw : LipschitzWith L w) (hwd : Differen
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.1 hmem
   filter_upwards [Metric.ball_mem_nhds _ hε] with q hq
   -- The ball contains `(σ, τ, q.2.2)` for `σ ∈ [[0, q.1]]` and `τ ∈ [[0, q.2.1]]`.
-  refine flowOfLipschitz_comm_of_lieBracket_eq_zero_on hv hvs hw hwd fun σ hσ τ hτ ↦
+  refine flowOfLipschitz_comm_of_lieBracket_eq_zero_on hv hvs hw (fun _ _ _ _ ↦ hwd _)
+    fun σ hσ τ hτ ↦
     hball (y := (σ, τ, q.2.2)) (lt_of_le_of_lt ?_ hq)
   have hσ' : dist σ 0 ≤ dist q.1 0 := by
     simpa [Real.dist_eq] using Set.abs_sub_left_of_mem_uIcc hσ
@@ -180,7 +187,8 @@ theorem flowOfLipschitz_comm_of_lieBracket_eq_zero (hw : LipschitzWith L w)
     (hwd : Differentiable ℝ w) (hvw : lieBracket ℝ v w = 0) (s t : ℝ) (x : E) :
     flowOfLipschitz v hv s (flowOfLipschitz w hw t x) =
       flowOfLipschitz w hw t (flowOfLipschitz v hv s x) :=
-  flowOfLipschitz_comm_of_lieBracket_eq_zero_on hv hvs hw hwd fun _ _ _ _ ↦ congrFun hvw _
+  flowOfLipschitz_comm_of_lieBracket_eq_zero_on hv hvs hw (fun _ _ _ _ ↦ hwd _)
+    fun _ _ _ _ ↦ congrFun hvw _
 
 /-- Commuting flows force the bracket to vanish. Here too, the second field need only be
 Lipschitz and differentiable, rather than continuously differentiable. -/
