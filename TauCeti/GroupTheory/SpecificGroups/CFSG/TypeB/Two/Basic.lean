@@ -248,6 +248,16 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
+/-- The Frobenius fixes the Bourbaki numbering of a negative simple-root subgroup and raises
+its parameter to the `q`-th power. -/
+@[simp]
+theorem frobenius_negSimpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.frobenius (d.negSimpleRootSubgroup i u) =
+      d.negSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [frobenius_def, negSimpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
 /-- **The prime-field Frobenius endomorphism of the ambient group of an index on the `B₂`
 diagram**, the `p`-power map for `p` the defining characteristic. It agrees with the `q`-power map
 `TauCeti.RankTwoBLieIndex.frobenius` above exactly when the index has field order `p`, which
@@ -286,6 +296,15 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
       d.simpleRootSubgroup i
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
+
+/-- The prime-field Frobenius fixes the Bourbaki numbering of a negative simple-root subgroup
+and raises its parameter to the `p`-th power. -/
+@[simp]
+theorem primeFrobenius_negSimpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.negSimpleRootSubgroup i u) =
+      d.negSimpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, negSimpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
 -- there being no power operation on `MonoidHom` itself; this is the form
