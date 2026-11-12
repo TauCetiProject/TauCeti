@@ -176,7 +176,7 @@ private theorem simpleClass_liftable (hs : t ≠ .G2) :
     have hj := hentry j i (Ne.symm h)
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hi hj hp
     rcases hi with hi | hi | hi <;> rcases hj with hj | hj | hj <;> simp_all
-  rcases hpairs with ⟨hij, hji⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩
+  rcases hpairs with ⟨hij, _⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩ | ⟨hij, hji⟩
   · rw [hij, zero_mul, coxeterOrder_zero, (D.simpleClass_commute A i j hij).mul_pow]
     simp only [pow_two, D.simpleClass_mul_self, one_mul]
   · simpa only [hij, hji, neg_mul_neg, one_mul, coxeterOrder_one] using
