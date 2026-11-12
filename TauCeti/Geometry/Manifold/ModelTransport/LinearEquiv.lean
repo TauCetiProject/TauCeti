@@ -17,8 +17,8 @@ linear equivalence. Composing every chart of `M` with `L` gives a second charted
 chart at `x` is `chartAt F x ≫ₕ L` (`ContinuousLinearEquiv.chartAt_chartedSpace`). It is a `C^n`
 manifold whenever the original structure is (`ContinuousLinearEquiv.isManifold_chartedSpace`),
 and the identity of `M` is a `C^n` map in both directions between the two structures, with
-derivatives `L.symm` and `L` (`ContinuousLinearEquiv.mfderiv_id_chartedSpace`,
-`ContinuousLinearEquiv.mfderiv_id_chartedSpace_symm`).
+derivatives `L.symm` and `L` (`ContinuousLinearEquiv.mfderiv_id_chartedSpace_left`,
+`ContinuousLinearEquiv.mfderiv_id_chartedSpace_right`).
 
 This lets a construction stated for manifolds modelled on one particular space, such as a
 Euclidean space, be applied to a manifold modelled on any space of the same dimension, while
@@ -32,11 +32,11 @@ keeping its original atlas: the two structures carry different model types, so t
 ## Main results
 
 * `ContinuousLinearEquiv.isManifold_chartedSpace`: recharting preserves `C^n` manifolds.
-* `ContinuousLinearEquiv.contMDiff_id_chartedSpace`,
-  `ContinuousLinearEquiv.contMDiff_id_chartedSpace_symm`: the identity is smooth in both
+* `ContinuousLinearEquiv.contMDiff_id_chartedSpace_left`,
+  `ContinuousLinearEquiv.contMDiff_id_chartedSpace_right`: the identity is smooth in both
   directions.
-* `ContinuousLinearEquiv.mfderiv_id_chartedSpace`,
-  `ContinuousLinearEquiv.mfderiv_id_chartedSpace_symm`: its derivatives are `L.symm` and `L`.
+* `ContinuousLinearEquiv.mfderiv_id_chartedSpace_left`,
+  `ContinuousLinearEquiv.mfderiv_id_chartedSpace_right`: its derivatives are `L.symm` and `L`.
 -/
 
 public section
@@ -129,7 +129,7 @@ private theorem writtenInExtChartAt_id_symm_eventuallyEq (x : M) :
   simp [writtenInExtChartAt, coe_chartAt_chartedSpace, (chartAt F x).right_inv hy]
 
 /-- The identity of `M`, from its recharting along `L` to its original structure, is `C^n`. -/
-theorem contMDiff_id_chartedSpace {n : ℕ∞ω} :
+theorem contMDiff_id_chartedSpace_left {n : ℕ∞ω} :
     letI := L.chartedSpace M
     ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n (id : M → M) := by
   let := L.chartedSpace M
@@ -141,7 +141,7 @@ theorem contMDiff_id_chartedSpace {n : ℕ∞ω} :
   exact (L.symm.contDiff.contDiffAt.congr_of_eventuallyEq h)
 
 /-- The identity of `M`, from its original structure to its recharting along `L`, is `C^n`. -/
-theorem contMDiff_id_chartedSpace_symm {n : ℕ∞ω} :
+theorem contMDiff_id_chartedSpace_right {n : ℕ∞ω} :
     letI := L.chartedSpace M
     ContMDiff 𝓘(𝕜, F) 𝓘(𝕜, E) n (id : M → M) := by
   let := L.chartedSpace M
@@ -154,21 +154,21 @@ theorem contMDiff_id_chartedSpace_symm {n : ℕ∞ω} :
 
 /-- The derivative of the identity of `M`, from its recharting along `L` to its original
 structure, is `L.symm`. -/
-theorem mfderiv_id_chartedSpace (x : M) :
+theorem mfderiv_id_chartedSpace_left (x : M) :
     (letI := L.chartedSpace M
      mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) (id : M → M) x) = (L.symm : E →L[𝕜] F) := by
   let := L.chartedSpace M
-  rw [((contMDiff_id_chartedSpace L (n := 1)).mdifferentiableAt one_ne_zero).mfderiv]
+  rw [((contMDiff_id_chartedSpace_left L (n := 1)).mdifferentiableAt one_ne_zero).mfderiv]
   simp only [ModelWithCorners.range_eq_univ, fderivWithin_univ]
   exact (writtenInExtChartAt_id_eventuallyEq L x).fderiv_eq.trans L.symm.fderiv
 
 /-- The derivative of the identity of `M`, from its original structure to its recharting along
 `L`, is `L`. -/
-theorem mfderiv_id_chartedSpace_symm (x : M) :
+theorem mfderiv_id_chartedSpace_right (x : M) :
     (letI := L.chartedSpace M
      mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) (id : M → M) x) = (L : F →L[𝕜] E) := by
   let := L.chartedSpace M
-  rw [((contMDiff_id_chartedSpace_symm L (n := 1)).mdifferentiableAt one_ne_zero).mfderiv]
+  rw [((contMDiff_id_chartedSpace_right L (n := 1)).mdifferentiableAt one_ne_zero).mfderiv]
   simp only [ModelWithCorners.range_eq_univ, fderivWithin_univ]
   exact (writtenInExtChartAt_id_symm_eventuallyEq L x).fderiv_eq.trans L.fderiv
 
@@ -185,9 +185,9 @@ theorem mdifferentiableAt_chartedSpace_left_iff {f : M → N} {x : M} :
   let := L.chartedSpace M
   refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
   · exact hf.comp (I' := 𝓘(𝕜, E)) x
-      ((contMDiff_id_chartedSpace_symm L (n := 1)).mdifferentiableAt one_ne_zero)
+      ((contMDiff_id_chartedSpace_right L (n := 1)).mdifferentiableAt one_ne_zero)
   · exact hf.comp (I' := 𝓘(𝕜, F)) x
-      ((contMDiff_id_chartedSpace L (n := 1)).mdifferentiableAt one_ne_zero)
+      ((contMDiff_id_chartedSpace_left L (n := 1)).mdifferentiableAt one_ne_zero)
 
 /-- The derivative of a map out of `M` for the recharted structure is its derivative for the
 original structure composed with `L.symm`. -/
@@ -196,8 +196,8 @@ theorem mfderiv_chartedSpace_left {f : M → N} {x : M} (hf : MDifferentiableAt 
       (mfderiv 𝓘(𝕜, F) I' f x).comp (L.symm : E →L[𝕜] F) := by
   let := L.chartedSpace M
   have h := mfderiv_comp (I' := 𝓘(𝕜, F)) x hf
-    ((contMDiff_id_chartedSpace L (n := 1)).mdifferentiableAt one_ne_zero)
-  rw [Function.comp_id, mfderiv_id_chartedSpace] at h
+    ((contMDiff_id_chartedSpace_left L (n := 1)).mdifferentiableAt one_ne_zero)
+  rw [Function.comp_id, mfderiv_id_chartedSpace_left] at h
   exact h
 
 /-- A map into `M` is differentiable for the recharted structure exactly when it is
@@ -207,9 +207,9 @@ theorem mdifferentiableAt_chartedSpace_right_iff {g : N → M} {y : N} :
       MDifferentiableAt I' 𝓘(𝕜, F) g y := by
   let := L.chartedSpace M
   refine ⟨fun hg ↦ ?_, fun hg ↦ ?_⟩
-  · exact ((contMDiff_id_chartedSpace L (n := 1)).mdifferentiableAt one_ne_zero).comp
+  · exact ((contMDiff_id_chartedSpace_left L (n := 1)).mdifferentiableAt one_ne_zero).comp
       (I' := 𝓘(𝕜, E)) y hg
-  · exact ((contMDiff_id_chartedSpace_symm L (n := 1)).mdifferentiableAt one_ne_zero).comp
+  · exact ((contMDiff_id_chartedSpace_right L (n := 1)).mdifferentiableAt one_ne_zero).comp
       (I' := 𝓘(𝕜, F)) y hg
 
 /-- The derivative of a map into `M` for the recharted structure is `L` composed with its
@@ -219,8 +219,8 @@ theorem mfderiv_chartedSpace_right {g : N → M} {y : N} (hg : MDifferentiableAt
       (L : F →L[𝕜] E).comp (mfderiv I' 𝓘(𝕜, F) g y) := by
   let := L.chartedSpace M
   have h := mfderiv_comp (I' := 𝓘(𝕜, F)) (g := (id : M → M)) y
-    ((contMDiff_id_chartedSpace_symm L (n := 1)).mdifferentiableAt one_ne_zero) hg
-  rw [Function.id_comp, mfderiv_id_chartedSpace_symm] at h
+    ((contMDiff_id_chartedSpace_right L (n := 1)).mdifferentiableAt one_ne_zero) hg
+  rw [Function.id_comp, mfderiv_id_chartedSpace_right] at h
   exact h
 
 end Comp

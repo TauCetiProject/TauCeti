@@ -689,8 +689,8 @@ def rechart (o : Orientation 𝓘(ℝ, F) M ι) :
     letI := L.chartedSpace M
     Orientation 𝓘(ℝ, E) M ι :=
   letI := L.chartedSpace M
-  o.pullback (L.contMDiff_id_chartedSpace (M := M))
-    (fun x ↦ ⟨L.symm, (L.mfderiv_id_chartedSpace x).symm⟩)
+  o.pullback (L.contMDiff_id_chartedSpace_left (M := M))
+    (fun x ↦ ⟨L.symm, (L.mfderiv_id_chartedSpace_left x).symm⟩)
     (o.card_eq.trans L.toLinearEquiv.finrank_eq)
 
 variable (o : Orientation 𝓘(ℝ, F) M ι)
@@ -701,9 +701,9 @@ theorem orientationAt_rechart (x : M) :
     (letI := L.chartedSpace M; (o.rechart L).orientationAt x) =
       _root_.Orientation.map ι L.toLinearEquiv (o.orientationAt x) := by
   let := L.chartedSpace M
-  have h := map_orientationAt_pullback o (L.contMDiff_id_chartedSpace (M := M))
-    (fun x ↦ ⟨L.symm, (L.mfderiv_id_chartedSpace x).symm⟩)
-    (o.card_eq.trans L.toLinearEquiv.finrank_eq) x L.symm (L.mfderiv_id_chartedSpace x).symm
+  have h := map_orientationAt_pullback o (L.contMDiff_id_chartedSpace_left (M := M))
+    (fun x ↦ ⟨L.symm, (L.mfderiv_id_chartedSpace_left x).symm⟩)
+    (o.card_eq.trans L.toLinearEquiv.finrank_eq) x L.symm (L.mfderiv_id_chartedSpace_left x).symm
   apply (_root_.Orientation.map ι L.symm.toLinearEquiv).injective
   refine h.trans ?_
   rw [ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm]
@@ -741,7 +741,7 @@ theorem orientationSign_rechart_left (o' : Orientation J N ι) {f : M → N} {x 
   let := L.chartedSpace M
   have h := orientationSign_comp (o := o.rechart L) (o' := o) (o'' := o') (g := f)
     (f := (id : M → M)) hf
-    ((L.contMDiff_id_chartedSpace (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
+    ((L.contMDiff_id_chartedSpace_left (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
   rw [Function.comp_id, orientationSign_of_isOrientationPreservingAt
     (o.isOrientationPreservingAt_id_rechart L x), mul_one] at h
   exact h
@@ -757,13 +757,13 @@ theorem orientationSign_rechart_right (o' : Orientation J N ι) {g : N → M} {y
   have hid : orientationSign o (o.rechart L) (id : M → M) (g y) = 1 := by
     have h := orientationSign_comp (o := o) (o' := o.rechart L) (o'' := o)
       (g := (id : M → M)) (f := (id : M → M)) (x := g y)
-      ((L.contMDiff_id_chartedSpace (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
-      ((L.contMDiff_id_chartedSpace_symm (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
+      ((L.contMDiff_id_chartedSpace_left (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
+      ((L.contMDiff_id_chartedSpace_right (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
     rwa [Function.comp_id, orientationSign_id, orientationSign_of_isOrientationPreservingAt
       (o.isOrientationPreservingAt_id_rechart L _), one_mul, eq_comm] at h
   have h := orientationSign_comp (o := o') (o' := o) (o'' := o.rechart L)
     (g := (id : M → M)) (f := g) (x := y)
-    ((L.contMDiff_id_chartedSpace_symm (M := M) (n := 1)).mdifferentiableAt one_ne_zero) hg
+    ((L.contMDiff_id_chartedSpace_right (M := M) (n := 1)).mdifferentiableAt one_ne_zero) hg
   rwa [Function.id_comp, hid, one_mul] at h
 
 end Manifold.Orientation
