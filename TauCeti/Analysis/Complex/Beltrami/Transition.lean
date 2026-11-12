@@ -71,11 +71,9 @@ theorem differentiableAt_symm_trans_of_fderiv_comp (hw : w ∈ (e₁.symm.trans 
     e₁.hasFDerivAt_symm hw.1 (hL ▸ hd₁.hasFDerivAt)
   have hD := hd₂.hasFDerivAt.comp w hsymm
   refine (hD.complexOfReal_hasFDerivAt ?_).differentiableAt
-  -- `L⁻¹` carries multiplication by `I` to `J z`.
-  have hLJ : L.symm I = J z (L.symm 1) := by
-    apply L.injective
-    rw [L.apply_symm_apply, ← ContinuousLinearEquiv.coe_coe, hL, hJ₁, ← hL,
-      ContinuousLinearEquiv.coe_coe, L.apply_symm_apply, mul_one]
+  -- `L` carries `J z` to multiplication by `I`, so `L⁻¹` carries `I` to `J z`.
+  have hLJ' : ∀ v, L (J z v) = I * L v := by simpa [← hL] using hJ₁
+  have hLJ : L.symm I = J z (L.symm 1) := L.injective (by simp [hLJ'])
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, smul_eq_mul]
   rw [hLJ, hJ₂]
 
