@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
-import TauCeti.Probability.Distributions.Gaussian.Moments
-import TauCeti.Probability.Moments.SampleMean
+import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Probability.Independence.Integration
 
 /-!
 # The isometry for elementary Brownian integrals
@@ -45,12 +45,6 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {ξ η : Ω → ℝ}
   {s t u v : ℝ≥0}
 
-/-- A height known at the left endpoint is independent of the following Brownian increment. -/
-private theorem indepFun_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
-    (hξ : StronglyMeasurable[ℱ s] ξ) : IndepFun ξ (W t - W s) P :=
-  (IndepFun_iff_Indep _ _ _).2
-    (indep_of_indep_of_le_left (hW.indep_sub hst).symm hξ.measurable.comap_le)
-
 /-- A square-integrable height known at the left endpoint times a Brownian increment
 is square integrable. -/
 theorem memLp_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
@@ -58,18 +52,14 @@ theorem memLp_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
     MemLp (fun ω => ξ ω * (W t ω - W s ω)) 2 P := by
   have hΔ : MemLp (W t - W s) 2 P :=
     (hW.hasLaw_sub_of_le hst).memLp (memLp_id_gaussianReal 2)
-  have hi := ((hW.indepFun_sub hst hξ).comp (measurable_id.pow_const 2)
-    (measurable_id.pow_const 2)).integrable_mul hξ₂.integrable_sq hΔ.integrable_sq
-  apply (memLp_two_iff_integrable_sq (hξ₂.aestronglyMeasurable.mul
-    hΔ.aestronglyMeasurable)).2
-  simpa only [Pi.mul_def, Function.comp_apply, id_eq, mul_pow, Pi.sub_apply] using hi
+  exact (hW.indepFun_sub hst hξ.measurable).memLp_two_mul hξ₂ hΔ
 
 /-- A measurable height known at the left endpoint times a Brownian increment has mean zero.
 No integrability is required: the Bochner integral is zero also in the nonintegrable case. -/
 theorem integral_mul_sub_eq_zero (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
     (hξ : StronglyMeasurable[ℱ s] ξ) :
     ∫ ω, ξ ω * (W t ω - W s ω) ∂P = 0 := by
-  have h := (hW.indepFun_sub hst hξ).integral_fun_mul_eq_mul_integral
+  have h := (hW.indepFun_sub hst hξ.measurable).integral_fun_mul_eq_mul_integral
     (hξ.mono (ℱ.le s)).aestronglyMeasurable
     (hW.adapted.measurable.sub hW.adapted.measurable).aestronglyMeasurable
   have hmean : ∫ ω, W t ω - W s ω ∂P = 0 := by
@@ -83,12 +73,9 @@ theorem integral_sq_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s �
     (hξ : StronglyMeasurable[ℱ s] ξ) :
     ∫ ω, (ξ ω * (W t ω - W s ω)) ^ 2 ∂P =
       (∫ ω, ξ ω ^ 2 ∂P) * ((t : ℝ) - s) := by
-  have hΔ : ∫ ω, (W t ω - W s ω) ^ 2 ∂P = ((t : ℝ) - s) := by
-    have h := (hW.hasLaw_sub_of_le hst).integral_comp
-      (f := fun x : ℝ => x ^ 2) (by fun_prop)
-    simpa [Function.comp_def, integral_sq_gaussianReal, NNReal.coe_sub hst] using h
+  have hΔ := hW.toIsPreBrownianReal.integral_sq_sub_of_le hst
   simp_rw [mul_pow]
-  have h := ((hW.indepFun_sub hst hξ).comp (measurable_id.pow_const 2)
+  have h := ((hW.indepFun_sub hst hξ.measurable).comp (measurable_id.pow_const 2)
     (measurable_id.pow_const 2)).integral_fun_mul_eq_mul_integral
       ((hξ.mono (ℱ.le s)).measurable.pow_const 2).aestronglyMeasurable
       ((hW.adapted.measurable.sub hW.adapted.measurable).pow_const 2).aestronglyMeasurable
@@ -148,15 +135,9 @@ theorem integral_sq_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     rcases hij.lt_or_gt with hij | hij
     · exact hoff i j hi hj hij
     · simpa only [mul_comm] using hoff j i hj hi hij
-  have hiso := TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
-    (X := Z) (s := range n)
-    (fun i hi j hj => by
-      simpa only [Real.inner_apply, Pi.mul_def] using
-        (hZ i (mem_range.mp hi)).integrable_mul (hZ j (mem_range.mp hj)))
-    (fun i hi j hj hij => by
-      simpa only [Real.inner_apply] using hpair i j (mem_range.mp hi) (mem_range.mp hj) hij)
-  simp only [Real.norm_eq_abs, sq_abs] at hiso
-  rw [hiso]
+  rw [integral_sq_sum_of_pairwise_integral_mul_eq_zero
+    (fun i hi ↦ hZ i (mem_range.mp hi))
+    (fun i hi j hj hij ↦ hpair i j (mem_range.mp hi) (mem_range.mp hj) hij)]
   exact sum_congr rfl fun i hi =>
     hW.integral_sq_mul_sub (hstep i (mem_range.mp hi)) (ha i (mem_range.mp hi))
 
