@@ -119,7 +119,7 @@ theorem mdifferentiable_onePointMap_eval (hp : 0 < p.natDegree) :
   | infty =>
     refine MDifferentiableAt.congr_of_eventuallyEq ?_ (onePointMap_eval_eventuallyEq_infty hp)
     exact (mdifferentiableAt_atlas_symm (Or.inr rfl) (by simp)).comp _
-      ((analyticAt_pow_div_eval_reverse (ne_zero_of_natDegree_gt hp)
+      ((analyticAt_pow_div_eval_reverse p
         _).differentiableAt.mdifferentiableAt.comp_of_eq _
         (mdifferentiableAt_atlas (Or.inr rfl) (by simp)) (by simp))
   | coe z =>
@@ -136,43 +136,86 @@ theorem mdifferentiable_onePointMap_eval (hp : 0 < p.natDegree) :
       (p.differentiableAt.mdifferentiableAt.comp _
         (mdifferentiableAt_atlas (Or.inl rfl) (by simp)))
 
-/-- At a finite point `z`, the local multiplicity of the extension of a nonconstant polynomial `p`
-to the Riemann sphere is the multiplicity of `z` as a root of `p - p(z)`. -/
-theorem localMultiplicity_onePointMap_eval_coe (hp : 0 < p.natDegree) (z : ℂ) :
+/-- At a finite point `z`, the local multiplicity of the extension of a polynomial `p` to the
+Riemann sphere is the multiplicity of `z` as a root of `p - p(z)`. For constant `p` both sides
+are `0`. -/
+theorem localMultiplicity_onePointMap_eval_coe (z : ℂ) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (z : OnePoint ℂ) =
       (p - C (p.eval z)).rootMultiplicity z := by
-  have h := analyticOrderAt_eval (sub_C_ne_zero hp (p.eval z)) z
-  simp only [eval_sub, eval_C] at h
-  simp [localMultiplicity_def, analyticOrderNatAt, h]
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hp
+  · obtain ⟨c, rfl⟩ : ∃ c, p = C c := ⟨_, eq_C_of_natDegree_eq_zero h0⟩
+    rw [eval_C, sub_self, rootMultiplicity_zero]
+    refine localMultiplicity_eq_zero_of_eventuallyConst
+      (eventuallyConst_iff_exists_eventuallyEq.2 ⟨(c : OnePoint ℂ), ?_⟩)
+    filter_upwards [(isOpenEmbedding_coe (X := ℂ)).isOpen_range.mem_nhds (mem_range_self z)]
+      with x hx
+    obtain ⟨w, rfl⟩ := hx
+    simp
+  · have h := analyticOrderAt_eval (sub_C_ne_zero hp (p.eval z)) z
+    simp only [eval_sub, eval_C] at h
+    simp [localMultiplicity_def, analyticOrderNatAt, h]
 
 /-- At a finite point `z`, the extension of a nonconstant polynomial `p` to the Riemann sphere has
 local multiplicity greater than `1` exactly when `z` is a critical point of `p`. -/
 theorem one_lt_localMultiplicity_onePointMap_eval_coe_iff (hp : 0 < p.natDegree) {z : ℂ} :
     1 < localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (z : OnePoint ℂ) ↔
       p.derivative.IsRoot z := by
-  rw [localMultiplicity_onePointMap_eval_coe hp,
+  rw [localMultiplicity_onePointMap_eval_coe,
     one_lt_rootMultiplicity_iff_isRoot (sub_C_ne_zero hp (p.eval z))]
   simp
 
 /-- Away from the critical points of a nonconstant polynomial `p`, its extension to the Riemann
 sphere has local multiplicity `1`. -/
-theorem localMultiplicity_onePointMap_eval_coe_of_not_isRoot (hp : 0 < p.natDegree) {z : ℂ}
+theorem localMultiplicity_onePointMap_eval_coe_of_not_isRoot {z : ℂ}
     (hz : ¬ p.derivative.IsRoot z) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (z : OnePoint ℂ) = 1 := by
+  -- A constant polynomial has derivative `0`, so `hz` forces `p` to be nonconstant.
+  have hp : 0 < p.natDegree := by
+    by_contra h
+    exact hz (by simp [derivative_of_natDegree_zero (Nat.eq_zero_of_not_pos h)])
   have h1 := (one_lt_localMultiplicity_onePointMap_eval_coe_iff hp).not.2 hz
   have h0 : 0 < localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (z : OnePoint ℂ) := by
-    rw [localMultiplicity_onePointMap_eval_coe hp]
+    rw [localMultiplicity_onePointMap_eval_coe]
     exact (rootMultiplicity_pos (sub_C_ne_zero hp (p.eval z))).2 (by simp)
   omega
 
-/-- The extension of a nonconstant polynomial `p` to the Riemann sphere has local multiplicity
-the degree of `p` at `∞`, where it is `w ↦ w ^ d / p.reverse.eval w` in the inverted chart. -/
+/-- The extension of a polynomial `p` to the Riemann sphere has local multiplicity the degree of
+`p` at `∞`, where for nonconstant `p` it is `w ↦ w ^ d / p.reverse.eval w` in the inverted chart.
+For constant `p` both sides are `0`. -/
 @[simp]
-theorem localMultiplicity_onePointMap_eval_infty (hp : 0 < p.natDegree) :
+theorem localMultiplicity_onePointMap_eval_infty :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ p.eval z) (∞ : OnePoint ℂ) = p.natDegree := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hp
+  · -- In the inverted chart a constant map is `0` at `0` and the constant `c⁻¹` elsewhere.
+    obtain ⟨c, rfl⟩ : ∃ c, p = C c := ⟨_, eq_C_of_natDegree_eq_zero h0⟩
+    rw [natDegree_C, localMultiplicity_def]
+    have hg : (fun w : ℂ ↦ chartAt ℂ (OnePoint.map (fun z : ℂ ↦ (C c).eval z) (∞ : OnePoint ℂ))
+        (OnePoint.map (fun z : ℂ ↦ (C c).eval z) ((chartAt ℂ (∞ : OnePoint ℂ)).symm w)) -
+          chartAt ℂ (OnePoint.map (fun z : ℂ ↦ (C c).eval z) (∞ : OnePoint ℂ))
+            (OnePoint.map (fun z : ℂ ↦ (C c).eval z) (∞ : OnePoint ℂ))) =
+        fun w ↦ if w = 0 then 0 else c⁻¹ := by
+      funext w
+      rcases eq_or_ne w 0 with rfl | hw
+      · simp
+      · simp [hw, invChart_symm_of_ne_zero]
+    rw [hg, chartAt_infty, invChart_infty, analyticOrderNatAt]
+    by_cases hc : c = 0
+    · have : analyticOrderAt (fun w : ℂ ↦ if w = 0 then (0 : ℂ) else c⁻¹) 0 = ⊤ := by
+        simp [hc]
+      simp [this]
+    · have : analyticOrderAt (fun w : ℂ ↦ if w = 0 then (0 : ℂ) else c⁻¹) 0 = 0 := by
+        rw [analyticOrderAt_eq_zero]
+        refine Or.inl fun h ↦ ?_
+        have h2 : Tendsto (fun w : ℂ ↦ if w = 0 then (0 : ℂ) else c⁻¹) (𝓝[≠] 0) (𝓝 c⁻¹) :=
+          tendsto_const_nhds.congr'
+            (eventually_nhdsWithin_of_forall fun w (hw : w ≠ 0) ↦ by simp [hw])
+        have h3 := tendsto_nhds_unique (h.continuousAt.tendsto.mono_left nhdsWithin_le_nhds) h2
+        simp at h3
+        exact hc h3.symm
+      simp [this]
   have h0 := eval_zero_reverse_ne_zero (ne_zero_of_natDegree_gt hp)
   have h : analyticOrderAt (fun w : ℂ ↦ w ^ p.natDegree / p.reverse.eval w) 0 = p.natDegree :=
-    (analyticAt_pow_div_eval_reverse (ne_zero_of_natDegree_gt hp) _).analyticOrderAt_eq_natCast.2
+    (analyticAt_pow_div_eval_reverse p _).analyticOrderAt_eq_natCast.2
       ⟨fun w ↦ (p.reverse.eval w)⁻¹, ((AnalyticOnNhd.eval_polynomial _) 0 (mem_univ _)).inv h0,
         inv_ne_zero h0,
         .of_forall fun w ↦ by simp [div_eq_mul_inv]⟩
@@ -211,7 +254,7 @@ theorem branchValues_spherePolynomial (hp : 1 < p.natDegree) :
       insert ∞ ((↑) '' p.criticalValues ℂ) := by
   refine (branchValues_spherePolynomial_subset _).antisymm (insert_subset_iff.2 ⟨?_, ?_⟩)
   · refine (mem_branchValues_iff _ _).2 ⟨∞, by simp, ?_⟩
-    rwa [coe_spherePolynomial, localMultiplicity_onePointMap_eval_infty (zero_lt_one.trans hp)]
+    rwa [coe_spherePolynomial, localMultiplicity_onePointMap_eval_infty]
   · rintro _ ⟨_, hy, rfl⟩
     obtain ⟨z, hz, rfl⟩ :=
       (mem_criticalValues_self_iff (derivative_ne_zero.mpr (zero_lt_one.trans hp).ne')).1 hy
@@ -222,15 +265,27 @@ theorem branchValues_spherePolynomial (hp : 1 < p.natDegree) :
 end FiniteHolomorphicMap
 
 open FiniteHolomorphicMap in
-/-- The extension of a nonconstant polynomial `p` to the Riemann sphere has degree the degree of
-`p`: its fibre over `∞` is the single point `∞`, of local multiplicity the degree of `p`. -/
+/-- The extension of a polynomial `p` to the Riemann sphere has degree the degree of `p`: for
+nonconstant `p` its fibre over `∞` is the single point `∞`, of local multiplicity the degree of
+`p`. For constant `p` every local multiplicity and the degree are `0`. -/
 @[simp]
-theorem degree_onePointMap_eval (hp : 0 < p.natDegree) :
+theorem degree_onePointMap_eval :
     degree (OnePoint.map fun z : ℂ ↦ p.eval z) = p.natDegree := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hp
+  · have hfib (y : OnePoint ℂ) :
+        fiberMultiplicitySum (OnePoint.map fun z : ℂ ↦ p.eval z) y = 0 := by
+      rw [fiberMultiplicitySum_def]
+      refine finsum_mem_eq_zero_of_forall_eq_zero fun x _ ↦ ?_
+      induction x using OnePoint.rec with
+      | infty => rw [localMultiplicity_onePointMap_eval_infty, h0]
+      | coe z =>
+        obtain ⟨c, rfl⟩ : ∃ c, p = C c := ⟨_, eq_C_of_natDegree_eq_zero h0⟩
+        rw [localMultiplicity_onePointMap_eval_coe, eval_C, sub_self, rootMultiplicity_zero]
+    simp [degree_def, hfib, h0]
   have hne : ∀ x, ¬ EventuallyConst (OnePoint.map fun z : ℂ ↦ p.eval z) (𝓝 x) := by
     simpa using (spherePolynomial hp).not_eventuallyConst
   rw [← fiberMultiplicitySum_eq_degree (mdifferentiable_onePointMap_eval hp) hne ∞,
     fiberMultiplicitySum_def, preimage_onePointMap_infty, finsum_mem_singleton,
-    localMultiplicity_onePointMap_eval_infty hp]
+    localMultiplicity_onePointMap_eval_infty]
 
 end TauCeti.RiemannSurface

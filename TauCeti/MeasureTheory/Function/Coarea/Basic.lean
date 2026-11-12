@@ -10,9 +10,11 @@ public import TauCeti.MeasureTheory.Function.Coarea.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # The coarea formula for maps with surjective derivative
@@ -34,10 +36,11 @@ measurable set.
 Suppose that `f` is approximated on `s` by a linear map `L` up to `δ`, in the sense of
 `ApproximatesLinearOn`, and that `M` is a continuous linear right inverse of `L`. The map
 `h x = x + M (f x - L x)` satisfies `L ∘ h = f`, and it is approximated on `s` by the identity up to
-`c = δ ‖M‖`. When `c < 1`, it distorts distances on `s` by factors between `1 - c` and `1 + c`,
-and it maps each fibre `s ∩ f ⁻¹' {y}` onto the fibre `h '' s ∩ L ⁻¹' {y}` of the linear map `L`.
-The linear coarea formula `LinearMap.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton`
-for `h '' s` then gives the coarea formula for `f` on `s` up to factors close to `1`
+`c = δ ‖M‖` (`TauCeti.Analysis.Calculus.ApproximatesLinearOn`). When `c < 1`, it distorts distances
+on `s` by factors between `1 - c` and `1 + c`, and it maps each fibre `s ∩ f ⁻¹' {y}` onto the
+fibre `h '' s ∩ L ⁻¹' {y}` of the linear map `L`. The linear coarea formula
+`LinearMap.lintegral_euclideanHausdorffMeasure_inter_preimage_singleton` for `h '' s` then gives the
+coarea formula for `f` on `s` up to factors close to `1`
 (`ApproximatesLinearOn.lintegral_euclideanHausdorffMeasure_inter_preimage_le`,
 `ApproximatesLinearOn.ofReal_normDet_adjoint_mul_volume_le`).
 
@@ -46,7 +49,7 @@ To globalize, fix `τ > 1`. Splitting `s` into the level sets `τ ^ j ≤ J f x 
 `exists_partition_approximatesLinearOn_of_hasFDerivWithinAt` gives countably many disjoint
 measurable pieces on which both sides of the formula agree up to the factor `τ²`. The fibre
 measures of the pieces are measurable functions of the fibre up to null sets
-(`LipschitzOnWith.aemeasurable_euclideanHausdorffMeasure_inter_preimage`), so the estimates add
+(`LocallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage`), so the estimates add
 up, and `τ → 1` gives the formula for measurable `s`. A Lebesgue-null set has null fibres for
 almost every `y` by Eilenberg's inequality, which extends the formula to Lebesgue-measurable `s`.
 The structure follows the proof of the area formula in
@@ -57,6 +60,10 @@ The structure follows the proof of the area formula in
 * `ApproximatesLinearOn.lintegral_euclideanHausdorffMeasure_inter_preimage_le`,
   `ApproximatesLinearOn.ofReal_normDet_adjoint_mul_volume_le`: the coarea formula up to a
   controlled factor for a map approximated by a linear map with a right inverse.
+* `TauCeti.measurable_normDet_adjoint_fderiv`,
+  `TauCeti.measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero`,
+  `TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv`: Borel measurability of the
+  coarea Jacobian and of the regular coarea locus.
 * `lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv`:
   the coarea formula for maps with surjective derivative.
 * `ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt`: almost every
@@ -74,88 +81,32 @@ public section
 open MeasureTheory Measure Set Filter Metric Module Function
 open scoped NNReal ENNReal Topology
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
-  {s : Set E} {δ : ℝ≥0}
-
 namespace ApproximatesLinearOn
 
-/-! ### Straightening a map along a right inverse of its linear approximation -/
+/-! ### The coarea formula near a linear map -/
 
-/-- The map `x ↦ x + M (f x - L x)` is approximated on `s` by the identity up to `δ ‖M‖`. -/
-private theorem approximatesLinearOn_straighten (hf : ApproximatesLinearOn f L s δ) :
-    ApproximatesLinearOn (fun x ↦ x + M (f x - L x))
-      (ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) s (δ * ‖M‖₊) := by
-  refine LipschitzOnWith.approximatesLinearOn ?_
-  have h : (fun x ↦ x + M (f x - L x)) - ⇑(ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) =
-      M ∘ (f - ⇑L) := by
-    ext x
-    simp
-  rw [h, mul_comm]
-  exact M.lipschitzWith.comp_lipschitzOnWith hf.lipschitzOnWith
+section NormedSpace
 
-/-- The map `x ↦ x + M (f x - L x)` is `(1 + δ ‖M‖)`-Lipschitz on `s`. -/
-private theorem lipschitzOnWith_straighten (hf : ApproximatesLinearOn f L s δ) :
-    LipschitzOnWith (1 + δ * ‖M‖₊) (fun x ↦ x + M (f x - L x)) s := by
-  refine lipschitzOnWith_iff_restrict.2
-    ((approximatesLinearOn_straighten hf).lipschitzWith.weaken ?_)
-  gcongr
-  rw [ContinuousLinearEquiv.coe_refl, ← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
-  exact ContinuousLinearMap.norm_id_le
-
-/-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` expands distances on `s` by at least the
-factor `1 - δ ‖M‖`. -/
-private theorem antilipschitzWith_straighten (hf : ApproximatesLinearOn f L s δ)
-    (hδ : δ * ‖M‖₊ < 1) :
-    AntilipschitzWith (1 - δ * ‖M‖₊)⁻¹ (s.domRestrict fun x ↦ x + M (f x - L x)) := by
-  -- The identity has norm `1` unless `E` is trivial.
-  cases subsingleton_or_nontrivial E
-  · exact AntilipschitzWith.of_subsingleton
-  simpa using (approximatesLinearOn_straighten hf).antilipschitzWith (Or.inr (by simpa using hδ))
-
-/-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` is injective on `s`. -/
-private theorem injOn_straighten (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) :
-    InjOn (fun x ↦ x + M (f x - L x)) s :=
-  injOn_iff_injective.2 (antilipschitzWith_straighten hf hδ).injective
-
-/-- The map `x ↦ x + M (f x - L x)` sends the fibre `s ∩ f ⁻¹' {y}` onto the fibre of the linear
-map `L` through its image. -/
-private theorem image_straighten_inter_preimage (hM : RightInverse M L) (y : F) :
-    (fun x ↦ x + M (f x - L x)) '' (s ∩ f ⁻¹' {y}) =
-      (fun x ↦ x + M (f x - L x)) '' s ∩ L ⁻¹' {y} := by
-  have hL (x : E) : L (x + M (f x - L x)) = f x := by rw [map_add, hM, add_sub_cancel]
-  ext z
-  simp only [mem_image, mem_inter_iff, mem_preimage, mem_singleton_iff]
-  constructor
-  · rintro ⟨x, ⟨hx, rfl⟩, rfl⟩
-    exact ⟨⟨x, hx, rfl⟩, hL x⟩
-  · rintro ⟨⟨x, hx, rfl⟩, hy⟩
-    exact ⟨x, ⟨hx, (hL x).symm.trans hy⟩, rfl⟩
-
-variable [MeasurableSpace E] [BorelSpace E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] [BorelSpace E]
+  {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E} {s : Set E} {δ : ℝ≥0}
 
 /-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` shrinks the `d`-dimensional measure of
 subsets of `s` by at most the factor `(1 - δ ‖M‖)ᵈ`. -/
 private theorem euclideanHausdorffMeasure_le_image_straighten
     (hf : ApproximatesLinearOn f L s δ) (hδ : δ * ‖M‖₊ < 1) {t : Set E} (ht : t ⊆ s) (d : ℕ) :
     μHE[d] t ≤ ((1 - δ * ‖M‖₊)⁻¹ ^ d : ℝ≥0) * μHE[d] ((fun x ↦ x + M (f x - L x)) '' t) := by
-  set h : E → E := fun x ↦ x + M (f x - L x)
-  -- The inverse `g` of `h` on `s` is `(1 - δ ‖M‖)⁻¹`-Lipschitz on `h '' s`.
-  set g := invFunOn h s
-  have hg (x : E) (hx : x ∈ s) : g (h x) = x := (injOn_straighten hf hδ).leftInvOn_invFunOn hx
-  have hlip : LipschitzOnWith (1 - δ * ‖M‖₊)⁻¹ g (h '' s) :=
-    lipschitzOnWith_iff_restrict.2 ((antilipschitzWith_straighten hf hδ).to_rightInvOn'
-      (surjOn_image h s).mapsTo_invFunOn (surjOn_image h s).rightInvOn_invFunOn)
-  have himage : t = g '' (h '' t) := by
-    rw [image_image]
-    exact ((image_congr fun x hx ↦ hg x (ht hx)).trans (image_id' t)).symm
+  obtain ⟨g, hlip, hg⟩ := hf.exists_lipschitzOnWith_leftInvOn_id_add_comp_sub hδ
   rw [ENNReal.coe_pow]
-  conv_lhs => rw [himage]
+  conv_lhs => rw [← hg.image_image' ht]
   exact (hlip.mono (image_mono ht)).euclideanHausdorffMeasure_image_le d
 
-/-! ### The coarea formula near a linear map -/
+end NormedSpace
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
+  {s : Set E} {δ : ℝ≥0} [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
 
 /-- **Upper coarea bound near a linear map.** If `f` is approximated on `s` up to `δ` by a linear
 map `L` with a right inverse `M`, and `δ ‖M‖ < 1`, then the integral of the
@@ -173,12 +124,12 @@ theorem lintegral_euclideanHausdorffMeasure_inter_preimage_le
   have hfib (y : F) : μHE[k] (s ∩ f ⁻¹' {y}) ≤
       ((1 - δ * ‖M‖₊)⁻¹ ^ k : ℝ≥0) * μHE[k] (T ∩ (L : E →ₗ[ℝ] F) ⁻¹' {y}) := by
     refine (euclideanHausdorffMeasure_le_image_straighten hf hδ inter_subset_left k).trans ?_
-    rw [image_straighten_inter_preimage hM, ContinuousLinearMap.coe_coe]
+    rw [hM.image_id_add_comp_sub_inter_preimage, ContinuousLinearMap.coe_coe]
     gcongr
     exact subset_toMeasurable _ _
   have hvol : volume (h '' s) ≤ ((1 + δ * ‖M‖₊) ^ finrank ℝ E : ℝ≥0) * volume s := by
     rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume, ENNReal.coe_pow]
-    exact (lipschitzOnWith_straighten hf).euclideanHausdorffMeasure_image_le _
+    exact (hf.lipschitzOnWith_id_add_comp_sub M).euclideanHausdorffMeasure_image_le _
   calc ∫⁻ y, μHE[k] (s ∩ f ⁻¹' {y})
       ≤ ∫⁻ y, ((1 - δ * ‖M‖₊)⁻¹ ^ k : ℝ≥0) * μHE[k] (T ∩ (L : E →ₗ[ℝ] F) ⁻¹' {y}) :=
         lintegral_mono hfib
@@ -204,7 +155,7 @@ theorem ofReal_normDet_adjoint_mul_volume_le
         ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) := by
   set h : E → E := fun x ↦ x + M (f x - L x)
   set k := finrank ℝ E - finrank ℝ F
-  have hlip := lipschitzOnWith_straighten (M := M) hf
+  have hlip := hf.lipschitzOnWith_id_add_comp_sub M
   -- `h '' s` is Lebesgue measurable: `h` is a continuous injection on a Borel subset of `s` of
   -- full measure, and Lipschitz on the null remainder.
   have hmeas : NullMeasurableSet (h '' s) := by
@@ -216,14 +167,14 @@ theorem ofReal_normDet_adjoint_mul_volume_le
       rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume, (ae_eq_set.1 hst).2, mul_zero]
     rw [← union_sdiff_cancel hts, image_union]
     exact (ht.image_of_continuousOn_injOn (hlip.continuousOn.mono hts)
-      ((injOn_straighten hf hδ).mono hts)).nullMeasurableSet.union
+      ((hf.injOn_id_add_comp_sub hδ).mono hts)).nullMeasurableSet.union
       (NullMeasurableSet.of_null hnull)
   have hvol : volume s ≤ ((1 - δ * ‖M‖₊)⁻¹ ^ finrank ℝ E : ℝ≥0) * volume (h '' s) := by
     simpa only [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] using
       euclideanHausdorffMeasure_le_image_straighten hf hδ subset_rfl (finrank ℝ E)
   have hfib (y : F) : μHE[k] (h '' s ∩ (L : E →ₗ[ℝ] F) ⁻¹' {y}) ≤
       ((1 + δ * ‖M‖₊) ^ k : ℝ≥0) * μHE[k] (s ∩ f ⁻¹' {y}) := by
-    rw [ContinuousLinearMap.coe_coe, ← image_straighten_inter_preimage hM, ENNReal.coe_pow]
+    rw [ContinuousLinearMap.coe_coe, ← hM.image_id_add_comp_sub_inter_preimage, ENNReal.coe_pow]
     exact (hlip.mono inter_subset_left).euclideanHausdorffMeasure_image_le k
   calc ENNReal.ofReal L.adjoint.normDet * volume s
       ≤ ENNReal.ofReal L.adjoint.normDet *
@@ -242,12 +193,47 @@ theorem ofReal_normDet_adjoint_mul_volume_le
 
 end ApproximatesLinearOn
 
+namespace TauCeti
+
+/-- The coarea Jacobian `x ↦ (fderiv ℝ f x)†.normDet` of a map between finite-dimensional real
+inner product spaces is Borel measurable. -/
+@[fun_prop]
+theorem measurable_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (f : E → F) :
+    Measurable fun x ↦ (fderiv ℝ f x).adjoint.normDet :=
+  ContinuousLinearMap.continuous_normDet_adjoint.measurable.comp (measurable_fderiv ℝ f)
+
+/-- The set of differentiability points with nonzero coarea Jacobian is Borel measurable. -/
+theorem measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    (f : E → F) :
+    MeasurableSet {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).adjoint.normDet ≠ 0} :=
+  (measurableSet_of_differentiableAt ℝ f).inter
+    (measurableSet_eq_fun (measurable_normDet_adjoint_fderiv f) measurable_const).compl
+
+/-- The regular coarea locus, where `f` is differentiable with surjective derivative, is Borel
+measurable. -/
+theorem measurableSet_setOf_differentiableAt_surjective_fderiv {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    (f : E → F) :
+    MeasurableSet {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)} := by
+  convert measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero f using 1
+  ext x
+  exact and_congr_right' ContinuousLinearMap.normDet_adjoint_ne_zero_iff.symm
+
+end TauCeti
+
 namespace MeasureTheory
 
 /-! ### Globalization -/
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] [MeasurableSpace E] [BorelSpace E]
-  [MeasurableSpace F] [BorelSpace F]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] {f : E → F} {L : E →L[ℝ] F} {M : F →L[ℝ] E}
+  {s : Set E} {δ : ℝ≥0} [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+  [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
 
 /-- The coarea formula on one piece, up to factors: if `f` is approximated on `Q` by a linear map
 `L` with a right inverse `M`, with a precision for which the factors of the two linear coarea
@@ -270,7 +256,7 @@ private theorem lintegral_le_and_setLIntegral_le {Q : Set E} (hQ : MeasurableSet
           rw [← setLIntegral_const]
           exact mul_le_mul' (ENNReal.coe_le_coe.2 h₁) (setLIntegral_mono' hQ fun x hx ↦ (hj x hx).1)
       _ = _ := by rw [lintegral_const_mul' _ _ ENNReal.coe_ne_top, ← mul_assoc, ENNReal.coe_mul]
-  · calc ∫⁻ x in Q, j x ≤ ∫⁻ x in Q, (σ : ℝ≥0∞) * ENNReal.ofReal L.adjoint.normDet :=
+  · calc ∫⁻ x in Q, j x ≤ ∫⁻ _ in Q, (σ : ℝ≥0∞) * ENNReal.ofReal L.adjoint.normDet :=
           setLIntegral_mono' hQ fun x hx ↦ (hj x hx).2
       _ = σ * (ENNReal.ofReal L.adjoint.normDet * volume Q) := by
           rw [setLIntegral_const, mul_assoc]
@@ -331,9 +317,7 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
   set J : E → ℝ := fun x ↦ (fderiv ℝ f x).adjoint.normDet
   set S : ℤ → Set E := fun j ↦ s ∩ J ⁻¹' Ico ((τ : ℝ) ^ j) ((τ : ℝ) ^ (j + 1))
   have hSm (j : ℤ) : MeasurableSet (S j) :=
-    hs.inter (((ContinuousLinearMap.continuous_normDet.comp
-      ContinuousLinearMap.adjoint.continuous).measurable.comp
-        (measurable_fderiv ℝ f)) measurableSet_Ico)
+    hs.inter (TauCeti.measurable_normDet_adjoint_fderiv f measurableSet_Ico)
   have hSd : Pairwise (Disjoint on S) := by
     intro i j hij
     refine disjoint_left.2 fun x hi hj ↦ hij (le_antisymm ?_ ?_)
@@ -351,7 +335,8 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
     · exact (hSd hij).mono inter_subset_left inter_subset_left
   · refine Subset.antisymm (iUnion_subset fun p ↦ inter_subset_left.trans inter_subset_left)
       fun x hx ↦ ?_
-    obtain ⟨j, hj⟩ := exists_mem_Ico_zpow (LinearMap.normDet_adjoint_pos_iff.2 (hsurj x hx)) hτ'
+    obtain ⟨j, hj⟩ := exists_mem_Ico_zpow
+      (ContinuousLinearMap.normDet_adjoint_pos_iff.2 (hsurj x hx)) hτ'
     obtain ⟨n, hn⟩ := mem_iUnion.1 (ht_cover j ⟨hx, hj⟩)
     exact mem_iUnion.2 ⟨(j, n), ⟨hx, hj⟩, hn⟩
   · -- On a nonempty piece, `J A` and every `J f x` lie in the same interval `[τ ^ j, τ ^ (j + 1))`,
@@ -396,8 +381,9 @@ private theorem lintegral_le_and_setLIntegral_le_of_one_lt (hs : MeasurableSet s
   have hint : ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (s ∩ f ⁻¹' {y}) =
       ∑' p, ∫⁻ y, μHE[finrank ℝ E - finrank ℝ F] (P p ∩ f ⁻¹' {y}) := by
     simp_rw [hfib]
-    exact lintegral_tsum fun p ↦ (hK p).aemeasurable_euclideanHausdorffMeasure_inter_preimage
-      volume (hPm p).nullMeasurableSet le_add_tsub
+    exact lintegral_tsum fun p ↦
+      (hK p).locallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage
+        volume (hPm p).nullMeasurableSet le_add_tsub
   rw [hint, ← hPU, lintegral_iUnion hPm hPd, ← ENNReal.tsum_mul_left, ← ENNReal.tsum_mul_left]
   exact ⟨tsum_le_tsum fun p ↦ (hpiece p).1, tsum_le_tsum fun p ↦ (hpiece p).2⟩
 
@@ -430,19 +416,14 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt
   obtain ⟨t, A, -, -, hcover, happrox, -⟩ :=
     exists_partition_approximatesLinearOn_of_hasFDerivWithinAt f N f' hd (fun _ ↦ 1)
       fun _ ↦ one_ne_zero
-  have hnull (n : ℕ) : μHE[finrank ℝ F + (finrank ℝ E - finrank ℝ F)] (N ∩ t n) = 0 := by
-    have h : μHE[finrank ℝ E] (N ∩ t n) = 0 := by
-      rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
-      exact measure_mono_null inter_subset_left hN
-    rw [euclideanHausdorffMeasure_eq_zero_iff] at h ⊢
-    exact nonpos_iff_eq_zero.1
-      ((hausdorffMeasure_mono (by exact_mod_cast le_add_tsub) _).trans h.le)
+  have hnull (n : ℕ) : μHE[finrank ℝ F + (finrank ℝ E - finrank ℝ F)] (N ∩ t n) = 0 :=
+    TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero
+      (measure_mono_null inter_subset_left hN) le_add_tsub
   have hfib := ae_all_iff.2 fun n ↦ (lipschitzOnWith_iff_restrict.2
     (happrox n).lipschitzWith).ae_euclideanHausdorffMeasure_inter_preimage_eq_zero volume (hnull n)
   filter_upwards [hfib] with y hy
-  refine measure_mono_null (fun x hx ↦ ?_) (measure_iUnion_null hy)
-  obtain ⟨n, hn⟩ := mem_iUnion.1 (hcover hx.1)
-  exact mem_iUnion.2 ⟨n, ⟨hx.1, hn⟩, hx.2⟩
+  rw [← inter_eq_left.2 hcover, inter_iUnion, iUnion_inter]
+  exact measure_iUnion_null hy
 
 /-- **The coarea formula** for maps with surjective derivative. Let `E` and `F` be
 finite-dimensional real inner product spaces and let `f : E → F` be differentiable at every point

@@ -209,7 +209,7 @@ private theorem normSq_geodesicLine_rayToward_one_sub {A : ℍ} {q : ℍ ⊕ One
   have hQm : Complex.normSq ((Q : ℂ) - m) = r := by
     rw [← hQ]
     exact hg.normSq_geodesicLine_sub hp hq (by rwa [toComplex_inl]) hqm hre' 1
-  have hlt := hg.re_toComplex_lt_iff hgQ hp hq hre'
+  have hlt := hg.re_toComplex_lt_iff hgQ hq hre'
   rw [toComplex_inl, toComplex_inl, coe_re, coe_re] at hlt
   -- `Q ≠ A` are two points of `ℍ` on the same circle, so they have different real parts
   have hAQ : A.re ≠ Q.re := fun h ↦ by
@@ -305,7 +305,6 @@ second, to the right of `A` (each possibly an ideal endpoint), with `p` strictly
 second semicircle. Then the angle at `A` between the directions to `p` and `q` is the sum of the
 angles they make with the upward vertical through `A`. -/
 theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ} {m₁ ρ₁ m₂ ρ₂ : ℝ}
-    (hp : p ≠ .inr ∞) (hq : q ≠ .inr ∞)
     (hA₁ : Complex.normSq ((A : ℂ) - m₁) = ρ₁ ^ 2)
     (hp₁ : Complex.normSq (toComplex p - m₁) = ρ₁ ^ 2)
     (hA₂ : Complex.normSq ((A : ℂ) - m₂) = ρ₂ ^ 2)
@@ -314,6 +313,11 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
     (hp₂ : ρ₂ ^ 2 < Complex.normSq (toComplex p - m₂)) :
     vertexAngle (.inl A) p q =
       vertexAngle (.inl A) p (.inr ∞) + vertexAngle (.inl A) (.inr ∞) q := by
+  -- an ideal vertex `∞` among `p`, `q` makes one of the two summands vanish
+  rcases eq_or_ne p (.inr ∞) with rfl | hp
+  · rw [vertexAngle_self, zero_add]
+  rcases eq_or_ne q (.inr ∞) with rfl | hq
+  · rw [vertexAngle_self, add_zero]
   -- the angles at `A` are interior angles towards the points `B`, `C`, `D` at parameter `1` of
   -- the rays towards `q`, `∞` and `p`
   obtain ⟨hBm, hB⟩ := normSq_geodesicLine_rayToward_one_sub hq hA₂ hq₂ hAq.ne

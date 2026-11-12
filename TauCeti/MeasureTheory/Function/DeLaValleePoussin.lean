@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
-public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
 # The de la Vallée Poussin criterion
@@ -121,7 +121,7 @@ theorem exists_convexOn_superlinear_integrable {f : α → F} (hf : Integrable f
       Tendsto (fun t ↦ Φ t / t) atTop atTop ∧ Integrable (fun a ↦ Φ ‖f a‖) μ := by
   -- The positive parts `(‖f‖ - s)⁺` have integrals tending to zero as `s → ∞`.
   have htail : Tendsto (fun s : ℝ ↦ ∫⁻ a, ENNReal.ofReal (‖f a‖ - s) ∂μ) atTop (𝓝 0) := by
-    refine ((tendsto_lintegral_tsub_atTop hf.aestronglyMeasurable.enorm
+    refine ((tendsto_lintegral_tsub_atTop
       hf.hasFiniteIntegral.ne).comp Real.tendsto_toNNReal_atTop).congr' ?_
     filter_upwards [eventually_ge_atTop 0] with s hs
     simp only [Function.comp_apply, ← ofReal_norm, ENNReal.ofReal_sub _ hs]
@@ -139,7 +139,7 @@ theorem exists_convexOn_superlinear_integrable {f : α → F} (hf : Integrable f
   rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun a ↦ tsum_nonneg fun k ↦ le_max_right _ _)]
   calc ∫⁻ a, ENNReal.ofReal (∑' k, max (‖f a‖ - t k) 0) ∂μ
       = ∑' k, ∫⁻ a, ENNReal.ofReal (‖f a‖ - t k) ∂μ := by
-        simp only [ENNReal.ofReal_tsum_of_nonneg (fun k ↦ le_max_right _ _)
+        simp only [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ le_max_right _ _)
           (summable_max_sub_zero ht _), ENNReal.ofReal_max, ENNReal.ofReal_zero, zero_le,
           max_eq_left]
         exact lintegral_tsum fun k ↦
@@ -205,7 +205,7 @@ theorem unifIntegrable_of_lintegral_ofReal_le {Φ : ℝ → ℝ}
   obtain ⟨δ, hδ, hδT⟩ := ENNReal.exists_nnreal_pos_mul_lt ENNReal.coe_ne_top
     (ENNReal.half_pos hε.ne').ne'
   refine ⟨δ, by exact_mod_cast hδ, fun i s hs ↦ ?_⟩
-  rw [eLpNorm_one_eq_lintegral_enorm (hfm i).restrict]
+  rw [eLpNorm_one_eq_lintegral_eNorm (hfm i).restrict]
   calc ∫⁻ a in s, ‖f i a‖ₑ ∂μ ≤ T * μ s + ε / 2 := hT i s
     _ ≤ δ * T + ε / 2 := by
         rw [mul_comm (δ : ℝ≥0∞)]

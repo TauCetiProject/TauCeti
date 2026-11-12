@@ -204,8 +204,8 @@ theorem IsJordanCurve.ofReal_four_pi_mul_volume_filledHull_sdiff_eq_iff (hC : Is
   · refine iff_of_false (fun h ↦ ?_) ?_
     · rw [hfin, ENNReal.top_pow two_ne_zero] at h
       exact (by finiteness : ENNReal.ofReal (4 * π) * volume (filledHull C \ C) ≠ ∞) h
-    · rintro ⟨c, r, hr, rfl⟩
-      simp [Complex.euclideanHausdorffMeasure_sphere c hr.le] at hfin
+    · rintro ⟨c, r, _, rfl⟩
+      simp [Complex.euclideanHausdorffMeasure_sphere c] at hfin
   rw [← ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness), ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_pow, ← measureReal_def,
     hC.four_pi_mul_volume_real_filledHull_sdiff_eq_iff hfin]
