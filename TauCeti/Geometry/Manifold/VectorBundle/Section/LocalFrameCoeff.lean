@@ -71,11 +71,8 @@ theorem cutoffLocalFrameCoeff_apply (i : ι) (s : Cₛ^∞⟮I; F, V⟯) (y : M)
 theorem cutoffLocalFrameCoeff_mem_of_mem_smul_top (i : ι) {J : Ideal C^∞⟮I, M; ℝ⟯}
     {s : Cₛ^∞⟮I; F, V⟯} (hs : s ∈ J • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯)) :
     e.cutoffLocalFrameCoeff b ρ hρ i s ∈ J := by
-  refine Submodule.smul_induction_on hs (fun f hf t _ ↦ ?_) fun s t hs ht ↦ ?_
-  · rw [map_smul, smul_eq_mul]
-    exact J.mul_mem_right _ hf
-  · rw [map_add]
-    exact J.add_mem hs ht
+  simpa [smul_eq_mul, Ideal.mul_top] using
+    Submodule.smul_comap_le_comap_smul (e.cutoffLocalFrameCoeff b ρ hρ i) ⊤ J (by simpa using hs)
 
 /-- At a point where `ρ = 1` and the sections `fr i` agree with the local frame of `e`, a smooth
 section is the sum of its cut-off frame coefficients times the `fr i`. -/
