@@ -435,23 +435,37 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm [Fintyp
         (novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) a) =
       novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k))
         (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i i' => coefficientComparison q hq (E i i')) a) := by
-  -- The matrices of comparisons are functions of two indices; they are named as matrices so that
-  -- their products are matrix products, and the entry formula is applied as a term.
+  -- The matrices of comparisons are named as matrices so that their products are matrix
+  -- products. The count identity is a matrix identity, which the ring homomorphism
+  -- `coefficientComparison` carries to these matrices.
   set Φ' : Matrix ι₁ ι₀ (NovikovSeries R (PeriodGroup ω c) (-area ω c)) :=
     fun i k => coefficientComparison q hq (Φ i k)
   set D' : Matrix ι₀ ι₀ (NovikovSeries R (PeriodGroup ω c) (-area ω c)) :=
     fun k k' => coefficientComparison q hq (D k k')
   set E' : Matrix ι₁ ι₁ (NovikovSeries R (PeriodGroup ω c) (-area ω c)) :=
     fun i i' => coefficientComparison q hq (E i i')
-  have hm : Φ' * D' = E' * Φ' :=
-    Matrix.ext fun i k' => Matrix.mul_apply.trans (Eq.trans
-      (by simpa only [Φ', D', E', map_sum, _root_.map_mul] using
-        congrArg (coefficientComparison q hq) (hΦ i k')) Matrix.mul_apply.symm)
+  have hm : Φ' * D' = E' * Φ' := by
+    have h := congrArg (Matrix.map · (coefficientComparison q hq))
+      (Matrix.ext hΦ : Matrix.of Φ * Matrix.of D = Matrix.of E * Matrix.of Φ)
+    rwa [Matrix.map_mul, Matrix.map_mul] at h
   have h := congrArg (fun A => novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A a) hm
   simpa only [novikovMapOfMatrix_mul hF₁ hF₀ hF₀ r₁ r₀ r₀,
     novikovMapOfMatrix_mul hF₁ hF₀ hF₁ r₁ r₀ r₁, LinearMap.comp_apply] using h
 
 end ChainMap
+
+section Sign
+
+variable [Ring R]
+
+/-- The coefficient comparison commutes with the ground-ring signs `(-1)^m`, so it carries the
+signed count identities of class-indexed series to those of their comparisons. -/
+theorem coefficientComparison_negOnePowCast_smul (m : ℤ) (x : NovikovSeries R G ωG) :
+    coefficientComparison q hq (negOnePowCast R m • x) =
+      negOnePowCast R m • coefficientComparison q hq x := by
+  simp only [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def, map_zsmul]
+
+end Sign
 
 section Leibniz
 
@@ -495,10 +509,8 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add
             b) := by
   refine novikovMapOfMatrix_novikovProductOfMatrix_eq_add hF₁ hF₂ hF₀ r₁ r₂ r₀ _ _ _ _
     (even_cochain_vadd_sub hμ₁ n) (fun i j l => ?_) ha b
-  have h := congrArg (coefficientComparison q hq) (hL i j l)
-  simp only [map_sum, map_add, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-    Units.smul_def, map_zsmul] at h ⊢
-  exact h
+  simpa only [map_sum, map_add, _root_.map_mul, coefficientComparison_negOnePowCast_smul] using
+    congrArg (coefficientComparison q hq) (hL i j l)
 
 end Leibniz
 
@@ -561,10 +573,9 @@ theorem
     exact (even_degree ω c γ).neg
   · rw [hμ₂, show n - (degree ω c γ + μ₂ ⟨j, D⟩) - (n - μ₂ ⟨j, D⟩) = -degree ω c γ by ring]
     exact (even_degree ω c γ).neg
-  · have h := congrArg (coefficientComparison q hq) (hC i j l)
-    simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-      Units.smul_def, map_zsmul] at h ⊢
-    exact h
+  · simpa only [map_sum, map_add, map_sub, _root_.map_mul,
+      coefficientComparison_negOnePowCast_smul] using
+      congrArg (coefficientComparison q hq) (hC i j l)
 
 include hμ₁ hμ₂ in
 /-- **Graded commutativity of class-indexed counts on cohomology.** Under the identity of
@@ -759,10 +770,9 @@ theorem novikovProductOfMatrix_coefficientComparison_assoc_sub_eq_add
   refine novikovProductOfMatrix_assoc_sub_eq_add hF₁ hF₂ hF₃ hF₀ hF₁₂ hF₂₃ r₁ r₂ r₃ r₀ r₁₂ r₂₃
     _ _ _ _ _ _ _ _ _ (even_cochain_vadd_sub hμ₁ n) (even_cochain_vadd_sub hμ₂ n)
     (fun i j k l => ?_) ha hb x₃
-  have h := congrArg (coefficientComparison q hq) (hA i j k l)
-  simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-    Units.smul_def, map_zsmul] at h ⊢
-  exact h
+  simpa only [map_sum, map_add, map_sub, _root_.map_mul,
+    coefficientComparison_negOnePowCast_smul] using
+    congrArg (coefficientComparison q hq) (hA i j k l)
 
 end Associativity
 

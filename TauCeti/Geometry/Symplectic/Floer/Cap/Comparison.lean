@@ -48,7 +48,11 @@ This is the multiplicativity of the PSS map on capped generators, with the Novik
 both sides compared through `q^A ↦ e^(-q A)`. Neither product is defined by transporting the
 other.
 
-The kernel-level form of these statements is
+The kernel-level forms of these statements are
+`TauCeti.NovikovModule.kernelMap_kernelProduct_kernelMap_sub_kernelProduct`,
+`TauCeti.NovikovModule.kernelProduct_kernelMap_sub_kernelMap_kernelProduct` and
+`TauCeti.NovikovModule.kernelProduct_kernelMap_sub_kernelMap_kernelProduct_mem_coboundaries`; the
+downstream statement on cohomology is
 `TauCeti.NovikovModule.cohomologyMap_cohomologyProduct_kernelProduct_of_homotopy_inverse`. The
 count identities, index conditions and potential bounds are the hypotheses the compactified moduli
 spaces are to supply; no moduli space, orientation or count is constructed here.
@@ -142,10 +146,9 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_novi
   refine novikovMapOfMatrix_novikovProductOfMatrix_novikovMapOfMatrix_sub_novikovProductOfMatrix
     hF₁ hF₂ hF₀ hG₁ hG₂ hG₀ r₁ r₂ r₀ s₁ s₂ s₀ _ _ _ _ _ _ _ _ _
     (even_cochain_vadd_sub hν₁ n) (fun s t l => ?_) ha b
-  have h := congrArg (coefficientComparison q hq) (hC s t l)
-  simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-    Units.smul_def, map_zsmul] at h ⊢
-  exact h
+  simpa only [map_sum, map_add, map_sub, _root_.map_mul,
+    coefficientComparison_negOnePowCast_smul] using
+    congrArg (coefficientComparison q hq) (hC s t l)
 
 include hν₁ in
 /-- **Multiplicativity of the PSS maps of class-indexed counts up to homotopy.** Under the
@@ -213,20 +216,19 @@ theorem
     (fun k l => coefficientComparison q hq (Ψ₀ k l))
     _ _ _ (fun l m => coefficientComparison q hq (E₀ l m)) _ _ _
     (even_cochain_vadd_sub hν₁ n) (fun s t l => ?_) ?_ ?_ ha b
-  · have h := congrArg (coefficientComparison q hq) (hC s t l)
-    simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-      Units.smul_def, map_zsmul] at h ⊢
-    exact h
-  -- The matrices of comparisons are functions of two indices, so the entry formula for matrix
-  -- products is applied as a term rather than rewritten.
-  · refine Matrix.ext fun l k => Matrix.mul_apply.trans (Eq.trans ?_ Matrix.mul_apply.symm)
-    simpa only [map_sum, _root_.map_mul] using congrArg (coefficientComparison q hq) (hΦ₀ l k)
-  · refine Matrix.ext fun k k' => ?_
-    rw [Matrix.sub_apply, Matrix.add_apply, Matrix.one_apply]
-    refine (congrArg (· - _) Matrix.mul_apply).trans
-      (Eq.trans ?_ (congrArg₂ (· + ·) Matrix.mul_apply Matrix.mul_apply).symm)
-    simpa only [map_sum, map_sub, map_add, _root_.map_mul, apply_ite, _root_.map_one,
-      _root_.map_zero] using congrArg (coefficientComparison q hq) (hinv k k')
+  · simpa only [map_sum, map_add, map_sub, _root_.map_mul,
+      coefficientComparison_negOnePowCast_smul] using
+      congrArg (coefficientComparison q hq) (hC s t l)
+  -- The count identities are matrix identities, which the ring homomorphism
+  -- `coefficientComparison` carries to the matrices of comparisons.
+  · have h := congrArg (Matrix.map · (coefficientComparison q hq))
+      (Matrix.ext hΦ₀ : Matrix.of E₀ * Matrix.of Φ₀ = Matrix.of Φ₀ * Matrix.of D₀)
+    rwa [Matrix.map_mul, Matrix.map_mul] at h
+  · have h := congrArg (Matrix.map · (coefficientComparison q hq))
+      (Matrix.ext hinv : Matrix.of Ψ₀ * Matrix.of Φ₀ - 1 =
+        Matrix.of Y₀ * Matrix.of D₀ + Matrix.of D₀ * Matrix.of Y₀)
+    rwa [Matrix.map_sub _ (map_sub _), Matrix.map_add _ (map_add _), Matrix.map_mul,
+      Matrix.map_mul, Matrix.map_mul, Matrix.map_one _ (map_zero _) (map_one _)] at h
 
 include hν₁ in
 /-- **Multiplicativity of the PSS maps of class-indexed counts on cocycles.** Under the identities
