@@ -85,18 +85,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {L c : ℝ}
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- Replacing `H_0` by `0` keeps the end Hamiltonians periodic. -/
-private theorem periodic_update_zero (hH : ∀ q, Periodic (H q) 1) (q : Puncture) :
-    Periodic (update H zero 0 q) 1 :=
-  (forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩ q
-
-omit [FiniteDimensional ℝ V] in
-/-- Replacing `H_0` by `0` keeps the end Hamiltonians `C¹`. -/
-private theorem contDiff_update_zero (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (q : Puncture) :
-    ContDiff ℝ 1 (uncurry (update H zero 0 q)) :=
-  (forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2 ⟨contDiff_const, fun q _ => hHs q⟩ q
-
 /-- **The energy identity along the input-exchange family capped at `0`.** Let `K_c` be the member
 `c ∈ [0, 1]` of the input-exchange family capped at `0` along a neck of length `L > 4`, for
 period-one `C¹` Hamiltonians `H_q`, with components `K_s(z) = K_c(z)(1)` and `K_t(z) = K_c(z)(i)` in
@@ -146,8 +134,8 @@ theorem integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTru
       v).contDiffWithinAt
   have hK' (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ exchangePerturbation (update H zero 0) c (e.symm z) x v) (S ×ˢ univ) :=
-    fun p hp ↦ (contDiffAt_uncurry_exchangePerturbation (periodic_update_zero hH)
-      (contDiff_update_zero hHs) c (mem_thricePuncturedSphereReal_iff.2 hp.1) p.2
+    fun p hp ↦ (contDiffAt_uncurry_exchangePerturbation (periodic_update_zero hH zero)
+      (contDiff_update_zero hHs zero) c (mem_thricePuncturedSphereReal_iff.2 hp.1) p.2
         v).contDiffWithinAt
   -- The two data agree on `S` outside the truncation `T`.
   have hagree (v : ℂ) : EqOn (fun z x ↦ cappedExchangePerturbation H L c (e.symm z) x v)
@@ -162,7 +150,7 @@ theorem integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTru
     (hagree Complex.I)
   -- The energy identity of the input-exchange family with `H_0` switched off.
   have h₂ := ω.integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation
-    (periodic_update_zero hH) (contDiff_update_zero hHs) hc₀ hc₁ (hu.mono hSU) hR₂
+    (periodic_update_zero hH zero) (contDiff_update_zero hHs zero) hc₀ hc₁ (hu.mono hSU) hR₂
   -- Both curvatures vanish on `S` outside `T`, so their integrals over `S` are those over `T`.
   have hR' (z : ℝ × ℝ) (hz : z ∈ S \ T) :=
     hamiltonianCurvature_exchangePerturbation_update_zero_eq_zero ω hH hHs hc₀ hc₁ hR₂ hz.1 hz.2

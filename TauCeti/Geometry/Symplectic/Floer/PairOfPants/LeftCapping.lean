@@ -346,21 +346,12 @@ theorem contDiffAt_uncurry_cappedExchangePerturbation (hH : ∀ q, Periodic (H q
     · exact Or.inr ⟨h, hz⟩
   -- The capped part, which does not depend on `c`.
   have hin := contDiffAt_uncurry_plumbedPerturbation_single_inf (q := zero)
-    (Hb := update H inf 0) (by decide)
-    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
-    ((forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
-      ⟨contDiff_const, fun q _ => hHs q⟩) hL hz' x v
+    (Hb := update H inf 0) (by decide) (periodic_update_zero hH inf) (contDiff_update_zero hHs inf)
+    hL hz' x v
   rw [update_inf_zero] at hin
   -- The output part, the negative plane datum translated by `c`.
-  have hpl : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦
-      negativePlanePerturbation (H inf) (Complex.equivRealProdCLM.symm (p.1 - (c, 0))) p.2 v)
-      (z, x) :=
-    (SymplecticForm.contDiff_negativePlanePerturbation_apply (hH inf) (hHs inf) v).contDiffAt.comp
-      (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) _ (by fun_prop)
-  have he (z : ℝ × ℝ) :
-      Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
-    apply Complex.ext <;> simp
-  simp only [he] at hpl
+  have hpl :=
+    (contDiff_uncurry_negativePlanePerturbation_sub (hH inf) (hHs inf) c v).contDiffAt (x := (z, x))
   exact (hin.add hpl).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ by
     simp [cappedExchangePerturbation_def, uncurry])
 

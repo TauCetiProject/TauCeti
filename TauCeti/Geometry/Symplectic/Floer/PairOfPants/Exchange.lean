@@ -57,7 +57,8 @@ rotation of the end at `∞` under `σ`. The main results are:
   `c`, the domain point of `S` and the target point.
 * `TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation`: for `C¹` Hamiltonians on a normed
   space, every member is `C¹` jointly in the domain point of `S`, in real coordinates, and the
-  target point.
+  target point; so is the translated plane datum on all of `ℂ`
+  (`TauCeti.Floer.contDiff_uncurry_negativePlanePerturbation_sub`).
 * `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`: for
   Hamiltonians on a manifold with a smooth two-form, such as a closed symplectic manifold, the
   integrated curvature `∫ |R_K|` of every member with `0 ≤ c ≤ 1` is at most `B₀ + B₁ + B_∞`
@@ -366,6 +367,11 @@ private theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0
   · simpa using h₀
   · simpa [update_of_ne hq] using hH q
 
+/-- Replacing the Hamiltonian `H_p` of one end by `0` keeps the end Hamiltonians periodic. -/
+theorem periodic_update_zero (hH : ∀ q, Periodic (H q) 1) (p q : Puncture) :
+    Periodic (update H p 0 q) 1 :=
+  (forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩ q
+
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
@@ -408,6 +414,23 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
+/-- Replacing the Hamiltonian `H_p` of one end by `0` keeps the end Hamiltonians `C¹`. -/
+theorem contDiff_update_zero (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (p q : Puncture) :
+    ContDiff ℝ 1 (uncurry (update H p 0 q)) :=
+  (forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2 ⟨contDiff_const, fun q _ => hHs q⟩ q
+
+/-- **The translated plane datum is `C¹` in real coordinates.** For a period-one `C¹` Hamiltonian
+on a normed space, the negative plane datum translated by `c ∈ ℝ` is `C¹` jointly in the domain
+point, in real coordinates, and the target point. -/
+theorem contDiff_uncurry_negativePlanePerturbation_sub {Hp : ℝ → V → ℝ} (hH : Periodic Hp 1)
+    (hHs : ContDiff ℝ 1 (uncurry Hp)) (c : ℝ) (v : ℂ) :
+    ContDiff ℝ 1 (uncurry fun z x ↦
+      negativePlanePerturbation Hp (Complex.equivRealProdCLM.symm z - c) x v) := by
+  have h := (SymplecticForm.contDiff_negativePlanePerturbation_apply hH hHs v).comp
+    (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) (by fun_prop)
+  simp only [Function.comp_def, uncurry, TauCeti.Complex.equivRealProdCLM_symm_sub_ofReal] at h
+  exact h
+
 /-- **The family is `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
 space, the member `c` of the family is `C¹` jointly in the domain point of
 `S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
@@ -420,15 +443,8 @@ theorem contDiffAt_uncurry_exchangePerturbation (hH : ∀ q, Periodic (H q) 1)
   have hin := contDiffAt_uncurry_pairOfPantsPerturbation
     (forall_update_inf (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH)
     (forall_update_inf (P := fun f ↦ ContDiff ℝ 1 (uncurry f)) contDiff_const hHs) hz x v
-  have hpl : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦
-      negativePlanePerturbation (H inf) (Complex.equivRealProdCLM.symm (p.1 - (c, 0))) p.2 v)
-      (z, x) :=
-    (SymplecticForm.contDiff_negativePlanePerturbation_apply (hH inf) (hHs inf) v).contDiffAt.comp
-      (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) _ (by fun_prop)
-  have he (z : ℝ × ℝ) :
-      Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
-    apply Complex.ext <;> simp
-  simp only [he] at hpl
+  have hpl :=
+    (contDiff_uncurry_negativePlanePerturbation_sub (hH inf) (hHs inf) c v).contDiffAt (x := (z, x))
   exact (hin.add hpl).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ by
     simp [exchangePerturbation_def, uncurry])
 
@@ -664,20 +680,16 @@ theorem hamiltonianCurvature_exchangePerturbation_update_zero_eq_zero
         endCenter_one, not_le]
       exact h₁'
     rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I)]
-    have hH' : ∀ q, Periodic (update H zero 0 q) 1 :=
-      (forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩
-    have hHs' : ∀ q, ContDiff ℝ 1 (uncurry (update H zero 0 q)) :=
-      (forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
-        ⟨contDiff_const, fun q _ => hHs q⟩
     exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt
-      (forall_update_inf (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH')
-      (forall_update_inf (P := fun f ↦ ContDiff ℝ 1 (uncurry f)) contDiff_const hHs')
+      (forall_update_inf (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) (periodic_update_zero hH zero))
+      (forall_update_inf (P := fun f ↦ ContDiff ℝ 1 (uncurry f)) contDiff_const
+        (contDiff_update_zero hHs zero))
       hz (q := one) (by rw [endSign_one, one_mul]; linarith) x
   -- Far from `c` the input part vanishes, and the output datum is cylindrical on its end.
   · have hev := hfar (a := c) (r := 3 / 2) (by linarith)
     set z' : ℝ × ℝ := z + -(c, 0)
     have he (y : ℝ × ℝ) : e.symm (y + -(c, 0)) = e.symm y - c := by
-      apply Complex.ext <;> simp [e, sub_eq_add_neg]
+      rw [← sub_eq_add_neg, TauCeti.Complex.equivRealProdCLM_symm_sub_ofReal]
     have hinf : inf ≠ zero := by decide
     have hK (v : ℂ) : (fun y x ↦ exchangePerturbation (update H zero 0) c (e.symm y) x v) =ᶠ[𝓝 z]
         fun y x ↦ pairOfPantsPerturbation (Pi.single inf (H inf)) (e.symm (y + -(c, 0))) x v :=
@@ -702,13 +714,9 @@ theorem hamiltonianCurvature_exchangePerturbation_update_zero_eq_zero
     rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I), hzz',
       ← ω.hamiltonianCurvature_comp_add_right]
     simp only [add_neg_cancel_right]
-    have hsingle {P : (ℝ → V → ℝ) → Prop} (h₀ : P 0) (h : P (H inf)) (q : Puncture) :
-        P ((Pi.single inf (H inf) : Puncture → ℝ → V → ℝ) q) := by
-      rcases eq_or_ne q inf with rfl | hq
-      · rwa [Pi.single_eq_same]
-      · rwa [Pi.single_eq_of_ne hq]
     exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt
-      (hsingle (P := fun f => Periodic f 1) (fun _ => rfl) (hH inf))
-      (hsingle (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHs inf)) hz' hre x
+      (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hH inf))
+      (forall_single inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHs inf)) hz'
+      hre x
 
 end TauCeti.SymplecticForm
