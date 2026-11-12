@@ -179,17 +179,24 @@ def lineShift : Multiplicative ℤ →* line.Aut where
         simp only [lineVertexEquiv_src]
         split_ifs <;> omega
       map_rev _ := rfl }
-  -- Here the `show`s also evaluate the identity automorphism as `Equiv.refl` and a product of
-  -- automorphisms as the composite of their equivalences.
-  map_one' := Aut.ext
-    (fun (v : ℤ) => show (1 : Multiplicative ℤ).toAdd + v = v by rw [toAdd_one, zero_add])
-    (fun (e : ℤ × Bool) => Prod.ext
-      (show (1 : Multiplicative ℤ).toAdd + e.1 = e.1 by rw [toAdd_one, zero_add]) rfl)
-  map_mul' x y := Aut.ext
-    (fun (v : ℤ) => show (x * y).toAdd + v = x.toAdd + (y.toAdd + v) by
-      rw [toAdd_mul, add_assoc])
-    (fun (e : ℤ × Bool) => Prod.ext
-      (show (x * y).toAdd + e.1 = x.toAdd + (y.toAdd + e.1) by rw [toAdd_mul, add_assoc]) rfl)
+  -- After evaluating the identity automorphism as `Equiv.refl` and a product of automorphisms as
+  -- the composite of their equivalences, the `show`s evaluate both sides as above.
+  map_one' := Iso.ext
+    (fun (v : ℤ) => by
+      rw [Aut.one_equivV]
+      exact show (1 : Multiplicative ℤ).toAdd + v = v by rw [toAdd_one, zero_add])
+    (fun (e : ℤ × Bool) => by
+      rw [Aut.one_equivE]
+      exact Prod.ext
+        (show (1 : Multiplicative ℤ).toAdd + e.1 = e.1 by rw [toAdd_one, zero_add]) rfl)
+  map_mul' x y := Iso.ext
+    (fun (v : ℤ) => by
+      rw [Aut.mul_equivV]
+      exact show (x * y).toAdd + v = x.toAdd + (y.toAdd + v) by rw [toAdd_mul, add_assoc])
+    (fun (e : ℤ × Bool) => by
+      rw [Aut.mul_equivE]
+      exact Prod.ext
+        (show (x * y).toAdd + e.1 = x.toAdd + (y.toAdd + e.1) by rw [toAdd_mul, add_assoc]) rfl)
 
 /-- Translation adds to the coordinate of a vertex. -/
 @[simp] theorem lineVertexEquiv_lineShift_smul (k : Multiplicative ℤ) (v : line.V) :

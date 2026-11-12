@@ -21,7 +21,9 @@ starting point of each face, and `PolygonalComplex.reverseFaces` replaces chosen
 inverses. Both give complexes isomorphic to the original one, by an isomorphism which is the
 identity on the one-skeleton and on the faces (`PolygonalComplex.rotateFacesIso`,
 `PolygonalComplex.reverseFacesIso`). Consequently link degrees, the surface-link condition, the
-Euler characteristic and orientability are unchanged.
+Euler characteristic and orientability are unchanged. Both changes carry a surface model to a
+surface model (`SurfaceModel.rotateFaces`, `SurfaceModel.reverseFaces`) with the same boundary
+darts and boundary germs.
 
 ## Main definitions
 
@@ -29,6 +31,8 @@ Euler characteristic and orientability are unchanged.
   of the starting points of the faces.
 * `TauCeti.PolygonalComplex.reverseFaces`, `TauCeti.PolygonalComplex.reverseFacesIso`: reversal of
   the orientations of some faces.
+* `TauCeti.SurfaceModel.rotateFaces`, `TauCeti.SurfaceModel.reverseFaces`: the same changes for
+  surface models.
 
 ## References
 
@@ -92,6 +96,9 @@ def rotateFacesIso (k : C.Face → ℕ) : C.Iso (C.rotateFaces k) where
 
 @[simp] theorem rotateFacesIso_sideEquiv_apply (k : C.Face → ℕ) (c : C.Corner) :
     (C.rotateFacesIso k).sideEquiv c = ⟨c.1, (finRotate (C.sides c.1) ^ k c.1)⁻¹ c.2⟩ := (rfl)
+
+@[simp] theorem rotateFacesIso_sideEquiv_symm_apply (k : C.Face → ℕ) (c : C.Corner) :
+    (C.rotateFacesIso k).sideEquiv.symm c = ⟨c.1, (finRotate (C.sides c.1) ^ k c.1) c.2⟩ := (rfl)
 
 /-- Moving the starting points of the faces does not change the degrees of the germs. -/
 @[simp] theorem linkDegree_rotateFaces (k : C.Face → ℕ) (e : C.graph.E) :
@@ -171,6 +178,11 @@ def reverseFacesIso (s : C.Face → Bool) : C.Iso (C.reverseFaces s) where
   obtain ⟨f, i⟩ := c
   cases hs : s f <;> simp [reverseFacesIso, hs]
 
+@[simp] theorem reverseFacesIso_sideEquiv_symm_apply (s : C.Face → Bool) (c : C.Corner) :
+    (C.reverseFacesIso s).sideEquiv.symm c = ⟨c.1, cond (s c.1) (Fin.rev c.2) c.2⟩ := by
+  obtain ⟨f, i⟩ := c
+  cases hs : s f <;> simp [Equiv.symm_apply_eq, hs]
+
 /-- Reversing the orientations of some faces does not change the degrees of the germs. -/
 @[simp] theorem linkDegree_reverseFaces (s : C.Face → Bool) (e : C.graph.E) :
     (C.reverseFaces s).linkDegree e = C.linkDegree e := by
@@ -193,5 +205,51 @@ links. -/
   (C.reverseFacesIso s).isOrientable_iff
 
 end PolygonalComplex
+
+/-! ### Surface models -/
+
+namespace SurfaceModel
+
+variable (S : SurfaceModel.{u, v, w})
+
+/-- The surface model obtained by moving the starting point of each face `f` forward by `k f`
+sides. It is reducible, so that its underlying complex is seen to be
+`S.toPolygonalComplex.rotateFaces k`. -/
+abbrev rotateFaces (k : S.Face → ℕ) : SurfaceModel.{u, v, w} :=
+  S.ofIso (S.rotateFacesIso k)
+
+@[simp] theorem toPolygonalComplex_rotateFaces (k : S.Face → ℕ) :
+    (S.rotateFaces k).toPolygonalComplex = S.toPolygonalComplex.rotateFaces k := (rfl)
+
+/-- Moving the starting points of the faces does not change the boundary darts. -/
+@[simp] theorem boundaryDarts_rotateFaces (k : S.Face → ℕ) :
+    (S.rotateFaces k).boundaryDarts = S.boundaryDarts := by
+  simpa using ((S.rotateFacesIso k).image_boundaryDarts (T := S.rotateFaces k)).symm
+
+/-- Moving the starting points of the faces does not change the boundary germs. -/
+@[simp] theorem boundaryGerms_rotateFaces (k : S.Face → ℕ) (v : S.graph.V) :
+    (S.rotateFaces k).boundaryGerms v = S.boundaryGerms v :=
+  Set.ext fun e => by simp
+
+/-- The surface model obtained by reversing the orientation of the faces `f` with `s f = true`.
+It is reducible, so that its underlying complex is seen to be
+`S.toPolygonalComplex.reverseFaces s`. -/
+abbrev reverseFaces (s : S.Face → Bool) : SurfaceModel.{u, v, w} :=
+  S.ofIso (S.reverseFacesIso s)
+
+@[simp] theorem toPolygonalComplex_reverseFaces (s : S.Face → Bool) :
+    (S.reverseFaces s).toPolygonalComplex = S.toPolygonalComplex.reverseFaces s := (rfl)
+
+/-- Reversing the orientations of some faces does not change the boundary darts. -/
+@[simp] theorem boundaryDarts_reverseFaces (s : S.Face → Bool) :
+    (S.reverseFaces s).boundaryDarts = S.boundaryDarts := by
+  simpa using ((S.reverseFacesIso s).image_boundaryDarts (T := S.reverseFaces s)).symm
+
+/-- Reversing the orientations of some faces does not change the boundary germs. -/
+@[simp] theorem boundaryGerms_reverseFaces (s : S.Face → Bool) (v : S.graph.V) :
+    (S.reverseFaces s).boundaryGerms v = S.boundaryGerms v :=
+  Set.ext fun e => by simp
+
+end SurfaceModel
 
 end TauCeti

@@ -75,10 +75,10 @@ theorem rev_injective : Function.Injective Γ.rev := by
   simpa only [Γ.rev_rev] using congrArg Γ.rev h
 
 /-- The geometric edges of a Serre graph: the pairs `{e, rev e}` of mutually reverse darts. -/
-@[expose] def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
+def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
 
 /-- The geometric edge underlying a dart. -/
-@[expose] def toGeomEdge (e : Γ.E) : Γ.GeomEdge := Quot.mk _ e
+def toGeomEdge (e : Γ.E) : Γ.GeomEdge := Quot.mk _ e
 
 /-- A dart and its reverse have the same underlying geometric edge. -/
 @[simp] theorem toGeomEdge_rev (e : Γ.E) : Γ.toGeomEdge (Γ.rev e) = Γ.toGeomEdge e :=
@@ -117,6 +117,16 @@ def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e
 @[simp] theorem GeomEdge.lift_toGeomEdge {β : Sort*} (f : Γ.E → β)
     (hf : ∀ e, f (Γ.rev e) = f e) (e : Γ.E) : GeomEdge.lift Γ f hf (Γ.toGeomEdge e) = f e :=
   (rfl)
+
+/-- A bijection of darts commuting with reversal induces a bijection of geometric edges. -/
+def GeomEdge.congr {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) : Γ.GeomEdge ≃ Δ.GeomEdge :=
+  Quot.congr f fun e e' => by rw [← hf, f.apply_eq_iff_eq]
+
+@[simp] theorem GeomEdge.congr_toGeomEdge {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) (e : Γ.E) :
+    GeomEdge.congr Γ f hf (Γ.toGeomEdge e) = Δ.toGeomEdge (f e) :=
+  Quot.congr_mk ..
 
 /-- An orientation chooses one dart from each reverse pair. -/
 def IsOrientation (O : Set Γ.E) : Prop := ∀ e, e ∈ O ↔ Γ.rev e ∉ O

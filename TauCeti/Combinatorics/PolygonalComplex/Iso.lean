@@ -40,7 +40,8 @@ surface models preserves the boundary darts.
   which satisfy the groupoid laws (`PolygonalComplex.Iso.trans_assoc`,
   `PolygonalComplex.Iso.refl_trans`, `PolygonalComplex.Iso.trans_refl`,
   `PolygonalComplex.Iso.symm_trans_self`, `PolygonalComplex.Iso.self_trans_symm`).
-* `TauCeti.PolygonalComplex.Iso.cornerEquiv`: the induced bijection of corners.
+* `TauCeti.PolygonalComplex.Iso.cornerEquiv`: the induced bijection of corners, compatible with
+  identities, inverses and composites.
 * `TauCeti.PolygonalComplex.Iso.vertexLinkIso`: the induced isomorphisms of vertex links.
 * `TauCeti.SurfaceModel.ofIso`: the surface model structure on a complex isomorphic to a surface
   model.
@@ -136,6 +137,9 @@ theorem toGeomEdge_outgoing_sideEquiv (c : C.Corner) :
 @[simp] theorem sides_faceEquiv (f : C.Face) : D.sides (φ.faceEquiv f) = C.sides f :=
   (Fin.equiv_iff_eq.1 ⟨((Equiv.sigmaSubtype f).symm.trans (φ.sideEquiv.subtypeEquiv fun c => by
     rw [sideEquiv_fst, Equiv.apply_eq_iff_eq])).trans (Equiv.sigmaSubtype (φ.faceEquiv f))⟩).symm
+
+@[simp] theorem sides_faceEquiv_symm (g : D.Face) : C.sides (φ.faceEquiv.symm g) = D.sides g := by
+  rw [← φ.sides_faceEquiv, Equiv.apply_symm_apply]
 
 /-- An isomorphism of polygonal complexes is determined by its action on the one-skeleton and on
 the side occurrences. -/
@@ -260,8 +264,42 @@ def cornerEquiv : C.Corner ≃ D.Corner where
 theorem cornerEquiv_apply (c : C.Corner) :
     φ.cornerEquiv c = cond (φ.flip c.1) (D.nextCorner (φ.sideEquiv c)) (φ.sideEquiv c) := (rfl)
 
+theorem cornerEquiv_symm_apply (d : D.Corner) : φ.cornerEquiv.symm d =
+    φ.sideEquiv.symm (cond (φ.flip (φ.faceEquiv.symm d.1)) (D.prevCorner d) d) := (rfl)
+
 @[simp] theorem cornerEquiv_fst (c : C.Corner) : (φ.cornerEquiv c).1 = φ.faceEquiv c.1 := by
   cases hf : φ.flip c.1 <;> simp [cornerEquiv_apply, hf]
+
+/-- Consecutive corners correspond to consecutive corners, in the reverse order on a reversed
+face. -/
+@[simp] theorem cornerEquiv_nextCorner (c : C.Corner) : φ.cornerEquiv (C.nextCorner c) =
+    cond (φ.flip c.1) (D.prevCorner (φ.cornerEquiv c)) (D.nextCorner (φ.cornerEquiv c)) := by
+  cases hf : φ.flip c.1 <;> simp [cornerEquiv_apply, hf]
+
+@[simp] theorem cornerEquiv_prevCorner (c : C.Corner) : φ.cornerEquiv (C.prevCorner c) =
+    cond (φ.flip c.1) (D.nextCorner (φ.cornerEquiv c)) (D.prevCorner (φ.cornerEquiv c)) := by
+  cases hf : φ.flip c.1 <;> simp [cornerEquiv_apply, hf]
+
+@[simp] theorem cornerEquiv_refl (C : PolygonalComplex.{u, v, w}) :
+    (refl C).cornerEquiv = .refl C.Corner :=
+  Equiv.ext fun _ => rfl
+
+@[simp] theorem cornerEquiv_symm : φ.symm.cornerEquiv = φ.cornerEquiv.symm :=
+  Equiv.ext fun d => by
+    rw [Equiv.eq_symm_apply]
+    obtain ⟨c, rfl⟩ := φ.sideEquiv.surjective d
+    cases hf : φ.flip c.1 <;> simp [cornerEquiv_apply, hf]
+
+@[simp] theorem cornerEquiv_trans (ψ : D.Iso K) :
+    (φ.trans ψ).cornerEquiv = φ.cornerEquiv.trans ψ.cornerEquiv :=
+  Equiv.ext fun c => by
+    cases hφ : φ.flip c.1 <;> cases hψ : ψ.flip (φ.faceEquiv c.1) <;>
+      simp [cornerEquiv_apply, hφ, hψ]
+
+@[simp] theorem cornerEquiv_symm_fst (d : D.Corner) :
+    (φ.cornerEquiv.symm d).1 = φ.faceEquiv.symm d.1 := by
+  rw [← cornerEquiv_symm]
+  exact φ.symm.cornerEquiv_fst d
 
 /-- The outgoing side of the corresponding corner: the image of the outgoing side, or the reverse
 of the image of the incoming side on a reversed face. -/
@@ -298,6 +336,10 @@ def cornerAtEquiv (v : C.graph.V) :
 
 @[simp] theorem cornerAtEquiv_coe {v : C.graph.V} (c : {c : C.Corner // C.cornerVertex c = v}) :
     (φ.cornerAtEquiv v c).1 = φ.cornerEquiv c.1 := (rfl)
+
+@[simp] theorem cornerAtEquiv_symm_coe {v : C.graph.V}
+    (d : {d : D.Corner // D.cornerVertex d = φ.graph.equivV v}) :
+    ((φ.cornerAtEquiv v).symm d).1 = φ.cornerEquiv.symm d.1 := (rfl)
 
 /-- The germs at a vertex correspond to the germs at the corresponding vertex. -/
 private def germEquiv (v : C.graph.V) :
@@ -337,12 +379,25 @@ def vertexLinkIso (v : C.graph.V) : (C.vertexLink v).Iso (D.vertexLink (φ.graph
 @[simp] theorem vertexLinkIso_equivE_apply {v : C.graph.V} (d : (C.vertexLink v).E) :
     (φ.vertexLinkIso v).equivE d = (φ.cornerAtEquiv v d.1, d.2 ^^ φ.flip d.1.1.1) := (rfl)
 
+@[simp] theorem vertexLinkIso_equivV_symm_coe {v : C.graph.V}
+    (e : (D.vertexLink (φ.graph.equivV v)).V) :
+    ((φ.vertexLinkIso v).equivV.symm e).1 = φ.graph.equivE.symm e.1 := (rfl)
+
+@[simp] theorem vertexLinkIso_equivE_symm_apply {v : C.graph.V}
+    (d : (D.vertexLink (φ.graph.equivV v)).E) : (φ.vertexLinkIso v).equivE.symm d =
+      ((φ.cornerAtEquiv v).symm d.1, d.2 ^^ φ.flip (φ.faceEquiv.symm d.1.1.1)) :=
+  Prod.ext rfl (congrArg (d.2 ^^ φ.flip ·) (by simp))
+
 /-- Corresponding germs have the same degree in their links. -/
 @[simp] theorem linkDegree_equivE (e : C.graph.E) :
     D.linkDegree (φ.graph.equivE e) = C.linkDegree e := by
   rw [D.linkDegree_eq_card_of_src_eq (φ.graph.map_src e), C.linkDegree_eq_card_of_src_eq rfl]
   refine (Nat.card_congr ((φ.vertexLinkIso _).equivE.subtypeEquiv fun d => ?_)).symm
   rw [(φ.vertexLinkIso _).map_src, vertexLinkIso_equivV_coe, Equiv.apply_eq_iff_eq]
+
+@[simp] theorem linkDegree_equivE_symm (e : D.graph.E) :
+    C.linkDegree (φ.graph.equivE.symm e) = D.linkDegree e := by
+  rw [← φ.linkDegree_equivE, Equiv.apply_symm_apply]
 
 /-- A vertex has a surface link exactly when the corresponding vertex has one. -/
 @[simp] theorem hasSurfaceLink_equivV_iff (v : C.graph.V) :
@@ -354,6 +409,10 @@ def vertexLinkIso (v : C.graph.V) : (C.vertexLink v).Iso (D.vertexLink (φ.graph
     ← (φ.vertexLinkIso v).equivE.finite_iff]
   simp only [← φ.graph.equivE.forall_congr_right, ← φ.graph.equivE.exists_congr_right, hsrc,
     linkDegree_equivE, ne_eq, EmbeddingLike.apply_eq_iff_eq]
+
+@[simp] theorem hasSurfaceLink_equivV_symm_iff (v : D.graph.V) :
+    C.HasSurfaceLink (φ.graph.equivV.symm v) ↔ D.HasSurfaceLink v := by
+  rw [← φ.hasSurfaceLink_equivV_iff, Equiv.apply_symm_apply]
 
 /-! ### Euler characteristic and orientability -/
 
@@ -397,8 +456,9 @@ namespace SurfaceModel
 
 variable {D : PolygonalComplex.{u', v', w'}}
 
-/-- A polygonal complex isomorphic to a surface model is a surface model. -/
-def ofIso (S : SurfaceModel.{u, v, w}) (φ : S.toPolygonalComplex.Iso D) :
+/-- A polygonal complex isomorphic to a surface model is a surface model. It is reducible, so that
+its underlying complex is seen to be the given one. -/
+abbrev ofIso (S : SurfaceModel.{u, v, w}) (φ : S.toPolygonalComplex.Iso D) :
     SurfaceModel.{u', v', w'} where
   toPolygonalComplex := D
   finite_face := Finite.of_equiv _ φ.faceEquiv
@@ -422,6 +482,10 @@ variable {S : SurfaceModel.{u, v, w}} {T : SurfaceModel.{u', v', w'}}
     φ.graph.equivE e ∈ T.boundaryDarts ↔ e ∈ S.boundaryDarts := by
   rw [← SurfaceModel.linkDegree_eq_one_iff_mem_boundaryDarts,
     ← SurfaceModel.linkDegree_eq_one_iff_mem_boundaryDarts, φ.linkDegree_equivE]
+
+@[simp] theorem equivE_symm_mem_boundaryDarts_iff {e : T.graph.E} :
+    φ.graph.equivE.symm e ∈ S.boundaryDarts ↔ e ∈ T.boundaryDarts := by
+  rw [← φ.equivE_mem_boundaryDarts_iff, Equiv.apply_symm_apply]
 
 /-- An isomorphism of surface models maps the boundary darts onto the boundary darts. -/
 theorem image_boundaryDarts : φ.graph.equivE '' S.boundaryDarts = T.boundaryDarts := by

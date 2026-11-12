@@ -26,7 +26,8 @@ a polygonal complex with the link of the corresponding vertex of an isomorphic c
   (`SerreGraph.Iso.trans_assoc`, `SerreGraph.Iso.refl_trans`, `SerreGraph.Iso.trans_refl`,
   `SerreGraph.Iso.symm_trans_self`, `SerreGraph.Iso.self_trans_symm`).
 * `TauCeti.SerreGraph.Iso.toHom`: the underlying morphism.
-* `TauCeti.SerreGraph.Iso.geomEdgeEquiv`: the induced bijection of geometric edges.
+* `TauCeti.SerreGraph.Iso.geomEdgeEquiv`: the induced bijection of geometric edges, compatible
+  with identities, inverses and composites.
 
 ## References
 
@@ -77,6 +78,9 @@ def toHom (φ : Γ.Iso Δ) : Γ.Hom Δ where
 @[simp] theorem toHom_mapV (φ : Γ.Iso Δ) : φ.toHom.mapV = φ.equivV := (rfl)
 
 @[simp] theorem toHom_mapE (φ : Γ.Iso Δ) : φ.toHom.mapE = φ.equivE := (rfl)
+
+theorem toHom_mapE_injective (φ : Γ.Iso Δ) : Function.Injective φ.toHom.mapE :=
+  φ.equivE.injective
 
 /-- Targets are preserved. -/
 @[simp] theorem map_tgt (φ : Γ.Iso Δ) (e : Γ.E) : Δ.tgt (φ.equivE e) = φ.equivV (Γ.tgt e) :=
@@ -149,11 +153,26 @@ theorem trans_assoc {Λ : SerreGraph.{u', v'}} (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ)
 
 /-- The bijection of geometric edges induced by an isomorphism. -/
 def geomEdgeEquiv (φ : Γ.Iso Δ) : Γ.GeomEdge ≃ Δ.GeomEdge :=
-  Quot.congr φ.equivE fun e f => by rw [← φ.map_rev, Equiv.apply_eq_iff_eq]
+  GeomEdge.congr Γ φ.equivE φ.map_rev
 
 @[simp] theorem geomEdgeEquiv_toGeomEdge (φ : Γ.Iso Δ) (e : Γ.E) :
     φ.geomEdgeEquiv (Γ.toGeomEdge e) = Δ.toGeomEdge (φ.equivE e) :=
-  Quot.congr_mk ..
+  GeomEdge.congr_toGeomEdge ..
+
+@[simp] theorem geomEdgeEquiv_symm_toGeomEdge (φ : Γ.Iso Δ) (e : Δ.E) :
+    φ.geomEdgeEquiv.symm (Δ.toGeomEdge e) = Γ.toGeomEdge (φ.equivE.symm e) := by
+  rw [Equiv.symm_apply_eq, geomEdgeEquiv_toGeomEdge, Equiv.apply_symm_apply]
+
+@[simp] theorem geomEdgeEquiv_refl (Γ : SerreGraph.{u, v}) :
+    (refl Γ).geomEdgeEquiv = Equiv.refl Γ.GeomEdge :=
+  Equiv.ext fun x => by obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x; simp
+
+@[simp] theorem geomEdgeEquiv_symm (φ : Γ.Iso Δ) : φ.symm.geomEdgeEquiv = φ.geomEdgeEquiv.symm :=
+  Equiv.ext fun x => by obtain ⟨e, rfl⟩ := Δ.toGeomEdge_surjective x; simp
+
+@[simp] theorem geomEdgeEquiv_trans (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) :
+    (φ.trans ψ).geomEdgeEquiv = φ.geomEdgeEquiv.trans ψ.geomEdgeEquiv :=
+  Equiv.ext fun x => by obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x; simp
 
 /-- Isomorphic Serre graphs are preconnected together. -/
 theorem preconnected_iff (φ : Γ.Iso Δ) : Δ.Preconnected ↔ Γ.Preconnected :=
