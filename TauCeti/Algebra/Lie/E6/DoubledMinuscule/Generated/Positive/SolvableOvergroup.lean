@@ -132,7 +132,7 @@ private theorem single_mem_of_posRootCone
         intro a b h
         induction h with
         | refl => exact id
-        | tail h hstep ih =>
+        | tail _ hstep ih =>
           obtain ⟨i, hi, rfl⟩ := (e6MinusculeRaisingStep_iff _ _).mp hstep
           intro ha
           simpa only [reflection_inl] using single_mem_of_raising_step J hJ N (.inl _) i
@@ -153,7 +153,7 @@ private theorem single_mem_of_posRootCone
         intro b a h
         induction h with
         | refl => exact id
-        | @tail c d h hstep ih =>
+        | @tail c d _ hstep ih =>
           obtain ⟨i, hi, rfl⟩ := (e6MinusculeRaisingStep_iff _ _).mp hstep
           intro hd
           apply ih

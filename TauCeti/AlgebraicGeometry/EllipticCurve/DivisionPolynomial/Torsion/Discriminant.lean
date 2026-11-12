@@ -31,15 +31,16 @@ that discharges for free, which is why the specialisation carries no arithmetic 
 The arithmetic is already in `Discriminant.lean`, which proves — for any commutative ring, any `x`
 and **any** divisor `d` — that `d ∣ Ψ₂Sq(x)` and `d ∣ 4·Ψ₃(x)` together give `d ∣ 4Δ`, by an
 explicit Bézout certificate in the `b`-invariants. What this file adds is the torsion input that
-discharges the second premise, which that file deliberately left open: *"its hypothesis
-`κ² ∣ 4·Ψ₃(x)` is supplied by point-level `[n]`-multiplication material that is not yet in this
-repository"*. It is now, so the premise can be met.
+discharges the second premise, `κ² ∣ 4·Ψ₃(x)`, which that file takes as a hypothesis.
 
 The route is doubling. `κ ≠ 0` forces `2 • P ≠ 0`, so `2 • P` has an affine representative
 `(x', y')`, and the cleared doubling relation `x' · ΨSq₂(x₀) = Φ₂(x₀)` turns `Ψ₃(x₀)` into
 `(x₀ - x') · Ψ₂Sq(x₀)`, which on the curve is `(x₀ - x') · κ²`. Nagell–Lutz integrality applied at
 `2 • P` makes `x'` integral — or, in its order-two case, makes `4x'` integral — and either way the
 `4` already present on the left absorbs the difference.
+
+The sharpening for short models is a separate result, `CubicDiscriminant.lean`'s
+`sq_dvd_cubic_discr`.
 
 ## Main results
 
@@ -67,21 +68,14 @@ then `2 • P = 0` and `addOrderOf (2 • P) = 1`, where `≠ 2` holds but neith
 in `isInteger_or_order_two_of_torsion`, whose point is a `.some`, which is why `≠ 2` suffices
 there; here the point is a double and may vanish, so the guard must exclude `1` as well.
 
-## Roadmap
-
-New mathematics: `TauCetiRoadmap/EllipticCurves/README.md:821` — "**The torsion subgroup and
-Nagell–Lutz**". Line `:827` names this target as `lutz_nagell_integrality_general`'s "discriminant
-companion". The short-model sharpening is separate and already present, as
-`CubicDiscriminant.lean`'s `sq_dvd_cubic_discr`.
-
 ## Provenance
 
 Ported from J. Xu and D. K. Angdinata's
 `projects/NagellLutz/LutzNagell/LutzNagellTheorem/PIDMain.lean` in AINTLIB
 (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`):
 `kappa_sq_dvd_four_Psi3_of_torsion` (`:356`) and `lutz_nagell_pid_discriminant_of_torsion`
-(`:415`). That file is byte-identical at `9fec8eba7652`, the revision the roadmap pins for this
-project (`README:1072`), verified by blob hash, so the citations hold at either.
+(`:415`). That file is byte-identical at `dev/modular-curves @ 9fec8eba7652`, verified by blob
+hash, so the citations hold at either.
 
 Two further declarations of that source file land elsewhere. `addOrderOf_ne_two_of_kappa_ne_zero`
 (`:279`) is ported **into `ZSMul.lean`**, beside `evalEval_ψ_eq_zero_of_zsmul_eq_zero`, and
@@ -239,9 +233,9 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_of_squarefree {x y : K}
   evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ W hns htor
     (fun h2 ↦ Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree h2 (hsf h2)) hx hy
 
-/-- **The discriminant companion over `ℚ`**, the form the roadmap asks for: for an integral long
-Weierstrass model, a torsion point with integral coordinates has `ψ₂ = 0` there, or `ψ₂²` divides
-`4Δ`. For a short model (`a₁ = a₃ = 0`) `ψ₂` is `2y`, so this reads `y = 0` or `4y² ∣ 4Δ`.
+/-- **The discriminant companion over `ℚ`**: for an integral long Weierstrass model, a torsion
+point with integral coordinates has `ψ₂ = 0` there, or `ψ₂²` divides `4Δ`. For a short model
+(`a₁ = a₃ = 0`) `ψ₂` is `2y`, so this reads `y = 0` or `4y² ∣ 4Δ`.
 
 As with `isInteger_or_order_two_of_torsion_rat`, no arithmetic hypothesis survives: over `ℤ` every
 rational prime is squarefree, so the uniform hypothesis discharges outright. -/

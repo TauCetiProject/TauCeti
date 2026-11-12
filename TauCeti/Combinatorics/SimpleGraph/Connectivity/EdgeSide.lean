@@ -118,7 +118,7 @@ private theorem Adj.mem_edgeSide_or_mem_edgeSide {y z : V} (hyz : G.Adj y z)
 theorem Reachable.mem_edgeSide_or_mem_edgeSide (h : G.Reachable u x) :
     x ∈ G.edgeSide u v ∨ x ∈ G.edgeSide v u := by
   obtain ⟨p⟩ := h
-  suffices key : ∀ {y z : V} (q : G.Walk y z), (y ∈ G.edgeSide u v ∨ y ∈ G.edgeSide v u) →
+  suffices key : ∀ {y z : V} (_ : G.Walk y z), (y ∈ G.edgeSide u v ∨ y ∈ G.edgeSide v u) →
       z ∈ G.edgeSide u v ∨ z ∈ G.edgeSide v u from key p (.inl (self_mem_edgeSide G u v))
   intro y z q
   induction q with

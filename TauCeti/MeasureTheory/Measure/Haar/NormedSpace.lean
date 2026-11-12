@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -519,5 +521,34 @@ theorem norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 h
 
 end ContinuousLinearMap
+
+namespace MeasureTheory.Measure
+
+section Fubini
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [MeasurableSpace F] [BorelSpace F] (ν : Measure F) [IsAddHaarMeasure ν]
+  {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
+  [MeasurableSpace H] [BorelSpace H]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  [MeasurableSpace G] [BorelSpace G]
+
+/-- Fubini for a measurable set in a split space: if `F ≃L[ℝ] H × G` and almost every slice
+`{y | (t, y) ∈ e S}` of the image of a measurable set `S` is null for an additive Haar measure
+`μG` of `G` (for almost every `t` for an additive Haar measure `μH` of `H`), then `S` is null
+for any additive Haar measure of `F`. -/
+theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsAddHaarMeasure μH]
+    (μG : Measure G) [IsAddHaarMeasure μG] (e : F ≃L[ℝ] H × G) {S : Set F}
+    (hS : MeasurableSet S) (h : ∀ᵐ t ∂μH, μG (Prod.mk t ⁻¹' (e '' S)) = 0) :
+    ν S = 0 := by
+  have hprod : (μH.prod μG) (e '' S) = 0 :=
+    measure_prod_null_of_ae_null (e.toHomeomorph.measurableEmbedding.measurableSet_image.2 hS) h
+  have := (e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar ν (μH.prod μG)).preimage_null hprod
+  rwa [ContinuousLinearEquiv.toContinuousAddEquiv_coe,
+    Set.preimage_image_eq _ e.injective] at this
+
+end Fubini
+
+end MeasureTheory.Measure
 
 end
