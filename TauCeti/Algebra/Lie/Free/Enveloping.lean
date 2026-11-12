@@ -156,7 +156,7 @@ of class at most `c` embeds in the truncated enveloping algebra `U(F) ⧸ J ^ (c
 theorem quotientEnvelopingMap_injective
     (hι : Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R : F → U)) (c : ℕ) :
     Function.Injective (quotientEnvelopingMap R S c) := by
-  refine LieIdeal.liftQ_injective _ _ _ fun x hx => ?_
+  refine (LieIdeal.liftQ_injective_iff _ _ _).2 fun x hx => ?_
   have hmem := SetLike.ext_iff.mp (comap_augmentation_pow_ι R S hι c) x
   simp only [Submodule.mem_comap, Submodule.restrictScalars_mem, LieHom.coe_toLinearMap,
     LieSubmodule.mem_toSubmodule] at hmem
