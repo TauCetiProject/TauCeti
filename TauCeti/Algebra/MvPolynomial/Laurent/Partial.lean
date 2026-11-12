@@ -12,10 +12,20 @@ public import Mathlib.RingTheory.Localization.Basic
 /-!
 # Partially Laurent coefficient rings
 
-The partially Laurent ring inverts exactly a chosen set of variables. It is realized inside
-the Laurent ring as the span of monomials with nonnegative exponents outside that set.
-The index set and the set of inverted variables may both be infinite; each polynomial still
-has finite support. No domain hypothesis on the coefficient ring is needed.
+Partially Laurent rings allow a chosen subset of variables to be inverted while the other
+variables remain polynomial. They serve as ground rings for cluster algebras when only some
+frozen variables are inverted. The scalar coefficient semiring is denoted by `R`.
+
+`partiallyLaurent R S` is the subalgebra of the full Laurent ring spanned by monomials whose
+exponents outside `S` are nonnegative. `partiallyLaurentBasis` gives unique coordinates in
+these monomials. `toPartiallyLaurent` embeds polynomials, and `partiallyLaurentEmptyEquiv`
+identifies the case `S = ∅` with the polynomial ring. `isLocalization_partiallyLaurent` and
+`isLocalization_partiallyLaurent_of_subset` invert the selected variables and then any newly
+selected variables. `partialCoeffMap` transports these constructions along coefficient maps,
+including noninjective maps.
+
+The variable and inverted sets may both be infinite: each element has finite support. The
+construction and localization theorems work over any commutative coefficient semiring.
 
 ## References
 
@@ -29,26 +39,27 @@ namespace TauCeti.LaurentRing
 variable {K : Type*}
 
 /-- Exponents of monomials whose negative powers use only variables in `S`. -/
-def nonnegativeOutside (S : Set K) : AddSubmonoid (K →₀ ℤ) where
+def nonnegOutside (S : Set K) : AddSubmonoid (K →₀ ℤ) where
   carrier := {m | ∀ i ∉ S, 0 ≤ m i}
   zero_mem' := by simp
   add_mem' hm hn i hi := add_nonneg (hm i hi) (hn i hi)
 
 @[simp]
-theorem mem_nonnegativeOutside {S : Set K} {m : K →₀ ℤ} :
-    m ∈ nonnegativeOutside S ↔ ∀ i ∉ S, 0 ≤ m i := (Iff.rfl)
+theorem mem_nonnegOutside {S : Set K} {m : K →₀ ℤ} :
+    m ∈ nonnegOutside S ↔ ∀ i ∉ S, 0 ≤ m i := (Iff.rfl)
 
 variable (R : Type*) [CommSemiring R] (S : Set K)
 
-/-- The faithful monomial map from the exponent monoid of the partially Laurent ring. -/
+/-- The injective `R`-algebra map from the monoid algebra of `nonnegOutside S` to
+`LaurentRing R K`, induced by the inclusion of the permitted exponents. -/
 noncomputable def partialInclusion :
-    AddMonoidAlgebra R (nonnegativeOutside S) →ₐ[R] LaurentRing R K :=
-  AddMonoidAlgebra.mapDomainAlgHom R R (nonnegativeOutside S).subtype
+    AddMonoidAlgebra R (nonnegOutside S) →ₐ[R] LaurentRing R K :=
+  AddMonoidAlgebra.mapDomainAlgHom R R (nonnegOutside S).subtype
 
-theorem partialInclusion_apply (p : AddMonoidAlgebra R (nonnegativeOutside S)) :
+theorem partialInclusion_apply (p : AddMonoidAlgebra R (nonnegOutside S)) :
     partialInclusion R S p = AddMonoidAlgebra.mapDomain Subtype.val p := (rfl)
 
-/-- The coefficient subalgebra in which precisely the variables in `S` may have negative powers. -/
+/-- The partially Laurent subalgebra permits negative powers exactly in the variables in `S`. -/
 noncomputable def partiallyLaurent : Subalgebra R (LaurentRing R K) :=
   (partialInclusion R S).range
 
@@ -59,12 +70,26 @@ semiring, including those with zero divisors. -/
 theorem partialInclusion_injective : Function.Injective (partialInclusion R S) := by
   exact AddMonoidAlgebra.mapDomain_injective Subtype.val_injective
 
+@[simp]
+theorem range_partialInclusion : (partialInclusion R S).range = partiallyLaurent R S := (rfl)
+
+@[simp]
+theorem partialInclusion_single (m : nonnegOutside S) (r : R) :
+    partialInclusion R S (AddMonoidAlgebra.single m r) =
+      AddMonoidAlgebra.single (m : K →₀ ℤ) r := by simp [partialInclusion_apply]
+
+@[simp]
+theorem coeff_partialInclusion (p : AddMonoidAlgebra R (nonnegOutside S))
+    (m : nonnegOutside S) : (partialInclusion R S p).coeff m = p.coeff m := by
+  classical
+  rw [partialInclusion_apply, AddMonoidAlgebra.coeff_mapDomain]
+  exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective p.coeff m
+
 /-- Membership is the nonnegativity of every supported exponent outside the inverted set. -/
 theorem mem_partiallyLaurent_iff {f : LaurentRing R K} :
     f ∈ partiallyLaurent R S ↔ ∀ m ∈ f.coeff.support, ∀ i ∉ S, 0 ≤ m i := by
   classical
-  change f ∈ (partialInclusion R S).range ↔ _
-  rw [AlgHom.mem_range]
+  rw [partiallyLaurent, AlgHom.mem_range]
   constructor
   · rintro ⟨p, rfl⟩ m hm i hi
     rw [partialInclusion_apply, AddMonoidAlgebra.coeff_mapDomain] at hm
@@ -77,7 +102,7 @@ theorem mem_partiallyLaurent_iff {f : LaurentRing R K} :
     intro m hm
     exact ⟨⟨m, hf m hm⟩, rfl⟩
 
-/-- Increasing the set of inverted variables increases the coefficient subalgebra. -/
+/-- Increasing the set of inverted variables increases the partially Laurent subalgebra. -/
 theorem partiallyLaurent_mono {T : Set K} (h : S ⊆ T) :
     partiallyLaurent R S ≤ partiallyLaurent R T := by
   intro f hf
@@ -100,70 +125,97 @@ theorem partiallyLaurent_univ : partiallyLaurent R (Set.univ : Set K) = ⊤ := b
   ext f
   simp [mem_partiallyLaurent_iff]
 
-/-- Every monomial with permitted exponents belongs to the coefficient subalgebra. -/
-theorem single_mem_partiallyLaurent (m : nonnegativeOutside S) (r : R) :
-    AddMonoidAlgebra.single (m : K →₀ ℤ) r ∈ partiallyLaurent R S := by
-  refine ⟨AddMonoidAlgebra.single m r, ?_⟩
-  simp [partialInclusion_apply]
-
-/-- In a nontrivial coefficient ring, the exponent condition can be read from a monomial. -/
+/-- A monomial belongs precisely when its coefficient vanishes or its exponent is permitted. -/
 @[simp]
-theorem single_one_mem_partiallyLaurent_iff [Nontrivial R] (m : K →₀ ℤ) :
-    AddMonoidAlgebra.single m (1 : R) ∈ partiallyLaurent R S ↔
-      ∀ i ∉ S, 0 ≤ m i := by
+theorem single_mem_partiallyLaurent_iff (m : K →₀ ℤ) (r : R) :
+    AddMonoidAlgebra.single m r ∈ partiallyLaurent R S ↔
+      r = 0 ∨ ∀ i ∉ S, 0 ≤ m i := by
   classical
-  simp [mem_partiallyLaurent_iff]
+  by_cases hr : r = 0
+  · simp [hr]
+  · simp [mem_partiallyLaurent_iff, hr]
+
+/-- Every monomial with permitted exponents belongs to the partially Laurent subalgebra. -/
+@[simp high]
+theorem single_mem_partiallyLaurent (m : nonnegOutside S) (r : R) :
+    AddMonoidAlgebra.single (m : K →₀ ℤ) r ∈ partiallyLaurent R S :=
+  single_mem_partiallyLaurent_iff _ _ |>.2 (Or.inr m.property)
+
+/-- A variable power belongs if the coefficient semiring is trivial, the variable is inverted,
+or the exponent is nonnegative. -/
+theorem val_unitX_zpow_mem_partiallyLaurent_iff (i : K) (n : ℤ) :
+    ((unitX i ^ n : (LaurentRing R K)ˣ) : LaurentRing R K) ∈ partiallyLaurent R S ↔
+      (1 : R) = 0 ∨ i ∈ S ∨ 0 ≤ n := by
+  classical
+  rw [val_unitX_zpow, single_mem_partiallyLaurent_iff]
+  constructor
+  · rintro (h | h)
+    · exact Or.inl h
+    · by_cases hi : i ∈ S
+      · exact Or.inr (Or.inl hi)
+      · exact Or.inr (Or.inr (by simpa using h i hi))
+  · rintro (h | hi | hn)
+    · exact Or.inl h
+    · exact Or.inr fun j hj ↦ by simp [show i ≠ j from fun h ↦ hj (h ▸ hi)]
+    · exact Or.inr fun j _ ↦ by by_cases h : i = j <;> simp [h, hn]
 
 /-- Every ordinary variable belongs to every partially Laurent subalgebra. -/
+@[simp]
 theorem X_mem_partiallyLaurent (i : K) : (X i : LaurentRing R K) ∈ partiallyLaurent R S := by
-  classical
-  rw [X_def]
-  apply single_mem_partiallyLaurent ⟨Finsupp.single i 1, ?_⟩ 1
-  intro j _
-  by_cases h : i = j <;> simp [h]
+  simpa using (val_unitX_zpow_mem_partiallyLaurent_iff (R := R) (S := S) i 1).2
+    (Or.inr (Or.inr zero_le_one))
 
 /-- The inverse of a variable belongs whenever that variable is among those inverted. -/
 theorem inv_unitX_mem_partiallyLaurent {i : K} (hi : i ∈ S) :
     ((unitX i)⁻¹ : (LaurentRing R K)ˣ).val ∈ partiallyLaurent R S := by
-  classical
-  rw [val_inv_unitX]
-  apply single_mem_partiallyLaurent ⟨Finsupp.single i (-1), ?_⟩ 1
-  intro j hj
-  have hij : i ≠ j := fun h ↦ hj (h ▸ hi)
-  simp [hij]
+  simpa using (val_unitX_zpow_mem_partiallyLaurent_iff (R := R) (S := S) i (-1)).2
+    (Or.inr (Or.inl hi))
 
-/-- The partially Laurent coefficient ring is the monoid algebra of its permitted exponents. -/
+/-- The partially Laurent ring is the monoid algebra of its permitted exponents. -/
 noncomputable def partiallyLaurentEquiv :
-    AddMonoidAlgebra R (nonnegativeOutside S) ≃ₐ[R] partiallyLaurent R S :=
+    AddMonoidAlgebra R (nonnegOutside S) ≃ₐ[R] partiallyLaurent R S :=
   AlgEquiv.ofInjective (partialInclusion R S) partialInclusion_injective
 
 /-- The monoid-algebra realization sends each permitted monomial to the same ambient monomial. -/
 @[simp]
-theorem partiallyLaurentEquiv_apply (p : AddMonoidAlgebra R (nonnegativeOutside S)) :
+theorem coe_partiallyLaurentEquiv_apply (p : AddMonoidAlgebra R (nonnegOutside S)) :
     (partiallyLaurentEquiv p : LaurentRing R K) = partialInclusion R S p := by
   exact AlgEquiv.ofInjective_apply _ _ p
 
-/-- The permitted monomials form a basis of the partially Laurent coefficient ring. -/
-noncomputable def partiallyLaurentBasis :
-    Module.Basis (nonnegativeOutside S) R (partiallyLaurent R S) :=
-  (AddMonoidAlgebra.basis (nonnegativeOutside S) R).map partiallyLaurentEquiv.toLinearEquiv
+/-- The permitted monomials form a basis of the partially Laurent ring. -/
+noncomputable def partiallyLaurentBasis (R : Type*) [CommSemiring R] (S : Set K) :
+    Module.Basis (nonnegOutside S) R (partiallyLaurent R S) :=
+  (AddMonoidAlgebra.basis (nonnegOutside S) R).map partiallyLaurentEquiv.toLinearEquiv
 
 @[simp]
-theorem partiallyLaurentBasis_apply (m : nonnegativeOutside S) :
-    (partiallyLaurentBasis (R := R) m : LaurentRing R K) =
+theorem coe_partiallyLaurentBasis_apply (m : nonnegOutside S) :
+    (partiallyLaurentBasis R S m : LaurentRing R K) =
       AddMonoidAlgebra.single (m : K →₀ ℤ) 1 := by
   simp [partiallyLaurentBasis, AddMonoidAlgebra.basis_apply, partialInclusion_apply]
 
-/-- Ordinary polynomials belong to every partially Laurent coefficient ring. -/
+@[simp]
+theorem coeff_partiallyLaurentEquiv_symm (f : partiallyLaurent R S) (m : nonnegOutside S) :
+    (partiallyLaurentEquiv.symm f).coeff m = (f : LaurentRing R K).coeff m := by
+  rw [← coeff_partialInclusion]
+  have h : partialInclusion R S (partiallyLaurentEquiv.symm f) = (f : LaurentRing R K) := by
+    rw [← coe_partiallyLaurentEquiv_apply, AlgEquiv.apply_symm_apply]
+  rw [h]
+
+@[simp]
+theorem partiallyLaurentBasis_repr_apply (f : partiallyLaurent R S) (m : nonnegOutside S) :
+    (partiallyLaurentBasis R S).repr f m = (f : LaurentRing R K).coeff m := by
+  simp only [partiallyLaurentBasis, Module.Basis.map_repr, LinearEquiv.trans_apply]
+  exact coeff_partiallyLaurentEquiv_symm f m
+
+/-- Ordinary polynomials belong to every partially Laurent ring. -/
+@[simp]
 theorem toLaurent_mem_partiallyLaurent (p : MvPolynomial K R) :
     MvPolynomial.toLaurent p ∈ partiallyLaurent R S := by
-  have h : MvPolynomial.toLaurent p ∈
-      (MvPolynomial.toLaurent : MvPolynomial K R →ₐ[R] LaurentRing R K).range :=
-    (AlgHom.mem_range _).2 ⟨p, rfl⟩
-  exact mem_partiallyLaurent_iff.2 fun m hm i _ ↦
-    MvPolynomial.mem_range_toLaurent_iff.1 h m hm i
+  apply partiallyLaurent_mono (R := R) (Set.empty_subset S)
+  rw [partiallyLaurent_empty]
+  exact MvPolynomial.toLaurent.mem_range_self p
 
-/-- The canonical polynomial map into the partially Laurent coefficient ring. -/
+/-- The canonical polynomial map into the partially Laurent ring. -/
 noncomputable def toPartiallyLaurent : MvPolynomial K R →ₐ[R] partiallyLaurent R S :=
   MvPolynomial.toLaurent.codRestrict (partiallyLaurent R S) toLaurent_mem_partiallyLaurent
 
@@ -175,58 +227,52 @@ theorem toPartiallyLaurent_injective :
     Function.Injective (toPartiallyLaurent : MvPolynomial K R → partiallyLaurent R S) :=
   fun _ _ h ↦ MvPolynomial.toLaurent_injective (congrArg Subtype.val h)
 
-/-- Inverting no variables identifies the coefficient ring with the polynomial ring. -/
+/-- Inverting no variables identifies the partially Laurent ring with the polynomial ring. -/
 noncomputable def partiallyLaurentEmptyEquiv :
     MvPolynomial K R ≃ₐ[R] partiallyLaurent R (∅ : Set K) :=
-  AlgEquiv.ofBijective toPartiallyLaurent ⟨toPartiallyLaurent_injective, by
-    intro f
-    have hf : ∀ m ∈ (f : LaurentRing R K).coeff.support, ∀ i, 0 ≤ m i := by
-      simpa using mem_partiallyLaurent_iff.1 f.property
-    obtain ⟨p, hp⟩ := (AlgHom.mem_range _).1 (MvPolynomial.mem_range_toLaurent_iff.2 hf)
-    exact ⟨p, Subtype.ext hp⟩⟩
+  (AlgEquiv.ofInjective MvPolynomial.toLaurent MvPolynomial.toLaurent_injective).trans
+    (Subalgebra.equivOfEq _ _ partiallyLaurent_empty.symm)
+
+@[simp]
+theorem partiallyLaurentEmptyEquiv_apply (p : MvPolynomial K R) :
+    partiallyLaurentEmptyEquiv p = toPartiallyLaurent (S := ∅) p := by
+  apply Subtype.ext
+  simp [partiallyLaurentEmptyEquiv, AlgEquiv.ofInjective_apply, coe_toPartiallyLaurent]
+
+@[simp]
+theorem toLaurent_partiallyLaurentEmptyEquiv_symm (f : partiallyLaurent R (∅ : Set K)) :
+    MvPolynomial.toLaurent (partiallyLaurentEmptyEquiv.symm f) = (f : LaurentRing R K) := by
+  rw [← coe_toPartiallyLaurent, ← partiallyLaurentEmptyEquiv_apply, AlgEquiv.apply_symm_apply]
+
+@[simp]
+theorem coeff_partiallyLaurentEmptyEquiv_symm (f : partiallyLaurent R (∅ : Set K))
+    (n : K →₀ ℕ) :
+    (partiallyLaurentEmptyEquiv.symm f).coeff n =
+      (f : LaurentRing R K).coeff (n.mapRange Nat.cast Nat.cast_zero) := by
+  rw [← MvPolynomial.coeff_toLaurent, toLaurent_partiallyLaurentEmptyEquiv_symm]
 
 /-- Every element of a partially Laurent ring has a polynomial numerator and a denominator
 monomial supported entirely on the inverted variables. -/
-theorem exists_polynomial_denominator (f : partiallyLaurent R S) :
+theorem exists_coe_mul_toLaurent_monomial (f : partiallyLaurent R S) :
     ∃ n : K →₀ ℕ, (∀ i ∉ S, n i = 0) ∧ ∃ p : MvPolynomial K R,
       (f : LaurentRing R K) * MvPolynomial.toLaurent (MvPolynomial.monomial n 1) =
         MvPolynomial.toLaurent p := by
-  classical
-  obtain ⟨q, hq⟩ := (AlgHom.mem_range _).1 f.property
-  rw [← hq]
-  clear hq f
-  induction q using AddMonoidAlgebra.induction_linear with
-  | zero => exact ⟨0, by simp, 0, by simp⟩
-  | add q r hq hr =>
-    obtain ⟨n, hn, p, hp⟩ := hq
-    obtain ⟨k, hk, t, ht⟩ := hr
-    refine ⟨n + k, fun i hi ↦ by simp [hn i hi, hk i hi],
-      p * MvPolynomial.monomial k 1 + t * MvPolynomial.monomial n 1, ?_⟩
-    have hnk : (MvPolynomial.monomial (n + k) 1 : MvPolynomial K R) =
-        MvPolynomial.monomial n 1 * MvPolynomial.monomial k 1 := by
-      rw [MvPolynomial.monomial_mul_monomial, one_mul]
-    rw [map_add, hnk, map_mul, map_add, map_mul, map_mul, ← hp, ← ht]
-    ring
-  | single m r =>
-    refine ⟨(-(m : K →₀ ℤ)).mapRange Int.toNat Int.toNat_zero, ?_,
-      MvPolynomial.monomial ((m : K →₀ ℤ).mapRange Int.toNat Int.toNat_zero) r, ?_⟩
-    · intro i hi
-      simp only [Finsupp.mapRange_apply, Finsupp.neg_apply]
-      exact Int.toNat_eq_zero.mpr (neg_nonpos.mpr (m.property i hi))
-    · rw [partialInclusion_apply, AddMonoidAlgebra.mapDomain_single,
-        MvPolynomial.toLaurent_monomial, MvPolynomial.toLaurent_monomial,
-        AddMonoidAlgebra.single_mul_single, mul_one]
-      congr 1
-      ext i
-      simp only [Finsupp.add_apply, Finsupp.mapRange_apply, Finsupp.neg_apply]
-      omega
+  obtain ⟨n, p, hp, hn⟩ := exists_mul_toLaurent_monomial (f : LaurentRing R K)
+  exact ⟨n, fun i hi ↦ hn i (fun m hm ↦ mem_partiallyLaurent_iff.1 f.property m hm i hi),
+    p, hp⟩
 
-/-- The variables allowed as polynomial denominators. -/
+/-- The multiplicative submonoid of polynomials generated by the variables indexed by `S`. -/
 noncomputable def partialDenominators (R : Type*) [CommSemiring R] (S : Set K) :
     Submonoid (MvPolynomial K R) :=
   Submonoid.closure (MvPolynomial.X '' S)
 
-/-- Every monomial supported on the inverted variables is an allowed denominator. -/
+theorem partialDenominators_def :
+    partialDenominators R S = Submonoid.closure (MvPolynomial.X '' S) := (rfl)
+
+theorem X_mem_partialDenominators {i : K} (hi : i ∈ S) :
+    MvPolynomial.X i ∈ partialDenominators R S := Submonoid.subset_closure ⟨i, hi, rfl⟩
+
+/-- Every monic monomial supported on the inverted variables is an allowed denominator. -/
 theorem monomial_mem_partialDenominators {n : K →₀ ℕ} (hn : ∀ i ∉ S, n i = 0) :
     MvPolynomial.monomial n (1 : R) ∈ partialDenominators R S := by
   classical
@@ -236,20 +282,59 @@ theorem monomial_mem_partialDenominators {n : K →₀ ℕ} (hn : ∀ i ∉ S, n
   by_contra h
   exact Finsupp.mem_support_iff.1 hi (hn i h)
 
+/-- Allowed denominators are exactly monic monomials supported on the selected variables. -/
+theorem mem_partialDenominators_iff (p : MvPolynomial K R) :
+    p ∈ partialDenominators R S ↔
+      ∃ n : K →₀ ℕ, (∀ i ∉ S, n i = 0) ∧ p = MvPolynomial.monomial n 1 := by
+  classical
+  constructor
+  · rw [partialDenominators_def]
+    intro hp
+    induction hp using Submonoid.closure_induction with
+    | mem p hp =>
+      obtain ⟨i, hi, rfl⟩ := hp
+      exact ⟨Finsupp.single i 1, fun j hj ↦ by
+        simp [show i ≠ j from fun h ↦ hj (h ▸ hi)], by simp [MvPolynomial.X]⟩
+    | one => exact ⟨0, by simp, by simp⟩
+    | mul p q _ _ hp hq =>
+      obtain ⟨n, hn, rfl⟩ := hp
+      obtain ⟨m, hm, rfl⟩ := hq
+      exact ⟨n + m, fun i hi ↦ by simp [hn i hi, hm i hi], by simp⟩
+  · rintro ⟨n, hn, rfl⟩
+    exact monomial_mem_partialDenominators hn
+
 /-- An inverted variable is a unit already in the partially Laurent ring. -/
 noncomputable def partialUnitX (i : S) : (partiallyLaurent R S)ˣ where
   val := ⟨X i, X_mem_partiallyLaurent (R := R) (S := S) (i : K)⟩
   inv := ⟨((unitX i)⁻¹ : (LaurentRing R K)ˣ).val, inv_unitX_mem_partiallyLaurent i.property⟩
   val_inv := by
     apply Subtype.ext
-    change X (i : K) * ((unitX i)⁻¹ : (LaurentRing R K)ˣ).val = 1
-    rw [← val_unitX]
-    exact (unitX (R := R) (i : K)).val_inv
+    simp only [Subalgebra.coe_mul, Subalgebra.coe_one, ← val_unitX, Units.mul_inv]
   inv_val := by
     apply Subtype.ext
-    change ((unitX i)⁻¹ : (LaurentRing R K)ˣ).val * X (i : K) = 1
-    rw [← val_unitX]
-    exact (unitX (R := R) (i : K)).inv_val
+    simp only [Subalgebra.coe_mul, Subalgebra.coe_one, ← val_unitX, Units.inv_mul]
+
+@[simp]
+theorem val_partialUnitX (i : S) :
+    (partialUnitX (R := R) i : partiallyLaurent R S) =
+      toPartiallyLaurent (MvPolynomial.X (i : K)) := by
+  apply Subtype.ext
+  simp [partialUnitX]
+
+@[simp]
+theorem coe_val_inv_partialUnitX (i : S) :
+    (((partialUnitX (R := R) i)⁻¹).val : LaurentRing R K) = ((unitX (i : K))⁻¹).val := (rfl)
+
+@[simp]
+theorem coe_val_partialUnitX_zpow (i : S) (n : ℤ) :
+    (((partialUnitX (R := R) i) ^ n).val : LaurentRing R K) =
+      ((unitX (i : K) ^ n : (LaurentRing R K)ˣ) : LaurentRing R K) := by
+  let f := Units.map (partiallyLaurent R S).val.toMonoidHom
+  have h : f (partialUnitX i) = unitX (R := R) (i : K) := by
+    apply Units.ext
+    simp [f]
+  rw [← h, ← map_zpow]
+  rfl
 
 /-- The partially Laurent ring carries the canonical polynomial-algebra structure. -/
 noncomputable instance partialAlgebraMvPolynomial :
@@ -257,20 +342,23 @@ noncomputable instance partialAlgebraMvPolynomial :
   (toPartiallyLaurent : MvPolynomial K R →ₐ[R] partiallyLaurent R S).toRingHom.toAlgebra
 
 @[simp]
-theorem partial_algebraMap_eq (p : MvPolynomial K R) :
+theorem algebraMap_eq_toPartiallyLaurent (p : MvPolynomial K R) :
     algebraMap (MvPolynomial K R) (partiallyLaurent R S) p = toPartiallyLaurent p := (rfl)
 
 instance : IsScalarTower R (MvPolynomial K R) (partiallyLaurent R S) :=
   .of_algebraMap_eq fun r ↦ by simp
 
-/-- The partially Laurent coefficient ring is exactly the localization of polynomials at
+instance : IsScalarTower (MvPolynomial K R) (partiallyLaurent R S) (LaurentRing R K) :=
+  .of_algebraMap_eq fun p ↦ by simp
+
+/-- The partially Laurent ring is exactly the localization of polynomials at
 the chosen variables. This holds for an arbitrary, possibly infinite inverted set. -/
-instance partialIsLocalization :
+instance isLocalization_partiallyLaurent :
     IsLocalization (partialDenominators R S) (partiallyLaurent R S) where
   map_units := by
     rintro ⟨y, hy⟩
-    change y ∈ Submonoid.closure (MvPolynomial.X '' S) at hy
-    change IsUnit (algebraMap (MvPolynomial K R) (partiallyLaurent R S) y)
+    dsimp only
+    rw [partialDenominators] at hy
     induction hy using Submonoid.closure_induction with
     | mem x hx =>
       obtain ⟨i, hi, rfl⟩ := hx
@@ -280,14 +368,14 @@ instance partialIsLocalization :
     | one => simp
     | mul x y _ _ hx hy => simpa using hx.mul hy
   surj f := by
-    obtain ⟨n, hn, p, hp⟩ := exists_polynomial_denominator f
+    obtain ⟨n, hn, p, hp⟩ := exists_coe_mul_toLaurent_monomial f
     refine ⟨(p, ⟨MvPolynomial.monomial n 1, monomial_mem_partialDenominators hn⟩), ?_⟩
     apply Subtype.ext
     simpa using hp
   exists_of_eq h := ⟨1, by simpa using toPartiallyLaurent_injective h⟩
 
 /-- Enlarging the inverted set localizes at precisely the newly inverted variables. -/
-theorem isLocalization_partiallyLaurent {T : Set K} (hST : S ⊆ T) :
+theorem isLocalization_partiallyLaurent_of_subset {T : Set K} (hST : S ⊆ T) :
     letI := (Subalgebra.inclusion (partiallyLaurent_mono (R := R) hST)).toRingHom.toAlgebra
     IsLocalization
       (Algebra.algebraMapSubmonoid (partiallyLaurent R S) (partialDenominators R (T \ S)))
@@ -313,7 +401,7 @@ theorem isLocalization_partiallyLaurent {T : Set K} (hST : S ⊆ T) :
     exact ⟨p, Submonoid.closure_mono (Set.image_mono Set.sdiff_subset) hp, rfl⟩
   have hdiv : ∀ n ∈ N, ∃ m ∈ M, n ∣ m := by
     rintro _ ⟨p, hp, rfl⟩
-    change p ∈ Submonoid.closure (MvPolynomial.X '' T) at hp
+    rw [partialDenominators] at hp
     induction hp using Submonoid.closure_induction with
     | mem x hx =>
       obtain ⟨i, hiT, rfl⟩ := hx
@@ -335,25 +423,22 @@ section Coefficients
 variable {A B : Type*} [CommSemiring A] [CommSemiring B]
 
 /-- Changing coefficients preserves the exponent condition, even for noninjective maps. -/
-theorem map_mem_partiallyLaurent (φ : R →+* A) {f : LaurentRing R K}
+theorem mapRingHom_mem_partiallyLaurent (φ : R →+* A) {f : LaurentRing R K}
     (hf : f ∈ partiallyLaurent R S) :
     AddMonoidAlgebra.mapRingHom (K →₀ ℤ) φ f ∈ partiallyLaurent A S := by
-  classical
-  apply mem_partiallyLaurent_iff.2
-  intro m hm i hi
-  apply mem_partiallyLaurent_iff.1 hf m _ i hi
-  apply Finsupp.mem_support_iff.2
-  intro hz
-  exact Finsupp.mem_support_iff.1 hm (by simp [AddMonoidAlgebra.coeff_mapRingHom, hz])
+  rw [partiallyLaurent, AlgHom.mem_range] at hf ⊢
+  obtain ⟨p, rfl⟩ := hf
+  refine ⟨AddMonoidAlgebra.mapRingHom _ φ p, ?_⟩
+  simpa only [RingHom.comp_apply, partialInclusion, AddMonoidAlgebra.mapDomainAlgHom,
+    AlgHom.coe_mk] using
+    DFunLike.congr_fun
+      (AddMonoidAlgebra.mapRingHom_comp_mapDomainRingHom φ (nonnegOutside S).subtype).symm p
 
 /-- Coefficient homomorphisms restrict to partially Laurent rings with the same inverted set. -/
 noncomputable def partialCoeffMap (φ : R →+* A) :
-    partiallyLaurent R S →+* partiallyLaurent A S where
-  toFun f := ⟨AddMonoidAlgebra.mapRingHom (K →₀ ℤ) φ f, map_mem_partiallyLaurent φ f.property⟩
-  map_zero' := Subtype.ext (map_zero _)
-  map_one' := Subtype.ext (map_one _)
-  map_add' _ _ := Subtype.ext (map_add _ _ _)
-  map_mul' _ _ := Subtype.ext (map_mul _ _ _)
+    partiallyLaurent R S →+* partiallyLaurent A S :=
+  (AddMonoidAlgebra.mapRingHom (K →₀ ℤ) φ).restrict
+    (partiallyLaurent R S) (partiallyLaurent A S) (fun _ ↦ mapRingHom_mem_partiallyLaurent φ)
 
 @[simp]
 theorem coe_partialCoeffMap (φ : R →+* A) (f : partiallyLaurent R S) :
@@ -383,6 +468,12 @@ theorem partialCoeffMap_comp (φ : R →+* A) (ψ : A →+* B) :
   ext m
   simp
 
+@[simp]
+theorem partialCoeffMap_partialCoeffMap (φ : R →+* A) (ψ : A →+* B)
+    (f : partiallyLaurent R S) :
+    partialCoeffMap ψ (partialCoeffMap φ f) = partialCoeffMap (ψ.comp φ) f :=
+  DFunLike.congr_fun (partialCoeffMap_comp φ ψ) f
+
 /-- Coefficient change commutes with the polynomial inclusion into a partially Laurent ring. -/
 @[simp]
 theorem partialCoeffMap_toPartiallyLaurent (φ : R →+* A) (p : MvPolynomial K R) :
@@ -393,13 +484,14 @@ theorem partialCoeffMap_toPartiallyLaurent (φ : R →+* A) (p : MvPolynomial K 
 
 /-- Changing coefficients preserves each permitted basis monomial. -/
 @[simp]
-theorem partialCoeffMap_basis (φ : R →+* A) (m : nonnegativeOutside S) :
-    partialCoeffMap φ (partiallyLaurentBasis (R := R) m) =
-      partiallyLaurentBasis (R := A) m := by
+theorem partialCoeffMap_partiallyLaurentBasis (φ : R →+* A) (m : nonnegOutside S) :
+    partialCoeffMap φ (partiallyLaurentBasis R S m) =
+      partiallyLaurentBasis A S m := by
   apply Subtype.ext
   simp
 
 /-- Enlarging the inverted set commutes with arbitrary coefficient homomorphisms. -/
+@[simp]
 theorem partialCoeffMap_inclusion (φ : R →+* A) {T : Set K} (hST : S ⊆ T)
     (f : partiallyLaurent R S) :
     partialCoeffMap φ (Subalgebra.inclusion (partiallyLaurent_mono (R := R) hST) f) =
