@@ -322,19 +322,6 @@ end Seminorm
 
 section Topology
 
-/-- If `ϖ ∈ A₀` and some positive power `ϖ ^ (-n)` lies in `A₀`, then so does every `ϖ ^ (-m)`. -/
-private theorem coe_zpow_neg_mem_of_pos (hϖ : (ϖ : A) ∈ A₀) {n : ℤ} (hn : 0 < n)
-    (h : ((ϖ ^ (-n) : Aˣ) : A) ∈ A₀) (m : ℕ) : ((ϖ ^ (-(m : ℤ)) : Aˣ) : A) ∈ A₀ := by
-  have e : (ϖ ^ (-(n * m : ℤ)) : Aˣ) = (ϖ ^ (-n)) ^ m := by
-    rw [← zpow_natCast, ← zpow_mul]
-    congr 1
-    ring
-  have h2 : ((ϖ ^ (-(n * m : ℤ)) : Aˣ) : A) * 1 ∈ A₀ := by
-    rw [e, mul_one, Units.val_pow_eq_pow_val]
-    exact pow_mem h m
-  simpa using zpow_neg_mul_mem_of_le hϖ (x := 1) (m := (m : ℤ)) (n := n * m)
-    (by nlinarith [Int.natCast_nonneg m]) h2
-
 variable [TopologicalSpace A]
   (hb : (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True)
     (fun n ↦ {x | ((ϖ ^ (-(n : ℤ)) : Aˣ) : A) * x ∈ A₀}))
@@ -430,18 +417,15 @@ theorem t2Space_iff_forall_tateGauge_eq_zero_iff [SeparatelyContinuousMul A]
 with `ϖ ∈ A₀`, then the Tate gauge of one is one. -/
 theorem tateGauge_one [T1Space A] [Nontrivial A] (ha : 1 < a)
     (hϖ : (ϖ : A) ∈ A₀) : tateGauge A₀ ϖ a 1 = 1 := by
-  have ha₀ : 0 ≤ a := zero_le_one.trans ha.le
-  refine le_antisymm (tateGauge_le_one A₀.one_mem) (not_lt.1 fun hlt ↦ ?_)
-  obtain ⟨n, hn, hn'⟩ := (tateGauge_lt_iff ha₀ ⟨0, by simp⟩).1 hlt
-  have hnpos : 0 < n := by
-    by_contra h
-    exact absurd hn' (not_lt.2 (one_le_zpow₀ ha.le (by omega)))
-  -- a gauge below one forces `1 ∈ closure {0} = {0}`, which is absurd
-  have h1 : (1 : A) ∈ closure ({0} : Set A) := by
-    refine (mem_closure_zero_iff_forall hb).2 fun m ↦ ?_
-    simpa using coe_zpow_neg_mem_of_pos hϖ hnpos (by simpa using hn) m
-  rw [closure_singleton] at h1
-  exact one_ne_zero h1
+  have h1 : ∃ n : ℤ, ((ϖ ^ n : Aˣ) : A) * 1 ∈ A₀ := ⟨0, by simp⟩
+  -- `1 ∉ closure {0}` makes the gauge of `1` positive; submultiplicativity then forces it to be `1`
+  have hpos : 0 < tateGauge A₀ ϖ a 1 :=
+    (tateGauge_nonneg (zero_le_one.trans ha.le) 1).lt_of_ne' fun h ↦ one_ne_zero <| by
+      have := (mem_closure_zero_iff_forall hb).2 ((tateGauge_eq_zero_iff_forall hϖ h1 ha).1 h)
+      rwa [closure_singleton, Set.mem_singleton_iff] at this
+  have hle := tateGauge_mul_le 1 1 h1 h1 (zero_lt_one.trans ha)
+  rw [one_mul] at hle
+  exact le_antisymm (tateGauge_le_one A₀.one_mem) (by nlinarith)
 
 end Topology
 
