@@ -26,13 +26,15 @@ it as `Bᴴ * B` for an explicit `B`, and check that it is invertible. One gener
 `Matrix.PosDef` over any ring is recorded alongside, since Mathlib does not state it: a matrix on
 an empty index type is positive definite, which is what the rank-zero members of the classical
 Cartan families need. So is the `1 × 1` criterion: such a matrix over a nontrivial star-ordered
-ring without zero divisors is positive definite exactly when its single entry is positive.
+ring without zero divisors is positive definite exactly when its single entry is positive. So is
+the positive definiteness of `1 + Aᴴ * A` for any matrix `A`.
 
 ## Main results
 
 * `Matrix.PosDef.of_isEmpty`: a matrix on an empty index type is positive definite.
 * `Matrix.posDef_fin_one_iff`: a `1 × 1` matrix is positive definite exactly when its single
   entry is positive.
+* `Matrix.posDef_one_add_conjTranspose_mul_self`: the matrix `1 + Aᴴ * A` is positive definite.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
 * `TauCeti.Matrix.posDef_map_intCast_iff`: positive definiteness over `ℤ` and over `ℚ` agree.
@@ -96,6 +98,13 @@ theorem _root_.Matrix.posDef_fin_one_iff {R : Type*} [Ring R] [PartialOrder R] [
     simp
   rw [hdiag, _root_.Matrix.posDef_diagonal_iff]
   simp
+
+/-- For any matrix `A` over a star-ordered ring with a proper star, such as `ℝ` or `ℂ`, the matrix
+`1 + Aᴴ * A` is positive definite. -/
+theorem _root_.Matrix.posDef_one_add_conjTranspose_mul_self {m R : Type*} [Fintype m] [Finite n]
+    [DecidableEq n] [Ring R] [PartialOrder R] [StarRing R] [StarOrderedRing R] [IsProperStar R]
+    (A : _root_.Matrix m n R) : (1 + Aᴴ * A).PosDef :=
+  _root_.Matrix.PosDef.one.add_posSemidef (_root_.Matrix.posSemidef_conjTranspose_mul_self A)
 
 /-- The finite case of `TauCeti.Matrix.posDef_map_intCast`, where positive definiteness can be
 tested against ordinary vectors. -/
