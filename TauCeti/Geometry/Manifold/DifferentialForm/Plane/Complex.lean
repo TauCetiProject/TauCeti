@@ -43,6 +43,10 @@ with value the flat covector `TauCeti.dzForm`. -/
 def complexDz : SmoothForm 𝓘(ℝ, ℂ) ℂ ℂ 1 :=
   const dzForm
 
+/-- `dz` is the constant form with value `TauCeti.dzForm`, so the lemmas about
+`TauCeti.SmoothForm.const` apply to it. -/
+theorem complexDz_eq_const : complexDz = const dzForm := (rfl)
+
 /-- The complex-valued coordinate one-form `dbar z` on the real manifold `ℂ`. -/
 def complexDzBar : SmoothForm 𝓘(ℝ, ℂ) ℂ ℂ 1 :=
   const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℂ (0 : Fin 1)
