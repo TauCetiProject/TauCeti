@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Group.Quotient
@@ -32,6 +34,8 @@ differentiable, so the predicate is meaningful for differentiable maps.
 * `TauCeti.isHorizontalMap_comp_diffeomorph_iff`, `TauCeti.isHorizontalMap_diffeomorph_comp_iff`:
   independence of the parametrization and transport by diffeomorphisms preserving the
   distributions.
+
+* `TauCeti.sub_mem_of_tangent_curve`: transverse constancy along a closed-interval tangent curve.
 
 ## References
 
@@ -137,7 +141,7 @@ end General
 
 section Real
 
-open Set Filter
+open Set Filter TauCeti.Manifold
 open scoped Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -147,6 +151,46 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
   {D : ∀ z : M, Submodule ℝ (TangentSpace I z)} {f : N → M}
+
+/-- A curve tangent to a distribution is constant modulo a closed subspace in any coordinates
+whose differentials send the distribution into that subspace. Relative derivatives include
+both endpoints of the closed interval. -/
+theorem sub_mem_of_tangent_curve {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {a b : ℝ} (hab : a < b) {γ : ℝ → M} {S : Set ℝ}
+    (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ S) (hsub : Icc a b ⊆ S)
+    {U : Set M} (hU : IsOpen U) {p : M → V}
+    (hp : MDifferentiableOn I 𝓘(ℝ, V) p U) (hγU : MapsTo γ (Icc a b) U)
+    (W : Submodule ℝ V) (hW : IsClosed (W : Set V))
+    (hflat : ∀ z ∈ U, (D z).map (mfderiv I 𝓘(ℝ, V) p z).toLinearMap ≤ W)
+    (htan : ∀ t ∈ S, curveVelocityWithin I γ S t ∈ D (γ t))
+    {s t : ℝ} (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    p (γ t) - p (γ s) ∈ W := by
+  let _ : IsClosed (W : Set V) := hW
+  let q : V →L[ℝ] V ⧸ W := W.mkQL
+  have hpD (u : ℝ) (hu : u ∈ Icc a b) : MDifferentiableAt I 𝓘(ℝ, V) p (γ u) :=
+    (hp (γ u) (hγU hu)).mdifferentiableAt (hU.mem_nhds (hγU hu))
+  have hcomp : MDifferentiableOn 𝓘(ℝ, ℝ) 𝓘(ℝ, V ⧸ W) (q ∘ p ∘ γ) (Icc a b) :=
+    q.mdifferentiable.comp_mdifferentiableOn
+      (hp.comp (hγ.mono hsub) hγU)
+  have hdiff : DifferentiableOn ℝ (q ∘ p ∘ γ) (Icc a b) :=
+    hcomp.differentiableOn
+  have hzero (u : ℝ) (hu : u ∈ Ico a b) :
+      derivWithin (q ∘ p ∘ γ) (Icc a b) u = 0 := by
+    have hu' : u ∈ Icc a b := Ico_subset_Icc_self hu
+    have hd := hasDerivWithinAt_comp_curve
+      (q.differentiableAt.comp_mdifferentiableAt (hpD u hu'))
+      (hasMFDerivWithinAt_curveVelocityWithin (hγ u (hsub hu')))
+    have hz : mvfderiv I (q ∘ p) (γ u) (curveVelocityWithin I γ S u) = 0 := by
+      rw [mvfderiv_comp_apply_of_differentiableAt q.differentiableAt (hpD u hu'),
+        q.fderiv]
+      apply (Submodule.Quotient.mk_eq_zero W).mpr
+      rw [mvfderiv_apply_eq_mfderiv_apply]
+      exact hflat (γ u) (hγU hu') (Submodule.mem_map_of_mem (htan u (hsub hu')))
+    rw [hz] at hd
+    exact (hd.mono hsub).derivWithin (uniqueDiffOn_Icc hab u hu')
+  have hconst := constant_of_derivWithin_zero hdiff hzero
+  apply (Submodule.Quotient.eq W).mp
+  exact (hconst t ht).trans (hconst s hs).symm
 
 /-- Along a horizontal differentiable map, coordinates are locally constant modulo any closed
 subspace containing the coordinate image of the distribution. -/

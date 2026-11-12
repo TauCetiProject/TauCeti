@@ -8,9 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Foliation.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Topology.Connected.PathConnected
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Normed.Group.Quotient
-import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+import TauCeti.Geometry.Manifold.Distribution.Horizontal
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -46,6 +44,7 @@ every leaf) and the Euler-class bound on its leaves refer to.
   `TauCeti.Foliation.sameLeaf_le` says it is the least one relating the ends of tangent curves.
 * `TauCeti.Foliation.sameLeaf_of_contMDiffOn_of_tangent`: a curve tangent to `F` on a compact
   interval stays in one leaf.
+* `TauCeti.Foliation.leaf_eq_of_distribution_eq`: leaves depend only on the distribution.
 * `TauCeti.Foliation.leaf_eq_leaf_iff` and `TauCeti.Foliation.disjoint_leaf_iff`: two leaves are
   equal or disjoint.
 * `TauCeti.Foliation.isPathConnected_leaf`: every leaf is path-connected.
@@ -237,30 +236,17 @@ their difference lies in `S`. -/
 @[simp]
 theorem sameLeaf_ofSubmodule_iff : (ofSubmodule S hn).SameLeaf x y ↔ y - x ∈ S := by
   constructor
-  · -- A curve with velocity in `S` has constant image in the quotient `E ⧸ S`, which is a normed
-    -- space because the finite-dimensional subspace `S` is closed.
-    have : IsClosed (S : Set E) := S.closed_of_finiteDimensional
-    set q : E →L[ℝ] E ⧸ S := S.mkQL
-    have hq : ∀ v, q v = 0 ↔ v ∈ S := fun _ ↦ Submodule.Quotient.mk_eq_zero S
-    have hr : Equivalence fun x y : E ↦ y - x ∈ S :=
+  · have hr : Equivalence fun x y : E ↦ y - x ∈ S :=
       ⟨fun x ↦ by simp, fun h ↦ by simpa using S.neg_mem h,
         fun hxy hyz ↦ by simpa using S.add_mem hyz hxy⟩
     refine fun h ↦ sameLeaf_le hr (fun x y hxy ↦ ?_) x y h
     obtain ⟨γ, hγ, htan, rfl, rfl⟩ := joinedByTangentCurve_iff.mp hxy
-    have hdiff : DifferentiableOn ℝ γ (Icc 0 1) :=
-      (contMDiffOn_iff_contDiffOn.mp hγ).differentiableOn one_ne_zero
-    have hconst := constant_of_derivWithin_zero (q.differentiable.comp_differentiableOn hdiff)
-      (fun u hu ↦ ?_) 1 (right_mem_Icc.mpr zero_le_one)
-    · rw [← hq, map_sub, sub_eq_zero]
-      exact hconst
-    · have hu' : u ∈ Icc (0 : ℝ) 1 := Ico_subset_Icc_self hu
-      rw [(q.hasFDerivAt.comp_hasDerivWithinAt u
-        ((hdiff u hu').hasDerivWithinAt)).derivWithin (uniqueDiffOn_Icc zero_lt_one u hu'),
-        hq]
-      have hmem := htan u hu'
-      rw [curveVelocityWithin_eq_derivWithin, ofSubmodule_distribution] at hmem
-      -- The tangent space of the model `𝓘(ℝ, E)` is `E` by definition.
-      exact hmem
+    exact sub_mem_of_tangent_curve (D := fun _ : E ↦ S) zero_lt_one
+      (hγ.mdifferentiableOn one_ne_zero) (by rfl)
+      isOpen_univ mdifferentiableOn_id (fun _ _ ↦ mem_univ _) S S.closed_of_finiteDimensional
+      (fun z _ ↦ by rw [mfderiv_id]; exact (Submodule.map_id S).le)
+      (fun t ht ↦ by simpa only [ofSubmodule_distribution] using htan t ht)
+      (by simp) (by simp)
   · -- The straight segment from `x` to `y` has constant velocity `y - x ∈ S`.
     intro h
     refine JoinedByTangentCurve.sameLeaf <| joinedByTangentCurve_iff.mpr
@@ -282,6 +268,17 @@ theorem leaf_ofSubmodule (x : E) : (ofSubmodule S hn).leaf x = {y | y - x ∈ S}
   Set.ext fun _ ↦ sameLeaf_ofSubmodule_iff S hn
 
 end ofSubmodule
+
+/-- Foliations with the same tangent distribution have the same leaves, even if their
+regularities and recorded ranks differ. -/
+theorem leaf_eq_of_distribution_eq (F : Foliation I n M k)
+    {n' : ℕ∞ω} {k' : ℕ} [IsManifold I (n' + 1) M] (F' : Foliation I n' M k')
+    (hD : F.distribution = F'.distribution) (x : M) : F.leaf x = F'.leaf x := by
+  have hrel : F.JoinedByTangentCurve = F'.JoinedByTangentCurve := by
+    funext y z
+    apply propext
+    simp only [JoinedByTangentCurve, hD]
+  simp only [leaf, SameLeaf, hrel]
 
 end Foliation
 
