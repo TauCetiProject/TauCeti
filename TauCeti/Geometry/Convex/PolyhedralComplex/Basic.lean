@@ -105,7 +105,7 @@ theorem subset_of_mem_intrinsicInterior (C : FinitePolyhedralComplex h) {P Q : S
 open Filter Topology in
 /-- Near a relative interior point of a cell, every cell encountered contains
 that entire cell. This is uniform over the finite complex. -/
-theorem eventually_subset_of_mem_cell (C : FinitePolyhedralComplex h) {P : Set V}
+theorem eventually_subset_of_mem_intrinsicInterior (C : FinitePolyhedralComplex h) {P : Set V}
     (hP : P ∈ C.cells) {x : V} (hx : x ∈ intrinsicInterior ℝ P) :
     ∀ᶠ y in 𝓝 x, ∀ Q ∈ C.cells, y ∈ Q → P ⊆ Q := by
   have hnear := (locallyFinite_of_finite (fun Q : C.cells => (Q : Set V))).eventually_subset
@@ -126,6 +126,20 @@ theorem disjoint_intrinsicInterior (C : FinitePolyhedralComplex h) {P Q : Set V}
     (hP : P ∈ C.cells) (hQ : Q ∈ C.cells) (hne : P ≠ Q) :
     Disjoint (intrinsicInterior ℝ P) (intrinsicInterior ℝ Q) :=
   Set.disjoint_left.mpr fun _ hxP hxQ => hne (C.eq_of_mem_intrinsicInterior hP hQ hxP hxQ)
+
+/-- If one cell is contained in another and their affine spans have the same dimension,
+the cells are equal. -/
+theorem eq_of_subset_of_finrank_direction_eq (C : FinitePolyhedralComplex h)
+    {P Q : Set V} (hP : P ∈ C.cells) (hQ : Q ∈ C.cells) (hPQ : P ⊆ Q)
+    (hdim : Module.finrank ℝ (affineSpan ℝ P).direction =
+      Module.finrank ℝ (affineSpan ℝ Q).direction) : P = Q := by
+  have := h.finiteDimensional
+  by_contra hne
+  have hlt := TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior
+    (C.isConvexPolyhedron hP).convex (C.nonempty P hP) hPQ
+    (C.disjoint_intrinsicInterior hP hQ hne)
+  rw [direction_affineSpan, direction_affineSpan] at hdim
+  exact (ne_of_lt hlt) hdim
 
 /-- A cell contained in another cell is a face of it. -/
 theorem isPolyhedralFace_of_subset (C : FinitePolyhedralComplex h) {P Q : Set V}

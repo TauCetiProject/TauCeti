@@ -28,18 +28,6 @@ namespace TauCeti.FinitePolyhedralComplex
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
 
-private theorem eq_of_subset_of_finrank_direction_eq (C : FinitePolyhedralComplex h)
-    {P Q : Set V} (hP : P ∈ C.cells) (hQ : Q ∈ C.cells) (hPQ : P ⊆ Q)
-    (hdim : Module.finrank ℝ (affineSpan ℝ P).direction =
-      Module.finrank ℝ (affineSpan ℝ Q).direction) : P = Q := by
-  have := h.finiteDimensional
-  by_contra hne
-  have hlt := TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior
-    (C.isConvexPolyhedron hP).convex (C.nonempty P hP) hPQ
-    (C.disjoint_intrinsicInterior hP hQ hne)
-  rw [direction_affineSpan, direction_affineSpan] at hdim
-  exact (ne_of_lt hlt) hdim
-
 /-- The subcomplex consisting of all cells of ambient codimension at least `k`.
 The dimension inequality also gives the empty complex when `k` exceeds the ambient dimension. -/
 noncomputable def codimensionAtLeast (C : FinitePolyhedralComplex h) (k : ℕ) :
@@ -68,7 +56,7 @@ noncomputable def codimensionAtLeast (C : FinitePolyhedralComplex h) (k : ℕ) :
 
 /-- Membership in the codimension subcomplex is the corresponding dimension inequality. -/
 @[simp]
-theorem mem_codimensionAtLeast_cells (C : FinitePolyhedralComplex h) (k : ℕ) (P : Set V) :
+theorem mem_cells_codimensionAtLeast (C : FinitePolyhedralComplex h) (k : ℕ) (P : Set V) :
     P ∈ (C.codimensionAtLeast k).cells ↔ P ∈ C.cells ∧
       Module.finrank ℝ (affineSpan ℝ P).direction + k ≤ Module.finrank ℝ V := by
   classical
@@ -84,32 +72,32 @@ theorem codimensionAtLeast_zero (C : FinitePolyhedralComplex h) :
   simp [Submodule.finrank_le]
 
 /-- Every exact-codimension cell belongs to the corresponding codimension subcomplex. -/
-theorem cellsOfCodimension_subset_codimensionAtLeast_cells
+theorem cellsOfCodimension_subset_cells_codimensionAtLeast
     (C : FinitePolyhedralComplex h) (k : ℕ) :
     C.cellsOfCodimension k ⊆ (C.codimensionAtLeast k).cells := by
   intro P hP
   obtain ⟨hPC, hdim⟩ := mem_cellsOfCodimension.mp hP
-  exact (C.mem_codimensionAtLeast_cells k P).mpr ⟨hPC, hdim.le⟩
+  exact (C.mem_cells_codimensionAtLeast k P).mpr ⟨hPC, hdim.le⟩
 
 /-- Increasing the codimension bound gives a subcomplex of the previous one. -/
-theorem codimensionAtLeast_cells_antitone (C : FinitePolyhedralComplex h) :
+theorem cells_codimensionAtLeast_antitone (C : FinitePolyhedralComplex h) :
     Antitone (fun k => (C.codimensionAtLeast k).cells) := by
   intro k l hkl P hP
-  obtain ⟨hPC, hdim⟩ := (C.mem_codimensionAtLeast_cells l P).mp hP
-  exact (C.mem_codimensionAtLeast_cells k P).mpr
+  obtain ⟨hPC, hdim⟩ := (C.mem_cells_codimensionAtLeast l P).mp hP
+  exact (C.mem_cells_codimensionAtLeast k P).mpr
     ⟨hPC, (Nat.add_le_add_left hkl _).trans hdim⟩
 
 /-- Every codimension skeleton is a subcomplex of the original complex. -/
 theorem codimensionAtLeast_isSubcomplex (C : FinitePolyhedralComplex h) (k : ℕ) :
     (C.codimensionAtLeast k).IsSubcomplex C :=
-  isSubcomplex_iff.mpr fun _ hP => ((C.mem_codimensionAtLeast_cells k _).mp hP).1
+  isSubcomplex_iff.mpr fun _ hP => ((C.mem_cells_codimensionAtLeast k _).mp hP).1
 
 /-- No cells can have codimension greater than the ambient dimension. -/
 theorem cells_codimensionAtLeast_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
     (hk : Module.finrank ℝ V < k) : (C.codimensionAtLeast k).cells = ∅ := by
   apply Finset.eq_empty_iff_forall_notMem.mpr
   intro P hP
-  have hdim := ((C.mem_codimensionAtLeast_cells k P).mp hP).2
+  have hdim := ((C.mem_cells_codimensionAtLeast k P).mp hP).2
   omega
 
 open Filter Topology in
@@ -121,17 +109,17 @@ theorem eventually_mem_support_codimensionAtLeast_iff (C : FinitePolyhedralCompl
     ∀ᶠ y in 𝓝 x, y ∈ (C.codimensionAtLeast k).support ↔ y ∈ P := by
   let := h.finiteDimensional
   obtain ⟨hPC, hdimP⟩ := mem_cellsOfCodimension.mp hP
-  filter_upwards [C.eventually_subset_of_mem_cell hPC hx] with y hy
+  filter_upwards [C.eventually_subset_of_mem_intrinsicInterior hPC hx] with y hy
   constructor
   · intro hys
     obtain ⟨Q, hQ, hyQ⟩ := mem_support.mp hys
-    obtain ⟨hQC, hdimQ⟩ := (C.mem_codimensionAtLeast_cells k Q).mp hQ
+    obtain ⟨hQC, hdimQ⟩ := (C.mem_cells_codimensionAtLeast k Q).mp hQ
     have hPQ := hy Q hQC hyQ
     have hle := Submodule.finrank_mono (AffineSubspace.direction_le (affineSpan_mono ℝ hPQ))
     have heq : P = Q := C.eq_of_subset_of_finrank_direction_eq hPC hQC hPQ (by omega)
     exact heq ▸ hyQ
   · intro hyP
-    exact mem_support.mpr ⟨P, C.cellsOfCodimension_subset_codimensionAtLeast_cells k hP, hyP⟩
+    exact mem_support.mpr ⟨P, C.cellsOfCodimension_subset_cells_codimensionAtLeast k hP, hyP⟩
 
 open Set Filter Topology in
 /-- At a relative interior point of an exact-codimension cell, one ball
@@ -153,7 +141,7 @@ theorem exists_isolating_ball (C : FinitePolyhedralComplex h) {P : Set V} {k : �
     (isClosed_intrinsicFrontier (affineSpan ℝ P).closed_of_finiteDimensional).isOpen_compl.mem_nhds
       hxf
   have hnear := (C.eventually_mem_support_codimensionAtLeast_iff hP hx).and
-    (hfront.and (C.eventually_subset_of_mem_cell hPC hx))
+    (hfront.and (C.eventually_subset_of_mem_intrinsicInterior hPC hx))
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp hnear
   refine ⟨r, hr, ?_, ?_, ?_, ?_⟩
   · ext y
@@ -169,17 +157,5 @@ theorem exists_isolating_ball (C : FinitePolyhedralComplex h) {P : Set V} {k : �
     exact hne heq.symm
   · rintro Q hQ ⟨y, hy, hyQ⟩
     exact (hball hy).2.2 Q hQ hyQ
-
-open Set in
-/-- Near a relative interior point of a wall, a ball meets no other wall. -/
-theorem exists_ball_eq_wall_of_mem_intrinsicInterior (C : FinitePolyhedralComplex h)
-    (P : C.walls) {q : V}
-    (hq : q ∈ intrinsicInterior ℝ (P : Set V)) :
-    ∃ r > 0, ∀ Q : C.walls, ∀ z ∈ Metric.ball q r, z ∈ (Q : Set V) → Q = P := by
-  obtain ⟨r, hr, -, -, hdisj, -⟩ := C.exists_isolating_ball P.property hq
-  refine ⟨r, hr, fun Q z hz hzQ => ?_⟩
-  by_contra hne
-  exact disjoint_left.mp (hdisj Q Q.property fun he => hne (Subtype.ext he)) hz hzQ
-
 
 end TauCeti.FinitePolyhedralComplex
