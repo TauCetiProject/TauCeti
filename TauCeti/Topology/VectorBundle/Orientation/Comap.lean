@@ -83,13 +83,13 @@ private theorem eventually_map_eq_map_of_continuousAt {X : Type*} [TopologicalSp
   -- Otherwise `F'` is finite-dimensional, and the determinant of `L x` is positive near `x₀`.
   have : FiniteDimensional ℝ F' := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
   have hLb : (L x₀).det = 1 := by
-    rw [hL₀]
-    exact LinearMap.det_id
+    rw [hL₀, ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id]
   filter_upwards [(ContinuousLinearMap.continuous_det.continuousAt.comp (hL this)).eventually
     (lt_mem_nhds (hLb ▸ one_pos))] with x hx f hf
   refine Orientation.map_eq_map_of_det_pos c _ _ hι ?_
-  rw [Function.comp_apply, ← hf] at hx
-  exact hx
+  rwa [Function.comp_apply, ← hf, ContinuousLinearMap.det,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    ContinuousLinearEquiv.trans_toLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm] at hx
 
 /-- Near a point `b'`, the fibre orientations obtained by pulling back `o` along `φ` are locally
 constant when read in the preferred trivialization of `E'` at `b'`. -/
@@ -139,7 +139,7 @@ private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank
   have hS := eventually_map_eq_map_of_continuousAt hι c (T b' hb' hb) (L := L)
     (fun _ ↦ (continuousOn_const.clm_comp (continuousOn_fiberwise_inCoordinates
       (φ := fun b' ↦ (φ b' : E' b' →L[ℝ] E (g b'))) hφ e e')).continuousAt hU)
-    (by rw [← hL b' hb' hb, ContinuousLinearEquiv.self_trans_symm]; rfl)
+    (by rw [← hL b' hb' hb, ContinuousLinearEquiv.self_trans_symm, ContinuousLinearEquiv.coe_refl])
   filter_upwards [hU, g.continuous.continuousAt.eventually (o.eventually_mapOrientation_eq' (g b')),
     hS] with x hxU hxo hxS hx'
   refine (Orientation.map ι (T x hx' hxU.2).toLinearEquiv).injective ?_
