@@ -235,10 +235,9 @@ theorem coe_rightPolarDiffeomorph_apply_snd (A : GL n 𝕜) :
 theorem coe_rightPolarDiffeomorph_symm_apply (p : unitaryGroup n 𝕜 × posDefOpens n 𝕜) :
     ((rightPolarDiffeomorph n 𝕜).symm p : Matrix n n 𝕜) =
       (p.1 : Matrix n n 𝕜) * ((p.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) := by
-  change ((cartanDiffeomorph n 𝕜 (p.1, (hermitianExpDiffeomorph n 𝕜 ∞).symm p.2) : GL n 𝕜) :
-    Matrix n n 𝕜) = _
-  rw [val_cartanDiffeomorph_apply, coe_hermitianExpDiffeomorph_symm_apply,
-    ((mem_posDefOpens _).1 p.2.2).exp_cfc_log]
+  obtain ⟨A, rfl⟩ := (rightPolarDiffeomorph n 𝕜).surjective p
+  rw [Diffeomorph.coe_toEquiv, Diffeomorph.symm_apply_apply, rightPolarDiffeomorph_apply_fst,
+    coe_rightPolarDiffeomorph_apply_snd, Units.polarUnitary_mul_sqrt_star_mul]
 
 /-- The right polar coordinates are the unique factorization of `A` as a unitary matrix times a
 positive-definite matrix: a pair from the unitary group and the cone is the right polar
@@ -281,18 +280,11 @@ theorem coe_rightPolarDiffeomorph_mul_toUnits_snd (A : GL n 𝕜) (W : unitaryGr
       star (W : Matrix n n 𝕜) *
         (((rightPolarDiffeomorph n 𝕜 A).2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) *
           (W : Matrix n n 𝕜) := by
-  rw [coe_rightPolarDiffeomorph_apply_snd, coe_rightPolarDiffeomorph_apply_snd]
-  refine Units.sqrt_star_mul_eq_of_mul_eq _
-    (star_left_conjugate_nonneg (CFC.sqrt_nonneg _) _) (v := A.polarUnitary * W) ?_
-  -- `(U W) (Wᴴ Q W) = U Q W = A W`.
-  have hW : (W : Matrix n n 𝕜) * star (W : Matrix n n 𝕜) = 1 := Unitary.mul_star_self_of_mem W.2
-  calc ((A.polarUnitary : Matrix n n 𝕜) * W) *
-        (star (W : Matrix n n 𝕜) * CFC.sqrt (star (A : Matrix n n 𝕜) * A) * W)
-      = A.polarUnitary * ((W : Matrix n n 𝕜) * star (W : Matrix n n 𝕜)) *
-          CFC.sqrt (star (A : Matrix n n 𝕜) * A) * W := by simp only [mul_assoc]
-    _ = A.polarUnitary * CFC.sqrt (star (A : Matrix n n 𝕜) * A) * W := by rw [hW, mul_one]
-    _ = ((A * Unitary.toUnits W : GL n 𝕜) : Matrix n n 𝕜) := by
-      rw [Units.polarUnitary_mul_sqrt_star_mul, Units.val_mul, Unitary.val_toUnits_apply]
+  rw [coe_rightPolarDiffeomorph_apply_snd, coe_rightPolarDiffeomorph_apply_snd, Units.val_mul,
+    Unitary.val_toUnits_apply, star_mul, mul_assoc, ← mul_assoc (star (A : Matrix n n 𝕜)),
+    ← mul_assoc]
+  simpa only [Unitary.coe_star, star_star] using
+    CFC.sqrt_unitary_mul_mul_star (star W) (star (A : Matrix n n 𝕜) * A)
 
 /-! ### Determinant one -/
 
