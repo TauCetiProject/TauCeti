@@ -87,24 +87,33 @@ section OrderedGroup
 
 variable [AddCommGroup R] [Preorder R] [IsOrderedAddMonoid R]
 
+-- Give affine evaluation priority over the generic boundary_apply expansion.
+/-- An affine hive has constant boundary slopes `u`, `v - u`, and `-v` clockwise. -/
+@[simp high] theorem boundary_affine (u v : R) (s : Fin 3) (i : Fin n) :
+    boundary (affine u v : Vertex n → R) s i = ![u, v - u, -v] s := by
+  have hn : n - (i : ℕ) = (n - ((i : ℕ) + 1)) + 1 := by omega
+  fin_cases s <;>
+    simp [boundary, Vertex.edge_zero, Vertex.edge_one, Vertex.edge_two, hn, add_nsmul]
+  abel
+
 private theorem edgeAB_midpoint_inequality {k : ℕ} {h : Vertex (k + 2) → R}
     (hh : IsHive h) (i : Fin (k + 1)) :
-    h (Vertex.edgeAB (k + 2) ⟨i, by omega⟩) +
-        h (Vertex.edgeAB (k + 2) ⟨i + 2, by omega⟩) ≤
-      h (Vertex.edgeAB (k + 2) ⟨i + 1, by omega⟩) +
-        h (Vertex.edgeAB (k + 2) ⟨i + 1, by omega⟩) := by
+    h (Vertex.edgeAB (k + 2) i.castSucc.castSucc) +
+        h (Vertex.edgeAB (k + 2) i.succ.succ) ≤
+      h (Vertex.edgeAB (k + 2) i.castSucc.succ) +
+        h (Vertex.edgeAB (k + 2) i.castSucc.succ) := by
   let p : Vertex k := ⟨k - i, i, 0, by omega⟩
   let u : Vertex 2 := ⟨1, 0, 1, rfl⟩
   let v : Vertex 2 := ⟨0, 1, 1, rfl⟩
   let e : Vertex 2 := ⟨1, 1, 0, rfl⟩
   have h1 := ((isHive_iff h).mp hh) (isRhombus_at_cornerA.add p)
   have h2 := ((isHive_iff h).mp hh) (isRhombus_at_cornerA.rotate.add p)
-  have he : p.add e = Vertex.edgeAB (k + 2) ⟨i + 1, by omega⟩ := by
+  have he : p.add e = Vertex.edgeAB (k + 2) i.castSucc.succ := by
     ext <;> simp [p, e]; omega
-  have hA : p.add (Vertex.cornerA 2) = Vertex.edgeAB (k + 2) ⟨i, by omega⟩ := by
+  have hA : p.add (Vertex.cornerA 2) = Vertex.edgeAB (k + 2) i.castSucc.castSucc := by
     ext <;> simp [p]; omega
   have hB : p.add (Vertex.cornerA 2).rotate =
-      Vertex.edgeAB (k + 2) ⟨i + 2, by omega⟩ := by
+      Vertex.edgeAB (k + 2) i.succ.succ := by
     ext <;> simp [p]
   have hr1 : (⟨1, 1, 0, rfl⟩ : Vertex 2).rotate = v := by ext <;> simp [v]
   have hr2 : (⟨1, 0, 1, rfl⟩ : Vertex 2).rotate = e := by ext <;> simp [e]
@@ -133,9 +142,8 @@ theorem IsHive.boundary_antitone {h : Vertex n → R} (hh : IsHive h) (s : Fin 3
       | zero => exact Fin.elim0 i
       | succ k =>
         have hi := edgeAB_midpoint_inequality hh i
-        simp only [boundary, Vertex.edge_zero, sub_le_sub_iff]
-        rw [add_comm]
-        convert hi using 1 <;> congr 3
+        simpa only [boundary, Vertex.edge_zero, sub_le_sub_iff, Fin.castSucc_succ,
+          add_comm] using hi
   -- Normalize the nonzero Fin literals from fin_cases so the edge evaluation lemmas match.
   fin_cases s
   · exact base hh
