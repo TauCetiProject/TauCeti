@@ -342,6 +342,11 @@ theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p U k f)
     exact ⟨hp.congr_ae hfg, D,
       hD.congr_ae (ae_mono (Measure.restrict_mono_set volume interior_subset) hfg), hk⟩
 
+/-- On a measurable set, the local Sobolev class only depends on the values on that set. -/
+theorem MemWkpLoc.congr_fun (hf : MemWkpLoc p U k f) (hfg : Set.EqOn f g U)
+    (hU : MeasurableSet U) : MemWkpLoc p U k g :=
+  hf.congr_ae ((ae_restrict_mem hU).mono hfg)
+
 /-- Decreasing the integrability exponent preserves each local derivative order. -/
 theorem MemWkpLoc.mono_exponent (hf : MemWkpLoc p U k f) (hqp : q ≤ p) :
     MemWkpLoc q U k f := by

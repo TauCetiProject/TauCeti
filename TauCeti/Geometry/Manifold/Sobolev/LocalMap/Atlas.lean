@@ -41,12 +41,12 @@ along the transition map, which is real `C¹` with invertible derivative. Changi
   for `TauCeti.MemWkpLocMap`.
 * `TauCeti.MemWkpLocMapOn.contMDiffOn_comp`, `ContMDiff.comp_memWkpLocMap`: composition with
   `C^ℓ` maps into any manifold modelled on a real Banach space.
-* `Diffeomorph.memWkpLocMapOn_comp_iff`, `Diffeomorph.memWkpLocMap_comp_iff`: invariance under
-  diffeomorphisms of the target.
-* `TauCeti.memWkpLoc_mulLeft_two_chart_iff`, `TauCeti.HasWeakFDerivOn.comp_two_mul`: on `X = ℂ`
-  the charts `z` and `2 z` give the same coordinate tests at every order, with first derivatives
-  scaled by `2`; `TauCeti.conj_chart_notMem_maximalAtlas`: the conjugation chart is not a
-  holomorphic chart.
+* `Diffeomorph.memWkpLocMapOn_diffeomorph_comp_iff`,
+  `Diffeomorph.memWkpLocMap_diffeomorph_comp_iff`: invariance under diffeomorphisms of the target.
+* `TauCeti.memWkpLoc_mulLeft_two_chart_iff`: on `X = ℂ` the charts `z` and `2 z` give the same
+  coordinate tests at every order, with first derivatives scaled by `2`
+  (`TauCeti.HasWeakFDerivOn.comp_two_mul`); `TauCeti.conj_chart_notMem_maximalAtlas`: the
+  conjugation chart is not a holomorphic chart.
 
 ## Implementation notes
 
@@ -97,12 +97,6 @@ private theorem isOpen_chart (hu : ContinuousOn u s) (hs : IsOpen s)
     IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
   φ.isOpen_inter_preimage_symm (hu.isOpen_inter_preimage hs ψ.open_source)
 
-/-- Local Sobolev membership on an open set only depends on the values on that set. -/
-private theorem memWkpLoc_congr_of_isOpen {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f g : ℂ → E} {W : Set ℂ} (hW : IsOpen W) (hf : MemWkpLoc p W k f) (hfg : EqOn f g W) :
-    MemWkpLoc p W k g :=
-  hf.congr_ae ((ae_restrict_mem hW.measurableSet).mono hfg)
-
 /-- **Change of holomorphic chart.** Precomposition with the transition map `φ ∘ φ'⁻¹` between
 two holomorphic charts preserves the local classes of order at most one. -/
 private theorem memWkpLoc_comp_chart_transition {φ φ' : OpenPartialHomeomorph X ℂ}
@@ -150,18 +144,20 @@ private theorem memWkpLoc_extend_comp [I.Boundaryless] [CompleteSpace F']
     have hvw := hmaps hw
     refine ⟨(ψ.extend I).map_source (by simpa using hvw.1), ?_⟩
     simpa [ψ.left_inv hvw.1] using hvw.2
-  refine memWkpLoc_congr_of_isOpen hW
-    (hv.contDiffOn_comp hvc hO (contMDiffOn_iff_contDiffOn.1 hh) hmaps') fun w hw ↦ ?_
+  refine (hv.contDiffOn_comp hvc hO (contMDiffOn_iff_contDiffOn.1 hh) hmaps').congr_fun
+    (fun w hw ↦ ?_) hW.measurableSet
   simp [ψ.left_inv (hmaps hw).1]
 
 /-! ### Order zero -/
 
 /-- At order zero, the local Sobolev maps on `s` are the maps continuous on `s`. -/
+@[simp]
 theorem memWkpLocMapOn_zero_iff : MemWkpLocMapOn I p 0 u s ↔ ContinuousOn u s :=
   ⟨MemWkpLocMapOn.continuousOn, fun hu ↦ memWkpLocMapOn_iff.2
     ⟨hu, fun φ _ ψ _ ↦ memWkpLoc_zero_iff.2 (continuousOn_chart hu φ ψ).memLpLoc⟩⟩
 
 /-- At order zero, the local Sobolev maps are the continuous maps. -/
+@[simp]
 theorem memWkpLocMap_zero_iff : MemWkpLocMap I p 0 u ↔ Continuous u := by
   rw [← memWkpLocMapOn_univ, memWkpLocMapOn_zero_iff, continuousOn_univ]
 
@@ -195,9 +191,9 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : IsOpen s)
     have hO : IsOpen (φ'.target ∩ φ'.symm ⁻¹' φ.source) :=
       φ'.isOpen_inter_preimage_symm φ.open_source
     refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hxφ⟩),
-      memWkpLoc_congr_of_isOpen ((isOpen_chart hc hs φ' ψ).inter hO)
-        (memWkpLoc_comp_chart_transition (hA hφA) hφ' le_rfl (h φ hφA ψ hψ) inter_subset_right
-          fun w hw ↦ ?_) fun w hw ↦ ?_⟩
+      (memWkpLoc_comp_chart_transition (hA hφA) hφ' le_rfl (h φ hφA ψ hψ) inter_subset_right
+        fun w hw ↦ ?_).congr_fun (fun w hw ↦ ?_)
+        ((isOpen_chart hc hs φ' ψ).inter hO).measurableSet⟩
     · refine ⟨φ.map_source hw.2.2, ?_⟩
       simpa [Function.comp_apply, φ.left_inv hw.2.2] using hw.1.2
     · simp [φ.left_inv hw.2.2]
@@ -305,8 +301,8 @@ variable [IsManifold I' ∞ N] [I'.Boundaryless] [CompleteSpace F]
 
 /-- Composition with a `C^ℓ` diffeomorphism, `ℓ ≥ k`, preserves and reflects the local Sobolev
 classes of order `k ≤ 1` on open sets. -/
-theorem _root_.Diffeomorph.memWkpLocMapOn_comp_iff {n : ℕ∞ω} (e : M ≃ₘ^n⟮I, I'⟯ N) (hk : k ≤ 1)
-    (hkn : (k : ℕ∞ω) ≤ n) (hs : IsOpen s) :
+theorem _root_.Diffeomorph.memWkpLocMapOn_diffeomorph_comp_iff {n : ℕ∞ω} (e : M ≃ₘ^n⟮I, I'⟯ N)
+    (hk : k ≤ 1) (hkn : (k : ℕ∞ω) ≤ n) (hs : IsOpen s) :
     MemWkpLocMapOn I' p k (e ∘ u) s ↔ MemWkpLocMapOn I p k u s := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.contMDiffOn_comp hk e.contMDiff.contMDiffOn hkn hs isOpen_univ
     (mapsTo_univ _ _)⟩
@@ -315,9 +311,11 @@ theorem _root_.Diffeomorph.memWkpLocMapOn_comp_iff {n : ℕ∞ω} (e : M ≃ₘ^
 
 /-- Composition with a `C^ℓ` diffeomorphism, `ℓ ≥ k`, preserves and reflects the local Sobolev
 classes of order `k ≤ 1`. -/
-theorem _root_.Diffeomorph.memWkpLocMap_comp_iff {n : ℕ∞ω} (e : M ≃ₘ^n⟮I, I'⟯ N) (hk : k ≤ 1)
-    (hkn : (k : ℕ∞ω) ≤ n) : MemWkpLocMap I' p k (e ∘ u) ↔ MemWkpLocMap I p k u := by
-  rw [← memWkpLocMapOn_univ, ← memWkpLocMapOn_univ, e.memWkpLocMapOn_comp_iff hk hkn isOpen_univ]
+theorem _root_.Diffeomorph.memWkpLocMap_diffeomorph_comp_iff {n : ℕ∞ω} (e : M ≃ₘ^n⟮I, I'⟯ N)
+    (hk : k ≤ 1) (hkn : (k : ℕ∞ω) ≤ n) :
+    MemWkpLocMap I' p k (e ∘ u) ↔ MemWkpLocMap I p k u := by
+  rw [← memWkpLocMapOn_univ, ← memWkpLocMapOn_univ,
+    e.memWkpLocMapOn_diffeomorph_comp_iff hk hkn isOpen_univ]
 
 end Composition
 
@@ -357,21 +355,6 @@ theorem memWkpLoc_mulLeft_two_chart_iff {v : ℂ → M} {S : Set ℂ} (ψ : Open
   · intro h
     simpa [Function.comp_def, hAs] using
       h.comp_continuousLinearEquiv_add A.symm 0 fun z hz ↦ by simpa [hAs] using hz
-
-/-- The chart change `z ↦ 2 z` scales the first weak derivative by `2`: if `Du` is a weak
-derivative of `g` on `V`, then `z ↦ 2 • Du (2 z)` is a weak derivative of `z ↦ g (2 z)` on every
-open set mapped into `V` by `z ↦ 2 z`. -/
-theorem HasWeakFDerivOn.comp_two_mul {g : ℂ → F} {Du : ℂ → ℂ →L[ℝ] F} {U V : Opens ℂ}
-    (hg : HasWeakFDerivOn volume V g Du) (hUV : MapsTo (2 * ·) (U : Set ℂ) V) :
-    HasWeakFDerivOn volume U (fun z => g (2 * z)) (fun z => (2 : ℝ) • Du (2 * z)) := by
-  set A : ℂ ≃L[ℝ] ℂ := (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv
-  have hA : ∀ z, A z = 2 * z := fun z ↦ by simp [A, Complex.real_smul]
-  have h := hg.comp_continuousLinearEquiv_add (U := U) A 0 fun z hz ↦ by
-    simpa [hA] using hUV hz
-  convert h using 2 with z
-  · simp [hA]
-  · ext w
-    simp [hA, Complex.real_smul, ← map_smul]
 
 /-- The conjugation chart `z ↦ conj z` of `ℂ` is not a holomorphic chart, so it is never tested
 in the definition of the local Sobolev class. -/
