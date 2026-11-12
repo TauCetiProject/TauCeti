@@ -87,9 +87,8 @@ private theorem eventually_map_eq_map_of_continuousAt {X : Type*} [TopologicalSp
   filter_upwards [(ContinuousLinearMap.continuous_det.continuousAt.comp (hL this)).eventually
     (lt_mem_nhds (hLb ▸ one_pos))] with x hx f hf
   refine Orientation.map_eq_map_of_det_pos c _ _ hι ?_
-  rwa [Function.comp_apply, ← hf, ContinuousLinearMap.det,
-    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
-    ContinuousLinearEquiv.trans_toLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm] at hx
+  rw [Function.comp_apply, ← hf] at hx
+  simpa [ContinuousLinearMap.det] using hx
 
 /-- Near a point `b'`, the fibre orientations obtained by pulling back `o` along `φ` are locally
 constant when read in the preferred trivialization of `E'` at `b'`. -/

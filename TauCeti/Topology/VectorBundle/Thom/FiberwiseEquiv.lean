@@ -205,17 +205,17 @@ theorem isThomClass_singularCohomologyMap_thomPairMapOfFiberwise_iff {E' : B →
   have h := hu b
   rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, hψ,
     TopPair.singularCohomologyMap_comp, ConcreteCategory.comp_apply] at h
-  -- The isomorphism of fibre pairs induced by `φ b` gives a linear isomorphism `e` in cohomology,
-  -- which reflects generators; by definition of the cohomology functor, `e` applies
-  -- `TopPair.singularCohomologyMap (φ b).complZeroPairIso.hom`.
-  let e : (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularCohomology
-      R k M (finrank ℝ F) ≃ₗ[k]
-      (TopPair.ofSubset (X := TopCat.of (E' b)) ({0}ᶜ : Set (E' b))).singularCohomology
-        R k M (finrank ℝ F) :=
-    ((TopPair.singularCohomologyFunctor R k M (finrank ℝ F)).mapIso
-      (φ b).complZeroPairIso.op).toLinearEquiv
-  rw [← Submodule.map_eq_top_iff (e := e), ← Submodule.span_image_linearEquiv, Set.image_singleton]
-  exact h
+  -- The isomorphism of fibre pairs induced by `φ b` gives an isomorphism `e` in cohomology, with
+  -- forward map `TopPair.singularCohomologyMap (φ b).complZeroPairIso.hom`, which reflects
+  -- generators.
+  let e := Iso.mk (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (φ b).complZeroPairIso.hom (finrank ℝ F))
+    (TopPair.singularCohomologyMap (φ b).complZeroPairIso.inv _)
+    (by rw [← TopPair.singularCohomologyMap_comp, Iso.inv_hom_id, TopPair.singularCohomologyMap_id])
+    (by rw [← TopPair.singularCohomologyMap_comp, Iso.hom_inv_id, TopPair.singularCohomologyMap_id])
+  rw [← Submodule.map_eq_top_iff (e := e.toLinearEquiv), ← Submodule.span_image_linearEquiv,
+    Set.image_singleton, Iso.toLinearEquiv_apply]
+  simpa only [e] using h
 
 end ThomClass
 
