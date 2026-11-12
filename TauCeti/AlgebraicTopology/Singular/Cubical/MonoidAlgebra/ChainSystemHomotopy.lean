@@ -282,7 +282,7 @@ private theorem exists_chain_of_sub_eq (hS : S.IsRepresenting A μ) (hS' : S'.Is
     hA hh x y
   have hdeg : ind y - ind x + 1 = -(((ind x - ind y - 1).toNat : ℕ) : ℤ) := by omega
   have hcycle := cubicalChainDifferential_sub_add_continuationChainSum S S' hh (hι x · · y)
-    (fun z h₁ h₂ ↦ hd z y (by omega)) (fun z h₁ h₂ ↦ hd x z (by omega))
+    (fun z _ h₂ ↦ hd z y (by omega)) (fun z h₁ _ ↦ hd x z (by omega))
   rw [← hbsum] at hcycle ⊢
   obtain ⟨e, he, hde⟩ := ((S.isRepresenting_iff μ).1 hS x y (by omega))
     |>.exists_cubicalChainDifferential_eq_sub_add ((S'.isRepresenting_iff μ).1 hS' x y (by omega))
@@ -324,7 +324,7 @@ theorem IsRepresenting.exists_homotopy (hS : S.IsRepresenting A μ) (hS' : S'.Is
   · obtain ⟨e, he, hde⟩ := exists_chain_of_sub_eq hS hS' hι hA hinj hh (x := x) (y := y)
       (d := (ind x - ind y - 1).toNat) (by omega) fun x' y' h ↦ hlt x' y' (by omega)
     -- The continuation sum only depends on the chains of the pairs of smaller index difference.
-    refine ⟨e, he, fun h' hh' hhh' hh'e ↦ ?_⟩
+    refine ⟨e, he, fun h' _ hhh' hh'e ↦ ?_⟩
     rw [hh'e, hde, continuationChainSum_congr S.mem_graded S'.mem_graded
       (fun z hzx ↦ (hhh' z y (by omega)).symm) fun z hyz ↦ (hhh' x z (by omega)).symm]
 
