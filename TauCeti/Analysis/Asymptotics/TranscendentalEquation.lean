@@ -18,9 +18,9 @@ equations. The asymptotic statement needs only that `f` is monotone on `[a, ∞)
 
 ## Main results
 
-* `Asymptotics.existsUnique_root_of_isEquivalent`: existence and uniqueness of the root
+* `ContinuousOn.existsUnique_root_of_isEquivalent`: existence and uniqueness of the root
   (DLMF 2.2.1).
-* `Asymptotics.root_isEquivalent`: any function that is eventually such a root is asymptotically
+* `MonotoneOn.root_isEquivalent`: any function that is eventually such a root is asymptotically
   equivalent to the identity (DLMF 2.2.2).
 
 ## References
@@ -33,14 +33,13 @@ file `DLMF/AsymptoticApproximations/Basics/Transcendental.lean`.
 
 @[expose] public section
 
-open Filter Set
-
-namespace Asymptotics
+open Asymptotics Filter Set
 
 /-- DLMF 2.2.1: if `f` is continuous and strictly increasing on `[a, ∞)` and `f(x) ∼ x` as
 `x → +∞`, then for every `y > f(a)` the equation `f(x) = y` has a unique root in `(a, ∞)`. -/
-theorem existsUnique_root_of_isEquivalent {f : ℝ → ℝ} {a : ℝ} (hf : ContinuousOn f (Ici a))
-    (hmono : StrictMonoOn f (Ici a)) (hfx : f ~[atTop] id) {y : ℝ} (hy : f a < y) :
+theorem ContinuousOn.existsUnique_root_of_isEquivalent {f : ℝ → ℝ} {a : ℝ}
+    (hf : ContinuousOn f (Ici a)) (hmono : StrictMonoOn f (Ici a)) (hfx : f ~[atTop] id)
+    {y : ℝ} (hy : f a < y) :
     ∃! x, a < x ∧ f x = y := by
   have htop : Tendsto f atTop atTop := hfx.symm.tendsto_atTop tendsto_id
   obtain ⟨x, hax, hfx'⟩ := intermediate_value_Ioi hf htop hy
@@ -50,7 +49,7 @@ theorem existsUnique_root_of_isEquivalent {f : ℝ → ℝ} {a : ℝ} (hf : Cont
 /-- DLMF 2.2.2: if `f` is monotone on `[a, ∞)` with `f(x) ∼ x` as `x → +∞`, then any function `g`
 such that `g y` is eventually a root of `f(x) = y` in `[a, ∞)` satisfies `g(y) ∼ y` as
 `y → +∞`. -/
-theorem root_isEquivalent {f : ℝ → ℝ} {a : ℝ} (hmono : MonotoneOn f (Ici a))
+theorem MonotoneOn.root_isEquivalent {f : ℝ → ℝ} {a : ℝ} (hmono : MonotoneOn f (Ici a))
     (hfx : f ~[atTop] id) {g : ℝ → ℝ} (hg : ∀ᶠ y in atTop, a ≤ g y ∧ f (g y) = y) :
     g ~[atTop] id := by
   have hgt : Tendsto g atTop atTop := by
@@ -66,5 +65,3 @@ theorem root_isEquivalent {f : ℝ → ℝ} {a : ℝ} (hmono : MonotoneOn f (Ici
   refine (IsEquivalent.congr_left h ?_).symm
   filter_upwards [hg] with y hy
   simpa using hy.2
-
-end Asymptotics
