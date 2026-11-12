@@ -85,11 +85,11 @@ theorem hasMFDerivAt_coe_pi (t : ι → ℝ) :
     ext v i
     rfl
 
-/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, is smooth. -/
-theorem contMDiff_coe_pi :
-    ContMDiff 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ∞
+/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, is `C^n` for every order `n`. -/
+theorem contMDiff_coe_pi (n : ℕ∞ω) :
+    ContMDiff 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
       (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) :=
-  contMDiff_pi_iff.2 fun i ↦ (contMDiff_coe p ∞).comp (contMDiff_pi_module_iff.1 contMDiff_id i)
+  contMDiff_pi_iff.2 fun i ↦ (contMDiff_coe p n).comp (contMDiff_pi_module_iff.1 contMDiff_id i)
 
 /-- **The tangent bundle of the torus is trivialized by its charts.** On the source of the chart
 at `x`, the inverse tangent trivialization at `x` is the identity of `ι → ℝ`: in each coordinate

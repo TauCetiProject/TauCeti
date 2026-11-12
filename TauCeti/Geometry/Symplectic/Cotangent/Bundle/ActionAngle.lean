@@ -93,13 +93,13 @@ theorem contMDiff_torusCover :
       (torusCover (ι := ι) p) := by
   intro q₀
   rw [contMDiffAt_hom_bundle]
-  refine ⟨(AddCircle.contMDiff_coe_pi p (ι := ι)).contMDiffAt.comp q₀
+  refine ⟨(AddCircle.contMDiff_coe_pi p (ι := ι) ∞).contMDiffAt.comp q₀
     contDiff_fst.contMDiff.contMDiffAt, ?_⟩
   -- Near `q₀` the base point stays in the chart at `[q₀.1]`, where the tangent trivialization of
   -- the torus is the identity, so the fibre coordinate is the covector `q.2` itself.
   have hsrc : ∀ᶠ q in 𝓝 q₀, (torusCover p q).proj ∈
       (chartAt (ModelPi fun _ : ι ↦ ℝ) (torusCover p q₀).proj).source :=
-    ((AddCircle.contMDiff_coe_pi p (ι := ι)).continuous.comp
+    ((AddCircle.contMDiff_coe_pi p (ι := ι) ∞).continuous.comp
       continuous_fst).continuousAt.preimage_mem_nhds
       ((chartAt _ _).open_source.mem_nhds (mem_chart_source _ _))
   refine contDiff_snd.contMDiff.contMDiffAt.congr_of_eventuallyEq ?_
