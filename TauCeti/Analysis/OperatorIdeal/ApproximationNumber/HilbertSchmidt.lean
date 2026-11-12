@@ -70,7 +70,7 @@ the Frobenius seminorm. -/
 private theorem tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimensional
     [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 = T.hilbertSchmidtEnergy b := by
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 F
   set σ := (T : E →ₗ[𝕜] F).singularValues
   have hσ (n : ℕ) : (T.singularValue n : ℝ≥0∞) ^ 2 = ENNReal.ofReal (σ n ^ 2) := by
     rw [← T.singularValue_eq_linearMap_singularValues, ENNReal.ofReal_pow NNReal.zero_le_coe,
@@ -117,12 +117,12 @@ private theorem hilbertSchmidtEnergy_compression_le (T : E →L[𝕜] F) (V : Su
     ((V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto.comp
       (T.comp V.subtypeL)).hilbertSchmidtEnergy c ≤ T.hilbertSchmidtEnergy b := by
   set W := V.map (T : E →ₗ[𝕜] F)
-  have := FiniteDimensional.complete 𝕜 W
+  have := FiniteDimensional.completeSpace 𝕜 W
   have hP : ‖W.orthogonalProjectionOnto‖ₑ ≤ 1 := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_le_one_iff]
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff]
     exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
   have hι : ‖V.subtypeL‖ₑ ≤ 1 := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_le_one_iff]
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff]
     exact_mod_cast Submodule.norm_subtypeL_le V
   -- The middle space of `(P_W ∘ T) ∘ ι_V` is the complete source `E`, so `F` need not be complete.
   rw [← comp_assoc]
