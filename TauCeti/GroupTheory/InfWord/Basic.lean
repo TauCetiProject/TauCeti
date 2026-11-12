@@ -66,6 +66,9 @@ group: `β + 1` is the successor of `β`, so `1` is the least positive element i
   cancellative on both sides.
 * `TauCeti.InfWord.inv_append`: `(u ++ v)⁻¹ = v⁻¹ ++ u⁻¹`; inversion is an involution.
 * `TauCeti.InfWord.take_append_drop`: `w.take β ++ w.drop β = w`.
+* `TauCeti.InfWord.take_append`, `TauCeti.InfWord.drop_append`: the segments of a concatenation.
+* `TauCeti.InfWord.inv_take`, `TauCeti.InfWord.inv_drop`: inversion exchanges initial and final
+  segments, `(w.take β)⁻¹ = w⁻¹.drop (|w| - β)`.
 * `TauCeti.InfWord.isReduced_append_iff`: the criterion for a concatenation to be reduced.
 * `TauCeti.InfWord.isReduced_inv`, `TauCeti.InfWord.IsReduced.take`,
   `TauCeti.InfWord.IsReduced.drop`: inverses and segments of reduced words are reduced.
@@ -200,8 +203,24 @@ theorem letter_take (w : InfWord Λ X) (β γ : Λ) :
     (w.take β).letter γ = if γ ≤ β then w.letter γ else none := (rfl)
 
 @[simp]
-theorem take_zero (w : InfWord Λ X) : w.take 0 = empty Λ X := by
-  simp [← length_eq_zero_iff, w.length_nonneg]
+theorem letter_take_of_le (w : InfWord Λ X) {β γ : Λ} (h : γ ≤ β) :
+    (w.take β).letter γ = w.letter γ := by
+  simp [letter_take, h]
+
+theorem take_of_nonpos (w : InfWord Λ X) {β : Λ} (h : β ≤ 0) : w.take β = empty Λ X := by
+  simp [← length_eq_zero_iff, h]
+
+@[simp]
+theorem take_zero (w : InfWord Λ X) : w.take 0 = empty Λ X :=
+  w.take_of_nonpos le_rfl
+
+theorem take_of_length_le (w : InfWord Λ X) {β : Λ} (h : w.length ≤ β) : w.take β = w :=
+  ext (by simp [min_eq_right h, w.length_nonneg]) fun _ h0 hγ =>
+    w.letter_take_of_le (by simp at hγ; grind)
+
+@[simp]
+theorem take_length (w : InfWord Λ X) : w.take w.length = w :=
+  w.take_of_length_le le_rfl
 
 end LinearOrder
 
@@ -321,6 +340,11 @@ theorem length_drop (w : InfWord Λ X) (β : Λ) :
 theorem letter_drop (w : InfWord Λ X) (β γ : Λ) :
     (w.drop β).letter γ = if 0 < γ then w.letter (γ + max 0 β) else none := (rfl)
 
+@[simp]
+theorem letter_drop_of_pos (w : InfWord Λ X) (β : Λ) {γ : Λ} (h : 0 < γ) :
+    (w.drop β).letter γ = w.letter (γ + max 0 β) := by
+  simp [letter_drop, h]
+
 /-- A word is the concatenation of its initial segment `w.take β` and the complementary final
 segment `w.drop β`. -/
 @[simp]
@@ -331,29 +355,52 @@ theorem take_append_drop (w : InfWord Λ X) (β : Λ) : w.take β ++ w.drop β =
   simp only [letter_append, letter_take, letter_drop, length_take]
   split_ifs <;> first | rfl | (exfalso; grind) | (congr 1; grind)
 
+theorem drop_of_nonpos (w : InfWord Λ X) (h : β ≤ 0) : w.drop β = w := by
+  simpa [w.take_of_nonpos h] using w.take_append_drop β
+
 @[simp]
-theorem take_length_append (u v : InfWord Λ X) : (u ++ v).take u.length = u := by
+theorem drop_zero (w : InfWord Λ X) : w.drop 0 = w :=
+  w.drop_of_nonpos le_rfl
+
+theorem drop_of_length_le (w : InfWord Λ X) (h : w.length ≤ β) : w.drop β = empty Λ X := by
+  rw [← length_eq_zero_iff, length_drop, min_eq_right h, max_eq_right w.length_nonneg, sub_self]
+
+@[simp]
+theorem drop_length (w : InfWord Λ X) : w.drop w.length = empty Λ X :=
+  w.drop_of_length_le le_rfl
+
+theorem take_append (u v : InfWord Λ X) (β : Λ) :
+    (u ++ v).take β = u.take β ++ v.take (β - u.length) := by
   have := u.length_nonneg
   have := v.length_nonneg
   refine ext (by simp; grind) fun γ h0 hγ => ?_
-  have : γ ≤ u.length := by simp at hγ; grind
-  simp [letter_take, letter_append, this]
+  simp only [letter_append, letter_take, length_take]
+  split_ifs <;> first | rfl | (exfalso; grind) | (congr 1; grind)
+
+theorem take_append_of_le_length (v : InfWord Λ X) (h : β ≤ u.length) :
+    (u ++ v).take β = u.take β := by
+  rw [take_append, v.take_of_nonpos (sub_nonpos.2 h), append_empty]
+
+theorem drop_append (u v : InfWord Λ X) (β : Λ) :
+    (u ++ v).drop β = u.drop β ++ v.drop (β - u.length) := by
+  rw [← append_right_inj ((u ++ v).take β), take_append_drop, take_append]
+  rcases le_total β u.length with h | h
+  · rw [v.take_of_nonpos (sub_nonpos.2 h), v.drop_of_nonpos (sub_nonpos.2 h), append_empty,
+      ← append_assoc, take_append_drop]
+  · rw [u.take_of_length_le h, u.drop_of_length_le h, empty_append, append_assoc,
+      take_append_drop]
+
+theorem drop_append_of_le_length (v : InfWord Λ X) (h : β ≤ u.length) :
+    (u ++ v).drop β = u.drop β ++ v := by
+  rw [drop_append, v.drop_of_nonpos (sub_nonpos.2 h)]
+
+@[simp]
+theorem take_length_append (u v : InfWord Λ X) : (u ++ v).take u.length = u := by
+  rw [take_append_of_le_length _ le_rfl, take_length]
 
 @[simp]
 theorem drop_length_append (u v : InfWord Λ X) : (u ++ v).drop u.length = v := by
-  rw [← append_right_inj ((u ++ v).take u.length), take_append_drop, take_length_append]
-
-@[simp]
-theorem drop_zero (w : InfWord Λ X) : w.drop 0 = w := by
-  simpa using w.take_append_drop 0
-
-@[simp]
-theorem take_length (w : InfWord Λ X) : w.take w.length = w := by
-  simpa using take_length_append w (empty Λ X)
-
-@[simp]
-theorem drop_length (w : InfWord Λ X) : w.drop w.length = empty Λ X := by
-  simpa using drop_length_append w (empty Λ X)
+  rw [drop_append_of_le_length _ le_rfl, drop_length, empty_append]
 
 end Group
 
@@ -391,12 +438,31 @@ instance : InvolutiveInv (InfWord Λ X) where
 theorem inv_empty : (empty Λ X)⁻¹ = empty Λ X := by
   simp [← length_eq_zero_iff]
 
+@[simp]
 theorem inv_append (u v : InfWord Λ X) : (u ++ v)⁻¹ = v⁻¹ ++ u⁻¹ := by
   refine ext (by simp [add_comm]) fun β h0 hβ => ?_
   have h01 := Order.zero_lt_one_of_pos h0
   have := Order.add_one_le_of_lt (x := v.length) (y := β)
   simp only [letter_inv, letter_append, length_append, length_inv]
   split_ifs <;> first | (exfalso; grind) | (congr 2; abel)
+
+/-- Inversion turns the initial segment of length `β` into the final segment of `w⁻¹` of the same
+length. -/
+@[simp]
+theorem inv_take (w : InfWord Λ X) (β : Λ) : (w.take β)⁻¹ = w⁻¹.drop (w.length - β) := by
+  have := w.length_nonneg
+  refine ext (by simp; grind) fun γ h0 hγ => ?_
+  have := Order.zero_lt_one_of_pos h0
+  have := Order.add_one_le_of_lt h0
+  simp only [length_inv, length_take] at hγ
+  simp only [letter_inv, letter_take, letter_drop, length_take, h0, ↓reduceIte]
+  split_ifs <;> first | (exfalso; grind) | (congr 2; grind)
+
+/-- Inversion turns the final segment `w.drop β` into the initial segment of `w⁻¹` of the same
+length. -/
+@[simp]
+theorem inv_drop (w : InfWord Λ X) (β : Λ) : (w.drop β)⁻¹ = w⁻¹.take (w.length - β) := by
+  rw [inv_eq_iff_eq_inv, inv_take, inv_inv, length_inv, sub_sub_cancel]
 
 @[simp]
 theorem isReduced_ofFun_iff {f : Λ → X × Bool} : (ofFun α f).IsReduced ↔

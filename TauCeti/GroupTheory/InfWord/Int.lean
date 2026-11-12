@@ -113,6 +113,7 @@ theorem equivList_symm_apply (L : List (X × Bool)) : equivList.symm L = ofList 
 theorem ofList_nil : ofList ([] : List (X × Bool)) = empty ℤ X := by
   simp [← length_eq_zero_iff]
 
+@[simp]
 theorem ofList_append (L₁ L₂ : List (X × Bool)) :
     ofList (L₁ ++ L₂) = ofList L₁ ++ ofList L₂ := by
   refine ext (by simp) fun n h0 hn => ?_
@@ -125,6 +126,7 @@ theorem ofList_append (L₁ L₂ : List (X × Bool)) :
     have e : ((L₁.length + j : ℕ) : ℤ) + 1 - L₁.length = j + 1 := by omega
     simp only [h, h', ↓reduceIte, e, letter_ofList_natCast_add_one, Nat.add_sub_cancel_left]
 
+@[simp]
 theorem ofList_invRev (L : List (X × Bool)) : ofList (FreeGroup.invRev L) = (ofList L)⁻¹ := by
   refine ext (by simp) fun n h0 hn => ?_
   obtain ⟨i, rfl⟩ : ∃ i : ℕ, n = i + 1 := ⟨(n - 1).toNat, by omega⟩
@@ -134,12 +136,15 @@ theorem ofList_invRev (L : List (X × Bool)) : ofList (FreeGroup.invRev L) = (of
     letter_ofList_natCast_add_one, FreeGroup.invRev, List.getElem?_reverse (by simpa using hi)]
   simp [Prod.map_def]
 
+@[simp]
 theorem toList_empty : (empty ℤ X).toList = [] := by
   rw [← ofList_nil, toList_ofList]
 
+@[simp]
 theorem toList_append (u v : InfWord ℤ X) : (u ++ v).toList = u.toList ++ v.toList := by
   rw [← toList_ofList (u.toList ++ v.toList), ofList_append, ofList_toList, ofList_toList]
 
+@[simp]
 theorem toList_inv (w : InfWord ℤ X) : w⁻¹.toList = FreeGroup.invRev w.toList := by
   rw [← toList_ofList (FreeGroup.invRev w.toList), ofList_invRev, ofList_toList]
 
