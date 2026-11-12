@@ -216,7 +216,7 @@ theorem exists_seq_simpleHolding_tendsto_ae_energy
   have hpred (m : ℕ) : IsStronglyPredictable ℱ (fun t ω ↦ L m t ω - K m t ω) :=
     (isStronglyPredictable_simpleHolding (ha m)).sub (hK m)
   have hmeas (m : ℕ) : Measurable (fun p : ℝ≥0 × Ω ↦ ‖L m p.1 p.2 - K m p.1 p.2‖ₑ ^ 2) :=
-    ((hpred m).mono ℱ.predictable_le_prod).measurable.enorm.pow_const 2
+    ((hpred m).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2
   have hE (m : ℕ) : Measurable (E m) := (hmeas m).lintegral_prod_left'
   have hmean (m : ℕ) : ∫⁻ ω, E m ω ∂P ≤ ((1 / 2 : ℝ≥0) ^ m : ℝ≥0∞) := by
     rw [← lintegral_lintegral_swap (hmeas m).aemeasurable]
@@ -252,21 +252,21 @@ theorem exists_seq_simpleHolding_tendsto_ae_energy
         (measurable_id.prodMk measurable_const)
     have hdom (m : ℕ) (t : ℝ≥0) : ‖K m t ω - H t ω‖ₑ ^ 2 ≤ ‖H t ω‖ₑ ^ 2 := by
       by_cases h : ‖H t ω‖ ≤ m <;>
-        simp only [K, h, ite_true, ite_false, sub_self, zero_sub, enorm_neg, enorm_zero,
+        simp only [K, h, ite_true, ite_false, sub_self, zero_sub, eNorm_neg, eNorm_zero,
           zero_pow (by decide : 2 ≠ 0), zero_le, le_refl]
     have hfinite : ∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂ν < ∞ := by
       simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_two] using
-        lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top (by norm_num) (by norm_num)
+        lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top (by norm_num) (by norm_num)
           hω.eLpNorm_lt_top
     have hlim (t : ℝ≥0) : Tendsto (fun m ↦ ‖K m t ω - H t ω‖ₑ ^ 2) atTop (𝓝 0) := by
       obtain ⟨N, hN⟩ := exists_nat_ge ‖H t ω‖
       apply tendsto_const_nhds.congr'
       filter_upwards [eventually_ge_atTop N] with m hm
       have hm' : ‖H t ω‖ ≤ (m : ℝ) := hN.trans (Nat.cast_le.mpr hm)
-      simp only [K, hm', ite_true, sub_self, enorm_zero, zero_pow (by decide : 2 ≠ 0)]
+      simp only [K, hm', ite_true, sub_self, eNorm_zero, zero_pow (by decide : 2 ≠ 0)]
     simpa using tendsto_lintegral_of_dominated_convergence (fun t ↦ ‖H t ω‖ₑ ^ 2)
       (fun m ↦ (((hK m).mono ℱ.predictable_le_prod).comp_measurable
-        (measurable_id.prodMk measurable_const)).sub hsec |>.measurable.enorm.pow_const 2)
+        (measurable_id.prodMk measurable_const)).sub hsec |>.measurable.eNorm.pow_const 2)
       (fun m ↦ Eventually.of_forall (hdom m)) hfinite.ne (Eventually.of_forall hlim)
   -- The square error is at most twice each of the two square errors.
   refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, ?_⟩
@@ -278,7 +278,7 @@ theorem exists_seq_simpleHolding_tendsto_ae_energy
           2 * ‖K m t ω - H t ω‖ₑ ^ 2 ∂ν := by
         apply lintegral_mono
         intro t
-        have h := enorm_add_le (L m t ω - K m t ω) (K m t ω - H t ω)
+        have h := eNorm_add_le (L m t ω - K m t ω) (K m t ω - H t ω)
         rw [sub_add_sub_cancel] at h
         have hsq := ENNReal.rpow_add_le_mul_rpow_add_rpow
           ‖L m t ω - K m t ω‖ₑ ‖K m t ω - H t ω‖ₑ (p := (2 : ℝ)) (by norm_num)
