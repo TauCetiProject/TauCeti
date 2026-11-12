@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Fourier.LpSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Calculus.Taylor.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -471,43 +472,30 @@ theorem integral_fourierChar_mul_fourier (χ : 𝓢(E, ℂ)) (w : E) :
 
 /-- **The Fourier transform of a cut-off function.** The Fourier transform of the product
 `y ↦ χ(x - y) u(y)` is a twisted convolution of the Fourier transforms:
-`∫ 𝓕 χ(η) exp(2πi ⟪η, x⟫) 𝓕 u(ζ + η) dη`. -/
+`∫ 𝓕 χ(η) exp(2πi ⟪η, x⟫) 𝓕 u(ζ + η) dη`. This is the convolution theorem
+`SchwartzMap.fourier_smulLeftCLM_apply` for the Schwartz function `y ↦ χ(x - y)`. -/
 theorem fourier_smulLeftCLM_sub_apply (χ : 𝓢(E, ℂ)) (u : 𝓢(E, F)) (x ζ : E) :
     𝓕 (smulLeftCLM F (fun y ↦ χ (x - y)) u) ζ =
       ∫ η, 𝓕 χ η • (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 u (ζ + η) := by
-  have hχx : (fun y : E ↦ χ (x - y)).HasTemperateGrowth := χ.hasTemperateGrowth.comp (by fun_prop)
-  set K : E × E → F := fun p ↦ (𝓕 χ p.2 * 𝐞 ⟪p.2, x⟫ * 𝐞 (-⟪p.1, ζ + p.2⟫)) • u p.1
-  have hK : Integrable K (volume.prod volume) := by
-    have hc : Continuous fun p : E × E ↦ 𝓕 χ p.2 * (𝐞 ⟪p.2, x⟫ : ℂ) * 𝐞 (-⟪p.1, ζ + p.2⟫) := by
-      have h₁ : Continuous ⇑(𝓕 χ : 𝓢(E, ℂ)) := (𝓕 χ).continuous
-      have h₂ : Continuous fun t : ℝ ↦ (𝐞 t : ℂ) :=
-        continuous_subtype_val.comp Real.continuous_fourierChar
-      fun_prop
-    refine (u.integrable.norm.mul_prod (𝓕 χ).integrable.norm).mono'
-      (hc.smul (u.continuous.comp continuous_fst)).aestronglyMeasurable (.of_forall fun p ↦ ?_)
-    simp only [K, norm_smul, norm_mul, Circle.norm_coe, mul_one]
-    exact (mul_comm _ _).le
-  -- The Fourier transform of the cut-off input, with `χ(x - y)` written by Fourier inversion.
-  have hL : 𝓕 (smulLeftCLM F (fun y ↦ χ (x - y)) u) ζ = ∫ y, ∫ η, K (y, η) := by
-    rw [fourier_coe, Real.fourier_eq]
-    refine integral_congr_ae (.of_forall fun y ↦ ?_)
-    simp only [smulLeftCLM_apply_apply hχx, K, ← integral_fourierChar_mul_fourier χ (x - y),
-      Circle.smul_def, ← integral_smul_const, ← integral_smul]
-    refine integral_congr_ae (.of_forall fun η ↦ ?_)
-    simp only [smul_smul]
-    congr 1
-    have e : (𝐞 (-⟪y, ζ⟫) : ℂ) * 𝐞 ⟪η, x - y⟫ = 𝐞 ⟪η, x⟫ * 𝐞 (-⟪y, ζ + η⟫) := by
-      rw [← Circle.coe_mul, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, ← AddChar.map_add_eq_mul]
-      congr 2
-      simp only [inner_sub_right, inner_add_right, real_inner_comm y η]
-      ring
-    calc (𝐞 (-⟪y, ζ⟫) : ℂ) * ((𝐞 ⟪η, x - y⟫ : ℂ) * 𝓕 χ η)
-        = (𝐞 (-⟪y, ζ⟫) : ℂ) * 𝐞 ⟪η, x - y⟫ * 𝓕 χ η := by ring
-      _ = _ := by rw [e]; ring
-  rw [hL, integral_integral_swap hK]
+  -- The cut-off `y ↦ χ(x - y)` as a Schwartz function; its Fourier transform is
+  -- `t ↦ exp(-2πi ⟪x, t⟫) 𝓕 χ(-t)`.
+  set ψ : 𝓢(E, ℂ) := compCLMOfAntilipschitz ℂ (g := fun y ↦ x - y) (K := 1) (by fun_prop)
+    (fun _ _ ↦ by simp [edist_sub_left]) χ
+  have hψx : (ψ : E → ℂ) = fun y ↦ χ (x - y) := rfl
+  have hψ (t : E) : 𝓕 ψ t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
+    rw [fourier_coe, fourier_coe, Real.fourier_eq, Real.fourier_eq, ← integral_const_mul,
+      ← integral_sub_left_eq_self _ volume x]
+    refine integral_congr_ae (.of_forall fun z ↦ ?_)
+    simp only [hψx, sub_sub_cancel, Circle.smul_def, smul_eq_mul, ← mul_assoc,
+      ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
+    congr 3
+    simp only [inner_sub_left, inner_neg_right]
+    ring
+  rw [← hψx, fourier_smulLeftCLM_apply, ← integral_neg_eq_self]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  simp only [K, mul_smul, integral_smul]
-  congr 2
+  dsimp only
+  rw [hψ, neg_neg, sub_neg_eq_add, inner_neg_right, neg_neg, real_inner_comm, mul_smul,
+    smul_comm]
 
 end Cutoff
 
