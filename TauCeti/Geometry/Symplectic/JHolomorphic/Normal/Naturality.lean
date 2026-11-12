@@ -70,6 +70,24 @@ theorem normalFDerivMap_mk (u : U → V) (Φ : V → W) (x : U) (w : V) :
     normalFDerivMap u Φ x (Submodule.Quotient.mk w) =
       Submodule.Quotient.mk (fderiv ℝ Φ (u x) w) := (rfl)
 
+/-- The identity target map induces the identity on the normal quotient. -/
+@[simp]
+theorem normalFDerivMap_id (u : U → V) (x : U) :
+    normalFDerivMap u id x = LinearMap.id := by
+  ext w
+  simp only [LinearMap.comp_apply, Submodule.mkQ_apply, normalFDerivMap_mk, fderiv_id,
+    ContinuousLinearMap.id_apply, LinearMap.id_apply]
+
+/-- Normal quotient maps respect composition of target maps differentiable at the image
+points, without requiring differentiability of the curve. -/
+theorem normalFDerivMap_comp {Z : Type*} [NormedAddCommGroup Z] [NormedSpace ℝ Z]
+    (u : U → V) (Φ : V → W) (Ψ : W → Z) (x : U)
+    (hΨ : DifferentiableAt ℝ Ψ (Φ (u x))) (hΦ : DifferentiableAt ℝ Φ (u x)) :
+    normalFDerivMap u (Ψ ∘ Φ) x =
+      (normalFDerivMap (Φ ∘ u) Ψ x).comp (normalFDerivMap u Φ x) := by
+  ext w
+  simp [normalFDerivMap_mk, fderiv_comp (u x) hΨ hΦ]
+
 /-- The map of normal quotients induced by a `C²` target map intertwines the normal
 Cauchy–Riemann linearizations at a zero of the nonlinear defect. The hypothesis on the
 target structures is local near `u x`, as needed for coordinate overlaps. -/
@@ -82,9 +100,9 @@ theorem normalCauchyRiemannLinearization_comp_of_cauchyRiemannOperator_eq_zero
     (hJK : ∀ᶠ y in 𝓝 (u x), (fderiv ℝ Φ y).comp (J y) =
       (K (Φ y)).comp (fderiv ℝ Φ y))
     (hhol : cauchyRiemannOperator j J u x = 0) :
-    (normalFDerivMap u Φ x).comp (normalCauchyRiemannLinearization j J u ξ x) =
-      normalCauchyRiemannLinearization j K (Φ ∘ u)
-        (fun y ↦ fderiv ℝ Φ (u y) (ξ y)) x := by
+    normalCauchyRiemannLinearization j K (Φ ∘ u)
+        (fun y ↦ fderiv ℝ Φ (u y) (ξ y)) x =
+      (normalFDerivMap u Φ x).comp (normalCauchyRiemannLinearization j J u ξ x) := by
   ext v
   simp only [LinearMap.comp_apply, normalCauchyRiemannLinearization_apply,
     Submodule.mkQ_apply, normalFDerivMap_mk]
