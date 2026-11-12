@@ -315,7 +315,7 @@ theorem comap_mul_right_subtype_coe (hH : MeasurableSet (H : Set G)) (g : G) :
     μ.comap (fun u : H ↦ (u : G) * g) =
       Measure.modularCharacter g⁻¹ • μ.comap ((↑) : H → G) := by
   have hcoe : MeasurableEmbedding ((↑) : H → G) := MeasurableEmbedding.subtype_coe hH
-  ext E hE
+  ext E _
   rw [(measurableEmbedding_mul_right_subtype_coe hH g).comap_apply, smul_apply,
     Measure.nnreal_smul_coe_apply, hcoe.comap_apply]
   have himg : (fun u : H ↦ (u : G) * g) '' E = (· * g⁻¹) ⁻¹' (((↑) : H → G) '' E) := by

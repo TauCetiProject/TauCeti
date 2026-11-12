@@ -223,10 +223,10 @@ section Conjugacy
 variable {β : Type*} [TopologicalSpace β]
   {φ : _root_.Flow ℝ α} {ψ : _root_.Flow ℝ β}
 
-/-- An inducing semiconjugacy carries membership in a stable set to membership in the
-corresponding stable set. -/
+/-- An inducing map intertwining two flows carries membership in a stable set to membership in
+the corresponding stable set. -/
 theorem _root_.Topology.IsInducing.map_mem_stableSet_iff {f : α → β} (hf : IsInducing f)
-    (hconj : _root_.Flow.IsSemiconjugacy f φ ψ) {x y : α} :
+    (hconj : ∀ t, Function.Semiconj f (φ t) (ψ t)) {x y : α} :
     f y ∈ stableSet ψ (f x) ↔ y ∈ stableSet φ x := by
   rw [mem_stableSet, mem_stableSet]
   exact hf.tendsto_flow_iff hconj
@@ -237,7 +237,7 @@ corresponding stable set. This is stated as an explicit rewrite lemma because
 theorem _root_.Homeomorph.map_mem_stableSet_iff
     (e : α ≃ₜ β) (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
-  exact e.isInducing.map_mem_stableSet_iff hconj
+  exact e.isInducing.map_mem_stableSet_iff hconj.semiconj
 
 /-- A topological conjugacy carries a stable set to the corresponding stable set. -/
 /- This is an explicit rewrite lemma: the target flow is not determined by the left-hand
@@ -253,11 +253,11 @@ theorem _root_.Homeomorph.image_stableSet_eq
     refine ⟨e.symm y, (e.map_mem_stableSet_iff hconj).1 ?_, e.apply_symm_apply y⟩
     simpa only [e.apply_symm_apply] using hy
 
-/-- An inducing semiconjugacy carries membership in an unstable set to membership in the
-corresponding unstable set. This is stated as an explicit rewrite lemma because
+/-- An inducing map intertwining two flows carries membership in an unstable set to membership in
+the corresponding unstable set. This is stated as an explicit rewrite lemma because
 `Flow.mem_unstableSet` already puts its left-hand side in simp-normal form. -/
 theorem _root_.Topology.IsInducing.map_mem_unstableSet_iff {f : α → β} (hf : IsInducing f)
-    (hconj : _root_.Flow.IsSemiconjugacy f φ ψ) {x y : α} :
+    (hconj : ∀ t, Function.Semiconj f (φ t) (ψ t)) {x y : α} :
     f y ∈ unstableSet ψ (f x) ↔ y ∈ unstableSet φ x := by
   rw [mem_unstableSet, mem_unstableSet]
   exact hf.tendsto_flow_iff hconj
@@ -268,7 +268,7 @@ corresponding unstable set. This is stated as an explicit rewrite lemma because
 theorem _root_.Homeomorph.map_mem_unstableSet_iff
     (e : α ≃ₜ β) (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
     e y ∈ unstableSet ψ (e x) ↔ y ∈ unstableSet φ x := by
-  exact e.isInducing.map_mem_unstableSet_iff hconj
+  exact e.isInducing.map_mem_unstableSet_iff hconj.semiconj
 
 /-- A topological conjugacy carries an unstable set to the corresponding unstable set. -/
 /- This is an explicit rewrite lemma: the target flow is not determined by the left-hand

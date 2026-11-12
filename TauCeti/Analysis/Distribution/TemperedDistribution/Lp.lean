@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -73,6 +74,8 @@ function by a function of temperate growth multiplies the function pointwise
   `G ‖u‖_p`.
 * `ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`: an operator
   `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
+* `BoundedContinuousFunction.toTemperedDistribution_toLpTop_injective`: for a measure positive on
+  open sets, a bounded continuous function is determined by its tempered distribution.
 
 ## References
 
@@ -329,3 +332,23 @@ theorem exists_apply_eq_toTemperedDistribution_and_norm_le {μ : Measure E}
     SchwartzMap.toLpCLM_apply] using hT φ
 
 end ContinuousLinearMap
+
+namespace BoundedContinuousFunction
+
+open MeasureTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
+  [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  [CompleteSpace F]
+
+/-- For a measure of temperate growth that is positive on nonempty open sets, a bounded
+continuous function is determined by its tempered distribution. -/
+theorem toTemperedDistribution_toLpTop_injective {μ : Measure E} [μ.HasTemperateGrowth]
+    [μ.IsOpenPosMeasure] :
+    Function.Injective fun f : E →ᵇ F ↦ Lp.toTemperedDistribution (toLpTop μ ℂ f) := fun f g h ↦
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
+  toLpTop_injective (𝕜 := ℂ) μ <|
+    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+    simpa only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply] using h
+
+end BoundedContinuousFunction

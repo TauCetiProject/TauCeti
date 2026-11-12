@@ -35,9 +35,6 @@ uniqueness live in `Laplace/Representation.lean`.
 
 The finite-measure representation is the Hausdorff--Bernstein--Widder theorem, after
 S. Bernstein (1928) and D. V. Widder, *The Laplace Transform*, Chapter IV.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone).
 -/
 
 public section

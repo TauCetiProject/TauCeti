@@ -468,7 +468,7 @@ private theorem toReal_eLpNorm_fourierInv_annularSymbol (B : ℝ) {R : ℝ}
   have hscale : ⇑(annularSymbolSchwartz B hR m) =
       fun ξ ↦ (((R⁻¹ : ℝ) : ℂ) • S) (R⁻¹ • ξ) := by
     ext ξ
-    rcases eq_or_ne ξ 0 with rfl | hξ
+    rcases eq_or_ne ξ 0 with rfl | _
     · simp [S, coe_annularSymbolSchwartz, annularSymbol]
     simp only [S, smul_apply, coe_annularSymbolSchwartz, annularSymbol, inv_one, one_smul,
       real_inner_smul_left, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, smul_eq_mul]
