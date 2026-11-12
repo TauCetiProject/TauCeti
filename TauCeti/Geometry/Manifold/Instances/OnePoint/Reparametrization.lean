@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Topology.UniformSpace.UniformApproximation
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.ContinuousSMul
 public import TauCeti.Topology.Compactification.OnePoint.Stabilizer
@@ -24,9 +23,11 @@ quotient well behaved: it is free on maps with an injective point, and proper on
 The properness rests on the way a sequence of Möbius transformations can leave every compact
 subset of `PSL(2, 𝕜)`. Lift `g n` to matrices `A n` of determinant one. They are unbounded, and
 after dividing each by its entry of largest norm a subsequence converges to a nonzero matrix `B`
-whose determinant is the limit of `(A n i j)⁻²`, hence zero. So `B` has rank one, with a kernel
-line `a` and an image line `b`, and `g n • z` converges to `b` for every `z ≠ a`, by the limit
-theorem `Projectivization.tendsto_smul_of_tendsto_smul_coe`. This holds even along moving points:
+whose determinant is the limit of `(A n i j)⁻²`, hence zero
+(`Matrix.ProjectiveSpecialLinearGroup.exists_tendsto_inv_smul_of_tendsto_cocompact`). So `B` has
+rank one, with a kernel line `a` and an image line `b` (`Matrix.exists_ker_range_of_det_eq_zero`),
+and `g n • z` converges to `b` for every `z ≠ a`, by the limit theorem
+`Projectivization.tendsto_smul_of_tendsto_smul_coe`. This holds even along moving points:
 if `z n → z₀ ≠ a` then `g n • z n → b` along the subsequence
 (`OnePoint.exists_tendsto_psl_smul_of_tendsto_cocompact`), so that the transformations converge
 to the constant map `b` away from the point `a`. For instance the dilations `z ↦ n z` converge to
@@ -84,106 +85,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [Prope
 
 /-! ### Escaping sequences -/
 
-section Escaping
-
-attribute [local instance] Matrix.normedAddCommGroup Matrix.normedSpace
-
-omit [DecidableEq 𝕜] [ProperSpace 𝕜] in
-/-- A nonzero `2 × 2` matrix `B` of determinant zero has rank one: there are lines `a` and `b`
-such that `B` kills exactly the vectors of `a`, and sends every other vector into `b`. -/
-private theorem exists_ker_range_of_det_eq_zero {B : Matrix (Fin 2) (Fin 2) 𝕜} (hB : B ≠ 0)
-    (hdet : B.det = 0) :
-    ∃ a b : ℙ 𝕜 (Fin 2 → 𝕜), (∀ w (hw : w ≠ 0), B *ᵥ w = 0 → Projectivization.mk 𝕜 w hw = a) ∧
-      ∀ w (hw : B *ᵥ w ≠ 0), Projectivization.mk 𝕜 (B *ᵥ w) hw = b := by
-  obtain ⟨v, hv, hBv⟩ := Matrix.exists_mulVec_eq_zero_iff.2 hdet
-  obtain ⟨w₀, hw₀⟩ : ∃ w₀, B *ᵥ w₀ ≠ 0 := by
-    by_contra! h
-    exact hB (Matrix.ext fun i j ↦ by simpa using congrFun (h (Pi.single j 1)) i)
-  -- Rank-nullity: the kernel and the range of `B` are both lines.
-  have hrank := LinearMap.finrank_range_add_finrank_ker B.mulVecLin
-  have hker : 0 < Module.finrank 𝕜 (LinearMap.ker B.mulVecLin) :=
-    Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨v, hBv⟩, fun h ↦ hv (congrArg Subtype.val h)⟩
-  have hrange : 0 < Module.finrank 𝕜 (LinearMap.range B.mulVecLin) :=
-    Module.finrank_pos_iff_exists_ne_zero.2
-      ⟨⟨B *ᵥ w₀, LinearMap.mem_range.2 ⟨w₀, rfl⟩⟩, fun h ↦ hw₀ (congrArg Subtype.val h)⟩
-  rw [Module.finrank_fin_fun] at hrank
-  have hle : ∀ S : Submodule 𝕜 (Fin 2 → 𝕜), Module.finrank 𝕜 S ≤ 1 → Module.rank 𝕜 S ≤ 1 :=
-    fun S h ↦ by
-      rw [← Module.finrank_eq_rank]
-      exact_mod_cast h
-  refine ⟨Projectivization.mk 𝕜 v hv, Projectivization.mk 𝕜 (B *ᵥ w₀) hw₀,
-    fun w hw hBw ↦ Projectivization.mk_eq_mk_of_mem_of_rank_le_one
-      (S := LinearMap.ker B.mulVecLin) (hle _ (by omega)) hBw hBv hw hv,
-    fun w hw ↦ Projectivization.mk_eq_mk_of_mem_of_rank_le_one
-      (S := LinearMap.range B.mulVecLin) (hle _ (by omega)) (LinearMap.mem_range.2 ⟨w, rfl⟩)
-      (LinearMap.mem_range.2 ⟨w₀, rfl⟩) hw hw₀⟩
-
-omit [DecidableEq 𝕜] in
-/-- Lifts to `SL(2, 𝕜)` of a sequence of Möbius transformations escaping to infinity have
-unbounded norms. -/
-private theorem tendsto_norm_of_tendsto_cocompact {g : ℕ → PSL(2, 𝕜)}
-    (hg : Tendsto g atTop (cocompact PSL(2, 𝕜))) {A : ℕ → SL(2, 𝕜)}
-    (hA : ∀ n, (A n : PSL(2, 𝕜)) = g n) :
-    Tendsto (fun n ↦ ‖(A n : Matrix (Fin 2) (Fin 2) 𝕜)‖) atTop atTop := by
-  have : ProperSpace (Matrix (Fin 2) (Fin 2) 𝕜) :=
-    inferInstanceAs (ProperSpace (Fin 2 → Fin 2 → 𝕜))
-  refine tendsto_atTop.2 fun R ↦ ?_
-  -- The matrices of determinant one and norm at most `R` form a compact subset of `SL(2, 𝕜)`.
-  have hemb : IsClosedEmbedding ((↑) : SL(2, 𝕜) → Matrix (Fin 2) (Fin 2) 𝕜) :=
-    IsClosedEmbedding.subtypeVal (isClosed_eq continuous_id.matrix_det continuous_const)
-  have hK : IsCompact ((QuotientGroup.mk : SL(2, 𝕜) → PSL(2, 𝕜)) ''
-      (((↑) : SL(2, 𝕜) → Matrix (Fin 2) (Fin 2) 𝕜) ⁻¹' Metric.closedBall 0 R)) :=
-    (hemb.isCompact_preimage (isCompact_closedBall 0 R)).image
-      (QuotientGroup.continuous_mk (G := SL(2, 𝕜)))
-  filter_upwards [hg.eventually hK.compl_mem_cocompact] with n hn
-  by_contra! hlt
-  exact hn ⟨A n, mem_closedBall_zero_iff.2 hlt.le, hA n⟩
-
-omit [DecidableEq 𝕜] in
-/-- Lifts `A n` to `SL(2, 𝕜)` of a sequence of Möbius transformations escaping to infinity,
-divided by suitable scalars `m n`, have a subsequence converging to a nonzero singular matrix. The
-scalar `m n` is an entry of `A n` of largest norm, so that `(m n)⁻¹ • A n` has norm one and
-determinant `(m n)⁻²`, which tends to zero. -/
-private theorem exists_tendsto_inv_smul_of_tendsto_cocompact {g : ℕ → PSL(2, 𝕜)}
-    (hg : Tendsto g atTop (cocompact PSL(2, 𝕜))) {A : ℕ → SL(2, 𝕜)}
-    (hA : ∀ n, (A n : PSL(2, 𝕜)) = g n) :
-    ∃ (m : ℕ → 𝕜) (φ : ℕ → ℕ) (B : Matrix (Fin 2) (Fin 2) 𝕜), StrictMono φ ∧ B ≠ 0 ∧
-      B.det = 0 ∧ Tendsto (fun n ↦ (m (φ n))⁻¹ • (A (φ n) : Matrix (Fin 2) (Fin 2) 𝕜)) atTop
-        (𝓝 B) := by
-  have : ProperSpace (Matrix (Fin 2) (Fin 2) 𝕜) :=
-    inferInstanceAs (ProperSpace (Fin 2 → Fin 2 → 𝕜))
-  have hnorm := tendsto_norm_of_tendsto_cocompact hg hA
-  choose p hp using fun n ↦ Finite.exists_max fun p : Fin 2 × Fin 2 ↦
-    ‖(A n : Matrix (Fin 2) (Fin 2) 𝕜) p.1 p.2‖
-  set m : ℕ → 𝕜 := fun n ↦ (A n : Matrix (Fin 2) (Fin 2) 𝕜) (p n).1 (p n).2
-  have hm_norm : ∀ n, ‖m n‖ = ‖(A n : Matrix (Fin 2) (Fin 2) 𝕜)‖ := fun n ↦
-    le_antisymm (norm_apply_le_norm _) <|
-      (norm_le_iff (norm_nonneg _)).2 fun i j ↦ hp n (i, j)
-  have hm0 : ∀ n, m n ≠ 0 := fun n ↦ by
-    rw [← norm_ne_zero_iff, hm_norm, norm_ne_zero_iff]
-    exact fun h ↦ by simpa [h] using (A n).2
-  set C : ℕ → Matrix (Fin 2) (Fin 2) 𝕜 := fun n ↦ (m n)⁻¹ • (A n : Matrix (Fin 2) (Fin 2) 𝕜)
-    with hC
-  have hC_norm : ∀ n, ‖C n‖ = 1 := fun n ↦ by
-    rw [hC, norm_smul, norm_inv, hm_norm, inv_mul_cancel₀]
-    rw [← hm_norm, norm_ne_zero_iff]
-    exact hm0 n
-  obtain ⟨B, -, φ, hφ, hCB⟩ :=
-    (isCompact_closedBall (0 : Matrix (Fin 2) (Fin 2) 𝕜) 1).tendsto_subseq (x := C)
-      fun n ↦ by simp [hC_norm]
-  refine ⟨m, φ, B, hφ, ?_, ?_, hCB⟩
-  · have hB1 : ‖B‖ = 1 := tendsto_nhds_unique ((continuous_norm.tendsto B).comp hCB)
-      (by simp [Function.comp_def, hC_norm])
-    rintro rfl
-    simp at hB1
-  · refine tendsto_nhds_unique ((continuous_id.matrix_det.tendsto B).comp hCB) ?_
-    have hdetC : ∀ n, (C n).det = (m n)⁻¹ ^ 2 := fun n ↦ by
-      simp [hC, (A n).2]
-    simp only [Function.comp_def, id_eq, hdetC]
-    rw [tendsto_zero_iff_norm_tendsto_zero]
-    simpa [hm_norm] using ((tendsto_inv_atTop_zero.comp
-      (hnorm.comp hφ.tendsto_atTop)).pow 2)
-
 /-- **Escaping sequences of Möbius transformations.** If a sequence `g n` of Möbius
 transformations leaves every compact subset of `PSL(2, 𝕜)`, a subsequence converges to a constant
 `b` away from a point `a`, even along moving points: whenever `z n → z₀ ≠ a`, the points
@@ -194,8 +95,9 @@ theorem exists_tendsto_psl_smul_of_tendsto_cocompact {g : ℕ → PSL(2, 𝕜)}
       ∀ ⦃z : ℕ → OnePoint 𝕜⦄ ⦃z₀ : OnePoint 𝕜⦄, z₀ ≠ a → Tendsto z atTop (𝓝 z₀) →
         Tendsto (fun n ↦ g (φ n) • z n) atTop (𝓝 b) := by
   choose A hA using fun n ↦ QuotientGroup.mk_surjective (g n)
-  obtain ⟨m, φ, B, hφ, hB, hdet, hCB⟩ := exists_tendsto_inv_smul_of_tendsto_cocompact hg hA
-  obtain ⟨a, b, ha, hb⟩ := exists_ker_range_of_det_eq_zero hB hdet
+  obtain ⟨m, φ, B, hφ, hB, hdet, hCB⟩ :=
+    Matrix.ProjectiveSpecialLinearGroup.exists_tendsto_inv_smul_of_tendsto_cocompact hg hA
+  obtain ⟨a, b, ha, hb⟩ := Matrix.exists_ker_range_of_det_eq_zero hB hdet
   let e := (diffeomorphProjectivization 𝕜 0).toHomeomorph
   refine ⟨φ, e.symm a, e.symm b, hφ, fun z z₀ hz₀ hz ↦ ?_⟩
   -- On the projective line the transformations act through the matrices `A n`, and
@@ -209,8 +111,6 @@ theorem exists_tendsto_psl_smul_of_tendsto_cocompact {g : ℕ → PSL(2, 𝕜)}
   refine ((e.symm.continuous.tendsto b).comp hlim).congr fun n ↦ ?_
   simp only [Function.comp_apply, ← hA (φ n)]
   exact e.injective (by simpa [e] using (equivProjectivization_smul (z n)).symm)
-
-end Escaping
 
 /-! ### Properness and freeness of the reparametrization action -/
 
