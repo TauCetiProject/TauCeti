@@ -159,6 +159,23 @@ theorem hessianOperator_stereographicHeight_zero :
     hasFDerivAt_gradient_stereographicHeight_zero
 
 omit [CompleteSpace F] in
+/-- The second derivative of the chart height function at the origin is minus the inner
+product. -/
+theorem fderiv_fderiv_stereographicHeight_zero :
+    fderiv ℝ (fderiv ℝ stereographicHeight) (0 : F) = -innerSL ℝ := by
+  have hfun : fderiv ℝ stereographicHeight =
+      fun w : F ↦ (-16 * ((‖w‖ ^ 2 + 4) ^ 2)⁻¹) • innerSL ℝ w :=
+    funext fun w ↦ by rw [fderiv_stereographicHeight, div_eq_mul_inv]
+  have hd : DifferentiableAt ℝ (fun w : F ↦ (‖w‖ ^ 2 + 4) ^ 2) 0 :=
+    ((((contDiff_norm_sq ℝ (E := F) (n := 1)).differentiable one_ne_zero) 0).add_const 4).pow 2
+  have hc : DifferentiableAt ℝ (fun w : F ↦ -16 * ((‖w‖ ^ 2 + 4) ^ 2)⁻¹) 0 :=
+    (hd.inv (by norm_num)).const_mul (-16)
+  rw [hfun]
+  refine (hc.hasFDerivAt.smul (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).hasFDerivAt).fderiv.trans ?_
+  ext w y
+  norm_num
+
+omit [CompleteSpace F] in
 /-- The Hessian quadratic form of the chart height function at the origin is minus the squared
 norm. -/
 theorem hessianQuadraticForm_stereographicHeight_zero (w : F) :

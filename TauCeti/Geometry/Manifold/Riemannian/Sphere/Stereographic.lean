@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The round metric in stereographic coordinates
@@ -39,6 +40,8 @@ projection onto the equatorial hyperplane, which is `y ↦ σ⁻¹(2 y)`, the fa
   `y ↦ σ⁻¹ (2 J y)` for a linear isometry `J` into that hyperplane.
 * `TauCeti.inner_mfderiv_stereographic'_symm`: the round metric pulled back along the inverse of
   the stereographic chart `stereographic' n v`.
+* `TauCeti.inner_mvfderiv_coe_sphere`: at the centre of the preferred chart, the differential of
+  the inclusion of the sphere is an isometry from the chart coordinates.
 
 ## References
 
@@ -153,5 +156,39 @@ theorem inner_mfderiv_stereographic'_symm (v : sphere (0 : E) 1)
     inner_fderiv_stereoInvFunAux (norm_eq_of_mem_sphere v) (U.symm y).2 (U.symm a).2 (U.symm b).2,
     Submodule.norm_coe, LinearIsometryEquiv.norm_map, ← Submodule.coe_inner,
     LinearIsometryEquiv.inner_map_map]
+
+/-- **The preferred chart is isometric at its centre.** The preferred chart of the unit sphere at
+`x` is stereographic projection from `-x`, which sends `x` to the origin, where the conformal factor
+`(4 / (‖y‖² + 4))²` is one. So the differential at `x` of the inclusion of the sphere, read in that
+chart, preserves the Euclidean inner product of the chart coordinates. -/
+theorem inner_mvfderiv_coe_sphere (x : sphere (0 : E) 1) (a b : EuclideanSpace ℝ (Fin n)) :
+    inner ℝ (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x a)
+        (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x b) = inner ℝ a b := by
+  set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
+    (ne_zero_of_mem_unit_sphere (-x))).repr
+  -- Read in `E`, the inverse of the preferred chart is `σ⁻¹` precomposed with the isometry
+  -- `U.symm`, and the chart sends `x` to the origin.
+  have hfun : ((↑) : sphere (0 : E) 1 → E) ∘ (extChartAt (𝓡 n) x).symm =
+      stereoInvFunAux ((-x : sphere (0 : E) 1) : E) ∘
+        ((↑) : (ℝ ∙ ((-x : sphere (0 : E) 1) : E))ᗮ → E) ∘ U.symm := by
+    rw [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, Function.comp_id, chartAt_sphere]
+    exact coe_comp_stereographic'_symm (-x)
+  have hL : HasFDerivAt (((↑) : (ℝ ∙ ((-x : sphere (0 : E) 1) : E))ᗮ → E) ∘ U.symm)
+      ((ℝ ∙ ((-x : sphere (0 : E) 1) : E))ᗮ.subtypeL.comp
+        U.symm.toContinuousLinearEquiv.toContinuousLinearMap) 0 :=
+    ((ℝ ∙ ((-x : sphere (0 : E) 1) : E))ᗮ.subtypeL.comp
+      U.symm.toContinuousLinearEquiv.toContinuousLinearMap).hasFDerivAt
+  have hd (c : EuclideanSpace ℝ (Fin n)) :
+      mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x c =
+        fderiv ℝ (stereoInvFunAux ((-x : sphere (0 : E) 1) : E)) 0 (U.symm c) := by
+    rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, hfun, extChartAt_sphere_apply_self,
+      (((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp 0
+        hL).fderiv]
+    simp only [Function.comp_apply, map_zero, ZeroMemClass.coe_zero]
+    -- The composite of continuous linear maps applied to `c` is `σ⁻¹`'s derivative at `U.symm c`.
+    rfl
+  rw [hd a, hd b, inner_fderiv_stereoInvFunAux (norm_eq_of_mem_sphere (-x)) (Submodule.zero_mem _)
+    (U.symm a).2 (U.symm b).2, ← Submodule.coe_inner, LinearIsometryEquiv.inner_map_map]
+  norm_num
 
 end TauCeti
