@@ -11,23 +11,25 @@ import TauCeti.AlgebraicGeometry.Morphisms.ElementaryEtale.Stalk
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Ramification
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Normal
 import TauCeti.AlgebraicGeometry.Morphisms.LocalSpectrum
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 import TauCeti.RingTheory.KrullDimension.Integral
-import TauCeti.RingTheory.RegularLocalRing.Flat
 import TauCeti.RingTheory.RegularLocalRing.Purity
 
 /-!
 # Purity of the branch locus in local dimension at most two
 
 A morphism of locally Noetherian schemes, locally of finite type and quasi-finite at `x`,
-is étale near `x` if its source stalk is normal, its target stalk is regular, their dimensions
-agree and lie between one and two, and it is unramified at every codimension-one generization
-of `x`. This is the small-dimensional case of Zariski–Nagata purity (Stacks, Lemma 58.21.4).
+is étale near `x` if its source stalk is normal, its target stalk is regular of dimension
+between one and two and at most that of the source stalk, and it is unramified at every
+codimension-one generization of `x`. This is the small-dimensional case of Zariski–Nagata purity
+(Stacks, Lemma 58.21.4).
 No global finiteness, dominance, normality or regularity is imposed.
 
 The finite-stalk version applies purity for finite normal algebras over regular local rings
-of dimension at most two. Equality of dimensions makes the finite stalk map injective, hence
-its normal-domain target is torsion free. The general case uses an elementary étale
-neighbourhood isolating the chosen point: its finite horizontal map has a singleton fibre,
+of dimension at most two. The target stalk having dimension at most that of the source stalk
+makes the finite stalk map injective, hence its normal-domain target is torsion free. The general
+case uses an elementary étale neighbourhood isolating the chosen point: its finite horizontal
+map has a singleton fibre,
 so its stalk map really is finite. Étale invariance transports normality, regularity,
 dimension and the codimension-one unramifiedness hypothesis to this local model.
 
@@ -74,16 +76,17 @@ theorem exists_etale_of_finite_stalkMap_of_ringKrullDim_le_two (f : X ⟶ Y)
     ⟨RingHom.flat_algebraMap_iff.mpr inferInstance,
       RingHom.formallyUnramified_algebraMap.mpr inferInstance⟩
 
-/-- **Purity of the branch locus in local dimension one or two.** A quasi-finite point with
-normal source stalk and regular target stalk of the same positive dimension at most two has
-an étale neighbourhood if every codimension-one generization is unramified. -/
+/-- **Purity of the branch locus in local dimension one or two.** If a quasi-finite point `x`
+has normal source stalk and regular target stalk of positive dimension at most two and at most
+that of the source stalk, and every codimension-one generization is unramified, then `f` is
+étale on an open neighbourhood of `x`. -/
 @[stacks 0BMB "in local dimension one or two"]
 theorem exists_etale_of_formallyUnramified_stalk_codimOne_of_ringKrullDim_le_two
     (f : X ⟶ Y) [IsLocallyNoetherian Y] [LocallyOfFiniteType f] (x : X)
     [IsDomain (X.presheaf.stalk x)]
     [IsIntegrallyClosed (X.presheaf.stalk x)] [IsRegularLocalRing (Y.presheaf.stalk (f x))]
     (hx : f.QuasiFiniteAt x)
-    (hdim : ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)))
+    (hdim : ringKrullDim (Y.presheaf.stalk (f x)) ≤ ringKrullDim (X.presheaf.stalk x))
     (hdim₁ : 1 ≤ ringKrullDim (Y.presheaf.stalk (f x)))
     (hdim₂ : ringKrullDim (Y.presheaf.stalk (f x)) ≤ 2)
     (hunram : ∀ z : X, z ⤳ x → ringKrullDim (X.presheaf.stalk z) = 1 →
@@ -99,23 +102,16 @@ theorem exists_etale_of_formallyUnramified_stalk_codimOne_of_ringKrullDim_le_two
   have hnormal := (e.isDomain_and_isIntegrallyClosed_stalk_iff_of_etale x').mp
     (hex ▸ ⟨inferInstance, inferInstance⟩)
   obtain ⟨hdom, hclosed⟩ := hnormal
-  have hregular : IsRegularLocalRing (Y'.presheaf.stalk (f' x')) := by
-    let := (b.stalkMap (f' x')).hom.toAlgebra
-    have : IsRegularLocalRing (Y.presheaf.stalk (b (f' x'))) := hbx ▸ inferInstance
-    have := b.isLocalHom_stalkMap_toAlgebra (f' x')
-    have := b.essFiniteType_stalkMap_toAlgebra (f' x')
-    have := b.formallyUnramified_stalkMap_toAlgebra (f' x')
-    have : Module.Flat (Y.presheaf.stalk (b (f' x'))) (Y'.presheaf.stalk (f' x')) :=
-      Flat.stalkMap b (f' x')
-    exact TauCeti.IsRegularLocalRing.of_flat_of_formallyUnramified
-      (R := Y.presheaf.stalk (b (f' x')))
+  have hregular : IsRegularLocalRing (Y'.presheaf.stalk (f' x')) :=
+    (b.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified (f' x')).mp
+      (hbx ▸ inferInstance)
   have hedim := e.ringKrullDim_stalk_eq_of_etale x'
   have hbdim := b.ringKrullDim_stalk_eq_of_etale (f' x')
   rw [hex] at hedim
   rw [hbx] at hbdim
   apply hetale.mpr
   exact f'.exists_etale_of_finite_stalkMap_of_ringKrullDim_le_two x' hstalk
-    (hedim.symm.trans (hdim.trans hbdim)).ge (hbdim ▸ hdim₁) (hbdim ▸ hdim₂)
+    (hedim ▸ hbdim ▸ hdim) (hbdim ▸ hdim₁) (hbdim ▸ hdim₂)
     ((formallyUnramified_stalk_codimOne_iff_of_etale_square f f' e b hw x').mp
       (hex ▸ hunram))
 
