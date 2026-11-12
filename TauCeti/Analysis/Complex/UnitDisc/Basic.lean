@@ -20,7 +20,9 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
   disc, which is nontrivial.
 * Compactness of the disc points of Euclidean norm at most `ρ < 1`
   (`Complex.UnitDisc.isCompact_setOf_norm_le`).
-* The closed unit disc `Complex.UnitClosedDisc` is a compact, second countable Hausdorff space.
+* The closed unit disc `Complex.UnitClosedDisc` is a compact, second countable Hausdorff space,
+  homeomorphic to the subtype `Metric.closedBall 0 1` it is a type synonym of
+  (`Complex.UnitClosedDisc.homeomorphClosedBall`).
 * Transport between a self-map of the bundled disc and a scalar representative `ℂ → ℂ` of it:
   such a representative maps `Metric.ball 0 1` into itself
   (`TauCeti.mapsTo_ball_of_forall_unitDisc_coe_eq`), and bijectively onto itself when the bundled
@@ -83,6 +85,20 @@ end Complex.UnitDisc
 
 namespace Complex.UnitClosedDisc
 
+/-- The identity, from the closed unit disc to the subtype `closedBall (0 : ℂ) 1` it is a type
+synonym of. -/
+noncomputable def homeomorphClosedBall : 𝕔𝔻 ≃ₜ closedBall (0 : ℂ) 1 :=
+  Homeomorph.refl _
+
+@[simp]
+theorem coe_homeomorphClosedBall (z : 𝕔𝔻) : (homeomorphClosedBall z : ℂ) = z :=
+  (rfl)
+
+@[simp]
+theorem coe_homeomorphClosedBall_symm (z : closedBall (0 : ℂ) 1) :
+    (homeomorphClosedBall.symm z : ℂ) = z :=
+  (rfl)
+
 /-- The closed unit disc is Hausdorff. -/
 instance instT2Space : T2Space 𝕔𝔻 :=
   inferInstanceAs <| T2Space (closedBall (0 : ℂ) 1)
@@ -93,7 +109,6 @@ instance instSecondCountableTopology : SecondCountableTopology 𝕔𝔻 :=
 
 /-- The closed unit disc is compact. -/
 instance instCompactSpace : CompactSpace 𝕔𝔻 :=
-  haveI := isCompact_iff_compactSpace.1 (isCompact_closedBall (0 : ℂ) 1)
   inferInstanceAs <| CompactSpace (closedBall (0 : ℂ) 1)
 
 end Complex.UnitClosedDisc

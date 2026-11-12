@@ -64,20 +64,6 @@ open scoped Manifold ContDiff Topology Complex.UnitDisc
 
 namespace Complex.UnitClosedDisc
 
-/-- The identity, from the closed unit disc to the subtype `closedBall (0 : ℂ) 1` it is a type
-synonym of. -/
-def homeomorphClosedBall : 𝕔𝔻 ≃ₜ closedBall (0 : ℂ) 1 :=
-  Homeomorph.refl _
-
-@[simp]
-theorem coe_homeomorphClosedBall (z : 𝕔𝔻) : (homeomorphClosedBall z : ℂ) = z :=
-  (rfl)
-
-@[simp]
-theorem coe_homeomorphClosedBall_symm (z : closedBall (0 : ℂ) 1) :
-    (homeomorphClosedBall.symm z : ℂ) = z :=
-  (rfl)
-
 /-! ### Cayley charts -/
 
 private theorem ne_zero_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) : ζ ≠ 0 :=
