@@ -234,11 +234,8 @@ slices. -/
 theorem Measure.ext_of_forall_spatialSlice_eq {μ ν : Measure (ℝ≥0 × V)} [IsFiniteMeasure μ]
     (hslice : ∀ t : ℝ≥0, spatialSlice μ t = spatialSlice ν t) : μ = ν := by
   -- The slice at time `0` is the spatial marginal, so `ν` is finite too.
-  have : IsFiniteMeasure (ν.map Prod.snd) := by
-    change IsFiniteMeasure ν.snd
-    rw [← spatialSlice_zero, ← hslice 0]
-    infer_instance
-  have := Measure.isFiniteMeasure_of_map (f := Prod.snd) (μ := ν) measurable_snd.aemeasurable
+  have : IsFiniteMeasure ν :=
+    ⟨by rw [← Measure.snd_univ, ← spatialSlice_zero, ← hslice 0]; exact measure_lt_top _ _⟩
   -- Step 1: Laplace determinacy on `ℝ≥0` identifies every measurable rectangle.
   have hrect : ∀ B : Set V, MeasurableSet B → ∀ A : Set ℝ≥0, MeasurableSet A →
       μ (A ×ˢ B) = ν (A ×ˢ B) := by
@@ -336,12 +333,8 @@ theorem representsLaplaceFourier_of_forall_spatialSlice_eq
     (hFcont : ∀ t : ℝ≥0, Continuous fun a => F (t, a))
     (h : ∀ t : ℝ≥0, spatialSlice μ t = bochnerMeasure fun a => F (t, a)) :
     RepresentsLaplaceFourier μ F := by
-  have : IsFiniteMeasure (μ.map Prod.snd) := by
-    change IsFiniteMeasure μ.snd
-    rw [← spatialSlice_zero, h 0]
-    infer_instance
   have : IsFiniteMeasure μ :=
-    Measure.isFiniteMeasure_of_map (f := Prod.snd) measurable_snd.aemeasurable
+    ⟨by rw [← Measure.snd_univ, ← spatialSlice_zero, h 0]; exact measure_lt_top _ _⟩
   refine representsLaplaceFourier_iff.mpr ⟨this, fun x => ?_⟩
   rw [← Prod.mk.eta (p := x), ← integral_fourierAtom_spatialSlice, h x.1,
     integral_fourierAtom_bochnerMeasure (hFcont x.1) (hFpd x.1) x.2]
