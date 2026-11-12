@@ -31,7 +31,7 @@ function `ord(x) = sup {r : x ∈ 𝔪ʳ}` on a regular local ring.
 
 ## References
 
-* H. Matsumura, *Commutative Ring Theory*, Theorem 14.4 and Theorem 17.4.
+* H. Matsumura, *Commutative Ring Theory*, Theorem 14.4 and Theorem 16.2 (i).
 * [The Stacks Project, Lemma 10.106.1](https://stacks.math.columbia.edu/tag/00NO).
 -/
 
@@ -54,6 +54,14 @@ noncomputable def associatedGradedEquiv {rs : List R} (hspan : ofList rs = maxim
       (maximalIdeal R).AssociatedGraded :=
   (isRegular_of_ofList_eq_maximalIdeal hspan hlen).toIsWeaklyRegular.associatedGradedEquiv hspan
 
+/-- The regular-local comparison is the comparison for its weakly regular parameter sequence. -/
+theorem associatedGradedEquiv_def {rs : List R} (hspan : ofList rs = maximalIdeal R)
+    (hlen : rs.length ≤ (maximalIdeal R).spanFinrank) :
+    associatedGradedEquiv hspan hlen =
+      (isRegular_of_ofList_eq_maximalIdeal hspan hlen).toIsWeaklyRegular.associatedGradedEquiv
+        hspan :=
+  (rfl)
+
 /-- `associatedGradedEquiv` is `Ideal.AssociatedGraded.mvPolynomialHom`. -/
 @[simp]
 theorem associatedGradedEquiv_apply {rs : List R} (hspan : ofList rs = maximalIdeal R)
@@ -63,6 +71,64 @@ theorem associatedGradedEquiv_apply {rs : List R} (hspan : ofList rs = maximalId
       (fun i ↦ by rw [← hspan]; exact subset_span (List.getElem_mem _) :
         ∀ i : Fin rs.length, rs[i] ∈ maximalIdeal R) P :=
   IsWeaklyRegular.associatedGradedEquiv_apply _ hspan P
+
+/-- The parameter comparison preserves homogeneous components. -/
+theorem associatedGradedEquiv_homogeneousComponent {rs : List R}
+    (hspan : ofList rs = maximalIdeal R) (hlen : rs.length ≤ (maximalIdeal R).spanFinrank)
+    (ν : ℕ) (P : MvPolynomial (Fin rs.length) (R ⧸ maximalIdeal R)) :
+    associatedGradedEquiv hspan hlen (MvPolynomial.homogeneousComponent ν P) =
+      DirectSum.of (maximalIdeal R).GradedPiece ν (associatedGradedEquiv hspan hlen P ν) := by
+  rw [associatedGradedEquiv_def]
+  exact IsWeaklyRegular.associatedGradedEquiv_homogeneousComponent _ hspan ν P
+
+/-- The parameter comparison preserves and reflects homogeneity of any specified degree. -/
+theorem isHomogeneous_iff_associatedGradedEquiv_mem_range {rs : List R}
+    (hspan : ofList rs = maximalIdeal R) (hlen : rs.length ≤ (maximalIdeal R).spanFinrank)
+    (ν : ℕ) (P : MvPolynomial (Fin rs.length) (R ⧸ maximalIdeal R)) :
+    P.IsHomogeneous ν ↔ associatedGradedEquiv hspan hlen P ∈
+      Set.range (DirectSum.of (maximalIdeal R).GradedPiece ν) := by
+  rw [associatedGradedEquiv_def]
+  exact IsWeaklyRegular.isHomogeneous_iff_associatedGradedEquiv_mem_range _ hspan ν P
+
+/-- The inverse parameter comparison preserves homogeneous components. -/
+@[simp]
+theorem homogeneousComponent_associatedGradedEquiv_symm {rs : List R}
+    (hspan : ofList rs = maximalIdeal R) (hlen : rs.length ≤ (maximalIdeal R).spanFinrank)
+    (ν : ℕ) (g : (maximalIdeal R).AssociatedGraded) :
+    MvPolynomial.homogeneousComponent ν ((associatedGradedEquiv hspan hlen).symm g) =
+      (associatedGradedEquiv hspan hlen).symm
+        (DirectSum.of (maximalIdeal R).GradedPiece ν (g ν)) := by
+  rw [associatedGradedEquiv_def]
+  exact IsWeaklyRegular.homogeneousComponent_associatedGradedEquiv_symm _ hspan ν g
+
+/-- The inverse parameter comparison sends the degree-`ν` summand to degree-`ν` forms. -/
+theorem isHomogeneous_associatedGradedEquiv_symm_of {rs : List R}
+    (hspan : ofList rs = maximalIdeal R) (hlen : rs.length ≤ (maximalIdeal R).spanFinrank)
+    (ν : ℕ) (q : (maximalIdeal R).GradedPiece ν) :
+    ((associatedGradedEquiv hspan hlen).symm
+      (DirectSum.of (maximalIdeal R).GradedPiece ν q)).IsHomogeneous ν := by
+  rw [associatedGradedEquiv_def]
+  exact IsWeaklyRegular.isHomogeneous_associatedGradedEquiv_symm_of _ hspan ν q
+
+/-- The inverse parameter comparison sends a class from `𝔪ᵛ` to a degree-`ν` form. -/
+theorem isHomogeneous_associatedGradedEquiv_symm_mk {rs : List R}
+    (hspan : ofList rs = maximalIdeal R) (hlen : rs.length ≤ (maximalIdeal R).spanFinrank)
+    (ν : ℕ) (x : ↥(maximalIdeal R ^ ν)) :
+    ((associatedGradedEquiv hspan hlen).symm
+      (AssociatedGraded.mk (maximalIdeal R) ν x)).IsHomogeneous ν := by
+  rw [associatedGradedEquiv_def]
+  exact IsWeaklyRegular.isHomogeneous_associatedGradedEquiv_symm_mk _ hspan ν x
+
+/-- The inverse parameter comparison sends a parameter class to its variable. -/
+@[simp]
+theorem associatedGradedEquiv_symm_mk_one {rs : List R}
+    (hspan : ofList rs = maximalIdeal R) (hlen : rs.length ≤ (maximalIdeal R).spanFinrank)
+    (i : Fin rs.length) :
+    (associatedGradedEquiv hspan hlen).symm (AssociatedGraded.mk (maximalIdeal R) 1
+      ⟨rs[(i : ℕ)], by rw [pow_one, ← hspan]; exact subset_span (List.getElem_mem _)⟩) =
+        MvPolynomial.X i := by
+  rw [associatedGradedEquiv_def]
+  exact IsWeaklyRegular.associatedGradedEquiv_symm_mk_one _ hspan i
 
 /-- The associated graded ring of the maximal ideal of a regular local ring is a domain. -/
 instance isDomain_associatedGraded : IsDomain (maximalIdeal R).AssociatedGraded := by
@@ -76,9 +142,7 @@ instance isDomain_associatedGraded : IsDomain (maximalIdeal R).AssociatedGraded 
 the initial forms of `x` and `y`. -/
 theorem mul_notMem_maximalIdeal_pow_succ {x y : R} {r s : ℕ} (hx : x ∈ maximalIdeal R ^ r)
     (hx' : x ∉ maximalIdeal R ^ (r + 1)) (hy : y ∈ maximalIdeal R ^ s)
-    (hy' : y ∉ maximalIdeal R ^ (s + 1)) : x * y ∉ maximalIdeal R ^ (r + s + 1) := by
-  have h := mul_ne_zero ((AssociatedGraded.mk_eq_zero_iff ⟨x, hx⟩).not.mpr hx')
-    ((AssociatedGraded.mk_eq_zero_iff ⟨y, hy⟩).not.mpr hy')
-  rwa [AssociatedGraded.mk_mul_mk, Ne, AssociatedGraded.mk_eq_zero_iff] at h
+    (hy' : y ∉ maximalIdeal R ^ (s + 1)) : x * y ∉ maximalIdeal R ^ (r + s + 1) :=
+  AssociatedGraded.mul_notMem_pow_succ hx hx' hy hy'
 
 end TauCeti.IsRegularLocalRing

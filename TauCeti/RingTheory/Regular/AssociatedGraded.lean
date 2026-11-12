@@ -217,6 +217,18 @@ noncomputable def associatedGradedEquiv {rs : List R} (h : IsWeaklyRegular R rs)
     ⟨h.mvPolynomialHom_injective hI.ge ha,
       AssociatedGraded.mvPolynomialHom_surjective ha (hI ▸ (ofList_eq_span_range_getElem rs).le)⟩
 
+/-- The comparison equips the polynomial presentation with its inverse. -/
+theorem associatedGradedEquiv_def {rs : List R} (h : IsWeaklyRegular R rs) {I : Ideal R}
+    (hI : ofList rs = I) :
+    h.associatedGradedEquiv hI =
+      let ha : ∀ i : Fin rs.length, rs[i] ∈ I := fun i ↦
+        hI ▸ subset_span (List.getElem_mem i.isLt)
+      AlgEquiv.ofBijective (AssociatedGraded.mvPolynomialHom I ha)
+        ⟨h.mvPolynomialHom_injective hI.ge ha,
+          AssociatedGraded.mvPolynomialHom_surjective ha
+            (hI ▸ (ofList_eq_span_range_getElem rs).le)⟩ :=
+  (rfl)
+
 /-- `associatedGradedEquiv` is `Ideal.AssociatedGraded.mvPolynomialHom`. -/
 @[simp]
 theorem associatedGradedEquiv_apply {rs : List R} (h : IsWeaklyRegular R rs) {I : Ideal R}
@@ -225,5 +237,79 @@ theorem associatedGradedEquiv_apply {rs : List R} (h : IsWeaklyRegular R rs) {I 
       (fun i ↦ by rw [← hI]; exact subset_span (List.getElem_mem _) :
         ∀ i : Fin rs.length, rs[i] ∈ I) P :=
   (rfl)
+
+/-- The comparison isomorphism preserves homogeneous components. -/
+theorem associatedGradedEquiv_homogeneousComponent {rs : List R} (h : IsWeaklyRegular R rs)
+    {I : Ideal R} (hI : ofList rs = I) (ν : ℕ) (P : MvPolynomial (Fin rs.length) (R ⧸ I)) :
+    h.associatedGradedEquiv hI (homogeneousComponent ν P) =
+      DirectSum.of I.GradedPiece ν (h.associatedGradedEquiv hI P ν) := by
+  simp only [associatedGradedEquiv_apply]
+  exact AssociatedGraded.mvPolynomialHom_homogeneousComponent _ ν P
+
+/-- The comparison isomorphism preserves and reflects homogeneity of any specified degree. -/
+theorem isHomogeneous_iff_associatedGradedEquiv_mem_range {rs : List R}
+    (h : IsWeaklyRegular R rs) {I : Ideal R} (hI : ofList rs = I) (ν : ℕ)
+    (P : MvPolynomial (Fin rs.length) (R ⧸ I)) :
+    P.IsHomogeneous ν ↔ h.associatedGradedEquiv hI P ∈
+      Set.range (DirectSum.of I.GradedPiece ν) := by
+  constructor
+  · intro hP
+    refine ⟨h.associatedGradedEquiv hI P ν, ?_⟩
+    symm
+    simpa [homogeneousComponent_eq_self hP] using
+      h.associatedGradedEquiv_homogeneousComponent hI ν P
+  · rintro ⟨q, hq⟩
+    have heq : homogeneousComponent ν P = P := (h.associatedGradedEquiv hI).injective <| by
+      rw [h.associatedGradedEquiv_homogeneousComponent, ← hq, DirectSum.of_eq_same]
+    rw [← heq]
+    exact homogeneousComponent_isHomogeneous _ _
+
+/-- The inverse comparison isomorphism preserves homogeneous components. -/
+@[simp]
+theorem homogeneousComponent_associatedGradedEquiv_symm {rs : List R} (h : IsWeaklyRegular R rs)
+    {I : Ideal R} (hI : ofList rs = I) (ν : ℕ) (g : I.AssociatedGraded) :
+    homogeneousComponent ν ((h.associatedGradedEquiv hI).symm g) =
+      (h.associatedGradedEquiv hI).symm (DirectSum.of I.GradedPiece ν (g ν)) := by
+  apply (h.associatedGradedEquiv hI).injective
+  rw [h.associatedGradedEquiv_homogeneousComponent, AlgEquiv.apply_symm_apply,
+    AlgEquiv.apply_symm_apply]
+
+/-- The inverse comparison sends the degree-`ν` summand to homogeneous polynomials of degree `ν`. -/
+theorem isHomogeneous_associatedGradedEquiv_symm_of {rs : List R} (h : IsWeaklyRegular R rs)
+    {I : Ideal R} (hI : ofList rs = I) (ν : ℕ) (q : I.GradedPiece ν) :
+    ((h.associatedGradedEquiv hI).symm (DirectSum.of I.GradedPiece ν q)).IsHomogeneous ν := by
+  apply (h.isHomogeneous_iff_associatedGradedEquiv_mem_range hI ν _).mpr
+  exact ⟨q, (AlgEquiv.apply_symm_apply _ _).symm⟩
+
+/-- The inverse comparison sends the class of an element of `Iᵛ` to a degree-`ν` form. -/
+theorem isHomogeneous_associatedGradedEquiv_symm_mk {rs : List R} (h : IsWeaklyRegular R rs)
+    {I : Ideal R} (hI : ofList rs = I) (ν : ℕ) (x : ↥(I ^ ν)) :
+    ((h.associatedGradedEquiv hI).symm (AssociatedGraded.mk I ν x)).IsHomogeneous ν := by
+  rw [AssociatedGraded.mk_apply]
+  exact h.isHomogeneous_associatedGradedEquiv_symm_of hI ν _
+
+/-- The inverse comparison sends a parameter class to its variable. -/
+@[simp]
+theorem associatedGradedEquiv_symm_mk_one {rs : List R} (h : IsWeaklyRegular R rs)
+    {I : Ideal R} (hI : ofList rs = I) (i : Fin rs.length) :
+    (h.associatedGradedEquiv hI).symm
+      (AssociatedGraded.mk I 1
+        ⟨rs[(i : ℕ)], by rw [pow_one, ← hI]; exact subset_span (List.getElem_mem _)⟩) =
+        X i := by
+  apply (h.associatedGradedEquiv hI).symm_apply_eq.mpr
+  simp
+
+/-- The inverse comparison sends a homogeneous value class to the reduced polynomial. -/
+@[simp]
+theorem associatedGradedEquiv_symm_mk_eval {rs : List R} (h : IsWeaklyRegular R rs)
+    {I : Ideal R} (hI : ofList rs = I) {ν : ℕ} {F : MvPolynomial (Fin rs.length) R}
+    (hF : F.IsHomogeneous ν) :
+    (h.associatedGradedEquiv hI).symm (AssociatedGraded.mk I ν
+      ⟨F.eval (fun i : Fin rs.length ↦ rs[(i : ℕ)]), hF.eval_mem_pow
+        (fun i : Fin rs.length ↦ by rw [← hI]; exact subset_span (List.getElem_mem _))⟩) =
+        F.map (Ideal.Quotient.mk I) := by
+  apply (h.associatedGradedEquiv hI).symm_apply_eq.mpr
+  rw [associatedGradedEquiv_apply, AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous _ hF]
+  simp
 
 end RingTheory.Sequence.IsWeaklyRegular
