@@ -17,7 +17,6 @@ two-coordinate transport plan. Given a joint law `π` of a family `(X j)`, an in
 Then discard the old `i`th coordinate and retain the new one. All other coordinates keep their
 joint distribution, while the `i`th marginal becomes the second marginal of `σ`.
 
-This is the marginal-replacement operation requested in Layer 0 of the optimal-transport roadmap.
 The construction is stated first for an unbundled joint probability law and then bundled as
 `TauCeti.MultiCoupling.replaceMarginal`.
 
