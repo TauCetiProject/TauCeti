@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Complex
 public import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 public import TauCeti.Analysis.Contour.Residue.Theorem
+import TauCeti.Analysis.Calculus.FDeriv.OfReal
 
 /-!
 # The residue as the integral of a cutoff against a meromorphic function
@@ -51,16 +52,6 @@ open scoped Real Topology
 namespace TauCeti.Contour
 
 variable {f : ℂ → ℂ} {χ : ℂ → ℝ} {c : ℂ} {R : ℝ}
-
-/-- Away from `c`, the coefficient `(1 - χ) f` is real differentiable with derivative
-`-(dχ) f + (1 - χ) df`. -/
-private theorem hasFDerivAt_cutoff {z : ℂ} (hf : AnalyticAt ℂ f z) (hχ : DifferentiableAt ℝ χ z) :
-    HasFDerivAt (fun y ↦ ((1 - χ y : ℝ) : ℂ) * f y)
-      (((1 - χ z : ℝ) : ℂ) • ((fderiv ℂ f z).restrictScalars ℝ) +
-        f z • (ofRealCLM.comp (-fderiv ℝ χ z))) z := by
-  have hχ' : HasFDerivAt (fun y ↦ ((1 - χ y : ℝ) : ℂ)) (ofRealCLM.comp (-fderiv ℝ χ z)) z :=
-    ofRealCLM.hasFDerivAt.comp z (hχ.hasFDerivAt.const_sub 1)
-  exact hχ'.mul (hf.differentiableAt.hasFDerivAt.restrictScalars ℝ)
 
 /-- The cutoff `1`-form `(1 - χ) f dz` is `C¹` on the closed disc. -/
 private theorem contDiffAt_cutoff_smul_dzForm (hfa : ∀ z ∈ closedBall c R, z ≠ c → AnalyticAt ℂ f z)
@@ -128,7 +119,11 @@ theorem extDeriv_one_sub_smul_dzForm_apply (hfa : ∀ z ∈ closedBall c R, z �
       exact fderiv_const_apply _
     rw [extDeriv_apply_pair, hφ.fderiv_eq, hdχ]
     simp
-  · have hd := hasFDerivAt_cutoff (hfa z hz hzc) (hχ.differentiable one_ne_zero z)
+  · have hd : HasFDerivAt (fun y ↦ ((1 - χ y : ℝ) : ℂ) * f y)
+        (((1 - χ z : ℝ) : ℂ) • ((fderiv ℂ f z).restrictScalars ℝ) +
+          f z • (ofRealCLM.comp (-fderiv ℝ χ z))) z :=
+      ((hχ.differentiable one_ne_zero z).hasFDerivAt.const_sub 1).ofReal_comp.mul
+        ((hfa z hz hzc).differentiableAt.hasFDerivAt.restrictScalars ℝ)
     rw [extDeriv_smul_dzForm_apply hd.differentiableAt, hd.fderiv]
     simp only [add_apply, FunLike.coe_smul, Pi.smul_apply,
       ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.coe_comp, Function.comp_apply,

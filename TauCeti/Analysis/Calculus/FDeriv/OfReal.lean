@@ -22,6 +22,7 @@ sides vanish when `f` is not differentiable at `x`.
 
 * `TauCeti.fderiv_ofReal_comp_apply`: the real derivative of `y ↦ (f y : ℂ)` is the
   complexification of the real derivative of `f`.
+* `HasFDerivAt.ofReal_comp`: `y ↦ (f y : ℂ)` has the complexified derivative of `f`.
 * `DifferentiableAt.ofReal_comp`, `TauCeti.norm_fderiv_ofReal_comp_le`: `y ↦ (f y : ℂ)` is
   differentiable where `f` is, and its real derivative has norm at most `‖Df(x)‖`.
 * `ContDiffAt.hasFDerivAt_fderiv_ofReal_comp_apply`: at a `C²` point of `f`, the complexified
@@ -49,6 +50,13 @@ theorem fderiv_ofReal_comp_apply (f : E → ℝ) (x v : E) :
       have hre := reCLM.differentiableAt.comp x h
       exact hf (by simpa [Function.comp_def] using hre)
     simp [fderiv_zero_of_not_differentiableAt hf, fderiv_zero_of_not_differentiableAt hf']
+
+/-- If a real function `f` has derivative `f'` at `x`, then `y ↦ (f y : ℂ)` has the
+complexified derivative `ofRealCLM ∘ f'` at `x`. -/
+theorem _root_.HasFDerivAt.ofReal_comp {f : E → ℝ} {f' : E →L[ℝ] ℝ} {x : E}
+    (hf : HasFDerivAt f f' x) :
+    HasFDerivAt (fun y ↦ (f y : ℂ)) (ofRealCLM.comp f') x :=
+  ofRealCLM.hasFDerivAt.comp x hf
 
 /-- A real function differentiable at `x` stays differentiable at `x` after composing with the
 inclusion `ℝ → ℂ`. -/
