@@ -105,22 +105,25 @@ theorem exists_src_eq_and_tgt_eq_of_dist_eq_one {a b : Γ.V} (h : Γ.dist a b = 
   obtain rfl := q.eq_of_length_zero hq
   exact ⟨e.1, e.2.1, e.2.2⟩
 
-/-- Joined vertices are joined by a sequence of vertices, each at distance at most one from the
-next, that reaches the second vertex after as many steps as their distance. -/
+/-- Joined vertices are joined by a sequence of vertices, each joined to the next by a path and at
+distance at most one from it, that reaches the second vertex after as many steps as their
+distance. -/
 theorem exists_forall_dist_succ_le_one {a b : Γ.V} (h : Nonempty (Γ.Path a b)) :
-    ∃ u : ℕ → Γ.V, u 0 = a ∧ u (Γ.dist a b) = b ∧ ∀ i, Γ.dist (u i) (u (i + 1)) ≤ 1 := by
+    ∃ u : ℕ → Γ.V, u 0 = a ∧ u (Γ.dist a b) = b ∧
+      ∀ i, Nonempty (Γ.Path (u i) (u (i + 1))) ∧ Γ.dist (u i) (u (i + 1)) ≤ 1 := by
   have key : ∀ {b : Γ.V} (p : Γ.Path a b), ∃ u : ℕ → Γ.V, u 0 = a ∧ u p.length = b ∧
-      ∀ i, Γ.dist (u i) (u (i + 1)) ≤ 1 := by
+      ∀ i, Nonempty (Γ.Path (u i) (u (i + 1))) ∧ Γ.dist (u i) (u (i + 1)) ≤ 1 := by
     intro b p
     induction p with
-    | nil => exact ⟨fun _ => a, rfl, rfl, fun _ => by simp⟩
+    | nil => exact ⟨fun _ => a, rfl, rfl, fun _ => ⟨⟨.nil⟩, by simp⟩⟩
     | @cons b c p e ih =>
       obtain ⟨u, hu₀, hu, hstep⟩ := ih
       refine ⟨fun i => if i ≤ p.length then u i else c, by simp [hu₀], by simp, fun i => ?_⟩
       rcases Nat.lt_trichotomy i p.length with hi | rfl | hi
       · simpa [hi.le, Nat.succ_le_of_lt hi] using hstep i
-      · simpa [hu] using dist_le_length e.toPath
-      · simp [Nat.not_le.mpr hi, Nat.not_le.mpr (Nat.lt_succ_of_lt hi)]
+      · simpa [hu] using And.intro (Nonempty.intro e.toPath) (dist_le_length e.toPath)
+      · simpa [Nat.not_le.mpr hi, Nat.not_le.mpr (Nat.lt_succ_of_lt hi)] using
+          Nonempty.intro (Quiver.Path.nil : Γ.Path c c)
   obtain ⟨p, hp⟩ := exists_length_eq_dist h
   exact hp ▸ key p
 

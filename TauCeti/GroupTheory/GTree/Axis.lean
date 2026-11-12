@@ -374,7 +374,7 @@ private theorem exists_smul_eq_add_translationLength {g : G} {x : T.V} (hx : x â
           huâ‚€, zpow_add_one, mul_smul]
     beta_reduce
     rw [key, dist_smul]
-    exact hstep _
+    exact (hstep _).2
 
 /-- A family of vertices indexed by the integers, with consecutive members at distance at most
 one, that starts on the axis of a hyperbolic element `g` and is shifted by the translation length
