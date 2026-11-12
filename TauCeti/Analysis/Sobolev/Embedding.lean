@@ -21,8 +21,7 @@ This file proves the **critical Sobolev embedding in the `p < n` regime** on
 `‖u‖_{p⋆} ≤ C ‖∇u‖_p` for every `u ∈ W^{1,p}_0(Ω)`,
 
 and it bundles the resulting map `u ↦ u` as a continuous linear map
-`W^{1,p}_0(Ω) →L[ℝ] L^{p⋆}(Ω)`. This is the `p < n` half of Lane A.4 of
-`TauCetiRoadmap/PDE/README.md`; the Morrey regime `p > n` and the borderline `p = n` are not
+`W^{1,p}_0(Ω) →L[ℝ] L^{p⋆}(Ω)`. The Morrey regime `p > n` and the borderline `p = n` are not
 proved here.
 
 ## Consuming Gagliardo--Nirenberg--Sobolev
@@ -77,9 +76,8 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
 
 ## References
 
-The `p < n` half of Lane A.4 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial
-Differential Equations*, Section 5.6.1; H. Brezis, *Functional Analysis, Sobolev Spaces and
-Partial Differential Equations*, Corollary 9.9.
+L. C. Evans, *Partial Differential Equations*, Section 5.6.1; H. Brezis, *Functional Analysis,
+Sobolev Spaces and Partial Differential Equations*, Corollary 9.9.
 -/
 
 public section

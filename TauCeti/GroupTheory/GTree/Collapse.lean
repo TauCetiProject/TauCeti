@@ -194,7 +194,7 @@ theorem dominates_collapse_univ (T' : GTree.{u', v'} G)
     (hS : ∀ e ∈ (Set.univ : Set T.E), T.rev e ∈ (Set.univ : Set T.E))
     (hG : ∀ g : G, ∀ e ∈ (Set.univ : Set T.E), g • e ∈ (Set.univ : Set T.E)) :
     T'.Dominates (T.collapse Set.univ hS hG) :=
-  dominates_of_subsingleton T' _
+  T'.dominates_of_subsingleton
 
 end GTree
 

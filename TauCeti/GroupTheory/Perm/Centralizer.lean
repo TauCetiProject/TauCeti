@@ -47,29 +47,29 @@ identity: transitivity moves the fixed letter to any other letter, where commuta
 be fixed as well. -/
 theorem eq_one_of_mem_centralizer_of_apply_eq
     {G : Subgroup (Equiv.Perm α)} (hG : MulAction.IsPretransitive G α)
-    {τ : Equiv.Perm α} (hτ : τ ∈ Subgroup.centralizer (G : Set (Equiv.Perm α)))
+    {τ : Equiv.Perm α} (hτ : τ ∈ centralizer (G : Set (Equiv.Perm α)))
     {i : α} (hi : τ i = i) : τ = 1 := by
   refine Equiv.ext fun j => ?_
   obtain ⟨g, rfl⟩ := hG.exists_smul_eq i j
-  simpa [Subgroup.smul_def, Equiv.Perm.smul_def, hi] using
-    congr($(Subgroup.mem_centralizer_iff.mp hτ g g.2) i).symm
+  simpa [smul_def, Equiv.Perm.smul_def, hi] using
+    congr($(mem_centralizer_iff.mp hτ g g.2) i).symm
 
 /-- The centralizer of a transitive group of permutations acts freely on the letters by
 evaluation. -/
 theorem isCancelSMul_centralizer
     {G : Subgroup (Equiv.Perm α)} (hG : MulAction.IsPretransitive G α) :
-    IsCancelSMul (Subgroup.centralizer (G : Set (Equiv.Perm α))) α :=
+    IsCancelSMul (centralizer (G : Set (Equiv.Perm α))) α :=
   isCancelSMul_iff_eq_one_of_smul_eq.mpr fun τ i hi =>
-    OneMemClass.coe_eq_one.mp <| Subgroup.eq_one_of_mem_centralizer_of_apply_eq hG τ.2 <| by
-      rwa [Subgroup.smul_def, Equiv.Perm.smul_def] at hi
+    OneMemClass.coe_eq_one.mp <| eq_one_of_mem_centralizer_of_apply_eq hG τ.2 <| by
+      rwa [smul_def, Equiv.Perm.smul_def] at hi
 
 /-- **The order of the centralizer of a transitive group of permutations divides the number of
 letters**, the centralizer acting freely on them. Since `Nat.card` is `0` on an infinite type,
 this bounds the order of the centralizer only on a finite set of letters. -/
 theorem card_centralizer_dvd
     {G : Subgroup (Equiv.Perm α)} (hG : MulAction.IsPretransitive G α) :
-    Nat.card (Subgroup.centralizer (G : Set (Equiv.Perm α))) ∣ Nat.card α :=
-  have := Subgroup.isCancelSMul_centralizer hG
+    Nat.card (centralizer (G : Set (Equiv.Perm α))) ∣ Nat.card α :=
+  have := isCancelSMul_centralizer hG
   MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 end Subgroup

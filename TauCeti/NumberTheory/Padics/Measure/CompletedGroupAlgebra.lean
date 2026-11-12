@@ -191,7 +191,6 @@ theorem toCompletedGroupAlgebra_injective [T2Space R] [TotallyDisconnectedSpace 
     Function.Injective (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ) := by
   intro μ ν h
   -- The two measures agree on the dense set of functions factoring through a finite quotient.
-  let := IsTopologicalAddGroup.rightUniformSpace R
   have hEqOn : Set.EqOn μ ν {F : C(Γ, R) |
       ∃ (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
     rintro F ⟨U, g, hF⟩
