@@ -21,6 +21,8 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
 exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`).
+For `C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
+are `C¹` (`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousOn_floerLinearizationCoeff`).
@@ -221,6 +223,39 @@ theorem continuousOn_floerLinearizationCoeff (ω : SymplecticForm V)
   have hflip : ContinuousAt (fun z ↦ (fderiv ℝ (J z) (u z)).flip) z :=
     (flipₗᵢ ℝ V V V).continuous.continuousAt.comp hdJ
   exact (((hflip.clm_apply (hut.sub hXtu)).sub hdXs).sub (hJu.clm_comp hdXt)).continuousWithinAt
+
+/-- **Continuity of the linearization.** Let `u` and `ξ` be `C¹` at `z`, and let the
+coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at `(z, u z)`, jointly in the
+domain and target point. Then the linearized Floer operator along `u` in the direction `ξ` is
+continuous at `z`. -/
+theorem continuousAt_floerLinearization (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiffAt ℝ 1 u z)
+    (hξ : ContDiffAt ℝ 1 ξ z) :
+    ContinuousAt (ω.floerLinearization J Ks Kt u ξ) z := by
+  have hdξ := hξ.continuousAt_fderiv one_ne_zero
+  have hgraph : ContinuousAt (fun w ↦ (w, u w)) z := continuousAt_id.prodMk hu.continuousAt
+  -- The Hamiltonian vector fields and their target derivatives along `u`.
+  have hX {K : ℝ × ℝ → V → ℝ} (hK : ContDiffAt ℝ 2 (Function.uncurry K) (z, u z)) :
+      ContinuousAt (fun w ↦ ω.hamiltonianVectorField (K w) (u w)) z ∧
+        ContinuousAt (fun w ↦ fderiv ℝ (ω.hamiltonianVectorField (K w)) (u w)) z := by
+    have hF : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianVectorField (K p.1) p.2)
+        (z, u z) :=
+      ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hK
+    exact ⟨ContinuousAt.comp (f := fun w ↦ (w, u w)) hF.continuousAt hgraph,
+      (ContDiffAt.fderiv (f := fun w y ↦ ω.hamiltonianVectorField (K w) y) hF
+        (hu.of_le zero_le_one) le_rfl).continuousAt⟩
+  have hdJ : ContinuousAt (fun w ↦ fderiv ℝ (J w) (u w)) z :=
+    (ContDiffAt.fderiv hJ (hu.of_le zero_le_one) le_rfl).continuousAt
+  have hJu : ContinuousAt (fun w ↦ J w (u w)) z :=
+    ContinuousAt.comp (f := fun w ↦ (w, u w)) hJ.continuousAt hgraph
+  have hξc := hξ.continuousAt
+  have hdu := hu.continuousAt_fderiv one_ne_zero
+  exact (((hdξ.clm_apply continuousAt_const).sub ((hX hKs).2.clm_apply hξc)).add
+    ((hdJ.clm_apply hξc).clm_apply ((hdu.clm_apply continuousAt_const).sub (hX hKt).1))).add
+    (hJu.clm_apply ((hdξ.clm_apply continuousAt_const).sub ((hX hKt).2.clm_apply hξc)))
 
 section Families
 

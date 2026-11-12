@@ -114,13 +114,17 @@ theorem cuspFunction_qParam_of_lt_im {f : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
   ext
   simp [add_comm]
 
-/-- Two functions which agree above a height `A ≥ 0` have q-extensions which agree on the disc of
+/-- Two functions which agree above a height `A` have q-extensions which agree on the disc of
 the corresponding radius `exp (-2 * π * A / w)`, including at `q = 0`. -/
-theorem eqOn_cuspFunction_of_lt_im {f g : ℍ → ℂ} {w A : ℝ} (hw : 0 < w) (hA : 0 ≤ A)
+theorem eqOn_cuspFunction_of_lt_im {f g : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
     (hfg : ∀ z : ℍ, A < z.im → f z = g z) :
     Set.EqOn (Function.Periodic.cuspFunction w (f ∘ ofComplex))
       (Function.Periodic.cuspFunction w (g ∘ ofComplex))
       (Metric.ball 0 (Real.exp (-2 * Real.pi * A / w))) := by
+  rcases lt_or_ge A 0 with hA | hA
+  · -- every point of `ℍ` lies above height `A`, so `f = g`
+    obtain rfl : f = g := funext fun z ↦ hfg z (hA.trans z.im_pos)
+    exact fun _ _ ↦ rfl
   have hne {q : ℂ} (hq : q ≠ 0) (hqA : ‖q‖ < Real.exp (-2 * Real.pi * A / w)) :
       Function.Periodic.cuspFunction w (f ∘ ofComplex) q =
         Function.Periodic.cuspFunction w (g ∘ ofComplex) q := by
@@ -167,7 +171,7 @@ theorem differentiableOn_cuspFunction_of_lt_im {f : ℍ → ℂ} {w A : ℝ} (hw
     exact (hfg z' hz').symm
   have hghol {z : ℍ} (hz : A < z.im) : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g z :=
     (hhol z hz).congr_of_eventuallyEq (hgeq hz)
-  refine DifferentiableOn.congr (fun q hq ↦ ?_) (eqOn_cuspFunction_of_lt_im hw hA hfg)
+  refine DifferentiableOn.congr (fun q hq ↦ ?_) (eqOn_cuspFunction_of_lt_im hw hfg)
   rw [Metric.mem_ball, dist_zero_right] at hq
   refine DifferentiableAt.differentiableWithinAt ?_
   rcases ne_or_eq q 0 with hq0 | rfl

@@ -39,7 +39,7 @@ measurable representative.
 * `MeasureTheory.SimpleFunc.integrable_toLp` — the class in `Lᵖ`, `0 < p < ∞`, of a simple
   function is integrable.
 * `MeasureTheory.SimpleFunc.eLpNorm_eq_top_of_not_memLp` — a simple function outside `Lᵖ` for one
-  exponent `0 < p < ∞` has infinite `L^q` norm for every `0 < q < ∞`.
+  exponent `p` has infinite `L^q` norm for every `0 < q < ∞`.
 -/
 
 public section
@@ -129,7 +129,7 @@ theorem denseRange_toLpTop : DenseRange (toLpTop μ ℝ : SimpleFunc α ℝ →�
   set C := ‖φ‖
   -- A measurable representative of `φ`, truncated to `[-C, C]` where it exceeds the bound.
   have hφ := Lp.aestronglyMeasurable φ
-  set f : α → ℝ := fun x => max (-C) (min C (hφ.mk φ x)) with hf_def
+  set f : α → ℝ := fun x => max (-C) (min C (hφ.mk φ x))
   have hf : Measurable f :=
     measurable_const.max (measurable_const.min hφ.stronglyMeasurable_mk.measurable)
   have hfC (x : α) : f x ∈ Metric.closedBall (0 : ℝ) C := by
@@ -158,14 +158,19 @@ theorem integrable_toLp {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} {f :
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : MemLp f p μ) : Integrable (hf.toLp f) μ :=
   ((memLp_iff_integrable hp0 hp).1 hf).congr hf.coeFn_toLp.symm
 
-/-- A simple function outside `Lᵖ` for one exponent `0 < p < ∞` has infinite `L^q` norm for every
+/-- A simple function outside `Lᵖ` for one exponent `p` has infinite `L^q` norm for every
 `0 < q < ∞`. -/
 theorem eLpNorm_eq_top_of_not_memLp {E : Type*} [NormedAddCommGroup E] {p q : ℝ≥0∞}
-    {f : SimpleFunc α E} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hq0 : q ≠ 0) (hq : q ≠ ∞)
-    (hf : ¬MemLp f p μ) : eLpNorm f q μ = ∞ := by
+    {f : SimpleFunc α E} (hq0 : q ≠ 0) (hq : q ≠ ∞) (hf : ¬MemLp f p μ) :
+    eLpNorm f q μ = ∞ := by
   by_contra h
-  exact hf ((SimpleFunc.memLp_iff hp0 hp).2
-    ((SimpleFunc.memLp_iff hq0 hq).1 (MeasureTheory.memLp_iff.2 (Ne.lt_top h))))
+  refine hf ?_
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 f.aestronglyMeasurable
+  rcases eq_or_ne p ∞ with rfl | hp
+  · exact f.memLp_top μ
+  exact (SimpleFunc.memLp_iff hp0 hp).2
+    ((SimpleFunc.memLp_iff hq0 hq).1 (MeasureTheory.memLp_iff.2 (Ne.lt_top h)))
 
 end SimpleFunc
 
