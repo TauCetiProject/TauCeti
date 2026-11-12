@@ -64,7 +64,7 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
 * `TauCeti.Delineation.comp`: restriction of a delineation along a continuous map of bases.
 * `TauCeti.Delineation.reindex`: reindexing a delineation along a surjection of polynomial labels.
 * `TauCeti.Delineation.nonempty_of_forall_exists_eq`: a family whose members agree pointwise with
-  those of a delineated family, and conversely, has a delineation with the same root functions.
+  those of a delineated family, and conversely, has a delineation.
 * `TauCeti.nonempty_delineation`: existence of a delineation over a preconnected base from
   constant degrees, numbers of distinct complex roots and pairwise gcd degrees.
 * `TauCeti.exists_delineation_of_isRoot_iff`: an ordered continuous enumeration of the real roots
@@ -365,7 +365,7 @@ theorem comp_multiplicity (f : Y → X) (hf : Continuous f) (k : ι) (i : Fin (D
 include D in
 /-- **Transfer to a family with the same members.** If every member of a family `Q` agrees at
 every point with some member of `P`, and every member of `P` with some member of `Q`, then `Q` has
-a delineation, with the same root functions as `D`. -/
+a delineation. -/
 theorem nonempty_of_forall_exists_eq {κ : Type*} {Q : κ → X → ℝ[X]}
     (hQP : ∀ l, ∃ k, ∀ x, Q l x = P k x) (hPQ : ∀ k, ∃ l, ∀ x, Q l x = P k x) :
     Nonempty (Delineation Q) := by
