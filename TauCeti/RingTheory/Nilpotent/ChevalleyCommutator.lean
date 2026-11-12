@@ -50,7 +50,8 @@ its generating-function form.
 * `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq` and
   `TauCeti.baseChangeExp_conj_of_commutator_eq`: the Chevalley commutator relation and its
   conjugation form.
-* `TauCeti.baseChangeExpHom_mul_of_commutator_eq` and
+* `TauCeti.baseChangeExpHom_mul_of_commutator_eq`,
+  `TauCeti.baseChangeExpHom_mul_of_commutator_eq_zsmul`, and
   `TauCeti.commutatorElement_baseChangeExpHom_of_commutator_eq`: multiplication and
   element-commutator laws for `baseChangeExpHom`.
 
@@ -188,6 +189,27 @@ theorem baseChangeExpHom_mul_of_commutator_eq {x y z : A} (M : S)
     simp only [LinearEquiv.coe_toLinearMap_mul, baseChangeExpHom_toLinearMap, toAdd_ofAdd]
     exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy hxz hyz hx hy hMx hMy hMz
       (toAdd t) (toAdd u)
+
+/-- **Scaled class-two multiplication law for `baseChangeExpHom`.** If
+`x * y = y * x + (k * r) • z` with `(k * r) • z` commuting with both `x` and `y`, then
+`E_x(t) E_y(u) = E_y(u) E_{r • z}(s) E_x(t)` whenever `k * (t * u) = s`. -/
+theorem baseChangeExpHom_mul_of_commutator_eq_zsmul {x y z : A} (M : S) (k r : ℤ)
+    (hxy : x * y = y * x + (k * r) • z) (hxz : Commute x ((k * r) • z))
+    (hyz : Commute y ((k * r) • z)) (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
+    (hMz : ∀ n, ∀ v ∈ M, Associative.dividedPower n z • v ∈ M)
+    (hMrz : ∀ n, ∀ v ∈ M, Associative.dividedPower n (r • z) • v ∈ M)
+    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (t u : Multiplicative R)
+    {s : R} (hs : (k : R) * (toAdd t * toAdd u) = s) :
+    baseChangeExpHom x M hMx hx t * baseChangeExpHom y M hMy hy u =
+      baseChangeExpHom y M hMy hy u * baseChangeExpHom (r • z) M hMrz (hz.smul r) (ofAdd s) *
+        baseChangeExpHom x M hMx hx t := by
+  have hMkrz := fun n => Associative.dividedPower_zsmul_smul_mem (k * r) z M (hMz n)
+  rw [baseChangeExpHom_mul_of_commutator_eq M hxy hxz hyz hMx hMy hMkrz
+      hx hy (hz.smul (k * r)) t u,
+    baseChangeExpHom_zsmul (k * r) M hMz hMkrz hz (hz.smul (k * r)),
+    baseChangeExpHom_zsmul r M hMz hMrz hz (hz.smul r), toAdd_ofAdd, toAdd_ofAdd]
+  congr 4; rw [← hs, Int.cast_mul]; ring
 
 /-- **Class-two element-commutator relation for `baseChangeExpHom`.** If `x * y = y * x + z` with
 `z` commuting with both `x` and `y`, then `⁅E_x(t), E_y(u)⁆ = E_z(t * u)`. -/

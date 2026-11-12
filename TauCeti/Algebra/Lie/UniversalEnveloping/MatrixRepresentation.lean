@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Matrix
+public import TauCeti.Algebra.Lie.Matrix.IntegralCast
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 public import TauCeti.RingTheory.DividedPowers.Associative
 
@@ -18,8 +19,8 @@ representation of its universal enveloping algebra on this Lie module is
 that representation on Lie generators in matrix terms and shows that a Lie generator acts
 nilpotently exactly when its underlying matrix is nilpotent. For the ambient matrix Lie algebra
 `Matrix n n R`, it also identifies `TauCeti.UniversalEnvelopingAlgebra.representation` on canonical
-generators with `Matrix.toLinAlgEquiv'` and evaluates the second divided power when a matrix squares
-to `2 • D`.
+generators with `Matrix.toLinAlgEquiv'`, evaluates the second divided power when a matrix squares
+to `2 • D`, and records cube-zero nilpotence for coerced integral matrices on `n → ℚ`.
 
 ## Main results
 
@@ -28,9 +29,11 @@ to `2 • D`.
   Lie subalgebra acts through its underlying matrix.
 * `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_representation_ι_matrix_iff`: a Lie generator
   acts nilpotently exactly when its underlying matrix is nilpotent.
-* `TauCeti.UniversalEnvelopingAlgebra.representation_matrix_ι` and
-  `TauCeti.UniversalEnvelopingAlgebra.dividedPower_two_representation_matrix_apply`: generator and
-  divided-square action for `TauCeti.UniversalEnvelopingAlgebra.representation` on `Matrix n n R`.
+* `TauCeti.UniversalEnvelopingAlgebra.representation_matrix_ι`,
+  `TauCeti.UniversalEnvelopingAlgebra.dividedPower_two_representation_matrix_apply`,
+  `TauCeti.UniversalEnvelopingAlgebra.pow_three_representation_matrix_eq_zero`, and
+  `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_representation_matrix`: generator, divided-square,
+  and integral cube-zero nilpotence facts for `representation` on `Matrix n n R`.
 -/
 
 public section
@@ -91,6 +94,19 @@ theorem dividedPower_two_representation_matrix_apply {A : Type*} [CommRing A] [A
   rw [Associative.dividedPower_def, LinearMap.smul_apply, hsq', LinearMap.smul_apply,
     Matrix.toLinAlgEquiv'_apply, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul]
   norm_num [Nat.factorial]
+
+/-- An integral matrix that cubes to zero acts with vanishing cube on `n → ℚ`. -/
+theorem pow_three_representation_matrix_eq_zero {X : Matrix n n ℤ} (hcube : X ^ 3 = 0) :
+    representation ℚ (Matrix n n ℚ) (n → ℚ)
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.matrixIntCastLieHom ℚ X)) ^ 3 = 0 := by
+  rw [representation_matrix_ι, ← map_pow, pow_three, ← TauCeti.matrixIntCastLieHom_mul,
+    ← TauCeti.matrixIntCastLieHom_mul, ← pow_three, hcube, map_zero, map_zero]
+
+/-- An integral matrix that cubes to zero acts nilpotently on `n → ℚ`. -/
+theorem isNilpotent_representation_matrix {X : Matrix n n ℤ} (hcube : X ^ 3 = 0) :
+    IsNilpotent (representation ℚ (Matrix n n ℚ) (n → ℚ)
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.matrixIntCastLieHom ℚ X))) :=
+  ⟨3, pow_three_representation_matrix_eq_zero hcube⟩
 
 end Matrix
 

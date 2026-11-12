@@ -107,14 +107,6 @@ private theorem dp_zsmul (c : ℤ) {x : A} (M : S)
     ∀ n, ∀ v ∈ M, dividedPower n (c • x) • v ∈ M :=
   fun n => Associative.dividedPower_zsmul_smul_mem c x M (hM n)
 
-private theorem inv_exp_ofAdd_eq_zsmul (M : S) {x : A} (c : ℤ)
-    (hM : ∀ n, ∀ v ∈ M, dividedPower n x • v ∈ M)
-    (hcM : ∀ n, ∀ v ∈ M, dividedPower n (c • x) • v ∈ M)
-    (hx : IsNilpotent x) {r s : R} (hrs : -r = (c : R) * s) :
-    (baseChangeExpHom x M hM hx (ofAdd r))⁻¹ =
-      baseChangeExpHom (c • x) M hcM (hx.smul c) (ofAdd s) := by
-  rw [← map_inv, ← ofAdd_neg, baseChangeExpHom_zsmul c M hM hcM hx (hx.smul c), toAdd_ofAdd, hrs]
-
 private theorem commute_exp_zsmul_right (ρ : F) (M : S) {a b : L} {q : ℤ} (hab : q • ⁅a, b⁆ = 0)
     (hMa : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ a)) • v ∈ M)
     (hMb : ∀ n, ∀ v ∈ M, dividedPower n (q • ρ (ι ℚ b)) • v ∈ M)
@@ -123,26 +115,6 @@ private theorem commute_exp_zsmul_right (ρ : F) (M : S) {a b : L} {q : ℤ} (ha
       (baseChangeExpHom (q • ρ (ι ℚ b)) M hMb hb u) :=
   commute_baseChangeExpHom M (by simpa only [one_zsmul] using
     commute_zsmul_of_zsmul_lie_eq_zero ρ (p := 1) (q := q) (by simpa using hab)) hMa hMb ha hb t u
-
-/-- Class-two swap rule with an integer factor `k` absorbed from `(k * r) • u₃` into the additive
-parameter `s` of `r • u₃`, used in the type-`G₂` proofs to commute an intermediate factor. -/
-private theorem exp_mul_of_commutator_eq_zsmul (M : S) {u₁ u₂ u₃ : A} (k r : ℤ)
-    (h₁₂ : u₁ * u₂ = u₂ * u₁ + (k * r) • u₃)
-    (h₁₃ : Commute u₁ ((k * r) • u₃)) (h₂₃ : Commute u₂ ((k * r) • u₃))
-    (hM₁ : ∀ n, ∀ v ∈ M, dividedPower n u₁ • v ∈ M) (hM₂ : ∀ n, ∀ v ∈ M, dividedPower n u₂ • v ∈ M)
-    (hM₃ : ∀ n, ∀ v ∈ M, dividedPower n u₃ • v ∈ M)
-    (hMr₃ : ∀ n, ∀ v ∈ M, dividedPower n (r • u₃) • v ∈ M)
-    (hn₁ : IsNilpotent u₁) (hn₂ : IsNilpotent u₂) (hn₃ : IsNilpotent u₃)
-    (t u : Multiplicative R) {s : R} (hs : (k : R) * (toAdd t * toAdd u) = s) :
-    baseChangeExpHom u₁ M hM₁ hn₁ t * baseChangeExpHom u₂ M hM₂ hn₂ u =
-      baseChangeExpHom u₂ M hM₂ hn₂ u * baseChangeExpHom (r • u₃) M hMr₃ (hn₃.smul r) (ofAdd s) *
-        baseChangeExpHom u₁ M hM₁ hn₁ t := by
-  have hMkr₃ := dp_zsmul (k * r) M hM₃
-  rw [baseChangeExpHom_mul_of_commutator_eq M h₁₂ h₁₃ h₂₃ hM₁ hM₂ hMkr₃
-      hn₁ hn₂ (hn₃.smul (k * r)) t u,
-    baseChangeExpHom_zsmul (k * r) M hM₃ hMkr₃ hn₃ (hn₃.smul (k * r)),
-    baseChangeExpHom_zsmul r M hM₃ hMr₃ hn₃ (hn₃.smul r), toAdd_ofAdd, toAdd_ofAdd]
-  congr 4; rw [← hs, Int.cast_mul]; ring
 
 /-- **Steinberg's Chevalley commutator relation for the chain `α + β, 2α + β`.** If
 `⁅x, y⁆ = c • z` and `⁅x, ⁅x, y⁆⁆ = (2 * d) • w` with `⁅x, w⁆ = ⁅y, z⁆ = 0`, then
@@ -163,8 +135,7 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_eq (ρ : F) (M : S) {x y z
   have hyw := zsmul_lie_eq_zero_of_zsmul_lie_eq_two hxy hxz hyz
   have hMcz := dp_zsmul c M hMz; have hMdw := dp_zsmul d M hMw
   let tr := toAdd t; let ur := toAdd u
-  have hmul :
-      baseChangeExpHom (ρ (ι ℚ x)) M hMx hx t * baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u =
+  have hmul : baseChangeExpHom (ρ (ι ℚ x)) M hMx hx t * baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u =
         baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u *
           baseChangeExpHom (c • ρ (ι ℚ z)) M hMcz (hz.smul c) (ofAdd (tr * ur)) *
           baseChangeExpHom (d • ρ (ι ℚ w)) M hMdw (hw.smul d) (ofAdd (tr ^ 2 * ur)) *
@@ -187,10 +158,9 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_eq (ρ : F) (M : S) {x y z
 /-- **Steinberg's Chevalley commutator relation for the reversed chain `α + β, α + 2β`.** If
 `⁅x, y⁆ = c • z` and `⁅y, ⁅y, x⁆⁆ = (2 * d) • w` with `⁅y, w⁆ = ⁅x, z⁆ = 0`, then
 `⁅E_x(t), E_y(u)⁆ = E_z(c t u) E_w(-d t u²)`. -/
-theorem commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq (ρ : F) (M : S)
-    {x y z w : L} {c d : ℤ} (hxy : ⁅x, y⁆ = c • z) (hyyx : ⁅y, ⁅y, x⁆⁆ = (2 * d) • w)
-    (hyw : ⁅y, w⁆ = 0) (hxz : ⁅x, z⁆ = 0)
-    (hMx : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ x)) • v ∈ M)
+theorem commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq (ρ : F) (M : S) {x y z w : L}
+    {c d : ℤ} (hxy : ⁅x, y⁆ = c • z) (hyyx : ⁅y, ⁅y, x⁆⁆ = (2 * d) • w) (hyw : ⁅y, w⁆ = 0)
+    (hxz : ⁅x, z⁆ = 0) (hMx : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ x)) • v ∈ M)
     (hMy : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ y)) • v ∈ M)
     (hMz : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ z)) • v ∈ M)
     (hMw : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ w)) • v ∈ M)
@@ -209,8 +179,10 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq (ρ : F) (M : S)
   rw [← commutatorElement_inv,
     commutatorElement_baseChangeExpHom_of_lie_lie_eq ρ M hyx hyyx hyw hxz
       hMy hMx hMz hMw hy hx hz hw u t, mul_inv_rev,
-    inv_exp_ofAdd_eq_zsmul M (-d) hMw hMdw hw (s := toAdd t * toAdd u ^ 2) (by push_cast; ring),
-    inv_exp_ofAdd_eq_zsmul M c hMz hMcz hz (s := toAdd t * toAdd u) (by push_cast; ring),
+    inv_baseChangeExpHom_eq_zsmul (-d) M hMw hMdw hw (s := toAdd t * toAdd u ^ 2)
+      (by simp only [toAdd_ofAdd]; push_cast; ring),
+    inv_baseChangeExpHom_eq_zsmul c M hMz hMcz hz (s := toAdd t * toAdd u)
+      (by simp only [toAdd_ofAdd]; push_cast; ring),
     (commute_baseChangeExpHom M (commute_zsmul_of_zsmul_lie_eq_zero ρ hzw).symm
       hMdw hMcz (hw.smul (-d)) (hz.smul c) _ _).eq,
     baseChangeExpHom_zsmul c M hMz hMcz hz (hz.smul c),
@@ -221,10 +193,9 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq (ρ : F) (M : S)
 `α, α + β, 2α + β, 3α + β, 3α + 2β` corresponding to `x, y, z, w, s` with
 `⁅x, y⁆ = (2 * c) • z`, `c • ⁅x, z⁆ = (3 * d) • w`, and `c • ⁅z, y⁆ = (3 * a) • s`, the element
 commutator is `⁅E_x(t), E_y(u)⁆ = E_z(2c t u) E_w(3d t² u) E_s(-3a t u²)`. -/
-theorem commutatorElement_baseChangeExpHom_of_g2_short_pair (ρ : F) (M : S)
-    {x y z w s : L} {c d a : ℤ}
-    (hxy : ⁅x, y⁆ = (2 * c) • z) (hxz : c • ⁅x, z⁆ = (3 * d) • w) (hzy : c • ⁅z, y⁆ = (3 * a) • s)
-    (hxw : ⁅x, w⁆ = 0) (hxs : ⁅x, s⁆ = 0) (hys : ⁅y, s⁆ = 0)
+theorem commutatorElement_baseChangeExpHom_of_g2_short_pair (ρ : F) (M : S) {x y z w s : L}
+    {c d a : ℤ} (hxy : ⁅x, y⁆ = (2 * c) • z) (hxz : c • ⁅x, z⁆ = (3 * d) • w)
+    (hzy : c • ⁅z, y⁆ = (3 * a) • s) (hxw : ⁅x, w⁆ = 0) (hxs : ⁅x, s⁆ = 0) (hys : ⁅y, s⁆ = 0)
     (hzw : ⁅z, w⁆ = 0) (hzs : ⁅z, s⁆ = 0) (hws : ⁅w, s⁆ = 0)
     (hMx : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ x)) • v ∈ M)
     (hMy : ∀ n, ∀ v ∈ M, dividedPower n (ρ (ι ℚ y)) • v ∈ M)
@@ -242,8 +213,7 @@ theorem commutatorElement_baseChangeExpHom_of_g2_short_pair (ρ : F) (M : S)
   have hMcz := dp_zsmul c M hMz; have hMdw := dp_zsmul d M hMw; have hMas := dp_zsmul a M hMs
   let tr := toAdd t; let ur := toAdd u
   -- Step 1: normal-order `E_x(t) E_y(u)` via the divided-power straightening rule.
-  have hmul :
-      baseChangeExpHom (ρ (ι ℚ x)) M hMx hx t * baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u =
+  have hmul : baseChangeExpHom (ρ (ι ℚ x)) M hMx hx t * baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u =
         baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u *
           baseChangeExpHom (c • ρ (ι ℚ z)) M hMcz (hz.smul c) (ofAdd (2 * tr * ur)) *
           baseChangeExpHom (d • ρ (ι ℚ w)) M hMdw (hw.smul d) (ofAdd (3 * tr ^ 2 * ur)) *
@@ -254,14 +224,13 @@ theorem commutatorElement_baseChangeExpHom_of_g2_short_pair (ρ : F) (M : S)
       exact baseChangeExp_mul_baseChangeExp_of_g2_short_pair M
         (by simpa only [one_zsmul] using mul_zsmul_of_lie ρ 1 c 2 (by simpa using hxy))
         (mul_zsmul_of_lie ρ c d 3 hxz)
-        (by simpa only [one_zsmul] using
-          (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ (p := c) (q := 1) (r := a) (n := 3)
-            (by simpa using hzy)))
+        (by simpa only [one_zsmul] using (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
+          (p := c) (q := 1) (r := a) (n := 3) (by simpa using hzy)))
         ((commute_of_lie_eq_zero ρ hxw).smul_right d) ((commute_of_lie_eq_zero ρ hxs).smul_right a)
         ((commute_of_lie_eq_zero ρ hys).smul_right a) (comm_zsmul ρ c d hzw)
         (comm_zsmul ρ c a hzs) (comm_zsmul ρ d a hws) hx hy (hz.smul c) hMx hMy hMcz hMdw hMas tr ur
   -- Step 2: commute `E_{c • z}` past `E_y(u⁻¹)` so that `E_y(u)` and `E_y(u⁻¹)` cancel.
-  have hswap_zy := exp_mul_of_commutator_eq_zsmul M 3 a
+  have hswap_zy := baseChangeExpHom_mul_of_commutator_eq_zsmul M 3 a
     (by simpa only [one_zsmul, one_nsmul, one_mul] using
       (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ (p := c) (q := 1) (r := 3 * a) (n := 1)
         (by simpa using hzy)))
@@ -288,9 +257,8 @@ theorem commutatorElement_baseChangeExpHom_of_g2_short_pair (ρ : F) (M : S)
 `α, β, α + β, 2α + β, 3α + β, 3α + 2β` corresponding to `x, y, z, w, m, o` with `⁅x, y⁆ = c • z`,
 `c • ⁅x, z⁆ = (2 * d) • w`, `d • ⁅x, w⁆ = (3 * a) • m`, and `(d * c) • ⁅w, z⁆ = (3 * b) • o`,
 the element commutator is `⁅E_x(t), E_y(u)⁆ = E_z(c t u) E_w(d t² u) E_m(a t³ u) E_o(2b t³ u²)`. -/
-theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul (ρ : F) (M : S)
-    {x y z w m o : L} {c d a b : ℤ}
-    (hxy : ⁅x, y⁆ = c • z) (hxz : c • ⁅x, z⁆ = (2 * d) • w)
+theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul (ρ : F) (M : S) {x y z w m o : L}
+    {c d a b : ℤ} (hxy : ⁅x, y⁆ = c • z) (hxz : c • ⁅x, z⁆ = (2 * d) • w)
     (hxw : d • ⁅x, w⁆ = (3 * a) • m) (hwz : (d * c) • ⁅w, z⁆ = (3 * b) • o)
     (hxm : ⁅x, m⁆ = 0) (hxo : ⁅x, o⁆ = 0) (hyz : ⁅y, z⁆ = 0)
     (hwm : ⁅w, m⁆ = 0) (hzo : ⁅z, o⁆ = 0) (hwo : ⁅w, o⁆ = 0) (hmo : ⁅m, o⁆ = 0)
@@ -317,8 +285,7 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul (ρ : F) (M : S
   have hMam := dp_zsmul a M hMm; have hMbo := dp_zsmul b M hMo
   let tr := toAdd t; let ur := toAdd u
   -- Step 1: normal-order `E_x(t) E_y(u)` via the four-root `G₂` straightening rule.
-  have hmul :
-      baseChangeExpHom (ρ (ι ℚ x)) M hMx hx t * baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u =
+  have hmul : baseChangeExpHom (ρ (ι ℚ x)) M hMx hx t * baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u =
         baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u *
           baseChangeExpHom (c • ρ (ι ℚ z)) M hMcz (hz.smul c) (ofAdd (tr * ur)) *
           baseChangeExpHom (d • ρ (ι ℚ w)) M hMdw (hw.smul d) (ofAdd (tr ^ 2 * ur)) *
@@ -328,8 +295,8 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul (ρ : F) (M : S
     LinearEquiv.toLinearMap_inj.mp <| by
       simp only [LinearEquiv.coe_toLinearMap_mul, baseChangeExpHom_toLinearMap, toAdd_ofAdd]
       exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul M
-        (mul_eq_mul_add_zsmul_of_lie_eq ρ hxy)
-        (mul_zsmul_of_lie ρ c d 2 hxz) (mul_zsmul_of_lie ρ d a 3 hxw)
+        (mul_eq_mul_add_zsmul_of_lie_eq ρ hxy) (mul_zsmul_of_lie ρ c d 2 hxz)
+        (mul_zsmul_of_lie ρ d a 3 hxw)
         (by simpa using (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
           (p := d) (q := c) (r := b) (n := 3) (by simpa using hwz)))
         ((commute_of_lie_eq_zero ρ hxm).smul_right a) ((commute_of_lie_eq_zero ρ hxo).smul_right b)
@@ -339,7 +306,7 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul (ρ : F) (M : S
   -- Step 2: commute `E_{a • m}` past `E_y(u⁻¹)`, producing a second `E_{b • o}` factor.
   have hmy_lie : (a * 1) • ⁅m, y⁆ = ((1 : ℕ) * (-1 * b)) • o := by
     rw [mul_one, ← lie_skew m y, smul_neg, hym]; simp
-  have hswap_my := exp_mul_of_commutator_eq_zsmul M (-1) b
+  have hswap_my := baseChangeExpHom_mul_of_commutator_eq_zsmul M (-1) b
     (by simpa only [one_zsmul, one_nsmul] using
       (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ hmy_lie))
     (comm_zsmul ρ a (-1 * b) hmo)
@@ -370,8 +337,7 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul (ρ : F) (M : S
 `(d * c) • ⁅z, w⁆ = (3 * b) • o`, the element commutator is
 `⁅E_x(t), E_y(u)⁆ = E_z(c t u) E_w(-d t u²) E_m(-a t u³) E_o(b t² u³)`. -/
 theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul_rev (ρ : F) (M : S)
-    {x y z w m o : L} {c d a b : ℤ}
-    (hxy : ⁅x, y⁆ = c • z) (hzy : c • ⁅z, y⁆ = (2 * d) • w)
+    {x y z w m o : L} {c d a b : ℤ} (hxy : ⁅x, y⁆ = c • z) (hzy : c • ⁅z, y⁆ = (2 * d) • w)
     (hyw : d • ⁅y, w⁆ = (3 * a) • m) (hzw : (d * c) • ⁅z, w⁆ = (3 * b) • o)
     (hym : ⁅y, m⁆ = 0) (hyo : ⁅y, o⁆ = 0) (hxz : ⁅x, z⁆ = 0)
     (hwm : ⁅w, m⁆ = 0) (hzo : ⁅z, o⁆ = 0) (hwo : ⁅w, o⁆ = 0) (hmo : ⁅m, o⁆ = 0)
@@ -407,7 +373,7 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul_rev (ρ : F) (M
   -- Step 2: commute `E_{d • w}` past `E_{c • z}`, picking up `E_{b • o}(3 t² u³)`.
   have hwz_lie : (d * c) • ⁅w, z⁆ = ((1 : ℕ) * (-3 * b)) • o := by
     rw [← lie_skew w z, smul_neg, hzw]; simp [neg_mul]
-  have hswap_wz := (exp_mul_of_commutator_eq_zsmul M (-3) b
+  have hswap_wz := (baseChangeExpHom_mul_of_commutator_eq_zsmul M (-3) b
     (by simpa only [one_nsmul] using zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ hwz_lie)
     (comm_zsmul ρ d (-3 * b) hwo) (comm_zsmul ρ c (-3 * b) hzo) hMdw hMcz hMo hMbo
     (hw.smul d) (hz.smul c) ho (ofAdd (-(tr * ur ^ 2))) (ofAdd (tr * ur))
@@ -418,10 +384,14 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul_rev (ρ : F) (M
     commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul ρ M
       hyx hyz' hyw hwz' hym hyo hxz hwm hzo hwo hmo hMy hMx hMz hMw hMm hMo hy hx hz hw hm ho u t,
     mul_inv_rev, mul_inv_rev, mul_inv_rev,
-    inv_exp_ofAdd_eq_zsmul M b hMo hMbo ho (s := (-2 : R) * (tr ^ 2 * ur ^ 3)) (by ring),
-    inv_exp_ofAdd_eq_zsmul M a hMm hMam hm (s := -(tr * ur ^ 3)) (by ring),
-    inv_exp_ofAdd_eq_zsmul M d hMw hMdw hw (s := -(tr * ur ^ 2)) (by ring),
-    inv_exp_ofAdd_eq_zsmul M c hMz hMcz hz (s := tr * ur) (by push_cast; ring),
+    inv_baseChangeExpHom_eq_zsmul b M hMo hMbo ho (s := (-2 : R) * (tr ^ 2 * ur ^ 3))
+      (by simp only [toAdd_ofAdd]; ring),
+    inv_baseChangeExpHom_eq_zsmul a M hMm hMam hm (s := -(tr * ur ^ 3))
+      (by simp only [toAdd_ofAdd]; ring),
+    inv_baseChangeExpHom_eq_zsmul d M hMw hMdw hw (s := -(tr * ur ^ 2))
+      (by simp only [toAdd_ofAdd]; ring),
+    inv_baseChangeExpHom_eq_zsmul c M hMz hMcz hz (s := tr * ur)
+      (by simp only [toAdd_ofAdd]; push_cast; ring),
     reorder_g2_rev hswap_wz
       (commute_baseChangeExpHom M (comm_zsmul ρ a b hmo).symm hMbo hMam (ho.smul b) (hm.smul a) _ _)
       (hcomm_ow _)
