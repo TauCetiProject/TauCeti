@@ -57,31 +57,6 @@ namespace LinearMap
 
 namespace IsAdjointPair
 
-section CommRing
-
-variable {R V M : Type*} [CommRing R] [AddCommGroup V] [Module R V] [AddCommGroup M] [Module R M]
-  {B : V →ₗ[R] V →ₗ[R] M} {f g : Module.End R V}
-
-/-- **Adjoints are unique** for a right-separating bilinear map. -/
-theorem right_unique (hB : B.SeparatingRight) {g' : Module.End R V}
-    (h : IsAdjointPair B B f g) (h' : IsAdjointPair B B f g') : g = g' :=
-  LinearMap.ext fun w ↦ sub_eq_zero.1 <| hB _ fun v ↦ by
-    rw [map_sub, ← h v w, ← h' v w, sub_self]
-
-/-- For a right-separating bilinear map, a polynomial killing `f` kills its adjoint `g`. -/
-theorem aeval_eq_zero (hB : B.SeparatingRight) (h : IsAdjointPair B B f g) {p : R[X]}
-    (hp : Polynomial.aeval f p = 0) : Polynomial.aeval g p = 0 :=
-  right_unique hB (hp ▸ h.aeval p) fun _ _ ↦ by simp
-
-/-- For a right-separating bilinear map, if `p(f)` is nilpotent then so is `p(g)` for the adjoint
-`g` of `f`. -/
-theorem isNilpotent_aeval (hB : B.SeparatingRight) (h : IsAdjointPair B B f g) {p : R[X]}
-    (hp : IsNilpotent (Polynomial.aeval f p)) : IsNilpotent (Polynomial.aeval g p) := by
-  obtain ⟨k, hk⟩ := hp
-  exact ⟨k, by rw [← map_pow]; exact h.aeval_eq_zero hB (by rwa [map_pow])⟩
-
-end CommRing
-
 section Field
 
 variable {K V M : Type*} [Field K] [AddCommGroup V] [Module K V] [AddCommGroup M] [Module K M]
@@ -153,25 +128,29 @@ namespace IsSkewAdjoint
 variable {K V M : Type*} [Field K] [PerfectField K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [AddCommGroup M] [Module K M] {B : V →ₗ[K] V →ₗ[K] M}
 
+/-- Both Jordan–Chevalley parts of a skew-adjoint endomorphism are skew-adjoint. -/
+private theorem isSkewAdjoint_and_isSkewAdjoint_of_add (hB : B.SeparatingRight)
+    {n s : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n) (hs : s.IsSemisimple)
+    (h : B.IsSkewAdjoint ⇑(n + s)) : B.IsSkewAdjoint ⇑n ∧ B.IsSkewAdjoint ⇑s := by
+  have h' : IsAdjointPair B B ⇑(n + s) ⇑(-(n + s)) := by simpa [IsSkewAdjoint] using h
+  simpa [IsSkewAdjoint] using IsAdjointPair.isAdjointPair_and_isAdjointPair_of_add hB h' hc hn hs
+    rfl hc.neg_left.neg_right hn.neg (by simpa using IsSemisimple_smul (-1 : K) hs) (neg_add n s)
+
 /-- **The nilpotent part of a skew-adjoint endomorphism is skew-adjoint**, for a right-separating
 bilinear map: if `n + s` is skew-adjoint, with `n` nilpotent, `s` semisimple and `n`, `s`
 commuting, then `n` is skew-adjoint. -/
 theorem of_isNilpotent_of_add (hB : B.SeparatingRight) {n s : Module.End K V} (hc : Commute n s)
     (hn : IsNilpotent n) (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) :
-    B.IsSkewAdjoint ⇑n := by
-  have h' : IsAdjointPair B B ⇑(n + s) ⇑(-(n + s)) := by simpa [IsSkewAdjoint] using h
-  simpa [IsSkewAdjoint] using h'.isAdjointPair_of_isNilpotent_of_add hB hc hn hs rfl
-    hc.neg_left.neg_right hn.neg (by simpa using IsSemisimple_smul (-1 : K) hs) (neg_add n s)
+    B.IsSkewAdjoint ⇑n :=
+  (isSkewAdjoint_and_isSkewAdjoint_of_add hB hc hn hs h).1
 
 /-- **The semisimple part of a skew-adjoint endomorphism is skew-adjoint**, for a right-separating
 bilinear map: if `n + s` is skew-adjoint, with `n` nilpotent, `s` semisimple and `n`, `s`
 commuting, then `s` is skew-adjoint. -/
 theorem of_isSemisimple_of_add (hB : B.SeparatingRight) {n s : Module.End K V} (hc : Commute n s)
     (hn : IsNilpotent n) (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) :
-    B.IsSkewAdjoint ⇑s := by
-  have h' : IsAdjointPair B B ⇑(n + s) ⇑(-(n + s)) := by simpa [IsSkewAdjoint] using h
-  simpa [IsSkewAdjoint] using h'.isAdjointPair_of_isSemisimple_of_add hB hc hn hs rfl
-    hc.neg_left.neg_right hn.neg (by simpa using IsSemisimple_smul (-1 : K) hs) (neg_add n s)
+    B.IsSkewAdjoint ⇑s :=
+  (isSkewAdjoint_and_isSkewAdjoint_of_add hB hc hn hs h).2
 
 end IsSkewAdjoint
 

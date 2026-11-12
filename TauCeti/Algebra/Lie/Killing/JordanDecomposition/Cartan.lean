@@ -84,8 +84,8 @@ theorem isSemisimple_of_mem_isCartanSubalgebra [PerfectField K]
       (Algebra.commute_of_mem_adjoin_singleton_of_commute hn
         (commute_of_mem_isCartanSubalgebra H hy hx)).symm
     have : ⁅n', y⁆ = 0 := Subtype.ext <| by
-      rw [coe_bracket, LieRing.of_associative_ring_bracket, hcomm.eq, sub_self,
-        ZeroMemClass.coe_zero]
+      rw [coe_bracket, ZeroMemClass.coe_zero]
+      exact hcomm.lie_eq
     rw [this]
     exact H.zero_mem
   have hn'0 : n' = 0 := IsKilling.eq_zero_of_isNilpotent_ad_of_mem_isCartanSubalgebra K L H
