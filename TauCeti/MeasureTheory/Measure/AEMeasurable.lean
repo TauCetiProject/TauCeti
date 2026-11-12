@@ -28,13 +28,15 @@ while preserving pointwise upper bounds.
   almost everywhere measurable `f`, with no hypothesis on `s`.
 * `MeasurableEmbedding.map_map_measure` — `(μ.map f).map g = μ.map (g ∘ f)` for a measurable
   embedding `f`, with no measurability assumption on `g`.
-* `MeasureTheory.AEMeasurable.exists_measurable_ge_ae_eq`: a measurable majorant in the same
+* `AEMeasurable.exists_measurable_ge_ae_eq`: a measurable majorant in the same
   a.e. equivalence class.
 -/
 
 public section
 
-namespace MeasureTheory.AEMeasurable
+namespace AEMeasurable
+
+open MeasureTheory
 
 /-- An a.e. measurable function into an ordered space with a greatest element admits a
 measurable majorant that agrees with it almost everywhere. -/
@@ -55,7 +57,7 @@ theorem exists_measurable_ge_ae_eq {α β : Type*} [MeasurableSpace α] [Measura
   · filter_upwards [hf.ae_eq_mk, compl_mem_ae_iff.mpr hsμ] with x hx hxs
     simpa only [Set.piecewise_eq_of_notMem s _ _ hxs] using hx
 
-end MeasureTheory.AEMeasurable
+end AEMeasurable
 
 namespace MeasureTheory.Measure
 
