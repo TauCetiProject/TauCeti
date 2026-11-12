@@ -47,6 +47,7 @@ instead deduced over `ℚ` from connectedness of the pinned Dynkin diagram.
 * `TauCeti.DynkinType.hasCartanType_rationalRootSystem`: the rational system realizes its own
   Dynkin type against the pinned numbering.
 * `TauCeti.DynkinType.pairingIn_rationalRootSystem`: its Cartan integers are those of the datum.
+* `TauCeti.DynkinType.height_rationalBase`: rational base change preserves root heights.
 * `TauCeti.DynkinType.instIsReducedRationalRootSystem` and
   `TauCeti.DynkinType.instIsIrreducibleRationalRootSystem`: the rational system is reduced and
   irreducible.
