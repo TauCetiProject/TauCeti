@@ -50,7 +50,7 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 /-- An almost-surely left-continuous native local martingale has a predictable
 indistinguishable version which remains a native local martingale for the same measure
 and filtration. Literal adaptation of the original process is not assumed. -/
-theorem exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
+theorem exists_isStronglyPredictable_indist_locally_martingale_of_ae_isLeftContinuous
     (hX : Locally (fun U ↦ Martingale U ℱ P) ℱ X P)
     (hc : ∀ᵐ ω ∂P, IsLeftContinuous (fun t ↦ X t ω)) :
     ∃ Y : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ Y ∧ Y ≡ᵐ[P] X ∧
