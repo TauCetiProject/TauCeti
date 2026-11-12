@@ -49,7 +49,7 @@ theorem torusIntegral_cauchyCoeff (p : ContinuousMultilinearMap ℂ (fun _ : ν 
   have hp (z : Fin n → ℂ) : p (fun _ => z) =
       ∑ r : ν → Fin n, (∏ i, z i ^ b r i) • p (fun k => Pi.single (r k) 1) := by
     have hz : (fun _ : ν => z) = fun _ : ν => ∑ i, z i • Pi.single i 1 := by
-      funext k
+      funext _
       exact pi_eq_sum_univ' z
     rw [hz, p.map_sum]
     apply Finset.sum_congr rfl

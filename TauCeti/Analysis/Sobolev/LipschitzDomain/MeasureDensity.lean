@@ -88,7 +88,7 @@ theorem exists_ball_subset_inter_ball (hc : Ω.IsLipschitzChart e γ K h r) {z :
     (hc.image_closure_inter_normalCylinder.subset ⟨mem_image_of_mem e hz, hzC⟩).1
   have hK : (0 : ℝ) ≤ K := K.2
   set t := s / (1 + K) with ht_def
-  have ht : 0 < t := by positivity
+  have _ : 0 < t := by positivity
   have hts : t ≤ s := div_le_self hs.le (by linarith)
   have hst : s - t = K * t := by
     rw [ht_def]

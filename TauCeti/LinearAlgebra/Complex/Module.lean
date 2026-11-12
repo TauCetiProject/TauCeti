@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Algebra.Ring.Action.ConjAct
+import Mathlib.LinearAlgebra.Basis.Submodule
 import Mathlib.Tactic.FastInstance
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -32,8 +35,9 @@ Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex
 (`Complex.toLinearMap_I_comp_toLinearMap_I`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`). Conversely, a conjugate-linear equivalence between complex
-modules is real-linear (`LinearEquiv.toRealLinearEquiv`). The non-instance
+linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
+(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). Conversely, a conjugate-linear equivalence
+between complex modules is real-linear (`LinearEquiv.toRealLinearEquiv`). The non-instance
 `RestrictScalars.realModule` normalizes the restricted real module at the additive-group parent
 for use in constructions on real modules.
 
@@ -43,6 +47,9 @@ at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
 half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
+
+The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries
+(`TauCeti.mem_span_range_basisFun_iff`).
 -/
 
 public section
@@ -168,6 +175,14 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
   rw [realPart_apply_coe]
   module
 
+/-- The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries. -/
+theorem mem_span_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
+    w ∈ Submodule.span ℝ (Set.range (Pi.basisFun ℂ ι)) ↔ ∀ i, (w i).im = 0 := by
+  simp only [(Pi.basisFun ℂ ι).mem_span_iff_repr_mem ℝ, Pi.basisFun_repr]
+  refine forall_congr' fun i ↦ ⟨?_, fun h ↦ ⟨(w i).re, Complex.ext (by simp) (by simp [h])⟩⟩
+  rintro ⟨r, hr⟩
+  simp [← hr]
+
 end TauCeti
 
 section ComplexOfMapISmul
@@ -198,6 +213,15 @@ theorem restrictScalars_complexOfMapISmul (u : V →ₗ[ℝ] W)
     (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     (u.complexOfMapISmul h).restrictScalars ℝ = u :=
   LinearMap.ext fun _ ↦ rfl
+
+/-- A real-linear map between complex modules that anticommutes with multiplication by `I` is
+conjugate-linear: `u (z • v) = conj z • u v`. -/
+theorem map_smul_eq_conj_smul_of_map_I_smul (u : V →ₗ[ℝ] W)
+    (h : ∀ v, u (Complex.I • v) = -(Complex.I • u v)) (z : ℂ) (v : V) :
+    u (z • v) = starRingEnd ℂ z • u v := by
+  conv_rhs => rw [← Complex.re_smul_add_im_smul]
+  rw [← Complex.re_smul_add_im_smul z v, map_add, map_smul, map_smul, h, Complex.conj_re,
+    Complex.conj_im, smul_neg, neg_smul]
 
 end LinearMap
 

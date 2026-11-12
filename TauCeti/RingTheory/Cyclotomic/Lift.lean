@@ -41,9 +41,9 @@ conclusion.  What a good Dixon prime contributes is the other two ingredients: t
 `Monoid.exponent G ∣ p - 1` provides the primitive root `α`, and Dixon's size bound `2⌊√|G|⌋ < p`
 converts a coordinate bound of `⌊√|G|⌋` into the residue window.  That the values the algorithm
 reconstructs do have coordinates that small is *not* claimed anywhere here: it is unverified, it is
-proved nowhere in this repository, and the roadmap records the precise constant in Dixon's `2√|G|`
-as low-confidence pending a re-check against Dixon 1967.  A caller has to supply that bound as a
-hypothesis.  Nothing about groups appears here, only the arithmetic.
+proved nowhere in this repository, and the precise constant in Dixon's `2√|G|` is not checked
+against Dixon 1967 here either.  A caller has to supply that bound as a hypothesis.  Nothing about
+groups appears here, only the arithmetic.
 
 The lift is *not* a bare map `ZMod p → ℤ[ζ_e]`: a single residue underdetermines an algebraic
 integer, and because a good Dixon prime satisfies `p ≡ 1 (mod e)` the Frobenius acts trivially on
@@ -107,9 +107,6 @@ is invertible.
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
-* The roadmap `RepresentationTheory/CharacterTheory`, Layer 6, "The structured cyclotomic lift",
-  whose `liftCyclotomic` and `liftCyclotomic_spec` are `TauCeti.Cyclotomic.lift` and
-  `TauCeti.Cyclotomic.lift_eq_of_conjugateResidues_eq` here.
 -/
 
 public section
@@ -418,9 +415,8 @@ example : List.ofFn (conjugateResidues (2 : ZMod 5) (zeta 4 + 1)) = [3, 4] := by
 
 /-! The lift itself is not reducible by the kernel, but it can still be run against a concrete
 element through its correctness theorem, which is where the hypotheses become concrete: for the
-two small conductors the roadmap stages before the general one, `e = 4` (the Gaussian integers)
-and `e = 3` (the Eisenstein integers), both the primitivity of the root and the coordinate bound
-are settled by `decide`. -/
+two small conductors `e = 4` (the Gaussian integers) and `e = 3` (the Eisenstein integers), both
+the primitivity of the root and the coordinate bound are settled by `decide`. -/
 
 example : lift 4 (2 : ZMod 5) (conjugateResidues (2 : ZMod 5) (zeta 4 + 1)) = zeta 4 + 1 := by
   have : Fact (Nat.Prime 5) := ⟨by decide⟩

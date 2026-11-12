@@ -225,8 +225,8 @@ private theorem continuousOn_frameGramSchmidt :
       {f : finiteOrthonormalFrame ℝ r (r + m) | LinearIndependent ℝ (frameCompletion f)} := by
   have h (k : Fin (r + m)) : ContinuousOn (fun f ↦ gramSchmidtNormed ℝ (frameCompletion f) k)
       {f : finiteOrthonormalFrame ℝ r (r + m) | LinearIndependent ℝ (frameCompletion f)} :=
-    ContinuousOn.gramSchmidtNormed (v := fun l f ↦ frameCompletion f l)
-      (fun l ↦ (continuous_frameCompletion l).continuousOn) (fun _ hf ↦ hf) k
+    ContinuousOn.gramSchmidtNormed (v := fun l f ↦ frameCompletion f l) k
+      (fun l _ ↦ (continuous_frameCompletion l).continuousOn) (fun _ hf ↦ hf.linearIndepOn _)
   exact continuousOn_pi.2 fun a ↦ continuousOn_pi.2 fun k ↦
     ((continuous_apply a).comp (PiLp.continuous_ofLp 2 _)).comp_continuousOn (h k)
 
