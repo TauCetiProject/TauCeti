@@ -24,8 +24,7 @@ piecewise-`C¹` loop rather than a round circle, and each pole is weighted by it
 rather than by `1`. Null-homology is not decoration — on a general holomorphy domain `Ω`, a loop
 that merely avoids the poles need not integrate to the residue sum (a loop around a hole of `Ω`
 sees the function's behaviour there), so `n_w(γ) = 0` for every `w ∉ Ω` is exactly the hypothesis
-that rules this out. Its `S = ∅` case is the homology Cauchy theorem, which is why the roadmap
-defers this statement past Layer 2.
+that rules this out. Its `S = ∅` case is the homology Cauchy theorem.
 
 The proof is the classical three-line argument, over the pieces the repository already has. The
 polar-part decomposition (`Contour.PolarPartDecomposition.ofMeromorphic`) writes
@@ -57,9 +56,6 @@ here and not there.
   residue theorem for a fixed decomposition, assuming nothing about `f` beyond it.
 * `TauCeti.Contour.classicalResidueTheorem_nullHomologous` — the residue theorem for an arbitrary
   null-homologous cycle avoiding the poles.
-
-This is the "general arbitrary-cycle case" of the contour-integration roadmap, which that roadmap
-defers to Layer 3+.
 
 ## References
 
@@ -219,10 +215,10 @@ number, hence their contribution, to vanish, so nothing at all is asked of `f` t
 meromorphicity is required only at the points of `S` that lie in `U`. Likewise `S` may list
 regular points of `f`, whose residues are `0`.
 
-Its `S = ∅` case is the homology Cauchy theorem (`Contour.homologyCauchyTheorem`), so this is
-genuinely a Layer 3 statement; the round-circle case with the poles inside is
-`Contour.classicalResidueTheorem_circle`, and the version admitting poles *on* the curve is the
-Hungerbühler–Wasem theorem `Contour.hungerbuhlerWasem_residueTheorem`. -/
+Its `S = ∅` case is the homology Cauchy theorem (`Contour.homologyCauchyTheorem`); the
+round-circle case with the poles inside is `Contour.classicalResidueTheorem_circle`, and the
+version admitting poles *on* the curve is the Hungerbühler–Wasem theorem
+`Contour.hungerbuhlerWasem_residueTheorem`. -/
 theorem classicalResidueTheorem_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
     (hU : IsOpen U) (hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ)))
     (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b)

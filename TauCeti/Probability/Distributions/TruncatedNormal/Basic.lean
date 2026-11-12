@@ -245,29 +245,42 @@ theorem truncatedNormalMeasure_eq_withDensity (m : ℝ) (hv : v ≠ 0) (hs : Mea
       ← restrict_withDensity hs, ← gaussianReal_of_var_ne_zero m hv, truncatedNormalMeasure_def,
       ProbabilityTheory.cond]
 
-/-- At positive variance, a random variable with a truncated normal law to a measurable set has a
-density. -/
+/-- At positive variance, a random variable with a truncated normal law has a density. -/
 theorem hasPDF_of_hasLaw_truncatedNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {X : Ω → ℝ} (hv : v ≠ 0) (hs : MeasurableSet s)
-    (hX : HasLaw X (truncatedNormalMeasure m v s) P) : HasPDF X P volume :=
-  hasPDF_of_hasLaw_withDensity (measurable_truncatedNormalPDF m v hs).aemeasurable
-    (by rwa [truncatedNormalMeasure_eq_withDensity m hv hs] at hX)
+    {X : Ω → ℝ} (hv : v ≠ 0) (hX : HasLaw X (truncatedNormalMeasure m v s) P) :
+    HasPDF X P volume := by
+  have hac : truncatedNormalMeasure m v s ≪ volume := by
+    rw [truncatedNormalMeasure_def]
+    exact (cond_absolutelyContinuous).trans (gaussianReal_absolutelyContinuous m hv)
+  have hfin : IsFiniteMeasure (truncatedNormalMeasure m v s) := by
+    rw [truncatedNormalMeasure_def]
+    infer_instance
+  rw [hasPDF_iff_of_aemeasurable hX.aemeasurable, hX.map_eq]
+  exact ⟨inferInstance, hac⟩
 
-/-- At positive variance, the canonical density of a truncated normal random variable equals its
-named density almost everywhere. -/
-theorem pdf_eq_truncatedNormalPDF_of_hasLaw_truncatedNormalMeasure {Ω : Type*}
-    [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} (hv : v ≠ 0) (hs : MeasurableSet s)
-    (hX : HasLaw X (truncatedNormalMeasure m v s) P) :
-    pdf X P volume =ᵐ[volume] truncatedNormalPDF m v s :=
-  pdf_eq_of_hasLaw_withDensity (measurable_truncatedNormalPDF m v hs).aemeasurable
-    (by rwa [truncatedNormalMeasure_eq_withDensity m hv hs] at hX)
-
-/-- At positive variance, the Radon–Nikodym derivative of the truncated normal law to a measurable
-set is its named density. -/
-theorem rnDeriv_truncatedNormalMeasure (m : ℝ) (hv : v ≠ 0) (hs : MeasurableSet s) :
+/-- The Radon–Nikodym derivative of the truncated normal law to a measurable set is its named
+density. At the Dirac boundary `v = 0` both vanish almost everywhere, since a Dirac mass is
+singular with respect to Lebesgue measure. -/
+theorem rnDeriv_truncatedNormalMeasure (m : ℝ) (hs : MeasurableSet s) :
     (truncatedNormalMeasure m v s).rnDeriv volume =ᵐ[volume] truncatedNormalPDF m v s := by
-  rw [truncatedNormalMeasure_eq_withDensity m hv hs]
-  exact Measure.rnDeriv_withDensity volume (measurable_truncatedNormalPDF m v hs)
+  by_cases hv : v = 0
+  · classical
+    rw [hv, truncatedNormalPDF_zero_var, truncatedNormalMeasure_zero_var]
+    split_ifs
+    · exact Measure.rnDeriv_eq_zero_of_mutuallySingular (mutuallySingular_dirac m volume)
+        Measure.AbsolutelyContinuous.rfl
+    · exact Measure.rnDeriv_zero volume
+  · rw [truncatedNormalMeasure_eq_withDensity m hv hs]
+    exact Measure.rnDeriv_withDensity volume (measurable_truncatedNormalPDF m v hs)
+
+/-- The canonical density of a random variable with a truncated normal law to a measurable set
+equals its named density almost everywhere. -/
+theorem pdf_eq_truncatedNormalPDF_of_hasLaw_truncatedNormalMeasure {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} (hs : MeasurableSet s)
+    (hX : HasLaw X (truncatedNormalMeasure m v s) P) :
+    pdf X P volume =ᵐ[volume] truncatedNormalPDF m v s := by
+  rw [pdf_def, hX.map_eq]
+  exact rnDeriv_truncatedNormalMeasure m hs
 
 /-! ### Cumulative distribution function and quantile -/
 
@@ -294,8 +307,6 @@ theorem cdf_truncatedNormalMeasure_eq (hv : v ≠ 0) (hlr : l < r)
   rw [truncatedNormalMeasure_eq_cond_sdiff hv hs₁ hs₂]
   exact Measure.cdf_cond_sdiff _ ((IsLowerSet.Iic l).preimage EReal.coe_strictMono.monotone)
     ((IsLowerSet.Iic r).preimage EReal.coe_strictMono.monotone)
-    (measurableSet_Iic.preimage measurable_coe_real_ereal)
-    (measurableSet_Iic.preimage measurable_coe_real_ereal)
     (measureReal_gaussianReal_preimage_Iic_lt hv hlr) x
 
 /-- At positive variance and every level `0 < u < 1`, the quantile of a normal law truncated to
@@ -314,9 +325,7 @@ theorem quantile_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
   have hR : (gaussianReal m v).real (Real.toEReal ⁻¹' Iic r) ≤ 1 := measureReal_le_one
   rw [truncatedNormalMeasure_eq_cond_sdiff hv hs₁ hs₂,
     Measure.quantile_cond_sdiff _ ((IsLowerSet.Iic l).preimage EReal.coe_strictMono.monotone)
-      ((IsLowerSet.Iic r).preimage EReal.coe_strictMono.monotone)
-      (measurableSet_Iic.preimage measurable_coe_real_ereal)
-      (measurableSet_Iic.preimage measurable_coe_real_ereal) hLR hu]
+      ((IsLowerSet.Iic r).preimage EReal.coe_strictMono.monotone) hLR hu]
   refine quantile_gaussianReal_eq_add_mul m v ⟨?_, ?_⟩
   · nlinarith [hu.1]
   · nlinarith [hu.2]
