@@ -29,9 +29,10 @@ subspace `F` with `⟪v, J(s) w⟫ = 0` for all `v, w ∈ F`. For `J(s) = i` and
 the totally real boundary condition `φ(s), ξ(s) ∈ ℝⁿ` of the roadmap. In that case the left side
 is the weak formulation tested against test functions that are real on `ℝ` but need not vanish
 there, so a classical solution with real boundary values is a weak solution in the sense of
-(B.4.3). The constant-coefficient formula `TauCeti.setIntegral_im_pos_re_inner_cauchyRiemann`,
-with its analysis of the dual boundary condition, is the case `J = i`, `S = 0` on a complex
-inner product space.
+(B.4.3). For `V = ℂ` the condition on `F = ℝ` is `Real.inner_ofReal_I_mul_ofReal`. The
+constant-coefficient formula `TauCeti.setIntegral_im_pos_re_inner_cauchyRiemann`, with its
+analysis of the dual boundary condition, is the case `J = i`, `S = 0` on a complex inner product
+space.
 
 ## Main results
 
@@ -44,8 +45,6 @@ inner product space.
   `TauCeti.setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem`: if `φ` and `ξ` take values
   on `ℝ` in a subspace `F` with `⟪F, J(s) F⟫ = 0`, the boundary term vanishes and the weak
   equation (B.4.3) holds.
-* `Real.inner_ofReal_I_mul_ofReal`: on `V = ℂ` the real line satisfies this condition for
-  `J = i`.
 
 ## References
 
@@ -218,10 +217,5 @@ theorem setIntegral_halfDisc_inner_cauchyRiemann_adjoint_of_mem {F : Submodule �
         S z (ξ z) + fderiv ℝ J z I (ξ z)⟫_ℝ := by
   rw [setIntegral_halfDisc_inner_cauchyRiemann_adjoint hφ hφc hξ hJ hS hφr]
   simp [inner_apply_eq_zero_of_mem F hφr hJF hφF hξF]
-
-/-- On `V = ℂ` with `J = i`, the real line satisfies the boundary condition of
-`setIntegral_im_pos_inner_cauchyRiemann_adjoint_of_mem`: `⟪x, i y⟫ = 0` for real `x`, `y`. -/
-theorem _root_.Real.inner_ofReal_I_mul_ofReal (x y : ℝ) : ⟪(x : ℂ), I * y⟫_ℝ = 0 := by
-  simp [Complex.inner]
 
 end TauCeti

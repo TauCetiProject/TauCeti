@@ -21,6 +21,8 @@ lets the level sets `⟪ζ, z⟫_ℝ = t` be read in the rotated coordinate `w =
 * `Complex.inner_mul_mul_of_norm_eq_one` -- `⟪ζ * a, ζ * b⟫_ℝ = ⟪a, b⟫_ℝ` for a unit `ζ`.
 * `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
 * `LinearIsometry.norm_map_I` -- a linear isometry from the plane maps `i` to a unit vector.
+* `Real.inner_ofReal_I_mul_ofReal` -- `⟪x, i y⟫_ℝ = 0` for real `x`, `y`: the real line is
+  orthogonal to its rotation by `i`.
 -/
 
 public section
@@ -54,3 +56,8 @@ end Complex
 theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
     (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
   (ι.norm_map _).trans Complex.norm_I
+
+/-- The real line is orthogonal to its rotation by `i`: `⟪x, i y⟫_ℝ = 0` for real `x`, `y`. This
+is the totally real boundary condition `⟪F, J F⟫ = 0` for `F = ℝ ⊆ ℂ` and `J = i`. -/
+theorem Real.inner_ofReal_I_mul_ofReal (x y : ℝ) : inner ℝ (x : ℂ) (Complex.I * y) = 0 := by
+  simp [Complex.inner]
