@@ -53,26 +53,26 @@ variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X)
 
 /-- Čech cochains preserve the kernel in the injective cokernel sequence. -/
 private lemma lerayOneSeq_exact (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    (cechSeq U F).Exact := by
+    (cechInjectiveCokernelSequence U F).Exact := by
   apply (injectiveCokernelSequence_shortExact F).exact.map_of_mono_of_preservesKernel
     (sheafToPresheaf _ AddCommGrpCat.{u} ⋙ cechComplexFunctor U) inferInstance inferInstance
 
 /-- The first Čech map is injective. -/
 private instance lerayOneSeq_mono (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    Mono (cechSeq U F).f := by
+    Mono (cechInjectiveCokernelSequence U F).f := by
   exact Functor.map_mono (sheafToPresheaf _ AddCommGrpCat.{u} ⋙ cechComplexFunctor U)
     (Injective.ι F)
 
 /-- The actual complex cokernel, used in place of `Č(Q)`. -/
 private abbrev lerayOneCokerSeq
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :=
-  ShortComplex.cokernelSequence (cechSeq U F).f
+  ShortComplex.cokernelSequence (cechInjectiveCokernelSequence U F).f
 
 /-- The complex cokernel injects into the Čech complex of the quotient sheaf. -/
 private def lerayOneCokerToQuotient
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    (lerayOneCokerSeq U F).X₃ ⟶ (cechSeq U F).X₃ :=
-  cokernel.desc _ (cechSeq U F).g (cechSeq U F).zero
+    (lerayOneCokerSeq U F).X₃ ⟶ (cechInjectiveCokernelSequence U F).X₃ :=
+  cokernel.desc _ (cechInjectiveCokernelSequence U F).g (cechInjectiveCokernelSequence U F).zero
 
 private instance lerayOneCokerToQuotient_mono
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
@@ -82,7 +82,7 @@ private instance lerayOneCokerToQuotient_mono
 /-- Memberwise `H¹` vanishing makes the degree-zero map onto. -/
 private lemma epi_lerayOneSeq_g_zero
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
-    (hF : ∀ i, Subsingleton (F.H' 1 (U i))) : Epi ((cechSeq U F).g.f 0) := by
+    (hF : ∀ i, Subsingleton (F.H' 1 (U i))) : Epi ((cechInjectiveCokernelSequence U F).g.f 0) := by
   -- The mapped short-complex projection is definitionally the Čech map of the quotient.
   change Epi (((cechComplexFunctor U).map (cokernel.π (Injective.ι F)).hom).f 0)
   rw [cechComplexFunctor_map_f]
@@ -114,10 +114,13 @@ private lemma isIso_lerayOneCokerToQuotient_zero
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
     (hF : ∀ i, Subsingleton (F.H' 1 (U i))) : IsIso ((lerayOneCokerToQuotient U F).f 0) := by
   have hcomp : (lerayOneCokerSeq U F).g.f 0 ≫ (lerayOneCokerToQuotient U F).f 0 =
-      (cechSeq U F).g.f 0 := by
+      (cechInjectiveCokernelSequence U F).g.f 0 := by
     rw [← HomologicalComplex.comp_f]
-    exact congrArg (fun f : (cechSeq U F).X₂ ⟶ (cechSeq U F).X₃ ↦ f.f 0)
-      (cokernel.π_desc (cechSeq U F).f (cechSeq U F).g (cechSeq U F).zero)
+    exact congrArg
+      (fun f : (cechInjectiveCokernelSequence U F).X₂ ⟶ (cechInjectiveCokernelSequence U F).X₃ ↦
+        f.f 0)
+      (cokernel.π_desc (cechInjectiveCokernelSequence U F).f (cechInjectiveCokernelSequence U F).g
+        (cechInjectiveCokernelSequence U F).zero)
   have hE := epi_lerayOneSeq_g_zero U F hF
   -- Supply the degree-zero epimorphism explicitly: the short-complex and evaluated
   -- Čech presentations have semireducible object types, beyond instance-search transparency.
@@ -152,17 +155,17 @@ private lemma homologyMap_comp_lerayOneZeroIso_hom (hU : ⨆ i, U i = ⊤)
   simp only [lerayOneZeroIso, Iso.trans_hom, asIso_hom,
     ← HomologicalComplex.homologyMap_comp_assoc]
   -- These abbreviations expose the chosen cokernel projection and its universal desc.
-  rw [show (lerayOneCokerSeq U F).g ≫ lerayOneCokerToQuotient U F = (cechSeq U F).g from
-    cokernel.π_desc _ _ _]
+  rw [show (lerayOneCokerSeq U F).g ≫ lerayOneCokerToQuotient U F =
+      (cechInjectiveCokernelSequence U F).g from cokernel.π_desc _ _ _]
   exact homologyMap_comp_homologyZeroCechIso_hom U hU (cokernel.π (Injective.ι F))
 
 /-- The Čech connecting map is onto because the injective sheaf is flasque. -/
 private lemma epi_lerayOneCokerSeq_δ [Finite ι] (hU : ⨆ i, U i = ⊤)
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
-    Epi ((cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 (by simp)) := by
+    Epi ((cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 (by simp)) := by
   have : QuasiIso (cechAugmentation U isTerminalTop (Injective.under F).obj) :=
     TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque (Injective.under F) U hU
-  apply (cokernelSequence_shortExact (cechSeq U F).f).epi_δ
+  apply (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).epi_δ
   exact ((exactAt_iff_of_quasiIsoAt
     (cechAugmentation U isTerminalTop (Injective.under F).obj) 1).mp
     (CochainComplex.exactAt_succ_single_obj _ 0)).isZero_homology
@@ -179,7 +182,8 @@ def homologyCechComplexIsoHOne [Finite ι] (hU : ⨆ i, U i = ⊤)
       (injectiveCokernelSequence_shortExact F) 0 1 rfl)) :=
     (AddCommGrpCat.epi_iff_surjective _).2 (_root_.CategoryTheory.Sheaf.H.δ_surjective
       (injectiveCokernelSequence_shortExact F) 0 1 rfl inferInstance)
-  have hEC := (cokernelSequence_shortExact (cechSeq U F).f).homology_exact₃ 0 1 (by simp)
+  have hEC := (cokernelSequence_shortExact
+    (cechInjectiveCokernelSequence U F).f).homology_exact₃ 0 1 (by simp)
   have hEH := _root_.CategoryTheory.Sheaf.H.longSequence_exact₃'
     (injectiveCokernelSequence_shortExact F) 0 1 rfl
   exact CokernelCofork.mapIsoOfIsColimit hEC.gIsCokernel hEH.gIsCokernel
@@ -191,7 +195,7 @@ def homologyCechComplexIsoHOne [Finite ι] (hU : ⨆ i, U i = ⊤)
 private lemma lerayOneCokerSeq_δ_comp_iso_hom [Finite ι] (hU : ⨆ i, U i = ⊤)
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
     (hF : ∀ i, Subsingleton (F.H' 1 (U i))) :
-    (cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 (by simp) ≫
+    (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 (by simp) ≫
         (homologyCechComplexIsoHOne U hU F hF).hom =
       (lerayOneZeroIso U hU F hF).hom ≫
         AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
@@ -201,8 +205,8 @@ private lemma lerayOneCokerSeq_δ_comp_iso_hom [Finite ι] (hU : ⨆ i, U i = �
     arg 1
     rw [← CokernelCofork.π_ofπ
       (HomologicalComplex.homologyMap (lerayOneCokerSeq U F).g 0)
-      ((cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 (by simp))
-      ((cokernelSequence_shortExact (cechSeq U F).f).comp_δ 0 1 (by simp))]
+      ((cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 (by simp))
+      ((cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).comp_δ 0 1 (by simp))]
   rw [CokernelCofork.π_mapOfIsColimit]
   -- `Arrow.isoMk` stores the chosen zero-degree comparison as its right component,
   -- and `CokernelCofork.ofπ` stores the connecting map as its projection.
@@ -217,46 +221,49 @@ lemma homologyCechComplexIsoH_one_eq_homologyCechComplexIsoHOne [Finite ι]
     (hF₁ : ∀ i, Subsingleton (F.H' 1 (U i))) :
     homologyCechComplexIsoH U hU F hF 1 = homologyCechComplexIsoHOne U hU F hF₁ := by
   have h01 : (ComplexShape.up ℕ).Rel 0 1 := by simp
-  have hS : (cechSeq U F).ShortExact :=
+  have hS : (cechInjectiveCokernelSequence U F).ShortExact :=
     shortExact_map_cechComplexFunctor U
       ((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{u})) fun m a ↦
         _root_.CategoryTheory.Sheaf.H'.shortExact_map_sheafSections
           (injectiveCokernelSequence_shortExact F) _
           (CompleteLattice.finite_product_of_forall_finset_inf
             (p := fun W ↦ Subsingleton (F.H' 1 W)) U (fun t ht ↦ hF t ht 0) a)
-  let φ : lerayOneCokerSeq U F ⟶ cechSeq U F :=
+  let φ : lerayOneCokerSeq U F ⟶ cechInjectiveCokernelSequence U F :=
     { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := lerayOneCokerToQuotient U F
       comm₁₂ := by
         -- Expose the identical first two objects of the mapped and cokernel sequences;
         -- rewriting cannot match identity composition through their semireducible projections.
-        change 𝟙 _ ≫ (cechSeq U F).f = (cechSeq U F).f ≫ 𝟙 _
+        change 𝟙 _ ≫ (cechInjectiveCokernelSequence U F).f =
+          (cechInjectiveCokernelSequence U F).f ≫ 𝟙 _
         simp only [Category.id_comp, Category.comp_id]
       comm₂₃ := by
         -- The second object agrees in the two sequences by their definitions.
-        change 𝟙 _ ≫ (cechSeq U F).g =
-          cokernel.π (cechSeq U F).f ≫
-            cokernel.desc (cechSeq U F).f (cechSeq U F).g (cechSeq U F).zero
+        change 𝟙 _ ≫ (cechInjectiveCokernelSequence U F).g =
+          cokernel.π (cechInjectiveCokernelSequence U F).f ≫
+            cokernel.desc (cechInjectiveCokernelSequence U F).f
+              (cechInjectiveCokernelSequence U F).g (cechInjectiveCokernelSequence U F).zero
         rw [Category.id_comp, cokernel.π_desc] }
   have hd := HomologicalComplex.HomologySequence.δ_naturality φ
-    (cokernelSequence_shortExact (cechSeq U F).f) hS 0 1 h01
-  have : Epi ((cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 h01) :=
+    (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f) hS 0 1 h01
+  have : Epi ((cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 h01) :=
     epi_lerayOneCokerSeq_δ U hU F
   have hid : HomologicalComplex.homologyMap φ.τ₁ 1 =
       𝟙 ((lerayOneCokerSeq U F).X₁.homology 1) :=
     HomologicalComplex.homologyMap_id _ _
   -- Use typed congruence rather than rewriting through the semireducible objects
   -- stored in the two short complexes. Both first components are the original Čech complex.
-  have hd' : (cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 h01 =
+  have hd' : (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 h01 =
       HomologicalComplex.homologyMap (lerayOneCokerToQuotient U F) 0 ≫ hS.δ 0 1 rfl := by
     have hi := congrArg (fun f : (lerayOneCokerSeq U F).X₁.homology 1 ⟶
         (lerayOneCokerSeq U F).X₁.homology 1 ↦
-      (cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 h01 ≫ f) hid
+      (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 h01 ≫ f) hid
     exact (hi.trans (Category.comp_id _)).symm.trans hd
   apply Iso.ext
-  apply (cancel_epi ((cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 h01)).mp
+  apply (cancel_epi
+    ((cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 h01)).mp
   rw [lerayOneCokerSeq_δ_comp_iso_hom]
   calc
-    (cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 h01 ≫
+    (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 h01 ≫
         (homologyCechComplexIsoH U hU F hF 1).hom =
         HomologicalComplex.homologyMap (lerayOneCokerToQuotient U F) 0 ≫
           (hS.δ 0 1 rfl ≫ (homologyCechComplexIsoH U hU F hF 1).hom) := by
@@ -275,16 +282,19 @@ variable {κ : Type u} (V : κ → Opens X)
   {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
 
 /-- Any map of the left exact Čech sequences induces a map of their actual cokernel sequences. -/
-private def lerayOneCokerSeqHom (φ : cechSeq U F ⟶ cechSeq V G) :
+private def lerayOneCokerSeqHom
+    (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G) :
     lerayOneCokerSeq U F ⟶ lerayOneCokerSeq V G where
   τ₁ := φ.τ₁
   τ₂ := φ.τ₂
-  τ₃ := cokernel.map (cechSeq U F).f (cechSeq V G).f φ.τ₁ φ.τ₂ φ.comm₁₂.symm
+  τ₃ := cokernel.map (cechInjectiveCokernelSequence U F).f (cechInjectiveCokernelSequence V G).f
+    φ.τ₁ φ.τ₂ φ.comm₁₂.symm
   comm₁₂ := φ.comm₁₂
   comm₂₃ := (cokernel.π_desc _ _ _).symm
 
 /-- The cokernel-to-quotient comparisons commute with a map of Čech sequences. -/
-private lemma lerayOneCokerSeqHom_comp_toQuotient (φ : cechSeq U F ⟶ cechSeq V G) :
+private lemma lerayOneCokerSeqHom_comp_toQuotient
+    (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G) :
     (lerayOneCokerSeqHom U V φ).τ₃ ≫ lerayOneCokerToQuotient V G =
       lerayOneCokerToQuotient U F ≫ φ.τ₃ := by
   exact cokernel.map_desc _ _ _ _ _ _ _ _ _ φ.comm₁₂.symm φ.comm₂₃.symm
@@ -293,7 +303,7 @@ private lemma lerayOneCokerSeqHom_comp_toQuotient (φ : cechSeq U F ⟶ cechSeq 
 @[reassoc]
 private lemma lerayOneCokerSeqHom_comp_zeroIso (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
     (hF : ∀ i, Subsingleton (F.H' 1 (U i))) (hG : ∀ i, Subsingleton (G.H' 1 (V i)))
-    (φ : cechSeq U F ⟶ cechSeq V G)
+    (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G)
     (g : cokernel (Injective.ι F) ⟶ cokernel (Injective.ι G))
     (hφ : HomologicalComplex.homologyMap φ.τ₃ 0 ≫
         (homologyZeroCechIso V hV (cokernel (Injective.ι G))).hom =
@@ -312,7 +322,7 @@ private lemma lerayOneCokerSeqHom_comp_zeroIso (hU : ⨆ i, U i = ⊤) (hV : ⨆
 private lemma lerayOneIso_naturality [Finite ι] [Finite κ]
     (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
     (hF : ∀ i, Subsingleton (F.H' 1 (U i))) (hG : ∀ i, Subsingleton (G.H' 1 (V i)))
-    (φ : cechSeq U F ⟶ cechSeq V G)
+    (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G)
     (m : injectiveCokernelSequence F ⟶ injectiveCokernelSequence G)
     (hφ : HomologicalComplex.homologyMap φ.τ₃ 0 ≫
         (homologyZeroCechIso V hV (cokernel (Injective.ι G))).hom =
@@ -324,16 +334,17 @@ private lemma lerayOneIso_naturality [Finite ι] [Finite κ]
   have h01 : (ComplexShape.up ℕ).Rel 0 1 := by simp
   let dU : (lerayOneCokerSeq U F).X₃.homology 0 ⟶
       ((cechComplexFunctor U).obj F.obj).homology 1 :=
-    (cokernelSequence_shortExact (cechSeq U F).f).δ 0 1 h01
+    (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 h01
   let dV : (lerayOneCokerSeq V G).X₃.homology 0 ⟶
       ((cechComplexFunctor V).obj G.obj).homology 1 :=
-    (cokernelSequence_shortExact (cechSeq V G).f).δ 0 1 h01
+    (cokernelSequence_shortExact (cechInjectiveCokernelSequence V G).f).δ 0 1 h01
   have : Epi dU := epi_lerayOneCokerSeq_δ U hU F
   have hd : dU ≫ HomologicalComplex.homologyMap φ.τ₁ 1 =
       HomologicalComplex.homologyMap (lerayOneCokerSeqHom U V φ).τ₃ 0 ≫ dV :=
     HomologicalComplex.HomologySequence.δ_naturality
-      (lerayOneCokerSeqHom U V φ) (cokernelSequence_shortExact (cechSeq U F).f)
-      (cokernelSequence_shortExact (cechSeq V G).f) 0 1 h01
+      (lerayOneCokerSeqHom U V φ)
+      (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f)
+      (cokernelSequence_shortExact (cechInjectiveCokernelSequence V G).f) 0 1 h01
   have hdU : dU ≫ (homologyCechComplexIsoHOne U hU F hF).hom =
       (lerayOneZeroIso U hU F hF).hom ≫
         AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
@@ -382,10 +393,11 @@ theorem homologyMap_comp_homologyCechComplexIsoHOne_hom [Finite ι]
         (homologyCechComplexIsoHOne U hU G hG).hom =
       (homologyCechComplexIsoHOne U hU F hF).hom ≫
         AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f 1) := by
-  simpa only [cechSeqMap_τ₁, injectiveCokernelSequenceMap_τ₁] using
-    lerayOneIso_naturality U U hU hU hF hG (cechSeqMap U f) (injectiveCokernelSequenceMap f)
+  simpa only [cechInjectiveCokernelSequenceMap_τ₁, injectiveCokernelSequenceMap_τ₁] using
+    lerayOneIso_naturality U U hU hU hF hG (cechInjectiveCokernelSequenceMap U f)
+      (injectiveCokernelSequenceMap f)
       (by
-        rw [cechSeqMap_τ₃]
+        rw [cechInjectiveCokernelSequenceMap_τ₃]
         exact homologyMap_comp_homologyZeroCechIso_hom U hU
           (injectiveCokernelSequenceMap f).τ₃)
 
@@ -393,7 +405,7 @@ theorem homologyMap_comp_homologyCechComplexIsoHOne_hom [Finite ι]
 private def lerayOneSeqRefinement
     (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
-    cechSeq V F ⟶ cechSeq U F where
+    cechInjectiveCokernelSequence V F ⟶ cechInjectiveCokernelSequence U F where
   τ₁ := cechComplexMap F.obj φ
   τ₂ := cechComplexMap (Injective.under F).obj φ
   τ₃ := cechComplexMap (cokernel (Injective.ι F)).obj φ

@@ -22,12 +22,12 @@ import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 Let `X` be a scheme and let `M` be a quasi-coherent sheaf of modules on `X`. Then `M` has no
 cohomology in positive degrees on affine opens
 (`AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`). So every
-finite open cover `U` of `X` whose nonempty finite intersections are affine is a Leray cover for
+open cover `U` of `X` whose nonempty finite intersections are affine is a Leray cover for
 `M`, and by Leray's theorem (`TauCeti.Topology.homologyCechComplexIsoH`) the Čech cohomology
 `Hⁿ(U, M)` of the underlying abelian sheaf of `M` is isomorphic to the cohomology `Hⁿ(X, M)`.
 When `X` has affine diagonal, for instance when it is separated, finite intersections of affine
 opens are affine (`AlgebraicGeometry.IsAffineOpen.biInf`), so `Hⁿ(X, M)` can be computed from the
-Čech complex of any finite affine open cover.
+Čech complex of any affine open cover.
 
 The isomorphism is natural in the quasi-coherent sheaf `M`. In particular it intertwines the map
 on Čech cohomology induced by multiplication by a global function `r` on `M` with the action of
@@ -36,14 +36,14 @@ structures of both sides over the ring of global functions, and hence over any b
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology`: for a finite open cover `U`
-  of `X` with affine nonempty finite intersections, `Hⁿ(U, M) ≅ Hⁿ(X, M)` for every `n`;
+* `AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology`: for an open cover `U` of
+  `X` with affine nonempty finite intersections, `Hⁿ(U, M) ≅ Hⁿ(X, M)` for every `n`;
 * `AlgebraicGeometry.Scheme.Modules.homologyMap_comp_homologyCechComplexIsoCohomology_hom`: its
   naturality in `M`;
 * `AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology_hom_globalSectionsSmul`: its
   compatibility with the action of global functions;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardIsoOfIsAffineHom`: for an affine morphism
-  `f : X ⟶ Y`, where `Y` has affine diagonal and a finite affine open cover `U`, the
+  `f : X ⟶ Y`, where `Y` has affine diagonal and an affine open cover `U`, the
   isomorphism `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)` for quasi-coherent `M`;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardIsoOfIsAffineHom_naturality`: its naturality
   in `M`;
@@ -56,8 +56,8 @@ structures of both sides over the ring of global functions, and hence over any b
 
 ## Cohomology along affine morphisms
 
-Let `f : X ⟶ Y` be an affine morphism and `U` a finite affine open cover of `Y` whose finite
-intersections are affine. The preimages `f⁻¹ U i` form a finite affine open cover of `X` with
+Let `f : X ⟶ Y` be an affine morphism and `U` an affine open cover of `Y` whose finite
+intersections are affine. The preimages `f⁻¹ U i` form an affine open cover of `X` with
 affine finite intersections, and the sections of `f_* M` over a finite intersection of members of
 `U` are the sections of `M` over its preimage. So the Čech complex of `f_* M` for `U` is the Čech
 complex of `M` for `f⁻¹ U` (`TauCeti.CategoryTheory.cechComplexCompIso`), and computing both sides
@@ -92,11 +92,11 @@ private lemma subsingleton_cohomologyOn_inf_succ (M : X.Modules) [M.IsQuasicoher
     (s : Finset ι) (hs : s.Nonempty) (k : ℕ) : Subsingleton (cohomologyOn M (k + 1) (s.inf U)) :=
   subsingleton_cohomologyOn_succ_of_isAffineOpen M (hU s hs) k
 
-variable [Finite ι] (hcover : ⨆ i, U i = ⊤)
+variable (hcover : ⨆ i, U i = ⊤)
 
 /-- **Čech cohomology computes the cohomology of a quasi-coherent sheaf.** Let `X` be a scheme,
-`M` a quasi-coherent sheaf of modules on `X`, and `U` a finite family of opens
-covering `X` whose nonempty finite intersections are affine, for instance a finite affine open
+`M` a quasi-coherent sheaf of modules on `X`, and `U` a family of opens
+covering `X` whose nonempty finite intersections are affine, for instance an affine open
 cover when `X` has affine diagonal. Then the Čech cohomology `Hⁿ(U, M)` of the underlying abelian
 sheaf of `M` is isomorphic to `Hⁿ(X, M)`, for every `n`, naturally in `M`
 (`homologyMap_comp_homologyCechComplexIsoCohomology_hom`). -/
@@ -107,7 +107,7 @@ def homologyCechComplexIsoCohomology (M : X.Modules) [M.IsQuasicoherent] (n : �
   TauCeti.Topology.homologyCechComplexIsoH U hcover _
     (subsingleton_cohomologyOn_inf_succ U hU M) n
 
-/-- The comparison of Čech cohomology for a finite cover with affine intersections with the
+/-- The comparison of Čech cohomology for a cover with affine intersections with the
 cohomology of a quasi-coherent sheaf is natural in the sheaf. -/
 @[reassoc]
 theorem homologyMap_comp_homologyCechComplexIsoCohomology_hom {M N : X.Modules}
@@ -118,7 +118,7 @@ theorem homologyMap_comp_homologyCechComplexIsoCohomology_hom {M N : X.Modules}
       (homologyCechComplexIsoCohomology U hU hcover M n).hom ≫ (cohomologyFunctor X n).map f :=
   TauCeti.Topology.homologyMap_comp_homologyCechComplexIsoH_hom U hcover _ _ _ n
 
-/-- The comparison of Čech cohomology for a finite cover with affine intersections with the
+/-- The comparison of Čech cohomology for a cover with affine intersections with the
 cohomology of a quasi-coherent sheaf `M` is linear over the global functions: it carries the map
 on Čech cohomology induced by multiplication by `r` on `M` to scalar multiplication by `r` on
 `Hⁿ(X, M)`. -/
@@ -182,7 +182,7 @@ private lemma subsingleton_cohomologyOn_inf_preimage_succ
     (f.isAffineOpen_finset_inf_preimage (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
       s hs) k
 
-variable [IsAffineHom (pullback.diagonal (terminal.from Y))] [Finite ι] (hcover : ⨆ i, U i = ⊤)
+variable [IsAffineHom (pullback.diagonal (terminal.from Y))] (hcover : ⨆ i, U i = ⊤)
 
 /-- Leray's theorem for the cover of `X` by the preimages `f⁻¹ U i`. -/
 private def homologyCechComplexPreimageIsoCohomology (M : X.Modules) [M.IsQuasicoherent]
@@ -204,7 +204,7 @@ private lemma homologyMap_comp_homologyCechComplexPreimageIsoCohomology_hom {M N
   TauCeti.Topology.homologyMap_comp_homologyCechComplexIsoH_hom _ _ _ _ _ n
 
 /-- **Cohomology along an affine morphism.** Let `f : X ⟶ Y` be an affine morphism of schemes,
-where `Y` has affine diagonal (for instance `Y` separated), and let `U` be a finite family of
+where `Y` has affine diagonal (for instance `Y` separated), and let `U` be a family of
 affine opens covering `Y`. For a quasi-coherent sheaf `M` on `X`, the cohomology `Hⁿ(Y, f_* M)`
 of its direct image is isomorphic to `Hⁿ(X, M)`, naturally in `M`
 (`cohomologyPushforwardIsoOfIsAffineHom_naturality`). Both sides are computed by the same Čech
