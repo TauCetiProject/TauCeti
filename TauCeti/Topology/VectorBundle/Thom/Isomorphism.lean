@@ -207,7 +207,7 @@ theorem singularCohomologyMap_thomPairOverMap_thomMapOver {W W' : Set B} (hW : W
         (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.inclusion hW)) p a) := by
   rw [thomMapOver_apply, thomMapOver_apply,
     TopPair.singularCohomologyMap_singularCup_singularCohomologyMap K _ _ _
-      (fst_thomPairOverMap_comp_thomPairOverProj F E hW), TopCat.singularCohomologyMap_comp]
+      (thomPairOverMap_fst_comp_thomPairOverProj F E hW), TopCat.singularCohomologyMap_comp]
   rfl
 
 /-- **The Thom map restricted to a subset of the base**: restricting `Φ_u(a)` from `B` to `W` gives
@@ -222,7 +222,8 @@ theorem singularCohomologyMap_thomPairOverMap_thomMap (W : Set B) {n p m : ℕ} 
         (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal W)) p a) := by
   rw [thomMap_apply, thomMapOver_apply,
     TopPair.singularCohomologyMap_singularCup_singularCohomologyMap K _ _ _
-      (fst_thomPairOverMap_comp_thomPairProj F E W), TopCat.singularCohomologyMap_comp]
+      (thomPairOverMap_comp_thomPairOverUnivIso_hom_fst_comp_thomPairProj F E W),
+    TopCat.singularCohomologyMap_comp]
   rfl
 
 end TauCeti

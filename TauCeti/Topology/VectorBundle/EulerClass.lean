@@ -233,7 +233,7 @@ theorem thomPairOverProj_apply (W : Set B) (v : π F E ⁻¹' W) :
 /-- For `W ⊆ W'`, the restricted projections commute with the inclusions `E|_W ⟶ E|_{W'}` and
 `W ⟶ W'`. -/
 @[reassoc]
-theorem fst_thomPairOverMap_comp_thomPairOverProj {W W' : Set B} (hW : W ⊆ W') :
+theorem thomPairOverMap_fst_comp_thomPairOverProj {W W' : Set B} (hW : W ⊆ W') :
     TopPair.Hom.fst (thomPairOverMap F E hW) ≫ thomPairOverProj F E W' =
       thomPairOverProj F E W ≫ TopCat.ofHom (ContinuousMap.inclusion hW) :=
   TopCat.ext fun _ ↦ rfl
@@ -241,7 +241,7 @@ theorem fst_thomPairOverMap_comp_thomPairOverProj {W W' : Set B} (hW : W ⊆ W')
 /-- The projection `π : E ⟶ B` restricts along the inclusion `(E|_W, E₀|_W) ⟶ (E, E₀)` to the
 projection `E|_W ⟶ W` followed by the inclusion `W ⟶ B`. -/
 @[reassoc]
-theorem fst_thomPairOverMap_comp_thomPairProj (W : Set B) :
+theorem thomPairOverMap_comp_thomPairOverUnivIso_hom_fst_comp_thomPairProj (W : Set B) :
     TopPair.Hom.fst (thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom) ≫
         thomPairProj F E =
       thomPairOverProj F E W ≫ TopCat.ofHom (ContinuousMap.subtypeVal W) :=
