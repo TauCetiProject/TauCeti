@@ -221,7 +221,7 @@ theorem adjoin_mem_totallyRamifiedOfDegree_two_of_sq_add_mul_add_eq_zero {b c : 
 `X ^ 2 + b X + c` generates an extension of discriminant exponent
 `min (2 v_K(b)) (2 v_K(2) + 1)`. For `b ∈ 𝓂[K]` the polynomial is Eisenstein and the formula is the
 Eisenstein different formula; for a unit `b` of `𝒪[K]` it is not Eisenstein, `x ∈ K` by Hensel's
-lemma (`HenselianLocalRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit`), and both
+lemma (`HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit`), and both
 sides are `0`. -/
 theorem natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero {b c : 𝒪[K]}
     (hc : Irreducible c) {x : SeparableClosure K}
@@ -242,14 +242,12 @@ theorem natCast_discriminantExponent_adjoin_eq_min_of_sq_add_mul_add_eq_zero {b 
       · simp [nsmul_eq_mul]
       · simp [coeff_X, coeff_C, one_add_one_eq_two, nsmul_eq_mul]
   · have hbu := IsLocalRing.notMem_maximalIdeal.mp hb
-    have hcm : c ∈ 𝓂[K] := by
-      by_contra h
-      exact hc.not_isUnit (IsLocalRing.notMem_maximalIdeal.mp h)
+    have hcm : c ∈ 𝓂[K] := (IsLocalRing.mem_maximalIdeal _).mpr hc.not_isUnit
     have e (y : 𝒪[K]) :
         algebraMap 𝒪[K] (SeparableClosure K) y = algebraMap K (SeparableClosure K) y :=
       IsScalarTower.algebraMap_apply 𝒪[K] K (SeparableClosure K) y
-    obtain ⟨s, hs⟩ := HenselianLocalRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit
-      hbu hcm (by rw [e, e]; exact hx)
+    obtain ⟨s, hs⟩ := HenselianRing.mem_range_algebraMap_of_sq_add_mul_add_eq_zero_of_isUnit
+      (hbu.map (Ideal.Quotient.mk 𝓂[K])) hcm (by rw [e, e]; exact hx)
     rw [IntermediateField.adjoin_simple_eq_bot_iff.mpr
       (by rw [IntermediateField.mem_bot, ← hs, e]; exact ⟨_, rfl⟩)]
     simp [addVal_eq_zero_iff.mpr hbu]
