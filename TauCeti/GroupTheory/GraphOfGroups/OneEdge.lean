@@ -217,9 +217,9 @@ noncomputable def equivCoprod (hT : T.Nonempty) :
   (congrArg (pushoutIEquivCoprod f g hf hg) (equivPushoutI_of hT true b)).trans
     (pushoutIEquivCoprod_of_true b)
 
-@[simp] theorem equivCoprod_edge (hT : T.Nonempty) (e : SerreGraph.segment.E) :
+theorem equivCoprod_edge (hT : T.Nonempty) (e : SerreGraph.segment.E) :
     equivCoprod f g hf hg hT (edge T e) = 1 := by
-  simp [equivCoprod]
+  rw [edge_segment_eq_one hT, map_one]
 
 @[simp] theorem equivCoprod_symm_inl (hT : T.Nonempty) (a : A) :
     (equivCoprod f g hf hg hT).symm (Monoid.Coprod.inl a) = of T false a :=
