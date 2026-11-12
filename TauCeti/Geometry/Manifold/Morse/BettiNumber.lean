@@ -101,7 +101,10 @@ theorem IsMorse.exists_cwComplex_criticalCount_eq_bettiNumber_add_coeff (hf : Is
         (bettiNumber k M j + ((1 + X) * ∑ i ∈ Finset.range (finrank ℝ E), monomial i (finrank k
           (LinearMap.range ((cellularChainComplex (univ : Set W) (ModuleCat.of k k)).d (i + 1)
             i).hom))).coeff j : ℕ) := by
-  obtain ⟨W, _, _, _, _, ⟨e⟩, hcount⟩ := hf.exists_finite_cwComplex_homotopyEquiv
+  obtain ⟨W, _, _, _, _, ⟨e⟩, hcell⟩ := hf.exists_finite_cwComplex_homotopyEquiv
+  have hcount (m : ℕ) : ENat.card (cell (univ : Set W) m) = criticalCount I f m := by
+    obtain ⟨c⟩ := hcell m
+    rw [ENat.card_congr c, ENat.card_coe_set_eq, criticalCount_def]
   refine ⟨W, _, ‹_›, ‹_›, ‹_›, ⟨e⟩, hcount, fun k _ j ↦ ?_⟩
   have hfinite (i : ℕ) : Finite (cell (univ : Set W) i) := FiniteType.finite_cell i
   have := hfinite j
