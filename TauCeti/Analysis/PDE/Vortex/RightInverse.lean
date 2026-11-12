@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.InnerProductSpace.WeakSolution
 public import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Distribution.TestFunction.Lp
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.PDE.Vortex.WeightedEstimate
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -257,7 +258,7 @@ private theorem integral_sq_mul_inner_gaugeFixedOperator_eq_add
 /-- For a weight `V` bounded by `B` with logarithmic gradient at most `|c|`,
 `∫ |L_x* (V² η)|² ≤ 2 B⁴ ∫ |L_x* η|² + 8 c² B⁴ ∫ |η|²`. -/
 private theorem integral_norm_sq_gaugeFixedAdjoint_sq_smul_le
-    (hx : ContDiff ℝ 1 x) {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) {B c : ℝ} (hVB : ∀ z, |V z| ≤ B)
+    (hx : ContDiff ℝ 1 x) {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) {B c : ℝ} (hVB : ∀ z, V z ^ 2 ≤ B ^ 2)
     (hdV : ∀ z, ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
     ∫ z, ‖gaugeFixedAdjoint x (fun t ↦ V t ^ 2 • η t) z‖ ^ 2 ∂μ ≤
@@ -287,9 +288,8 @@ private theorem integral_norm_sq_gaugeFixedAdjoint_sq_smul_le
   set σ := gaugeFixedAdjointSymbol ((2 * V z) • fderiv ℝ V z) (η z)
   have ht := norm_add_le (V z ^ 2 • gaugeFixedAdjoint x η z) σ
   rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)] at ht
-  have hB2 : V z ^ 2 ≤ B ^ 2 := sq_le_sq' (abs_le.1 (hVB z)).1 (abs_le.1 (hVB z)).2
   have hB4 : V z ^ 4 ≤ B ^ 4 := by
-    have := pow_le_pow_left₀ (sq_nonneg _) hB2 2
+    have := pow_le_pow_left₀ (sq_nonneg _) (hVB z) 2
     simpa only [← pow_mul] using this
   -- `‖L_x* (V² η)‖ ≤ V² ‖L_x* η‖ + ‖σ‖`, with `‖σ‖² = 4 V² ‖dV‖² ‖η‖² ≤ 4 c² B⁴ ‖η‖²`.
   have h₁ : (V z ^ 2 * ‖gaugeFixedAdjoint x η z‖) ^ 2 ≤ B ^ 4 * ‖gaugeFixedAdjoint x η z‖ ^ 2 := by
@@ -301,8 +301,10 @@ private theorem integral_norm_sq_gaugeFixedAdjoint_sq_smul_le
     have h4 := mul_le_mul_of_nonneg_right hB4
       (by positivity : (0 : ℝ) ≤ 4 * c ^ 2 * ‖η z‖ ^ 2)
     nlinarith
-  have h₃ := pow_le_pow_left₀ (norm_nonneg _) ht 2
-  nlinarith [sq_nonneg (V z ^ 2 * ‖gaugeFixedAdjoint x η z‖ - ‖σ‖)]
+  have h₃ := norm_sub_sq_le_two_mul (V z ^ 2 • gaugeFixedAdjoint x η z + σ) 0 σ
+  rw [sub_zero, add_sub_cancel_right, zero_sub, norm_neg, norm_smul, Real.norm_eq_abs,
+    abs_of_nonneg (sq_nonneg _)] at h₃
+  linarith
 
 /-- The bookkeeping behind the bounded-weight estimate: real inequalities between the weighted
 norms, the pairings and the approximation error `e` combine to the stated bound. -/
@@ -331,16 +333,6 @@ private theorem le_of_weighted_energy_inequalities {Y F e s a P Q R h g n Y₀ t
   have hss : 4 * c ^ 2 / δ * (δ * s) = 4 * c ^ 2 * s := by field_simp
   linear_combination h₈ + 2 * h₄ + 4 * hl + 4 * h₁ + 4 * h₂ + 2 * hδs + 2 * hs + hκ - 2 * hss
 
-omit [μ.IsAddHaarMeasure] in
-/-- A continuous weight bounded by `B` has integrable weighted squared norm against a
-square-integrable field. -/
-private theorem integrable_sq_mul_norm_sq_of_abs_le {V : ℂ → ℝ} (hV : Continuous V) {B : ℝ}
-    (hVB : ∀ z, |V z| ≤ B) {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :
-    Integrable (fun z ↦ V z ^ 2 * ‖g z‖ ^ 2) μ :=
-  hg.norm.integrable_sq.bdd_mul (hV.aestronglyMeasurable.pow 2) (ae_of_all _ fun z ↦
-    (Real.norm_of_nonneg (sq_nonneg _)).trans_le
-      (sq_le_sq' (abs_le.1 (hVB z)).1 (abs_le.1 (hVB z)).2))
-
 /-- One approximation step of the bounded-weight estimate. Let `y` be a weak solution of
 `L_x y = f` and `V` a weight bounded by `B` with logarithmic gradient at most `|c|`, for which
 `L_x L_x*` is weighted-coercive with constant `δ`. Then for every test field `η` and `t > 0`,
@@ -354,7 +346,7 @@ private theorem integral_sq_mul_norm_sq_le_add_mul_integral_norm_sub_sq
     {c₀ : ℝ} (hc₀ : 0 < c₀)
     (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       c₀ * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
-    {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) {B : ℝ} (hVB : ∀ z, |V z| ≤ B) {c : ℝ}
+    {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) {B : ℝ} (hVB : ∀ z, V z ^ 2 ≤ B ^ 2) {c : ℝ}
     (hdV : ∀ z, ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2) {δ : ℝ} (hδ : 0 < δ)
     (hcoer : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       δ * (∫ z, V z ^ 2 * ‖η z‖ ^ 2 ∂μ) ≤
@@ -370,9 +362,8 @@ private theorem integral_sq_mul_norm_sq_le_add_mul_integral_norm_sub_sq
           ∫ z, ‖y z - gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
   set G := gaugeFixedAdjoint x η
   set H := gaugeFixedAdjoint x (fun t ↦ V t ^ 2 • η t)
-  have hB2 (z : ℂ) : V z ^ 2 ≤ B ^ 2 := sq_le_sq' (abs_le.1 (hVB z)).1 (abs_le.1 (hVB z)).2
   have hwt {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :=
-    integrable_sq_mul_norm_sq_of_abs_le hV.continuous hVB hg
+    hg.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable (ae_of_all _ hVB)
   have hG : MemLp G 2 μ := (contDiff_gaugeFixedAdjoint hx hη).continuous.memLp_of_hasCompactSupport
     (hasCompactSupport_gaugeFixedAdjoint hηc)
   have hH : MemLp H 2 μ :=
@@ -405,23 +396,19 @@ private theorem integral_sq_mul_norm_sq_le_add_mul_integral_norm_sub_sq
     rw [← integral_const_mul, ← integral_const_mul,
       ← integral_add (iyG.const_mul _) (iy.const_mul _)]
     refine integral_mono iG ((iyG.const_mul _).add (iy.const_mul _)) fun z ↦ ?_
-    have := norm_sub_le (y z) (y z - G z)
-    rw [sub_sub_cancel] at this
-    nlinarith [norm_nonneg (G z), norm_nonneg (y z - G z), norm_nonneg (y z),
-      sq_nonneg (‖y z‖ - ‖y z - G z‖)]
+    have := norm_sub_sq_le_two_mul (G z) 0 (y z)
+    rw [sub_zero, zero_sub, norm_neg, norm_sub_rev] at this
+    linarith
   have h₈ : ∫ z, V z ^ 2 * ‖y z‖ ^ 2 ∂μ ≤
       2 * B ^ 2 * (∫ z, ‖y z - G z‖ ^ 2 ∂μ) + 2 * ∫ z, V z ^ 2 * ‖G z‖ ^ 2 ∂μ := by
     rw [← integral_const_mul, ← integral_const_mul,
       ← integral_add (iyG.const_mul _) ((hwt hG).const_mul _)]
     refine integral_mono (hwt hy) ((iyG.const_mul _).add ((hwt hG).const_mul _)) fun z ↦ ?_
-    have := norm_sub_le (y z - G z) (- G z)
-    rw [sub_neg_eq_add, sub_add_cancel, norm_neg] at this
-    have h2 : ‖y z‖ ^ 2 ≤ 2 * ‖y z - G z‖ ^ 2 + 2 * ‖G z‖ ^ 2 := by
-      nlinarith [norm_nonneg (G z), norm_nonneg (y z - G z), norm_nonneg (y z),
-        sq_nonneg (‖G z‖ - ‖y z - G z‖)]
+    have h2 := norm_sub_sq_le_two_mul (y z) 0 (G z)
+    rw [sub_zero, zero_sub, norm_neg] at h2
     have := mul_le_mul_of_nonneg_left h2 (sq_nonneg (V z))
-    have := mul_le_mul_of_nonneg_right (hB2 z) (sq_nonneg ‖y z - G z‖)
-    nlinarith
+    have := mul_le_mul_of_nonneg_right (hVB z) (sq_nonneg ‖y z - G z‖)
+    linarith
   exact le_of_weighted_energy_inequalities ht hδ hc₀ hl h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈
 
 /-- **The bounded-weight estimate.** Let `y` be a square-integrable weak solution of `L_x y = f`
@@ -438,7 +425,7 @@ private theorem integral_sq_mul_norm_sq_le_of_forall_exists_lt
     {c₀ : ℝ} (hc₀ : 0 < c₀)
     (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       c₀ * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
-    {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) {B : ℝ} (hVB : ∀ z, |V z| ≤ B) {c : ℝ}
+    {V : ℂ → ℝ} (hV : ContDiff ℝ 2 V) {B : ℝ} (hVB : ∀ z, V z ^ 2 ≤ B ^ 2) {c : ℝ}
     (hdV : ∀ z, ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2) {δ : ℝ} (hδ : 0 < δ)
     (hcoer : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       δ * (∫ z, V z ^ 2 * ‖η z‖ ^ 2 ∂μ) ≤
@@ -446,7 +433,6 @@ private theorem integral_sq_mul_norm_sq_le_of_forall_exists_lt
     ∫ z, V z ^ 2 * ‖y z‖ ^ 2 ∂μ ≤
       (4 / δ + 8 * c ^ 2 / δ ^ 2) * ∫ z, V z ^ 2 * ‖f z‖ ^ 2 ∂μ := by
   -- Nonnegativity facts used by `positivity` and `nlinarith` below.
-  have : 0 ≤ B := (abs_nonneg _).trans (hVB 0)
   have : 0 ≤ 8 + 16 * c ^ 2 / δ := by positivity
   have : 0 ≤ 2 * B ^ 4 + 8 * c ^ 2 * B ^ 4 / c₀ := by positivity
   have : 0 ≤ ∫ z, ‖y z‖ ^ 2 ∂μ := integral_nonneg fun z ↦ by positivity
@@ -477,26 +463,33 @@ private theorem integral_sq_mul_norm_sq_le_of_forall_exists_lt
     exact mul_le_of_le_one_right hε.le ((div_le_one (by positivity)).2 (by linarith))
   linarith
 
-/-- The truncated weight `V = W / (1 + ε W)`, `W = exp(c √(b + |z|²))`, `ε > 0`, is nonnegative,
-at most `W` and at most `1 / ε`, and `|dV|² ≤ c² V²` since its logarithmic gradient is at most
-that of `W` (`TauCeti.norm_fderiv_exp_div_one_add_mul_exp_le`). -/
-private theorem exp_div_one_add_mul_exp_bounds (c : ℝ) {b ε : ℝ} (hb : 0 < b) (hε : 0 < ε)
-    (z : ℂ) :
-    0 ≤ Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ∧
-      Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ≤
-        Real.exp (c * √(b + ‖z‖ ^ 2)) ∧
-      |Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2)))| ≤ 1 / ε ∧
-      ‖fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(b + ‖t‖ ^ 2)) /
-          (1 + ε * Real.exp (c * √(b + ‖t‖ ^ 2)))) z‖ ^ 2 ≤
-        c ^ 2 * (Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2)))) ^ 2 := by
-  have hW := Real.exp_pos (c * √(b + ‖z‖ ^ 2))
-  have hV₀ : 0 ≤ Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) := by
-    positivity
-  refine ⟨hV₀, div_le_self hW.le (le_add_of_nonneg_right (by positivity)), ?_,
-    norm_fderiv_sq_le_of_norm_fderiv_le c hb.le hV₀
-      (norm_fderiv_exp_div_one_add_mul_exp_le c hb hε.le z)⟩
-  rw [abs_of_nonneg hV₀, div_le_div_iff₀ (by positivity) hε]
-  linarith [mul_comm (Real.exp (c * √(b + ‖z‖ ^ 2))) ε]
+omit [μ.IsAddHaarMeasure] in
+/-- **Fatou's lemma for truncated weights.** A bound on `∫ V_n² u` for all the truncations
+`V_n = W / (1 + W / (n + 1))` of a weight `W` holds for `W` itself, since `V_n → W` pointwise. -/
+private theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
+    {W u : ℂ → ℝ} (hW : AEMeasurable W μ) (hu : AEMeasurable u μ) {C : ℝ≥0∞}
+    (h : ∀ n : ℕ,
+      ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z) ∂μ ≤ C) :
+    ∫⁻ z, ENNReal.ofReal (W z ^ 2 * u z) ∂μ ≤ C := by
+  have hlim (z : ℂ) : Tendsto (fun n : ℕ ↦
+      ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z)) atTop
+      (𝓝 (ENNReal.ofReal (W z ^ 2 * u z))) := by
+    have hc : ContinuousAt (fun ε : ℝ ↦ ENNReal.ofReal ((W z / (1 + ε * W z)) ^ 2 * u z)) 0 :=
+      ENNReal.continuous_ofReal.continuousAt.comp
+        (((continuousAt_const.div (continuousAt_const.add
+          (continuousAt_id.mul continuousAt_const)) (by simp)).pow 2).mul continuousAt_const)
+    have h := hc.tendsto
+    simp only [zero_mul, add_zero, div_one] at h
+    exact h.comp (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+  calc ∫⁻ z, ENNReal.ofReal (W z ^ 2 * u z) ∂μ
+      = ∫⁻ z, liminf (fun n : ℕ ↦
+          ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z)) atTop ∂μ :=
+        lintegral_congr fun z ↦ (hlim z).liminf_eq.symm
+    _ ≤ liminf (fun n : ℕ ↦
+          ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z) ∂μ) atTop :=
+        lintegral_liminf_le' fun n ↦ (((hW.div (aemeasurable_const.add
+          (aemeasurable_const.mul hW))).pow_const 2).mul hu).ennreal_ofReal
+    _ ≤ C := liminf_le_of_frequently_le' (Frequently.of_forall h)
 
 /-- **The exponentially weighted estimate for the weak right inverse.** Let `x` be a `C¹`
 solution of the plane vortex equation with `|α| → 1` at infinity, let `ρ(z) = √(1 + |z|²)` and
@@ -544,49 +537,32 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
   set W : ℂ → ℝ := fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2))
   have hy := Lp.memLp y
   have hf := Lp.memLp f
-  have hmeas {V : ℂ → ℝ} (hV : Continuous V) {g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
-      AEMeasurable (fun z ↦ ENNReal.ofReal (V z ^ 2 * ‖g z‖ ^ 2)) μ :=
-    (((hV.aestronglyMeasurable.pow 2).mul
-      ((Lp.aestronglyMeasurable g).norm.pow 2)).aemeasurable).ennreal_ofReal
   -- The estimate for the bounded weights `V_n = W / (1 + W / (n + 1))`.
   set V : ℕ → ℂ → ℝ := fun n z ↦ W z / (1 + 1 / ((n : ℝ) + 1) * W z)
   have hVn (n : ℕ) : ∫⁻ z, ENNReal.ofReal (V n z ^ 2 * ‖y z‖ ^ 2) ∂μ ≤
       ENNReal.ofReal K₀ * ∫⁻ z, ENNReal.ofReal (W z ^ 2 * ‖f z‖ ^ 2) ∂μ := by
     have hε : 0 < 1 / ((n : ℝ) + 1) := by positivity
     have hV : ContDiff ℝ 2 (V n) := contDiff_exp_div_one_add_mul_exp c hb₀ hε.le
-    have hVz := exp_div_one_add_mul_exp_bounds c hb₀ hε
+    have hV₀ (z : ℂ) : 0 ≤ V n z := exp_div_one_add_mul_exp_nonneg c hε.le z
+    have hVB (z : ℂ) : V n z ^ 2 ≤ (1 / (1 / ((n : ℝ) + 1))) ^ 2 :=
+      pow_le_pow_left₀ (hV₀ z) (exp_div_one_add_mul_exp_le_one_div c hε z) 2
     have h := integral_sq_mul_norm_sq_le_of_forall_exists_lt hx hy hf hweak
       (fun ε hε ↦ exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt hx.continuous horth hε) hc₀
-      hgap hV (fun z ↦ (hVz z).2.2.1) (fun z ↦ (hVz z).2.2.2) hδ
-      (hcoer (V n) hV (fun z ↦ (hVz z).1) (norm_fderiv_exp_div_one_add_mul_exp_le c hb₀ hε.le))
+      hgap hV hVB (fun z ↦ norm_fderiv_sq_le_of_norm_fderiv_le c hb₀.le (hV₀ z)
+        (norm_fderiv_exp_div_one_add_mul_exp_le c hb₀ hε.le z)) hδ
+      (hcoer (V n) hV hV₀ (norm_fderiv_exp_div_one_add_mul_exp_le c hb₀ hε.le))
     have hwt {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :=
-      integrable_sq_mul_norm_sq_of_abs_le hV.continuous (fun z ↦ (hVz z).2.2.1) hg
+      hg.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable (ae_of_all _ hVB)
     rw [← ofReal_integral_eq_lintegral_ofReal (hwt hy) (ae_of_all _ fun z ↦ by positivity)]
     refine (ENNReal.ofReal_le_ofReal h).trans ?_
     rw [ENNReal.ofReal_mul hK₀,
       ofReal_integral_eq_lintegral_ofReal (hwt hf) (ae_of_all _ fun z ↦ by positivity)]
     gcongr with z
-    exact (hVz z).2.1
+    exact exp_div_one_add_mul_exp_le_exp c hε.le z
   -- Fatou's lemma as `n → ∞`, since `V_n → W` pointwise.
-  have hWy : ∫⁻ z, ENNReal.ofReal (W z ^ 2 * ‖y z‖ ^ 2) ∂μ ≤
-      ENNReal.ofReal K₀ * ∫⁻ z, ENNReal.ofReal (W z ^ 2 * ‖f z‖ ^ 2) ∂μ := by
-    have hlimV (z : ℂ) : Tendsto (fun n ↦ ENNReal.ofReal (V n z ^ 2 * ‖y z‖ ^ 2)) atTop
-        (𝓝 (ENNReal.ofReal (W z ^ 2 * ‖y z‖ ^ 2))) := by
-      have hc : ContinuousAt (fun ε : ℝ ↦
-          ENNReal.ofReal ((W z / (1 + ε * W z)) ^ 2 * ‖y z‖ ^ 2)) 0 :=
-        ENNReal.continuous_ofReal.continuousAt.comp
-          (((continuousAt_const.div (continuousAt_const.add
-            (continuousAt_id.mul continuousAt_const)) (by simp)).pow 2).mul continuousAt_const)
-      have h := hc.tendsto
-      simp only [zero_mul, add_zero, div_one] at h
-      exact (h.comp (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))).congr fun n ↦ rfl
-    calc ∫⁻ z, ENNReal.ofReal (W z ^ 2 * ‖y z‖ ^ 2) ∂μ
-        = ∫⁻ z, liminf (fun n ↦ ENNReal.ofReal (V n z ^ 2 * ‖y z‖ ^ 2)) atTop ∂μ :=
-          lintegral_congr fun z ↦ (hlimV z).liminf_eq.symm
-      _ ≤ liminf (fun n ↦ ∫⁻ z, ENNReal.ofReal (V n z ^ 2 * ‖y z‖ ^ 2) ∂μ) atTop :=
-          lintegral_liminf_le' fun n ↦
-            hmeas (contDiff_exp_div_one_add_mul_exp (n := 0) c hb₀ (by positivity)).continuous
-      _ ≤ _ := liminf_le_of_frequently_le' (Frequently.of_forall hVn)
+  have hWy := lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
+    (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c hb₀).continuous.aemeasurable
+    ((Lp.aestronglyMeasurable y).norm.pow 2).aemeasurable hVn
   -- The weights `w` and `W` are comparable.
   have hcmp {u v : ℂ → ℝ} (huv : ∀ z, u z ^ 2 ≤ E * v z ^ 2)
       (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :

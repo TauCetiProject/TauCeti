@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 
@@ -170,13 +171,11 @@ theorem integral_sq_mul_norm_sq_gaugeFixedAdjoint_le
       rw [hl, add_sub_cancel_right]
     have hn : ‖w z • gaugeFixedAdjoint x η z‖ ^ 2 = w z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 := by
       rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-    have ht := norm_sub_le (gaugeFixedAdjoint x (fun t ↦ w t • η t) z)
-      (gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z))
-    rw [← he] at ht
-    have h2 := pow_le_pow_left₀ (norm_nonneg _) ht 2
+    have h2 := norm_sub_sq_le_two_mul (gaugeFixedAdjoint x (fun t ↦ w t • η t) z)
+      (gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z)) 0
+    rw [← he, hn, sub_zero, sub_zero] at h2
     simp only [Pi.add_apply]
-    nlinarith [sq_nonneg (‖gaugeFixedAdjoint x (fun t ↦ w t • η t) z‖ -
-      ‖gaugeFixedAdjointSymbol (fderiv ℝ w z) (η z)‖)]
+    linarith
   rw [integral_add' (iS.const_mul 2) (iD.const_mul 2), integral_const_mul,
     integral_const_mul, integral_norm_sq_gaugeFixedAdjoint_fun_smul hx hη hc hw] at hpt
   have hD := integral_mono iD ((hi (f := fun z ↦ w z ^ 2) (hw.continuous.pow 2)).const_mul

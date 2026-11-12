@@ -17,8 +17,8 @@ For `b > 0`, the weight `exp(c √(b + ‖z‖²))` is smooth on any real inner 
 norm of its derivative is `|c| ‖z‖ / √(b + ‖z‖²)` times the weight, so it is bounded by `|c|`
 times the weight, and by an arbitrarily small multiple of the weight on a fixed ball once `b` is
 large. The usual choice is `b = 1`, and changing `b` changes the weight by at most a constant
-factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are bounded and smooth, with
-logarithmic gradient at most that of `W`.
+factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are smooth, lie between `0` and
+`min W (1 / ε)`, and have logarithmic gradient at most that of `W`.
 -/
 
 public section
@@ -88,6 +88,26 @@ theorem contDiff_exp_div_one_add_mul_exp (c : ℝ) (hb : 0 < b) {ε : ℝ} (hε 
       (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2)))) :=
   have hW := contDiff_exp_mul_sqrt_add_norm_sq (E := E) (n := n) c hb
   hW.div (contDiff_const.add (contDiff_const.mul hW)) fun _ ↦ by positivity
+
+omit [InnerProductSpace ℝ E] in
+/-- The truncated radial exponential weight `W / (1 + ε W)`, `ε ≥ 0`, is nonnegative. -/
+theorem exp_div_one_add_mul_exp_nonneg (c : ℝ) {ε : ℝ} (hε : 0 ≤ ε) (z : E) :
+    0 ≤ Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) := by
+  positivity
+
+omit [InnerProductSpace ℝ E] in
+/-- The truncated radial exponential weight `W / (1 + ε W)`, `ε ≥ 0`, is at most `W`. -/
+theorem exp_div_one_add_mul_exp_le_exp (c : ℝ) {ε : ℝ} (hε : 0 ≤ ε) (z : E) :
+    Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ≤
+      Real.exp (c * √(b + ‖z‖ ^ 2)) :=
+  div_le_self (Real.exp_pos _).le (le_add_of_nonneg_right (by positivity))
+
+omit [InnerProductSpace ℝ E] in
+/-- The truncated radial exponential weight `W / (1 + ε W)`, `ε > 0`, is bounded by `1 / ε`. -/
+theorem exp_div_one_add_mul_exp_le_one_div (c : ℝ) {ε : ℝ} (hε : 0 < ε) (z : E) :
+    Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ≤ 1 / ε := by
+  rw [div_le_div_iff₀ (by positivity) hε]
+  linarith [mul_comm (Real.exp (c * √(b + ‖z‖ ^ 2))) ε]
 
 /-- The truncated radial exponential weight `W / (1 + ε W)`, `W = exp(c √(b + ‖z‖²))`, `ε ≥ 0`,
 has logarithmic gradient at most that of `W`, namely `|c| ‖z‖ / √(b + ‖z‖²)`. -/
