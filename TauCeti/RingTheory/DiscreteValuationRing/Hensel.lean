@@ -313,7 +313,7 @@ theorem card_roots_eq_of_addVal_lt_coeff_sub [HenselianLocalRing A] {f g U V : A
     (hβ : U * f + V * derivative f = C β)
     (hfg : ∀ i, addVal A β + addVal A β < addVal A ((g - f).coeff i)) :
     g.roots.card = f.roots.card := by
-  set b := addVal A β with hb_def
+  set b := addVal A β
   have hb : b ≠ ⊤ := by
     intro htop
     have := hfg 0

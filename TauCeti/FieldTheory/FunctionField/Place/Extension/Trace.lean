@@ -352,7 +352,7 @@ theorem algebraMap_trace_sub_mem_filtration (hF' : IsFunctionField k' F')
       z ∈ Q'.filtration (ramificationIdx F Q' * m)) :
     algebraMap F F' (Algebra.trace F F' z) - z ∈ P'.filtration m := by
   classical
-  set P := P'.restrict k F with hPdef
+  set P := P'.restrict k F
   -- A uniformizer `x` of `P`; it is also one at `P'`.
   obtain ⟨x, hx⟩ := P.exists_isUniformizer
   have hxo : P.ord x = 1 := P.isUniformizer_iff_ord_eq_one.mp hx
@@ -433,7 +433,7 @@ private theorem exists_ringHom_powerSeries (m : ℕ)
   let ιS : integralClosure (P'.restrict k F).integers F' →+* P'.integers :=
     (algebraMap _ F').codRestrict P'.integers
       (algebraMap_mem_integers_of_mem_integralClosure k F P')
-  refine ⟨(P'.powerSeriesExpansionResidueField ht').toRingHom.comp ιS, fun s hs ↦ rfl,
+  refine ⟨(P'.powerSeriesExpansionResidueField ht').toRingHom.comp ιS, fun s _ ↦ rfl,
     fun s ↦ (P'.trunc_powerSeriesExpansionResidueField_eq_zero_iff ht' m ⟨s, _⟩).symm,
     fun c ↦ ?_, ?_⟩
   · have h : ιS (algebraMap _ (integralClosure (P'.restrict k F).integers F')
@@ -727,7 +727,7 @@ theorem residue_trace (hF' : IsFunctionField k F') (hP : P.degree = 1) {v : F'}
     (hv : ∀ Q' : Place k F', Q'.restrict k F = P → Q' ≠ P' → v ∈ Q'.integers) :
     P.residue hP ht (Algebra.trace F F' v) = P'.traceResidue ht' v := by
   set n := (-P'.ord v).toNat
-  have ht0 : t ≠ 0 := by
+  have _ : t ≠ 0 := by
     rintro rfl
     simp at ht
   -- `t ^ (n + 1) v` is regular at `P'` and vanishes to order `e(Q' ∣ P) (n + 1)` at the others.

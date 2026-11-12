@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+public import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # The Galois group of a normal subextension as a quotient
@@ -28,16 +29,16 @@ at an algebraic closure, comparing a quotient of `Field.absoluteGaloisGroup K` w
 in `TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient`.
 
 Normality of `M/F` alone makes `M.fixingSubgroup` a normal subgroup of `Gal(E/F)`, since it is the
-kernel of restriction; Mathlib's `IsGalois.fixingSubgroup_normal_of_isGalois` asks in addition that
-`E/F` and `M/F` be separable, which an algebraic closure in positive characteristic need not be.
+kernel of restriction (`IntermediateField.fixingSubgroup_normal`, in
+`TauCeti.FieldTheory.Galois.Restriction`); Mathlib's `IsGalois.fixingSubgroup_normal_of_isGalois`
+asks in addition that `E/F` and `M/F` be separable, which an algebraic closure in positive
+characteristic need not be.
 The same separability is what keeps `InfiniteGalois.normalAutEquivQuotient`, which identifies the
 quotient of `Gal(E/F)` by a closed normal subgroup with the Galois group of its fixed field, from
 covering an algebraic closure; that identification is also one of abstract groups only.
 
 ## Main results
 
-* `IntermediateField.fixingSubgroup_normal`: the fixing subgroup of a normal intermediate field is
-  a normal subgroup.
 * `TauCeti.quotientFixingSubgroupEquiv`: the isomorphism of topological groups
   `Gal(E/F) ⧸ M.fixingSubgroup ≃ₜ* Gal(M/F)`, for `E/F` and `M/F` normal.
 -/
@@ -49,13 +50,7 @@ noncomputable section
 namespace TauCeti
 
 variable (F E : Type*) [Field F] [Field E] [Algebra F E] (M : IntermediateField F E) [Normal F M]
-
-/-- **The fixing subgroup of a normal intermediate field is normal**, being the kernel of
-restriction. Neither separability nor normality of the ambient extension `E/F` is used. -/
-instance _root_.IntermediateField.fixingSubgroup_normal : M.fixingSubgroup.Normal :=
-  M.restrictNormalHom_ker (K := F) (L := E) ▸ (AlgEquiv.restrictNormalHom M).normal_ker
-
-variable [Normal F E]
+  [Normal F E]
 
 -- The multiplicative equivalence is named so that the structure field of
 -- `quotientFixingSubgroupEquiv` and the continuity proof below refer to one and the same term

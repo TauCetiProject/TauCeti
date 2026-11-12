@@ -155,7 +155,7 @@ theorem normalize_reflectRecords_reverse_map_neg_reflectRecords (hx : f x = 2) (
     rw [List.map_cons, List.reverse_cons]
     by_cases hr : 0 < min (f v + listMinHeight f l) c
     · -- The first segment is cut at height `r` and its initial piece is reflected.
-      set r := min (f v + listMinHeight f l) c with hr_def
+      set r := min (f v + listMinHeight f l) c
       have hrc : r ≤ c := min_le_right _ _
       have hrl : r ≤ f v + listMinHeight f l := min_le_left _ _
       have hrv : r ≤ f v := by linarith

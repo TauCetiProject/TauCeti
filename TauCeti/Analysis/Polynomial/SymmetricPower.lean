@@ -58,8 +58,8 @@ Both halves are elementary, but neither is formal:
   polynomial to every point induces an analytic map in coefficient coordinates, including at
   tuples where points collide.
 
-Lane F4.1 of the analytic Heegaard Floer roadmap opens with "`Sym^g(Σ)` geometry: smooth complex
-structure (elementary symmetric functions)", after Ozsváth--Szabó
+In Heegaard Floer theory the symmetric product `Sym^g(Σ)` of a surface carries the complex
+structure given by elementary symmetric functions, after Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1): a holomorphic coordinate on the
 surface identifies a neighbourhood in `Sym^g(Σ)` with an open subset of `Sym^g(ℂ)`, and the chart
 below is what makes that a chart on a topological manifold; the charted structure is assembled
