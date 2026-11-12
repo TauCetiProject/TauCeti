@@ -8,27 +8,29 @@ module
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.RingTheory.AdicCompletion.Finite
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
-public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.Henselian.Integral
+import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 
 /-!
 # Integral closures of henselian discrete valuation rings
 
-The integral closure of a henselian DVR in a finite separable extension of its fraction field is
-again a DVR. If the base DVR is complete, its integral closure is complete at its own maximal
-ideal. No finiteness or perfection of the residue field, and no normality of the field extension,
-is needed.
+The integral closure of a henselian DVR in a finite extension of its fraction field is again
+a DVR, without a separability assumption. For finite separable extensions, completeness of the
+base DVR implies completeness of its integral closure at its own maximal ideal. No finiteness
+or perfection of the residue field, and no normality of the field extension, is needed.
 
 These results provide integer rings for ramification theory over complete discretely valued
 fields with arbitrary residue fields. Finiteness, freeness and rank are already supplied by
 Mathlib's `IsIntegralClosure.finite`, `IsIntegralClosure.module_free` and
-`IsIntegralClosure.rank`; the additional step here is locality. A finite domain over a henselian
-local ring is local, and a local Dedekind domain that is not a field is a DVR. Completeness then
-passes to the finite local algebra.
+`IsIntegralClosure.rank`; the additional step here is locality. A domain integral over a
+henselian local ring is local, and a local Dedekind domain that is not a field is a DVR.
+Krull–Akizuki supplies Dedekindness even without separability. Completeness passes to finite
+local algebras, also over integrally closed Noetherian local bases that are not DVRs.
 
-The general theorem allows any model of the integral closure and any chosen fraction field.
-Instances for `integralClosure A L` use `FractionRing A`, as do Mathlib's integral-closure
-instances.
+`TauCeti.IsIntegralClosure.isDiscreteValuationRing` and
+`TauCeti.IsIntegralClosure.isAdicComplete` allow any model of the integral closure and any chosen
+fraction field. Instances for `integralClosure A L` use `FractionRing A`, as do Mathlib's
+integral-closure instances.
 
 ## References
 
@@ -39,45 +41,56 @@ public section
 
 namespace TauCeti
 
-/-- The integral closure of a henselian DVR in a finite separable extension of its fraction
-field is a DVR. The integral closure may be any ring satisfying `IsIntegralClosure`. -/
-theorem isDiscreteValuationRing_of_isIntegralClosure
+/-- The integral closure of a henselian DVR in a finite extension of its fraction field is a
+DVR, without a separability assumption. The closure may be any model of `IsIntegralClosure`. -/
+theorem IsIntegralClosure.isDiscreteValuationRing
     (A K L B : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-    [HenselianLocalRing A] [Field K] [Algebra A K] [IsFractionRing A K]
-    [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
+    [HenselianRing A (IsLocalRing.maximalIdeal A)] [Field K] [Algebra A K] [IsFractionRing A K]
+    [Field L] [Algebra K L] [FiniteDimensional K L]
     [Algebra A L] [IsScalarTower A K L]
     [CommRing B] [IsDomain B] [Algebra A B] [Algebra B L] [IsScalarTower A B L]
     [IsIntegralClosure B A L] : IsDiscreteValuationRing B := by
-  have := IsIntegralClosure.finite A K L B
   have := IsIntegralClosure.isDedekindDomain A K L B
-  have := IsIntegralClosure.isIntegral_algebra A L (A := B)
-  have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
-  have := IsIntegralClosure.isTorsionFree A L (A := B)
-  have := isLocalRing_of_finite_of_henselianRing A B
+  have := _root_.IsIntegralClosure.isIntegral_algebra A L (A := B)
+  have := isLocalRing_of_isDomain_of_isIntegral_of_henselianRing A B
   apply IsDiscreteValuationRing.of_krullDimLE_one
   intro hB
   exact IsDiscreteValuationRing.not_isField A
-    (isField_of_isIntegral_of_isField (FaithfulSMul.algebraMap_injective A B) hB)
+    (isField_of_isIntegral_of_isField (algebraMap_injective_of_field_isFractionRing A B K L) hB)
 
-end TauCeti
+/-- A local integral closure of a complete integrally closed Noetherian local domain in a
+finite separable extension of its fraction field is complete at its own maximal ideal. -/
+theorem IsIntegralClosure.isAdicComplete
+    (A K L B : Type*) [CommRing A] [IsDomain A] [IsIntegrallyClosed A] [IsNoetherianRing A]
+    [IsLocalRing A] [IsAdicComplete (IsLocalRing.maximalIdeal A) A]
+    [Field K] [Algebra A K] [IsFractionRing A K]
+    [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
+    [Algebra A L] [IsScalarTower A K L]
+    [CommRing B] [IsLocalRing B] [Algebra A B] [Algebra B L] [IsScalarTower A B L]
+    [IsIntegralClosure B A L] : IsAdicComplete (IsLocalRing.maximalIdeal B) B := by
+  have := _root_.IsIntegralClosure.finite A K L B
+  exact _root_.IsAdicComplete.of_finite_of_isLocalRing A B
 
 namespace integralClosure
 
-variable (A L : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
+variable (A L : Type*) [CommRing A] [IsDomain A]
   [Field L] [Algebra A L] [Algebra (FractionRing A) L]
   [IsScalarTower A (FractionRing A) L] [FiniteDimensional (FractionRing A) L]
-  [Algebra.IsSeparable (FractionRing A) L]
 
-/-- The integral closure of a henselian DVR in a finite separable field extension is a DVR. -/
-instance isDiscreteValuationRing [HenselianLocalRing A] :
+/-- The integral closure of a henselian DVR in a finite field extension is a DVR, without a
+separability assumption. -/
+instance isDiscreteValuationRing [IsDiscreteValuationRing A]
+    [HenselianRing A (IsLocalRing.maximalIdeal A)] :
     IsDiscreteValuationRing (integralClosure A L) :=
-  TauCeti.isDiscreteValuationRing_of_isIntegralClosure A (FractionRing A) L _
+  IsIntegralClosure.isDiscreteValuationRing A (FractionRing A) L _
 
-/-- The integral closure of a complete DVR in a finite separable field extension is complete
-for its maximal ideal, not merely for the ideal extended from the base. -/
-instance isAdicComplete [IsAdicComplete (IsLocalRing.maximalIdeal A) A] :
-    IsAdicComplete (IsLocalRing.maximalIdeal (integralClosure A L)) (integralClosure A L) := by
-  have := IsIntegralClosure.finite A (FractionRing A) L (integralClosure A L)
-  exact IsAdicComplete.of_finite_of_isLocalRing A _
+/-- The integral closure of a complete integrally closed Noetherian local domain in a finite
+separable field extension is complete at its own maximal ideal. -/
+instance isAdicComplete [IsIntegrallyClosed A] [IsNoetherianRing A] [IsLocalRing A]
+    [IsAdicComplete (IsLocalRing.maximalIdeal A) A] [Algebra.IsSeparable (FractionRing A) L] :
+    IsAdicComplete (IsLocalRing.maximalIdeal (integralClosure A L)) (integralClosure A L) :=
+  IsIntegralClosure.isAdicComplete A (FractionRing A) L _
 
 end integralClosure
+
+end TauCeti

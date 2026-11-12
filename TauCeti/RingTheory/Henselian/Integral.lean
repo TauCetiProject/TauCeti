@@ -42,8 +42,10 @@ pairs by their finite algebras, and by their integral algebras.
   the maximal ideal, is the image of an idempotent.
 * `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
   `R`-algebra, then `(S, IS)` is Henselian.
-* `TauCeti.isLocalRing_of_finite_of_henselianRing`: a finite domain over a henselian local ring
-  is local.
+* `TauCeti.isLocalRing_of_isDomain_of_isIntegral_of_henselianRing`: a domain integral over a
+  henselian local ring is local.
+* `TauCeti.isLocalRing_of_isIntegral_of_forall_isIdempotentElem`: an integral algebra over a
+  henselian local ring is local if it is nontrivial and has only trivial idempotents.
 * `TauCeti.HenselianLocalRing.of_finite`: a finite local algebra over a henselian local ring
   is henselian.
 * `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
@@ -179,19 +181,47 @@ end Ideal
 
 namespace TauCeti
 
-/-- A domain finite over a henselian local ring is local. In particular, this applies to the
-integral closure in a finite separable extension of the fraction field of a henselian DVR. -/
-theorem isLocalRing_of_finite_of_henselianRing (R S : Type*) [CommRing R] [IsLocalRing R]
-    [HenselianRing R (IsLocalRing.maximalIdeal R)] [CommRing S] [IsDomain S] [Algebra R S]
-    [Module.Finite R S] : IsLocalRing S := by
+/-- A nontrivial finite algebra over a henselian local ring is local if its only idempotents
+are zero and one. -/
+theorem isLocalRing_of_finite_of_forall_isIdempotentElem (R S : Type*) [CommRing R]
+    [IsLocalRing R] [HenselianRing R (IsLocalRing.maximalIdeal R)] [CommRing S] [Nontrivial S]
+    [Algebra R S] [Module.Finite R S]
+    (h : ∀ e : S, IsIdempotentElem e → e = 0 ∨ e = 1) : IsLocalRing S := by
   let J := (IsLocalRing.maximalIdeal R).map (algebraMap R S)
   have : IsArtinianRing (S ⧸ J) := by
     let := Ideal.Quotient.field (IsLocalRing.maximalIdeal R)
     have : Module.Finite (R ⧸ IsLocalRing.maximalIdeal R) (S ⧸ J) :=
       .of_restrictScalars_finite R _ _
     exact IsArtinianRing.of_finite (R ⧸ IsLocalRing.maximalIdeal R) _
-  exact HenselianRing.isLocalRing_of_forall_isIdempotentElem J fun e he ↦
+  exact HenselianRing.isLocalRing_of_forall_isIdempotentElem J h
+
+/-- A nontrivial integral algebra over a henselian local ring is local if its only idempotents
+are zero and one. -/
+theorem isLocalRing_of_isIntegral_of_forall_isIdempotentElem (R S : Type*) [CommRing R]
+    [IsLocalRing R] [HenselianRing R (IsLocalRing.maximalIdeal R)] [CommRing S] [Nontrivial S]
+    [Algebra R S] [Algebra.IsIntegral R S]
+    (h : ∀ e : S, IsIdempotentElem e → e = 0 ∨ e = 1) : IsLocalRing S := by
+  refine IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun s ↦ ?_
+  let T := Algebra.adjoin R {s}
+  have : Module.Finite R T :=
+    Algebra.finite_adjoin_simple_of_isIntegral (Algebra.IsIntegral.isIntegral s)
+  have : IsLocalRing T := isLocalRing_of_finite_of_forall_isIdempotentElem R T fun e he ↦
+    (h e (he.map T.val)).imp Subtype.ext Subtype.ext
+  exact (IsLocalRing.isUnit_or_isUnit_one_sub_self
+    (⟨s, Algebra.self_mem_adjoin_singleton R s⟩ : T)).imp (·.map T.val) (·.map T.val)
+
+/-- A domain integral over a henselian local ring is local. -/
+theorem isLocalRing_of_isDomain_of_isIntegral_of_henselianRing (R S : Type*) [CommRing R]
+    [IsLocalRing R] [HenselianRing R (IsLocalRing.maximalIdeal R)] [CommRing S] [IsDomain S]
+    [Algebra R S] [Algebra.IsIntegral R S] : IsLocalRing S :=
+  isLocalRing_of_isIntegral_of_forall_isIdempotentElem R S fun _ he ↦
     IsIdempotentElem.iff_eq_zero_or_one.mp he
+
+/-- The integral closure of a henselian local ring in a domain is local. -/
+instance integralClosure.isLocalRing (R S : Type*) [CommRing R] [IsLocalRing R]
+    [HenselianRing R (IsLocalRing.maximalIdeal R)] [CommRing S] [IsDomain S] [Algebra R S] :
+    IsLocalRing (integralClosure R S) :=
+  isLocalRing_of_isDomain_of_isIntegral_of_henselianRing R _
 
 /-- A finite local algebra over a henselian local ring is henselian. -/
 theorem HenselianLocalRing.of_finite (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]

@@ -25,7 +25,7 @@ finite `R`-module. It is therefore Henselian along the extension of the maximal 
 (`Ideal.henselianRing_map_of_isIntegral`), and its reduction is a finite-dimensional algebra over
 the residue field. Idempotents of `R[f]` are idempotents of `End_A(M)`, so indecomposability of `M`
 leaves `R[f]` only the trivial ones, and `R[f]` is local by
-`TauCeti.HenselianRing.isLocalRing_of_forall_isIdempotentElem`. So `f` or `1 - f` is a unit.
+`TauCeti.isLocalRing_of_finite_of_forall_isIdempotentElem`. So `f` or `1 - f` is a unit.
 
 The Henselian hypothesis is stated as `HenselianRing R (maximalIdeal R)`, which holds both for a
 ring with Mathlib's `HenselianLocalRing` and for a local ring complete along its maximal ideal.
@@ -77,18 +77,11 @@ theorem isLocalRing_end_of_isIndecomposable_of_henselianRing {M : Type*} [AddCom
         commutes' _ := rfl }
     exact (isIntegral_algHom_iff ρ fun _ _ h ↦ LinearMap.restrictScalars_injective R h).mp
       (Algebra.IsIntegral.isIntegral (ρ f))
-  -- The commutative subalgebra `S = R[f]` is finite over `R`, so Henselian along `J = 𝔪 S`, with
-  -- Artinian quotient `S ⧸ J`.
+  -- The commutative subalgebra `S = R[f]` is finite over `R`.
   let S := Algebra.adjoin R {f}
   have : Module.Finite R S := Algebra.finite_adjoin_simple_of_isIntegral hint
-  let J : Ideal S := (maximalIdeal R).map (algebraMap R S)
-  have : IsArtinianRing (S ⧸ J) := by
-    let := Ideal.Quotient.field (maximalIdeal R)
-    have : Module.Finite (R ⧸ maximalIdeal R) (S ⧸ J) :=
-      .of_restrictScalars_finite R _ _
-    exact IsArtinianRing.of_finite (R ⧸ maximalIdeal R) (S ⧸ J)
   -- Its idempotents are idempotents of `End_A(M)`, hence trivial, so `S` is local.
-  have : IsLocalRing S := HenselianRing.isLocalRing_of_forall_isIdempotentElem J fun e he ↦
+  have : IsLocalRing S := isLocalRing_of_finite_of_forall_isIdempotentElem R S fun e he ↦
     (hM.eq_zero_or_eq_one_of_isIdempotentElem (he.map S.val)).imp Subtype.ext Subtype.ext
   exact (IsLocalRing.isUnit_or_isUnit_one_sub_self
     (⟨f, Algebra.self_mem_adjoin_singleton R f⟩ : S)).imp (·.map S.val) (·.map S.val)
