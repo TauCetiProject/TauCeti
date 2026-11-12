@@ -119,7 +119,6 @@ theorem f4KillingRootSystem_chainBotCoeff (α β : Fin 48) :
     _ = (F4.rationalRootSystem valid_F4).chainBotCoeff
         (f4RootIndex α) (f4RootIndex β) :=
       (F4.rationalRootSystemEquiv valid_F4).toHom.chainBotCoeff_indexEquiv
-        (F4.rationalRootSystemEquiv valid_F4).bijective_weightMap.injective
         (f4RootIndex α) (f4RootIndex β)
     _ = (F4.simplyConnectedRootDatum valid_F4).chainBotCoeff
         (f4RootIndex α) (f4RootIndex β) :=
@@ -139,7 +138,6 @@ theorem f4KillingRootSystem_chainTopCoeff (α β : Fin 48) :
     _ = (F4.rationalRootSystem valid_F4).chainTopCoeff
         (f4RootIndex α) (f4RootIndex β) :=
       (F4.rationalRootSystemEquiv valid_F4).toHom.chainTopCoeff_indexEquiv
-        (F4.rationalRootSystemEquiv valid_F4).bijective_weightMap.injective
         (f4RootIndex α) (f4RootIndex β)
     _ = (F4.simplyConnectedRootDatum valid_F4).chainTopCoeff
         (f4RootIndex α) (f4RootIndex β) :=
