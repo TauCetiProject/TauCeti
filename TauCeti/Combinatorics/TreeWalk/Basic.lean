@@ -439,7 +439,8 @@ namespace IsTreeWalk
 variable {k : ℕ} {w : ℕ → ℕ} (hw : IsTreeWalk k w)
 include hw
 
-private theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
+/-- A tree walk of length `2 * k` discovers a new vertex at exactly `k` steps. -/
+theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
   have h := hw.card_vertices
   rw [card_filter, sum_range_succ'] at h
   have : ∑ i ∈ range (2 * k), (if w (i + 1) = i + 1 then 1 else 0) = k := by
@@ -448,7 +449,7 @@ private theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
   exact this
 
 /-- Every edge of a tree walk is the edge discovered by some up step. -/
-private theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
+theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
     ∃ i < 2 * k, w (i + 1) = i + 1 ∧ s(w j, w (j + 1)) = s(w i, i + 1) := by
   set U := {j ∈ range (2 * k) | w (j + 1) = j + 1} with hU
   set e : ℕ → Sym2 ℕ := fun j => s(w j, w (j + 1)) with he

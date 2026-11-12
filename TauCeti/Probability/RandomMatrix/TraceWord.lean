@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
-public import Mathlib.Probability.Independence.Integration
+public import TauCeti.Probability.Independence.Integration
+public import TauCeti.Combinatorics.TreeWalk.Product
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.RandomMatrix.Wigner
 
@@ -24,6 +25,12 @@ zero. Consequently only the closed walks traversing each of their edges at least
 to the expected moment. This is the first reduction of the trace-word expansion; the remaining
 walks are then classified by their numbers of vertices and distinct edges.
 
+For a leading word of length `2 * m`, the maximal `m + 1` visited vertices force a
+double-traversal tree. Pairing each discovery with its reverse reduces the entry product
+to independent squared absolute values. Unit off-diagonal second moments then give exactly
+`n⁻ᵐ`, without centering, higher moments, or any assumptions on the diagonal entries.
+The path formulation includes the zero-step case and proves integrability first.
+
 ## Main results
 
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred entries, a product
@@ -31,6 +38,12 @@ walks are then classified by their numbers of vertices and distinct edges.
 * `TauCeti.integral_trace_pow_wignerMatrix`: for independent centred entries in `Lᵏ`, the
   expected trace of `Hₙᵏ` is the sum, over the closed walks of length `k` traversing each of
   their edges at least twice, of the expected products of entries along the walk.
+
+* `TauCeti.integrable_prod_wignerMatrix_apply_path` and
+  `TauCeti.integral_prod_wignerMatrix_apply_path`: integrability and a second-moment product
+  formula for double-traversal tree paths.
+* `TauCeti.integral_prod_wignerMatrix_apply_leading`: every leading cyclic Wigner word
+  contributes `n⁻ᵐ` under independence and unit off-diagonal second moments.
 
 ## References
 
@@ -157,5 +170,175 @@ theorem integral_trace_pow_wignerMatrix [IsFiniteMeasure P]
     fun s hs ↦ by_contra fun hst ↦ h s hst hs)
 
 end SingleEdge
+
+end TauCeti
+
+open MeasureTheory ProbabilityTheory Matrix Finset
+open TauCeti.TreeWalk
+
+namespace TauCeti
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+  {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {m n : ℕ}
+
+private abbrev DiscoverySteps (v : Fin (2 * m + 1) → Fin n) :=
+  ↥({i : Fin (2 * m) | canonicalWalk v i.succ = i.succ} : Finset _)
+
+private noncomputable def discoveryFactor (v : Fin (2 * m + 1) → Fin n)
+    (i : DiscoverySteps v) (ω : Ω) : ℝ :=
+  ‖wignerMatrix ξ η n ω (v i.val.castSucc) (v i.val.succ)‖ ^ 2
+
+private theorem indep_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
+    (hindep : iIndepFun ξ P) :
+    iIndepFun (discoveryFactor (ξ := ξ) (η := η) v) P :=
+  iIndepFun_norm_wignerMatrix_apply_sq _ _
+    (fun i ↦ ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2)
+    (fun i j hij ↦ Subtype.ext (injOn_edge_of_canonicalWalk_succ_eq v
+      (mem_filter.mp i.property).2 (mem_filter.mp j.property).2 hij)) hindep
+
+private theorem integrable_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
+    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (i : DiscoverySteps v) :
+    Integrable (discoveryFactor (ξ := ξ) (η := η) v i) P := by
+  unfold discoveryFactor
+  have hne := ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2
+  rcases lt_or_gt_of_ne (fun hval ↦ hne (Fin.ext hval)) with h | h
+  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow]
+    exact (hξ _).const_mul _
+  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, mul_pow, norm_star]
+    exact (hξ _).const_mul _
+
+omit [MeasurableSpace Ω] in
+private theorem prod_path_eq_prod_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
+    (hclosed : v (Fin.last (2 * m)) = v 0) (hv : #(univ.image v) = m + 1)
+    (he : ∀ i : Fin (2 * m),
+      #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2)
+    (ω : Ω) :
+    ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) =
+      ((∏ i : DiscoverySteps v, discoveryFactor (ξ := ξ) (η := η) v i ω : ℝ) : ℂ) := by
+  rw [prod_path_eq_prod_up_mul_reverse v hclosed hv he
+    (fun i j ↦ wignerMatrix ξ η n ω i j)]
+  unfold discoveryFactor DiscoverySteps
+  rw [Complex.ofReal_prod, Finset.prod_coe_sort _
+    (fun i : Fin (2 * m) ↦ ((‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 : ℝ) : ℂ))]
+  apply prod_congr rfl
+  intro i _
+  rw [← (wignerMatrix_isHermitian ξ η ω n).apply (v i.succ) (v i.castSucc)]
+  rw [Complex.ofReal_pow]
+  exact Complex.mul_conj' _
+
+/-- A double-traversal tree word is integrable when the upper entries are independent
+and their squared absolute values are integrable. The diagonal entries may be arbitrary. -/
+theorem integrable_prod_wignerMatrix_apply_path
+    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hindep : iIndepFun ξ P)
+    (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
+    (hv : #(univ.image v) = m + 1)
+    (he : ∀ i : Fin (2 * m),
+      #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2) :
+    Integrable (fun ω ↦ ∏ i : Fin (2 * m),
+      wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)) P := by
+  have hint := (indep_discoveryFactor (η := η) v hindep).integrable_fun_prod
+    (integrable_discoveryFactor v hξ)
+  exact hint.ofReal.congr (.of_forall fun ω ↦
+    (prod_path_eq_prod_discoveryFactor v hclosed hv he ω).symm)
+
+/-- The expected product along a double-traversal tree path is the product of the second
+absolute moments at its discovery steps. No centering or identical-distribution assumption
+is needed. -/
+theorem integral_prod_wignerMatrix_apply_path
+    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hindep : iIndepFun ξ P)
+    (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
+    (hv : #(univ.image v) = m + 1)
+    (he : ∀ i : Fin (2 * m),
+      #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2) :
+    ∫ ω, ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) ∂P =
+      ((∏ i : Fin (2 * m) with canonicalWalk v i.succ = i.succ,
+        ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P : ℝ) : ℂ) := by
+  have hint := (indep_discoveryFactor (η := η) v hindep).integrable_fun_prod
+    (integrable_discoveryFactor v hξ)
+  rw [integral_congr_ae (.of_forall (prod_path_eq_prod_discoveryFactor v hclosed hv he))]
+  have hcast := Complex.ofRealCLM.integral_comp_comm hint
+  simp only [Complex.ofRealCLM_apply] at hcast
+  rw [hcast]
+  rw [(indep_discoveryFactor (η := η) v hindep).integral_fun_prod_eq_prod_integral
+    (fun i ↦ (integrable_discoveryFactor v hξ i).aestronglyMeasurable)]
+  unfold discoveryFactor DiscoverySteps
+  rw [Finset.prod_coe_sort _ (fun i : Fin (2 * m) ↦
+    ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P)]
+
+/-- With unit off-diagonal second moments, every double-traversal tree path of length
+`2 * m` has expected entry product `n⁻ᵐ`. The zero-step path contributes `1`. -/
+theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
+    (hindep : iIndepFun ξ P)
+    (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1)
+    (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
+    (hv : #(univ.image v) = m + 1)
+    (he : ∀ i : Fin (2 * m),
+      #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2) :
+    ∫ ω, ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) ∂P =
+      (n : ℂ)⁻¹ ^ m := by
+  have hξ (ij : StrictUpper) : Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P :=
+    integrable_of_integral_eq_one (hsecond ij)
+  have hw := isTreeWalk_canonicalWalk v hclosed hv he
+  have hcard : Fintype.card (DiscoverySteps v) = m := by
+    simp only [DiscoverySteps, Fintype.card_coe, card_filter]
+    have h := hw.card_up
+    rw [card_filter, ← Fin.sum_univ_eq_sum_range] at h
+    exact h
+  have hterm (i : DiscoverySteps v) :
+      ∫ ω, discoveryFactor (ξ := ξ) (η := η) v i ω ∂P = (n : ℝ)⁻¹ := by
+    have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
+      rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
+        inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
+    have hne := ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2
+    rcases lt_or_gt_of_ne (fun hval ↦ hne (Fin.ext hval)) with h | h
+    · simp only [discoveryFactor, wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow,
+        hn, integral_const_mul, hsecond, mul_one]
+    · simp only [discoveryFactor, wignerMatrix_apply_of_gt _ _ _ h, norm_mul, mul_pow,
+        norm_star, hn, integral_const_mul, hsecond, mul_one]
+  have hprod : (∏ i : DiscoverySteps v,
+      ∫ ω, discoveryFactor (ξ := ξ) (η := η) v i ω ∂P) = (n : ℝ)⁻¹ ^ m := by
+    simp only [hterm, prod_const, card_univ, hcard]
+  rw [integral_prod_wignerMatrix_apply_path hξ hindep v hclosed hv he]
+  have hprod' := congrArg Complex.ofReal hprod
+  -- Expand only the private factor and finite-index representations.
+  unfold discoveryFactor DiscoverySteps at hprod'
+  rw [Finset.prod_coe_sort _ (fun i : Fin (2 * m) ↦
+    ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P)] at hprod'
+  simpa only [Complex.ofReal_pow, Complex.ofReal_inv, Complex.ofReal_natCast] using hprod'
+
+/-- **Leading Wigner words.** A cyclic word of length `2 * m`, with no singleton unordered
+edge and `m + 1` distinct vertices, contributes exactly `n⁻ᵐ` to the expected trace.
+Only independence and unit second absolute moments of the upper entries are required;
+centering, higher moments, and all conditions on the diagonal are unnecessary here. -/
+theorem integral_prod_wignerMatrix_apply_leading
+    (hindep : iIndepFun ξ P)
+    (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) (w : Fin (2 * m) → Fin n)
+    (h : ∀ i, ∃ j ≠ i,
+      s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
+    (hv : #(univ.image w) = m + 1) :
+    ∫ ω, ∏ i, wignerMatrix ξ η n ω (w i) (w (finRotate (2 * m) i)) ∂P =
+      (n : ℂ)⁻¹ ^ m := by
+  have hm : m ≠ 0 := by
+    rintro rfl
+    simp at hv
+  have := NeZero.mk hm
+  let v : Fin (2 * m + 1) → Fin n := fun i ↦ w (Fin.ofNat (2 * m) i.val)
+  have hcast (i : Fin (2 * m)) : v i.castSucc = w i := by simp [v]
+  have hsucc (i : Fin (2 * m)) : v i.succ = w (finRotate (2 * m) i) := by
+    apply congrArg w
+    rw [finRotate_apply]
+    apply Fin.ext
+    simp [Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+  have hsurj : Function.Surjective (fun i : Fin (2 * m + 1) ↦
+      Fin.ofNat (2 * m) i.val) := fun i ↦ ⟨i.castSucc, by simp⟩
+  have himage : univ.image v = univ.image w := by
+    have hmap := congrArg (Finset.image w) (Finset.image_univ_of_surjective hsurj)
+    rw [image_image] at hmap
+    exact hmap
+  have he := ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv
+  have hp := integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
+    (η := η) hindep hsecond v (by simp [v]) (by rw [himage]; exact hv)
+    (fun i ↦ by simpa only [hcast, hsucc] using he.2 i)
+  simpa only [hcast, hsucc] using hp
 
 end TauCeti

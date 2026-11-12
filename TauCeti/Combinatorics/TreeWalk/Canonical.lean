@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Sym.Sym2
 public import TauCeti.Data.List.FindIdx
 
 /-!
@@ -187,6 +188,29 @@ theorem canonicalWalk_le (w : Fin (n + 1) → α) (i : ℕ) : canonicalWalk w i 
     simp only [List.getElem_ofFn, beq_self_eq_true, Bool.true_eq_false] at hnot
   · rw [canonicalWalk_eq_zero w (by omega)]
     exact Nat.zero_le _
+
+/-- A step which discovers a new vertex cannot be a loop. -/
+theorem ne_of_canonicalWalk_succ_eq (v : Fin (n + 1) → α) (i : Fin n)
+    (hi : canonicalWalk v i.succ = i.succ) : v i.castSucc ≠ v i.succ := by
+  have hle := canonicalWalk_le v i
+  intro he
+  have hc := (canonicalWalk_eq_iff v i.castSucc i.succ).mpr he
+  simp only [Fin.val_castSucc, Fin.val_succ] at hc hi
+  omega
+
+/-- Distinct steps which discover new vertices traverse distinct unordered edges. -/
+theorem injOn_edge_of_canonicalWalk_succ_eq (v : Fin (n + 1) → α) :
+    Set.InjOn (fun i : Fin n ↦ s(v i.castSucc, v i.succ))
+      {i | canonicalWalk v i.succ = i.succ} := by
+  intro i hi j hj hij
+  have hc : s(canonicalWalk v i.castSucc, canonicalWalk v i.succ) =
+      s(canonicalWalk v j.castSucc, canonicalWalk v j.succ) := by
+    simpa only [Sym2.eq_iff, canonicalWalk_eq_iff] using hij
+  have hli := canonicalWalk_le v i
+  have hlj := canonicalWalk_le v j
+  simp only [Set.mem_ofPred_eq, Sym2.eq_iff, Fin.val_castSucc, Fin.val_succ] at hc hi hj
+  apply Fin.ext
+  omega
 
 /-- The canonical walk starts at zero. -/
 @[simp] theorem canonicalWalk_zero (w : Fin (n + 1) → α) : canonicalWalk w 0 = 0 :=

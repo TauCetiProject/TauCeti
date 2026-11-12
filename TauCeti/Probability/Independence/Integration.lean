@@ -14,6 +14,8 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 /-!
 # Integrability and expectations of products and quadratic forms under independence
 
+A finite product of independent integrable variables is integrable
+(`ProbabilityTheory.iIndepFun.integrable_fun_prod`).
 The product of two independent square-integrable real random variables is square integrable
 (`ProbabilityTheory.IndepFun.memLp_two_mul`). For a finite family of pairwise independent
 mean-zero square-integrable `RCLike`-valued random variables `W` and `A : Matrix ι ι 𝕜`,
@@ -24,6 +26,33 @@ mean-zero square-integrable `RCLike`-valued random variables `W` and `A : Matrix
 public section
 
 open MeasureTheory
+
+namespace ProbabilityTheory.iIndepFun
+
+/-- A finite product of independent integrable random variables is integrable. -/
+theorem integrable_fun_prod {Ω ι E : Type*} [MeasurableSpace Ω] [Fintype ι]
+    [NormedCommRing E] [MeasurableSpace E] [BorelSpace E] [MeasurableMul₂ E]
+    {P : Measure Ω} {X : ι → Ω → E}
+    (h : iIndepFun X P) (hX : ∀ i, Integrable (X i) P) :
+    Integrable (fun ω ↦ ∏ i, X i ω) P := by
+  classical
+  have := h.isProbabilityMeasure
+  have hprod (s : Finset ι) : Integrable (fun ω ↦ ∏ i ∈ s, X i ω) P := by
+    induction s using Finset.induction_on with
+    | empty => simp
+    | @insert i s hi ih =>
+      have hind : IndepFun (X i) (fun ω ↦ ∏ j ∈ s, X j ω) P := by
+        simpa only [Finset.prod_fn] using
+          (h.indepFun_finsetProd_of_notMem₀ (fun i ↦ (hX i).aemeasurable) hi).symm
+      have hint := hind.integrable_op (hX i) ih (· * ·) (by fun_prop) 1
+        (by
+          intro x y
+          simpa only [ENNReal.coe_one, one_mul, smul_eq_mul] using
+            eNorm_smul_le (r := x) (x := y))
+      simpa only [Finset.prod_insert hi, Finset.prod_apply] using hint
+  exact hprod Finset.univ
+
+end ProbabilityTheory.iIndepFun
 
 namespace ProbabilityTheory.IndepFun
 
