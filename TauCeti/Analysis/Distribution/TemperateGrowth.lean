@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
@@ -51,6 +52,8 @@ A measure of temperate growth is finite on compact sets.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
 * `Function.HasTemperateGrowth.abs`: `|f|` has temperate growth if `f` has no zeros.
+* `Function.HasTemperateGrowth.abs_det_fderiv_symm`: the Jacobian factor `|det Dφ⁻¹|` of a
+  bijection `φ` such that `φ` and `φ⁻¹` have temperate growth.
 * `Function.HasTemperateGrowth.exists_norm_le_of_leftInverse`: a polynomial lower bound for
   `‖f x‖` from a left inverse of temperate growth.
 * `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
@@ -168,6 +171,17 @@ theorem Function.HasTemperateGrowth.det_fderiv {E : Type*} [NormedAddCommGroup E
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] {f : E → E} (hf : f.HasTemperateGrowth) :
     (fun x ↦ (_root_.fderiv ℝ f x).det).HasTemperateGrowth :=
   ContinuousLinearMap.hasTemperateGrowth_det.comp hf.fderiv
+
+/-- For a bijection `φ` of a finite-dimensional space such that `φ` and `φ⁻¹` have temperate
+growth, the Jacobian factor `y ↦ |det Dφ⁻¹(y)|` of the change of variables has temperate growth:
+`det Dφ⁻¹(y)` has no zeros, being the reciprocal of `det Dφ(φ⁻¹ y)`. -/
+theorem Function.HasTemperateGrowth.abs_det_fderiv_symm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] {φ : E ≃ E} (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) :
+    (fun y ↦ |(_root_.fderiv ℝ φ.symm y).det|).HasTemperateGrowth :=
+  hψ.det_fderiv.abs fun y h ↦ by
+    simpa [h] using φ.det_fderiv_symm_mul_det_fderiv (hφ.1.differentiable (by simp) _)
+      (hψ.1.differentiable (by simp) y)
 
 namespace Function
 

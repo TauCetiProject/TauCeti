@@ -126,6 +126,7 @@ variable [NormedAddCommGroup F] [NormedSpace ℂ F] [MeasurableSpace E] [BorelSp
 
 /-- The pullback of the distribution of a Schwartz function `u` is the distribution of `u ∘ φ`,
 for every additive Haar measure. -/
+@[simp]
 theorem compCLM_toTemperedDistributionCLM (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (u : 𝓢(E, F)) :
     compCLM F φ hφ hψ (SchwartzMap.toTemperedDistributionCLM E F μ u) =
@@ -137,6 +138,7 @@ theorem compCLM_toTemperedDistributionCLM (hφ : (φ : E → E).HasTemperateGrow
 
 /-- The pullback of the distribution of a function `u` of temperate growth is the distribution
 of `u ∘ φ`, for every additive Haar measure. -/
+@[simp]
 theorem compCLM_toTemperedDistribution (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) {u : E → F} (hu : u.HasTemperateGrowth) :
     compCLM F φ hφ hψ (hu.toTemperedDistribution μ) = (hu.comp hφ).toTemperedDistribution μ := by
@@ -150,8 +152,8 @@ end Normed
 theorem compCLM_delta (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (x : E) :
     compCLM ℂ φ hφ hψ (delta (φ x)) = ((|(fderiv ℝ φ x).det|⁻¹ : ℝ) : ℂ) • delta x := by
-  have h := φ.det_fderiv_symm_mul_det_fderiv (hφ.1.differentiable (by simp))
-    (hψ.1.differentiable (by simp)) (φ x)
+  have h := φ.det_fderiv_symm_mul_det_fderiv (y := φ x) (hφ.1.differentiable (by simp) _)
+    (hψ.1.differentiable (by simp) _)
   rw [Equiv.symm_apply_apply] at h
   ext f
   simp [eq_inv_of_mul_eq_one_left h, abs_inv]

@@ -11,6 +11,8 @@ public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import Mathlib.Topology.Sets.Opens
 
+import TauCeti.Topology.Algebra.Module.Determinant
+
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -36,8 +38,9 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: the same identities evaluated at a
   vector.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
-* `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable together with its
-  inverse, the Jacobian determinants are reciprocal, `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`.
+* `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
+  inverse differentiable at `y`, the Jacobian determinants are reciprocal,
+  `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`.
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
 
@@ -133,17 +136,13 @@ namespace Equiv
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] (φ : E ≃ E)
 
-/-- If a bijection `φ` and its inverse are differentiable, the Jacobian determinants of `φ⁻¹` at
-`y` and of `φ` at `φ⁻¹ y` are reciprocal. -/
-theorem det_fderiv_symm_mul_det_fderiv (hφ : Differentiable 𝕜 φ)
-    (hψ : Differentiable 𝕜 φ.symm) (y : E) :
+/-- If a bijection `φ` is differentiable at `φ⁻¹ y` and its inverse is differentiable at `y`, the
+Jacobian determinants of `φ⁻¹` at `y` and of `φ` at `φ⁻¹ y` are reciprocal. -/
+theorem det_fderiv_symm_mul_det_fderiv {y : E} (hφ : DifferentiableAt 𝕜 φ (φ.symm y))
+    (hψ : DifferentiableAt 𝕜 φ.symm y) :
     (fderiv 𝕜 φ.symm y).det * (fderiv 𝕜 φ (φ.symm y)).det = 1 := by
-  have h := TauCeti.fderiv_comp_fderiv_eq_id_of_invOn (U := ⊤) (V := ⊤) hφ.differentiableOn
-    (mapsTo_univ _ _) hψ.differentiableOn (fun x _ ↦ φ.apply_symm_apply x)
-    (fun x _ ↦ φ.symm_apply_apply x) (y := φ.symm y) trivial
-  rw [φ.apply_symm_apply] at h
-  rw [mul_comm, ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp,
-    ← ContinuousLinearMap.toLinearMap_comp, h, ContinuousLinearMap.coe_id, LinearMap.det_id]
+  rw [mul_comm, ← ContinuousLinearMap.det_comp, ← fderiv_comp y hφ hψ, φ.self_comp_symm,
+    fderiv_id, ContinuousLinearMap.det_id]
 
 end Equiv
 

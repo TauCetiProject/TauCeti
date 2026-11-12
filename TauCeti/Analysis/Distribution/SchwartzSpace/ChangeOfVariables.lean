@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.MeasureTheory.Function.Jacobian
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Pushforward of Schwartz densities along a change of variables
@@ -54,15 +54,6 @@ variable (𝕜 : Type*) {E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [Norm
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
   {φ : E ≃ E}
 
-/-- The Jacobian factor `y ↦ |det Dφ⁻¹(y)|` of the pushforward has temperate growth. -/
-private theorem hasTemperateGrowth_jacobian (hφ : (φ : E → E).HasTemperateGrowth)
-    (hψ : (φ.symm : E → E).HasTemperateGrowth) :
-    (fun y ↦ ((|(fderiv ℝ φ.symm y).det| : ℝ) : 𝕜)).HasTemperateGrowth :=
-  (RCLike.hasTemperateGrowth_ofReal 𝕜).comp <| hψ.det_fderiv.abs fun y h ↦ by
-    simpa [show (fderiv ℝ φ.symm y).det = 0 from h] using
-      φ.det_fderiv_symm_mul_det_fderiv (hφ.1.differentiable (by simp))
-        (hψ.1.differentiable (by simp)) y
-
 /-- The **pushforward of Schwartz densities** along a bijection `φ` such that `φ` and `φ⁻¹` have
 temperate growth: `(φ_* f)(y) = |det Dφ⁻¹(y)| f(φ⁻¹ y)`, as a continuous linear map of Schwartz
 space. It is the transpose of composition with `φ`
@@ -77,7 +68,8 @@ theorem pushforwardCLM_apply (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (f : 𝓢(E, F)) (y : E) :
     pushforwardCLM 𝕜 φ hφ hψ f y = ((|(fderiv ℝ φ.symm y).det| : ℝ) : 𝕜) • f (φ.symm y) := by
   rw [pushforwardCLM, ContinuousLinearMap.comp_apply,
-    smulLeftCLM_apply_apply (hasTemperateGrowth_jacobian 𝕜 hφ hψ), compCLM_apply,
+    smulLeftCLM_apply_apply (g := fun y ↦ ((|(fderiv ℝ φ.symm y).det| : ℝ) : 𝕜))
+      ((RCLike.hasTemperateGrowth_ofReal 𝕜).comp (hφ.abs_det_fderiv_symm hψ)), compCLM_apply,
     Function.comp_apply]
 
 /-- **The pushforward is the transpose of composition.** For every function `u` and every
@@ -109,8 +101,8 @@ theorem pushforwardCLM_trans {χ : E ≃ E} (hφ : (φ : E → E).HasTemperateGr
   have hd : fderiv ℝ ((φ.trans χ).symm) y = fderiv ℝ φ.symm (χ.symm y) ∘L fderiv ℝ χ.symm y :=
     fderiv_comp y (hψ.1.differentiable (by simp) _) (hχs.1.differentiable (by simp) _)
   rw [ContinuousLinearMap.comp_apply, pushforwardCLM_apply, pushforwardCLM_apply,
-    pushforwardCLM_apply, hd, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.det_comp, abs_mul, RCLike.ofReal_mul, mul_comm, mul_smul, Equiv.symm_trans_apply]
+    pushforwardCLM_apply, hd, ContinuousLinearMap.det_comp, abs_mul, RCLike.ofReal_mul, mul_comm,
+    mul_smul, Equiv.symm_trans_apply]
 
 /-- The pushforward along the identity is the identity. -/
 @[simp]
@@ -118,7 +110,7 @@ theorem pushforwardCLM_refl (h₁ : (Equiv.refl E : E → E).HasTemperateGrowth)
     (h₂ : ((Equiv.refl E).symm : E → E).HasTemperateGrowth) :
     pushforwardCLM 𝕜 (Equiv.refl E) h₁ h₂ (F := F) = ContinuousLinearMap.id 𝕜 _ := by
   ext f y
-  simp [ContinuousLinearMap.det, ContinuousLinearMap.coe_id]
+  simp
 
 /-- Multiplying by `g ∘ φ` and then pushing forward along `φ` is pushing forward and then
 multiplying by `g`. -/
