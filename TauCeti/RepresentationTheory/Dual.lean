@@ -33,6 +33,12 @@ If `g` fixes pointwise the hyperplane `ker ℓ` cut out by a linear form `ℓ`, 
 every linear form by a multiple of `ℓ`, and conversely. This is the divisibility behind the
 divided-difference operator of a pseudoreflection.
 
+For a `G`-stable submodule `W`, the annihilator `W⁰` of linear forms vanishing on `W` is stable
+under the dual representation. An element `g` moving every vector by an element of `W`,
+`ρ g v - v ∈ W`, fixes `W⁰` pointwise. For the adjoint
+representation of a Lie group and the Lie algebra of a closed normal subgroup this is the
+coadjoint action on the annihilator used in reduction in stages.
+
 Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and whose dual is
 `Dual Y ⊗ X`, this counts intertwiners in both directions alike. The invariant bilinear forms of `ρ`
 are the intertwiners into `ρ.dual`, so counting them is counting invariants of a dual.
@@ -48,6 +54,10 @@ are the intertwiners into `ρ.dual`, so counting them is counting invariants of 
   pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`; by
   `Representation.forall_sub_dual_apply_mem_span_singleton_iff`, this characterizes the elements
   fixing `ker ℓ` pointwise.
+* `Representation.dualAnnihilator_le_comap_dual`: the annihilator of a `G`-stable submodule is
+  stable under the dual representation.
+* `Representation.dual_apply_eq_self_of_mem_dualAnnihilator`: an element moving every vector by
+  an element of `W` fixes the annihilator `W⁰` pointwise.
 * `Representation.dual_comp`: restricting along a group homomorphism commutes with taking duals.
 * `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
   when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
@@ -155,6 +165,38 @@ theorem dual_injective_iff : Function.Injective ρ.dual ↔ Function.Injective �
   simp only [injective_iff_map_eq_one, dual_apply_eq_one_iff]
 
 end Field
+
+/-! ### Annihilators of invariant submodules -/
+
+section Annihilator
+
+variable {k G V : Type*} [Group G]
+
+/-- **The annihilator of an invariant submodule is invariant.** If `W` is stable under `ρ`, its
+dual annihilator `W⁰` is stable under the dual representation, since
+`(ρ.dual g φ) w = φ (ρ g⁻¹ w)` vanishes for `w ∈ W`. -/
+theorem dualAnnihilator_le_comap_dual [CommSemiring k] [AddCommMonoid V] [Module k V]
+    (ρ : Representation k G V) {W : Submodule k V} (hW : ∀ g, W ≤ W.comap (ρ g)) (g : G) :
+    W.dualAnnihilator ≤ W.dualAnnihilator.comap (ρ.dual g) := fun φ hφ ↦ by
+  rw [Submodule.mem_comap, Submodule.mem_dualAnnihilator]
+  intro w hw
+  rw [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply]
+  exact (Submodule.mem_dualAnnihilator φ).1 hφ _ (hW g⁻¹ hw)
+
+variable [CommRing k] [AddCommGroup V] [Module k V] {ρ : Representation k G V}
+  {W : Submodule k V} {g : G}
+
+/-- An element `g` that moves every vector by an element of `W`, `ρ g v - v ∈ W`, fixes every
+linear form vanishing on `W` under the dual representation. No invariance of `W` is needed. -/
+theorem dual_apply_eq_self_of_mem_dualAnnihilator (hg : ∀ v, ρ g v - v ∈ W)
+    {φ : Module.Dual k V} (hφ : φ ∈ W.dualAnnihilator) : ρ.dual g φ = φ := by
+  ext v
+  -- `φ` takes the same value at `v = ρ g (ρ g⁻¹ v)` and at `ρ g⁻¹ v`.
+  have h := (Submodule.mem_dualAnnihilator φ).1 hφ _ (hg (ρ g⁻¹ v))
+  rw [map_sub, self_inv_apply, sub_eq_zero] at h
+  simp [Module.Dual.transpose_apply, ← h]
+
+end Annihilator
 
 end Representation
 

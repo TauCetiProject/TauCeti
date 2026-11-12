@@ -84,6 +84,11 @@ algebra: `Ad*_g ν = ν ∘ Ad_{g⁻¹}`. -/
 def coadjointRepresentation : Representation 𝕜 G (Module.Dual 𝕜 (GroupLieAlgebra I G)) :=
   (adjointRepresentation 𝕜 I G).dual
 
+/-- The coadjoint representation is the dual of the adjoint representation. -/
+theorem coadjointRepresentation_eq_dual :
+    coadjointRepresentation 𝕜 I G = (adjointRepresentation 𝕜 I G).dual :=
+  (rfl)
+
 @[simp]
 theorem coadjointRepresentation_apply (g : G) (ν : Module.Dual 𝕜 (GroupLieAlgebra I G))
     (X : GroupLieAlgebra I G) :
