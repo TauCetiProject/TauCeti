@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -131,6 +132,21 @@ theorem finiteDimensional_of_isScalarTower : FiniteDimensional 𝕜' (E →L[�
   exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' (E →L[𝕜] F)
 
 end ScalarExtension
+
+section Invertible
+
+variable {𝕜 U G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup U] [NormedSpace 𝕜 U] [FiniteDimensional 𝕜 U]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+
+/-- An injective continuous linear map between finite-dimensional spaces of the same dimension is
+invertible. -/
+theorem isInvertible_of_injective_of_finrank_eq (A : U →L[𝕜] G)
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) (hinj : Function.Injective A) :
+    A.IsInvertible := by
+  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, rfl⟩
+
+end Invertible
 
 end ContinuousLinearMap
 

@@ -428,8 +428,7 @@ theorem IsMaximalTotallyReal.projection_sum_smul {ι : Type*} [Fintype ι]
     conv_lhs => rw [← Complex.re_add_im (c i)]
     rw [add_smul, mul_smul, hr, hr]
   rw [hsplit, map_add,
-    Submodule.projection_apply_of_mem_right hL.isCompl
-      ⟨_, L.sum_mem fun i _ ↦ L.smul_mem _ (hv i), rfl⟩, add_zero,
+    hL.projection_map_of_mem (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i)), add_zero,
     Submodule.projection_apply_of_mem_left hL.isCompl (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i))]
 
 end TauCeti
