@@ -163,7 +163,7 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ : ℝ) {t s : �
     intro u
     -- The unit tangent vector at `u` is the real number `1`.
     have h1 : NormedSpace.fromTangentSpace u (1 : TangentSpace 𝓘(ℝ, ℝ) u) = (1 : ℝ) := rfl
-    rw [mfderiv_eq_fderiv, enorm_tangentSpace_vectorSpace,
+    rw [mfderiv_eq_fderiv, eNorm_tangentSpace_vectorSpace,
       (hasDerivAt_quadraticTrajectory x₀ u).hasFDerivAt.fderiv, ← ofReal_norm]
     simp [h1]
     ring_nf
