@@ -36,11 +36,6 @@ characteristic.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of the ReductiveGroups roadmap:
-the explicit type `A` carrier is now reductive over the algebraically closed fields on which the
-finite groups of Lie type are constructed. Its consumer is milestone L0, "pinned ambient groups",
-of the CFSGStatement roadmap.
 -/
 
 public section

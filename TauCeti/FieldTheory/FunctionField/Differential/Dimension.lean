@@ -121,18 +121,28 @@ private theorem exists_pos_le_degree (hF : IsFunctionField k F) (c : ℤ) :
   omega
 
 /-- **Stichtenoth, Lemma 1.5.7**, in the form that gets used: an algebraic function field has a
-nonzero Weil differential.  A strictly positive divisor `B` of degree at least `2` has
-`i(-B) = deg B - 1 + g > 0`, so `Ω_F(-B)` is already nonzero. -/
-theorem weilDifferentialSpace_ne_bot (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) : weilDifferentialSpace k F ≠ ⊥ := by
-  obtain ⟨B, hBpos, hBdeg⟩ := exists_pos_le_degree hF 2
-  have hi : Divisor.indexOfSpecialty (-B) ≠ 0 := by
-    rw [Divisor.indexOfSpecialty_def,
-      Divisor.dim_eq_zero_of_lt_zero hF (neg_lt_zero.mpr hBpos), Divisor.degree_neg]
-    omega
-  have hne : weilDifferentialFiltration (-B) ≠ (⊥ : Submodule k _) := fun h ↦
-    hi ((weilDifferentialFiltration_eq_bot_iff_indexOfSpecialty_eq_zero hF hex (-B)).mp h)
-  exact fun h ↦ hne (le_bot_iff.mp (h ▸ weilDifferentialFiltration_le_weilDifferentialSpace (-B)))
+nonzero Weil differential.  A strictly positive divisor `B` of degree larger than `ℓ(0)` has
+`i(-B) = deg B - 1 + g ≠ ℓ(0) - 1 + g = i(0)`, so `Ω_F(-B)` is already nonzero; no exactness of the
+constant field is needed. -/
+theorem weilDifferentialSpace_ne_bot (hF : IsFunctionField k F) :
+    weilDifferentialSpace k F ≠ ⊥ := by
+  obtain ⟨B, hBpos, hBdeg⟩ := exists_pos_le_degree hF (Divisor.dim (0 : Divisor k F) + 1)
+  intro h
+  have hbot : weilDifferentialFiltration (-B) = ⊥ := le_bot_iff.mp
+    (h ▸ weilDifferentialFiltration_le_weilDifferentialSpace (-B))
+  rw [weilDifferentialFiltration_eq_bot_iff hF] at hbot
+  have hle : -B ≤ (0 : Divisor k F) := neg_nonpos.mpr hBpos.le
+  have hq := finrank_quotient_adeleFiltration_sup_diagonalRepartitions hF hle
+  have hsub : Subsingleton (↥(adeleFiltration (0 : Divisor k F) ⊔ diagonalRepartitions k F) ⧸
+      (adeleFiltration (-B) ⊔ diagonalRepartitions k F).submoduleOf
+        (adeleFiltration (0 : Divisor k F) ⊔ diagonalRepartitions k F)) := by
+    rw [Submodule.Quotient.subsingleton_iff, hbot, Submodule.submoduleOf_eq_top]
+    exact adeleFiltration_sup_diagonalRepartitions_le hF _
+  rw [Module.finrank_zero_of_subsingleton] at hq
+  rw [Divisor.indexOfSpecialty_def, Divisor.indexOfSpecialty_def,
+    Divisor.dim_eq_zero_of_lt_zero hF (neg_lt_zero.mpr hBpos), Divisor.degree_neg,
+    Divisor.degree_zero] at hq
+  omega
 
 /-! ### `dim_F Ω_F = 1` -/
 
@@ -247,7 +257,7 @@ theorem finrank_weilDifferentialSpace (hF : IsFunctionField k F)
     letI := weilDifferentialSpaceModule hF
     Module.finrank F ↥(weilDifferentialSpace k F) = 1 := by
   let := weilDifferentialSpaceModule hF
-  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
+  obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF)
   refine (_root_.finrank_eq_one_iff_of_ne_zero' (V := ↥(weilDifferentialSpace k F)) ⟨ω, hωmem⟩
     (fun h ↦ hω0 (congrArg Subtype.val h))).mpr fun w ↦ ?_
   obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq hF hex hωmem hω0 w.2

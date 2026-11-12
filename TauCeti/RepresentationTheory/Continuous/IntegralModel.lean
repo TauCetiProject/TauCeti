@@ -213,11 +213,13 @@ noncomputable def genericFiberIso : ContinuousRep.Iso (Λ.toContinuousRep.baseCh
     ext x
     simp)
 
+omit [IsDomain O] in
 @[simp]
 theorem genericFiberIso_tmul (a : E) (x : Λ.lattice) :
     Λ.genericFiberIso (a ⊗ₜ x) = a • (x : V) := by
   simp [genericFiberIso]
 
+omit [IsDomain O] in
 @[simp]
 theorem genericFiberIso_symm_coe (x : Λ.lattice) :
     Λ.genericFiberIso.symm (x : V) = 1 ⊗ₜ x :=

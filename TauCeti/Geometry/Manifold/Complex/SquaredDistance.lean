@@ -140,7 +140,7 @@ theorem hessianQuadraticForm_norm_sq_sub_comp_add_I_smul_of_mem_maximalAtlas
 
 /-- At a critical point of squared distance along a holomorphic immersion, the real
 Morse index is at most the complex dimension of the source. -/
-theorem manifoldMorseIndex_norm_sq_sub_comp_le [FiniteDimensional ℂ E]
+theorem manifoldMorseIndex_norm_sq_sub_comp_le
     [IsManifold 𝓘(ℂ, E) 2 M]
     (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x)
     (hinj : Injective (mvfderiv 𝓘(ℂ, E) i x))
@@ -159,8 +159,7 @@ theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal (U : Opens F
 
 section Immersion
 
-variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ F] [IsManifold 𝓘(ℂ, E) ∞ M]
-  [SecondCountableTopology M]
+variable [FiniteDimensional ℂ F] [IsManifold 𝓘(ℂ, E) ∞ M] [SecondCountableTopology M]
 
 /-- **Generic low-index squared-distance Morse functions on a holomorphically immersed manifold.**
 For a smooth holomorphic immersion `i : M → F` of a second-countable complex manifold into a
@@ -175,6 +174,13 @@ theorem ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le
       ∀ x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2),
         manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · refine Filter.Eventually.of_forall fun a ↦ ⟨?_, fun x ↦ isEmptyElim x⟩
+    rw [← isMorseOn_univ, Set.univ_eq_empty_iff.2 hM]
+    exact isMorseOn_empty
+  have : FiniteDimensional ℂ E :=
+    Module.Finite.of_injective (mvfderiv 𝓘(ℂ, E) i x₀).toLinearMap (hinj x₀)
+  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
   have : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
   have : IsManifold 𝓘(ℝ, E) ∞ M :=
     IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
@@ -182,8 +188,7 @@ theorem ae_isMorse_and_manifoldMorseIndex_norm_sq_sub_comp_le
   have : IsManifold 𝓘(ℂ, E) 2 M := .of_le (n := ∞) (by norm_cast)
   have hiR : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ i := by simpa using hi.restrictScalars ℝ
   have hinjR (x : M) : Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) i x) :=
-    ((hi x).mdifferentiableAt (by simp)).injective_mfderiv_restrictScalars ℝ
-      (injective_mvfderiv_iff.1 (hinj x))
+    injective_mfderiv_restrictScalars ℝ (injective_mvfderiv_iff.1 (hinj x))
   filter_upwards [ae_isMorse_norm_sq_sub_comp μ hiR hinjR] with a ha
   exact ⟨ha, fun x hx ↦ manifoldMorseIndex_norm_sq_sub_comp_le ((hi x).of_le (by norm_cast))
     (hinj x) (mem_criticalPoints.1 hx)⟩

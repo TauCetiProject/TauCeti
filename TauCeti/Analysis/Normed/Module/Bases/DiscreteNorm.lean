@@ -71,7 +71,7 @@ theorem isPotentiallyONable_of_discrete_norm {R : Type*} [NormedCommRing R] [Nor
     (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ ‖a‖ = ‖a‖) :
     IsPotentiallyONable R E := by
   rw [isPotentiallyONable_def]
-  have hE := fun m : E ↦ zpowCeil_zpowCeil ϖ.norm_pos ϖ.norm_lt_one ‖m‖
+  have hE := fun m : E ↦ zpowCeil_zpowCeil ϖ.norm_pos ‖m‖
   have hu := isUltrametricDist_zpowCeilNormedAddCommGroup
     (M := E) ϖ.norm_pos ϖ.norm_lt_one
   have hs := isBoundedSMul_zpowCeilNormedAddCommGroup

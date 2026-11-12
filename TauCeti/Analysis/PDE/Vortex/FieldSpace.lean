@@ -271,7 +271,7 @@ def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))
     simp
   zero_mem' i := by
     convert zero_mem (realSobolevFunctions ℂ s 2) using 1
-    ext z
+    ext _
     simp
   smul_mem' c y h i := by
     convert Submodule.smul_mem _ c (h i) using 1
@@ -282,6 +282,17 @@ def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))
 theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
     y ∈ sobolevFields s ↔ ∀ i, (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
+
+/-- Every field of `sobolevFields s` is square integrable, whatever the order `s`. -/
+theorem memLp_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : y ∈ sobolevFields s) : MemLp y 2 volume :=
+  memLp_piLp_iff.2 fun i ↦ memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)
+
+/-- A field lies in `sobolevFields 0` exactly when it is square integrable. -/
+@[simp]
+theorem mem_sobolevFields_zero_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    y ∈ sobolevFields 0 ↔ MemLp y 2 volume := by
+  simp [mem_sobolevFields, memLp_piLp_iff]
 
 /-- The section `2 (y₂ + i y₃)` of a field of `sobolevFields s` is square integrable. -/
 theorem memLp_sectionValue_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -407,19 +418,28 @@ theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m :
     Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
   tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow (tendsto_sectionValue_mul_inv_pow hs hx hcont)
 
+/-- For `s > 1`, the section of a continuous field in `A_m^s` is nonzero somewhere, since its
+squared modulus tends to one at infinity. -/
+theorem exists_sectionValue_ne_zero_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ}
+    {s : ℝ} (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
+    (hcont : Continuous x) : ∃ z, sectionValue x z ≠ 0 := by
+  obtain ⟨z, hz⟩ :=
+    ((tendsto_normSq_of_mem_framedFieldSpace hs hx hcont).eventually_ne one_ne_zero).exists
+  exact ⟨z, fun h ↦ hz (by rw [(sectionValue_eq_zero_iff x z).1 h]; norm_num)⟩
+
 /-- **The modulus bound in the affine field space.** For `s > 1`, every vortex in `A_m^s` with
-differentiable connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/
+continuous connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/
 theorem normSq_le_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
     (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hb₁ : Continuous (fun w ↦ x w 0)) (hb₂ : Continuous (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) (z : ℂ) :
     4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 1 := by
   have hcont : Continuous x := by
     refine contDiff_zero.1 (contDiff_euclidean.2 fun i ↦ contDiff_zero.2 ?_)
     fin_cases i
-    exacts [hb₁.continuous, hb₂.continuous, hp.continuous, hq.continuous]
-  exact normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol
+    exacts [hb₁, hb₂, hp.continuous, hq.continuous]
+  exact normSq_le_one_of_tendsto hp hq hsol
     (tendsto_normSq_of_mem_framedFieldSpace hs hx hcont) z
 
 end TauCeti.Vortex

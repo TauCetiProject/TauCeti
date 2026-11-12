@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Order.Filter.Germ.Basic
 public import Mathlib.RingTheory.Algebraic.Defs
+public import TauCeti.Order.Filter.Germ.Polynomial
 
 /-!
 # Polynomial relations on germs of functions of several variables
@@ -64,16 +65,10 @@ theorem aeval_coe [CommSemiring R] {l : Filter (σ → R)} (P : (MvPolynomial σ
     (f : (σ → R) → R) :
     aeval (f : Germ l R) P =
       ((fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y) : (σ → R) → R) : Germ l R) := by
-  have key : (fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y)) =
-      P.eval₂ (RingHom.pi fun y ↦ MvPolynomial.eval y) f := by
-    ext y
-    rw [eval_map]
-    -- `Pi.evalRingHom _ y` composed with `RingHom.pi` is `MvPolynomial.eval y` by definition.
-    exact (hom_eval₂ P (RingHom.pi fun y ↦ MvPolynomial.eval y)
-      (Pi.evalRingHom (fun _ : σ → R ↦ R) y) f).symm
-  rw [key, aeval_def, RingHom.algebraMap_toAlgebra]
-  -- `Germ.coeRingHom` is the coercion to germs by definition (`Germ.coe_coeRingHom`).
-  exact (hom_eval₂ (p := P) (g := coeRingHom (R := R) l) ..).symm
+  rw [aeval_def, RingHom.algebraMap_toAlgebra, eval₂_coeRingHom_comp_coe]
+  -- The remaining coefficient ring homomorphisms agree because evaluating the `y`-th coordinate of
+  -- `RingHom.pi fun y ↦ MvPolynomial.eval y` is `MvPolynomial.eval y`, by definition.
+  rfl
 
 /-- The germ of `f` is algebraic over the coordinate polynomials exactly when `f` satisfies a
 nonzero polynomial relation `P (y, f y) = 0` eventually along `l`. -/

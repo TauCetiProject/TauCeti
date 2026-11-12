@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Distribution.Support
 import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # Complex-valued distributions on complex-valued test functions
@@ -24,13 +25,16 @@ This is how a complex-valued distribution is paired with a complex kernel, such 
 kernel `t ↦ χ t / (t - z)` whose pairing with a distribution on `ℝ` is the Cauchy transform. This
 file defines the extension `Distribution.complexPairing` and transfers to it the two basic
 estimates used when the test function varies: the pairing depends only on the germ of the test
-function along the support of `T`, and it has finite order on each compact set.
+function along the support of `T`, and it has finite order on each compact set. Complex
+conjugation of the values, `mapCLM conjCLE`, is an involution on complex distributions.
 
 ## Main declarations
 
 * `Distribution.complexPairing`: the complex-linear extension of `T : 𝓓'^{n}(Ω, ℂ)` to complex
   test functions, as a continuous complex-linear map.
 * `Distribution.complexPairing_postcompCLM_ofRealCLM`: on real test functions it is `T`.
+* `Distribution.complexPairing_lineDerivOp`: it turns derivatives of `T` into derivatives of the
+  test function, `(∂_{v} T) φ = - T (∂_{v} φ)`.
 * `Distribution.complexPairing_mapCLM_ofRealCLM_delta`: for the complex point mass at `x` it is
   evaluation at `x`.
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
@@ -38,6 +42,8 @@ function along the support of `T`, and it has finite order on each compact set.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
+* `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
+  back.
 
 ## References
 
@@ -48,7 +54,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Set TopologicalSpace TestFunction
+open Complex Filter Set TopologicalSpace TestFunction LineDeriv
 open scoped Distributions Topology
 
 namespace Distribution
@@ -109,6 +115,14 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
     (c • T).complexPairing φ = c * T.complexPairing φ := by
   simp only [complexPairing_apply]
   simp
+  ring
+
+/-- The complex-linear extension of a derivative of `T` is minus the extension of `T` applied to
+the derivative of the test function: `(∂_{v} T) φ = - T (∂_{v} φ)` on complex test functions. -/
+theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ)) :
+    (∂_{v} T).complexPairing φ = -T.complexPairing (∂_{v} φ) := by
+  simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg,
+    TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, lineDerivCLM_postcompCLM]
   ring
 
 /-- The complex-linear extension of the complex point mass at `x` evaluates a complex test
@@ -181,6 +195,13 @@ theorem exists_norm_complexPairing_le (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
         rw [norm_mul, norm_I, one_mul]
         exact add_le_add (hpart _ Complex.reCLM_norm.le) (hpart _ Complex.imCLM_norm.le)
     _ = 2 * C * M := by ring
+
+/-- Conjugating a complex distribution twice gives it back. -/
+@[simp]
+theorem mapCLM_conj_mapCLM_conj (T : 𝓓'^{n}(Ω, ℂ)) :
+    mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) = T := by
+  ext φ
+  simp [mapCLM_apply]
 
 variable [FiniteDimensional ℝ E]
 
