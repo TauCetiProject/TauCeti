@@ -45,8 +45,6 @@ converse is Mathlib's inverse function theorem
 * `TauCeti.localDegree_card` — the distinct-and-simple form.
 * `TauCeti.exists_localDegree` — the textbook form: for `f` analytic at `z₀`, suitable radii
   exist; the degree count is meaningful when `z₀` is an isolated solution of `f z = f z₀`.
-* `TauCeti.eventually_deriv_ne_zero_of_eventually_ne` — a non-locally-constant analytic
-  function has nonvanishing derivative on a punctured neighbourhood.
 * `TauCeti.not_injOn_of_deriv_eq_zero` — a critical point destroys injectivity on *every*
   neighbourhood of `z₀`.
 * `TauCeti.exists_injOn_nhds_iff_deriv_ne_zero` — the local injectivity criterion.
@@ -277,7 +275,7 @@ private lemma not_injOn_ball_of_deriv_eq_zero {f : ℂ → ℂ} {z₀ : ℂ} {r 
 /-- **A non-locally-constant analytic function has eventually nonvanishing derivative.** If `f` is
 analytic at `z₀` and takes a value different from `f z₀` at every point of some punctured
 neighbourhood, then `deriv f` is nonzero on a punctured neighbourhood of `z₀`. -/
-theorem eventually_deriv_ne_zero_of_eventually_ne {f : ℂ → ℂ} {z₀ : ℂ}
+private theorem eventually_deriv_ne_zero_of_eventually_ne {f : ℂ → ℂ} {z₀ : ℂ}
     (hf : AnalyticAt ℂ f z₀) (hne : ∀ᶠ z in 𝓝[≠] z₀, f z ≠ f z₀) :
     ∀ᶠ z in 𝓝[≠] z₀, deriv f z ≠ 0 := by
   rcases hf.deriv.eventually_eq_zero_or_eventually_ne_zero with hz | hz

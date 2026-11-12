@@ -11,8 +11,9 @@ import Mathlib.LinearAlgebra.Complex.Determinant
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
-import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Analysis.Analytic.IsolatedCriticalPoints
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
 
 /-!
 # The local index of a holomorphic map is its order of vanishing
@@ -27,8 +28,7 @@ index of a holomorphic map at a point near which it is not constant is a positiv
 (`TauCeti.HomologicalOrientation.localIndex_pos_of_analyticAt`): the isolated zeros of a
 holomorphic function carry positive topological multiplicities, which are the zero orders. This is
 the input that compares the zero orders of a holomorphic section with its topological local
-indices, and so with the signed count of the zeros of a transverse section, in the zero count of
-the PseudoholomorphicCurveAnalysis roadmap.
+indices, and so with the signed count of the zeros of a transverse section.
 
 At a point where `f` is complex differentiable with nonzero derivative `c`, its real derivative is
 multiplication by `c`, of determinant `‖c‖² > 0`, so the local index is `1`
@@ -40,11 +40,12 @@ holomorphic, not only on the orientation being the same on both sides.
 The proof of the general statement counts preimages. Choose a closed disc `D` around `z₀` on which
 `f` is analytic, `z₀` is the only solution of `f z = f z₀`, and `f'` vanishes nowhere except
 possibly at `z₀`. Extend `f|_D` radially to a proper map `g : ℂ → ℂ` whose values outside the open
-disc stay a fixed distance away from `f z₀`. The degree of `g` is its local index at `z₀`, the only
-preimage of `f z₀`, which is the local index of `f`. At a value `w ≠ f z₀` close to `f z₀`, the
-preimages of `w` under `g` are the `m` distinct simple solutions of `f z = w` in the disc, with `m`
-the order of `f - f z₀` at `z₀` (`TauCeti.localDegree_card`, a Rouché argument). Each has local
-index `1`, so the degree of `g` is also `m`.
+disc stay a fixed distance away from `f z₀` (`ContinuousOn.exists_isProperMap_eqOn_closedBall`).
+The degree of `g` is its local index at `z₀`, the only preimage of `f z₀`, which is the local index
+of `f`. At a value `w ≠ f z₀` close to `f z₀`, the preimages of `w` under `g` are the `m` distinct
+simple solutions of `f z = w` in the disc, with `m` the order of `f - f z₀` at `z₀`
+(`TauCeti.localDegree_card`, a Rouché argument). Each has local index `1`, so the degree of `g` is
+also `m`.
 
 ## Main results
 
@@ -102,56 +103,6 @@ theorem localIndex_conj (z : ℂ) :
   rw [h, hdet]
   simp
 
-/-- The radial extension of a map from a closed disc: if `f` stays at distance at least `δ` from
-`f z₀` on the circle of radius `r` about `z₀`, then `f` agrees on the closed disc with a proper map
-`g : ℂ → ℂ` which stays at distance at least `δ` from `f z₀` outside the open disc. Explicitly,
-`g (z₀ + s u) = f z₀ + (s / r) (f (z₀ + r u) - f z₀)` for `s ≥ r` and `‖u‖ = 1`. -/
-private theorem exists_isProperMap_eqOn_closedBall (f : C(ℂ, ℂ)) {z₀ : ℂ} {r δ : ℝ}
-    (hr : 0 < r) (hδ : 0 < δ) (hfδ : ∀ z ∈ sphere z₀ r, δ ≤ ‖f z - f z₀‖) :
-    ∃ g : C(ℂ, ℂ), IsProperMap g ∧ EqOn g f (closedBall z₀ r) ∧
-      ∀ z, r ≤ ‖z - z₀‖ → δ ≤ ‖g z - f z₀‖ := by
-  set s : ℂ → ℝ := fun z ↦ max 1 (‖z - z₀‖ / r) with hs
-  have hs1 (z : ℂ) : 1 ≤ s z := le_max_left _ _
-  have hs0 (z : ℂ) : (s z : ℂ) ≠ 0 := ofReal_ne_zero.2 (zero_lt_one.trans_le (hs1 z)).ne'
-  have hsc : Continuous s :=
-    continuous_const.max ((continuous_id.sub continuous_const).norm.div_const r)
-  have hsinv : Continuous fun z ↦ ((s z : ℂ))⁻¹ := (continuous_ofReal.comp hsc).inv₀ hs0
-  let g : C(ℂ, ℂ) :=
-    ⟨fun z ↦ f z₀ + (s z : ℂ) * (f (z₀ + ((s z : ℂ))⁻¹ * (z - z₀)) - f z₀),
-      continuous_const.add ((continuous_ofReal.comp hsc).mul ((f.continuous.comp
-        (continuous_const.add (hsinv.mul (continuous_id.sub continuous_const)))).sub
-          continuous_const))⟩
-  have hg (z : ℂ) : g z = f z₀ + (s z : ℂ) * (f (z₀ + ((s z : ℂ))⁻¹ * (z - z₀)) - f z₀) := rfl
-  -- Outside the open disc, `g z - f z₀` is `s z` times the value of `f - f z₀` at the point of the
-  -- circle on the ray through `z`.
-  have hout (z : ℂ) (hz : r ≤ ‖z - z₀‖) : s z * δ ≤ ‖g z - f z₀‖ := by
-    have hsz : s z = ‖z - z₀‖ / r := max_eq_right ((one_le_div hr).2 hz)
-    have hmem : z₀ + ((s z : ℂ))⁻¹ * (z - z₀) ∈ sphere z₀ r := by
-      rw [mem_sphere, dist_eq_norm, add_sub_cancel_left, norm_mul, norm_inv, norm_real,
-        Real.norm_of_nonneg (zero_le_one.trans (hs1 z)), hsz]
-      field_simp [(hr.trans_le hz).ne']
-    rw [hg, add_sub_cancel_left, norm_mul, norm_real,
-      Real.norm_of_nonneg (zero_le_one.trans (hs1 z))]
-    exact mul_le_mul_of_nonneg_left (hfδ _ hmem) (zero_le_one.trans (hs1 z))
-  refine ⟨g, ?_, fun z hz ↦ ?_, fun z hz ↦
-    (le_mul_of_one_le_left hδ.le (hs1 z)).trans (hout z hz)⟩
-  · -- The preimage of a compact set is closed and, by `hout`, bounded.
-    refine isProperMap_iff_isCompact_preimage.2 ⟨g.continuous, fun K hK ↦ ?_⟩
-    obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall (f z₀)
-    refine isCompact_of_isClosed_isBounded (hK.isClosed.preimage g.continuous)
-      ((isBounded_closedBall (x := z₀) (r := max r (R * r / δ))).subset fun z hz ↦ ?_)
-    rw [mem_closedBall, dist_eq_norm]
-    by_cases hzr : r ≤ ‖z - z₀‖
-    · have h1 := (hout z hzr).trans (by simpa [dist_eq_norm] using hR hz)
-      have hsz : s z = ‖z - z₀‖ / r := max_eq_right ((one_le_div hr).2 hzr)
-      rw [hsz, div_mul_eq_mul_div, div_le_iff₀ hr] at h1
-      exact le_max_of_le_right ((le_div_iff₀ hδ).2 (by nlinarith))
-    · exact le_max_of_le_left (not_le.1 hzr).le
-  · have hz' : ‖z - z₀‖ ≤ r := by simpa [dist_eq_norm] using hz
-    have hsz : s z = 1 := max_eq_left ((div_le_one hr).2 hz')
-    rw [hg, hsz]
-    simp
-
 /-- **The local index of a holomorphic map is its order of vanishing.** If `f : ℂ → ℂ` is analytic
 at `z₀`, its local index at `z₀`, for the same orientation of `ℂ` on source and target, is the
 order of vanishing of `f - f z₀` at `z₀`. Both sides are `0` when `f` is constant near `z₀`. -/
@@ -168,8 +119,13 @@ theorem localIndex_eq_analyticOrderNatAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : An
   have hE : finrank ℝ ℂ = 2 := finrank_real_complex
   -- A closed disc of radius `r` on which `f` is analytic, `z₀` is the only solution of
   -- `f z = f z₀`, and `f'` vanishes nowhere except possibly at `z₀`.
-  have hderiv : ∀ᶠ z in 𝓝[≠] z₀, deriv f z ≠ 0 :=
-    eventually_deriv_ne_zero_of_eventually_ne hf (hisol.mono fun _ h ↦ sub_ne_zero.1 h)
+  have hderiv : ∀ᶠ z in 𝓝[≠] z₀, deriv f z ≠ 0 := by
+    obtain ⟨ε, hε, hεf⟩ := eventually_nhds_iff_ball.1 hf.eventually_analyticAt
+    refine AnalyticOnNhd.eventually_deriv_ne_zero_of_not_eqOn_const hεf
+      (convex_ball z₀ ε).isPreconnected (fun ⟨c, hc⟩ ↦ ?_) (mem_ball_self hε)
+    obtain ⟨z, hzε, hz⟩ :=
+      ((eventually_nhdsWithin_of_eventually_nhds (ball_mem_nhds z₀ hε)).and hisol).exists
+    exact hz (by rw [Pi.sub_apply, hc hzε, hc (mem_ball_self hε), sub_self])
   have hall : ∀ᶠ z in 𝓝 z₀, AnalyticAt ℂ f z ∧ (z ≠ z₀ → f z ≠ f z₀) ∧
       (z ≠ z₀ → deriv f z ≠ 0) := by
     filter_upwards [hf.eventually_analyticAt, eventually_nhdsWithin_iff.1 hisol,
@@ -191,12 +147,13 @@ theorem localIndex_eq_analyticOrderNatAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : An
   obtain ⟨δ₂, hδ₂, hδ₂le⟩ := exists_pos_le_norm_of_mem_sphere (f := fun z ↦ f z - f z₀)
     (f.continuous.continuousOn.sub continuousOn_const) fun z hz ↦ sub_ne_zero.2
       (hisolr z (sphere_subset_closedBall hz) (ne_of_mem_sphere hz hr.ne'))
-  obtain ⟨g, hgp, hgf, hgout⟩ := exists_isProperMap_eqOn_closedBall f hr hδ₂ hδ₂le
+  obtain ⟨g, hgp, hgf, hgout⟩ :=
+    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall hr hδ₂ hδ₂le
   have hgf_nhds (x : ℂ) (hx : x ∈ ball z₀ r) : g =ᶠ[𝓝 x] f :=
     eventually_of_mem (isOpen_ball.mem_nhds hx) fun _ hy ↦ hgf (ball_subset_closedBall hy)
   -- Outside the open disc `g` misses the ball of radius `δ₂` about `f z₀`.
   have hgball (z : ℂ) {w : ℂ} (hw : ‖w - f z₀‖ < δ₂) (hz : g z = w) : z ∈ ball z₀ r := by
-    rw [mem_ball, dist_eq_norm]
+    rw [mem_ball]
     by_contra h
     exact (hgout z (not_lt.1 h)).not_gt (hz ▸ hw)
   -- The fibre of `g` over `f z₀` is `{z₀}`.
