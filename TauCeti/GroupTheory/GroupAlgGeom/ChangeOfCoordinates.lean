@@ -14,8 +14,32 @@ A coefficient-preserving word homomorphism acts on tuples by evaluation. When it
 this action transports solution sets and radicals, and induces an isomorphism of coordinate
 groups. The results apply to inconsistent systems and arbitrary coefficient homomorphisms.
 
-The construction is the invertible case of the word-map correspondence of Baumslag, Myasnikov
-and Remeslennikov, *Algebraic geometry over groups I*, §3.5.
+Multiplying every variable on the right by a coefficient is a change of coordinates. The change of
+coordinates `x ↦ x g` of one variable fixes the commutator equation `[x, g] = 1`, so it carries
+its solutions, the centralizer of `ι g`, onto themselves.
+
+## Main definitions
+
+* `TauCeti.GroupAlgGeom.coordinateChangeEquiv`, `TauCeti.GroupAlgGeom.coordinateChangeEquivV`:
+  a bijective coefficient-preserving word map gives an equivalence of tuples, restricting to an
+  equivalence of solution sets.
+* `TauCeti.GroupAlgGeom.CoordGroup.equivOfCoordinateChange`: the induced isomorphism of
+  coordinate groups.
+
+## Main results
+
+* `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V`: a change of coordinates `σ` carries
+  `V_H(S)` onto `V_H(σ⁻¹(S))`.
+* `TauCeti.GroupAlgGeom.GX.evalGHom_inr_of_mul_inl_bijective`,
+  `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V_singleton_commutatorElement`: right
+  translation of the variables by coefficients is a change of coordinates, and `x ↦ x g` carries
+  the solutions of `[x, g] = 1` onto themselves.
+
+## References
+
+* G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
+  and ideal theory*, J. Algebra 219 (1999), §3.3, Corollary 6, and §3.5: the construction is the
+  invertible case of the word-map correspondence.
 -/
 
 public section
@@ -26,6 +50,8 @@ namespace GroupAlgGeom
 open Monoid.Coprod
 
 variable {G H X Y Z : Type*} [Group G] [Group H] (ι : G →* H)
+
+section CoordinateChange
 
 variable (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
     (hσ : Function.Bijective σ)
@@ -70,6 +96,14 @@ noncomputable def coordinateChangeEquivV (S : Set (GX G X)) :
   -- The subtype equivalence applies the tuple equivalence to the underlying value.
   change coordinateChangeEquiv ι σ hσ (v : X → H) = _
   simp
+
+/-- A change of coordinates carries the solutions of `S` onto the solutions of the transformed
+system `σ⁻¹(S)`. -/
+theorem image_coordinateChangeEquiv_V (S : Set (GX G X)) :
+    coordinateChangeEquiv ι σ hσ '' V ι S = V ι (σ ⁻¹' S) := by
+  ext v
+  rw [Equiv.image_eq_preimage_symm, Set.mem_preimage, ← wordMap_mem_V_iff ι σ hσ.2,
+    ← coordinateChangeEquiv_apply ι σ hσ, Equiv.apply_symm_apply]
 
 /-- On tuples, the inverse solution equivalence applies the inverse word map. -/
 @[simp] theorem coordinateChangeEquivV_symm_apply_coe
@@ -142,6 +176,52 @@ theorem equivOfCoordinateChange_symm_coeff (S : Set (GX G X)) (g : G) :
   simp
 
 end CoordGroup
+
+end CoordinateChange
+
+/-! ### Right translation of the variables -/
+
+section Translation
+
+open FreeGroup
+open scoped commutatorElement
+
+/-- Right multiplication of every variable by a coefficient, `x ↦ x (g x)`, is a change of
+coordinates of `G[X]`. -/
+theorem GX.evalGHom_inr_of_mul_inl_bijective (g : X → G) :
+    Function.Bijective (evalGHom (inl : G →* GX G X) fun x => inr (of x) * inl (g x)) := by
+  set σ := evalGHom (inl : G →* GX G X) fun x => inr (of x) * inl (g x)
+  -- The inverse multiplies every variable on the right by the inverse coefficient.
+  set τ := evalGHom (inl : G →* GX G X) fun x => inr (of x) * inl (g x)⁻¹
+  have h₁ : σ.comp τ = GHom.id _ := by
+    ext x
+    simp [σ, τ]
+  have h₂ : τ.comp σ = GHom.id _ := by
+    ext x
+    simp [σ, τ]
+  exact ⟨Function.LeftInverse.injective (g := τ) fun w => by simpa using DFunLike.congr_fun h₂ w,
+    Function.RightInverse.surjective (g := τ) fun w => by simpa using DFunLike.congr_fun h₁ w⟩
+
+/-- The change of coordinates `x ↦ x g` of `G[x]` fixes the commutator `[x, g]`. -/
+theorem GX.evalGHom_inr_of_mul_inl_commutatorElement (g : G) :
+    evalGHom (inl : G →* GX G Unit) (fun x => inr (of x) * inl g)
+        ⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆ =
+      ⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆ := by
+  simp [commutatorElement_def]
+
+/-- The change of coordinates `x ↦ x g` carries the solutions of `[x, g] = 1`, the centralizer of
+`ι g`, onto themselves. -/
+theorem image_coordinateChangeEquiv_V_singleton_commutatorElement (g : G) :
+    coordinateChangeEquiv ι _ (GX.evalGHom_inr_of_mul_inl_bijective fun _ : Unit => g) ''
+        V ι {⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆} =
+      V ι {⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆} := by
+  have hσ := GX.evalGHom_inr_of_mul_inl_bijective fun _ : Unit => g
+  have hc := GX.evalGHom_inr_of_mul_inl_commutatorElement g
+  -- The change of coordinates fixes the equation, so it fixes the system.
+  refine (image_coordinateChangeEquiv_V ι _ hσ _).trans (congrArg (V ι) ?_)
+  exact Set.ext fun w => ⟨fun h => hσ.1 (h.trans hc.symm), fun h => (congrArg _ h).trans hc⟩
+
+end Translation
 
 end GroupAlgGeom
 end TauCeti
