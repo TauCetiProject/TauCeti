@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.Basic
 public import TauCeti.AlgebraicGeometry.Rigidity
-import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
+import TauCeti.AlgebraicGeometry.GroupScheme.Separated
 
 /-!
 # Morphisms of abelian varieties preserving the identity are homomorphisms
@@ -55,10 +55,10 @@ universe u
 variable {K : Type u} [Field K]
 
 /-- A morphism of monoid schemes over `K` from a proper geometrically integral source to a
-separated locally finite type group scheme is a homomorphism if it preserves the identity. -/
+locally finite type group scheme is a homomorphism if it preserves the identity. -/
 theorem isMonHom_of_one_hom {A B : Over (Spec (.of K))} [MonObj A] [GrpObj B]
     [IsProper A.hom] [GeometricallyIntegral A.hom]
-    [IsSeparated B.hom] [LocallyOfFiniteType B.hom]
+    [LocallyOfFiniteType B.hom]
     (f : A ⟶ B) (hf : η[A] ≫ f = η[B]) : IsMonHom f := by
   -- The defect `h (x, y) = f (x y) / (f x * f y)`, in the group of morphisms `A × A ⟶ B`.
   let h : A ⊗ A ⟶ B :=
