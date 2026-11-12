@@ -21,17 +21,15 @@ matrices of structure constants into identities between the products and maps th
 
 ## Main results
 
-* `TauCeti.sum_mul_sum_sum_mul_mul`: contracting the output index.
-* `TauCeti.sum_sum_sum_mul_mul_mul_left`: transforming the first input.
-* `TauCeti.sum_sum_mul_sum_mul_mul_right`: transforming the second input.
-* `TauCeti.sum_sum_sum_mul_sum_mul_mul`: transforming both inputs.
+* `Finset.sum_mul_sum_sum_mul_mul`: contracting the output index.
+* `Finset.sum_sum_sum_mul_mul_mul_left`: transforming the first input.
+* `Finset.sum_sum_mul_sum_mul_mul_right`: transforming the second input.
+* `Finset.sum_sum_sum_mul_sum_mul_mul`: transforming both inputs.
 -/
 
 public section
 
-namespace TauCeti
-
-open Finset
+namespace Finset
 
 variable {ι₁ ι₂ ι₀ κ₁ κ₂ R : Type*} [CommSemiring R] (s₁ : Finset ι₁) (s₂ : Finset ι₂)
   (x : ι₁ → R) (y : ι₂ → R)
@@ -76,4 +74,4 @@ theorem sum_sum_sum_mul_sum_mul_mul (t₁ : Finset κ₁) (t₂ : Finset κ₂) 
   refine (sum_sum_sum_mul_mul_mul_left s₁ s₂ x y t₁ A _).trans ?_
   simp only [mul_sum, mul_left_comm (A _ _), mul_assoc]
 
-end TauCeti
+end Finset

@@ -209,8 +209,9 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_eq_add
   -- Each of the three sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the
   -- three sums over `k` of the Leibniz identity. Termwise, this is the Leibniz identity, with the
   -- sign of the orbit of `i` replaced by the sign of the degree of `a` on its nonzero coordinates.
-  rw [sum_mul_sum_sum_mul_mul _ _ x y _ Q (D₀ · l), sum_sum_sum_mul_mul_mul_left _ _ x y _ D₁,
-    sum_sum_mul_sum_mul_mul_right _ _ x y _ D₂, Finset.smul_sum, ← Finset.sum_add_distrib]
+  rw [Finset.sum_mul_sum_sum_mul_mul _ _ x y _ Q (D₀ · l),
+    Finset.sum_sum_sum_mul_mul_mul_left _ _ x y _ D₁,
+    Finset.sum_sum_mul_sum_mul_mul_right _ _ x y _ D₂, Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_

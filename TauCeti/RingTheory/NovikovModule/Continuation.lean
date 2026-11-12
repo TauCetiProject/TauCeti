@@ -364,9 +364,11 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_sub_novikovProductOfMatrix_nov
   -- Each of the five sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the five
   -- sums of the homotopy identity. Termwise, this is the homotopy identity, with the sign of the
   -- orbit of `i` replaced by the sign of the degree of `a` on its nonzero coordinates.
-  rw [sum_mul_sum_sum_mul_mul _ _ x y _ Q (Φ₀ · l), sum_sum_sum_mul_sum_mul_mul _ _ x y _ _ Φ₁ Φ₂,
-    sum_mul_sum_sum_mul_mul _ _ x y _ K (E₀ · l), sum_sum_sum_mul_mul_mul_left _ _ x y _ D₁,
-    sum_sum_mul_sum_mul_mul_right _ _ x y _ D₂, ← Finset.sum_sub_distrib, Finset.smul_sum,
+  rw [Finset.sum_mul_sum_sum_mul_mul _ _ x y _ Q (Φ₀ · l),
+    Finset.sum_sum_sum_mul_sum_mul_mul _ _ x y _ _ Φ₁ Φ₂,
+    Finset.sum_mul_sum_sum_mul_mul _ _ x y _ K (E₀ · l),
+    Finset.sum_sum_sum_mul_mul_mul_left _ _ x y _ D₁,
+    Finset.sum_sum_mul_sum_mul_mul_right _ _ x y _ D₂, ← Finset.sum_sub_distrib, Finset.smul_sum,
     ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
