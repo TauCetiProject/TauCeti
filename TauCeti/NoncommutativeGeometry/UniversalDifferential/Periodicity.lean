@@ -58,10 +58,10 @@ theorem exteriorProductCocycle_scalarCocycle_zero_apply_tmul_one
     (φ : cyclicCocycles k A M p) (a : Fin (p + 1) → A) :
     ((exteriorProductCocycle φ (scalarCocycle k 0) :
         cyclicCochains k (A ⊗[k] k) (M ⊗[k] k) (p + 0)) :
-        MultilinearMap k (fun _ : Fin (p + 0 + 1) ↦ A ⊗[k] k) (M ⊗[k] k))
+        MultilinearMap (RingHom.id k) (fun _ : Fin (p + 0 + 1) ↦ A ⊗[k] k) (M ⊗[k] k))
         (fun i ↦ a i ⊗ₜ[k] (1 : k)) =
-      ((φ : cyclicCochains k A M p) : MultilinearMap k (fun _ : Fin (p + 1) ↦ A) M) a ⊗ₜ[k]
-        (1 : k) := by
+      ((φ : cyclicCochains k A M p) :
+        MultilinearMap (RingHom.id k) (fun _ : Fin (p + 1) ↦ A) M) a ⊗ₜ[k] (1 : k) := by
   rw [exteriorProductCocycle_apply_tmul_of_zero, scalarCocycle_zero_apply, List.ofFn_const,
     List.prod_replicate, one_pow]
 
@@ -72,10 +72,10 @@ theorem exteriorProductCocycle_scalarCocycle_one_apply_tmul_one
     (φ : cyclicCocycles k A M p) (a : Fin (p + 3) → A) :
     ((exteriorProductCocycle φ (scalarCocycle k 1) :
         cyclicCochains k (A ⊗[k] k) (M ⊗[k] k) (p + 2)) :
-        MultilinearMap k (fun _ : Fin (p + 3) ↦ A ⊗[k] k) (M ⊗[k] k))
+        MultilinearMap (RingHom.id k) (fun _ : Fin (p + 3) ↦ A ⊗[k] k) (M ⊗[k] k))
         (fun i ↦ a i ⊗ₜ[k] (1 : k)) =
       ((cyclicCocyclesPeriodicity k A M p φ : cyclicCochains k A M (p + 2)) :
-        MultilinearMap k (fun _ : Fin (p + 3) ↦ A) M) a ⊗ₜ[k] (1 : k) := by
+        MultilinearMap (RingHom.id k) (fun _ : Fin (p + 3) ↦ A) M) a ⊗ₜ[k] (1 : k) := by
   rw [exteriorProductCocycle_apply]
   refine (cycleCharacter_gradedTensorHomOfMemZero_tmul_of_two (UniversalForms.isDGAlgebra k A)
     (UniversalForms.isDGAlgebra k k) IsIdempotentElem.one a).trans ?_
@@ -88,10 +88,11 @@ theorem rid_comp_exteriorProductCocycle_scalarCocycle_one (φ : cyclicCocycles k
     (TensorProduct.rid k M).toLinearMap.compMultilinearMap
         ((((exteriorProductCocycle φ (scalarCocycle k 1) :
           cyclicCochains k (A ⊗[k] k) (M ⊗[k] k) (p + 2)) :
-          MultilinearMap k (fun _ : Fin (p + 3) ↦ A ⊗[k] k) (M ⊗[k] k))).compLinearMap
+          MultilinearMap (RingHom.id k) (fun _ : Fin (p + 3) ↦ A ⊗[k] k)
+            (M ⊗[k] k))).compLinearMap
           fun _ ↦ (TensorProduct.rid k A).symm.toLinearMap) =
       ((cyclicCocyclesPeriodicity k A M p φ : cyclicCochains k A M (p + 2)) :
-        MultilinearMap k (fun _ : Fin (p + 3) ↦ A) M) := by
+        MultilinearMap (RingHom.id k) (fun _ : Fin (p + 3) ↦ A) M) := by
   ext a
   simp only [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply,
     LinearEquiv.coe_coe, TensorProduct.rid_symm_apply,

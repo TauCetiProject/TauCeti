@@ -257,7 +257,7 @@ private theorem volume_lt_enorm_le_volume_czUnion [Nonempty ι] {f : (ι → ℝ
     (hf : Integrable f) {t : ℝ≥0∞} (ht : t ≠ 0) :
     volume {x | t < ‖f x‖ₑ} ≤ volume (czUnion f t) := by
   refine measure_mono_ae ?_
-  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.1.enorm hf.2.ne ht]
+  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.1.eNorm hf.2.ne ht]
     with x hx (hxt : t < ‖f x‖ₑ)
   by_contra hxU
   refine (hx fun q hq hxq => hxU ?_).not_gt hxt
@@ -275,7 +275,7 @@ private theorem mul_volume_le_setLIntegral_enorm_sub {f : (ι → ℝ) → F} {t
   calc t * volume P + t * volume P = 2 * t * volume P := by ring
     _ ≤ ∫⁻ y in P, ‖f y‖ₑ := (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hp).le
     _ ≤ ∫⁻ y in P, (‖f y - a‖ₑ + ‖a‖ₑ) :=
-        lintegral_mono fun y => by simpa using enorm_add_le (f y - a) a
+        lintegral_mono fun y => by simpa using eNorm_add_le (f y - a) a
     _ = (∫⁻ y in P, ‖f y - a‖ₑ) + ‖a‖ₑ * volume P := by
         rw [lintegral_add_right _ measurable_const, setLIntegral_const]
     _ ≤ (∫⁻ y in P, ‖f y - a‖ₑ) + t * volume P := by gcongr
@@ -347,7 +347,7 @@ private theorem mul_volume_czUnion_two_mul_inter_le {f : (ι → ℝ) → F} (hf
 `m(2t) ≤ 2²ⁿ⁺¹ γ m(t) + |{f^# > γ t}|`,
 
 where `m(s)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `s`. -/
-private theorem volume_czUnion_two_mul_le [Nonempty ι] {f : (ι → ℝ) → F} (hf : Integrable f)
+private theorem volume_czUnion_two_mul_le {f : (ι → ℝ) → F} (hf : Integrable f)
     {t : ℝ≥0∞} (ht : t ≠ 0) (ht' : t ≠ ∞) (γ : ℝ≥0∞) :
     volume (czUnion f (2 * t)) ≤ 2 ^ (2 * Fintype.card ι + 1) * γ * volume (czUnion f t) +
       volume {x | γ * t < sharpMaximalFunction volume f x} := by
@@ -458,7 +458,7 @@ variable [NormedSpace ℝ F] [CompleteSpace F]
 where `m(t)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `t`.
 Substituting `t = 2s` and applying the good-`λ` inequality bounds the left side by half of itself
 plus the right side, and the left side is finite, so the first term is absorbed. -/
-private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι → ℝ) → F}
+private theorem setLIntegral_volume_czUnion_mul_rpow_le {f : (ι → ℝ) → F}
     (hf : Integrable f) {p : ℝ} (hp : 1 < p) {N : ℝ} (hN : 0 ≤ N) :
     ∫⁻ t in Ioo 0 N, volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1)) ≤
       2 * (ENNReal.ofReal (2 ^ p) *
@@ -534,7 +534,7 @@ theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι
     Monotone.directed_le fun _ _ h => Ioo_subset_Ioo_right (by exact_mod_cast h)
   calc ∫⁻ x, ‖f x‖ₑ ^ p
       = ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ), volume {x | ENNReal.ofReal t < ‖f x‖ₑ} * w t :=
-        lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hf.1.enorm hp0
+        lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hf.1.eNorm hp0
     _ ≤ ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ), m t * w t := by
         refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioi fun t ht => ?_)
         gcongr
@@ -572,12 +572,12 @@ theorem eLpNorm_le_eLpNorm_sharpMaximalFunction [Nonempty ι] {f : (ι → ℝ) 
   have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top hf.1,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hf.1,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top
       (measurable_sharpMaximalFunction volume f).aestronglyMeasurable,
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
-  simpa only [enorm_eq_self] using
+  simpa only [eNorm_eq_self] using
     lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow hf hpr
 
 end FeffermanStein

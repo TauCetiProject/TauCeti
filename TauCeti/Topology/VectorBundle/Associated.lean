@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.FiberBundle.Associated
+public import TauCeti.Topology.FiberBundle.Associated.Basic
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -48,7 +48,7 @@ instance instModule (b : B) : Module 𝕜 (AssociatedBundle G P F b) :=
 /-- Associated-bundle charts are linear when the structure-group action is linear. -/
 instance localTriv_isLinear (b : B) :
     ((associatedBundleCore G P F).localTriv b).IsLinear 𝕜 where
-  linear x hx := by
+  linear x _ := by
     refine ⟨?_, ?_⟩
     · intro v w
       simp only [FiberBundleCore.localTriv_apply]

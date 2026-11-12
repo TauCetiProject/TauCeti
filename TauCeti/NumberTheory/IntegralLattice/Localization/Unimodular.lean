@@ -56,7 +56,7 @@ theorem isPerfPair_localIntegralForm_of_isUnit_determinant (L : IntegralLattice 
     (L.localIntegralForm p).IsPerfPair := by
   rw [← L.det_toMatrix_localIntegralForm p (Module.finBasis ℤ L)] at hdet
   -- `LinearMap.BilinForm.toMatrix b` is defined as `LinearMap.toMatrix₂ b b`.
-  exact (Module.finBasis ℤ L).baseChange ℤ_[p] |>.isPerfPair_of_isUnit_det _ hdet
+  exact Module.Basis.isPerfPair_of_isUnit_det _ _ _ hdet
 
 /-- Integrally isometric localizations have equal ranks and determinant products that are
 squares, at every prime and without any determinant-unit hypothesis. -/
