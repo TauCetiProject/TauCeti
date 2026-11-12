@@ -317,7 +317,7 @@ theorem lieSubalgebraOfSubgroup_le_iff {K : Subgroup G}
 theorem lieSubalgebraOfSubgroup_eq_bot_of_isTotallyDisconnected {K : Subgroup G}
     (hK : IsTotallyDisconnected (K : Set G)) :
     TauCeti.Lie.lieSubalgebraOfSubgroup (I := I) K = ⊥ := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   apply le_antisymm _ bot_le
   apply TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff.mpr
   intro X hX
