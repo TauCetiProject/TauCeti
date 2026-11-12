@@ -54,9 +54,8 @@ is pulled back from `Y`. The energy identity itself is not proved here.
 * `TauCeti.SmoothForm.mpullback_snd_mpullback_prodMk_of_interior_eq_zero`: the same for smooth
   forms on `AddCircle p × M`.
 * `TauCeti.SmoothForm.exists_mpullback_snd_eq_iff_interior_eq_zero`: a smooth closed form on
-  `AddCircle p × M` is pulled back from `M` exactly when `ι_{∂ₛ} α = 0`.
-* `TauCeti.SmoothForm.exists_isClosed_and_mpullback_snd_eq`: the form on `M` can be chosen
-  closed; it is unique, since pullback along `pr₂` is injective
+  `AddCircle p × M` is pulled back from a closed form on `M` exactly when `ι_{∂ₛ} α = 0`. That
+  form is unique, since pullback along `pr₂` is injective
   (`TauCeti.SmoothForm.mpullback_snd_injective`).
 
 ## References
@@ -223,15 +222,18 @@ theorem mpullback_snd_mpullback_prodMk_of_interior_eq_zero
   rw [coe_mpullback, coe_mpullback]
   exact (eq_mpullback_snd_of_interior_eq_zero hι hconst).symm
 
-/-- A smooth closed form `α` on `AddCircle p × M` is the pullback of a smooth form on `M` along
-the second projection exactly when its contraction with `∂ₛ = (1, 0)` vanishes. -/
+/-- A smooth closed form `α` on `AddCircle p × M` is the pullback of a closed smooth form on `M`
+along the second projection exactly when its contraction with `∂ₛ = (1, 0)` vanishes. By
+`TauCeti.SmoothForm.mpullback_snd_injective`, that form is the only smooth form on `M`, closed or
+not, whose pullback is `α`. -/
 theorem exists_mpullback_snd_eq_iff_interior_eq_zero
     {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × M) F (k + 1)} (hα : α.IsClosed) :
-    (∃ β : SmoothForm I M F (k + 1), mpullback Prod.snd contMDiff_snd β = α) ↔
+    (∃ β : SmoothForm I M F (k + 1), β.IsClosed ∧ mpullback Prod.snd contMDiff_snd β = α) ↔
       RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × M) (F := F)
         (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0 := by
-  refine ⟨?_, fun hι ↦ ⟨_, mpullback_snd_mpullback_prodMk_of_interior_eq_zero hα hι 0⟩⟩
-  rintro ⟨β, rfl⟩
+  refine ⟨?_, fun hι ↦
+    ⟨_, hα.mpullback _ _, mpullback_snd_mpullback_prodMk_of_interior_eq_zero hα hι 0⟩⟩
+  rintro ⟨β, -, rfl⟩
   -- The second projection kills `∂ₛ`.
   let W : (q : AddCircle p × M) → TangentSpace (𝓘(ℝ).prod I) q := fun _ ↦ ((1 : ℝ), (0 : E))
   rw [coe_mpullback]
@@ -240,17 +242,6 @@ theorem exists_mpullback_snd_eq_iff_interior_eq_zero
     -- The second projection of `(1, 0)` is `0`.
     rfl
   · rw [RoughForm.interior_zero_field, mpullback_zero]
-
-/-- A smooth closed form `α` on `AddCircle p × M` whose contraction with `∂ₛ = (1, 0)` vanishes is
-the pullback along the second projection of a closed smooth form on `M`. By
-`TauCeti.SmoothForm.mpullback_snd_injective`, this is the only smooth form on `M`, closed or not,
-whose pullback is `α`. -/
-theorem exists_isClosed_and_mpullback_snd_eq
-    {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × M) F (k + 1)} (hα : α.IsClosed)
-    (hι : RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × M) (F := F)
-      (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 = 0) :
-    ∃ β : SmoothForm I M F (k + 1), β.IsClosed ∧ mpullback Prod.snd contMDiff_snd β = α :=
-  ⟨_, hα.mpullback _ _, mpullback_snd_mpullback_prodMk_of_interior_eq_zero hα hι 0⟩
 
 end SmoothForm
 
