@@ -297,7 +297,7 @@ private theorem MemSobolev.integrable_norm_pow_mul_norm_and_integral_le {s : ℝ
       ring
     rwa [heq, hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv] at h
   have hlt : eLpNorm w 1 volume < ∞ :=
-    hw.trans_lt (ENNReal.mul_lt_top hK.lt_top enorm_lt_top)
+    hw.trans_lt (ENNReal.mul_lt_top hK.lt_top eNorm_lt_top)
   have hwi : Integrable w := memLp_one_iff_integrable.1 hlt
   have hle (ξ : E) : ‖ξ‖ ^ j * ‖v ξ‖ ≤ ‖w ξ‖ := by
     rw [norm_smul, Real.norm_of_nonneg (by positivity)]
@@ -315,8 +315,8 @@ private theorem MemSobolev.integrable_norm_pow_mul_norm_and_integral_le {s : ℝ
   refine ⟨hint, ?_⟩
   calc ∫ ξ, ‖ξ‖ ^ j * ‖v ξ‖ ≤ ∫ ξ, ‖w ξ‖ := integral_mono hint hwi.norm hle
     _ ≤ K.toReal * ‖hf.toBesselPotentialSpace‖ := by
-      rw [integral_norm_eq_lintegral_enorm hwm]
-      rw [eLpNorm_one_eq_lintegral_enorm hwm, ← ofReal_norm, ← ENNReal.ofReal_toReal hK,
+      rw [integral_norm_eq_lintegral_eNorm hwm]
+      rw [eLpNorm_one_eq_lintegral_eNorm hwm, ← ofReal_norm, ← ENNReal.ofReal_toReal hK,
         ← ENNReal.ofReal_mul ENNReal.toReal_nonneg] at hw
       exact ENNReal.toReal_le_of_le_ofReal (by positivity) hw
 

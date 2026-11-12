@@ -62,7 +62,7 @@ theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev {a : Symbol n V W m} (ha 
   -- A symbol of order `s - t` with the same coefficient maps `H^s` into `H^t`.
   obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - t)
   have hbc := hc.of_coefficient_eq hb
-  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc s u]
+  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
   simpa only [sub_sub_cancel] using (b.quantizeSobolev hbc s u).memSobolev_toDistr
 
 /-- **Smoothing operators produce smooth functions.** For a smoothing symbol `a` with compact
