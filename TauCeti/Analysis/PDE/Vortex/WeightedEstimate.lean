@@ -385,13 +385,8 @@ theorem exists_pos_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFix
   have hδ : 0 < δ := lt_min (by positivity) (by linarith)
   refine ⟨b, hb, δ, hδ, fun V hV hV₀ hdV η hη hηc ↦ ?_⟩
   -- The logarithmic gradient of `V` is at most `|c|`, and at most `√m / 4` on the disc.
-  have hWd (z : ℂ) : ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2 := by
-    have hp : 0 < b + ‖z‖ ^ 2 := by positivity
-    have hq : ‖z‖ / √(b + ‖z‖ ^ 2) ≤ 1 :=
-      (div_le_one (Real.sqrt_pos.2 hp)).2 ((Real.le_sqrt (norm_nonneg z) hp.le).2 (by linarith))
-    have h := (hdV z).trans (mul_le_mul_of_nonneg_right
-      (mul_le_of_le_one_right (abs_nonneg c) hq) (hV₀ z))
-    simpa only [mul_pow, sq_abs] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have hWd (z : ℂ) : ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2 :=
+    norm_fderiv_sq_le_of_norm_fderiv_le c (by linarith) (hV₀ z) (hdV z)
   have hWd₂ (z : ℂ) (hz : ‖z‖ ≤ R₂) : ‖fderiv ℝ V z‖ ^ 2 ≤ m / 16 * V z ^ 2 := by
     have hp : 0 < b + ‖z‖ ^ 2 := by positivity
     have hz2 : ‖z‖ ^ 2 ≤ R₂ ^ 2 := pow_le_pow_left₀ (norm_nonneg z) hz 2
@@ -501,7 +496,7 @@ theorem exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFix
   obtain ⟨b, hb, δ, hδ, hW⟩ :=
     exists_pos_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFixedOperator (μ := μ)
       hx hsol hlim hc
-  set E : ℝ := Real.exp (|c| * √(b - 1)) ^ 2 with hE_def
+  set E : ℝ := Real.exp (|c| * √|b - 1|) ^ 2
   have : 0 < E := by positivity
   refine ⟨E * E / δ ^ 2, by positivity, fun η hη hηc ↦ ?_⟩
   set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
@@ -531,19 +526,13 @@ theorem exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFix
     have h2 := mul_le_mul_of_nonneg_left this (by positivity : (0 : ℝ) ≤ 2 * δ)
     convert h2 using 1 <;> field_simp
   -- The two weights are comparable, since `√·` is `1/2`-Hölder.
-  have hcmp {s t : ℝ} (hst : |s - t| = b - 1) (z : ℂ) :
-      Real.exp (c * √(s + ‖z‖ ^ 2)) ^ 2 ≤ E * Real.exp (c * √(t + ‖z‖ ^ 2)) ^ 2 := by
-    have h := exp_mul_sqrt_add_norm_sq_le c s t z
-    rw [hst] at h
-    rw [hE_def, ← mul_pow]
-    exact pow_le_pow_left₀ (Real.exp_pos _).le h 2
-  have hb1 : |1 - b| = b - 1 := by rw [abs_sub_comm, abs_of_nonneg (by linarith)]
-  have hb2 : |b - 1| = b - 1 := abs_of_nonneg (by linarith)
   have h₁ := integral_mono (hi hw hη.continuous hηc) ((hi hWc hη.continuous hηc).const_mul E)
     fun z ↦ by
-      simpa only [mul_assoc] using mul_le_mul_of_nonneg_right (hcmp hb1 z) (sq_nonneg ‖η z‖)
+      simpa only [mul_assoc, abs_sub_comm 1 b] using mul_le_mul_of_nonneg_right
+        (sq_exp_mul_sqrt_add_norm_sq_le c 1 b z) (sq_nonneg ‖η z‖)
   have h₂ := integral_mono (hi hWc hGc hGs) ((hi hw hGc hGs).const_mul E) fun z ↦ by
-      simpa only [mul_assoc] using mul_le_mul_of_nonneg_right (hcmp hb2 z) (sq_nonneg ‖G z‖)
+      simpa only [mul_assoc] using mul_le_mul_of_nonneg_right
+        (sq_exp_mul_sqrt_add_norm_sq_le c b 1 z) (sq_nonneg ‖G z‖)
   rw [integral_const_mul] at h₁ h₂
   calc ∫ z, w z ^ 2 * ‖η z‖ ^ 2 ∂μ ≤ E * ∫ z, W z ^ 2 * ‖η z‖ ^ 2 ∂μ := h₁
     _ ≤ E * (1 / δ ^ 2 * (E * ∫ z, w z ^ 2 * ‖G z‖ ^ 2 ∂μ)) := by
