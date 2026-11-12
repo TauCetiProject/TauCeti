@@ -240,12 +240,15 @@ interval `[c b ^ (μ j), c b ^ (μ j + |μ|))`, then the `ℓ^q` norm of `g`, wr
 seminorm for the counting measure, is at most `(|μ| log b) ^ (-1 / q)` times the `L^q(dt / t)`
 norm of `f`. -/
 theorem ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar {b c μ : ℝ} {q : ℝ≥0∞} (hb : 1 < b)
-    (hc : 0 < c) (hμ : μ ≠ 0) (hq : q ≠ 0) {ε : Type*} [TopologicalSpace ε] [ENorm ε] {f : ℝ → ε}
+    (hc : 0 < c) (hμ : μ ≠ 0) {ε : Type*} [TopologicalSpace ε] [ENorm ε] {f : ℝ → ε}
     (hf : AEStronglyMeasurable f multHaar) {g : ℕ → ℝ≥0∞}
     (h : ∀ j : ℕ, ∀ r ∈ Ico (c * b ^ (μ * j)) (c * b ^ (μ * j + |μ|)), g j ≤ ‖f r‖ₑ) :
     ENNReal.ofReal (|μ| * Real.log b) ^ q.toReal⁻¹ * eLpNorm g q count ≤
       eLpNorm f q multHaar := by
   have hL : 0 < |μ| * Real.log b := mul_pos (abs_pos.2 hμ) (Real.log_pos hb)
+  rcases eq_or_ne q 0 with rfl | hq
+  · rw [eLpNorm_exponent_zero .of_discrete, mul_zero]
+    exact bot_le
   rcases eq_or_ne q ∞ with rfl | hq_top
   · -- `q = ∞`: each `g j` is below `‖f‖` on a set of positive measure
     rw [ENNReal.toReal_top, inv_zero, ENNReal.rpow_zero, one_mul,

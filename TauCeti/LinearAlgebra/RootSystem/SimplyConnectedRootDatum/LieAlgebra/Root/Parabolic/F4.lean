@@ -90,7 +90,8 @@ theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_F4
       Subgroup.normalizer
         (⨆ γ ∈ posRoots (F4.rationalRootSystem ht) (F4.rationalBase ht) \ {F4.simpleIndex ht i},
           (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) :=
-  closure_simpleRootPair_le_normalizer_posRoots_diff_singleton ρ M hM hnil i A
+  closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_range_le_normalizer
+    ρ M hM hnil i A
     (range_simple_le_normalizer_posRoots_diff_singleton_F4 ρ M hM hnil i A)
 
 /-- Every positive F₄ element is a punctured-positive element followed by an element of the

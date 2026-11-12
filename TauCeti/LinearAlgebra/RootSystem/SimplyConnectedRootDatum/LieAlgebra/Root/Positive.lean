@@ -88,7 +88,7 @@ theorem map_iSup_posRoots_chevalleyRootSubgroup_conj_kostantWeylGL
     (chevalleyRootSubgroup ρ M hM hnil
       ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
         (t.simpleIndex ht i)) A).range := by
-  conv_lhs => rw [posRoots_eq_diff_singleton_union i, iSup_union]
+  conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union]
   simp only [iSup_singleton, Subgroup.map_sup,
     map_range_chevalleyRootSubgroup_conj_kostantWeylGL,
     (Subgroup.mem_normalizer_iff_map_conj_eq.mp
@@ -96,7 +96,7 @@ theorem map_iSup_posRoots_chevalleyRootSubgroup_conj_kostantWeylGL
 
 /-- If the omitted simple root subgroup normalizes the other positive root subgroups, so does
 its opposite root pair. The negative-root inclusion follows by simple Weyl conjugation. -/
-theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
+theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_range_le_normalizer
     (i : Fin t.rank) (A : CommAlgCat ℤ)
     (hx : (chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A).range ≤
       Subgroup.normalizer
@@ -134,7 +134,7 @@ theorem mem_iSup_posRoots_iff_exists_mem_posRoots_diff_singleton_mul
       ∃ q ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range),
         ∃ u, g = q * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A u := by
-  conv_lhs => rw [posRoots_eq_diff_singleton_union i, iSup_union, iSup_singleton]
+  conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union, iSup_singleton]
   rw [Subgroup.mem_sup_of_right_le_normalizer_left hx]
   constructor
   · rintro ⟨q, hq, x, ⟨u, rfl⟩, heq⟩

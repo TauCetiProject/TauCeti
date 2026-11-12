@@ -270,7 +270,7 @@ theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij :
   -- `φ` and its inverse send the generators to `x ∈ eᵢ A eⱼ` and `y ∈ eⱼ A eᵢ` with `eᵢ = x y`;
   -- the degree-zero component of `x` lies in `eᵢ A eⱼ ∩ 𝒜 0 = 0`, so that of `x y` vanishes.
   refine ⟨fun φ => hi ?_⟩
-  set x : A := (φ (spanSingletonGenerator (e i)) : A) with hxdef
+  set x : A := (φ (spanSingletonGenerator (e i)) : A)
   have hx : x ∈ cornerSubmodule k (e i) (e j) :=
     apply_generator_mem_cornerSubmodule (ho.idem i) φ.toLinearMap
   have hxy : e i = x * (φ.symm (spanSingletonGenerator (e j)) : A) := by

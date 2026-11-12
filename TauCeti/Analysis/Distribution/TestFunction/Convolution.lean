@@ -106,11 +106,11 @@ The compact set is contained in the open domain, not merely in its closure. -/
 private theorem tendsto_mollify_of_support_subset {ι : Type*} {l : Filter ι}
     (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaarMeasure]
     {ρ : ι → ContDiffBump (0 : E)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0))
-    {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω) (hφK : tsupport φ ⊆ K)
+    {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω)
     (hK : ∀ i, closedBall (0 : E) (ρ i).rOut + tsupport φ ⊆ (K : Set E)) :
     Tendsto (fun i => mollify φ μ (ρ i) ((hK i).trans hKΩ)) l (𝓝 φ) := by
   refine tendsto_of_tendstoUniformly_iteratedFDeriv K.isCompact hKΩ (fun i ↦
-    ((ρ i).tsupport_normed_convolution_subset (g := (φ : E → F))).trans (hK i)) hφK
+    ((ρ i).tsupport_normed_convolution_subset (g := (φ : E → F))).trans (hK i))
     fun n _ ↦ ?_
   have hc := φ.contDiff.continuous_iteratedFDeriv (m := n) (by simp)
   have hu := (φ.hasCompactSupport.iteratedFDeriv n).uniformContinuous_of_continuous hc
@@ -132,9 +132,6 @@ theorem tendsto_mollify {ι : Type*} {l : Filter ι} (φ : 𝓓(Ω, F))
   have hKΩ : (K : Set E) ⊆ Ω := by
     simpa only [K, Compacts.coe_mk,
       φ.hasCompactSupport.isCompact.closedBall_add hδ.le, zero_vadd] using hδΩ
-  have hφK : tsupport φ ⊆ K := by
-    intro x hx
-    exact ⟨0, mem_closedBall_self hδ.le, x, hx, zero_add x⟩
   -- Replace only the initial large bumps, obtaining a common compact support.
   let ρ₀ : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
   let σ : ι → ContDiffBump (0 : E) := fun i => if (ρ i).rOut ≤ δ then ρ i else ρ₀
@@ -149,7 +146,7 @@ theorem tendsto_mollify {ι : Type*} {l : Filter ι} (φ : 𝓓(Ω, F))
   have hσK (i : ι) : closedBall (0 : E) (σ i).rOut + tsupport φ ⊆ (K : Set E) :=
     add_subset_add (closedBall_subset_closedBall (hσδ i)) Subset.rfl
   have hσlim := hρ.congr' (hσ.symm.mono fun i hi => congrArg ContDiffBump.rOut hi)
-  refine (tendsto_mollify_of_support_subset φ μ hσlim hKΩ hφK hσK).congr' ?_
+  refine (tendsto_mollify_of_support_subset φ μ hσlim hKΩ hσK).congr' ?_
   filter_upwards [hσ] with i hi
   ext x
   simp only [mollify_apply, hi]

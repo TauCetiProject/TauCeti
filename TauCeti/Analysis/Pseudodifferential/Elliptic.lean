@@ -31,6 +31,8 @@ degree:
 * `HomogeneousSymbol.spatialDeriv_inverse` and `HomogeneousSymbol.frequencyDeriv_inverse`: the
   derivatives of the inverse are `-(a⁻¹ ∘ ∂a ∘ a⁻¹)`, the formula behind the derivative
   estimates of inverse symbols.
+* `HomogeneousSymbol.isElliptic_adjoint_iff`: between Hilbert spaces, the pointwise adjoint of a
+  symbol is elliptic exactly when the symbol is.
 * `HomogeneousSymbol.IsElliptic.finrank_eq`: when the frequency space is nontrivial, an elliptic
   symbol identifies the two fibres, so they have the same dimension. On a trivial frequency space
   every symbol is elliptic (`HomogeneousSymbol.isElliptic_of_subsingleton`), and no such
@@ -219,7 +221,7 @@ theorem spatialDeriv_inverse (v : X) :
     (a.inverse ha).spatialDeriv v =
       -((a.inverse ha).comp ((a.spatialDeriv v).comp (a.inverse ha))).castDegree (by ring) :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ,
+    simp [coefficient_spatialDeriv_eq_fderiv _ _,
       fderiv_coefficient_inverse a ha (p := (x, ξ)) hξ]
 
 /-- The frequency derivative of the inverse of an elliptic symbol is `-(a⁻¹ ∘ ∂_ξa ∘ a⁻¹)`; its
@@ -232,6 +234,16 @@ theorem frequencyDeriv_inverse (w : E) :
       fderiv_coefficient_inverse a ha (p := (x, ξ)) hξ]
 
 end Inverse
+
+/-! ### Adjoints -/
+
+/-- Between Hilbert spaces, the pointwise adjoint of a homogeneous symbol is elliptic exactly
+when the symbol is. -/
+@[simp]
+theorem isElliptic_adjoint_iff {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+    [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+    {a : HomogeneousSymbol X E V W m} : a.adjoint.IsElliptic ↔ a.IsElliptic := by
+  simp only [isElliptic_iff, coefficient_adjoint, ContinuousLinearMap.isInvertible_adjoint_iff]
 
 end HomogeneousSymbol
 

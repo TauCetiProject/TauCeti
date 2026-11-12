@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -49,6 +50,20 @@ For a solution of the Floer equation `∂s u + J_t(u)(∂t u - X_{H_t}(u)) = 0` 
 `J_t(u) ∂s u`, so it tends to zero uniformly whenever `∂s u` does
 (`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero`).
 
+At a nondegenerate orbit `x` this gives the `L²` estimate of `D_u` on the far part of the end
+(`TauCeti.SymplecticForm.exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization`):
+there is a set `U` of slices, a neighbourhood of the end, and a constant `C` such that every `C²`
+map `ξ` of period one in `t` vanishing on two slices `s = a`, `s = b` with `[a, b] ⊆ U` satisfies
+
+`∫ (|∂s ξ|² + |∂t ξ - S ξ|² + |ξ|²) ≤ C ∫ |D_u ξ|²`
+
+over `[a, b] × [0, 1]`, in the norms `g_t = ω(·, J_t(x(t)) ·)`, uniformly in `a`, `b` and `ξ`. It
+follows from the estimate of the stationary cylinder operator
+(`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`),
+which survives perturbations that are small relative to `‖∂t ξ‖ + ‖ξ‖`. Together with an interior
+estimate on the compact part of the domain, this is the estimate on the ends behind the Fredholm
+property of `D_u`; the Sobolev completion and the Fredholm property itself are not treated here.
+
 ## References
 
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
@@ -61,6 +76,7 @@ For a solution of the Floer equation `∂s u + J_t(u)(∂t u - X_{H_t}(u)) = 0` 
 public section
 
 open Filter Set Topology ContinuousLinearMap
+open scoped Manifold NNReal
 
 namespace TauCeti.SymplecticForm
 
@@ -161,7 +177,6 @@ theorem eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le
     (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hdJ.continuousAt) hpair) 1 one_pos
   -- `dJ` is bounded along `x` on the compact set `T`, hence eventually along `u`.
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hdJ.continuousOn
-  have hM : 0 < |C| + 1 := by positivity
   have h₄ := Metric.tendstoUniformlyOn_iff.1 hδ (ε / 2 / (|C| + 1)) (by positivity)
   filter_upwards [h₁, h₂, h₃, h₄] with s hs₁ hs₂ hs₃ hs₄ t ht ξ
   refine (norm_floerLinearization_sub_stationaryCylinderOperator_le ω J H u ξ x (s, t)).trans ?_
@@ -259,5 +274,74 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
     _ ≤ (|C| + 1) * ‖fderiv ℝ u (s, t) stdComplexLineReal‖ := by gcongr
     _ < (|C| + 1) * (ε / (|C| + 1)) := by gcongr
     _ = ε := by field_simp
+
+/-- **The `L²` estimate of the linearized operator on an end.** Let `x` be a nondegenerate
+one-periodic orbit of a one-periodic, jointly `C²` Hamiltonian `H` whose suspended vector field is
+globally Lipschitz, let `J_t(y)` be a `C¹` family of almost complex structures that are
+`ω`-compatible along `x`, and let `u` be a map that is `C¹` on the slices `s` eventually along a
+filter `l`, whose loops converge uniformly to `x` along `l` while its slice defect
+`∂t u - X_{H_t}(u)` tends uniformly to zero, as for a Floer solution on a positive end
+(`l = atTop`) or a negative end (`l = atBot`) asymptotic to `x`. Then there are a constant
+`C ≥ 0` and a set `U ∈ l` of slices such that every `C²` map `ξ` of period one in `t`, vanishing
+on the slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C ∫ g(D_u ξ, D_u ξ)`
+
+over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K = H_t dt`,
+`S_t = dX_{H_t}(x(t))` and `g_t = ω(·, J_t(x(t)) ·)`. The constant does not depend on `a`, `b`
+or `ξ`. -/
+theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHp : Function.Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hxp : Function.Periodic x 1)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ} {u : ℝ × ℝ → V}
+    (hu : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ U ∈ l, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
+      (∀ s t, ξ (s, t + 1) = ξ (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ U →
+      (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc 0 1,
+            ((ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineReal)
+                (fderiv ℝ ξ z stdComplexLineReal) +
+              ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineImag -
+                  fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))
+                (fderiv ℝ ξ z stdComplexLineImag -
+                  fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))) +
+              ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)) ≤
+          C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2 (x z.2))
+            (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+              (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z)
+            (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+              (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z) := by
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  have hJxc : Continuous fun p : ℝ × V ↦ J p.1 (x p.1) p.2 :=
+    (hJ.continuous.comp (continuous_fst.prodMk (hxc.comp continuous_fst))).clm_apply
+      continuous_snd
+  -- The stationary cylinder estimate at `x`, and its stability under small perturbations.
+  obtain ⟨C₀, hC₀, hest⟩ :=
+    ω.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator hX hH hHp hx hxp hnd
+      hJx hJxc
+  obtain ⟨ε, hε, C, hC, hpert⟩ :=
+    Floer.exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
+      (fun t ↦ (hJx t).tames) hJxc (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc) hC₀
+  -- Eventually along the end, `D_u` is within `ε (‖∂t ξ‖ + ‖ξ‖)` of the stationary operator.
+  refine ⟨C, hC, _, (eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le ω hJ hH
+    isCompact_Icc hxc.continuousOn hux hδ hε).and hu,
+    fun ξ hξ hper a b hab hU ha hb ↦ hpert (hξ.of_le one_le_two) (hest hξ hper hab ha hb)
+      (fun z hz ↦ ?_) fun z hz ↦ (hU hz.1).1 z.2 hz.2 ξ⟩
+  -- `D_u ξ` is continuous where `u` is `C¹`.
+  exact (ω.continuousAt_floerLinearization
+    (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
+    (Kt := fun w ↦ H w.2) (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
+    contDiffAt_const (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
+    ((hU hz.1).2 z.2 hz.2)
+    (hξ.contDiffAt.of_le one_le_two)).continuousWithinAt
 
 end TauCeti.SymplecticForm

@@ -71,18 +71,22 @@ theorem norm_coeff_zero_le_norm_mul_pow_of_roots_le {p : K[X]} {B : ℝ} (hp : p
 
 /-- **The coefficients against a distinguished root.** A monic polynomial `p` that splits over a
 normed field, with a root `w` of norm at most `B` whose remaining roots have norm at most `1`,
-has its coefficient of `X ^ (n - k)`, for `0 < k < n = p.natDegree`, bounded in norm by
+has its coefficient of `X ^ (n - k)`, for `k < n = p.natDegree`, bounded in norm by
 `C(n-1, k-1) * B + C(n-1, k)`: it is `q_(n-k-1) - w * q_(n-k)` for the cofactor `q` of `X - w`,
 whose coefficients are bounded by Mathlib's `coeff_le_of_roots_le`. -/
 theorem norm_coeff_le_of_roots_erase_le [DecidableEq K] {p : K[X]} {B : ℝ} (hp : p.Monic)
     (hs : Splits p) {w : K} (hw : p.IsRoot w) (hwB : ‖w‖ ≤ B)
-    (hB : ∀ z ∈ p.roots.erase w, ‖z‖ ≤ 1) {k : ℕ} (hk : 0 < k) (hkn : k < p.natDegree) :
+    (hB : ∀ z ∈ p.roots.erase w, ‖z‖ ≤ 1) {k : ℕ} (hkn : k < p.natDegree) :
     ‖p.coeff (p.natDegree - k)‖ ≤
       (p.natDegree - 1).choose (k - 1) * B + (p.natDegree - 1).choose k := by
+  rcases k.eq_zero_or_pos with rfl | hk
+  · have hB0 : 0 ≤ B := (norm_nonneg w).trans hwB
+    simp only [Nat.sub_zero, hp.coeff_natDegree, norm_one, zero_tsub, Nat.choose_zero_right,
+      Nat.cast_one, one_mul]
+    linarith
   set q := p /ₘ (X - C w)
   have hfac : (X - C w) * q = p := mul_divByMonic_eq_iff_isRoot.mpr hw
   have hqmono : q.Monic := (monic_X_sub_C w).of_mul_monic_left (by rw [hfac]; exact hp)
-  have hq0 : q ≠ 0 := hqmono.ne_zero
   have hqdeg : q.natDegree = p.natDegree - 1 := by
     simpa [q] using natDegree_divByMonic p (monic_X_sub_C w)
   have hqroots : q.roots = p.roots.erase w := by

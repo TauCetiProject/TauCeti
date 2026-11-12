@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -129,13 +130,8 @@ theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuo
   set b : ∀ i, Module.Basis (Fin (Module.finrank 𝕜 (M i))) 𝕜 (M i) :=
     fun i ↦ Module.finBasis 𝕜 (M i) with _
   have key : ⇑f = fun m : ∀ i, M i ↦ ∑ r : ∀ i, Fin (Module.finrank 𝕜 (M i)),
-      (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) := by
-    funext m
-    have hm : f m = f fun i ↦ ∑ j, (b i).repr (m i) j • b i j := by
-      congr 1 with i
-      exact ((b i).sum_repr (m i)).symm
-    rw [hm, f.map_sum]
-    exact Finset.sum_congr rfl fun r _ ↦ f.map_smul_univ _ _
+      (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) :=
+    funext (f.apply_eq_sum_prod_repr_smul b)
   rw [key]
   refine continuous_finsetSum _ fun r _ ↦ Continuous.smul ?_ continuous_const
   refine continuous_finsetProd _ fun i _ ↦ ?_

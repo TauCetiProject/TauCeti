@@ -47,7 +47,7 @@ theorem IsLink.exists_ear_of_mem_notMem {e : β} {x y : α} (h : G.IsLink e x y)
   have hp : p.IsPath := q.bypass_isPath
   have hp_no_e : e ∉ p.edges := fun hep ↦ hq e (q.edges_bypass_subset_edges hep) (by simp)
   obtain ⟨z, r, hr, hz, hinter, hsupport, hedges⟩ :=
-    hp.exists_initialSegment_to_set hy hx
+    hp.exists_initialSegment_to_set hx
   have hr_no_e : e ∉ r.edges := fun her ↦ hp_no_e (hedges her)
   have he_notMem : e ∉ E(H) := by
     intro heH
