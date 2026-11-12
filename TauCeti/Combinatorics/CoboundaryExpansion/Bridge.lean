@@ -53,9 +53,18 @@ def ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     rw [ite_eq_right huv, ite_eq_right huv.symm, Sym3.val_swap f (e.symm.injective.ne huv)]
   one_of_not_mem u v h := ite_eq_left (not_not.1 fun huv => h (pair_mem_edges_complete huv))
 
+@[simp] theorem toFin_apply (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3)))
+    (i j : Fin k) : toFin e α i j = α.toFun (e i) (e j) := by
+  simp [toFin]
+
+theorem ofFin_apply (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) (u v : V) :
+    (ofFin e f).toFun u v =
+      if u = v then 1 else Sym3.val f (e.symm u) (e.symm v) := by
+  simp [ofFin]
+
 theorem defect_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) :
     α.defect (movedNorm (Fin 3)) = (Sym3.defect (toFin e α) : ℝ) := by
-  unfold Cochain.defect
+  rw [Cochain.defect_def]
   rw [Sym3.defect_eq_sum]
   have hfilt : (univ.filter fun p : V × V × V =>
       p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset V) ∈ (complete V).triangles) =
@@ -79,12 +88,12 @@ theorem defect_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) 
     have huw : u < w := huv.trans hvw
     rw [← Sym3.moved_eq_movedNorm,
       α.inv_symm (e u) (e w) (pair_mem_edges_complete (e.injective.ne huw.ne))]
-    simp [Sym3.hol, Sym3.val, toFin, huv, hvw, not_lt.mpr huw.le]
+    simp [Sym3.hol_apply, Sym3.val, toFin_apply, huv, hvw, not_lt.mpr huw.le]
   · rfl
 
 theorem cost_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) (β : V → Perm (Fin 3)) :
     α.cost (movedNorm (Fin 3)) β = (Sym3.cost (toFin e α) (β ∘ e) : ℝ) := by
-  unfold Cochain.cost
+  rw [Cochain.cost_def]
   rw [Sym3.cost_eq_sum]
   have hfilt : (univ.filter fun p : V × V =>
       p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ (complete V).edges) =
@@ -115,7 +124,21 @@ theorem gaugeDist_eq (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3)
 
 theorem toFin_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) {i j : Fin k} (h : i < j) :
     toFin e (ofFin e f) i j = f i j := by
-  simp [toFin, ofFin, h.ne, Sym3.val, h]
+  simp [toFin_apply, ofFin_apply, h.ne, Sym3.val, h]
+
+/-- The two transports are inverse on cochains. -/
+theorem ofFin_toFin (e : Fin k ≃o V) (α : Cochain (complete V) (Perm (Fin 3))) :
+    ofFin e (toFin e α) = α := by
+  refine Cochain.ext_edges fun u v h => ?_
+  have huv := TwoComplex.ne_of_pair_mem_edges h
+  rw [ofFin_apply, ite_eq_right huv]
+  rcases huv.lt_or_gt with hlt | hgt
+  · have := e.symm.lt_iff_lt.2 hlt
+    simp [Sym3.val, toFin_apply, this]
+  · have := e.symm.lt_iff_lt.2 hgt
+    simp only [Sym3.val, toFin_apply, not_lt.mpr this.le, ↓reduceIte]
+    rw [α.inv_symm v u (by simpa [Finset.pair_comm] using h)]
+    rw [e.apply_symm_apply, e.apply_symm_apply]
 
 theorem defect_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
     (ofFin e f).defect (movedNorm (Fin 3)) = (Sym3.defect f : ℝ) := by
@@ -129,7 +152,7 @@ theorem gaugeDist_ofFin (e : Fin k ≃o V) (f : Fin k → Fin k → Sym3.S3) :
 `Sym3` at `k = card V` (any order isomorphism `Fin k ≃o V` witnesses this). -/
 theorem h1_eq (e : Fin k ≃o V) :
     h1 (complete V) (movedNorm (Fin 3)) = Sym3.h1 k := by
-  unfold h1 Sym3.h1
+  rw [h1_def, Sym3.h1_def]
   congr 1
   ext r
   constructor

@@ -12,16 +12,16 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
 # The `Sym(3)` constant of the complete complex is `k/3`
 
 The general results are `h1_complete_movedNorm_fin_three_of_three_le` and
-`h1Norm_complete_movedNorm_fin_three_of_three_le`, for every `k = card V ≥ 3`. The roadmap
-headlines `h1_complete_movedNorm_fin_three` and `h1Norm_complete_movedNorm_fin_three` keep the
-roadmap's hypothesis `4 ≤ card V` and follow in one line each.
+`h1Norm_complete_movedNorm_fin_three_of_three_le`, for every `k = card V ≥ 3`. The theorems
+`h1_complete_movedNorm_fin_three` and `h1Norm_complete_movedNorm_fin_three` keep the
+hypothesis `4 ≤ card V` and follow in one line each.
 
-Route: `Bridge.h1_eq_card` reduces to `Sym3.h1_eq_card_div_three`, which uses the replicated `k
-= 4` seed at powers of two and replicated `Sym(3)` staircase seeds on `K_{2t+1}` elsewhere,
-with the star bound `Sym3.k_div_three_le_h1`. Layer 7.4 (the `𝔽₂` constant) is not used as a
-hypothesis; instead Kozlov's staircase witnesses [Kozlov, Cor. 4.5] are built and checked
-directly in Lean: their `Sym(3)` gauge distance is proved here (parity of the gauge, then a cut
-count).
+Route: `Bridge.h1_eq_card` reduces to `Sym3.h1_eq_card_div_three`, which uses the replicated
+`k = 4` seed at powers of two and replicated `Sym(3)` staircase seeds on `K_{2t+1}`
+elsewhere, with the star bound `Sym3.k_div_three_le_h1`. Kozlov's `𝔽₂` constant is not used
+as a hypothesis; instead Kozlov's staircase witnesses [Kozlov, Cor. 4.5] are built and
+checked directly in Lean: their `Sym(3)` gauge distance is proved here (parity of the gauge,
+then a cut count).
 
 Attribution: the seeds are Kozlov's staircase graphs [D. N. Kozlov, arXiv:1610.07136, Def. 3.2,
 §3.1, Cor. 4.5, giving Thm. 4.2 and Cor. 4.3]; the cut-minimality bound is proved directly
@@ -56,21 +56,21 @@ theorem h1_complete_movedNorm_fin_three_of_three_le (hV : 3 ≤ Fintype.card V) 
 /-- Normalized form for every `k ≥ 3`: `(k choose 2) / (k choose 3) · k/3 = k/(k-2)`. -/
 theorem h1Norm_complete_movedNorm_fin_three_of_three_le (hV : 3 ≤ Fintype.card V) :
     h1Norm (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / (Fintype.card V - 2) := by
-  unfold h1Norm
-  rw [h1_complete_movedNorm_fin_three_of_three_le hV, natCast_card_edges_complete,
+  rw [h1Norm_def, h1_complete_movedNorm_fin_three_of_three_le hV, natCast_card_edges_complete,
     natCast_card_triangles_complete]
   have : (3 : ℝ) ≤ Fintype.card V := by exact_mod_cast hV
   field_simp [show (Fintype.card V : ℝ) - 1 ≠ 0 by linarith,
     show (Fintype.card V : ℝ) - 2 ≠ 0 by linarith]
   ring
 
-/-- Roadmap headline (Layer 8.1, as stated in the roadmap): the permutation coboundary constant
-of the complete complex is `k/3` for every `k ≥ 4`, attained with values in `Sym(3)`. -/
+/-- The permutation coboundary constant of the complete complex is `k/3` for every
+`k ≥ 4`, attained with values in `Sym(3)`. A corollary of
+`h1_complete_movedNorm_fin_three_of_three_le`. -/
 theorem h1_complete_movedNorm_fin_three (hV : 4 ≤ Fintype.card V) :
     h1 (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / 3 :=
   h1_complete_movedNorm_fin_three_of_three_le (by omega)
 
-/-- Roadmap headline, normalized form: `(k choose 2) / (k choose 3) · k/3 = k/(k-2)`. -/
+/-- Normalized form for every `k ≥ 4`: `(k choose 2) / (k choose 3) · k/3 = k/(k-2)`. -/
 theorem h1Norm_complete_movedNorm_fin_three (hV : 4 ≤ Fintype.card V) :
     h1Norm (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / (Fintype.card V - 2) :=
   h1Norm_complete_movedNorm_fin_three_of_three_le (by omega)

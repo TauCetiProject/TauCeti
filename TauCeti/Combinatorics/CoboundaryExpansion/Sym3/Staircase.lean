@@ -157,12 +157,12 @@ private theorem stEdge_of_even (p q : ℕ) (hq : q % 2 = 0) : stEdge p q = decid
 
 /-- Truncating a sum over `range n` by the indicator of `u < v` (`v ≤ n`) gives a sum over
 `range v`. -/
-private theorem st_sum_lt (n v : ℕ) (hv : v ≤ n) (f : ℕ → ℕ) :
+theorem st_sum_lt (n v : ℕ) (hv : v ≤ n) (f : ℕ → ℕ) :
     (∑ u ∈ range n, if u < v then f u else 0) = ∑ u ∈ range v, f u := by
   rw [← Finset.sum_filter]; congr 1; ext u; simp only [mem_filter, mem_range]; omega
 
 /-- A sum over the edges `u < v` of `K_n`, as a sum over `range`. -/
-private theorem st_fin_pair (n : ℕ) (G : ℕ → ℕ → ℕ) :
+theorem st_fin_pair (n : ℕ) (G : ℕ → ℕ → ℕ) :
     (∑ u : Fin n, ∑ v : Fin n, if u < v then G u.val v.val else 0) =
       ∑ v ∈ range n, ∑ u ∈ range v, G u v := by
   have hA : (∑ u : Fin n, ∑ v : Fin n, if u < v then G u.val v.val else 0) =
@@ -183,7 +183,7 @@ private theorem st_fin_pair (n : ℕ) (G : ℕ → ℕ → ℕ) :
   exact st_sum_lt n v (Finset.mem_range.mp hv).le (fun u => G u v)
 
 /-- A sum over the triangles `u < v < w` of `K_n`, as a sum over `range`. -/
-private theorem st_fin_triple (n : ℕ) (Y : ℕ → ℕ → ℕ → ℕ) :
+theorem st_fin_triple (n : ℕ) (Y : ℕ → ℕ → ℕ → ℕ) :
     (∑ u : Fin n, ∑ v : Fin n, ∑ w : Fin n,
       if u < v ∧ v < w then Y u.val v.val w.val else 0) =
       ∑ w ∈ range n, ∑ v ∈ range w, ∑ u ∈ range v, Y u v w := by

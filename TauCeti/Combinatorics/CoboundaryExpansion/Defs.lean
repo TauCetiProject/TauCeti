@@ -22,7 +22,8 @@ together with its normalized form `h1Norm`. The carrier type is `TauCeti.TwoComp
 `β u⁻¹ * α u v * β v`, orientation `u < v < w`, infimum over cochains at positive gauge distance.
 -/
 
--- These are the specification definitions; downstream files unfold them.
+-- Specification definitions: downstream characteristic lemmas and the `*_def`
+-- rewrites unfold them, so the bodies are exposed.
 @[expose] public section
 
 noncomputable section
@@ -55,14 +56,33 @@ def defect (ℓ : GroupNorm G) (α : Cochain X G) : ℝ :=
       p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset V) ∈ X.triangles),
     ℓ (α.toFun p.1 p.2.1 * α.toFun p.2.1 p.2.2 * α.toFun p.2.2 p.1)
 
+theorem defect_def (ℓ : GroupNorm G) (α : Cochain X G) :
+    α.defect ℓ =
+      ∑ p ∈ univ.filter (fun p : V × V × V =>
+          p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧
+            ({p.1, p.2.1, p.2.2} : Finset V) ∈ X.triangles),
+        ℓ (α.toFun p.1 p.2.1 * α.toFun p.2.1 p.2.2 * α.toFun p.2.2 p.1) :=
+  rfl
+
 /-- The cost of a gauge `β`: the norm of `β u⁻¹ * α u v * β v`, summed over edges `u < v`. -/
 def cost (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) : ℝ :=
   ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
     ℓ ((β p.1)⁻¹ * α.toFun p.1 p.2 * β p.2)
 
+theorem cost_def (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) :
+    α.cost ℓ β =
+      ∑ p ∈ univ.filter (fun p : V × V =>
+          p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
+        ℓ ((β p.1)⁻¹ * α.toFun p.1 p.2 * β p.2) :=
+  rfl
+
 /-- The gauge distance `D`: the infimum of the cost over all gauges. -/
 def gaugeDist (ℓ : GroupNorm G) (α : Cochain X G) : ℝ :=
   ⨅ β : V → G, α.cost ℓ β
+
+theorem gaugeDist_def (ℓ : GroupNorm G) (α : Cochain X G) :
+    α.gaugeDist ℓ = ⨅ β : V → G, α.cost ℓ β :=
+  rfl
 
 end Cochain
 
@@ -71,10 +91,20 @@ over cochains at positive gauge distance. -/
 def h1 (X : TauCeti.TwoComplex V) (ℓ : GroupNorm G) : ℝ :=
   sInf {r : ℝ | ∃ α : Cochain X G, 0 < α.gaugeDist ℓ ∧ r = α.defect ℓ / α.gaugeDist ℓ}
 
+theorem h1_def (X : TauCeti.TwoComplex V) (ℓ : GroupNorm G) :
+    h1 X ℓ =
+      sInf {r : ℝ | ∃ α : Cochain X G,
+        0 < α.gaugeDist ℓ ∧ r = α.defect ℓ / α.gaugeDist ℓ} :=
+  rfl
+
 /-- The Cheeger constant in the normalized convention: `h1` rescaled by the ratio of the number
 of edges to the number of triangles. With Lean's `x / 0 = 0` this is `0` when `X` has no
 triangle; the theorems use it only for `card V ≥ 3`. -/
 def h1Norm (X : TauCeti.TwoComplex V) (ℓ : GroupNorm G) : ℝ :=
   (X.edges.card / X.triangles.card : ℝ) * h1 X ℓ
+
+theorem h1Norm_def (X : TauCeti.TwoComplex V) (ℓ : GroupNorm G) :
+    h1Norm X ℓ = (X.edges.card / X.triangles.card : ℝ) * h1 X ℓ :=
+  rfl
 
 end TauCeti.CoboundaryExpansion

@@ -54,12 +54,23 @@ def vert (q : ℕ) (i : Fin k) (a : Fin q) : Fin (k * q) := finProdFinEquiv (i, 
 @[simp] theorem clus_vert (q : ℕ) (i : Fin k) (a : Fin q) : clus q (vert q i a) = i := by
   simp [clus, vert]
 
+/-- The position of a vertex inside its cluster. -/
+def pos (q : ℕ) (x : Fin (k * q)) : Fin q := (finProdFinEquiv.symm x).2
+
+@[simp] theorem vert_clus (q : ℕ) (x : Fin (k * q)) :
+    vert q (clus q x) (pos q x) = x := by
+  unfold vert clus pos
+  exact Equiv.apply_symm_apply finProdFinEquiv x
+
+@[simp] theorem pos_vert (q : ℕ) (i : Fin k) (a : Fin q) : pos q (vert q i a) = a := by
+  simp [pos, vert]
+
 /-- A sum over the vertices of `K_{kq}` is a sum over clusters and positions inside them. -/
 private theorem sum_blocks {q : ℕ} (F : Fin (k * q) → ℕ) : ∑ x, F x = ∑ i, ∑ a, F (vert q i a) := by
   rw [← Equiv.sum_comp finProdFinEquiv F, Fintype.sum_prod_type]
   rfl
 
-private theorem block_lt (a b i j q : ℕ) (ha : a < q) (hb : b < q) :
+theorem block_lt (a b i j q : ℕ) (ha : a < q) (hb : b < q) :
     a + q * i < b + q * j ↔ i < j ∨ (i = j ∧ a < b) := by
   rcases lt_trichotomy i j with h | rfl | h
   · have := Nat.mul_le_mul_left q h; rw [Nat.mul_succ] at this; omega
@@ -67,7 +78,7 @@ private theorem block_lt (a b i j q : ℕ) (ha : a < q) (hb : b < q) :
   · have := Nat.mul_le_mul_left q h; rw [Nat.mul_succ] at this; omega
 
 /-- Vertices are ordered cluster first, then position. -/
-private theorem vert_lt_iff {q : ℕ} (i j : Fin k) (a b : Fin q) :
+theorem vert_lt_iff {q : ℕ} (i j : Fin k) (a b : Fin q) :
     vert q i a < vert q j b ↔ i < j ∨ (i = j ∧ a < b) := by
   rw [Fin.lt_def]
   simp only [vert, finProdFinEquiv_apply_val]
@@ -79,6 +90,15 @@ private theorem vert_lt_iff {q : ℕ} (i j : Fin k) (a b : Fin q) :
 clusters. -/
 def rep (q : ℕ) (α : Fin k → Fin k → S3) : Fin (k * q) → Fin (k * q) → S3 :=
   fun x y => if clus q x = clus q y then 1 else val α (clus q x) (clus q y)
+
+theorem rep_same {q : ℕ} (α : Fin k → Fin k → S3) {x y : Fin (k * q)}
+    (h : clus q x = clus q y) : rep q α x y = 1 :=
+  ite_eq_left h
+
+theorem rep_ne {q : ℕ} (α : Fin k → Fin k → S3) {x y : Fin (k * q)}
+    (h : clus q x ≠ clus q y) :
+    rep q α x y = val α (clus q x) (clus q y) :=
+  ite_eq_right h
 
 /-- A triangle across three clusters carries the seed holonomy; any other triangle closes. -/
 private theorem rep_tri {q : ℕ} (α : Fin k → Fin k → S3) (i j l : Fin k) (a b c : Fin q) :
@@ -150,7 +170,7 @@ private theorem rep_edge_lower {q : ℕ} (α : Fin k → Fin k → S3) (γ : Fin
 /-! ## Sections -/
 
 /-- Fixing two coordinates leaves `q ^ (k - 2)` functions. -/
-private theorem sum_two_coords {q : ℕ} (i j : Fin k) (hij : i ≠ j) (G : Fin q → Fin q → ℕ) :
+theorem sum_two_coords {q : ℕ} (i j : Fin k) (hij : i ≠ j) (G : Fin q → Fin q → ℕ) :
     ∑ s : Fin k → Fin q, G (s i) (s j) = q ^ (k - 2) * ∑ a, ∑ b, G a b := by
   rw [← Equiv.sum_comp (Equiv.funSplitAt i (Fin q)).symm, Fintype.sum_prod_type]
   have hj : j ≠ i := hij.symm

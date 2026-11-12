@@ -11,6 +11,7 @@ public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Ring
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Group.List.Basic
+import TauCeti.Combinatorics.Hypergraph.Complex.TwoComplex.Link
 
 /-!
 # The `Sym(3)` coboundary constant of `K_k`
@@ -42,7 +43,8 @@ public section
 
 namespace TauCeti.CoboundaryExpansion.Sym3
 
-open Equiv
+open Equiv Finset
+open TauCeti.TwoComplex
 
 variable {k : ℕ}
 
@@ -118,7 +120,12 @@ theorem cost_eq_sum (α : Fin k → Fin k → S3) (β : Fin k → S3) :
   sum_edges fun u v => moved ((β u)⁻¹ * α u v * β v)
 
 /-- The holonomy of `α` around the triangle `a → b → c → a`. -/
-@[expose] def hol (α : Fin k → Fin k → S3) (a b c : Fin k) : S3 := val α a b * val α b c * val α c a
+@[expose] def hol (α : Fin k → Fin k → S3) (a b c : Fin k) : S3 :=
+  val α a b * val α b c * val α c a
+
+@[simp] theorem hol_apply (α : Fin k → Fin k → S3) (a b c : Fin k) :
+    hol α a b c = val α a b * val α b c * val α c a :=
+  rfl
 
 theorem defect_eq_sum (α : Fin k → Fin k → S3) :
     defect α = ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k,
@@ -200,6 +207,11 @@ no non-coboundary exists the set is empty and the value is `0` by Mathlib's conv
 @[expose] noncomputable def h1 (k : ℕ) : ℝ :=
   sInf {r : ℝ | ∃ α : Fin k → Fin k → S3, 0 < gaugeDist α ∧
     r = (defect α : ℝ) / (gaugeDist α : ℝ)}
+
+theorem h1_def (k : ℕ) :
+    h1 k = sInf {r : ℝ | ∃ α : Fin k → Fin k → S3, 0 < gaugeDist α ∧
+      r = (defect α : ℝ) / (gaugeDist α : ℝ)} :=
+  rfl
 
 /-- The coboundary constant is nonnegative. -/
 theorem h1_nonneg (k : ℕ) : 0 ≤ h1 k := by
@@ -296,68 +308,179 @@ private theorem star_right (α : Fin k → Fin k → S3) {u v : Fin k} (huv : u 
   rw [ite_eq_right huv.ne, ite_eq_left (rfl : v = v), hval]
   group
 
-/-- The star-gauge term of one edge, split by where `x` sits relative to `u < v`. -/
-private theorem star_point (α : Fin k → Fin k → S3) (x u v : Fin k) :
-    (if u < v then moved ((starGauge α x u)⁻¹ * α u v * starGauge α x v) else 0) =
-      (if x < u ∧ u < v then moved (hol α x u v) else 0) +
-      (if u < x ∧ x < v then moved (hol α u x v) else 0) +
-      (if u < v ∧ v < x then moved (hol α u v x) else 0) := by
-  by_cases huv : u < v
-  · rcases lt_trichotomy x u with hxu | hxu | hxu
-    · have hxv : x < v := hxu.trans huv
-      rw [star_hol α huv hxu.ne hxv.ne]
-      simp only [ite_eq_left huv, ite_eq_left (And.intro hxu huv),
-        ite_eq_right (fun h : u < x ∧ x < v => lt_asymm hxu h.1),
-        ite_eq_right (fun h : u < v ∧ v < x => lt_asymm hxv h.2), add_zero]
-    · rw [hxu, star_left α huv]
-      simp only [ite_eq_left huv, moved_one,
-        ite_eq_right (fun h : u < u ∧ u < v => lt_irrefl u h.1),
-        ite_eq_right (fun h : u < v ∧ v < u => lt_asymm huv h.2), add_zero]
-    · rcases lt_trichotomy x v with hxv | hxv | hxv
-      · rw [star_hol α huv hxu.ne' hxv.ne, moved_hol_swap α hxu.ne' huv.ne hxv.ne']
-        simp only [ite_eq_left huv, ite_eq_right (fun h : x < u ∧ u < v => lt_asymm hxu h.1),
-          ite_eq_left (And.intro hxu hxv), ite_eq_right (fun h : u < v ∧ v < x => lt_asymm hxv h.2),
-          zero_add, add_zero]
-      · rw [hxv, star_right α huv]
-        simp only [ite_eq_left huv, moved_one,
-          ite_eq_right (fun h : v < u ∧ u < v => lt_asymm huv h.1),
-          ite_eq_right (fun h : u < v ∧ v < v => lt_irrefl v h.2), add_zero]
-      · rw [star_hol α huv hxu.ne' hxv.ne', moved_hol_rot α x u v]
-        simp only [ite_eq_left huv, ite_eq_right (fun h : x < u ∧ u < v => lt_asymm hxu h.1),
-          ite_eq_right (fun h : u < x ∧ x < v => lt_asymm hxv h.2), ite_eq_left (And.intro huv hxv),
-          zero_add]
-  · simp only [ite_eq_right huv, ite_eq_right (fun h : x < u ∧ u < v => huv h.2),
-      ite_eq_right (fun h : u < x ∧ x < v => huv (h.1.trans h.2)),
-      ite_eq_right (fun h : u < v ∧ v < x => huv h.1), add_zero]
+/-- The unique increasing enumeration of a 2-element set. -/
+private theorem eq_ordered_pair {u v u' v' : Fin k}
+    (huv : u < v) (huv' : u' < v')
+    (he : ({u', v'} : Finset (Fin k)) = {u, v}) : u' = u ∧ v' = v := by
+  have hmin {a b x : Fin k} (hab : a < b)
+      (hx : x ∈ ({a, b} : Finset (Fin k))) : a ≤ x := by
+    simp only [mem_insert, mem_singleton] at hx
+    rcases hx with rfl | rfl <;> simp [hab.le]
+  have hmax {a b x : Fin k} (hab : a < b)
+      (hx : x ∈ ({a, b} : Finset (Fin k))) : x ≤ b := by
+    simp only [mem_insert, mem_singleton] at hx
+    rcases hx with rfl | rfl <;> simp [hab.le]
+  exact ⟨le_antisymm (hmin huv' (by rw [he]; simp)) (hmin huv (by rw [← he]; simp)),
+    le_antisymm (hmax huv (by rw [← he]; simp)) (hmax huv' (by rw [he]; simp))⟩
 
-/-- **The double count.** The star gauges at the `k` vertices cost `3N` in total: each triangle
-is counted once from each of its three vertices. -/
+/-- The unique increasing enumeration of a 3-element set. -/
+private theorem eq_ordered_of_finset {u v w u' v' w' : Fin k}
+    (huv : u < v) (hvw : v < w) (huv' : u' < v') (hvw' : v' < w')
+    (he : ({u', v', w'} : Finset (Fin k)) = {u, v, w}) :
+    u' = u ∧ v' = v ∧ w' = w := by
+  have hmin {a b c x : Fin k} (hab : a < b) (hbc : b < c)
+      (hx : x ∈ ({a, b, c} : Finset (Fin k))) : a ≤ x := by
+    simp only [mem_insert, mem_singleton] at hx
+    rcases hx with rfl | rfl | rfl
+    · exact le_rfl
+    · exact hab.le
+    · exact (hab.trans hbc).le
+  have hmax {a b c x : Fin k} (hab : a < b) (hbc : b < c)
+      (hx : x ∈ ({a, b, c} : Finset (Fin k))) : x ≤ c := by
+    simp only [mem_insert, mem_singleton] at hx
+    rcases hx with rfl | rfl | rfl
+    · exact (hab.trans hbc).le
+    · exact hbc.le
+    · exact le_rfl
+  have hu : u' = u := le_antisymm (hmin huv' hvw' (by rw [he]; simp))
+    (hmin huv hvw (by rw [← he]; simp))
+  have hw : w' = w := le_antisymm (hmax huv hvw (by rw [← he]; simp))
+    (hmax huv' hvw' (by rw [he]; simp))
+  have hv : v' ∈ ({u, v, w} : Finset (Fin k)) := he ▸ by simp
+  simp only [mem_insert, mem_singleton] at hv
+  refine ⟨hu, ?_, hw⟩
+  rcases hv with hv | rfl | hv
+  · exact (huv'.ne (hu.trans hv.symm)).elim
+  · rfl
+  · exact (hvw'.ne (hv.trans hw.symm)).elim
+
+/-- Moved-point holonomy of a 3-set, read in increasing order, or `0` if it is not a
+triple. -/
+private def movedHol (α : Fin k → Fin k → S3) (t : Finset (Fin k)) : ℕ :=
+  ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k,
+    if u < v ∧ v < w ∧ ({u, v, w} : Finset (Fin k)) = t then
+      moved (hol α u v w) else 0
+
+private theorem movedHol_eq (α : Fin k → Fin k → S3) {u v w : Fin k}
+    (huv : u < v) (hvw : v < w) :
+    movedHol α {u, v, w} = moved (hol α u v w) := by
+  unfold movedHol
+  rw [Fintype.sum_eq_single u, Fintype.sum_eq_single v, Fintype.sum_eq_single w]
+  · simp [huv, hvw]
+  · intro w' hw'
+    by_cases h : u < v ∧ v < w' ∧ ({u, v, w'} : Finset (Fin k)) = {u, v, w}
+    · exact (hw' (eq_ordered_of_finset huv hvw h.1 h.2.1 h.2.2).2.2).elim
+    · simp [h]
+  · intro v' hv'
+    refine Fintype.sum_eq_zero _ fun w' => ?_
+    by_cases h : u < v' ∧ v' < w' ∧ ({u, v', w'} : Finset (Fin k)) = {u, v, w}
+    · exact (hv' (eq_ordered_of_finset huv hvw h.1 h.2.1 h.2.2).2.1).elim
+    · simp [h]
+  · intro u' hu'
+    refine Fintype.sum_eq_zero _ fun v' => Fintype.sum_eq_zero _ fun w' => ?_
+    by_cases h : u' < v' ∧ v' < w' ∧ ({u', v', w'} : Finset (Fin k)) = {u, v, w}
+    · exact (hu' (eq_ordered_of_finset huv hvw h.1 h.2.1 h.2.2).1).elim
+    · simp [h]
+
+private theorem sum_swap_triangles (F : Finset (Fin k) → Fin k → Fin k → Fin k → ℕ) :
+    ∑ t ∈ (complete (Fin k)).triangles, ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k, F t u v w =
+      ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k, ∑ t ∈ (complete (Fin k)).triangles,
+        F t u v w := by
+  rw [sum_comm]
+  refine sum_congr rfl fun _ _ => ?_
+  rw [sum_comm]
+  refine sum_congr rfl fun _ _ => ?_
+  rw [sum_comm]
+
+private theorem defect_eq_sum_movedHol (α : Fin k → Fin k → S3) :
+    defect α = ∑ t ∈ (complete (Fin k)).triangles, movedHol α t := by
+  rw [defect_eq_sum]
+  unfold movedHol
+  rw [sum_swap_triangles]
+  refine sum_congr rfl fun u _ => sum_congr rfl fun v _ => sum_congr rfl fun w _ => ?_
+  by_cases huv : u < v
+  · by_cases hvw : v < w
+    · have h : u < v ∧ v < w := ⟨huv, hvw⟩
+      have ht : ({u, v, w} : Finset (Fin k)) ∈ (complete (Fin k)).triangles :=
+        triple_mem_triangles_complete h.1.ne (h.1.trans h.2).ne h.2.ne
+      simp [h, ht]
+    · simp [hvw]
+  · simp [huv]
+
+private theorem sum_complete_edges (g : Finset (Fin k) → ℕ) :
+    ∑ e ∈ (complete (Fin k)).edges, g e =
+      ∑ u : Fin k, ∑ v : Fin k, if u < v then g {u, v} else 0 := by
+  have hbij :
+      ∑ p ∈ (univ ×ˢ univ).filter (fun p : Fin k × Fin k => p.1 < p.2),
+        g ({p.1, p.2} : Finset (Fin k)) =
+      ∑ e ∈ (complete (Fin k)).edges, g e := by
+    refine sum_bij (fun p _ => ({p.1, p.2} : Finset (Fin k))) ?_ ?_ ?_ ?_
+    · intro p hp
+      exact (mem_edges_complete _).2 (card_pair (mem_filter.mp hp).2.ne)
+    · intro p hp p' hp' heq
+      exact Prod.ext_iff.2
+        (eq_ordered_pair (mem_filter.mp hp').2 (mem_filter.mp hp).2 heq)
+    · intro e he
+      obtain ⟨u, v, huv, rfl⟩ := card_eq_two.mp ((mem_edges_complete _).1 he)
+      rcases huv.lt_or_gt with h | h
+      · exact ⟨(u, v), by simp [h], rfl⟩
+      · exact ⟨(v, u), by simp [h], Finset.pair_comm _ _⟩
+    · intros; rfl
+  rw [← hbij, sum_filter, sum_product]
+
+/-- The star-gauge cost of an edge is zero at `x` and otherwise the holonomy of its
+triangle with `x`. -/
+private theorem star_term (α : Fin k → Fin k → S3) (x u v : Fin k) (huv : u < v) :
+    moved ((starGauge α x u)⁻¹ * α u v * starGauge α x v) =
+      if x ∈ ({u, v} : Finset (Fin k)) then 0
+        else movedHol α (insert x {u, v}) := by
+  by_cases hxu : x = u
+  · subst hxu
+    rw [star_left α huv, moved_one]
+    simp
+  · by_cases hxv : x = v
+    · subst hxv
+      rw [star_right α huv, moved_one]
+      simp
+    · have hx : x ∉ ({u, v} : Finset (Fin k)) := by simp [hxu, hxv]
+      have hxu' : x ≠ u := hxu
+      have hxv' : x ≠ v := hxv
+      rw [ite_eq_right hx, star_hol α huv hxu' hxv']
+      have hins : insert x ({u, v} : Finset (Fin k)) = {x, u, v} := by ext; simp
+      rw [hins]
+      rcases lt_trichotomy x u with hxlt | hxe | hxgt
+      · exact (movedHol_eq α hxlt huv).symm
+      · exact (hxu hxe).elim
+      · rcases lt_trichotomy x v with hylt | hye | hygt
+        · have hset : ({x, u, v} : Finset (Fin k)) = {u, x, v} := by
+            ext a; simp; tauto
+          rw [hset, movedHol_eq α hxgt hylt,
+            moved_hol_swap α hxgt.ne' huv.ne hylt.ne']
+        · exact (hxv hye).elim
+        · have hset : ({x, u, v} : Finset (Fin k)) = {u, v, x} := by
+            ext a; simp; tauto
+          rw [hset, movedHol_eq α huv hygt, moved_hol_rot α x u v]
+
+private theorem cost_starGauge_eq (α : Fin k → Fin k → S3) (x : Fin k) :
+    cost α (starGauge α x) =
+      ∑ e ∈ (complete (Fin k)).edges,
+        (if x ∈ e then 0 else movedHol α (insert x e)) := by
+  rw [cost_eq_sum, sum_complete_edges]
+  refine sum_congr rfl fun u _ => sum_congr rfl fun v _ => ?_
+  by_cases huv : u < v
+  · simp only [huv, ↓reduceIte]
+    exact star_term α x u v huv
+  · simp only [huv, ↓reduceIte]
+
+/-- **The double count.** The star gauges at the `k` vertices cost `3N` in total: each
+triangle is counted once from each of its three vertices. This is the
+`Sym(3)`-valued form of `TwoComplex.sum_vertex_edges_complete`, itself the complete
+complex case of `TwoComplex.sum_vertex_linkEdges`. -/
 theorem star_gauge_sum (α : Fin k → Fin k → S3) :
     ∑ x, cost α (starGauge α x) = 3 * defect α := by
-  have hA : ∑ x : Fin k, ∑ u : Fin k, ∑ v : Fin k,
-      (if x < u ∧ u < v then moved (hol α x u v) else 0) = defect α :=
-    (defect_eq_sum α).symm
-  have hB : ∑ x : Fin k, ∑ u : Fin k, ∑ v : Fin k,
-      (if u < x ∧ x < v then moved (hol α u x v) else 0) = defect α := by
-    rw [defect_eq_sum]
-    exact Finset.sum_comm
-  have hC : ∑ x : Fin k, ∑ u : Fin k, ∑ v : Fin k,
-      (if u < v ∧ v < x then moved (hol α u v x) else 0) = defect α := by
-    rw [defect_eq_sum, Finset.sum_comm]
-    refine Finset.sum_congr rfl fun u _ => ?_
-    exact Finset.sum_comm
-  calc ∑ x, cost α (starGauge α x)
-      = ∑ x : Fin k, ∑ u : Fin k, ∑ v : Fin k,
-          ((if x < u ∧ u < v then moved (hol α x u v) else 0) +
-           (if u < x ∧ x < v then moved (hol α u x v) else 0) +
-           (if u < v ∧ v < x then moved (hol α u v x) else 0)) := by
-        refine Finset.sum_congr rfl fun x _ => ?_
-        rw [cost_eq_sum]
-        refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
-        exact star_point α x u v
-    _ = defect α + defect α + defect α := by
-        simp only [Finset.sum_add_distrib, hA, hB, hC]
-    _ = 3 * defect α := by ring
+  simp_rw [cost_starGauge_eq]
+  rw [sum_vertex_edges_complete (movedHol α), nsmul_eq_mul, Nat.cast_id,
+    defect_eq_sum_movedHol]
 
 /-- **The cheapest gauge costs at most the average star gauge**: `k · D ≤ 3 · N` for every
 `Sym(3)`-valued cochain on `K_k`. This is Proposition 1 of the paper, which is Chapman–Lubotzky
