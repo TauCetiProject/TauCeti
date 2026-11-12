@@ -33,12 +33,15 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
 ## Main declarations
 
 * `TauCeti.abs_log_norm_Gamma_vertical_sub_le`: the explicit bound
-  `(2 / (1 - cos (π / 4)) ^ 3 + |σ - 1/2| |σ| + σ ^ 2) / |t|` whenever `t ≠ 0` and `|σ| ≤ |t|`.
-* `TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le`: one constant and one threshold for all
-  `σ ∈ [a, b]`.
-* `TauCeti.isBigO_log_norm_Gamma_vertical`: the uniform `O(1 / |t|)` form along
+  `(2 / (1 - cos (π / 4)) ^ 3 + |σ - 1/2| |σ| + σ ^ 2) / |t|` at every `s = σ + i t` with `t ≠ 0`
+  and `|σ| ≤ |t|`.
+* `TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le`: one constant and one threshold for all `s`
+  with `Re s ∈ [a, b]`.
+* `TauCeti.isBigO_log_norm_Gamma_vertical_sub`: the uniform `O(1 / |t|)` form in `(σ, t)` along
   `𝓟 (Icc a b) ×ˢ cocompact ℝ`.
-* `TauCeti.isBigO_log_norm_Gamma_vertical_line`: the same on a single vertical line, along
+* `TauCeti.isBigO_log_norm_Gamma_vertical_strip_sub`: the same as a function of `s : ℂ`, along
+  `cocompact ℂ` restricted to the strip `Re s ∈ [a, b]`.
+* `TauCeti.isBigO_log_norm_Gamma_vertical_line_sub`: the same on a single vertical line, along
   `cocompact ℝ`.
 -/
 
@@ -124,10 +127,9 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
   refine (abs_add_three _ _ _).trans ?_
   linarith [hS.trans hS', abs_mul_arctan_div_sub_div_le ht hσt]
 
-/-- **Stirling's formula on vertical strips**, explicit form: for `t ≠ 0` and `|σ| ≤ |t|`,
-`|log ‖Γ(σ + i t)‖ - ((σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2)| ≤
-(2 / (1 - cos (π / 4)) ^ 3 + |σ - 1/2| |σ| + σ ^ 2) / |t|`. -/
-theorem abs_log_norm_Gamma_vertical_sub_le {σ t : ℝ} (ht : t ≠ 0) (hσt : |σ| ≤ |t|) :
+/-- The explicit vertical bound in the coordinates `s = σ + i t`. -/
+private theorem abs_log_norm_Gamma_vertical_sub_le_of_ne_zero {σ t : ℝ} (ht : t ≠ 0)
+    (hσt : |σ| ≤ |t|) :
     |Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤
       (2 / (1 - Real.cos (π / 4)) ^ 3 + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
@@ -140,35 +142,46 @@ theorem abs_log_norm_Gamma_vertical_sub_le {σ t : ℝ} (ht : t ≠ 0) (hσt : |
     rwa [hconj, Complex.Gamma_conj, Complex.norm_conj]
   · exact abs_log_norm_Gamma_vertical_sub_le_of_pos ht (by rwa [abs_of_pos ht] at hσt)
 
+/-- **Stirling's formula on vertical strips**, explicit form: for `s = σ + i t` with `t ≠ 0` and
+`|σ| ≤ |t|`,
+`|log ‖Γ(s)‖ - ((σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2)| ≤
+(2 / (1 - cos (π / 4)) ^ 3 + |σ - 1/2| |σ| + σ ^ 2) / |t|`. -/
+theorem abs_log_norm_Gamma_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre : |s.re| ≤ |s.im|) :
+    |Real.log ‖Complex.Gamma s‖ -
+        ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2)| ≤
+      (2 / (1 - Real.cos (π / 4)) ^ 3 + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
+  simpa only [re_add_im] using abs_log_norm_Gamma_vertical_sub_le_of_ne_zero hs hre
+
 /-- Stirling's formula on vertical strips, with one constant and one threshold for the whole
-strip `a ≤ σ ≤ b`: `|log ‖Γ(σ + i t)‖ - ((σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2)| ≤ C / |t|`
-for `σ ∈ [a, b]` and `T ≤ |t|`. -/
+strip `a ≤ Re s ≤ b`: for `s = σ + i t` with `σ ∈ [a, b]` and `T ≤ |t|`,
+`|log ‖Γ(s)‖ - ((σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2)| ≤ C / |t|`. -/
 theorem exists_abs_log_norm_Gamma_vertical_sub_le (a b : ℝ) :
-    ∃ C T : ℝ, ∀ σ ∈ Icc a b, ∀ t : ℝ, T ≤ |t| →
-      |Real.log ‖Complex.Gamma (σ + t * I)‖ -
-          ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤ C / |t| := by
+    ∃ C T : ℝ, ∀ s : ℂ, s.re ∈ Icc a b → T ≤ |s.im| →
+      |Real.log ‖Complex.Gamma s‖ -
+          ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2)| ≤
+        C / |s.im| := by
   set M := max |a| |b|
   refine ⟨2 / (1 - Real.cos (π / 4)) ^ 3 + (M + 1 / 2) * M + M ^ 2, M + 1,
-    fun σ hσ t ht ↦ ?_⟩
-  have hσM : |σ| ≤ M := abs_le_max_abs_abs hσ.1 hσ.2
-  have hM : 0 ≤ M := (abs_nonneg σ).trans hσM
-  have ht0 : 0 < |t| := by linarith
+    fun s hs ht ↦ ?_⟩
+  have hσM : |s.re| ≤ M := abs_le_max_abs_abs hs.1 hs.2
+  have hM : 0 ≤ M := (abs_nonneg _).trans hσM
+  have ht0 : 0 < |s.im| := by linarith
   refine (abs_log_norm_Gamma_vertical_sub_le (abs_pos.1 ht0) (by linarith)).trans ?_
   refine div_le_div_of_nonneg_right ?_ ht0.le
-  have h1 : |σ - 1 / 2| ≤ M + 1 / 2 := by
+  have h1 : |s.re - 1 / 2| ≤ M + 1 / 2 := by
     obtain ⟨hl, hu⟩ := abs_le.1 hσM
     exact abs_le.2 ⟨by linarith, by linarith⟩
-  have h2 : |σ - 1 / 2| * |σ| ≤ (M + 1 / 2) * M :=
+  have h2 : |s.re - 1 / 2| * |s.re| ≤ (M + 1 / 2) * M :=
     mul_le_mul h1 hσM (abs_nonneg _) (by linarith)
-  have h3 : σ ^ 2 ≤ M ^ 2 := by
+  have h3 : s.re ^ 2 ≤ M ^ 2 := by
     rw [← sq_abs]
-    exact pow_le_pow_left₀ (abs_nonneg σ) hσM 2
+    exact pow_le_pow_left₀ (abs_nonneg _) hσM 2
   linarith
 
 /-- **Stirling's formula on vertical strips** ([DLMF 5.11.9](https://dlmf.nist.gov/5.11.E9)):
 `log ‖Γ(σ + i t)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` uniformly for
 `σ ∈ [a, b]` as `|t| → ∞`. -/
-theorem isBigO_log_norm_Gamma_vertical (a b : ℝ) :
+theorem isBigO_log_norm_Gamma_vertical_sub (a b : ℝ) :
     (fun p : ℝ × ℝ ↦ Real.log ‖Complex.Gamma (p.1 + p.2 * I)‖ -
         ((p.1 - 1 / 2) * Real.log |p.2| - π * |p.2| / 2 + Real.log (2 * π) / 2))
       =O[𝓟 (Icc a b) ×ˢ cocompact ℝ] fun p ↦ |p.2|⁻¹ := by
@@ -179,15 +192,33 @@ theorem isBigO_log_norm_Gamma_vertical (a b : ℝ) :
     rwa [Real.norm_eq_abs] at ht
   filter_upwards [(eventually_principal.2 fun _ hσ ↦ hσ).prod_mk hT] with p hp
   rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_inv, abs_abs, ← div_eq_mul_inv]
-  exact h p.1 hp.1 p.2 hp.2
+  simpa using h (p.1 + p.2 * I) (by simpa using hp.1) (by simpa using hp.2)
+
+/-- **Stirling's formula on vertical strips** as a function of `s = σ + i t`:
+`log ‖Γ(s)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` as `s → ∞` in the strip
+`a ≤ Re s ≤ b`. -/
+theorem isBigO_log_norm_Gamma_vertical_strip_sub (a b : ℝ) :
+    (fun s : ℂ ↦ Real.log ‖Complex.Gamma s‖ -
+        ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2))
+      =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun s ↦ |s.im|⁻¹ := by
+  obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
+  refine IsBigO.of_bound C ?_
+  have hT : ∀ᶠ s : ℂ in cocompact ℂ, T + max |a| |b| ≤ ‖s‖ :=
+    (tendsto_norm_cocompact_atTop (E := ℂ)).eventually_ge_atTop _
+  filter_upwards [hT.filter_mono inf_le_left,
+    (eventually_principal.2 fun _ hs ↦ hs).filter_mono inf_le_right] with s hs hre
+  have hM : |s.re| ≤ max |a| |b| := abs_le_max_abs_abs hre.1 hre.2
+  have hnorm := norm_le_abs_re_add_abs_im s
+  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_inv, abs_abs, ← div_eq_mul_inv]
+  exact h s hre (by linarith)
 
 /-- Stirling's formula on a single vertical line `Re s = σ`:
 `log ‖Γ(σ + i t)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` as `|t| → ∞`. -/
-theorem isBigO_log_norm_Gamma_vertical_line (σ : ℝ) :
+theorem isBigO_log_norm_Gamma_vertical_line_sub (σ : ℝ) :
     (fun t : ℝ ↦ Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2))
       =O[cocompact ℝ] fun t ↦ |t|⁻¹ :=
-  (isBigO_log_norm_Gamma_vertical σ σ).comp_tendsto
+  (isBigO_log_norm_Gamma_vertical_sub σ σ).comp_tendsto
     ((tendsto_principal.2 (Eventually.of_forall fun _ ↦ left_mem_Icc.2 le_rfl)).prodMk tendsto_id)
 
 end TauCeti
