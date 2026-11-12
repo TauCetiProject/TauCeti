@@ -22,6 +22,8 @@ coprimality passes to iterated products.
 ## Main declarations
 
 * `IsNilpotent.prodMap`: a product of nilpotent endomorphisms is nilpotent.
+* `Module.End.aeval_prodMap`: a polynomial evaluated at a product of endomorphisms is the product
+  of the evaluations.
 * `Module.End.IsSemisimple.prodMap`: a product of semisimple endomorphisms is semisimple.
 * `Module.End.commute_prodMap_iff_of_isCoprime`: if `f` and `g` have coprime minimal polynomials,
   the endomorphisms commuting with `f × g` are the products `a × b` with `a` commuting with `f`
@@ -72,7 +74,7 @@ variable [CommSemiring K] [AddCommMonoid V] [Module K V] [AddCommMonoid W] [Modu
 
 /-- Evaluating a polynomial at a componentwise product of endomorphisms is the componentwise
 product of the evaluations. -/
-private theorem _root_.Module.End.aeval_prodMap (f : Module.End K V) (g : Module.End K W)
+theorem _root_.Module.End.aeval_prodMap (f : Module.End K V) (g : Module.End K W)
     (p : K[X]) :
     aeval (f.prodMap g) p = (aeval f p).prodMap (aeval g p) := by
   have h : aeval (f.prodMap g) =

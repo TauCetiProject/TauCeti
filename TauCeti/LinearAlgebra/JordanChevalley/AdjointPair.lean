@@ -7,30 +7,30 @@ module
 
 public import Mathlib.LinearAlgebra.JordanChevalley
 public import TauCeti.LinearAlgebra.SesquilinearForm.AdjointPair
+import TauCeti.LinearAlgebra.End.Prod
 
 /-!
 # Jordan–Chevalley decompositions of adjoint pairs
 
-Let `B` be a bilinear map on a module `V` which is right-separating, `B v w = 0` for all `v` only
-when `w = 0`, and let `(f, g)` be an adjoint pair of endomorphisms, `B (f v) w = B v (g w)`
-(`LinearMap.IsAdjointPair B B f g`). Since `p(f)` and `p(g)` are adjoint for every polynomial `p`
-(`LinearMap.IsAdjointPair.aeval`), `B` determines `g` from `f`
-(`LinearMap.IsAdjointPair.right_unique`), every polynomial killing `f` kills `g`
-(`LinearMap.IsAdjointPair.aeval_eq_zero`), and if a polynomial in `f` is nilpotent then so is the
-same polynomial in `g` (`LinearMap.IsAdjointPair.isNilpotent_aeval`). For a finite-dimensional
-vector space the same holds for semisimplicity (`LinearMap.IsAdjointPair.isSemisimple_aeval`).
+Let `B` be a bilinear map on a finite-dimensional vector space `V` over a perfect field, and let
+`(f, g)` be an adjoint pair of endomorphisms, `B (f v) w = B v (g w)`
+(`LinearMap.IsAdjointPair B B f g`). Then `p(f)` and `p(g)` are adjoint for every polynomial `p`
+(`LinearMap.IsAdjointPair.aeval`).
 
-Over a perfect field the nilpotent and semisimple parts of the Jordan–Chevalley decomposition
-`f = n + s` are polynomials in `f`. Applying the same polynomials to `g` gives a commuting nilpotent
-and semisimple pair adding up to `g`, so by uniqueness of the decomposition **the adjoint of the
+The Jordan–Chevalley decomposition of `f × g` on `V × V` is the product of those of `f = n + s`
+and `g = n' + s'`, since products of nilpotent and of semisimple endomorphisms are again
+nilpotent and semisimple (`IsNilpotent.prodMap`, `Module.End.IsSemisimple.prodMap`). Its parts are
+polynomials `p(f × g) = p(f) × p(g)` and `q(f × g) = q(f) × q(g)`, so `n = p(f)`, `n' = p(g)`,
+`s = q(f)` and `s' = q(g)` for the same polynomials `p` and `q`. Hence **the adjoint of the
 nilpotent part is the nilpotent part of the adjoint, and likewise for the semisimple part**
 (`LinearMap.IsAdjointPair.isAdjointPair_of_isNilpotent_of_add`,
-`LinearMap.IsAdjointPair.isAdjointPair_of_isSemisimple_of_add`).
+`LinearMap.IsAdjointPair.isAdjointPair_of_isSemisimple_of_add`). No nondegeneracy of `B` is
+needed.
 
 For a skew-adjoint endomorphism `f`, whose adjoint is `-f` with decomposition `-n + -s`, this says
 that both parts of `f` are again skew-adjoint
 (`LinearMap.IsSkewAdjoint.of_isNilpotent_of_add`, `LinearMap.IsSkewAdjoint.of_isSemisimple_of_add`).
-So the Lie algebra of skew-adjoint endomorphisms of a nondegenerate form, such as a symplectic Lie
+So the Lie algebra of skew-adjoint endomorphisms of a bilinear form, such as a symplectic Lie
 algebra `sp(V, ω)` or an orthogonal Lie algebra, contains the Jordan–Chevalley parts of its
 elements.
 
@@ -57,69 +57,55 @@ namespace LinearMap
 
 namespace IsAdjointPair
 
-section Field
-
-variable {K V M : Type*} [Field K] [AddCommGroup V] [Module K V] [AddCommGroup M] [Module K M]
-  {B : V →ₗ[K] V →ₗ[K] M} {f g : Module.End K V}
-
-/-- For a right-separating bilinear map on a finite-dimensional space, if `p(f)` is semisimple
-then so is `p(g)` for the adjoint `g` of `f`: the squarefree minimal polynomial of `p(f)` also
-kills `p(g)`. -/
-theorem isSemisimple_aeval [FiniteDimensional K V] (hB : B.SeparatingRight)
-    (h : IsAdjointPair B B f g) {p : K[X]} (hp : (Polynomial.aeval f p).IsSemisimple) :
-    (Polynomial.aeval g p).IsSemisimple := by
-  refine isSemisimple_of_squarefree_aeval_eq_zero hp.minpoly_squarefree ?_
-  rw [← Polynomial.aeval_comp]
-  exact h.aeval_eq_zero hB (by rw [Polynomial.aeval_comp, minpoly.aeval])
-
-variable [PerfectField K] [FiniteDimensional K V]
+variable {K V M : Type*} [Field K] [PerfectField K] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] [AddCommGroup M] [Module K M] {B : V →ₗ[K] V →ₗ[K] M}
+  {f g : Module.End K V}
 
 /-- Both Jordan–Chevalley parts of an adjoint pair are adjoint pairs. -/
-private theorem isAdjointPair_and_isAdjointPair_of_add (hB : B.SeparatingRight)
-    (h : IsAdjointPair B B f g) {n s n' s' : Module.End K V} (hc : Commute n s)
-    (hn : IsNilpotent n) (hs : s.IsSemisimple) (hf : f = n + s) (hc' : Commute n' s')
-    (hn' : IsNilpotent n') (hs' : s'.IsSemisimple) (hg : g = n' + s') :
-    IsAdjointPair B B n n' ∧ IsAdjointPair B B s s' := by
-  -- By uniqueness of the decomposition, `n` and `s` are polynomials `p(f)` and `q(f)`.
-  obtain ⟨n₀, hn₀, s₀, hs₀, hn₀nil, hs₀ss, hf₀⟩ := f.exists_isNilpotent_isSemisimple
+private theorem isAdjointPair_and_isAdjointPair_of_add (h : IsAdjointPair B B f g)
+    {n s n' s' : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n) (hs : s.IsSemisimple)
+    (hf : f = n + s) (hc' : Commute n' s') (hn' : IsNilpotent n') (hs' : s'.IsSemisimple)
+    (hg : g = n' + s') : IsAdjointPair B B n n' ∧ IsAdjointPair B B s s' := by
+  -- By uniqueness of the decomposition of `f × g`, `n × n'` and `s × s'` are polynomials in it.
+  obtain ⟨n₀, hn₀, s₀, hs₀, hn₀nil, hs₀ss, hfg₀⟩ :=
+    Module.End.exists_isNilpotent_isSemisimple (f := f.prodMap g)
   have hc₀ : Commute n₀ s₀ := Algebra.commute_of_mem_adjoin_singleton_of_commute hs₀
     (Algebra.commute_of_mem_adjoin_self hn₀).symm
-  obtain ⟨rfl, rfl⟩ := isNilpotent_isSemisimple_unique hn₀nil hs₀ss hn hs hc₀ hc
-    (hf₀.symm.trans hf)
+  have hcp : Commute (n.prodMap n') (s.prodMap s') := by
+    rw [commute_iff_eq, prodMap_mul, prodMap_mul, hc.eq, hc'.eq]
+  obtain ⟨rfl, rfl⟩ := isNilpotent_isSemisimple_unique hn₀nil hs₀ss (hn.prodMap hn')
+    (hs.prodMap hs') hc₀ hcp (by rw [← hfg₀, hf, hg, prodMap_add])
   rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hn₀ hs₀
-  obtain ⟨p, rfl⟩ := hn₀
-  obtain ⟨q, rfl⟩ := hs₀
-  -- Then `p(g)` and `q(g)` are a nilpotent and a semisimple commuting pair adding up to `g`.
-  have hsum : Polynomial.aeval g p + Polynomial.aeval g q = g := by
-    have h₀ := h.aeval (p + q)
-    rw [map_add, ← hf] at h₀
-    rw [← map_add]
-    exact (right_unique hB h h₀).symm
-  have hcomm : Commute (Polynomial.aeval g p) (Polynomial.aeval g q) := by
-    rw [commute_iff_eq, ← map_mul, ← map_mul, mul_comm]
-  obtain ⟨hp, hq⟩ := isNilpotent_isSemisimple_unique (h.isNilpotent_aeval hB hn)
-    (h.isSemisimple_aeval hB hs) hn' hs' hcomm hc' (hsum.trans hg)
-  exact ⟨hp ▸ h.aeval p, hq ▸ h.aeval q⟩
+  -- A polynomial `r` with `r(f × g) = a × b` has `a = r(f)` and `b = r(g)`, an adjoint pair.
+  have key {a b : Module.End K V} {r : K[X]} (hr : Polynomial.aeval (f.prodMap g) r = a.prodMap b) :
+      IsAdjointPair B B a b := by
+    rw [Module.End.aeval_prodMap] at hr
+    have ha : Polynomial.aeval f r = a :=
+      LinearMap.ext fun v ↦ by simpa using congrArg Prod.fst (LinearMap.congr_fun hr (v, 0))
+    have hb : Polynomial.aeval g r = b :=
+      LinearMap.ext fun v ↦ by simpa using congrArg Prod.snd (LinearMap.congr_fun hr (0, v))
+    exact ha ▸ hb ▸ h.aeval r
+  obtain ⟨p, hp⟩ := hn₀
+  obtain ⟨q, hq⟩ := hs₀
+  exact ⟨key hp, key hq⟩
 
 /-- **The adjoint of the nilpotent part is the nilpotent part of the adjoint.** If `(f, g)` is an
-adjoint pair for a right-separating `B` and `f = n + s`, `g = n' + s'` are Jordan–Chevalley
-decompositions, then `(n, n')` is an adjoint pair. -/
-theorem isAdjointPair_of_isNilpotent_of_add (hB : B.SeparatingRight) (h : IsAdjointPair B B f g)
+adjoint pair and `f = n + s`, `g = n' + s'` are Jordan–Chevalley decompositions, then `(n, n')` is
+an adjoint pair. -/
+theorem isAdjointPair_of_isNilpotent_of_add (h : IsAdjointPair B B f g)
     {n s n' s' : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n) (hs : s.IsSemisimple)
     (hf : f = n + s) (hc' : Commute n' s') (hn' : IsNilpotent n') (hs' : s'.IsSemisimple)
     (hg : g = n' + s') : IsAdjointPair B B n n' :=
-  (isAdjointPair_and_isAdjointPair_of_add hB h hc hn hs hf hc' hn' hs' hg).1
+  (isAdjointPair_and_isAdjointPair_of_add h hc hn hs hf hc' hn' hs' hg).1
 
 /-- **The adjoint of the semisimple part is the semisimple part of the adjoint.** If `(f, g)` is
-an adjoint pair for a right-separating `B` and `f = n + s`, `g = n' + s'` are Jordan–Chevalley
-decompositions, then `(s, s')` is an adjoint pair. -/
-theorem isAdjointPair_of_isSemisimple_of_add (hB : B.SeparatingRight) (h : IsAdjointPair B B f g)
+an adjoint pair and `f = n + s`, `g = n' + s'` are Jordan–Chevalley decompositions, then `(s, s')`
+is an adjoint pair. -/
+theorem isAdjointPair_of_isSemisimple_of_add (h : IsAdjointPair B B f g)
     {n s n' s' : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n) (hs : s.IsSemisimple)
     (hf : f = n + s) (hc' : Commute n' s') (hn' : IsNilpotent n') (hs' : s'.IsSemisimple)
     (hg : g = n' + s') : IsAdjointPair B B s s' :=
-  (isAdjointPair_and_isAdjointPair_of_add hB h hc hn hs hf hc' hn' hs' hg).2
-
-end Field
+  (isAdjointPair_and_isAdjointPair_of_add h hc hn hs hf hc' hn' hs' hg).2
 
 end IsAdjointPair
 
@@ -129,28 +115,26 @@ variable {K V M : Type*} [Field K] [PerfectField K] [AddCommGroup V] [Module K V
   [FiniteDimensional K V] [AddCommGroup M] [Module K M] {B : V →ₗ[K] V →ₗ[K] M}
 
 /-- Both Jordan–Chevalley parts of a skew-adjoint endomorphism are skew-adjoint. -/
-private theorem isSkewAdjoint_and_isSkewAdjoint_of_add (hB : B.SeparatingRight)
-    {n s : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n) (hs : s.IsSemisimple)
-    (h : B.IsSkewAdjoint ⇑(n + s)) : B.IsSkewAdjoint ⇑n ∧ B.IsSkewAdjoint ⇑s := by
+private theorem isSkewAdjoint_and_isSkewAdjoint_of_add {n s : Module.End K V} (hc : Commute n s)
+    (hn : IsNilpotent n) (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) :
+    B.IsSkewAdjoint ⇑n ∧ B.IsSkewAdjoint ⇑s := by
   have h' : IsAdjointPair B B ⇑(n + s) ⇑(-(n + s)) := by simpa [IsSkewAdjoint] using h
-  simpa [IsSkewAdjoint] using IsAdjointPair.isAdjointPair_and_isAdjointPair_of_add hB h' hc hn hs
+  simpa [IsSkewAdjoint] using IsAdjointPair.isAdjointPair_and_isAdjointPair_of_add h' hc hn hs
     rfl hc.neg_left.neg_right hn.neg (by simpa using IsSemisimple_smul (-1 : K) hs) (neg_add n s)
 
-/-- **The nilpotent part of a skew-adjoint endomorphism is skew-adjoint**, for a right-separating
-bilinear map: if `n + s` is skew-adjoint, with `n` nilpotent, `s` semisimple and `n`, `s`
-commuting, then `n` is skew-adjoint. -/
-theorem of_isNilpotent_of_add (hB : B.SeparatingRight) {n s : Module.End K V} (hc : Commute n s)
-    (hn : IsNilpotent n) (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) :
-    B.IsSkewAdjoint ⇑n :=
-  (isSkewAdjoint_and_isSkewAdjoint_of_add hB hc hn hs h).1
+/-- **The nilpotent part of a skew-adjoint endomorphism is skew-adjoint**: if `n + s` is
+skew-adjoint, with `n` nilpotent, `s` semisimple and `n`, `s` commuting, then `n` is
+skew-adjoint. -/
+theorem of_isNilpotent_of_add {n s : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n)
+    (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) : B.IsSkewAdjoint ⇑n :=
+  (isSkewAdjoint_and_isSkewAdjoint_of_add hc hn hs h).1
 
-/-- **The semisimple part of a skew-adjoint endomorphism is skew-adjoint**, for a right-separating
-bilinear map: if `n + s` is skew-adjoint, with `n` nilpotent, `s` semisimple and `n`, `s`
-commuting, then `s` is skew-adjoint. -/
-theorem of_isSemisimple_of_add (hB : B.SeparatingRight) {n s : Module.End K V} (hc : Commute n s)
-    (hn : IsNilpotent n) (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) :
-    B.IsSkewAdjoint ⇑s :=
-  (isSkewAdjoint_and_isSkewAdjoint_of_add hB hc hn hs h).2
+/-- **The semisimple part of a skew-adjoint endomorphism is skew-adjoint**: if `n + s` is
+skew-adjoint, with `n` nilpotent, `s` semisimple and `n`, `s` commuting, then `s` is
+skew-adjoint. -/
+theorem of_isSemisimple_of_add {n s : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n)
+    (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) : B.IsSkewAdjoint ⇑s :=
+  (isSkewAdjoint_and_isSkewAdjoint_of_add hc hn hs h).2
 
 end IsSkewAdjoint
 
