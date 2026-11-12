@@ -113,7 +113,7 @@ private theorem locallyOfFiniteType_diag_snd (hF : yoneda.relativelyRepresentabl
   have sq : IsPullback φ (hF.snd G) (prod.lift (hr.fst' a) (hr.snd a)) (prod.lift u v) := by
     refine ⟨⟨by ext <;> simp [hr₁, hr₂]⟩, ⟨PullbackCone.IsLimit.mk _
       (fun c ↦ hF.lift (yoneda.map (c.snd ≫ u) ≫ a) c.snd ?_) (fun c ↦ ?_) (fun c ↦ ?_)
-      (fun c m hm₁ hm₂ ↦ ?_)⟩⟩
+      (fun c m _ hm₂ ↦ ?_)⟩⟩
     · have e₁ : c.fst ≫ hr.fst' a = c.snd ≫ u := by simpa using c.condition =≫ prod.fst
       have e₂ : c.fst ≫ hr.snd a = c.snd ≫ v := by simpa using c.condition =≫ prod.snd
       have : yoneda.map c.snd ≫ yoneda.map u ≫ a = yoneda.map c.snd ≫ yoneda.map v ≫ a := by
