@@ -50,6 +50,9 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 * `normalMetricChange_symm_apply`: the inverse projects `ν⁻_{g'}` onto `ν⁻_g` along `ν⁺_{g'}`, and
   `ν⁺_{g'}` onto `ν⁺_g` along `ν⁻_{g'}`.
 * `normalMetricChange_self`: for `g' = g` it is the identity.
+* `normalMetricChange_symm_apply_eq`: read in a linear isomorphism of the normal space with `P`,
+  through which `p` and `p'` read the negative projections for `g` and `g'`, the automorphism is
+  `p' p + (1 - p') (1 - p)`.
 * `exists_contMDiffOn_normalMetricChange`: in each normal-bundle trivialization the automorphism
   and its inverse are `C^k` families of operators.
 
@@ -175,6 +178,27 @@ theorem normalMetricChange_self (s : S) :
     h.normalMetricChange hn g g s = LinearEquiv.refl ℝ (i.NormalSpace s hn) :=
   Submodule.splittingEquiv_self _
 
+/-- **The change of fibre metric read in a linear isomorphism.** Let `L` identify the normal space
+at `s` with `P`, and let `p` and `p'` be operators on `P` which, read in `L`, are the projections
+onto the negative normal spaces for `g` and for `g'` along the positive ones. Then the change of
+fibre metric, read in `L`, is `p' p + (1 - p') (1 - p)`. -/
+theorem normalMetricChange_symm_apply_eq {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {s : S} (L : i.NormalSpace s hn ≃ₗ[ℝ] P) {p p' : P →L[ℝ] P}
+    (hp : ∀ w, L.symm (p w) = (h.negativeNormalSpace hn g s).projection
+      (h.positiveNormalSpace hn g s) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s)
+      (L.symm w))
+    (hp' : ∀ w, L.symm (p' w) = (h.negativeNormalSpace hn g' s).projection
+      (h.positiveNormalSpace hn g' s)
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s) (L.symm w)) (w : P) :
+    L.symm ((p' * p + (1 - p') * (1 - p)) w) = h.normalMetricChange hn g g' s (L.symm w) := by
+  simp only [ContinuousLinearMap.mul_def, add_apply, ContinuousLinearMap.comp_apply, sub_apply,
+    one_apply_eq_self, map_add, map_sub, hp, hp', normalMetricChange_apply,
+    Submodule.projection_eq_self_sub_projection
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s),
+    Submodule.projection_eq_self_sub_projection
+      (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s)]
+  abel
+
 end Pointwise
 
 section Smooth
@@ -252,12 +276,7 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
     ext u
     apply L.symm.injective
     rw [hL (C s hs _ u), hC s hs, ← hL, LinearEquiv.coe_coe]
-    simp only [A, add_apply, ContinuousLinearMap.comp_apply, sub_apply, one_apply_eq_self, map_add,
-      map_sub, hpL, hpL', normalMetricChange_apply, Submodule.projection_eq_self_sub_projection
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s),
-      Submodule.projection_eq_self_sub_projection
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s)]
-    abel
+    exact h.normalMetricChange_symm_apply_eq hn g g' L hpL hpL' u
   -- The change of metric read in the trivialization is a bijection, hence invertible, so its
   -- inverse is `C^k` as well and is the inverse change of metric read in the trivialization.
   have hAu (s : S) (hs : s ∈ V) : IsUnit (A s) := by
