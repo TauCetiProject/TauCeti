@@ -117,6 +117,16 @@ lemma map_notMem_skeletonLT {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : �
     map n j y ∉ (skeletonLT C (n : ℕ∞) : Set X) := fun h ↦
   (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left h ⟨y, mem_ball_zero_iff.2 hy, rfl⟩
 
+/-- The characteristic map of an `n`-cell takes the value of the centre of its cell only at the
+centre of the closed disk: it is injective on the open disk, and sends the boundary sphere into
+`skeletonLT C n`, which misses the open cell. -/
+lemma map_ne_map_zero {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) (hy₀ : y ≠ 0) :
+    map n j y ≠ map n j 0 := by
+  rcases hy.lt_or_eq with hy | hy
+  · exact fun h ↦ hy₀ ((map_eq_map_iff hy (by simp)).1 h).2
+  · exact fun h ↦ map_notMem_skeletonLT j (by simp) (h ▸ cellFrontier_subset_skeletonLT n j
+      ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩)
+
 /-- A point of `skeletonLT C (n + 1)` lies in `skeletonLT C n` or is the image of a point of the
 open unit ball under the characteristic map of an `n`-cell. -/
 lemma mem_skeletonLT_or_exists_map {n : ℕ} {x : X}

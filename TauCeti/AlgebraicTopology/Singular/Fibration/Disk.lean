@@ -71,6 +71,8 @@ along straight lines. Over the closed unit ball, the radial deformation
 * `TauCeti.TopCat.isZero_singularHomology_preimage_sphere`,
   `TauCeti.TopCat.singularHomologyPreimageSphereIso`: the relative homology of `E` modulo the part
   over the boundary sphere, for a Serre fibration over the closed unit ball.
+* `TauCeti.TopCat.isIso_singularHomologyMap_ofSubsetMap_preimage_sphere`: over the closed unit
+  ball, the part over the boundary sphere may be replaced by the part over the punctured ball.
 
 ## References
 
@@ -249,6 +251,18 @@ private lemma isIso_totalToOuter (hp : serreFibrations p) (m : ℕ) :
   TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero _ _ m
     (isZero_singularHomology_puncturedBall_unitSphere R hp m)
     fun m' _ ↦ isZero_singularHomology_puncturedBall_unitSphere R hp m'
+
+omit [FiniteDimensional ℝ V] in
+/-- **Over the closed unit ball, the part of `E` over the boundary sphere may be replaced by the
+part over the punctured ball.** For a Serre fibration `p : E ⟶ Dʳ`, the inclusion
+`(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` induces isomorphisms on relative singular homology. -/
+theorem isIso_singularHomologyMap_ofSubsetMap_preimage_sphere (hp : serreFibrations p) (m : ℕ) :
+    IsIso ((TopPair.ofSubset (p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1})).singularHomologyMap
+      (TopPair.ofSubsetMap (B' := p ⁻¹' {x | (x : V) ≠ 0}) (𝟙 E)
+        fun x (hx : (p x : V) ∈ sphere (0 : V) 1) (h : (p x : V) = 0) ↦ by
+          simp [h] at hx) (ModuleCat.of R R) m) := by
+  have := isIso_totalToOuter R hp m
+  rwa [TopTriple.totalToOuter_app_ofSubset] at this
 
 /-- **A Serre fibration over a disk has vanishing homology modulo the part over the boundary
 sphere, below the dimension.** Let `p : E ⟶ Dʳ` be a Serre fibration over the closed unit ball of
