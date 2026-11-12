@@ -9,10 +9,11 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Order.IsLUB
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
+import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
 
@@ -39,6 +40,9 @@ namely `f`.
 This is the local `\bar∂`-lemma behind the vanishing of `H¹(D, 𝒪)` on discs, which makes discs
 acyclic for the structure sheaf of a Riemann surface.
 
+The telescoping step (`TauCeti.exists_differentiableOn_eqOn_add_tsum`) is stated on an arbitrary
+complex normed space, where it also serves the exhaustion of `ℂⁿ` by polydiscs.
+
 ## Main results
 
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball`: the Dolbeault lemma on a
@@ -47,6 +51,8 @@ acyclic for the structure sheaf of a Riemann surface.
   real radius.
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq`: every `Cⁿ` function on the plane is
   `\bar∂` of a `Cⁿ` function, without any support condition.
+* `TauCeti.exists_differentiableOn_eqOn_add_tsum`: the telescoping step of the exhaustion, on any
+  complex normed space.
 
 ## References
 
@@ -84,26 +90,28 @@ private theorem contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add {G f : �
       conjWirtingerDeriv_add haz (hKz.restrictScalars ℝ), hKz.conjWirtingerDeriv_eq_zero,
       add_zero, haf z hzV]
 
-/-- Telescoping step: if consecutive differences `h (k + 1) - h k` are holomorphic on the growing
-balls `ball c (r k)` and are approximated within `2⁻ᵏ` on `closedBall c (r k)` by entire functions
-`P k`, then on `ball c (r m)` the corrected limit `h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m`
-plus a holomorphic function. -/
-private theorem exists_differentiableOn_eqOn_add_tsum {h P : ℕ → ℂ → W} {c : ℂ} {r : ℕ → ℝ}
+/-- **Telescoping step.** If consecutive differences `h (k + 1) - h k` are holomorphic on the
+growing balls `ball c (r k)` of a complex normed space and are approximated within `2⁻ᵏ` on
+`closedBall c (r k)` by entire functions `P k`, then on `ball c (r m)` the corrected limit
+`h 0 + ∑' k, (h (k + 1) - h k - P k)` is `h m` plus a holomorphic function. -/
+theorem exists_differentiableOn_eqOn_add_tsum {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] {h P : ℕ → V → W} {c : V} {r : ℕ → ℝ}
     (hr : Monotone r) (hP : ∀ k, Differentiable ℂ (P k))
     (hdiff : ∀ k, DifferentiableOn ℂ (h (k + 1) - h k) (ball c (r k)))
     (hP_lt : ∀ k, ∀ z ∈ closedBall c (r k), ‖(h (k + 1) - h k) z - P k z‖ < (1 / 2 : ℝ) ^ k)
-    (m : ℕ) : ∃ K : ℂ → W, DifferentiableOn ℂ K (ball c (r m)) ∧
+    (m : ℕ) : ∃ K : V → W, DifferentiableOn ℂ K (ball c (r m)) ∧
       EqOn (fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z) (h m + K) (ball c (r m)) := by
-  set e : ℕ → ℂ → W := fun k ↦ h (k + 1) - h k - P k
-  have he_le {k : ℕ} (hmk : m ≤ k) {z : ℂ} (hz : z ∈ ball c (r m)) :
+  set e : ℕ → V → W := fun k ↦ h (k + 1) - h k - P k
+  have he_le {k : ℕ} (hmk : m ≤ k) {z : V} (hz : z ∈ ball c (r m)) :
       ‖e k z‖ ≤ (1 / 2 : ℝ) ^ k :=
     (hP_lt k z (closedBall_subset_closedBall (hr hmk) (ball_subset_closedBall hz))).le
   have hsumm : Summable fun k ↦ (1 / 2 : ℝ) ^ (k + m) :=
     (summable_nat_add_iff m).2 summable_geometric_two
   refine ⟨fun z ↦ ∑' k, e (k + m) z - ∑ k ∈ Finset.range m, P k z, ?_, fun z hz ↦ ?_⟩
   · refine DifferentiableOn.sub ?_ (DifferentiableOn.fun_sum fun k _ ↦ (hP k).differentiableOn)
-    refine differentiableOn_tsum_of_summable_norm hsumm (fun k ↦ ?_) isOpen_ball
-      fun k z hz ↦ he_le (Nat.le_add_left m k) hz
+    refine (tendstoUniformlyOn_tsum hsumm fun k z hz ↦ he_le (Nat.le_add_left m k) hz)
+      |>.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum fun k _ ↦ ?_)
+      isOpen_ball
     exact ((hdiff (k + m)).sub (hP (k + m)).differentiableOn).mono
       (ball_subset_ball (hr (Nat.le_add_left m k)))
   · have hs : Summable fun k ↦ e k z := (summable_nat_add_iff m).1 <|
