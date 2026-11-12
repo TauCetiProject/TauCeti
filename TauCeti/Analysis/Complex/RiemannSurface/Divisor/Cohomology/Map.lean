@@ -111,17 +111,8 @@ private theorem divisorCechCohomologyMapOfLE_one_surjective_aux (E : WeilDivisor
       rw [h0, map_zero] at hk
       exact absurd hk (by omega)
     obtain ⟨x, hx⟩ := WeilDivisor.exists_pos_coeff_of_ne_zero (sub_nonneg.mpr h) hpos
-    have hD' : D + WeilDivisor.ofPoint x ≤ E := by
-      rw [WeilDivisor.le_iff]
-      intro y
-      by_cases hy : y = x
-      · subst hy
-        have := hx
-        simp only [WeilDivisor.coeff_sub] at this
-        simp only [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_self]
-        omega
-      · simp only [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_of_ne hy, add_zero]
-        exact WeilDivisor.coeff_le_coeff h y
+    have hD' : D + WeilDivisor.ofPoint x ≤ E := WeilDivisor.add_ofPoint_le_of_coeff_lt h
+      (by simpa only [WeilDivisor.coeff_sub, sub_pos] using hx)
     have hk' : WeilDivisor.degree (E - (D + WeilDivisor.ofPoint x)) = k := by
       rw [sub_add_eq_sub_sub, map_sub, WeilDivisor.degree_ofPoint, hk]
       push_cast
