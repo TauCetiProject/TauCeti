@@ -12,11 +12,12 @@ import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Uniqueness
 /-!
 # Additive generators of Krull-Schmidt categories
 
-An object with a local endomorphism ring lies in the additive closure of a finite biproduct
-`⨁ P` of objects with local endomorphism rings exactly when it is isomorphic to one of the `P j`
-(`TauCeti.additiveClosure_biproduct_iff_exists_iso`). Hence, in a Krull-Schmidt category, an
-indecomposable object lies in `add G` exactly when it is a direct summand of `G`, and `G` is an
-additive generator exactly when every indecomposable object is a direct summand of `G`. A
+An object with a local endomorphism ring lies in the additive closure `add G` exactly when it is a
+direct summand of `G` (`TauCeti.additiveClosure_iff_nonempty_retract`), since the identity is a
+finite sum of composites through the copies of `G` and one of them is invertible; and it lies in
+`add (⨁ P)`, for `P j` with local endomorphism rings, exactly when it is isomorphic to some `P j`
+(`TauCeti.additiveClosure_biproduct_iff_exists_iso`). Hence, in a Krull-Schmidt category, `G` is
+an additive generator exactly when every indecomposable object is a direct summand of `G`. A
 biproduct of objects representing every indecomposable object is then an additive generator, and a
 Krull-Schmidt category has an additive generator exactly when it has finitely many indecomposable
 objects up to isomorphism.
@@ -28,10 +29,10 @@ additive generator, but a non-principal ideal is indecomposable and not a direct
 
 ## Main results
 
+* `TauCeti.additiveClosure_iff_nonempty_retract`: an object with a local endomorphism ring lies in
+  `add G` exactly when it is a direct summand of `G`.
 * `TauCeti.additiveClosure_biproduct_iff_exists_iso`: the summands of `add (⨁ P)` with local
   endomorphism rings are the `P j`, up to isomorphism.
-* `TauCeti.additiveClosure_iff_nonempty_retract`: in a Krull-Schmidt category, an indecomposable
-  object lies in `add G` exactly when it is a direct summand of `G`.
 * `TauCeti.isAdditiveGenerator_iff_forall_indecomposable`: in a Krull-Schmidt category, `G` is an
   additive generator exactly when every indecomposable object is a direct summand of `G`.
 * `TauCeti.isAdditiveGenerator_biproduct`: in a Krull-Schmidt category, a biproduct of objects
@@ -57,39 +58,49 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
 
 attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
+/-- **A local summand of a finite biproduct is a summand of one term**: if `End X` is local and `X`
+is a retract of `⨁ Y`, then `X` is a retract of some `Y j`. -/
+theorem exists_nonempty_retract_of_retract_biproduct {κ : Type w} [Finite κ] (Y : κ → C) {X : C}
+    [IsLocalRing (End X)] (h : Retract X (⨁ Y)) : ∃ j, Nonempty (Retract X (Y j)) := by
+  have := Fintype.ofFinite κ
+  -- The identity of `X` is the sum of its composites through the `Y j`; one is invertible.
+  have hsum : ∑ j, End.of (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r) = 1 := by
+    ext
+    have hr : ∑ j, biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r = h.r := by
+      simp only [← Category.assoc, ← Preadditive.sum_comp, biproduct.total, Category.id_comp]
+    simp only [End.sum_asHom, End.one_asHom, ← Preadditive.comp_sum, hr, h.retract]
+  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hsum ▸ isUnit_one : IsUnit (∑ j, _))
+  have := (isUnit_iff_isIso _).1 hj
+  exact ⟨j, ⟨⟨h.i ≫ biproduct.π Y j, biproduct.ι Y j ≫ h.r ≫
+    inv (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r), by
+      simpa only [Category.assoc] using
+        IsIso.hom_inv_id (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r)⟩⟩⟩
+
+/-- An object with a local endomorphism ring lies in the additive closure of `G` exactly when it
+is a direct summand of `G`. -/
+theorem additiveClosure_iff_nonempty_retract {G X : C} [IsLocalRing (End X)] :
+    additiveClosure G X ↔ Nonempty (Retract X G) := by
+  refine ⟨fun hX ↦ ?_, fun ⟨h⟩ ↦ (additiveClosure G).prop_of_retract h (additiveClosure_self G)⟩
+  obtain ⟨n, ⟨h⟩⟩ := additiveClosure_iff.1 hX
+  exact (exists_nonempty_retract_of_retract_biproduct _ h).choose_spec
+
 /-- **The local summands of `add (⨁ P)`**: if the objects `P j` and `X` have local endomorphism
 rings, `X` lies in the additive closure of `⨁ P` exactly when it is isomorphic to some `P j`. -/
 theorem additiveClosure_biproduct_iff_exists_iso {κ : Type w} [Finite κ] (P : κ → C)
     (hP : ∀ j, IsLocalRing (End (P j))) {X : C} [IsLocalRing (End X)] :
     additiveClosure (⨁ P) X ↔ ∃ j, Nonempty (X ≅ P j) := by
-  refine ⟨fun hX ↦ ?_, fun ⟨j, ⟨e⟩⟩ ↦ (additiveClosure (⨁ P)).prop_of_retract
-    ((Retract.ofIso e).trans ⟨biproduct.ι P j, biproduct.π P j, by simp⟩) (additiveClosure_self _)⟩
-  obtain ⟨n, ⟨h⟩⟩ := additiveClosure_iff.1 hX
-  have := Fintype.ofFinite κ
-  -- `(⨁ P)ⁿ` is a biproduct of copies of the `P j`.
-  let h' := h.trans (.ofIso (biproductBiproductIso (fun _ : Fin n ↦ κ) fun _ j ↦ P j))
-  obtain ⟨j, hj⟩ := exists_isIso_comp_π_of_retract (fun p : Σ _ : Fin n, κ ↦ P p.2)
-    (fun p ↦ hP p.2) h'
-  exact ⟨j.2, ⟨asIso (h'.i ≫ biproduct.π _ j)⟩⟩
-
-/-- In a Krull-Schmidt category, an indecomposable object lies in the additive closure of `G`
-exactly when it is a direct summand of `G`. -/
-theorem additiveClosure_iff_nonempty_retract [IsKrullSchmidt C] {G X : C} (hX : Indecomposable X) :
-    additiveClosure G X ↔ Nonempty (Retract X G) := by
-  refine ⟨fun h ↦ ?_, fun ⟨h⟩ ↦ (additiveClosure G).prop_of_retract h (additiveClosure_self G)⟩
-  obtain ⟨m, P, hP, ⟨φ⟩⟩ := IsKrullSchmidt.exists_iso_biproduct G
-  have := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end X).1 hX
-  obtain ⟨j, ⟨e⟩⟩ := (additiveClosure_biproduct_iff_exists_iso P hP).1
-    (additiveClosure_le_iff.2 ((additiveClosure (⨁ P)).prop_of_iso φ.symm (additiveClosure_self _))
-      X h)
-  exact ⟨((Retract.ofIso e).trans ⟨biproduct.ι P j, biproduct.π P j, by simp⟩).trans
-    (.ofIso φ.symm)⟩
+  rw [additiveClosure_iff_nonempty_retract]
+  refine ⟨fun ⟨h⟩ ↦ ?_, fun ⟨j, ⟨e⟩⟩ ↦
+    ⟨(Retract.ofIso e).trans ⟨biproduct.ι P j, biproduct.π P j, by simp⟩⟩⟩
+  obtain ⟨j, hj⟩ := exists_isIso_comp_π_of_retract P hP h
+  exact ⟨j, ⟨asIso (h.i ≫ biproduct.π P j)⟩⟩
 
 /-- In a Krull-Schmidt category, every indecomposable object is a retract of an additive
 generator. -/
 theorem IsAdditiveGenerator.nonempty_retract [IsKrullSchmidt C] {G : C}
     (hG : IsAdditiveGenerator G) {X : C} (hX : Indecomposable X) : Nonempty (Retract X G) :=
-  (additiveClosure_iff_nonempty_retract hX).1 (hG.additiveClosure X)
+  have := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end X).1 hX
+  additiveClosure_iff_nonempty_retract.1 (hG.additiveClosure X)
 
 /-- **Additive generators of a Krull-Schmidt category**: `G` is an additive generator exactly when
 every indecomposable object is a direct summand of `G`. -/

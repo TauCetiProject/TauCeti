@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure
-import Mathlib.CategoryTheory.Adjunction.Limits
+public import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
 # Additive generators
@@ -30,10 +30,12 @@ are described through indecomposable objects, in
 
 * `TauCeti.isAdditiveGenerator_def`, `TauCeti.isAdditiveGenerator_iff` and
   `TauCeti.additiveClosure_eq_top_iff`: the definition, unfolded, and as `add G = ⊤`.
-* `CategoryTheory.Retract.isAdditiveGenerator` and `TauCeti.IsAdditiveGenerator.of_iso`: invariance
-  under adding direct summands and under isomorphism.
-* `CategoryTheory.Equivalence.isAdditiveGenerator_functor_obj_iff`: invariance under equivalence of
-  categories.
+* `TauCeti.IsAdditiveGenerator.of_additiveClosure`: if `G ∈ add G'` and `G` is an additive
+  generator, so is `G'`; in particular `CategoryTheory.Retract.isAdditiveGenerator` and
+  `TauCeti.IsAdditiveGenerator.of_iso`.
+* `CategoryTheory.Functor.isAdditiveGenerator_obj`: an essentially surjective functor preserving
+  finite products carries additive generators to additive generators, and
+  `CategoryTheory.Functor.isAdditiveGenerator_obj_iff`: an equivalence reflects them.
 
 ## References
 
@@ -85,11 +87,21 @@ theorem additiveClosure_eq_top (hG : IsAdditiveGenerator G) : TauCeti.additiveCl
 
 end IsAdditiveGenerator
 
+namespace IsAdditiveGenerator
+
+variable {G G' : C}
+
+/-- If an additive generator `G` lies in `add G'`, then `G'` is an additive generator. -/
+theorem of_additiveClosure (hG : IsAdditiveGenerator G) (h : TauCeti.additiveClosure G' G) :
+    IsAdditiveGenerator G' :=
+  fun X ↦ additiveClosure_le_iff.2 h X (hG X)
+
+end IsAdditiveGenerator
+
 /-- **An object having an additive generator as a direct summand is an additive generator.** -/
 theorem _root_.CategoryTheory.Retract.isAdditiveGenerator {G G' : C} (h : Retract G G')
     (hG : IsAdditiveGenerator G) : IsAdditiveGenerator G' :=
-  fun X ↦ additiveClosure_le_iff.2
-    ((additiveClosure G').prop_of_retract h (additiveClosure_self G')) X (hG X)
+  hG.of_additiveClosure ((additiveClosure G').prop_of_retract h (additiveClosure_self G'))
 
 namespace IsAdditiveGenerator
 
@@ -111,30 +123,25 @@ end IsAdditiveGenerator
 
 end TauCeti
 
-namespace CategoryTheory.Equivalence
+namespace CategoryTheory.Functor
 
 open Limits TauCeti
 
 variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteBiproducts C]
   {D : Type*} [Category* D] [Preadditive D] [HasFiniteBiproducts D]
 
-/-- An equivalence of categories carries an additive generator to an additive generator. -/
-theorem isAdditiveGenerator_functor_obj (e : C ≌ D) {G : C} (hG : IsAdditiveGenerator G) :
-    IsAdditiveGenerator (e.functor.obj G) :=
-  fun Y ↦ (additiveClosure _).prop_of_iso (e.counitIso.app Y)
-    (additiveClosure_le_inverseImage e.functor G _ (hG _))
+/-- An essentially surjective functor preserving finite products carries an additive generator to
+an additive generator. -/
+theorem isAdditiveGenerator_obj (F : C ⥤ D) [PreservesFiniteProducts F] [F.EssSurj] {G : C}
+    (hG : IsAdditiveGenerator G) : IsAdditiveGenerator (F.obj G) :=
+  fun Y ↦ (additiveClosure _).prop_of_iso (F.objObjPreimageIso Y)
+    (F.additiveClosure_le_inverseImage G _ (hG.additiveClosure _))
 
-/-- **Additive generators are invariant under equivalence of categories.** -/
+/-- **Additive generators are invariant under equivalences of categories.** -/
 @[simp]
-theorem isAdditiveGenerator_functor_obj_iff (e : C ≌ D) (G : C) :
-    IsAdditiveGenerator (e.functor.obj G) ↔ IsAdditiveGenerator G :=
-  ⟨fun hG ↦ (e.symm.isAdditiveGenerator_functor_obj hG).of_iso (e.unitIso.app G).symm,
-    e.isAdditiveGenerator_functor_obj⟩
+theorem isAdditiveGenerator_obj_iff (F : C ⥤ D) [F.IsEquivalence] (G : C) :
+    IsAdditiveGenerator (F.obj G) ↔ IsAdditiveGenerator G :=
+  ⟨fun hG ↦ (F.inv.isAdditiveGenerator_obj hG).of_iso (F.asEquivalence.unitIso.app G).symm,
+    F.isAdditiveGenerator_obj⟩
 
-/-- Additive generators are invariant under the inverse of an equivalence of categories. -/
-@[simp]
-theorem isAdditiveGenerator_inverse_obj_iff (e : C ≌ D) (G : D) :
-    IsAdditiveGenerator (e.inverse.obj G) ↔ IsAdditiveGenerator G :=
-  e.symm.isAdditiveGenerator_functor_obj_iff G
-
-end CategoryTheory.Equivalence
+end CategoryTheory.Functor
