@@ -16,7 +16,8 @@ public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 The algebra `A(Z)` of a pointed matched circle, the matched subalgebra of the strands algebra
 (`TauCeti.StrandsAlgebra.matchedSubalgebra`), has the idempotents `I(s)`
 (`TauCeti.StrandsAlgebra.matchedIdem`), one for each set `s` of matched pairs. They are orthogonal
-and sum to the unit, and this file shows that they are **primitive** idempotents of `A(Z)`, provided
+and sum to the unit (`TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`), and
+this file shows that they are **primitive** idempotents of `A(Z)`, provided
 `1` is primitive in the ground ring, that is, the ground ring is nontrivial and has no idempotents
 besides `0` and `1`; over `𝔽₂` they are therefore the primitive idempotents of a complete
 orthogonal decomposition of the unit, which is the ring of idempotents over which type `D`
@@ -42,8 +43,6 @@ idempotent in `F_1`, hence nilpotent and zero.
 * `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_iff`: `I(s)` is a primitive idempotent
   of the matched subalgebra exactly when `s` is a set of matched pairs and `1` is primitive in the
   ground ring.
-* `TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`: the `I(s)` form a complete
-  family of orthogonal idempotents of the matched subalgebra.
 
 ## References
 
@@ -178,19 +177,6 @@ theorem isPrimitiveIdempotent_matchedIdem_iff {R : Type*} [CommRing R] :
       simpa [h0] using repr_matchedIdem_apply_idOn (R := R) hS
     refine (eq_zero_or_eq_matchedIdem_of_isIdempotentElem h1 f.2 (congrArg Subtype.val hf.eq)
       (congrArg Subtype.val hef) (congrArg Subtype.val hfe)).imp Subtype.ext Subtype.ext
-
-/-- The idempotents `I(s)` over the sets `s` of matched pairs form a **complete family of
-orthogonal idempotents** of the matched subalgebra: they are pairwise orthogonal and sum to its
-unit. -/
-theorem completeOrthogonalIdempotents_matchedIdem :
-    CompleteOrthogonalIdempotents fun s : (univ.image M).powerset ↦
-      (⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩ : matchedSubalgebra R M) := by
-  refine CompleteOrthogonalIdempotents.iff_ortho_complete.2 ⟨fun s t hst ↦ ?_, ?_⟩
-  · refine Subtype.ext ?_
-    simp [Subtype.coe_ne_coe.2 hst]
-  · refine Subtype.ext ?_
-    simp only [AddSubmonoidClass.coe_finsetSum, coe_matchedSubalgebra_one, matchedOne_def]
-    exact sum_coe_sort _ fun s ↦ matchedIdem R M s
 
 end StrandsAlgebra
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Data.Finset.Image
 public import TauCeti.Data.Set.Function
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.AddHorizontal
@@ -110,6 +111,8 @@ spanning the matched subalgebra are generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul_of_mem_matchedSubalgebra`,
   `TauCeti.StrandsAlgebra.mul_matchedOne_of_mem_matchedSubalgebra`: `∑ₛ I(s)` is a two-sided unit
   for the matched subalgebra.
+* `TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`: the `I(s)` form a complete
+  family of orthogonal idempotents of the matched subalgebra.
 * `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_matchedDifferential`: over a ring of characteristic
   two, the matched subalgebra is an ungraded differential algebra.
 * `TauCeti.StrandsAlgebra.repr_horizontalCompletion_apply`: the coefficients of `a(ρ, h)`.
@@ -1379,6 +1382,19 @@ instance {R : Type*} [CommRing R] : Ring (matchedSubalgebra R M) where
 
 instance : Algebra R (matchedSubalgebra R M) :=
   Algebra.ofModule smul_mul_assoc mul_smul_comm
+
+/-- The idempotents `I(s)` over the sets `s` of matched pairs form a **complete family of
+orthogonal idempotents** of the matched subalgebra: they are pairwise orthogonal and sum to its
+unit. -/
+theorem completeOrthogonalIdempotents_matchedIdem :
+    CompleteOrthogonalIdempotents fun s : (univ.image M).powerset ↦
+      (⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩ : matchedSubalgebra R M) := by
+  refine CompleteOrthogonalIdempotents.iff_ortho_complete.2 ⟨fun s t hst ↦ ?_, ?_⟩
+  · refine Subtype.ext ?_
+    simp [Subtype.coe_ne_coe.2 hst]
+  · refine Subtype.ext ?_
+    simp only [AddSubmonoidClass.coe_finsetSum, coe_matchedSubalgebra_one, matchedOne_def]
+    exact sum_coe_sort _ fun s ↦ matchedIdem R M s
 
 end SubalgebraUnit
 
