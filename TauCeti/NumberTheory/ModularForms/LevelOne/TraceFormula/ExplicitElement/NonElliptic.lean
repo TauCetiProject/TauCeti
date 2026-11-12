@@ -108,7 +108,7 @@ private theorem eq_one_of_le_neg_le {a b c d : ℤ} (htr : a + d = t) (hdet : a 
     (hn : 0 < n) (ht : n < t) (hc : 0 ≤ c) (hca : c < a) (h₁ : a - d ≤ -b) (h₂ : -b ≤ c) :
     a = 1 := by
   -- `-b c = a² - a t + n`, and `4 (-b c) = (a - d)² - (t² - 4 n)` with `t² - 4 n ≥ (n - 1)²`
-  have hf : -b * c = a ^ 2 - a * t + n := by rw [← htr, ← hdet]; ring
+  have _ : -b * c = a ^ 2 - a * t + n := by rw [← htr, ← hdet]; ring
   have hD : (n - 1) ^ 2 ≤ t ^ 2 - 4 * n := by nlinarith
   rcases lt_or_ge a d with had | had
   · -- `-b c ≥ (a - d) c ≥ (a - d) (a - 1)`, so `(a - 1)² ≤ n - t + 1 ≤ 0`
@@ -122,7 +122,6 @@ private theorem eq_one_of_le_neg_le {a b c d : ℤ} (htr : a + d = t) (hdet : a 
     have h₄ : (-b) * (-b) ≤ -b * c := mul_le_mul_of_nonneg_left h₂ (by omega)
     have h₅ : t ^ 2 - 4 * n = 0 := by nlinarith
     have h₆ : n = 1 := by nlinarith [sq_nonneg (n - 1)]
-    have h₇ : (a - d) ^ 2 = 0 := by nlinarith
     have : a = d := by nlinarith [sq_nonneg (a - d)]
     nlinarith
 

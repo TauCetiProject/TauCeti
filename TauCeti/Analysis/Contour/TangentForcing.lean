@@ -28,7 +28,7 @@ the exact hypothesis the higher-order antiderivative asymptotics
 ## Provenance
 
 New to the raw-curve development: the AINTLIB `LeanModularForms` flatness structure
-(`IsFlatOfOrder`) is indexed by the tangent, so no forcing step was needed there; the roadmap's
+(`IsFlatOfOrder`) is indexed by the tangent, so no forcing step was needed there; Tau Ceti's
 `Contour.FlatOfOrder` quantifies its witness directions existentially, and this file supplies
 the bridge. The forcing argument is the standard one: the curve leaves `t₀` tangent to `L`, so a
 line it hugs to first order can only be `ℝ • L`. See N. Hungerbühler, M. Wasem, *Non-integer
