@@ -39,18 +39,48 @@ variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
   {P : Measure Ω} {ℱ : Filtration ℝ≥0 ‹MeasurableSpace Ω›}
   {τ : Ω → WithTop ℝ≥0} {U : ℝ≥0 → Ω → β} {μ : Measure β}
 
+/-- On an event of the stopped sigma-algebra where a countable-range stopping time is finite,
+the preimage of a measurable set under a stopped measurable process is measurable. The process
+need not be adapted. -/
+theorem measurableSet_inter_stoppedValue_preimage_of_countable_range
+    (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable)
+    (hm : ∀ s, Measurable (U s))
+    {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A)
+    (hfin : ∀ ω ∈ A, τ ω ≠ ⊤) {B : Set β} (hB : MeasurableSet B) :
+    MeasurableSet (A ∩ stoppedValue U τ ⁻¹' B) := by
+  classical
+  let R : Set ℝ≥0 := {s | (s : WithTop ℝ≥0) ∈ range τ}
+  have hR : R.Countable := hc.preimage WithTop.coe_injective
+  let := hR.to_subtype
+  have hevent : A ∩ stoppedValue U τ ⁻¹' B =
+      ⋃ s : R, (A ∩ {ω | τ ω = s.val}) ∩ U s.val ⁻¹' B := by
+    ext ω
+    simp only [mem_iUnion, mem_inter_iff, mem_preimage]
+    constructor
+    · rintro ⟨hω, hB⟩
+      obtain ⟨s, hs⟩ := WithTop.ne_top_iff_exists.mp (hfin ω hω)
+      exact ⟨⟨s, ω, hs.symm⟩, ⟨hω, hs.symm⟩,
+        by rwa [stoppedValue_of_eq hs.symm] at hB⟩
+    · rintro ⟨s, ⟨hω, hs⟩, hB⟩
+      exact ⟨hω, by rwa [stoppedValue_of_eq hs]⟩
+  rw [hevent]
+  refine .iUnion fun s => ?_
+  have hs : MeasurableSet[ℱ s.val] (A ∩ {ω | τ ω = s.val}) :=
+    (hτ.measurableSet_inter_eq_iff A s.val).mp
+      (hA.inter (hτ.measurableSet_eq_of_countable_range' hc s.val))
+  exact (ℱ.le _ _ hs).inter (hm _ hB)
+
 /-- A deterministic fixed conditional law passes to a countable-range stopping time.
-The event is measurable even if the process is not adapted. Restrict to an event of the
-stopped sigma-algebra on which the time is finite, so no value at infinity is used. -/
-theorem measurableSet_inter_stoppedValue_preimage_and_measure_eq_of_countable_range
+Restrict to an event of the stopped sigma-algebra on which the time is finite, so no value
+at infinity is used. -/
+theorem measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
     (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable)
     (hm : ∀ s, Measurable (U s))
     (hdet : ∀ (s : ℝ≥0) (A : Set Ω), MeasurableSet[ℱ s] A →
       ∀ B, MeasurableSet B → P (A ∩ U s ⁻¹' B) = P A * μ B)
     {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A)
     (hfin : ∀ ω ∈ A, τ ω ≠ ⊤) {B : Set β} (hB : MeasurableSet B) :
-    MeasurableSet (A ∩ stoppedValue U τ ⁻¹' B) ∧
-      P (A ∩ stoppedValue U τ ⁻¹' B) = P A * μ B := by
+    P (A ∩ stoppedValue U τ ⁻¹' B) = P A * μ B := by
   classical
   let R : Set ℝ≥0 := {s | (s : WithTop ℝ≥0) ∈ range τ}
   have hR : R.Countable := hc.preimage WithTop.coe_injective
@@ -84,7 +114,6 @@ theorem measurableSet_inter_stoppedValue_preimage_and_measure_eq_of_countable_ra
   have hmI (s : R) : MeasurableSet (E s ∩ U s.val ⁻¹' B) :=
     (ℱ.le _ _ (hmE s)).inter (hm _ hB)
   rw [hevent]
-  refine ⟨.iUnion hmI, ?_⟩
   rw [measure_iUnion (fun s u hsu => (hdisj hsu).mono inter_subset_left inter_subset_left) hmI]
   simp_rw [hdet _ _ (hmE _) _ hB]
   rw [ENNReal.tsum_mul_right, ← measure_iUnion hdisj (fun s => ℱ.le _ _ (hmE s)), hcover]
@@ -92,7 +121,7 @@ theorem measurableSet_inter_stoppedValue_preimage_and_measure_eq_of_countable_ra
 /-- For discrete-valued, almost surely right-continuous variables, a deterministic fixed
 conditional law passes to any stopping time, on its finite-time event. Neither adaptation of
 `U` nor completeness or right continuity of the filtration is assumed. -/
-theorem measure_inter_stoppedValue_mem [TopologicalSpace β] [DiscreteTopology β]
+theorem measure_inter_stoppedValue_preimage_eq_mul [TopologicalSpace β] [DiscreteTopology β]
     [IsFiniteMeasure P] (hτ : IsStoppingTime ℱ τ)
     (hm : ∀ s, Measurable (U s))
     (hrc : ∀ᵐ ω ∂P, ∀ s, ContinuousWithinAt (fun u => U u ω) (Ici s) s)
@@ -109,12 +138,16 @@ theorem measure_inter_stoppedValue_mem [TopologicalSpace β] [DiscreteTopology �
   let σ (n : ℕ) (ω : Ω) := TauCeti.dyadicCeilTime n (τ ω)
   let E (n : ℕ) := C ∩ stoppedValue U (σ n) ⁻¹' B
   let F := C ∩ stoppedValue U τ ⁻¹' B
-  have hEn (n : ℕ) : MeasurableSet (E n) ∧ P (E n) = P C * μ B := by
-    have hn := hτ.dyadicCeilTime n
-    have hCn : MeasurableSet[hn.measurableSpace] C :=
-      hτ.measurableSpace_mono hn (fun ω => TauCeti.le_dyadicCeilTime n _) _ hC
-    exact hn.measurableSet_inter_stoppedValue_preimage_and_measure_eq_of_countable_range
-      (TauCeti.countable_range_dyadicCeilTime τ n) hm hdet hCn
+  have hCn (n : ℕ) : MeasurableSet[(hτ.dyadicCeilTime n).measurableSpace] C :=
+    hτ.measurableSpace_mono (hτ.dyadicCeilTime n)
+      (fun ω => TauCeti.le_dyadicCeilTime n _) _ hC
+  have hmEn (n : ℕ) : MeasurableSet (E n) :=
+    (hτ.dyadicCeilTime n).measurableSet_inter_stoppedValue_preimage_of_countable_range
+      (TauCeti.countable_range_dyadicCeilTime τ n) hm (hCn n)
+      (fun ω hω => (TauCeti.dyadicCeilTime_eq_top_iff n _).not.mpr hω.2) hB
+  have hEn (n : ℕ) : P (E n) = P C * μ B :=
+    (hτ.dyadicCeilTime n).measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
+      (TauCeti.countable_range_dyadicCeilTime τ n) hm hdet (hCn n)
       (fun ω hω => (TauCeti.dyadicCeilTime_eq_top_iff n _).not.mpr hω.2) hB
   have hlim : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ E n ↔ ω ∈ F := by
     filter_upwards [hrc] with ω hω
@@ -133,16 +166,16 @@ theorem measure_inter_stoppedValue_mem [TopologicalSpace β] [DiscreteTopology �
       simp [L, eventually_atTop]
     rw [hset]
     exact MeasurableSet.iUnion fun k => MeasurableSet.iInter fun n =>
-      MeasurableSet.iInter fun _ => (hEn n).1
+      MeasurableSet.iInter fun _ => hmEn n
   have hLF : L =ᵐ[P] F := by
     filter_upwards [hlim] with ω hω
     exact propext ((eventually_congr hω).trans eventually_const)
   have hconv : Tendsto (fun n => P (E n)) atTop (𝓝 (P L)) := by
-    apply tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop hmL (fun n => (hEn n).1)
+    apply tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop hmL hmEn
     filter_upwards [hlim, hLF] with ω hω hLFω
     simpa only [hLFω] using hω
   have heq : P L = P C * μ B :=
-    tendsto_nhds_unique hconv (by simpa only [(hEn _).2] using tendsto_const_nhds)
+    tendsto_nhds_unique hconv (by simpa only [hEn] using tendsto_const_nhds)
   exact (measure_congr hLF).symm.trans heq
 
 end MeasureTheory.IsStoppingTime

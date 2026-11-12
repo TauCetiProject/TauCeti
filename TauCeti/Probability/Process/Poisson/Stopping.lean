@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Independence.Process.Stopping
 public import Mathlib.Probability.Distributions.Poisson.Basic
+import TauCeti.Probability.Process.Poisson.Characterization
 
 /-!
 # Poisson increments after a stopping time
@@ -35,7 +36,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {N : ℝ≥0 → Ω 
 over a fixed duration after a natural-filtration stopping time has its usual Poisson law,
 independently of the stopped history. Monotonicity and right continuity are only almost-sure
 path assumptions; the rate may be zero and the stopping time may be infinite. -/
-theorem HasIndepIncrements.measure_inter_stoppedValue_sub_mem_of_hasLaw_poissonMeasure
+theorem HasIndepIncrements.measure_inter_stoppedValue_sub_preimage_eq_mul_of_hasLaw_poissonMeasure
     (hN : HasIndepIncrements N P) (hm : ∀ t, Measurable (N t))
     (h0 : ∀ᵐ ω ∂P, N 0 ω = 0) (hmono : ∀ᵐ ω ∂P, Monotone (fun t => N t ω))
     (hrc : ∀ᵐ ω ∂P, ∀ s, ContinuousWithinAt (fun u => N u ω) (Ici s) s) (r : ℝ≥0)
@@ -52,12 +53,8 @@ theorem HasIndepIncrements.measure_inter_stoppedValue_sub_mem_of_hasLaw_poissonM
     simp only [tsub_zero] at h
     apply h.congr
     filter_upwards [h0] with ω hω using by simp [hω]
-  have hstat (s u : ℝ≥0) :
-      IdentDistrib (fun ω => N (s + u) ω - N s ω) (N u) P P := by
-    have h := hlaw s (s + u) le_self_add
-    rw [add_tsub_cancel_left] at h
-    exact h.identDistrib (hmarg u)
-  rw [hN.measure_inter_stoppedValue_sub_mem hm h0 hmono hrc hstat hτ hA t B,
+  rw [hN.measure_inter_stoppedValue_sub_preimage_eq_mul hm h0 hmono hrc
+    (TauCeti.Probability.identDistrib_sub_of_hasLaw_poissonMeasure hlaw hmarg) hτ hA t B,
     ← Measure.map_apply (hm t) .of_discrete, (hmarg t).map_eq]
 
 end ProbabilityTheory

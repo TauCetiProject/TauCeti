@@ -38,7 +38,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {N : ℝ≥0 → Ω 
 On the finite-time event, an increment of duration `t` after a stopping time has the same law
 as `N t`, independently of the stopped natural history. The stopping time may be infinite;
 no fallback value at infinity enters the assertion. -/
-theorem HasIndepIncrements.measure_inter_stoppedValue_sub_mem
+theorem HasIndepIncrements.measure_inter_stoppedValue_sub_preimage_eq_mul
     (hN : HasIndepIncrements N P) (hm : ∀ t, Measurable (N t))
     (h0 : ∀ᵐ ω ∂P, N 0 ω = 0) (hmono : ∀ᵐ ω ∂P, Monotone (fun t => N t ω))
     (hrc : ∀ᵐ ω ∂P, ∀ s, ContinuousWithinAt (fun u => N u ω) (Ici s) s)
@@ -70,7 +70,8 @@ theorem HasIndepIncrements.measure_inter_stoppedValue_sub_mem
     exact ((hω (s + t)).comp (f := fun u : ℝ≥0 => u + t)
       (x := s) (s := Ici s) hadd.continuousWithinAt
       (fun u hu => add_le_add hu (le_refl t))).sub (hω _)
-  have h := hτ.measure_inter_stoppedValue_mem (U := fun s ω => N (s + t) ω - N s ω)
+  have h := hτ.measure_inter_stoppedValue_preimage_eq_mul
+    (U := fun s ω => N (s + t) ω - N s ω)
     (μ := P.map (N t)) (B := B) (fun s => (hm _).sub (hm _)) hright
     (fun s C hC D hD => by rw [Measure.map_apply (hm t) hD]; exact hdet s C hC D hD)
     hA .of_discrete
