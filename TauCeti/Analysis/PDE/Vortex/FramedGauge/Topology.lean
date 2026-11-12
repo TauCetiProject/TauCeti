@@ -120,6 +120,7 @@ theorem sobolevGaugeIncrement_one : sobolevGaugeIncrement hs 1 = 0 := by
 
 /-- **The increment of a product.** For `u, v ∈ G_s`, `uv - 1 = (u - 1) + (v - 1) + (u - 1)(v - 1)`,
 so the increment of `uv` is `h_u + h_v + h_u h_v`, with the product of `H^s(ℂ)`. -/
+@[simp]
 theorem sobolevGaugeIncrement_mul (u v : sobolevGaugeGroup hs) :
     sobolevGaugeIncrement hs (u * v) = sobolevGaugeIncrement hs u + sobolevGaugeIncrement hs v +
       mul (finrank_real_complex_lt_two_mul hs) (sobolevGaugeIncrement hs u)
