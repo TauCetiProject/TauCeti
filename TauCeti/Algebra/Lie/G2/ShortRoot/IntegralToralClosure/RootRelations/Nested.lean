@@ -129,7 +129,7 @@ private theorem highest_conjugate_matrix (t : A) :
       highestMatrix A t := by
   -- Freeze the word before reassociating, retaining its already computed matrix.
   have hwmat := weyl_word_matrix A
-  generalize hw : (n₁ * n₀ : points A) = w at hwmat ⊢
+  generalize (n₁ * n₀ : points A) = w at hwmat ⊢
   apply (Units.isUnit (w : Matrix.GeneralLinearGroup (Fin 7) A)).mul_right_cancel
   simp only [← Matrix.GeneralLinearGroup.coe_mul, ← Subgroup.coe_mul,
     mul_assoc, inv_mul_cancel, mul_one]
@@ -166,10 +166,10 @@ theorem commutatorElement_long_commutatorElement_long_short (a b c : A) :
   rw [commutatorElement_def, mul_inv_eq_iff_eq_mul]
   -- Retain the two computed matrices instead of re-expanding their root words.
   have hh := highest_conjugate_matrix A (-(a ^ 3 * b * c))
-  generalize hhdef : ((n₁ * n₀) * y (Multiplicative.ofAdd (-(a ^ 3 * b * c))) *
+  generalize ((n₁ * n₀) * y (Multiplicative.ofAdd (-(a ^ 3 * b * c))) *
     (n₁ * n₀)⁻¹ : points A) = h at hh ⊢
   have hk := inner_commutator_matrix A a c
-  generalize hkdef : ⁅y (Multiplicative.ofAdd c), x (Multiplicative.ofAdd a)⁆ = k at hk ⊢
+  generalize ⁅y (Multiplicative.ofAdd c), x (Multiplicative.ofAdd a)⁆ = k at hk ⊢
   apply Subtype.ext
   apply Units.ext
   simp only [← (rootSubgroupPoints (Sum.inl 1) A).map_inv, ← ofAdd_neg,
