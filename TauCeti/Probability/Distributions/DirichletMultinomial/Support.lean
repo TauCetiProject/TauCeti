@@ -49,7 +49,8 @@ theorem support_dirichletMultinomialMeasure (n : ℕ) (a : ι → ℝ) :
 
 /-- Arbitrary labels of a Dirichlet-multinomial count vector have support equal to the labels
 of the count antidiagonal for valid concentrations, and empty support otherwise. Labels need
-not be injective. -/
+not be injective. Taking `f := multinomialToEuclidean` gives the exact support of the Euclidean
+cast law, with no additional limit points. -/
 @[simp]
 theorem support_map_dirichletMultinomialMeasure {E : Type*} [TopologicalSpace E]
     [T1Space E] [MeasurableSpace E] [BorelSpace E]
@@ -66,16 +67,6 @@ theorem support_map_dirichletMultinomialMeasure {E : Type*} [TopologicalSpace E]
   · rw [ite_eq_left ha, ite_eq_left ha, (hfinite.image f).isClosed.closure_eq]
   · rw [ite_eq_right ha, ite_eq_right ha, image_empty, closure_empty]
 
-/-- For positive concentrations, the Euclidean topological support is the finite image of all
-natural count vectors with the prescribed total. No additional limit points occur.
-For invalid concentrations, the support is empty. -/
-theorem support_map_multinomialToEuclidean_dirichletMultinomialMeasure
-    (n : ℕ) (a : ι → ℝ) :
-    ((dirichletMultinomialMeasure n a).map multinomialToEuclidean).support =
-      if ∀ i, 0 < a i then
-        multinomialToEuclidean '' {k : ι → ℕ | ∑ i, k i = n} else ∅ :=
-  support_map_dirichletMultinomialMeasure n a multinomialToEuclidean
-
 /-- A Euclidean vector belongs to the support precisely when the concentrations are positive,
 its coordinates are natural numbers, and their sum is the trial count. -/
 theorem mem_support_map_multinomialToEuclidean_dirichletMultinomialMeasure_iff
@@ -83,7 +74,7 @@ theorem mem_support_map_multinomialToEuclidean_dirichletMultinomialMeasure_iff
     x ∈ ((dirichletMultinomialMeasure n a).map multinomialToEuclidean).support ↔
       (∀ i, 0 < a i) ∧ (∀ i, ∃ k : ℕ, x i = k) ∧ ∑ i, x i = n := by
   classical
-  rw [support_map_multinomialToEuclidean_dirichletMultinomialMeasure]
+  rw [support_map_dirichletMultinomialMeasure]
   by_cases ha : ∀ i, 0 < a i
   · rw [ite_eq_left ha]
     simp only [mem_image, mem_ofPred_eq]
