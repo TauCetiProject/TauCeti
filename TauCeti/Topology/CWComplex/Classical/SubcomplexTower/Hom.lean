@@ -63,15 +63,16 @@ theorem isCellular_ι {c : Cocone T.diagram} (hc : IsColimit c) (k : ℕ) :
   refine isCellular_of_map_eq _ _ (fun _ h ↦ False.elim h) fun n i ↦ ?_
   let q := (T.stageCellEquiv k n).symm i
   have hiq : T.stageCellEquiv k n q = i := (T.stageCellEquiv k n).apply_symm_apply i
-  refine ⟨q.1, fun x hx _ ↦ ?_⟩
+  refine ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm q.1, fun x hx _ ↦ ?_⟩
   exact (congrArg (fun j ↦ c.ι.app k (map (C := (univ : Set (W k))) n j x)) hiq).symm.trans
     (T.map_eq_ι_stageCellEquiv hc n q.1 q.2 hx).symm
 
 /-- Each stage inclusion `T.incl k : W k → T.Union` is cellular. -/
 theorem isCellular_incl (k : ℕ) :
     IsCellular (univ : Set (W k)) (univ : Set T.Union)
-      (TopCat.ofHom ((T.incl k).hom.restrictPreimage univ)) :=
-  T.isCellular_ι (colimit.isColimit T.diagram) k
+      (TopCat.ofHom ((T.incl k).hom.restrictPreimage univ)) := by
+  rw [T.instCWComplexUnion_eq]
+  exact T.isCellular_ι (colimit.isColimit T.diagram) k
 
 end SingleTower
 
@@ -182,10 +183,11 @@ theorem isCellular_mapOfIsColimit (φ : T₁.Hom T₂)
   let _ := T₂.t2Space_of_isColimit hc₂
   rintro n ⟨z, -⟩ (hz : z ∈ skeletonLT (univ : Set c₁.pt) (n : ℕ∞))
   rw [RelCWComplex.mem_skeletonLT_iff] at hz
-  rcases hz with hzEmpty | ⟨m, hmn, p, hzp⟩
+  rcases hz with hzEmpty | ⟨m, hmn, i, hzi⟩
   · exact False.elim hzEmpty
-  · rw [T₁.openCell_eq_image_ι hc₁] at hzp
-    obtain ⟨y, hy, rfl⟩ := hzp
+  · obtain ⟨p, rfl⟩ := (T₁.cwComplexOfIsColimitCellEquiv hc₁ m).symm.surjective i
+    rw [T₁.openCell_cwComplexOfIsColimitCellEquiv_symm hc₁] at hzi
+    obtain ⟨y, hy, rfl⟩ := hzi
     have hy_skel : (⟨y, mem_univ y⟩ : (univ : Set (W₁ p.1))) ∈
         {x | x.1 ∈ skeletonLT (univ : Set (W₁ p.1)) (n : ℕ∞)} :=
       RelCWComplex.mem_skeletonLT_iff.2 (Or.inr ⟨m, hmn, T₁.birthCell p.1 m p.2, hy⟩)
@@ -212,25 +214,19 @@ lemma unionMap_incl_apply (φ : T₁.Hom T₂) (k : ℕ) (x : W₁ k) :
 
 @[simp]
 lemma unionMap_id : (Hom.id T₁).unionMap = 𝟙 T₁.Union :=
-  colimit.hom_ext fun k ↦ by
-    rw [show colimit.ι T₁.diagram k = T₁.incl k from rfl, incl_comp_unionMap]
-    ext x
-    rfl
+  T₁.union_hom_ext fun k ↦ by simp
 
 @[simp, reassoc]
 lemma unionMap_comp (φ : T₁.Hom T₂) (ψ : T₂.Hom T₃) :
     (φ.comp ψ).unionMap = φ.unionMap ≫ ψ.unionMap :=
-  colimit.hom_ext fun k ↦ by
-    rw [show colimit.ι T₁.diagram k = T₁.incl k from rfl, incl_comp_unionMap,
-      incl_comp_unionMap_assoc, comp_app]
-    ext x
-    simp
+  T₁.union_hom_ext fun k ↦ by simp [TopCat.ofHom_comp, incl_comp_unionMap_assoc]
 
 /-- The induced map `T₁.Union ⟶ T₂.Union` of a cellular tower morphism is cellular. -/
 theorem isCellular_unionMap (φ : T₁.Hom T₂) :
     IsCellular (univ : Set T₁.Union) (univ : Set T₂.Union)
-      (TopCat.ofHom (φ.unionMap.hom.restrictPreimage univ)) :=
-  φ.isCellular_mapOfIsColimit (colimit.isColimit T₁.diagram) (colimit.isColimit T₂.diagram)
+      (TopCat.ofHom (φ.unionMap.hom.restrictPreimage univ)) := by
+  rw [T₁.instCWComplexUnion_eq, T₂.instCWComplexUnion_eq]
+  exact φ.isCellular_mapOfIsColimit (colimit.isColimit T₁.diagram) (colimit.isColimit T₂.diagram)
 
 /-- On every dimension skeleton, the induced map `φ.unionMap` restricts to a map commuting with
 stage skeletal restrictions. -/
