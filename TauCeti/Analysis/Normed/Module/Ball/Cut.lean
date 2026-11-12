@@ -61,13 +61,12 @@ centres that divides it in the ratio of the two radii, at distance `r * dist c �
 
 ## The intended consumer
 
-Layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's boundary
-correspondence, cuts a disc `ball c r` in the plane by the circle `sphere ζ ρ` about a point `ζ`
-of its boundary — the *circular crosscut* of
+Carathéodory's boundary correspondence cuts a disc `ball c r` in the plane by the circle
+`sphere ζ ρ` about a point `ζ` of its boundary — the *circular crosscut* of
 `TauCeti/Analysis/Complex/Conformal/Crosscut/Basic.lean` — and reads the boundary behaviour of a
-conformal map along the near side. There `dist ζ c = r`, so
-the overlap condition `dist c ζ < r + ρ` holds for every `ρ > 0`, and the frontier bound is what
-the maximum modulus principle is applied against. None of that is used here.
+conformal map along the near side. There `dist ζ c = r`, so the overlap condition
+`dist c ζ < r + ρ` holds for every `ρ > 0`, and the frontier bound is what the maximum modulus
+principle is applied against. None of that is used here.
 
 ## Main results
 
@@ -206,7 +205,7 @@ theorem connectedComponentIn_ball_diff_sphere_eq_ball_inter_ball (hz : z ∈ bal
     sdiff_sphere_eq_inter_ball_union_sdiff_closedBall (x := ζ) (s := ball c r) ▸ subset_union_left
   refine Subset.antisymm ?_ (((convex_ball c r).inter (convex_ball ζ ρ)).isPreconnected
     |>.subset_connectedComponentIn hz hsub)
-  rcases subset_inter_ball_or_subset_sdiff_closedBall (x := ζ) (s := ball c r) isOpen_ball
+  rcases subset_inter_ball_or_subset_sdiff_closedBall (x := ζ) (s := ball c r)
     isPreconnected_connectedComponentIn (connectedComponentIn_subset _ _) with h | h
   · exact h
   · exact absurd (h (mem_connectedComponentIn (hsub hz)))

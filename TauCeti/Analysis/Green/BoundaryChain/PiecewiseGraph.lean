@@ -142,7 +142,7 @@ private theorem CoordinatePrimitive.trans {d : Coordinate} {P : ℂ → ℝ}
 private theorem CoordinatePrimitive.symm {d : Coordinate} {P : ℂ → ℝ} {p q : ℂ}
     {γ : Path p q} {F : ℝ → ℝ} (hF : CoordinatePrimitive d P ⟨p, q, γ⟩ F) :
     CoordinatePrimitive d P ⟨q, p, γ.symm⟩ (fun t ↦ F (1 - t) - F 1) := by
-  obtain ⟨hcF, hF0, s, hs, hdF⟩ := hF
+  obtain ⟨hcF, _, s, hs, hdF⟩ := hF
   refine ⟨(hcF.comp (by fun_prop)).sub continuous_const, by simp,
     (fun t : ℝ ↦ 1 - t) '' s, hs.image _, ?_⟩
   intro t ht
@@ -169,7 +169,7 @@ private theorem CoordinatePrimitive.reparam {d : Coordinate} {P : ℂ → ℝ}
     apply hb.mono
     intro t ht
     exact mem_iUnion₂.mpr ⟨θ t, ht, by simp⟩
-  obtain ⟨Φ, hΦ, heΦ⟩ := hθ.exists_continuous_eqOn_Icc zero_le_one
+  obtain ⟨Φ, hΦ, heΦ⟩ := hθ.exists_continuous_eqOn_Icc
   refine ⟨F ∘ Φ, ?_, ?_⟩
   · refine ⟨?_, ?_, u ∪ θ ⁻¹' T, hu.union hpre, ?_⟩
     · exact hcF.comp hΦ
@@ -220,14 +220,14 @@ private theorem PiecewiseGraphArc.coordinatePrimitive {d : Coordinate} {U : Set 
         ((γ.forall_extend_iff (P := fun z ↦ d.proj z = d.proj p)).mpr hγ) t
     simpa only [hz, mul_zero] using hasDerivAt_const t (0 : ℝ)
   | graph hγ hU => exact hγ.coordinatePrimitive (hP.mono hU)
-  | trans hγ hδ ihγ ihδ =>
+  | trans _ _ ihγ ihδ =>
     obtain ⟨F, hF⟩ := ihγ
     obtain ⟨G, hG⟩ := ihδ
     exact ⟨_, hF.trans hG⟩
-  | symm hγ ih =>
+  | symm _ ih =>
     obtain ⟨F, hF⟩ := ih
     exact ⟨_, hF.symm⟩
-  | reparam hδ θ h ih =>
+  | reparam _ θ h ih =>
     obtain ⟨F, hF⟩ := ih
     obtain ⟨G, hG, _⟩ := hF.reparam h
     exact ⟨G, hG⟩
