@@ -140,20 +140,28 @@ theorem integral_extendByZero (o : Manifold.Orientation I M (Fin n)) {U W : Open
   exact integralTopForm_extendByZero o h ((mem_compactlySupportedForms I).mp
     ((mem_compactlySupportedClosedForms I).mp φ.2).1)
 
+/-- Identifying the top open subset with the ambient manifold preserves integration on
+compactly supported cohomology, with the restricted orientation. -/
+theorem integral_equivOfDiffeomorph_ofTop (o : Manifold.Orientation I M (Fin n))
+    (c : compactlySupportedDeRhamCohomology I M n) :
+    integral (o.restrict ⊤) (equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) n c) =
+      integral o c := by
+  let Φ : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
+  obtain ⟨φ, rfl⟩ := mk_surjective I n c
+  have h : integralTopForm (o.restrict ⊤) (mpullback I I Φ φ.1.1) = integralTopForm o φ.1.1 := by
+    rw [Diffeomorph.coe_ofTop]
+    exact integralTopForm_mpullback_subtypeVal o ⊤ (by simp)
+  rw [equivOfDiffeomorph_mk, integral_mk, integral_mk, ← h]
+  exact congrArg _ (compactlySupportedClosedForms.coe_coe_mpullback _ _ _ n φ)
+
 /-- Integration on compactly supported cohomology commutes with extension by zero from an open
 subset `U` into `M`: `∫_M ext x = ∫_U x` for the orientation restricted to `U`. -/
 @[simp]
 theorem integral_extendByZeroTop (o : Manifold.Orientation I M (Fin n)) (U : Opens M)
     [SigmaCompactSpace U] (x : compactlySupportedDeRhamCohomology I U n) :
     integral o (extendByZeroTop U n x) = integral (o.restrict U) x := by
-  let Φ : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
-  rw [← integral_extendByZero o (le_top : U ≤ ⊤), ← equivOfDiffeomorph_extendByZeroTop]
-  obtain ⟨φ, hφ⟩ := mk_surjective I n (extendByZeroTop U n x)
-  have h : integralTopForm (o.restrict ⊤) (mpullback I I Φ φ.1.1) = integralTopForm o φ.1.1 := by
-    rw [Diffeomorph.coe_ofTop]
-    exact integralTopForm_mpullback_subtypeVal o ⊤ (by simp)
-  rw [← hφ, equivOfDiffeomorph_mk, integral_mk, integral_mk, ← h]
-  exact congrArg _ (compactlySupportedClosedForms.coe_coe_mpullback _ _ _ n φ).symm
+  rw [← integral_extendByZero o (le_top : U ≤ ⊤), ← equivOfDiffeomorph_extendByZeroTop,
+    integral_equivOfDiffeomorph_ofTop]
 
 /-- An orientation-preserving diffeomorphism preserves integration on compactly supported
 cohomology. No integrability hypothesis is needed: representatives are smooth and compactly

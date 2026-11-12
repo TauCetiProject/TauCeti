@@ -17,10 +17,8 @@ A simplicial complex is a **combinatorial `n`-ball** when it is stellar equivale
 `n`-simplex, and a **combinatorial `n`-sphere** when it is stellar equivalent to the boundary of
 the standard `(n+1)`-simplex. A complex is a **combinatorial `n`-manifold** when the link of each
 of its vertices is a combinatorial `(n-1)`-sphere — an interior vertex — or a combinatorial
-`(n-1)`-ball — a boundary vertex. This is the simplicial side of piecewise-linear topology asked
-for by layer 11 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), the definition that "has the correct links to be
-a manifold".
+`(n-1)`-ball — a boundary vertex. This is the simplicial side of piecewise-linear topology: the
+definition of a complex that has the correct links to be a manifold.
 
 The models are the complexes of `Simplex.Basic`: `simplex V` for a vertex set of `n + 1`
 elements, and `simplexBoundary V` for one of `n + 2` elements, so that both models have dimension

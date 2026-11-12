@@ -182,7 +182,6 @@ private theorem forall_edist_ne_top_and_exists_eq
   rw [← EReal.coe_toReal htop hbot, EReal.coe_le_coe_add_coe_ennreal_iff hP] at hcoer
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.coe_toReal] at hcoer
-  have hτ'r : (0 : ℝ) < τ' := NNReal.coe_pos.2 hτ'
   have := (le_div_iff₀ (by positivity)).1 (by linarith : A - (φ (u n)).toReal ≤
     (edist (u 0) (u n)).toReal ^ 2 / (2 * τ'))
   linarith
@@ -205,7 +204,7 @@ private theorem toReal_edist_sq_le (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolv
   have key := sq_le_mul_one_add_div_pow_of_sq_le_mul_sub
     (D := fun n ↦ (edist (u 0) (u n)).toReal) (d := fun n ↦ (edist (u n) (u (n + 1))).toReal)
     (e := e) (τ := τ) (τ' := τ') (A := A)
-    (NNReal.coe_pos.2 hτ) (by exact_mod_cast hττ') (by simp) (fun _ ↦ ENNReal.toReal_nonneg)
+    τ.2 (by exact_mod_cast hττ') (by simp) (fun _ ↦ ENNReal.toReal_nonneg)
     (fun n ↦ ENNReal.toReal_le_add (edist_triangle _ _ _) (hfin n)
       (edist_ne_top_of_mem_moreauYosidaResolvent (hu n)))
     (fun n ↦ ?_) hcoer n
@@ -214,7 +213,6 @@ private theorem toReal_edist_sq_le (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolv
       (he (n + 1)) (he n)
     simp only [edist_self, ENNReal.toReal_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
       zero_pow, zero_div, add_zero] at h
-    have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
     have := (div_le_iff₀ (by positivity)).1 (by linarith : (edist (u n) (u (n + 1))).toReal ^ 2 /
       (2 * τ) ≤ e n - e (n + 1))
     linarith
@@ -240,7 +238,6 @@ theorem le_apply_of_forall_mem_moreauYosidaResolvent
     {A E : ℝ} (hA : moreauYosida φ τ' (u 0) = A) (hE : φ (u 0) = E) (n : ℕ) :
     ((A - (E - A) * (1 + 8 * τ / τ') ^ n : ℝ) : EReal) ≤ φ (u n) := by
   obtain ⟨-, e, he, hcoer, h⟩ := toReal_edist_sq_le hu hτ hττ' hA hE n
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have hτ' : (0 : ℝ) < τ' :=
     lt_of_lt_of_le (by positivity : (0 : ℝ) < 4 * τ) (by exact_mod_cast hττ')
   rw [he, EReal.coe_le_coe_iff]
@@ -262,7 +259,6 @@ private theorem toReal_edist_sq_le_mul_sub
   rw [hem, hen, ← EReal.coe_ennreal_toReal hP, ← EReal.coe_add, EReal.coe_le_coe_iff] at hC1
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.toReal_natCast, ENNReal.coe_toReal] at hC1
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have := (div_le_iff₀ (by positivity)).1
     (by linarith : (edist (u m) (u n)).toReal ^ 2 / (2 * ((n - m : ℕ) * τ)) ≤ em - en)
   linarith
@@ -282,8 +278,8 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
   have hτ'r : (0 : ℝ) < τ' :=
     lt_of_lt_of_le (by positivity : (0 : ℝ) < 4 * τ) (by exact_mod_cast hττ')
   have hAE : A ≤ E := by exact_mod_cast hA ▸ hE ▸ moreauYosida_le_self φ τ' (u 0)
-  set m := ⌈s / τ⌉₊ with hm
-  set n := ⌈t / τ⌉₊ with hn
+  set m := ⌈s / τ⌉₊
+  set n := ⌈t / τ⌉₊
   have hmn : m ≤ n := Nat.ceil_mono (div_le_div_of_nonneg_right hst hτr.le)
   obtain ⟨hfm, em, hem, -, -⟩ := toReal_edist_sq_le hu hτ hττ' hA hE m
   obtain ⟨hfn, en, hen, -, -⟩ := toReal_edist_sq_le hu hτ hττ' hA hE n
@@ -308,7 +304,8 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
     rw [hen] at this
     exact_mod_cast this
   have hexp : (1 + 8 * τ / τ') ^ n ≤ Real.exp (8 * (t + τ) / τ') := by
-    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity) hτr (hs.trans hst)
+    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity)
+      (add_nonneg (hs.trans hst) τ.2)
     rwa [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
   have hdiff : em - en ≤ (E - A) * (1 + Real.exp (8 * (t + τ) / τ')) := by
     nlinarith [mul_le_mul_of_nonneg_left hexp (sub_nonneg.2 hAE)]
@@ -358,7 +355,8 @@ private theorem le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
     calc (1 + 8 * (τ : ℝ) / τ') ^ n ≤ (1 + 8 / τ' * τ) ^ ⌈T / τ⌉₊ := by
           rw [div_mul_eq_mul_div]
           exact pow_le_pow_right₀ (le_add_of_nonneg_right (by positivity)) hn
-      _ ≤ Real.exp (8 / τ' * (T + τ)) := one_add_mul_pow_ceil_div_le_exp (by positivity) hτr hT
+      _ ≤ Real.exp (8 / τ' * (T + τ)) := one_add_mul_pow_ceil_div_le_exp (by positivity)
+        (add_nonneg hT τ.2)
       _ ≤ B := Real.exp_le_exp.2 (by rw [div_mul_eq_mul_div]; gcongr)
   have hP1 : 1 ≤ (1 + 8 * (τ : ℝ) / τ') ^ n :=
     one_le_pow₀ (le_add_of_nonneg_right (by positivity))
@@ -387,10 +385,8 @@ theorem exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosid
     (hT : 0 ≤ T) :
     ∃ (L : ℝ) (R : ℝ≥0∞), R ≠ ⊤ ∧ ∀ᶠ k in atTop, ∀ n ≤ ⌈T / τ k⌉₊,
       (L : EReal) ≤ φ (U k n) ∧ edist x₀ (U k n) ≤ R := by
-  set τ' : ℝ≥0 := τ₀ / 2 with hτ'_def
-  have hτ' : 0 < τ' := by positivity
+  set τ' : ℝ≥0 := τ₀ / 2
   have hτ'τ₀ : τ' < τ₀ := half_lt_self hτ₀
-  have hτ₀τ'r : (0 : ℝ) < τ₀ - τ' := sub_pos.2 (NNReal.coe_lt_coe.2 hτ'τ₀)
   -- Eventually the initial point is within distance `1` of `x₀`, hence within `D` of `x₁`, and
   -- `4 τ k ≤ τ'`.
   set D : ℝ := (edist x₀ x₁).toReal + 1
@@ -450,8 +446,7 @@ private theorem apply_le_and_edist_le_rpow_of_forall_mem_moreauYosidaResolvent
     refine (edist_sq_le_of_forall_mem_moreauYosidaResolvent hu hτ hττ' hA hE _).trans
       (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left ?_
         (mul_nonneg (by positivity) hEA)))
-    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity)
-      (NNReal.coe_pos.2 hτ) ht
+    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity) (add_nonneg ht τ.2)
     rw [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
     exact this.trans hB
 
@@ -575,7 +570,7 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
   have hAk k : moreauYosida φ τ' (U k 0) = A := by rw [hU0]; exact hA
   have hEk k : φ (U k 0) = E := by rw [hU0]; exact hE
   -- Up to time `t`, the a priori bounds hold with the constant `B t`, uniformly in `k`.
-  set B : ℝ → ℝ := fun t ↦ Real.exp (8 * (t + τ') / τ') with hB
+  set B : ℝ → ℝ := fun t ↦ Real.exp (8 * (t + τ') / τ')
   have hexpk k (t : ℝ) : Real.exp (8 * (t + τ k) / τ') ≤ B t :=
     Real.exp_le_exp.2 (by gcongr; exact_mod_cast hτkτ' k)
   -- The interpolants `v k` take their values at time `t` in a set `K t` of bounded diameter and
@@ -583,7 +578,6 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
   set v : ℕ → ℝ≥0 → X := fun k t ↦ U k ⌈(t : ℝ) / τ k⌉₊ with hv
   set K : ℝ≥0 → Set X :=
     fun t ↦ {y | φ y ≤ E ∧ edist x₀ y ≤ ENNReal.ofReal (2 * τ' * (E - A) * B t) ^ (2⁻¹ : ℝ)}
-    with hK_def
   have hvK k t : v k t ∈ K t := by
     have := apply_le_and_edist_le_rpow_of_forall_mem_moreauYosidaResolvent (hU k) (hτ k) (hττ' k)
       (hAk k) (hEk k) hEA t.2 (hexpk k t)
@@ -645,7 +639,7 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
     ∃ u : ℝ → X, IsGeneralizedMinimizingMovement l φ x₀ u ∧ u 0 = x₀ ∧
       ∀ T : ℝ, ∃ C : ℝ≥0, HolderOnWith C (1 / 2) u (Icc 0 T) := by
   -- The coercivity constant `A = φ_{τ'}(x₀)` at `τ' = τ₀ / 2`, and the energy `E = φ x₀`.
-  set τ' : ℝ≥0 := τ₀ / 2 with hτ'_def
+  set τ' : ℝ≥0 := τ₀ / 2
   have hAbot : moreauYosida φ τ' x₀ ≠ ⊥ := moreauYosida_ne_bot_of_lt (half_lt_self hτ₀) hx₀ h₀
   have hAtop : moreauYosida φ τ' x₀ ≠ ⊤ :=
     ne_top_of_le_ne_top hφx₀ (moreauYosida_le_self φ τ' x₀)
@@ -671,7 +665,7 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
     push_cast [hτ_def]
     field_simp
   choose U hU0 hU using fun k ↦ exists_forall_mem_moreauYosidaResolvent
-    (fun z _ _ hv ↦ hd (tendsto_const_pure.mono_right (hl z)) hv) hφ hcpt (hτ k)
+    (fun z _ _ hv ↦ hd (tendsto_const_pure.mono_right (hl z)) hv) hφ hcpt
     (((le_mul_of_one_le_left zero_le (by norm_num)).trans (hττ' k)).trans_lt (half_lt_self hτ₀))
     hx₀ h₀
   -- The limit curve of a subsequence of the interpolants.
@@ -722,7 +716,7 @@ private lemma liminf_sum_edist_rpow_ne_top (hτ₀ : 0 < τ₀) (h₀ : moreauYo
     (hU0 : Tendsto (fun k ↦ U k 0) atTop (𝓝 x₀)) (hS : ∀ k, φ (U k 0) ≤ S) (hT : 0 ≤ T) :
     liminf (fun k ↦ ∑ n ∈ Finset.range ⌈T / τ k⌉₊,
       edist (U k n) (U k (n + 1)) ^ (2 : ℝ) / (τ k : ℝ≥0∞) ^ ((2 : ℝ) - 1)) atTop ≠ ⊤ := by
-  obtain ⟨L, R, hR, hev⟩ :=
+  obtain ⟨L, R, _, hev⟩ :=
     exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent hτ₀ h₀
       (edist_ne_top x₀ x₁) hτ hτ0 hU hU0 hS hT
   refine ne_top_of_le_ne_top (b := 2 * ENNReal.ofReal (S - L)) (by finiteness)
