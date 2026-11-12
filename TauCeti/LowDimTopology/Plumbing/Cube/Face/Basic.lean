@@ -17,7 +17,7 @@ upper face with base point `x + E_v` and directions `S.erase v`.
 
 The cube weight is the maximum of the point weights over all vertices, so each face weight is
 bounded above by the ambient cube weight. The resulting nonnegative differences are the
-exponents of the `U`-powers in the later lattice-homology differential.
+exponents of the `U`-powers in the lattice-homology differential (`Plumbing/Differential`).
 
 ## Main results
 
@@ -31,10 +31,8 @@ exponents of the `U`-powers in the later lattice-homology differential.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose opening item asks for Némethi's lattice (co)homology from lattice
-points and weight functions. The face-weight exponents are the standard cubical-boundary
-weights in Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
+The face-weight exponents are the standard cubical-boundary weights in Némethi,
+[arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 
 public section

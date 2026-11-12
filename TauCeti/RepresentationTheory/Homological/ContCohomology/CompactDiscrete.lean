@@ -37,14 +37,15 @@ The predicate `TauCeti.ContinuousCohomology.ResolutionVanishesOn X T n F` record
 `F` of the resolution `C(G, C(G, …, X))` vanishes on all `n`-tuples of points of a subset `T ⊆ G`,
 and `TauCeti.ContinuousCohomology.ResolutionVanishesOn.exists_isOpen` shows that vanishing on a
 compact set already holds on an open neighbourhood of it. For an arbitrary compact set that is
-all one gets; when the compact set is a closed subgroup of a profinite `G`, the neighbourhood
-contains an open subgroup, so the vanishing holds on an open subgroup containing the closed one
+all one gets. The vanishing locus is closed
+(`TauCeti.ContinuousCohomology.isClosed_setOfPred_resolutionVanishesOn`), so for a Hausdorff
+coefficient module vanishing passes to the closure
+(`TauCeti.ContinuousCohomology.ResolutionVanishesOn.closure`). When the compact set is the
+closure of a subgroup of a profinite `G`, the neighbourhood contains an open subgroup, so the
+vanishing holds on an open subgroup containing the subgroup itself, for any subgroup
 (`TauCeti.ContinuousCohomology.exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero` in
-`ClosedSubgroup.lean`). This is how cohomological statements about a closed subgroup descend to the
-open subgroups containing it.
-
-This implements the "category of the comparison" milestone of Layer 3 of the human-authored
-roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`.
+`ClosedSubgroup.lean`). This is how cohomological statements about a subgroup descend to the open
+subgroups containing it.
 -/
 
 public section
@@ -182,6 +183,40 @@ theorem ResolutionVanishesOn.exists_isOpen {T : Set G} (hT : IsCompact T) (n : �
       Set.subset_inter (Set.subset_preimage_image _ _) (Set.subset_iInter fun v ↦ hTW v),
       fun g hg ↦ ?_⟩
     exact (hW ⟨F' g, hg.1⟩).mono (Set.inter_subset_right.trans (Set.iInter_subset _ _)) n
+
+omit [CompactSpace G] [DiscreteTopology X.V] in
+/-- **The vanishing locus is closed.** For a Hausdorff coefficient module, the elements of the
+coinduced resolution that vanish on a set `T` form a closed subset. -/
+theorem isClosed_setOfPred_resolutionVanishesOn [T2Space X.V] (T : Set G) (n : ℕ) :
+    IsClosed {F : (TopRep.resolutionX X n).V | ResolutionVanishesOn X T n F} := by
+  -- an intersection of the preimages of closed sets under the continuous evaluations at `T`
+  induction n with
+  | zero => exact isClosed_singleton
+  | succ n ih =>
+    have : {F : (TopRep.resolutionX X (n + 1)).V | ResolutionVanishesOn X T (n + 1) F} =
+        ⋂ g ∈ T, (fun F : C(G, (TopRep.resolutionX X n).V) ↦ F g) ⁻¹'
+          {v | ResolutionVanishesOn X T n v} := by
+      ext F
+      simp [Set.mem_iInter]
+    rw [this]
+    exact isClosed_biInter fun g _ ↦ ih.preimage (continuous_eval_const g)
+
+omit [CompactSpace G] [DiscreteTopology X.V] in
+/-- **Vanishing on a set spreads to its closure.** An element of the coinduced resolution that
+vanishes on a set `T` vanishes on the closure of `T`, for a Hausdorff coefficient module. -/
+theorem ResolutionVanishesOn.closure [T2Space X.V] {T : Set G} (n : ℕ) :
+    ∀ {F : (TopRep.resolutionX X n).V}, ResolutionVanishesOn X T n F →
+      ResolutionVanishesOn X (_root_.closure T) n F := by
+  induction n with
+  | zero => exact fun hF ↦ hF
+  | succ n ih =>
+    intro F hF
+    set F' : C(G, (TopRep.resolutionX X n).V) := F
+    have hsub : T ⊆ F' ⁻¹' {v | ResolutionVanishesOn X (_root_.closure T) n v} :=
+      fun g hg ↦ ih (hF g hg)
+    exact fun g hg ↦ closure_minimal hsub
+      ((isClosed_setOfPred_resolutionVanishesOn (X := X) (_root_.closure T) n).preimage
+        F'.continuous) hg
 
 end ContinuousCohomology
 

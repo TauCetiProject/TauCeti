@@ -27,7 +27,7 @@ chain group of the restricted complex is a finitely generated `𝔽₂[U]`-modul
 The inclusions for `N ≤ M` make these complexes the filtered system whose direct limit is the
 untruncated lattice complex. That direct limit is constructed in
 `TauCeti.LowDimTopology.Plumbing.Filtration.Colimit`; identifying its homology with Némethi's
-`ℍ⁻` is a subsequent step.
+`ℍ⁻` is not done here.
 
 ## Main definitions
 
@@ -41,9 +41,7 @@ untruncated lattice complex. That direct limit is constructed in
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, which asks for
-Némethi's lattice homology from lattice points and weight functions. The filtration by the
-sublevel cubical complexes is the construction in A. Némethi,
+The filtration by the sublevel cubical complexes is the construction in A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 

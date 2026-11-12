@@ -86,7 +86,7 @@ theorem dbarFunction_apply_almostComplex (σ : M → F) (x : M) (v : TangentSpac
 theorem dbarFunction_const (c : F) (x : M) : j.dbarFunction (fun _ ↦ c) x = 0 := by
   rw [dbarFunction, mvfderiv_const]
   ext v
-  simp [zeroOnePart_apply]
+  simp
 
 /-- `∂bar` on functions is additive on functions differentiable at the point. -/
 theorem dbarFunction_add {σ τ : M → F} {x : M} (hσ : MDifferentiableAt I 𝓘(ℝ, F) σ x)

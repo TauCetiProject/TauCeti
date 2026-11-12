@@ -175,7 +175,7 @@ lemma intCast_mul_smul_add_intCast (γ : SL(2, ℤ)) (z : ℍ) (y : Fin 2 → �
 `(c z + d)⁻¹ (ℤ z + ℤ)`, so `℘(x / (c z + d); ℤ γz + ℤ) = (c z + d)² ℘(x; ℤ z + ℤ)`. -/
 theorem weierstrassP_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (x : ℂ) :
     ℘[(γ • z).periodPair] (x / denom γ z) = denom γ z ^ 2 * ℘[z.periodPair] x := by
-  have hD := denom_ne_zero γ z
+  have _ := denom_ne_zero γ z
   -- reindex the integer pairs by `y ↦ y γ`
   let e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) :=
     Matrix.toLinearEquivRight'OfInv
@@ -296,7 +296,6 @@ theorem norm_rowSum_le (w : ℍ) :
   simp only [Nat.reduceAdd, pow_one, Nat.factorial_one, Nat.cast_one, div_one] at H
   set q := cexp (2 * π * Complex.I * w)
   have hq : ‖q‖ < 1 := norm_exp_two_pi_I_lt_one w
-  have hq' : 0 < 1 - ‖q‖ := by linarith
   have h1 : 1 - ‖q‖ ≤ ‖1 - q‖ := by
     simpa using norm_sub_norm_le (1 : ℂ) q
   have h2 : ‖(-2 * π * Complex.I : ℂ)‖ ^ 2 = 4 * π ^ 2 := by

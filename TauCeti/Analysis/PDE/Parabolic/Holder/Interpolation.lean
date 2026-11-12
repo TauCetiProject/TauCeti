@@ -50,7 +50,9 @@ absorb lower-order terms in parabolic Schauder estimates.
 * `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le`,
   `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul` and
   `TauCeti.ParabolicC2HolderSpace.exists_norm_valueHolderL_add_norm_spatialFDerivHolderL_le`:
-  the absorption of the lower-order parabolic Hölder norms.
+  the absorption of the lower-order parabolic Hölder norms, with the separate bounds
+  `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_mul` and
+  `TauCeti.ParabolicC2HolderSpace.norm_spatialFDerivHolderL_le_mul`.
 
 ## References
 
@@ -384,6 +386,18 @@ theorem norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1)
   simp only [Real.one_rpow, mul_one] at h
   linarith [norm_valueL_le f]
 
+/-- The parabolic Hölder norm of the value is at most `24 ‖u‖`. -/
+theorem norm_valueHolderL_le_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueHolderL hα f‖ ≤ 24 * ‖f‖ :=
+  (le_add_of_nonneg_right (norm_nonneg _)).trans
+    (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα f)
+
+/-- The parabolic Hölder norm of the spatial gradient is at most `24 ‖u‖`. -/
+theorem norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialFDerivHolderL hα f‖ ≤ 24 * ‖f‖ :=
+  (le_add_of_nonneg_left (norm_nonneg _)).trans
+    (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα f)
+
 /-- **Absorption with a prescribed small constant.** For `α < 1` and every `η > 0` there is a
 constant `C`, depending only on `α` and `η`, such that on every slab
 `‖u‖_{α,par} + ‖D_x u‖_{α,par} ≤ η ‖u‖ + C ‖u‖_∞`. -/
@@ -392,7 +406,7 @@ theorem exists_norm_valueHolderL_add_norm_spatialFDerivHolderL_le (hα : α < 1)
       ‖valueHolderL hα.le f‖ + ‖spatialFDerivHolderL hα.le f‖ ≤ η * ‖f‖ + C * ‖valueL f‖ := by
   have hα' : 0 < 1 - (α : ℝ) := sub_pos.2 (by exact_mod_cast hα)
   -- Choose `ε ≤ 1` with `7 ε^(1 - α) ≤ η`.
-  set ε := min 1 ((η / 7) ^ (1 - (α : ℝ))⁻¹) with hε_def
+  set ε := min 1 ((η / 7) ^ (1 - (α : ℝ))⁻¹)
   have hε : 0 < ε := lt_min one_pos (by positivity)
   have hpow : 7 * ε ^ (1 - (α : ℝ)) ≤ η := by
     have h := Real.rpow_le_rpow hε.le (min_le_right _ _) hα'.le
