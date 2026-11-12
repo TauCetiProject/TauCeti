@@ -20,13 +20,15 @@ ring maps carry each subgroup into the corresponding subgroup over the target ri
 
 The torus here is parametrized in the chosen basis of the datum's weight lattice, rather than
 by restriction from the full weight lattice. The latter can miss torus points, already for
-adjoint type A₁ over ℚ. All results hold over every commutative ring. We call the generated
-subgroup `borelSubgroup`; we do not identify it with all points of a Borel subgroup scheme
-or assert maximal solvability here. No ordered-product normal form for `U` is assumed.
+adjoint type A₁ over ℚ. The subgroup and membership results hold over every commutative ring.
+We call the generated subgroup `borelSubgroup`; we do not identify it with all points of a Borel
+subgroup scheme or assert maximal solvability here. No ordered-product normal form for `U` is
+assumed.
 The opposite-intersection theorem also shows that a negative root element in `B` must be
-the identity; this detects when a simple Weyl conjugate leaves `B`. Over every nontrivial
-commutative ring, the simple-root element with additive parameter one witnesses that each
-pinned simple Weyl representative conjugates some element of `B` outside `B`. This is the
+the identity; this detects when conjugating an element of a simple-root subgroup by its pinned
+Weyl representative leaves `B`. Over every nontrivial commutative ring, the simple-root element
+with additive parameter one witnesses that each pinned simple Weyl representative conjugates
+some element of `B` outside `B`. This is the
 noncontainment required by the last Tits-system axiom, without assuming a Bruhat decomposition.
 
 ## References
