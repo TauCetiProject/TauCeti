@@ -132,10 +132,7 @@ theorem map_tensorProductCoeff_add_tensorProductCoeff_mul_tensorProductCoeff [Ch
   have hI := idMorphism_mul (idMorphism_mem_morphisms N hιA)
   have hI' := idMorphism_mul (idMorphism_mem_morphisms N' hιB)
   have h2 := add_self_eq_zero_of_charTwo R (N.coeff ⊗ₖₜ[R] N'.coeff)
-  have hadd (P Q : Matrix X X A) : (P + Q) ⊗ₖₜ[R] N'.idMorphism =
-      P ⊗ₖₜ[R] N'.idMorphism + Q ⊗ₖₜ[R] N'.idMorphism :=
-    Matrix.kroneckerMap_add_left _ TensorProduct.add_tmul _ _ _
-  simp only [tensorProductCoeff_def, hadd, Matrix.map_add _ (map_add _),
+  simp only [tensorProductCoeff_def, Matrix.add_kroneckerTMul', Matrix.map_add _ (map_add _),
     Matrix.kroneckerTMul_map_ungradedTensorDifferential, map_idMorphism N hdA,
     map_idMorphism N' hdB, Matrix.add_mul, Matrix.mul_add, ← Matrix.mul_kroneckerTMul_mul,
     idMorphism_mul (coeff_mem_morphisms N), mul_idMorphism (coeff_mem_morphisms N),
@@ -197,9 +194,7 @@ variable (N N') in
 morphisms. -/
 theorem idMorphism_tensorProduct :
     (N.tensorProduct N' hιA hιB hdA hdB).idMorphism = N.idMorphism ⊗ₖₜ[R] N'.idMorphism := by
-  ext ⟨x, x'⟩ ⟨y, y'⟩
-  simp only [idMorphism_apply, Prod.mk.injEq, tensorProduct_idem, Matrix.kroneckerTMul_apply]
-  by_cases hx : x = y <;> by_cases hx' : x' = y' <;> simp [hx, hx']
+  simp only [idMorphism_def, Matrix.diagonal_kroneckerTMul_diagonal, tensorProduct_idem]
 
 /-- **Kronecker products of morphisms are morphisms** of exterior tensor products. -/
 theorem kroneckerTMul_mem_morphisms {F : Matrix X X₂ A} {G : Matrix X' X₂' B}
@@ -213,20 +208,17 @@ theorem kroneckerTMul_mem_morphisms {F : Matrix X X₂ A} {G : Matrix X' X₂' B
   exact ⟨by rw [hF.1, hG.1], by rw [hF.2, hG.2]⟩
 
 /-- **The Leibniz rule for exterior tensor products of morphisms.** For morphisms `F` from `N` to
-`N₂` and `G` from `N'` to `N₂'`, the morphism differential of `F ⊗ G` is `∂F ⊗ G + F ⊗ ∂G`.
-The identities of the factors act as units on `F` and `G`, which is what separates the four
-terms of `Δ₂` and `Δ₁` into the two factors. -/
+`N₂` and `G` from `N'` to `N₂'`, the morphism differential of `F ⊗ G` is `∂F ⊗ G + F ⊗ ∂G`,
+with no sign in characteristic two. -/
 theorem morphismDifferential_tensorProduct_kroneckerTMul {F : Matrix X X₂ A}
     {G : Matrix X' X₂' B} (hF : F ∈ morphisms N N₂) (hG : G ∈ morphisms N' N₂') :
     morphismDifferential (N.tensorProduct N' hιA hιB hdA hdB)
         (N₂.tensorProduct N₂' hιA hιB hdA hdB) (F ⊗ₖₜ[R] G) =
       morphismDifferential N N₂ F ⊗ₖₜ[R] G + F ⊗ₖₜ[R] morphismDifferential N' N₂' G := by
-  have hadd (P Q : Matrix X X₂ A) : (P + Q) ⊗ₖₜ[R] G = P ⊗ₖₜ[R] G + Q ⊗ₖₜ[R] G :=
-    Matrix.kroneckerMap_add_left _ TensorProduct.add_tmul _ _ _
   simp only [morphismDifferential_apply, tensorProduct_coeff, tensorProductCoeff_def,
     Matrix.kroneckerTMul_map_ungradedTensorDifferential, Matrix.mul_add, Matrix.add_mul,
     ← Matrix.mul_kroneckerTMul_mul, mul_idMorphism hF, mul_idMorphism hG, idMorphism_mul hF,
-    idMorphism_mul hG, hadd, Matrix.kroneckerTMul_add]
+    idMorphism_mul hG, Matrix.add_kroneckerTMul', Matrix.kroneckerTMul_add]
   abel
 
 /-- Exterior tensor products of homomorphisms of type `D` structures are homomorphisms. -/

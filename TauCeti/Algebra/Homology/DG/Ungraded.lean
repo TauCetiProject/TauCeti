@@ -207,10 +207,18 @@ namespace Matrix
 
 open scoped Kronecker TensorProduct
 
+/-- Left distributivity of `⊗ₖₜ[R]` over `+` when the two factors have different entry types.
+Mathlib's `Matrix.add_kroneckerTMul` asks for both factors to have the same entry type. -/
+theorem add_kroneckerTMul' {R α β l m n p : Type*} [CommSemiring R] [AddCommMonoid α]
+    [AddCommMonoid β] [Module R α] [Module R β] (A₁ A₂ : Matrix l m α) (B : Matrix n p β) :
+    (A₁ + A₂) ⊗ₖₜ[R] B = A₁ ⊗ₖₜ[R] B + A₂ ⊗ₖₜ[R] B :=
+  kroneckerMap_add_left _ TensorProduct.add_tmul _ _ _
+
 variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
 
 /-- **The Leibniz rule for Kronecker products.** The entrywise differential `d ⊗ 1 + 1 ⊗ d'` of
 the Kronecker product `F ⊗ₖₜ G` of matrices over `A` and over `B` is `d F ⊗ₖₜ G + F ⊗ₖₜ d' G`. -/
+@[simp]
 theorem kroneckerTMul_map_ungradedTensorDifferential {l m n p : Type*} {d : A →ₗ[R] A}
     {d' : B →ₗ[R] B} (F : Matrix l m A) (G : Matrix n p B) :
     (F ⊗ₖₜ[R] G).map (TauCeti.ungradedTensorDifferential d d') =
