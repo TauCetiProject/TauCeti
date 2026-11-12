@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Node.BranchSequence
 public import TauCeti.RingTheory.Smooth.GeometricallyReduced
-import Mathlib.Algebra.MvPolynomial.Nilpotent
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.RingTheory.Node.BaseChange
 
@@ -32,17 +31,10 @@ namespace TauCeti.NodeAlgebra
 
 open scoped TensorProduct
 
-private theorem isReduced_zero (R : Type*) [CommRing R] [IsReduced R] :
-    IsReduced (NodeAlgebra R 0) := by
-  have : IsReduced (Polynomial R) := isReduced_of_injective
-    (MvPolynomial.uniqueAlgEquiv.{_, 0} R PUnit).symm
-    (MvPolynomial.uniqueAlgEquiv.{_, 0} R PUnit).symm.injective
-  exact isReduced_of_injective (branchMap R) (branchMap_injective R)
-
 private theorem isReduced_of_field {K : Type*} [Field K] (a : K) : IsReduced (NodeAlgebra K a) := by
   by_cases ha : a = 0
   · subst a
-    exact isReduced_zero K
+    exact isReduced_of_injective (branchMap K) (branchMap_injective K)
   · have : Algebra.IsStandardSmooth K (NodeAlgebra K a) :=
       (isStandardSmoothOfRelativeDimension_of_isUnit a (isUnit_iff_ne_zero.mpr ha)).isStandardSmooth
     exact TauCeti.isReduced_of_smooth K (NodeAlgebra K a)
