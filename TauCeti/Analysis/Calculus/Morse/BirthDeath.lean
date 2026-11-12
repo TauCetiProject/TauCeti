@@ -227,18 +227,22 @@ theorem morseIndex_birthDeathPotential_sqrt (hs : 0 < s) :
     linarith [Real.sqrt_pos.2 hs])
 
 /-- The critical value at the local maximum `-√s` is `2 s √s / 3`. -/
-theorem birthDeathPotential_neg_sqrt (hs : 0 ≤ s) :
+theorem birthDeathPotential_neg_sqrt (s : ℝ) :
     birthDeathPotential s (-√s) = 2 * s * √s / 3 := by
-  have h := Real.sq_sqrt hs
-  rw [birthDeathPotential_apply]
-  linear_combination (-√s / 3) * h
+  rcases le_or_gt 0 s with hs | hs
+  · have h := Real.sq_sqrt hs
+    rw [birthDeathPotential_apply]
+    linear_combination (-√s / 3) * h
+  · simp [birthDeathPotential_apply, Real.sqrt_eq_zero'.2 hs.le]
 
 /-- The critical value at the local minimum `√s` is `-(2 s √s / 3)`. -/
-theorem birthDeathPotential_sqrt (hs : 0 ≤ s) :
+theorem birthDeathPotential_sqrt (s : ℝ) :
     birthDeathPotential s √s = -(2 * s * √s / 3) := by
-  have h := Real.sq_sqrt hs
-  rw [birthDeathPotential_apply]
-  linear_combination (√s / 3) * h
+  rcases le_or_gt 0 s with hs | hs
+  · have h := Real.sq_sqrt hs
+    rw [birthDeathPotential_apply]
+    linear_combination (√s / 3) * h
+  · simp [birthDeathPotential_apply, Real.sqrt_eq_zero'.2 hs.le]
 
 /-! ### The connecting trajectory -/
 
@@ -379,14 +383,14 @@ theorem exists_eq_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 < s)
   · simpa using congrFun hτ t
   · simpa using congrFun hy t
 
-/-- Conversely, above a critical point `y` of a differentiable transverse function `g`, the curve
-`t ↦ (√s tanh (√s t), y)` is a negative gradient trajectory of the birth–death model. -/
+/-- Conversely, above a critical point `y` of a transverse function `g` differentiable at `y`, the
+curve `t ↦ (√s tanh (√s t), y)` is a negative gradient trajectory of the birth–death model. -/
 theorem isIntegralCurve_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 ≤ s)
-    (hg : Differentiable ℝ g) (hy : ∇ g y = 0) :
+    (hg : DifferentiableAt ℝ g y) (hy : ∇ g y = 0) :
     IsIntegralCurve (fun t ↦ WithLp.toLp 2 (birthDeathOrbit s t, y))
       (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w) :=
   (isIntegralCurve_birthDeathOrbit hs).separatedSum (isIntegralCurve_const_neg_gradient_iff.2 hy)
-    (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _
+    (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg
 
 end SeparatedSum
 
