@@ -257,7 +257,7 @@ theorem subsingleton_of_not_forall_hasEnoughRootsOfUnity
   -- every `p`-power torsion unit is killed by `p ^ N`
   have hkill : ∀ (m : ℕ) (ζ : Kˣ), ζ ^ p ^ m = 1 → ζ ^ p ^ N = 1 := by
     intro m ζ hζ
-    obtain ⟨e, he, hord⟩ := (Nat.dvd_prime_pow Fact.out).mp (orderOf_dvd_of_pow_eq_one hζ)
+    obtain ⟨e, -, hord⟩ := (Nat.dvd_prime_pow Fact.out).mp (orderOf_dvd_of_pow_eq_one hζ)
     by_contra hne
     have hNe : N < e := by
       by_contra hle
