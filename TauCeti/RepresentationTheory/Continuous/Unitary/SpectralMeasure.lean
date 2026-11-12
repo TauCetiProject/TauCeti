@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.Unitary
 public import TauCeti.Analysis.Fourier.Pontryagin.Density
+public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import Mathlib.GroupTheory.SemidirectProduct
@@ -483,19 +484,6 @@ open SemidirectProduct (inl inr)
 variable {K : Type*} [Group K] {φ : K →* MulAut (Multiplicative G)}
   {ρ : ContRepresentation ℂ (Multiplicative G ⋊[φ] K) H}
 
-omit [CompleteSpace H] [TopologicalSpace G] [DiscreteTopology G]
-  [MeasurableSpace (PontryaginDual (Multiplicative G))]
-  [BorelSpace (PontryaginDual (Multiplicative G))] in
-/-- The operator `ρ k` intertwines the restriction of `ρ` to `G` with its restriction along
-`φ k`. -/
-private theorem toLinearIsometryEquiv_inr_apply_restrict_inl (hρ : ρ.IsUnitary) (k : K)
-    (g : Multiplicative G) (ξ : H) :
-    hρ.toLinearIsometryEquiv (inr k) (ρ.restrict inl g ξ) =
-      ρ.restrict inl (φ k g) (hρ.toLinearIsometryEquiv (inr k) ξ) := by
-  rw [IsUnitary.coe_toLinearIsometryEquiv, restrict_apply_apply, restrict_apply_apply,
-    ← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, SemidirectProduct.inl_aut,
-    map_inv, inv_mul_cancel_right]
-
 /-- **Equivariance of the spectral measure in a semidirect product.** For a unitary
 representation `ρ` of `G ⋊[φ] K` with `G` discrete abelian, the operator `ρ k` carries the spectral
 projection of a set `B` of characters of `G`, for the restriction of `ρ` to `G`, to the spectral
@@ -508,7 +496,8 @@ theorem apply_inr_spectralPVM_restrict_inl_proj (hρ : ρ.IsUnitary) (k : K)
         ((map_continuous (PontryaginDual.map _)).measurable hB) (ρ (inr k) ξ) := by
   rw [← hρ.coe_toLinearIsometryEquiv (inr k)]
   exact apply_spectralPVM_proj_of_intertwines_restrict (hρ.restrict _) (hρ.restrict _)
-    (hρ.toLinearIsometryEquiv (inr k)) _ (toLinearIsometryEquiv_inr_apply_restrict_inl hρ k) hB ξ
+    (hρ.toLinearIsometryEquiv (inr k)) _
+    (fun g η => by rw [IsUnitary.coe_toLinearIsometryEquiv]; exact ρ.apply_inr_apply_inl k g η) hB ξ
 
 /-- **Equivariance of the diagonal spectral measures in a semidirect product.** For a unitary
 representation `ρ` of `G ⋊[φ] K` with `G` discrete abelian, pushing the diagonal spectral measure
@@ -520,7 +509,8 @@ theorem map_diag_spectralPVM_restrict_inl_apply_inr (hρ : ρ.IsUnitary) (k : K)
       ((ρ.restrict inl).spectralPVM (hρ.restrict _)).diag ξ := by
   rw [← hρ.coe_toLinearIsometryEquiv (inr k)]
   exact map_diag_spectralPVM_of_intertwines_restrict (hρ.restrict _) (hρ.restrict _)
-    (hρ.toLinearIsometryEquiv (inr k)) _ (toLinearIsometryEquiv_inr_apply_restrict_inl hρ k) ξ
+    (hρ.toLinearIsometryEquiv (inr k)) _
+    (fun g η => by rw [IsUnitary.coe_toLinearIsometryEquiv]; exact ρ.apply_inr_apply_inl k g η) ξ
 
 end SemidirectProduct
 
