@@ -22,8 +22,8 @@ this file proves the exact identity
 
 The summands are orthogonal, not generally independent: the later height may depend on
 all earlier increments. Specializing to `Hᵢ = B(tᵢ)` gives the centered quadratic error
-in the partition proof of the cubic Itô formula. A mesh bound then gives mean-square
-convergence to zero. Empty grids and repeated dates are allowed. Only the filtered
+in the partition proof of the cubic Itô formula. Empty grids and repeated dates are allowed.
+Only the filtered
 pre-Brownian laws are used; path continuity and usual filtration conditions are unnecessary.
 
 ## References
@@ -142,50 +142,5 @@ theorem integral_sq_sum_eval_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ 
   have hm : (∫ ω, B (t i) ω ^ 2 ∂P) = t i := by
     simpa [Function.comp_def, integral_sq_gaussianReal] using h
   rw [hm]
-
-/-- On a horizon bounded by `T`, mesh at most `δ` bounds the second moment (mean square)
-of the Brownian-weighted centered quadratic error by `2 T² δ`. -/
-theorem integral_sq_sum_eval_mul_sq_sub_sub_le (hB : IsFilteredPreBrownianReal ℱ B P)
-    {n : ℕ} {t : ℕ → ℝ≥0} (ht : MonotoneOn t (Set.Iic n)) {T : ℝ≥0}
-    (hT : t n ≤ T) {δ : ℝ} (hδ : 0 ≤ δ)
-    (hmesh : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
-    (∫ ω, (∑ i ∈ range n, B (t i) ω * ((B (t (i + 1)) ω - B (t i) ω) ^ 2 -
-      ((t (i + 1) : ℝ) - t i))) ^ 2 ∂P) ≤ 2 * (T : ℝ) ^ 2 * δ := by
-  rw [hB.integral_sq_sum_eval_mul_sq_sub_sub ht]
-  have hsum : ∑ i ∈ range n, (t i : ℝ) * ((t (i + 1) : ℝ) - t i) ^ 2 ≤
-      (T : ℝ) * δ * ∑ i ∈ range n, ((t (i + 1) : ℝ) - t i) := by
-    rw [mul_sum]
-    refine sum_le_sum fun i hi ↦ ?_
-    have hi := mem_range.1 hi
-    have hstep : 0 ≤ (t (i + 1) : ℝ) - t i :=
-      sub_nonneg.2 (NNReal.coe_le_coe.2 (ht hi.le hi (Nat.le_succ i)))
-    have hleft : (t i : ℝ) ≤ T := NNReal.coe_le_coe.2 ((ht hi.le Set.self_mem_Iic hi.le).trans hT)
-    calc
-      (t i : ℝ) * ((t (i + 1) : ℝ) - t i) ^ 2
-          ≤ (T : ℝ) * (δ * ((t (i + 1) : ℝ) - t i)) := by
-            gcongr
-            nlinarith [hmesh i hi]
-      _ = (T : ℝ) * δ * ((t (i + 1) : ℝ) - t i) := by ring
-  rw [sum_range_sub (fun i ↦ (t i : ℝ))] at hsum
-  have hn : (t n : ℝ) ≤ T := NNReal.coe_le_coe.2 hT
-  have hbound : (T : ℝ) * δ * ((t n : ℝ) - t 0) ≤ (T : ℝ) * δ * T :=
-    mul_le_mul_of_nonneg_left (by linarith [NNReal.coe_nonneg (t 0)]) (mul_nonneg T.coe_nonneg hδ)
-  nlinarith
-
-/-- The centered Brownian-weighted quadratic error tends to zero in mean square along
-any deterministic vanishing-mesh family on a bounded horizon. -/
-theorem tendsto_integral_sq_sum_eval_mul_sq_sub_sub
-    (hB : IsFilteredPreBrownianReal ℱ B P)
-    {α : Type*} {l : Filter α} {n : α → ℕ} {t : α → ℕ → ℝ≥0} {δ : α → ℝ} {T : ℝ≥0}
-    (ht : ∀ a, MonotoneOn (t a) (Set.Iic (n a))) (hT : ∀ a, t a (n a) ≤ T)
-    (hδ : ∀ a, 0 ≤ δ a) (hmesh : ∀ a, ∀ i < n a, (t a (i + 1) : ℝ) - t a i ≤ δ a)
-    (hlim : Tendsto δ l (𝓝 0)) :
-    Tendsto (fun a ↦ ∫ ω, (∑ i ∈ range (n a), B (t a i) ω *
-      ((B (t a (i + 1)) ω - B (t a i) ω) ^ 2 - ((t a (i + 1) : ℝ) - t a i))) ^ 2 ∂P)
-        l (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using hlim.const_mul (2 * (T : ℝ) ^ 2))
-    (fun a ↦ integral_nonneg fun _ ↦ sq_nonneg _) ?_
-  exact fun a ↦ hB.integral_sq_sum_eval_mul_sq_sub_sub_le (ht a) (hT a) (hδ a) (hmesh a)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

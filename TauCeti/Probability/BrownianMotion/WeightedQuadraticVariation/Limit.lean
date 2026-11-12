@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.BrownianMotion.WeightedQuadraticVariation.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.RiemannSums
-import TauCeti.Probability.Moments.Chebyshev
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
@@ -47,8 +46,8 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B : ℝ≥0 → Ω → ℝ}
 
-/-- A uniform bound M on the expected squared predictable heights bounds the centered
-quadratic error by twice M times the horizon and the mesh. -/
+/-- A uniform bound M on the expected squared predictable heights bounds the second moment
+(mean square) of the centered quadratic error by twice M times the horizon and the mesh. -/
 theorem integral_sq_sum_mul_sq_sub_sub_le (hB : IsFilteredPreBrownianReal ℱ B P)
     {n : ℕ} {t : ℕ → ℝ≥0} (ht : MonotoneOn t (Iic n))
     {H : ℕ → Ω → ℝ} (hH : ∀ i < n, Measurable[ℱ (t i)] (H i))
@@ -112,19 +111,20 @@ theorem tendstoInMeasure_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ 
     TendstoInMeasure P (fun k ω ↦ ∑ i ∈ range (n k), H k i ω *
       ((B (t k (i + 1)) ω - B (t k i) ω) ^ 2 - ((t k (i + 1) : ℝ) - t k i)))
       l (fun _ ↦ 0) := by
-  refine tendstoInMeasure_iff_norm.mpr fun ε hε ↦ ?_
+  apply tendstoInMeasure_of_tendsto_eLpNorm (p := 2) two_ne_zero
   have hlim := ENNReal.continuous_ofReal.continuousAt.tendsto.comp
-    ((hB.tendsto_integral_sq_sum_mul_sq_sub_sub ht hH hHi hM hT hδ hmesh hlim).div_const (ε ^ 2))
-  simp only [zero_div, ENNReal.ofReal_zero, Function.comp_def] at hlim
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun k ↦ zero_le) fun k ↦ ?_
+    (hB.tendsto_integral_sq_sum_mul_sq_sub_sub ht hH hHi hM hT hδ hmesh hlim).sqrt
+  simp only [Real.sqrt_zero, ENNReal.ofReal_zero] at hlim
+  convert hlim using 1
+  ext k
+  simp only [Pi.sub_def, sub_zero]
   have hZ : MemLp (fun ω ↦ ∑ i ∈ range (n k), H k i ω *
       ((B (t k (i + 1)) ω - B (t k i) ω) ^ 2 - ((t k (i + 1) : ℝ) - t k i))) 2 P :=
     memLp_finsetSum _ fun i hi ↦ hB.memLp_mul_sq_sub_sub
       (ht k (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i))
       (hH k i (mem_range.mp hi)) (hHi k i (mem_range.mp hi))
-  simpa only [sub_zero, Real.norm_eq_abs, sq_abs] using
-    TauCeti.meas_ge_le_integral_norm_sq_div_sq hZ.norm.integrable_sq hε
+  rw [hZ.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top]
+  simp [Real.sqrt_eq_rpow, Real.norm_eq_abs]
 
 /-- Left-weighted Brownian quadratic sums converge in probability to the samplewise time
 integral of an adapted almost surely continuous process with uniformly bounded second moments.
