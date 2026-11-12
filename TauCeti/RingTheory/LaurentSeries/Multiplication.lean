@@ -15,7 +15,7 @@ A coefficient of a product is a finite convolution over the interval determined 
 order bounds on its factors. This form of the coefficient formula is useful when the bounds
 are specified in advance, rather than extracted from the supports.
 
-Over a nontrivial semiring without zero divisors, the order of a power of a nonzero Laurent
+Over a semiring without zero divisors, the order of a power of a nonzero Laurent
 series is the exponent times its integer order. In particular, a power greater than one
 strictly lowers a negative order.
 These formulas compare poles of a Laurent series and its powers.
