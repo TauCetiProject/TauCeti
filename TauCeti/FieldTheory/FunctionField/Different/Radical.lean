@@ -134,9 +134,6 @@ theorem differentExponent_eq_zero_of_pow_eq_of_dvd_ord {y : F'} {n : ℕ} {u : F
     rw [eq_top_iff, ← hgen, IntermediateField.adjoin_simple_le_iff, hyz]
     exact mul_mem (IntermediateField.mem_adjoin_simple_self F z)
       (IntermediateField.algebraMap_mem _ w)
-  have hz0 : z ≠ 0 := div_ne_zero (fun h0 ↦ by
-    rw [h0, zero_pow hn0, eq_comm, map_eq_zero] at hy
-    exact hu hy) hwF
   -- `z` is a unit at `P'`, since `n · ord_{P'} z = e(P' ∣ P) · ord_P c = 0`.
   have hordz : P'.ord z = 0 := by
     have := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_eq k F (P' := P') hz
@@ -176,7 +173,7 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
   · simp only [ord_zero, Int.gcd_zero_right, Int.natAbs_natCast] at h
     rw [differentExponent_eq_zero_of_pow_eq_of_dvd_ord k F hgen hy hn
       (by rw [ord_zero]; exact dvd_zero _), h]
-  obtain ⟨z, c, hgenz, hz, hc, hz0⟩ :=
+  obtain ⟨z, c, hgenz, hz, hc, _⟩ :=
     exists_adjoin_eq_top_pow_eq_ord_eq_one k F (P'.restrict k F) hgen hy hu h
   -- `d ≤ (n - 1) · ord_{P'} z`, while `n · ord_{P'} z = e(P' ∣ P) ≤ d + 1`; so `ord_{P'} z = 1`.
   have hd := differentExponent_le_mul_ord_of_pow_eq k F hgenz hz hn
@@ -218,7 +215,7 @@ private theorem ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq {y
   have hn0 : n ≠ 0 := by
     rintro rfl
     exact hn Nat.cast_zero
-  rcases eq_or_ne u 0 with rfl | hu
+  rcases eq_or_ne u 0 with rfl | _
   · simp only [ord_zero, Int.gcd_zero_right, Int.natAbs_natCast,
       Nat.div_self (Nat.pos_of_ne_zero hn0)]
     have hdvd : (n : ℤ) ∣ (P'.restrict k F).ord 0 := by rw [ord_zero]; exact dvd_zero _

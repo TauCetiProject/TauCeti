@@ -338,7 +338,7 @@ theorem trace_spinCGroupHalfSpinRep_neg_one_mk_spinTorus (w₁ w₂ z : Circle) 
         (spinCGroupHalfSpinRep o ρ (-1) hQ₀ (spinCGroup.mk Q hQ₀ (b.spinTorus hQ (w₁, w₂), z))) =
       (z : ℂ) * ((w₁ : ℂ) * (w₂ : ℂ)⁻¹ + (w₁ : ℂ)⁻¹ * w₂) := by
   rw [spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply, map_smul,
-    trace_halfSpinRep_neg_one_spinTorus b hQ ρ hb, finrank_eigenspace_chirality_neg o hQ ρ, h₂,
+    trace_halfSpinRep_neg_one_spinTorus b hQ ρ hb, finrank_eigenspace_chirality_neg o ρ, h₂,
     smul_eq_mul]
   have hw := Circle.coe_add_inv_coe (w₁ * w₂⁻¹)
   simp only [Circle.coe_mul, Circle.coe_inv, mul_inv, inv_inv] at hw

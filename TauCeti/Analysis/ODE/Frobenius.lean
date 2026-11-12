@@ -910,7 +910,7 @@ theorem eventually_exists_hasFDerivAt_iff_eventually_isFrobeniusIntegrableAt
       ∀ᶠ p in 𝓝 p₀, IsFrobeniusIntegrableAt f p := by
   constructor
   · intro h
-    filter_upwards [h, eventually_mem_nhds_iff.2 hs] with p ⟨u, hu₀, hu⟩ hsp
+    filter_upwards [h, eventually_mem_nhds_iff.2 hs] with p ⟨u, hu₀, hu⟩ _
     simpa [hu₀] using isFrobeniusIntegrableAt_of_eventually_hasFDerivAt hu
   · intro h
     filter_upwards [h.eventually_nhds, eventually_mem_nhds_iff.2 hs] with p hp hsp
