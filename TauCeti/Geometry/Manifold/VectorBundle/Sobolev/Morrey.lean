@@ -231,7 +231,7 @@ theorem toSection_smul (hp : 2 < p) (c : ℝ) (w : SobolevSection A volume p 1) 
     rw [SetLike.val_smul, map_smul, hy, Pi.smul_apply, hw, A.coord_smul i _ _ hyU]
 
 /-- Taking continuous representatives, as a real-linear map from `W^{1,p}(V)` to sections. -/
-@[expose] def toSectionₗ (hp : 2 < p) : SobolevSection A volume p 1 →ₗ[ℝ] ∀ x, V x where
+def toSectionₗ (hp : 2 < p) : SobolevSection A volume p 1 →ₗ[ℝ] ∀ x, V x where
   toFun := toSection hp
   map_add' := toSection_add hp
   map_smul' := toSection_smul hp
@@ -239,7 +239,7 @@ theorem toSection_smul (hp : 2 < p) (c : ℝ) (w : SobolevSection A volume p 1) 
 @[simp]
 theorem toSectionₗ_apply (hp : 2 < p) (w : SobolevSection A volume p 1) :
     toSectionₗ hp w = toSection hp w :=
-  rfl
+  (rfl)
 
 /-- The continuous representative of `0` is the zero section. -/
 @[simp]
