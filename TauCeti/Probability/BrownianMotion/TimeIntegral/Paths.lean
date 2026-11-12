@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.TimeIntegral.Basic
-public import TauCeti.MeasureTheory.Integral.Bochner.L2
+public import TauCeti.MeasureTheory.Integral.Bochner.Lp
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
@@ -52,7 +52,7 @@ theorem coeFn_integral_toL2 (hB : IsPreBrownianReal B P) {a b : ℝ≥0} (hab : 
   simp only [intervalIntegral.integral_of_le hab']
   have hi : IntegrableOn (fun u : ℝ ↦ hB.toL2 u.toNNReal) (Ioc (a : ℝ) b) volume :=
     hB.continuous_toL2_toNNReal.integrableOn_Icc.mono_set Ioc_subset_Icc_self
-  exact hi.coeFn_integral_L2 hm (Eventually.of_forall fun u ↦ hB.coeFn_toL2 u.toNNReal)
+  exact hi.coeFn_integral_Lp hm (Eventually.of_forall fun u ↦ hB.coeFn_toL2 u.toNNReal)
 
 /-- The ordinary Brownian time integral is square integrable whenever its integrand is
 jointly a.e. strongly measurable on the interval. -/
@@ -87,7 +87,7 @@ theorem coeFn_sum_leftRiemannError (hB : IsPreBrownianReal B P)
 
 /-- The exact second moment of ordinary Brownian left-rectangle quadrature error is
 one third of the sum of cubed cell lengths. Empty grids and repeated dates are allowed. -/
-theorem integral_sq_sum_leftRiemannError (hB : IsPreBrownianReal B P)
+theorem integral_sq_sum_mul_sub_integral (hB : IsPreBrownianReal B P)
     (t : ℕ → ℝ≥0) (ht : Monotone t) (n : ℕ)
     (hm : AEStronglyMeasurable (fun p : ℝ × Ω ↦ B p.1.toNNReal p.2)
       ((volume.restrict (Ioc (t 0 : ℝ) (t n))).prod P)) :
@@ -101,7 +101,7 @@ theorem integral_sq_sum_leftRiemannError (hB : IsPreBrownianReal B P)
 
 /-- Actual Brownian quadrature errors are square integrable, not merely random
 variables with a formally computed Bochner second moment. -/
-theorem memLp_sum_leftRiemannError (hB : IsPreBrownianReal B P)
+theorem memLp_sum_mul_sub_integral (hB : IsPreBrownianReal B P)
     (t : ℕ → ℝ≥0) (n : ℕ) (hspan : t 0 ≤ t n)
     (hm : AEStronglyMeasurable (fun p : ℝ × Ω ↦ B p.1.toNNReal p.2)
       ((volume.restrict (Ioc (t 0 : ℝ) (t n))).prod P)) :
@@ -111,7 +111,7 @@ theorem memLp_sum_leftRiemannError (hB : IsPreBrownianReal B P)
 
 /-- Ordinary Brownian quadrature errors converge in probability on bounded horizons
 along any vanishing-mesh family, with no nesting requirement. -/
-theorem tendstoInMeasure_sum_leftRiemannError (hB : IsPreBrownianReal B P)
+theorem tendstoInMeasure_sum_mul_sub_integral_zero (hB : IsPreBrownianReal B P)
     {ι : Type*} {l : Filter ι} {t : ι → ℕ → ℝ≥0} {n : ι → ℕ} {δ : ι → ℝ}
     (ht : ∀ k, Monotone (t k)) {T : ℝ≥0} (hT : ∀ k, t k (n k) ≤ T)
     (hδ : ∀ k i, i < n k → (t k (i + 1) : ℝ) - t k i ≤ δ k)
