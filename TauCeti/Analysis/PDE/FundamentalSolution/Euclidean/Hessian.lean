@@ -60,7 +60,7 @@ noncomputable section
 
 namespace TauCeti
 
-open InnerProductSpace MeasureTheory Metric
+open Filter InnerProductSpace MeasureTheory Metric Topology
 
 open scoped RealInnerProductSpace
 
@@ -87,31 +87,25 @@ private theorem not_differentiableAt_fderiv_newtonianKernel_zero (hn : n ≠ 2) 
     ¬ DifferentiableAt ℝ (fderiv ℝ (newtonianKernel n)) 0 := by
   intro hd
   have : NeZero n := ⟨hn0⟩
-  set e : EuclideanSpace ℝ (Fin n) := EuclideanSpace.single 0 1
-  have he : ‖e‖ = 1 := by simp [e]
   set c : ℝ := ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
   have hc : 0 < c := by
     have := volume_real_unitBall_pos n
     have : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn0)
     positivity
-  have hg : ContinuousAt (fun s : ℝ ↦ fderiv ℝ (newtonianKernel n) (s • e) e) 0 :=
-    (ContinuousLinearMap.apply ℝ ℝ e).continuous.continuousAt.comp
-      (hd.continuousAt.comp_of_eq (continuousAt_id.smul_const e) (zero_smul ℝ e))
-  have hlim := hg.tendsto.mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
-  simp only [zero_smul, fderiv_newtonianKernel_zero, zero_apply] at hlim
-  obtain ⟨t, ht, htlt⟩ := ((hlim.eventually (Metric.ball_mem_nhds _ hc)).and
-    (Ioo_mem_nhdsGT one_pos)).exists
-  have hval : fderiv ℝ (newtonianKernel n) (t • e) e = -(c * t ^ (1 - (n : ℝ))) := by
-    rw [fderiv_newtonianKernel_apply n hn (t • e) e]
-    simp only [norm_smul, real_inner_smul_left, real_inner_self_eq_norm_sq, he, Real.norm_eq_abs,
-      abs_of_pos htlt.1, c, sub_eq_add_neg, Real.rpow_add htlt.1, Real.rpow_one]
-    field_simp
-  have hge : 1 ≤ t ^ (1 - (n : ℝ)) :=
-    Real.one_le_rpow_of_pos_of_le_one_of_nonpos htlt.1 htlt.2.le (by
-      have : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn0
-      linarith)
-  rw [Real.dist_eq, sub_zero, hval, abs_neg,
-    abs_of_pos (mul_pos hc (Real.rpow_pos_of_pos htlt.1 _))] at ht
+  -- Continuity of the gradient at the pole forces `‖∇Gₙ x‖ → 0`, but `‖∇Gₙ x‖ = c ‖x‖ ^ (1 - n)`
+  -- is at least `c` for `0 < ‖x‖ ≤ 1`.
+  have hlim : Tendsto (fun x : EuclideanSpace ℝ (Fin n) ↦ ‖fderiv ℝ (newtonianKernel n) x‖)
+      (𝓝[≠] 0) (𝓝 0) := by
+    simpa using hd.continuousAt.norm.tendsto.mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
+  obtain ⟨x, hxc, hx0, hx1⟩ := ((hlim.eventually (gt_mem_nhds hc)).and
+    (eventually_mem_nhdsWithin.and
+      (nhdsWithin_le_nhds (Metric.ball_mem_nhds _ one_pos)))).exists
+  rw [norm_fderiv_newtonianKernel n hn hx0] at hxc
+  have hge : 1 ≤ ‖x‖ ^ (1 - (n : ℝ)) :=
+    Real.one_le_rpow_of_pos_of_le_one_of_nonpos (norm_pos_iff.2 hx0)
+      (mem_ball_zero_iff.1 hx1).le (by
+        have : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn0
+        linarith)
   nlinarith
 
 /-- The Hessian of the totalized Newtonian kernel vanishes at the pole, in every dimension: in

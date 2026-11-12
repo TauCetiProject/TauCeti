@@ -119,7 +119,6 @@ theorem newtonianKernel_ne_zero (n : ℕ) (hn : n ≠ 2) {x : EuclideanSpace ℝ
   have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by rintro rfl; exact hx (Subsingleton.elim _ _))
   have hn2 : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
   have hvol := (volume_real_unitBall_pos n).ne'
-  have hx' : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
   rw [newtonianKernel_def]
   positivity
 
