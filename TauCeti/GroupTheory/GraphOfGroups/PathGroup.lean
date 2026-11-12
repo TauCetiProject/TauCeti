@@ -65,7 +65,7 @@ private def fromTreePresentation : GraphOfGroups.π₁Tree 𝔸 T.darts →* Pat
 @[simp] private theorem toTreePresentation_loop (e : Γ.E) :
     T.toTreePresentation v 𝔸 (T.loop v e) = GraphOfGroups.π₁Tree.edge T.darts e := by
   simp [loop_def, Quiver.Path.weight_comp,
-    T.weight_path (fun _ => GraphOfGroups.π₁Tree.edge_eq_one (𝔸 := 𝔸))]
+    T.weight_path_eq_one (fun _ => GraphOfGroups.π₁Tree.edge_eq_one (𝔸 := 𝔸))]
 
 private theorem fromTreePresentation_weight {a b : Γ.V} (p : Γ.Path a b) :
     T.fromTreePresentation v 𝔸

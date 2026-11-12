@@ -265,8 +265,9 @@ theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e :=
 
 /-- A dart weight that is trivial on the darts of a spanning tree is trivial along every tree
 path. -/
-theorem weight_path {M : Type*} [Monoid M] {wt : Γ.E → M} (hwt : ∀ e ∈ T.darts, wt e = 1)
-    (a b : Γ.V) : (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
+theorem weight_path_eq_one {M : Type*} [Monoid M] {wt : Γ.E → M}
+    (hwt : ∀ e ∈ T.darts, wt e = 1) (a b : Γ.V) :
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
   have key {a b : Γ.V} (p : Γ.Path a b) (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) :
       p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
     induction p with

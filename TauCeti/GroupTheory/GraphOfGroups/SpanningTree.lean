@@ -17,8 +17,9 @@ spanning tree of `Γ`, with tree paths `[a, b]_T`. The two models of the fundame
 agree: reading the letters of closed `𝔸`-paths at `v₀` is an isomorphism
 `π₁(𝔸, v₀) ≃* π₁(𝔸, T)`. Its inverse sends `g ∈ A_v` to the class of `[v₀, v]_T g [v, v₀]_T` and
 the generator of a dart `e` to the class of the loop `[v₀, src e]_T e [tgt e, v₀]_T`; these
-classes generate `π₁(𝔸, v₀)`, and more precisely the inverse reads any `𝔸`-path `p` from `a`
-to `b` as the class of `[v₀, a]_T p [b, v₀]_T`.
+classes generate `π₁(𝔸, v₀)`. More generally, reading the letters of an `𝔸`-path `p` from `a` to
+`b` gives an element of `π₁(𝔸, T)`, which the inverse sends to the class of
+`[v₀, a]_T p [b, v₀]_T`.
 
 ## Main definitions
 
@@ -28,8 +29,8 @@ to `b` as the class of `[v₀, a]_T p [b, v₀]_T`.
 
 * `TauCeti.GraphOfGroups.π₁Equiv_symm_of`, `TauCeti.GraphOfGroups.π₁Equiv_symm_edge`: the
   inverse on the generators of `π₁(𝔸, T)`.
-* `TauCeti.GraphOfGroups.π₁Equiv_symm_toπ₁Tree`: the inverse reads an `𝔸`-path letter by
-  letter.
+* `TauCeti.GraphOfGroups.π₁Equiv_symm_toπ₁Tree`: the inverse sends the element of `π₁(𝔸, T)`
+  read off an `𝔸`-path `p` from `a` to `b` to the class of `[v₀, a]_T p [b, v₀]_T`.
 
 ## References
 
@@ -117,7 +118,8 @@ private noncomputable def ofπ₁Tree : π₁Tree 𝔸 T.darts →* π₁ 𝔸 v
     (fun e he => by simp [he]) (fun e => by simp)
     (based_rel 𝔸 v₀ T)
 
-/-- The inverse reads an `𝔸`-path letter by letter, based along the tree. -/
+/-- The inverse sends the element of `π₁(𝔸, T)` read off an `𝔸`-path to the class of the path
+based along the tree. -/
 private theorem ofπ₁Tree_toπ₁Tree {x y : 𝔸.LetterVertex} (p : 𝔸.Path x y) :
     ofπ₁Tree 𝔸 v₀ T (Path.toπ₁Tree T.darts p) = based 𝔸 v₀ T p := by
   induction p with
@@ -134,11 +136,16 @@ private theorem ofπ₁Tree_toπ₁Tree {x y : 𝔸.LetterVertex} (p : 𝔸.Path
       rw [hd, ← Path.ofDart_def, based_ofDart]
       simp [ofπ₁Tree]
 
+/-- The dart generators of `π₁(𝔸, T)` along a tree path multiply to `1`. -/
+@[simp] theorem π₁Tree.weight_path_edge_eq_one (a b : Γ.V) :
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T.darts e.1) = 1 :=
+  T.weight_path_eq_one (fun _ => π₁Tree.edge_eq_one) a b
+
 private theorem toπ₁Tree_comp_ofπ₁Tree :
     (π₁.toπ₁Tree 𝔸 v₀ T.darts).comp (ofπ₁Tree 𝔸 v₀ T) = MonoidHom.id _ := by
   -- Tree paths read as `1` in `π₁(𝔸, T)`, so each generator is sent back to itself.
   refine π₁Tree.hom_ext (fun v => MonoidHom.ext fun g => ?_) fun e => ?_ <;>
-    simp [ofπ₁Tree, SpanningTree.loop_def, T.weight_path (fun _ => π₁Tree.edge_eq_one)]
+    simp [ofπ₁Tree, SpanningTree.loop_def]
 
 /-! ### The isomorphism -/
 
@@ -171,7 +178,7 @@ theorem π₁Equiv_apply (g : π₁ 𝔸 v₀) : π₁Equiv 𝔸 v₀ T g = π�
   π₁Tree.lift_edge ..
 
 /-- `π₁Equiv` sends the class of `[v₀, v]_T g [v, v₀]_T` to `g ∈ A_v`. -/
-@[simp] theorem π₁Equiv_vertexHom (v : Γ.V) (g : 𝔸.vertexGroup v) :
+@[simp] theorem π₁Equiv_vertexHom_mapPath_path (v : Γ.V) (g : 𝔸.vertexGroup v) :
     π₁Equiv 𝔸 v₀ T (π₁.vertexHom ((dartPrefunctor 𝔸).mapPath (T.path v₀ v)) g) =
       π₁Tree.of T.darts v g := by
   rw [← π₁Equiv_symm_of, MulEquiv.apply_symm_apply]
@@ -182,9 +189,9 @@ the dart `e`. -/
     π₁Equiv 𝔸 v₀ T (π₁.ofPathGroup 𝔸 v₀ (T.loop v₀ e)) = π₁Tree.edge T.darts e := by
   rw [← π₁Equiv_symm_edge, MulEquiv.apply_symm_apply]
 
-/-- The inverse of `π₁Equiv` reads an `𝔸`-path `p` from `a` to `b` as the class of the loop
-`[v₀, a]_T p [b, v₀]_T`. -/
-theorem π₁Equiv_symm_toπ₁Tree {a b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+/-- The inverse of `π₁Equiv` sends the element of `π₁(𝔸, T)` read off an `𝔸`-path `p` from `a`
+to `b` to the class of the loop `[v₀, a]_T p [b, v₀]_T`. -/
+@[simp] theorem π₁Equiv_symm_toπ₁Tree {a b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     (π₁Equiv 𝔸 v₀ T).symm (p.toπ₁Tree T.darts) =
       π₁.mk ((((dartPrefunctor 𝔸).mapPath (T.path v₀ a)).comp p).comp
         ((dartPrefunctor 𝔸).mapPath (T.path b v₀))) :=
