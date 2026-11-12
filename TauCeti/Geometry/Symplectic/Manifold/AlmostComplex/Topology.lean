@@ -28,7 +28,8 @@ structures are the subtypes `{J // ω.Tames J}` and `{J // ω.Compatible J}` wit
 topology. Invariance of `ω` is a closed condition, so the compatible structures form a closed
 subspace of the tame ones. Tameness is a pointwise open condition, but it is not open for this
 topology on a noncompact manifold, so no openness is asserted. Nonemptiness of these spaces for a
-nondegenerate form is `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible`.
+nondegenerate form on a Hausdorff σ-compact manifold is
+`TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible`.
 
 ## Main declarations
 
