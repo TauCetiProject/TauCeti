@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
-import TauCeti.LinearAlgebra.Basis.Semilinear
-import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The torsion of a based two-periodic complex over a field
@@ -23,8 +21,8 @@ the sequences
 
 are short exact, so bases `b₀` of `B₀`, `b₁` of `B₁` and lifts `s₀ ⊆ C₀` of `b₁` and `s₁ ⊆ C₁`
 of `b₀` give ordered bases `(b₀, s₀)` of `C₀` and `(b₁, s₁)` of `C₁`. Their determinants with
-respect to `c 0` and `c 1` are the *brackets* (`HomologicalComplex.periodicTorsionBracket`), and the
-torsion of `C` is their quotient
+respect to `c 0` and `c 1` are the *brackets* (`HomologicalComplex.torsionBracket`, shared with the
+torsion of `ℤ`-graded complexes), and the torsion of `C` is their quotient
 
 `τ(C) = [b₁ s₁ / c₁] / [b₀ s₀ / c₀]`
 
@@ -57,8 +55,9 @@ complexes (`HomologicalComplex.periodicReidemeisterTorsion_map`).
 
 ## Main declarations
 
-* `HomologicalComplex.periodicTorsionBracket`: the bracket `[bᵢ sᵢ / cᵢ]` of a parity.
 * `HomologicalComplex.periodicReidemeisterTorsion`: the torsion of a based two-periodic complex.
+* `HomologicalComplex.periodicReidemeisterTorsion_of_acyclic`: the torsion of an acyclic complex is
+  the quotient of the odd and even brackets for the chosen boundary bases and lifts.
 * `HomologicalComplex.periodicReidemeisterTorsion_eq`: the torsion is the quotient of the odd and
   even brackets for any boundary bases and lifts.
 * `HomologicalComplex.periodicReidemeisterTorsion_eq_zero_iff`: the torsion vanishes if and only
@@ -95,164 +94,6 @@ variable {F : Type*} [Field F] (C : CochainComplex (ModuleCat F) (ZMod 2))
 
 variable {n : ZMod 2 → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
 
-/-- In `ZMod 2`, the parity after the parity after `i` is `i`. -/
-private theorem add_one_eq_of_add_one_eq {i j : ZMod 2} (hij : i + 1 = j) : j + 1 = i := by
-  subst hij
-  fin_cases i <;> rfl
-
-section Bracket
-
-variable {C} {i j : ZMod 2} (hij : i + 1 = j) (h : C.ExactAt i) {p q : ℕ}
-  (b : Basis (Fin p) F (LinearMap.range (C.d j i).hom))
-  (b' : Basis (Fin q) F (LinearMap.range (C.d i j).hom))
-  (s : Fin q → C.X i) (hs : ∀ k, (C.d i j).hom (s k) = b' k)
-
-include hij h in
-/-- At a parity `i` where a two-periodic complex is exact, the image of the differential into `Cᵢ`
-and the corestriction of the differential out of `Cᵢ` form a short exact sequence. -/
-private theorem exact_periodic :
-    Function.Exact (LinearMap.range (C.d j i).hom).subtype (C.d i j).hom.rangeRestrict :=
-  exact_subtype_rangeRestrict
-    ((ComplexShape.up (ZMod 2)).prev_eq' (add_one_eq_of_add_one_eq hij))
-    ((ComplexShape.up (ZMod 2)).next_eq' hij) h
-
-/-- The basis `(b, s)` of `Cᵢ` made of a basis `b` of the boundaries `Bᵢ` followed by lifts `s` of
-a basis `b'` of the boundaries `Bᵢ₊₁`. -/
-private def periodicBracketBasis : Basis (Fin p ⊕ Fin q) F (C.X i) :=
-  Basis.ofExactLift (Submodule.injective_subtype _) (exact_periodic hij h) b b' s
-    fun k ↦ Subtype.ext (hs k)
-
-include c hij h b b' in
-/-- At a parity `i` where `C` is exact, the dimension `n i` of `Cᵢ` is the sum of the dimensions
-`p` and `q` of the boundaries `Bᵢ` and `Bᵢ₊₁`. -/
-theorem eq_add_of_periodic_exactAt : n i = p + q := by
-  let _ : Module.Finite F (C.X i) := .of_basis (c i)
-  have hdim := (exact_periodic hij h).finrank_eq_add (Submodule.injective_subtype _)
-    (C.d i j).hom.surjective_rangeRestrict
-  simpa only [finrank_eq_card_basis (c i), finrank_eq_card_basis b, finrank_eq_card_basis b',
-    Fintype.card_fin] using hdim
-
-/-- The bracket `[b s / cᵢ]` of a two-periodic complex at the parity `i`: the determinant, with
-respect to the basis `c i` of `Cᵢ`, of the family made of a basis `b` of the boundaries
-`Bᵢ ⊆ Cᵢ` followed by lifts `s` of a basis `b'` of the boundaries `Bᵢ₊₁ ⊆ Cᵢ₊₁`. -/
-def periodicTorsionBracket : F :=
-  ((c i).reindex ((finCongr (eq_add_of_periodic_exactAt c hij h b b')).trans
-    finSumFinEquiv.symm)).det (periodicBracketBasis hij h b b' s hs)
-
-/-- The bracket `[b s / cᵢ]` is the determinant, with respect to the basis `c i` of `Cᵢ`, of the
-family `(b, s)` obtained by appending the lifts `s` to the basis `b` of the boundaries `Bᵢ`. -/
-theorem periodicTorsionBracket_eq_det_append (hn : n i = p + q) :
-    periodicTorsionBracket c hij h b b' s hs =
-      (c i).det (Fin.append (fun k ↦ (b k : C.X i)) s ∘ Fin.cast hn) := by
-  rw [periodicTorsionBracket, Basis.det_reindex]
-  congr 1
-  ext k
-  obtain ⟨m, rfl⟩ := (finCongr hn.symm).surjective k
-  induction m using Fin.addCases <;> simp [periodicBracketBasis]
-
-/-- Reindexing the boundary bases of a bracket along equalities of their lengths does not change
-the bracket. -/
-private theorem periodicTorsionBracket_reindex {p' q' : ℕ} (hp : p = p') (hq : q = q') :
-    periodicTorsionBracket c hij h (b.reindex (finCongr hp)) (b'.reindex (finCongr hq))
-      (s ∘ Fin.cast hq.symm) (fun k ↦ by simp [hs]) = periodicTorsionBracket c hij h b b' s hs := by
-  subst hp hq
-  congr 1 <;> simp
-
-/-- Replacing the boundary bases and the lifts in a bracket multiplies it by the determinants of
-the new boundary bases with respect to the old ones; in particular the bracket does not depend on
-the lifts. -/
-theorem periodicTorsionBracket_eq_mul
-    (b₂ : Basis (Fin p) F (LinearMap.range (C.d j i).hom))
-    (b₂' : Basis (Fin q) F (LinearMap.range (C.d i j).hom))
-    (s₂ : Fin q → C.X i) (hs₂ : ∀ k, (C.d i j).hom (s₂ k) = b₂' k) :
-    periodicTorsionBracket c hij h b₂ b₂' s₂ hs₂ =
-      periodicTorsionBracket c hij h b b' s hs * (b.det b₂ * b'.det b₂') := by
-  simp only [periodicTorsionBracket, periodicBracketBasis]
-  exact Basis.det_ofExactLift _ _ _ _ _ _ _ _ _ _ _
-
-/-- Replacing the basis `c i` of `Cᵢ` by `c' i` multiplies a bracket by the determinant of
-`c i` with respect to `c' i`. -/
-theorem periodicTorsionBracket_eq_det_mul (c' : ∀ i, Basis (Fin (n i)) F (C.X i)) :
-    periodicTorsionBracket c' hij h b b' s hs =
-      (c' i).det (c i) * periodicTorsionBracket c hij h b b' s hs := by
-  rw [periodicTorsionBracket, periodicTorsionBracket, ← Basis.det_mul_det _ ((c i).reindex
-    ((finCongr (eq_add_of_periodic_exactAt c hij h b b')).trans finSumFinEquiv.symm))]
-  simp [Basis.det_reindex, Function.comp_assoc, -Equiv.symm_trans, -Equiv.coe_trans]
-
-/-- A bracket is nonzero. -/
-theorem periodicTorsionBracket_ne_zero : periodicTorsionBracket c hij h b b' s hs ≠ 0 :=
-  (Basis.isUnit_det _ _).ne_zero
-
-/-- The bracket at a parity where the complex vanishes is `1`. -/
-@[simp]
-theorem periodicTorsionBracket_eq_one (hn : n i = 0) :
-    periodicTorsionBracket c hij h b b' s hs = 1 := by
-  have : IsEmpty (Fin (n i)) := by rw [hn]; infer_instance
-  simp [periodicTorsionBracket, Basis.det_reindex]
-
-/-- In a parity `i` where the boundaries `Bᵢ` fill `Cᵢ` (that is, `Bᵢ₊₁ = 0`, as the dimension
-`n i` is `p`), the bracket is the determinant of the basis `b` of `Bᵢ`. -/
-theorem periodicTorsionBracket_eq_det_left (hp : n i = p) :
-    periodicTorsionBracket c hij h b b' s hs =
-      (c i).det fun k ↦ (b (Fin.cast hp k) : C.X i) := by
-  have hq : q = 0 := by have := eq_add_of_periodic_exactAt c hij h b b'; omega
-  subst hq
-  rw [periodicTorsionBracket, Basis.det_reindex]
-  congr 1
-  ext k
-  have : Fin.cast (eq_add_of_periodic_exactAt c hij h b b') k = Fin.castAdd 0 (Fin.cast hp k) :=
-    Fin.ext rfl
-  rw [Function.comp_apply, Equiv.trans_apply, finCongr_apply, this,
-    finSumFinEquiv_symm_apply_castAdd, periodicBracketBasis, Basis.ofExactLift_inl]
-  rfl
-
-/-- In a parity `i` where `Cᵢ` has no nonzero boundaries (that is, `Bᵢ = 0`, as the dimension
-`n i` is `q`), the bracket is the determinant of the lifts `s` of the basis `b'` of `Bᵢ₊₁`. -/
-theorem periodicTorsionBracket_eq_det_right (hq : n i = q) :
-    periodicTorsionBracket c hij h b b' s hs = (c i).det (s ∘ Fin.cast hq) := by
-  have hp : p = 0 := by have := eq_add_of_periodic_exactAt c hij h b b'; omega
-  subst hp
-  rw [periodicTorsionBracket, Basis.det_reindex]
-  congr 1
-  ext k
-  have : Fin.cast (eq_add_of_periodic_exactAt c hij h b b') k = Fin.natAdd 0 (Fin.cast hq k) :=
-    Fin.ext (by simp)
-  rw [Function.comp_apply, Equiv.trans_apply, finCongr_apply, this,
-    finSumFinEquiv_symm_apply_natAdd, periodicBracketBasis, Basis.ofExactLift_inr]
-  rfl
-
-end Bracket
-
-/-- The basis `Module.finBasis` of the boundaries, the image of the differential `Cⱼ → Cᵢ`, used to
-define the torsion of a based two-periodic complex. -/
-def periodicBoundaryBasis (j i : ZMod 2) :
-    Basis (Fin (finrank F (LinearMap.range (C.d j i).hom))) F (LinearMap.range (C.d j i).hom) :=
-  haveI : Module.Finite F (C.X j) := .of_basis (c j)
-  finBasis F _
-
-/-- Lifts of `periodicBoundaryBasis C c j i` through the differential, chosen by
-`Function.surjInv`. -/
-def periodicBoundaryLift (j i : ZMod 2)
-    (k : Fin (finrank F (LinearMap.range (C.d j i).hom))) : C.X j :=
-  Function.surjInv (C.d j i).hom.surjective_rangeRestrict (periodicBoundaryBasis C c j i k)
-
-/-- The lifts `periodicBoundaryLift C c j i` are mapped by the differential to the basis
-`periodicBoundaryBasis C c j i`. -/
-@[simp]
-theorem periodicBoundaryLift_spec (j i : ZMod 2) (k) :
-    (C.d j i).hom (periodicBoundaryLift C c j i k) = periodicBoundaryBasis C c j i k :=
-  congrArg Subtype.val (Function.surjInv_eq (C.d j i).hom.surjective_rangeRestrict _)
-
-/-- The quotient of the odd and even brackets of an acyclic two-periodic complex, for the bases
-`periodicBoundaryBasis` of the boundaries and the lifts `periodicBoundaryLift`. -/
-private def periodicTorsionOfAcyclic (h : C.Acyclic) : F :=
-  periodicTorsionBracket c (i := 1) (j := 0) rfl (h 1) (periodicBoundaryBasis C c 0 1)
-      (periodicBoundaryBasis C c 1 0) (periodicBoundaryLift C c 1 0)
-      (periodicBoundaryLift_spec C c 1 0) /
-    periodicTorsionBracket c (i := 0) (j := 1) rfl (h 0) (periodicBoundaryBasis C c 1 0)
-      (periodicBoundaryBasis C c 0 1) (periodicBoundaryLift C c 0 1)
-      (periodicBoundaryLift_spec C c 0 1)
-
 /-- The torsion of a two-periodic complex of vector spaces with ordered bases `c 0` of the even
 space and `c 1` of the odd space: the quotient `[b₁ s₁ / c₁] / [b₀ s₀ / c₀]` of the odd and even
 brackets when `C` is acyclic, for a choice of bases `bᵢ` of the boundaries `Bᵢ ⊆ Cᵢ` and lifts
@@ -260,7 +101,26 @@ brackets when `C` is acyclic, for a choice of bases `bᵢ` of the boundaries `B�
 (`periodicReidemeisterTorsion_eq`). -/
 def periodicReidemeisterTorsion : F := by
   classical
-  exact if h : C.Acyclic then periodicTorsionOfAcyclic C c h else 0
+  exact if h : C.Acyclic then
+    torsionBracket c (by simp +decide) (by simp +decide) (h 1) (chosenBoundaryBasis C c 0 1)
+        (chosenBoundaryBasis C c 1 0) (chosenBoundaryLift C c 1 0)
+        (chosenBoundaryLift_spec C c 1 0) /
+      torsionBracket c (by simp +decide) (by simp +decide) (h 0) (chosenBoundaryBasis C c 1 0)
+        (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
+        (chosenBoundaryLift_spec C c 0 1)
+  else 0
+
+/-- The torsion of an acyclic two-periodic complex is the quotient of the odd and even brackets,
+for the bases `chosenBoundaryBasis` of the boundaries and the lifts `chosenBoundaryLift`. -/
+theorem periodicReidemeisterTorsion_of_acyclic (h : C.Acyclic) :
+    C.periodicReidemeisterTorsion c =
+      torsionBracket c (by simp +decide) (by simp +decide) (h 1) (chosenBoundaryBasis C c 0 1)
+          (chosenBoundaryBasis C c 1 0) (chosenBoundaryLift C c 1 0)
+          (chosenBoundaryLift_spec C c 1 0) /
+        torsionBracket c (by simp +decide) (by simp +decide) (h 0) (chosenBoundaryBasis C c 1 0)
+          (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
+          (chosenBoundaryLift_spec C c 0 1) :=
+  dite_eq_left h
 
 /-- The torsion of a two-periodic complex that is not acyclic is `0`. -/
 @[simp]
@@ -279,23 +139,23 @@ theorem periodicReidemeisterTorsion_eq (h : C.Acyclic) {p q : ℕ}
     (s₀ : Fin q → C.X 0) (hs₀ : ∀ k, (C.d 0 1).hom (s₀ k) = b₁ k)
     (s₁ : Fin p → C.X 1) (hs₁ : ∀ k, (C.d 1 0).hom (s₁ k) = b₀ k) :
     C.periodicReidemeisterTorsion c =
-      periodicTorsionBracket c (i := 1) (j := 0) rfl (h 1) b₁ b₀ s₁ hs₁ /
-        periodicTorsionBracket c (i := 0) (j := 1) rfl (h 0) b₀ b₁ s₀ hs₀ := by
+      torsionBracket c (by simp +decide) (by simp +decide) (h 1) b₁ b₀ s₁ hs₁ /
+        torsionBracket c (by simp +decide) (by simp +decide) (h 0) b₀ b₁ s₀ hs₀ := by
   have hp : p = finrank F (LinearMap.range (C.d 1 0).hom) := by
     rw [finrank_eq_card_basis b₀, Fintype.card_fin]
   have hq : q = finrank F (LinearMap.range (C.d 0 1).hom) := by
     rw [finrank_eq_card_basis b₁, Fintype.card_fin]
   -- Compare both brackets with those of the reindexed bases, and these with the chosen ones:
   -- the changes of boundary bases multiply both brackets by the same nonzero factor.
-  rw [periodicReidemeisterTorsion, dite_eq_left h, periodicTorsionOfAcyclic,
-    ← periodicTorsionBracket_reindex c rfl (h 1) b₁ b₀ s₁ hs₁ hq hp,
-    ← periodicTorsionBracket_reindex c rfl (h 0) b₀ b₁ s₀ hs₀ hp hq,
-    periodicTorsionBracket_eq_mul c rfl (h 1) (periodicBoundaryBasis C c 0 1)
-      (periodicBoundaryBasis C c 1 0) (periodicBoundaryLift C c 1 0)
-      (periodicBoundaryLift_spec C c 1 0) (b₁.reindex (finCongr hq)) (b₀.reindex (finCongr hp)),
-    periodicTorsionBracket_eq_mul c rfl (h 0) (periodicBoundaryBasis C c 1 0)
-      (periodicBoundaryBasis C c 0 1) (periodicBoundaryLift C c 0 1)
-      (periodicBoundaryLift_spec C c 0 1) (b₀.reindex (finCongr hp)) (b₁.reindex (finCongr hq)),
+  rw [periodicReidemeisterTorsion_of_acyclic C c h,
+    ← torsionBracket_reindex c _ _ (h 1) b₁ b₀ s₁ hs₁ hq hp,
+    ← torsionBracket_reindex c _ _ (h 0) b₀ b₁ s₀ hs₀ hp hq,
+    torsionBracket_eq_mul c _ _ (h 1) (chosenBoundaryBasis C c 0 1) (chosenBoundaryBasis C c 1 0)
+      (chosenBoundaryLift C c 1 0) (chosenBoundaryLift_spec C c 1 0) (b₁.reindex (finCongr hq))
+      (b₀.reindex (finCongr hp)),
+    torsionBracket_eq_mul c _ _ (h 0) (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1)
+      (chosenBoundaryLift C c 0 1) (chosenBoundaryLift_spec C c 0 1) (b₀.reindex (finCongr hp))
+      (b₁.reindex (finCongr hq)),
     mul_comm (Basis.det _ (b₀.reindex _)),
     mul_div_mul_right _ _ (mul_ne_zero (Basis.isUnit_det _ _).ne_zero
       (Basis.isUnit_det _ _).ne_zero)]
@@ -303,9 +163,9 @@ theorem periodicReidemeisterTorsion_eq (h : C.Acyclic) {p q : ℕ}
 /-- The torsion of an acyclic two-periodic complex is nonzero. -/
 theorem periodicReidemeisterTorsion_ne_zero (h : C.Acyclic) :
     C.periodicReidemeisterTorsion c ≠ 0 := by
-  rw [periodicReidemeisterTorsion, dite_eq_left h, periodicTorsionOfAcyclic]
-  exact div_ne_zero (periodicTorsionBracket_ne_zero _ _ _ _ _ _ _)
-    (periodicTorsionBracket_ne_zero _ _ _ _ _ _ _)
+  rw [periodicReidemeisterTorsion_of_acyclic C c h]
+  exact div_ne_zero (torsionBracket_ne_zero _ _ _ _ _ _ _ _)
+    (torsionBracket_ne_zero _ _ _ _ _ _ _ _)
 
 /-- The torsion of a based two-periodic complex vanishes if and only if the complex is not
 acyclic. -/
@@ -322,10 +182,10 @@ include c h in
 /-- An acyclic two-periodic complex has bases of the same size in both parities: both `C₀` and
 `C₁` have dimension `dim B₀ + dim B₁`. -/
 theorem card_eq_card_of_periodic_acyclic : n 0 = n 1 := by
-  have h₀ := eq_add_of_periodic_exactAt c (i := 0) (j := 1) rfl (h 0)
-    (periodicBoundaryBasis C c 1 0) (periodicBoundaryBasis C c 0 1)
-  have h₁ := eq_add_of_periodic_exactAt c (i := 1) (j := 0) rfl (h 1)
-    (periodicBoundaryBasis C c 0 1) (periodicBoundaryBasis C c 1 0)
+  have h₀ := eq_add_of_exactAt c (by simp +decide) (by simp +decide) (h 0)
+    (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1)
+  have h₁ := eq_add_of_exactAt c (by simp +decide) (by simp +decide) (h 1)
+    (chosenBoundaryBasis C c 0 1) (chosenBoundaryBasis C c 1 0)
   omega
 
 end Acyclic
@@ -345,12 +205,8 @@ theorem periodicReidemeisterTorsion_eq_one (h₀ : n 0 = 0) (h₁ : n 1 = 0) :
     have : IsEmpty (Fin (n i)) := by rw [hn i]; infer_instance
     have : Subsingleton (C.X i) := (c i).repr.toEquiv.subsingleton
     exact ModuleCat.isZero_of_subsingleton (C.X i)
-  rw [periodicReidemeisterTorsion_eq h (periodicBoundaryBasis C c 1 0)
-      (periodicBoundaryBasis C c 0 1) (periodicBoundaryLift C c 0 1)
-      (periodicBoundaryLift_spec C c 0 1) (periodicBoundaryLift C c 1 0)
-      (periodicBoundaryLift_spec C c 1 0),
-    periodicTorsionBracket_eq_one _ _ _ _ _ _ _ h₁, periodicTorsionBracket_eq_one _ _ _ _ _ _ _ h₀,
-    div_one]
+  rw [periodicReidemeisterTorsion_of_acyclic C c h, torsionBracket_eq_one _ _ _ _ _ _ _ _ h₁,
+    torsionBracket_eq_one _ _ _ _ _ _ _ _ h₀, div_one]
 
 section OneDifferential
 
@@ -358,10 +214,11 @@ variable {C c}
 
 /-- At a parity `i` where a two-periodic complex is exact and the incoming differential vanishes,
 the outgoing differential is injective. -/
-private theorem injective_d_of_d_eq_zero {i j : ZMod 2} (hij : i + 1 = j) (h : C.ExactAt i)
-    (hd : C.d j i = 0) : Function.Injective (C.d i j).hom := by
+private theorem injective_d_of_d_eq_zero {i j : ZMod 2} (hi : (ComplexShape.up (ZMod 2)).prev i = j)
+    (hk : (ComplexShape.up (ZMod 2)).next i = j) (h : C.ExactAt i) (hd : C.d j i = 0) :
+    Function.Injective (C.d i j).hom := by
   rw [← LinearMap.ker_eq_bot, ← LinearMap.ker_rangeRestrict,
-    (exact_periodic hij h).linearMap_ker_eq, Submodule.range_subtype, hd]
+    (exact_subtype_rangeRestrict hi hk h).linearMap_ker_eq, Submodule.range_subtype, hd]
   simp
 
 /-- The image of a vanishing differential has a basis indexed by `Fin 0`. -/
@@ -382,12 +239,13 @@ theorem periodicReidemeisterTorsion_eq_inv_det (h : C.Acyclic) (hd : C.d 0 1 = 0
   -- The images of the basis `c 1` form a basis of the boundaries `B₀ = C₀`, with the basis `c 1`
   -- itself as lifts; the boundaries `B₁` vanish.
   let β := (c 1).map
-    (LinearEquiv.ofInjective _ (injective_d_of_d_eq_zero (i := 1) (j := 0) rfl (h 1) hd))
+    (LinearEquiv.ofInjective _ (injective_d_of_d_eq_zero (by simp +decide)
+      (by simp +decide) (h 1) hd))
   have hβ (k) : (C.d 1 0).hom (c 1 k) = β k := by simp [β]
   rw [periodicReidemeisterTorsion_eq h β (emptyBoundaryBasis hd) Fin.elim0 (fun k ↦ k.elim0)
       (c 1) hβ,
-    periodicTorsionBracket_eq_det_right c _ _ _ _ _ _ rfl,
-    periodicTorsionBracket_eq_det_left c _ _ _ _ _ _ (card_eq_card_of_periodic_acyclic c h)]
+    torsionBracket_eq_det_right c _ _ _ _ _ _ _ rfl,
+    torsionBracket_eq_det_left c _ _ _ _ _ _ _ (card_eq_card_of_periodic_acyclic c h)]
   simp [β, Basis.det_self]
 
 /-- An acyclic two-periodic complex whose differential `d₁₀ : C₁ → C₀` vanishes has torsion
@@ -399,12 +257,13 @@ theorem periodicReidemeisterTorsion_eq_det (h : C.Acyclic) (hd : C.d 1 0 = 0) :
   -- The images of the basis `c 0` form a basis of the boundaries `B₁ = C₁`, with the basis `c 0`
   -- itself as lifts; the boundaries `B₀` vanish.
   let β := (c 0).map
-    (LinearEquiv.ofInjective _ (injective_d_of_d_eq_zero (i := 0) (j := 1) rfl (h 0) hd))
+    (LinearEquiv.ofInjective _ (injective_d_of_d_eq_zero (by simp +decide)
+      (by simp +decide) (h 0) hd))
   have hβ (k) : (C.d 0 1).hom (c 0 k) = β k := by simp [β]
   rw [periodicReidemeisterTorsion_eq h (emptyBoundaryBasis hd) β (c 0) hβ Fin.elim0
       (fun k ↦ k.elim0),
-    periodicTorsionBracket_eq_det_left c _ _ _ _ _ _ (card_eq_card_of_periodic_acyclic c h).symm,
-    periodicTorsionBracket_eq_det_right c _ _ _ _ _ _ rfl]
+    torsionBracket_eq_det_left c _ _ _ _ _ _ _ (card_eq_card_of_periodic_acyclic c h).symm,
+    torsionBracket_eq_det_right c _ _ _ _ _ _ _ rfl]
   simp [β, Basis.det_self]
 
 end OneDifferential
@@ -427,16 +286,12 @@ theorem periodicReidemeisterTorsion_eq_mul_det :
   -- bracket for `c` times `[cᵢ / c'ᵢ] = [c'ᵢ / cᵢ]⁻¹`.
   have hinv (i : ZMod 2) : (c' i).det (c i) = ((c i).det (c' i))⁻¹ :=
     eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
-  rw [periodicReidemeisterTorsion_eq h (periodicBoundaryBasis C c 1 0)
-      (periodicBoundaryBasis C c 0 1) (periodicBoundaryLift C c 0 1)
-      (periodicBoundaryLift_spec C c 0 1) (periodicBoundaryLift C c 1 0)
-      (periodicBoundaryLift_spec C c 1 0),
-    periodicReidemeisterTorsion_eq h (periodicBoundaryBasis C c 1 0)
-      (periodicBoundaryBasis C c 0 1) (periodicBoundaryLift C c 0 1)
-      (periodicBoundaryLift_spec C c 0 1) (periodicBoundaryLift C c 1 0)
-      (periodicBoundaryLift_spec C c 1 0),
-    periodicTorsionBracket_eq_det_mul (c := c) (c' := c'),
-    periodicTorsionBracket_eq_det_mul (c := c) (c' := c'), hinv, hinv]
+  rw [periodicReidemeisterTorsion_eq (c := c') h (chosenBoundaryBasis C c 1 0)
+      (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
+      (chosenBoundaryLift_spec C c 0 1) (chosenBoundaryLift C c 1 0)
+      (chosenBoundaryLift_spec C c 1 0),
+    periodicReidemeisterTorsion_of_acyclic C c h, torsionBracket_eq_det_mul c _ _ (h 1) _ _ _ _ c',
+    torsionBracket_eq_det_mul c _ _ (h 0) _ _ _ _ c', hinv, hinv]
   simp only [div_eq_mul_inv, mul_inv, inv_inv]
   ring
 
@@ -469,46 +324,6 @@ section ScalarExtension
 variable {C c} {K : Type*} [Field K] (φ : F →+* K) {D : CochainComplex (ModuleCat K) (ZMod 2)}
   {e : ∀ i, Basis (Fin (n i)) K (D.X i)}
 
-/-- The bracket of the scalar extension, for the images of boundary bases and lifts, is the image
-of the bracket. -/
-private theorem periodicTorsionBracket_semilinearMap {i j : ZMod 2} (hij : i + 1 = j)
-    (h : C.ExactAt i) (h' : D.ExactAt i) {p q : ℕ}
-    (b : Basis (Fin p) F (LinearMap.range (C.d j i).hom))
-    (b' : Basis (Fin q) F (LinearMap.range (C.d i j).hom))
-    (s : Fin q → C.X i) (hs : ∀ k, (C.d i j).hom (s k) = b' k)
-    (bK : Basis (Fin p) K (LinearMap.range (D.d j i).hom))
-    (bK' : Basis (Fin q) K (LinearMap.range (D.d i j).hom))
-    (hb : ∀ k, (bK k : D.X i) = (c i).semilinearMap φ (e i) (b k))
-    (hs' : ∀ k, (D.d i j).hom ((c i).semilinearMap φ (e i) (s k)) = bK' k) :
-    periodicTorsionBracket e hij h' bK bK' ((c i).semilinearMap φ (e i) ∘ s) hs' =
-      φ (periodicTorsionBracket c hij h b b' s hs) := by
-  have hn := eq_add_of_periodic_exactAt c hij h b b'
-  rw [periodicTorsionBracket_eq_det_append e hij h' _ _ _ _ hn,
-    periodicTorsionBracket_eq_det_append c hij h _ _ _ _ hn,
-    ← Basis.det_comp_semilinearMap φ (c i) (e i)]
-  congr 1
-  ext k
-  obtain ⟨m, rfl⟩ := (finCongr hn.symm).surjective k
-  induction m using Fin.addCases <;> simp [hb]
-
-/-- For an acyclic complex, the images of the chosen boundary bases under the `φ`-semilinear maps
-`semilinearMap φ (c i) (e i)` are linearly independent: together with the images of the chosen
-lifts they form a family whose determinant is the image of a bracket, which is nonzero. -/
-private theorem linearIndependent_semilinearMap_periodicBoundaryBasis (h : C.Acyclic)
-    {i j : ZMod 2} (hij : i + 1 = j) :
-    LinearIndependent K fun k ↦ (c i).semilinearMap φ (e i) (periodicBoundaryBasis C c j i k) := by
-  have hn := eq_add_of_periodic_exactAt c hij (h i) (periodicBoundaryBasis C c j i)
-    (periodicBoundaryBasis C c i j)
-  have hdet := periodicTorsionBracket_ne_zero c hij (h i) (periodicBoundaryBasis C c j i)
-    (periodicBoundaryBasis C c i j) (periodicBoundaryLift C c i j)
-    (periodicBoundaryLift_spec C c i j)
-  rw [periodicTorsionBracket_eq_det_append c _ _ _ _ _ _ hn, ← map_ne_zero φ,
-    ← Basis.det_comp_semilinearMap φ (c i) (e i)] at hdet
-  convert ((Basis.is_basis_iff_det (e i)).2 (isUnit_iff_ne_zero.2 hdet)).1.comp _
-    ((Fin.cast_injective hn.symm).comp (Fin.castAdd_injective _ _)) using 1
-  ext k
-  simp
-
 /-- **Scalar extension of the torsion.** Let `φ : F →+* K` be a homomorphism of fields, and let
 `D` be a two-periodic complex of vector spaces over `K` with bases `e i` in which the matrices of
 the two differentials are the images under `φ` of the matrices of the differentials of `C` in the
@@ -538,40 +353,23 @@ theorem map_periodicReidemeisterTorsion
   · rw [periodicReidemeisterTorsion_of_not_acyclic C c h,
       periodicReidemeisterTorsion_of_not_acyclic D e (mt hDC.1 h), map_zero]
   have hD := hDC.2 h
-  have : ∀ i, Module.Finite K (D.X i) := fun i ↦ .of_basis (e i)
-  have hcomm (j i : ZMod 2) (x : C.X j) :
-      (D.d j i).hom ((c j).semilinearMap φ (e j) x) =
-        (c i).semilinearMap φ (e i) ((C.d j i).hom x) :=
-    Basis.semilinearMap_comp_apply_of_toMatrix_eq (hd j i) x
   -- The images of the chosen boundary bases of `C` form boundary bases of `D`, and the images of
   -- the chosen lifts are lifts of them.
-  have hmem (j i : ZMod 2) (k) : (c i).semilinearMap φ (e i) (periodicBoundaryBasis C c j i k) ∈
-      LinearMap.range (D.d j i).hom :=
-    LinearMap.mem_range.2 ⟨_, by rw [hcomm, periodicBoundaryLift_spec]⟩
-  let b (j i : ZMod 2) (hij : i + 1 = j) :
-      Basis (Fin (finrank F (LinearMap.range (C.d j i).hom))) K
-        (LinearMap.range (D.d j i).hom) :=
-    basisOfLinearIndependentOfCardEqFinrank' (fun k ↦ ⟨_, hmem j i k⟩)
-      (LinearIndependent.of_comp (LinearMap.range (D.d j i).hom).subtype
-        (linearIndependent_semilinearMap_periodicBoundaryBasis φ h hij))
-      (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ (hd j i)])
-  have hb (j i : ZMod 2) (hij : i + 1 = j) (k) : (b j i hij k : D.X i) =
-      (c i).semilinearMap φ (e i) (periodicBoundaryBasis C c j i k) := by
-    simp [b]
-  have hs (j i : ZMod 2) (hij : j + 1 = i) (k) :
-      (D.d j i).hom ((c j).semilinearMap φ (e j) (periodicBoundaryLift C c j i k)) =
-        b j i (add_one_eq_of_add_one_eq hij) k := by
-    rw [hb _ _ (add_one_eq_of_add_one_eq hij), hcomm, periodicBoundaryLift_spec]
-  rw [periodicReidemeisterTorsion_eq h (periodicBoundaryBasis C c 1 0)
-      (periodicBoundaryBasis C c 0 1) (periodicBoundaryLift C c 0 1)
-      (periodicBoundaryLift_spec C c 0 1) (periodicBoundaryLift C c 1 0)
-      (periodicBoundaryLift_spec C c 1 0),
-    periodicReidemeisterTorsion_eq hD (b 1 0 rfl) (b 0 1 rfl)
-      ((c 0).semilinearMap φ (e 0) ∘ periodicBoundaryLift C c 0 1) (hs 0 1 rfl)
-      ((c 1).semilinearMap φ (e 1) ∘ periodicBoundaryLift C c 1 0) (hs 1 0 rfl),
+  rw [periodicReidemeisterTorsion_of_acyclic C c h,
+    periodicReidemeisterTorsion_eq hD
+      (semilinearChosenBoundaryBasis φ (k := 1) (by simp +decide) (by simp +decide) (hd 1 0) (h 0))
+      (semilinearChosenBoundaryBasis φ (k := 0) (by simp +decide) (by simp +decide) (hd 0 1) (h 1))
+      ((c 0).semilinearMap φ (e 0) ∘ chosenBoundaryLift C c 0 1)
+      (d_semilinearMap_chosenBoundaryLift φ _ _ (hd 0 1) (h 1))
+      ((c 1).semilinearMap φ (e 1) ∘ chosenBoundaryLift C c 1 0)
+      (d_semilinearMap_chosenBoundaryLift φ _ _ (hd 1 0) (h 0)),
     map_div₀,
-    periodicTorsionBracket_semilinearMap φ rfl (h 1) (hD 1) _ _ _ _ _ _ (hb 0 1 rfl) (hs 1 0 rfl),
-    periodicTorsionBracket_semilinearMap φ rfl (h 0) (hD 0) _ _ _ _ _ _ (hb 1 0 rfl) (hs 0 1 rfl)]
+    torsionBracket_semilinearMap φ _ _ (h 1) (hD 1) _ _ _ _ _ _
+      (coe_semilinearChosenBoundaryBasis φ _ _ (hd 0 1) (h 1))
+      (d_semilinearMap_chosenBoundaryLift φ _ _ (hd 1 0) (h 0)),
+    torsionBracket_semilinearMap φ _ _ (h 0) (hD 0) _ _ _ _ _ _
+      (coe_semilinearChosenBoundaryBasis φ _ _ (hd 1 0) (h 0))
+      (d_semilinearMap_chosenBoundaryLift φ _ _ (hd 0 1) (h 1))]
 
 end ScalarExtension
 

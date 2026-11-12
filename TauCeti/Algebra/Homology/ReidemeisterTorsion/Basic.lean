@@ -17,7 +17,7 @@ import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
 public import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Alternating.Append
-import TauCeti.LinearAlgebra.Basis.Semilinear
+public import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -42,6 +42,14 @@ differential (`HomologicalComplex.reidemeisterTorsion_eq_det_zpow`); for instanc
 by `a ≠ 0` on `F`, from degree `1` to degree `0`, has torsion `a⁻¹`. The torsion of a complex
 that is not acyclic is defined to be `0` (`HomologicalComplex.reidemeisterTorsion`), and so is
 that of an unbounded complex, for which the alternating product is not defined.
+
+The brackets do not depend on the indexing of the complex: `HomologicalComplex.torsionBracket` is
+defined at a degree `j` of an exact complex of any shape, with incoming differential from
+`i = c.prev j` and outgoing differential to `k = c.next j`, and so are its basic properties, the
+chosen boundary bases and lifts (`HomologicalComplex.chosenBoundaryBasis`,
+`HomologicalComplex.chosenBoundaryLift`) and the behaviour of brackets under scalar extension.
+They are shared with the torsion of two-periodic complexes
+(`HomologicalComplex.periodicReidemeisterTorsion`).
 
 For a bounded complex the alternating product does not depend on the boundary bases nor on the
 lifts (`HomologicalComplex.reidemeisterTorsion_eq_finprod`): changing the lifts does not change
@@ -96,7 +104,8 @@ be compared componentwise along the field homomorphisms between them.
 
 ## Main declarations
 
-* `HomologicalComplex.torsionBracket`: the bracket `[bⱼ₊₁ sⱼ / cⱼ₊₁]` of a degree.
+* `HomologicalComplex.torsionBracket`: the bracket `[b₁ s / cⱼ]` of a degree `j` of an exact
+  complex of any shape.
 * `HomologicalComplex.torsionBracket_eq_det_append`: the bracket is the determinant of the boundary
   basis followed by the lifts.
 * `HomologicalComplex.reidemeisterTorsion`: the torsion of a based chain complex.
@@ -138,58 +147,61 @@ open CategoryTheory Module
 
 namespace HomologicalComplex
 
-variable {F : Type*} [Field F] (C : ChainComplex (ModuleCat F) ℤ)
-
-variable {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
+variable {F : Type*} [Field F]
 
 section Bracket
 
-variable {C} {j : ℤ} (h : C.ExactAt (j + 1)) {p q : ℕ}
-  (b₁ : Basis (Fin p) F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
-  (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom))
-  (s : Fin q → C.X (j + 1)) (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k)
+/-! ### The bracket of a degree of a complex of any shape -/
 
-/-- The basis `(b₁, s)` of `Cⱼ₊₁` made of a basis `b₁` of the boundaries `Bⱼ₊₁` followed by lifts
-`s` of a basis `b₀` of the boundaries `Bⱼ`. -/
-private def bracketBasis : Basis (Fin p ⊕ Fin q) F (C.X (j + 1)) :=
-  Basis.ofExactLift (Submodule.injective_subtype _)
-    (exact_subtype_rangeRestrict (by simp) (by simp) h) b₁ b₀ s fun k ↦ Subtype.ext (hs k)
+variable {ι : Type*} {σ : ComplexShape ι} {C : HomologicalComplex (ModuleCat F) σ} {n : ι → ℕ}
+  (c : ∀ i, Basis (Fin (n i)) F (C.X i)) {i j k : ι} (hi : σ.prev j = i) (hk : σ.next j = k)
+  (h : C.ExactAt j) {p q : ℕ}
+  (b₁ : Basis (Fin p) F (LinearMap.range (C.d i j).hom))
+  (b₀ : Basis (Fin q) F (LinearMap.range (C.d j k).hom))
+  (s : Fin q → C.X j) (hs : ∀ m, (C.d j k).hom (s m) = b₀ m)
 
-include c h b₁ b₀ in
-/-- In a degree `j + 1` where `C` is exact, the dimension `n (j + 1)` of `Cⱼ₊₁` is the sum of the
-dimensions `p` and `q` of the boundaries `Bⱼ₊₁` and `Bⱼ`. -/
-theorem eq_add_of_exactAt : n (j + 1) = p + q := by
-  let _ : Module.Finite F (C.X (j + 1)) := .of_basis (c (j + 1))
-  have hdim := (exact_subtype_rangeRestrict (i := j + 1 + 1) (k := j)
-    (by simp) (by simp) h).finrank_eq_add
-    (Submodule.injective_subtype _) (C.d (j + 1) j).hom.surjective_rangeRestrict
-  simpa only [finrank_eq_card_basis (c (j + 1)), finrank_eq_card_basis b₁,
+/-- The basis `(b₁, s)` of `Cⱼ` made of a basis `b₁` of the image of the incoming differential
+`Cᵢ → Cⱼ` followed by lifts `s` of a basis `b₀` of the image of the outgoing differential
+`Cⱼ → Cₖ`. -/
+private def bracketBasis : Basis (Fin p ⊕ Fin q) F (C.X j) :=
+  Basis.ofExactLift (Submodule.injective_subtype _) (exact_subtype_rangeRestrict hi hk h) b₁ b₀ s
+    fun m ↦ Subtype.ext (hs m)
+
+include c hi hk h b₁ b₀ in
+/-- In a degree `j` where `C` is exact, the dimension `n j` of `Cⱼ` is the sum of the dimensions
+`p` and `q` of the images of the incoming differential `Cᵢ → Cⱼ` and of the outgoing differential
+`Cⱼ → Cₖ`. -/
+theorem eq_add_of_exactAt : n j = p + q := by
+  let _ : Module.Finite F (C.X j) := .of_basis (c j)
+  have hdim := (exact_subtype_rangeRestrict hi hk h).finrank_eq_add
+    (Submodule.injective_subtype _) (C.d j k).hom.surjective_rangeRestrict
+  simpa only [finrank_eq_card_basis (c j), finrank_eq_card_basis b₁,
     finrank_eq_card_basis b₀, Fintype.card_fin] using hdim
 
-/-- The bracket `[b₁ s / cⱼ₊₁]`: the determinant, with respect to the basis `c (j + 1)` of `Cⱼ₊₁`,
-of the family made of a basis `b₁` of the boundaries `Bⱼ₊₁ ⊆ Cⱼ₊₁` followed by lifts `s` of a
-basis `b₀` of the boundaries `Bⱼ ⊆ Cⱼ`. -/
+/-- The bracket `[b₁ s / cⱼ]`: the determinant, with respect to the basis `c j` of `Cⱼ`, of the
+family made of a basis `b₁` of the image `Bⱼ ⊆ Cⱼ` of the incoming differential `Cᵢ → Cⱼ` followed
+by lifts `s` of a basis `b₀` of the image `Bₖ ⊆ Cₖ` of the outgoing differential `Cⱼ → Cₖ`. -/
 def torsionBracket : F :=
-  ((c (j + 1)).reindex ((finCongr (eq_add_of_exactAt c h b₁ b₀)).trans
-    finSumFinEquiv.symm)).det (bracketBasis h b₁ b₀ s hs)
+  ((c j).reindex ((finCongr (eq_add_of_exactAt c hi hk h b₁ b₀)).trans
+    finSumFinEquiv.symm)).det (bracketBasis hi hk h b₁ b₀ s hs)
 
-/-- The bracket `[b₁ s / cⱼ₊₁]` is the determinant, with respect to the basis `c (j + 1)` of
-`Cⱼ₊₁`, of the family `(b₁, s)` obtained by appending the lifts `s` to the basis `b₁` of the
-boundaries `Bⱼ₊₁`. -/
-theorem torsionBracket_eq_det_append (hn : n (j + 1) = p + q) :
-    torsionBracket c h b₁ b₀ s hs =
-      (c (j + 1)).det (Fin.append (fun k ↦ (b₁ k : C.X (j + 1))) s ∘ Fin.cast hn) := by
+/-- The bracket `[b₁ s / cⱼ]` is the determinant, with respect to the basis `c j` of `Cⱼ`, of the
+family `(b₁, s)` obtained by appending the lifts `s` to the basis `b₁` of the boundaries
+`Bⱼ`. -/
+theorem torsionBracket_eq_det_append (hn : n j = p + q) :
+    torsionBracket c hi hk h b₁ b₀ s hs =
+      (c j).det (Fin.append (fun m ↦ (b₁ m : C.X j)) s ∘ Fin.cast hn) := by
   rw [torsionBracket, Basis.det_reindex]
   congr 1
-  ext k
-  obtain ⟨m, rfl⟩ := (finCongr hn.symm).surjective k
-  induction m using Fin.addCases <;> simp [bracketBasis]
+  ext m
+  obtain ⟨l, rfl⟩ := (finCongr hn.symm).surjective m
+  induction l using Fin.addCases <;> simp [bracketBasis]
 
 /-- Reindexing the boundary bases of a bracket along equalities of their lengths does not change
 the bracket. -/
-private theorem torsionBracket_reindex {p' q' : ℕ} (hp : p = p') (hq : q = q') :
-    torsionBracket c h (b₁.reindex (finCongr hp)) (b₀.reindex (finCongr hq))
-      (s ∘ Fin.cast hq.symm) (fun k ↦ by simp [hs]) = torsionBracket c h b₁ b₀ s hs := by
+theorem torsionBracket_reindex {p' q' : ℕ} (hp : p = p') (hq : q = q') :
+    torsionBracket c hi hk h (b₁.reindex (finCongr hp)) (b₀.reindex (finCongr hq))
+      (s ∘ Fin.cast hq.symm) (fun m ↦ by simp [hs]) = torsionBracket c hi hk h b₁ b₀ s hs := by
   subst hp hq
   congr 1 <;> simp
 
@@ -197,93 +209,172 @@ private theorem torsionBracket_reindex {p' q' : ℕ} (hp : p = p') (hq : q = q')
 the new boundary bases with respect to the old ones; in particular the bracket does not depend on
 the lifts. -/
 theorem torsionBracket_eq_mul
-    (b₁' : Basis (Fin p) F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
-    (b₀' : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom))
-    (s' : Fin q → C.X (j + 1)) (hs' : ∀ k, (C.d (j + 1) j).hom (s' k) = b₀' k) :
-    torsionBracket c h b₁' b₀' s' hs' =
-      torsionBracket c h b₁ b₀ s hs * (b₁.det b₁' * b₀.det b₀') := by
+    (b₁' : Basis (Fin p) F (LinearMap.range (C.d i j).hom))
+    (b₀' : Basis (Fin q) F (LinearMap.range (C.d j k).hom))
+    (s' : Fin q → C.X j) (hs' : ∀ m, (C.d j k).hom (s' m) = b₀' m) :
+    torsionBracket c hi hk h b₁' b₀' s' hs' =
+      torsionBracket c hi hk h b₁ b₀ s hs * (b₁.det b₁' * b₀.det b₀') := by
   simp only [torsionBracket, bracketBasis]
   exact Basis.det_ofExactLift _ _ _ _ _ _ _ _ _ _ _
 
-/-- Replacing the basis `c (j + 1)` of `Cⱼ₊₁` by `c' (j + 1)` multiplies a bracket by the
-determinant of `c (j + 1)` with respect to `c' (j + 1)`. -/
+/-- Replacing the basis `c j` of `Cⱼ` by `c' j` multiplies a bracket by the determinant of `c j`
+with respect to `c' j`. -/
 theorem torsionBracket_eq_det_mul (c' : ∀ i, Basis (Fin (n i)) F (C.X i)) :
-    torsionBracket c' h b₁ b₀ s hs =
-      (c' (j + 1)).det (c (j + 1)) * torsionBracket c h b₁ b₀ s hs := by
-  rw [torsionBracket, torsionBracket, ← Basis.det_mul_det _ ((c (j + 1)).reindex
-    ((finCongr (eq_add_of_exactAt c h b₁ b₀)).trans finSumFinEquiv.symm))]
+    torsionBracket c' hi hk h b₁ b₀ s hs =
+      (c' j).det (c j) * torsionBracket c hi hk h b₁ b₀ s hs := by
+  rw [torsionBracket, torsionBracket, ← Basis.det_mul_det _ ((c j).reindex
+    ((finCongr (eq_add_of_exactAt c hi hk h b₁ b₀)).trans finSumFinEquiv.symm))]
   simp [Basis.det_reindex, Function.comp_assoc, -Equiv.symm_trans, -Equiv.coe_trans]
 
 /-- A bracket is nonzero. -/
-theorem torsionBracket_ne_zero : torsionBracket c h b₁ b₀ s hs ≠ 0 :=
+theorem torsionBracket_ne_zero : torsionBracket c hi hk h b₁ b₀ s hs ≠ 0 :=
   (Basis.isUnit_det _ _).ne_zero
 
 /-- The bracket in a degree where the complex vanishes is `1`. -/
 @[simp]
-theorem torsionBracket_eq_one (hn : n (j + 1) = 0) : torsionBracket c h b₁ b₀ s hs = 1 := by
-  have : IsEmpty (Fin (n (j + 1))) := by rw [hn]; infer_instance
+theorem torsionBracket_eq_one (hn : n j = 0) : torsionBracket c hi hk h b₁ b₀ s hs = 1 := by
+  have : IsEmpty (Fin (n j)) := by rw [hn]; infer_instance
   simp [torsionBracket, Basis.det_reindex]
 
-/-- In a degree `j + 1` where the boundaries `Bⱼ₊₁` fill `Cⱼ₊₁` (that is, `Bⱼ = 0`, as the
-dimension `n (j + 1)` is `p`), the bracket is the determinant of the basis `b₁` of `Bⱼ₊₁`. -/
-theorem torsionBracket_eq_det_left (hp : n (j + 1) = p) :
-    torsionBracket c h b₁ b₀ s hs =
-      (c (j + 1)).det fun k ↦ (b₁ (Fin.cast hp k) : C.X (j + 1)) := by
-  have hq : q = 0 := by have := eq_add_of_exactAt c h b₁ b₀; omega
+/-- In a degree `j` where the boundaries `Bⱼ` fill `Cⱼ` (that is, `Bₖ = 0`, as the dimension `n j`
+is `p`), the bracket is the determinant of the basis `b₁` of `Bⱼ`. -/
+theorem torsionBracket_eq_det_left (hp : n j = p) :
+    torsionBracket c hi hk h b₁ b₀ s hs = (c j).det fun m ↦ (b₁ (Fin.cast hp m) : C.X j) := by
+  have hq : q = 0 := by have := eq_add_of_exactAt c hi hk h b₁ b₀; omega
   subst hq
-  rw [torsionBracket, Basis.det_reindex]
-  congr 1
-  ext k
-  have : Fin.cast (eq_add_of_exactAt c h b₁ b₀) k = Fin.castAdd 0 (Fin.cast hp k) :=
-    Fin.ext rfl
-  rw [Function.comp_apply, Equiv.trans_apply, finCongr_apply, this,
-    finSumFinEquiv_symm_apply_castAdd, bracketBasis, Basis.ofExactLift_inl]
-  rfl
+  rw [torsionBracket_eq_det_append c hi hk h b₁ b₀ s hs hp, Fin.append_right_nil _ _ rfl]
+  simp [Function.comp_def]
 
-/-- In a degree `j + 1` where `Cⱼ₊₁` has no nonzero boundaries (that is, `Bⱼ₊₁ = 0`, as the
-dimension `n (j + 1)` is `q`), the bracket is the determinant of the lifts `s` of the basis `b₀`
-of `Bⱼ`. -/
-theorem torsionBracket_eq_det_right (hq : n (j + 1) = q) :
-    torsionBracket c h b₁ b₀ s hs = (c (j + 1)).det (s ∘ Fin.cast hq) := by
-  have hp : p = 0 := by have := eq_add_of_exactAt c h b₁ b₀; omega
+/-- In a degree `j` where `Cⱼ` has no nonzero boundaries (that is, `Bⱼ = 0`, as the dimension `n j`
+is `q`), the bracket is the determinant of the lifts `s` of the basis `b₀` of `Bₖ`. -/
+theorem torsionBracket_eq_det_right (hq : n j = q) :
+    torsionBracket c hi hk h b₁ b₀ s hs = (c j).det (s ∘ Fin.cast hq) := by
+  have hp : p = 0 := by have := eq_add_of_exactAt c hi hk h b₁ b₀; omega
   subst hp
-  rw [torsionBracket, Basis.det_reindex]
-  congr 1
-  ext k
-  have : Fin.cast (eq_add_of_exactAt c h b₁ b₀) k = Fin.natAdd 0 (Fin.cast hq k) :=
-    Fin.ext (by simp)
-  rw [Function.comp_apply, Equiv.trans_apply, finCongr_apply, this,
-    finSumFinEquiv_symm_apply_natAdd, bracketBasis, Basis.ofExactLift_inr]
-  rfl
+  rw [torsionBracket_eq_det_append c hi hk h b₁ b₀ s hs (hq.trans (zero_add q).symm),
+    Fin.append_left_nil _ _ rfl]
+  simp [Function.comp_def]
 
 end Bracket
 
-/-- The basis `Module.finBasis` of the boundaries `Bⱼ`, used to define the torsions of a based
-complex. -/
-def chosenBoundaryBasis (j : ℤ) :
-    Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) F
-      (LinearMap.range (C.d (j + 1) j).hom) :=
-  haveI : Module.Finite F (C.X (j + 1)) := .of_basis (c (j + 1))
+section ChosenBoundary
+
+variable {ι : Type*} {σ : ComplexShape ι} (C : HomologicalComplex (ModuleCat F) σ) {n : ι → ℕ}
+  (c : ∀ i, Basis (Fin (n i)) F (C.X i))
+
+/-- The basis `Module.finBasis` of the boundaries `LinearMap.range (C.d i j).hom ⊆ Cⱼ`, used to
+define the torsions of a based complex. -/
+def chosenBoundaryBasis (i j : ι) :
+    Basis (Fin (finrank F (LinearMap.range (C.d i j).hom))) F (LinearMap.range (C.d i j).hom) :=
+  haveI : Module.Finite F (C.X i) := .of_basis (c i)
   finBasis F _
 
-/-- Lifts of `chosenBoundaryBasis C c j` through the differential, chosen by `Function.surjInv`. -/
-def chosenBoundaryLift (j : ℤ) (k : Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) :
-    C.X (j + 1) :=
-  Function.surjInv (C.d (j + 1) j).hom.surjective_rangeRestrict (chosenBoundaryBasis C c j k)
+/-- Lifts of `chosenBoundaryBasis C c i j` through the differential, chosen by
+`Function.surjInv`. -/
+def chosenBoundaryLift (i j : ι) (m : Fin (finrank F (LinearMap.range (C.d i j).hom))) : C.X i :=
+  Function.surjInv (C.d i j).hom.surjective_rangeRestrict (chosenBoundaryBasis C c i j m)
 
-/-- The lifts `chosenBoundaryLift C c j` are mapped by the differential to the basis
-`chosenBoundaryBasis C c j`. -/
+/-- The lifts `chosenBoundaryLift C c i j` are mapped by the differential to the basis
+`chosenBoundaryBasis C c i j`. -/
 @[simp]
-theorem chosenBoundaryLift_spec (j : ℤ) (k) :
-    (C.d (j + 1) j).hom (chosenBoundaryLift C c j k) = chosenBoundaryBasis C c j k :=
-  congrArg Subtype.val (Function.surjInv_eq (C.d (j + 1) j).hom.surjective_rangeRestrict _)
+theorem chosenBoundaryLift_spec (i j : ι) (m) :
+    (C.d i j).hom (chosenBoundaryLift C c i j m) = chosenBoundaryBasis C c i j m :=
+  congrArg Subtype.val (Function.surjInv_eq (C.d i j).hom.surjective_rangeRestrict _)
+
+end ChosenBoundary
+
+section SemilinearMap
+
+/-! ### Brackets under scalar extension along a homomorphism of fields -/
+
+variable {ι : Type*} {σ : ComplexShape ι} {C : HomologicalComplex (ModuleCat F) σ} {n : ι → ℕ}
+  {c : ∀ i, Basis (Fin (n i)) F (C.X i)} {K : Type*} [Field K] (φ : F →+* K)
+  {D : HomologicalComplex (ModuleCat K) σ} {e : ∀ i, Basis (Fin (n i)) K (D.X i)}
+  {i j k : ι} (hi : σ.prev j = i) (hk : σ.next j = k)
+
+/-- The bracket of the scalar extension, for the images of boundary bases and lifts, is the image
+of the bracket. -/
+theorem torsionBracket_semilinearMap (h : C.ExactAt j) (h' : D.ExactAt j) {p q : ℕ}
+    (b₁ : Basis (Fin p) F (LinearMap.range (C.d i j).hom))
+    (b₀ : Basis (Fin q) F (LinearMap.range (C.d j k).hom))
+    (s : Fin q → C.X j) (hs : ∀ m, (C.d j k).hom (s m) = b₀ m)
+    (b₁' : Basis (Fin p) K (LinearMap.range (D.d i j).hom))
+    (b₀' : Basis (Fin q) K (LinearMap.range (D.d j k).hom))
+    (hb₁ : ∀ m, (b₁' m : D.X j) = (c j).semilinearMap φ (e j) (b₁ m))
+    (hs' : ∀ m, (D.d j k).hom ((c j).semilinearMap φ (e j) (s m)) = b₀' m) :
+    torsionBracket e hi hk h' b₁' b₀' ((c j).semilinearMap φ (e j) ∘ s) hs' =
+      φ (torsionBracket c hi hk h b₁ b₀ s hs) := by
+  have hn := eq_add_of_exactAt c hi hk h b₁ b₀
+  rw [torsionBracket_eq_det_append e hi hk h' _ _ _ _ hn,
+    torsionBracket_eq_det_append c hi hk h _ _ _ _ hn, ← Basis.det_comp_semilinearMap φ (c j) (e j)]
+  congr 1
+  ext m
+  obtain ⟨l, rfl⟩ := (finCongr hn.symm).surjective m
+  induction l using Fin.addCases <;> simp [hb₁]
+
+include hi hk in
+/-- In a degree `j` where `C` is exact, the images of the chosen basis of the boundaries
+`LinearMap.range (C.d i j).hom` under the `φ`-semilinear map `semilinearMap φ (c j) (e j)` are
+linearly independent: together with the images of the chosen lifts of the next boundaries they
+form a family whose determinant is the image of a bracket, which is nonzero. -/
+theorem linearIndependent_semilinearMap_chosenBoundaryBasis (h : C.ExactAt j) :
+    LinearIndependent K fun m ↦ (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c i j m) := by
+  have hn := eq_add_of_exactAt c hi hk h (chosenBoundaryBasis C c i j)
+    (chosenBoundaryBasis C c j k)
+  have hdet := torsionBracket_ne_zero c hi hk h (chosenBoundaryBasis C c i j)
+    (chosenBoundaryBasis C c j k) (chosenBoundaryLift C c j k) (chosenBoundaryLift_spec C c j k)
+  rw [torsionBracket_eq_det_append c _ _ _ _ _ _ _ hn, ← map_ne_zero φ,
+    ← Basis.det_comp_semilinearMap φ (c j) (e j)] at hdet
+  convert ((Basis.is_basis_iff_det (e j)).2 (isUnit_iff_ne_zero.2 hdet)).1.comp _
+    ((Fin.cast_injective hn.symm).comp (Fin.castAdd_injective _ _)) using 1
+  ext m
+  simp
+
+variable (hd : LinearMap.toMatrix (e i) (e j) (D.d i j).hom =
+  (LinearMap.toMatrix (c i) (c j) (C.d i j).hom).map φ)
+
+/-- In a degree `j` where `C` is exact, the basis of the boundaries
+`LinearMap.range (D.d i j).hom` of the scalar extension `D` made of the images of
+`chosenBoundaryBasis C c i j` under the `φ`-semilinear map `semilinearMap φ (c j) (e j)`. -/
+def semilinearChosenBoundaryBasis (h : C.ExactAt j) :
+    Basis (Fin (finrank F (LinearMap.range (C.d i j).hom))) K (LinearMap.range (D.d i j).hom) :=
+  haveI : Module.Finite K (D.X i) := .of_basis (e i)
+  basisOfLinearIndependentOfCardEqFinrank'
+    (fun m ↦ ⟨(c j).semilinearMap φ (e j) (chosenBoundaryBasis C c i j m), LinearMap.mem_range.2
+      ⟨_, by rw [Basis.semilinearMap_comp_apply_of_toMatrix_eq hd, chosenBoundaryLift_spec]⟩⟩)
+    (LinearIndependent.of_comp (LinearMap.range (D.d i j).hom).subtype
+      (linearIndependent_semilinearMap_chosenBoundaryBasis φ hi hk h))
+    (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ hd])
+
+/-- The vectors of `semilinearChosenBoundaryBasis` are the images of those of
+`chosenBoundaryBasis C c i j`. -/
+@[simp]
+theorem coe_semilinearChosenBoundaryBasis (h : C.ExactAt j) (m) :
+    (semilinearChosenBoundaryBasis φ hi hk hd h m : D.X j) =
+      (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c i j m) := by
+  simp [semilinearChosenBoundaryBasis]
+
+/-- The images of the lifts `chosenBoundaryLift C c i j` are lifts of the basis
+`semilinearChosenBoundaryBasis`. -/
+theorem d_semilinearMap_chosenBoundaryLift (h : C.ExactAt j) (m) :
+    (D.d i j).hom ((c i).semilinearMap φ (e i) (chosenBoundaryLift C c i j m)) =
+      semilinearChosenBoundaryBasis φ hi hk hd h m := by
+  rw [coe_semilinearChosenBoundaryBasis, Basis.semilinearMap_comp_apply_of_toMatrix_eq hd,
+    chosenBoundaryLift_spec]
+
+end SemilinearMap
+
+variable (C : ChainComplex (ModuleCat F) ℤ)
+
+variable {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
 
 /-- The alternating product of the brackets of an acyclic complex, for the bases
 `chosenBoundaryBasis` of the boundaries and the lifts `chosenBoundaryLift`. -/
 private def torsionOfAcyclic (h : C.Acyclic) : F :=
-  ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (chosenBoundaryBasis C c (j + 1))
-    (chosenBoundaryBasis C c j) (chosenBoundaryLift C c j) (chosenBoundaryLift_spec C c j) ^
-      (j.negOnePow : ℤ)
+  ∏ᶠ j : ℤ, torsionBracket c (by simp) (by simp) (h (j + 1))
+    (chosenBoundaryBasis C c (j + 1 + 1) (j + 1)) (chosenBoundaryBasis C c (j + 1) j)
+      (chosenBoundaryLift C c (j + 1) j) (chosenBoundaryLift_spec C c (j + 1) j) ^
+        (j.negOnePow : ℤ)
 
 /-- The torsion of a chain complex of vector spaces with ordered bases `c i` of each `C.X i`: the
 alternating product `∏ⱼ [bⱼ₊₁ sⱼ / cⱼ₊₁] ^ ((-1) ^ j)` of the brackets when `C` is acyclic and
@@ -309,7 +400,7 @@ theorem reidemeisterTorsion_of_not_finite (hn : ¬{i | n i ≠ 0}.Finite) :
 theorem reidemeisterTorsion_ne_zero (hn : {i | n i ≠ 0}.Finite) (h : C.Acyclic) :
     C.reidemeisterTorsion c ≠ 0 := by
   rw [reidemeisterTorsion, dite_eq_left ⟨h, hn⟩, torsionOfAcyclic]
-  exact finprod_ne_zero fun j ↦ zpow_ne_zero _ (torsionBracket_ne_zero c _ _ _ _ _)
+  exact finprod_ne_zero fun j ↦ zpow_ne_zero _ (torsionBracket_ne_zero c _ _ _ _ _ _ _)
 
 /-- The torsion of a bounded based complex vanishes if and only if the complex is not acyclic. -/
 theorem reidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
@@ -341,10 +432,11 @@ theorem hasFiniteMulSupport_torsionBracket
     (s : ∀ j, Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom)) → C.X (j + 1))
     (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k) :
     Function.HasFiniteMulSupport fun j : ℤ ↦
-      torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^ (j.negOnePow : ℤ) :=
+      torsionBracket c (by simp) (by simp) (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
+        (j.negOnePow : ℤ) :=
   (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
     Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-      rw [torsionBracket_eq_one c _ _ _ _ _ (by simpa using hj), one_zpow]
+      rw [torsionBracket_eq_one c _ _ _ _ _ _ _ (by simpa using hj), one_zpow]
 
 include hn h in
 /-- For a bounded acyclic complex, the alternating product of the brackets does not depend on the
@@ -355,15 +447,15 @@ private theorem finprod_torsionBracket_eq
     (s s' : ∀ j, Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom)) → C.X (j + 1))
     (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k)
     (hs' : ∀ j k, (C.d (j + 1) j).hom (s' j k) = b' j k) :
-    ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (b' (j + 1)) (b' j) (s' j) (hs' j) ^
-        (j.negOnePow : ℤ) =
-      ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
+    ∏ᶠ j : ℤ, torsionBracket c (by simp) (by simp) (h (j + 1)) (b' (j + 1)) (b' j) (s' j)
+        (hs' j) ^ (j.negOnePow : ℤ) =
+      ∏ᶠ j : ℤ, torsionBracket c (by simp) (by simp) (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
         (j.negOnePow : ℤ) := by
   -- Changing the boundary bases multiplies the bracket in degree `j + 1` by
   -- `[b'ⱼ₊₁ / bⱼ₊₁] [b'ⱼ / bⱼ]`.
   refine (finprod_congr fun j ↦ ?_).trans (TauCeti.finprod_mul_mul_add_one_zpow_negOnePow _
     (hasFiniteMulSupport_det_range_d C c hn b b') fun j ↦ (Basis.isUnit_det _ _).ne_zero)
-  rw [torsionBracket_eq_mul c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j)]
+  rw [torsionBracket_eq_mul c _ _ (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j)]
 
 include hn in
 /-- For a bounded acyclic complex, the torsion is the alternating product
@@ -374,14 +466,15 @@ theorem reidemeisterTorsion_eq_finprod {r : ℤ → ℕ}
     (s : ∀ j, Fin (r j) → C.X (j + 1))
     (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k) :
     C.reidemeisterTorsion c =
-      ∏ᶠ j : ℤ, torsionBracket c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
+      ∏ᶠ j : ℤ, torsionBracket c (by simp) (by simp) (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j) ^
         (j.negOnePow : ℤ) := by
   have hr (j : ℤ) : r j = finrank F (LinearMap.range (C.d (j + 1) j).hom) := by
     rw [finrank_eq_card_basis (b j), Fintype.card_fin]
   rw [reidemeisterTorsion, dite_eq_left ⟨h, hn⟩, torsionOfAcyclic,
     finprod_torsionBracket_eq hn h (fun j ↦ (b j).reindex (finCongr (hr j)))
-      (chosenBoundaryBasis C c) (fun j ↦ s j ∘ Fin.cast (hr j).symm) (chosenBoundaryLift C c)
-      (fun j k ↦ by simp [hs]) (chosenBoundaryLift_spec C c)]
+      (fun j ↦ chosenBoundaryBasis C c (j + 1) j) (fun j ↦ s j ∘ Fin.cast (hr j).symm)
+      (fun j ↦ chosenBoundaryLift C c (j + 1) j) (fun j k ↦ by simp [hs])
+      (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j)]
   exact finprod_congr fun j ↦ by rw [torsionBracket_reindex]
 
 end Bounded
@@ -420,16 +513,17 @@ theorem reidemeisterTorsion_eq_mul_finprod_det :
   have hshift : ∏ᶠ i : ℤ, (c i).det (c' i) ^ (i.negOnePow : ℤ) =
       ∏ᶠ j : ℤ, (c (j + 1)).det (c' (j + 1)) ^ ((j + 1).negOnePow : ℤ) :=
     (finprod_comp_equiv (Equiv.addRight 1)).symm
-  rw [reidemeisterTorsion_eq_finprod (c := c) hn h (chosenBoundaryBasis C c)
-      (chosenBoundaryLift C c) (chosenBoundaryLift_spec C c),
-    reidemeisterTorsion_eq_finprod (c := c') hn h (chosenBoundaryBasis C c)
-      (chosenBoundaryLift C c) (chosenBoundaryLift_spec C c),
+  rw [reidemeisterTorsion_eq_finprod (c := c) hn h (fun j ↦ chosenBoundaryBasis C c (j + 1) j)
+      (fun j ↦ chosenBoundaryLift C c (j + 1) j) (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j),
+    reidemeisterTorsion_eq_finprod (c := c') hn h (fun j ↦ chosenBoundaryBasis C c (j + 1) j)
+      (fun j ↦ chosenBoundaryLift C c (j + 1) j) (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j),
     hshift]
   refine (finprod_congr fun j ↦ ?_).trans
-    (finprod_mul_distrib (hasFiniteMulSupport_torsionBracket hn h _ _ _) hD)
+    (finprod_mul_distrib (hasFiniteMulSupport_torsionBracket hn h _ _
+      fun j ↦ chosenBoundaryLift_spec C c (j + 1) j) hD)
   have hinv : (c (j + 1)).det (c' (j + 1)) = ((c' (j + 1)).det (c (j + 1)))⁻¹ :=
     eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
-  rw [torsionBracket_eq_det_mul c (c' := c'), mul_zpow, mul_comm]
+  rw [torsionBracket_eq_det_mul c _ _ (h (j + 1)) _ _ _ _ c', mul_zpow, mul_comm]
   simp only [Int.negOnePow_succ, Units.val_neg, zpow_neg]
   congr 1
   rw [hinv, inv_zpow, inv_inv]
@@ -512,14 +606,16 @@ theorem reidemeisterTorsion_eq_det_zpow :
     (LinearEquiv.ofInjective _ (injective_d_of_concentrated (c := c) h hn))
   have hr : n (j + 1 + 1) = finrank F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom) := by
     rw [finrank_eq_card_basis β, Fintype.card_fin]
-  let b := Function.update (chosenBoundaryBasis C c) (j + 1) (β.reindex (finCongr hr))
-  let s := Function.update (chosenBoundaryLift C c) (j + 1) (c (j + 1 + 1) ∘ Fin.cast hr.symm)
+  let b := Function.update (fun i ↦ chosenBoundaryBasis C c (i + 1) i) (j + 1)
+    (β.reindex (finCongr hr))
+  let s := Function.update (fun i ↦ chosenBoundaryLift C c (i + 1) i) (j + 1)
+    (c (j + 1 + 1) ∘ Fin.cast hr.symm)
   have hs (i : ℤ) (k) : (C.d (i + 1) i).hom (s i k) = b i k := by
     by_cases hi : i = j + 1
     · subst hi
       simp [s, b, β]
     · simp only [s, b, Function.update_of_ne hi]
-      exact chosenBoundaryLift_spec C c i k
+      exact chosenBoundaryLift_spec C c (i + 1) i k
   have hfin : {i | n i ≠ 0}.Finite :=
     (Set.toFinite {j + 1, j + 1 + 1}).subset fun i hi ↦ by
       by_contra hi'
@@ -527,10 +623,10 @@ theorem reidemeisterTorsion_eq_det_zpow :
       exact hi (hn i hi'.1 hi'.2)
   rw [reidemeisterTorsion_eq_finprod hfin h b s hs,
     finprod_eq_prod_of_mulSupport_subset (s := {j, j + 1}), Finset.prod_pair (by omega),
-    torsionBracket_eq_det_left c (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j)
+    torsionBracket_eq_det_left c (by simp) (by simp) (h (j + 1)) (b (j + 1)) (b j) (s j) (hs j)
       ((card_eq_card_of_concentrated c h hn).trans hr),
-    torsionBracket_eq_det_right c (h (j + 1 + 1)) (b (j + 1 + 1)) (b (j + 1)) (s (j + 1))
-      (hs (j + 1)) hr]
+    torsionBracket_eq_det_right c (by simp) (by simp) (h (j + 1 + 1)) (b (j + 1 + 1)) (b (j + 1))
+      (s (j + 1)) (hs (j + 1)) hr]
   · simp [s, b, β, Function.comp_def, Basis.det_self]
   · intro i hi
     by_contra hi'
@@ -538,7 +634,7 @@ theorem reidemeisterTorsion_eq_det_zpow :
       not_or] at hi'
     refine hi ?_
     beta_reduce
-    rw [torsionBracket_eq_one c _ _ _ _ _ (hn _ (by omega) (by omega)), one_zpow]
+    rw [torsionBracket_eq_one c _ _ _ _ _ _ _ (hn _ (by omega) (by omega)), one_zpow]
 
 end TwoDegrees
 
@@ -602,17 +698,18 @@ private theorem torsionBracket_shortExactBoundaryBasis (hC : C.ExactAt (j + 1))
     (s' : Fin q' → C'.X (j + 1)) (hs' : ∀ k, (C'.d (j + 1) j).hom (s' k) = b'₀ k)
     (hS : ∀ k, (C.d (j + 1) j).hom (Fin.append (fun k ↦ (f.f (j + 1)).hom (s' k)) t₀ k) =
       shortExactBoundaryBasis hf hfg hg h''₀ b'₀ b''₀ t₀ ht₀ k) :
-    torsionBracket c hC (shortExactBoundaryBasis hf hfg hg h''₁ b'₁ b''₁ t₁ ht₁)
+    torsionBracket c (by simp) (by simp) hC (shortExactBoundaryBasis hf hfg hg h''₁ b'₁ b''₁ t₁ ht₁)
         (shortExactBoundaryBasis hf hfg hg h''₀ b'₀ b''₀ t₀ ht₀)
         (Fin.append (fun k ↦ (f.f (j + 1)).hom (s' k)) t₀) hS =
-      (-1) ^ (p'' * q') * (torsionBracket c' h' b'₁ b'₀ s' hs' *
-        torsionBracket c'' h''₀ b''₁ b''₀ (fun k ↦ (g.f (j + 1)).hom (t₀ k)) ht₀) := by
-  have hn' := eq_add_of_exactAt c' h' b'₁ b'₀
-  have hn'' := eq_add_of_exactAt c'' h''₀ b''₁ b''₀
+      (-1) ^ (p'' * q') * (torsionBracket c' (by simp) (by simp) h' b'₁ b'₀ s' hs' *
+        torsionBracket c'' (by simp) (by simp) h''₀ b''₁ b''₀ (fun k ↦ (g.f (j + 1)).hom (t₀ k))
+          ht₀) := by
+  have hn' := eq_add_of_exactAt c' (by simp) (by simp) h' b'₁ b'₀
+  have hn'' := eq_add_of_exactAt c'' (by simp) (by simp) h''₀ b''₁ b''₀
   have hN : n' (j + 1) + n'' (j + 1) = p' + q' + (p'' + q'') := by omega
-  rw [torsionBracket_eq_det_append c hC _ _ _ hS (by omega), coe_shortExactBoundaryBasis,
-    torsionBracket_eq_det_append c' h' b'₁ b'₀ s' hs' hn',
-    torsionBracket_eq_det_append c'' h''₀ b''₁ b''₀ _ ht₀ hn'']
+  rw [torsionBracket_eq_det_append c _ _ hC _ _ _ hS (by omega), coe_shortExactBoundaryBasis,
+    torsionBracket_eq_det_append c' _ _ h' b'₁ b'₀ s' hs' hn',
+    torsionBracket_eq_det_append c'' _ _ h''₀ b''₁ b''₀ _ ht₀ hn'']
   -- Exchange the boundaries of the lifts of `B''ⱼ₊₁` with the lifts of `B'ⱼ`; the resulting family
   -- is block triangular with respect to the compatible basis `c (j + 1)`.
   have hsw := ((c (j + 1)).reindex (finCongr hN)).det.map_append_append_comm
@@ -693,19 +790,22 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
   -- chosen boundary bases of `C₁` and `C₃`, and lifts `t` of the chosen lifts of `C₃`.
   let t (j : ℤ) (k : Fin (finrank F (LinearMap.range (S.X₃.d (j + 1) j).hom))) :
       S.X₂.X (j + 1) :=
-    Function.surjInv (hg (j + 1)) (chosenBoundaryLift S.X₃ c₃ j k)
+    Function.surjInv (hg (j + 1)) (chosenBoundaryLift S.X₃ c₃ (j + 1) j k)
   have ht (j : ℤ) (k) : (S.X₃.d (j + 1) j).hom ((S.g.f (j + 1)).hom (t j k)) =
-      chosenBoundaryBasis S.X₃ c₃ j k := by
+      chosenBoundaryBasis S.X₃ c₃ (j + 1) j k := by
     rw [Function.surjInv_eq (hg (j + 1)), chosenBoundaryLift_spec]
-  let β (j : ℤ) := shortExactBoundaryBasis hf hfg hg (h₃ (j + 1)) (chosenBoundaryBasis S.X₁ c₁ j)
-    (chosenBoundaryBasis S.X₃ c₃ j) (t j) (ht j)
-  let s (j : ℤ) := Fin.append (fun k ↦ (S.f.f (j + 1)).hom (chosenBoundaryLift S.X₁ c₁ j k)) (t j)
+  let β (j : ℤ) := shortExactBoundaryBasis hf hfg hg (h₃ (j + 1))
+    (chosenBoundaryBasis S.X₁ c₁ (j + 1) j) (chosenBoundaryBasis S.X₃ c₃ (j + 1) j) (t j) (ht j)
+  let s (j : ℤ) :=
+    Fin.append (fun k ↦ (S.f.f (j + 1)).hom (chosenBoundaryLift S.X₁ c₁ (j + 1) j k)) (t j)
   have hs (j : ℤ) (k) : (S.X₂.d (j + 1) j).hom (s j k) = β j k := by
     rw [congrFun (coe_shortExactBoundaryBasis hf hfg hg (h₃ (j + 1)) _ _ _ (ht j)) k]
     induction k using Fin.addCases <;> simp [s, Hom.comm_apply, chosenBoundaryLift_spec]
-  have hτ₁ := hasFiniteMulSupport_torsionBracket (c := c₁) hn₁ h₁ (chosenBoundaryBasis S.X₁ c₁)
-    (chosenBoundaryLift S.X₁ c₁) (chosenBoundaryLift_spec S.X₁ c₁)
-  have hτ₃ := hasFiniteMulSupport_torsionBracket (c := c₃) hn₃ h₃ (chosenBoundaryBasis S.X₃ c₃)
+  have hτ₁ := hasFiniteMulSupport_torsionBracket (c := c₁) hn₁ h₁
+    (fun j ↦ chosenBoundaryBasis S.X₁ c₁ (j + 1) j) (fun j ↦ chosenBoundaryLift S.X₁ c₁ (j + 1) j)
+    (fun j ↦ chosenBoundaryLift_spec S.X₁ c₁ (j + 1) j)
+  have hτ₃ := hasFiniteMulSupport_torsionBracket (c := c₃) hn₃ h₃
+    (fun j ↦ chosenBoundaryBasis S.X₃ c₃ (j + 1) j)
     (fun j k ↦ (S.g.f (j + 1)).hom (t j k)) ht
   -- The Koszul sign is `1` in every degree where `C₁` vanishes.
   have hε : Function.HasFiniteMulSupport fun j : ℤ ↦
@@ -714,14 +814,15 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
     simpa only [Nat.mul_comm] using hasFiniteMulSupport_neg_one_pow_finrank_mul S.X₁ c₁ hn₁
       fun j ↦ finrank F (LinearMap.range (S.X₃.d (j + 1 + 1) (j + 1)).hom)
   rw [reidemeisterTorsion_eq_finprod hn (hS.acyclic_X₂ h₁ h₃) β s hs,
-    reidemeisterTorsion_eq_finprod hn₁ h₁ (chosenBoundaryBasis S.X₁ c₁) (chosenBoundaryLift S.X₁ c₁)
-      (chosenBoundaryLift_spec S.X₁ c₁),
-    reidemeisterTorsion_eq_finprod hn₃ h₃ (chosenBoundaryBasis S.X₃ c₃)
+    reidemeisterTorsion_eq_finprod hn₁ h₁ (fun j ↦ chosenBoundaryBasis S.X₁ c₁ (j + 1) j)
+      (fun j ↦ chosenBoundaryLift S.X₁ c₁ (j + 1) j)
+      (fun j ↦ chosenBoundaryLift_spec S.X₁ c₁ (j + 1) j),
+    reidemeisterTorsion_eq_finprod hn₃ h₃ (fun j ↦ chosenBoundaryBasis S.X₃ c₃ (j + 1) j)
       (fun j k ↦ (S.g.f (j + 1)).hom (t j k)) ht,
     ← finprod_mul_distrib hτ₁ hτ₃, ← finprod_mul_distrib hε (hτ₁.fun_mul hτ₃)]
   refine finprod_congr fun j ↦ ?_
   rw [torsionBracket_shortExactBoundaryBasis hf hfg hg hc₁ hc₃ (h' := h₁ (j + 1))
-    (hs' := chosenBoundaryLift_spec S.X₁ c₁ j), mul_zpow, mul_zpow]
+    (hs' := chosenBoundaryLift_spec S.X₁ c₁ (j + 1) j), mul_zpow, mul_zpow]
   congr 1
   rcases Int.units_eq_one_or j.negOnePow with hj | hj <;> simp [hj, ← inv_pow]
 
@@ -779,44 +880,6 @@ variable {C c} {K : Type*} [Field K] (φ : F →+* K) {D : ChainComplex (ModuleC
   (hd : ∀ i, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom =
     (LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom).map φ)
 
-/-- The bracket of the scalar extension, for the images of boundary bases and lifts, is the image
-of the bracket. -/
-private theorem torsionBracket_semilinearMap {j : ℤ} (h : C.ExactAt (j + 1))
-    (h' : D.ExactAt (j + 1)) {p q : ℕ}
-    (b₁ : Basis (Fin p) F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
-    (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom))
-    (s : Fin q → C.X (j + 1)) (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k)
-    (b₁' : Basis (Fin p) K (LinearMap.range (D.d (j + 1 + 1) (j + 1)).hom))
-    (b₀' : Basis (Fin q) K (LinearMap.range (D.d (j + 1) j).hom))
-    (hb₁ : ∀ k, (b₁' k : D.X (j + 1)) = (c (j + 1)).semilinearMap φ (e (j + 1)) (b₁ k))
-    (hs' : ∀ k, (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) (s k)) = b₀' k) :
-    torsionBracket e h' b₁' b₀' ((c (j + 1)).semilinearMap φ (e (j + 1)) ∘ s) hs' =
-      φ (torsionBracket c h b₁ b₀ s hs) := by
-  have hn := eq_add_of_exactAt c h b₁ b₀
-  rw [torsionBracket_eq_det_append e h' _ _ _ _ hn, torsionBracket_eq_det_append c h _ _ _ _ hn,
-    ← Basis.det_comp_semilinearMap φ (c (j + 1)) (e (j + 1))]
-  congr 1
-  ext k
-  obtain ⟨m, rfl⟩ := (finCongr hn.symm).surjective k
-  induction m using Fin.addCases <;> simp [hb₁]
-
-/-- For an acyclic complex, the images of the chosen boundary bases under the `φ`-semilinear maps
-`semilinearMap φ (c j) (e j)` are linearly independent: together with the images of the chosen
-lifts they form a family whose determinant is the image of a bracket, which is nonzero. -/
-private theorem linearIndependent_semilinearMap_chosenBasis (h : C.Acyclic) (j : ℤ) :
-    LinearIndependent K fun k ↦ (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) := by
-  obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
-  have hn := eq_add_of_exactAt c (h (i + 1)) (chosenBoundaryBasis C c (i + 1))
-    (chosenBoundaryBasis C c i)
-  have hdet := torsionBracket_ne_zero c (h (i + 1)) (chosenBoundaryBasis C c (i + 1))
-    (chosenBoundaryBasis C c i) (chosenBoundaryLift C c i) (chosenBoundaryLift_spec C c i)
-  rw [torsionBracket_eq_det_append c _ _ _ _ _ hn, ← map_ne_zero φ,
-    ← Basis.det_comp_semilinearMap φ (c (i + 1)) (e (i + 1))] at hdet
-  convert ((Basis.is_basis_iff_det (e (i + 1))).2 (isUnit_iff_ne_zero.2 hdet)).1.comp _
-    ((Fin.cast_injective hn.symm).comp (Fin.castAdd_injective _ _)) using 1
-  ext k
-  simp
-
 include hd in
 /-- **Scalar extension of the torsion.** Let `φ : F →+* K` be a homomorphism of fields, and let
 `D` be a complex of vector spaces over `K` with bases `e i` in which the matrices of the
@@ -835,38 +898,20 @@ theorem map_reidemeisterTorsion : φ (C.reidemeisterTorsion c) = D.reidemeisterT
   · rw [reidemeisterTorsion_of_not_acyclic C c h, reidemeisterTorsion_of_not_acyclic D e
       (mt hDC.1 h), map_zero]
   have hD := hDC.2 h
-  have : ∀ i, Module.Finite K (D.X i) := fun i ↦ .of_basis (e i)
-  have hcomm (j : ℤ) (x : C.X (j + 1)) :
-      (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) x) =
-        (c j).semilinearMap φ (e j) ((C.d (j + 1) j).hom x) :=
-    Basis.semilinearMap_comp_apply_of_toMatrix_eq (hd j) x
-  -- The images of the chosen boundary bases of `C` are boundaries of `D`.
-  have hmem (j : ℤ) (k) : (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) ∈
-      LinearMap.range (D.d (j + 1) j).hom :=
-    LinearMap.mem_range.2 ⟨_, by rw [hcomm, chosenBoundaryLift_spec]⟩
   -- The images of the chosen boundary bases of `C` form boundary bases of `D`, and the images of
   -- the chosen lifts are lifts of them.
-  let b (j : ℤ) : Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) K
-      (LinearMap.range (D.d (j + 1) j).hom) :=
-    basisOfLinearIndependentOfCardEqFinrank' (fun k ↦ ⟨_, hmem j k⟩)
-      (LinearIndependent.of_comp (LinearMap.range (D.d (j + 1) j).hom).subtype
-        (linearIndependent_semilinearMap_chosenBasis φ h j))
-      (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ (hd j)])
-  have hb (j : ℤ) (k) : (b j k : D.X j) =
-      (c j).semilinearMap φ (e j) (chosenBoundaryBasis C c j k) := by
-    simp [b]
-  have hs (j : ℤ) (k) :
-      (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) (chosenBoundaryLift C c j k)) =
-        b j k := by
-    rw [hb, hcomm, chosenBoundaryLift_spec]
-  rw [reidemeisterTorsion_eq_finprod hn h (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
-      (chosenBoundaryLift_spec C c),
+  let b (j : ℤ) :=
+    semilinearChosenBoundaryBasis φ (ChainComplex.prev ℤ j) (ChainComplex.next ℤ j) (hd j) (h j)
+  rw [reidemeisterTorsion_eq_finprod hn h (fun j ↦ chosenBoundaryBasis C c (j + 1) j)
+      (fun j ↦ chosenBoundaryLift C c (j + 1) j) (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j),
     reidemeisterTorsion_eq_finprod hn hD b
-      (fun j ↦ (c (j + 1)).semilinearMap φ (e (j + 1)) ∘ chosenBoundaryLift C c j) hs]
+      (fun j ↦ (c (j + 1)).semilinearMap φ (e (j + 1)) ∘ chosenBoundaryLift C c (j + 1) j)
+      (fun j ↦ d_semilinearMap_chosenBoundaryLift φ _ _ (hd j) (h j))]
   refine (MonoidHom.map_finprod_of_injective (φ : F →* K) φ.injective _).trans
     (finprod_congr fun j ↦ ?_)
-  rw [MonoidHom.coe_ofClass, map_zpow₀,
-    torsionBracket_semilinearMap φ (h (j + 1)) (hD (j + 1)) _ _ _ _ _ _ (hb (j + 1)) (hs j)]
+  rw [MonoidHom.coe_ofClass, map_zpow₀, torsionBracket_semilinearMap φ _ _ (h (j + 1)) (hD (j + 1))
+    _ _ _ _ _ _ (coe_semilinearChosenBoundaryBasis φ _ _ (hd (j + 1)) (h (j + 1)))
+    (d_semilinearMap_chosenBoundaryLift φ _ _ (hd j) (h j))]
 
 end ScalarExtension
 
