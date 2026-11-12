@@ -24,7 +24,8 @@ finite-dimensional real normed space `F` is first recharted along a linear equiv
 a Euclidean space (`ContinuousLinearEquiv.chartedSpace`); homological orientations do not depend on
 the model (`TauCeti.HomologicalOrientation.congrModel`), so this gives the homological orientation
 `TauCeti.Manifold.Orientation.toHomologicalOrientation` of `o` for every such model, for instance
-for products of spheres, which are modelled on products of Euclidean spaces with the sup norm. On
+for a product of spheres once its product model is presented as `𝓘(ℝ, E × E')`, a product of
+Euclidean spaces with the sup norm (`modelWithCornersSelf_prod`, `chartedSpaceSelf_prod`). On
 an inner product model it is the chart construction above
 (`TauCeti.Manifold.Orientation.toHomologicalOrientation_apply`): oriented-chart generators are
 invariant under linear isometries of the model, and change by the sign of the Jacobian under linear

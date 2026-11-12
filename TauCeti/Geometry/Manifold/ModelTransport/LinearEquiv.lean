@@ -22,7 +22,7 @@ derivatives `L.symm` and `L` (`ContinuousLinearEquiv.mfderiv_id_chartedSpace_lef
 
 This lets a construction stated for manifolds modelled on one particular space, such as a
 Euclidean space, be applied to a manifold modelled on any space of the same dimension, while
-keeping its original atlas: the two structures carry different model types, so they coexist on
+keeping its original atlas: when `F` and `E` are different types, the two structures coexist on
 `M` as separate instances.
 
 ## Main definitions

@@ -43,8 +43,9 @@ For a map between compact manifolds, with `N` preconnected, this reads
 `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`
 (`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`), so a degree
 computed by counting preimages with signs computes the image of the fundamental class. The models
-need not be inner product spaces: a product of spheres, modelled on a product of Euclidean spaces
-with the sup norm, is covered.
+need not be inner product spaces: a product of spheres is covered once its product model
+`𝓘(ℝ, E).prod 𝓘(ℝ, E')` is presented as `𝓘(ℝ, E × E')`, a product of Euclidean spaces with the
+sup norm (`modelWithCornersSelf_prod`, `chartedSpaceSelf_prod`).
 
 ## Main results
 
