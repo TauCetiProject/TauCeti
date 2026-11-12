@@ -60,19 +60,6 @@ variable {r N : ℕ}
 
 /-! ### Local triviality -/
 
-/-- A continuous local section of the Stiefel fibration `SO(r + m) → V_r(ℝ^(r + m))` around each
-frame, read off a chart of the fibration. -/
-private theorem exists_localSection_specialOrthogonalFrameMap (m : ℕ) [NeZero m]
-    (b : finiteOrthonormalFrame ℝ r (r + m)) :
-    ∃ (U : Set (finiteOrthonormalFrame ℝ r (r + m)))
-      (s : finiteOrthonormalFrame ℝ r (r + m) → Matrix.specialOrthogonalGroup (Fin (r + m)) ℝ),
-      IsOpen U ∧ b ∈ U ∧ ContinuousOn s U ∧ ∀ f ∈ U, specialOrthogonalFrameMap r m (s f) = f := by
-  obtain ⟨e, hb⟩ := exists_trivialization_specialOrthogonalFrameMap (r := r) (m := m) b
-  exact ⟨e.baseSet, fun f ↦ e.toOpenPartialHomeomorph.symm (f, 1), e.open_baseSet, hb,
-    e.toOpenPartialHomeomorph.continuousOn_symm.comp (continuousOn_id.prodMk continuousOn_const)
-      fun _ hf ↦ e.mem_target.2 hf,
-    fun _ hf ↦ e.proj_symm_apply' hf⟩
-
 /-- For `r < N`, forgetting the last vector `V_(r+1)(ℝ^N) → V_r(ℝ^N)` has a chart with fibre the
 sphere `S^(N-r-1)` around each orthonormal `r`-frame. -/
 theorem exists_trivialization_forgetLast (h : r < N) (b : finiteOrthonormalFrame ℝ r N) :
@@ -80,14 +67,15 @@ theorem exists_trivialization_forgetLast (h : r < N) (b : finiteOrthonormalFrame
       (forgetLast : finiteOrthonormalFrame ℝ (r + 1) N → finiteOrthonormalFrame ℝ r N),
       b ∈ e.baseSet := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt h
-  obtain ⟨U, s, hU, hb, hs, hsec⟩ := exists_localSection_specialOrthogonalFrameMap (m + 1) b
+  obtain ⟨c, hb⟩ := exists_trivialization_specialOrthogonalFrameMap (r := r) (m := m + 1) b
   let := specialOrthogonalMulAction (r + 1) (r + m + 1)
   let := specialOrthogonalMulAction r (r + m + 1)
   have := continuousSMul_specialOrthogonalMulAction (r := r + 1) (N := r + m + 1)
   let e := equivariantTrivialization forgetLast continuous_forgetLast
     (fun A g ↦ by simp only [specialOrthogonal_smul_def, forgetLast_unitaryMap])
-    (forgetLast_surjective h (standard ℝ h.le)) U hU s hs
-    fun f hf ↦ (specialOrthogonalFrameMap_eq_smul_standard (s f)).symm.trans (hsec f hf)
+    (forgetLast_surjective h (standard ℝ h.le)) c.baseSet c.open_baseSet
+    (fun f ↦ c.toOpenPartialHomeomorph.symm (f, 1)) c.continuousOn_symm_prodMk_left
+    fun f hf ↦ (specialOrthogonalFrameMap_eq_smul_standard _).symm.trans (c.proj_symm_apply' hf)
   refine ⟨e.transFiberHomeomorph (forgetLastFiberSphere _), ?_⟩
   simpa only [Bundle.Trivialization.transFiberHomeomorph, e, equivariantTrivialization_baseSet]
     using hb
