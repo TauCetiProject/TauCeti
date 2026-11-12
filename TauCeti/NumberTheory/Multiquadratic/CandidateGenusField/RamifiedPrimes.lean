@@ -69,8 +69,12 @@ theorem finrank_candidateGenusField_eq_two_pow_ncard_ramifiedPrimes
 
 /-- **The candidate genus field of `ℚ(√d)` has degree `2 ^ (t - 1)` over `ℚ(√d)`**, where `t` is the
 number of rational primes ramifying in `ℚ(√d)`. This is the field-theoretic side of the genus-theory
-`2`-rank formula: once `Gal(K_gen/K) ≅ Cl⁺(K)/Cl⁺(K)²` is available, it says that the elementary-`2`
-quotient of the *narrow* class group has rank `t - 1`. -/
+`2`-rank formula. The class-group side, that the elementary-`2` quotient of the *narrow* class group
+`Cl⁺(K)` has rank `t - 1`, is `narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one` in
+`Quadratic/TwoRank.lean`. For `d` not a rational square the two sides are matched by the
+isomorphism `Gal(K_gen/K) ≅ Cl⁺(K)/Cl⁺(K)²`, which is
+`autCandidateGenusFieldEquivNarrowElementaryTwoQuotient` in
+`CandidateGenusField/Relative/GenusCharacter.lean`. -/
 theorem finrank_candidateGenusField_over_candidateGenusFieldBase_eq_two_pow_ncard_ramifiedPrimes
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hd : Squarefree d) :
