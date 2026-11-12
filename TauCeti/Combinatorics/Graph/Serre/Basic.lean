@@ -138,6 +138,29 @@ theorem IsOrientation.mem_or_rev_mem {O : Set Γ.E} (hO : Γ.IsOrientation O) (e
     e ∈ O ∨ Γ.rev e ∈ O :=
   or_iff_not_imp_left.mpr (IsOrientation.mem_rev_iff Γ hO e).mpr
 
+/-- An orientation contains exactly one dart above each geometric edge. -/
+theorem IsOrientation.bijective_toGeomEdge {O : Set Γ.E} (hO : Γ.IsOrientation O) :
+    Function.Bijective fun e : O => Γ.toGeomEdge e := by
+  refine ⟨fun e f h => Subtype.ext ?_, fun g => ?_⟩
+  · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.mp h with hf | hf
+    · exact hf.symm
+    · exact absurd (hf ▸ f.2) (hO.rev_notMem_of_mem Γ e e.2)
+  · obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective g
+    by_cases he : e ∈ O
+    · exact ⟨⟨e, he⟩, rfl⟩
+    · exact ⟨⟨Γ.rev e, (hO.mem_rev_iff Γ e).mpr he⟩, Γ.toGeomEdge_rev e⟩
+
+/-- Every Serre graph has an orientation: choose one dart above each geometric edge. -/
+theorem exists_isOrientation : ∃ O : Set Γ.E, Γ.IsOrientation O := by
+  choose out hout using Γ.toGeomEdge_surjective
+  have hmem (e : Γ.E) : e ∈ Set.range out ↔ out (Γ.toGeomEdge e) = e :=
+    ⟨by rintro ⟨g, rfl⟩; rw [hout], fun h => ⟨_, h⟩⟩
+  refine ⟨Set.range out, fun e => ?_⟩
+  rw [hmem, hmem, toGeomEdge_rev]
+  rcases Γ.toGeomEdge_eq_toGeomEdge_iff.mp (hout (Γ.toGeomEdge e)).symm with h | h
+  · simpa [h] using (Γ.rev_ne e).symm
+  · simpa [h] using Γ.rev_ne e
+
 /-- The quiver whose arrows are the actual darts from their source to their target. -/
 @[expose, instance_reducible] def toQuiver : Quiver Γ.V where
   Hom a b := {e : Γ.E // Γ.src e = a ∧ Γ.tgt e = b}

@@ -19,9 +19,8 @@ the multigraph (`SerreGraph.componentCount_endpointGraph`).
 
 When `O` contains at least one dart of every reversal pair, in particular when it is an
 orientation, the simple support of `O` is that of all darts, and its components are those of
-the multigraph of reversal pairs `SerreGraph.toGraph` (`SerreGraph.componentCount_toGraph`).
-Reachability in it is then joinability by a path of darts, and it has exactly one component
-precisely when the Serre graph is connected.
+the multigraph of reversal pairs `SerreGraph.toGraph` (`SerreGraph.componentCount_toGraph`). The
+simple support then has exactly one component precisely when the Serre graph is connected.
 
 ## References
 
@@ -86,15 +85,6 @@ theorem supportGraph_eq_supportGraph_univ (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ 
   refine fun _ => ⟨by grind, ?_⟩
   rintro (⟨e, rfl, rfl⟩ | ⟨e, rfl, rfl⟩) <;> grind [Γ.src_rev e, Γ.tgt_rev e, hO e]
 
-/-- For a dart set containing at least one dart of every reversal pair, reachability in the
-simple support is joinability by a path of darts. -/
-theorem reachable_supportGraph_iff (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (x y : Γ.V) :
-    (Γ.supportGraph O).Reachable x y ↔ Nonempty (Γ.Path x y) := by
-  rw [supportGraph_eq_supportGraph_univ hO, ← Γ.reachable_toGraph_iff,
-    ← Graph.toSimpleGraph_reachable_iff (u := ⟨x, by simp⟩) (v := ⟨y, by simp⟩),
-    ← Γ.toSimpleGraphToGraphIso.reachable_iff]
-  simp
-
 /-- For a dart set containing at least one dart of every reversal pair, the components of the
 simple support are those of the Serre graph: their number is the component count of its
 multigraph of reversal pairs. -/
@@ -120,12 +110,6 @@ theorem card_connectedComponent_supportGraph_eq_one_iff (hO : ∀ e, e ∈ O ∨
 theorem IsOrientation.supportGraph_eq_supportGraph_univ (hO : Γ.IsOrientation O) :
     Γ.supportGraph O = Γ.supportGraph Set.univ :=
   SerreGraph.supportGraph_eq_supportGraph_univ hO.mem_or_rev_mem
-
-/-- For an orientation, reachability in the simple support is joinability by a path of
-darts. -/
-theorem IsOrientation.reachable_supportGraph_iff (hO : Γ.IsOrientation O) (x y : Γ.V) :
-    (Γ.supportGraph O).Reachable x y ↔ Nonempty (Γ.Path x y) :=
-  SerreGraph.reachable_supportGraph_iff hO.mem_or_rev_mem x y
 
 /-- The components of the simple support of an orientation are those of the Serre graph: their
 number is the component count of its multigraph of reversal pairs. -/

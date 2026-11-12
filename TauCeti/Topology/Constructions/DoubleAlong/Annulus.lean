@@ -107,7 +107,6 @@ private theorem norm_eq_of_height_eq (h : r₁ < r₂) {z w : closedAnnulus r₁
     (hzw : height z = height w) : ‖(z : ℂ)‖ = ‖(w : ℂ)‖ := by
   have := congrArg Subtype.val hzw
   rw [coe_height h, coe_height h] at this
-  have hr : 0 < r₂ - r₁ := sub_pos.2 h
   field_simp at this
   linarith
 
