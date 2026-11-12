@@ -66,6 +66,8 @@ separate endpoint family is chosen.
 * `TauCeti.SmoothMappingTorus.seamFamily_of_mem_Icc`,
   `TauCeti.SmoothMappingTorus.seamFamily_eq_of_mem_Icc`: the family is `J_k` on the collar of
   width `1/3` around the integer time `k`, and `J₀` around time `0`.
+* `TauCeti.SmoothMappingTorus.seamAlmostComplexStructure_def`: the descended structure is
+  `TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure` of the seam family.
 * `TauCeti.SmoothMappingTorus.compatible_seamAlmostComplexStructure`: the descended structure is
   compatible with `Ω`.
 * `TauCeti.SmoothMappingTorus.seamAlmostComplexStructure_mk`: in the coordinates `(s, t, x)` with
@@ -316,6 +318,13 @@ def seamAlmostComplexStructure :
       (UnitAddCircle × SmoothMappingTorus φ) :=
   suspensionAlmostComplexStructure φ (contMDiff_seamFamily hσ hJ₀) (seamFamily_add_fst hσ hJ₀)
     (mfderiv_symm_seamFamily hσ hJ₀)
+
+/-- The seam structure is the block structure descended from the seam family. -/
+theorem seamAlmostComplexStructure_def :
+    seamAlmostComplexStructure hσ hJ₀ = suspensionAlmostComplexStructure φ
+      (contMDiff_seamFamily hσ hJ₀) (seamFamily_add_fst hσ hJ₀)
+      (mfderiv_symm_seamFamily hσ hJ₀) := by
+  rw [seamAlmostComplexStructure]
 
 /-- In the coordinates `(s, t, x)`, the descended structure sends `a ∂_s + b ∂_t + v` at
 `([s], [t, x])` to `-b ∂_s + a ∂_t + K_((s, t), x) v`. -/
