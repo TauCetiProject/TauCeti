@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.LinearAlgebra.TotallyReal.Extension
 import TauCeti.LinearAlgebra.TotallyReal.Frame
 
@@ -169,14 +170,6 @@ theorem frameChartDeriv_comp_frameStructure {u' : ℂ →L[ℝ] V} {J₀ : V →
     frameChartDeriv u' J₀ N ∘L frameStructure W = J₀ ∘L frameChartDeriv u' J₀ N := by
   ext w <;> simp [hu, hJ₀, add_comm]
 
-/-- The value of a real-linear map on `ℂ` in terms of its values on `1` and `i`. -/
-private theorem apply_eq_re_smul_add_im_smul (u' : ℂ →L[ℝ] V) (z : ℂ) :
-    u' z = z.re • u' 1 + z.im • u' I := by
-  have hz : z = z.re • (1 : ℂ) + z.im • I := by
-    apply Complex.ext <;> simp
-  nth_rewrite 1 [hz]
-  rw [map_add, map_smul, map_smul]
-
 /-- **Frames exist.** In finite dimension, if `J₀² = -1` and `u'` is complex linear for `J₀` and
 nonzero, there is a subspace `L` whose inclusion is a frame completing `u'`: the linear model
 `(a, x, y) ↦ u' a + x + J₀ y` of the frame chart is bijective from `ℂ × L × L` onto `V`. -/
@@ -235,7 +228,7 @@ theorem exists_bijective_frameChartDeriv [FiniteDimensional ℝ V] {u' : ℂ →
     simp only [frameChartDeriv_apply, Submodule.coe_subtype,
       Function.comp_apply, LinearMap.coprod_apply, LinearMap.coe_comp, ContinuousLinearMap.coe_coe,
       LinearMap.toSpanSingleton_apply, σ, Equiv.coe_fn_mk, A, map_add, map_smul,
-      apply_eq_re_smul_add_im_smul u' w.1, hI]
+      u'.apply_eq_re_smul_one_add_im_smul_I w.1, hI]
     abel
   exact ⟨L, hcomp ▸ hbij.comp σ.bijective⟩
 
