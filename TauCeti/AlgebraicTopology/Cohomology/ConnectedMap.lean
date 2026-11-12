@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.LinearYoneda
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.ConnectedMap
@@ -35,8 +34,9 @@ on cohomology. For the inclusion of the bottom face, the relative singular homol
 (`ContinuousMap.IsNConnected.isZero_singularHomology_mappingCylinder`). The relative singular
 chains are projective, since they are a direct summand of the free singular chains of `M_f`, so the
 complex of relative singular cochains `Hom(C(M_f, X; R), M)` is exact in the same degrees
-(`ChainComplex.exactAt_linearYonedaObj_of_projective`): the relative cohomology `H^m(M_f, X; M)`
-vanishes for `m ≤ n`, whatever the module `M`
+(`ChainComplex.exactAt_linearYonedaObj_of_projective`, through
+`TopPair.isZero_singularCohomology_of_isZero_singularHomology`): the relative cohomology
+`H^m(M_f, X; M)` vanishes for `m ≤ n`, whatever the module `M`
 (`ContinuousMap.IsNConnected.isZero_singularCohomology_mappingCylinder`). No universal coefficient
 theorem is involved. The long exact cohomology sequence of the pair `(M_f, X)` then makes
 restriction to the bottom face injective in degrees `≤ n` and surjective in degrees `< n`.
@@ -91,18 +91,9 @@ The relative singular chains are projective and exact in degrees `≤ n`, so the
 the same degrees. -/
 theorem isZero_singularCohomology_mappingCylinder (hf : f.IsNConnected n) {m : ℕ} (hm : m ≤ n) :
     IsZero ((TopPair.ofSubset (X := TopCat.of (MappingCylinder f))
-      (Set.range (MappingCylinder.incl f))).singularCohomology (ModuleCat.of R R) k M m) := by
-  let P := TopPair.ofSubset (X := TopCat.of (MappingCylinder f))
-    (Set.range (MappingCylinder.incl f))
-  -- The relative singular chains are a direct summand of the free singular chains of `M_f`.
-  have : Projective (ModuleCat.of R R) :=
-    ModuleCat.projective_of_free (Module.Basis.singleton Unit R)
-  have (i : ℕ) : Projective ((P.singularChainComplex (ModuleCat.of R R)).X i) :=
-    SSetPair.projective_chainComplex_X _ _ i
-  rw [← HomologicalComplex.exactAt_iff_isZero_homology]
-  exact ChainComplex.exactAt_linearYonedaObj_of_projective k _ M
-    (fun i hi ↦ (HomologicalComplex.exactAt_iff_isZero_homology _ _).2
-      (hf.isZero_singularHomology_mappingCylinder R hi)) hm
+      (Set.range (MappingCylinder.incl f))).singularCohomology (ModuleCat.of R R) k M m) :=
+  TopPair.isZero_singularCohomology_of_isZero_singularHomology _ (ModuleCat.of R R) M m
+    fun _ hj ↦ hf.isZero_singularHomology_mappingCylinder R (hj.trans hm)
 
 variable {R k M} in
 /-- The map induced on singular cohomology by `f` is the map induced by the restriction to the
@@ -182,17 +173,26 @@ end ContinuousMap.IsNConnected
 
 namespace TopPair
 
-open TauCeti.ChainComplex
+variable {P P' : TopPair.{u}} (f : P ⟶ P') {n : ℕ} {R : Type u} [Ring R] {k : Type*} [Ring k]
+  [Linear k (ModuleCat.{u} R)] {M : ModuleCat.{u} R}
 
-variable {P P' : TopPair.{u}} (f : P ⟶ P') {n : ℕ} (R : Type u) [Ring R] (k : Type*) [Ring k]
-  [Linear k (ModuleCat.{u} R)] (M : ModuleCat.{u} R)
+/-- On cohomology, the ambient component of the morphism of cochain sequences induced by `f` is the
+singular cohomology map of `Hom.fst f`. -/
+private lemma homologyMap_singularCochainComplexShortComplexMap_τ₂ (j : ℕ) :
+    HomologicalComplex.homologyMap
+        (singularCochainComplexShortComplexMap (R := ModuleCat.of R R) (k := k) (M := M) f).τ₂ j =
+      TopCat.singularCohomologyMap (TopCat.ofHom (Hom.fst f).hom) j := by
+  rw [singularCochainComplexShortComplexMap_τ₂, TopCat.ofHom_hom]
 
-/-- The morphism from the short exact cochain sequence `C*(Y, B) ⟶ C*(Y) ⟶ C*(B)` of `P'` to that
-of `P`, induced by a map of pairs `f : P ⟶ P'`. Its components are the relative, ambient and
-subspace cochain maps of `f`. -/
-private abbrev cochainShortComplexMap :=
-  (linearYonedaFunctor k M).mapShortComplex.map (ShortComplex.opMap
-    (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) (ModuleCat.of R R)))
+/-- On cohomology, the subspace component of the morphism of cochain sequences induced by `f` is
+the singular cohomology map of `Hom.snd f`. -/
+private lemma homologyMap_singularCochainComplexShortComplexMap_τ₃ (j : ℕ) :
+    HomologicalComplex.homologyMap
+        (singularCochainComplexShortComplexMap (R := ModuleCat.of R R) (k := k) (M := M) f).τ₃ j =
+      TopCat.singularCohomologyMap (TopCat.ofHom (Hom.snd f).hom) j := by
+  rw [singularCochainComplexShortComplexMap_τ₃, TopCat.ofHom_hom]
+
+variable (R k M)
 
 /-- **A map of pairs which is `n`-connected on the ambient spaces and on the subspaces induces
 isomorphisms on relative singular cohomology below degree `n`**: the map
@@ -201,35 +201,24 @@ exact cohomology sequences of the two pairs. -/
 theorem isIso_singularCohomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
     (hsnd : (Hom.snd f).hom.IsNConnected n) {m : ℕ} (hm : m < n) :
     IsIso (TopPair.singularCohomologyMap (R := ModuleCat.of R R) (k := k) (M := M) f m) := by
-  -- `Hom(-, M)` carries the morphism of chain sequences of `f` to a morphism from the cochain
-  -- sequence of `P'` to that of `P`, with components the relative cochain map and the cochain maps
-  -- of `Hom.fst f` and `Hom.snd f`; the singular cohomology maps of the latter two are by
-  -- definition the cohomology maps of these cochain maps.
   have h := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₁
-    (cochainShortComplexMap f R k M)
-    (shortExact_map_linearYonedaFunctor k M
-      ((toSSetPair.obj P').shortExact_chainComplexShortComplex _))
-    (shortExact_map_linearYonedaFunctor k M
-      ((toSSetPair.obj P).shortExact_chainComplexShortComplex _)) m
+    (singularCochainComplexShortComplexMap f)
+    (P'.shortExact_singularCochainComplexShortComplex _ k M)
+    (P.shortExact_singularCochainComplexShortComplex _ k M) m
     (fun j hj ↦ by
-      rw [Functor.mapShortComplex_map_τ₂, ShortComplex.opMap_τ₂,
-        SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
-      exact @IsIso.epi_of_iso _ _ _ _ _
-        (hfst.isIso_singularCohomologyMap R k M (by simp at hj; lia)))
+      rw [homologyMap_singularCochainComplexShortComplexMap_τ₂]
+      have := hfst.isIso_singularCohomologyMap R k M (m := j) (by simp at hj; lia)
+      infer_instance)
     (fun j hj ↦ by
-      rw [Functor.mapShortComplex_map_τ₃, ShortComplex.opMap_τ₃,
-        SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      rw [homologyMap_singularCochainComplexShortComplexMap_τ₃]
       exact hsnd.isIso_singularCohomologyMap R k M (by simp at hj; lia))
     (by
-      rw [Functor.mapShortComplex_map_τ₂, ShortComplex.opMap_τ₂,
-        SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      rw [homologyMap_singularCochainComplexShortComplexMap_τ₂]
       exact hfst.isIso_singularCohomologyMap R k M hm)
     (by
-      rw [Functor.mapShortComplex_map_τ₃, ShortComplex.opMap_τ₃,
-        SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      rw [homologyMap_singularCochainComplexShortComplexMap_τ₃]
       exact hsnd.mono_singularCohomologyMap R k M hm.le)
-  rwa [Functor.mapShortComplex_map_τ₁, ShortComplex.opMap_τ₁,
-    SSetPair.chainComplexShortComplexMap_τ₃] at h
+  rwa [singularCochainComplexShortComplexMap_τ₁] at h
 
 /-- **A map of pairs which is `n`-connected on the ambient spaces and on the subspaces induces
 monomorphisms on relative singular cohomology up to degree `n`**: the map
@@ -238,25 +227,19 @@ theorem mono_singularCohomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNCo
     (hsnd : (Hom.snd f).hom.IsNConnected n) {m : ℕ} (hm : m ≤ n) :
     Mono (TopPair.singularCohomologyMap (R := ModuleCat.of R R) (k := k) (M := M) f m) := by
   have h := HomologicalComplex.HomologySequence.mono_homologyMap_τ₁
-    (cochainShortComplexMap f R k M)
-    (shortExact_map_linearYonedaFunctor k M
-      ((toSSetPair.obj P').shortExact_chainComplexShortComplex _))
-    (shortExact_map_linearYonedaFunctor k M
-      ((toSSetPair.obj P).shortExact_chainComplexShortComplex _)) m
+    (singularCochainComplexShortComplexMap f)
+    (P'.shortExact_singularCochainComplexShortComplex _ k M)
+    (P.shortExact_singularCochainComplexShortComplex _ k M) m
     (fun j hj ↦ by
-      rw [Functor.mapShortComplex_map_τ₂, ShortComplex.opMap_τ₂,
-        SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
-      exact @IsIso.epi_of_iso _ _ _ _ _
-        (hfst.isIso_singularCohomologyMap R k M (by simp at hj; lia)))
+      rw [homologyMap_singularCochainComplexShortComplexMap_τ₂]
+      have := hfst.isIso_singularCohomologyMap R k M (m := j) (by simp at hj; lia)
+      infer_instance)
     (fun j hj ↦ by
-      rw [Functor.mapShortComplex_map_τ₃, ShortComplex.opMap_τ₃,
-        SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      rw [homologyMap_singularCochainComplexShortComplexMap_τ₃]
       exact hsnd.mono_singularCohomologyMap R k M (by simp at hj; lia))
     (by
-      rw [Functor.mapShortComplex_map_τ₂, ShortComplex.opMap_τ₂,
-        SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      rw [homologyMap_singularCochainComplexShortComplexMap_τ₂]
       exact hfst.mono_singularCohomologyMap R k M hm)
-  rwa [Functor.mapShortComplex_map_τ₁, ShortComplex.opMap_τ₁,
-    SSetPair.chainComplexShortComplexMap_τ₃] at h
+  rwa [singularCochainComplexShortComplexMap_τ₁] at h
 
 end TopPair

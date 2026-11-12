@@ -261,6 +261,28 @@ namespace TopPair
 
 variable {P P' : TopPair.{u}} (f : P ⟶ P') {n : ℕ} (R : Type u) [Ring R]
 
+/-- On homology, the subspace component of the morphism of chain sequences induced by `f` is the
+singular homology map of `Hom.snd f`. -/
+private lemma homologyMap_chainComplexShortComplexMap_τ₁ (m : ℕ) :
+    HomologicalComplex.homologyMap
+        (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) (ModuleCat.of R R)).τ₁ m =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
+        (ModuleCat.of R R)).map
+        (TopCat.ofHom (Hom.snd f).hom) := by
+  rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left, TopCat.ofHom_hom]
+  rfl
+
+/-- On homology, the ambient component of the morphism of chain sequences induced by `f` is the
+singular homology map of `Hom.fst f`. -/
+private lemma homologyMap_chainComplexShortComplexMap_τ₂ (m : ℕ) :
+    HomologicalComplex.homologyMap
+        (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) (ModuleCat.of R R)).τ₂ m =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
+        (ModuleCat.of R R)).map
+        (TopCat.ofHom (Hom.fst f).hom) := by
+  rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right, TopCat.ofHom_hom]
+  rfl
+
 /-- **A map of pairs which is `n`-connected on the ambient spaces and on the subspaces induces
 isomorphisms on relative singular homology below degree `n`**: the map
 `H_m(X, A; R) → H_m(Y, B; R)` is an isomorphism for every `m < n`, by the five lemma in the long
@@ -268,25 +290,24 @@ exact sequences of the two pairs. -/
 theorem isIso_singularHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
     (hsnd : (Hom.snd f).hom.IsNConnected n) {m : ℕ} (hm : m < n) :
     IsIso (TopPair.singularHomologyMap f (ModuleCat.of R R) m) := by
-  -- The components of the morphism of chain sequences are the chain maps of `Hom.snd f`,
-  -- `Hom.fst f` and the relative chain map, and the singular homology maps of `Hom.snd f` and
-  -- `Hom.fst f` are by definition the homology maps of their chain maps
-  -- (`singularHomologyFunctor_obj_map`).
   have h := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₃
     (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) (ModuleCat.of R R))
     ((toSSetPair.obj P).shortExact_chainComplexShortComplex _)
     ((toSSetPair.obj P').shortExact_chainComplexShortComplex _) m
     (by
-      rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      rw [homologyMap_chainComplexShortComplexMap_τ₁]
       exact hsnd.epi_singularHomologyMap R hm.le)
     (by
-      rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      rw [homologyMap_chainComplexShortComplexMap_τ₂]
       exact hfst.isIso_singularHomologyMap R hm)
     (fun j hj ↦ by
-      rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      rw [homologyMap_chainComplexShortComplexMap_τ₁]
       exact hsnd.isIso_singularHomologyMap R (by simp at hj; lia))
     (fun j hj ↦ by
-      rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      rw [homologyMap_chainComplexShortComplexMap_τ₂]
+      -- The objects of the rewritten goal are the homology of the terms of the chain sequence,
+      -- which agree with the singular homology objects only after unfolding definitions, so
+      -- instance search does not find `IsIso.mono_of_iso`; the instance is passed by hand.
       exact @IsIso.mono_of_iso _ _ _ _ _ (hfst.isIso_singularHomologyMap R (by simp at hj; lia)))
   rwa [SSetPair.chainComplexShortComplexMap_τ₃] at h
 
@@ -296,20 +317,19 @@ surjections on relative singular homology up to degree `n`**: the map
 theorem epi_singularHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
     (hsnd : (Hom.snd f).hom.IsNConnected n) {m : ℕ} (hm : m ≤ n) :
     Epi (TopPair.singularHomologyMap f (ModuleCat.of R R) m) := by
-  -- As in `isIso_singularHomologyMap_of_isNConnected`, the components are the chain maps of
-  -- `Hom.snd f`, `Hom.fst f` and the relative chain map.
   have h := HomologicalComplex.HomologySequence.epi_homologyMap_τ₃
     (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) (ModuleCat.of R R))
     ((toSSetPair.obj P).shortExact_chainComplexShortComplex _)
     ((toSSetPair.obj P').shortExact_chainComplexShortComplex _) m
     (by
-      rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      rw [homologyMap_chainComplexShortComplexMap_τ₂]
       exact hfst.epi_singularHomologyMap R hm)
     (fun j hj ↦ by
-      rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+      rw [homologyMap_chainComplexShortComplexMap_τ₁]
       exact hsnd.epi_singularHomologyMap R (by simp at hj; lia))
     (fun j hj ↦ by
-      rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+      rw [homologyMap_chainComplexShortComplexMap_τ₂]
+      -- As in `isIso_singularHomologyMap_of_isNConnected`, the instance is passed by hand.
       exact @IsIso.mono_of_iso _ _ _ _ _ (hfst.isIso_singularHomologyMap R (by simp at hj; lia)))
   rwa [SSetPair.chainComplexShortComplexMap_τ₃] at h
 
