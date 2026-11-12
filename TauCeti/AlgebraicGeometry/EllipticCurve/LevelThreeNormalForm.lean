@@ -683,7 +683,7 @@ theorem existsUnique_variableChange_levelThreeNormalForm :
       y₂ = C.u ^ 3 * ((μ ^ 2 + μ + 1) * (μ - ζ)) + C.u ^ 2 * C.s * -(μ ^ 2 + μ + 1) + C.t := by
   obtain ⟨hζ, hC, hx₂, hy₂⟩ := toLevelThreeNormalForm_spec h
   exact ⟨toLevelThreeNormalForm h, ⟨rfl, rfl, _, _, hζ, hC, hx₂, hy₂⟩,
-    fun _ ⟨hr, ht, _, _, _, hC, hx₂, hy₂⟩ ↦ eq_toLevelThreeNormalForm h hr ht hC hx₂⟩
+    fun _ ⟨hr, ht, _, _, _, hC, hx₂, _⟩ ↦ eq_toLevelThreeNormalForm h hr ht hC hx₂⟩
 
 /-- For elliptic `W`, a change of variables carrying `W` to a level-three normal form, `(x₁, y₁)`
 to `(0, 0)` and `(x₂, y₂)` to `(-(μ² + μ + 1), (μ² + μ + 1)(μ - ζ))` exists exactly when
