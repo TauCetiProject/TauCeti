@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Morrey
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.AEEq
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # Morrey's embedding for Sobolev sections over surfaces
@@ -43,7 +45,8 @@ functions.
 
 * `TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord`: an element of `W^{1,p}(V)`, for
   `p > 2`, has a unique continuous representative.
-* `TauCeti.SobolevSection.toSection`: that continuous section.
+* `TauCeti.SobolevSection.toSection`: that continuous section; it is linear in the element of
+  `W^{1,p}(V)` (`TauCeti.SobolevSection.toSection_add`, `TauCeti.SobolevSection.toSection_smul`).
 * `TauCeti.SobolevSection.exists_holderOnWith_coord_toSection`: its chart expressions are
   `(1 - 2 / p)`-Hölder on compact subsets of the chart images.
 
@@ -62,50 +65,6 @@ open Bundle MeasureTheory Module Set TopologicalSpace TauCeti.MeasureTheory
 open scoped Manifold ENNReal NNReal
 
 namespace TauCeti
-
-section Continuous
-
-variable {E : Type*} [TopologicalSpace E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
-  {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
-
-namespace FiniteBundleAtlas
-
-variable (A : FiniteBundleAtlas E M F V)
-
-/-- The chart expression in chart `i` of a continuous section is continuous on `A.image i`. -/
-theorem continuousOn_coord {s : ∀ x, V x} (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
-    (i : Fin A.n) : ContinuousOn (A.coord i s) (A.image i) := by
-  have hsymm : ContinuousOn (A.chart i).symm (A.image i) :=
-    (A.chart i).continuousOn_symm.mono fun y hy ↦ by
-      obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
-      exact (A.chart i).map_source (A.dom_subset_chart_source i hx)
-  refine (continuous_snd.comp_continuousOn ((A.triv i).continuousOn.comp
-    (hs.comp_continuousOn hsymm) fun y hy ↦ ?_)).congr fun y _ ↦ A.coord_def i s y
-  exact (A.triv i).mem_source.2 (A.dom_subset_baseSet i (A.symm_mem_dom hy))
-
-/-- **Continuous sections are determined by their chart expressions almost everywhere.** Two
-continuous sections whose chart expressions in every chart `i` agree almost everywhere on
-`A.image i`, for a measure charging nonempty open sets, are equal. -/
-theorem eq_of_continuous_of_coord_ae_eq [T2Space F] [MeasurableSpace E] {μ : Measure E}
-    [μ.IsOpenPosMeasure] {s t : ∀ x, V x} (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
-    (ht : Continuous fun x ↦ TotalSpace.mk' F x (t x))
-    (h : ∀ i, A.coord i s =ᵐ[μ.restrict (A.image i)] A.coord i t) : s = t := by
-  funext x
-  obtain ⟨i, hx⟩ := A.exists_mem_dom x
-  have heq := Measure.eqOn_open_of_ae_eq (h i) (A.image i).isOpen (A.continuousOn_coord hs i)
-    (A.continuousOn_coord ht i) (A.mem_image.2 ⟨x, hx, rfl⟩)
-  rw [A.coord_chart s hx, A.coord_chart t hx] at heq
-  have hb : x ∈ (A.triv i).baseSet := A.dom_subset_baseSet i hx
-  have himage : A.triv i ⟨x, s x⟩ = A.triv i ⟨x, t x⟩ := by
-    rw [← (A.triv i).mk_proj_snd' (x := ⟨x, s x⟩) hb,
-      ← (A.triv i).mk_proj_snd' (x := ⟨x, t x⟩) hb, heq]
-  exact TotalSpace.mk_inj.1 ((A.triv i).injOn ((A.triv i).mem_source.2 hb)
-    ((A.triv i).mem_source.2 hb) himage)
-
-end FiniteBundleAtlas
-
-end Continuous
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) 1 M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
@@ -244,6 +203,42 @@ theorem eq_toSection (hp : 2 < p) {w : SobolevSection A volume p 1} {s : ∀ x, 
     s = toSection hp w :=
   (existsUnique_continuous_ae_eq_coord hp w).unique ⟨hs, hw⟩
     ⟨continuous_toSection hp w, chartValueL_ae_eq_coord_toSection hp w⟩
+
+/-- The continuous representative of `0` is the zero section. -/
+@[simp]
+theorem toSection_zero (hp : 2 < p) : toSection hp (0 : SobolevSection A volume p 1) = 0 := by
+  refine (eq_toSection hp ?_ fun i ↦ ?_).symm
+  · exact Trivialization.continuous_zeroSection ℝ (E := V) (F := F)
+  · rw [ZeroMemClass.coe_zero, map_zero]
+    filter_upwards [Lp.coeFn_zero F p _, ae_restrict_mem (A.image i).isOpen.measurableSet]
+      with y hy hyU
+    exact hy.trans (A.coord_zero i hyU).symm
+
+/-- Taking continuous representatives is additive. -/
+@[simp]
+theorem toSection_add (hp : 2 < p) (w v : SobolevSection A volume p 1) :
+    toSection hp (w + v) = toSection hp w + toSection hp v := by
+  refine (eq_toSection hp ?_ fun i ↦ ?_).symm
+  · exact contMDiff_zero_iff.1 (ContMDiff.add_section (I := 𝓘(ℝ, ℂ))
+      (contMDiff_zero_iff.2 (continuous_toSection hp w))
+      (contMDiff_zero_iff.2 (continuous_toSection hp v)))
+  · filter_upwards [Lp.coeFn_add (A.sectionChartData.chartValueL volume p 1 i w)
+        (A.sectionChartData.chartValueL volume p 1 i v),
+      chartValueL_ae_eq_coord_toSection hp w i, chartValueL_ae_eq_coord_toSection hp v i,
+      ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hw hv hyU
+    rw [AddMemClass.coe_add, map_add, hy, Pi.add_apply, hw, hv, A.coord_add i _ _ hyU]
+
+/-- Taking continuous representatives commutes with real scalar multiplication. -/
+@[simp]
+theorem toSection_smul (hp : 2 < p) (c : ℝ) (w : SobolevSection A volume p 1) :
+    toSection hp (c • w) = c • toSection hp w := by
+  refine (eq_toSection hp ?_ fun i ↦ ?_).symm
+  · exact contMDiff_zero_iff.1 (ContMDiff.const_smul_section (I := 𝓘(ℝ, ℂ)) (a := c)
+      (contMDiff_zero_iff.2 (continuous_toSection hp w)))
+  · filter_upwards [Lp.coeFn_smul c (A.sectionChartData.chartValueL volume p 1 i w),
+      chartValueL_ae_eq_coord_toSection hp w i,
+      ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hw hyU
+    rw [SetLike.val_smul, map_smul, hy, Pi.smul_apply, hw, A.coord_smul i _ _ hyU]
 
 /-- The chart expressions of the continuous representative are, on the chart images, the precise
 representatives of the chart expressions of any section whose coordinates are the chart data. -/

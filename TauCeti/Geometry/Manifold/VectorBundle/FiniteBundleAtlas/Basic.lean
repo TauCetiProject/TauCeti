@@ -191,6 +191,17 @@ theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).
   obtain ⟨x, hx, rfl⟩ := hy
   rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]
 
+/-- The chart expression in chart `i` of a continuous section is continuous on `A.image i`. -/
+theorem continuousOn_coord {s : ∀ x, V x} (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
+    (i : Fin A.n) : ContinuousOn (A.coord i s) (A.image i) := by
+  have hsymm : ContinuousOn (A.chart i).symm (A.image i) :=
+    (A.chart i).continuousOn_symm.mono fun y hy ↦ by
+      obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
+      exact (A.chart i).map_source (A.dom_subset_chart_source i hx)
+  refine (continuous_snd.comp_continuousOn ((A.triv i).continuousOn.comp
+    (hs.comp_continuousOn hsymm) fun y hy ↦ ?_)).congr fun y _ ↦ A.coord_def i s y
+  exact (A.triv i).mem_source.2 (A.dom_subset_baseSet i (A.symm_mem_dom hy))
+
 /-- The image under chart `i` of the closure of its domain is a compact set. -/
 theorem isCompact_chart_image_closure_dom (i : Fin A.n) :
     IsCompact (A.chart i '' closure (A.dom i)) :=
