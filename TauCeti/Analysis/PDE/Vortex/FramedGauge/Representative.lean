@@ -122,7 +122,6 @@ private theorem sub_referenceField_apply_eq (f : ContDiffBump (0 : ℝ)) {z : �
   have hq : DifferentiableAt ℝ (fun w ↦ y w 3) z := by
     simp only [y, gaugeTransform_apply]
     exact (him.mul (hx 2)).add (hre.mul (hx 3))
-  have hnorm : ‖sectionValue x z‖ ≠ 0 := norm_ne_zero_iff.2 hα
   have hαy : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0 := by
     rw [hy2, hy3z]
     positivity
@@ -182,14 +181,12 @@ private theorem exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
     ∃ v : ℂ → ℝ, ContDiff ℝ ∞ v ∧ (∀ s, v ∈ realSobolevFunctions ℂ s 2) ∧
       ∀ z : ℂ, R + 2 < ‖z‖ → v =ᶠ[𝓝 z] fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by
   have hxi (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) := contDiff_euclidean.1 hx i
-  have hxd (i : Fin 4) (z : ℂ) : DifferentiableAt ℝ (fun w ↦ x w i) z :=
-    (hxi i).differentiable (by simp) z
   set n : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
   set ℓ : ℂ → ℝ := fun z ↦ Real.log (n z)
   have hn : ContDiff ℝ ∞ n := contDiff_const.mul (((hxi 2).pow 2).add ((hxi 3).pow 2))
   have hn1 (z : ℂ) : n z ≤ 1 :=
-    normSq_le_one_of_tendsto ((hxi 0).differentiable (by simp)) ((hxi 1).differentiable (by simp))
-      ((hxi 2).of_le (by norm_cast)) ((hxi 3).of_le (by norm_cast)) hsol hlim z
+    normSq_le_one_of_tendsto ((hxi 2).of_le (by norm_cast)) ((hxi 3).of_le (by norm_cast)) hsol
+      hlim z
   have hn0 (z : ℂ) : 0 ≤ n z := by positivity
   -- The cutoff `v = (1 - b) ℓ` of `ℓ = log |α|²`, vanishing on the disc of radius `R + 1`.
   let b : ContDiffBump (0 : ℂ) := ⟨R + 1, R + 2, by positivity, by linarith⟩
@@ -233,8 +230,7 @@ private theorem exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
   have hdef : MemLp (fun z ↦ 1 - n z) 2 volume := by
     have hc : Continuous fun z ↦ 1 - n z := continuous_const.sub hn.continuous
     refine (memLp_two_iff_integrable_sq hc.aestronglyMeasurable).2 ?_
-    refine (integrable_one_sub_normSq volume ((hxi 0).differentiable (by simp))
-      ((hxi 1).differentiable (by simp)) ((hxi 2).of_le (by norm_cast))
+    refine (integrable_one_sub_normSq volume ((hxi 2).of_le (by norm_cast))
       ((hxi 3).of_le (by norm_cast)) hsol hlim).mono (hc.pow 2).aestronglyMeasurable
       (Eventually.of_forall fun z ↦ ?_)
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _),
@@ -257,7 +253,7 @@ private theorem exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
     have hnz := (hR z (by linarith))
     have hΔ : Δ v z = (n z - 1) / 4 := by
       rw [(InnerProductSpace.laplacian_congr_nhds (hvfar z hz')).eq_of_nhds]
-      exact laplacian_log_normSq_of_equation_eq_zero (hxd 0 z) (hxd 1 z)
+      exact laplacian_log_normSq_of_equation_eq_zero
         ((hxi 2).contDiffAt.of_le (by norm_cast)) ((hxi 3).contDiffAt.of_le (by norm_cast))
         (by linarith) (Eventually.of_forall hsol)
     have hvz : v z = ℓ z := (hvfar z hz').self_of_nhds
