@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
+import TauCeti.MeasureTheory.Function.Lp.CompLp
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # The `W^{k,p}` and `H^{k,p}` norms are equivalent on the whole space
@@ -83,31 +85,27 @@ namespace TauCeti.Wkp
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Restricting `volume` to the whole space does not change it. -/
-private theorem volume_restrict_top :
-    (volume : Measure E).restrict ((⊤ : Opens E) : Set E) = volume := by
-  simp
+/-- The value of a Sobolev function on the whole space, as a real `Lᵖ` function for `volume`. -/
+private def realValue (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
+    Lp ℝ p (volume : Measure E) :=
+  castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_top volume) (value k u)
+
+private theorem value_ae_eq_realValue (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
+    (value k u : E → ℝ) =ᵐ[volume] realValue k u :=
+  .of_forall fun x ↦ (coeFn_castLpₗᵢ _ (value k u) x).symm
 
 /-- The value of a Sobolev function on the whole space, as a complex `Lᵖ` function for `volume`. -/
 private def complexValue (k : ℕ) :
     Wkp (volume : Measure E) ⊤ p k →L[ℝ] Lp ℂ p (volume : Measure E) :=
   (Complex.ofRealCLM.compLpL p volume).comp
-    ((castLpₗᵢ (𝕜 := ℝ) volume_restrict_top).toContinuousLinearEquiv.toContinuousLinearMap.comp
-      (valueL k))
-
-/-- The bundled and unbundled complexifications of a real `Lᵖ` function agree. -/
-private theorem compLpL_ofRealCLM (g : Lp ℝ p (volume : Measure E)) :
-    Complex.ofRealCLM.compLpL p volume g = Complex.ofRealCLM.compLp g :=
-  Lp.ext <| by
-    filter_upwards [Complex.ofRealCLM.coeFn_compLpL (p := p) (μ := volume) g,
-      Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) g] with x h₁ h₂
-    rw [h₁, h₂]
+    ((castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_top volume)).toContinuousLinearEquiv
+      |>.toContinuousLinearMap.comp (valueL k))
 
 private theorem complexValue_apply (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
-    complexValue k u =
-      Complex.ofRealCLM.compLp (castLpₗᵢ (𝕜 := ℝ) volume_restrict_top (value k u)) := by
-  simp only [complexValue, ContinuousLinearMap.comp_apply, valueL_apply, compLpL_ofRealCLM,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    complexValue k u = Complex.ofRealCLM.compLp (realValue k u) := by
+  simp only [complexValue, realValue, ContinuousLinearMap.comp_apply, valueL_apply,
+    ContinuousLinearMap.compLpL_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The tempered distribution of the complexified value of a Sobolev function. -/
 private def toDistrValue (k : ℕ) : Wkp (volume : Measure E) ⊤ p k →L[ℝ] 𝓢'(E, ℂ) :=
@@ -121,9 +119,9 @@ private theorem toDistrValue_apply (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p
 private theorem complexValue_ae_eq (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
     complexValue k u =ᵐ[volume] fun x ↦ (value k u x : ℂ) := by
   rw [complexValue_apply]
-  filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume)
-    (castLpₗᵢ (𝕜 := ℝ) volume_restrict_top (value k u))] with x hx
-  rw [hx, Complex.ofRealCLM_apply, coeFn_castLpₗᵢ]
+  filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) (realValue k u),
+    value_ae_eq_realValue k u] with x hx hu
+  rw [hx, Complex.ofRealCLM_apply, hu]
 
 /-- If the value of `u` agrees almost everywhere with a real `Lᵖ` function `g`, then the
 complexified value of `u` is the complexification of `g`. -/
@@ -142,8 +140,8 @@ include hp hp_top
 private theorem memSobolev_complexValue (k : ℕ) (u : Wkp (volume : Measure E) ⊤ p k) :
     MemSobolev k p (complexValue k u : 𝓢'(E, ℂ)) := by
   rw [complexValue_apply]
-  refine (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k _).2 ⟨u, ?_⟩
-  exact .of_forall fun x ↦ (coeFn_castLpₗᵢ volume_restrict_top (value k u) x).symm
+  exact (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k _).2
+    ⟨u, value_ae_eq_realValue k u⟩
 
 /-- **The identification `W^{k,p}(E) = H^{k,p}(E)`.** For `1 < p < ∞`, the map sending a real
 `W^{k,p}` function on the whole space to its complexification, as an element of Mathlib's
@@ -209,9 +207,8 @@ theorem exists_toBesselPotentialSpace_eq_iff (k : ℕ) (h : H^{k, p}(E, ℂ)) :
         h.toDistr = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp g) := by
   constructor
   · rintro ⟨u, rfl⟩
-    exact ⟨castLpₗᵢ (𝕜 := ℝ) volume_restrict_top (value k u),
-      toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top
-        (.of_forall fun x ↦ (coeFn_castLpₗᵢ volume_restrict_top (value k u) x).symm)⟩
+    exact ⟨realValue k u,
+      toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top (value_ae_eq_realValue k u)⟩
   · rintro ⟨g, hg⟩
     obtain ⟨u, hu⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k g).1
       (hg ▸ h.memSobolev_toDistr)
@@ -236,15 +233,13 @@ theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
   refine isClosed_of_closure_subset fun h hh ↦ ?_
   obtain ⟨w, hw, hlim⟩ := mem_closure_iff_seq_limit.1 hh
   choose u hu using hw
-  set g : ℕ → Lp ℝ p (volume : Measure E) :=
-    fun n ↦ castLpₗᵢ (𝕜 := ℝ) volume_restrict_top (value k (u n))
+  set g : ℕ → Lp ℝ p (volume : Measure E) := fun n ↦ realValue k (u n)
   -- Through the continuous inclusion into `Lᵖ`, the approximants are complexified real functions.
   have hT (n : ℕ) : toLpOfNat hp hp_top k (w n) = Complex.ofRealCLM.compLp (g n) := by
     refine LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot ?_
     simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
       toTemperedDistribution_toLpOfNat, ← hu n]
-    exact toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top
-      (.of_forall fun x ↦ (coeFn_castLpₗᵢ volume_restrict_top (value k (u n)) x).symm)
+    exact toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top (value_ae_eq_realValue k (u n))
   have hT' : Tendsto (fun n ↦ Complex.ofRealCLM.compLpL p volume (g n)) atTop
       (𝓝 (toLpOfNat hp hp_top k h)) :=
     (((toLpOfNat hp hp_top k).continuous.tendsto h).comp hlim).congr fun n ↦ hT n
@@ -253,15 +248,15 @@ theorem isClosed_range_toBesselPotentialSpace (k : ℕ) :
       (𝓝 (Complex.reCLM.compLpL p volume (toLpOfNat hp hp_top k h))) := by
     refine (((Complex.reCLM.compLpL p volume).continuous.tendsto _).comp hT').congr fun n ↦ ?_
     refine Lp.ext ?_
-    filter_upwards [Complex.reCLM.coeFn_compLpL (p := p) (μ := volume)
-      (Complex.ofRealCLM.compLpL p volume (g n)),
-      Complex.ofRealCLM.coeFn_compLpL (p := p) (μ := volume) (g n)] with x h₁ h₂
+    filter_upwards [Complex.reCLM.coeFn_compLp (p := p) (μ := volume)
+      (Complex.ofRealCLM.compLp (g n)),
+      Complex.ofRealCLM.coeFn_compLp (p := p) (μ := volume) (g n)] with x h₁ h₂
     simp [h₁, h₂]
   have hlim' := tendsto_nhds_unique
     (((Complex.ofRealCLM.compLpL p volume).continuous.tendsto _).comp hre) hT'
   refine (exists_toBesselPotentialSpace_eq_iff hp hp_top k h).2
     ⟨Complex.reCLM.compLpL p volume (toLpOfNat hp hp_top k h), ?_⟩
-  rw [← compLpL_ofRealCLM, hlim', toTemperedDistribution_toLpOfNat]
+  rw [← ContinuousLinearMap.compLpL_apply, hlim', toTemperedDistribution_toLpOfNat]
 
 /-- **The `W^{k,p}` and `H^{k,p}` norms are equivalent.** For `1 < p < ∞` there is `C` such that
 `‖u‖_{W^{k,p}} ≤ C ‖u‖_{H^{k,p}}` for every `u ∈ W^{k,p}(E)`; the reverse bound
@@ -284,15 +279,11 @@ theorem lineDerivOp_toDistr_toBesselPotentialSpace {j k : ℕ} {u : Wkp (volume 
     (hd : HasWeakLineDerivOn volume ⊤ (value k u) (value j d) v) :
     ∂_{v} (toBesselPotentialSpace hp hp_top k u).toDistr =
       (toBesselPotentialSpace hp hp_top j d).toDistr := by
-  set g := castLpₗᵢ (𝕜 := ℝ) volume_restrict_top (value k u)
-  set g' := castLpₗᵢ (𝕜 := ℝ) volume_restrict_top (value j d)
-  have hg : (value k u : E → ℝ) =ᵐ[volume] g :=
-    .of_forall fun x ↦ (coeFn_castLpₗᵢ volume_restrict_top (value k u) x).symm
-  have hg' : (value j d : E → ℝ) =ᵐ[volume] g' :=
-    .of_forall fun x ↦ (coeFn_castLpₗᵢ volume_restrict_top (value j d) x).symm
+  have hg := value_ae_eq_realValue k u
+  have hg' := value_ae_eq_realValue j d
   rw [toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top hg,
     toDistr_toBesselPotentialSpace_of_ae_eq hp hp_top hg']
-  refine (hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq g g' v).1 ?_
+  refine (hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq _ _ v).1 ?_
   exact (hd.congr_ae (by simpa using hg)).congr_ae_deriv (by simpa using hg')
 
 end TauCeti.Wkp

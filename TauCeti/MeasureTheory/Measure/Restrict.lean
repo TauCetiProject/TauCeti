@@ -6,19 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Topology.Sets.Opens
 
 /-!
-# Event probabilities from restricted pushforwards
+# Restricted measures
 
 A restricted pushforward equal to a scalar multiple of a measure gives a factorization
 of preimage-event probabilities. This converts restricted distribution identities into
 independence identities without requiring the restricting event to be measurable.
+
+Restricting a measure to the whole space, written as the top open set, does not change it
+(`MeasureTheory.Measure.restrict_coe_top`). Spaces of functions on an open set `Ω` are built on
+`μ.restrict Ω`, so this identifies their whole-space instances with the spaces for `μ`.
 -/
 
 public section
 
 open MeasureTheory Set
 open scoped ENNReal
+
+namespace MeasureTheory.Measure
+
+/-- Restricting a measure to the whole space, as the top open set, does not change it. -/
+theorem restrict_coe_top {α : Type*} [MeasurableSpace α] [TopologicalSpace α] (μ : Measure α) :
+    μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α) = μ := by
+  rw [TopologicalSpace.Opens.coe_top, restrict_univ]
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 
