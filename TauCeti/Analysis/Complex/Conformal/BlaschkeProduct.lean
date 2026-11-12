@@ -17,8 +17,8 @@ The boundary formula is the removable extension of the same rational expression:
 `‖a‖ = 1` and `z ≠ a` one has `(z - a) / (1 - conj a * z) = -a`, whereas Lean's totalized
 division would assign the value `0` at `z = a`.  Every such factor is analytic on a
 neighbourhood of the closed unit disc and has modulus one on the unit circle; an interior factor
-maps the open disc into itself and vanishes exactly at `a`, while a boundary factor is a
-unimodular constant.
+maps the open disc into itself and vanishes in the closed unit disc exactly at `a`, while a
+boundary factor is a unimodular constant.
 
 A **finite Blaschke product** is `B(z) = ∏ i, b_(a i)(z) ^ n i` for a finite family of
 parameters `a i` in the closed unit disc with multiplicities `n i`.  It is analytic near the
@@ -233,7 +233,7 @@ lemma norm_blaschkeProduct_le_one (ha : ∀ i, ‖a i‖ ≤ 1) (hz : ‖z‖ �
 
 /-- On the open unit disc, a finite Blaschke product with parameters in the closed unit disc has
 modulus less than one exactly when some interior parameter has positive multiplicity; otherwise
-it is a unimodular constant. -/
+it has modulus one there. -/
 lemma norm_blaschkeProduct_lt_one_iff (ha : ∀ i, ‖a i‖ ≤ 1) (hz : ‖z‖ < 1) :
     ‖blaschkeProduct a n z‖ < 1 ↔ ∃ i, ‖a i‖ < 1 ∧ n i ≠ 0 := by
   constructor
