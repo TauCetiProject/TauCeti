@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Beltrami.Holder
 public import TauCeti.Analysis.Complex.Beltrami.Linear
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
 # Planar `J`-holomorphic charts from the Beltrami equation
@@ -39,6 +40,9 @@ The pointwise statements are `TauCeti.Beltrami.isComplexLinear_iff_conjWirtinger
 * `TauCeti.Beltrami.exists_isComplexLinear_chart`: the normalized Beltrami solution is a
   `C¹` local chart at `c`, `J`-holomorphic on its source, with value `0` and holomorphic derivative
   `1` at `c`.
+* `TauCeti.Beltrami.exists_isComplexLinear_chart_contDiffAt_symm`: for coefficients small enough
+  that the Beltrami solution's derivative stays within distance `1` of the identity, the chart has
+  a `C¹` inverse on its target.
 * `TauCeti.Beltrami.cauchySolution_zero`, `TauCeti.Beltrami.normalizedChart_id`: for `μ = 0` the
   source `h = 0` gives `ψ = z`, and its normalized chart at `0` is the identity.
 
@@ -240,5 +244,47 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
       exact ⟨hφs.mem_toOpenPartialHomeomorph_source, mem_ball_self hr⟩
     · rw [OpenPartialHomeomorph.restrOpen_source]
       exact Set.inter_subset_right
+
+/-- **The planar Beltrami chart with `C¹` inverse.** Let `0 < α < 1` and `0 < r`. There is
+`δ > 0` such that the following holds. Let `J` be a field of almost complex structures on the
+plane, tame on `closedBall c r`, and let `μ` be an `α`-Hölder function vanishing off that disc,
+equal there to the scalar coefficient `μ_J` and with `‖μ‖ < δ`. Then there is an open partial
+homeomorphism `e` with `c` in its source, `e c = 0` and source inside `ball c r`, of class `C¹` on
+its source with `C¹` inverse on its target, whose real differential carries `J z` to
+multiplication by `i` at every point `z` of its source. -/
+theorem exists_isComplexLinear_chart_contDiffAt_symm {α : ℝ≥0} {r : ℝ} (hα : 0 < α)
+    (hα1 : α < 1) (c : ℂ) (hr : 0 < r) :
+    ∃ δ > 0, ∀ (J : ℂ → AlmostComplexStructure ℂ)
+      (hJ : ∀ z ∈ closedBall c r, stdComplexSymplecticForm.Tames (J z)),
+      ∀ μ ∈ supportedHolderSubmodule (Y := ℂ) α (closedBall c r),
+      (∀ z (hz : z ∈ closedBall c r), μ z = (coefficientEquiv ⟨J z, hJ z hz⟩).val) →
+      ‖μ‖ < δ →
+      ∃ e : OpenPartialHomeomorph ℂ ℂ, c ∈ e.source ∧ e c = 0 ∧ e.source ⊆ ball c r ∧
+        (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧ (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
+        ∀ z ∈ e.source, IsComplexLinear (J z).toLinearMap
+          (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap (fderiv ℝ e z).toLinearMap := by
+  obtain ⟨δ, hδ, C, hchart⟩ := exists_isComplexLinear_chart hα hα1 c hr
+  refine ⟨min δ ((C : ℝ) + 1)⁻¹, lt_min hδ (by positivity), fun J hJ μ hμ hμJ hμδ ↦ ?_⟩
+  obtain ⟨h, -, -, -, -, hnear, -, -, ha, hφC1, hφc, -, hφlin, e, he, hce, hesub⟩ :=
+    hchart J hJ μ hμ hμJ (hμδ.trans_le (min_le_left _ _))
+  -- On the disc, `dψ` is within `C ‖μ‖ < 1` of the identity.
+  have hCμ : C * ‖μ‖ < 1 := by
+    calc (C : ℝ) * ‖μ‖ ≤ C * ((C : ℝ) + 1)⁻¹ := by gcongr; exact hμδ.le.trans (min_le_right _ _)
+      _ < 1 := by
+        rw [← div_eq_mul_inv, div_lt_one (by positivity)]
+        linarith
+  have hsub : ball c r ⊆ closedBall c r := ball_subset_closedBall
+  have heC : ∀ z ∈ e.source, ContDiffAt ℝ 1 e z := fun z hz ↦ by
+    rw [he]
+    exact hφC1.contDiffAt (isOpen_ball.mem_nhds (ball_subset_ball (by linarith) (hesub hz)))
+  have hesC : ContDiffOn ℝ 1 e.symm e.target :=
+    e.contDiffOn_symm_of_isInvertible_fderiv (fun z hz ↦ (heC z hz).contDiffWithinAt)
+      fun z hz ↦ by
+        rw [he]
+        exact isInvertible_fderiv_normalizedChart ha ((hnear z (hsub (hesub hz))).trans_lt hCμ)
+  refine ⟨e, hce, by rw [he]; exact hφc, hesub, heC,
+    fun z hz ↦ (hesC z hz).contDiffAt (e.open_target.mem_nhds hz), fun z hz ↦ ?_⟩
+  rw [he]
+  exact hφlin z (hsub (hesub hz))
 
 end TauCeti.Beltrami
