@@ -90,7 +90,7 @@ private def IsComposablePairs {α : Type*} {n : ℕ} (p : Fin n → α × α) : 
 morphisms `sᵢ ⟶ tᵢ` of the category induced along `F`, the component from `⟨s (n - 1)⟩` to
 `⟨t 0⟩` of the Taylor map of `𝒢` on the same morphisms; on any other string, zero. -/
 private noncomputable def inducedTaylorComponent : (n : ℕ) →
-    MultilinearMap R (fun _ : Fin n ↦ TotalHom R (InducedQuiver C F))
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R (InducedQuiver C F))
       (TotalHom R (InducedQuiver D (𝒢.obj ∘ F)))
   | 0 => 0
   | n + 1 => by

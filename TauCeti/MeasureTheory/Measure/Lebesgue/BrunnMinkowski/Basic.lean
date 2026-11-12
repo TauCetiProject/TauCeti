@@ -10,14 +10,22 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Algebra.Group.Pointwise
 
 /-!
 # Brunn–Minkowski in finite-dimensional Euclidean spaces
 
 The Brunn–Minkowski inequality bounds the outer volume of a Minkowski sum from below
-by the sum of the dimension roots of the input volumes. We work with Lebesgue-measurable
-sets and do not require their sum to be measurable. Nonemptiness is retained even when
-an input has zero volume.
+by the sum of the dimension roots of the input volumes. Only the second set is required to be
+Lebesgue-measurable: the first set and the sum have their outer volumes. Nonemptiness is
+retained even when an input has zero volume.
+
+For two Lebesgue-measurable sets the multiplicative form follows from Prékopa–Leindler applied
+to indicators. For an arbitrary set `A` and a compact set `K`, outer regularity gives an open set
+`U ⊇ (1 - θ) • A + θ • K` of almost minimal volume; the open set of points `x` with
+`(1 - θ) • x + θ • K ⊆ U` contains `A`, so the measurable case applies to it. Inner regularity
+of a measurable subset with the same volume then extends this to a Lebesgue-measurable second set,
+as in the one-dimensional `TauCeti.Real.volume_add_volume_le_of_nullMeasurableSet`.
 
 The multiplicative formulation bounds the volume of a convex combination by a weighted
 geometric mean of volumes. The additive formulation bounds its dimension root by a
@@ -48,9 +56,9 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- The multiplicative Brunn–Minkowski inequality, with outer volume on the right.
-The weight is strictly between zero and one; input volumes may be zero or infinite. -/
-theorem volume_rpow_mul_volume_rpow_le {A B : Set E}
+/-- The multiplicative Brunn–Minkowski inequality for two Lebesgue-measurable sets, deduced from
+Prékopa–Leindler applied to indicators. -/
+private theorem volume_rpow_mul_volume_rpow_le_of_nullMeasurableSet {A B : Set E}
     (hA : NullMeasurableSet A volume) (hB : NullMeasurableSet B volume)
     {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1) :
     volume A ^ (1 - θ) * volume B ^ θ ≤ volume ((1 - θ) • A + θ • B) := by
@@ -77,9 +85,39 @@ theorem volume_rpow_mul_volume_rpow_le {A B : Set E}
     lintegral_indicator_const hS, one_mul, measure_congr hKv, measure_congr hLv,
     S, measure_toMeasurable, ENNReal.rpow_eq_pow] using key
 
+/-- The multiplicative Brunn–Minkowski inequality for an arbitrary set `A` and a
+Lebesgue-measurable set `B`, with outer volume for `A` and for the weighted sum. The weight is
+strictly between zero and one; input volumes may be zero or infinite. -/
+theorem volume_rpow_mul_volume_rpow_le {A B : Set E} (hB : NullMeasurableSet B volume)
+    {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1) :
+    volume A ^ (1 - θ) * volume B ^ θ ≤ volume ((1 - θ) • A + θ • B) := by
+  -- For compact `K`, an open set `U ⊇ (1 - θ) • A + θ • K` of almost minimal volume contains
+  -- `(1 - θ) • V + θ • K` for an open set `V ⊇ A`.
+  have hcpt {K : Set E} (hK : IsCompact K) :
+      volume A ^ (1 - θ) * volume K ^ θ ≤ volume ((1 - θ) • A + θ • K) := by
+    refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
+    obtain ⟨U, hAKU, hU, hUr⟩ := ((1 - θ) • A + θ • K).exists_isOpen_lt_of_lt r hr
+    obtain ⟨W, hW, hAW, hWKU⟩ := (hK.smul θ).exists_isOpen_superset_add_subset hU hAKU
+    -- Pull the open set `W ⊇ (1 - θ) • A` back along the dilation by `1 - θ`.
+    let V := (fun x : E ↦ (1 - θ) • x) ⁻¹' W
+    have hV : IsOpen V := hW.preimage (continuous_const_smul _)
+    have hAV : A ⊆ V := fun x hx ↦ hAW (smul_mem_smul_set hx)
+    have hVKU : (1 - θ) • V + θ • K ⊆ U :=
+      (add_subset_add_right (smul_set_subset_iff.2 fun _ hv ↦ hv)).trans hWKU
+    calc volume A ^ (1 - θ) * volume K ^ θ ≤ volume V ^ (1 - θ) * volume K ^ θ := by gcongr
+      _ ≤ volume ((1 - θ) • V + θ • K) :=
+          volume_rpow_mul_volume_rpow_le_of_nullMeasurableSet hV.measurableSet.nullMeasurableSet
+            hK.measurableSet.nullMeasurableSet hθ₀ hθ₁
+      _ ≤ r := (measure_mono hVKU).trans hUr.le
+  -- Inner regularity of a measurable representative of `B` reduces to the compact case.
+  obtain ⟨L, hLB, hLm, hL⟩ := hB.exists_measurable_subset_ae_eq
+  rw [← measure_congr hL, hLm.measure_eq_iSup_isCompact]
+  simp_rw [iSup_and', ENNReal.iSup_rpow_of_pos hθ₀, ENNReal.mul_iSup]
+  exact iSup₂_le fun K ⟨hKL, hKc⟩ ↦ (hcpt hKc).trans (measure_mono
+    (add_subset_add_left (smul_set_mono (hKL.trans hLB))))
+
 /-- The additive lower bound in terms of positive dimension roots of the input volumes. -/
-private theorem volume_pow_add_root_le {A B : Set E}
-    (hA : NullMeasurableSet A volume) (hB : NullMeasurableSet B volume)
+private theorem volume_pow_add_root_le {A B : Set E} (hB : NullMeasurableSet B volume)
     {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
     (hAv : volume A = ENNReal.ofReal (a ^ Module.finrank ℝ E))
     (hBv : volume B = ENNReal.ofReal (b ^ Module.finrank ℝ E)) :
@@ -102,8 +140,7 @@ private theorem volume_pow_add_root_le {A B : Set E}
   have hright : θ * ((a + b) / b) = 1 := by
     dsimp [θ]
     field_simp
-  have key := volume_rpow_mul_volume_rpow_le
-    (Measure.NullMeasurableSet.const_smul hA ((a + b) / a))
+  have key := volume_rpow_mul_volume_rpow_le (A := ((a + b) / a) • A)
     (Measure.NullMeasurableSet.const_smul hB ((a + b) / b)) hθ₀ hθ₁
   rw [hscale ha hAv, hscale hb hBv,
     ← ENNReal.rpow_add_of_nonneg _ _ (sub_nonneg.2 hθ₁.le) hθ₀.le,
@@ -111,20 +148,19 @@ private theorem volume_pow_add_root_le {A B : Set E}
     hleft, hright, one_smul, one_smul] at key
   exact key
 
-/-- Weighted **Brunn–Minkowski inequality** with arbitrary nonnegative coefficients.
-It includes the convex-combination weights `1 - θ, θ` for every `θ ∈ [0,1]`.
-Zero coefficients and infinite input volumes use extended multiplication `0 * ∞ = 0`. -/
+/-- Weighted **Brunn–Minkowski inequality** with arbitrary nonnegative coefficients, for a
+nonempty set `A` with its outer volume and a nonempty Lebesgue-measurable set `B`. It includes
+the convex-combination weights `1 - θ, θ` for every `θ ∈ [0,1]`. Zero coefficients
+and infinite input volumes use extended multiplication `0 * ∞ = 0`. -/
 theorem mul_volume_rpow_add_mul_volume_rpow_le {A B : Set E}
-    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hA : NullMeasurableSet A volume)
-    (hBn : B.Nonempty) (hB : NullMeasurableSet B volume)
-    {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d) :
+    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hBn : B.Nonempty)
+    (hB : NullMeasurableSet B volume) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d) :
     ENNReal.ofReal c * volume A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
       ENNReal.ofReal d * volume B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
         volume (c • A + d • B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
   -- Apply the volume argument to the dilated sets, retaining zero coefficients.
   let C := c • A
   let D := d • B
-  have hC := Measure.NullMeasurableSet.const_smul hA c
   have hD := Measure.NullMeasurableSet.const_smul hB d
   suffices h : volume C ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
       volume D ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
@@ -163,35 +199,36 @@ theorem mul_volume_rpow_add_mul_volume_rpow_le {A B : Set E}
     rw [Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg hn, ENNReal.ofReal_toReal hAfin]
   have hBv : volume D = ENNReal.ofReal (b ^ Module.finrank ℝ E) := by
     rw [Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg hn, ENNReal.ofReal_toReal hBfin]
-  have key := ENNReal.rpow_le_rpow (volume_pow_add_root_le hC hD ha hb hAv hBv) hp.le
+  have key := ENNReal.rpow_le_rpow (volume_pow_add_root_le hD ha hb hAv hBv) hp.le
   rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) hp.le,
     Real.pow_rpow_inv_natCast (by positivity) hn, ENNReal.ofReal_add ha.le hb.le] at key
   simpa only [a, b, ← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hp.le,
     ENNReal.ofReal_toReal hAfin, ENNReal.ofReal_toReal hBfin] using key
 
-/-- **Brunn–Minkowski inequality** for nonempty Lebesgue-measurable sets
-in a positive-dimensional real inner product space. The sum has its outer volume and
-need not be measurable or have finite volume. -/
+/-- **Brunn–Minkowski inequality** for a nonempty set `A` and a nonempty Lebesgue-measurable set
+`B` in a positive-dimensional real inner product space. The set `A` and the sum have their outer
+volumes and need not be measurable or have finite volume. -/
 theorem volume_rpow_add_volume_rpow_le {A B : Set E}
-    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hA : NullMeasurableSet A volume)
-    (hBn : B.Nonempty) (hB : NullMeasurableSet B volume) :
+    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hBn : B.Nonempty)
+    (hB : NullMeasurableSet B volume) :
     volume A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
       volume B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
         volume (A + B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
   simpa only [ENNReal.ofReal_one, one_mul, one_smul] using
-    mul_volume_rpow_add_mul_volume_rpow_le hn hAn hA hBn hB
+    mul_volume_rpow_add_mul_volume_rpow_le hn hAn hBn hB
       (c := 1) (d := 1) zero_le_one zero_le_one
 
-/-- Real-valued weighted **Brunn–Minkowski inequality**. Only the weighted sum is
-required to have finite outer volume: an input with zero coefficient may have infinite volume. -/
+/-- Real-valued weighted **Brunn–Minkowski inequality**, for a nonempty set `A` and a nonempty
+Lebesgue-measurable set `B`. Only the weighted sum is required to have finite outer volume: an
+input with zero coefficient may have infinite volume. -/
 theorem mul_volume_real_rpow_add_mul_volume_real_rpow_le {A B : Set E}
-    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hA : NullMeasurableSet A volume)
-    (hBn : B.Nonempty) (hB : NullMeasurableSet B volume)
-    {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d) (hfin : volume (c • A + d • B) ≠ ∞) :
+    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hBn : B.Nonempty)
+    (hB : NullMeasurableSet B volume) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
+    (hfin : volume (c • A + d • B) ≠ ∞) :
     c * volume.real A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
       d * volume.real B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
         volume.real (c • A + d • B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
-  have h := mul_volume_rpow_add_mul_volume_rpow_le hn hAn hA hBn hB hc hd
+  have h := mul_volume_rpow_add_mul_volume_rpow_le hn hAn hBn hB hc hd
   have hsum := ENNReal.rpow_ne_top_of_nonneg (by positivity :
     0 ≤ (Module.finrank ℝ E : ℝ)⁻¹) hfin
   have hAfin := ne_top_of_le_ne_top hsum (le_self_add.trans h)
@@ -200,16 +237,17 @@ theorem mul_volume_real_rpow_add_mul_volume_real_rpow_le {A B : Set E}
     ENNReal.toReal_ofReal hc, ENNReal.toReal_ofReal hd, ← ENNReal.toReal_rpow,
     measureReal_def] using ENNReal.toReal_mono hsum h
 
-/-- Real-valued **Brunn–Minkowski inequality**. The sum's outer volume must be finite;
-this implies finiteness of both input volumes. -/
+/-- Real-valued **Brunn–Minkowski inequality**, for a nonempty set `A` and a nonempty
+Lebesgue-measurable set `B`. The sum's outer volume must be finite; this implies finiteness of
+both input volumes. -/
 theorem volume_real_rpow_add_volume_real_rpow_le {A B : Set E}
-    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hA : NullMeasurableSet A volume)
-    (hBn : B.Nonempty) (hB : NullMeasurableSet B volume) (hfin : volume (A + B) ≠ ∞) :
+    (hn : Module.finrank ℝ E ≠ 0) (hAn : A.Nonempty) (hBn : B.Nonempty)
+    (hB : NullMeasurableSet B volume) (hfin : volume (A + B) ≠ ∞) :
     volume.real A ^ ((Module.finrank ℝ E : ℝ)⁻¹) +
       volume.real B ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
         volume.real (A + B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) := by
   simpa only [one_mul, one_smul] using
-    mul_volume_real_rpow_add_mul_volume_real_rpow_le hn hAn hA hBn hB
+    mul_volume_real_rpow_add_mul_volume_real_rpow_le hn hAn hBn hB
       (c := 1) (d := 1) zero_le_one zero_le_one (by simpa only [one_smul] using hfin)
 
 section Shell
@@ -217,10 +255,10 @@ section Shell
 open Metric Module
 
 /-- **Brunn–Minkowski for a shell.** If the `r`-neighbourhood `G + ball 0 r` of a nonempty
-null-measurable set `G` lies in a set `F` of finite volume, then in dimension `n ≥ 1`
+set `G`, with its outer volume, lies in a set `F` of finite volume, then in dimension `n ≥ 1`
 `volume F - volume G ≥ n (volume G ^ (1 / n)) ^ (n - 1) r ω_n ^ (1 / n)`. -/
 theorem finrank_mul_rpow_pow_mul_le_volume_real_sub (hn : finrank ℝ E ≠ 0) {G F : Set E}
-    (hG : NullMeasurableSet G volume) (hG0 : G.Nonempty) (hF : volume F ≠ ∞) {r : ℝ} (hr : 0 < r)
+    (hG0 : G.Nonempty) (hF : volume F ≠ ∞) {r : ℝ} (hr : 0 < r)
     (hsub : G + ball (0 : E) r ⊆ F) :
     finrank ℝ E * (volume.real G ^ (finrank ℝ E : ℝ)⁻¹) ^ (finrank ℝ E - 1) *
         (r * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹) ≤
@@ -231,7 +269,7 @@ theorem finrank_mul_rpow_pow_mul_le_volume_real_sub (hn : finrank ℝ E ≠ 0) {
   have hball : volume.real (ball (0 : E) r) ^ (n : ℝ)⁻¹ = b := by
     rw [volume.addHaar_real_ball_of_pos 0 hr, Real.mul_rpow (by positivity) measureReal_nonneg,
       Real.pow_rpow_inv_natCast hr.le hn]
-  have hBM := volume_real_rpow_add_volume_real_rpow_le hn hG0 hG
+  have hBM := volume_real_rpow_add_volume_real_rpow_le hn hG0
     (nonempty_ball.2 hr) measurableSet_ball.nullMeasurableSet
     (ne_top_of_le_ne_top hF (measure_mono hsub))
   rw [hball] at hBM
