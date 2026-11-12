@@ -57,8 +57,11 @@ space `(ℝ × ℝ) × M`, while their descents live on the different mapping to
 slab `k - 1/3 < t < k + 4/3` the vertical family only involves the two structures
 `(Φ p ^ k)^* K₀ p` and `(Φ p ^ (k + 1))^* K₀ p`, so it is jointly smooth there as soon as these
 two families are (`TauCeti.SmoothMappingTorus.contMDiffOn_seamFamily_family`). For `k = 0` they
-are `K₀ p` and the endpoint family `(Φ p)^* K₀ p`, and no smooth dependence of `Φ p` on `p` is
-needed: the seam identity determines the family at all other times from this slab. If `Φ p x`
+are `K₀ p` and the endpoint family `(Φ p)^* K₀ p`, so smoothness on this slab needs no smooth
+dependence of `Φ p` on `p`. For each fixed `p` the seam identity determines the family at all
+other times from this slab, but joint smoothness at all times requires every pullback
+`(Φ p ^ k)^* K₀ p` to be jointly smooth
+(`TauCeti.SmoothMappingTorus.contMDiff_seamFamily_family_of_contMDiff_seamStructure`). If `Φ p x`
 and `(Φ p)⁻¹ x` are jointly smooth in `(p, x)`, then so are all the powers `Φ p ^ k`, the
 pullbacks `(Φ p ^ k)^* K₀ p` are jointly smooth, and the vertical families are jointly smooth
 for all times (`TauCeti.SmoothMappingTorus.contMDiff_seamFamily_family_of_contMDiff`).

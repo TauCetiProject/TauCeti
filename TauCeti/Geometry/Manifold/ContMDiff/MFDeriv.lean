@@ -118,8 +118,15 @@ theorem ContMDiff.contMDiff_tangentMap_family [IsManifold IQ m Q] {f : Q → M �
       (((contMDiff_zeroSection 𝕜 (TangentSpace IQ : Q → Type _)).comp contMDiff_fst).prodMk
         contMDiff_snd))
   refine h.congr fun ⟨q, x, v⟩ ↦ ?_
+  -- `tangentMap`, `equivTangentBundleProd.symm`, `zeroSection` and `Function.uncurry` unfold to
+  -- this by `rfl`. The vectors live in `TangentSpace`s, which are only definitionally the model
+  -- spaces, so the goal is stated with `change` rather than reached by `simp`.
+  change (⟨f q x, mfderiv I I' (f q) x v⟩ : TangentBundle I' N) =
+    ⟨f q x, mfderiv (IQ.prod I) I' (Function.uncurry f) (q, x) (0, v)⟩
+  congr 1
+  -- The product rule, whose first summand vanishes at the zero vector.
   have hd := (mfderiv_prod_eq_add_apply ((hf.mdifferentiable (zero_lt_one.trans_le h1).ne')
     (q, x)) (v := ((0, v) : EQ × E))).trans ((congrArg (· + _) (map_zero _)).trans (zero_add _))
-  exact congrArg (TotalSpace.mk' F (f q x)) hd.symm
+  exact hd.symm
 
 end TangentMap
