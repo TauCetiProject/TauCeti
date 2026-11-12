@@ -50,7 +50,8 @@ functions (`MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`). Quantit
 If moreover `2s > n + 2k`, Cauchy–Schwarz pairs `(1 + |ξ|²)^{s/2} 𝓕u ∈ L²` with
 `(1 + |ξ|²)^{-(s-k)/2} ∈ L²`, so `|ξ|^j v ∈ L¹` for every `j ≤ k`. Differentiation under the
 integral sign (`Real.contDiff_fourier`) then makes `𝓕⁻ v` a `C^k` function, giving the embedding
-`H^s(ℝⁿ) ⊆ C^k(ℝⁿ)` for `s > n / 2 + k`.
+`H^s(ℝⁿ) ⊆ C^k(ℝⁿ)` for `s > n / 2 + k`. These `C^k` representatives agree for all `k`, so a
+function lying in every `H^s` is smooth.
 
 On the whole space the weak-derivative space `W^{k,2}` is the Bessel-potential space `H^{k,2}`
 (`MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`), so every `u ∈ W^{k,2}(ℝⁿ)` has a
@@ -79,6 +80,8 @@ spaces.
   function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`: an `L²` function in `H^s`,
   `2s > n + 2k`, agrees almost everywhere with a `C^k` function.
+* `TemperedDistribution.exists_contDiff_ae_eq_of_forall_memSobolev`: an `L²` function lying in
+  every `H^s` agrees almost everywhere with a smooth function.
 * `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`: a continuous real function in
   `H^s`, `2s > n + 2k`, is `C^k`.
 * `TauCeti.Wkp.toZeroAtInfty`: the Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)` for `2k > n`.
@@ -274,6 +277,19 @@ theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E
   rw [Real.fourierInv_eq_fourier_comp_neg]
   refine Real.contDiff_fourier (N := k) fun n hn ↦ ?_
   simpa only [norm_neg] using (hmom n (by exact_mod_cast hn)).comp_neg
+
+/-- **Sobolev embedding into `C^∞`.** An `L²` function on `E` lying in the Bessel-potential space
+`H^s` for every real `s` agrees almost everywhere with a smooth function. -/
+theorem exists_contDiff_ae_eq_of_forall_memSobolev {u : Lp F 2 (volume : Measure E)}
+    (hu : ∀ s, MemSobolev s 2 (u : 𝓢'(E, F))) :
+    ∃ g : E → F, ContDiff ℝ (⊤ : ℕ∞) g ∧ u =ᵐ[volume] g := by
+  have hs (k : ℕ) : (finrank ℝ E : ℝ) + 2 * k < 2 * (finrank ℝ E + k + 1) := by
+    linarith [(finrank ℝ E).cast_nonneg (α := ℝ)]
+  obtain ⟨g, hg, hug⟩ := (hu _).exists_contDiff_ae_eq (hs 0)
+  refine ⟨g, contDiff_infty.2 fun k ↦ ?_, hug⟩
+  -- The `C^k` representatives for the various `k` are continuous and agree almost everywhere.
+  obtain ⟨g', hg', hug'⟩ := (hu _).exists_contDiff_ae_eq (hs k)
+  rwa [(hg.continuous.ae_eq_iff_eq volume hg'.continuous).1 (hug.symm.trans hug')]
 
 /-- **Continuous Sobolev functions are `C^k`.** A continuous real function in `H^s`,
 `s > dim E / 2 + k`, is of class `C^k`: it agrees almost everywhere, hence everywhere, with the
