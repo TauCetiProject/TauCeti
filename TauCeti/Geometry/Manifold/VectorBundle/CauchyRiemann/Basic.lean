@@ -273,6 +273,21 @@ theorem zeroOnePart_add {x : M} (η η' : TangentSpace I x →L[ℝ] V x) :
   simp only [zeroOnePart_apply, add_apply, smul_add]
   abel
 
+/-- The `(0,1)`-part of the zero one-form is zero. -/
+@[simp]
+theorem zeroOnePart_zero {x : M} : j.zeroOnePart (0 : TangentSpace I x →L[ℝ] V x) = 0 := by
+  ext v
+  simp [zeroOnePart_apply]
+
+/-- The `(0,1)`-projection commutes with finite sums. -/
+theorem zeroOnePart_sum {κ : Type*} (s : Finset κ) {x : M}
+    (η : κ → TangentSpace I x →L[ℝ] V x) :
+    j.zeroOnePart (∑ i ∈ s, η i) = ∑ i ∈ s, j.zeroOnePart (η i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, zeroOnePart_add, ih, Finset.sum_insert hi]
+
 /-- The `(0,1)`-projection commutes with real scalars. -/
 theorem zeroOnePart_smul (c : ℝ) {x : M} (η : TangentSpace I x →L[ℝ] V x) :
     j.zeroOnePart (c • η) = c • j.zeroOnePart η := by
@@ -559,6 +574,12 @@ variable [VectorBundle ℝ F V] [FiniteDimensional ℝ F] [ContMDiffVectorBundle
 def antilinearPart (hD : IsRealCauchyRiemannOperator F j D) (x : M) :
     V x →L[ℝ] TangentSpace I x →L[ℝ] V x :=
   hD.difference hD.isRealCauchyRiemannOperator_sectionComplexLinearPart x
+
+/-- The antilinear part of a real Cauchy–Riemann operator is its difference with its complex
+linear part. -/
+theorem antilinearPart_eq_difference (hD : IsRealCauchyRiemannOperator F j D) :
+    hD.antilinearPart = hD.difference hD.isRealCauchyRiemannOperator_sectionComplexLinearPart :=
+  (rfl)
 
 theorem antilinearPart_apply (hD : IsRealCauchyRiemannOperator F j D) {σ : Π x : M, V x} {x : M}
     (hσ : MDiffAt (T% σ) x) :
