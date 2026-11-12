@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Distribution.SchwartzSpace.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Fourier multipliers of order `m` on Littlewood–Paley blocks
@@ -41,6 +43,10 @@ smoothness by `m`.
   `TemperedDistribution.exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le`: the two
   statements for the Bessel potential `J^s`, whose symbol is of order `s`
   (`TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`).
+* `TemperedDistribution.exists_besselPotential_eq_and_norm_le_of_isVanishingOn`: the same estimate
+  `‖J^s v‖_p ≤ C 2^{js} ‖v‖_p` for any `v ∈ Lᵖ` whose Fourier transform lives in a dyadic annulus
+  `2^j a ≤ ‖ξ‖ ≤ 2^j b` (in the ball of radius `b` when `j = 0`). Such a `v` is the sum of
+  boundedly many of its blocks, of index near `j`, so this follows from the block estimate.
 
 ## References
 
@@ -164,5 +170,57 @@ theorem exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpac
   exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le φ
     (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow (s / 2))
     (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s)
+
+open Distribution in
+/-- **Bessel potentials on a dyadic annulus.** For `t : ℝ`, `a > 0` and every `b` there is a
+constant `C ≥ 0`, depending only on `t`, `a` and `b`, with the following property. Let
+`1 ≤ p ≤ ∞` and let `v ∈ Lᵖ` have Fourier transform vanishing outside the closed ball of radius
+`2^j b` and, when `j > 0`, on the open ball of radius `2^j a`. Then `J^t v` is an `Lᵖ` function
+`g` with
+
+`‖g‖_p ≤ C 2^{jt} ‖v‖_p`. -/
+theorem exists_besselPotential_eq_and_norm_le_of_isVanishingOn [CompleteSpace F] (t : ℝ) {a : ℝ}
+    (ha : 0 < a) (b : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (v : Lp F p (volume : Measure E)),
+      IsVanishingOn (𝓕 (v : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 (2 ^ j * b))ᶜ →
+        (0 < j → IsVanishingOn (𝓕 (v : 𝓢'(E, F)) : 𝓢'(E, F)) (ball 0 (2 ^ j * a))) →
+          ∃ g : Lp F p (volume : Measure E),
+            besselPotential E F t v = g ∧ ‖g‖ ≤ C * 2 ^ (t * j) * ‖v‖ := by
+  -- Cut `v` into the blocks of any fixed bump function.
+  let φ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
+  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_annulus (F := F) φ ha b
+  obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  obtain ⟨C₁, hC₁, hJ⟩ := exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ t
+  set K : ℝ := C₁ * 2 ^ (|t| * L) * max C₀ 0
+  refine ⟨2 * L * K, by positivity, fun {p} _ j v hb ha' ↦ ?_⟩
+  -- Only the blocks `Δₖ v` with `j - L ≤ k < j + L` survive, so `v` is their sum.
+  have hv : ∑ k ∈ Finset.Ico (j - L) (j + L), littlewoodPaleyBlock F φ k (v : 𝓢'(E, F)) = v :=
+    sum_littlewoodPaleyBlock_eq_self φ _ fun k hk ↦ hL j k _ hb ha' <| by
+      rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
+      omega
+  choose f hf hfC using fun k ↦ hC₀ (p := p) k v
+  choose g hg hgC using fun k ↦ hJ (p := p) k (v : 𝓢'(E, F)) (f k) (hf k)
+  refine ⟨∑ k ∈ Finset.Ico (j - L) (j + L), g k, ?_, ?_⟩
+  · rw [← hv, map_sum, Lp.toTemperedDistribution_sum]
+    exact Finset.sum_congr rfl fun k _ ↦ hg k
+  -- Each surviving block costs `2^{kt} ≤ 2^{|t| L} 2^{jt}`, and there are at most `2 L` of them.
+  have hgk (k : ℕ) (hk : k ∈ Finset.Ico (j - L) (j + L)) :
+      ‖g k‖ ≤ K * 2 ^ (t * j) * ‖v‖ := by
+    calc ‖g k‖ ≤ C₁ * 2 ^ (t * k) * ‖f k‖ := hgC k
+      _ ≤ C₁ * (2 ^ (|t| * L) * 2 ^ (t * j)) * (max C₀ 0 * ‖v‖) := by
+        gcongr
+        · exact Real.rpow_mul_natCast_le_of_mem_Ico one_le_two t hk
+        · exact (hfC k).trans (by gcongr; exact le_max_left C₀ 0)
+      _ = K * 2 ^ (t * j) * ‖v‖ := by ring
+  calc ‖∑ k ∈ Finset.Ico (j - L) (j + L), g k‖
+      ≤ ∑ k ∈ Finset.Ico (j - L) (j + L), K * 2 ^ (t * j) * ‖v‖ :=
+        (norm_sum_le _ _).trans (Finset.sum_le_sum hgk)
+    _ = (Finset.Ico (j - L) (j + L)).card * (K * 2 ^ (t * j) * ‖v‖) := by
+        rw [Finset.sum_const, nsmul_eq_mul]
+    _ ≤ 2 * L * (K * 2 ^ (t * j) * ‖v‖) := by
+        gcongr
+        rw [Nat.card_Ico]
+        exact_mod_cast (by omega)
+    _ = 2 * L * K * 2 ^ (t * j) * ‖v‖ := by ring
 
 end TemperedDistribution
