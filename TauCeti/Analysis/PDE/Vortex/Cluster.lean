@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Existence
 public import TauCeti.Analysis.PDE.Vortex.Flux
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Topology.Algebra.Module.Cardinality
 
 /-!
@@ -64,6 +65,8 @@ zero as `a → ∞`
 ## Main results
 
 * `TauCeti.Vortex.sectionValue_mulField`: the section of the product field is `α_x α_y`.
+* `TauCeti.Vortex.contDiff_mulField`, `TauCeti.Vortex.differentiable_mulField`: the product field
+  is as regular as its factors.
 * `TauCeti.Vortex.equation_mulField_apply_one_eq_zero_and_apply_two_eq_zero`: the product field
   satisfies the holomorphicity rows when both factors do.
 * `TauCeti.Vortex.isZeroMultiplicity_sectionValue_mulField`: the zero multiplicities of the
@@ -157,6 +160,46 @@ theorem differentiableAt_mulField_apply_three {z : ℂ}
   have h₂ : DifferentiableAt ℝ (fun w ↦ (sectionValue x w * sectionValue y w).im / 2) z :=
     h.mul_const (2⁻¹ : ℝ) |>.congr_of_eventuallyEq (.of_forall fun _ ↦ div_eq_mul_inv _ _)
   exact h₂.congr_of_eventuallyEq (.of_forall fun w ↦ mulField_apply_three x y w)
+
+/-- The product field is differentiable when both factors are. -/
+theorem differentiable_mulField (hx : Differentiable ℝ x) (hy : Differentiable ℝ y) :
+    Differentiable ℝ (mulField x y) := by
+  have hc {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : Differentiable ℝ u) (i : Fin 4) :
+      Differentiable ℝ fun w ↦ u w i :=
+    (differentiable_piLp 2).1 hu i
+  have h₀ : Differentiable ℝ fun w ↦ mulField x y w 0 := by
+    simpa only [mulField_apply_zero] using (hc hx 0).fun_add (hc hy 0)
+  have h₁ : Differentiable ℝ fun w ↦ mulField x y w 1 := by
+    simpa only [mulField_apply_one] using (hc hx 1).fun_add (hc hy 1)
+  have h₂ : Differentiable ℝ fun w ↦ mulField x y w 2 := fun w ↦
+    differentiableAt_mulField_apply_two (hc hx 2 w) (hc hx 3 w) (hc hy 2 w) (hc hy 3 w)
+  have h₃ : Differentiable ℝ fun w ↦ mulField x y w 3 := fun w ↦
+    differentiableAt_mulField_apply_three (hc hx 2 w) (hc hx 3 w) (hc hy 2 w) (hc hy 3 w)
+  -- `fin_cases` writes the index as `⟨i, _⟩`, which is the numeral `i` up to `rfl`.
+  refine (differentiable_piLp 2).2 fun i ↦ ?_
+  fin_cases i <;> assumption
+
+/-- The product field is `C^n` when both factors are. -/
+theorem contDiff_mulField {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hy : ContDiff ℝ n y) :
+    ContDiff ℝ n (mulField x y) := by
+  have hc {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ n u) (i : Fin 4) :
+      ContDiff ℝ n fun w ↦ u w i :=
+    (contDiff_piLp 2).1 hu i
+  have hs : ContDiff ℝ n fun w ↦ sectionValue x w * sectionValue y w :=
+    (contDiff_sectionValue (hc hx 2) (hc hx 3)).mul (contDiff_sectionValue (hc hy 2) (hc hy 3))
+  have h₀ : ContDiff ℝ n fun w ↦ mulField x y w 0 := by
+    simpa only [mulField_apply_zero] using (hc hx 0).add (hc hy 0)
+  have h₁ : ContDiff ℝ n fun w ↦ mulField x y w 1 := by
+    simpa only [mulField_apply_one] using (hc hx 1).add (hc hy 1)
+  have h₂ : ContDiff ℝ n fun w ↦ mulField x y w 2 := by
+    simpa only [mulField_apply_two, Function.comp_apply, reCLM_apply] using
+      (reCLM.contDiff.comp hs).div_const (2 : ℝ)
+  have h₃ : ContDiff ℝ n fun w ↦ mulField x y w 3 := by
+    simpa only [mulField_apply_three, Function.comp_apply, imCLM_apply] using
+      (imCLM.contDiff.comp hs).div_const (2 : ℝ)
+  -- `fin_cases` writes the index as `⟨i, _⟩`, which is the numeral `i` up to `rfl`.
+  refine (contDiff_piLp 2).2 fun i ↦ ?_
+  fin_cases i <;> assumption
 
 /-- **The product of two holomorphic fields is holomorphic.** If `x` and `y` satisfy the
 holomorphicity rows `∂bar_a α = 0` of the vortex equation at `z`, so does their tensor product
@@ -356,8 +399,12 @@ theorem exists_contDiff_sectionValue_eq_mul_mul_of_add {k : ℕ∞} (hk : 1 ≤ 
   have hmul : IsZeroMultiplicity (sectionValue (mulField y₁ y₂)) (Multiset.count · (D₁ + D₂)) := by
     convert isZeroMultiplicity_sectionValue_mulField hD₁ hD₂ using 1
     exact funext fun z ↦ Multiset.count_add z D₁ D₂
-  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul hk hxb₁ hxb₂ hxp hxq hxhol
-    (hy₁b₁.add hy₂b₁) (hy₁b₂.add hy₂b₂)
+  -- The connection components of the product field are the sums of those of the factors.
+  have hb₁ : ContDiff ℝ k fun w ↦ mulField y₁ y₂ w 0 := by
+    simpa only [mulField_apply_zero] using hy₁b₁.add hy₂b₁
+  have hb₂ : ContDiff ℝ k fun w ↦ mulField y₁ y₂ w 1 := by
+    simpa only [mulField_apply_one] using hy₁b₂.add hy₂b₂
+  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul hk hxb₁ hxb₂ hxp hxq hxhol hb₁ hb₂
     (fun w ↦ differentiableAt_mulField_apply_two (hy₁p w) (hy₁q w) (hy₂p w) (hy₂q w))
     (fun w ↦ differentiableAt_mulField_apply_three (hy₁p w) (hy₁q w) (hy₂p w) (hy₂q w))
     (fun w ↦ equation_mulField_apply_one_eq_zero_and_apply_two_eq_zero (hy₁p w) (hy₁q w)
