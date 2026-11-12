@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Rotation
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
-public import Mathlib.Analysis.Real.Sqrt
+public import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Planar examples and non-examples of Lipschitz domains
@@ -112,15 +112,11 @@ private theorem corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
   · rintro ⟨h1, h2⟩
     refine ⟨⟨by nlinarith, by nlinarith⟩, by nlinarith, by nlinarith⟩
 
-/-- The vector `((√2)⁻¹, (√2)⁻¹)` has unit length. -/
-theorem inv_sqrt_two_sq_add_inv_sqrt_two_sq : ((√2)⁻¹ : ℝ) ^ 2 + ((√2)⁻¹ : ℝ) ^ 2 = 1 := by
-  rw [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
-
 /-- The rotation by `π / 4` centred at the corner `0` is a chart of the open unit square with
 graph `|s|` and constant `1`. -/
 theorem isLipschitzChartWith_openUnitSquare_zero :
     openUnitSquare.IsLipschitzChartWith 1
-      (prodRecentredRotation (√2)⁻¹ (√2)⁻¹ inv_sqrt_two_sq_add_inv_sqrt_two_sq 0)
+      (prodRecentredRotation (√2)⁻¹ (√2)⁻¹ Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq 0)
       (fun s => |s|) (1 / 2) (1 / 2) := by
   refine isLipschitzChartWith_openUnitSquare_of 0 _ (by norm_num) (by norm_num) abs_zero
     (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
@@ -135,7 +131,7 @@ theorem isLipschitzDomainWith_openUnitSquare :
   refine (Set.isLipschitzDomainWith_iff ..).2 ⟨isOpen_openUnitSquare, fun x hx => ?_⟩
   obtain ⟨⟨⟨hs0, hs1⟩, ht0, ht1⟩, hxΩ⟩ := mem_Icc_of_mem_frontier_openUnitSquare hx
   have hlip0 : LipschitzWith 1 (fun _ : ℝ => (0 : ℝ)) := (LipschitzWith.const 0).weaken zero_le_one
-  have hk0 := inv_sqrt_two_sq_add_inv_sqrt_two_sq
+  have hk0 := Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq
   have hk : (-(√2)⁻¹ : ℝ) ^ 2 + ((√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
   have hk' : ((√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
   have hk'' : (-(√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
