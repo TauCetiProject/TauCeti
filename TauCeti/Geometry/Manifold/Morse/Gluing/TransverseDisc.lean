@@ -83,6 +83,7 @@ end MorseChart
 
 variable [IsManifold 𝓘(ℝ, E) ∞ M]
 
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- **A transverse disc read in split coordinates.** Let `φ` be a Morse chart and `pr` a
 surjection of the split model onto a finite-dimensional space, and let `s₂` be, on the open
 coordinate cube of radius `ε`, the set where `pr` vanishes on the split coordinates. A set `s₁`
