@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.BoxIntegral.Basic
 public import TauCeti.Analysis.BoxIntegral.IntervalIntegral
 public import TauCeti.Analysis.BoxIntegral.HenstockPartition
 public import Mathlib.Algebra.BigOperators.Intervals
