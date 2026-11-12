@@ -29,16 +29,16 @@ measures.
 
 In the preferred chart of `M × N`, the product of the preferred charts of `M` and `N`, the
 coefficient of `φ` in the product of coordinate bases is the product of the coefficients of `φ₁`
-and `φ₂` (`TauCeti.RoughForm.inChartAt_prod_apply`). Since the coordinate measure of
-`TauCeti.RoughForm.measure` does not depend on the basis used to normalize it, and the Haar measure
-of a product basis is the product of the Haar measures, the two measures agree on products of
-measurable subsets of chart sources. Both measures are `σ`-finite, so they agree on each product
+and `φ₂` (`TauCeti.RoughForm.inChartAt_apply_reindex_prod_eq_mul`). Since the coordinate measure
+of `TauCeti.RoughForm.measure` does not depend on the basis used to normalize it, and the Haar
+measure of a product basis is the product of the Haar measures, the two measures agree on products
+of measurable subsets of chart sources. Both measures are `σ`-finite, so they agree on each product
 chart source, and these sources cover `M × N`.
 
 ## Main results
 
-* `TauCeti.RoughForm.inChartAt_prod_apply`: the coefficient of a factoring top form in a product
-  chart, on a product basis.
+* `TauCeti.RoughForm.inChartAt_apply_reindex_prod_eq_mul`: the coefficient of a factoring top
+  form in a product chart, on a product basis.
 * `TauCeti.RoughForm.measure_eq_prod`: the measure of a factoring top form is the product measure.
 
 ## References
@@ -68,7 +68,7 @@ variable {E H M F H' N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topo
 takes the value `φ₁_x(v) φ₂_y(w)` on the family `(v₁, 0), …, (vₖ, 0), (0, w₁), …, (0, wₗ)`, then
 in the preferred chart at `(α, β)` its coefficient in the product of bases `b₁` and `b₂` is the
 product of the coefficients of `φ₁` in `b₁` and of `φ₂` in `b₂`. -/
-theorem inChartAt_prod_apply (hp : k + l = p)
+theorem inChartAt_apply_reindex_prod_eq_mul (hp : k + l = p)
     (h : ∀ (x : M) (y : N) (v : Fin k → TangentSpace I x) (w : Fin l → TangentSpace J y),
       φ (x, y) (fun r ↦ Sum.elim (fun i ↦ ((v i, 0) : E × F)) (fun j ↦ (0, w j))
         (finSumFinEquiv.symm (Fin.cast hp.symm r))) = φ₁ x v * φ₂ y w)
@@ -143,23 +143,15 @@ private theorem measure_prod_of_subset (hp : k + l = p) (hφ₁ : IsSmoothForm I
     (image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset
   have hA₂ : extChartAt J β '' t ⊆ (extChartAt J β).target :=
     (image_mono htβ).trans (extChartAt J β).image_source_eq_target.subset
-  have hm₁ : AEMeasurable (fun y ↦ ENNReal.ofReal |φ₁.inChartAt α y b₁|)
-      (b₁.addHaar.restrict (extChartAt I α '' s)) :=
-    (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
-      ((continuous_eval_const (b₁ : Fin k → E)).comp_continuousOn
-        ((hφ₁.continuousOn_inChartAt α).mono hA₁)))).aemeasurable (hs.image_extChartAt α hsα)
-  have hm₂ : AEMeasurable (fun z ↦ ENNReal.ofReal |φ₂.inChartAt β z b₂|)
-      (b₂.addHaar.restrict (extChartAt J β '' t)) :=
-    (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
-      ((continuous_eval_const (b₂ : Fin l → F)).comp_continuousOn
-        ((hφ₂.continuousOn_inChartAt β).mono hA₂)))).aemeasurable (ht.image_extChartAt β htβ)
   rw [φ.measure_apply_of_subset (hs.prod ht) hsub, φ₁.measure_apply_of_subset hs hsα,
     φ₂.measure_apply_of_subset ht htβ, himage]
   -- The chart measurable structure on `E × F` is supplied explicitly: elaborating it by instance
   -- search would find the product structure and force an expensive unification.
   refine setLIntegral_prod_addHaar (mEF := TauCeti.extChartAtMeasurableSpaceE) hp _ b₁ b₂
-    (hs.image_extChartAt α hsα) (ht.image_extChartAt β htβ) _ hm₁ hm₂ fun z hz ↦ ?_
-  rw [inChartAt_prod_apply hp h α β (hA₁ hz.1) (hA₂ hz.2), abs_mul,
+    (hs.image_extChartAt α hsα) (ht.image_extChartAt β htβ) _
+    (aemeasurable_ofReal_abs_inChartAt hφ₁ b₁ hs hsα)
+    (aemeasurable_ofReal_abs_inChartAt hφ₂ b₂ ht htβ) fun z hz ↦ ?_
+  rw [inChartAt_apply_reindex_prod_eq_mul hp h α β (hA₁ hz.1) (hA₂ hz.2), abs_mul,
     ENNReal.ofReal_mul (abs_nonneg _)]
 
 /-- **The measure of a product of top forms is the product measure.** Let `φ₁` and `φ₂` be

@@ -51,6 +51,8 @@ this construction gives the Liouville measure of a symplectic manifold.
   `TauCeti.RoughForm.measure_zero`: `|c • φ| = |c| • |φ|`.
 * `TauCeti.RoughForm.isLocallyFiniteMeasure_measure`: the measure of a continuous form is locally
   finite.
+* `TauCeti.RoughForm.aemeasurable_ofReal_abs_inChartAt`: the coordinate density of a continuous
+  form is a.e.-measurable on chart images.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
 * `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
@@ -254,6 +256,20 @@ theorem isLocallyFiniteMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoot
   · exact ((measure_mono (himage.trans inter_subset_right)).trans_lt measure_ball_lt_top).ne
   · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
 
+omit [FiniteDimensional ℝ E] hk [LindelofSpace M] in
+/-- The coordinate density `|φ(b)|` of a continuous top form in the chart at `α` is
+a.e.-measurable on the coordinate image of a measurable subset of the chart source. -/
+theorem aemeasurable_ofReal_abs_inChartAt {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ)
+    (b : Basis (Fin k) ℝ E) {α : M} {s : Set M} (hs : MeasurableSet s)
+    (hsα : s ⊆ (extChartAt I α).source) :
+    AEMeasurable (fun y ↦ ENNReal.ofReal |φ.inChartAt α y b|)
+      (b.addHaar.restrict (extChartAt I α '' s)) :=
+  (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
+    ((continuous_eval_const (b : Fin k → E)).comp_continuousOn
+      ((hφ.continuousOn_inChartAt α).mono
+        ((image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset))))).aemeasurable
+    (hs.image_extChartAt α hsα)
+
 /-- **The measure of a continuous nowhere-vanishing top form is positive on nonempty open sets.**
 In a chart the coefficient of such a form vanishes nowhere, and a nonempty open subset of a chart
 source has a coordinate image of positive Lebesgue measure, even at boundary or corner points. -/
@@ -279,12 +295,7 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
         (subset_closure (mem_interior_iff_mem_nhds.mpr (hV.mem_nhds ⟨hx, mem_extChartAt_source x⟩)))
         (mem_extChartAt_source x))
   -- The coordinate density is measurable and vanishes nowhere on that image.
-  have hd : AEMeasurable (fun y ↦ ENNReal.ofReal |φ.inChartAt x y b|)
-      (b.addHaar.restrict (e '' V)) :=
-    (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
-      ((continuous_eval_const (b : Fin k → E)).comp_continuousOn
-        ((hφ.continuousOn_inChartAt x).mono
-          (e.image_source_eq_target ▸ image_mono hVsub))))).aemeasurable hA
+  have hd := aemeasurable_ofReal_abs_inChartAt hφ b hV.measurableSet hVsub
   have hpos : ∀ y ∈ e '' V, ENNReal.ofReal |φ.inChartAt x y b| ≠ 0 := by
     rintro _ ⟨z, hz, rfl⟩
     have hz0 : φ.inChartAt x (e z) ≠ 0 := by

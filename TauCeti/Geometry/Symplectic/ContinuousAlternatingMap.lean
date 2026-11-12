@@ -17,9 +17,7 @@ import TauCeti.Geometry.Symplectic.WittExtension
 `SymplecticForm.ofContinuousAlternatingMap` reads a nondegenerate continuous alternating
 map in two variables as an algebraic symplectic form. Nondegeneracy need only be checked
 in the left variable, since alternation supplies the corresponding right-variable condition.
-The evaluation lemma identifies the resulting bilinear form with the original two-form. The
-direct sum `ω₁ ∘ pr₁ + ω₂ ∘ pr₂` of two-forms on `E` and `F` evaluates componentwise on `E × F`
-(`ContinuousAlternatingMap.add_compContinuousLinearMap_fst_snd_apply`).
+The evaluation lemma identifies the resulting bilinear form with the original two-form.
 Over finite-dimensional spaces, Witt's extension theorem then gives a continuous linear
 automorphism of `E × N` fixing `E × {0}` and carrying one nondegenerate two-form to another with
 the same restriction to `E × {0}`.
@@ -82,18 +80,3 @@ theorem exists_continuousLinearEquiv_fix_inl_of_compContinuousLinearMap_inl_eq
     (he.apply v w)).trans (SymplecticForm.ofContinuousAlternatingMap_apply _ hnd₀ v w)
 
 end TauCeti
-
-namespace ContinuousAlternatingMap
-
-variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
-
-/-- The direct sum `ω₁ ∘ pr₁ + ω₂ ∘ pr₂` of two two-forms on `E × F` evaluates componentwise. -/
-theorem add_compContinuousLinearMap_fst_snd_apply (ω₁ : E [⋀^Fin 2]→L[ℝ] ℝ)
-    (ω₂ : F [⋀^Fin 2]→L[ℝ] ℝ) (x y : E × F) :
-    (ω₁.compContinuousLinearMap (.fst ℝ E F) + ω₂.compContinuousLinearMap (.snd ℝ E F)) ![x, y] =
-      ω₁ ![x.1, y.1] + ω₂ ![x.2, y.2] := by
-  simp only [add_apply, compContinuousLinearMap_apply]
-  congr 2 <;> funext i <;> fin_cases i <;> rfl
-
-end ContinuousAlternatingMap

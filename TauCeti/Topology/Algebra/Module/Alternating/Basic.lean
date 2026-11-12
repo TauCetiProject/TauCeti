@@ -32,6 +32,9 @@ form a complex vector space, and these operations are complex-linear or conjugat
   vanishes exactly when it vanishes on every vector.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
   `A` and then along `B` is pulling back along `A.comp B`.
+* `ContinuousAlternatingMap.compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply`:
+  the sum `ω₁ ∘ pr₁ + ω₂ ∘ pr₂` of pullbacks of maps of two vectors to `E × F` evaluates
+  componentwise.
 -/
 
 public section
@@ -97,6 +100,17 @@ theorem compContinuousLinearMap_compContinuousLinearMap (a : M'' [⋀^ι]→L[R]
   rfl
 
 end CompComp
+
+/-- The sum `ω₁ ∘ pr₁ + ω₂ ∘ pr₂` of the pullbacks of alternating maps of two vectors on `E` and
+`F` to `E × F` evaluates componentwise. -/
+theorem compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply {R E F G : Type*}
+    [Semiring R] [AddCommMonoid E] [Module R E] [TopologicalSpace E] [AddCommMonoid F]
+    [Module R F] [TopologicalSpace F] [AddCommMonoid G] [Module R G] [TopologicalSpace G]
+    [ContinuousAdd G] (ω₁ : E [⋀^Fin 2]→L[R] G) (ω₂ : F [⋀^Fin 2]→L[R] G) (x y : E × F) :
+    (ω₁.compContinuousLinearMap (.fst R E F) + ω₂.compContinuousLinearMap (.snd R E F)) ![x, y] =
+      ω₁ ![x.1, y.1] + ω₂ ![x.2, y.2] := by
+  simp only [add_apply, compContinuousLinearMap_apply]
+  congr 2 <;> funext i <;> match i with | 0 | 1 => rfl
 
 end ContinuousAlternatingMap
 

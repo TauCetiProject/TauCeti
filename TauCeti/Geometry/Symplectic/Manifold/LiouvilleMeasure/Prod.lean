@@ -65,7 +65,7 @@ theorem liouvilleMeasure_prod (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) 
   rw [liouvilleMeasure_def, liouvilleMeasure_def, liouvilleMeasure_def]
   exact RoughForm.measure_eq_prod (mul_add 2 n m).symm
     ((σ.volumeForm n).isSmoothForm.of_le bot_le) ((τ.volumeForm m).isSmoothForm.of_le bot_le)
-    (volumeForm_prod_apply hn.out hm.out σ τ)
+    (volumeForm_prod_apply σ τ)
 
 end SmoothTwoForm
 

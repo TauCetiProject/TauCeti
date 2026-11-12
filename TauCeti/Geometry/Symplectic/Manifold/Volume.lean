@@ -186,16 +186,14 @@ theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSp
     ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
 
-/-- **The volume form of a product form factors on product frames.** For two-forms `σ` on a
-manifold of dimension `2 n` and `τ` on a manifold of dimension `2 m`, the volume form
-`(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!` of the product form takes the value `(σⁿ / n!)(v) (τᵐ / m!)(w)` on the
-family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)` of tangent vectors at `(x, y)`. -/
+/-- **The volume form of a product form factors on product frames.** For two-forms `σ` on `M` and
+`τ` on `N`, the volume form `(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!` of the product form takes the value
+`(σⁿ / n!)(v) (τᵐ / m!)(w)` on the family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)` of tangent
+vectors at `(x, y)`. -/
 theorem volumeForm_prod_apply {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
     [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-    [IsManifold J ∞ N] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] {m : ℕ}
-    (hn : finrank ℝ E = 2 * n) (hm : finrank ℝ E' = 2 * m) (σ : SmoothTwoForm I M)
-    (τ : SmoothTwoForm J N) (x : M) (y : N) (v : Fin (2 * n) → TangentSpace I x)
-    (w : Fin (2 * m) → TangentSpace J y) :
+    [IsManifold J ∞ N] {m : ℕ} (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) (x : M) (y : N)
+    (v : Fin (2 * n) → TangentSpace I x) (w : Fin (2 * m) → TangentSpace J y) :
     ((σ.prod τ).volumeForm (n + m)).1 (x, y)
         (fun r ↦ Sum.elim (fun i ↦ ((v i, 0) : E × E')) (fun j ↦ (0, w j))
           (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r))) =
@@ -203,9 +201,10 @@ theorem volumeForm_prod_apply {E' H' N : Type*} [NormedAddCommGroup E'] [NormedS
   rw [volumeForm_apply, volumeForm_apply, volumeForm_apply, prod_toRoughForm_apply]
   -- The tangent spaces carry their instances through `TangentSpace`, so the linear identity is
   -- applied up to unfolding rather than by rewriting.
+  open _root_.ContinuousAlternatingMap in
   exact
-    ContinuousAlternatingMap.inv_factorial_smul_wedgePow_add_compContinuousLinearMap_fst_snd_apply
-      hn hm (σ.1 x) (τ.1 y) v w
+    inv_factorial_smul_wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply
+      (σ.1 x) (τ.1 y) v w
 
 end SmoothTwoForm
 
