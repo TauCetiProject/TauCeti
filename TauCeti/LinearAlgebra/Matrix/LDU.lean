@@ -113,7 +113,7 @@ theorem blockUnitriangular_of_apply_eq_one_apply_of_not_lt {α : Type*} [Preorde
     {b : m → α} (h : ∀ r s, ¬ b r < b s → M r s = (1 : Matrix m m R) r s) :
     M.BlockUnitriangular b := by
   refine ⟨fun r s hsr => ?_, fun r s hrs => h r s (by rw [hrs]; exact lt_irrefl _)⟩
-  rw [h r s (not_lt_of_gt hsr), Matrix.one_apply_ne]
+  rw [h r s (not_lt_of_gt hsr), one_apply_ne]
   exact fun hrs => (ne_of_lt hsr) (congrArg b hrs.symm)
 
 /-- Restricting a block unitriangular matrix along an injective map of indices keeps it block
