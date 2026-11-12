@@ -42,6 +42,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_apply`,
   `TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold`: it acts on each tangent
   space as multiplication by `i`.
+* `TauCeti.SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: on a complex normed
+  space, its chart expression is constantly multiplication by `i`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
   and everywhere: pseudoholomorphic maps between complex manifolds are the holomorphic maps.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_ofComplexManifold`: the almost complex structure
@@ -99,6 +101,13 @@ theorem ofComplexManifold_self_eq_const
     ofComplexManifold E E = const (Complex.I • ContinuousLinearMap.id ℝ E) hI := by
   ext x v
   exact (ofComplexManifold_apply (E := E) x v).trans (const_apply _ hI x v).symm
+
+/-- On a complex normed space `E`, for example `ℂⁿ`, the chart expression of multiplication
+by `i` is constantly multiplication by `i`. Via `toContMDiff`, this is a structure of every
+regularity with the same chart expression (`toContMDiff_inChart`). -/
+theorem inChart_ofComplexManifold_self (x z : E) :
+    (ofComplexManifold E E).inChart x z = Complex.I • ContinuousLinearMap.id ℝ E := by
+  rw [inChart_modelWithCornersSelf, toEndomorphism_ofComplexManifold]
 
 end SmoothAlmostComplexStructure
 
