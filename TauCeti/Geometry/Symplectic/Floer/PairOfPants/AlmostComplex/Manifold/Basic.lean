@@ -73,6 +73,23 @@ theorem contMDiffAt_toEndomorphism_comp_im_endCoord (q : Puncture) {n : ℕ∞ω
 
 end TauCeti.ThricePuncturedSphere.Puncture
 
+namespace TauCeti.SmoothTwoForm.Tames
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I (⊤ : ℕ∞) M]
+  {σ : SmoothTwoForm I M} {J₀ : SmoothAlmostComplexStructure I M}
+
+/-- The end structures `J`, with the output structure replaced by a base structure `J₀`, are tame
+when `J₀` and `J` are. This is the manifold counterpart of `TauCeti.Floer.tames_update_inf_base`. -/
+theorem update_inf_base (h₀ : σ.Tames J₀) {J : Puncture → ℝ → SmoothAlmostComplexStructure I M}
+    (hJ : ∀ q t, σ.Tames (J q t)) (q : Puncture) (t : ℝ) :
+    σ.Tames (Function.update J inf (fun _ => J₀) q t) := by
+  rcases eq_or_ne q inf with rfl | hq
+  · simpa using h₀
+  · simpa [Function.update_of_ne hq] using hJ q t
+
+end TauCeti.SmoothTwoForm.Tames
+
 namespace TauCeti.SmoothTwoForm.Compatible
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]

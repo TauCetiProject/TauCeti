@@ -25,11 +25,12 @@ for the ends `q` and times `t`. For `c ∈ ℝ` and `w ∈ ℂ`, the smooth almo
 `TauCeti.SmoothTwoForm.Compatible.exchangeAlmostComplex h₀ J hJ c w` is the pair-of-pants
 structure of the input structures `J 0`, `J 1` (with output structure `J₀`) on the disc
 `‖w - c‖ ≤ 2 exp (2π)`, and the negative plane structure
-`TauCeti.SmoothTwoForm.Compatible.negativePlaneAlmostComplex` of `J ∞` translated by `c` off it. On
-the tangent space at every point `x` it is the linear input-exchange structure of `J₀ x` and the
-end structures `J q t x`
+`TauCeti.SmoothTwoForm.Compatible.negativePlaneAlmostComplex` of `J ∞` translated by `c` off it
+(`TauCeti.SmoothTwoForm.Compatible.exchangeAlmostComplex_of_norm_le` and
+`TauCeti.SmoothTwoForm.Compatible.exchangeAlmostComplex_of_lt_norm`). On the tangent space at every
+point `x` it is the linear input-exchange structure of `J₀ x` and the end structures `J q t x`
 (`TauCeti.SmoothTwoForm.Compatible.almostComplexStructureAt_exchangeAlmostComplex`), so its
-properties follow fiberwise from the linear construction:
+pointwise properties follow fiberwise from the linear construction:
 
 * it is tame, and compatible when the end structures are;
 * for `-1 ≤ c ≤ 2` its Cayley coordinate relative to `J₀` is
@@ -40,22 +41,25 @@ properties follow fiberwise from the linear construction:
 * at `c = 0` it is the pair-of-pants structure
   `TauCeti.SmoothTwoForm.Compatible.pairOfPantsAlmostComplex`
   (`TauCeti.SmoothTwoForm.Compatible.exchangeAlmostComplex_zero`), and at `c = 1`, if `J ∞` has
-  period one, its value at `1 - w` is the pair-of-pants structure of the exchanged end structures
-  `TauCeti.Floer.exchangeEndData J` at `w`
+  period one, its value at `w` is the pair-of-pants structure of the exchanged end structures
+  `TauCeti.Floer.exchangeEndData J` at `1 - w`
   (`TauCeti.SmoothTwoForm.Compatible.exchangeAlmostComplex_one`);
 * for `0 ≤ c ≤ 1` and period-one end structures, it is `J q t` far out on each input end in the
   end lift `φ_q`, and `J ∞ t` far out on the output end in the end lift `c + φ_∞`, the end
-  coordinates in which the perturbations of the family are `H_q(t) dt`;
-* for period-one end structures which are jointly `C^n` on `ℝ × M`, it is jointly `C^n` along
-  `C^n` families of parameters `-1 < c < 2`, points of `S` and points of `M`
-  (`TauCeti.SmoothTwoForm.Compatible.contMDiffAt_exchangeAlmostComplex`).
+  coordinates in which the perturbations of the family are `H_q(t) dt`.
+
+Smoothness across the fibers is proved separately, in tangent trivializations: for period-one end
+structures which are jointly `C^n` on `ℝ × M`, the family is jointly `C^n` along `C^n` families of
+parameters `-1 < c < 2`, points of `S` and points of `M`, as a section of the tangent endomorphism
+bundle (`TauCeti.SmoothTwoForm.Compatible.contMDiffAt_exchangeAlmostComplex`).
 
 Finally, the member `c = 1` of the family of Floer data is the pullback of the pair-of-pants data
-with exchanged inputs along `w ↦ 1 - w`: if `u` solves the Floer equation in `M` at `1 - w` for the
-exchanged pair-of-pants data, then `u (1 - ·)` solves it at `w` for `(K_1, J_1)`
-(`TauCeti.SmoothTwoForm.Compatible.isComplexLinearMap_perturbedMFDeriv_exchange_one`). This uses
-the naturality of the intrinsic perturbed derivative under holomorphic changes of domain
-coordinates (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`).
+with exchanged inputs along `w ↦ 1 - w`: `u (1 - ·)` solves the Floer equation in `M` at `w` for
+`(K_1, J_1)` if and only if `u` solves it at `1 - w` for the exchanged pair-of-pants data
+(`TauCeti.SmoothTwoForm.Compatible.isComplexLinearMap_perturbedMFDeriv_exchange_one_iff`). This
+uses the naturality of the intrinsic perturbed derivative under holomorphic changes of domain
+coordinates (`TauCeti.SmoothTwoForm.perturbedMFDeriv_perturbationPullback` and
+`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`).
 
 ## References
 
@@ -82,20 +86,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (h₀ : σ.Compatible J₀)
   (J : Puncture → ℝ → SmoothAlmostComplexStructure I M) (hJ : ∀ q t, σ.Tames (J q t))
 
-omit [FiniteDimensional ℝ E] in
-include h₀ hJ in
-/-- The input structures of `J`, with the output structure replaced by `J₀`, are tame. -/
-private theorem tames_update_inf (q : Puncture) (t : ℝ) :
-    σ.Tames (update J inf (fun _ => J₀) q t) := by
-  rcases eq_or_ne q inf with rfl | hq
-  · simpa using h₀.tames
-  · simpa [update_of_ne hq] using hJ q t
-
 /-- The input part of the family at `w ∈ ℂ`: the pair-of-pants structure of the input structures
 of `J`, with output structure `J₀`, written as an end-weighted structure so that it is defined at
 every point of `ℂ`. -/
 private def inputAlmostComplex (w : ℂ) : SmoothAlmostComplexStructure I M :=
-  h₀.endWeightedAlmostComplex (update J inf fun _ => J₀) (tames_update_inf h₀ J hJ)
+  h₀.endWeightedAlmostComplex (update J inf fun _ => J₀) (h₀.tames.update_inf_base hJ)
     (fun q w => smoothTransition (q.endSign * (q.endCoord w).re - 1))
     (fun _ _ => mem_Icc.2 ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩)
     (fun _ _ hq => zero_lt_one.trans (Floer.one_lt_endSign_mul_re_endCoord hq).1) w
@@ -181,6 +176,22 @@ def exchangeAlmostComplex (c : ℝ) (w : ℂ) : SmoothAlmostComplexStructure I M
 
 variable {c : ℝ} {w : ℂ}
 
+/-- On the disc `‖w - c‖ ≤ 2 exp (2π)` the member `c` of the family is the pair-of-pants structure
+of the input structures of `J`, with output structure `J₀`. -/
+theorem exchangeAlmostComplex_of_norm_le {w : ThricePuncturedSphere}
+    (hw : ‖(w : ℂ) - c‖ ≤ 2 * Real.exp (2 * π)) :
+    h₀.exchangeAlmostComplex J hJ c w =
+      h₀.pairOfPantsAlmostComplex (update J inf fun _ => J₀) (h₀.tames.update_inf_base hJ) w := by
+  simp only [exchangeAlmostComplex, hw, ↓reduceIte]
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
+  rw [almostComplexStructureAt_inputAlmostComplex,
+    almostComplexStructureAt_pairOfPantsAlmostComplex]
+  congr 1
+  funext q t _
+  rcases eq_or_ne q inf with rfl | hq
+  · simp
+  · simp [update_of_ne hq]
+
 /-- Off the disc `‖w - c‖ ≤ 2 exp (2π)` the member `c` of the family is the negative plane
 structure of the output structures, translated by `c`. -/
 theorem exchangeAlmostComplex_of_lt_norm (hw : 2 * Real.exp (2 * π) < ‖w - c‖) :
@@ -252,13 +263,13 @@ theorem exchangeAlmostComplex_zero (w : ThricePuncturedSphere) :
       almostComplexStructureAt_pairOfPantsAlmostComplex]
 
 /-- **The end of the family is the exchanged pair-of-pants structure.** If the output structures
-`J ∞` have period one in `t`, the member `c = 1` of the family at `1 - w` is the pair-of-pants
+`J ∞` have period one in `t`, the member `c = 1` of the family at `w` is the pair-of-pants
 structure with exchanged end structures (`TauCeti.Floer.exchangeEndData`: `J 1` at `0`, `J 0` at
-`1` and `t ↦ J ∞ (t + 1/2)` at `∞`) at `w`. -/
+`1` and `t ↦ J ∞ (t + 1/2)` at `∞`) at `1 - w`. -/
 theorem exchangeAlmostComplex_one (hJp : Periodic (J inf) 1)
     (hJ' : ∀ q t, σ.Tames (Floer.exchangeEndData J q t)) (w : ThricePuncturedSphere) :
-    h₀.exchangeAlmostComplex J hJ 1 (1 - w) =
-      h₀.pairOfPantsAlmostComplex (Floer.exchangeEndData J) hJ' w :=
+    h₀.exchangeAlmostComplex J hJ 1 w =
+      h₀.pairOfPantsAlmostComplex (Floer.exchangeEndData J) hJ' (mob01 w) :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     have hJx : ∀ q t (y : Unit), (h₀.isNondegenerate.symplecticFormAt x).Tames
         (Floer.exchangeEndData (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x) q t
@@ -270,7 +281,7 @@ theorem exchangeAlmostComplex_one (hJp : Periodic (J inf) 1)
       · simpa using h₀.isNondegenerate.tames_iff.mp (hJ' inf t) x
     rw [almostComplexStructureAt_exchangeAlmostComplex,
       Floer.exchangeAlmostComplex_one (h₀.compatibleAt x) (fun t => by simp only [hJp t]) hJx,
-      sub_sub_cancel, almostComplexStructureAt_pairOfPantsAlmostComplex]
+      almostComplexStructureAt_pairOfPantsAlmostComplex, coe_mob01]
     -- Both sides are the linear pair-of-pants structure of the same exchanged end structures.
     refine (h₀.compatibleAt x).eq_of_cayley_eq
       (Floer.tames_pairOfPantsAlmostComplex (h₀.compatibleAt x) _ ())
@@ -306,10 +317,7 @@ theorem exchangeAlmostComplex_add_cylindricalEndLift_inf (hJp : Periodic (J inf)
 /-- **The family is smooth.** For end structures which have period one in `t` and are `C^n` on
 `ℝ × M`, the input-exchange family is `C^n` at `y₀` as a section of the tangent endomorphism
 bundle along `b`, read along families of parameters `c`, domain points `f` and target points `b`
-that are `C^n` at `y₀`, provided `-1 < c y₀ < 2` and `f y₀` is a point of `S = ℂ ∖ {0, 1}`.
-Near the disc `‖w - c‖ < 2 exp (2π)` it is the pair-of-pants structure of the input structures,
-and near the complement of the disc `‖w - c‖ ≤ 3` it is the translated negative plane
-structure. -/
+that are `C^n` at `y₀`, provided `-1 < c y₀ < 2` and `f y₀` is a point of `S = ℂ ∖ {0, 1}`. -/
 theorem contMDiffAt_exchangeAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [TopologicalSpace G] {I' : ModelWithCorners ℝ F G} [TopologicalSpace N]
     [ChartedSpace G N] {n : ℕ∞ω} [ENat.LEInfty n] (hJp : ∀ q, Periodic (J q) 1)
@@ -359,20 +367,28 @@ theorem contMDiffAt_exchangeAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
 /-! ### Solutions at the end of the family -/
 
 /-- **Solutions at the end of the family.** Let `σ'(z) = (1, 0) - z` be the exchange `w ↦ 1 - w`
-in the real coordinates `ℝ × ℝ ≃ ℂ`, let the Hamiltonians `H_q` on `M` have period one and be
-`C¹`, and let the output structures `J ∞` have period one. If `u` is differentiable at the point
-`σ'(z)` of `S` and solves the Floer equation there for the pair-of-pants data with exchanged
-inputs, then `u ∘ σ'` solves the Floer equation at `z` for the member `c = 1` of the
-input-exchange family: the perturbation `TauCeti.Floer.exchangePerturbation H 1` with the almost
-complex structure `exchangeAlmostComplex h₀ J hJ 1`. -/
-theorem isComplexLinearMap_perturbedMFDeriv_exchange_one {H : Puncture → ℝ → M → ℝ}
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+in the real coordinates `ℝ × ℝ ≃ ℂ`, let the output Hamiltonian `H_∞` on `M` have period one, let
+every `H_q(t)` be differentiable at `u (σ'(z))`, and let the output structures `J ∞` have period
+one. If `u` is differentiable at the point `σ'(z)` of `S`, then `u ∘ σ'` solves the Floer equation
+at `z` for the member `c = 1` of the input-exchange family (the perturbation
+`TauCeti.Floer.exchangePerturbation H 1` with the almost complex structure
+`exchangeAlmostComplex h₀ J hJ 1`) if and only if `u` solves the Floer equation at `σ'(z)` for the
+pair-of-pants data with exchanged inputs. -/
+theorem isComplexLinearMap_perturbedMFDeriv_exchange_one_iff {H : Puncture → ℝ → M → ℝ}
+    {u : ℝ × ℝ → M} {z : ℝ × ℝ} (hH : Periodic (H inf) 1)
+    (hHd : ∀ q t, MDifferentiableAt I 𝓘(ℝ) (H q t) (u ((1, 0) - z)))
     (hJp : Periodic (J inf) 1) (hJ' : ∀ q t, σ.Tames (Floer.exchangeEndData J q t))
-    {u : ℝ × ℝ → M} {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm ((1, 0) - z) ≠ 0 ∧
+    (hz : Complex.equivRealProdCLM.symm ((1, 0) - z) ≠ 0 ∧
       Complex.equivRealProdCLM.symm ((1, 0) - z) ≠ 1)
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u ((1, 0) - z))
-    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u ((1, 0) - z)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      ((h₀.exchangeAlmostComplex J hJ 1 (Complex.equivRealProdCLM.symm z)).almostComplexStructureAt
+        (u ((1, 0) - z)))
+      (σ.perturbedMFDeriv
+        (fun z x ↦ Floer.exchangePerturbation H 1 (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ Floer.exchangePerturbation H 1 (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ fun z ↦ (1, 0) - z) z).toLinearMap ↔
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       ((h₀.pairOfPantsAlmostComplex (Floer.exchangeEndData J) hJ' ⟨_, hz⟩).almostComplexStructureAt
         (u ((1, 0) - z)))
       (σ.perturbedMFDeriv
@@ -380,20 +396,13 @@ theorem isComplexLinearMap_perturbedMFDeriv_exchange_one {H : Puncture → ℝ �
           (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H)
           (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u ((1, 0) - z)).toLinearMap) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      ((h₀.exchangeAlmostComplex J hJ 1 (Complex.equivRealProdCLM.symm z)).almostComplexStructureAt
-        (u ((1, 0) - z)))
-      (σ.perturbedMFDeriv
-        (fun z x ↦ Floer.exchangePerturbation H 1 (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ Floer.exchangePerturbation H 1 (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (u ∘ fun z ↦ (1, 0) - z) z).toLinearMap := by
+        u ((1, 0) - z)).toLinearMap := by
   set e := Complex.equivRealProdCLM.symm
   have hσ : 1 - e ((1, 0) - z) = e z := by
     apply Complex.ext <;> simp [e]
   -- The structure at `z` is the exchanged pair-of-pants structure at `σ'(z)`.
-  have hJz := exchangeAlmostComplex_one h₀ J hJ hJp hJ' ⟨_, hz⟩
-  simp only [hσ] at hJz
+  have hJz := exchangeAlmostComplex_one h₀ J hJ hJp hJ' (mob01 ⟨_, hz⟩)
+  rw [mob01_mob01, coe_mob01, hσ] at hJz
   rw [hJz]
   -- The perturbation is the pullback along `σ'` of the exchanged pair-of-pants perturbation.
   have hpull (v : ℝ × ℝ) : (fun z x ↦ Floer.exchangePerturbation H 1 (e z) x (e v)) =
@@ -402,7 +411,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_exchange_one {H : Puncture → ℝ �
         (fun z x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e z) x Complex.I)
         v := by
     funext z' x
-    rw [Floer.perturbationPullback_pairOfPantsPerturbation_exchangeEndData (hH inf)]
+    rw [Floer.perturbationPullback_pairOfPantsPerturbation_exchangeEndData hH]
   have hD : σ.perturbedMFDeriv (fun z x ↦ Floer.exchangePerturbation H 1 (e z) x 1)
       (fun z x ↦ Floer.exchangePerturbation H 1 (e z) x Complex.I) (u ∘ fun z ↦ (1, 0) - z) z =
       σ.perturbedMFDeriv
@@ -422,19 +431,34 @@ theorem isComplexLinearMap_perturbedMFDeriv_exchange_one {H : Puncture → ℝ �
   have hK (v : ℂ) : MDifferentiableAt I 𝓘(ℝ)
       (fun x ↦ Floer.pairOfPantsPerturbation (Floer.exchangeEndData H) (e ((1, 0) - z)) x v)
       (u ((1, 0) - z)) := by
-    have hd := Floer.contMDiffAt_pairOfPantsPerturbation (Floer.periodic_exchangeEndData hH)
-      (Floer.contMDiff_uncurry_exchangeEndData hHs) ⟨_, hz⟩ (u ((1, 0) - z))
-    exact ((hd.comp _ (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
-      contMDiffAt_const).mdifferentiableAt one_ne_zero
+    have hHd' (q : Puncture) (t : ℝ) :
+        MDifferentiableAt I 𝓘(ℝ) (Floer.exchangeEndData H q t) (u ((1, 0) - z)) := by
+      cases q <;> simp [hHd]
+    have h := MDifferentiableAt.sum (t := Finset.univ) (z := u ((1, 0) - z))
+      (f := fun q x => smoothTransition (q.endSign * (q.endCoord (e ((1, 0) - z))).re - 1) *
+        Floer.exchangeEndData H q (q.endCoord (e ((1, 0) - z))).im x *
+          q.endAngularForm (e ((1, 0) - z)) v)
+      fun q _ => (mdifferentiableAt_const.mul (hHd' q _)).mul mdifferentiableAt_const
+    convert h using 1
+    funext x
+    simp only [Floer.pairOfPantsPerturbation_def, FunLike.coe_sum, Finset.sum_apply,
+      FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
   -- The exchange is holomorphic: its derivative is `-1`.
   have hφ : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z :=
     (differentiableAt_const _).sub differentiableAt_id
+  have hdφ : fderiv ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z = -ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
+    rw [fderiv_const_sub, fderiv_fun_id]
   have hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (AlmostComplexStructure.product ℝ)
       (fderiv ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-    rw [fderiv_const_sub, fderiv_fun_id]
+    rw [hdφ]
     simp
-  exact σ.isComplexLinearMap_perturbedMFDeriv_perturbationPullback hφ hu (hK 1) (hK Complex.I)
-    hφJ h
+  refine ⟨fun h => ?_, fun h => σ.isComplexLinearMap_perturbedMFDeriv_perturbationPullback hφ hu
+    (hK 1) (hK Complex.I) hφJ h⟩
+  -- Conversely, precomposing with the derivative `-1` of the exchange does not change complex
+  -- linearity.
+  rwa [σ.perturbedMFDeriv_perturbationPullback hφ hu (hK 1) (hK Complex.I), hdφ,
+    ContinuousLinearMap.comp_neg, ContinuousLinearMap.comp_id, ContinuousLinearMap.toLinearMap_neg,
+    isComplexLinearMap_neg_iff] at h
 
 end TauCeti.SmoothTwoForm.Compatible
