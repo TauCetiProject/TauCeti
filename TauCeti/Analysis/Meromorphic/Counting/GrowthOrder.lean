@@ -96,7 +96,6 @@ theorem OrderLE.isBigO_zeroCount_closedBall (h : OrderLE f A) (hf : Differentiab
   -- The constant part of Jensen's bound, and the coefficient of `r ^ B`.
   set K : ℝ := analyticOrderNatAt f 0 + (log (1 + |C|) - log ‖meromorphicTrailingCoeffAt f 0‖) /
     log 2
-  have hlog2 : 0 < log 2 := log_pos one_lt_two
   refine IsBigO.of_bound (|K| + 2 ^ B / log 2) ?_
   filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop (ρ₀ / 2)] with r hr hrρ
   have hr0 : 0 ≤ r := zero_le_one.trans hr
