@@ -57,8 +57,8 @@ theorem ContMDiffAt.eventually_injective_mfderiv
     (hcoord (t₀, x) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x)
       (FiberBundle.mem_baseSet_trivializationAt E' (TangentSpace J) (F t₀ x))).mpr hinj
   have hAn := hA.preimage_mem_nhds (ContinuousLinearMap.isOpen_injective.mem_nhds hA0)
-  have hxn := (show ContinuousAt (fun p : ℝ × M ↦ p.2) (t₀, x) from
-    continuousAt_snd).preimage_mem_nhds
+  have hproj : ContinuousAt (fun p : ℝ × M ↦ p.2) (t₀, x) := continuousAt_snd
+  have hxn := hproj.preimage_mem_nhds
     ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x))
   have hyn := hF.continuousAt.preimage_mem_nhds
