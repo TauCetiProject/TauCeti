@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
