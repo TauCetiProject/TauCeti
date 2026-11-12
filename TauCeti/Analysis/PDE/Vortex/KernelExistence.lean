@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.LogVariation
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import TauCeti.Analysis.PDE.Schrodinger.Stationary
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 
@@ -19,7 +18,7 @@ whose holomorphicity rows `∂bar_a α = 0` hold, a variation `y` in the kernel 
 operator `L_x = d₀* ⊕ d₁` is, off the zeros of `α`, the logarithmic variation of
 `η = δα / α`, and `η` solves the Schrödinger equation `Δη = P η`, `P = |α|² / 4`
 (`TauCeti.Vortex.laplacian_div_sectionValue_eq_smul`). The function `η` may have poles at the
-zeros of `α`, of order less than the multiplicity of the zero: the covariant translations of
+zeros of `α`, of order at most the multiplicity of the zero: the covariant translations of
 `TauCeti.Analysis.PDE.Vortex.TranslationKernel` have simple poles. Conversely a square-integrable
 kernel element is determined by the singular part of `η`
 (`TauCeti.Vortex.eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto`).
@@ -40,9 +39,9 @@ real space of dimension `2m` for a vortex of degree `m`, the dimension of the ta
 divisor space `Sym^m ℂ`: every one of them is realized by a square-integrable kernel element.
 
 The construction cuts the pole off: `η₀ = χ c / (w - z)^(j+1)`, with `χ` a bump equal to one near
-`z`, has smooth logarithmic variation `y₀`, because `α` vanishes to order `j + 1` at `z` and
-`c / (w - z)^(j+1)` is holomorphic, and `L_x y₀` is smooth with compact support and vanishing
-`∂bar` rows. Its two remaining rows are the source of the Schrödinger equation
+`z`, has smooth logarithmic variation `y₀`, because `α` vanishes to order at least `j + 1` at
+`z` and `c / (w - z)^(j+1)` is holomorphic, and `L_x y₀` is smooth with compact support and
+vanishing `∂bar` rows. Its two remaining rows are the source of the Schrödinger equation
 `Δξ = P ξ + g` for the correction `ξ`, which has a solution in `L²` with `L²` derivative because
 `P ≥ 0` is bounded and positive near infinity (`TauCeti.exists_contDiff_laplacian_eq_mul_add`).
 Then `y = y₀ + logVariation x ξ`.
@@ -102,39 +101,6 @@ private theorem exists_contDiff_sectionValue_eq_pow_succ_mul (hx : ContDiff ℝ 
       simp only [q, hwz, ite_false]
       field_simp
 
-/-- The logarithmic variation of `u + i v` is square integrable when `u`, `v` and their
-derivatives are, along a field whose section components are bounded. -/
-private theorem memLp_logVariation (hx : Continuous x) {B : ℝ}
-    (hB : ∀ w, |x w 2| ≤ B ∧ |x w 3| ≤ B) {u v : ℂ → ℝ} (hu : MemLp u 2 volume)
-    (hv : MemLp v 2 volume) (hdu : MemLp (fderiv ℝ u) 2 volume)
-    (hdv : MemLp (fderiv ℝ v) 2 volume) :
-    MemLp (logVariation x fun w ↦ (u w : ℂ) + v w * I) 2 volume := by
-  have hre : (fun w ↦ ((u w : ℂ) + v w * I).re) = u := by funext w; simp
-  have him : (fun w ↦ ((u w : ℂ) + v w * I).im) = v := by funext w; simp
-  have happ {f : ℂ → ℝ} (hf : MemLp (fderiv ℝ f) 2 volume) (a : ℂ) :
-      MemLp (fun w ↦ fderiv ℝ f w a) 2 volume :=
-    (ContinuousLinearMap.apply ℝ ℝ a).comp_memLp' hf
-  have hxi (i : Fin 4) : Continuous fun w ↦ x w i := by fun_prop
-  have hmul {f : ℂ → ℝ} (hf : MemLp f 2 volume) (i : Fin 4) (hi : ∀ w, |x w i| ≤ B) :
-      MemLp (fun w ↦ x w i * f w) 2 volume :=
-    hf.of_le_mul (c := B) ((hxi i).aestronglyMeasurable.mul hf.aestronglyMeasurable)
-      (ae_of_all _ fun w ↦ by rw [norm_mul, Real.norm_eq_abs]; gcongr; exact hi w)
-  have h₀ : MemLp (fun w ↦ logVariation x (fun w ↦ (u w : ℂ) + v w * I) w 0) 2 volume := by
-    simp only [logVariation_apply_zero, hre, him]
-    exact (happ hdv 1).neg.sub (happ hdu I)
-  have h₁ : MemLp (fun w ↦ logVariation x (fun w ↦ (u w : ℂ) + v w * I) w 1) 2 volume := by
-    simp only [logVariation_apply_one, hre, him]
-    exact (happ hdu 1).sub (happ hdv I)
-  have h₂ : MemLp (fun w ↦ logVariation x (fun w ↦ (u w : ℂ) + v w * I) w 2) 2 volume := by
-    exact ((hmul hu 2 fun w ↦ (hB w).1).sub (hmul hv 3 fun w ↦ (hB w).2)).ae_eq
-      (ae_of_all _ fun w ↦ by simp)
-  have h₃ : MemLp (fun w ↦ logVariation x (fun w ↦ (u w : ℂ) + v w * I) w 3) 2 volume := by
-    exact ((hmul hv 2 fun w ↦ (hB w).1).add (hmul hu 3 fun w ↦ (hB w).2)).ae_eq
-      (ae_of_all _ fun w ↦ by simp)
-  refine memLp_piLp_iff.2 fun i ↦ ?_
-  fin_cases i
-  exacts [h₀, h₁, h₂, h₃]
-
 /-- **The cut-off pole.** Let `α = (w - z)^(j+1) q` with `q` smooth. There is a smooth compactly
 supported variation `y₀` which, near every `w ≠ z`, is the logarithmic variation of
 `c / (w - z)^(j+1) + ζ`, for a smooth function `ζ` on the plane. -/
@@ -191,15 +157,9 @@ private theorem exists_cutoffPole (hx : ContDiff ℝ ∞ x) {z : ℂ} {j : ℕ} 
     · subst hwz
       exact Function.update_self _ _ _
     rw [(hy₀_off w hwz).eq_of_nhds, logVariation_congr_nhds x (hη₀pp w hw)]
-    have hcon := logVariation_zero_add_one_mul_I x ((hppC w hwz).restrictScalars ℝ)
-    rw [(hppC w hwz).conjWirtingerDeriv_eq_zero, _root_.zero_apply, mul_zero] at hcon
-    have h₀ := congrArg re hcon
-    have h₁ := congrArg im hcon
-    simp only [add_re, ofReal_re, mul_re, ofReal_im, I_re, I_im, mul_zero, mul_one, sub_zero,
-      zero_re, add_im, mul_im, zero_add, zero_im] at h₀ h₁
     refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
-    · simpa [g₀] using h₀
-    · simpa [g₀] using h₁
+    · simpa [g₀] using logVariation_apply_zero_eq_zero_of_differentiableAt x (hppC w hwz)
+    · simpa [g₀] using logVariation_apply_one_eq_zero_of_differentiableAt x (hppC w hwz)
     · have hne : (w - z) ^ (j + 1) ≠ 0 := pow_ne_zero _ (sub_ne_zero.2 hwz)
       rw [sectionValue_logVariation, hsection_g₀, hαq]
       simp only [pp]
@@ -311,14 +271,15 @@ theorem exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add (hx : 
   set ξ : ℂ → ℂ := fun w ↦ (ξr w : ℂ) + ξi w * I
   have hξ : ContDiff ℝ ∞ ξ := (ofRealCLM.contDiff.comp (hξr.of_le le_self_add)).add
     ((ofRealCLM.contDiff.comp (hξi.of_le le_self_add)).mul contDiff_const)
+  -- The real and imaginary parts of `ξ` are `ξr` and `ξi`.
+  have hre : (fun w ↦ (ξ w).re) = ξr := by funext w; simp [ξ]
+  have him : (fun w ↦ (ξ w).im) = ξi := by funext w; simp [ξ]
   have hΔre (w : ℂ) : (Δ ξ w).re = Δ ξr w := by
-    rw [show ξr = ⇑reCLM ∘ ξ by funext w; simp [ξ],
-      ((hξ.of_le (by simp)).contDiffAt (x := w)).laplacian_CLM_comp_left (l := reCLM)]
-    rfl
+    rw [← hre]
+    exact ((hξ.of_le (by simp)).contDiffAt.laplacian_CLM_comp_left (l := reCLM)).symm
   have hΔim (w : ℂ) : (Δ ξ w).im = Δ ξi w := by
-    rw [show ξi = ⇑imCLM ∘ ξ by funext w; simp [ξ],
-      ((hξ.of_le (by simp)).contDiffAt (x := w)).laplacian_CLM_comp_left (l := imCLM)]
-    rfl
+    rw [← him]
+    exact ((hξ.of_le (by simp)).contDiffAt.laplacian_CLM_comp_left (l := imCLM)).symm
   -- The kernel element `y = y₀ + logVariation x ξ`.
   have hB (w : ℂ) : |x w 2| ≤ √C ∧ |x w 3| ≤ √C := by
     have := hPC w
@@ -326,7 +287,8 @@ theorem exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add (hx : 
       Real.abs_le_sqrt (by nlinarith [sq_nonneg (x w 2)])⟩
   refine ⟨y₀ + logVariation x ξ, hy₀.add (contDiff_logVariation hx (by simpa using hξ)),
     (hy₀.continuous.memLp_of_hasCompactSupport hy₀c).add
-      (memLp_logVariation hx.continuous hB hξr2 hξi2 hdξr hdξi), fun w ↦ ?_,
+      (memLp_logVariation hx.continuous hB (hre ▸ hξr2) (him ▸ hξi2) (hre ▸ hdξr)
+        (him ▸ hdξi)), fun w ↦ ?_,
     fun w ↦ ζ w + ξ w, hζ.add hξ, fun w hw ↦ ?_⟩
   · rw [gaugeFixedOperator_add x (hy₀.differentiable (by simp) w)
       ((contDiff_logVariation hx (by simpa using hξ)).differentiable (by simp) w),

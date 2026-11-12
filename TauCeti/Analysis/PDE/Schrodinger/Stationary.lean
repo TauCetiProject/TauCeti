@@ -25,7 +25,7 @@ import TauCeti.MeasureTheory.Function.L2Space
 /-!
 # The stationary Schrödinger equation with a potential positive at infinity
 
-Let `P` be a continuous nonnegative potential which is at least a constant `a > 0` outside a ball.
+Let `P` be a nonnegative potential which is at least a constant `a > 0` outside a ball.
 The Schrödinger operator `-Δ + P` then has a spectral gap: its quadratic form is bounded below by
 a positive multiple of the squared `L²` norm
 (`TauCeti.exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq`).
@@ -112,16 +112,17 @@ private theorem schrodingerToLp_apply (hP : Continuous P) (φ : TestFn E) :
     schrodingerToLp μ hP φ = (memLp_schrodinger hP φ).toLp _ :=
   (rfl)
 
-/-- **The Schrödinger operator is bounded below.** Let `P` be continuous and nonnegative, with
-`P ≥ a > 0` outside a ball. There is `c > 0` with `c ∫ φ² ≤ ∫ φ (-Δφ + P φ)` for every compactly
-supported `C²` function `φ`. -/
-theorem exists_pos_mul_integral_sq_le_integral_mul_neg_laplacian_add_mul (hP : Continuous P)
-    (hP₀ : ∀ z, 0 ≤ P z) {a R : ℝ} (ha : 0 < a) (haP : ∀ z, R < ‖z‖ → a ≤ P z) :
+/-- **The Schrödinger operator is bounded below.** Let `P` be locally integrable and almost
+everywhere nonnegative, with `P ≥ a > 0` almost everywhere outside a ball. There is `c > 0` with
+`c ∫ φ² ≤ ∫ φ (-Δφ + P φ)` for every compactly supported `C²` function `φ`. -/
+theorem exists_pos_mul_integral_sq_le_integral_mul_neg_laplacian_add_mul
+    (hP : LocallyIntegrable P μ) (hP₀ : ∀ᵐ z ∂μ, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
+    (haP : ∀ᵐ z ∂μ, R < ‖z‖ → a ≤ P z) :
     ∃ c > 0, ∀ φ : E → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
       c * ∫ z, φ z ^ 2 ∂μ ≤ ∫ z, φ z * (-Δ φ z + P z * φ z) ∂μ := by
   obtain ⟨c, hc, hgap⟩ :=
     exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
-      (μ := μ) (F := ℝ) hP.locallyIntegrable (ae_of_all _ hP₀) ha (ae_of_all _ haP)
+      (μ := μ) (F := ℝ) hP hP₀ ha haP
   refine ⟨c, hc, fun φ hφ hφc ↦ ?_⟩
   -- Green's identity turns `∫ |∇φ|²` into `-∫ φ Δφ`.
   have hgreen := integral_inner_gradient_eq_neg_integral_mul_laplacian (μ := μ) hφ
@@ -132,7 +133,8 @@ theorem exists_pos_mul_integral_sq_le_integral_mul_neg_laplacian_add_mul (hP : C
   have hint (f : E → ℝ) (hf : Continuous f) : Integrable (fun z ↦ φ z * f z) μ :=
     (hφ.continuous.mul hf).integrable_of_hasCompactSupport hφc.mul_right
   have hP2 : Integrable (fun z ↦ P z * φ z ^ 2) μ :=
-    (hint (fun z ↦ P z * φ z) (hP.mul hφ.continuous)).congr (ae_of_all _ fun z ↦ by ring)
+    (hP.integrable_smul_right_of_hasCompactSupport (hφ.continuous.mul hφ.continuous)
+      hφc.mul_left).congr (ae_of_all _ fun z ↦ by simp only [smul_eq_mul, Pi.mul_apply]; ring)
   have hsplit : ∫ z, φ z * (-Δ φ z + P z * φ z) ∂μ =
       -∫ z, φ z * Δ φ z ∂μ + ∫ z, P z * φ z ^ 2 ∂μ := by
     rw [neg_add_eq_sub, ← integral_sub hP2 (hint _ hφ.continuous_laplacian)]
@@ -150,7 +152,8 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq (hP : C
     ∃ Q : Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 μ, ∀ (f : Lp ℝ 2 μ) (φ : E → ℝ), ContDiff ℝ 2 φ →
       HasCompactSupport φ → ∫ z, Q f z * (-Δ φ z + P z * φ z) ∂μ = ∫ z, f z * φ z ∂μ := by
   obtain ⟨c, hc, hgap⟩ :=
-    exists_pos_mul_integral_sq_le_integral_mul_neg_laplacian_add_mul (μ := μ) hP hP₀ ha haP
+    exists_pos_mul_integral_sq_le_integral_mul_neg_laplacian_add_mul (μ := μ) hP.locallyIntegrable
+      (ae_of_all _ hP₀) ha (ae_of_all _ haP)
   let S := schrodingerToLp μ hP
   let ι := (TestFunction.ambientToLp 2 μ : TestFn E →L[ℝ] Lp ℝ 2 μ).toLinearMap
   have hS (u : Lp ℝ 2 μ) (φ : TestFn E) :
@@ -209,11 +212,9 @@ private theorem exists_wkp_value_ae_eq {C : ℝ} (hP : Continuous P) (hPC : ∀ 
     refine ext_real fun φ hφ ↦ ?_
     have hφ2 := φ.memLp 2 (μ := volume)
     have hu' := hu φ ((φ.smooth ⊤).of_le (by norm_cast)) hφ
-    rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
-      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
-      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
-      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, one_smul]
-    simp only [SchwartzMap.laplacian_apply]
+    simp only [T, add_apply, neg_apply, laplacian_apply_apply,
+      TauCeti.laplacian_postcompCLM, Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
+      one_smul, SchwartzMap.laplacian_apply]
     have hR' : ∫ z, φ z * (hR.toLp _ : Lp ℝ 2 volume) z =
         (∫ z, φ z * u z) - ∫ z, φ z * (P z * u z + g z) := by
       have h₁ : Integrable (fun z ↦ φ z * u z) volume := hφ2.integrable_mul (Lp.memLp u)
@@ -227,25 +228,8 @@ private theorem exists_wkp_value_ae_eq {C : ℝ} (hP : Continuous P) (hPC : ∀ 
   have hT2 : MemSobolev ((2 : ℕ) : ℝ) 2 T := by
     have h := (memSobolev_add_two_iff_neg_laplacian_add_smul (s := 0) (c := 1) one_pos).2
       (by rw [hT]; exact memSobolev_zero_iff.2 ⟨_, rfl⟩)
-    rwa [zero_add, show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num] at h
+    simpa only [zero_add, Nat.cast_ofNat] using h
   exact (Lp.memSobolev_natCast_iff_exists_wkp_value_eq (by norm_num) (by norm_num) 2 u).1 hT2
-
-/-- A `C¹` function on the plane agreeing almost everywhere with the value of an `H²` function has
-square-integrable derivative. -/
-private theorem memLp_fderiv_of_wkp {v : ℂ → ℝ} (hv : ContDiff ℝ 1 v)
-    (W : Wkp (volume : Measure ℂ) ⊤ 2 2) (hW : (Wkp.value 2 W : ℂ → ℝ) =ᵐ[volume] v) :
-    MemLp (fderiv ℝ v) 2 volume := by
-  have hrestrict : (volume : Measure ℂ).restrict ((⊤ : TopologicalSpace.Opens ℂ) : Set ℂ) =
-      volume := by simp
-  have hd := W1p.gradient_ae_eq_of_contDiffOn (Wkp.firstOrder 1 W) hv.contDiffOn
-    (by rw [Wkp.value_firstOrder]; exact ae_restrict_of_ae hW)
-  have hG := Lp.memLp (W1p.gradient (Wkp.firstOrder 1 W))
-  -- Forget the dependence of the gradient's type on the restricted measure.
-  generalize (W1p.gradient (Wkp.firstOrder 1 W) : ℂ → ℂ) = G at hd hG
-  rw [hrestrict] at hd hG
-  have h := (InnerProductSpace.toDual ℝ ℂ).toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp'
-    (hG.ae_eq hd)
-  exact h.ae_eq (ae_of_all _ fun z ↦ toDual_gradient)
 
 /-- The weak equation `∫ Δφ u = ∫ φ (P u + g)` satisfied by an `L²` weak solution of
 `-Δu + P u = -g`. -/
@@ -319,8 +303,10 @@ theorem exists_contDiff_laplacian_eq_mul_add {k : ℕ∞} (hk : 1 ≤ k) (hP : C
   have hv1 : ContDiff ℝ 1 (v : ℂ → ℝ) := (contDiffOn_univ.1 hsmooth).of_le (by
     calc (1 : ℕ∞ω) ≤ (k : ℕ∞ω) := by exact_mod_cast hk
       _ ≤ (k : ℕ∞ω) + 1 := le_self_add)
-  refine ⟨v, contDiffOn_univ.1 hsmooth, (Lp.memLp u).ae_eq huv,
-    memLp_fderiv_of_wkp hv1 W (Wkp.value_ae_eq_toZeroAtInfty hdim W),
+  have hdv := W1p.memLp_fderiv_of_contDiffOn (Wkp.firstOrder 1 W) hv1.contDiffOn
+    (by rw [Wkp.value_firstOrder]; exact ae_restrict_of_ae (Wkp.value_ae_eq_toZeroAtInfty hdim W))
+  rw [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at hdv
+  refine ⟨v, contDiffOn_univ.1 hsmooth, (Lp.memLp u).ae_eq huv, hdv,
     ZeroAtInftyContinuousMap.zero_at_infty' v, fun z ↦ heq (Set.mem_univ z)⟩
 
 end Plane

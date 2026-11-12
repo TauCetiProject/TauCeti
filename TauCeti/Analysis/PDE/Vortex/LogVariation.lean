@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
 import TauCeti.Analysis.PDE.Vortex.Zeros
@@ -29,6 +30,11 @@ equation `Δη = P η`.
   real-linear in differentiable `η` (pointwise: `logVariation_add_apply`).
 * `logVariation_congr_nhds`, `contDiff_logVariation`: it is local in `η`, and `Cⁿ` along a `Cⁿ`
   field when `η` is `Cⁿ⁺¹`.
+* `logVariation_apply_zero_eq_zero_of_differentiableAt`,
+  `logVariation_apply_one_eq_zero_of_differentiableAt`: the connection part vanishes where `η` is
+  holomorphic.
+* `memLp_logVariation`: it is square integrable when `η` and `Dη` are, along a field with bounded
+  section components.
 * `gaugeFixedOperator_logVariation`: at every field, writing `E = ∂bar_a α` for the complex
   holomorphicity defect (the rows `1` and `2` of `equation x`),
   `L_x (logVariation x η) = (Im (P η - Δη), Re (P η - Δη), Re (η E), Im (η E))`.
@@ -131,6 +137,26 @@ theorem logVariation_zero_add_one_mul_I (x : ℂ → EuclideanSpace ℝ (Fin 4))
     congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) (imCLM.hasFDerivAt.comp z hη.hasFDerivAt).fderiv
   rw [conjWirtingerDeriv_apply]
   apply Complex.ext <;> simp [hre, him] <;> ring
+
+/-- Where `η` is holomorphic, the connection variation `2 i ∂bar η` of its logarithmic variation
+vanishes. -/
+private theorem logVariation_zero_add_one_mul_I_eq_zero (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) :
+    (logVariation x η z 0 : ℂ) + logVariation x η z 1 * I = 0 := by
+  rw [logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ), hη.conjWirtingerDeriv_eq_zero,
+    _root_.zero_apply, mul_zero]
+
+/-- The first connection component of the logarithmic variation vanishes where `η` is
+holomorphic. -/
+theorem logVariation_apply_zero_eq_zero_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 0 = 0 := by
+  simpa using congrArg re (logVariation_zero_add_one_mul_I_eq_zero x hη)
+
+/-- The second connection component of the logarithmic variation vanishes where `η` is
+holomorphic. -/
+theorem logVariation_apply_one_eq_zero_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 1 = 0 := by
+  simpa using congrArg im (logVariation_zero_add_one_mul_I_eq_zero x hη)
 
 /-- The two `∂bar` rows of `L_x` on a logarithmic variation: they are the real and imaginary
 parts of `η E`, where `E` is the complex holomorphicity defect of `x` (rows `1` and `2` of
@@ -427,6 +453,37 @@ theorem contDiff_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {η : ℂ
     {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hη : ContDiff ℝ (n + 1) η) :
     ContDiff ℝ n (logVariation x η) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_logVariation hx.contDiffAt hη.contDiffAt
+
+/-- The logarithmic variation of `η` is in `Lᵖ` when the real and imaginary parts of `η` and their
+derivatives are, along a continuous field whose section components are bounded. -/
+theorem memLp_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) {B : ℝ}
+    (hB : ∀ w, |x w 2| ≤ B ∧ |x w 3| ≤ B) {η : ℂ → ℂ} {p : ENNReal} {μ : Measure ℂ}
+    (hu : MemLp (fun w ↦ (η w).re) p μ) (hv : MemLp (fun w ↦ (η w).im) p μ)
+    (hdu : MemLp (fderiv ℝ fun w ↦ (η w).re) p μ) (hdv : MemLp (fderiv ℝ fun w ↦ (η w).im) p μ) :
+    MemLp (logVariation x η) p μ := by
+  have happ {f : ℂ → ℝ} (hf : MemLp (fderiv ℝ f) p μ) (a : ℂ) :
+      MemLp (fun w ↦ fderiv ℝ f w a) p μ :=
+    (ContinuousLinearMap.apply ℝ ℝ a).comp_memLp' hf
+  have hxi (i : Fin 4) : Continuous fun w ↦ x w i := by fun_prop
+  have hmul {f : ℂ → ℝ} (hf : MemLp f p μ) (i : Fin 4) (hi : ∀ w, |x w i| ≤ B) :
+      MemLp (fun w ↦ x w i * f w) p μ :=
+    hf.of_le_mul (c := B) ((hxi i).aestronglyMeasurable.mul hf.aestronglyMeasurable)
+      (ae_of_all _ fun w ↦ by rw [norm_mul, Real.norm_eq_abs]; gcongr; exact hi w)
+  have h₀ : MemLp (fun w ↦ logVariation x η w 0) p μ := by
+    simp only [logVariation_apply_zero]
+    exact (happ hdv 1).neg.sub (happ hdu I)
+  have h₁ : MemLp (fun w ↦ logVariation x η w 1) p μ := by
+    simp only [logVariation_apply_one]
+    exact (happ hdu 1).sub (happ hdv I)
+  have h₂ : MemLp (fun w ↦ logVariation x η w 2) p μ := by
+    simp only [logVariation_apply_two]
+    exact (hmul hu 2 fun w ↦ (hB w).1).sub (hmul hv 3 fun w ↦ (hB w).2)
+  have h₃ : MemLp (fun w ↦ logVariation x η w 3) p μ := by
+    simp only [logVariation_apply_three]
+    exact (hmul hv 2 fun w ↦ (hB w).1).add (hmul hu 3 fun w ↦ (hB w).2)
+  refine memLp_piLp_iff.2 fun i ↦ ?_
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
 
 /-- **A kernel element with regular `δα / α` vanishes.** Let `x` be a differentiable field whose
 holomorphicity rows vanish everywhere and whose zeros have dense complement, and let `y` be a
