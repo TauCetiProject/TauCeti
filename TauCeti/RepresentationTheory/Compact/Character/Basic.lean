@@ -8,17 +8,18 @@ module
 public import TauCeti.RepresentationTheory.Compact.SchurOrthogonality
 public import TauCeti.RepresentationTheory.Continuous.Character
 import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.Compact.UnitaryModel
 
 /-!
 # Orthonormality of the characters of a compact group
 
 The character of a finite-dimensional continuous representation of a compact group is a continuous
 function, hence square integrable for normalized Haar measure. This file records its image in
-`L²(G)` and proves the two orthogonality relations that make the irreducible unitary characters an
-orthonormal system: the normalization `∫ |χ_π|² = 1` for an irreducible unitary `π`, and the
-orthogonality `∫ conj χ_π · χ_ρ = 0` for a pair `π`, `ρ` admitting no nonzero continuous
-intertwiner `ρ → π`. Schur's lemma is what supplies that hypothesis for a pair of inequivalent
-irreducibles; deriving it is not done here.
+`L²(G)` and proves the two orthogonality relations that make the irreducible characters an
+orthonormal system: the normalization `∫ |χ_π|² = 1` for an irreducible `π`, and the
+orthogonality `∫ conj χ_π · χ_ρ = 0` for a pair `π`, `ρ` with `π` unitary admitting no nonzero
+continuous intertwiner `ρ → π`. Schur's lemma is what supplies that hypothesis for a pair of
+inequivalent irreducibles; deriving it is not done here.
 
 Both statements are read off the Schur orthogonality relations of
 `TauCeti/RepresentationTheory/Compact/SchurOrthogonality.lean` and
@@ -37,7 +38,8 @@ here by the Haar integral.
 * `ContRepresentation.inner_characterLp_eq_sum`: the `L²` inner product of two characters
   is the double sum of the inner products of the diagonal matrix coefficients.
 * `ContRepresentation.character_orthonormal_self`: **first character orthogonality.** The
-  character of a finite-dimensional irreducible unitary representation is a unit vector of `L²(G)`.
+  character of a finite-dimensional irreducible representation is a unit vector of `L²(G)`; neither
+  unitarity nor an inner product on the carrier is assumed.
 * `ContRepresentation.character_orthonormal_distinct`: **second character orthogonality.**
   The characters of two representations with no nonzero intertwiner between them are
   `L²`-orthogonal.
@@ -57,7 +59,11 @@ orientation is the conjugate statement, since `⟪χ_π, χ_ρ⟫ = conj ⟪χ_�
 
 Packaging the character in `L²` asks nothing of `V` beyond the finite-dimensional normed structure
 that the character itself needs, so `characterLp` is stated there; `V` carries an inner product only
-from `inner_characterLp_eq_sum` on, where an orthonormal basis enters. The scalars stay `RCLike`
+from `inner_characterLp_eq_sum` on, where an orthonormal basis enters. The first orthogonality
+relation is again stated for a normed carrier: the character does not change under conjugation
+(`ContinuousLinearEquiv.character_congr`), so it is computed on a unitary conjugate of `π` on the
+standard model `EuclideanSpace 𝕜 (Fin (dim V))`
+(`ContRepresentation.exists_isUnitary_congr_euclideanSpace`). The scalars stay `RCLike`
 even for that packaging: `ContinuousMap.toLp` needs `SecondCountableTopologyEither G 𝕜`, which a
 general complete nontrivially normed field does not supply.
 
@@ -139,6 +145,62 @@ theorem inner_characterLp_eq_sum (ρ : ContRepresentation 𝕜 G W) (hρ : Conti
 
 end CompactGroup
 
+section Normalization
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+
+variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+
+/-- **First character orthogonality.** The character of a finite-dimensional irreducible
+representation of a compact group has `L²` inner product `1` with itself.
+
+Neither unitarity of `π` nor an inner product on its carrier is assumed: `π` is conjugate to a
+unitary representation on the standard model `EuclideanSpace 𝕜 (Fin (dim V))`
+(`ContRepresentation.exists_isUnitary_congr_euclideanSpace`), which has the same character
+(`ContinuousLinearEquiv.character_congr`). For that unitary model, summing the first Schur
+orthogonality relation over the diagonal collapses the `d²` terms of `inner_characterLp_eq_sum` to
+the `d` terms `d⁻¹`, whose sum is `1`. The `[Finite G]` shadow of this statement is the diagonal
+half of Mathlib's `Representation.char_orthonormal`. -/
+theorem character_orthonormal_self [IsAlgClosed 𝕜]
+    (hirr : Representation.IsIrreducible π.toRepresentation) :
+    ⟪characterLp π hπ, characterLp π hπ⟫_𝕜 = 1 := by
+  classical
+  let : Representation.IsIrreducible π.toRepresentation := hirr
+  have hd : (Module.finrank 𝕜 V : 𝕜) ≠ 0 :=
+    Representation.IsIrreducible.natCast_finrank_ne_zero hirr
+  obtain ⟨f, hunitary⟩ := exists_isUnitary_congr_euclideanSpace π hπ
+  have hπ' := f.continuous_congr hπ
+  have hirr' := f.isIrreducible_congr hirr
+  rw [characterLp_def, ← f.character_congr hπ', ← characterLp_def]
+  set π' := ContinuousLinearEquiv.congr f π
+  set e := EuclideanSpace.basisFun (Fin (Module.finrank 𝕜 V)) 𝕜
+  -- Only the diagonal term of each inner sum survives, so each of the `d` rows contributes `d⁻¹`.
+  have hrow : ∀ i, ∑ k, ⟪matrixCoeffLp π' hπ' (e k) (e k), matrixCoeffLp π' hπ' (e i) (e i)⟫_𝕜 =
+      (Module.finrank 𝕜 V : 𝕜)⁻¹ := by
+    intro i
+    simp only [π'.schur_orthogonality_basis hπ' hunitary hirr' e]
+    rw [Finset.sum_eq_single i (fun k _ hk ↦ by simp [hk]) (by simp)]
+    simp
+  rw [inner_characterLp_eq_sum π' hπ' π' hπ' e e, Finset.sum_congr rfl fun i _ ↦ hrow i,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_inv_cancel₀ hd]
+
+/-- The character of a finite-dimensional irreducible representation is a **unit vector** of
+`L²(G)`. This is `character_orthonormal_self` in norm form; it is the normalization that makes
+the irreducible characters an orthonormal system rather than merely an orthogonal one. -/
+theorem norm_characterLp_eq_one [IsAlgClosed 𝕜]
+    (hirr : Representation.IsIrreducible π.toRepresentation) :
+    ‖characterLp π hπ‖ = 1 := by
+  have h := character_orthonormal_self π hπ hirr
+  rw [inner_self_eq_norm_sq_to_K] at h
+  have h' : ‖characterLp π hπ‖ ^ 2 = 1 ^ 2 := by
+    have h'' : ‖characterLp π hπ‖ ^ 2 = (1 : ℝ) := by exact_mod_cast h
+    simpa using h''
+  exact (sq_eq_sq₀ (norm_nonneg _) zero_le_one).1 h'
+
+end Normalization
+
 section Orthogonality
 
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -154,31 +216,6 @@ local instance instCompleteSpaceCharacterCodomain : CompleteSpace W :=
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
-/-- **First character orthogonality.** The character of a finite-dimensional irreducible unitary
-representation of a compact group has `L²` inner product `1` with itself.
-
-Summing the first Schur orthogonality relation over the diagonal collapses the `d²` terms of
-`inner_characterLp_eq_sum` to the `d` terms `d⁻¹`, whose sum is `1`. The `[Finite G]` shadow of this
-statement is the diagonal half of Mathlib's `Representation.char_orthonormal`. -/
-theorem character_orthonormal_self [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
-    (hirr : Representation.IsIrreducible π.toRepresentation) :
-    ⟪characterLp π hπ, characterLp π hπ⟫_𝕜 = 1 := by
-  classical
-  let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
-  let : Representation.IsIrreducible π.toRepresentation := hirr
-  have hd : (Module.finrank 𝕜 V : 𝕜) ≠ 0 :=
-    Representation.IsIrreducible.natCast_finrank_ne_zero hirr
-  set e := stdOrthonormalBasis 𝕜 V
-  -- Only the diagonal term of each inner sum survives, so each of the `d` rows contributes `d⁻¹`.
-  have hrow : ∀ i, ∑ k, ⟪matrixCoeffLp π hπ (e k) (e k), matrixCoeffLp π hπ (e i) (e i)⟫_𝕜 =
-      (Module.finrank 𝕜 V : 𝕜)⁻¹ := by
-    intro i
-    simp only [π.schur_orthogonality_basis hπ hunitary hirr e]
-    rw [Finset.sum_eq_single i (fun k _ hk ↦ by simp [hk]) (by simp)]
-    simp
-  rw [inner_characterLp_eq_sum π hπ π hπ e e, Finset.sum_congr rfl fun i _ ↦ hrow i,
-    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_inv_cancel₀ hd]
-
 /-- **Second character orthogonality.** If there is no nonzero continuous intertwiner `ρ → π`, the
 characters of `π` and `ρ` are orthogonal in `L²(G)`.
 
@@ -192,19 +229,6 @@ theorem character_orthonormal_distinct (ρ : ContRepresentation 𝕜 G W) (hρ :
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   rw [inner_characterLp_eq_sum π hπ ρ hρ (stdOrthonormalBasis 𝕜 V) (stdOrthonormalBasis 𝕜 W)]
   simp [schur_orthogonality_distinct ρ hρ π hπ hunitary hdistinct]
-
-/-- The character of a finite-dimensional irreducible unitary representation is a **unit vector**
-of `L²(G)`. This is `character_orthonormal_self` in norm form; it is the normalization that makes
-the irreducible characters an orthonormal system rather than merely an orthogonal one. -/
-theorem norm_characterLp_eq_one [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
-    (hirr : Representation.IsIrreducible π.toRepresentation) :
-    ‖characterLp π hπ‖ = 1 := by
-  have h := character_orthonormal_self π hπ hunitary hirr
-  rw [inner_self_eq_norm_sq_to_K] at h
-  have h' : ‖characterLp π hπ‖ ^ 2 = 1 ^ 2 := by
-    have h'' : ‖characterLp π hπ‖ ^ 2 = (1 : ℝ) := by exact_mod_cast h
-    simpa using h''
-  exact (sq_eq_sq₀ (norm_nonneg _) zero_le_one).1 h'
 
 end Orthogonality
 

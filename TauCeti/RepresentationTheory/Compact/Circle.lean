@@ -291,8 +291,7 @@ theorem orthonormal_characterLp_fourierRep :
 -- The general first orthogonality relation returns the diagonal half of `orthonormal_fourier`.
 example (n : ℤ) :
     ‖ContRepresentation.characterLp (fourierRep T n) (continuous_fourierRep T n)‖ = 1 :=
-  ContRepresentation.norm_characterLp_eq_one _ _ (isUnitary_fourierRep T n)
-    (isIrreducible_fourierRep T n)
+  ContRepresentation.norm_characterLp_eq_one _ _ (isIrreducible_fourierRep T n)
 
 -- The general second orthogonality relation returns the off-diagonal half.
 example {m n : ℤ} (h : m ≠ n) :

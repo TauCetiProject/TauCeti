@@ -692,7 +692,7 @@ example [IsAlgClosed 𝕜] (hunitary : IsUnitary π)
     (Nat.card G : 𝕜)⁻¹ * ∑ g, character π hπ g * character π hπ g⁻¹ = 1 := by
   let _ : MeasurableSpace G := borel G
   have _ : BorelSpace G := ⟨rfl⟩
-  rw [← character_orthonormal_self π hπ hunitary hirr, inner_characterLp_eq_inv_mul_sum π hπ π hπ]
+  rw [← character_orthonormal_self π hπ hirr, inner_characterLp_eq_inv_mul_sum π hπ π hπ]
   exact congrArg _ (Finset.sum_congr rfl fun g _ ↦ by
     rw [character_apply_inv π hπ hunitary, mul_comm])
 

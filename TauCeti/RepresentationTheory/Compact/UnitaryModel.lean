@@ -38,6 +38,9 @@ finite-dimensional continuous representations alone.
 
 * `ContRepresentation.exists_isUnitary_congr`: a finite-dimensional continuous
   representation of a compact group is conjugate to a unitary one.
+* `ContRepresentation.exists_isUnitary_congr_euclideanSpace`: the same for a representation on a
+  finite-dimensional normed space, which is conjugate to a unitary representation on the standard
+  model `EuclideanSpace 𝕜 (Fin (dim V))`.
 * `ContRepresentation.exists_isUnitary_matrixCoeff_eq`: its matrix coefficients are matrix
   coefficients of a unitary representation.
 * `TauCeti.isRepresentative_iff_exists_isUnitary`: a representative function is a matrix
@@ -120,6 +123,30 @@ theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ 
         hπ) v w).symm⟩
 
 end Unitarization
+
+section EuclideanModel
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+
+/-- **A finite-dimensional continuous representation of a compact group on a normed space is
+conjugate to a unitary representation on the standard model** `EuclideanSpace 𝕜 (Fin (dim V))`.
+
+No inner product on `V` is needed: `V` is continuously linearly equivalent to the standard model by
+dimension count, and the transport of `π` there is unitarized by
+`ContRepresentation.exists_isUnitary_congr`. Since the transport is an equivalence of
+representations, this brings the theory of unitary representations to bear on any property that is
+invariant under such equivalences, the character being one
+(`ContinuousLinearEquiv.character_congr`). -/
+theorem exists_isUnitary_congr_euclideanSpace (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
+    ∃ e : V ≃L[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 V)),
+      IsUnitary (ContinuousLinearEquiv.congr e π) := by
+  let f : V ≃L[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 V)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  obtain ⟨e, he⟩ := exists_isUnitary_congr _ (ContinuousLinearEquiv.continuous_congr f hπ)
+  exact ⟨f.trans e, by rwa [ContinuousLinearEquiv.congr_congr] at he⟩
+
+end EuclideanModel
 
 end ContRepresentation
 

@@ -135,7 +135,7 @@ theorem _root_.ContRepresentation.orthonormal_characterLp (hunitary : ∀ i, IsU
   rw [orthonormal_iff_ite]
   intro i j
   rcases eq_or_ne i j with rfl | hij
-  · simpa using character_orthonormal_self (π i) (hπ i) (hunitary i) (hirr i)
+  · simpa using character_orthonormal_self (π i) (hπ i) (hirr i)
   · -- The second character orthogonality asks for the intertwiners `π j → π i`, not `π i → π j`,
     -- so it is the pair `(j, i)` that Schur's lemma is applied to.
     rw [character_orthonormal_distinct (π i) (hπ i) (π j) (hπ j) (hunitary i)
