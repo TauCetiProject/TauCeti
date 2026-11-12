@@ -106,8 +106,10 @@ theorem exists_span_D_eq_top_of_isInvertible (x : X)
     TauCeti.IsLocalRing.exists_mem_span_singleton_eq_top_of_finrank_eq_one hrank
       (KaehlerDifferential.span_range_derivation k (X.presheaf.stalk x))
   -- Transport the generator along the identification of the stalk with the valuation ring.
-  exact ⟨X.stalkToPlaceIntegersAlgEquiv (k := k) x a,
-    (KaehlerDifferential.span_singleton_D_apply_eq_top_iff _ a).mpr ha⟩
+  refine ⟨X.stalkToPlaceIntegersAlgEquiv (k := k) x a, ?_⟩
+  rw [← AlgEquiv.toAlgHom_apply, ← KaehlerDifferential.mapSemilinear_D,
+    KaehlerDifferential.span_singleton_mapSemilinear_eq_top_iff]
+  exact ha
 
 variable (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
   {t : X.functionField} (ht : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ X.functionField]
