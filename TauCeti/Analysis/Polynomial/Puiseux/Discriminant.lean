@@ -9,7 +9,6 @@ public import TauCeti.Analysis.MvPolynomial.Complexification
 public import TauCeti.Analysis.Polynomial.Puiseux.Monic
 public import TauCeti.Analysis.Polynomial.Puiseux.RealRoots
 import Mathlib.Analysis.Convex.Contractible
-import TauCeti.Analysis.MvPolynomial.Analytic
 import TauCeti.Analysis.Polynomial.RealRoots.Reciprocal
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
 
@@ -103,15 +102,16 @@ theorem _root_.Polynomial.exists_analyticAt_prod_X_sub_C_of_orderAt_discr_eq
   have hac : ac ∈ U := mem_ball_self hρ
   let : ContractibleSpace U := (convex_ball ac ρ).contractibleSpace ⟨ac, hac⟩
   let : SimplyConnectedSpace U := SimplyConnectedSpace.ofContractible U
-  have hcoord (j : σ) : AnalyticOnNhd ℂ
-      (fun z : (ι → ℂ) × ℂ ↦ (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) j) (U ×ˢ ball 0 ρ) := by
+  have hcoeff (i : ℕ) : AnalyticOnNhd ℂ (fun z ↦ (F z).coeff i) (U ×ˢ ball 0 ρ) := by
     intro z hz
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    exact ((analyticAt_pi_iff.1 (hΦ z.1 hz.1) j).comp analyticAt_fst).add
-      (analyticAt_snd.mul analyticAt_const)
-  have hcoeff (i : ℕ) : AnalyticOnNhd ℂ (fun z ↦ (F z).coeff i) (U ×ˢ ball 0 ρ) :=
-    p.analyticOnNhd_coeff_map_eval₂Hom Complex.ofRealHom (E := (ι → ℂ) × ℂ)
-      (f := fun z ↦ Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (S := U ×ˢ ball 0 ρ) hcoord i
+    have hcoord (j : σ) : AnalyticAt ℂ
+        (fun z : (ι → ℂ) × ℂ ↦ (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) j) z := by
+      simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+      exact ((analyticAt_pi_iff.1 (hΦ z.1 hz.1) j).comp analyticAt_fst).add
+        (analyticAt_snd.mul analyticAt_const)
+    simpa only [F, coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map,
+      MvPolynomial.aeval_eq_eval] using
+      AnalyticAt.aeval_mvPolynomial hcoord ((p.coeff i).map Complex.ofRealHom)
   have hmonic (z) : (F z).Monic := hp.map _
   have hdeg (z) : (F z).natDegree = p.natDegree := hp.natDegree_map _
   have hdiscr (z) (hz : z ∈ U ×ˢ ball 0 ρ) : (F z).discr = z.2 ^ m * u z := by

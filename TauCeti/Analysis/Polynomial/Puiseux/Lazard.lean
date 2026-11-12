@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.MvPolynomial.Lazard.Complexification
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Factorization
-import TauCeti.Analysis.MvPolynomial.Analytic
+import Mathlib.Analysis.Analytic.Polynomial
 
 /-!
 # Puiseux Laurent branches along Lazard monomial deformations
@@ -152,7 +152,11 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
     SimplyConnectedSpace.ofContractible _
   obtain ⟨R, hR, hfit, r, g, hr, hg, hfac, e, w, he, hw, hw0, hform⟩ :=
     TauCeti.Polynomial.exists_analyticOnNhd_nonmonic_laurent isOpen_ball hρ
-      (fun i _ ↦ p.analyticOnNhd_coeff_map_eval₂Hom Complex.ofRealHom hcoord i) hdeg hD (hu 0)
+      (fun i _ ↦ by
+        simpa only [F, coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map,
+          MvPolynomial.aeval_eq_eval] using
+          AnalyticOnNhd.aeval_mvPolynomial hcoord ((p.coeff i).map Complex.ofRealHom))
+      hdeg hD (hu 0)
       (fun b hb ↦ (hforms b hb 0).1)
       (hu 1) (fun b hb ↦ (hforms b hb 1).1) hL hC
   refine ⟨ρ, hρ, Φ, c, hrange ▸ hc, hΦ, hreal, hstar,

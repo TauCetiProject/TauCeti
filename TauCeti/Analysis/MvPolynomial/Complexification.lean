@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.MvPolynomial.DirectionalOrder
 public import TauCeti.Analysis.Analytic.Complexification.Basic
 public import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
-import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Topology.Algebra.MvPolynomial
 
 /-!
