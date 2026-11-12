@@ -140,6 +140,14 @@ def append (S T : EqIneqSystem X A) : EqIneqSystem X A :=
   simp [IsSolution, append, List.mem_append, or_imp, forall_and, and_assoc,
     and_left_comm]
 
+/-- Appending the empty system leaves a system unchanged. -/
+@[simp] theorem append_empty (S : EqIneqSystem X A) : S.append (empty X A) = S := by
+  simp [append, empty]
+
+/-- Appending a system to the empty system gives that system. -/
+@[simp] theorem empty_append (S : EqIneqSystem X A) : (empty X A).append S = S := by
+  simp [append, empty]
+
 /-- Distribute conjunction over two finite disjunctions of word systems. -/
 def disjunctionProduct (S T : List (EqIneqSystem X A)) : List (EqIneqSystem X A) :=
   (S.product T).map fun st => st.1.append st.2
@@ -156,6 +164,12 @@ input family. -/
     exact ⟨s, hs, t, ht, heq⟩
   · rintro ⟨s, hs, t, ht, heq⟩
     exact ⟨(s, t), List.mem_product.mpr ⟨hs, ht⟩, heq⟩
+
+/-- Distributing conjunction against a single system appends that system to every member of
+the other family. -/
+@[simp] theorem disjunctionProduct_singleton (S : List (EqIneqSystem X A)) (T : EqIneqSystem X A) :
+    disjunctionProduct S [T] = S.map fun s => s.append T := by
+  simp [disjunctionProduct, List.product, ← List.map_eq_flatMap]
 
 /-- Solving a system in a distributed conjunction is equivalent to solving one system
 from each input family. -/
