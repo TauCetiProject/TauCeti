@@ -402,7 +402,7 @@ private theorem divVal_eq
         MvPowerSeries.coeff γ G - lowerSum F α (ord.divQuot F α hu G) γ := by
   have hL : (∑ i : Fin m,
       ∑ p ∈ (Finset.antidiagonal γ).filter (fun p ↦ p.2 ≠ α i),
-        if h : ord.toSyn (α i + p.1) < ord.toSyn γ ∧ inCell α i (α i + p.1) then
+        if _ : ord.toSyn (α i + p.1) < ord.toSyn γ ∧ inCell α i (α i + p.1) then
           ord.divVal F α hu G (ord.toSyn (α i + p.1)) * MvPowerSeries.coeff p.2 (F i)
         else 0) = lowerSum F α (ord.divQuot F α hu G) γ := by
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun p hp ↦ ?_
