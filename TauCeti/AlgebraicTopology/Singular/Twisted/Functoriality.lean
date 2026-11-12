@@ -325,6 +325,27 @@ lemma homologyMap_twistedSubspaceChainComplexMap (k : ℕ) :
         LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k := by
   rw [twistedSubspaceChainComplexMap, HomologicalComplex.homologyMap_comp]
 
+/-- A property of morphisms of modules that respects isomorphisms holds for the map induced by a
+map of pairs on the twisted homology of the subspaces, through the comparison of the pulled-back
+coefficient systems, as soon as it holds for the map induced by the subspace component. -/
+lemma homologyMap_twistedChainComplexShortComplexMap_τ₁_mem
+    (Pr : MorphismProperty (ModuleCat.{max v w} R)) [Pr.RespectsIso] (k : ℕ)
+    (h : Pr (LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k)) :
+    Pr (HomologicalComplex.homologyMap (twistedChainComplexShortComplexMap f L).τ₁ k) := by
+  rw [twistedChainComplexShortComplexMap_τ₁, homologyMap_twistedSubspaceChainComplexMap,
+    Pr.cancel_left_of_respectsIso]
+  exact h
+
+/-- A property of morphisms of modules holds for the map induced by a map of pairs on the
+twisted homology of the ambient spaces as soon as it holds for the map induced by the ambient
+component. -/
+lemma homologyMap_twistedChainComplexShortComplexMap_τ₂_mem
+    (Pr : MorphismProperty (ModuleCat.{max v w} R)) (k : ℕ)
+    (h : Pr (LocalCoefficientSystem.twistedHomologyMap (Hom.fst f) L k)) :
+    Pr (HomologicalComplex.homologyMap (twistedChainComplexShortComplexMap f L).τ₂ k) := by
+  rw [twistedChainComplexShortComplexMap_τ₂]
+  exact h
+
 /-- The homology maps induced by a map of pairs commute with the inclusions of the subspaces,
 after the canonical comparison of their pulled-back coefficient systems. -/
 lemma twistedHomologyMap_naturality_pair (k : ℕ) :

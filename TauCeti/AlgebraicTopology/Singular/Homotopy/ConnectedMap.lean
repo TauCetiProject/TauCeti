@@ -262,26 +262,6 @@ open LocalCoefficientSystem
 variable {R : Type u} [Ring R] {P Q : TopPair.{v}} (f : P ⟶ Q)
   (L : LocalCoefficientSystem.{u, v, v} R Q.fst) {n k m : ℕ}
 
-/-- A property of morphisms of modules that respects isomorphisms holds for the map induced by a
-map of pairs on the twisted homology of the subspaces, through the comparison of the pulled-back
-coefficient systems, as soon as it holds for the map induced by the subspace component. -/
-private theorem homologyMap_τ₁_mem (Pr : MorphismProperty (ModuleCat.{v} R)) [Pr.RespectsIso]
-    (j : ℕ)
-    (h : Pr (LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) j)) :
-    Pr (HomologicalComplex.homologyMap (twistedChainComplexShortComplexMap f L).τ₁ j) := by
-  rw [twistedChainComplexShortComplexMap_τ₁, homologyMap_twistedSubspaceChainComplexMap,
-    Pr.cancel_left_of_respectsIso]
-  exact h
-
-/-- A property of morphisms of modules holds for the map induced by a map of pairs on the
-twisted homology of the ambient spaces as soon as it holds for the map induced by the ambient
-component. -/
-private theorem homologyMap_τ₂_mem (Pr : MorphismProperty (ModuleCat.{v} R)) (j : ℕ)
-    (h : Pr (LocalCoefficientSystem.twistedHomologyMap (Hom.fst f) L j)) :
-    Pr (HomologicalComplex.homologyMap (twistedChainComplexShortComplexMap f L).τ₂ j) := by
-  rw [twistedChainComplexShortComplexMap_τ₂]
-  exact h
-
 /-- **A map of pairs which is connected on the ambient spaces and on the subspaces induces
 isomorphisms on relative homology with local coefficients in low degrees**: if
 `f : (X, A) ⟶ (Y, B)` is `n`-connected on the ambient spaces and `k`-connected on the
@@ -293,13 +273,16 @@ theorem isIso_twistedHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConn
   have := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₃
     (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
     (Q.shortExact_twistedChainComplexShortComplex L) m
-    (homologyMap_τ₁_mem f L (.epimorphisms _) m
+    (homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.epimorphisms _) m
       (hsnd.epi_twistedHomologyMap (Q.subspaceSystem L) hmk))
-    (homologyMap_τ₂_mem f L (.isomorphisms _) m (hfst.isIso_twistedHomologyMap L hmn))
-    (fun j (hj : j + 1 = m) ↦ homologyMap_τ₁_mem f L (.isomorphisms _) j
-      (hsnd.isIso_twistedHomologyMap (Q.subspaceSystem L) (by lia)))
-    (fun j (hj : j + 1 = m) ↦ homologyMap_τ₂_mem f L (.monomorphisms _) j
-      (have := hfst.isIso_twistedHomologyMap L (m := j) (by lia); inferInstance))
+    (homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.isomorphisms _) m
+      (hfst.isIso_twistedHomologyMap L hmn))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.isomorphisms _) j
+        (hsnd.isIso_twistedHomologyMap (Q.subspaceSystem L) (by lia)))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.monomorphisms _) j
+        (have := hfst.isIso_twistedHomologyMap L (m := j) (by lia); inferInstance))
   rwa [twistedChainComplexShortComplexMap_τ₃] at this
 
 /-- **A map of pairs which is connected on the ambient spaces and on the subspaces induces
@@ -313,11 +296,14 @@ theorem epi_twistedHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnec
   have := HomologicalComplex.HomologySequence.epi_homologyMap_τ₃
     (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
     (Q.shortExact_twistedChainComplexShortComplex L) m
-    (homologyMap_τ₂_mem f L (.epimorphisms _) m (hfst.epi_twistedHomologyMap L hmn))
-    (fun j (hj : j + 1 = m) ↦ homologyMap_τ₁_mem f L (.epimorphisms _) j
-      (hsnd.epi_twistedHomologyMap (Q.subspaceSystem L) (by lia)))
-    (fun j (hj : j + 1 = m) ↦ homologyMap_τ₂_mem f L (.monomorphisms _) j
-      (have := hfst.isIso_twistedHomologyMap L (m := j) (by lia); inferInstance))
+    (homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.epimorphisms _) m
+      (hfst.epi_twistedHomologyMap L hmn))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.epimorphisms _) j
+        (hsnd.epi_twistedHomologyMap (Q.subspaceSystem L) (by lia)))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.monomorphisms _) j
+        (have := hfst.isIso_twistedHomologyMap L (m := j) (by lia); inferInstance))
   rwa [twistedChainComplexShortComplexMap_τ₃] at this
 
 end TopPair
