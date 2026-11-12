@@ -65,7 +65,7 @@ polygon need not stay on one side of it.
 * `TauCeti.apply_add_one_ne_of_isMaxOn_inscribedPerimeter`: at a maximizer, consecutive vertices
   are distinct.
 * `TauCeti.inner_eq_inner_of_isMaxOn_inscribedPerimeter`: at a maximizer, the reflection law holds
-  at every vertex.
+  at every vertex that is distinct from its neighbours and where the curve is differentiable.
 * `TauCeti.exists_billiard_periodic_reflection`: periodic billiard polygons with `N` vertices, for
   every `N ≥ 2`.
 * `TauCeti.exists_double_normal`: a chord orthogonal to the curve at both of its endpoints.
@@ -179,19 +179,18 @@ end NormedSpace
 
 variable [InnerProductSpace ℝ F]
 
-/-- **The reflection law at a perimeter maximizer.** For a differentiable periodic curve with
-nowhere vanishing derivative and at least two vertices, an inscribed polygon of maximal perimeter
-obeys the reflection law at each vertex `χ(s_k)`: the unit vectors `u_(k-1)` and `u_k` along the
-incoming and the outgoing sides have the same component along the tangent vector `χ'(s_k)`. -/
-theorem inner_eq_inner_of_isMaxOn_inscribedPerimeter (hχ : Differentiable ℝ χ)
-    (hper : Periodic χ L) (hL : 0 < L) (hχ' : ∀ t, deriv χ t ≠ 0) (hN : 2 ≤ N)
-    {s : ZMod N → ℝ} (hs : IsMaxOn (inscribedPerimeter χ) univ s) (k : ZMod N) :
+/-- **The reflection law at a perimeter maximizer.** For at least two vertices, an inscribed
+polygon of maximal perimeter obeys the reflection law at each vertex `χ(s_k)` that is distinct from
+its two neighbours and where the curve is differentiable: the unit vectors `u_(k-1)` and `u_k`
+along the incoming and the outgoing sides have the same component along the tangent vector
+`χ'(s_k)`. -/
+theorem inner_eq_inner_of_isMaxOn_inscribedPerimeter (hN : 2 ≤ N) {s : ZMod N → ℝ}
+    (hs : IsMaxOn (inscribedPerimeter χ) univ s) {k : ZMod N} (hχ : DifferentiableAt ℝ χ (s k))
+    (hk₁ : χ (s k) ≠ χ (s (k - 1))) (hk₂ : χ (s (k + 1)) ≠ χ (s k)) :
     ⟪‖χ (s k) - χ (s (k - 1))‖⁻¹ • (χ (s k) - χ (s (k - 1))), deriv χ (s k)⟫ =
       ⟪‖χ (s (k + 1)) - χ (s k)‖⁻¹ • (χ (s (k + 1)) - χ (s k)), deriv χ (s k)⟫ := by
-  have hne := apply_add_one_ne_of_isMaxOn_inscribedPerimeter hχ hper hL hχ' hN hs
-  have h₁ : χ (s k) - χ (s (k - 1)) ≠ 0 :=
-    sub_ne_zero.2 (by simpa only [sub_add_cancel] using hne (k - 1))
-  have h₂ : χ (s (k + 1)) - χ (s k) ≠ 0 := sub_ne_zero.2 (hne k)
+  have h₁ : χ (s k) - χ (s (k - 1)) ≠ 0 := sub_ne_zero.2 hk₁
+  have h₂ : χ (s (k + 1)) - χ (s k) ≠ 0 := sub_ne_zero.2 hk₂
   -- Moving only the vertex `k`, the perimeter is a constant plus the lengths of its two sides.
   set g : ℝ → ℝ := fun t ↦ ‖χ t - χ (s (k - 1))‖ + ‖χ (s (k + 1)) - χ t‖
   have hmax : IsLocalMax g (s k) := by
@@ -202,9 +201,9 @@ theorem inner_eq_inner_of_isMaxOn_inscribedPerimeter (hχ : Differentiable ℝ �
     linarith
   -- Fermat's rule for `g` at `s k` is the reflection law.
   have hd₁ := (hasFDerivAt_norm_of_ne h₁).comp_hasDerivAt (s k)
-    ((hχ (s k)).hasDerivAt.sub_const (χ (s (k - 1))))
+    (hχ.hasDerivAt.sub_const (χ (s (k - 1))))
   have hd₂ := (hasFDerivAt_norm_of_ne h₂).comp_hasDerivAt (s k)
-    ((hχ (s k)).hasDerivAt.const_sub (χ (s (k + 1))))
+    (hχ.hasDerivAt.const_sub (χ (s (k + 1))))
   have h0 := hmax.hasDerivAt_eq_zero (hd₁.add hd₂)
   simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, smul_eq_mul] at h0
   rw [real_inner_smul_left, real_inner_smul_left]
@@ -227,8 +226,9 @@ theorem exists_billiard_periodic_reflection (hχ : Differentiable ℝ χ) (hper 
         ⟪‖χ (s (k + 1)) - χ (s k)‖⁻¹ • (χ (s (k + 1)) - χ (s k)), deriv χ (s k)⟫ := by
   have : NeZero N := ⟨by omega⟩
   obtain ⟨s, hs⟩ := exists_isMaxOn_inscribedPerimeter hχ.continuous hper hL (N := N)
-  exact ⟨s, fun k ↦ ⟨apply_add_one_ne_of_isMaxOn_inscribedPerimeter hχ hper hL hχ' hN hs k,
-    inner_eq_inner_of_isMaxOn_inscribedPerimeter hχ hper hL hχ' hN hs k⟩⟩
+  have hne := apply_add_one_ne_of_isMaxOn_inscribedPerimeter hχ hper hL hχ' hN hs
+  exact ⟨s, fun k ↦ ⟨hne k, inner_eq_inner_of_isMaxOn_inscribedPerimeter hN hs (hχ (s k))
+    (by simpa only [sub_add_cancel] using hne (k - 1)) (hne k)⟩⟩
 
 omit [NeZero N] in
 /-- **Double normals.** A differentiable periodic curve with nowhere vanishing derivative has a
