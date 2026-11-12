@@ -159,12 +159,11 @@ the normal class `[v]` of an ambient tangent vector `v` at `f x` corresponds to 
 `σ_(f x)(df_x ·, v)` at `x`. The source is finite-dimensional since `df_x` is injective. -/
 def normalSpaceEquivOfIsLagrangianMap (hf : hσ.IsLagrangianMap I f) (hn : n ≠ 0) (x : M) :
     f.NormalSpace x hn ≃L[ℝ] (TangentSpace I x →L[ℝ] ℝ) :=
-  haveI : FiniteDimensional ℝ (TangentSpace I x) :=
-    .of_injective (mfderiv I J f x).toLinearMap (f.isImmersion.mfderiv_injective hn x)
+  haveI := f.finiteDimensional_tangentSpace x hn
   let φ := f.normalLiftL x hn (f.pairingCovector σ x)
     fun _ ↦ f.pairingCovector_eq_zero_of_mem_tangentRange hf.isIsotropicMap hn x
-  have hφ : ∀ v, φ (f.normalClass x hn v) = f.pairingCovector σ x v := fun v ↦ by
-    rw [← normalClassL_apply, ← ContinuousLinearMap.comp_apply, normalLiftL_comp_normalClassL]
+  have hφ : ∀ v, φ (f.normalClass x hn v) = f.pairingCovector σ x v :=
+    f.normalLiftL_normalClass x hn _ _
   have hinj : Function.Injective φ := by
     refine (injective_iff_map_eq_zero φ).2 fun w hw ↦ ?_
     obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn w
@@ -185,11 +184,9 @@ theorem normalSpaceEquivOfIsLagrangianMap_normalClass (hf : hσ.IsLagrangianMap 
     (x : M) (v : TangentSpace J (f x)) :
     f.normalSpaceEquivOfIsLagrangianMap hf hn x (f.normalClass x hn v) =
       f.pairingCovector σ x v := by
-  have : FiniteDimensional ℝ (TangentSpace I x) :=
-    .of_injective (mfderiv I J f x).toLinearMap (f.isImmersion.mfderiv_injective hn x)
+  have := f.finiteDimensional_tangentSpace x hn
   rw [normalSpaceEquivOfIsLagrangianMap, LinearEquiv.coe_toContinuousLinearEquiv',
-    LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe, ← normalClassL_apply,
-    ← ContinuousLinearMap.comp_apply, normalLiftL_comp_normalClassL]
+    LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe, normalLiftL_normalClass]
 
 /-- The codimension of a Lagrangian embedding of a nonempty manifold into a finite-dimensional
 manifold is the dimension of its cotangent model fibre, so `E →L[ℝ] ℝ` is a model fibre for its
@@ -198,10 +195,9 @@ theorem finrank_continuousLinearMap_eq_sub_of_isLagrangianMap [Nonempty M]
     (hf : hσ.IsLagrangianMap I f) (hn : n ≠ 0) :
     finrank ℝ (E →L[ℝ] ℝ) = finrank ℝ F - finrank ℝ E := by
   let x := Classical.arbitrary M
-  have hx := f.isImmersion.mfderiv_injective hn x
-  have : FiniteDimensional ℝ (TangentSpace I x) := .of_injective (mfderiv I J f x).toLinearMap hx
+  have := f.finiteDimensional_tangentSpace x hn
   have : FiniteDimensional ℝ E := (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
-  have h2 := hf.two_mul_finrank hx
+  have h2 := hf.two_mul_finrank (f.isImmersion.mfderiv_injective hn x)
   rw [← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq]
   omega
 

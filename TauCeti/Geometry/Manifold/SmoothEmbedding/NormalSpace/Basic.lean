@@ -174,6 +174,15 @@ theorem normalLiftL_comp_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (h
     Submodule.toLinearMap_mkQL]
   exact (f.tangentRange x hn).liftQ_mkQ g.toLinearMap _
 
+/-- The continuous quotient lift sends the normal class of an ambient tangent vector to the
+value of the original map on that vector. -/
+theorem normalLiftL_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
+    (g : TangentSpace J (f x) →L[𝕜] V)
+    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : TangentSpace J (f x)) :
+    f.normalLiftL x hn g hg (f.normalClass x hn v) = g v := by
+  rw [← normalClassL_apply, ← ContinuousLinearMap.comp_apply, normalLiftL_comp_normalClassL]
+
 /-- Every normal vector has an ambient tangent representative. -/
 theorem normalClass_surjective (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     Function.Surjective (f.normalClass x hn) :=
@@ -305,6 +314,12 @@ theorem normalLiftL_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0
   apply f.normalLift_unique x hn g.toLinearMap (fun v hv => hg v hv)
   simpa only [← normalClassL_toLinearMap, ← ContinuousLinearMap.toLinearMap_comp] using
     congrArg ContinuousLinearMap.toLinearMap hh
+
+/-- The tangent spaces of a positive-regularity embedding into a manifold with
+finite-dimensional model space are finite-dimensional, since the differential is injective. -/
+theorem finiteDimensional_tangentSpace (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    [FiniteDimensional 𝕜 F] : FiniteDimensional 𝕜 (TangentSpace I x) :=
+  .of_injective (mfderiv I J (f : M → N) x).toLinearMap (f.isImmersion.mfderiv_injective hn x)
 
 /-- The normal dimension plus the tangent dimension equals the ambient dimension for a
 finite-dimensional smooth embedding. -/
