@@ -263,7 +263,7 @@ theorem separatelyExchangeable_iff_exists_map_separateArray_eq [StandardBorelSpa
     fun p => (measurable_pi_apply p).aemeasurable, Measure.map_id']
   exact (separatelyExchangeable_iff_map_pairReindex (X := separateArray F)
     fun p => ((measurable_pi_apply p).comp (measurable_separateArray F hF)).aemeasurable).1
-      (separatelyExchangeable_separateArray F hF)
+      (separatelyExchangeable_separateArray F)
 
 end TauCeti.Probability
 

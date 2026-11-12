@@ -127,7 +127,7 @@ theorem quantileCoupling_Iic_prod_Ioi (μ ν : Measure ℝ) (a b : ℝ) :
       and_congr_left_iff]
     rintro ⟨ht0, ht1⟩
     rw [quantile_le_iff μ ht0 ht1, lt_quantile_iff ν ht0 ht1, and_comm]
-  rw [hset, TauCeti.volume_Ioc_inter_Ioo_zero_one (cdf_nonneg ν b) (cdf_le_one μ a)]
+  rw [hset, TauCeti.volume_Ioc_inter_Ioo_of_le_of_le (cdf_nonneg ν b) (cdf_le_one μ a)]
 
 end MeasureTheory.Measure
 

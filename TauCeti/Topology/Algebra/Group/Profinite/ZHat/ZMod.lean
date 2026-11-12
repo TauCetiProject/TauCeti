@@ -66,6 +66,8 @@ is `ℤ`, which is not profinite, and no lift exists.
   additive one.
 * `TauCeti.zHat.continuous_iff_forall_continuous_toZMod`: continuity into `Additive zHat` is
   detected by the projections.
+* `TauCeti.zHat.exists_eq_of_forall_exists_toZMod_eq`: a continuous map from a compact space
+  into `Additive zHat` attains every value that it attains modulo each `n`.
 * The `CharZero (Additive zHat)` instance and `TauCeti.zHat.ofInt_injective`: the integers embed
   into the profinite integers.
 
@@ -227,6 +229,27 @@ theorem continuous_iff_forall_continuous_toZMod {X : Type*} [TopologicalSpace X]
     simp_rw [hψ]
     exact continuous_of_discreteTopology.comp (continuous_ofAdd.comp (h n))
   exact (continuous_ofMul.comp hmul).congr fun x ↦ ofMul_toMul (f x)
+
+/-- **Values in `ℤ̂` are attained once they are attained at every finite level.** A continuous
+map from a compact space into the profinite integers takes the value `a` if, for every `n`, it
+takes some value with the same reduction modulo `n` as `a`. -/
+theorem exists_eq_of_forall_exists_toZMod_eq {X : Type*} [TopologicalSpace X] [CompactSpace X]
+    {f : X → Additive zHat.{u}} (hf : Continuous f) (a : Additive zHat.{u})
+    (h : ∀ n : ℕ+, ∃ x, toZMod n (f x) = toZMod n a) : ∃ x, f x = a := by
+  -- The fibres over the reductions of `a` are closed, nonempty, and directed along
+  -- divisibility, so Cantor's intersection theorem gives a point in all of them.
+  let t : ℕ+ → Set X := fun n ↦ {x | toZMod n (f x) = toZMod n a}
+  have htcl (n : ℕ+) : IsClosed (t n) :=
+    isClosed_eq ((continuous_toZMod n).comp hf) continuous_const
+  have hmono {m n : ℕ+} (hmn : (m : ℕ) ∣ n) : t n ⊆ t m := fun x hx ↦ by
+    simp only [t, Set.mem_ofPred_eq] at hx ⊢
+    rw [← cast_toZMod hmn, hx, cast_toZMod hmn]
+  have htd : Directed (· ⊇ ·) t := fun m n ↦
+    ⟨m * n, hmono (Dvd.intro _ (PNat.mul_coe m n).symm),
+      hmono (Dvd.intro_left _ (PNat.mul_coe m n).symm)⟩
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t htd h
+    (fun n ↦ (htcl n).isCompact) htcl
+  exact ⟨x, ext_of_toZMod (Set.mem_iInter.mp hx)⟩
 
 /-- The integers embed into the profinite integers: no positive integer reduces to zero
 modulo every `n`. -/
