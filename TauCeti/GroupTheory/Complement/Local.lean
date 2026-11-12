@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Complement
 public import TauCeti.Algebra.Group.Subgroup.ModularLaw
+public import TauCeti.GroupTheory.GroupAction.ConjAct
 
 /-!
 # Local complements of subgroups
@@ -22,6 +23,8 @@ Restriction of a complement to an intermediate subgroup uses Dedekind's modular 
 -/
 
 public section
+
+open scoped Pointwise
 
 namespace Subgroup
 
@@ -99,6 +102,17 @@ theorem isLocalComplement_top_iff [N.Normal] :
     rw [← normal_mul, h.sup_eq, coe_top]
   · intro h
     exact ⟨disjoint_iff.mp h.disjoint, h.sup_eq_top⟩
+
+/-- A conjugate of a complement of the normal subgroup `N` is again a complement of `N`. -/
+theorem IsComplement'.conj_smul [N.Normal] {D : Subgroup G} (h : N.IsComplement' D) (g : G) :
+    N.IsComplement' (MulAut.conj g • D) := by
+  have hN : N.map (MulAut.conj g).toMonoidHom = N :=
+    (pointwise_smul_def N).symm.trans (‹N.Normal›.conj_smul_eq_self g N)
+  have h' := ((isLocalComplement_top_iff (N := N)).mpr h).map (f := (MulAut.conj g).toMonoidHom)
+    (MulEquiv.injective _)
+  rw [map_top_of_surjective _ (MulEquiv.surjective _), hN, isLocalComplement_top_iff] at h'
+  convert h' using 1
+  exact pointwise_smul_def D
 
 /-- A global complement restricts to a local complement in every intermediate subgroup. -/
 theorem IsComplement'.isLocalComplement_inf (h : N.IsComplement' K) (hNH : N ≤ H) :
@@ -308,5 +322,27 @@ theorem leftProjection_eq_one_iff (x : H) : h.leftProjection x = 1 ↔ (x : G) �
     exact h.leftProjection_right ⟨x, hx⟩
 
 end IsLocalComplement
+
+section Conjugation
+
+variable [N.Normal]
+
+attribute [local instance] conjugationAction
+
+/-- On `N` the left projection is the identity, hence equivariant for conjugation by `G`. -/
+theorem IsLocalComplement.smul_leftProjection_of_mem (h : N.IsLocalComplement K H) (g : G)
+    (x y : H) (hx : (x : G) ∈ N) (hy : (y : G) = g * x * g⁻¹) :
+    g • h.leftProjection x = h.leftProjection y := by
+  obtain ⟨x, hxH⟩ := x
+  obtain ⟨y, hyH⟩ := y
+  dsimp only at hx hy
+  subst hy
+  have hx' : h.leftProjection ⟨x, hxH⟩ = ⟨x, hx⟩ := h.leftProjection_left ⟨x, hx⟩
+  have hy' : h.leftProjection ⟨_, hyH⟩ = ⟨_, ‹N.Normal›.conj_mem x hx g⟩ :=
+    h.leftProjection_left ⟨_, ‹N.Normal›.conj_mem x hx g⟩
+  rw [hx', hy']
+  exact Subtype.ext (coe_conjugationAction_smul N g _)
+
+end Conjugation
 
 end Subgroup
