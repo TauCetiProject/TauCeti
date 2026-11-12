@@ -351,7 +351,7 @@ private theorem rpow_lintegral_ofReal_min_rpow_le_of_convex (hpstar : pstar ≠ 
     lintegral_ofReal_rpow_mul_enorm_le (((Lp.stronglyMeasurable _).measurable.sub_const m).max
       measurable_const |>.min measurable_const).aemeasurable (Lp.aestronglyMeasurable _) hconj hγP'
   have hXfin : X ≠ ∞ := by
-    refine ne_top_of_le_ne_top (b := ∫⁻ x in Omega, ENNReal.ofReal K ^ Q ∂mu) ?_
+    refine ne_top_of_le_ne_top (b := ∫⁻ _ in Omega, ENNReal.ofReal K ^ Q ∂mu) ?_
       (lintegral_mono fun x => ?_)
     · rw [setLIntegral_const]
       exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hQ0.le ENNReal.ofReal_ne_top)
