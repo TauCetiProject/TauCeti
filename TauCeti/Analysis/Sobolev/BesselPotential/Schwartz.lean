@@ -42,6 +42,8 @@ normed complex `F`.
 * `SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`: `⟨ξ⟩ ^ s 𝓕 u` lies in every `L^q`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: the `H¹` norm of a Schwartz function in terms
   of its first derivatives, `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the `H^s`
+  norm of a Schwartz function.
 
 ## References
 
@@ -165,6 +167,33 @@ theorem norm_toBesselPotentialSpaceCLM_one_sq {F : Type*} [NormedAddCommGroup F]
     hweight, norm_mul, Complex.norm_I, Complex.norm_ofNat, Real.abs_pi, mul_one, sq_abs]
   rw [← Finset.sum_mul, ← Finset.mul_sum, hsum]
   field_simp
+
+open scoped LineDeriv Real in
+/-- The `H¹` norm of a Schwartz function bounds the `L²` norm of each of its first derivatives
+along an orthonormal basis `b`: `(2π)⁻² ∫ ‖∂_{bᵢ} u‖² ≤ ‖u‖²_{H¹}`. -/
+theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) (i : ι) :
+    (2 * π)⁻¹ ^ 2 * ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 := by
+  rw [norm_toBesselPotentialSpaceCLM_one_sq b]
+  have hi : ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ∑ j, ∫ x, ‖∂_{b j} u x‖ ^ 2 :=
+    Finset.single_le_sum (f := fun j ↦ ∫ x, ‖∂_{b j} u x‖ ^ 2)
+      (fun j _ ↦ integral_nonneg fun _ ↦ by positivity) (Finset.mem_univ i)
+  have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
+
+/-- **Translation is an isometry of `H^s`** on Schwartz functions with Hilbert-space values. -/
+@[simp]
+theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (u : 𝓢(E, F)) (a : E) :
+    ‖toBesselPotentialSpaceCLM s 2 (u.compSubConstCLM ℂ a)‖ =
+      ‖toBesselPotentialSpaceCLM s 2 u‖ := by
+  rw [norm_toBesselPotentialSpaceCLM, norm_toBesselPotentialSpaceCLM]
+  congr 1
+  refine eLpNorm_congr_norm_ae
+    (memLp_one_add_norm_sq_rpow_smul_fourier s _ 2).aestronglyMeasurable
+    (memLp_one_add_norm_sq_rpow_smul_fourier s u 2).aestronglyMeasurable (.of_forall fun ξ ↦ ?_)
+  simp [fourier_compSubConstCLM_apply, norm_smul]
 
 end SchwartzMap
 
