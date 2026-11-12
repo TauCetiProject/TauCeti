@@ -305,7 +305,7 @@ private theorem hasSum_neckMode {y : ℂ} (hy : ‖y‖ < 1) :
   rw [norm_sub_rev]
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
   rw [← LinearIsometryEquiv.norm_map reflect u]
-  refine norm_le_of_forall_le (pow_nonneg (norm_nonneg y) N) fun k ↦ ?_
+  refine norm_le_of_forall_le (C := ‖y‖ ^ N) fun k ↦ ?_
   have hS : ((∑ i ∈ Finset.range N, y ^ i • (neckMode i : CircleSobolev s E →L[ℂ] _)) u).coeff k =
       ∑ i ∈ Finset.range N, y ^ i • if k = -(i : ℤ) then u.coeff i else 0 := by
     rw [← coeffCLM_apply, sum_apply, map_sum]
