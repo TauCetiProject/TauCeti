@@ -21,6 +21,7 @@ form `((s, v), (s', w)) ↦ s a(w) - s' a(v) + b(v, w)` on `𝕜 × V`
 (`ContDiffOn.symplectizationFormCLM`), and at a point where a real one-form `α` is a contact form,
 the symplectization form of `α` and `dα` is invertible
 (`TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`), by
+`TauCeti.isContactFormAt_modelSpace_iff_isContact` and
 `Module.Dual.isContact_iff_nondegenerate_symplectizationForm`.
 
 This is the linear algebra of the contact Moser method: pairing a conformal factor and a vector
@@ -54,16 +55,15 @@ covector `a` and a two-form `b` on `V` (`Module.Dual.symplectizationForm`), as a
 bilinear map. -/
 noncomputable def symplectizationFormCLM (a : V [⋀^Fin 1]→L[𝕜] 𝕜)
     (b : V [⋀^Fin 2]→L[𝕜] 𝕜) : 𝕜 × V →L[𝕜] 𝕜 × V →L[𝕜] 𝕜 :=
-  (Module.Dual.symplectizationForm
-    ((ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm a : V →L[𝕜] 𝕜).toLinearMap
-    (ContinuousAlternatingMap.flatL 𝕜 V 𝕜 b).toBilinForm).toContinuousBilinearMap
+  (Module.Dual.symplectizationForm (toDual a : V →ₗ[𝕜] 𝕜)
+    (flatL 𝕜 V 𝕜 b).toLinearMap₁₂).toContinuousBilinearMap
 
 /-- The symplectization form evaluates by `((s, v), (s', w)) ↦ s a(w) - s' a(v) + b(v, w)`. -/
 @[simp]
 theorem symplectizationFormCLM_apply (a : V [⋀^Fin 1]→L[𝕜] 𝕜) (b : V [⋀^Fin 2]→L[𝕜] 𝕜)
     (p q : 𝕜 × V) :
     a.symplectizationFormCLM b p q = p.1 * a ![q.2] - q.1 * a ![p.2] + b ![p.2, q.2] := by
-  simp [symplectizationFormCLM, ← Matrix.vec_single_eq_const]
+  simp [symplectizationFormCLM, ← flatL_apply_apply]
 
 end ContinuousAlternatingMap
 
@@ -86,35 +86,13 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- At a point where a one-form is a contact form, its symplectization form is invertible, by
+`TauCeti.isContactFormAt_modelSpace_iff_isContact` and
 `Module.Dual.isContact_iff_nondegenerate_symplectizationForm`. -/
 theorem IsContactFormAt.isInvertible_symplectizationFormCLM
     {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V} (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x) :
-    ((α x).symplectizationFormCLM (extDeriv α x)).IsInvertible := by
-  set B := (ContinuousAlternatingMap.flatL ℝ V ℝ (extDeriv α x)).toBilinForm
-  have hB : B.IsAlt := fun v ↦ by
-    simpa [B] using (extDeriv α x).map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl
-      Fin.zero_ne_one
-  have hcontact : Module.Dual.IsContact
-      ((ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm (α x) : V →L[ℝ] ℝ).toLinearMap
-      B := by
-    rw [Module.Dual.isContact_iff_of_isRefl hB.isRefl]
-    simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply,
-      ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, ← Matrix.vec_single_eq_const, B,
-      ContinuousLinearMap.toBilinForm_apply, ContinuousAlternatingMap.flatL_apply_apply]
-    refine ⟨fun h ↦ hc.ne_zero (ContinuousAlternatingMap.ext fun m ↦ ?_),
-      fun v hv hvw ↦ hc.nondegenerate v (RoughForm.mem_ker.2 hv) fun (w : V) hw ↦ ?_⟩
-    · have hm : m = ![m 0] := by
-        funext i
-        rw [Subsingleton.elim i 0]
-        rfl
-      have h0 : α x ![m 0] = 0 := by
-        simpa [← Matrix.vec_single_eq_const] using congrArg (fun f : V →ₗ[ℝ] ℝ ↦ f (m 0)) h
-      rw [hm]
-      exact h0
-    · exact (congrArg (fun A ↦ A ![v, w])
-        (mextDeriv_eq_extDeriv (E := V) (F := ℝ) (k := 1) α x)).trans
-          (hvw w (RoughForm.mem_ker.1 hw))
-  exact isInvertible_toContinuousBilinearMap_iff_separatingLeft.2
-    (Module.Dual.isContact_iff_nondegenerate_symplectizationForm.1 hcontact).1
+    ((α x).symplectizationFormCLM (extDeriv α x)).IsInvertible :=
+  isInvertible_toContinuousBilinearMap_iff_separatingLeft.2
+    (Module.Dual.isContact_iff_nondegenerate_symplectizationForm.1
+      (isContactFormAt_modelSpace_iff_isContact.1 hc)).1
 
 end TauCeti
