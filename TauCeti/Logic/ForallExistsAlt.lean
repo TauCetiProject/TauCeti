@@ -25,7 +25,7 @@ coordinate of `f x` depends only on the coordinates `x j` with `j ≤ i`.
 
 ## Main results
 
-* `TauCeti.forallExistsAlt_iff_exists_strategy`: the alternation holds exactly when it has
+* `TauCeti.forallExistsAlt_iff_exists_skolem`: the alternation holds exactly when it has
   Skolem functions respecting the order of the quantifiers.
 -/
 
@@ -59,6 +59,16 @@ theorem forallExistsAlt_one {P : (Fin 1 → α) → (Fin 1 → β) → Prop} :
     ForallExistsAlt 1 P ↔ ∀ x, ∃ y, P ![x] ![y] :=
   Iff.rfl
 
+/-- The innermost pair of quantifiers of an alternation. -/
+theorem forallExistsAlt_succ' {P : (Fin (k + 1) → α) → (Fin (k + 1) → β) → Prop} :
+    ForallExistsAlt (k + 1) P ↔
+      ForallExistsAlt k fun xs ys => ∀ x, ∃ y, P (Fin.snoc xs x) (Fin.snoc ys y) := by
+  induction k with
+  | zero => simp [forallExistsAlt_one]
+  | succ k ih =>
+    rw [forallExistsAlt_succ, forallExistsAlt_succ]
+    simp only [ih, Fin.cons_snoc_eq_snoc_cons]
+
 /-- An alternation of quantifiers is monotone in the quantified relation. -/
 theorem ForallExistsAlt.mono {P Q : (Fin k → α) → (Fin k → β) → Prop}
     (h : ForallExistsAlt k P) (hPQ : ∀ x y, P x y → Q x y) : ForallExistsAlt k Q := by
@@ -69,7 +79,7 @@ theorem ForallExistsAlt.mono {P Q : (Fin k → α) → (Fin k → β) → Prop}
 /-- Skolem functions respecting the order of the quantifiers witness an alternation: if the
 `i`-th coordinate of `f x` depends only on the coordinates `x j` with `j ≤ i`, and `P x (f x)`
 holds for every `x`, then `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1}, P x y`. -/
-theorem forallExistsAlt_of_strategy {P : (Fin k → α) → (Fin k → β) → Prop}
+theorem forallExistsAlt_of_skolem {P : (Fin k → α) → (Fin k → β) → Prop}
     (f : (Fin k → α) → Fin k → β)
     (hf : ∀ i x x', (∀ j ≤ i, x j = x' j) → f x i = f x' i) (hP : ∀ x, P x (f x)) :
     ForallExistsAlt k P := by
@@ -92,7 +102,7 @@ theorem forallExistsAlt_of_strategy {P : (Fin k → α) → (Fin k → β) → P
 /-- An alternation of quantifiers has Skolem functions respecting the order of the quantifiers:
 a function `f` with `P x (f x)` for every `x` such that the `i`-th coordinate of `f x` depends
 only on the coordinates `x j` with `j ≤ i`. -/
-theorem ForallExistsAlt.exists_strategy {P : (Fin k → α) → (Fin k → β) → Prop}
+theorem ForallExistsAlt.exists_skolem {P : (Fin k → α) → (Fin k → β) → Prop}
     (h : ForallExistsAlt k P) :
     ∃ f : (Fin k → α) → Fin k → β,
       (∀ i x x', (∀ j ≤ i, x j = x' j) → f x i = f x' i) ∧ ∀ x, P x (f x) := by
@@ -115,10 +125,10 @@ theorem ForallExistsAlt.exists_strategy {P : (Fin k → α) → (Fin k → β) �
 /-- An alternation `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1}, P x y` holds exactly when it has Skolem
 functions respecting the order of the quantifiers: a function `f` with `P x (f x)` for every `x`
 such that the `i`-th coordinate of `f x` depends only on the coordinates `x j` with `j ≤ i`. -/
-theorem forallExistsAlt_iff_exists_strategy {P : (Fin k → α) → (Fin k → β) → Prop} :
+theorem forallExistsAlt_iff_exists_skolem {P : (Fin k → α) → (Fin k → β) → Prop} :
     ForallExistsAlt k P ↔
       ∃ f : (Fin k → α) → Fin k → β,
         (∀ i x x', (∀ j ≤ i, x j = x' j) → f x i = f x' i) ∧ ∀ x, P x (f x) :=
-  ⟨ForallExistsAlt.exists_strategy, fun ⟨f, hf, hP⟩ => forallExistsAlt_of_strategy f hf hP⟩
+  ⟨ForallExistsAlt.exists_skolem, fun ⟨f, hf, hP⟩ => forallExistsAlt_of_skolem f hf hP⟩
 
 end TauCeti

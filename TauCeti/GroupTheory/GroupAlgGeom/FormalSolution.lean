@@ -19,12 +19,14 @@ Let `S(x, y) = 1` be a system of equations over a group `G` in the variables `x�
 `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` is a tuple of words `q₀, …, q_{k-1}` in the free
 `G`-group `G[x₀, …, x_{k-1}]` such that `q i` involves only the coefficients and the variables
 `x₀, …, x_i`, and such that `S(x, q) = 1` holds in `G[x₀, …, x_{k-1}]`. In other words, the
-system has a solution in `G[X]` whose `y`-coordinates respect the order of the quantifiers.
+system has a solution in `G[x₀, …, x_{k-1}]` whose `x`-coordinates are the variables
+`x₀, …, x_{k-1}` themselves and whose `y`-coordinates respect the order of the quantifiers.
 
 A formal solution makes the sentence true in every group `H` receiving the coefficients through a
 homomorphism `G →* H`: given values of the `x i` in `H`, the values of the words `q i` are
-witnesses for the `y i`, and the value of `q i` depends only on `x₀, …, x_i`. Merzljakov's
-theorem is the converse for a nonabelian free group `G = H` of finite rank; it is not proved here.
+witnesses for the `y i`, and the value of `q i` depends only on `x₀, …, x_i`.
+Merzljakov's theorem is the converse for a nonabelian free group `G = H` of finite rank; it is not
+proved here.
 
 ## Main definitions
 
@@ -37,9 +39,9 @@ theorem is the converse for a nonabelian free group `G = H` of finite rank; it i
   formal solution solve the system, for any values of the universally quantified variables.
 * `TauCeti.GroupAlgGeom.IsFormalSolution.forallExistsAlt`: a formal solution makes the sentence
   true in every group receiving the coefficients.
-* `TauCeti.GroupAlgGeom.not_isFormalSolution_sq`,
-  `TauCeti.GroupAlgGeom.not_forallExistsAlt_sq_freeGroup`: the sentence `∀ x ∃ y (y² = x)` has no
-  formal solution, and fails in a free group on a nonempty alphabet.
+* `TauCeti.GroupAlgGeom.not_forallExistsAlt_sq_freeGroup`,
+  `TauCeti.GroupAlgGeom.not_isFormalSolution_sq`: the sentence `∀ x ∃ y (y² = x)` fails in a free
+  group on a nonempty alphabet, and has no formal solution.
 * `TauCeti.GroupAlgGeom.not_isFormalSolution_eq_later`: `∀ x₀ ∃ y₀ ∀ x₁ ∃ y₁ (y₀ = x₁)` has no
   formal solution, although `y₀ = x₁` is solvable in `G[x₀, x₁]`: the constraint on the variables
   of `q i` cannot be dropped.
@@ -81,6 +83,12 @@ namespace IsFormalSolution
 
 variable {S T : Set (GX G (Fin k ⊕ Fin k))} {q : Fin k → GX G (Fin k)}
 
+/-- Substituting the words of a formal solution for the variables `y i` makes each equation of
+the system trivial in the free `G`-group on the variables `x i`. -/
+theorem eval_eq_one (h : IsFormalSolution S q) {s : GX G (Fin k ⊕ Fin k)} (hs : s ∈ S) :
+    eval inl (Sum.elim (fun i => inr (of i)) q) s = 1 :=
+  mem_V.1 h.sumElim_mem_V s hs
+
 /-- A formal solution of a system is a formal solution of each of its subsystems. -/
 theorem anti (h : IsFormalSolution T q) (hST : S ⊆ T) : IsFormalSolution S q :=
   ⟨h.mem_varSubgroup, V_antitone _ hST h.sumElim_mem_V⟩
@@ -99,23 +107,41 @@ theorem sumElim_eval_mem_V (h : IsFormalSolution S q) (ι : G →* H) (x : Fin k
   refine mem_V.2 fun s hs => ?_
   have hw : wordMap ι (Sum.elim (fun i => inr (of i)) q) x = Sum.elim x fun i => eval ι x (q i) :=
     funext fun j => by cases j <;> simp
-  rw [← hw, ← eval_comp_eval, MonoidHom.comp_apply, mem_V.1 h.sumElim_mem_V s hs, _root_.map_one]
+  rw [← hw, ← eval_comp_eval, MonoidHom.comp_apply, h.eval_eq_one hs, _root_.map_one]
 
 /-- A formal solution makes the sentence `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` true in
 every group `H` receiving the coefficients through a homomorphism `ι : G →* H`. -/
 theorem forallExistsAlt (h : IsFormalSolution S q) (ι : G →* H) :
     ForallExistsAlt k fun x y : Fin k → H => Sum.elim x y ∈ V ι S :=
-  forallExistsAlt_of_strategy (fun x i => eval ι x (q i)) (fun _ _ _ => h.eval_eq_eval ι)
+  forallExistsAlt_of_skolem (fun x i => eval ι x (q i)) (fun _ _ _ => h.eval_eq_eval ι)
     (h.sumElim_eval_mem_V ι)
 
 end IsFormalSolution
 
+variable {S T : Set (GX G (Fin k ⊕ Fin k))} {q : Fin k → GX G (Fin k)}
+
 /-- A tuple of words is a formal solution of a union of two systems exactly when it is a formal
 solution of both. -/
-theorem isFormalSolution_union {S T : Set (GX G (Fin k ⊕ Fin k))} {q : Fin k → GX G (Fin k)} :
+@[simp]
+theorem isFormalSolution_union :
     IsFormalSolution (S ∪ T) q ↔ IsFormalSolution S q ∧ IsFormalSolution T q := by
   simp only [isFormalSolution_iff, V_union, Set.mem_inter_iff]
   tauto
+
+/-- A formal solution of the empty system is a tuple of words whose `i`-th word involves only the
+coefficients and the variables `x j` with `j ≤ i`. -/
+@[simp]
+theorem isFormalSolution_empty :
+    IsFormalSolution (∅ : Set (GX G (Fin k ⊕ Fin k))) q ↔
+      ∀ i, q i ∈ GX.varSubgroup G (Set.Iic i) := by
+  simp [isFormalSolution_iff]
+
+/-- A system and the normal subgroup it generates have the same formal solutions. -/
+@[simp]
+theorem isFormalSolution_normalClosure :
+    IsFormalSolution (Subgroup.normalClosure S : Set (GX G (Fin k ⊕ Fin k))) q ↔
+      IsFormalSolution S q := by
+  simp [isFormalSolution_iff]
 
 /-! ### Examples -/
 
@@ -166,32 +192,21 @@ example :
   · exact GX.inr_of_mem_varSubgroup (by simp)
   · exact mul_mem (GX.inr_of_mem_varSubgroup (by simp)) (GX.inr_of_mem_varSubgroup (by simp))
 
-/-- In a group receiving the coefficients, `∀ x ∃ y (y² = x)` says that every element is a
-square. -/
-theorem forallExistsAlt_sq_iff (ι : G →* H) :
-    ForallExistsAlt 1 (fun x y : Fin 1 → H =>
-      Sum.elim x y ∈
-        V ι {(inr (of (Sum.inr 0)) ^ 2 * (inr (of (Sum.inl 0)))⁻¹ : GX G (Fin 1 ⊕ Fin 1))}) ↔
-      ∀ h : H, ∃ y : H, y ^ 2 = h := by
-  simp [forallExistsAlt_one, mul_inv_eq_one]
-
-/-- The sentence `∀ x ∃ y (y² = x)` has no formal solution over any group of coefficients: it
-fails in the infinite cyclic group. -/
-theorem not_isFormalSolution_sq (q : Fin 1 → GX G (Fin 1)) :
-    ¬IsFormalSolution {inr (of (Sum.inr 0)) ^ 2 * (inr (of (Sum.inl 0)))⁻¹} q := fun h => by
-  obtain ⟨y, hy⟩ := (forallExistsAlt_sq_iff _).1
-    (h.forallExistsAlt (1 : G →* Multiplicative ℤ)) (Multiplicative.ofAdd 1)
-  exact Group.not_isProperPower_ofAdd_one (Group.isProperPower_iff.2 ⟨y, 2, le_rfl, hy.symm⟩)
-
-/-- The sentence `∀ x ∃ y (y² = x)` is false in a free group on a nonempty alphabet: a generator
-has no square root. -/
-theorem not_forallExistsAlt_sq_freeGroup (A : Type*) [Nonempty A] :
+/-- The sentence `∀ x ∃ y (y² = x)` is false in a free group on a nonempty alphabet, whatever
+the homomorphism receiving the coefficients. -/
+theorem not_forallExistsAlt_sq_freeGroup {A : Type*} [Nonempty A] (ι : G →* FreeGroup A) :
     ¬ForallExistsAlt 1 fun x y : Fin 1 → FreeGroup A =>
-      Sum.elim x y ∈ V (MonoidHom.id (FreeGroup A))
-        {inr (of (Sum.inr 0)) ^ 2 * (inr (of (Sum.inl 0)))⁻¹} := fun h => by
+      Sum.elim x y ∈ V ι {inr (of (Sum.inr 0)) ^ 2 * (inr (of (Sum.inl 0)))⁻¹} := fun h => by
   obtain ⟨a⟩ := ‹Nonempty A›
-  obtain ⟨y, hy⟩ := (forallExistsAlt_sq_iff _).1 h (of a)
+  have hsq : ∀ x : FreeGroup A, ∃ y, y ^ 2 = x := by
+    simpa [forallExistsAlt_one, mul_inv_eq_one] using h
+  obtain ⟨y, hy⟩ := hsq (of a)
   exact not_isProperPower_of a (Group.isProperPower_iff.2 ⟨y, 2, le_rfl, hy.symm⟩)
+
+/-- The sentence `∀ x ∃ y (y² = x)` has no formal solution over any group of coefficients. -/
+theorem not_isFormalSolution_sq (q : Fin 1 → GX G (Fin 1)) :
+    ¬IsFormalSolution {inr (of (Sum.inr 0)) ^ 2 * (inr (of (Sum.inl 0)))⁻¹} q := fun h =>
+  not_forallExistsAlt_sq_freeGroup (1 : G →* FreeGroup Unit) (h.forallExistsAlt _)
 
 /-- The equation `y₀ = x₁` is solved in the free `G`-group on `x₀`, `x₁` by `y₀ = x₁`, a word
 involving a variable quantified after `y₀`. -/
@@ -201,8 +216,8 @@ example :
   simp
 
 /-- The sentence `∀ x₀ ∃ y₀ ∀ x₁ ∃ y₁ (y₀ = x₁)` has no formal solution, although the equation
-`y₀ = x₁` is solvable in the free `G`-group on `x₀`, `x₁`: the sentence fails in the infinite
-cyclic group, so the words of a formal solution must respect the order of the quantifiers. -/
+`y₀ = x₁` is solvable in the free `G`-group on `x₀`, `x₁`: the words of a formal solution must
+respect the order of the quantifiers. -/
 theorem not_isFormalSolution_eq_later (q : Fin 2 → GX G (Fin 2)) :
     ¬IsFormalSolution {inr (of (Sum.inr 0)) * (inr (of (Sum.inl 1)))⁻¹} q := fun h => by
   obtain ⟨a, ha⟩ : ∃ a : ℤ, ∀ b : ℤ, a = b := by
