@@ -419,8 +419,23 @@ theorem IsUniform.smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) : (c �
   exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x ξ =>
     norm_mixedDeriv_smul_le c (hCa x ξ)⟩
 
+theorem IsUniform.neg {a : Symbol n V W m} (ha : a.IsUniform) : (-a).IsUniform := by
+  intro α β
+  obtain ⟨C, hC, hCa⟩ := ha α β
+  exact ⟨C, hC, fun x ξ => by
+    rw [coefficient_neg, mixedDeriv_neg, norm_neg]
+    exact hCa x ξ⟩
+
+theorem IsUniform.sub {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
+    (a - b).IsUniform :=
+  sub_eq_add_neg a b ▸ ha.add hb.neg
+
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩
+
+theorem isUniform_sum {ι : Type*} (s : Finset ι) {a : ι → Symbol n V W m}
+    (ha : ∀ i ∈ s, (a i).IsUniform) : (∑ i ∈ s, a i).IsUniform :=
+  Finset.sum_induction _ IsUniform (fun _ _ => IsUniform.add) isUniform_zero ha
 
 theorem hasCompactSpatialSupport_zero : (0 : Symbol n V W m).HasCompactSpatialSupport :=
   ⟨∅, isCompact_empty, fun _ _ _ => rfl⟩
@@ -1320,6 +1335,34 @@ theorem isSmoothing_ofBoundedFrequencySupport
 theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
     (ha : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R ha, rfl⟩
+
+/-- A symbol with estimates uniform in the position that vanishes at every frequency of norm at
+least `R` is a symbol of every order `m'`, again with estimates uniform in the position. -/
+theorem IsUniform.exists_isUniform_of_coefficient_eq_zero {a : Symbol n V W m} (ha : a.IsUniform)
+    (R : ℝ) (h : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) (m' : ℝ) :
+    ∃ b : Symbol n V W m', b.IsUniform ∧ b.coefficient = a.coefficient := by
+  refine ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R h, fun α β => ?_, rfl⟩
+  obtain ⟨C, hC0, hC⟩ := ha α β
+  refine ⟨C * (1 + R ^ 2) ^ (|m - m'| / 2), by positivity, fun x ξ => ?_⟩
+  rw [coefficient_ofBoundedFrequencySupport]
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · -- For `‖ξ‖ ≤ R`, `⟨ξ⟩^(m - |β|) = ⟨ξ⟩^(m - m') ⟨ξ⟩^(m' - |β|)` and
+    -- `⟨ξ⟩^(m - m') ≤ ⟨R⟩^|m - m'|`.
+    have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+    have hR : (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) ≤ (1 + R ^ 2) ^ (|m - m'| / 2) :=
+      (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖])
+        (by linarith [le_abs_self (m - m')])).trans
+        (Real.rpow_le_rpow hw.le (by nlinarith [norm_nonneg ξ]) (by positivity))
+    refine (hC x ξ).trans ?_
+    rw [show (m - β.length) / 2 = (m - m') / 2 + (m' - β.length) / 2 by ring, Real.rpow_add hw,
+      mul_assoc C]
+    gcongr
+  · -- Beyond radius `R` the coefficient vanishes on a neighbourhood, with all its derivatives.
+    have hzero : a.coefficient =ᶠ[nhds (x, ξ)] 0 :=
+      Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_snd.norm).mem_nhds hξ)
+        fun p hp => h p.1 p.2 hp.le
+    rw [hzero.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
+    positivity
 
 /-- A smooth coefficient that agrees with a symbol `b` of order `m` at all frequencies of norm at
 least `R` is itself a symbol of order `m`: the difference vanishes at large frequencies. -/

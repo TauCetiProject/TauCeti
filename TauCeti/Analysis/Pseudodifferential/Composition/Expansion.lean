@@ -43,7 +43,8 @@ the position and the frequency.
   `TauCeti.Symbol.coefficient_sharpTerm_one` (`-i ∑ⱼ ∂_{ξⱼ} a ∘ ∂_{xⱼ} b`) and the Leibniz rules
   `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`.
   The coefficients of the terms only depend on the coefficients of the two symbols
-  (`TauCeti.Symbol.coefficient_sharpTerm_congr`) and depend linearly on each of them, also for
+  (`TauCeti.Symbol.coefficient_sharpTerm_congr`), are uniform in the position when both symbols
+  are (`TauCeti.Symbol.IsUniform.sharpTerm`), and depend linearly on each of them, also for
   linear combinations of symbols of different orders
   (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions). For a constant symbol
   only the pointwise composition survives (`TauCeti.Symbol.const_sharpTerm_succ`,
@@ -188,6 +189,19 @@ theorem coefficient_sharpTerm_congr {μ μ' : ℝ} {a : Symbol n W U m'} {a' : S
     (a.sharpTerm b k).coefficient = (a'.sharpTerm b' k).coefficient := by
   funext ⟨x, ξ⟩
   simp only [coefficient_sharpTerm, ha, hb]
+
+/-- The terms of the composition expansion of two symbols whose estimates are uniform in the
+position again have estimates uniform in the position. -/
+theorem IsUniform.sharpTerm {a : Symbol n W U m'} {b : Symbol n V W m} (ha : a.IsUniform)
+    (hb : b.IsUniform) (k : ℕ) : (a.sharpTerm b k).IsUniform := by
+  induction k generalizing m m' with
+  | zero =>
+    rw [sharpTerm_zero]
+    exact (ha.comp hb).inclusion _
+  | succ k ih =>
+    rw [sharpTerm_succ]
+    exact ((isUniform_sum _ fun j _ ↦ ih (ha.frequencyDeriv j) (hb.spatialDeriv j)).smul
+      _).inclusion _
 
 /-- The terms of the composition expansion are linear in the first symbol: a linear relation
 `a₀ = ∑ᵢ cᵢ aᵢ` between the coefficients of symbols `aᵢ` of possibly different orders gives the
