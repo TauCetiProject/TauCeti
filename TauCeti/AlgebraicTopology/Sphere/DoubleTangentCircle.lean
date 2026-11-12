@@ -40,7 +40,7 @@ cyclic, so `σ_*` sends the fundamental class of `Σ` to a generator of `H_{n-2}
 
 The proof reads through `σ` a generalized loop `c` of `Σ` that is a homeomorphism off the boundary
 of its cube. Under the loop-space shifts `π_{n-2}(Ω²Sⁿ) ≅ π_{n-1}(ΩSⁿ) ≅ πₙ(Sⁿ)`
-(`HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_fromLoopFamily`) the class of `σ ∘ c` becomes the
+(`HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph`) the class of `σ ∘ c` becomes the
 class of the cube `(y, s, t) ↦ σ(c y)(s)(t)`, which is, up to the order of the cube coordinates,
 the family of circles through the circles through the points of `c` (`TauCeti.tangentCircleGenLoop`,
 applied twice). That cube is again a homeomorphism off the boundary, so its class generates
@@ -126,10 +126,10 @@ theorem tangentCircleDoubleLoop_self (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (p₀
 `σ` becomes the circles through the circles through the points of `c`, with the cube coordinates
 reordered by `GenLoop.congr` along the permutation of `Fin (k + 3)` sending `0`, `1` and `j + 2`
 to `k + 2`, `k + 1` and `j`. -/
-private theorem fromLoopFamily_fromLoopFamily_map_tangentCircleDoubleLoop (hu : ‖u‖ = 1)
+private theorem genLoopLoopHomeomorph_map_tangentCircleDoubleLoop (hu : ‖u‖ = 1)
     (hv : ‖v‖ = 1) {p₀ : sphereEquator v} {k : ℕ} (c : Ω^ (Fin (k + 1)) (sphereEquator v) p₀) :
-    GenLoop.fromLoopFamily (GenLoop.fromLoopFamily (GenLoop.map (tangentCircleDoubleLoop hu hv p₀)
-        (tangentCircleDoubleLoop_self hu hv p₀) c)) =
+    GenLoop.genLoopLoopHomeomorph _ (k + 2) (GenLoop.genLoopLoopHomeomorph _ (k + 1)
+      (GenLoop.map (tangentCircleDoubleLoop hu hv p₀) (tangentCircleDoubleLoop_self hu hv p₀) c)) =
       GenLoop.congr _ ((Equiv.swap 0 1).trans
           ((Fin.last (k + 2)).cycleRange.symm.trans (Fin.last (k + 2)).cycleRange.symm))
         (tangentCircleGenLoop hu (GenLoop.map (orthogonalSphereToEquator u) rfl
@@ -150,23 +150,24 @@ private theorem fromLoopFamily_fromLoopFamily_map_tangentCircleDoubleLoop (hu : 
       Fin.cycleRange_symm_succ, Fin.succAbove_last_apply, ← Fin.succ_castSucc,
       Fin.cycleRange_symm_succ, Fin.succAbove_last_apply]
   refine GenLoop.ext _ _ fun w => ?_
-  rw [GenLoop.congr_apply, tangentCircleGenLoop_apply, GenLoop.map_apply,
-    tangentCircleGenLoop_apply, GenLoop.fromLoopFamily_apply, GenLoop.fromLoopFamily_apply,
-    GenLoop.map_apply, tangentCircleDoubleLoop_apply]
-  simp only [Fin.tail_def, Fin.init_def, he₀, he₁, he₂]
+  rw [GenLoop.genLoopLoopHomeomorph_apply, GenLoop.genLoopLoopHomeomorph_apply,
+    GenLoop.map_apply, tangentCircleDoubleLoop_apply, GenLoop.congr_apply,
+    tangentCircleGenLoop_apply, GenLoop.map_apply, tangentCircleGenLoop_apply]
+  simp only [Fin.tail_def, he₀, he₁, he₂]
 
 /-- If a generalized loop `c` of `Σ` covers `Σ` off its base point and identifies only points of
 the boundary of its cube, then so does the cube of `Sⁿ` that the two loop-space shifts attach to
 `c` read through the double loops `σ`: it is the circles through the circles through the points of
 `c`, up to the order of the coordinates. -/
-private theorem bijective_toSphere_fromLoopFamily_fromLoopFamily (hu : ‖u‖ = 1) (hv : ‖v‖ = 1)
-    {p₀ : sphereEquator v} {k : ℕ} (c : Ω^ (Fin (k + 1)) (sphereEquator v) p₀)
+private theorem bijective_toSphere_genLoopLoopHomeomorph_map_tangentCircleDoubleLoop
+    (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) {p₀ : sphereEquator v} {k : ℕ}
+    (c : Ω^ (Fin (k + 1)) (sphereEquator v) p₀)
     (hcs : ∀ q, q ≠ p₀ → ∃ y, c y = q)
     (hci : ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin (k + 1)) ∧
       z ∈ Cube.boundary (Fin (k + 1))) :
-    Function.Bijective (GenLoop.toSphere (GenLoop.fromLoopFamily (GenLoop.fromLoopFamily
-      (GenLoop.map (tangentCircleDoubleLoop hu hv p₀) (tangentCircleDoubleLoop_self hu hv p₀)
-        c)))) := by
+    Function.Bijective (GenLoop.toSphere (GenLoop.genLoopLoopHomeomorph _ (k + 2)
+      (GenLoop.genLoopLoopHomeomorph _ (k + 1) (GenLoop.map (tangentCircleDoubleLoop hu hv p₀)
+        (tangentCircleDoubleLoop_self hu hv p₀) c)))) := by
   -- The circles `c₁` of the unit sphere of `u⊥` through the points of `c`, read in the equator
   -- `c₂` of `Sⁿ`; the cube is the circles of `Sⁿ` through the points of `c₂`, reordered.
   set c₁ := tangentCircleGenLoop hv c
@@ -183,7 +184,7 @@ private theorem bijective_toSphere_fromLoopFamily_fromLoopFamily (hu : ‖u‖ =
       y = z ∨ y ∈ Cube.boundary (Fin (k + 2)) ∧ z ∈ Cube.boundary (Fin (k + 2)) :=
     fun y z h ↦ hc₁i y z (injective_orthogonalSphereToEquator u (by
       rwa [GenLoop.map_apply, GenLoop.map_apply] at h))
-  rw [fromLoopFamily_fromLoopFamily_map_tangentCircleDoubleLoop hu hv c]
+  rw [genLoopLoopHomeomorph_map_tangentCircleDoubleLoop hu hv c]
   generalize (Equiv.swap (0 : Fin (k + 3)) 1).trans
     ((Fin.last (k + 2)).cycleRange.symm.trans (Fin.last (k + 2)).cycleRange.symm) = e
   -- Reordering the cube coordinates along `e` preserves the boundary of the cube.
@@ -230,9 +231,9 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
   -- Read through `σ` and the loop-space shifts, `c` becomes a cube `Q` of `Sⁿ` that is again a
   -- homeomorphism off the boundary.
   set γ := GenLoop.map (tangentCircleDoubleLoop hu hv p₀) (tangentCircleDoubleLoop_self hu hv p₀) c
-  set Q := GenLoop.fromLoopFamily (GenLoop.fromLoopFamily γ)
+  set Q := GenLoop.genLoopLoopHomeomorph _ (m + 3) (GenLoop.genLoopLoopHomeomorph _ (m + 2) γ)
   have hQiso : IsIso (GenLoop.hurewicz R Q) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
-    (bijective_toSphere_fromLoopFamily_fromLoopFamily hu hv c hcs hci)
+    (bijective_toSphere_genLoopLoopHomeomorph_map_tangentCircleDoubleLoop hu hv c hcs hci)
   -- Connectivity of `Sⁿ` and of `Ω²Sⁿ`, for the Hurewicz theorem.
   have hS (x : sphere (0 : E) 1) :
       ∀ k < m + 2 + 2, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
@@ -245,8 +246,8 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
   -- The two loop-space shifts send the class of `γ` to the class of `Q`.
   have hshift : HomotopyGroup.pathLoopSpaceMulEquiv (m + 2)
       (HomotopyGroup.pathLoopSpaceMulEquiv (m + 1) ⟦γ⟧) = ⟦Q⟧ := by
-    rw [HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_fromLoopFamily,
-      HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_fromLoopFamily]
+    rw [HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph,
+      HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
   -- Through the Hurewicz theorems for `Sⁿ` and for `Ω²Sⁿ`, the Hurewicz class of `γ` generates.
   have hQgen := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom (hS _) Q).1 hQiso
   have hF : ((HomotopyGroup.pathLoopSpaceMulEquiv (m + 1)).trans
