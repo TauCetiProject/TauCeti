@@ -424,7 +424,6 @@ theorem not_mapClusterPt_nhdsLT_maximalIntegralCurve [CompleteSpace E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hb : IsLUB (maximalIntegralCurveInterval v x) b) (y : M) :
     ¬ MapClusterPt y (𝓝[<] b) (maximalIntegralCurve v x) := by
-  have h0 := TauCeti.zero_mem_maximalIntegralCurveInterval_of_nonempty hb.nonempty
   obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hb
   intro hy
   obtain ⟨c, hc, δ, hδ, hδeq⟩ :=
@@ -455,7 +454,6 @@ theorem not_mapClusterPt_nhdsGT_maximalIntegralCurve [CompleteSpace E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (ha : IsGLB (maximalIntegralCurveInterval v x) a) (y : M) :
     ¬ MapClusterPt y (𝓝[>] a) (maximalIntegralCurve v x) := by
-  have h0 := TauCeti.zero_mem_maximalIntegralCurveInterval_of_nonempty ha.nonempty
   obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB ha
   intro hy
   obtain ⟨c, hc, δ, hδ, hδeq⟩ :=

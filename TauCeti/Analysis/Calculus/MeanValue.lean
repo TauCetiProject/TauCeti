@@ -83,7 +83,9 @@ segment from `z` to `z + v` (`t` real, `0 ≤ t ≤ 1`) takes the same value at 
 `Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
 vanish, so the map need not be constant near the segment. Consequently, if `π` is a continuous
 projection and the derivative of a map kills `ker π` on a ball about `0`, then near `0` the map
-only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`).
+only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
+compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
+(`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
 -/
 
 public section
@@ -286,6 +288,26 @@ theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : F → G} {π : F →L[𝕂] F
     (fun t ht ↦ hker _ (hball t ht) _ hπz)
   rw [add_sub_cancel] at h
   exact h.symm
+
+/-- A compactly supported differentiable map whose derivative in a fixed nonzero direction `v`
+vanishes identically is zero: moving along `v` does not change its value, and far enough along `v`
+the point leaves the support. -/
+theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
+    (hc : HasCompactSupport g) (hg : Differentiable 𝕂 g) {v : F} (hv : v ≠ 0)
+    (h0 : ∀ w, fderiv 𝕂 g w v = 0) (z : F) : g z = 0 := by
+  obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+  set c : ℝ := (|R| + ‖z‖ + 1) / ‖v‖
+  have hconst := apply_add_eq_of_fderiv_apply_eq_zero (z := z) (v := (c : 𝕂) • v)
+    (fun _ _ ↦ hg _) fun _ _ ↦ by rw [map_smul, h0, smul_zero]
+  rw [← hconst]
+  refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
+  have hle := mem_closedBall_zero_iff.1 (hR hmem)
+  have hcv : ‖(c : 𝕂) • v‖ = |R| + ‖z‖ + 1 := by
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by positivity),
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hv)]
+  have hlow := norm_sub_norm_le ((c : 𝕂) • v) (-z)
+  rw [sub_neg_eq_add, norm_neg, hcv, add_comm ((c : 𝕂) • v)] at hlow
+  linarith [le_abs_self R]
 
 end Direction
 

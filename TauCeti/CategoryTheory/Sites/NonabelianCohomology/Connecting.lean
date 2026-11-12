@@ -42,6 +42,8 @@ This file constructs the connecting map and proves the exactness statements whic
 * `CategoryTheory.Sheaf.NonabelianH1.connecting_eq_one_iff`: exactness at `Q(C)`.
 * `CategoryTheory.Sheaf.NonabelianH1.connecting_eq_connecting_iff`: the fibres of the connecting
   map are the orbits of `B(C)`.
+* `CategoryTheory.Sheaf.NonabelianH1.mk_mem_range_connecting`: an `A`-torsor with an
+  `i`-equivariant morphism to `B` is a torsor of lifts.
 
 ## References
 
@@ -314,6 +316,38 @@ theorem connecting_eq_connecting_iff (q q' : (Q.obj ⋙ forget GrpCat).sections)
       (hE.liftsObjEquiv q' _ (e.hom.hom.hom.app _ j.2.some)).2]
     -- Multiplication and inversion of global sections are computed objectwise.
     rfl
+
+/-- An `A`-torsor `P` with an `i`-equivariant morphism `u : P → B` is a torsor of lifts: `π ∘ u`
+is constant on `P`, so it is a global section `q` of `Q`, and `u` identifies `P` with the torsor of
+lifts of `q`. -/
+theorem mk_mem_range_connecting {P : Torsor A} (u : P.sheaf ⟶ (Torsor.trivial B).sheaf)
+    (hu : ∀ (U : Cᵒᵖ) (a : A.obj.obj U) (p : P.sheaf.obj.obj U),
+      u.hom.app U (a • p) = i.hom.app U a • u.hom.app U p) :
+    mk P ∈ Set.range (connecting hE) := by
+  -- `π ∘ u` is `A`-invariant, hence the restriction of a global section `q` of `Q`.
+  obtain ⟨q, hq⟩ : ∃ q : (Q.obj ⋙ forget GrpCat).sections,
+      ∀ U p, π.hom.app U (u.hom.app U p) = q.1 U :=
+    P.exists_sections_eq_of_smul_invariant (u ≫ (sheafCompose J (forget GrpCat.{w})).map π)
+      fun U a p ↦ by
+        refine (congrArg (π.hom.app U) (hu U a p)).trans ?_
+        exact (map_mul (π.hom.app U).hom (i.hom.app U a) (u.hom.app U p)).trans
+          ((congrArg (· * _) (hE.app_app_eq_one a)).trans (one_mul _))
+  refine ⟨q, (connecting_def hE q).trans (mk_eq_mk_of_hom ⟨ObjectProperty.homMk
+    { app U := ↾fun p ↦ (hE.liftsObjEquiv q U).symm ⟨u.hom.app U p, hq U p⟩
+      naturality U V f := by
+        ext p
+        refine (hE.liftsObjEquiv q V).injective (Subtype.ext ?_)
+        simp only [Functor.comp_obj, TypeCat.Fun.toFun_apply, comp_apply, TypeCat.hom_ofHom,
+          TypeCat.Fun.coe_mk, NatTrans.naturality_apply, Equiv.apply_symm_apply,
+          IsGroupExtension.liftsObjEquiv_map]
+        -- The restriction maps of the trivial torsor are those of `B`.
+        rfl }, fun U a p ↦ ?_⟩).symm⟩
+  refine (hE.liftsObjEquiv q U).injective (Subtype.ext ?_)
+  rw [hE.liftsObjEquiv_smul]
+  simp only [ObjectProperty.homMk_hom, TypeCat.hom_ofHom, TypeCat.Fun.coe_mk,
+    Equiv.apply_symm_apply]
+  -- The action of `B` on the trivial torsor is multiplication.
+  exact hu U a p
 
 end NonabelianH1
 

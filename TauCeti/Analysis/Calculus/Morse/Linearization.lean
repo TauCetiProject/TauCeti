@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import TauCeti.Analysis.Calculus.IteratedGradient
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Calculus.Morse.Basic
 -- Private: symmetry of the second derivative, strict differentiability, and the
 -- gradient/Fréchet-derivative norm comparison are used only in proofs below.
@@ -402,6 +402,14 @@ theorem isInvertible_hessianOperator_iff :
 theorem IsNondegenerateCriticalPoint.isInvertible_hessianOperator
     (h : IsNondegenerateCriticalPoint f x) : (hessianOperator f x).IsInvertible :=
   isInvertible_hessianOperator_iff.2 h.isInvertible
+
+/-- At a nondegenerate critical point the Hessian operator is bounded below: `α ‖v‖ ≤ ‖Hess f(x) v‖`
+for some `α > 0` and every `v`. -/
+theorem IsNondegenerateCriticalPoint.exists_pos_mul_norm_le_hessianOperator
+    (h : IsNondegenerateCriticalPoint f x) : ∃ α > 0, ∀ v, α * ‖v‖ ≤ ‖hessianOperator f x v‖ := by
+  obtain ⟨e, he⟩ := h.isInvertible_hessianOperator
+  obtain ⟨c, hc, hce⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e.antilipschitzWith⟩
+  exact ⟨c, hc, fun v ↦ he ▸ hce v⟩
 
 /-- The gradient vanishes at a nondegenerate critical point. This translates the dual-valued
 criticality condition in `TauCeti.IsNondegenerateCriticalPoint` through the Riesz equivalence. -/

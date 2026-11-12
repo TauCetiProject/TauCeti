@@ -372,7 +372,7 @@ theorem _root_.Module.Basis.isModular_of_isUnit_det {ι : Type*} [Fintype ι] [D
   let C : BilinForm R M := (LinearMap.toMatrix₂ b b).symm G
   have hCG : LinearMap.toMatrix₂ b b C = G := (LinearMap.toMatrix₂ b b).apply_symm_apply G
   refine ⟨C, (LinearMap.toMatrix₂ b b).injective (Matrix.ext fun i j ↦ ?_),
-    b.isPerfPair_of_isUnit_det C (hCG ▸ hdet)⟩
+    b.isPerfPair_of_isUnit_det b C (hCG ▸ hdet)⟩
   have hC : C (b i) (b j) = G i j := by
     simpa [LinearMap.toMatrix₂_apply] using congrFun (congrFun hCG i) j
   simp [LinearMap.toMatrix₂_apply, hC, hG]
@@ -500,7 +500,7 @@ theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Fin
   let U (i : o) := (C i).toMatrix (d i)
   have hCapp (i : o) (x y : P i) : π ^ e i * C i x y = B x y := by
     simpa using LinearMap.congr_fun₂ (hC i) x y
-  have hUdet (i : o) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (C i) (hCp i)
+  have hUdet (i : o) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (d i) (C i) (hCp i)
   have hUs (i : o) : (U i).IsSymm := by
     ext a a'
     refine (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ' (e i))).mp ?_

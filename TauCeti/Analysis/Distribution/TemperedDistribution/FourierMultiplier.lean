@@ -132,17 +132,11 @@ tempered distribution `u` vanishes on `s` and the symbol `g` is supported in `s`
 theorem fourierMultiplierCLM_eq_zero_of_isVanishingOn {u : 𝓢'(E, F)} {s : Set E}
     (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) s) {g : E → ℂ} (hgs : tsupport g ⊆ s) :
     fourierMultiplierCLM F g u = 0 := by
-  by_cases hg : g.HasTemperateGrowth
-  · have h : smulLeftCLM F g (𝓕 u) = 0 := by
-      ext ψ
-      rw [smulLeftCLM_apply_apply, zero_apply]
-      refine hu _ (subset_trans ?_ hgs)
-      have : ⇑(SchwartzMap.smulLeftCLM ℂ g ψ) = fun ξ ↦ g ξ • ψ ξ := by
-        ext ξ
-        simp [SchwartzMap.smulLeftCLM_apply_apply hg]
-      rw [this]
-      exact tsupport_smul_subset_left _ _
-    rw [fourierMultiplierCLM_apply, h, FourierTransform.fourierInv_zero]
-  · rw [fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth hg, zero_apply]
+  have h : smulLeftCLM F g (𝓕 u) = 0 := by
+    ext ψ
+    rw [smulLeftCLM_apply_apply, zero_apply]
+    exact hu _ ((SchwartzMap.tsupport_smulLeftCLM_subset g ψ).trans
+      (Set.inter_subset_right.trans hgs))
+  rw [fourierMultiplierCLM_apply, h, FourierTransform.fourierInv_zero]
 
 end TemperedDistribution
