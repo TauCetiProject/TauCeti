@@ -40,6 +40,8 @@ contraction of `M` need not close up.
 
 * `Matrix.GeneralLinearGroup.realOrthonormalize`: the frame `M Re (Mᴴ M) ^ (-1/2)`, with the same
   real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`.
+* `Matrix.GeneralLinearGroup.realOrthonormalize_mem_unitaryGroup`: a frame of a Lagrangian
+  subspace, one whose Gram matrix `Mᴴ M` is real, orthonormalizes to a unitary matrix.
 * `TauCeti.exists_realImage_homotopy_unitaryGroup`: a closed frame deforms through closed frames
   to a path of unitary matrices.
 
@@ -133,6 +135,38 @@ theorem continuous_realOrthonormalize {X : Type*} [TopologicalSpace X] {M : X �
     (Matrix.contDiffOn_rpow (𝕜 := ℝ) (n := n) (-(1 / 2)) (k := 0)).continuousOn.comp_continuous
       hG fun x ↦ isStrictlyPositive_iff_posDef.1 (isStrictlyPositive_map_re (M x))
   exact hval.mul (hQ.matrix_map Complex.continuous_ofReal)
+
+/-- **A Lagrangian frame orthonormalizes to a unitary frame.** If the Gram matrix `Mᴴ M` is real,
+that is, if `Im ⟪·, ·⟫` vanishes on the columns of `M` and `M ℝⁿ` is Lagrangian, then the real
+orthonormalization of `M` is unitary. -/
+theorem realOrthonormalize_mem_unitaryGroup {M : GL n ℂ}
+    (h : ((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)).map Complex.im = 0) :
+    (realOrthonormalize M : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
+  have hG : (M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ) =
+      (((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)).map Complex.re).map ((↑) : ℝ → ℂ) := by
+    ext i j
+    exact Complex.ext rfl (by simpa using congrFun (congrFun h i) j)
+  have hT (R : Matrix n n ℝ) : (R.map ((↑) : ℝ → ℂ))ᴴ = Rᵀ.map ((↑) : ℝ → ℂ) := by
+    rw [← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
+      conjTranspose_eq_transpose_of_trivial]
+  have hM (R S : Matrix n n ℝ) :
+      R.map ((↑) : ℝ → ℂ) * S.map ((↑) : ℝ → ℂ) = (R * S).map ((↑) : ℝ → ℂ) :=
+    (Matrix.map_mul (f := Complex.ofRealHom)).symm
+  obtain ⟨R, hR⟩ : ∃ R : Matrix n n ℝ,
+      (realOrthonormalize M : Matrix n n ℂ) = (M : Matrix n n ℂ) * R.map ((↑) : ℝ → ℂ) :=
+    ⟨_, coe_realOrthonormalize M⟩
+  -- The Gram matrix of `M R`, for the real matrix `R`, is the real matrix `Rᵀ (Mᴴ M) R`, and its
+  -- real part is the identity.
+  have hN : (realOrthonormalize M : Matrix n n ℂ)ᴴ * (realOrthonormalize M : Matrix n n ℂ) =
+      (Rᵀ * ((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)).map Complex.re * R).map ((↑) : ℝ → ℂ) := by
+    rw [hR, conjTranspose_mul, hT, Matrix.mul_assoc, ← Matrix.mul_assoc (M : Matrix n n ℂ)ᴴ]
+    conv_lhs => rw [hG]
+    rw [hM, hM, Matrix.mul_assoc]
+  have hre := map_re_conjTranspose_mul_self_realOrthonormalize M
+  rw [hN, Matrix.map_map] at hre
+  have h1 : Rᵀ * ((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)).map Complex.re * R = 1 := by
+    simpa [Function.comp_def] using hre
+  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, hN, h1, Matrix.map_one _ (by simp) (by simp)]
 
 end Matrix.GeneralLinearGroup
 

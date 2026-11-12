@@ -37,6 +37,8 @@ matrix past `J`.
   ring.
 * `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
   is negative transpose.
+* `LieAlgebra.Symplectic.J_mul_mem_sp`: `J * S` lies in `sp l R` for every symmetric `S`; these are
+  the linearized Hamiltonian vector fields of quadratic Hamiltonians.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
 * `Matrix.mem_range_scalar_of_commute_sp`: a matrix commuting with every element of `sp l R` is
@@ -127,6 +129,13 @@ theorem conjTranspose_mem_sp [StarRing R] {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX
 theorem J_conj_eq_neg_transpose {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
     J l R * X * (J l R)⁻¹ = -Xᵀ := by
   rw [(mem_sp_iff_transpose_eq_J_conj_neg X).mp hX]
+  simp
+
+/-- **`J` times a symmetric matrix is a symplectic Lie matrix.** These are the linearized
+Hamiltonian vector fields of quadratic Hamiltonians. -/
+theorem J_mul_mem_sp {S : Matrix (l ⊕ l) (l ⊕ l) R} (hS : S.IsSymm) : J l R * S ∈ sp l R := by
+  rw [mem_sp, transpose_mul, hS.eq, J_transpose, mul_neg, ← mul_assoc, J_squared, neg_mul,
+    mul_assoc, J_squared]
   simp
 
 end LieAlgebra.Symplectic
