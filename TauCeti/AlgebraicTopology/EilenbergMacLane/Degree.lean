@@ -133,7 +133,7 @@ theorem prod (h₁ : IsEilenbergMacLaneSpace G₁ n X₁ x₁) (h₂ : IsEilenbe
     IsEilenbergMacLaneSpace (G₁ × G₂) n (X₁ × X₂) (x₁, x₂) := by
   have := h₁.pathConnectedSpace
   have := h₂.pathConnectedSpace
-  refine .mk inferInstance (fun k hk0 hk ↦ ?_) ?_
+  refine .mk inferInstance (fun k _ hk ↦ ?_) ?_
   · have := h₁.subsingleton_homotopyGroup hk
     have := h₂.subsingleton_homotopyGroup hk
     exact (HomotopyGroup.prodEquiv (N := Fin k) x₁ x₂).subsingleton_congr.mpr inferInstance
@@ -148,7 +148,7 @@ variable {ι : Type w} {G' : ι → Type u} {Z : ι → Type v}
 theorem pi (h : ∀ i, IsEilenbergMacLaneSpace (G' i) n (Z i) (z i)) :
     IsEilenbergMacLaneSpace (∀ i, G' i) n (∀ i, Z i) z := by
   have := fun i ↦ (h i).pathConnectedSpace
-  refine .mk inferInstance (fun k hk0 hk ↦ ?_) ?_
+  refine .mk inferInstance (fun k _ hk ↦ ?_) ?_
   · have := fun i ↦ (h i).subsingleton_homotopyGroup hk
     exact inferInstance
   · exact ⟨(HomotopyGroup.piMulEquiv z).trans

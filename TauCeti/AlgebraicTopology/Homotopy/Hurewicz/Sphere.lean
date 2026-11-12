@@ -107,7 +107,7 @@ private abbrev diskInterior : Set (TopCat.disk.{0} (n + 1)) :=
 north pole. -/
 private lemma bijOn_diskToSphere :
     BijOn (diskToSphere n) (diskInterior n) {sphereNorthPole (n + 1)}ᶜ := by
-  refine ⟨fun _ hz ↦ hz, fun z hz w hw h ↦ ?_, fun y hy ↦ ?_⟩
+  refine ⟨fun _ hz ↦ hz, fun z hz w _ h ↦ ?_, fun y hy ↦ ?_⟩
   · rw [diskToSphere_apply, diskToSphere_apply, closedBallToSphere_eq_closedBallToSphere_iff] at h
     rcases h with h | ⟨h, -⟩
     · exact ULift.ext h
