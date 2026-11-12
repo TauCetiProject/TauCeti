@@ -31,9 +31,9 @@ at `x`: it is an isomorphism off `x`, zero at `x`, and sends `C^n` sections of `
 sections of `E`. Conversely, `TauCeti.negPointTwistOfZero` builds a section of `E(-x)` from a
 section of `E` vanishing at `x`. Off `x` it is that section, and at `x` it is the derivative of its
 chart reading in the centred coordinate, so that in the chart at `x` it is the chart reading divided
-by the centred coordinate, extended by Mathlib's `dslope`. When the model fibre `F` is complete, the
-removable singularity theorem makes this holomorphic when the section of `E` is, and the two
-constructions are inverse to each other on holomorphic sections. Thus, for complete `F`, the
+by the centred coordinate, extended by Mathlib's `dslope`. It recovers every section of `E(-x)`
+continuous at `x` from its image in `E`. When the model fibre `F` is complete, the removable
+singularity theorem makes it holomorphic when the section of `E` is. Thus, for complete `F`, the
 holomorphic sections of `E(-x)` are the holomorphic sections of `E` vanishing at `x`.
 
 For the trivial line bundle, `TauCeti.negPointTwistPairing` is the fibrewise pairing
@@ -366,13 +366,16 @@ theorem mdifferentiable_negPointTwistOfZero [CompleteSpace F] {x : X} {σ : ∀ 
     filter_upwards [((negPointTwistCore F E x).isOpen_baseSet _).mem_nhds hz₀] with z hz
     exact negPointTwistCore_localTriv_negPointTwistOfZero_of_ne hz
 
-/-- Every holomorphic section of the negative point twist `E(-x)` is recovered by
-`negPointTwistOfZero` from its image in `E`, which vanishes at `x`. Together with
-`pointTwistDiv_negPointTwistOfZero` and `mdifferentiable_negPointTwistOfZero`, the holomorphic
-sections of `E(-x)` correspond to the holomorphic sections of `E` vanishing at `x`. -/
-theorem negPointTwistOfZero_pointTwistDiv [CompleteSpace F] {x : X}
+omit [IsManifold 𝓘(ℂ) 1 X] [ContMDiffVectorBundle 1 F E 𝓘(ℂ)] in
+/-- Every section of the negative point twist `E(-x)` that is continuous at `x`, in particular
+every holomorphic section, is recovered by `negPointTwistOfZero` from its image in `E`, which
+vanishes at `x`. Together with `pointTwistDiv_negPointTwistOfZero` and
+`mdifferentiable_negPointTwistOfZero`, for complete `F` the holomorphic sections of `E(-x)`
+correspond to the holomorphic sections of `E` vanishing at `x`. -/
+theorem negPointTwistOfZero_pointTwistDiv {x : X}
     {τ : ∀ z, (negPointTwistCore F E x).Fiber z}
-    (hτ : MDifferentiable 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, F)) (fun z ↦ TotalSpace.mk' F z (τ z))) :
+    (hτ : ContinuousAt (fun z ↦ TotalSpace.mk' F (E := (negPointTwistCore F E x).Fiber) z (τ z))
+      x) :
     negPointTwistOfZero F x (fun z ↦ pointTwistDiv F E x z (τ z)) = τ := by
   have hne (z : X) (h : z ≠ x) :
       negPointTwistOfZero F x (fun z ↦ pointTwistDiv F E x z (τ z)) z = τ z := by
@@ -381,22 +384,39 @@ theorem negPointTwistOfZero_pointTwistDiv [CompleteSpace F] {x : X}
   funext z
   by_cases h : z = x
   · subst h
-    have : (𝓝[≠] z).NeBot := (tendsto_chartAt_symm_nhdsNE (H := ℂ) z).neBot
-    set τ' := negPointTwistOfZero F z (fun z' ↦ pointTwistDiv F E z z' (τ z'))
-    have hτ' := mdifferentiable_negPointTwistOfZero
-      (mdifferentiable_negPointTwist_pointTwistDiv_section hτ)
-      (by rw [pointTwistDiv_self]; exact zero_apply _)
-    set e := trivializationAt F (negPointTwistCore F E z).Fiber z
-    have he : z ∈ e.baseSet := mem_baseSet_trivializationAt F _ z
-    have h₁ := ((e.mdifferentiableAt_section_iff 𝓘(ℂ) _ he).1 (hτ z)).continuousAt
-    have h₂ := ((e.mdifferentiableAt_section_iff 𝓘(ℂ) _ he).1 (hτ' z)).continuousAt
-    have key : (e ⟨z, τ' z⟩).2 = (e ⟨z, τ z⟩).2 := by
-      refine tendsto_nhds_unique (l := 𝓝[≠] z) (h₂.tendsto.mono_left nhdsWithin_le_nhds)
-        ((h₁.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_)
-      filter_upwards [self_mem_nhdsWithin] with z' hz'
-      exact congrArg (fun v : (negPointTwistCore F E z).Fiber z' ↦ (e ⟨z', v⟩).2) (hne z' hz').symm
-    have := congrArg (e.symm z) key
-    rwa [e.symm_apply_apply_mk he, e.symm_apply_apply_mk he] at this
+    set σ := fun z' ↦ pointTwistDiv F E z z' (τ z')
+    have hσz : σ z = 0 := by
+      change pointTwistDiv F E z z (τ z) = 0
+      rw [pointTwistDiv_self]; exact zero_apply _
+    set φ := chartAt ℂ z
+    -- The chart reading `t` of `τ` at `x` is continuous at the chart coordinate of `x`.
+    set t : ℂ → F := fun w ↦
+      (trivializationAt F (negPointTwistCore F E z).Fiber z ⟨φ.symm w, τ (φ.symm w)⟩).2 with ht_def
+    have ht : ContinuousAt t (φ z) :=
+      ContinuousAt.comp_of_eq
+        (g := fun z' ↦ (trivializationAt F (negPointTwistCore F E z).Fiber z ⟨z', τ z'⟩).2)
+        ((FiberBundle.continuousAt_totalSpace F _).1 hτ).2
+        (φ.continuousAt_symm (mem_chart_target ℂ z)) (φ.left_inv (mem_chart_source ℂ z))
+    -- Off the chart coordinate of `x`, the slope of the chart reading of `σ` there is `t`, so `t`
+    -- at the chart coordinate of `x` is the derivative of that chart reading.
+    have hs : slope (negPointTwistChartReading F z σ) (φ z) =ᶠ[𝓝[≠] φ z] t := by
+      have hb : z ∈ (negPointTwistCore F E z).baseSet (z, true) :=
+        mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E z, by simp⟩
+      filter_upwards [nhdsWithin_le_nhds (chart_target_mem_nhds ℂ z),
+        nhdsWithin_le_nhds (φ.tendsto_symm (mem_chart_source ℂ z)
+          (((negPointTwistCore F E z).isOpen_baseSet _).mem_nhds hb)), self_mem_nhdsWithin]
+        with w hw hwb hwz
+      have hz' : φ.symm w ≠ z := fun h' ↦ hwz (by rw [mem_singleton_iff, ← h', φ.right_inv hw])
+      rw [← dslope_of_ne _ hwz, ← φ.right_inv hw,
+        ← negPointTwistCore_localTriv_negPointTwistOfZero hσz hwb, hne _ hz', φ.right_inv hw,
+        ht_def, signedPointTwistCore_trivializationAt_self]
+    have hd : HasDerivAt (negPointTwistChartReading F z σ) (t (φ z)) (φ z) :=
+      hasDerivAt_iff_tendsto_slope.2 ((ht.tendsto.mono_left nhdsWithin_le_nhds).congr' hs.symm)
+    rw [negPointTwistOfZero_self, hd.deriv, ht_def]
+    dsimp only
+    rw [φ.left_inv (mem_chart_source ℂ z), signedPointTwistCore_trivializationAt_apply]
+    exact (negPointTwistCore F E z).coordChange_self _ _
+      ((negPointTwistCore F E z).mem_baseSet_at z) (τ z)
   · exact hne z h
 
 end Holomorphic
@@ -504,7 +524,7 @@ theorem negPointTwist_trivial_section_eq_zero [CompactSpace X] [PreconnectedSpac
       (mem_univ z)).1 (hσ z)
   have h0 : σ = fun _ ↦ 0 := funext fun z ↦ (hf.apply_eq_of_compactSpace z x).trans
     (by simp only [σ, pointTwistDiv_self]; exact zero_apply _)
-  rw [← negPointTwistOfZero_pointTwistDiv hτ]
+  rw [← negPointTwistOfZero_pointTwistDiv (hτ x).continuousAt]
   exact (congrArg (negPointTwistOfZero ℂ x) h0).trans (negPointTwistOfZero_zero x)
 
 end Pairing
