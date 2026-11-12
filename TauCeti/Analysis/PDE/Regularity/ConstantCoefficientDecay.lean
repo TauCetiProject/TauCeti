@@ -123,6 +123,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {F : Type*} [NormedAddCommGr
 variable [CompleteSpace F] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {lam Lam : ℝ}
   {u : EuclideanSpace ℝ ι → F} {x₀ : EuclideanSpace ℝ ι} {ρ R : ℝ}
 
+omit [CompleteSpace F] in
 /-- **Decay of the `L²` mass for constant coefficients.** Let `A` be a square matrix with
 `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, and let `u` be a `C²` solution of
 `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` on the ball `ball x₀ R ⊆ ℝⁿ`, with `‖u‖²` integrable there. Then for every
@@ -141,9 +142,29 @@ theorem setIntegral_ball_norm_sq_le_of_sum_smul_fderiv_fderiv_eq_zero (hlam : 0 
     ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ ≤
       2 ^ Fintype.card ι * √(Lam / lam) ^ Fintype.card ι * (ρ / R) ^ Fintype.card ι *
         ∫ x in ball x₀ R, ‖u x‖ ^ 2 ∂μ := by
-  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
+  -- Pass to the completion `F̂`, where the mean-value property is available.
+  set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
+  have hL (y : F) : ‖L y‖ = ‖y‖ := UniformSpace.Completion.norm_coe y
+  have hu' : ContDiffOn ℝ 2 (L ∘ u) (ball x₀ R) := L.contDiff.comp_contDiffOn hu
+  have hLu' : ∀ x ∈ ball x₀ R, ∑ i, ∑ j, A i j •
+      fderiv ℝ (fderiv ℝ (L ∘ u)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+        0 := by
+    intro x hx
+    have hderiv (v w : EuclideanSpace ℝ ι) :
+        fderiv ℝ (fderiv ℝ (L ∘ u)) x v w = L (fderiv ℝ (fderiv ℝ u) x v w) := by
+      have h := congrArg (fun m => m ![v, w])
+        (L.iteratedFDeriv_comp_left (hu.contDiffAt (isOpen_ball.mem_nhds hx)) (i := 2)
+          (mod_cast le_rfl))
+      simpa [iteratedFDeriv_two_apply] using h
+    have h := congrArg L (hLu x hx)
+    simpa only [map_sum, map_smul, map_zero, hderiv] using h
+  have hint' : IntegrableOn (fun x ↦ ‖(L ∘ u) x‖ ^ 2) (ball x₀ R) μ := by
+    simpa only [Function.comp_apply, hL] using hint
+  obtain ⟨e, hae, hbe, he⟩ :=
+    exists_continuousLinearEquiv_laplacian_comp_eq (F := UniformSpace.Completion F) hlam hA hA'
   have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp e hae hbe
-    (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu) hint hρ hρR
+    (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu' hLu') hint' hρ hρR
+  simp only [Function.comp_apply, hL] at h
   rwa [finrank_euclideanSpace, inv_mul_eq_div, ← Real.sqrt_div' _ hlam.le] at h
 
 /-- **Decay of the `L²` mean oscillation for constant coefficients.** Let `A` be a square matrix

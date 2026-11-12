@@ -1065,6 +1065,21 @@ theorem tsupport_matrixBilinearForm_gradient_subset {a : EuclideanSpace ℝ n �
   closure_minimal (fun x hx => by_contra fun hxψ => hx (by
     simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
 
+/-- A coefficient field with continuous conormal form is bounded on the support of the gradient of
+a compactly supported function. -/
+theorem exists_norm_matrixBilinearForm_le_of_gradient_ne_zero
+    {a : EuclideanSpace ℝ n → Matrix n n ℝ}
+    (ha : Continuous fun x => matrixBilinearForm (a x)) {ψ : EuclideanSpace ℝ n → ℝ}
+    (hψc : HasCompactSupport ψ) :
+    ∃ B : ℝ, 0 ≤ B ∧ ∀ x, ∇ ψ x ≠ 0 → ‖matrixBilinearForm (a x)‖ ≤ B := by
+  have hgc : HasCompactSupport (∇ ψ) :=
+    hψc.mono' fun x hx => by_contra fun h => hx (gradient_of_notMem_tsupport h)
+  have hn : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
+    by exact continuous_norm.comp (f := fun x => matrixBilinearForm (a x)) ha
+  obtain ⟨B, hB⟩ := (hgc.isCompact.image hn).isBounded.bddAbove
+  exact ⟨max B 0, le_max_right _ _, fun x hx =>
+    (hB ⟨x, subset_tsupport _ hx, rfl⟩).trans (le_max_left _ _)⟩
+
 end Calculus
 
 end PDE
