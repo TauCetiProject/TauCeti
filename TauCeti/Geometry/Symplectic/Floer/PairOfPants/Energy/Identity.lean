@@ -553,51 +553,40 @@ private theorem hasFDerivWithinAt_endChart (q : Puncture) (ζ : ℝ × ℝ) (s :
     HasFDerivWithinAt (endChart q) (fderiv ℝ (endChart q) ζ) s ζ :=
   (hasFDerivAt_endChart q ζ).differentiableAt.hasFDerivAt.hasFDerivWithinAt
 
-/-- **The boundary term on one end.** For `T ≥ 2` with `K = H_q dt` beyond height `T₀ ≤ T`, the
-integral of `dχ ∧ α` over the end `q` is `-±∫ β'(±s - T) A_q(s) ds`, where `A_q(s)` is the action
-of the loop `t ↦ u(φ_q(s, t))`; the weighted actions are integrable. -/
-private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
-    (hK : ∀ z ∈ thricePuncturedSphereReal, ∀ x v,
-      ContDiffAt ℝ 1 (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v) (z, x))
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHc : ∀ q, Continuous (uncurry (H q)))
-    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {T : ℝ} (hT : 2 ≤ T) (hT₀ : T₀ ≤ T)
-    (q : Puncture) :
-    ∫ z in endChart q '' endStrip q, boundaryForm ω K u T z =
-        -(q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
-          ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))) ∧
-      Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) *
-        ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t))) := by
+/-- **Integrating a boundary term over one end.** Let `b` be integrable on `ℝ × ℝ`, and suppose
+that on the end `q`, transported to end coordinates with its Jacobian, it is
+`-±β'(±s - T) g(s, t)` for some `g` whose integral over `t ∈ [-1/2, 1/2)` is `a(s)` when
+`±s > 1/2`. Then for `T ≥ 2` the integral of `b` over the end `q` is `-±∫ β'(±s - T) a(s) ds`, and
+the weighted function `β'(±s - T) a(s)` is integrable. -/
+private theorem integral_image_endChart_of_abs_det_mul_eq {b g : ℝ × ℝ → ℝ} {a : ℝ → ℝ}
+    (hb : Integrable b) {T : ℝ} (hT : 2 ≤ T) {q : Puncture}
+    (hbg : ∀ ζ ∈ endStrip q, |(fderiv ℝ (endChart q) ζ).det| * b (endChart q ζ) =
+      -(q.endSign * deriv smoothTransition (q.endSign * ζ.1 - T) * g ζ))
+    (hga : ∀ s, 1 / 2 < q.endSign * s → ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), g (s, t) = a s) :
+    ∫ z in endChart q '' endStrip q, b z =
+        -(q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) * a s) ∧
+      Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) * a s := by
   -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  set F : ℝ × ℝ → ℝ := fun ζ ↦ -(q.endSign * deriv smoothTransition (q.endSign * ζ.1 - T) *
-    (H q ζ.2 (u (endChart q ζ)) +
-      1 / 2 * ω (u (endChart q ζ)) (fderiv ℝ (u ∘ endChart q) ζ stdComplexLineImag)))
-  set A : ℝ → ℝ := fun s ↦ deriv smoothTransition (q.endSign * s - T) *
-    ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))
+  set F : ℝ × ℝ → ℝ := fun ζ ↦ -(q.endSign * deriv smoothTransition (q.endSign * ζ.1 - T) * g ζ)
+  set A : ℝ → ℝ := fun s ↦ deriv smoothTransition (q.endSign * s - T) * a s
   have hS₁ : MeasurableSet {s : ℝ | 1 / 2 < q.endSign * s} :=
     measurableSet_lt measurable_const (measurable_const.mul measurable_id)
   -- In end coordinates the integrand is `F`.
-  have hcongr : EqOn (fun ζ ↦ |(fderiv ℝ (endChart q) ζ).det| • boundaryForm ω K u T (endChart q ζ))
-      F (endStrip q) := fun ζ hζ ↦ by
+  have hcongr : EqOn (fun ζ ↦ |(fderiv ℝ (endChart q) ζ).det| • b (endChart q ζ)) F
+      (endStrip q) := fun ζ hζ ↦ by
     dsimp only
-    rw [smul_eq_mul, boundaryForm]
-    exact abs_det_mul_wedge_endChart ω hKH hH hu (by linarith) hT₀
-      (endSign_mul_pos_of_mem_endStrip hζ)
+    rw [smul_eq_mul]
+    exact hbg ζ hζ
   have hint : IntegrableOn F (endStrip q) :=
     ((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume (measurableSet_endStrip q)
       (fun ζ _ ↦ hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q) _).1
-      (integrable_boundaryForm ω hK hu T).integrableOn).congr_fun hcongr
-      (measurableSet_endStrip q)
-  -- Integrating out the angular coordinate gives the actions of the loops.
+      hb.integrableOn).congr_fun hcongr (measurableSet_endStrip q)
+  -- Integrating out the angular coordinate gives `a`.
   have hinner (s : ℝ) (hs : s ∈ {s : ℝ | 1 / 2 < q.endSign * s}) :
       ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t) = -(q.endSign * A s) := by
-    have hs' : 0 < q.endSign * s := by
-      have : 1 / 2 < q.endSign * s := hs
-      linarith
     simp only [F, A]
-    rw [integral_neg, integral_const_mul, integral_Ico_eq_hamiltonianAction ω hH hHc hu hs']
+    rw [integral_neg, integral_const_mul, hga s hs]
     ring
   have hzero (s : ℝ) (hs : s ∉ {s : ℝ | 1 / 2 < q.endSign * s}) : A s = 0 := by
     have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
@@ -616,6 +605,29 @@ private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
     Measure.volume_eq_prod, setIntegral_prod _ (by rwa [IntegrableOn, ← Measure.prod_restrict]),
     setIntegral_congr_fun hS₁ hinner, integral_neg, integral_const_mul,
     setIntegral_eq_integral_of_forall_compl_eq_zero hzero]
+
+/-- **The boundary term on one end.** For `T ≥ 2` with `K = H_q dt` beyond height `T₀ ≤ T`, the
+integral of `dχ ∧ α` over the end `q` is `-±∫ β'(±s - T) A_q(s) ds`, where `A_q(s)` is the action
+of the loop `t ↦ u(φ_q(s, t))`; the weighted actions are integrable. -/
+private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
+    (hK : ∀ z ∈ thricePuncturedSphereReal, ∀ x v,
+      ContDiffAt ℝ 1 (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v) (z, x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHc : ∀ q, Continuous (uncurry (H q)))
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {T : ℝ} (hT : 2 ≤ T) (hT₀ : T₀ ≤ T)
+    (q : Puncture) :
+    ∫ z in endChart q '' endStrip q, boundaryForm ω K u T z =
+        -(q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
+          ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))) ∧
+      Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) *
+        ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t))) :=
+  integral_image_endChart_of_abs_det_mul_eq (integrable_boundaryForm ω hK hu T) hT
+    (g := fun ζ ↦ H q ζ.2 (u (endChart q ζ)) +
+      1 / 2 * ω (u (endChart q ζ)) (fderiv ℝ (u ∘ endChart q) ζ stdComplexLineImag))
+    (fun ζ hζ ↦ abs_det_mul_wedge_endChart ω hKH hH hu (by linarith) hT₀
+      (endSign_mul_pos_of_mem_endStrip hζ))
+    fun _ hs ↦ integral_Ico_eq_hamiltonianAction ω hH hHc hu (by linarith)
 
 /-- Away from the three end strips the cutoff at height `T ≥ 2` is locally constant, so its
 derivative vanishes there. -/
@@ -708,6 +720,21 @@ private theorem continuousOn_floerEnergyDensity_thricePuncturedSphereReal (ω : 
     (fun p hp ↦ (hK p.1 hp.1 p.2 1).contDiffWithinAt)
     (fun p hp ↦ (hK p.1 hp.1 p.2 Complex.I).contDiffWithinAt)
 
+/-- As the height tends to infinity, functions on the ends averaged against `β'(±s - T)` tend to
+their limits along the ends. -/
+private theorem tendsto_sum_integral_deriv_smoothTransition_mul_of_tendsto
+    {a : Puncture → ℝ → ℝ} {h : Puncture → ℝ}
+    (ha : ∀ q, Tendsto (fun σ ↦ a q (q.endSign * σ)) atTop (𝓝 (h q)))
+    (hint : ∀ q, ∀ᶠ T in atTop,
+      Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) * a q s) :
+    Tendsto (fun T ↦ ∑ q, q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) * a q s)
+      atTop (𝓝 (∑ q, q.endSign * h q)) :=
+  tendsto_finsetSum _ fun q _ ↦ by
+    have hlim := smoothTransition.tendsto_integral_deriv_mul_sub_mul
+      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using ha q) (hint q)
+    rw [abs_endSign, inv_one, one_mul] at hlim
+    exact hlim.const_mul _
+
 /-- As the height tends to infinity, the actions on the ends averaged against `β'(±s - T)` tend to
 the limiting actions. -/
 private theorem tendsto_sum_integral_deriv_smoothTransition_mul (ω : SymplecticForm V)
@@ -722,14 +749,10 @@ private theorem tendsto_sum_integral_deriv_smoothTransition_mul (ω : Symplectic
     Tendsto (fun T ↦ ∑ q, q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
       ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))) atTop
       (𝓝 (∑ q, q.endSign * A q)) :=
-  tendsto_finsetSum _ fun q _ ↦ by
-    have h := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hA q)
-      (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
-        (integral_image_endChart_boundaryForm ω hK hKH hH hHc hu (le_of_max_le_left hT)
-          (le_of_max_le_right hT) q).2)
-    rw [abs_endSign, inv_one, one_mul] at h
-    exact h.const_mul _
+  tendsto_sum_integral_deriv_smoothTransition_mul_of_tendsto hA fun q ↦
+    eventually_ge_atTop (max 2 T₀) |>.mono fun _ hT ↦
+      (integral_image_endChart_boundaryForm ω hK hKH hH hHc hu (le_of_max_le_left hT)
+        (le_of_max_le_right hT) q).2
 
 /-- **The energy identity for perturbations that are cylindrical on the ends.** Let `K` be a
 perturbation datum on `S = ℂ ∖ {0, 1}` which is `C¹` jointly in the domain and target points, with
@@ -1186,50 +1209,12 @@ private theorem integral_image_endChart_boundaryForm
         -(q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
           ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))) ∧
       Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) *
-        ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  set F : ℝ × ℝ → ℝ := fun ζ ↦ -(q.endSign * deriv smoothTransition (q.endSign * ζ.1 - T) *
-    H q ζ.2 (u (endChart q ζ)))
-  set A : ℝ → ℝ := fun s ↦ deriv smoothTransition (q.endSign * s - T) *
-    ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))
-  have hS₁ : MeasurableSet {s : ℝ | 1 / 2 < q.endSign * s} :=
-    measurableSet_lt measurable_const (measurable_const.mul measurable_id)
-  -- In end coordinates the integrand is `F`.
-  have hcongr : EqOn (fun ζ ↦ |(fderiv ℝ (endChart q) ζ).det| • boundaryForm K u T (endChart q ζ))
-      F (endStrip q) := fun ζ hζ ↦ by
-    dsimp only
-    rw [smul_eq_mul]
-    exact abs_det_mul_boundaryForm_endChart hKH hH (by linarith) hT₀
-      (endSign_mul_pos_of_mem_endStrip hζ)
-  have hint : IntegrableOn F (endStrip q) :=
-    ((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume (measurableSet_endStrip q)
-      (fun ζ _ ↦ SymplecticForm.hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q) _).1
-      (integrable_boundaryForm hK hu T).integrableOn).congr_fun hcongr
-      (measurableSet_endStrip q)
-  -- Integrating out the angular coordinate gives the integrals of the end Hamiltonian.
-  have hinner (s : ℝ) (_ : s ∈ {s : ℝ | 1 / 2 < q.endSign * s}) :
-      ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t) = -(q.endSign * A s) := by
-    simp only [F, A]
-    rw [integral_neg, integral_const_mul, integral_Ico_eq_intervalIntegral hH q s]
-    ring
-  have hzero (s : ℝ) (hs : s ∉ {s : ℝ | 1 / 2 < q.endSign * s}) : A s = 0 := by
-    have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
-    simp only [A, smoothTransition.deriv_of_neg (by linarith : q.endSign * s - T < 0), zero_mul]
-  rw [endStrip_def, Measure.volume_eq_prod, IntegrableOn, ← Measure.prod_restrict] at hint
-  have hint' : IntegrableOn (fun s ↦ ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t))
-      {s : ℝ | 1 / 2 < q.endSign * s} := hint.integral_prod_left
-  have hA : IntegrableOn A {s : ℝ | 1 / 2 < q.endSign * s} := by
-    refine IntegrableOn.congr_fun (hint'.const_mul (-q.endSign)) (fun s hs ↦ ?_) hS₁
-    rw [hinner s hs]
-    linear_combination (A s) * q.endSign_mul_self
-  refine ⟨?_, hA.integrable_of_forall_notMem_eq_zero hzero⟩
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume (measurableSet_endStrip q)
-    (fun ζ _ ↦ SymplecticForm.hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q),
-    setIntegral_congr_fun (measurableSet_endStrip q) hcongr, endStrip_def,
-    Measure.volume_eq_prod, setIntegral_prod _ (by rwa [IntegrableOn, ← Measure.prod_restrict]),
-    setIntegral_congr_fun hS₁ hinner, integral_neg, integral_const_mul,
-    setIntegral_eq_integral_of_forall_compl_eq_zero hzero]
+        ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) :=
+  SymplecticForm.integral_image_endChart_of_abs_det_mul_eq (integrable_boundaryForm hK hu T) hT
+    (g := fun ζ ↦ H q ζ.2 (u (endChart q ζ)))
+    (fun ζ hζ ↦ abs_det_mul_boundaryForm_endChart hKH hH (by linarith) hT₀
+      (endSign_mul_pos_of_mem_endStrip hζ))
+    fun s _ ↦ integral_Ico_eq_intervalIntegral hH q s
 
 /-- **The truncated energy identity, for a manifold target.** For `T ≥ 2` with `K = H_q dt`
 beyond height `T₀ ≤ T`, the energy density weighted by the cutoff at height `T` integrates to the
@@ -1291,14 +1276,10 @@ private theorem tendsto_sum_integral_deriv_smoothTransition_mul
       atTop (𝓝 (h q))) :
     Tendsto (fun T ↦ ∑ q, q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))) atTop (𝓝 (∑ q, q.endSign * h q)) :=
-  tendsto_finsetSum _ fun q _ ↦ by
-    have hlim := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hh q)
-      (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
-        (integral_image_endChart_boundaryForm hK hKH hH hu (le_of_max_le_left hT)
-          (le_of_max_le_right hT) q).2)
-    rw [abs_endSign, inv_one, one_mul] at hlim
-    exact hlim.const_mul _
+  SymplecticForm.tendsto_sum_integral_deriv_smoothTransition_mul_of_tendsto hh fun q ↦
+    eventually_ge_atTop (max 2 T₀) |>.mono fun _ hT ↦
+      (integral_image_endChart_boundaryForm hK hKH hH hu (le_of_max_le_left hT)
+        (le_of_max_le_right hT) q).2
 
 /-- **The energy identity for perturbations that are cylindrical on the ends, for a manifold
 target.** Let `ω` be a nondegenerate two-form on a finite-dimensional manifold `M`, such as a
