@@ -23,8 +23,11 @@ Let `φ : E → ℝ` be a smooth bump function on a real normed space, equal to 
 form a smooth **Littlewood–Paley partition of unity** of `E \ {0}`: each `ψⱼ` is supported in the
 annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`, the partial sums telescope,
 `∑_{a < j ≤ b} ψⱼ ξ = φ (2^{-b} ξ) - φ (2^{-a} ξ)`, and `∑ⱼ ψⱼ ξ = 1` for every `ξ ≠ 0`, with
-only finitely many nonzero terms. In finite dimension, the `k`-th derivative of `ψⱼ` is
-`O(2^{-jk})` uniformly in `j`.
+only finitely many nonzero terms. Each `ψⱼ` is the rescaling `ψ₀ (2^{-j} ·)`, and cutoffs whose
+indices differ by at least a fixed `L` have disjoint supports, also between the cutoffs of two
+bump functions; so each cutoff of one partition is reproduced by the cutoffs of nearby index of
+another. In finite dimension, the `k`-th derivative of `ψⱼ` is `O(2^{-jk})` uniformly in `j`, and
+each `ψⱼ` is a compactly supported symbol of temperate growth.
 
 Keeping `φ` itself as a low-frequency piece and discarding the cutoffs with `j ≤ 0` gives the
 **inhomogeneous** partition `ψ₀ = φ, ψ₁, ψ₂, …`, which sums to `1` on all of `E`. Its partial sums
@@ -43,6 +46,10 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
 * `ContDiffBump.sum_littlewoodPaley_Ioc`: the telescoping partial sums.
 * `ContDiffBump.hasSum_littlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for `ξ ≠ 0`.
+* `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ = ψ₀ (2^{-j} ·)`.
+* `ContDiffBump.exists_littlewoodPaley_mul_eq_zero`: finite overlap of the cutoffs, also between
+  the partitions of two bump functions, and
+  `ContDiffBump.exists_littlewoodPaley_mul_sum_Ico_eq`: `ψ'ⱼ ∑_{j - L ≤ k < j + L} ψₖ = ψ'ⱼ`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
@@ -202,6 +209,69 @@ theorem hasSum_littlewoodPaley {ξ : E} (hξ : ξ ≠ 0) :
   obtain ⟨a, b, hab, hzero, hb, ha⟩ := φ.exists_Ioc_littlewoodPaley hξ
   have : HasSum (fun j ↦ φ.littlewoodPaley j ξ) _ := hasSum_sum_of_ne_finset_zero hzero
   rwa [φ.sum_littlewoodPaley_Ioc hab, hb, ha, sub_zero] at this
+
+/-- The cutoff `ψⱼ` vanishes near the origin: `0` is not in its topological support. -/
+theorem zero_notMem_tsupport_littlewoodPaley (j : ℤ) : (0 : E) ∉ tsupport (φ.littlewoodPaley j) :=
+  fun h ↦ by
+    have := (φ.tsupport_littlewoodPaley_subset j h).1
+    rw [norm_zero] at this
+    exact not_le.2 (mul_pos (zpow_pos two_pos _) φ.rIn_pos) this
+
+/-- **Scaling of the dyadic cutoffs.** Each `ψⱼ` is `ψ₀` rescaled to frequency `2^j`:
+`ψⱼ ξ = ψ₀ (2^{-j} ξ)`. -/
+theorem littlewoodPaley_apply_eq_littlewoodPaley_zero_apply (j : ℤ) (ξ : E) :
+    φ.littlewoodPaley j ξ = φ.littlewoodPaley 0 (((2 : ℝ) ^ j)⁻¹ • ξ) := by
+  have h : ((2 : ℝ) ^ ((0 : ℤ) - 1))⁻¹ * ((2 : ℝ) ^ j)⁻¹ = ((2 : ℝ) ^ (j - 1))⁻¹ := by
+    rw [← mul_inv, ← zpow_add₀ two_ne_zero]
+    congr 2
+    ring
+  simp only [littlewoodPaley_apply, zpow_zero, inv_one, smul_smul, h, one_mul]
+
+/-- **Finite overlap of the dyadic cutoffs.** For two bump functions `φ` and `φ'`, there is `L`
+such that the cutoff `ψⱼ` of `φ` and the cutoff `ψ'ₖ` of `φ'` have disjoint supports whenever
+`j + L ≤ k`. For `φ' = φ` this is the finite overlap of a single partition. -/
+theorem exists_littlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) :
+    ∃ L : ℕ, ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E,
+      φ.littlewoodPaley j ξ * φ'.littlewoodPaley k ξ = 0 := by
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ'.rIn) (one_lt_two (α := ℝ))
+  have hn' : φ.rOut ≤ 2 ^ n * φ'.rIn := ((div_lt_iff₀ φ'.rIn_pos).1 hn).le
+  refine ⟨n + 1, fun j k hjk ξ ↦ ?_⟩
+  rcases le_or_gt ‖ξ‖ (2 ^ (k - 1) * φ'.rIn) with hξ | hξ
+  · rw [φ'.littlewoodPaley_eq_zero_of_norm_le hξ, mul_zero]
+  · refine mul_eq_zero_of_left (φ.littlewoodPaley_eq_zero_of_le_norm (le_trans ?_ hξ.le)) _
+    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ'.rIn) :=
+          mul_le_mul_of_nonneg_left hn' (zpow_nonneg zero_le_two _)
+      _ = 2 ^ (j + n) * φ'.rIn := by rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_assoc]
+      _ ≤ 2 ^ (k - 1) * φ'.rIn :=
+          mul_le_mul_of_nonneg_right (zpow_le_zpow_right₀ one_le_two (by push_cast at hjk; omega))
+            φ'.rIn_pos.le
+
+/-- **Change of partition.** For two bump functions `φ` and `φ'`, there is `L` such that each
+cutoff `ψ'ⱼ` of `φ'` is reproduced by the cutoffs `ψₖ` of `φ` of nearby index:
+`ψ'ⱼ ξ ∑_{j - L ≤ k < j + L} ψₖ ξ = ψ'ⱼ ξ` for every `ξ`. -/
+theorem exists_littlewoodPaley_mul_sum_Ico_eq (φ' : ContDiffBump (0 : E)) :
+    ∃ L : ℕ, ∀ (j : ℤ) (ξ : E), φ'.littlewoodPaley j ξ *
+      ∑ k ∈ Finset.Ico (j - L) (j + L), φ.littlewoodPaley k ξ = φ'.littlewoodPaley j ξ := by
+  obtain ⟨L₁, hL₁⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ'
+  obtain ⟨L₂, hL₂⟩ := φ'.exists_littlewoodPaley_mul_eq_zero φ
+  refine ⟨max L₁ L₂, fun j ξ ↦ ?_⟩
+  by_cases hj : φ'.littlewoodPaley j ξ = 0
+  · rw [hj, zero_mul]
+  -- At a point where `ψ'ⱼ` does not vanish, `ξ ≠ 0` and the only cutoffs `ψₖ` that do not vanish
+  -- have `k` in the window, so their sum over the window is the full sum `1`.
+  have hξ : ξ ≠ 0 := by
+    rintro rfl
+    exact φ'.zero_notMem_tsupport_littlewoodPaley j (subset_tsupport _ hj)
+  have hzero : ∀ k ∉ Finset.Ico (j - (max L₁ L₂ : ℕ)) (j + (max L₁ L₂ : ℕ)),
+      φ.littlewoodPaley k ξ = 0 := by
+    intro k hk
+    rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
+    rcases hk with hk | hk
+    · have h := hL₁ k j (by push_cast at hk ⊢; omega) ξ
+      exact (mul_eq_zero.1 h).resolve_right hj
+    · have h := hL₂ j k (by push_cast at hk ⊢; omega) ξ
+      exact (mul_eq_zero.1 h).resolve_left hj
+  rw [(hasSum_sum_of_ne_finset_zero hzero).unique (φ.hasSum_littlewoodPaley hξ), mul_one]
 
 /-! ### The inhomogeneous partition -/
 
@@ -605,6 +675,23 @@ theorem hasTemperateGrowth_inhomogeneousLittlewoodPaley (j : ℕ) :
 growth, so they are Fourier multipliers on Schwartz functions and on tempered distributions. -/
 theorem hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley (j : ℕ) :
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
+  fun_prop
+
+/-- Each Littlewood–Paley cutoff `ψⱼ` is compactly supported. -/
+theorem hasCompactSupport_littlewoodPaley (j : ℤ) : HasCompactSupport (φ.littlewoodPaley j) :=
+  HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 ^ j * φ.rOut)) fun ξ hξ ↦
+    φ.littlewoodPaley_eq_zero_of_le_norm
+      (not_le.1 (by simpa [mem_closedBall_zero_iff] using hξ)).le
+
+/-- Each Littlewood–Paley cutoff has temperate growth, so it is a Fourier multiplier on Schwartz
+functions and on tempered distributions. -/
+@[fun_prop]
+theorem hasTemperateGrowth_littlewoodPaley (j : ℤ) : (φ.littlewoodPaley j).HasTemperateGrowth :=
+  (φ.hasCompactSupport_littlewoodPaley j).hasTemperateGrowth (φ.contDiff_littlewoodPaley j)
+
+/-- The Littlewood–Paley cutoffs, viewed as complex-valued symbols, have temperate growth. -/
+theorem hasTemperateGrowth_ofReal_littlewoodPaley (j : ℤ) :
+    (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)).HasTemperateGrowth := by
   fun_prop
 
 /-- **Derivative bounds for the inhomogeneous partition.** The `k`-th derivative of `ψⱼ` is

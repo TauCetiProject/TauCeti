@@ -20,7 +20,8 @@ by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j �
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
-(`Memℓp.sum_Ico_sub_add`, `lp.norm_le_of_forall_eq_sum_Ico_sub_add`). Such sums arise when a
+(`Memℓp.sum_Ico_sub_add`, `lp.norm_le_of_forall_eq_sum_Ico_sub_add`); for sequences indexed by `ℤ`
+they are sums of translates (`Memℓp.sum_Ico_sub_add_int`). Such sums arise when a
 sequence of dyadic pieces is replaced by another one in which each piece only interacts with the
 pieces of nearby index, as for two Littlewood–Paley decompositions of the same function.
 -/
@@ -80,6 +81,18 @@ theorem Memℓp.sum_Ico_sub_add {f : ℕ → G} (hf : Memℓp f p) (L : ℕ) :
   simp_rw [Finset.sum_Ico_sub_add_eq_sum_range_indicator]
   exact Memℓp.finsetSum _ fun d _ ↦
     hf.indicator_comp fun _ hi _ hi' h ↦ add_right_cancel (tsub_inj_left hi hi' h)
+
+/-- **Window sums in `ℓᵖ` over `ℤ`.** If `f ∈ ℓᵖ(ℤ)`, then so is
+`j ↦ ∑_{j - L ≤ k < j + L} f k`, a sum of `2 L` translates of `f`. -/
+theorem Memℓp.sum_Ico_sub_add_int {f : ℤ → G} (hf : Memℓp f p) (L : ℕ) :
+    Memℓp (fun j : ℤ ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), f k) p := by
+  have h : ∀ j : ℤ, ∑ k ∈ Finset.Ico (j - L) (j + L), f k =
+      ∑ d ∈ Finset.Ico (-(L : ℤ)) L, f (d + j) := fun j ↦ by
+    rw [Finset.sum_Ico_add', neg_add_eq_sub, add_comm]
+  simp_rw [h]
+  refine Memℓp.finsetSum _ fun d _ ↦ ?_
+  have := hf.indicator_comp (s := Set.univ) (add_right_injective d).injOn
+  rwa [Set.indicator_univ] at this
 
 /-- **The norm of window sums.** For `1 ≤ p`, the sequence `j ↦ ∑_{j - L ≤ k < j + L} f k` has
 `ℓᵖ` norm at most `2 L ‖f‖`. -/
