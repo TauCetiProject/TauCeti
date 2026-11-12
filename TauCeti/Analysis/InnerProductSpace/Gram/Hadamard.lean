@@ -204,7 +204,9 @@ theorem EuclideanSpace.basisFun_toBasis_det_toLp (A : Matrix ι ι 𝕜) :
     (EuclideanSpace.basisFun ι 𝕜).toBasis.det (fun i ↦ WithLp.toLp 2 (A i)) = A.det := by
   rw [Module.Basis.det_apply, ← Matrix.det_transpose]
   -- The transposed coordinate matrix has entries `(basisFun ι 𝕜).repr (toLp 2 (A i)) j = A i j`.
-  rfl
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  simp only [Matrix.transpose_apply, Module.Basis.toMatrix_apply,
+    OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr]
 
 namespace Matrix
 
