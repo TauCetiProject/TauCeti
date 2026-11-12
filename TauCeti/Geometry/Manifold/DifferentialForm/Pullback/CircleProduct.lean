@@ -21,10 +21,12 @@ forms that need not be closed, and records what the descended form of a closed f
   its Lie derivative `L_{∂ₛ} α` vanishes
   (`TauCeti.forall_mpullback_prodMap_add_right_eq_iff_mlieDerivForm_eq_zero`), since the
   rotations form an isotopy whose velocity field is `∂ₛ`;
-* hence a smooth form of positive degree is a pullback `pr₂^* β` exactly when `ι_{∂ₛ} α = 0` and
-  `L_{∂ₛ} α = 0` (`TauCeti.SmoothForm.exists_mpullback_snd_eq_iff`), and then `β` is the
-  restriction of `α` to any slice `{c} × Y`
-  (`TauCeti.SmoothForm.mpullback_snd_mpullback_prodMk_of_mlieDerivForm_eq_zero`);
+* hence a differentiable form of positive degree with `ι_{∂ₛ} α = 0` and `L_{∂ₛ} α = 0` is the
+  pullback `pr₂^* β` of its restriction `β` to any slice `{c} × Y`
+  (`TauCeti.mpullback_snd_mpullback_prodMk_addCircle_of_mlieDerivForm_eq_zero`, with the smooth
+  version `TauCeti.SmoothForm.mpullback_snd_mpullback_prodMk_of_mlieDerivForm_eq_zero`), and a
+  smooth form of positive degree is a pullback from `Y` exactly when these two conditions hold
+  (`TauCeti.SmoothForm.exists_mpullback_snd_eq_iff`);
 * a closed form `α` with `ι_{∂ₛ} α = 0` is the pullback of a unique form `β` on `Y`, and `β` is
   closed (`TauCeti.SmoothForm.existsUnique_isClosed_mpullback_snd_eq`).
 
@@ -37,9 +39,11 @@ the determinant line.
 
 * `TauCeti.forall_mpullback_prodMap_add_right_eq_iff_mlieDerivForm_eq_zero`: a differentiable
   form is invariant under the rotations of the circle factor exactly when `L_{∂ₛ} α = 0`.
-* `TauCeti.SmoothForm.mpullback_snd_mpullback_prodMk_of_mlieDerivForm_eq_zero`: if
-  `ι_{∂ₛ} α = 0` and `L_{∂ₛ} α = 0`, then `α` is the pullback along `pr₂` of its restriction to
-  any slice `{c} × Y`.
+* `TauCeti.mpullback_snd_mpullback_prodMk_addCircle_of_mlieDerivForm_eq_zero`: if a
+  differentiable form satisfies `ι_{∂ₛ} α = 0` and `L_{∂ₛ} α = 0`, then `α` is the pullback along
+  `pr₂` of its restriction to any slice `{c} × Y`;
+  `TauCeti.SmoothForm.mpullback_snd_mpullback_prodMk_of_mlieDerivForm_eq_zero` is the smooth
+  version.
 * `TauCeti.SmoothForm.exists_mpullback_snd_eq_iff`: a smooth form is a pullback along `pr₂`
   exactly when `ι_{∂ₛ} α = 0` and `L_{∂ₛ} α = 0`.
 * `TauCeti.SmoothForm.existsUnique_isClosed_mpullback_snd_eq`: a closed form with
@@ -162,6 +166,20 @@ theorem forall_mpullback_prodMap_add_right_eq_iff_mlieDerivForm_eq_zero
   obtain ⟨u, rfl⟩ := QuotientAddGroup.mk_surjective c
   rw [hst u 0, h0, mpullback_id]
 
+/-- **Descent.** If a differentiable form `α` on `AddCircle p × Y` has vanishing contraction with
+and vanishing Lie derivative along the unit field `∂ₛ = (1, 0)` of the circle factor, then `α` is
+the pullback along the projection to `Y` of its restriction to any slice `{c} × Y`. -/
+theorem mpullback_snd_mpullback_prodMk_addCircle_of_mlieDerivForm_eq_zero
+    {α : RoughForm (𝓘(ℝ).prod I) (AddCircle p × Y) F (k + 1)}
+    (hα : MDifferentiable (𝓘(ℝ).prod I)
+      ((𝓘(ℝ).prod I).prod 𝓘(ℝ, (ℝ × E) [⋀^Fin (k + 1)]→L[ℝ] F))
+      (fun z ↦ TotalSpace.mk' ((ℝ × E) [⋀^Fin (k + 1)]→L[ℝ] F) z (α z)))
+    (hL : mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α = 0)
+    (hι : α.interior (fun _ ↦ ((1 : ℝ), (0 : E))) = 0) (c : AddCircle p) :
+    mpullback (𝓘(ℝ).prod I) I Prod.snd (mpullback I (𝓘(ℝ).prod I) (Prod.mk c) α) = α :=
+  (eq_mpullback_snd_of_interior_eq_zero hι fun s ↦ mpullback_prodMk_eq_of_forall_mpullback_eq
+    ((forall_mpullback_prodMap_add_right_eq_iff_mlieDerivForm_eq_zero hα).2 hL) s c).symm
+
 end Rotation
 
 /-! ### Descent along the projection to `Y` -/
@@ -181,12 +199,10 @@ theorem mpullback_snd_mpullback_prodMk_of_mlieDerivForm_eq_zero
     (c : AddCircle p) :
     mpullback Prod.snd contMDiff_snd
       (mpullback (Prod.mk c) (contMDiff_const.prodMk contMDiff_id) α) = α := by
-  have hinv := (forall_mpullback_prodMap_add_right_eq_iff_mlieDerivForm_eq_zero
-    α.mdifferentiable).2 hL
   refine Subtype.ext ?_
   rw [coe_mpullback, coe_mpullback]
-  exact (eq_mpullback_snd_of_interior_eq_zero hι fun s ↦
-    mpullback_prodMk_eq_of_forall_mpullback_eq hinv s c).symm
+  exact TauCeti.mpullback_snd_mpullback_prodMk_addCircle_of_mlieDerivForm_eq_zero
+    α.mdifferentiable hL hι c
 
 /-- **Pullbacks from `Y`.** A smooth form of positive degree on `AddCircle p × Y` is the pullback
 of a smooth form on `Y` along the projection exactly when its contraction with and its Lie
