@@ -268,7 +268,7 @@ theorem IsIsotropicMap.exists_partialDiffeomorph
   obtain ⟨Φa, hxa, hΦa⟩ := ha
   obtain ⟨Φb, hxb, hΦb⟩ := hb
   -- On `U = Φa.source ∩ Φb.source` the projections are `Φa` and `Φb`, and `Φ = Φb ∘ Φa⁻¹`.
-  set U := Φa.source ∩ Φb.source with hU_def
+  set U := Φa.source ∩ Φb.source
   have hU : IsOpen U := Φa.open_source.inter Φb.open_source
   have hcoe (p : M) : Φa.symm.trans Φb p = Φb (Φa.symm p) := rfl
   have hleft {z : L} (hz : z ∈ Φa.source) : Φa.symm (Φa z) = z := Φa.left_inv hz

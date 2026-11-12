@@ -95,7 +95,7 @@ private theorem Equivalent.isSquare_prod_mul_prod_and_eight_dvd {B : BilinForm �
     IsSquare ((∏ i, B (b i) (b i)) * ∏ i, C (c i) (c i)) ∧
       (8 : ℤ_[2]) ∣ ∑ i, C (c i) (c i) - ∑ i, B (b i) (b i) := by
   have hbdet : IsUnit (B.toMatrix b).det := hb.isUnit_det_toMatrix hbu
-  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det B hbdet
+  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hbdet
   refine ⟨?_, h.eight_dvd_sum_apply_self_sub_sum_apply_self PadicInt.two_dvd_sq_sub_self hb hc⟩
   simpa [hb.toMatrix_eq_diagonal, hc.toMatrix_eq_diagonal] using h.isSquare_det_mul_det b c
 
@@ -211,7 +211,7 @@ private theorem exists_toZModPow_three_apply_self_eq {B : BilinForm ℤ_[2] M} {
     exact ⟨j, x, y, hx.trans h.symm, hy, hxy⟩
   -- Otherwise every `dᵢ` lies in `{y, 5y}` and every `vⱼ` in `{-y, -5y}`, where `y = d₀`.
   push Not at hA hB5
-  set y := PadicInt.toZModPow 3 (B (b 0) (b 0)) with hy
+  set y := PadicInt.toZModPow 3 (B (b 0) (b 0))
   have hdy (i : Fin (m + 2)) : PadicInt.toZModPow 3 (B (b i) (b i)) = y ∨
       PadicInt.toZModPow 3 (B (b i) (b i)) = 5 * y := by
     have key : ∀ a b c : ZMod (2 ^ 3), a * a = 1 → b * b = 1 → c * c = 1 → c ≠ a → c ≠ 5 * a →
@@ -316,8 +316,6 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   · exact exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one hv hP
   -- Choose a vector representing some `vⱼ` with an odd complement, rescaled to represent `vⱼ`.
   obtain ⟨j, x, y, hxv, hyu, hxy⟩ := exists_toZModPow_three_apply_self_eq hb hbu hv hP hS
-  have hxu : IsUnit (B x x) :=
-    isUnit_iff_toZModPow_three_mul_self.mpr (hxv ▸ isUnit_iff_toZModPow_three_mul_self.mp (hv j))
   obtain ⟨s, -, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (hv j) hxv
   set x' := s • x with hx'
   have hx'x' : B x' x' = v j := by
@@ -415,8 +413,8 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det_and_eight_dvd_of_odd {B : Bil
     hCodd
   have : Free ℤ_[2] M := .of_basis b
   have : Free ℤ_[2] N := .of_basis c
-  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det B hBdet
-  have : C.IsPerfPair := c.isPerfPair_of_isUnit_det C hCdet
+  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hBdet
+  have : C.IsPerfPair := c.isPerfPair_of_isUnit_det c C hCdet
   have hb'det : (B.toMatrix b').det = ∏ i, B (b' i) (b' i) := hb'.det_toMatrix
   have hc'det : (C.toMatrix c').det = ∏ i, C (c' i) (c' i) := hc'.det_toMatrix
   have hb'P := IsUnit.prod_univ_iff.mpr hb'u

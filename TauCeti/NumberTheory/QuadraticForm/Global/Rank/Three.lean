@@ -173,7 +173,7 @@ private theorem realPositiveIndex_ternaryPresentation (I : GlobalFormInvariants 
     exact zero_add (squareClass (-1 : ℝˣ))
   have hcube : (-1 : ℤˣ) ^ 3 = -1 := by decide
   -- In rank three the determinant sign and Hasse sign distinguish all four signatures.
-  interval_cases h : I.realPositiveIndex w <;>
+  interval_cases I.realPositiveIndex w <;>
     rcases lt_or_gt_of_ne hda with hdsgn | hdsgn <;>
     rcases lt_or_gt_of_ne haa with hasgn | hasgn <;>
     rcases lt_or_gt_of_ne hba with hbsgn | hbsgn <;>
