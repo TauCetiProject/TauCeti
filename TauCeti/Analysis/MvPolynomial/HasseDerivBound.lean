@@ -52,18 +52,6 @@ namespace MvPolynomial
 
 variable {R σ : Type*} [SeminormedCommRing R] [Fintype σ]
 
-omit [Fintype σ] in
-/-- The norm of `b ∏_{s ∈ S} (a s) ^ (e s)` is at most `‖b‖ ∏_{s ∈ S} ‖a s‖ ^ (e s)`, without the
-normalisation `‖1‖ = 1`. -/
-private theorem norm_mul_prod_pow_le (S : Finset σ) (a : σ → R) (e : σ → ℕ) (b : R) :
-    ‖b * ∏ s ∈ S, a s ^ e s‖ ≤ ‖b‖ * ∏ s ∈ S, ‖a s‖ ^ e s := by
-  classical
-  induction S using Finset.induction_on generalizing b with
-  | empty => simp
-  | insert t S ht ih =>
-    rw [prod_insert ht, prod_insert ht, ← mul_assoc, ← mul_assoc]
-    exact (ih _).trans (by gcongr; exact TauCeti.norm_mul_pow_le _ _ _)
-
 /-- The entry bound of a multivariate jet matrix:
 `‖∂^d (c X^μ) (a)‖ ≤ ‖c‖ ∏ₛ choose (μ s) (d s) · ‖a s‖ ^ (μ s - d s)`. -/
 theorem norm_eval_hasseDeriv_monomial_le (d μ : σ →₀ ℕ) (c : R) (a : σ → R) :
@@ -77,7 +65,7 @@ theorem norm_eval_hasseDeriv_monomial_le (d μ : σ →₀ ℕ) (c : R) (a : σ 
     _ ≤ ((∏ s, (μ s).choose (d s) : ℕ) : ℝ) * ‖c * ∏ s, a s ^ (μ s - d s)‖ := norm_nsmul_le
     _ ≤ ((∏ s, (μ s).choose (d s) : ℕ) : ℝ) * (‖c‖ * ∏ s, ‖a s‖ ^ (μ s - d s)) := by
       gcongr
-      exact norm_mul_prod_pow_le _ _ _ _
+      exact TauCeti.norm_mul_prod_pow_le _ _ _ _
     _ = ‖c‖ * ∏ s, ((μ s).choose (d s) : ℝ) * ‖a s‖ ^ (μ s - d s) := by
       rw [prod_mul_distrib, Nat.cast_prod]
       ring
