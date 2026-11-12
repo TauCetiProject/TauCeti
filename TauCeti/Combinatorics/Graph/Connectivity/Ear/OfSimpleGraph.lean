@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.Graph.OfSimpleGraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Ear.Basic
 
 import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
-import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 
 /-!
 # Ear decompositions of simple graphs as multigraph ear decompositions
@@ -24,7 +23,8 @@ subgraph `H` correspond to those of `H.toGraph` in `Graph.ofSimpleGraph G`. The 
 transports underlying walks with `SimpleGraph.Walk.toGraph` and `Graph.Walk.toSimpleGraph`, so it
 preserves the number of ears, the kind and walk of every ear, the stage after every prefix,
 prefix decompositions, openness, and starting from a single vertex. In particular, results proved
-for multigraph ear decompositions apply to simple graphs, and conversely.
+for multigraph ear decompositions apply to simple graphs, and results proved for simple-graph ear
+decompositions apply to `Graph.ofSimpleGraph G`.
 
 ## Main definitions
 
@@ -49,20 +49,6 @@ universe u
 variable {α : Type u} {G : SimpleGraph α}
 
 namespace SimpleGraph
-
-/-- The graph traced by the edge-labelled walk corresponding to a walk is the multigraph of the
-subgraph traced by that walk. -/
-@[simp]
-theorem Walk.walkGraph_toGraph {x y : α} (p : G.Walk x y) :
-    (Graph.ofSimpleGraph G).walkGraph p.toGraph = p.toSubgraph.toGraph :=
-  Graph.ext (by simp) fun e a b ↦ by
-    simp only [Graph.Walk.walkGraph_isLink, Graph.ofSimpleGraph_isLink, Walk.edges_toGraph,
-      Subgraph.toGraph_isLink, Walk.adj_toSubgraph_iff_mem_edges]
-    constructor
-    · rintro ⟨⟨rfl, -⟩, h⟩
-      exact ⟨rfl, h⟩
-    · rintro ⟨rfl, h⟩
-      exact ⟨⟨rfl, p.edges_subset_edgeSet h⟩, h⟩
 
 namespace Ear
 

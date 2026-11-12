@@ -19,8 +19,7 @@ subgraphs of `Graph.ofSimpleGraph G`, as an order isomorphism
 `SimpleGraph.Subgraph.toGraphOrderIso`.
 
 The correspondence sends the top subgraph to `Graph.ofSimpleGraph G`, singleton subgraphs to
-edgeless one-vertex graphs, suprema to unions, and the subgraph traced by a walk to the graph
-traced by the corresponding edge-labelled walk. These are the identities needed to transport
+edgeless one-vertex graphs, and suprema to unions. These are the identities needed to transport
 constructions built from subgraphs, such as ear decompositions, between the two interfaces.
 -/
 
