@@ -118,6 +118,7 @@ private theorem eLpNorm_rpow_smul_fourier_eq (s : ℝ) (f : E → F) (hf : Conti
   refine congrArg (· ^ (1 / 2 : ℝ)) (lintegral_congr fun ξ ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
 
+omit [CompleteSpace F] in
 /-- The pointwise Peetre bound behind the `H^s` estimate: for Schwartz functions `φ` and `f`,
 `⟨ξ⟩ ^ s ‖𝓕 (φ f) ξ‖` is bounded by the convolution of `2 ^ (|s| / 2) ⟨·⟩ ^ |s| ‖𝓕 φ‖` with
 `⟨·⟩ ^ s ‖𝓕 f‖`. -/

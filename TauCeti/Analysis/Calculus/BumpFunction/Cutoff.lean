@@ -45,14 +45,16 @@ function is bounded and Hölder continuous with every exponent at most one
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
-with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
-vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a
-smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on
-the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported
-in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
-independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
-function supported in a closed ball with bounded gradient there has integral at most the squared
-bound times the volume of the ball
+with shrinking gaps. With such a cutoff of small gradient, an angle `θ` rising from `0` to `π / 2`
+across an annulus gives the IMS-type partition `cos² θ + sin² θ = 1` with gradients at most a
+prescribed `ε` (`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth cutoff of the
+identity equals `s` on `[-r, r]` and vanishes outside `(-R, R)`
+(`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a smooth, even, compactly
+supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius `r / 2`
+(`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported in `[c - r - 1, c + r + 1]`
+have `L²` mass at least `2 r` and derivative energy bounded independently of `c` and `r`
+(`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a function supported in a closed
+ball with bounded gradient there has integral at most the squared bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
@@ -544,6 +546,44 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
         = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
       _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by gcongr
       _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
+
+open Real in
+/-- **A slowly rising angle.** For `0 ≤ R` and `0 < ε`, some smooth `θ` vanishes on the closed
+ball of radius `R`, equals `π / 2` near every point outside a larger ball of radius `R₂`, and has
+gradient at most `ε`. Then `cos θ` and `sin θ` form a partition of unity in the sense of squares
+whose gradients are at most `ε`, as used in IMS-type localization. The angle is
+`π / 2 * (1 - ψ)` for a radial cutoff `ψ` from `exists_forall_contDiff_cutoff_closedBall` with a
+gap large enough to make its gradient small. -/
+theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E] {R ε : ℝ}
+    (hR : 0 ≤ R) (hε : 0 < ε) :
+    ∃ R₂ > R, ∃ θ : E → ℝ, ContDiff ℝ ∞ θ ∧ (∀ z, ‖z‖ ≤ R → θ z = 0) ∧
+      (∀ z, R₂ < ‖z‖ → θ =ᶠ[𝓝 z] fun _ ↦ π / 2) ∧ ∀ z, ‖fderiv ℝ θ z‖ ≤ ε := by
+  obtain ⟨C, hC, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
+  set K : ℝ := π * C / (2 * ε) + 1
+  have hK : 0 < K := by positivity
+  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hcut 0 hR (lt_add_of_pos_right R hK)
+  refine ⟨R + K, lt_add_of_pos_right R hK, fun z ↦ π / 2 * (1 - ψ z),
+    contDiff_const.mul (contDiff_const.sub hψ), fun z hz ↦ ?_, fun z hz ↦ ?_, fun z ↦ ?_⟩
+  · have : ψ z = 1 := hψ1 (by simpa using hz)
+    simp [this]
+  · filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
+    have : ψ w = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ by
+      have := hψt h
+      simp only [Metric.mem_closedBall, dist_zero_right] at this
+      linarith
+    simp [this]
+  · have hd : HasFDerivAt (fun z ↦ π / 2 * (1 - ψ z)) ((π / 2) • -fderiv ℝ ψ z) z :=
+      (((hψ.differentiable (by simp)) z).hasFDerivAt.const_sub 1).const_mul (π / 2)
+    have hg : ‖fderiv ℝ ψ z‖ ≤ C / K := by
+      have := hψd z
+      rwa [gradient, LinearIsometryEquiv.norm_map, add_sub_cancel_left] at this
+    have hCK : π * C ≤ 2 * ε * K := by
+      have : π * C / (2 * ε) * (2 * ε) = π * C := div_mul_cancel₀ _ (by positivity)
+      nlinarith
+    rw [hd.fderiv, norm_smul, norm_neg, Real.norm_eq_abs, abs_of_pos (by positivity)]
+    calc π / 2 * ‖fderiv ℝ ψ z‖ ≤ π / 2 * (C / K) := by gcongr
+      _ = π * C / (2 * K) := div_mul_div_comm _ _ _ _
+      _ ≤ ε := by rw [div_le_iff₀ (by positivity)]; linarith
 
 /-- **A smooth cutoff of the identity on the line.** For `0 < r < R`, some smooth `k : ℝ → ℝ`
 equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
