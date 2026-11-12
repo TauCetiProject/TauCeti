@@ -6,11 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Rank
+public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.FreeModule.Basic
 import TauCeti.GroupTheory.FreeGroup.Basis
 import Mathlib.Algebra.Group.TypeTags.Finite
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.ZMod.Defs
+import Mathlib.GroupTheory.FreeGroup.GeneratorEquiv
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
@@ -27,6 +32,17 @@ determined by their values on the images of the elements of `α`.
 Consequently, a group with a free basis is finitely generated exactly when the basis is
 finite, and its rank is the cardinality of that basis. These results allow rank computations
 from explicit free coordinates, for example the non-tree edges of a graph.
+
+The abelianization of a group with a free basis is a free abelian group with basis the classes of
+the same elements (`FreeGroupBasis.abelianizationBasis`). Hence the rank of a finitely generated
+free group is also the rank of its abelianization as a free `ℤ`-module
+(`TauCeti.finrank_abelianization_eq_rank`).
+
+## References
+
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Cambridge University Press, 2002, Section 1.2, p. 42 (the abelianization of a free group is free
+  abelian on the same basis, so the rank of a free group is well defined).
 -/
 
 public section
@@ -92,4 +108,42 @@ theorem rank_eq_nat_card (b : FreeGroupBasis ι H) [Group.FG H] :
   simpa only [Nat.card_eq_fintype_card (α := S), Fintype.card_coe, hcard] using
     b.card_le_of_surjective hsurj
 
+/-- **The abelianization of a free group is free abelian on the same basis.** For a free basis `b`
+of `H`, the classes of the elements `b i` form a basis of the abelianization of `H`, written
+additively, as a `ℤ`-module. -/
+noncomputable def abelianizationBasis (b : FreeGroupBasis ι H) :
+    Module.Basis ι ℤ (Additive (Abelianization H)) :=
+  -- `FreeAbelianGroup ι` is by definition `Additive (Abelianization (FreeGroup ι))`.
+  (FreeAbelianGroup.basis ι).map
+    (AddEquiv.toIntLinearEquiv (M := FreeAbelianGroup ι) b.repr.symm.abelianizationCongr.toAdditive)
+
+@[simp]
+theorem abelianizationBasis_apply (b : FreeGroupBasis ι H) (i : ι) :
+    b.abelianizationBasis i = .ofMul (.of (b i)) := by
+  have h : FreeAbelianGroup.basis ι i = FreeAbelianGroup.of i :=
+    (FreeAbelianGroup.basis ι).repr.injective <| by simp [FreeAbelianGroup.basis]
+  rw [abelianizationBasis, Module.Basis.map_apply, h]
+  -- `FreeAbelianGroup.of i` is by definition the additive class of `FreeGroup.of i`, which the
+  -- abelianized isomorphism sends to the class of `b.repr.symm (FreeGroup.of i) = b i`.
+  rfl
+
 end FreeGroupBasis
+
+namespace TauCeti
+
+variable {H : Type*} [Group H]
+
+/-- The abelianization of a free group is a free `ℤ`-module. -/
+instance instModuleFreeAbelianization [IsFreeGroup H] :
+    Module.Free ℤ (Additive (Abelianization H)) :=
+  .of_basis (IsFreeGroup.basis H).abelianizationBasis
+
+/-- **The rank of a free group is the rank of its abelianization.** For a finitely generated free
+group `H`, the rank of the abelianization of `H` as a `ℤ`-module is the rank of `H`, the least
+number of generators of `H`. -/
+theorem finrank_abelianization_eq_rank [IsFreeGroup H] [Group.FG H] :
+    Module.finrank ℤ (Additive (Abelianization H)) = Group.rank H := by
+  rw [Module.finrank_eq_nat_card_basis (IsFreeGroup.basis H).abelianizationBasis,
+    (IsFreeGroup.basis H).rank_eq_nat_card]
+
+end TauCeti
