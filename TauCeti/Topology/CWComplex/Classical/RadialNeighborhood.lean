@@ -119,13 +119,18 @@ private lemma radialNeighborhoodLT_subset_radialNeighborhood (n : ℕ) :
     radialNeighborhoodLT A n ⊆ A.radialNeighborhood :=
   subset_iUnion (radialNeighborhoodLT A) n
 
+/-- A vector of the outer half of the unit ball has a radial projection of norm one. -/
+private lemma norm_inv_norm_smul_of_half_le {n : ℕ} {y : Fin n → ℝ} (hy : 2⁻¹ ≤ ‖y‖) :
+    ‖‖y‖⁻¹ • y‖ = 1 :=
+  norm_smul_inv_norm (norm_pos_iff.1 (lt_of_lt_of_le (by norm_num) hy))
+
 /-- The radial projection `y ↦ map n j (‖y‖⁻¹ • y)` is continuous on the outer half of the closed
 unit ball. -/
 private lemma continuousOn_map_inv_norm_smul (n : ℕ) (j : cell C n) :
     ContinuousOn (fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j (‖(y : Fin n → ℝ)‖⁻¹ • y))
       {y | 2⁻¹ < ‖(y : Fin n → ℝ)‖} := by
   refine (continuousOn n j).comp ?_ fun y hy ↦
-    mem_closedBall_zero_iff.2 (norm_smul_inv_norm (norm_pos_iff.1 (lt_trans (by norm_num) hy))).le
+    mem_closedBall_zero_iff.2 (norm_inv_norm_smul_of_half_le hy.le).le
   refine ContinuousOn.smul (f := fun y : closedBall (0 : Fin n → ℝ) 1 ↦ ‖(y : Fin n → ℝ)‖⁻¹)
     (g := fun y ↦ (y : Fin n → ℝ)) ?_ continuous_subtype_val.continuousOn
   exact ((continuous_norm.comp continuous_subtype_val).continuousOn).inv₀
@@ -147,7 +152,7 @@ private lemma radialNeighborhoodLT_subset_skeletonLT (n : ℕ) :
 private lemma map_inv_norm_smul_mem_skeletonLT {n : ℕ} (j : cell C n) {y : Fin n → ℝ}
     (hy : 2⁻¹ ≤ ‖y‖) : map n j (‖y‖⁻¹ • y) ∈ (skeletonLT C (n : ℕ∞) : Set X) :=
   cellFrontier_subset_skeletonLT n j ⟨_, mem_sphere_zero_iff_norm.2
-    (norm_smul_inv_norm (norm_pos_iff.1 (lt_of_lt_of_le (by norm_num) hy))), rfl⟩
+    (norm_inv_norm_smul_of_half_le hy), rfl⟩
 
 /-- The radial neighborhood meets `skeletonLT C n` in its `n`-th stage. -/
 private lemma radialNeighborhood_inter_skeletonLT (n : ℕ) :
@@ -207,10 +212,10 @@ lemma map_mem_radialNeighborhood_iff {n : ℕ} (j : cell C n) {y : Fin n → ℝ
     obtain ⟨rfl, rfl⟩ := (map_eq_map_iff hz hy).1 hzy
     refine hzA.imp_right fun ⟨h2, h⟩ ↦ ⟨h2, ?_⟩
     exact (map_mem_radialNeighborhood_iff_of_norm_eq_one A i
-      (norm_smul_inv_norm (norm_pos_iff.1 (lt_trans (by norm_num) h2)))).2 h
+      (norm_inv_norm_smul_of_half_le h2.le)).2 h
   · refine fun h ↦ .inr (mem_iUnion.2 ⟨j, y, ⟨hy, h.imp_right fun ⟨h2, h⟩ ↦ ⟨h2, ?_⟩⟩, rfl⟩)
     exact (map_mem_radialNeighborhood_iff_of_norm_eq_one A j
-      (norm_smul_inv_norm (norm_pos_iff.1 (lt_trans (by norm_num) h2)))).1 h
+      (norm_inv_norm_smul_of_half_le h2.le)).1 h
 
 /-- **A subcomplex lies in its radial neighborhood.** -/
 lemma subset_radialNeighborhood : (A : Set X) ⊆ A.radialNeighborhood := by
@@ -225,7 +230,7 @@ private lemma map_inv_norm_smul_mem_of_mem_I {n : ℕ} {j : cell C n} (hj : j �
     {y : Fin n → ℝ} (hy : 2⁻¹ < ‖y‖) : map n j (‖y‖⁻¹ • y) ∈ A.radialNeighborhood :=
   subset_radialNeighborhood A <| A.cellFrontier_subset_of_mem hj
     ⟨_, mem_sphere_zero_iff_norm.2
-      (norm_smul_inv_norm (norm_pos_iff.1 (lt_trans (by norm_num) hy))), rfl⟩
+      (norm_inv_norm_smul_of_half_le hy.le), rfl⟩
 
 /-- **Radial neighborhoods of an intersection.** If the subcomplex `E` is the intersection of
 `A` and `B`, its radial neighborhood is the intersection of theirs. -/
@@ -435,6 +440,11 @@ private def stageTime (m : ℕ) (t : I) : I :=
   projIcc 0 1 zero_le_one (2 ^ (m + 1) * (t : ℝ) - 1)
 
 omit [T2Space X] in
+private lemma stageTime_def (m : ℕ) (t : I) :
+    stageTime m t = projIcc 0 1 zero_le_one (2 ^ (m + 1) * (t : ℝ) - 1) :=
+  rfl
+
+omit [T2Space X] in
 private lemma continuous_stageTime (m : ℕ) : Continuous (stageTime m) :=
   continuous_projIcc.comp ((continuous_const.mul continuous_subtype_val).sub continuous_const)
 
@@ -594,8 +604,8 @@ lemma radialDeformation_map_of_le {n : ℕ} {j : cell C n} (hj : j ∉ A.I n) {t
       map n j (radialPush 2⁻¹ (projIcc 0 1 zero_le_one (2 ^ (n + 1) * (t : ℝ) - 1)) y) := by
   rw [radialDeformation_eq A t (map_mem_skeletonLT_succ j hy)]
   cases n with
-  | zero => exact stage_map A hj _ hy
-  | succ m => rw [stagesUpTo_succ, stage_map A hj _ hy, stagesUpTo_of_le A ht]; rfl
+  | zero => rw [stagesUpTo, stage_map A hj _ hy, stageTime_def]
+  | succ m => rw [stagesUpTo_succ, stage_map A hj _ hy, stagesUpTo_of_le A ht, stageTime_def]
 
 /-- **The radial deformation on a closed cell outside `A`, from time `2⁻¹ ^ n` on.** By then a
 point of the outer half of a closed `n`-cell outside `A` has been pushed to the frontier, and it
