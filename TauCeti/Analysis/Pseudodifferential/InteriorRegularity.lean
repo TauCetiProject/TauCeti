@@ -16,12 +16,10 @@ Let `a` be a symbol of order `m` on `ℝⁿ` with a *formal left parametrix*: a 
 `1 ∼ ∑ₖ sharpTerm b a k`,
 
 meaning that `1 - ∑_{k < N} sharpTerm b a k` is a symbol of order `-N` for every `N`. This is a
-left parametrix of `Op(a)` on the level of symbols, and ellipticity of `a` is what makes it exist.
-For a symbol that does not depend on the position, such as the symbol of a differential operator
-with constant coefficients, a pointwise inverse at large frequencies already is one, so every such
-symbol elliptic above some radius has a formal left parametrix
-(`TauCeti.Symbol.exists_isAsymptoticSum_sharpTerm_of_spatialDeriv_eq_zero`). These symbol-level
-results are in `TauCeti.Analysis.Pseudodifferential.Composition.Parametrix`.
+left parametrix of `Op(a)` on the level of symbols, and ellipticity of `a` is what makes it exist:
+every symbol elliptic above some radius has one
+(`TauCeti.Symbol.IsEllipticAbove.exists_isAsymptoticSum_sharpTerm`). These symbol-level results
+are in `TauCeti.Analysis.Pseudodifferential.Composition.Parametrix`.
 
 To apply `Op(a)` to distributions of finite Sobolev order, localize: let `ψ` be a compactly
 supported Schwartz function and `p` a symbol of order `m` with compact spatial support which

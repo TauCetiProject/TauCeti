@@ -48,6 +48,25 @@ convex set `s` with unique derivatives, the integral is `C^n` on `s`
 (`Convex.contDiffOn_integral_smul_of_contDiffOn`), with derivative within `s` the integral of the
 partial derivatives within `s` (`Convex.hasFDerivWithinAt_integral_smul_of_contDiffOn`). This
 is the regularity of the Poincaré homotopy operator on a closed half-ball.
+
+For a family `f : Y → E → F` with compact topological parameter `Y`, smooth slices on an
+open set and jointly continuous spatial jets, integration preserves smoothness
+(`TauCeti.contDiffOn_integral_of_continuous_jets`) and has the integrated spatial Taylor series
+(`TauCeti.hasFTaylorSeriesUpToOn_integral_of_continuous_jets`). All iterated spatial derivatives
+commute with integration (`TauCeti.iteratedFDeriv_integral_of_continuous_jets`).
+
+## References
+
+* Lean-Atiyah-Singer, `AtiyahSinger/Analysis/CompactJetIntegral.lean`:
+  the source formalization of continuous-jet integration.
+  <https://github.com/alpha-squared-labs/Lean-Atiyah-Singer>.
+* Mathlib, `hasFDerivAt_integral_of_continuousOn_fderiv`:
+  differentiation of compact-parameter integrals.
+* H. B. Lawson, Jr. and M.-L. Michelsohn, *Spin Geometry*, Chapter III,
+  proof of Theorem 9.7, p. 214: compact-group averaging of operator homotopies.
+  The continuous-jet integral lemmas are supplementary analytic inputs in the
+  source formalization.
+  <https://doi.org/10.1515/9781400883912>.
 -/
 
 public section
@@ -518,5 +537,109 @@ theorem _root_.Convex.contDiffOn_integral_smul_of_contDiffOn {G : Type v} [Norme
 end Convex
 
 end CompactParameter
+
+/-! ### Integrals of continuous spatial jets
+
+The compact parameter space in this section has only a topology. Joint continuity of
+every spatial derivative and smoothness of each slice allow differentiation under
+the integral at every order.
+-/
+
+section ContinuousJets
+
+open Filter Set Topology
+
+variable {Y H F : Type*} [TopologicalSpace Y] [CompactSpace Y]
+  [MeasurableSpace Y] [OpensMeasurableSpace Y]
+  [NormedAddCommGroup H] [NormedSpace ℝ H]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {μ : Measure Y} [IsFiniteMeasure μ]
+  {f : Y → H → F} {s : Set H} (hs : IsOpen s)
+  (hf : ∀ y, ContDiffOn ℝ ∞ (f y) s)
+  (hjets : ∀ k : ℕ,
+    ContinuousOn (fun p : Y × H ↦ iteratedFDeriv ℝ k (f p.1) p.2) (univ ×ˢ s))
+
+include hs hf hjets
+
+/-- The spatial Taylor series of a compact continuous-jet integral consists of the integrated
+spatial jets. -/
+theorem hasFTaylorSeriesUpToOn_integral_of_continuous_jets :
+    HasFTaylorSeriesUpToOn ∞ (fun x ↦ ∫ y, f y x ∂μ)
+      (fun x k ↦ ∫ y, iteratedFDeriv ℝ k (f y) x ∂μ) s := by
+  have hjet (k : ℕ) (y : Y) (x : H) (hx : x ∈ s) :
+      HasFDerivAt (iteratedFDeriv ℝ k (f y))
+        (iteratedFDeriv ℝ (k + 1) (f y) x).curryLeft x :=
+    ((hf y x hx).contDiffAt (hs.mem_nhds hx)).differentiableAt_iteratedFDeriv
+      (ENat.natCast_lt_of_coe_top_le_withTop le_rfl k) |>.hasFDerivAt
+  have hderiv (k : ℕ) (x : H) (hx : x ∈ s) :
+      HasFDerivAt (fun z ↦ ∫ y, iteratedFDeriv ℝ k (f y) z ∂μ)
+        (∫ y, iteratedFDeriv ℝ (k + 1) (f y) x ∂μ).curryLeft x := by
+    let C := (continuousMultilinearCurryLeftEquiv ℝ
+      (fun _ : Fin (k + 1) ↦ H) F).toContinuousLinearEquiv
+    have hcurry (g : H [×k + 1]→L[ℝ] F) : C g = g.curryLeft := by
+      ext v w
+      simp only [C, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+        continuousMultilinearCurryLeftEquiv_apply, ContinuousMultilinearMap.curryLeft_apply]
+    have hvalue : ContinuousOn (fun p : H × Y ↦ iteratedFDeriv ℝ k (f p.2) p.1)
+        (s ×ˢ univ) :=
+      (hjets k).comp continuous_swap.continuousOn (fun _ hp ↦ ⟨hp.2, hp.1⟩)
+    have hnext : ContinuousOn (fun p : H × Y ↦ C (iteratedFDeriv ℝ (k + 1) (f p.2) p.1))
+        (s ×ˢ univ) :=
+      C.continuous.comp_continuousOn ((hjets (k + 1)).comp continuous_swap.continuousOn
+        (fun _ hp ↦ ⟨hp.2, hp.1⟩))
+    have hdiff : ContinuousOn (fun p : H × Y ↦ fderiv ℝ (iteratedFDeriv ℝ k (f p.2)) p.1)
+        (s ×ˢ univ) := hnext.congr (fun p hp ↦
+          (hcurry _).trans (hjet k p.2 p.1 hp.1).fderiv.symm)
+    have hD := hasFDerivAt_integral_of_continuousOn_fderiv (𝕜 := ℝ) (μ := μ)
+      (F := fun z y ↦ iteratedFDeriv ℝ k (f y) z)
+      (hs.mem_nhds hx) isCompact_univ MeasurableSet.univ (measure_ne_top _ _) Subset.rfl
+      hvalue (fun y _ z hz ↦ (hjet k y z hz).differentiableAt.differentiableWithinAt) hdiff
+    simp only [setIntegral_univ] at hD
+    have heq : (fun y ↦ fderiv ℝ (iteratedFDeriv ℝ k (f y)) x) =
+        (fun y ↦ C (iteratedFDeriv ℝ (k + 1) (f y) x)) :=
+      funext fun y ↦ (hjet k y x hx).fderiv.trans (hcurry _).symm
+    rw [heq] at hD
+    -- Commute the integral with the equivalence, then identify its value by left currying.
+    have hcomm := ContinuousLinearEquiv.integral_comp_comm (𝕜 := ℝ) (μ := μ)
+      (E := H [×k + 1]→L[ℝ] F) (F := H →L[ℝ] H [×k]→L[ℝ] F)
+      C (fun y ↦ iteratedFDeriv ℝ (k + 1) (f y) x)
+    rwa [hcomm, hcurry] at hD
+  constructor
+  · intro x hx
+    let C := (continuousMultilinearCurryFin0 ℝ H F).toContinuousLinearEquiv
+    have hcomm := ContinuousLinearEquiv.integral_comp_comm (𝕜 := ℝ) (μ := μ)
+      (E := H [×0]→L[ℝ] F) (F := F) C
+      (fun y ↦ iteratedFDeriv ℝ 0 (f y) x)
+    -- At degree zero, the currying equivalence evaluates a zero-argument multilinear map.
+    simpa only [C, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      continuousMultilinearCurryFin0_apply, iteratedFDeriv_zero_apply,
+      ContinuousMultilinearMap.curry0_apply] using hcomm.symm
+  · intro k _ x hx
+    exact (hderiv k x hx).hasFDerivWithinAt
+  · intro k _
+    apply continuousOn_integral_of_compact_support (k := univ) isCompact_univ
+    · exact (hjets k).comp continuous_swap.continuousOn
+        (fun _ hp ↦ ⟨mem_univ _, hp.1⟩)
+    · intro x y hx hy
+      exact (hy (mem_univ y)).elim
+
+/-- A compact family with jointly continuous spatial jets has a smooth integral. -/
+theorem contDiffOn_integral_of_continuous_jets :
+    ContDiffOn ℝ ∞ (fun x ↦ ∫ y, f y x ∂μ) s :=
+  (hasFTaylorSeriesUpToOn_integral_of_continuous_jets (μ := μ) hs hf hjets).contDiffOn
+
+/-- Every spatial derivative of a compact continuous jet integral is the integral of that jet. -/
+theorem iteratedFDeriv_integral_of_continuous_jets (k : ℕ) {x : H} (hx : x ∈ s) :
+    iteratedFDeriv ℝ k (fun z ↦ ∫ y, f y z ∂μ) x =
+      ∫ y, iteratedFDeriv ℝ k (f y) x ∂μ := by
+  have hseries := hasFTaylorSeriesUpToOn_integral_of_continuous_jets (μ := μ) hs hf hjets
+  have hsmooth := hseries.contDiffOn
+  have heq := hseries.eq_iteratedFDerivWithin_of_uniqueDiffOn (m := k)
+    (by simp) hs.uniqueDiffOn hx
+  rw [iteratedFDerivWithin_eq_iteratedFDeriv hs.uniqueDiffOn
+    (((hsmooth x hx).contDiffAt (hs.mem_nhds hx)).of_le (by simp)) hx] at heq
+  exact heq.symm
+
+end ContinuousJets
 
 end TauCeti

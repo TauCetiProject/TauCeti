@@ -518,7 +518,6 @@ theorem hasDerivAt_neg_two_cpow_half_mul_inv {x y : ℂ}
   intro t ht
   have htx : (t : ℂ) + x ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht
   have hty : (t : ℂ) + y ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hy ht
-  have htx_ne : (t : ℂ) + x ≠ 0 := slitPlane_ne_zero htx
   have hty_ne : (t : ℂ) + y ≠ 0 := slitPlane_ne_zero hty
   have hd1 : HasDerivAt (fun s : ℝ => ((s : ℂ) + x) ^ (1 / 2 : ℂ))
       ((1 / 2 : ℂ) * ((t : ℂ) + x) ^ ((1 / 2 : ℂ) - 1) * 1) t := by
