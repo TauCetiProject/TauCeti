@@ -302,7 +302,7 @@ operator-valued function: it is a finite sum of its values on a basis, each loca
 definition. -/
 theorem HasWeakFDerivOn.locallyIntegrableOn_deriv [FiniteDimensional ℝ E] {U : E → E →L[ℝ] F}
     (h : HasWeakFDerivOn μ Ω u U) : LocallyIntegrableOn U Ω μ := by
-  obtain ⟨n, b, -⟩ : ∃ n, ∃ b : Module.Basis (Fin n) ℝ E, True :=
+  obtain ⟨n, b, -⟩ : ∃ n, ∃ _ : Module.Basis (Fin n) ℝ E, True :=
     ⟨_, Module.finBasis ℝ E, trivial⟩
   -- The `i`-th term `x ↦ (b.coord i).smulRight (U x (b i))` of the expansion of `U` in `b`.
   let g : Fin n → E → E →L[ℝ] F := fun i x =>

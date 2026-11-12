@@ -59,7 +59,7 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
     rw [sum_comm]
     exact sum_congr rfl fun _ _ ↦ sum_comm
   have e₃ : (#s₀ * #s₁ * #s₂ : R) * (p * q * r) =
-      ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, p * q * r := by
+      ∑ _ ∈ s₀, ∑ _ ∈ s₁, ∑ _ ∈ s₂, p * q * r := by
     simp only [sum_const, nsmul_eq_mul]
     ring
   have e₄ : (#s₀ : R) * ∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r) =

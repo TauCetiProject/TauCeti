@@ -114,7 +114,7 @@ theorem finrank_centralizer_eq_sum_sq_ker (f : Module.End K V) {n : ℕ}
     exact TauCeti.finrank_ker_smul_pi_cyclic_root_pow len (fun i => (hlen i).2) k
   rw [hdim]
   apply Finset.sum_congr rfl
-  intro k hk
+  intro k _
   congr 1
   rw [hker, hker, ← Finset.sum_tsub_distrib Finset.univ
     (fun i _ => min_le_min_right (len i) (Nat.le_succ k))]
@@ -122,7 +122,7 @@ theorem finrank_centralizer_eq_sum_sq_ker (f : Module.End K V) {n : ℕ}
   simp only [Nat.cast_id] at hcount
   rw [← hcount]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   split_ifs <;> omega
 
 /-- **The centralizer dimension of a nilpotent endomorphism** is `∑ⱼ (λ'ⱼ)²`, the sum of the
