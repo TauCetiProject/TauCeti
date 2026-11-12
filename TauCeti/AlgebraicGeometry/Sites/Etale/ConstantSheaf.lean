@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Sites.AffineEtale
 public import Mathlib.AlgebraicGeometry.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
+public import TauCeti.AlgebraicGeometry.Sites.Small
 public import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
@@ -26,7 +27,7 @@ comparison is induced by the map from the constant presheaf sending `m` to the c
 function `m`, which is locally bijective:
 
 * it is locally injective, since two different constants agree only on an empty scheme, which is
-  covered by the empty family;
+  covered by the empty family (`AlgebraicGeometry.Scheme.bot_mem_smallGrothendieckTopology`);
 * it is locally surjective, since a locally constant function is constant on each of its fibres,
   and these fibres are open subschemes, hence étale, covering the source.
 
@@ -50,8 +51,6 @@ example the sheaves of sections of split finite étale covers.
 
 * `AlgebraicGeometry.Scheme.isSheaf_etaleLocallyConstantPresheaf`: locally constant functions form
   an étale sheaf.
-* `AlgebraicGeometry.Scheme.bot_mem_smallGrothendieckTopology`: on a small site of `S`, such as
-  the small étale site, an object with empty underlying space is covered by the empty sieve.
 * `AlgebraicGeometry.Scheme.toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom`: the
   comparison sends the class of `m` to the constant function `m`.
 
@@ -91,12 +90,9 @@ theorem isSheaf_etaleLocallyConstantPresheaf (M : Type u) :
   have := Functor.isContinuous_comp (Etale.forget S) (Over.forget S) (smallEtaleTopology S)
     (etaleTopology.over S) etaleTopology
   have h := (Etale.forget S ⋙ Over.forget S).op_comp_isSheaf_of_isSheaf
-    (smallEtaleTopology S) etaleTopology (continuousMapPresheaf M) (by
-      rw [isSheaf_iff_isSheaf_of_type]
-      refine Presieve.isSheaf_of_le _ (etaleTopology_le_proetaleTopology.trans
-        proetaleTopology_le_fpqcTopology) ?_
-      rw [← isSheaf_iff_isSheaf_of_type]
-      exact isSheaf_fpqcTopology_continuousMapPresheaf M)
+    (smallEtaleTopology S) etaleTopology (continuousMapPresheaf M)
+    ((isSheaf_fpqcTopology_continuousMapPresheaf M).of_le
+      (etaleTopology_le_proetaleTopology.trans proetaleTopology_le_fpqcTopology))
   -- For the discrete topology on `M`, locally constant functions are continuous maps.
   refine (Presheaf.isSheaf_of_iso_iff (NatIso.ofComponents (fun U ↦ Equiv.toIso
     (LocallyConstant.equivContinuousMap U.unop.left M)) fun _ ↦ rfl)).2 h
@@ -115,16 +111,6 @@ def etaleLocallyConstantSheaf : Type u ⥤ Sheaf (smallEtaleTopology S) (Type u)
 def constToEtaleLocallyConstantPresheaf :
     Functor.const S.Etaleᵒᵖ ⟶ etaleLocallyConstantPresheaf S where
   app M := { app U := TypeCat.ofHom fun m ↦ LocallyConstant.const _ m }
-
-variable {S} in
-/-- On the small site of `S` defined by a morphism property `P`, for example the small étale
-site, an object with empty underlying space is covered by the empty sieve. -/
-theorem bot_mem_smallGrothendieckTopology {P : MorphismProperty Scheme.{u}}
-    [P.IsStableUnderBaseChange] [P.IsMultiplicative] (U : P.Over ⊤ S) [IsEmpty U.left] :
-    ⊥ ∈ S.smallGrothendieckTopology P U := by
-  rw [Functor.mem_restrictedTopology_iff, GrothendieckTopology.mem_over_iff,
-    Sieve.functorPushforward_bot, map_bot]
-  exact bot_mem_grothendieckTopology (P := P) U.left
 
 /-- Constant sections that agree are locally equal: two different constants agree only over an
 empty étale `S`-scheme, which is covered by the empty sieve. -/
