@@ -295,7 +295,6 @@ private theorem undoCell_zero (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
         (mapsTo_snd k) K' hK'
         (fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ (fun _ ↦ ContinuousMap.snd)
           (mapsTo_snd k) K hK (fiberwiseCellAttachmentCell α₁ i (p, w))) := by
-  have hw₁ : ‖w.down.1‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.2
   set v := TopCat.reattachmentRadial w
   rcases le_total ‖w.down.1‖ (1 / 2) with hw | hw
   · -- The first reattachment map sends `w` to the point `v = 2w` of the `i`-th cell.
@@ -314,7 +313,6 @@ private theorem undoCell_zero (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
       simp only [ContinuousMap.snd_apply]
     · -- On the annulus `1/4 ≤ ‖w‖ ≤ 1/2` the reverse homotopy is read at time `2 - 4‖w‖`.
       have hvn' : 1 / 2 ≤ ‖v.down.1‖ := by rw [hvn]; linarith
-      have hw₀ : 0 < ‖w.down.1‖ := by linarith
       obtain ⟨t, ht⟩ : ∃ t : I, (t : ℝ) = 2 - 2 * ‖v.down.1‖ :=
         ⟨TopCat.reattachmentTime v, TopCat.coe_reattachmentTime_of_le_norm hvn'⟩
       obtain ⟨s, hs⟩ : ∃ s : TopCat.diskBoundary.{u} (k i), s.down.1 = ‖v.down.1‖⁻¹ • v.down.1 :=
