@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Martingale.Basic
-public import Mathlib.Probability.Process.LocalProperty
+public import TauCeti.Probability.Process.LocalProperty
 public import TauCeti.Probability.Process.Stopping
 
 /-!
@@ -82,20 +82,11 @@ theorem martingale_add_initial [SigmaFiniteFiltration P ℱ]
   let τ : ℕ → Ω → WithTop ι := fun n ↦
     (A n).piecewise (hX.localSeq n) (fun _ ↦ ⊥)
   have hτ : IsLocalizingSequence ℱ τ P := by
-    refine ⟨⟨fun n ↦ ?_, ?_⟩, ?_⟩
-    · exact (hX.isLocalizingSequence_localSeq.isStoppingTime n).piecewise_of_le
-        (isStoppingTime_const ℱ ⊥) (i := ⊥) (by simp) (by simp) (hA n)
-    · filter_upwards [hX.isLocalizingSequence_localSeq.tendsto_top] with ω hω
-      have hlarge : ∀ᶠ n : ℕ in atTop, ω ∈ A n := by
-        filter_upwards [tendsto_natCast_atTop_atTop.eventually (eventually_ge_atTop ‖ξ ω‖),
-          eventually_mem_spanningSets (P.trim (ℱ.le ⊥)) ω] with n hn hs
-        exact ⟨hn, hs⟩
-      exact hω.congr' (hlarge.mono fun n hn ↦ by simp [τ, hn])
-    · filter_upwards [hX.isLocalizingSequence_localSeq.mono] with ω hω n m hnm
-      by_cases hn : ω ∈ A n
-      · have hm : ω ∈ A m := hAmono hnm hn
-        simpa [τ, Set.piecewise, hn, hm] using hω hnm
-      · simp [τ, Set.piecewise, hn]
+    have hev : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ A n := ae_of_all _ fun ω ↦ by
+      filter_upwards [tendsto_natCast_atTop_atTop.eventually (eventually_ge_atTop ‖ξ ω‖),
+        eventually_mem_spanningSets (P.trim (ℱ.le ⊥)) ω] with n hn hs
+      exact ⟨hn, hs⟩
+    simpa only [τ] using hX.isLocalizingSequence_localSeq.piecewise_bot hA hAmono hev
   refine ⟨τ, hτ, fun n ↦ ?_⟩
   let Z := stoppedProcess (fun t ↦ {ω | ⊥ < hX.localSeq n ω}.indicator (X t))
     (hX.localSeq n)

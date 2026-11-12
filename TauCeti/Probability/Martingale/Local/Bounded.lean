@@ -45,9 +45,50 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMea
   {ℱ : Filtration ℝ≥0 mΩ} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {M : ℝ≥0 → Ω → E}
 
+-- Pathwise bounds for the particular level-localizer and initial-cutoff construction below.
+open scoped Classical in
+omit [NormedSpace ℝ E] [CompleteSpace E] in
+private theorem bounded_native_stage {Y : ℝ≥0 → Ω → E}
+    (τ η : Ω → WithTop ℝ≥0) (n : ℕ) (ω : Ω)
+    (heq : ∀ t, Y t ω = M t ω)
+    (hb : ∀ t, ‖stoppedProcess Y η t ω - Y 0 ω‖ ≤ (n : ℝ) + 1) :
+    let χ := {ω | ‖Y 0 ω‖ ≤ (n : ℝ)}.piecewise η (fun _ ↦ 0)
+    let ρ := min τ χ
+    ∀ t, let Z := stoppedProcess (fun t ↦ {ω | 0 < ρ ω}.indicator (M t)) ρ
+      ‖Z t ω - Z 0 ω‖ ≤ (n : ℝ) + 1 ∧ ‖Z t ω‖ ≤ 2 * (n : ℝ) + 1 := by
+  classical
+  intro χ ρ t
+  have hρη : ρ ω ≤ η ω := by
+    refine (min_le_right _ _).trans ?_
+    by_cases hn : ‖Y 0 ω‖ ≤ (n : ℝ) <;> simp [χ, hn]
+  have hcenter : ‖stoppedProcess M ρ t ω - M 0 ω‖ ≤ (n : ℝ) + 1 := by
+    apply stoppedProcess_mem (s := {x | ‖x - M 0 ω‖ ≤ (n : ℝ) + 1}) (fun u hu ↦ ?_) t
+    have h := hb u
+    rw [stoppedProcess_eq_of_le (hu.trans hρη), heq u, heq 0] at h
+    exact h
+  dsimp only
+  rw [stoppedProcess_indicator_comm, stoppedProcess_indicator_comm]
+  by_cases hpos : 0 < ρ ω
+  · have hn : ‖Y 0 ω‖ ≤ (n : ℝ) := by
+      by_contra hn
+      have : ρ ω ≤ 0 := (min_le_right _ _).trans (by simp [χ, hn])
+      exact (not_lt_of_ge this) hpos
+    have hinit : ‖M 0 ω‖ ≤ (n : ℝ) := by simpa only [heq 0] using hn
+    simp only [Set.indicator_apply, Set.mem_ofPred_eq, hpos, ↓reduceIte]
+    have hzero : stoppedProcess M ρ 0 = M 0 := by
+      simpa only [bot_eq_zero] using stoppedProcess_bot M ρ
+    rw [hzero]
+    have hnorm := norm_add_le (stoppedProcess M ρ t ω - M 0 ω) (M 0 ω)
+    rw [sub_add_cancel] at hnorm
+    exact ⟨hcenter, by linarith⟩
+  · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hpos, ↓reduceIte, sub_self, norm_zero]
+    constructor <;> positivity
+
 /-- An almost-surely continuous native local martingale has bounded native martingale stages on
-its original raw filtration, even without adaptation or moments of its initial value. Both bounds
-hold simultaneously in the stage index and time, outside one common null set. -/
+its original raw filtration, even without adaptation or moments of its initial value. For the
+native stage `Z := stoppedProcess (fun t ↦ {ω | 0 < ρ n ω}.indicator (M t)) (ρ n)`, the
+centered bound `‖Z t ω - Z 0 ω‖ ≤ n + 1` and full bound `‖Z t ω‖ ≤ 2 * n + 1` hold
+simultaneously for all stage indices `n` and times `t`, outside one common null set. -/
 theorem exists_isLocalizingSequence_bounded_martingale
     (hM : Locally (fun X ↦ Martingale X ℱ P) ℱ M P)
     (hc : ∀ᵐ ω ∂P, Continuous (M · ω)) :
@@ -79,17 +120,9 @@ theorem exists_isLocalizingSequence_bounded_martingale
     exact ((hcount n).mono (image_subset_range _ _)).union
       ((countable_singleton 0).mono (by simp))
   have hχ : IsLocalizingSequence ℱ χ P := by
-    refine ⟨⟨fun n ↦ ?_, ?_⟩, ?_⟩
-    · exact (hη.isStoppingTime n).piecewise_of_le (isStoppingTime_const ℱ 0)
-        (i := 0) (by simp) (by simp) (hA n)
-    · filter_upwards [hη.tendsto_top] with ω hω
-      have hlarge : ∀ᶠ n : ℕ in atTop, ω ∈ A n :=
-        tendsto_natCast_atTop_atTop.eventually (eventually_ge_atTop ‖Y 0 ω‖)
-      exact hω.congr' (hlarge.mono fun n hn ↦ by simp [χ, hn])
-    · filter_upwards [hη.mono] with ω hω n k hnk
-      by_cases hn : ω ∈ A n
-      · simpa [χ, hn, hAmono hnk hn] using hω hnk
-      · simp [χ, hn]
+    simpa only [bot_eq_zero] using hη.piecewise_bot hA hAmono
+      (ae_of_all _ fun ω ↦
+        tendsto_natCast_atTop_atTop.eventually (eventually_ge_atTop ‖Y 0 ω‖))
   let ρ := min hM.localSeq χ
   have hρ : IsLocalizingSequence ℱ ρ P := hM.isLocalizingSequence_localSeq.min hχ
   refine ⟨ρ, hρ, fun n ↦ ?_, ?_⟩
@@ -102,30 +135,6 @@ theorem exists_isLocalizingSequence_bounded_martingale
     simp [ρ, Pi.inf_apply, lt_min_iff, Set.indicator_apply, inf_comm, ite_and]
   · -- Transfer the pathwise level bounds back to M, then account for the initial cutoff.
     filter_upwards [heq, hbound] with ω heqω hb n t
-    have hρη : ρ n ω ≤ η n ω := by
-      refine (min_le_right _ _).trans ?_
-      by_cases hn : ω ∈ A n <;> simp [χ, hn]
-    have hcenter : ‖stoppedProcess M (ρ n) t ω - M 0 ω‖ ≤ (n : ℝ) + 1 := by
-      apply stoppedProcess_mem (s := {x | ‖x - M 0 ω‖ ≤ (n : ℝ) + 1}) (fun u hu ↦ ?_) t
-      have h := (hb n).2 u
-      rw [stoppedProcess_eq_of_le (hu.trans hρη), heqω u, heqω 0] at h
-      exact h
-    dsimp only
-    rw [stoppedProcess_indicator_comm, stoppedProcess_indicator_comm]
-    by_cases hpos : 0 < ρ n ω
-    · have hn : ω ∈ A n := by
-        by_contra hn
-        have : ρ n ω ≤ 0 := (min_le_right _ _).trans (by simp [χ, hn])
-        exact (not_lt_of_ge this) hpos
-      have hinit : ‖M 0 ω‖ ≤ (n : ℝ) := by simpa only [A, mem_ofPred_eq, heqω 0] using hn
-      simp only [Set.indicator_apply, Set.mem_ofPred_eq, hpos, ↓reduceIte]
-      have hzero : stoppedProcess M (ρ n) 0 = M 0 := by
-        simpa only [bot_eq_zero] using stoppedProcess_bot M (ρ n)
-      rw [hzero]
-      have hnorm := norm_add_le (stoppedProcess M (ρ n) t ω - M 0 ω) (M 0 ω)
-      rw [sub_add_cancel] at hnorm
-      exact ⟨hcenter, by linarith⟩
-    · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hpos, ↓reduceIte, sub_self, norm_zero]
-      constructor <;> positivity
+    exact bounded_native_stage (hM.localSeq n) (η n) n ω heqω (hb n).2 t
 
 end ProbabilityTheory.Locally

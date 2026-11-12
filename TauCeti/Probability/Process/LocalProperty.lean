@@ -33,6 +33,8 @@ to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_lo
 
 Enlarging a filtration preserves its localizing sequences. The stopping-time property
 transports to the larger filtration, while monotonicity and divergence are unchanged.
+Cutting localizers off at the initial time outside increasing initial-measurable events
+also preserves localization, provided those events eventually contain almost every point.
 
 ## References
 
@@ -115,6 +117,26 @@ theorem mono_filtration {ι Ω : Type*} [Preorder ι] [TopologicalSpace ι] [Ord
   isStoppingTime n := (hτ.isStoppingTime n).mono_filtration h
   tendsto_top := hτ.tendsto_top
   mono := hτ.mono
+
+/-- Cutting a localizing sequence off at the initial time outside increasing initial-measurable
+events preserves localization, if almost every point eventually belongs to the events. -/
+theorem piecewise_bot {ι Ω : Type*} [Preorder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {P : Measure Ω} {ℱ : Filtration ι mΩ} {τ : ℕ → Ω → WithTop ι} {A : ℕ → Set Ω}
+    [∀ n, DecidablePred (· ∈ A n)] (hτ : IsLocalizingSequence ℱ τ P)
+    (hA : ∀ n, MeasurableSet[ℱ ⊥] (A n))
+    (hmono : Monotone A) (hev : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ A n) :
+    IsLocalizingSequence ℱ (fun n ↦ (A n).piecewise (τ n) (fun _ ↦ ⊥)) P := by
+  classical
+  refine ⟨⟨fun n ↦ ?_, ?_⟩, ?_⟩
+  · exact (hτ.isStoppingTime n).piecewise_of_le (isStoppingTime_const ℱ ⊥)
+      (i := ⊥) (by simp) (by simp) (hA n)
+  · filter_upwards [hτ.tendsto_top, hev] with ω hω hlarge
+    exact hω.congr' (hlarge.mono fun n hn ↦ by simp [hn])
+  · filter_upwards [hτ.mono] with ω hω n k hnk
+    by_cases hn : ω ∈ A n
+    · simpa [hn, hmono hnk hn] using hω hnk
+    · simp [hn]
 
 end ProbabilityTheory.IsLocalizingSequence
 
