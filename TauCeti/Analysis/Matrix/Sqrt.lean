@@ -44,6 +44,8 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 * `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
   transpose recovers the matrix;
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
+* `Matrix.sqrt_map_ofReal` — the square root of a real positive-semidefinite matrix is real: read
+  over `𝕜`, it is the square root over `𝕜`;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
@@ -153,6 +155,27 @@ theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS 
         CFC.sqrt S * (M * (CFC.sqrt S * CFC.sqrt S) * M) * CFC.sqrt S := by
     simp only [Matrix.mul_assoc]
   rw [hreassoc, trace_mul_cycle, CFC.sqrt_mul_sqrt_self S hS.nonneg, trace_mul_comm]
+
+open scoped Classical in
+/-- **The square root of a real matrix is real.** For a positive-semidefinite real matrix `M`, the
+square root of `M` read over `𝕜` is the square root of `M` over `ℝ`, read over `𝕜`. -/
+theorem sqrt_map_ofReal {M : Matrix ι ι ℝ} (hM : 0 ≤ M) :
+    CFC.sqrt (M.map ((↑) : ℝ → 𝕜)) = (CFC.sqrt M).map (↑) := by
+  have hmul (X Y : Matrix ι ι ℝ) : (X * Y).map ((↑) : ℝ → 𝕜) = X.map (↑) * Y.map (↑) :=
+    Matrix.map_mul (f := algebraMap ℝ 𝕜)
+  -- `√M = Tᴴ T` for the real symmetric `T = √√M`, so `√M` read over `𝕜` is positive.
+  have hT : ((CFC.sqrt (CFC.sqrt M)).map ((↑) : ℝ → 𝕜))ᴴ * (CFC.sqrt (CFC.sqrt M)).map (↑) =
+      (CFC.sqrt M).map (↑) := by
+    have hc : ((CFC.sqrt (CFC.sqrt M)).map ((↑) : ℝ → 𝕜))ᴴ =
+        (star (CFC.sqrt (CFC.sqrt M))).map (↑) := by
+      ext i j
+      simp [star_eq_conjTranspose]
+    rw [hc, (CFC.sqrt_nonneg (CFC.sqrt M)).isSelfAdjoint.star_eq, ← hmul,
+      CFC.sqrt_mul_sqrt_self (CFC.sqrt M) (CFC.sqrt_nonneg M)]
+  refine CFC.sqrt_unique ?_ ?_
+  · rw [← hmul, CFC.sqrt_mul_sqrt_self M hM]
+  · rw [← hT]
+    exact (posSemidef_conjTranspose_mul_self _).nonneg
 
 /-! ### The scale form of the pencil -/
 

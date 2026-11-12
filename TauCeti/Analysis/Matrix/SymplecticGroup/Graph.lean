@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
+import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
@@ -49,6 +50,12 @@ unitary matrix `A = U_ℝ` the complex matrix is `2 i U`, so the graph phase is
 (`TauCeti.GLSymplectic.coe_graphPhase_inclusion`). A general loop is deformed to its loop of
 orthogonal polar factors through symplectic matrices, which changes no degree
 (`TauCeti.GLSymplectic.degree_map_inclusion_polarUnitary`).
+
+The Hermitian inner products of the columns of two graph frames are computed by
+`Matrix.conjTranspose_graphFrame_mul_graphFrame`: their real part is the Euclidean inner product
+of the graph vectors, and their imaginary part is the difference of the forms `yᵀ J x` on the two
+factors. In particular the graph of a symplectic matrix is Lagrangian: its graph frame has a real
+Gram matrix.
 
 ## References
 
@@ -154,6 +161,51 @@ theorem continuous_graphFrame : Continuous (graphFrame : Matrix (n ⊕ n) (n ⊕
   simp only [Matrix.add_apply, Matrix.map_apply, Matrix.smul_apply, smul_eq_mul, toBlocks₁₁,
     toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Matrix.of_apply] <;>
   fun_prop
+
+/-- The graph frame is the matrix with rows `conj ∘ φ = (1, -i)` and `φ ∘ A`, `φ = (1, i)`. -/
+private theorem graphFrame_eq_fromRows (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphFrame A = fromRows (fromCols 1 (-(Complex.I • 1)))
+      (fromCols 1 (Complex.I • 1) * A.map ((↑) : ℝ → ℂ)) := by
+  ext (i | i) (j | j) <;>
+    simp [graphFrame, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply, toBlocks₁₁,
+      toBlocks₁₂, toBlocks₂₁, toBlocks₂₂]
+
+/-- The Gram matrix of `conj ∘ φ = (1, -i)` is `1 + i J`. -/
+private theorem conjTranspose_fromCols_one_neg_I_mul :
+    (fromCols (1 : Matrix n n ℂ) (-(Complex.I • 1)))ᴴ * fromCols 1 (-(Complex.I • 1)) =
+      1 + Complex.I • (J n ℝ).map ((↑) : ℝ → ℂ) := by
+  ext (i | i) (j | j) <;>
+    simp [J, Matrix.mul_apply, Matrix.one_apply] <;> split_ifs <;> simp_all [eq_comm]
+
+/-- The Gram matrix of `φ = (1, i)` is `1 - i J`. -/
+private theorem conjTranspose_fromCols_one_I_mul :
+    (fromCols (1 : Matrix n n ℂ) (Complex.I • 1))ᴴ * fromCols 1 (Complex.I • 1) =
+      1 - Complex.I • (J n ℝ).map ((↑) : ℝ → ℂ) := by
+  ext (i | i) (j | j) <;>
+    simp [J, Matrix.mul_apply, Matrix.one_apply] <;> split_ifs <;> simp_all [eq_comm]
+
+/-- **The Gram matrix of two graph frames.** For real matrices `A` and `B` on `ℝ^{n ⊕ n}`,
+`(graphFrame B)ᴴ (graphFrame A) = (1 + Bᵀ A) + i (J - Bᵀ J A)`. On real vectors `x` and `y`, the
+Hermitian product of the graph vectors `(conj (φ y), φ (B y))` and `(conj (φ x), φ (A x))` thus
+has real part `yᵀ x + (B y)ᵀ (A x)` and imaginary part `yᵀ J x - (B y)ᵀ J (A x)`. -/
+theorem conjTranspose_graphFrame_mul_graphFrame (A B : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (graphFrame B)ᴴ * graphFrame A =
+      (1 + Bᵀ * A).map ((↑) : ℝ → ℂ) +
+        Complex.I • (J n ℝ - Bᵀ * J n ℝ * A).map ((↑) : ℝ → ℂ) := by
+  have hB : (B.map ((↑) : ℝ → ℂ))ᴴ = Bᵀ.map (↑) := by
+    ext i j
+    simp
+  rw [graphFrame_eq_fromRows, graphFrame_eq_fromRows,
+    conjTranspose_fromRows_eq_fromCols_conjTranspose, fromCols_mul_fromRows,
+    conjTranspose_fromCols_one_neg_I_mul, conjTranspose_mul, Matrix.mul_assoc,
+    ← Matrix.mul_assoc _ (fromCols 1 _), conjTranspose_fromCols_one_I_mul, hB]
+  -- Read every real matrix through the ring homomorphism `ℝ → ℂ` on matrices.
+  have key (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+      X.map ((↑) : ℝ → ℂ) = Complex.ofRealHom.mapMatrix X := (rfl)
+  simp only [key, map_add, map_sub, map_one, map_mul]
+  simp only [Matrix.mul_sub, Matrix.sub_mul, Matrix.one_mul, Matrix.mul_smul, Matrix.smul_mul,
+    smul_sub, Matrix.mul_assoc]
+  abel
 
 /-! ### The graph subspace -/
 
