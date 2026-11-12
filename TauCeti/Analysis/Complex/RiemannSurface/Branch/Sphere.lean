@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Triangulable
+public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
