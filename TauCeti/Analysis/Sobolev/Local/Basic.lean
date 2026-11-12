@@ -343,12 +343,19 @@ theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p U k f)
     exact ⟨hp.congr_ae hfg, D,
       hD.congr_ae (ae_mono (Measure.restrict_mono_set volume interior_subset) hfg), hk⟩
 
-/-- Restricting to a measurable subset preserves the local Sobolev class of any function agreeing
-with the original one on that subset. -/
-theorem MemWkpLoc.congr_mono (hf : MemWkpLoc p U k f) (hV : MeasurableSet V)
-    (hgf : Set.EqOn g f V) (hVU : V ⊆ U) : MemWkpLoc p V k g :=
-  (hf.mono hVU).congr_ae <| by
-    filter_upwards [ae_restrict_mem hV] with z hz using (hgf hz).symm
+/-- Restricting to a subset preserves the local Sobolev class of any function agreeing with the
+original one on that subset. -/
+theorem MemWkpLoc.congr_mono (hf : MemWkpLoc p U k f) (hgf : Set.EqOn g f V) (hVU : V ⊆ U) :
+    MemWkpLoc p V k g := by
+  have hg : MemLpLoc p V g := fun K hK hc => (hf.memLpLoc K (hK.trans hVU) hc).ae_eq <| by
+    filter_upwards [ae_restrict_mem hc.measurableSet] with z hz using (hgf (hK hz)).symm
+  cases k with
+  | zero => exact hg
+  | succ k =>
+    obtain ⟨-, D, hD, hk⟩ := hf.mono hVU
+    exact ⟨hg, D, hD.congr_ae <| by
+      filter_upwards [ae_restrict_mem isOpen_interior.measurableSet] with z hz using
+        (hgf (interior_subset hz)).symm, hk⟩
 
 /-- Decreasing the integrability exponent preserves each local derivative order. -/
 theorem MemWkpLoc.mono_exponent (hf : MemWkpLoc p U k f) (hqp : q ≤ p) :

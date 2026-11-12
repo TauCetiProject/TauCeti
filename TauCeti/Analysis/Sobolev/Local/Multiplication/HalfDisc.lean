@@ -75,7 +75,6 @@ theorem MemWkpLoc.memLpLoc_of_holderTriple_halfPlane (hp : 2 < p) (hqp : q ≤ p
     (memWkpLoc_zero_iff.2 <| MemWkpLoc.memLpLoc_of_holderTriple (Ω := ⟨_, isOpen_ball⟩) hp hqp
       (MemWkpLoc.planarReflection_higherReflectionCoeff_ball Fact.out x r
         (hg.mono (inter_subset_inter_left _ hΩ))))
-    (measurableSet_ball.inter (measurableSet_le measurable_const Complex.measurable_im))
     (fun z hz => (planarReflection_of_nonneg _ _ hz.2).symm) inter_subset_left
 
 /-- **Order-zero mixed products on half-discs.** For `p > 2` and `1 ≤ q ≤ p`, the product of a
@@ -95,7 +94,6 @@ theorem MemLpLoc.bilin_of_memWkpLoc_halfPlane (B : F →L[ℝ] G →L[ℝ] H) (h
         (higherReflectionCoeff 1))
       (MemWkpLoc.planarReflection_higherReflectionCoeff_ball Fact.out x r
         (hg.mono (inter_subset_inter_left _ hΩ))))
-    (measurableSet_ball.inter (measurableSet_le measurable_const Complex.measurable_im))
     (fun z hz => by simp [planarReflection_of_nonneg _ _ hz.2]) inter_subset_left
 
 /-- **Order-one mixed products on half-discs.** For `p > 2` and `1 < q ≤ p`, the product of a
@@ -122,7 +120,6 @@ theorem MemWkpLoc.bilin_of_memLpLoc_top_halfPlane [CompleteSpace H] (B : F →L[
         (higherReflectionCoeff 1))
       (MemWkpLoc.planarReflection_higherReflectionCoeff_ball hq1 x r
         (hg.mono (inter_subset_inter_left _ hΩ))))
-    (measurableSet_ball.inter (measurableSet_le measurable_const Complex.measurable_im))
     (fun z hz => by simp [planarReflection_of_nonneg _ _ hz.2]) inter_subset_left
 
 /-- **Order-one mixed products on half-discs with finite-dimensional factors.** For `p > 2` and
