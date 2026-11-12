@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Cech
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
 /-!
 # Square-integrable holomorphic Čech cochains on a Riemann surface
@@ -316,11 +317,10 @@ def chartSection (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hV : (V : S
     bergmanSpace ℂ (e.chartRead V) →ₗ[ℂ]
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op V) where
   toFun u := holomorphicStructureSheafModules.ofContMDiff
-    (fun x : V ↦ BergmanSpace.representative u (e x)) <| MDifferentiable.contMDiff fun x ↦
+    (fun x : V ↦ BergmanSpace.representative u (e x))
+    (Manifold.mdifferentiable_restrict_comp_chart he hV fun x hx ↦
       ((BergmanSpace.differentiableOn_representative u).differentiableAt
-        ((e.chartRead V).isOpen.mem_nhds (map_mem_chartRead hV x.2))).mdifferentiableAt.comp x
-        ((mdifferentiableAt_of_mem_maximalAtlas he (hV x.2)).comp x
-          (contMDiff_subtype_val.mdifferentiable one_ne_zero x))
+        ((e.chartRead V).isOpen.mem_nhds (map_mem_chartRead hV hx))).mdifferentiableAt).contMDiff
   map_add' u v := by
     ext x
     simp [BergmanSpace.representative_add _ _ (map_mem_chartRead hV x.2)]
