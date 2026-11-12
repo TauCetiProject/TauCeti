@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.ProjectiveLine
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ProjectiveLine.Cohomology
-import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
 
 /-!
 # The index of `∂bar` on the projective line is its Euler characteristic
@@ -19,19 +18,14 @@ identifies that `2` with the Euler characteristic `χ(ℂℙ¹)` of a finite CW 
 instance of the closed Riemann-Roch formula `ind_ℝ D = n χ(Σ) + 2 c₁(E)[Σ]` with `n = 1` and the
 trivial bundle, `c₁ = 0`.
 
-The projective line is homeomorphic to the Riemann sphere `OnePoint ℂ` through the homeomorphism
-underlying `OnePoint.diffeomorphProjectivization`, and the one-point compactification of the real
-plane has finite CW type and Euler characteristic `1 + (-1) ^ 2 = 2` (`TauCeti.eulerChar_onePoint`).
-
-The finite CW type of `ℂℙ¹` is provided as a theorem and used as a local instance here, rather than
-as a global instance, leaving room for a general instance on compact manifolds. Since
-`FiniteCWType` is a `Prop`, the Euler characteristic statements below apply verbatim under any
-other instance.
+The Euler characteristic side, `χ(ℂℙ¹) = 2` (`TauCeti.ProjectiveLine.eulerChar_eq_two`), is
+computed from the homeomorphism with the Riemann sphere `OnePoint ℂ`. The finite CW type of `ℂℙ¹`
+(`TauCeti.ProjectiveLine.finiteCWType`) is a theorem rather than a global instance and is used as a
+local instance here. Since `FiniteCWType` is a `Prop`, the statement below applies verbatim under
+any other instance.
 
 ## Main declarations
 
-* `TauCeti.ProjectiveLine.finiteCWType`: `ℂℙ¹` has finite CW type.
-* `TauCeti.ProjectiveLine.eulerChar_eq_two`: `χ(ℂℙ¹) = 2`.
 * `dolbeaultCohomology.finrank_zero_zero_sub_finrank_zero_one_projectivization_eq_eulerChar`:
   the index of `∂bar` on complex functions over `ℂℙ¹` is `χ(ℂℙ¹)`.
 
@@ -49,29 +43,6 @@ open Module
 open scoped LinearAlgebra.Projectivization
 
 namespace TauCeti
-
-namespace ProjectiveLine
-
-/-- The homeomorphism between the Riemann sphere `OnePoint ℂ` and the projective line `ℂℙ¹`,
-underlying the biholomorphism `OnePoint.diffeomorphProjectivization`. -/
-private noncomputable def onePointHomeomorph : OnePoint ℂ ≃ₜ ℙ ℂ (Fin 2 → ℂ) :=
-  (OnePoint.diffeomorphProjectivization ℂ 0).toHomeomorph
-
-/-- **The projective line has finite CW type**, being homeomorphic to the Riemann sphere
-`OnePoint ℂ`. This is a theorem, not a global instance; use it as a local instance where needed. -/
-theorem finiteCWType : FiniteCWType (ℙ ℂ (Fin 2 → ℂ)) :=
-  onePointHomeomorph.symm.finiteCWType
-
-attribute [local instance] finiteCWType
-
-/-- **The Euler characteristic of the projective line.** `χ(ℂℙ¹) = 2`, transported from the
-Riemann sphere `OnePoint ℂ` along their homeomorphism. The finite CW type is
-`TauCeti.ProjectiveLine.finiteCWType`. -/
-theorem eulerChar_eq_two : eulerChar (ℙ ℂ (Fin 2 → ℂ)) = 2 := by
-  rw [← onePointHomeomorph.eulerChar_eq, eulerChar_onePoint, Complex.finrank_real_complex]
-  norm_num
-
-end ProjectiveLine
 
 namespace dolbeaultCohomology
 
