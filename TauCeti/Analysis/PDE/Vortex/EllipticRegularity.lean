@@ -22,8 +22,8 @@ square-integrable field `y` is a weak solution of `L_x y = f` if `∫ ⟪y, L_x*
 every smooth compactly supported test field `η`; this is the notion of solution produced by the
 weak right inverse of `TauCeti.Analysis.PDE.Vortex.RightInverse`. This file shows that weak
 solutions gain one derivative, measured on the Sobolev scale `sobolevFields s` of the framed field
-space. The same holds for weak solutions of `L_x* η = g`, tested against `L_x`; their kernel is the
-weak cokernel of `L_x`.
+space. The same holds for weak solutions of `L_x* η = g`, tested against `L_x`; the weak kernel of
+`L_x*` (the case `g = 0`) is the weak cokernel of `L_x`.
 
 The principal part of `L_x` is that of the vacuum operator `L₀` (`vacuumOperator`), and
 `L_x - L₀` is multiplication by a matrix whose entries are coordinates of `x - vacuumField`. A weak
@@ -53,7 +53,8 @@ multiplication by the transposed matrix.
   `mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedOperator_eq`: the same three
   statements for weak solutions of `L_x* η = g`, in the sense that `∫ ⟪η, L_x v⟫ = ∫ ⟪g, v⟫` for
   every smooth compactly supported test field `v`. With `g = 0` they show that the weak `L²`
-  cokernel of `L_x` lies in `H¹`, and in `H^(k+1)` at a smooth field.
+  cokernel of `L_x` lies in `H¹` at an essentially bounded measurable field, and in `H^(k+1)` at a
+  smooth field whose coordinates have bounded derivatives through order `k`.
 
 These are regularity statements for weak solutions. The Fredholm property of `L_x` between
 Sobolev spaces and the dimension of its kernel are not treated here.
@@ -107,7 +108,7 @@ private theorem inner_gaugeFixedOperator_eq_add_inner_zerothOrder
     ⟪v, gaugeFixedOperator x η z⟫ = ⟪v, gaugeFixedOperator vacuumField η z⟫ +
       ⟪zerothOrder (fun w ↦ (gaugeFixedZerothOrderMatrix w).transpose) (x z - vacuumField z) v,
         η z⟫ := by
-  rw [gaugeFixedOperator_eq_add_gaugeFixedZerothOrder, inner_add_right]
+  rw [gaugeFixedOperator_eq_add_gaugeFixedZerothOrder x vacuumField, inner_add_right]
   congr 1
   simp only [zerothOrder, gaugeFixedZerothOrder, PiLp.inner_apply, RCLike.inner_apply,
     conj_trivial, Matrix.transpose_apply, Finset.mul_sum, Finset.sum_mul]
@@ -222,8 +223,10 @@ private theorem memLp_zerothOrder
   gcongr
   exact (abs_gaugeFixedZerothOrderMatrix_le _ a b).trans (hwC z hz)
 
-/-- A weak solution of `K x y = f` is a weak solution of `K vacuumField y = f - Z y`, where `Z` is
-the zeroth-order term. -/
+/-- If `∫ ⟪y, K x η⟫ = ∫ ⟪f, η⟫` for a test field `η`, then
+`∫ ⟪y, K vacuumField η⟫ = ∫ ⟪f - Z y, η⟫`, where `Z` is the zeroth-order term
+`zerothOrder A (x z - vacuumField z)`: tested against the vacuum operator, `y` has the
+zeroth-order term moved to the right-hand side. -/
 private theorem integral_inner_vacuumField_eq
     (hK : ∀ (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) z, K vacuumField η z = S η z)
     (hB : ∀ x η z v, ⟪v, K x η z⟫ =
@@ -235,6 +238,8 @@ private theorem integral_inner_vacuumField_eq
     ∫ z, ⟪y z, K vacuumField η z⟫ =
       ∫ z, ⟪f z - zerothOrder A (x z - vacuumField z) (y z), η z⟫ := by
   have hηL : MemLp η 2 volume := hη.continuous.memLp_of_hasCompactSupport hc
+  -- `hK` only applies to Schwartz fields, so `η` is packaged as the Schwartz field
+  -- `hc.toSchwartzMap hη`, which `hS` identifies with `η` as a function.
   have hL : MemLp (K vacuumField η) 2 volume := by
     have hS : ⇑(hc.toSchwartzMap hη) = η := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
     rw [show K vacuumField η = S (hc.toSchwartzMap hη) from funext fun z ↦ by rw [← hK, hS]]
@@ -298,8 +303,8 @@ private theorem contDiff_gaugeFixedZerothOrderMatrix_and_bounded {k : ℕ}
     · simp [iteratedFDeriv_const_of_ne hn]
   fin_cases i <;> fin_cases j <;> first | exact h0 | exact hw _ | exact hneg (hw _)
 
-/-- One step of the elliptic bootstrap: a weak solution in `H^k` of `K x y = f ∈ H^k` lies in
-`H^(k+1)`. -/
+/-- One step of the elliptic bootstrap: a field `y ∈ H^k` with `∫ ⟪y, K x η⟫ = ∫ ⟪f, η⟫` for every
+smooth compactly supported test field `η`, where `f ∈ H^k`, lies in `H^(k+1)`. -/
 private theorem mem_sobolevFields_natCast_add_one_of_mem_sobolevFields {k : ℕ}
     (hT : ∀ Y η, ∑ i, T Y i (cpt η i) = ∑ j, Y j (cpt (S η) j))
     (hK : ∀ (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) z, K vacuumField η z = S η z)
@@ -391,8 +396,8 @@ theorem mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq
   mem_sobolevFields_one_of_integral_inner_eq (A := gaugeFixedZerothOrderMatrix)
     sum_temperedVacuumOperator_apply gaugeFixedAdjoint_vacuumField
     memSobolev_add_one_of_temperedVacuumOperator (fun i j ↦ ⟨i, j, fun _ ↦ rfl⟩)
-    (zerothOrder_gaugeFixedZerothOrderMatrix ▸
-      inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder) hx hC hy hf hweak
+    (fun x ↦ zerothOrder_gaugeFixedZerothOrderMatrix ▸
+      inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x vacuumField) hx hC hy hf hweak
 
 /-- **The elliptic bootstrap for the gauge-fixed operator.** Let `x` be a smooth field whose
 coordinates have bounded derivatives through order `k`, and let `y` be a square-integrable weak
@@ -408,8 +413,9 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
   mem_sobolevFields_natCast_add_one_of_integral_inner_eq k (A := gaugeFixedZerothOrderMatrix)
     sum_temperedVacuumOperator_apply gaugeFixedAdjoint_vacuumField
     memSobolev_add_one_of_temperedVacuumOperator (fun i j ↦ ⟨i, j, fun _ ↦ rfl⟩)
-    (zerothOrder_gaugeFixedZerothOrderMatrix ▸
-      inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder) hx hbound hy hf hweak
+    (fun x ↦ zerothOrder_gaugeFixedZerothOrderMatrix ▸
+      inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x vacuumField) hx hbound hy hf
+    hweak
 
 /-! ### Weak solutions of `L_x* η = g` -/
 
