@@ -16,16 +16,19 @@ An element of `TauCeti.Wkp mu Ω p (n + 1)` is described by a chain of `Lᵖ` fi
 chain from an element of `Wkp` and, conversely, assembles an element of `Wkp` from an `Lᵖ` chain,
 by induction on the order through `TauCeti.Wkp.lowerOrder` and `TauCeti.Wkp.mk`. Any weak
 derivative chain of the value of an element of `Wkp` agrees with the recorded derivatives, and its
-fields are bounded in `Lᵖ` by the graph norm.
+fields are bounded in `Lᵖ` by the graph norm, so that they converge in `Lᵖ` when the elements
+of `Wkp` converge.
 
 ## Main declarations
 
 * `TauCeti.Wkp.exists_iteratedGradient_chain`: the weak derivative chain of an element of `Wkp`.
 * `TauCeti.Wkp.exists_value_iteratedGradient_ae_eq_of_chain`: an `Lᵖ` weak derivative chain is
   represented by an element of `Wkp`.
-* `TauCeti.Wkp.iteratedGradient_ae_eq_and_eLpNorm_le_of_chain`: a weak derivative chain of the
+* `TauCeti.Wkp.ae_eq_iteratedGradient_and_eLpNorm_le_of_chain`: a weak derivative chain of the
   value of an element of `Wkp` recovers its highest recorded derivative, with `Lᵖ` bounds by the
   graph norm.
+* `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto_of_chain`: convergence in `Wkp` gives `Lᵖ`
+  convergence of the fields of weak derivative chains of the values.
 
 ## References
 
@@ -132,7 +135,7 @@ private theorem memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient {j : ℕ}
 `G 0, …, G n` be a chain of iterated weak gradients on `Ω` of a representative `f` of the value of
 `y`. Then `G n` is the highest recorded derivative of `y`, and every `G i` with `i ≤ n` lies in
 `Lᵖ(Ω)` with norm at most `‖y‖`. -/
-theorem iteratedGradient_ae_eq_and_eLpNorm_le_of_chain :
+theorem ae_eq_iteratedGradient_and_eLpNorm_le_of_chain :
     ∀ (n : ℕ) (y : Wkp mu Omega p (n + 1)) {f : E → ℝ} {G : (i : ℕ) → E → IteratedGradient E i},
     value (n + 1) y =ᵐ[mu.restrict Omega] f →
     HasWeakFDerivOn mu Omega f (fun x => innerSL ℝ (G 0 x)) →
@@ -148,7 +151,7 @@ theorem iteratedGradient_ae_eq_and_eLpNorm_le_of_chain :
     obtain rfl := Nat.le_zero.1 hi
     exact memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient hG0
   | n + 1, y, f, G, hy, h0, hG => by
-    obtain ⟨hGn, hb⟩ := iteratedGradient_ae_eq_and_eLpNorm_le_of_chain n (lowerOrder (n + 1) y)
+    obtain ⟨hGn, hb⟩ := ae_eq_iteratedGradient_and_eLpNorm_le_of_chain n (lowerOrder (n + 1) y)
       (by rwa [← value_succ]) h0 fun i hi => hG i (by omega)
     have hGn1 : G (n + 1) =ᵐ[mu.restrict Omega] iteratedGradient (n + 1) y :=
       ((hG n (by omega)).congr_ae hGn).ae_eq (hasWeakFDerivOn_iteratedGradient n y)
@@ -157,6 +160,42 @@ theorem iteratedGradient_ae_eq_and_eLpNorm_le_of_chain :
     · obtain ⟨hm, hle⟩ := hb i (by omega)
       exact ⟨hm, hle.trans (ENNReal.ofReal_le_ofReal (norm_lowerOrder_le _ y))⟩
     · exact memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient hGn1
+
+/-- **Convergence of weak derivative chains.** Let `y a → w` in `W^{n+1,p}(Ω)` along a filter `l`,
+with values representing `f a` and `g` almost everywhere on `Ω`, and let `G a` and `H` be chains of
+iterated weak gradients on `Ω` of `f a` and `g`. Then `G a i → H i` in `Lᵖ(Ω)` along `l` for every
+`i ≤ n`. -/
+theorem tendsto_eLpNorm_sub_of_tendsto_of_chain (n : ℕ) {α : Type*} {l : Filter α}
+    {y : α → Wkp mu Omega p (n + 1)} {w : Wkp mu Omega p (n + 1)}
+    (hyw : Filter.Tendsto y l (nhds w)) {f : α → E → ℝ} {g : E → ℝ}
+    {G : α → (i : ℕ) → E → IteratedGradient E i} {H : (i : ℕ) → E → IteratedGradient E i}
+    (hy : ∀ a, value (n + 1) (y a) =ᵐ[mu.restrict Omega] f a)
+    (hw : value (n + 1) w =ᵐ[mu.restrict Omega] g)
+    (hG0 : ∀ a, HasWeakFDerivOn mu Omega (f a) fun x => innerSL ℝ (G a 0 x))
+    (hG : ∀ a, ∀ i < n, HasWeakFDerivOn mu Omega (G a i) (G a (i + 1)))
+    (hH0 : HasWeakFDerivOn mu Omega g fun x => innerSL ℝ (H 0 x))
+    (hH : ∀ i < n, HasWeakFDerivOn mu Omega (H i) (H (i + 1))) {i : ℕ} (hi : i ≤ n) :
+    Filter.Tendsto (fun a => eLpNorm (G a i - H i) p (mu.restrict Omega)) l (nhds 0) := by
+  -- The chain `G a - H` of `f a - g` bounds the difference of the fields by `‖y a - w‖`.
+  have hle : ∀ a, eLpNorm (G a i - H i) p (mu.restrict Omega) ≤ ENNReal.ofReal ‖y a - w‖ := by
+    intro a
+    have hval : value (n + 1) (y a - w) =ᵐ[mu.restrict Omega] f a - g := by
+      rw [← valueL_apply, map_sub, valueL_apply, valueL_apply]
+      filter_upwards [Lp.coeFn_sub (value (n + 1) (y a)) (value (n + 1) w), hy a, hw]
+        with z hz hyz hwz
+      rw [hz, Pi.sub_apply, Pi.sub_apply, hyz, hwz]
+    have h0 : HasWeakFDerivOn mu Omega (f a - g)
+        fun x => innerSL ℝ ((fun j => G a j - H j) 0 x) := by
+      have heq : (fun x => innerSL ℝ ((fun j => G a j - H j) 0 x)) =
+          (fun x => innerSL ℝ (G a 0 x)) - fun x => innerSL ℝ (H 0 x) :=
+        funext fun x => by simp only [Pi.sub_apply, map_sub]
+      rw [heq]
+      exact (hG0 a).sub hH0
+    exact ((ae_eq_iteratedGradient_and_eLpNorm_le_of_chain n (y a - w) hval h0
+      fun j hj => (hG a j hj).sub (hH j hj)).2 i hi).2
+  have h0 : Filter.Tendsto (fun a => ENNReal.ofReal ‖y a - w‖) l (nhds 0) := by
+    simpa using ENNReal.tendsto_ofReal (tendsto_iff_norm_sub_tendsto_zero.1 hyw)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0 (fun _ => bot_le) hle
 
 end Wkp
 

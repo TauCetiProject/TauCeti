@@ -94,7 +94,7 @@ theorem eqOn_preciseRepresentative_sum_repr (b : Module.Basis ι ℝ F) (hp : 1 
     (continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const)
   have hcoord : ∀ i, (fun z => b.repr (f z) i) =ᵐ[volume.restrict Ω]
       preciseRepresentative volume fun z => b.repr (f z) i := fun i =>
-    (hf.clm_comp (LinearMap.toContinuousLinearMap (b.coord i))).ae_eq_preciseRepresentative hp
+    (b.memLpLoc_iff.1 hf i).ae_eq_preciseRepresentative hp
   filter_upwards [ae_all_iff.2 hcoord] with z hz
   conv_lhs => rw [← b.sum_repr (f z)]
   exact Finset.sum_congr rfl fun i _ => by rw [← hz i]

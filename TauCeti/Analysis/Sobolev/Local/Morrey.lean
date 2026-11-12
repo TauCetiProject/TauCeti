@@ -144,14 +144,16 @@ private theorem eqOn_preciseRepresentative_coord (hp : 2 < p) (hu : MemWkpLoc p 
         (fun w => ((Module.finBasis ℝ F).coord i).toContinuousLinearMap (u w)) z •
           Module.finBasis ℝ F i) Ω := by
   set b := Module.finBasis ℝ F
-  set ℓ : Fin (finrank ℝ F) → F →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
   have hp1 : 1 ≤ p := one_le_two.trans hp.le
-  have hcont : ContinuousOn
-      (fun z => ∑ i, preciseRepresentative volume (fun w => ℓ i (u w)) z • b i) Ω :=
-    continuousOn_finsetSum _ fun i _ =>
-      (continuousOn_preciseRepresentative_real hp (hu.clm_comp (ℓ i))).smul continuousOn_const
-  exact ⟨b.eqOn_preciseRepresentative_sum_repr hp1 hu.memLpLoc fun i =>
-    continuousOn_preciseRepresentative_real hp (hu.clm_comp (ℓ i)), hcont⟩
+  have hℓ : ∀ i w, (b.coord i).toContinuousLinearMap w = b.repr w i := fun i w => by
+    rw [LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
+  have hc : ∀ i, ContinuousOn (preciseRepresentative volume fun w => b.repr (u w) i) Ω :=
+    fun i => by
+      simpa only [hℓ] using continuousOn_preciseRepresentative_real hp
+        (hu.clm_comp (b.coord i).toContinuousLinearMap)
+  simp only [hℓ]
+  exact ⟨b.eqOn_preciseRepresentative_sum_repr hp1 hu.memLpLoc hc,
+    continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const⟩
 
 /-- **Continuity of `W^{1,p}_loc` maps for `p > 2`.** The precise representative of
 `u ∈ MemWkpLoc p Ω 1`, which agrees with `u` almost everywhere on `Ω`
@@ -236,6 +238,35 @@ theorem MemWkpLoc.exists_dist_preciseRepresentative_le (hp : 2 < p) :
         gcongr
         linarith
 
+/-- **Averaging over a planar ball.** If `p ≠ 0`, `u` has finite `Lᵖ(B(x, r))` seminorm and
+`t ≤ ‖u y‖` for almost every `y ∈ B(x, r)`, then `t ≤ r^{-2/p} ‖u‖_{Lᵖ(B(x, r))}`, as the
+volume of `B(x, r)` is at least `r ^ 2`. -/
+private theorem le_rpow_neg_mul_toReal_eLpNorm_of_ae_le {G : Type*} [NormedAddCommGroup G]
+    (hp : p ≠ 0) {u : ℂ → G} {x : ℂ} {r t : ℝ} (hr : 0 < r)
+    (hu : eLpNorm u p (volume.restrict (ball x r)) ≠ ∞)
+    (h : ∀ᵐ y ∂volume.restrict (ball x r), t ≤ ‖u y‖) :
+    t ≤ r ^ (-(2 / p.toReal)) * (eLpNorm u p (volume.restrict (ball x r))).toReal := by
+  have havg := le_toReal_eLpNorm_div_of_ae_le hp
+    (fun h => (measure_ball_pos volume x hr).ne' (Measure.restrict_eq_zero.1 h))
+    (by rw [Measure.restrict_apply_univ]; exact measure_ball_lt_top.ne) hu h
+  rw [Measure.restrict_apply_univ] at havg
+  set s : ℝ := 1 / p.toReal
+  have hVs : r ^ (2 * s) ≤ (volume (ball x r)).toReal ^ s := by
+    rw [Real.rpow_mul hr.le, Complex.volume_ball]
+    refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
+    simp only [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal hr.le,
+      ENNReal.coe_toReal, NNReal.coe_real_pi, Real.rpow_two]
+    nlinarith [Real.two_le_pi, sq_nonneg r]
+  have hexp : r ^ (-(2 / p.toReal)) = (r ^ (2 * s))⁻¹ := by
+    rw [← Real.rpow_neg hr.le]
+    congr 1
+    simp only [s]
+    ring
+  calc t ≤ (eLpNorm u p (volume.restrict (ball x r))).toReal / (volume (ball x r)).toReal ^ s :=
+        havg
+    _ ≤ (eLpNorm u p (volume.restrict (ball x r))).toReal / r ^ (2 * s) := by gcongr
+    _ = _ := by rw [hexp, div_eq_mul_inv, mul_comm]
+
 /-- **The local Morrey sup bound.** Let `2 < p ≤ ∞` and `α = 1 - 2 / p`. There is a constant
 `C > 0`, depending only on `p` and `F`, such that the following holds. Let `u ∈ MemWkpLoc p Ω 1`
 with weak derivative `D` on `Ω`, let `r > 0` and let `x` be a point with `closedBall x (2 r) ⊆ Ω`.
@@ -245,7 +276,7 @@ Then the precise representative `u*` of `u` satisfies
 
 The proof averages the local Morrey inequality
 `TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le` over `B(x, r)`, through
-`TauCeti.le_toReal_eLpNorm_div_add_of_ae_le`. -/
+`MeasureTheory.le_toReal_eLpNorm_div_of_ae_le`. -/
 theorem MemWkpLoc.exists_norm_preciseRepresentative_le (hp : 2 < p) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Ω : Opens ℂ} {u : ℂ → F} {D : ℂ → ℂ →L[ℝ] F}, MemWkpLoc p Ω 1 u →
       HasWeakFDerivOn volume Ω u D → ∀ {x : ℂ} {r : ℝ}, 0 < r → closedBall x (2 * r) ⊆ Ω →
@@ -259,74 +290,35 @@ theorem MemWkpLoc.exists_norm_preciseRepresentative_le (hp : 2 < p) :
   set α : ℝ := (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ)
   set B := ball x r
   set N := (eLpNorm D p (volume.restrict (ball x (2 * r)))).toReal
-  set A := C * N * r ^ α
   set c := preciseRepresentative volume u x
   have hBK : B ⊆ closedBall x (2 * r) :=
     ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith))
-  have hBΩ : B ⊆ Ω := hBK.trans hxr
   have hDfin : eLpNorm D p (volume.restrict (ball x (2 * r))) ≠ ∞ :=
     ((memLpLoc_iff.1 (hu.memLpLoc_of_hasWeakFDerivOn hD) _ hxr
       (isCompact_closedBall _ _)).mono_measure
         (Measure.restrict_mono ball_subset_closedBall le_rfl)).eLpNorm_ne_top
-  -- Pointwise: `‖u*(x)‖ ≤ ‖u*(y)‖ + A` for `y ∈ B`.
-  have hpt : ∀ y ∈ B, ‖c‖ ≤ ‖preciseRepresentative volume u y‖ + A := by
+  -- Pointwise: `‖u*(x)‖ - C N r ^ α ≤ ‖u*(y)‖` for `y ∈ B`.
+  have hpt : ∀ y ∈ B, ‖c‖ - C * N * r ^ α ≤ ‖preciseRepresentative volume u y‖ := by
     intro y hy
-    have hxy : dist x y < r := by
-      rw [dist_comm]
-      exact hy
-    have hsub : closedBall x (2 * dist x y) ⊆ closedBall x (2 * r) :=
-      closedBall_subset_closedBall (by linarith)
-    have h := hdist hu hD (hsub.trans hxr)
-    have h2 : dist c (preciseRepresentative volume u y) ≤ A := by
-      refine h.trans ?_
-      have hN : (eLpNorm D p (volume.restrict (ball x (2 * dist x y)))).toReal ≤ N :=
-        ENNReal.toReal_mono hDfin (eLpNorm_mono_measure _
-          (Measure.restrict_mono (ball_subset_ball (by linarith)) le_rfl))
-      have hα : dist x y ^ α ≤ r ^ α :=
-        Real.rpow_le_rpow dist_nonneg hxy.le NNReal.zero_le_coe
-      have := mul_le_mul hN hα (Real.rpow_nonneg dist_nonneg _)
-        (ENNReal.toReal_nonneg.trans hN)
-      calc _ = C * ((eLpNorm D p (volume.restrict (ball x (2 * dist x y)))).toReal *
-            dist x y ^ α) := by ring
-        _ ≤ C * (N * r ^ α) := by gcongr
-        _ = A := by ring
-    calc ‖c‖ ≤ ‖preciseRepresentative volume u y‖ +
-          ‖c - preciseRepresentative volume u y‖ := norm_le_norm_add_norm_sub' _ _
-      _ ≤ _ := by
-        rw [← dist_eq_norm]
-        linarith
-  have hae : ∀ᵐ y ∂volume.restrict B, ‖c‖ ≤ ‖u y‖ + A := by
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hBΩ
+    have hxy : dist x y ≤ r := (dist_comm x y ▸ mem_ball.1 hy).le
+    have hN : (eLpNorm D p (volume.restrict (ball x (2 * dist x y)))).toReal ≤ N :=
+      ENNReal.toReal_mono hDfin (eLpNorm_mono_measure _
+        (Measure.restrict_mono (ball_subset_ball (by linarith)) le_rfl))
+    have h : dist c (preciseRepresentative volume u y) ≤ C * N * r ^ α :=
+      (hdist hu hD ((closedBall_subset_closedBall (by linarith)).trans hxr)).trans (by gcongr)
+    rw [dist_eq_norm] at h
+    linarith [norm_le_norm_add_norm_sub' c (preciseRepresentative volume u y)]
+  have hae : ∀ᵐ y ∂volume.restrict B, ‖c‖ - C * N * r ^ α ≤ ‖u y‖ := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (hBK.trans hxr)
       (hu.memLpLoc.ae_eq_preciseRepresentative hp1), self_mem_ae_restrict measurableSet_ball]
       with y hy hyB
     rw [hy]
     exact hpt y hyB
-  have huB : MemLp u p (volume.restrict B) :=
-    (memLpLoc_iff.1 hu.memLpLoc _ hxr (isCompact_closedBall _ _)).mono_measure
-      (Measure.restrict_mono hBK le_rfl)
-  have hA : 0 ≤ A := by
-    have := ENNReal.toReal_nonneg (a := eLpNorm D p (volume.restrict (ball x (2 * r))))
-    positivity
-  -- Average the pointwise bound over `B`, then compare `vol(B) ≥ r ^ 2`.
-  have havg := le_toReal_eLpNorm_div_add_of_ae_le hp1 (measure_ball_pos volume x hr).ne'
-    measure_ball_lt_top.ne huB hA hae
-  set s : ℝ := 1 / p.toReal
-  have hVs : r ^ (2 * s) ≤ (volume B).toReal ^ s := by
-    rw [Real.rpow_mul hr.le, Complex.volume_ball]
-    refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
-    simp only [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal hr.le,
-      ENNReal.coe_toReal, NNReal.coe_real_pi, Real.rpow_two]
-    nlinarith [Real.two_le_pi, sq_nonneg r]
-  have hexp : r ^ (-(2 / p.toReal)) = (r ^ (2 * s))⁻¹ := by
-    rw [← Real.rpow_neg hr.le]
-    congr 1
-    simp only [s]
-    ring
-  calc ‖c‖ ≤ (eLpNorm u p (volume.restrict B)).toReal / (volume B).toReal ^ s + A := havg
-    _ ≤ (eLpNorm u p (volume.restrict B)).toReal / r ^ (2 * s) + A := by
-        gcongr
-    _ = _ := by
-        rw [hexp, div_eq_mul_inv, mul_comm]
+  -- Average the pointwise bound over `B`.
+  have := le_rpow_neg_mul_toReal_eLpNorm_of_ae_le (zero_lt_one.trans_le hp1).ne' hr
+    ((memLpLoc_iff.1 hu.memLpLoc _ hxr (isCompact_closedBall _ _)).mono_measure
+      (Measure.restrict_mono hBK le_rfl)).eLpNorm_ne_top hae
+  linarith
 
 /-- **Morrey's embedding for `W^{1,p}_loc` maps on compact sets.** If `2 < p ≤ ∞`, the precise
 representative of `u ∈ MemWkpLoc p Ω 1` is Hölder continuous with exponent `1 - 2 / p` on every
