@@ -44,7 +44,6 @@ variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ]
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
   (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
   (hcont : ∀ l, Continuous fun y ↦ P y l)
   (hR : ∀ g : Γ, Continuous fun a : Y × E ↦ R g a.1 a.2)
@@ -55,31 +54,31 @@ variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ]
 covering of the base, via `x ↦ (p x, [x])`. The target has the product subspace topology. -/
 noncomputable def torusFamilyAffineQuotientPullbackHomeomorph :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     AddAction.orbitRel.Quotient Λ (Y × E) ≃ₜ
-      β.Pullback (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      β.Pullback (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
         β (fun g _ ↦ hβ.map_smul g)) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     hcont hR hbc
   let p : AddAction.orbitRel.Quotient Λ (Y × E) →[Γ] Y :=
     ⟨torusFamilyProjection P, fun g x ↦ by simp⟩
   exact p.orbitRelQuotientPullbackHomeomorph β _
-    (torusFamilyAffineQuotientLift_mk P R ρ hequiv b hb hone hmul hbone hbmul β _)
+    (torusFamilyAffineQuotientLift_mk P R ρ hequiv b hb hone hmul hbmul β _)
     (continuous_torusFamilyProjection P) hβ
-    (continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul hβ.continuous)
+    (continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul hβ.continuous)
 
 /-- The covering comparison preserves the base point and records the affine orbit. -/
 @[simp] theorem torusFamilyAffineQuotientPullbackHomeomorph_val
     (x : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    (torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    (torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbmul
       hcont hR hbc β hβ x).1 = (torusFamilyProjection P x, Quotient.mk _ x) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     hcont hR hbc
   simp only [torusFamilyAffineQuotientPullbackHomeomorph,
     MulActionHom.orbitRelQuotientPullbackHomeomorph_apply,
@@ -91,16 +90,16 @@ This formula allows arbitrary linear and translation parts of the affine action.
 @[simp] theorem torusFamilyAffineQuotientPullbackHomeomorph_symm_mk
     (g : Γ) (y : Y) (v : E) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    (torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    (torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbmul
       hcont hR hbc β hβ).symm
         ⟨(g • y, Quotient.mk _ (Quotient.mk _ (y, v))), by
           simpa only [torusFamilyAffineQuotientLift_mk, torusFamilyProjection_mk] using
             hβ.map_smul g (e := y)⟩ =
       g • (Quotient.mk _ (y, v) : AddAction.orbitRel.Quotient Λ (Y × E)) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  apply (torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  apply (torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbmul
     hcont hR hbc β hβ).injective
   apply Subtype.ext
   simp only [Homeomorph.apply_symm_apply, torusFamilyAffineQuotientPullbackHomeomorph_val]
@@ -126,7 +125,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCo
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
   (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
   (hR : ∀ g : Γ, ContMDiff (I.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun a : Y × E ↦ R g a.1 a.2)
   (hbc : letI := periodAddAction P
@@ -141,61 +139,62 @@ second projection; no manifold structure on that pullback is assumed. -/
 noncomputable def torusFamilyAffineQuotientPullbackDiffeomorph :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := hβ.isCancelSMul
     letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous)
-      (isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul)
+      (isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul)
     letI := (hβ.isLocalHomeomorph.pullback_snd
-      (continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      (continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
         (hf := fun g _ ↦ hβ.map_smul g) hβ.continuous)).chartedSpaceComap (H := ModelProd H E)
     Diffeomorph (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E))
       (AddAction.orbitRel.Quotient Λ (Y × E))
-      (β.Pullback (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      (β.Pullback (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
         β (fun g _ ↦ hβ.map_smul g))) n := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := hβ.isCancelSMul
-  have hfree := isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  have hfree := isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   let _ := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-    hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+    hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
     (fun g ↦ (hbc g).continuous) hfree
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
   let p : AddAction.orbitRel.Quotient Λ (Y × E) →[Γ] Y :=
     ⟨torusFamilyProjection P, fun g x ↦ by simp⟩
   exact p.orbitRelQuotientPullbackDiffeomorph β _
-    (torusFamilyAffineQuotientLift_mk P R ρ hequiv b hb hone hmul hbone hbmul β _)
+    (torusFamilyAffineQuotientLift_mk P R ρ hequiv b hb hone hmul hbmul β _)
     (continuous_torusFamilyProjection P) hβ
-    (continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul hβ.continuous)
-    (isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbone
+    (continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul hβ.continuous)
+    (isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul
       hbmul hR hbc hfree)
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The differentiable covering comparison has the canonical homeomorphism as its underlying
 map, so its inverse and both projection formulas agree with the topological comparison. -/
 @[simp] theorem torusFamilyAffineQuotientPullbackDiffeomorph_toHomeomorph :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := hβ.isCancelSMul
     letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-      hbone hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
+      hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous)
       (fun g ↦ (hbc g).continuous)
-      (isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul)
+      (isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul)
     letI := (hβ.isLocalHomeomorph.pullback_snd
-      (continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+      (continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
         (hf := fun g _ ↦ hβ.map_smul g) hβ.continuous)).chartedSpaceComap (H := ModelProd H E)
-    (torusFamilyAffineQuotientPullbackDiffeomorph P hinj hP R ρ hequiv b hb hone hmul hbone hbmul
+    (torusFamilyAffineQuotientPullbackDiffeomorph P hinj hP R ρ hequiv b hb hone hmul hbmul
       hR hbc β hβ).toHomeomorph =
-      torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbone hbmul
+      torusFamilyAffineQuotientPullbackHomeomorph P R ρ hequiv b hb hone hmul hbmul
         (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
         β hβ := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
   simp only [torusFamilyAffineQuotientPullbackDiffeomorph,
     MulActionHom.orbitRelQuotientPullbackDiffeomorph_toHomeomorph,

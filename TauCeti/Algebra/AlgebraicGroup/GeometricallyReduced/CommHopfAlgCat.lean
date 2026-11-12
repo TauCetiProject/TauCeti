@@ -40,9 +40,6 @@ as a TODO. The all-extension condition used here implies Mathlib's existing alge
 The object-property organization follows
 `TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat` with reducedness replacing
 connectedness.
-
-This advances Layer 2, "Smoothness and dimension tools via `Lie(G)`", of the ReductiveGroups
-roadmap.
 -/
 
 public section

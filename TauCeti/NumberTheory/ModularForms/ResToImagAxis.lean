@@ -61,9 +61,12 @@ namespace UpperHalfPlane
 /-- **The `S`-involution on the imaginary axis**: slashing by `S` turns `t` into `1 / t`,
 `(F ∣[k] S) (i t) = i ^ (-k) t ^ (-k) F (i / t)`. This is the reflection underlying the
 functional equation of the L-function. -/
-theorem resToImagAxis_slash_S (F : ℍ → ℂ) (k : ℤ) {t : ℝ} (ht : 0 < t) :
+theorem resToImagAxis_slash_S (F : ℍ → ℂ) (k : ℤ) (t : ℝ) :
     resToImagAxis (F ∣[k] S) t =
       Complex.I ^ (-k) * (t : ℂ) ^ (-k) * resToImagAxis F (1 / t) := by
+  rcases le_or_gt t 0 with ht | ht
+  · have ht' : 1 / t ≤ 0 := by rw [one_div]; exact inv_nonpos.mpr ht
+    rw [resToImagAxis_of_nonpos _ ht, resToImagAxis_of_nonpos _ ht', mul_zero]
   have ht' : (0 : ℝ) < 1 / t := by positivity
   have h : mk _ (⟨Complex.I * t, by simpa using ht⟩ : ℍ).im_inv_neg_coe_pos =
       (⟨Complex.I * (1 / t : ℝ), by simpa using ht'⟩ : ℍ) :=
@@ -81,9 +84,9 @@ theorem resToImagAxis_slash_S (F : ℍ → ℂ) (k : ℤ) {t : ℝ} (ht : 0 < t)
 
 /-- **The `S`-involution in weight `2`**: `(F ∣[2] S) (i t) = -t⁻² F (i / t)`, the reflection
 `t ↦ 1 / t` of the axis together with its Jacobian. -/
-theorem resToImagAxis_slash_two_S (F : ℍ → ℂ) {t : ℝ} (ht : 0 < t) :
+theorem resToImagAxis_slash_two_S (F : ℍ → ℂ) (t : ℝ) :
     resToImagAxis (F ∣[(2 : ℤ)] S) t = -((t : ℂ) ^ 2)⁻¹ * resToImagAxis F t⁻¹ := by
-  rw [resToImagAxis_slash_S F 2 ht, one_div]
+  rw [resToImagAxis_slash_S F 2 t, one_div]
   have hI : (Complex.I : ℂ) ^ (-(2 : ℤ)) = -1 := by
     rw [zpow_neg, zpow_two, Complex.I_mul_I]
     norm_num
@@ -119,7 +122,7 @@ theorem integrableOn_resToImagAxis_Ioi_of_slash_S {G : ℍ → ℂ}
       one_le_inv₀ hx, hx, true_and]
     rw [hexp, Real.rpow_neg hx.le, Real.rpow_two, abs_neg, abs_one, one_mul]
     split_ifs with hx1
-    · rw [resToImagAxis_slash_two_S G (inv_pos.mpr hx), inv_inv]
+    · rw [resToImagAxis_slash_two_S G x⁻¹, inv_inv]
       push_cast
       field_simp
     · simp
