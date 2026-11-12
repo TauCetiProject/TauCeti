@@ -149,9 +149,10 @@ theorem exists_homotopyEquiv_of_homotopyEquiv_sublevel (hf : ContMDiff I 𝓘(�
   -- Each sublevel is a closed cofibration in the next: across the regular collar above `a n`, or
   -- trivially when the two levels agree.
   rcases (ha n.le_succ).lt_or_eq with hlt | heq
-  · rw [← range_sublevelInclusion f (ha n.le_succ)]
-    exact hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue hf hlt
+  · have h := hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue hf hlt
       (hcompact n) (hreg n) (ha n.le_succ)
+    rw [sublevelInclusion_eq_inclusion] at h
+    exact (congrArg _ (range_inclusion (sublevel_mono f (ha n.le_succ)))).mp h
   · have huniv : ((↑) ⁻¹' {x | f x ≤ a n} : Set {x | f x ≤ a (n + 1)}) = univ :=
       eq_univ_of_forall fun x ↦ by rw [mem_preimage, mem_ofPred_eq, heq]; exact x.2
     rw [huniv]

@@ -195,10 +195,9 @@ theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
 
 /-- Along a family of levels `a` that is unbounded above, the sublevels `{f ≤ a i}` cover `X`. -/
 theorem iUnion_sublevel_eq_univ {X β ι : Type*} [LinearOrder β] (f : X → β) {a : ι → β}
-    (ha : ¬BddAbove (range a)) : ⋃ i, {x | f x ≤ a i} = univ := by
-  refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
-  obtain ⟨_, ⟨i, rfl⟩, hi⟩ := not_bddAbove_iff.1 ha (f x)
-  exact ⟨i, hi.le⟩
+    (ha : ¬BddAbove (range a)) : ⋃ i, {x | f x ≤ a i} = univ :=
+  preimage_iUnion.symm.trans <|
+    (congrArg (f ⁻¹' ·) (iUnion_Iic_of_not_bddAbove_range ha)).trans preimage_univ
 
 /-- Along a family of levels `a` that is unbounded above, every point has a neighbourhood which is
 one of the sublevels `{f ≤ a i}` of a continuous function `f`, namely one with `f x < a i`. So `X`
@@ -230,13 +229,6 @@ theorem sublevelInclusion_sublevelInclusion {X β : Type*} [TopologicalSpace X] 
     sublevelInclusion f b c hbc (sublevelInclusion f a b hab x) =
       sublevelInclusion f a c (hab.trans hbc) x :=
   Subtype.ext (rfl)
-
-/-- The image of `{f ≤ a}` in `{f ≤ b}` is the set of points of `{f ≤ b}` at which `f ≤ a`. -/
-@[simp]
-theorem range_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
-    {a b : β} (hab : a ≤ b) :
-    range (sublevelInclusion f a b hab) = (↑) ⁻¹' {x | f x ≤ a} :=
-  Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.2, fun hx ↦ ⟨⟨x, hx⟩, Subtype.ext (rfl)⟩⟩
 
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels is the inclusion of sets. -/
 theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
