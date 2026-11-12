@@ -204,7 +204,7 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
   -- Replace `v` by `w = (1 + ε) v + b`: then `u < w` at `x₀` and `w < u` on the frontier of `Ω`.
   obtain ⟨ε, hε, b, hwc, hwconv, hfrw, hx₀w⟩ :=
     exists_convexOn_lt_frontier_of_lt hΩ.isCompact_closure hv hvc hfr hx₀ hlt
-  set w : E → ℝ := fun y => (1 + ε) * v y + b with hw
+  set w : E → ℝ := fun y => (1 + ε) * v y + b
   -- The open set `G = {u < w}` contains `x₀`, and `w ≤ u` on its frontier.
   obtain ⟨G, hGo, hGΩ, hGc, hx₀G, hpos, hfrG⟩ :=
     exists_isOpen_subset_pos_forall_frontier_le hΩo huc hwc hfrw hx₀ hx₀w

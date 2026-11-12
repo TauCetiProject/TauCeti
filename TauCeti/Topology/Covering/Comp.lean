@@ -99,7 +99,7 @@ theorem comp {q : Y → X} {p : E → Y} {x : X} {I : Type*}
     exact hxU
   choose y hyS hyx using hy
   -- The sheets `T i j` of `p` over `V i ∋ y i`.
-  choose V hyV hV T hTo hTi hTim hTiff hTd hTV using fun i ↦ (hp (y i) (hyx i)).exists_sheets
+  choose V hyV hV T _ hTi hTim hTiff hTd hTV using fun i ↦ (hp (y i) (hyx i)).exists_sheets
   -- Shrink `U` to `W`, over which the lift of `W` to each `S i` lies in `V i`.
   obtain ⟨W, hWo, hxW, hWU, hWsurj, key⟩ :=
     TauCeti.exists_isOpen_lift_mem_of_finite_sheets hxU hU hSo hSi hSim hSiff hV hyS hyV hyx

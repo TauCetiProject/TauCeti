@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Acyclic.TitsForm
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Uniqueness
 
@@ -19,14 +18,10 @@ condition in Gabriel's theorem. This file proves that `V` has finite representat
 The result comes from one map. The dimension vector is constant on isomorphism classes, so it
 descends to the skeleton of the finite-dimensional indecomposables as
 `TauCeti.isoClassDimVector`. That map
-lands in the positive roots, by `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`,
-and is injective, by `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`; a
+lands in the positive roots, by `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`,
+and is injective, by `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`; a
 positive definite integral quadratic form takes the value `1` only finitely often, by
 `QuadraticMap.PosDef.finite_setOf_apply_eq`, so the skeleton is finite.
-
-No acyclicity hypothesis appears, although both consumed theorems ask for one: a directed cycle
-would already contradict positive definiteness, by
-`TauCeti.isAcyclic_of_titsForm_posDef`.
 
 This is the affirming half of Gabriel's dichotomy, and the half that the earlier work leaves to be
 read off: the two theorems it consumes were proved for their own sake, one saying that a dimension
@@ -89,7 +84,7 @@ section Tits
 variable [Fintype V] [∀ a b : V, Fintype (a ⟶ b)]
 
 /-- **The dimension vector of a class of indecomposables is a root of the Tits form**, the class
-form of `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`. -/
+form of `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`. -/
 theorem titsForm_isoClassDimVector_eq_one (hpd : (titsForm V).PosDef)
     (X : Skeleton (ObjectProperty.FullSubcategory
       (fun M : QuiverRep.{u, v, w, max v w x} k V ↦ IsFinDim k V M ∧ Indecomposable M))) :
@@ -98,13 +93,13 @@ theorem titsForm_isoClassDimVector_eq_one (hpd : (titsForm V).PosDef)
       (dimVector ((fromSkeleton _).obj X).obj j : ℤ) :=
     funext (isoClassDimVector_apply X)
   rw [hvec]
-  exact titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic
-    (isAcyclic_of_titsForm_posDef hpd) hpd ((fromSkeleton _).obj X).obj
+  exact titsForm_dimVector_eq_one_of_indecomposable
+    hpd ((fromSkeleton _).obj X).obj
     ((fromSkeleton _).obj X).property.2 ((fromSkeleton _).obj X).property.1
 
 /-- **The Gabriel injection.** Over a finite quiver with positive definite Tits form, two
 isomorphism classes of finite-dimensional indecomposable representations with the same dimension
-vector coincide. This is `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`,
+vector coincide. This is `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`,
 transported to the skeleton. -/
 theorem isoClassDimVector_injective (hpd : (titsForm V).PosDef) :
     Function.Injective (isoClassDimVector.{u, v, w, x} (k := k) (V := V)) := by
@@ -114,8 +109,7 @@ theorem isoClassDimVector_injective (hpd : (titsForm V).PosDef) :
     have hj := congrFun hXY j
     rw [isoClassDimVector_apply, isoClassDimVector_apply] at hj
     exact_mod_cast hj
-  have hiso := nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic
-    (isAcyclic_of_titsForm_posDef hpd) hpd
+  have hiso := nonempty_iso_of_dimVector_eq_of_indecomposable hpd
     ((fromSkeleton _).obj X).obj ((fromSkeleton _).obj Y).obj
     ((fromSkeleton _).obj X).property.2 ((fromSkeleton _).obj Y).property.2
     ((fromSkeleton _).obj X).property.1 ((fromSkeleton _).obj Y).property.1 hd
