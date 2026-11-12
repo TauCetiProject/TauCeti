@@ -22,6 +22,9 @@ The normalization is fixed by `LieAlgebra.Orthogonal.JB`: the distinguished rema
 quadratic norm `1` and polar self-pairing `2`, while the two isotropic families pair by the identity
 matrix. The coordinate equivalence absorbs its arbitrary square-one internal coordinate.
 
+The comparison is evaluated on the numbered root vectors in
+`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/RootGenerators.lean`.
+
 ## Main definitions
 
 * `TauCeti.SpinPolarizationData.typeBBasis`: the odd hyperbolic basis, with the remainder first.
@@ -38,13 +41,6 @@ matrix. The coordinate equivalence absorbs its arbitrary square-one internal coo
   polar coordinates of a single vector against the whole basis.
 * `TauCeti.SpinPolarizationData.typeBQuadraticEquiv_lie_ι`: the comparison acts on Clifford
   generators through the matrix endomorphism in that basis.
-
-## Roadmap
-
-This supplies the matrix-to-Clifford bridge needed by the full-weight type-`B` Chevalley carrier
-in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. The comparison is evaluated on the
-numbered root vectors in
-`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/RootGenerators.lean`.
 
 ## References
 

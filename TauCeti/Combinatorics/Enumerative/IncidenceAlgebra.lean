@@ -58,7 +58,7 @@ theorem mu_map (e : α ≃o β) (a b : α) : mu 𝕜 (e a) (e b) = mu 𝕜 a b :
     refine sum_bij (fun x _ => e.symm x) (fun x hx => ?_) ?_ ?_ ?_
     · exact mem_Ico.2 ⟨by simpa using e.symm.monotone (mem_Ico.1 hx).1,
         by simpa using e.symm.strictMono (mem_Ico.1 hx).2⟩
-    · intro x hx y hy hxy
+    · intro x _ y _ hxy
       exact e.symm.injective hxy
     · intro x hx
       exact ⟨e x, by simpa using hx, e.symm_apply_apply x⟩
