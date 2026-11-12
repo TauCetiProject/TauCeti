@@ -37,8 +37,8 @@ of full rank with torsion quotient (`TauCeti.exists_linearIndependent_smul_mem_s
 repackaging of Mathlib's `exists_linearIndepOn_smul_mem_span`), on which the cokernel is
 `(A ⧸ aA)^rank`.
 
-For a module with a finite basis, the cokernel of an endomorphism is the cokernel of its matrix
-(`Module.Basis.length_quotient_range_eq_length_quotient_range_toMatrix`).
+For a linear map between modules with finite bases, the cokernel has the same length as the
+cokernel of its matrix (`Module.Basis.length_quotient_range_eq_length_quotient_range_toMatrix`).
 -/
 
 public section
@@ -73,23 +73,24 @@ theorem length_quotient_range_restrict {φ : M →ₗ[A] M} (hφ : Function.Inje
   have hfin : Module.length A (M ⧸ N) ≠ ⊤ := Module.length_ne_top_iff.2 hN
   exact (WithTop.add_right_cancel hfin ((add_comm _ _).trans h₁)).symm
 
-/-- The cokernel of an endomorphism of a module with a finite basis is the cokernel of its
-matrix. -/
+/-- The cokernel of a linear map between modules with finite bases has the same length as the
+cokernel of its matrix. -/
 theorem _root_.Module.Basis.length_quotient_range_eq_length_quotient_range_toMatrix
-    {R ι F : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] [AddCommGroup F] [Module R F]
-    (b : Module.Basis ι R F) (ψ : F →ₗ[R] F) :
+    {R κ ι E F : Type*} [CommRing R] [Fintype κ] [DecidableEq κ] [Finite ι] [AddCommGroup E]
+    [Module R E] [AddCommGroup F] [Module R F] (b₁ : Module.Basis κ R E)
+    (b₂ : Module.Basis ι R F) (ψ : E →ₗ[R] F) :
     Module.length R (F ⧸ LinearMap.range ψ) =
-      Module.length R ((ι → R) ⧸ LinearMap.range (LinearMap.toMatrix b b ψ).mulVecLin) := by
-  refine (Submodule.Quotient.equiv _ _ b.equivFun ?_).length_eq
+      Module.length R ((ι → R) ⧸ LinearMap.range (LinearMap.toMatrix b₁ b₂ ψ).mulVecLin) := by
+  refine (Submodule.Quotient.equiv _ _ b₂.equivFun ?_).length_eq
   ext x
   simp only [Submodule.mem_map, LinearMap.mem_range, LinearEquiv.coe_coe, Matrix.mulVecLin_apply]
   constructor
   · rintro ⟨_, ⟨y, rfl⟩, rfl⟩
-    exact ⟨b.equivFun y, by
+    exact ⟨b₁.equivFun y, by
       rw [Module.Basis.equivFun_apply, Module.Basis.equivFun_apply, LinearMap.toMatrix_mulVec_repr]⟩
   · rintro ⟨y, rfl⟩
-    refine ⟨ψ (b.equivFun.symm y), ⟨_, rfl⟩, ?_⟩
-    conv_rhs => rw [← b.equivFun.apply_symm_apply y]
+    refine ⟨ψ (b₁.equivFun.symm y), ⟨_, rfl⟩, ?_⟩
+    conv_rhs => rw [← b₁.equivFun.apply_symm_apply y]
     rw [Module.Basis.equivFun_apply, Module.Basis.equivFun_apply, LinearMap.toMatrix_mulVec_repr]
 
 section Scalar

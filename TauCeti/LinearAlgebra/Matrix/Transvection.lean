@@ -12,10 +12,16 @@ import Mathlib.RingTheory.Localization.Integer
 /-!
 # Rigidity of additive functions of nonsingular matrices
 
-`Matrix.eq_zero_of_map_mul_of_diagonal_of_transvection` shows that an additive function on
-nonsingular matrices over a domain vanishes if it vanishes on nonsingular diagonal matrices and
-transvections. The proof clears denominators to apply Mathlib's diagonal-transvection induction
-over the fraction field.
+`Matrix.eq_zero_of_map_mul_of_diagonal_of_transvection` shows that a function `g` on
+nonsingular matrices over a domain that turns products into sums, `g (M * N) = g M + g N`,
+vanishes if it vanishes on nonsingular diagonal matrices and transvections.
+
+Over a field, or a ring with a Smith normal form, this is immediate because every nonsingular
+matrix factors into diagonal matrices and transvections. Over a general domain, such as a
+one-dimensional Noetherian local ring, nonsingular matrices need not factor in this way, and the
+lemma is what still allows two invariants of nonsingular matrices that are additive under
+products to be compared by checking them on these two kinds of matrices. It is used to identify
+the length of the cokernel of a matrix with the order of its determinant.
 -/
 
 public section
@@ -36,8 +42,9 @@ theorem eq_zero_of_map_mul_of_diagonal_of_transvection {G : Type*}
   classical
   let K := FractionRing A
   let φ : Matrix ι ι A →+* Matrix ι ι K := (algebraMap A K).mapMatrix
-  have hφ : ∀ M : Matrix ι ι A, φ M = M.map (algebraMap A K) := fun _ ↦ rfl
-  have hinj : Function.Injective φ := Matrix.map_injective (IsFractionRing.injective A K)
+  have hφ : ∀ M : Matrix ι ι A, φ M = M.map (algebraMap A K) := (algebraMap A K).mapMatrix_apply
+  have hinj : Function.Injective φ := fun _ _ h ↦
+    Matrix.map_injective (IsFractionRing.injective A K) (by simpa only [hφ] using h)
   have hdet : ∀ M : Matrix ι ι A, (φ M).det = algebraMap A K M.det := fun M ↦
     ((algebraMap A K).map_det M).symm
   have hsmul : ∀ (s : A) (M : Matrix ι ι A), φ (s • M) = algebraMap A K s • φ M := fun s M ↦ by
