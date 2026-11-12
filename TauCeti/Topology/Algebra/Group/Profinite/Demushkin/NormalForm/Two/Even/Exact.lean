@@ -14,7 +14,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Free.Automorphism
 # Labute's normal form for the dyadic Demushkin groups of even rank
 
 Let `F = freeProP 2 (Fin n)` be the free pro-`2` group on an even number `n` of generators and let
-`r ∈ Φ(F)` be a relator presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`.
+`r` be a relator presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`; such a
+relator automatically lies in `Φ(F)`.
 Labute's Theorem 3 says that a continuous automorphism of `F` carries `r` to one of the words
 
   `x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, `2 ≤ f < ∞`, or
@@ -54,8 +55,8 @@ how the classification pins them, and this file proves only the existence of the
   `q' = 2^f` for some `f ≥ 2`.
 * `exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo`, in the
   namespace `TauCeti.IsDemushkin`: **Labute's Theorem 3 for `q = 2` and even rank**, the previous
-  statement for a relator in `Φ(F)` presenting a Demushkin group with `q = 2` on an even number of
-  generators.
+  statement for a relator presenting a Demushkin group with `q = 2` on an even number of
+  generators (such a relator automatically lies in `Φ(F)`).
 * `exists_continuousMulEquiv_presentedProP_padicPow_mul_labuteComm_mul_demushkinWordNeTwo`, in the
   namespace `TauCeti.IsDemushkin`: a Demushkin group at `p = 2` of even rank `n` with `q = 2` is
   topologically isomorphic to
@@ -214,7 +215,7 @@ end freeProP
 namespace IsDemushkin
 
 /-- **Labute's normal form for `q = 2` and even rank** (Labute, Theorem 3, case (3)). Let
-`r ∈ Φ(F)` be a relator of the free pro-`2` group on an even number `n` of generators presenting a
+`r` be a relator of the free pro-`2` group on an even number `n` of generators presenting a
 Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`. Then a continuous automorphism of `F`
 carries `r` to `x₁^{2+α} (x₁, x₂) x₃^{q'} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, where `α ∈ ℤ₂` is divisible
 by `4` and `q' = 0`, Labute's level `f = ∞`, or `q' = 2^f` for some `f ≥ 2`. The last factor is the
