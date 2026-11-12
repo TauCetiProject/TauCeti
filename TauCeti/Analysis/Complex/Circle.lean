@@ -39,6 +39,8 @@ glued at their endpoints `±1`.
 * `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
+* `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
+  of `sphere (0 : ℂ) 1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
@@ -85,6 +87,14 @@ theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 :
 theorem _root_.Complex.re_sq_add_im_sq_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1) :
     z.re ^ 2 + z.im ^ 2 = 1 := by
   simpa using re_sq_add_im_sq (homeomorphSphere.symm ⟨z, hz⟩)
+
+/-- On the unit sphere of `ℂ`, conjugation inverts integer powers:
+`z ^ k * conj (z ^ m) = z ^ (k - m)`. -/
+theorem _root_.Complex.zpow_mul_conj_zpow_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1)
+    (k m : ℤ) : z ^ k * conj (z ^ m) = z ^ (k - m) := by
+  have hz1 : ‖z‖ = 1 := by simpa using hz
+  have hz0 : z ≠ 0 := by rintro rfl; simp at hz1
+  rw [map_zpow₀, ← Complex.inv_eq_conj hz1, inv_zpow', ← zpow_add₀ hz0, sub_eq_add_neg]
 
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
