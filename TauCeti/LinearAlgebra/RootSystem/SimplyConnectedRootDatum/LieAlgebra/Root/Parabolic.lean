@@ -148,25 +148,6 @@ theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton (hs : t.IsS
     exact N.mul_mem (N.mul_mem hn (hx hx')) (N.inv_mem hn)
   exact (Subgroup.closure_le _).mpr (Set.union_subset hx hy)
 
-/-- Every positive element in a simply-laced type is a punctured-positive element followed by
-an element of the chosen simple root group. No uniqueness of the factors is asserted. -/
-theorem mem_iSup_posRoots_iff_exists_posRoots_diff_singleton_mul (hs : t.IsSimplyLaced)
-    (i : Fin t.rank) (A : CommAlgCat ℤ)
-    (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) :
-    g ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-      (chevalleyRootSubgroup ρ M hM hnil γ A).range) ↔
-    ∃ q ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
-      (chevalleyRootSubgroup ρ M hM hnil γ A).range),
-      ∃ u, g = q * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A u := by
-  have hnorm := range_simpleIndex_le_normalizer_posRoots_diff_singleton ρ M hM hnil hs i A
-  conv_lhs => rw [posRoots_eq_diff_union_simpleIndex i, iSup_union, iSup_singleton]
-  rw [← SetLike.mem_coe, Subgroup.coe_mul_of_right_le_normalizer_left _ _ hnorm]
-  constructor
-  · rintro ⟨q, hq, x, ⟨u, rfl⟩, heq⟩
-    exact ⟨q, hq, u, heq.symm⟩
-  · rintro ⟨q, hq, u, rfl⟩
-    exact ⟨q, hq, _, ⟨u, rfl⟩, rfl⟩
-
 end
 
 end TauCeti.DynkinType
