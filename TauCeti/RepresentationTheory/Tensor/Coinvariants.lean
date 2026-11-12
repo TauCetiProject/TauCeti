@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
-public import TauCeti.RepresentationTheory.OfMulAction
+import TauCeti.RepresentationTheory.OfMulAction.LeftRegular
 
 /-!
 # Tensor coinvariants with a retract of the regular representation
@@ -16,7 +16,7 @@ public import TauCeti.RepresentationTheory.OfMulAction
 Let `τ` and `ρ` be representations of a group `G` on `k`-modules `V` and `W`. The coinvariants
 `(V ⊗ W)_G` are the balanced tensor product `V ⊗_{k[G]} W`, with `V` made a right `k[G]`-module
 by `v · g = τ(g⁻¹) v`: the coinvariant kernel of `τ ⊗ ρ` is spanned by the balancing relations
-`τ(g⁻¹) v ⊗ w - v ⊗ ρ(g) w` (`Representation.Coinvariants.ker_tprod_eq_span`).
+`τ(g⁻¹) v ⊗ w - v ⊗ ρ(g) w` (`Representation.coinvariantsKer_tprod_eq_span`).
 
 For the regular representation Mathlib identifies `(V ⊗ k[G])_G` with `V`
 (`Representation.coinvariantsTprodLeftRegularLEquiv`), sending the class of `v ⊗ x` to the action
@@ -40,10 +40,8 @@ tensor product of a tensor power with a Specht module with a Schur functor.
 
 ## Main results
 
-* `Representation.Coinvariants.ker_tprod_eq_span`: the coinvariant kernel of a tensor product
+* `Representation.coinvariantsKer_tprod_eq_span`: the coinvariant kernel of a tensor product
   is spanned by the balancing relations.
-* `Representation.IntertwiningMap.apply_eq_mul_apply_single_one`: an endomorphism of the regular
-  representation is right multiplication by its value at `1`.
 * `Representation.IntertwiningMap.ker_tprodContraction` and
   `Representation.IntertwiningMap.range_tprodContraction`: for a retract of the regular
   representation, the kernel of the contraction is the coinvariant kernel and its image is the
@@ -67,7 +65,7 @@ variable {k G V W : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
 /-- **The coinvariant kernel of a tensor product is spanned by the balancing relations**
 `τ(g⁻¹) v ⊗ w - v ⊗ ρ(g) w`, those of the balanced tensor product `V ⊗_{k[G]} W` for the right
 action `v · g = τ(g⁻¹) v`. -/
-theorem Coinvariants.ker_tprod_eq_span (τ : Representation k G V) (ρ : Representation k G W) :
+theorem coinvariantsKer_tprod_eq_span (τ : Representation k G V) (ρ : Representation k G W) :
     Coinvariants.ker (τ.tprod ρ) = Submodule.span k {x | ∃ (v : V) (w : W) (g : G),
       x = τ g⁻¹ v ⊗ₜ w - v ⊗ₜ ρ g w} := by
   refine le_antisymm (Submodule.span_le.mpr ?_) (Submodule.span_le.mpr ?_)
@@ -83,6 +81,7 @@ theorem Coinvariants.ker_tprod_eq_span (τ : Representation k G V) (ρ : Represe
 
 /-- The identification `(V ⊗ k[G])_G ≅ V` sends the class of `v ⊗ x` to the action of the
 antipode of `x` on `v`. -/
+@[simp]
 theorem ofCoinvariantsTprodLeftRegular_mk_tmul (τ : Representation k G V) (v : V)
     (x : MonoidAlgebra k G) :
     ofCoinvariantsTprodLeftRegular τ (Coinvariants.mk _ (v ⊗ₜ x)) =
@@ -92,35 +91,9 @@ theorem ofCoinvariantsTprodLeftRegular_mk_tmul (τ : Representation k G V) (v : 
   | add x y hx hy => simp [tmul_add, hx, hy]
   | single g r => simp [asAlgebraHom_single]
 
-/-- A group element acts on the regular representation by left multiplication with the
-corresponding basis element: the case `c = 1` of `TauCeti.single_mul_eq_smul_ofMulAction`, oriented
-to rewrite the action. -/
-theorem leftRegular_apply_eq_single_mul (g : G) (x : MonoidAlgebra k G) :
-    leftRegular k G g x = MonoidAlgebra.single g 1 * x := by
-  rw [TauCeti.single_mul_eq_smul_ofMulAction, one_smul]
-
 namespace IntertwiningMap
 
-/-- **An endomorphism of the regular representation is right multiplication** by its value at
-`1`. -/
-theorem apply_eq_mul_apply_single_one
-    (f : (leftRegular k G).IntertwiningMap (leftRegular k G)) (x : MonoidAlgebra k G) :
-    f x = x * f (MonoidAlgebra.single 1 1) := by
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [map_add, hx, hy, add_mul]
-  | single g r =>
-    have hg : MonoidAlgebra.single g r = r • leftRegular k G g (MonoidAlgebra.single 1 1) := by
-      simp
-    rw [hg, map_smul, f.isIntertwining, leftRegular_apply_eq_single_mul,
-      leftRegular_apply_eq_single_mul, smul_mul_assoc, mul_assoc, ← MonoidAlgebra.one_def, one_mul]
-
 variable {τ : Representation k G V} {ρ : Representation k G W}
-
-/-- A right inverse of an intertwining map undoes it pointwise. -/
-theorem apply_apply_eq_of_comp_eq_id {i : ρ.IntertwiningMap τ} {p : τ.IntertwiningMap ρ}
-    (h : p.comp i = .id ρ) (w : W) : p (i w) = w :=
-  congrArg (fun f : ρ.IntertwiningMap ρ => f w) h
 
 variable (i : ρ.IntertwiningMap (leftRegular k G))
 
@@ -144,12 +117,13 @@ variable {i} {p : (leftRegular k G).IntertwiningMap ρ}
 coinvariant kernel**: the contraction identifies `(V ⊗ W)_G` with its image. -/
 theorem ker_tprodContraction (h : p.comp i = .id ρ) :
     LinearMap.ker (i.tprodContraction τ) = Coinvariants.ker (τ.tprod ρ) := by
+  have hpi (w : W) : p (i w) = w := DFunLike.congr_fun h w
   -- the map induced by `i` on coinvariants has the map induced by `p` as a left inverse
   have key : Coinvariants.map _ _ (p.lTensor τ) ∘ₗ
       Coinvariants.map (τ.tprod ρ) (τ.tprod (leftRegular k G)) (i.lTensor τ) = LinearMap.id := by
     rw [Coinvariants.map_comp]
     ext v w
-    simp [apply_apply_eq_of_comp_eq_id h]
+    simp [hpi]
   have hinj : Function.Injective
       (Coinvariants.map (τ.tprod ρ) (τ.tprod (leftRegular k G)) (i.lTensor τ)) :=
     Function.LeftInverse.injective fun x => congrArg (fun f => f x) key
@@ -163,6 +137,7 @@ the antipode of the idempotent** `e = i (p 1)` acting on `V`. -/
 theorem range_tprodContraction (h : p.comp i = .id ρ) :
     LinearMap.range (i.tprodContraction τ) = LinearMap.range
       (τ.asAlgebraHom (HopfAlgebra.antipode k (i (p (MonoidAlgebra.single 1 1))))) := by
+  have hpi (w : W) : p (i w) = w := DFunLike.congr_fun h w
   refine le_antisymm ?_ ?_
   · rintro _ ⟨x, rfl⟩
     induction x using TensorProduct.inductionOn with
@@ -170,7 +145,7 @@ theorem range_tprodContraction (h : p.comp i = .id ρ) :
       refine ⟨τ.asAlgebraHom (HopfAlgebra.antipode k (i w)) v, ?_⟩
       -- `i w` is fixed by right multiplication with `e`, since `i ∘ p` is
       have hw : i w = i w * i (p (MonoidAlgebra.single 1 1)) := by
-        simpa [apply_apply_eq_of_comp_eq_id h] using apply_eq_mul_apply_single_one (i.comp p) (i w)
+        simpa [hpi] using apply_eq_mul_apply_single_one (i.comp p) (i w)
       rw [tprodContraction_tmul, ← mul_apply_eq_comp, ← map_mul,
         ← HopfAlgebra.antipode_mul_antidistrib, ← hw]
     | add x y hx hy =>

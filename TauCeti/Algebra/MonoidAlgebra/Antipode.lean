@@ -14,9 +14,9 @@ public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 The group algebra `k[G]` of a group is a Hopf algebra whose antipode `S` is the linear extension
 of inversion, `S(g) = g⁻¹` (`MonoidAlgebra.antipode_single`); it reverses products. This file
 records how `S` interacts with the operations that move elements between group algebras: it
-commutes with extending the coefficients along `k → K` and with transporting along an isomorphism
-of groups, and it fixes the character sum `∑_{h ∈ H} χ(h) h` of a character that takes the same
-value on `h` and `h⁻¹`.
+commutes with mapping the coefficients along a ring homomorphism `k → K` and with transporting
+along an isomorphism of groups, and it fixes the character sum `∑_{h ∈ H} χ(h) h` of a character
+that takes the same value on `h` and `h⁻¹`.
 
 Through `v · g = g⁻¹ v`, a representation becomes a right module over `k[G]`, and an element `x`
 acts on the right as `S(x)` acts on the left. This is how the antipode enters tensor products
@@ -25,8 +25,9 @@ the two factors of a Young symmetrizer, are both fixed by `S`.
 
 ## Main results
 
-* `MonoidAlgebra.antipode_mapAlgHom` and `MonoidAlgebra.antipode_domCongr`: the antipode commutes
-  with extending the coefficients and with transport along a group isomorphism.
+* `MonoidAlgebra.antipode_mapRingHom`, `MonoidAlgebra.antipode_mapAlgHom` and
+  `MonoidAlgebra.antipode_domCongr`: the antipode commutes with mapping the coefficients and with
+  transport along a group isomorphism.
 * `TauCeti.antipode_subgroupCharSum`: the antipode fixes `∑_{h ∈ H} χ(h) h` when `χ(h⁻¹) = χ(h)`
   on `H`.
 -/
@@ -35,40 +36,30 @@ public section
 
 namespace MonoidAlgebra
 
-variable {k K G H : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
-
-section Monoid
-
-variable [Monoid G] [Monoid H]
-
-/-- Extending the coefficients of a monoid algebra commutes with transport along an isomorphism
-of monoids. -/
-theorem mapAlgHom_domCongr (e : G ≃* H) (x : MonoidAlgebra k G) :
-    mapAlgHom H (Algebra.ofId k K) (domCongr k k e x) =
-      domCongr K K e (mapAlgHom G (Algebra.ofId k K) x) := by
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | single g r => simp
-
-end Monoid
-
-variable [Group G] [Group H]
-
-/-- The antipode commutes with extending the coefficients of a group algebra. -/
+/-- The antipode commutes with mapping the coefficients of a group algebra along a ring
+homomorphism. -/
 @[simp]
-theorem antipode_mapAlgHom (x : MonoidAlgebra k G) :
-    HopfAlgebra.antipode K (mapAlgHom G (Algebra.ofId k K) x) =
-      mapAlgHom G (Algebra.ofId k K) (HopfAlgebra.antipode k x) := by
+theorem antipode_mapRingHom {k K G : Type*} [CommSemiring k] [CommSemiring K] [Group G]
+    (f : k →+* K) (x : MonoidAlgebra k G) :
+    HopfAlgebra.antipode K (mapRingHom G f x) = mapRingHom G f (HopfAlgebra.antipode k x) := by
   induction x using induction_linear with
   | zero => simp
   | add x y hx hy => simp only [map_add, hx, hy]
   | single g r => simp
+
+/-- The antipode commutes with mapping the coefficients of a group algebra along an algebra
+homomorphism. -/
+@[simp]
+theorem antipode_mapAlgHom {R A B G : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B]
+    [Algebra R A] [Algebra R B] [Group G] (f : A →ₐ[R] B) (x : MonoidAlgebra A G) :
+    HopfAlgebra.antipode B (mapAlgHom G f x) = mapAlgHom G f (HopfAlgebra.antipode A x) :=
+  antipode_mapRingHom f.toRingHom x
 
 /-- The antipode commutes with transport along an isomorphism of groups. -/
 @[simp]
-theorem antipode_domCongr (e : G ≃* H) (x : MonoidAlgebra k G) :
-    HopfAlgebra.antipode k (domCongr k k e x) = domCongr k k e (HopfAlgebra.antipode k x) := by
+theorem antipode_domCongr {R S A G H : Type*} [CommSemiring R] [CommSemiring S] [Semiring A]
+    [HopfAlgebra R A] [Algebra S A] [Group G] [Group H] (e : G ≃* H) (x : MonoidAlgebra A G) :
+    HopfAlgebra.antipode R (domCongr S A e x) = domCongr S A e (HopfAlgebra.antipode R x) := by
   induction x using induction_linear with
   | zero => simp
   | add x y hx hy => simp only [map_add, hx, hy]
