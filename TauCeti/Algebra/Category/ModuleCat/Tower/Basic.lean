@@ -610,6 +610,23 @@ theorem smulTower_transition (f : R) (n : ℕ) :
   -- `ModuleCat.hom_ofHom`, stated for the carrier `M` rather than `ModuleCat.of R M`
   rfl
 
+/-- A composite transition in the scalar-multiplication tower is multiplication by the
+corresponding power of the scalar. -/
+@[simp]
+theorem smulTower_transitionOfLE (f : R) {n m : ℕ} (h : n ≤ m) :
+    (smulTower M f).transitionOfLE h = (f ^ (m - n)) • LinearMap.id := by
+  induction m, h using Nat.le_induction with
+  | base => simp
+  | succ m h ih =>
+    -- State scalar identities on `M`, rather than on the carrier of a tower term.
+    have key : (f ^ (m - n) • (LinearMap.id : M →ₗ[R] M)) ∘ₗ (f • LinearMap.id) =
+        f ^ (m + 1 - n) • LinearMap.id := by
+      ext x
+      simp [Nat.succ_sub h, pow_succ, mul_smul]
+    rw [← transitionOfLE_comp_transitionOfLE _ h (Nat.le_succ m), ih,
+      transitionOfLE_succ, smulTower_transition]
+    exact key
+
 end SMulTower
 
 end ModuleTower

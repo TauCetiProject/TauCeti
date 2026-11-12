@@ -18,7 +18,9 @@ has `lim A = 0` and `lim¹ A = 0`, so pro-zero error terms are invisible to `lim
 
 The basic family of examples is the tower `R ← R ← ⋯` whose transitions are right multiplication
 by an element `a`: it is pro-zero exactly when `a` is nilpotent. In particular, for a prime `p` the
-tower `ℤ ← ℤ ← ⋯` with transitions multiplication by `p` is not pro-zero.
+tower `ℤ ← ℤ ← ⋯` with transitions multiplication by `p` is not pro-zero. More generally,
+the scalar-multiplication tower of a module over a commutative ring is pro-zero exactly when
+one power of the scalar annihilates the whole module.
 
 ## Main declarations
 
@@ -206,6 +208,34 @@ theorem isProZero_multiplicationTower_iff_eq_zero [IsReduced R] (a : R) :
   rw [isProZero_multiplicationTower_iff, isNilpotent_iff_eq_zero]
 
 end MultiplicationTower
+
+section SMulTower
+
+variable {R : Type u} [CommRing R]
+variable {Q : Type v} [AddCommGroup Q] [Module R Q]
+
+/-- A scalar-multiplication tower is pro-zero exactly when a uniform power of the scalar
+annihilates the module. Elementwise power torsion alone is not sufficient. -/
+theorem isProZero_smulTower_iff (f : R) :
+    (smulTower Q f).IsProZero ↔ ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0 := by
+  rw [isProZero_iff_exists_transitionOfLE_eq_zero]
+  constructor
+  · intro h
+    obtain ⟨k, _, hk⟩ := h 0
+    -- The tower's terms are `Q`; use this typed identity to evaluate the linear map.
+    have hk' : f ^ k • (LinearMap.id : Q →ₗ[R] Q) = 0 := by
+      rw [smulTower_transitionOfLE, Nat.sub_zero] at hk
+      exact hk
+    exact ⟨k, fun x ↦ by simpa using LinearMap.congr_fun hk' x⟩
+  · rintro ⟨k, hk⟩ n
+    refine ⟨n + k, Nat.le_add_right _ _, ?_⟩
+    have hk' : f ^ k • (LinearMap.id : Q →ₗ[R] Q) = 0 := by
+      ext x
+      simpa using hk x
+    rw [smulTower_transitionOfLE, Nat.add_sub_cancel_left]
+    exact hk'
+
+end SMulTower
 
 end ModuleTower
 
