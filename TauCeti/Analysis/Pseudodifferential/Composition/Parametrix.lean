@@ -46,7 +46,7 @@ same equations for the homogeneous terms of a classical symbol, nothing here ass
 * `TauCeti.Symbol.isSmoothing_sharp_sub_ofSpatial`: **the local parametrix modulo smoothing
   symbols.** For a smooth function `ψ` of the position, `q(x, ξ) = ψ(x) b(x, ξ)` with `b` a left
   parametrix symbol of `a`, and a symbol `p` with compact spatial support which agrees with `a`
-  near the support of `ψ`, the composition symbol `q # p` is `ψ(x)` up to a smoothing symbol.
+  on the support of `ψ`, the composition symbol `q # p` is `ψ(x)` up to a smoothing symbol.
 
 ## Proof outline
 
@@ -340,34 +340,42 @@ section Parametrix
 variable [CompleteSpace V] [CompleteSpace W]
 
 /-- **The local parametrix modulo smoothing symbols.** Let `b` be a left parametrix symbol of the
-symbol `a` of order `m`, `1 ∼ ∑ₖ sharpTerm b a k`. Let `ψ` be a smooth function of the position,
+symbol `a`, `1 ∼ ∑ₖ sharpTerm b a k`. Let `ψ` be a smooth function of the position,
 `q(x, ξ) = ψ(x) b(x, ξ)`, and `p` a symbol with compact spatial support which agrees with `a` at
-all positions near the support of `ψ`. Then the composition symbol `q # p` is `ψ(x)` up to a
+all positions where `ψ` does not vanish. Then the composition symbol `q # p` is `ψ(x)` up to a
 smoothing symbol. -/
-theorem isSmoothing_sharp_sub_ofSpatial {a : Symbol n V W m} {b : Symbol n W V (-m)}
-    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
-      (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
-    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) {q : Symbol n W V (-m)}
-    (hq : ∀ x ξ, q.coefficient (x, ξ) = ψ x • b.coefficient (x, ξ)) {p : Symbol n V W m}
+theorem isSmoothing_sharp_sub_ofSpatial {m' μ μ' : ℝ} {a : Symbol n V W m} {b : Symbol n W V m'}
+    {hm : 0 ≤ m' + m - (0 : ℕ)}
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ m' + m - k)
+      (inclusion hm (const (.id ℂ V))) (b.sharpTerm a))
+    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) {q : Symbol n W V μ'}
+    (hq : ∀ x ξ, q.coefficient (x, ξ) = ψ x • b.coefficient (x, ξ)) {p : Symbol n V W μ}
     (hp : p.HasCompactSpatialSupport)
-    (hpa : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, p.coefficient (x, ξ) = a.coefficient (x, ξ)) :
-    (q.sharp p hp - inclusion (neg_add_cancel m).ge
+    (hpa : ∀ x, ψ x ≠ 0 → ∀ ξ, p.coefficient (x, ξ) = a.coefficient (x, ξ))
+    (hμ : 0 ≤ μ' + μ := by linarith) :
+    (q.sharp p hp - inclusion hμ
       (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
         (hψ.smul contDiff_const))).IsSmoothing := by
-  refine isSmoothing_iff.2 fun μ ↦ ?_
-  obtain ⟨N, hN⟩ := exists_nat_ge (-μ)
+  refine isSmoothing_iff.2 fun ν ↦ ?_
+  obtain ⟨N, hN⟩ := exists_nat_ge (max (μ' + μ - ν) (m' + m - ν))
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hab N
   -- `q # p - ψ = (q # p - ∑_{k < N} sharpTerm q p k) - ψ (1 - ∑_{k < N} sharpTerm b a k)`.
-  refine ⟨inclusion (m := -m + m - N) (by linarith) (q.sharpRemainder p hp N) -
-    inclusion (m := 0 + (-m + m - N)) (by linarith)
+  refine ⟨inclusion (m := μ' + μ - N) (by linarith [le_max_left (μ' + μ - ν) (m' + m - ν)])
+      (q.sharpRemainder p hp N) -
+    inclusion (m := 0 + (m' + m - N)) (by linarith [le_max_right (μ' + μ - ν) (m' + m - ν)])
       ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)).comp r),
     ?_⟩
   funext ⟨x, ξ⟩
   have hr' := congrFun hr (x, ξ)
   simp only [Pi.sub_apply, Finset.sum_apply, coefficient_inclusion, coefficient_const] at hr'
+  -- Each term of `q # p` at `(x, ξ)` is `ψ x` times the term of `b # a`.
+  have hterm (k : ℕ) : (q.sharpTerm p k).coefficient (x, ξ) =
+      ψ x • (b.sharpTerm a k).coefficient (x, ξ) :=
+    coefficient_sharpTerm_eq_smul_of_eventuallyEq (.of_eq (funext fun η ↦ hq x η))
+      (fun hx ↦ eventually_of_mem (hψ.continuous.isOpen_support.mem_nhds hx) fun y hy ↦
+        hpa y hy ξ) k
   simp only [coefficient_sub, coefficient_inclusion, coefficient_sharpRemainder, coefficient_comp,
-    coefficient_ofSpatial, Pi.sub_apply, Finset.sum_apply,
-    coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hq hpa, ← hr',
+    coefficient_ofSpatial, Pi.sub_apply, Finset.sum_apply, hterm, ← hr',
     ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp, smul_sub, Finset.smul_sum]
   abel
 
