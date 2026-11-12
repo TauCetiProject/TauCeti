@@ -359,7 +359,8 @@ theorem hodgeStar_kahlerForm : o.hodgeStar hkl J.kahlerForm = J.kahlerForm := by
     ← e.repr_apply_apply, OrthonormalBasis.repr_self]
   ring
 
-include hkl he h₀ h₂ in
+omit [FiniteDimensional ℝ V] in
+include he h₀ h₂ in
 /-- **Unitary frames through a unit vector.** If `J` has a positively oriented unitary frame,
 `J e₀ = e₁` and `J e₂ = e₃`, then every unit vector `ξ` is the first vector of another: there is a
 positively oriented orthonormal basis `e'` with `e'₀ = ξ`, `J e'₀ = e'₁` and `J e'₂ = e'₃`. -/
@@ -369,20 +370,8 @@ theorem exists_orthonormalBasis_apply_zero_eq {ξ : V} (hξ : ‖ξ‖ = 1) :
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
   obtain ⟨e', he'₀, h₀', h₂'⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ hξ
   refine ⟨e', ?_, he'₀, h₀', h₂'⟩
-  -- `vol(e'₀, e'₁, e'₂, e'₃) = ⟪⋆ω, e'₂ ∧ e'₃⟫ = ⟪ω, e'₂ ∧ J e'₂⟫ = 1`, expanding `ω` in `e'`
-  -- and using `⋆ω = ω` from `e`.
-  have hω := kahlerForm_eq_ιMulti_add_ιMulti h₀' h₂'
-  have h1 : ⟪o.hodgeStar hkl J.kahlerForm, ιMulti ℝ 2 ![e' 2, e' 3]⟫ = 1 := by
-    rw [hodgeStar_kahlerForm h₀ h₂ hkl he, inner_kahlerForm_ιMulti hJ, h₂',
-      real_inner_self_eq_norm_sq, e'.orthonormal.1 3, one_pow]
-  have h0 : o.volumeForm ![e' 2, e' 3, e' 2, e' 3] = 0 :=
-    o.volumeForm.map_eq_zero_of_eq _ (i := 0) (j := 2) rfl (by decide)
-  rw [hω, map_add, inner_add_left, o.inner_hodgeStar_ιMulti_two hkl,
-    o.inner_hodgeStar_ιMulti_two hkl, h0, add_zero] at h1
-  have he'v : (e' : Fin 4 → V) = ![e' 0, e' 1, e' 2, e' 3] :=
-    funext fun i ↦ by fin_cases i <;> rfl
-  exact Orientation.volumeForm_apply_pos_iff.mp
-    (by rw [OrthonormalBasis.coe_toBasis, he'v, h1]; exact zero_lt_one)
+  rw [toBasis_orientation_eq_symplecticForm_orientation_four (J.symplecticForm_apply hJ) h₀' h₂',
+    ← toBasis_orientation_eq_symplecticForm_orientation_four (J.symplecticForm_apply hJ) h₀ h₂, he]
 
 include he h₀ h₂ in
 /-- **The Hodge star preserves the `ω`-component** of a two-form, `⟪ω, ⋆F⟫ = ⟪ω, F⟫`, since `ω`
