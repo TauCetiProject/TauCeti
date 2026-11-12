@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.RealModel
 public import TauCeti.Algebra.Module.ZLattice.RootLattice
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Normalized
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Roots
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
