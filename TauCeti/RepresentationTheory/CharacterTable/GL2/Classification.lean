@@ -97,10 +97,10 @@ universe u
 
 /-! ### The four families are pairwise disjoint
 
-Three of the six comparisons are made at the unipotent Jordan block `!![1, 1; 0, 1]`, where the
-linear characters take the value `1`, the Steinberg twists `0` and the cuspidal characters `-1`;
-the other three, those involving the principal series, are made at the identity, where the degrees
-`1`, `q`, `q + 1` and `q - 1` differ. -/
+The linear-versus-Steinberg and linear-versus-cuspidal comparisons are made at the unipotent
+Jordan block `!![1, 1; 0, 1]`, where the linear characters take the value `1`, the Steinberg twists
+`0` and the cuspidal characters `-1`; the other four, including Steinberg-versus-cuspidal, are made
+at the identity, where the degrees `1`, `q`, `q + 1` and `q - 1` differ. -/
 
 section Distinct
 
@@ -442,9 +442,10 @@ private theorem ncard_image_GL2CuspidalVirtualCharacter_of_ne_one {ψ : AddChar 
   have := (count_arith (Fintype.one_lt_card (α := F))).1
   omega
 
-/-- For every additive character `ψ`, the virtual characters `χ_θ` with `θ^q ≠ θ` take
-`½ q (q - 1)` distinct values, one for each orbit `{θ, θ^q}` of characters of `Eˣ`.
-For nontrivial `ψ`, these are the cuspidal characters of `GL₂(F)`. -/
+/-- **Counting the cuspidal virtual characters.** For every additive character `ψ`, the virtual
+characters `χ_θ` with `θ^q ≠ θ` take `½ q (q - 1)` distinct values, one for each orbit
+`{θ, θ^q}` of characters of `Eˣ`; for nontrivial `ψ` these are the cuspidal characters of
+`GL₂(F)`. -/
 @[simp]
 theorem ncard_image_GL2CuspidalVirtualCharacter (ψ : AddChar F ℂ) :
     ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
@@ -454,9 +455,8 @@ theorem ncard_image_GL2CuspidalVirtualCharacter (ψ : AddChar F ℂ) :
   refine Eq.trans ?_ (ncard_image_GL2CuspidalVirtualCharacter_of_ne_one F E hψ₀)
   simp only [Set.ncard_def]
   apply congrArg ENat.toNat
-  exact Set.encard_image_eq_encard_image_of_eq_iff (fun θ θ' =>
-    ⟨GL2CuspidalVirtualCharacter_apply_eq_of_eq θ θ' _ _,
-      GL2CuspidalVirtualCharacter_apply_eq_of_eq θ θ' _ _⟩) _
+  exact Set.encard_image_eq_encard_image_of_eq_iff
+    (fun θ θ' => coe_GL2CuspidalVirtualCharacter_eq_coe_iff_of_addChar θ θ' _ _) _
 
 end Classification
 
