@@ -56,6 +56,11 @@ preserved by every algebra isomorphism between Clifford algebras of finite-dimen
 * `CliffordAlgebra.scalarTrace_eq_zero_of_mem_evenOdd_one`: the scalar part of an odd element is
   zero.
 * `CliffordAlgebra.scalarTrace_mul_comm`: cyclicity, `τ (x * y) = τ (y * x)`.
+* `CliffordAlgebra.scalarTrace_map`: naturality under quadratic isometries,
+  `τ (map f x) = τ x`.
+* `CliffordAlgebra.scalarTrace_ι_mul_map_eq_zero` and
+  `CliffordAlgebra.scalarTrace_map_mul_ι_eq_zero`: an element in the image of a quadratic isometry
+  multiplied by a vector orthogonal to that image has scalar part zero.
 * `CliffordAlgebra.scalarTrace_prod_map_ι_append_cons_eq_zero`: a product of vectors with a factor
   orthogonal to all the others has scalar part zero.
 * `CliffordAlgebra.eq_smul_scalarTrace`: for `M` spanned by pairwise orthogonal vectors, every
@@ -165,6 +170,42 @@ theorem scalarTrace_mul_comm (x y : CliffordAlgebra Q) :
   | algebraMap r => rw [Algebra.commutes]
   | add x x' hx hx' => rw [add_mul, mul_add, map_add, map_add, hx, hx']
   | ι_mul x m hx => rw [mul_assoc, scalarTrace_ι_mul, mul_assoc, hx, mul_assoc]
+
+/-- **Naturality of the scalar part under quadratic isometries**: `CliffordAlgebra.map f`
+preserves `CliffordAlgebra.scalarTrace`. -/
+@[simp]
+theorem scalarTrace_map {M' : Type*} [AddCommGroup M'] [Module R M'] {Q' : QuadraticForm R M'}
+    (f : Q →qᵢ Q') (x : CliffordAlgebra Q) :
+    scalarTrace Q' (map f x) = scalarTrace Q x := by
+  have h : ExteriorAlgebra.algebraMapInv.comp (ExteriorAlgebra.map f.toLinearMap) =
+      ExteriorAlgebra.algebraMapInv :=
+    ExteriorAlgebra.hom_ext <| LinearMap.ext fun m ↦ by simp
+  rw [scalarTrace_apply, equivExterior_map, ← AlgHom.comp_apply, h, scalarTrace_apply]
+
+/-- A vector orthogonal to the image of a quadratic isometry pairs to zero in scalar trace with
+every element from the subalgebra `CliffordAlgebra.map f`. -/
+theorem scalarTrace_ι_mul_map_eq_zero {M' : Type*} [AddCommGroup M'] [Module R M']
+    {Q' : QuadraticForm R M'} (f : Q →qᵢ Q') {v : M'} (hv : ∀ m, Q'.IsOrtho v (f m))
+    (x : CliffordAlgebra Q) :
+    scalarTrace Q' (ι Q' v * map f x) = 0 := by
+  have hB : QuadraticMap.associated (-Q') v ∘ₗ f.toLinearMap = 0 := by
+    ext m
+    simpa using hv m
+  have hmap (d : Module.Dual R M') (y : ExteriorAlgebra R M) :
+      contractLeft d (ExteriorAlgebra.map f.toLinearMap y) =
+        ExteriorAlgebra.map f.toLinearMap (contractLeft (d ∘ₗ f.toLinearMap) y) :=
+    contractLeft_map { f.toLinearMap with map_app' := fun _ ↦ rfl } d y
+  rw [scalarTrace_apply, equivExterior_ι_mul, equivExterior_map, hmap, hB]
+  simp
+
+/-- Right-multiplied form of `CliffordAlgebra.scalarTrace_ι_mul_map_eq_zero`: an element in the
+image of a quadratic isometry multiplied on the right by an orthogonal vector has scalar part
+zero. -/
+theorem scalarTrace_map_mul_ι_eq_zero {M' : Type*} [AddCommGroup M'] [Module R M']
+    {Q' : QuadraticForm R M'} (f : Q →qᵢ Q') {v : M'} (hv : ∀ m, Q'.IsOrtho v (f m))
+    (x : CliffordAlgebra Q) :
+    scalarTrace Q' (map f x * ι Q' v) = 0 := by
+  rw [scalarTrace_mul_comm, scalarTrace_ι_mul_map_eq_zero f hv]
 
 /-! ### Uniqueness and the regular trace -/
 
