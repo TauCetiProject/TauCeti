@@ -251,8 +251,6 @@ private theorem norm_associativityScale_zero (hf : 0 ≤ f) (hf₁ : f ≤ 1) :
 theorem associativityScale_ne_zero (hf : 0 < f) (i : Fin 3) : associativityScale f τ i ≠ 0 := by
   have h₀ := smoothTransition.nonneg (8 * τ)
   have h₀' := smoothTransition.le_one (8 * τ)
-  have h₄ := smoothTransition.nonneg (8 * τ - 4)
-  have h₅ := smoothTransition.nonneg (8 * τ - 5)
   have h₇ := smoothTransition.nonneg (8 * τ - 7)
   have h₇' := smoothTransition.le_one (8 * τ - 7)
   fin_cases i
