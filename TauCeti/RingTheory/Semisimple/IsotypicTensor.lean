@@ -10,6 +10,9 @@ public import TauCeti.RingTheory.Semisimple.Multiplicity
 -- Non-public: the rank criterion for a self-map to be injective is used only inside the proof of
 -- injectivity on a finite-dimensional target; no exported statement mentions a dimension.
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+-- Non-public: the rank of a product with finitely many nontrivial factors is used only inside the
+-- proof of the hom-space dimension formula.
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # An isotypic component is its type tensored with its multiplicity space
@@ -45,6 +48,13 @@ combines injectivity on each summand with the independence of the isotypic compo
 (`TauCeti.iSupIndep_isotypicComponent`). Again nothing is asked of `M` beyond semisimplicity; in
 particular infinitely many `S j` may occur, with infinite-dimensional multiplicity spaces.
 
+The decomposition computes maps out of `M`. An `A`-linear map `g : M →ₗ[A] N` into any module is
+determined by the maps `φ ↦ g ∘ φ` it induces from the multiplicity spaces of `M` to those of `N`,
+and any family of `k`-linear maps between multiplicity spaces arises this way. Hence the
+endomorphism algebra of `M` is the product of the full endomorphism algebras of its multiplicity
+spaces, and for finite-dimensional `M` and `N` the dimension of `M →ₗ[A] N` is
+`∑ⱼ dim (S j →ₗ[A] M) · dim (S j →ₗ[A] N)`.
+
 ## Main definitions
 
 * `TauCeti.isotypicComponentTensorEquiv`: **the isotypic component is `S` tensored with its
@@ -54,6 +64,10 @@ particular infinitely many `S j` may occur, with infinite-dimensional multiplici
 * `TauCeti.directSumIsotypicEval`: the sum of the evaluation maps of a family of modules `S j`.
 * `TauCeti.directSumIsotypicTensorEquiv`: **the isotypic decomposition of a semisimple module**,
   `⨁ⱼ S j ⊗[k] (S j →ₗ[A] M) ≃ₗ[A] M`.
+* `TauCeti.directSumIsotypicLinearMapEquiv`: maps out of a semisimple module are families of maps
+  between multiplicity spaces, `(M →ₗ[A] N) ≃ₗ[k] Π j, (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N)`.
+* `TauCeti.directSumIsotypicEndAlgEquiv`: the algebra form,
+  `Module.End A M ≃ₐ[k] Π j, Module.End k (S j →ₗ[A] M)`.
 
 ## Main results
 
@@ -70,6 +84,11 @@ particular infinitely many `S j` may occur, with infinite-dimensional multiplici
 * `TauCeti.directSumIsotypicEval_comp`, `TauCeti.directSumIsotypicTensorEquiv_map` and
   `TauCeti.directSumIsotypicTensorEquiv_symm_apply_map`: naturality of the decomposition in the
   target, so that `A`-linear maps act on the multiplicity spaces alone.
+* `TauCeti.finrank_linearMap_eq_finsum`: for finite-dimensional `M` and `N`,
+  `dim (M →ₗ[A] N) = ∑ⱼ dim (S j →ₗ[A] M) · dim (S j →ₗ[A] N)`.
+* `TauCeti.nonempty_end_algEquiv_pi_matrix`: for finite-dimensional `M`, `Module.End A M` is the
+  product of the full matrix algebras over `k` whose sizes are the multiplicities
+  `dim (S j →ₗ[A] M)`.
 
 ## References
 
@@ -412,6 +431,135 @@ theorem directSumIsotypicTensorEquiv_symm_apply_map [IsSemisimpleModule A M]
   apply (directSumIsotypicTensorEquiv k S hS hcoverN).injective
   rw [LinearEquiv.apply_symm_apply, directSumIsotypicTensorEquiv_map k S hS hcoverM hcoverN,
     LinearEquiv.apply_symm_apply]
+
+/-- The inverse of the isotypic decomposition sends the value `φ s` of a map `φ : S j →ₗ[A] M` to
+the elementary tensor `s ⊗ φ` in the `j`-th summand. -/
+@[simp]
+theorem directSumIsotypicTensorEquiv_symm_apply_apply [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    {j : κ} (φ : S j →ₗ[A] M) (s : S j) :
+    (directSumIsotypicTensorEquiv k S hS hcover).symm (φ s) = DFinsupp.single j (s ⊗ₜ φ) := by
+  rw [LinearEquiv.symm_apply_eq, directSumIsotypicTensorEquiv_apply, directSumIsotypicEval_single,
+    isotypicEval_tmul]
+
+/-! ### Hom spaces and endomorphism algebras through multiplicity spaces -/
+
+/-- **Maps out of a semisimple module are families of maps between multiplicity spaces.** Let
+the `S j` be pairwise non-isomorphic simple modules, finite-dimensional over the algebraically
+closed field `k`, representing every simple submodule of the semisimple module `M`. For every
+module `N`, postcomposition `g ↦ (φ ↦ g ∘ φ)` identifies `M →ₗ[A] N` with the families of
+`k`-linear maps `(S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N)`. Nothing is asked of `N`, and the multiplicity
+spaces may be infinite-dimensional. -/
+noncomputable def directSumIsotypicLinearMapEquiv [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    (M →ₗ[A] N) ≃ₗ[k] Π j, (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N) where
+  toFun g _ := LinearMap.compRight k g
+  map_add' _ _ := by
+    ext
+    simp
+  map_smul' _ _ := by
+    ext
+    simp
+  invFun T := directSumIsotypicEval k A S N ∘ₗ
+    DFinsupp.mapRange.linearMap (fun j => AlgebraTensorModule.map LinearMap.id (T j)) ∘ₗ
+      (directSumIsotypicTensorEquiv k S hS hcover).symm.toLinearMap
+  left_inv g := by
+    ext y
+    have hy := (directSumIsotypicTensorEquiv k S hS hcover).apply_symm_apply y
+    rw [directSumIsotypicTensorEquiv_apply] at hy
+    simpa [hy] using directSumIsotypicEval_map_apply k S g
+      ((directSumIsotypicTensorEquiv k S hS hcover).symm y)
+  right_inv T := by
+    ext
+    simp
+
+/-- `directSumIsotypicLinearMapEquiv` sends `g` to postcomposition by `g` on every multiplicity
+space. -/
+@[simp]
+theorem directSumIsotypicLinearMapEquiv_apply [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (g : M →ₗ[A] N) (j : κ) (φ : S j →ₗ[A] M) :
+    directSumIsotypicLinearMapEquiv k S hS hcover g j φ = g ∘ₗ φ :=
+  (rfl)
+
+/-- The map with prescribed action `T` on the multiplicity spaces sends the value `φ s` of
+`φ : S j →ₗ[A] M` to `T j φ s`. -/
+@[simp]
+theorem directSumIsotypicLinearMapEquiv_symm_apply_apply [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (T : Π j, (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N)) {j : κ} (φ : S j →ₗ[A] M) (s : S j) :
+    (directSumIsotypicLinearMapEquiv k S hS hcover).symm T (φ s) = T j φ s := by
+  simp [directSumIsotypicLinearMapEquiv]
+
+/-- **The endomorphism algebra of a semisimple module is a product of full endomorphism
+algebras of its multiplicity spaces.** With the `S j` as in
+`TauCeti.directSumIsotypicLinearMapEquiv`, postcomposition is an isomorphism of `k`-algebras
+`Module.End A M ≃ₐ[k] Π j, Module.End k (S j →ₗ[A] M)`. -/
+noncomputable def directSumIsotypicEndAlgEquiv [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    Module.End A M ≃ₐ[k] Π j, Module.End k (S j →ₗ[A] M) :=
+  .ofLinearEquiv (directSumIsotypicLinearMapEquiv k S hS hcover) (by ext; rfl)
+    fun _ _ => by ext; rfl
+
+/-- `directSumIsotypicEndAlgEquiv` sends `g` to postcomposition by `g` on every multiplicity
+space. -/
+@[simp]
+theorem directSumIsotypicEndAlgEquiv_apply [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (g : Module.End A M) (j : κ) (φ : S j →ₗ[A] M) :
+    directSumIsotypicEndAlgEquiv k S hS hcover g j φ = g ∘ₗ φ :=
+  (rfl)
+
+/-- The endomorphism with prescribed action `T` on the multiplicity spaces sends the value `φ s`
+of `φ : S j →ₗ[A] M` to `T j φ s`. -/
+@[simp]
+theorem directSumIsotypicEndAlgEquiv_symm_apply_apply [IsSemisimpleModule A M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (T : Π j, Module.End k (S j →ₗ[A] M)) {j : κ} (φ : S j →ₗ[A] M) (s : S j) :
+    (directSumIsotypicEndAlgEquiv k S hS hcover).symm T (φ s) = T j φ s :=
+  directSumIsotypicLinearMapEquiv_symm_apply_apply k S hS hcover T φ s
+
+omit [DecidableEq κ] in
+/-- **The dimension of a hom space between finite-dimensional modules.** With the `S j` as in
+`TauCeti.directSumIsotypicLinearMapEquiv` for the semisimple module `M`,
+`dim Hom_A(M, N) = ∑ⱼ dim Hom_A(S j, M) · dim Hom_A(S j, N)` for finite-dimensional `M` and `N`;
+only finitely many terms of the sum are nonzero. -/
+theorem finrank_linearMap_eq_finsum [IsSemisimpleModule A M] [FiniteDimensional k M]
+    [FiniteDimensional k N] (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    Module.finrank k (M →ₗ[A] N) =
+      ∑ᶠ j, Module.finrank k (S j →ₗ[A] M) * Module.finrank k (S j →ₗ[A] N) := by
+  classical
+  rw [(directSumIsotypicLinearMapEquiv k S hS hcover).finrank_eq, finrank_pi_eq_finsum]
+  · simp_rw [Module.finrank_linearMap]
+  · have : IsNoetherian A M := isNoetherian_of_tower k inferInstance
+    refine (finite_setOf_nontrivial_linearMap A M S hS).subset
+      fun j (hj : Nontrivial (_ →ₗ[k] _)) => ?_
+    -- A nonzero map between multiplicity spaces needs a nonzero source.
+    by_contra h
+    have := not_nontrivial_iff_subsingleton.mp h
+    exact not_nontrivial _ hj
+
+omit [DecidableEq κ] in
+/-- **The endomorphism algebra of a finite-dimensional semisimple module is a product of full
+matrix algebras.** With the `S j` as in `TauCeti.directSumIsotypicLinearMapEquiv`, the size of the
+`j`-th factor is the multiplicity `dim Hom_A(S j, M)` of `S j` in `M`; all but finitely many
+factors are the zero ring. -/
+theorem nonempty_end_algEquiv_pi_matrix [IsSemisimpleModule A M] [FiniteDimensional k M]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    Nonempty (Module.End A M ≃ₐ[k] Π j, Matrix (Fin (Module.finrank k (S j →ₗ[A] M)))
+      (Fin (Module.finrank k (S j →ₗ[A] M))) k) := by
+  classical
+  exact ⟨(directSumIsotypicEndAlgEquiv k S hS hcover).trans
+    (AlgEquiv.piCongrRight fun _ => LinearMap.toMatrixAlgEquiv (Module.finBasis k _))⟩
 
 end DirectSumEquiv
 

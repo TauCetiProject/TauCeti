@@ -55,6 +55,8 @@ weights.
   factor change-of-basis determinants.
 * `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
   products is the sum of the ranks of the finite free component hom spaces.
+* `TauCeti.finrank_pi_eq_finsum`: the finite rank of a dependent product over an arbitrary index
+  type with only finitely many nontrivial finite free factors is the `finsum` of their ranks.
 * `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
   finite-dimensional space onto a finite dependent product, whose factors are then finite
   (`LinearMap.finite_of_surjective_pi`).
@@ -340,6 +342,23 @@ public theorem finrank_linearMap_pi_eq_sum {R A ι κ : Type*} [Semiring R] [Str
   exact Finset.sum_congr rfl fun i _ ↦ by
     rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R).finrank_eq,
       Module.finrank_pi_fintype]
+
+/-- The finite rank of a dependent product whose factors are finite free and only finitely many
+of them nontrivial is the sum of the ranks of the factors. The index type may be infinite; this
+extends `Module.finrank_pi_fintype`, the trivial factors contributing nothing. -/
+public theorem finrank_pi_eq_finsum {R ι : Type*} [Ring R] [StrongRankCondition R]
+    (M : ι → Type*) [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, Module.Free R (M i)]
+    [∀ i, Module.Finite R (M i)] (h : {i | Nontrivial (M i)}.Finite) :
+    Module.finrank R ((i : ι) → M i) = ∑ᶠ i, Module.finrank R (M i) := by
+  classical
+  have (i : {x // x ∉ h.toFinset}) : Subsingleton (M i) :=
+    not_nontrivial_iff_subsingleton.mp (by simpa using i.2)
+  rw [(LinearEquiv.piEquivPiSubtypeProd R (· ∈ h.toFinset) M).finrank_eq, Module.finrank_prod,
+    Module.finrank_zero_of_subsingleton (M := (i : {x // x ∉ h.toFinset}) → M i), add_zero,
+    Module.finrank_pi_fintype,
+    Finset.sum_coe_sort h.toFinset fun i ↦ Module.finrank R (M i)]
+  refine (finsum_eq_sum_of_support_subset _ fun i hi ↦ ?_).symm
+  simpa using Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero hi)
 
 variable {K ι : Type*} [Ring K] [DecidableEq ι]
 
