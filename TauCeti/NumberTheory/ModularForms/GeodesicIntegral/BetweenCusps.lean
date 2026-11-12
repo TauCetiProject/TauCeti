@@ -415,7 +415,7 @@ private lemma exists_pos_det (g : GL (Fin 2) ℚ) :
   · have h : resToImagAxis (F ∣[(2 : ℤ)] (g * D)) =
         fun t ↦ conj (resToImagAxis (F ∣[(2 : ℤ)] g) t) := by
       funext t
-      rw [SlashAction.slash_mul, resToImagAxis_slash_negDiag _ hD]
+      rw [SlashAction.slash_mul, resToImagAxis_slash_of_map_eq_J _ _ hD]
     rw [h]
     exact (Complex.conjCLE.integrable_comp_iff).2 hF
 
