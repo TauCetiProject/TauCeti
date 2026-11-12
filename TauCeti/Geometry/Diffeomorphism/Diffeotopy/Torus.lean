@@ -119,7 +119,7 @@ integer multiple of `p i`. -/
 theorem final_torusTranslationDiffeotopy_eq_refl_iff :
     (torusTranslationDiffeotopy (n := n) p v).final = Diffeomorph.refl _ _ n ↔
       ∀ i, v i ∈ AddSubgroup.zmultiples (p i) := by
-  simp only [← QuotientAddGroup.eq_zero_iff]
+  simp only [AddSubgroup.mem_zmultiples_iff, ← AddCircle.coe_eq_zero_iff]
   constructor
   · intro h i
     have h0 := congrArg (fun f ↦ f 0 i) h
@@ -145,7 +145,12 @@ private theorem hasMFDerivAt_add_shift_time (x : ∀ i, AddCircle (p i)) (t : un
   refine (TauCeti.hasMFDerivAt_pi h).congr_mfderiv ?_
   -- Both sides send `τ` to `τ' • v`, for the image `τ'` of `τ` in the tangent line of `ℝ`.
   ext τ i
-  rfl
+  have key (r : ℝ) :
+      (1 : ℝ →L[ℝ] ℝ).smulRight (v i) r = ContinuousLinearMap.toSpanSingleton ℝ v r i := by
+    simp
+  -- The tangent spaces are type synonyms of `ℝ`, so `comp_apply` matches the goal only up to
+  -- unfolding them, which `exact` does and `rw` and `simp` do not.
+  exact key _
 
 /-- **The derivative of the motion of a translation diffeotopy.** The motion
 `(x, t) ↦ x + [t v]` of the torus has derivative `(w, τ) ↦ w + τ' • v`, where `τ'` is the image of
