@@ -54,10 +54,9 @@ private theorem integrable_id_stableMeasure_one_zero_iff (hα : α ∈ Ioo 0 2)
     (hβ : |β| ≤ 1) : Integrable id (stableMeasure α β 1 0) ↔ 1 < α := by
   obtain ⟨ρ, hρ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ
-    (by norm_num : (0 : ℝ) < 1)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   have hsmall : Integrable id (ρ : Measure ℝ) :=
-    (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hα hβ (by norm_num) hρ).integrable
+    (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hα (by norm_num) hρ).integrable
       (by norm_num)
   have hlarge : Integrable id (stableCompensatedPoissonMeasure α β 1) ↔ 1 < α := by
     rw [← integrable_norm_iff aestronglyMeasurable_id]
@@ -140,7 +139,7 @@ theorem integral_id_stableMeasure (hα : α ∈ Ioc 1 2) (hβ : |β| ≤ 1)
 /-- A random variable with a stable law of shape greater than one has mean equal to the
 law's corrected `S₁` location. -/
 theorem integral_of_hasLaw_stableMeasure (hα : α ∈ Ioc 1 2) (hβ : |β| ≤ 1)
-    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : Ω → ℝ}
+    {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω} {X : Ω → ℝ}
     {s : ℝ≥0} {m : ℝ} (hX : HasLaw X (stableMeasure α β s m) P) :
     ∫ ω, X ω ∂P = stableS1Location α β s m :=
   hX.integral_eq.trans (integral_id_stableMeasure hα hβ s m)

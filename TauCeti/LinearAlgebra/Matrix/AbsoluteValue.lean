@@ -38,6 +38,8 @@ the bound on the regulator.
 * `Matrix.abv_det_le_prod_of_le` and `Matrix.abv_det_le_prod_of_le'`: for nonarchimedean `abv`,
   entrywise row bounds `b i` or column bounds `b j` give `abv A.det ≤ ∏ i, b i` and
   `abv A.det ≤ ∏ j, b j`.
+* `Matrix.abv_det_le_one_of_isNonarchimedean`, `Matrix.abv_det_eq_one_of_mul_eq_one`: unit-ball
+  determinant specializations for a nonarchimedean absolute value.
 * `Matrix.abv_det_le_factorial_mul_of_forall_perm`: a bound on each permutation product gives
   the same bound on the determinant, multiplied by the factorial of the matrix size.
 -/
@@ -48,7 +50,7 @@ open Equiv Finset
 
 namespace Matrix
 
-variable {R S : Type*} [CommRing R] [Nontrivial R]
+variable {R S : Type*} [CommRing R]
   [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
@@ -57,6 +59,9 @@ product of the `ℓ¹` norms of the columns. -/
 theorem abv_det_le_prod_sum_abv' (A : Matrix n n R) (abv : AbsoluteValue R S) :
     abv A.det ≤ ∏ j, ∑ i, abv (A i j) := by
   classical
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim A.det 0, map_zero]
+    exact prod_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ abv.nonneg _
   calc
     abv A.det ≤ ∑ σ : Perm n, abv (Perm.sign σ • ∏ i, A (σ i) i) := by
       rw [det_apply]
@@ -89,6 +94,11 @@ column `j` of `A` is bounded entrywise in `abv` by `b j`, then `abv A.det ≤ �
 theorem abv_det_le_prod_of_le' (A : Matrix n n R) {abv : AbsoluteValue R S}
     (habv : IsNonarchimedean abv) {b : n → S} (hA : ∀ i j, abv (A i j) ≤ b j) :
     abv A.det ≤ ∏ j, b j := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim A.det 0, map_zero]
+    rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
+    · simp
+    · exact prod_nonneg fun j _ ↦ (abv.nonneg (A i₀ j)).trans (hA i₀ j)
   rw [det_apply]
   obtain ⟨σ, -, hσ⟩ := habv.finset_image_add_of_nonempty _ (univ_nonempty (α := Perm n))
   refine hσ.trans ?_
@@ -104,12 +114,37 @@ theorem abv_det_le_prod_of_le (A : Matrix n n R) {abv : AbsoluteValue R S}
   simpa only [det_transpose, transpose_apply] using
     abv_det_le_prod_of_le' Aᵀ habv fun i j => hA j i
 
+/-- A square matrix with entries in the nonarchimedean unit ball has determinant in the unit
+ball. -/
+theorem abv_det_le_one_of_isNonarchimedean {A : Matrix n n R} {abv : AbsoluteValue R S}
+    (habv : IsNonarchimedean abv) (hA : ∀ i j, abv (A i j) ≤ 1) :
+    abv A.det ≤ 1 :=
+  (A.abv_det_le_prod_of_le' habv hA).trans_eq prod_const_one
+
+/-- If `A * B = 1` and both `A` and `B` have entries in the nonarchimedean unit ball, then
+`abv A.det = 1`. -/
+theorem abv_det_eq_one_of_mul_eq_one [Nontrivial R] {A B : Matrix n n R} {abv : AbsoluteValue R S}
+    (habv : IsNonarchimedean abv) (hAB : A * B = 1) (hA : ∀ i j, abv (A i j) ≤ 1)
+    (hB : ∀ i j, abv (B i j) ≤ 1) :
+    abv A.det = 1 := by
+  refine le_antisymm (A.abv_det_le_one_of_isNonarchimedean habv hA) ?_
+  have hmul : abv A.det * abv B.det = 1 := by
+    rw [← map_mul, ← det_mul, hAB, det_one, map_one]
+  calc (1 : S) = abv A.det * abv B.det := hmul.symm
+    _ ≤ abv A.det * 1 :=
+      mul_le_mul_of_nonneg_left (B.abv_det_le_one_of_isNonarchimedean habv hB) (abv.nonneg _)
+    _ = abv A.det := mul_one _
+
 /-- A uniform bound on the absolute values of all permutation products bounds the determinant
 by the same bound times the factorial of the matrix size. Unlike an entrywise bound, this can
 retain correlations between the factors in each permutation product. -/
 theorem abv_det_le_factorial_mul_of_forall_perm (A : Matrix n n R) (abv : AbsoluteValue R S)
     {B : S} (hA : ∀ σ : Perm n, ∏ i, abv (A (σ i) i) ≤ B) :
     abv A.det ≤ (Fintype.card n).factorial * B := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · rw [Subsingleton.elim A.det 0, map_zero]
+    exact mul_nonneg (Nat.cast_nonneg _)
+      ((prod_nonneg fun _ _ ↦ abv.nonneg _).trans (hA 1))
   calc
     abv A.det ≤ ∑ σ : Perm n, abv (Perm.sign σ • ∏ i, A (σ i) i) := by
       rw [det_apply]

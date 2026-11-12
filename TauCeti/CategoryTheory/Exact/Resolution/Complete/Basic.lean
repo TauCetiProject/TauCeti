@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Homology.ShortComplex.Splice
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
+public import TauCeti.CategoryTheory.Exact.Resolution.Unbounded.Basic
+public import TauCeti.CategoryTheory.Exact.Acyclic
 
 /-!
 # Complete resolutions
@@ -26,7 +28,8 @@ maps are spliced. Uniqueness up to homotopy is the comparison theorem in
 
 * `TauCeti.ExactStructure.CompleteResolution`: a complete resolution, as the data of its
   conflations.
-* `TauCeti.ExactStructure.CompleteResolution.complex`: the spliced cochain complex.
+* `TauCeti.ExactStructure.CompleteResolution.complex`: the spliced cochain complex, acyclic by
+  `TauCeti.ExactStructure.CompleteResolution.acyclicData`.
 * `TauCeti.ExactStructure.CompleteResolution.cyclesMap`: the morphism of the objects of cycles in
   degree zero induced by a map of the spliced complexes.
 * `TauCeti.ExactStructure.IsFrobenius.completeResolution`: a complete resolution of an object of
@@ -126,6 +129,16 @@ of the form `n + 1`. -/
 theorem complex_d_negSucc_zero : r.complex.d (Int.negSucc 0) 0 = r.d (Int.negSucc 0) :=
   r.complex_d _
 
+/-- The spliced complex of a complete resolution is acyclic, with objects of cycles `Zⁿ`. -/
+@[expose, simps]
+def acyclicData : E.AcyclicData r.complex where
+  Z := r.Z
+  i := r.ι
+  p := r.π
+  zero := r.ι_π
+  conflation := r.conflation
+  fac n := by rw [complex_d, d_def]
+
 /-- A map of the spliced complexes commutes with the differentials of the resolutions. -/
 @[reassoc]
 theorem f_comp_d {r' : E.CompleteResolution} (φ : r.complex ⟶ r'.complex) (n : ℤ) :
@@ -219,41 +232,35 @@ private noncomputable def cosyzygy (X : C) : ℕ → C
   | 0 => X
   | n + 1 => (hE.enoughInjectives.injectivePresentation (cosyzygy X n)).K
 
-private noncomputable def syzygy (X : C) : ℕ → C
-  | 0 => X
-  | n + 1 => (hE.enoughProjectives.projectivePresentation (syzygy X n)).K
-
 private noncomputable def positiveConflation (X : C) (n : ℕ) : ShortComplex C :=
   let P := hE.enoughInjectives.injectivePresentation (cosyzygy hE X n)
   ShortComplex.mk P.i P.p P.zero
 
-private noncomputable def negativeConflation (X : C) (n : ℕ) : ShortComplex C :=
-  let P := hE.enoughProjectives.projectivePresentation (syzygy hE X n)
-  ShortComplex.mk P.i P.p P.zero
-
 private noncomputable def conflationSequence (X : C) : ℤ → ShortComplex C
   | .ofNat n => positiveConflation hE X n
-  | .negSucc n => negativeConflation hE X n
+  | .negSucc n =>
+    let r := hE.enoughProjectives.projectiveResolution X
+    ShortComplex.mk (r.ι n) (r.π n) (r.ι_π n)
 
 /-- The cokernel of each conflation of the sequence is the kernel of the next one. In each case
 the two objects are the same syzygy or cosyzygy, so the isomorphism is an identity. -/
 private noncomputable def conflationSequenceIso (X : C) :
     ∀ n, (conflationSequence hE X n).X₃ ≅ (conflationSequence hE X (n + 1)).X₁
   | .ofNat _ => Iso.refl _
-  | .negSucc 0 => Iso.refl _
+  | .negSucc 0 => eqToIso (hE.enoughProjectives.projectiveResolution_Z_zero X)
   | .negSucc (_ + 1) => Iso.refl _
 
 private theorem conflation_conflationSequence (X : C) (n : ℤ) :
     E.Conflation (conflationSequence hE X n) := by
   cases n with
   | ofNat n => exact (hE.enoughInjectives.injectivePresentation _).conflation
-  | negSucc n => exact (hE.enoughProjectives.projectivePresentation _).conflation
+  | negSucc n => exact (hE.enoughProjectives.projectiveResolution X).conflation n
 
 private theorem isProjective_conflationSequence (X : C) (n : ℤ) :
     E.isProjective (conflationSequence hE X n).X₂ := by
   cases n with
   | ofNat n => exact hE.isProjective_I (hE.enoughInjectives.injectivePresentation _)
-  | negSucc n => exact (hE.enoughProjectives.projectivePresentation _).isProjective
+  | negSucc n => exact (hE.enoughProjectives.projectiveResolution X).projective n
 
 /-- A complete resolution of an object of a Frobenius exact category, spliced from injective
 presentations in nonnegative degrees and projective presentations in negative degrees. Its object

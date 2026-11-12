@@ -40,11 +40,10 @@ precomposition with `Φ` is the bounded operator `TauCeti.Wkp.compL` from `W^{k,
 `TauCeti.memWkpLoc_iff_forall_wkp` of the local class with the spaces `W^{k,p}(W)` then gives the
 invariance; vector-valued maps are handled in coordinates (`Module.Basis.memWkpLoc_iff`).
 
-For half-discs the property is checked locally (`TauCeti.memWkpLoc_iff_locally`). Near a point
-whose image lies on the real axis, the higher-order reflection
-`TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` extends `u` to a disc centred on
-the axis (`TauCeti.MemWkpLoc.exists_ball_extension`); the open case applies to the extension,
-which agrees with `u` on the closed upper half-plane, where `Φ` takes its values.
+For half-discs, the higher-order reflection extends `u` to an open set `W` between
+`V ∩ {0 ≤ im}` and `V` (`TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`); the open
+case applies to the extension on `U ∩ Φ⁻¹(W)`, which contains `U ∩ {0 ≤ im}`, and the extension
+agrees with `u` on the closed upper half-plane, where `Φ` takes its values.
 
 ## Main declarations
 
@@ -156,19 +155,15 @@ theorem MemWkpLoc.comp_contDiffOn_halfPlane [Fact (1 ≤ p)] (hp : p ≠ ⊤) (h
     (hΦ : ContDiffOn ℝ k Φ U) (hdet : ∀ z ∈ (U : Set ℂ), (fderiv ℝ Φ z).det ≠ 0)
     (hmaps : MapsTo Φ ((U : Set ℂ) ∩ {z | 0 ≤ z.im}) ((V : Set ℂ) ∩ {z | 0 ≤ z.im})) :
     MemWkpLoc p ((U : Set ℂ) ∩ {z | 0 ≤ z.im}) k (fun z => u (Φ z)) := by
-  refine memWkpLoc_iff_locally.2 fun z hz => ?_
-  obtain ⟨hzV, hz0⟩ := hmaps hz
-  obtain ⟨r, hr, v, hv, hvu⟩ := hu.exists_ball_extension Fact.out V.isOpen hzV hz0
-  set O : Opens ℂ := ⟨U ∩ Φ ⁻¹' ball (Φ z) r, hΦ.continuousOn.isOpen_inter_preimage U.isOpen
-    isOpen_ball⟩
-  have hvO := hv.comp_contDiffOn (U := O) (V := ⟨_, isOpen_ball⟩) hp hk
-    (hΦ.mono inter_subset_left) (fun y hy => hdet y hy.1) fun y hy => hy.2
-  refine ⟨((U : Set ℂ) ∩ {z | 0 ≤ z.im}) ∩ O, inter_mem_nhdsWithin _ (O.isOpen.mem_nhds ?_), ?_⟩
-  · exact ⟨hz.1, by simpa using hr⟩
-  · refine (hvO.mono inter_subset_right).congr_ae (ae_restrict_of_forall_mem
-      ((U.isOpen.measurableSet.inter (measurableSet_le measurable_const
-        Complex.measurable_im)).inter O.isOpen.measurableSet) fun y hy => ?_)
-    exact hvu _ hy.2.2 (hmaps hy.1).2
+  obtain ⟨W, hVW, -, hW⟩ := hu.exists_opens_memWkpLoc_planarReflection Fact.out
+  set O : Opens ℂ := ⟨U ∩ Φ ⁻¹' W, hΦ.continuousOn.isOpen_inter_preimage U.isOpen W.isOpen⟩
+  have hvO := hW.comp_contDiffOn (U := O) hp hk (hΦ.mono inter_subset_left)
+    (fun y hy => hdet y hy.1) fun y hy => hy.2
+  have hUO : (U : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ O := fun y hy => ⟨hy.1, hVW (hmaps hy)⟩
+  refine (hvO.mono hUO).congr_ae (ae_restrict_of_forall_mem
+    (U.isOpen.measurableSet.inter (measurableSet_le measurable_const Complex.measurable_im))
+    fun y hy => ?_)
+  exact planarReflection_of_nonneg _ u (hmaps hy).2
 
 /-- **Invariance of the half-disc classes under `Cᵏ` diffeomorphisms.** Let `e` be an open partial
 homeomorphism of `ℂ` that is `Cᵏ` in both directions, `k ≥ 1`, mapping `e.source ∩ {0 ≤ im}` into

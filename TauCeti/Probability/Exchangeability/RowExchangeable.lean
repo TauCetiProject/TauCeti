@@ -92,7 +92,6 @@ measurable map into `ι × ℕ → α`.
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115–130.
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "Markov exchangeability".
 
 No material is adapted from `cameronfreer/exchangeability`, which treats exchangeable sequences
 rather than arrays.
@@ -134,10 +133,9 @@ theorem rowExchangeable_def :
 
 omit [Countable ι] in
 /-- **It suffices to check row exchangeability for permutation families of finite total support.**
-For a finite base measure and an a.e.-measurable array, invariance under every family `π` that
-moves only finitely many cells `(a, k)` implies invariance under arbitrary row-wise permutations. -/
-theorem rowExchangeable_iff_forall_prodCongrRight_mem_finitary [IsFiniteMeasure μ]
-    (hY : AEMeasurable (fun ω => fun p : ι × ℕ => Y p ω) μ) :
+For a finite base measure, invariance under every family `π` that moves only finitely many cells
+`(a, k)` implies invariance under arbitrary row-wise permutations. -/
+theorem rowExchangeable_iff_forall_prodCongrRight_mem_finitary [IsFiniteMeasure μ] :
     RowExchangeable μ Y ↔
       ∀ π : ι → Equiv.Perm ℕ,
         Equiv.prodCongrRight π ∈ Equiv.Perm.finitary (ι × ℕ) →
@@ -149,26 +147,34 @@ theorem rowExchangeable_iff_forall_prodCongrRight_mem_finitary [IsFiniteMeasure 
   · intro h
     rw [rowExchangeable_def]
     intro π
-    have hshift : ∀ ρ : ι → Equiv.Perm ℕ,
-        AEMeasurable (fun ω => fun p : ι × ℕ => Y (p.1, ρ p.1 p.2) ω) μ := by
-      intro ρ
+    have hshift : ∀ (ρ : ι → Equiv.Perm ℕ) (Z : ι × ℕ → Ω → α),
+        AEMeasurable (fun ω => fun p : ι × ℕ => Z p ω) μ →
+          AEMeasurable (fun ω => fun p : ι × ℕ => Z (p.1, ρ p.1 p.2) ω) μ := by
+      intro ρ Z hZ
       have hρ : Measurable (fun y : ι × ℕ → α =>
           fun p : ι × ℕ => y (p.1, ρ p.1 p.2)) :=
         Measurable.of_eval fun p => measurable_pi_apply (p.1, ρ p.1 p.2)
-      exact hρ.comp_aemeasurable hY
-    rw [ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq (hshift π) hY]
-    intro F
-    obtain ⟨τ, hτfin, hτ⟩ :=
-      Equiv.Perm.exists_prodCongrRight_mem_finitary_apply_eq_on_finset π F
-    have hτmap := (ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq
-      (hshift τ) hY).mp (h τ hτfin) F
-    have heq : (fun ω => F.restrict fun p : ι × ℕ => Y (p.1, τ p.1 p.2) ω) =
-        fun ω => F.restrict fun p : ι × ℕ => Y (p.1, π p.1 p.2) ω := by
-      funext ω p
-      obtain ⟨q, hq⟩ := p
-      simpa only [Finset.restrict_def] using
-        congrArg (fun k => Y (q.1, k) ω) (hτ q hq)
-    rwa [heq] at hτmap
+      exact hρ.comp_aemeasurable hZ
+    by_cases hY : AEMeasurable (fun ω => fun p : ι × ℕ => Y p ω) μ
+    · rw [ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq (hshift π Y hY) hY]
+      intro F
+      obtain ⟨τ, hτfin, hτ⟩ :=
+        Equiv.Perm.exists_prodCongrRight_mem_finitary_apply_eq_on_finset π F
+      have hτmap := (ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq
+        (hshift τ Y hY) hY).mp (h τ hτfin) F
+      have heq : (fun ω => F.restrict fun p : ι × ℕ => Y (p.1, τ p.1 p.2) ω) =
+          fun ω => F.restrict fun p : ι × ℕ => Y (p.1, π p.1 p.2) ω := by
+        funext ω p
+        obtain ⟨q, hq⟩ := p
+        simpa only [Finset.restrict_def] using
+          congrArg (fun k => Y (q.1, k) ω) (hτ q hq)
+      rwa [heq] at hτmap
+    · have hπ : ¬ AEMeasurable (fun ω => fun p : ι × ℕ => Y (p.1, π p.1 p.2) ω) μ := fun hs =>
+        hY (by simpa using hshift (fun a => (π a).symm) _ hs)
+      obtain rfl | hμ := eq_or_ne μ 0
+      · simp
+      rw [Measure.map_of_not_aemeasurable_of_ne_zero hπ hμ,
+        Measure.map_of_not_aemeasurable_of_ne_zero hY hμ]
 
 /-- **Each row of a row exchangeable array is fully exchangeable.** -/
 theorem RowExchangeable.fullyExchangeable_row (h : RowExchangeable μ Y)
@@ -481,11 +487,11 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
   refine Finset.prod_congr rfl fun t ht => ?_
   rw [← (Finset.mem_filter.1 ht).2, htarget t]
 
-/-- **De Finetti for a row exchangeable array.** Over a countable row index and a nonempty standard
+/-- **De Finetti for a row exchangeable array.** Over a countable row index and a standard
 Borel state space, the columns of a row exchangeable array are conditionally i.i.d., and their
 directing measure almost surely factors over the rows: conditionally on it, the rows are
 independent as well as identically distributed within each row. -/
-theorem RowExchangeable.exists_directing_pi_eq_prod [StandardBorelSpace α] [Nonempty α]
+theorem RowExchangeable.exists_directing_pi_eq_prod [StandardBorelSpace α]
     [IsFiniteMeasure μ] (h : RowExchangeable μ Y) (hY : ∀ p, AEMeasurable (Y p) μ) :
     ∃ lam : Ω → ProbabilityMeasure (ι → α), ConditionallyIIDWith μ (arrayCol Y) lam ∧
       ∀ (B : ι → Set α) (F : Finset ι), (∀ a ∈ F, MeasurableSet (B a)) →

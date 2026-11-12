@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 
 /-!
@@ -92,33 +94,26 @@ theorem exists_pos_norm_fderiv_le_rpow
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     ∃ ε > 0, ε < R ∧ ∃ C > 0, ∀ z ∈ ball z₀ ε \ {z₀},
       ‖fderiv ℝ u z‖ ≤ C * ‖z - z₀‖ ^ (c / (1 + M) ^ 2 - 1) := by
-  have hmem : circleMap z₀ (R / 2) 0 ∈ ball z₀ R \ {z₀} := by
-    constructor
-    · simp only [mem_ball, dist_eq_norm, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_pos (half_pos hR)]
-      linarith
-    · exact sub_ne_zero.mp (norm_pos_iff.mp (by
-        simpa only [circleMap_sub_center, norm_circleMap_zero,
-          abs_of_pos (half_pos hR)] using half_pos hR))
+  have hmem := circleMap_mem_ball_diff_singleton (z₀ := z₀) (half_pos hR) (half_lt_self hR) 0
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound _ hmem)
   -- Normalize the energy power bound, then choose a radius below the mean-value threshold.
   let β := c / (1 + M) ^ 2
-  have hβ : 0 < β := by dsimp [β]; positivity
-  obtain ⟨A, hA, hpower⟩ := exists_energy_power_bound hg hc hR
+  have _ : 0 < β := by dsimp [β]; positivity
+  obtain ⟨A, _, hpower⟩ := exists_energy_power_bound hg hc hR
     (hu.of_le (by norm_num)) hCR htame hbound henergy
   obtain ⟨δ, hδ, hmean⟩ :=
     exists_pos_sq_norm_fderiv_one_le_energy hW hJ hK hKW hJsq hu hCR huK henergy
+  have ht : Tendsto (fun r : ℝ ↦ 2 * r) (𝓝 0) (𝓝 0) := by
+    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).const_mul 2
   have hlim : Tendsto (fun r : ℝ ↦ A * (2 * r) ^ (2 * β)) (𝓝 0) (𝓝 0) := by
     simpa [Real.zero_rpow (by positivity : 2 * β ≠ 0)] using
-      ((Real.continuous_rpow_const (by positivity : 0 ≤ 2 * β)).comp
-        (continuous_const.mul continuous_id)).const_mul A |>.tendsto 0
+      (ht.rpow_const_nhds_zero (by positivity : 0 < 2 * β)).const_mul A
   obtain ⟨η, hη, hηbound⟩ := Metric.eventually_nhds_iff.mp
     (hlim.eventually (gt_mem_nhds hδ))
   let ε := min η (R / 4)
   have hε : 0 < ε := lt_min hη (by positivity)
   have hεR : ε < R := (min_le_right _ _).trans_lt (by linarith)
   let B := 32 * A * (2 : ℝ) ^ (2 * β) / Real.pi
-  have hB : 0 ≤ B := by dsimp [B]; positivity
   let C := (1 + M) * (Real.sqrt B + 1)
   have hC : 0 < C := by dsimp [C]; positivity
   refine ⟨ε, hε, hεR, C, hC, fun z hz ↦ ?_⟩
@@ -148,15 +143,7 @@ theorem exists_pos_norm_fderiv_le_rpow
     calc
       _ ≤ 32 / Real.pi * (A * (2 ^ (2 * β) * d ^ (2 * β))) := h
       _ = B * d ^ (2 * β) := by dsimp [B]; ring
-  have hreal : ‖fderiv ℝ u z 1‖ ≤ Real.sqrt B * d ^ (β - 1) := by
-    have hsq : (d * ‖fderiv ℝ u z 1‖) ^ 2 ≤ (Real.sqrt B * d ^ β) ^ 2 := by
-      have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
-        simpa only [Nat.cast_ofNat, mul_comm] using Real.rpow_mul_natCast hd.le β 2
-      rw [hp] at hsquare
-      simpa only [mul_pow, Real.sq_sqrt hB] using hsquare
-    have h := (sq_le_sq₀ (by positivity) (by positivity)).mp hsq
-    rw [Real.rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
-    nlinarith
+  have hreal := Real.le_sqrt_mul_rpow_sub_one_of_sq_le hd hsquare
   -- The Cauchy--Riemann equation controls the full differential by its real-direction part.
   have hop : ‖fderiv ℝ u z‖ ≤ (1 + M) * ‖fderiv ℝ u z 1‖ :=
     (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hzR) (hbound z hzR) le_rfl

@@ -139,7 +139,6 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
         schwarzChristoffelPrimitive a e z₀ z‖
       ≤ C * 2 ^ (-∑ i, e i) / (-(∑ i, e i + 1)) * ‖z‖ ^ (∑ i, e i + 1) := by
   set S : ℝ := ∑ i, e i
-  have hS1 : S + 1 < 0 := by linarith
   have hzim : 0 < z.im := hz
   have hz0 : (0 : ℝ) < ‖z‖ := lt_of_lt_of_le hzim (le_trans (le_abs_self _) (abs_im_le_norm z))
   set β : ℝ := T - z.im with hβdef
@@ -183,7 +182,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
   have hmain := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ hβ0 hmem hB hBi
   rw [hend, hstart] at hmain
   have hint := mul_le_mul_of_nonneg_left
-    (TauCeti.integral_add_rpow_le_of_lt_neg_one hz0 hβ0 (by linarith : S < -1)) hK.le
+    (TauCeti.integral_add_rpow_le_of_lt_neg_one (β := β) hz0 (by linarith : S < -1)) hK.le
   rw [← intervalIntegral.integral_const_mul] at hint
   refine hmain.trans (hint.trans (le_of_eq ?_))
   rw [hKdef]
@@ -248,7 +247,7 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive_atInfinity (a e : ι 
   obtain ⟨C, hC, R, hR, hbd⟩ := exists_norm_schwarzChristoffelIntegrand_le_of_le_norm a e
   set S : ℝ := ∑ i, e i
   have hS1 : S + 1 < 0 := by linarith
-  set D : ℝ := C * 2 ^ (-S) / (-(S + 1)) with hDdef
+  set D : ℝ := C * 2 ^ (-S) / (-(S + 1))
   have hD : 0 < D := div_pos (by positivity) (by linarith)
   set M : ℝ := 2 * D + C with hMdef
   refine CompleteSpace.complete (f := map (schwarzChristoffelPrimitive a e z₀)

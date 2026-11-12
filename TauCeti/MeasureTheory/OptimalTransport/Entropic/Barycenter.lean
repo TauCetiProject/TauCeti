@@ -138,14 +138,15 @@ variable {X : Type*} [MeasurableSpace X] [MetricSpace X] [PolishSpace X] [BorelS
   [∀ i, IsProbabilityMeasure (μ i)]
 
 /-- **The zero-temperature limit of the entropic barycenter cost.** On a Polish metric space, for
-`0 < p < ∞` and laws `μ i` of finite `p`-moment, the entropic barycenter cost of every probability
-law `ν` converges to its weighted Wasserstein cost as `ε → 0⁺`. -/
-theorem tendsto_entropicBarycenterCost (hp0 : p ≠ 0) (hp : p ≠ ∞)
+laws `μ i` of finite `p`-moment, the entropic barycenter cost of every probability law `ν`
+converges to its weighted Wasserstein cost as `ε → 0⁺`. For `p = 0` and `p = ∞` both sides are
+the total weight, since the exponent `p.toReal` vanishes. -/
+theorem tendsto_entropicBarycenterCost
     (hμ : ∀ i, HasFiniteMoment p (μ i)) (ν : Measure X) [IsProbabilityMeasure ν] :
     Tendsto (fun ε ↦ entropicBarycenterCost p ε w μ ν) (𝓝[>] 0)
       (𝓝 (∑ i, (w i : ℝ≥0∞) * wassersteinEDist p ν (μ i) ^ p.toReal)) :=
   tendsto_finsetSum _ fun i _ ↦ ENNReal.Tendsto.const_mul
-    (tendsto_entropicTransportCost_wassersteinEDist_rpow hp0 hp ν (μ i) (hμ i))
+    (tendsto_entropicTransportCost_wassersteinEDist_rpow ν (μ i) (hμ i))
     (Or.inr ENNReal.coe_ne_top)
 
 /-! ### Γ-convergence and entropic barycenters -/
@@ -188,7 +189,7 @@ theorem tendstoGamma_entropicBarycenterCost (hp0 : p ≠ 0) (hp : p ≠ ∞)
     exact sum_mul_wassersteinEDist_rpow_le_entropicBarycenterCost hd hp0 hp
   · -- The constant recovery sequence: the costs of a fixed law converge.
     have h := (continuous_coe_ennreal_ereal.tendsto _).comp
-      ((tendsto_entropicBarycenterCost hp0 hp hμ (w := w) ν.toMeasure).comp hε)
+      ((tendsto_entropicBarycenterCost hμ (w := w) ν.toMeasure).comp hε)
     exact h.limsup_eq.le
 
 /-- **Existence of entropic barycenters.** On a nonempty compact metric space, the entropic
