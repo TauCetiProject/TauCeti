@@ -74,7 +74,7 @@ public section
 noncomputable section
 
 open Filter Set
-open scoped Topology Interval
+open scoped ContDiff Topology Interval
 
 namespace TauCeti
 
@@ -120,6 +120,19 @@ theorem stripGeneratingFunction_add_fst {a : ℝ} (hF : ∀ q, F (q + (a, 0)) = 
 
 variable {U : Set (ℝ × ℝ)}
 
+/-- If `F` is `C^k`, with `k` finite, at every point of the segment from `(x, 0)` to `(x, y)`,
+then it is `C^k` on an open set containing that segment. -/
+private theorem exists_isOpen_contDiffOn_segment {k : WithTop ℕ∞} (hk : k ≠ ∞) {x y : ℝ}
+    (hF : ∀ t ∈ [[0, y]], ContDiffAt ℝ k F (x, t)) :
+    ∃ U : Set (ℝ × ℝ), IsOpen U ∧ ContDiffOn ℝ k F U ∧ {x} ×ˢ [[0, y]] ⊆ U := by
+  -- The points at which `F` is `C^k` form such a set.
+  refine ⟨{q | ContDiffAt ℝ k F q}, isOpen_iff_mem_nhds.2 fun q hq ↦ hq.eventually hk,
+    fun _ hq ↦ hq.contDiffWithinAt, ?_⟩
+  rintro ⟨x', t⟩ ⟨hx, ht⟩
+  rw [mem_singleton_iff] at hx
+  subst hx
+  exact hF t ht
+
 /-- The integrand `Y ∂_u X` along a direction `u` of a map which is `C^(n + 1)` on an open set
 is `C^n` there. -/
 private theorem contDiffOn_snd_mul_fst_fderiv {n : ℕ∞} (hU : IsOpen U)
@@ -141,16 +154,8 @@ theorem contDiffAt_stripGeneratingFunction {n : ℕ∞} {p : ℝ × ℝ}
         H m (ENat.natCast_ne_top m) fun t ht ↦ (hF t ht).of_le (by simp)
     · exact H n hn hF
   intro n hn hF
-  -- For finite `n`, the points at which `F` is `C^(n + 1)` form an open set `U` containing the
-  -- segment.
-  set U : Set (ℝ × ℝ) := {q | ContDiffAt ℝ (n + 1) F q}
-  have hU : IsOpen U := isOpen_iff_mem_nhds.2 fun q hq ↦ hq.eventually (by simpa using hn)
-  have hFU : ContDiffOn ℝ (n + 1) F U := fun _ hq ↦ hq.contDiffWithinAt
-  have hp : {p.1} ×ˢ [[0, p.2]] ⊆ U := by
-    rintro ⟨x, t⟩ ⟨hx, ht⟩
-    rw [mem_singleton_iff] at hx
-    subst hx
-    exact hF t ht
+  -- For finite `n`, `F` is `C^(n + 1)` on an open set `U` containing the segment.
+  obtain ⟨U, hU, hFU, hp⟩ := exists_isOpen_contDiffOn_segment (by simpa using hn) hF
   set g : ℝ × ℝ → ℝ := fun q ↦ (F q).2 * (fderiv ℝ F q (0, 1)).1
   -- Rescale the variable interval `[0, y]` to `[0, 1]`.
   have h : stripGeneratingFunction F = fun p ↦ p.2 * ∫ s in (0 : ℝ)..1, g (p.1, p.2 * s) := by
@@ -265,15 +270,8 @@ theorem hasFDerivAt_stripGeneratingFunction {p : ℝ × ℝ}
   have hS : DifferentiableAt ℝ (stripGeneratingFunction F) (x, y) :=
     (contDiffAt_stripGeneratingFunction (n := 1) fun t ht ↦
       (hF t ht).of_le (by norm_num)).differentiableAt one_ne_zero
-  -- The points at which `F` is `C²` form an open set `U` containing the segment.
-  set U : Set (ℝ × ℝ) := {q | ContDiffAt ℝ 2 F q}
-  have hU : IsOpen U := isOpen_iff_mem_nhds.2 fun q hq ↦ hq.eventually (by simp)
-  have hFU : ContDiffOn ℝ 2 F U := fun _ hq ↦ hq.contDiffWithinAt
-  have hp : {x} ×ˢ [[0, y]] ⊆ U := by
-    rintro ⟨x', t⟩ ⟨hx, ht⟩
-    rw [mem_singleton_iff] at hx
-    subst hx
-    exact hF t ht
+  -- `F` is `C²` on an open set `U` containing the segment.
+  obtain ⟨U, hU, hFU, hp⟩ := exists_isOpen_contDiffOn_segment (by simp) hF
   convert hS.hasFDerivAt using 1
   -- Compare the two partial derivatives.
   have hfst : HasDerivAt (fun s ↦ stripGeneratingFunction F (s, y))
