@@ -44,7 +44,7 @@ theorem sub_sum_taylor_two_eq_sum_sub_taylorWithinEval (f : ℝ → ℝ) (x : �
   rw [← Finset.sum_range_sub (fun i ↦ f (x i)) n, ← Finset.sum_sub_distrib,
     Finset.mul_sum, ← Finset.sum_sub_distrib]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   rw [taylorWithinEval_univ_two]
   ring
 

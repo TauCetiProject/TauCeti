@@ -493,7 +493,7 @@ theorem stellarSubdivision_simplex_self_of_mem (hv : v ∈ V) :
   refine SetLike.ext fun τ => ?_
   rw [mem_stellarSubdivision_iff, mem_simplex, mem_simplex]
   constructor
-  · rintro (⟨-, hτ, -⟩ | ⟨hvτ, -, hne, hsub⟩)
+  · rintro (⟨-, hτ, -⟩ | ⟨hvτ, -, _, hsub⟩)
     · exact hτ
     · refine ⟨⟨v, hvτ⟩, fun x hx => ?_⟩
       by_cases hxv : x = v

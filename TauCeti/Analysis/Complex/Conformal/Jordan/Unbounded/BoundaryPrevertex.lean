@@ -194,7 +194,7 @@ theorem subsingleton_inverted_boundary_fiber_of_isPreconnectedApproachAt {U : Se
   exact hw.image (κ := fun y => q + y⁻¹) (hinv hwq)
     (fun z hz => (hinv fun h => hqU (h ▸ hz)).continuousWithinAt)
     (continuousAt_const.add (continuousAt_inv₀ (inv_ne_zero (sub_ne_zero.mpr hwq))))
-    (by simp) fun z hz => by simp
+    (by simp) fun z _ => by simp
 
 /-- **The inverted coordinate is injective away from the accesses to infinity.** Let `U` be an
 unbounded open set with `q ∉ closure U`, and let `f`, `g = (f - q)⁻¹` be as supplied by
@@ -225,7 +225,7 @@ theorem injOn_inverted_boundary_of_isPreconnectedApproachAt {U : Set ℂ}
   -- a boundary value lies on the frontier of the open set `V`, so it is not an interior value
   have hmix {z z' : ℂ} (hz : z.im = 0) (hz' : 0 < z'.im) : g z ≠ g z' := fun h =>
     (hVo.frontier_eq ▸ hgfr hz).2 (h ▸ hgV hz')
-  rintro z ⟨hz, hgz⟩ z' ⟨hz', hgz'⟩ h
+  rintro z ⟨hz, hgz⟩ z' ⟨hz', _⟩ h
   rcases hz.eq_or_lt with hz | hz <;> rcases hz'.eq_or_lt with hz' | hz'
   · -- two real parameters: their common value is `(w - q)⁻¹` for a frontier point `w` of `U`
     have hmem := hgfr hz.symm
@@ -266,7 +266,7 @@ theorem injOn_inverted_boundary_of_polygonal {ι : Type*} {e : ι → ℝ}
     fun w hw => ?_
   by_cases hv : ∃ i, w = v i
   · obtain ⟨i, rfl⟩ := hv
-    obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
+    obtain ⟨ρ, hρ, b, _, hU⟩ := hcorner i
     exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hU
   · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
     exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU

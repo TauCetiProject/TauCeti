@@ -895,7 +895,7 @@ theorem quasiIso_cechAugmentation_iff_of_iso {Q : Cᵒᵖ ⥤ A} (e : P ≅ Q) :
 Čech complex of `Q` for `U` is exact, then so is the one of `P`: by naturality, the augmentation of
 `P` is a retract of the augmentation of `Q`. -/
 theorem quasiIso_cechAugmentation_of_retract {Q : Cᵒᵖ ⥤ A} (h : Retract P Q)
-    (hQ : QuasiIso (cechAugmentation U hT Q)) : QuasiIso (cechAugmentation U hT P) :=
+    (_hQ : QuasiIso (cechAugmentation U hT Q)) : QuasiIso (cechAugmentation U hT P) :=
   -- the augmentation is natural in the presheaf, so retracts of presheaves give retracts of arrows
   quasiIso_of_retractArrow (NatTrans.retractArrowApp
     (F := (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A) (G := cechComplexFunctor U)
