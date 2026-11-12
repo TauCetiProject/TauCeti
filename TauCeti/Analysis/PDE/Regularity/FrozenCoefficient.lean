@@ -187,12 +187,13 @@ private theorem UniformlyEllipticOn.exists_memLp_mul_norm_gradient_restrictL_sub
 /-- **Comparison with the frozen problem.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`
 weakly on `Ω`, tested against test functions, let `B ⊆ Ω` be open, and let `A` be a constant
 matrix, uniformly elliptic with lower constant `λ`, with `‖a(x) - A‖ ≤ ε` for `x ∈ B` in the
-operator norm of the attached bilinear forms. Let `f ∈ L²(B)` and suppose that `H¹₀(B)` satisfies
-the Poincaré inequality `‖v‖_{L²(B)} ≤ P ‖∇v‖_{L²(B)}`. If `w ∈ H¹(B)` has the boundary values of
-`u`, `u - w ∈ H¹₀(B)`, and solves the frozen problem `-∂ᵢ(Aⁱʲ ∂ⱼw) = 0` weakly on `B`, then for
-every constant `c` with `G - c ∈ L²(B)`
+operator norm of the attached bilinear forms. Let `f ∈ L²(B)` and suppose that its pairing with
+`v ∈ H¹₀(B)` is at most `L ‖∇v‖_{L²(B)}`; by the Poincaré inequality `‖v‖_{L²(B)} ≤ P ‖∇v‖_{L²(B)}`
+one may take `L = P ‖f‖_{L²(B)}`, and for `f = 0` one may take `L = 0` on any open `B`. If
+`w ∈ H¹(B)` has the boundary values of `u`, `u - w ∈ H¹₀(B)`, and solves the frozen problem
+`-∂ᵢ(Aⁱʲ ∂ⱼw) = 0` weakly on `B`, then for every constant `c` with `G - c ∈ L²(B)`
 
-`λ ‖∇(u - w)‖_{L²(B)} ≤ ε ‖∇u‖_{L²(B)} + ‖G - c‖_{L²(B)} + P ‖f‖_{L²(B)}`. -/
+`λ ‖∇(u - w)‖_{L²(B)} ≤ ε ‖∇u‖_{L²(B)} + ‖G - c‖_{L²(B)} + L`. -/
 theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
     {Omega B : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ} {lam Lam : ℝ}
     (hA : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) (fun _ => A) lam Lam)
@@ -205,20 +206,15 @@ theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
     (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
       ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu + ∫ x in Omega, f x * φ x ∂mu)
     {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B))
-    (hf : MemLp f 2 (mu.restrict B)) {P : ℝ} (hP0 : 0 ≤ P)
-    (hP : ∀ v : W1p0 mu B 2, ‖W1p.value (v : W1p mu B 2)‖ ≤ P * ‖W1p.gradient (v : W1p mu B 2)‖)
+    (hf : MemLp f 2 (mu.restrict B)) {L : ℝ} (hL : 0 ≤ L)
+    (hℓ : ∀ v : W1p0 mu B 2, |⟪hf.toLp, W1p.value (v : W1p mu B 2)⟫_ℝ| ≤
+      L * ‖W1p.gradient (v : W1p mu B 2)‖)
     {w : W1p mu B 2} (huw : W1p.restrictL hB u - w ∈ w1p0Submodule mu B 2)
     (hw : ∀ v : W1p0 mu B 2, energyFormH1 (fun _ => A) 0 0 w (v : W1p mu B 2) = 0) :
     lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤
-      ε * ‖W1p.gradient (W1p.restrictL hB u)‖ + ‖hGc.toLp‖ + P * ‖hf.toLp‖ := by
-  -- The datum `f` pairs with `v ∈ H¹₀(B)` to at most `P ‖f‖ ‖∇v‖`.
-  have hℓ : ∀ v : W1p0 mu B 2, |⟪hf.toLp, W1p.value (v : W1p mu B 2)⟫_ℝ| ≤
-      P * ‖hf.toLp‖ * ‖W1p.gradient (v : W1p mu B 2)‖ := fun v =>
-    (abs_real_inner_le_norm _ _).trans <| by
-      rw [mul_comm P, mul_assoc]
-      exact mul_le_mul_of_nonneg_left (hP v) (norm_nonneg _)
+      ε * ‖W1p.gradient (W1p.restrictL hB u)‖ + ‖hGc.toLp‖ + L := by
   obtain ⟨hD, hest⟩ := hA.exists_memLp_mul_norm_gradient_restrictL_sub_le hB ha haA hu hGc hf
-    (by positivity) hℓ huw hw
+    hL hℓ huw hw
   have hDn : ‖hD.toLp‖ ≤ ε * ‖W1p.gradient (W1p.restrictL hB u)‖ := by
     refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
     filter_upwards [hD.coeFn_toLp, ae_restrict_mem B.isOpen.measurableSet] with x hx hxB
@@ -379,11 +375,18 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
         (w1p0Submodule volume B 2)).2 huw
     exact (ClosedSubmodule.mem_toSubmodule_iff _ _).1 (sub_mem_comm_iff.1 hwu)
   refine ⟨w, hsub, hw0, ?_⟩
+  -- By the Poincaré inequality on `B ⊆ B(x₀, r)`, `f` pairs with `v ∈ H¹₀(B)` to at most
+  -- `2 r ‖f‖ ‖∇v‖`.
+  have hℓ : ∀ v : W1p0 volume B 2, |⟪hf.toLp, W1p.value (v : W1p volume B 2)⟫_ℝ| ≤
+      2 * r * ‖hf.toLp‖ * ‖W1p.gradient (v : W1p volume B 2)‖ := fun v => by
+    have hv := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hBr v.2
+    have hfv := abs_real_inner_le_norm hf.toLp (W1p.value (v : W1p volume B 2))
+    have := mul_le_mul_of_nonneg_left hv (norm_nonneg hf.toLp)
+    linarith
   have hest := hA.mul_norm_gradient_restrictL_sub_le hB ha (ε := Ka * r ^ (α : ℝ))
     (fun x hx => by
       have := haK.dist_le_mul_rpow_of_mem_ball (hBr hx)
-      rwa [dist_eq_norm] at this) hu hGc hf (by positivity)
-    (fun v => W1p.norm_value_le_mul_norm_gradient_of_subset_ball hBr v.2) hsub hw0
+      rwa [dist_eq_norm] at this) hu hGc hf (by positivity) hℓ hsub hw0
   -- The `L²(B)` norm of `G - G x₀` is at most `|B|^{1/2} K_G r^α`.
   have hGn := hGc.norm_toLp_le_measureReal_rpow_mul (by norm_num) hBfin
     ((ae_restrict_iff' hBm).2 (ae_of_all _ hGbd))
