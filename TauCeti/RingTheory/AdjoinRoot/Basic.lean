@@ -28,9 +28,9 @@ polynomial ring `R[X]/(X ^ n)`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
   evaluation of `p` at the image of the root.
-* `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f` are
-  the roots of `f`. Mathlib's `AdjoinRoot.equiv` is the version over a field with values in a
-  domain.
+* `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f`
+  into any algebra, commutative or not, are the roots of `f`. Mathlib's `AdjoinRoot.equiv` is the
+  version over a field with values in a domain.
 * `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
   unity.
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
@@ -71,21 +71,20 @@ polynomial ring `R[X]/(X ^ n)`.
 Stated over arbitrary commutative rings.
 
 This is consumed by `TauCeti/AlgebraicGeometry/EllipticCurve/Affine/CoordinateRingMap.lean`, which
-specialises it to the coordinate ring of a Weierstrass curve for the Hasse strand of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 3.
+specialises it to the coordinate ring of a Weierstrass curve.
 
 ## Provenance
 
 The surjectivity argument — lift a class to a polynomial, then lift that polynomial along `f` — is
-adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by
-that roadmap at `dev/hasse-weil @ 513e83879e2f`),
+adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`),
 `HasseWeil/WeilPairing/FrobeniusFunctionFieldEquiv.lean`, declaration `coordRingMap_bijective`.
 There it is carried out for the coordinate ring of a Weierstrass curve and only for a base ring
 *equivalence*; here it is stated for `AdjoinRoot.map` along any surjective base homomorphism, with
 `map_mk` — which the source does not isolate — extracted as the step that makes it routine.
 `AdjoinRoot.exists_degree_lt_mk_eq` and `AdjoinRoot.mk_eq_mk_iff_of_degree_lt` are adapted from
 Michael Stoll's `EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`,
-Apache-2.0, pinned by `TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`. There the reduction step the first one uses is a separate
 lemma; here that step is Mathlib's `AdjoinRoot.mk_leftInverse`. The source proves the second from a
 named helper `eq_zero_of_monic_dvd_of_degree_lt`; that helper is a one-line composition of
@@ -100,7 +99,11 @@ open Polynomial
 
 namespace AdjoinRoot
 
-variable {R S : Type*} [CommRing R] [CommRing S]
+variable {R S : Type*} [CommRing R]
+
+section Map
+
+variable [CommRing S]
 
 /-- `AdjoinRoot.map` on the class of a polynomial is the class of its image. Mathlib states this
 for `WeierstrassCurve.Affine.CoordinateRing.map` but not for the underlying `AdjoinRoot.map`. -/
@@ -117,6 +120,8 @@ lemma map_surjective {f : R →+* S} (hf : Function.Surjective f) {p : R[X]} {q 
   obtain ⟨u, rfl⟩ := Polynomial.map_surjective f hf t
   exact ⟨mk p u, map_mk h u⟩
 
+end Map
+
 /-- An algebra map out of `AdjoinRoot g` sends the class of `p` to the evaluation of `p` at the
 image of the root. -/
 theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F (AdjoinRoot g) B]
@@ -124,29 +129,40 @@ theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F
     φ (mk g p) = aeval (φ (root g)) p := by
   rw [← aeval_eq, aeval_algHom_apply]
 
+section AlgHomEquiv
+
+variable [Semiring S] [Algebra R S]
+
 variable (S) in
 /-- **Algebra maps out of `AdjoinRoot f` are the roots of `f`.** An `R`-algebra map
 `AdjoinRoot f →ₐ[R] S` is determined by the image of the root, which can be any root of `f` in
-`S`. Mathlib's `AdjoinRoot.equiv` is the version over a field with values in a domain, indexed by
-the multiset of roots. -/
-noncomputable def algHomEquiv [Algebra R S] (f : R[X]) :
+`S`. The target need not be commutative, since `R` acts centrally on it. Mathlib's
+`AdjoinRoot.equiv` is the version over a field with values in a domain, indexed by the multiset of
+roots. -/
+noncomputable def algHomEquiv (f : R[X]) :
     (AdjoinRoot f →ₐ[R] S) ≃ {x : S // aeval x f = 0} where
-  toFun φ := ⟨φ (root f), aeval_algHom_eq_zero f φ⟩
-  invFun x := liftAlgHom f (Algebra.ofId R S) x x.2
-  left_inv φ := liftAlgHom_eq_algHom f φ
-  right_inv _ := Subtype.ext (liftAlgHom_root ..)
+  toFun φ := ⟨φ (root f), by rw [← algHom_mk, mk_self, map_zero]⟩
+  -- `AdjoinRoot.liftAlgHom` asks for a commutative target, so the inverse uses
+  -- `Ideal.Quotient.liftₐ` instead.
+  invFun x := Ideal.Quotient.liftₐ _ (aeval x.1) fun p hp ↦ by
+    obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.mp hp
+    rw [map_mul, x.2, mul_zero]
+  left_inv φ := algHom_ext <| (Ideal.Quotient.lift_mk _ _ _).trans (aeval_X _)
+  right_inv x := Subtype.ext <| (Ideal.Quotient.lift_mk _ _ _).trans (aeval_X _)
 
 /-- The root of `f` attached to an algebra map out of `AdjoinRoot f` is the image of the root. -/
 @[simp]
-theorem coe_algHomEquiv_apply [Algebra R S] {f : R[X]} (φ : AdjoinRoot f →ₐ[R] S) :
+theorem coe_algHomEquiv_apply {f : R[X]} (φ : AdjoinRoot f →ₐ[R] S) :
     (algHomEquiv S f φ : S) = φ (root f) :=
   (rfl)
 
 /-- The algebra map out of `AdjoinRoot f` attached to a root `x` of `f` sends the root to `x`. -/
 @[simp]
-theorem algHomEquiv_symm_apply_root [Algebra R S] {f : R[X]} (x : {x : S // aeval x f = 0}) :
+theorem algHomEquiv_symm_apply_root {f : R[X]} (x : {x : S // aeval x f = 0}) :
     (algHomEquiv S f).symm x (root f) = x :=
-  liftAlgHom_root ..
+  congrArg Subtype.val ((algHomEquiv S f).apply_symm_apply x)
+
+end AlgHomEquiv
 
 /-- The class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of unity. -/
 @[simp]

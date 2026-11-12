@@ -177,7 +177,7 @@ theorem W1p.exists_lpEmbeddingL_of_eLpNorm_value_le {r : ℝ≥0∞} [Fact (1 �
   -- lets the public norm_toLp law apply without unfolding the representative itself.
   change ‖(hm u).toLp (W1p.value u)‖ ≤ _
   rw [Lp.norm_toLp]
-  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] using
+  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_eNorm] using
     ENNReal.toReal_mono (by finiteness : C * ‖u‖ₑ ≠ ∞) (hC u)
 
 /-! ### The interior of a domain -/
