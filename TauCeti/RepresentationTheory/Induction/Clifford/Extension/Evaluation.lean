@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstruction
+public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstruction.Basic
 
 /-!
 # Equivariant reconstruction from Clifford multiplicities
