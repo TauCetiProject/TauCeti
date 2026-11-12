@@ -30,7 +30,8 @@ category:
   generated module is small, so `ModuleCat.uliftFunctor` identifies the finitely generated
   indecomposable modules in two universes;
 * an equivalence of module categories `ModuleCat A ≌ ModuleCat B` preserves and reflects finite
-  generation and indecomposability, so it identifies the two skeletons;
+  generation and indecomposability (`CategoryTheory.Equivalence.indecomposable_functor_obj_iff`),
+  so it identifies the two skeletons;
 * hence **Morita equivalent algebras** (`IsMoritaEquivalent R A B`) have the same number of
   isomorphism classes of finitely generated indecomposable modules, and one is
   representation-finite exactly when the other is.
@@ -47,8 +48,6 @@ field `k` this gives one class and for `k × k` two, so `k` and `k × k` are not
   `TauCeti.card_skeleton_indecomposable_eq_card_skeleton_indecomposable`: representation-finiteness
   and the number of finitely generated indecomposable modules do not depend on the universe of the
   modules.
-* `CategoryTheory.Equivalence.indecomposable_functor_obj_iff`: an equivalence of module categories
-  preserves and reflects indecomposability.
 * `CategoryTheory.Equivalence.isRepresentationFinite_iff` and
   `CategoryTheory.Equivalence.card_skeleton_indecomposable_eq`: rings with equivalent module
   categories are representation-finite together and have equally many finitely generated
@@ -142,16 +141,6 @@ end Universe
 section Equivalence
 
 variable {A : Type u} [Ring A] {B : Type u'} [Ring B]
-
-/-- **An equivalence of module categories preserves and reflects indecomposability.** -/
-@[simp]
-theorem _root_.CategoryTheory.Equivalence.indecomposable_functor_obj_iff
-    (e : ModuleCat.{v} A ≌ ModuleCat.{v'} B) (M : ModuleCat.{v} A) :
-    Indecomposable (e.functor.obj M) ↔ Indecomposable M :=
-  ⟨fun h ↦ (e.inverse.indecomposable_obj_of_map_bijective h
-      (e.fullyFaithfulInverse.map_bijective _ _)).of_iso (e.unitIso.app M).symm,
-    fun h ↦ e.functor.indecomposable_obj_of_map_bijective h
-      (e.fullyFaithfulFunctor.map_bijective _ _)⟩
 
 /-- An equivalence of module categories identifies the isomorphism classes of finitely generated
 indecomposable modules over the two rings. -/
