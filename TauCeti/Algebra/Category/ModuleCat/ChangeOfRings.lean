@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
@@ -306,5 +307,45 @@ theorem _root_.ModuleCat.ExtendScalars.span_singleton_one_tmul_eq_top
   exact ⟨s, key s⟩
 
 end Cyclic
+
+end TauCeti
+
+open scoped TensorProduct ChangeOfRings
+
+namespace TauCeti
+
+open CategoryTheory _root_.ModuleCat
+
+/-- Scalar extension of a finite relation cokernel agrees with the cokernel of its
+coefficientwise image under a ring homomorphism. -/
+theorem _root_.RingHom.nonempty_extendScalars_cokernel_pi_iso
+    {R S : Type u} [CommRing R] [CommRing S] (φ : R →+* S) (n m : ℕ)
+    (r : (Fin m → S) →ₗ[S] (Fin n → S))
+    (rᵢ : (Fin m → R) →ₗ[R] (Fin n → R))
+    (hcoeff : ∀ (row : Fin n) (col : Fin m),
+      φ (rᵢ (Pi.single col 1) row) = r (Pi.single col 1) row) :
+    Nonempty ((extendScalars (φ)).obj
+        (ModuleCat.of R (ULift.{v} ((Fin n → R) ⧸ LinearMap.range rᵢ))) ≅
+        ModuleCat.of S
+          (ULift.{v} ((Fin n → S) ⧸ LinearMap.range r))) := by
+  classical
+  let := φ.toAlgebra
+  have hmatrix : (LinearMap.toMatrix' rᵢ).map (algebraMap R S) =
+      LinearMap.toMatrix' r := by
+    ext row col
+    exact hcoeff row col
+  have hsource : (LinearMap.toMatrix' rᵢ).mulVecLin = rᵢ := Matrix.toLin'_toMatrix' rᵢ
+  have htarget : ((LinearMap.toMatrix' rᵢ).map (algebraMap R S)).mulVecLin = r := by
+    rw [hmatrix]
+    exact Matrix.toLin'_toMatrix' r
+  let eQ : S ⊗[R] ((Fin n → R) ⧸ LinearMap.range rᵢ) ≃ₗ[S]
+      (Fin n → S) ⧸ LinearMap.range r := by
+    have comparison := (LinearMap.toMatrix' rᵢ).cokernelBaseChangeEquiv (S := S)
+    rw [hsource, htarget] at comparison
+    exact comparison
+  let eU := (ULift.moduleEquiv : ULift.{v} ((Fin n → R) ⧸ LinearMap.range rᵢ) ≃ₗ[R]
+    ((Fin n → R) ⧸ LinearMap.range rᵢ)).baseChange R S _ _
+  let e := eU.trans (eQ.trans ULift.moduleEquiv.symm)
+  exact ⟨e.toModuleIso⟩
 
 end TauCeti

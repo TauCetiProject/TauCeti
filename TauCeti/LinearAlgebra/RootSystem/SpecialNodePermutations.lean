@@ -76,10 +76,9 @@ that construction, stated against the pinned Bourbaki numbering of
 
 ## References
 
-This is the root-level combinatorics underlying the "special isogenies in characteristics two and
-three" item of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. See R. Steinberg, *Lectures
-on Chevalley Groups*, §11, for the isogeny itself, and R. W. Carter, *Simple Groups of Lie Type*,
-§12.3-12.4, for the Suzuki and Ree groups it produces.
+This is the root-level combinatorics underlying the special isogenies in characteristics two and
+three. See R. Steinberg, *Lectures on Chevalley Groups*, §11, for the isogeny itself, and
+R. W. Carter, *Simple Groups of Lie Type*, §12.3-12.4, for the Suzuki and Ree groups it produces.
 -/
 
 public section

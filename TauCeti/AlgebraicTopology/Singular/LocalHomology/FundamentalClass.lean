@@ -66,6 +66,9 @@ homology isomorphism directly, without requiring Poincaré duality.
   `ℚ ≃ₗ[ℚ] Hₙ(M; ℚ)` on a compact connected oriented manifold.
 * `TauCeti.HomologicalOrientation.fundamentalClassOn_eq_sum_localOrientationAlong`: the
   fundamental class along a finite set is the sum of the local orientations at its points.
+* `TauCeti.HomologicalOrientation.eq_localHomologyMap_fundamentalClassOn`: along an open
+  embedding `ι : M → X`, a class restricting to the local orientations is the image of the
+  fundamental class.
 * `TauCeti.HomologicalOrientation.eq_fundamentalClass`: the fundamental class is the only class
   restricting to the orientation at every point.
 * `TauCeti.HomologicalOrientation.fundamentalClass_neg`: the fundamental class of the reversed
@@ -203,6 +206,41 @@ theorem fundamentalClassOn_neg :
     LocalOrientation.coe_neg]
 
 end Compact
+
+section OpenEmbedding
+
+variable {X : Type} [TopologicalSpace X] [T1Space X] {ι : M → X} (hι : Topology.IsOpenEmbedding ι)
+
+/-- **Fundamental classes along an open embedding.** Let `ι : M → X` be an open embedding into a
+`T₁` space and let `T ⊆ ι(M)` be closed, with compact preimage `S = ι ⁻¹' T`. A class of
+`Hₙ(X, X ∖ T; ℤ)` whose restriction to every point `ι x` of `T` is the image of the local
+orientation `o x` is the image under `ι` of the fundamental class of `M` along `S`. -/
+theorem eq_localHomologyMap_fundamentalClassOn {S : Set M} (hS : IsCompact S) {T : Set X}
+    (h : ι ⁻¹' T = S) (hT : IsClosed T) (hTι : T ⊆ range ι)
+    {γ : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) T n}
+    (hγ : ∀ x (hx : ι x ∈ T),
+      localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n γ =
+        (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom (o x).val) :
+    γ = localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨ι, hι.continuous⟩ h.subset n
+      (o.fundamentalClassOn hn hS) := by
+  have := isIso_localHomologyMap (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
+    ⟨ι, hι.continuous⟩ hι h hT hTι n
+  set a := localHomologyMap (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
+    ⟨ι, hι.continuous⟩ h.subset n
+  -- The preimage of `γ` under the excision isomorphism `a` restricts to the local orientation at
+  -- every point of `S`.
+  suffices hδ : inv a γ = o.fundamentalClassOn hn hS by
+    rw [← hδ, ← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ModuleCat.id_apply]
+  refine o.eq_fundamentalClassOn hn hS fun x hx ↦
+    ConcreteCategory.injective_of_mono_of_preservesPullback
+      (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hι x n).hom ?_
+  have hxT : ι x ∈ T := h.symm.subset hx
+  rw [← ConcreteCategory.comp_apply,
+    ← localHomologyMap_comp_localHomologyRestriction_singleton _ hι h.subset hxT,
+    ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply (inv a), IsIso.inv_hom_id,
+    ModuleCat.id_apply, hγ x hxT]
+
+end OpenEmbedding
 
 section Finite
 
@@ -517,8 +555,8 @@ def rationalFundamentalClassEquiv : ℚ ≃ₗ[ℚ]
   let F : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ := ModuleCat.extendScalars (Int.castRingHom ℚ)
   let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
     (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
-  exact (eUnit.symm ≪≫ F.mapIso (o.fundamentalClassEquiv hn).toModuleIso ≪≫
-    (TopCat.toSSet.obj (TopCat.of M)).rationalHomologyExtendScalarsIso n).toLinearEquiv
+  let eH := (TopCat.toSSet.obj (TopCat.of M)).homologyExtendScalarsIso (Int.castRingHom ℚ) n
+  exact (eUnit.symm ≪≫ F.mapIso (o.fundamentalClassEquiv hn).toModuleIso ≪≫ eH).toLinearEquiv
 
 /-- Reversing orientation negates every value of the normalized rational equivalence. -/
 theorem rationalFundamentalClassEquiv_neg_apply (c : ℚ) :
@@ -527,7 +565,7 @@ theorem rationalFundamentalClassEquiv_neg_apply (c : ℚ) :
   have : F.Additive := Functor.additive_of_preserves_binary_products F
   let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
     (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
-  let eH := (TopCat.toSSet.obj (TopCat.of M)).rationalHomologyExtendScalarsIso n
+  let eH := (TopCat.toSSet.obj (TopCat.of M)).homologyExtendScalarsIso (Int.castRingHom ℚ) n
   -- Keep the induced integer action visible in these typed comparison maps. The original
   -- composition uses a definitionally equal canonical action in its tensor unit isomorphism.
   change eH.hom ((F.map ((-o).fundamentalClassEquiv hn).toModuleIso.hom)

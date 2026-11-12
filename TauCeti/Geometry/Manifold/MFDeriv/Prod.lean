@@ -36,6 +36,8 @@ fields on a product manifold.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
 * `TauCeti.mvfderiv_diag_eq_add`: the derivative of `x ↦ S(x, x)` is the sum of the two
   partial derivatives of `S` on the diagonal.
+* `TauCeti.mfderiv_inr_eq_zero_of_forall_apply_eq`: a map constant on a slice `{p} × N` has
+  differential vanishing on the vectors tangent to that slice.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
   `𝕜 × N`.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
@@ -49,6 +51,10 @@ fields on a product manifold.
   differential of a coordinate of a map into a product.
 * `MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`: the derivative of a
   fibre-product condition `(f y).2 = (g y).1`.
+* `MDifferentiableAt.mfderiv_prodMk_fst_snd_comp_apply`: the differential of
+  `y ↦ ((φ (a y)).1, (ψ (b y)).2)`.
+* `MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp`: the derivative of a
+  fibre-product condition `(φ (a y)).2 = (ψ (b y)).1` along maps `a` and `b`.
 -/
 
 public section
@@ -185,6 +191,24 @@ theorem mvfderiv_curry_right {f : M × N → F} (p : M) (x : N)
   -- The product tangent synonym and the product of tangent synonyms have the same vectors;
   -- their `inr` maps agree pointwise. Composing with `y ↦ (p, y)` is currying at `p`.
   exact hd.trans (by ext v; rfl)
+
+/-- A map on a product that is constant on the slice `{p} × N` through `(p, x)` has differential
+at `(p, x)` vanishing on the vectors `(0, v)` tangent to that slice. No differentiability is
+needed: the differential is zero where the map is not differentiable. -/
+theorem mfderiv_inr_eq_zero_of_forall_apply_eq {f : M × N → M''} {p : M} {x : N}
+    (hc : ∀ y, f (p, y) = f (p, x)) (v : TangentSpace J x) :
+    mfderiv (I.prod J) I'' f (p, x) ((0 : TangentSpace I p), v) = 0 := by
+  by_cases hf : MDifferentiableAt (I.prod J) I'' f (p, x)
+  · have hd := mfderiv_comp_of_eq hf
+      (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (rfl : (p, x) = (p, x))
+    dsimp only [id_eq] at hd
+    -- The composite with the slice inclusion `y ↦ (p, y)` is constant.
+    rw [show (f ∘ fun y : N ↦ (p, y)) = fun _ ↦ f (p, x) from funext hc, mfderiv_const,
+      mfderiv_prod_right] at hd
+    exact (DFunLike.congr_fun hd v).symm
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf]
+    -- The zero map evaluates to zero; the product tangent space is the product of the factors.
+    rfl
 
 /-- **The differential on the diagonal.** If `S` is differentiable at `(q, q)`, the differential
 of `ψ(x) = S(x, x)` at `q` is the sum `d₁S(q, q) + d₂S(q, q)` of the partial differentials. -/
@@ -352,5 +376,42 @@ theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct {g : M → 
   -- The two coordinate maps are equal; ascribing `F'` gives both sides one type, since the tangent
   -- spaces of `N'` at `(f x).2` and `(g x).1` are both `F'`.
   exact congrArg (fun φ : M → N' ↦ (mfderiv I J' φ x v : F')) (funext hfg)
+
+
+section Comp
+
+variable {EL EL' HL HL' L L' : Type*} [NormedAddCommGroup EL] [NormedSpace 𝕜 EL]
+  [NormedAddCommGroup EL'] [NormedSpace 𝕜 EL'] [TopologicalSpace HL] [TopologicalSpace HL']
+  {K : ModelWithCorners 𝕜 EL HL} {K' : ModelWithCorners 𝕜 EL' HL'}
+  [TopologicalSpace L] [ChartedSpace HL L] [TopologicalSpace L'] [ChartedSpace HL' L']
+  {φ : L → N × N'} {ψ : L' → N' × N''} {a : M → L} {b : M → L'}
+
+/-- The differential of `y ↦ ((φ (a y)).1, (ψ (b y)).2)` reads off the first coordinate of
+`dφ (da v)` and the second coordinate of `dψ (db v)`. -/
+theorem MDifferentiableAt.mfderiv_prodMk_fst_snd_comp_apply
+    (hφ : MDifferentiableAt K (J.prod J') φ (a x)) (hψ : MDifferentiableAt K' (J'.prod J'') ψ (b x))
+    (ha : MDifferentiableAt I K a x) (hb : MDifferentiableAt I K' b x) (v : TangentSpace I x) :
+    mfderiv I (J.prod J'') (fun y ↦ ((φ (a y)).1, (ψ (b y)).2)) x v =
+      ((mfderiv K (J.prod J') φ (a x) (mfderiv I K a x v)).1,
+        (mfderiv K' (J'.prod J'') ψ (b x) (mfderiv I K' b x v)).2) := by
+  have hφa : MDifferentiableAt I (J.prod J') (φ ∘ a) x := hφ.comp x ha
+  have hψb : MDifferentiableAt I (J'.prod J'') (ψ ∘ b) x := hψ.comp x hb
+  have hh := hφa.fst.prodMk hψb.snd
+  rw [← mfderiv_comp_apply x hφ ha, ← mfderiv_comp_apply x hψ hb, ← hφa.mfderiv_fst_apply,
+    ← hψb.mfderiv_snd_apply]
+  exact Prod.ext (hh.mfderiv_fst_apply v).symm (hh.mfderiv_snd_apply v).symm
+
+/-- Differentiating a fibre-product condition `(φ (a y)).2 = (ψ (b y)).1` along maps `a` and `b`:
+the matching coordinates of `dφ (da v)` and `dψ (db v)` agree. -/
+theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp
+    (hφ : MDifferentiableAt K (J.prod J') φ (a x)) (hψ : MDifferentiableAt K' (J'.prod J'') ψ (b x))
+    (ha : MDifferentiableAt I K a x) (hb : MDifferentiableAt I K' b x)
+    (hab : ∀ y, (φ (a y)).2 = (ψ (b y)).1) (v : TangentSpace I x) :
+    (mfderiv K (J.prod J') φ (a x) (mfderiv I K a x v)).2 =
+      (mfderiv K' (J'.prod J'') ψ (b x) (mfderiv I K' b x v)).1 := by
+  rw [← mfderiv_comp_apply x hφ ha, ← mfderiv_comp_apply x hψ hb]
+  exact (hφ.comp x ha).mfderiv_snd_eq_mfderiv_fst_of_fiberProduct (hψ.comp x hb) hab v
+
+end Comp
 
 end Coordinates
