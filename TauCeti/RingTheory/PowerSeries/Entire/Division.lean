@@ -280,19 +280,52 @@ private theorem divByMonic_coe_and_modByMonic_coe (g : Polynomial R) (hp : p.Mon
     ⟨hdiv, degree_modByMonic_lt _ hp.ne_zero⟩
   exact ⟨hq.trans (by rw [h₁]), h₂.symm⟩
 
-/-- On a polynomial, the quotient of entire division is the quotient of polynomial division. -/
+end HasSum
+
+section TopologicalRingCoe
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R] {p : Polynomial R}
+
+/-- On a polynomial, the sums defining the quotient of entire division are finite, so they do not
+depend on the topology. -/
+private theorem divByMonic_coe_eq_mk (g : Polynomial R) (p : Polynomial R) :
+    (g : R⟦X⟧).divByMonic p = mk fun n ↦ ∑ k ∈ range (g.natDegree + 1),
+      coeff (n + p.natDegree + k) (g : R⟦X⟧) * coeff k (invOfUnit (p.reverse : R⟦X⟧) 1) := by
+  ext n
+  rw [coeff_divByMonic, coeff_mk]
+  refine tsum_eq_sum fun k hk ↦ ?_
+  rw [Polynomial.coeff_coe,
+    Polynomial.coeff_eq_zero_of_natDegree_lt (by rw [mem_range] at hk; omega), zero_mul]
+
+/-- On a polynomial, the quotient of entire division is the quotient of polynomial division. The
+sums defining the quotient are finite, so this holds in every topology; it is proved by comparing
+with the discrete topology. -/
 @[simp]
 theorem divByMonic_coe (g : Polynomial R) (hp : p.Monic) :
-    (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) :=
-  (divByMonic_coe_and_modByMonic_coe g hp).1
+    (g : R⟦X⟧).divByMonic p = (g /ₘ p : Polynomial R) := by
+  have e := divByMonic_coe_eq_mk (R := R) g p
+  let _ : TopologicalSpace R := ⊥
+  have : DiscreteTopology R := ⟨rfl⟩
+  exact e.trans ((divByMonic_coe_eq_mk (R := R) g p).symm.trans
+    (divByMonic_coe_and_modByMonic_coe g hp).1)
 
 /-- On a polynomial, the remainder of entire division is the remainder of polynomial division. -/
 @[simp]
 theorem modByMonic_coe (g : Polynomial R) (hp : p.Monic) :
-    (g : R⟦X⟧).modByMonic p = g %ₘ p :=
-  (divByMonic_coe_and_modByMonic_coe g hp).2
+    (g : R⟦X⟧).modByMonic p = g %ₘ p := by
+  nontriviality R
+  rw [modByMonic, divByMonic_coe g hp]
+  have h : (g : R⟦X⟧) - (p : R⟦X⟧) * ((g /ₘ p : Polynomial R) : R⟦X⟧) =
+      ((g %ₘ p : Polynomial R) : R⟦X⟧) := by
+    rw [sub_eq_iff_eq_add, ← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.coe_inj]
+    exact (Polynomial.modByMonic_add_div g p).symm
+  rw [h]
+  rcases eq_or_ne (g %ₘ p) 0 with h0 | h0
+  · simp [h0]
+  · exact trunc_coe_eq_self
+      (Polynomial.natDegree_lt_natDegree h0 (Polynomial.degree_modByMonic_lt _ hp))
 
-end HasSum
+end TopologicalRingCoe
 
 section NormedCommRing
 
