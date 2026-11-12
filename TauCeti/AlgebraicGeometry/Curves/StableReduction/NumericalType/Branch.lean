@@ -183,11 +183,6 @@ theorem intersection_eq_zero_of_branch_six (hcard : 7 < Fintype.card T.Component
     (e₃₄ : 0 < T.intersection c₃ c₄) (e₄₅ : 0 < T.intersection c₄ c₅)
     (e₃₆ : 0 < T.intersection c₃ c₆) :
     T.intersection c₆ c₇ = 0 := by
-  have h₁₂ : c₁ ≠ c₂ := by rintro rfl; linarith
-  have h₂₃ : c₂ ≠ c₃ := by rintro rfl; linarith
-  have h₃₄ : c₃ ≠ c₄ := by rintro rfl; linarith
-  have h₄₅ : c₄ ≠ c₅ := by rintro rfl; linarith
-  have h₃₆ : c₃ ≠ c₆ := by rintro rfl; linarith
   by_contra hne
   have e₆₇ : 0 < T.intersection c₆ c₇ :=
     (T.offDiagonal_nonneg c₆ c₇ h₆₇).lt_of_ne (Ne.symm hne)

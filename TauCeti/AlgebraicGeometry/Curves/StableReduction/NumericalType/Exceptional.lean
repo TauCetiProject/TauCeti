@@ -134,7 +134,7 @@ theorem exists_weight_intersection_branch_eight_eq
   let r : ℕ → T.Component := fun i ↦ c (6 - i)
   have hr : T.IsSelfIntersectionMinusTwoChain 6 r := by
     simpa [r] using hc.reverse.mono (s := 6) (by omega)
-  obtain ⟨w', hwr, -, hredge, -, hrbranch_zero⟩ :=
+  obtain ⟨w', hwr, -, -, -, hrbranch_zero⟩ :=
     T.exists_weight_intersection_branch_seven_eq hr (fun i hi ↦ hbranch_ne (6 - i) (by omega))
       hbranch_self (by simpa [r] using hbranch_pos)
   have hww : (w' : ℤ) = w := (hwr 3 (by omega)).symm.trans (hw 3 (by omega))
