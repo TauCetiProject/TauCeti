@@ -215,7 +215,7 @@ theorem existsUnique_logarithm_of_nsmulSeries_eq_zero [F.IsComm] {p : ℕ} (hp :
         PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g := by
   obtain ⟨g, h₀, h₁, hpow, hg⟩ := F.exists_logarithm hp hF
   rw [F.homDefect_𝔾ₐ, sub_sub, sub_eq_zero] at hg
-  refine ⟨g, ⟨h₀, h₁, hpow, hg⟩, fun g' ⟨h₀', h₁', hpow', hg'⟩ ↦ ?_⟩
+  refine ⟨g, ⟨h₀, h₁, hpow, hg⟩, fun g' ⟨_, h₁', hpow', hg'⟩ ↦ ?_⟩
   exact F.logarithm_unique_of_natCast_eq_zero hp (F.natCast_eq_zero_of_nsmulSeries_eq_zero hF)
     h₁' hpow' hg' h₁ hpow hg
 
