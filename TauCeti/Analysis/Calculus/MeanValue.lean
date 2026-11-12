@@ -91,9 +91,11 @@ compactly supported differentiable map whose derivative kills a nonzero `v` ever
 
 A real function on `[x, ∞)` with nonpositive (negative) derivative beyond `x` that tends to `0`
 at `+∞` is nonnegative (positive) at `x` (`TauCeti.nonneg_of_tendsto_atTop_of_deriv_nonpos`,
-`TauCeti.pos_of_tendsto_atTop_of_deriv_neg`). A function with nonnegative derivative inside
-`[a, b]` satisfies `f a ≤ f b` (`TauCeti.le_of_deriv_nonneg_Icc`), and one vanishing at `a` with
-positive derivative beyond `a` is positive there (`TauCeti.pos_of_deriv_pos_of_eq_zero`).
+`TauCeti.pos_of_tendsto_atTop_of_deriv_neg`). If such a function also vanishes at `a` and its
+derivative, once nonpositive at a point of `(a, ∞)`, stays nonpositive (negative) afterwards, then
+it is nonnegative on `[a, ∞)` (positive on `(a, ∞)`)
+(`TauCeti.nonneg_of_tendsto_atTop_of_deriv_nonpos_stable`,
+`TauCeti.pos_of_tendsto_atTop_of_deriv_nonpos_stable`).
 -/
 
 public section
@@ -494,12 +496,10 @@ theorem nonneg_of_tendsto_atTop_of_deriv_nonpos {f f' : ℝ → ℝ} {x : ℝ}
     (hf : ∀ y, x ≤ y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 0))
     (hf' : ∀ y, x < y → f' y ≤ 0) : 0 ≤ f x := by
   have hanti : AntitoneOn f (Ici x) :=
-    antitoneOn_of_deriv_nonpos (convex_Ici x)
+    antitoneOn_of_hasDerivWithinAt_nonpos (convex_Ici x)
       (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
-      (fun y hy => by
-        rw [interior_Ici] at hy
-        exact (hf y (le_of_lt hy)).differentiableAt.differentiableWithinAt)
-      (fun y hy => by rw [interior_Ici] at hy; rw [(hf y (le_of_lt hy)).deriv]; exact hf' y hy)
+      (fun y hy => (hf y (interior_subset hy)).hasDerivWithinAt)
+      (fun y hy => hf' y (by simpa using hy))
   refine le_of_tendsto hlim ?_
   filter_upwards [eventually_ge_atTop x] with t ht
   exact hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr ht) ht
@@ -510,39 +510,53 @@ theorem pos_of_tendsto_atTop_of_deriv_neg {f f' : ℝ → ℝ} {x : ℝ}
     (hf : ∀ y, x ≤ y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 0))
     (hf' : ∀ y, x < y → f' y < 0) : 0 < f x := by
   have hanti : StrictAntiOn f (Ici x) :=
-    strictAntiOn_of_deriv_neg (convex_Ici x)
+    strictAntiOn_of_hasDerivWithinAt_neg (convex_Ici x)
       (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
-      (fun y hy => by rw [interior_Ici] at hy; rw [(hf y (le_of_lt hy)).deriv]; exact hf' y hy)
+      (fun y hy => (hf y (interior_subset hy)).hasDerivWithinAt)
+      (fun y hy => hf' y (by simpa using hy))
   have h1 : 0 ≤ f (x + 1) := nonneg_of_tendsto_atTop_of_deriv_nonpos
     (fun y hy => hf y (by linarith)) hlim (fun y hy => (hf' y (by linarith)).le)
   have := hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr (by linarith : x ≤ x + 1)) (by linarith)
   linarith
 
-/-- A real function with nonnegative derivative inside `[a, b]` satisfies `f a ≤ f b`. -/
-theorem le_of_deriv_nonneg_Icc {f f' : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hf : ∀ y ∈ Icc a b, HasDerivAt f (f' y) y) (hf' : ∀ y ∈ Ioo a b, 0 ≤ f' y) :
-    f a ≤ f b := by
-  have hmono : MonotoneOn f (Icc a b) :=
-    monotoneOn_of_deriv_nonneg (convex_Icc a b)
-      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
-      (fun y hy => by
-        rw [interior_Icc] at hy
-        exact (hf y (Ioo_subset_Icc_self hy)).differentiableAt.differentiableWithinAt)
-      (fun y hy => by
-        rw [interior_Icc] at hy
-        rw [(hf y (Ioo_subset_Icc_self hy)).deriv]
-        exact hf' y hy)
-  exact hmono ⟨le_rfl, hab⟩ ⟨hab, le_rfl⟩ hab
+/-- **Sign change of the derivative, nonstrict form.** Let `f` vanish at `a` and tend to `0` at
+`+∞`, and let its derivative stay nonpositive beyond any point of `(a, ∞)` where it is
+nonpositive (so `f` first increases, then decreases). Then `f` is nonnegative on `[a, ∞)`. -/
+theorem nonneg_of_tendsto_atTop_of_deriv_nonpos_stable {f f' : ℝ → ℝ} {a x : ℝ} (hax : a ≤ x)
+    (hf : ∀ y, a ≤ y → HasDerivAt f (f' y) y) (ha : f a = 0) (hlim : Tendsto f atTop (𝓝 0))
+    (hf' : ∀ y z, a < y → y ≤ z → f' y ≤ 0 → f' z ≤ 0) : 0 ≤ f x := by
+  rcases hax.eq_or_lt with rfl | hax
+  · exact ha.ge
+  rcases le_or_gt (f' x) 0 with hx | hx
+  · exact nonneg_of_tendsto_atTop_of_deriv_nonpos (fun y hy => hf y (hax.le.trans hy)) hlim
+      fun y hy => hf' x y hax hy.le hx
+  · have hmono : MonotoneOn f (Icc a x) :=
+      monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a x)
+        (fun y hy => (hf y hy.1).continuousAt.continuousWithinAt)
+        (fun y hy => (hf y (interior_subset hy).1).hasDerivWithinAt)
+        (fun y hy => by
+          rw [interior_Icc] at hy
+          by_contra! h
+          exact (hf' y x hy.1 hy.2.le h.le).not_gt hx)
+    simpa [ha] using hmono ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax.le
 
-/-- A real function vanishing at `a` with positive derivative beyond `a` is positive beyond
-`a`. -/
-theorem pos_of_deriv_pos_of_eq_zero {f f' : ℝ → ℝ} {a : ℝ}
-    (hf : ∀ y, a ≤ y → HasDerivAt f (f' y) y) (ha : f a = 0) (hf' : ∀ y, a < y → 0 < f' y)
-    {x : ℝ} (hx : a < x) : 0 < f x := by
-  have hmono : StrictMonoOn f (Ici a) :=
-    strictMonoOn_of_deriv_pos (convex_Ici a)
-      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
-      (fun y hy => by rw [interior_Ici] at hy; rw [(hf y hy.le).deriv]; exact hf' y hy)
-  simpa [ha] using hmono (mem_Ici.mpr le_rfl) (mem_Ici.mpr hx.le) hx
+/-- **Sign change of the derivative, strict form.** Let `f` vanish at `a` and tend to `0` at
+`+∞`, and let its derivative be negative beyond any point of `(a, ∞)` where it is nonpositive.
+Then `f` is positive on `(a, ∞)`. -/
+theorem pos_of_tendsto_atTop_of_deriv_nonpos_stable {f f' : ℝ → ℝ} {a x : ℝ} (hax : a < x)
+    (hf : ∀ y, a ≤ y → HasDerivAt f (f' y) y) (ha : f a = 0) (hlim : Tendsto f atTop (𝓝 0))
+    (hf' : ∀ y z, a < y → y < z → f' y ≤ 0 → f' z < 0) : 0 < f x := by
+  rcases le_or_gt (f' x) 0 with hx | hx
+  · exact pos_of_tendsto_atTop_of_deriv_neg (fun y hy => hf y (hax.le.trans hy)) hlim
+      fun y hy => hf' x y hax hy hx
+  · have hmono : StrictMonoOn f (Icc a x) :=
+      strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a x)
+        (fun y hy => (hf y hy.1).continuousAt.continuousWithinAt)
+        (fun y hy => (hf y (interior_subset hy).1).hasDerivWithinAt)
+        (fun y hy => by
+          rw [interior_Icc] at hy
+          by_contra! h
+          exact (hf' y x hy.1 hy.2 h).not_gt hx)
+    simpa [ha] using hmono ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax
 
 end TauCeti
