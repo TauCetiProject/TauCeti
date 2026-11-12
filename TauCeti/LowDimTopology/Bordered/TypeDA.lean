@@ -105,7 +105,8 @@ variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R
 
 section Relation
 
-variable {Y : Type*} (δ : (n : ℕ) → MultilinearMap R (fun _ : Fin n => B) (Matrix Y Y A))
+variable {Y : Type*}
+  (δ : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => B) (Matrix Y Y A))
 
 /-- The **composite terms** of the type `DA` structure relation of length `n`:
 `∑_{i + j = n} δ_{i+1}(b₁, …, bᵢ) δ_{j+1}(bᵢ₊₁, …, bₙ)`, where `δ i` is `δ_{i+1}`. -/
@@ -157,7 +158,7 @@ structure TypeDABimodule where
   /-- The idempotent of `B` of each generator. -/
   idemRight : Y → T
   /-- The coefficient matrices: `δ¹_{n+1}(y, b₁, …, bₙ) = ∑ y', coeff n b y y' ⊗ y'`. -/
-  coeff : (n : ℕ) → MultilinearMap R (fun _ : Fin n => B) (Matrix Y Y A)
+  coeff : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => B) (Matrix Y Y A)
   /-- The coefficients from `y` lie in the summand of the idempotent of `y` on the left. -/
   idem_mul_coeff (n : ℕ) (b : Fin n → B) (y y' : Y) :
     ιA (idemLeft y) * coeff n b y y' = coeff n b y y'
@@ -199,8 +200,9 @@ variable (dA) in
 /-- The differential term of the induced operations: `d` on `m₁`, and nothing on the higher
 operations. -/
 private noncomputable def diffAct :
-    (n : ℕ) → MultilinearMap R (fun _ : Fin n => B) ((Y → A) →ₗ[R] Y → A)
-  | 0 => MultilinearMap.constOfIsEmpty R _ (LinearMap.pi fun y => dA ∘ₗ LinearMap.proj y)
+    (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => B) ((Y → A) →ₗ[R] Y → A)
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id R) _
+    (LinearMap.pi fun y => dA ∘ₗ LinearMap.proj y)
   | _ + 1 => 0
 
 omit [Fintype Y] in
@@ -239,7 +241,7 @@ private theorem coeff_tail (M : TypeDABimodule dA dB ιA ιB Y) {n : ℕ} (b : F
 /-- The operations of the induced module: `m_{n+1}(φ, b) = φ ⬝ δ_{n+1}(b)`, plus `d φ` for
 `n = 0`. -/
 private noncomputable def inducedAct (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n => B) ((Y → A) →ₗ[R] Y → A) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => B) ((Y → A) →ₗ[R] Y → A) :=
   (continuationMapLinear R A).compMultilinearMap (M.coeff n) + diffAct dA n
 
 private theorem inducedAct_apply (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) (b : Fin n → B)
