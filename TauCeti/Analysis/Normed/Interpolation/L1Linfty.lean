@@ -25,8 +25,9 @@ the integral of the decreasing rearrangement of `‖f‖` over `(0, t]`:
 for arbitrary splittings `f = f₀ + f₁` measured by `Lᵖ` seminorms, transported to the
 decompositions of `u` in the sum space of the couple. Since `K(t, u)` is a real number, the
 equation shows in particular that `∫₀ᵗ ‖f‖*` is finite for every `f` in `L¹ + L^∞`; conversely,
-a measurable function with `∫₀ᵗ ‖f‖* < ∞` represents an element of `L¹ + L^∞`
-(`TauCeti.CompatibleCouple.exists_toAEEqFun_ae_eq_iff_lintegral_lt_top`).
+an almost everywhere strongly measurable function with `∫₀ᵗ ‖f‖* < ∞` represents an element of
+`L¹ + L^∞`
+(`TauCeti.L1AddLinfty.exists_toAEEqFun_ae_eq_iff_lintegral_decreasingRearrangement_lt_top`).
 
 The ambient space of `l1Linfty` carries the indiscrete topology, so the normed real interpolation
 spaces `(L¹, L^∞)_{θ,q}` are those of the Lebesgue couple `TauCeti.CompatibleCouple.lebesgue` at
@@ -37,13 +38,14 @@ Lebesgue couple as well (`TauCeti.CompatibleCouple.ofReal_kFunctional_lebesgue_o
 `TauCeti.CompatibleCouple.kFunctional_lebesgue_one_top`).
 
 As a check, the `K`-functional of `c 1_A` is `‖c‖ min (t, μ A)`
-(`TauCeti.CompatibleCouple.ofReal_kFunctional_l1Linfty_indicator`): the decompositions
-`c 1_A = c 1_A + 0` and `c 1_A = 0 + c 1_A` cost `‖c‖ μ A` and `t ‖c‖`, and no decomposition does
-better.
+(`TauCeti.CompatibleCouple.ofReal_kFunctional_l1Linfty_indicator`): the decomposition
+`c 1_A = 0 + c 1_A` costs at most `t ‖c‖`, when `μ A < ∞` the decomposition `c 1_A = c 1_A + 0`
+costs `‖c‖ μ A`, and no decomposition does better.
 
-The radial retraction attaining the infimum in the scalar formula scales vectors by real numbers,
-so `E` is assumed to be a real normed space in addition to a normed space over the scalar field
-`𝕜` of the couple.
+The radial retraction attaining the infimum in
+`MeasureTheory.Measure.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm` scales vectors by
+real numbers, so `E` is assumed to be a real normed space in addition to a normed space over the
+scalar field `𝕜` of the couple.
 
 ## References
 
@@ -155,23 +157,6 @@ theorem kFunctional_l1Linfty {u : L1AddLinfty 𝕜 E μ} {f : α → E}
       (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s).toReal := by
   rw [← ofReal_kFunctional_l1Linfty hu ht, ENNReal.toReal_ofReal (kFunctional_nonneg ht.le)]
 
-/-- For `t > 0`, a function represents an element of `L¹ + L^∞` exactly when it is almost
-everywhere strongly measurable and `∫₀ᵗ ‖f‖*` is finite. -/
-theorem exists_toAEEqFun_ae_eq_iff_lintegral_lt_top {f : α → E} (ht : 0 < t) :
-    (∃ u : L1AddLinfty 𝕜 E μ, ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) ↔
-      AEStronglyMeasurable f μ ∧ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s < ∞ := by
-  refine ⟨fun ⟨u, hu⟩ => ⟨(AEEqFun.aestronglyMeasurable _).congr hu, ?_⟩, fun ⟨hf, hfin⟩ => ?_⟩
-  · rw [← ofReal_kFunctional_l1Linfty hu ht]
-    exact ENNReal.ofReal_lt_top
-  · rw [μ.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm hf] at hfin
-    obtain ⟨f₀, hfin⟩ := iInf_lt_iff.1 hfin
-    obtain ⟨f₁, hfin⟩ := iInf_lt_iff.1 hfin
-    obtain ⟨hsum, hfin⟩ := iInf_lt_iff.1 hfin
-    obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin.ne
-    refine L1AddLinfty.exists_toAEEqFun_ae_eq_iff.2 ⟨h₀.toLp f₀, h₁.toLp f₁, ?_⟩
-    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp] with y hy₀ hy₁
-    rw [Pi.add_apply, hy₀, hy₁, ← Pi.add_apply, hsum]
-
 /-- **The `K`-functional of the Lebesgue couple `(L¹, L^∞)`.** For `t > 0` and an element `v` of
 its sum space represented by `f`, `K(t, v) = ∫₀ᵗ ‖f‖*`. -/
 theorem ofReal_kFunctional_lebesgue_one_top {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace} {f : α → E}
@@ -219,3 +204,28 @@ theorem ofReal_kFunctional_l1Linfty_indicator {u : L1AddLinfty 𝕜 E μ} {A : S
     ENNReal.ofReal_toReal hA]
 
 end TauCeti.CompatibleCouple
+
+namespace TauCeti.L1AddLinfty
+
+variable {𝕜 E : Type*} {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] {t : ℝ}
+
+/-- For `t > 0`, a function represents an element of `L¹ + L^∞` exactly when it is almost
+everywhere strongly measurable and `∫₀ᵗ ‖f‖*` is finite. -/
+theorem exists_toAEEqFun_ae_eq_iff_lintegral_decreasingRearrangement_lt_top {f : α → E}
+    (ht : 0 < t) :
+    (∃ u : L1AddLinfty 𝕜 E μ, ⇑(toAEEqFun 𝕜 u) =ᵐ[μ] f) ↔
+      AEStronglyMeasurable f μ ∧ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s < ∞ := by
+  refine ⟨fun ⟨u, hu⟩ => ⟨(AEEqFun.aestronglyMeasurable _).congr hu, ?_⟩, fun ⟨hf, hfin⟩ => ?_⟩
+  · rw [← CompatibleCouple.ofReal_kFunctional_l1Linfty hu ht]
+    exact ENNReal.ofReal_lt_top
+  · rw [μ.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm hf] at hfin
+    obtain ⟨f₀, hfin⟩ := iInf_lt_iff.1 hfin
+    obtain ⟨f₁, hfin⟩ := iInf_lt_iff.1 hfin
+    obtain ⟨hsum, hfin⟩ := iInf_lt_iff.1 hfin
+    obtain ⟨h₀, h₁⟩ := CompatibleCouple.memLp_of_eLpNorm_add_mul_ne_top ht hfin.ne
+    refine exists_toAEEqFun_ae_eq_iff.2 ⟨h₀.toLp f₀, h₁.toLp f₁, ?_⟩
+    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp] with y hy₀ hy₁
+    rw [Pi.add_apply, hy₀, hy₁, ← Pi.add_apply, hsum]
+
+end TauCeti.L1AddLinfty
