@@ -13,8 +13,11 @@ import TauCeti.Geometry.Manifold.VectorBundle.Prod
 /-!
 # Constructions of real Cauchy–Riemann operators
 
-Three constructions of real Cauchy–Riemann operators which leave the Fredholm index unchanged or
-additive (McDuff–Salamon, proof of Theorem C.1.10, step 1).
+Three constructions of real Cauchy–Riemann operators. In McDuff–Salamon (proof of Theorem C.1.10,
+step 1) they are used, for operators which are Fredholm between suitable Sobolev completions, to
+show that the Fredholm index is invariant and additive. This file only constructs the operators
+and proves that they are again real Cauchy–Riemann operators; it contains no Fredholm or index
+statements.
 
 * The direct sum `D₁ ⊕ D₂ : σ ↦ (D₁ σ.1, D₂ σ.2)` of operators on `V` and `W` is an operator on
   `V ×ᵇ W`.
