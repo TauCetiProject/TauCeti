@@ -40,6 +40,8 @@ quasi-coherent.
 
 ## Main declarations
 
+* `PresheafOfModulesOfCommRing.map_smul_of_basicOpen_le`: restriction between basic opens of
+  `U` respects the actions of `Γ(X, U)` through restriction;
 * `PresheafOfModulesOfCommRing.exists_pow_smul_eq_zero_of_map_basicOpen_eq_zero`: if the
   restrictions of `P` from `U` to `D(f)` and `D(f * g)` are localizations, a section of `P` over
   `D(f)` vanishing on `D(f * g)` is killed by a power of `g`;
@@ -92,17 +94,10 @@ theorem exists_pow_smul_eq_zero_of_map_basicOpen_eq_zero
     (f := (P.map (homOfLE (X.basicOpen_le (f * g))).op).hom)).1 h₁
   exact ⟨n, IsLocalizedModule.Away.pow_smul_eq_zero_of_pow_smul_eq ρ hc hn⟩
 
-end PresheafOfModulesOfCommRing
-
-namespace AlgebraicGeometry.IsAffineOpen
-
-variable {X : Scheme.{u}} {U : X.Opens}
-
-variable {P : PresheafOfModulesOfCommRing.{u} X.presheaf} {M : X.Modules}
-
 /-- Restriction of `P` between basic opens of `U` is compatible with the actions of `Γ(X, U)`
 through restriction. -/
-private lemma map_smul_of_basicOpen_le {f t : Γ(X, U)} (h : X.basicOpen t ≤ X.basicOpen f)
+lemma map_smul_of_basicOpen_le (P : PresheafOfModulesOfCommRing.{u} X.presheaf)
+    {f t : Γ(X, U)} (h : X.basicOpen t ≤ X.basicOpen f)
     (r : Γ(X, U)) (w : P.obj (op (X.basicOpen f))) :
     P.map (homOfLE h).op (X.presheaf.map (homOfLE (X.basicOpen_le f)).op r • w) =
       X.presheaf.map (homOfLE (X.basicOpen_le t)).op r • P.map (homOfLE h).op w := by
@@ -110,6 +105,14 @@ private lemma map_smul_of_basicOpen_le {f t : Γ(X, U)} (h : X.basicOpen t ≤ X
   congr 1
   exact (ConcreteCategory.comp_apply (X.presheaf.map (homOfLE (X.basicOpen_le f)).op)
     (X.presheaf.map (homOfLE h).op) r).symm.trans (by rw [← Functor.map_comp]; rfl)
+
+end PresheafOfModulesOfCommRing
+
+namespace AlgebraicGeometry.IsAffineOpen
+
+variable {X : Scheme.{u}} {U : X.Opens}
+
+variable {P : PresheafOfModulesOfCommRing.{u} X.presheaf} {M : X.Modules}
 
 section
 
@@ -257,7 +260,7 @@ private lemma exists_pow_smul_mem_range (hP : ∀ f : Γ(X, U),
     -- unique
     rw [← PresheafOfModules.map_comp_apply,
       show (homOfLE (X.basicOpen_le f)).op ≫ i₁.op = (homOfLE (X.basicOpen_le g)).op ≫ i₂.op
-        from rfl, PresheafOfModules.map_comp_apply, ← hak, map_smul_of_basicOpen_le]
+        from rfl, PresheafOfModules.map_comp_apply, ← hak, P.map_smul_of_basicOpen_le]
   have e₂ : M.presheaf.map i₂.op (M.presheaf.map (homOfLE hg).op s) = M.presheaf.map i₁.op s :=
     TopCat.Presheaf.restrict_restrict (F := M.presheaf) _ _ s
   -- over `D(f * g)`, `φ` carries the restriction of `b` to that of `s`
