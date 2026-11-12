@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.InvolutionCount
+public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
 public import TauCeti.RepresentationTheory.CharacterTable.RealClasses
 
 /-!

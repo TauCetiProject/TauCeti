@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Squares
-public import TauCeti.LinearAlgebra.Dimension.Submodule
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.InvariantForm
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # The Frobenius-Schur trichotomy
@@ -86,8 +86,9 @@ invariants to invariant forms, and the counting that follows.
 
 The two maps out of the dual squares are only ever used through their images.  On the symmetric
 side, injectivity plus the dimension count is what forces the image onto the symmetric forms, in
-`TauCeti.Representation.map_ofSymmetricSquareDual_eq_symmetricInvariantForms`: a direct proof
-would need a universal property of the symmetric square, which Mathlib does not have.  On the
+`TauCeti.Representation.map_ofSymmetricSquareDual_eq_symmetricInvariantForms`: this route
+avoids the universal property of the symmetric square, and the dimension count it needs follows from
+the splitting of every invariant form into its symmetric and alternating parts.  On the
 exterior side the universal property of the exterior power gives the surjectivity directly, in
 `TauCeti.Representation.map_ofExteriorSquareDual_eq_alternatingInvariantForms`, over any commutative
 ring and with no finiteness assumption, and the dimension count follows from it.
@@ -124,7 +125,7 @@ namespace TauCeti
 
 namespace Representation
 
-open LinearMap (BilinForm)
+open _root_.LinearMap (BilinForm)
 
 /-! ### Invariant forms from invariant functionals on the two squares -/
 
@@ -239,6 +240,31 @@ theorem finrank_invariantForms_cast (ρ : Representation k G V) :
   rw [finrank_invariantForms_eq_finrank_invariants_tprod_self_cast,
     finrank_invariants_tprod_self_cast]
 
+omit [FiniteDimensional k V] [Finite G] in
+private theorem finrank_map_ofSymmetricSquareDual (ρ : Representation k G V) :
+    finrank k (Submodule.map (BilinForm.ofSymmetricSquareDual (k := k) (V := V))
+        ((ρ.symmetricPower 2).dual).invariants) =
+      finrank k (ρ.symmetricPower 2).invariants := by
+  rw [← (Submodule.equivMapOfInjective (BilinForm.ofSymmetricSquareDual (k := k) (V := V))
+    BilinForm.ofSymmetricSquareDual_injective
+    ((ρ.symmetricPower 2).dual).invariants).finrank_eq, finrank_invariants_dual]
+
+omit [FiniteDimensional k V] [Finite G] in
+private theorem finrank_map_ofExteriorSquareDual (ρ : Representation k G V) :
+    finrank k (Submodule.map (BilinForm.ofExteriorSquareDual (k := k) (V := V))
+        ((ρ.exteriorPower 2).dual).invariants) =
+      finrank k (ρ.exteriorPower 2).invariants := by
+  rw [← (Submodule.equivMapOfInjective (BilinForm.ofExteriorSquareDual (k := k) (V := V))
+    BilinForm.ofExteriorSquareDual_injective
+    ((ρ.exteriorPower 2).dual).invariants).finrank_eq, finrank_invariants_dual]
+
+omit [FiniteDimensional k V] [Finite G] in
+/-- **The invariant alternating forms are as many as the invariants of the exterior square.** -/
+theorem finrank_alternatingInvariantForms (ρ : Representation k G V) :
+    finrank k (alternatingInvariantForms ρ) = finrank k (ρ.exteriorPower 2).invariants := by
+  rw [← map_ofExteriorSquareDual_eq_alternatingInvariantForms ρ]
+  exact finrank_map_ofExteriorSquareDual ρ
+
 end Invertible
 
 variable [CharZero k]
@@ -253,9 +279,9 @@ theorem finrank_invariantForms (ρ : Representation k G V) :
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   exact_mod_cast finrank_invariantForms_cast ρ
 
-/- The image of the invariant functionals on the symmetric square, and its dimension.  Both halves
-are used twice: once for the inequality that feeds the squeeze, and once for the surjectivity that
-the squeeze then delivers. -/
+/- The image of the invariant functionals on the symmetric square lands in the invariant symmetric
+forms; its dimension is the invariant count of the square, and the count of symmetric forms is then
+read off the splitting of every invariant form into its symmetric and alternating parts. -/
 omit [FiniteDimensional k V] [Finite G] [CharZero k] in
 private theorem map_ofSymmetricSquareDual_le (ρ : Representation k G V) :
     Submodule.map (BilinForm.ofSymmetricSquareDual (k := k) (V := V))
@@ -263,70 +289,24 @@ private theorem map_ofSymmetricSquareDual_le (ρ : Representation k G V) :
   rintro _ ⟨ψ, hψ, rfl⟩
   exact ofSymmetricSquareDual_mem_symmetricInvariantForms ρ hψ
 
-omit [FiniteDimensional k V] in
-private theorem finrank_map_ofSymmetricSquareDual (ρ : Representation k G V) :
-    finrank k (Submodule.map (BilinForm.ofSymmetricSquareDual (k := k) (V := V))
-        ((ρ.symmetricPower 2).dual).invariants) =
-      finrank k (ρ.symmetricPower 2).invariants := by
-  have : Invertible (Nat.card G : k) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
-  rw [← (Submodule.equivMapOfInjective (BilinForm.ofSymmetricSquareDual (k := k) (V := V))
-    BilinForm.ofSymmetricSquareDual_injective
-    ((ρ.symmetricPower 2).dual).invariants).finrank_eq, finrank_invariants_dual]
-
-omit [FiniteDimensional k V] in
-private theorem finrank_map_ofExteriorSquareDual (ρ : Representation k G V) :
-    finrank k (Submodule.map (BilinForm.ofExteriorSquareDual (k := k) (V := V))
-        ((ρ.exteriorPower 2).dual).invariants) =
-      finrank k (ρ.exteriorPower 2).invariants := by
-  have : Invertible (Nat.card G : k) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
-  rw [← (Submodule.equivMapOfInjective (BilinForm.ofExteriorSquareDual (k := k) (V := V))
-    BilinForm.ofExteriorSquareDual_injective
-    ((ρ.exteriorPower 2).dual).invariants).finrank_eq, finrank_invariants_dual]
-
-private theorem finrank_invariants_symmetricPower_le (ρ : Representation k G V) :
-    finrank k (ρ.symmetricPower 2).invariants ≤ finrank k (symmetricInvariantForms ρ) := by
-  rw [← finrank_map_ofSymmetricSquareDual ρ]
-  exact Submodule.finrank_mono (map_ofSymmetricSquareDual_le ρ)
-
-private theorem finrank_invariants_exteriorPower_le (ρ : Representation k G V) :
-    finrank k (ρ.exteriorPower 2).invariants ≤ finrank k (alternatingInvariantForms ρ) := by
-  rw [← finrank_map_ofExteriorSquareDual ρ]
-  exact Submodule.finrank_mono (map_ofExteriorSquareDual_le ρ)
-
-/- The two counts are squeezed together: each of the two injections gives one inequality, and the
-splitting of every invariant form into its symmetric and alternating parts gives the third, which
-together leave no room. -/
-private theorem finrank_symmetricInvariantForms_and_alternatingInvariantForms
-    (ρ : Representation k G V) :
-    finrank k (symmetricInvariantForms ρ) = finrank k (ρ.symmetricPower 2).invariants ∧
-      finrank k (alternatingInvariantForms ρ) = finrank k (ρ.exteriorPower 2).invariants := by
-  have h₁ := finrank_invariants_symmetricPower_le ρ
-  have h₂ := finrank_invariants_exteriorPower_le ρ
-  have h₃ := (ρ.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms).le
-  have h₄ := finrank_invariantForms ρ
-  omega
-
 /-- **The invariant symmetric forms are as many as the invariants of the symmetric square.** -/
 theorem finrank_symmetricInvariantForms (ρ : Representation k G V) :
-    finrank k (symmetricInvariantForms ρ) = finrank k (ρ.symmetricPower 2).invariants :=
-  (finrank_symmetricInvariantForms_and_alternatingInvariantForms ρ).1
-
-omit [FiniteDimensional k V] in
-/-- **The invariant alternating forms are as many as the invariants of the exterior square.** -/
-theorem finrank_alternatingInvariantForms (ρ : Representation k G V) :
-    finrank k (alternatingInvariantForms ρ) = finrank k (ρ.exteriorPower 2).invariants := by
-  rw [← map_ofExteriorSquareDual_eq_alternatingInvariantForms ρ]
-  exact finrank_map_ofExteriorSquareDual ρ
+    finrank k (symmetricInvariantForms ρ) = finrank k (ρ.symmetricPower 2).invariants := by
+  have : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  have h := ρ.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms
+  rw [finrank_alternatingInvariantForms, finrank_invariantForms] at h
+  exact Nat.add_right_cancel h
 
 /-- **Every invariant symmetric form comes from an invariant functional on the symmetric square.**
 The injection is onto: it lands in the invariant symmetric forms, and the two have the same
 dimension. -/
 theorem map_ofSymmetricSquareDual_eq_symmetricInvariantForms (ρ : Representation k G V) :
     Submodule.map (BilinForm.ofSymmetricSquareDual (k := k) (V := V))
-        ((ρ.symmetricPower 2).dual).invariants = symmetricInvariantForms ρ :=
-  Submodule.eq_of_le_of_finrank_le (K := k) (V := BilinForm k V)
+        ((ρ.symmetricPower 2).dual).invariants = symmetricInvariantForms ρ := by
+  have : Invertible (Nat.card G : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  exact Submodule.eq_of_le_of_finrank_le (K := k) (V := BilinForm k V)
     (map_ofSymmetricSquareDual_le ρ)
     (by rw [finrank_map_ofSymmetricSquareDual, finrank_symmetricInvariantForms])
 
@@ -365,12 +345,8 @@ theorem frobeniusSchurIndicator_eq_zero_of_invariantForms_eq_bot (h : invariantF
     frobeniusSchurIndicator ρ = 0 := by
   by_cases hV : FiniteDimensional k V
   swap
-  · have hb : ¬ ∃ s : Finset V, Nonempty (Module.Basis s k V) := fun ⟨_, ⟨b⟩⟩ =>
-      hV (Module.Finite.of_basis b)
-    have h0 (m : G) : ρ.character m = 0 := by
-      simp only [Representation.character, LinearMap.trace, dite_eq_right hb]
-      rfl
-    simp [frobeniusSchurIndicator_def, h0]
+  · simp [frobeniusSchurIndicator_def, Representation.character,
+      TauCeti.LinearMap.trace_eq_zero_of_not_finite hV]
   have hs : symmetricInvariantForms ρ = ⊥ :=
     le_bot_iff.mp (le_of_le_of_eq (symmetricInvariantForms_le ρ) h)
   have ha : alternatingInvariantForms ρ = ⊥ :=

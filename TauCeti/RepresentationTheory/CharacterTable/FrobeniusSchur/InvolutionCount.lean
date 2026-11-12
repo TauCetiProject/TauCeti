@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.SquareRoot
-public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 public import TauCeti.RepresentationTheory.FDRep.FrobeniusSchur
 
