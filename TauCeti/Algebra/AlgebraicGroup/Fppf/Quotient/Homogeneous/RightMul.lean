@@ -40,8 +40,8 @@ that `G(A) → (G/Q)(A)` identifies exactly the left cosets of `Q(A)`, for every
   `g⁻¹Pg = Q`.
 * `CommHopfAlgCat.conjugate_le_iff_forall_fppfHomogeneousQuotientProjection_app_mul_eq`: the point
   `gQ` is fixed by `P` exactly when `g⁻¹Pg ⊆ Q`.
-* `CommHopfAlgCat.exists_fppfHomogeneousQuotientProjection_comp_eq_iff`: `x ↦ xgQ` descends to
-  `G/P` exactly when `g⁻¹Pg ⊆ Q`.
+* `CommHopfAlgCat.exists_fppfHomogeneousQuotientProjection_comp_eq_pointsRightMul_comp_iff`:
+  `x ↦ xgQ` descends to `G/P` exactly when `g⁻¹Pg ⊆ Q`.
 
 ## References
 
@@ -83,8 +83,9 @@ private theorem pointsRightMul_comp_projection_invariant
       (pointsRightMul H g ≫ fppfHomogeneousQuotientProjection H J).app A (ULift.up x) := by
   rw [pointsRightMul_comp_projection_app_apply, pointsRightMul_comp_projection_app_apply,
     fppfHomogeneousQuotientProjection_app_eq_iff]
-  have hn := (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff J g _ (n.val⁻¹)).mpr
-    (quotientPointsSubgroup_le_of_le H h _ (inv_mem n.property))
+  have hn :=
+    (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate J g _ (n.val⁻¹)).mpr
+      (quotientPointsSubgroup_le_of_le H h _ (inv_mem n.property))
   simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel_left] using hn
 
 /-- For closed subgroups `P` and `Q` cut out by `I` and `J`, and a ground-ring point `g` with
@@ -139,6 +140,30 @@ theorem fppfHomogeneousQuotientRightMul_one (h : J.conjugate 1 ≤ I) :
   apply fppfHomogeneousQuotient_hom_ext
   rw [fppfHomogeneousQuotientProjection_comp_rightMul, pointsRightMul_one, Category.id_comp,
     fppfHomogeneousQuotientProjection_comp_map]
+
+/-- Projecting `G/P ⟶ G/Q` for `P ⊆ Q` and then applying `yQ ↦ ygS` gives `xP ↦ xgS`. -/
+@[reassoc (attr := simp)]
+theorem fppfHomogeneousQuotientMap_comp_rightMul
+    {g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)}
+    (hJI : J ≤ I) (h : K.conjugate g ≤ J) :
+    fppfHomogeneousQuotientMap H hJI ≫ fppfHomogeneousQuotientRightMul H g h =
+      fppfHomogeneousQuotientRightMul H g (h.trans hJI) := by
+  apply fppfHomogeneousQuotient_hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom,
+    fppfHomogeneousQuotientProjection_comp_map_assoc,
+    fppfHomogeneousQuotientProjection_comp_rightMul]
+
+/-- Applying `xP ↦ xgQ` and then projecting `G/Q ⟶ G/S` for `Q ⊆ S` gives `xP ↦ xgS`. -/
+@[reassoc (attr := simp)]
+theorem fppfHomogeneousQuotientRightMul_comp_map
+    {g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)}
+    (h : J.conjugate g ≤ I) (hKJ : K ≤ J) :
+    fppfHomogeneousQuotientRightMul H g h ≫ fppfHomogeneousQuotientMap H hKJ =
+      fppfHomogeneousQuotientRightMul H g ((HopfIdeal.conjugate_mono g hKJ).trans h) := by
+  apply fppfHomogeneousQuotient_hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom,
+    fppfHomogeneousQuotientProjection_comp_rightMul_assoc,
+    fppfHomogeneousQuotientProjection_comp_map, fppfHomogeneousQuotientProjection_comp_rightMul]
 
 /-- The morphisms `xP ↦ xgQ` and `yQ ↦ yg'S` compose to `xP ↦ xgg'S`. -/
 @[reassoc (attr := simp)]
@@ -215,7 +240,7 @@ theorem fppfHomogeneousQuotientRightMul_eq_id_iff
     inv_mem_iff]
 
 /-- Right multiplication by a ground-ring point of `P` induces the identity of `G/P`. -/
-theorem fppfHomogeneousQuotientRightMul_of_mem
+theorem fppfHomogeneousQuotientRightMul_eq_id_of_mem
     {q : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)} (h : I.conjugate q ≤ I)
     (hq : q ∈ quotientPointsSubgroup H I (CommAlgCat.of R R)) :
     fppfHomogeneousQuotientRightMul H q h = 𝟙 _ :=
@@ -233,7 +258,7 @@ theorem isIso_fppfHomogeneousQuotientRightMul_iff
     -- `pP` and `eP` have the same image `gQ` in `G/Q`, so they agree in `G/P`.
     have hinj := (ConcreteCategory.bijective_of_isIso
       ((fppfHomogeneousQuotientRightMul H g h).hom.app (op (op A)))).injective
-    have hpg := (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff J g A p⁻¹).mpr
+    have hpg := (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate J g A p⁻¹).mpr
       (inv_mem hp)
     have hp1 : (fppfHomogeneousQuotientProjection H I).app (op (op A)) (ULift.up p) =
         (fppfHomogeneousQuotientProjection H I).app (op (op A))
@@ -297,12 +322,12 @@ theorem conjugate_le_iff_forall_fppfHomogeneousQuotientProjection_app_mul_eq
   constructor
   · intro h A p hp
     refine (fppfHomogeneousQuotientProjection_app_eq_iff H J A _ _).mpr ?_
-    have hp' := (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff J g _ p⁻¹).mpr
+    have hp' := (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate J g _ p⁻¹).mpr
       (quotientPointsSubgroup_le_of_le H h _ (inv_mem hp))
     simpa only [mul_inv_rev, mul_assoc] using hp'
   · intro hfix
     refine (HopfIdeal.le_iff_forall_quotientPointsSubgroup_le _ _).mpr fun A p hp ↦ ?_
-    refine (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff J g A p).mp ?_
+    refine (extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate J g A p).mp ?_
     have hp' := (fppfHomogeneousQuotientProjection_app_eq_iff H J (op (op A)) _ _).mp
       (hfix (op (op A)) p⁻¹ (inv_mem hp))
     simpa only [mul_inv_rev, inv_inv, mul_assoc] using hp'
@@ -310,7 +335,7 @@ theorem conjugate_le_iff_forall_fppfHomogeneousQuotientProjection_app_mul_eq
 /-- **Descent of `x ↦ xgQ`.** The map `x ↦ xgQ` from `G` to `G/Q` descends along the projection
 `G ⟶ G/P` exactly when `g⁻¹Pg ⊆ Q`; by `fppfHomogeneousQuotientRightMul_eq_iff`, the descended
 morphism is then `fppfHomogeneousQuotientRightMul`. -/
-theorem exists_fppfHomogeneousQuotientProjection_comp_eq_iff
+theorem exists_fppfHomogeneousQuotientProjection_comp_eq_pointsRightMul_comp_iff
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     (∃ f : fppfHomogeneousQuotient H I ⟶ fppfHomogeneousQuotient H J,
         fppfHomogeneousQuotientProjection H I ≫ f.hom =
