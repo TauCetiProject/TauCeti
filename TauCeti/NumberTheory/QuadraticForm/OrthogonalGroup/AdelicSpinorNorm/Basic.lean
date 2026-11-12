@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.FiniteAdelic
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.SpinorNormImage
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinorNorm
-import Mathlib.NumberTheory.Padics.LocalField
 
 /-!
 # The finite adelic spinor norm

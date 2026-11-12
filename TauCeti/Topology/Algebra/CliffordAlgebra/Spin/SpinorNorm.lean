@@ -30,10 +30,10 @@ Clifford norm is a square. That set is open because the Clifford norm is continu
 are open, and its image is open because the vector representation is an open map.
 
 Equivalently, both spinor-norm homomorphisms are continuous when their square-class codomain has
-the quotient topology. The openness of the squares is the fact `Units.isOpen_square`: squaring
-has derivative `2` at `1`, so by the inverse function theorem every complete nontrivially normed
-field in which `2 ≠ 0` has the squares open in `Kˣ`. Discreteness of the square-class group alone
-would only show that a *continuous* map into it is locally constant.
+the quotient topology. The openness of the squares is the fact `TauCeti.isOpen_square_units`:
+squaring has derivative `2` at `1`, so by the inverse function theorem every complete nontrivially
+normed field in which `2 ≠ 0` has the squares open in `Kˣ`. Discreteness of the square-class
+group alone would only show that a *continuous* map into it is locally constant.
 
 The topology matters. Over a field with the indiscrete topology, every module topology is
 indiscrete and so is `O(Q)`, whose only open subgroup is therefore `O(Q)` itself. The spinor
@@ -93,7 +93,8 @@ theorem isOpen_ker_orthogonalSpinorNorm (hQ : Q.Nondegenerate) :
   rw [← Subgroup.map_comap_eq_self_of_surjective (lipschitzToOrthogonal_surjective Q hQ)
     (orthogonalSpinorNorm Q hQ).ker, hlift, Subgroup.coe_map, Subgroup.coe_comap]
   exact isOpenMap_lipschitzToOrthogonal Q hQ _ 
-    ((Units.isOpen_square (Invertible.ne_zero (2 : K))).preimage (continuous_cliffordNorm Q))
+    ((TauCeti.isOpen_square_units (Invertible.ne_zero (2 : K))).preimage
+      (continuous_cliffordNorm Q))
 
 /-- **The spinor kernel of `SO(Q)` is open.** Under the hypotheses of
 `isOpen_ker_orthogonalSpinorNorm`, the kernel of the spinor norm on the special orthogonal group
