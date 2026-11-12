@@ -246,10 +246,8 @@ theorem hessianOperator_separatedSum_apply {z : WithLp 2 (E × F)} (hf : ContDif
   have hd := (WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.hasFDerivAt.comp z
     ((hf.hasFDerivAt_gradient.comp z (WithLp.fstL 2 ℝ E F).hasFDerivAt).prodMk
       (hg.hasFDerivAt_gradient.comp z (WithLp.sndL 2 ℝ E F).hasFDerivAt))
-  -- `hd` is stated for the composite with `WithLp.prodContinuousLinearEquiv`, which unfolds to
-  -- the pair map.
-  rw [← fderiv_gradient, hgrad.fderiv_eq, (show HasFDerivAt
-    (fun y : WithLp 2 (E × F) ↦ WithLp.toLp 2 (∇ f y.fst, ∇ g y.snd)) _ z from hd).fderiv]
+  simp only [Function.comp_def, WithLp.prodContinuousLinearEquiv_symm_apply] at hd
+  rw [← fderiv_gradient, hgrad.fderiv_eq, hd.fderiv]
   simp
 
 end Gradient
