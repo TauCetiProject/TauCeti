@@ -209,9 +209,7 @@ theorem maximalAbelianLayer_inf_of_isAbelianClassFieldLayer {V W : OpenNormalSub
     maximalAbelianLayer (V ⊓ W) = maximalAbelianLayer V ⊓ W :=
   toSubgroup_injective <| by
     simp only [toSubgroup_maximalAbelianLayer, toSubgroup_inf]
-    have hC : (commutator G).topologicalClosure ≤ W.toSubgroup := fun x hx ↦
-      maximalAbelianLayer_le le_rfl hW (mem_maximalAbelianLayer.2 (Subgroup.mem_sup_right hx))
-    rw [inf_comm V.toSubgroup, Subgroup.inf_sup_assoc_of_le (Subgroup.mul_normal _ _) hC,
+    rw [inf_comm V.toSubgroup, Subgroup.inf_sup_assoc_of_le (Subgroup.mul_normal _ _) hW,
       inf_comm]
 
 /-- A layer is already abelian exactly when its maximal abelian sublayer is itself. -/
