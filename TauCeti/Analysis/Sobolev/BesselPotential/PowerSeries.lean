@@ -179,7 +179,7 @@ theorem exists_memSobolev_ae_eq_log_one_add {s : ℝ} (hs : finrank ℝ E < 2 * 
       ∃ v : Lp ℂ 2 (volume : Measure E), v =ᵐ[volume] (fun x ↦ Complex.log (1 + U x)) ∧
         MemSobolev s 2 (v : 𝓢'(E, ℂ)) := by
   obtain ⟨C₁, hC₁, hser⟩ := exists_hasSum_mul_pow hs
-  obtain ⟨C₂, hC₂, hsup⟩ :=
+  obtain ⟨C₂, -, hsup⟩ :=
     exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (E := E) (F := ℂ) hs
   refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun {U} hU hCU ↦ ?_⟩
   set R := ‖hU.toBesselPotentialSpace‖
@@ -332,7 +332,7 @@ theorem exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_log_one_add {s : ℝ}
         ‖hv.toBesselPotentialSpace - hv'.toBesselPotentialSpace‖ ≤
           (1 - C * R)⁻¹ * ‖hU.toBesselPotentialSpace - hW.toBesselPotentialSpace‖ := by
   obtain ⟨C₁, hC₁, hlip⟩ := exists_norm_toBesselPotentialSpace_sub_le_of_hasSum_mul_pow hs
-  obtain ⟨C₂, hC₂, hsup⟩ :=
+  obtain ⟨C₂, -, hsup⟩ :=
     exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (E := E) (F := ℂ) hs
   refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun {U W} hU hW {R} hUR hWR hCR {v v'} hv hv' hvU
     hvW ↦ ?_⟩
