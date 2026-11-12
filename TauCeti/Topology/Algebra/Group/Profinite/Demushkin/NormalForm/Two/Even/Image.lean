@@ -117,14 +117,7 @@ theorem range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two
     (demushkinCharacter hG).toMonoidHom.range ≠ unitsPlusMinus f := fun h ↦ by
   obtain ⟨u, hu⟩ :=
     hG.exists_topologicalClosure_zpowers_eq_range_demushkinCharacter_of_demushkinRank_eq_two hn
-  -- Below level `2` the group `V^(f)` is all of `ℤ_2ˣ`, so `V^(max f 2) = V^(f)`.
-  have hmax : unitsPlusMinus (max f 2) = unitsPlusMinus f := by
-    rcases le_or_gt 2 f with hf | hf
-    · rw [max_eq_left hf]
-    · rw [max_eq_right hf.le, unitsPlusMinus_two]
-      exact (eq_top_iff.2 (unitsPlusMinus_two.ge.trans (unitsPlusMinus_antitone hf.le))).symm
-  exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus (le_max_right f 2)
-    ⟨u, hu.trans (h.trans hmax.symm)⟩
+  exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus ⟨u, hu.trans h⟩
 
 end Dyadic
 
