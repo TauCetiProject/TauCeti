@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.CompactSupport
-import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Geometry.Symplectic.Area.Basic
 import TauCeti.Geometry.Symplectic.Duality
-import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
 # The `L²` estimate of Cauchy--Riemann operators with domain-dependent structures
@@ -26,10 +25,11 @@ area of `ξ` over `K` vanishes, the energy identity
 holds although `J` varies with `z`
 (`SymplecticForm.setIntegral_stdComplexLineEnergyDensity_eq_of_setIntegral_symplecticForm_eq_zero`).
 Because `ω` is constant, no smallness of the variation of `J` is needed. The area vanishes for
-`C²` maps with compact support in `K` (`SymplecticForm.setIntegral_symplecticForm_fderiv_eq_zero`),
-and for `C²` maps of period one in `t` that vanish on the two slices `s = a` and `s = b` of the
-rectangle `[a, b] × [0, 1]`
-(`SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic`).
+`C²` maps with compact support in `K` (`SymplecticForm.setIntegral_symplecticForm_fderiv_eq_zero`
+in `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.CompactSupport`), and for `C²` maps of period
+one in `t` that vanish on the two slices `s = a` and `s = b` of the rectangle `[a, b] × [0, 1]`
+(`SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic` in
+`TauCeti.Geometry.Symplectic.Area.Basic`).
 
 Together with the uniform equivalence of the `g_z` with the norm of `V` over `K`, this gives the
 `L²` estimate of the operator `D ξ = ∂s ξ + J(z) ∂t ξ + T(z) ξ` with a continuous zeroth-order
@@ -65,87 +65,39 @@ namespace SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 variable {ω : SymplecticForm V} {J : ℝ × ℝ → AlmostComplexStructure V} {K : Set (ℝ × ℝ)}
-
-/-- A `C²` map with support in a compact set `K` has symplectic area zero over `K`. -/
-theorem setIntegral_symplecticForm_fderiv_eq_zero (ω : SymplecticForm V) {ξ : ℝ × ℝ → V}
-    (hK : IsCompact K) (hξ : ContDiff ℝ 2 ξ) (hξK : tsupport ξ ⊆ K) :
-    ∫ z in K, ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag) = 0 := by
-  have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
-  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
-    simp [fderiv_of_notMem_tsupport ℝ fun h ↦ hz (hξK h)]]
-  exact integral_symplecticForm_fderiv_eq_zero ω hξ
-    (hK.of_isClosed_subset (isClosed_tsupport ξ) hξK : HasCompactSupport ξ)
-
-/-- **The symplectic area of a periodic map on a finite cylinder.** A map of period one in `t`,
-`C²` on the rectangle `[a, b] × [0, 1]` and vanishing on its two slices `s = a` and `s = b`, has
-symplectic area zero over the rectangle: the two horizontal boundary terms of Green's formula
-cancel by periodicity, and the two vertical ones vanish. -/
-theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic (ω : SymplecticForm V)
-    {ξ : ℝ × ℝ → V} {a b : ℝ} (hab : a ≤ b) (hξ : ContDiff ℝ 2 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (ha : ∀ t, ξ (a, t) = 0) (hb : ∀ t, ξ (b, t) = 0) :
-    ∫ z in Icc a b ×ˢ Icc 0 1,
-      ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag) = 0 := by
-  let B := ω.toBilinForm.toContinuousBilinearMap
-  have hB (v w : V) : B v w = ω v w := by simp [B]
-  have hp : Function.Periodic ξ ((0 : ℝ), (1 : ℝ)) := fun ⟨p, q⟩ ↦ by simpa using hper p q
-  have htop (s : ℝ) : B (ξ (s, 1)) (fderiv ℝ ξ (s, 1) (1, 0)) =
-      B (ξ (s, 0)) (fderiv ℝ ξ (s, 0) (1, 0)) := by
-    have h₀ := hp (s, 0)
-    have h₁ := hp.fderiv (𝕜 := ℝ) (s, 0)
-    simp only [Prod.mk_add_mk, add_zero, zero_add] at h₀ h₁
-    rw [h₀, h₁]
-  have hgreen := B.integral_bilinear_fderiv_sub_prod_Icc (a := (a, 0)) (b := (b, 1))
-    ⟨hab, zero_le_one⟩ fun z _ ↦ hξ.contDiffAt
-  simp only [ha, hb, htop, map_zero, zero_apply, intervalIntegral.integral_zero,
-    sub_self] at hgreen
-  rw [← Icc_prod_Icc] at hgreen
-  -- Antisymmetry identifies the alternating pairing with twice the area density.
-  have hpair (v w : V) : ω v w - ω w v = 2 * ω v w := by
-    rw [← ω.neg_eq v w]
-    ring
-  simp only [hB, hpair, integral_const_mul] at hgreen
-  rw [stdComplexLineReal_eq, stdComplexLineImag_eq]
-  linarith
-
-/-- The map `x ↦ g_x(f x, f x)` for `g_x = ω(·, J(x) ·)` is continuous on a set when `J` and `f`
-are. -/
-theorem continuousOn_associatedBilinForm_apply_self {X : Type*} [TopologicalSpace X]
-    {J : X → AlmostComplexStructure V} {s : Set X}
-    (hJc : ContinuousOn (fun x ↦ (J x).toLinearMap.toContinuousLinearMap) s) {f : X → V}
-    (hf : ContinuousOn f s) :
-    ContinuousOn (fun x ↦ ω.associatedBilinForm (J x) (f x) (f x)) s := by
-  simpa using ω.continuousOn_apply_comp hf (hJc.clm_apply hf)
+variable {μ : Measure (ℝ × ℝ)}
 
 /-- **The energy identity for a domain-dependent structure.** Let `J(z)` leave `ω` invariant at
 every point of a compact set `K` and depend continuously on `z ∈ K`, and let `ξ` be a `C¹` map
 whose symplectic area over `K` vanishes. Then the integrated energy density of `ξ` over `K`
 equals the integrated square `g_z(D ξ, D ξ)` of its Cauchy--Riemann defect
-`D ξ = ∂s ξ + J(z) ∂t ξ`, for `g_z = ω(·, J(z) ·)`. For a constant structure on the whole plane
-this is `SymplecticForm.integral_stdComplexLineEnergyDensity_eq_of_integral_symplecticForm_eq_zero`.
--/
+`D ξ = ∂s ξ + J(z) ∂t ξ`, for `g_z = ω(·, J(z) ·)`, against any measure that is finite on compact
+sets. For a constant structure and a compactly supported `ξ` with `K` containing its support, this
+is `SymplecticForm.integral_stdComplexLineEnergyDensity_eq_of_integral_symplecticForm_eq_zero`. -/
 theorem setIntegral_stdComplexLineEnergyDensity_eq_of_setIntegral_symplecticForm_eq_zero
-    (hK : IsCompact K) (hJ : ∀ z ∈ K, ω.Invariant (J z))
+    [IsFiniteMeasureOnCompacts μ] (hK : IsCompact K) (hJ : ∀ z ∈ K, ω.Invariant (J z))
     (hJc : ContinuousOn (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) K) {ξ : ℝ × ℝ → V}
     (hξ : ContDiff ℝ 1 ξ)
-    (hzero : ∫ z in K, ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag) = 0) :
-    ∫ z in K, ω.stdComplexLineEnergyDensity (J z) (fderiv ℝ ξ z).toLinearMap =
+    (hzero : ∫ z in K,
+      ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag) ∂μ = 0) :
+    ∫ z in K, ω.stdComplexLineEnergyDensity (J z) (fderiv ℝ ξ z).toLinearMap ∂μ =
       ∫ z in K, ω.associatedBilinForm (J z)
         (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag))
-        (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag)) := by
+        (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag)) ∂μ := by
   have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv one_ne_zero
   have hs : ContinuousOn (fun z ↦ fderiv ℝ ξ z stdComplexLineReal) K :=
     (hdξ.clm_apply continuous_const).continuousOn
   have ht : ContinuousOn (fun z ↦ fderiv ℝ ξ z stdComplexLineImag) K :=
     (hdξ.clm_apply continuous_const).continuousOn
   have he : IntegrableOn
-      (fun z ↦ ω.stdComplexLineEnergyDensity (J z) (fderiv ℝ ξ z).toLinearMap) K := by
+      (fun z ↦ ω.stdComplexLineEnergyDensity (J z) (fderiv ℝ ξ z).toLinearMap) K μ := by
     simp only [stdComplexLineEnergyDensity_def, ContinuousLinearMap.coe_coe]
     exact ((continuousOn_associatedBilinForm_apply_self hJc hs).add
       (continuousOn_associatedBilinForm_apply_self hJc ht)).integrableOn_compact hK
   have harea : IntegrableOn
-      (fun z ↦ ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag)) K :=
+      (fun z ↦ ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag)) K μ :=
     (ω.continuousOn_apply_comp hs ht).integrableOn_compact hK
-  rw [← sub_zero (∫ z in K, _), ← mul_zero (2 : ℝ), ← hzero, ← integral_const_mul,
+  rw [← sub_zero (∫ z in K, _ ∂μ), ← mul_zero (2 : ℝ), ← hzero, ← integral_const_mul,
     ← integral_sub he (harea.const_mul 2)]
   refine setIntegral_congr_fun hK.measurableSet fun z hz ↦ ?_
   simpa using stdComplexLineEnergyDensity_sub_two_mul_symplecticForm (hJ z hz)
@@ -156,19 +108,21 @@ structure.** Let `J(z)` be `ω`-compatible at every point of a compact set `K` a
 continuously on `z ∈ K`, and let `T(z)` be a continuous family of operators on `K`. Then there is
 a constant `C ≥ 0` such that every `C¹` map `ξ` whose symplectic area over `K` vanishes satisfies
 
-`∫_K (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫_K (‖∂s ξ + J(z) ∂t ξ + T(z) ξ‖² + ‖ξ‖²)`.
+`∫_K (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫_K (‖∂s ξ + J(z) ∂t ξ + T(z) ξ‖² + ‖ξ‖²)`
 
-The constant depends only on `J`, `T` and `K`. -/
+with respect to a measure `μ` that is finite on compact sets. The constant depends only on `J`,
+`T` and `K`, not on `μ`. -/
 theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_setIntegral_symplecticForm_eq_zero
-    {T : ℝ × ℝ → V →L[ℝ] V} (hK : IsCompact K) (hJ : ∀ z ∈ K, ω.Compatible (J z))
+    [IsFiniteMeasureOnCompacts μ] {T : ℝ × ℝ → V →L[ℝ] V} (hK : IsCompact K)
+    (hJ : ∀ z ∈ K, ω.Compatible (J z))
     (hJc : ContinuousOn (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) K)
     (hT : ContinuousOn T K) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ →
-      ∫ z in K, ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag) = 0 →
+      ∫ z in K, ω (fderiv ℝ ξ z stdComplexLineReal) (fderiv ℝ ξ z stdComplexLineImag) ∂μ = 0 →
       ∫ z in K, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
+          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ∂μ ≤
         C * ∫ z in K, (‖fderiv ℝ ξ z stdComplexLineReal +
-            J z (fderiv ℝ ξ z stdComplexLineImag) + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) := by
+            J z (fderiv ℝ ξ z stdComplexLineImag) + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) ∂μ := by
   obtain ⟨a, ha, b, hb, hab⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm hK hJc
     fun z hz ↦ (hJ z hz).tames
   obtain ⟨N, hN⟩ := hK.exists_bound_of_continuousOn hT
@@ -188,41 +142,33 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_setIntegral_symplecticFor
   have hid := setIntegral_stdComplexLineEnergyDensity_eq_of_setIntegral_symplecticForm_eq_zero
     hK (fun z hz ↦ (hJ z hz).invariant) hJc hξ hzero
   simp only [stdComplexLineEnergyDensity_def, ContinuousLinearMap.coe_coe] at hid
-  have hlow : ∫ z in K, a * (‖ξs z‖ ^ 2 + ‖ξt z‖ ^ 2) ≤
+  have hlow : ∫ z in K, a * (‖ξs z‖ ^ 2 + ‖ξt z‖ ^ 2) ∂μ ≤
       ∫ z in K, (ω.associatedBilinForm (J z) (ξs z) (ξs z) +
-        ω.associatedBilinForm (J z) (ξt z) (ξt z)) :=
+        ω.associatedBilinForm (J z) (ξt z) (ξt z)) ∂μ :=
     setIntegral_mono_on
       ((continuous_const.mul ((hξs.norm.pow 2).add (hξt.norm.pow 2))).continuousOn
         |>.integrableOn_compact hK)
       (((continuousOn_associatedBilinForm_apply_self hJc hξs.continuousOn).add
         (continuousOn_associatedBilinForm_apply_self hJc hξt.continuousOn)).integrableOn_compact hK)
       hK.measurableSet fun z hz ↦ by linarith [(hab z hz (ξs z)).1, (hab z hz (ξt z)).1]
-  have hup : ∫ z in K, ω.associatedBilinForm (J z) (F z) (F z) ≤
-      ∫ z in K, 2 * b * (1 + N ^ 2) * (‖F z + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) :=
+  have hup : ∫ z in K, ω.associatedBilinForm (J z) (F z) (F z) ∂μ ≤
+      ∫ z in K, 2 * b * (1 + N ^ 2) * (‖F z + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) ∂μ :=
     setIntegral_mono_on
       ((continuousOn_associatedBilinForm_apply_self hJc hF).integrableOn_compact hK)
       ((continuousOn_const.mul ((hD.norm.pow 2).add (hξ.continuous.norm.pow 2).continuousOn))
         |>.integrableOn_compact hK)
       hK.measurableSet fun z hz ↦ by
-        -- `‖F‖² ≤ 2 ‖F + T ξ‖² + 2 ‖T ξ‖²` and `‖T ξ‖ ≤ N ‖ξ‖`.
+        -- `‖F‖ ≤ ‖F + T ξ‖ + ‖T ξ‖` and `‖T ξ‖ ≤ N ‖ξ‖`.
         have hTξ : ‖T z (ξ z)‖ ≤ N * ‖ξ z‖ :=
           ((T z).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hN z hz) (norm_nonneg _))
-        have hsq : ‖F z‖ ^ 2 ≤ 2 * ‖F z + T z (ξ z)‖ ^ 2 + 2 * (N ^ 2 * ‖ξ z‖ ^ 2) := by
-          have h₁ : ‖F z‖ ≤ ‖F z + T z (ξ z)‖ + ‖T z (ξ z)‖ := by
-            simpa using norm_sub_le (F z + T z (ξ z)) (T z (ξ z))
-          have h₂ : ‖T z (ξ z)‖ ^ 2 ≤ N ^ 2 * ‖ξ z‖ ^ 2 := by
-            rw [← mul_pow]
-            exact pow_le_pow_left₀ (norm_nonneg _) hTξ 2
-          have h₃ : ‖F z‖ ^ 2 ≤ (‖F z + T z (ξ z)‖ + ‖T z (ξ z)‖) ^ 2 :=
-            pow_le_pow_left₀ (norm_nonneg _) h₁ 2
-          nlinarith [sq_nonneg (‖F z + T z (ξ z)‖ - ‖T z (ξ z)‖)]
-        have hN0 : 0 ≤ N ^ 2 := sq_nonneg N
+        have h₁ : ‖F z‖ ≤ ‖F z + T z (ξ z)‖ + N * ‖ξ z‖ :=
+          (norm_le_norm_add_norm_sub' (F z) (F z + T z (ξ z))).trans (by simpa using hTξ)
+        have hpos : 0 ≤ b * (‖ξ z‖ ^ 2 + N ^ 2 * ‖F z + T z (ξ z)‖ ^ 2) := by positivity
         calc ω.associatedBilinForm (J z) (F z) (F z) ≤ b * ‖F z‖ ^ 2 := (hab z hz (F z)).2
-          _ ≤ b * (2 * ‖F z + T z (ξ z)‖ ^ 2 + 2 * (N ^ 2 * ‖ξ z‖ ^ 2)) := by gcongr
+          _ ≤ b * (‖F z + T z (ξ z)‖ + N * ‖ξ z‖) ^ 2 := by gcongr
+          _ ≤ b * (2 * (‖F z + T z (ξ z)‖ ^ 2 + (N * ‖ξ z‖) ^ 2)) := by gcongr; exact add_sq_le
           _ ≤ 2 * b * (1 + N ^ 2) * (‖F z + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) := by
-            nlinarith [mul_nonneg hb (sq_nonneg ‖F z + T z (ξ z)‖),
-              mul_nonneg (mul_nonneg hb hN0) (sq_nonneg ‖F z + T z (ξ z)‖),
-              mul_nonneg hb (sq_nonneg ‖ξ z‖)]
+            linear_combination 2 * hpos
   rw [integral_const_mul] at hlow hup
   rw [← hid] at hup
   rw [div_mul_eq_mul_div, le_div_iff₀' ha]
@@ -231,18 +177,21 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_setIntegral_symplecticFor
 /-- **The `L²` estimate for compactly supported maps.** Let `J(z)` be `ω`-compatible at every
 point of a compact set `K ⊆ ℝ × ℝ` and depend continuously on `z ∈ K`, and let `T` be continuous
 on `K`. Then there is a constant `C ≥ 0` such that every `C²` map `ξ` with support in `K`
-satisfies `∫_K (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫_K (‖∂s ξ + J(z) ∂t ξ + T(z) ξ‖² + ‖ξ‖²)`. -/
+satisfies `∫_K (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫_K (‖∂s ξ + J(z) ∂t ξ + T(z) ξ‖² + ‖ξ‖²)` with respect to
+an additive Haar measure. -/
 theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset
-    {T : ℝ × ℝ → V →L[ℝ] V} (hK : IsCompact K) (hJ : ∀ z ∈ K, ω.Compatible (J z))
+    [μ.IsAddHaarMeasure] {T : ℝ × ℝ → V →L[ℝ] V} (hK : IsCompact K)
+    (hJ : ∀ z ∈ K, ω.Compatible (J z))
     (hJc : ContinuousOn (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) K)
     (hT : ContinuousOn T K) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → tsupport ξ ⊆ K →
       ∫ z in K, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
+          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ∂μ ≤
         C * ∫ z in K, (‖fderiv ℝ ξ z stdComplexLineReal +
-            J z (fderiv ℝ ξ z stdComplexLineImag) + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) := by
+            J z (fderiv ℝ ξ z stdComplexLineImag) + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) ∂μ := by
   obtain ⟨C, hC, h⟩ :=
-    exists_forall_setIntegral_norm_fderiv_sq_le_of_setIntegral_symplecticForm_eq_zero hK hJ hJc hT
+    exists_forall_setIntegral_norm_fderiv_sq_le_of_setIntegral_symplecticForm_eq_zero (μ := μ)
+      hK hJ hJc hT
   exact ⟨C, hC, fun ξ hξ hξK ↦
     h (hξ.of_le one_le_two) (setIntegral_symplecticForm_fderiv_eq_zero ω hK hξ hξK)⟩
 
@@ -268,9 +217,10 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic
             J z (fderiv ℝ ξ z stdComplexLineImag) + T z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2) := by
   obtain ⟨C, hC, h⟩ :=
     exists_forall_setIntegral_norm_fderiv_sq_le_of_setIntegral_symplecticForm_eq_zero
-      (isCompact_Icc.prod isCompact_Icc) hJ hJc hT
+      (μ := volume) (isCompact_Icc.prod isCompact_Icc) hJ hJc hT
   exact ⟨C, hC, fun ξ hξ hper ha hb ↦ h (hξ.of_le one_le_two)
-    (integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic ω hab hξ hper ha hb)⟩
+    (ω.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic hab
+      (fun _ _ ↦ hξ.contDiffAt) (fun s _ ↦ by simpa using hper s 0) ha hb)⟩
 
 end SymplecticForm
 
