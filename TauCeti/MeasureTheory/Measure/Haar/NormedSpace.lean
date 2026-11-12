@@ -93,6 +93,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
   empty).
+* `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le`: the same in scale-invariant form,
+  `R^(-n/p₀) ‖f‖_{L^{p₀}(B(x₀, R))} ≤ |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B(x₀, R))}`.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -149,6 +151,42 @@ theorem eLpNorm_ball_le_mul_rpow
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (ENNReal.ofReal_le_ofReal hp₀p) hf
   rwa [hvol, ENNReal.toReal_ofReal hp₀0.le, ENNReal.toReal_ofReal (hp₀0.le.trans hp₀p),
     ENNReal.ofReal_rpow_of_nonneg (by positivity) he] at h
+
+/-- Hölder's inequality on a ball, in scale-invariant form: for `0 < p₀ ≤ p`, `R > 0` and `f` in
+`L^p` on `B = B(x₀, R)` in dimension `n`, `R^(-n/p₀) ‖f‖_{L^{p₀}(B)}` is at most
+`|B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B)}`. -/
+theorem rpow_neg_mul_toReal_eLpNorm_ball_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p₀ p R : ℝ} {x₀ : E} (hR : 0 < R)
+    (hp₀0 : 0 < p₀) (hp₀p : p₀ ≤ p) (hf : MemLp f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))) :
+    R ^ (-((finrank ℝ E : ℝ) / p₀)) *
+        (eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (ball x₀ R))).toReal ≤
+      mu.real (ball (0 : E) 1) ^ (1 / p₀ - 1 / p) *
+        (R ^ (-((finrank ℝ E : ℝ) / p)) *
+          (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal) := by
+  have hω : 0 ≤ mu.real (ball (0 : E) 1) := measureReal_nonneg
+  have hV : 0 ≤ (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p) :=
+    Real.rpow_nonneg (mul_nonneg (by positivity) hω) _
+  have hhol := ENNReal.toReal_mono (ENNReal.mul_ne_top hf.eLpNorm_ne_top ENNReal.ofReal_ne_top)
+    (eLpNorm_ball_le_mul_rpow mu (x₀ := x₀) hp₀0 hp₀p hf.aestronglyMeasurable)
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hV] at hhol
+  -- `R^(-n/p₀) (Rⁿ |B(0, 1)|)^(1/p₀ - 1/p) = |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p)`.
+  have hRpow : R ^ (-((finrank ℝ E : ℝ) / p₀)) *
+      (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p) =
+        mu.real (ball (0 : E) 1) ^ (1 / p₀ - 1 / p) * R ^ (-((finrank ℝ E : ℝ) / p)) := by
+    rw [Real.mul_rpow (by positivity) hω, ← Real.rpow_natCast, ← Real.rpow_mul hR.le,
+      ← mul_assoc, ← Real.rpow_add hR, mul_comm]
+    congr 2
+    field_simp
+    ring
+  calc R ^ (-((finrank ℝ E : ℝ) / p₀)) *
+        (eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (ball x₀ R))).toReal
+      ≤ R ^ (-((finrank ℝ E : ℝ) / p₀)) *
+          ((eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal *
+            (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p)) := by
+        gcongr
+    _ = _ := by rw [mul_left_comm, hRpow]; ring
 
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/

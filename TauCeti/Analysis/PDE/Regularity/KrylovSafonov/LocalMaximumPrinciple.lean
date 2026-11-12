@@ -15,6 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -77,16 +78,7 @@ namespace PDE
 
 section Cutoff
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {c x : E} {R : ℝ}
-
-omit [InnerProductSpace ℝ E] in
-/-- On `B(c, R)` the base `s = 1 - ‖x - c‖² / R²` of the cutoff lies in `(0, 1]`. -/
-private theorem one_sub_norm_sq_div_mem_Ioc (hx : x ∈ ball c R) :
-    1 - ‖x - c‖ ^ 2 / R ^ 2 ∈ Set.Ioc 0 1 := by
-  have hR : 0 < R := pos_of_mem_ball hx
-  refine ⟨?_, sub_le_self _ (by positivity)⟩
-  rw [sub_pos, div_lt_one (by positivity)]
-  exact pow_lt_pow_left₀ (mem_ball_iff_norm.1 hx) (norm_nonneg _) two_ne_zero
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {c : E} {R : ℝ}
 
 /-- **The cross term on the contact set.** Let `η` be the cutoff `(1 - ‖· - c‖² / R²)^(m + 2)` and
 `s = 1 - ‖y - c‖² / R²` at `y ∈ B(c, R)`. If `u y ≥ 0` and the gradient of `v = η u` is controlled
@@ -102,7 +94,7 @@ private theorem norm_fderiv_cutoff_mul_norm_fderiv_le {u : E → ℝ} {y : E} (m
   set s := 1 - ‖y - c‖ ^ 2 / R ^ 2 with hs_def
   have hR : 0 < R := pos_of_mem_ball hy
   have hρ : ‖y - c‖ < R := mem_ball_iff_norm.1 hy
-  obtain ⟨hs0, -⟩ := one_sub_norm_sq_div_mem_Ioc hy
+  obtain ⟨hs0, -⟩ := one_sub_norm_sq_sub_div_mem_Ioc hy
   have hηy : η y = s ^ (m + 2) := rfl
   -- `‖Dη‖ ≤ 2 (m + 2) s^(m + 1) / R`.
   have hDη : ‖fderiv ℝ η y‖ ≤ (m + 2) * s ^ (m + 1) * (2 / R) := by
@@ -211,7 +203,7 @@ private theorem neg_sum_mul_fderiv_fderiv_cutoff_mul_le {lam Lam R : ℝ}
   set η : EuclideanSpace ℝ ι → ℝ := fun z ↦ (1 - ‖z - c‖ ^ 2 / R ^ 2) ^ (m + 2)
   set s := 1 - ‖y - c‖ ^ 2 / R ^ 2
   set n : ℝ := (Fintype.card ι : ℝ)
-  obtain ⟨hs0, hs1⟩ := one_sub_norm_sq_div_mem_Ioc hy
+  obtain ⟨hs0, hs1⟩ := one_sub_norm_sq_sub_div_mem_Ioc hy
   have hLam := ha.upper_nonneg
   have hη : ContDiffAt ℝ 2 η y := ((contDiff_one_sub_norm_sq_sub_div c R).pow _).contDiffAt
   -- The three terms of the expansion of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼ(η u)`.
@@ -265,21 +257,6 @@ private theorem neg_sum_mul_fderiv_fderiv_cutoff_mul_le {lam Lam R : ℝ}
         2 * (Lam * (4 * (m + 2) * (m + 3) / R ^ 2 * s ^ m * u y)) := by ring
   linarith [neg_abs_le A₁, neg_abs_le A₂]
 
-/-- If `s^(m + 2) u ≤ M` with `s, u ≥ 0`, then `s^m u ≤ M^(m / (m + 2)) u^(2 / (m + 2))`. -/
-private theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} (m : ℕ) (hs : 0 ≤ s) (hu : 0 ≤ u)
-    (hM : s ^ (m + 2) * u ≤ M) :
-    s ^ m * u ≤ M ^ ((m : ℝ) / (m + 2)) * u ^ ((2 : ℝ) / (m + 2)) := by
-  have hm : (0 : ℝ) < m + 2 := by positivity
-  have hsplit : s ^ m * u = (s ^ (m + 2) * u) ^ ((m : ℝ) / (m + 2)) * u ^ ((2 : ℝ) / (m + 2)) := by
-    rw [Real.mul_rpow (by positivity) hu, ← Real.rpow_natCast s (m + 2), ← Real.rpow_mul hs,
-      mul_assoc, ← Real.rpow_add' hu (by field_simp; positivity)]
-    push_cast
-    rw [show ((m : ℝ) + 2) * (m / (m + 2)) = m by field_simp,
-      show (m : ℝ) / (m + 2) + 2 / (m + 2) = 1 by field_simp, Real.rpow_one, Real.rpow_natCast]
-  rw [hsplit]
-  exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (by positivity) hM (by positivity))
-    (by positivity)
-
 /-- **The determinant bound on the contact set.** Let `u` be `C²` in `B = B(c, R)` with
 `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f` there, and let `v = (1 - ‖· - c‖² / R²)^(m + 2) u` be at most
 `M = v x₀` on `B`. At a point `y` of the upper contact set of `v` on `B` where
@@ -319,7 +296,7 @@ private theorem abs_det_hessianOperator_cutoff_mul_le {lam Lam R M : ℝ}
     rw [dist_eq_norm]
     linarith
   rw [sub_zero, norm_gradient_eq_norm_fderiv] at hgrad
-  obtain ⟨hs0, -⟩ := one_sub_norm_sq_div_mem_Ioc hyB
+  obtain ⟨hs0, -⟩ := one_sub_norm_sq_sub_div_mem_Ioc hyB
   have hu0 : 0 ≤ u y := by
     have hv0 : 0 ≤ v y := (mul_nonneg (norm_nonneg _) (by
       linarith [mem_ball_iff_norm.1 hyB] : (0 : ℝ) ≤ R - ‖y - c‖)).trans hgrad
@@ -329,7 +306,7 @@ private theorem abs_det_hessianOperator_cutoff_mul_le {lam Lam R M : ℝ}
       (EuclideanSpace.single j 1) ≤ G := by
     refine (neg_sum_mul_fderiv_fderiv_cutoff_mul_le m ha hyB
       (hu.contDiffAt (isOpen_ball.mem_nhds hyB)) (hsub y hyB) hu0 hgrad).trans ?_
-    have hpow := pow_mul_le_rpow_mul_rpow m hs0.le hu0 (hmax y hyB)
+    have hpow := Real.pow_mul_le_rpow_mul_rpow m hs0.le hu0 (hmax y hyB)
     calc (f y)⁻ + 2 * (m + 2) * (4 * m + 12 + (N : ℝ)) * Lam / R ^ 2 *
           (1 - ‖y - c‖ ^ 2 / R ^ 2) ^ m * u y
         = (f y)⁻ + 2 * (m + 2) * (4 * m + 12 + (N : ℝ)) * Lam / R ^ 2 *
@@ -354,47 +331,6 @@ private theorem abs_det_hessianOperator_cutoff_mul_le {lam Lam R M : ℝ}
     _ ≤ (G / N) ^ N := by
         gcongr
         exact div_nonneg (neg_nonneg.2 hnonpos) (Nat.cast_nonneg _)
-
-/-- The `Lⁿ` norm of `(f⁻ + C (u⁺)^q) / λ` is at most
-`(‖f⁻‖ₙ + C ‖u⁺‖_{n q}^q) / λ`, when `f⁻ ∈ Lⁿ` and `(u⁺)^q ∈ Lⁿ`. -/
-private theorem toReal_eLpNorm_inv_mul_add_le {X : Type*} [MeasurableSpace X] {μ : Measure X}
-    {f u : X → ℝ} {lam C q : ℝ} {N : ℕ} (hN : 1 ≤ N) (hlam : 0 < lam) (hC : 0 ≤ C) (hq : 0 < q)
-    (hf : MemLp (fun x ↦ (f x)⁻) N μ) (hu : AEStronglyMeasurable (fun x ↦ (u x)⁺) μ)
-    (huq : MemLp (fun x ↦ (u x)⁺ ^ q) N μ) :
-    (eLpNorm (fun x ↦ lam⁻¹ * ((f x)⁻ + C * (u x)⁺ ^ q)) N μ).toReal ≤
-      lam⁻¹ * ((eLpNorm (fun x ↦ (f x)⁻) N μ).toReal +
-        C * (eLpNorm (fun x ↦ (u x)⁺) (N * ENNReal.ofReal q) μ).toReal ^ q) := by
-  have h1 : (fun x ↦ lam⁻¹ * ((f x)⁻ + C * (u x)⁺ ^ q)) =
-      lam⁻¹ • ((fun x ↦ (f x)⁻) + fun x ↦ C * (u x)⁺ ^ q) := rfl
-  have h2 : (fun x ↦ C * (u x)⁺ ^ q) = C • fun x ↦ ‖(u x)⁺‖ ^ q := by
-    funext x
-    rw [Pi.smul_apply, smul_eq_mul, Real.norm_of_nonneg (posPart_nonneg _)]
-  have hfin := (huq.const_mul C).eLpNorm_ne_top
-  have hadd := eLpNorm_add_le (μ := μ) (f := fun x ↦ (f x)⁻) (g := fun x ↦ C * (u x)⁺ ^ q)
-    (by exact_mod_cast hN : (1 : ℝ≥0∞) ≤ N)
-  rw [h1, eLpNorm_const_smul, ENNReal.toReal_mul, toReal_enorm,
-    Real.norm_of_nonneg (inv_nonneg.2 hlam.le)]
-  refine mul_le_mul_of_nonneg_left ?_ (inv_nonneg.2 hlam.le)
-  refine (ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hf.eLpNorm_ne_top, hfin⟩) hadd).trans_eq ?_
-  rw [ENNReal.toReal_add hf.eLpNorm_ne_top hfin, h2, eLpNorm_const_smul, ENNReal.toReal_mul,
-    toReal_enorm, Real.norm_of_nonneg hC, eLpNorm_norm_rpow _ hu hq, ENNReal.toReal_rpow]
-
-omit [DecidableEq ι] in
-/-- For `u` continuous on `closedBall c R` and `q ≥ 0`, `(u⁺)^q` is bounded and measurable on
-`B(c, R)`, hence in every `Lᵖ(B)`. -/
-private theorem memLp_posPart_rpow {R q : ℝ} {c : EuclideanSpace ℝ ι}
-    {u : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn u (closedBall c R)) (hq : 0 ≤ q)
-    (p : ℝ≥0∞) : MemLp (fun y ↦ (u y)⁺ ^ q) p (volume.restrict (ball c R)) := by
-  have : IsFiniteMeasure (volume.restrict (ball c R)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  obtain ⟨C, hC⟩ := (isCompact_closedBall c R).exists_bound_of_continuousOn hcont
-  refine MemLp.of_bound ((Real.continuous_rpow_const hq).comp_aestronglyMeasurable
-    (continuous_posPart.comp_aestronglyMeasurable
-      ((hcont.mono ball_subset_closedBall).aestronglyMeasurable measurableSet_ball)))
-    (max C 0 ^ q) (ae_restrict_of_forall_mem measurableSet_ball fun y hy => ?_)
-  rw [Real.norm_of_nonneg (by positivity)]
-  refine Real.rpow_le_rpow (posPart_nonneg _) (max_le_max ?_ le_rfl) hq
-  exact (le_abs_self _).trans (Real.norm_eq_abs (u y) ▸ hC y (ball_subset_closedBall hy))
 
 variable [Nonempty ι]
 
@@ -462,10 +398,15 @@ private theorem le_mul_add_of_cutoff_mul_le {lam Lam R M : ℝ} {c x₀ : Euclid
       ∫⁻ y in B, ENNReal.ofReal (((-G y)⁻ / N) ^ N / (lam • (1 : Matrix ι ι ℝ)).det) :=
     (addHaar_ball_le_lintegral_abs_det_hessianOperator_inter volume isBounded_ball isOpen_ball
       hvcont hv2 hfront hx₀).trans ((setLIntegral_mono' hΓm hpt).trans (lintegral_mono_set hΓB))
-  -- `G ∈ Lⁿ(B)`: `u⁺^q` is bounded and measurable on `B`.
-  have hupos : AEStronglyMeasurable (fun y ↦ (u y)⁺) (volume.restrict B) := by
-    simpa only [Real.rpow_one] using (memLp_posPart_rpow hcont zero_le_one ⊤).aestronglyMeasurable
-  have hupq : MemLp (fun y ↦ (u y)⁺ ^ q) N (volume.restrict B) := memLp_posPart_rpow hcont hq.le N
+  -- `G ∈ Lⁿ(B)`: `u⁺` and `(u⁺)^q` are continuous on the compact `closedBall c R ⊇ B`.
+  have hposc : ContinuousOn (fun y ↦ (u y)⁺) (closedBall c R) :=
+    continuous_posPart.comp_continuousOn hcont
+  have hupos : AEStronglyMeasurable (fun y ↦ (u y)⁺) (volume.restrict B) :=
+    (hposc.memLp_restrict_of_subset_isCompact (isCompact_closedBall c R) measurableSet_ball
+      ball_subset_closedBall ⊤).aestronglyMeasurable
+  have hupq : MemLp (fun y ↦ (u y)⁺ ^ q) N (volume.restrict B) :=
+    (hposc.rpow_const fun _ _ ↦ Or.inr hq.le).memLp_restrict_of_subset_isCompact
+      (isCompact_closedBall c R) measurableSet_ball ball_subset_closedBall N
   have hfun : (fun y ↦ (-G y)⁻ / (lam • (1 : Matrix ι ι ℝ)).det ^ (N : ℝ)⁻¹) =
       fun y ↦ lam⁻¹ * G y := by
     funext y
@@ -477,14 +418,33 @@ private theorem le_mul_add_of_cutoff_mul_le {lam Lam R M : ℝ} {c x₀ : Euclid
     (by rw [hfun]; exact (hf.add (hupq.const_mul K')).const_mul _) hkey
   have hvx₀ : v x₀ = M := hM
   rw [hfun, hvx₀, zero_add, hdiam] at habp
-  -- The `Lⁿ` norm of `G / λ`.
+  -- The `Lⁿ` norm of `G / λ`, by Minkowski's inequality and `‖(u⁺)^q‖ₙ = ‖u⁺‖_{n q}^q`.
   have hq' : (N : ℝ≥0∞) * ENNReal.ofReal q = ENNReal.ofReal (2 * n / (m + 2)) := by
     rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)]
     congr 1
     simp only [q, n]
     ring
-  have hnorm := toReal_eLpNorm_inv_mul_add_le Fintype.card_pos hlam hK' hq hf hupos hupq
-  rw [hq'] at hnorm
+  have hGfun : (fun y ↦ lam⁻¹ * G y) =
+      lam⁻¹ • ((fun y ↦ (f y)⁻) + fun y ↦ K' * (u y)⁺ ^ q) := by
+    funext y
+    simp only [G, Pi.smul_apply, Pi.add_apply, smul_eq_mul]
+  have hKu : (fun y ↦ K' * (u y)⁺ ^ q) = K' • fun y ↦ ‖(u y)⁺‖ ^ q := by
+    funext y
+    rw [Pi.smul_apply, smul_eq_mul, Real.norm_of_nonneg (posPart_nonneg _)]
+  have hfin := (hupq.const_mul K').eLpNorm_ne_top
+  have hadd := eLpNorm_add_le (μ := volume.restrict B) (f := fun y ↦ (f y)⁻)
+    (g := fun y ↦ K' * (u y)⁺ ^ q)
+    (by exact_mod_cast Nat.one_le_iff_ne_zero.2 Fintype.card_ne_zero : (1 : ℝ≥0∞) ≤ N)
+  have hnorm : (eLpNorm (fun y ↦ lam⁻¹ * G y) N (volume.restrict B)).toReal ≤
+      lam⁻¹ * ((eLpNorm (fun y ↦ (f y)⁻) N (volume.restrict B)).toReal +
+        K' * (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal (2 * n / (m + 2)))
+          (volume.restrict B)).toReal ^ q) := by
+    rw [hGfun, eLpNorm_const_smul, ENNReal.toReal_mul, toReal_enorm,
+      Real.norm_of_nonneg (inv_nonneg.2 hlam.le), ← hq']
+    refine mul_le_mul_of_nonneg_left ?_ (inv_nonneg.2 hlam.le)
+    refine (ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hf.eLpNorm_ne_top, hfin⟩) hadd).trans_eq ?_
+    rw [ENNReal.toReal_add hf.eLpNorm_ne_top hfin, hKu, eLpNorm_const_smul, ENNReal.toReal_mul,
+      toReal_enorm, Real.norm_of_nonneg hK', eLpNorm_norm_rpow _ hupos hq, ENNReal.toReal_rpow]
   calc M ≤ 2 * R / (n * (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (n : ℝ)⁻¹) *
         (eLpNorm (fun y ↦ lam⁻¹ * G y) N (volume.restrict B)).toReal := habp
     _ ≤ _ := by
@@ -591,49 +551,6 @@ private theorem le_mul_add_mul_of_two_mul_card_div {κ lam Lam R : ℝ}
   rw [Real.rpow_neg hR.le]
   ring
 
-omit [DecidableEq ι] [Nonempty ι] in
-/-- **Comparison of the scaled norms of `u⁺` on a ball.** For `u` continuous on `closedBall c R`
-and `0 < q ≤ p`, by Hölder's inequality and `|B(c, R)| = ωₙ Rⁿ`,
-`R^(-n/q) ‖u⁺‖_{L^q(B)} ≤ ωₙ^(1/q - 1/p) R^(-n/p) ‖u⁺‖_{Lᵖ(B)}`. -/
-private theorem rpow_mul_toReal_eLpNorm_posPart_le {R p q : ℝ} {c : EuclideanSpace ℝ ι}
-    {u : EuclideanSpace ℝ ι → ℝ} (hR : 0 < R) (hq : 0 < q) (hqp : q ≤ p)
-    (hcont : ContinuousOn u (closedBall c R)) :
-    R ^ (-((Fintype.card ι : ℝ) / q)) *
-        (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal q) (volume.restrict (ball c R))).toReal ≤
-      (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (1 / q - 1 / p) *
-        (R ^ (-(Fintype.card ι : ℝ) / p) *
-          (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal) := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
-  have hω : 0 ≤ ω := ENNReal.toReal_nonneg
-  have hu1 : MemLp (fun y ↦ (u y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R)) := by
-    simpa only [Real.rpow_one] using memLp_posPart_rpow hcont zero_le_one (ENNReal.ofReal p)
-  -- Hölder: `‖u⁺‖_{L^q(B)} ≤ ‖u⁺‖_{Lᵖ(B)} |B|^(1/q - 1/p)`, with `|B| = Rⁿ ωₙ`.
-  have hhol : (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal q) (volume.restrict (ball c R))).toReal ≤
-      (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal *
-        (R ^ Fintype.card ι * ω) ^ (1 / q - 1 / p) := by
-    have h := Measure.eLpNorm_ball_le_mul_rpow volume (x₀ := c) (R := R) hq hqp
-      hu1.aestronglyMeasurable
-    rw [finrank_euclideanSpace] at h
-    refine (ENNReal.toReal_mono (ENNReal.mul_ne_top hu1.eLpNorm_ne_top ENNReal.ofReal_ne_top)
-      h).trans_eq ?_
-    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
-    rfl
-  -- `R^(-n/q) |B|^(1/q - 1/p) = ω^(1/q - 1/p) R^(-n/p)`.
-  have hRpow : R ^ (-(n / q)) * (R ^ Fintype.card ι * ω) ^ (1 / q - 1 / p) =
-      ω ^ (1 / q - 1 / p) * R ^ (-n / p) := by
-    rw [Real.mul_rpow (by positivity) hω, ← Real.rpow_natCast, ← Real.rpow_mul hR.le,
-      ← mul_assoc, ← Real.rpow_add hR, mul_comm]
-    congr 2
-    field_simp
-    ring
-  calc R ^ (-(n / q)) * (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal q)
-        (volume.restrict (ball c R))).toReal
-      ≤ R ^ (-(n / q)) * ((eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal p)
-          (volume.restrict (ball c R))).toReal * (R ^ Fintype.card ι * ω) ^ (1 / q - 1 / p)) := by
-        gcongr
-    _ = _ := by rw [mul_left_comm, hRpow]; ring
-
 /-- **The local maximum principle** (Gilbarg–Trudinger, Theorem 9.20, for classical
 subsolutions without lower-order terms). Let `p > 0` and `κ` be given. There is a constant `C`,
 depending only on the dimension `n`, on `κ` and on `p`, with the following property. Let the
@@ -692,10 +609,14 @@ theorem exists_le_mul_rpow_mul_eLpNorm_posPart_add {κ p : ℝ} (hp : 0 < p) :
     simp only [e, q]
     field_simp
   have hX : (C₀ * K * κ) ^ e * (R ^ (-e) * Nq) ≤ D * (R ^ (-n / p) * Np) := by
-    have h := rpow_mul_toReal_eLpNorm_posPart_le (c := c) (u := u) hR hq hqp.le hcont
-    rw [hD, he]
+    have hNp : MemLp (fun y ↦ (u y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R)) :=
+      (continuous_posPart.comp_continuousOn hcont).memLp_restrict_of_subset_isCompact
+        (isCompact_closedBall c R) measurableSet_ball ball_subset_closedBall _
+    have h := Measure.rpow_neg_mul_toReal_eLpNorm_ball_le volume hR hq hqp.le hNp
+    rw [finrank_euclideanSpace, measureReal_def] at h
+    rw [hD, he, neg_div]
     calc (C₀ * K * κ) ^ (n / q) * (R ^ (-(n / q)) * Nq)
-        ≤ (C₀ * K * κ) ^ (n / q) * (ω ^ (1 / q - 1 / p) * (R ^ (-n / p) * Np)) := by gcongr
+        ≤ (C₀ * K * κ) ^ (n / q) * (ω ^ (1 / q - 1 / p) * (R ^ (-(n / p)) * Np)) := by gcongr
       _ = _ := by ring
   refine hcore.trans ?_
   rw [mul_assoc ((4 / 3 : ℝ) ^ (m + 2))]

@@ -64,6 +64,8 @@ of a higher-order Sobolev space.
   sums of coordinate pairs.
 * `Real.le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow`: absorption of a power `M^θ`, `θ < 1`,
   in a bound `M ≤ A + B M^θ N^(1 - θ)`.
+* `Real.pow_mul_le_rpow_mul_rpow`: `s^(m + 2) u ≤ M` gives
+  `s^m u ≤ M^(m / (m + 2)) u^(2 / (m + 2))`.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -178,6 +180,22 @@ theorem le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow {M A B N θ : ℝ} (hθ0
       _ ≤ _ := by gcongr
   rw [div_add' _ _ _ (by linarith), le_div_iff₀ (by linarith)]
   nlinarith
+
+/-- If `s^(m + 2) u ≤ M` with `s, u ≥ 0`, then `s^m u ≤ M^(m / (m + 2)) u^(2 / (m + 2))`: split
+`s^m u` as `(s^(m + 2) u)^(m / (m + 2)) u^(2 / (m + 2))`. -/
+theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} (m : ℕ) (hs : 0 ≤ s) (hu : 0 ≤ u)
+    (hM : s ^ (m + 2) * u ≤ M) :
+    s ^ m * u ≤ M ^ ((m : ℝ) / (m + 2)) * u ^ ((2 : ℝ) / (m + 2)) := by
+  have hm : (0 : ℝ) < m + 2 := by positivity
+  have hsplit : s ^ m * u = (s ^ (m + 2) * u) ^ ((m : ℝ) / (m + 2)) * u ^ ((2 : ℝ) / (m + 2)) := by
+    rw [mul_rpow (by positivity) hu, ← rpow_natCast s (m + 2), ← rpow_mul hs,
+      mul_assoc, ← rpow_add' hu (by field_simp; positivity)]
+    push_cast
+    rw [show ((m : ℝ) + 2) * (m / (m + 2)) = m by field_simp,
+      show (m : ℝ) / (m + 2) + 2 / (m + 2) = 1 by field_simp, rpow_one, rpow_natCast]
+  rw [hsplit]
+  exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
+    (by positivity)
 
 end Real
 

@@ -36,8 +36,9 @@ The same calculus gives the first and second derivatives of the Gaussian
 boundary-point lemma for elliptic operators with variable coefficients.
 
 The file also computes the Hessian of the radial profile `(σ ‖y - c‖² + ε)^(-β)`, the barrier
-of the Krylov–Safonov measure estimate, and the first and second derivatives of the profile
-`(1 - ‖y - c‖² / R²)^(m + 2)`, the cutoff of the local maximum principle.
+of the Krylov–Safonov measure estimate. For the cutoff `(1 - ‖y - c‖² / R²)^(m + 2)` of the local
+maximum principle, it gives the range of the base `1 - ‖y - c‖² / R²` on `B(c, R)` and the first
+and second derivatives of the base and of the cutoff.
 
 ## Main results
 
@@ -49,6 +50,7 @@ of the Krylov–Safonov measure estimate, and the first and second derivatives o
   `x ↦ exp (-α ‖x - a‖ ^ 2)`.
 * `TauCeti.fderiv_fderiv_rpow_mul_norm_sq_sub_add_apply`: the Hessian of
   `(σ ‖y - c‖² + ε)^(-β)`.
+* `TauCeti.one_sub_norm_sq_sub_div_mem_Ioc`: on `B(c, R)`, `1 - ‖x - c‖² / R²` lies in `(0, 1]`.
 * `TauCeti.fderiv_one_sub_norm_sq_sub_div`,
   `TauCeti.fderiv_fderiv_one_sub_norm_sq_sub_div_apply`: the first and second derivatives of
   `1 - ‖y - c‖² / R²`.
@@ -230,6 +232,15 @@ end Rpow
 section OneSubNormSqDiv
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+omit [InnerProductSpace ℝ E] in
+/-- On `B(c, R)`, `1 - ‖x - c‖² / R²` lies in `(0, 1]`. -/
+theorem one_sub_norm_sq_sub_div_mem_Ioc {c x : E} {R : ℝ} (hx : x ∈ Metric.ball c R) :
+    1 - ‖x - c‖ ^ 2 / R ^ 2 ∈ Set.Ioc 0 1 := by
+  have hR : 0 < R := Metric.pos_of_mem_ball hx
+  refine ⟨?_, sub_le_self _ (by positivity)⟩
+  rw [sub_pos, div_lt_one (by positivity)]
+  exact pow_lt_pow_left₀ (mem_ball_iff_norm.1 hx) (norm_nonneg _) two_ne_zero
 
 /-- `1 - ‖y - c‖² / R²` is smooth. -/
 theorem contDiff_one_sub_norm_sq_sub_div (c : E) (R : ℝ) {k : WithTop ℕ∞} :
