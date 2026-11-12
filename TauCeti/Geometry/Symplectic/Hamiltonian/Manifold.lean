@@ -63,11 +63,11 @@ back form (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback`). On a pro
 the product form, the product of Hamiltonian vector fields of `f` and `g` is a Hamiltonian vector
 field of `(x, y) ↦ f x + g y` (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.prod`).
 
-Both constructions are natural. Pointwise, if a surjective linear map `D` from `T_x M` to
-`T_y M₂` satisfies `σ₂_y(D u, D v) = σ_x(u, v)` and `dg_y ∘ D = df_x` for nondegenerate `σ` and
-`σ₂`, then `D` carries `X_f(x)` to `X_g(y)`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`). Surjectivity is
-automatic when `M₂ = M` and `σ₂ = σ`
+Both constructions are natural. Pointwise, if a linear map `D` from `T_x M` to `T_y M₂`
+satisfies `σ₂_y(D u, D v) = σ_x(u, v)` and `dg_y ∘ D = df_x` for nondegenerate `σ` and `σ₂`, and
+`X_g(y)` lies in the range of `D`, then `D` carries `X_f(x)` to `X_g(y)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`). This holds when
+`D` is surjective, which is automatic when `M₂ = M` and `σ₂ = σ`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`). Hence a smooth map `φ` pulling
 a nondegenerate form `σ₂` back to `σ`
 carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
@@ -80,8 +80,10 @@ range of `dφ_x`, the differential carries `X_{g ∘ φ}(x)` to it
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_of_mem_range`). For the inclusion of a
 symplectic submanifold, this computes brackets with the restriction of an ambient function whose
 Hamiltonian vector field is tangent to the submanifold.
-Along a curve where its differential is surjective, `φ` therefore maps integral curves of the
+Along a curve where `X_g` is tangent to `φ`, `φ` therefore maps integral curves of the
 Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField_of_mem_range`),
+in particular along a curve where its differential is surjective
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField`).
 
 ## Main declarations
@@ -110,16 +112,18 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`, and
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_poissonBracket`: the Poisson bracket of
   `C^(n+1)` functions is `C^n`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`: a surjective
-  linear map `D` with `σ₂(D u, D v) = σ(u, v)` and `dg ∘ D = df` carries `X_f(x)` to `X_g(y)`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`: a linear map `D`
+  with `σ₂(D u, D v) = σ(u, v)` and `dg ∘ D = df` whose range contains `X_g(y)` carries `X_f(x)`
+  to `X_g(y)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
   fields, their integral curves and Poisson brackets under maps pulling one form back to the
   other.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp_of_mem_range` and
-  `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_of_mem_range`: the same naturality
-  at a point where the Hamiltonian vector field is tangent to the map.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp_of_mem_range`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField_of_mem_range`
+  and `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_of_mem_range`: the same
+  naturality where the Hamiltonian vector field is tangent to the map.
 
 ## References
 
@@ -638,18 +642,21 @@ variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E�
 namespace IsNondegenerate
 
 /-- **Linear maps preserving nondegenerate forms carry Hamiltonian vectors.** Let `D` be a
-surjective linear map from the tangent space of `M` at `x` to the tangent space of `M₂` at `y`
-with `σ₂_y(D u, D v) = σ_x(u, v)` and `dg_y ∘ D = df_x`. Then `D` carries `X_f(x)` to `X_g(y)`. -/
+linear map from the tangent space of `M` at `x` to the tangent space of `M₂` at `y` with
+`σ₂_y(D u, D v) = σ_x(u, v)` and `dg_y ∘ D = df_x`. If `X_g(y)` lies in the range of `D`, then
+`D` carries `X_f(x)` to `X_g(y)`. -/
 theorem map_hamiltonianVectorField_of_eval₂ (hσ : σ.IsNondegenerate) (hσ₂ : σ₂.IsNondegenerate)
-    {y : M₂} {D : TangentSpace I x →L[ℝ] TangentSpace I₂ y} (hDs : Function.Surjective D)
+    {y : M₂} {D : TangentSpace I x →L[ℝ] TangentSpace I₂ y} {f : M → ℝ} {g : M₂ → ℝ}
+    (hDg : σ₂.hamiltonianVectorField g y ∈ D.range)
     (hD : ∀ u v, SmoothBundleForm.eval₂ σ₂ y (D u) (D v) = SmoothBundleForm.eval₂ σ x u v)
-    {f : M → ℝ} {g : M₂ → ℝ} (hfg : ∀ u, mvfderiv I₂ g y (D u) = mvfderiv I f x u) :
+    (hfg : ∀ u, mvfderiv I₂ g y (D u) = mvfderiv I f x u) :
     D (σ.hamiltonianVectorField f x) = σ₂.hamiltonianVectorField g y := by
-  refine (hσ₂.isInvertible_flat y).injective (ContinuousLinearMap.ext fun w ↦ ?_)
-  obtain ⟨u, rfl⟩ := hDs w
-  -- Both sides pair with `D u` to `df_x(u)`.
-  rw [flat_apply, flat_apply, hD, hσ.eval₂_hamiltonianVectorField,
-    hσ₂.eval₂_hamiltonianVectorField, hfg]
+  obtain ⟨v, hv⟩ := hDg
+  rw [ContinuousLinearMap.coe_coe] at hv
+  -- The tangent vector `v` lifting `X_g(y)` satisfies the Hamiltonian equation of `f`.
+  have hvσ : σ.flat x v = mvfderiv I f x := ContinuousLinearMap.ext fun w ↦ by
+    rw [flat_apply, ← hD, hv, hσ₂.eval₂_hamiltonianVectorField, hfg]
+  rwa [← (hσ.isInvertible_flat x).injective (hvσ.trans (hσ.flat_hamiltonianVectorField _ x).symm)]
 
 end IsNondegenerate
 
@@ -668,14 +675,10 @@ functions whose Hamiltonian vector fields are tangent to the submanifold. -/
 theorem mfderiv_hamiltonianVectorField_comp_of_mem_range {g : M₂ → ℝ}
     (hg : MDifferentiableAt I₂ 𝓘(ℝ) g (φ x))
     (hgx : σ₂.hamiltonianVectorField g (φ x) ∈ (mfderiv I I₂ φ x).range) :
-    mfderiv I I₂ φ x (σ.hamiltonianVectorField (g ∘ φ) x) = σ₂.hamiltonianVectorField g (φ x) := by
-  obtain ⟨v, hv⟩ := hgx
-  rw [ContinuousLinearMap.coe_coe] at hv
-  -- The tangent vector `v` lifting `X_g(φ x)` satisfies the Hamiltonian equation of `g ∘ φ`.
-  have hvσ : σ.flat x v = mvfderiv I (g ∘ φ) x := ContinuousLinearMap.ext fun w ↦ by
-    rw [flat_apply, ← hφσ, SmoothForm.eval₂_mpullback φ hφ, hv, hσ₂.eval₂_hamiltonianVectorField,
-      mvfderiv_comp_apply x hg ((hφ x).mdifferentiableAt (by simp))]
-  rwa [← (hσ.isInvertible_flat x).injective (hvσ.trans (hσ.flat_hamiltonianVectorField _ x).symm)]
+    mfderiv I I₂ φ x (σ.hamiltonianVectorField (g ∘ φ) x) = σ₂.hamiltonianVectorField g (φ x) :=
+  hσ.map_hamiltonianVectorField_of_eval₂ hσ₂ hgx
+    (fun u v ↦ by rw [← hφσ, SmoothForm.eval₂_mpullback φ hφ])
+    fun u ↦ (mvfderiv_comp_apply x hg ((hφ x).mdifferentiableAt (by simp)) u).symm
 
 /-- **Hamiltonian vector fields are natural.** Let a smooth map `φ` pull a nondegenerate form `σ₂`
 back to a nondegenerate form `σ`. At a point where the differential of `φ` is surjective, it carries
@@ -706,6 +709,20 @@ theorem poissonBracket_comp (hx : Function.Surjective (mfderiv I I₂ φ x)) {g 
     σ.poissonBracket (g ∘ φ) (k ∘ φ) x = σ₂.poissonBracket g k (φ x) :=
   hσ.poissonBracket_comp_of_mem_range hσ₂ hφ hφσ hg hk (hx _)
 
+/-- **Hamiltonian integral curves tangent to a map are natural.** Let a smooth map `φ` pull a
+nondegenerate form `σ₂` back to a nondegenerate form `σ`. If `γ` is an integral curve of the
+Hamiltonian vector field of `g ∘ φ`, and at every point `φ (γ t)` the function `g` is
+differentiable with Hamiltonian vector in the range of the differential of `φ` at `γ t`, then
+`φ ∘ γ` is an integral curve of the Hamiltonian vector field of `g`. -/
+theorem isMIntegralCurve_comp_hamiltonianVectorField_of_mem_range {g : M₂ → ℝ} {γ : ℝ → M}
+    (hgγ : ∀ t, σ₂.hamiltonianVectorField g (φ (γ t)) ∈ (mfderiv I I₂ φ (γ t)).range)
+    (hg : ∀ t, MDifferentiableAt I₂ 𝓘(ℝ) g (φ (γ t)))
+    (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ φ))) :
+    IsMIntegralCurve (φ ∘ γ) (σ₂.hamiltonianVectorField g) := by
+  rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
+  exact hγ.map_of_mfderiv_eq (fun t _ ↦ (hφ (γ t)).mdifferentiableAt (by simp))
+    fun t _ ↦ hσ.mfderiv_hamiltonianVectorField_comp_of_mem_range hσ₂ hφ hφσ (hg t) (hgγ t)
+
 /-- **Hamiltonian integral curves are natural.** Let a smooth map `φ` pull a nondegenerate form
 `σ₂` back to a nondegenerate form `σ`. If `γ` is an integral curve of the Hamiltonian vector field
 of `g ∘ φ`, along which the differential of `φ` is surjective and `g` is differentiable at the
@@ -714,10 +731,8 @@ theorem isMIntegralCurve_comp_hamiltonianVectorField {g : M₂ → ℝ} {γ : �
     (hsurj : ∀ t, Function.Surjective (mfderiv I I₂ φ (γ t)))
     (hg : ∀ t, MDifferentiableAt I₂ 𝓘(ℝ) g (φ (γ t)))
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ φ))) :
-    IsMIntegralCurve (φ ∘ γ) (σ₂.hamiltonianVectorField g) := by
-  rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
-  exact hγ.map_of_mfderiv_eq (fun t _ ↦ (hφ (γ t)).mdifferentiableAt (by simp))
-    fun t _ ↦ hσ.mfderiv_hamiltonianVectorField_comp hσ₂ hφ hφσ (hsurj t) (hg t)
+    IsMIntegralCurve (φ ∘ γ) (σ₂.hamiltonianVectorField g) :=
+  hσ.isMIntegralCurve_comp_hamiltonianVectorField_of_mem_range hσ₂ hφ hφσ (fun t ↦ hsurj t _) hg hγ
 
 end IsNondegenerate
 
