@@ -46,6 +46,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
   space, its chart expression is constantly multiplication by `i`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
   and everywhere: pseudoholomorphic maps between complex manifolds are the holomorphic maps.
+* `TauCeti.mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply`: a real differentiable complex
+  valued function is holomorphic at a point exactly when its real differential is complex linear.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_ofComplexManifold`: the almost complex structure
   of a complex manifold is integrable.
 
@@ -183,6 +185,21 @@ theorem isPseudoholomorphic_ofComplexManifold_iff :
   isPseudoholomorphic_iff.trans (forall_congr' fun _ ↦ isPseudoholomorphicAt_ofComplexManifold_iff)
 
 end Pseudoholomorphic
+
+/-- A real differentiable complex valued function on a complex manifold is holomorphic at a point
+exactly when its real differential there is complex linear: it takes `j v` to `i` times its value
+on `v`. -/
+theorem mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply {f : M → ℂ} {x : M}
+    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f x) :
+    MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, ℂ) f x ↔
+      ∀ v : TangentSpace 𝓘(ℝ, E) x,
+        mvfderiv 𝓘(ℝ, E) f x (ofComplexManifold E M x v) = Complex.I * mvfderiv 𝓘(ℝ, E) f x v := by
+  rw [← isPseudoholomorphicAt_ofComplexManifold_iff (E' := ℂ) (N := ℂ),
+    isPseudoholomorphicAt_iff_mfderiv]
+  simp only [hf, true_and]
+  refine forall_congr' fun v ↦ ?_
+  rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply]
+  exact Iff.of_eq (congrArg (_ = ·) (ofComplexManifold_apply (E := ℂ) (f x) _))
 
 /-! ### Integrability -/
 
