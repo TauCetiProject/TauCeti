@@ -499,7 +499,7 @@ theorem tsupport_cutoffHomotopyPullbackCLM_subset (ω : 𝓓(Ω', E' [⋀^Fin (k
   refine right_ne_zero_of_smul hx ((cylinderHomotopy_congr fun t ht ↦ ?_).trans
     (congrFun cylinderHomotopy_zero x))
   rw [image_eq_zero_of_notMem_tsupport fun h ↦ hxS ⟨(x, t), ⟨⟨hχ, ht⟩, h⟩, rfl⟩, Pi.zero_apply]
-  ext v
+  ext _
   simp
 
 /-- The pointwise norm of the homotopy operator with a cutoff, on a form of norm at most one, is
