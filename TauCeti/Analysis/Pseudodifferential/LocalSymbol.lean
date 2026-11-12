@@ -47,6 +47,10 @@ global one. It does extend after multiplication by a cutoff:
   to an open set on which `ψ = 1` recovers the restriction of the original symbol
   (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`).
 
+Conversely, `TauCeti.LocalSymbol.ofCutoff` recognizes a local symbol by its cut-off products: a
+function vanishing at positions outside `U` all of whose products `ψ(x) f(x, ξ)` with smooth cutoffs
+`ψ` of compact support in `U` are symbols on `ℝⁿ` is a local symbol on `U`.
+
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
 ## References
@@ -210,6 +214,11 @@ instance : AddCommGroup (LocalSymbol U V W m) :=
 instance : Module ℂ (LocalSymbol U V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
+
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → LocalSymbol U V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ : LocalSymbol U V W m →+ _) a s
 
 end Module
 
@@ -489,6 +498,56 @@ theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
   ext_of_mem fun x hx ξ => by simp [hx, (hψ1 hx).trans (Pi.one_apply x)]
 
 end Extend
+
+section OfCutoff
+
+/-- If every cut-off product `ψ(x) f(x, ξ)`, for a smooth cutoff `ψ` with compact support in `U`, is
+the coefficient of a symbol of order `m` on `ℝⁿ`, then near each position of `U` the function `f`
+agrees with such a symbol. -/
+private theorem exists_symbol_eventually_eq {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
+    (h : ∀ ψ : CoordinateSpace n → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ U →
+      ∃ b : Symbol n V W m, b.coefficient = fun p => ψ p.1 • f p)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ b : Symbol n V W m, ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, f (y, η) = b.coefficient (y, η) := by
+  obtain ⟨ψ, hψ, -, hψ1, hψc, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one U.isOpen hKU
+  obtain ⟨b, hb⟩ := h ψ hψ hψc hψU
+  refine ⟨b, fun x hx => ?_⟩
+  filter_upwards [hψ1 x hx] with y hy η
+  simp [hb, hy]
+
+/-- A local symbol of order `m` on `U` from a function `f` vanishing at positions outside `U`
+whose cut-off products `ψ(x) f(x, ξ)`, for every smooth cutoff `ψ` with compact support in `U`,
+are symbols of order `m` on `ℝⁿ`. No separate smoothness hypothesis on `f` is needed. -/
+def ofCutoff (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ ψ : CoordinateSpace n → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ U →
+      ∃ b : Symbol n V W m, b.coefficient = fun p => ψ p.1 • f p) :
+    LocalSymbol U V W m where
+  coefficient := f
+  contDiffOn_coefficient p hp := by
+    obtain ⟨b, hb⟩ := exists_symbol_eventually_eq h isCompact_singleton
+      (singleton_subset_iff.2 hp.1)
+    have hfb : f =ᶠ[𝓝 p] b.coefficient := by
+      have := (hb p.1 rfl).prod_inl_nhds p.2
+      filter_upwards [this] with q hq using hq q.2
+    exact (b.contDiff_coefficient.contDiffAt.congr_of_eventuallyEq hfb).contDiffWithinAt
+  coefficient_of_notMem := hf
+  exists_bound K hKU hK α β := by
+    obtain ⟨b, hb⟩ := exists_symbol_eventually_eq h hK hKU
+    obtain ⟨C, hC, hbC⟩ := b.exists_bound K hK α β
+    exact ⟨C, hC, fun x hx ξ => by
+      rw [mixedDeriv_congr_of_eventually (hb x hx)]
+      exact hbC x hx ξ⟩
+
+@[simp]
+theorem coefficient_ofCutoff (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ ψ : CoordinateSpace n → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ U →
+      ∃ b : Symbol n V W m, b.coefficient = fun p => ψ p.1 • f p) :
+    (ofCutoff f hf h).coefficient = f :=
+  (rfl)
+
+end OfCutoff
 
 end LocalSymbol
 
