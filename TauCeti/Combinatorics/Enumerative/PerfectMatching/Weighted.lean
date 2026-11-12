@@ -36,6 +36,15 @@ variable {α β R : Type*} [Fintype α] [DecidableEq α]
 def edgeFinset (D : PerfectMatching α) : Finset (Sym2 α) :=
   univ.image fun a ↦ s(a, D.val a)
 
+/-- The edge set is the image of the vertices under the endpoint-pair map. -/
+theorem edgeFinset_def (D : PerfectMatching α) :
+    D.edgeFinset = univ.image fun a ↦ s(a, D.val a) := (rfl)
+
+/-- Every edge is the unordered pair of a vertex and its partner. -/
+theorem mem_edgeFinset (D : PerfectMatching α) (e : Sym2 α) :
+    e ∈ D.edgeFinset ↔ ∃ a, e = s(a, D.val a) := by
+  simp [edgeFinset, eq_comm]
+
 /-- An unordered pair is an edge exactly when its endpoints are matched. -/
 @[simp]
 theorem mk_mem_edgeFinset (D : PerfectMatching α) (a b : α) :
@@ -48,30 +57,80 @@ theorem mk_mem_edgeFinset (D : PerfectMatching α) (a b : α) :
   · intro h
     exact ⟨a, Or.inl ⟨rfl, h⟩⟩
 
+/-- No edge of a perfect matching is diagonal. -/
+theorem not_isDiag_of_mem_edgeFinset (D : PerfectMatching α) {e : Sym2 α}
+    (he : e ∈ D.edgeFinset) : ¬e.IsDiag := by
+  obtain ⟨a, rfl⟩ := (D.mem_edgeFinset e).mp he
+  simpa using (D.apply_ne a).symm
+
+/-- A diagonal pair cannot be an edge of a perfect matching. -/
+@[simp]
+theorem notMem_edgeFinset_of_isDiag (D : PerfectMatching α) {e : Sym2 α}
+    (he : e.IsDiag) : e ∉ D.edgeFinset :=
+  fun h ↦ D.not_isDiag_of_mem_edgeFinset h he
+
+/-- Each unordered edge accounts for exactly two vertices. -/
+theorem two_mul_card_edgeFinset (D : PerfectMatching α) :
+    2 * #D.edgeFinset = Fintype.card α := by
+  have hfiber (e : Sym2 α) (he : e ∈ D.edgeFinset) :
+      #{x : α | s(x, D.val x) = e} = 2 := by
+    obtain ⟨a, rfl⟩ := (D.mem_edgeFinset e).mp he
+    have hset : (univ.filter fun x : α ↦ s(x, D.val x) = s(a, D.val a)) =
+        {a, D.val a} := by
+      ext x
+      simp only [mem_filter, mem_univ, true_and, Sym2.eq_iff, mem_insert, mem_singleton]
+      constructor
+      · exact fun h ↦ h.imp And.left And.left
+      · rintro (rfl | rfl) <;> simp
+    rw [hset, card_pair (D.apply_ne a).symm]
+  have hcard := card_eq_sum_card_fiberwise (s := (univ : Finset α))
+    (t := D.edgeFinset) (f := fun a ↦ s(a, D.val a)) (fun a _ ↦ by simp)
+  simpa [mul_comm] using (hcard.trans (sum_congr rfl hfiber)).symm
+
+/-- A perfect matching has half as many edges as vertices. -/
+@[simp]
+theorem card_edgeFinset (D : PerfectMatching α) :
+    #D.edgeFinset = Fintype.card α / 2 := by
+  rw [← D.two_mul_card_edgeFinset, Nat.mul_div_right _ (by decide : 0 < 2)]
+
+/-- A matching on an empty vertex type has no edges. -/
+@[simp]
+theorem edgeFinset_of_isEmpty [IsEmpty α] (D : PerfectMatching α) : D.edgeFinset = ∅ := by
+  simp [edgeFinset]
+
 /-- The unordered edges determine the matching. -/
-@[ext]
 theorem ext_edgeFinset {D E : PerfectMatching α} (h : D.edgeFinset = E.edgeFinset) : D = E := by
   apply Subtype.ext
   apply Equiv.ext
   intro a
   exact ((E.mk_mem_edgeFinset a (D.val a)).mp (by simp [← h])).symm
 
+/-- Two matchings have the same edge set exactly when they are equal. -/
+@[simp]
+theorem edgeFinset_inj {D E : PerfectMatching α} : D.edgeFinset = E.edgeFinset ↔ D = E :=
+  ⟨ext_edgeFinset, congrArg edgeFinset⟩
+
 /-- Transporting a matching transports its unordered edges. -/
 theorem edgeFinset_congr [Fintype β] [DecidableEq β] (e : α ≃ β) (D : PerfectMatching α) :
     (congr e D).edgeFinset = D.edgeFinset.image (Sym2.map e) := by
-  ext z
-  induction z using Sym2.inductionOn with
-  | _ a b =>
-    rw [mk_mem_edgeFinset, congr_val_apply]
-    simp only [edgeFinset, image_image, mem_image, mem_univ, true_and,
-      Function.comp_apply, Sym2.map_mk, Sym2.eq_iff]
-    constructor
-    · intro h
-      exact ⟨e.symm a, Or.inl ⟨e.apply_symm_apply a, h⟩⟩
-    · rintro ⟨x, (⟨h, h'⟩ | ⟨h, h'⟩)⟩
-      · simpa [← h] using h'
-      · have hx : D.val x = e.symm a := e.injective (by simpa using h')
-        rw [← hx, D.apply_apply, h]
+  rw [edgeFinset, edgeFinset, ← image_univ_equiv e, image_image, image_image]
+  simp only [Function.comp_def, congr_val_apply_apply, Sym2.map_mk]
+
+/-- Transporting a matching pulls its edge weights back along the vertex equivalence. -/
+@[simp]
+theorem prod_edgeFinset_congr [Fintype β] [DecidableEq β] [CommMonoid R]
+    (e : α ≃ β) (D : PerfectMatching α) (w : Sym2 β → R) :
+    (∏ z ∈ (congr e D).edgeFinset, w z) =
+      ∏ z ∈ D.edgeFinset, w (Sym2.map e z) := by
+  rw [edgeFinset_congr, prod_image (Sym2.map.injective e.injective).injOn]
+
+/-- Relabeling the vertices transports the sum of edge-weight products. -/
+theorem sum_prod_edgeFinset_congr [Fintype β] [DecidableEq β] [CommMonoid R]
+    [AddCommMonoid R] (e : α ≃ β) (w : Sym2 β → R) :
+    (∑ E : PerfectMatching β, ∏ z ∈ E.edgeFinset, w z) =
+      ∑ D : PerfectMatching α, ∏ z ∈ D.edgeFinset, w (Sym2.map e z) := by
+  rw [← (congr e).sum_comp]
+  simp only [prod_edgeFinset_congr]
 
 /-- Adjoining an edge inserts that edge alongside the edges of the smaller matching. -/
 theorem edgeFinset_extend {a b : α} (hab : a ≠ b)
@@ -106,53 +165,41 @@ theorem edgeFinset_extend {a b : α} (hab : a ≠ b)
         · apply (extend hab E).apply_eq_comm.mpr
           exact extend_apply_of_mem hab E u.2
 
+/-- Restricting away a matched pair erases exactly that edge. -/
+theorem edgeFinset_restrict (D : PerfectMatching α) {a b : α} (hab : D.val a = b) :
+    (D.restrict hab).edgeFinset.image (Sym2.map Subtype.val) =
+      D.edgeFinset.erase s(a, b) := by
+  have hnot : s(a, b) ∉ (D.restrict hab).edgeFinset.image (Sym2.map Subtype.val) := by
+    rintro h
+    obtain ⟨e, _, he⟩ := mem_image.mp h
+    have ha := Sym2.mem_map.mp (he.symm ▸ Sym2.mem_mk_left a b)
+    obtain ⟨x, _, hx⟩ := ha
+    exact x.2.1 hx
+  have hext := edgeFinset_extend (fun h ↦ D.apply_ne a (hab.trans h.symm)) (D.restrict hab)
+  rw [extend_restrict] at hext
+  rw [hext, erase_insert hnot]
+
 /-- Adjoining a pair multiplies the edge-weight product by the weight of that pair. -/
+@[simp]
 theorem prod_edgeFinset_extend [CommMonoid R] {a b : α} (hab : a ≠ b)
     (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b}) (w : Sym2 α → R) :
     (∏ e ∈ (extend hab E).edgeFinset, w e) =
       w s(a, b) * ∏ e ∈ E.edgeFinset, w (Sym2.map Subtype.val e) := by
+  have himage := edgeFinset_restrict (extend hab E) (extend_apply_left hab E)
+  rw [restrict_extend] at himage
   have hnot : s(a, b) ∉ E.edgeFinset.image (Sym2.map Subtype.val) := by
-    simp only [edgeFinset, image_image, mem_image, mem_univ, true_and,
-      Function.comp_apply, Sym2.map_mk, Sym2.eq_iff]
-    rintro ⟨x, (⟨h, _⟩ | ⟨_, h⟩)⟩
-    · exact x.2.1 h
-    · exact (E.val x).2.1 h
+    rw [himage]
+    exact notMem_erase _ _
   rw [edgeFinset_extend, prod_insert hnot,
     prod_image (Sym2.map.injective Subtype.val_injective).injOn]
 
 /-- Removing a matched pair factors a product of unordered edge weights. -/
 theorem prod_edgeFinset_eq_mul_prod_restrict [CommMonoid R] (D : PerfectMatching α)
-    (w : Sym2 α → R) (a : α) :
-    (∏ e ∈ D.edgeFinset, w e) = w s(a, D.val a) *
-      ∏ e ∈ (D.restrict (a := a) rfl).edgeFinset, w (Sym2.map Subtype.val e) := by
-  conv_lhs => rw [← extend_restrict (D.apply_ne a).symm D rfl]
+    {a b : α} (hab : D.val a = b) (w : Sym2 α → R) :
+    (∏ e ∈ D.edgeFinset, w e) = w s(a, b) *
+      ∏ e ∈ (D.restrict hab).edgeFinset, w (Sym2.map Subtype.val e) := by
+  conv_lhs => rw [← extend_restrict (fun h ↦ D.apply_ne a (hab.trans h.symm)) D hab]
   exact prod_edgeFinset_extend _ _ w
-
-omit [Fintype α] in
-/-- Group all perfect matchings by the partner of `a`, and remove that pair. -/
-def partnerEquiv (a : α) : PerfectMatching α ≃
-    (b : {b : α // b ≠ a}) × PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val} :=
-  (Equiv.sigmaSubtypeFiberEquiv (fun D : PerfectMatching α ↦ D.val a)
-    (· ≠ a) (fun D ↦ D.apply_ne a)).symm.trans
-      (Equiv.sigmaCongrRight fun b ↦ fiberEquiv b.2.symm)
-
-omit [Fintype α] in
-/-- The matching reconstructed from a partner and a matching of the complement adjoins
-exactly that pair. -/
-@[simp]
-theorem partnerEquiv_symm_apply (a : α) (b : {b : α // b ≠ a})
-    (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val}) :
-    (partnerEquiv a).symm ⟨b, E⟩ = extend b.2.symm E := by
-  simp [partnerEquiv, Equiv.sigmaSubtypeFiberEquiv, Equiv.sigmaSubtypeEquivOfSubset,
-    Equiv.subtypeSigmaEquiv, Equiv.sigmaCongrRight]
-
-omit [Fintype α] in
-/-- The partner decomposition records the partner and restricts away its edge. -/
-@[simp]
-theorem partnerEquiv_apply (a : α) (D : PerfectMatching α) :
-    partnerEquiv a D = ⟨⟨D.val a, D.apply_ne a⟩, D.restrict rfl⟩ := by
-  apply (partnerEquiv a).symm.injective
-  simp only [Equiv.symm_apply_apply, partnerEquiv_symm_apply, extend_restrict]
 
 /-- The weighted matching sum satisfies the contraction recurrence at any distinguished
 vertex. No order on vertices or symmetry hypothesis on weights is needed, since weights
@@ -171,10 +218,8 @@ theorem sum_prod_edgeFinset_eq_sum_partner [CommSemiring R] (w : Sym2 α → R) 
   simp only [partnerEquiv_symm_apply, prod_edgeFinset_extend]
 
 /-- The empty vertex type has one matching, whose edge-weight product is the empty product. -/
-@[simp]
 theorem sum_prod_edgeFinset_of_isEmpty [IsEmpty α] [CommSemiring R] (w : Sym2 α → R) :
     (∑ D : PerfectMatching α, ∏ e ∈ D.edgeFinset, w e) = 1 := by
-  have hcard := card_perfectMatching α (m := 0) (by simp)
-  simp [edgeFinset, hcard]
+  simp
 
 end TauCeti.PerfectMatching
