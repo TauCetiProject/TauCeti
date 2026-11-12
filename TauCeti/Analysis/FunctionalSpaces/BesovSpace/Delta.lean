@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
-import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
+public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 
@@ -30,7 +30,7 @@ case `p = ∞`. The exponent `-n/p'` is sharp, so the negative regularity of a p
 
 ## Main declarations
 
-* `TemperedDistribution.exists_littlewoodPaleyBlock_delta_eq`: `Δⱼ δ₀` is the `Lᵖ` function
+* `TemperedDistribution.littlewoodPaleyBlock_delta_zero`: `Δⱼ δ₀` is the Schwartz function
   `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.memBesov_delta_iff`: the exact Besov regularity of `δ₀`.
 * `TemperedDistribution.memBesov_delta`: `δ₀ ∈ B^{-n/p'}_{p,∞}`, in every dimension; at `p = ∞`
@@ -57,21 +57,32 @@ namespace TemperedDistribution
 
 variable (φ : ContDiffBump (0 : E))
 
-/-- **The blocks of the Dirac mass are the Littlewood–Paley kernels.** For every `1 ≤ p ≤ ∞`, the
-block `Δⱼ δ₀` is the `Lᵖ` function `𝓕⁻ ψⱼ`, since the Fourier transform of `δ₀` is `1`. -/
-theorem exists_littlewoodPaleyBlock_delta_eq (j : ℕ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
-    ∃ f : Lp ℂ p (volume : Measure E), littlewoodPaleyBlock ℂ φ j (delta 0) = f ∧
-      f =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-  set σ := φ.inhomogeneousLittlewoodPaleySchwartz j
-  have hσ : (σ : E → ℂ) = _ := φ.coe_inhomogeneousLittlewoodPaleySchwartz j
-  refine ⟨(𝓕⁻ σ).toLp p, ?_, ?_⟩
-  · rw [Lp.toTemperedDistribution_toLp_eq, ← fourierInv_toTemperedDistributionCLM_eq,
-      littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply, fourier_delta_zero]
-    congr 1
-    ext u
-    simp [φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j, hσ, mul_comm]
-  · filter_upwards [(𝓕⁻ σ).coeFn_toLp p] with x hx
-    rw [hx, SchwartzMap.fourierInv_coe, hσ]
+/-- **The blocks of the Dirac mass are the Littlewood–Paley kernels.** The block `Δⱼ δ₀` is the
+Schwartz function `𝓕⁻ ψⱼ`, since the Fourier transform of `δ₀` is `1`. -/
+@[simp]
+theorem littlewoodPaleyBlock_delta_zero (j : ℕ) :
+    littlewoodPaleyBlock ℂ φ j (delta 0) =
+      (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) : 𝓢(E, ℂ)) := by
+  rw [← fourierInv_toTemperedDistributionCLM_eq, littlewoodPaleyBlock_apply,
+    fourierMultiplierCLM_apply, fourier_delta_zero]
+  congr 1
+  ext u
+  simp [φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j, mul_comm]
+
+/-- For every `1 ≤ p ≤ ∞`, the block `Δⱼ δ₀` is the `Lᵖ` function `𝓕⁻ ψⱼ`. -/
+private theorem littlewoodPaleyBlock_delta_zero_eq_toLp (j : ℕ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    littlewoodPaleyBlock ℂ φ j (delta 0) =
+      ((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p (volume : Measure E) :
+        𝓢'(E, ℂ)) := by
+  rw [Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_delta_zero]
+
+/-- The `Lᵖ` class of the Schwartz function `𝓕⁻ ψⱼ` is almost everywhere the inverse Fourier
+transform of the function `ψⱼ`. -/
+private theorem toLp_fourierInv_ae_eq (j : ℕ) (p : ℝ≥0∞) :
+    (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p (volume : Measure E) =ᵐ[volume]
+      𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
+  filter_upwards [(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).coeFn_toLp p] with x hx
+  rw [hx, SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
 
 variable {φ}
 
@@ -106,13 +117,17 @@ Besov space `B^s_{p,q}` exactly when `s < -n/p'`, or `s = -n/p'` and `q = ∞`. 
 theorem memBesov_delta_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] (hq : q ≠ 0) :
     (delta (0 : E)).MemBesov φ s p q ↔
       s < -(finrank ℝ E * (1 - p.toReal⁻¹)) ∨ s = -(finrank ℝ E * (1 - p.toReal⁻¹)) ∧ q = ∞ := by
-  choose f hf hfae using fun j ↦ exists_littlewoodPaleyBlock_delta_eq φ j p
+  set f : ℕ → Lp ℂ p (volume : Measure E) :=
+    fun j ↦ (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p
+  have hfae (j : ℕ) : f j =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+    toLp_fourierInv_ae_eq φ j p
   have hc : 0 < ‖f 1‖ := by
     refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
     rw [eLpNorm_congr_ae (hfae 1)]
     exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_one_ne_zero
       (zero_lt_one.trans_le Fact.out).ne'
-  rw [memBesov_iff_memℓp hf, ← memℓp_comp_add_one_iff]
+  rw [memBesov_iff_memℓp (f := f) (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
+    ← TauCeti.memℓp_nat_add_iff 1]
   simp_rw [rpow_mul_norm_succ_eq hfae]
   set m : ℝ := finrank ℝ E * (1 - p.toReal⁻¹)
   -- The ratio `2^{s + m}` of the geometric sequence is `< 1` or `= 1` according to the sign of
@@ -121,16 +136,18 @@ theorem memBesov_delta_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 
     rw [← Real.rpow_zero 2, Real.rpow_lt_rpow_left_iff one_lt_two, ← lt_neg_iff_add_neg]
   have heq : (2 : ℝ) ^ (s + m) = 1 ↔ s = -m := by
     rw [← Real.rpow_zero 2, Real.rpow_right_inj two_pos (by norm_num), ← eq_neg_iff_add_eq_zero]
-  rw [memℓp_const_mul_pow_iff (by positivity) hq, Real.norm_of_nonneg (by positivity), hlt, heq]
+  rw [TauCeti.memℓp_const_mul_pow_iff (by positivity) hq, Real.norm_of_nonneg (by positivity), hlt,
+    heq]
 
 /-- **The Dirac mass lies in `B^{-n/p'}_{p,∞}`.** On a real inner product space of dimension `n`,
 for `1 ≤ p ≤ ∞` with conjugate exponent `p'`, the Dirac mass lies in `B^{-n/p'}_{p,∞}`, where
 `n/p' = n (1 - 1/p)` with `1/∞ = 0`. For `p = ∞` this is `δ₀ ∈ 𝒞^{-n} = B^{-n}_{∞,∞}`. -/
 theorem memBesov_delta (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     (delta (0 : E)).MemBesov φ (-(finrank ℝ E * (1 - p.toReal⁻¹))) p ∞ := by
-  choose f hf hfae using fun j ↦ exists_littlewoodPaleyBlock_delta_eq φ j p
-  rw [memBesov_iff_memℓp hf, ← memℓp_comp_add_one_iff]
-  simp_rw [rpow_mul_norm_succ_eq hfae, neg_add_cancel, Real.rpow_zero, one_pow, mul_one]
+  rw [memBesov_iff_memℓp (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
+    ← TauCeti.memℓp_nat_add_iff 1]
+  simp_rw [rpow_mul_norm_succ_eq (toLp_fourierInv_ae_eq φ · p), neg_add_cancel, Real.rpow_zero,
+    one_pow, mul_one]
   exact memℓp_infty (by rw [Set.range_const]; exact bddAbove_singleton)
 
 end TemperedDistribution

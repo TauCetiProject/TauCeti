@@ -22,9 +22,9 @@ form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ
 bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
 (`Memℓp.of_norm_le_geometric`), and for `1 ≤ p` its `ℓᵖ` norm is at most `C (1 - r)⁻¹`
 (`lp.norm_le_of_norm_le_geometric`). Conversely, for `p ≠ 0` a nonzero geometric sequence `C rⁱ`
-lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞` (`memℓp_const_mul_pow_iff`). The
-scalar coordinate vectors are linearly independent, and vectors in their span vanish outside the
-corresponding indices. These algebraic facts hold over
+lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
+(`TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are linearly independent, and
+vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
 normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
 vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
 `lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
@@ -281,6 +281,8 @@ theorem lp.norm_le_of_norm_le_geometric [Fact (1 ≤ p)] {f : lp E p} (hr0 : 0 �
         (hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hf).tsum_le_tsum hf hgeom
     _ = C * (1 - r)⁻¹ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
 
+namespace TauCeti
+
 /-- **Geometric sequences in `ℓᵖ`.** For `C ≠ 0` and `p ≠ 0`, the geometric sequence `C rⁱ` lies
 in `ℓᵖ` exactly when `‖r‖ < 1`, or when `‖r‖ = 1` and `p = ∞`. -/
 theorem memℓp_const_mul_pow_iff {𝕜 : Type*} [NormedDivisionRing 𝕜] {C r : 𝕜} (hC : C ≠ 0)
@@ -310,5 +312,7 @@ theorem memℓp_const_mul_pow_iff {𝕜 : Type*} [NormedDivisionRing 𝕜] {C r 
   · rintro (hr | ⟨hr, rfl⟩)
     · exact Memℓp.of_norm_le_geometric (norm_nonneg r) hr (fun i ↦ (hnorm i).le) hp
     · exact memℓp_infty ⟨‖C‖, by rintro _ ⟨i, rfl⟩; simp [hnorm, hr]⟩
+
+end TauCeti
 
 end Geometric
