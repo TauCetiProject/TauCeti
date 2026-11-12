@@ -629,7 +629,6 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
   rw [← inv_div ρ r]
   simp only [H, V] at hV0 ⊢
   generalize ρ / r = s at hs ⊢
-  have hs0 : s ≠ 0 := hs.ne'
   rw [inv_pow]
   field_simp
   ring
