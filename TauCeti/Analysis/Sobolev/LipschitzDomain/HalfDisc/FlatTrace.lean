@@ -106,16 +106,9 @@ theorem halfDiscFlatSegment_subset_closure {r : ℝ} (hr : 0 < r) :
     halfDiscFlatSegment r ⊆ closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) :=
   (halfDiscFlatSegment_subset_frontier hr).trans frontier_subset_closure
 
-/-- The norm of `(0, t)` is `|t|`. -/
-private theorem norm_toLp_zero_prod (t : ℝ) : ‖WithLp.toLp 2 ((0 : ℝ), t)‖ = |t| := by
-  rw [WithLp.prod_norm_eq_of_L2]
-  simp [Real.sqrt_sq_eq_abs]
-
 /-- The map `t ↦ (0, t)` is an isometry onto the line containing the flat segment. -/
-private theorem isometry_toLp_zero_prod : Isometry fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t) := by
-  refine Isometry.of_dist_eq fun s t => ?_
-  rw [dist_eq_norm, dist_eq_norm, ← WithLp.toLp_sub, Prod.mk_sub_mk, sub_zero,
-    norm_toLp_zero_prod, Real.norm_eq_abs]
+private theorem isometry_toLp_zero_prod : Isometry fun t : ℝ => WithLp.toLp 2 ((0 : ℝ), t) :=
+  Isometry.of_dist_eq (WithLp.dist_toLp_snd 2 ℝ ℝ)
 
 /-- The flat segment is the image of `[-r, r]` under `t ↦ (0, t)`. -/
 private theorem image_Icc_toLp_zero_prod (r : ℝ) :
@@ -124,13 +117,13 @@ private theorem image_Icc_toLp_zero_prod (r : ℝ) :
   rw [mem_image, mem_halfDiscFlatSegment]
   constructor
   · rintro ⟨t, ht, rfl⟩
-    exact ⟨(norm_toLp_zero_prod t).trans_le (abs_le.2 ht), rfl⟩
+    exact ⟨(WithLp.norm_toLp_snd 2 ℝ ℝ t).trans_le (abs_le.2 ht), rfl⟩
   · rintro ⟨hx, hx₁⟩
     have hx' : WithLp.toLp 2 ((0 : ℝ), x.snd) = x := by
       rw [← hx₁]
       rfl
     refine ⟨x.snd, abs_le.1 ?_, hx'⟩
-    rwa [← norm_toLp_zero_prod, hx']
+    rwa [← Real.norm_eq_abs, ← WithLp.norm_toLp_snd 2 ℝ ℝ, hx']
 
 /-- **Surface measure on the flat segment.** Normalized one-dimensional Euclidean Hausdorff
 measure on the flat segment of the half-disc is the image of Lebesgue measure on `[-r, r]` under
@@ -324,24 +317,8 @@ theorem W1p.exists_value_ae_eq_fst_mem_halfDiscFlatTraceZeroSubmodule (hp : p �
     ∃ u : W1p volume (halfDisc r) p,
       W1p.value u =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] (fun x => x.fst) ∧
         u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r := by
-  have hfst : (fun x : WithLp 2 (ℝ × ℝ) => x.fst) = WithLp.fstL 2 ℝ ℝ ℝ := rfl
-  have hgrad : MemLp (∇ fun x : WithLp 2 (ℝ × ℝ) => x.fst) p
-      (volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))) := by
-    rw [hfst]
-    have : (∇ ⇑(WithLp.fstL 2 ℝ ℝ ℝ)) = fun _ => (InnerProductSpace.toDual ℝ _).symm
-        (WithLp.fstL 2 ℝ ℝ ℝ) := by
-      ext1 x
-      rw [_root_.gradient, (WithLp.fstL 2 ℝ ℝ ℝ).fderiv]
-    rw [this]
-    exact memLp_const _
-  have hval : MemLp (fun x : WithLp 2 (ℝ × ℝ) => x.fst) p
-      (volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))) := by
-    refine MemLp.of_bound (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst.aestronglyMeasurable r ?_
-    refine (ae_restrict_iff' (halfDisc r).isOpen.measurableSet).2 (ae_of_all _ fun x hx => ?_)
-    rw [SetLike.mem_coe, mem_halfDisc] at hx
-    exact (WithLp.norm_fst_le (α := ℝ) x).trans hx.1.le
-  obtain ⟨u, hu, -⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn (mu := volume)
-    (Omega := halfDisc r) (hfst ▸ (WithLp.fstL 2 ℝ ℝ ℝ).contDiff.contDiffOn) hval hgrad
+  obtain ⟨u, hu, -⟩ := W1p.exists_value_gradient_ae_eq_continuousLinearMap (mu := volume)
+    (p := p) (isBounded_halfDisc r) (WithLp.fstL 2 ℝ ℝ ℝ)
   exact ⟨u, hu, W1p.mem_halfDiscFlatTraceZeroSubmodule_of_value_ae_eq_fst hp hr hu⟩
 
 /-- **Check: a nonzero constant violates the boundary condition.** For `c ≠ 0` the constant
