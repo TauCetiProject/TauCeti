@@ -62,8 +62,8 @@ second derivatives of `C²` maps.
 * `TauCeti.sum_euclideanWittenExtDeriv_mul_sub_sum_mul_euclideanWittenCodifferential`: the
   Lagrange identity exhibiting `d_t^*` as the formal adjoint of `d_t`.
 * `TauCeti.euclideanWittenLaplacian_apply`: Witten's frame formula for the Witten Laplacian.
-* `TauCeti.continuous_euclideanWittenLaplacian`: the Witten Laplacian of a `C²` form is
-  continuous.
+* `TauCeti.continuousAt_euclideanWittenLaplacian` and `TauCeti.continuous_euclideanWittenLaplacian`:
+  the Witten Laplacian of a `C²` form is continuous.
 
 ## References
 
@@ -154,23 +154,25 @@ theorem euclideanWittenCodifferential_add_apply (f : (ι → ℝ) → ℝ) (t : 
   refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
   abel
 
-theorem euclideanWittenExtDeriv_smul (f : (ι → ℝ) → ℝ) (t c : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
+theorem euclideanWittenExtDeriv_const_smul (f : (ι → ℝ) → ℝ) (t c : ℝ)
+    (φ : (ι → ℝ) → Finset ι → ℝ) :
     euclideanWittenExtDeriv f t (c • φ) = c • euclideanWittenExtDeriv f t φ := by
   funext x
   simp only [euclideanWittenExtDeriv_apply, fderiv_const_smul_field, Pi.smul_apply, Finset.smul_sum,
     ← map_smul, smul_apply, smul_add, smul_comm c]
 
-theorem euclideanWittenCodifferential_smul (f : (ι → ℝ) → ℝ) (t c : ℝ)
+theorem euclideanWittenCodifferential_const_smul (f : (ι → ℝ) → ℝ) (t c : ℝ)
     (φ : (ι → ℝ) → Finset ι → ℝ) :
     euclideanWittenCodifferential f t (c • φ) = c • euclideanWittenCodifferential f t φ := by
   funext x
   simp only [euclideanWittenCodifferential_apply, fderiv_const_smul_field, Pi.smul_apply,
     Finset.smul_sum, ← map_smul, smul_apply, smul_add, smul_neg, smul_comm c]
 
-theorem euclideanWittenLaplacian_smul (f : (ι → ℝ) → ℝ) (t c : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
+theorem euclideanWittenLaplacian_const_smul (f : (ι → ℝ) → ℝ) (t c : ℝ)
+    (φ : (ι → ℝ) → Finset ι → ℝ) :
     euclideanWittenLaplacian f t (c • φ) = c • euclideanWittenLaplacian f t φ := by
-  simp only [euclideanWittenLaplacian_def, euclideanWittenCodifferential_smul,
-    euclideanWittenExtDeriv_smul, smul_add]
+  simp only [euclideanWittenLaplacian_def, euclideanWittenCodifferential_const_smul,
+    euclideanWittenExtDeriv_const_smul, smul_add]
 
 /-- **The Witten differential is the conjugate `d_t = e^{-tf} d e^{tf}` of the exterior
 derivative.** For `f` and `φ` differentiable at `x`, `d_t φ = e^{-tf} d (e^{tf} φ)` at `x`. -/
@@ -417,23 +419,38 @@ theorem euclideanWittenLaplacian_add_apply {f : (ι → ℝ) → ℝ} {φ ψ : (
   simp only [add_apply, Pi.add_apply, map_add, smul_add, neg_add, Finset.sum_add_distrib]
   abel
 
+/-- The Witten Laplacian of a form that is `C²` at `x`, for a function `f` that is `C²` at `x`, is
+continuous at `x`. -/
+theorem continuousAt_euclideanWittenLaplacian {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
+    {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x) (t : ℝ) :
+    ContinuousAt (euclideanWittenLaplacian f t φ) x := by
+  have hφ₂ : ContinuousAt (fderiv ℝ (fderiv ℝ φ)) x :=
+    ((hφ.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuousAt
+  have hf₁ : ContinuousAt (fderiv ℝ f) x := (hf.fderiv_right (m := 1) (by norm_num)).continuousAt
+  have hf₂ : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
+    ((hf.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuousAt
+  refine ContinuousAt.congr (f := fun y ↦
+      ∑ i, (-fderiv ℝ (fderiv ℝ φ) y (Pi.single i 1) (Pi.single i 1) +
+          (t ^ 2 * fderiv ℝ f y (Pi.single i 1) ^ 2) • φ y) +
+        t • ∑ i, ∑ j, fderiv ℝ (fderiv ℝ f) y (Pi.single i 1) (Pi.single j 1) •
+          ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆
+            (φ y)) ?_ ?_
+  · refine ContinuousAt.add (tendsto_finsetSum _ fun i _ ↦ ?_)
+      (ContinuousAt.const_smul (tendsto_finsetSum _ fun i _ ↦ tendsto_finsetSum _ fun j _ ↦ ?_) t)
+    · exact ((hφ₂.clm_apply continuousAt_const).clm_apply continuousAt_const).neg.add
+        ((continuousAt_const.mul ((hf₁.clm_apply continuousAt_const).pow 2)).smul
+          hφ.continuousAt)
+    · exact ((hf₂.clm_apply continuousAt_const).clm_apply continuousAt_const).smul
+        ((LinearMap.continuous_of_finiteDimensional _).continuousAt.comp hφ.continuousAt)
+  · filter_upwards [hf.eventually (by simp), hφ.eventually (by simp)] with y hfy hφy
+    exact (euclideanWittenLaplacian_apply hfy hφy t).symm
+
 /-- The Witten Laplacian of a `C²` form, for a `C²` function `f`, is continuous. -/
 theorem continuous_euclideanWittenLaplacian {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
     (hf : ContDiff ℝ 2 f) (hφ : ContDiff ℝ 2 φ) (t : ℝ) :
-    Continuous (euclideanWittenLaplacian f t φ) := by
-  have hφ₂ : Continuous (fderiv ℝ (fderiv ℝ φ)) :=
-    (hφ.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
-  have hf₁ : Continuous (fderiv ℝ f) := hf.continuous_fderiv (by norm_num)
-  have hf₂ : Continuous (fderiv ℝ (fderiv ℝ f)) :=
-    (hf.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
-  refine Continuous.congr ?_ fun x ↦
-    (euclideanWittenLaplacian_apply hf.contDiffAt hφ.contDiffAt t).symm
-  refine (continuous_finsetSum _ fun i _ ↦ ?_).add
-    ((continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun j _ ↦ ?_).const_smul t)
-  · exact ((hφ₂.clm_apply continuous_const).clm_apply continuous_const).neg.add
-      ((continuous_const.mul ((hf₁.clm_apply continuous_const).pow 2)).smul hφ.continuous)
-  · exact ((hf₂.clm_apply continuous_const).clm_apply continuous_const).smul
-      ((LinearMap.continuous_of_finiteDimensional _).comp hφ.continuous)
+    Continuous (euclideanWittenLaplacian f t φ) :=
+  continuous_iff_continuousAt.2 fun _ ↦
+    continuousAt_euclideanWittenLaplacian hf.contDiffAt hφ.contDiffAt t
 
 end FrameFormula
 

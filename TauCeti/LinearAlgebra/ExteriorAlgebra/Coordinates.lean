@@ -264,9 +264,11 @@ theorem sum_exteriorContraction_apply_sq_add_sum_exteriorCreation_apply_sq (i : 
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [← add_mul, ← Pi.add_apply, h, sq]
 
-/-- **The commutator `⁅εᵢ, ιⱼ⁆` is a contraction for the standard pairing.** For coordinates in an
-ordered ring, `|⟨⁅εᵢ, ιⱼ⁆ φ, φ⟩| ≤ |φ|²`. Indeed `⟨⁅εᵢ, ιⱼ⁆ φ, φ⟩ = ⟨ιⱼ φ, ιᵢ φ⟩ - ⟨εⱼ φ, εᵢ φ⟩`,
-and `|ιₖ φ|² + |εₖ φ|² = |φ|²` for `k = i, j`. -/
+/-- **The quadratic form of the commutator `⁅εᵢ, ιⱼ⁆` is bounded by the squared norm.** For
+coordinates in an ordered ring, `|⟨⁅εᵢ, ιⱼ⁆ φ, φ⟩| ≤ |φ|²` for the standard pairing. Indeed
+`⟨⁅εᵢ, ιⱼ⁆ φ, φ⟩ = ⟨ιⱼ φ, ιᵢ φ⟩ - ⟨εⱼ φ, εᵢ φ⟩`, and `|ιₖ φ|² + |εₖ φ|² = |φ|²` for `k = i, j`.
+This bounds the quadratic form only: for `i ≠ j` the operator `⁅εᵢ, ιⱼ⁆ = 2 εᵢ ιⱼ` is not a
+contraction. -/
 theorem abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le [LinearOrder R]
     [IsStrictOrderedRing R] (i j : I) (φ : Finset I → R) :
     |∑ s, ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ s * φ s| ≤ ∑ s, φ s ^ 2 := by
@@ -292,9 +294,10 @@ theorem abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le [LinearOrd
   rw [key, abs_le]
   constructor <;> linarith
 
-/-- **A weighted sum of commutators `⁅εᵢ, ιⱼ⁆` is bounded by the weights.** For coordinates in an
-ordered ring and any coefficients `Hᵢⱼ`, `|⟨∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆ φ, φ⟩| ≤ (∑ᵢⱼ |Hᵢⱼ|) |φ|²`, by the
-triangle inequality and the bound for a single commutator. -/
+/-- **The quadratic form of a weighted sum of commutators `⁅εᵢ, ιⱼ⁆` is bounded by the
+weights.** For coordinates in an ordered ring and any coefficients `Hᵢⱼ`,
+`|⟨∑ᵢⱼ Hᵢⱼ ⁅εᵢ, ιⱼ⁆ φ, φ⟩| ≤ (∑ᵢⱼ |Hᵢⱼ|) |φ|²`, by the triangle inequality and the bound for the
+quadratic form of a single commutator. -/
 theorem abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
     [LinearOrder R] [IsStrictOrderedRing R] (H : I → I → R) (φ : Finset I → R) :
     |∑ s, (∑ i, ∑ j, H i j • ⁅b.exteriorCreation i, b.exteriorContraction j⁆ φ) s * φ s| ≤
