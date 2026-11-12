@@ -17,7 +17,9 @@ homomorphisms.
 
 The equivalence lets quadratic-space constructions use the bilinear isometry-group API without
 changing their automorphisms. In particular, it is the field-level bridge to bilinear-first
-integral lattices, where division by two need not be available.
+integral lattices, where division by two need not be available. For the quadratic form
+`x ↦ B x x` of a symmetric bilinear form `B`, the orthogonal group is the isometry group of `B`
+itself (`TauCeti.QuadraticMap.orthogonalGroup_toQuadraticMap_eq_isometryGroup`).
 -/
 
 public section
@@ -54,6 +56,18 @@ theorem coe_orthogonalGroupEquivIsometryGroupPolarBilin_symm_apply
     (g : LinearMap.BilinForm.isometryGroup Q.polarBilin) :
     ((orthogonalGroupEquivIsometryGroupPolarBilin Q h2).symm g : M ≃ₗ[R] M) = g := by
   simp [orthogonalGroupEquivIsometryGroupPolarBilin]
+
+/-- **The orthogonal group of `x ↦ B x x` is the isometry group of `B`** for a symmetric bilinear
+form `B`, as soon as `2` is a regular scalar: the polar form of `x ↦ B x x` is `2 • B`. -/
+theorem orthogonalGroup_toQuadraticMap_eq_isometryGroup (h2 : IsSMulRegular R (2 : R))
+    {B : LinearMap.BilinForm R M} (hB : B.IsSymm) :
+    orthogonalGroup B.toQuadraticMap = B.isometryGroup := by
+  ext f
+  rw [mem_orthogonalGroup_iff_polar h2, LinearMap.BilinForm.mem_isometryGroup_iff]
+  refine forall₂_congr fun x y ↦ ?_
+  rw [LinearMap.BilinMap.polar_toQuadraticMap, LinearMap.BilinMap.polar_toQuadraticMap,
+    ← hB.eq (f x), ← hB.eq x]
+  exact ⟨fun h ↦ h2 (by simpa only [smul_eq_mul, two_mul] using h), fun h ↦ by rw [h]⟩
 
 end TauCeti.QuadraticMap
 

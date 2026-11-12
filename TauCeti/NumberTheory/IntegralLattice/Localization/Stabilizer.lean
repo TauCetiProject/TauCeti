@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.CompactOpen
 import TauCeti.LinearAlgebra.Basis.RangeSpan
+import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Polar
 import TauCeti.Logic.Equiv.Set
 import TauCeti.NumberTheory.Padics.RatCast
 
@@ -50,6 +51,11 @@ double cosets are the class sets `O(V)(ℚ) \ O(V)(𝔸_f) / ∏_p K_p(L)` and
 `SO(V)(ℚ) \ SO(V)(𝔸_f) / ∏_p K_p⁺(L)` on which the adelic description of the genus is stated; the
 comparison of these double cosets with the classes in the genus is not done here.
 
+The orthogonal groups in which these stabilizers live are those of the norm forms, but since the
+forms are symmetric over fields in which `2` is invertible they are the isometry groups of the
+rational form of `L` and of its completions (`TauCeti.IntegralLattice.orthogonalGroup_norm` and
+`TauCeti.IntegralLattice.orthogonalGroup_norm_baseChange`).
+
 ## Main definitions
 
 * `TauCeti.IntegralLattice.localStabilizer`: the local stabilizer `K_p(L)`.
@@ -58,8 +64,13 @@ comparison of these double cosets with the classes in the genus is not done here
 
 ## Main results
 
+* `TauCeti.IntegralLattice.orthogonalGroup_norm`,
+  `TauCeti.IntegralLattice.orthogonalGroup_norm_baseChange`: `O(V)` and `O(V_p)` are the isometry
+  groups of the rational form and of the completed rational form.
 * `TauCeti.IntegralLattice.mem_localStabilizer_iff`: `g ∈ K_p(L)` exactly when `g` maps the image
   of `L_p` onto itself.
+* `TauCeti.IntegralLattice.mem_localStabilizer_iff_map_eq`: `g ∈ K_p(L)` exactly when `g` maps
+  the localization `L_p` onto itself.
 * `TauCeti.IntegralLattice.localStabilizer_eq_integralOrthogonalSubgroup`: in any basis of `L`,
   the local stabilizer is the integral orthogonal subgroup.
 * `TauCeti.IntegralLattice.isOpen_localStabilizer`,
@@ -87,6 +98,31 @@ namespace IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
 
+section OrthogonalGroup
+
+/-- The orthogonal group of the norm form of `L` is the isometry group of its rational form. -/
+theorem orthogonalGroup_norm : orthogonalGroup L.norm = L.form.isometryGroup := by
+  rw [norm_def]
+  exact orthogonalGroup_toQuadraticMap_eq_isometryGroup
+    ((isUnit_of_invertible (2 : ℚ)).isSMulRegular ℚ) L.isSymm
+
+variable (p : ℕ) [Fact p.Prime]
+
+/-- The completed norm form is the norm form of the completed rational form. -/
+theorem norm_baseChange :
+    L.norm.baseChange ℚ_[p] = (L.completedRationalForm p).toQuadraticMap := by
+  ext v
+  simp [norm_apply]
+
+/-- The local orthogonal group `O(V_p)` is the isometry group of the completed rational form. -/
+theorem orthogonalGroup_norm_baseChange :
+    orthogonalGroup (L.norm.baseChange ℚ_[p]) = (L.completedRationalForm p).isometryGroup := by
+  rw [norm_baseChange]
+  exact orthogonalGroup_toQuadraticMap_eq_isometryGroup
+    ((isUnit_of_invertible (2 : ℚ_[p])).isSMulRegular ℚ_[p]) (L.isSymm_completedRationalForm p)
+
+end OrthogonalGroup
+
 section Stabilizer
 
 variable (p : ℕ) [Fact p.Prime]
@@ -112,6 +148,20 @@ theorem mem_localStabilizer_iff {g : orthogonalGroup (L.norm.baseChange ℚ_[p])
       LinearMap.range (L.localizationToCompletion p) ↔
         x ∈ LinearMap.range (L.localizationToCompletion p) :=
   Iff.rfl
+
+/-- An isometry of `V_p` lies in `K_p(L)` exactly when it carries the localization `L_p` onto
+itself. -/
+theorem mem_localStabilizer_iff_map_eq {k : orthogonalGroup (L.norm.baseChange ℚ_[p])} :
+    k ∈ L.localStabilizer p ↔ (L.carrier.padicLocalization p).map
+      ((k : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V).restrictScalars ℤ_[p]).toLinearMap =
+        L.carrier.padicLocalization p := by
+  rw [mem_localStabilizer_iff, ← L.range_localizationToCompletion]
+  refine ⟨fun h ↦ Submodule.ext fun x ↦ ?_, fun h x ↦ ?_⟩
+  · rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply, ← h,
+      LinearEquiv.apply_symm_apply]
+  · conv_lhs => rw [← h]
+    rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
+      LinearEquiv.symm_apply_apply]
 
 /-- **The local stabilizer is an integral orthogonal subgroup.** In the rational basis of any basis
 `e` of `L`, the local stabilizer `K_p(L)` consists of the isometries whose matrices, and those of
