@@ -28,8 +28,8 @@ ordinary completions with formal sections.
 
 * The Stacks Project, Lemma 52.3.2 (0BLD), cohomology and completion with stabilized
   parameter-power torsion, and Lemma 52.12.7 (0EII), formal sections.
-* The completion construction used here is Mathlib's `AdicCompletion`, by Judith Ludwig
-  and Christian Merten.
+* The completion construction used here is Mathlib's `AdicCompletion`, by Kenny Lau,
+  Judith Ludwig, Christian Merten, and Jiedong Jiang.
 -/
 
 public section
