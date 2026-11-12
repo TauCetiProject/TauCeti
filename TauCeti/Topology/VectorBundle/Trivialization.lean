@@ -37,14 +37,15 @@ satisfy the identity and cocycle laws over the relevant base sets
 the first trivialization to its coordinate in the second
 (`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
-point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`), and the scalar action on each fibre is
-continuous (`Bundle.Trivialization.continuousSMul`).
+point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`).
 
 We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
 bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear trivializations
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
-`Bundle.Trivialization.restrictScalars_coordChangeL`).
+`Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
+fields has the same continuous linear map at every point over either field
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
 -/
 
 public section
@@ -151,13 +152,6 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
 
-/-- The scalar action on a fibre of a vector bundle is continuous: over the base set of a linear
-trivialization `e`, the fibre is homeomorphic to the model fibre by the linear equivalence
-`e.continuousLinearEquivAt 𝕜 b`. -/
-theorem continuousSMul (hb : b ∈ e.baseSet) : ContinuousSMul 𝕜 (E b) :=
-  (e.continuousLinearEquivAt 𝕜 b hb).toHomeomorph.isInducing.continuousSMul continuous_id
-    fun {_ _} ↦ (e.continuousLinearEquivAt 𝕜 b hb).map_smul _ _
-
 omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- The coordinate change from a linear trivialization to itself is the identity over its base
 set. -/
@@ -238,5 +232,18 @@ theorem restrictScalars_coordChangeL (𝕜' 𝕜 : Type*)
   by_cases hb : b ∈ e.baseSet ∩ e'.baseSet
   · ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
   · ext v; simp [Trivialization.coordChangeL, hb]
+
+/-- A trivialization that is linear over both `𝕜'` and `𝕜` has the same continuous linear map at
+every point over either field. In particular the `𝕜'`-linear map of a trivialization of a
+`VectorBundle 𝕜 F E`, restricted to `𝕜'` by `VectorBundle.restrictScalars`, is `𝕜`-linear. -/
+theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (𝕜' 𝕜 : Type*)
+    [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜] {F : Type*} {E : B → Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [∀ x, AddCommMonoid (E x)]
+    [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+    [∀ x, TopologicalSpace (E x)] [FiberBundle F E] (e : Trivialization F (π F E))
+    [e.IsLinear 𝕜'] [e.IsLinear 𝕜] (b : B) :
+    ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
+  ext v
+  simp only [continuousLinearMapAt_apply, coe_linearMapAt]
 
 end Bundle.Trivialization

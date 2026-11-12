@@ -57,7 +57,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
 * `TauCeti.SectionChartData.lowerOrderL`: the continuous inclusion of order `k + 1` into order `k`.
 * `TauCeti.SectionChartData.constMapL`: a fibrewise map of sections read in every chart as a
   constant linear map `L` of the model fibre, applied to the Sobolev sections by the matrix of `L`
-  (`TauCeti.SectionChartData.chartValueL_constMapL_ae`).
+  (`TauCeti.SectionChartData.chartValueL_constMapL_ae`), which lifts the fibre map on the readings
+  of sections (`TauCeti.SectionChartData.chartValueL_constMapL_ae_coord`).
 * `TauCeti.SectionChartData.ofComponents`: the linear map into the Sobolev sections from a space of
   sections with chartwise Sobolev components.
 * `TauCeti.FiniteBundleAtlas.sectionChartData`: the chart data of a finite bundle atlas.
@@ -525,11 +526,15 @@ theorem chartValueL_constMapData_ae (L : F →L[ℝ] F) (w : C.SobolevData μ p 
   have hval (j : Fin (finrank ℝ F)) :
       (Wkp.value k (constMapData C μ p k L w i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)]
         fun y ↦ ∑ j', (finBasis ℝ F).repr (L (finBasis ℝ F j')) j * Wkp.value k (w i j') y := by
+    have hsmul (c : ℝ) (u : Wkp μ (C.image i) p k) :
+        (Wkp.value k (c • u) : E → ℝ) =ᵐ[μ.restrict (C.image i)] c • (Wkp.value k u : E → ℝ) := by
+      rw [Wkp.value_smul]
+      exact Lp.coeFn_smul c (Wkp.value k u)
     rw [constMapData_apply]
     filter_upwards [Wkp.value_finsetSum_ae k Finset.univ
       (fun j' ↦ (finBasis ℝ F).repr (L (finBasis ℝ F j')) j • w i j'),
-      ae_all_iff.2 fun j' ↦ (Wkp.value_smul k ((finBasis ℝ F).repr (L (finBasis ℝ F j')) j)
-        (w i j')).symm ▸ Lp.coeFn_smul _ (Wkp.value k (w i j'))] with y hy hs
+      ae_all_iff.2 fun j' ↦ hsmul ((finBasis ℝ F).repr (L (finBasis ℝ F j')) j) (w i j')]
+      with y hy hs
     rw [hy]
     exact Finset.sum_congr rfl fun j' _ ↦ by rw [hs j', Pi.smul_apply, smul_eq_mul]
   filter_upwards [C.chartValueL_apply_ae μ p k i (constMapData C μ p k L w),
@@ -541,6 +546,20 @@ theorem chartValueL_constMapData_ae (L : F →L[ℝ] F) (w : C.SobolevData μ p 
   conv_rhs => rw [← (finBasis ℝ F).sum_repr (L (finBasis ℝ F j')), Finset.smul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
 
+variable {C μ p k} in
+/-- If the chart data of `w` in chart `i` are the readings of a section `s`, and a fibrewise map `Ψ`
+of sections is read in every chart as the linear map `L` of the model fibre, then the chart data of
+`constMapData L w` are the readings of `Ψ s`. -/
+theorem chartValueL_constMapData_ae_coord {L : F →L[ℝ] F} {Ψ : S → S}
+    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
+    {w : C.SobolevData μ p k} {i : Fin C.n} {s : S}
+    (hw : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s) :
+    C.chartValueL μ p k i (constMapData C μ p k L w) =ᵐ[μ.restrict (C.image i)]
+      C.coord i (Ψ s) := by
+  filter_upwards [chartValueL_constMapData_ae C μ p k L w i, hw,
+    ae_restrict_mem (C.image i).isOpen.measurableSet] with y h hsy hy
+  rw [h, hsy, hΨ i s y hy]
+
 variable {C} in
 /-- A fibrewise map `Ψ` of sections whose chart readings are a constant linear map `L` of the model
 fibre, applied to the Sobolev sections: the components in every chart are transformed by the
@@ -550,10 +569,8 @@ def constMapL (L : F →L[ℝ] F) (Ψ : S → S)
     C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ p k :=
   ((constMapData C μ p k L).comp (C.sobolevSections μ p k).subtypeL).codRestrict _ fun w ↦ by
     obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.2
-    refine (C.mem_sobolevSections_iff μ p k).2 ⟨Ψ s, fun i ↦ ?_⟩
-    filter_upwards [chartValueL_constMapData_ae C μ p k L w i, hs i,
-      ae_restrict_mem (C.image i).isOpen.measurableSet] with y h hsy hy
-    rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, h, hsy, hΨ i s y hy]
+    exact (C.mem_sobolevSections_iff μ p k).2
+      ⟨Ψ s, fun i ↦ chartValueL_constMapData_ae_coord hΨ (hs i)⟩
 
 variable {C} in
 /-- The components of `constMapL μ p k L Ψ hΨ w` are those of `constMapData C μ p k L w`. -/
@@ -572,6 +589,17 @@ theorem chartValueL_constMapL_ae {L : F →L[ℝ] F} {Ψ : S → S}
     C.chartValueL μ p k i (constMapL μ p k L Ψ hΨ w) =ᵐ[μ.restrict (C.image i)]
       fun y ↦ L (C.chartValueL μ p k i w y) :=
   chartValueL_constMapData_ae C μ p k L w i
+
+variable {C μ p k} in
+/-- **Lifting the fibre map.** If the chart data of `w` in chart `i` are the readings of a section
+`s`, the chart data of `constMapL μ p k L Ψ hΨ w` are the readings of `Ψ s`. -/
+theorem chartValueL_constMapL_ae_coord {L : F →L[ℝ] F} {Ψ : S → S}
+    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
+    {w : C.sobolevSections μ p k} {i : Fin C.n} {s : S}
+    (hw : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s) :
+    C.chartValueL μ p k i (constMapL μ p k L Ψ hΨ w) =ᵐ[μ.restrict (C.image i)]
+      C.coord i (Ψ s) :=
+  chartValueL_constMapData_ae_coord hΨ hw
 
 variable {C} in
 /-- Forgetting the highest derivative commutes with a constant fibre map. -/

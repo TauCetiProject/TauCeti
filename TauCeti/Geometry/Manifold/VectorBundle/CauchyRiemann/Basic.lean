@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
+public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
@@ -17,6 +18,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Real Cauchy–Riemann operators
@@ -40,6 +42,11 @@ differentiable.
   its complex antilinear part (`TauCeti.SmoothAlmostComplexStructure.toLinearMap_zeroOnePart`), a
   projection onto the `(0,1)`-forms
   (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_self_iff`).
+* `TauCeti.SmoothAlmostComplexStructure.inCoordinates_zeroOnePart`,
+  `TauCeti.SmoothAlmostComplexStructure.isZeroOneForm_iff_inCoordinates`: where `j` reads as
+  multiplication by `i` in tangent coordinates, the `(0,1)`-part of a one-form is read as the
+  complex antilinear part `ContinuousLinearMap.complexAntilinearPartL` of its reading, and a
+  `(0,1)`-form is a one-form whose reading is complex antilinear.
 * `TauCeti.SmoothAlmostComplexStructure.zeroOnePart_smulRight_eq_zero_iff`: for `w ≠ 0`, the
   `(0,1)`-part of `η ⊗ w` vanishes exactly when the complex valued one-form `η` is complex linear.
 * `TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm`: on a
@@ -333,6 +340,59 @@ theorem zeroOnePart_smulRight_eq_zero_iff {x : M} (η : TangentSpace I x →L[�
     rw [key, h, zero_apply]
     simp only [← mul_assoc, Complex.I_mul_I]
     simp
+
+/-! ### `(0,1)`-forms in coordinates -/
+
+section Coordinates
+
+variable [NormedSpace ℂ E] [IsScalarTower ℝ ℂ E] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
+  [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+
+/-- At a point `x` of the chart at `x₀` where `j` reads as multiplication by `i` in the tangent
+coordinates at `x₀`, the `(0,1)`-part of a one-form read in these coordinates and the trivialization
+of `V` at `y₀` is the complex antilinear part of its reading. -/
+theorem inCoordinates_zeroOnePart {x₀ x : M} (y₀ : M)
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E)
+    (hx : x ∈ (chartAt H x₀).source) (η : TangentSpace I x →L[ℝ] V x) :
+    ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x (j.zeroOnePart η) =
+      ContinuousLinearMap.complexAntilinearPartL
+        (ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η) := by
+  have hJ (v : E) : j.toEndomorphism x ((trivializationAt E (TangentSpace I) x₀).symmL ℝ x v) =
+      (trivializationAt E (TangentSpace I) x₀).symmL ℝ x (Complex.I • v) := by
+    have h := DFunLike.congr_fun hj v
+    simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id_eq,
+      ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply] at h
+    rw [← h, Trivialization.symmL_continuousLinearMapAt]
+    rwa [TangentBundle.trivializationAt_baseSet]
+  ext v
+  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.complexAntilinearPartL_apply_apply, zeroOnePart_apply]
+  rw [hJ, map_smul, map_add,
+    Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
+
+/-- At a point `x` of the chart at `x₀` and of the base set of the trivialization of `V` at `y₀`,
+where `j` reads as multiplication by `i` in the tangent coordinates at `x₀`, a one-form is a
+`(0,1)`-form exactly when its reading in these coordinates is complex antilinear. -/
+theorem isZeroOneForm_iff_inCoordinates {x₀ x y₀ : M}
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E)
+    (hx : x ∈ (chartAt H x₀).source) (hy : x ∈ (trivializationAt F V y₀).baseSet)
+    {η : TangentSpace I x →L[ℝ] V x} :
+    j.IsZeroOneForm η ↔ ∀ v,
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η (Complex.I • v) =
+        -(Complex.I • ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η v) := by
+  rw [← ContinuousLinearMap.complexAntilinearPartL_eq_self_iff,
+    ← inCoordinates_zeroOnePart y₀ hj hx, ← zeroOnePart_eq_self_iff]
+  refine ⟨fun h ↦ by rw [h], fun h ↦ ?_⟩
+  -- The reading at `x` is injective: both trivializations are isomorphisms at `x`.
+  have hx' : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet]
+  rw [ContinuousLinearMap.inCoordinates_eq hx' hy,
+    ContinuousLinearMap.inCoordinates_eq hx' hy] at h
+  exact (ContinuousLinearEquiv.arrowCongrEquiv _ _).injective h
+
+end Coordinates
 
 end SmoothAlmostComplexStructure
 
