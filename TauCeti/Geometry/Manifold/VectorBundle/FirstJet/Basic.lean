@@ -51,6 +51,8 @@ change of charts.
   (`TauCeti.FirstJetBundle.range_ofDeriv`), hence exact. The
   inclusion is intrinsic: in every chart it reads `L` in that chart and trivialization
   (`TauCeti.FirstJetBundle.coordChange_ofDeriv`).
+* `TauCeti.FirstJetBundle.jet_snd_eq_mfderiv`: the derivative coordinate of `j¹s(x)` is the
+  manifold derivative of `s` read in the trivialization at `x`.
 
 The construction follows Mathlib's `tangentBundleCore`: the bundle is indexed by the points of `M`,
 and derivatives in charts are taken within `range I`, so manifolds with boundary are allowed.
@@ -542,6 +544,21 @@ theorem trivializationAt_jet {s : ∀ x, V x} {y : M}
         fderivWithin 𝕜 (localRep I F s i) (range I) (extChartAt I i y)) := by
   rw [trivializationAt_apply_snd]
   exact coordChange_jet I F hs hi
+
+/-- **The derivative coordinate of a first jet is a manifold derivative.** For a section `s`
+differentiable at `x`, the derivative coordinate of `j¹s(x)` is the manifold derivative at `x` of
+`s` read in the preferred trivialization at `x`, with the tangent space at `x` identified with the
+model space as in the fibre `F × (E →L[𝕜] F)` of `J¹V`. -/
+theorem jet_snd_eq_mfderiv {s : ∀ x, V x} {x : M}
+    (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun x ↦ TotalSpace.mk' F x (s x)) x) :
+    (jet I F s x).2 = mfderiv I 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x := by
+  have hg : MDifferentiableAt I 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x :=
+    ((trivializationAt F V x).mdifferentiableAt_section_iff I s
+      (mem_baseSet_trivializationAt F V x)).1 hs
+  -- Written in the chart at `x`, the trivialized section is the local representative.
+  rw [hg.mfderiv_abuse, jet_snd]
+  refine congrArg (fderivWithin 𝕜 · (range I) (extChartAt I x x)) (funext fun z ↦ ?_)
+  simp [writtenInExtChartAt, localRep_apply]
 
 /-- The value of a first jet, the fibre of the projection `J¹V → V`. -/
 def value (x : M) : FirstJetBundle I F V x →L[𝕜] V x :=
