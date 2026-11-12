@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 public import Mathlib.Algebra.Homology.DerivedCategory.SingleTriangle
 public import TauCeti.Algebra.Homology.DerivedCategory.KProjective
+public import TauCeti.Algebra.Homology.Single.Projective
 public import TauCeti.CategoryTheory.Triangulated.Orthogonal.Basic
 
 /-!
@@ -18,7 +19,8 @@ category. For every object `M` of `D(C)`, taking `n`-th cohomology is a bijectio
 `Hom_{D(C)}(P[-n], M) ≃ Hom_C(P, Hⁿ(M))`
 (`DerivedCategory.homologyFunctor_map_bijective_of_projective`). No boundedness of `M` is needed:
 `P` placed in one degree is K-projective, so every such morphism is a chain map, and a chain map
-which vanishes on cohomology is null-homotopic since `P` is projective.
+which vanishes on cohomology is null-homotopic since `P` is projective
+(`CochainComplex.nonempty_homotopy_zero_of_homologyMap_eq_zero`).
 
 As a consequence, for a short exact sequence `0 → X₁ → X₂ → X₃ → 0` in `C` with `X₁` and `X₂`
 projective, every morphism from `X₃` placed in degree zero to every shift of `M` vanishes if and
@@ -47,73 +49,6 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 open HomologicalComplex
 
-section Chain
-
-variable {P : C} [Projective P] {L : CochainComplex C ℤ} {n : ℤ}
-
-omit [HasDerivedCategory.{w} C] in
-/-- A morphism from `P` to `Hⁿ(L)` is the cohomology of a chain map from `P` placed in degree
-`n`, through a lift of it to the cycles. -/
-private lemma exists_homologyMap_eq (α : P ⟶ L.homology n) :
-    ∃ g : (CochainComplex.singleFunctor C n).obj P ⟶ L,
-      homologyMap g n = (singleObjHomologySelfIso _ n P).hom ≫ α := by
-  obtain ⟨β, hβ⟩ : ∃ β, β ≫ L.homologyπ n = α :=
-    ⟨Projective.factorThru α (L.homologyπ n), Projective.factorThru_comp _ _⟩
-  refine ⟨mkHomFromSingle (β ≫ L.iCycles n) (by rintro k rfl; simp), ?_⟩
-  have hc : cyclesMap (mkHomFromSingle (β ≫ L.iCycles n) (by rintro k rfl; simp)) n =
-      (singleObjCyclesSelfIso _ n P).hom ≫ β := by
-    rw [← cancel_mono (L.iCycles n), cyclesMap_i, mkHomFromSingle_f, singleObjCyclesSelfIso_hom]
-    simp
-  rw [← cancel_epi (((single C _ n).obj P).homologyπ n), homologyπ_naturality, hc,
-    homologyπ_singleObjHomologySelfIso_hom_assoc, Category.assoc, hβ]
-
-/-- A chain map from `P` placed in degree `n` which vanishes on `Hⁿ` is null-homotopic, since
-`P` is projective. -/
-private lemma Q_map_eq_zero_of_homologyMap_eq_zero
-    (g : (CochainComplex.singleFunctor C n).obj P ⟶ L) (hg : homologyMap g n = 0) :
-    Q.map g = 0 := by
-  let K := (CochainComplex.singleFunctor C n).obj P
-  -- `g` is given by `γ : P ⟶ Zⁿ(L)`, whose image in `Hⁿ(L)` vanishes.
-  let γ : P ⟶ L.cycles n :=
-    L.liftCycles ((singleObjXSelf _ n P).inv ≫ g.f n) (n + 1) (by simp) (by simp)
-  have hγ : γ ≫ L.homologyπ n = 0 := by
-    have h := homologyπ_naturality g n
-    rw [hg, comp_zero] at h
-    have hc : cyclesMap g n = (singleObjCyclesSelfIso _ n P).hom ≫ γ := by
-      rw [← cancel_mono (L.iCycles n), cyclesMap_i, singleObjCyclesSelfIso_hom]
-      simp [γ]
-    rw [hc, Category.assoc] at h
-    rw [← cancel_epi (singleObjCyclesSelfIso _ n P).hom, comp_zero]
-    exact h.symm
-  -- So `γ` lifts along `Lⁿ⁻¹ ⟶ Zⁿ(L)`.
-  have hex : (ShortComplex.mk (L.toCycles (n - 1) n) (L.homologyπ n)
-      (L.toCycles_comp_homologyπ _ _)).Exact :=
-    ShortComplex.exact_of_g_is_cokernel _ (L.homologyIsCokernel (n - 1) n (by simp))
-  let h : P ⟶ L.X (n - 1) := hex.liftFromProjective γ hγ
-  have hh : h ≫ L.d (n - 1) n = (singleObjXSelf _ n P).inv ≫ g.f n := by
-    have := hex.liftFromProjective_comp γ hγ
-    dsimp at this
-    rw [← L.toCycles_i, ← Category.assoc, this]
-    simp [γ]
-  -- The lift is a null-homotopy of `g`.
-  let H : ∀ i j, (ComplexShape.up ℤ).Rel j i → (K.X i ⟶ L.X j) := fun i j hij ↦
-    if hi : i = n then (singleObjXIsoOfEq _ n P i hi).hom ≫ h ≫ (L.XIsoOfEq (by
-      simp only [ComplexShape.up_Rel] at hij; lia)).hom else 0
-  have hgH : g = Homotopy.nullHomotopicMap' H := by
-    refine from_single_hom_ext ?_
-    rw [Homotopy.nullHomotopicMap'_f (c := ComplexShape.up ℤ) (k₂ := n - 1) (k₁ := n)
-      (k₀ := n + 1) (by simp) (by simp)]
-    have hd : K.d n (n + 1) = 0 :=
-      (isZero_single_obj_X _ n P (n + 1) (by lia)).eq_of_tgt _ _
-    rw [hd, zero_comp, zero_add]
-    simp only [H, dite_true, XIsoOfEq_rfl, Iso.refl_hom, Category.comp_id, Category.assoc, hh]
-    simp [singleObjXSelf]
-  rw [hgH, ← cancel_epi ((quotientCompQhIso C).hom.app K), ← quotientCompQhIso_hom_naturality,
-    HomotopyCategory.eq_of_homotopy _ _ (Homotopy.nullHomotopy' H)]
-  simp
-
-end Chain
-
 /-- **Morphisms from a projective object placed in one degree.** For a projective object `P` of
 `C`, every object `M` of `D(C)` and every `n : ℤ`, taking `n`-th cohomology is a bijection from
 morphisms `P[-n] ⟶ M` to morphisms `Hⁿ(P[-n]) ⟶ Hⁿ(M)`, and `Hⁿ(P[-n]) ≅ P`. -/
@@ -132,12 +67,13 @@ theorem homologyFunctor_map_bijective_of_projective (P : C) [Projective P]
     · rw [← sub_eq_zero]
       obtain ⟨g, hg⟩ := CochainComplex.IsKProjective.Q_map_surjective K L (φ₁ - φ₂)
       rw [← hg]
-      refine Q_map_eq_zero_of_homologyMap_eq_zero g ?_
-      have h := homologyFunctorFactors_hom_naturality g n
-      rw [hg, H.map_sub, hφ, sub_self, zero_comp] at h
-      exact (Iso.cancel_iso_hom_left ((homologyFunctorFactors C n).app K) _ _).1
-        (h.symm.trans comp_zero.symm)
-    · obtain ⟨g, hg⟩ := exists_homologyMap_eq (P := P) (L := L) (n := n)
+      obtain ⟨ho⟩ := CochainComplex.nonempty_homotopy_zero_of_homologyMap_eq_zero g (by
+        have h := homologyFunctorFactors_hom_naturality g n
+        rw [hg, H.map_sub, hφ, sub_self, zero_comp] at h
+        exact (Iso.cancel_iso_hom_left ((homologyFunctorFactors C n).app K) _ _).1
+          (h.symm.trans comp_zero.symm))
+      exact (Q_map_eq_of_homotopy C ho).trans (Q.map_zero _ _)
+    · obtain ⟨g, hg⟩ := CochainComplex.exists_homologyMap_eq_of_projective (L := L) (n := n)
         ((singleObjHomologySelfIso _ n P).inv ≫ η.inv.app K ≫ ψ ≫ η.hom.app L)
       refine ⟨Q.map g, ?_⟩
       have h := homologyFunctorFactors_hom_naturality g n
