@@ -101,8 +101,7 @@ private theorem iteratedFDeriv_memWkpLoc_one_and_eqOn (hu : MemWkpLoc p Ω (k + 
       EqOn (preciseRepresentative volume (iteratedFDeriv ℝ k g)) (iteratedFDeriv ℝ k g) Ω := by
   have h1 := hu.iteratedFDeriv_of_contDiffOn hg hug
   have hcont : ContinuousOn (iteratedFDeriv ℝ k g) Ω :=
-    (hg.continuousOn_iteratedFDerivWithin le_rfl Ω.isOpen.uniqueDiffOn).congr
-      fun x hx => (iteratedFDerivWithin_of_isOpen k Ω.isOpen hx).symm
+    ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen le_rfl
   exact ⟨h1, eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
     (hcont.locallyIntegrableOn Ω.isOpen.measurableSet) (Filter.EventuallyEq.refl _ _) hcont⟩
 
