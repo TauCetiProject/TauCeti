@@ -541,12 +541,12 @@ theorem timeDependentFlowPartialDiffeomorph_target (s t : ℝ) :
       {x | ((t, s), x) ∈ timeDependentFlowDomain X} :=
   (rfl)
 
-/-- The inverse of `timeDependentFlowPartialDiffeomorph` from `s` to `t` is the time-dependent flow
+/-- The inverse of the partial diffeomorphism from `s` to `t` is the partial diffeomorphism
 from `t` to `s`. -/
 @[simp]
-theorem timeDependentFlowPartialDiffeomorph_symm_apply (s t : ℝ) (x : M) :
-    (timeDependentFlowPartialDiffeomorph hn hX s t).toPartialEquiv.symm x =
-      timeDependentFlowOf X t s x :=
+theorem symm_timeDependentFlowPartialDiffeomorph (s t : ℝ) :
+    (timeDependentFlowPartialDiffeomorph hn hX s t).symm =
+      timeDependentFlowPartialDiffeomorph hn hX t s :=
   (rfl)
 
 end Partial
