@@ -75,6 +75,10 @@ operators, are separate.
 ## Main results
 
 * `TauCeti.orbitTorusOperator`: the operator `D u = ∂s u + (J₀ ∂t u + S(t) u)`.
+* `TauCeti.orbitTorusAdjoint`: the formal adjoint `D† u = -∂s u + (J₀ ∂t u + S(t) u)`.
+* `TauCeti.setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjoint` and
+  `TauCeti.orbitTorusOperator_comp_neg_fst`: `D†` is the formal adjoint of `D` on twisted maps,
+  and the reflection `(s, t) ↦ (-s, t)` intertwines `D` and `D†`.
 * `TauCeti.setIntegral_norm_sq_orbitTorusOperator`: the energy identity on the fundamental
   rectangle.
 * `TauCeti.fderiv_apply_stdComplexLineReal_eq_zero_of_orbitTorusOperator_eq_zero`: kernel
@@ -160,6 +164,133 @@ theorem orbitTorusOperator_smul (c : ℝ) :
   funext z
   simp only [orbitTorusOperator_apply, fderiv_const_smul_field, Pi.smul_apply,
     smul_apply, map_smul, smul_add]
+
+section Adjoint
+
+variable {v : ℝ × ℝ → V}
+
+/-- The formal adjoint `D† u = -∂s u + (J₀ ∂t u + S(t) u)` of the orbit-torus operator
+`TauCeti.orbitTorusOperator`, for `J₀` skew-adjoint and `S` symmetric
+(`TauCeti.setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjoint`). -/
+def orbitTorusAdjoint (J₀ : V →L[ℝ] V) (S : ℝ → V →L[ℝ] V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) : V :=
+  -fderiv ℝ u z stdComplexLineReal + (J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z))
+
+/-- Unfolding `orbitTorusAdjoint` at a point. -/
+theorem orbitTorusAdjoint_apply (z : ℝ × ℝ) :
+    orbitTorusAdjoint J₀ S u z =
+      -fderiv ℝ u z stdComplexLineReal + (J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)) :=
+  (rfl)
+
+/-- **`D†` is the formal adjoint of `D`.** For `C¹` maps `u` and `v`, both twisted by the signs
+`ε₁` along `(ℓ, 0)` and `ε₂` along `(0, d)` with `ε₁ ^ 2 = ε₂ ^ 2 = 1`, and for `J₀`
+skew-adjoint and `S` symmetric, `∫ ⟪D u, v⟫ = ∫ ⟪u, D† v⟫` over the fundamental rectangle
+`[0, ℓ] × [0, d]`. The difference of the integrands is `∂s ⟪u, v⟫ - ∂t ⟪u, J₀ v⟫`, whose two
+potentials are periodic because the twists square to one. -/
+theorem setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjoint
+    (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)
+    (hScont : Continuous S) (hu : ContDiff ℝ 1 u) (hv : ContDiff ℝ 1 v) (hε₁ : ε₁ ^ 2 = 1)
+    (hε₂ : ε₂ ^ 2 = 1) (hus : ∀ s t, u (s + ℓ, t) = ε₁ • u (s, t))
+    (hut : ∀ s t, u (s, t + d) = ε₂ • u (s, t)) (hvs : ∀ s t, v (s + ℓ, t) = ε₁ • v (s, t))
+    (hvt : ∀ s t, v (s, t + d) = ε₂ • v (s, t)) :
+    ∫ z in Icc (0 : ℝ) ℓ ×ˢ Icc 0 d, ⟪orbitTorusOperator J₀ S u z, v z⟫ =
+      ∫ z in Icc (0 : ℝ) ℓ ×ˢ Icc 0 d, ⟪u z, orbitTorusAdjoint J₀ S v z⟫ := by
+  set e₁ := stdComplexLineReal
+  set e₂ := stdComplexLineImag
+  have hR : IsCompact (Icc (0 : ℝ) ℓ ×ˢ Icc 0 d) := isCompact_Icc.prod isCompact_Icc
+  have hu1 : Differentiable ℝ u := hu.differentiable one_ne_zero
+  have hv1 : Differentiable ℝ v := hv.differentiable one_ne_zero
+  have hu0 := hu.continuous
+  have hv0 := hv.continuous
+  -- The two potentials and their partial derivatives.
+  set φ₁ : ℝ × ℝ → ℝ := fun z => ⟪u z, fderiv ℝ v z e₁⟫ + ⟪fderiv ℝ u z e₁, v z⟫
+  set φ₂ : ℝ × ℝ → ℝ := fun z => ⟪u z, J₀ (fderiv ℝ v z e₂)⟫ + ⟪fderiv ℝ u z e₂, J₀ (v z)⟫
+  have hφ₁ : Continuous φ₁ := by fun_prop
+  have hφ₂ : Continuous φ₂ := by fun_prop
+  have hfst {w : ℝ × ℝ → V} (hw : Differentiable ℝ w) (s t : ℝ) :
+      HasDerivAt (fun s => w (s, t)) (fderiv ℝ w (s, t) e₁) s :=
+    (hw _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s t)
+  have hsnd {w : ℝ × ℝ → V} (hw : Differentiable ℝ w) (s t : ℝ) :
+      HasDerivAt (fun t => w (s, t)) (fderiv ℝ w (s, t) e₂) t :=
+    (hw _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)
+  have hI₁ : ∫ z in Icc (0 : ℝ) ℓ ×ˢ Icc 0 d, φ₁ z = 0 := by
+    refine setIntegral_rect_eq_zero_of_hasDerivAt_fst hφ₁ (Φ := fun z => ⟪u z, v z⟫)
+      (fun s t => HasDerivAt.inner ℝ (hfst hu1 s t) (hfst hv1 s t)) fun t => ?_
+    have hu' : u (ℓ, t) = ε₁ • u (0, t) := by simpa using hus 0 t
+    have hv' : v (ℓ, t) = ε₁ • v (0, t) := by simpa using hvs 0 t
+    simp only [hu', hv', real_inner_smul_left, real_inner_smul_right]
+    linear_combination ⟪u (0, t), v (0, t)⟫ * hε₁
+  have hI₂ : ∫ z in Icc (0 : ℝ) ℓ ×ˢ Icc 0 d, φ₂ z = 0 := by
+    refine setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂ (Φ := fun z => ⟪u z, J₀ (v z)⟫)
+      (fun s t => HasDerivAt.inner ℝ (hsnd hu1 s t)
+        (J₀.hasFDerivAt.comp_hasDerivAt t (hsnd hv1 s t)))
+      fun s => ?_
+    have hu' : u (s, d) = ε₂ • u (s, 0) := by simpa using hut s 0
+    have hv' : v (s, d) = ε₂ • v (s, 0) := by simpa using hvt s 0
+    simp only [hu', hv', map_smul, real_inner_smul_left, real_inner_smul_right]
+    linear_combination ⟪u (s, 0), J₀ (v (s, 0))⟫ * hε₂
+  -- Pointwise, the difference of the two integrands is `φ₁ - φ₂`.
+  have hpt : (fun z => ⟪orbitTorusOperator J₀ S u z, v z⟫ - ⟪u z, orbitTorusAdjoint J₀ S v z⟫) =
+      fun z => φ₁ z - φ₂ z := by
+    funext z
+    simp only [orbitTorusOperator_apply, orbitTorusAdjoint_apply, φ₁, φ₂, e₁, e₂, inner_add_left,
+      inner_add_right, inner_neg_right, hJ₀ (fderiv ℝ u z stdComplexLineImag), hS z.2 (u z)]
+    ring
+  have hc₁ : Continuous fun z => ⟪orbitTorusOperator J₀ S u z, v z⟫ := by
+    simp only [orbitTorusOperator_apply]
+    fun_prop
+  have hc₂ : Continuous fun z => ⟪u z, orbitTorusAdjoint J₀ S v z⟫ := by
+    simp only [orbitTorusAdjoint_apply]
+    fun_prop
+  have h := congrArg (fun f : ℝ × ℝ → ℝ => ∫ z in Icc (0 : ℝ) ℓ ×ˢ Icc 0 d, f z) hpt
+  rw [integral_sub (hc₁.continuousOn.integrableOn_compact hR)
+      (hc₂.continuousOn.integrableOn_compact hR),
+    integral_sub (hφ₁.continuousOn.integrableOn_compact hR)
+      (hφ₂.continuousOn.integrableOn_compact hR), hI₁, hI₂, sub_self, sub_eq_zero] at h
+  exact h
+
+/-- **Reflection intertwines `D` and `D†`.** For a differentiable `u`, the operator `D` applied to
+the reflection `(s, t) ↦ u (-s, t)` is the reflection of `D† u`. -/
+theorem orbitTorusOperator_comp_neg_fst (hu : Differentiable ℝ u) (z : ℝ × ℝ) :
+    orbitTorusOperator J₀ S (fun w => u (-w.1, w.2)) z = orbitTorusAdjoint J₀ S u (-z.1, z.2) := by
+  set L : ℝ × ℝ →L[ℝ] ℝ × ℝ := (-ContinuousLinearMap.fst ℝ ℝ ℝ).prod (ContinuousLinearMap.snd ℝ ℝ ℝ)
+  have hL (w : ℝ × ℝ) : L w = (-w.1, w.2) := rfl
+  have hf : HasFDerivAt (fun w => u (-w.1, w.2)) ((fderiv ℝ u (-z.1, z.2)).comp L) z :=
+    (hu _).hasFDerivAt.comp z L.hasFDerivAt
+  have h₁ : L stdComplexLineReal = -stdComplexLineReal := by
+    simp [hL, stdComplexLineReal_eq]
+  have h₂ : L stdComplexLineImag = stdComplexLineImag := by
+    simp [hL, stdComplexLineImag_eq]
+  rw [orbitTorusOperator_apply, orbitTorusAdjoint_apply, hf.fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h₁, h₂, map_neg]
+
+/-- The orbit-torus adjoint is additive on maps differentiable at the point. -/
+theorem orbitTorusAdjoint_add {z : ℝ × ℝ} (hu : DifferentiableAt ℝ u z)
+    (hv : DifferentiableAt ℝ v z) :
+    orbitTorusAdjoint J₀ S (u + v) z = orbitTorusAdjoint J₀ S u z + orbitTorusAdjoint J₀ S v z := by
+  simp only [orbitTorusAdjoint_apply, fderiv_add hu hv, add_apply, map_add, Pi.add_apply]
+  abel
+
+/-- The orbit-torus adjoint commutes with multiplication by a real scalar. -/
+@[simp]
+theorem orbitTorusAdjoint_smul (c : ℝ) :
+    orbitTorusAdjoint J₀ S (c • u) = c • orbitTorusAdjoint J₀ S u := by
+  funext z
+  simp only [orbitTorusAdjoint_apply, fderiv_const_smul_field, Pi.smul_apply,
+    smul_apply, map_smul, smul_add, smul_neg]
+
+/-- The orbit-torus adjoint vanishes on the zero map. -/
+@[simp]
+theorem orbitTorusAdjoint_zero : orbitTorusAdjoint J₀ S (0 : ℝ × ℝ → V) = 0 := by
+  funext z
+  simp [orbitTorusAdjoint_apply]
+
+/-- Where the `s`-derivative of `u` vanishes, `D† u = D u`. -/
+theorem orbitTorusAdjoint_eq_orbitTorusOperator {z : ℝ × ℝ}
+    (h : fderiv ℝ u z stdComplexLineReal = 0) :
+    orbitTorusAdjoint J₀ S u z = orbitTorusOperator J₀ S u z := by
+  rw [orbitTorusAdjoint_apply, orbitTorusOperator_apply, h, neg_zero]
+
+end Adjoint
 
 /-- The first potential `φ₁` of the cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫`: the `s`-derivative of
 `⟪u, S u⟫ + ⟪u, J₀ ∂t u⟫`. -/
