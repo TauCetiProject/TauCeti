@@ -138,8 +138,10 @@ the Bochner integral. -/
 private theorem heatKernel_convolution_of_not_aestronglyMeasurable (ht : 0 < t)
     (hg : ¬AEStronglyMeasurable g) : heatKernel t ⋆ g = fun _ => 0 := by
   funext x
+  rw [convolution_def]
   refine integral_non_aestronglyMeasurable fun h => hg ?_
-  exact aestronglyMeasurable_of_aestronglyMeasurable_heatKernel_smul_sub ht x (by simpa using h)
+  simp only [lsmul_apply] at h
+  exact aestronglyMeasurable_of_aestronglyMeasurable_heatKernel_smul_sub ht x h
 
 /-- **Smoothing by the heat kernel.** For `t > 0` and `g` essentially bounded, `K_t ⋆ g` is
 smooth. -/

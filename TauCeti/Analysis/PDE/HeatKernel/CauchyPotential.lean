@@ -122,7 +122,7 @@ theorem heatCauchyPotential_def (g : E → F) (t : ℝ) (x : E) :
 integral. -/
 theorem heatCauchyPotential_of_not_completeSpace (hF : ¬CompleteSpace F) (g : E → F) (t : ℝ) :
     heatCauchyPotential g t = fun _ => 0 :=
-  funext fun _ => integral_of_not_completeSpace hF
+  funext fun x => by rw [heatCauchyPotential_def]; exact integral_of_not_completeSpace hF
 
 /-- **The initial datum.** For `t ≤ 0` the Cauchy heat potential of `g` is `g`. -/
 theorem heatCauchyPotential_of_nonpos [CompleteSpace F] (g : E → F) {t : ℝ} (ht : t ≤ 0)
