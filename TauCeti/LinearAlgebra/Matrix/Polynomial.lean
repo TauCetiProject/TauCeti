@@ -12,9 +12,9 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Laurent
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Tactic.ComputeDegree
-import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.LinearAlgebra.End.Aeval
 
 /-!
 # Coefficients and determinants of polynomial matrices
@@ -95,7 +95,7 @@ theorem aeval_mul_eq_mul_aeval {m : Type*} [Fintype m] [DecidableEq m] [CommSemi
   rw [toLin'_mul, toLin'_mul, hA, hB] at hAV
   apply toLin'.injective
   rw [toLin'_mul, toLin'_mul, hA, hB, ← aeval_algHom_apply, ← aeval_algHom_apply]
-  exact aeval_comp_eq_comp_aeval hAV q
+  exact Module.End.aeval_comp_of_comp_eq hAV q
 
 omit [DecidableEq n] in
 /-- Taking an entrywise polynomial coefficient commutes with multiplication on the left by a
@@ -106,7 +106,7 @@ theorem map_coeff_map_C_mul [Semiring R] {m p : Type*}
     (d : ℕ) :
     (A.map C * P).map (fun p ↦ p.coeff d) = A * P.map (fun p ↦ p.coeff d) := by
   ext i j
-  simp [Matrix.mul_apply, finsetSum_coeff, coeff_C_mul]
+  simp [Matrix.mul_apply, coeff_C_mul]
 
 omit [DecidableEq n] in
 /-- Taking an entrywise polynomial coefficient commutes with multiplication on the right by a
@@ -117,7 +117,7 @@ theorem map_coeff_mul_map_C [Semiring R] {m p : Type*}
     (d : ℕ) :
     (P * A.map C).map (fun p ↦ p.coeff d) = P.map (fun p ↦ p.coeff d) * A := by
   ext i j
-  simp [Matrix.mul_apply, finsetSum_coeff, coeff_mul_C]
+  simp [Matrix.mul_apply, coeff_mul_C]
 
 variable [CommRing R]
 

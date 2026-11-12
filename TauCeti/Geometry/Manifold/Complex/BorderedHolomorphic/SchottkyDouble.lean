@@ -124,7 +124,8 @@ in the double agree. -/
 theorem inl_eq_inr_of_im_eq_zero (he : e ∈ atlas ClosedUpperHalfPlane M) {x : M}
     (hx : x ∈ e.source) (h : (e x : ℂ).im = 0) :
     DoubleAlong.inl (borderedInterior M : Set M)ᶜ x = DoubleAlong.inr _ x :=
-  DoubleAlong.inl_coe_eq_inr _ ⟨x, (im_eq_zero_iff_notMem_borderedInterior he hx).1 h⟩
+  DoubleAlong.inl_coe_eq_inr _
+    ⟨x, (im_eq_zero_iff_notMem_borderedInterior (IsManifold.subset_maximalAtlas he) hx).1 h⟩
 
 private theorem doubleChartFun_inl (x : M) : doubleChartFun e (DoubleAlong.inl _ x) = e x := by
   simp [doubleChartFun]
@@ -133,7 +134,7 @@ private theorem doubleChartFun_inr (he : e ∈ atlas ClosedUpperHalfPlane M) {x 
     (hx : x ∈ e.source) : doubleChartFun e (DoubleAlong.inr _ x) = conj (e x : ℂ) := by
   by_cases hA : x ∈ (borderedInterior M : Set M)ᶜ
   · rw [← DoubleAlong.inl_coe_eq_inr _ ⟨x, hA⟩, doubleChartFun_inl,
-      conj_apply_eq_of_notMem_borderedInterior he hx hA]
+      conj_apply_eq_of_notMem_borderedInterior (IsManifold.subset_maximalAtlas he) hx hA]
   · have : DoubleAlong.inr _ x ∉ range (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) := by
       rintro ⟨y, hy⟩
       have h := (DoubleAlong.inl_eq_inr_iff _).1 hy
@@ -179,7 +180,7 @@ private theorem continuousOn_doubleChartFun (he : e ∈ atlas ClosedUpperHalfPla
     DoubleAlong.frontier_range_inl_subset _ (borderedInterior M).isOpen.isClosed_compl hfr
   rw [mem_preimage, DoubleAlong.fold_inl] at hz
   simp only [DoubleAlong.fold_inl]
-  exact (conj_apply_eq_of_notMem_borderedInterior he hz hA).symm
+  exact (conj_apply_eq_of_notMem_borderedInterior (IsManifold.subset_maximalAtlas he) hz hA).symm
 
 open Classical in
 /-- The inverse of the doubled chart is continuous on its target: its two pieces agree on the real

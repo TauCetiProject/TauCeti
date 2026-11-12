@@ -102,7 +102,7 @@ private theorem exists_zero_coordinate {x : ι →₀ ℝ} (hvσ : v ∉ σ)
   exact ⟨i, hi, Finsupp.notMem_support_iff.mp hix⟩
 
 /-- The barycentric map sends the stellar polyhedron into the original polyhedron. -/
-theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
+theorem mapsTo_stellarSubdivisionLinearMap :
     MapsTo (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) K).space := by
@@ -119,7 +119,11 @@ theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
     rw [stellarSubdivisionLinearMap_apply]
     by_cases hiv : i = v
     · subst i
-      simp [hvσ]
+      by_cases hvσ : v ∈ σ
+      · have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast hσne.card_pos)
+        simp only [hvσ, ite_true]
+        nlinarith [hxpos v]
+      · simp [hvσ]
     · simp only [hiv, ite_false, sub_zero]
       exact add_nonneg (hxpos i) (mul_nonneg (hxpos v) (by split_ifs <;> positivity))
   · by_cases hvx : v ∈ x.support
@@ -131,9 +135,9 @@ theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
         have his : i ∉ σ := fun h => hnot (Finset.mem_union_right _ h)
         have hiv : i ≠ v := by
           intro h
-          subst i
+          rw [h] at his hi
           have hz : stellarSubdivisionLinearMap σ v x v = 0 := by
-            simp [stellarSubdivisionLinearMap_apply, hvσ]
+            simp [stellarSubdivisionLinearMap_apply, his]
           exact Finsupp.mem_support_iff.mp hi hz
         have hix : x i = 0 := Finsupp.notMem_support_iff.mp fun h =>
           hnot (Finset.mem_union_left _ (Finset.mem_erase.mpr ⟨hiv, h⟩))
@@ -150,25 +154,30 @@ theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
       rw [heq]
       exact ((mem_stellarSubdivision_iff_of_notMem hvx).mp hxface).1
 
-/-- The barycentric map is injective on the stellar polyhedron when the new vertex
-lies outside the starred face. -/
-theorem injOn_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :
+/-- The barycentric map is injective on the stellar polyhedron. -/
+theorem injOn_stellarSubdivisionLinearMap :
     InjOn (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space := by
   intro x hx y hy heq
   obtain ⟨hxpos, -, hxface⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hx
   obtain ⟨hypos, -, hyface⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hy
-  obtain ⟨i, hi, hxi⟩ := exists_zero_coordinate hvσ hxface
-  obtain ⟨j, hj, hyj⟩ := exists_zero_coordinate hvσ hyface
-  have hiv : i ≠ v := fun h => hvσ (h ▸ hi)
-  have hjv : j ≠ v := fun h => hvσ (h ▸ hj)
-  have hei := DFunLike.congr_fun heq i
-  have hej := DFunLike.congr_fun heq j
-  simp only [stellarSubdivisionLinearMap_apply, hi, hj, ite_true, hiv, hjv, ite_false,
-    sub_zero, hxi, hyj, zero_add] at hei hej
-  have hσne : σ.Nonempty := ⟨i, hi⟩
-  have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast hσne.card_pos)
-  have hxyv : x v = y v := by nlinarith [hxpos j, hypos i]
+  have hxyv : x v = y v := by
+    by_cases hvσ : v ∈ σ
+    · have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast Finset.card_pos.mpr ⟨v, hvσ⟩)
+      have hev := DFunLike.congr_fun heq v
+      simp only [stellarSubdivisionLinearMap_apply, hvσ, ite_true] at hev
+      nlinarith [hev]
+    · obtain ⟨i, hi, hxi⟩ := exists_zero_coordinate hvσ hxface
+      obtain ⟨j, hj, hyj⟩ := exists_zero_coordinate hvσ hyface
+      have hiv : i ≠ v := fun h => hvσ (h ▸ hi)
+      have hjv : j ≠ v := fun h => hvσ (h ▸ hj)
+      have hei := DFunLike.congr_fun heq i
+      have hej := DFunLike.congr_fun heq j
+      simp only [stellarSubdivisionLinearMap_apply, hi, hj, ite_true, hiv, hjv, ite_false,
+        sub_zero, hxi, hyj, zero_add] at hei hej
+      have hσne : σ.Nonempty := ⟨i, hi⟩
+      have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by exact_mod_cast hσne.card_pos)
+      nlinarith [hxpos j, hypos i]
   ext k
   have hek := DFunLike.congr_fun heq k
   simp only [stellarSubdivisionLinearMap_apply, hxyv] at hek
@@ -251,8 +260,8 @@ theorem bijOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset �
     BijOn (stellarSubdivisionLinearMap σ v)
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (stellarSubdivision K σ v)).space
       (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) K).space :=
-  ⟨mapsTo_stellarSubdivisionLinearMap (notMem_of_singleton_notMem hv hσ),
-    injOn_stellarSubdivisionLinearMap (notMem_of_singleton_notMem hv hσ),
+  ⟨mapsTo_stellarSubdivisionLinearMap,
+    injOn_stellarSubdivisionLinearMap,
     surjOn_stellarSubdivisionLinearMap hσ hv⟩
 
 end PreAbstractSimplicialComplex
