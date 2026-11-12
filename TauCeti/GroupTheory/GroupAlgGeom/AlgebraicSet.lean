@@ -869,14 +869,9 @@ generates. -/
 theorem normalClosure_inl_of_inl_of_inr_of_eq_top :
     normalClosure
       ({inl (of 0), inl (of 1), inr (of ())} : Set (GX (FreeGroup (Fin 2)) Unit)) = ⊤ := by
-  refine top_le_iff.1 (le_trans ?_ closure_le_normalClosure)
-  rw [← range_inl_sup_range_inr, sup_le_iff, MonoidHom.range_eq_map, MonoidHom.range_eq_map,
-    ← closure_range_of, ← closure_range_of, MonoidHom.map_closure, MonoidHom.map_closure]
-  constructor <;> refine closure_mono ?_
-  · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    fin_cases i <;> simp
-  · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    simp
+  rw [eq_top_iff, ← GX.closure_image_inl_union_range_inr_of (closure_range_of (Fin 2))]
+  exact (closure_mono (by simp [Set.range_subset_iff, Fin.forall_fin_two])).trans
+    closure_le_normalClosure
 
 /-- The group of the system `{a, b, x}` over `F(a, b)` is trivial. -/
 theorem SystemGroup.subsingleton_inl_of_inl_of_inr_of :
