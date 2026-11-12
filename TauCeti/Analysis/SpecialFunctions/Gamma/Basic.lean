@@ -51,6 +51,7 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
+* `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
@@ -225,6 +226,14 @@ theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab :
 end Real
 
 namespace Complex
+
+/-- A complex number with positive real part is not a nonpositive integer. -/
+theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
+    b ≠ -(n : ℂ) := by
+  intro h
+  have heq := congrArg re h
+  simp only [neg_re, natCast_re] at heq
+  linarith [n.cast_nonneg (α := ℝ)]
 
 /-- On the half-plane `1 ≤ Re s`, the reciprocal Gamma function decays factorially along
 `s + k`: `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!`. Together with the boundedness of `1 / Γ` on compact

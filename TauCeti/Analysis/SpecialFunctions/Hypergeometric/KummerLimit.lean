@@ -26,13 +26,6 @@ open scoped Nat Topology
 
 namespace Complex
 
-private theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
-    b ≠ -(n : ℂ) := by
-  intro h
-  have heq := congrArg re h
-  simp only [neg_re, natCast_re] at heq
-  linarith [n.cast_nonneg (α := ℝ)]
-
 private theorem eventually_kummer_parameters (c : ℂ) :
     ∀ᶠ k : ℕ in atTop, 0 < (k : ℝ) ∧ 0 ≤ (k : ℝ) + c.re := by
   filter_upwards [tendsto_natCast_atTop_atTop.eventually
