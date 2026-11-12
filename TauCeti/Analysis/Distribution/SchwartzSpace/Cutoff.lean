@@ -242,7 +242,11 @@ theorem IsCompact.exists_schwartzMap_cutoff [FiniteDimensional ℝ E] {K U : Set
   obtain ⟨ψ, hψ, -, hψ1, hψc, hψU⟩ := hK.exists_contDiff_cutoff hU hKU
   have hc : HasCompactSupport fun x ↦ (ψ x : ℂ) := hψc.comp_left Complex.ofReal_zero
   have hd : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := Complex.ofRealCLM.contDiff.comp hψ
-  refine ⟨hc.toSchwartzMap hd, hc, (tsupport_comp_subset Complex.ofReal_zero ψ).trans hψU, ?_⟩
+  have hχ : ⇑(hc.toSchwartzMap hd) = fun x ↦ (ψ x : ℂ) := funext (hc.toSchwartzMap_toFun hd)
+  refine ⟨hc.toSchwartzMap hd, by rwa [hχ], ?_, ?_⟩
+  · rw [hχ]
+    exact (tsupport_comp_subset Complex.ofReal_zero ψ).trans hψU
   filter_upwards [subset_interior_iff_mem_nhdsSet.1 hψ1] with x hx
   rw [Set.mem_preimage, Set.mem_singleton_iff] at hx
-  simp [HasCompactSupport.toSchwartzMap_toFun, hx]
+  rw [hχ]
+  simp [hx]

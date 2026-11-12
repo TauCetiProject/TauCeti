@@ -99,9 +99,12 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
       (hχK.filter_mono (nhds_le_nhdsSet hx)).mono fun y hy ξ ↦ by simp [F, hy, hχ1 x hx]
   have hsmK : (c.sharp F hF - c.comp F).HasCompactSpatialSupport :=
     (hc.sharp hF).sub (hF.comp_left c)
-  obtain ⟨C, hC0, hC⟩ := hsm.exists_toDistr_quantizeSobolev_eq_and_norm_le hsmK hrt (t - m)
+  obtain ⟨T, hT⟩ := hsm.exists_continuousLinearMap_toDistr_quantizeSobolev_eq hsmK r (t - m)
+  set C := ‖T‖
   refine ⟨‖c.quantizeSobolev hc t‖ + C, fun v ↦ ?_⟩
-  obtain ⟨w, hw, hwle⟩ := hC v
+  set w := T (BesselPotentialSpace.inclusion hrt v)
+  have hw := hT (BesselPotentialSpace.toDistr_inclusion hrt v).symm
+  have hwle : ‖w‖ ≤ C * ‖BesselPotentialSpace.inclusion hrt v‖ := T.le_opNorm _
   -- `Op(c) v = Op(c # χ) v - Op(c # χ - c ∘ χ) v = Op(c) (χ v) - w`.
   have hv : c.quantizeSobolev hc t v =
       c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v) - w := by
@@ -115,7 +118,8 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
     have h₂ : ((c.sharp F hF).quantizeSobolev (hc.sharp hF) t v).toDistr =
         (c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v)).toDistr := by
       rw [toDistr_quantizeSobolev_sharp hc hF]
-      exact toDistr_quantizeSobolev_congr rfl hc hc (toDistr_quantizeSobolev_ofSpatial χ hF t v)
+      exact toDistr_quantizeSobolev_congr rfl hc hc
+        (toDistr_quantizeSobolev_ofSpatial_smul_id χ hF t v)
     rw [h₁, h₂, hw, BesselPotentialSpace.toDistr_sub]
   rw [hv]
   calc ‖c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v) - w‖
@@ -124,7 +128,7 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
         (norm_sub_le _ _).trans (add_le_add ((c.quantizeSobolev hc t).le_opNorm _) hwle)
     _ ≤ (‖c.quantizeSobolev hc t‖ + C) * (‖BesselPotentialSpace.smulLeftCLM t χ v‖ +
           ‖BesselPotentialSpace.inclusion hrt v‖) := by
-        nlinarith [norm_nonneg (c.quantizeSobolev hc t),
+        nlinarith [norm_nonneg (c.quantizeSobolev hc t), norm_nonneg T,
           norm_nonneg (BesselPotentialSpace.smulLeftCLM t χ v),
           norm_nonneg (BesselPotentialSpace.inclusion hrt v)]
 
