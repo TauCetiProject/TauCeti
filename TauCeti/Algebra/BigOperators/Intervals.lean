@@ -7,14 +7,19 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Group.Nat.Even
+public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
 
 /-!
 # Sums over intervals of natural numbers and integers
+
+On a finite nondecreasing grid, squared cell lengths sum to at most elapsed time times
+any upper bound on the cell lengths.
 
 A sum `∑ k ∈ Ico m (n + 1), f k` whose summands split as `f m = β m`, `f n = γ n`, and
 `f k = γ k + β k` for `m < k < n` regroups as the sum over `m ≤ k < n` of the adjacent pairs
@@ -40,6 +45,22 @@ and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, t
 public section
 
 namespace Finset
+
+/-- On a finite nondecreasing prefix, the sum of squared cell lengths is at most
+elapsed time times any upper bound on the cell lengths. -/
+theorem sum_range_sq_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    (t : ℕ → R) (n : ℕ) (ht : MonotoneOn t (Set.Iic n)) {δ : R}
+    (hmesh : ∀ i < n, t (i + 1) - t i ≤ δ) :
+    ∑ i ∈ range n, (t (i + 1) - t i) ^ 2 ≤ (t n - t 0) * δ := by
+  calc
+    _ ≤ ∑ i ∈ range n, (t (i + 1) - t i) * δ := by
+      apply sum_le_sum
+      intro i hi
+      have hi := mem_range.mp hi
+      have hpos : 0 ≤ t (i + 1) - t i :=
+        sub_nonneg.mpr (ht (by simp; omega) (by simp; omega) (Nat.le_succ i))
+      simpa only [pow_two] using mul_le_mul_of_nonneg_left (hmesh i hi) hpos
+    _ = _ := by rw [← sum_mul, sum_range_sub]
 
 /-- If `m < n`, the summands `f m = β m`, `f n = γ n`, and `f k = γ k + β k` for
 `m < k < n` regroup as the adjacent pairs `β k + γ (k + 1)` over `m ≤ k < n`. -/

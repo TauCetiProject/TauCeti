@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.OptionalStopping
+public import TauCeti.Probability.Process.Filtration.Comp
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
@@ -93,10 +94,11 @@ theorem mul_measure_exists_mem_le_le_setIntegral [IsFiniteMeasure μ]
   have hmem (j : ℕ) : τ j ∈ F := F.orderEmbOfFin_mem hcard _
   have hτn : τ n = F.max' hne := by
     simpa [τ, e] using Finset.orderEmbOfFin_last hcard (Nat.succ_pos n)
-  let 𝒢 : Filtration ℕ m0 := ⟨fun j ↦ ℱ (τ j), fun _ _ hij ↦ ℱ.mono (hτ hij), fun _ ↦ ℱ.le _⟩
-  have hg : Submartingale (fun j ↦ f (τ j)) 𝒢 μ :=
-    ⟨fun j ↦ hf.stronglyAdapted (τ j), fun _ _ hij ↦ hf.ae_le_condExp (hτ hij),
-      fun j ↦ hf.integrable (τ j)⟩
+  let 𝒢 : Filtration ℕ m0 := ℱ.comp hτ
+  have hg : Submartingale (fun j ↦ f (τ j)) 𝒢 μ := by
+    refine ⟨fun j ↦ ?_, fun _ _ hij ↦ ?_, fun j ↦ hf.integrable (τ j)⟩
+    · exact (hf.stronglyAdapted (τ j)).mono (Filtration.comp_apply ℱ hτ j).symm.le
+    · simpa only [𝒢, Filtration.comp_apply] using hf.ae_le_condExp (hτ hij)
   have hset : {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} = {ω | (ε : ℝ) ≤
       (Finset.range (n + 1)).sup' Finset.nonempty_range_add_one fun k ↦ f (τ k) ω} := by
     ext ω
