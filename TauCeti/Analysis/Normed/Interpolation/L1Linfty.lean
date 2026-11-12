@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.KFunctional
+public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 public import TauCeti.MeasureTheory.Function.DecreasingRearrangement
 public import TauCeti.MeasureTheory.Function.Lp.L1AddLinfty
 
@@ -22,9 +23,18 @@ the integral of the decreasing rearrangement of `‖f‖` over `(0, t]`:
 `TauCeti.CompatibleCouple.kFunctional_l1Linfty`). This is the formula
 `MeasureTheory.Measure.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm`, which is stated
 for arbitrary splittings `f = f₀ + f₁` measured by `Lᵖ` seminorms, transported to the
-decompositions of `u` in the sum space of the couple, on which the real interpolation spaces
-`(L¹, L^∞)_{θ,q}` are built. Since `K(t, u)` is a real number, the equation shows in particular
-that `∫₀ᵗ ‖f‖*` is finite for every `f` in `L¹ + L^∞`.
+decompositions of `u` in the sum space of the couple. Since `K(t, u)` is a real number, the
+equation shows in particular that `∫₀ᵗ ‖f‖*` is finite for every `f` in `L¹ + L^∞`; conversely,
+a measurable function with `∫₀ᵗ ‖f‖* < ∞` represents an element of `L¹ + L^∞`
+(`TauCeti.CompatibleCouple.exists_toAEEqFun_ae_eq_iff_lintegral_lt_top`).
+
+The ambient space of `l1Linfty` carries the indiscrete topology, so the normed real interpolation
+spaces `(L¹, L^∞)_{θ,q}` are those of the Lebesgue couple `TauCeti.CompatibleCouple.lebesgue` at
+the exponents `1` and `∞`, whose ambient space is the normed space `L¹ + L^∞`. Both couples have
+the same decompositions, hence the same `K`-functional
+(`TauCeti.CompatibleCouple.kFunctional_l1Linfty_sumSpaceEmbed`), and the formula holds for the
+Lebesgue couple as well (`TauCeti.CompatibleCouple.ofReal_kFunctional_lebesgue_one_top`,
+`TauCeti.CompatibleCouple.kFunctional_lebesgue_one_top`).
 
 As a check, the `K`-functional of `c 1_A` is `‖c‖ min (t, μ A)`
 (`TauCeti.CompatibleCouple.ofReal_kFunctional_l1Linfty_indicator`): the decompositions
@@ -61,6 +71,32 @@ private theorem ofReal_norm_add_mul_norm {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fa
     Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g),
     ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
 
+/-- A splitting of finite cost `‖f₀‖₁ + t ‖f₁‖_∞`, with `t > 0`, is a pair of `L¹` and `L^∞`
+functions. -/
+private theorem memLp_of_eLpNorm_add_mul_ne_top {f₀ f₁ : α → E} (ht : 0 < t)
+    (hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ ≠ ∞) :
+    MemLp f₀ 1 μ ∧ MemLp f₁ ∞ μ := by
+  obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
+  refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
+  rw [htop, ENNReal.mul_top (by simpa using ht)]
+
+/-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions, hence the same
+`K`-functional, read through the embedding of the sum space of the former into `L¹ + L^∞`. -/
+theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E μ 1 ∞).SumSpace) :
+    (l1Linfty 𝕜 E μ).kFunctional t ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v) =
+      (lebesgue 𝕜 E μ 1 ∞).kFunctional t v := by
+  have key (g : Lp E 1 μ) (h : Lp E ∞ μ) :
+      (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed
+          ((lebesgue 𝕜 E μ 1 ∞).fstToSum g + (lebesgue 𝕜 E μ 1 ∞).sndToSum h) =
+        (l1Linfty 𝕜 E μ).fstToSum g + (l1Linfty 𝕜 E μ).sndToSum h := by
+    rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
+      lebesgue_embed₁, L1AddLinfty.ofLp_eq_fstToSum, L1AddLinfty.ofLp_eq_sndToSum]
+  refine le_antisymm ((le_kFunctional_iff ht).2 fun g h hgh => kFunctional_le ht ?_)
+    ((le_kFunctional_iff ht).2 fun g h hgh =>
+      kFunctional_le ht ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed_injective ?_))
+  · rw [← hgh, key]
+  · rw [key, hgh]
+
 variable [NormedSpace ℝ E]
 
 /-- **The `K`-functional of `(L¹, L^∞)`.** For `t > 0` and an element `u` of `L¹ + L^∞`
@@ -77,11 +113,7 @@ theorem ofReal_kFunctional_l1Linfty {u : L1AddLinfty 𝕜 E μ} {f : α → E}
     by_cases hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ = ∞
     · rw [hfin]
       exact le_top
-    obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
-    have hfin₁' : eLpNorm f₁ ∞ μ ≠ ∞ := fun htop => hfin₁ <| by
-      rw [htop, ENNReal.mul_top (by simpa using ht)]
-    have h₀ : MemLp f₀ 1 μ := memLp_iff.2 hfin₀.lt_top
-    have h₁ : MemLp f₁ ∞ μ := memLp_iff.2 hfin₁'.lt_top
+    obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
     have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp f₀) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp f₁) =
         u := by
       refine L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 ?_
@@ -122,6 +154,41 @@ theorem kFunctional_l1Linfty {u : L1AddLinfty 𝕜 E μ} {f : α → E}
     (l1Linfty 𝕜 E μ).kFunctional t u =
       (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s).toReal := by
   rw [← ofReal_kFunctional_l1Linfty hu ht, ENNReal.toReal_ofReal (kFunctional_nonneg ht.le)]
+
+/-- For `t > 0`, a function represents an element of `L¹ + L^∞` exactly when it is almost
+everywhere strongly measurable and `∫₀ᵗ ‖f‖*` is finite. -/
+theorem exists_toAEEqFun_ae_eq_iff_lintegral_lt_top {f : α → E} (ht : 0 < t) :
+    (∃ u : L1AddLinfty 𝕜 E μ, ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) ↔
+      AEStronglyMeasurable f μ ∧ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s < ∞ := by
+  refine ⟨fun ⟨u, hu⟩ => ⟨(AEEqFun.aestronglyMeasurable _).congr hu, ?_⟩, fun ⟨hf, hfin⟩ => ?_⟩
+  · rw [← ofReal_kFunctional_l1Linfty hu ht]
+    exact ENNReal.ofReal_lt_top
+  · rw [μ.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm hf] at hfin
+    obtain ⟨f₀, hfin⟩ := iInf_lt_iff.1 hfin
+    obtain ⟨f₁, hfin⟩ := iInf_lt_iff.1 hfin
+    obtain ⟨hsum, hfin⟩ := iInf_lt_iff.1 hfin
+    obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin.ne
+    refine L1AddLinfty.exists_toAEEqFun_ae_eq_iff.2 ⟨h₀.toLp f₀, h₁.toLp f₁, ?_⟩
+    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp] with y hy₀ hy₁
+    rw [Pi.add_apply, hy₀, hy₁, ← Pi.add_apply, hsum]
+
+/-- **The `K`-functional of the Lebesgue couple `(L¹, L^∞)`.** For `t > 0` and an element `v` of
+its sum space represented by `f`, `K(t, v) = ∫₀ᵗ ‖f‖*`. -/
+theorem ofReal_kFunctional_lebesgue_one_top {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace} {f : α → E}
+    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v)) =ᵐ[μ] f)
+    (ht : 0 < t) :
+    ENNReal.ofReal ((lebesgue 𝕜 E μ 1 ∞).kFunctional t v) =
+      ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+  rw [← kFunctional_l1Linfty_sumSpaceEmbed ht.le, ofReal_kFunctional_l1Linfty hv ht]
+
+/-- **The `K`-functional of the Lebesgue couple `(L¹, L^∞)`**, real form: for `t > 0` and an
+element `v` of its sum space represented by `f`, `K(t, v) = ∫₀ᵗ ‖f‖*`. -/
+theorem kFunctional_lebesgue_one_top {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace} {f : α → E}
+    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v)) =ᵐ[μ] f)
+    (ht : 0 < t) :
+    (lebesgue 𝕜 E μ 1 ∞).kFunctional t v =
+      (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s).toReal := by
+  rw [← kFunctional_l1Linfty_sumSpaceEmbed ht.le, kFunctional_l1Linfty hv ht]
 
 /-- The `K`-functional of `c 1_A` in `L¹ + L^∞` is `‖c‖ min (t, μ A)`, for `t > 0`. -/
 theorem ofReal_kFunctional_l1Linfty_indicator {u : L1AddLinfty 𝕜 E μ} {A : Set α}
