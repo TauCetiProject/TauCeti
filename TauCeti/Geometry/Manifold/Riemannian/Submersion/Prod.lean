@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Curvature
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
 # O'Neill tensors and horizontal curvature of Riemannian product projections

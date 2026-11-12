@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 public import TauCeti.Geometry.Manifold.Riemannian.Prod.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Riemannian submersions and horizontal lifts
@@ -207,7 +208,8 @@ theorem isRiemannianSubmersion_fst :
   let w : TangentSpace (I.prod J) p := (Manifold.tangentSpaceProdEquiv p).symm
     (0, (Manifold.tangentSpaceProdEquiv p v).2)
   have hw : w ∈ (mfderiv (I.prod J) I (@Prod.fst M N) p).ker := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Manifold.mfderiv_fst_apply]
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mfderiv_fst_apply,
+      ← Manifold.tangentSpaceProdEquiv_apply (I := I) (J := J) p w]
     simp only [w, ContinuousLinearEquiv.apply_symm_apply]
   have hzero : inner ℝ w v = 0 := hv w hw
   rw [Manifold.inner_tangentSpace_prod] at hzero
@@ -215,7 +217,8 @@ theorem isRiemannianSubmersion_fst :
   have hv₂ : (Manifold.tangentSpaceProdEquiv p v).2 = 0 :=
     (inner_self_eq_zero (𝕜 := ℝ)).mp hzero
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
-    Manifold.inner_tangentSpace_prod, hv₂, inner_zero_left, add_zero, Manifold.mfderiv_fst_apply]
+    Manifold.inner_tangentSpace_prod, hv₂, inner_zero_left, add_zero, mfderiv_fst_apply,
+    Manifold.tangentSpaceProdEquiv_apply]
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
@@ -228,8 +231,8 @@ theorem horizontalLift_fst (p : M × N) (v : TangentSpace I p.1) :
   intro w
   rw [IsRiemannianSubmersion.horizontalLift_apply,
     ContinuousLinearMap.adjoint_inner_left, Manifold.inner_tangentSpace_prod,
-    Manifold.mfderiv_fst_apply]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero]
+    ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero,
+    mfderiv_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
 
 /-- For the product Riemannian submersion `Prod.fst : M × N → M`, the horizontal projection keeps
 the first tangent component and zeroes the second. -/
@@ -237,7 +240,7 @@ theorem starProjection_orthogonal_ker_fst (p : M × N) (v : TangentSpace (I.prod
     (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ.starProjection v =
       (Manifold.tangentSpaceProdEquiv p).symm ((Manifold.tangentSpaceProdEquiv p v).1, 0) := by
   rw [← (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift_mfderiv,
-    horizontalLift_fst, Manifold.mfderiv_fst_apply]
+    horizontalLift_fst, mfderiv_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
 
 /-- For the product Riemannian submersion `Prod.fst : M × N → M`, the vertical projection zeroes
 the first tangent component and keeps the second. -/

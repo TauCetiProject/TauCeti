@@ -125,6 +125,15 @@ theorem det_gram_horizontalLift (x : M) (u v : TangentSpace J (f x)) :
       (Matrix.gram ℝ ![u, v]).det := by
   rw [h.gram_horizontalLift]
 
+/-- Horizontal lifting preserves linear independence of a pair of base tangent vectors. -/
+private theorem linearIndependent_horizontalLift (x : M) {u v : TangentSpace J (f x)}
+    (huv : LinearIndependent ℝ ![u, v]) :
+    LinearIndependent ℝ ![h.horizontalLift x u, h.horizontalLift x v] := by
+  convert huv.map' (h.horizontalLift x).toLinearMap
+    (LinearMap.ker_eq_bot.mpr (h.horizontalLift x).injective) using 1
+  ext i
+  fin_cases i <;> rfl
+
 end Gram
 
 -- These regularity indices are propositionally, but not definitionally, equal to two or `∞`.
@@ -607,11 +616,7 @@ theorem le_sectionalCurvature_of_forall {κ : ℝ}
     κ ≤ (leviCivitaConnection J N).sectionalCurvature
       (isMetricCompatible_leviCivitaConnection J) (f x) u v :=
   h.le_sectionalCurvature_of_forall_horizontalLift
-    (fun a b hab ↦ hκ _ _ <|
-      (show ![h.horizontalLift x a, h.horizontalLift x b] =
-          (h.horizontalLift x).toLinearMap ∘ ![a, b] by ext i; fin_cases i <;> rfl) ▸
-        hab.map' (h.horizontalLift x).toLinearMap
-          (LinearMap.ker_eq_bot.mpr (h.horizontalLift x).injective)) huv
+    (fun _ _ hab ↦ hκ _ _ (h.linearIndependent_horizontalLift x hab)) huv
 
 /-- Under a surjective Riemannian submersion, a global lower sectional-curvature bound on `M`
 descends to a global lower sectional-curvature bound on `N`. -/
@@ -635,12 +640,8 @@ theorem sectionalCurvature_eq_add_div_of_hasSectionalCurvatureAt {κ : ℝ}
         (isMetricCompatible_leviCivitaConnection J) (f x) u v =
       κ + 3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 /
         (Matrix.gram ℝ ![u, v]).det := by
-  have huv' : LinearIndependent ℝ ![h.horizontalLift x u, h.horizontalLift x v] :=
-    (show ![h.horizontalLift x u, h.horizontalLift x v] =
-        (h.horizontalLift x).toLinearMap ∘ ![u, v] by ext i; fin_cases i <;> rfl) ▸
-      huv.map' (h.horizontalLift x).toLinearMap
-        (LinearMap.ker_eq_bot.mpr (h.horizontalLift x).injective)
-  rw [h.sectionalCurvature_eq_horizontalLift_add_div, hκ.sectionalCurvature_eq _ _ huv']
+  rw [h.sectionalCurvature_eq_horizontalLift_add_div,
+    hκ.sectionalCurvature_eq _ _ (h.linearIndependent_horizontalLift x huv)]
 
 /-- When `M` has prescribed sectional curvature `κ` at `x`, the base sectional curvature of any
 orthonormal pair `u, v ∈ T_(f x) N` is `κ + 3 ‖A_u' v'‖²`. -/
