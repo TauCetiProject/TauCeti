@@ -88,7 +88,7 @@ theorem signedLaurentQuantumBinomial_add_left_eq (m n : ℤ) (r : ℕ) :
     intro r
     rw [zero_add, Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_eq_single 0]
     · simp
-    · intro a ha hne
+    · intro a _ hne
       have hz : signedLaurentQuantumBinomial 0 a = 0 :=
         (signedLaurentQuantumBinomial_natCast 0 a).trans
           (laurentQuantumBinomial_eq_zero_of_lt (Nat.pos_of_ne_zero hne))

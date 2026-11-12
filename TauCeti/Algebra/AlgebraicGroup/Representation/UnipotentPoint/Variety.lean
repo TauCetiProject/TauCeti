@@ -25,7 +25,7 @@ nor the vanishing of the characteristic-polynomial equations of `ρ` alone.
 
 When `H` is of finite type, `I_U` is the radical of the unipotence ideal `J_ρ` of every faithful
 finite-dimensional representation `ρ`, it may be computed with the unipotent points valued in any
-algebraically closed extension of `k`, and its points with values in a perfect field are exactly
+algebraically closed extension of `k`, and its points with values in a field are exactly
 the unipotent points.
 
 The unipotent variety contains the identity, is stable under inversion, and every homomorphism of
@@ -43,8 +43,8 @@ of the unipotent variety and the morphisms between unipotent varieties on coordi
   unipotence ideal of any faithful representation.
 * `TauCeti.HopfAlgebra.mem_unipotentVarietyIdeal_iff_of_isAlgClosed`: it may be computed with the
   unipotent points valued in any algebraically closed extension.
-* `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_ker_iff`: its points with values in a perfect
-  field are the unipotent points.
+* `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_ker_iff`: its points with values in a field
+  are the unipotent points.
 * `TauCeti.HopfAlgebra.comap_antipodeAlgHom_unipotentVarietyIdeal`: stability under inversion.
 * `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_comap`: functoriality along homomorphisms of
   affine groups.
@@ -188,9 +188,9 @@ theorem mem_unipotentVarietyIdeal_iff_of_isAlgClosed (K : Type u) [Field K] [Alg
   rw [← radical_unipotenceIdeal_eq_unipotentVarietyIdeal M hM,
     Comodule.mem_radical_unipotenceIdeal_iff K M hM]
 
-/-- The points of the unipotent variety with values in a perfect field are exactly the unipotent
+/-- The points of the unipotent variety with values in a field are exactly the unipotent
 points. -/
-theorem unipotentVarietyIdeal_le_ker_iff {K : Type u} [Field K] [Algebra k K] [PerfectField K]
+theorem unipotentVarietyIdeal_le_ker_iff {K : Type u} [Field K] [Algebra k K]
     (g : WithConv (H →ₐ[k] K)) :
     unipotentVarietyIdeal k H ≤ RingHom.ker g.ofConv ↔ IsUnipotentPoint g := by
   obtain ⟨M, hM⟩ := Comodule.exists_isFaithful (k := k) (H := H)

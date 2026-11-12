@@ -80,7 +80,7 @@ theorem exists_length_eq_ofDigits_eq_of_le_two_mul_pow {b n z : ℕ} (hn : 0 < n
     ∃ w : List (Fin (2 * b + 1)), w.length = n ∧ ofDigits b (w.map Fin.val) = z := by
   induction n, hn using le_induction generalizing z with
   | base => exact ⟨[⟨z, by simpa using lt_succ_of_le hz⟩], rfl, ofDigits_singleton⟩
-  | succ n hn ih =>
+  | succ n _ ih =>
     -- Split off the last digit `z % b`; the quotient `z / b` is at most `2 b ^ n`.
     obtain ⟨w, hw, hwz⟩ := ih (z := z / b) (Nat.div_le_of_le_mul (hz.trans_eq (by ring)))
     have hr : z % b < 2 * b + 1 := by

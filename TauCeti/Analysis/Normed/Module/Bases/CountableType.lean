@@ -85,7 +85,7 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq (w : ℕ → E) {t : ℝ≥
   -- The initial spans `span K (w '' Iio n)` are finite-dimensional, hence closed.
   have hF (n : ℕ) : IsClosed (span K (w '' Iio n) : Set E) :=
     have := FiniteDimensional.span_of_finite K ((finite_Iio n).image w)
-    (span K (w '' Iio n)).closed_of_finiteDimensional
+    (span K (w '' Iio n)).isClosed_of_finiteDimensional
   -- Subtract from `w n` an almost best approximation `y n` in the previous span, with loss
   -- `T (n + 1) / T n < 1`.
   have hr (n : ℕ) : ((T (n + 1) / T n : ℝ≥0) : ℝ) < 1 := by
@@ -177,7 +177,7 @@ theorem exists_isTOrthogonalBasis_nat_of_dense_span (hE : ¬FiniteDimensional K 
     refine not_finite_iff_infinite.1 fun hS ↦ hE ?_
     have := FiniteDimensional.span_of_finite K (finite_range e)
     have htop : span K (range e) = ⊤ := eq_top_iff'.2 fun x ↦
-      (span K (range e)).closed_of_finiteDimensional.closure_subset (he.dense_span x)
+      (span K (range e)).isClosed_of_finiteDimensional.closure_subset (he.dense_span x)
     exact Module.finite_def.2 (htop ▸ fg_span (finite_range e))
   obtain ⟨σ⟩ : Nonempty (ℕ ≃ S) := nonempty_equiv_of_countable
   exact ⟨e ∘ σ, he.comp_equiv σ⟩

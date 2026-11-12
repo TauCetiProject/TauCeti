@@ -163,6 +163,18 @@ theorem exteriorPowerZeroIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
           (SheafOfModules.unit (ringCatSheaf R))).hom :=
   (rfl)
 
+/-- The inverse zeroth-power identification is the sheafification of the sectionwise inverse,
+preceded by the inverse of the sheafified-unit identification. -/
+@[simp, reassoc]
+theorem exteriorPowerZeroIso_inv_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (exteriorPowerZeroIso R).inv.app M =
+      (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R)
+        (SheafOfModules.unit (ringCatSheaf R))).inv ≫
+      (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
+        ((PresheafOfModulesOfCommRing.exteriorPowerZeroIso R.obj).inv.app M.val) ≫
+      (exteriorPowerIso 0 M).inv :=
+  (rfl)
+
 /-- On components, `exteriorPowerOneIso` is the sheafification of the presheaf-level
 identification `PresheafOfModulesOfCommRing.exteriorPowerOneIso`, followed by the counit
 `TauCeti.SheafOfModules.sheafificationIso`. -/

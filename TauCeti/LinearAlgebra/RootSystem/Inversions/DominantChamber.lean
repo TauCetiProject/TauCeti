@@ -28,8 +28,8 @@ group acts freely on the interior of the dominant chamber.
 
 ## References
 
-This file proves the interior case of the uniqueness half of the fundamental-domain item of Layer 4
-in `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`: for a weight interior to the
+This file proves the interior case of the uniqueness half of the statement that the closed dominant
+chamber is a fundamental domain for the Weyl group: for a weight interior to the
 dominant chamber the moving element is forced to be the identity, and the Weyl group acts freely
 there. The general case, where a weight on a wall of the chamber is fixed by the reflection in that
 wall and the moving element need not be the identity, is
