@@ -290,7 +290,7 @@ private def extendedEvenPeriodPolynomialEquivOfPosEven {w : ℕ} (hw : Even w) (
     ⟨eisensteinPeriodPolynomial ℂ w, mem_evenPeriodPolynomials_eisensteinPeriodPolynomial hw⟩
   have hP₀ : P₀ ≠ 0 := fun h ↦ eisensteinPeriodPolynomial_ne_zero hw₀ (congrArg Subtype.val h)
   let eDom := Submodule.prodEquivOfIsCompl (R := ℂ) (E := ModularForm 𝒮ℒ (w + 2 : ℕ)) _ _
-    (isCompl_cuspFormSubmodule_span_E hk3 hk2)
+    (isCompl_cuspFormSubmodule_span_E hk3)
   let eCod := Submodule.prodEquivOfIsCompl (R := ℂ) (E := evenPeriodPolynomials ℂ w) _ _
     (isCompl_range_evenPeriodPolynomial_span_eisensteinPeriodPolynomial hk hw hw₀)
   eDom.symm ≪≫ₗ
@@ -369,7 +369,7 @@ theorem extendedEvenPeriodPolynomialEquiv_E {k w : ℕ} (hk : (k : ℤ) = w + 2)
     have hsymm :
         (Submodule.prodEquivOfIsCompl (R := ℂ) (E := ModularForm 𝒮ℒ (w + 2 : ℕ))
           (ModularForm.cuspFormSubmodule 𝒮ℒ (w + 2 : ℕ)) (ℂ ∙ ModularForm.E hk3)
-          (isCompl_cuspFormSubmodule_span_E hk3 (hcond.1.add even_two))).symm
+          (isCompl_cuspFormSubmodule_span_E hk3)).symm
           (ModularForm.E hk3) =
         (0, ⟨ModularForm.E hk3, Submodule.mem_span_singleton_self _⟩) :=
       Submodule.prodEquivOfIsCompl_symm_apply_right (R := ℂ) (E := ModularForm 𝒮ℒ (w + 2 : ℕ))
@@ -443,7 +443,7 @@ theorem PeriodRelation.periodAction_extendedEvenPeriodPolynomialEquiv {k : ℤ} 
     have hk2 : Even (w + 2) := hw.add even_two
     have hw1 : w + 2 - 1 = w + 1 := by omega
     have hmem : F ∈ ModularForm.cuspFormSubmodule 𝒮ℒ (w + 2 : ℕ) ⊔ (ℂ ∙ ModularForm.E hk3) := by
-      rw [(isCompl_cuspFormSubmodule_span_E hk3 hk2).sup_eq_top]
+      rw [(isCompl_cuspFormSubmodule_span_E hk3).sup_eq_top]
       trivial
     obtain ⟨_, ⟨g, rfl⟩, _, hE, rfl⟩ := Submodule.mem_sup.mp hmem
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hE
@@ -462,7 +462,7 @@ theorem PeriodRelation.periodAction_extendedEvenPeriodPolynomialEquiv {k : ℤ} 
               homogeneousSubmodule (Fin 2) ℂ w) =
           extendedEvenPeriodPolynomialEquiv hk
             (heckeTLevelOne (w + 2 : ℕ) n (ModularForm.E hk3)) := by
-      rw [heckeTLevelOne_E hk3 hk2 n, map_smul, Submodule.coe_smul,
+      rw [heckeTLevelOne_E hk3 n, map_smul, Submodule.coe_smul,
         extendedEvenPeriodPolynomialEquiv_E hk hw hw₀ hk3,
         h.periodAction_eisensteinPeriodPolynomial (by exact_mod_cast NeZero.ne n) hw,
       Int.natAbs_natCast, hw1]
