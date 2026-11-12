@@ -203,7 +203,7 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_one
       not_false_eq_true, Finset.erase_eq_of_notMem, TauCeti.ExteriorAlgebra.basis_singleton,
       map_zsmul_unit, CliffordAlgebra.contractLeft_ι, Basis.coord_apply, Basis.repr_self,
       Finsupp.single_eq_same, map_one, spinFourExteriorBasis_empty, one_smul]
-    obtain h | h := Int.units_eq_one_or
+    obtain _ | _ := Int.units_eq_one_or
       (TauCeti.ExteriorAlgebra.basisEraseSign (0 : Fin 2) {0, 1})
     · simp
     · simp
