@@ -400,7 +400,7 @@ private theorem ofReal_mul_volume_ball_le_of_volume_ball_le {Γ S : Set (Euclide
     simp only [NNReal.coe_natCast, ENNReal.coe_natCast, ENNReal.rpow_natCast] at h
     calc ∫⁻ y in ball c R, ENNReal.ofReal ((f y)⁺ ^ N)
         = ∫⁻ y in ball c R, ‖(f y)⁺‖ₑ ^ N := lintegral_congr fun y ↦ by
-          rw [Real.enorm_eq_ofReal (posPart_nonneg _), ENNReal.ofReal_pow (posPart_nonneg _)]
+          rw [Real.eNorm_eq_ofReal (posPart_nonneg _), ENNReal.ofReal_pow (posPart_nonneg _)]
       _ ≤ ENNReal.ofReal B ^ N := h.trans (by gcongr)
       _ = ENNReal.ofReal (B ^ N) := (ENNReal.ofReal_pow (by positivity) N).symm
   have hvol (z : EuclideanSpace ℝ ι) {r : ℝ} (hr : 0 < r) :
