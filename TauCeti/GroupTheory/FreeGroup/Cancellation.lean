@@ -44,8 +44,8 @@ reductions (`FreeGroup.mk_eq_one_of_mk_append_cons_append_cons_eq_one`).
   `ws` of blocks.
 * `TauCeti.exists_cancellationPieces`: a list of reduced words with trivial product has
   cancellation pieces indexed by some `Fin p`. Conversely, a list with cancellation pieces has
-  trivial product (`TauCeti.CancellationPieces.mk_flatten`); `TauCeti.exists_cancellationPieces_iff`
-  combines the two.
+  trivial product (`TauCeti.CancellationPieces.mk_flatten_eq_one`);
+  `TauCeti.exists_cancellationPieces_iff` combines the two.
 * `TauCeti.CancellationPieces.length_le_of_mem_patterns`: `|Vⱼ| ≤ l - 1`.
 * `TauCeti.CancellationPieces.card_le`: at most `l (l - 1) / 2` pieces.
 
@@ -87,13 +87,13 @@ structure CancellationPieces (ws : List (List (α × Bool))) (Z : Type*) where
   /-- No letter of `Z` occurs twice in one word `Vⱼ`. -/
   nodup_map_fst (v : List (Z × Bool)) : v ∈ patterns → (v.map Prod.fst).Nodup
   /-- The product `V₀ ⋯ V_{l-1}` is trivial in `FreeGroup Z`. -/
-  mk_flatten_patterns : mk patterns.flatten = 1
+  mk_flatten_patterns_eq_one : mk patterns.flatten = 1
   /-- Two distinct words `Vⱼ` share at most one letter of `Z`. -/
   pairwise_subsingleton : patterns.Pairwise fun v v' =>
     {z | z ∈ v.map Prod.fst ∧ z ∈ v'.map Prod.fst}.Subsingleton
 
 attribute [simp] CancellationPieces.piece_ne_nil CancellationPieces.map_flatMap_patterns
-  CancellationPieces.nodup_flatten_patterns CancellationPieces.mk_flatten_patterns
+  CancellationPieces.nodup_flatten_patterns CancellationPieces.mk_flatten_patterns_eq_one
 
 namespace CancellationPieces
 
@@ -122,8 +122,8 @@ theorem flatMap_flatten_patterns :
     Function.comp_def]
 
 /-- The product `w₀ ⋯ w_{l-1}` of the blocks is trivial in the free group. -/
-theorem mk_flatten (P : CancellationPieces ws Z) : FreeGroup.mk ws.flatten = 1 := by
-  rw [← P.flatMap_flatten_patterns, mk_flatMap_substituteLetter, P.mk_flatten_patterns,
+theorem mk_flatten_eq_one (P : CancellationPieces ws Z) : FreeGroup.mk ws.flatten = 1 := by
+  rw [← P.flatMap_flatten_patterns, mk_flatMap_substituteLetter, P.mk_flatten_patterns_eq_one,
     _root_.map_one]
 
 /-- Each word over `Z^{±1}` is reduced. -/
@@ -222,7 +222,7 @@ private theorem nonempty_of_forall_eq_nil {ws : List (List (α × Bool))} (hws :
     nodup_flatten_patterns := by simp
     mem_flatten_patterns := fun z => z.elim0
     nodup_map_fst := by simp
-    mk_flatten_patterns := by simp [← one_eq_mk]
+    mk_flatten_patterns_eq_one := by simp [← one_eq_mk]
     pairwise_subsingleton := List.pairwise_map.2 (List.pairwise_of_forall fun _ _ => by simp) }⟩
   rw [List.map_map]
   conv_rhs => rw [← List.map_id ws]
@@ -257,7 +257,7 @@ private theorem nonempty_of_continue {ws : List (List (α × Bool))} (P : Cancel
     nodup_flatten_patterns := P.nodup_flatten_patterns
     mem_flatten_patterns := P.mem_flatten_patterns
     nodup_map_fst := P.nodup_map_fst
-    mk_flatten_patterns := P.mk_flatten_patterns
+    mk_flatten_patterns_eq_one := P.mk_flatten_patterns_eq_one
     pairwise_subsingleton := P.pairwise_subsingleton }⟩
   · by_cases hz : z = y
     · subst hz
@@ -290,7 +290,7 @@ private theorem mk_append_eq_one_of_patterns_eq {ws : List (List (α × Bool))}
   have hz := List.notMem_map_fst_of_nodup_append_cons_append_cons (hflat ▸ P.nodup_flatten_patterns)
   simp only [List.map_append, List.mem_append, not_or] at hz
   refine mk_eq_one_of_mk_append_cons_append_cons_eq_one ?_ ?_ ?_
-    (hflat ▸ P.mk_flatten_patterns) <;>
+    (hflat ▸ P.mk_flatten_patterns_eq_one) <;>
     simp only [List.map_append, List.mem_append, not_or] <;> tauto
 
 /-- **Non-crossing.** If the patterns of `P` contain a block `v₁` followed (after empty blocks) by
@@ -473,10 +473,10 @@ private theorem nonempty_of_new {p : ℕ} {ws : List (List (α × Bool))}
     mem_flatten_patterns := mem_flatten_insertPiece hmid (hflat ▸ P.mem_flatten_patterns)
     nodup_map_fst := nodup_map_fst_insertPiece (Fin.castSucc_injective p) Fin.castSucc_ne_last
       (hP ▸ P.nodup_map_fst)
-    mk_flatten_patterns := by
+    mk_flatten_patterns_eq_one := by
       rw [hnew, mk_append_cons_cons_of_ne Bool.false_ne_true.symm, ← List.map_append, ← hflat]
       simpa only [Prod.map_def, id_eq, map.mk, _root_.map_one] using
-        congrArg (FreeGroup.map Fin.castSucc) P.mk_flatten_patterns
+        congrArg (FreeGroup.map Fin.castSucc) P.mk_flatten_patterns_eq_one
     pairwise_subsingleton := pairwise_insertPiece (Fin.castSucc_injective p)
       Fin.castSucc_ne_last (hP ▸ P.pairwise_subsingleton) hdisj }⟩
   · induction z using Fin.lastCases with
@@ -553,7 +553,7 @@ exactly when its product is trivial in the free group. -/
 theorem exists_cancellationPieces_iff {ws : List (List (α × Bool))}
     (hws : ∀ w ∈ ws, IsReduced w) :
     (∃ p, Nonempty (CancellationPieces ws (Fin p))) ↔ mk ws.flatten = 1 :=
-  ⟨fun ⟨_, ⟨P⟩⟩ => P.mk_flatten, exists_cancellationPieces hws⟩
+  ⟨fun ⟨_, ⟨P⟩⟩ => P.mk_flatten_eq_one, exists_cancellationPieces hws⟩
 
 section Examples
 
@@ -585,7 +585,7 @@ example {w : List (α × Bool)} (hw : w ≠ []) :
     nodup_flatten_patterns := by decide
     mem_flatten_patterns := by decide
     nodup_map_fst := by decide
-    mk_flatten_patterns := by
+    mk_flatten_patterns_eq_one := by
       simpa [← one_eq_mk] using (Red.Step.not (L₁ := []) (L₂ := []) (x := (0 : Fin 1))
         (b := true)).mk_eq
     pairwise_subsingleton := by simp [Set.subsingleton_of_subsingleton] }⟩
@@ -604,7 +604,7 @@ example : ∃ P : CancellationPieces ([[(0, true), (1, true)], [(1, false), (2, 
     nodup_flatten_patterns := by decide
     mem_flatten_patterns := by decide
     nodup_map_fst := by decide
-    mk_flatten_patterns := by decide
+    mk_flatten_patterns_eq_one := by decide
     pairwise_subsingleton := by
       simp only [Set.Subsingleton, Set.mem_ofPred_eq]
       decide }, by decide⟩
