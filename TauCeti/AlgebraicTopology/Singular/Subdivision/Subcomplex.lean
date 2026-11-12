@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Homotopy
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 import TauCeti.Algebra.Homology.Homotopy
 
 /-!
@@ -122,10 +123,6 @@ lemma subcomplexChain_ι {m k : ℕ} (σ : (S : SSet) _⦋m⦌)
   | single v a => simp [SSet.ι_chainComplexMap_f]
 
 end AffineChain
-
--- The chain inclusion is the coproduct map induced by an injective map of simplices.
-local instance (n : ℕ) : Mono ((SSet.chainComplexMap S.ι R).f n) :=
-  inferInstanceAs (Mono ((sigmaConst.obj R).map (S.ι.app (op ⦋n⦌))))
 
 /-- Barycentric subdivision restricted to the chains of an affinely stable subcomplex, in
 degree `n`. -/
@@ -262,7 +259,6 @@ lemma subcomplexSubdivisionChainMap_naturality :
   have hι : SSet.chainComplexMap g R ≫ SSet.chainComplexMap T.ι R =
       SSet.chainComplexMap S.ι R ≫ SSet.chainComplexMap (TopCat.toSSet.map f) R := by
     simp only [← Functor.map_comp, hg]
-  have : Mono (SSet.chainComplexMap T.ι R) := HomologicalComplex.mono_of_mono_f _ inferInstance
   apply (cancel_mono (SSet.chainComplexMap T.ι R)).1
   simp only [Category.assoc, subcomplexSubdivisionChainMap_ι, hι, reassoc_of% hι,
     subcomplexSubdivisionChainMap_ι_assoc]

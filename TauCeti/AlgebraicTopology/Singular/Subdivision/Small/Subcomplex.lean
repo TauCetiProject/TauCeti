@@ -18,14 +18,16 @@ This file proves that the inclusion of its chains into the chains of `S` is a ch
 equivalence (`TauCeti.subcomplexSmallChainHomotopyEquiv`), and hence a quasi-isomorphism.
 
 Barycentric subdivision and its prism operator restrict to the chains of every affinely stable
-subcomplex (`TauCeti.subcomplexSubdivisionHomotopy`). They preserve the chains of
-`S ⊓ X.smallSingularSubcomplex U`, which is affinely stable as well, and a sufficiently fine
+subcomplex (`TauCeti.subcomplexSubdivisionHomotopy`). On the chains of `S` they preserve the chains
+of every affinely stable subcomplex of `S`
+(`TauCeti.comp_subcomplexSubdivisionX_mem_chainRange`), in particular those of
+`S ⊓ X.smallSingularSubcomplex U`, and a sufficiently fine
 iterated subdivision of each simplex of `S` is a chain of `S ⊓ X.smallSingularSubcomplex U`
 (`TauCeti.exists_ιChainComplex_comp_subcomplexSubdivisionChainMap_pow_mem_chainRange`), by the
 Lebesgue number argument of the singular case. So the general construction
 `TauCeti.chainComplexMapHomotopyEquivOfSubdivision` applies. For smooth singular chains this is
-the small-chain theorem from which Mayer–Vietoris sequences of smooth singular chains, and the
-comparison of smooth with continuous singular homology, are derived.
+the small-chain theorem needed for the Mayer–Vietoris sequence of smooth singular chains and for
+comparing smooth with continuous singular homology.
 
 ## Main results
 
@@ -94,8 +96,6 @@ lemma ιChainComplex_comp_subcomplexSubdivisionChainMap_pow_f {k : ℕ} (σ : (S
     (n : ℕ) :
     (S : SSet).ιChainComplex σ ≫ (End.of (subcomplexSubdivisionChainMap R S) ^ n).asHom.f k =
       subcomplexChain R S σ k ((subdivision _ k)^[n] (simplex k)) := by
-  have : Mono ((SSet.chainComplexMap S.ι R).f k) :=
-    inferInstanceAs (Mono ((sigmaConst.obj R).map (S.ι.app (Opposite.op ⦋k⦌))))
   apply (cancel_mono ((SSet.chainComplexMap S.ι R).f k)).1
   rw [Category.assoc, subcomplexSubdivisionChainMap_pow_f_ι, SSet.ι_chainComplexMap_f_assoc,
     subcomplexChain_ι, singularChain_subdivision_iterate, singularChain_simplex]
@@ -114,29 +114,29 @@ theorem exists_ιChainComplex_comp_subcomplexSubdivisionChainMap_pow_mem_chainRa
   rw [ιChainComplex_comp_subcomplexSubdivisionChainMap_pow_f]
   exact subcomplexChain_mem_chainRange R S U σ _ (hn n le_rfl (simplex k))
 
-/-- Restricted barycentric subdivision of the chains of `S` preserves the chains subordinate to
-`U`. -/
-lemma comp_subcomplexSubdivisionX_mem_chainRange {n : ℕ} {f : R ⟶ ((S : SSet).chainComplex R).X n}
-    (hf : f ∈ chainRange R (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) n) :
-    f ≫ subcomplexSubdivisionX R S n ∈
-      chainRange R (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) n := by
+variable {R S} in
+/-- Restricted barycentric subdivision of the chains of `S` preserves the chains of every affinely
+stable subcomplex `T ≤ S`, such as the simplices of `S` subordinate to an open cover. -/
+lemma comp_subcomplexSubdivisionX_mem_chainRange {T : (TopCat.toSSet.obj X).Subcomplex}
+    [T.IsAffineStable] (hTS : T ≤ S) {n : ℕ} {f : R ⟶ ((S : SSet).chainComplex R).X n}
+    (hf : f ∈ chainRange R (homOfLE hTS) n) :
+    f ≫ subcomplexSubdivisionX R S n ∈ chainRange R (homOfLE hTS) n := by
   obtain ⟨g, rfl⟩ := (mem_chainRange_iff _).1 hf
-  refine (mem_chainRange_iff _).2
-    ⟨g ≫ subcomplexSubdivisionX R (S ⊓ X.smallSingularSubcomplex U) n, ?_⟩
+  refine (mem_chainRange_iff _).2 ⟨g ≫ subcomplexSubdivisionX R T n, ?_⟩
   rw [Category.assoc, Category.assoc, ← subcomplexSubdivisionChainMap_f,
     ← subcomplexSubdivisionChainMap_f, ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f,
-    subcomplexSubdivisionChainMap_naturality R _ S (𝟙 X) _ (by simp)]
+    subcomplexSubdivisionChainMap_naturality R T S (𝟙 X) _ (by simp)]
 
-/-- The restricted prism operator of the chains of `S` preserves the chains subordinate to `U`. -/
-lemma comp_subcomplexPrismX_mem_chainRange {n : ℕ} {f : R ⟶ ((S : SSet).chainComplex R).X n}
-    (hf : f ∈ chainRange R (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) n) :
-    f ≫ subcomplexPrismX R S n ∈
-      chainRange R (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) (n + 1) := by
+variable {R S} in
+/-- The restricted prism operator of the chains of `S` preserves the chains of every affinely
+stable subcomplex `T ≤ S`, such as the simplices of `S` subordinate to an open cover. -/
+lemma comp_subcomplexPrismX_mem_chainRange {T : (TopCat.toSSet.obj X).Subcomplex}
+    [T.IsAffineStable] (hTS : T ≤ S) {n : ℕ} {f : R ⟶ ((S : SSet).chainComplex R).X n}
+    (hf : f ∈ chainRange R (homOfLE hTS) n) :
+    f ≫ subcomplexPrismX R S n ∈ chainRange R (homOfLE hTS) (n + 1) := by
   obtain ⟨g, rfl⟩ := (mem_chainRange_iff _).1 hf
-  refine (mem_chainRange_iff _).2
-    ⟨g ≫ subcomplexPrismX R (S ⊓ X.smallSingularSubcomplex U) n, ?_⟩
-  rw [Category.assoc, Category.assoc,
-    subcomplexPrismX_naturality R _ S (𝟙 X) _ (by simp)]
+  refine (mem_chainRange_iff _).2 ⟨g ≫ subcomplexPrismX R T n, ?_⟩
+  rw [Category.assoc, Category.assoc, subcomplexPrismX_naturality R T S (𝟙 X) _ (by simp)]
 
 variable (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ)
 
@@ -155,10 +155,10 @@ def subcomplexSmallChainHomotopyEquiv :
     (h := subcomplexSubdivisionHomotopy R S)
     (fun _ _ hf ↦ by
       simpa only [subcomplexSubdivisionChainMap_f] using
-        comp_subcomplexSubdivisionX_mem_chainRange R S U hf)
+        comp_subcomplexSubdivisionX_mem_chainRange inf_le_left hf)
     (fun _ _ hf ↦ by
       simpa only [subcomplexSubdivisionHomotopy_hom] using
-        comp_subcomplexPrismX_mem_chainRange R S U hf)
+        comp_subcomplexPrismX_mem_chainRange inf_le_left hf)
     (fun _ σ ↦ exists_ιChainComplex_comp_subcomplexSubdivisionChainMap_pow_mem_chainRange
       R S U hU hcov σ)
 
