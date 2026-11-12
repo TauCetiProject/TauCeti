@@ -35,14 +35,17 @@ open Bundle Set Topology
 
 variable {B B' : Type*}
 
-/-- The fibres of a pullback bundle inherit scalar multiplication from the original fibres. -/
-instance Bundle.Pullback.instSMul {M : Type*} {E : B → Type*}
+/-- The fibres of a pullback bundle inherit scalar multiplication from the original fibres.
+It has low priority so that Mathlib's scalar multiplication on pullbacks of module fibres, which
+agrees with the module structure at instance transparency, takes precedence there. -/
+instance (priority := low) Bundle.Pullback.instSMul {M : Type*} {E : B → Type*}
     [i : ∀ b, SMul M (E b)] (f : B' → B) (x : B') : SMul M ((f *ᵖ E) x) :=
   i (f x)
 
 /-- The fibres of a pullback bundle `f *ᵖ E` carry the actions on the fibres of `E`: the fibre over
-`x` is the fibre of `E` over `f x`. -/
-instance Bundle.Pullback.instMulAction {M : Type*} [Monoid M] {E : B → Type*}
+`x` is the fibre of `E` over `f x`. Like `Bundle.Pullback.instSMul`, it has low priority so that
+Mathlib's module structure on pullbacks of module fibres takes precedence. -/
+instance (priority := low) Bundle.Pullback.instMulAction {M : Type*} [Monoid M] {E : B → Type*}
     [i : ∀ b, MulAction M (E b)] (f : B' → B) (x : B') : MulAction M ((f *ᵖ E) x) :=
   i (f x)
 

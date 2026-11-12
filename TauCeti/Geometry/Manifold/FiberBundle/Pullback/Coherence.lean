@@ -50,6 +50,8 @@ variable {n : ℕ∞ω} {𝕜 B B' B'' F : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace F] [ChartedSpace HF F]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [∀ b, Nonempty (E b)]
+  {K K' : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
+  [FunLike K' B'' B'] [ContinuousMapClass K' B'' B']
 
 variable (n F E IB IF) in
 /-- Pullback along the identity is canonically diffeomorphic to the original total space.
@@ -126,12 +128,12 @@ variable (n F E IB'' IF) in
 /-- Pullback along a composite and successive pullback have canonically diffeomorphic
 total spaces. Both atlases read the same original fibre coordinates, so the comparison is
 `C^n` even when the continuous base maps are not smooth. -/
-noncomputable def pullbackCompDiffeomorph (g : C(B', B)) (f : C(B'', B')) :
+noncomputable def pullbackCompDiffeomorph (g : K) (f : K') :
     Diffeomorph (IB''.prod IF) (IB''.prod IF)
-      (ManifoldTotalSpace F ((g.comp f : B'' → B) *ᵖ E))
+      (ManifoldTotalSpace F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E))
       (ManifoldTotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) n where
   toFun := fiberwiseMap (E' := (f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) fun _ ↦ id
-  invFun := fiberwiseMap (E' := (g.comp f : B'' → B) *ᵖ E) fun _ ↦ id
+  invFun := fiberwiseMap (E' := ((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E) fun _ ↦ id
   left_inv := congrFun ((fiberwiseMap_comp _ _).symm.trans fiberwiseMap_id)
   right_inv := congrFun ((fiberwiseMap_comp _ _).symm.trans fiberwiseMap_id)
   contMDiff_toFun := ContMDiff.congr (fun x ↦ by
@@ -150,38 +152,38 @@ noncomputable def pullbackCompDiffeomorph (g : C(B', B)) (f : C(B'', B')) :
       (homeomorph_symm_fiberwiseMap _ x).trans (Homeomorph.symm_apply_apply _ _).symm
 
 /-- The composition comparison is the fibrewise identity map. -/
-theorem coe_pullbackCompDiffeomorph (g : C(B', B)) (f : C(B'', B')) :
+theorem coe_pullbackCompDiffeomorph (g : K) (f : K') :
     ⇑(pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f) =
-      fiberwiseMap (E := ((g.comp f : B'' → B) *ᵖ E))
+      fiberwiseMap (E := (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E))
         (E' := ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) (fun _ ↦ id) :=
   funext fun _ ↦ rfl
 
 /-- The inverse composition comparison is the fibrewise identity map. -/
-theorem coe_pullbackCompDiffeomorph_symm (g : C(B', B)) (f : C(B'', B')) :
+theorem coe_pullbackCompDiffeomorph_symm (g : K) (f : K') :
     ⇑(pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f).symm =
       fiberwiseMap (E := ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)))
-        (E' := ((g.comp f : B'' → B) *ᵖ E)) (fun _ ↦ id) :=
+        (E' := (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)) (fun _ ↦ id) :=
   funext fun _ ↦ rfl
 
 /-- The composition comparison preserves the displayed base point and fibre element. -/
-theorem pullbackCompDiffeomorph_homeomorph (g : C(B', B)) (f : C(B'', B'))
-    (p : TotalSpace F ((g.comp f : B'' → B) *ᵖ E)) :
+theorem pullbackCompDiffeomorph_homeomorph (g : K) (f : K')
+    (p : TotalSpace F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)) :
     pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f
-        (homeomorph F ((g.comp f : B'' → B) *ᵖ E) p) =
+        (homeomorph F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E) p) =
       homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) ⟨p.proj, p.2⟩ :=
   fiberwiseMap_homeomorph _ p
 
 /-- The inverse composition comparison preserves the displayed base point and fibre element. -/
-theorem pullbackCompDiffeomorph_symm_homeomorph (g : C(B', B)) (f : C(B'', B'))
+theorem pullbackCompDiffeomorph_symm_homeomorph (g : K) (f : K')
     (p : TotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) :
     (pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f).symm
         (homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) p) =
-      homeomorph F ((g.comp f : B'' → B) *ᵖ E) ⟨p.proj, p.2⟩ :=
+      homeomorph F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E) ⟨p.proj, p.2⟩ :=
   fiberwiseMap_homeomorph _ p
 
 /-- Reading the composition comparison in the iterated pullback preserves both components. -/
-theorem homeomorph_symm_pullbackCompDiffeomorph (g : C(B', B)) (f : C(B'', B'))
-    (x : ManifoldTotalSpace F ((g.comp f : B'' → B) *ᵖ E)) :
+theorem homeomorph_symm_pullbackCompDiffeomorph (g : K) (f : K')
+    (x : ManifoldTotalSpace F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)) :
     (homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))).symm
         (pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f x) =
       ⟨((homeomorph F _).symm x).proj, ((homeomorph F _).symm x).2⟩ :=
@@ -189,9 +191,9 @@ theorem homeomorph_symm_pullbackCompDiffeomorph (g : C(B', B)) (f : C(B'', B'))
 
 /-- Reading the inverse composition comparison in the composite pullback preserves both
 components. -/
-theorem homeomorph_symm_pullbackCompDiffeomorph_symm (g : C(B', B)) (f : C(B'', B'))
+theorem homeomorph_symm_pullbackCompDiffeomorph_symm (g : K) (f : K')
     (x : ManifoldTotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) :
-    (homeomorph F ((g.comp f : B'' → B) *ᵖ E)).symm
+    (homeomorph F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)).symm
         ((pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f).symm x) =
       ⟨((homeomorph F _).symm x).proj, ((homeomorph F _).symm x).2⟩ :=
   homeomorph_symm_fiberwiseMap _ x
@@ -199,33 +201,39 @@ theorem homeomorph_symm_pullbackCompDiffeomorph_symm (g : C(B', B)) (f : C(B'', 
 /-- The comparison intertwines the lift from a composite pullback with the two successive
 lifts to the original bundle. This identity does not require smoothness of the base maps. -/
 theorem pullbackLift_pullbackLift_homeomorph_symm_pullbackCompDiffeomorph
-    (g : C(B', B)) (f : C(B'', B'))
-    (x : ManifoldTotalSpace F ((g.comp f : B'' → B) *ᵖ E)) :
+    (g : K) (f : K')
+    (x : ManifoldTotalSpace F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)) :
     Pullback.lift g (Pullback.lift f
       ((homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))).symm
         (pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f x))) =
-        Pullback.lift (g.comp f) ((homeomorph F ((g.comp f : B'' → B) *ᵖ E)).symm x) := by
-  obtain ⟨⟨b, y⟩, rfl⟩ := (homeomorph F ((g.comp f : B'' → B) *ᵖ E)).surjective x
+        Pullback.lift ((g : C(B', B)).comp (f : C(B'', B')))
+          ((homeomorph F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)).symm x) := by
+  obtain ⟨⟨b, y⟩, rfl⟩ :=
+    (homeomorph F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)).surjective x
   rw [homeomorph_symm_pullbackCompDiffeomorph, Homeomorph.symm_apply_apply]
   exact (congrArg (Pullback.lift g) (Pullback.lift_mk f b y)).trans
-    ((Pullback.lift_mk g (f b) y).trans (Pullback.lift_mk (g.comp f) b y).symm)
+    ((Pullback.lift_mk g (f b) y).trans
+      (Pullback.lift_mk ((g : C(B', B)).comp (f : C(B'', B'))) b y).symm)
 
 /-- The inverse comparison intertwines the composite lift with the two successive lifts. -/
 theorem pullbackLift_homeomorph_symm_pullbackCompDiffeomorph_symm
-    (g : C(B', B)) (f : C(B'', B'))
+    (g : K) (f : K')
     (x : ManifoldTotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) :
-    Pullback.lift (g.comp f) ((homeomorph F ((g.comp f : B'' → B) *ᵖ E)).symm
+    Pullback.lift ((g : C(B', B)).comp (f : C(B'', B')))
+      ((homeomorph F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)).symm
         ((pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f).symm x)) =
       Pullback.lift g (Pullback.lift f ((homeomorph F _).symm x)) := by
   obtain ⟨⟨b, y⟩, rfl⟩ := (homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))).surjective x
   rw [homeomorph_symm_pullbackCompDiffeomorph_symm, Homeomorph.symm_apply_apply]
   exact ((congrArg (Pullback.lift g) (Pullback.lift_mk f b y)).trans
-    ((Pullback.lift_mk g (f b) y).trans (Pullback.lift_mk (g.comp f) b y).symm)).symm
+    ((Pullback.lift_mk g (f b) y).trans
+      (Pullback.lift_mk ((g : C(B', B)).comp (f : C(B'', B'))) b y).symm)).symm
 
-/-- Pullback along the identity after a base map cancels the identity comparison.
-This is the unit law for the composition comparison. -/
+/-- Composing a base map on the right with the identity gives the inverse of the identity
+comparison on the pulled-back bundle. This is the right unit law for the composition
+comparison. -/
 @[simp]
-theorem pullbackCompDiffeomorph_id_right (g : C(B', B)) :
+theorem pullbackCompDiffeomorph_id_right (g : K) :
     pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB' IF g (ContinuousMap.id B') =
       (pullbackIdDiffeomorph (n := n) (F := F) (E := (g : B' → B) *ᵖ E) IB' IF).symm := by
   -- Both comparisons keep the point in the same fibre; composition with the identity
@@ -247,28 +255,28 @@ theorem pullbackIdDiffeomorph_smul (a : A)
     (x : ManifoldTotalSpace F ((ContinuousMap.id B : B → B) *ᵖ E)) :
     pullbackIdDiffeomorph (n := n) (F := F) (E := E) IB IF (a • x) =
       a • pullbackIdDiffeomorph (n := n) (F := F) (E := E) IB IF x :=
-  fiberwiseMap_smul _ (fun _ _ _ ↦ rfl) a x
+  fiberwiseMap_smul _ a (fun _ _ ↦ by rfl) x
 
 /-- The inverse identity comparison intertwines fibrewise scalar multiplication. -/
 theorem pullbackIdDiffeomorph_symm_smul (a : A) (x : ManifoldTotalSpace F E) :
     (pullbackIdDiffeomorph (n := n) (F := F) (E := E) IB IF).symm (a • x) =
       a • (pullbackIdDiffeomorph (n := n) (F := F) (E := E) IB IF).symm x :=
-  fiberwiseMap_smul _ (fun _ _ _ ↦ rfl) a x
+  fiberwiseMap_smul _ a (fun _ _ ↦ by rfl) x
 
 /-- The composition comparison intertwines fibrewise scalar multiplication. In particular it is an
 equivariant isomorphism between the composite and iterated pullbacks of a principal bundle. -/
-theorem pullbackCompDiffeomorph_smul (g : C(B', B)) (f : C(B'', B')) (a : A)
-    (x : ManifoldTotalSpace F ((g.comp f : B'' → B) *ᵖ E)) :
+theorem pullbackCompDiffeomorph_smul (g : K) (f : K') (a : A)
+    (x : ManifoldTotalSpace F (((g : C(B', B)).comp (f : C(B'', B')) : B'' → B) *ᵖ E)) :
     pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f (a • x) =
       a • pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f x :=
-  fiberwiseMap_smul _ (fun _ _ _ ↦ rfl) a x
+  fiberwiseMap_smul _ a (fun _ _ ↦ by rfl) x
 
 /-- The inverse composition comparison intertwines fibrewise scalar multiplication. -/
-theorem pullbackCompDiffeomorph_symm_smul (g : C(B', B)) (f : C(B'', B')) (a : A)
+theorem pullbackCompDiffeomorph_symm_smul (g : K) (f : K') (a : A)
     (x : ManifoldTotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) :
     (pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f).symm (a • x) =
       a • (pullbackCompDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f).symm x :=
-  fiberwiseMap_smul _ (fun _ _ _ ↦ rfl) a x
+  fiberwiseMap_smul _ a (fun _ _ ↦ by rfl) x
 
 end Actions
 

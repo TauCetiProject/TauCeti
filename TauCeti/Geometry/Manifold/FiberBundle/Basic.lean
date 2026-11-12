@@ -290,11 +290,11 @@ theorem homeomorph_symm_smul {α : Type*} [∀ b, SMul α (E b)] (a : α)
       ⟨((homeomorph F E).symm x).proj, a • ((homeomorph F E).symm x).2⟩ :=
   homeomorph_symm_fiberwiseMap _ x
 
-/-- A fibrewise map of equivariant fibre maps commutes with fibrewise scalar multiplication. -/
+/-- A fibrewise map of fibre maps commuting with multiplication by a scalar `a` commutes with
+fibrewise multiplication by `a`. -/
 theorem fiberwiseMap_smul {α : Type*} {E' : B → Type*} [TopologicalSpace (TotalSpace F E')]
-    [∀ b, SMul α (E b)] [∀ b, SMul α (E' b)] (φ : ∀ b, E b → E' b)
-    (hφ : ∀ b (a : α) (v : E b), φ b (a • v) = a • φ b v) (a : α)
-    (x : ManifoldTotalSpace F E) :
+    [∀ b, SMul α (E b)] [∀ b, SMul α (E' b)] (φ : ∀ b, E b → E' b) (a : α)
+    (hφ : ∀ b (v : E b), φ b (a • v) = a • φ b v) (x : ManifoldTotalSpace F E) :
     fiberwiseMap φ (a • x) = a • fiberwiseMap φ x := by
   obtain ⟨p, rfl⟩ := (homeomorph F E).surjective x
   simp [hφ]
