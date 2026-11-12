@@ -112,42 +112,29 @@ theorem congrAlgEquiv_tprod {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (
 theorem congrAlgEquiv_symm {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)]
     [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
     (e : ∀ i, A i ≃ₐ[R] B i) :
-    (congrAlgEquiv e).symm = congrAlgEquiv fun i ↦ (e i).symm :=
-  AlgEquiv.ext fun x ↦ by
-    rw [AlgEquiv.symm_apply_eq]
-    induction x using PiTensorProduct.induction_on with
-    | smul_tprod r x => simp
-    | add x y hx hy => rw [map_add, map_add, ← hx, ← hy]
+    (congrAlgEquiv e).symm = congrAlgEquiv fun i ↦ (e i).symm := (rfl)
 
 /-- `PiTensorProduct.congrAlgEquiv` of the identities is the identity. -/
 @[simp]
 theorem congrAlgEquiv_refl {ι : Type*} {A : ι → Type*} [∀ i, Semiring (A i)]
     [∀ i, Algebra R (A i)] :
     congrAlgEquiv (fun i ↦ (AlgEquiv.refl : A i ≃ₐ[R] A i)) = .refl :=
-  AlgEquiv.ext fun x ↦ by
-    induction x using PiTensorProduct.induction_on with
-    | smul_tprod r x => simp
-    | add x y hx hy => rw [map_add, map_add, hx, hy]
+  AlgEquiv.toLinearMap_injective map_id
 
 /-- `PiTensorProduct.congrAlgEquiv` sends slotwise composites to composites. -/
 theorem congrAlgEquiv_trans {ι : Type*} {A B C : ι → Type*} [∀ i, Semiring (A i)]
     [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)] [∀ i, Semiring (C i)]
     [∀ i, Algebra R (C i)] (e : ∀ i, A i ≃ₐ[R] B i) (e' : ∀ i, B i ≃ₐ[R] C i) :
     congrAlgEquiv (fun i ↦ (e i).trans (e' i)) = (congrAlgEquiv e).trans (congrAlgEquiv e') :=
-  AlgEquiv.ext fun x ↦ by
-    induction x using PiTensorProduct.induction_on with
-    | smul_tprod r x => simp
-    | add x y hx hy => rw [map_add, map_add, hx, hy]
+  AlgEquiv.toLinearMap_injective (map_comp (fun i ↦ (e' i).toLinearMap) fun i ↦ (e i).toLinearMap)
 
 /-- Applying algebra equivalences slotwise commutes with reindexing the slots. -/
 theorem congrAlgEquiv_reindexAlgEquiv {ι κ : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)]
     [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
     (f : ∀ i, A i ≃ₐ[R] B i) (e : ι ≃ κ) (x : ⨂[R] i, A i) :
     congrAlgEquiv (fun j ↦ f (e.symm j)) (reindexAlgEquiv A e x) =
-      reindexAlgEquiv B e (congrAlgEquiv f x) := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r x => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
+      reindexAlgEquiv B e (congrAlgEquiv f x) :=
+  map_reindex (fun i ↦ (f i).toLinearMap) e x
 
 /-- `PiTensorProduct.congrAlgEquiv e` sends the factor inclusion at `i` to the factor inclusion at
 `i` composed with `e i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite
@@ -157,13 +144,9 @@ theorem congrAlgEquiv_singleAlgHom {ι : Type*} [DecidableEq ι] {A B : ι → T
     [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
     (e : ∀ i, A i ≃ₐ[R] B i) (i : ι) (a : A i) :
     congrAlgEquiv e (singleAlgHom i a) = singleAlgHom i (e i a) := by
-  rw [singleAlgHom_apply, singleAlgHom_apply, congrAlgEquiv_tprod]
-  congr 1
-  ext j
-  by_cases h : j = i
-  · subst h
-    simp
-  · simp [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne h]
+  rw [singleAlgHom_apply, singleAlgHom_apply, congrAlgEquiv_tprod, MonoidHom.mulSingle_apply,
+    MonoidHom.mulSingle_apply]
+  exact congrArg (tprod R) (Pi.mulSingle_op (fun i ↦ e i) (fun i ↦ map_one (e i)) i a).symm
 
 section Perm
 

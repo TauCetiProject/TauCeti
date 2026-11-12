@@ -65,7 +65,6 @@ private theorem isFiniteEtaleTorsor_aux {R S : Type u} [CommRing R] [CommRing S]
   obtain ⟨T, _, _, _, _, _, hT⟩ := Algebra.IsFiniteSplit.exists_tensorProduct_of_etale h
   obtain ⟨m, ⟨f⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T (T ⊗[R] S)
   have : Nontrivial T := (FaithfulSMul.algebraMap_injective R T).nontrivial
-  have : Module.Free T (T ⊗[R] S) := .of_equiv f.toLinearEquiv.symm
   obtain rfl : m = Fintype.card ι := by
     simpa using f.toLinearEquiv.finrank_eq.symm.trans
       (TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq h)

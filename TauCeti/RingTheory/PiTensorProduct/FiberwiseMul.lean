@@ -40,6 +40,8 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 
 * `PiTensorProduct.productMap_tprod`, `PiTensorProduct.productMap_singleAlgHom`: the values of
   `PiTensorProduct.productMap` on pure tensors and on the factor inclusions.
+* `PiTensorProduct.productMap_singleAlgHom_self`: the `PiTensorProduct.productMap` of the factor
+  inclusions is the identity.
 * `PiTensorProduct.eq_productMap_iff`: the universal property of `PiTensorProduct.productMap`.
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
   pure tensors and on the factor inclusions.
@@ -129,6 +131,13 @@ theorem comp_productMap {B' : Type*} [CommSemiring B'] [Algebra R B'] (φ : B �
     rw [AlgHom.comp_assoc, productMap_comp_singleAlgHom, productMap_comp_singleAlgHom]
 
 end ProductMap
+
+/-- The `PiTensorProduct.productMap` of the factor inclusions is the identity. -/
+@[simp]
+theorem productMap_singleAlgHom_self {ι : Type*} [Fintype ι] [DecidableEq ι] (A : ι → Type*)
+    [∀ i, CommSemiring (A i)] [∀ i, Algebra R (A i)] :
+    productMap (singleAlgHom (R := R) (A := A)) = AlgHom.id R (⨂[R] i, A i) :=
+  algHom_ext fun i ↦ by rw [productMap_comp_singleAlgHom, AlgHom.id_comp]
 
 variable {σ τ υ : Type*} {A : τ → Type*} [∀ j, CommSemiring (A j)] [∀ j, Algebra R (A j)]
 

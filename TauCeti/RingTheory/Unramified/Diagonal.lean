@@ -184,11 +184,7 @@ theorem map_elem_of_surjective {R S S' : Type*} [CommRing R] [CommRing S] [Algeb
   · obtain ⟨s, rfl⟩ := hf s'
     simpa using congrArg (Algebra.TensorProduct.map f f)
       (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
-  · have hcomm : (Algebra.TensorProduct.lmul' R).comp (Algebra.TensorProduct.map f f) =
-        f.comp (Algebra.TensorProduct.lmul' R) :=
-      Algebra.TensorProduct.ext' fun a b ↦ by simp
-    rw [← AlgHom.comp_apply, hcomm, AlgHom.comp_apply, Algebra.FormallyUnramified.lmul_elem,
-      map_one]
+  · simp [Algebra.FormallyUnramified.lmul_elem]
 
 /-- The diagonal idempotent is transported by algebra isomorphisms: an isomorphism
 `e : S ≃ₐ[R] S'` sends the diagonal idempotent of `S ⊗[R] S` to that of `S' ⊗[R] S'`. -/

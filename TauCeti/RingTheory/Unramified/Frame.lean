@@ -73,6 +73,8 @@ split model of that torsor.
 * `TauCeti.Algebra.FrameAlgebra.congr_smul`,
   `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_smul`: equivariance of the isomorphism
   invariance and of the base change.
+* `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_map_congr`: compatibility of the base change with
+  the isomorphism invariance.
 
 ## References
 
@@ -538,37 +540,31 @@ section BaseChange
 
 variable {R S ι} (T : Type*) [CommRing T] [Algebra R T]
 
-omit [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] [Fintype ι] [DecidableEq ι] in
-/-- Base change of the tensor power restricted to `1 ⊗ (⨂[R] _ : ι, S)`, as an `R`-algebra map. -/
-private theorem baseChangeAlgEquiv_one_tmul_eq_comp [Finite ι] (x : ⨂[R] _ : ι, S) :
-    PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) ((1 : T) ⊗ₜ[R] x) =
-      ((PiTensorProduct.baseChangeAlgEquiv (R := R) T (fun _ : ι ↦ S)).toAlgHom.restrictScalars
-        R).comp Algebra.TensorProduct.includeRight x := by
-  rw [AlgHom.comp_apply, AlgHom.restrictScalars_apply, Algebra.TensorProduct.includeRight_apply,
-    AlgEquiv.toAlgHom_apply]
-
 omit [Fintype ι] in
-/-- Base change sends `δᵢⱼ` to `δᵢⱼ`: the locus where the points in the slots `i` and `j` agree
-pulls back to the corresponding locus for `T ⊗[R] S` over `T`. -/
+/-- Base change sends `t ⊗ δᵢⱼ` to `t • δᵢⱼ`: the locus where the points in the slots `i` and `j`
+agree pulls back to the corresponding locus for `T ⊗[R] S` over `T`. -/
 @[simp]
-theorem baseChangeAlgEquiv_one_tmul_tensorPowDiagonal [Finite ι] (i j : ι) :
-    PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) ((1 : T) ⊗ₜ[R] tensorPowDiagonal R S i j) =
-      tensorPowDiagonal T (T ⊗[R] S) i j := by
-  rw [baseChangeAlgEquiv_one_tmul_eq_comp, map_tensorPowDiagonal, tensorPowDiagonal,
+theorem baseChangeAlgEquiv_tmul_tensorPowDiagonal [Finite ι] (t : T) (i j : ι) :
+    PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) (t ⊗ₜ[R] tensorPowDiagonal R S i j) =
+      t • tensorPowDiagonal T (T ⊗[R] S) i j := by
+  rw [TensorProduct.tmul_eq_smul_one_tmul t, map_smul, ← AlgEquiv.toAlgHom_apply,
+    ← AlgHom.liftEquiv_symm_apply (R := R), map_tensorPowDiagonal, tensorPowDiagonal,
     FormallyUnramified.productMap_elem_baseChange]
-  congr 2 <;> exact AlgHom.ext fun a ↦
+  congr 3 <;> exact AlgHom.ext fun a ↦
     PiTensorProduct.baseChangeAlgEquiv_tmul_singleAlgHom T (fun _ ↦ S) 1 _ a
 
-/-- Base change sends `ε` to `ε`: the locus of tuples of pairwise distinct points pulls back to the
-corresponding locus for `T ⊗[R] S` over `T`. -/
+/-- Base change sends `t ⊗ ε` to `t • ε`: the locus of tuples of pairwise distinct points pulls
+back to the corresponding locus for `T ⊗[R] S` over `T`. -/
 @[simp]
-theorem baseChangeAlgEquiv_one_tmul_distinctIdempotent :
-    PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) ((1 : T) ⊗ₜ[R] distinctIdempotent R S ι) =
-      distinctIdempotent T (T ⊗[R] S) ι := by
-  rw [baseChangeAlgEquiv_one_tmul_eq_comp, distinctIdempotent, map_prod, distinctIdempotent]
+theorem baseChangeAlgEquiv_tmul_distinctIdempotent (t : T) :
+    PiTensorProduct.baseChangeAlgEquiv T (fun _ : ι ↦ S) (t ⊗ₜ[R] distinctIdempotent R S ι) =
+      t • distinctIdempotent T (T ⊗[R] S) ι := by
+  rw [TensorProduct.tmul_eq_smul_one_tmul t, map_smul, ← AlgEquiv.toAlgHom_apply,
+    ← AlgHom.liftEquiv_symm_apply (R := R), distinctIdempotent, map_prod, distinctIdempotent]
+  congr 1
   refine Finset.prod_congr rfl fun p _ ↦ ?_
-  rw [map_sub, map_one, ← baseChangeAlgEquiv_one_tmul_eq_comp,
-    baseChangeAlgEquiv_one_tmul_tensorPowDiagonal]
+  rw [map_sub, map_one, AlgHom.liftEquiv_symm_apply, AlgEquiv.toAlgHom_apply,
+    baseChangeAlgEquiv_tmul_tensorPowDiagonal, one_smul]
 
 variable (R S ι) in
 /-- The frame algebra commutes with base change: for an `R`-algebra `T`, the base change of the
@@ -624,6 +620,24 @@ theorem FrameAlgebra.baseChangeEquiv_smul (σ : Equiv.Perm ι) (x : T ⊗[R] Fra
   | add x y hx hy =>
     simp only [Algebra.TensorProduct.rightMulSemiringAction_smul_def, smul_def, map_add] at hx hy ⊢
     rw [hx, hy]
+
+/-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` commutes with the isomorphisms of frame
+algebras induced by an isomorphism `e : S ≃ₐ[R] S'` and by its base change. -/
+theorem FrameAlgebra.baseChangeEquiv_map_congr {S' : Type*} [CommRing S'] [Algebra R S']
+    [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] (e : S ≃ₐ[R] S')
+    (x : T ⊗[R] FrameAlgebra R S ι) :
+    FrameAlgebra.baseChangeEquiv R S' ι T
+        (Algebra.TensorProduct.map (AlgHom.id T T) (FrameAlgebra.congr ι e).toAlgHom x) =
+      FrameAlgebra.congr ι (Algebra.TensorProduct.congr (AlgEquiv.refl : T ≃ₐ[T] T) e)
+        (FrameAlgebra.baseChangeEquiv R S ι T x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul t y =>
+    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, AlgEquiv.toAlgHom_apply, congr_mk,
+      baseChangeEquiv_tmul_mk, baseChangeEquiv_tmul_mk, congr_mk]
+    exact congrArg _ (PiTensorProduct.baseChangeAlgEquiv_map_congrAlgEquiv T (fun _ ↦ S) (fun _ ↦ e)
+      (t ⊗ₜ y))
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end BaseChange
 
