@@ -11,8 +11,8 @@ public import TauCeti.RingTheory.NormTrace.BaseChange
 /-!
 # Discriminants under base change
 
-The trace matrix of an arbitrary family, and the discriminant of a finite family, in a finite
-free algebra commute with scalar extension. In particular, for a basis `b` of `S` over `R` and
+The trace matrix of an arbitrary family, and the discriminant of a finite family, in a free
+algebra commute with scalar extension. In particular, for a basis `b` of `S` over `R` and
 an `R`-algebra `A`, the discriminant of the base-changed basis of `A ⊗[R] S` over `A` is the
 image of the discriminant of `b`. This lets statements about discriminants pass to residue
 fields and localizations.

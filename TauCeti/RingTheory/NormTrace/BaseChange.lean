@@ -24,16 +24,17 @@ noncommutative algebras.
 * `TauCeti.Algebra.norm_baseChange_tmul`, `TauCeti.Algebra.trace_baseChange_tmul`: the norm and
   trace of `1 ⊗ x ∈ A ⊗[K] B` over `A` are the images of those of `x`.
 * `TauCeti.Algebra.leftMulMatrix_rTensor`, `TauCeti.Algebra.norm_rTensor`: the matrix of
-  multiplication on `P ⊗[K] B` (for a `K`-basis of `B`) and the norm of `P ⊗[K] B` over `P`
+  multiplication on `P ⊗[K] B` (for a finite `K`-basis of `B`) and the norm of `P ⊗[K] B` over `P`
   (for a free `K`-algebra `B`, finite or not) are compatible with every `K`-algebra map
-  `φ : P →ₐ[K] T`. Taking `P` to be a polynomial ring and `φ` an evaluation map, the norm on every
-  base change `T ⊗[K] B` is a specialization of the generic norm form.
+  `φ : P →ₐ[K] T`. When `B` has a finite `K`-basis, taking `P` to be a polynomial ring and `φ` an
+  evaluation map shows that the norm on every base change `T ⊗[K] B` is a specialization of the
+  generic norm form.
 * `TauCeti.Algebra.norm_sum_X_tmul_tensorProductBasis`: the generic norm form of `T ⊗[K] B` over
   `T` is the image of that of `B` over `K`.
 * `Module.Basis.norm_sum_tmul_eq_aeval`: the norm of `∑ j, xⱼ ⊗ bⱼ` over `T` is the generic norm
   form of `B` evaluated at `x`.
-* `TauCeti.Algebra.charpoly_lmul_eq_norm`: the characteristic polynomial of multiplication by
-  `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
+* `TauCeti.Algebra.charpoly_lmul_eq_norm`: for a finite free `K`-algebra `B`, the characteristic
+  polynomial of multiplication by `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
 * `TauCeti.Algebra.trace_baseChange_tmul_of_isScalarTower`: for a tower `R → S → T` and an
   `R`-algebra `C` with `S ⊗[R] C` free over `S`, the trace of `1 ⊗ c` in `T ⊗[R] C` is the
   image of its trace in `S ⊗[R] C`.
