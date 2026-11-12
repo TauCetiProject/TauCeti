@@ -45,6 +45,9 @@ conditions are closed under uniform convergence, which gives completeness.
   regularity of an element; `TauCeti.CkHolderSpace.ofContDiff` is the converse constructor.
 * `TauCeti.CkHolderSpace.norm_eq`: the norm is the sum of the supremum norms of the derivatives
   through order `k` and the `α`-Hölder seminorm of the `k`-th derivative.
+* `TauCeti.CkHolderSpace.norm_le_of_norm_iteratedFDeriv_le_of_holderWith`: the norm is controlled
+  by uniform bounds on the derivatives and a Hölder constant of the `k`-th derivative.
+* `TauCeti.CkHolderSpace.toBoundedContinuousFunction`: the underlying bounded continuous function.
 * `TauCeti.CkHolderSpace.norm_fderiv_le_iteratedFDeriv_one`,
   `TauCeti.CkHolderSpace.norm_fderiv_fderiv_le_iteratedFDeriv_two` and
   `TauCeti.CkHolderSpace.holderWith_fderiv_fderiv`: bounds on the curried derivatives `Df` and
@@ -388,6 +391,29 @@ theorem holderWith_iteratedFDeriv_of_le (f : CkHolderSpace k α E F) (hα : α �
         (M := ‖f‖₊) (L := ‖f‖₊) hj hα (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj.le x)
         (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj x))
     convert h using 1; ring
+
+/-- The `C^{k,α}` norm is at most `(k + 1) M + K` when every derivative through order `k` is
+bounded by `M` and the `k`-th derivative is `α`-Hölder with constant `K`. -/
+theorem norm_le_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpace k α E F} {M : ℝ}
+    {K : ℝ≥0} (hM0 : 0 ≤ M) (hM : ∀ i ≤ k, ∀ x, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ M)
+    (hK : HolderWith K α (_root_.iteratedFDeriv ℝ k f)) : ‖f‖ ≤ (k + 1) * M + K := by
+  rw [norm_eq]
+  gcongr
+  · calc ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ ≤ ∑ _i : Fin (k + 1), M :=
+          Finset.sum_le_sum fun i _ ↦ (BoundedContinuousFunction.norm_le hM0).2 fun x ↦ by
+            rw [← iteratedFDeriv_eq]
+            exact hM i (Nat.lt_succ_iff.1 i.2) x
+      _ = (k + 1) * M := by simp
+  · exact_mod_cast hK.nnholderNorm_le
+
+/-- A bounded `C^{k,α}` map, as a bounded continuous function. -/
+def toBoundedContinuousFunction (f : CkHolderSpace k α E F) : E →ᵇ F :=
+  BoundedContinuousFunction.ofNormedAddCommGroup f f.contDiff.continuous ‖f‖ f.norm_apply_le
+
+@[simp]
+theorem coe_toBoundedContinuousFunction (f : CkHolderSpace k α E F) :
+    ⇑f.toBoundedContinuousFunction = f :=
+  (rfl)
 
 /-- The values of a bounded `C^{k,α}` map are controlled by the supremum norm of its order-zero
 field. -/
