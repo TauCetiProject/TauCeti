@@ -123,6 +123,16 @@ theorem root_rationalRootSystem_eq_nsmul_add_iff (α β γ : Fin t.numRoots) (n 
   simpa only [Int.cast_natCast, Nat.cast_smul_eq_nsmul, natCast_zsmul, add_comm] using
     t.root_rationalRootSystem_eq_add_zsmul_iff ht α β γ n
 
+/-- Rational base change preserves and reflects sums of two roots. -/
+theorem root_rationalRootSystem_eq_add_iff (α β γ : Fin t.numRoots) :
+    (t.rationalRootSystem ht).root γ =
+        (t.rationalRootSystem ht).root α + (t.rationalRootSystem ht).root β ↔
+      (t.simplyConnectedRootDatum ht).root γ =
+        (t.simplyConnectedRootDatum ht).root α +
+          (t.simplyConnectedRootDatum ht).root β := by
+  simpa only [one_nsmul] using
+    t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1
+
 /-- Rational base change preserves and reflects opposite-root relations. -/
 theorem root_rationalRootSystem_eq_neg_iff (α β : Fin t.numRoots) :
     (t.rationalRootSystem ht).root α = -(t.rationalRootSystem ht).root β ↔
@@ -227,16 +237,11 @@ which over a field of characteristic zero forces irreducibility. -/
 instance instIsIrreducibleRationalRootSystem : (t.rationalRootSystem ht).IsIrreducible :=
   (hasCartanType_rationalRootSystem t ht).isIrreducible ht
 
-/-- The rational root systems of types B and C have no G₂ root strings. -/
-theorem isNotG2_rationalRootSystem_of_typeBC (hBC : ∃ n, t = B n ∨ t = C n) :
+/-- An absolute bound of two on the integral pairings excludes G₂ root strings after
+rational base change. -/
+theorem isNotG2_rationalRootSystem_of_abs_pairing_le_two
+    (hbound : ∀ a c, |(t.simplyConnectedRootDatum ht).pairing a c| ≤ 2) :
     (t.rationalRootSystem ht).IsNotG2 := by
-  have hbound (a c : Fin t.numRoots) :
-      |(t.simplyConnectedRootDatum ht).pairing a c| ≤ 2 := by
-    obtain ⟨n, rfl | rfl⟩ := hBC
-    · rw [simplyConnectedRootDatum_B]
-      exact abs_pairing_typeBSimplyConnectedRootDatum_le_two a c
-    · rw [simplyConnectedRootDatum_C]
-      exact abs_pairing_typeCSimplyConnectedRootDatum_le_two a c
   refine ⟨fun a c => ?_⟩
   have h := hbound a c
   rw [abs_le] at h
@@ -247,6 +252,25 @@ theorem isNotG2_rationalRootSystem_of_typeBC (hBC : ∃ n, t = B n ∨ t = C n) 
   rw [heq]
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
   omega
+
+/-- The rational root systems of types B and C have no G₂ root strings. -/
+theorem isNotG2_rationalRootSystem_of_typeBC (hBC : ∃ n, t = B n ∨ t = C n) :
+    (t.rationalRootSystem ht).IsNotG2 := by
+  apply t.isNotG2_rationalRootSystem_of_abs_pairing_le_two ht
+  intro a c
+  obtain ⟨n, rfl | rfl⟩ := hBC
+  · rw [simplyConnectedRootDatum_B]
+    exact abs_pairing_typeBSimplyConnectedRootDatum_le_two a c
+  · rw [simplyConnectedRootDatum_C]
+    exact abs_pairing_typeCSimplyConnectedRootDatum_le_two a c
+
+/-- The rational root system of type F₄ has no G₂ root strings. -/
+theorem isNotG2_rationalRootSystem_F4 (ht : F4.Valid) :
+    (F4.rationalRootSystem ht).IsNotG2 := by
+  apply F4.isNotG2_rationalRootSystem_of_abs_pairing_le_two ht
+  intro a c
+  rw [simplyConnectedRootDatum_F4]
+  exact abs_pairing_f4SimplyConnectedRootDatum_le_two a c
 
 /-! ## The Bourbaki numbering of the base support -/
 
