@@ -332,7 +332,7 @@ theorem qExpansion_qParam_mul_j_mul_qExpansion_discriminant :
     one_mem_strictPeriods_SL
   have hE := ModularFormClass.analyticAt_cuspFunction_zero (E₄.pow 3) one_pos
     one_mem_strictPeriods_SL
-  have hq := TauCeti.UpperHalfPlane.analyticAt_cuspFunction_qParam one_pos
+  have hq := TauCeti.UpperHalfPlane.analyticAt_cuspFunction_qParam 1
   have hfun : (fun τ : ℍ ↦ 𝕢 1 τ * j τ) * ⇑CuspForm.discriminant =
       (fun τ : ℍ ↦ 𝕢 1 τ) * ⇑(E₄.pow 3) := by
     rw [ModularForm.coe_pow]

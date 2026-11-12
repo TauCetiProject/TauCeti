@@ -279,7 +279,7 @@ theorem laurentQExpansion_compactifiedQuotientComap (hσ : D.scaling = E.scaling
     laurentQExpansion D (compactifiedQuotientComap h F) =
       LaurentSeries.expand ℂ d (laurentQExpansion E F) := by
   rw [laurentQExpansion_apply, laurentQExpansion_apply, finitePart_compactifiedQuotientComap, hσ,
-    hw, ← TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul E.width_pos (periodic_finitePart E F)
+    hw, ← TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul (periodic_finitePart E F)
       (meromorphicAt_cuspFunction_finitePart E F)]
   simp only [comp_apply, compactifiedQuotientMap_ofQuotient, TauCeti.Setoid.map_of_le_mk]
 
