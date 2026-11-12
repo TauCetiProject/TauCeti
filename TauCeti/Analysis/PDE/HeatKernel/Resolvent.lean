@@ -57,8 +57,9 @@ gives `1 ≤ λ ‖(λ - Δ)⁻¹‖ + O(r⁻²)`, and `r → ∞` gives `λ ‖
   integrable with mass `1 / λ`.
 * `TauCeti.resolvent_heatSemigroup`: the resolvent of the heat semigroup on `Lᵖ` is convolution
   with `G_λ`.
-* `TauCeti.resolvent_heatSemigroup_ae_eq_convolution`: pointwise, `(λ - Δ)⁻¹ f` is represented
-  almost everywhere by the classical convolution `G_λ ⋆ f`.
+* `TauCeti.resolvent_heatSemigroup_ae_eq_convolution`,
+  `TauCeti.resolvent_heatSemigroup_ae_eq_convolution_coeFn`: pointwise, `(λ - Δ)⁻¹ f` is
+  represented almost everywhere by the classical convolution `G_λ ⋆ f`.
 * `TauCeti.norm_resolvent_heatSemigroup`: the resolvent has operator norm exactly `1 / λ`.
 
 ## References
@@ -108,7 +109,7 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- The space-time integrand `(t, x) ↦ e^{-λt} K_t(x)` of the heat resolvent kernel is
 integrable on `(0, ∞) × E`. -/
-private theorem integrable_heatResolventKernel_integrand (hlambda : 0 < lambda) :
+theorem integrable_heatResolventKernel_integrand (hlambda : 0 < lambda) :
     Integrable (fun z : ℝ × E ↦ exp (-(lambda * z.1)) * heatKernel z.1 z.2)
       ((volume.restrict (Ioi 0)).prod volume) := by
   have hmeas : AEStronglyMeasurable (fun z : ℝ × E ↦ exp (-(lambda * z.1)) * heatKernel z.1 z.2)
@@ -134,6 +135,7 @@ theorem integrable_heatResolventKernel (hlambda : 0 < lambda) :
   (integrable_heatResolventKernel_integrand hlambda).integral_prod_right
 
 /-- **The mass of the heat resolvent kernel**: `∫ G_λ = 1 / λ` for `λ > 0`. -/
+@[simp]
 theorem integral_heatResolventKernel (hlambda : 0 < lambda) :
     ∫ x : E, heatResolventKernel lambda x = lambda⁻¹ := by
   have hswap := integral_integral_swap (f := fun t (x : E) ↦ exp (-(lambda * t)) * heatKernel t x)
@@ -184,6 +186,15 @@ theorem resolvent_heatSemigroup_ae_eq_convolution (hp : p ≠ ∞) (hlambda : 0 
   rw [resolvent_heatSemigroup hp hlambda]
   exact convolutionLp_ae_eq_convolution hp (integrable_heatResolventKernel hlambda) hf
 
+/-- For `1 ≤ p < ∞` and `λ > 0`, the heat resolvent applied to `f : Lp` is represented almost
+everywhere by convolution of `G_λ` with the chosen representative of `f`. -/
+theorem resolvent_heatSemigroup_ae_eq_convolution_coeFn (hp : p ≠ ∞) (hlambda : 0 < lambda)
+    (f : Lp F p (volume : Measure E)) :
+    (heatSemigroup hp).resolvent lambda hlambda f =ᵐ[volume]
+      heatResolventKernel lambda ⋆ (f : E → F) := by
+  simpa only [Lp.toLp_coeFn] using
+    resolvent_heatSemigroup_ae_eq_convolution hp hlambda (Lp.memLp f)
+
 /-- An element `f` of the generator domain of the heat semigroup, with generator value `g`,
 satisfies `‖f‖ ≤ λ ‖(λ - Δ)⁻¹‖ ‖f‖ + λ⁻¹ ‖g‖`: write `f = (λ - Δ)⁻¹ (λ f - g)`. -/
 private theorem norm_le_mul_norm_resolvent_heatSemigroup_add (hp : p ≠ ∞) (hlambda : 0 < lambda)
@@ -194,9 +205,8 @@ private theorem norm_le_mul_norm_resolvent_heatSemigroup_add (hp : p ≠ ∞) (h
       lambda⁻¹ * ‖g‖ := by
   set S := heatSemigroup (E := E) (F := F) hp
   set R := S.resolvent lambda hlambda
-  have hleft := S.toStronglyContinuousSemigroup.resolventLeftInv S.hasGrowthBound lambda
-    (by simpa using hlambda) ⟨f, hf⟩
-  rw [hg, ← ContractionSemigroup.resolvent_eq_stronglyContinuousSemigroup_resolvent] at hleft
+  have hleft := S.resolventLeftInv lambda hlambda ⟨f, hf⟩
+  rw [hg] at hleft
   have hR : ‖R‖ ≤ lambda⁻¹ := (S.resolvent_norm_le lambda hlambda).trans_eq (one_div _)
   calc ‖f‖ = ‖R (lambda • f - g)‖ := by rw [hleft]
     _ ≤ ‖R‖ * (lambda * ‖f‖ + ‖g‖) := by
@@ -209,6 +219,7 @@ private theorem norm_le_mul_norm_resolvent_heatSemigroup_add (hp : p ≠ ∞) (h
 /-- **The norm of the heat resolvent.** For `1 ≤ p < ∞`, `λ > 0` and a nontrivial Banach space
 `F`, the resolvent `(λ - Δ)⁻¹` of the heat semigroup on `Lᵖ(E; F)` has operator norm exactly
 `1 / λ`: the Hille–Yosida bound of a contraction semigroup is attained. -/
+@[simp]
 theorem norm_resolvent_heatSemigroup [Nontrivial F] (hp : p ≠ ∞) (hlambda : 0 < lambda) :
     ‖(heatSemigroup (E := E) (F := F) hp).resolvent lambda hlambda‖ = lambda⁻¹ := by
   set R := (heatSemigroup (E := E) (F := F) hp).resolvent lambda hlambda
