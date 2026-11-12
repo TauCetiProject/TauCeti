@@ -17,14 +17,10 @@ Let `p > 2` and `k ≥ 0`. If `u` is continuous on an open planar domain `Ω` an
 `W^{k+1,p}_loc(Ω)` with finite-dimensional values, and `g` is `C^{k+1}` on an open set `W`
 containing `u '' Ω`, with finite-dimensional values, then `g ∘ u ∈ W^{k+1,p}_loc(Ω)`.
 
-The proof is an induction on `k` from the order-one statement `TauCeti.MemWkpLoc.contDiffOn_comp`.
-By the weak chain rule `TauCeti.HasWeakFDerivOn.contDiffOn_comp`, the weak derivative of `g ∘ u`
-is `z ↦ Dg(u z) ∘L Du z`. The induction hypothesis, applied to `Dg`, which is `C^k` on `W` with
-values in the finite-dimensional space `F →L[ℝ] G`, puts the first factor in `W^{k,p}_loc`, and
-`Du` is in `W^{k,p}_loc` by assumption. Their composition is in `W^{k,p}_loc` by the product
-theorem `TauCeti.MemWkpLoc.compL_succ`, which needs `p > 2`. The domain-dependent form
-`z ↦ g(z, u z)`, the shape of the coefficients `J(z, u)` and `η(z, u)` in the interior bootstrap
-for pseudoholomorphic curves, follows by composing with the graph map `z ↦ (z, u z)`.
+The domain-dependent form `z ↦ g(z, u z)` is the shape of the coefficients `J(z, u)` and
+`η(z, u)` in the interior bootstrap for pseudoholomorphic curves: once `u` is known to be in
+`W^{k+1,p}_loc` with `p > 2`, these coefficients are in `W^{k+1,p}_loc` too, which is what the
+next step of the bootstrap needs.
 
 ## Main declarations
 
@@ -55,15 +51,19 @@ variable {F : Type uF} {G : Type uG} {H : Type uH}
   [NormedAddCommGroup H] [NormedSpace ℝ H] [FiniteDimensional ℝ H]
   {Ω : Opens ℂ} {p : ℝ≥0}
 
-/-- The composition theorem with values in a universe at least that of `F`. The induction on the
-order passes from `g` to `fderiv ℝ g`, with values in `F →L[ℝ] G`, which lies in the universe of
-`F` and `G` together; this auxiliary form is closed under that step. -/
+/-- `TauCeti.MemWkpLoc.contDiffOn_comp_succ` for values in a universe at least that of `F`. -/
 private theorem contDiffOn_comp_succ_aux {G : Type (max uF uG)}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
     (hp : 2 < p) {k : ℕ} {u : ℂ → F} {g : F → G}
     {W : Set F} (hu : MemWkpLoc p Ω (k + 1) u) (huc : ContinuousOn u Ω) (hW : IsOpen W)
     (hg : ContDiffOn ℝ (k + 1) g W) (huW : MapsTo u Ω W) :
     MemWkpLoc p Ω (k + 1) (fun z => g (u z)) := by
+  -- Induction on `k` from the order-one statement `TauCeti.MemWkpLoc.contDiffOn_comp`. The weak
+  -- derivative of `g ∘ u` is `z ↦ Dg(u z) ∘L Du z`; the induction hypothesis puts `Dg ∘ u` in
+  -- `W^{k,p}_loc`, and the product theorem `TauCeti.MemWkpLoc.compL_succ` (which needs `p > 2`)
+  -- handles the composition. The step passes from `g` to `fderiv ℝ g`, with values in
+  -- `F →L[ℝ] G`, which lies in the universe of `F` and `G` together; restricting `G` to a
+  -- universe at least that of `F` makes the statement closed under that step.
   induction k generalizing G g with
   | zero => exact hu.contDiffOn_comp huc hW (by simpa using hg) huW
   | succ k ih =>
@@ -81,8 +81,7 @@ private theorem contDiffOn_comp_succ_aux {G : Type (max uF uG)}
 
 /-- **Composition of continuous local Sobolev maps with `C^{k+1}` maps.** For `p > 2`, if `u` is
 continuous on `Ω` and belongs to `W^{k+1,p}_loc(Ω)`, and `g` is `C^{k+1}` on an open set `W`
-containing `u '' Ω`, then `g ∘ u` belongs to `W^{k+1,p}_loc(Ω)`. Its weak derivative is
-`z ↦ Dg(u z) ∘L Du z`, by `TauCeti.HasWeakFDerivOn.contDiffOn_comp`. -/
+containing `u '' Ω`, then `g ∘ u` belongs to `W^{k+1,p}_loc(Ω)`. -/
 theorem MemWkpLoc.contDiffOn_comp_succ (hp : 2 < p) {k : ℕ} {u : ℂ → F} {g : F → G}
     {W : Set F} (hu : MemWkpLoc p Ω (k + 1) u) (huc : ContinuousOn u Ω) (hW : IsOpen W)
     (hg : ContDiffOn ℝ (k + 1) g W) (huW : MapsTo u Ω W) :

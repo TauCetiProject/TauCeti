@@ -16,12 +16,11 @@ finite-dimensional. For every `i ≥ 1`, if `f ∈ W^{i,p}_loc(Ω)` and `g ∈ W
 planar domain `Ω`, then `B(f, g) ∈ W^{i,q}_loc(Ω)`. At `q = p` this is the algebra property of
 `W^{i,p}_loc` under continuous bilinear maps.
 
-The proof is an induction on the order from the order-one statement
-`TauCeti.MemWkpLoc.bilin`. By the weak Leibniz rule `TauCeti.HasWeakFDerivOn.bilin_of_memLpLoc`,
-the weak derivative of `B(f, g)` is `B(Df, g) + B(f, Dg)`, a sum of two mixed products of one
-order lower, for the bilinear maps `B.precompL ℂ` and `B.precompR ℂ`. Their factors `Df` and `Dg`
-take values in the finite-dimensional spaces `ℂ →L[ℝ] F` and `ℂ →L[ℝ] G`, so the induction
-hypothesis applies to them.
+These products describe how variable coefficients act on local Sobolev maps: a coefficient
+field `A ∈ W^{i,p}_loc(Ω; F →L[ℝ] G)` with `p > 2` multiplies `W^{i,q}_loc(Ω; F)` into
+`W^{i,q}_loc(Ω; G)`, and such fields compose with one another. The composition form is what the
+higher-order composition theorem `TauCeti.MemWkpLoc.contDiffOn_comp_succ` uses to control the
+weak derivative `z ↦ Dg(u z) ∘L Du z` of `g ∘ u`.
 
 ## Main declarations
 
@@ -51,12 +50,15 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimen
 /-- **Mixed-exponent products at every positive order.** For `p > 2` and `1 < q ≤ p`, the
 product of a `W^{k+1,p}_loc` map with a `W^{k+1,q}_loc` map, both with finite-dimensional values,
 is in `W^{k+1,q}_loc`. At `q = p` this is the algebra property of `W^{k+1,p}_loc` under continuous
-bilinear maps. The weak derivative is `B(Df, g) + B(f, Dg)`, by
-`TauCeti.HasWeakFDerivOn.bilin_of_memLpLoc`. -/
+bilinear maps. -/
 theorem MemWkpLoc.bilin_succ [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p)
     (hq : 1 < q) (hqp : q ≤ p) {k : ℕ} {f : ℂ → F} {g : ℂ → G}
     (hf : MemWkpLoc p Ω (k + 1) f) (hg : MemWkpLoc q Ω (k + 1) g) :
     MemWkpLoc q Ω (k + 1) (fun z => B (f z) (g z)) := by
+  -- Induction on the order from the order-one statement `TauCeti.MemWkpLoc.bilin`. By the weak
+  -- Leibniz rule, the weak derivative of `B(f, g)` is `B(Df, g) + B(f, Dg)`, a sum of two mixed
+  -- products of one order lower for the bilinear maps `B.precompL ℂ` and `B.precompR ℂ`, whose
+  -- factors `Df` and `Dg` again have finite-dimensional values.
   induction k generalizing F G H with
   | zero => exact hf.bilin B hp hq hqp hg
   | succ k ih =>
