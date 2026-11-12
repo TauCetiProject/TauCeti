@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Arnold
 import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Neighborhood
 import TauCeti.Topology.Algebra.Module.CompactQuotient
-import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Regular components are cylinders, and compact ones are Liouville tori

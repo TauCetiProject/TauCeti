@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Angle
 import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.IsotropicSection
 import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Neighborhood
-import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Local action-angle coordinates near a regular Liouville torus
