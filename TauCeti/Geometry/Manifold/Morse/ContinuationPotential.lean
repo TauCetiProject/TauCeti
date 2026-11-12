@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.Morse.ContinuationPotential
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Analysis.Calculus.Deriv.Const
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.IntegralCurve.Reparam
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -39,6 +42,15 @@ continuation potential of the coordinate expression of `f`, and the time derivat
   (`TauCeti.exists_forall_lt_isMorseOn_continuationPotential`), because the time derivative
   `∂ₜ f` is bounded on the compact inner slab `M × [δ, 1 - δ]` and vanishes outside it. The
   continuity of `∂ₜ f` is `ContMDiff.continuous_deriv_prodMk`.
+* **The rescaled field.** Let `V` be a vector field on `M × ℝ` whose time component is
+  `C t (1 - t²) - ∂ₜ f`, as for the negative gradient of `F` for any metric `dt² + g_t`. The
+  rescaled field `λ • V`, for the factor `λ = C t (1 - t²) / (C t (1 - t²) - ∂ₜ f)` of
+  `TauCeti.continuationRescaling`, projects to the base field: the time component of each of its
+  integral curves solves `τ' = C τ (1 - τ²)`. On a compact manifold, for every large `C`, the
+  factor `λ` is smooth, positive, bounded above and below, and `1` near the two ends, so the
+  integral curves of `V` and of `λ • V` are the same oriented curves up to increasing changes of
+  time, with the same limits at `±∞`. This identifies the trajectory spaces of the two fields
+  between critical points, and the fields agree near the critical points themselves.
 
 ## Main results
 
@@ -53,6 +65,13 @@ continuation potential of the coordinate expression of `f`, and the time derivat
 * `TauCeti.isMorseOn_continuationPotential`: `F` is Morse on the slab.
 * `TauCeti.exists_forall_lt_isMorseOn_continuationPotential`: on a compact manifold, `F` is Morse
   on the slab for every large constant.
+* `TauCeti.exists_abs_deriv_le_mul_one_sub_sq`: on a compact manifold, `|∂ₜ f| ≤ K t (1 - t²)`.
+* `ContMDiff.continuationRescaling`: the rescaling factor is smooth.
+* `IsMIntegralCurve.hasDerivAt_snd_of_continuationRescaling_smul`: the rescaled field projects to
+  the base field.
+* `IsMIntegralCurve.exists_orderIso_isMIntegralCurve_comp_continuationRescaling_smul` and
+  `IsMIntegralCurve.exists_orderIso_isMIntegralCurve_comp_of_continuationRescaling_smul`: the
+  integral curves of the two fields correspond under increasing changes of time.
 
 ## References
 
@@ -223,6 +242,23 @@ theorem isMorseOn_continuationPotential (hC : C ≠ 0) (hf : ContMDiff (I.prod �
 
 /-! ### The choice of the constant on a compact manifold -/
 
+/-- **The time derivative is bounded by `K t (1 - t²)` on a compact manifold.** Let `f` be a `C¹`
+function on `M × ℝ`, for a compact manifold `M`, independent of the time for `t < δ` and for
+`t > 1 - δ`. Then `|∂ₜ f| ≤ K t (1 - t²)` in the open slab `0 < t < 1` for some `K ≥ 0`; every
+`C > K` then satisfies the hypotheses of `TauCeti.continuationRescaling_mem_Icc`. -/
+theorem exists_abs_deriv_le_mul_one_sub_sq [CompactSpace M]
+    (hf : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) 1 f) {δ : ℝ} (hδ : 0 < δ)
+    (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1)) :
+    ∃ K, 0 ≤ K ∧ ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, |deriv (fun s ↦ f (x, s)) t| ≤ K * t * (1 - t ^ 2) := by
+  obtain ⟨K, hK, hKle⟩ := (isCompact_univ (X := M)).exists_forall_le_mul_one_sub_sq
+    (g := fun x t ↦ |deriv (fun s ↦ f (x, s)) t|) hδ
+    (continuous_abs.comp hf.continuous_deriv_prodMk).continuousOn
+    fun x _ t _ ht ↦ by
+      rcases lt_or_ge t δ with htδ | htδ
+      · simp [deriv_prodMk_eq_zero_of_lt (z := (x, t)) hf₀ htδ]
+      · simp [deriv_prodMk_eq_zero_of_gt (z := (x, t)) hf₁ (lt_of_not_ge fun h ↦ ht ⟨htδ, h⟩)]
+  exact ⟨K, hK, fun x t ht ↦ hKle x (mem_univ x) t ht⟩
+
 /-- **The choice of the constant on a compact manifold.** Let `f` be a smooth function on `M × ℝ`,
 for a compact manifold `M`, with `f (x, t) = f (x, 0)` for `t < δ` and `f (x, t) = f (x, 1)` for
 `t > 1 - δ`, whose ends `f₀` and `f₁` are Morse. Then for every sufficiently large `C` the
@@ -241,19 +277,138 @@ theorem exists_forall_lt_isMorseOn_continuationPotential [CompactSpace M]
     filter_upwards [continuousAt_snd.preimage_mem_nhds (Ioi_mem_nhds ht)] with z hz
     rw [hf₁ z.1 z.2 hz, hf₁ z.1 t ht]
   -- The time derivative is bounded by `K t (1 - t²)` on the open slab.
-  obtain ⟨K, hK, hKle⟩ := (isCompact_univ (X := M)).exists_forall_le_mul_one_sub_sq
-    (g := fun x t ↦ deriv (fun s ↦ f (x, s)) t) hδ
-    ((hf.of_le (m := 1) (by simp)).continuous_deriv_prodMk.continuousOn)
-    fun x _ t _ ht ↦ by
-      rcases lt_or_ge t δ with htδ | htδ
-      · exact (deriv_prodMk_eq_zero_of_eventually_eq (hgerm₀ x t htδ)).le
-      · have h1 : 1 - δ < t := lt_of_not_ge fun h ↦ ht ⟨htδ, h⟩
-        exact (deriv_prodMk_eq_zero_of_eventually_eq (hgerm₁ x t h1)).le
+  obtain ⟨K, hK, hKle⟩ := exists_abs_deriv_le_mul_one_sub_sq (hf.of_le (by simp)) hδ hf₀ hf₁
   refine ⟨K, fun C hKC ↦ isMorseOn_continuationPotential (hK.trans_lt hKC).ne' hf h₀ h₁
     (fun x ↦ by simpa using hgerm₀ x 0 hδ) (fun x ↦ by simpa using hgerm₁ x 1 (by linarith))
     fun x t ht ↦ ?_⟩
   have hpos : 0 < t * (1 - t ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])
-  calc deriv (fun s ↦ f (x, s)) t ≤ K * t * (1 - t ^ 2) := hKle x (mem_univ x) t ht
+  calc deriv (fun s ↦ f (x, s)) t ≤ K * t * (1 - t ^ 2) := (le_abs_self _).trans (hKle x t ht)
     _ < C * t * (1 - t ^ 2) := by nlinarith
+
+/-! ### The rescaled continuation field -/
+
+section Rescaling
+
+variable {δ K : ℝ}
+
+/-- **The rescaling factor is smooth.** Let `f` be a `C^(n + 1)` function on `M × ℝ`, independent
+of the time for `t < δ` and for `t > 1 - δ`, with `∂ₜ f ≠ C t (1 - t²)` in the open slab. Then the
+rescaling factor `λ = C t (1 - t²) / (C t (1 - t²) - ∂ₜ f)` is `C^n` on all of `M × ℝ`: it is a
+quotient with nonvanishing denominator in the open slab, and `1` near the end levels. -/
+theorem _root_.ContMDiff.continuationRescaling {n : WithTop ℕ∞}
+    (hf : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) (n + 1) f) (hδ : 0 < δ)
+    (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
+    (hne : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t ≠ C * t * (1 - t ^ 2)) :
+    ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) n (TauCeti.continuationRescaling C f) := by
+  intro z
+  by_cases ht : z.2 ∈ Ioo 0 1
+  · -- In the open slab, `λ` is `(b, a) ↦ 1 + b / (a - b)` applied to `∂ₜ f` and `C t (1 - t²)`.
+    have ha : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) n fun z : M × ℝ ↦ C * z.2 * (1 - z.2 ^ 2) :=
+      (by fun_prop : ContDiff ℝ n fun t : ℝ ↦ C * t * (1 - t ^ 2)).contMDiff.comp contMDiff_snd
+    have hden : C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2 ≠ 0 :=
+      sub_ne_zero.2 (hne z.1 z.2 ht).symm
+    have hg : ContDiffAt ℝ n (fun p : ℝ × ℝ ↦ 1 + p.1 / (p.2 - p.1))
+        (deriv (fun s ↦ f (z.1, s)) z.2, C * z.2 * (1 - z.2 ^ 2)) :=
+      contDiffAt_const.add (contDiffAt_fst.div (contDiffAt_snd.sub contDiffAt_fst) hden)
+    rw [show TauCeti.continuationRescaling C f = fun z ↦ 1 + deriv (fun s ↦ f (z.1, s)) z.2 /
+      (C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2) from
+        funext (continuationRescaling_apply C f)]
+    exact ContDiffAt.comp_contMDiffAt
+      (f := fun z : M × ℝ ↦ (deriv (fun s ↦ f (z.1, s)) z.2, C * z.2 * (1 - z.2 ^ 2))) hg
+      ((hf.contMDiff_deriv_prodMk z).prodMk_space (ha z))
+  · -- Outside the open slab, `λ = 1` near `z`, since `f` is independent of the time there.
+    have hz : z.2 ∈ (Icc δ (1 - δ))ᶜ := fun h ↦ ht ⟨hδ.trans_le h.1, by linarith [h.2]⟩
+    refine (contMDiffAt_const (c := (1 : ℝ))).congr_of_eventuallyEq ?_
+    filter_upwards [continuousAt_snd.preimage_mem_nhds (isClosed_Icc.isOpen_compl.mem_nhds hz)]
+      with w hw
+    exact continuationRescaling_eq_one hf₀ hf₁ hw
+
+/-- Under the hypotheses of the trajectory comparison, the rescaling factor is continuous and lies
+between `C / (C + K)` and `C / (C - K)`. -/
+private theorem continuous_continuationRescaling_and_mem_Icc
+    (hf : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) 1 f) (hδ : 0 < δ)
+    (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
+    (hK : 0 ≤ K) (hKC : K < C)
+    (hb : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, |deriv (fun s ↦ f (x, s)) t| ≤ K * t * (1 - t ^ 2)) :
+    Continuous (continuationRescaling C f) ∧
+      ∀ z : M × ℝ, continuationRescaling C f z ∈ Icc (C / (C + K)) (C / (C - K)) := by
+  have hne : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t ≠ C * t * (1 - t ^ 2) :=
+    fun x t ht ↦ by
+      have hw : 0 < t * (1 - t ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+      have := (le_abs_self _).trans (hb x t ht)
+      exact ne_of_lt (by nlinarith)
+  refine ⟨(ContMDiff.continuationRescaling (n := 0) (by simpa using hf) hδ hf₀ hf₁ hne).continuous,
+    fun z ↦ continuationRescaling_mem_Icc hK hKC (hb z.1 z.2) fun ht ↦ ?_⟩
+  exact deriv_prodMk_eq_zero_of_notMem_Icc hf₀ hf₁ fun h ↦ ht ⟨hδ.trans_le h.1, by linarith [h.2]⟩
+
+variable {V : (z : M × ℝ) → TangentSpace (I.prod 𝓘(ℝ)) z} {γ : ℝ → M × ℝ}
+
+omit [I.Boundaryless] in
+/-- **The rescaled continuation field projects to the base field.** Let `V` be a vector field on
+`M × ℝ` whose time component is `C t (1 - t²) - ∂ₜ f`, as for the negative gradient of the
+continuation potential for any metric `dt² + g_t`, with `∂ₜ f ≠ C t (1 - t²)` in the open slab and
+`∂ₜ f = 0` outside it. Along an integral curve of `λ • V`, the time component `τ` solves the base
+equation `τ' = C τ (1 - τ²)` of `TauCeti.intervalBasePotential`. -/
+theorem _root_.IsMIntegralCurve.hasDerivAt_snd_of_continuationRescaling_smul
+    (hγ : IsMIntegralCurve γ fun z ↦ continuationRescaling C f z • V z)
+    (hV : ∀ z, (V z : E × ℝ).2 = C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2)
+    (hne : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t ≠ C * t * (1 - t ^ 2))
+    (hend : ∀ x, ∀ t ∉ Ioo (0 : ℝ) 1, deriv (fun s ↦ f (x, s)) t = 0) (s : ℝ) :
+    HasDerivAt (fun s ↦ (γ s).2) (C * (γ s).2 * (1 - (γ s).2 ^ 2)) s := by
+  have hmap : IsMIntegralCurveOn (Prod.snd ∘ γ)
+      (fun t : ℝ ↦ (C * t * (1 - t ^ 2) : TangentSpace 𝓘(ℝ) t)) univ := by
+    refine (hγ.isMIntegralCurveOn univ).map_of_mfderiv_eq (fun t _ ↦ mdifferentiableAt_snd)
+      fun t _ ↦ ?_
+    set z := γ t
+    have hz : deriv (fun s ↦ f (z.1, s)) z.2 ≠ C * z.2 * (1 - z.2 ^ 2) ∨
+        deriv (fun s ↦ f (z.1, s)) z.2 = 0 := by
+      by_cases ht : z.2 ∈ Ioo 0 1
+      · exact .inl (hne z.1 z.2 ht)
+      · exact .inr (hend z.1 z.2 ht)
+    rw [mfderiv_snd]
+    -- The tangent space of `M × ℝ` is the product `E × ℝ`, on which `snd` and the scalar action
+    -- act componentwise; the dependent tangent space types block a rewrite with `Prod.smul_snd`.
+    calc _ = continuationRescaling C f z * (V z : E × ℝ).2 := rfl
+      _ = C * z.2 * (1 - z.2 ^ 2) := by rw [hV]; exact continuationRescaling_mul_sub hz
+  exact (isMIntegralCurveOn_iff_isIntegralCurveOn.1 hmap s (mem_univ s)).hasDerivAt univ_mem
+
+/-- **Trajectories of the continuation field are trajectories of the rescaled field.** Let `f` be
+a `C¹` function on `M × ℝ`, independent of the time for `t < δ` and for `t > 1 - δ`, with
+`|∂ₜ f| ≤ K t (1 - t²)` in the open slab for some `0 ≤ K < C`. If `γ` is an integral curve of a
+vector field `V`, then `γ ∘ ψ` is an integral curve of `λ • V` for an order automorphism `ψ` of `ℝ`
+fixing `0`. So `γ ∘ ψ` traces the same oriented trajectory, with the same limits at `±∞`. -/
+theorem _root_.IsMIntegralCurve.exists_orderIso_isMIntegralCurve_comp_continuationRescaling_smul
+    (hγ : IsMIntegralCurve γ V) (hf : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) 1 f) (hδ : 0 < δ)
+    (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
+    (hK : 0 ≤ K) (hKC : K < C)
+    (hb : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, |deriv (fun s ↦ f (x, s)) t| ≤ K * t * (1 - t ^ 2)) :
+    ∃ ψ : ℝ ≃o ℝ, ψ 0 = 0 ∧
+      IsMIntegralCurve (γ ∘ ψ) fun z ↦ continuationRescaling C f z • V z := by
+  obtain ⟨hcont, hmem⟩ := continuous_continuationRescaling_and_mem_Icc hf hδ hf₀ hf₁ hK hKC hb
+  exact hγ.exists_orderIso_isMIntegralCurve_comp (hcont.comp hγ.continuous)
+    (fun t ↦ (div_pos (hK.trans_lt hKC) (by linarith)).trans_le (hmem (γ t)).1)
+    (fun t ↦ (hmem (γ t)).2) fun t ↦ rfl
+
+/-- **Trajectories of the rescaled field are trajectories of the continuation field.** Under the
+hypotheses of `IsMIntegralCurve.exists_orderIso_isMIntegralCurve_comp_continuationRescaling_smul`,
+if `η` is an integral curve of `λ • V`, then `η ∘ ψ` is an integral curve of `V` for an order
+automorphism `ψ` of `ℝ` fixing `0`. -/
+theorem _root_.IsMIntegralCurve.exists_orderIso_isMIntegralCurve_comp_of_continuationRescaling_smul
+    (hγ : IsMIntegralCurve γ fun z ↦ continuationRescaling C f z • V z)
+    (hf : ContMDiff (I.prod 𝓘(ℝ)) 𝓘(ℝ) 1 f) (hδ : 0 < δ)
+    (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0)) (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
+    (hK : 0 ≤ K) (hKC : K < C)
+    (hb : ∀ x, ∀ t ∈ Ioo (0 : ℝ) 1, |deriv (fun s ↦ f (x, s)) t| ≤ K * t * (1 - t ^ 2)) :
+    ∃ ψ : ℝ ≃o ℝ, ψ 0 = 0 ∧ IsMIntegralCurve (γ ∘ ψ) V := by
+  obtain ⟨hcont, hmem⟩ := continuous_continuationRescaling_and_mem_Icc hf hδ hf₀ hf₁ hK hKC hb
+  have hpos : ∀ z : M × ℝ, 0 < continuationRescaling C f z := fun z ↦
+    (div_pos (hK.trans_lt hKC) (by linarith)).trans_le (hmem z).1
+  -- The factor `1 / λ` is at most `(C + K) / C`, since `λ ≥ C / (C + K)`.
+  refine hγ.exists_orderIso_isMIntegralCurve_comp (h := fun t ↦ (continuationRescaling C f (γ t))⁻¹)
+    ((hcont.comp hγ.continuous).inv₀ fun t ↦ (hpos _).ne') (fun t ↦ inv_pos.2 (hpos _))
+    (c := (C / (C + K))⁻¹) (fun t ↦ inv_anti₀ (div_pos (hK.trans_lt hKC) (by linarith))
+      (hmem (γ t)).1) fun t ↦ (inv_smul_smul₀ (hpos _).ne' _).symm
+
+end Rescaling
 
 end TauCeti

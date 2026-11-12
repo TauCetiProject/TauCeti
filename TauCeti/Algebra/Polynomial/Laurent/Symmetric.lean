@@ -206,8 +206,7 @@ theorem eq_C_coeff_zero_of_coeff_swap {G : PowerSeries (PowerSeries R)} {L : ℕ
       rw [← hsymm, hcoe]
       split_ifs with h
       · rfl
-      · have hmN : m ≤ N := by omega
-        have h' := ih (N - m) (by omega) m hm
+      · have h' := ih (N - m) (by omega) m hm
         rw [hcoe, ite_eq_right (by omega)] at h'
         have e₁ : (-(m : ℤ) + N).natAbs = N - m := by omega
         have e₂ : ((m : ℤ) + (N - m : ℕ)).natAbs = N := by omega

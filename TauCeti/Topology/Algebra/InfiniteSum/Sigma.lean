@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+import TauCeti.Order.Filter.AtTopBot.Finset
 
 /-!
 # Regrouping a series along finite fibres
@@ -33,8 +34,5 @@ theorem HasProd.sigma_of_finite {α β : Type*} {γ : β → Type*} [CommMonoid 
     HasProd (fun b ↦ ∏ c, f ⟨b, c⟩) a := by
   classical
   -- the partial products over finite sets of `b` are partial products of `ha`
-  have hT : Tendsto (fun s : Finset β ↦ s.sigma fun b ↦ (Finset.univ : Finset (γ b))) atTop
-      atTop := by
-    refine tendsto_atTop_atTop.2 fun T ↦ ⟨T.image Sigma.fst, fun s hs x hx ↦ ?_⟩
-    exact Finset.mem_sigma.2 ⟨hs (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩
-  exact (ha.comp hT).congr fun s ↦ by simp [Finset.prod_sigma]
+  exact (ha.comp TauCeti.tendsto_finset_sigma_univ_atTop).congr fun s ↦ by
+    simp [Finset.prod_sigma]
