@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.Process.Adapted
+import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.Probability.Independence.Sup
 
 /-!
@@ -23,6 +24,8 @@ file derives the consequences that do not depend on the law of the increments.
   on `[s, u]` and on `[u, t]` give an increment independent of the past on `[s, t]`.
 * `MeasureTheory.Adapted.hasIndepIncrements`: increments independent of the past are independent
   increments in the sense of `ProbabilityTheory.HasIndepIncrements`.
+* `MeasureTheory.Adapted.indep_comap_sub_Ici`: increments independent of the past make the whole
+  future increment process `(X t - X s)_{t ≥ s}` independent of `ℱ s`.
 -/
 
 public section
@@ -39,11 +42,12 @@ variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorde
 /-- If the increment of an adapted process over `[s, u]` is independent of `ℱ s` and its
 increment over `[u, t]` is independent of `ℱ u`, then its increment over `[s, t]` is independent
 of `ℱ s`. -/
-theorem indep_comap_sub_of_indep_comap_sub [AddGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+theorem indep_comap_sub_of_indep_comap_sub [AddGroup E] [MeasurableSub₂ E]
     [IsZeroOrProbabilityMeasure μ] (hX : Adapted ℱ X) {s u t : ι} (hsu : s ≤ u)
     (h₁ : Indep (.comap (X u - X s) inferInstance) (ℱ s) μ)
     (h₂ : Indep (.comap (X t - X u) inferInstance) (ℱ u) μ) :
     Indep (.comap (X t - X s) inferInstance) (ℱ s) μ := by
+  have : MeasurableAdd₂ E := TauCeti.measurableAdd₂_of_measurableSub₂
   have hm₁ : MeasurableSpace.comap (X u - X s) inferInstance ≤ ℱ u :=
     ((hX u).sub (hX.measurable_le hsu)).comap_le
   have hsup := h₁.sup_left (indep_of_indep_of_le_right h₂ (sup_le hm₁ (ℱ.mono hsu)))
@@ -76,5 +80,61 @@ theorem hasIndepIncrements [Sub E] [MeasurableSub₂ E] [IsProbabilityMeasure μ
       ← ih fun i hi ↦ hB i (Finset.mem_insert_of_mem hi)]
     exact (Indep_iff _ _ _).1 (hindep (ht a.castSucc_le_succ)) _ _
       ⟨B a, hB a (Finset.mem_insert_self a S), rfl⟩ hpast
+
+end MeasureTheory.Adapted
+
+namespace MeasureTheory.Adapted
+
+open ProbabilityTheory
+
+variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrder ι]
+  {ℱ : Filtration ι mΩ} [MeasurableSpace E] [AddGroup E] [MeasurableSub₂ E]
+  [IsZeroOrProbabilityMeasure μ] {X : ι → Ω → E}
+
+/-- If the increments of an adapted process are independent of the past, then for every finite
+set `J` of times after `s`, the increments `X t - X s`, `t ∈ J`, jointly generate a sigma-algebra
+independent of `ℱ s`. -/
+theorem indep_biSup_comap_sub (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ)
+    (J : Finset ι) {s : ι} (hJ : ∀ t ∈ J, s ≤ t) :
+    Indep (⨆ t ∈ J, .comap (X t - X s) inferInstance) (ℱ s) μ := by
+  classical
+  have : MeasurableAdd₂ E := TauCeti.measurableAdd₂_of_measurableSub₂
+  induction J using Finset.induction_on_min generalizing s with
+  | empty => simpa using indep_bot_left (ℱ s)
+  | insert a S hlt ih =>
+    have hsa : s ≤ a := hJ a (Finset.mem_insert_self a S)
+    -- Increments after `a` are measured from `a`; they are independent of `ℱ a`.
+    have hm₁ : MeasurableSpace.comap (X a - X s) inferInstance ≤ ℱ a :=
+      ((hX a).sub (hX.measurable_le hsa)).comap_le
+    have hm₂ : (⨆ t ∈ S, MeasurableSpace.comap (X t - X a) inferInstance) ≤ mΩ :=
+      iSup₂_le fun _ _ ↦ (hX.measurable.sub hX.measurable).comap_le
+    have h₂ := indep_of_indep_of_le_right (ih (fun t ht ↦ (hlt t ht).le))
+      (sup_le hm₁ (ℱ.mono hsa))
+    have hsup := (hindep hsa).sup_left h₂ (hm₁.trans (ℱ.le a)) hm₂ (ℱ.le s)
+    refine indep_of_indep_of_le_left hsup ?_
+    rw [Finset.iSup_insert]
+    refine sup_le le_sup_left (iSup₂_le fun t ht ↦ Measurable.comap_le ?_)
+    rw [← sub_add_sub_cancel (X t) (X a) (X s)]
+    have hle := le_iSup₂
+      (f := fun t (_ : t ∈ S) ↦ MeasurableSpace.comap (X t - X a) inferInstance) t ht
+    exact ((comap_measurable _).mono (hle.trans le_sup_right) le_rfl).add
+      ((comap_measurable _).mono le_sup_left le_rfl)
+
+/-- If the increments of an adapted process are independent of the past, then the whole future
+increment process `(X t - X s)_{t ≥ s}` is independent of `ℱ s`. -/
+theorem indep_comap_sub_Ici (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) (s : ι) :
+    Indep (.comap (fun ω (t : Set.Ici s) ↦ X t ω - X s ω) inferInstance) (ℱ s) μ := by
+  classical
+  rw [MeasurableSpace.comap_process_pi, iSup_eq_iSup_finset]
+  refine indep_iSup_of_monotone (fun J ↦ ?_) (fun J ↦ ?_) (ℱ.le s)
+    (fun _ _ h ↦ iSup_le_iSup_of_subset h)
+  · refine indep_of_indep_of_le_left
+      (hX.indep_biSup_comap_sub hindep (J.map (Function.Embedding.subtype _))
+        (s := s) (by simp +contextual)) ?_
+    exact iSup₂_le fun t ht ↦
+      le_iSup₂_of_le (t : ι) (Finset.mem_map_of_mem _ ht) le_rfl
+  · exact iSup₂_le fun _ _ ↦ (hX.measurable.sub hX.measurable).comap_le
 
 end MeasureTheory.Adapted

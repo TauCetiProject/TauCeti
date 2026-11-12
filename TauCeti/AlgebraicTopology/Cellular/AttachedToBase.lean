@@ -18,8 +18,9 @@ a critical level of a Morse function, where one disc is attached along the lower
 critical point. All of its cellular differentials vanish
 (`TauCeti.cellularChainComplex_d_eq_zero_of_cellFrontier_subset`), so its relative
 homology is the cellular chain group: `Hₙ(C, D; R)` is the coproduct of one copy of `R` for each
-`n`-cell (`TauCeti.nonempty_singularHomology_complexBasePair_iso_sigma`), and over a division
-ring its dimension is the number of `n`-cells times the dimension of the coefficients
+`n`-cell (`TauCeti.nonempty_singularHomology_complexBasePair_iso_sigma`), and for free coefficients
+over a ring with the strong rank condition its `finrank` is the number of `n`-cells times the
+`finrank` of the coefficients
 (`TauCeti.finrank_singularHomology_complexBasePair_of_cellFrontier_subset`). This sharpens the
 weak Morse inequality `TauCeti.finrank_singularHomology_complexBasePair_le` of a general CW pair
 to an equality.
@@ -76,12 +77,13 @@ theorem nonempty_singularHomology_complexBasePair_iso_sigma
     eqToIso (cellularChainComplex_X C R n) ≪≫ cellularChainGroupIso C R n⟩
 
 /-- **The relative homology of a complex attached along its base is free on its cells.** If the
-boundary sphere of every cell of the relative CW complex `(C, D)` lies in `D`, and there are
-finitely many `n`-cells, then `Hₙ(C, D; M)` has dimension the number of `n`-cells times `dim M`,
-for a finite-dimensional module `M` over a division ring. -/
+boundary sphere of every cell of the relative CW complex `(C, D)` lies in `D`, then
+`finrank Hₙ(C, D; M) = #(n-cells) · finrank M` for a free module `M` over a ring with the strong
+rank condition. This is meaningful when `M` is finite-dimensional and there are finitely many
+`n`-cells; otherwise both sides are `0`. -/
 theorem finrank_singularHomology_complexBasePair_of_cellFrontier_subset {k : Type w}
-    [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
-    (h : ∀ m (j : cell C m), cellFrontier m j ⊆ D) (n : ℕ) [Finite (cell C n)] :
+    [Ring k] [StrongRankCondition k] (M : ModuleCat.{w} k) [Module.Free k M]
+    (h : ∀ m (j : cell C m), cellFrontier m j ⊆ D) (n : ℕ) :
     finrank k ((complexBasePair C).singularHomology M n : ModuleCat k) =
       Nat.card (cell C n) * finrank k M := by
   rw [← (cellularSingularHomologyIso C M n).toLinearEquiv.finrank_eq,

@@ -361,7 +361,6 @@ theorem exists_schwartzKernel_supportedIn
       ‖schwartzKernel B' hB' (periodizeProd Φ)‖ ≤
         max C' 0 * (Finset.Iic N').sup (fun i ↦ N[ℂ]_{K₁ ×ˢ K₂, i}) Φ := by
     have hΦ := derivBound_periodizeProd hK₁' hK₂' hKK Φ N'
-    have hΦ0 := hΦ.nonneg
     refine (hC'N' _ _ hΦ).trans ?_
     gcongr
     · exact le_max_left _ _

@@ -186,7 +186,7 @@ theorem HasRingHomProperty.exists_ι_comp_of_away (P : MorphismProperty Scheme.{
     (r : Γ(X, V)) (hr : r ∉ (hV.primeIdealOf ⟨x, hx⟩).asIdeal)
     (H : Q ((algebraMap Γ(X, V) (Localization.Away r)).comp (f.appLE U V hVU).hom)) :
     ∃ W : X.Opens, x ∈ W ∧ P (W.ι ≫ f) := by
-  refine ⟨X.basicOpen r, (hV.mem_basicOpen_iff_notMem_primeIdealOf hx r).mpr hr, ?_⟩
+  refine ⟨X.basicOpen r, (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hx⟩ r).mpr hr, ?_⟩
   rw [← f.resLE_comp_ι ((X.basicOpen_le r).trans hVU)]
   exact P.comp_mem _ _ (resLE_basicOpen P hU hV hVU r H)
     (IsZariskiLocalAtSource.of_isOpenImmersion _)

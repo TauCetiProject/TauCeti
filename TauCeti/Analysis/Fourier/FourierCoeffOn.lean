@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Fourier.Uniqueness
+import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.SineSeries
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Integral.Circle.Haar
 
 /-!
 # Fourier coefficients on an interval
@@ -35,6 +39,13 @@ interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each d
 (`TauCeti.fourierCoeffOn_iteratedDeriv`), since periodicity kills the boundary term of the
 integration by parts. The same holds for a function on the circle with values in any complete
 normed complex space and a continuous derivative (`TauCeti.fourierCoeff_of_hasDerivAt`).
+
+On the unit circle of `ℂ`, a function `φ : ℂ → ℂ` restricted to the circle and read on
+`AddCircle (2 * π)` has the Fourier coefficients of `θ ↦ φ(e^{iθ})` on `[0, 2π]`
+(`TauCeti.fourierCoeff_comp_toCircle`), and is continuous when `θ ↦ φ(e^{iθ})` is
+(`TauCeti.continuous_comp_toCircle`). If these coefficients `c n` are summable, the Fourier series
+`∑ c n w ^ n` sums to `φ w` at every point `w` of the unit circle
+(`TauCeti.hasSum_fourierCoeffOn_circleMap_mul_zpow`).
 -/
 
 public section
@@ -119,10 +130,7 @@ theorem eqOn_Icc_of_fourierCoeffOn_eq (hab : a < b) {f g : ℝ → ℂ} (hf : Co
     (hg : ContinuousOn g [[a, b]]) (h : ∀ n, fourierCoeffOn hab f n = fourierCoeffOn hab g n) :
     EqOn f g (Icc a b) := by
   have hfg : ContinuousOn (fun t ↦ f t - g t) [[a, b]] := hf.sub hg
-  have hL2 : MemLp (fun t ↦ f t - g t) 2 (volume.restrict (Ioc a b)) :=
-    (hfg.memLp_top_restrict_of_subset_isCompact isCompact_uIcc measurableSet_Ioc
-      (Ioc_subset_Icc_self.trans Icc_subset_uIcc)).mono_exponent le_top
-  have hae := ae_eq_zero_of_forall_fourierCoeffOn_eq_zero hab hL2 fun n ↦ by
+  have hae := hfg.intervalIntegrable.1.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero hab fun n ↦ by
     rw [fourierCoeffOn_sub hab hf.intervalIntegrable hg.intervalIntegrable, h, sub_self]
   rw [uIcc_of_le hab.le] at hfg
   intro t ht
@@ -219,7 +227,6 @@ theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff 
       ((hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable _ _)
     rw [hper.iteratedDeriv j a, sub_self, mul_zero, zero_sub, ih (by omega)] at h
     have hT0 : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
-    have hc : (2 * π * I * n : ℂ) ≠ 0 := by simp [hn, Real.pi_ne_zero, I_ne_zero]
     rw [pow_succ, mul_comm _ (2 * π * I * n / T), mul_assoc, h]
     push_cast
     field_simp
@@ -246,5 +253,47 @@ theorem fourierCoeff_of_hasDerivAt [CompleteSpace E] {f g : AddCircle T → E}
   ring
 
 end Circle
+
+section UnitCircle
+
+open AddCircle Complex Metric
+open scoped Real
+
+local instance fourierCoeffOnTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+
+/-- The Fourier coefficients of `φ` restricted to the unit circle, as a function on
+`AddCircle (2 * π)`, are those of `θ ↦ φ(e^{iθ})` on `[0, 2π]`. -/
+theorem fourierCoeff_comp_toCircle (φ : ℂ → ℂ) (n : ℤ) :
+    fourierCoeff (fun x : AddCircle (2 * π) ↦ φ (toCircle x)) n =
+      fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n := by
+  rw [fourierCoeff_eq_fourierCoeffOn 0]
+  simp only [coe_toCircle_coe_eq_circleMap, zero_add]
+
+/-- The restriction of `φ` to the unit circle is continuous as a function on `AddCircle (2 * π)`
+when `θ ↦ φ(e^{iθ})` is continuous. -/
+theorem continuous_comp_toCircle {X : Type*} [TopologicalSpace X] {φ : ℂ → X}
+    (hφ : Continuous fun θ ↦ φ (circleMap 0 1 θ)) :
+    Continuous fun x : AddCircle (2 * π) ↦ φ (toCircle x) := by
+  refine (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.mpr ?_
+  simpa [Function.comp_def, coe_toCircle_coe_eq_circleMap] using hφ
+
+/-- **Fourier series on the unit circle.** If `θ ↦ φ(e^{iθ})` is continuous with summable Fourier
+coefficients `c n` on `[0, 2π]`, then `∑ c n w ^ n = φ w` at every point `w` of the unit circle. -/
+theorem hasSum_fourierCoeffOn_circleMap_mul_zpow {φ : ℂ → ℂ}
+    (hφ : Continuous fun θ ↦ φ (circleMap 0 1 θ))
+    (hs : Summable fun n : ℤ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n)
+    {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) :
+    HasSum (fun n : ℤ ↦ fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n * w ^ n)
+      (φ w) := by
+  have hs' : Summable (fourierCoeff fun x : AddCircle (2 * π) ↦ φ (toCircle x)) := by
+    convert hs using 1
+    exact funext (fourierCoeff_comp_toCircle φ)
+  have := has_pointwise_sum_fourier_series_of_summable
+    (f := ⟨fun x ↦ φ (toCircle x), continuous_comp_toCircle hφ⟩) hs'
+    ((arg w : ℝ) : AddCircle (2 * π))
+  simpa only [ContinuousMap.coe_mk, fourierCoeff_comp_toCircle,
+    fourier_apply_eq_coe_toCircle_zpow, toCircle_arg_of_mem_sphere hw, smul_eq_mul] using this
+
+end UnitCircle
 
 end TauCeti

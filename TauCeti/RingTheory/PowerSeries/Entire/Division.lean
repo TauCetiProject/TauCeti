@@ -188,7 +188,6 @@ private theorem norm_coeff_mul_coeff_le {b : ℕ → R} {s M A C : ℝ} (hs : 1 
     (hA : 0 ≤ A) (hC0 : 0 ≤ C) (hM : ∀ m, ‖coeff m f‖ * s ^ m ≤ M) (hb : ∀ k, ‖b k‖ ≤ A * C ^ k)
     (d n k : ℕ) :
     ‖coeff (n + d + k) f * b k‖ ≤ M * A * (s ^ n)⁻¹ * (1 / 2) ^ k := by
-  have hs0 : 0 < s := zero_lt_one.trans_le hs
   have hM0 : 0 ≤ M := (by positivity : 0 ≤ ‖coeff 0 f‖ * s ^ 0).trans (hM 0)
   have hC : C ≤ s / 2 := by linarith
   calc ‖coeff (n + d + k) f * b k‖ ≤ ‖coeff (n + d + k) f‖ * (A * (s / 2) ^ k) :=
