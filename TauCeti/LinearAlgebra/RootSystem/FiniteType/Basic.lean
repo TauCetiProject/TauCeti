@@ -97,12 +97,10 @@ statements the classification runs on.
 
 ## References
 
-This file implements the "finite-type condition" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signature
-`isFiniteType_cartanMatrix` in that roadmap's `Suggested.lean`. See V. G. Kac, *Infinite
-Dimensional Lie Algebras*, 3rd ed., Chapter 4, for the finite/affine/indefinite trichotomy of
-generalized Cartan matrices, and Humphreys, *Introduction to Lie Algebras and Representation
-Theory*, Chapter 11, for the classification of the finite-type case.
+See V. G. Kac, *Infinite Dimensional Lie Algebras*, 3rd ed., Chapter 4, for the
+finite/affine/indefinite trichotomy of generalized Cartan matrices, and Humphreys, *Introduction to
+Lie Algebras and Representation Theory*, Chapter 11, for the classification of the finite-type
+case.
 -/
 
 public section

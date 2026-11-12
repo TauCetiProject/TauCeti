@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.MeasureTheory.Measure.Haar.Unique
@@ -93,6 +94,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
   empty).
+* `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
+  linear part has `|det| = 1` preserves an additive Haar measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -521,6 +524,29 @@ theorem norm_det_le_opNorm_pow {𝕜 E : Type*} [RCLike 𝕜]
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) finrank_pos.ne').1 h
 
 end ContinuousLinearMap
+
+namespace ContinuousAffineMap
+
+/-- A continuous affine self-map of a finite-dimensional real space whose linear part has
+determinant of absolute value `1` preserves an additive Haar measure. -/
+theorem measurePreserving_of_abs_det_eq_one
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (T : E →ᴬ[ℝ] E) (habs : |T.contLinear.det| = 1) : MeasurePreserving T μ μ := by
+  have hdet : T.contLinear.det ≠ 0 := fun h ↦ by simp [h] at habs
+  have hT0 : (T : E → E) = (fun y ↦ y + T 0) ∘ T.contLinear := T.decomp
+  have hL : μ.map T.contLinear = μ := by
+    have h := Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+    rw [ContinuousLinearMap.coe_coe] at h
+    have h1 : |(LinearMap.det (T.contLinear : E →ₗ[ℝ] E))⁻¹| = 1 := by
+      rw [abs_inv]; exact inv_eq_one.2 habs
+    rw [h, h1]
+    simp
+  refine ⟨T.continuous.measurable, ?_⟩
+  rw [hT0, ← Measure.map_map (measurable_add_const _) T.contLinear.continuous.measurable, hL,
+    map_add_right_eq_self]
+
+end ContinuousAffineMap
 
 namespace MeasureTheory.Measure
 

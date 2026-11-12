@@ -126,12 +126,12 @@ theorem f4ModularCoroot_mem_shortRootSubspace (β : Fin 48) (hβ : f4Length β =
 
 /-- A short--short Chevalley bracket with long-root target vanishes in the modular lattice. -/
 theorem f4Modular_lie_rootVector_eq_zero_of_short_add_short_eq_long (α β γ : Fin 48)
-    (hα : f4Length α = 1) (hβ : f4Length β = 1) (hγ : f4Length γ = 2)
+    (hβ : f4Length β = 1) (hγ : f4Length γ = 2)
     (h : f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
     ⁅f4ModularRootVector α, f4ModularRootVector β⁆ = 0 := by
   obtain ⟨z, hzabs, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add α β γ h
-  rw [f4_chainBotCoeff_eq_one_of_short_add_short_eq_long α β γ hα hβ hγ h] at hzabs
+  rw [f4_chainBotCoeff_eq_one_of_short_add_short_eq_long α β γ hβ hγ h] at hzabs
   have hzmod : (z : ZMod 2) = 0 := by
     rw [← ZMod.natAbs_mod_two, hzabs]
     exact ZMod.natCast_self 2
@@ -160,9 +160,9 @@ theorem f4Modular_lie_rootVector_mem_shortRootSubspace (α β : Fin 48)
       rw [hlie]
       exact Submodule.smul_mem _ _
         (f4ModularRootVector_mem_shortRootSubspace γ hγshort)
-    · rcases f4Length_eq_one_or_eq_two α with hαshort | hαlong
+    · rcases f4Length_eq_one_or_eq_two α with - | hαlong
       · rw [f4Modular_lie_rootVector_eq_zero_of_short_add_short_eq_long α β γ
-          hαshort hβ hγlong hγ]
+          hβ hγlong hγ]
         exact Submodule.zero_mem _
       · have hγshort :=
           f4_n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long

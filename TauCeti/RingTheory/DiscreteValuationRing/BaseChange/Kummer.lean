@@ -65,8 +65,8 @@ theorem IsUnramifiedWRT.adjoin_root (h : IsUnramifiedWRT A L) {π : A}
   have hgen : K⟮AdjoinSimple.gen K α⟯ = ⊤ :=
     _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
   have := IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
-    hπ hn hαK hgen
-  have hdegree := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible hπ hn hαK hgen
+    hπ hαK hgen
+  have hdegree := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible hπ hαK hgen
   have : FiniteDimensional K K⟮α⟯ :=
     Module.finite_of_finrank_pos (hdegree ▸ Nat.pos_of_ne_zero hn)
   have : IsFractionRing (integralClosure A K⟮α⟯) K⟮α⟯ :=

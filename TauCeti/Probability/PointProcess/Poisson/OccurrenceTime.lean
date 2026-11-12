@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Poisson.Basic
-public import TauCeti.Probability.PointProcess.OccurrenceTime
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Distributions.Gamma.Cdf
 public import TauCeti.Probability.Distributions.Poisson.Tail

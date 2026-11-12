@@ -46,11 +46,11 @@ example (hv : (3 : ℤ) ∈ v.asIdeal) {α : L} (hα : α ^ 2 = 3) (hgen : ℚ�
   have hα' : α ^ 2 = algebraMap (Localization.AtPrime v.asIdeal) L (3 : ℕ) := by
     rw [map_natCast, hα, Nat.cast_ofNat]
   exact ⟨IsDiscreteValuationRing.integralClosure_eq_adjoin_of_pow_eq_of_irreducible
-      (K := ℚ) hπ two_ne_zero hα' hgen,
+      (K := ℚ) hπ hα' hgen,
     IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
-      (K := ℚ) hπ two_ne_zero hα' hgen,
+      (K := ℚ) hπ hα' hgen,
     fun P _ ↦ IsDiscreteValuationRing.ramificationIdx_eq_of_pow_eq_of_irreducible
-      (K := ℚ) hπ two_ne_zero hα' hgen P⟩
+      (K := ℚ) hπ hα' hgen P⟩
 
 /-- *test_kummer_wild*: for `A = ℤ_(2)` and `L = ℚ(√2)`, clauses (1)–(5) of Stacks,
 Lemma 15.116.2 hold: `[L : ℚ] = 2`, the integral closure of `A` in `L` is `A[√2]`, where `√2`
@@ -72,20 +72,20 @@ example (hv : (2 : ℤ) ∈ v.asIdeal) {α : L} (hα : α ^ 2 = 2) (hgen : ℚ�
     rw [map_natCast, hα, Nat.cast_ofNat]
   have := FaithfulSMul.trans (Localization.AtPrime v.asIdeal) ℚ L
   refine ⟨IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible
-      (K := ℚ) hπ two_ne_zero hα' hgen,
+      (K := ℚ) hπ hα' hgen,
     IsDiscreteValuationRing.integralClosure_eq_adjoin_of_pow_eq_of_irreducible
-      (K := ℚ) hπ two_ne_zero hα' hgen,
+      (K := ℚ) hπ hα' hgen,
     by simpa using
-      IsDiscreteValuationRing.minpoly_eq_of_pow_eq_of_irreducible hπ two_ne_zero hα',
+      IsDiscreteValuationRing.minpoly_eq_of_pow_eq_of_irreducible hπ hα',
     IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
-      (K := ℚ) hπ two_ne_zero hα' hgen,
+      (K := ℚ) hπ hα' hgen,
     fun P _ ↦ IsDiscreteValuationRing.ramificationIdx_eq_of_pow_eq_of_irreducible
-      (K := ℚ) hπ two_ne_zero hα' hgen P,
+      (K := ℚ) hπ hα' hgen P,
     IsDiscreteValuationRing.isTotallyRamifiedWRT_of_pow_eq_of_irreducible
-      (K := ℚ) hπ two_ne_zero hα' hgen, ?_⟩
+      (K := ℚ) hπ hα' hgen, ?_⟩
   -- The ramification index `2` is the uniformizer, so it vanishes in the residue field.
   rw [IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible
-    (K := ℚ) hπ two_ne_zero hα' hgen, ← map_natCast (Ideal.Quotient.mk _),
+    (K := ℚ) hπ hα' hgen, ← map_natCast (Ideal.Quotient.mk _),
     Ideal.Quotient.eq_zero_iff_mem.mpr ((mem_maximalIdeal _).mpr hπ.not_isUnit)]
   exact not_isUnit_zero
 

@@ -67,7 +67,7 @@ theorem isSymplecticSubmanifoldEmbedding_graph_iff (hσ : σ.IsNondegenerate)
     (hσ.prod hτ).IsSymplecticSubmanifoldEmbedding I (fun x ↦ (x, f x)) ↔
       SmoothTwoForm.IsNondegenerate (σ + SmoothForm.mpullback f hf τ) := by
   rw [isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding hf.isSmoothEmbedding_graph,
-    hσ.hasSymplecticTangentImages_graph_iff hτ (hf.mdifferentiable (by simp)),
+    hσ.hasSymplecticTangentImages_graph_iff hτ,
     isNondegenerate_iff_separatingLeft]
   simp only [SmoothBundleForm.eval₂_add, SmoothForm.eval₂_mpullback]
 
