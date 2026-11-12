@@ -62,6 +62,30 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
   {n : WithTop ℕ∞}
 
 
+/-- Differentiate a product whose second coordinate evaluates a varying continuous linear map
+on the fibre coordinate. -/
+theorem _root_.HasFDerivWithinAt.fst_prodMk_apply {G : E → E →L[𝕜] F}
+    {G' : E →L[𝕜] E →L[𝕜] F} {s : Set (E × E)}
+    {t : Set E} {p : E × E} (hG : HasFDerivWithinAt G G' t p.1) (hs : Set.MapsTo Prod.fst s t) :
+    HasFDerivWithinAt (fun w : E × E ↦ (w.1, G w.1 w.2))
+      ((ContinuousLinearMap.fst 𝕜 E E).prod
+        ((G p.1).comp (ContinuousLinearMap.snd 𝕜 E E) +
+          (G'.comp (ContinuousLinearMap.fst 𝕜 E E)).flip p.2)) s p :=
+  hasFDerivWithinAt_fst.prodMk
+    ((hG.comp p hasFDerivWithinAt_fst hs).clm_apply hasFDerivWithinAt_snd)
+
+/-- Differentiate a varying continuous bilinear map evaluated twice on the fibre coordinate. -/
+theorem _root_.HasFDerivWithinAt.apply_apply {G : E → E →L[𝕜] E →L[𝕜] F}
+    {G' : E →L[𝕜] E →L[𝕜] E →L[𝕜] F}
+    {s : Set (E × E)} {t : Set E} {p : E × E} (hG : HasFDerivWithinAt G G' t p.1)
+    (hs : Set.MapsTo Prod.fst s t) :
+    HasFDerivWithinAt (fun w : E × E ↦ G w.1 w.2 w.2)
+      ((G p.1 p.2).comp (ContinuousLinearMap.snd 𝕜 E E) +
+        ((G p.1).comp (ContinuousLinearMap.snd 𝕜 E E) +
+          (G'.comp (ContinuousLinearMap.fst 𝕜 E E)).flip p.2).flip p.2) s p :=
+  ((hG.comp p hasFDerivWithinAt_fst hs).clm_apply hasFDerivWithinAt_snd).clm_apply
+    hasFDerivWithinAt_snd
+
 /-- The map `z ↦ B z z` attached to a continuous bilinear map `B` is `C^n` for every `n`. -/
 theorem _root_.ContinuousLinearMap.contDiff_apply_self (B : E →L[𝕜] E →L[𝕜] F) : ContDiff 𝕜 n
     (fun z ↦ B z z) :=

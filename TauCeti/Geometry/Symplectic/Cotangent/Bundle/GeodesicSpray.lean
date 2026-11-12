@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Cogeodesic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Hyperregular
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
+import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
 # The geodesic spray is the Lagrangian vector field of the kinetic energy
@@ -89,68 +90,15 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M]
 
+/-- The kinetic Lagrangian is smooth because the metric is smooth and the potential is zero. -/
+theorem Manifold.ContMDiffNondegenerateMetric.contMDiff_mechanicalLagrangian_zero
+    (g : Manifold.ContMDiffNondegenerateMetric (I := I) (M := M)) :
+    ContMDiff I.tangent 𝓘(ℝ) ∞ (mechanicalLagrangian g 0) :=
+  contMDiff_mechanicalLagrangian g.contMDiff contMDiff_const
+
 /-! ### Chart formulas -/
 
 section Chart
-
-/-- The inverse of the preferred chart of `TM` at `z` sends `(q, u)` to the tangent vector with
-fibre coordinate `u`, in the trivialization at `z.proj`, at the point with chart coordinate `q`. -/
-private theorem extChartAt_tangent_symm_apply (z : TangentBundle I M) {w : E × E}
-    (hw : w ∈ (extChartAt I.tangent z).target) :
-    (extChartAt I.tangent z).symm w =
-      TotalSpace.mk' E ((extChartAt I z.proj).symm w.1)
-        ((trivializationAt E (TangentSpace I) z.proj).symm ((extChartAt I z.proj).symm w.1)
-          w.2) := by
-  have hb : (extChartAt I z.proj).symm w.1 ∈
-      (trivializationAt E (TangentSpace I) z.proj).baseSet := by
-    rw [FiberBundle.extChartAt_target] at hw
-    exact hw.1.2
-  rw [FiberBundle.extChartAt]
-  exact ((trivializationAt E (TangentSpace I) z.proj).mk_symm hb w.2).symm
-
-/-- In its own preferred chart, a tangent vector `z` has coordinates the chart image of its base
-point and its own fibre coordinate. -/
-private theorem extChartAt_tangent_self (z : TangentBundle I M) :
-    extChartAt I.tangent z z = (extChartAt I z.proj z.proj, (id z.2 : E)) := by
-  rw [FiberBundle.extChartAt]
-  refine Prod.ext rfl ?_
-  simp only [PartialEquiv.coe_trans, Function.comp_apply, PartialEquiv.prod_coe,
-    PartialEquiv.refl_coe, id_eq]
-  exact ((trivializationAt E (TangentSpace I) z.proj).continuousLinearMapAt_apply_of_mem (R := ℝ)
-    (FiberBundle.mem_baseSet_trivializationAt' z.proj) z.2).symm.trans
-    (Manifold.continuousLinearMapAt_trivializationAt_self z.proj z.2)
-
-/-- The derivative of `w ↦ (w.1, G w.1 w.2)`, the chart shape of the Legendre map of a mechanical
-Lagrangian. -/
-private theorem hasFDerivWithinAt_fst_prodMk_apply {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {G : E → E →L[ℝ] F} {G' : E →L[ℝ] E →L[ℝ] F} {s : Set (E × E)}
-    {t : Set E} {p : E × E} (hG : HasFDerivWithinAt G G' t p.1) (hs : MapsTo Prod.fst s t) :
-    HasFDerivWithinAt (fun w : E × E ↦ (w.1, G w.1 w.2))
-      ((ContinuousLinearMap.fst ℝ E E).prod
-        ((G p.1).comp (ContinuousLinearMap.snd ℝ E E) +
-          (G'.comp (ContinuousLinearMap.fst ℝ E E)).flip p.2)) s p :=
-  hasFDerivWithinAt_fst.prodMk
-    ((hG.comp p hasFDerivWithinAt_fst hs).clm_apply hasFDerivWithinAt_snd)
-
-/-- The derivative of `w ↦ G w.1 w.2 w.2`, the chart shape of the energy of a mechanical
-Lagrangian. -/
-private theorem hasFDerivWithinAt_apply_apply {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {G : E → E →L[ℝ] E →L[ℝ] F} {G' : E →L[ℝ] E →L[ℝ] E →L[ℝ] F}
-    {s : Set (E × E)} {t : Set E} {p : E × E} (hG : HasFDerivWithinAt G G' t p.1)
-    (hs : MapsTo Prod.fst s t) :
-    HasFDerivWithinAt (fun w : E × E ↦ G w.1 w.2 w.2)
-      ((G p.1 p.2).comp (ContinuousLinearMap.snd ℝ E E) +
-        ((G p.1).comp (ContinuousLinearMap.snd ℝ E E) +
-          (G'.comp (ContinuousLinearMap.fst ℝ E E)).flip p.2).flip p.2) s p :=
-  ((hG.comp p hasFDerivWithinAt_fst hs).clm_apply hasFDerivWithinAt_snd).clm_apply
-    hasFDerivWithinAt_snd
-
-/-- The first coordinate of a point of the target of the chart of `TM` at `z` lies in the target
-of the chart of `M` at `z.proj`. -/
-private theorem mapsTo_fst_extChartAt_tangent_target (z : TangentBundle I M) :
-    MapsTo Prod.fst (extChartAt I.tangent z).target (extChartAt I z.proj).target := fun w hw ↦ by
-  rw [FiberBundle.extChartAt_target] at hw
-  exact hw.1.1
 
 variable (g : Manifold.ContMDiffNondegenerateMetric (I := I) (M := M))
 
@@ -162,13 +110,13 @@ private theorem writtenInExtChartAt_legendreMap_mechanicalLagrangian (V : M → 
     writtenInExtChartAt I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z
         (legendreMap (mechanicalLagrangian g V)) w =
       (w.1, g.chartMetric z.proj w.1 w.2) := by
-  have hw1 := mapsTo_fst_extChartAt_tangent_target z hw
+  have hw1 := TangentBundle.mapsTo_fst_extChartAt_target z hw
   have hb : (extChartAt I z.proj).symm w.1 ∈
       (trivializationAt E (TangentSpace I) z.proj).baseSet := by
     rw [FiberBundle.extChartAt_target] at hw
     exact hw.1.2
   rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply,
-    extChartAt_tangent_symm_apply z hw, CotangentBundle.extChartAt_apply,
+    TangentBundle.extChartAt_symm_apply z hw, CotangentBundle.extChartAt_apply,
     legendreMap_mechanicalLagrangian_snd (fun x v w ↦ (g.symm x).eq v w) V, proj_legendreMap,
     proj_legendreMap]
   refine Prod.ext ((extChartAt I z.proj).right_inv hw1) (ContinuousLinearMap.ext fun u ↦ ?_)
@@ -180,9 +128,9 @@ private theorem writtenInExtChartAt_lagrangianEnergy_mechanicalLagrangian (z : T
     writtenInExtChartAt I.tangent 𝓘(ℝ) z (lagrangianEnergy (mechanicalLagrangian g 0)) w =
       2⁻¹ * g.chartMetric z.proj w.1 w.2 w.2 := by
   rw [writtenInExtChartAt, Function.comp_apply, Function.comp_apply, extChartAt_model_space_eq_id,
-    PartialEquiv.refl_coe, id_eq, extChartAt_tangent_symm_apply z hw,
+    PartialEquiv.refl_coe, id_eq, TangentBundle.extChartAt_symm_apply z hw,
     lagrangianEnergy_mechanicalLagrangian,
-    g.chartMetric_apply (mapsTo_fst_extChartAt_tangent_target z hw), Pi.zero_apply, add_zero]
+    g.chartMetric_apply (TangentBundle.mapsTo_fst_extChartAt_target z hw), Pi.zero_apply, add_zero]
 
 /-- The derivative of the Legendre map of a mechanical Lagrangian at `z`, read in charts:
 `(a, b) ↦ (a, G b + DG(a) u)` with `G` the chart metric at the chart image of `z.proj`, `DG` its
@@ -208,11 +156,11 @@ private theorem hasMFDerivAt_legendreMap_mechanicalLagrangian (V : M → ℝ)
     (z : TangentBundle I M) (hL : ContMDiff I.tangent 𝓘(ℝ) 2 (mechanicalLagrangian g V)) :
     HasMFDerivAt I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap (mechanicalLagrangian g V)) z
       (legendreChartDeriv g z) := by
-  have hΦ := hasFDerivWithinAt_fst_prodMk_apply
+  have hΦ := HasFDerivWithinAt.fst_prodMk_apply
     (p := ((extChartAt I z.proj z.proj : E), (id z.2 : E)))
     ((g.contDiffOn_chartMetric z.proj _ (mem_extChartAt_target z.proj)).differentiableWithinAt
-      (by simp)).hasFDerivWithinAt (mapsTo_fst_extChartAt_tangent_target z)
-  have hp := extChartAt_tangent_self z
+      (by simp)).hasFDerivWithinAt (TangentBundle.mapsTo_fst_extChartAt_target z)
+  have hp := TangentBundle.extChartAt_self z
   -- On the chart target the chart expression is `(q, u) ↦ (q, G(q) u)`, and that target is a
   -- neighbourhood of the chart image of `z` within the range of the model.
   have h : HasFDerivWithinAt (writtenInExtChartAt I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z
@@ -228,16 +176,15 @@ private theorem hasMFDerivAt_legendreMap_mechanicalLagrangian (V : M → ℝ)
     h.congr_fderiv (ContinuousLinearMap.ext fun _ ↦ rfl)⟩
 
 /-- The energy of the kinetic Lagrangian has derivative `energyChartDeriv` in charts. -/
-private theorem hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian (z : TangentBundle I M)
-    (hL : ContMDiff I.tangent 𝓘(ℝ) 2 (mechanicalLagrangian g 0)) :
+private theorem hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian (z : TangentBundle I M) :
     HasMFDerivAt I.tangent 𝓘(ℝ) (lagrangianEnergy (mechanicalLagrangian g 0)) z
       (energyChartDeriv g z) := by
-  have hΦ := (hasFDerivWithinAt_apply_apply
+  have hΦ := (HasFDerivWithinAt.apply_apply
     (p := ((extChartAt I z.proj z.proj : E), (id z.2 : E)))
     ((g.contDiffOn_chartMetric z.proj _ (mem_extChartAt_target z.proj)).differentiableWithinAt
-      (by simp)).hasFDerivWithinAt (mapsTo_fst_extChartAt_tangent_target z)).const_smul
+      (by simp)).hasFDerivWithinAt (TangentBundle.mapsTo_fst_extChartAt_target z)).const_smul
     (2⁻¹ : ℝ)
-  have hp := extChartAt_tangent_self z
+  have hp := TangentBundle.extChartAt_self z
   have h : HasFDerivWithinAt (writtenInExtChartAt I.tangent 𝓘(ℝ) z
       (lagrangianEnergy (mechanicalLagrangian g 0))) (energyChartDeriv g z) (range I.tangent)
       (extChartAt I.tangent z z) := by
@@ -248,7 +195,8 @@ private theorem hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian (z : TangentB
         smul_eq_mul]
     · rw [← hp, writtenInExtChartAt_lagrangianEnergy_mechanicalLagrangian g z
         (mem_extChartAt_target z), Pi.smul_apply, smul_eq_mul]
-  exact ⟨(contMDiff_lagrangianEnergy (m := 0) hL (by norm_num) z).continuousAt,
+  exact ⟨(contMDiff_lagrangianEnergy (m := 0)
+      g.contMDiff_mechanicalLagrangian_zero (by norm_num) z).continuousAt,
     h.congr_fderiv (ContinuousLinearMap.ext fun _ ↦ rfl)⟩
 
 end Chart
@@ -277,14 +225,16 @@ the chart of `TM` at `v` with `Γ` the Christoffel map in the trivialization at 
 `ω_L((v, -Γ_x(v, v)), Y) = dE_L(Y)` for the Cartan two-form `ω_L` and the energy `E_L`. -/
 theorem IsLeviCivitaConnection.eval₂_cartanTwoForm_mechanicalLagrangian
     (hcov : g.IsLeviCivitaConnection cov)
-    (hL : ContMDiff I.tangent 𝓘(ℝ) ∞ (mechanicalLagrangian g 0)) (z : TangentBundle I M)
+    (z : TangentBundle I M)
     (Y : TangentSpace I.tangent z) :
-    SmoothBundleForm.eval₂ (cartanTwoForm (mechanicalLagrangian g 0) hL) z
+    SmoothBundleForm.eval₂
+      (cartanTwoForm (mechanicalLagrangian g 0) g.contMDiff_mechanicalLagrangian_zero) z
         ((z.2, -christoffelMap (finBasis ℝ E) (cov.isCovariantDerivativeOn
           (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2) :
           TangentSpace I.tangent z) Y =
       mvfderiv I.tangent (lagrangianEnergy (mechanicalLagrangian g 0)) z Y := by
-  have hL2 : ContMDiff I.tangent 𝓘(ℝ) 2 (mechanicalLagrangian g 0) := hL.of_le (by simp)
+  have hL2 : ContMDiff I.tangent 𝓘(ℝ) 2 (mechanicalLagrangian g 0) :=
+    g.contMDiff_mechanicalLagrangian_zero.of_le (by simp)
   obtain ⟨a, b⟩ := Y
   -- Abbreviations for the chart data at the base point `x`: the chart metric `G` at the chart
   -- image of `x`, its derivative `DG`, the fibre coordinate `u` and the Christoffel map `Γ`.
@@ -307,13 +257,15 @@ theorem IsLeviCivitaConnection.eval₂_cartanTwoForm_mechanicalLagrangian
     rfl
   have hE : mvfderiv I.tangent (lagrangianEnergy (mechanicalLagrangian g 0)) z
       ((a, b) : TangentSpace I.tangent z) = 2⁻¹ * (G u b + (G b u + DG a u u)) := by
-    rw [mvfderiv, (hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian g z hL2).mfderiv]
+    rw [mvfderiv, (hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian g z).mfderiv]
     rfl
   -- `ω_L = FL^* ω`, and `ω` is the linear cotangent form in the chart at `FL(z)`.
   have h := SmoothForm.eval₂_mpullback (legendreMap (mechanicalLagrangian g 0))
-    (contMDiff_legendreMap hL (by simp)) (CotangentBundle.symplecticForm I M) z
+    (contMDiff_legendreMap g.contMDiff_mechanicalLagrangian_zero (by simp))
+    (CotangentBundle.symplecticForm I M) z
     ((z.2, -Γ z.2 z.2) : TangentSpace I.tangent z) ((a, b) : TangentSpace I.tangent z)
-  rw [mpullback_legendreMap_symplecticForm hL, CotangentBundle.eval₂_symplecticForm, hX, hY] at h
+  rw [mpullback_legendreMap_symplecticForm g.contMDiff_mechanicalLagrangian_zero,
+    CotangentBundle.eval₂_symplecticForm, hX, hY] at h
   rw [h, hE, strongDualCotangentSymplecticForm_apply]
   dsimp only
   -- Metric compatibility in coordinates, and the symmetries of `G` and of `Γ`.
@@ -344,21 +296,22 @@ the vector `(v, -Γ_x(v, v))`, where `Γ` is the Christoffel map of a Levi-Civit
 in the trivialization at `x`. -/
 theorem IsLeviCivitaConnection.hamiltonianVectorField_lagrangianEnergy_mechanicalLagrangian
     [BoundarylessManifold I.tangent (TangentBundle I M)] (hcov : g.IsLeviCivitaConnection cov)
-    (hL : ContMDiff I.tangent 𝓘(ℝ) ∞ (mechanicalLagrangian g 0)) (z : TangentBundle I M) :
-    (cartanTwoForm (mechanicalLagrangian g 0) hL).hamiltonianVectorField
+    (z : TangentBundle I M) :
+    (cartanTwoForm (mechanicalLagrangian g 0)
+      g.contMDiff_mechanicalLagrangian_zero).hamiltonianVectorField
         (lagrangianEnergy (mechanicalLagrangian g 0)) z =
       ((z.2, -christoffelMap (finBasis ℝ E) (cov.isCovariantDerivativeOn
           (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2) :
           TangentSpace I.tangent z) := by
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
   have hω := ((g.isHyperregularLagrangian_mechanicalLagrangian 0).isRegularLagrangian
-    |>.isSymplectic_cartanTwoForm hL).isNondegenerate
+    |>.isSymplectic_cartanTwoForm g.contMDiff_mechanicalLagrangian_zero).isNondegenerate
   -- Both vectors have the flat `dE_L`, and the flat of `ω_L` is injective.
   refine ((hω.isInvertible_flat z).injective ?_).symm
   rw [hω.flat_hamiltonianVectorField]
   ext Y
   exact (SmoothTwoForm.flat_apply _ _ _ _).trans
-    (hcov.eval₂_cartanTwoForm_mechanicalLagrangian hL z Y)
+    (hcov.eval₂_cartanTwoForm_mechanicalLagrangian z Y)
 
 end Manifold.ContMDiffNondegenerateMetric
 
@@ -399,16 +352,16 @@ variable [BoundarylessManifold I.tangent (TangentBundle I M)]
 `½ ‖v‖²` of a Riemannian metric, the Hamiltonian vector field of the energy for the Cartan two-form
 is the geodesic spray. -/
 @[simp]
-theorem hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray
-    (hL : ContMDiff I.tangent 𝓘(ℝ) ∞
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)) :
-    (cartanTwoForm _ hL).hamiltonianVectorField
+theorem hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray :
+    SmoothTwoForm.hamiltonianVectorField
+      (cartanTwoForm _
+        (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero)
         (lagrangianEnergy
           (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)) =
       geodesicSpray I M := by
   funext z
   rw [(ContMDiffNondegenerateMetric.isLeviCivitaConnection_ofRiemannianBundle_leviCivitaConnection
-      I M).hamiltonianVectorField_lagrangianEnergy_mechanicalLagrangian hL z,
+      I M).hamiltonianVectorField_lagrangianEnergy_mechanicalLagrangian z,
     geodesicSpray_apply]
   -- The two sides differ only in the smoothness instances through which the Levi-Civita
   -- connection of the Riemannian metric is elaborated.
@@ -419,8 +372,6 @@ theorem hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray
 geodesic spray to the Hamiltonian vector field of the kinetic energy `‖p‖² / 2` for the canonical
 symplectic form of `T*M`. -/
 theorem mfderiv_legendreMap_geodesicSpray
-    (hL : ContMDiff I.tangent 𝓘(ℝ) ∞
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0))
     (z : TangentBundle I M) :
     mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
         (legendreMap (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0))
@@ -433,15 +384,14 @@ theorem mfderiv_legendreMap_geodesicSpray
   have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
     (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
   rw [← h.hamiltonian_eq_kineticEnergy,
-    ← hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray hL]
-  exact h.mfderiv_legendreMap_hamiltonianVectorField hL z
+    ← hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray]
+  exact h.mfderiv_legendreMap_hamiltonianVectorField
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero z
 
 /-- **The geodesic flow is the cogeodesic flow.** A `C²` curve `γ` in a Riemannian manifold is a
 geodesic exactly when the Legendre transform `t ↦ ⟪γ'(t), ·⟫` of its velocity is an integral curve
 of the Hamiltonian vector field of the kinetic energy `‖p‖² / 2` on `T*M`. -/
 theorem isMIntegralCurve_legendreMap_comp_curveVelocityLift_iff
-    (hL : ContMDiff I.tangent 𝓘(ℝ) ∞
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0))
     {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I 2 γ) :
     IsMIntegralCurve
         (legendreMap
@@ -453,8 +403,10 @@ theorem isMIntegralCurve_legendreMap_comp_curveVelocityLift_iff
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
   have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
     (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
-  rw [← h.hamiltonian_eq_kineticEnergy, h.isMIntegralCurve_legendreMap_comp_iff hL,
-    hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray hL]
+  rw [← h.hamiltonian_eq_kineticEnergy,
+    h.isMIntegralCurve_legendreMap_comp_iff
+      (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero,
+    hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray]
   exact isMIntegralCurve_curveVelocityLift_iff hγ
 
 end Riemannian
