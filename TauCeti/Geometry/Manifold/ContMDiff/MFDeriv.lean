@@ -55,29 +55,52 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
-  {f : M → N} {s : ∀ y : M, TangentSpace I y} {x : M} {m n : ℕ∞ω} {u : Set M}
+  {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP]
+  [TopologicalSpace HP] [TopologicalSpace P] [ChartedSpace HP P]
+  {IP : ModelWithCorners 𝕜 EP HP} {b : P → M}
+  {f : M → N} {s : ∀ y : P, TangentSpace I (b y)} {x : P} {m n : ℕ∞ω} {u : Set P}
 
 /-- The differential of a map regular at a point sends a tangent section regular within a
 set to a field along the map, losing one derivative of the map. No metric or
 finite-dimensionality assumption is needed. -/
 theorem ContMDiffWithinAt.mfderiv_apply_sectionAlong
-    (hs : ContMDiffWithinAt I (I.prod 𝓘(𝕜, E)) n
-      (fun y ↦ Bundle.TotalSpace.mk' E y (s y)) u x)
-    (hf : ContMDiffAt I J m f x) (hnm : n + 1 ≤ m) :
-    ContMDiffWithinAt I (J.prod 𝓘(𝕜, F)) n
-      (fun y ↦ Bundle.TotalSpace.mk' F (f y) (mfderiv I J f y (s y))) u x := by
+    (hs : ContMDiffWithinAt IP (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E (b y) (s y)) u x)
+    (hf : ContMDiffAt I J m f (b x)) (hnm : n + 1 ≤ m) :
+    ContMDiffWithinAt IP (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f (b y)) (mfderiv I J f (b y) (s y))) u x := by
   -- The tangent map composed with a section is the bundled differential applied to that section.
   simpa only [Function.comp_def, tangentMap] using
     (hf.contMDiffAt_tangentMap hnm).comp_contMDiffWithinAt x hs
 
 /-- The differential of a `C^m` map sends a `C^n` tangent section to a `C^n` field along
 it when `n + 1 ≤ m`. No metric or finite-dimensionality assumption is needed. -/
-theorem ContMDiffAt.mfderiv_apply_sectionAlong (hf : ContMDiffAt I J m f x)
-    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, E)) n (fun y ↦ Bundle.TotalSpace.mk' E y (s y)) x)
+theorem ContMDiffAt.mfderiv_apply_sectionAlong (hf : ContMDiffAt I J m f (b x))
+    (hs : ContMDiffAt IP (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E (b y) (s y)) x)
     (hnm : n + 1 ≤ m) :
-    ContMDiffAt I (J.prod 𝓘(𝕜, F)) n
-      (fun y ↦ Bundle.TotalSpace.mk' F (f y) (mfderiv I J f y (s y))) x :=
+    ContMDiffAt IP (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f (b y)) (mfderiv I J f (b y) (s y))) x :=
   ContMDiffWithinAt.mfderiv_apply_sectionAlong hs hf hnm
+
+/-- The differential sends a tangent field along a base map, regular on a set, to a regular
+field along the composite when the map is regular at the image points and `n + 1 ≤ m`. -/
+theorem ContMDiffOn.mfderiv_apply_sectionAlong
+    (hs : ContMDiffOn IP (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E (b y) (s y)) u)
+    (hf : ∀ x ∈ u, ContMDiffAt I J m f (b x)) (hnm : n + 1 ≤ m) :
+    ContMDiffOn IP (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f (b y)) (mfderiv I J f (b y) (s y))) u :=
+  fun x hx ↦ (hs x hx).mfderiv_apply_sectionAlong (hf x hx) hnm
+
+/-- The differential of a `C^m` map sends a `C^n` tangent field along any base map to a
+`C^n` field along the composite when `n + 1 ≤ m`. -/
+theorem ContMDiff.mfderiv_apply_sectionAlong (hf : ContMDiff I J m f)
+    (hs : ContMDiff IP (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E (b y) (s y))) (hnm : n + 1 ≤ m) :
+    ContMDiff IP (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f (b y)) (mfderiv I J f (b y) (s y))) :=
+  fun x ↦ (hf (b x)).mfderiv_apply_sectionAlong (hs x) hnm
 
 end SectionAlong
 

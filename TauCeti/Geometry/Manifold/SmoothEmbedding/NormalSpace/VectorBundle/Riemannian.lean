@@ -55,7 +55,7 @@ omit [FiniteDimensional ℝ E] in
 `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
 ambient tangent vector may vary. -/
 theorem contMDiff_normalRepresentative_normalClass
-    [IsManifold I (m + 1) M]
+    [IsManifold I 1 M]
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
@@ -73,7 +73,7 @@ theorem contMDiff_normalRepresentative_normalClass
       (Pullback.lift (f : M → N)) :=
     Pullback.contMDiff_lift (E := TangentSpace J) f
       (f.contMDiff.of_le (le_self_add.trans hm))
-  have hprojection := (f.contMDiff.of_le hm).starProjection_orthogonal_range_mfderiv
+  have hprojection := f.contMDiff.starProjection_orthogonal_range_mfderiv hm
     (f.isImmersion.mfderiv_injective hn)
   refine ((hprojection.comp hbase).clm_bundle_apply hlift).congr fun p ↦ ?_
   exact congrArg (TotalSpace.mk (f p.proj))

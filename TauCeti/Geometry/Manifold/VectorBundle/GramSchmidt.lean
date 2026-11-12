@@ -141,6 +141,47 @@ theorem ContMDiffAt.gramSchmidtNormed_bundle (j : ι)
       (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidtNormed ℝ (fun i ↦ v i y) j)) x :=
   ContMDiffWithinAt.gramSchmidtNormed_bundle j hv hli
 
+/-- Fiberwise Gram–Schmidt preserves regularity on a set along a base map, using only
+regular inputs through `j` and independence before `j` at each point of the set. -/
+theorem ContMDiffOn.gramSchmidt_bundle (j : ι)
+    (hv : ∀ i ≤ j, ContMDiffOn IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (v i y)) s)
+    (hli : ∀ x ∈ s, LinearIndepOn ℝ (fun i ↦ v i x) (Set.Iio j)) :
+    ContMDiffOn IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidt ℝ (fun i ↦ v i y) j)) s :=
+  fun x hx ↦ ContMDiffWithinAt.gramSchmidt_bundle j (fun i hi ↦ hv i hi x hx) (hli x hx)
+
+/-- Fiberwise Gram–Schmidt preserves global regularity along a base map, using only
+regular inputs through `j` and independence before `j`. -/
+theorem ContMDiff.gramSchmidt_bundle (j : ι)
+    (hv : ∀ i ≤ j, ContMDiff IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (v i y)))
+    (hli : ∀ x, LinearIndepOn ℝ (fun i ↦ v i x) (Set.Iio j)) :
+    ContMDiff IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidt ℝ (fun i ↦ v i y) j)) :=
+  fun x ↦ ContMDiffAt.gramSchmidt_bundle j (fun i hi ↦ hv i hi x) (hli x)
+
+/-- Fiberwise normalized Gram–Schmidt preserves regularity on a set along a base map,
+using only regularity and independence through `j`. -/
+theorem ContMDiffOn.gramSchmidtNormed_bundle (j : ι)
+    (hv : ∀ i ≤ j, ContMDiffOn IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (v i y)) s)
+    (hli : ∀ x ∈ s, LinearIndepOn ℝ (fun i ↦ v i x) (Set.Iic j)) :
+    ContMDiffOn IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidtNormed ℝ (fun i ↦ v i y) j)) s :=
+  fun x hx ↦ ContMDiffWithinAt.gramSchmidtNormed_bundle j
+    (fun i hi ↦ hv i hi x hx) (hli x hx)
+
+/-- Fiberwise normalized Gram–Schmidt preserves global regularity along a base map,
+using only regularity and independence through `j`. -/
+theorem ContMDiff.gramSchmidtNormed_bundle (j : ι)
+    (hv : ∀ i ≤ j, ContMDiff IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (v i y)))
+    (hli : ∀ x, LinearIndepOn ℝ (fun i ↦ v i x) (Set.Iic j)) :
+    ContMDiff IP (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (gramSchmidtNormed ℝ (fun i ↦ v i y) j)) :=
+  fun x ↦ ContMDiffAt.gramSchmidtNormed_bundle j (fun i hi ↦ hv i hi x) (hli x)
+
 end Along
 
 open scoped Classical in
