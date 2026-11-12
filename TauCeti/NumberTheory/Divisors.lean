@@ -181,7 +181,7 @@ theorem isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal
     have hmul : a * d = n := by
       have ha2 : 2 * a = |t| - |u| := by dsimp [a]; omega
       have hd2 : 2 * d = |t| + |u| := by dsimp [d]; omega
-      nlinarith
+      nlinarith [hd2]
     refine ⟨(a.toNat, d.toNat), ?_, by omega, by omega⟩
     simpa only [Int.toNat_natCast] using
       prodMk_toNat_mem_divisorsAntidiagonal_toNat ha (by omega) hmul

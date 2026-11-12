@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.NovikovModule.Tensor
 public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.Algebra.Homology.SquareZero.Graded
+public import TauCeti.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Comparing a kernel product with a product transported along chain maps
@@ -422,21 +423,22 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_novikovMapOfMatrix_sub_novikov
           (novikovMapOfMatrix hG₂ hG₂ s₂ s₂ η₂ b) := by
   refine (coordinates hG₀ s₀).injective (funext fun l => ?_)
   rw [map_sub, map_add, map_add, map_smul, Pi.sub_apply, Pi.add_apply, Pi.add_apply,
-    Pi.smul_apply]
-  simp only [coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix]
+    Pi.smul_apply, coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
+    coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right,
+    coordinates_novikovProductOfMatrix]
+  simp only [coordinates_novikovMapOfMatrix]
   have hs := negOnePowCast_smul_coordinates_of_mem_gradeBy hG₁ s₁ he₁ ha
   set x := coordinates hG₁ s₁ a
   set y := coordinates hG₂ s₂ b
-  -- Each of the five sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the five
-  -- sums of the homotopy identity.
-  have hT : ∑ k, (∑ i', ∑ j', (∑ i, x i * φ₁ i i') * (∑ j, y j * φ₂ j j') * Q i' j' k) *
-      ψ₀ k l = ∑ i, ∑ j, x i * y j * ∑ i', ∑ j', φ₁ i i' * φ₂ j j' * ∑ k, Q i' j' k * ψ₀ k l := by
-    simp_rw [sum_sum_sum_mul_sum_mul x y φ₁ φ₂, sum_mul_sum_sum_mul_mul]
-  -- Termwise, this is the homotopy identity, with the sign of the orbit of `i` replaced by the
-  -- sign of the degree of `a` on its nonzero coordinates.
-  rw [hT, sum_mul_sum_sum_mul_mul x y K (η₀ · l), sum_sum_sum_mul_mul_mul x y η₁ (K · · l),
-    sum_sum_mul_sum_mul_mul x y η₂ (K · · l), ← Finset.sum_sub_distrib, Finset.smul_sum,
-    ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+  -- Each of the five sums is now `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the five sums of
+  -- the homotopy identity, once the maps `φ₁` and `φ₂` on both inputs are regrouped. Termwise,
+  -- this is the homotopy identity, with the sign of the orbit of `i` replaced by the sign of the
+  -- degree of `a` on its nonzero coordinates.
+  rw [sum_sum_sum_mul_sum_mul x y φ₁ φ₂ (fun i' j' => ∑ k, Q i' j' k * ψ₀ k l),
+    ← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
     ← Finset.sum_add_distrib]

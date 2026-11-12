@@ -28,8 +28,8 @@ ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` compone
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
-* `TauCeti.Floer.pairOfPantsPerturbation_add`: the perturbation is additive in the end
-  Hamiltonians.
+* `TauCeti.Floer.pairOfPantsPerturbation_add`, `TauCeti.Floer.pairOfPantsPerturbation_smul`: the
+  perturbation is linear in the end Hamiltonians.
 * `TauCeti.Floer.pairOfPantsPerturbation_add_const`: adding functions `c_q` of time to the end
   Hamiltonians adds the perturbation of the target-independent Hamiltonians `c_q`, which does
   not depend on the target point (`TauCeti.Floer.pairOfPantsPerturbation_const_target`).
@@ -89,18 +89,18 @@ theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : �
   rw [pairOfPantsPerturbation]
 
 /-- The pair-of-pants perturbation is additive in the end Hamiltonians. -/
-theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
-    pairOfPantsPerturbation (fun q t y ↦ H q t y + G q t y) w x =
-      pairOfPantsPerturbation H w x + pairOfPantsPerturbation G w x := by
-  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
+theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (H + G) = pairOfPantsPerturbation H + pairOfPantsPerturbation G := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.add_apply, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- **Normalizing the end Hamiltonians.** Adding functions `c_q` of time to the end Hamiltonians
 adds the pair-of-pants perturbation of the target-independent Hamiltonians `c_q`. -/
 theorem pairOfPantsPerturbation_add_const (H : Puncture → ℝ → M → ℝ) (c : Puncture → ℝ → ℝ)
     (w : ℂ) (x : M) :
     pairOfPantsPerturbation (fun q t y ↦ H q t y + c q t) w x =
-      pairOfPantsPerturbation H w x + pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x :=
-  pairOfPantsPerturbation_add H (fun q t _ ↦ c q t) w x
+      pairOfPantsPerturbation H w x + pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x := by
+  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- The pair-of-pants perturbation of target-independent Hamiltonians does not depend on the
 target point. -/
@@ -108,6 +108,13 @@ theorem pairOfPantsPerturbation_const_target (c : Puncture → ℝ → ℝ) (w :
     pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x =
       pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w y := by
   simp only [pairOfPantsPerturbation_def]
+
+/-- The pair-of-pants perturbation is homogeneous in the end Hamiltonians. -/
+theorem pairOfPantsPerturbation_smul (c : ℝ) (H : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (c • H) = c • pairOfPantsPerturbation H := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.smul_apply, smul_eq_mul, Finset.smul_sum, smul_smul,
+    mul_left_comm c]
 
 variable {H : Puncture → ℝ → M → ℝ}
 
@@ -156,7 +163,6 @@ theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :
     pairOfPantsPerturbation H q.endCenter x = 0 := by
   refine pairOfPantsPerturbation_eq_zero_of_forall_le (fun r => ?_) x
   have h : 0 ≤ Real.log 2 / (2 * π) := by have := Real.log_nonneg one_le_two; positivity
-  have hπ := Real.pi_pos
   cases q <;> cases r <;> simp [re_endCoord, neg_div] <;> linarith
 
 /-- On the part `±s > 0` of the end `q`, the cutoff of every other end `r` vanishes, since the
@@ -246,9 +252,14 @@ theorem pairOfPantsEndComponent_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ
   pairOfPantsPerturbation_cylindricalEndLift_of_pos hH hz x v
 
 /-- On the part `±s > 0` of the end `q`, the `ds` component of the perturbation vanishes. -/
-theorem pairOfPantsEndComponent_one_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+theorem pairOfPantsEndComponent_one_of_pos {z : ℝ × ℝ}
     (hz : 0 < q.endSign * z.1) (x : M) : pairOfPantsEndComponent H q 1 z x = 0 := by
-  simp [pairOfPantsEndComponent_of_pos hH hz]
+  rw [pairOfPantsEndComponent_def, pairOfPantsPerturbation, Finset.sum_eq_single q]
+  · rw [smul_apply, endAngularForm_cylindricalEndLift]
+    simp
+  · intro r _ hr
+    simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero (z := ⟨z.1, z.2⟩) hr hz]
+  · simp
 
 /-- On the part `±s > 0` of the end `q`, the `dt` component of the perturbation is
 `β(±s - 1) H_q(t)`. -/
@@ -280,7 +291,7 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
         fun w x ↦ smoothTransition (q.endSign * w.1 - 1) * H q w.2 x := by
   have h := (isOpen_endSign_mul_fst_pos q).mem_nhds hz
   refine ⟨?_, ?_⟩ <;> filter_upwards [h] with w hw <;> funext x
-  exacts [pairOfPantsEndComponent_one_of_pos hH hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
+  exacts [pairOfPantsEndComponent_one_of_pos hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]

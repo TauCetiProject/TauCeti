@@ -158,7 +158,7 @@ theorem aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt
     exact (aemeasurable_euclideanHausdorffMeasure_inter_preimage_of_hasFDerivWithinAt μ
       (hs.inter ht.nullMeasurableSet)
       (fun x hx ↦ (hd x hx.1).mono inter_subset_left)).const_mul c
-  · intro g h hdisj hg hh ihg ihh
+  · intro g h _ hg _ ihg ihh
     simp_rw [Pi.add_apply, lintegral_add_left hg]
     exact ihg.add ihh
   · intro g hg hmono ih

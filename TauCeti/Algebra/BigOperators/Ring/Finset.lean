@@ -28,18 +28,11 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 
 ## Regrouping coordinates of products given by matrices
 
-Let `M : ι₁ → ι₂ → ι₀ → A` be the matrix of a bilinear product on coordinate vectors over finite
-types, so that the product of `x` and `y` has coordinates `∑ᵢ ∑ⱼ xᵢ yⱼ Mᵢⱼₖ`. Composing it with
-matrices of linear maps on either input or on the output gives a vector whose coordinates regroup
-as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, where `c(i, j)` is the corresponding composite matrix entry:
-
-* `TauCeti.sum_mul_sum_sum_mul_mul`: a map `Ψ` on the output;
-* `TauCeti.sum_sum_sum_mul_mul_mul`: a map `P` on the first input;
-* `TauCeti.sum_sum_mul_sum_mul_mul`: a map `P` on the second input;
-* `TauCeti.sum_sum_sum_mul_sum_mul`: maps `P` and `Q` on both inputs.
-
-These are the coordinate computations behind Leibniz rules and comparison homotopies for products
-given by matrices.
+Let `M : ι₁ → ι₂ → A` be a matrix of coefficients over finite types, as in the coordinates
+`∑ᵢ ∑ⱼ xᵢ yⱼ Mᵢⱼ` of a bilinear product on coordinate vectors. Composing it with matrices `P` and
+`Q` of linear maps on both inputs regroups as `∑ᵢ ∑ⱼ xᵢ yⱼ ∑ᵢ' ∑ⱼ' Pᵢᵢ' Qⱼⱼ' Mᵢ'ⱼ'`
+(`TauCeti.sum_sum_sum_mul_sum_mul`). This is the coordinate computation behind comparison
+homotopies for products given by matrices.
 -/
 
 public section
@@ -74,7 +67,7 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
     rw [sum_comm]
     exact sum_congr rfl fun _ _ ↦ sum_comm
   have e₃ : (#s₀ * #s₁ * #s₂ : R) * (p * q * r) =
-      ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, p * q * r := by
+      ∑ _ ∈ s₀, ∑ _ ∈ s₁, ∑ _ ∈ s₂, p * q * r := by
     simp only [sum_const, nsmul_eq_mul]
     ring
   have e₄ : (#s₀ : R) * ∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r) =
@@ -87,39 +80,8 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
 
 section Regroup
 
-variable {A ι₁ ι₂ ι₀ κ₁ κ₂ : Type*} [CommSemiring A] [Fintype ι₁] [Fintype ι₂] [Fintype ι₀]
-  [Fintype κ₁] [Fintype κ₂]
-
-/-- Applying a matrix `Ψ` after the product of a matrix `M`, in coordinates, regroups as
-`∑ₖ (∑ᵢ ∑ⱼ xᵢ yⱼ Mᵢⱼₖ) Ψₖ = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₖ Mᵢⱼₖ Ψₖ`. -/
-theorem sum_mul_sum_sum_mul_mul (x : ι₁ → A) (y : ι₂ → A) (M : ι₁ → ι₂ → ι₀ → A)
-    (Ψ : ι₀ → A) :
-    ∑ k, (∑ i, ∑ j, x i * y j * M i j k) * Ψ k = ∑ i, ∑ j, x i * y j * ∑ k, M i j k * Ψ k := by
-  simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-
-/-- Applying a matrix `P` to the first input of the product of a matrix `M`, in coordinates,
-regroups as `∑ₖ ∑ⱼ (∑ᵢ xᵢ Pᵢₖ) yⱼ Mₖⱼ = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₖ Pᵢₖ Mₖⱼ`. -/
-theorem sum_sum_sum_mul_mul_mul (x : κ₁ → A) (y : ι₂ → A) (P : κ₁ → ι₁ → A)
-    (M : ι₁ → ι₂ → A) :
-    ∑ k, ∑ j, (∑ i, x i * P i k) * y j * M k j = ∑ i, ∑ j, x i * y j * ∑ k, P i k * M k j := by
-  simp only [Finset.sum_mul, Finset.mul_sum]
-  rw [Finset.sum_comm]
-  refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-    Finset.sum_congr rfl fun k _ => by ring
-
-/-- Applying a matrix `P` to the second input of the product of a matrix `M`, in coordinates,
-regroups as `∑ᵢ ∑ⱼ (xᵢ ∑ₘ yₘ Pₘⱼ) Mᵢⱼ = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₖ Pⱼₖ Mᵢₖ`. -/
-theorem sum_sum_mul_sum_mul_mul (x : ι₁ → A) (y : κ₂ → A) (P : κ₂ → ι₂ → A)
-    (M : ι₁ → ι₂ → A) :
-    ∑ i, ∑ j, (x i * ∑ m, y m * P m j) * M i j = ∑ i, ∑ j, x i * y j * ∑ k, P j k * M i k := by
-  simp only [Finset.sum_mul, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+variable {A ι₁ ι₂ κ₁ κ₂ : Type*} [CommSemiring A] [Fintype ι₁] [Fintype ι₂] [Fintype κ₁]
+  [Fintype κ₂]
 
 /-- Applying matrices `P` and `Q` to the two inputs of the product of a matrix `M`, in
 coordinates, regroups as
