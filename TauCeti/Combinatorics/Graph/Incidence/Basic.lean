@@ -289,7 +289,7 @@ theorem internalEdges_subset_incidentEdges (S : Finset G.vertexSet) :
     G.internalEdges S ⊆ G.incidentEdges S := by
   intro e
   simp only [mem_internalEdges, mem_incidentEdges]
-  rintro ⟨x, hx, y, hy, hxy⟩
+  rintro ⟨x, hx, y, _, hxy⟩
   exact ⟨x, hx, hxy.inc_left⟩
 
 /-- Enlarging a vertex set enlarges its set of internal edges. -/

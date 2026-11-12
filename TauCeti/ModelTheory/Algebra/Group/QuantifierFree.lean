@@ -61,7 +61,7 @@ private theorem exists_normalForms
       cases R with
       | inl r => exact isEmptyElim r
       | inr r => exact isEmptyElim r
-  | imp h₁ h₂ ih₁ ih₂ =>
+  | imp _ _ ih₁ ih₂ =>
     obtain ⟨P₁, N₁, h₁⟩ := ih₁
     obtain ⟨P₂, N₂, h₂⟩ := ih₂
     refine ⟨N₁ ++ P₂, EqIneqSystem.disjunctionProduct P₁ N₂, ?_⟩
