@@ -114,82 +114,59 @@ theorem shift_shift (l : DominantWeight n) (m m' : ℤ) :
   ext i; simp [add_assoc]
 
 /-- The **contragredient** (or **dual**) dominant weight `λ*ᵢ = -λₙ₋₁₋ᵢ`: negating and reversing
-an antitone integer sequence keeps it antitone.  On representations this is passing to the dual
+an antitone integer sequence keeps it antitone. On representations this is passing to the dual
 module. -/
 def dual (l : DominantWeight n) : DominantWeight n :=
   ⟨fun i => -l.1 i.rev, fun _ _ h => Int.neg_le_neg (l.antitone (Fin.rev_le_rev.mpr h))⟩
 
-@[simp]
-theorem dual_apply (l : DominantWeight n) (i : Fin n) : l.dual.1 i = -l.1 i.rev := (rfl)
+@[simp] theorem dual_apply (l : DominantWeight n) (i : Fin n) : l.dual.1 i = -l.1 i.rev := (rfl)
 
 /-- Contragredient duality is an involution on dominant weights. -/
-@[simp]
-theorem dual_dual (l : DominantWeight n) : l.dual.dual = l := by
-  ext i; simp
+@[simp] theorem dual_dual (l : DominantWeight n) : l.dual.dual = l := by ext i; simp
 
 theorem dual_involutive : Function.Involutive (dual (n := n)) := dual_dual
-
 theorem dual_injective : Function.Injective (dual (n := n)) := dual_involutive.injective
 
-@[simp]
-theorem dual_shift (l : DominantWeight n) (m : ℤ) : (l.shift m).dual = l.dual.shift (-m) := by
-  ext i; simp [neg_add_rev, add_comm]
+@[simp] theorem dual_shift (l : DominantWeight n) (m : ℤ) :
+    (l.shift m).dual = l.dual.shift (-m) := by ext i; simp [neg_add_rev, add_comm]
 
 /-- The entries of `λ*` sum to the negative of the entries of `λ`. -/
 theorem sum_dual (l : DominantWeight n) : (∑ i, l.dual.1 i) = -∑ i, l.1 i := by
-  rw [← Finset.sum_neg_distrib]
-  simp only [dual_apply]
-  exact Equiv.sum_comp Fin.revPerm fun i => -l.1 i
+  rw [← Finset.sum_neg_distrib]; exact Equiv.sum_comp Fin.revPerm fun i => -l.1 i
 
 instance : Zero (DominantWeight n) := ⟨⟨0, fun _ _ _ => le_rfl⟩⟩
-
 instance : Add (DominantWeight n) :=
   ⟨fun l₁ l₂ => ⟨l₁.1 + l₂.1, fun _ _ h => Int.add_le_add (l₁.antitone h) (l₂.antitone h)⟩⟩
-
 instance : SMul ℕ (DominantWeight n) :=
-  ⟨fun k l => ⟨k • l.1, fun _ _ h => by
-    simp only [Pi.smul_apply, nsmul_eq_mul]
-    exact Int.mul_le_mul_of_nonneg_left (l.antitone h) (Int.natCast_nonneg k)⟩⟩
-
+  ⟨fun k l => ⟨k • l.1, fun _ _ h => nsmul_le_nsmul_right (l.antitone h) k⟩⟩
 instance : AddCommMonoid (DominantWeight n) :=
   Subtype.coe_injective.addCommMonoid Subtype.val rfl (fun _ _ => rfl) fun _ _ => rfl
 
 @[simp] theorem zero_apply (i : Fin n) : (0 : DominantWeight n).1 i = 0 := (rfl)
-
-@[simp]
-theorem add_apply (l₁ l₂ : DominantWeight n) (i : Fin n) : (l₁ + l₂).1 i = l₁.1 i + l₂.1 i := (rfl)
-
-@[simp]
-theorem nsmul_apply (k : ℕ) (l : DominantWeight n) (i : Fin n) : (k • l).1 i = k • l.1 i := (rfl)
-
-@[simp]
-theorem dual_zero : (0 : DominantWeight n).dual = 0 := by ext i; simp
-
-@[simp]
-theorem dual_add (l₁ l₂ : DominantWeight n) : (l₁ + l₂).dual = l₁.dual + l₂.dual := by
+@[simp] theorem add_apply (l₁ l₂ : DominantWeight n) (i : Fin n) :
+    (l₁ + l₂).1 i = l₁.1 i + l₂.1 i := (rfl)
+@[simp] theorem nsmul_apply (k : ℕ) (l : DominantWeight n) (i : Fin n) :
+    (k • l).1 i = k • l.1 i := (rfl)
+@[simp] theorem dual_zero : (0 : DominantWeight n).dual = 0 := by ext i; simp
+@[simp] theorem dual_add (l₁ l₂ : DominantWeight n) : (l₁ + l₂).dual = l₁.dual + l₂.dual := by
   ext i; simp [neg_add_rev, add_comm]
 
-/-- A dominant weight `μ` **dominates** `ν` (corresponding to `ν ≤ μ` in the `GL n` dominance order)
-when `μ` and `ν` have the same total sum and every leading partial sum of `ν` is at most the
-corresponding leading partial sum of `μ`. -/
+/-- A dominant weight `μ` **dominates** `ν` (`ν ≤ μ` in the `GL n` dominance order) when `μ` and `ν`
+have the same total sum and every leading partial sum of `ν` is at most that of `μ`. -/
 def Dominates (μ ν : DominantWeight n) : Prop :=
   (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧
     ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.1 i) ≤ ∑ i : Fin n with i.val < k, μ.1 i
 
 /-- The defining partial-sum characterization of `Dominates`. -/
 theorem dominates_iff {μ ν : DominantWeight n} :
-    μ.Dominates ν ↔
-      (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧
-        ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.1 i) ≤ ∑ i : Fin n with i.val < k, μ.1 i :=
-  Iff.rfl
+    μ.Dominates ν ↔ (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧
+      ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.1 i) ≤ ∑ i : Fin n with i.val < k, μ.1 i := Iff.rfl
 
 /-- Leading partial sums stabilize at index `n`, so `Dominates` only needs to test `k : Fin (n + 1)`
 and is decidable. -/
 theorem dominates_iff_forall_fin {μ ν : DominantWeight n} :
-    μ.Dominates ν ↔
-      (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧
-        ∀ k : Fin (n + 1),
-          (∑ i : Fin n with i.val < k.val, ν.1 i) ≤ ∑ i : Fin n with i.val < k.val, μ.1 i := by
+    μ.Dominates ν ↔ (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧ ∀ k : Fin (n + 1),
+      (∑ i : Fin n with i.val < k.val, ν.1 i) ≤ ∑ i : Fin n with i.val < k.val, μ.1 i := by
   refine and_congr_right fun hsum => ⟨fun h k => h k.val, fun h k => ?_⟩
   rcases le_or_gt k n with hk | hk
   · exact h ⟨k, Nat.lt_succ_of_le hk⟩
@@ -200,13 +177,11 @@ theorem dominates_iff_forall_fin {μ ν : DominantWeight n} :
 instance (μ ν : DominantWeight n) : Decidable (μ.Dominates ν) :=
   decidable_of_iff _ dominates_iff_forall_fin.symm
 
-@[simp, refl]
-theorem dominates_refl (μ : DominantWeight n) : μ.Dominates μ :=
+@[simp, refl] theorem dominates_refl (μ : DominantWeight n) : μ.Dominates μ :=
   ⟨rfl, fun _ => le_rfl⟩
 
-@[trans]
-theorem Dominates.trans {μ ν ξ : DominantWeight n} (hμν : μ.Dominates ν) (hνξ : ν.Dominates ξ) :
-    μ.Dominates ξ :=
+@[trans] theorem Dominates.trans {μ ν ξ : DominantWeight n}
+    (hμν : μ.Dominates ν) (hνξ : ν.Dominates ξ) : μ.Dominates ξ :=
   ⟨hνξ.1.trans hμν.1, fun k => (hνξ.2 k).trans (hμν.2 k)⟩
 
 theorem Dominates.antisymm {μ ν : DominantWeight n} (hμν : μ.Dominates ν) (hνμ : ν.Dominates μ) :
@@ -216,11 +191,10 @@ theorem Dominates.antisymm {μ ν : DominantWeight n} (hμν : μ.Dominates ν) 
   have hsucc := le_antisymm (hνμ.2 (i.val + 1)) (hμν.2 (i.val + 1))
   have hsplit : ({j : Fin n | j.val < i.val + 1} : Finset (Fin n)) =
       insert i ({j : Fin n | j.val < i.val} : Finset (Fin n)) := by
-    ext j
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Fin.ext_iff]
+    ext j; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Fin.ext_iff]
     omega
-  have hnotmem : i ∉ ({j : Fin n | j.val < i.val} : Finset (Fin n)) := by simp
-  rw [hsplit, Finset.sum_insert hnotmem, Finset.sum_insert hnotmem, hlt] at hsucc
+  have hni : i ∉ ({j : Fin n | j.val < i.val} : Finset (Fin n)) := by simp
+  rw [hsplit, Finset.sum_insert hni, Finset.sum_insert hni, hlt] at hsucc
   exact add_right_cancel hsucc
 
 /-- The **determinant-twist exponent** of a dominant weight: its last entry `λₙ`, and `0` for the
