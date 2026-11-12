@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Contraction
 public import TauCeti.LinearAlgebra.Determinant.Exact
+public import TauCeti.LinearAlgebra.Dimension.Prod
 public import TauCeti.LinearAlgebra.Quotient.Prod
 import TauCeti.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.TensorProduct.Basic
@@ -60,10 +61,6 @@ for split operators.
   `(-1) ^ (ind f * ind g)`, and nothing when `ind f` is even
   (`LinearMap.detLineProdMapEquiv_detLineCongr_prodComm_of_even`).
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodAssoc`: regrouping the summands costs no sign.
-* `LinearMap.finrank_ker_prodMap`, `LinearMap.finrank_quotient_range_prodMap`: the kernel and
-  cokernel of `f.prodMap g` have the summed dimensions, and are finite-dimensional when those of
-  `f` and `g` are (`LinearMap.finiteDimensional_ker_prodMap`,
-  `LinearMap.finiteDimensional_quotient_range_prodMap`).
 
 ## References
 
@@ -260,17 +257,6 @@ private theorem detLineKerProdMap_detLineCongr (e : ker (f.prodMap g) ≃ₗ[K] 
   rw [map_smul, ← detLineCongr_prodComm_detLineProdEquiv, ← hswap]
   simp only [LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply]
 
-/-- The kernel of `f.prodMap g` is finite-dimensional when those of `f` and `g` are. -/
-instance finiteDimensional_ker_prodMap : FiniteDimensional K (ker (f.prodMap g)) :=
-  ((LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans
-    (Submodule.prodEquiv (ker f) (ker g))).symm.finiteDimensional
-
-/-- The kernel of `f.prodMap g` has dimension `dim ker f + dim ker g`. -/
-theorem finrank_ker_prodMap :
-    finrank K (ker (f.prodMap g)) = finrank K (ker f) + finrank K (ker g) := by
-  rw [((LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans
-    (Submodule.prodEquiv (ker f) (ker g))).finrank_eq, finrank_prod]
-
 variable {M'' N'' : Type*} [AddCommGroup M''] [Module K M''] [AddCommGroup N''] [Module K N'']
   (h : M'' →ₗ[K] N'') [FiniteDimensional K (ker h)]
 
@@ -415,19 +401,6 @@ private theorem dualDistribEquiv_symm_dualMap_detLineCokerProdMap
       toLinearMap_dualDistribEquiv, TensorProduct.dualDistrib_apply_comm]
   simp only [LinearEquiv.dualMap_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, h', map_smul,
     LinearMap.smul_apply, hdd, LinearEquiv.apply_symm_apply]
-
-/-- The cokernel of `f.prodMap g` is finite-dimensional when those of `f` and `g` are. -/
-instance finiteDimensional_quotient_range_prodMap :
-    FiniteDimensional K ((N × N') ⧸ range (f.prodMap g)) :=
-  ((Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
-    (Submodule.quotientProdEquiv (range f) (range g))).symm.finiteDimensional
-
-/-- The cokernel of `f.prodMap g` has dimension `dim coker f + dim coker g`. -/
-theorem finrank_quotient_range_prodMap :
-    finrank K ((N × N') ⧸ range (f.prodMap g)) =
-      finrank K (N ⧸ range f) + finrank K (N' ⧸ range g) := by
-  rw [((Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
-    (Submodule.quotientProdEquiv (range f) (range g))).finrank_eq, finrank_prod]
 
 variable {M'' N'' : Type*} [AddCommGroup M''] [Module K M''] [AddCommGroup N''] [Module K N'']
   (h : M'' →ₗ[K] N'') [FiniteDimensional K (N'' ⧸ range h)]
