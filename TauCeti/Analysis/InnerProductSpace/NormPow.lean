@@ -148,14 +148,6 @@ theorem gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠
   ext v
   simp [InnerProductSpace.toDual_apply_apply]
 
-/-- Away from the origin, the gradient of `‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
-theorem norm_gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
-    ‖∇ (fun y : E ↦ ‖y‖ ^ p) x‖ = |p| * ‖x‖ ^ (p - 1) := by
-  have hN : 0 < ‖x‖ := norm_pos_iff.2 hx
-  rw [gradient_norm_rpow_of_ne hx, norm_smul, Real.norm_eq_abs, abs_mul,
-    abs_of_pos (Real.rpow_pos_of_pos hN _), mul_assoc, show p - 1 = (p - 2) + 1 by ring,
-    Real.rpow_add_one hN.ne']
-
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
 theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x‖ = |p| * ‖x‖ ^ (p - 1) := by
@@ -163,6 +155,11 @@ theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
   have hp : p - 2 + 1 = p - 1 := by ring
   rw [fderiv_norm_rpow_of_ne p hx, norm_smul, innerSL_apply_norm, Real.norm_eq_abs, abs_mul,
     abs_of_nonneg (Real.rpow_nonneg hx'.le _), mul_assoc, ← Real.rpow_add_one hx'.ne', hp]
+
+/-- Away from the origin, the gradient of `‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
+theorem norm_gradient_norm_rpow_of_ne [CompleteSpace E] {p : ℝ} {x : E} (hx : x ≠ 0) :
+    ‖∇ (fun y : E ↦ ‖y‖ ^ p) x‖ = |p| * ‖x‖ ^ (p - 1) := by
+  rw [gradient, LinearIsometryEquiv.norm_map, norm_fderiv_norm_rpow_of_ne p hx]
 
 /-- The norm of the classical derivative `p ‖x‖ ^ (p - 2) ⟨x, ·⟩` of `x ↦ ‖x‖ ^ p` is at most
 `|p| ‖x‖ ^ (p - 1)`, with equality away from the origin (`norm_fderiv_norm_rpow_of_ne`). -/

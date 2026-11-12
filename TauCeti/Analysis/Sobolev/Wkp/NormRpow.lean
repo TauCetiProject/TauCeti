@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
@@ -22,7 +24,9 @@ measure, and let `u(x) = ‖x‖ ^ γ`. Away from the origin its classical Hessi
 
 `D²u(x) v = γ ‖x‖ ^ (γ - 2) v + γ (γ - 2) ‖x‖ ^ (γ - 4) ⟪x, v⟫ x`
 
-(`TauCeti.iteratedGradientChain_one_norm_rpow_apply`), of size comparable to `‖x‖ ^ (γ - 2)`.
+(`TauCeti.iteratedGradientChain_one_norm_rpow_apply`, with bilinear form
+`TauCeti.inner_iteratedGradientChain_one_norm_rpow_apply`), of size comparable to
+`‖x‖ ^ (γ - 2)`.
 Its trace is `γ (n + γ - 2) ‖x‖ ^ (γ - 2)`
 (`TauCeti.sum_inner_iteratedGradientChain_one_norm_rpow_apply`) and its radial value is
 `⟪D²u(x) x, x⟫ = γ (γ - 1) ‖x‖ ^ γ`
@@ -30,7 +34,7 @@ Its trace is `γ (n + γ - 2) ‖x‖ ^ (γ - 2)`
 For `n + γ > 2` this Hessian is locally integrable, and it is the weak derivative of the gradient
 of `u` across the origin (`TauCeti.hasWeakFDerivOn_gradient_norm_rpow`), while the gradient is the
 weak derivative of `u` itself (`TauCeti.hasWeakFDerivOn_norm_rpow`). Consequently, for
-`0 < γ < 2` and `n + γ > 2`, on a bounded open set containing the origin,
+`γ ≠ 0`, `γ < 2` and `n + γ > 2`, on a bounded open set containing the origin,
 
 `u ∈ W^{2,p}` exactly when `p < n / (2 - γ)`
 
@@ -104,40 +108,26 @@ private theorem hasFDerivAt_gradField (γ ε : ℝ) {x : E} (hx : ‖x‖ ^ 2 + 
   congr 1
   ring
 
-omit [InnerProductSpace ℝ E] in
-/-- `(‖x‖ ^ 2) ^ a = ‖x‖ ^ (2 a)`. -/
-private theorem norm_sq_rpow (x : E) (a : ℝ) : (‖x‖ ^ 2) ^ a = ‖x‖ ^ (2 * a) := by
-  rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg x), Nat.cast_ofNat]
-
 private theorem gradField_zero (γ : ℝ) (x : E) :
     gradField γ 0 x = (γ * ‖x‖ ^ (γ - 2)) • x := by
-  rw [gradField, add_zero, norm_sq_rpow]
-  congr 3
-  ring
+  rw [gradField, add_zero, show γ / 2 - 1 = (γ - 2) / 2 by ring,
+    Real.sq_rpow_div_two (norm_nonneg x)]
 
 private theorem hessField_zero_apply (γ : ℝ) (x v : E) :
     hessField γ 0 x v = (γ * ‖x‖ ^ (γ - 2)) • v +
       (γ * (γ - 2) * ‖x‖ ^ (γ - 4) * ⟪x, v⟫_ℝ) • x := by
-  rw [hessField_apply, add_zero, norm_sq_rpow, norm_sq_rpow]
-  congr 5 <;> ring
+  rw [hessField_apply, add_zero, show γ / 2 - 1 = (γ - 2) / 2 by ring,
+    show γ / 2 - 2 = (γ - 4) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x),
+    Real.sq_rpow_div_two (norm_nonneg x)]
 
-omit [InnerProductSpace ℝ E] in
-/-- `(‖x‖² + ε) ^ (γ / 2 - 1) ≤ ‖x‖ ^ (γ - 2)` for `x ≠ 0`, `ε ≥ 0` and `γ ≤ 2`. -/
-private theorem rpow_norm_sq_add_le {x : E} (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤ ε) (hγ : γ ≤ 2) :
-    (‖x‖ ^ 2 + ε) ^ (γ / 2 - 1) ≤ ‖x‖ ^ (γ - 2) := by
-  have hx2 : 0 < ‖x‖ ^ 2 := by positivity
-  calc (‖x‖ ^ 2 + ε) ^ (γ / 2 - 1) ≤ (‖x‖ ^ 2) ^ (γ / 2 - 1) :=
-        Real.rpow_le_rpow_of_nonpos hx2 (le_add_of_nonneg_right hε) (by linarith)
-    _ = ‖x‖ ^ (γ - 2) := by rw [norm_sq_rpow]; congr 1; ring
-
-private theorem norm_gradField_le {x : E} (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤ ε) (hγ : γ ≤ 2) :
-    ‖gradField γ ε x‖ ≤ |γ| * ‖x‖ ^ (γ - 1) := by
-  have hN : 0 < ‖x‖ := norm_pos_iff.2 hx
-  rw [gradField, norm_smul, Real.norm_eq_abs, abs_mul,
-    abs_of_pos (Real.rpow_pos_of_pos (by positivity) _), mul_assoc,
-    show γ - 1 = (γ - 2) + 1 by ring, Real.rpow_add_one hN.ne']
+private theorem norm_gradField_le [CompleteSpace E] {x : E} (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤ ε)
+    (hγ : γ ≤ 2) : ‖gradField γ ε x‖ ≤ |γ| * ‖x‖ ^ (γ - 1) := by
+  rw [← norm_gradient_norm_rpow_of_ne hx, gradient_norm_rpow_of_ne hx, gradField, norm_smul,
+    norm_smul, norm_mul, norm_mul, Real.norm_of_nonneg (Real.rpow_nonneg (by positivity) _),
+    Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
   gcongr
-  exact rpow_norm_sq_add_le hx hε hγ
+  exact (sq_add_rpow_le (e := γ / 2 - 1) (norm_ne_zero_iff.2 hx) hε (by linarith)).trans_eq <| by
+    rw [add_zero, show γ / 2 - 1 = (γ - 2) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x)]
 
 private theorem norm_hessField_le {x : E} (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤ ε) (hγ : γ ≤ 2) :
     ‖hessField γ ε x‖ ≤ |γ| * (3 - γ) * ‖x‖ ^ (γ - 2) := by
@@ -170,7 +160,9 @@ private theorem norm_hessField_le {x : E} (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤
     _ ≤ |γ| * (3 - γ) * ‖x‖ ^ (γ - 2) := by
         have : 0 ≤ |γ| * (3 - γ) := mul_nonneg (abs_nonneg γ) (by linarith)
         gcongr
-        exact rpow_norm_sq_add_le hx hε hγ
+        refine (sq_add_rpow_le (e := γ / 2 - 1) (norm_ne_zero_iff.2 hx) hε
+          (by linarith)).trans_eq ?_
+        rw [add_zero, show γ / 2 - 1 = (γ - 2) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x)]
 
 /-! ### Continuity in the regularization parameter -/
 
@@ -225,13 +217,21 @@ theorem iteratedGradientChain_one_norm_rpow_apply {x : E} (hx : x ≠ 0) (v : E)
       (γ * ‖x‖ ^ (γ - 2)) • v + (γ * (γ - 2) * ‖x‖ ^ (γ - 4) * ⟪x, v⟫_ℝ) • x := by
   rw [iteratedGradientChain_one_norm_rpow_eq_hessField hx, hessField_zero_apply]
 
+/-- Away from the origin, the bilinear form of the classical Hessian of `‖x‖ ^ γ` is
+`⟪D²u(x) v, w⟫ = γ ‖x‖ ^ (γ - 2) ⟪v, w⟫ + γ (γ - 2) ‖x‖ ^ (γ - 4) ⟪x, v⟫ ⟪x, w⟫`. -/
+theorem inner_iteratedGradientChain_one_norm_rpow_apply {x : E} (hx : x ≠ 0) (v w : E) :
+    ⟪iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x v, w⟫_ℝ =
+      γ * ‖x‖ ^ (γ - 2) * ⟪v, w⟫_ℝ + γ * (γ - 2) * ‖x‖ ^ (γ - 4) * (⟪x, v⟫_ℝ * ⟪x, w⟫_ℝ) := by
+  rw [iteratedGradientChain_one_norm_rpow_apply hx, inner_add_left, real_inner_smul_left,
+    real_inner_smul_left, mul_assoc _ ⟪x, v⟫_ℝ]
+
 /-- Away from the origin, the Hessian of `‖x‖ ^ γ` in the radial direction is
 `⟪D²u(x) x, x⟫ = γ (γ - 1) ‖x‖ ^ γ`. -/
 theorem inner_iteratedGradientChain_one_norm_rpow_apply_self {x : E} (hx : x ≠ 0) :
     ⟪iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x x, x⟫_ℝ = γ * (γ - 1) * ‖x‖ ^ γ := by
   have hN := norm_pos_iff.2 hx
-  rw [iteratedGradientChain_one_norm_rpow_apply hx, inner_add_left, real_inner_smul_left,
-    real_inner_smul_left, real_inner_self_eq_norm_sq, Real.rpow_sub hN, Real.rpow_sub hN]
+  rw [inner_iteratedGradientChain_one_norm_rpow_apply hx, real_inner_self_eq_norm_sq,
+    Real.rpow_sub hN, Real.rpow_sub hN]
   norm_cast
   field_simp
   ring
@@ -244,9 +244,8 @@ theorem sum_inner_iteratedGradientChain_one_norm_rpow_apply {ι : Type*} [Fintyp
       γ * (finrank ℝ E + γ - 2) * ‖x‖ ^ (γ - 2) := by
   have hterm : ∀ i, ⟪iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x (v i), v i⟫_ℝ =
       γ * ‖x‖ ^ (γ - 2) + γ * (γ - 2) * ‖x‖ ^ (γ - 4) * (⟪x, v i⟫_ℝ * ⟪v i, x⟫_ℝ) := fun i => by
-    rw [iteratedGradientChain_one_norm_rpow_apply hx, inner_add_left, real_inner_smul_left,
-      real_inner_smul_left, real_inner_self_eq_norm_sq, v.norm_eq_one, real_inner_comm (v i) x]
-    ring
+    rw [inner_iteratedGradientChain_one_norm_rpow_apply hx, real_inner_self_eq_norm_sq,
+      v.norm_eq_one, real_inner_comm (v i) x, one_pow, mul_one]
   have hN := norm_pos_iff.2 hx
   rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_add_distrib, Finset.sum_const,
     ← Finset.mul_sum, v.sum_inner_mul_inner, real_inner_self_eq_norm_sq, Finset.card_univ,
@@ -412,9 +411,9 @@ private theorem aestronglyMeasurable_iteratedGradientChain_one_norm_rpow [Nontri
     (hae.mono fun x hx => (continuousAt_hessField hx).tendsto.comp tendsto_eps)).congr
     (hae.mono fun x hx => (iteratedGradientChain_one_norm_rpow_eq_hessField hx).symm)
 
-/-- If the Hessian of `‖x‖ ^ γ`, `0 < γ < 2`, is `p`-integrable near the origin, then
+/-- If the Hessian of `‖x‖ ^ γ`, `γ ≠ 0`, `γ < 2`, is `p`-integrable near the origin, then
 `p < n / (2 - γ)`: its norm is at least a multiple of `‖x‖ ^ (γ - 2)`. -/
-private theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow (hγ0 : 0 < γ)
+private theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow (hγ0 : γ ≠ 0)
     (hγ : γ < 2) (hn : 2 < finrank ℝ E + γ) {Ω : Set E} (hΩ : Ω ∈ 𝓝 0) {p : ℝ≥0∞}
     (hH : MemLp (iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1) p (μ.restrict Ω)) :
     p < ENNReal.ofReal (finrank ℝ E / (2 - γ)) := by
@@ -435,7 +434,7 @@ private theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow (hγ0 : 0
     hq).integrable_norm_rpow hq0 ENNReal.ofReal_ne_top
   -- Its norm is at least `c ‖x‖ ^ (γ - 2)`, so `‖x‖ ^ ((γ - 2) q)` would be integrable there.
   set c := |γ * (finrank ℝ E + γ - 2)| / finrank ℝ E
-  have hc : 0 < c := div_pos (abs_pos.2 (mul_ne_zero hγ0.ne' (by linarith))) hnpos
+  have hc : 0 < c := div_pos (abs_pos.2 (mul_ne_zero hγ0 (by linarith))) hnpos
   have hpow : IntegrableOn (fun x : E => ‖x‖ ^ ((γ - 2) * q.toReal)) (ball 0 r) μ := by
     refine (hint.const_mul (c ^ (-q.toReal))).mono'
       (by fun_prop : Measurable fun x : E => ‖x‖ ^ ((γ - 2) * q.toReal)).aestronglyMeasurable
@@ -453,8 +452,8 @@ private theorem lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow (hγ0 : 0
   rw [hqr, show (γ - 2) * (finrank ℝ E / (2 - γ)) = -finrank ℝ E by field_simp; ring] at this
   exact lt_irrefl _ this
 
-/-- For `0 < γ < 2` and `p < n / (2 - γ)`, `‖x‖ ^ γ` lies in `W^{2,p}` of a bounded open set. -/
-private theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ0 : 0 < γ) (hγ : γ < 2)
+/-- For `γ < 2` and `p < n / (2 - γ)`, `‖x‖ ^ γ` lies in `W^{2,p}` of a bounded open set. -/
+private theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ : γ < 2)
     (hn : 2 < finrank ℝ E + γ) {Ω : Opens E} (hb : Bornology.IsBounded (Ω : Set E))
     {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p < ENNReal.ofReal (finrank ℝ E / (2 - γ))) :
     ∃ w : Wkp μ Ω p 2, (Wkp.value 2 w : E → ℝ) =ᵐ[μ.restrict Ω] fun y => ‖y‖ ^ γ := by
@@ -470,7 +469,7 @@ private theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ0 : 0 < γ) (hγ : γ <
     simpa using ENNReal.toReal_mono hpt hp1
   have hu : MemLp (fun y : E => ‖y‖ ^ γ) p (μ.restrict Ω) :=
     memLp_restrict_of_norm_le_mul_norm_rpow (C := 1) hp0 hpt hb
-      (continuous_norm.rpow_const fun _ => Or.inr hγ0.le).aestronglyMeasurable
+      (by fun_prop : Measurable fun y : E => ‖y‖ ^ γ).aestronglyMeasurable
       (fun x _ => by rw [one_mul, Real.norm_of_nonneg (by positivity)])
       (by nlinarith)
   have hg : MemLp (∇ fun y : E => ‖y‖ ^ γ) p (μ.restrict Ω) :=
@@ -501,12 +500,12 @@ private theorem exists_wkp_two_value_ae_eq_norm_rpow (hγ0 : 0 < γ) (hγ : γ <
   rw [Wkp.value_mk, Wkp.value_one, hv]
   exact hu.coeFn_toLp
 
-/-- **`W^{2,p}` regularity of a norm power.** Let `0 < γ < 2` with `n + γ > 2`, where `n` is the
-dimension, and let `Ω` be a bounded open set containing the origin. Then `‖x‖ ^ γ` lies in
+/-- **`W^{2,p}` regularity of a norm power.** Let `γ ≠ 0` and `γ < 2` with `n + γ > 2`, where `n`
+is the dimension, and let `Ω` be a bounded open set containing the origin. Then `‖x‖ ^ γ` lies in
 `W^{2,p}(Ω)` exactly when `p < n / (2 - γ)`. The Hessian has size comparable to
 `‖x‖ ^ (γ - 2)`, which is `p`-integrable near the origin exactly in this range; the case
 `p = ∞` is included and never occurs. -/
-theorem exists_wkp_two_value_ae_eq_norm_rpow_iff (hγ0 : 0 < γ) (hγ : γ < 2)
+theorem exists_wkp_two_value_ae_eq_norm_rpow_iff (hγ0 : γ ≠ 0) (hγ : γ < 2)
     (hn : 2 < finrank ℝ E + γ) {Ω : Opens E} (hb : Bornology.IsBounded (Ω : Set E))
     (h0 : (0 : E) ∈ Ω) {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     (∃ w : Wkp μ Ω p 2, (Wkp.value 2 w : E → ℝ) =ᵐ[μ.restrict Ω] fun y => ‖y‖ ^ γ) ↔
@@ -514,6 +513,6 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow_iff (hγ0 : 0 < γ) (hγ : γ < 2)
   ⟨fun ⟨w, hw⟩ => lt_ofReal_of_memLp_iteratedGradientChain_one_norm_rpow hγ0 hγ hn
       (Ω.isOpen.mem_nhds h0) ((Lp.memLp (Wkp.iteratedGradient 1 w)).ae_eq
         (Wkp.iteratedGradient_one_ae_eq_iteratedGradientChain_norm_rpow hn w hw)),
-    exists_wkp_two_value_ae_eq_norm_rpow hγ0 hγ hn hb⟩
+    exists_wkp_two_value_ae_eq_norm_rpow hγ hn hb⟩
 
 end TauCeti

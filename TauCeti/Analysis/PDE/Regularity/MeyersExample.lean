@@ -11,6 +11,7 @@ import Mathlib.Analysis.Matrix.MeasurableSpace
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.PDE.Ellipticity.RadialCoefficient
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
 
@@ -82,68 +83,44 @@ namespace PDE
 
 variable {μ : ℝ}
 
-/-- **Meyers' coefficient field** `a(x) = μ² I + (1 - μ²) x xᵀ / ‖x‖²` on the plane. Its
-eigenvalue in the radial direction `x` is `1` and in the tangential direction is `μ²`. At the
-origin, where the direction is undefined, it is `μ² I`. -/
+/-- **Meyers' coefficient field** `a(x) = μ² I + (1 - μ²) x xᵀ / ‖x‖²` on the plane, the radial
+coefficient `TauCeti.PDE.radialCoefficient (μ ^ 2) (1 - μ ^ 2)`. Its eigenvalue in the radial
+direction `x` is `1` and in the tangential direction is `μ²`. At the origin, where the direction
+is undefined, it is `μ² I`. -/
 def meyersCoefficient (μ : ℝ) (x : EuclideanSpace ℝ (Fin 2)) : Matrix (Fin 2) (Fin 2) ℝ :=
-  μ ^ 2 • 1 + ((1 - μ ^ 2) / ‖x‖ ^ 2) • Matrix.vecMulVec x x
+  radialCoefficient (μ ^ 2) (1 - μ ^ 2) x
 
 /-- Unfolding `TauCeti.PDE.meyersCoefficient`. -/
 theorem meyersCoefficient_apply (x : EuclideanSpace ℝ (Fin 2)) :
-    meyersCoefficient μ x = μ ^ 2 • 1 + ((1 - μ ^ 2) / ‖x‖ ^ 2) • Matrix.vecMulVec x x :=
-  (rfl)
+    meyersCoefficient μ x = μ ^ 2 • 1 + ((1 - μ ^ 2) / ‖x‖ ^ 2) • Matrix.vecMulVec x x := by
+  ext i j
+  simp [meyersCoefficient, radialCoefficient_apply, Matrix.one_apply, Matrix.vecMulVec_apply]
 
 /-- The bilinear form of Meyers' coefficient:
 `ηᵀ a(x) ξ = μ² ⟪η, ξ⟫ + (1 - μ²) ⟪η, x⟫ ⟪x, ξ⟫ / ‖x‖²`. -/
 theorem dotProduct_meyersCoefficient_mulVec (x η ξ : EuclideanSpace ℝ (Fin 2)) :
     η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ) =
-      μ ^ 2 * ⟪η, ξ⟫_ℝ + (1 - μ ^ 2) / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ) := by
-  simp [meyersCoefficient, Matrix.mulVec, dotProduct, Matrix.vecMulVec_apply, Fin.sum_univ_two,
-    PiLp.inner_apply]
-  ring
+      μ ^ 2 * ⟪η, ξ⟫_ℝ + (1 - μ ^ 2) / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ) :=
+  dotProduct_radialCoefficient_mulVec x η ξ
 
 /-- The bilinear form of Meyers' coefficient is bounded by `μ² + |1 - μ²|`. -/
 theorem abs_dotProduct_meyersCoefficient_mulVec_le (x η ξ : EuclideanSpace ℝ (Fin 2)) :
     |η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ)| ≤ (μ ^ 2 + |1 - μ ^ 2|) * ‖η‖ * ‖ξ‖ := by
-  have hcx : |(1 - μ ^ 2) / ‖x‖ ^ 2| * ‖x‖ ^ 2 ≤ |1 - μ ^ 2| := by
-    rcases eq_or_ne ‖x‖ 0 with h | h
-    · simp [h]
-    · rw [abs_div, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖x‖ ^ 2),
-        div_mul_cancel₀ _ (pow_ne_zero 2 h)]
-  rw [dotProduct_meyersCoefficient_mulVec]
-  calc |μ ^ 2 * ⟪η, ξ⟫_ℝ + (1 - μ ^ 2) / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ)|
-      ≤ μ ^ 2 * (‖η‖ * ‖ξ‖) + |(1 - μ ^ 2) / ‖x‖ ^ 2| * ((‖η‖ * ‖x‖) * (‖x‖ * ‖ξ‖)) := by
-        refine (abs_add_le _ _).trans (add_le_add ?_ ?_)
-        · rw [abs_mul, abs_of_nonneg (by positivity)]
-          exact mul_le_mul_of_nonneg_left (abs_real_inner_le_norm _ _) (by positivity)
-        · rw [abs_mul, abs_mul]
-          exact mul_le_mul_of_nonneg_left (mul_le_mul (abs_real_inner_le_norm _ _)
-            (abs_real_inner_le_norm _ _) (abs_nonneg _) (by positivity)) (abs_nonneg _)
-    _ = (μ ^ 2 + |(1 - μ ^ 2) / ‖x‖ ^ 2| * ‖x‖ ^ 2) * ‖η‖ * ‖ξ‖ := by ring
-    _ ≤ (μ ^ 2 + |1 - μ ^ 2|) * ‖η‖ * ‖ξ‖ := by gcongr
+  have h := abs_dotProduct_radialCoefficient_mulVec_le (α := μ ^ 2) (β := 1 - μ ^ 2) x η ξ
+  rwa [abs_of_nonneg (sq_nonneg μ)] at h
 
 /-- For `0 < μ ≤ 1`, Meyers' coefficient is uniformly elliptic with constants `μ²` and `1`, so
 its ellipticity ratio is `1 / μ²`. -/
 theorem uniformlyEllipticOn_meyersCoefficient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
     (Ω : Set (EuclideanSpace ℝ (Fin 2))) :
     UniformlyEllipticOn Ω (meyersCoefficient μ) (μ ^ 2) 1 := by
-  have hc : 0 ≤ 1 - μ ^ 2 := by nlinarith
-  refine UniformlyEllipticOn.of_bounds (by positivity) (by nlinarith) (fun x _ ξ => ?_)
-    (fun x _ η ξ => ?_)
-  · rw [Matrix.toQuadraticForm'_apply, dotProduct_meyersCoefficient_mulVec,
-      real_inner_self_eq_norm_sq, real_inner_comm x ξ]
-    have : 0 ≤ (1 - μ ^ 2) / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ) :=
-      mul_nonneg (div_nonneg hc (by positivity)) (mul_self_nonneg _)
-    linarith
-  · simpa [abs_of_nonneg hc] using abs_dotProduct_meyersCoefficient_mulVec_le (μ := μ) x η ξ
+  have h := uniformlyEllipticOn_radialCoefficient (by positivity : 0 < μ ^ 2)
+    (by nlinarith : 0 ≤ 1 - μ ^ 2) Ω
+  rwa [add_sub_cancel] at h
 
 /-- Meyers' coefficient is strongly measurable. -/
-theorem stronglyMeasurable_meyersCoefficient : StronglyMeasurable (meyersCoefficient μ) := by
-  have : Measurable (meyersCoefficient μ) := by
-    unfold meyersCoefficient
-    fun_prop
-  -- The matrix space is metrizable through its underlying function type.
-  exact Measurable.stronglyMeasurable (β := Fin 2 → Fin 2 → ℝ) this
+theorem stronglyMeasurable_meyersCoefficient : StronglyMeasurable (meyersCoefficient μ) :=
+  stronglyMeasurable_radialCoefficient
 
 /-! ### The radial coordinate functions -/
 
