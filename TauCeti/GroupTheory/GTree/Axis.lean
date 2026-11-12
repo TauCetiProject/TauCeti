@@ -152,7 +152,7 @@ theorem mem_axis_of_isReduced {g : G} {x : T.V} {p : T.Path x (g • x)}
   obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
   refine mem_axis_iff.mpr (le_antisymm ?_ (translationLength_le g x))
   -- Compare the displacements of `x` and `v` under a large power of `g`.
-  set n := 2 * T.dist x v + 1 with hn
+  set n := 2 * T.dist x v + 1
   have h₁ := dist_pow_smul_eq_mul hp hg n
   have h₂ := T.dist_pow_smul_le g v n
   have h₃ := dist_triangle (T.nonempty_path x v) (T.nonempty_path v (g ^ n • x))
@@ -310,7 +310,7 @@ private theorem exists_smul_eq_add_translationLength {g : G} {x : T.V} (hx : x �
       ∀ n, T.dist (c n) (c (n + 1)) ≤ 1 := by
   obtain ⟨u, hu₀, hu, hstep⟩ := exists_forall_dist_succ_le_one (T.nonempty_path x (g • x))
   rw [mem_axis_iff.mp hx] at hu
-  set ℓ : ℤ := ((T.translationLength g : ℕ) : ℤ) with hℓdef
+  set ℓ : ℤ := ((T.translationLength g : ℕ) : ℤ)
   have hℓ' : 0 < ℓ := by omega
   refine ⟨fun n => g ^ (n / ℓ) • u (n % ℓ).toNat, by simp [hu₀], fun n => ?_, fun n => ?_⟩
   · simp only [Int.add_emod_right, Int.add_ediv_of_dvd_right (dvd_refl ℓ), Int.ediv_self hℓ'.ne']
@@ -456,8 +456,8 @@ theorem dist_smul_eq_translationLength_add (g : G) (v : T.V) :
 theorem line_translationLength (k : Multiplicative ℤ) :
     line.translationLength k = k.toAdd.natAbs :=
   translationLength_eq_natAbs_of_smul_eq_add (c := fun n => (lineVertexEquiv.symm n : line.V))
-    (fun m n => Int.ofNat_inj.mp <| by
-      rw [line_dist, Int.natCast_natAbs, Equiv.apply_symm_apply, Equiv.apply_symm_apply])
+    (fun m n => Int.ofNat_inj.mp <| (line_dist _ _).trans <| by
+      rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, Int.natCast_natAbs])
     fun n => lineVertexEquiv.injective ((lineVertexEquiv_line_smul k _).trans (by
       rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, add_comm]))
 
@@ -465,9 +465,8 @@ theorem line_translationLength (k : Multiplicative ℤ) :
 theorem line_axis (k : Multiplicative ℤ) : line.axis k = Set.univ := by
   refine Set.eq_univ_of_forall fun v => ?_
   rw [mem_axis_iff, line_translationLength]
-  refine Int.ofNat_inj.mp ?_
-  rw [line_dist, Int.natCast_natAbs, lineVertexEquiv_line_smul]
-  omega
+  refine Int.ofNat_inj.mp <| (line_dist _ _).trans ?_
+  rw [lineVertexEquiv_line_smul, Int.natCast_natAbs, sub_add_cancel_right, abs_neg]
 
 end GTree
 end TauCeti
