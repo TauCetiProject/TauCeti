@@ -32,7 +32,7 @@ Conversely, Fubini applied to a finite absolute moment of the convolution gives 
 large-jump component with that moment. Translation preserves moment finiteness, so the
 large-jump obstruction persists in the full stable law.
 
-A symmetric stable law with location `m`, scale `s` and shape `α` has, for `0 < q < α`,
+A symmetric stable law with location `m`, scale `s` and shape `α` has, for `0 ≤ q < α`,
 
 `E[|X - m| ^ q] = s ^ q * 2 ^ q * Γ((q + 1) / 2) * Γ(1 - q / α) / (√π * Γ(1 - q / 2))`.
 
@@ -122,14 +122,21 @@ theorem integrable_abs_rpow_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β|
     memLp_id_map_affine_iff hspos.ne', memLp_id_ofReal_iff_integrable_abs_rpow hq]
   exact integrable_abs_rpow_standardStableMeasure_iff ⟨hα.1, lt_of_le_of_ne hα.2 htwo⟩ hβ hq
 
-/-- The fractional absolute central moments of a symmetric stable law: for `0 < q < α`,
+/-- The fractional absolute central moments of a symmetric stable law: for `0 ≤ q < α`,
 `E[|X - m| ^ q] = s ^ q * 2 ^ q * Γ((q + 1) / 2) * Γ(1 - q / α) / (√π * Γ(1 - q / 2))`.
 This includes the Gaussian shape `α = 2` and the zero-scale Dirac law. -/
-theorem integral_abs_sub_rpow_stableMeasure (hα : α ∈ Ioc 0 2) (hq : 0 < q) (hqα : q < α)
+theorem integral_abs_sub_rpow_stableMeasure (hα : α ≤ 2) (hq : 0 ≤ q) (hqα : q < α)
     (s : ℝ≥0) (m : ℝ) :
     ∫ x, |x - m| ^ q ∂stableMeasure α 0 s m =
       s ^ q * 2 ^ q * Gamma ((q + 1) / 2) * Gamma (1 - q / α) / (√π * Gamma (1 - q / 2)) := by
+  have hα : α ∈ Ioc 0 2 := ⟨hq.trans_lt hqα, hα⟩
   have hβ : |(0 : ℝ)| ≤ 1 := by simp
+  rcases hq.eq_or_lt with rfl | hq
+  · let _ := isProbabilityMeasure_stableMeasure hα hβ s m
+    simp only [rpow_zero, integral_const, probReal_univ, smul_eq_mul, mul_one, zero_add,
+      one_div, one_mul, zero_div, sub_zero, Gamma_one]
+    rw [show (2 : ℝ)⁻¹ = 1 / 2 by norm_num, Real.Gamma_one_half_eq,
+      div_self (Real.sqrt_ne_zero'.mpr Real.pi_pos)]
   rcases eq_or_ne s 0 with rfl | hs
   · simp [stableMeasure_zero_scale hα hβ, zero_rpow hq.ne']
   have hspos : 0 < (s : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hs)
@@ -180,11 +187,11 @@ theorem integrable_abs_rpow_iff_stableMeasure {Ω : Type*} [MeasurableSpace Ω]
   exact h.symm.trans (TauCeti.Probability.integrable_abs_rpow_stableMeasure_iff hα hβ hq)
 
 /-- A random variable with a symmetric stable law has the fractional absolute central moments
-`s ^ q * 2 ^ q * Γ((q + 1) / 2) * Γ(1 - q / α) / (√π * Γ(1 - q / 2))` for `0 < q < α`. -/
-theorem integral_abs_sub_rpow_stableMeasure {Ω : Type*} [MeasurableSpace Ω]
+`s ^ q * 2 ^ q * Γ((q + 1) / 2) * Γ(1 - q / α) / (√π * Γ(1 - q / 2))` for `0 ≤ q < α`. -/
+theorem integral_abs_sub_rpow_stableMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω}
     {P : Measure Ω} {X : Ω → ℝ} {α q : ℝ} {s : ℝ≥0} {m : ℝ}
     (hX : HasLaw X (TauCeti.Probability.stableMeasure α 0 s m) P)
-    (hα : α ∈ Ioc 0 2) (hq : 0 < q) (hqα : q < α) :
+    (hα : α ≤ 2) (hq : 0 ≤ q) (hqα : q < α) :
     ∫ ω, |X ω - m| ^ q ∂P =
       s ^ q * 2 ^ q * Gamma ((q + 1) / 2) * Gamma (1 - q / α) / (√π * Gamma (1 - q / 2)) :=
   (hX.integral_comp (f := fun x ↦ |x - m| ^ q) (by fun_prop)).trans
