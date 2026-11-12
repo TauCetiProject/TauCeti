@@ -346,8 +346,9 @@ theorem nonempty_iso_res_GL2PrincipalSeries_mapEquiv (α β : F'ˣ →* ℂˣ) :
         (GeneralLinearGroup.mapEquiv (Fin 2) e : GL (Fin 2) F →* GL (Fin 2) F')).obj
         (GL2PrincipalSeries F' α β) ≅
       GL2PrincipalSeries F (α.comp (Units.map (e : F →* F'))) (β.comp (Units.map (e : F →* F')))) :=
-  -- The character of a restriction is, by definition, the character read at the image.
-  FDRep.nonempty_iso_of_character_eq _ _ (funext (character_GL2PrincipalSeries_mapEquiv e α β))
+  FDRep.nonempty_iso_of_character_eq _ _ (funext fun g => by
+    rw [FDRep.character_actionRes]
+    exact character_GL2PrincipalSeries_mapEquiv e α β g)
 
 /-- **Irreducibility of the principal series is invariant under a ring isomorphism of the field.**
 Restriction along a group isomorphism is an equivalence of categories, so it preserves and reflects
