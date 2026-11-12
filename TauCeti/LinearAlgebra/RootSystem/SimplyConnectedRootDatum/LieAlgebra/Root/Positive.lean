@@ -52,6 +52,14 @@ variable (hM : ∀ u ∈ kostantForm (t.lieBasis ht).rootGenerator (t.lieBasis h
 variable (hnil : ∀ i, IsNilpotent
   (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))))
 
+private theorem posRoots_eq_diff_singleton_union_simpleIndex (i : Fin t.rank) :
+    posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) ∪
+        {t.simpleIndex ht i} :=
+  (Set.sdiff_union_of_subset (Set.singleton_subset_iff.mpr
+    ((mem_posRoots _ _ _).mpr
+      (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))))).symm
+
 -- Match the tensor product to the integral algebra structure of the value ring.
 attribute [local instance high] Algebra.toModule
 
@@ -65,24 +73,13 @@ theorem mem_iSup_posRoots_iff_exists_mul_simpleRoot
         (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
           (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _))
     (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) :
-    let x := fun γ => chevalleyRootSubgroup ρ M hM hnil γ A
-    let α := t.simpleIndex ht i
-    g ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht), (x γ).range) ↔
-      ∃ v ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {α},
-          (x γ).range), ∃ a : Multiplicative A, v * x α a = g := by
-  dsimp only
-  let S := posRoots (t.rationalRootSystem ht) (t.rationalBase ht)
-  let α := t.simpleIndex ht i
-  let x := fun γ => chevalleyRootSubgroup ρ M hM hnil γ A
-  -- Keep the root homomorphisms bundled while rewriting their indexing sets.
-  change g ∈ (⨆ γ ∈ S, (x γ).range) ↔
-    ∃ v ∈ (⨆ γ ∈ S \ {α}, (x γ).range), ∃ a, v * x α a = g
-  have hα : α ∈ S :=
-    (mem_posRoots _ _ _).mpr
-      (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))
-  have hsplit : S = (S \ {α}) ∪ {α} :=
-    (Set.sdiff_union_of_subset (Set.singleton_subset_iff.mpr hα)).symm
-  conv_lhs => rw [hsplit, iSup_union, iSup_singleton]
+    g ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+      (chevalleyRootSubgroup ρ M hM hnil γ A).range) ↔
+      ∃ v ∈ (⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i},
+          (chevalleyRootSubgroup ρ M hM hnil γ A).range),
+        ∃ a : Multiplicative A,
+          v * chevalleyRootSubgroup ρ M hM hnil (t.simpleIndex ht i) A a = g := by
+  conv_lhs => rw [posRoots_eq_diff_singleton_union_simpleIndex i, iSup_union, iSup_singleton]
   rw [Subgroup.mem_sup_of_right_le_normalizer_left hnorm]
   constructor
   · rintro ⟨v, hv, _, ⟨a, rfl⟩, heq⟩
@@ -121,13 +118,7 @@ theorem map_iSup_posRoots_chevalleyRootSubgroup_conj_kostantWeylGL
     (chevalleyRootSubgroup ρ M hM hnil
       ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
         (t.simpleIndex ht i)) A).range := by
-  have hsplit : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) ∪
-        {t.simpleIndex ht i} := by
-    exact (Set.sdiff_union_of_subset (Set.singleton_subset_iff.mpr
-      ((mem_posRoots _ _ _).mpr
-        (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))))).symm
-  conv_lhs => rw [hsplit, iSup_union]
+  conv_lhs => rw [posRoots_eq_diff_singleton_union_simpleIndex i, iSup_union]
   simp only [iSup_singleton, Subgroup.map_sup,
     map_range_chevalleyRootSubgroup_conj_kostantWeylGL,
     (Subgroup.mem_normalizer_iff_map_conj_eq.mp

@@ -134,6 +134,12 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
     (t.rationalBase ht).support = (t.simplyConnectedBase ht).support :=
   support_rootPairingBaseChangeBase ..
 
+/-- Rationalization preserves the positive-root set of every pinned Dynkin datum. -/
+@[simp] theorem posRoots_rationalRootSystem :
+    posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      posRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) :=
+  posRoots_rootPairingBaseChangeBase ℚ _ _ _
+
 instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..
 

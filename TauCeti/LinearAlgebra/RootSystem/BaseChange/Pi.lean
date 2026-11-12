@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import Mathlib.LinearAlgebra.RootSystem.Chain
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.Matrix.Dual
+public import TauCeti.LinearAlgebra.RootSystem.Positive
 
 /-!
 # Base change of a root pairing carried by the standard lattices
@@ -267,6 +268,31 @@ def supportEquivRootPairingBaseChangeBase :
       b.cartanMatrix (supportEquivRootPairingBaseChangeBase S P hP b i)
         (supportEquivRootPairingBaseChangeBase S P hP b j) :=
   pairingIn_rootPairingBaseChange S P hP i j
+
+/-- Entrywise base change into characteristic zero preserves the height of every root. -/
+@[simp] theorem height_rootPairingBaseChangeBase [CharZero R] [CharZero S] (i : ι) :
+    (rootPairingBaseChangeBase S P hP b).height i = b.height i := by
+  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
+  have hf' : (rootPairingBaseChange S P hP).root i =
+      ∑ j ∈ (rootPairingBaseChangeBase S P hP b).support,
+        f j • (rootPairingBaseChange S P hP).root j := by
+    simpa only [root_rootPairingBaseChange, support_rootPairingBaseChangeBase,
+      map_sum, map_zsmul] using congrArg (Pi.algebraMap κ R S) hf
+  rw [RootPairing.Base.height_eq_sum hf', RootPairing.Base.height_eq_sum hf,
+    support_rootPairingBaseChangeBase]
+
+/-- A root is positive after entrywise base change exactly when it was positive before. -/
+@[simp] theorem isPos_rootPairingBaseChangeBase_iff [CharZero R] [CharZero S] (i : ι) :
+    (rootPairingBaseChangeBase S P hP b).IsPos i ↔ b.IsPos i := by
+  rw [RootPairing.Base.isPos_iff, RootPairing.Base.isPos_iff,
+    height_rootPairingBaseChangeBase]
+
+/-- Entrywise base change into characteristic zero preserves the positive-root set. -/
+@[simp] theorem posRoots_rootPairingBaseChangeBase [CharZero R] [CharZero S] :
+    posRoots (rootPairingBaseChange S P hP) (rootPairingBaseChangeBase S P hP b) =
+      posRoots P b := by
+  ext i
+  simp only [mem_posRoots, isPos_rootPairingBaseChangeBase_iff]
 
 end Base
 
