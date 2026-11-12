@@ -261,7 +261,7 @@ private theorem volume_lt_enorm_le_volume_czUnion [Nonempty ι] {f : (ι → ℝ
     volume {x | t < ‖f x‖ₑ} ≤ volume (czUnion f t) := by
   refine measure_mono_ae ?_
   filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes_of_tendsto
-    hf.aestronglyMeasurable.enorm (tendsto_setLAverage_enorm_dyadicCube_atTop hf hp₀ hp₀') ht]
+    hf.aestronglyMeasurable.eNorm (tendsto_setLAverage_enorm_dyadicCube_atTop hf hp₀ hp₀') ht]
     with x hx (hxt : t < ‖f x‖ₑ)
   by_contra hxU
   refine (hx fun q hq hxq => hxU ?_).not_gt hxt
@@ -279,7 +279,7 @@ private theorem mul_volume_le_setLIntegral_enorm_sub {f : (ι → ℝ) → F} {t
   calc t * volume P + t * volume P = 2 * t * volume P := by ring
     _ ≤ ∫⁻ y in P, ‖f y‖ₑ := (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hp).le
     _ ≤ ∫⁻ y in P, (‖f y - a‖ₑ + ‖a‖ₑ) :=
-        lintegral_mono fun y => by simpa using enorm_add_le (f y - a) a
+        lintegral_mono fun y => by simpa using eNorm_add_le (f y - a) a
     _ = (∫⁻ y in P, ‖f y - a‖ₑ) + ‖a‖ₑ * volume P := by
         rw [lintegral_add_right _ measurable_const, setLIntegral_const]
     _ ≤ (∫⁻ y in P, ‖f y - a‖ₑ) + t * volume P := by gcongr
@@ -466,9 +466,9 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_ne_top {f : (ι → ℝ) �
         (dyadicMaximalFunction_le_two_pow_mul_maximalFunction f x))
   -- By the maximal inequality and the layer cake formula, `∫₀^∞ |{h > t}| t^(r-1) dt` is finite.
   have hint : ∫⁻ x, h x ^ r ≠ ∞ := by
-    have hM := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans hp₀1).ne' hp₀top
-      (eLpNorm_maximalFunction_lt_top volume hf.aestronglyMeasurable.enorm hf.eLpNorm_ne_top hp₀1)
-    simp only [enorm_eq_self] at hM
+    have hM := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans hp₀1).ne' hp₀top
+      (eLpNorm_maximalFunction_lt_top volume hf.aestronglyMeasurable.eNorm hf.eLpNorm_ne_top hp₀1)
+    simp only [eNorm_eq_self] at hM
     simp only [h, ENNReal.mul_rpow_of_nonneg _ _ (zero_le_one.trans hr.le)]
     rw [lintegral_const_mul' _ _ (by finiteness)]
     exact ENNReal.mul_ne_top (by finiteness) hM.ne
@@ -601,7 +601,7 @@ theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι
     Monotone.directed_le fun _ _ h => Ioo_subset_Ioo_right (by exact_mod_cast h)
   calc ∫⁻ x, ‖f x‖ₑ ^ p
       = ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ), volume {x | ENNReal.ofReal t < ‖f x‖ₑ} * w t :=
-        lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hf.aestronglyMeasurable.enorm hp0
+        lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hf.aestronglyMeasurable.eNorm hp0
     _ ≤ ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ), m t * w t := by
         refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioi fun t ht => ?_)
         gcongr
@@ -643,12 +643,12 @@ theorem eLpNorm_le_eLpNorm_sharpMaximalFunction [Nonempty ι] {f : (ι → ℝ) 
   have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hf.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hf.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top
       (measurable_sharpMaximalFunction volume f).aestronglyMeasurable,
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
-  simpa only [enorm_eq_self] using
+  simpa only [eNorm_eq_self] using
     lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow hf hp₀
       (hp₀p.trans_eq (ENNReal.ofReal_toReal hp_top).symm) hpr
 

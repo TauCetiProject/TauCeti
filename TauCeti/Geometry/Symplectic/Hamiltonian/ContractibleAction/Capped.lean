@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 
 /-!

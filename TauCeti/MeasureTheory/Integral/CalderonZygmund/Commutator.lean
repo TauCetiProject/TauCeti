@@ -158,8 +158,8 @@ private theorem setLIntegral_enorm_apply_le_of_eLpNorm_le {F : Type*} [NormedAdd
       bmoHolderConst n s q * M * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume B₁ ^ s⁻¹ * Mf ^ q⁻¹ := by
     rw [eLpNorm_congr_ae hh,
       eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_ball.nullMeasurableSet,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal (by positivity) ENNReal.ofReal_ne_top hφ, hsR]
-    simp_rw [enorm_smul]
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal (by positivity) ENNReal.ofReal_ne_top hφ, hsR]
+    simp_rw [eNorm_smul]
     calc (∫⁻ y in B₁, (‖b y - a‖ₑ * ‖f y‖ₑ) ^ s) ^ (1 / s)
         ≤ (((bmoHolderConst n s q + 0) * M) ^ s * (2 ^ n : ℝ≥0∞) ^ (s / q) * volume B₁ *
             Mf ^ (s / q)) ^ (1 / s) := by
@@ -174,7 +174,7 @@ private theorem setLIntegral_enorm_apply_le_of_eLpNorm_le {F : Type*} [NormedAdd
   have hloc : ∫⁻ y in B, ‖T h y‖ₑ ≤
       A * eLpNorm h (ENNReal.ofReal s) volume * volume B ^ (1 - s⁻¹) := by
     calc ∫⁻ y in B, ‖T h y‖ₑ = eLpNorm (T h) 1 (volume.restrict B) :=
-          (eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _).restrict).symm
+          (eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _).restrict).symm
       _ ≤ eLpNorm (T h) (ENNReal.ofReal s) (volume.restrict B) *
             (volume.restrict B) univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / (ENNReal.ofReal s).toReal) :=
           eLpNorm_le_eLpNorm_mul_rpow_measure_univ (by simpa using hs)
@@ -265,7 +265,7 @@ private theorem lintegral_enorm_sub_apply_le {F : Type*} [NormedAddCommGroup F] 
   set c' : ℕ → ℝ := fun k => C₀ * r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ))
   have hr : 0 < r := pos_of_mem_ball hx
   have hgm : AEMeasurable g volume :=
-    (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mul hf.enorm
+    (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).eNorm.mul hf.eNorm
   -- Pointwise domination by a sum over the dyadic annuli.
   have hpt : ∀ᵐ z, ‖(K y z - K c z) (h z)‖ₑ ≤
       ∑' k : ℕ, ENNReal.ofReal (c' k) * (ball c (2 ^ (k + 2) * r)).indicator g z := by
@@ -278,7 +278,7 @@ private theorem lintegral_enorm_sub_apply_le {F : Type*} [NormedAddCommGroup F] 
     rw [indicator_of_mem (mem_compl hzB)]
     calc ‖(K y z - K c z) ((b z - a) • f z)‖ₑ
         ≤ ‖K y z - K c z‖ₑ * g z := by
-          simpa only [g, enorm_smul] using
+          simpa only [g, eNorm_smul] using
             ContinuousLinearMap.le_opENorm (K y z - K c z) ((b z - a) • f z)
       _ ≤ ENNReal.ofReal (C₀ * r ^ δ) * ENNReal.ofReal (dist z c ^ (-(n + δ))) * g z := by
           gcongr
@@ -437,9 +437,9 @@ private theorem setLAverage_enorm_smul_sub_sub_setAverage_le {F : Type*} [Normed
       abel
     rw [heq]
     calc ‖(b y - a) • T f y - T h₁ y - (T h₂ y - A₀)‖ₑ
-        ≤ ‖(b y - a) • T f y - T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := enorm_sub_le
-      _ ≤ ‖(b y - a) • T f y‖ₑ + ‖T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := by gcongr; exact enorm_sub_le
-      _ ≤ _ := by rw [enorm_smul]; gcongr
+        ≤ ‖(b y - a) • T f y - T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := eNorm_sub_le
+      _ ≤ ‖(b y - a) • T f y‖ₑ + ‖T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := by gcongr; exact eNorm_sub_le
+      _ ≤ _ := by rw [eNorm_smul]; gcongr
   -- The three parts.
   have hI : ∫⁻ y in B, ‖b y - a‖ₑ * ‖T f y‖ₑ ≤
       (bmoHolderConst n 1 q + 2 ^ n) * M * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume B * X ^ q⁻¹ := by
@@ -451,8 +451,8 @@ private theorem setLAverage_enorm_smul_sub_sub_setAverage_le {F : Type*} [Normed
   have hII := setLIntegral_enorm_apply_le_of_eLpNorm_le T hs hsq hT hb hM
     (Lp.aestronglyMeasurable f) hx hh₁
   have hbm : AEMeasurable (fun y => ‖b y - a‖ₑ * ‖T f y‖ₑ) (volume.restrict B) :=
-    ((hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mul
-      (Lp.aestronglyMeasurable _).enorm).restrict
+    ((hb.aestronglyMeasurable.sub aestronglyMeasurable_const).eNorm.mul
+      (Lp.aestronglyMeasurable _).eNorm).restrict
   have hosc : ⨍⁻ y in B, ‖Φ y - (-A₀)‖ₑ ≤
       commutatorConst n s q A C₀ δ * M * (X ^ q⁻¹ + Y ^ q⁻¹) := by
     rw [setLAverage_eq, ENNReal.div_le_iff hB0 hBtop]
@@ -462,7 +462,7 @@ private theorem setLAverage_enorm_smul_sub_sub_setAverage_le {F : Type*} [Normed
       _ = (∫⁻ y in B, ‖b y - a‖ₑ * ‖T f y‖ₑ) + (∫⁻ y in B, ‖T h₁ y‖ₑ) +
             farConst n q C₀ δ * M * Y ^ q⁻¹ * volume B := by
           rw [lintegral_add_left' (f := fun y => ‖b y - a‖ₑ * ‖T f y‖ₑ + ‖T h₁ y‖ₑ)
-            (hbm.add (Lp.aestronglyMeasurable _).enorm.restrict), lintegral_add_left' hbm,
+            (hbm.add (Lp.aestronglyMeasurable _).eNorm.restrict), lintegral_add_left' hbm,
             setLIntegral_const]
       _ ≤ (bmoHolderConst n 1 q + 2 ^ n) * M * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume B * X ^ q⁻¹ +
             A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (2 ^ n : ℝ≥0∞) ^ s⁻¹ * M * volume B *
@@ -612,16 +612,16 @@ private theorem exists_eLpNorm_smul_sub_le_of_memLp_top {F : Type*} [NormedAddCo
           (maximalFunction volume (fun y => ‖T f y‖ₑ ^ q) x ^ q⁻¹ +
             maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹)) P volume := by
         gcongr
-        refine eLpNorm_mono_enorm (measurable_sharpMaximalFunction volume _).aestronglyMeasurable
+        refine eLpNorm_mono_eNorm (measurable_sharpMaximalFunction volume _).aestronglyMeasurable
           fun x => ?_
-        simp only [enorm_eq_self]
+        simp only [eNorm_eq_self]
         exact hJ T hKm hK hrep hTs (hb.locallyIntegrable le_top) hM f g hg x
     _ ≤ CFS * (CJ * M * (CM * eLpNorm (T f) P volume + CM * eLpNorm f P volume)) := by
         rw [eLpNorm_const_mul_ennreal_of_pos (zero_lt_one.trans hP1)]
         gcongr
         refine (eLpNorm_add_le hP1.le).trans (add_le_add ?_ ?_) <;>
           simpa only [hPR] using eLpNorm_maximalFunction_rpow_rpow_inv_le volume
-            (Lp.aestronglyMeasurable _).enorm hq hqp
+            (Lp.aestronglyMeasurable _).eNorm hq hqp
     _ ≤ CFS * (CJ * M * (CM * (A * eLpNorm f P volume) + CM * eLpNorm f P volume)) := by
         gcongr
         exact hTp f
@@ -713,9 +713,9 @@ theorem exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*} [NormedAd
     refine tendsto_eLpNorm_sub_of_ae_tendsto (by norm_num) (C := 1)
       (.of_forall fun N => Lp.aestronglyMeasurable _) (Lp.memLp g) (.of_forall fun N => ?_) ?_
     · filter_upwards [hgN N, hg] with y hy hgy
-      rw [hy, hgy, ← sub_smul, ENNReal.coe_one, one_mul, enorm_smul, enorm_smul]
+      rw [hy, hgy, ← sub_smul, ENNReal.coe_one, one_mul, eNorm_smul, eNorm_smul]
       gcongr
-      exact enorm_le_iff_norm_le.2 (hφsub N (b y))
+      exact eNorm_le_iff_norm_le.2 (hφsub N (b y))
     · filter_upwards [ae_all_iff.2 hgN, hg] with y hy hgy
       simp only [hy, hgy]
       exact (hφlim (b y)).smul_const (f y)
