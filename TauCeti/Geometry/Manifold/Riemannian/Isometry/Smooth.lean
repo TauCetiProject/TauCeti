@@ -147,7 +147,6 @@ private theorem exists_dist_radialMap_le (hf : Isometry f)
     rw [← apply_riemannianExp_eq_radialMap hf hp hq hvδ,
       ← apply_riemannianExp_eq_radialMap hf hp hq hwδ, hf.dist_eq]
   have hsq : √c * √c = c := Real.mul_self_sqrt hc₀
-  have hs₀ : 0 ≤ √c := Real.sqrt_nonneg c
   constructor
   · calc dist (radialMap (J := J) f p δ v) (radialMap (J := J) f p δ w)
         ≤ √c * dist (riemannianExp I M p v) (riemannianExp I M p w) :=
