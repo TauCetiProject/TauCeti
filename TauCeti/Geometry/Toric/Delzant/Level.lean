@@ -435,6 +435,14 @@ theorem coe_delzantLevelCongr (x : delzantLevel i' u' c') :
         (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) x :=
   (rfl)
 
+@[simp]
+theorem coe_delzantLevelCongr_symm (x : delzantLevel i u c) :
+    ((delzantLevelCongr e hZ).symm x : EuclideanSpace ℝ ι' × EuclideanSpace ℝ ι') =
+      Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm)
+        (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm) x := by
+  rw [← LinearIsometryEquiv.piLpCongrLeft_symm]
+  rfl
+
 /-- The relabelling of coordinates intertwines the torus actions on the levels, relabelling the
 angles along `e`. -/
 theorem delzantLevelCongr_vadd (θ : ι' → AddCircle (2 * π)) (x : delzantLevel i' u' c') :

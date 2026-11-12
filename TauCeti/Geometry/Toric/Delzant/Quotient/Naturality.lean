@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Basic
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
@@ -163,6 +162,15 @@ theorem relabel_mk (x : delzantLevel i (u ∘ e) (c ∘ e)) :
   rw [relabel, congr_mk]
   exact congrArg mk (Subtype.ext (coe_delzantLevelCongr _ _ x))
 
+@[simp]
+theorem relabel_symm_mk (x : delzantLevel i u c) :
+    (relabel e).symm (mk x) = mk ⟨Prod.map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm)
+      (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm) x,
+        by rw [← coe_delzantLevelCongr_symm e
+          fun _ ↦ prodMap_piLpCongrLeft_mem_delzantLevel_iff e]; exact Subtype.prop _⟩ := by
+  rw [relabel, congr_symm_mk]
+  exact congrArg mk (Subtype.ext (coe_delzantLevelCongr_symm e _ x))
+
 /-- Relabelling the facets intertwines the residual torus actions, relabelling the angles. -/
 theorem relabel_coe_vadd (θ : ι' → AddCircle (2 * π)) (q : DelzantQuotient i (u ∘ e) (c ∘ e)) :
     relabel e ((θ : (ι' → AddCircle (2 * π)) ⧸ (facetTorusHom i (u ∘ e) (2 * π)).ker) +ᵥ q) =
@@ -203,6 +211,12 @@ def translate : DelzantQuotient i u c ≃ₜ DelzantQuotient i u (fun j ↦ c j 
 theorem translate_mk (x : delzantLevel i u c) :
     translate y (mk x) = mk ⟨x, by rw [delzantLevel_add]; exact x.2⟩ := by
   rw [translate, congr_mk]
+  exact congrArg mk (Subtype.ext (by simp))
+
+@[simp]
+theorem translate_symm_mk (x : delzantLevel i u (fun j ↦ c j + y (i (u j)))) :
+    (translate y).symm (mk x) = mk ⟨x, by rw [← delzantLevel_add y]; exact x.2⟩ := by
+  rw [translate, congr_symm_mk]
   exact congrArg mk (Subtype.ext (by simp))
 
 /-- Translating the polytope commutes with the residual torus action. -/
@@ -249,6 +263,13 @@ def latticeCongr : DelzantQuotient i u c ≃ₜ DelzantQuotient i' (fun j ↦ f 
 theorem latticeCongr_mk (x : delzantLevel i u c) :
     latticeCongr hf hg hfg (mk x) = mk ⟨x, by rw [delzantLevel_comp_left hg hfg]; exact x.2⟩ := by
   rw [latticeCongr, congr_mk]
+  exact congrArg mk (Subtype.ext (by simp))
+
+@[simp]
+theorem latticeCongr_symm_mk (x : delzantLevel i' (fun j ↦ f (u j)) c) :
+    (latticeCongr hf hg hfg).symm (mk x) =
+      mk ⟨x, by rw [← delzantLevel_comp_left hg hfg]; exact x.2⟩ := by
+  rw [latticeCongr, congr_symm_mk]
   exact congrArg mk (Subtype.ext (by simp))
 
 /-- Changing the lattice commutes with the residual torus actions. -/
