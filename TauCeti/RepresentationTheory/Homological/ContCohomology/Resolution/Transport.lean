@@ -11,9 +11,10 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 # Transporting contractions along isomorphisms of complexes
 
 A contraction can be pulled back along an equivariant isomorphism of complexes. The
-augmentation is composed with the inverse isomorphism, while the retraction and homotopy
-are conjugated degree by degree. This lets a regrouped tensor resolution inherit its
-contraction without reconstructing the contracting homotopy on the regrouped factors.
+augmentation is composed with the inverse isomorphism. The retraction is precomposed with the
+isomorphism in degree zero, while the homotopy is conjugated degree by degree. This lets a
+regrouped tensor resolution inherit its contraction without reconstructing the contracting
+homotopy on the regrouped factors.
 -/
 
 public section

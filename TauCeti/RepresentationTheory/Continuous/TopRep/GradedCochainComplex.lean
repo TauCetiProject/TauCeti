@@ -44,6 +44,7 @@ assembles a `ℤ`-indexed complex of modules from the same kind of data.
   with values in one piece of the grading.
 * `TopRep.gradedCochainComplexMap`: the chain map induced by a morphism of degree zero commuting
   with the differentials.
+* `TopRep.resGradedCochainComplexIso`: forming a graded complex commutes with group restriction.
 * `TopRep.gradedCochainComplexIso`: an isomorphism preserving and detecting degrees induces
   an isomorphism of complexes when it commutes with the differentials.
 * `TopRep.gradedCochainComplexResMap`: the chain map from the restricted complex of a graded
@@ -433,6 +434,9 @@ noncomputable def resGradedCochainComplexIso (φ : H →* G) :
         exact Subtype.ext (hf n z) }
   exact HomologicalComplex.Hom.isoOfComponents e (fun i j _ ↦ f.comm i j)
 
+-- Neither application lemma is a simp lemma: simplifying the source or target changes a term
+-- of the restricted complex through Functor.mapHomologicalComplex_obj_X, so the indexed
+-- left-hand sides are not in normal form.
 /-- The restriction comparison does not change the underlying homogeneous vector. -/
 theorem resGradedCochainComplexIso_hom_f_apply (φ : H →* G) (n : ℕ)
     (z : ((resFunctor φ).obj ((M.gradedCochainComplex ℳ hρ d hd hdd).X n)).V) :
@@ -440,8 +444,6 @@ theorem resGradedCochainComplexIso_hom_f_apply (φ : H →* G) (n : ℕ)
       z.1 :=
   resGradedCochainComplexHom_f_apply φ n z
 
--- Not a simp lemma: simplifying the source changes a term of the restricted complex through
--- Functor.mapHomologicalComplex_obj_X, so the indexed left-hand side is not in normal form.
 /-- The inverse restriction comparison does not change the underlying homogeneous vector. -/
 theorem resGradedCochainComplexIso_inv_f_apply (φ : H →* G) (n : ℕ)
     (z : (((TopRep.res φ M).gradedCochainComplex ℳ (fun n h ↦ hρ n (φ h))
