@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Convex
 public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
+import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.FunProp
 import Mathlib.Tactic.Positivity
@@ -24,6 +26,12 @@ point along the positive ray.
 The cone is open and convex, is invariant under positive scaling, and has ball estimates uniform
 near each admissible point and vector. These estimates supply the local geometric input for
 constructing strictly inward vector fields on models with corners.
+
+A derivative of dense range of a map into a convex set with nonempty interior sends strictly
+inward directions to strictly inward directions
+(`HasFDerivWithinAt.mapsTo_strictInwardCone`). Hence the strict inward cones of a convex model
+are invariant under the derivatives of `C¹` changes of coordinates, and define a cone in each
+tangent space of a manifold with corners.
 -/
 
 public section
@@ -234,6 +242,78 @@ theorem Convex.isOpen_setOf_mem_strictInwardCone (hs : Convex ℝ s) :
   rw [heq]
   exact isOpen_iUnion fun t ↦ isOpen_iUnion fun _ ↦
     isOpen_interior.preimage (by fun_prop)
+
+/-- **Derivatives preserve strict inwardness.** Let `f` send points of `s` near `x` into a convex
+set `t` with nonempty interior, with `f x ∈ t`. If `f` has a derivative `f'` of dense range within
+`s` at `x`, then `f'` sends directions strictly inward to `s` at `x` to directions strictly inward
+to `t` at `f x`. Without the density of the range this fails, as for a constant map. -/
+theorem HasFDerivWithinAt.mapsTo_strictInwardCone {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] {t : Set F} {f : E → F} {f' : E →L[ℝ] F}
+    (hf : HasFDerivWithinAt f f' s x) (hf' : DenseRange f') (ht : Convex ℝ t)
+    (hti : (interior t).Nonempty) (hft : ∀ᶠ z in 𝓝[s] x, f z ∈ t) (hfx : f x ∈ t) :
+    MapsTo f' (strictInwardCone s x) (strictInwardCone t (f x)) := by
+  intro v hv
+  by_contra hnot
+  -- The segment from `f x` to `f x + f' v` misses the interior of `t`.
+  have hdisj : Disjoint (interior t) (segment ℝ (f x) (f x + f' v)) := by
+    refine disjoint_right.mpr ?_
+    rw [segment_eq_image']
+    rintro _ ⟨τ, hτ, rfl⟩ hmem
+    rw [add_sub_cancel_left] at hmem
+    rcases hτ.1.eq_or_lt with rfl | hτ₀
+    · simp only [zero_smul, add_zero] at hmem
+      exact hnot (strictInwardCone_eq_univ_iff.mpr hmem ▸ mem_univ _)
+    · exact hnot ((ht.mem_strictInwardCone_iff hfx).mpr ⟨τ, hτ₀, hmem⟩)
+  obtain ⟨g, c, hgi, hgs⟩ :=
+    geometric_hahn_banach_open ht.interior isOpen_interior (convex_segment _ _) hdisj
+  -- `g` is bounded by `c` on `t`, since `t` lies in the closure of its interior.
+  have hgt : ∀ q ∈ t, g q ≤ c := by
+    have hcl : closure (interior t) ⊆ {q | g q ≤ c} :=
+      closure_minimal (fun q hq ↦ (hgi q hq).le) (isClosed_le g.continuous continuous_const)
+    rw [ht.closure_interior_eq_closure_of_nonempty_interior hti] at hcl
+    exact fun q hq ↦ hcl (subset_closure hq)
+  have hgfx : g (f x) = c := le_antisymm (hgt _ hfx) (hgs _ (left_mem_segment _ _ _))
+  have hgv : 0 ≤ g (f' v) := by
+    have := hgs _ (right_mem_segment _ _ _)
+    rw [map_add, hgfx] at this
+    linarith
+  -- As `g` is nonzero and `f'` has dense range, `g ∘ f'` is positive somewhere.
+  obtain ⟨w, hw⟩ : ∃ w, 0 < g (f' w) := by
+    by_contra! h
+    have hg : ⇑g = fun _ ↦ 0 := hf'.equalizer g.continuous continuous_const <| funext fun w ↦
+      le_antisymm (h w) (by simpa using h (-w))
+    obtain ⟨q, hq⟩ := hti
+    have := hgi q hq
+    rw [hg] at this hgfx
+    exact this.ne' hgfx.symm
+  -- Perturb `v` towards `w` inside the open cone `strictInwardCone s x`.
+  have hpert : ∀ᶠ ε in 𝓝[>] (0 : ℝ), v + ε • w ∈ strictInwardCone s x := by
+    have : Tendsto (fun ε : ℝ ↦ v + ε • w) (𝓝 0) (𝓝 v) :=
+      (continuous_const.add (continuous_id.smul continuous_const)).tendsto' _ _ (by simp)
+    exact nhdsWithin_le_nhds (this.eventually ((isOpen_strictInwardCone s x).mem_nhds hv))
+  obtain ⟨ε, hεv, hε⟩ := (hpert.and self_mem_nhdsWithin).exists
+  set v' := v + ε • w
+  have hpos : 0 < g (f' v') := by
+    simp only [v', map_add, map_smul, smul_eq_mul]
+    exact add_pos_of_nonneg_of_pos hgv (mul_pos hε hw)
+  -- Small steps along `v'` stay in `s` and are sent into `t`, so `g ∘ f'` is nonpositive at `v'`.
+  obtain ⟨δ, hδ, hint⟩ := add_smul_mem_interior_of_mem_strictInwardCone hεv
+  have hs : ∀ᶠ τ in 𝓝[>] (0 : ℝ), x + τ • v' ∈ s := by
+    filter_upwards [Ioo_mem_nhdsGT hδ] with τ hτ using interior_subset (hint τ hτ)
+  have hd : Tendsto (fun τ : ℝ ↦ τ • v') (𝓝[>] 0) (𝓝 0) :=
+    ((continuous_id.smul continuous_const).tendsto' _ _ (by simp)).mono_left nhdsWithin_le_nhds
+  have hcd : Tendsto (fun τ : ℝ ↦ τ⁻¹ • τ • v') (𝓝[>] 0) (𝓝 v') :=
+    tendsto_const_nhds.congr' <| by
+      filter_upwards [self_mem_nhdsWithin] with τ (hτ : 0 < τ)
+      simp [smul_smul, hτ.ne']
+  have hlim := hf.lim hd hs hcd
+  have hxt : ∀ᶠ τ in 𝓝[>] (0 : ℝ), f (x + τ • v') ∈ t := by
+    refine (tendsto_nhdsWithin_iff.mpr ⟨?_, hs⟩).eventually hft
+    simpa using tendsto_const_nhds.add hd
+  refine hpos.not_ge (le_of_tendsto ((g.continuous.tendsto _).comp hlim) ?_)
+  filter_upwards [hxt, self_mem_nhdsWithin] with τ hτ (hτ₀ : 0 < τ)
+  simp only [Function.comp_apply, map_smul, map_sub, hgfx, smul_eq_mul]
+  exact mul_nonpos_of_nonneg_of_nonpos (inv_nonneg.mpr hτ₀.le) (sub_nonpos.mpr (hgt _ hτ))
 
 namespace TauCeti
 
