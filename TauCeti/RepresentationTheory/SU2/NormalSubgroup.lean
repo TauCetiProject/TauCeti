@@ -156,6 +156,7 @@ theorem ker_le_center_of_mfderiv_ne_zero {E H G : Type*} [NormedAddCommGroup E]
     φ.ker ≤ Subgroup.center SU2 := by
   refine ker_le_center_iff.mpr fun hφ => h ?_
   subst hφ
+  simp only [MonoidHom.one_apply]
   exact mfderiv_const
 
 end SU2
