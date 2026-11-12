@@ -155,9 +155,10 @@ theorem exists_finiteDimensional_forall_fixingSubgroup {X : Scheme.{u}} (f : X �
       (Spec.residueFieldIso (.of K) (f y)).inv ≫ f.residueFieldMap y ≫ φ =
         CommRingCat.ofHom (algebraMap K Ω) := by
     apply Spec.map_injective
-    rw [← ht, Spec.map_comp, Spec.map_comp, Spec.map_comp, Category.assoc,
-      Spec.map_residueFieldIso_inv_eq_fromSpecResidueField]
-    simp only [Category.assoc, Hom.SpecMap_residueFieldMap_fromSpecResidueField]
+    rw [← ht]
+    simp only [Spec.map_comp, Category.assoc]
+    rw [Spec.map_residueFieldIso_inv_eq_fromSpecResidueField,
+      Hom.SpecMap_residueFieldMap_fromSpecResidueField]
   have hφ (k : K) : φ (f.residueFieldMap y ((Spec.residueFieldIso (.of K) (f y)).inv
       (algebraMap K (f y).asIdeal.ResidueField k))) = algebraMap K Ω k := by
     simpa only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom] using congr($h k)
@@ -256,7 +257,7 @@ noncomputable def galoisStalk :
 
 section Concrete
 
-variable {A : Type (u + 1)} [LargeCategory A] {FA : A → A → Type*} {CA : A → Type u}
+variable {A : Type (v + 1)} [LargeCategory A] {FA : A → A → Type*} {CA : A → Type*}
   [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA] [HasColimitsOfSize.{u, u} A]
   [PreservesFilteredColimitsOfSize.{u, u} (CategoryTheory.forget A)]
 
@@ -278,15 +279,10 @@ theorem isOpen_stabilizer_galoisStalk (F : Sheaf (smallEtaleTopology (Spec (.of 
   have ht : (pointSmallEtaleHom _ (SpecMap_algEquiv_comp K Ω σ)).hom.app X t = t :=
     Over.OverMorphism.ext ((pointSmallEtaleHom_hom_app_left _ _ X t).trans (hL σ hσ))
   -- `σ` acts on `p` through `galoisStalkMap`, which sends the germ at `t` to the germ at `t`.
-  refine (Action.ρ_apply_eq_smul ((galoisStalk K Ω A).obj F) σ p).symm.trans ?_
-  refine (ConcreteCategory.congr_hom (galoisStalk_obj_ρ_apply_asHom K Ω A F σ) p).trans ?_
-  -- The stalk of `F` is by definition the stalk of its underlying presheaf, which is the type
-  -- of the germs `toPresheafFiber`.
-  rw [← hp]
-  exact (ConcreteCategory.comp_apply ((pointSmallEtale _).toPresheafFiber X t F.obj)
-    ((galoisStalkMap K Ω A σ).app F) z).symm.trans <|
-      (ConcreteCategory.congr_hom (toPresheafFiber_galoisStalkMap_app K Ω A σ F X t) z).trans
-        (congrArg (fun t' ↦ (pointSmallEtale _).toPresheafFiber X t' F.obj z) ht)
+  subst hp
+  have h := congr($(toPresheafFiber_galoisStalkMap_app K Ω A σ F X t) z)
+  rw [ht] at h
+  exact (ConcreteCategory.comp_apply _ _ z).symm.trans h
 
 end Concrete
 
