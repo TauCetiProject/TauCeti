@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
@@ -19,7 +19,8 @@ uniformly for `σ ∈ [a, b]` as `|t| → ∞`, that is along `cocompact ℝ`
 [DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1)). The statement is additive in `log ‖Γ‖`, so it adds
 up over finite products of shifted Gamma factors.
 
-The proof is the sector form `TauCeti.abs_log_norm_Gamma_sub_stirling_le` at the angle `π / 4`.
+The proof is the sector form `TauCeti.abs_log_norm_Gamma_sub_stirling_le`
+(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Basic.lean`) at the angle `π / 4`.
 Once `|σ| ≤ |t|` the point `σ + i t` has `|arg| ≤ 3π/4`, and the sector main term
 `(σ - 1/2) log ‖s‖ - t arg s - σ` differs from the vertical one by two terms of size `O(1 / |t|)`:
 
