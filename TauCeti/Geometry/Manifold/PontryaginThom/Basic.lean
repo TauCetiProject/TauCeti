@@ -25,7 +25,7 @@ framed normal bundle with an open neighbourhood of `S`, through an open embeddin
 (`TauCeti.IsFramedTube.pontryaginThomCollapse_eq_zero_iff`). Near a point where a map `σ` reads in
 the tube as `τ ∘ g`, the collapse along `σ` is the normal coordinate `Prod.snd ∘ g`, so it is a
 local homeomorphism there as soon as the normal coordinate is
-(`TauCeti.IsFramedTube.isLocalHomeomorphOn_pontryaginThomCollapse_comp`). Only the topology of
+(`TauCeti.isLocalHomeomorphOn_pontryaginThomCollapse_comp`). Only the topology of
 the tube is used; the ambient space `M` is an arbitrary Hausdorff space, for instance a closed
 manifold, and the fibre `V` an arbitrary topological space with a zero.
 
@@ -48,7 +48,7 @@ of the tube to `s₀`.
 * `TauCeti.IsFramedTube f τ`: `τ : S × V → M` is an open embedding extending `f` along the zero
   section.
 * `TauCeti.pontryaginThomCollapse τ`: the Pontryagin–Thom collapse `M → OnePoint V`.
-* `TauCeti.IsFramedTube.isLocalHomeomorphOn_pontryaginThomCollapse_comp`: the collapse along a map
+* `TauCeti.isLocalHomeomorphOn_pontryaginThomCollapse_comp`: the collapse along a map
   is a local homeomorphism where the normal coordinate of the map is.
 * `TauCeti.pontryaginThomCollapseMap`: the collapse as a continuous map.
 * `TauCeti.pontryaginThomCollapseMap_homotopic`: isotopic tubes have homotopic collapses.
@@ -111,6 +111,28 @@ theorem pontryaginThomCollapse_eq_coe_iff (hτ : Injective τ) {m : M} {v : V} :
   rw [pontryaginThomCollapse, onePointCollapse_eq_coe_iff hτ]
   exact ⟨fun ⟨⟨x, w⟩, hw, hm⟩ ↦ ⟨x, hw ▸ hm⟩, fun ⟨x, hm⟩ ↦ ⟨(x, v), rfl, hm⟩⟩
 
+/-- Near a point where a map reads in the tube as `τ ∘ g`, its Pontryagin–Thom collapse is the
+normal coordinate `Prod.snd ∘ g` followed by the inclusion `V → OnePoint V`. -/
+theorem pontryaginThomCollapse_comp_eventuallyEq (hτ : Injective τ) {X : Type*} {l : Filter X}
+    {σ : X → M} {g : X → S × V} (hg : τ ∘ g =ᶠ[l] σ) :
+    pontryaginThomCollapse τ ∘ σ =ᶠ[l] ((↑) : V → OnePoint V) ∘ Prod.snd ∘ g := by
+  filter_upwards [hg] with m hm
+  rw [comp_apply, ← hm, comp_apply, pontryaginThomCollapse_apply hτ]
+  simp only [comp_apply]
+
+/-- **The collapse along a map is a local homeomorphism where its normal coordinate is.** If a map
+`σ` reads in the tube as `τ ∘ g` near each point of `s`, and its normal coordinate `Prod.snd ∘ g`
+is a local homeomorphism on `s`, then so is the composite of `σ` with the Pontryagin–Thom
+collapse. -/
+theorem isLocalHomeomorphOn_pontryaginThomCollapse_comp [TopologicalSpace V] {X : Type*}
+    [TopologicalSpace X] (hτ : Injective τ) {σ : X → M} {g : X → S × V} {s : Set X}
+    (hg : ∀ x ∈ s, τ ∘ g =ᶠ[𝓝 x] σ) (hν : IsLocalHomeomorphOn (Prod.snd ∘ g) s) :
+    IsLocalHomeomorphOn (pontryaginThomCollapse τ ∘ σ) s := by
+  have hcoe : IsLocalHomeomorphOn ((↑) : V → OnePoint V) ((Prod.snd ∘ g) '' s) :=
+    OnePoint.isOpenEmbedding_coe.isLocalHomeomorph.isLocalHomeomorphOn.mono (subset_univ _)
+  exact (hcoe.comp hν (mapsTo_image _ _)).congr_of_eventuallyEq fun x hx ↦
+    (pontryaginThomCollapse_comp_eventuallyEq hτ (hg x hx)).symm
+
 namespace IsFramedTube
 
 variable [TopologicalSpace S] [TopologicalSpace M] [TopologicalSpace V] [Zero V] {f : S → M}
@@ -126,29 +148,6 @@ when it lies on the core of the framed tube. -/
 theorem pontryaginThomCollapse_eq_zero_iff (h : IsFramedTube f τ) {m : M} :
     pontryaginThomCollapse τ m = (0 : V) ↔ m ∈ range f := by
   simp [pontryaginThomCollapse_eq_coe_iff h.isOpenEmbedding.injective, h.apply_zero, mem_range]
-
-variable {X : Type*} [TopologicalSpace X]
-
-/-- Near a point where a map reads in the tube as `τ ∘ g`, its Pontryagin–Thom collapse is the
-normal coordinate `Prod.snd ∘ g` followed by the inclusion `V → OnePoint V`. -/
-theorem pontryaginThomCollapse_comp_eventuallyEq (h : IsFramedTube f τ) {σ : X → M} {x : X}
-    {g : X → S × V} (hg : τ ∘ g =ᶠ[𝓝 x] σ) :
-    pontryaginThomCollapse τ ∘ σ =ᶠ[𝓝 x] ((↑) : V → OnePoint V) ∘ Prod.snd ∘ g := by
-  filter_upwards [hg] with m hm
-  rw [comp_apply, ← hm, comp_apply, pontryaginThomCollapse_apply h.isOpenEmbedding.injective]
-  simp only [comp_apply]
-
-/-- **The collapse along a map is a local homeomorphism where its normal coordinate is.** If a map
-`σ` reads in the tube as `τ ∘ g` near `x`, and its normal coordinate `Prod.snd ∘ g` is a local
-homeomorphism at `x`, then so is the composite of `σ` with the Pontryagin–Thom collapse. -/
-theorem isLocalHomeomorphOn_pontryaginThomCollapse_comp (h : IsFramedTube f τ) {σ : X → M} {x : X}
-    {g : X → S × V} (hg : τ ∘ g =ᶠ[𝓝 x] σ) (hν : IsLocalHomeomorphOn (Prod.snd ∘ g) {x}) :
-    IsLocalHomeomorphOn (pontryaginThomCollapse τ ∘ σ) {x} := by
-  have hcoe : IsLocalHomeomorphOn ((↑) : V → OnePoint V) ((Prod.snd ∘ g) '' {x}) :=
-    OnePoint.isOpenEmbedding_coe.isLocalHomeomorph.isLocalHomeomorphOn.mono (subset_univ _)
-  refine (hcoe.comp hν (mapsTo_image _ _)).congr_of_eventuallyEq fun m hm ↦ ?_
-  rw [mem_singleton_iff.1 hm]
-  exact (h.pontryaginThomCollapse_comp_eventuallyEq hg).symm
 
 end IsFramedTube
 

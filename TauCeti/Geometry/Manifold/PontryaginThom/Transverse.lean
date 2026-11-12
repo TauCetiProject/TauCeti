@@ -17,13 +17,14 @@ Let `τ : S × V → Q` be a framed tube around `f : S → Q` (`TauCeti.IsFramed
 `σ : M → Q` enters the tube, `σ` reads in the tube as `τ ∘ g`, and `c ∘ σ` is the
 **normal coordinate** `Prod.snd ∘ g` followed by the inclusion `V → OnePoint V`. So `c ∘ σ` is a
 local homeomorphism at `x` as soon as the normal coordinate is
-(`TauCeti.IsFramedTube.isLocalHomeomorphOn_pontryaginThomCollapse_comp`).
+(`TauCeti.isLocalHomeomorphOn_pontryaginThomCollapse_comp`).
 
-Let the tube be a smooth local diffeomorphism at `(y, 0)`, let `σ` be smooth near `x` with
-`σ x = f y`, and let `dim M = dim V`. If `σ` is transverse to `f` there,
-`im dσ_x + im df_y = T_{σ x} Q`, then the normal coordinate has a surjective, hence bijective,
-differential at `x`. The inverse function theorem then makes the normal coordinate a local
-diffeomorphism, and `c ∘ σ` a local homeomorphism at `x`
+Let the tube be a smooth local diffeomorphism at `(y, 0)` and let `σ` read in the tube as `τ ∘ g`
+near `x`, with `g x = (y, 0)`. If `σ` is transverse to `f` there, `im dσ_x + im df_y = T_{σ x} Q`,
+then the normal coordinate has a surjective differential at `x`
+(`TauCeti.IsFramedTube.surjective_mfderiv_snd_comp_of_transverse`). If moreover `σ` is smooth
+near `x` and `dim M = dim V`, this differential is bijective. The inverse function theorem then
+makes the normal coordinate a local diffeomorphism, and `c ∘ σ` a local homeomorphism at `x`
 (`TauCeti.IsFramedTube.isLocalHomeomorphOn_pontryaginThomCollapse_comp_of_transverse`). This is
 the transversality input of the degree computation for a map meeting the core of a framed tube in
 one point: such a map, transverse to the core there, has collapse of degree `±1`
@@ -31,6 +32,8 @@ one point: such a map, transverse to the core there, has collapse of degree `±1
 
 ## Main results
 
+* `TauCeti.IsFramedTube.surjective_mfderiv_snd_comp_of_transverse`: the normal coordinate of a map
+  transverse to the core of a smooth tube is a submersion at the meeting point.
 * `TauCeti.IsFramedTube.exists_isLocalDiffeomorphAt_snd_comp_of_transverse`: the normal coordinate
   of a smooth map transverse to the core of a smooth tube, from a manifold of the dimension of the
   fibre, is a local diffeomorphism at the meeting point.
@@ -66,38 +69,38 @@ variable {𝕂 : Type*} [RCLike 𝕂]
   {IS : ModelWithCorners 𝕂 ES HS} {S : Type*} [TopologicalSpace S] [ChartedSpace HS S]
   {EQ : Type*} [NormedAddCommGroup EQ] [NormedSpace 𝕂 EQ] {HQ : Type*} [TopologicalSpace HQ]
   {IQ : ModelWithCorners 𝕂 EQ HQ} {Q : Type*} [TopologicalSpace Q] [ChartedSpace HQ Q]
-  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕂 EM] [FiniteDimensional 𝕂 EM]
-  {HM : Type*} [TopologicalSpace HM]
+  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕂 EM] {HM : Type*} [TopologicalSpace HM]
   {IM : ModelWithCorners 𝕂 EM HM} {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
-  {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕂 V] [FiniteDimensional 𝕂 V]
-  {n : WithTop ℕ∞} [IsManifold IS n S] [IsManifold IQ n Q] [IsManifold IM n M]
-  {f : S → Q} {τ : S × V → Q}
+  {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕂 V]
+  {n : WithTop ℕ∞} {f : S → Q} {τ : S × V → Q}
 
-omit [FiniteDimensional 𝕂 EM] [FiniteDimensional 𝕂 V] [IsManifold IS n S] [IsManifold IQ n Q]
-  [IsManifold IM n M] in
-/-- The differential at `x` of the normal coordinate `m ↦ (L (σ m)).2` of a map `σ` transverse to
-`f` at `σ x = f y`, where `L` is a local inverse of the tube at `(y, 0)`, is surjective. -/
-private theorem surjective_mfderiv_snd_comp_localInverse_comp (h : IsFramedTube f τ)
-    {y : S} (hτ : IsLocalDiffeomorphAt (IS.prod 𝓘(𝕂, V)) IQ n τ (y, 0)) (hn0 : n ≠ 0)
-    {σ : M → Q} {x : M} (hσd : MDifferentiableAt IM IQ σ x) (hy : f y = σ x)
+/-- **The normal coordinate of a transverse map is a submersion.** Let `τ : S × V → Q` be a framed
+tube around `f` which is a `C^n` local diffeomorphism at `(y, 0)`, `n ≠ 0`, and let `σ : M → Q`
+read in the tube as `τ ∘ g` near `x`, for a map `g` differentiable at `x` with `g x = (y, 0)`. If
+`σ` is transverse to `f` there, `im dσ_x + im df_y = T_{σ x} Q`, then the normal coordinate
+`Prod.snd ∘ g` has surjective differential at `x`. -/
+theorem surjective_mfderiv_snd_comp_of_transverse (h : IsFramedTube f τ) {y : S}
+    (hτ : IsLocalDiffeomorphAt (IS.prod 𝓘(𝕂, V)) IQ n τ (y, 0)) (hn : n ≠ 0) {σ : M → Q}
+    {x : M} {g : M → S × V} (hg : τ ∘ g =ᶠ[𝓝 x] σ) (hgx : g x = (y, 0))
+    (hgd : MDifferentiableAt IM (IS.prod 𝓘(𝕂, V)) g x)
     (htrans : (mfderiv IM IQ σ x).range ⊔
       (((tangentSpaceCast IQ (f y) (σ x)).toContinuousLinearMap).comp
         (mfderiv IS IQ f y)).range = ⊤) :
-    Surjective (mfderiv IM 𝓘(𝕂, V) (Prod.snd ∘ hτ.localInverse ∘ σ) x) := by
-  set L := hτ.localInverse
-  have hτy : τ (y, 0) = σ x := (h.apply_zero y).trans hy
-  have hτd : MDifferentiableAt (IS.prod 𝓘(𝕂, V)) IQ τ (y, 0) := hτ.mdifferentiableAt hn0
-  have hLd : MDifferentiableAt IQ (IS.prod 𝓘(𝕂, V)) L (σ x) :=
-    hτy ▸ hτ.mdifferentiableAt_localInverse hn0
-  -- Tangent spaces are the model spaces by definition; read the three differentials there.
-  let dσ : EM →L[𝕂] EQ := mfderiv IM IQ σ x
+    Surjective (mfderiv IM 𝓘(𝕂, V) (Prod.snd ∘ g) x) := by
+  have hτd : MDifferentiableAt (IS.prod 𝓘(𝕂, V)) IQ τ (y, 0) := hτ.mdifferentiableAt hn
+  -- Tangent spaces are the model spaces by definition; read the differentials there.
   let dτ : ES × V →L[𝕂] EQ := mfderiv (IS.prod 𝓘(𝕂, V)) IQ τ (y, 0)
-  let dL : EQ →L[𝕂] ES × V := mfderiv IQ (IS.prod 𝓘(𝕂, V)) L (σ x)
-  -- The differential of `L` inverts that of `τ`.
-  have hLτ (p : ES × V) : dL (dτ p) = p := by
-    simp only [dL]
-    rw [← hτy]
-    exact (hτ.mfderivToContinuousLinearEquiv hn0).symm_apply_apply p
+  let dg : EM →L[𝕂] ES × V := mfderiv IM (IS.prod 𝓘(𝕂, V)) g x
+  -- `dτ` is injective, as `τ` is a local diffeomorphism at `(y, 0) = g x`.
+  have hdτ : Injective dτ := (hτ.mfderivToContinuousLinearEquiv hn).injective
+  have hτD : HasMFDerivAt (IS.prod 𝓘(𝕂, V)) IQ τ (g x) dτ := by
+    rw [hgx]
+    exact hτd.hasMFDerivAt
+  -- The chain rule gives `dσ = dτ ∘ dg`; applied to `u`, the composite is `dτ (dg u)` by
+  -- definition, through the identification of tangent spaces with model spaces.
+  have hσd (u : EM) : mfderiv IM IQ σ x u = dτ (dg u) := by
+    rw [((hτD.comp x hgd.hasMFDerivAt).congr_of_eventuallyEq_abuse hg.symm).mfderiv]
+    rfl
   -- The differential of `f` is that of `τ` along the zero section.
   have hfd (v : ES) : mfderiv IS IQ f y v = dτ (v, 0) := by
     have hz : HasMFDerivAt IS (IS.prod 𝓘(𝕂, V)) (fun s ↦ (s, (0 : V))) y
@@ -106,25 +109,26 @@ private theorem surjective_mfderiv_snd_comp_localInverse_comp (h : IsFramedTube 
     have : mfderiv IS IQ f y = dτ.comp (ContinuousLinearMap.inl 𝕂 ES V) :=
       ((hτd.hasMFDerivAt.comp y hz).congr_of_eventuallyEq_abuse
         (Eventually.of_forall fun s ↦ (h.apply_zero s).symm)).mfderiv
-    -- `dτ ∘ inl` applied to `v` is `dτ (v, 0)`; the coercions live on the tangent spaces.
+    -- `dτ ∘ inl` applied to `v` is `dτ (v, 0)` by definition, as above.
     rw [this]
     rfl
-  -- The differential of the normal coordinate is `snd ∘ dL ∘ dσ`.
-  have hνd : mfderiv IM 𝓘(𝕂, V) (Prod.snd ∘ L ∘ σ) x =
-      (ContinuousLinearMap.snd 𝕂 ES V).comp (dL.comp dσ) :=
-    ((hasMFDerivAt_snd _).comp x (hLd.hasMFDerivAt.comp x hσd.hasMFDerivAt)).mfderiv
-  -- It is surjective by transversality.
+  -- The differential of the normal coordinate sends `u` to `(dg u).2`, again by definition.
+  have hνd (u : EM) : mfderiv IM 𝓘(𝕂, V) (Prod.snd ∘ g) x u = (dg u).2 := by
+    rw [((hasMFDerivAt_snd _).comp x hgd.hasMFDerivAt).mfderiv]
+    rfl
+  -- By transversality `dτ (0, w) = dσ u + df v = dτ (dg u + (v, 0))`, and `dτ` is injective.
   intro (w : V)
   obtain ⟨⟨u, v⟩, huv⟩ :=
     LinearMap.range_eq_top.1 ((LinearMap.range_coprod _ _).trans htrans) (dτ (0, w))
-  refine ⟨u, ?_⟩
-  have huv' : dσ u + dτ (v, 0) = dτ (0, w) := by
-    rw [← hfd v]
-    exact huv
-  have := congrArg (fun t ↦ (dL t).2) huv'
-  simp only [map_add, hLτ, Prod.snd_add, add_zero] at this
-  rw [hνd]
-  exact this
+  simp only [LinearMap.coprod_apply, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe] at huv
+  change EM at u
+  change ES at v
+  -- `huv` is `dσ u + df v = dτ (0, w)`: `tangentSpaceCast` is the identity by definition (Mathlib
+  -- has no `_apply` lemma for it), and the tangent spaces of `Q` are `EQ` by definition.
+  have hdg : dg u + (v, 0) = (0, w) := hdτ (by rw [map_add, ← hσd, ← hfd]; exact huv)
+  have hw : (dg u).2 = w := by simpa using congrArg Prod.snd hdg
+  exact ⟨u, (hνd u).trans hw⟩
 
 /-- **The normal coordinate of a transverse map is a local diffeomorphism.** Let `τ : S × V → Q`
 be a framed tube around `f` which is a `C^n` local diffeomorphism at `(y, 0)`, `1 ≤ n`, and let
@@ -132,7 +136,8 @@ be a framed tube around `f` which is a `C^n` local diffeomorphism at `(y, 0)`, `
 `σ x = f y`. If `σ` is transverse to `f` there, `im dσ_x + im df_y = T_{σ x} Q`, then near `x` the
 map `σ` reads in the tube as `τ ∘ g` with normal coordinate `Prod.snd ∘ g` a `C^n` local
 diffeomorphism at `x`. -/
-theorem exists_isLocalDiffeomorphAt_snd_comp_of_transverse (h : IsFramedTube f τ)
+theorem exists_isLocalDiffeomorphAt_snd_comp_of_transverse [FiniteDimensional 𝕂 EM]
+    [FiniteDimensional 𝕂 V] [IsManifold IM n M] (h : IsFramedTube f τ)
     {y : S} (hτ : IsLocalDiffeomorphAt (IS.prod 𝓘(𝕂, V)) IQ n τ (y, 0)) {σ : M → Q} {x : M}
     {s : Set M} (hs : s ∈ 𝓝 x) (hσ : ContMDiffOn IM IQ n σ s) (hIx : IM.IsInteriorPoint x)
     (hn : 1 ≤ n) (hdim : Module.finrank 𝕂 EM = Module.finrank 𝕂 V) (hy : f y = σ x)
@@ -152,26 +157,32 @@ theorem exists_isLocalDiffeomorphAt_snd_comp_of_transverse (h : IsFramedTube f �
   have hxU : x ∈ U := ⟨mem_interior_iff_mem_nhds.2 hs, by
     simpa only [mem_preimage, ← hτy] using hτ.localInverse_mem_source⟩
   have hLσ : ∀ m ∈ U, τ (L (σ m)) = σ m := fun m hm ↦ hτ.localInverse_right_inv hm.2
+  have hLσx : (L ∘ σ) x = (y, 0) := by
+    rw [comp_apply, ← hτy]
+    exact hτ.localInverse_left_inv hτ.localInverse_mem_target
+  have hLσd : MDifferentiableAt IM (IS.prod 𝓘(𝕂, V)) (L ∘ σ) x :=
+    MDifferentiableAt.comp x (hτy ▸ hτ.mdifferentiableAt_localInverse hn0)
+      ((hσ.contMDiffAt hs).mdifferentiableAt hn0)
   have hνsmooth : ContMDiffOn IM 𝓘(𝕂, V) n (fun m ↦ (L (σ m)).2) U :=
     contMDiff_snd.comp_contMDiffOn
       (hτ.contMDiffOn_localInverse.comp (hσ.mono fun m hm ↦ interior_subset hm.1)
         fun m hm ↦ hm.2)
   -- The differential of the normal coordinate is surjective, hence bijective in equal
   -- dimensions, and the inverse function theorem applies.
-  have hsurj := h.surjective_mfderiv_snd_comp_localInverse_comp hτ hn0
-    ((hσ.contMDiffAt hs).mdifferentiableAt hn0) hy htrans
+  have hg : τ ∘ L ∘ σ =ᶠ[𝓝 x] σ := eventually_of_mem (hUopen.mem_nhds hxU) hLσ
+  have hsurj := h.surjective_mfderiv_snd_comp_of_transverse hτ hn0 hg hLσx hLσd htrans
   have hinj : Injective (mfderiv IM 𝓘(𝕂, V) (Prod.snd ∘ L ∘ σ) x) :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).2 hsurj
-  exact ⟨L ∘ σ, eventually_of_mem (hUopen.mem_nhds hxU) hLσ,
-    isLocalDiffeomorphAt_of_injective_mfderiv hνsmooth hUopen hxU hIx hn hinj hdim⟩
+  exact ⟨L ∘ σ, hg, isLocalDiffeomorphAt_of_injective_mfderiv hνsmooth hUopen hxU hIx hn hinj hdim⟩
 
 /-- **The collapse along a transverse map is a local homeomorphism.** Let `τ : S × V → Q` be a
 framed tube around `f` which is a `C^n` local diffeomorphism at `(y, 0)`, `1 ≤ n`, and let
 `σ : M → Q` be `C^n` near an interior point `x` of a manifold of the dimension of `V`, with
 `σ x = f y`. If `σ` is transverse to `f` there, `im dσ_x + im df_y = T_{σ x} Q`, then the
 composite of `σ` with the Pontryagin–Thom collapse is a local homeomorphism at `x`. -/
-theorem isLocalHomeomorphOn_pontryaginThomCollapse_comp_of_transverse (h : IsFramedTube f τ)
-    {y : S} (hτ : IsLocalDiffeomorphAt (IS.prod 𝓘(𝕂, V)) IQ n τ (y, 0)) {σ : M → Q} {x : M}
+theorem isLocalHomeomorphOn_pontryaginThomCollapse_comp_of_transverse [FiniteDimensional 𝕂 EM]
+    [FiniteDimensional 𝕂 V] [IsManifold IM n M] (h : IsFramedTube f τ) {y : S}
+    (hτ : IsLocalDiffeomorphAt (IS.prod 𝓘(𝕂, V)) IQ n τ (y, 0)) {σ : M → Q} {x : M}
     {s : Set M} (hs : s ∈ 𝓝 x) (hσ : ContMDiffOn IM IQ n σ s) (hIx : IM.IsInteriorPoint x)
     (hn : 1 ≤ n) (hdim : Module.finrank 𝕂 EM = Module.finrank 𝕂 V) (hy : f y = σ x)
     (htrans : (mfderiv IM IQ σ x).range ⊔
@@ -180,7 +191,8 @@ theorem isLocalHomeomorphOn_pontryaginThomCollapse_comp_of_transverse (h : IsFra
     IsLocalHomeomorphOn (pontryaginThomCollapse τ ∘ σ) {x} := by
   obtain ⟨g, hg, hν⟩ :=
     h.exists_isLocalDiffeomorphAt_snd_comp_of_transverse hτ hs hσ hIx hn hdim hy htrans
-  refine h.isLocalHomeomorphOn_pontryaginThomCollapse_comp hg ?_
+  refine isLocalHomeomorphOn_pontryaginThomCollapse_comp h.isOpenEmbedding.injective
+    (by rintro _ rfl; exact hg) ?_
   exact IsLocalDiffeomorphOn.isLocalHomeomorphOn (I := IM) (J := 𝓘(𝕂, V)) (n := n)
     fun ⟨_, hz⟩ ↦ (mem_singleton_iff.1 hz).symm ▸ hν
 
@@ -193,8 +205,7 @@ variable {ES : Type*} [NormedAddCommGroup ES] [NormedSpace ℝ ES] {HS : Type*}
   [ChartedSpace HS S] [CompactSpace S]
   {EQ : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] {HQ : Type*} [TopologicalSpace HQ]
   {IQ : ModelWithCorners ℝ EQ HQ} {Q : Type*} [TopologicalSpace Q] [ChartedSpace HQ Q] [T2Space Q]
-  {n : WithTop ℕ∞} [IsManifold IS n S] [IsManifold IQ n Q]
-  {k : ℕ} {f : S → Q} {τ : S × (Fin k → ℝ) → Q}
+  {n : WithTop ℕ∞} {k : ℕ} {f : S → Q} {τ : S × (Fin k → ℝ) → Q}
 
 /-- **The collapse onto the sphere along a transverse map is a local homeomorphism.** For a framed
 tube with fibre `ℝᵏ` which is a `C^n` local diffeomorphism at `(y, 0)`, `1 ≤ n`, and a map `σ`
@@ -222,13 +233,12 @@ end Sphere
 
 section Degree
 
-variable {ES : Type} [NormedAddCommGroup ES] [NormedSpace ℝ ES] {HS : Type} [TopologicalSpace HS]
-  {IS : ModelWithCorners ℝ ES HS} {S : Type} [TopologicalSpace S] [ChartedSpace HS S]
-  [CompactSpace S]
-  {EQ : Type} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] {HQ : Type} [TopologicalSpace HQ]
+variable {ES : Type*} [NormedAddCommGroup ES] [NormedSpace ℝ ES] {HS : Type*}
+  [TopologicalSpace HS] {IS : ModelWithCorners ℝ ES HS} {S : Type} [TopologicalSpace S]
+  [ChartedSpace HS S] [CompactSpace S]
+  {EQ : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] {HQ : Type*} [TopologicalSpace HQ]
   {IQ : ModelWithCorners ℝ EQ HQ} {Q : Type} [TopologicalSpace Q] [ChartedSpace HQ Q] [T2Space Q]
-  {n : WithTop ℕ∞} [IsManifold IS n S] [IsManifold IQ n Q]
-  {k : ℕ} {f : S → Q} {τ : S × (Fin k → ℝ) → Q}
+  {n : WithTop ℕ∞} {k : ℕ} {f : S → Q} {τ : S × (Fin k → ℝ) → Q}
   {M E : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
   [IsManifold 𝓘(ℝ, E) n M]
