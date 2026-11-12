@@ -44,6 +44,10 @@ admissible functions through their boundary traces:
 * `ComplexMethodSpace.ofInter`: the intersection embeds with `‖x‖_θ ≤ ‖x‖_{X₀ ∩ X₁}`
   (`ComplexMethodSpace.norm_ofInter_le`), using the admissible functions `exp (δ (z - θ)²) x`
   with `δ → 0`;
+* `ComplexMethodSpace.exists_toSum_eq_and_norm_le`: more generally, the value at `θ` of a bounded
+  holomorphic function on the strip whose boundary values are continuous functions into `X_j`
+  bounded by `M`, not necessarily vanishing at infinity, lies in `[X₀, X₁]_θ` with norm at most
+  `M`;
 * `ComplexMethodSpace.map`: continuous linear maps `T₀ : X₀ → Y₀`, `T₁ : X₁ → Y₁` that agree on the
   intersection, with norms at most `M₀, M₁ ≥ 0`, induce a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at
   most `M₀ ^ (1 - θ) * M₁ ^ θ` (`ComplexMethodSpace.norm_map_le`), in particular of norm at most
@@ -641,6 +645,67 @@ most one. -/
 theorem opNorm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
     ‖(ofInter θ : C.inter →L[ℂ] C.ComplexMethodSpace θ)‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by simpa using norm_ofInter_le hθ x
+
+/-- The boundary traces of `exp (δ (z - θ)²) F z` for a function `F` with continuous boundary
+values `G₀`, `G₁` bounded by `M`; the Gaussian factor makes them vanish at infinity. -/
+private def gaussianSmulTrace {δ : ℝ} (hδ : 0 < δ) (θ : ℝ) {G₀ : ℝ → X₀} {G₁ : ℝ → X₁}
+    (hG₀ : Continuous G₀) (hG₁ : Continuous G₁) {M : ℝ} (hM₀ : ∀ t, ‖G₀ t‖ ≤ M)
+    (hM₁ : ∀ t, ‖G₁ t‖ ≤ M) : C₀(ℝ, X₀) × C₀(ℝ, X₁) :=
+  (⟨⟨fun t => gaussian δ θ (t * I) • G₀ t,
+      ((differentiable_gaussian δ θ).continuous.comp (by fun_prop)).smul hG₀⟩,
+      squeeze_zero_norm (fun t => (norm_smul _ _).trans_le
+        (mul_le_mul_of_nonneg_left (hM₀ t) (norm_nonneg _)))
+        (by simpa using (tendsto_norm_gaussian hδ θ 0).mul_const M)⟩,
+    ⟨⟨fun t => gaussian δ θ (1 + t * I) • G₁ t,
+      ((differentiable_gaussian δ θ).continuous.comp (by fun_prop)).smul hG₁⟩,
+      squeeze_zero_norm (fun t => (norm_smul _ _).trans_le
+        (mul_le_mul_of_nonneg_left (hM₁ t) (norm_nonneg _)))
+        (by simpa using (tendsto_norm_gaussian hδ θ 1).mul_const M)⟩)
+
+/-- **Bounded boundary values.** Let `F` be holomorphic on the open strip `0 < re z < 1`,
+continuous and bounded on the closed strip, with values `F (t * I) = G₀ t ∈ X₀` and
+`F (1 + t * I) = G₁ t ∈ X₁` on the boundary lines, where `G₀` and `G₁` are continuous and bounded
+by `M`. Then `F θ` lies in `[X₀, X₁]_θ`, with norm at most `M`, for `0 ≤ θ ≤ 1`. Unlike the traces
+of an admissible function, `G₀` and `G₁` need not vanish at infinity. -/
+theorem exists_toSum_eq_and_norm_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) {F : ℂ → C.SumSpace}
+    (hF : DiffContOnCl ℂ F (verticalStrip 0 1))
+    (hB : Bornology.IsBounded (F '' verticalClosedStrip 0 1)) {G₀ : ℝ → X₀} {G₁ : ℝ → X₁}
+    (hG₀ : Continuous G₀) (hG₁ : Continuous G₁) (hF₀ : ∀ t : ℝ, F (t * I) = C.fstToSum (G₀ t))
+    (hF₁ : ∀ t : ℝ, F (1 + t * I) = C.sndToSum (G₁ t)) {M : ℝ} (hM₀ : ∀ t, ‖G₀ t‖ ≤ M)
+    (hM₁ : ∀ t, ‖G₁ t‖ ≤ M) :
+    ∃ u : C.ComplexMethodSpace θ, toSum u = F θ ∧ ‖u‖ ≤ M := by
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hM₀ 0)
+  obtain ⟨K, hK⟩ := isBounded_iff_forall_norm_le.1 hB
+  -- the Gaussian multiple `exp (δ (z - θ)²) F z` is admissible, with the traces above
+  have hstrip (δ : ℝ) (hδ : 0 < δ) : C.IsStripFunction (fun z => gaussian δ θ z • F z)
+      (gaussianSmulTrace hδ θ hG₀ hG₁ hM₀ hM₁) := by
+    refine ⟨(differentiable_gaussian δ θ).diffContOnCl.smul hF,
+      isBounded_iff_forall_norm_le.2 ⟨Real.exp (δ * (|θ| + 1) ^ 2) * K, ?_⟩,
+      fun t => by simp [gaussianSmulTrace, hF₀], fun t => by simp [gaussianSmulTrace, hF₁]⟩
+    rintro _ ⟨z, hz, rfl⟩
+    rw [norm_smul]
+    exact mul_le_mul (norm_gaussian_le hδ.le θ hz) (hK _ (mem_image_of_mem F hz))
+      (norm_nonneg _) (Real.exp_pos _).le
+  have hu (δ : ℝ) (hδ : 0 < δ) :
+      toSum (mk θ ⟨_, _, hstrip δ hδ⟩ : C.ComplexMethodSpace θ) = F θ := by
+    rw [toSum_mk, stripEval_apply, stripFunction_eq (hstrip δ hδ) (by simpa using hθ)]
+    simp [gaussian]
+  refine ⟨_, hu 1 one_pos, ?_⟩
+  have hnorm (δ : ℝ) (hδ : 0 < δ) :
+      ‖(mk θ ⟨_, _, hstrip 1 one_pos⟩ : C.ComplexMethodSpace θ)‖ ≤
+        Real.exp (δ * (|θ| + 1) ^ 2) * M := by
+    rw [ext ((hu 1 one_pos).trans (hu δ hδ).symm)]
+    refine (norm_mk_le _).trans (norm_prod_le_iff.2
+      ⟨(ZeroAtInftyContinuousMap.norm_le (by positivity)).2 fun t => ?_,
+        (ZeroAtInftyContinuousMap.norm_le (by positivity)).2 fun t => ?_⟩)
+    · exact (norm_smul _ _).trans_le (mul_le_mul (norm_gaussian_le hδ.le θ (by simp)) (hM₀ t)
+        (norm_nonneg _) (Real.exp_pos _).le)
+    · exact (norm_smul _ _).trans_le (mul_le_mul (norm_gaussian_le hδ.le θ (by simp)) (hM₁ t)
+        (norm_nonneg _) (Real.exp_pos _).le)
+  have hlim : Tendsto (fun δ : ℝ => Real.exp (δ * (|θ| + 1) ^ 2) * M) (𝓝[>] 0) (𝓝 M) := by
+    have : Continuous fun δ : ℝ => Real.exp (δ * (|θ| + 1) ^ 2) * M := by fun_prop
+    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hnorm)
 
 /-- For the couple `(X, X)`, the norm of `[X, X]_θ` is the norm of `X`: the inclusion into the sum
 space, which is `X`, is an isometry. -/
