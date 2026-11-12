@@ -62,7 +62,7 @@ private theorem exists_eq_tmul_one_of_isIdempotentElem_of_isReduced
         one_smul]
     exact h.trans (by simp [hc, Algebra.TensorProduct.one_def])
 
-/-- The finite-type case of `exists_eq_tmul_one_of_isIdempotentElem`. -/
+/-- The finite-type case of `IsIdempotentElem.exists_isIdempotentElem_eq_tmul_one`. -/
 private theorem exists_eq_tmul_one_of_isIdempotentElem_of_finiteType
     {k A B : Type*} [Field k] [IsAlgClosed k]
     [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
@@ -95,7 +95,7 @@ private theorem exists_eq_tmul_one_of_isIdempotentElem_of_finiteType
 
 /-- An idempotent in a family over any parameter algebra is scalar when the other factor has
 preconnected spectrum and the ground field is algebraically closed. -/
-theorem exists_eq_tmul_one_of_isIdempotentElem
+theorem _root_.IsIdempotentElem.exists_isIdempotentElem_eq_tmul_one
     {k A B : Type*} [Field k] [IsAlgClosed k]
     [CommRing A] [Algebra k A] [PreconnectedSpace (PrimeSpectrum A)]
     [CommRing B] [Algebra k B]
@@ -143,7 +143,7 @@ theorem connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed
       (FaithfulSMul.algebraMap_injective k A)
   apply connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr
   intro e he
-  obtain ⟨c, hcid, hec⟩ := exists_eq_tmul_one_of_isIdempotentElem he
+  obtain ⟨c, hcid, hec⟩ := he.exists_isIdempotentElem_eq_tmul_one
   rcases hcid.eq_zero_or_eq_one_of_preconnectedSpace with h | h <;>
     simp [hec, h, Algebra.TensorProduct.one_def]
 
