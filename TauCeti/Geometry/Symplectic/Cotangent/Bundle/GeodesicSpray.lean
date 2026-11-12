@@ -303,7 +303,7 @@ theorem IsLeviCivitaConnection.hamiltonianVectorField_lagrangianEnergy_mechanica
       ((z.2, -christoffelMap (finBasis ℝ E) (cov.isCovariantDerivativeOn
           (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2) :
           TangentSpace I.tangent z) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hω := ((g.isHyperregularLagrangian_mechanicalLagrangian 0).isRegularLagrangian
     |>.isSymplectic_cartanTwoForm g.contMDiff_mechanicalLagrangian_zero).isNondegenerate
   -- Both vectors have the flat `dE_L`, and the flat of `ω_L` is injective.
@@ -380,7 +380,7 @@ theorem mfderiv_legendreMap_geodesicSpray
         (CotangentBundle.kineticEnergy I M)
         (legendreMap (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)
           z) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
     (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
   rw [← h.hamiltonian_eq_kineticEnergy,
@@ -400,7 +400,7 @@ theorem isMIntegralCurve_legendreMap_comp_curveVelocityLift_iff
         ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
           (CotangentBundle.kineticEnergy I M)) ↔
       IsGeodesicCurve I γ := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
     (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
   rw [← h.hamiltonian_eq_kineticEnergy,
