@@ -1010,7 +1010,7 @@ theorem contMDiffAt_section_opens_model_space_iff {F : Type*} [NormedAddCommGrou
         (b x)) x₀ ↔
       ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E →L[𝕜] E →L[𝕜] F) n
         (fun x : U ↦ show E →L[𝕜] E →L[𝕜] F from b x) x₀ := by
-  rw [contMDiffAt_section]
+  rw [Bundle.contMDiffAt_section_iff]
   refine Filter.EventuallyEq.contMDiffAt_iff (Filter.Eventually.of_forall fun y ↦ ?_)
   have hy := mem_trivializationAt_opens_model_space_baseSet (𝕜 := 𝕜) x₀ y
   refine ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ ?_
