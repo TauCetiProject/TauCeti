@@ -131,6 +131,7 @@ theorem ofLinearCharacter_comp_mk_apply_monomialGroupEpsilon {F : Type*} [CommSe
 
 variable [Invertible (2 : R)] [LinearOrder I] {b : Module.Basis I R M}
 
+omit [LinearOrder I] in
 /-- **The quotient by the sign subgroup has exactly `2 ^ n` characters** with values in a field in
 which `2` is invertible: it is a finite commutative group of exponent dividing two with `2 ^ n`
 elements, and such a group is isomorphic to its character group. -/

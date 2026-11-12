@@ -58,15 +58,14 @@ theorem orderStatistic_def (k : Fin n) (x : Fin n → α) :
 
 /-- Applying a map that is monotone on every entry of a tuple commutes with taking an order
 statistic. No behavior is required away from those entries. -/
-theorem orderStatistic_comp_of_monotoneOn {β : Type*} [LinearOrder β] {s : Set α} (f : α → β)
-    (hf : MonotoneOn f s) (hx : ∀ i, x i ∈ s) (k : Fin n) :
+theorem orderStatistic_comp_of_monotoneOn {β : Type*} [LinearOrder β] {s : Set α}
+    {x : Fin n → α} (f : α → β) (hf : MonotoneOn f s) (hx : ∀ i, x i ∈ s) (k : Fin n) :
     orderStatistic k (f ∘ x) = f (orderStatistic k x) := by
   rw [orderStatistic_def, orderStatistic_def]
   have hmono : Monotone (f ∘ x ∘ Tuple.sort x) := by
     intro i j hij
     exact hf (hx _) (hx _) (Tuple.monotone_sort x hij)
-  exact congrFun (Tuple.unique_monotone (Tuple.monotone_sort (f ∘ x))
-    hmono) k
+  exact congrFun (Tuple.unique_monotone (Tuple.monotone_sort (f ∘ x)) hmono) k
 
 /-- Applying a monotone map to every entry commutes with taking an order statistic. -/
 theorem orderStatistic_comp_of_monotone {β : Type*} [LinearOrder β] (f : α → β)
@@ -103,9 +102,9 @@ theorem orderStatistic_lt_iff (k : Fin n) (x : Fin n → α) (t : α) :
   rw [← hcard]
   exact (Tuple.lt_card_lt_iff_apply_lt_of_monotone (Tuple.monotone_sort x)).symm
 
-/-- The least order statistic is the minimum of the entries. -/
+/-- The least order statistic of a nonempty tuple is the minimum of its entries. -/
 @[simp]
-theorem orderStatistic_zero (x : Fin (n + 1) → α) :
+theorem orderStatistic_zero [NeZero n] (x : Fin n → α) :
     orderStatistic 0 x = Finset.univ.inf' Finset.univ_nonempty x := by
   refine eq_of_forall_ge_iff fun t => ?_
   simp [Finset.card_pos, Finset.filter_nonempty_iff]
@@ -135,9 +134,7 @@ variable [MeasurableSpace α] [MeasurableInf₂ α] [MeasurableSup₂ α]
 theorem measurable_orderStatistic (k : Fin n) :
     Measurable (orderStatistic k : (Fin n → α) → α) := by
   let p := (Finset.univ : Finset (Fin n)).powersetCard ((k : ℕ) + 1)
-  have hp : p.Nonempty := Finset.powersetCard_nonempty.mpr (by
-    simp only [Finset.card_univ, Fintype.card_fin]
-    omega)
+  have hp : p.Nonempty := Finset.powersetCard_nonempty.mpr (by simp)
   have hpa : p.attach.Nonempty := by simpa using hp
   have hs : ∀ s : p, s.1.Nonempty := fun s => Finset.card_pos.mp (by
     rw [(Finset.mem_powersetCard.mp s.2).2]
@@ -160,12 +157,9 @@ theorem measurable_orderStatistic (k : Fin n) :
       rw [← (Finset.mem_powersetCard.mp s.2).2]
       exact Finset.card_le_card fun i hi =>
         Finset.mem_filter.mpr ⟨Finset.mem_univ i, hsle i hi⟩
+  -- `Finset.inf'_induction` plays the role of the missing `Finset.measurable_inf'`.
   rw [hrepr]
-  refine Finset.inf'_induction hpa
-    (fun s => s.1.sup' (hs s) fun i (x : Fin n → α) => x i)
-    (p := fun f => Measurable f) (fun (_ : (Fin n → α) → α) hf _ hg => hf.inf hg) ?_
-  intro s _
-  exact Finset.measurable_sup' (hs s) fun i _ =>
-    measurable_pi_apply (X := fun _ : Fin n => α) i
+  exact Finset.inf'_induction hpa _ (p := Measurable) (fun _ hf _ hg => hf.inf hg)
+    fun s _ => Finset.measurable_sup' (hs s) fun i _ => measurable_pi_apply i
 
 end TauCeti

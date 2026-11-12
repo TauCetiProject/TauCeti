@@ -111,14 +111,10 @@ theorem forall_coeff_exponentTwoLog_mem_iff (F : FormalGroup A) [F.IsComm]
     have h₂ : ((F.map Polynomial.C).rescale Polynomial.X).nsmulSeries 2 = 0 := by
       rw [← h, ← map_nsmulSeries, hF, map_zero]
     refine logarithm_unique_of_natCast_eq_zero _ Nat.prime_two
-      (natCast_eq_zero_of_nsmulSeries_eq_zero _ h₂) ?_ ?_ ?_ hψ ?_ ?_ ?_ hT
-    · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
-      simp [g]
+      (natCast_eq_zero_of_nsmulSeries_eq_zero _ h₂) ?_ ?_ hψ ?_ ?_ hT
     · simp [g]
     · intro k hk
       simp [g, coeff_two_pow_exponentTwoLog _ _ hk]
-    · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
-      simp [g]
     · simp [g]
     · intro k hk
       simp [g, coeff_two_pow_exponentTwoLog _ _ hk]

@@ -174,14 +174,14 @@ private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ
   have hcda (x : E) (hx : x ∈ ball x₀ R) : ContDiffAt ℝ 2 u x :=
     hu.contDiffAt (isOpen_ball.mem_nhds hx)
   have hLu : LipschitzOnWith N u (ball x₀ R) :=
-    (convex_ball x₀ R).lipschitzOnWith_of_nnnorm_fderiv_le
+    (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun x hx => (hcda x hx).differentiableAt (by norm_num))
-      fun x hx => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hN1 x hx
+      fun x hx => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hN1 x hx
   have hLDu : LipschitzOnWith N (fderiv ℝ u) (ball x₀ R) :=
-    (convex_ball x₀ R).lipschitzOnWith_of_nnnorm_fderiv_le
+    (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun x hx => ((hcda x hx).fderiv_right (m := 1) le_rfl).differentiableAt (by norm_num))
       fun x hx => by
-        rw [← NNReal.coe_le_coe, coe_nnnorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+        rw [← NNReal.coe_le_coe, coe_nnNorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
         exact hN2 x hx
   have hholder {g : E → ℝ} (hg : LipschitzOnWith N g (ball x₀ R)) :
       HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g (ball x₀ R) := by
@@ -420,7 +420,7 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
 
 /-- **The interior Schauder estimate on small balls.** Let `0 < α < 1`. There is `C₀ > 0`,
 depending only on dimension and `α`, with the following property. Let `0 < λ`, `Λ`, `L`, `M` and
-`0 < R` be given, put `κ = C₀ (Λ / λ)^(1 + (n+1)/4 + α/2)`, and assume the scale condition
+`R` be given, put `κ = C₀ (Λ / λ)^(1 + (n+1)/4 + α/2)`, and assume the scale condition
 
 `2 κ (n+1)² (1 + 2ᵅ) L Rᵅ ≤ λ`.
 
@@ -437,7 +437,7 @@ balls at once. -/
 theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) :
     ∃ C₀ : ℝ, 0 < C₀ ∧
-      ∀ {lam Lam : ℝ} {L M : ℝ≥0} {R : ℝ}, 0 < lam → 0 < R →
+      ∀ {lam Lam : ℝ} {L M : ℝ≥0} {R : ℝ}, 0 < lam →
       2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
         ((1 + 2 ^ (α : ℝ)) * L * R ^ (α : ℝ)) ≤ lam →
       ∀ {ρ : ℝ}, ρ < R → ∃ C : ℝ≥0,
@@ -455,7 +455,12 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
         HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closedBall x₀ ρ) := by
   obtain ⟨C₀, hC₀, hCS⟩ :=
     exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall hα hα1 (n := n)
-  refine ⟨C₀, hC₀, fun {lam Lam L M R} hlam hR hsmall {ρ} hρR => ?_⟩
+  refine ⟨C₀, hC₀, fun {lam Lam L M R} hlam hsmall {ρ} hρR => ?_⟩
+  -- If `R ≤ 0` then `ρ < 0` and the closed ball is empty.
+  rcases le_or_gt R 0 with hR | hR
+  · exact ⟨0, fun {a x₀} _ _ _ _ {u N K V} _ _ _ _ _ _ => by
+      rw [closedBall_eq_empty.2 (hρR.trans_le hR)]
+      exact holderOnWith_empty _ _ _⟩
   -- A cutoff `ζ₀`, equal to one near `closedBall 0 ρ` and supported in `B(0, R)`, and its
   -- constant `Z`. Its translates serve as cutoffs about every centre, with the same constant.
   obtain ⟨ζ₀, hζ₀, -, hζ₀1, hζ₀c, hζ₀s⟩ :=

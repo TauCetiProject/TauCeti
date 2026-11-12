@@ -19,6 +19,12 @@ approximate unit, `Filter.IsApproximateUnit.map`. Surjectivity is what lets ever
 target be written as an image, so that its products with the image filter converge. This is the
 input for transferring approximate units, and quantities computed as their limits, from a
 C⋆-algebra to its quotients.
+
+In a Hausdorff space, a one-sided approximate unit forces the corresponding annihilator to
+vanish: `TauCeti.faithfulSMul_of_tendsto_mul_left` (if `x * c = y * c` for every `c`, then
+`x = y`) and `TauCeti.faithfulSMul_mulOpposite_of_tendsto_mul_right` (if `c * x = c * y` for
+every `c`, then `x = y`). This nondegeneracy is what makes double centralizers of an algebra with
+an approximate unit behave like multipliers.
 -/
 
 public section
@@ -53,3 +59,30 @@ theorem map {l : Filter α} (hl : l.IsApproximateUnit) (f : F) (hf : Continuous 
   neBot := hl.neBot.map f
 
 end Filter.IsApproximateUnit
+
+namespace TauCeti
+
+variable {α : Type*} [TopologicalSpace α] [Mul α] [T2Space α] {l : Filter α} [l.NeBot]
+
+/-- If `a * e → a` along a proper filter for every `a`, in a Hausdorff space, an element is
+determined by its products on the right: the action of `α` on itself by left multiplication is
+faithful. This applies to every approximate unit, via
+`Filter.IsApproximateUnit.tendsto_mul_left`. -/
+theorem faithfulSMul_of_tendsto_mul_left (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) :
+    FaithfulSMul α α where
+  eq_of_smul_eq_smul {x y} h := by
+    have hxy : (x * ·) = (y * ·) := funext fun c => by simpa only [smul_eq_mul] using h c
+    exact tendsto_nhds_unique (hl x) (hxy ▸ hl y)
+
+/-- If `e * a → a` along a proper filter for every `a`, in a Hausdorff space, an element is
+determined by its products on the left: the action of `αᵐᵒᵖ` on `α` by right multiplication is
+faithful. This applies to every approximate unit, via
+`Filter.IsApproximateUnit.tendsto_mul_right`. -/
+theorem faithfulSMul_mulOpposite_of_tendsto_mul_right (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) :
+    FaithfulSMul αᵐᵒᵖ α where
+  eq_of_smul_eq_smul {x y} h := by
+    have hxy : (· * x.unop) = (· * y.unop) := funext fun c => by
+      simpa only [MulOpposite.smul_eq_mul_unop] using h c
+    exact MulOpposite.unop_injective <| tendsto_nhds_unique (hl x.unop) (hxy ▸ hl y.unop)
+
+end TauCeti

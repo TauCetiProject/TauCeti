@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.ClosedSubmodule
 public import TauCeti.Topology.Algebra.Module.Finite
+import Mathlib.RingTheory.Finiteness.Projective
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
@@ -24,7 +25,7 @@ For a finite module over a complete first-countable ring, completeness is automa
 (`TauCeti.completeSpace_moduleTopology`), so natural completeness is the Hausdorff property
 (`TauCeti.Huber.isNaturallyComplete_iff_t2Space`), and that is closedness of the kernel of any
 presentation (`TauCeti.Huber.isNaturallyComplete_iff_isClosed_ker`; Kedlaya–Liu II, Remark 1.2.3).
-Finite projective modules over a complete Hausdorff first-countable ring are naturally complete
+Finite projective modules over a complete Hausdorff ring are naturally complete
 (Kedlaya–Liu II, Remark 1.2.4). Over a complete Hausdorff Tate ring, a submodule of a naturally
 complete finite module whose closure is finitely generated is closed and itself naturally complete,
 and a dense submodule is everything (Kedlaya–Liu II, Corollary 1.2.11). Finite generation of the
@@ -45,7 +46,7 @@ closed in the Banach algebra `C(ℤ_p, ℚ_p)`.
 * `TauCeti.Huber.isNaturallyComplete_iff_isClosed_ker`: it is naturally complete exactly when the
   kernel of a linear surjection onto it from a module with its module topology is closed.
 * `TauCeti.Huber.IsNaturallyComplete.of_projective`: finite projective modules over a complete
-  Hausdorff first-countable ring are naturally complete.
+  Hausdorff ring are naturally complete.
 * `TauCeti.Huber.IsNaturallyComplete.of_injective`: a finite module embedding linearly into a
   naturally complete module is naturally complete.
 * `TauCeti.Huber.IsNaturallyComplete.isClosed_of_module_finite_topologicalClosure` and
@@ -130,12 +131,34 @@ theorem isNaturallyComplete_iff_isClosed_ker [Module.Finite A M] {F : Type*} [Ad
     IsNaturallyComplete A M ↔ IsClosed (LinearMap.ker q : Set F) :=
   isNaturallyComplete_iff_t2Space.trans (t2Space_moduleTopology_iff_isClosed_ker hq)
 
+omit [FirstCountableTopology A] in
 /-- **Finite projective modules are naturally complete** (Kedlaya–Liu II, Remark 1.2.4): over a
-complete Hausdorff first-countable ring, a finite projective module is complete and Hausdorff for
-its natural topology. -/
+complete Hausdorff ring, a finite projective module is complete and Hausdorff for its natural
+topology. It is a retract of a finite free module, hence a closed subgroup of a complete group. -/
 theorem IsNaturallyComplete.of_projective [T2Space A] [Module.Finite A M]
-    [Module.Projective A M] : IsNaturallyComplete A M :=
-  isNaturallyComplete_iff_t2Space.2 t2Space_moduleTopology_of_projective
+    [Module.Projective A M] : IsNaturallyComplete A M := by
+  let _ : TopologicalSpace M := moduleTopology A M
+  let _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
+  let _ : UniformSpace M := IsTopologicalAddGroup.rightUniformSpace M
+  have _ : IsModuleTopology A M := inferInstance
+  have _ : IsUniformAddGroup M := isUniformAddGroup_of_addCommGroup
+  have _ : T2Space M := t2Space_moduleTopology_of_projective
+  rw [isNaturallyComplete_iff]
+  refine ⟨?_, inferInstance⟩
+  obtain ⟨n, f, g, -, _, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A M
+  have hfc : Continuous f := IsModuleTopology.continuous_of_linearMap f
+  have hgc : Continuous g := IsModuleTopology.continuous_of_linearMap g
+  have hfg' : ∀ x, f (g x) = x := fun x ↦ congr($hfg x)
+  have hind : IsUniformInducing g := by
+    refine IsUniformInducing.of_comp (uniformContinuous_addMonoidHom_of_continuous
+      (f := g.toAddMonoidHom) hgc) (uniformContinuous_addMonoidHom_of_continuous
+      (f := f.toAddMonoidHom) hfc) ?_
+    have : ⇑f.toAddMonoidHom ∘ ⇑g = id := funext hfg'
+    rw [this]
+    exact IsUniformInducing.id
+  rw [completeSpace_iff_isComplete_range hind]
+  refine IsClosed.isComplete ?_
+  exact Function.LeftInverse.isClosed_range hfg' hfc hgc
 
 /-- **A finite module embedding into a naturally complete module is naturally complete.** If
 `f : N → M` is an injective linear map, `N` is finite and `M` is naturally complete, then `N` is
