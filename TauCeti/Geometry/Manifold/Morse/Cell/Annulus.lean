@@ -48,11 +48,11 @@ private theorem apply_morseCellMap_annulusPoint
     (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n)
     (hε : 0 ≤ ε) (hball : closedBall 0 √ε ⊆ ψ.target)
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
-    (d : I) (p : I × TopCat.diskBoundary.{u} k) :
-    f (ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p).down.1) =
-      c - ε * ((d : ℝ) + (1 - d) * p.1) ^ 2 := by
+    (d s : I) (θ : TopCat.diskBoundary.{u} k) :
+    f (ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 s θ).down.1) =
+      c - ε * ((d : ℝ) + (1 - d) * s) ^ 2 := by
   rw [ψ.apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε
-    (mem_closedBall_zero_iff.1 (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p).down.2),
+    (mem_closedBall_zero_iff.1 (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 s θ).down.2),
     TauCeti.TopCat.norm_annulusPoint]
 
 /-- The negative-coordinate annulus of a Morse characteristic disc, with normalized inner
@@ -61,15 +61,19 @@ def morseAnnulusMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) 
     (hε : 0 ≤ ε) (hball : closedBall 0 √ε ⊆ ψ.target)
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
     (d : I) : C(I × TopCat.diskBoundary.{u} k, {x : M | f x ≤ c - ε * (d : ℝ) ^ 2}) where
-  toFun p := ⟨ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p).down.1, by
+  toFun p := ⟨ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p.1 p.2).down.1, by
         simp only [mem_ofPred_eq]
         rw [apply_morseCellMap_annulusPoint ψ hk hε hball hf]
+        have hds : (d : ℝ) ≤ (d : ℝ) + (1 - d) * p.1 := by
+          nlinarith [d.property.2, p.1.property.1]
         exact sub_le_sub_left (mul_le_mul_of_nonneg_left
-          (pow_le_pow_left₀ d.2.1 (TauCeti.TopCat.le_add_one_sub_mul d.2.2 p.1) 2) hε) c⟩
+          (pow_le_pow_left₀ d.property.1 hds 2) hε) c⟩
   continuous_toFun := by
     apply Continuous.subtype_mk
-    exact (ψ.continuousOn_morseCellMap hball hk).comp_continuous (by fun_prop)
-      fun p ↦ (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p).down.2
+    exact (ψ.continuousOn_morseCellMap hball hk).comp_continuous
+      (continuous_subtype_val.comp (continuous_uliftDown.comp
+        (TauCeti.TopCat.continuous_annulusPoint d.2.1 d.2.2)))
+      fun p ↦ (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 p.1 p.2).down.2
 
 /-- Coordinates of the parametrized annulus, read through the existing Morse cell map. -/
 theorem coe_morseAnnulusMap_apply
@@ -78,7 +82,7 @@ theorem coe_morseAnnulusMap_apply
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
     (d s : I) (θ : TopCat.diskBoundary.{u} k) :
     (ψ.morseAnnulusMap hk hε hball hf d (s, θ) : M) =
-      ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 (s, θ)).down.1 :=
+      ψ.morseCellMap hk ε (TauCeti.TopCat.annulusPoint d.2.1 d.2.2 s θ).down.1 :=
   (rfl)
 
 /-- The inner seam is the small negative-coordinate circle. -/
@@ -90,8 +94,7 @@ theorem coe_morseAnnulusMap_zero
     (d : I) (θ : TopCat.diskBoundary.{u} k) :
     (ψ.morseAnnulusMap hk hε hball hf d (0, θ) : M) =
       ψ.morseCellMap hk ε ((d : ℝ) • (θ.down : EuclideanSpace ℝ (Fin k))) := by
-  rw [coe_morseAnnulusMap_apply, TauCeti.TopCat.annulusPoint_zero,
-    TauCeti.TopCat.smallDiskIncl_apply]
+  simp [coe_morseAnnulusMap_apply]
 
 /-- The outer seam is the actual attaching map of the original characteristic disc. -/
 @[simp]
@@ -102,8 +105,7 @@ theorem coe_morseAnnulusMap_one
     (d : I) (θ : TopCat.diskBoundary.{u} k) :
     (ψ.morseAnnulusMap hk hε hball hf d (1, θ) : M) =
       (ψ.morseAttachingMap hk hε hball hf θ : M) := by
-  rw [coe_morseAnnulusMap_apply, TauCeti.TopCat.annulusPoint_one,
-    TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down, coe_morseAttachingMap_apply]
+  simpa [coe_morseAnnulusMap_apply] using (coe_morseAttachingMap_apply hball hf hk hε θ).symm
 
 /-- The function decreases quadratically with the actual radial coordinate of the annulus. -/
 theorem apply_morseAnnulusMap
@@ -114,7 +116,7 @@ theorem apply_morseAnnulusMap
     f (ψ.morseAnnulusMap hk hε hball hf d (s, θ)) =
       c - ε * ((d : ℝ) + (1 - d) * s) ^ 2 := by
   rw [coe_morseAnnulusMap_apply]
-  exact apply_morseCellMap_annulusPoint ψ hk hε hball hf d (s, θ)
+  exact apply_morseCellMap_annulusPoint ψ hk hε hball hf d s θ
 
 /-- The value of the function on the inner seam is the level of the smaller circle. -/
 theorem apply_morseAnnulusMap_zero

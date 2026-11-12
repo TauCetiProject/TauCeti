@@ -18,7 +18,10 @@ In a real Banach algebra, exponentiating the continuous commutator operator
 identity `Ad (lieExp X) = exp (ad X)`. The underlying linear map of the bounded commutator is
 Mathlib's `LieAlgebra.ad` for the associative-ring Lie bracket. The commutator itself works in
 compatible nonunital seminormed algebras over any nontrivially normed field; the identification
-with `LieAlgebra.ad` uses a unital seminormed algebra. Neither requires completeness.
+with `LieAlgebra.ad` uses a unital seminormed algebra. Neither requires completeness. The proof of
+the conjugation identity uses the exponentials of bounded left and right multiplication,
+`TauCeti.exp_mulLeft_apply` and `TauCeti.exp_mulRight_apply`, which are proved with the other
+multiplication-operator identities in `TauCeti/Analysis/Normed/Operator/Mul.lean`.
 
 ## Main definitions
 
@@ -27,10 +30,6 @@ with `LieAlgebra.ad` uses a unital seminormed algebra. Neither requires complete
 
 ## Main results
 
-* `TauCeti.Lie.exp_mulLeft_apply`: exponentiating left multiplication acts by `exp x` on the left.
-* `TauCeti.Lie.exp_mulRight_apply`: the analogous right-multiplication identity.
-* `TauCeti.Lie.exp_mulLeft` and `TauCeti.Lie.exp_mulRight`: the corresponding bounded-operator
-  identities.
 * `TauCeti.Lie.exp_continuousCommutator_apply`: its operator exponential acts by conjugation.
 * `TauCeti.Lie.exp_continuousCommutator`: the corresponding equality of bounded operators.
 * `TauCeti.Lie.continuousCommutator_toLinearMap`: its underlying linear map is Mathlib's
@@ -85,45 +84,6 @@ section Complete
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
-
-/-- Exponentiating the bounded left-multiplication operator gives left multiplication by the
-algebra exponential. -/
-@[simp]
-theorem exp_mulLeft_apply (x y : R) :
-    exp (ContinuousLinearMap.mul ℝ R x) y = exp x * y := by
-  have hop := (ContinuousLinearMap.apply ℝ R y).hasSum
-    (exp_series_hasSum_exp' (𝕂 := ℝ) (ContinuousLinearMap.mul ℝ R x))
-  have halg := (exp_series_hasSum_exp' (𝕂 := ℝ) x).mul_right y
-  apply HasSum.unique (hop.congr_fun fun n => ?_) halg
-  simp only [map_smul, ContinuousLinearMap.apply_apply, ContinuousLinearMap.mul_pow_apply]
-  simp only [smul_mul_assoc]
-
-/-- Exponentiating the bounded right-multiplication operator gives right multiplication by the
-algebra exponential. -/
-@[simp]
-theorem exp_mulRight_apply (x y : R) :
-    exp ((ContinuousLinearMap.mul ℝ R).flip x) y = y * exp x := by
-  have hop := (ContinuousLinearMap.apply ℝ R y).hasSum
-    (exp_series_hasSum_exp' (𝕂 := ℝ) ((ContinuousLinearMap.mul ℝ R).flip x))
-  have halg := (exp_series_hasSum_exp' (𝕂 := ℝ) x).mul_left y
-  apply HasSum.unique (hop.congr_fun fun n => ?_) halg
-  simp only [map_smul, ContinuousLinearMap.apply_apply, ContinuousLinearMap.flip_mul_pow_apply]
-  simp only [mul_smul_comm]
-
-/-- Exponentiating the bounded left-multiplication operator gives the operator of left
-multiplication by the algebra exponential. -/
-theorem exp_mulLeft (x : R) :
-    exp (ContinuousLinearMap.mul ℝ R x) = ContinuousLinearMap.mul ℝ R (exp x) := by
-  ext y
-  simp
-
-/-- Exponentiating the bounded right-multiplication operator gives the operator of right
-multiplication by the algebra exponential. -/
-theorem exp_mulRight (x : R) :
-    exp ((ContinuousLinearMap.mul ℝ R).flip x) =
-      (ContinuousLinearMap.mul ℝ R).flip (exp x) := by
-  ext y
-  simp
 
 /-- Exponentiating the continuous commutator operator gives conjugation by the algebra
 exponential. -/

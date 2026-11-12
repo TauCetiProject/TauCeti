@@ -11,57 +11,53 @@ import TauCeti.AlgebraicTopology.Disk.Annulus
 /-!
 # Extending a homotopy of small Morse discs to the characteristic maps
 
-Let `ψ₀` and `ψ₁` be two normal-form charts of the same index `k` at a critical level `c`, in which
-`f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²`, with characteristic maps
-`χ₀, χ₁ : (D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`, `χ(w) = ψ⁻¹(√ε • (w, 0))`, and let `g` be a linear
-isometry of `ℝᵏ`. Milnor's comparison of the cells attached by the two charts first compares
-only small discs: for a radius `0 < d ≤ 1` one constructs a homotopy `G` from `χ₁` to `χ₀ ∘ g` on
-the disc `‖w‖ ≤ d` which stays in `M_{c+ε}` and keeps the small boundary sphere `‖w‖ = d` in
-`M_{c-εd²}`. This file shows that such a homotopy of small discs extends to a homotopy of maps of
-pairs `K : χ₁ ≃ χ₀ ∘ g` on the whole disc, keeping the boundary sphere in the lower sublevel
-`M_{c-ε}` (`TauCeti.exists_homotopy_morseCharacteristicMap_of_innerDisc`), provided the band
-`f⁻¹[c - ε, c - εd²]` is compact and free of critical points. This is the homotopy of pairs that
-the change-of-chart comparison `TauCeti.morseChartChange` and the reattachment map
-`TauCeti.morseCellReattachment` take as input.
+Let `χ₀, χ₁ : P × D^k → M` be two families, over a parameter space `P`, of characteristic maps of
+Morse cells at a critical level `c` of a function `f : M → ℝ`, in the sense that
+`f (χⱼ (p, w)) ≤ c - ε ‖w‖²`. For instance, `χ(w) = ψ⁻¹(√ε • (w, 0))` for a normal-form chart `ψ`
+in which `f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²`, where equality holds, and the same map
+precomposed with a linear isometry of `ℝᵏ`. Write `M_a = {f ≤ a}`. For `ε ≥ 0` each `χⱼ (p, ·)` is
+then a map of pairs `(D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`.
 
-The extension works for families of discs over any parameter space `X`, which is what the
-comparison of continuous families of Morse charts over a compact parameter space needs. Only the
-values of `f` on the discs matter: if `m₀, m₁ : X × D^k → M` satisfy `f (mⱼ (x, w)) ≤ c - ε‖w‖²`,
-as the characteristic maps of Morse charts do with equality, then a homotopy of the families of
-small discs `‖w‖ ≤ d` with the same bounds as `G` extends to a homotopy from `m₁` to `m₀` which
-stays in `M_{c+ε}` and keeps `X × ∂D^k` in `M_{c-ε}`
-(`TauCeti.exists_parametric_homotopy_of_innerDisc`). The critical-free band deformation is the same
-for every parameter, since `f` does not depend on it. The comparison of two charts is the case of a
-one-point parameter space.
+Milnor's comparison of the cells attached by two charts first compares only small discs: for a
+radius `0 < d ≤ 1` one constructs a homotopy `G` from `χ₁` to `χ₀` on the discs `‖w‖ ≤ d` which
+stays in `M_{c+ε}` and keeps the small spheres `‖w‖ = d` in `M_{c-εd²}`. This file shows that such
+a homotopy of small discs extends to a homotopy `K : χ₁ ≃ χ₀` on the whole discs, keeping the
+boundary spheres in the lower sublevel `M_{c-ε}`
+(`TauCeti.exists_homotopy_morseCharacteristicFamily_of_innerDisc_of_homotopyRel`), provided the
+band `f⁻¹[c - ε, c - εd²]` is compact and free of critical points
+(`TauCeti.exists_homotopy_morseCharacteristicFamily_of_innerDisc`). Everything depends
+continuously on `p ∈ P`, as needed for the fiberwise reattachment map
+`TauCeti.fiberwiseCellReattachment`, which takes such a homotopy of families as input; the
+critical-free band and its deformation do not depend on `p`.
+For a single pair of charts (`P` a point) this is the homotopy of pairs that the change-of-chart
+comparison, the reattachment map `TauCeti.morseCellReattachment`, takes as input
+(`TauCeti.exists_homotopy_morseCharacteristicMap_of_innerDisc`).
 
 The construction follows Milnor. Let `R` deform `M_{c-εd²}` onto `M_{c-ε}` across the band
 (`TauCeti.exists_sublevelDeformation`). Write a point of the annulus `d ≤ ‖w‖ ≤ 1` of the disc
-as `(d + (1 - d) s) • θ` with `s ∈ [0, 1]` and `θ` on the unit sphere. The homotopy has three
-stages; on the small disc the first and last are constant in time, and the second is `G`:
-
-* on the annulus, deform the annulus of `m₁` to the retraction track
-  `(s, x, θ) ↦ R (s, m₁ (x, d θ))` of its inner circle (`ContinuousMap.HomotopyRel.annulusToTrack`),
-  keeping `m₁` on the small disc;
-* move the small disc by `G`, together with the retraction track of its boundary circle
-  (`ContinuousMap.Homotopy.retractionTrackHomotopy`);
-* undo the first stage for the annulus of `m₀`.
-
-On the seam `‖w‖ = d` the pieces agree because `R` starts at the identity, and on the outer
-sphere every stage stays in `M_{c-ε}`: the annulus deformation does by construction, and the
-track has reached the end of `R` there. No overlap of the whole characteristic discs of the two
-charts is used.
+as `(d + (1 - d) s) • θ` with `s ∈ [0, 1]` and `θ` on the unit sphere. The annuli of `χ₁` and
+`χ₀`, parametrized by `I × (P × ∂D^k)`, take values in `M_{c-εd²}`, their outer circles lie in
+`M_{c-ε}`, and their inner circles are joined by `G` restricted to the small spheres. So they are
+homotopic keeping the outer circles in `M_{c-ε}`
+(`ContinuousMap.HomotopyRel.exists_annulus_homotopy`): deform each annulus to the retraction
+track of its inner circle and move the tracks along `G`. Glued along the seam `‖w‖ = d` with `G`,
+run at the time at which the annulus homotopy runs it on the inner circles
+(`TauCeti.TopCat.discGlue`), this is the homotopy `K`. No overlap of the whole characteristic
+discs of the two families is used.
 
 ## Main results
 
-* `TauCeti.exists_parametric_homotopy_of_innerDisc_of_homotopyRel`: a homotopy of the families of
-  small discs of two families of maps `X × D^k → M` with `f ≤ c - ε‖w‖²`, keeping their boundary
-  spheres in `M_{c-εd²}`, extends to a homotopy of the families, keeping `X × ∂D^k` in `M_{c-ε}`,
+* `TauCeti.exists_homotopy_morseCharacteristicFamily_of_innerDisc_of_homotopyRel`: a homotopy of
+  the small discs of two families of characteristic maps, keeping the small spheres in
+  `M_{c-εd²}`, extends to a homotopy of the families keeping the boundary spheres in `M_{c-ε}`,
   given a deformation of `M_{c-εd²}` into `M_{c-ε}` fixing `M_{c-ε}`.
-* `TauCeti.exists_parametric_homotopy_of_innerDisc`: the same when `M` is a manifold and the band
-  `f⁻¹[c - ε, c - εd²]` is compact and free of critical points, which supplies the deformation.
-* `TauCeti.exists_homotopy_morseCharacteristicMap_of_innerDisc_of_homotopyRel` and
+* `TauCeti.exists_homotopy_morseCharacteristicFamily_of_innerDisc`: the same when `M` is a
+  manifold and the band `f⁻¹[c - ε, c - εd²]` is compact and free of critical points, which
+  supplies the deformation.
+* `TauCeti.exists_homotopy_morseCharacteristicMap_of_innerDisc_of_homotopyRel`,
   `TauCeti.exists_homotopy_morseCharacteristicMap_of_innerDisc`: the case of the characteristic
-  maps of two Morse charts, as a homotopy of maps of pairs.
+  maps `χ₁` and `χ₀ ∘ g` of two Morse charts and a linear isometry `g`, as maps of pairs into
+  `M_{c+ε}`.
 
 ## References
 
@@ -73,311 +69,234 @@ public section
 
 noncomputable section
 
-universe u v
+universe u
 
 open Set Metric Topology unitInterval CategoryTheory
 open scoped ContDiff Manifold
 
 namespace TauCeti
 
-section Stages
+section Family
 
-variable {X : Type*} [TopologicalSpace X] {M : Type*} [TopologicalSpace M] {f : M → ℝ}
-  {c ε : ℝ} {k : ℕ} {d : I}
+variable {P M : Type*} [TopologicalSpace P] [TopologicalSpace M] {f : M → ℝ} {c ε : ℝ} {k : ℕ}
 
-/-- The bounds kept by every stage: the discs go into `M_{c+ε}` and their boundaries into
-`M_{c-ε}`. -/
-private def StageBound (f : M → ℝ) (c ε : ℝ) (m : C(X × TopCat.disk.{u} k, M)) : Prop :=
-  (∀ q, f (m q) ≤ c + ε) ∧ ∀ x s, f (m (x, TopCat.diskBoundaryInclusion k s)) ≤ c - ε
+/-- The annulus `(s, (p, θ)) ↦ χ (p, (d + (1 - d) s) • θ)` of a family of characteristic maps,
+with values in `M_{c-εd²}`. -/
+private def familyAnnulus (hε : 0 ≤ ε) (d : I) (χ : C(P × TopCat.disk.{u} k, M))
+    (hχ : ∀ p w, f (χ (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) :
+    C(I × (P × TopCat.diskBoundary.{u} k), {x : M | f x ≤ c - ε * (d : ℝ) ^ 2}) where
+  toFun x := ⟨χ (x.2.1, TopCat.annulusPoint d.2.1 d.2.2 x.1 x.2.2), (hχ _ _).trans <| by
+    rw [TopCat.norm_annulusPoint]
+    have hds : (d : ℝ) ≤ d + (1 - d) * x.1 := by nlinarith [d.2.2, x.1.2.1]
+    exact sub_le_sub_left (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ d.2.1 hds 2) hε) c⟩
+  continuous_toFun := (χ.continuous.comp ((continuous_fst.comp continuous_snd).prodMk
+    ((TopCat.continuous_annulusPoint d.2.1 d.2.2).comp (continuous_fst.prodMk
+      (continuous_snd.comp continuous_snd))))).subtype_mk _
 
-/-- The annulus of a family of discs on which `f ≤ c - ε‖w‖²` lies in `M_{c-εd²}`. -/
-private theorem apply_annulusPoint_le (hε : 0 ≤ ε) (m : C(X × TopCat.disk.{u} k, M))
-    (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) (p : I × (X × TopCat.diskBoundary.{u} k)) :
-    f (m (p.2.1, TopCat.annulusPoint d.2.1 d.2.2 (p.1, p.2.2))) ≤ c - ε * (d : ℝ) ^ 2 := by
-  refine (hm _ _).trans (sub_le_sub_left (mul_le_mul_of_nonneg_left ?_ hε) c)
-  rw [TopCat.norm_annulusPoint]
-  exact pow_le_pow_left₀ d.2.1 (TopCat.le_add_one_sub_mul d.2.2 p.1) 2
-
-/-- The annulus `d ≤ ‖w‖ ≤ 1` of a family of discs on which `f ≤ c - ε‖w‖²`, as a map into
-`M_{c-εd²}`. -/
-private def familyAnnulus (hε : 0 ≤ ε) (m : C(X × TopCat.disk.{u} k, M))
-    (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) :
-    C(I × (X × TopCat.diskBoundary.{u} k), {x : M | f x ≤ c - ε * (d : ℝ) ^ 2}) where
-  toFun p :=
-    ⟨m (p.2.1, TopCat.annulusPoint d.2.1 d.2.2 (p.1, p.2.2)), apply_annulusPoint_le hε m hm p⟩
-  continuous_toFun :=
-    (m.continuous.comp (by fun_prop)).subtype_mk fun p ↦ apply_annulusPoint_le hε m hm p
-
-private theorem coe_familyAnnulus_apply (hε : 0 ≤ ε) (m : C(X × TopCat.disk.{u} k, M))
-    (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) (p : I × (X × TopCat.diskBoundary.{u} k)) :
-    (familyAnnulus (d := d) hε m hm p : M) =
-      m (p.2.1, TopCat.annulusPoint d.2.1 d.2.2 (p.1, p.2.2)) :=
+private theorem coe_familyAnnulus_apply (hε : 0 ≤ ε) (d : I) (χ : C(P × TopCat.disk.{u} k, M))
+    (hχ : ∀ p w, f (χ (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) (x : I × (P × TopCat.diskBoundary.{u} k)) :
+    (familyAnnulus hε d χ hχ x : M) = χ (x.2.1, TopCat.annulusPoint d.2.1 d.2.2 x.1 x.2.2) :=
   (rfl)
 
-/-- The outer circle of the annulus lies in the lower sublevel `M_{c-ε}`. -/
-private theorem familyAnnulus_one_mem (hε : 0 ≤ ε) (m : C(X × TopCat.disk.{u} k, M))
-    (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) (q : X × TopCat.diskBoundary.{u} k) :
-    familyAnnulus (d := d) hε m hm (1, q) ∈ {x | f x.val ≤ c - ε} := by
-  have h := hm q.1 (TopCat.annulusPoint d.2.1 d.2.2 (1, q.2))
-  rw [TopCat.annulusPoint_one, TopCat.norm_diskBoundaryInclusion, one_pow, mul_one] at h
-  rw [Set.mem_ofPred_eq, coe_familyAnnulus_apply, TopCat.annulusPoint_one]
-  exact h
+/-- The outer circle of the annulus of a family lies in `M_{c-ε}`. -/
+private theorem familyAnnulus_one_mem (hε : 0 ≤ ε) (d : I) (χ : C(P × TopCat.disk.{u} k, M))
+    (hχ : ∀ p w, f (χ (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) (x : P × TopCat.diskBoundary.{u} k) :
+    familyAnnulus hε d χ hχ (1, x) ∈ {x | f x.val ≤ c - ε} := by
+  refine (hχ _ _).trans_eq ?_
+  rw [TopCat.norm_annulusPoint, Set.Icc.coe_one]
+  ring
 
-/-- Glue a map on the small discs and a map on the annuli, both depending on a time and a
-parameter, along the seam `‖w‖ = d`. -/
-private def stageGlue (hd : 0 < d)
-    (A : C((I × X) × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, M))
-    (B : C((I × X) × (I × TopCat.diskBoundary.{u} k), M))
-    (hAB : ∀ p θ, B (p, 0, θ) =
-      A (p, ⟨(d : ℝ) • θ.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 θ⟩)) :
-    C(I × (X × TopCat.disk.{u} k), M) where
-  toFun p := TopCat.discGlue (unitInterval.coe_pos.2 hd) A B hAB ((p.1, p.2.1), p.2.2)
-  continuous_toFun := (TopCat.discGlue _ A B hAB).continuous.comp (by fun_prop)
-
-private theorem stageGlue_of_norm_le (hd : 0 < d)
-    (A : C((I × X) × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, M))
-    (B : C((I × X) × (I × TopCat.diskBoundary.{u} k), M))
-    (hAB : ∀ p θ, B (p, 0, θ) =
-      A (p, ⟨(d : ℝ) • θ.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 θ⟩))
-    (t : I) (x : X) {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ d) :
-    stageGlue hd A B hAB (t, x, w) = A ((t, x), ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) :=
-  TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw
-
-private theorem stageGlue_of_le_norm (hd : 0 < d)
-    (A : C((I × X) × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, M))
-    (B : C((I × X) × (I × TopCat.diskBoundary.{u} k), M))
-    (hAB : ∀ p θ, B (p, 0, θ) =
-      A (p, ⟨(d : ℝ) • θ.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 θ⟩))
-    (t : I) (x : X) {w : TopCat.disk.{u} k} (hw : d ≤ ‖w.down.1‖) :
-    stageGlue hd A B hAB (t, x, w) =
-      B ((t, x), TopCat.annulusParam d w, TopCat.annulusDir (unitInterval.coe_pos.2 hd) ⟨w, hw⟩) :=
-  TopCat.discGlue_apply_of_le_norm _ _ _ _ _ hw
-
-private theorem stageGlue_le (hd : 0 < d)
-    (A : C((I × X) × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, M))
-    (B : C((I × X) × (I × TopCat.diskBoundary.{u} k), M))
-    (hAB : ∀ p θ, B (p, 0, θ) =
-      A (p, ⟨(d : ℝ) • θ.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 θ⟩))
-    {a : ℝ} (hA : ∀ q, f (A q) ≤ a) (hB : ∀ q, f (B q) ≤ a)
-    (q : I × (X × TopCat.disk.{u} k)) : f (stageGlue hd A B hAB q) ≤ a :=
-  TopCat.discGlue_mem (S := {x | f x ≤ a}) _ _ _ _ hA hB _
-
-private theorem stageGlue_boundary_le (hd : 0 < d)
-    (A : C((I × X) × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, M))
-    (B : C((I × X) × (I × TopCat.diskBoundary.{u} k), M))
-    (hAB : ∀ p θ, B (p, 0, θ) =
-      A (p, ⟨(d : ℝ) • θ.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 θ⟩))
-    {a : ℝ} (hA : ∀ p (v : closedBall (0 : EuclideanSpace ℝ (Fin k)) d),
-      ‖(v : EuclideanSpace ℝ (Fin k))‖ = 1 → f (A (p, v)) ≤ a)
-    (hB : ∀ p θ, f (B (p, 1, θ)) ≤ a) (t : I) (x : X) (s : TopCat.diskBoundary.{u} k) :
-    f (stageGlue hd A B hAB (t, x, TopCat.diskBoundaryInclusion k s)) ≤ a :=
-  TopCat.discGlue_mem_of_norm_eq_one (S := {x | f x ≤ a}) _ _ _ _ hA hB _
-    (TopCat.norm_diskBoundaryInclusion s)
-
-/-- `c - εa² ≤ c + ε`, so the sublevel `M_{c-εa²}` lies in `M_{c+ε}`. -/
-private theorem sub_mul_sq_le_add (hε : 0 ≤ ε) (a : ℝ) : c - ε * a ^ 2 ≤ c + ε :=
-  (sub_le_self _ (by positivity)).trans (le_add_of_nonneg_right hε)
-
-variable {r : C({x : M | f x ≤ c - ε * (d : ℝ) ^ 2}, {x : M | f x ≤ c - ε * (d : ℝ) ^ 2})}
-  (R : (ContinuousMap.id _).HomotopyRel r {x | f x.val ≤ c - ε}) (hr : ∀ x, f (r x).val ≤ c - ε)
-  (hε : 0 ≤ ε) (hd : 0 < d)
-
-/-- The deformation of the annulus of a family of discs to the retraction track of its inner
-circle. -/
-private def annulusDeformation (m : C(X × TopCat.disk.{u} k, M))
-    (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) :=
-  R.annulusToTrack hr (familyAnnulus hε m hm) (familyAnnulus_one_mem hε m hm) (ContinuousMap.id I)
-    rfl rfl
-
-/-- The first stage for a family `m`: on the small discs it is `m`, and on the annuli it deforms
-the annulus of `m` to the retraction track of its inner circle. -/
-private def annulusStage (m : C(X × TopCat.disk.{u} k, M))
-    (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) : C(I × (X × TopCat.disk.{u} k), M) :=
-  stageGlue hd ⟨fun p ↦ m (p.1.2, TopCat.smallDiskIncl d.2.2 p.2), by fun_prop⟩
-    ⟨fun p ↦ (annulusDeformation R hr hε m hm (p.1.1, p.2.1, p.1.2, p.2.2) : M), by fun_prop⟩
-    fun p θ ↦ by
-      have h := ((annulusDeformation R hr hε m hm).prop p.1).1 (p.2, θ)
-      simp only [ContinuousMap.HomotopyWith.coe_toHomotopy,
-        ContinuousMap.Homotopy.curry_apply] at h
-      simp [h, coe_familyAnnulus_apply, TopCat.annulusPoint_zero]
-
-variable (m : C(X × TopCat.disk.{u} k, M)) (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
-
-/-- On the small discs the first stage is `m` at all times. -/
-private theorem annulusStage_of_norm_le (t : I) (x : X) {w : TopCat.disk.{u} k}
-    (hw : ‖w.down.1‖ ≤ d) : annulusStage R hr hε hd m hm (t, x, w) = m (x, w) :=
-  (stageGlue_of_norm_le hd _ _ _ t x hw).trans
-    (congrArg (fun w ↦ m (x, w)) (TopCat.smallDiskIncl_mk d.2.2 _))
-
-/-- On the annuli the first stage is the deformation of the annulus to the retraction track, read
-in annulus coordinates. -/
-private theorem annulusStage_of_le_norm (t : I) (x : X) {w : TopCat.disk.{u} k}
-    (hw : d ≤ ‖w.down.1‖) :
-    annulusStage R hr hε hd m hm (t, x, w) =
-      (annulusDeformation R hr hε m hm
-        (t, TopCat.annulusParam d w, x, TopCat.annulusDir (unitInterval.coe_pos.2 hd) ⟨w, hw⟩) :
-        M) :=
-  stageGlue_of_le_norm hd _ _ _ t x hw
-
-/-- The first stage as a homotopy keeping the bounds `TauCeti.StageBound`. -/
-private def annulusStageHomotopy :
-    ContinuousMap.HomotopyWith m ((annulusStage R hr hε hd m hm).curry 1) (StageBound f c ε) where
-  toFun := annulusStage R hr hε hd m hm
-  continuous_toFun := (annulusStage R hr hε hd m hm).continuous
-  map_zero_left q := by
-    rcases le_total ‖q.2.down.1‖ d with hw | hw
-    · exact annulusStage_of_norm_le R hr hε hd m hm 0 q.1 hw
-    · rw [annulusStage_of_le_norm R hr hε hd m hm 0 q.1 hw, ContinuousMap.HomotopyWith.apply_zero,
-        coe_familyAnnulus_apply, TopCat.annulusPoint_annulusParam_annulusDir _ d.2.2 ⟨q.2, hw⟩]
-  map_one_left _ := rfl
-  prop' t := by
-    refine ⟨fun q ↦ stageGlue_le hd _ _ _ (fun q ↦ ?_) (fun q ↦ ?_) (t, q),
-      fun x s ↦ stageGlue_boundary_le hd _ _ _ (fun p v hv ↦ ?_) (fun p θ ↦ ?_) t x s⟩
-    · exact (hm _ _).trans (sub_mul_sq_le_add hε _)
-    · exact (annulusDeformation R hr hε m hm _).2.trans (sub_mul_sq_le_add hε _)
-    · exact (hm p.2 (TopCat.smallDiskIncl d.2.2 v)).trans_eq
-        (by rw [TopCat.smallDiskIncl_apply, hv, one_pow, mul_one])
-    · exact ((annulusDeformation R hr hε m hm).prop p.1).2 (p.2, θ)
-
-end Stages
-
-section Middle
-
-variable {X : Type*} [TopologicalSpace X] {M : Type*} [TopologicalSpace M] {f : M → ℝ}
-  {c ε : ℝ} {k : ℕ} {d : I}
-  {r : C({x : M | f x ≤ c - ε * (d : ℝ) ^ 2}, {x : M | f x ≤ c - ε * (d : ℝ) ^ 2})}
-  (R : (ContinuousMap.id _).HomotopyRel r {x | f x.val ≤ c - ε}) (hr : ∀ x, f (r x).val ≤ c - ε)
-  (hε : 0 ≤ ε) (hd : 0 < d) {m₀ m₁ : C(X × TopCat.disk.{u} k, M)}
-  (hm₀ : ∀ x w, f (m₀ (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
-  (hm₁ : ∀ x w, f (m₁ (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
-  (G : C(I × (X × closedBall (0 : EuclideanSpace ℝ (Fin k)) d), M))
-  (hG₀ : ∀ x w, G (0, x, w) = m₁ (x, ⟨⟨w, closedBall_subset_closedBall d.2.2 w.2⟩⟩))
-  (hG₁ : ∀ x w, G (1, x, w) = m₀ (x, ⟨⟨w, closedBall_subset_closedBall d.2.2 w.2⟩⟩))
-  (hGf : ∀ p, f (G p) ≤ c + ε)
-  (hGd : ∀ t x (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d),
-    ‖(w : EuclideanSpace ℝ (Fin k))‖ = d → f (G (t, x, w)) ≤ c - ε * (d : ℝ) ^ 2)
-
-/-- The homotopy `G` restricted to the inner circles, as a homotopy in `M_{c-εd²}` between the
-inner circles of the annuli of `m₁` and `m₀`. -/
-private def circleHomotopy :
-    ContinuousMap.Homotopy
-      ⟨fun q ↦ familyAnnulus (d := d) hε m₁ hm₁ (0, q), by fun_prop⟩
-      ⟨fun q ↦ familyAnnulus (d := d) hε m₀ hm₀ (0, q), by fun_prop⟩ where
-  toFun p := ⟨G (p.1, p.2.1,
-      ⟨(d : ℝ) • p.2.2.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 p.2.2⟩),
-    hGd _ _ _ (by rw [norm_smul, mem_sphere_zero_iff_norm.1 p.2.2.down.2,
-      Real.norm_of_nonneg d.2.1, mul_one])⟩
-  continuous_toFun := by fun_prop
-  map_zero_left q := Subtype.ext (by
-    simp only [ContinuousMap.coe_mk, hG₀, coe_familyAnnulus_apply, TopCat.annulusPoint_zero,
-      TopCat.smallDiskIncl_apply])
-  map_one_left q := Subtype.ext (by
-    simp only [ContinuousMap.coe_mk, hG₁, coe_familyAnnulus_apply, TopCat.annulusPoint_zero,
-      TopCat.smallDiskIncl_apply])
-
-private theorem coe_circleHomotopy_apply (p : I × (X × TopCat.diskBoundary.{u} k)) :
-    (circleHomotopy hε hm₀ hm₁ G hG₀ hG₁ hGd p : M) =
-      G (p.1, p.2.1,
-        ⟨(d : ℝ) • p.2.2.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 p.2.2⟩) :=
-  (rfl)
-
-/-- The second stage: move the small discs by `G`, together with the retraction tracks of their
-boundary circles. -/
-private def middleStage : C(I × (X × TopCat.disk.{u} k), M) :=
-  stageGlue hd ⟨fun p ↦ G (p.1.1, p.1.2, p.2), by fun_prop⟩
-    ⟨fun p ↦ (R.toHomotopy.retractionTrackHomotopy (ContinuousMap.id I)
-      (circleHomotopy hε hm₀ hm₁ G hG₀ hG₁ hGd) (p.1.1, p.2.1, p.1.2, p.2.2) : M), by fun_prop⟩
-    fun p θ ↦ by
-      simp only [ContinuousMap.coe_mk, ContinuousMap.Homotopy.retractionTrackHomotopy_apply,
-        ContinuousMap.id_apply, ContinuousMap.Homotopy.apply_zero, coe_circleHomotopy_apply]
-
-/-- On the small discs the second stage is `G`. -/
-private theorem middleStage_of_norm_le (t : I) (x : X) {w : TopCat.disk.{u} k}
-    (hw : ‖w.down.1‖ ≤ d) :
-    middleStage R hε hd hm₀ hm₁ G hG₀ hG₁ hGd (t, x, w) =
-      G (t, x, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) :=
-  stageGlue_of_norm_le hd _ _ _ t x hw
-
-/-- On the annuli the second stage is the retraction track of `G` on the inner circles, read in
-annulus coordinates. -/
-private theorem middleStage_of_le_norm (t : I) (x : X) {w : TopCat.disk.{u} k}
-    (hw : d ≤ ‖w.down.1‖) :
-    middleStage R hε hd hm₀ hm₁ G hG₀ hG₁ hGd (t, x, w) =
-      (R.toHomotopy.retractionTrackHomotopy (ContinuousMap.id I)
-        (circleHomotopy hε hm₀ hm₁ G hG₀ hG₁ hGd)
-        (t, TopCat.annulusParam d w, x, TopCat.annulusDir (unitInterval.coe_pos.2 hd) ⟨w, hw⟩) :
-        M) :=
-  stageGlue_of_le_norm hd _ _ _ t x hw
-
-/-- The second stage as a homotopy keeping the bounds `TauCeti.StageBound`, from the end of the
-first stage for `m₁` to the end of the first stage for `m₀`. -/
-private def middleStageHomotopy :
-    ContinuousMap.HomotopyWith ((annulusStage R hr hε hd m₁ hm₁).curry 1)
-      ((annulusStage R hr hε hd m₀ hm₀).curry 1) (StageBound f c ε) where
-  toFun := middleStage R hε hd hm₀ hm₁ G hG₀ hG₁ hGd
-  continuous_toFun := (middleStage R hε hd hm₀ hm₁ G hG₀ hG₁ hGd).continuous
-  map_zero_left q := by
-    rw [ContinuousMap.curry_apply]
-    rcases le_total ‖q.2.down.1‖ d with hw | hw
-    · -- Both sides evaluate `m` at the point `q.2` of the disc, up to structure eta.
-      rw [middleStage_of_norm_le (hw := hw), annulusStage_of_norm_le (hw := hw), hG₀]
-      rfl
-    · rw [middleStage_of_le_norm (hw := hw), annulusStage_of_le_norm (hw := hw)]
-      simp [annulusDeformation]
-  map_one_left q := by
-    rw [ContinuousMap.curry_apply]
-    rcases le_total ‖q.2.down.1‖ d with hw | hw
-    · -- Both sides evaluate `m` at the point `q.2` of the disc, up to structure eta.
-      rw [middleStage_of_norm_le (hw := hw), annulusStage_of_norm_le (hw := hw), hG₁]
-      rfl
-    · rw [middleStage_of_le_norm (hw := hw), annulusStage_of_le_norm (hw := hw)]
-      simp [annulusDeformation]
-  prop' t := by
-    refine ⟨fun q ↦ stageGlue_le hd _ _ _ (fun q ↦ hGf _) (fun q ↦ ?_) (t, q),
-      fun x s ↦ stageGlue_boundary_le hd _ _ _ (fun p v hv ↦ ?_) (fun p θ ↦ ?_) t x s⟩
-    · exact (R.toHomotopy.retractionTrackHomotopy (ContinuousMap.id I)
-        (circleHomotopy hε hm₀ hm₁ G hG₀ hG₁ hGd) _).2.trans (sub_mul_sq_le_add hε _)
-    · -- A unit vector of the small disc forces `d = 1`.
-      have hd₁ : (d : ℝ) = 1 := le_antisymm d.2.2 (hv ▸ mem_closedBall_zero_iff.1 v.2)
-      simpa [hd₁] using hGd _ _ v (hv.trans hd₁.symm)
-    · exact R.toHomotopy.retractionTrackHomotopy_one_mem (B := {x | f x.val ≤ c - ε}) hr rfl _ _
-        (p.2, θ)
-
-end Middle
-
-section Topological
-
-variable {X : Type*} [TopologicalSpace X] {M : Type*} [TopologicalSpace M] {f : M → ℝ}
-  {c ε : ℝ} {k : ℕ}
-
-/-- **A homotopy of families of small discs extends to the whole discs, given a deformation of the
-band.** Let `m₀, m₁ : X × D^k → M` be families of discs parametrized by `X` with
-`f (mⱼ (x, w)) ≤ c - ε‖w‖²`, as for the characteristic maps of Morse charts. Let `0 < d ≤ 1`, and
-let `R` be a homotopy from the identity of `M_{c-εd²}` to a self-map `r` with values in `M_{c-ε}`,
-fixing `M_{c-ε}`. Suppose that `G` is a homotopy, on the discs `‖w‖ ≤ d`, from `m₁` to `m₀`, with
-values in `M_{c+ε}`, which keeps the spheres `‖w‖ = d` in `M_{c-εd²}`. Then `m₁` is homotopic to
-`m₀` by a homotopy with values in `M_{c+ε}` which keeps `X × ∂D^k` in `M_{c-ε}`. -/
-theorem exists_parametric_homotopy_of_innerDisc_of_homotopyRel (hε : 0 ≤ ε) {d : I} (hd : 0 < d)
+/-- **A homotopy of small discs extends to families of characteristic maps, given a deformation
+of the band.** Let `χ₀, χ₁ : P × D^k → M` be families of maps with `f (χⱼ (p, w)) ≤ c - ε ‖w‖²`,
+for instance families of characteristic maps of Morse charts, so that `χⱼ (p, ·)` sends the
+boundary sphere into `M_{c-ε}`. Let `0 < d ≤ 1`, and let `R` be a homotopy from the identity of
+`M_{c-εd²}` to a self-map `r` with values in `M_{c-ε}`, fixing `M_{c-ε}`. Suppose that `G` is a
+homotopy, on the discs `‖w‖ ≤ d`, from `χ₁` to `χ₀`, with values in `M_{c+ε}`, which keeps the
+spheres `‖w‖ = d` in `M_{c-εd²}`. Then `χ₁` is homotopic to `χ₀` through maps with values in
+`M_{c+ε}` which send `P × ∂D^k` into `M_{c-ε}`. -/
+theorem exists_homotopy_morseCharacteristicFamily_of_innerDisc_of_homotopyRel (hε : 0 ≤ ε)
+    {χ₀ χ₁ : C(P × TopCat.disk.{u} k, M)}
+    (hχ₀ : ∀ p w, f (χ₀ (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
+    (hχ₁ : ∀ p w, f (χ₁ (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) {d : I} (hd : 0 < d)
     {r : C({x : M | f x ≤ c - ε * (d : ℝ) ^ 2}, {x : M | f x ≤ c - ε * (d : ℝ) ^ 2})}
     (R : (ContinuousMap.id _).HomotopyRel r {x | f x.val ≤ c - ε})
-    (hr : ∀ x, f (r x).val ≤ c - ε) {m₀ m₁ : C(X × TopCat.disk.{u} k, M)}
-    (hm₀ : ∀ x w, f (m₀ (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
-    (hm₁ : ∀ x w, f (m₁ (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
-    (G : C(I × (X × closedBall (0 : EuclideanSpace ℝ (Fin k)) d), M))
-    (hG₀ : ∀ x w, G (0, x, w) = m₁ (x, ⟨⟨w, closedBall_subset_closedBall d.2.2 w.2⟩⟩))
-    (hG₁ : ∀ x w, G (1, x, w) = m₀ (x, ⟨⟨w, closedBall_subset_closedBall d.2.2 w.2⟩⟩))
-    (hGf : ∀ p, f (G p) ≤ c + ε)
-    (hGd : ∀ t x (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d),
-      ‖(w : EuclideanSpace ℝ (Fin k))‖ = d → f (G (t, x, w)) ≤ c - ε * (d : ℝ) ^ 2) :
-    ∃ K : m₁.Homotopy m₀, (∀ p, f (K p) ≤ c + ε) ∧
-      ∀ t x (s : TopCat.diskBoundary.{u} k),
-        f (K (t, x, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
-  -- Deform the annuli of `m₁`, move the small discs with their tracks, and undo the annulus
-  -- deformation for `m₀`.
-  let K := (annulusStageHomotopy R hr hε hd m₁ hm₁).trans
-    ((middleStageHomotopy R hr hε hd hm₀ hm₁ G hG₀ hG₁ hGf hGd).trans
-      (annulusStageHomotopy R hr hε hd m₀ hm₀).symm)
-  exact ⟨K.toHomotopy, fun p ↦ (K.prop p.1).1 p.2, fun t x s ↦ (K.prop t).2 x s⟩
+    (hr : ∀ x, f (r x).val ≤ c - ε)
+    (G : C(I × (P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d), M))
+    (hG₀ : ∀ p (w : TopCat.disk.{u} k) (hw : ‖w.down.1‖ ≤ d),
+      G (0, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ₁ (p, w))
+    (hG₁ : ∀ p (w : TopCat.disk.{u} k) (hw : ‖w.down.1‖ ≤ d),
+      G (1, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ₀ (p, w))
+    (hGf : ∀ q, f (G q) ≤ c + ε)
+    (hGd : ∀ t p (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d),
+      ‖(w : EuclideanSpace ℝ (Fin k))‖ = d → f (G (t, p, w)) ≤ c - ε * (d : ℝ) ^ 2) :
+    ∃ K : χ₁.Homotopy χ₀, (∀ q, f (K q) ≤ c + ε) ∧
+      ∀ t p (s : TopCat.diskBoundary.{u} k),
+        f (K (t, p, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
+  have hd' : (0 : ℝ) < d := unitInterval.coe_pos.2 hd
+  -- `G` at a point of the small disc given as a point of the whole disc.
+  have hGeq (t : I) (G' : C(P × TopCat.disk.{u} k, M))
+      (hG' : ∀ p (w : TopCat.disk.{u} k) (hw : ‖w.down.1‖ ≤ d),
+        G (t, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = G' (p, w))
+      (p : P) (v : closedBall (0 : EuclideanSpace ℝ (Fin k)) d) (w : TopCat.disk.{u} k)
+      (h : w.down.1 = v) : G (t, p, v) = G' (p, w) := by
+    have hv : v = ⟨w.down.1, mem_closedBall_zero_iff.2 (h ▸ mem_closedBall_zero_iff.1 v.2)⟩ :=
+      Subtype.ext h.symm
+    rw [hv]
+    exact hG' p w (by rw [h]; exact mem_closedBall_zero_iff.1 v.2)
+  -- The homotopy `G` on the small spheres joins the inner circles of the two annuli.
+  let Kc : (⟨fun x ↦ familyAnnulus hε d χ₁ hχ₁ (0, x), by fun_prop⟩ :
+      C(P × TopCat.diskBoundary.{u} k, _)).Homotopy
+      ⟨fun x ↦ familyAnnulus hε d χ₀ hχ₀ (0, x), by fun_prop⟩ :=
+    { toFun y := ⟨G (y.1, y.2.1,
+          ⟨(d : ℝ) • y.2.2.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 y.2.2⟩),
+        hGd _ _ _ (by rw [norm_smul, mem_sphere_zero_iff_norm.1 y.2.2.down.2,
+          Real.norm_of_nonneg d.2.1, mul_one])⟩
+      continuous_toFun := (G.continuous.comp (continuous_fst.prodMk
+        ((continuous_fst.comp continuous_snd).prodMk
+          (Continuous.subtype_mk (by fun_prop) _)))).subtype_mk _
+      map_zero_left x := Subtype.ext <| hGeq 0 χ₁ hG₀ _ _ _ (by simp)
+      map_one_left x := Subtype.ext <| hGeq 1 χ₀ hG₁ _ _ _ (by simp) }
+  have hKc (y : I × (P × TopCat.diskBoundary.{u} k)) : (Kc y : M) =
+      G (y.1, y.2.1,
+        ⟨(d : ℝ) • y.2.2.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 y.2.2⟩) :=
+    rfl
+  obtain ⟨H, hH1, hH0⟩ := R.exists_annulus_homotopy hr (familyAnnulus_one_mem hε d χ₁ hχ₁)
+    (familyAnnulus_one_mem hε d χ₀ hχ₀) Kc
+  -- The disc piece is `G` at the time at which `H` runs it on the inner circles.
+  let τ : C(I, I) := ⟨fun t ↦ projIcc 0 1 zero_le_one (4 * t - 2), by fun_prop⟩
+  have hτ (t : I) : τ t = projIcc 0 1 zero_le_one (4 * (t : ℝ) - 2) := rfl
+  have hτ0 : τ 0 = 0 :=
+    projIcc_of_le_left zero_le_one (by norm_num : 4 * ((0 : I) : ℝ) - 2 ≤ 0)
+  have hτ1 : τ 1 = 1 :=
+    projIcc_of_right_le zero_le_one (by norm_num : (1 : ℝ) ≤ 4 * ((1 : I) : ℝ) - 2)
+  let A : C((I × P) × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, M) :=
+    ⟨fun q ↦ G (τ q.1.1, q.1.2, q.2), by fun_prop⟩
+  let B : C((I × P) × (I × TopCat.diskBoundary.{u} k), M) :=
+    ⟨fun q ↦ H (q.1.1, q.2.1, q.1.2, q.2.2), by fun_prop⟩
+  have hA (q : (I × P) × closedBall (0 : EuclideanSpace ℝ (Fin k)) d) :
+      A q = G (τ q.1.1, q.1.2, q.2) := rfl
+  have hB (q : (I × P) × (I × TopCat.diskBoundary.{u} k)) :
+      B q = H (q.1.1, q.2.1, q.1.2, q.2.2) := rfl
+  have hAB (q : I × P) (θ : TopCat.diskBoundary.{u} k) :
+      B (q, 0, θ) =
+        A (q, ⟨(d : ℝ) • θ.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 θ⟩) := by
+    rw [hB, hH0, hKc, hA, hτ]
+  let F := TopCat.discGlue hd' A B hAB
+  -- At the two ends, the glued map is the given family on the small disc and its annulus.
+  have hend (j : I) (χ : C(P × TopCat.disk.{u} k, M))
+      (hχ : ∀ p w, f (χ (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
+      (hGj : ∀ p (w : TopCat.disk.{u} k) (hw : ‖w.down.1‖ ≤ d),
+        G (τ j, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ (p, w))
+      (hH : ∀ x, (H (j, x) : M) = familyAnnulus hε d χ hχ x) (p : P) (w : TopCat.disk.{u} k) :
+      F ((j, p), w) = χ (p, w) := by
+    rcases le_total ‖w.down.1‖ d with hw | hw
+    · exact (TopCat.discGlue_apply_of_norm_le hd' A B hAB _ hw).trans (hGj p w hw)
+    · refine (TopCat.discGlue_apply_of_le_norm hd' A B hAB _ hw).trans ?_
+      rw [hB, hH, coe_familyAnnulus_apply]
+      congr 2
+      exact ULift.ext (Subtype.ext ((TopCat.coe_annulusPoint _ _ _ _).trans
+        (TopCat.add_one_sub_mul_annulusParam_smul_annulusDir hd' d.2.2 ⟨w, hw⟩)))
+  refine ⟨{ toFun x := F ((x.1, x.2.1), x.2.2)
+            continuous_toFun := by fun_prop
+            map_zero_left x := hend 0 χ₁ hχ₁ (fun p w hw ↦ by rw [hτ0]; exact hG₀ p w hw)
+              (fun x ↦ by rw [ContinuousMap.Homotopy.apply_zero]) x.1 x.2
+            map_one_left x := hend 1 χ₀ hχ₀ (fun p w hw ↦ by rw [hτ1]; exact hG₁ p w hw)
+              (fun x ↦ by rw [ContinuousMap.Homotopy.apply_one]) x.1 x.2 },
+    fun q ↦ ?_, fun t p s ↦ ?_⟩
+  · refine TopCat.discGlue_mem (S := {x | f x ≤ c + ε}) hd' A B hAB (fun q ↦ hGf _) (fun q ↦ ?_) _
+    rw [mem_ofPred_eq, hB]
+    exact (H _).2.trans (by nlinarith [mul_nonneg hε (sq_nonneg (d : ℝ))])
+  · exact TopCat.discGlue_mem_of_norm_eq_one (S := {x | f x ≤ c - ε}) hd' A B hAB
+      (fun q v hv ↦ by
+        -- A unit vector of the small disc forces `d = 1`.
+        have hd₁ : (d : ℝ) = 1 := le_antisymm d.2.2 (hv ▸ mem_closedBall_zero_iff.1 v.2)
+        rw [mem_ofPred_eq, hA]
+        simpa [hd₁] using hGd _ _ v (hv.trans hd₁.symm))
+      (fun q θ ↦ hH1 _ _) _ (TopCat.norm_diskBoundaryInclusion s)
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {Iₘ : ModelWithCorners ℝ E H} [Iₘ.Boundaryless]
+  [ChartedSpace H M] [IsManifold Iₘ ∞ M] [T2Space M]
+
+/-- A compact band `f⁻¹[c - ε, c - εd²]` free of critical points gives a deformation `R` of
+`M_{c-εd²}` into `M_{c-ε}` fixing `M_{c-ε}`, as used by
+`TauCeti.exists_homotopy_morseCharacteristicFamily_of_innerDisc_of_homotopyRel`. -/
+private theorem exists_homotopyRel_of_band (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f) (hε : 0 ≤ ε) (d : I)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c - ε * (d : ℝ) ^ 2)))
+    (hreg : ∀ x, c - ε ≤ f x → f x ≤ c - ε * (d : ℝ) ^ 2 → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0) :
+    ∃ (r : C({x : M | f x ≤ c - ε * (d : ℝ) ^ 2}, {x : M | f x ≤ c - ε * (d : ℝ) ^ 2}))
+      (_ : (ContinuousMap.id _).HomotopyRel r {x | f x.val ≤ c - ε}), ∀ x, f (r x).val ≤ c - ε := by
+  have hab : c - ε ≤ c - ε * (d : ℝ) ^ 2 := by
+    have := pow_le_one₀ d.2.1 d.2.2 (n := 2)
+    nlinarith
+  obtain ⟨r, -, ⟨R⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
+  refine ⟨_, R.symm, fun x ↦ ?_⟩
+  rw [ContinuousMap.comp_apply, coe_sublevelInclusion_apply]
+  exact (r x).2
+
+/-- **A homotopy of small discs extends to families of characteristic maps.** Let
+`χ₀, χ₁ : P × D^k → M` be families of maps with `f (χⱼ (p, w)) ≤ c - ε ‖w‖²`, for instance
+families of characteristic maps of Morse charts. Let `0 < d ≤ 1` be such that the band
+`f⁻¹[c - ε, c - εd²]` is compact and free of critical points. Suppose that `G` is a homotopy, on
+the discs `‖w‖ ≤ d`, from `χ₁` to `χ₀`, with values in `M_{c+ε}`, which keeps the spheres
+`‖w‖ = d` in `M_{c-εd²}`. Then `χ₁` is homotopic to `χ₀` through maps with values in `M_{c+ε}`
+which send `P × ∂D^k` into `M_{c-ε}`. -/
+theorem exists_homotopy_morseCharacteristicFamily_of_innerDisc (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
+    (hε : 0 ≤ ε)
+    {χ₀ χ₁ : C(P × TopCat.disk.{u} k, M)}
+    (hχ₀ : ∀ p w, f (χ₀ (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
+    (hχ₁ : ∀ p w, f (χ₁ (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) {d : I} (hd : 0 < d)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c - ε * (d : ℝ) ^ 2)))
+    (hreg : ∀ x, c - ε ≤ f x → f x ≤ c - ε * (d : ℝ) ^ 2 → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (G : C(I × (P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d), M))
+    (hG₀ : ∀ p (w : TopCat.disk.{u} k) (hw : ‖w.down.1‖ ≤ d),
+      G (0, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ₁ (p, w))
+    (hG₁ : ∀ p (w : TopCat.disk.{u} k) (hw : ‖w.down.1‖ ≤ d),
+      G (1, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ₀ (p, w))
+    (hGf : ∀ q, f (G q) ≤ c + ε)
+    (hGd : ∀ t p (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d),
+      ‖(w : EuclideanSpace ℝ (Fin k))‖ = d → f (G (t, p, w)) ≤ c - ε * (d : ℝ) ^ 2) :
+    ∃ K : χ₁.Homotopy χ₀, (∀ q, f (K q) ≤ c + ε) ∧
+      ∀ t p (s : TopCat.diskBoundary.{u} k),
+        f (K (t, p, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
+  obtain ⟨r, R, hr⟩ := exists_homotopyRel_of_band hf hε d hcompact hreg
+  exact exists_homotopy_morseCharacteristicFamily_of_innerDisc_of_homotopyRel hε hχ₀ hχ₁ hd R hr
+    G hG₀ hG₁ hGf hGd
+
+end Family
+
+section Charts
+
+variable {M : Type u} [TopologicalSpace M] {f : M → ℝ} {c ε : ℝ} {n k : ℕ}
+
+/-- The characteristic map `w ↦ χ (g w)` of a chart precomposed with a linear isometry, as a
+family over a point. -/
+private def chartFamily (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n)
+    (hball : closedBall 0 √ε ⊆ ψ.target)
+    (g : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k)) :
+    C(PUnit.{1} × TopCat.disk.{u} k, M) where
+  toFun q := ψ.morseCellMap hk ε (g q.2.down)
+  continuous_toFun := (ψ.continuousOn_morseCellMap hball hk).comp_continuous (by fun_prop)
+    fun q ↦ by
+      rw [mem_closedBall_zero_iff, g.norm_map]
+      exact mem_closedBall_zero_iff.1 q.2.down.2
+
+private theorem chartFamily_apply (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
+    (hk : k ≤ n) (hball : closedBall 0 √ε ⊆ ψ.target)
+    (g : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k))
+    (q : PUnit.{1} × TopCat.disk.{u} k) :
+    chartFamily ψ hk hball g q = ψ.morseCellMap hk ε (g q.2.down) :=
+  (rfl)
+
+private theorem apply_chartFamily_le (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
+    (hk : k ≤ n) (hε : 0 ≤ ε) (hball : closedBall 0 √ε ⊆ ψ.target)
+    (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
+    (g : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k)) (p : PUnit.{1})
+    (w : TopCat.disk.{u} k) :
+    f (chartFamily ψ hk hball g (p, w)) ≤ c - ε * ‖w.down.1‖ ^ 2 := by
+  have hw : ‖g w.down.1‖ ≤ 1 := (g.norm_map _).trans_le (mem_closedBall_zero_iff.1 w.down.2)
+  exact (ψ.apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε hw).trans_le
+    (by rw [g.norm_map])
 
 /-- **A homotopy of small Morse discs extends to the characteristic maps, given a deformation of
 the band.** Let `ψ₀` and `ψ₁` be charts with values in `ℝⁿ` in which
@@ -389,7 +308,6 @@ fixing `M_{c-ε}`. Suppose that `G` is a homotopy, on the disc `‖w‖ ≤ d`, 
 `χ₁` is homotopic to `χ₀ ∘ g` as a map of pairs `(D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`: the homotopy
 keeps the boundary sphere in `M_{c-ε}`. -/
 theorem exists_homotopy_morseCharacteristicMap_of_innerDisc_of_homotopyRel
-    {M : Type u} [TopologicalSpace M] {f : M → ℝ} {n : ℕ}
     {ψ₀ ψ₁ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : k ≤ n) (hε : 0 ≤ ε)
     (hball₀ : closedBall 0 √ε ⊆ ψ₀.target) (hball₁ : closedBall 0 √ε ⊆ ψ₁.target)
     (hf₀ : ∀ y ∈ ψ₀.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₀ y j ^ 2)
@@ -407,88 +325,26 @@ theorem exists_homotopy_morseCharacteristicMap_of_innerDisc_of_homotopyRel
     ∃ K : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
         (g.diskMap ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom,
       ∀ t (s : TopCat.diskBoundary.{u} k), f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
-  -- Apply the parametric statement over a one-point parameter space.
-  let m₀ : C(Unit × TopCat.disk.{u} k, M) :=
-    ⟨fun q ↦ ψ₀.morseCellMap hk ε (g q.2.down.1),
-      (ψ₀.continuousOn_morseCellMap hball₀ hk).comp_continuous (by fun_prop) fun q ↦ by
-        rw [mem_closedBall_zero_iff, g.norm_map]
-        exact mem_closedBall_zero_iff.1 q.2.down.2⟩
-  let m₁ : C(Unit × TopCat.disk.{u} k, M) :=
-    ⟨fun q ↦ ψ₁.morseCellMap hk ε q.2.down.1,
-      (ψ₁.continuousOn_morseCellMap hball₁ hk).comp_continuous (by fun_prop) fun q ↦ q.2.down.2⟩
-  have hm₀ : ∀ x w, f (m₀ (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2 := fun _ w ↦ by
-    have hw := mem_closedBall_zero_iff.1 w.down.2
-    rw [← g.norm_map] at hw ⊢
-    exact (OpenPartialHomeomorph.apply_morseCellMap_eq_sub_mul_norm_sq hball₀ hf₀ hk hε hw).le
-  have hm₁ : ∀ x w, f (m₁ (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2 := fun _ w ↦
-    (OpenPartialHomeomorph.apply_morseCellMap_eq_sub_mul_norm_sq hball₁ hf₁ hk hε
-      (mem_closedBall_zero_iff.1 w.down.2)).le
-  obtain ⟨K, hKf, hKd⟩ := exists_parametric_homotopy_of_innerDisc_of_homotopyRel hε hd R hr hm₀
-    hm₁ ⟨fun p : I × (Unit × _) ↦ G (p.1, p.2.2), by fun_prop⟩ (fun _ w ↦ hG₀ w)
-    (fun _ w ↦ hG₁ w) (fun p ↦ hGf _ _) (fun t _ w hw ↦ hGd t w hw)
-  exact ⟨{ toFun p := ⟨K (p.1, (), p.2), hKf _⟩
-           continuous_toFun := (K.continuous.comp (by fun_prop)).subtype_mk _
-           -- The endpoints of `K` are `m₁` and `m₀`, which unfold to the characteristic maps.
-           map_zero_left w := Subtype.ext ((K.apply_zero ((), w)).trans
-             (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply hball₁ hf₁ hk hε w).symm)
-           map_one_left w := Subtype.ext ((K.apply_one ((), w)).trans (by
-             rw [TopCat.hom_comp, ContinuousMap.comp_apply,
+  -- Apply the family version over a point.
+  obtain ⟨K, hKf, hKb⟩ := exists_homotopy_morseCharacteristicFamily_of_innerDisc_of_homotopyRel
+    hε (apply_chartFamily_le ψ₀ hk hε hball₀ hf₀ g)
+    (apply_chartFamily_le ψ₁ hk hε hball₁ hf₁ (.refl ℝ _)) hd R hr
+    (G.comp ⟨fun x ↦ (x.1, x.2.2), by fun_prop⟩) (fun _ w _ ↦ hG₀ _) (fun _ w _ ↦ hG₁ _)
+    (fun q ↦ hGf _ _) (fun t _ w hw ↦ hGd t w hw)
+  exact ⟨{ toFun x := ⟨K (x.1, PUnit.unit, x.2), hKf _⟩
+           continuous_toFun := by fun_prop
+           map_zero_left w := Subtype.ext <| (K.apply_zero _).trans <| by
+             rw [chartFamily_apply, OpenPartialHomeomorph.coe_morseCharacteristicMap_apply,
+               LinearIsometryEquiv.coe_refl, id]
+           map_one_left w := Subtype.ext <| (K.apply_one _).trans <| by
+             rw [chartFamily_apply, TopCat.hom_comp, ContinuousMap.comp_apply,
                OpenPartialHomeomorph.coe_morseCharacteristicMap_apply,
-               LinearIsometryEquiv.coe_diskMap_apply_down]
-             rfl)) },
-    fun t s ↦ hKd t () s⟩
-
-end Topological
-
-section Main
+               LinearIsometryEquiv.coe_diskMap_apply_down] },
+    fun t s ↦ hKb t _ s⟩
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {Iₘ : ModelWithCorners ℝ E H} [Iₘ.Boundaryless]
-  {M : Type v} [TopologicalSpace M] [ChartedSpace H M] [IsManifold Iₘ ∞ M] [T2Space M]
-  {f : M → ℝ} {c ε : ℝ} {n k : ℕ}
-
-/-- A compact band `f⁻¹[c - ε, c - εd²]` without critical points supplies a deformation of
-`M_{c-εd²}` into `M_{c-ε}` fixing `M_{c-ε}`. -/
-private theorem exists_homotopyRel_sublevel (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f) {d : I}
-    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c - ε * (d : ℝ) ^ 2)))
-    (hreg : ∀ x, c - ε ≤ f x → f x ≤ c - ε * (d : ℝ) ^ 2 → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
-    (hε : 0 ≤ ε) :
-    ∃ r : C({x : M | f x ≤ c - ε * (d : ℝ) ^ 2}, {x : M | f x ≤ c - ε * (d : ℝ) ^ 2}),
-      (∀ x, f (r x).val ≤ c - ε) ∧
-        Nonempty ((ContinuousMap.id _).HomotopyRel r {x | f x.val ≤ c - ε}) := by
-  have hab : c - ε ≤ c - ε * (d : ℝ) ^ 2 := by
-    have := pow_le_one₀ d.2.1 d.2.2 (n := 2)
-    nlinarith
-  obtain ⟨r, -, ⟨R⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
-  refine ⟨_, fun x ↦ ?_, ⟨R.symm⟩⟩
-  rw [ContinuousMap.comp_apply, coe_sublevelInclusion_apply]
-  exact (r x).2
-
-/-- **A homotopy of families of small discs extends to the whole discs.** Let `m₀, m₁ : X × D^k → M`
-be families of discs parametrized by `X` with `f (mⱼ (x, w)) ≤ c - ε‖w‖²`, as for the
-characteristic maps of Morse charts. Let `0 < d ≤ 1` be such that the band `f⁻¹[c - ε, c - εd²]` is
-compact and free of critical points. Suppose that `G` is a homotopy, on the discs `‖w‖ ≤ d`, from
-`m₁` to `m₀`, with values in `M_{c+ε}`, which keeps the spheres `‖w‖ = d` in `M_{c-εd²}`. Then `m₁`
-is homotopic to `m₀` by a homotopy with values in `M_{c+ε}` which keeps `X × ∂D^k` in
-`M_{c-ε}`. -/
-theorem exists_parametric_homotopy_of_innerDisc {X : Type*} [TopologicalSpace X]
-    (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f) (hε : 0 ≤ ε) {d : I} (hd : 0 < d)
-    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c - ε * (d : ℝ) ^ 2)))
-    (hreg : ∀ x, c - ε ≤ f x → f x ≤ c - ε * (d : ℝ) ^ 2 → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
-    {m₀ m₁ : C(X × TopCat.disk.{u} k, M)}
-    (hm₀ : ∀ x w, f (m₀ (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
-    (hm₁ : ∀ x w, f (m₁ (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
-    (G : C(I × (X × closedBall (0 : EuclideanSpace ℝ (Fin k)) d), M))
-    (hG₀ : ∀ x w, G (0, x, w) = m₁ (x, ⟨⟨w, closedBall_subset_closedBall d.2.2 w.2⟩⟩))
-    (hG₁ : ∀ x w, G (1, x, w) = m₀ (x, ⟨⟨w, closedBall_subset_closedBall d.2.2 w.2⟩⟩))
-    (hGf : ∀ p, f (G p) ≤ c + ε)
-    (hGd : ∀ t x (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d),
-      ‖(w : EuclideanSpace ℝ (Fin k))‖ = d → f (G (t, x, w)) ≤ c - ε * (d : ℝ) ^ 2) :
-    ∃ K : m₁.Homotopy m₀, (∀ p, f (K p) ≤ c + ε) ∧
-      ∀ t x (s : TopCat.diskBoundary.{u} k),
-        f (K (t, x, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
-  obtain ⟨r, hr, ⟨R⟩⟩ := exists_homotopyRel_sublevel hf hcompact hreg hε
-  exact exists_parametric_homotopy_of_innerDisc_of_homotopyRel hε hd R hr hm₀ hm₁ G hG₀ hG₁ hGf hGd
+  [ChartedSpace H M] [IsManifold Iₘ ∞ M] [T2Space M]
 
 /-- **A homotopy of small Morse discs extends to the characteristic maps.** Let `ψ₀` and `ψ₁` be
 charts with values in `ℝⁿ` in which `f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²`, whose targets contain
@@ -514,11 +370,11 @@ theorem exists_homotopy_morseCharacteristicMap_of_innerDisc (hf : ContMDiff Iₘ
       ‖(w : EuclideanSpace ℝ (Fin k))‖ = d → f (G (t, w)) ≤ c - ε * (d : ℝ) ^ 2) :
     ∃ K : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
         (g.diskMap ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom,
-      ∀ t (s : TopCat.diskBoundary.{v} k), f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
-  obtain ⟨r, hr, ⟨R⟩⟩ := exists_homotopyRel_sublevel hf hcompact hreg hε
+      ∀ t (s : TopCat.diskBoundary.{u} k), f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
+  obtain ⟨r, R, hr⟩ := exists_homotopyRel_of_band hf hε d hcompact hreg
   exact exists_homotopy_morseCharacteristicMap_of_innerDisc_of_homotopyRel hk hε hball₀ hball₁ hf₀
     hf₁ g hd R hr G hG₀ hG₁ hGf hGd
 
-end Main
+end Charts
 
 end TauCeti
