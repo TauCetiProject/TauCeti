@@ -123,7 +123,6 @@ private theorem exists_harmonicOnNhd_ball_setIntegral_norm_gradient_sub_sq_eq {a
   have hBU : B ≤ U := SetLike.coe_subset_coe.1 hBs
   have hΩB : Ω ≤ B := SetLike.coe_subset_coe.1 hΩBs
   have hΩeq : B ⊓ normalHalfSpace a = Ω := SetLike.coe_injective (by rw [Opens.coe_inf, hB, hΩ])
-  have hΩm : MeasurableSet (Ω : Set (WithLp 2 (ℝ × E))) := Ω.isOpen.measurableSet
   -- `W = u - (u - w)₀` on `B` vanishes off `H` and restricts to `w` on `Ω`.
   obtain ⟨W, hW0, hWres⟩ := W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule hΩB hBU
     (S := normalHalfSpace (E := E) a) (hΩ ▸ inter_subset_right)
@@ -355,7 +354,6 @@ theorem exists_setIntegral_ball_inter_normalHalfSpace_norm_gradient_sub_sq_le {�
   set ψ : ℝ → ℝ := fun s => ∫ x in ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _),
     ‖W1p.gradient u x - WithLp.toLp 2
       ((⨍ y in ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _), W1p.gradient u y).fst, 0)‖ ^ 2
-    with hψ
   -- The comparison step on every half-ball `B_r⁺`, `r ≤ R`.
   have hstep : ∀ ρ r, 0 < ρ → ρ ≤ r → r ≤ R →
       ψ ρ ≤ 4 * D * ((ρ / r) ^ ((n : ℝ) + 2) + 0) * ψ r +
@@ -378,7 +376,6 @@ theorem exists_setIntegral_ball_inter_normalHalfSpace_norm_gradient_sub_sq_le {�
       (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)
   have hHm : ∀ s, MeasurableSet (ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _)) := fun _ =>
     measurableSet_ball.inter (normalHalfSpace a).isOpen.measurableSet
-  have hM0 : 0 ≤ M := mul_nonneg (by positivity) (mul_nonneg (by positivity) measureReal_nonneg)
   have h := hit (φ := ψ) (R := R) (B := M * (K : ℝ) ^ 2) (ε := 0) (by positivity) hε₀.le
     (monotoneOn_setIntegral_ball_inter_normalHalfSpace_norm_sub_sq hf)
     (fun s _ => setIntegral_nonneg (hHm s) fun _ _ => sq_nonneg _) hstep t R ht htR le_rfl
