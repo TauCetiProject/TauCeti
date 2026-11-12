@@ -33,7 +33,9 @@ integer-graded algebra are those of its parity reduction.
   `SetLike.GradedMonoid (coarsenGrading 𝒜 f)` and `GradedAlgebra (coarsenGrading 𝒜 f)`, which
   apply in particular to `parityGrading 𝒜`.
 * `TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading`: integer graded commutativity implies
-  parity graded commutativity.
+  parity graded commutativity, whence even-parity elements commute with every element
+  (`TauCeti.commute_of_mem_parityGrading_zero`) and odd-parity elements square to their own
+  negatives (`TauCeti.mul_self_eq_neg_of_mem_parityGrading_one`).
 -/
 
 public section
@@ -114,6 +116,24 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading
   refine coarsenGrading_induction (motive := fun b ↦ a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a)) hb
     (fun q hq b hb ↦ ?_) (by simp) fun x y hx hy ↦ by rw [mul_add, add_mul, hx, hy, smul_add]
   rw [hcomm ha hb, ← hp, ← hq, Int.coe_castAddHom, ← Int.cast_mul, uzpow_intCast_eq_negOnePow]
+
+/-- In an internally integer-graded algebra with Koszul signs, every element of even parity
+commutes with the entire algebra. -/
+theorem commute_of_mem_parityGrading_zero [Decomposition 𝒜]
+    (hcomm : ∀ {p q : ℤ} {a b : A}, a ∈ 𝒜 p → b ∈ 𝒜 q → a * b = (p * q).negOnePow • (b * a))
+    {a : A} (ha : a ∈ parityGrading 𝒜 0) (b : A) : Commute a b := by
+  induction b using Decomposition.inductionOn (parityGrading 𝒜) with
+  | zero => simp [Commute, SemiconjBy]
+  | @homogeneous j b =>
+    simpa [Commute, SemiconjBy] using mul_eq_uzpow_smul_mul_of_mem_parityGrading hcomm ha b.2
+  | add x y hx hy => simp only [Commute, SemiconjBy, mul_add, add_mul, hx.eq, hy.eq]
+
+/-- Under Koszul graded commutativity, every element of odd parity squares to its own negative,
+including inhomogeneous sums of odd-degree pieces. -/
+theorem mul_self_eq_neg_of_mem_parityGrading_one
+    (hcomm : ∀ {p q : ℤ} {a b : A}, a ∈ 𝒜 p → b ∈ 𝒜 q → a * b = (p * q).negOnePow • (b * a))
+    {a : A} (ha : a ∈ parityGrading 𝒜 1) : a * a = -(a * a) := by
+  simpa using mul_eq_uzpow_smul_mul_of_mem_parityGrading hcomm ha ha
 
 end ParityComm
 

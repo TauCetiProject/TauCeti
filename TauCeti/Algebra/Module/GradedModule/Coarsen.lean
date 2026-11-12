@@ -25,7 +25,11 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 ## Main definitions
 
 * `TauCeti.coarsenGrading ℳ f`: the coarsening of a family of submodules along `f : ι → κ`.
+* `TauCeti.coarsenGradingEquiv`: equivalence between the direct sum over the fibre `f i = k` and
+  `coarsenGrading ℳ f k`.
 * `TauCeti.parityGrading ℳ`: the parity grading of an integer-indexed family of submodules.
+* `TauCeti.LinearMap.IsHomogeneous.restrictParity`: restriction of a degree-zero homogeneous map
+  to each parity piece.
 * `TauCeti.InternalGrading.coarsen` and `TauCeti.InternalGrading.parity`: the same constructions
   for bundled internal gradings.
 
@@ -39,7 +43,9 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
   when its components outside the fibre over `k` vanish.
 * `TauCeti.LinearMap.IsHomogeneous.coarsenGrading`: a homogeneous linear map of degree `q` is
   homogeneous of degree `f q` for gradings coarsened along an additive homomorphism `f`.
-* `TauCeti.parityGrading_zero` and `TauCeti.parityGrading_one`: the even and odd pieces.
+* `TauCeti.parityGrading_zero`, `TauCeti.parityGrading_one`, and
+  `TauCeti.decompose_parityGrading_zero_add_one`: the even and odd pieces and the two-term parity
+  decomposition of an element.
 -/
 
 public section
@@ -153,6 +159,76 @@ theorem mem_coarsenGrading_iff {x : M} {k : κ} :
     · rw [hx i hi]
       exact zero_mem _
 
+/-- Each coarsened piece is the direct sum of the original pieces in its fibre. -/
+noncomputable def coarsenGradingEquiv (k : κ) :
+    (⨁ i : {i : ι // f i = k}, ℳ i.1) ≃ₗ[R] coarsenGrading ℳ f k :=
+  LinearEquiv.ofLinearMap
+    (toModule R {i : ι // f i = k} (coarsenGrading ℳ f k) fun i ↦
+      (ℳ i.1).subtype.codRestrict (coarsenGrading ℳ f k) fun x ↦ by
+        rw [Submodule.coe_subtype]
+        have hx : (x : M) ∈ coarsenGrading ℳ f (f i.1) := mem_coarsenGrading_of_mem f x.2
+        rwa [i.2] at hx)
+    (((toModule R ι (⨁ i : {i : ι // f i = k}, ℳ i.1) fun i ↦
+        if h : f i = k then lof R {j : ι // f j = k} (fun j ↦ ℳ j.1) ⟨i, h⟩ else 0).comp
+      (decomposeLinearEquiv ℳ).toLinearMap).comp (coarsenGrading ℳ f k).subtype)
+    (by
+      have hleft : ∀ x ∈ coarsenGrading ℳ f k,
+          ((toModule R {i : ι // f i = k} (coarsenGrading ℳ f k) fun i ↦
+              (ℳ i.1).subtype.codRestrict (coarsenGrading ℳ f k) fun y ↦ by
+                rw [Submodule.coe_subtype]
+                have hy : (y : M) ∈ coarsenGrading ℳ f (f i.1) := mem_coarsenGrading_of_mem f y.2
+                rwa [i.2] at hy)
+            ((toModule R ι (⨁ i : {i : ι // f i = k}, ℳ i.1) fun i ↦
+              if h : f i = k then lof R {j : ι // f j = k} (fun j ↦ ℳ j.1) ⟨i, h⟩ else 0)
+                (decomposeLinearEquiv ℳ x)) : M) = x := fun x hx ↦
+        coarsenGrading_induction hx
+          (fun i hi y hy ↦ by
+            rw [decomposeLinearEquiv_apply_coe ℳ i ⟨y, hy⟩, toModule_lof, dite_eq_left hi,
+              toModule_lof]
+            rfl)
+          (by simp)
+          (fun y z hy hz ↦ by simp [hy, hz])
+      exact LinearMap.ext fun ⟨x, hx⟩ ↦ Subtype.ext (hleft x hx))
+    (by
+      refine DirectSum.linearMap_ext R fun i ↦ LinearMap.ext fun x ↦ ?_
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, Submodule.coe_subtype,
+        LinearEquiv.coe_coe, toModule_lof, LinearMap.codRestrict_apply]
+      rw [decomposeLinearEquiv_apply_coe ℳ i.1 x, toModule_lof, dite_eq_left i.2])
+
+/-- On a single fibre summand, `coarsenGradingEquiv` is the submodule inclusion into `M`. -/
+@[simp]
+theorem coe_coarsenGradingEquiv_lof (k : κ) (i : {i : ι // f i = k}) (x : ℳ i.1) :
+    (coarsenGradingEquiv ℳ f k (lof R {j : ι // f j = k} (fun j ↦ ℳ j.1) i x) : M) = x := by
+  simp [coarsenGradingEquiv]
+
+/-- The inverse of `coarsenGradingEquiv` extracts the `i`-th homogeneous component for each `i` in
+the fibre over `k`. -/
+@[simp]
+theorem coarsenGradingEquiv_symm_apply (k : κ) (x : coarsenGrading ℳ f k)
+    (i : {i : ι // f i = k}) :
+    (coarsenGradingEquiv ℳ f k).symm x i = decompose ℳ (x : M) i.1 := by
+  have h : ∀ y : M, (((toModule R ι (⨁ j : {j : ι // f j = k}, ℳ j.1) fun j ↦
+      if h : f j = k then lof R {j : ι // f j = k} (fun j ↦ ℳ j.1) ⟨j, h⟩ else 0)
+        (decomposeLinearEquiv ℳ y)) i : M) = (decompose ℳ y i.1 : M) := fun y ↦ by
+    induction y using Decomposition.inductionOn ℳ with
+    | zero => simp
+    | @homogeneous j y =>
+      rw [decomposeLinearEquiv_apply_coe ℳ j y, toModule_lof]
+      by_cases hj : j = i.1
+      · subst hj
+        rw [dite_eq_left i.2, decompose_of_mem_same ℳ y.2]
+        simp
+      · by_cases hfk : f j = k
+        · have hne : i ≠ ⟨j, hfk⟩ := fun heq ↦ hj (congrArg Subtype.val heq.symm)
+          rw [dite_eq_left hfk, lof_eq_of, of_eq_of_ne _ _ _ hne, Submodule.coe_zero,
+            decompose_of_mem_ne ℳ y.2 hj]
+        · rw [dite_eq_right hfk, LinearMap.zero_apply, DirectSum.zero_apply, Submodule.coe_zero,
+            decompose_of_mem_ne ℳ y.2 hj]
+    | add y z hy hz => simp [hy, hz]
+  refine Subtype.ext ?_
+  simpa only [coarsenGradingEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+    LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.coe_subtype] using h x.1
+
 end Coarsen
 
 section Homogeneous
@@ -209,6 +285,55 @@ theorem parityGrading_one (ℳ : ℤ → Submodule R M) :
     rw [eq_add_of_sub_eq hk]
     exact le_iSup (fun k ↦ ℳ (2 * k + 1)) k
   · simpa [CharP.ofNat_eq_zero] using mem_parityGrading_of_mem hx
+
+/-- Every element is the sum of its even and odd components in the parity grading. -/
+theorem decompose_parityGrading_zero_add_one (ℳ : ℤ → Submodule R M) [Decomposition ℳ] (x : M) :
+    (decompose (parityGrading ℳ) x 0 : M) + (decompose (parityGrading ℳ) x 1 : M) = x := by
+  induction x using Decomposition.inductionOn (parityGrading ℳ) with
+  | zero => simp
+  | @homogeneous k y =>
+    rcases (by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) k with rfl | rfl
+    · rw [decompose_of_mem_same _ y.2, decompose_of_mem_ne _ y.2 (by decide), add_zero]
+    · rw [decompose_of_mem_ne _ y.2 (by decide), decompose_of_mem_same _ y.2, zero_add]
+  | add y z hy hz =>
+    simp only [decompose_add, add_apply, Submodule.coe_add]
+    calc
+      ((decompose (parityGrading ℳ) y 0 : M) + (decompose (parityGrading ℳ) z 0 : M)) +
+          ((decompose (parityGrading ℳ) y 1 : M) + (decompose (parityGrading ℳ) z 1 : M)) =
+        ((decompose (parityGrading ℳ) y 0 : M) + (decompose (parityGrading ℳ) y 1 : M)) +
+          ((decompose (parityGrading ℳ) z 0 : M) + (decompose (parityGrading ℳ) z 1 : M)) :=
+        add_add_add_comm _ _ _ _
+      _ = y + z := by rw [hy, hz]
+
+/-- A degree-zero homogeneous linear map restricts to a linear map on each parity piece. -/
+def LinearMap.IsHomogeneous.restrictParity {N : Type*} [AddCommMonoid N] [Module R N]
+    {g : M →ₗ[R] N} {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
+    (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) (k : ZMod 2) :
+    parityGrading ℳ k →ₗ[R] parityGrading 𝒩 k :=
+  g.restrict fun _ hx ↦ by
+    have h := (hg.coarsenGrading (Int.castAddHom (ZMod 2))).map_mem hx
+    rwa [map_zero, add_zero] at h
+
+/-- Coercing `restrictParity` back to the ambient module applies the original map `g`. -/
+@[simp]
+theorem LinearMap.IsHomogeneous.coe_restrictParity_apply {N : Type*} [AddCommMonoid N] [Module R N]
+    {g : M →ₗ[R] N} {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
+    (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) (k : ZMod 2) (x : parityGrading ℳ k) :
+    (hg.restrictParity k x : N) = g x :=
+  (rfl)
+
+/-- Restricting a degree-zero homogeneous map to a parity piece commutes with decomposition into
+parity components. -/
+@[simp]
+theorem LinearMap.IsHomogeneous.restrictParity_decompose {N : Type*} [AddCommMonoid N] [Module R N]
+    {g : M →ₗ[R] N} {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N} [Decomposition ℳ]
+    [Decomposition 𝒩] (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) (k : ZMod 2) (x : M) :
+    hg.restrictParity k (decompose (parityGrading ℳ) x k) =
+      decompose (parityGrading 𝒩) (g x) k := by
+  apply Subtype.ext
+  rw [hg.coe_restrictParity_apply]
+  have h := (hg.coarsenGrading (Int.castAddHom (ZMod 2))).map_decompose k x
+  rwa [map_zero, add_zero] at h
 
 end Parity
 
