@@ -140,6 +140,14 @@ theorem localFourier_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (�
 theorem localFourier_zero (φ : 𝓓(Ω, ℂ)) (η : E) : (0 : 𝓓'(Ω, ℂ)).localFourier φ η = 0 := by
   rw [← zero_smul ℂ (0 : 𝓓'(Ω, ℂ)), localFourier_smul, zero_mul]
 
+/-- The localized Fourier transform of a finite sum of distributions is the sum of their
+localized Fourier transforms. -/
+@[simp]
+theorem localFourier_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (∑ i ∈ s, T i).localFourier φ η = ∑ i ∈ s, (T i).localFourier φ η :=
+  map_sum (AddMonoidHom.mk' (fun S : 𝓓'(Ω, ℂ) ↦ S.localFourier φ η) fun S S' ↦
+    localFourier_add S S' φ η) T s
+
 /-- The localized Fourier transform is additive in the cutoff. -/
 @[simp]
 theorem localFourier_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ ψ : 𝓓(Ω, ℂ)) (η : E) :
