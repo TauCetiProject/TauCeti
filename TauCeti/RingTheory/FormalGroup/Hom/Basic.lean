@@ -26,8 +26,10 @@ The homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect`) o
 At substitutable `x, y` the defect is `f(F(x, y)) - G(f(x), f(y))` (`FormalGroup.subst_homDefect`);
 in particular it is `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect_eq_sub_subst_pair`).
 The defect of `X` is the difference `F - G` (`FormalGroup.homDefect_X`).
-Towards the additive formal group law the defect is additive in `f`
-(`FormalGroup.homDefect_𝔾ₐ_sub`) and vanishes to the order of `f`
+Towards the additive formal group law the defect is linear in `f`
+(`FormalGroup.homDefect_𝔾ₐ_add`, `FormalGroup.homDefect_𝔾ₐ_sub`,
+`FormalGroup.homDefect_𝔾ₐ_smul`), is the additivity defect `f(F(x, y)) - f(x) - f(y)` at any
+substitutable `x, y` (`FormalGroup.subst_homDefect_𝔾ₐ`), and vanishes to the order of `f`
 (`FormalGroup.le_order_homDefect_𝔾ₐ`).
 Towards an arbitrary formal group law, the defects of two series with zero constant term that
 agree below degree `n` agree below degree `n` (`FormalGroup.le_order_homDefect_sub`), and
@@ -112,6 +114,36 @@ theorem homDefect_𝔾ₐ_sub {g h : PowerSeries R} :
   rw [F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ]
   simp only [PowerSeries.subst_sub hF, PowerSeries.subst_sub (PowerSeries.HasSubst.X _)]
   ring
+
+/-- The homomorphism defect towards the additive formal group law is additive in the series. -/
+theorem homDefect_𝔾ₐ_add {g h : PowerSeries R} :
+    F.homDefect 𝔾ₐ (g + h) = F.homDefect 𝔾ₐ g + F.homDefect 𝔾ₐ h := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  rw [F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ]
+  simp only [PowerSeries.subst_add hF, PowerSeries.subst_add (PowerSeries.HasSubst.X _)]
+  ring
+
+/-- The homomorphism defect towards the additive formal group law commutes with scalars. -/
+theorem homDefect_𝔾ₐ_smul (c : R) (g : PowerSeries R) :
+    F.homDefect 𝔾ₐ (c • g) = c • F.homDefect 𝔾ₐ g := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  rw [F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ, PowerSeries.subst_smul hF,
+    PowerSeries.subst_smul (PowerSeries.HasSubst.X _),
+    PowerSeries.subst_smul (PowerSeries.HasSubst.X _), smul_sub, smul_sub]
+
+/-- The homomorphism defect towards the additive formal group law, at substitutable `x, y`, is the
+additivity defect `g(F(x, y)) - g(x) - g(y)`. Unlike `FormalGroup.subst_homDefect`, this needs no
+hypothesis on the constant coefficient of `g`. -/
+theorem subst_homDefect_𝔾ₐ {σ : Type*} (g : PowerSeries R) {x y : MvPowerSeries σ R}
+    (hx : PowerSeries.HasSubst x) (hy : PowerSeries.HasSubst y) :
+    (F.homDefect 𝔾ₐ g).subst ![x, y] = PowerSeries.subst (F.toPowerSeries.subst ![x, y]) g -
+      PowerSeries.subst x g - PowerSeries.subst y g := by
+  have hxy := hasSubst_finTwo hx hy
+  rw [homDefect_𝔾ₐ, subst_sub hxy, subst_sub hxy,
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.X 0),
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.X 1), subst_X hxy, subst_X hxy]
+  rfl
 
 /-- The homomorphism defect of `g` towards the additive formal group law vanishes to the order
 of `g`. -/
