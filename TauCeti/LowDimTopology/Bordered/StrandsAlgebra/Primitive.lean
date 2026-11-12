@@ -400,14 +400,7 @@ private theorem repr_idOn_eq_of_mem_matchedSubalgebra {x : StrandsAlgebra R α}
       have := card_pos.2 ⟨a, ha.1⟩
       omega
     have hS'T : S' \ T = (S \ T).erase a := by
-      ext y
-      simp only [S', mem_sdiff, mem_insert, mem_erase]
-      constructor
-      · rintro ⟨rfl | ⟨hya, hyS⟩, hyT⟩
-        · exact absurd hbT hyT
-        · exact ⟨hya, hyS, hyT⟩
-      · rintro ⟨hya, hyS, hyT⟩
-        exact ⟨Or.inr ⟨hya, hyS⟩, hyT⟩
+      rw [insert_sdiff_of_mem _ hbT, erase_sdiff_comm]
     have hswap := (mem_matchedSubalgebra.1 hx).2 (idOn S) a b hba.symm
     rw [swapHorizontal_idOn ha.1 hbS] at hswap
     rw [← hswap]
