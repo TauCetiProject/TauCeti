@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Trivialization
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
