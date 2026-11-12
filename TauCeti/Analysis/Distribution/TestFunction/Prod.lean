@@ -222,21 +222,15 @@ section Tensor
 
 variable {n : ℕ∞}
 
-omit [NormedSpace ℝ E] [NormedSpace ℝ D] in
-/-- The function `(x, y) ↦ φ x * ψ y` is supported in `tsupport φ ×ˢ tsupport ψ`. -/
-private theorem tsupport_mul_subset (φ : E → ℂ) (ψ : D → ℂ) :
-    tsupport (fun p : E × D ↦ φ p.1 * ψ p.2) ⊆ tsupport φ ×ˢ tsupport ψ :=
-  closure_minimal (fun _ hp ↦ ⟨subset_tsupport _ (left_ne_zero_of_mul hp),
-    subset_tsupport _ (right_ne_zero_of_mul hp)⟩) ((isClosed_tsupport _).prod (isClosed_tsupport _))
-
 /-- The tensor product `(x, y) ↦ φ x * ψ y` of complex test functions `φ` on `Ω` and `ψ` on `O`,
 a test function on every open set `V` containing `Ω ×ˢ O`. -/
 def tensor (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) :
     𝓓^{n}(V, ℂ) :=
+  have h : tsupport (fun p : E × D ↦ φ p.1 * ψ p.2) ⊆ tsupport φ ×ˢ tsupport ψ := by
+    simpa only [smul_eq_mul, mul_comm] using tsupport_snd_smul_fst_subset (ψ : D → ℂ) (φ : E → ℂ)
   ⟨fun p ↦ φ p.1 * ψ p.2, (φ.contDiff.comp contDiff_fst).mul (ψ.contDiff.comp contDiff_snd),
-    (φ.hasCompactSupport.prod ψ.hasCompactSupport).of_isClosed_subset (isClosed_tsupport _)
-      (tsupport_mul_subset _ _),
-    (tsupport_mul_subset _ _).trans ((prod_mono φ.tsupport_subset ψ.tsupport_subset).trans hV)⟩
+    (φ.hasCompactSupport.prod ψ.hasCompactSupport).of_isClosed_subset (isClosed_tsupport _) h,
+    h.trans ((prod_mono φ.tsupport_subset ψ.tsupport_subset).trans hV)⟩
 
 variable (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V)
 
@@ -247,8 +241,9 @@ theorem tensor_apply (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) (p : E × 
 
 /-- The tensor product `φ ⊗ ψ` is supported in `tsupport φ ×ˢ tsupport ψ`. -/
 theorem tsupport_tensor_subset (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
-    tsupport (φ.tensor ψ hV) ⊆ tsupport φ ×ˢ tsupport ψ :=
-  tsupport_mul_subset _ _
+    tsupport (φ.tensor ψ hV) ⊆ tsupport φ ×ˢ tsupport ψ := by
+  rw [show ⇑(φ.tensor ψ hV) = fun p ↦ ψ p.2 • φ p.1 from funext fun p ↦ mul_comm (φ p.1) (ψ p.2)]
+  exact tsupport_snd_smul_fst_subset _ _
 
 theorem tensor_add_left (φ φ' : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
     (φ + φ').tensor ψ hV = φ.tensor ψ hV + φ'.tensor ψ hV := by
