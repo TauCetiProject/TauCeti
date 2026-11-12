@@ -459,7 +459,7 @@ theorem forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_iff_det_ne_zero
   have hdet := det_smul_one_sub_dysonSeriesLeft_pow hJ₀sq hΦ2 hΦ hseam 1 (2 * n)
   rw [one_smul, one_smul] at hdet
   rw [← hdet, ← hmodel]
-  refine forall₂_congr fun ε₁ ε₂ => forall₂_congr fun hε₁ hε₂ => ?_
+  refine forall₂_congr fun ε₁ ε₂ => forall₂_congr fun _ _ => ?_
   have htr := exists_orbitTorusVerticalOperator_eq_zero_iff_exists_orbitTorusOperator_eq_zero
     (ℓ := ℓ) (ε₁ := ε₁) (ε₂ := ε₂) hJ₀sq hΦ2 hΦ hK hseam k n a
   constructor
@@ -598,7 +598,7 @@ private theorem exists_frame_transport [CompleteSpace V] (hK2 : ContDiff ℝ 2 K
       (∀ t x y, σ (Φ₁ t x) (Φ₁ t y) = ⟪lsmul ℝ ℂ Complex.I x, y⟫) ∧
       ∀ t z, P (Φ₁ (t + d) z) = Φ₁ t (Φ₀.inverse (P (Φ₁ d z))) := by
   have hKd : Differentiable ℝ K := hK2.differentiable (by norm_num)
-  set A : ℝ → V →L[ℝ] V := fun t => -(1 / 2 : ℝ) • (deriv K t ∘L K t) with hA_def
+  set A : ℝ → V →L[ℝ] V := fun t => -(1 / 2 : ℝ) • (deriv K t ∘L K t)
   have hA1 : ContDiff ℝ 1 A :=
     (((contDiff_succ_iff_deriv (n := 1)).1 hK2).2.2.clm_comp (hK2.of_le (by norm_num))).const_smul _
   have hAc : Continuous A := hA1.continuous
