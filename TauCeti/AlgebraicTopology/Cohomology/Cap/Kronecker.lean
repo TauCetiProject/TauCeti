@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 
@@ -31,6 +32,22 @@ the cup product under the Kronecker pairing.
 The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`, from
 `TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing`: the action of the tensor unit on
 singular chains is the left unitor.
+
+For a class `α ∈ Hᵖ(X; R, M)` with values in an arbitrary object `M`, the cap product along a
+pairing `μ : M ⊗ S ⟶ L` lands in `H_q(X; L)`, and the class to evaluate on it is a class
+`ψ ∈ H^q(X; L, N')` which, pulled back along the chain map `M ⊗ C(X; S) ⟶ C(X; L)` of `μ`, is the
+extension `(M ◁ β) ≫ ν` of a class `β ∈ H^q(X; S, N)` along a pairing `ν : M ⊗ N ⟶ N'`
+(`ChainComplex.linearYonedaObjWhiskerLeft`).  Then again `⟨ψ, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`, with
+the cup product along `u` and `ν` (`TopCat.singularCap_comp_singularKronecker_of_homologyMap_eq`).
+When `μ` is invertible, every `β` has such an extension, through the isomorphism
+`M ⊗ C(X; S) ≅ C(X; L)` (`TopCat.singularCap_comp_singularKronecker_of_isIso`, an instance of
+`TauCeti.ChainComplex.cap_comp_kronecker_of_isIso`); for modules over `k`
+this pairs `α ∈ Hᵖ(X; M)` with `β ∈ H^q(X; k)`, the general coefficient form of the identity.  For
+a pair `(X, A)` the same identities hold for the relative cap product of a relative class
+`α ∈ Hᵖ(X, A; R, M)` with a relative class `x ∈ Hₙ(X, A; T)`, with the relative cup product
+`α ⌣ β ∈ Hⁿ(X, A; T, N')` along the relative Alexander–Whitney diagonal
+(`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
+`TopPair.singularCap_comp_singularKronecker_of_isIso`).
 
 ## References
 
@@ -67,4 +84,100 @@ theorem singularCap_comp_singularKronecker (X : TopCat.{w}) (k : Type*) [CommRin
   rw [SSet.chainComplexPairing_leftUnitor_hom_f]
   exact (leftUnitor_naturality _).symm
 
+variable {M N' L : C} [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
+
+/-- **The Kronecker pairing of a singular cap product with general coefficients**,
+`⟨ψ, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`: for a class `α ∈ Hᵖ(X; R, M)`, cap along `u` and a pairing
+`μ : M ⊗ S ⟶ L`, a class `ψ ∈ H^q(X; L, N')` and a class `β ∈ H^q(X; S, N)` such that `ψ`, pulled
+back along the chain map `M ⊗ C(X; S) ⟶ C(X; L)` of `μ`, is the extension of `β` along a pairing
+`ν : M ⊗ N ⟶ N'`, evaluating `ψ` on the cap product of a class of degree `n = p + q` with `α` is
+evaluating on that class the cup product of `α` and `β` along `u` and `ν`. -/
+theorem singularCap_comp_singularKronecker_of_homologyMap_eq (X : TopCat.{w}) (k : Type*)
+    [CommRing k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ L)
+    (ν : M ⊗ N ⟶ N') (p q n : ℕ) (h : p + q = n) (α : X.singularCohomology R k M p)
+    (ψ : X.singularCohomology L k N' q) (β : X.singularCohomology S k N q)
+    (hψ : homologyMap (K := X.singularCochainComplex L k N')
+        (L := ChainComplex.linearYonedaObj
+          (((tensorLeft M).mapHomologicalComplex _).obj ((toSSet.obj X).chainComplex S)) k N')
+        ((TauCeti.ChainComplex.linearYonedaFunctor k N').map
+          ((toSSet.obj X).chainComplexPairing μ).op) q ψ =
+      homologyMap (ChainComplex.linearYonedaObjWhiskerLeft k M _ ν) q β) :
+    X.singularCap k u μ p q n h α ≫ X.singularKronecker k q ψ =
+      X.singularKronecker k n (X.singularCup k u ν p q n h α β) := by
+  rw [singularCap_def, singularKronecker_def, singularKronecker_def, TauCeti.singularCup_def]
+  exact TauCeti.ChainComplex.cap_comp_kronecker_of_homologyMap_eq _ _ ν p q n h α ψ β hψ
+
+/-- **The Kronecker pairing of a singular cap product along an invertible pairing**,
+`⟨ν(M ⊗ β), x ⌢ α⟩ = ⟨α ⌣ β, x⟩`: when the pairing `μ : M ⊗ S ⟶ L` is invertible, every class
+`β ∈ H^q(X; S, N)` extends along `ν : M ⊗ N ⟶ N'` to a class of `H^q(X; L, N')`, through the
+isomorphism `M ⊗ C(X; S) ≅ C(X; L)` of `μ`, and evaluating it on the cap product with
+`α ∈ Hᵖ(X; R, M)` is evaluating the cup product of `α` and `β`.  For modules over a commutative
+ring `k`, with `R = S = T = N = k`, `μ = ν` the right unitor of a module `M` and `u` the inverse
+left unitor, this pairs a class `α ∈ Hᵖ(X; M)` and a class `β ∈ H^q(X; k)`. -/
+theorem singularCap_comp_singularKronecker_of_isIso (X : TopCat.{w}) (k : Type*)
+    [CommRing k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ L) [IsIso μ]
+    (ν : M ⊗ N ⟶ N') (p q n : ℕ) (h : p + q = n) (α : X.singularCohomology R k M p)
+    (β : X.singularCohomology S k N q) :
+    X.singularCap k u μ p q n h α ≫ X.singularKronecker k q
+        (homologyMap (K := ChainComplex.linearYonedaObj
+            (((tensorLeft M).mapHomologicalComplex _).obj ((toSSet.obj X).chainComplex S)) k N')
+          (L := X.singularCochainComplex L k N')
+          ((TauCeti.ChainComplex.linearYonedaFunctor k N').map
+            (inv ((toSSet.obj X).chainComplexPairing μ)).op) q
+          (homologyMap (ChainComplex.linearYonedaObjWhiskerLeft k M _ ν) q β)) =
+      X.singularKronecker k n (X.singularCup k u ν p q n h α β) := by
+  rw [singularCap_def, singularKronecker_def, singularKronecker_def, TauCeti.singularCup_def]
+  exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
+
 end TopCat
+
+namespace TopPair
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
+  [MonoidalPreadditive C] {R S T M N N' L : C}
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
+
+/-- **The Kronecker pairing of a relative singular cap product**, `⟨ψ, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`: for
+a pair `(X, A)`, a relative class `α ∈ Hᵖ(X, A; R, M)` capped along `u` and a pairing
+`μ : M ⊗ S ⟶ L` with a relative class `x ∈ Hₙ(X, A; T)`, `n = p + q`, and absolute classes
+`ψ ∈ H^q(X; L, N')` and `β ∈ H^q(X; S, N)` related as in
+`TopCat.singularCap_comp_singularKronecker_of_homologyMap_eq`, evaluating `ψ` on `x ⌢ α` is
+evaluating on `x` the relative cup product `α ⌣ β ∈ Hⁿ(X, A; T, N')` along the relative
+Alexander–Whitney diagonal `P.alexanderWhitneyDiagonal u` and `ν`. -/
+theorem singularCap_comp_singularKronecker_of_homologyMap_eq (P : TopPair.{w}) (k : Type*)
+    [CommRing k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ L)
+    (ν : M ⊗ N ⟶ N') (p q n : ℕ) (h : p + q = n) (α : P.singularCohomology R k M p)
+    (ψ : P.fst.singularCohomology L k N' q) (β : P.fst.singularCohomology S k N q)
+    (hψ : homologyMap (K := P.fst.singularCochainComplex L k N')
+        (L := ChainComplex.linearYonedaObj
+          (((tensorLeft M).mapHomologicalComplex _).obj
+            ((TopCat.toSSet.obj P.fst).chainComplex S)) k N')
+        ((TauCeti.ChainComplex.linearYonedaFunctor k N').map
+          ((TopCat.toSSet.obj P.fst).chainComplexPairing μ).op) q ψ =
+      homologyMap (ChainComplex.linearYonedaObjWhiskerLeft k M _ ν) q β) :
+    P.singularCap k u μ p q n h α ≫ P.fst.singularKronecker k q ψ =
+      P.singularKronecker k n
+        (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) ν p q n h α β) := by
+  rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
+  exact TauCeti.ChainComplex.cap_comp_kronecker_of_homologyMap_eq _ _ ν p q n h α ψ β hψ
+
+/-- **The Kronecker pairing of a relative singular cap product along an invertible pairing**:
+the relative form of `TopCat.singularCap_comp_singularKronecker_of_isIso`. -/
+theorem singularCap_comp_singularKronecker_of_isIso (P : TopPair.{w}) (k : Type*)
+    [CommRing k] [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ L) [IsIso μ]
+    (ν : M ⊗ N ⟶ N') (p q n : ℕ) (h : p + q = n) (α : P.singularCohomology R k M p)
+    (β : P.fst.singularCohomology S k N q) :
+    P.singularCap k u μ p q n h α ≫ P.fst.singularKronecker k q
+        (homologyMap (K := ChainComplex.linearYonedaObj
+            (((tensorLeft M).mapHomologicalComplex _).obj
+              ((TopCat.toSSet.obj P.fst).chainComplex S)) k N')
+          (L := P.fst.singularCochainComplex L k N')
+          ((TauCeti.ChainComplex.linearYonedaFunctor k N').map
+            (inv ((TopCat.toSSet.obj P.fst).chainComplexPairing μ)).op) q
+          (homologyMap (ChainComplex.linearYonedaObjWhiskerLeft k M _ ν) q β)) =
+      P.singularKronecker k n
+        (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) ν p q n h α β) := by
+  rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
+  exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
+
+end TopPair
