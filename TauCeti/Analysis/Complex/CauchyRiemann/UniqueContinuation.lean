@@ -39,9 +39,10 @@ open preconnected `Ω ⊆ ℂ` that admits a factorization at every zero in `Ω`
   depend on the factorization is `TauCeti.analyticOrderAt_eq_of_eventually_eq_clm_apply`.
 
 A scalar power factorization `f w = (w - z₀) ^ m * v w` at a zero `z₀`, with `v` continuous and
-nonzero at `z₀`, is itself a similarity factorization with `Φ = v • id` and `σ = (· - z₀) ^ m`, so
-`m` is positive, `‖f w‖ ≍ ‖w - z₀‖ ^ m`, and `m` is the analytic order of the holomorphic factor of
-every factorization of `f` at `z₀` (`TauCeti.isTheta_pow_of_eventually_eq_pow_mul`).
+nonzero at `z₀`, is itself a similarity factorization with `Φ = v • id` and `σ = (· - z₀) ^ m`
+(`TauCeti.hasSimilarityFactorizationAt_of_eventually_eq_pow_mul`), so `m` is positive,
+`‖f w‖ ≍ ‖w - z₀‖ ^ m`, and `m` is the analytic order of the holomorphic factor of every
+factorization of `f` at `z₀` (`TauCeti.isTheta_pow_of_eventually_eq_pow_mul`).
 
 For example, a continuous invertible family preserves quadratic vanishing:
 `TauCeti.isTheta_clm_apply_sq_smul` shows that `Φ z (z ^ 2 • v)` has an isolated zero of order
@@ -141,6 +142,17 @@ theorem analyticOrderAt_eq_of_eventually_eq_clm_apply
   exact (isTheta_of_eventually_eq_clm_apply hΦ hΦ₀ hξ).symm.trans
     (isTheta_of_eventually_eq_clm_apply hΦ' hΦ'₀ hξ')
 
+/-- A scalar power factorization `f w = (w - z₀) ^ m * v w` near `z₀`, with `v` continuous and
+nonzero at `z₀`, is a similarity factorization of `f` at `z₀`. -/
+theorem hasSimilarityFactorizationAt_of_eventually_eq_pow_mul {f : ℂ → ℂ} {m : ℕ} {v : ℂ → ℂ}
+    (hv : ContinuousAt v z₀) (hv₀ : v z₀ ≠ 0) (hfv : ∀ᶠ w in 𝓝 z₀, f w = (w - z₀) ^ m * v w) :
+    HasSimilarityFactorizationAt f z₀ := by
+  refine hasSimilarityFactorizationAt_iff.2 ⟨fun w ↦ v w • ContinuousLinearMap.id ℝ ℂ,
+    fun w ↦ (w - z₀) ^ m, hv.smul continuousAt_const,
+    ContinuousLinearMap.isUnit_smul_id_of_ne_zero hv₀, by fun_prop, ?_⟩
+  filter_upwards [hfv] with w hw
+  simp [hw, mul_comm]
+
 /-- **Orders of zeros** from a power factorization. Let `z₀` be a zero of `f : ℂ → ℂ` with a
 power factorization `f w = (w - z₀) ^ m * v w` near `z₀`, with `v` continuous and nonzero at `z₀`,
 such as the one of `TauCeti.exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul` for
@@ -161,8 +173,7 @@ theorem isTheta_pow_of_eventually_eq_pow_mul {f : ℂ → ℂ} (hf₀ : f z₀ =
   have hfΦ : ∀ᶠ w in 𝓝 z₀, f w = (v w • ContinuousLinearMap.id ℝ ℂ) ((w - z₀) ^ m) := by
     filter_upwards [hfv] with w hw
     simp [hw, mul_comm]
-  have hm : analyticOrderAt (fun w ↦ (w - z₀) ^ m) z₀ = m :=
-    (hσ.analyticOrderAt_eq_natCast_iff_isTheta).2 (isTheta_refl _ _)
+  have hm : analyticOrderAt (fun w ↦ (w - z₀) ^ m) z₀ = m := analyticOrderAt_centeredMonomial
   refine ⟨Nat.pos_of_ne_zero fun h0 ↦ hv₀ ?_,
     (analyticOrderAt_eq_natCast_iff_isTheta_of_eventually_eq_clm_apply hΦ hΦ₀ hσ hfΦ).1 hm,
     fun Φ' σ' hΦ' hΦ'₀ hσ' hfΦ' ↦
