@@ -62,8 +62,8 @@ If `x * x = c • 1` is a scalar, then `ad x` satisfies the cubic `(ad x)³ = 4 
 * `LieSubalgebra.ad_pow_three_eq_smul_ad`: the same cubic for `ad x` on a Lie subalgebra.
 * `LieSubalgebra.commute_coe_iff`: two elements of a Lie subalgebra of `A` commute in `A` exactly
   when their bracket vanishes.
-* `LieSubalgebra.commute_of_mem_isLieAbelian`: the elements of an abelian Lie subalgebra of a Lie
-  subalgebra of `A` commute in `A`.
+* `LieSubalgebra.commute_of_mem_isLieAbelian`, `LieSubalgebra.commute_coe_of_mem_isLieAbelian`: the
+  elements of an abelian Lie subalgebra of `A`, or of a Lie subalgebra of `A`, commute in `A`.
 
 ## References
 
@@ -192,9 +192,15 @@ their bracket vanishes. -/
 theorem commute_coe_iff {K : LieSubalgebra R A} {x y : K} : Commute (x : A) y ↔ ⁅x, y⁆ = 0 := by
   rw [commute_iff_lie_eq, ← coe_bracket, ZeroMemClass.coe_eq_zero]
 
+/-- **Elements of an abelian Lie subalgebra commute**: if `H` is an abelian Lie subalgebra of `A`,
+any two elements of `H` commute in `A`. -/
+theorem commute_of_mem_isLieAbelian {H : LieSubalgebra R A} [IsLieAbelian H] {x y : A}
+    (hx : x ∈ H) (hy : y ∈ H) : Commute x y :=
+  commute_coe_iff.2 (trivial_lie_zero H H ⟨x, hx⟩ ⟨y, hy⟩)
+
 /-- **Elements of an abelian Lie subalgebra commute** in the ambient associative algebra: if `H` is
 an abelian Lie subalgebra of a Lie subalgebra `K` of `A`, any two elements of `H` commute in `A`. -/
-theorem commute_of_mem_isLieAbelian {K : LieSubalgebra R A} (H : LieSubalgebra R K)
+theorem commute_coe_of_mem_isLieAbelian {K : LieSubalgebra R A} {H : LieSubalgebra R K}
     [IsLieAbelian H] {x y : K} (hx : x ∈ H) (hy : y ∈ H) : Commute (x : A) y :=
   commute_coe_iff.2 <| congrArg Subtype.val (trivial_lie_zero H H ⟨x, hx⟩ ⟨y, hy⟩)
 

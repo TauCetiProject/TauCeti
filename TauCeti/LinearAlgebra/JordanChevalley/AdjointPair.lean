@@ -23,9 +23,8 @@ nilpotent and semisimple (`IsNilpotent.prodMap`, `Module.End.IsSemisimple.prodMa
 polynomials `p(f × g) = p(f) × p(g)` and `q(f × g) = q(f) × q(g)`, so `n = p(f)`, `n' = p(g)`,
 `s = q(f)` and `s' = q(g)` for the same polynomials `p` and `q`. Hence **the adjoint of the
 nilpotent part is the nilpotent part of the adjoint, and likewise for the semisimple part**
-(`LinearMap.IsAdjointPair.isAdjointPair_of_isNilpotent_of_add`,
-`LinearMap.IsAdjointPair.isAdjointPair_of_isSemisimple_of_add`). No nondegeneracy of `B` is
-needed.
+(`LinearMap.IsAdjointPair.of_isNilpotent_of_add`, `LinearMap.IsAdjointPair.of_isSemisimple_of_add`).
+No nondegeneracy of `B` is needed.
 
 For a skew-adjoint endomorphism `f`, whose adjoint is `-f` with decomposition `-n + -s`, this says
 that both parts of `f` are again skew-adjoint
@@ -36,9 +35,8 @@ elements.
 
 ## Main results
 
-* `LinearMap.IsAdjointPair.isAdjointPair_of_isNilpotent_of_add`,
-  `LinearMap.IsAdjointPair.isAdjointPair_of_isSemisimple_of_add`: the Jordan–Chevalley parts of an
-  adjoint pair are adjoint pairs.
+* `LinearMap.IsAdjointPair.of_isNilpotent_of_add`, `LinearMap.IsAdjointPair.of_isSemisimple_of_add`:
+  the Jordan–Chevalley parts of an adjoint pair are adjoint pairs.
 * `LinearMap.IsSkewAdjoint.of_isNilpotent_of_add`, `LinearMap.IsSkewAdjoint.of_isSemisimple_of_add`:
   the Jordan–Chevalley parts of a skew-adjoint endomorphism are skew-adjoint.
 
@@ -90,18 +88,20 @@ private theorem isAdjointPair_and_isAdjointPair_of_add (h : IsAdjointPair B B f 
   exact ⟨key hp, key hq⟩
 
 /-- **The adjoint of the nilpotent part is the nilpotent part of the adjoint.** If `(f, g)` is an
-adjoint pair and `f = n + s`, `g = n' + s'` are Jordan–Chevalley decompositions, then `(n, n')` is
-an adjoint pair. -/
-theorem isAdjointPair_of_isNilpotent_of_add (h : IsAdjointPair B B f g)
+adjoint pair of endomorphisms of a finite-dimensional vector space over a perfect field and
+`f = n + s`, `g = n' + s'` are Jordan–Chevalley decompositions, then `(n, n')` is an adjoint
+pair. -/
+theorem of_isNilpotent_of_add (h : IsAdjointPair B B f g)
     {n s n' s' : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n) (hs : s.IsSemisimple)
     (hf : f = n + s) (hc' : Commute n' s') (hn' : IsNilpotent n') (hs' : s'.IsSemisimple)
     (hg : g = n' + s') : IsAdjointPair B B n n' :=
   (isAdjointPair_and_isAdjointPair_of_add h hc hn hs hf hc' hn' hs' hg).1
 
 /-- **The adjoint of the semisimple part is the semisimple part of the adjoint.** If `(f, g)` is
-an adjoint pair and `f = n + s`, `g = n' + s'` are Jordan–Chevalley decompositions, then `(s, s')`
-is an adjoint pair. -/
-theorem isAdjointPair_of_isSemisimple_of_add (h : IsAdjointPair B B f g)
+an adjoint pair of endomorphisms of a finite-dimensional vector space over a perfect field and
+`f = n + s`, `g = n' + s'` are Jordan–Chevalley decompositions, then `(s, s')` is an adjoint
+pair. -/
+theorem of_isSemisimple_of_add (h : IsAdjointPair B B f g)
     {n s n' s' : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n) (hs : s.IsSemisimple)
     (hf : f = n + s) (hc' : Commute n' s') (hn' : IsNilpotent n') (hs' : s'.IsSemisimple)
     (hg : g = n' + s') : IsAdjointPair B B s s' :=
@@ -122,16 +122,16 @@ private theorem isSkewAdjoint_and_isSkewAdjoint_of_add {n s : Module.End K V} (h
   simpa [IsSkewAdjoint] using IsAdjointPair.isAdjointPair_and_isAdjointPair_of_add h' hc hn hs
     rfl hc.neg_left.neg_right hn.neg (by simpa using IsSemisimple_smul (-1 : K) hs) (neg_add n s)
 
-/-- **The nilpotent part of a skew-adjoint endomorphism is skew-adjoint**: if `n + s` is
-skew-adjoint, with `n` nilpotent, `s` semisimple and `n`, `s` commuting, then `n` is
-skew-adjoint. -/
+/-- **The nilpotent part of a skew-adjoint endomorphism is skew-adjoint**: if an endomorphism
+`n + s` of a finite-dimensional vector space over a perfect field is skew-adjoint, with `n`
+nilpotent, `s` semisimple and `n`, `s` commuting, then `n` is skew-adjoint. -/
 theorem of_isNilpotent_of_add {n s : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n)
     (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) : B.IsSkewAdjoint ⇑n :=
   (isSkewAdjoint_and_isSkewAdjoint_of_add hc hn hs h).1
 
-/-- **The semisimple part of a skew-adjoint endomorphism is skew-adjoint**: if `n + s` is
-skew-adjoint, with `n` nilpotent, `s` semisimple and `n`, `s` commuting, then `s` is
-skew-adjoint. -/
+/-- **The semisimple part of a skew-adjoint endomorphism is skew-adjoint**: if an endomorphism
+`n + s` of a finite-dimensional vector space over a perfect field is skew-adjoint, with `n`
+nilpotent, `s` semisimple and `n`, `s` commuting, then `s` is skew-adjoint. -/
 theorem of_isSemisimple_of_add {n s : Module.End K V} (hc : Commute n s) (hn : IsNilpotent n)
     (hs : s.IsSemisimple) (h : B.IsSkewAdjoint ⇑(n + s)) : B.IsSkewAdjoint ⇑s :=
   (isSkewAdjoint_and_isSkewAdjoint_of_add hc hn hs h).2
