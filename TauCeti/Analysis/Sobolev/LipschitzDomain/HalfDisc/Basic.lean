@@ -127,6 +127,7 @@ complex coordinate `z = s + it` with `t = x.fst` it is the real interval `[-r, r
 def halfDiscFlatSegment (r : ℝ) : Set (WithLp 2 (ℝ × ℝ)) :=
   closedBall 0 r ∩ {x | x.fst = 0}
 
+@[simp]
 theorem mem_halfDiscFlatSegment {r : ℝ} {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ halfDiscFlatSegment r ↔ ‖x‖ ≤ r ∧ x.fst = 0 := by
   rw [halfDiscFlatSegment, mem_inter_iff, mem_closedBall_zero_iff, mem_ofPred_eq]
