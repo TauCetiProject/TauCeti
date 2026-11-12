@@ -105,7 +105,7 @@ theorem ordIndex_eq_mul_of_forall_ord_eq (w : _root_.Valuation F ℤᵐ⁰) {e :
     rw [hord f] at hf
     simp only [Nat.cast_zero, zero_mul] at hf
     omega
-  have he' : (0 : ℤ) < e := by exact_mod_cast Nat.pos_of_ne_zero he
+  have _ : (0 : ℤ) < e := by exact_mod_cast Nat.pos_of_ne_zero he
   by_cases hb : ordIndex w = 0
   · rw [hb, mul_zero]
     by_contra ha
