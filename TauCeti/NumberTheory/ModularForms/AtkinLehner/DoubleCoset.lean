@@ -82,11 +82,6 @@ theorem IsAtkinLehnerMatrix.mem_normalizer_map_mapGL (hQN : Q ∣ N)
     (hw : (w : Matrix (Fin 2) (Fin 2) ℚ) = M.map (Int.cast : ℤ → ℚ)) :
     w ∈ Subgroup.normalizer
       (((Gamma0 N).map (mapGL ℚ) : Subgroup (GL (Fin 2) ℚ)) : Set (GL (Fin 2) ℚ)) := by
-  have hQ : Q ≠ 0 := by
-    intro hQ
-    apply Matrix.GeneralLinearGroup.det_ne_zero w
-    rw [hw, ← Int.cast_det, h.det_eq, hQ]
-    norm_num
   refine Subgroup.mem_normalizer_iff.mpr fun x ↦ ⟨?_, fun hx ↦ ?_⟩
   · rintro ⟨γ, hγ, rfl⟩
     obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN hγ
