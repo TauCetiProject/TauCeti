@@ -137,7 +137,7 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
     refine BesselPotentialSpace.ext ?_
     rw [← toDistr_quantizeSobolev_ofSpatial φ hF,
       toDistr_quantizeSobolev_eq_sub_sub ha hq hF hsmK, toDistr_sub, toDistr_sub,
-      toDistr_inclusion, toDistr_inclusion, hw,
+      toDistr_inclusion, toDistr_inclusion, ← hw,
       toDistr_quantizeSobolev_congr hrem _ hremK (toDistr_inclusion _ u).symm]
   have hZ : ‖rem.quantizeSobolev hremK (s - 1) v‖ ≤
       max C₁ 0 * (‖smulLeftCLM (s - 1) χ v‖ + ‖BesselPotentialSpace.inclusion hrs u‖) := by

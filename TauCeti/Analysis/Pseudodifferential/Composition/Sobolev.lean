@@ -20,8 +20,9 @@ to the bounded extensions `H^s → H^{s - m}` of `TauCeti.Symbol.quantizeSobolev
 
 Combined with the locality of the composition symbol
 (`TauCeti.Symbol.isSmoothing_sharp_sub_comp`), this shows that `Op(c) v` only depends on `v` near
-the positions where the symbol `c` does not vanish, up to a smoothing operator: if `c` vanishes
-outside `K` and `χ` equals `1` on a neighbourhood of `K`, then
+the positions where the symbol `c` does not vanish, up to a smoothing operator: if `c` has compact
+spatial support and vanishes outside `K`, and `χ` is a compactly supported Schwartz function equal
+to `1` on a neighbourhood of `K`, then
 `‖Op(c) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})` for every `r ≤ t`
 (`TauCeti.Symbol.exists_norm_quantizeSobolev_le_smulLeftCLM`). Estimates of this form localize the
 lower order terms in elliptic estimates.
@@ -115,7 +116,7 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
         (c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v)).toDistr := by
       rw [toDistr_quantizeSobolev_sharp hc hF]
       exact toDistr_quantizeSobolev_congr rfl hc hc (toDistr_quantizeSobolev_ofSpatial χ hF t v)
-    rw [h₁, h₂, ← hw, BesselPotentialSpace.toDistr_sub]
+    rw [h₁, h₂, hw, BesselPotentialSpace.toDistr_sub]
   rw [hv]
   calc ‖c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v) - w‖
       ≤ ‖c.quantizeSobolev hc t‖ * ‖BesselPotentialSpace.smulLeftCLM t χ v‖ +

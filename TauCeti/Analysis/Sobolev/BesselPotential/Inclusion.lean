@@ -125,7 +125,7 @@ theorem norm_inclusion_apply_le (h : r ≤ s) (u : H^{s}(E, F)) : ‖inclusion h
 under the inclusion, so its norm is at most `‖u‖`. -/
 theorem norm_le_of_toDistr_eq (h : r ≤ s) {u : H^{s}(E, F)} {v : H^{r}(E, F)}
     (huv : u.toDistr = v.toDistr) : ‖v‖ ≤ ‖u‖ := by
-  rw [show v = inclusion h u from ext (by rw [toDistr_inclusion, huv])]
+  obtain rfl : v = inclusion h u := ext (by rw [toDistr_inclusion, huv])
   exact norm_inclusion_apply_le h u
 
 /-- The inclusion of `H^s` into itself is the identity. -/

@@ -105,10 +105,10 @@ families of operators.
 * `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the operators for different Sobolev orders `s`
   and different symbol orders `m` agree, as maps of tempered distributions, on symbols with the same
   coefficient.
-* `TauCeti.Symbol.toDistr_quantizeSobolev_ofSpatial`: the symbol `φ(x)` of a Schwartz function
-  quantizes to multiplication by `φ` (`BesselPotentialSpace.smulLeftCLM`). It has compact
-  spatial support when `φ` has compact support
-  (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`).
+* `TauCeti.Symbol.toDistr_quantizeSobolev_ofSpatial`: for a Schwartz function `φ` such that the
+  symbol `φ(x) id` has compact spatial support, for instance a compactly supported `φ`
+  (`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`), this symbol quantizes to
+  multiplication by `φ` (`BesselPotentialSpace.smulLeftCLM`).
 * `TauCeti.Symbol.IsSmoothing.exists_toDistr_quantizeSobolev_eq_and_norm_le`: a smoothing symbol
   with compact spatial support maps `H^t` to every `H^s`, bounded by any weaker norm `H^r`,
   `r ≤ t`.
@@ -958,8 +958,10 @@ theorem hasCompactSpatialSupport_ofSpatial_smul_id {φ : 𝓢(CoordinateSpace n,
       ((φ.smooth ⊤).smul contDiff_const)).HasCompactSpatialSupport :=
   (hasCompactSpatialSupport_ofSpatial_iff _).2 (hφ.mono fun x hx h ↦ hx (by simp [h]))
 
-/-- **Multiplication operators.** For a Schwartz function `φ`, the symbol `φ(x) id` of order `0`
-quantizes to multiplication by `φ` on `H^s`. -/
+/-- **Multiplication operators.** For a Schwartz function `φ` such that the symbol `φ(x) id` of
+order `0` has compact spatial support, for instance a compactly supported `φ`
+(`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`), this symbol quantizes to
+multiplication by `φ` on `H^s`. -/
 theorem toDistr_quantizeSobolev_ofSpatial (φ : 𝓢(CoordinateSpace n, ℂ))
     (h : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
       ((φ.smooth ⊤).smul contDiff_const)).HasCompactSpatialSupport)
@@ -992,7 +994,7 @@ takes values in `H^s`, with `‖Op(a) v‖_{H^s} ≤ C ‖v‖_{H^r}`. -/
 theorem IsSmoothing.exists_toDistr_quantizeSobolev_eq_and_norm_le (hsm : a.IsSmoothing)
     (ha : a.HasCompactSpatialSupport) {r t : ℝ} (hrt : r ≤ t) (s : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ v : H^{t}(CoordinateSpace n, V), ∃ w : H^{s}(CoordinateSpace n, W),
-      w.toDistr = (a.quantizeSobolev ha t v).toDistr ∧
+      (a.quantizeSobolev ha t v).toDistr = w.toDistr ∧
         ‖w‖ ≤ C * ‖BesselPotentialSpace.inclusion hrt v‖ := by
   obtain ⟨b, hb⟩ := isSmoothing_iff.mp hsm (r - s)
   have hbK := ha.of_coefficient_eq hb
@@ -1000,7 +1002,8 @@ theorem IsSmoothing.exists_toDistr_quantizeSobolev_eq_and_norm_le (hsm : a.IsSmo
     (by rw [sub_sub_cancel]) (b.quantizeSobolev hbK r (BesselPotentialSpace.inclusion hrt v)),
     ?_, ?_⟩⟩
   · rw [BesselPotentialSpace.toDistr_inclusion]
-    exact toDistr_quantizeSobolev_congr hb hbK ha (BesselPotentialSpace.toDistr_inclusion hrt v)
+    exact (toDistr_quantizeSobolev_congr hb hbK ha
+      (BesselPotentialSpace.toDistr_inclusion hrt v)).symm
   · exact (BesselPotentialSpace.norm_inclusion_apply_le _ _).trans
       ((b.quantizeSobolev hbK r).le_opNorm _)
 

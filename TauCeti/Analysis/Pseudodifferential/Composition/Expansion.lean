@@ -330,11 +330,7 @@ private theorem coefficient_sharpTerm_eq_zero {a : Symbol n W U m'} {b : Symbol 
     rw [mixedDeriv_congr_of_eventually (b := fun q ↦ b.coefficient (x, q.2))
       ((hbK x hx).mono fun y hy η ↦ hy η),
       mixedDeriv_comp_snd (fun η ↦ b.coefficient (x, η)) hw, ContinuousLinearMap.comp_zero]
-  · have h0 : mixedDeriv [] (List.ofFn w) a.coefficient x ξ = 0 := by
-      rw [mixedDeriv_def, coordinateDeriv_nil,
-        show (fun η ↦ a.coefficient (x, η)) = 0 from funext (haK x hx), coordinateDeriv_zero,
-        Pi.zero_apply]
-    rw [h0, ContinuousLinearMap.zero_comp]
+  · simp [mixedDeriv_def, haK x hx, ← Pi.zero_def]
 
 end Term
 
@@ -672,10 +668,11 @@ theorem sharp_eq_comp_add_sharpRemainder_one (hb : b.HasCompactSpatialSupport) :
   funext p
   simp
 
-/-- **Locality of the composition symbol.** If `a` vanishes at positions outside `K` and `b` does
-not depend on the position near each point of `K`, for instance if `b` is the symbol of
-multiplication by a function equal to `1` on a neighbourhood of `K`, then `a # b` agrees with the
-pointwise composition `a ∘ b` up to a smoothing symbol. -/
+/-- **Locality of the composition symbol.** Let `b` have compact spatial support. If `a` vanishes
+at positions outside `K` and `b` does not depend on the position near each point of `K`, for
+instance if `b` is the symbol of multiplication by a compactly supported smooth function equal to
+`1` on a neighbourhood of `K`, then `a # b` agrees with the pointwise composition `a ∘ b` up to a
+smoothing symbol. -/
 theorem isSmoothing_sharp_sub_comp (hb : b.HasCompactSpatialSupport)
     {K : Set (CoordinateSpace n)} (haK : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0)
     (hbK : ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ ξ, b.coefficient (y, ξ) = b.coefficient (x, ξ)) :
