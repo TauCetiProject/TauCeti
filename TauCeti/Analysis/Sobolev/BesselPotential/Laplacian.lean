@@ -136,15 +136,9 @@ theorem mem_realSobolevFunctions_add_two_of_laplacian_eq_mul_exp_sub_one_add
         ((Real.continuous_exp.comp hv.continuous).sub continuous_const).aestronglyMeasurable
         (Filter.Eventually.of_forall fun x ↦ by
           rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _), mul_comm]
-          rcases le_or_gt (v x) 0 with h0 | h0
-          · have h1 := Real.add_one_le_exp (v x)
-            have h2 := Real.one_le_exp (le_max_right C 0)
-            rw [abs_of_nonpos (by linarith [Real.exp_le_one_iff.2 h0]), abs_of_nonpos h0]
-            nlinarith
-          · refine (TauCeti.abs_exp_sub_one_le_mul_exp_abs (v x)).trans
-              (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) (abs_nonneg _))
-            rw [abs_of_pos h0]
-            exact (hvC x).trans (le_max_left _ _))
+          refine (TauCeti.abs_exp_sub_one_le_mul_exp_max (v x)).trans ?_
+          gcongr
+          exact hvC x)
     have h := mem_realSobolevFunctions_add_two_of_sub_laplacian (s := 0) one_pos hv hv2 (by
       rw [hsub, mem_realSobolevFunctions_zero_iff]
       exact (hv2.sub (hexp.const_smul c)).sub (memLp_of_mem_realSobolevFunctions hg))

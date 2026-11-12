@@ -10,6 +10,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
+import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 
 /-!
 # Sobolev representatives of smooth framed vortices
@@ -116,13 +117,10 @@ private theorem exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
       linarith [hn1 z]
     · have hnz := (hR z (by linarith))
       have hlog : |ℓ z| ≤ 2 * (1 - n z) := by
-        have h1 := Real.log_le_sub_one_of_pos (inv_pos.2 (by linarith : 0 < n z))
-        rw [Real.log_inv] at h1
-        rw [abs_of_nonpos (Real.log_nonpos (hn0 z) (hn1 z))]
-        have h2 : (n z)⁻¹ - 1 ≤ 2 * (1 - n z) := by
-          rw [inv_eq_one_div, div_sub_one (by linarith), div_le_iff₀ (by linarith)]
-          nlinarith [hn1 z]
-        linarith
+        have h := Real.neg_log_one_sub_le_two_mul (x := 1 - n z) (by linarith [hn1 z])
+          (by linarith)
+        rw [sub_sub_cancel] at h
+        rwa [abs_of_nonpos (Real.log_nonpos (hn0 z) (hn1 z))]
       have hb0 := b.nonneg (x := z)
       have hb1 := b.le_one (x := z)
       calc |v z| = |1 - b z| * |ℓ z| := abs_mul _ _
@@ -171,6 +169,25 @@ private theorem exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
         (mem_realSobolevFunctions_of_hasCompactSupport hgc hgs (s - 2))
         fun z ↦ by rw [hg_def]; ring
   exact ⟨v, hv, hvS, hvfar⟩
+
+/-- A reference coefficient times `exp (v / 2) - 1` lies in every `H^s` when `v` does. This is the
+section part of `x - x_ref` for an end-normalized vortex. -/
+private theorem referenceField_apply_mul_exp_sub_one_mem_realSobolevFunctions
+    (f : ContDiffBump (0 : ℝ)) (i : Fin 4) {v : ℂ → ℝ}
+    (hvS : ∀ s, v ∈ realSobolevFunctions ℂ s 2) (s : ℝ) :
+    (fun z ↦ referenceField f m z i * (Real.exp (v z / 2) - 1)) ∈ realSobolevFunctions ℂ s 2 := by
+  obtain ⟨k, hk⟩ := exists_nat_ge (max s 2)
+  have hk2 : (Module.finrank ℝ ℂ : ℝ) < 2 * k := by
+    rw [Complex.finrank_real_complex]
+    push_cast
+    linarith [le_max_right s 2]
+  have he : (fun z ↦ Real.exp (v z / 2) - 1) ∈ realSobolevFunctions ℂ k 2 := by
+    simpa only [Pi.smul_apply, smul_eq_mul, one_div_mul_eq_div] using
+      exp_sub_one_mem_realSobolevFunctions hk2 (Submodule.smul_mem _ (1 / 2 : ℝ) (hvS k))
+  exact realSobolevFunctions_mono (by norm_num) (by norm_num) ((le_max_left s 2).trans hk)
+    (mul_mem_realSobolevFunctions_of_bounded_derivatives (by norm_num) (by norm_num) k
+      (contDiff_euclidean.1 (contDiff_referenceField f m) i)
+      (fun j _ ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m i j) he)
 
 /-- **End-normalized vortices lie in every Sobolev field space.** Let `x` be a smooth plane
 vortex with `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
@@ -226,17 +243,12 @@ theorem mem_framedFieldSpace_of_eventually_sectionValue_eq (f : ContDiffBump (0 
   have key (i : Fin 4) (F : ℂ → ℝ) (hF : ContDiff ℝ ∞ F)
       (hFs : ∀ s, F ∈ realSobolevFunctions ℂ s 2)
       (hFeq : ∀ z, R + 2 < ‖z‖ → x z i - referenceField f m z i = F z) :
-      (fun z ↦ (x - referenceField f m) z i) ∈ realSobolevFunctions ℂ s 2 := by
-    set D : ℂ → ℝ := fun z ↦ x z i - referenceField f m z i - F z
-    have hD : ContDiff ℝ ∞ D :=
-      ((hxi i).sub (contDiff_euclidean.1 (contDiff_referenceField f m) i)).sub hF
-    have hDc : HasCompactSupport D :=
-      HasCompactSupport.intro (isCompact_closedBall 0 (R + 2)) fun z hz ↦ by
-        simp only [D, hFeq z (by simpa using hz), sub_self]
-    have h := add_mem (mem_realSobolevFunctions_of_hasCompactSupport hD hDc s) (hFs s)
-    convert h using 1
-    ext z
-    simp [D]
+      (fun z ↦ (x - referenceField f m) z i) ∈ realSobolevFunctions ℂ s 2 :=
+    mem_realSobolevFunctions_of_hasCompactSupport_sub
+      (((hxi i).sub (contDiff_euclidean.1 (contDiff_referenceField f m) i)).sub hF)
+      (HasCompactSupport.intro (isCompact_closedBall 0 (R + 2)) fun z hz ↦ by
+        simp [hFeq z (by simpa using hz)])
+      (hFs s)
   have hv1 : ContDiff ℝ 1 v := hv.of_le (by norm_cast)
   have hdv (u : ℂ) : ContDiff ℝ ∞ fun z ↦ fderiv ℝ v z u :=
     (hv.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
@@ -244,20 +256,6 @@ theorem mem_framedFieldSpace_of_eventually_sectionValue_eq (f : ContDiffBump (0 
     realSobolevFunctions_mono (by norm_num) (by norm_num) (le_max_left s 0)
       (fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) (le_max_right s 0) hv1
         (hvS _) u)
-  have hexpS (i : Fin 4) (s : ℝ) : (fun z ↦ referenceField f m z i * (Real.exp (v z / 2) - 1)) ∈
-      realSobolevFunctions ℂ s 2 := by
-    obtain ⟨k, hk⟩ := exists_nat_ge (max s 2)
-    have hk2 : (Module.finrank ℝ ℂ : ℝ) < 2 * k := by
-      rw [Complex.finrank_real_complex]
-      push_cast
-      linarith [le_max_right s 2]
-    have he : (fun z ↦ Real.exp (v z / 2) - 1) ∈ realSobolevFunctions ℂ k 2 := by
-      simpa only [Pi.smul_apply, smul_eq_mul, one_div_mul_eq_div] using
-        exp_sub_one_mem_realSobolevFunctions hk2 (Submodule.smul_mem _ (1 / 2 : ℝ) (hvS k))
-    exact realSobolevFunctions_mono (by norm_num) (by norm_num) ((le_max_left s 2).trans hk)
-      (mul_mem_realSobolevFunctions_of_bounded_derivatives (by norm_num) (by norm_num) k
-        (contDiff_euclidean.1 (contDiff_referenceField f m) i)
-        (fun j _ ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m i j) he)
   have hexpC (i : Fin 4) :
       ContDiff ℝ ∞ (fun z ↦ referenceField f m z i * (Real.exp (v z / 2) - 1)) :=
     (contDiff_euclidean.1 (contDiff_referenceField f m) i).mul
@@ -279,8 +277,10 @@ theorem mem_framedFieldSpace_of_eventually_sectionValue_eq (f : ContDiffBump (0 
         simp only [Pi.smul_apply, smul_eq_mul]
         ring)
       fun z hz ↦ (hfar z hz).2.1
-  · exact key 2 _ (hexpC 2) (hexpS 2) fun z hz ↦ (hfar z hz).2.2.1
-  · exact key 3 _ (hexpC 3) (hexpS 3) fun z hz ↦ (hfar z hz).2.2.2
+  · exact key 2 _ (hexpC 2) (referenceField_apply_mul_exp_sub_one_mem_realSobolevFunctions f 2 hvS)
+      fun z hz ↦ (hfar z hz).2.2.1
+  · exact key 3 _ (hexpC 3) (referenceField_apply_mul_exp_sub_one_mem_realSobolevFunctions f 3 hvS)
+      fun z hz ↦ (hfar z hz).2.2.2
 
 /-- **Every smooth framed vortex has a representative in every Sobolev field space.** A smooth
 plane vortex with the degree-`m` end framing `α (z / |z|)^(-m) → 1` is carried by a smooth framed
