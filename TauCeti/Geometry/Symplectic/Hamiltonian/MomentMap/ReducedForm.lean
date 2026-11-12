@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
 
@@ -15,22 +14,23 @@ import TauCeti.Geometry.Manifold.IsManifold.Basic
 # The reduced symplectic form of a level of a moment map
 
 Let `μ : M → 𝔤*` be a moment map, in the convention `ι_{Z_M} σ = d⟨μ, Z⟩`, for a symplectic form
-`σ` on `M`, and let `c ∈ 𝔤*` with coadjoint stabilizer `𝔤_c = {Z | ⁅Z, c⁆ = 0}`. The
+`σ` on `M`, and for `c ∈ 𝔤*` let `𝔤_c = {Z | ⁅Z, c⁆ = 0}` be its coadjoint stabilizer. The
 Marsden–Weinstein–Meyer theorem says that the restriction of `σ` to the level `μ⁻¹(c)` descends to
 a symplectic form on the quotient of the level by the stabilizer `G_c`. This file proves the
 descent for **level data** supplied as maps, independently of how the level and its quotient are
 constructed:
 
-* a manifold `Z` with a smooth map `i : Z → M` into the level, `μ ∘ i = c`, whose tangent images
-  are the tangent spaces `ker dμ` of the level, and along which the cocycle
-  `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` of `μ` vanishes;
-* a surjective smooth submersion `p : Z → Q` whose vertical tangent vectors are those sent by
-  `di` into the stabilizer orbit directions `𝔤_c · i(z)`;
+* a manifold `Z` with a smooth map `i : Z → M` whose tangent images are the tangent spaces
+  `ker dμ` of the levels of `μ`, and along which the cocycle `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` of `μ`
+  vanishes;
+* a surjective smooth submersion `p : Z → Q` whose vertical tangent vectors at `z` are those sent
+  by `di` into the stabilizer orbit directions `𝔤_c · i(z)`, for `c = μ (i z)`;
 * an action of `K` on `Z` by smooth maps over `p`, transitive on the fibres of `p` and preserving
   `i^* σ`.
 
-For the regular level `Z = μ⁻¹(c)` of a coadjoint-equivariant moment map of a Lie group `G` acting
-by symplectomorphisms, with `G_c` acting freely and properly on `Z`, the inclusion `i`, the orbit
+Then `μ ∘ i` is locally constant, but it need not be constant. For the regular level
+`Z = μ⁻¹(c)` of a coadjoint-equivariant moment map of a Lie group `G` acting by
+symplectomorphisms, with `G_c` acting freely and properly on `Z`, the inclusion `i`, the orbit
 projection `p : Z → Z / G_c` and `K = G_c` are such data. The same data describe other smooth
 pieces of levels with their tangent descriptions.
 
@@ -46,10 +46,8 @@ since the null directions of `σ` on `ker dμ` are `𝔤_c · i(z)`
 action is locally free and `i` is an immersion, `Q` has dimension `dim M - dim 𝔤 - dim 𝔤_c`
 (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_add_finrank_add_finrank_lieAnnihilator`).
 
-For a group-level moment map `μ` of a Lie group `G` acting by symplectomorphisms, the cocycle of
-`μ` vanishes and `K` may act through any map `φ : K → G` with `i (k • z) = φ k • i z`, such as the
-inclusion of the stabilizer `G_c`; invariance of `i^* σ` is then automatic
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`).
+The group-level version, for a Lie group acting by symplectomorphisms, is in
+`TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.ReducedForm`.
 
 The reduced form computes the reduced Hamiltonian dynamics of
 `TauCeti.Geometry.Symplectic.Hamiltonian.Reduction`, whose hypothesis is `p^* ω_red = i^* σ`.
@@ -61,8 +59,6 @@ The reduced form computes the reduced Hamiltonian dynamics of
   reduced symplectic form exists and is unique.
 * `TauCeti.SmoothTwoForm.IsMomentMap.finrank_add_finrank_add_finrank_lieAnnihilator`: the
   reduced dimension `dim Q + dim 𝔤 + dim 𝔤_c = dim M`.
-* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`:
-  the reduced symplectic form of a group-level moment map.
 
 ## References
 
@@ -101,14 +97,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 omit [FiniteDimensional ℝ E] [IsManifold JQ ∞ Q] in
 /-- **The restricted form on a level is basic.** Let `i : Z → M` be a smooth map into a level of a
 moment map `μ`, in the sense that its tangent images lie in `ker dμ`, and let `p : Z → Q` be a
-differentiable map whose vertical tangent vectors are sent by `di` into the orbit directions
-`𝔤 · i(z)`. If `K` acts on `Z` by smooth maps over `p`, transitively on the fibres of `p` and
-preserving `i^* σ`, then `i^* σ` is basic for `p`. The vertical vectors are null directions of
+map whose vertical tangent vectors are sent by `di` into the orbit directions `𝔤 · i(z)`. If `K`
+acts on `Z` by smooth maps over `p`, transitively on the fibres of `p` and preserving `i^* σ`,
+then `i^* σ` is basic for `p`. The vertical vectors are null directions of
 `i^* σ` because `σ(Z_M, u) = ⟨dμ u, Z⟩` vanishes for `u` tangent to the level. -/
 theorem isBasic_mpullback {K : Type*} [SMul K Z] (h : σ.IsMomentMap a μ) (hi : ContMDiff J I ∞ i)
     (hrange : ∀ z, LinearMap.range (mfderiv J I i z).toLinearMap ≤
       LinearMap.ker (h.differential (i z)))
-    (hp : MDifferentiable J JQ p)
     (hker : ∀ z, (mfderiv J JQ p z).ker ≤
       (a.orbitTangent (i z)).comap (mfderiv J I i z).toLinearMap)
     (hK : ∀ k : K, ContMDiff J J ∞ fun z : Z ↦ k • z) (hpK : ∀ (k : K) z, p (k • z) = p z)
@@ -116,8 +111,8 @@ theorem isBasic_mpullback {K : Type*} [SMul K Z] (h : σ.IsMomentMap a μ) (hi :
     (hinv : ∀ k : K, SmoothForm.mpullback (fun z : Z ↦ k • z) (hK k)
       (SmoothForm.mpullback i hi σ) = SmoothForm.mpullback i hi σ) :
     RoughForm.IsBasic (V := ℝ) JQ p (SmoothForm.mpullback i hi σ).1 := by
-  refine RoughForm.isBasic_of_mpullback_eq hp (fun k ↦ (hK k).mdifferentiable (by simp))
-    (fun k ↦ funext (hpK k)) (fun z z' hzz' ↦ .inr (hfib z z' hzz')) (fun z v j hj ↦ ?_)
+  refine RoughForm.isBasic_of_mpullback_eq (fun k ↦ funext (hpK k))
+    (fun z z' hzz' ↦ .inr (hfib z z' hzz')) (fun z v j hj ↦ ?_)
     fun k ↦ by simpa only [SmoothForm.coe_mpullback] using congrArg Subtype.val (hinv k)
   -- A vertical vector `u` is sent by `di` to an orbit direction `Z_M`, and `σ(Z_M, di w)` is
   -- `⟨dμ (di w), Z⟩ = 0`.
@@ -134,20 +129,20 @@ theorem isBasic_mpullback {K : Type*} [SMul K Z] (h : σ.IsMomentMap a μ) (hi :
   · rw [SmoothBundleForm.eval₂_swap, hnull _ _ hj, neg_zero]
 
 /-- **The reduced symplectic form.** Let `σ` be a symplectic form on `M` with a moment map `μ`,
-let `i : Z → M` parametrize a level `μ = c` on which the cocycle of `μ` vanishes, with tangent
-images `ker dμ`, and let `p : Z → Q` be a surjective smooth submersion out of a boundaryless
-manifold whose vertical tangent vectors are exactly those sent by `di` into the stabilizer orbit
-directions `𝔤_c · i(z)`. If `K` acts on `Z` by smooth maps over `p`, transitively on the fibres
-of `p` and preserving `i^* σ`, then there is a unique symplectic form `ω_red` on `Q` with
-`p^* ω_red = i^* σ`. -/
+let `i : Z → M` parametrize pieces of levels of `μ` on which the cocycle of `μ` vanishes, with
+tangent images `ker dμ`, and let `p : Z → Q` be a surjective smooth submersion out of a
+boundaryless manifold whose vertical tangent vectors at `z` are exactly those sent by `di` into
+the stabilizer orbit directions `𝔤_c · i(z)`, for `c = μ (i z)`. If `K` acts on `Z` by smooth
+maps over `p`, transitively on the fibres of `p` and preserving `i^* σ`, then there is a unique
+symplectic form `ω_red` on `Q` with `p^* ω_red = i^* σ`. -/
 theorem existsUnique_isSymplectic_mpullback_eq_mpullback [J.Boundaryless] {K : Type*} [SMul K Z]
     (h : σ.IsMomentMap a μ) (hσ : σ.IsSymplectic) (hi : ContMDiff J I ∞ i)
-    (hμi : ∀ z, μ (i z) = c) (hc : ∀ z, σ.momentCocycle a μ (i z) = 0)
+    (hc : ∀ z, σ.momentCocycle a μ (i z) = 0)
     (hrange : ∀ z, LinearMap.range (mfderiv J I i z).toLinearMap =
       LinearMap.ker (h.differential (i z)))
     (hp : IsSubmersion J JQ ∞ p) (hsurj : Surjective p)
     (hker : ∀ z, (mfderiv J JQ p z).ker =
-      ((lieAnnihilator ℝ 𝔤 c).toSubmodule.map (a.eval (i z))).comap
+      ((lieAnnihilator ℝ 𝔤 (μ (i z))).toSubmodule.map (a.eval (i z))).comap
         (mfderiv J I i z).toLinearMap)
     (hK : ∀ k : K, ContMDiff J J ∞ fun z : Z ↦ k • z) (hpK : ∀ (k : K) z, p (k • z) = p z)
     (hfib : ∀ z z', p z = p z' → ∃ k : K, k • z = z')
@@ -156,18 +151,20 @@ theorem existsUnique_isSymplectic_mpullback_eq_mpullback [J.Boundaryless] {K : T
     ∃! η : SmoothTwoForm JQ Q,
       η.IsSymplectic ∧ SmoothForm.mpullback p hp.contMDiff η = SmoothForm.mpullback i hi σ :=
   existsUnique_isSymplectic_mpullback_eq hp hsurj (hσ.isClosed.mpullback i hi)
-    (h.isBasic_mpullback hi (fun z ↦ (hrange z).le) (hp.contMDiff.mdifferentiable (by simp))
+    (h.isBasic_mpullback hi (fun z ↦ (hrange z).le)
       (fun z ↦ (hker z).le.trans (Submodule.comap_mono
         (LinearMap.map_le_range.trans_eq (a.orbitTangent_eq_range _).symm))) hK hpK hfib hinv)
     fun z ↦ by
       rw [h.ker_bilinFormAt_mpullback hi (hσ.isNondegenerate.nondegenerate_bilinFormAt (i z))
-        (hc z) (hrange z), hμi z, hker z]
+        (hc z) (hrange z), hker z]
 
 omit [IsManifold J ∞ Z] [IsManifold JQ ∞ Q] in
-/-- **The dimension of the reduced space.** In the setting of
-`TauCeti.SmoothTwoForm.IsMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`, at a point
-`z` where `σ` is nondegenerate at `i z`, `i` is an immersion and the action is locally free, the
-model space of `Q` has dimension `dim M - dim 𝔤 - dim 𝔤_c`. -/
+/-- **The dimension of the reduced space.** Let `μ` be a moment map of a two-form `σ` on `M`, and
+let `i : Z → M` and `p : Z → Q` be maps. Suppose that at a point `z` the form `σ` is nondegenerate
+at `i z`, `μ (i z) = c`, the cocycle of `μ` vanishes at `i z`, the action is locally free at `i z`,
+the derivative `di_z` is injective with image `ker dμ_(i z)`, and `dp_z` is surjective with kernel
+`di_z⁻¹(𝔤_c · i(z))`. Then `dim Q + dim 𝔤 + dim 𝔤_c = dim M`, where `dim Q` and `dim M` are the
+dimensions of the model spaces. -/
 theorem finrank_add_finrank_add_finrank_lieAnnihilator (h : σ.IsMomentMap a μ) {z : Z}
     (hσx : (σ.bilinFormAt (i z)).Nondegenerate) (hμi : μ (i z) = c)
     (hc : σ.momentCocycle a μ (i z) = 0)
@@ -204,64 +201,6 @@ theorem finrank_add_finrank_add_finrank_lieAnnihilator (h : σ.IsMomentMap a μ)
   omega
 
 end IsMomentMap
-
-namespace IsEquivariantMomentMap
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I (minSmoothness ℝ 3) G] [LieGroup I ∞ G]
-  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
-  [ContMDiffSMul I I' ∞ G M]
-  {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
-  {EZ HZ Z : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
-  {J : ModelWithCorners ℝ EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z] [IsManifold J ∞ Z]
-  {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
-  {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q] [IsManifold JQ ∞ Q]
-  {i : Z → M} {p : Z → Q} {c : Module.Dual ℝ (GroupLieAlgebra I G)}
-
-/-- **The reduced symplectic form of a group-level moment map.** Let a Lie group `G` act on `M` by
-symplectomorphisms of `σ`, with coadjoint-equivariant moment map `μ`. Let `i : Z → M` parametrize
-a level `μ = c` with tangent images `ker dμ`, and let `p : Z → Q` be a surjective smooth
-submersion out of a boundaryless manifold whose vertical tangent vectors are exactly those sent by
-`di` into the stabilizer orbit directions `𝔤_c · i(z)`. Let `K` act on `Z` by smooth maps over
-`p`, transitively on the fibres of `p`, through a map `φ : K → G` with
-`i (k • z) = φ k • i z`; for `Z = μ⁻¹(c)` and `Q = Z / G_c`, take `K = G_c` and `φ` the
-inclusion. Then there is a unique symplectic form `ω_red` on `Q` with `p^* ω_red = i^* σ`. -/
-theorem existsUnique_isSymplectic_mpullback_eq_mpullback [J.Boundaryless] {K : Type*} [SMul K Z]
-    (h : σ.IsEquivariantMomentMap μ) (hσ : σ.IsSymplectic)
-    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
-    (hi : ContMDiff J I' ∞ i) (hμi : ∀ z, μ (i z) = c)
-    (hrange : ∀ z, LinearMap.range (mfderiv J I' i z).toLinearMap =
-      LinearMap.ker (h.differential (i z)))
-    (hp : IsSubmersion J JQ ∞ p) (hsurj : Surjective p)
-    (hker : ∀ z, (mfderiv J JQ p z).ker =
-      ((lieAnnihilator ℝ (GroupLieAlgebra I G) c).toSubmodule.map
-        ((InfinitesimalAction.fundamental I G I' M).eval (i z))).comap
-        (mfderiv J I' i z).toLinearMap)
-    (hK : ∀ k : K, ContMDiff J J ∞ fun z : Z ↦ k • z) (hpK : ∀ (k : K) z, p (k • z) = p z)
-    (hfib : ∀ z z', p z = p z' → ∃ k : K, k • z = z') (φ : K → G)
-    (hφ : ∀ (k : K) z, i (k • z) = φ k • i z) :
-    ∃! η : SmoothTwoForm JQ Q,
-      η.IsSymplectic ∧ SmoothForm.mpullback p hp.contMDiff η = SmoothForm.mpullback i hi σ := by
-  refine h.toIsMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback hσ hi hμi
-    (fun z ↦ h.momentCocycle_eq_zero (i z)) hrange hp hsurj hker hK hpK hfib fun k ↦ ?_
-  -- `i ∘ (k • ·) = (φ k • ·) ∘ i`, and `φ k` preserves `σ`.
-  have hg : ContMDiff I' I' ∞ fun x : M ↦ φ k • x :=
-    ContMDiffSMul.contMDiff_const_smul (I := I) (φ k)
-  calc SmoothForm.mpullback (fun z : Z ↦ k • z) (hK k) (SmoothForm.mpullback i hi σ)
-      = SmoothForm.mpullback (i ∘ fun z : Z ↦ k • z) (hi.comp (hK k)) σ :=
-        SmoothForm.mpullback_mpullback _ _ (hK k) hi σ
-    _ = SmoothForm.mpullback ((fun x : M ↦ φ k • x) ∘ i) (hg.comp hi) σ :=
-        Subtype.ext (by simp only [SmoothForm.coe_mpullback, funext (hφ k), Function.comp_def])
-    _ = SmoothForm.mpullback i hi (SmoothForm.mpullback (fun x : M ↦ φ k • x) hg σ) :=
-        (SmoothForm.mpullback_mpullback _ _ hi hg σ).symm
-    _ = SmoothForm.mpullback i hi σ := by rw [hG]
-
-end IsEquivariantMomentMap
 
 end SmoothTwoForm
 

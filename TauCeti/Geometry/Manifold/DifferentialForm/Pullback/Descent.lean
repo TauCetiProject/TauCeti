@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.LinearAlgebra.Multilinear.Quotient
 
 /-!
@@ -30,7 +31,8 @@ for every `i`. Being basic is a pointwise condition, and it is all that descent 
   (`TauCeti.mpullback_injective_of_surjective`), so the descended form is unique.
 * A form that vanishes when one of its arguments lies in the kernel of the derivative of `f`, and
   that is invariant under a family of self-maps of `M` over `f` transitive on its fibres, is basic
-  (`TauCeti.RoughForm.isBasic_of_mpullback_eq`). This is how the restriction of a symplectic form
+  (`TauCeti.RoughForm.isBasic_of_mpullback_eq`); neither `f` nor the self-maps need be
+  differentiable. This is how the restriction of a symplectic form
   to a level of a moment map is shown to be basic for the quotient by the stabilizer.
 
 No regularity of `f` is assumed here. The descent applies along submersions with boundaryless
@@ -106,15 +108,16 @@ theorem isBasic_mpullback (ω : RoughForm I' M' V k) : IsBasic I' f (mpullback I
   simp only [mpullback_apply, hvw]
   exact apply_tangentSpaceCast hxy.symm _
 
-/-- **Invariant forms killing vertical vectors are basic.** Let `f` be differentiable and let `σ`
-be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that is transitive on the
-fibres of `f`. A form `α` that vanishes as soon as one of its arguments is vertical, that is, lies
-in the kernel of the derivative of `f`, and that is invariant under every `σ i`, is basic for `f`.
-At a single point the first condition makes `α_x` depend only on the images of its arguments under
-`df_x`; invariance compares two points of a fibre. When `f` is a local diffeomorphism the first
-condition is vacuous, as in `IsLocalDiffeomorph.isBasic_of_mpullback_eq`. -/
-theorem isBasic_of_mpullback_eq {ι : Type*} {σ : ι → M → M} (hf : MDifferentiable I I' f)
-    (hσ : ∀ i, MDifferentiable I I (σ i)) (hfσ : ∀ i, f ∘ σ i = f)
+/-- **Invariant forms killing vertical vectors are basic.** Let `σ` be a family of self-maps of `M`
+over `f` (`f ∘ σ i = f`) that is transitive on the fibres of `f`. A form `α` that vanishes as soon
+as one of its arguments is vertical, that is, lies in the kernel of the derivative of `f`, and
+that is invariant under every `σ i`, is basic for `f`. At a single point the first condition makes
+`α_x` depend only on the images of its arguments under `df_x`; invariance compares two points of a
+fibre. No differentiability of `f` or `σ` is assumed: where one of them is not differentiable its
+derivative is the junk value `0`, and the two conditions then force the form to vanish there and
+along the whole fibre (in positive degree). When `f` is a local diffeomorphism the first condition
+is vacuous, as in `IsLocalDiffeomorph.isBasic_of_mpullback_eq`. -/
+theorem isBasic_of_mpullback_eq {ι : Type*} {σ : ι → M → M} (hfσ : ∀ i, f ∘ σ i = f)
     (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y) {α : RoughForm I M V k}
     (hvert : ∀ x (v : Fin k → TangentSpace I x) j, mfderiv I I' f x (v j) = 0 → α x v = 0)
     (hα : ∀ i, mpullback I I (σ i) α = α) : IsBasic I' f α := by
@@ -126,13 +129,38 @@ theorem isBasic_of_mpullback_eq {ι : Type*} {σ : ι → M → M} (hf : MDiffer
       fun j ↦ (Submodule.Quotient.eq _).2 (by simp [hvw j])
   refine isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
   rcases hσf y x hxy.symm with rfl | ⟨i, rfl⟩
-  · exact key y v w hvw
-  rw [← congrFun (hα i) y, mpullback_apply]
-  refine key _ v _ fun j ↦ ?_
-  -- By the chain rule, `df_y` factors through the derivative of `σ i`.
-  have hcomp := mfderiv_comp y (hf (σ i y)) (hσ i y)
-  rw [hfσ i] at hcomp
-  exact (hvw j).trans (congrArg (· (w j)) hcomp)
+  · exact key y v w fun j ↦ by simpa using hvw j
+  by_cases hd : MDifferentiableAt I I' f (σ i y) ∧ MDifferentiableAt I I (σ i) y
+  · rw [← congrFun (hα i) y, mpullback_apply]
+    refine key _ v _ fun j ↦ (hvw j).trans ?_
+    -- By the chain rule, `df_y = d(f ∘ σ i)_y` factors through the derivative of `σ i`.
+    rw [← mfderiv_comp_apply y hd.1 hd.2, (Filter.EventuallyEq.of_eq (hfσ i)).mfderiv_eq,
+      ContinuousLinearMap.comp_apply]
+    -- The two casts agree: `(f ∘ σ i) y` is `f (σ i y)` by `Function.comp_apply`.
+    rfl
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · rw [← congrFun (hα i) y, mpullback_apply]
+    exact congrArg _ (funext fun j ↦ j.elim0)
+  -- In positive degree `α` vanishes wherever `f` or some `σ j` is not differentiable, since a
+  -- derivative there is `0`, and invariance carries this vanishing along the fibre.
+  have hzero (z : M) (hz : ¬ MDifferentiableAt I I' f z ∨ ∃ j, ¬ MDifferentiableAt I I (σ j) z)
+      (u : Fin k → TangentSpace I z) : α z u = 0 := by
+    rcases hz with hz | ⟨j, hz⟩
+    · exact hvert z u ⟨0, hk⟩ (by simp [mfderiv_zero_of_not_mdifferentiableAt hz])
+    · rw [← congrFun (hα j) z, mpullback_apply]
+      exact (α (σ j z)).map_coord_zero ⟨0, hk⟩
+        (by simp [mfderiv_zero_of_not_mdifferentiableAt hz])
+  have hfib (z z' : M) (hzz' : f z' = f z) (h0 : ∀ u : Fin k → TangentSpace I z, α z u = 0)
+      (u : Fin k → TangentSpace I z') : α z' u = 0 := by
+    rcases hσf z' z hzz' with rfl | ⟨j, rfl⟩
+    · exact h0 u
+    · rw [← congrFun (hα j) z', mpullback_apply]
+      exact h0 _
+  rcases not_and_or.mp hd with hd | hd
+  · have h0 := hzero _ (.inl hd)
+    rw [h0, hfib _ y hxy.symm h0]
+  · have h0 := hzero y (.inr ⟨i, hd⟩)
+    rw [h0, hfib y _ hxy h0]
 
 open scoped Classical in
 variable (I I') in

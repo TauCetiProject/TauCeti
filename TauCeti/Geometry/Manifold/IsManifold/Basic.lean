@@ -21,6 +21,8 @@ at propositionally equal points are identified by `tangentSpaceCast`.
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
   the identity.
+* `TauCeti.tangentSpaceCast_self_apply`: `tangentSpaceCast` from a point to itself is the
+  identity.
 -/
 
 public section
@@ -43,6 +45,12 @@ points of tangent bundles with `Bundle.TotalSpace.ext`. -/
 theorem heq_tangentSpaceCast {x y : M} (hxy : x = y) (w : TangentSpace I x) :
     HEq (tangentSpaceCast I x y w) w := by
   subst hxy
+  rfl
+
+/-- `tangentSpaceCast` from a point to itself is the identity. -/
+@[simp]
+theorem tangentSpaceCast_self_apply (x : M) (v : TangentSpace I x) :
+    tangentSpaceCast I x x v = v :=
   rfl
 
 end TauCeti
