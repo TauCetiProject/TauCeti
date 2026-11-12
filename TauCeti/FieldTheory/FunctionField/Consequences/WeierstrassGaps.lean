@@ -481,7 +481,7 @@ private theorem choose_two_add_sum_gapNumbersUpTo_le (P : Place k F) {N M : ℕ}
       ((P.gapNumbersUpTo N).card + 1).choose 2 + ∑ n ∈ P.gapNumbersUpTo M, n := by
   induction M, hNM using Nat.le_induction with
   | base => exact le_rfl
-  | succ M hNM ih =>
+  | succ M _ ih =>
     by_cases h : P.IsGap (M + 1)
     · have hM := card_gapNumbersUpTo_le P M
       rw [gapNumbersUpTo_succ_of_isGap h,
@@ -500,7 +500,7 @@ private theorem sq_add_sum_gapNumbersUpTo_le (P : Place k F) {N M : ℕ} (hNM : 
       (P.gapNumbersUpTo M).card ^ 2 + ∑ n ∈ P.gapNumbersUpTo N, n := by
   induction M, hNM using Nat.le_induction with
   | base => exact le_rfl
-  | succ M hNM ih =>
+  | succ M _ ih =>
     by_cases h : P.IsGap (M + 1)
     · have hM := h.sub_one_le_two_mul_card_gapNumbersUpTo
       rw [Nat.add_sub_cancel] at hM

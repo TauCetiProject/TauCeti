@@ -37,9 +37,6 @@ measurable. This is what turns a fibrewise Bernstein representation into a kerne
 
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*
   (de Gruyter, 2nd ed. 2012), Chapter 1.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-  (BCR semigroup--Bochner).
 -/
 
 public section
