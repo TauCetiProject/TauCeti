@@ -296,6 +296,19 @@ theorem zpowCeil_norm_smul_le {R : Type*} [SeminormedAddGroup R] [SMulZeroClass 
     zpowCeil c ‖a • m‖ ≤ zpowCeil c ‖a‖ * zpowCeil c ‖m‖ :=
   (monotone_zpowCeil hc₀ hc₁ (norm_smul_le a m)).trans (zpowCeil_mul_le hc₀ hc₁ (norm_nonneg a) _)
 
+/-- Rounding the norm on a norm-one ring preserves the original scalar inequality exactly
+when every scalar norm is already fixed by rounding. -/
+theorem zpowCeil_norm_mul_le_iff {R : Type*} [SeminormedRing R] [NormOneClass R] :
+    (∀ a x : R, zpowCeil c ‖a * x‖ ≤ ‖a‖ * zpowCeil c ‖x‖) ↔
+      ∀ a : R, zpowCeil c ‖a‖ = ‖a‖ := by
+  constructor
+  · intro h a
+    -- Test the scalar inequality on the module vector `1`.
+    exact le_antisymm (by simpa [zpowCeil_one] using h a 1)
+      (le_zpowCeil hc₀ hc₁ _)
+  · intro h a x
+    simpa only [smul_eq_mul, h] using zpowCeil_norm_smul_le hc₀ hc₁ a x
+
 variable (M)
 
 /-- The norm of an ultrametric seminormed group rounded up to `c ^ ℤ ∪ {0}`, for `0 < c < 1`.
