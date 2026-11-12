@@ -296,7 +296,7 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_normalHalfSpa
       lpNorm (Wkp.iteratedGradient 1 u) p
           (volume.restrict ((Omega : Set (WithLp 2 (ℝ × E))) ∩ K)) ≤
         C * (‖f‖ + ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ + ‖Wkp.value 2 u‖) := by
-  obtain ⟨C₀, δ, hδ, c₀, hc₀, hball⟩ :=
+  obtain ⟨C₀, δ, hδ, c₀, -, hball⟩ :=
     exists_lpNorm_iteratedGradient_inter_ball_le (E := E) hp hp_top
   -- The bounds on `b` and `c` also hold with their nonnegative parts.
   have hbβ' : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖b x‖ ≤ max β 0 :=
