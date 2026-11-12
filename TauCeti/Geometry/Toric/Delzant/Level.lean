@@ -445,6 +445,7 @@ theorem coe_delzantLevelCongr_symm (x : delzantLevel i u c) :
 
 /-- The relabelling of coordinates intertwines the torus actions on the levels, relabelling the
 angles along `e`. -/
+@[simp]
 theorem delzantLevelCongr_vadd (θ : ι' → AddCircle (2 * π)) (x : delzantLevel i' u' c') :
     delzantLevelCongr e hZ (θ +ᵥ x) = (θ ∘ e.symm) +ᵥ delzantLevelCongr e hZ x :=
   Subtype.ext (by
@@ -452,6 +453,7 @@ theorem delzantLevelCongr_vadd (θ : ι' → AddCircle (2 * π)) (x : delzantLev
       prodMap_piLpCongrLeft_torusRotation])
 
 /-- The inverse relabelling of coordinates intertwines the torus actions on the levels. -/
+@[simp]
 theorem delzantLevelCongr_symm_vadd (θ : ι → AddCircle (2 * π)) (x : delzantLevel i u c) :
     (delzantLevelCongr e hZ).symm (θ +ᵥ x) = (θ ∘ e) +ᵥ (delzantLevelCongr e hZ).symm x := by
   refine (delzantLevelCongr e hZ).injective ?_

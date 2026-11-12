@@ -9,15 +9,14 @@ public import TauCeti.Geometry.Toric.Delzant.Quotient.Basic
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
-# Naturality of the Delzant quotient and its orbit space
+# Naturality of the Delzant quotient
 
 Let `i : N →+ V` be a lattice and `(u, c)` a facet presentation of a polytope
 `Δ = {y ∈ V* | c j ≤ ⟨y, u j⟩ for every j}`, with Delzant quotient `M_Δ = Z / N_Δ`
 (`TauCeti.Toric.DelzantQuotient i u c`), residual torus `(ℝ / 2πℤ)^ι / N_Δ` and reduced moment map
 `μ_Δ : M_Δ → V*` (`TauCeti.Toric.DelzantQuotient.reducedMomentMap`). This file shows that `M_Δ`,
 with its residual torus action and reduced moment map, is natural under relabelling the facets,
-translating the polytope and changing the lattice, and that `μ_Δ` identifies the orbit space of
-the residual torus with `Δ`.
+translating the polytope and changing the lattice.
 
 * **Changes of presentation.** If a bijection `e : ι' ≃ ι` of facets carries the level and the
   kernel torus of one presentation to those of another, then `z ↦ z ∘ e.symm` descends to a
@@ -39,10 +38,6 @@ the residual torus with `Δ`.
   with `g`, to that of `(u, c)` (`TauCeti.Toric.DelzantQuotient.latticeCongr`,
   `TauCeti.Toric.DelzantQuotient.reducedMomentMap_latticeCongr_comp`). Together with moment map
   shifts, this is the behaviour of `M_Δ` under integral affine changes of `Δ`.
-* **The orbit space.** When the real normals span `V` and `Δ` is bounded, as for a Delzant
-  polytope, `μ_Δ` is invariant under the residual torus, has image `Δ`, and its fibres are the
-  orbits. As `M_Δ` is compact, `μ_Δ` therefore induces a homeomorphism from the orbit space of
-  the residual torus onto `Δ` (`TauCeti.Toric.DelzantQuotient.orbitRelQuotientHomeomorph`).
 
 ## Main definitions
 
@@ -51,8 +46,6 @@ the residual torus with `Δ`.
 * `TauCeti.Toric.DelzantQuotient.relabel`, `TauCeti.Toric.DelzantQuotient.translate`,
   `TauCeti.Toric.DelzantQuotient.latticeCongr`: the identifications of Delzant quotients under
   relabelling the facets, translating the polytope and changing the lattice.
-* `TauCeti.Toric.DelzantQuotient.orbitRelQuotientHomeomorph`: the homeomorphism from the orbit
-  space of the residual torus onto `Δ`.
 
 ## Main results
 
@@ -64,8 +57,6 @@ the residual torus with `Δ`.
   `TauCeti.Toric.DelzantQuotient.reducedMomentMap_translate`,
   `TauCeti.Toric.DelzantQuotient.reducedMomentMap_latticeCongr_comp`: their effect on the reduced
   moment map.
-* `TauCeti.Toric.DelzantQuotient.coe_orbitRelQuotientHomeomorph_mk`: the orbit space
-  homeomorphism sends the orbit of `q` to `μ_Δ(q)`.
 
 ## References
 
@@ -132,6 +123,7 @@ theorem congr_symm_mk (x : delzantLevel i u c) :
 
 /-- The homeomorphism `congr` intertwines the residual torus actions, relabelling angles along
 `e`. -/
+@[simp]
 theorem congr_coe_vadd (θ : ι' → AddCircle (2 * π)) (q : DelzantQuotient i' u' c') :
     congr e hZ hN ((θ : (ι' → AddCircle (2 * π)) ⧸ (facetTorusHom i' u' (2 * π)).ker) +ᵥ q) =
       ((θ ∘ e.symm : ι → AddCircle (2 * π)) :
@@ -172,6 +164,7 @@ theorem relabel_symm_mk (x : delzantLevel i u c) :
   exact congrArg mk (Subtype.ext (coe_delzantLevelCongr_symm e _ x))
 
 /-- Relabelling the facets intertwines the residual torus actions, relabelling the angles. -/
+@[simp]
 theorem relabel_coe_vadd (θ : ι' → AddCircle (2 * π)) (q : DelzantQuotient i (u ∘ e) (c ∘ e)) :
     relabel e ((θ : (ι' → AddCircle (2 * π)) ⧸ (facetTorusHom i (u ∘ e) (2 * π)).ker) +ᵥ q) =
       ((θ ∘ e.symm : ι → AddCircle (2 * π)) :
@@ -273,6 +266,7 @@ theorem latticeCongr_symm_mk (x : delzantLevel i' (fun j ↦ f (u j)) c) :
   exact congrArg mk (Subtype.ext (by simp))
 
 /-- Changing the lattice commutes with the residual torus actions. -/
+@[simp]
 theorem latticeCongr_coe_vadd (θ : ι → AddCircle (2 * π)) (q : DelzantQuotient i u c) :
     latticeCongr hf hg hfg ((θ : (ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker) +ᵥ q) =
       (θ : (ι → AddCircle (2 * π)) ⧸ (facetTorusHom i' (fun j ↦ f (u j)) (2 * π)).ker) +ᵥ
@@ -293,47 +287,6 @@ theorem reducedMomentMap_latticeCongr_comp [FiniteDimensional ℝ V] [FiniteDime
   simp [hfg, reducedMomentMap_mk_apply]
 
 end Lattice
-
-/-! ### The orbit space of the residual torus -/
-
-section OrbitSpace
-
-variable [FiniteDimensional ℝ V]
-  (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
-
-/-- **The orbit space of a Delzant quotient is its polytope.** When the real normals span `V` and
-the polytope `Δ` is bounded, as for a Delzant polytope, the reduced moment map induces a
-homeomorphism from the orbit space of the residual torus action on `M_Δ` onto `Δ`. -/
-def orbitRelQuotientHomeomorph (hb : Bornology.IsBounded (facetPolyhedron i u c)) :
-    AddAction.orbitRel.Quotient ((ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker)
-      (DelzantQuotient i u c) ≃ₜ facetPolyhedron i u c :=
-  haveI := compactSpace_delzantQuotient hb
-  Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective
-    (Quotient.lift
-      (fun q ↦ ⟨reducedMomentMap hβ q, reducedMomentMap_mem_facetPolyhedron hβ q⟩)
-      fun q q' h ↦ by
-        obtain ⟨θ, rfl⟩ := AddAction.orbitRel_apply.1 h
-        exact Subtype.ext (reducedMomentMap_vadd hβ θ q'))
-    ⟨fun a b h ↦ by
-      induction a using Quotient.inductionOn with | h q =>
-      induction b using Quotient.inductionOn with | h q' =>
-      obtain ⟨θ, hθ⟩ := (reducedMomentMap_eq_reducedMomentMap_iff hβ).1 (congrArg Subtype.val h)
-      exact Quotient.sound ⟨θ, hθ⟩,
-    fun ⟨y, hy⟩ ↦ by
-      rw [← range_reducedMomentMap hβ] at hy
-      obtain ⟨q, rfl⟩ := hy
-      exact ⟨Quotient.mk _ q, rfl⟩⟩)
-    (continuous_quot_lift _ ((continuous_reducedMomentMap hβ).subtype_mk _))
-
-/-- The homeomorphism `orbitRelQuotientHomeomorph` sends the orbit of `q` to `μ_Δ(q)`. -/
-@[simp]
-theorem coe_orbitRelQuotientHomeomorph_mk (hb : Bornology.IsBounded (facetPolyhedron i u c))
-    (q : DelzantQuotient i u c) :
-    (orbitRelQuotientHomeomorph hβ hb (Quotient.mk _ q) : StrongDual ℝ V) =
-      reducedMomentMap hβ q :=
-  (rfl)
-
-end OrbitSpace
 
 end DelzantQuotient
 
