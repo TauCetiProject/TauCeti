@@ -154,6 +154,16 @@ theorem simpleHolding_of_notMem_Ioc (hτ : MonotoneOn τ (Set.Iic n))
   exact Set.Ioc_subset_Ioc (hτ (Nat.zero_le n) (mem_range.1 hi).le (Nat.zero_le i))
     (hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)) hit
 
+/-- A zero-preserving function acts on a simple holding by acting on its heights.
+The grid may contain repeated dates. -/
+theorem simpleHolding_comp (hτ : MonotoneOn τ (Set.Iic n)) (f : ℝ → ℝ) (hf : f 0 = 0)
+    (t : ι) (ω : Ω) :
+    simpleHolding τ n (fun j ω ↦ f (a j ω)) t ω = f (simpleHolding τ n a t ω) := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, htj⟩ := TauCeti.exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj htj, simpleHolding_of_mem_Ioc hτ hj htj]
+  · rw [simpleHolding_of_notMem_Ioc hτ ht, simpleHolding_of_notMem_Ioc hτ ht, hf]
+
 /-- The gains over a partition monotone up to `n` vanish up to its first date. -/
 @[simp]
 theorem simpleGains_of_le (hτ : MonotoneOn τ (Set.Iic n)) (ht : t ≤ τ 0) (X : ι → Ω → ℝ)
