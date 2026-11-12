@@ -50,7 +50,6 @@ theorem abs_arctan_sub_self_le (x : ℝ) : |arctan x - x| ≤ |x| ^ 3 := by
   have hbound : ∀ u ∈ Metric.closedBall (0 : ℝ) |x|, ‖(1 + u ^ 2)⁻¹ - 1‖ ≤ |x| ^ 2 := by
     intro u hu
     rw [Metric.mem_closedBall, dist_zero_right, norm_eq_abs] at hu
-    have h1 : 0 < 1 + u ^ 2 := by positivity
     have heq : (1 + u ^ 2)⁻¹ - 1 = -(u ^ 2 / (1 + u ^ 2)) := by
       field_simp
       ring
