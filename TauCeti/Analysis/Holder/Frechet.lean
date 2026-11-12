@@ -46,9 +46,9 @@ smooth bump supported in `Ω` away from a compact set `K` has `p_K = 0` without 
 This is the space of solutions of interior Schauder estimates: such an estimate bounds `p_K u` by
 data on a slightly larger compact set, with no control up to the boundary of `Ω`. It differs from
 the Banach space of maps with *globally* bounded `C^{k,α}` norm on `Ω`. On `Ω = (0, 1)` the map
-`x ↦ 1 / x` lies in `C^{k,α}_loc(Ω)` for every `k` and `α` but is unbounded, and on
-`(-1, 0) ∪ (0, 1)` the sign function lies in `C^{k,α}_loc` with all derivatives zero although its
-global `α`-Hölder seminorm is infinite.
+`x ↦ 1 / x` lies in `C^{k,α}_loc(Ω)` for every `k` and every `α ≤ 1` but is unbounded, and on
+`(-1, 0) ∪ (0, 1)` the sign function lies in `C^{0,α}_loc` for every `α > 0` although its global
+`α`-Hölder seminorm is infinite.
 
 ## Main declarations
 
@@ -61,6 +61,15 @@ global `α`-Hölder seminorm is infinite.
   `TauCeti.CkHolderLocSpace.instCompleteSpace`: first countability for proper `E`, and
   completeness for locally compact `E` and complete `F`.
 * `TauCeti.CkHolderLocSpace.not_isNormableSpace`: the topology is not given by a norm.
+* `HolderOnWith.iteratedFDeriv_add`: Hölder bounds on the `n`-th derivatives of two maps give one
+  on the `n`-th derivative of their sum.
+
+## Implementation notes
+
+As for Mathlib's `ContDiffMapSupportedIn` and `TestFunction`, an element is stored as a map on the
+whole space vanishing outside `Ω`. The topology, uniform structure and `IsUniformAddGroup`
+instance are built from the seminorm family as for Mathlib's `SchwartzMap`
+(`Mathlib/Analysis/Distribution/SchwartzSpace/Basic.lean`).
 
 ## References
 
@@ -80,6 +89,16 @@ open Set Filter Topology TopologicalSpace
 open scoped NNReal BoundedContinuousFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- If `f` and `g` are `C^n` at every point of `s` and their `n`-th derivatives are `r`-Hölder on
+`s`, then so is the `n`-th derivative of `f + g`, with the sum of the constants. -/
+theorem _root_.HolderOnWith.iteratedFDeriv_add {𝕜 G H : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H] {n : ℕ}
+    {r C C' : ℝ≥0} {f g : G → H} {s : Set G} (hf : HolderOnWith C r (iteratedFDeriv 𝕜 n f) s)
+    (hg : HolderOnWith C' r (iteratedFDeriv 𝕜 n g) s) (hfs : ∀ x ∈ s, ContDiffAt 𝕜 n f x)
+    (hgs : ∀ x ∈ s, ContDiffAt 𝕜 n g x) :
+    HolderOnWith (C + C') r (iteratedFDeriv 𝕜 n (f + g)) s :=
+  (hf.add hg).congr fun x hx => (iteratedFDeriv_add_apply (hfs x hx) (hgs x hx)).symm
 
 /-- The space `C^{k,α}_loc(Ω, F)` of maps that are `C^k` on the open set `Ω` and whose `k`-th
 iterated derivative is `α`-Hölder on every compact subset of `Ω`. An element is a map `E → F`
@@ -122,21 +141,10 @@ theorem ext {f g : CkHolderLocSpace k α Ω F} (h : ∀ x ∈ Ω, f x = g x) : f
   · exact h x hx
   · rw [f.apply_of_notMem hx, g.apply_of_notMem hx]
 
-/-! ### Derivatives on `Ω` -/
-
-section Derivatives
-
-variable {f g : E → F}
-
-private theorem holderOnWith_add (hf : ContDiffOn ℝ k f Ω) (hg : ContDiffOn ℝ k g Ω)
-    {K : Set E} (hKΩ : K ⊆ Ω) {C C' : ℝ≥0} (hfK : HolderOnWith C α (iteratedFDeriv ℝ k f) K)
-    (hgK : HolderOnWith C' α (iteratedFDeriv ℝ k g) K) :
-    HolderOnWith (C + C') α (iteratedFDeriv ℝ k (f + g)) K :=
-  (hfK.add hgK).congr fun _ hx =>
-    (_root_.iteratedFDeriv_add_apply (hf.contDiffAt (Ω.isOpen.mem_nhds (hKΩ hx)))
-      (hg.contDiffAt (Ω.isOpen.mem_nhds (hKΩ hx)))).symm
-
-end Derivatives
+/-- An element of `C^{k,α}_loc(Ω)` is `C^i` at every point of `Ω`, for `i ≤ k`. -/
+theorem contDiffAt (f : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k) {x : E} (hx : x ∈ Ω) :
+    ContDiffAt ℝ i f x :=
+  (f.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (Nat.cast_le.mpr hi)
 
 /-! ### The vector space structure -/
 
@@ -150,7 +158,8 @@ instance instAdd : Add (CkHolderLocSpace k α Ω F) where
   add f g := ⟨f + g, f.contDiffOn.add g.contDiffOn, fun K hKΩ hK => by
     obtain ⟨C, hC⟩ := f.exists_holderOnWith hKΩ hK
     obtain ⟨C', hC'⟩ := g.exists_holderOnWith hKΩ hK
-    exact ⟨C + C', holderOnWith_add f.contDiffOn g.contDiffOn hKΩ hC hC'⟩,
+    exact ⟨C + C', hC.iteratedFDeriv_add hC' (fun x hx => f.contDiffAt le_rfl (hKΩ hx))
+      fun x hx => g.contDiffAt le_rfl (hKΩ hx)⟩,
     fun x hx => by simp [f.apply_of_notMem hx, g.apply_of_notMem hx]⟩
 
 instance instSMul : SMul ℝ (CkHolderLocSpace k α Ω F) where
@@ -158,8 +167,7 @@ instance instSMul : SMul ℝ (CkHolderLocSpace k α Ω F) where
     obtain ⟨C, hC⟩ := f.exists_holderOnWith hKΩ hK
     exact ⟨C * ‖c‖₊, (HolderWith.restrict_iff.mp
       ((HolderWith.restrict_iff.mpr hC).smul c)).congr fun _ hx =>
-        (iteratedFDeriv_const_smul_apply
-          (f.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds (hKΩ hx)))).symm⟩,
+        (iteratedFDeriv_const_smul_apply (f.contDiffAt le_rfl (hKΩ hx))).symm⟩,
     fun x hx => by simp [f.apply_of_notMem hx]⟩
 
 instance instNeg : Neg (CkHolderLocSpace k α Ω F) where
@@ -236,20 +244,17 @@ theorem continuousOn_iteratedFDeriv (f : CkHolderLocSpace k α Ω F) {i : ℕ} (
 theorem iteratedFDeriv_add_apply (f g : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k) {x : E}
     (hx : x ∈ Ω) :
     iteratedFDeriv ℝ i ⇑(f + g) x = iteratedFDeriv ℝ i f x + iteratedFDeriv ℝ i g x :=
-  _root_.iteratedFDeriv_add_apply
-    ((f.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (Nat.cast_le.mpr hi))
-    ((g.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (Nat.cast_le.mpr hi))
+  _root_.iteratedFDeriv_add_apply (f.contDiffAt hi hx) (g.contDiffAt hi hx)
 
 theorem iteratedFDeriv_smul_apply (c : ℝ) (f : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k)
     {x : E} (hx : x ∈ Ω) : iteratedFDeriv ℝ i ⇑(c • f) x = c • iteratedFDeriv ℝ i f x :=
-  iteratedFDeriv_const_smul_apply
-    ((f.contDiffOn.contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (Nat.cast_le.mpr hi))
+  iteratedFDeriv_const_smul_apply (f.contDiffAt hi hx)
 
 theorem iteratedFDeriv_sub_apply (f g : CkHolderLocSpace k α Ω F) {i : ℕ} (hi : i ≤ k) {x : E}
     (hx : x ∈ Ω) :
     iteratedFDeriv ℝ i ⇑(f - g) x = iteratedFDeriv ℝ i f x - iteratedFDeriv ℝ i g x := by
-  rw [sub_eq_add_neg, iteratedFDeriv_add_apply f (-g) hi hx, ← neg_one_smul ℝ g,
-    iteratedFDeriv_smul_apply (-1) g hi hx, neg_one_smul, sub_eq_add_neg]
+  rw [coe_sub]
+  exact _root_.iteratedFDeriv_sub_apply (f.contDiffAt hi hx) (g.contDiffAt hi hx)
 
 /-! ### Construction from a map on `Ω` -/
 
@@ -267,6 +272,7 @@ def ofContDiffOn (g : E → F) (hg : ContDiffOn ℝ k g Ω)
     exact ⟨C, hC.congr fun x hx => ((heq x (hKΩ hx)).iteratedFDeriv ℝ k).eq_of_nhds.symm⟩,
     fun _ hx => indicator_of_notMem hx g⟩
 
+@[simp]
 theorem ofContDiffOn_apply_of_mem (g : E → F) (hg : ContDiffOn ℝ k g Ω)
     (hgH : ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k g) K)
     {x : E} (hx : x ∈ Ω) : ofContDiffOn g hg hgH x = g x :=
@@ -277,6 +283,7 @@ theorem ofContDiffOn_coe (f : CkHolderLocSpace k α Ω F) :
     ofContDiffOn f f.contDiffOn (fun _ hKΩ hK => f.exists_holderOnWith hKΩ hK) = f :=
   ext fun _ hx => ofContDiffOn_apply_of_mem _ _ _ hx
 
+@[simp]
 theorem iteratedFDeriv_ofContDiffOn (g : E → F) (hg : ContDiffOn ℝ k g Ω)
     (hgH : ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k g) K)
     (i : ℕ) {x : E} (hx : x ∈ Ω) :
