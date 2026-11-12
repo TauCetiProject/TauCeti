@@ -104,7 +104,7 @@ theorem exists_isSegment_inter
   convert hσ.isSegment_sep hσ.left_mem hw using 1
   ext u
   simp only [mem_inter_iff, mem_sep_iff, d.refl, hwc, uIcc_of_le hc0, mem_Icc]
-  refine ⟨fun ⟨hu, hu'⟩ => ⟨hu, d.nonneg x u, ?_⟩, fun ⟨hu, _, hu'⟩ => ⟨hu, ?_⟩⟩
+  refine ⟨fun ⟨hu, hu'⟩ => ⟨hu, d.nonneg x u, ?_⟩, fun ⟨hu, _, _⟩ => ⟨hu, ?_⟩⟩
   · grind [hσ.dist_add_dist hu, hτ.dist_add_dist hu', d.triangle y u z, d.symm u y]
   · exact hσ.mem_of_two_nsmul_dist_le hx hτ hu (by rw [two_nsmul]; grind)
 

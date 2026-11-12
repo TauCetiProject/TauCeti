@@ -229,10 +229,8 @@ theorem chiswellMetric_root_mk (g : G) (a : Icc (0 : Λ) (l g)) :
 @[simp]
 theorem chiswellMetric_mk_mk_self (g : G) (a b : Icc (0 : Λ) (l g)) :
     l.chiswellMetric (ChiswellTree.mk g a) (ChiswellTree.mk g b) = |(a : Λ) - b| := by
-  have ha := a.2.2
-  have hb := b.2.2
   simp only [chiswellMetric_mk_mk, inv_mul_cancel, map_one_eq_zero, sub_zero, two_nsmul]
-  grind
+  grind [a.2.2, b.2.2]
 
 /-! ### Chiswell's tree is a `Λ`-tree -/
 
