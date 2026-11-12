@@ -121,6 +121,17 @@ theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
+/-- The truncation at heights `R` is compact in real coordinates. -/
+theorem isCompact_preimage_truncationAt (R : Puncture → ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncationAt R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncationAt R)
+
+/-- The truncation at heights `R`, in real coordinates, lies in `S`. -/
+theorem preimage_truncationAt_subset_thricePuncturedSphereReal (R : Puncture → ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncationAt R ⊆ thricePuncturedSphereReal :=
+  fun _ hz ↦ mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncationAt.1 hz).1,
+    (mem_truncationAt.1 hz).2.1⟩
+
 /-- The truncation `S_R` is compact in real coordinates. -/
 theorem isCompact_preimage_truncation (R : ℝ) :
     IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
