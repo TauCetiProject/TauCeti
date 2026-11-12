@@ -263,8 +263,7 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_adjoin_algebra
     exact hspan.symm
   have hli : LinearIndependent S (algebraMap F E ∘ c) := by
     apply LinearIndependent.of_smul_of_span_eq_top (b := w) (hb := hw)
-    convert (linearIndependent_equiv' (Equiv.prodComm ι _) (g := fun p : ι × _ ↦
-      algebraMap F E (b p.2 • c p.1)) rfl).mpr hprod using 1
+    convert hprod using 1
     ext p
     simp [Algebra.smul_def, IsScalarTower.algebraMap_apply C F E, w]
   exact (LinearIndependent.iff_fractionRing S

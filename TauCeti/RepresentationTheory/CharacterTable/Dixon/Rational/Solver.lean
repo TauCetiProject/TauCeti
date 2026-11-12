@@ -27,9 +27,8 @@ checker. A successful result is certified by
 after embedding in `ℂ`, by
 `TauCeti.ClassData.isCharacterTableSpec_of_dixonRationalCharacterTable_eq_some`.
 
-This is the first assembled solver promised by the rational-table stage of the character-theory
-roadmap. The later general solver replaces signed integer lifting by the structured cyclotomic lift;
-no claim about that later stage is made here.
+The general solver `TauCeti.ClassData.dixonCyclotomicCharacterTable?` replaces signed integer
+lifting by the cyclotomic lift `TauCeti.Cyclotomic.lift`; this file makes no claim about it.
 
 ## Main definitions
 

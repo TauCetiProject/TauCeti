@@ -35,6 +35,8 @@ compatibility under linear equivalences.
   spaces, relative to a reference linear equivalence.
 * `Orientation.map_linearEquiv_neg`: transport along the negation of an `n`-dimensional space
   multiplies an orientation by `(-1) ^ n`.
+* `Orientation.eq_or_eq_neg_of_card_eq_finrank`: any two orientations are equal or opposite when
+  the index type has the dimension of the space, without assuming finite dimension.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
 -/
 
@@ -125,6 +127,23 @@ section Field
 
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
   {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*} [Fintype ι]
+
+/-- If the index type has cardinality equal to the dimension, any two orientations are equal or
+negations. Unlike `Orientation.eq_or_eq_neg`, this needs no `FiniteDimensional` hypothesis: a
+nonempty index type forces positive `finrank`, hence finite dimension, and otherwise
+there are only the two orientations of the zero-dimensional case. -/
+theorem Orientation.eq_or_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : x₁ = x₂ ∨ x₁ = -x₂ := by
+  rcases isEmpty_or_nonempty ι with _ | _
+  · -- the two orientations of the empty index type are `±positiveOrientation`
+    rcases Orientation.eq_or_eq_neg_of_isEmpty x₁ with rfl | rfl <;>
+      rcases Orientation.eq_or_eq_neg_of_isEmpty x₂ with rfl | rfl
+    · exact .inl rfl
+    · exact .inr (neg_neg (positiveOrientation : Orientation R M ι)).symm
+    · exact .inr rfl
+    · exact .inl rfl
+  · have : FiniteDimensional R M := Module.finite_of_finrank_pos (h ▸ Fintype.card_pos)
+    exact Orientation.eq_or_eq_neg x₁ x₂ h
 
 /-- When the index type has cardinality equal to the finite dimension, two self-equivalences
 transport an orientation to the same orientation if and only if their determinants have the same

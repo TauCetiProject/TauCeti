@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-
--- Access the body of `IsLocalDiffeomorphAt` to destructure and rebuild its witness.
+-- Access the body of `IsLocalDiffeomorphAt` to lower the regularity of its witness.
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
@@ -37,8 +36,6 @@ It also records the source, target, forward map and inverse map of Mathlib's com
 
 ## Main results
 
-* `IsLocalDiffeomorphAt.of_le`, `IsLocalDiffeomorphOn.of_le`, `IsLocalDiffeomorph.of_le`: a local
-  `C^n` diffeomorphism is a local `C^m` diffeomorphism, for `m ≤ n`.
 * `PartialDiffeomorph.exists_transition`: charts with a common coordinate induce a local change
   of parameters carrying the specified points to one another.
 * `PartialDiffeomorph.exists_curve_single_axis`: pulling a coordinate axis back through a
@@ -181,27 +178,16 @@ end Axis
 
 end PartialDiffeomorph
 
-section OfLE
+/-- A `C^n` local diffeomorphism at a point is a `C^m` one, for `m ≤ n`. -/
+theorem IsLocalDiffeomorphAt.of_le {f : M → N} {x : M} (hf : IsLocalDiffeomorphAt I J n f x)
+    (hmn : m ≤ n) : IsLocalDiffeomorphAt I J m f x := by
+  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
+  exact ⟨Φ.ofLE hmn, by simpa using hxΦ, by simpa using hfΦ⟩
 
-variable {f : M → N} {s : Set M} {x : M}
-
-/-- A local `C^n` diffeomorphism at a point is a local `C^m` diffeomorphism there, for `m ≤ n`. -/
-theorem IsLocalDiffeomorphAt.of_le (hf : IsLocalDiffeomorphAt I J n f x) (hmn : m ≤ n) :
-    IsLocalDiffeomorphAt I J m f x := by
-  obtain ⟨Φ, hx, heq⟩ := hf
-  exact ⟨Φ.ofLE hmn, hx, heq⟩
-
-/-- A local `C^n` diffeomorphism on a set is a local `C^m` diffeomorphism on it, for `m ≤ n`. -/
-theorem IsLocalDiffeomorphOn.of_le (hf : IsLocalDiffeomorphOn I J n f s) (hmn : m ≤ n) :
-    IsLocalDiffeomorphOn I J m f s :=
-  fun x ↦ (hf x).of_le hmn
-
-/-- A local `C^n` diffeomorphism is a local `C^m` diffeomorphism, for `m ≤ n`. -/
-theorem IsLocalDiffeomorph.of_le (hf : IsLocalDiffeomorph I J n f) (hmn : m ≤ n) :
+/-- A `C^n` local diffeomorphism is a `C^m` one, for `m ≤ n`. -/
+theorem IsLocalDiffeomorph.of_le {f : M → N} (hf : IsLocalDiffeomorph I J n f) (hmn : m ≤ n) :
     IsLocalDiffeomorph I J m f :=
   fun x ↦ (hf x).of_le hmn
-
-end OfLE
 
 namespace ContinuousLinearEquiv
 

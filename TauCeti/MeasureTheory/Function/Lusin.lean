@@ -49,9 +49,10 @@ maps produced by `ProbabilityTheory.HasLaw` are only almost-everywhere measurabl
 * `TauCeti.exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq` — Lusin's conclusion transfers
   to an almost-everywhere equal map, which reduces each almost-everywhere version to its
   everywhere counterpart;
-* `LowerSemicontinuous.aemeasurable_comp_of_forall_exists_isClosed_continuousOn` — a lower
-  semicontinuous function of a map that is continuous on closed sets with arbitrarily small
-  complement mass is almost-everywhere measurable.
+* `LowerSemicontinuous.aemeasurable_comp_of_forall_exists_measurableSet_continuousOn` — a lower
+  semicontinuous function, with values in a second-countable linear order, of a map that is
+  continuous on measurable sets with arbitrarily small complement mass is almost-everywhere
+  measurable.
 
 ## References
 
@@ -180,20 +181,22 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.exists_isClosed_measure_sdiff_
 
 end StronglyMeasurable
 
-/-- A lower semicontinuous function of a map that is continuous on closed sets with arbitrarily
-small complement mass is almost-everywhere measurable: the map is continuous on countably many
-closed sets whose union is a full-measure set, and on each of them the composite is lower
-semicontinuous. -/
-theorem _root_.LowerSemicontinuous.aemeasurable_comp_of_forall_exists_isClosed_continuousOn
-    {Ω W : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω] [OpensMeasurableSpace Ω]
-    [TopologicalSpace W] {h : W → ℝ≥0∞} {Φ : Ω → W} {μ : Measure Ω}
+/-- A lower semicontinuous function, with values in a second-countable linear order, of a map
+that is continuous on measurable sets with arbitrarily small complement mass is
+almost-everywhere measurable: the map is continuous on
+countably many measurable sets whose union is a full-measure set, and on each of them the
+composite is lower semicontinuous. The sets supplied by Lusin's theorem are closed, but only
+their measurability matters here. -/
+theorem _root_.LowerSemicontinuous.aemeasurable_comp_of_forall_exists_measurableSet_continuousOn
+    {Ω W α : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω] [OpensMeasurableSpace Ω]
+    [TopologicalSpace W] [TopologicalSpace α] [MeasurableSpace α] [BorelSpace α] [LinearOrder α]
+    [OrderTopology α] [SecondCountableTopology α] {h : W → α} {Φ : Ω → W} {μ : Measure Ω}
     (hh : LowerSemicontinuous h)
-    (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 → ∃ C, IsClosed C ∧ ContinuousOn Φ C ∧ μ Cᶜ ≤ ε) :
+    (hΦ : ∀ ε : ℝ≥0∞, ε ≠ 0 → ∃ C, MeasurableSet C ∧ ContinuousOn Φ C ∧ μ Cᶜ ≤ ε) :
     AEMeasurable (fun x ↦ h (Φ x)) μ := by
   choose C hC hΦC hμC using fun n : ℕ ↦ hΦ (n : ℝ≥0∞)⁻¹ (by simp)
   have hmeas : ∀ n, AEMeasurable (fun x ↦ h (Φ x)) (μ.restrict (C n)) := fun n ↦
-    aemeasurable_restrict_of_measurable_subtype (hC n).measurableSet
-      (hh.comp (hΦC n).domRestrict).measurable
+    aemeasurable_restrict_of_measurable_subtype (hC n) (hh.comp (hΦC n).domRestrict).measurable
   have hnull : μ (⋃ n, C n)ᶜ = 0 := by
     by_contra hne
     obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hne
