@@ -256,6 +256,28 @@ theorem Generator.ext {g g' : D.Generator} (h : ∀ i, (g.2 i : Point) = g'.2 i)
 def betaPoint (g : D.Generator) (j : Fin n) : Point :=
   g.2 (g.1.symm j)
 
+theorem betaPoint_def (g : D.Generator) (j : Fin n) : D.betaPoint g j = g.2 (g.1.symm j) :=
+  (rfl)
+
+/-- The point of a generator on the `β`-curve matched with the `α`-curve `i` is its point over
+`i`. -/
+@[simp]
+theorem betaPoint_fst (g : D.Generator) (i : Fin n) : D.betaPoint g (g.1 i) = g.2 i := by
+  rw [betaPoint, Equiv.symm_apply_apply]
+
+/-- The points of a generator on the `β`-curves are its points. -/
+@[simp]
+theorem range_betaPoint (g : D.Generator) : Set.range (D.betaPoint g) = Set.range (D.point g) :=
+  (g.1.symm.surjective.range_comp (D.point g))
+
+/-- An intersection point is the point of a generator on some `β`-curve exactly when it is the
+generator's point on its own `α`-curve. -/
+@[simp]
+theorem exists_betaPoint_iff (g : D.Generator) (q : Point) :
+    (∃ j, D.betaPoint g j = q) ↔ D.point g (D.alpha q) = q := by
+  rw [← exists_point_iff, ← Set.mem_range, range_betaPoint]
+  rfl
+
 /-- The point of a generator on the `β`-curve `j` lies on `j`. -/
 @[simp]
 theorem beta_betaPoint (g : D.Generator) (j : Fin n) : D.beta (D.betaPoint g j) = j := by
@@ -290,6 +312,20 @@ noncomputable def generatorOfBetaPoint (q : Fin n → Point) (hβ : ∀ j, D.bet
   ⟨(Equiv.ofBijective _ hα).symm, fun i ↦
     ⟨q ((Equiv.ofBijective _ hα).symm i), by
       simpa using Equiv.ofBijective_apply_symm_apply _ hα i, hβ _⟩⟩
+
+/-- The curve-index matching stored by `generatorOfBetaPoint`. -/
+@[simp]
+theorem generatorOfBetaPoint_fst (q : Fin n → Point) (hβ : ∀ j, D.beta (q j) = j)
+    (hα : Function.Bijective (D.alpha ∘ q)) :
+    (D.generatorOfBetaPoint q hβ hα).1 = (Equiv.ofBijective _ hα).symm :=
+  (rfl)
+
+/-- The point stored by `generatorOfBetaPoint` at index `i`. -/
+@[simp]
+theorem generatorOfBetaPoint_val (q : Fin n → Point) (hβ : ∀ j, D.beta (q j) = j)
+    (hα : Function.Bijective (D.alpha ∘ q)) (i : Fin n) :
+    ((D.generatorOfBetaPoint q hβ hα).2 i : Point) = q ((Equiv.ofBijective _ hα).symm i) :=
+  (rfl)
 
 /-- The points on the `β`-curves of the generator built from `q` are those of `q`. -/
 @[simp]
