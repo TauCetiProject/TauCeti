@@ -366,7 +366,7 @@ theorem continuous_faceSection : Continuous (faceSection he hi) :=
 /-- The map from the abstract boundary to `M` is continuous. -/
 @[fun_prop]
 theorem continuous_point : Continuous (point : J.AbstractBoundary M → M) := by
-  refine continuous_def.2 fun U hU ↦ isOpen_iff.2 fun e he i hi ↦ ?_
+  refine continuous_def.2 fun U hU ↦ isOpen_iff.2 fun e _ i _ ↦ ?_
   exact hU.preimage continuous_subtype_val
 
 /-- The face sections are injective: a face section remembers its point of `M`. -/
@@ -449,7 +449,7 @@ theorem t2Space [T2Space M] (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) (hn : 
         ((e.open_source.inter (isOpen_setOf_faceGerm_eq e' e j k)).preimage continuous_point),
       mem_range_self _, ⟨mem_range_self _, hxe, hjk⟩, ?_⟩
     rw [Set.disjoint_left]
-    rintro _ ⟨⟨p, hp⟩, rfl⟩ ⟨⟨⟨q, hq⟩, hpq⟩, hpe, hp'⟩
+    rintro _ ⟨⟨p, hp⟩, rfl⟩ ⟨⟨⟨q, hq⟩, hpq⟩, _, hp'⟩
     obtain ⟨hpq, hgerm⟩ := faceSection_eq_faceSection_iff.1 hpq.symm
     obtain rfl : p = q := hpq
     simp only [point_faceSection, mem_ofPred_eq] at hp'

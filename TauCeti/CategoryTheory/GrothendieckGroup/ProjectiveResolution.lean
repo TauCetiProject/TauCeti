@@ -85,9 +85,6 @@ auxiliaries over an explicit `n`.
   and Lemma 7.6.1: the resolution theorem and the independence of the Euler class.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69, Sections
   11--12, for Schanuel's lemma and the horseshoe lemma in a Quillen exact category.
-* [The Tau Ceti Grothendieck groups, Cartan maps, and Euler forms roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/GrothendieckEulerForms/README.md),
-  Layer 3, whose Euler-class and resolution-theorem bullets are the targets proved here in the
-  projective case, and whose Layer 4 Cartan comparison consumes them.
 -/
 
 public section
