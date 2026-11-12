@@ -19,7 +19,8 @@ whole real line, natural powers multiplied by an exponentially decaying factor, 
 which a bare exponential is integrable on a right half-line, and integrability and the integral
 of the two-sided exponential; and, on a finite-dimensional real normed space, integrability of the
 radial exponential `exp (-a ‖x‖)` for every additive Haar measure, by integrating in polar
-coordinates.
+coordinates. The radial exponential then bounds the overlap of two functions that decay
+exponentially about two points: it decays exponentially in the distance between the points.
 
 Mathlib supplies the *sufficient* direction of the right-half-line integrability criterion,
 `integrableOn_exp_mul_Ioi`, for a negative rate.  `integrableOn_exp_mul_Ioi_iff` adds the converse,
@@ -44,6 +45,13 @@ inclusion.
   `exp (b * x * I)`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
+* `TauCeti.norm_mul_norm_le_mul_exp_neg_mul_norm` and
+  `TauCeti.exists_integral_norm_mul_norm_le_mul_exp_neg_mul_norm`: two functions decaying
+  exponentially at rate `c` about points at distance `‖a‖` overlap, pointwise and after
+  integration, by `O(exp (-(c' ‖a‖)))`, with `c' = c` pointwise and every `c' < c` for the
+  integral. `TauCeti.exists_mul_le_mul_exp_neg_mul_norm_of_forall_lt` and
+  `TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt` restate this for
+  nonnegative functions decaying at every rate below a threshold.
 -/
 
 public section
@@ -131,6 +139,124 @@ theorem integrable_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSp
     exact (integrable_const (1 : ℝ)).congr (.of_forall fun x ↦ by simp [Subsingleton.elim x 0])
   · refine (integrable_fun_norm_addHaar μ (f := fun t ↦ Real.exp (-(a * t)))).mpr ?_
     simpa only [smul_eq_mul] using integrableOn_pow_mul_exp_neg_mul_Ioi _ ha
+
+section Overlap
+
+variable {E F G : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
+  [SeminormedAddCommGroup G] {f : E → F} {g : E → G} {K L c : ℝ}
+
+/-- The overlap of two functions decaying at rate `c` about `0` and about `-a`, with part
+`b ≤ c` of the rate spent on the separation `‖a‖` and the rest kept as decay in `z`. -/
+private theorem norm_mul_norm_le_mul_exp_mul_exp {b : ℝ} (hb : 0 ≤ b) (hbc : b ≤ c)
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖)))
+    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c * ‖z‖))) (z a : E) :
+    ‖f z‖ * ‖g (z + a)‖ ≤ K * L * Real.exp (-(b * ‖a‖)) * Real.exp (-((c - b) * ‖z‖)) := by
+  have hK : 0 ≤ K * Real.exp (-(c * ‖z‖)) := (norm_nonneg _).trans (hf z)
+  -- `‖a‖ ≤ ‖z‖ + ‖z + a‖`, so the two decay factors together beat `exp (-(b ‖a‖))`.
+  have ha : ‖a‖ ≤ ‖z‖ + ‖z + a‖ := by
+    simpa [add_comm ‖z‖] using norm_sub_le (z + a) z
+  have hexp : Real.exp (-(c * ‖z‖)) * Real.exp (-(c * ‖z + a‖)) ≤
+      Real.exp (-(b * ‖a‖)) * Real.exp (-((c - b) * ‖z‖)) := by
+    rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
+    nlinarith [norm_nonneg (z + a), mul_le_mul_of_nonneg_left ha hb]
+  have hKL : 0 ≤ K * L := by
+    have hK' : 0 ≤ K := nonneg_of_mul_nonneg_left hK (Real.exp_pos _)
+    have hL' : 0 ≤ L :=
+      nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hg z)) (Real.exp_pos _)
+    positivity
+  calc ‖f z‖ * ‖g (z + a)‖
+      ≤ K * Real.exp (-(c * ‖z‖)) * (L * Real.exp (-(c * ‖z + a‖))) :=
+        mul_le_mul (hf z) (hg _) (norm_nonneg _) hK
+    _ = K * L * (Real.exp (-(c * ‖z‖)) * Real.exp (-(c * ‖z + a‖))) := by ring
+    _ ≤ K * L * (Real.exp (-(b * ‖a‖)) * Real.exp (-((c - b) * ‖z‖))) :=
+        mul_le_mul_of_nonneg_left hexp hKL
+    _ = _ := by ring
+
+/-- **Overlap of exponentially decaying functions, pointwise.** If `‖f z‖ ≤ K exp (-(c ‖z‖))`
+and `‖g z‖ ≤ L exp (-(c ‖z‖))` with `0 ≤ c`, then the product of `f` and of the translate
+`g (· + a)`, which decays about `-a`, is at most `K L exp (-(c ‖a‖))` everywhere. -/
+theorem norm_mul_norm_le_mul_exp_neg_mul_norm (hc : 0 ≤ c)
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖)))
+    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c * ‖z‖))) (z a : E) :
+    ‖f z‖ * ‖g (z + a)‖ ≤ K * L * Real.exp (-(c * ‖a‖)) := by
+  simpa using norm_mul_norm_le_mul_exp_mul_exp hc le_rfl hf hg z a
+
+/-- **Overlap of exponentially decaying functions, integrated.** If `‖f z‖ ≤ K exp (-(c ‖z‖))`
+and `‖g z‖ ≤ L exp (-(c ‖z‖))` on a finite-dimensional space with `0 < c`, then for every rate
+`c' < c` the overlap integral `∫ ‖f z‖ ‖g (z + a)‖` of `f` with the translate `g (· + a)` is at
+most `C exp (-(c' ‖a‖))`, for every additive Haar measure and with `C` independent of `a`. -/
+theorem exists_integral_norm_mul_norm_le_mul_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] {f : E → F} {g : E → G} {c' : ℝ} (hc : 0 < c)
+    (hc' : c' < c) (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖)))
+    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c * ‖z‖))) :
+    ∃ C, ∀ a, ∫ z, ‖f z‖ * ‖g (z + a)‖ ∂μ ≤ C * Real.exp (-(c' * ‖a‖)) := by
+  set b := max c' 0
+  have hδ : 0 < c - b := sub_pos.2 (max_lt hc' hc)
+  refine ⟨K * L * ∫ z, Real.exp (-((c - b) * ‖z‖)) ∂μ, fun a ↦ ?_⟩
+  have hint := integrable_exp_neg_mul_norm μ hδ
+  calc ∫ z, ‖f z‖ * ‖g (z + a)‖ ∂μ
+      ≤ ∫ z, K * L * Real.exp (-(b * ‖a‖)) * Real.exp (-((c - b) * ‖z‖)) ∂μ :=
+        integral_mono_of_nonneg (.of_forall fun z ↦ by positivity) (hint.const_mul _)
+          (.of_forall fun z ↦ norm_mul_norm_le_mul_exp_mul_exp (le_max_right _ _)
+            (max_le hc'.le hc.le) hf hg z a)
+    _ = K * L * Real.exp (-(b * ‖a‖)) * ∫ z, Real.exp (-((c - b) * ‖z‖)) ∂μ :=
+        integral_const_mul _ _
+    _ ≤ K * L * Real.exp (-(c' * ‖a‖)) * ∫ z, Real.exp (-((c - b) * ‖z‖)) ∂μ := by
+        have hK : 0 ≤ K := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hf 0))
+          (Real.exp_pos _)
+        have hL : 0 ≤ L := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hg 0))
+          (Real.exp_pos _)
+        refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ?_ (by positivity))
+          (integral_nonneg fun z ↦ (Real.exp_pos _).le)
+        exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
+          (norm_nonneg a)))
+    _ = _ := by ring
+
+/-- **Overlap of nonnegative functions decaying at every rate below `r`, pointwise.** If
+`0 ≤ f`, `0 ≤ g` and both are at most `K exp (-(c ‖z‖))` for every rate `c < r`, with `K`
+depending on `c`, then `f z g (z + a) ≤ K exp (-(c ‖a‖))` for every rate `c < r`. -/
+theorem exists_mul_le_mul_exp_neg_mul_norm_of_forall_lt {f g : E → ℝ} {r : ℝ}
+    (hf₀ : ∀ z, 0 ≤ f z) (hg₀ : ∀ z, 0 ≤ g z)
+    (hf : ∀ c < r, ∃ K, ∀ z, f z ≤ K * Real.exp (-(c * ‖z‖)))
+    (hg : ∀ c < r, ∃ K, ∀ z, g z ≤ K * Real.exp (-(c * ‖z‖))) (hr : 0 < r) (hc : c < r) :
+    ∃ K, ∀ z a, f z * g (z + a) ≤ K * Real.exp (-(c * ‖a‖)) := by
+  obtain ⟨Kf, hKf⟩ := hf (max c 0) (max_lt hc hr)
+  obtain ⟨Kg, hKg⟩ := hg (max c 0) (max_lt hc hr)
+  refine ⟨Kf * Kg, fun z a ↦ ?_⟩
+  have h := norm_mul_norm_le_mul_exp_neg_mul_norm (le_max_right c 0) (f := f) (g := g)
+    (fun w ↦ (Real.norm_of_nonneg (hf₀ w)).trans_le (hKf w))
+    (fun w ↦ (Real.norm_of_nonneg (hg₀ w)).trans_le (hKg w)) z a
+  rw [Real.norm_of_nonneg (hf₀ z), Real.norm_of_nonneg (hg₀ _)] at h
+  have hKfg : 0 ≤ Kf * Kg :=
+    nonneg_of_mul_nonneg_left ((mul_nonneg (hf₀ z) (hg₀ (z + a))).trans h) (Real.exp_pos _)
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ hKfg)
+  exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
+    (norm_nonneg a)))
+
+/-- **Overlap of nonnegative functions decaying at every rate below `r`, integrated.** If
+`0 ≤ f`, `0 ≤ g` and both are at most `K exp (-(c ‖z‖))` for every rate `c < r`, with `K`
+depending on `c`, then `∫ f z g (z + a) ≤ K exp (-(c ‖a‖))` for every rate `c < r`, on a
+finite-dimensional space with an additive Haar measure. -/
+theorem exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure] {f g : E → ℝ} {r : ℝ}
+    (hf₀ : ∀ z, 0 ≤ f z) (hg₀ : ∀ z, 0 ≤ g z)
+    (hf : ∀ c < r, ∃ K, ∀ z, f z ≤ K * Real.exp (-(c * ‖z‖)))
+    (hg : ∀ c < r, ∃ K, ∀ z, g z ≤ K * Real.exp (-(c * ‖z‖))) (hr : 0 < r) (hc : c < r) :
+    ∃ K, ∀ a, ∫ z, f z * g (z + a) ∂μ ≤ K * Real.exp (-(c * ‖a‖)) := by
+  -- Spend a rate strictly between `max c 0` and `r` on the decay of `f` and `g`.
+  obtain ⟨c₁, hc₁, hc₁r⟩ := exists_between (max_lt hc hr)
+  obtain ⟨Kf, hKf⟩ := hf c₁ hc₁r
+  obtain ⟨Kg, hKg⟩ := hg c₁ hc₁r
+  obtain ⟨K, hK⟩ := exists_integral_norm_mul_norm_le_mul_exp_neg_mul_norm μ
+    ((le_max_right c 0).trans_lt hc₁) ((le_max_left c 0).trans_lt hc₁) (f := f) (g := g)
+    (fun w ↦ (Real.norm_of_nonneg (hf₀ w)).trans_le (hKf w))
+    (fun w ↦ (Real.norm_of_nonneg (hg₀ w)).trans_le (hKg w))
+  refine ⟨K, fun a ↦ (le_of_eq (integral_congr_ae (.of_forall fun z ↦ ?_))).trans (hK a)⟩
+  simp only [Real.norm_of_nonneg (hf₀ z), Real.norm_of_nonneg (hg₀ (z + a))]
+
+end Overlap
 
 /-- The two-sided exponential is integrable on the line. -/
 theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
