@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
@@ -50,7 +51,10 @@ Hamiltonian is constant along the integral curves of `X`, which is conservation 
 (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`). The pairing
 `σ(a - X_f, b) = -σ(b, a) - df(b)` is the integrand of the first variation of the action
 functionals of Hamiltonian dynamics
-(`TauCeti.SmoothTwoForm.IsNondegenerate.apply_sub_hamiltonianVectorField`). A nonzero value
+(`TauCeti.SmoothTwoForm.IsNondegenerate.apply_sub_hamiltonianVectorField`). Along the chart
+variations `TauCeti.Manifold.sinChartVariation` of a curve `γ`, it is the profile times the pairing
+of `γ' - X_f` with a tangent vector of fixed chart coordinates
+(`TauCeti.SmoothTwoForm.apply_mfderiv_sinChartVariation`). A nonzero value
 `a - X_f` of the obstruction pairs positively with a tangent vector of short chart coordinates,
 which supplies the test direction of the first variation arguments showing that the critical
 points of these functionals solve Hamilton's equation
@@ -272,6 +276,45 @@ theorem hamiltonianVectorField_comp {φ : ℝ → ℝ} {x : M} (hφ : Differenti
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_scalar_comp hf hφ,
     map_smul]
 
+/-- Along the chart variation `TauCeti.Manifold.sinChartVariation` of a `C²` curve `γ`, the
+integrand `σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation of an action functional at `s = 0`
+is `φ t` times the pairing of `γ' - X_{H_t}` with the tangent vector of chart coordinates `e` at
+`γ t`. -/
+theorem apply_mfderiv_sinChartVariation [I.Boundaryless] {H : ℝ → M → ℝ}
+    {γ : ℝ → M} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E} (hJo : IsOpen J)
+    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
+    (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
+      extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
+    (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) (t : ℝ) :
+    σ.1 (Manifold.sinChartVariation I γ x₀ J φ e (0, t))
+        ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (0, 1) -
+            σ.hamiltonianVectorField (H t) (Manifold.sinChartVariation I γ x₀ J φ e (0, t)),
+          mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (1, 0)] =
+      φ t * σ.1 (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
+        (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e] := by
+  have hw0 : ∀ t, Manifold.sinChartVariation I γ x₀ J φ e (0, t) = γ t :=
+    Manifold.sinChartVariation_zero hJ
+  have hwd : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) :=
+    (Manifold.contMDiff_sinChartVariation hJo hJ hT hφ hφJ hγ (0, t)).mdifferentiableAt
+      two_ne_zero
+  have hv : mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (0, 1) =
+      Manifold.curveVelocity I γ t := by
+    rw [← Manifold.curveVelocity_eq_mfderiv_snd
+      (f := fun a b ↦ Manifold.sinChartVariation I γ x₀ J φ e (a, b)) hwd, funext hw0]
+  -- first the base point `w (0, t) = γ t` and the velocity `∂_t w (0, t) = γ'(t)`
+  trans σ.1 (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
+    mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (1, 0)]
+  · rw [hv, hw0 t]
+  -- then the variation field
+  by_cases htJ : t ∈ J
+  · rw [Manifold.mfderiv_sinChartVariation_of_mem hJo hJ (hφ.of_le one_le_two) hφJ
+        ((hγ t).of_le one_le_two) hwd htJ,
+      ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
+      SmoothBundleForm.eval₂_apply, smul_eq_mul]
+  · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ htJ (hφJ h')
+    rw [Manifold.mfderiv_sinChartVariation_of_notMem hwd htJ, hφt, zero_mul]
+    exact (σ.1 (γ t)).map_coord_zero 1 rfl
+
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
@@ -325,12 +368,29 @@ theorem continuous_apply_sub_hamiltonianVectorField {H : ℝ → M → ℝ}
     (Manifold.continuous_mvfderiv_apply_mfderiv hH hw s₀)).congr fun t ↦
     (h.apply_sub_hamiltonianVectorField (H t) (w (s₀, t)) _ _).symm
 
+/-- Along the chart variation `TauCeti.Manifold.sinChartVariation` of a `C²` curve `γ`, the pairing
+of `γ' - X_{H_t}` with the tangent vectors of chart coordinates `e`, weighted by the profile `φ`,
+is continuous. -/
+theorem continuous_mul_apply_curveVelocity_sub [I.Boundaryless] {H : ℝ → M → ℝ}
+    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (Function.uncurry H)) {γ : ℝ → M} {x₀ : M}
+    {J : Set ℝ} {φ : ℝ → ℝ} {e : E} (hJo : IsOpen J)
+    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
+    (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
+      extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
+    (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) :
+    Continuous fun t ↦ φ t * σ.1 (γ t) ![Manifold.curveVelocity I γ t -
+      σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ
+        (γ t) e] :=
+  (h.continuous_apply_sub_hamiltonianVectorField hH
+    ((Manifold.contMDiff_sinChartVariation hJo hJ hT hφ hφJ hγ).of_le one_le_two) 0).congr
+    fun t ↦ σ.apply_mfderiv_sinChartVariation hJo hJ hT hφ hφJ hγ t
+
 omit [FiniteDimensional ℝ E] in
-/-- **The test direction of a first variation argument.** On a manifold without boundary, a
-nonzero tangent vector `v` at `x₀` pairs positively with the tangent vector at `x₀` of coordinates
-`e` in the tangent-bundle trivialization at `x₀`, for a chart vector `e` short enough that, near
-`x₀`, the points displaced by `c • e` with `|c| ≤ 1` stay in the target of the extended chart at
-`x₀`. -/
+/-- **The test direction of a first variation argument.** For a nondegenerate `σ` on a manifold
+without boundary and a nonzero tangent vector `v` at `x₀`, there is a chart vector `e` such that
+`σ(v, ·)` is positive on the tangent vector at `x₀` of coordinates `e` in the tangent-bundle
+trivialization at `x₀`, and, near `x₀`, the points displaced by `c • e` with `|c| ≤ 1` stay in the
+target of the extended chart at `x₀`. -/
 theorem exists_pos_apply_and_eventually_add_smul_mem_target [I.Boundaryless] {x₀ : M}
     {v : TangentSpace I x₀} (hv : v ≠ 0) :
     ∃ e : E, 0 < σ.1 x₀ ![v, (trivializationAt E (TangentSpace I) x₀).symmL ℝ x₀ e] ∧

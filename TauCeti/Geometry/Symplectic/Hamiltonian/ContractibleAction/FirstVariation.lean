@@ -192,15 +192,6 @@ private theorem hasDerivAt_contractibleLoopAction_of_apply_zero {γ : ℝ → M}
   exact intervalIntegral.integral_congr fun t _ ↦
     (apply_eq_of_apply_zero h0 ((hwc (0, t)).mdifferentiableAt two_ne_zero)).symm
 
-/-- Along a variation of the loop `γ`, the first-variation integrand at `s = 0` is continuous. -/
-private theorem continuous_apply_curveVelocity_sub {γ : ℝ → M} (h : σ.IsNondegenerate)
-    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w)
-    (h0 : ∀ t, w (0, t) = γ t) :
-    Continuous fun t ↦ σ.1 (γ t) ![Manifold.curveVelocity I γ t -
-      σ.hamiltonianVectorField (H t) (γ t), mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] :=
-  (h.continuous_apply_sub_hamiltonianVectorField hH hwc 0).congr fun t ↦
-    apply_eq_of_apply_zero h0 ((hwc (0, t)).mdifferentiableAt one_ne_zero)
-
 end SmoothTwoForm.IsNondegenerate
 
 end FirstVariation
@@ -351,22 +342,15 @@ private theorem IsContractibleLoopActionCritical.integral_mul_apply_eq_zero [I.B
   have hpt : ∀ t, σ.1 (γ t) ![Manifold.curveVelocity I γ t -
       σ.hamiltonianVectorField (H t) (γ t), mfderiv 𝓘(ℝ, ℝ × ℝ) I w (0, t) (1, 0)] =
       φ t * σ.1 (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
-        (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e] := by
-    intro t
-    by_cases htJ : t ∈ J
-    · rw [Manifold.mfderiv_sinChartVariation_of_mem hJo hJ (hφ.of_le one_le_two) hφJ
-          ((hc.contMDiff t).of_le one_le_two) ((hwc (0, t)).mdifferentiableAt two_ne_zero) htJ,
-        ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
-        SmoothBundleForm.eval₂_apply, smul_eq_mul]
-    · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ htJ (hφJ h')
-      rw [Manifold.mfderiv_sinChartVariation_of_notMem ((hwc (0, t)).mdifferentiableAt two_ne_zero)
-        htJ, hφt, zero_mul]
-      exact (σ.1 (γ t)).map_coord_zero 1 rfl
+        (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e] := fun t ↦
+    (SmoothTwoForm.IsNondegenerate.apply_eq_of_apply_zero hw0
+      ((hwc (0, t)).mdifferentiableAt two_ne_zero)).symm.trans
+        (SmoothTwoForm.apply_mfderiv_sinChartVariation hJo hJ hT hφ hφJ hc.contMDiff t)
   have hd := h.hasDerivAt_contractibleLoopAction_of_apply_zero hw hH hwc hwper hw0
     hc.exists_isCap
   rw [intervalIntegral.integral_congr fun t _ ↦ hpt t] at hd
   exact ⟨hd.unique (hc.hasDerivAt hwc hwper hw0),
-    (h.continuous_apply_curveVelocity_sub hH (hwc.of_le one_le_two) hw0).congr hpt⟩
+    h.continuous_mul_apply_curveVelocity_sub hH hJo hJ hT hφ hφJ hc.contMDiff⟩
 
 /-- **Critical points of the action are `1`-periodic orbits.** Let `σ` be a nondegenerate weakly
 exact two-form on a manifold without boundary modelled on a finite-dimensional space, and `H` a

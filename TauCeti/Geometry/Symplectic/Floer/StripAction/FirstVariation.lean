@@ -246,59 +246,13 @@ section CriticalPaths
 variable [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ E] [I.Boundaryless] {ω : SmoothTwoForm I M}
   {H : ℝ → M → ℝ} {γ : ℝ → M} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
 
-omit [FiniteDimensional ℝ E] in
-/-- Along the chart variation `TauCeti.Manifold.sinChartVariation` of `γ`, the integrand of the
-first variation formula at `s = 0` is `φ t` times the pairing of `γ' - X_H` with the tangent vector
-of chart coordinates `e` at `γ t`. -/
-private theorem apply_mfderiv_sinChartVariation (hJo : IsOpen J)
-    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
-    (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
-      extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
-    (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) (t : ℝ) :
-    ω.1 (Manifold.sinChartVariation I γ x₀ J φ e (0, t))
-        ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (0, 1) -
-            ω.hamiltonianVectorField (H t) (Manifold.sinChartVariation I γ x₀ J φ e (0, t)),
-          mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (1, 0)] =
-      φ t * ω.1 (γ t) ![Manifold.curveVelocity I γ t - ω.hamiltonianVectorField (H t) (γ t),
-        (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e] := by
-  have hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 (Manifold.sinChartVariation I γ x₀ J φ e) :=
-    Manifold.contMDiff_sinChartVariation hJo hJ hT hφ hφJ hγ
-  have hw0 : ∀ t, Manifold.sinChartVariation I γ x₀ J φ e (0, t) = γ t :=
-    Manifold.sinChartVariation_zero hJ
-  have hwd : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) :=
-    (hwc (0, t)).mdifferentiableAt two_ne_zero
-  have hv : mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (0, 1) =
-      Manifold.curveVelocity I γ t := by
-    rw [← Manifold.curveVelocity_eq_mfderiv_snd
-      (f := fun a b ↦ Manifold.sinChartVariation I γ x₀ J φ e (a, b)) hwd, funext hw0]
-  -- first the base point `w (0, t) = γ t` and the velocity `∂_t w (0, t) = γ'(t)`
-  trans ω.1 (γ t) ![Manifold.curveVelocity I γ t - ω.hamiltonianVectorField (H t) (γ t),
-    mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (1, 0)]
-  · rw [hv, hw0 t]
-  -- then the variation field
-  by_cases htJ : t ∈ J
-  · rw [Manifold.mfderiv_sinChartVariation_of_mem hJo hJ (hφ.of_le one_le_two) hφJ
-        ((hγ t).of_le one_le_two) hwd htJ,
-      ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
-      SmoothBundleForm.eval₂_apply, smul_eq_mul]
-  · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ htJ (hφJ h')
-    rw [Manifold.mfderiv_sinChartVariation_of_notMem hwd htJ, hφt, zero_mul]
-    exact (ω.1 (γ t)).map_coord_zero 1 rfl
-
-/-- For a chart variation of `γ`, the pairing of `γ' - X_H` with the tangent vectors of chart
-coordinates `e`, weighted by the profile `φ`, is continuous. -/
-private theorem continuous_mul_apply_curveVelocity_sub (hω : ω.IsNondegenerate)
-    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hJo : IsOpen J)
-    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source)
-    (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
-      extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
-    (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I 2 γ) :
-    Continuous fun t ↦ φ t * ω.1 (γ t) ![Manifold.curveVelocity I γ t -
-      ω.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ
-        (γ t) e] :=
-  (hω.continuous_apply_sub_hamiltonianVectorField hH
-    ((Manifold.contMDiff_sinChartVariation hJo hJ hT hφ hφJ hγ).of_le one_le_two) 0).congr
-    fun t ↦ apply_mfderiv_sinChartVariation hJo hJ hT hφ hφJ hγ t
+/-- A smooth bump function centred at `c` and supported in the ball of radius `r` around `c`. -/
+private theorem exists_contDiffBump_tsupport_subset_ball (c : ℝ) {r : ℝ} (hr : 0 < r) :
+    ∃ b : ContDiffBump c, tsupport b ⊆ ball c r :=
+  -- the bump of radii `r / 4` and `r / 2`
+  ⟨⟨r / 4, r / 2, by positivity, by linarith⟩, by
+    rw [ContDiffBump.tsupport_eq]
+    exact closedBall_subset_ball (half_lt_self hr)⟩
 
 variable {α : SmoothForm I M ℝ 1} {f₀ : N₀ → ℝ} {f₁ : N₁ → ℝ} {i₀ : N₀ → M} {i₁ : N₁ → M}
   {y₀ : N₀} {y₁ : N₁}
@@ -334,9 +288,8 @@ private theorem _root_.TauCeti.IsLagrangianPathActionCritical.integral_mul_apply
   have hd' := hc.hasDerivAt hwc contMDiff_const contMDiff_const
     (fun s ↦ by rw [hend s 0 h0J, hc.apply_zero]) (fun s ↦ by rw [hend s 1 h1J, hc.apply_one])
     (Manifold.sinChartVariation_zero hJ) rfl rfl
-  exact (intervalIntegral.integral_congr fun t _ ↦
-    (apply_mfderiv_sinChartVariation hJo hJ hT hφ hφJ hc.contMDiff t).symm).trans
-    (hd.unique hd')
+  exact (intervalIntegral.integral_congr fun t _ ↦ (SmoothTwoForm.apply_mfderiv_sinChartVariation
+    (σ := ω) hJo hJ hT hφ hφJ hc.contMDiff t).symm).trans (hd.unique hd')
 
 /-- **Critical points of the action are Hamiltonian chords.** Let `ω = dα` be a nondegenerate
 exact two-form on a manifold without boundary modelled on a finite-dimensional space, and `H` a
@@ -378,14 +331,10 @@ theorem _root_.TauCeti.IsLagrangianPathActionCritical.hasMFDerivAt
     abs_le.mpr ⟨by linarith [b.nonneg (x := t)], b.le_one⟩
   -- `g` is continuous at `t₀`, where it agrees with `φ g` for a bump `φ` equal to `1` near `t₀`
   have hgcont : ContinuousAt g t₀ := by
-    let b : ContDiffBump t₀ := ⟨δ / 4, δ / 2, by positivity, by linarith⟩
-    have hbJ : tsupport b ⊆ ball t₀ δ := by
-      -- the outer radius of `b` is `δ / 2` by construction
-      rw [b.tsupport_eq]
-      exact closedBall_subset_ball (half_lt_self hδ)
-    refine (continuous_mul_apply_curveVelocity_sub hω hH isOpen_ball (hJ subset_rfl)
+    obtain ⟨b, hbJ⟩ := exists_contDiffBump_tsupport_subset_ball t₀ hδ
+    refine (hω.continuous_mul_apply_curveVelocity_sub hH isOpen_ball (hJ subset_rfl)
       (hT subset_rfl (hbump b)) b.contDiff hbJ hc.contMDiff).continuousAt.congr ?_
-    filter_upwards [closedBall_mem_nhds t₀ (by positivity : (0 : ℝ) < δ / 4)] with t ht
+    filter_upwards [closedBall_mem_nhds t₀ b.rIn_pos] with t ht
     rw [b.one_of_mem_closedBall ht, one_mul]
   obtain ⟨ε, hε, hεg⟩ := Metric.eventually_nhds_iff.mp (hgcont.eventually (lt_mem_nhds hg₀))
   -- an interior time `t₁` near `t₀`, and a ball around it inside `(0, 1)` where `g > 0`
@@ -394,35 +343,21 @@ theorem _root_.TauCeti.IsLagrangianPathActionCritical.hasMFDerivAt
   obtain ⟨r, hr, hrsub⟩ := Metric.isOpen_iff.mp (isOpen_Ioo.inter isOpen_ball) t₁
     ⟨ht₁, by rwa [mem_ball, dist_comm]⟩
   have hrδ : ball t₁ r ⊆ ball t₀ δ := fun t ht ↦ ball_subset_ball (min_le_left _ _) (hrsub ht).2
-  let b : ContDiffBump t₁ := ⟨r / 4, r / 2, by positivity, by linarith⟩
-  have hbJ : tsupport b ⊆ ball t₁ r := by
-    -- the outer radius of `b` is `r / 2` by construction
-    rw [b.tsupport_eq]
-    exact closedBall_subset_ball (half_lt_self hr)
+  have hg : ∀ t ∈ ball t₁ r, 0 < g t := fun t ht ↦
+    hεg ((mem_ball.mp (hrsub ht).2).trans_le (min_le_right _ _))
+  obtain ⟨b, hbJ⟩ := exists_contDiffBump_tsupport_subset_ball t₁ hr
   have hint := hc.integral_mul_apply_eq_zero hω hα hH isOpen_ball (fun t ht ↦ (hrsub ht).1)
     (hJ hrδ) (hT hrδ (hbump b)) b.contDiff hbJ
-  have hcont := continuous_mul_apply_curveVelocity_sub hω hH isOpen_ball (hJ hrδ)
+  have hcont := hω.continuous_mul_apply_curveVelocity_sub hH isOpen_ball (hJ hrδ)
     (hT hrδ (hbump b)) b.contDiff hbJ hc.contMDiff
-  -- `b g` is positive on the support of `b`, and zero elsewhere
-  have hpos : ∀ t ∈ ball t₁ (r / 2), 0 < b t * g t := fun t ht ↦ by
-    refine mul_pos (b.pos_of_mem_ball ht) (hεg ?_)
-    have h := (hrsub (ball_subset_ball (by linarith) ht)).2
-    rw [mem_ball] at h
-    exact h.trans_le (min_le_right _ _)
-  have hnn : ∀ t, 0 ≤ b t * g t := fun t ↦ by
-    by_cases ht : t ∈ ball t₁ (r / 2)
-    · exact (hpos t ht).le
-    · rw [b.zero_of_le_dist (by rw [mem_ball, not_lt] at ht; exact ht), zero_mul]
-  have hpos_int : 0 < ∫ t in 0..1, b t * g t := by
-    rw [intervalIntegral.integral_pos_iff_support_of_nonneg_ae'
-      (ae_of_all _ fun t ↦ hnn t) (hcont.intervalIntegrable 0 1)]
-    refine ⟨zero_lt_one, ?_⟩
-    calc (0 : ENNReal) < volume (ball t₁ (r / 2)) := by
-          rw [Real.volume_ball]
-          exact ENNReal.ofReal_pos.mpr (by positivity)
-      _ ≤ volume (support (fun t ↦ b t * g t) ∩ Ioc 0 1) := measure_mono fun t ht ↦
-          ⟨(hpos t ht).ne', Ioo_subset_Ioc_self (hrsub (ball_subset_ball (by linarith) ht)).1⟩
-  exact hpos_int.ne' hint
+  -- `b g` is nonnegative, as `g > 0` on the support of `b`, and `b g = g > 0` at `t₁`
+  refine (intervalIntegral.integral_pos zero_lt_one hcont.continuousOn (fun t _ ↦ ?_)
+    ⟨t₁, Ioo_subset_Icc_self ht₁, ?_⟩).ne' hint
+  · by_cases hb : b t = 0
+    · rw [hb, zero_mul]
+    · exact mul_nonneg b.nonneg (hg t (hbJ (subset_tsupport _ hb))).le
+  · rw [b.one_of_mem_closedBall (mem_closedBall_self b.rIn_pos.le), one_mul]
+    exact hg t₁ (mem_ball_self hr)
 
 /-- **The critical points of the action are the Hamiltonian chords.** Let `ω = dα` be a
 nondegenerate exact two-form on a manifold without boundary modelled on a finite-dimensional
