@@ -70,6 +70,11 @@ normal closure of `x ^ n` when `n ≠ 1`.
   `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
   injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
   strictly contains that of `x ^ n` when `n ≠ 1`.
+* `TauCeti.GroupAlgGeom.Rad_pow_mul_inl_pow_eq_normalClosure`,
+  `TauCeti.GroupAlgGeom.inr_of_mul_inl_notMem_normalClosure_pow_mul_inl`: over a group `H` with
+  unique roots and injective coefficients, the radical of the one-variable equation
+  `x ^ n * b ^ n` (`n ≠ 0`) is the normal closure of `x * b`. For `n ≠ 1`, the element `x * b`
+  does not lie in the normal closure of `x ^ n * d`, whatever the coefficients `b` and `d`.
 
 ## References
 
@@ -721,18 +726,55 @@ theorem Rad_pow_eq_normalClosure [IsMulTorsionFree H] (hι : Function.Injective 
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
-/-- The normal closure of the one-variable equation `x ^ n` does not contain `x` when `n ≠ 1`. -/
-theorem inr_of_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) :
-    (inr (of x) : GX G X) ∉ normalClosure {inr (of x) ^ n} := by
+/-- In a group `H` with unique roots, the equation `x ^ n * b ^ n = 1` (`n ≠ 0`) has the same
+solutions as `x * b = 1`: the only `n`-th root of `(b ^ n)⁻¹` is `b⁻¹`. -/
+theorem V_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    V ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = V ι {inr (of x) * inl b} := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+
+/-- In a group `H` with unique roots, the equations `x ^ n * b ^ n = 1` (`n ≠ 0`) and `x * b = 1`
+have the same radical. -/
+theorem Rad_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = Rad ι {inr (of x) * inl b} := by
+  rw [Rad_def, V_pow_mul_inl_pow hn, Rad_def]
+
+/-- For injective coefficients, the radical of the one-variable equation `x * b = 1` is its
+normal closure: the quotient `G[x] ⧸ ncl(x b)` is `G` itself. -/
+theorem Rad_inr_of_mul_inl [Subsingleton X] (hι : Function.Injective ι) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) * inl b} = normalClosure {inr (of x) * inl b} := by
+  have := uniqueOfSubsingleton x
+  have hV : V ι {(inr (of x) : GX G X) * inl b} = {ι ∘ fun _ => b⁻¹} := by
+    ext v
+    simp [funext_iff, Unique.forall_iff, Subsingleton.elim default x, mul_eq_one_iff_eq_inv]
+  rw [Rad_def, hV, I_singleton_comp hι]
+  simp [Set.range_unique, Subsingleton.elim default x]
+
+/-- Over a group `H` with unique roots and injective coefficients, the radical of the
+one-variable equation `x ^ n * b ^ n = 1` (`n ≠ 0`) is the normal closure of `x * b`. -/
+theorem Rad_pow_mul_inl_pow_eq_normalClosure [Subsingleton X] [HasUniqueRoots H]
+    (hι : Function.Injective ι) {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = normalClosure {inr (of x) * inl b} := by
+  rw [Rad_pow_mul_inl_pow hn, Rad_inr_of_mul_inl hι]
+
+/-- When `n ≠ 1`, the normal closure of the equation `x ^ n * d` does not contain `x * b`, for
+any coefficients `b` and `d`. -/
+theorem inr_of_mul_inl_notMem_normalClosure_pow_mul_inl {n : ℕ} (hn : n ≠ 1) (x : X) (b d : G) :
+    (inr (of x) * inl b : GX G X) ∉ normalClosure {inr (of x) ^ n * inl d} := by
   -- Send the coefficients to `1` and the variables to a generator of `ℤ / n`.
   let f : GX G X →* Multiplicative (ZMod n) := eval 1 fun _ => .ofAdd 1
-  have hle : normalClosure {inr (of x) ^ n} ≤ f.ker := by
+  have hle : normalClosure {(inr (of x) : GX G X) ^ n * inl d} ≤ f.ker := by
     refine normalClosure_le_normal ?_
     rintro _ rfl
     simp [f, ← ofAdd_nsmul]
   intro h
   have : (Multiplicative.ofAdd 1 : Multiplicative (ZMod n)) = 1 := by simpa [f] using hle h
   exact hn (ZMod.one_eq_zero_iff.1 this)
+
+/-- The normal closure of the one-variable equation `x ^ n` does not contain `x` when `n ≠ 1`. -/
+theorem inr_of_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) :
+    (inr (of x) : GX G X) ∉ normalClosure {inr (of x) ^ n} := by
+  simpa using inr_of_mul_inl_notMem_normalClosure_pow_mul_inl hn x (1 : G) 1
 
 /-- For `n ≠ 1`, the normal closure of `x ^ n` differs from the normal closure of `x`. -/
 theorem normalClosure_pow_ne_normalClosure {n : ℕ} (hn : n ≠ 1) (x : X) :

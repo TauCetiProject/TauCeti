@@ -52,9 +52,6 @@ graph of a concrete triple evaluate by `decide` and `#eval`.
 
 open Equiv Equiv.Perm
 
--- The carrier vocabulary below follows the formal prototype `Suggested.lean` of the Tau Ceti
--- `BelyiMaps` roadmap.
-
 public section
 
 namespace TauCeti

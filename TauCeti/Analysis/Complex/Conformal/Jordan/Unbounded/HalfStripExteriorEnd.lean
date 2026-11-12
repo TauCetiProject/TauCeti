@@ -187,7 +187,7 @@ private theorem false_of_inverted_coordinate_eq_zero_of_rays
     {u v : ℝ} (huv : u < v) (hu : (u : ℂ) ∈ ball (x : ℂ) r) (hv : (v : ℂ) ∈ ball (x : ℂ) r)
     (hgu : g u = 0) (hgv : g v = 0) : False := by
   have hgR : Continuous fun s : ℝ => g s :=
-    hgc.comp_continuous continuous_ofReal fun s => by simp
+    hgc.comp_continuous continuous_ofReal fun _ => by simp
   have hZ : IsClosed {s : ℝ | g s = 0} := isClosed_eq hgR continuous_const
   obtain ⟨t, ht, hgt⟩ : ∃ t ∈ Ioo u v, g t ≠ 0 := by
     have h := exists_mem_Ioo_ne_zero_of_ne_zero (f := g) (x := (u + v) / 2) (r := (v - u) / 2)
@@ -281,7 +281,7 @@ private theorem exists_lt_norm_mem_image_ball_of_halfStripExterior
     (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
     (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0)
     (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {x : ℝ} (hx : g x = 0)
-    {r ρ M : ℝ} {c b : ℂ} (hb : b ≠ 0) (hr : 0 < r)
+    {r ρ M : ℝ} {c b : ℂ} (hr : 0 < r)
     (hS : {w : ℂ | ρ < ‖w - c‖ ∧ (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} ⊆
       f '' upperHalfPlaneSet)
     (hfS : ∀ z ∈ ball (x : ℂ) r ∩ upperHalfPlaneSet, f z ∈
@@ -309,7 +309,7 @@ private theorem exists_lt_norm_mem_image_ball_of_halfStripExterior
     exact hy.2 (hFi hy.1 hz.2 hyz ▸ ball_subset_closedBall hz.1)
   -- far out, `E` lies in a preconnected subset `C` of `E` avoiding the image of the semicircle
   obtain ⟨C, hCE, hCc, hCM, hEC⟩ := isPreconnectedAtInfinityIn_iff.1
-    (isPreconnectedAtInfinityIn_halfStripExterior ρ (c := c) hb) (closedBall c M)
+    (isPreconnectedAtInfinityIn_halfStripExterior ρ (c := c)) (closedBall c M)
     isBounded_closedBall
   have hsub : C ⊆ F '' A ∪ F '' B := by
     intro w hw
@@ -392,8 +392,8 @@ theorem exists_ball_halfStripExterior_end_of_inverted_coordinate
           rw [← mem_sphere.mp hz.1, mem_singleton_iff.mp h, dist_self])⟩).sub continuousOn_const)
   have hfS'' (z : ℂ) (hz : z ∈ ball (x : ℂ) r ∩ upperHalfPlaneSet) :=
     hfS' z ⟨(ball_subset_closedBall.trans hrr₀) hz.1, hz.2⟩
-  obtain ⟨R, hR⟩ := exists_lt_norm_mem_image_ball_of_halfStripExterior hgc hgd hgf hgne hgi hx hb
-    hr hS hfS'' fun z hz => hM z ⟨hz.1, le_of_lt hz.2⟩
+  obtain ⟨R, hR⟩ := exists_lt_norm_mem_image_ball_of_halfStripExterior hgc hgd hgf hgne hgi hx hr
+    hS hfS'' fun z hz => hM z ⟨hz.1, le_of_lt hz.2⟩
   refine ⟨r, hr, R, hFc, ((add_right_injective q).comp inv_injective).comp_injOn
     (hgi.mono fun z hz => by exact ⟨hz.1.2, hgP z hz⟩), hFt, fun w hw => ⟨?_, hR w hw⟩⟩
   rintro ⟨z, hz, rfl⟩

@@ -14,10 +14,10 @@ import Mathlib.Order.Preorder.Finite
 
 For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if some power of `κ`
 (including the zeroth) assigns positive mass to `y`, and two states *communicate* if they are
-mutually reachable. Reachability is reflexive; when the singletons are measurable it is
-transitive, communication is an equivalence relation, and Mathlib's `Kernel.IsIrreducible`
-with respect to the counting measure is equivalent to every state reaching every other state,
-equivalently to every pair of states communicating. A state with finitely many reachable states
+mutually reachable. Reachability is reflexive and transitive, communication is an equivalence
+relation, and Mathlib's `Kernel.IsIrreducible` with respect to the counting measure is
+equivalent to every state reaching every other state, equivalently to every pair of states
+communicating. A state with finitely many reachable states
 reaches a state from which every reachable state can return.
 -/
 
@@ -120,19 +120,26 @@ theorem communicates_equivalence :
   · intro x y z hxy hyz
     exact hxy.trans hyz
 
+/-- Under counting-measure irreducibility every state reaches every other state. -/
+theorem exists_pos_pow_apply_singleton [IsIrreducible Measure.count κ] (x y : S) :
+    ∃ n, 0 < (κ ^ n) x {y} := by
+  by_contra! h
+  -- Without measurable singletons, use a measurable superset of `{y}` of the same mass for all `n`.
+  obtain ⟨A, hyA, hA, hEq⟩ := exists_measurable_superset_forall_eq (fun n : ℕ => (κ ^ n) x) {y}
+  obtain ⟨n, hn⟩ := IsIrreducible.irreducible (φ := Measure.count) (κ := κ) hA
+    (pos_iff_ne_zero.mpr (Measure.count_ne_zero_iff.mpr ⟨y, hyA rfl⟩)) x
+  exact hn.not_ge ((hEq n).trans_le (h n))
+
 /-- A kernel is irreducible with respect to the counting measure if and only if every state
 reaches every state. -/
-theorem isIrreducible_count_iff_forall_reaches [MeasurableSingletonClass S] :
+theorem isIrreducible_count_iff_forall_reaches :
     IsIrreducible Measure.count κ ↔ ∀ x y : S, κ.Reaches x y := by
   constructor
   · intro h x y
-    have hpos : Measure.count {y} > 0 := by
-      rw [Measure.count_singleton y]
-      exact one_pos
-    exact h.irreducible (measurableSet_singleton y) hpos x
+    exact exists_pos_pow_apply_singleton x y
   · intro h
     refine ⟨?_⟩
-    intro s hs hA x
+    intro s _ hA x
     obtain ⟨y, hy⟩ := Measure.count_ne_zero_iff.mp (Ne.symm (ne_of_lt hA))
     obtain ⟨n, hn⟩ := h x y
     use n
@@ -140,7 +147,7 @@ theorem isIrreducible_count_iff_forall_reaches [MeasurableSingletonClass S] :
 
 /-- A kernel is irreducible with respect to the counting measure if and only if every pair of
 states communicates. -/
-theorem isIrreducible_count_iff_forall_communicates [MeasurableSingletonClass S] :
+theorem isIrreducible_count_iff_forall_communicates :
     IsIrreducible Measure.count κ ↔ ∀ x y : S, κ.Communicates x y := by
   rw [isIrreducible_count_iff_forall_reaches]
   exact ⟨fun h x y => ⟨h x y, h y x⟩, fun h x y => (h x y).1⟩

@@ -11,6 +11,7 @@ import TauCeti.Analysis.Contour.Winding.Number.Segment.Bounds
 import TauCeti.Analysis.Contour.Winding.Number.Partition
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Data.Fin.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Basic.Complex.BigOperators
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
@@ -75,13 +76,33 @@ theorem windingNumber_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : �
     (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
       γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
         (γ (s i.succ) - γ (s i.castSucc)))
-    (hclosed : γ a = γ b) (c : ℂ) {z : ℂ} (hz : z ∉ γ '' uIcc a b)
+    (hclosed : γ a = γ b) (c : ℂ) {z : ℂ}
     (hzi : ∀ i : Fin N,
       z ∉ segment ℝ c (γ (s i.castSucc)) ∪ segment ℝ (γ (s i.castSucc)) (γ (s i.succ)) ∪
         segment ℝ (γ (s i.succ)) c) :
     Contour.windingNumber γ a b z =
       ∑ i : Fin N, Contour.windingNumber
         (triangleCurve c (γ (s i.castSucc)) (γ (s i.succ))) 0 3 z := by
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · -- No edges: the interval is degenerate.
+    have hab : a = b := by
+      rw [← ha, ← hb, Fin.last_zero]
+    subst hab
+    simp [Contour.windingNumber_same]
+  -- The trace of the polygon lies on its edges, so it avoids `z`.
+  have hz : z ∉ γ '' uIcc a b := by
+    rintro ⟨u, hu, rfl⟩
+    have hab : a ≤ b := ha ▸ hb ▸ hs.monotone (Fin.zero_le _)
+    rw [uIcc_of_le hab] at hu
+    obtain ⟨i, hi⟩ := TauCeti.exists_mem_Icc_castSucc_succ s hN.ne' (by rwa [ha, hb])
+    have hlt := hs (Fin.castSucc_lt_succ (i := i))
+    have hseg := hsegments i u hi
+    refine hzi i (Or.inl (Or.inr ?_))
+    rw [hseg, segment_eq_image']
+    refine ⟨(u - s i.castSucc) / (s i.succ - s i.castSucc), ⟨?_, ?_⟩, rfl⟩
+    · exact div_nonneg (sub_nonneg.2 hi.1) (sub_nonneg.2 hlt.le)
+    · rw [div_le_one (sub_pos.2 hlt)]
+      linarith [hi.2]
   let R : Fin (N + 1) → ℂ := fun i ↦
     Contour.windingNumber (fun t : ℝ ↦ c + t • (γ (s i) - c)) 0 1 z
   have htriangle (i : Fin N) :
@@ -134,7 +155,7 @@ theorem windingWeight_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : �
     simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve] using hzi i
   simp_rw [htriangle]
   rw [← Complex.re_sum]
-  exact congrArg Complex.re (windingNumber_eq_sum_triangleCurve hs ha hb hsegments hclosed c hz hzi)
+  exact congrArg Complex.re (windingNumber_eq_sum_triangleCurve hs ha hb hsegments hclosed c hzi)
 
 /-- The winding weight of a closed raw polygon is almost everywhere the signed indicator sum
 of the interiors of its fan triangles, including degenerate and overlapping triangles. -/
