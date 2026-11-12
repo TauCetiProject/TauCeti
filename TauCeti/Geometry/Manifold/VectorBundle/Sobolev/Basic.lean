@@ -490,6 +490,7 @@ theorem lowerOrderL_apply (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n)
   rfl
 
 /-- The chart data of `C.lowerOrderL μ p k w` are those of `w`. -/
+@[simp]
 theorem chartValueL_lowerOrderL_coe (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
     C.chartValueL μ p k i (C.lowerOrderL μ p k w) = C.chartValueL μ p (k + 1) i w := by
   rw [← C.chartValueL_lowerOrderL μ p k i w]
@@ -510,6 +511,7 @@ def constMapData (L : F →L[ℝ] F) : C.SobolevData μ p k →L[ℝ] C.SobolevD
 
 /-- The components of `constMapData L w` in chart `i` are those of `w` combined by the matrix of
 `L`. -/
+@[simp]
 theorem constMapData_apply (L : F →L[ℝ] F) (w : C.SobolevData μ p k) (i : Fin C.n)
     (j : Fin (finrank ℝ F)) :
     constMapData C μ p k L w i j = ∑ j', (finBasis ℝ F).repr (L (finBasis ℝ F j')) j • w i j' := by
@@ -555,6 +557,7 @@ def constMapL (L : F →L[ℝ] F) (Ψ : S → S)
 
 variable {C} in
 /-- The components of `constMapL μ p k L Ψ hΨ w` are those of `constMapData C μ p k L w`. -/
+@[simp]
 theorem coe_constMapL {L : F →L[ℝ] F} {Ψ : S → S}
     (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
     (w : C.sobolevSections μ p k) :
@@ -578,8 +581,7 @@ theorem lowerOrderL_constMapL {L : F →L[ℝ] F} {Ψ : S → S}
     C.lowerOrderL μ p k (constMapL μ p (k + 1) L Ψ hΨ w) =
       constMapL μ p k L Ψ hΨ (C.lowerOrderL μ p k w) := by
   refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
-  rw [lowerOrderL_apply, coe_constMapL, coe_constMapL]
-  simp only [constMapData_apply, lowerOrderL_apply, ← Wkp.lowerOrderL_apply, map_sum, map_smul]
+  simp [← Wkp.lowerOrderL_apply]
 
 end ConstMap
 
