@@ -14,7 +14,7 @@ This file supplements Mathlib's `IsArithFrobAt` API with facts about a monoid or
 a commutative ring extension `S/R`. All of them are stated at ring level, so they are available
 independently of any number-field or Legendre-symbol specialization.
 
-Two are properties of a single Frobenius element. The defining congruence has `#(R ⧸ Q ∩ R)` as
+Several are properties of a single Frobenius element. The defining congruence has `#(R ⧸ Q ∩ R)` as
 its exponent, so it makes that residue ring finite and therefore forces `Q ≠ ⊥` over an infinite
 base. Iterating it `n` times replaces the exponent by its `n`-th power, which is what a Frobenius
 over an intermediate ring of residue degree `n` is required to satisfy. Multiplying a Frobenius
@@ -39,6 +39,10 @@ each of them, which again carries hypotheses of its own, such as those of
   by the `q ^ n`-th power map.
 * `IsArithFrobAt.mul_of_mem_inertia` — a Frobenius element times an element of the inertia
   subgroup is again a Frobenius element.
+* `IsArithFrobAt.of_le` — a Frobenius element at `Q` is one at any larger ideal with the same
+  contraction to the base.
+* `Ideal.exists_isArithFrobAt_smul` — translating a member of the fiber of `σ` by `c` gives a
+  member of the fiber of `c * σ * c⁻¹`.
 * `Ideal.nonempty_frobenius_fiber_equiv_of_isConj` — conjugate elements have equipotent fibers
   above a fixed ideal of the base, as a bijection between them.
 * `Ideal.frobenius_fiber_card_eq_of_isConj` — the `Nat.card` form of that equipotence.
@@ -79,31 +83,27 @@ open nonZeroDivisors
 
 open scoped Pointwise
 
-namespace Ideal
+namespace IsArithFrobAt
+
+variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Monoid G]
+  [MulSemiringAction G S] [SMulCommClass G R S] {Q : Ideal S} {σ : G}
 
 /-- Suppose `S` is Noetherian and `Q` is a prime of `S` containing all zero-divisors. If the
 action of `G` on `S` is faithful and the extension is unramified at `Q`, then a Frobenius element
 of `G` at `Q` is unique. -/
-theorem _root_.IsArithFrobAt.eq_of_isUnramifiedAt
-    {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Monoid G]
-    [MulSemiringAction G S] [SMulCommClass G R S] [FaithfulSMul G S]
-    {Q : Ideal S} [Q.IsPrime] (hQ : Q.primeCompl ≤ S⁰)
+theorem eq_of_isUnramifiedAt [FaithfulSMul G S] [Q.IsPrime] (hQ : Q.primeCompl ≤ S⁰)
     [Algebra.IsUnramifiedAt R Q] [IsNoetherianRing S]
-    {σ τ : G} (hσ : _root_.IsArithFrobAt R σ Q) (hτ : _root_.IsArithFrobAt R τ Q) : σ = τ := by
-  apply MulSemiringAction.toAlgHom_injective R S
-  exact AlgHom.IsArithFrobAt.eq_of_isUnramifiedAt hσ hτ hQ
+    {τ : G} (hσ : IsArithFrobAt R σ Q) (hτ : IsArithFrobAt R τ Q) : σ = τ :=
+  MulSemiringAction.toAlgHom_injective R S (AlgHom.IsArithFrobAt.eq_of_isUnramifiedAt hσ hτ hQ)
 
 /-- **A prime carrying an arithmetic Frobenius over an infinite base is nonzero.** The defining
 congruence has the cardinality of `R ⧸ Q ∩ R` as its exponent, so it forces that residue ring to
 be finite; over an infinite `R` this rules out `Q = ⊥`. -/
-theorem _root_.IsArithFrobAt.ne_bot {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    [FaithfulSMul R S] [Infinite R] [Monoid G] [MulSemiringAction G S] [SMulCommClass G R S]
-    {Q : Ideal S} {σ : G} (H : _root_.IsArithFrobAt R σ Q) : Q ≠ ⊥ := by
+theorem ne_bot [FaithfulSMul R S] [Infinite R] (H : IsArithFrobAt R σ Q) : Q ≠ ⊥ := by
   rintro rfl
-  have hfin : Finite (R ⧸ Ideal.under R (⊥ : Ideal S)) := H.finite_quotient
-  rw [Ideal.under_bot] at hfin
-  have : Finite R := Finite.of_equiv _ (RingEquiv.quotientBot R).toEquiv
-  exact not_finite R
+  have := H.finite_quotient
+  rw [Ideal.under_bot] at this
+  exact not_finite_iff_infinite.mpr ‹_› (Finite.of_equiv _ (RingEquiv.quotientBot R).toEquiv)
 
 /-- **Powers of an arithmetic Frobenius raise the exponent.** If `σ` is an arithmetic Frobenius at
 `Q`, then `σ ^ n` acts on the residue ring `S ⧸ Q` as the `q ^ n`-th power map, where
@@ -112,39 +112,46 @@ theorem _root_.IsArithFrobAt.ne_bot {R S G : Type*} [CommRing R] [CommRing S] [A
 This is the congruence a tower formula rests on: over an intermediate ring whose prime below `Q`
 has residue ring of cardinality `q ^ n`, the `n`-th power of a Frobenius over the base satisfies
 the defining congruence of a Frobenius over that intermediate ring. -/
-theorem _root_.IsArithFrobAt.mk_pow_smul {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    [Monoid G] [MulSemiringAction G S] [SMulCommClass G R S] {Q : Ideal S} {σ : G}
-    (H : _root_.IsArithFrobAt R σ Q) (n : ℕ) (x : S) :
+theorem mk_pow_smul (H : IsArithFrobAt R σ Q) (n : ℕ) (x : S) :
     Ideal.Quotient.mk Q ((σ ^ n) • x) =
       Ideal.Quotient.mk Q x ^ Nat.card (R ⧸ Q.under R) ^ n := by
-  induction n generalizing x with
+  induction n with
   | zero => simp
   | succ n ih =>
-    have hstep : Ideal.Quotient.mk Q (σ • x) =
-        Ideal.Quotient.mk Q x ^ Nat.card (R ⧸ Q.under R) := H.mk_apply x
-    rw [pow_succ, mul_smul, ih (σ • x), hstep, ← pow_mul]
-    ring
+    rw [pow_succ', mul_smul, pow_succ, pow_mul, ← ih]
+    exact H.mk_apply _
 
 /-- **A Frobenius times an inertia element is a Frobenius.** If `σ` is an arithmetic Frobenius at
-a prime `Q` and `τ` lies in the inertia subgroup of `Q`, then `σ * τ` is again an arithmetic
+an ideal `Q` and `τ` lies in the inertia subgroup of `Q`, then `σ * τ` is again an arithmetic
 Frobenius at `Q`: `τ` acts trivially on `S ⧸ Q`. Together with Mathlib's
 `IsArithFrobAt.mul_inv_mem_inertia`, this says that the Frobenius elements at `Q` form one coset
 of the inertia subgroup. -/
-theorem _root_.IsArithFrobAt.mul_of_mem_inertia {R S G : Type*} [CommRing R] [CommRing S]
-    [Algebra R S] [Group G] [MulSemiringAction G S] [SMulCommClass G R S] {Q : Ideal S}
-    [Q.IsPrime] {σ τ : G} (H : _root_.IsArithFrobAt R σ Q) (hτ : τ ∈ Q.inertia G) :
-    _root_.IsArithFrobAt R (σ * τ) Q := by
+theorem mul_of_mem_inertia {G : Type*} [Group G] [MulSemiringAction G S] [SMulCommClass G R S]
+    {σ τ : G} (H : IsArithFrobAt R σ Q) (hτ : τ ∈ Q.inertia G) : IsArithFrobAt R (σ * τ) Q := by
   intro x
-  -- `σ` stabilizes `Q`, so it carries `τ • x - x ∈ Q` into `Q`
-  have hστ : σ • (τ • x - x) ∈ Q := by
-    rw [← (MulAction.mem_stabilizer_iff.mp H.mem_stabilizer : σ • Q = Q)]
-    exact Ideal.smul_mem_pointwise_smul _ _ _ (Ideal.mem_inertia.mp hτ x)
+  -- `σ` maps `Q` into itself, so it carries `τ • x - x ∈ Q` into `Q`
+  have hστ : σ • (τ • x - x) ∈ Q := H.le_comap (Ideal.mem_inertia.mp hτ x)
   simpa [mul_smul, smul_sub] using Q.add_mem hστ (H x)
+
+/-- A Frobenius element at `Q` is a Frobenius element at any larger ideal `P` with the same
+contraction to `R`. -/
+theorem of_le {P : Ideal S} (H : IsArithFrobAt R σ Q) (hQP : Q ≤ P)
+    (h : P.under R = Q.under R) : IsArithFrobAt R σ P := fun x ↦ by
+  rw [h]
+  exact hQP (H x)
+
+end IsArithFrobAt
+
+namespace Ideal
 
 variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Group G]
   [MulSemiringAction G S] [SMulCommClass G R S]
 
-private theorem exists_isArithFrobAt_smul {p : Ideal R} {σ τ c : G} {P : Ideal S}
+/-- **Translating a Frobenius fiber.** If `P` is a nonzero prime of `S` above `p` at which `σ` is an
+arithmetic Frobenius, then `c • P` is a nonzero prime above `p` at which the conjugate
+`τ = c * σ * c⁻¹` is an arithmetic Frobenius. This is the map underlying
+`nonempty_frobenius_fiber_equiv_of_isConj`. -/
+theorem exists_isArithFrobAt_smul {p : Ideal R} {σ τ c : G} {P : Ideal S}
     (hτ : c * σ * c⁻¹ = τ)
     (h : ∃ (_ : P.IsPrime) (_ : P.LiesOver p) (_ : P ≠ ⊥), IsArithFrobAt R σ P) :
     ∃ (_ : (c • P).IsPrime) (_ : (c • P).LiesOver p) (_ : c • P ≠ ⊥),
@@ -157,7 +164,7 @@ private theorem exists_isArithFrobAt_smul {p : Ideal R} {σ τ c : G} {P : Ideal
 bijection from the nonzero primes of `S` above `p` with arithmetic Frobenius `σ` onto those with
 arithmetic Frobenius `σ'`. The bijection depends on the choice of conjugator, so it is stated as
 `Nonempty`. -/
-theorem nonempty_frobenius_fiber_equiv_of_isConj (p : Ideal R) (σ σ' : G) (hc : IsConj σ σ') :
+theorem nonempty_frobenius_fiber_equiv_of_isConj (p : Ideal R) {σ σ' : G} (hc : IsConj σ σ') :
     Nonempty ({P : Ideal S // ∃ (_ : P.IsPrime) (_ : P.LiesOver p) (_ : P ≠ ⊥),
         IsArithFrobAt R σ P} ≃
       {P : Ideal S // ∃ (_ : P.IsPrime) (_ : P.LiesOver p) (_ : P ≠ ⊥),
@@ -173,11 +180,11 @@ theorem nonempty_frobenius_fiber_equiv_of_isConj (p : Ideal R) (σ σ' : G) (hc 
 /-- Conjugate elements have fibers of the same `Nat.card` above a fixed ideal of the base. This is
 the cardinality shadow of `nonempty_frobenius_fiber_equiv_of_isConj`: when the fibers are infinite
 both sides are `0`, so it is the bijection there that carries the content. -/
-theorem frobenius_fiber_card_eq_of_isConj (p : Ideal R) (σ σ' : G) (hc : IsConj σ σ') :
+theorem frobenius_fiber_card_eq_of_isConj (p : Ideal R) {σ σ' : G} (hc : IsConj σ σ') :
     Nat.card {P : Ideal S // ∃ (_ : P.IsPrime) (_ : P.LiesOver p) (_ : P ≠ ⊥),
         IsArithFrobAt R σ P} =
       Nat.card {P : Ideal S // ∃ (_ : P.IsPrime) (_ : P.LiesOver p) (_ : P ≠ ⊥),
         IsArithFrobAt R σ' P} :=
-  (nonempty_frobenius_fiber_equiv_of_isConj p σ σ' hc).elim Nat.card_congr
+  (nonempty_frobenius_fiber_equiv_of_isConj p hc).elim Nat.card_congr
 
 end Ideal

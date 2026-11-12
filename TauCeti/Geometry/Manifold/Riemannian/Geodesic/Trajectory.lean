@@ -34,6 +34,9 @@ to define the Riemannian exponential map by evaluation at time one.
   theorem for any open-interval geodesic witness.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ` specializes uniqueness to
   geodesics defined for all time.
+* `TauCeti.Manifold.IsGeodesicCurveOn.maximalGeodesic_sub_eq`: a geodesic `γ` on an open
+  interval is a translate of a piece of the maximal geodesic with initial data `(γ τ, γ'(τ))`, for
+  any interior parameter `τ`.
 * `TauCeti.Manifold.maximalGeodesic_smul` is homogeneity in the initial velocity and time.
 * `TauCeti.Manifold.maximalIntegralCurve_geodesicSpray` identifies the maximal integral curve of
   the geodesic spray with the velocity lift of the maximal geodesic.
@@ -49,8 +52,6 @@ to define the Riemannian exponential map by evaluation at time one.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §2.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5.
 -/
-
--- Roadmap: HopfRinow
 
 public section
 
@@ -122,8 +123,7 @@ theorem exists_Ioo_subset_geodesicInterval_of_isLUB {p : M} {v : TangentSpace I 
     (hb : IsLUB (geodesicInterval I M p v) b) :
     ∃ a < (0 : ℝ), 0 < b ∧ Ioo a b ⊆ geodesicInterval I M p v := by
   rw [← maximalIntegralCurveInterval_geodesicSpray] at hb ⊢
-  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB
-    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) hb
+  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hb
 
 /-- The maximal geodesic interval contains an open interval with the same left endpoint and a
 positive right endpoint. In particular a finite greatest lower bound of the interval is
@@ -132,8 +132,7 @@ theorem exists_Ioo_subset_geodesicInterval_of_isGLB {p : M} {v : TangentSpace I 
     (ha : IsGLB (geodesicInterval I M p v) a) :
     ∃ b > (0 : ℝ), a < 0 ∧ Ioo a b ⊆ geodesicInterval I M p v := by
   rw [← maximalIntegralCurveInterval_geodesicSpray] at ha ⊢
-  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB
-    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) ha
+  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB ha
 
 /-- Outside its maximal interval, the total maximal geodesic takes its junk value `p`. -/
 @[simp] theorem maximalGeodesic_eq_of_not_mem {p : M} {v : TangentSpace I p} {t : ℝ}
@@ -163,18 +162,17 @@ theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
     (I := I) (M := M) (s := geodesicInterval I M p v) (t := (0 : ℝ))
     (isOpen_geodesicInterval.uniqueDiffOn 0 h0) hz h0
   have hz0 : maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) 0 =
-      TotalSpace.mk' E p v := by
-    apply maximalIntegralCurve_zero
-    rw [hdomains]
-    exact h0
+      TotalSpace.mk' E p v :=
+    maximalIntegralCurve_zero
   refine ⟨hgeo, h0, ?_⟩
   unfold maximalGeodesic
   simpa only [curveVelocityLiftWithin_apply] using hlift.symm.trans hz0
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The maximal geodesic starts at its prescribed base point. -/
 @[simp] theorem maximalGeodesic_zero (p : M) (v : TangentSpace I p) :
-    maximalGeodesic I M p v 0 = p :=
-  (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq
+    maximalGeodesic I M p v 0 = p := by
+  rw [maximalGeodesic, maximalIntegralCurve_zero]
 
 /-- Every geodesic with initial data `(p, v)` on an open interval around zero agrees there with
 the maximal geodesic. -/
@@ -202,6 +200,16 @@ theorem IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ
   exact (hγ.mono (uniqueDiffOn_Ioo _ _) (subset_univ _) ⟨neg_lt_zero.2 hc, hc⟩).eqOn_maximalGeodesic
     (abs_lt.1 (lt_add_one |t|))
 
+/-- **A geodesic is a translate of a piece of a maximal geodesic.** For a geodesic `γ` on an open
+interval `(a, b)` and `τ, t ∈ (a, b)`, the maximal geodesic with initial data `(γ τ, γ'(τ))` takes
+the value `γ t` at time `t - τ`. -/
+theorem IsGeodesicCurveOn.maximalGeodesic_sub_eq {γ : ℝ → M} {a b τ t : ℝ}
+    (hγ : IsGeodesicCurveOn I γ (Ioo a b)) (hτ : τ ∈ Ioo a b) (ht : t ∈ Ioo a b) :
+    maximalGeodesic I M (γ τ) (curveVelocity I γ τ) (t - τ) = γ t := by
+  simpa only [comp_apply, sub_add_cancel] using
+    (hγ.isGeodesicCurveOnFrom_comp_add_const hτ).eqOn_maximalGeodesic
+      ⟨sub_lt_sub_right ht.1 τ, sub_lt_sub_right ht.2 τ⟩
+
 /-- The maximal geodesic with zero initial velocity is the constant curve. -/
 @[simp] theorem maximalGeodesic_zero_velocity (p : M) :
     maximalGeodesic I M p (0 : TangentSpace I p) = fun _ ↦ p := by
@@ -219,7 +227,7 @@ theorem IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ
       (contMDiff_one_geodesicSpray (I := I) (M := M)) hdomain
   have heq := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless
     (contMDiff_one_geodesicSpray (I := I) (M := M)) hmax hconst
-    (maximalIntegralCurve_zero (hdomain ▸ mem_univ 0))
+    maximalIntegralCurve_zero
   funext t
   exact congrArg TotalSpace.proj (congrFun heq t)
 

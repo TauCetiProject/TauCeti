@@ -29,8 +29,8 @@ namespace List
 degree `(l.map fun p => p.2 + 1).sum` is at most `K`. -/
 theorem finite_setOf_sum_map_snd_add_one_le (α : Type*) [Finite α] (K : ℕ) :
     {l : List (α × ℕ) | (l.map fun p => p.2 + 1).sum ≤ K}.Finite := by
-  refine ((List.finite_length_le (α × Fin (K + 1)) K).image
-    (List.map fun p => (p.1, (p.2 : ℕ)))).subset fun l hl => ?_
+  refine ((finite_length_le (α × Fin (K + 1)) K).image
+    (map fun p => (p.1, (p.2 : ℕ)))).subset fun l hl => ?_
   suffices ∀ l : List (α × ℕ), (l.map fun p => p.2 + 1).sum ≤ K →
       ∃ l' : List (α × Fin (K + 1)), l'.length ≤ (l.map fun p => p.2 + 1).sum ∧
         l'.map (fun p => (p.1, (p.2 : ℕ))) = l by
@@ -41,8 +41,8 @@ theorem finite_setOf_sum_map_snd_add_one_le (α : Type*) [Finite α] (K : ℕ) :
   | nil => exact fun _ => ⟨[], by simp⟩
   | cons p l ih =>
     intro hp
-    simp only [List.map_cons, List.sum_cons] at hp ⊢
+    simp only [map_cons, sum_cons] at hp ⊢
     obtain ⟨l', hlen, hl'⟩ := ih (by omega)
-    exact ⟨(p.1, ⟨p.2, by omega⟩) :: l', by rw [List.length_cons]; omega, by simp [hl']⟩
+    exact ⟨(p.1, ⟨p.2, by omega⟩) :: l', by rw [length_cons]; omega, by simp [hl']⟩
 
 end List

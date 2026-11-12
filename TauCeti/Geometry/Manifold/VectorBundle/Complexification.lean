@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Topology.VectorBundle.Complexification
+import TauCeti.Topology.VectorBundle.RestrictScalars
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
 # `C^n` complex vector bundles over real manifolds and complexification of `C^n` sections
@@ -24,6 +26,9 @@ For any real `C^n` vector bundle `E : B → Type*` with model fibre `F` whose co
 `TauCeti.contMDiff_complexification_section_iff`, `TauCeti.tmulConjDiffeomorph`,
 `TauCeti.complexificationTotalSpaceDiffeomorphProd`, `ContMDiffSection.complexificationEquiv`,
 `ContMDiffSection.complexificationEquivProd`, and `ContMDiffSection.conjEquiv`.
+The canonical complex-linear extension of any smooth real bundle map is smooth on the actual
+complexification total space (`TauCeti.contMDiff_liftBaseChangeComplex_totalSpace`), with no
+injectivity, maximality or finite-rank assumption.
 
 ## References
 
@@ -75,12 +80,14 @@ theorem smulIDiffeomorph_smulIDiffeomorph_apply (p : TotalSpace G W) :
 variable [∀ x, Module ℝ (W x)] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, ContinuousConstSMul ℂ (W x)]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] [VectorBundle ℝ G W]
 
+omit [IsScalarTower ℝ ℂ G] in
 /-- Fibrewise multiplication by `Complex.I` is a `C^n` section of `fun x ↦ W x →L[ℝ] W x`. -/
 theorem contMDiff_smulIEquiv_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, G →L[ℝ] G)) n (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
       (E := fun y ↦ W y →L[ℝ] W y) x (Complex.smulIEquiv (W x) : W x →L[ℝ] W x)) :=
   contMDiff_hom_bundle_of_inCoordinates_eq_const fun a _ hx _ ↦ inCoordinates_smulIEquiv a hx
 
+omit [IsScalarTower ℝ ℂ G] in
 /-- Fibrewise multiplication by `-Complex.I` is a `C^n` section of `fun x ↦ W x →L[ℝ] W x`. -/
 theorem contMDiff_smulIEquiv_symm_bundle :
     ContMDiff IB (IB.prod 𝓘(ℝ, G →L[ℝ] G)) n (fun x ↦ TotalSpace.mk' (G →L[ℝ] G)
@@ -529,5 +536,50 @@ theorem complexificationEquiv_tmul_eq_smul (z : ℂ) (s : Cₛ^n⟮IB; F, E⟯) 
 end ComplexificationSections
 
 end ContMDiffSection
+
+namespace TauCeti
+
+variable {XB HB B F G : Type*} [NormedAddCommGroup XB] [NormedSpace ℝ XB]
+  [TopologicalSpace HB] {IB : ModelWithCorners ℝ XB HB}
+  [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup G]
+  {W V : B → Type*}
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [TopologicalSpace (TotalSpace F W)] [FiberBundle F W] [VectorBundle ℝ F W]
+  [∀ x, TopologicalSpace (ℂ ⊗[ℝ] W x)] [∀ x, IsComplexificationTopology (W x)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace G V)] [FiberBundle G V]
+  [∀ x, IsTopologicalAddGroup (V x)]
+  {n : ℕ∞ω}
+
+section SmoothExtension
+
+variable [NormedSpace ℝ G] [NormedSpace ℂ G] [IsScalarTower ℝ ℂ G] [VectorBundle ℂ G V]
+  [∀ x, ContinuousConstSMul ℂ (V x)]
+
+local instance : VectorBundle ℝ G V := VectorBundle.restrictScalars ℝ ℂ G V
+
+/-- Complex-linear extension of a smooth real bundle map is smooth on the actual
+complexification total space. It is the canonical native base-change lift in each fiber. -/
+theorem contMDiff_liftBaseChangeComplex_totalSpace (i : ∀ x, W x →L[ℝ] V x)
+    (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V))) :
+    ContMDiff (IB.prod 𝓘(ℝ, Complexification F)) (IB.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] W x) ↦
+        (⟨p.proj, (i p.proj).liftBaseChangeComplex p.2⟩ : TotalSpace G V)) := by
+  obtain ⟨hre, him⟩ := (contMDiff_complexification_totalSpace_iff (IB := IB) (F := F)
+    (E := W)).mp (contMDiff_id (I := IB.prod 𝓘(ℝ, Complexification F)) (n := n))
+  have hreal := hi.comp hre
+  have himag := hi.comp him
+  have hI := (contMDiff_const (I := IB.prod 𝓘(ℝ, Complexification F))
+    (c := Complex.I)).smul_totalSpace himag
+  simpa only [ContinuousLinearMap.liftBaseChangeComplex_apply, Function.comp_def, id_eq] using
+    ContMDiff.add_sectionAlong hreal hI
+
+end SmoothExtension
+
+end TauCeti
 
 end

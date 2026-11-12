@@ -49,10 +49,8 @@ of the ambient space, rather than only on homogeneous vectors where `i^{p-q}` ma
 * `TauCeti.Hodge.HodgeStructure.Hom.commutes_weilOperator`: morphisms commute with `C`.
 * `TauCeti.Hodge.tate_weilOperator`: the Weil operator of `ℤ(m)` is the identity.
 
-This supplies the Weil operator targeted in Layer L1 of
-`TauCetiRoadmap/HodgeStructures/README.md`. The sign conventions are those of Voisin, *Hodge
-Theory and Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge
-Structures*, §2.
+The sign conventions are those of Voisin, *Hodge Theory and Complex Algebraic Geometry I*,
+§7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2.
 -/
 
 public section
@@ -153,7 +151,7 @@ theorem proj_weilOperator (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
     hs.proj p (hs.weilOperator x) = Complex.I ^ (2 * p - n) • hs.proj p x := by
   refine hs.piece_induction_on (motive := fun y ↦
     hs.proj p (hs.weilOperator y) = Complex.I ^ (2 * p - n) • hs.proj p y) x
-    (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp only [map_add, hy, hz, smul_add]
+    (fun q y hy ↦ ?_) fun y z hy hz ↦ by simp only [map_add, hy, hz, smul_add]
   rw [hs.weilOperator_apply_of_mem hy, map_smul]
   rcases eq_or_ne q p with rfl | hqp
   · rfl
@@ -266,7 +264,7 @@ theorem conj_weilOperator (hs : HodgeStructureOn W ω n) (x : W) :
     ω.toEquiv (hs.weilOperator x) = hs.weilOperator (ω.toEquiv x) := by
   refine hs.piece_induction_on
     (motive := fun w ↦ ω.toEquiv (hs.weilOperator w) = hs.weilOperator (ω.toEquiv w)) x
-    (fun p y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp [map_add, hy, hz]
+    (fun p y hy ↦ ?_) fun y z hy hz ↦ by simp [map_add, hy, hz]
   have hconj : ω.toEquiv y ∈ hs.piece (n - p) := by
     rw [← hs.conj_piece p]
     exact ⟨y, hy, rfl⟩
@@ -447,7 +445,7 @@ theorem commutes_weilOperator (f : Hom source target) (x : W₁) :
     f (source.weilOperator x) = target.weilOperator (f x) := by
   refine source.piece_induction_on
     (motive := fun w ↦ f (source.weilOperator w) = target.weilOperator (f w)) x
-    (fun p y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp [map_add, hy, hz]
+    (fun p y hy ↦ ?_) fun y z hy hz ↦ by simp [map_add, hy, hz]
   rw [source.weilOperator_apply_of_mem hy, map_smul,
     target.weilOperator_apply_of_mem (f.map_mem_piece p hy)]
 

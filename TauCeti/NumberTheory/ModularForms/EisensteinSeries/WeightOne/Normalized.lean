@@ -63,7 +63,7 @@ theorem qExpansion_normalizedCharE1MF_coeff (huv : u * v ∣ N)
       DirichletCharacter.twistedDivisorSum 0 ψ φ n := by
   let _ : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  have hg := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφ.inv
+  have hg := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hφ.inv
     (isPrimitive_stdAddChar v)
   have hscale : 2 * (-2 * π * I) / v * gaussSum φ⁻¹ stdAddChar ≠ 0 := by
     exact mul_ne_zero (div_ne_zero (by simp [Real.pi_ne_zero]) hv) hg
@@ -97,18 +97,22 @@ theorem normalizedCharE1MF_mem_modFormCharSpace (huv : u * v ∣ N) :
   rw [normalizedCharE1MF_def]
   exact (modFormCharSpace 1 _).smul_mem _ (charE1MF_mem_modFormCharSpace ψ φ huv)
 
-/-- Exchanging primitive characters of opposite parity does not change the normalized
-weight-one Eisenstein series. This equality includes the constant coefficient. -/
-theorem normalizedCharE1MF_comm (huv : u * v ∣ N)
-    (hpar : ψ (-1) * φ (-1) = -1) (hψ : ψ.IsPrimitive) (hφ : φ.IsPrimitive) :
+/-- Exchanging primitive characters does not change the normalized weight-one Eisenstein
+series. This equality includes the constant coefficient. When the characters do not have opposite
+parity, both series vanish. -/
+theorem normalizedCharE1MF_comm (huv : u * v ∣ N) (hψ : ψ.IsPrimitive) (hφ : φ.IsPrimitive) :
     normalizedCharE1MF ψ φ huv = normalizedCharE1MF φ ψ (by rwa [mul_comm]) := by
-  apply TauCeti.ModularForm.eq_of_forall_pos_qExpansion_coeff_eq one_pos
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N) one_ne_zero
-  intro n hn
-  have hpar' : φ (-1) * ψ (-1) = -1 := (mul_comm _ _).trans hpar
-  rw [qExpansion_normalizedCharE1MF_coeff ψ φ huv hpar hφ hn.ne',
-    qExpansion_normalizedCharE1MF_coeff φ ψ _ hpar' hψ hn.ne',
-    DirichletCharacter.twistedDivisorSum_zero_comm]
+  by_cases hpar : ψ (-1) * φ (-1) = -1
+  · apply TauCeti.ModularForm.eq_of_forall_pos_qExpansion_coeff_eq one_pos
+      (TauCeti.one_mem_strictPeriods_Gamma1_map N) one_ne_zero
+    intro n hn
+    have hpar' : φ (-1) * ψ (-1) = -1 := (mul_comm _ _).trans hpar
+    rw [qExpansion_normalizedCharE1MF_coeff ψ φ huv hpar hφ hn.ne',
+      qExpansion_normalizedCharE1MF_coeff φ ψ _ hpar' hψ hn.ne',
+      DirichletCharacter.twistedDivisorSum_zero_comm]
+  · have hpar' : φ (-1) * ψ (-1) ≠ -1 := by rwa [mul_comm]
+    rw [normalizedCharE1MF_def, normalizedCharE1MF_def, charE1MF_eq_zero ψ φ huv hpar,
+      charE1MF_eq_zero φ ψ _ hpar', smul_zero, smul_zero]
 
 /-- The level raise `E₁^{ψ,φ,t}(z) = E₁^{ψ,φ}(tz)` of the normalized series, at any level
 `N` divisible by `t u v`. -/
@@ -163,8 +167,7 @@ theorem qExpansion_normalizedCharE1MFRaise (htuv : t * (u * v) ∣ N) :
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [normalizedCharE1MFRaise]
   exact ModularForm.qExpansion_levelRaise
-    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N) _ _
+    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v)) _ _
 
 /-- The `q`-expansion of a raised normalized weight-one Eisenstein series is supported on the
 multiples of `t`, without primitivity or parity assumptions. -/
@@ -175,7 +178,6 @@ theorem isSupportedOnDvd_qExpansion_normalizedCharE1MFRaise (htuv : t * (u * v) 
   rw [normalizedCharE1MFRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The positive coefficients of the raised series are the twisted divisor sums at `n / t`
@@ -187,8 +189,7 @@ theorem qExpansion_normalizedCharE1MFRaise_coeff (htuv : t * (u * v) ∣ N)
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [normalizedCharE1MFRaise, ModularForm.qExpansion_levelRaise_coeff
-    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)]
+    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))]
   split_ifs with htn
   · exact qExpansion_normalizedCharE1MF_coeff ψ φ dvd_rfl hpar hφ
       (Nat.div_ne_zero_iff.mpr ⟨NeZero.ne t, Nat.le_of_dvd (Nat.pos_of_ne_zero hn) htn⟩)
@@ -219,17 +220,26 @@ theorem normalizedCharE1MFRaise_mem_modFormCharSpace (htuv : t * (u * v) ∣ N) 
   rw [normalizedCharE1MFRaise_eq_smul]
   exact (modFormCharSpace 1 _).smul_mem _ (charE1MFRaise_mem_modFormCharSpace ψ φ htuv)
 
+omit [NeZero N] in
+/-- The underlying function of the normalized series does not depend on the proof of the level
+divisibility, nor on the form in which the level is written. -/
+private theorem coe_normalizedCharE1MF_congr {M M' : ℕ} [NeZero M] [NeZero M'] (hM : M = M')
+    (h : u * v ∣ M) (h' : u * v ∣ M') :
+    ⇑(normalizedCharE1MF ψ φ h) = ⇑(normalizedCharE1MF ψ φ h') := by
+  subst hM
+  rfl
+
 /-- The character-exchange relation persists under every level raise. -/
 theorem normalizedCharE1MFRaise_comm (htuv : t * (u * v) ∣ N)
-    (hpar : ψ (-1) * φ (-1) = -1) (hψ : ψ.IsPrimitive) (hφ : φ.IsPrimitive) :
+    (hψ : ψ.IsPrimitive) (hφ : φ.IsPrimitive) :
     normalizedCharE1MFRaise ψ φ t htuv =
       normalizedCharE1MFRaise φ ψ t (by rwa [mul_comm v u]) := by
-  apply TauCeti.ModularForm.eq_of_forall_pos_qExpansion_coeff_eq one_pos
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N) one_ne_zero
-  intro n hn
-  have hpar' : φ (-1) * ψ (-1) = -1 := (mul_comm _ _).trans hpar
-  rw [qExpansion_normalizedCharE1MFRaise_coeff ψ φ htuv hpar hφ hn.ne',
-    qExpansion_normalizedCharE1MFRaise_coeff φ ψ _ hpar' hψ hn.ne',
-    DirichletCharacter.twistedDivisorSum_zero_comm]
+  let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+  let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
+  let _ : NeZero (v * u) := ⟨by rw [mul_comm]; exact NeZero.ne _⟩
+  refine DFunLike.ext _ _ fun z ↦ ?_
+  rw [normalizedCharE1MFRaise_apply, normalizedCharE1MFRaise_apply,
+    coe_normalizedCharE1MF_congr ψ φ (mul_comm u v) dvd_rfl (by rw [mul_comm]),
+    normalizedCharE1MF_comm (N := v * u) ψ φ (by rw [mul_comm]) hψ hφ]
 
 end TauCeti.EisensteinSeries

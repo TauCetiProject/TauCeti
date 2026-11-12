@@ -219,7 +219,7 @@ minimum norm `4`, which is zero in `ℚ/ℤ`. -/
 theorem quadratic_a11d7e6GlueWord :
     (FiniteQuadraticModule.pi fun i ↦ (a11d7e6 i).glueAlphabet
       (isSimplyLaced_a11d7e6 i)).quadratic a11d7e6GlueWord = 0 := by
-  rw [quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two _ valid_a11d7e6,
+  rw [quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two _,
     sum_glueMinimum_a11d7e6GlueWord]
   exact (AddCircle.coe_eq_zero_iff_mem_one _).mpr (Submodule.mem_one.mpr ⟨2, by norm_num⟩)
 
@@ -274,7 +274,7 @@ theorem isLagrangian_a11d7e6GlueSubgroup :
     (FiniteQuadraticModule.pi fun i ↦ (a11d7e6 i).glueAlphabet
       (isSimplyLaced_a11d7e6 i)).IsLagrangian a11d7e6GlueSubgroup :=
   isIsotropic_a11d7e6GlueSubgroup.isLagrangian_of_card_sq_eq _
-    (isNondegenerate_pi_glueAlphabet _ _ valid_a11d7e6)
+    (isNondegenerate_pi_glueAlphabet _ _)
     (by rw [natCard_a11d7e6GlueSubgroup, natCard_pi_glueAlphabet_a11d7e6]; norm_num)
 
 /-- **Every nonzero word of the glue subgroup has minimum norm at least `4`.** -/
@@ -282,7 +282,7 @@ theorem four_le_sum_glueMinimum_of_mem_a11d7e6GlueSubgroup {w : FiniteQuadraticM
       (a11d7e6 i).glueAlphabet (isSimplyLaced_a11d7e6 i)}
     (hw : w ∈ a11d7e6GlueSubgroup) (hw0 : w ≠ 0) :
     4 ≤ ∑ i, (a11d7e6 i).glueMinimum (isSimplyLaced_a11d7e6 i) (w i) := by
-  obtain ⟨k, hk, rfl⟩ := mem_a11d7e6GlueSubgroup_iff.mp hw
+  obtain ⟨k, _, rfl⟩ := mem_a11d7e6GlueSubgroup_iff.mp hw
   have hk0 : k % 12 ≠ 0 := fun h ↦
     hw0 ((nsmul_a11d7e6GlueWord_eq_zero_iff k).mpr (Nat.dvd_of_mod_eq_zero h))
   rw [sum_glueMinimum_nsmul_a11d7e6GlueWord]

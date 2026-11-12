@@ -61,6 +61,8 @@ infrastructure independent of the diamond operators.
   `Γ(N) ≤ Γ(M)` whenever `M ∣ N`.
 * `CongruenceSubgroup.Gamma_le_Gamma1`, `CongruenceSubgroup.Gamma_le_Gamma0`: at a fixed level
   the three families are nested, `Γ(N) ≤ Γ₁(N) ≤ Γ₀(N)`.
+* `CongruenceSubgroup.map_eq_one_of_mem_Gamma`: a matrix of `Γ(N)` is the identity matrix modulo
+  `N`, as an integral matrix.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
@@ -180,6 +182,12 @@ theorem Gamma_le_Gamma_of_dvd {M N : ℕ} (h : M ∣ N) : Gamma N ≤ Gamma M :=
     rw [show (Int.castRingHom (ZMod M) : ℤ →+* ZMod M) =
         (ZMod.castHom h (ZMod M)).comp (Int.castRingHom (ZMod N)) from Subsingleton.elim _ _,
       ← Matrix.SpecialLinearGroup.map_comp, MonoidHom.comp_apply, Gamma_mem'.mp hA, map_one]
+
+/-- A matrix of `Γ(N)` reduces to the identity matrix modulo `N`. -/
+theorem map_eq_one_of_mem_Gamma {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma N) :
+    (γ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom (ZMod N)) = 1 := by
+  simpa only [Matrix.SpecialLinearGroup.map_apply_coe, Matrix.SpecialLinearGroup.coe_one,
+    RingHom.mapMatrix_apply] using congrArg Subtype.val (Gamma_mem'.mp hγ)
 
 /-- `Γ(N) ≤ Γ₁(N)`: the principal congruence subgroup sits inside `Γ₁(N)`, since the three
 congruences `a ≡ 1`, `d ≡ 1`, `c ≡ 0` that `Γ₁(N)` imposes are three of the four that `Γ(N)`
@@ -367,6 +375,15 @@ inclusion along which a form of level `M` is read as a form of level `N`. -/
 theorem Gamma1_map_le_Gamma1_map_of_dvd {M N : ℕ} (h : M ∣ N) :
     (Gamma1 N).map (mapGL ℝ) ≤ (Gamma1 M).map (mapGL ℝ) :=
   Subgroup.map_mono (Gamma1_le_Gamma1_of_dvd h)
+
+/-- The index of a subgroup of `SL(2, ℤ)` equals the number of cosets of its real matrix
+image in `𝒮ℒ`. -/
+theorem _root_.Subgroup.card_quotient_mapGL_eq_index (Γ : Subgroup SL(2, ℤ)) :
+    Nat.card (𝒮ℒ ⧸ (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) = Γ.index := by
+  rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
+    MonoidHom.range_eq_map (Matrix.SpecialLinearGroup.mapGL ℝ), ← Subgroup.relIndex_comap,
+    Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective,
+    Subgroup.relIndex_top_right]
 
 /-- A finite-index subgroup of `SL(2, ℤ)` has finite index in every subgroup of `SL(2, ℤ)` after
 mapping to `GL₂(ℝ)`, so the trace between the two images is defined. This covers, for instance,

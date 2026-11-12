@@ -70,11 +70,15 @@ theorem analyticOrderAt_eval {p : Polynomial 𝕜} (hp : p ≠ 0) (a : 𝕜) :
   conv_lhs => rw [hpq]
   simp only [eval_mul, eval_pow, eval_sub, eval_X, eval_C, smul_eq_mul]
 
-/-- For a nonzero polynomial `p`, the function `w ↦ w ^ n / p.reverse.eval w` is analytic at `0`:
-the reversal does not vanish at `0`, where it takes the leading coefficient of `p`. -/
-theorem analyticAt_pow_div_eval_reverse {p : Polynomial 𝕜} (hp : p ≠ 0) (n : ℕ) :
-    AnalyticAt 𝕜 (fun w : 𝕜 ↦ w ^ n / p.reverse.eval w) 0 :=
-  ((analyticAt_id (𝕜 := 𝕜)).pow _).div ((AnalyticOnNhd.eval_polynomial _) 0 (Set.mem_univ _))
-    (eval_zero_reverse_ne_zero hp)
+/-- For a polynomial `p`, the function `w ↦ w ^ n / p.reverse.eval w` is analytic at `0`: for
+nonzero `p` the reversal does not vanish at `0`, where it takes the leading coefficient of `p`,
+and for `p = 0` the function is identically `0`. -/
+theorem analyticAt_pow_div_eval_reverse (p : Polynomial 𝕜) (n : ℕ) :
+    AnalyticAt 𝕜 (fun w : 𝕜 ↦ w ^ n / p.reverse.eval w) 0 := by
+  by_cases hp : p = 0
+  · subst hp
+    simpa using analyticAt_const (v := (0 : 𝕜))
+  · exact ((analyticAt_id (𝕜 := 𝕜)).pow _).div ((AnalyticOnNhd.eval_polynomial _) 0
+      (Set.mem_univ _)) (eval_zero_reverse_ne_zero hp)
 
 end Polynomial
