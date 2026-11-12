@@ -124,13 +124,9 @@ theorem residue_eq_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (
 /-- On a compact Riemann surface, a `1`-form meromorphic everywhere has nonzero residue at only
 finitely many points: a nonzero residue forces a pole. -/
 theorem finite_support_residue [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
-    (support ω.residue).Finite := by
-  refine (finite_support_untop₀_order hω).subset fun y hy ↦ ?_
-  have hneg : ω.order y < 0 := lt_of_not_ge fun h ↦ hy (residue_eq_zero_of_order_nonneg h)
-  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 (hneg.trans (WithTop.coe_lt_top 0)).ne
-  rw [← hn] at hneg
-  simp only [mem_support, ← hn, WithTop.untop₀_coe]
-  exact_mod_cast hneg.ne
+    (support ω.residue).Finite :=
+  (finite_support_untop₀_order hω).subset fun _ hy h0 ↦
+    hy (residue_eq_zero_of_order_nonneg (WithTop.untop₀_nonneg.1 h0.ge))
 
 variable {f : X → ℂ}
 

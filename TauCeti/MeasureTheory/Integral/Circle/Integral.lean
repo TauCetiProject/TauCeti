@@ -19,8 +19,8 @@ integral may be computed over any parameter interval `[a, a + 2π]`.
 
 * `ContinuousLinearMap.circleIntegral_comp_comm`: continuous linear maps commute with circle
   integrals.
-* `circleIntegral_eq_intervalIntegral_add_two_pi`: a circle integral may be computed over any
-  parameter interval of length `2π`.
+* `TauCeti.circleIntegral_eq_intervalIntegral_add_two_pi`: a circle integral may be computed over
+  any parameter interval of length `2π`.
 -/
 
 public section
@@ -35,6 +35,8 @@ theorem ContinuousLinearMap.circleIntegral_comp_comm [CompleteSpace E] [Complete
   rw [circleIntegral, circleIntegral, ← L.intervalIntegral_comp_comm hf.out]
   simp only [map_smul]
 
+namespace TauCeti
+
 open Real in
 /-- By periodicity of `circleMap`, a circle integral may be computed over any parameter interval
 `[a, a + 2π]` instead of `[0, 2π]`. -/
@@ -44,3 +46,5 @@ theorem circleIntegral_eq_intervalIntegral_add_two_pi (f : ℂ → E) (c : ℂ) 
       (fun θ ↦ deriv (circleMap c R) θ • f (circleMap c R θ)) (2 * π) := fun θ ↦ by
     simp only [deriv_circleMap, periodic_circleMap 0 R θ, periodic_circleMap c R θ]
   simpa [circleIntegral] using hper.intervalIntegral_add_eq 0 a
+
+end TauCeti

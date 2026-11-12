@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 
 /-!
 # The complex `1`-form `dz`
@@ -48,10 +49,8 @@ theorem _root_.DifferentiableAt.extDeriv_smul_dzForm {g : ℂ → ℂ} {z : ℂ}
     (hg : DifferentiableAt ℂ g z) : extDeriv (fun y ↦ g y • dzForm) z = 0 := by
   ext v
   rw [ContinuousAlternatingMap.coe_zero, Pi.zero_apply, show v = ![v 0, v 1] from
-    funext fun i ↦ by fin_cases i <;> rfl, extDeriv_smul_dzForm_apply, hg.fderiv_restrictScalars ℝ]
-  simp only [ContinuousLinearMap.coe_restrictScalars']
-  rw [← mul_one (v 0), ← smul_eq_mul (v 0) 1, map_smul, ← mul_one (v 1),
-    ← smul_eq_mul (v 1) 1, map_smul]
+    funext fun i ↦ by fin_cases i <;> rfl, extDeriv_smul_dzForm_apply,
+    hg.fderiv_restrictScalars_eq_smul_deriv ℝ, hg.fderiv_restrictScalars_eq_smul_deriv ℝ]
   simp only [smul_eq_mul]
   ring
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Complex
 public import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 public import TauCeti.Analysis.Contour.Residue.Theorem
-import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.MeasureTheory.Integral.Circle.Integral
 
 /-!
@@ -105,17 +104,14 @@ theorem extDeriv_one_sub_mul_smul_dzForm_apply (hχ : DifferentiableAt ℝ χ z)
     extDeriv (fun y ↦ (((1 - χ y : ℝ) : ℂ) * f y) • dzForm) z ![1, I] =
       -(f z * (I * fderiv ℝ χ z 1 - fderiv ℝ χ z I)) := by
   rcases hf with hf | hχz
-  · have hd : HasFDerivAt (fun y ↦ ((1 - χ y : ℝ) : ℂ) * f y)
-        (((1 - χ z : ℝ) : ℂ) • ((fderiv ℂ f z).restrictScalars ℝ) +
-          f z • (ofRealCLM.comp (-fderiv ℝ χ z))) z :=
-      (hχ.hasFDerivAt.const_sub 1).ofReal_comp.mul (hf.hasFDerivAt.restrictScalars ℝ)
-    rw [extDeriv_smul_dzForm_apply, hd.fderiv]
-    simp only [add_apply, FunLike.coe_smul, Pi.smul_apply,
-      ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.coe_comp, Function.comp_apply,
-      neg_apply, ofRealCLM_apply, smul_eq_mul, ofReal_neg]
-    have hlin : fderiv ℂ f z I = I * fderiv ℂ f z 1 := by
-      rw [← smul_eq_mul, ← (fderiv ℂ f z).map_smul, smul_eq_mul, mul_one]
-    rw [hlin]
+  · have hω : (fun y ↦ (((1 - χ y : ℝ) : ℂ) * f y) • dzForm) =
+        (fun y ↦ 1 - χ y) • fun y ↦ f y • dzForm := by
+      funext y
+      rw [Pi.smul_apply', ← real_smul, smul_assoc]
+    rw [hω, extDeriv_function_smul (hχ.const_sub 1) ((hf.restrictScalars ℝ).smul_const dzForm),
+      hf.extDeriv_smul_dzForm, smul_zero, zero_add,
+      ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair]
+    simp [fderiv_const_sub]
     ring
   · have hdχ : fderiv ℝ χ z = 0 := by
       rw [hχz.fderiv_eq]
