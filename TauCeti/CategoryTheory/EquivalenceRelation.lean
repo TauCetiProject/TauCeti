@@ -24,6 +24,12 @@ is an equivalence relation (Stacks, Definition 39.3.1 (022P), for schemes).
 * `TauCeti.CategoryTheory.isEquivalenceRelation_iff`: if the pullback of `p₂` and `p₁` exists,
   then `p₁, p₂` is an internal equivalence relation if and only if it is jointly monic and
   `Rel.ofPairHom p₁ p₂ T` is an equivalence for every `T`.
+* `CategoryTheory.IsEquivalenceRelation.refl`, `.symm`, `.trans`: chosen reflexivity, symmetry
+  and transitivity morphisms of an internal equivalence relation, with their laws.
+* `CategoryTheory.IsEquivalenceRelation.swap`: exchanging the projections of an internal
+  equivalence relation gives an internal equivalence relation.
+* `CategoryTheory.IsKernelPair.isEquivalenceRelation`: a kernel pair is an internal equivalence
+  relation.
 
 ## References
 
@@ -98,3 +104,128 @@ theorem isEquivalenceRelation_iff [HasPullback p₂ p₁] :
             t := t }⟩⟩
 
 end TauCeti.CategoryTheory
+
+namespace CategoryTheory
+
+open Limits TauCeti.CategoryTheory
+
+variable {C : Type*} [Category* C] {R X : C} {p₁ p₂ : R ⟶ X}
+
+/-- The projections of an internal equivalence relation are jointly monic. -/
+instance IsEquivalenceRelation.jointlyMono₂ [h : IsEquivalenceRelation p₁ p₂] :
+    JointlyMono₂ p₁ p₂ :=
+  h.nonempty_equivalenceRelation.some.toJointlyMono₂
+
+/-- A kernel pair `p₁, p₂` of `f` admitting a pullback of `p₂` and `p₁` is an internal equivalence
+relation. -/
+theorem IsKernelPair.isEquivalenceRelation {Y : C} {f : X ⟶ Y} (hk : IsKernelPair f p₁ p₂)
+    [HasPullback p₂ p₁] : IsEquivalenceRelation p₁ p₂ :=
+  (IsKernelPair.equivalenceRelation f p₁ p₂ (pullbackIsPullback p₂ p₁) hk).isEquivalenceRelation
+
+namespace IsEquivalenceRelation
+
+/-- A chosen internal equivalence relation structure. -/
+private noncomputable def equivalenceRelation (h : IsEquivalenceRelation p₁ p₂) :
+    EquivalenceRelation p₁ p₂ :=
+  h.nonempty_equivalenceRelation.some
+
+/-- The relation on morphisms `T ⟶ X` given by an internal equivalence relation is an equivalence
+relation. -/
+theorem equivalence_ofPairHom (h : IsEquivalenceRelation p₁ p₂) (T : C) :
+    _root_.Equivalence (Rel.ofPairHom p₁ p₂ T) :=
+  h.equivalenceRelation.equivalence_ofPairHom T
+
+/-- Exchanging the two projections of an internal equivalence relation gives an internal
+equivalence relation. -/
+theorem swap (h : IsEquivalenceRelation p₁ p₂) : IsEquivalenceRelation p₂ p₁ :=
+  let e := h.equivalenceRelation
+  ⟨⟨{ right_cancellation := fun _ f g h₂ h₁ ↦ e.right_cancellation f g h₁ h₂
+      r := e.r
+      reflexivity₁ := e.reflexivity₂
+      reflexivity₂ := e.reflexivity₁
+      s := e.s
+      symmetry₁ := e.symmetry₂
+      symmetry₂ := e.symmetry₁
+      c := e.c.flip
+      isLimit := PullbackCone.flipIsLimit e.isLimit
+      t := e.t
+      transitivity₁ := e.transitivity₂
+      transitivity₂ := e.transitivity₁ }⟩⟩
+
+/-- The chosen reflexivity morphism `X ⟶ R` of an internal equivalence relation, a section of both
+projections. -/
+noncomputable def refl (h : IsEquivalenceRelation p₁ p₂) : X ⟶ R :=
+  h.equivalenceRelation.r
+
+@[reassoc (attr := simp)]
+theorem reflexivity₁ (h : IsEquivalenceRelation p₁ p₂) : h.refl ≫ p₁ = 𝟙 X :=
+  h.equivalenceRelation.reflexivity₁
+
+@[reassoc (attr := simp)]
+theorem reflexivity₂ (h : IsEquivalenceRelation p₁ p₂) : h.refl ≫ p₂ = 𝟙 X :=
+  h.equivalenceRelation.reflexivity₂
+
+/-- The chosen symmetry morphism `R ⟶ R` of an internal equivalence relation, exchanging the
+projections. -/
+noncomputable def symm (h : IsEquivalenceRelation p₁ p₂) : R ⟶ R :=
+  h.equivalenceRelation.s
+
+@[reassoc (attr := simp)]
+theorem symmetry₁ (h : IsEquivalenceRelation p₁ p₂) : h.symm ≫ p₁ = p₂ :=
+  h.equivalenceRelation.symmetry₁
+
+@[reassoc (attr := simp)]
+theorem symmetry₂ (h : IsEquivalenceRelation p₁ p₂) : h.symm ≫ p₂ = p₁ :=
+  h.equivalenceRelation.symmetry₂
+
+/-- The chosen transitivity morphism `R ×_X R ⟶ R` of an internal equivalence relation, where the
+fibre product is formed over `p₂` on the first factor and `p₁` on the second: it relates `p₁` of
+the first point to `p₂` of the second. -/
+noncomputable def trans (h : IsEquivalenceRelation p₁ p₂) [HasPullback p₂ p₁] :
+    pullback p₂ p₁ ⟶ R :=
+  (h.equivalenceRelation.isLimit.conePointUniqueUpToIso (pullbackIsPullback p₂ p₁)).inv ≫
+    h.equivalenceRelation.t
+
+@[reassoc (attr := simp)]
+theorem transitivity₁ (h : IsEquivalenceRelation p₁ p₂) [HasPullback p₂ p₁] :
+    h.trans ≫ p₁ = pullback.fst p₂ p₁ ≫ p₁ := by
+  simp [trans, h.equivalenceRelation.transitivity₁]
+
+@[reassoc (attr := simp)]
+theorem transitivity₂ (h : IsEquivalenceRelation p₁ p₂) [HasPullback p₂ p₁] :
+    h.trans ≫ p₂ = pullback.snd p₂ p₁ ≫ p₂ := by
+  simp [trans, h.equivalenceRelation.transitivity₂]
+
+@[reassoc (attr := simp)]
+theorem symm_symm (h : IsEquivalenceRelation p₁ p₂) : h.symm ≫ h.symm = 𝟙 R :=
+  JointlyMono₂.right_cancellation (p₁ := p₁) (p₂ := p₂) _ _ (by simp) (by simp)
+
+@[reassoc (attr := simp)]
+theorem refl_symm (h : IsEquivalenceRelation p₁ p₂) : h.refl ≫ h.symm = h.refl :=
+  JointlyMono₂.right_cancellation (p₁ := p₁) (p₂ := p₂) _ _ (by simp) (by simp)
+
+theorem isIso_symm (h : IsEquivalenceRelation p₁ p₂) : IsIso h.symm :=
+  ⟨h.symm, h.symm_symm, h.symm_symm⟩
+
+/-- Composing a point with the reflexivity at its second projection is the point itself. -/
+@[reassoc (attr := simp)]
+theorem lift_id_refl_trans (h : IsEquivalenceRelation p₁ p₂) [HasPullback p₂ p₁] :
+    pullback.lift (𝟙 R) (p₂ ≫ h.refl) (by simp) ≫ h.trans = 𝟙 R :=
+  JointlyMono₂.right_cancellation (p₁ := p₁) (p₂ := p₂) _ _ (by simp) (by simp)
+
+/-- Composing the reflexivity at the first projection of a point with the point is the point
+itself. -/
+@[reassoc (attr := simp)]
+theorem lift_refl_id_trans (h : IsEquivalenceRelation p₁ p₂) [HasPullback p₂ p₁] :
+    pullback.lift (p₁ ≫ h.refl) (𝟙 R) (by simp) ≫ h.trans = 𝟙 R :=
+  JointlyMono₂.right_cancellation (p₁ := p₁) (p₂ := p₂) _ _ (by simp) (by simp)
+
+/-- Composing a point with its inverse gives the reflexivity at its first projection. -/
+@[reassoc (attr := simp)]
+theorem lift_id_symm_trans (h : IsEquivalenceRelation p₁ p₂) [HasPullback p₂ p₁] :
+    pullback.lift (𝟙 R) h.symm (by simp) ≫ h.trans = p₁ ≫ h.refl :=
+  JointlyMono₂.right_cancellation (p₁ := p₁) (p₂ := p₂) _ _ (by simp) (by simp)
+
+end IsEquivalenceRelation
+
+end CategoryTheory
