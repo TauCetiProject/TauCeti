@@ -7,16 +7,18 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Normed.Operator.Banach
+public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import Mathlib.RingTheory.Artinian.Algebra
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Bounded operators on a finite-dimensional space
 
-A bounded operator on a finite-dimensional normed space is just a linear map, so its spectrum is
-the finite set of eigenvalues. This holds over every field of scalars acting compatibly, for
-instance over `ℝ` for an operator on a complex space.
+A bounded operator on a finite-dimensional topological vector space is just a linear map, so its
+spectrum is the finite set of eigenvalues. This holds over every field of scalars acting
+compatibly, for instance over `ℝ` for an operator on a complex space.
 
 Bounded operators out of a finite-dimensional space are determined by the images of a basis,
 with operator norm controlled by the norms of those images. Hence such operators into `E` are
@@ -30,10 +32,13 @@ real-linear operators into a complex space.
 
 ## Main results
 
-* `ContinuousLinearMap.finite_spectrum`: a bounded operator on a finite-dimensional normed space
-  has finite spectrum, also over subfields of the scalars such as `ℝ ⊆ ℂ`.
+* `ContinuousLinearMap.finite_spectrum`: a bounded operator on a finite-dimensional topological
+  vector space has finite spectrum, also over subfields of the scalars such as `ℝ ⊆ ℂ`.
 * `ContinuousLinearMap.isUnit_smul_one_sub`: on a finite-dimensional space, `c • 1 - T` is
   invertible when `T` has no eigenvector of eigenvalue `c`.
+* `ContinuousLinearMap.isUnit_of_isUnit_toLinearMap`: on a finite-dimensional topological vector
+  space over a field, a continuous linear map invertible as a linear map is invertible as a
+  continuous linear map, without completeness of the scalars.
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
@@ -48,16 +53,39 @@ public section
 
 namespace ContinuousLinearMap
 
-variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+section TopologicalVectorSpace
 
-/-- A bounded operator on a finite-dimensional normed space has finite spectrum over any field
-`S` of scalars acting compatibly, for instance over `ℝ` for an operator on a complex space. -/
+variable {𝕜 V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [ContinuousConstSMul 𝕜 V] [FiniteDimensional 𝕜 V]
+
+/-- On a finite-dimensional topological vector space, a continuous linear map that is invertible
+as a linear map is invertible as a continuous linear map. The scalar field need not be complete,
+or even topologized. -/
+theorem isUnit_of_isUnit_toLinearMap {u : V →L[𝕜] V} (hu : IsUnit (u : Module.End 𝕜 V)) :
+    IsUnit u := by
+  -- The operator is integral over the scalars, hence a unit once it is not a zero divisor.
+  let φ : (V →L[𝕜] V) →ₐ[𝕜] Module.End 𝕜 V :=
+    { ContinuousLinearMap.toLinearMapRingHom with commutes' := fun _ ↦ rfl }
+  have hφ : Function.Injective φ := fun f g h ↦ ContinuousLinearMap.coe_injective h
+  exact IsArtinianRing.isUnit_of_isIntegral_of_nonZeroDivisor
+    ((isIntegral_algHom_iff φ hφ).mp (LinearMap.isIntegral (φ u)))
+    (mem_nonZeroDivisors_of_injective hφ hu.mem_nonZeroDivisors)
+
+/-- A bounded operator on a finite-dimensional topological vector space has finite spectrum over
+any field `S` of scalars acting compatibly, for instance over `ℝ` for an operator on a complex
+space. -/
 theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →L[𝕜] V)]
     [IsScalarTower S 𝕜 (V →L[𝕜] V)] (T : V →L[𝕜] V) : (spectrum S T).Finite := by
-  have := FiniteDimensional.completeSpace 𝕜 V
-  rw [← spectrum.preimage_algebraMap 𝕜, spectrum_eq]
-  exact (Module.End.finite_spectrum _).preimage (algebraMap S 𝕜).injective.injOn
+  have hsub : spectrum 𝕜 T ⊆ spectrum 𝕜 (T : Module.End 𝕜 V) := fun μ hμ ↦ by
+    rw [spectrum.mem_iff] at hμ ⊢
+    exact fun hu ↦ hμ (isUnit_of_isUnit_toLinearMap hu)
+  rw [← spectrum.preimage_algebraMap 𝕜]
+  exact ((Module.End.finite_spectrum _).subset hsub).preimage (algebraMap S 𝕜).injective.injOn
+
+end TopologicalVectorSpace
+
+variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 /-- On a finite-dimensional normed space, `c • 1 - T` is invertible as soon as `T` has no
 eigenvector of eigenvalue `c`. -/
