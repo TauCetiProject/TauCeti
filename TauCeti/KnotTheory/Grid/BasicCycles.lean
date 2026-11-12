@@ -27,9 +27,7 @@ square-zero theorem; instead it records the exact condition under which boundari
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane G.3, "The complexes and `∂² = 0`". The terminology follows Ozsváth--Stipsicz--Szabó,
-*Grid Homology for Knots and Links*, Chapter 3.
+The terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
 
 public section

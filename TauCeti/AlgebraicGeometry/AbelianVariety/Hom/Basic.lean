@@ -21,11 +21,8 @@ being only a morphism of the underlying schemes. The characteristic lemmas expos
 the unit, multiplication, and inverse, as well as the forgetful functors to schemes over `Spec K`
 and to schemes.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
-proper, geometrically connected group scheme over `k`; basic API", and prepares Layer F's unique
-"homomorphism of abelian varieties". No external mathematics is vendored; the implementation
-reuses Mathlib's `CommGrp` category and its `IsMonHom` API for group objects in a cartesian
-monoidal category.
+No external mathematics is vendored; the implementation reuses Mathlib's `CommGrp` category and
+its `IsMonHom` API for group objects in a cartesian monoidal category.
 -/
 
 public section
