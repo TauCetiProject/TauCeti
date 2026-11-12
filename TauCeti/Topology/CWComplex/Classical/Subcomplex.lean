@@ -41,6 +41,8 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.coe_inf`, `Topology.RelCWComplex.Subcomplex.coe_sup`,
   `Topology.RelCWComplex.Subcomplex.mem_inf`, `Topology.RelCWComplex.Subcomplex.mem_sup`:
   subcomplexes form a distributive lattice, whose meet and join are intersection and union.
+* `Topology.RelCWComplex.Subcomplex.coe_bot`, `Topology.RelCWComplex.Subcomplex.coe_top`: it is
+  bounded, by the base and the whole complex.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
@@ -254,6 +256,61 @@ omit [T2Space X] in
 /-- Subcomplexes form a distributive lattice under intersection and union. -/
 instance instDistribLattice : DistribLattice (Subcomplex C) :=
   SetLike.coe_injective.distribLattice _ .rfl .rfl (fun _ _ ↦ rfl) fun _ _ ↦ rfl
+
+omit [T2Space X] in
+/-- The smallest subcomplex: the base, with no cells. -/
+instance instBot : Bot (Subcomplex C) where
+  bot :=
+    { carrier := D
+      I _ := ∅
+      closed' := isClosedBase C
+      union' := by simp }
+
+/-- The largest subcomplex: the whole complex, with all cells. -/
+instance instTop : Top (Subcomplex C) where
+  top :=
+    { carrier := C
+      I _ := univ
+      closed' := RelCWComplex.isClosed
+      union' := by simpa [iUnion_coe_set] using union_iUnion_openCell_eq_complex (C := C) }
+
+omit [T2Space X] in
+@[simp, norm_cast]
+lemma coe_bot : ((⊥ : Subcomplex C) : Set X) = D :=
+  (rfl)
+
+@[simp, norm_cast]
+lemma coe_top : ((⊤ : Subcomplex C) : Set X) = C :=
+  (rfl)
+
+omit [T2Space X] in
+@[simp]
+lemma mem_bot {x : X} : x ∈ (⊥ : Subcomplex C) ↔ x ∈ D :=
+  .rfl
+
+@[simp]
+lemma mem_top {x : X} : x ∈ (⊤ : Subcomplex C) ↔ x ∈ C :=
+  .rfl
+
+omit [T2Space X] in
+@[simp]
+lemma bot_I (n : ℕ) : (⊥ : Subcomplex C).I n = ∅ :=
+  (rfl)
+
+@[simp]
+lemma top_I (n : ℕ) : (⊤ : Subcomplex C).I n = univ :=
+  (rfl)
+
+omit [T2Space X] in
+/-- The base is the smallest subcomplex. -/
+instance instOrderBot : OrderBot (Subcomplex C) where
+  bot_le E := E.base_subset
+
+/-- The whole complex is the largest subcomplex. -/
+instance instOrderTop : OrderTop (Subcomplex C) where
+  le_top E := E.subset_complex
+
+instance instBoundedOrder : BoundedOrder (Subcomplex C) where
 
 omit [T2Space X] in
 /-- One subcomplex lies in another exactly when its cells are among the cells of the other. -/

@@ -51,8 +51,9 @@ Hatcher's neighborhood `N_ε(A)` with every `ε` equal to `2⁻¹`.
   closed cell.
 * `Topology.RelCWComplex.Subcomplex.subset_radialNeighborhood`: a subcomplex lies in its radial
   neighborhood.
-* `Topology.RelCWComplex.Subcomplex.isOpen_preimage_val_radialNeighborhood`: the radial
-  neighborhood is open in the complex.
+* `Topology.RelCWComplex.Subcomplex.isOpen_preimage_val_radialNeighborhood`,
+  `Topology.RelCWComplex.Subcomplex.isOpen_radialNeighborhood`: the radial neighborhood is open
+  in the complex, and so open in the space when the complex is.
 * `Topology.RelCWComplex.Subcomplex.continuousOn_radialDeformation`,
   `Topology.RelCWComplex.Subcomplex.radialDeformation_map_of_le`,
   `Topology.RelCWComplex.Subcomplex.radialDeformation_map_of_ge`: the radial deformation is
@@ -63,6 +64,9 @@ Hatcher's neighborhood `N_ε(A)` with every `ε` equal to `2⁻¹`.
 * `Topology.RelCWComplex.Subcomplex.radialNeighborhood_inf`,
   `Topology.RelCWComplex.Subcomplex.radialNeighborhood_sup`: compatibility with intersections
   and unions.
+* `Topology.RelCWComplex.Subcomplex.radialNeighborhood_top`,
+  `Topology.RelCWComplex.Subcomplex.radialNeighborhood_eq_empty_iff`: the radial neighborhood of
+  the whole complex is the complex, and that of an empty subcomplex is empty.
 
 ## References
 
@@ -324,6 +328,28 @@ lemma radialNeighborhood_mono {A B : Subcomplex C} (h : A ≤ B) :
   rw [← sup_eq_right.2 h, radialNeighborhood_sup]
   exact subset_union_left
 
+/-- The radial neighborhood of the whole complex is the complex. -/
+@[simp]
+lemma radialNeighborhood_top : (⊤ : Subcomplex C).radialNeighborhood = C :=
+  (radialNeighborhood_subset_complex ⊤).antisymm (subset_radialNeighborhood (⊤ : Subcomplex C))
+
+/-- The radial neighborhood of a subcomplex is empty exactly when the subcomplex is. -/
+lemma radialNeighborhood_eq_empty_iff : A.radialNeighborhood = ∅ ↔ (A : Set X) = ∅ := by
+  refine ⟨fun h ↦ subset_empty_iff.1 (h ▸ subset_radialNeighborhood A), fun h ↦ ?_⟩
+  refine eq_empty_of_forall_notMem fun x hx ↦ forall_mem_complex_of_map
+    (P := fun x ↦ x ∉ A.radialNeighborhood)
+    (fun x hx ↦ (notMem_empty x (h ▸ A.base_subset hx)).elim)
+    (fun n j y hy ih ↦ ?_) x (radialNeighborhood_subset_complex A hx) hx
+  rw [map_mem_radialNeighborhood_iff A j hy.le, not_or]
+  refine ⟨fun hj ↦ notMem_empty _ (h ▸ A.closedCell_subset_of_mem hj
+    ⟨y, mem_closedBall_zero_iff.2 hy.le, rfl⟩), fun ⟨h2, hp⟩ ↦ ?_⟩
+  exact ih _ (map_inv_norm_smul_mem_skeletonLT j h2.le) hp
+
+/-- Over an empty base, the radial neighborhood of the bottom subcomplex is empty. -/
+lemma radialNeighborhood_bot_of_base_eq_empty (hD : D = ∅) :
+    (⊥ : Subcomplex C).radialNeighborhood = ∅ :=
+  radialNeighborhood_eq_empty_iff ⊥ |>.2 (coe_bot.trans hD)
+
 /-! ### Openness -/
 
 /-- Membership in the radial neighborhood is continuous along every closed cell: its preimage
@@ -367,6 +393,12 @@ theorem isOpen_preimage_val_radialNeighborhood : IsOpen ((↑) ⁻¹' A.radialNe
   rw [isOpen_iff_continuous_mem, continuous_complex_iff]
   exact ⟨continuous_mem_radialNeighborhood_map A, continuous_const.congr fun d ↦
     (eq_true (base_subset_radialNeighborhood A d.2)).symm⟩
+
+/-- **The radial neighborhood of a subcomplex of an open complex is open.** This applies to a CW
+complex structure on the whole space. -/
+theorem isOpen_radialNeighborhood (hC : IsOpen C) : IsOpen A.radialNeighborhood := by
+  rw [← inter_eq_right.2 (radialNeighborhood_subset_complex A), ← Subtype.image_preimage_coe]
+  exact hC.isOpenMap_subtype_val _ (isOpen_preimage_val_radialNeighborhood A)
 
 /-! ### The radial deformation -/
 
