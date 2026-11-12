@@ -55,8 +55,9 @@ Without injectivity, for a Hausdorff `C`, the number of sheets `k = |v⁻¹(p)|`
 and does not depend on `p`: since `v` preserves orientation everywhere, `k` is the degree of `v`,
 which is constant because `v` has no critical values
 (`TauCeti.degreeAtRegularValue_eq_of_forall_isRegularValue`). The integral formula for the degree
-(`TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul`) then says that `u` integrates
-every two-form `β` on `X_φ` as `k` copies of the embedded orbit torus, `∫_C u^* β = k ∫ τ^* β`
+(`TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue`) then
+says that `u` integrates every two-form `β` on `X_φ` as `k` copies of the embedded orbit torus,
+`∫_C u^* β = k ∫ τ^* β`
 (`TauCeti.SmoothMappingTorus.integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq`). As a
 current, an immersed curve of zero vertical area is therefore its image `(ℝ / ℤ) × γ` with
 multiplicity `k`, and its `Ω`-area is `k d`, a positive multiple of the least period
@@ -245,8 +246,8 @@ theorem integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq [CompactSpa
       fun c _ ↦ hor c
   rw [← hτv, mpullback_comp (hv.contMDiff.mdifferentiable (by simp))
     ((contMDiff_orbitTorus h).mdifferentiable (by simp)),
-    integralTopForm_mpullback_eq_degreeAtRegularValue_mul o oT (hv.contMDiff.of_le (by simp))
-      hreg p hβ, hdeg, Int.cast_natCast]
+    integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue o oT
+      (hv.contMDiff.of_le (by simp)) hreg p hβ, hdeg, Int.cast_natCast]
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [I'.Boundaryless] [CompactSpace C]
   [ConnectedSpace C]

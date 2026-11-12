@@ -36,9 +36,12 @@ unity subordinate to finitely many such neighbourhoods globalizes the formula: i
 the support of `φ` is a regular value at which the degree is `c`, then `f^*φ` is integrable and
 `∫_M f^*φ = c ∫_N φ` (`TauCeti.integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport`). When
 every value is regular and `N` is preconnected this holds for every integrable top form, with `c`
-the degree at any point (`TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul`). This is
-the integral formula for the degree [Lee, Thm. 17.35] for maps all of whose values in the support
-of `φ` are regular; no Sard theorem is used.
+the degree at any point
+(`TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue`). This
+is the integral formula for the degree [Lee, Thm. 17.35] for `C¹` maps all of whose values in the
+support of `φ` are regular; no Sard theorem is used. For smooth maps to a connected σ-compact
+manifold modelled on the same space, `TauCeti/Geometry/Manifold/Degree/Global.lean` proves the
+formula for every compactly supported smooth top form and every regular value.
 
 The two manifolds may be modelled on different spaces of the same dimension.
 
@@ -54,8 +57,8 @@ The two manifolds may be modelled on different spaces of the same dimension.
 * `TauCeti.integrableTopForm_mpullback_of_forall_mem_tsupport`,
   `TauCeti.integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport`: the integral formula for top
   forms supported in regular values of a fixed degree.
-* `TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul`: the integral formula when every
-  value is regular and `N` is preconnected.
+* `TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue`: the
+  integral formula when every value is regular and `N` is preconnected.
 
 ## References
 
@@ -385,8 +388,8 @@ theorem integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport [CompactSpace M]
 from a compact Hausdorff boundaryless manifold to a preconnected Hausdorff manifold of the same
 dimension is regular, as for a local diffeomorphism, then `∫_M f^*φ = deg_y(f) · ∫_N φ` for every
 integrable top form `φ` and every value `y`. -/
-theorem integralTopForm_mpullback_eq_degreeAtRegularValue_mul [CompactSpace M] [T2Space M]
-    [T2Space N] [PreconnectedSpace N] [BoundarylessManifold I M]
+theorem integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue
+    [CompactSpace M] [T2Space M] [T2Space N] [PreconnectedSpace N] [BoundarylessManifold I M]
     (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
     (hf : ContMDiff I J 1 f) (hreg : ∀ y, IsRegularValue I J f y) (y : N)
     {φ : RoughForm J N ℝ k} (hφ : IntegrableTopForm φ) :
