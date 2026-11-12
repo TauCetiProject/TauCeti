@@ -116,11 +116,9 @@ private theorem writtenInExtChartAt_pglMk_eventuallyEq_of_eq_zero (A : GL (Fin 2
     (hA : A 1 1 = 0) :
     writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) ((0 : 𝕜) : OnePoint 𝕜) (fun x ↦ ProjGenLinGroup.mk A • x)
       =ᶠ[𝓝 0] fun z ↦ (A 1 0 * z + A 1 1) / (A 0 0 * z + A 0 1) := by
-  have hb := GeneralLinearGroup.zero_one_ne_zero_of_one_one_eq_zero hA
-  have hq : Continuous fun z : 𝕜 ↦ A 0 0 * z + A 0 1 := by fun_prop
   have h0 : ProjGenLinGroup.mk A • ((0 : 𝕜) : OnePoint 𝕜) = ∞ := by
     simp [smul_some_eq_ite, hA]
-  filter_upwards [hq.continuousAt.eventually_ne (by simpa using hb)] with z hz
+  filter_upwards with z
   rw [writtenInExtChartAt_pgl_smul_zero_apply, h0, chartAt_infty, pglMk_smul, smul_some_eq_ite]
   split_ifs with hd
   · rw [hd, zero_div, invChart_infty]
