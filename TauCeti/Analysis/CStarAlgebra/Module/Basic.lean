@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.Module.Defs
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
 
 /-!
 # Basic norm estimates for Hilbert C⋆-modules
@@ -203,18 +204,12 @@ theorem isGreatest_norm_unop_inner (x : E) :
     IsGreatest {‖unop (inner Aᵐᵒᵖ y x)‖ | (y : E) (_ : ‖y‖ ≤ 1)} ‖x‖ := by
   simpa only [norm_unop] using isGreatest_norm_inner (A := Aᵐᵒᵖ) x
 
-/-- The square root of `⟨x, x⟩_A` may be computed in `Aᵐᵒᵖ` or in `A`. -/
-private lemma unop_sqrt_inner_self (x : E) :
-    unop (CFC.sqrt (inner Aᵐᵒᵖ x x)) = CFC.sqrt (unop (inner Aᵐᵒᵖ x x)) := by
-  refine (CFC.sqrt_unique ?_ (unop_nonneg.mpr (CFC.sqrt_nonneg (inner Aᵐᵒᵖ x x)))).symm
-  rw [← unop_mul, CFC.sqrt_mul_sqrt_self _ inner_self_nonneg]
-
 /-- The inner product of `x a` with itself is `(|x| a)⋆ (|x| a)`, where
 `|x| = CFC.sqrt ⟨x, x⟩_A`. -/
 lemma unop_inner_op_smul_op_smul (a : A) (x : E) :
     unop (inner Aᵐᵒᵖ (op a • x) (op a • x)) =
       star (CFC.sqrt (unop (inner Aᵐᵒᵖ x x)) * a) * (CFC.sqrt (unop (inner Aᵐᵒᵖ x x)) * a) := by
-  simp only [inner_smul_smul, unop_mul, unop_star, unop_op, unop_sqrt_inner_self]
+  simp only [inner_smul_smul, unop_mul, unop_star, unop_op, CFC.unop_sqrt]
 
 /-- The inner product of `x a - x` with itself is `(|x| a - |x|)⋆ (|x| a - |x|)`, where
 `|x| = CFC.sqrt ⟨x, x⟩_A`. -/
@@ -222,18 +217,18 @@ lemma unop_inner_op_smul_sub_self (a : A) (x : E) :
     unop (inner Aᵐᵒᵖ (op a • x - x) (op a • x - x)) =
       star (CFC.sqrt (unop (inner Aᵐᵒᵖ x x)) * a - CFC.sqrt (unop (inner Aᵐᵒᵖ x x))) *
         (CFC.sqrt (unop (inner Aᵐᵒᵖ x x)) * a - CFC.sqrt (unop (inner Aᵐᵒᵖ x x))) := by
-  simp only [inner_smul_sub_self, unop_mul, unop_star, unop_sub, unop_op, unop_sqrt_inner_self]
+  simp only [inner_smul_sub_self, unop_mul, unop_star, unop_sub, unop_op, CFC.unop_sqrt]
 
 /-- The norm of `x a` is the norm of `|x| a` in `A`, where `|x| = CFC.sqrt ⟨x, x⟩_A`. -/
 theorem norm_op_smul (a : A) (x : E) :
     ‖op a • x‖ = ‖CFC.sqrt (unop (inner Aᵐᵒᵖ x x)) * a‖ := by
-  rw [CStarModule.norm_smul, ← norm_unop, unop_mul, unop_op, unop_sqrt_inner_self]
+  rw [CStarModule.norm_smul, ← norm_unop, unop_mul, unop_op, CFC.unop_sqrt (A := A)]
 
 /-- The norm of `x a - x` is the norm of `|x| a - |x|` in `A`, where `|x| = CFC.sqrt ⟨x, x⟩_A`. -/
 theorem norm_op_smul_sub_self (a : A) (x : E) :
     ‖op a • x - x‖ =
       ‖CFC.sqrt (unop (inner Aᵐᵒᵖ x x)) * a - CFC.sqrt (unop (inner Aᵐᵒᵖ x x))‖ := by
-  rw [norm_smul_sub_self, ← norm_unop, unop_sub, unop_mul, unop_op, unop_sqrt_inner_self]
+  rw [norm_smul_sub_self, ← norm_unop, unop_sub, unop_mul, unop_op, CFC.unop_sqrt (A := A)]
 
 /-- The right action of a C⋆-algebra on a right Hilbert module is bounded:
 `‖x a‖ ≤ ‖x‖ ‖a‖`. -/
