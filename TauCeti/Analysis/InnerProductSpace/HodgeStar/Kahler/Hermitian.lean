@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.ComplexStructure
 
 /-!
@@ -57,6 +58,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `hermitianForm_apply_self`: `B(v, v) = F(v, J v)`.
 * `hermitianForm_kahlerForm`: the Hermitian part of `ω` is the inner product.
+* `continuous_hermitianForm_apply`: `B(v, w)` depends continuously on `(F, v, w)`.
 * `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
   for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
   `B(v, w) = η(v, J w)`.
@@ -122,6 +124,16 @@ omit [FiniteDimensional ℝ V] in
 theorem isSymm_hermitianForm (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) :
     (J.hermitianForm F).IsSymm :=
   ⟨QuadraticMap.associated_isSymm ℝ _⟩
+
+/-- The Hermitian part `B(v, w)` of `F` depends continuously on `(F, v, w)`. -/
+theorem continuous_hermitianForm_apply (J : AlmostComplexStructure V) :
+    Continuous fun p : ⋀[ℝ]^2 V × V × V ↦ J.hermitianForm p.1 p.2.1 p.2.2 := by
+  -- In finite dimension `B` is a continuous bilinear map into the continuous dual of `V`.
+  let T : ⋀[ℝ]^2 V →L[ℝ] V →L[ℝ] V →L[ℝ] ℝ :=
+    (J.hermitianForm.compr₂ (LinearMap.toContinuousLinearMap : (V →ₗ[ℝ] ℝ) ≃ₗ[ℝ] _).toLinearMap)
+      |>.toContinuousBilinearMap
+  exact (T.continuous₂.comp (continuous_fst.prodMk (continuous_fst.comp continuous_snd))).clm_apply
+    (continuous_snd.comp continuous_snd)
 
 /-- **The Hermitian part of the Kähler form is the metric**: for an orthogonal `J`,
 `ω(v, J w) = ⟪v, w⟫`. -/
