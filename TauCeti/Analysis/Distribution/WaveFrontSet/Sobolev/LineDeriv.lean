@@ -83,7 +83,6 @@ private theorem weight_mul_norm_two_mul_pi_mul_I_mul_inner_le (s : ℝ) (v η : 
   rw [hn, ← hw]
   have hinner : |⟪v, η⟫| ≤ ‖v‖ * (1 + ‖η‖ ^ 2) ^ ((1 : ℝ) / 2) :=
     (abs_real_inner_le_norm v η).trans (by gcongr)
-  have hw₀ : 0 ≤ (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) := by positivity
   calc (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (2 * π * |⟪v, η⟫|)
       ≤ (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (2 * π * (‖v‖ * (1 + ‖η‖ ^ 2) ^ ((1 : ℝ) / 2))) := by
         gcongr
