@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Indicator
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
@@ -15,16 +15,17 @@ public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 An `ε`-excision deletes from the parameter interval every time at which the curve comes within
 `ε` of one of finitely many centres. This file records that the deleted set carries no length in
-the limit: the integral of the excision's indicator over `[a, b]` tends to `b - a` as `ε → 0⁺`.
+the limit: the interval integral of the excision's indicator from `a` to `b` tends to `b - a` as
+`ε → 0⁺`, for either orientation of the interval.
 
-Two properties of the curve are used, for two different parts of the argument. **Measurability**
-makes each excised set measurable. **Nullity of the times the curve spends exactly
-at a centre** gives the almost-everywhere convergence: away from those times the curve keeps a
-positive distance from the finite centre set, so the excision condition eventually fails
-outright (`eventually_not_exists_norm_sub_le`). Injectivity on `[a, b]` is one convenient
-sufficient condition for the second — it makes those times finite — and is the general
-measure-theoretic fact `Set.InjOn.measure_setOf_mem_eq_zero`; a curve may revisit centres, so long
-as it does so on a null set of times.
+Two properties of the curve are used, for two different parts of the argument. **A.e.
+measurability** makes each excised set null-measurable, so dominated convergence applies.
+**Nullity of the times the curve spends exactly at a centre** gives the almost-everywhere
+convergence: away from those times the curve keeps a positive distance from the finite centre
+set, so the excision condition eventually fails outright (`eventually_not_exists_norm_sub_le`).
+Injectivity on the interval is one convenient sufficient condition for the second — it makes those
+times finite — and is the general measure-theoretic fact `Set.InjOn.measure_setOf_mem_eq_zero`; a
+curve may revisit centres, so long as it does so on a null set of times.
 
 ## Main results
 
@@ -35,8 +36,8 @@ as it does so on a null set of times.
   where the curve is differentiable keeps it a.e. strongly measurable.
 * `TauCeti.Contour.eventually_not_exists_norm_sub_le`: a point off the finite centre set
   survives every small enough excision.
-* `TauCeti.Contour.tendsto_intervalIntegral_excisionIndicator`: the excision indicator's integral
-  over `[a, b]` tends to `b - a` as `ε → 0⁺`.
+* `TauCeti.Contour.tendsto_intervalIntegral_excisionIndicator`: the excision indicator's interval
+  integral from `a` to `b` tends to `b - a` as `ε → 0⁺`.
 
 ## References
 
@@ -84,12 +85,14 @@ theorem measurableSet_excision [MeasurableSpace α] [SeminormedAddCommGroup E]
 /-- **Excising a curve's `ε`-neighbourhood of finitely many points keeps a.e.-strong
 measurability, if the integrand is supported where the curve is differentiable.** Off the set of
 differentiability the integrand vanishes, and on it the curve is continuous, hence measurable, so
-the excised parameter set is null-measurable for the restricted measure. -/
+the excised parameter set is null-measurable for the restricted measure. No measurable structure
+on `E` is assumed: the proof equips `E` with its Borel one. -/
 theorem aestronglyMeasurable_indicator_excision [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] [MeasurableSpace E] [BorelSpace E] {F : Type*} [TopologicalSpace F] [Zero F]
-    {γ : ℝ → E} {μ : Measure ℝ} {G : ℝ → F} (hG : AEStronglyMeasurable G μ)
-    (hG0 : ∀ t, ¬ DifferentiableAt ℝ γ t → G t = 0) (S : Finset E) (ε : ℝ) :
+    [CompleteSpace E] {F : Type*} [TopologicalSpace F] [Zero F] {γ : ℝ → E} {μ : Measure ℝ}
+    {G : ℝ → F} (hG : AEStronglyMeasurable G μ) (hG0 : ∀ t, ¬ DifferentiableAt ℝ γ t → G t = 0)
+    (S : Finset E) (ε : ℝ) :
     AEStronglyMeasurable ({t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε}ᶜ.indicator G) μ := by
+  borelize E
   have hD : MeasurableSet {t | DifferentiableAt ℝ γ t} := measurableSet_of_differentiableAt ℝ γ
   have hγD : AEMeasurable γ (μ.restrict {t | DifferentiableAt ℝ γ t}) :=
     ContinuousOn.aemeasurable (fun t ht => ht.continuousAt.continuousWithinAt) hD
@@ -114,46 +117,38 @@ theorem eventually_not_exists_norm_sub_le [NormedAddGroup E] {z : E} {S : Finset
   filter_upwards [hlt] with ε hε ⟨s, hs, hle⟩
   exact (hε s hs).not_ge hle
 
-/-- **The excised parameter set shrinks to nothing.** Deleting from `[a, b]` the times at which
-the curve comes within `ε` of one of finitely many centres costs no length as `ε → 0⁺`: what
-survives tends to the whole length `b - a`.
+/-- **The excised parameter set shrinks to nothing.** Deleting from `uIoc a b` the times at which
+the curve comes within `ε` of one of finitely many centres costs no length as `ε → 0⁺`: the
+excision indicator's interval integral tends to the full oriented length `b - a`.
 
-The curve must be measurable, and must spend only a null set of times exactly at a centre —
-`Set.InjOn.measure_setOf_mem_eq_zero` supplies the latter from injectivity. -/
+The curve must be a.e. measurable on `uIoc a b`, and must spend only a null set of times there
+exactly at a centre — `Set.InjOn.measure_setOf_mem_eq_zero` supplies the latter from
+injectivity. -/
 theorem tendsto_intervalIntegral_excisionIndicator [NormedAddCommGroup E]
-    [MeasurableSpace E] [OpensMeasurableSpace E] {γ : ℝ → E} (hγm : Measurable γ) {a b : ℝ}
-    (hab : a ≤ b) (S : Finset E) (hnull : volume {t ∈ Icc a b | γ t ∈ S} = 0) :
+    [MeasurableSpace E] [OpensMeasurableSpace E] {γ : ℝ → E} {a b : ℝ}
+    (hγ : AEMeasurable γ (volume.restrict (uIoc a b))) (S : Finset E)
+    (hnull : volume {t ∈ uIoc a b | γ t ∈ S} = 0) :
     Tendsto (fun ε => ∫ t in a..b, if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then (0 : ℝ) else 1)
       (𝓝[>] 0) (𝓝 (b - a)) := by
-  set As : ℝ → Set ℝ := fun ε => Ioc a b \ {t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε} with hAs_def
-  have hAs : ∀ ε, MeasurableSet (As ε) := fun ε =>
-    measurableSet_Ioc.diff (measurableSet_excision hγm S ε)
-  -- The integral is exactly the surviving set's length.
-  have hint : ∀ ε : ℝ, (∫ t in a..b, if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then (0 : ℝ) else 1)
-      = volume.real (As ε) := fun ε => by
-    have hcongr : EqOn (fun t => if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then (0 : ℝ) else 1)
-        ((As ε).indicator 1) (Ioc a b) := fun t ht => by
-      by_cases hb : ∃ s ∈ S, ‖γ t - s‖ ≤ ε <;>
-        simp [hAs_def, ht, hb]
-    rw [intervalIntegral.integral_of_le hab, setIntegral_congr_fun measurableSet_Ioc hcongr,
-      setIntegral_indicator (hAs ε), Set.inter_eq_self_of_subset_right Set.sdiff_subset]
-    simp [hAs_def]
-  simp only [hint]
-  -- Away from the null set of exact hits, the excision condition eventually fails outright.
-  have hlim : Tendsto (fun ε => volume (As ε)) (𝓝[>] (0 : ℝ)) (𝓝 (volume (Ioc a b))) := by
-    refine tendsto_measure_of_ae_tendsto_indicator (𝓝[>] (0 : ℝ)) measurableSet_Ioc hAs
-      measurableSet_Ioc
-      measure_Ioc_lt_top.ne (Eventually.of_forall fun ε => Set.sdiff_subset) ?_
-    refine measure_mono_null (fun t ht => ?_) hnull
-    by_contra hnot
-    refine ht ?_
-    simp only [Set.mem_ofPred_eq]
-    by_cases hmem : t ∈ Ioc a b
-    · filter_upwards [eventually_not_exists_norm_sub_le
-        fun h : γ t ∈ S => hnot ⟨⟨hmem.1.le, hmem.2⟩, h⟩] with ε hε
-      simpa [hAs_def, hmem] using hε
-    · exact Eventually.of_forall fun ε => by simp [hAs_def, hmem]
-  simpa only [Function.comp_def, ← measureReal_def, Real.volume_real_Ioc_of_le hab] using
-    (ENNReal.tendsto_toReal measure_Ioc_lt_top.ne).comp hlim
+  -- Dominated convergence, with the constant bound `1`, towards the constant integrand `1`.
+  suffices h : Tendsto (fun ε => ∫ t in a..b, if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then (0 : ℝ) else 1)
+      (𝓝[>] 0) (𝓝 (∫ _ in a..b, (1 : ℝ))) by simpa using h
+  refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ => 1) ?_ ?_
+    intervalIntegrable_const ?_
+  · -- Each integrand is the indicator of the complement of the excised set.
+    refine Eventually.of_forall fun ε => ?_
+    have hind : (fun t => if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then (0 : ℝ) else 1) =
+        {t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε}ᶜ.indicator 1 := by
+      ext t
+      by_cases ht : ∃ s ∈ S, ‖γ t - s‖ ≤ ε <;> simp [ht]
+    rw [hind]
+    exact aestronglyMeasurable_const.indicator₀ (nullMeasurableSet_excision hγ S ε).compl
+  · exact Eventually.of_forall fun ε => Eventually.of_forall fun t _ => by split_ifs <;> simp
+  · -- Off the null set of exact hits, the excision condition eventually fails outright.
+    filter_upwards [measure_eq_zero_iff_ae_notMem.mp hnull] with t ht htab
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_not_exists_norm_sub_le fun h : γ t ∈ S => ht ⟨htab, h⟩]
+      with ε hε
+    exact (ite_eq_right hε).symm
 
 end TauCeti.Contour
