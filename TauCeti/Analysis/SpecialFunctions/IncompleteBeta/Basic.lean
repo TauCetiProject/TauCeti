@@ -577,17 +577,14 @@ measurable. -/
 @[fun_prop]
 theorem measurable_inverseRegularizedIncompleteBeta (a b : ℝ) :
     Measurable (inverseRegularizedIncompleteBeta a b) := by
-  by_cases hab : 0 < a ∧ 0 < b
-  · have hp := (continuousOn_inverseRegularizedIncompleteBeta a b).measurable_piecewise
-      (g := fun _ : ℝ => 0) continuousOn_const measurableSet_Ioo
-    convert hp using 1
-    funext u
-    by_cases hu : u ∈ Ioo (0 : ℝ) 1
-    · simp [hu]
-    · simp only [Set.piecewise, hu, ↓reduceIte]
-      exact inverseRegularizedIncompleteBeta_eq_zero (fun h => hu ⟨h.2.2.1, h.2.2.2⟩)
-  · rw [inverseRegularizedIncompleteBeta_of_not_pos hab]
-    exact measurable_const
+  have hp := (continuousOn_inverseRegularizedIncompleteBeta a b).measurable_piecewise
+    (g := fun _ : ℝ => 0) continuousOn_const measurableSet_Ioo
+  convert hp using 1
+  funext u
+  by_cases hu : u ∈ Ioo (0 : ℝ) 1
+  · simp [hu]
+  · simp only [Set.piecewise, hu, ↓reduceIte]
+    exact inverseRegularizedIncompleteBeta_eq_zero (fun h => hu ⟨h.2.2.1, h.2.2.2⟩)
 
 /-- The inverse regularized incomplete beta function tends to the lower support endpoint as its
 level tends to zero from the right (outside the positive shape parameters it is identically
