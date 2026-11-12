@@ -32,8 +32,9 @@ structure, is constant for parameters at most zero and at least one, and is smoo
 whole real line. Thus its endpoint jets of every positive order vanish. Smoothness is also
 proved jointly with external parameters for families expressed in Cayley coordinates. In
 operator-norm coordinates the path is the rational expression `TauCeti.cayleyPathFormula` in
-its two endpoints, which commutes with algebra isomorphisms and is smooth jointly in the
-parameter and both endpoints wherever its denominators are invertible.
+its two endpoints, which commutes with algebra isomorphisms, and hence with conjugation by linear
+isomorphisms intertwining the endpoints, and is smooth jointly in the parameter and both endpoints
+wherever its denominators are invertible.
 Over a manifold of parameters, `SymplecticForm.Compatible.contMDiffAt_cayleyEquiv_symm` shows
 that the inverse chart preserves smoothness, and conversely
 `SymplecticForm.Tames.contMDiffAt_cayley` shows that the forward chart sends a smooth family of
@@ -95,6 +96,20 @@ theorem contDiffAt_cayleyPathFormula {R : Type*} [NormedRing R] [NormedAlgebra �
 end Formula
 
 end TauCeti
+
+/-- A continuous linear equivalence `e` which intertwines `A` with `A'` and `B` with `B'`
+intertwines their Cayley path expressions. -/
+theorem ContinuousLinearEquiv.apply_cayleyPathFormula_apply {V W : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W] (e : V ≃L[ℝ] W) (b : ℝ)
+    {A B : V →L[ℝ] V} {A' B' : W →L[ℝ] W} (hA : ∀ v, e (A v) = A' (e v))
+    (hB : ∀ v, e (B v) = B' (e v)) (v : V) :
+    e (TauCeti.cayleyPathFormula b A B v) = TauCeti.cayleyPathFormula b A' B' (e v) := by
+  have hconj {C : V →L[ℝ] V} {C' : W →L[ℝ] W} (h : ∀ v, e (C v) = C' (e v)) :
+      e.conjContinuousAlgEquiv C = C' := by
+    ext w
+    rw [conjContinuousAlgEquiv_apply_apply, h, apply_symm_apply]
+  rw [← hconj hA, ← hconj hB, ← TauCeti.map_cayleyPathFormula, conjContinuousAlgEquiv_apply_apply,
+    symm_apply_apply]
 
 namespace TauCeti.SymplecticForm
 
