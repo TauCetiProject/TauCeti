@@ -91,6 +91,20 @@ theorem smoothTensorInducedMackeyIso_mem_resolutionPiece_iff (n : ℤ)
       (smoothGradedResolutionFunctor.obj A) z)).to_iff.trans
         (Subgroup.tensorInducedMackey_mem_totalDegreePiece_iff U V r hr t B.ρ s hρ n z)
 
+/-- Inverse Mackey regrouping carries an ambient homogeneous vector to the same orbitwise
+sum of degrees. -/
+theorem smoothTensorInducedMackeyIso_inv_mem_resolutionPiece (n : ℤ)
+    (z : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V)
+    (hz : z ∈ smoothTensorInducedGradedResolutionPiece U hU s A n) :
+    (smoothTensorInducedMackeyIso U V hU r hr t s
+        (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z ∈
+      smoothTensorInducedMackeyResolutionPiece U V hU r t A n := by
+  let e := smoothTensorInducedMackeyIso U V hU r hr t s (smoothGradedResolutionFunctor.obj A)
+  have he : e.hom.hom.hom (e.inv.hom.hom z) = z :=
+    congrArg (fun f ↦ f.hom.hom z) e.inv_hom_id
+  exact (smoothTensorInducedMackeyIso_mem_resolutionPiece_iff U V hU r hr t s A n _).1
+    (he.symm ▸ hz)
+
 /- We obtain the equivariant differential by conjugating the ambient differential along the smooth
 Mackey isomorphism, then identify it with the iterated slot sum by the algebraic chain identity.
 This avoids constructing a second equivariance proof for the same slot operator. -/
@@ -145,6 +159,28 @@ theorem smoothTensorInducedMackeyResolutionDifferential_apply
         (e.hom.hom.hom z)) = dz by exact this
   rw [hk]
   exact congrArg (fun f ↦ f.hom.hom dz) e.hom_inv_id
+
+omit [Fintype (DoubleCoset.Quotient (V : Set G) (U : Set G))]
+  [∀ D, Fintype (V ⧸ (mackeySubgroup (r D) U V).subgroupOf V)] in
+/-- The orbitwise differential commutes with inverse Mackey regrouping on total modules. -/
+theorem smoothTensorInducedMackeyResolutionDifferential_apply_smoothTensorInducedMackeyIso_inv
+    (z : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.V) :
+    (smoothTensorInducedMackeyResolutionDifferential U V hU r hr t s A).hom.hom
+        ((smoothTensorInducedMackeyIso U V hU r hr t s
+          (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z) =
+      (smoothTensorInducedMackeyIso U V hU r hr t s
+        (smoothGradedResolutionFunctor.obj A)).inv.hom.hom
+        ((smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom z) := by
+  let e := smoothTensorInducedMackeyIso U V hU r hr t s (smoothGradedResolutionFunctor.obj A)
+  have he : e.hom.hom.hom (e.inv.hom.hom z) = z :=
+    congrArg (fun f ↦ f.hom.hom z) e.inv_hom_id
+  -- Unfold the conjugated differential on vectors. The smooth/discrete restriction functors
+  -- preserve the underlying maps, but their carrier dictionaries agree only at semireducible
+  -- transparency; `change` normalizes both compositions and the restricted differential so that
+  -- the inverse/hom cancellation can be rewritten without exposing those functor bodies.
+  change e.inv.hom.hom ((smoothTensorInducedGradedResolutionDifferential U hU s A).hom.hom
+    (e.hom.hom.hom (e.inv.hom.hom z))) = _
+  rw [he]
 
 omit [Fintype (G ⧸ U)] in
 /-- The orbitwise action preserves the sum of the orbitwise total degrees. -/
@@ -303,6 +339,44 @@ theorem smoothTensorInducedMackeyResolutionIso_inv_f_apply
         (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z.1 := by
   unfold smoothTensorInducedMackeyResolutionIso
   exact TopRep.gradedCochainComplexIso_inv_f_apply _ _ _ _ _
+
+variable (hA : ∀ a : A.obj.V, a + a = 0)
+
+/-- The Mackey chain comparison with the categorical restriction of the ambient complex.
+This includes the identity comparison between restricting homogeneous terms and taking the
+homogeneous terms of the restricted representation. -/
+noncomputable def smoothTensorInducedMackeyResolutionResIso :
+    let J := ((smoothTensorInducedGradedResolutionFunctor U hU s).obj A).obj.gradedCochainComplex
+      (smoothTensorInducedGradedResolutionPiece U hU s A)
+      (smoothTensorInducedGradedResolutionPiece_ρ_mem U hU s A)
+      (smoothTensorInducedGradedResolutionDifferential U hU s A).hom
+      (isHomogeneous_smoothTensorInducedGradedResolutionDifferential U hU s A)
+      (smoothTensorInducedGradedResolutionDifferential_sq U hU s A hA)
+    smoothTensorInducedMackeyResolution U V hU r hr t s A hA ≅
+      ((TopRep.resFunctor V.subtype).mapHomologicalComplex _).obj J :=
+  (smoothTensorInducedMackeyResolutionIso U V hU r hr t s A hA).trans
+    (TopRep.resGradedCochainComplexIso V.subtype).symm
+
+-- The two application lemmas are not simp lemmas: simplifying their indexed terms changes
+-- the source or target through Functor.mapHomologicalComplex_obj_X.
+/-- The restricted chain comparison applies the original Mackey regrouping in each degree. -/
+theorem smoothTensorInducedMackeyResolutionResIso_hom_f_apply (n : ℕ)
+    (z : ((smoothTensorInducedMackeyResolution U V hU r hr t s A hA).X n).V) :
+    (((smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).hom.f n).hom z).1 =
+      (smoothTensorInducedMackeyIso U V hU r hr t s
+        (smoothGradedResolutionFunctor.obj A)).hom.hom.hom z.1 := by
+  -- The restriction comparison identifies the homogeneous carriers without changing vectors.
+  exact (TopRep.resGradedCochainComplexIso_inv_f_apply V.subtype n _).trans
+    (smoothTensorInducedMackeyResolutionIso_hom_f_apply U V hU r hr t s A hA n z)
+
+/-- The inverse restricted chain comparison applies the inverse Mackey regrouping. -/
+theorem smoothTensorInducedMackeyResolutionResIso_inv_f_apply (n : ℕ) (z) :
+    (((smoothTensorInducedMackeyResolutionResIso U V hU r hr t s A hA).inv.f n).hom z).1 =
+      (smoothTensorInducedMackeyIso U V hU r hr t s
+        (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z.1 := by
+  -- Apply the inverse Mackey map after the vector-preserving restriction comparison.
+  exact (smoothTensorInducedMackeyResolutionIso_inv_f_apply U V hU r hr t s A hA n _).trans
+    (congrArg _ (TopRep.resGradedCochainComplexIso_hom_f_apply V.subtype n z))
 
 omit [Fintype (DoubleCoset.Quotient (V : Set G) (U : Set G))]
   [∀ D, Fintype (V ⧸ (mackeySubgroup (r D) U V).subgroupOf V)] [Fintype (G ⧸ U)] in
