@@ -129,6 +129,15 @@ noncomputable def detLineCoprodEquiv (h : Function.Surjective (D₁.coprod D₂)
     (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
     ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h)
 
+/-- `ContinuousLinearMap.detLineCoprodEquiv` is the four-term isomorphism
+`TauCeti.detLineFourTermEquiv` of the exact sequence
+`0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁ → 0`. -/
+theorem detLineCoprodEquiv_def (h : Function.Surjective (D₁.coprod D₂)) :
+    detLineCoprodEquiv D₁ D₂ h = TauCeti.detLineFourTermEquiv (kerCoprodHom_injective D₁ D₂)
+      (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
+      ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h) :=
+  (rfl)
+
 /-- **The value of `ContinuousLinearMap.detLineCoprodEquiv` on exterior products.** Let `u` be a
 family of `dim (ker D₁)` vectors of `ker D₁`, let `v` be a family of `dim (range p)` vectors of
 the kernel of `D₁.coprod D₂`, where `p` is the parameter projection
