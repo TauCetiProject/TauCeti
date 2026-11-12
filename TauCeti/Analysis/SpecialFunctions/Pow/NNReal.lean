@@ -73,6 +73,8 @@ For a base in `ℝ≥0` greater than one, power comparisons also express rationa
 closed intervals for a reciprocal radius parameter `α / r`.
 
 On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every positive exponent `a`.
+Likewise `K * ofReal (f x) ^ e` tends to `0` along any filter on which `f` tends to `0`, for finite
+`K` and `e > 0`; this is how terms to be absorbed are made small by the choice of parameters.
 
 ## Main declarations
 
@@ -95,6 +97,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
   `x + η ≤ r` and `y ^ d ≤ x ^ d + ε` for `y ∈ [x, x + η]`.
 * `ENNReal.tendsto_rpow_one_div_atTop`: `c ^ (1 / p) → 1` as `p → ∞` for `c ∉ {0, ∞}`.
+* `ENNReal.tendsto_const_mul_ofReal_rpow_nhds_zero`: `K * ofReal (f x) ^ e → 0` when `f → 0`, for
+  finite `K` and `0 < e`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
@@ -250,6 +254,16 @@ theorem tendsto_rpow_one_div_atTop {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ 
   have hexp : Filter.Tendsto (fun p : ℝ ↦ 1 / p) Filter.atTop (𝓝 0) :=
     tendsto_const_nhds.div_atTop Filter.tendsto_id
   simpa [coe_rpow_of_ne_zero hc0] using tendsto_coe.2 (tendsto_const_nhds.nnrpow hexp (.inl hc0))
+
+/-- If `f → 0` along `l`, then `K * ofReal (f x) ^ e → 0` for finite `K` and a positive
+exponent `e`. -/
+theorem tendsto_const_mul_ofReal_rpow_nhds_zero {α : Type*} {l : Filter α} {f : α → ℝ}
+    (hf : Filter.Tendsto f l (𝓝 0)) {K : ℝ≥0∞} (hK : K ≠ ∞) {e : ℝ} (he : 0 < e) :
+    Filter.Tendsto (fun x => K * ENNReal.ofReal (f x) ^ e) l (𝓝 0) := by
+  have h := ENNReal.Tendsto.const_mul
+    (((ENNReal.continuous_rpow_const (y := e)).tendsto _).comp (ENNReal.tendsto_ofReal hf))
+    (Or.inr hK)
+  rwa [ENNReal.ofReal_zero, ENNReal.zero_rpow_of_pos he, mul_zero] at h
 
 /-- The inverse square root of a real `x` is at most `‖x‖ₑ ^ (-1/2)`, as a value in `ℝ≥0∞`. The two
 agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/

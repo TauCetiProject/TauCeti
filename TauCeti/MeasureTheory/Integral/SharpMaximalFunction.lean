@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # The sharp maximal function and the Fefferman–Stein inequality
@@ -506,15 +507,10 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι �
   have hstep : I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) :=
     setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add hγ hN hσ.measurable hlevel hJ hconst
   -- Since `I N` is finite, the first term is absorbed.
-  have hhalf : 2⁻¹ * I N ≠ ∞ :=
-    ENNReal.mul_ne_top (by simp) (setLIntegral_volume_czUnion_mul_rpow_ne_top hf hp hN)
-  have h : 2⁻¹ * I N + 2⁻¹ * I N ≤
-      2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
-    rw [← add_mul, ENNReal.inv_two_add_inv_two, one_mul]
-    exact hstep
-  calc I N = 2 * (2⁻¹ * I N) := by
-        rw [← mul_assoc, ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
-    _ ≤ _ := mul_le_mul' le_rfl (ENNReal.le_of_add_le_add_left hhalf h)
+  rw [mul_comm]
+  refine ENNReal.le_mul_two_of_le_add_div_two
+    (setLIntegral_volume_czUnion_mul_rpow_ne_top hf hp hN) ?_
+  rwa [add_comm, ENNReal.div_eq_inv_mul]
 
 /-- **The Fefferman–Stein inequality**, as an inequality between the integrals `∫⁻ ‖·‖ₑ ^ p`.
 For `1 < p < ∞` and integrable `f` on `ℝⁿ = ι → ℝ`, `n ≥ 1`,
