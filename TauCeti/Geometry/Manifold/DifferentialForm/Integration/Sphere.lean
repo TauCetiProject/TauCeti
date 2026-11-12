@@ -735,6 +735,7 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [Compac
 /-- **Base-point change.** The integral of a closed `C¹` two-form over a class of `π₂(M, x)` is
 unchanged by transporting the class along a path from `x` to `y`. In particular the integral is
 invariant under the action of the fundamental group on `π₂(M, x)`. -/
+@[simp]
 theorem sphereIntegral_homotopyGroupTransport (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
     {y : M} (γ : Path x y) (a : π_ 2 M x) :
     sphereIntegral φ y (homotopyGroupTransport γ a) = sphereIntegral φ x a := by
@@ -766,6 +767,7 @@ theorem sphereIntegral_homotopyGroupTransport (hφ : IsSmoothForm I 1 φ) (hdφ 
 
 /-- The integral of a closed `C¹` two-form over a class of `π₂(M, x)` is invariant under the action
 of the fundamental group at `x`. -/
+@[simp]
 theorem sphereIntegral_fundamentalGroup_smul (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
     (g : FundamentalGroup M x) (a : π_ 2 M x) :
     sphereIntegral φ x (g • a) = sphereIntegral φ x a := by
