@@ -32,11 +32,11 @@ namespace FreeGroupBasis
 variable {ι H : Type*} [Group H]
 
 /-- A free basis generates the group. -/
+@[simp]
 theorem closure_range_eq_top (b : FreeGroupBasis ι H) : Subgroup.closure (Set.range b) = ⊤ := by
-  -- The basis is the image of the generators of `FreeGroup ι` under `b.repr.symm`.
-  change Subgroup.closure (Set.range (b.repr.symm.toMonoidHom ∘ FreeGroup.of)) = ⊤
-  rw [Set.range_comp, ← MonoidHom.map_closure, FreeGroup.closure_range_of,
-    ← MonoidHom.range_eq_map, MonoidHom.range_eq_top]
+  have : FreeGroup.lift b = b.repr.symm.toMonoidHom :=
+    FreeGroup.ext_hom _ _ fun i => b.repr.injective (by simp)
+  rw [← FreeGroup.lift_surjective_iff_closure_range_eq_top, this]
   exact b.repr.symm.surjective
 
 /-- If `f : FreeGroup α →* H` is surjective, a function on the basis `ι`, extended to a

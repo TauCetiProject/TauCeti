@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Algebra.Group.QuantifierFree
+public import TauCeti.ModelTheory.Algebra.Group.SystemFormula
 
 /-!
 # Existential and universal group formulas as solution statements
@@ -238,24 +239,16 @@ open FirstOrder FirstOrder.Language
 
 variable {A : Type*} {n : ℕ}
 
-/-- The equation `w = 1` for a word `w` in the bound variables `Fin n` and the coefficient names
-`A`, as an atomic formula of the group language with coefficient names `A`. -/
-private noncomputable def wordEqOne (w : FreeGroup (Fin n ⊕ A)) :
-    Language.group[[A]].BoundedFormula Empty n :=
-  Term.bdEqual ((group.Term.ofWord w).relabel Sum.inr) 1
-
 /-- The universal sentence of the group language with coefficient names `A` saying that the
-system `S` of equations and inequations in the variables `Fin n` has no solution. -/
+system `S` of equations and inequations in the variables `Fin n` has no solution: the negation
+of the formula of `S`, with its variables universally quantified. -/
 noncomputable def noSolutionSentence (S : EqIneqSystem (Fin n) A) : Language.group[[A]].Sentence :=
-  (BoundedFormula.iInf (fun i : Fin S.eqs.length => wordEqOne S.eqs[i]) ⊓
-    BoundedFormula.iInf (fun i : Fin S.ineqs.length => (wordEqOne S.ineqs[i]).not)).not.alls
+  (BoundedFormula.relabel Sum.inr S.toFormula).not.alls
 
 /-- The sentence `S.noSolutionSentence` is universal. -/
 theorem isUniversal_noSolutionSentence (S : EqIneqSystem (Fin n) A) :
     S.noSolutionSentence.IsUniversal :=
-  ((BoundedFormula.IsQF.iInf fun _ => (BoundedFormula.IsAtomic.equal _ _).isQF).inf
-    (BoundedFormula.IsQF.iInf fun _ => (BoundedFormula.IsAtomic.equal _ _).isQF.not)).not
-    |>.isUniversal.alls
+  (S.isQF_toFormula.relabel Sum.inr).not.isUniversal.alls
 
 /-- A group, with the coefficient names `A` read through `c`, satisfies `S.noSolutionSentence`
 exactly when the system `S` has no solution in it. -/
@@ -266,12 +259,8 @@ theorem realize_noSolutionSentence {G : Type*} [Group G] (S : EqIneqSystem (Fin 
     G ⊨ S.noSolutionSentence ↔ ¬∃ v : Fin n → G, S.IsSolution v c := by
   let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
   let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-  -- Unfold the relabelling of each word before evaluating it as a free-group word.
-  simp only [noSolutionSentence, wordEqOne, Sentence.Realize, BoundedFormula.realize_alls,
-    BoundedFormula.realize_not, BoundedFormula.realize_inf, BoundedFormula.realize_iInf,
-    BoundedFormula.realize_bdEqual, Term.realize_relabel, Sum.elim_comp_inr]
-  simp [group.Term.realize_eq_lift c, isSolution_iff, eval_eq_lift, Fin.forall_iff,
-    List.forall_mem_iff_getElem]
+  simp [noSolutionSentence, Sentence.Realize, Formula.realize_relabel_sumInr,
+    -BoundedFormula.realize_relabel]
 
 /-- If every universal sentence of the group language with coefficient names `A` that holds in `H`
 also holds in `K`, then every system of equations and inequations with a solution in `K` has a
