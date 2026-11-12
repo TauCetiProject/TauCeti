@@ -65,7 +65,7 @@ on matrices entrywise.
   increase a height function (`TauCeti.TypeDStructure.isBounded_of_lt`). A finite set of
   generators does not suffice: a generator whose only coefficient is a nonzero coefficient of
   itself gives nonzero iterates of every length over a field
-  (`TauCeti.TypeDStructure.not_isBounded_of_forall_ne_of_coeff_ne_zero`). The tensor power over
+  (`TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`). The tensor power over
   the ring of idempotents is a quotient of the one over `R`, so this boundedness implies the
   vanishing of the iterates over the idempotents. The iterates enter the box tensor product with
   type `A` modules in `TauCeti.LowDimTopology.Bordered.TypeA`.
@@ -105,8 +105,8 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.iteratedCoeff_eq_zero_of_lt` and
   `TauCeti.TypeDStructure.isBounded_of_lt`: a type `D` structure whose coefficients increase a
   height function is bounded.
-* `TauCeti.TypeDStructure.not_isBounded_of_forall_ne` and
-  `TauCeti.TypeDStructure.not_isBounded_of_forall_ne_of_coeff_ne_zero`: a generator whose only
+* `TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero` and
+  `TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`: a generator whose only
   coefficient is a coefficient of itself, with nonzero tensor powers, makes a type `D` structure
   unbounded.
 
@@ -644,7 +644,7 @@ theorem isBounded_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x
 /-- If the only coefficient out of the generator `x` is the coefficient `coeff x x` of `x` itself,
 the only path from `x` stays at `x`, and `δᵏ x` has the `k`-th tensor power of `coeff x x` as its
 coefficient of `x`. -/
-theorem iteratedCoeff_self_of_forall_ne {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (k : ℕ) :
+theorem iteratedCoeff_self_of_coeff_eq_zero {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (k : ℕ) :
     N.iteratedCoeff k x x = PiTensorProduct.tprod R fun _ => N.coeff x x := by
   rw [iteratedCoeff_def, Finset.sum_eq_single_of_mem (fun _ => x) (by simp)]
   intro r hr' hr
@@ -663,16 +663,18 @@ theorem iteratedCoeff_self_of_forall_ne {x : X} (hx : ∀ y, y ≠ x → N.coeff
 the generator `x` is its own coefficient `coeff x x`, and every tensor power of `coeff x x` is
 nonzero, then the iterates `δᵏ x` never vanish. A finite set of generators therefore does not make
 a type `D` structure bounded. -/
-theorem not_isBounded_of_forall_ne {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0)
+theorem not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero {x : X}
+    (hx : ∀ y, y ≠ x → N.coeff x y = 0)
     (hxx : ∀ k, (PiTensorProduct.tprod R fun _ : Fin k => N.coeff x x) ≠ 0) : ¬N.IsBounded :=
-  fun ⟨K, hK⟩ => hxx K (N.iteratedCoeff_self_of_forall_ne hx K ▸ hK K le_rfl x x)
+  fun ⟨K, hK⟩ => hxx K (N.iteratedCoeff_self_of_coeff_eq_zero hx K ▸ hK K le_rfl x x)
 
 /-- Over an integral domain, with `A` projective over `R` (for instance over a field), a generator
 `x` whose only coefficient is a nonzero coefficient `coeff x x` of `x` itself makes a type `D`
 structure unbounded: `δᵏ x = (coeff x x)^{⊗ k} ⊗ x ≠ 0` for every `k`. -/
-theorem not_isBounded_of_forall_ne_of_coeff_ne_zero [IsDomain R] [Module.Projective R A] {x : X}
-    (hx : ∀ y, y ≠ x → N.coeff x y = 0) (hxx : N.coeff x x ≠ 0) : ¬N.IsBounded :=
-  N.not_isBounded_of_forall_ne hx fun _ => PiTensorProduct.tprod_ne_zero fun _ => hxx
+theorem not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero [IsDomain R] [Module.Projective R A]
+    {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (hxx : N.coeff x x ≠ 0) : ¬N.IsBounded :=
+  N.not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero hx fun _ =>
+    PiTensorProduct.tprod_ne_zero fun _ => hxx
 
 end Iterates
 

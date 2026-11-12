@@ -117,13 +117,12 @@ example :
           StrandsAlgebra (ZMod 2) (Fin 4)) = 0 := by
   intro M
   -- A Reeb chord, with no horizontal strands added, indexes a generator.
-  have hgen (i j : Fin 4) (h : i < j) : IsMatchedGenerator M (single i j h.le) ∅ :=
-    ⟨fun k hk ↦ h.ne ((mem_single.1 hk).1.symm.trans (mem_single.1 hk).2), by simp, by simp,
-      Finset.disjoint_empty_right _, Finset.disjoint_empty_right _⟩
+  have h₀₁ := isMatchedGenerator_single_empty M (by decide : (0 : Fin 4) < 1)
+  have h₁₂ := isMatchedGenerator_single_empty M (by decide : (1 : Fin 4) < 2)
   refine ⟨?_, ?_⟩
-  · rw [horizontalCompletion_mul_horizontalCompletion (hgen 0 1 (by decide)) (hgen 1 2 (by decide))]
+  · rw [horizontalCompletion_mul_horizontalCompletion h₀₁ h₁₂]
     simp
-  · rw [horizontalCompletion_mul_horizontalCompletion (hgen 1 2 (by decide)) (hgen 0 1 (by decide))]
+  · rw [horizontalCompletion_mul_horizontalCompletion h₁₂ h₀₁]
     refine ite_eq_right_iff.2 fun hc ↦ absurd hc.2.target_eq ?_
     simp
 
