@@ -19,11 +19,11 @@ morphism spaces. In `TauCeti.CategoryTheory.Monoidal.Center.Induction.Basic`, th
 `Center.induction k C : C ⥤ Center C` sends `X : C` to `inductionObj X = ⨁ S, S.repr ⊗ X ⊗ S.reprᘁ`
 with half-braiding `inductionHalfBraiding k X` assembled from dual bases of `S.repr ⟶ U ⊗ T.repr`.
 In `TauCeti.CategoryTheory.Monoidal.Center.Induction.End`, `inductionObj X` is equipped with its
-universal dinatural end projections `inductionCodinat X Y : inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ`.
+universal dinatural end projections `inductionEndπ X Y : inductionObj X ⟶ Y ⊗ X ⊗ Yᘁ`.
 
 This file connects the dual-basis half-braiding to the universal end structure: composing
-`inductionβHom k X U` with `U ◁ inductionCodinat X Y` transposes `inductionCodinat X (U ⊗ Y)` along
-the Frobenius reciprocity `tensorRightHomEquiv` (`inductionβHom_comp_whiskerLeft_inductionCodinat`).
+`inductionβHom k X U` with `U ◁ inductionEndπ X Y` transposes `inductionEndπ X (U ⊗ Y)` along
+the Frobenius reciprocity `tensorRightHomEquiv` (`inductionβHom_comp_whiskerLeft_inductionEndπ`).
 From this characterization we equip `Center.induction k C` with its `Functor.Additive` and
 `Functor.Linear k` instances and construct the right adjunction
 `forgetInductionAdjunction k C : Center.forget C ⊣ Center.induction k C` (hence
@@ -32,14 +32,14 @@ pivotal structure.
 
 ## Main declarations
 
-* `CategoryTheory.Center.inductionβHom_comp_whiskerLeft_inductionCodinat`: characterizes the
-  half-braiding `inductionβHom k X U` against the dinatural end projections `inductionCodinat X Y`;
+* `CategoryTheory.Center.inductionβHom_comp_whiskerLeft_inductionEndπ`: characterizes the
+  half-braiding `inductionβHom k X U` against the dinatural end projections `inductionEndπ X Y`;
 * `CategoryTheory.Center.instAdditiveInduction` and `CategoryTheory.Center.instLinearInduction`:
   `Center.induction k C` is additive and `k`-linear;
 * `CategoryTheory.Center.forgetInductionAdjunction` and
   `CategoryTheory.Center.instIsRightAdjointInduction`: the right adjunction
   `Center.forget C ⊣ Center.induction k C`, with unit and counit characterized by
-  `CategoryTheory.Center.forgetInductionAdjunction_unit_app_f_comp_codinat`,
+  `CategoryTheory.Center.forgetInductionAdjunction_unit_app_f_comp_endπ`,
   `CategoryTheory.Center.forgetInductionAdjunction_unit_app_f_comp_π`, and
   `CategoryTheory.Center.forgetInductionAdjunction_counit_app`.
 
@@ -152,9 +152,9 @@ private def unitF {A : C} (b : HalfBraiding A) : A ⟶ inductionObj A :=
 
 omit [Linear k C] [MonoidalLinear k C] in
 @[reassoc]
-private theorem unitF_comp_codinat {A : C} (b : HalfBraiding A) (Y : C) :
-    unitF b ≫ inductionCodinat A Y = unitWedge b Y :=
-  inductionLift_comp_codinat (unitWedge b) (unitWedge_dinatural b) Y
+private theorem unitF_comp_endπ {A : C} (b : HalfBraiding A) (Y : C) :
+    unitF b ≫ inductionEndπ A Y = unitWedge b Y :=
+  inductionLift_comp_endπ (unitWedge b) (unitWedge_dinatural b) Y
 
 omit [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] [IsFiniteSemisimpleCategory C] in
 private theorem unitF_naturality {A A' : C} {b : HalfBraiding A} {b' : HalfBraiding A'}
@@ -169,7 +169,7 @@ private theorem unitF_naturality {A A' : C} {b : HalfBraiding A} {b' : HalfBraid
 
 /-- Component `inductionObj X ⟶ X` of `(forgetInductionAdjunction k C).counit.app X`. -/
 private def counitF (X : C) : inductionObj X ⟶ X :=
-  inductionCodinat X (𝟙_ C) ≫
+  inductionEndπ X (𝟙_ C) ≫
     (λ_ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)).hom ≫
     X ◁ (rightDualUnitIso C).hom ≫
     (ρ_ X).hom
@@ -178,7 +178,7 @@ omit [Linear k C] [MonoidalPreadditive C] [MonoidalLinear k C] in
 private theorem counitF_naturality {X X' : C} (f : X ⟶ X') :
     inductionMap f ≫ counitF X' = counitF X ≫ f := by
   dsimp only [counitF]
-  rw [inductionMap_comp_inductionCodinat_assoc, Category.assoc, Category.assoc,
+  rw [inductionMap_comp_inductionEndπ_assoc, Category.assoc, Category.assoc,
     leftUnitor_naturality_assoc, ← whisker_exchange_assoc, rightUnitor_naturality]
   simp only [Category.assoc]
 
@@ -186,7 +186,7 @@ omit [Linear k C] [MonoidalLinear k C] in
 private theorem unitF_comp_counitF {A : C} (b : HalfBraiding A) :
     unitF b ≫ counitF A = 𝟙 A := by
   dsimp only [counitF]
-  rw [unitF_comp_codinat_assoc]
+  rw [unitF_comp_endπ_assoc]
   dsimp only [unitWedge, tensorRightHomEquiv, Equiv.coe_fn_mk]
   let η₁ := @ExactPairing.coevaluation C _ _ (𝟙_ C) _ (RightRigidCategory.rightDual (𝟙_ C)).exact
   rw [HalfBraiding.β_tensorUnit_hom]
@@ -202,7 +202,7 @@ variable [∀ S : SimpleClasses C, FiniteDimensional k (S.repr ⟶ S.repr)]
 /-- The `Y`-component wedge of `inductionβHom k X U`. -/
 private def βHomWedge (X U Y : C) : inductionObj X ⊗ U ⟶ U ⊗ Y ⊗ X ⊗ Yᘁ :=
   (tensorRightHomEquiv (inductionObj X) U Uᘁ (U ⊗ Y ⊗ X ⊗ Yᘁ)).symm
-    (inductionCodinat X (U ⊗ Y) ≫
+    (inductionEndπ X (U ⊗ Y) ≫
       (U ⊗ Y) ◁ X ◁ (rightDualTensorIso U Y).hom ≫
       reassocRight U Y X Yᘁ)
 
@@ -221,7 +221,7 @@ private theorem βHomWedge_dinatural (X U : C) {Y Y' : C} (g : Y ⟶ Y') :
   have hdual : (U ◁ g)ᘁ ≫ (rightDualTensorIso U Y).hom =
       (rightDualTensorIso U Y').hom ≫ gᘁ ▷ Uᘁ := by
     simpa using rightDualTensorIso_hom_naturality (𝟙 U) g
-  rw [h1, h2, whisker_exchange_assoc, inductionCodinat_dinatural_assoc k X (U ◁ g),
+  rw [h1, h2, whisker_exchange_assoc, inductionEndπ_dinatural_assoc k X (U ◁ g),
     ← whiskerLeft_comp_assoc, ← whiskerLeft_comp_assoc, ← whiskerLeft_comp, ← whiskerLeft_comp,
     hdual]
 
@@ -243,24 +243,24 @@ private theorem inductionβHom_eq_inductionMapLift (X U : C) :
         (inductionTerm k X (b.homDual i) (b i)) := by
     rw [inductionβComponent_eq k X U S T b, ← tensorRightHomLinearEquiv_apply k]
     simp only [map_sum, tensorRightHomLinearEquiv_apply]
-  rw [hsum, ι_comp_inductionCodinat_assoc k X (U ⊗ T.repr) S b]
+  rw [hsum, ι_comp_inductionEndπ_assoc k X (U ⊗ T.repr) S b]
   simp only [tensorRightHomEquiv_inductionTerm, Preadditive.sum_comp, Category.assoc,
     whiskerLeft_comp]
 
 /-- Characterizing equation for `inductionβHom k X U` against the dinatural end projections
-`inductionCodinat X Y`: moving `U` past `inductionObj X` and projecting at `Y` transposes the
+`inductionEndπ X Y`: moving `U` past `inductionObj X` and projecting at `Y` transposes the
 `(U ⊗ Y)`-projection along `tensorRightHomEquiv`. -/
 @[reassoc]
-theorem inductionβHom_comp_whiskerLeft_inductionCodinat (X U Y : C) :
-    inductionβHom k X U ≫ U ◁ inductionCodinat X Y =
+theorem inductionβHom_comp_whiskerLeft_inductionEndπ (X U Y : C) :
+    inductionβHom k X U ≫ U ◁ inductionEndπ X Y =
       (tensorRightHomEquiv (inductionObj X) U Uᘁ (U ⊗ Y ⊗ X ⊗ Yᘁ)).symm
-        (inductionCodinat X (U ⊗ Y) ≫
+        (inductionEndπ X (U ⊗ Y) ≫
           (U ⊗ Y) ◁ X ◁ (rightDualTensorIso U Y).hom ≫
           (U ⊗ Y) ◁ (α_ X Yᘁ Uᘁ).inv ≫
           (α_ (U ⊗ Y) (X ⊗ Yᘁ) Uᘁ).inv ≫
           (α_ U Y (X ⊗ Yᘁ)).hom ▷ Uᘁ) := by
   rw [inductionβHom_eq_inductionMapLift k X U]
-  exact inductionMapLift_comp_map_codinat (F := tensorLeft U) (βHomWedge X U)
+  exact inductionMapLift_comp_map_endπ (F := tensorLeft U) (βHomWedge X U)
     (βHomWedge_dinatural k X U) Y
 
 private theorem unitF_comm {A : C} (b : HalfBraiding A) (U : C) :
@@ -268,10 +268,10 @@ private theorem unitF_comm {A : C} (b : HalfBraiding A) (U : C) :
   refine inductionObj_map_hom_ext (F := tensorLeft U) fun S ↦ ?_
   rw [curriedTensor_obj_map]
   simp only [Category.assoc]
-  rw [← inductionCodinat_repr k A S, inductionβHom_comp_whiskerLeft_inductionCodinat k,
-    ← whiskerLeft_comp, unitF_comp_codinat]
+  rw [← inductionEndπ_repr k A S, inductionβHom_comp_whiskerLeft_inductionEndπ k,
+    ← whiskerLeft_comp, unitF_comp_endπ]
   apply (tensorRightHomEquiv A U Uᘁ (U ⊗ S.repr ⊗ A ⊗ S.reprᘁ)).injective
-  rw [tensorRightHomEquiv_whiskerRight_comp, Equiv.apply_symm_apply, unitF_comp_codinat_assoc]
+  rw [tensorRightHomEquiv_whiskerRight_comp, Equiv.apply_symm_apply, unitF_comp_endπ_assoc]
   dsimp only [unitWedge, tensorRightHomEquiv, Equiv.coe_fn_mk]
   have hcoev : η_ (U ⊗ S.repr) (U ⊗ S.repr)ᘁ ≫
       (U ⊗ S.repr) ◁ (rightDualTensorIso U S.repr).hom =
@@ -320,13 +320,13 @@ private theorem induction_unitF_comp_map_counitF (X : C) :
     unitF (inductionHalfBraiding k X) ≫ inductionMap (counitF X) = 𝟙 (inductionObj X) := by
   refine inductionObj_map_hom_ext (F := 𝟭 C) fun S ↦ ?_
   simp only [Functor.id_map, Category.id_comp, Category.assoc, biproduct.map_π]
-  rw [← inductionCodinat_repr k X S, unitF, inductionLift_comp_π_assoc]
+  rw [← inductionEndπ_repr k X S, unitF, inductionLift_comp_π_assoc]
   dsimp only [unitWedge]
   rw [inductionHalfBraiding_β_hom, Category.assoc, ← associator_naturality_middle,
     ← Category.assoc, ← tensorRightHomEquiv_naturality]
   dsimp only [counitF]
   rw [whiskerLeft_comp, ← Category.assoc,
-    inductionβHom_comp_whiskerLeft_inductionCodinat k X S.repr (𝟙_ C),
+    inductionβHom_comp_whiskerLeft_inductionEndπ k X S.repr (𝟙_ C),
     tensorRightHomEquiv_naturality, Equiv.apply_symm_apply]
   have hunit : (λ_ S.reprᘁ).inv =
       ((ρ_ S.repr).hom)ᘁ ≫
@@ -358,7 +358,7 @@ private theorem induction_unitF_comp_map_counitF (X : C) :
   simp only [Category.assoc]
   rw [hcoh, ← whiskerLeft_comp_assoc, ← whiskerLeft_comp, hdual,
     whisker_exchange_assoc (ρ_ S.repr).hom,
-    inductionCodinat_dinatural_assoc k X (ρ_ S.repr).hom,
+    inductionEndπ_dinatural_assoc k X (ρ_ S.repr).hom,
     ← whiskerLeft_comp_assoc, ← whiskerLeft_comp, ← whiskerLeft_comp, hcancel,
     ← whiskerLeft_comp, Iso.inv_hom_id, whiskerLeft_id, whiskerLeft_id, Category.comp_id]
 
@@ -420,15 +420,15 @@ instance instIsRightAdjointInduction : (induction k C).IsRightAdjoint :=
   (forgetInductionAdjunction k C).isRightAdjoint
 
 /-- Component of the unit of `forgetInductionAdjunction` along the end projection
-`inductionCodinat Z.1 Y`. -/
+`inductionEndπ Z.1 Y`. -/
 @[reassoc]
-theorem forgetInductionAdjunction_unit_app_f_comp_codinat (Z : Center C) (Y : C) :
-    ((forgetInductionAdjunction k C).unit.app Z).f ≫ inductionCodinat Z.1 Y =
+theorem forgetInductionAdjunction_unit_app_f_comp_endπ (Z : Center C) (Y : C) :
+    ((forgetInductionAdjunction k C).unit.app Z).f ≫ inductionEndπ Z.1 Y =
       (ρ_ Z.1).inv ≫ Z.1 ◁ η_ Y Yᘁ ≫ (α_ Z.1 Y Yᘁ).inv ≫ (Z.2.β Y).hom ▷ Yᘁ ≫
         (α_ Y Z.1 Yᘁ).hom := by
   -- Unfold the unit component of `forgetInductionAdjunction` to `unitF Z.2`.
-  change unitF Z.2 ≫ inductionCodinat Z.1 Y = _
-  simpa [unitWedge, tensorRightHomEquiv] using unitF_comp_codinat Z.2 Y
+  change unitF Z.2 ≫ inductionEndπ Z.1 Y = _
+  simpa [unitWedge, tensorRightHomEquiv] using unitF_comp_endπ Z.2 Y
 
 /-- Component of the unit of `forgetInductionAdjunction` on the `S`-summand of
 `inductionObj Z.1`. -/
@@ -438,13 +438,13 @@ theorem forgetInductionAdjunction_unit_app_f_comp_π (Z : Center C) (S : SimpleC
         biproduct.π (inductionSummand Z.1) S =
       (ρ_ Z.1).inv ≫ Z.1 ◁ η_ S.repr S.reprᘁ ≫ (α_ Z.1 S.repr S.reprᘁ).inv ≫
         (Z.2.β S.repr).hom ▷ S.reprᘁ ≫ (α_ S.repr Z.1 S.reprᘁ).hom := by
-  rw [← inductionCodinat_repr k Z.1 S, forgetInductionAdjunction_unit_app_f_comp_codinat]
+  rw [← inductionEndπ_repr k Z.1 S, forgetInductionAdjunction_unit_app_f_comp_endπ]
 
 /-- Explicit formula for the counit of `forgetInductionAdjunction` at `X`. -/
 @[reassoc, simp]
 theorem forgetInductionAdjunction_counit_app (X : C) :
     (forgetInductionAdjunction k C).counit.app X =
-      inductionCodinat X (𝟙_ C) ≫
+      inductionEndπ X (𝟙_ C) ≫
         (λ_ (X ⊗ (RightRigidCategory.rightDual (𝟙_ C)).rightDual)).hom ≫
         X ◁ (rightDualUnitIso C).hom ≫
         (ρ_ X).hom :=
