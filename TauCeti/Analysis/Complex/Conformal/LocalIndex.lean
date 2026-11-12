@@ -132,7 +132,7 @@ theorem localIndex_eq_analyticOrderNatAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : An
       eventually_nhdsWithin_iff.1 hderiv] with z h1 h2 h3
     exact ⟨h1, fun hz ↦ sub_ne_zero.1 (h2 hz), h3⟩
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.1 hall
-  set r := ε / 2 with hr_def
+  set r := ε / 2
   have hr : 0 < r := half_pos hε
   have hsub (z : ℂ) (hz : z ∈ closedBall z₀ r) : dist z z₀ < ε :=
     (mem_closedBall.1 hz).trans_lt (half_lt_self hε)
