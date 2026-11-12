@@ -14,21 +14,22 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 /-!
 # Functoriality of the reduced path group
 
-A morphism of Serre graphs `f : Γ ⟶ Δ` sends closed paths at `v` to closed paths at `f v`, and
-backtrack-homotopic paths to backtrack-homotopic paths. It therefore induces a homomorphism
-`PathGroup.map f` of reduced path groups, functorially in `f`. A morphism injective on darts
-sends reduced paths to reduced paths, so the induced homomorphism is injective; in particular the
-reduced path group of a subgraph embeds in that of the ambient graph, with image the reduced
-loops all of whose darts lie in the subgraph. Every reduced loop at `v` comes from the based core
-at `v`, and lies in a finite connected based subgraph.
+A morphism of Serre graphs `f : Γ.Hom Δ` sends closed paths at `v` to closed paths at
+`f.mapV v`, and backtrack-homotopic paths to backtrack-homotopic paths. It therefore induces a
+homomorphism `PathGroup.map f` of reduced path groups, functorially in `f`. A morphism injective
+on darts sends reduced paths to reduced paths, so the induced homomorphism is injective; in
+particular the reduced path group of a subgraph embeds in that of the ambient graph, with image
+the reduced loops all of whose darts lie in the subgraph. Every reduced loop at `v` comes from the
+based core at `v`, and lies in a finite connected based subgraph.
 
 A path `p` from `v` to `w` gives the change of base vertex `PathGroup.mulEquivOfPath p`,
 `g ↦ p⁻¹ g p`, which is natural in the graph.
 
-For spanning trees `T` of `Γ` and `T'` of `Δ` with `f T ⊆ T'`, the induced homomorphism sends
-the tree loop of a dart `e` to the tree loop of `f e`; in particular the inclusion of a subgraph
-containing a spanning tree sends the tree loops of the restricted tree to the tree loops of the
-tree. Changing the base vertex along a tree path sends tree loops to tree loops.
+For spanning trees `T` of `Γ` and `T'` of `Δ` such that `f.mapE` carries the darts of `T` into
+`T'`, the induced homomorphism sends the tree loop of a dart `e` to the tree loop of `f.mapE e`;
+in particular the inclusion of a subgraph containing a spanning tree sends the tree loops of the
+restricted tree to the tree loops of the tree. Changing the base vertex along a tree path sends
+tree loops to tree loops.
 
 ## Main definitions
 
@@ -74,9 +75,9 @@ namespace PathGroup
 /-! ### The induced homomorphism -/
 
 /-- The homomorphism of reduced path groups induced by a morphism of Serre graphs: the class of
-a closed path at `v` is sent to the class of its image, a closed path at `f v`. The base vertex
-`w` of the target is a parameter equal to `f v`, so that identities and composites of morphisms
-can be compared without transporting along equalities of vertices. -/
+a closed path at `v` is sent to the class of its image, a closed path at `f.mapV v`. The base
+vertex `w` of the target is a parameter equal to `f.mapV v`, so that identities and composites of
+morphisms can be compared without transporting along equalities of vertices. -/
 def map (f : Γ.Hom Δ) {v : Γ.V} {w : Δ.V} (h : f.mapV v = w) :
     PathGroup Γ v →* PathGroup Δ w where
   toFun g := ofPath ((f.toPrefunctor.mapPath g.toPath).cast
@@ -395,15 +396,10 @@ theorem map_basedPath (f : Γ.Hom Δ) (T' : Δ.SpanningTree)
     PathGroup.map f h (T.basedPath v p) = T'.basedPath w (f.toPrefunctor.mapPath p) := by
   have h' : f.toPrefunctor.obj v = w := h
   subst h'
-  have hpath (x y : Γ.V) : Path.Homotopic Δ (f.toPrefunctor.mapPath (T.path x y))
-      (T'.path (f.toPrefunctor.obj x) (f.toPrefunctor.obj y)) :=
-    T'.homotopic_path _ fun e he => by
-      rw [Hom.darts_mapPath] at he
-      obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
-      exact hT d (T.mem_of_mem_darts_path hd)
   rw [basedPath_def, basedPath_def, PathGroup.map_ofPath, Quiver.Path.cast_rfl_rfl,
     PathGroup.ofPath_eq_iff_homotopic, Prefunctor.mapPath_comp, Prefunctor.mapPath_comp]
-  exact ((hpath v a).comp Δ (.refl _)).comp Δ (hpath b v)
+  exact ((T.homotopic_mapPath_path f T' hT v a).comp Δ (.refl _)).comp Δ
+    (T.homotopic_mapPath_path f T' hT b v)
 
 /-- A morphism of Serre graphs carrying a spanning tree `T` into a spanning tree `T'` sends the
 tree loop of a dart to the tree loop of its image. -/

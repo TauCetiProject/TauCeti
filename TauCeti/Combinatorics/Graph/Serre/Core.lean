@@ -14,8 +14,8 @@ public import Mathlib.Data.Set.Finite.Range
 The core at a vertex consists of the darts occurring in reduced loops at that vertex,
 together with their endpoints and the base vertex itself. It retains the stem from a base
 vertex to a circuit. Every reduced based loop lifts to the core, and every core vertex is
-reachable from the base within the core. Finite graphs have finite cores, and so do graphs
-with finitely many darts, whatever their number of vertices.
+reachable from the base within the core. Finite graphs have finite cores, and a core with
+finitely many darts has finitely many vertices, whatever the number of vertices of the graph.
 
 ## References
 
@@ -106,13 +106,14 @@ mapped by the inclusion have the corresponding ambient endpoints. -/
 instance [Finite Γ.V] : Finite (Γ.core v).V := inferInstanceAs (Finite (Γ.coreVertices v))
 instance [Finite Γ.E] : Finite (Γ.core v).E := inferInstanceAs (Finite (Γ.coreDarts v))
 
-/-- A graph with finitely many darts has a core with finitely many vertices, even if the graph
-has infinitely many: every core vertex other than the base is the source of a dart. -/
-instance [Finite Γ.E] : Finite (Γ.core v).V :=
-  Set.Finite.to_subtype <| ((Set.finite_range Γ.src).insert v).subset fun a ha => by
-    rcases ha with rfl | ⟨e, -, rfl⟩
-    · exact Set.mem_insert _ _
-    · exact Set.mem_insert_of_mem _ (Set.mem_range_self e)
+/-- A core with finitely many darts has finitely many vertices, even if the ambient graph has
+infinitely many: every core vertex other than the base is the source of a core dart. -/
+instance [Finite (Γ.core v).E] : Finite (Γ.core v).V :=
+  Set.Finite.to_subtype <| ((Set.finite_range fun e : (Γ.core v).E => Γ.src e.1).insert v).subset
+    fun a ha => by
+      rcases ha with rfl | ⟨e, he, rfl⟩
+      · exact Set.mem_insert _ _
+      · exact Set.mem_insert_of_mem _ ⟨⟨e, he⟩, rfl⟩
 
 /-- A path all of whose darts belong to the core lifts through its inclusion. -/
 theorem exists_core_path {a b : Γ.V} (p : Γ.Path a b)
