@@ -70,6 +70,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
 * `TauCeti.abs_inner_le_norm_mul_infDist`: a vector `w` orthogonal to a real subspace `P` satisfies
   `|⟪w, z⟫| ≤ ‖w‖ * infDist z P`.
+* `TauCeti.exists_mem_orthogonal_inner_ne_zero_of_not_le`: if `S` is not contained in `P`, some
+  vector orthogonal to `P` is not orthogonal to `S`.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
@@ -405,6 +407,17 @@ theorem abs_inner_le_norm_mul_infDist {F : Type*} [NormedAddCommGroup F] [InnerP
   calc |⟪w, z⟫_ℝ| = |⟪w, z - p⟫_ℝ| := by
         rw [inner_sub_right, Submodule.inner_left_of_mem_orthogonal hp hw, sub_zero]
     _ ≤ ‖w‖ * ‖z - p‖ := abs_real_inner_le_norm w (z - p)
+
+/-- If a subspace `S` is not contained in a subspace `P` admitting an orthogonal projection, some
+vector orthogonal to `P` has nonzero inner product with some vector of `S`. -/
+theorem exists_mem_orthogonal_inner_ne_zero_of_not_le {S P : Submodule 𝕜 E}
+    [P.HasOrthogonalProjection] (h : ¬ S ≤ P) : ∃ w ∈ Pᗮ, ∃ s ∈ S, ⟪w, s⟫_𝕜 ≠ 0 := by
+  rw [← P.orthogonal_orthogonal] at h
+  obtain ⟨s, hs, hsP⟩ := IsConcreteLE.not_le_iff_exists.mp h
+  rw [Submodule.mem_orthogonal] at hsP
+  push Not at hsP
+  obtain ⟨w, hw, hne⟩ := hsP
+  exact ⟨w, hw, s, hs, hne⟩
 
 section ProjectedBasis
 
