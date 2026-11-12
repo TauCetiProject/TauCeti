@@ -109,7 +109,7 @@ theorem cdf_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture_zero (h
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
   rw [Measure.cdf_map_natCast_cond_compl_zero_atomMixture_zero _ _
       (negativeBinomialMeasure_singleton_zero_ne_one hr hp hp1) hx,
-    cdf_map_cast_negativeBinomialMeasure hr hp hp1.le hx,
+    cdf_map_cast_negativeBinomialMeasure hr.le hp hx,
     negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
 
 /-- A natural number is the quantile of the negative-binomial hurdle law of positive shape and
