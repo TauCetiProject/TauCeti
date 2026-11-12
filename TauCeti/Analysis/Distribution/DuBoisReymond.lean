@@ -9,10 +9,12 @@ public import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The du Bois-Reymond lemma on an interval
@@ -40,7 +42,14 @@ nonnegative is monotone: if `∫ x, deriv ψ x * f x ≤ 0` for every nonnegativ
 the interval, then `f` is monotone there. For `x ≤ y` in the interval, take `ψ` to be the
 difference of the primitives of two copies of a narrow bump of integral one, centred at `x` and at
 `y`; then `ψ ≥ 0`, and `∫ ψ' f` is the difference of the averages of `f` against the two bumps,
-which are close to `f x` and `f y` by continuity.
+which are close to `f x` and `f y` by continuity. Without continuity the same argument applies at
+almost every pair of points: by the Lebesgue differentiation theorem, in the form
+`ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable`, the averages of `f` against
+bumps shrinking to `x` converge to `f x` for almost every `x`. So a locally integrable function
+with nonnegative distributional derivative is monotone on a subset of the interval of full measure.
+More generally, if `F' + g ≤ 0` in the sense of distributions, with `g` integrable on the
+interval, then `F + ∫ g` is antitone on a subset of full measure: the primitive `∫ g` has
+distributional derivative `g`.
 
 ## Main declarations
 
@@ -52,6 +61,12 @@ which are close to `f x` and `f y` by continuity.
   functions.
 * `ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos`: a continuous function with nonnegative
   distributional derivative is monotone.
+* `MeasureTheory.LocallyIntegrableOn.exists_monotoneOn_of_integral_deriv_mul_nonpos`: a locally
+  integrable function with nonnegative distributional derivative is monotone on a subset of full
+  measure.
+* `MeasureTheory.LocallyIntegrableOn.exists_antitoneOn_add_intervalIntegral_of_integral_mul_le`:
+  if `F' + g ≤ 0` in the sense of distributions, then `F + ∫ g` is antitone on a subset of full
+  measure.
 -/
 
 public section
@@ -324,3 +339,165 @@ theorem _root_.ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos {a b : ℝ} 
   linarith
 
 end TauCeti
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+open Set Filter Topology
+open scoped ContDiff Convolution
+open ContinuousLinearMap (lsmul lsmul_apply)
+
+/-- **The monotone du Bois-Reymond lemma for locally integrable functions.** A real function
+locally integrable on an open interval whose distributional derivative is nonnegative, in the
+sense that `∫ x, deriv ψ x * f x ≤ 0` for every nonnegative test function `ψ` on the interval, is
+monotone on a subset of the interval of full measure. -/
+theorem exists_monotoneOn_of_integral_deriv_mul_nonpos
+    {a b : ℝ} {f : ℝ → ℝ} (hf : LocallyIntegrableOn f (Ioo a b))
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, deriv ψ x * f x ≤ 0) :
+    ∃ s ⊆ Ioo a b, volume (Ioo a b \ s) = 0 ∧ MonotoneOn f s := by
+  -- The compact intervals `K n = [a + 1 / (n + 1), b - 1 / (n + 1)]` exhaust `(a, b)`, and `f` is
+  -- integrable on each of them.
+  set K : ℕ → Set ℝ := fun n ↦ Icc (a + 1 / (n + 1)) (b - 1 / (n + 1))
+  have hKsub (n : ℕ) : K n ⊆ Ioo a b := fun x hx ↦ by
+    have : (0 : ℝ) < 1 / (n + 1) := by positivity
+    exact ⟨by linarith [hx.1], by linarith [hx.2]⟩
+  have hint (n : ℕ) : Integrable ((K n).indicator f) :=
+    (integrable_indicator_iff measurableSet_Icc).2
+      (hf.integrableOn_compact_subset (hKsub n) isCompact_Icc)
+  -- Normalized bumps `β k` of radius `1 / (k + 1)`; by the Lebesgue differentiation theorem their
+  -- averages of `1_{K n} f` converge to `1_{K n} f` almost everywhere, for every `n`.
+  let φ : ℕ → ContDiffBump (0 : ℝ) := fun k ↦
+    ⟨1 / (2 * (k + 1)), 1 / (k + 1), by positivity,
+      one_div_lt_one_div_of_lt (by positivity) (by linarith)⟩
+  have hφr (k : ℕ) : (φ k).rOut = 1 / (k + 1) := rfl
+  have hφratio (k : ℕ) : (φ k).rOut ≤ 2 * (φ k).rIn := le_of_eq <| by
+    dsimp only [φ]
+    field_simp
+  have hlim : ∀ᵐ x, ∀ n, Tendsto (fun k ↦ ((φ k).normed volume ⋆[lsmul ℝ ℝ, volume]
+      (K n).indicator f) x) atTop (𝓝 ((K n).indicator f x)) :=
+    ae_all_iff.2 fun n ↦ ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable
+      tendsto_one_div_add_atTop_nhds_zero_nat (Eventually.of_forall hφratio)
+      (hint n).locallyIntegrable
+  refine ⟨{x | x ∈ Ioo a b ∧ ∀ n, Tendsto (fun k ↦ ((φ k).normed volume ⋆[lsmul ℝ ℝ, volume]
+      (K n).indicator f) x) atTop (𝓝 ((K n).indicator f x))}, fun x hx ↦ hx.1,
+    measure_mono_null ?_ (ae_iff.1 hlim), ?_⟩
+  · exact fun x hx hx' ↦ hx.2 ⟨hx.1, hx'⟩
+  rintro x ⟨hx, hxlim⟩ y ⟨hy, hylim⟩ hxy
+  -- Choose `n` with `2 / (n + 1) < x - a` and `2 / (n + 1) < b - y`.
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt (half_pos (lt_min (sub_pos.2 hx.1) (sub_pos.2 hy.2)))
+  have hn1 : 1 / ((n : ℝ) + 1) < (x - a) / 2 :=
+    hn.trans_le (div_le_div_of_nonneg_right (min_le_left _ _) zero_le_two)
+  have hn2 : 1 / ((n : ℝ) + 1) < (b - y) / 2 :=
+    hn.trans_le (div_le_div_of_nonneg_right (min_le_right _ _) zero_le_two)
+  have hn0 : (0 : ℝ) < 1 / (n + 1) := by positivity
+  -- For `k ≥ n`, the bump `β k` centred at a point of `[x, y]` is supported in `K n`.
+  have hrk (k : ℕ) (hk : n ≤ k) : 1 / ((k : ℝ) + 1) ≤ 1 / (n + 1) :=
+    one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hk 1)
+  have hβ0 (k : ℕ) (t : ℝ) (ht : (φ k).rOut ≤ |t|) : (φ k).normed volume t = 0 :=
+    Function.notMem_support.mp <| by simpa [(φ k).support_normed_eq] using ht
+  have hpt (k : ℕ) (hk : n ≤ k) (z : ℝ) (hz : z ∈ Icc x y) (t : ℝ) :
+      (φ k).normed volume (t - z) * (K n).indicator f t = (φ k).normed volume (t - z) * f t := by
+    by_cases ht : t ∈ K n
+    · rw [indicator_of_mem ht]
+    · rw [indicator_of_notMem ht, hβ0 k _ (not_lt.mp fun hlt ↦ ht ?_), zero_mul, zero_mul]
+      rw [hφr, abs_lt] at hlt
+      have := hrk k hk
+      exact ⟨by linarith [hlt.1, hz.1], by linarith [hlt.2, hz.2]⟩
+  -- These averages are the convolutions of `1_{K n} f` with `β k`, and are integrals of `f`.
+  have hconv (k : ℕ) (hk : n ≤ k) (z : ℝ) (hz : z ∈ Icc x y) :
+      ((φ k).normed volume ⋆[lsmul ℝ ℝ, volume] (K n).indicator f) z =
+        ∫ t, (φ k).normed volume (t - z) * f t := by
+    rw [convolution_eq_swap]
+    refine integral_congr_ae (Eventually.of_forall fun t ↦ ?_)
+    simp only [lsmul_apply, smul_eq_mul]
+    rw [← neg_sub t z, (φ k).normed_neg, hpt k hk z hz]
+  have hI (k : ℕ) (hk : n ≤ k) (z : ℝ) (hz : z ∈ Icc x y) :
+      Integrable fun t ↦ (φ k).normed volume (t - z) * f t := by
+    obtain ⟨C, hC⟩ := ((φ k).continuous_normed (μ := volume)).bounded_above_of_compact_support
+      (φ k).hasCompactSupport_normed
+    have hβc : Continuous fun t ↦ (φ k).normed volume (t - z) :=
+      ((φ k).continuous_normed (μ := volume)).comp (continuous_sub_right z)
+    exact ((hint n).bdd_mul hβc.aestronglyMeasurable (c := C)
+      (Eventually.of_forall fun t ↦ hC _)).congr (Eventually.of_forall fun t ↦ hpt k hk z hz t)
+  -- The hypothesis, against the difference of primitives of the two bumps, compares the averages.
+  have hle (k : ℕ) (hk : n ≤ k) : ∫ t, (φ k).normed volume (t - x) * f t ≤
+      ∫ t, (φ k).normed volume (t - y) * f t := by
+    obtain ⟨ψ, hψ, hψnn, hψs, hψd⟩ := TauCeti.exists_nonneg_deriv_eq_sub_bump (φ k).contDiff_normed
+      (φ k).nonneg_normed (hβ0 k) (φ k).integral_normed hxy
+    have hsub : Icc (x - (φ k).rOut) (y + (φ k).rOut) ⊆ Ioo a b := by
+      rw [hφr]
+      have := hrk k hk
+      exact Icc_subset_Ioo (by linarith) (by linarith)
+    have h0 := h ψ hψ (hψs.trans hsub) hψnn
+    simp_rw [hψd, sub_mul] at h0
+    rw [integral_sub (hI k hk x ⟨le_rfl, hxy⟩) (hI k hk y ⟨hxy, le_rfl⟩)] at h0
+    linarith
+  have hxK : x ∈ K n := ⟨by linarith, by linarith⟩
+  have hyK : y ∈ K n := ⟨by linarith, by linarith⟩
+  have hX := (hxlim n).congr' (eventually_atTop.2 ⟨n, fun k hk ↦ hconv k hk x ⟨le_rfl, hxy⟩⟩)
+  have hY := (hylim n).congr' (eventually_atTop.2 ⟨n, fun k hk ↦ hconv k hk y ⟨hxy, le_rfl⟩⟩)
+  rw [indicator_of_mem hxK] at hX
+  rw [indicator_of_mem hyK] at hY
+  exact le_of_tendsto_of_tendsto hX hY (eventually_atTop.2 ⟨n, hle⟩)
+
+/-- **Functions whose distributional derivative is bounded above by an integrable function.** Let
+`F` be locally integrable and `g` integrable on `(a, b)`, and suppose that `F' + g ≤ 0` in the
+sense of distributions: `∫ x, ψ x * g x ≤ ∫ x, deriv ψ x * F x` for every nonnegative test
+function `ψ` on the interval. Then `x ↦ F x + ∫ t in a..x, g t` is antitone on a subset of the
+interval of full measure. -/
+theorem exists_antitoneOn_add_intervalIntegral_of_integral_mul_le
+    {a b : ℝ} {F g : ℝ → ℝ} (hF : LocallyIntegrableOn F (Ioo a b)) (hg : IntegrableOn g (Ioo a b))
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, ψ x * g x ≤ ∫ x, deriv ψ x * F x) :
+    ∃ s ⊆ Ioo a b, volume (Ioo a b \ s) = 0 ∧
+      AntitoneOn (fun x ↦ F x + ∫ t in a..x, g t) s := by
+  rcases le_or_gt b a with hba | hab
+  · exact ⟨∅, empty_subset _, by simp [Ioo_eq_empty (not_lt.mpr hba)], fun _ h ↦ h.elim⟩
+  set G : ℝ → ℝ := fun x ↦ ∫ t in a..x, g t
+  have hgi : IntervalIntegrable g volume a b :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hg
+  have hGc : ContinuousOn G (Icc a b) := by
+    simpa only [uIcc_of_le hab.le] using
+      intervalIntegral.continuousOn_primitive_interval' hgi left_mem_uIcc
+  have hGloc : LocallyIntegrableOn G (Ioo a b) :=
+    (hGc.mono Ioo_subset_Icc_self).locallyIntegrableOn measurableSet_Ioo
+  -- `-(F + G)` has nonnegative distributional derivative.
+  have hderiv : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, deriv ψ x * (-(F + G)) x ≤ 0 := by
+    intro ψ hψ hψs hψnn
+    -- `ψ` and `ψ'` are test functions on the interval, so they pair integrably with `F`, `G`, `g`.
+    have hψ' : ContDiff ℝ ∞ (deriv ψ) := (contDiff_infty_iff_deriv.1 hψ).2
+    have hψ's : tsupport (deriv ψ) ⊆ Ioo a b := fun x hx ↦ hψs (tsupport_deriv_subset hx)
+    have hint (k : ℝ → ℝ) (hk : ContDiff ℝ ∞ k) (hks : tsupport k ⊆ Ioo a b) (f : ℝ → ℝ)
+        (hf : LocallyIntegrableOn f (Ioo a b)) : Integrable fun x ↦ k x * f x := by
+      have hkc : HasCompactSupport k :=
+        isCompact_Icc.of_isClosed_subset (isClosed_tsupport k) (hks.trans Ioo_subset_Icc_self)
+      exact TestFunction.integrable_smul (Ω := ⟨Ioo a b, isOpen_Ioo⟩) ⟨k, hk, hkc, hks⟩ hf
+    -- Integration by parts: `∫ ψ' G = -∫ ψ g`, since `ψ (b) = 0`.
+    have hzero (k : ℝ → ℝ) (hk : ∀ x ∉ Ioo a b, k x = 0) : ∫ x, k x = ∫ x in a..b, k x := by
+      rw [intervalIntegral.integral_of_le hab.le, setIntegral_eq_integral_of_forall_compl_eq_zero
+        fun x hx ↦ hk x fun hx' ↦ hx (Ioo_subset_Ioc_self hx')]
+    have hvan (k : ℝ → ℝ) (hks : tsupport k ⊆ Ioo a b) (x : ℝ) (hx : x ∉ Ioo a b) : k x = 0 :=
+      image_eq_zero_of_notMem_tsupport fun h' ↦ hx (hks h')
+    have hIBP : ∫ x, deriv ψ x * G x = -∫ x, ψ x * g x := by
+      have h1 := TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hab.le
+        (hψ.of_le (mod_cast le_top)) hgi
+      rw [hvan ψ hψs b fun hb ↦ hb.2.false, zero_smul, zero_sub] at h1
+      simp only [smul_eq_mul] at h1
+      rw [hzero _ fun x hx ↦ by simp [hvan _ hψ's x hx],
+        hzero _ fun x hx ↦ by simp [hvan _ hψs x hx], h1]
+    have hFG : ∫ x, deriv ψ x * (-(F + G)) x =
+        -(∫ x, deriv ψ x * F x) - ∫ x, deriv ψ x * G x := by
+      simp only [Pi.neg_apply, Pi.add_apply, mul_neg, mul_add]
+      rw [MeasureTheory.integral_neg, integral_add (hint _ hψ' hψ's F hF) (hint _ hψ' hψ's G hGloc)]
+      ring
+    rw [hFG, hIBP]
+    linarith [h ψ hψ hψs hψnn]
+  obtain ⟨s, hs, hnull, hmono⟩ :=
+    (hF.add hGloc).neg.exists_monotoneOn_of_integral_deriv_mul_nonpos hderiv
+  refine ⟨s, hs, hnull, fun x hx y hy hxy ↦ ?_⟩
+  have := hmono hx hy hxy
+  simp only [Pi.neg_apply, Pi.add_apply, neg_le_neg_iff] at this
+  exact this
+
+end MeasureTheory.LocallyIntegrableOn
