@@ -308,7 +308,7 @@ noncomputable def projectiveSpace (hi : IsIntegralLattice i) : Fan i where
     · rintro ⟨⟨_, ⟨k, hkS, rfl⟩, rfl⟩, hkτ⟩
       exact ⟨_, ⟨k, ⟨hkS, hkτ⟩, rfl⟩, rfl⟩
   inf_isFaceOf_left := by
-    rintro _ _ ⟨S, hS, rfl⟩ ⟨T, hT, rfl⟩
+    rintro _ _ ⟨S, hS, rfl⟩ ⟨T, _, rfl⟩
     have hb := hi.linearIndependent_basis b
     rw [projectiveSpaceCone_inf b hb, projectiveSpaceCone_eq_hull,
       projectiveSpaceCone_eq_hull]
