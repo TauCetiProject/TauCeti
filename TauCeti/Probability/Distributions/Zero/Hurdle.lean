@@ -144,8 +144,6 @@ theorem variance_id_map_natCast_cond_compl_zero_atomMixture_zero
     rw [variance_eq_integral (by fun_prop)]
     simp
   have := isProbabilityMeasure_cond_compl_singleton h0
-  have hmem : MemLp id 2 (ν.map (Nat.cast : ℕ → ℝ)) :=
-    (memLp_two_iff_integrable_sq measurable_id.aestronglyMeasurable).2 hν
   have hmem' : MemLp id 2 (((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)) := by
     refine (memLp_two_iff_integrable_sq measurable_id.aestronglyMeasurable).2 ?_
     rw [map_natCast_atomMixture_zero]
