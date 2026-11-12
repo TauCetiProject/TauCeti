@@ -244,29 +244,39 @@ theorem gaugeFixedAdjoint_smul (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
   ext i
   fin_cases i <;> simp [hd] <;> ring
 
-/-- The zeroth-order part of the gauge-fixed operator `L_x`, as a bilinear map of the value `ξ` of
-the field and the value `v` of the variation: the terms of `L_x y` without derivatives of `y`. -/
-def gaugeFixedZerothOrder :
+/-- The coefficient matrix of the zeroth-order part of the gauge-fixed operator at a field with
+value `w`. It is linear in `w`, and `L_x - L₀` is multiplication by the matrix at
+`x z - vacuumField z` (`inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder`). -/
+@[expose] def gaugeFixedZerothOrderMatrix (w : EuclideanSpace ℝ (Fin 4)) :
+    Matrix (Fin 4) (Fin 4) ℝ :=
+  !![0, 0, -w 3, w 2; 0, 0, w 2, w 3; -w 3, -w 2, -w 1, -w 0; w 2, -w 3, w 0, -w 1]
+
+/-- The zeroth-order part of the gauge-fixed operator `L_x`, as a bilinear map of the value `w` of
+the field and the value `v` of the variation: the matrix `gaugeFixedZerothOrderMatrix w` applied
+to `v`. These are the terms of `L_x y` without derivatives of `y`
+(`gaugeFixedOperator_eq_gaugeFixedFirstOrder_add`), and `L_x - L₀` is multiplication by
+`gaugeFixedZerothOrder (x z - vacuumField z)`. -/
+@[expose] def gaugeFixedZerothOrder :
     EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
   LinearMap.toContinuousLinearMap <|
     (LinearMap.toContinuousLinearMap :
         (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4)) ≃ₗ[ℝ]
           (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))).toLinearMap ∘ₗ
-      LinearMap.mk₂ ℝ (fun ξ v : EuclideanSpace ℝ (Fin 4) ↦
-        !₂[ξ 2 * v 3 - ξ 3 * v 2, ξ 2 * v 2 + ξ 3 * v 3,
-          -ξ 0 * v 3 - v 0 * ξ 3 - ξ 1 * v 2 - v 1 * ξ 2,
-          ξ 0 * v 2 + v 0 * ξ 2 - ξ 1 * v 3 - v 1 * ξ 3])
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+      LinearMap.mk₂ ℝ (fun w v : EuclideanSpace ℝ (Fin 4) ↦
+        WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
+        (fun _ _ _ ↦ by
+          ext i; fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring)
 
 /-- The defining formula of `gaugeFixedZerothOrder`. -/
-theorem gaugeFixedZerothOrder_apply (ξ v : EuclideanSpace ℝ (Fin 4)) :
-    gaugeFixedZerothOrder ξ v =
-      !₂[ξ 2 * v 3 - ξ 3 * v 2, ξ 2 * v 2 + ξ 3 * v 3,
-        -ξ 0 * v 3 - v 0 * ξ 3 - ξ 1 * v 2 - v 1 * ξ 2,
-        ξ 0 * v 2 + v 0 * ξ 2 - ξ 1 * v 3 - v 1 * ξ 3] :=
+theorem gaugeFixedZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedZerothOrder w v =
+      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j :=
   (rfl)
 
 /-- The first-order part of the gauge-fixed operator `L_x`, as a linear map of the gradients
@@ -294,7 +304,8 @@ theorem gaugeFixedOperator_eq_gaugeFixedFirstOrder_add (x y : ℂ → EuclideanS
       gaugeFixedFirstOrder (fun j ↦ ∇ (fun w ↦ y w j) z) + gaugeFixedZerothOrder (x z) (y z) := by
   ext i
   fin_cases i <;>
-    simp [gaugeFixedFirstOrder_apply, gaugeFixedZerothOrder_apply, inner_gradient_left] <;> ring
+    simp [gaugeFixedFirstOrder_apply, gaugeFixedZerothOrder_apply, gaugeFixedZerothOrderMatrix,
+      Fin.sum_univ_four, inner_gradient_left] <;> ring
 
 /-- The principal symbol of the gauge-fixed vortex adjoint, acting on a real covector
 and a target field value. It is independent of the vortex coefficients. -/
@@ -560,19 +571,6 @@ end Vacuum
 
 section ZerothOrder
 
-/-- The coefficient matrix of the zeroth-order part of the gauge-fixed operator at a field with
-value `w`. It is linear in `w`, and `L_x - L₀` is multiplication by the matrix at
-`x z - vacuumField z` (`inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder`). -/
-@[expose] def gaugeFixedZerothOrderMatrix (w : EuclideanSpace ℝ (Fin 4)) :
-    Matrix (Fin 4) (Fin 4) ℝ :=
-  !![0, 0, -w 3, w 2; 0, 0, w 2, w 3; -w 3, -w 2, -w 1, -w 0; w 2, -w 3, w 0, -w 1]
-
-/-- The zeroth-order part of the gauge-fixed operator at a field with value `w`, applied to a
-variation with value `v`: the matrix `gaugeFixedZerothOrderMatrix w` applied to `v`. The operator
-`L_x - L₀` is multiplication by `gaugeFixedZerothOrder (x z - vacuumField z)`. -/
-@[expose] def gaugeFixedZerothOrder (w v : EuclideanSpace ℝ (Fin 4)) : EuclideanSpace ℝ (Fin 4) :=
-  WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j
-
 /-- The formal adjoint `L_x*` differs from the vacuum adjoint by the transpose of the zeroth-order
 part of `L_x`, pointwise and without any regularity of the test field. -/
 theorem inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder
@@ -581,7 +579,7 @@ theorem inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder
       ⟪gaugeFixedZerothOrder (x z - vacuumField z) v, η z⟫ := by
   simp only [PiLp.inner_apply, Fin.sum_univ_four, gaugeFixedAdjoint_apply_zero,
     gaugeFixedAdjoint_apply_one, gaugeFixedAdjoint_apply_two, gaugeFixedAdjoint_apply_three,
-    gaugeFixedZerothOrder, gaugeFixedZerothOrderMatrix, vacuumField_apply, PiLp.sub_apply,
+    gaugeFixedZerothOrder_apply, gaugeFixedZerothOrderMatrix, vacuumField_apply, PiLp.sub_apply,
     RCLike.inner_apply, conj_trivial]
   simp
   ring

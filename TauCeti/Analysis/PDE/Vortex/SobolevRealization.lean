@@ -316,7 +316,6 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
   rw [hop] at hGarding
   have hG0 : 0 ≤ ∫ z, gaugeFixedGradientDensity x Y z :=
     integral_nonneg fun z ↦ gaugeFixedGradientDensity_nonneg x Y z
-  have hI0 : 0 ≤ ∫ z, ‖Y z‖ ^ 2 := integral_nonneg fun z ↦ sq_nonneg _
   have hB0 : 0 ≤ ∫ z in closedBall 0 R, ‖Y z‖ ^ 2 := integral_nonneg fun z ↦ sq_nonneg _
   have hK : K * ∫ z in closedBall 0 R, ‖Y z‖ ^ 2 ≤
       max K 0 * ∑ j, ∫ z in ball (0 : ℂ) (R + 1), W1p.value (y j) z ^ 2 :=

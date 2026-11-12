@@ -164,7 +164,7 @@ private theorem memLp_gaugeFixedZerothOrder {x y : ℂ → EuclideanSpace ℝ (F
     rw [vacuumField_apply z, ← vacuumField_apply 0]
     exact (norm_sub_le _ _).trans (by gcongr)
   refine memLp_piLp_iff.2 fun i ↦ ?_
-  simp only [gaugeFixedZerothOrder]
+  simp only [gaugeFixedZerothOrder_apply]
   refine memLp_finsetSum _ fun j _ ↦ ?_
   refine (memLp_piLp_iff.1 hy j).of_le_mul (c := C + ‖vacuumField 0‖)
     (((continuous_gaugeFixedZerothOrderMatrix_apply i j).comp_aestronglyMeasurable hw).mul
