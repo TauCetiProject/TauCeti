@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Analytic.Composition
 public import TauCeti.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Quaternion.Kernel
 import Mathlib.Analysis.Analytic.CPolynomialDef
+import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Topology.ContinuousMap.Algebra
 import TauCeti.Topology.ContinuousMap.Compact

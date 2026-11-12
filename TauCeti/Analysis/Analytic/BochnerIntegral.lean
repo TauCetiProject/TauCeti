@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import TauCeti.Analysis.Analytic.ConvergenceRadius
-public import TauCeti.MeasureTheory.Integral.Bochner.ContinuousMap
+public import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # Integrating parameter power series against `L¹` weights on compact spaces

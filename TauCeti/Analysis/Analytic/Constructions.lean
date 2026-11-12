@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 
 /-!
-# Analytic constructions: products, finite sums, and geometric-power series
+# Analytic constructions: products and finite sums
 
 Mathlib's `AnalyticAt.curry_right` says that a function analytic at `p` on a product has an
 analytic slice `y ↦ f (p.1, y)` at `p.2`. Since the analytic locus is open, the same holds for the
@@ -19,11 +19,6 @@ Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analy
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`).
-
-In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily commutative), the
-higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1` and represents
-`(1 - x)⁻¹ʳ ^ (k + 1)` on the open unit ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`),
-extending Mathlib's `hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`).
 -/
 
 public section
@@ -95,50 +90,7 @@ theorem Finset.hasFPowerSeriesOnBall_sum {ι : Type*} {f : ι → E → F}
     (I : Finset ι) (hr : 0 < r)
     (h : ∀ i ∈ I, HasFPowerSeriesOnBall (f i) (p i) x r) :
     HasFPowerSeriesOnBall (∑ i ∈ I, f i) (∑ i ∈ I, p i) x r := by
-  classical
-  induction I using Finset.induction with
-  | empty => exact ⟨by simp, hr, fun _ ↦ hasSum_zero⟩
-  | insert a I haI ih =>
-    rw [Finset.sum_insert haI, Finset.sum_insert haI]
-    exact (h a (Finset.mem_insert_self a I)).add
-      (ih fun i hi ↦ h i (Finset.mem_insert_of_mem hi))
+  simp_rw [← hasFPowerSeriesWithinOnBall_univ] at h ⊢
+  exact I.hasFPowerSeriesWithinOnBall_sum hr h
 
 end FinsetSum
-
-namespace TauCeti
-
-open scoped NNReal ENNReal Ring
-
-/-- The scalar multilinear series `∑ₙ C(n + k, k) xⁿ` in any normed `𝕜`-algebra `A` has radius of
-convergence at least `1`. -/
-theorem one_le_ofScalars_choose_radius (𝕜 A : Type*) [NontriviallyNormedField 𝕜]
-    [NormedRing A] [NormedAlgebra 𝕜 A] (k : ℕ) :
-    1 ≤ (FormalMultilinearSeries.ofScalars A fun n : ℕ ↦ ((n + k).choose k : 𝕜)).radius := by
-  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
-  rw [ENNReal.coe_lt_one_iff] at hr
-  apply FormalMultilinearSeries.le_radius_of_summable
-  rw [← summable_nat_add_iff 1]
-  have hmaj : Summable fun n : ℕ ↦ (((n + 1 + k).choose k : ℕ) : ℝ) * (r : ℝ) ^ (n + 1) :=
-    (summable_nat_add_iff (f := fun m : ℕ ↦ (((m + k).choose k : ℕ) : ℝ) * (r : ℝ) ^ m) 1).2
-      (summable_choose_mul_geometric_of_norm_lt_one k (by simpa using hr))
-  refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun n ↦ ?_) hmaj
-  gcongr
-  refine (FormalMultilinearSeries.ofScalars_norm_le A _ (n + 1) (Nat.succ_pos n)).trans ?_
-  simpa using Nat.norm_cast_le (α := 𝕜) ((n + 1 + k).choose k)
-
-/-- In a normed `𝕜`-algebra `A` with summable geometric series, `(1 - x)⁻¹ʳ ^ (k + 1)` is
-represented on the open unit ball by the scalar series `∑ₙ C(n + k, k) xⁿ`. -/
-theorem hasFPowerSeriesOnBall_inverse_one_sub_pow (𝕜 A : Type*) [NontriviallyNormedField 𝕜]
-    [NormedRing A] [NormedAlgebra 𝕜 A] [HasSummableGeomSeries A] (k : ℕ) :
-    HasFPowerSeriesOnBall (fun x : A ↦ (1 - x)⁻¹ʳ ^ (k + 1))
-      (FormalMultilinearSeries.ofScalars A fun n : ℕ ↦ ((n + k).choose k : 𝕜)) 0 1 where
-  r_le := one_le_ofScalars_choose_radius 𝕜 A k
-  r_pos := zero_lt_one
-  hasSum {y} hy := by
-    simp only [Metric.mem_eball, edist_dist, dist_zero_right, ENNReal.ofReal_lt_one] at hy
-    rw [zero_add]
-    convert hasSum_choose_mul_geometric_of_norm_lt_one' k hy using 1
-    ext n
-    rw [FormalMultilinearSeries.ofScalars_apply_eq, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
-
-end TauCeti
