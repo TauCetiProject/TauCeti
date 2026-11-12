@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Basic
 public import TauCeti.Geometry.Manifold.Instances.Comap
 public import TauCeti.Geometry.Manifold.Instances.PunctureFilling
 
-import TauCeti.Geometry.Manifold.Complex.Chart
+import TauCeti.Geometry.Manifold.Complex.Chart.Basic
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.Puncture
 
 /-!

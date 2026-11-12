@@ -16,7 +16,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.Topology.Sheaves.Functors
 public import TauCeti.Geometry.Manifold.Complex.Analytic
-public import TauCeti.Geometry.Manifold.Complex.Chart
+public import TauCeti.Geometry.Manifold.Complex.Chart.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 -- Supplies `exists_germ_eq` for stalks of ring-valued presheaves.
 import Mathlib.Algebra.Category.Ring.FilteredColimits

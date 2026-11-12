@@ -60,7 +60,8 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.RiemannSurface
 
-open OpenPartialHomeomorph (chartRead_mono isCompact_closure_chartRead map_mem_chartRead)
+open OpenPartialHomeomorph (chartRead_mono isCompact_closure_chartRead map_mem_chartRead
+  mem_chartRead)
 
 variable {X : Type} [TopologicalSpace X] {e : OpenPartialHomeomorph X ℂ} {V V' : Opens X}
 
@@ -91,7 +92,7 @@ variable (hW : ∀ i, (W i : Set X) ⊆ (e i).source)
 
 /-- The Čech coboundary `ξⱼₖ - ξᵢₖ + ξᵢⱼ` of a one-cochain at a point `x` of a triple overlap, each
 component evaluated in its own first chart. -/
-def cocycleEval (i j k : ι) {x : X} (hx : x ∈ W i ⊓ W j ⊓ W k) :
+private def cocycleEval (i j k : ι) {x : X} (hx : x ∈ W i ⊓ W j ⊓ W k) :
     ((i j : ι) → bergmanSpace ℂ ((e i).chartRead (W i ⊓ W j))) →L[ℂ] ℂ :=
   (BergmanSpace.evalCLM (map_mem_chartRead (inf_subset_source hW j k) ⟨hx.1.2, hx.2⟩)).comp
       (proj₁ j k) -
@@ -266,7 +267,7 @@ variable (hW' : ∀ i, (W' i : Set X) ⊆ (e i).source) (h' : ∀ i, W' i ≤ W 
 
 /-- The defect of `ξ' = ξ + δη` at a point of an overlap `W'' i ⊓ W'' j`, as a continuous linear
 functional of the triple of cochains `(ξ, ξ', η)`. -/
-def tripleEval (i j : ι) {x : X} (hx : x ∈ W'' i ⊓ W'' j) :
+private def tripleEval (i j : ι) {x : X} (hx : x ∈ W'' i ⊓ W'' j) :
     (((i j : ι) → bergmanSpace ℂ ((e i).chartRead (W i ⊓ W j))) ×
       ((i j : ι) → bergmanSpace ℂ ((e i).chartRead (W' i ⊓ W' j))) ×
         ((i : ι) → bergmanSpace ℂ ((e i).chartRead (W'' i)))) →L[ℂ] ℂ :=
@@ -365,9 +366,10 @@ theorem chartSection_injective (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X
   intro u v h
   apply BergmanSpace.ext
   intro z hz
-  have := congrArg (fun s ↦ s ⟨e.symm z, hz.2⟩) h
+  obtain ⟨hzt, hzV⟩ := mem_chartRead.1 hz
+  have := congrArg (fun s ↦ s ⟨e.symm z, hzV⟩) h
   simp only at this
-  rwa [chartSection_apply, chartSection_apply, e.right_inv hz.1] at this
+  rwa [chartSection_apply, chartSection_apply, e.right_inv hzt] at this
 
 /-- Restricting a chart-read Bergman class to a smaller open read in the same chart is the native
 restriction of its section. -/

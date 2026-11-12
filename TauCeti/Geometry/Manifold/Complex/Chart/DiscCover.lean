@@ -44,8 +44,8 @@ theorem exists_finite_chartDisc_cover [CompactSpace X] :
   let D : X → TopologicalSpace.Opens X :=
     fun x ↦ (chartAt ℂ x).chartDisc (chartAt ℂ x x) (ε x / 4)
   have hD : TopologicalSpace.IsOpenCover D := .mk <| eq_top_iff.2 fun x _ ↦
-    TopologicalSpace.Opens.mem_iSup.2
-      ⟨x, mem_chart_source ℂ x, Metric.mem_ball_self (by linarith [hε x])⟩
+    TopologicalSpace.Opens.mem_iSup.2 ⟨x, OpenPartialHomeomorph.mem_chartDisc.2
+      ⟨mem_chart_source ℂ x, Metric.mem_ball_self (by linarith [hε x])⟩⟩
   obtain ⟨s, hs⟩ := hD.exists_finite_of_compactSpace
   exact ⟨s, inferInstance, fun i ↦ chartAt ℂ i.1, fun i ↦ chartAt ℂ i.1 i.1, fun i ↦ ε i.1 / 4,
     fun i ↦ IsManifold.chart_mem_maximalAtlas i.1, fun i ↦ by linarith [hε i.1],

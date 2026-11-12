@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.Chart
+public import TauCeti.Geometry.Manifold.Complex.Chart.Basic
 public import TauCeti.Geometry.Manifold.SymmetricPower.Transition
 
 /-!

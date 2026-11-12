@@ -34,10 +34,13 @@ variable {X : Type*} [TopologicalSpace X]
 /-! ### Opens read in a chart -/
 
 /-- The plane open `e (V ∩ e.source)`, written as `e.target ∩ e.symm ⁻¹' V`. -/
-@[expose] def chartRead (e : OpenPartialHomeomorph X ℂ) (V : Opens X) : Opens ℂ :=
+def chartRead (e : OpenPartialHomeomorph X ℂ) (V : Opens X) : Opens ℂ :=
   ⟨e.target ∩ e.symm ⁻¹' V, e.isOpen_inter_preimage_symm V.isOpen⟩
 
 variable {e : OpenPartialHomeomorph X ℂ} {V V' : Opens X}
+
+@[simp]
+theorem coe_chartRead : (e.chartRead V : Set ℂ) = e.target ∩ e.symm ⁻¹' V := (rfl)
 
 @[simp]
 theorem mem_chartRead {z : ℂ} : z ∈ e.chartRead V ↔ z ∈ e.target ∧ e.symm z ∈ V := Iff.rfl
@@ -67,8 +70,12 @@ theorem isCompact_closure_chartRead (hV : (V : Set X) ⊆ e.source)
 /-! ### Coordinate discs -/
 
 /-- The coordinate disc `e.source ∩ e ⁻¹' ball c r`. -/
-@[expose] def chartDisc (e : OpenPartialHomeomorph X ℂ) (c : ℂ) (r : ℝ) : Opens X :=
+def chartDisc (e : OpenPartialHomeomorph X ℂ) (c : ℂ) (r : ℝ) : Opens X :=
   ⟨e.source ∩ e ⁻¹' Metric.ball c r, e.isOpen_inter_preimage Metric.isOpen_ball⟩
+
+@[simp]
+theorem coe_chartDisc {c : ℂ} {r : ℝ} :
+    (e.chartDisc c r : Set X) = e.source ∩ e ⁻¹' Metric.ball c r := (rfl)
 
 @[simp]
 theorem mem_chartDisc {c : ℂ} {r : ℝ} {x : X} :

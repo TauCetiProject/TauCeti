@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Manifold
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Map
 public import TauCeti.Analysis.Complex.Fuchsian.Conj
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
-public import TauCeti.Geometry.Manifold.Complex.Chart
+public import TauCeti.Geometry.Manifold.Complex.Chart.Basic
 public import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Geometry.Manifold.Complex.Analytic
 

@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.Complex.Chart
+import TauCeti.Geometry.Manifold.Complex.Chart.Basic
 import TauCeti.LinearAlgebra.TotallyReal.Finrank
 
 /-!

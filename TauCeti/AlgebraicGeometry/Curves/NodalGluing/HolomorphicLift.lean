@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.Lift
 public import TauCeti.Geometry.Manifold.Complex.Analytic
-public import TauCeti.Geometry.Manifold.Complex.Chart
+public import TauCeti.Geometry.Manifold.Complex.Chart.Basic
 
 /-!
 # Holomorphic lifting across the branches of a node
