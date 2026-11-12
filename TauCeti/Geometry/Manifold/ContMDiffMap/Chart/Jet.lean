@@ -193,4 +193,43 @@ theorem chartIteratedFDeriv_sub
       (congrArg₂ (· - ·) (chartIteratedFDerivLinearMap_apply x m hm f)
         (chartIteratedFDerivLinearMap_apply x m hm g)))
 
+/-- Coordinate differentiation commutes with negation of vector-valued maps. -/
+@[simp]
+theorem chartIteratedFDeriv_neg (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) (m : ℕ) (hm : m ≤ n) :
+    chartIteratedFDeriv (-f) x m hm = -chartIteratedFDeriv f x m hm := by
+  exact (chartIteratedFDerivLinearMap_apply x m hm (-f)).symm.trans
+    ((map_neg (chartIteratedFDerivLinearMap (F := F) x m hm) f).trans
+      (congrArg (- ·) (chartIteratedFDerivLinearMap_apply x m hm f)))
+
+section Restrict
+
+variable {x : M} {K : Set (extChartAt I x).target} {m : ℕ} {hm : m ≤ n}
+
+/-- The coordinate derivative restricted to a coordinate set is additive. -/
+theorem coe_restrict_chartIteratedFDeriv_add (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    ⇑((chartIteratedFDeriv (f + g) x m hm).restrict K) =
+      ⇑((chartIteratedFDeriv f x m hm).restrict K) +
+        ⇑((chartIteratedFDeriv g x m hm).restrict K) := by
+  ext z
+  simp only [chartIteratedFDeriv_add, ContinuousMap.restrict_apply, ContinuousMap.add_apply,
+    Pi.add_apply]
+
+/-- The coordinate derivative restricted to a coordinate set commutes with scalar
+multiplication. -/
+theorem coe_restrict_chartIteratedFDeriv_smul (c : 𝕜) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    ⇑((chartIteratedFDeriv (c • f) x m hm).restrict K) =
+      c • ⇑((chartIteratedFDeriv f x m hm).restrict K) := by
+  ext z
+  simp only [chartIteratedFDeriv_smul, ContinuousMap.restrict_apply, ContinuousMap.smul_apply,
+    Pi.smul_apply]
+
+/-- The coordinate derivative of the zero map restricted to a coordinate set is zero. -/
+theorem coe_restrict_chartIteratedFDeriv_zero :
+    ⇑((chartIteratedFDeriv (0 : C^n⟮I, M; 𝓘(𝕜, F), F⟯) x m hm).restrict K) = 0 := by
+  ext z
+  simp only [chartIteratedFDeriv_zero, ContinuousMap.restrict_apply, ContinuousMap.zero_apply,
+    Pi.zero_apply]
+
+end Restrict
+
 end ContMDiffMap

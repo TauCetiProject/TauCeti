@@ -73,8 +73,8 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   preserves Hölder bounds.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
-* `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with a common constant is Hölder
-  with that constant.
+* `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
+  a common constant is Hölder with that constant.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
   constant `2 M`.
 * `TauCeti.exists_holderWith_tsum_of_rpow_mul_le`: for `0 < α < 1`, a series `∑ⱼ fⱼ` whose terms
@@ -275,13 +275,23 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
 
+/-- A pointwise limit on `s` of maps that are `r`-Hölder on `s` with a common constant `C` is
+`r`-Hölder on `s` with constant `C`. -/
+theorem HolderOnWith.of_tendsto {ι X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    {l : Filter ι} [l.NeBot] {C r : ℝ≥0} {u : ι → X → Y} {v : X → Y} {s : Set X}
+    (hu : ∀ x ∈ s, Tendsto (fun n ↦ u n x) l (𝓝 (v x)))
+    (hC : ∀ᶠ n in l, HolderOnWith C r (u n) s) :
+    HolderOnWith C r v s := fun x hx y hy ↦
+  le_of_tendsto ((hu x hx).edist (hu y hy)) (hC.mono fun _ hn ↦ hn x hx y hy)
+
 /-- A pointwise limit of maps that are `r`-Hölder with a common constant `C` is `r`-Hölder with
 constant `C`. -/
 theorem HolderWith.of_tendsto {ι X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
     {l : Filter ι} [l.NeBot] {C r : ℝ≥0} {u : ι → X → Y} {v : X → Y}
     (hu : ∀ x, Tendsto (fun n ↦ u n x) l (𝓝 (v x))) (hC : ∀ᶠ n in l, HolderWith C r (u n)) :
-    HolderWith C r v := fun x y ↦
-  le_of_tendsto ((hu x).edist (hu y)) (hC.mono fun _ hn ↦ hn x y)
+    HolderWith C r v :=
+  holderOnWith_univ.mp <| HolderOnWith.of_tendsto (fun x _ ↦ hu x)
+    (hC.mono fun _ hn ↦ holderOnWith_univ.mpr hn)
 
 /-- A function bounded by `M` has oscillation at most `2 M`, which is its Hölder bound of
 exponent zero. Compare Mathlib's `HolderWith.holderWith_zero_of_bounded`, which bounds the

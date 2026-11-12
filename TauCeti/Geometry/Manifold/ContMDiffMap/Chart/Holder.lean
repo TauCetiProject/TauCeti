@@ -45,7 +45,7 @@ manifolds with boundary and corners; only completeness uses that `M` is boundary
 
 ## Main results
 
-* `ContMDiffMap.holderWith_restrict_chartIteratedFDeriv_sub_of_tendsto`: Hölder bounds on the
+* `ContMDiffMap.holderWith_restrict_chartIteratedFDeriv_of_tendsto`: Hölder bounds on the
   `k`th coordinate derivatives pass to pointwise limits.
 * `TauCeti.CompactChartAtlas.CkHolderSpace.norm_def`: the norm is the finite-atlas `C^k` norm
   plus the Hölder seminorms of the `k`th coordinate derivatives on the pieces.
@@ -89,40 +89,45 @@ def MemChartHolder (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) : Prop :=
 
 variable {x K k hk α}
 
-/-- The restricted coordinate derivative is additive. -/
-theorem coe_restrict_chartIteratedFDeriv_add (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
-    ⇑((chartIteratedFDeriv (f + g) x k hk).restrict K) =
-      ⇑((chartIteratedFDeriv f x k hk).restrict K) +
-        ⇑((chartIteratedFDeriv g x k hk).restrict K) := by
-  ext z
-  simp only [chartIteratedFDeriv_add, ContinuousMap.restrict_apply, ContinuousMap.add_apply,
-    Pi.add_apply]
+theorem chartHolderNorm_def (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    chartHolderNorm x K k hk α f = nnHolderNorm α ⇑((chartIteratedFDeriv f x k hk).restrict K) :=
+  (rfl)
 
-/-- The restricted coordinate derivative commutes with scalar multiplication. -/
-theorem coe_restrict_chartIteratedFDeriv_smul (c : 𝕜) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
-    ⇑((chartIteratedFDeriv (c • f) x k hk).restrict K) =
-      c • ⇑((chartIteratedFDeriv f x k hk).restrict K) := by
-  ext z
-  simp only [chartIteratedFDeriv_smul, ContinuousMap.restrict_apply, ContinuousMap.smul_apply,
-    Pi.smul_apply]
+theorem memChartHolder_iff {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    MemChartHolder x K k hk α f ↔ MemHolder α ⇑((chartIteratedFDeriv f x k hk).restrict K) :=
+  Iff.rfl
 
-/-- The restricted coordinate derivative commutes with subtraction. -/
-theorem coe_restrict_chartIteratedFDeriv_sub (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
-    ⇑((chartIteratedFDeriv (f - g) x k hk).restrict K) =
-      ⇑((chartIteratedFDeriv f x k hk).restrict K) -
-        ⇑((chartIteratedFDeriv g x k hk).restrict K) := by
-  ext z
-  simp only [chartIteratedFDeriv_sub, ContinuousMap.restrict_apply, ContinuousMap.sub_apply,
-    Pi.sub_apply]
+/-- A coordinate derivative that is `α`-Hölder on `K` with some constant is Hölder. -/
+theorem MemChartHolder.of_holderOnWith {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} {C : ℝ≥0}
+    (h : HolderOnWith C α (chartIteratedFDeriv f x k hk) K) : MemChartHolder x K k hk α f :=
+  ⟨C, h.holderWith⟩
 
-/-- The restricted coordinate derivative of the zero map is zero. -/
-theorem coe_restrict_chartIteratedFDeriv_zero :
-    ⇑((chartIteratedFDeriv (0 : C^n⟮I, M; 𝓘(𝕜, F), F⟯) x k hk).restrict K) = 0 := by
-  ext z
-  simp only [chartIteratedFDeriv_zero, ContinuousMap.restrict_apply, ContinuousMap.zero_apply,
-    Pi.zero_apply]
+/-- A bound on the oscillation of the `k`th coordinate derivative on `K` by `C` times the `α`th
+power of the distance makes it `α`-Hölder on `K`. -/
+theorem MemChartHolder.of_norm_sub_le {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} {C : ℝ≥0}
+    (h : ∀ z ∈ K, ∀ w ∈ K, ‖chartIteratedFDeriv f x k hk z - chartIteratedFDeriv f x k hk w‖ ≤
+      C * dist z w ^ (α : ℝ)) :
+    MemChartHolder x K k hk α f :=
+  .of_holderOnWith (C := C) <| HolderOnWith.of_dist_le fun z hz w hw ↦ by
+    simpa only [dist_eq_norm] using h z hz w hw
+
+/-- A Hölder constant of the coordinate derivative on `K` bounds its Hölder seminorm. -/
+theorem chartHolderNorm_le_of_holderOnWith {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} {C : ℝ≥0}
+    (h : HolderOnWith C α (chartIteratedFDeriv f x k hk) K) :
+    chartHolderNorm x K k hk α f ≤ C :=
+  h.holderWith.nnholderNorm_le
+
+/-- A bound on the oscillation of the `k`th coordinate derivative on `K` by `C` times the `α`th
+power of the distance bounds its Hölder seminorm by `C`. -/
+theorem chartHolderNorm_le_of_norm_sub_le {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} {C : ℝ≥0}
+    (h : ∀ z ∈ K, ∀ w ∈ K, ‖chartIteratedFDeriv f x k hk z - chartIteratedFDeriv f x k hk w‖ ≤
+      C * dist z w ^ (α : ℝ)) :
+    chartHolderNorm x K k hk α f ≤ C :=
+  chartHolderNorm_le_of_holderOnWith <| HolderOnWith.of_dist_le fun z hz w hw ↦ by
+    simpa only [dist_eq_norm] using h z hz w hw
 
 /-- The zero map has Hölder coordinate derivatives. -/
+@[simp]
 theorem memChartHolder_zero : MemChartHolder (F := F) x K k hk α 0 := by
   rw [MemChartHolder, coe_restrict_chartIteratedFDeriv_zero]
   exact memHolder_zero
@@ -142,10 +147,20 @@ theorem MemChartHolder.smul {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} (hf : MemChart
   rw [MemChartHolder, coe_restrict_chartIteratedFDeriv_smul]
   exact MemHolder.smul hf
 
+theorem MemChartHolder.neg {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} (hf : MemChartHolder x K k hk α f) :
+    MemChartHolder x K k hk α (-f) := by
+  rw [← neg_one_smul 𝕜 f]
+  exact hf.smul (-1)
+
+@[simp]
+theorem memChartHolder_neg {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    MemChartHolder x K k hk α (-f) ↔ MemChartHolder x K k hk α f :=
+  ⟨fun h ↦ neg_neg f ▸ h.neg, MemChartHolder.neg⟩
+
 theorem MemChartHolder.sub {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} (hf : MemChartHolder x K k hk α f)
     (hg : MemChartHolder x K k hk α g) : MemChartHolder x K k hk α (f - g) := by
-  rw [sub_eq_add_neg, ← neg_one_smul 𝕜 g]
-  exact hf.add (hg.smul (-1))
+  rw [sub_eq_add_neg]
+  exact hf.add hg.neg
 
 /-- The Hölder seminorm of a coordinate derivative is subadditive on Hölder maps. -/
 theorem chartHolderNorm_add_le {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
@@ -162,6 +177,11 @@ theorem chartHolderNorm_smul (c : 𝕜) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
   simp only [chartHolderNorm, coe_restrict_chartIteratedFDeriv_smul, nnHolderNorm,
     eHolderNorm_smul (Y := E [×k]→L[𝕜] F) c, ENNReal.toNNReal_mul, ENNReal.toNNReal_coe]
 
+@[simp]
+theorem chartHolderNorm_neg (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    chartHolderNorm x K k hk α (-f) = chartHolderNorm x K k hk α f := by
+  rw [← neg_one_smul 𝕜 f, chartHolderNorm_smul, nnnorm_neg, nnnorm_one, one_mul]
+
 /-- **Hölder estimate.** On a map whose coordinate derivative is Hölder, the Hölder seminorm
 bounds the oscillation of the `k`th coordinate derivative on `K`. -/
 theorem MemChartHolder.norm_chartIteratedFDeriv_sub_le {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
@@ -172,24 +192,53 @@ theorem MemChartHolder.norm_chartIteratedFDeriv_sub_le {f : C^n⟮I, M; 𝓘(�
   simpa only [chartHolderNorm, dist_eq_norm, ContinuousMap.restrict_apply, Subtype.dist_eq] using
     hf.holderWith.dist_le (⟨z, hz⟩ : K) ⟨w, hw⟩
 
-/-- **Hölder bounds pass to limits.** If the `k`th coordinate derivatives of `u m` converge
-pointwise on `K` to those of `g`, and from `N` on the differences `u N - u m` have Hölder
-seminorm at most `C` on `K`, then the `k`th coordinate derivative of `u N - g` is `α`-Hölder on
-`K` with constant `C`. -/
-theorem holderWith_restrict_chartIteratedFDeriv_sub_of_tendsto {u : ℕ → C^n⟮I, M; 𝓘(𝕜, F), F⟯}
-    {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} {N : ℕ} {C : ℝ≥0}
-    (hu : ∀ z ∈ K, Tendsto (fun m ↦ chartIteratedFDeriv (u m) x k hk z) atTop
+/-- On a map whose coordinate derivative is Hölder on `K`, the Hölder seminorm is at most `C`
+exactly when `C` bounds the oscillation of the `k`th coordinate derivative on `K` against the
+`α`th power of the distance. -/
+theorem MemChartHolder.chartHolderNorm_le_iff {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
+    (hf : MemChartHolder x K k hk α f) {C : ℝ≥0} :
+    chartHolderNorm x K k hk α f ≤ C ↔
+      ∀ z ∈ K, ∀ w ∈ K, ‖chartIteratedFDeriv f x k hk z - chartIteratedFDeriv f x k hk w‖ ≤
+        C * dist z w ^ (α : ℝ) :=
+  ⟨fun h _ hz _ hw ↦ (hf.norm_chartIteratedFDeriv_sub_le hz hw).trans
+    (mul_le_mul_of_nonneg_right (NNReal.coe_le_coe.mpr h) (Real.rpow_nonneg dist_nonneg _)),
+    chartHolderNorm_le_of_norm_sub_le⟩
+
+/-- **Hölder bounds pass to limits.** If the `k`th coordinate derivatives of `u b` converge
+pointwise on `K` to those of `g` along `l`, and eventually along `l` they are `α`-Hölder on `K`
+with seminorm at most `C`, then the `k`th coordinate derivative of `g` is `α`-Hölder on `K` with
+constant `C`. -/
+theorem holderWith_restrict_chartIteratedFDeriv_of_tendsto {β : Type*} {l : Filter β} [l.NeBot]
+    {u : β → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} {C : ℝ≥0}
+    (hu : ∀ z ∈ K, Tendsto (fun b ↦ chartIteratedFDeriv (u b) x k hk z) l
       (𝓝 (chartIteratedFDeriv g x k hk z)))
-    (hmem : ∀ m ≥ N, MemChartHolder x K k hk α (u N - u m))
-    (hC : ∀ m ≥ N, chartHolderNorm x K k hk α (u N - u m) ≤ C) :
-    HolderWith C α ⇑((chartIteratedFDeriv (u N - g) x k hk).restrict K) := by
-  refine HolderWith.of_tendsto (l := atTop)
-    (u := fun m ↦ ⇑((chartIteratedFDeriv (u N - u m) x k hk).restrict K))
-    (fun z ↦ ?_) ?_
-  · simp only [chartIteratedFDeriv_sub, ContinuousMap.restrict_apply, ContinuousMap.sub_apply]
-    exact tendsto_const_nhds.sub (hu z z.2)
-  · filter_upwards [eventually_ge_atTop N] with m hm
-    exact (hmem m hm).holderWith.mono (hC m hm)
+    (hmem : ∀ᶠ b in l, MemChartHolder x K k hk α (u b))
+    (hC : ∀ᶠ b in l, chartHolderNorm x K k hk α (u b) ≤ C) :
+    HolderWith C α ⇑((chartIteratedFDeriv g x k hk).restrict K) :=
+  HolderWith.of_tendsto (u := fun b ↦ ⇑((chartIteratedFDeriv (u b) x k hk).restrict K))
+    (fun z ↦ hu z z.2) ((hmem.and hC).mono fun _ hb ↦ hb.1.holderWith.mono hb.2)
+
+/-- A pointwise limit on `K` of `k`th coordinate derivatives that are eventually `α`-Hölder on `K`
+with bounded seminorms is `α`-Hölder on `K`. -/
+theorem MemChartHolder.of_tendsto {β : Type*} {l : Filter β} [l.NeBot]
+    {u : β → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} {C : ℝ≥0}
+    (hu : ∀ z ∈ K, Tendsto (fun b ↦ chartIteratedFDeriv (u b) x k hk z) l
+      (𝓝 (chartIteratedFDeriv g x k hk z)))
+    (hmem : ∀ᶠ b in l, MemChartHolder x K k hk α (u b))
+    (hC : ∀ᶠ b in l, chartHolderNorm x K k hk α (u b) ≤ C) :
+    MemChartHolder x K k hk α g :=
+  (holderWith_restrict_chartIteratedFDeriv_of_tendsto hu hmem hC).memHolder
+
+/-- A bound on the Hölder seminorms of `k`th coordinate derivatives that converge pointwise on
+`K` passes to the limit. -/
+theorem chartHolderNorm_le_of_tendsto {β : Type*} {l : Filter β} [l.NeBot]
+    {u : β → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} {C : ℝ≥0}
+    (hu : ∀ z ∈ K, Tendsto (fun b ↦ chartIteratedFDeriv (u b) x k hk z) l
+      (𝓝 (chartIteratedFDeriv g x k hk z)))
+    (hmem : ∀ᶠ b in l, MemChartHolder x K k hk α (u b))
+    (hC : ∀ᶠ b in l, chartHolderNorm x K k hk α (u b) ≤ C) :
+    chartHolderNorm x K k hk α g ≤ C :=
+  (holderWith_restrict_chartIteratedFDeriv_of_tendsto hu hmem hC).nnholderNorm_le
 
 end Chart
 
@@ -213,27 +262,6 @@ theorem mem_finiteAtlasHolderSubmodule_iff (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
 
 end FiniteAtlas
 
-section Convergence
-
-variable {ι : Type*} [Fintype ι] {c : ι → M}
-  {K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target} {k : ℕ} {hk : k ≤ n}
-
-/-- Convergence in the finite-atlas `C^k` seminorm gives pointwise convergence of the coordinate
-derivatives of order at most `k` on the pieces. -/
-theorem tendsto_chartIteratedFDeriv_of_tendsto_finiteAtlasSeminorm {β : Type*} {l : Filter β}
-    {u : β → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {g : C^n⟮I, M; 𝓘(𝕜, F), F⟯}
-    (h : Tendsto (fun b ↦ finiteAtlasSeminorm c K k hk (u b - g)) l (𝓝 0)) (i : ι) {m : ℕ}
-    (hm : m ≤ k) {z : (extChartAt I (c i)).target} (hz : z ∈ K i) :
-    Tendsto (fun b ↦ chartIteratedFDeriv (u b) (c i) m ((Nat.cast_le.mpr hm).trans hk) z) l
-      (𝓝 (chartIteratedFDeriv g (c i) m ((Nat.cast_le.mpr hm).trans hk) z)) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun b ↦ ?_) h
-  have hb := (finiteAtlasSeminorm_le_iff c K k hk (u b - g) (apply_nonneg _ _)).mp le_rfl i m hm
-    z hz
-  rwa [chartIteratedFDeriv_sub, ContinuousMap.sub_apply] at hb
-
-end Convergence
-
 end ContMDiffMap
 
 namespace TauCeti
@@ -243,6 +271,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H]
 
 namespace CompactChartAtlas
+
+noncomputable section
 
 variable {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
@@ -254,7 +284,7 @@ variable (A : CompactChartAtlas I M) (k : ℕ) (α : ℝ≥0)
 (`TauCeti.CompactChartAtlas.CkHolderSpace.norm_def`) is the finite-atlas `C^k` norm plus the
 Hölder seminorms of the `k`th coordinate derivatives on the pieces. The usual range of exponents
 is `0 < α ≤ 1`. -/
-@[expose] def CkHolderSpace : Type _ :=
+def CkHolderSpace : Type _ :=
   ↥(ContMDiffMap.finiteAtlasHolderSubmodule (F := F) (n := k) A.center
     (fun i ↦ (A.piece i : Set (extChartAt I (A.center i)).target)) k le_rfl α)
 
@@ -341,6 +371,13 @@ theorem coe_sub (f g : A.CkHolderSpace k α F) : ⇑(f - g) = f - g :=
 theorem coe_smul (c : 𝕜) (f : A.CkHolderSpace k α F) : ⇑(c • f) = c • ⇑f :=
   (rfl)
 
+/-- An element of `C^{k,α}(M, F)` is `C^k`. -/
+protected theorem contMDiff (f : A.CkHolderSpace k α F) : ContMDiff I 𝓘(𝕜, F) k f :=
+  ContMDiffMap.contMDiff (toContMDiffMap A k α F f)
+
+instance instContinuousMapClass : ContinuousMapClass (A.CkHolderSpace k α F) M F where
+  map_continuous f := (ContMDiffMap.contMDiff (toContMDiffMap A k α F f)).continuous
+
 /-- The `C^{k,α}` norm: the finite-atlas `C^k` norm plus the Hölder seminorms of the `k`th
 coordinate derivatives on the pieces. -/
 noncomputable instance instNorm : Norm (A.CkHolderSpace k α F) where
@@ -354,17 +391,17 @@ theorem norm_def (f : A.CkHolderSpace k α F) :
     ‖f‖ = ContMDiffMap.finiteAtlasSeminorm A.center A.piece k le_rfl (toContMDiffMap A k α F f) +
       ∑ i, (ContMDiffMap.chartHolderNorm (A.center i) (A.piece i) k le_rfl α
         (toContMDiffMap A k α F f) : ℝ) :=
-  rfl
+  (rfl)
 
 /-- The `C^{k,α}` norm is absolutely homogeneous. -/
-theorem norm_smul_eq (a : 𝕜) (f : A.CkHolderSpace k α F) : ‖a • f‖ = ‖a‖ * ‖f‖ := by
+private theorem norm_smul_eq (a : 𝕜) (f : A.CkHolderSpace k α F) : ‖a • f‖ = ‖a‖ * ‖f‖ := by
   rw [norm_def, norm_def, map_smul, map_smul_eq_mul, mul_add, Finset.mul_sum]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [ContMDiffMap.chartHolderNorm_smul, NNReal.coe_mul, coe_nnnorm]
 
 /-- The `C^{k,α}` norm vanishes only at zero. -/
-protected theorem norm_eq_zero_iff (f : A.CkHolderSpace k α F) : ‖f‖ = 0 ↔ f = 0 := by
+private theorem norm_eq_zero_iff' (f : A.CkHolderSpace k α F) : ‖f‖ = 0 ↔ f = 0 := by
   constructor
   · intro h
     have h0 : ContMDiffMap.finiteAtlasSeminorm A.center A.piece k le_rfl
@@ -391,7 +428,7 @@ noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (A.CkHolderSp
   NormedAddCommGroup.ofCore (𝕜 := 𝕜)
     { norm_nonneg f := add_nonneg (apply_nonneg _ _)
         (Finset.sum_nonneg fun _ _ ↦ NNReal.coe_nonneg _)
-      norm_smul := norm_smul_eq
+      norm_smul a f := by exact norm_smul_eq a f
       norm_triangle f g := by
         rw [norm_def, norm_def, norm_def, map_add]
         have hsum : ∑ i, (ContMDiffMap.chartHolderNorm (A.center i) (A.piece i) k le_rfl α
@@ -406,11 +443,11 @@ noncomputable instance instNormedAddCommGroup : NormedAddCommGroup (A.CkHolderSp
               (memChartHolder g i)
         linarith [map_add_le_add (ContMDiffMap.finiteAtlasSeminorm (F := F) A.center A.piece k
           le_rfl) (toContMDiffMap A k α F f) (toContMDiffMap A k α F g)]
-      norm_eq_zero_iff := CkHolderSpace.norm_eq_zero_iff }
+      norm_eq_zero_iff f := by exact norm_eq_zero_iff' f }
 
 /-- The normed space structure of the Hölder norm. -/
 noncomputable instance instNormedSpace : NormedSpace 𝕜 (A.CkHolderSpace k α F) where
-  norm_smul_le a f := (norm_smul_eq a f).le
+  norm_smul_le a f := by exact (norm_smul_eq a f).le
 
 /-- The finite-atlas `C^k` norm is bounded by the Hölder norm. -/
 theorem finiteAtlasSeminorm_le_norm (f : A.CkHolderSpace k α F) :
@@ -439,6 +476,26 @@ theorem norm_chartIteratedFDeriv_le (f : A.CkHolderSpace k α F) (i : A.ι) {m :
   (ContMDiffMap.finiteAtlasSeminorm_le_iff A.center A.piece k le_rfl _ (norm_nonneg f)).mp
     (finiteAtlasSeminorm_le_norm f) i m hm z hz
 
+/-- The values of an element are bounded by its Hölder norm. -/
+theorem norm_apply_le (f : A.CkHolderSpace k α F) (y : M) : ‖f y‖ ≤ ‖f‖ := by
+  obtain ⟨i, hy, hyK⟩ := A.interior_cover y
+  refine le_of_eq_of_le ?_ (norm_chartIteratedFDeriv_le f i (Nat.zero_le k) (interior_subset hyK))
+  rw [ContMDiffMap.chartIteratedFDeriv_self_target_apply, norm_iteratedFDerivWithin_zero,
+    Function.comp_apply, (extChartAt I (A.center i)).left_inv hy, coe_toContMDiffMap]
+
+variable (A k α F) in
+/-- Evaluation at a point, as a continuous linear map on `C^{k,α}(M, F)` of norm at most one. -/
+def evalCLM (y : M) : A.CkHolderSpace k α F →L[𝕜] F :=
+  LinearMap.mkContinuous
+    { toFun f := f y
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl } 1
+    fun f ↦ (one_mul ‖f‖).symm ▸ norm_apply_le f y
+
+@[simp]
+theorem evalCLM_apply (y : M) (f : A.CkHolderSpace k α F) : evalCLM A k α F y f = f y :=
+  (rfl)
+
 /-- **Hölder estimate.** The oscillation of the `k`th coordinate derivative on a piece is bounded
 by the Hölder norm times the `α`th power of the distance. -/
 theorem norm_chartIteratedFDeriv_sub_le (f : A.CkHolderSpace k α F) (i : A.ι)
@@ -450,21 +507,32 @@ theorem norm_chartIteratedFDeriv_sub_le (f : A.CkHolderSpace k α F) (i : A.ι)
     (mul_le_mul_of_nonneg_right (chartHolderNorm_le_norm f i)
       (Real.rpow_nonneg dist_nonneg _))
 
+/-- The inclusion of `C^{k,α}(M, F)` into `C^k(M, F)` with the finite-atlas norm is
+`1`-Lipschitz. -/
+theorem lipschitzWith_toContMDiffMap :
+    letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
+    LipschitzWith 1 (toContMDiffMap A k α F) := by
+  let _ := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
+  refine LipschitzWith.mk_one fun f g ↦ ?_
+  rw [dist_eq_norm, dist_eq_norm, ContMDiffMap.norm_finiteAtlas, ← map_sub]
+  exact finiteAtlasSeminorm_le_norm (f - g)
+
+/-- The inclusion of `C^{k,α}(M, F)` into `C^k(M, F)` with the finite-atlas norm is
+continuous. -/
+theorem continuous_toContMDiffMap :
+    letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
+    Continuous (toContMDiffMap A k α F) := by
+  let _ := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
+  exact lipschitzWith_toContMDiffMap.continuous
+
 /-- A Cauchy sequence in `C^{k,α}(M, F)` has underlying `C^k` maps Cauchy for the finite-atlas
 `C^k` norm. -/
-theorem cauchySeq_toContMDiffMap {u : ℕ → A.CkHolderSpace k α F} (hu : CauchySeq u) :
+theorem cauchySeq_toContMDiffMap {β : Type*} [Preorder β] {u : β → A.CkHolderSpace k α F}
+    (hu : CauchySeq u) :
     letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
-    CauchySeq fun n ↦ toContMDiffMap A k α F (u n) := by
-  let := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
-  refine Metric.cauchySeq_iff.mpr fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hu ε hε
-  refine ⟨N, fun m hm n hn ↦ ?_⟩
-  have h := hN m hm n hn
-  rw [dist_eq_norm] at h ⊢
-  rw [ContMDiffMap.norm_finiteAtlas]
-  refine lt_of_le_of_lt ?_ h
-  rw [← map_sub]
-  exact finiteAtlasSeminorm_le_norm (u m - u n)
+    CauchySeq fun b ↦ toContMDiffMap A k α F (u b) := by
+  let _ := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
+  exact lipschitzWith_toContMDiffMap.uniformContinuous.comp_cauchySeq hu
 
 section Complete
 
@@ -493,11 +561,14 @@ instance instCompleteSpace : CompleteSpace (A.CkHolderSpace k α F) := by
   have hH (n : ℕ) (C : ℝ≥0) (hC : ∀ m ≥ n, ‖u n - u m‖ ≤ C) (i : A.ι) :
       HolderWith C α ⇑((ContMDiffMap.chartIteratedFDeriv (v n - g) (A.center i) k
         le_rfl).restrict (A.piece i)) := by
-    refine ContMDiffMap.holderWith_restrict_chartIteratedFDeriv_sub_of_tendsto (hpt i)
-      (fun m _ ↦ ?_) (fun m hm ↦ ?_)
+    refine ContMDiffMap.holderWith_restrict_chartIteratedFDeriv_of_tendsto (l := atTop)
+      (u := fun m ↦ v n - v m) (fun z hz ↦ ?_) (.of_forall fun m ↦ ?_) ?_
+    · simp only [ContMDiffMap.chartIteratedFDeriv_sub, ContinuousMap.sub_apply]
+      exact tendsto_const_nhds.sub (hpt i z hz)
     · rw [← map_sub]
       exact memChartHolder (u n - u m) i
-    · rw [← map_sub]
+    · filter_upwards [eventually_ge_atTop n] with m hm
+      rw [← map_sub]
       exact_mod_cast (chartHolderNorm_le_norm (u n - u m) i).trans (hC m hm)
   have htail (C : ℝ≥0) (hC : 0 < C) : ∃ N, ∀ n ≥ N, ∀ m ≥ n, ‖u n - u m‖ ≤ C := by
     obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hu C hC
@@ -536,6 +607,8 @@ instance instCompleteSpace : CompleteSpace (A.CkHolderSpace k α F) := by
 end Complete
 
 end CkHolderSpace
+
+end
 
 end CompactChartAtlas
 
