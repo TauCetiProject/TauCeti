@@ -152,14 +152,10 @@ theorem span_mtangentConeAt_unstableSet_sup_span_mtangentConeAt_stableSet_self
     rw [hX.unstableSet_eq_stableSet_neg hf, (φ.neg hnd).mem_stableSubspace]
     simpa only [MorseChart.neg_toChart] using hu y (by simpa using hy.1)
       (by simpa using hy.2.trans_le (min_le_right _ _))
-  have hxs : x ∈ hX.flow.stableSet x :=
-    Flow.mem_stableSet.2 (by simp [hX.flow_apply_of_mfderiv_eq_zero hx])
-  have hxu : x ∈ hX.flow.unstableSet x :=
-    Flow.mem_unstableSet.2 (by simp [hX.flow_apply_of_mfderiv_eq_zero hx])
   exact hsliceu.span_mtangentConeAt_sup_eq_top (by simp)
     (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD) hslices
     (Submodule.closed_of_finiteDimensional _) (Submodule.closed_of_finiteDimensional _)
-    (by rw [hsrc]; exact hxD) hxu hxs
+    (by rw [hsrc]; exact hxD) (hX.self_mem_unstableSet hx) (hX.self_mem_stableSet hx)
     (by rw [sup_comm]; exact φ.stableSubspace_sup_stableSubspace_neg hnd)
 
 /-- The velocity `X y` of the trajectory through a point `y` of a set `S` invariant under the flow

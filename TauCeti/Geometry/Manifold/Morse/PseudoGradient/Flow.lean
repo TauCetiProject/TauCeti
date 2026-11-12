@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Dynamics.Flow.Lyapunov
-import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
@@ -134,7 +133,7 @@ diffeomorphism. -/
 theorem injective_mfderiv_flow (t : ℝ) (y : M) :
     Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y) := by
   have hcoe : ⇑(hX.flowDiffeomorph t) = hX.flow t := funext (hX.flowDiffeomorph_apply t)
-  exact hcoe ▸ (hX.flowDiffeomorph t).injective_mfderiv (by simp) y
+  exact hcoe ▸ ((hX.flowDiffeomorph t).isInvertible_mfderiv (x := y) (by simp)).injective
 
 /-- The derivative of `f` along an orbit of the flow is `df(X)`. -/
 theorem hasDerivAt_comp_flow (y : M) (t : ℝ) :

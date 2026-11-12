@@ -123,12 +123,9 @@ theorem mem_unstableSet (v : L) : P v ∈ hX.flow.unstableSet x :=
 /-- The parametrization sends `0` to the critical point: `P 0` is a rest point of the flow lying on
 `W^u(x)`, so its constant backward orbit converges to `x`. -/
 @[simp]
-theorem map_zero : P 0 = x := by
-  have hfix : ∀ t, hX.flow t (P 0) = P 0 := fun t ↦ by
-    rw [P.flow_apply, smul_zero]
-  have h := Flow.mem_unstableSet.1 (P.mem_unstableSet 0)
-  simp only [hfix] at h
-  exact tendsto_nhds_unique tendsto_const_nhds h
+theorem map_zero : P 0 = x :=
+  Flow.eq_of_mem_unstableSet_of_periodic (P.mem_unstableSet 0) one_ne_zero fun t ↦ by
+    simp only [P.flow_apply, smul_zero]
 
 /-- The derivative of the parametrization is injective. -/
 theorem mfderiv_injective (v : L) : Injective (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P v) :=
@@ -144,6 +141,9 @@ theorem span_mtangentConeAt_eq_range_mfderiv (hf : IsMorse 𝓘(ℝ, E) f) (v : 
     Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) (P v)) =
       LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P v).toLinearMap := by
   -- The image of the derivative is tangent to `W^u(x)`, and both spaces have dimension `ind x`.
+  -- The range of `mfderiv` lives in `Submodule ℝ (TangentSpace 𝓘(ℝ, E) (P v))`, which is only
+  -- definitionally `Submodule ℝ E`, so the order and `Submodule.subset_span` are elaborated
+  -- explicitly in `Submodule ℝ E`.
   have hle : @LE.le (Submodule ℝ E) _
       (LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) P v).toLinearMap)
       (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) (P v))) := by
