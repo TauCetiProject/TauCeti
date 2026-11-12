@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -38,6 +39,7 @@ apply to all three ends.
 * `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
   `q`.
 * `TauCeti.Floer.positiveEndChart q`: the end chart of `q` read as a positive end.
+* `TauCeti.Floer.positiveEndCoord q`: the coordinates of a point in the positive end chart of `q`.
 * `TauCeti.Floer.positiveEndHamiltonian H q`: the end Hamiltonian in the positive end chart.
 
 ## Main results
@@ -83,6 +85,11 @@ apply to all three ends.
   `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
   `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
   preserving, injective on the band `ℝ × (0, 1)` and `1`-periodic in `t`.
+* `TauCeti.Floer.positiveEndChart_positiveEndCoord`,
+  `TauCeti.Floer.exists_positiveEndCoord_positiveEndChart`: the positive end coordinates invert
+  the positive end chart, up to an integer shift of `t`.
+* `TauCeti.Floer.contDiffAt_comp_positiveEndCoord`: a `Cⁿ` function on the cylinder of period one
+  in `t`, read in the positive end coordinates, is `Cⁿ` away from the center of the end.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
@@ -567,6 +574,101 @@ theorem injOn_positiveEndChart (q : Puncture) :
         simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
   exact smul_right_injective _ q.endSign_ne_zero
     (injOn_endChart_univ_prod_Ico q t₀ (ht₀ a ha) (ht₀ b hb) hab)
+
+/-! ### Coordinates of the positive end chart -/
+
+/-- The coordinates of a point in the positive end chart of `q`: `(±s, ±t)` for the end coordinate
+`s + i t` of the point (`TauCeti.ThricePuncturedSphere.Puncture.endCoord`), with the sign of the
+end. Away from the center of the end the positive end chart sends them back to the point
+(`positiveEndChart_positiveEndCoord`), and they recover a point of the cylinder from its image
+under the positive end chart up to an integer shift of `t`
+(`exists_positiveEndCoord_positiveEndChart`). -/
+noncomputable def positiveEndCoord (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
+  q.endSign • Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z))
+
+theorem positiveEndCoord_apply (q : Puncture) (z : ℝ × ℝ) :
+    positiveEndCoord q z =
+      q.endSign • Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)) :=
+  (rfl)
+
+/-- The first positive end coordinate is the signed longitudinal coordinate `±s`. -/
+theorem fst_positiveEndCoord (q : Puncture) (z : ℝ × ℝ) :
+    (positiveEndCoord q z).1 = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  simp [positiveEndCoord_apply]
+
+/-- The second positive end coordinate is the signed angular coordinate `±t`. -/
+theorem snd_positiveEndCoord (q : Puncture) (z : ℝ × ℝ) :
+    (positiveEndCoord q z).2 = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im := by
+  simp [positiveEndCoord_apply]
+
+/-- Away from the center of the end, the positive end chart inverts the positive end
+coordinates. -/
+theorem positiveEndChart_positiveEndCoord (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    positiveEndChart q (positiveEndCoord q z) = z := by
+  rw [positiveEndChart_apply, positiveEndCoord_apply, smul_smul, endSign_mul_self, one_smul,
+    endChart_apply, ContinuousLinearEquiv.symm_apply_apply, q.cylindricalEndLift_endCoord hz,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The positive end coordinates recover a point of the cylinder from its image under the positive
+end chart, up to an integer shift of the angular coordinate. -/
+theorem exists_positiveEndCoord_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
+    ∃ k : ℤ, positiveEndCoord q (positiveEndChart q ζ) = ζ + (0, (k : ℝ)) := by
+  obtain ⟨k, hk⟩ :=
+    q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm (q.endSign • ζ))
+  -- The shift `k i` of the end coordinate becomes the shift `±k` of the positive coordinates.
+  have h : positiveEndCoord q (positiveEndChart q ζ) = ζ + (0, q.endSign * k) := by
+    rw [positiveEndCoord_apply, positiveEndChart_apply, equivRealProdCLM_symm_endChart, hk]
+    ext <;> simp [Complex.equivRealProdCLM_symm_apply, mul_add, ← mul_assoc]
+  rcases q.endSign_eq_one_or_eq_neg_one with hσ | hσ
+  · exact ⟨k, by rw [h, hσ, one_mul]⟩
+  · exact ⟨-k, by rw [h, hσ]; push_cast; ring_nf⟩
+
+/-- The positive end coordinates recover the longitudinal coordinate of a point of the cylinder
+from its image under the positive end chart. -/
+@[simp]
+theorem fst_positiveEndCoord_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
+    (positiveEndCoord q (positiveEndChart q ζ)).1 = ζ.1 := by
+  obtain ⟨k, hk⟩ := exists_positiveEndCoord_positiveEndChart q ζ
+  simp [hk]
+
+/-- A `Cⁿ` function `F` on the cylinder of period one in the angular coordinate, read in the
+positive end coordinates of the end `q`, is `Cⁿ` away from the center of the end. The angular
+coordinate jumps by `1` across a ray, and periodicity removes the jump. -/
+theorem contDiffAt_comp_positiveEndCoord {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (q : Puncture) {n : WithTop ℕ∞} {F : ℝ × ℝ → E} (hF : ContDiff ℝ n F)
+    (hFp : ∀ p, F (p + (0, 1)) = F p) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    ContDiffAt ℝ n (F ∘ positiveEndCoord q) z := by
+  -- Read `F` as a function of the angular coordinate `t` and the longitudinal coordinate `s`.
+  set f : ℝ → ℝ → E := fun t s ↦ F (q.endSign * s, q.endSign * t)
+  have hf : Periodic f 1 := by
+    intro t
+    funext s
+    rcases q.endSign_eq_one_or_eq_neg_one with hσ | hσ
+    · simpa [f, hσ] using hFp (s, t)
+    · have h := hFp (-s, -(t + 1))
+      rw [Prod.mk_add_mk, add_zero, show -(t + 1) + 1 = -t by ring] at h
+      simpa [f, hσ] using h.symm
+  have hfs : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, E) n (uncurry f) :=
+    contMDiff_prod_modelWithCornersSelf_iff.2 (hF.comp ((contDiff_const.mul contDiff_snd).prodMk
+      (contDiff_const.mul contDiff_fst))).contMDiff
+  have hg : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℝ)) n
+      (fun w : ℝ × ℝ ↦ (Complex.equivRealProdCLM.symm w,
+        (q.endCoord (Complex.equivRealProdCLM.symm w)).re)) z :=
+    Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.prodMk
+      ((q.contDiffAt_re_endCoord hz).comp z
+        Complex.equivRealProdCLM.symm.contDiff.contDiffAt).contMDiffAt
+  have h := (q.contMDiffAt_comp_im_endCoord hf hfs hz _).comp z hg
+  rw [contMDiffAt_iff_contDiffAt] at h
+  refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦ ?_)
+  simp [f, positiveEndCoord_apply]
+
+/-- The longitudinal positive end coordinate is continuous away from the center of the end. -/
+theorem continuousAt_fst_positiveEndCoord (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    ContinuousAt (fun w ↦ (positiveEndCoord q w).1) z :=
+  (contDiffAt_comp_positiveEndCoord q (n := 0) contDiff_fst (fun _ ↦ by simp) hz).continuousAt
 
 /-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
 sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/
