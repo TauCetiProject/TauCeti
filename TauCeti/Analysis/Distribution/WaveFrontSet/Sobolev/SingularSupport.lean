@@ -154,7 +154,7 @@ theorem exists_nhds_forall_memLp_of_forall_isMicrolocallySobolevAt {s : ℝ} {T 
   rcases i with _ | ⟨ξ, hξ⟩
   · -- The singleton at the origin carries a finite multiple of a point mass.
     rw [Option.elim_none, Measure.restrict_singleton]
-    exact (memLp_dirac enorm_lt_top).smul_measure measure_singleton_lt_top.ne
+    exact (memLp_dirac eNorm_lt_top).smul_measure measure_singleton_lt_top.ne
   · exact hL ξ ψ (hψ.trans (biInter_subset_of_mem hξ))
 
 /-- A complex distribution is `H^s` near a point `x ∈ Ω` exactly when it is microlocally `H^s` at
