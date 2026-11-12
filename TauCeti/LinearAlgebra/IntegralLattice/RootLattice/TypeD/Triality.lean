@@ -552,7 +552,6 @@ theorem typeD4TrialityGlueAlphabetIsometry_glueLabelEquiv (i : Fin 4) :
       (D 4).glueLabelEquiv ht (typeD4TrialityLabel i) := by
   have hF : Nat.card (GaloisField 2 2) = 4 := GaloisField.card 2 2 (by decide)
   obtain ⟨ω, hω⟩ := exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four hF
-  have h3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
   rw [typeD4TrialityGlueAlphabetIsometry_apply]
   apply (QuadraticMap.IsometryEquiv.symm_apply_eq _).mpr
   rw [discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry _ _ hF hω]
