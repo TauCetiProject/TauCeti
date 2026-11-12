@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Potential
+import TauCeti.Analysis.Convex.Measure
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Integral.RieszPotential
 import TauCeti.MeasureTheory.Integral.SchurTest
+import TauCeti.MeasureTheory.Measure.MeasurableHull
 
 /-!
 # The Poincaré–Wirtinger inequality for `C¹` functions on a convex domain
 
-Let `Ω` be a bounded convex open subset of a finite-dimensional real normed space `E` of
+Let `Ω` be a bounded convex subset of a finite-dimensional real normed space `E` of
 dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` have positive measure. For a
 `C¹` function `u` on `Ω` and `1 ≤ p < ∞`, this file proves
 
@@ -24,6 +28,8 @@ dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` have pos
 The constant depends only on the dimension, through the Haar measure of the unit ball, on the
 diameter of `Ω` and on the measure of `S`, as it must: rescaling `Ω` by `t` multiplies it by
 `t`. The mean may be taken over any subset of positive measure, not only over `Ω` itself.
+`Ω` need not be open: the frontier of a convex set is null, so each statement reduces to the open
+convex set `interior Ω`, which has no larger diameter.
 
 The proof bounds the deviation `u x - ⨍ S u` pointwise by the Riesz potential
 `∫_Ω ‖Du y‖ ‖x - y‖ ^ (1 - n) dy` (`TauCeti.enorm_sub_setAverage_le_of_convex`), and bounds that
@@ -44,6 +50,11 @@ under rescaling `Ω`.
 
 * `TauCeti.lintegral_enorm_sub_setAverage_rpow_le_of_convex`: the inequality in `∫⁻` form.
 * `TauCeti.eLpNorm_sub_setAverage_le_of_convex`: the inequality between `Lᵖ` seminorms.
+* `TauCeti.setIntegral_norm_sub_setAverage_sq_le_of_convex`: the case `p = 2` for Bochner
+  integrals of squared norms, for maps that are `C¹` on the whole space.
+* `TauCeti.setIntegral_norm_sq_le_of_convex`: the consequence
+  `∫_Ω ‖u‖² ≤ (2 + 4 μ(Ω)/μ(S)) C² ∫_Ω ‖Du‖² + (4 μ(Ω)/μ(S)) ∫_S ‖u‖²`, which bounds `u` on `Ω`
+  by its derivative and its size on the subset `S`.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex`: the `L¹`
   deviation on a subset `A ⊆ Ω` is at most `μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S)` times
   `μ(A) ^ (1/n) ‖Du‖_{L¹(Ω)}`.
@@ -68,16 +79,26 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω S : Set E}
 
 /-- **The Poincaré–Wirtinger inequality on a convex domain**, in `∫⁻` form. If `u` is `C¹` on a
-bounded convex open set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p` the `p`-th power
+bounded convex set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p` the `p`-th power
 of the deviation of `u` from its mean over `S` has integral over `Ω` at most `C ^ p` times the
 integral of `‖Du‖ ^ p` over `Ω`, where `C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` and `n` is
 the dimension of the space. -/
-theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) {p : ℝ}
     (hp : 1 ≤ p) :
     ∫⁻ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ^ p ∂μ ≤
       ENNReal.ofReal ((μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ p) *
         ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ^ p ∂μ := by
+  wlog hΩ : IsOpen Ω generalizing Ω S
+  · -- Pass to `interior Ω`, which is a.e. equal to `Ω` and has no larger diameter.
+    have hSae := hΩc.inter_interior_ae_eq (μ := μ) hS
+    have h := this (S := S ∩ interior Ω) hΩc.interior (hb.subset interior_subset)
+      (hu.mono interior_subset) inter_subset_right (by rwa [measure_congr hSae]) isOpen_interior
+    rw [Measure.restrict_congr_set (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ)),
+      Measure.restrict_congr_set hSae, measureReal_congr hSae] at h
+    refine h.trans (mul_le_mul_left (ENNReal.ofReal_le_ofReal ?_) _)
+    gcongr
+    exact diam_mono interior_subset hb
   set n := finrank ℝ E
   set d := diam Ω
   have hp0 : 0 ≤ p := zero_le_one.trans hp
@@ -91,14 +112,10 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
     simpa only [V, k, mul_comm (‖fderiv ℝ u _‖ₑ)] using
       enorm_sub_setAverage_le_of_convex hΩ hΩc hb hu hx hS hS₀
   rcases subsingleton_or_nontrivial E with hE | hE
-  · -- In dimension zero the kernel vanishes, and so does the left-hand side.
-    have hk0 : ∀ x y : E, k x y = 0 := fun x y => by
-      simp [k, n, Subsingleton.elim x y, finrank_zero_of_subsingleton]
-    have hzero : ∀ x ∈ Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ^ p = 0 := fun x hx => by
-      have h := hpoint x hx
-      simp only [V, hk0, zero_mul, lintegral_zero, mul_zero, nonpos_iff_eq_zero] at h
-      rw [h, ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hp)]
-    rw [setLIntegral_congr_fun hΩ.measurableSet hzero, lintegral_zero]
+  · -- In dimension zero the left-hand side vanishes.
+    rw [setLIntegral_congr_fun hΩ.measurableSet fun x _ => by
+      rw [enorm_sub_setAverage_eq_zero_of_subsingleton x hS₀ hS_top,
+        ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hp)], lintegral_zero]
     exact bot_le
   have hn : 0 < (n : ℝ) := Nat.cast_pos.2 finrank_pos
   have hd : 0 ≤ d := diam_nonneg
@@ -106,30 +123,22 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
   set K : ℝ := n * μ.real (ball 0 1) * d
   have hK : 0 ≤ K := by positivity
   have hmarg : ∀ x ∈ Ω, ∫⁻ y in Ω, k x y ∂μ ≤ ENNReal.ofReal K := fun x hx =>
-    calc
-      _ ≤ ∫⁻ y in closedBall x d, k x y ∂μ :=
-        lintegral_mono_set fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)
-      _ = _ := by
-        rw [setLIntegral_closedBall_enorm_sub_rpow (by linarith) hd, add_sub_cancel,
-          Real.rpow_one, div_one]
+    lintegral_enorm_sub_rpow_le_of_mem hb hx
   have hcont := hu.continuousOn_fderiv_of_isOpen hΩ le_rfl
   have hschur : ∫⁻ x in Ω, V x ^ p ∂μ ≤
       ENNReal.ofReal K ^ (p - 1) * ENNReal.ofReal K * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ^ p ∂μ :=
     lintegral_rpow_lintegral_mul_le (by fun_prop)
-      (hcont.enorm.aemeasurable hΩ.measurableSet) hp
+      (hcont.eNorm.aemeasurable hΩ.measurableSet) hp
       ((ae_restrict_iff' hΩ.measurableSet).2 (ae_of_all _ hmarg))
       ((ae_restrict_iff' hΩ.measurableSet).2 (ae_of_all _ fun y hy => by
-        simpa only [k, enorm_sub_rev y] using hmarg y hy))
+        simpa only [k, eNorm_sub_rev y] using hmarg y hy))
   -- Assemble the constant.
-  have hc : c = ENNReal.ofReal (d ^ n / n / μ.real S) := by
-    have hSpos : 0 < μ.real S := ENNReal.toReal_pos hS₀ hS_top
-    rw [ENNReal.ofReal_div_of_pos hSpos, ofReal_measureReal hS_top]
   have hcK : c * ENNReal.ofReal K =
       ENNReal.ofReal (μ.real (ball 0 1) * d ^ (n + 1) / μ.real S) := by
-    rw [hc, ← ENNReal.ofReal_mul (by positivity)]
+    rw [show K = n * (μ.real (ball 0 1) * d) by ring,
+      ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul finrank_pos hd hS₀ hS_top]
     congr 1
-    simp only [K]
-    field_simp
+    simp only [Measure.real]
     ring
   have hKp : ENNReal.ofReal K ^ (p - 1) * ENNReal.ofReal K = ENNReal.ofReal K ^ p := by
     rw [ENNReal.ofReal_rpow_of_nonneg hK (by linarith), ← ENNReal.ofReal_mul (by positivity),
@@ -140,7 +149,7 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
         rw [← ENNReal.mul_rpow_of_nonneg _ _ hp0]
         exact ENNReal.rpow_le_rpow (hpoint x hx) hp0
     _ = c ^ p * ∫⁻ x in Ω, V x ^ p ∂μ := lintegral_const_mul' _ _
-      (ENNReal.rpow_ne_top_of_nonneg hp0 (hc ▸ ENNReal.ofReal_ne_top))
+      (ENNReal.rpow_ne_top_of_nonneg hp0 (ENNReal.div_ne_top ENNReal.ofReal_ne_top hS₀))
     _ ≤ c ^ p * (ENNReal.ofReal K ^ p * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ^ p ∂μ) := by
       rw [← hKp]
       gcongr
@@ -149,67 +158,64 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
         ENNReal.ofReal_rpow_of_nonneg (by positivity) hp0]
 
 /-- **The Poincaré–Wirtinger inequality on a convex domain, localized to a subset.** If `u` is
-`C¹` on a bounded convex open set `Ω` and `S ⊆ Ω` has positive measure, then for every `A ⊆ Ω` the
+`C¹` on a bounded convex set `Ω` and `S ⊆ Ω` has positive measure, then for every `A ⊆ Ω` the
 integral over `A` of the deviation of `u` from its mean over `S` is at most
 `μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S) * μ(A) ^ (1/n)` times the integral of `‖Du‖` over
 `Ω`, where `n` is the dimension of the space. The factor `μ(A) ^ (1/n)` makes this a weak-type
 `L^{n/(n-1)}` Poincaré inequality. -/
-theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ : IsOpen Ω)
+theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex
     (hΩc : Convex ℝ Ω) (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hS : S ⊆ Ω)
     (hS₀ : μ S ≠ 0) {A : Set E} (hA : A ⊆ Ω) :
     ∫⁻ x in A, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ ≤
       ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * diam Ω ^ finrank ℝ E /
         μ.real S) * μ A ^ (finrank ℝ E : ℝ)⁻¹ * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ∂μ := by
+  wlog hΩ : IsOpen Ω generalizing Ω S A
+  · -- Pass to `interior Ω`, which is a.e. equal to `Ω` and has no larger diameter.
+    have hSae := hΩc.inter_interior_ae_eq (μ := μ) hS
+    have hAae := hΩc.inter_interior_ae_eq (μ := μ) hA
+    have h := this (S := S ∩ interior Ω) (A := A ∩ interior Ω) hΩc.interior
+      (hb.subset interior_subset) (hu.mono interior_subset) inter_subset_right
+      (by rwa [measure_congr hSae]) inter_subset_right isOpen_interior
+    rw [Measure.restrict_congr_set (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ)),
+      Measure.restrict_congr_set hSae, Measure.restrict_congr_set hAae, measureReal_congr hSae,
+      measure_congr hAae] at h
+    refine h.trans (mul_le_mul_left (mul_le_mul_left (ENNReal.ofReal_le_ofReal ?_) _) _)
+    gcongr
+    exact diam_mono interior_subset hb
   set n := finrank ℝ E
   set d := diam Ω
   have hS_top : μ S ≠ ∞ := ((measure_mono hS).trans_lt hb.measure_lt_top).ne
-  -- It suffices to treat the measurable set `A' = toMeasurable μ A ∩ Ω ⊇ A`, of the same measure.
-  set A' := toMeasurable μ A ∩ Ω
-  have hAA' : A ⊆ A' := subset_inter (subset_toMeasurable μ A) hA
-  have hA'm : MeasurableSet A' := (measurableSet_toMeasurable μ A).inter hΩ.measurableSet
-  have hμA' : μ A' = μ A :=
-    le_antisymm ((measure_mono inter_subset_left).trans_eq (measure_toMeasurable A))
-      (measure_mono hAA')
+  -- It suffices to treat a measurable set `A' ⊇ A` in `Ω` of the same measure.
+  obtain ⟨A', hAA', hA'Ω, hA'm, hμA'⟩ := exists_measurableSet_subset_measure_eq (μ := μ)
+    hΩ.measurableSet hA
   refine (lintegral_mono_set hAA').trans ?_
   rw [← hμA']
   -- The Riesz kernel and the pointwise potential estimate, with its constant `c`.
   set k : E → E → ℝ≥0∞ := fun x y => ‖x - y‖ₑ ^ (1 - (n : ℝ))
-  set c : ℝ≥0∞ := ENNReal.ofReal (d ^ n / n) / μ S with hc_def
+  set c : ℝ≥0∞ := ENNReal.ofReal (d ^ n / n) / μ S
   have hpoint : ∀ x ∈ Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤
       c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * k x y ∂μ := fun x hx =>
     enorm_sub_setAverage_le_of_convex hΩ hΩc hb hu hx hS hS₀
   rcases subsingleton_or_nontrivial E with hE | hE
-  · -- In dimension zero the kernel vanishes, and so does the left-hand side.
-    have hk0 : ∀ x y : E, k x y = 0 := fun x y => by
-      simp [k, n, Subsingleton.elim x y, finrank_zero_of_subsingleton]
-    have hzero : ∀ x ∈ A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := fun x hx => by
-      simpa [hk0] using hpoint x hx.2
+  · -- In dimension zero the left-hand side vanishes.
+    have hzero : ∀ x ∈ A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := fun x _ =>
+      enorm_sub_setAverage_eq_zero_of_subsingleton x hS₀ hS_top
     rw [setLIntegral_congr_fun hA'm hzero, lintegral_zero]
     exact bot_le
-  have hn : (0 : ℝ) < n := Nat.cast_pos.2 finrank_pos
   -- The kernel bound `∫_{A'} ‖x - y‖ ^ (1 - n) dx ≤ n ω ^ (1 - 1/n) μ(A') ^ (1/n)`.
   set K : ℝ := n * μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹)
   have hkA (y : E) : ∫⁻ x in A', k x y ∂μ ≤ ENNReal.ofReal K * μ A' ^ (n : ℝ)⁻¹ := by
-    have h := setLIntegral_enorm_sub_rpow_le (μ := μ) (inv_pos.2 hn)
-      (inv_le_one_of_one_le₀ (Nat.one_le_cast.2 finrank_pos)) hA'm y
-    rw [inv_inv, mul_sub, mul_inv_cancel₀ hn.ne', mul_one] at h
-    simpa only [k, enorm_sub_rev _ y] using h
+    simpa only [k, eNorm_sub_rev y] using setLIntegral_enorm_sub_rpow_le_finrank hA'm y
   have hmeas : AEMeasurable (Function.uncurry fun x y => ‖fderiv ℝ u y‖ₑ * k x y)
       ((μ.restrict A').prod (μ.restrict Ω)) :=
-    ((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).enorm.aemeasurable
+    ((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).eNorm.aemeasurable
       hΩ.measurableSet).comp_snd.mul (by fun_prop)
   have hc : c * ENNReal.ofReal K =
-      ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹) * d ^ n / μ.real S) := by
-    have hSpos : 0 < μ.real S := ENNReal.toReal_pos hS₀ hS_top
-    rw [hc_def, ENNReal.div_eq_inv_mul,
-      ← ofReal_measureReal hS_top, ← ENNReal.ofReal_inv_of_pos hSpos,
-      ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity)]
-    congr 1
-    simp only [K]
-    field_simp
+      ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹) * d ^ n / μ.real S) :=
+    ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul finrank_pos diam_nonneg hS₀ hS_top
   calc ∫⁻ x in A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ
       ≤ ∫⁻ x in A', c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * k x y ∂μ ∂μ :=
-        setLIntegral_mono' hA'm fun x hx => hpoint x hx.2
+        setLIntegral_mono' hA'm fun x hx => hpoint x (hA'Ω hx)
     _ = c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * ∫⁻ x in A', k x y ∂μ ∂μ := by
         rw [lintegral_const_mul' _ _ (ENNReal.div_ne_top ENNReal.ofReal_ne_top hS₀),
           lintegral_lintegral_swap hmeas]
@@ -220,24 +226,121 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ
         exact hkA y
     _ = _ := by
         have hA'fin : μ A' ≠ ∞ :=
-          ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono inter_subset_right)
+          ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono hA'Ω)
         rw [lintegral_mul_const' _ _ (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
           (ENNReal.rpow_ne_top_of_nonneg (by positivity) hA'fin)), ← hc]
         ring
 
 /-- **The Poincaré–Wirtinger inequality on a convex domain.** If `u` is `C¹` on a bounded convex
-open set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p < ∞` the `Lᵖ(Ω)` seminorm of the
+set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p < ∞` the `Lᵖ(Ω)` seminorm of the
 deviation of `u` from its mean over `S` is at most `μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times
 the `Lᵖ(Ω)` seminorm of the derivative of `u`, where `n` is the dimension of the space. -/
-theorem eLpNorm_sub_setAverage_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+theorem eLpNorm_sub_setAverage_le_of_convex (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0)
     {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) :
     eLpNorm (fun x => u x - ⨍ y in S, u y ∂μ) p (μ.restrict Ω) ≤
       ENNReal.ofReal (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) *
         eLpNorm (fderiv ℝ u) p (μ.restrict Ω) :=
-  eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) (zero_lt_one.trans_le hp).ne' hp'
-    ((hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).sub aestronglyMeasurable_const)
-    (lintegral_enorm_sub_setAverage_rpow_le_of_convex hΩ hΩc hb hu hS hS₀
+  eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) hp'
+    ((((hu.continuousOn.mono interior_subset).aestronglyMeasurable
+      isOpen_interior.measurableSet).mono_measure (Measure.restrict_congr_set
+        (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ))).ge).sub
+      aestronglyMeasurable_const)
+    (lintegral_enorm_sub_setAverage_rpow_le_of_convex hΩc hb hu hS hS₀
       (by simpa using ENNReal.toReal_mono hp' hp))
+
+/-- **The Poincaré–Wirtinger inequality on a convex domain**, for `p = 2` and Bochner integrals.
+If `u` is `C¹`, `Ω` is a bounded convex set and `S ⊆ Ω` has positive measure, the integral
+over `Ω` of the squared deviation of `u` from its mean over `S` is at most `C ^ 2` times the
+integral of `‖Du‖ ^ 2` over `Ω`, where `C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)`. -/
+theorem setIntegral_norm_sub_setAverage_sq_le_of_convex (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) :
+    ∫ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ ^ 2 ∂μ ≤
+      (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ 2 *
+        ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ := by
+  have h := lintegral_enorm_sub_setAverage_rpow_le_of_convex (μ := μ) hΩc hb hu.contDiffOn
+    hS hS₀ one_le_two
+  have hpowF (v : F) : ENNReal.ofReal (‖v‖ ^ 2) = ‖v‖ₑ ^ 2 := by
+    rw [← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
+  have hpowL (L : E →L[ℝ] F) : ENNReal.ofReal (‖L‖ ^ 2) = ‖L‖ₑ ^ 2 := by
+    rw [← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
+  -- Continuous functions are integrable on the compact closure of `Ω`.
+  have hi₁ : IntegrableOn (fun x ↦ ‖u x - ⨍ y in S, u y ∂μ‖ ^ 2) Ω μ :=
+    ((Continuous.continuousOn (by fun_prop)).integrableOn_compact
+      hb.isCompact_closure).mono_set subset_closure
+  have hi₂ : IntegrableOn (fun x ↦ ‖fderiv ℝ u x‖ ^ 2) Ω μ :=
+    ((((hu.continuous_fderiv one_ne_zero).norm.pow 2).continuousOn).integrableOn_compact
+      hb.isCompact_closure).mono_set subset_closure
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_mul (by positivity),
+    ofReal_integral_eq_lintegral_ofReal hi₁ (ae_of_all _ fun _ ↦ by positivity),
+    ofReal_integral_eq_lintegral_ofReal hi₂ (ae_of_all _ fun _ ↦ by positivity)]
+  simp only [hpowF, hpowL]
+  simpa only [Real.rpow_two, ENNReal.rpow_two] using h
+
+
+/-- **The Poincaré inequality on a convex domain, relative to a subset.** If `u` is `C¹`, `Ω` is a
+bounded convex set and `S ⊆ Ω` has positive measure, then `∫_Ω ‖u‖²` is at
+most `(2 + 4 μ(Ω) / μ(S)) C ^ 2 ∫_Ω ‖Du‖² + (4 μ(Ω) / μ(S)) ∫_S ‖u‖²`, where
+`C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` is the Poincaré–Wirtinger constant. -/
+theorem setIntegral_norm_sq_le_of_convex (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) :
+    ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤
+      (2 + 4 * μ.real Ω / μ.real S) *
+          (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ 2 *
+          ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ +
+        4 * μ.real Ω / μ.real S * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
+  set m := ⨍ y in S, u y ∂μ
+  set C := μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S
+  have hΩfin : μ Ω ≠ ∞ := hb.measure_lt_top.ne
+  have hs : 0 < μ.real S :=
+    ENNReal.toReal_pos hS₀ ((measure_mono hS).trans_lt hb.measure_lt_top).ne
+  have hV : 0 ≤ μ.real Ω := measureReal_nonneg
+  have hcpt := hb.isCompact_closure
+  have hdev : IntegrableOn (fun x ↦ ‖u x - m‖ ^ 2) Ω μ :=
+    ((Continuous.continuousOn (by fun_prop)).integrableOn_compact hcpt).mono_set subset_closure
+  have hsq : IntegrableOn (fun x ↦ ‖u x‖ ^ 2) Ω μ :=
+    ((Continuous.continuousOn (by fun_prop)).integrableOn_compact hcpt).mono_set subset_closure
+  have hX := setIntegral_norm_sub_setAverage_sq_le_of_convex (μ := μ) hΩc hb hu hS hS₀
+  -- The mean over `S` is controlled by the deviation and by `∫_S ‖u‖²`.
+  have hm : μ.real S * ‖m‖ ^ 2 ≤
+      2 * ∫ x in Ω, ‖u x - m‖ ^ 2 ∂μ + 2 * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
+    have hpt (x : E) : ‖m‖ ^ 2 ≤ 2 * ‖u x - m‖ ^ 2 + 2 * ‖u x‖ ^ 2 := by
+      have h := norm_sub_le (u x) (u x - m)
+      rw [sub_sub_cancel] at h
+      nlinarith [sq_nonneg (‖u x‖ - ‖u x - m‖), norm_nonneg m]
+    calc μ.real S * ‖m‖ ^ 2 = ∫ _ in S, ‖m‖ ^ 2 ∂μ := by rw [setIntegral_const, smul_eq_mul]
+      _ ≤ ∫ x in S, (2 * ‖u x - m‖ ^ 2 + 2 * ‖u x‖ ^ 2) ∂μ :=
+        setIntegral_mono_ae_restrict (integrableOn_const ((measure_mono hS).trans_lt
+          hb.measure_lt_top).ne) (((hdev.mono_set hS).const_mul 2).fun_add
+          ((hsq.mono_set hS).const_mul 2)) (ae_of_all _ hpt)
+      _ = 2 * ∫ x in S, ‖u x - m‖ ^ 2 ∂μ + 2 * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
+        rw [integral_add ((hdev.mono_set hS).const_mul 2) ((hsq.mono_set hS).const_mul 2),
+          integral_const_mul, integral_const_mul]
+      _ ≤ _ := by
+        gcongr 2 * ?_ + _
+        exact setIntegral_mono_set hdev (ae_of_all _ fun _ ↦ by positivity) hS.eventuallySubset
+  -- On `Ω`, `‖u‖²` is controlled by the deviation and the mean.
+  have hU : ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤
+      2 * ∫ x in Ω, ‖u x - m‖ ^ 2 ∂μ + 2 * μ.real Ω * ‖m‖ ^ 2 := by
+    have hpt (x : E) : ‖u x‖ ^ 2 ≤ 2 * ‖u x - m‖ ^ 2 + 2 * ‖m‖ ^ 2 := by
+      have h := norm_add_le (u x - m) m
+      rw [sub_add_cancel] at h
+      nlinarith [sq_nonneg (‖u x - m‖ - ‖m‖), norm_nonneg (u x)]
+    calc ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤ ∫ x in Ω, (2 * ‖u x - m‖ ^ 2 + 2 * ‖m‖ ^ 2) ∂μ :=
+          setIntegral_mono_ae_restrict hsq ((hdev.const_mul 2).fun_add
+            (integrableOn_const hΩfin).integrable) (ae_of_all _ hpt)
+      _ = _ := by
+        rw [integral_add (hdev.const_mul 2) (integrableOn_const hΩfin).integrable,
+          integral_const_mul, setIntegral_const, smul_eq_mul]
+        ring
+  refine le_of_mul_le_mul_left ?_ hs
+  have e : μ.real S * ((2 + 4 * μ.real Ω / μ.real S) * C ^ 2 * ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ +
+      4 * μ.real Ω / μ.real S * ∫ x in S, ‖u x‖ ^ 2 ∂μ) =
+      (2 * μ.real S + 4 * μ.real Ω) * (C ^ 2 * ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ) +
+        4 * μ.real Ω * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
+    field_simp
+  rw [e]
+  nlinarith [mul_le_mul_of_nonneg_left hU hs.le, mul_le_mul_of_nonneg_left hm hV,
+    mul_le_mul_of_nonneg_left hX (by positivity : 0 ≤ 2 * μ.real S + 4 * μ.real Ω)]
 
 end TauCeti

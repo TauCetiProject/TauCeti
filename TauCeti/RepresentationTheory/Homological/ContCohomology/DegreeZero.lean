@@ -30,22 +30,17 @@ H⁰_cont(G, X) --map φ f 0--> H⁰_cont(H, Y)
 commutes (`TauCeti.ContinuousCohomology.map_comp_zeroIso_hom`), and the three named instances of
 `ContinuousCohomology.map` — coefficient maps, restriction and inflation — inherit it.
 
-Two consequences are recorded because later layers use them rather than the square itself. First,
-`H⁰_cont(G, -)` and the invariants functor are naturally isomorphic
-(`TauCeti.ContinuousCohomology.zeroIsoNatIso`). Second, inflation is an isomorphism in degree zero
-(`TauCeti.ContinuousCohomology.isIso_infl_zero`): `(X^N)^{G/N}` and `X^G` are canonically
-isomorphic by explicit mutually inverse maps that preserve the underlying vector. Restriction is
-injective in degree zero (`TauCeti.ContinuousCohomology.res_zero_injective`), and so a
-monomorphism (`TauCeti.ContinuousCohomology.mono_res_zero`), because `X^G ⊆ X^S`.
+Two consequences are recorded alongside the square. First, `H⁰_cont(G, -)` and the invariants
+functor are naturally isomorphic (`TauCeti.ContinuousCohomology.zeroIsoNatIso`). Second, inflation
+is an isomorphism in degree zero (`TauCeti.ContinuousCohomology.isIso_infl_zero`): `(X^N)^{G/N}`
+and `X^G` are canonically isomorphic by explicit mutually inverse maps that preserve the underlying
+vector. Restriction is injective in degree zero (`TauCeti.ContinuousCohomology.res_zero_injective`),
+and so a monomorphism (`TauCeti.ContinuousCohomology.mono_res_zero`), because `X^G ⊆ X^S`.
 
 The route to the square is the explicit evaluation formula
 `TauCeti.ContinuousCohomology.coe_zeroIso_hom_π`: a `0`-cocycle of the homogeneous complex is an
 invariant element of `C(G, X)`, and `zeroIso` reads off its value at `1`. Compatible-pair
 functoriality precomposes with `φ`, and `φ 1 = 1`, which is the whole content.
-
-This implements the "Degree 0" milestone of Layer 1, "the canonical carrier and its
-functoriality", of the human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`,
-together with the invariant-class constructor `degreeZeroClass` that the same layer names.
 
 ## Main definitions
 
@@ -129,8 +124,7 @@ section CompatiblePair
 
 /-- **Degree zero is compatible with compatible pairs.** For a continuous homomorphism
 `φ : H →ₜ* G` and a morphism `f : TopRep.res φ X ⟶ Y`, the map `ContinuousCohomology.map φ f 0`
-becomes, under `ContinuousCohomology.zeroIso`, the map `X^G ⟶ Y^H` induced by `f`. This is what
-makes Layer 3's low-degree comparisons checkable at `n = 0`. -/
+becomes, under `ContinuousCohomology.zeroIso`, the map `X^G ⟶ Y^H` induced by `f`. -/
 @[reassoc]
 theorem map_comp_zeroIso_hom (φ : H →ₜ* G) {X : TopRep R G} {Y : TopRep R H}
     (f : TopRep.res (φ : H →* G) X ⟶ Y) :

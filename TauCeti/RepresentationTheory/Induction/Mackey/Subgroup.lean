@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Subgroup.Finite
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+public import TauCeti.Algebra.Group.Action.End
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.DoubleCoset.Orbits
@@ -37,10 +38,11 @@ translation, and the stabilizer of the coset `sH` is exactly `mackeySubgroup s H
 partition of `G` into double cosets, and orbit-stabilizer turns each orbit into an index:
 `|K·sH| = [K : K ⊓ sHs⁻¹]`.  This is the combinatorial content of the Mackey decomposition, and it
 yields the classical double-coset size formula `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`
-(`TauCeti.card_doubleCoset_mul_card_mackeySubgroup`).  The two facts about the translation action
+(`TauCeti.card_doubleCoset_mul_card_inf_conj_smul`).  The facts about the translation action
 that this rests on are generic group theory and live with the topics they belong to: the
-stabilizer description in `TauCeti.GroupTheory.QuotientGroup.Basic` and the identification of a
-double coset with an orbit in `TauCeti.GroupTheory.DoubleCoset.Orbits`.
+stabilizer description and the orbit size in `TauCeti.GroupTheory.QuotientGroup.Basic`, the
+identification of a double coset with an orbit in `TauCeti.GroupTheory.DoubleCoset.Orbits`, and
+the double-coset size formulas in `TauCeti.GroupTheory.DoubleCoset.Finite`.
 
 Because the Mackey decomposition is indexed by double cosets while its summands are built from a
 *chosen* representative, the dependence on the representative has to be pinned too: replacing `s`
@@ -51,8 +53,8 @@ a canonical representative-independent summand; that would need coherent conjuga
 of the representations themselves.
 
 Everything in this file is a statement about subgroups of `G`, with no coefficients and no
-representations; it is placed with the induction files because `mackeySubgroup` is the
-roadmap-specific subgroup the induction and restriction of that layer run along.
+representations; it is placed with the induction files because `mackeySubgroup` is the subgroup
+along which the restriction and induction in each summand of the Mackey decomposition run.
 
 ## Main definitions
 
@@ -73,13 +75,7 @@ roadmap-specific subgroup the induction and restriction of that layer run along.
   subgroup.
 * `TauCeti.mackeySubgroup_conj`: changing the double-coset representative conjugates the Mackey
   subgroup.
-* `TauCeti.card_orbit_eq_relIndex`: the `K`-orbit of `sH` has as many elements as the Mackey
-  subgroup has index in `K`.
 * `TauCeti.relIndex_mackeySubgroup_conj`: that index depends only on the double coset.
-* `TauCeti.card_doubleCoset_mul_card_mackeySubgroup`: the double-coset size formula
-  `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`.
-* `TauCeti.card_doubleCoset_eq_card_mul_relIndex`: the same formula as an index,
-  `|KsH| = |K| · [sHs⁻¹ : K ⊓ sHs⁻¹]`.
 * `TauCeti.stabilizer_smul_eq_mackeySubgroup_subgroupOf`: the same stabilizer description for an
   arbitrary `G`-set, at a translate `s • p`.
 * `TauCeti.mackeySubgroup_eq_bot_or_conj_smul_le_of_prime_card`: for `H` of prime order the Mackey
@@ -90,12 +86,6 @@ roadmap-specific subgroup the induction and restriction of that layer run along.
   of prime order therefore has a conjugate meeting it trivially.
 
 ## References
-
-Layer 3 of `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, which asks to
-"name the subgroup `mackeySubgroup s H K := K ⊓ (MulAut.conj s • H)`" carrying the two
-homomorphisms `mackeyToK` and `mackeyToConjH`, and Layer 4, which asks for the invariance of the
-Mackey data "under replacing `s` by `h₁ s h₂`" as its own lemma.  `mackeySubgroup` is pinned in the
-accompanying `Suggested.lean`.
 
 * [J.-P. Serre, *Linear Representations of Finite Groups*][serre1977], Section 7.3.
 -/
@@ -316,60 +306,14 @@ theorem stabilizer_eq_mackeySubgroup_subgroupOf (s : G) (H K : Subgroup G) :
     stabilizer_quotientGroup_mk, mem_conj_smul]
   exact ⟨fun hg => ⟨g.2, hg⟩, fun hg => hg.2⟩
 
-/-- **Orbit-stabilizer for the Mackey subgroup**: the `K`-orbit of the coset `sH` has as many
-elements as the Mackey subgroup has index in `K`. -/
-theorem card_orbit_eq_relIndex (s : G) (H K : Subgroup G) :
-    Nat.card (orbit K ((s : G ⧸ H))) = (mackeySubgroup s H K).relIndex K := by
-  rw [Subgroup.card_orbit_quotientGroup_mk, mackeySubgroup_def, Subgroup.inf_relIndex_left]
-  simpa using (Subgroup.relIndex_pointwise_smul (MulAut.conj s) H (MulAut.conj s⁻¹ • K)).symm
-
 /-- If `H` has finite index in `G` then the Mackey subgroup has finite index in `K`, so the Mackey
 summand attached to `s` is induced along a finite-index inclusion. -/
 instance instIsFiniteRelIndexMackeySubgroup (s : G) (H K : Subgroup G) [H.FiniteIndex] :
     (mackeySubgroup s H K).IsFiniteRelIndex K where
   relIndex_ne_zero := by
-    rw [← card_orbit_eq_relIndex]
+    rw [mackeySubgroup_def, ← Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf]
     have : Finite (orbit K ((s : G ⧸ H))) := Set.Finite.to_subtype (Set.toFinite _)
     exact Nat.card_ne_zero.2 ⟨⟨⟨_, mem_orbit_self _⟩⟩, this⟩
-
-/-- **The double-coset size formula**: `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`.
-
-With `Nat.card`'s convention that an infinite type has cardinality `0`, this holds without any
-finiteness hypothesis. -/
-theorem card_doubleCoset_mul_card_mackeySubgroup (s : G) (H K : Subgroup G) :
-    Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) * Nat.card (mackeySubgroup s H K)
-      = Nat.card K * Nat.card H := by
-  -- The double coset is `(Ks)H`, so `Subgroup.card_mul_eq_card_subgroup_mul_card_quotient` counts
-  -- it as `|H|` times the size of the image of `Ks` in `G ⧸ H`, and that image is the orbit.
-  have himg : (QuotientGroup.mk : G → G ⧸ H) '' ((K : Set G) * {s}) = orbit K ((s : G ⧸ H)) :=
-    QuotientGroup.mk_surjective.preimage_injective <| by
-      rw [QuotientGroup.preimage_image_mk_eq_mul, preimage_orbit_eq_doubleCoset,
-        DoubleCoset.doubleCoset]
-  have hdc : Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G))
-      = Nat.card H * Nat.card (orbit K ((s : G ⧸ H))) := by
-    rw [DoubleCoset.doubleCoset, Subgroup.card_mul_eq_card_subgroup_mul_card_quotient, himg]
-  have hK : Nat.card (mackeySubgroup s H K) * (mackeySubgroup s H K).relIndex K = Nat.card K := by
-    rw [Subgroup.relIndex,
-      ← Nat.card_congr (Subgroup.subgroupOfEquivOfLe mackeySubgroup_le_right).toEquiv]
-    exact Subgroup.card_mul_index _
-  rw [hdc, card_orbit_eq_relIndex, mul_assoc, mul_comm ((mackeySubgroup s H K).relIndex K), hK,
-    mul_comm]
-
-/-- **The double-coset size formula, as an index**: `|KsH| = |K| · [sHs⁻¹ : K ⊓ sHs⁻¹]`.
-
-Finiteness of `H` makes the conjugate subgroup `sHs⁻¹` finite, so the relative index
-`[sHs⁻¹ : K ⊓ sHs⁻¹]` is a finite count of cosets. -/
-theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) [Finite H] :
-    Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) =
-      Nat.card K * K.relIndex (MulAut.conj s • H) := by
-  -- `[sHs⁻¹ : K ⊓ sHs⁻¹] · |K ⊓ sHs⁻¹| = |sHs⁻¹| = |H|`, and `K ⊓ sHs⁻¹` is the Mackey subgroup.
-  have hrel : K.relIndex (MulAut.conj s • H) * Nat.card (mackeySubgroup s H K) = Nat.card H := by
-    rw [mackeySubgroup_def, Subgroup.relIndex_mul_card]
-    exact Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
-  have hpos : 0 < Nat.card (mackeySubgroup s H K) :=
-    Nat.pos_of_ne_zero fun h => Nat.card_pos.ne' (by rw [← hrel, h, mul_zero])
-  refine Nat.eq_of_mul_eq_mul_right hpos ?_
-  rw [card_doubleCoset_mul_card_mackeySubgroup, mul_assoc, hrel]
 
 /-- The index of the Mackey subgroup in `K` depends only on the double coset `KsH`, not on the
 representative `s` chosen inside it: the two subgroups are conjugate by an element of `K`
@@ -406,11 +350,6 @@ end Translate
 end Orbit
 
 section PrimeCard
-
-/-- Conjugation preserves the number of elements of a subgroup. -/
-private theorem card_conj_smul_eq (s : G) (H : Subgroup G) :
-    Nat.card (MulAut.conj s • H : Subgroup G) = Nat.card H :=
-  Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
 
 /-- **A subgroup of prime order either meets `K` trivially after conjugation, or is carried inside
 `K` altogether.** The Mackey subgroup `K ⊓ sHs⁻¹` sits inside the conjugate `sHs⁻¹`, a group of

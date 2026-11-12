@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Finsupp
 public import Mathlib.Algebra.Category.ModuleCat.Ext.Baer
 public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
+public import Mathlib.Algebra.Category.ModuleCat.Products
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
+public import TauCeti.RingTheory.Jacobson.Semiprimary
+import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
 import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
@@ -35,6 +40,11 @@ surjection `f` from a projective module onto `M`, the projective dimension of `M
 dimension is exactly one more than that of `ker f`. Iterating this along a resolution of `M`
 by projective modules, `M` has projective dimension at most `k + 1` exactly when the image of
 `F_{k+1} → F_k` is projective, whichever resolution is chosen.
+
+A quotient of a direct sum of copies of a semisimple module `X` is a direct summand of it, so its
+projective dimension is at most that of `X`. In particular, if `I` is a two-sided ideal with
+`R ⧸ I` a semisimple ring, every module annihilated by `I` has projective dimension at most that
+of `R ⧸ I`.
 
 The projective dimensions of the cyclic modules `R ⧸ I` bound those of all modules: by Baer's
 criterion they bound every injective dimension, and the vanishing of all `Ext^{n+1}(-, N)` then
@@ -132,29 +142,30 @@ theorem projective_projectiveShortComplex_X₁ [Small.{v} R] {M : ModuleCat.{v} 
 /-- **Dimension shifting along a projective presentation.** For a surjection `f : P → M` from a
 projective module, `M` has projective dimension at most `n + 1` exactly when `ker f` has
 projective dimension at most `n`. -/
-theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker [Small.{v} R] {P M : Type v}
+theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker {P M : Type v}
     [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
     {f : P →ₗ[R] M} (hf : Function.Surjective f) (n : ℕ) :
     HasProjectiveDimensionLE (ModuleCat.of R M) (n + 1) ↔
       HasProjectiveDimensionLE (ModuleCat.of R (LinearMap.ker f)) n :=
   (LinearMap.shortExact_shortComplexKer hf).hasProjectiveDimensionLT_X₃_iff n
-    ((IsProjective.iff_projective P).mp ‹_›)
+    (inferInstanceAs (Projective (ModuleCat.of R P)))
 
 /-- For a surjection `f` from a projective module onto a module `M` that is not projective, the
 projective dimension of `M` is one more than that of `ker f`. -/
-theorem _root_.LinearMap.projectiveDimension_ker_add_one [Small.{v} R] {P M : Type v}
+theorem _root_.LinearMap.projectiveDimension_ker_add_one {P M : Type v}
     [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
     {f : P →ₗ[R] M} (hf : Function.Surjective f) (hM : ¬ Module.Projective R M) :
     projectiveDimension (ModuleCat.of R (LinearMap.ker f)) + 1 =
       projectiveDimension (ModuleCat.of R M) :=
   ((LinearMap.shortExact_shortComplexKer hf).projectiveDimension_X₃_eq_succ_of_not_projective
-    ((IsProjective.iff_projective P).mp ‹_›) (mt (IsProjective.iff_projective M).mpr hM)).symm
+    (inferInstanceAs (Projective (ModuleCat.of R P))) fun hMp ↦
+      hM (have := hMp; f.moduleProjective_of_projective_of_surjective hf)).symm
 
 /-- **Projective dimension along a projective resolution.** Along a resolution
 `⋯ → F₁ → F₀ → M → 0` of `M` by projective modules, exact everywhere, the image of
 `d k : F_{k+1} → F_k` is projective exactly when `M` has projective dimension at most `k + 1`. In
 particular this projectivity does not depend on the resolution. -/
-theorem projective_range_iff_hasProjectiveDimensionLE [Small.{v} R] (k : ℕ) {F : ℕ → Type v}
+theorem projective_range_iff_hasProjectiveDimensionLE (k : ℕ) {F : ℕ → Type v}
     [∀ i, AddCommGroup (F i)] [∀ i, Module R (F i)] [∀ i, Module.Projective R (F i)]
     {M : Type v} [AddCommGroup M] [Module R M] {d : ∀ i, F (i + 1) →ₗ[R] F i}
     {ε : F 0 →ₗ[R] M} (hε : Function.Surjective ε) (h₀ : Function.Exact (d 0) ε)
@@ -164,8 +175,10 @@ theorem projective_range_iff_hasProjectiveDimensionLE [Small.{v} R] (k : ℕ) {F
   rw [ε.hasProjectiveDimensionLE_succ_iff_ker hε]
   induction k generalizing M F with
   | zero =>
-    rw [← projective_iff_hasProjectiveDimensionLE_zero, ← IsProjective.iff_projective,
-      LinearMap.exact_iff.mp h₀]
+    rw [← projective_iff_hasProjectiveDimensionLE_zero, LinearMap.exact_iff.mp h₀]
+    exact ⟨fun _ ↦ inferInstanceAs (Projective (ModuleCat.of R (LinearMap.range (d 0)))),
+      fun _ ↦ (d 0).rangeRestrict.moduleProjective_of_projective_of_surjective
+        (LinearMap.surjective_rangeRestrict _)⟩
   | succ k ih =>
     -- Shift the resolution: `d (i + 1)` resolves `ker ε` along the corestriction of `d 0`.
     let ε' : F 1 →ₗ[R] LinearMap.ker ε := (d 0).codRestrict (LinearMap.ker ε)
@@ -177,6 +190,48 @@ theorem projective_range_iff_hasProjectiveDimensionLE [Small.{v} R] (k : ℕ) {F
     rw [ih (F := fun i ↦ F (i + 1)) (d := fun i ↦ d (i + 1)) hε'
       (fun x ↦ Subtype.ext_iff.trans (hd 0 x)) (fun i ↦ hd (i + 1)),
       ε'.hasProjectiveDimensionLE_succ_iff_ker hε']
+
+/-- A quotient of a direct sum of copies of a semisimple module `X` has projective dimension at
+most that of `X`: the quotient map splits, so the quotient is a direct summand of the direct sum,
+and a direct sum of modules of projective dimension `< n` has projective dimension `< n`. -/
+theorem _root_.LinearMap.hasProjectiveDimensionLT_of_surjective [Small.{v} R]
+    {X M : ModuleCat.{v} R} [IsSemisimpleModule R X] {ι : Type v} (f : (ι →₀ X) →ₗ[R] M)
+    (hf : Function.Surjective f) (n : ℕ) [HasProjectiveDimensionLT X n] :
+    HasProjectiveDimensionLT M n := by
+  classical
+  let e := finsuppLEquivDirectSum R X ι
+  obtain ⟨s, hs⟩ := IsSemisimpleModule.lifting_property f hf LinearMap.id
+  have : HasProjectiveDimensionLT (ModuleCat.of R (DirectSum ι fun _ ↦ X)) n :=
+    hasProjectiveDimensionLT_of_isColimit_cofan
+      (ModuleCat.coproductCoconeIsColimit.{u, v, 0} fun _ : ι ↦ X) n fun _ ↦ inferInstance
+  exact (Retract.mk (X := M) (Y := ModuleCat.of R (DirectSum ι fun _ ↦ X))
+    (ModuleCat.ofHom (e.toLinearMap ∘ₗ s)) (ModuleCat.ofHom (f ∘ₗ e.symm.toLinearMap))
+    (by ext x; simpa using LinearMap.congr_fun hs x)).hasProjectiveDimensionLT n
+
+/-- **Modules annihilated by an ideal with semisimple quotient.** If `I` is a two-sided ideal with
+`R ⧸ I` a semisimple ring, then every module annihilated by `I` has projective dimension `< n` as
+soon as `R ⧸ I` does: it is a quotient, hence a direct summand, of a direct sum of copies of the
+semisimple module `R ⧸ I`. -/
+theorem _root_.Module.IsTorsionBySet.hasProjectiveDimensionLT [Small.{v} R] {I : Ideal R}
+    [I.IsTwoSided] [IsSemisimpleRing (R ⧸ I)] {M : ModuleCat.{v} R}
+    (hM : Module.IsTorsionBySet R M I) (n : ℕ)
+    [HasProjectiveDimensionLT (ModuleCat.of R (Shrink.{v} (R ⧸ I))) n] :
+    HasProjectiveDimensionLT M n := by
+  have : IsSemisimpleModule R (R ⧸ I) := by
+    have := isSemisimpleModule_quotient_smul_top R I R
+    rwa [smul_eq_mul, Ideal.mul_top] at this
+  have : IsSemisimpleModule R (Shrink.{v} (R ⧸ I)) := .congr (Shrink.linearEquiv R (R ⧸ I))
+  -- The map `R ⧸ I → M` sending `1` to `m`, which exists because `I` annihilates `M`.
+  let φ (m : M) : Shrink.{v} (R ⧸ I) →ₗ[R] M :=
+    I.liftQ (LinearMap.toSpanSingleton R M m)
+        (fun a ha ↦ LinearMap.mem_ker.mpr (hM (a := ⟨a, ha⟩))) ∘ₗ
+      (Shrink.linearEquiv R (R ⧸ I)).toLinearMap
+  refine LinearMap.hasProjectiveDimensionLT_of_surjective
+    (X := ModuleCat.of R (Shrink.{v} (R ⧸ I))) (Finsupp.lsum ℕ φ) (fun m ↦
+      ⟨Finsupp.single m ((Shrink.linearEquiv R (R ⧸ I)).symm (Submodule.Quotient.mk 1)), ?_⟩) n
+  simp only [Finsupp.lsum_single, φ, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply]
+  rw [Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply, one_smul]
 
 end TauCeti
 

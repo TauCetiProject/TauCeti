@@ -5,23 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.NormalizedDeterminant
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 
 /-!
 # The Maslov index of a loop moved by a loop of automorphisms
 
-Let `Λ` be a loop of maximal totally real subspaces of a finite-dimensional complex normed space
+Let `Λ` be a loop of maximal totally real subspaces of a complex normed space
 `E` and `B` a loop of complex-linear automorphisms of `E`. The pointwise image
 `t ↦ B t (Λ t)` (`TauCeti.TotallyRealLoop.map`) is again such a loop, and its Maslov index is
 
 `μ(B Λ) = μ(Λ) + 2 deg (det B)`,
 
 where `deg (det B)` is the winding number of the loop of determinants, read as the degree of the
-circle loop `t ↦ det (B t) / ‖det (B t)‖`
-(`TauCeti.TotallyRealLoop.maslovIndex_map`). The reason is that the Maslov phase
+circle loop `t ↦ det (B t) / ‖det (B t)‖` of normalized determinants
+(`ContinuousLinearEquiv.normalizedDet`, `TauCeti.TotallyRealLoop.maslovIndex_map`). The reason is
+that the Maslov phase
 `ρ(L₀, A L₀) = det A / conj (det A)` is multiplicative and that `z / conj z = (z / ‖z‖) ^ 2`
 for `z ≠ 0`. In particular a constant automorphism does not change the Maslov index
-(`TauCeti.TotallyRealLoop.maslovIndex_map_const`).
+(`TauCeti.TotallyRealLoop.maslovIndex_map_const`), and since the degree is a homotopy invariant,
+the Maslov index of `B Λ` only depends on the free homotopy class of the loop `B`
+(`TauCeti.TotallyRealLoop.maslovIndex_map_eq_of_homotopy`).
 
 This is the product axiom of the Maslov index of totally real loops, complementing homotopy
 invariance and the normalization (`TauCeti.LinearAlgebra.TotallyReal.Maslov.Index`) and the
@@ -36,6 +40,10 @@ whose determinant therefore has degree zero.
 * `TauCeti.TotallyRealLoop.maslovIndex_map`: `μ(B Λ) = μ(Λ) + 2 deg (det B)`.
 * `TauCeti.TotallyRealLoop.maslovIndex_map_const`: a constant automorphism preserves the Maslov
   index.
+* `TauCeti.TotallyRealLoop.maslovIndex_map_sub_maslovIndex`: the shift `μ(B Λ) - μ(Λ)` does not
+  depend on `Λ`.
+* `TauCeti.TotallyRealLoop.maslovIndex_map_eq_of_homotopy`: moving a loop by freely homotopic
+  loops of automorphisms gives loops with the same Maslov index.
 
 ## References
 
@@ -52,8 +60,7 @@ namespace TauCeti
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  (Λ : TotallyRealLoop E)
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (Λ : TotallyRealLoop E)
 
 /-- **The Maslov index under a loop of automorphisms.** If `B` is a loop of complex-linear
 automorphisms and `δ` is the circle loop of normalized determinants,
@@ -89,12 +96,44 @@ complex-linear automorphism does not change its Maslov index. -/
 @[simp]
 theorem maslovIndex_map_const (A : E ≃L[ℂ] E) :
     (Λ.map (fun _ => A) continuous_const rfl).maslovIndex = Λ.maslovIndex := by
-  have hd : LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) ≠ 0 := A.toLinearEquiv.isUnit_det'.ne_zero
-  let x : Circle := ⟨LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) /
-      ‖LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E)‖,
-    mem_sphere_zero_iff_norm.2 (by simp [hd])⟩
-  rw [Λ.maslovIndex_map _ _ _ (Path.refl x) fun _ => ?_, Circle.degree_refl, mul_zero, add_zero]
-  rw [Path.refl_apply, mul_div_cancel₀ _ (by simpa using hd)]
+  rw [Λ.maslovIndex_map _ _ _ (Path.refl A.normalizedDet) fun _ => A.det_eq_norm_mul_normalizedDet,
+    Circle.degree_refl, mul_zero, add_zero]
+
+/-- **The shift of the Maslov index under a loop of automorphisms does not depend on the loop it
+moves.** For any two loops `Λ` and `Γ` of maximal totally real subspaces,
+`μ(B Λ) - μ(Λ) = μ(B Γ) - μ(Γ)`: both are twice the degree of the loop of normalized determinants
+of `B`. -/
+theorem maslovIndex_map_sub_maslovIndex (Γ : TotallyRealLoop E) (B : I → E ≃L[ℂ] E)
+    (hB : Continuous fun t => (B t : E →L[ℂ] E)) (hB01 : B 0 = B 1) :
+    (Λ.map B hB hB01).maslovIndex - Λ.maslovIndex =
+      (Γ.map B hB hB01).maslovIndex - Γ.maslovIndex := by
+  let δ : Path (B 0).normalizedDet (B 0).normalizedDet :=
+    { toFun := fun t => (B t).normalizedDet
+      continuous_toFun := hB.normalizedDet
+      source' := rfl
+      target' := by simp only [hB01] }
+  rw [Λ.maslovIndex_map _ _ _ δ fun t => (B t).det_eq_norm_mul_normalizedDet,
+    Γ.maslovIndex_map _ _ _ δ fun t => (B t).det_eq_norm_mul_normalizedDet]
+  ring
+
+/-- **Homotopy invariance in the frame.** If `B` is a free homotopy of loops of complex-linear
+automorphisms, `B (s, 0) = B (s, 1)` for every `s`, then moving a loop of maximal totally real
+subspaces by `B (0, ·)` or by `B (1, ·)` gives loops with the same Maslov index. -/
+theorem maslovIndex_map_eq_of_homotopy (B : I × I → E ≃L[ℂ] E)
+    (hB : Continuous fun p => (B p : E →L[ℂ] E)) (hB01 : ∀ s, B (s, 0) = B (s, 1)) :
+    (Λ.map (fun t => B (0, t)) (hB.comp (Continuous.prodMk_right 0)) (hB01 0)).maslovIndex =
+      (Λ.map (fun t => B (1, t)) (hB.comp (Continuous.prodMk_right 1)) (hB01 1)).maslovIndex := by
+  -- The free homotopy of loops of normalized determinants.
+  let F : C(I × I, Circle) := ⟨fun p => (B p).normalizedDet, hB.normalizedDet⟩
+  let γ (s : I) : Path (F (s, 0)) (F (s, 0)) :=
+    { toFun := fun t => F (s, t)
+      continuous_toFun := by fun_prop
+      source' := rfl
+      target' := by simp only [F, ContinuousMap.coe_mk, hB01 s] }
+  rw [Λ.maslovIndex_map _ _ _ (γ 0) fun t => (B (0, t)).det_eq_norm_mul_normalizedDet,
+    Λ.maslovIndex_map _ _ _ (γ 1) fun t => (B (1, t)).det_eq_norm_mul_normalizedDet,
+    Circle.degree_eq_of_homotopy (γ 0) (γ 1) F (fun _ => rfl) (fun _ => rfl)
+      fun s => (γ s).target'.symm]
 
 end TotallyRealLoop
 

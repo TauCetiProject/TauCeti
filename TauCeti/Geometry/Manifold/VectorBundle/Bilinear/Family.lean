@@ -8,9 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Geometry.Manifold.MFDeriv.Parametric
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 
 /-!
 # Families of fields of bilinear forms on the tangent bundle
@@ -63,7 +61,7 @@ theorem contMDiffAt_uncurry_apply_apply {n : WithTop ℕ∞}
   have hW' : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) n
       (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (W q.2)) (t, x) := hW.comp (t, x) contMDiffAt_snd
   have h := ContMDiffAt.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ) hb hV' hW'
-  simpa [Function.uncurry_def] using (contMDiffAt_totalSpace.mp h).2
+  simpa [Function.uncurry_def] using (contMDiffAt_totalSpace_iff.mp h).2
 
 /-- The parameter curve `s ↦ b s x u w` of a family of fields of bilinear forms, jointly `C¹` at
 `(t, x)`, is differentiable at `t`. -/
@@ -95,10 +93,6 @@ theorem hasDerivAt_mvfderiv_apply_apply
   rw [minSmoothness_of_isRCLikeNormedField]
   exact contMDiffAt_uncurry_apply_apply hb hV hW
 
-section FiniteDimensional
-
-variable [FiniteDimensional ℝ E]
-
 /-- **Regularity of the parameter derivative of a family of bilinear forms.** Let `b_s` be a family
 of fields of bilinear forms on `TM`, jointly `C^n` in `(s, y)` at `(t, x)`, and let `h` be its
 parameter derivative at `s = t` near `x`. Then `h` is a `C^m` field of bilinear forms at `x`
@@ -119,7 +113,14 @@ theorem contMDiffAt_of_hasDerivAt_family {m n : WithTop ℕ∞}
     (TangentSpace I) (E →L[ℝ] ℝ) (fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) x y x y (b s y)
   have hreg := contMDiffAt_deriv_of_contMDiffAt_uncurry (F := B) (t := t) (x := x) hb.2 hmn
   refine hreg.congr_of_eventuallyEq ?_
-  filter_upwards [hh, (chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy hyx
+  -- Near `x`, the curve `s ↦ B s y` is differentiable at `t`, since `hb` holds on a neighbourhood.
+  have hB1 := hb.2.of_le (show (1 : WithTop ℕ∞) ≤ n from le_trans le_add_self hmn)
+  have hB1' := (contMDiffAt_iff_contMDiffAt_nhds (n := 1) (by simp)).1 hB1
+  have hdiff := (tendsto_const_nhds.prodMk_nhds tendsto_id).eventually hB1' |>.mono fun y hy ↦
+    ((hy.comp t (contMDiffAt_id.prodMk contMDiffAt_const)).mdifferentiableAt
+      one_ne_zero).differentiableAt
+  filter_upwards [hh, hdiff, (chartAt H x).open_source.mem_nhds (mem_chart_source H x)]
+    with y hy hdy hyx
   have key (φ : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) (a c : E) :
       ContinuousLinearMap.inCoordinates E (TangentSpace I) (E →L[ℝ] ℝ)
         (fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) x y x y φ a c =
@@ -133,11 +134,13 @@ theorem contMDiffAt_of_hasDerivAt_family {m n : WithTop ℕ∞}
       (h y ((trivializationAt E (TangentSpace I) x).symm y a)
         ((trivializationAt E (TangentSpace I) x).symm y c)) t := by
     simpa only [B, key] using hy _ _
-  have hD := (differentiableAt_clm_apply.mpr fun a ↦
-    differentiableAt_clm_apply.mpr fun c ↦ (hcurve a c).differentiableAt).hasDerivAt
   ext a c
   rw [key]
-  exact (hcurve a c).unique (hasDerivAt_clm_apply₂.mp hD a c)
+  have hD := hdy.hasDerivAt
+  refine (hcurve a c).unique ?_
+  -- Evaluating the derivative of `s ↦ B s y` at `(a, c)` gives the derivative of `s ↦ B s y a c`.
+  exact ((ContinuousLinearMap.apply ℝ ℝ c).comp
+    (ContinuousLinearMap.apply ℝ (E →L[ℝ] ℝ) a)).hasFDerivAt.comp_hasDerivAt t hD
 
 /-- The parameter derivative `h` of a family of fields of bilinear forms, jointly `C²` at `(t, x)`,
 pairs vector fields differentiable at `x` to a function differentiable at `x`. -/
@@ -152,7 +155,5 @@ theorem mdifferentiableAt_apply_apply_of_hasDerivAt_family
   have hreg := (contMDiffAt_of_hasDerivAt_family (m := 1) hb (by norm_num) hh).mdifferentiableAt
     one_ne_zero
   simpa [mdifferentiableAt_section] using hreg.clm_bundle_apply₂ hV hW
-
-end FiniteDimensional
 
 end TauCeti.Manifold

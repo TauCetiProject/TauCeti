@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
@@ -31,7 +32,8 @@ structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorph
 
 * `TauCeti.SmoothAlmostComplexStructure`: a smooth tangent-bundle endomorphism squaring to `-1`.
 * `TauCeti.SmoothAlmostComplexStructure.almostComplexStructureAt`: the pointwise almost complex
-  structure on a tangent space.
+  structure on a tangent space, with model-space complex-linearity bridge
+  `TauCeti.SmoothAlmostComplexStructure.isComplexLinearMap_almostComplexStructureAt_model_iff`.
 * `TauCeti.SmoothAlmostComplexStructure.contMDiff_apply`: applying the structure to a `C^n` vector
   field along a `C^n` map gives a `C^n` vector field along that map.
 * `TauCeti.SmoothAlmostComplexStructure.mdifferentiableAt_apply`: the pointwise differentiable
@@ -39,11 +41,18 @@ structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorph
 * `TauCeti.SmoothAlmostComplexStructure.neg`: the negative of a smooth almost complex structure.
 * `TauCeti.SmoothAlmostComplexStructure.const`: a continuous endomorphism of a real normed space
   squaring to `-1` gives the constant smooth almost complex structure on that model manifold.
+* `TauCeti.SmoothAlmostComplexStructure.contDiff_toEndomorphism`: on a self-modelled normed space,
+  the endomorphism section is `C^∞` in the normed-space sense.
 * `TauCeti.AlmostComplexStructure.constSmooth`: a pointwise almost complex structure on a
   finite-dimensional real normed space gives the constant smooth almost complex structure on that
   model manifold.
 * `TauCeti.SmoothAlmostComplexStructure.product`: the standard smooth almost complex structure on
   `V × V`, sending `(v, w)` to `(-w, v)`.
+* `TauCeti.SmoothAlmostComplexStructure.ofTangentCoordChangeISMul`: multiplication by `i` on the
+  tangent spaces of a manifold modelled on a complex normed space, as a smooth almost complex
+  structure, when the tangent coordinate changes commute with multiplication by `i`. The almost
+  complex structures of a complex manifold and of a Riemann surface with boundary are built from
+  it.
 
 The definition follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.2.
@@ -121,6 +130,27 @@ lemma almostComplexStructureAt_apply (J : SmoothAlmostComplexStructure I M) (x :
     J.almostComplexStructureAt x v = J x v :=
   (rfl)
 
+/-- On self-modelled normed spaces, `IsComplexLinearMap` between `almostComplexStructureAt` values
+is pointwise intertwining of `toEndomorphism` on the model spaces (bridging `TangentSpace 𝓘(ℝ, V) x`
+and `V`, where `rw` cannot match `.toLinearMap` at `implicit` transparency). -/
+theorem isComplexLinearMap_almostComplexStructureAt_model_iff
+    {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    (J₁ : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) (J₂ : SmoothAlmostComplexStructure 𝓘(ℝ, W) W)
+    (v : V) (w : W) (L : V →ₗ[ℝ] W) :
+    IsComplexLinearMap (J₁.almostComplexStructureAt v) (J₂.almostComplexStructureAt w) L ↔
+      ∀ u : V, L ((J₁.toEndomorphism v : V →L[ℝ] V) u) =
+        (J₂.toEndomorphism w : W →L[ℝ] W) (L u) := by
+  let K₁ : AlmostComplexStructure V := J₁.almostComplexStructureAt v
+  let K₂ : AlmostComplexStructure W := J₂.almostComplexStructureAt w
+  have hK₁ : K₁.toLinearMap = (J₁.toEndomorphism v : V →L[ℝ] V).toLinearMap :=
+    J₁.almostComplexStructureAt_toLinearMap v
+  have hK₂ : K₂.toLinearMap = (J₂.toEndomorphism w : W →L[ℝ] W).toLinearMap :=
+    J₂.almostComplexStructureAt_toLinearMap w
+  -- Replace `TangentSpace`-typed structures with `K₁, K₂` so `simp` sees model-space types.
+  change IsComplexLinearMap K₁ K₂ L ↔ _
+  simp only [isComplexLinearMap_iff_apply, hK₁, hK₂]
+  rfl
+
 /-- Applying a smooth almost complex structure twice gives the negative tangent vector. -/
 @[simp]
 lemma apply_apply (J : SmoothAlmostComplexStructure I M) (x : M) (v : TangentSpace I x) :
@@ -142,6 +172,12 @@ lemma ext (h : ∀ (x : M) (v : TangentSpace I x), J x v = K x v) : J = K := by
   ext x v
   exact h x v
 
+/-- Two smooth almost complex structures with the same pointwise almost complex structures are
+equal. -/
+lemma ext_almostComplexStructureAt
+    (h : ∀ x, J.almostComplexStructureAt x = K.almostComplexStructureAt x) : J = K :=
+  ext fun x v => congrArg (fun A : AlmostComplexStructure (TangentSpace I x) => A v) (h x)
+
 section ContMDiffApply
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -151,19 +187,34 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topolog
 `b` gives a `C^n` vector field along `b`. Taking `b = id` this says that `J` preserves `C^n`
 vector fields on `M`. -/
 lemma contMDiff_apply {n : ℕ∞ω} [ENat.LEInfty n] (J : SmoothAlmostComplexStructure I M)
-    {b : N → M} (hb : ContMDiff I' I n b) {V : ∀ y : N, TangentSpace I (b y)}
+    {b : N → M} {V : ∀ y : N, TangentSpace I (b y)}
     (hV : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (V y))) :
     ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) :=
-  ((J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp hb).clm_bundle_apply hV
+  ((J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp
+    ((contMDiff_proj (TangentSpace I)).comp hV)).clm_bundle_apply hV
 
-/-- Applying a smooth almost complex structure along a map `b` differentiable at `y₀` to a vector
-field along `b` differentiable at `y₀` gives a vector field along `b` differentiable at `y₀`.
+/-- Applying a smooth almost complex structure to a vector field along a map `b`, differentiable at
+`y₀` as a map into the tangent bundle, gives a vector field along `b` differentiable at `y₀`.
 Taking `b = id` this says that `J` preserves vector fields differentiable at a point. -/
 lemma mdifferentiableAt_apply (J : SmoothAlmostComplexStructure I M) {b : N → M} {y₀ : N}
-    (hb : MDifferentiableAt I' I b y₀) {V : ∀ y : N, TangentSpace I (b y)}
+    {V : ∀ y : N, TangentSpace I (b y)}
     (hV : MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (V y)) y₀) :
     MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) y₀ :=
-  ((J.toEndomorphism.contMDiff.mdifferentiableAt (by simp)).comp y₀ hb).clm_bundle_apply hV
+  ((J.toEndomorphism.contMDiff.mdifferentiableAt (by simp)).comp y₀
+    ((mdifferentiableAt_totalSpace _ _).1 hV).1).clm_bundle_apply hV
+
+/-- A family of smooth almost complex structures which equals a fixed `J` near `y₀`, read along a
+map `b` which is `C^n` at `y₀`, is `C^n` at `y₀` as a section of the tangent endomorphism bundle
+along `b`. -/
+lemma contMDiffAt_toEndomorphism_of_eventuallyEq {n : ℕ∞ω} [ENat.LEInfty n]
+    {J' : N → SmoothAlmostComplexStructure I M} {b : N → M} {y₀ : N}
+    (hb : ContMDiffAt I' I n b y₀) (hJ' : ∀ᶠ y in nhds y₀, J' y = J) :
+    ContMDiffAt I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        (b y) ((J' y).toEndomorphism (b y))) y₀ :=
+  (((J.toEndomorphism.contMDiff (b y₀)).of_le ENat.LEInfty.out).comp y₀ hb).congr_of_eventuallyEq
+    (hJ'.mono fun y hy ↦ by simp only [hy, Function.comp_apply])
 
 end ContMDiffApply
 
@@ -232,6 +283,26 @@ lemma const_toEndomorphism_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace
     (const Jc hJc).toEndomorphism x = Jc :=
   (rfl)
 
+/-- Evaluating a constant smooth almost complex structure applies its defining endomorphism. -/
+-- This is not a `simp` lemma: `simp` already rewrites the left-hand side through
+-- `const_toEndomorphism_apply`.
+lemma const_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v) (x v : V) :
+    const Jc hJc x v = Jc v :=
+  congrArg (fun A : V →L[ℝ] V ↦ A v) (const_toEndomorphism_apply Jc hJc x)
+
+/-- On a self-modelled normed space, the endomorphism field of a `SmoothAlmostComplexStructure` is
+smooth in the normed-space sense. -/
+theorem contDiff_toEndomorphism {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) :
+    ContDiff ℝ (E := V) (F := V →L[ℝ] V) ∞ (fun x ↦ J.toEndomorphism x) := by
+  refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
+  have h : ContDiffAt ℝ ∞ (fun x₁ ↦ ContinuousLinearMap.inCoordinates V (TangentSpace 𝓘(ℝ, V))
+      V (TangentSpace 𝓘(ℝ, V)) x x₁ x x₁ (J.toEndomorphism x₁)) x :=
+    contMDiffAt_iff_contDiffAt.1 ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff x)).2
+  exact (funext fun x₁ ↦ inCoordinates_tangent_bundle_core_model_space (I := 𝓘(ℝ, V))
+    (I' := 𝓘(ℝ, V)) x x₁ x x₁ (J.toEndomorphism x₁)) ▸ h
+
 end SmoothAlmostComplexStructure
 
 namespace AlmostComplexStructure
@@ -290,6 +361,87 @@ lemma product_almostComplexStructureAt {V : Type*} [NormedAddCommGroup V] [Norme
     (product V).almostComplexStructureAt x = AlmostComplexStructure.product V := by
   ext v
   exact product_apply x v
+
+end SmoothAlmostComplexStructure
+
+/-! ### Multiplication by `i` on a manifold modelled on a complex normed space -/
+
+namespace SmoothAlmostComplexStructure
+
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [TopologicalSpace H']
+  (I' : ModelWithCorners ℝ E' H') (N : Type*) [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I' ∞ N]
+
+/-- In the tangent coordinates of the chart at `x₀`, multiplication by `i` on the tangent spaces
+is multiplication by `i`, on the whole chart domain, when the tangent coordinate changes commute
+with multiplication by `i`. -/
+private theorem inTangentCoordinates_I_smul_id
+    (h : ∀ {x y z : N}, z ∈ (chartAt H' x).source ∩ (chartAt H' y).source → ∀ v : E',
+      tangentCoordChange I' x y z (Complex.I • v) = Complex.I • tangentCoordChange I' x y z v)
+    {x₀ x : N} (hx : x ∈ (chartAt H' x₀).source) :
+    inTangentCoordinates I' I' id id
+        (fun x : N ↦ (Complex.I • ContinuousLinearMap.id ℝ E' :
+          TangentSpace I' x →L[ℝ] TangentSpace I' x)) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E' := by
+  refine (inTangentCoordinates_eq (I := I') (I' := I') id id _ hx hx).trans
+    (ContinuousLinearMap.ext fun v ↦ ?_)
+  have hx' : x ∈ (extChartAt I' x₀).source ∩ (extChartAt I' x).source ∩
+      (extChartAt I' x₀).source := by
+    simp [hx]
+  simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply]
+  exact (h ⟨mem_chart_source H' x, hx⟩ _).trans
+    (congrArg (Complex.I • ·)
+      ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))
+
+/-- Multiplication by `i` on the tangent spaces of a manifold `N` modelled on a complex normed
+space `E'`, as a smooth almost complex structure, when the tangent coordinate changes of `N`
+commute with multiplication by `i`. -/
+def ofTangentCoordChangeISMul
+    (h : ∀ {x y z : N}, z ∈ (chartAt H' x).source ∩ (chartAt H' y).source → ∀ v : E',
+      tangentCoordChange I' x y z (Complex.I • v) = Complex.I • tangentCoordChange I' x y z v) :
+    SmoothAlmostComplexStructure I' N where
+  toEndomorphism :=
+    ⟨fun _ ↦ Complex.I • ContinuousLinearMap.id ℝ E', fun x₀ ↦ by
+      -- In the tangent coordinates at `x₀`, the section is constantly multiplication by `I` near
+      -- `x₀`, since the tangent coordinate changes commute with multiplication by `I`.
+      rw [contMDiffAt_hom_bundle]
+      refine ⟨contMDiffAt_id, (contMDiffAt_const (c := Complex.I • ContinuousLinearMap.id ℝ E'))
+        |>.congr_of_eventuallyEq ?_⟩
+      filter_upwards [(chartAt H' x₀).open_source.mem_nhds (mem_chart_source H' x₀)] with x hx
+      exact inTangentCoordinates_I_smul_id I' N h hx⟩
+  square_neg x := ContinuousLinearMap.ext fun v ↦ by
+    simp only [ContinuousLinearMap.comp_apply]
+    -- The tangent space at `x` is the model space `E'`, where `I • I • w = -w`.
+    have h (w : E') : Complex.I • Complex.I • w = -w := by
+      rw [smul_smul, Complex.I_mul_I, neg_one_smul]
+    exact h v
+
+variable {I' N}
+variable (h : ∀ {x y z : N}, z ∈ (chartAt H' x).source ∩ (chartAt H' y).source → ∀ v : E',
+  tangentCoordChange I' x y z (Complex.I • v) = Complex.I • tangentCoordChange I' x y z v)
+
+/-- The almost complex structure `ofTangentCoordChangeISMul` is multiplication by `i` on every
+tangent space. -/
+@[simp]
+theorem ofTangentCoordChangeISMul_apply (x : N) (v : E') :
+    ofTangentCoordChangeISMul I' N h x v = Complex.I • v :=
+  (rfl)
+
+/-- The almost complex structure `ofTangentCoordChangeISMul` is multiplication by `i` on every
+tangent space, as an endomorphism. -/
+theorem toEndomorphism_ofTangentCoordChangeISMul (x : N) :
+    (ofTangentCoordChangeISMul I' N h).toEndomorphism x =
+      (Complex.I • ContinuousLinearMap.id ℝ E' : TangentSpace I' x →L[ℝ] TangentSpace I' x) :=
+  ContinuousLinearMap.ext fun v ↦ ofTangentCoordChangeISMul_apply h x v
+
+/-- In the tangent coordinates of the chart at any point `x₀`, the almost complex structure
+`ofTangentCoordChangeISMul` is multiplication by `i` on the whole chart domain. -/
+theorem inTangentCoordinates_ofTangentCoordChangeISMul {x₀ x : N}
+    (hx : x ∈ (chartAt H' x₀).source) :
+    inTangentCoordinates I' I' id id
+        (fun x ↦ (ofTangentCoordChangeISMul I' N h).toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E' :=
+  inTangentCoordinates_I_smul_id I' N h hx
 
 end SmoothAlmostComplexStructure
 

@@ -290,7 +290,7 @@ noncomputable def projectiveSpace (hi : IsIntegralLattice i) : Fan i where
       (ne_univ_iff_exists_notMem _).2 ?_, ?_⟩
     · obtain ⟨k, hk⟩ := (ne_univ_iff_exists_notMem S).1 hS
       exact ⟨k, fun h ↦ hk h.1⟩
-    have hface := PointedCone.Face.eq_hull_inter_of_eq_hull ⟨τ, hτ⟩ _ (projectiveSpaceCone_def b S)
+    have hface := hτ.eq_hull_inter_of_eq_hull (projectiveSpaceCone_def b S)
     refine Eq.trans ?_ hface.symm
     rw [projectiveSpaceCone_def]
     congr 1

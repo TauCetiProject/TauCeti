@@ -246,7 +246,8 @@ theorem continuousCohomologyMap2Equiv_symm_apply (φ : H ≃ₜ* G) (e : M ≃+ 
     (x : continuousCohomology 2 (ofDiscreteModule ℤ H N)) :
     (continuousCohomologyMap2Equiv G M H N φ e he).symm x =
       continuousCohomologyMap2 H N G M φ.symm e.symm.toAddMonoidHom
-        (AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv he) x := by
+        (AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply
+          he) x := by
   simp [continuousCohomologyMap2Equiv, continuousCohomologyMap2]
 
 end TauCeti.ContCohomology

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
-public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
+public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Torus
 
 import TauCeti.Topology.FiberBundle.Separation
 
@@ -52,8 +52,13 @@ reduced.
 
 * `TauCeti.CotangentBundle.liouvilleForm_apply_fundamentalVectorField`: `⟨μ, ξ⟩ = λ(ξ_{T*M})`.
 * `TauCeti.CotangentBundle.momentMap_smul`: coadjoint equivariance.
+* `TauCeti.CotangentBundle.momentMap_comp_groupLieAlgebraMap`: for an action through a
+  homomorphism, the cotangent moment map is the restriction of the cotangent moment map of the
+  larger group.
 * `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`: `μ` is a coadjoint-equivariant
   moment map for the canonical symplectic form.
+* `TauCeti.CotangentBundle.hamiltonianTorusData_momentMap`: the cotangent lift of a smooth action
+  of a commutative Lie group, such as a torus, is a Hamiltonian torus action with moment map `μ`.
 
 ## References
 
@@ -95,6 +100,19 @@ theorem momentMap_apply (z : CotangentBundle I M) (ξ : GroupLieAlgebra IG G) :
     momentMap IG G z ξ = z.2 (fundamentalVectorField I ξ z.proj) :=
   (rfl)
 
+/-- **Restriction along a homomorphism.** If a Lie group `K` acts on `M` through a homomorphism
+`φ : K →* G` that is differentiable at the identity, then the cotangent moment map of `K` is the
+restriction along `dφ : 𝔨 → 𝔤` of that of `G`: `⟨μ_K(z), ξ⟩ = ⟨μ_G(z), dφ ξ⟩`. -/
+theorem momentMap_comp_groupLieAlgebraMap {EK HK : Type*} [NormedAddCommGroup EK]
+    [NormedSpace ℝ EK] [TopologicalSpace HK] {IK : ModelWithCorners ℝ EK HK} {K : Type*}
+    [TopologicalSpace K] [ChartedSpace HK K] [Group K] [MulAction K M] [ContMDiffSMul IG I 1 G M]
+    (φ : K →* G) (hφ : MDifferentiableAt IK IG φ 1) (hsmul : ∀ (k : K) (x : M), k • x = φ k • x)
+    (z : CotangentBundle I M) :
+    (momentMap IG G z).comp (φ.groupLieAlgebraMap IK IG).toLinearMap = momentMap IK K z := by
+  ext ξ
+  rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, momentMap_apply, momentMap_apply,
+    φ.fundamentalVectorField_groupLieAlgebraMap hφ hsmul]
+
 section Smooth
 
 variable [LieGroup IG ∞ G] [IsManifold I ∞ M] [ContMDiffSMul IG I ∞ G M]
@@ -128,7 +146,7 @@ theorem contMDiff_momentMap_apply (ξ : GroupLieAlgebra IG G) :
     (SmoothForm.degreeOneEquiv (liouvilleForm I M)).contMDiff
     (contMDiff_fundamentalVectorField (I' := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (m := ∞) (n := ∞)
       (by simp) ξ)
-  refine fun z ↦ (contMDiffAt_totalSpace.1 (h z)).2.congr_of_eventuallyEq
+  refine fun z ↦ (contMDiffAt_totalSpace_iff.1 (h z)).2.congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun y ↦ ?_)
   simp only [Trivial.eq_trivialization _ ℝ, Trivial.trivialization_apply,
     SmoothForm.degreeOneEquiv_apply_apply, ← Matrix.vec_single_eq_const,
@@ -195,5 +213,24 @@ theorem isEquivariantMomentMap_momentMap :
   apply_smul := momentMap_smul
 
 end Equivariant
+
+section Torus
+
+variable {T : Type*} [TopologicalSpace T] [ChartedSpace HG T] [CommGroup T] [MulAction T M]
+  [CompleteSpace EG] [LieGroup IG ∞ T] [T2Space T] [BoundarylessManifold IG T]
+  [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
+  [ContMDiffSMul IG I ∞ T M] [ContMDiffConstSMul I ∞ T M]
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+/-- **Cotangent lifts of torus actions are Hamiltonian torus actions.** The cotangent lift of a
+smooth action of a commutative Lie group `T` on `M` preserves the canonical symplectic form of
+`T*M`, and `⟨μ(x, p), ξ⟩ = p(ξ_M(x))` is a `T`-invariant moment map of it. -/
+theorem hamiltonianTorusData_momentMap :
+    (symplecticForm I M).HamiltonianTorusData (momentMap IG T) where
+  toIsEquivariantMomentMap := isEquivariantMomentMap_momentMap
+  mpullback_smul := mpullback_smul_symplecticForm
+
+end Torus
 
 end TauCeti.CotangentBundle

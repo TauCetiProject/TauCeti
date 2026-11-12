@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Finance.SimpleStrategy
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 
 /-!
 # Trading a mispriced static claim against its replication
@@ -126,7 +126,7 @@ theorem exists_staticClaim_profit_gt
     ∃ c ∈ A, ∀ᵐ ω ∂P, max R 0 < (-c * a n ω) * S (τ (n + 1)) ω +
       (-c * b n ω + c * (q - p) / B₀) * β (τ (n + 1)) ω + c * H ω := by
   have habs : 0 < |q - p| := abs_pos.mpr (sub_ne_zero.mpr hpq.symm)
-  have hg : 0 < |q - p| * Bₜ / B₀ := by positivity
+  have hg : 0 < |q - p| * Bₜ / B₀ := div_pos (mul_pos habs hBₜ) hB₀
   obtain ⟨N, hN⟩ := exists_nat_gt (max R 0 / (|q - p| * Bₜ / B₀))
   have hNpos : 0 < (N : ℝ) := (div_nonneg (le_max_right R 0) hg.le).trans_lt hN
   have hNnat : 0 < N := by exact_mod_cast hNpos

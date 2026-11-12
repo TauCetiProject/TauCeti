@@ -61,10 +61,6 @@ reductive, that its torus is maximal, or that its root datum has been identified
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * B. Conrad, *Reductive Group Schemes*, §1.
 
-This advances the base-change target in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
-The resulting specialized pinned carrier is an input to milestone L0, “pinned ambient groups”,
-of `TauCetiRoadmap/CFSGStatement/README.md`.
-
 The declaration structure specializes the formal template in
 `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.BaseChange`. Every construction below uses the
 generic Kostant base-change API from
@@ -319,7 +315,7 @@ theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_
       (TauCeti.serreRootGenerator weightTable.cartanMatrix)
       (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
       weightTable.rep_kostantForm_mem_lattice weightTable.isNilpotent_rep_serreRootGenerator 𝓑
-      weightTable.weight A definingIdeal_def i B q using 1
+      weightTable.weight A i B q using 1
   congr 1
   erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
@@ -418,7 +414,7 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
           CommHopfAlgCat.baseChangeMap weightTorusIntegralCoordinateMap ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup (Fin 6))))) =
       weightTorusToBaseChangeCoordinateMap A := by
   rw [baseChangeCoordinateIso, weightTorusIntegralCoordinateMap,

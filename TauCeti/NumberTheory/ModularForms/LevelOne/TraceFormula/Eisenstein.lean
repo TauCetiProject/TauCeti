@@ -143,7 +143,7 @@ private theorem infinityEval_of_mem_reps (hn : n ≠ 0) (A : TraceFormulaMatrix 
     fin_cases i <;> simp [Matrix.adjugate_fin_two, Matrix.mulVec, dotProduct, hc]
   simp only [infinityEval, LinearMap.comp_apply, hinf, evalCusp_infty, binaryFormAdjugateRep_apply,
     coe_binaryFormRep_apply, eval_linearSubst, hv, ((mem_homogeneousSubmodule _ _).1 P.2).eval_smul,
-    LinearMap.smul_apply]
+    LinearMap.smul_apply, smul_eq_mul]
 
 /-- The linear extension of `infinityEval` to `R[ℳₙ]`. -/
 private noncomputable def infinityEvalAction (hn : n ≠ 0) (hw : Even w) :
@@ -175,7 +175,7 @@ private theorem infinityEvalAction_eq_zero_of_mem (hn : n ≠ 0) (hw : Even w)
 private theorem infinityEvalAction_upperTriangularSum (hn : n ≠ 0) (hw : Even w) :
     infinityEvalAction (w := w) hn hw (upperTriangularSum R n) =
       (ArithmeticFunction.sigma (w + 1) n.natAbs : R) • evalCusp R w ∞ := by
-  rw [upperTriangularSum_eq_sum_reps, map_sum, ← FixedDetMatrices.sum_reps_pow hn hw,
+  rw [upperTriangularSum_eq_sum_reps, map_sum, ← FixedDetMatrices.sum_reps_pow hw,
     Finset.sum_smul]
   refine Finset.sum_congr rfl fun A _ ↦ ?_
   rw [infinityEvalAction, linearLift_single, one_smul, infinityEval_of_mem_reps hn A.1 A.2]

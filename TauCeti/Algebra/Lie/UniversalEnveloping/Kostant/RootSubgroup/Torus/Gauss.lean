@@ -180,19 +180,6 @@ variable {i j : ι}
 variable (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
 variable (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
 
-/-- Solve Steinberg's Weyl definition `n_α(-t⁻¹) = xᵢ(-t⁻¹) xⱼ(t) xᵢ(-t⁻¹)` for `xⱼ(t)`. -/
-private theorem kostantRootSubgroupParam_f_eq_mul_kostantWeylParam
-    (K : CommAlgCat.{w} ℤ) (t : Kˣ) :
-    kostantRootSubgroupParam e h ρ M hM j hj K (Multiplicative.ofAdd (t : K)) =
-      kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) *
-        kostantWeylParam e h ρ M hM hi hj K (-t⁻¹) *
-        kostantRootSubgroupParam e h ρ M hM i hi K (Multiplicative.ofAdd ((t⁻¹ : Kˣ) : K)) := by
-  have hn := kostantWeylParam_def e h ρ M hM hi hj K (-t⁻¹)
-  have hpar : -(((-t⁻¹)⁻¹ : Kˣ) : K) = (t : K) := by simp
-  rw [Units.val_neg, hpar, ofAdd_neg, map_inv] at hn
-  rw [hn]
-  group
-
 /-- Solve Steinberg's Weyl definition `n_α(v) = xᵢ(v) xⱼ(-v⁻¹) xᵢ(v)` for the left factor
 `xᵢ(v)`. -/
 private theorem kostantRootSubgroupParam_e_eq_kostantWeylParam_mul

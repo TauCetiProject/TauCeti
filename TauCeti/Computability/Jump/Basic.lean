@@ -189,6 +189,14 @@ theorem not_jump_turingReducible : ¬TuringReducible Z.jump.oracle Z.oracle := b
   rw [ofNat_encode, hc] at this
   by_cases he : encode c ∈ Z.jump <;> simp [he, Part.bind_eq_bind] at this
 
+/-- Diagonal evaluation of the oracle-program numbering is recursive in the oracle of `Z`. -/
+theorem recursiveIn_eval_diag :
+    Nat.RecursiveIn {Z.oracle} fun e => Code.eval Z.oracle (ofNat Code e) e := by
+  have hZ : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
+  exact ((Code.recursiveIn_eval Z.oracle Code.universal).comp_primrec
+    (Primrec.nat_iff.1 (Primrec₂.natPair.comp Primrec.id Primrec.id))).of_eq fun e => by
+      rw [hZ, Code.eval_universal, id_eq]
+
 variable {A B : Set ℕ}
 
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then `A'` reduces one-one to
@@ -197,13 +205,7 @@ theorem oneOneReducible_jump_jump (h : TuringReducible A.oracle B.oracle) :
     OneOneReducible (· ∈ A.jump) (· ∈ B.jump) := by
   -- the diagonal computations relative to `A` are recursive in `A`, hence in `B`, so `A'` is c.e.
   -- in `B`
-  have hA : A.oracle = ((A.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
-  -- run the universal program on `Nat.pair e e`
-  have hdiag : Nat.RecursiveIn {A.oracle} fun e => Code.eval A.oracle (ofNat Code e) e :=
-    ((Code.recursiveIn_eval A.oracle Code.universal).comp_primrec
-      (Primrec.nat_iff.1 (Primrec₂.natPair.comp Primrec.id Primrec.id))).of_eq fun e => by
-        rw [hA, Code.eval_universal, id_eq]
-  exact oneOneReducible_jump_of_recursiveIn B <| hdiag.subst fun g hg =>
+  exact oneOneReducible_jump_of_recursiveIn B <| A.recursiveIn_eval_diag.subst fun g hg =>
     (Set.mem_singleton_iff.1 hg) ▸ RecursiveIn.iff_nat.1 h
 
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then so is `A'` to `B'`. -/

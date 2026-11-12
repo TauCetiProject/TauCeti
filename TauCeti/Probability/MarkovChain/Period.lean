@@ -8,7 +8,7 @@ module
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Probability.Kernel.Irreducible
 public import TauCeti.NumberTheory.FrobeniusNumber
-public import TauCeti.Probability.Kernel.Composition.Power
+public import TauCeti.Probability.Kernel.ClosedClass.Basic
 
 /-!
 # The period of a state of a Markov chain
@@ -22,12 +22,12 @@ every state has period one.
 By Chapman–Kolmogorov the return lengths are closed under addition. Hence every sufficiently
 large multiple of the period is a return length, and a state of period one returns with positive
 probability at every sufficiently large time. Mutually reachable states have the same period, so
-the period is constant on each communicating class. For an irreducible aperiodic kernel on a
-space with measurable singletons, every transition mass `(κ ^ n) x {y}` is positive for all
-sufficiently large `n`; this is the input to the coupling proof of convergence to equilibrium.
+the period is constant on each communicating class. For an irreducible aperiodic kernel, every
+transition mass `(κ ^ n) x {y}` is positive for all sufficiently large `n`; this is the input to
+the coupling proof of convergence to equilibrium.
 
-Irreducibility is Mathlib's `Kernel.IsIrreducible` with respect to counting measure, which on a
-space with measurable singletons says that every state reaches every other state.
+Irreducibility is Mathlib's `Kernel.IsIrreducible` with respect to counting measure, which says
+that every state reaches every other state.
 
 As a check of the definition, the period of a state under the deterministic kernel of a map `f`
 is the minimal period `Function.minimalPeriod f x` of `x` under `f`.
@@ -73,9 +73,9 @@ def returnLengths (x : α) : Set ℕ := {n | 0 < n ∧ 0 < (κ ^ n) x {x}}
 theorem mem_returnLengths : n ∈ κ.returnLengths x ↔ 0 < n ∧ 0 < (κ ^ n) x {x} := Iff.rfl
 
 /-- The return lengths of a state are closed under addition. -/
-theorem add_mem_returnLengths [MeasurableSingletonClass α] {m : ℕ}
+theorem add_mem_returnLengths {m : ℕ}
     (hm : m ∈ κ.returnLengths x) (hn : n ∈ κ.returnLengths x) : m + n ∈ κ.returnLengths x :=
-  ⟨by have := hm.1; lia, pow_add_apply_pos (measurableSet_singleton x) hm.2 hn.2⟩
+  ⟨by have := hm.1; lia, pow_add_apply_pos hm.2 hn.2⟩
 
 variable (κ) in
 /-- The period of a state `x`: the gcd of its positive return lengths. A state that the chain
@@ -84,6 +84,21 @@ noncomputable def period (x : α) : ℕ := Nat.setGcd (κ.returnLengths x)
 
 /-- The defining equation of the period: the gcd of the return lengths. -/
 theorem period_def : κ.period x = Nat.setGcd (κ.returnLengths x) := (rfl)
+
+/-- Restriction to a closed set preserves the positive return lengths of each state. -/
+@[simp]
+theorem returnLengths_subtype {s : Set α} (hs : MeasurableSet s)
+    (hclosed : κ.IsClosedSet s) (x : s) :
+    (κ.subtype hs).returnLengths x = κ.returnLengths x.val := by
+  ext n
+  simp only [mem_returnLengths, subtype_pow_apply κ hs hclosed, Set.image_singleton]
+
+/-- Restriction to a closed set preserves the period of each state. -/
+@[simp]
+theorem period_subtype {s : Set α} (hs : MeasurableSet s)
+    (hclosed : κ.IsClosedSet s) (x : s) :
+    (κ.subtype hs).period x = κ.period x.val := by
+  simp only [period_def, returnLengths_subtype hs hclosed]
 
 /-- The period divides every return length. -/
 theorem period_dvd_of_mem_returnLengths (h : n ∈ κ.returnLengths x) : κ.period x ∣ n :=
@@ -109,9 +124,28 @@ def IsAperiodic : Prop := ∀ x, κ.period x = 1
 
 theorem isAperiodic_iff : κ.IsAperiodic ↔ ∀ x, κ.period x = 1 := Iff.rfl
 
-section MeasurableSingletonClass
+/-- If `x` reaches `y` and `y` reaches `x`, then the period of `x` divides the period of `y`. -/
+theorem period_dvd_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
+    (hyx : 0 < (κ ^ b) y {x}) : κ.period x ∣ κ.period y := by
+  -- A round trip `x → y → x` of length `a + b` has positive probability, and inserting a return
+  -- to `y` of length `n` gives one of length `a + n + b`; the period of `x` divides both.
+  have hround : 0 < (κ ^ (a + b)) x {x} := pow_add_apply_pos hxy hyx
+  have hdvd_ab : κ.period x ∣ a + b := by
+    rcases Nat.eq_zero_or_pos (a + b) with h | h
+    · simp [h]
+    · exact period_dvd_of_mem_returnLengths ⟨h, hround⟩
+  refine dvd_period_iff.mpr fun n hn ↦ ?_
+  have hlong : a + n + b ∈ κ.returnLengths x :=
+    ⟨by have := hn.1; lia, pow_add_apply_pos
+      (pow_add_apply_pos hxy hn.2) hyx⟩
+  have h := period_dvd_of_mem_returnLengths hlong
+  rw [show a + n + b = n + (a + b) by lia] at h
+  exact (Nat.dvd_add_left hdvd_ab).mp h
 
-variable [MeasurableSingletonClass α]
+/-- **The period is a class property.** Mutually reachable states have the same period. -/
+theorem period_eq_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
+    (hyx : 0 < (κ ^ b) y {x}) : κ.period x = κ.period y :=
+  Nat.dvd_antisymm (period_dvd_period_of_pos hxy hyx) (period_dvd_period_of_pos hyx hxy)
 
 /-- The chain returns to `x` with positive probability at every sufficiently large multiple of
 the period of `x`. For a state of period zero this only says `0 < (κ ^ 0) x {x}`. -/
@@ -132,29 +166,6 @@ theorem eventually_pos_pow_apply_singleton_self_of_period_eq_one (h : κ.period 
     ∀ᶠ n in atTop, 0 < (κ ^ n) x {x} := by
   simpa [h] using eventually_pos_pow_period_mul_apply_singleton κ x
 
-/-- If `x` reaches `y` and `y` reaches `x`, then the period of `x` divides the period of `y`. -/
-theorem period_dvd_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
-    (hyx : 0 < (κ ^ b) y {x}) : κ.period x ∣ κ.period y := by
-  -- A round trip `x → y → x` of length `a + b` has positive probability, and inserting a return
-  -- to `y` of length `n` gives one of length `a + n + b`; the period of `x` divides both.
-  have hround : 0 < (κ ^ (a + b)) x {x} := pow_add_apply_pos (measurableSet_singleton x) hxy hyx
-  have hdvd_ab : κ.period x ∣ a + b := by
-    rcases Nat.eq_zero_or_pos (a + b) with h | h
-    · simp [h]
-    · exact period_dvd_of_mem_returnLengths ⟨h, hround⟩
-  refine dvd_period_iff.mpr fun n hn ↦ ?_
-  have hlong : a + n + b ∈ κ.returnLengths x :=
-    ⟨by have := hn.1; lia, pow_add_apply_pos (measurableSet_singleton x)
-      (pow_add_apply_pos (measurableSet_singleton y) hxy hn.2) hyx⟩
-  have h := period_dvd_of_mem_returnLengths hlong
-  rw [show a + n + b = n + (a + b) by lia] at h
-  exact (Nat.dvd_add_left hdvd_ab).mp h
-
-/-- **The period is a class property.** Mutually reachable states have the same period. -/
-theorem period_eq_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
-    (hyx : 0 < (κ ^ b) y {x}) : κ.period x = κ.period y :=
-  Nat.dvd_antisymm (period_dvd_period_of_pos hxy hyx) (period_dvd_period_of_pos hyx hxy)
-
 /-- If `x` has period one and reaches `y`, then `(κ ^ n) x {y}` is positive for every
 sufficiently large `n`. -/
 theorem eventually_pos_pow_apply_singleton_of_period_eq_one {a : ℕ} (hx : κ.period x = 1)
@@ -164,12 +175,7 @@ theorem eventually_pos_pow_apply_singleton_of_period_eq_one {a : ℕ} (hx : κ.p
   obtain ⟨N, hN⟩ := h
   refine ⟨N + a, fun n hn ↦ ?_⟩
   rw [show n = (n - a) + a by lia]
-  exact pow_add_apply_pos (measurableSet_singleton y) (hN _ (by lia)) hxy
-
-/-- Under counting-measure irreducibility every state reaches every other state. -/
-theorem exists_pos_pow_apply_singleton [IsIrreducible Measure.count κ] (x y : α) :
-    ∃ n, 0 < (κ ^ n) x {y} :=
-  IsIrreducible.irreducible (φ := Measure.count) (measurableSet_singleton y) (by simp) x
+  exact pow_add_apply_pos (hN _ (by lia)) hxy
 
 /-- All states of an irreducible kernel have the same period. -/
 theorem period_eq_period [IsIrreducible Measure.count κ] (x y : α) :
@@ -190,6 +196,10 @@ theorem IsAperiodic.eventually_pos_pow_apply_singleton [IsIrreducible Measure.co
   have ⟨_, hxy⟩ := exists_pos_pow_apply_singleton (κ := κ) x y
   eventually_pos_pow_apply_singleton_of_period_eq_one (h x) hxy
 
+section MeasurableSingletonClass
+
+variable [MeasurableSingletonClass α]
+
 /-- The return lengths of `x` under a deterministic kernel are the positive periods of `x`. -/
 @[simp]
 theorem returnLengths_deterministic {f : α → α} (hf : Measurable f) (x : α) :
@@ -197,6 +207,18 @@ theorem returnLengths_deterministic {f : α → α} (hf : Measurable f) (x : α)
   ext n
   simp [deterministic_pow, deterministic_apply, pos_iff_ne_zero,
     Set.indicator_apply_eq_zero, Function.IsPeriodicPt, Function.IsFixedPt]
+
+/-- A nonzero translation in a torsion-free left-cancellative additive monoid has no positive
+return lengths. -/
+-- Simplify translations before the general deterministic return-length formula applies.
+@[simp↓]
+theorem returnLengths_deterministic_add [AddMonoid α] [IsLeftCancelAdd α] [IsAddTorsionFree α]
+    {a : α} (ha : Measurable (fun y : α => y + a)) (ha0 : a ≠ 0) (x : α) :
+    (deterministic (fun y : α => y + a) ha).returnLengths x = ∅ := by
+  rw [returnLengths_deterministic, Set.eq_empty_iff_forall_notMem]
+  rintro n ⟨hn, hreturn⟩
+  rw [Function.IsPeriodicPt, Function.IsFixedPt, add_right_iterate] at hreturn
+  exact ha0 ((nsmul_eq_zero_iff_right hn.ne').mp (add_eq_left.mp hreturn))
 
 /-- The period of `x` under the deterministic kernel of `f` is the minimal period of `x`
 under `f`. In particular a point that is not periodic has period zero. -/

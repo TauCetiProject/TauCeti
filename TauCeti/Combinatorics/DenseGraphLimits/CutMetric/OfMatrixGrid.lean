@@ -12,6 +12,7 @@ import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
 import TauCeti.Data.ENNReal.Weights
 import TauCeti.MeasureTheory.Measure.Coupling.Shift
 import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Rounding the weights of a finite weighted graph
@@ -128,6 +129,33 @@ theorem exists_gridValue_cutDist_le (ν : Measure κ) [IsProbabilityMeasure ν] 
 
 end Grid
 
+section Mismatch
+
+variable {κ : Type*} [MeasurableSpace κ]
+
+variable [MeasurableSingletonClass κ] [Countable κ] {ν ν' : Measure κ}
+
+/-- The overlaid difference of two weighted graphs with the same edge weights is bounded by the
+indicator of the pairs of pairs with a mismatched coordinate, where it vanishes otherwise. -/
+private theorem abs_overlayDiff_ofMatrix_le_indicator [IsProbabilityMeasure ν]
+    [IsProbabilityMeasure ν'] (π : Measure (κ × κ)) (b : κ → κ → Set.Icc (0 : ℝ) 1)
+    (hb : ∀ i j, b i j = b j i) (z : (κ × κ) × (κ × κ)) :
+    |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2| ≤
+      (((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
+        ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)).indicator
+          (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
+  by_cases hz : z ∈ ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
+      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)
+  · rw [Set.indicator_of_mem hz, Pi.one_apply]
+    exact abs_overlayDiff_apply_le_one _ _ _ _ _
+  · rw [Set.indicator_of_notMem hz]
+    simp only [Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and, not_or,
+      Set.mem_compl_iff, not_not, Set.mem_diagonal_iff] at hz
+    rw [overlayDiff_apply, Graphon.ofMatrix_apply, Graphon.ofMatrix_apply, hz.1, hz.2, sub_self,
+      abs_zero]
+
+end Mismatch
+
 section WeightShift
 
 variable {κ : Type*} [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
@@ -164,20 +192,9 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
   -- The overlaid difference vanishes unless one of the two coordinates is mismatched.
   set B : Set ((κ × κ) × (κ × κ)) :=
     ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
-      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) with hB
+      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)
   have hBmeas : MeasurableSet B := MeasurableSet.of_discrete
-  have hle : ∀ z : (κ × κ) × (κ × κ),
-      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2|
-        ≤ B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
-    intro z
-    by_cases hz : z ∈ B
-    · rw [Set.indicator_of_mem hz, Pi.one_apply]
-      exact abs_overlayDiff_apply_le_one _ _ _ _ _
-    · rw [Set.indicator_of_notMem hz]
-      simp only [hB, Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and, not_or,
-        Set.mem_compl_iff, not_not, Set.mem_diagonal_iff] at hz
-      rw [overlayDiff_apply, Graphon.ofMatrix_apply, Graphon.ofMatrix_apply, hz.1, hz.2, sub_self,
-        abs_zero]
+  have hle := abs_overlayDiff_ofMatrix_le_indicator (ν := ν) (ν' := ν') π b hb
   refine (cutDist_le _ _ hπ).trans ?_
   refine (cutNorm_le_integral_abs _ _).trans ?_
   have hint : Integrable (fun z : (κ × κ) × (κ × κ) =>
@@ -194,13 +211,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
           norm_num
         rw [measureReal_def, htwo]
         refine ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hrne) ?_
-        calc (π.prod π) B
-            ≤ (π.prod π) ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) +
-              (π.prod π) ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) := measure_union_le _ _
-          _ = π (Set.diagonal κ)ᶜ + π (Set.diagonal κ)ᶜ := by
-              rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
-          _ ≤ ∑ k, (ν {k} - ν' {k}) + ∑ k, (ν {k} - ν' {k}) := add_le_add hoff hoff
-          _ = 2 * ∑ k, (ν {k} - ν' {k}) := (two_mul _).symm
+        exact (Measure.prod_self_union_le_two_mul π _).trans (by gcongr)
 
 /-- Moving a weighting `ρ` to one that keeps `min (ρ {k}) (σ {k})` at every vertex but `k₀` costs at
 most twice the mass by which `ρ` exceeds `σ`. -/
@@ -302,29 +313,30 @@ theorem gridWeightMeasure_apply_singleton {n N : ℕ} (hN : 0 < N) (w : Fin n �
 multiples of `1 / N`.**  Rounding every weight but one down to the grid and letting the remaining
 vertex absorb the slack moves at most `n / N` of the mass, and each unit of moved mass costs at most
 two in cut distance. -/
-theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
+theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} (hN : 0 < N)
     (ν : Measure (Fin n)) [IsProbabilityMeasure ν] (b : Fin n → Fin n → Set.Icc (0 : ℝ) 1)
     (hb : ∀ i j, b i j = b j i) :
     ∃ (w : Fin n → ℕ) (hw : ∑ i, w i = N),
       cutDist (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix (gridWeightMeasure hN w hw) b hb)
         ≤ 2 * (n : ℝ) / (N : ℝ) := by
+  obtain ⟨k₀⟩ := nonempty_of_isProbabilityMeasure ν
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN.ne'
   have hNtop : (N : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top N
-  obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ (0 : Fin n))
-    ν.sum_singleton_eq_one hN
+  obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ k₀)
+    ν.sum_singleton_eq_one N
   refine ⟨w, hwsum, ?_⟩
   set ν' := gridWeightMeasure hN w hwsum with hν'
   have hweight : ∀ i, ν' {i} = (w i : ℝ≥0∞) / (N : ℝ≥0∞) := fun i => by
     rw [hν', gridWeightMeasure_apply_singleton]
   -- the rounded weights are dominated away from the absorbing vertex
-  have hdom : ∀ i, i ≠ (0 : Fin n) → ν' {i} ≤ ν {i} := fun i hi => by
+  have hdom : ∀ i, i ≠ k₀ → ν' {i} ≤ ν {i} := fun i hi => by
     rw [hweight i]
     exact ENNReal.div_le_of_le_mul' (hle i (Finset.mem_univ i) hi)
   -- every vertex loses at most one grid step of weight
   have hstep : ∀ i, ν {i} - ν' {i} ≤ (1 : ℝ≥0∞) / (N : ℝ≥0∞) := by
     intro i
-    rcases eq_or_ne i (0 : Fin n) with rfl | hi
-    · rw [tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le (Finset.mem_univ (0 : Fin n))
+    rcases eq_or_ne i k₀ with rfl | hi
+    · rw [tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le (Finset.mem_univ i)
         (ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm)
         (by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top)
         fun k _ hk => hdom k hk)]

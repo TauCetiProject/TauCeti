@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Algebra.GroupWithZero.Divisibility
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Holomorphic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Cusps
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Invariance
@@ -22,7 +21,7 @@ and of `CuspForm ((Gamma1 N).map (mapGL ℝ)) k`. Nebentypus preservation and th
 recurrence for the canonical `heckeTNat` operator are recorded at every level-supported index in
 `HeckeSlash/LevelSupported.lean`.
 
-This is Layer 2(b) of the ModularForms roadmap at a level divisible by `p`. When `p` is prime,
+This is the Hecke operator at a level divisible by `p`. When `p` is prime,
 the classical `Tₚ` for `p ∤ N` needs one further coset representative and is not built here;
 at `p ∣ N` the classical `Tₚ` *is* this operator, which is why the corresponding prime Hecke
 recurrence carries no `χ(p) p^{k-1}` term. Following Miyake, Diamond–Shurman and Shimura, no
@@ -83,7 +82,6 @@ private noncomputable def heckeSlashUpperTriModularForm (hpN : p ∣ N)
   toFun := heckeSlashUpperTri k p f
   slash_action_eq' γ hγ := by
     obtain ⟨δ, hδ, rfl⟩ := Subgroup.mem_map.mp hγ
-    let _ : NeZero p := NeZero.of_dvd hpN
     rw [← ModularForm.rat_slash_mapGL]
     exact heckeSlashUpperTri_slash_mapGL_of_mem_Gamma1 k hpN hδ
       fun _ hε ↦ SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f (Subgroup.mem_map_of_mem _ hε)

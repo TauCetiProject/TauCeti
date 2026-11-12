@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
-public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import TauCeti.NumberTheory.LocalField.FractionalIdeal
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
@@ -176,31 +175,6 @@ theorem isUnit_intCast_integerRing {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) : IsUnit 
     not_lt.1 fun h ↦ hm ((PadicInt.norm_int_lt_one_iff_dvd m).1 h)
   simpa using h.map (integerRingEquiv p).symm
 
-/-- The integer ring of `ℚ_[p]` is adically complete, via its canonical identification with
-`ℤ_[p]`. -/
-instance integerRingIsAdicComplete :
-    IsAdicComplete (IsLocalRing.maximalIdeal (𝒪[ℚ_[p]])) (𝒪[ℚ_[p]]) := by
-  have h := (IsAdicComplete.congr_ringEquiv
-    (I := IsLocalRing.maximalIdeal ℤ_[p]) (e := (integerRingEquiv p).symm)).2
-      (inferInstance : IsAdicComplete (IsLocalRing.maximalIdeal ℤ_[p]) ℤ_[p])
-  simpa only [IsLocalRing.map_ringEquiv_maximalIdeal] using h
-
-/-- The integer ring of `ℚ_[p]` is compact, since it is identified with `ℤ_[p]`. -/
-instance integerRingCompactSpace : CompactSpace 𝒪[ℚ_[p]] := by
-  have hcoe : Continuous (fun x : 𝒪[ℚ_[p]] =>
-      ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p])) := by
-    simp only [coe_integerRingEquiv_apply]
-    exact continuous_subtype_val
-  have hcoe' : Continuous (fun x : ℤ_[p] =>
-      (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p])) := by
-    simp only [coe_integerRingEquiv_symm_apply]
-    exact continuous_subtype_val
-  let e : 𝒪[ℚ_[p]] ≃ₜ ℤ_[p] :=
-    { toEquiv := (integerRingEquiv p).toEquiv
-      continuous_toFun := continuous_induced_rng.2 hcoe
-      continuous_invFun := continuous_induced_rng.2 hcoe' }
-  exact e.symm.compactSpace
-
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp high] -- Compute the cardinality before `Nat.card_eq_fintype_card` changes its form.
 theorem natCard_residueField :
@@ -219,7 +193,7 @@ theorem normalizedAbsoluteValue_eq_nnnorm (x : ℚ_[p]) :
   apply NNReal.eq
   rw [TauCeti.normalizedAbsoluteValue_apply_ne_zero x hx,
     natCard_residueField p, toAdd_normalizedValuation_eq_valuation]
-  simp only [coe_nnnorm]
+  simp only [coe_nnNorm]
   simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
 
 /-- The normalized valuation of a natural number in `ℚ_[p]` is its `p`-adic valuation. -/

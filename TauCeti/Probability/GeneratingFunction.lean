@@ -145,6 +145,45 @@ theorem integrable_pow_of_abs_le_one [IsFiniteMeasure μ] {X : Ω → ℕ} (hX :
   filter_upwards with ω
   simpa only [Real.norm_eq_abs, abs_pow, norm_one] using pow_le_one₀ (abs_nonneg t) ht
 
+/-- For a probability law on `ℕ`, the error in the approximation
+`pgf id ν z ≈ 1 + (z - 1) * ν.real {1}` is bounded by twice the multiple-occurrence probability.
+The estimate holds on the entire interval `[-1, 1]`. -/
+theorem _root_.MeasureTheory.Measure.abs_pgf_sub_one_sub_mul_le
+    (ν : Measure ℕ) [IsProbabilityMeasure ν]
+    {z : ℝ} (hz : |z| ≤ 1) :
+    |pgf id ν z - 1 - (z - 1) * ν.real {1}| ≤ 2 * ν.real (Set.Ici 2) := by
+  let b : ℕ → ℝ := Set.indicator {1} (fun _ ↦ 1)
+  have hb : Integrable b ν := (integrable_const 1).indicator (measurableSet_singleton 1)
+  have hbint : ∫ k, b k ∂ν = ν.real {1} := by
+    dsimp only [b]
+    rw [integral_indicator (measurableSet_singleton 1)]
+    simp [measureReal_def]
+  have hp := integrable_pow_of_abs_le_one (μ := ν) aemeasurable_id hz
+  simp only [id_eq] at hp
+  have heq (k : ℕ) : z ^ k - 1 - (z - 1) * b k =
+      Set.indicator (Set.Ici 2) (fun k ↦ z ^ k - 1) k := by
+    rcases k with _ | _ | k
+    · simp [b]
+    · simp [b]
+    · simp [b]
+  have hint : pgf id ν z - 1 - (z - 1) * ν.real {1} =
+      ∫ k in Set.Ici 2, (z ^ k - 1) ∂ν := by
+    rw [← integral_indicator measurableSet_Ici]
+    simp_rw [← heq]
+    rw [integral_sub (f := fun k : ℕ ↦ z ^ k - 1)
+      (hp.sub (integrable_const 1)) (hb.const_mul _),
+      integral_sub hp (integrable_const 1), integral_const_mul]
+    simp [hbint, pgf_def]
+  rw [hint, ← Real.norm_eq_abs]
+  have hbound : ∀ k : ℕ, ‖z ^ k - 1‖ ≤ 2 := fun k ↦ by
+    calc
+      ‖z ^ k - 1‖ ≤ ‖z ^ k‖ + ‖(1 : ℝ)‖ := norm_sub_le _ _
+      _ ≤ 2 := by
+        simpa only [norm_pow, Real.norm_eq_abs, abs_one, one_add_one_eq_two, add_comm] using
+          add_le_add_right (pow_le_one₀ (n := k) (abs_nonneg z) hz) 1
+  simpa [mul_comm] using norm_integral_le_of_norm_le_const
+    (μ := ν.restrict (Set.Ici 2)) (C := (2 : ℝ)) (ae_of_all _ hbound)
+
 /-- The probability-generating function of a sum of two independent natural-number-valued random
 variables is the product of their generating functions whenever both factor integrands are
 integrable.
@@ -172,7 +211,7 @@ theorem IndepFun.pgf_add_of_abs_le_one [IsFiniteMeasure μ] {X Y : Ω → ℕ}
 
 /-- The probability-generating function sends convolution to multiplication whenever both factor
 integrands are integrable. -/
-theorem _root_.MeasureTheory.Measure.pgf_conv (μ ν : Measure ℕ) [SFinite μ] [SFinite ν]
+theorem _root_.MeasureTheory.Measure.pgf_conv (μ ν : Measure ℕ)
     (t : ℝ) (hμ : Integrable (fun k => t ^ k) μ) (hν : Integrable (fun k => t ^ k) ν) :
     pgf id (μ ∗ ν) t = pgf id μ t * pgf id ν t := by
   have hconv : Integrable (fun k : ℕ => t ^ k) (μ ∗ ν) := by
@@ -328,7 +367,7 @@ theorem integrable_descFactorial_of_integrable_pow_natCast {ν : Measure ℕ} {n
 theorem integrable_descFactorial_of_integrable_exp_mul_natCast {ν : Measure ℕ} {t : ℝ}
     (ht : 0 < t) (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) (n : ℕ) :
     Integrable (fun k : ℕ => (k.descFactorial n : ℝ)) ν := by
-  let _ : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_of_one_le hExp <|
+  let _ : IsFiniteMeasure ν := hExp.isFiniteMeasure_of_one_le_norm <|
     Filter.Eventually.of_forall fun k => by
       rw [Real.norm_eq_abs, Real.abs_exp]
       exact Real.one_le_exp (mul_nonneg ht.le (Nat.cast_nonneg k))
@@ -437,13 +476,18 @@ theorem iteratedDeriv_pgf_zero (ν : Measure ℕ) [IsFiniteMeasure ν] (n : ℕ)
   rw [eq_comm, div_eq_iff (Nat.cast_ne_zero.mpr n.factorial_ne_zero)] at hcoeff
   rw [hcoeff, mul_comm]
 
-/-- Evaluating at the origin the probability-generating function of a finite measure on `ℕ` gives
-the mass of `{0}`.  This is the `n = 0` case of `iteratedDeriv_pgf_zero`, which `simp` normalises
-away from `iteratedDeriv`. -/
+/-- Evaluating at the origin the probability-generating function of a measure on `ℕ` gives
+the real-valued mass `ν.real {0}`; if `ν {0} = ∞` both sides are `0`, as `ν.real` sends infinite
+mass to zero.  For a finite measure this is the `n = 0` case of `iteratedDeriv_pgf_zero`,
+which `simp` normalises away from `iteratedDeriv`. -/
 @[simp]
-theorem pgf_zero (ν : Measure ℕ) [IsFiniteMeasure ν] : pgf id ν 0 = ν.real {0} := by
-  have h := iteratedDeriv_pgf_zero ν 0
-  rwa [iteratedDeriv_zero, Nat.factorial_zero, Nat.cast_one, one_mul] at h
+theorem pgf_zero (ν : Measure ℕ) : pgf id ν 0 = ν.real {0} := by
+  have h : (fun n : ℕ ↦ (0 : ℝ) ^ n) = Set.indicator {0} 1 := by
+    ext n
+    cases n <;> simp
+  rw [pgf_def]
+  simp only [id_eq]
+  rw [h, integral_indicator_one (measurableSet_singleton 0)]
 
 /-- The derivative at the origin of the probability-generating function of a finite measure on `ℕ`
 is the mass of `{1}`.  This is the `n = 1` case of `iteratedDeriv_pgf_zero`, which `simp`

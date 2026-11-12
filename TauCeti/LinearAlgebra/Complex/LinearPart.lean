@@ -57,6 +57,10 @@ statement, before any smoothness or bundle structure is introduced.
   complementary subspaces of all real-linear maps.
 * `TauCeti.isComplexLinear_arrowCongr_iff`: complex-linearity is preserved and reflected by
   conjugating source, target, and map along real-linear equivalences.
+* `TauCeti.IsComplexLinear.symm`, `TauCeti.IsComplexAntilinear.symm`: the inverse of a
+  complex-linear (complex-antilinear) equivalence is complex linear (complex antilinear).
+* `TauCeti.add_apply_eq_zero_iff_eq_apply`: for `K` with `K² = -1`, the equation `a + K b = 0`
+  is `b = K a`.
 
 The sign conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 2nd ed., Section 2.2, specialized to the pointwise real-linear setting.
@@ -133,6 +137,28 @@ theorem IsComplexAntilinear.apply {F : V →ₗ[ℝ] W} (h : IsComplexAntilinear
 theorem isComplexAntilinear_of_apply {F : V →ₗ[ℝ] W} (h : ∀ v, F (J v) = -(J' (F v))) :
     IsComplexAntilinear J J' F :=
   LinearMap.ext fun v => by simpa using h v
+
+/-- Pointwise anticommutation `F (J v) + J' (F v) = 0` is equivalent to `(J, J')`-complex
+antilinearity of `F`. -/
+theorem isComplexAntilinear_iff_apply_add_apply_eq_zero {F : V →ₗ[ℝ] W} :
+    IsComplexAntilinear J J' F ↔ ∀ v, F (J v) + J' (F v) = 0 :=
+  ⟨fun h v ↦ by rw [h.apply v, neg_add_cancel],
+    fun h ↦ isComplexAntilinear_of_apply fun v ↦ eq_neg_of_add_eq_zero_left (h v)⟩
+
+/-- The inverse of a complex-linear equivalence is complex linear. -/
+theorem IsComplexLinear.symm {e : V ≃ₗ[ℝ] W} (h : IsComplexLinear J J' (e : V →ₗ[ℝ] W)) :
+    IsComplexLinear J' J (e.symm : W →ₗ[ℝ] V) :=
+  isComplexLinear_of_apply fun w => by
+    rw [LinearEquiv.coe_coe, e.symm_apply_eq, ← LinearEquiv.coe_coe, h.apply,
+      LinearEquiv.coe_coe, e.apply_symm_apply]
+
+/-- The inverse of a complex-antilinear equivalence is complex antilinear. -/
+theorem IsComplexAntilinear.symm {e : V ≃ₗ[ℝ] W}
+    (h : IsComplexAntilinear J J' (e : V →ₗ[ℝ] W)) :
+    IsComplexAntilinear J' J (e.symm : W →ₗ[ℝ] V) :=
+  isComplexAntilinear_of_apply fun w => by
+    rw [LinearEquiv.coe_coe, e.symm_apply_eq, map_neg, ← LinearEquiv.coe_coe, h.apply,
+      LinearEquiv.coe_coe, e.apply_symm_apply, _root_.neg_neg]
 
 /-- The identity map is complex linear. -/
 theorem isComplexLinear_id : IsComplexLinear J J (LinearMap.id) := by
@@ -347,6 +373,19 @@ theorem complexLinearPart_neg (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : 
 theorem complexAntilinearPart_neg (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) :
     complexAntilinearPart J J' (-F) = -complexAntilinearPart J J' F :=
   map_neg (complexAntilinearPartLinearMap J J') F
+
+/-- For an additive endomorphism `K` with `K² = -1`, such as an almost complex structure, the
+equation `a + K b = 0` is equivalent to `b = K a`. -/
+theorem add_apply_eq_zero_iff_eq_apply {M F : Type*} [AddGroup M] [FunLike F M M]
+    [AddMonoidHomClass F M M] {K : F} (hK : ∀ v, K (K v) = -v) (a b : M) :
+    a + K b = 0 ↔ b = K a := by
+  constructor
+  · intro h
+    have := congrArg K h
+    rw [map_add, hK, map_zero] at this
+    exact (add_neg_eq_zero.1 this).symm
+  · rintro rfl
+    rw [hK, add_neg_cancel]
 
 /-- Applying an almost complex structure twice negates, in pointwise form. -/
 private theorem sq_apply (hsq : J ∘ₗ J = -LinearMap.id) (v : V) : J (J v) = -v := by

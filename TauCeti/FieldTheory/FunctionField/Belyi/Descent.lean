@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
+public import TauCeti.FieldTheory.FunctionField.Belyi.Model
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.GaloisDescent
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
@@ -29,7 +29,10 @@ Galois descent along this semilinear action (`TauCeti.GaloisDescent`) shows that
 `F₀ · L`. Since `t` is fixed, it lies in `F₀`, and the base-change comparison of Belyi pairs
 (`TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`) shows that `F₀` over `K(t)` is
 an algebraic Belyi pair of the same degree
-(`TauCeti.GaloisDescent.isAlgebraicBelyiPair_fixedField_iff`).
+(`TauCeti.GaloisDescent.isAlgebraicBelyiPair_fixedField_iff`). Embedded in `F` as the fixed field,
+the descended pair is a model of `X` over `K` in the sense of `TauCeti.AlgebraicBelyiPair.Model`
+(`TauCeti.AlgebraicBelyiPair.DescentDatum.model`), so a class admitting a descent datum is defined
+over `K`.
 
 A family of isomorphisms that is not a cocycle need not descend: whether the isomorphisms
 `f_σ` can be chosen to form a cocycle is the gap between the field of moduli of a Belyi pair and
@@ -44,6 +47,7 @@ its fields of definition.
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.descend`: the descended algebraic Belyi pair over `K`.
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.baseChangeEquiv`: the base-change isomorphism
   `L ⊗[K] F₀ ≃ F`.
+* `TauCeti.AlgebraicBelyiPair.DescentDatum.model`: the descended pair as a model of `X` over `K`.
 
 ## Main results
 
@@ -53,6 +57,8 @@ its fields of definition.
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.constantCompositum_descend_eq_top` and
   `TauCeti.AlgebraicBelyiPair.DescentDatum.finrank_descend`: the descended pair base-changes back
   to `X`, with the same degree.
+* `TauCeti.AlgebraicBelyiPair.DescentDatum.isDefinedOver_mk`: **effectiveness**, a pair with a
+  descent datum relative to `K` is defined over `K`.
 
 ## References
 
@@ -256,6 +262,28 @@ theorem baseChangeEquiv_tmul (a : L) (y : D.descend) :
 theorem baseChangeEquiv_symm_algebraMap (y : D.descend) :
     D.baseChangeEquiv.symm (algebraMap D.descend X y) = 1 ⊗ₜ y :=
   GaloisDescent.fixedFieldBaseChangeEquiv_symm_apply_coe D.semilinearAction_algebraMap y
+
+/-- **A descent datum gives a model**: the descended pair, embedded in the function field of `X`
+as the fixed field of the semilinear action, is a model of `X` over `K`. -/
+@[expose, simps pair embedding]
+noncomputable def model : Model K X where
+  pair := D.descend
+  embedding := algebraMap D.descend X
+  embedding_algebraMap c := by
+    rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply K L X]
+  embedding_algebraMap_X := D.algebraMap_descend_X
+  adjoin_range_embedding := by
+    have h := D.constantCompositum_descend_eq_top
+    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
+      constantCompositum_def, IntermediateField.adjoin_toSubfield] at h
+    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
+      IntermediateField.adjoin_toSubfield, Set.union_comm, h]
+
+include D in
+/-- **Descent data are effective**: an algebraic Belyi pair with a descent datum relative to `K`
+is defined over `K`. -/
+theorem isDefinedOver_mk : (IsoClass.mk X).IsDefinedOver K :=
+  IsoClass.isDefinedOver_mk_iff.mpr ⟨D.model⟩
 
 end DescentDatum
 

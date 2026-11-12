@@ -13,15 +13,16 @@ public import Mathlib.RingTheory.Jacobson.Radical
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RepresentationTheory.Maschke
 import Mathlib.RingTheory.Finiteness.Cardinality
-import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.Basic
 import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.Padic.Basic
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
 # Projective modules over finite `p`-adic group algebras
@@ -130,8 +131,6 @@ instance instFiniteQuotientJacobsonPadicIntMonoidAlgebra :
   have hker : RingHom.ker π ≤ Ring.jacobson (MonoidAlgebra ℤ_[p] G) := by
     rw [ker_padicMonoidAlgebraReduction p G]
     exact span_p_le_jacobson_padicInt_monoidAlgebra p G
-  have : Finite (G →₀ ZMod p) := Finite.of_injective _ DFunLike.coe_injective
-  have : Finite (MonoidAlgebra (ZMod p) G) := Finite.of_injective _ MonoidAlgebra.coeff_injective
   have : Finite (MonoidAlgebra ℤ_[p] G ⧸ RingHom.ker π) :=
     Finite.of_equiv _ (padicMonoidAlgebraQuotientEquiv p G).symm.toEquiv
   exact Finite.of_surjective _ (Ideal.Quotient.factor_surjective hker)
@@ -189,9 +188,9 @@ finitely generated projective submodule `X` of `N`.
 
 For `N` a finitely generated free module, this applies to every finitely generated projective
 `𝔽_p[G]`-module; see `TauCeti.exists_projective_reduction_bijective_of_projective`. -/
-theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [Module ℤ_[p] N]
-    [Module (MonoidAlgebra ℤ_[p] G) N] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) N]
-    [Module.Finite (MonoidAlgebra ℤ_[p] G) N] [Module.Projective (MonoidAlgebra ℤ_[p] G) N]
+theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N]
+    [Module (MonoidAlgebra ℤ_[p] G) N] [Module.Finite (MonoidAlgebra ℤ_[p] G) N]
+    [Module.Projective (MonoidAlgebra ℤ_[p] G) N]
     {Y : Type w} [AddCommGroup Y] [Module (MonoidAlgebra ℤ_[p] G) Y]
     (i : Y →ₗ[MonoidAlgebra ℤ_[p] G] N ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
       (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) N))
@@ -202,12 +201,14 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [M
       Module.Projective (MonoidAlgebra ℤ_[p] G) X ∧
       Nonempty ((X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
         (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X)) ≃ₗ[MonoidAlgebra ℤ_[p] G] Y) := by
+  -- Restrict scalars along `ℤ_p → ℤ_p[G]`.
+  let _ : Module ℤ_[p] N := Module.compHom N (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G))
+  have : IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) N :=
+    IsScalarTower.of_compHom ℤ_[p] (MonoidAlgebra ℤ_[p] G) N
   have : Module.Finite ℤ_[p] N := .trans (MonoidAlgebra ℤ_[p] G) N
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
     rw [← PadicInt.maximalIdeal_eq_span_p]
     infer_instance
-  have : Module.Finite ℤ_[p] (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
-    .linearMap_of_isNoetherian
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
     .of_finite _ _
   have : IsNoetherian (MonoidAlgebra ℤ_[p] G) N := isNoetherian_of_tower ℤ_[p] inferInstance

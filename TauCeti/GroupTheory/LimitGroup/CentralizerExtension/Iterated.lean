@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
+public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
 
 /-!
 # Iterated extensions of centralizers
@@ -16,12 +16,18 @@ centralizer of `Gᵢ`: `uᵢ` is not a proper power and `nᵢ > 0`. The chain co
 inclusion `F →* Gₘ`, the composite of the inclusions of the successive steps.
 
 Over a nonabelian free group `F` of finite rank, ICE groups are the model fully residually free
-groups: by theorems of Kharlampovich and Myasnikov, which are not proved here, each of them is
-`F`-discriminated by `F`, and every finitely generated fully residually free group embeds in one of
-them. This file sets up the chains over an arbitrary base group and proves the structural facts that
-do not depend on the base. The coefficient inclusion is injective, and it is surjective exactly for
-the empty chain, because every step is strict. It has a retraction. Chains can be concatenated, and
-over a finitely generated base every ICE group is finitely generated.
+groups. Each of them is `F`-discriminated by `F`, and conversely, by a theorem of Kharlampovich and
+Myasnikov which is not proved here, every finitely generated fully residually free group embeds in
+one of them. This file sets up the chains over an arbitrary base group and proves the structural
+facts that do not depend on the base. The coefficient inclusion is injective, and it is surjective
+exactly for the empty chain, because every step is strict. It has a retraction. Chains can be
+concatenated, and over a finitely generated base every ICE group is finitely generated.
+
+Over a fully residually free base `F`, such as a free group, every ICE group is discriminated by
+`F` over `F`, hence fully residually free. This follows by induction along the chain: each step
+`Gᵢ₊₁ = Gᵢ(uᵢ, ℤ^{nᵢ})` is discriminated by `Gᵢ`, because `Gᵢ` is fully residually free, so CSA with
+the big powers property (`TauCeti.LimitGroup.CentralizerExt.isDiscriminatedBy`), and
+discriminations compose.
 
 ## Main definitions
 
@@ -39,6 +45,10 @@ over a finitely generated base every ICE group is finitely generated.
   the chain is empty.
 * `TauCeti.LimitGroup.ICE.exists_retraction`: every ICE group over `F` retracts onto `F`.
 * `TauCeti.LimitGroup.ICE.fg`: ICE groups over a finitely generated group are finitely generated.
+* `TauCeti.LimitGroup.ICE.isDiscriminatedBy`: over a fully residually free group `F`, every ICE
+  group is discriminated by `F` over `F`.
+* `TauCeti.LimitGroup.ICE.isFullyResiduallyFree`: ICE groups over a fully residually free group are
+  fully residually free.
 
 ## References
 
@@ -47,6 +57,8 @@ over a finitely generated base every ICE group is finitely generated.
   (1998), §0.
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Subgroups of fully residually free
   groups: algorithmic problems*, Contemp. Math. 360 (2004), §5.
+* O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
+  (2005), §2.5.
 -/
 
 public section
@@ -115,14 +127,14 @@ def append (c : ICE F G ι) {K : Type u} [Group K] {j : G →* K} :
 theorem injective (c : ICE F G ι) : Function.Injective ι := by
   induction c with
   | refl => exact Function.injective_id
-  | step c h ih => exact CentralizerExt.of_injective.comp ih
+  | step _ _ ih => exact CentralizerExt.of_injective.comp ih
 
 /-- Every step of an ICE chain is strict: the coefficient inclusion is surjective exactly when the
 chain is empty. -/
 theorem range_eq_top_iff (c : ICE F G ι) : ι.range = ⊤ ↔ c.length = 0 := by
   induction c with
   | refl => simpa using MonoidHom.range_eq_top.2 Function.surjective_id
-  | @step G _ ι c r n h ih =>
+  | @step G _ ι c r n h _ =>
     simp only [length_step, Nat.add_one_ne_zero, iff_false]
     refine fun htop => CentralizerExt.range_of_ne_top (u := r) h.pos (eq_top_iff.2 ?_)
     rw [← htop]
@@ -134,7 +146,7 @@ the coefficient inclusion. -/
 theorem exists_retraction (c : ICE F G ι) : ∃ ρ : G →* F, ρ.comp ι = .id F := by
   induction c with
   | refl => exact ⟨.id _, rfl⟩
-  | step c h ih =>
+  | step _ _ ih =>
     obtain ⟨ρ, hρ⟩ := ih
     refine ⟨ρ.comp (CentralizerExt.retraction 0), ?_⟩
     rw [MonoidHom.comp_assoc, ← MonoidHom.comp_assoc _ CentralizerExt.of,
@@ -144,7 +156,30 @@ theorem exists_retraction (c : ICE F G ι) : ∃ ρ : G →* F, ρ.comp ι = .id
 theorem fg [Group.FG F] (c : ICE F G ι) : Group.FG G := by
   induction c with
   | refl => infer_instance
-  | step c h ih => infer_instance
+  | step _ _ ih => infer_instance
+
+open GroupAlgGeom in
+/-- **ICE groups are discriminated by their base.** Over a fully residually free group `F`, for
+instance a free group, every ICE group `G` is discriminated by `F` over `F`: any finite family of
+nonidentity elements of `G` survives under a single retraction `G →* F` of the coefficient
+inclusion. -/
+theorem isDiscriminatedBy (hF : IsFullyResiduallyFree F) (c : ICE F G ι) :
+    IsDiscriminatedBy ι (.id F) := by
+  induction c with
+  | refl => exact .self _
+  | @step G _ ι _ r n h ih =>
+    -- The top `G` of the shorter chain is fully residually free, so the new step is
+    -- discriminated by `G`; compose with the discrimination of `G` by `F`.
+    have hG := hF.of_isDiscriminatedBy ih
+    have hstep := (CentralizerExt.isDiscriminatedBy (n := n) hG.isBP hG.isCSA h.ne_one).comp ι
+    rw [MonoidHom.id_comp] at hstep
+    exact hstep.trans ih
+
+/-- ICE groups over a fully residually free group, for instance a free group, are fully residually
+free. -/
+theorem isFullyResiduallyFree (hF : IsFullyResiduallyFree F) (c : ICE F G ι) :
+    IsFullyResiduallyFree G :=
+  hF.of_isDiscriminatedBy (c.isDiscriminatedBy hF)
 
 end ICE
 

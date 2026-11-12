@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 
 /-!
 # Alternating forms on a real inner product space
@@ -41,6 +42,9 @@ product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧
 * `TauCeti.alternatingFormEquiv_wedge`: the identification carries `x ∧ y` to the wedge of forms.
 * `TauCeti.alternatingFormEquiv_koszulDifferential`: it carries the contraction by `⟪u, ·⟫` to
   the interior product by `u`.
+* `TauCeti.alternatingFormEquiv_wedgeLeft_apply`: it carries exterior multiplication by `u` to
+  the wedge with the covector `⟪u, ·⟫`.
+* `LinearIsometry.alternatingFormEquiv_map`: musical identification commutes with isometries.
 * `TauCeti.alternatingFormInner_eq_sum`: the inner product of forms in an orthonormal basis.
 * `Module.Basis.alternatingFormEquiv_symm_eq_sum`: the element of `⋀ᵏ V` representing a form, in
   an arbitrary basis.
@@ -147,6 +151,30 @@ theorem alternatingFormEquiv_koszulDifferential (u : V) {k : ℕ} (x : ⋀[ℝ]^
   -- `Matrix.vecCons`, used by `curryLeft`, is by definition `Fin.cons`.
   rfl
 
+/-- Elements of exterior powers of propositionally equal degrees which agree in the exterior
+algebra have forms which agree after reindexing their arguments. -/
+private theorem alternatingFormEquiv_apply_comp_cast {a b : ℕ} (h : a = b) (x : ⋀[ℝ]^a V)
+    (y : ⋀[ℝ]^b V) (hxy : (x : ExteriorAlgebra ℝ V) = y) (v : Fin b → V) :
+    alternatingFormEquiv V a x (v ∘ Fin.cast h) = alternatingFormEquiv V b y v := by
+  subst h
+  obtain rfl : x = y := Subtype.ext hxy
+  simp
+
+/-- **Exterior multiplication is the wedge with a covector**: the form of `u ∧ x` for
+`x ∈ ⋀ᵏ V` is the wedge `⟪u, ·⟫ ∧ α` of the covector of `u` with the form `α` of `x`, whose degree
+`1 + k` is identified with `k + 1` by `Fin.cast`. -/
+theorem alternatingFormEquiv_wedgeLeft_apply (u : V) {k : ℕ} (x : ⋀[ℝ]^k V)
+    (v : Fin (k + 1) → V) :
+    alternatingFormEquiv V (k + 1) (ExteriorAlgebra.wedgeLeft u k x) v =
+      (ContinuousAlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ u)).wedge
+        (alternatingFormEquiv V k x) (v ∘ Fin.cast (Nat.add_comm 1 k)) := by
+  have hu : ContinuousAlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ u) =
+      alternatingFormEquiv V 1 (ιMulti ℝ 1 ![u]) := by
+    ext v
+    simp [inner_ιMulti_ιMulti]
+  rw [hu, ← alternatingFormEquiv_wedge, alternatingFormEquiv_apply_comp_cast]
+  simp [ExteriorAlgebra.ιMulti_apply]
+
 variable (V) in
 /-- The pointwise inner product of alternating `k`-forms, transported from the inner product of
 `⋀ᵏ V` along `TauCeti.alternatingFormEquiv`. On wedges of covectors it is the Gram determinant,
@@ -205,6 +233,26 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
     inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti]
 
 end TauCeti
+
+namespace LinearIsometry
+
+open TauCeti
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+
+/-- The musical identification of exterior powers with alternating forms commutes with
+linear isometric embeddings: pulling back the form of the image recovers the original form. -/
+@[simp]
+theorem alternatingFormEquiv_map (e : V →ₗᵢ[ℝ] W) {k : ℕ} (a : ⋀[ℝ]^k V) :
+    (alternatingFormEquiv W k (exteriorPower.map k e.toLinearMap a)).compContinuousLinearMap
+        e.toContinuousLinearMap =
+      alternatingFormEquiv V k a := by
+  ext v
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, alternatingFormEquiv_apply]
+  simpa [exteriorPower.map_apply_ιMulti] using
+    exteriorPower.inner_map_map e a (ιMulti ℝ k v)
+
+end LinearIsometry
 
 namespace Module.Basis
 

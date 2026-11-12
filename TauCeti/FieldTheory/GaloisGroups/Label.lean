@@ -106,7 +106,6 @@ local instance factSplitsSplittingField (f : F[X]) :
     Fact ((f.map (algebraMap F f.SplittingField)).Splits) :=
   ⟨SplittingField.splits f⟩
 
--- Formalization source: `TauCetiRoadmap/PolynomialGaloisGroups/Suggested.lean`.
 /-- The Galois group of `f` carries the transitive-group label `j` of degree `n`: `f` is
 separable of degree `n`, and some numbering of its roots in the splitting field by `Fin n` carries
 the image of the Galois action on the roots to a conjugate of the reference subgroup
@@ -129,13 +128,14 @@ theorem isPretransitive_map_range_galActionHom_iff (hsep : f.Separable) (hdeg : 
     isPretransitive_range_toPermHom_iff]
   exact isPretransitive_iff_irreducible f.SplittingField hsep hdeg
 
-/-- Construct a Galois label from one numbering of the roots that exhibits it. -/
-theorem HasGaloisLabel.mk (hsep : f.Separable) (hdeg : f.natDegree = n)
-    (e : f.rootSet f.SplittingField ≃ Fin n)
+/-- Construct a Galois label from one numbering of the roots that exhibits it. The degree of the
+separable polynomial `f` is the number of its roots, so it is `n`. -/
+theorem HasGaloisLabel.mk (hsep : f.Separable) (e : f.rootSet f.SplittingField ≃ Fin n)
     (he : TransitiveGroupLabel j
       ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom)) :
     HasGaloisLabel f j :=
-  ⟨hsep, hdeg, e, he⟩
+  ⟨hsep, by rw [← card_rootSet_eq_natDegree hsep (SplittingField.splits f), Fintype.card_congr e,
+    Fintype.card_fin], e, he⟩
 
 /-- A polynomial with a label is separable. -/
 theorem HasGaloisLabel.separable (h : HasGaloisLabel f j) : f.Separable :=
@@ -163,7 +163,7 @@ theorem hasGaloisLabel_iff_forall :
           ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom) := by
   refine ⟨fun h => ⟨h.separable, h.natDegree_eq, h.transitiveGroupLabel⟩, ?_⟩
   rintro ⟨hsep, rfl, h⟩
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hsep (SplittingField.splits f)
   exact ⟨hsep, rfl, e, h e⟩
 
 /-- An inseparable polynomial has no label. -/
@@ -220,7 +220,7 @@ theorem exists_hasGaloisLabel_of_irreducible (hsep : f.Separable) (hirr : Irredu
     (h : ∀ G : Subgroup (Perm (Fin n)), IsPretransitive G (Fin n) →
       ∃ j : TransitiveGroupIndex n, TransitiveGroupLabel j G) :
     ∃ j : TransitiveGroupIndex n, HasGaloisLabel f j := by
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hsep (SplittingField.splits f)
   obtain ⟨j, hj⟩ := h _ ((isPretransitive_map_range_galActionHom_iff hsep
     (hdeg ▸ hirr.natDegree_pos) (e.trans (finCongr hdeg))).mpr hirr)
   exact ⟨j, hsep, hdeg, e.trans (finCongr hdeg), hj⟩
@@ -233,7 +233,7 @@ theorem HasGaloisLabel.eq_of {k : TransitiveGroupIndex n}
     (h : ∀ {i i' : TransitiveGroupIndex n} {G : Subgroup (Perm (Fin n))},
       TransitiveGroupLabel i G → TransitiveGroupLabel i' G → i = i')
     (hj : HasGaloisLabel f j) (hk : HasGaloisLabel f k) : j = k := by
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hj.separable
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hj.separable (SplittingField.splits f)
   exact h (hj.transitiveGroupLabel (e.trans (finCongr hj.natDegree_eq)))
     (hk.transitiveGroupLabel _)
 
@@ -260,7 +260,7 @@ theorem hasGaloisLabel_iff_natCard_gal (hsep : f.Separable) (hirr : Irreducible 
       (TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup n j))) :
     HasGaloisLabel f j ↔ Nat.card f.Gal = Nat.card (referenceSubgroup n j) := by
   refine ⟨HasGaloisLabel.natCard_gal, fun hcard => ?_⟩
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hsep (SplittingField.splits f)
   let e' := e.trans (finCongr hdeg)
   refine ⟨hsep, hdeg, e', (h _ ((isPretransitive_map_range_galActionHom_iff hsep
     (hdeg ▸ hirr.natDegree_pos) e').mpr hirr)).mpr ?_⟩
@@ -368,7 +368,7 @@ theorem HasGaloisLabel.irreducible_map_discrField_iff (h : HasGaloisLabel f j)
         (referenceSubgroup n j ⊓ alternatingGroup (Fin n) : Subgroup (Perm (Fin n))) (Fin n) := by
   classical
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
-  obtain ⟨e₀⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
+  obtain ⟨e₀⟩ := nonempty_rootSet_equiv_fin h.separable (SplittingField.splits f)
   -- Move to the discriminant field inside the splitting field, where the Galois image lives.
   rw [irreducible_map_discrField_congr hδ (leadingCoeff_pow_mul_discrSqrt_sq e₀.symm),
     TauCeti.irreducible_map_discrField_iff h.separable hchar
@@ -387,11 +387,11 @@ theorem hasGaloisLabel_one_iff (j : TransitiveGroupIndex 1) :
     rw [separable_iff_derivative_ne_zero (irreducible_of_degree_eq_one
       ((degree_eq_iff_natDegree_eq_of_pos one_pos).mpr hdeg))]
     intro h0
-    have h := congrArg (coeff · 0) h0
+    have h := congrArg (AddMonoidAlgebra.coeff · 0) h0
     simp only [coeff_derivative, coeff_zero, zero_add, Nat.cast_zero, mul_one] at h
     have hf : f ≠ 0 := by rintro rfl; simp at hdeg
     exact hf (leadingCoeff_eq_zero.mp (by rwa [leadingCoeff, hdeg]))
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hsep (SplittingField.splits f)
   exact ⟨hsep, hdeg, e.trans (finCongr hdeg), transitiveGroupLabel_one j _⟩
 
 /-- In degree two, a polynomial carries the label `2T1` exactly when it is separable, irreducible,
@@ -400,7 +400,7 @@ and of degree two. -/
 theorem hasGaloisLabel_two_iff (j : TransitiveGroupIndex 2) :
     HasGaloisLabel f j ↔ f.Separable ∧ Irreducible f ∧ f.natDegree = 2 := by
   refine ⟨fun h => ⟨h.separable, h.irreducible, h.natDegree_eq⟩, fun ⟨hsep, hirr, hdeg⟩ => ?_⟩
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hsep (SplittingField.splits f)
   refine ⟨hsep, hdeg, e.trans (finCongr hdeg), ?_⟩
   rw [transitiveGroupLabel_two_iff, isPretransitive_map_range_galActionHom_iff hsep (by omega)]
   exact hirr

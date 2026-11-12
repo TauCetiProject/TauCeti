@@ -8,9 +8,9 @@ module
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import TauCeti.RingTheory.Affinoid.MaximalSpectrum
 public import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
-public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import TauCeti.Analysis.Normed.Unbundled.RootBound
+public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
 /-!
 # Point norms and the supremum seminorm of an affinoid algebra
@@ -50,7 +50,9 @@ that affinoid algebras are Jacobson rings.
 * `TauCeti.IsAffinoidAlgebra.bddAbove_range_pointNorm`: the point norms of `f` are bounded.
 * `TauCeti.isUnit_one_sub_of_supSeminorm_lt_one`: if the point norms of `a` are bounded and
   `|a|sup < 1`, then `1 - a` is a unit.
-* `TauCeti.IsAffinoidAlgebra.isPowMul_supSeminorm`: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`.
+* `TauCeti.isPowMul_supSeminorm`: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`.
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_aeval_le`: a polynomial over the unit ball of `K`
+  without constant term, evaluated at elements with `|xᵢ|sup ≤ ε ≤ 1`, has `|·|sup ≤ ε`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_zero_iff`: `|f|sup = 0` if and only if `f` is
   nilpotent.
 * `TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`: `|·|sup` separates points
@@ -58,7 +60,7 @@ that affinoid algebras are Jacobson rings.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_le`: algebra homomorphisms contract `|·|sup`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_of_isIntegral`: integral injective algebra
   homomorphisms preserve `|·|sup`.
-* `TauCeti.IsAffinoidAlgebra.supSeminorm_mk_nilradical`: `|·|sup` is unchanged by reduction.
+* `TauCeti.supSeminorm_mk_nilradical`: `|·|sup` is unchanged by reduction.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minimalPrimes`: `|f|sup` is the supremum of the
   supremum seminorms of the residues of `f` modulo the minimal primes of `A`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero`: the bound of
@@ -71,18 +73,6 @@ that affinoid algebras are Jacobson rings.
 -/
 
 public section
-
-namespace AlgHom
-
-/-- The spectral norm over `K` is invariant under `K`-algebra maps of fields. -/
-theorem spectralNorm_map {K : Type*} [NontriviallyNormedField K] {E L : Type*} [Field E]
-    [Algebra K E] [Field L] [Algebra K L] (ψ : E →ₐ[K] L) (y : E) :
-    spectralNorm K L (ψ y) = spectralNorm K E y := by
-  -- `spectralNorm K L y` is by definition `spectralValue (minpoly K y)`, and the injective map `ψ`
-  -- preserves minimal polynomials.
-  simp only [spectralNorm, minpoly.algHom_eq ψ (ψ : E →+* L).injective]
-
-end AlgHom
 
 namespace TauCeti
 
@@ -163,6 +153,54 @@ theorem IsAffinoidAlgebra.pointNorm_maximalSpectrumComap [IsUltrametricDist K] [
   congr 1
   exact MaximalSpectrum.ext (hB.maximalSpectrumComap_asIdeal φ x)
 
+@[simp]
+theorem _root_.MaximalSpectrum.pointNorm_neg [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A) :
+    pointNorm K x (-f) = pointNorm K x f := by
+  let := Ideal.Quotient.field x.asIdeal
+  simp only [pointNorm, map_neg]
+  by_cases hf : IsAlgebraic K (Ideal.Quotient.mk x.asIdeal f)
+  · exact spectralNorm_neg hf
+  · rw [spectralNorm_eq_zero_of_not_isAlgebraic hf,
+      spectralNorm_eq_zero_of_not_isAlgebraic fun h ↦ hf (by simpa using h.neg)]
+
+/-- The absolute value at a classical point is homogeneous for scalars of `K`:
+`|(c • f)(x)| = ‖c‖ * |f(x)|`. -/
+theorem _root_.MaximalSpectrum.pointNorm_smul [IsUltrametricDist K] (x : MaximalSpectrum A) (c : K)
+    (f : A) :
+    pointNorm K x (c • f) = ‖c‖ * pointNorm K x f := by
+  let := Ideal.Quotient.field x.asIdeal
+  have hmk : Ideal.Quotient.mk x.asIdeal (c • f) = c • Ideal.Quotient.mk x.asIdeal f := by
+    rw [Algebra.smul_def, map_mul, Ideal.Quotient.mk_algebraMap, Algebra.smul_def]
+  rw [pointNorm, pointNorm, hmk]
+  by_cases hf : IsAlgebraic K (Ideal.Quotient.mk x.asIdeal f)
+  · exact spectralNorm_smul c hf
+  · rcases eq_or_ne c 0 with rfl | hc
+    · simp [spectralNorm_zero]
+    · have hcf : ¬ IsAlgebraic K (c • Ideal.Quotient.mk x.asIdeal f) := fun h ↦ hf <| by
+        simpa [smul_smul, inv_mul_cancel₀ hc] using h.smul c⁻¹
+      rw [spectralNorm_eq_zero_of_not_isAlgebraic hf, spectralNorm_eq_zero_of_not_isAlgebraic hcf,
+        mul_zero]
+
+open Polynomial IntermediateField in
+/-- `|(f ^ n)(x)| = |f(x)| ^ n` at every classical point `x`. -/
+theorem _root_.MaximalSpectrum.pointNorm_pow [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A)
+    (n : ℕ) :
+    pointNorm K x (f ^ n) = pointNorm K x f ^ n := by
+  let := Ideal.Quotient.field x.asIdeal
+  simp only [pointNorm, map_pow]
+  generalize Ideal.Quotient.mk x.asIdeal f = y
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simpa using spectralNorm_extends (K := K) (L := A ⧸ x.asIdeal) 1
+  by_cases hy : IsAlgebraic K y
+  · -- Pass to the finite extension `K⟮y⟯`, where the spectral norm is power-multiplicative.
+    have : FiniteDimensional K K⟮y⟯ := IntermediateField.adjoin.finiteDimensional hy.isIntegral
+    have hg : algebraMap K⟮y⟯ (A ⧸ x.asIdeal) (IntermediateField.AdjoinSimple.gen K y) = y :=
+      IntermediateField.AdjoinSimple.algebraMap_gen K y
+    rw [← hg, ← map_pow, ← spectralNorm.eq_of_tower, ← spectralNorm.eq_of_tower]
+    exact isPowMul_spectralNorm (K := K) (L := K⟮y⟯) _ hn
+  · rw [spectralNorm_eq_zero_of_not_isAlgebraic hy,
+      spectralNorm_eq_zero_of_not_isAlgebraic fun h ↦ hy (h.of_pow hn), zero_pow hn.ne']
+
 namespace IsAffinoidAlgebra
 
 variable [IsUltrametricDist K] [CompleteSpace K]
@@ -191,27 +229,6 @@ theorem pointNorm_mul (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f g 
   have := hA.isAlgebraic_quotient x
   -- The spectral norm is multiplicative as the bundled `spectralMulAlgNorm`.
   simp only [pointNorm, map_mul, ← spectralMulAlgNorm_def]
-
-/-- `|(f ^ n)(x)| = |f(x)| ^ n` at every classical point `x`. -/
-theorem pointNorm_pow (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) (n : ℕ) :
-    pointNorm K x (f ^ n) = pointNorm K x f ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ, hA.pointNorm_mul, ih, pow_succ]
-
-/-- The absolute value at a classical point is homogeneous for scalars of `K`:
-`|(c • f)(x)| = ‖c‖ * |f(x)|`. -/
-theorem pointNorm_smul (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (c : K) (f : A) :
-    pointNorm K x (c • f) = ‖c‖ * pointNorm K x f := by
-  rw [Algebra.smul_def, hA.pointNorm_mul, pointNorm_algebraMap]
-
-@[simp]
-theorem pointNorm_neg (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f : A) :
-    pointNorm K x (-f) = pointNorm K x f := by
-  let := Ideal.Quotient.field x.asIdeal
-  have := hA.isAlgebraic_quotient x
-  simp only [pointNorm, map_neg]
-  exact spectralNorm_neg (Algebra.IsAlgebraic.isAlgebraic _)
 
 /-- The absolute value at a classical point is ultrametric. -/
 theorem pointNorm_add_le (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f g : A) :
@@ -252,7 +269,7 @@ private theorem spectralNorm_le_norm {A : Type*} [NormedCommRing A] [NormedAlgeb
   have : IsUltrametricDist L :=
     IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
       isNonarchimedean_spectralNorm (K := K) (L := L) a b
-  have : CompleteSpace L := FiniteDimensional.complete K L
+  have : CompleteSpace L := FiniteDimensional.completeSpace K L
   have hc : Continuous φ := (hA.of_surjective φ hφ).continuous_algHom φ
   let q : A →L[K] L := { toLinearMap := φ.toLinearMap, cont := hc }
   have hq : (φ : A →+* L).IsBounded :=
@@ -330,6 +347,53 @@ theorem isUnit_one_sub_of_supSeminorm_lt_one {a : A}
     exact M.neg_mem (hM' (Ideal.mem_span_singleton_self _))
   exact ((hx ▸ pointNorm_le_supSeminorm_of_bddAbove hb ⟨M, hM⟩).trans_lt ha).false
 
+@[simp]
+theorem supSeminorm_neg [IsUltrametricDist K] (f : A) : supSeminorm K (-f) = supSeminorm K f := by
+  simp only [supSeminorm, MaximalSpectrum.pointNorm_neg]
+
+/-- The supremum seminorm is homogeneous for scalars of `K`: `|c • f|sup = ‖c‖ * |f|sup`. -/
+theorem supSeminorm_smul [IsUltrametricDist K] (c : K) (f : A) :
+    supSeminorm K (c • f) = ‖c‖ * supSeminorm K f := by
+  simp only [supSeminorm, MaximalSpectrum.pointNorm_smul, Real.mul_iSup_of_nonneg (norm_nonneg c)]
+
+/-- `|f ^ n|sup = |f|sup ^ n` for `n ≠ 0`, including on the zero algebra. For `n = 0` the
+statement fails on the zero algebra. -/
+theorem supSeminorm_pow [IsUltrametricDist K] (f : A) {n : ℕ} (hn : n ≠ 0) :
+    supSeminorm K (f ^ n) = supSeminorm K f ^ n := by
+  simp only [supSeminorm, MaximalSpectrum.pointNorm_pow,
+    Real.iSup_pow_of_ne_zero (fun _ ↦ pointNorm_nonneg f) hn]
+
+/-- The supremum seminorm is power-multiplicative: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`. -/
+theorem isPowMul_supSeminorm [IsUltrametricDist K] : IsPowMul (supSeminorm K : A → ℝ) :=
+  fun f _ hn ↦ supSeminorm_pow f (Nat.one_le_iff_ne_zero.mp hn)
+
+/-- A surjective algebra map whose kernel consists of nilpotent elements preserves supremum
+seminorms, since every classical point of the source contains the kernel and so comes from a
+classical point of the target. -/
+theorem supSeminorm_map_of_ker_le_nilradical {φ : A →ₐ[K] B} (hφ : Function.Surjective φ)
+    (hker : RingHom.ker φ ≤ nilradical A) (a : A) : supSeminorm K (φ a) = supSeminorm K a := by
+  let g : MaximalSpectrum B → MaximalSpectrum A := fun y ↦
+    ⟨y.asIdeal.comap φ, Ideal.comap_isMaximal_of_surjective φ hφ⟩
+  have hg : Function.Surjective g := fun x ↦ by
+    have hmap : (x.asIdeal.map φ).comap φ = x.asIdeal := by
+      rw [Ideal.comap_map_of_surjective' φ hφ,
+        sup_eq_left.mpr (hker.trans (nilradical_le_prime x.asIdeal))]
+    have hy : (x.asIdeal.map φ).IsMaximal := by
+      refine (Ideal.map_eq_top_or_isMaximal_of_surjective φ hφ x.isMaximal).resolve_left
+        fun h ↦ x.isMaximal.ne_top ?_
+      rw [← hmap, h, Ideal.comap_top]
+    exact ⟨⟨_, hy⟩, MaximalSpectrum.ext hmap⟩
+  simp only [supSeminorm]
+  rw [← hg.iSup_comp]
+  exact iSup_congr fun y ↦ (pointNorm_comap φ y (Ideal.comap_isMaximal_of_surjective φ hφ) a).symm
+
+/-- **The supremum seminorm is unchanged by reduction**: `|f|sup` is the same in `A` and in its
+reduction `A ⧸ nilradical A`. -/
+theorem supSeminorm_mk_nilradical (f : A) :
+    supSeminorm K (Ideal.Quotient.mk (nilradical A) f) = supSeminorm K f :=
+  supSeminorm_map_of_ker_le_nilradical (φ := Ideal.Quotient.mkₐ K (nilradical A))
+    (Ideal.Quotient.mkₐ_surjective K _) (Ideal.Quotient.mkₐ_ker K _).le f
+
 namespace IsAffinoidAlgebra
 
 variable [IsUltrametricDist K] [CompleteSpace K]
@@ -382,28 +446,40 @@ theorem isNonarchimedean_supSeminorm (hA : IsAffinoidAlgebra K A) :
     IsNonarchimedean (supSeminorm K : A → ℝ) :=
   hA.supSeminorm_add_le
 
-@[simp]
-theorem supSeminorm_neg (hA : IsAffinoidAlgebra K A) (f : A) :
-    supSeminorm K (-f) = supSeminorm K f := by
-  simp only [supSeminorm, hA.pointNorm_neg]
-
-/-- The supremum seminorm is homogeneous for scalars of `K`: `|c • f|sup = ‖c‖ * |f|sup`. -/
-theorem supSeminorm_smul (hA : IsAffinoidAlgebra K A) (c : K) (f : A) :
-    supSeminorm K (c • f) = ‖c‖ * supSeminorm K f := by
-  simp only [supSeminorm, hA.pointNorm_smul, Real.mul_iSup_of_nonneg (norm_nonneg c)]
-
-/-- `|f ^ n|sup = |f|sup ^ n` for `n ≠ 0`, including on the zero algebra. For `n = 0` the
-statement fails on the zero algebra. -/
-theorem supSeminorm_pow (hA : IsAffinoidAlgebra K A) (f : A) {n : ℕ} (hn : n ≠ 0) :
-    supSeminorm K (f ^ n) = supSeminorm K f ^ n := by
-  simp only [supSeminorm, hA.pointNorm_pow,
-    Real.iSup_pow_of_ne_zero (fun _ ↦ pointNorm_nonneg f) hn]
-
-/-- The supremum seminorm of an affinoid algebra is power-multiplicative:
-`|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`. -/
-theorem isPowMul_supSeminorm (hA : IsAffinoidAlgebra K A) :
-    IsPowMul (supSeminorm K : A → ℝ) :=
-  fun f _ hn ↦ hA.supSeminorm_pow f (Nat.one_le_iff_ne_zero.mp hn)
+/-- A polynomial with coefficients in the unit ball of `K` and no constant term, evaluated at
+elements of supremum seminorm at most `ε ≤ 1`, has supremum seminorm at most `ε`. -/
+theorem supSeminorm_aeval_le {σ : Type*} (hA : IsAffinoidAlgebra K A) {x : σ → A}
+    {ε : ℝ} (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) (hx : ∀ i, supSeminorm K (x i) ≤ ε)
+    {q : MvPolynomial σ K} (hq0 : q.coeff 0 = 0) (hq : ∀ t, ‖q.coeff t‖ ≤ 1) :
+    supSeminorm K (MvPolynomial.aeval x q) ≤ ε := by
+  classical
+  rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq]
+  refine Finset.sum_induction _ (fun b ↦ supSeminorm K b ≤ ε)
+    (fun a b ha hb ↦ (hA.supSeminorm_add_le a b).trans (max_le ha hb))
+    (supSeminorm_zero.trans_le hε0) fun t ht ↦ ?_
+  -- A monomial `xᵗ` with `t ≠ 0` contains a factor `xᵢ` and is otherwise of norm at most one.
+  obtain ⟨i, hi⟩ : ∃ i, t i ≠ 0 := by
+    by_contra! h
+    exact MvPolynomial.mem_support_iff.mp ht (by rw [show t = 0 from Finsupp.ext h, hq0])
+  have hrest : supSeminorm K (∏ j ∈ t.support.erase i, x j ^ t j) ≤ 1 :=
+    Finset.prod_induction _ (fun b ↦ supSeminorm K b ≤ 1)
+      (fun a b ha hb ↦ (hA.supSeminorm_mul_le a b).trans
+        ((mul_le_of_le_one_left (supSeminorm_nonneg b) ha).trans hb))
+      (supSeminorm_le zero_le_one fun _ ↦ pointNorm_one.le) fun j _ ↦
+        supSeminorm_le zero_le_one fun y ↦ by
+          rw [y.pointNorm_pow]
+          exact pow_le_one₀ (pointNorm_nonneg _)
+            ((hA.pointNorm_le_supSeminorm y _).trans ((hx j).trans hε1))
+  rw [← Algebra.smul_def, supSeminorm_smul,
+    ← Finset.mul_prod_erase _ _ (Finsupp.mem_support_iff.mpr hi)]
+  calc ‖q.coeff t‖ * supSeminorm K (x i ^ t i * ∏ j ∈ t.support.erase i, x j ^ t j)
+      ≤ 1 * (ε * 1) := by
+        refine mul_le_mul (hq t) ((hA.supSeminorm_mul_le _ _).trans (mul_le_mul ?_ hrest
+          (supSeminorm_nonneg _) hε0)) (supSeminorm_nonneg _) zero_le_one
+        rw [supSeminorm_pow _ hi]
+        exact (pow_le_pow_left₀ (supSeminorm_nonneg _) (hx i) _).trans
+          (pow_le_of_le_one hε0 hε1 hi)
+    _ = ε := by ring
 
 /-- The supremum seminorm of an affinoid algebra vanishes exactly on the elements lying in every
 maximal ideal. -/
@@ -471,23 +547,6 @@ theorem pointNorm_le_supSeminorm_map (hB : IsAffinoidAlgebra K B) {φ : A →ₐ
   rw [← hxy, hB.pointNorm_maximalSpectrumComap]
   exact hB.pointNorm_le_supSeminorm _ _
 
-/-- A surjective algebra map of affinoid algebras whose kernel consists of nilpotent elements
-preserves supremum seminorms, since every classical point of the source contains the kernel. -/
-theorem supSeminorm_map_of_ker_le_nilradical (hA : IsAffinoidAlgebra K A)
-    (hB : IsAffinoidAlgebra K B) {φ : A →ₐ[K] B} (hφ : Function.Surjective φ)
-    (hker : RingHom.ker φ ≤ nilradical A) (a : A) : supSeminorm K (φ a) = supSeminorm K a :=
-  le_antisymm (hA.supSeminorm_map_le hB φ a) <| supSeminorm_le (supSeminorm_nonneg _) fun x ↦
-    hB.pointNorm_le_supSeminorm_map hφ
-      (hker.trans (nilradical_le_prime x.asIdeal)) a
-
-/-- **The supremum seminorm is unchanged by reduction**: `|f|sup` is the same in `A` and in its
-reduction `A ⧸ nilradical A`. -/
-theorem supSeminorm_mk_nilradical (hA : IsAffinoidAlgebra K A) (f : A) :
-    supSeminorm K (Ideal.Quotient.mk (nilradical A) f) = supSeminorm K f :=
-  hA.supSeminorm_map_of_ker_le_nilradical (hA.quotient _)
-    (φ := Ideal.Quotient.mkₐ K (nilradical A)) (Ideal.Quotient.mkₐ_surjective K _)
-    (Ideal.Quotient.mkₐ_ker K _).le f
-
 /-- **The supremum seminorm is computed on minimal-prime quotients.** On an affinoid algebra,
 `|f|sup` is the supremum, over the finitely many minimal primes `𝔭` of `A`, of the supremum
 seminorm of the residue of `f` in the affinoid domain `A ⧸ 𝔭`. -/
@@ -522,7 +581,7 @@ noncomputable def supRingSeminorm (hA : IsAffinoidAlgebra K A) : RingSeminorm A 
   map_zero' := supSeminorm_zero
   add_le' f g := (hA.supSeminorm_add_le f g).trans
     (max_le_add_of_nonneg (supSeminorm_nonneg f) (supSeminorm_nonneg g))
-  neg' := hA.supSeminorm_neg
+  neg' := supSeminorm_neg
   mul_le' := hA.supSeminorm_mul_le
 
 @[simp]
@@ -539,7 +598,7 @@ theorem supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero (hA : IsAffinoidAlgebra K
       ⨆ i : Fin p.natDegree, supSeminorm K (p.coeff i) ^ (1 / (p.natDegree - i : ℝ)) := by
   have hpm : IsPowMul hA.supRingSeminorm := by
     rw [coe_supRingSeminorm]
-    exact hA.isPowMul_supSeminorm
+    exact isPowMul_supSeminorm
   have hna : IsNonarchimedean hA.supRingSeminorm := by
     rw [coe_supRingSeminorm]
     exact hA.isNonarchimedean_supSeminorm

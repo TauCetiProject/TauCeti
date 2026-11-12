@@ -96,6 +96,11 @@ theorem geodesicLine_one_apply (t : ℝ) :
     geodesicLine (1 : PSL(2, ℝ)) t = UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) := by
   simp [geodesicLine_def]
 
+/-- The point `i t` of the imaginary axis, as `geodesicLine 1 (log t)`, for `t > 0`. -/
+theorem coe_geodesicLine_one_log {t : ℝ} (ht : 0 < t) :
+    (geodesicLine (1 : PSL(2, ℝ)) (Real.log t) : ℂ) = ⟨0, t⟩ := by
+  rw [geodesicLine_one_apply, UpperHalfPlane.coe_mk, Real.exp_log ht]
+
 theorem isometry_geodesicLine (g : PSL(2, ℝ)) : Isometry (geodesicLine g) :=
   (isometry_smul ℍ g).comp (UpperHalfPlane.isometry_vertical_line 0)
 

@@ -22,7 +22,7 @@ The resulting `54`-dimensional block matrices satisfy the type-`E₆` Serre rela
 weights `TauCeti.DynkinType.e6DoubledMinusculeWeight`.
 
 This is the representation input for the graph-stable full-weight type-`E₆`
-Chevalley--Demazure carrier required by Layer 9 of the ReductiveGroups roadmap.
+Chevalley--Demazure carrier.
 
 ## Main declarations
 
@@ -88,6 +88,20 @@ def raisingMatrix (i : Fin 6) : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) �
 def loweringMatrix (i : Fin 6) : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℤ :=
   Matrix.fromBlocks (TauCeti.E6Minuscule.loweringMatrix i) 0 0
     (-TauCeti.E6Minuscule.raisingMatrix i)
+
+/-- The raising operator has the minuscule raising block and the negative dual lowering
+block. -/
+theorem raisingMatrix_eq_fromBlocks (i : Fin 6) :
+    raisingMatrix i = Matrix.fromBlocks (TauCeti.E6Minuscule.raisingMatrix i) 0 0
+      (-TauCeti.E6Minuscule.loweringMatrix i) := by
+  rw [raisingMatrix]
+
+/-- The lowering operator has the minuscule lowering block and the negative dual raising
+block. -/
+theorem loweringMatrix_eq_fromBlocks (i : Fin 6) :
+    loweringMatrix i = Matrix.fromBlocks (TauCeti.E6Minuscule.loweringMatrix i) 0 0
+      (-TauCeti.E6Minuscule.raisingMatrix i) := by
+  rw [loweringMatrix]
 
 /-- The integral `54`-dimensional representation `V(ϖ₁) ⊕ V(ϖ₆)` of the type-`E₆` Serre
 presentation. -/

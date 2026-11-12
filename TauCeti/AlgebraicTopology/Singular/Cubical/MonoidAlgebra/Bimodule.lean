@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Action
-public import TauCeti.Algebra.Homology.DG.Bimodule.Defs
+public import TauCeti.Algebra.Homology.DG.Bimodule.Category
 
 /-!
 # Cubical chains on a space with commuting left and right monoid actions
@@ -42,7 +42,8 @@ system.
 * `TauCeti.NormalizedCubicalChain.augment_leftAct`: the augmentation is multiplicative on the left
   action of `0`-chains.
 * `TauCeti.cubicalChainModule_isDGLeftModule`: the chains form a DG left module.
-* `TauCeti.cubicalChainModule_isDGBimodule`: with commuting actions, they form a DG bimodule.
+* `TauCeti.cubicalChainModule_isDGBimodule`: with commuting actions, they form a DG bimodule,
+  bundled as `TauCeti.cubicalChainBimoduleDG`.
 
 ## References
 
@@ -248,7 +249,6 @@ theorem cubicalChainLeftActBilin_one (m : cubicalChainModule Y H R) :
     rfl
   rw [h1]
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | lof n c =>
     rw [cubicalChainLeftActBilin_lof_lof, ← cubicalChainModuleLof_cast (Nat.zero_add n),
       one_leftAct]
@@ -260,7 +260,6 @@ theorem cubicalChainLeftActBilin_mul (a b : normalizedCubicalChainAlgebra G R)
     cubicalChainLeftActBilin G Y H R (a * b) m =
       cubicalChainLeftActBilin G Y H R a (cubicalChainLeftActBilin G Y H R b m) := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [map_add, hm, hm']
   | lof r c =>
     induction a using DirectSum.induction_on with
@@ -386,7 +385,6 @@ theorem cubicalChainModule_isDGLeftModule :
     · simp
     obtain rfl : p = -(n : ℤ) := by omega
     induction m using cubicalChainModule.induction_on with
-    | zero => simp
     | lof q c => exact cubicalChainModuleDifferential_lof_smul x c
     | add m m' hm hm' =>
       rw [smul_add, map_add, hm, hm', map_add, smul_add, smul_add, smul_add]
@@ -408,7 +406,6 @@ theorem cubicalChainModuleLinearMap_smul (f : C(Y, Y'))
     (x : cubicalChainModule Y H R) :
     cubicalChainModuleLinearMap R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
   induction x using cubicalChainModule.induction_on with
-  | zero => rw [smul_zero, map_zero, smul_zero]
   | add x x' hx hx' => rw [smul_add, map_add, hx, hx', map_add, smul_add]
   | lof q c =>
     induction a using DirectSum.induction_on with
@@ -433,7 +430,6 @@ instance : SMulCommClass (normalizedCubicalChainAlgebra G R) (normalizedCubicalC
   smul_comm a b m := by
     rw [← op_unop b]
     induction m using cubicalChainModule.induction_on with
-    | zero => simp only [smul_zero]
     | add m m' hm hm' => simp only [smul_add, hm, hm']
     | lof q c =>
       induction a using DirectSum.induction_on with
@@ -455,6 +451,12 @@ theorem cubicalChainModule_isDGBimodule :
       (cubicalChainModuleGrading Y H R) (cubicalChainModuleDifferential Y H R) where
   toIsDGLeftModule := cubicalChainModule_isDGLeftModule G Y H R
   leibniz_right := (cubicalChainModule_isDGRightModule Y H R).leibniz
+
+/-- The cubical chains of a space with commuting left and right actions of `G` and `H`, as an
+object of the category of DG `(C_*(G), C_*(H))`-bimodules. -/
+abbrev cubicalChainBimoduleDG :
+    DGBimoduleCat (cubicalChain_isDGAlgebra G R) (cubicalChain_isDGAlgebra H R) :=
+  DGBimoduleCat.of (cubicalChainModule_isDGBimodule G Y H R)
 
 end Bimodule
 

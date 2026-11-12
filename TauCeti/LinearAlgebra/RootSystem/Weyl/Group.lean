@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 
 /-!
 # Permutation actions of Weyl groups
@@ -29,6 +30,7 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   determined by its permutation of the roots.
 * `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
   when the coroots span, in particular for simply connected integral root data.
+* `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
 * `RootPairing.coroot'_smul` and `RootPairing.coroot'_weylGroupToPerm_smul` say an
@@ -46,6 +48,9 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   on the weight space is the identity.
 * `RootPairing.weylGroup.ext` says two Weyl-group elements agreeing on the weight space are
   equal.
+* `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
+  of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
+  span.
 * `RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj` says that conjugating a simple
   reflection by a Weyl-group element gives the reflection in the image root index.
 * `RootPairing.reflection_weylGroupToPerm_smul` says the reflection in the image `w β` of a root
@@ -63,10 +68,6 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.finite_aut` proves that the automorphism group of a finite root system is
   finite, and `RootPairing.finite_subgroup_aut` deduces the same for every subgroup of it.
 * `RootPairing.finite_weylGroup` is the resulting finiteness theorem for the Weyl group.
-
-## References
-
-* [Root systems roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/RootSystems/README.md)
 -/
 
 public section
@@ -124,6 +125,13 @@ theorem Equiv.indexHom_injective [P.IsRootSystem] :
 end
 
 section
+
+/-- Negating a root index twice gives it back: the root of index `P.reflectionPerm j j` for
+`j = P.reflectionPerm i i` is `-(-P.root i) = P.root i`. -/
+@[simp]
+theorem reflectionPerm_reflectionPerm_self (i : ι) :
+    P.reflectionPerm (P.reflectionPerm i i) (P.reflectionPerm i i) = i :=
+  P.indexNeg.neg_neg i
 
 /-- Reflecting a root in itself negates its coroot functional. -/
 @[simp]
@@ -272,6 +280,38 @@ theorem weylGroup.eq_one_of_smul_eq_self
   exact Subtype.ext (by simpa using hw)
 
 variable {P} in
+/-- A Weyl-group element fixing every root of a finite anisotropic root pairing over a domain is the
+identity. The roots need not span the weight space. -/
+theorem weylGroup.eq_one_of_forall_smul_root_eq [Fintype ι] [IsDomain R] [P.IsAnisotropic]
+    {w : P.weylGroup} (hfix : ∀ i, w • P.root i = P.root i) : w = 1 := by
+  have hidx : ∀ i, (w : P.Aut).indexEquiv i = i := fun i =>
+    P.root.injective (by rw [Equiv.root_indexEquiv_eq_smul]; exact hfix i)
+  have hcor : ∀ i x, P.coroot' i ((w : P.Aut) • x) = P.coroot' i x := fun i x => by
+    have := Equiv.coroot'_weightEquiv (w : P.Aut) i x
+    rw [hidx] at this
+    exact this
+  have hspan : ∀ g ∈ P.weylGroup, ∀ x : M, g • x - x ∈ P.rootSpan R := by
+    intro g hg
+    induction hg using weylGroup.induction with
+    | mem i =>
+      intro x
+      rw [Equiv.reflection_smul, reflection_apply, sub_sub_cancel_left]
+      exact neg_mem (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
+    | one => intro x; simp
+    | mul g h _ _ hg hh =>
+      intro x
+      rw [mul_smul, show g • h • x - x = (g • (h • x) - h • x) + (h • x - x) by abel]
+      exact add_mem (hg _) (hh x)
+  refine weylGroup.eq_one_of_smul_eq_self fun x => ?_
+  have hker : (w : P.Aut) • x - x ∈ LinearMap.ker P.RootForm := by
+    rw [LinearMap.mem_ker]
+    ext z
+    simp [rootForm_apply_apply, map_sub, hcor]
+  rw [Subgroup.smul_def]
+  exact sub_eq_zero.1
+    (Submodule.disjoint_def.1 P.disjoint_rootSpan_ker_rootForm _ (hspan _ w.2 x) hker)
+
+variable {P} in
 /-- Two Weyl-group elements agreeing on the weight space are equal. -/
 @[ext]
 theorem weylGroup.ext
@@ -338,7 +378,7 @@ lemma mem_corootSpan_of_mem_closure_range_coreflection {w : N ≃ₗ[R] N}
     obtain ⟨i, rfl⟩ := hw
     exact hrefl i hv
   | one => exact hv
-  | mul w₁ w₂ _ _ h₁ h₂ => exact h₁ (h₂ hv)
+  | mul _ w₂ _ _ h₁ h₂ => exact h₁ (h₂ hv)
 
 /-- A coreflection permutes the root functionals: `⟨αⱼ, s_{αᵢ} x⟩ = ⟨s_{αᵢ} αⱼ, x⟩`. -/
 lemma root'_coreflection (i j : ι) (x : N) :

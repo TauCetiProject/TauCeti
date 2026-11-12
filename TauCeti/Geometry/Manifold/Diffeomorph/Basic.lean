@@ -17,9 +17,9 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 The differentials of a diffeomorphism and its inverse undo each other, and the differential of a
 diffeomorphism undoes the pullback of vector fields along it.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
-diffeomorphism, and
-the tangent images of a map, the ranges of its differentials, are unchanged by precomposition
-with a diffeomorphism and are mapped by the differential under postcomposition.
+diffeomorphism, so the chain rule for such compositions holds without differentiability
+assumptions, and the tangent images of a map, the ranges of its differentials, are unchanged by
+precomposition with a diffeomorphism and are mapped by the differential under postcomposition.
 These facts support inverse isometries and transport of curve differentiability through
 diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as a partial
 diffeomorphism is also characterized, for composition with partial coordinates.
@@ -100,6 +100,19 @@ theorem tangentMap_apply_symm (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
   rw [hss] at hh
   exact hh
 
+/-- The tangent map of the inverse acts on a fibre by the inverse differential. This holds
+for every nonzero differentiability order, including finite orders. -/
+theorem tangentMap_symm_mk (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (x : M) (w : TangentSpace J (h x)) :
+    tangentMap J I h.symm (Bundle.TotalSpace.mk' F (h x) w) =
+      Bundle.TotalSpace.mk' E x ((mfderiv I J h x).inverse w) := by
+  have hleft : Function.LeftInverse (tangentMap J I h.symm) (tangentMap I J h) :=
+    h.tangentMap_symm_apply hn
+  apply hleft.injective
+  rw [h.tangentMap_apply_symm hn]
+  exact congrArg (Bundle.TotalSpace.mk' F (h x))
+    ((h.isInvertible_mfderiv hn).self_apply_inverse w).symm
+
 /-- Postcomposition with a diffeomorphism preserves differentiability at a point. -/
 theorem mdifferentiableAt_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
@@ -141,25 +154,42 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E' H''}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
 
+/-- **Chain rule for postcomposition with a diffeomorphism.** The differential of `h ∘ f` at `x`
+is `dh ∘ df`. No differentiability of `f` is assumed: when `f` is not differentiable at `x`,
+neither is `h ∘ f`, and both sides are zero. -/
+theorem mfderiv_diffeomorph_comp (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : P → M) (x : P) :
+    mfderiv K J (h ∘ f) x = (mfderiv I J h (f x)).comp (mfderiv K I f x) := by
+  by_cases hf : MDifferentiableAt K I f x
+  · exact mfderiv_comp x (h.mdifferentiable hn (f x)) hf
+  · have hhf : ¬MDifferentiableAt K J (h ∘ f) x := (h.mdifferentiableAt_comp_iff hn).not.mpr hf
+    rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hhf,
+      ContinuousLinearMap.comp_zero]
+
+/-- **Chain rule for precomposition with a diffeomorphism.** The differential of `f ∘ h` at `x`
+is `df ∘ dh`. No differentiability of `f` is assumed: when `f` is not differentiable at `h x`,
+`f ∘ h` is not differentiable at `x`, and both sides are zero. -/
+theorem mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : N → P) (x : M) :
+    mfderiv I K (f ∘ h) x = (mfderiv J K f (h x)).comp (mfderiv I J h x) := by
+  by_cases hf : MDifferentiableAt J K f (h x)
+  · exact mfderiv_comp x hf (h.mdifferentiable hn x)
+  · have hfh : ¬MDifferentiableAt I K (f ∘ h) x :=
+      (h.mdifferentiableAt_comp_diffeomorph_iff hn).not.mpr hf
+    rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfh,
+      ContinuousLinearMap.zero_comp]
+
 /-- Postcomposition with a diffeomorphism maps tangent images by its differential: the range of
 the differential of `h ∘ f` at `x` is the image of the range of the differential of `f` under the
 linear equivalence `dh`, `Diffeomorph.mfderivToContinuousLinearEquiv`.
-No differentiability of `f` is assumed: when `f` is not differentiable at `x`, neither is `h ∘ f`,
-and both ranges are zero. -/
+No differentiability of `f` is assumed. -/
 theorem range_mfderiv_diffeomorph_comp (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : P → M) (x : P) :
     LinearMap.range (mfderiv K J (h ∘ f) x).toLinearMap =
       (LinearMap.range (mfderiv K I f x).toLinearMap).map
         (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap := by
-  by_cases hf : MDifferentiableAt K I f x
-  · have hder : (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap =
-        (mfderiv I J h (f x)).toLinearMap :=
-      congrArg ContinuousLinearMap.toLinearMap
-        (h.mfderivToContinuousLinearEquiv_coe hn (x := f x))
-    rw [mfderiv_comp x (h.mdifferentiable hn (f x)) hf, ContinuousLinearMap.toLinearMap_comp,
-      LinearMap.range_comp, hder]
-  · have hhf : ¬MDifferentiableAt K J (h ∘ f) x := (h.mdifferentiableAt_comp_iff hn).not.mpr hf
-    simp only [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hhf,
-      ContinuousLinearMap.toLinearMap_zero, LinearMap.range_zero, Submodule.map_bot]
+  have hder : (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap =
+      (mfderiv I J h (f x)).toLinearMap :=
+    congrArg ContinuousLinearMap.toLinearMap (h.mfderivToContinuousLinearEquiv_coe hn (x := f x))
+  rw [h.mfderiv_diffeomorph_comp hn, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
+    hder]
 
 /-- Precomposition with a diffeomorphism does not change tangent images: the range of the
 differential of `f ∘ h` at `x` is the range of the differential of `f` at `h x`. No
@@ -167,14 +197,9 @@ differentiability of `f` is assumed. -/
 theorem range_mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : N → P) (x : M) :
     LinearMap.range (mfderiv I K (f ∘ h) x).toLinearMap =
       LinearMap.range (mfderiv J K f (h x)).toLinearMap := by
-  by_cases hf : MDifferentiableAt J K f (h x)
-  · rw [mfderiv_comp x hf (h.mdifferentiable hn x), ContinuousLinearMap.toLinearMap_comp,
-      LinearMap.range_comp_of_range_eq_top]
-    exact LinearMap.range_eq_top.mpr (h.isInvertible_mfderiv hn).surjective
-  · have hfh : ¬MDifferentiableAt I K (f ∘ h) x :=
-      (h.mdifferentiableAt_comp_diffeomorph_iff hn).not.mpr hf
-    simp only [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfh,
-      ContinuousLinearMap.toLinearMap_zero, LinearMap.range_zero]
+  rw [h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp_of_range_eq_top]
+  exact LinearMap.range_eq_top.mpr (h.isInvertible_mfderiv hn).surjective
 
 end TangentImage
 

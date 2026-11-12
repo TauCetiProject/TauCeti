@@ -126,8 +126,8 @@ theorem exists_isRoot_adjoin_eq_top_of_eisenstein {f : 𝒪[K][X]} (hf : f.IsEis
       (x := y) L.val.injective).mp hx
   have : Module.IsTorsionFree 𝒪[K] L := Module.IsTorsionFree.trans K
   have hassoc : Associated (minpoly 𝒪[K] y) f :=
-    associated_minpoly_of_eisenstein_isRoot y f hf (by
-      simpa only [IsRoot, eval_map, ← aeval_def] using hy)
+    hf.associated_minpoly hf.isUnit_leadingCoeff <| by
+      simpa only [IsRoot, eval_map, ← aeval_def] using hy
   have hf0 : f ≠ 0 := by
     rintro rfl
     exact hf.leading (by simp)
@@ -137,7 +137,7 @@ theorem exists_isRoot_adjoin_eq_top_of_eisenstein {f : 𝒪[K][X]} (hf : f.IsEis
   -- Fix the integer-ring algebra explicitly to avoid searching through the ambient closure.
   let : Algebra 𝒪[L] L := Algebra.ofSubsemiring (R := L) (A := L) 𝒪[L]
   have : IsScalarTower 𝒪[K] 𝒪[L] L := .of_algebraMap_eq' rfl
-  refine ⟨π, ?_, IntermediateField.AdjoinSimple.adjoin_gen_eq_top x⟩
+  refine ⟨π, ?_, IntermediateField.adjoin_adjoinSimple_gen_eq_top x⟩
   rw [IsRoot, eval_map, ← aeval_def]
   exact (aeval_algebraMap_eq_zero_iff_of_injective
     (IsFractionRing.injective 𝒪[L] L)).mp hy
@@ -288,7 +288,7 @@ theorem mem_totallyRamifiedOfDegree_iff_exists_eisenstein_generator {n : ℕ}
       ∃ (f : 𝒪[K][X]) (x : SeparableClosure K), f.Monic ∧ f.IsEisensteinAt 𝓂[K] ∧
         f.natDegree = n ∧ aeval x (f.map (algebraMap 𝒪[K] K)) = 0 ∧ K⟮x⟯ = L := by
   refine ⟨exists_eisenstein_generator_of_mem_totallyRamifiedOfDegree, ?_⟩
-  rintro ⟨f, x, hmonic, hf, hdeg, hx, rfl⟩
+  rintro ⟨f, x, _, hf, hdeg, hx, rfl⟩
   exact adjoin_mem_totallyRamifiedOfDegree_of_eisenstein hf hdeg hx
 
 /-- The image of any embedding of a counted extension into the separable closure is again
@@ -297,7 +297,7 @@ theorem _root_.AlgHom.fieldRange_mem_totallyRamifiedOfDegree {n : ℕ}
     {L : IntermediateField K (SeparableClosure K)} (φ : L →ₐ[K] SeparableClosure K)
     (hL : L ∈ totallyRamifiedOfDegree K n) :
     φ.fieldRange ∈ totallyRamifiedOfDegree K n := by
-  obtain ⟨f, x, hmonic, hf, hdeg, hx, hgen⟩ :=
+  obtain ⟨f, x, _, hf, hdeg, hx, hgen⟩ :=
     exists_eisenstein_generator_of_mem_totallyRamifiedOfDegree hL
   let y : L := ⟨x, hgen ▸ IntermediateField.mem_adjoin_simple_self K x⟩
   have hy : aeval y (f.map (algebraMap 𝒪[K] K)) = 0 := by

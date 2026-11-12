@@ -8,7 +8,8 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.Algebra.Algebra.Hom
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
@@ -86,23 +87,37 @@ variable {A : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A] {π :
 /-- The minimal polynomial over a discrete valuation ring `A` of an `n`-th root of a uniformizer
 `π` of `A`, in a torsion-free domain `A`-algebra, is `X ^ n - π`. -/
 theorem minpoly_eq_of_pow_eq_of_irreducible {L : Type*} [CommRing L] [IsDomain L] [Algebra A L]
-    [Module.IsTorsionFree A L] {α : L} (hπ : Irreducible π) (hn : n ≠ 0)
+    [Module.IsTorsionFree A L] {α : L} (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) : minpoly A α = X ^ n - C π := by
+  have hn := Algebra.ne_zero_of_pow_eq_algebraMap_of_injective
+    (Module.isTorsionFree_iff_algebraMap_injective.mp inferInstance) hπ.ne_one hα
+  have hmonic := monic_X_pow_sub_C π hn
   refine eq_of_monic_of_associated
     (minpoly.monic (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap)))
-    (monic_X_pow_sub_C π hn) ?_
-  refine associated_minpoly_of_eisenstein_isRoot α _
-    (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)) ?_
+    hmonic ?_
+  refine (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)).associated_minpoly
+    (hmonic.leadingCoeff ▸ isUnit_one) ?_
   simp [hα]
 
 variable {K L : Type*} [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra K L]
   [Algebra A L] [IsScalarTower A K L] {α : L}
 
+omit [IsDomain A] [IsDiscreteValuationRing A] in
+include K in
+/-- An `n`-th root of a uniformizer of `A` in a field `L` over the fraction field of `A` exists only
+for `n ≠ 0`. -/
+private theorem ne_zero_of_pow_eq_of_irreducible (hπ : Irreducible π)
+    (hα : α ^ n = algebraMap A L π) : n ≠ 0 :=
+  have := FaithfulSMul.trans A K L
+  Algebra.ne_zero_of_pow_eq_algebraMap_of_injective (FaithfulSMul.algebraMap_injective A L)
+    hπ.ne_one hα
+
 include K in
 /-- If `α` is an `n`-th root of a uniformizer of a discrete valuation ring `A`, then the field
 `K(α)` it generates over the fraction field `K` of `A` has degree `n` over `K`. -/
-theorem finrank_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn : n ≠ 0)
+theorem finrank_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) : Module.finrank K K⟮α⟯ = n := by
+  have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have hroot : aeval α (X ^ n - C (algebraMap A K π)) = 0 := by
     simp [hα, ← IsScalarTower.algebraMap_apply]
   have hmin : X ^ n - C (algebraMap A K π) = minpoly K α :=
@@ -117,19 +132,20 @@ include K in
 the fraction field `K` of a discrete valuation ring `A` by an `n`-th root of a uniformizer of `A`,
 then `[L : K] = n`. -/
 @[stacks 09EV "(1)"]
-theorem finrank_eq_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn : n ≠ 0)
+theorem finrank_eq_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) : Module.finrank K L = n := by
-  rw [← IntermediateField.finrank_top', ← hgen, finrank_adjoin_of_pow_eq_of_irreducible hπ hn hα]
+  rw [← IntermediateField.finrank_top', ← hgen, finrank_adjoin_of_pow_eq_of_irreducible hπ hα]
 
 include K in
 /-- If `S = A[α]` for an `n`-th root `α` of a uniformizer `π`, then `α` is a root in `S` of the
 Eisenstein polynomial `X ^ n - π` generating `S`, so the results of
 `TauCeti.RingTheory.DiscreteValuationRing.Eisenstein` apply to it. -/
 private theorem isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top (hπ : Irreducible π)
-    (hn : n ≠ 0) (hα : α ^ n = algebraMap A L π) {S : Subalgebra A L}
+    (hα : α ^ n = algebraMap A L π) {S : Subalgebra A L}
     (hS : Algebra.adjoin A {α} = S) (h : α ∈ S) :
     FaithfulSMul A S ∧ (X ^ n - C π).IsEisensteinAt (maximalIdeal A) ∧ (X ^ n - C π).Monic ∧
       aeval (⟨α, h⟩ : S) (X ^ n - C π) = 0 ∧ Algebra.adjoin A {(⟨α, h⟩ : S)} = ⊤ := by
+  have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have := FaithfulSMul.trans A K L
   refine ⟨inferInstance, isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn),
     monic_X_pow_sub_C π hn, Subtype.ext (by simp [hα]), ?_⟩
@@ -145,17 +161,18 @@ uniformizer `π` of `A`, then the integral closure of `A` in `L` is `A[α]`. Tog
 `TauCeti.IsDiscreteValuationRing.minpoly_eq_of_pow_eq_of_irreducible` and
 `minpoly.equivAdjoin`, it is `A[X] ⧸ (X ^ n - π)`. -/
 @[stacks 09EV "(2)"]
-theorem integralClosure_eq_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn : n ≠ 0)
+theorem integralClosure_eq_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
     integralClosure A L = Algebra.adjoin A {α} := by
+  have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have hint : IsIntegral A α :=
     IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap)
   set B := Algebra.adjoin A {α}
   have := FaithfulSMul.trans A K L
-  obtain ⟨_, hf, hmo, hx, hadj⟩ := isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top
-    (K := K) hπ hn hα rfl (Algebra.self_mem_adjoin_singleton A α)
+  obtain ⟨_, hf, -, hx, hadj⟩ := isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top
+    (K := K) hπ hα rfl (Algebra.self_mem_adjoin_singleton A α)
   -- `A[α]` is a discrete valuation ring, hence integrally closed.
-  have := hf.isDiscreteValuationRing_of_adjoin_eq_top hmo hx hadj
+  have := hf.isDiscreteValuationRing_of_adjoin_eq_top hx hadj
   have : Algebra.IsIntegral A B :=
     have := Algebra.finite_adjoin_simple_of_isIntegral hint
     inferInstance
@@ -171,13 +188,13 @@ include K in
 `α` of a uniformizer of `A`, the results of `TauCeti.RingTheory.DiscreteValuationRing.Eisenstein`
 apply to `α` in the integral closure of `A` in `L`. -/
 private theorem isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure
-    (hπ : Irreducible π) (hn : n ≠ 0) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
+    (hπ : Irreducible π) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
     (h : α ∈ integralClosure A L) :
     FaithfulSMul A (integralClosure A L) ∧ (X ^ n - C π).IsEisensteinAt (maximalIdeal A) ∧
       (X ^ n - C π).Monic ∧ aeval (⟨α, h⟩ : integralClosure A L) (X ^ n - C π) = 0 ∧
       Algebra.adjoin A {(⟨α, h⟩ : integralClosure A L)} = ⊤ :=
-  isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top (K := K) hπ hn hα
-    (integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hn hα hgen).symm h
+  isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top (K := K) hπ hα
+    (integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hα hgen).symm h
 
 include K in
 /-- **The integral closure in a Kummer extension is a discrete valuation ring.** If `L` is
@@ -185,25 +202,26 @@ generated over the fraction field `K` of a discrete valuation ring `A` by an `n`
 uniformizer of `A`, then the integral closure of `A` in `L` is a discrete valuation ring. -/
 @[stacks 09EV "(3)"]
 theorem isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible (hπ : Irreducible π)
-    (hn : n ≠ 0) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
+    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
     IsDiscreteValuationRing (integralClosure A L) :=
+  have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have h := (mem_integralClosure_iff _ _).mpr
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap))
-  have ⟨_, hf, hmo, hx, hadj⟩ :=
-    isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hn hα hgen h
-  hf.isDiscreteValuationRing_of_adjoin_eq_top hmo hx hadj
+  have ⟨_, hf, _, hx, hadj⟩ :=
+    isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hα hgen h
+  hf.isDiscreteValuationRing_of_adjoin_eq_top hx hadj
 
 include K in
 /-- **A root of a uniformizer is a uniformizer of the integral closure.** If `L` is generated over
 the fraction field `K` of a discrete valuation ring `A` by an `n`-th root `α` of a uniformizer of
 `A`, then `α` is a uniformizer of the integral closure of `A` in `L`. -/
 @[stacks 09EV "(3)"]
-theorem irreducible_mk_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn : n ≠ 0)
+theorem irreducible_mk_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) (h : α ∈ integralClosure A L) :
     Irreducible (⟨α, h⟩ : integralClosure A L) :=
-  have ⟨_, hf, hmo, hx, hadj⟩ :=
-    isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hn hα hgen h
-  hf.irreducible_of_adjoin_eq_top hmo hx hadj
+  have ⟨_, hf, _, hx, hadj⟩ :=
+    isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hα hgen h
+  hf.irreducible_of_adjoin_eq_top hx hadj
 
 include K in
 /-- **The ramification index of a Kummer extension of a discrete valuation ring.** If `L` is
@@ -211,41 +229,43 @@ generated over the fraction field `K` of a discrete valuation ring `A` by an `n`
 uniformizer of `A`, then the maximal ideal of the integral closure of `A` in `L` has ramification
 index `n` over `A`. -/
 @[stacks 09EV "(4)"]
-theorem ramificationIdx_eq_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn : n ≠ 0)
+theorem ramificationIdx_eq_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) (P : Ideal (integralClosure A L))
     [P.IsMaximal] : P.ramificationIdx A = n := by
+  have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have h := (mem_integralClosure_iff _ _).mpr
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap))
-  obtain ⟨_, hf, hmo, hx, hadj⟩ :=
-    isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hn hα hgen h
-  rw [hf.ramificationIdx_eq_natDegree hmo hx hadj P, natDegree_X_pow_sub_C]
+  obtain ⟨_, hf, -, hx, hadj⟩ :=
+    isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hα hgen h
+  rw [hf.ramificationIdx_eq_natDegree hx hadj P, natDegree_X_pow_sub_C]
 
 include K in
 /-- **A Kummer extension of a discrete valuation ring is totally ramified.** If `L` is generated
 over the fraction field `K` of a discrete valuation ring `A` by an `n`-th root of a uniformizer of
 `A`, then `L` is totally ramified with respect to `A`. -/
 @[stacks 09EV "(5)"]
-theorem isTotallyRamifiedWRT_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn : n ≠ 0)
+theorem isTotallyRamifiedWRT_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) : Algebra.IsTotallyRamifiedWRT A L := by
+  have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have h := (mem_integralClosure_iff _ _).mpr
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap))
-  obtain ⟨_, hf, hmo, hx, hadj⟩ :=
-    isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hn hα hgen h
-  exact Algebra.isTotallyRamifiedWRT_def.mpr ⟨⟨_, hf.isMaximal_span_singleton hmo hx hadj,
-      fun P _ ↦ hf.eq_span_singleton_of_isMaximal hmo hx hadj P⟩,
-    fun P _ ↦ hf.inertiaDeg_eq_one hmo hx hadj P⟩
+  obtain ⟨_, hf, -, hx, hadj⟩ :=
+    isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hα hgen h
+  exact Algebra.isTotallyRamifiedWRT_def.mpr ⟨⟨_, hf.isMaximal_span_singleton hx hadj,
+      fun P _ ↦ hf.eq_span_singleton_of_isMaximal hx hadj P⟩,
+    fun P _ ↦ hf.inertiaDeg_eq_one hx hadj P⟩
 
 include K in
 /-- In a Kummer extension `L = K(α)` of a discrete valuation ring `A`, the residue field extension
 at every maximal ideal of the integral closure of `A` in `L` is trivial. -/
 private theorem surjective_algebraMap_quotient_of_pow_eq_of_irreducible (hπ : Irreducible π)
-    (hn : n ≠ 0) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
+    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
     (P : Ideal (integralClosure A L)) [P.IsMaximal] [P.LiesOver (maximalIdeal A)] :
     Function.Surjective (algebraMap (A ⧸ maximalIdeal A) (integralClosure A L ⧸ P)) := by
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field P
   have h := (Algebra.isTotallyRamifiedWRT_def.mp
-    (isTotallyRamifiedWRT_of_pow_eq_of_irreducible hπ hn hα hgen)).2 P
+    (isTotallyRamifiedWRT_of_pow_eq_of_irreducible hπ hα hgen)).2 P
   rw [Ideal.inertiaDeg_eq_of_isMaximal (maximalIdeal A) P] at h
   exact (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp h).2
 
@@ -255,11 +275,12 @@ the residue characteristic.** If `L` is generated over the fraction field `K` of
 valuation ring `A` by an `n`-th root of a uniformizer of `A`, and `m` is invertible in the residue
 field of `A`, then every `m`-th root of unity in `L` lies in `K`. -/
 theorem mem_range_algebraMap_of_pow_eq_one_of_pow_eq_of_irreducible (hπ : Irreducible π)
-    (hn : n ≠ 0) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) {m : ℕ}
+    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) {m : ℕ}
     (hm : IsUnit (m : A ⧸ maximalIdeal A)) {ξ : L} (hξ : ξ ^ m = 1) :
     ξ ∈ Set.range (algebraMap K L) := by
+  have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have hm0 : m ≠ 0 := by rintro rfl; simp at hm
-  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hn hα hgen
+  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hα hgen
   have hint : IsIntegral A α :=
     IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap)
   have : FaithfulSMul A (integralClosure A L) :=
@@ -268,13 +289,13 @@ theorem mem_range_algebraMap_of_pow_eq_one_of_pow_eq_of_irreducible (hπ : Irred
   have : Module.Finite A (integralClosure A L) :=
     have := Algebra.finite_adjoin_simple_of_isIntegral hint
     .equiv (Subalgebra.equivOfEq _ _
-      (integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hn hα hgen)).symm.toLinearEquiv
+      (integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hα hgen)).symm.toLinearEquiv
   have : (maximalIdeal (integralClosure A L)).LiesOver (maximalIdeal A) :=
     ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
   -- The residue field extension is trivial, so roots of units descend from `A[α]` to `A`.
   have hres : Function.Surjective
       (algebraMap (ResidueField A) (ResidueField (integralClosure A L))) :=
-    surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hn hα hgen _
+    surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hα hgen _
   have hξB : ξ ∈ integralClosure A L :=
     IsIntegral.of_pow (Nat.pos_of_ne_zero hm0) (hξ ▸ isIntegral_one)
   obtain ⟨a, ha⟩ := TauCeti.IsLocalRing.mem_range_algebraMap_of_pow_eq_of_isUnit hres
@@ -290,11 +311,11 @@ generated over the fraction field `K` of a discrete valuation ring `A` by an `n`
 uniformizer of `A`, then `L` is tamely ramified with respect to `A` iff `n` is invertible in the
 residue field of `A`. -/
 @[stacks 09EV "(6), tame ramification"]
-theorem isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn : n ≠ 0)
+theorem isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
     Algebra.IsTamelyRamifiedWRT A L ↔ IsUnit (n : A ⧸ maximalIdeal A) := by
-  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hn hα hgen
-  have he := ramificationIdx_eq_of_pow_eq_of_irreducible hπ hn hα hgen
+  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hα hgen
+  have he := ramificationIdx_eq_of_pow_eq_of_irreducible hπ hα hgen
   rw [Algebra.isTamelyRamifiedWRT_def]
   refine ⟨fun h ↦ ?_, fun hu P _ _ ↦ ⟨⟨fun x ↦ ?_⟩, by rwa [he P]⟩⟩
   · have : (maximalIdeal (integralClosure A L)).LiesOver (maximalIdeal A) :=
@@ -302,7 +323,7 @@ theorem isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (hπ : Irreducible π) 
     simpa [he] using (h (maximalIdeal _)).2
   -- The residue field extension is trivial, hence separable.
   let := Ideal.Quotient.field (maximalIdeal A)
-  obtain ⟨y, rfl⟩ := surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hn hα hgen P x
+  obtain ⟨y, rfl⟩ := surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hα hgen P x
   exact isSeparable_algebraMap y
 
 include K in
@@ -316,7 +337,7 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hn : IsUnit (n : A ⧸ maximalIdeal A)) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
     (M : IntermediateField K L) : M = K⟮α ^ Module.finrank M L⟯ := by
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  have hfin := finrank_eq_of_pow_eq_of_irreducible hπ hn0 hα hgen
+  have hfin := finrank_eq_of_pow_eq_of_irreducible hπ hα hgen
   have : FiniteDimensional K L := Module.finite_of_finrank_pos (hfin ▸ Nat.pos_of_ne_zero hn0)
   set m := Module.finrank M L
   have hα0 : α ≠ 0 := by
@@ -339,8 +360,7 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
             ← pow_mul, ← pow_mul, mul_comm]
   have hξ : (algebraMap M L β / α ^ m) ^ n = 1 := by
     rw [div_pow, hβ, div_self (pow_ne_zero _ (pow_ne_zero _ hα0))]
-  obtain ⟨c, hc⟩ := mem_range_algebraMap_of_pow_eq_one_of_pow_eq_of_irreducible hπ hn0 hα hgen
-    hn hξ
+  obtain ⟨c, hc⟩ := mem_range_algebraMap_of_pow_eq_one_of_pow_eq_of_irreducible hπ hα hgen hn hξ
   have hβ0 : algebraMap M L β ≠ 0 := by
     rintro h
     rw [h, zero_div, zero_pow hn0] at hξ
@@ -354,7 +374,7 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
   have hmd : m * Module.finrank K M = n := by
     rw [mul_comm, Module.finrank_mul_finrank K M L, hfin]
   have hd : Module.finrank K K⟮α ^ m⟯ = Module.finrank K M :=
-    finrank_adjoin_of_pow_eq_of_irreducible hπ Module.finrank_pos.ne'
+    finrank_adjoin_of_pow_eq_of_irreducible hπ
       (by rw [← pow_mul, hmd, hα])
   exact (IntermediateField.eq_of_le_of_finrank_eq
     (IntermediateField.adjoin_simple_le_iff.mpr hmem) hd).symm
@@ -378,7 +398,7 @@ theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteD
     (hn : IsUnit (n : A ⧸ maximalIdeal A)) (hβ : β ^ n = algebraMap A E π)
     (h : Algebra.IsUnramifiedWRT (integralClosure A K⟮β⟯) E) :
     Algebra.IsTamelyRamifiedWRT A L := by
-  have hn0 : n ≠ 0 := by
+  have _ : n ≠ 0 := by
     rintro rfl
     simp at hn
   have : IsScalarTower A L E := .of_algebraMap_eq fun a ↦ by
@@ -391,10 +411,10 @@ theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteD
   have hβ' : AdjoinSimple.gen K β ^ n = algebraMap A K⟮β⟯ π := (algebraMap K⟮β⟯ E).injective (by
     rw [map_pow, AdjoinSimple.algebraMap_gen, hβ, ← IsScalarTower.algebraMap_apply])
   have hgen : K⟮AdjoinSimple.gen K β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
-  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hn0 hβ' hgen
+  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hβ' hgen
   -- `K(β)` is a Kummer extension of degree `n`, invertible in the residue field: it is tame.
   have hK₁ : Algebra.IsTamelyRamifiedWRT A K⟮β⟯ :=
-    (isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hn0 hβ' hgen).mpr hn
+    (isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hβ' hgen).mpr hn
   exact (hK₁.trans h.isTamelyRamifiedWRT).tower_bot K
 
 end TauCeti.IsDiscreteValuationRing

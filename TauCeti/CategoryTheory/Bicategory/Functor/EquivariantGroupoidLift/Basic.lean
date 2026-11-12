@@ -401,7 +401,7 @@ lemma transportComp_right_unitality {p q : Γ} (g : p ⟶ q) (hg : g ≫ 𝟙 q 
 /-- For an isomorphism `g : p ≅ q` of `Γ`, the transport functor `E_g` is an equivalence
 `C p ≌ C q` with inverse `E_(g⁻¹)`; its unit and counit are built from `transportId` and
 `transportComp`. -/
-@[expose] noncomputable def transportEquivalence {p q : Γ} (g : p ≅ q) :
+@[expose, simps] noncomputable def transportEquivalence {p q : Γ} (g : p ≅ q) :
     fiber actions p ≌ fiber actions q where
   functor := L.transport g.hom
   inverse := L.transport g.inv
@@ -415,27 +415,6 @@ lemma transportComp_right_unitality {p q : Γ} (g : p ⟶ q) (hg : g ≫ 𝟙 q 
     simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Category.assoc, ← h,
       ← Functor.map_comp, Iso.inv_hom_id_app_assoc, Iso.inv_hom_id_app]
     exact (L.transport g.hom).map_id X
-
-@[simp]
-lemma transportEquivalence_unitIso {p q : Γ} (g : p ≅ q) :
-    (L.transportEquivalence g).unitIso =
-      (L.transportId p).symm ≪≫ (L.transportComp g.hom g.inv (𝟙 p)).symm :=
-  rfl
-
-@[simp]
-lemma transportEquivalence_counitIso {p q : Γ} (g : p ≅ q) :
-    (L.transportEquivalence g).counitIso = L.transportComp g.inv g.hom (𝟙 q) ≪≫ L.transportId q :=
-  rfl
-
-@[simp]
-lemma transportEquivalence_functor {p q : Γ} (g : p ≅ q) :
-    (L.transportEquivalence g).functor = L.transport g.hom := by
-  rfl
-
-@[simp]
-lemma transportEquivalence_inverse {p q : Γ} (g : p ≅ q) :
-    (L.transportEquivalence g).inverse = L.transport g.inv := by
-  rfl
 
 /-- The transport functor along an isomorphism of `Γ` is an equivalence. In particular, when
 `Γ` is a groupoid every transport functor is an equivalence. -/

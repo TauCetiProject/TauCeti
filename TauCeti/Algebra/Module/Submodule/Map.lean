@@ -11,7 +11,7 @@ public import Mathlib.Order.SupIndep
 public import Mathlib.LinearAlgebra.Span.Basic
 
 /-!
-# Finite families of submodules under a linear map
+# Submodules under a linear map
 
 `Submodule.map` preserves arbitrary suprema (`Submodule.map_iSup`), and along an injective map it
 also preserves infima (`Submodule.map_inf`) and hence disjointness (`Submodule.disjoint_map`).  This
@@ -22,8 +22,17 @@ and along an injective map it leaves an independent family independent.
 The finite-set form is what a decomposition of a module into a `Finset` of submodules needs, as in
 `TauCeti/RingTheory/KrullSchmidt/Existence.lean`, when it is transported along a linear map.
 
+The file also describes two maps between submodule lattices: the inverse of the interval
+isomorphism `Submodule.mapIic` is the inverse image along the inclusion, and an injective map
+restricted to `B` carries the trace `A.comap B.subtype` of `A` in `B` onto the trace of `A.map f`
+in `B.map f`. The subquotient identifications in `TauCeti/Algebra/Module/Submodule/Quotient.lean`
+use both. For a surjective semilinear map, inverse image identifies the target's submodules
+with the source's submodules containing the kernel, including when the scalar homomorphism
+is a surjection rather than an isomorphism.
+
 ## Main results
 
+* `LinearMap.submoduleComapOrderIsoOfSurjective`: submodule correspondence along a surjection.
 * `LinearMap.sup_image_map_eq_range_of_sup_eq_top`: a finite family of submodules spanning the
   whole module is carried to one spanning the range of the map.
 * `LinearMap.supIndep_image_map`: an injective linear map carries an independent finite
@@ -31,6 +40,10 @@ The finite-set form is what a decomposition of a module into a `Finset` of submo
 * `Submodule.map_eq_span_of_span_eq_top`: the image of a submodule spanned by a family of its
   vectors (for instance a basis, via `Module.Basis.span_eq`) is spanned by the images of those
   vectors.
+* `Submodule.mapIic_symm_apply`: the inverse of `Submodule.mapIic` takes inverse images along the
+  inclusion.
+* `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
+  carries the trace of `A` in `B` onto the trace of `A.map f` in `B.map f`.
 -/
 
 public section
@@ -49,9 +62,54 @@ theorem map_eq_span_of_span_eq_top (p : Submodule R M) {v : ι → p}
   conv_lhs => rw [← (span_range_subtype_eq_top_iff p fun i ↦ (v i).2).1 hv]
   rw [map_span, ← Set.range_comp, Function.comp_def]
 
+/-- The image of the line spanned by `x` is the line spanned by `f x`. -/
+theorem map_span_singleton (f : M →ₛₗ[σ₁₂] M₂) (x : M) : (R ∙ x).map f = R₂ ∙ f x := by
+  rw [map_span, Set.image_singleton]
+
+/-- The inverse of `Submodule.mapIic` takes the inverse image along the inclusion.  This is the
+`symm`-side counterpart of Mathlib's `Submodule.coe_mapIic_apply`.
+
+This is not a simp lemma: unfolding the inverse prevents simplification by the order
+isomorphism's round-trip laws. -/
+theorem mapIic_symm_apply (p : Submodule R M) (N : Set.Iic p) :
+    p.mapIic.symm N = (N : Submodule R M).comap p.subtype :=
+  rfl
+
 end Submodule
 
 namespace LinearMap
+
+section Correspondence
+
+variable {A B V W : Type*} [Semiring A] [Semiring B]
+    [AddCommGroup V] [Module A V] [AddCommGroup W] [Module B W]
+    {σ : A →+* B} [RingHomSurjective σ]
+
+/-- Inverse image along a surjective semilinear map identifies submodules of the target with
+submodules of the source containing the kernel. -/
+def submoduleComapOrderIsoOfSurjective (f : V →ₛₗ[σ] W) (hf : Function.Surjective f) :
+    Submodule B W ≃o Set.Ici (LinearMap.ker f) where
+  toFun Q := ⟨Q.comap f, f.ker_le_comap⟩
+  invFun P := P.1.map f
+  left_inv Q := Submodule.map_comap_eq_of_surjective hf Q
+  right_inv P := Subtype.ext (Submodule.comap_map_eq_self P.2)
+  map_rel_iff' := Submodule.comap_le_comap_iff_of_surjective hf
+
+/-- The correspondence along a surjection takes inverse images. -/
+@[simp]
+theorem coe_submoduleComapOrderIsoOfSurjective (f : V →ₛₗ[σ] W) (hf : Function.Surjective f)
+    (Q : Submodule B W) :
+    (submoduleComapOrderIsoOfSurjective f hf Q : Submodule A V) = Q.comap f :=
+  (rfl)
+
+/-- The inverse correspondence along a surjection takes images. -/
+@[simp]
+theorem submoduleComapOrderIsoOfSurjective_symm_apply (f : V →ₛₗ[σ] W) (hf : Function.Surjective f)
+    (P : Set.Ici (LinearMap.ker f)) :
+    (submoduleComapOrderIsoOfSurjective f hf).symm P = P.1.map f :=
+  (rfl)
+
+end Correspondence
 
 variable {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂]
@@ -75,5 +133,20 @@ theorem supIndep_image_map [DecidableEq (Submodule R₂ M₂)] (f : M →ₛₗ[
   refine Finset.SupIndep.image fun t hts P hP hPt ↦ ?_
   simpa only [Function.comp_def, id_eq, Finset.sup_eq_iSup, Submodule.map_iSup] using
     Submodule.disjoint_map hf (hs hts hP hPt)
+
+/-- An injective linear map carries the trace of `A` in `B` onto the trace of `A.map f` in
+`B.map f`, so it descends to the subquotients. -/
+@[simp]
+theorem map_equivMapOfInjective_comap_subtype {N : Type*} [AddCommMonoid N] [Module R N]
+    (f : M →ₗ[R] N) (hf : Function.Injective f) (A B : Submodule R M) :
+    Submodule.map (B.equivMapOfInjective f hf : ↥B →ₗ[R] ↥(B.map f))
+        (Submodule.comap B.subtype A) =
+      Submodule.comap (B.map f).subtype (A.map f) := by
+  refine Submodule.map_injective_of_injective (B.map f).injective_subtype ?_
+  have hcomp : (B.map f).subtype ∘ₗ (B.equivMapOfInjective f hf : ↥B →ₗ[R] ↥(B.map f)) =
+      f ∘ₗ B.subtype :=
+    LinearMap.ext fun x => Submodule.coe_equivMapOfInjective_apply f hf B x
+  rw [← Submodule.map_comp, hcomp, Submodule.map_comp, Submodule.map_comap_subtype,
+    Submodule.map_comap_subtype, Submodule.map_inf f hf]
 
 end LinearMap

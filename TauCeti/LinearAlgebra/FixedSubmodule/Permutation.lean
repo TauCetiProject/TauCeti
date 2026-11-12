@@ -77,12 +77,37 @@ theorem permutationFixedEquiv_symm_apply (σ : Perm I)
     (permutationFixedEquiv (R := R) (M := M) σ).symm v (Quotient.mk _ i) = v.val i :=
   TauCeti.invariantColouringEquiv_symm_apply σ _ i
 
+/-- Fixed-vector coordinates agree whenever their permutation cycles agree. -/
+theorem permutationFixed_apply_eq_of_quotient_eq (σ : Perm I)
+    (v : (funCongrLeft R M σ).toLinearMap.fixedSubmodule) {i j : I}
+    (h : Quotient.mk (Perm.SameCycle.setoid σ) i = Quotient.mk _ j) :
+    v.val i = v.val j := by
+  rw [← permutationFixedEquiv_symm_apply σ v i, h, permutationFixedEquiv_symm_apply]
+
 /-- The coordinate of a cycle is the value at its chosen representative. -/
 theorem permutationFixedEquiv_symm_apply_out (σ : Perm I)
     (v : (funCongrLeft R M σ).toLinearMap.fixedSubmodule)
     (c : Quotient (Perm.SameCycle.setoid σ)) :
     (permutationFixedEquiv (R := R) (M := M) σ).symm v c = v.val c.out := by
   simpa only [Quotient.out_eq] using permutationFixedEquiv_symm_apply σ v c.out
+
+/-- A vector supported on the chosen representatives has the prescribed sum on each cycle. -/
+theorem sum_sameCycle_ite_out_eq [Fintype I] [DecidableEq I] (σ : Perm I)
+    [DecidableRel σ.SameCycle]
+    (w : Quotient (Perm.SameCycle.setoid σ) → M)
+    (c : Quotient (Perm.SameCycle.setoid σ)) :
+    ∑ j with σ.SameCycle c.out j,
+      (if j = (Quotient.mk (Perm.SameCycle.setoid σ) j).out then
+        w (Quotient.mk _ j) else 0) = w c := by
+  rw [Finset.sum_eq_single c.out]
+  · simp only [Quotient.out_eq, ite_true]
+  · intro j hj hne
+    have hjc : Quotient.mk (Perm.SameCycle.setoid σ) j = c :=
+      (Quotient.sound (Finset.mem_filter.mp hj).2.symm).trans (Quotient.out_eq c)
+    simp only [hjc, ite_eq_right hne]
+  · intro hnot
+    exact False.elim (hnot (Finset.mem_filter.mpr
+      ⟨Finset.mem_univ _, SameCycle.refl σ _⟩))
 
 /-- The orbit indicator vectors form a basis of the fixed submodule. -/
 def permutationFixedBasis (σ : Perm I)

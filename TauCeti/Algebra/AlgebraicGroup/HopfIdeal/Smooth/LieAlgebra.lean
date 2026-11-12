@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.Containment
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.IdentityComponent
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
 import TauCeti.RingTheory.Derivation.Idempotent
 
 /-!
@@ -26,7 +27,7 @@ surjective with surjective differential, so it is injective.
 
 * `TauCeti.HopfIdeal.lieSubalgebra_identityComponentHopfIdeal_eq_top`: the identity component
   has the same Lie algebra as the group.
-* `TauCeti.HopfIdeal.eq_bot_of_lieSubalgebra_eq_top`: a smooth closed subgroup of a smooth
+* `TauCeti.HopfIdeal.eq_bot_of_lieSubalgebra_eq_top`: a smooth closed subgroup of a
   connected group with the full Lie algebra is the whole group.
 
 ## References
@@ -51,26 +52,34 @@ theorem lieSubalgebra_identityComponentHopfIdeal_eq_top :
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
   let e : H := PrimeSpectrum.connectedComponentIdempotent (R := H)
     (Bialgebra.augmentationPoint k H)
-  have hspan : (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal =
-      Ideal.span {1 - e} := by
-    rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal]
-    ext x
-    exact PrimeSpectrum.mem_connectedComponentIdeal_iff.trans Ideal.mem_span_singleton'.symm
   rw [eq_top_iff]
   intro d _
-  rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _ hspan]
+  rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _
+    HopfAlgebra.identityComponentHopfIdeal_toIdeal_eq_span]
   rintro x rfl
   have he : IsIdempotentElem e := PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent _
   rw [map_sub, d.map_one_eq_zero, d.apply_eq_zero_of_isIdempotentElem he, sub_zero]
 
-/-- A smooth closed subgroup of a smooth connected affine group over an algebraically closed
-field is the whole group as soon as its Lie algebra is the whole Lie algebra.
+/-- A smooth closed subgroup of a connected finite-type affine group over an algebraically
+closed field is the whole group as soon as its Lie algebra is the whole Lie algebra. The ambient
+group is then automatically smooth.
 
 The order on Hopf ideals reverses inclusion of closed subgroups, so `I = ⊥` says that the closed
 subgroup cut out by `I` is everything. -/
-theorem eq_bot_of_lieSubalgebra_eq_top [Algebra.Smooth k H] [ConnectedSpace (PrimeSpectrum H)]
+theorem eq_bot_of_lieSubalgebra_eq_top [ConnectedSpace (PrimeSpectrum H)]
     (I : HopfIdeal k H) [Algebra.Smooth k (H ⧸ I.toIdeal)]
     (hI : I.lieSubalgebra (B := k) = ⊤) : I = ⊥ := by
+  -- The group is smooth: its Krull dimension is at most its Lie dimension, and at least the
+  -- dimension of the smooth subgroup, which is the Lie dimension.
+  have : Algebra.Smooth k H := by
+    rw [HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim]
+    refine le_antisymm ?_ HopfAlgebra.ringKrullDim_le_finrank_lie
+    have hfinrank : Module.finrank k (I.lieSubalgebra (B := k)) =
+        Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
+      rw [hI]
+      exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
+    rw [← hfinrank, ← ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth I]
+    exact ringKrullDim_le_of_surjective _ Ideal.Quotient.mk_surjective
   let Q := FiniteTypeCommHopfAlgCat.quotient H I
   let J := HopfAlgebra.identityComponentHopfIdeal (k := k) (H := Q)
   let _ : Algebra.Smooth k Q := ‹Algebra.Smooth k (H ⧸ I.toIdeal)›
@@ -95,7 +104,7 @@ theorem eq_bot_of_lieSubalgebra_eq_top [Algebra.Smooth k H] [ConnectedSpace (Pri
     ((smoothCommHopfAlgProperty_iff _).mpr
       (FiniteTypeCommHopfAlgCat.smooth_identityComponent Q))
     (FiniteTypeCommHopfAlgCat.connectedSpace_identityComponent Q)
-    (conormalSubspace_ker_eq_bot_of_surjective_of_derivationCompLieHom_surjective f hf hdf)
+    (conormalSubspace_ker_eq_bot_of_derivationCompLieHom_surjective f hdf)
   refine le_antisymm (fun x hx ↦ ?_) bot_le
   rw [← hker, mem_ker]
   have hx0 : Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal x = 0 := by

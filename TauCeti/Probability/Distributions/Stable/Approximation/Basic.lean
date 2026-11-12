@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.CompoundPoisson.Basic
 public import TauCeti.Probability.Distributions.Stable.LevyKhintchine
 public import Mathlib.Probability.Moments.IntegrableExpMul
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.CompoundPoisson.Transforms
 
@@ -23,6 +24,7 @@ converge to `exp (stableCharacteristicExponent α β t)`, by the Lévy–Khintch
 
 These laws are the finite-jump approximations used to construct non-Gaussian stable laws by
 letting the cutoff tend to zero.
+Reflection negates the skewness of each compensated approximation.
 
 When the Lévy measure is carried by `{x | t * x ≤ 0}`, the exponential `exp (t * x)` is
 integrable under every approximation, and the moment generating function at `t` is the
@@ -64,18 +66,52 @@ theorem stableCompensatedPoissonMeasure_def (α β ε : ℝ) :
         (cond (stableLevyMeasure α β) {x : ℝ | ε < |x|})).map
         (fun x ↦ x - ∫ y in {y : ℝ | ε < |y|}, sin y ∂stableLevyMeasure α β) := (rfl)
 
-/-- Every valid compensated stable approximation is a probability measure. -/
-theorem isProbabilityMeasure_stableCompensatedPoissonMeasure {α β ε : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) :
+/-- Reflecting a compensated stable approximation negates its skewness parameter. -/
+theorem map_neg_stableCompensatedPoissonMeasure (α β ε : ℝ) :
+    (stableCompensatedPoissonMeasure α β ε).map (fun x ↦ -x) =
+      stableCompensatedPoissonMeasure α (-β) ε := by
+  let ν := stableLevyMeasure α β
+  let A := {x : ℝ | ε < |x|}
+  have hA : MeasurableSet A := measurableSet_lt measurable_const (by fun_prop)
+  have hpre : (fun x : ℝ ↦ -x) ⁻¹' A = A := by
+    ext x
+    simp [A]
+  have hmass : ν A = stableLevyMeasure α (-β) A := by
+    rw [← map_neg_stableLevyMeasure, Measure.map_apply measurable_neg hA, hpre]
+  have hcond : (cond ν A).map (fun x ↦ -x) = cond (stableLevyMeasure α (-β)) A := by
+    have hrestrict := (Measure.restrict_map (μ := ν) measurable_neg hA).symm
+    rw [hpre, map_neg_stableLevyMeasure] at hrestrict
+    rw [ProbabilityTheory.cond, ProbabilityTheory.cond,
+      Measure.map_smul _ measurable_neg.aemeasurable, hrestrict, hmass]
+  have hsin : (∫ y in A, sin y ∂stableLevyMeasure α (-β)) = -∫ y in A, sin y ∂ν := by
+    rw [← map_neg_stableLevyMeasure,
+      setIntegral_map hA (by fun_prop) measurable_neg.aemeasurable, hpre]
+    simp only [sin_neg, integral_neg, ν]
+  rw [stableCompensatedPoissonMeasure_def, stableCompensatedPoissonMeasure_def,
+    ← hmass, hsin, ← hcond, ← map_neg_compoundPoissonMeasure,
+    Measure.map_map (by fun_prop) measurable_neg,
+    Measure.map_map measurable_neg (by fun_prop)]
+  congr 1
+  ext x
+  simp [sub_eq_add_neg, add_comm, ν, A]
+
+/-- Every compensated stable approximation is a probability measure. Outside the valid parameter
+range the cutoff Lévy mass is zero or infinite, the jump rate is zero, and the law is a point
+mass. -/
+theorem isProbabilityMeasure_stableCompensatedPoissonMeasure (α β ε : ℝ) :
     IsProbabilityMeasure (stableCompensatedPoissonMeasure α β ε) := by
-  let _ := isProbabilityMeasure_cond_stableLevyMeasure hα hβ hε
   rw [stableCompensatedPoissonMeasure_def]
-  infer_instance
+  by_cases h : stableLevyMeasure α β {x : ℝ | ε < |x|} = 0 ∨
+      stableLevyMeasure α β {x : ℝ | ε < |x|} = ∞
+  · rcases h with h | h <;> simp only [h, ENNReal.toNNReal_zero, ENNReal.toNNReal_top,
+      compoundPoissonMeasure_zero] <;> infer_instance
+  · rw [not_or] at h
+    let _ := cond_isProbabilityMeasure_of_finite h.1 h.2
+    infer_instance
 
 /-- The characteristic function of a compensated stable approximation is the exponential of
 the truncated compensated Lévy integral. -/
-theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (t : ℝ) :
+theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ} (hε : 0 < ε) (t : ℝ) :
     charFun (stableCompensatedPoissonMeasure α β ε) t =
       Complex.exp (∫ x in {x : ℝ | ε < |x|},
         Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
@@ -83,9 +119,12 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
   let ν := stableLevyMeasure α β
   let s : Set ℝ := {x | ε < |x|}
   let c : ℝ := ∫ x in s, sin x ∂ν
-  have hm0 : ν s ≠ 0 := (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
   have hm_top : ν s ≠ ∞ := stableLevyMeasure_abs_gt_ne_top hε
-  let _ := isProbabilityMeasure_cond_stableLevyMeasure hα hβ hε
+  by_cases hm0 : ν s = 0
+  · -- Outside the valid parameter range the cutoff Lévy measure vanishes, and both sides are `1`.
+    have hrestrict : ν.restrict s = 0 := Measure.restrict_eq_zero.mpr hm0
+    simp [stableCompensatedPoissonMeasure_def, ν, s, hm0, hrestrict]
+  let _ := cond_isProbabilityMeasure_of_finite hm0 hm_top
   -- First express the characteristic function of the normalized cutoff jump measure
   -- directly as a normalized integral against the unnormalized Lévy measure.
   have hchar_cond : charFun (ProbabilityTheory.cond ν s) t =
@@ -93,20 +132,12 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
     rw [charFun_apply_real, ProbabilityTheory.cond, integral_smul_measure,
       ENNReal.toReal_inv, Complex.real_smul, Complex.ofReal_inv]
     simp only [Complex.ofReal_mul]
-  have hfinite : IsFiniteMeasure (ν.restrict s) :=
-    isFiniteMeasure_stableLevyMeasure_restrict_abs_gt hε
-  have hexp : IntegrableOn (fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I)) s ν := by
-    let _ := hfinite
-    exact Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ by
-      simpa using (Complex.norm_exp_ofReal_mul_I (t * x)).le)
-  have hsin : IntegrableOn (fun x : ℝ ↦ sin x) s ν := by
-    let _ := hfinite
-    exact Integrable.of_bound (by fun_prop) 1
-      (ae_of_all _ fun x ↦ by simpa using abs_sin_le_one x)
-  have hone : IntegrableOn (fun _ : ℝ ↦ (1 : ℂ)) s ν := integrableOn_const hm_top
+  have hexp := integrableOn_exp_ofReal_mul_I_of_measure_ne_top (ν := ν) (s := s) t hm_top
+  have hsin := integrableOn_sin_of_measure_ne_top (ν := ν) (s := s) hm_top
   have hsinC : IntegrableOn (fun x : ℝ ↦ (t * sin x : ℝ) * Complex.I) s ν := by
-    apply (hsin.ofReal.const_mul ((t : ℂ) * Complex.I)).congr
+    refine (hsin.ofReal.const_mul ((t : ℂ) * Complex.I)).congr ?_
     exact ae_of_all _ fun x ↦ by simp only [Complex.ofReal_mul]; ring_nf; rfl
+  have hone : IntegrableOn (fun _ : ℝ ↦ (1 : ℂ)) s ν := integrableOn_const hm_top
   -- Translation contributes the compensating phase. The compound-Poisson exponent then
   -- cancels the cutoff mass introduced by normalization.
   rw [stableCompensatedPoissonMeasure_def]
@@ -125,19 +156,7 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
   have hsub₂ := integral_sub hexp hone
   simp only [Pi.sub_apply] at hsub₁ hsub₂
   rw [hsub₁, hsub₂, integral_const]
-  have hsin_integral :
-      ∫ x in s, (t * sin x : ℝ) * Complex.I ∂ν = (t * c : ℝ) * Complex.I := by
-    calc
-      _ = ((t : ℂ) * Complex.I) * ∫ x in s, (sin x : ℂ) ∂ν := by
-        rw [← integral_const_mul]
-        congr with x
-        push_cast
-        ring
-      _ = ((t : ℂ) * Complex.I) * (c : ℂ) := by
-        congr 1
-        exact integral_ofReal
-      _ = (t * c : ℝ) * Complex.I := by push_cast; ring
-  rw [hsin_integral]
+  rw [integral_mul_const, integral_complex_ofReal, integral_const_mul]
   have hm_real : (ν s).toReal ≠ 0 := ENNReal.toReal_ne_zero.mpr ⟨hm0, hm_top⟩
   have hinner : inner ℝ (-c) t = -t * c := by rw [Real.inner_apply]; ring
   rw [hinner, measureReal_restrict_apply_univ]
@@ -165,7 +184,7 @@ theorem tendsto_charFun_stableCompensatedPoissonMeasure {α β : ℝ}
   rw [integral_exp_sub_one_sub_sin_stableLevyMeasure hα hβ t] at hlim
   apply hlim.congr'
   filter_upwards [self_mem_nhdsWithin] with ε hε
-  exact (charFun_stableCompensatedPoissonMeasure hα hβ hε t).symm
+  exact (charFun_stableCompensatedPoissonMeasure hε t).symm
 
 /-- The characteristic functions converge along the dyadic cutoffs `2⁻ⁿ` used to construct
 the stable law. -/
@@ -207,14 +226,17 @@ theorem integrable_exp_mul_stableCompensatedPoissonMeasure {α β ε t : ℝ}
 /-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then the moment
 generating function of a compensated stable approximation is the exponential of the truncated
 compensated Lévy integral. -/
-theorem mgf_stableCompensatedPoissonMeasure {α β ε t : ℝ} (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
-    (hε : 0 < ε) (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
+theorem mgf_stableCompensatedPoissonMeasure {α β ε t : ℝ} (hε : 0 < ε)
+    (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
     mgf id (stableCompensatedPoissonMeasure α β ε) t =
       exp (∫ x in {x : ℝ | ε < |x|}, exp (t * x) - 1 - t * sin x ∂stableLevyMeasure α β) := by
   set ν := stableLevyMeasure α β
   set s : Set ℝ := {x | ε < |x|}
-  have hm0 : ν s ≠ 0 := (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
   have hm_top : ν s ≠ ∞ := stableLevyMeasure_abs_gt_ne_top hε
+  by_cases hm0 : ν s = 0
+  · -- Outside the valid parameter range the cutoff Lévy measure vanishes, and both sides are `1`.
+    have hrestrict : ν.restrict s = 0 := Measure.restrict_eq_zero.mpr hm0
+    simp [stableCompensatedPoissonMeasure_def, ν, s, hm0, hrestrict, mgf]
   have := isFiniteMeasure_stableLevyMeasure_restrict_abs_gt (α := α) (β := β) hε
   have hexp : IntegrableOn (fun x ↦ exp (t * x)) s ν := by
     simpa only [IntegrableOn, one_mul] using integrable_exp_mul_of_le
@@ -229,7 +251,7 @@ theorem mgf_stableCompensatedPoissonMeasure {α β ε t : ℝ} (hα : α ∈ Ioo
       exp (∫ x in s, exp (t * x) ∂ν - ν.real s) := by
     simpa only [AddMonoidHom.coe_id, AddMonoidHom.id_apply] using
       mgf_compoundPoissonMeasure_cond (f := AddMonoidHom.id ℝ)
-        (by simpa only [AddMonoidHom.coe_id] using measurable_id) hm0 hm_top
+        (by simpa only [AddMonoidHom.coe_id] using measurable_id) hm_top
         (by simpa only [AddMonoidHom.id_apply] using hexp)
   -- Split the compensated integral into its exponential, constant and sine parts.
   have hsplit : ∫ x in s, exp (t * x) - 1 - t * sin x ∂ν =
@@ -248,12 +270,12 @@ theorem mgf_stableCompensatedPoissonMeasure {α β ε t : ℝ} (hα : α ∈ Ioo
 /-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then the moment
 generating functions of the compensated stable approximations are bounded independently of the
 cutoff. -/
-theorem mgf_stableCompensatedPoissonMeasure_le {α β ε t : ℝ} (hα : α ∈ Ioo 0 2)
-    (hβ : |β| ≤ 1) (hε : 0 < ε) (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
+theorem mgf_stableCompensatedPoissonMeasure_le {α β ε t : ℝ} (hε : 0 < ε)
+    (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
     mgf id (stableCompensatedPoissonMeasure α β ε) t ≤
       exp (∫ x, |exp (t * x) - 1 - t * sin x| ∂stableLevyMeasure α β) := by
   have hi := integrable_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure ht
-  rw [mgf_stableCompensatedPoissonMeasure hα hβ hε ht, exp_le_exp]
+  rw [mgf_stableCompensatedPoissonMeasure hε ht, exp_le_exp]
   calc
     _ ≤ ∫ x in {x : ℝ | ε < |x|}, |exp (t * x) - 1 - t * sin x| ∂stableLevyMeasure α β :=
       setIntegral_mono hi.integrableOn hi.abs.integrableOn fun x ↦ le_abs_self _

@@ -35,7 +35,7 @@ The regularity hypothesis on `2` is necessary: in characteristic two the polar f
 determine the quadratic form. -/
 noncomputable def orthogonalGroupEquivIsometryGroupPolarBilin
     (Q : QuadraticForm R M) (h2 : IsSMulRegular R (2 : R)) :
-    orthogonalGroup Q ≃* BilinForm.isometryGroup Q.polarBilin :=
+    orthogonalGroup Q ≃* LinearMap.BilinForm.isometryGroup Q.polarBilin :=
   MulEquiv.subgroupCongr (orthogonalGroup_eq_isometryGroup_polarBilin h2 Q)
 
 /-- The quadratic-to-bilinear orthogonal-group equivalence does not change the underlying linear
@@ -51,7 +51,7 @@ linear automorphism. -/
 @[simp]
 theorem coe_orthogonalGroupEquivIsometryGroupPolarBilin_symm_apply
     (Q : QuadraticForm R M) (h2 : IsSMulRegular R (2 : R))
-    (g : BilinForm.isometryGroup Q.polarBilin) :
+    (g : LinearMap.BilinForm.isometryGroup Q.polarBilin) :
     ((orthogonalGroupEquivIsometryGroupPolarBilin Q h2).symm g : M ≃ₗ[R] M) = g := by
   simp [orthogonalGroupEquivIsometryGroupPolarBilin]
 

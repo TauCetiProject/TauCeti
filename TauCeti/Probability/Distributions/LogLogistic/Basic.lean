@@ -87,22 +87,25 @@ Unless `0 < a` and `0 < b` this is the zero measure, not a probability measure; 
 def logLogisticMeasure (a b : ℝ) : Measure ℝ :=
   if 0 < a ∧ 0 < b then (logisticMeasure (Real.log a) b⁻¹).map Real.exp else 0
 
-/-- For positive parameters the log-logistic law is the image of a logistic law under
-`Real.exp`. -/
-theorem logLogisticMeasure_of_pos (ha : 0 < a) (hb : 0 < b) :
-    logLogisticMeasure a b = (logisticMeasure (Real.log a) b⁻¹).map Real.exp := by
-  rw [logLogisticMeasure, ite_eq_left ⟨ha, hb⟩]
-
 /-- Outside the valid parameter range the log-logistic law is the zero measure. -/
 @[simp]
 theorem logLogisticMeasure_of_not_pos (h : ¬ (0 < a ∧ 0 < b)) : logLogisticMeasure a b = 0 := by
   rw [logLogisticMeasure, ite_eq_right h]
 
+/-- For a positive scale the log-logistic law is the image of a logistic law under `Real.exp`.
+For `b ≤ 0` both sides are zero. -/
+theorem logLogisticMeasure_of_pos (ha : 0 < a) :
+    logLogisticMeasure a b = (logisticMeasure (Real.log a) b⁻¹).map Real.exp := by
+  by_cases hb : 0 < b
+  · rw [logLogisticMeasure, ite_eq_left ⟨ha, hb⟩]
+  · rw [logLogisticMeasure_of_not_pos fun h ↦ hb h.2,
+      logisticMeasure_of_nonpos (inv_nonpos.2 (not_lt.1 hb)), Measure.map_zero]
+
 /-- For positive parameters the log-logistic law is a probability measure. -/
 theorem isProbabilityMeasure_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) :
     IsProbabilityMeasure (logLogisticMeasure a b) := by
   have := isProbabilityMeasure_logisticMeasure (inv_pos.mpr hb) (Real.log a)
-  rw [logLogisticMeasure_of_pos ha hb]
+  rw [logLogisticMeasure_of_pos ha]
   infer_instance
 
 /-- The log-logistic law is a probability measure exactly at positive parameters. -/
@@ -115,27 +118,27 @@ theorem isProbabilityMeasure_logLogisticMeasure_iff :
   exact not_isProbabilityMeasure_zero h
 
 /-- **The log-logistic law from a logistic variable.** If `Y` is logistic with location `log a`
-and scale `b⁻¹`, then `exp Y` has the log-logistic law with scale `a` and shape `b`. -/
+and scale `b⁻¹`, then `exp Y` has the log-logistic law with scale `a` and shape `b`. For `b ≤ 0`
+both laws are zero. -/
 theorem hasLaw_logLogisticMeasure_of_hasLaw_logisticMeasure {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {Y : Ω → ℝ} (ha : 0 < a) (hb : 0 < b)
+    {P : Measure Ω} {Y : Ω → ℝ} (ha : 0 < a)
     (hY : HasLaw Y (logisticMeasure (Real.log a) b⁻¹) P) :
     HasLaw (fun ω => Real.exp (Y ω)) (logLogisticMeasure a b) P := by
-  rw [logLogisticMeasure_of_pos ha hb]
+  rw [logLogisticMeasure_of_pos ha]
   exact (hasLaw_map Real.measurable_exp.aemeasurable).comp hY
 
 /-- **The logarithm of a log-logistic variable is logistic**, with location `log a` and scale
-`b⁻¹`. -/
-theorem map_log_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) :
+`b⁻¹`. For `b ≤ 0` both laws are zero. -/
+theorem map_log_logLogisticMeasure (ha : 0 < a) :
     (logLogisticMeasure a b).map Real.log = logisticMeasure (Real.log a) b⁻¹ := by
-  rw [logLogisticMeasure_of_pos ha hb,
-    Measure.map_map Real.measurable_log Real.measurable_exp]
+  rw [logLogisticMeasure_of_pos ha, Measure.map_map Real.measurable_log Real.measurable_exp]
   simp only [Function.comp_def, Real.log_exp, Measure.map_id']
 
 /-- A log-logistic variable is almost surely positive, including vacuously at invalid
 parameters. -/
 theorem ae_mem_Ioi_logLogisticMeasure (a b : ℝ) : ∀ᵐ x ∂logLogisticMeasure a b, x ∈ Ioi 0 := by
   by_cases h : 0 < a ∧ 0 < b
-  · rw [logLogisticMeasure_of_pos h.1 h.2]
+  · rw [logLogisticMeasure_of_pos h.1]
     exact (ae_map_iff Real.measurable_exp.aemeasurable measurableSet_Ioi).mpr
       (ae_of_all _ Real.exp_pos)
   · rw [logLogisticMeasure_of_not_pos h]
@@ -263,8 +266,6 @@ private lemma ofReal_abs_exp_mul_logLogisticPDF (ha : 0 < a) (hb : 0 < b) (y : �
     rw [Real.exp_sub, Real.exp_log ha]
     field_simp
   rw [hexp_y, ← hE]
-  have h1 := Real.exp_pos (y - Real.log a)
-  have h2 := Real.exp_pos ((y - Real.log a) * (b - 1))
   field_simp
   ring
 
@@ -275,13 +276,13 @@ theorem logLogisticMeasure_eq_withDensity (a b : ℝ) :
     logLogisticMeasure a b = volume.withDensity (logLogisticPDF a b) := by
   by_cases h : 0 < a ∧ 0 < b
   · have hmap := MeasureTheory.map_withDensity_abs_deriv_mul (f := logLogisticPDF a b)
-      MeasurableSet.univ Real.measurable_exp (fun y _ => (Real.hasDerivAt_exp y).hasDerivWithinAt)
+      MeasurableSet.univ (fun y _ => (Real.hasDerivAt_exp y).hasDerivWithinAt)
       Real.exp_injective.injOn
     simp only [Measure.restrict_univ, ofReal_abs_exp_mul_logLogisticPDF h.1 h.2, image_univ,
       Real.range_exp] at hmap
     have hind : (Ioi (0 : ℝ)).indicator (logLogisticPDF a b) = logLogisticPDF a b :=
       indicator_eq_self.mpr (support_logLogisticPDF h.1 h.2).le
-    rw [logLogisticMeasure_of_pos h.1 h.2, logisticMeasure_eq_withDensity, hmap,
+    rw [logLogisticMeasure_of_pos h.1, logisticMeasure_eq_withDensity, hmap,
       ← withDensity_indicator measurableSet_Ioi, hind]
   · have hpdf : logLogisticPDF a b = 0 := funext fun x => by
       rw [logLogisticPDF, logLogisticPDFReal_of_not_pos h, ENNReal.ofReal_zero, Pi.zero_apply]
@@ -341,7 +342,7 @@ theorem cdf_logLogisticMeasure_eq (ha : 0 < a) (hb : 0 < b) (x : ℝ) :
     have hpre : Real.exp ⁻¹' Iic x = Iic (Real.log x) := by
       ext y
       simp [Real.le_log_iff_exp_le hx']
-    rw [logLogisticMeasure_of_pos ha hb, Measure.map_apply Real.measurable_exp measurableSet_Iic,
+    rw [logLogisticMeasure_of_pos ha, Measure.map_apply Real.measurable_exp measurableSet_Iic,
       hpre, ← measureReal_def, ← cdf_eq_real, cdf_logisticMeasure_eq (inv_pos.mpr hb),
       Real.sigmoid_def, div_inv_eq_mul, ← Real.log_div hx'.ne' ha.ne',
       Real.rpow_def_of_pos (div_pos hx' ha)]
@@ -356,7 +357,7 @@ theorem one_sub_cdf_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) (hx : 0 ≤ x) 
   rw [cdf_logLogisticMeasure_eq ha hb]
   rcases hx.eq_or_lt with rfl | hx
   · simp [Real.zero_rpow hb.ne']
-  · have hz := Real.rpow_pos_of_pos (div_pos hx ha) b
+  · have _ := Real.rpow_pos_of_pos (div_pos hx ha) b
     rw [ite_eq_right hx.not_ge, Real.rpow_neg (div_pos hx ha).le]
     field_simp
     ring
@@ -366,7 +367,6 @@ the survival function is `(b / a) * (x / a) ^ (b - 1) / (1 + (x / a) ^ b)`. -/
 theorem logLogisticPDFReal_div_one_sub_cdf (ha : 0 < a) (hb : 0 < b) (hx : 0 < x) :
     logLogisticPDFReal a b x / (1 - cdf (logLogisticMeasure a b) x) =
       (b / a) * (x / a) ^ (b - 1) / (1 + (x / a) ^ b) := by
-  have hz := Real.rpow_pos_of_pos (div_pos hx ha) b
   rw [one_sub_cdf_logLogisticMeasure ha hb hx.le, logLogisticPDFReal_of_pos ha hb hx]
   field_simp
 
@@ -386,7 +386,7 @@ theorem map_mul_logLogisticMeasure (hc : 0 < c) (a b : ℝ) :
   · have hexp : (c * ·) ∘ Real.exp = Real.exp ∘ fun y => Real.log c + 1 * y := by
       funext y
       simp only [Function.comp_apply, one_mul, Real.exp_add, Real.exp_log hc]
-    rw [logLogisticMeasure_of_pos h.1 h.2, logLogisticMeasure_of_pos (mul_pos hc h.1) h.2,
+    rw [logLogisticMeasure_of_pos h.1, logLogisticMeasure_of_pos (mul_pos hc h.1),
       Measure.map_map (by fun_prop) Real.measurable_exp, hexp,
       ← Measure.map_map Real.measurable_exp (by fun_prop),
       map_affine_logisticMeasure _ _ one_ne_zero, one_mul, abs_one, one_mul,

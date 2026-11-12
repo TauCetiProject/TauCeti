@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
 -- Supplies the continuous PSL action required by `Homeomorph.smul`.
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
+public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
 import Mathlib.Analysis.Complex.CoveringMap
 import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
@@ -29,9 +30,11 @@ logarithmic lift transported back by `σ⁻¹`.
 This uses the translation quotient computed in
 `TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate`. No discreteness assumption is needed
 once a normalized cusp datum is given: its primitive-generator condition identifies the full
-stabilizer. The coordinate is holomorphic, and scaled horodiscs of positive height correspond
-exactly to smaller punctured discs. This is a local model for cusp charts; embedding such a
-neighbourhood into the full group quotient additionally requires precise invariance of the horodisc.
+stabilizer. The coordinate is holomorphic, with derivative `q * (2 * π * I / w) * σ'(z)`
+(`TauCeti.Subgroup.CuspDatum.hasDerivAt_coordinate`), and scaled horodiscs of positive height
+correspond exactly to smaller punctured discs. This is a local model for cusp charts; embedding
+such a neighbourhood into the full group quotient additionally requires precise invariance of the
+horodisc.
 
 The width parameter `q₂(z) = exp (2 * π * I * σ(z) / (2 * w))` of period twice the width is a
 square root of the coordinate (`TauCeti.Subgroup.CuspDatum.sqrtCoordinate_sq`) whose sign the
@@ -263,6 +266,18 @@ theorem mdifferentiable_qCoordinate :
   rw [qCoordinate_eq_comp]
   exact (mdifferentiable_qParamPuncturedUnitDisc D.width D.width_pos).comp
     ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp))
+
+/-- **The derivative of the cusp coordinate**, read on `ℂ` through `UpperHalfPlane.ofComplex`:
+`dq / dτ = q * (2 * π * I / w) * σ'(τ)` for the scaling `σ` and width `w`. -/
+theorem hasDerivAt_coordinate (D : Γ.CuspDatum) (τ : ℍ) :
+    HasDerivAt (fun t : ℂ ↦ coordinate D (ofComplex t))
+      (coordinate D τ * (2 * Real.pi * Complex.I / D.width) * smulDeriv D.scaling τ) τ := by
+  have hfun : (fun t : ℂ ↦ coordinate D (ofComplex t)) =
+      Function.Periodic.qParam D.width ∘ fun t : ℂ ↦ ((D.scaling • ofComplex t : ℍ) : ℂ) :=
+    funext fun t ↦ by rw [coordinate_apply, Function.comp_apply]
+  rw [hfun, coordinate_apply]
+  exact (TauCeti.Periodic.hasDerivAt_qParam D.width _).comp_of_eq _
+    (hasStrictDerivAt_coe_smul D.scaling τ).hasDerivAt (by rw [ofComplex_apply])
 
 /-- The normalized q-coordinate, regarded as a complex-valued function, is holomorphic. -/
 theorem mdifferentiable_coordinate :

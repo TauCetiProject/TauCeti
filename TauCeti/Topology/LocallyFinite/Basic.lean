@@ -8,12 +8,14 @@ module
 public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.LocallyFinite
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
+import Mathlib.Topology.ShrinkingLemma
 
 /-!
 # Locally finite families
 
 A locally finite family of sets stays locally finite when it is reindexed along the first
-projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`). Together with
+projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`), and more generally along
+`(Σ i, κ i) → ι` with every `κ i` finite (`LocallyFinite.comp_sigma_fst`). Together with
 `LocallyFinite.subset`, this makes a family indexed by `ι × κ` whose `(i, k)`-th member lies in
 the `i`-th member of a locally finite family locally finite. Dually, the pointwise union of
 finitely many locally finite families is locally finite (`LocallyFinite.iUnion`), as is the family
@@ -23,6 +25,10 @@ has a neighbourhood meeting only finitely many members of a locally finite famil
 compact fibres, such as a proper map, again form a locally finite family
 (`LocallyFinite.image_of_isClosedMap`). The topological support of a locally finite sum of
 functions lies in the union of their topological supports (`LocallyFinite.tsupport_finsum_subset`).
+
+An open cover of a paracompact normal space has a locally finite refinement by closed sets with
+the same index set (`TauCeti.precise_closed_refinement`), obtained by shrinking Mathlib's
+`precise_refinement`.
 
 In a pseudometric space, a locally finite family of closed sets has the following useful local
 description: around each point there is a ball such that every member of the family meeting the
@@ -43,11 +49,19 @@ namespace LocallyFinite
 variable {ι κ X : Type*} [TopologicalSpace X] {f : ι → Set X}
 
 /-- A locally finite family stays locally finite when reindexed along the first projection
-`ι × κ → ι`, for `κ` finite. -/
-theorem comp_fst [Finite κ] (hf : LocallyFinite f) : LocallyFinite fun p : ι × κ ↦ f p.1 :=
+`(Σ i, κ i) → ι`, for finite fibres `κ i`. -/
+theorem comp_sigma_fst {κ : ι → Type*} [∀ i, Finite (κ i)] (hf : LocallyFinite f) :
+    LocallyFinite fun p : (Σ i, κ i) ↦ f p.1 :=
   fun x ↦
     let ⟨U, hU, hfin⟩ := hf x
-    ⟨U, hU, (hfin.prod (finite_univ (α := κ))).subset fun _ hp ↦ ⟨hp, mem_univ _⟩⟩
+    ⟨U, hU, (hfin.biUnion fun i _ ↦ finite_range (Sigma.mk i)).subset
+      fun ⟨_, k⟩ hp ↦ mem_biUnion hp ⟨k, rfl⟩⟩
+
+/-- A locally finite family stays locally finite when reindexed along the first projection
+`ι × κ → ι`, for `κ` finite. -/
+theorem comp_fst [Finite κ] (hf : LocallyFinite f) : LocallyFinite fun p : ι × κ ↦ f p.1 :=
+  (Equiv.locallyFinite_comp_iff (Equiv.sigmaEquivProd ι κ).symm).mpr
+    (hf.comp_sigma_fst (κ := fun _ ↦ κ))
 
 /-- The pairwise intersections of two locally finite families form a locally finite family.
 The index set includes all pairs, whether or not the two families are the same. -/
@@ -149,6 +163,18 @@ end LocallyFinite
 namespace TauCeti
 
 open Metric Set
+
+/-- **Closed precise refinement.** An open cover of a paracompact normal space has a locally finite
+refinement by closed sets, indexed by the same type, whose `i`-th member lies in the `i`-th open
+set. -/
+theorem precise_closed_refinement {X ι : Type*} [TopologicalSpace X] [ParacompactSpace X]
+    [NormalSpace X] (u : ι → Set X) (uo : ∀ i, IsOpen (u i)) (uc : ⋃ i, u i = univ) :
+    ∃ K : ι → Set X, (∀ i, IsClosed (K i)) ∧ ⋃ i, K i = univ ∧ LocallyFinite K ∧
+      ∀ i, K i ⊆ u i := by
+  obtain ⟨v, hvo, hvc, hvlf, hvu⟩ := precise_refinement u uo uc
+  obtain ⟨K, hKc, hKcl, hKv⟩ :=
+    exists_iUnion_eq_closed_subset hvo (fun x ↦ hvlf.point_finite x) hvc
+  exact ⟨K, hKcl, hKc, hvlf.subset hKv, fun i ↦ (hKv i).trans (hvu i)⟩
 
 /-- Around each point there is a ball such that every member of a locally finite family of closed
 sets that meets the ball contains the centre. -/

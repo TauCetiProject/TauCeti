@@ -49,10 +49,8 @@ theorem legendreEc_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ :
     ring
   have hp : 0 < 1 + k := by linarith
   have hk : k ^ 2 < 1 := by nlinarith
-  have hs : 0 < √k := sqrt_pos.2 hk₀
-  have ht : 0 < 2 * √k / (1 + k) := by positivity
   have hsq := one_sub_sq_two_mul_sqrt_div_one_add hk₀.le
-  have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₀.le hk₁.ne
+  have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₁.ne
   have hd : HasDerivAt (fun x : ℝ ↦ 2 * √x / (1 + x))
       ((1 - k) / (√k * (1 + k) ^ 2)) k := by
     apply HasDerivAt.congr_deriv (((hasDerivAt_sqrt hk₀.ne').const_mul 2).div
@@ -60,8 +58,8 @@ theorem legendreEc_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ :
     simp only [id_eq]
     field_simp
     nlinarith [sq_sqrt hk₀.le]
-  have hleft := (hasDerivAt_legendreK ht.ne' hlt).comp k hd
-  have hright := ((hasDerivAt_id k).const_add 1).mul (hasDerivAt_legendreK hk₀.ne' hk)
+  have hleft := (hasDerivAt_legendreK hlt).comp k hd
+  have hright := ((hasDerivAt_id k).const_add 1).mul (hasDerivAt_legendreK hk)
   have heq : (fun x : ℝ ↦ legendreK (2 * √x / (1 + x))) =ᶠ[𝓝 k]
       (fun x ↦ (1 + x) * legendreK x) := by
     filter_upwards [Ioo_mem_nhds hk₀ hk₁] with x hx
@@ -96,8 +94,7 @@ theorem legendreEc_eq_one_add_mul_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
     simpa only [c] using legendreK_eq_one_add_mul_legendreK hk
   have harg : legendreEc (2 * √((1 - c) / (1 + c)) /
       (1 + (1 - c) / (1 + c))) = legendreEc k := by
-    rw [two_mul_sqrt_div_one_add_eq_abs hk.le]
-    rcases abs_choice k with h | h <;> simp only [h, legendreEc_neg]
+    rw [two_mul_sqrt_div_one_add_eq_abs hk.le, legendreEc_abs]
   rw [harg] at hE
   field_simp at hE hK ⊢
   -- The ascending identities at (1 - c) / (1 + c) have denominator 1 + c.

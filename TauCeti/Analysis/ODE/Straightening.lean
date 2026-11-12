@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.ODE.InitialCondition
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -148,7 +149,7 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const {n : ℕ∞} (hn : 1 ≤ n)
     {s : Set E} {a : E} (hw : ContDiffOn ℝ n w s) (hs : s ∈ 𝓝 a) (ha : w a ≠ 0) :
     ∃ φ : OpenPartialHomeomorph E E, a ∈ φ.source ∧ (∀ y ∈ φ.source, ContDiffAt ℝ n φ y) ∧
       (∀ z ∈ φ.target, ContDiffAt ℝ n φ.symm z) ∧ ∀ y ∈ φ.source, fderiv ℝ φ y (w y) = w a := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   set u := w a
   have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
     have : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn

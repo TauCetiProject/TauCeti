@@ -13,6 +13,8 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
 public import Mathlib.RingTheory.Artinian.Defs
 import TauCeti.RingTheory.LocalRing.Basic
+import Mathlib.CategoryTheory.Adjunction.Limits
+import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.HopkinsLevitzki
@@ -68,6 +70,8 @@ decomposition of the whole object.
 * `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor preserving zero morphisms
   and bijective on the endomorphisms of an indecomposable object carries it to an indecomposable
   object; in particular a fully faithful one does.
+* `CategoryTheory.Equivalence.indecomposable_functor_obj_iff`: indecomposability is invariant under
+  equivalence of categories, with no idempotent completeness.
 
 ## Implementation notes
 
@@ -128,11 +132,13 @@ theorem indecomposable_of_idempotent_eq_zero_or_id [HasBinaryBiproducts C] {X : 
 The record `φ` is asked to be injective and to preserve zero, the identity and squares. This is
 the criterion behind the Krull–Schmidt theorem: an object whose endomorphism ring is local is
 indecomposable. -/
-theorem indecomposable_of_injective_of_isLocalRing [HasBinaryBiproducts C] {X : C} (hX : ¬ IsZero X)
+theorem indecomposable_of_injective_of_isLocalRing [HasBinaryBiproducts C] {X : C}
     {R : Type*} [Ring R] [IsLocalRing R] (φ : (X ⟶ X) → R) (hφ : Function.Injective φ)
     (hzero : φ 0 = 0) (hid : φ (𝟙 X) = 1) (hsq : ∀ e : X ⟶ X, φ (e ≫ e) = φ e * φ e) :
     Indecomposable X := by
-  refine indecomposable_of_idempotent_eq_zero_or_id hX fun e he ↦ ?_
+  refine indecomposable_of_idempotent_eq_zero_or_id
+    (fun h ↦ zero_ne_one (hzero.symm.trans ((congrArg φ (h.eq_of_src 0 (𝟙 X))).trans hid)))
+    fun e he ↦ ?_
   have hidem : IsIdempotentElem (φ e) := (hsq e).symm.trans (congrArg φ he)
   rcases IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hidem with h0 | h1
   · exact Or.inl (hφ (h0.trans hzero.symm))
@@ -286,8 +292,7 @@ theorem isLocalRing_end_of_indecomposable {R : Type*} [CommRing R] [IsArtinianRi
 `TauCeti.isLocalRing_end_of_indecomposable`. -/
 theorem indecomposable_of_isLocalRing_end [HasBinaryBiproducts C] {X : C} [IsLocalRing (End X)] :
     Indecomposable X :=
-  indecomposable_of_injective_of_isLocalRing
-    (fun h ↦ zero_ne_one (α := End X) (End.ext ((IsZero.iff_id_eq_zero X).mp h).symm)) End.of
+  indecomposable_of_injective_of_isLocalRing End.of
     (fun _ _ h ↦ congr(($h).asHom)) rfl rfl fun _ ↦ rfl
 
 end TauCeti
@@ -330,3 +335,28 @@ theorem indecomposable_obj_of_map_bijective [HasBinaryBiproducts C] [IsIdempoten
     · exact Or.inr (by rw [h, F.map_id])
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Equivalence
+
+open Limits
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  {D : Type*} [Category* D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
+
+/-- **An equivalence of categories carries indecomposable objects to indecomposable objects.** A
+decomposition of the image transports back along the inverse, which preserves binary products. -/
+theorem indecomposable_functor_obj (e : C ≌ D) {X : C} (hX : Indecomposable X) :
+    Indecomposable (e.functor.obj X) := by
+  refine ⟨fun h ↦ hX.1 (IsZero.of_full_of_faithful_of_isZero e.functor X h), fun Y Z f ↦ ?_⟩
+  exact (hX.2 _ _ (e.unitIso.app X ≪≫ e.inverse.mapIso (f ≪≫ biprod.isoProd Y Z) ≪≫
+      PreservesLimitPair.iso e.inverse Y Z ≪≫ (biprod.isoProd _ _).symm)).imp
+    (IsZero.of_full_of_faithful_of_isZero e.inverse Y)
+    (IsZero.of_full_of_faithful_of_isZero e.inverse Z)
+
+/-- **Indecomposability is invariant under equivalence of categories.** -/
+theorem indecomposable_functor_obj_iff (e : C ≌ D) (X : C) :
+    Indecomposable (e.functor.obj X) ↔ Indecomposable X :=
+  ⟨fun h ↦ (e.symm.indecomposable_functor_obj h).of_iso (e.unitIso.app X).symm,
+    e.indecomposable_functor_obj⟩
+
+end CategoryTheory.Equivalence

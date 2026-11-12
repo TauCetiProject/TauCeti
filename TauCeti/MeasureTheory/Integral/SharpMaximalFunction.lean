@@ -154,13 +154,8 @@ theorem sharpMaximalFunction_zero (μ : Measure X) : sharpMaximalFunction μ (0 
 /-- The sharp maximal function depends only on the a.e. class of `f`. -/
 theorem sharpMaximalFunction_congr_ae {g : X → F} (h : f =ᵐ[μ] g) :
     sharpMaximalFunction μ f = sharpMaximalFunction μ g := by
-  have hosc (s : Set X) : ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ =
-      ⨍⁻ y in s, ‖g y - ⨍ z in s, g z ∂μ‖ₑ ∂μ := by
-    have hs : f =ᵐ[μ.restrict s] g := ae_restrict_of_ae h
-    rw [average_congr hs]
-    exact laverage_congr (hs.mono fun y hy => by simp only [hy])
   funext x
-  simp only [sharpMaximalFunction, hosc]
+  simp only [sharpMaximalFunction, setLAverage_enorm_sub_setAverage_congr_ae h]
 
 /-- The sharp maximal function does not see constants: adding a constant to an a.e. strongly
 measurable `f` leaves `f^#` unchanged. -/
@@ -175,12 +170,8 @@ theorem sharpMaximalFunction_add_const [CompleteSpace F] (hf : AEStronglyMeasura
 theorem sharpMaximalFunction_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F]
     [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] (k : 𝕜) (x : X) :
     sharpMaximalFunction μ (k • f) x = ‖k‖ₑ * sharpMaximalFunction μ f x := by
-  have hosc (s : Set X) : ⨍⁻ y in s, ‖k • f y - ⨍ z in s, k • f z ∂μ‖ₑ ∂μ =
-      ‖k‖ₑ * ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
-    have havg : ⨍ z in s, k • f z ∂μ = k • ⨍ z in s, f z ∂μ := integral_smul k f
-    simp_rw [havg, ← smul_sub, enorm_smul, setLAverage_eq,
-      lintegral_const_mul' _ _ enorm_ne_top, mul_div_assoc]
-  simp only [sharpMaximalFunction, Pi.smul_apply, hosc, ENNReal.mul_iSup]
+  simp only [sharpMaximalFunction, Pi.smul_apply, setLAverage_enorm_const_smul_sub_setAverage,
+    ENNReal.mul_iSup]
 
 /-- The sharp maximal function is subadditive on a.e. strongly measurable functions. -/
 theorem sharpMaximalFunction_add_le {g : X → F} (hf : AEStronglyMeasurable f μ)
@@ -266,7 +257,7 @@ private theorem volume_lt_enorm_le_volume_czUnion [Nonempty ι] {f : (ι → ℝ
     (hf : Integrable f) {t : ℝ≥0∞} (ht : t ≠ 0) :
     volume {x | t < ‖f x‖ₑ} ≤ volume (czUnion f t) := by
   refine measure_mono_ae ?_
-  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.1.enorm hf.2.ne ht]
+  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.1.eNorm hf.2.ne ht]
     with x hx (hxt : t < ‖f x‖ₑ)
   by_contra hxU
   refine (hx fun q hq hxq => hxU ?_).not_gt hxt
@@ -284,7 +275,7 @@ private theorem mul_volume_le_setLIntegral_enorm_sub {f : (ι → ℝ) → F} {t
   calc t * volume P + t * volume P = 2 * t * volume P := by ring
     _ ≤ ∫⁻ y in P, ‖f y‖ₑ := (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hp).le
     _ ≤ ∫⁻ y in P, (‖f y - a‖ₑ + ‖a‖ₑ) :=
-        lintegral_mono fun y => by simpa using enorm_add_le (f y - a) a
+        lintegral_mono fun y => by simpa using eNorm_add_le (f y - a) a
     _ = (∫⁻ y in P, ‖f y - a‖ₑ) + ‖a‖ₑ * volume P := by
         rw [lintegral_add_right _ measurable_const, setLIntegral_const]
     _ ≤ (∫⁻ y in P, ‖f y - a‖ₑ) + t * volume P := by gcongr
@@ -356,7 +347,7 @@ private theorem mul_volume_czUnion_two_mul_inter_le {f : (ι → ℝ) → F} (hf
 `m(2t) ≤ 2²ⁿ⁺¹ γ m(t) + |{f^# > γ t}|`,
 
 where `m(s)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `s`. -/
-private theorem volume_czUnion_two_mul_le [Nonempty ι] {f : (ι → ℝ) → F} (hf : Integrable f)
+private theorem volume_czUnion_two_mul_le {f : (ι → ℝ) → F} (hf : Integrable f)
     {t : ℝ≥0∞} (ht : t ≠ 0) (ht' : t ≠ ∞) (γ : ℝ≥0∞) :
     volume (czUnion f (2 * t)) ≤ 2 ^ (2 * Fintype.card ι + 1) * γ * volume (czUnion f t) +
       volume {x | γ * t < sharpMaximalFunction volume f x} := by
@@ -467,7 +458,7 @@ variable [NormedSpace ℝ F] [CompleteSpace F]
 where `m(t)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `t`.
 Substituting `t = 2s` and applying the good-`λ` inequality bounds the left side by half of itself
 plus the right side, and the left side is finite, so the first term is absorbed. -/
-private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι → ℝ) → F}
+private theorem setLIntegral_volume_czUnion_mul_rpow_le {f : (ι → ℝ) → F}
     (hf : Integrable f) {p : ℝ} (hp : 1 < p) {N : ℝ} (hN : 0 ≤ N) :
     ∫⁻ t in Ioo 0 N, volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1)) ≤
       2 * (ENNReal.ofReal (2 ^ p) *
@@ -486,7 +477,6 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι �
   set γ : ℝ := 2 ^ (-(p + 2 * n + 2))
   have hγ : 0 < γ := by positivity
   set K : ℝ≥0∞ := 2 ^ (2 * n + 1)
-  have hw : Measurable w := ENNReal.measurable_ofReal.comp (measurable_id.pow_const _)
   have hσ : Antitone σ := fun s t hst => measure_mono fun x (hx : ENNReal.ofReal t < f' x) =>
     (ENNReal.ofReal_le_ofReal hst).trans_lt hx
   -- The good-`λ` inequality at height `s`.
@@ -503,38 +493,8 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι �
   have hconst : ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ) = 2⁻¹ :=
     ofReal_two_rpow_mul_two_pow_mul_ofReal_two_rpow n p
   -- Substituting `t = 2 s` and applying the good-`λ` inequality bounds `I N` by `I N / 2 + …`.
-  have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos measurableSet_Ioo
-    (S := Ioo 0 N) (T := Ioo 0 (N / 2)) (fun s => by
-      simp only [mem_Ioo]
-      constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith)
-    (fun s hs => le_of_lt hs.1) (p - 1)
-  rw [sub_add_cancel] at hscale
-  have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
-    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]
-    simp
-  have hσw : Measurable fun s => σ (γ * s) * w s :=
-    ((hσ.comp_monotone fun _ _ h => mul_le_mul_of_nonneg_left h hγ.le).measurable).mul hw
   have hstep : I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) :=
-    calc I N = ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2), m (2 * s) * w s := by
-          rw [hscale, ← mul_assoc, h2p, one_mul]
-      _ ≤ ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2),
-            (K * ENNReal.ofReal γ * (m s * w s) + σ (γ * s) * w s) := by
-          refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioo fun s hs => ?_)
-          rw [← mul_assoc, ← add_mul]
-          gcongr
-          exact hlevel s hs.1
-      _ = ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I (N / 2) +
-            ∫⁻ s in Ioo 0 (N / 2), σ (γ * s) * w s) := by
-          rw [lintegral_add_right' _ hσw.aemeasurable,
-            lintegral_const_mul' _ _ (ENNReal.mul_ne_top (by simp [K]) ENNReal.ofReal_ne_top)]
-      _ ≤ ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I N +
-            ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * w s) := by
-          gcongr
-          · exact lintegral_mono_set (Ioo_subset_Ioo_right (by linarith))
-          · exact Ioo_subset_Ioi_self
-      _ = 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
-          rw [hJ, mul_add, ← mul_assoc, ← mul_assoc, ← hconst]
-          ring
+    setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add hγ hN hσ.measurable hlevel hJ hconst
   -- Since `I N` is finite, the first term is absorbed.
   have hhalf : 2⁻¹ * I N ≠ ∞ :=
     ENNReal.mul_ne_top (by simp) (setLIntegral_volume_czUnion_mul_rpow_ne_top hf hp hN)
@@ -574,7 +534,7 @@ theorem lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow [Nonempty ι
     Monotone.directed_le fun _ _ h => Ioo_subset_Ioo_right (by exact_mod_cast h)
   calc ∫⁻ x, ‖f x‖ₑ ^ p
       = ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ), volume {x | ENNReal.ofReal t < ‖f x‖ₑ} * w t :=
-        lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hf.1.enorm hp0
+        lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hf.1.eNorm hp0
     _ ≤ ENNReal.ofReal p * ∫⁻ t in Ioi (0 : ℝ), m t * w t := by
         refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioi fun t ht => ?_)
         gcongr
@@ -612,12 +572,12 @@ theorem eLpNorm_le_eLpNorm_sharpMaximalFunction [Nonempty ι] {f : (ι → ℝ) 
   have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top hf.1,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hf.1,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top
       (measurable_sharpMaximalFunction volume f).aestronglyMeasurable,
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
-  simpa only [enorm_eq_self] using
+  simpa only [eNorm_eq_self] using
     lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow hf hpr
 
 end FeffermanStein

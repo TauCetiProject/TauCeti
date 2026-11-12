@@ -131,12 +131,21 @@ theorem toReal_kumaraswamyPDF (a b x : ℝ) :
     (kumaraswamyPDF a b x).toReal = kumaraswamyPDFReal a b x :=
   ENNReal.toReal_ofReal (kumaraswamyPDFReal_nonneg a b x)
 
-/-- At valid parameters and inside the unit interval, the Kumaraswamy density has its classical
-formula. -/
+/-- At a positive first shape parameter and inside the unit interval, the Kumaraswamy density has
+its classical formula, which is nonpositive and so vanishes after `ENNReal.ofReal` when the second
+shape parameter is not positive. -/
 @[simp]
-theorem kumaraswamyPDF_of_mem_Ioo (ha : 0 < a) (hb : 0 < b) (hx : x ∈ Ioo 0 1) :
+theorem kumaraswamyPDF_of_mem_Ioo (ha : 0 < a) (hx : x ∈ Ioo 0 1) :
     kumaraswamyPDF a b x = ENNReal.ofReal (a * b * x ^ (a - 1) * (1 - x ^ a) ^ (b - 1)) := by
-  rw [kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_mem_Ioo ha hb hx]
+  by_cases hb : 0 < b
+  · rw [kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_mem_Ioo ha hb hx]
+  · have hxa : x ^ a < 1 := Real.rpow_lt_one hx.1.le hx.2 ha
+    rw [kumaraswamyPDF_eq_ofReal, kumaraswamyPDFReal_of_not_pos (fun h ↦ hb h.2),
+      ENNReal.ofReal_zero, eq_comm, ENNReal.ofReal_eq_zero]
+    exact mul_nonpos_of_nonpos_of_nonneg
+      (mul_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonneg_of_nonpos ha.le (not_lt.1 hb))
+        (Real.rpow_nonneg hx.1.le _))
+      (Real.rpow_nonneg (sub_nonneg.2 hxa.le) _)
 
 /-- The Kumaraswamy density vanishes outside the open unit interval. -/
 @[simp]
@@ -269,9 +278,9 @@ private theorem kumaraswamyPDF_eq_jacobian_mul_betaPDF (ha : 0 < a) (hb : 0 < b)
     kumaraswamyPDF a b x = ENNReal.ofReal |a * x ^ (a - 1)| * betaPDF 1 b (x ^ a) := by
   have hxa : x ^ a < 1 := Real.rpow_lt_one hx.1.le hx.2 ha
   have hjac : 0 < a * x ^ (a - 1) := mul_pos ha (Real.rpow_pos_of_pos hx.1 _)
-  rw [kumaraswamyPDF_of_mem_Ioo ha hb hx,
+  rw [kumaraswamyPDF_of_mem_Ioo ha hx,
     betaPDF_of_pos_lt_one (Real.rpow_pos_of_pos hx.1 a) hxa, abs_of_pos hjac,
-    ← ENNReal.ofReal_mul hjac.le, beta_comm, beta_one_right hb, sub_self, Real.rpow_zero]
+    ← ENNReal.ofReal_mul hjac.le, beta_one_left hb, sub_self, Real.rpow_zero]
   congr 1
   field_simp
 
@@ -284,7 +293,7 @@ theorem map_rpow_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
     exact kumaraswamyPDF_eq_jacobian_mul_betaPDF ha hb hx
   rw [kumaraswamyMeasure_eq_withDensity_restrict_Ioo, withDensity_congr_ae hweight,
-    TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo (by fun_prop)
+    TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo
       (fun x hx ↦ (Real.hasDerivAt_rpow_const (Or.inl hx.1.ne')).hasDerivWithinAt)
       ((Real.rpow_left_injOn ha.ne').mono fun x hx ↦ le_of_lt hx.1),
     Real.image_rpow_Ioo_zero_one ha, ← betaMeasure_eq_withDensity_restrict_Ioo]
@@ -369,7 +378,7 @@ theorem cdf_kumaraswamyMeasure_of_nonneg (ha : 0 < a) (hb : 0 < b) (hx : 0 ≤ x
   have := isProbabilityMeasure_kumaraswamyMeasure ha hb
   have hset : Iic x =ᵐ[kumaraswamyMeasure a b] (fun y : ℝ ↦ y ^ a) ⁻¹' Iic (x ^ a) := by
     filter_upwards [ae_mem_Ioo_kumaraswamyMeasure a b] with y hy
-    exact propext (Real.rpow_le_rpow_iff hy.1.le hx ha).symm
+    exact (Real.rpow_le_rpow_iff hy.1.le hx ha).symm
   rw [cdf_eq_real, ← measureReal_Iic_betaMeasure zero_lt_one hb,
     ← map_rpow_kumaraswamyMeasure ha hb, measureReal_def, measureReal_def,
     Measure.map_apply (by fun_prop) measurableSet_Iic, measure_congr hset]
@@ -390,15 +399,19 @@ theorem cdf_kumaraswamyMeasure_of_nonpos (ha : 0 < a) (hb : 0 < b) (hx : x ≤ 0
       rw [cdf_kumaraswamyMeasure_of_mem_Icc ha hb ⟨le_rfl, zero_le_one⟩,
         Real.zero_rpow ha.ne', sub_zero, Real.one_rpow, sub_self]
 
-/-- The Kumaraswamy cdf is one from the upper endpoint `1` on. -/
-theorem cdf_kumaraswamyMeasure_of_one_le (ha : 0 < a) (hb : 0 < b) (hx : 1 ≤ x) :
+/-- The Kumaraswamy cdf is one from the upper endpoint `1` on. At invalid parameters the law is
+zero and its cdf is one on the nonnegative half-line by convention. -/
+theorem cdf_kumaraswamyMeasure_of_one_le (hx : 1 ≤ x) :
     cdf (kumaraswamyMeasure a b) x = 1 := by
-  refine le_antisymm (cdf_le_one _ x) ?_
-  calc
-    (1 : ℝ) = cdf (kumaraswamyMeasure a b) 1 := by
-      rw [cdf_kumaraswamyMeasure_of_mem_Icc ha hb ⟨zero_le_one, le_rfl⟩, Real.one_rpow,
-        sub_self, Real.zero_rpow hb.ne', sub_zero]
-    _ ≤ cdf (kumaraswamyMeasure a b) x := (cdf _).mono hx
+  by_cases hab : 0 < a ∧ 0 < b
+  · refine le_antisymm (cdf_le_one _ x) ?_
+    calc
+      (1 : ℝ) = cdf (kumaraswamyMeasure a b) 1 := by
+        rw [cdf_kumaraswamyMeasure_of_mem_Icc hab.1 hab.2 ⟨zero_le_one, le_rfl⟩, Real.one_rpow,
+          sub_self, Real.zero_rpow hab.2.ne', sub_zero]
+      _ ≤ cdf (kumaraswamyMeasure a b) x := (cdf _).mono hx
+  · rw [kumaraswamyMeasure_of_not_pos hab, cdf_zero]
+    simp [zero_le_one.trans hx]
 
 /-- The Kumaraswamy cdf in closed form at every point: `0` on the nonpositive half-line,
 `1 - (1 - x ^ a) ^ b` on `(0, 1)`, and `1` from the upper endpoint on. -/
@@ -409,7 +422,7 @@ theorem cdf_kumaraswamyMeasure_eq (ha : 0 < a) (hb : 0 < b) (x : ℝ) :
   split_ifs with h₀ h₁
   · exact cdf_kumaraswamyMeasure_of_nonpos ha hb h₀
   · exact cdf_kumaraswamyMeasure_of_mem_Icc ha hb ⟨le_of_not_ge h₀, h₁.le⟩
-  · exact cdf_kumaraswamyMeasure_of_one_le ha hb (le_of_not_gt h₁)
+  · exact cdf_kumaraswamyMeasure_of_one_le (le_of_not_gt h₁)
 
 /-- The Kumaraswamy cdf is continuous. -/
 theorem continuous_cdf_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) :

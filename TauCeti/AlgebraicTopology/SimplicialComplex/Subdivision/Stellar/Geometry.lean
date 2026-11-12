@@ -55,38 +55,43 @@ omit [DecidableEq ι] in
 /-- If the coordinate at a vertex of the starred face vanishes, its linear inverse formula
 recovers the original vector after the stellar barycentric map. -/
 @[simp]
-theorem stellarSubdivisionInverseLinearMap_left_inv (ha : a ∈ σ) (hv : v ∉ σ)
+theorem stellarSubdivisionInverseLinearMap_left_inv (ha : a ∈ σ)
     {x : ι →₀ ℝ} (hxa : x a = 0) :
     stellarSubdivisionInverseLinearMap σ v a (stellarSubdivisionLinearMap σ v x) = x := by
   classical
-  have hav : a ≠ v := fun h => hv (h ▸ ha)
   have hc : (σ.card : ℝ) ≠ 0 := by exact_mod_cast (card_pos.mpr ⟨a, ha⟩).ne'
   ext i
-  simp only [stellarSubdivisionInverseLinearMap_apply, stellarSubdivisionLinearMap_apply,
-    ha, hav, ite_true, ite_false, sub_zero, hxa, zero_add]
-  by_cases hiv : i = v
-  · subst i
-    simp [hv, hc]
-  · by_cases hi : i ∈ σ <;> simp [hiv, hi]
+  simp only [stellarSubdivisionInverseLinearMap_apply, stellarSubdivisionLinearMap_apply]
+  by_cases hav : a = v
+  · subst hav
+    simp [ha, hxa]
+  · simp only [ha, hav, ite_true, ite_false, sub_zero, hxa, zero_add]
+    by_cases hiv : i = v
+    · subst i
+      by_cases hv : v ∈ σ
+      · simp only [hv, ↓reduceIte]
+        field_simp
+        ring
+      · simp [hv, hc]
+    · by_cases hi : i ∈ σ <;> simp [hiv, hi]
 
 omit [DecidableEq ι] in
 /-- The inverse formula works on the entire simplex whenever the simplex omits the chosen
 vertex of the starred face. -/
 theorem stellarSubdivisionInverseLinearMap_left_inv_on_simplex
-    (ha : a ∈ σ) (hv : v ∉ σ) (haτ : a ∉ τ) :
+    (ha : a ∈ σ) (haτ : a ∉ τ) :
     EqOn ((stellarSubdivisionInverseLinearMap σ v a) ∘ stellarSubdivisionLinearMap σ v)
       id (convexHull ℝ ((fun i : ι => Finsupp.single i (1 : ℝ)) '' (τ : Set ι))) := by
   classical
   intro x hx
   have hxτ := AbstractSimplicialComplex.mem_standardSimplex_iff.mp hx
-  exact stellarSubdivisionInverseLinearMap_left_inv ha hv
+  exact stellarSubdivisionInverseLinearMap_left_inv ha
     (Finsupp.notMem_support_iff.mp fun h => haτ (hxτ.2.2 h))
 
 omit [DecidableEq ι] in
 /-- The barycentric images of the vertices of a simplex omitting a vertex of the starred
 face are affinely independent. -/
-theorem affineIndependent_stellarSubdivisionLinearMap (ha : a ∈ σ) (hv : v ∉ σ)
-    (haτ : a ∉ τ) :
+theorem affineIndependent_stellarSubdivisionLinearMap (ha : a ∈ σ) (haτ : a ∉ τ) :
     AffineIndependent ℝ (fun i : τ =>
       stellarSubdivisionLinearMap σ v (Finsupp.single (i : ι) 1)) := by
   classical
@@ -95,7 +100,7 @@ theorem affineIndependent_stellarSubdivisionLinearMap (ha : a ∈ σ) (hv : v �
       (stellarSubdivisionLinearMap σ v (Finsupp.single (i : ι) 1))) =
       (fun i : τ => Finsupp.single (i : ι) (1 : ℝ)) := by
     funext i
-    apply stellarSubdivisionInverseLinearMap_left_inv ha hv
+    apply stellarSubdivisionInverseLinearMap_left_inv ha
     simp [ne_of_mem_of_not_mem i.2 haτ]
   simp only [Function.comp_def, LinearMap.coe_toAffineMap, hsingle]
   exact ((Finsupp.linearIndependent_single_one ℝ ι).comp Subtype.val
@@ -119,7 +124,7 @@ theorem exists_linearMap_leftInverse_stellarSubdivision (hvσ : v ∉ σ)
         (convexHull ℝ ((fun i : ι => Finsupp.single i (1 : ℝ)) '' (τ : Set ι))) := by
   obtain ⟨a, ha, haτ⟩ := exists_notMem_of_mem_stellarSubdivision hvσ hτ
   exact ⟨stellarSubdivisionInverseLinearMap σ v a,
-    stellarSubdivisionInverseLinearMap_left_inv_on_simplex ha hvσ haτ⟩
+    stellarSubdivisionInverseLinearMap_left_inv_on_simplex ha haτ⟩
 
 /-- Placing the fresh vertex at the barycenter gives affinely independent vertices on every
 face of the stellar subdivision. -/
@@ -128,12 +133,12 @@ theorem affineIndependent_stellarSubdivision (hvσ : v ∉ σ)
     AffineIndependent ℝ (fun i : τ =>
       stellarSubdivisionLinearMap σ v (Finsupp.single (i : ι) 1)) := by
   obtain ⟨a, ha, haτ⟩ := exists_notMem_of_mem_stellarSubdivision hvσ hτ
-  exact Finset.affineIndependent_stellarSubdivisionLinearMap ha hvσ haτ
+  exact Finset.affineIndependent_stellarSubdivisionLinearMap ha haτ
 
 /-- Two geometric stellar simplices meet exactly in the simplex spanned by their common
 vertices. Thus the barycentric placement is a geometric triangulation, not merely a
 collection of nondegenerate simplices with the correct union. -/
-theorem convexHull_stellarSubdivision_inter (hvσ : v ∉ σ)
+theorem convexHull_stellarSubdivision_inter
     (hτ : τ ∈ stellarSubdivision K σ v) (hρ : ρ ∈ stellarSubdivision K σ v) :
     convexHull ℝ ((fun i : ι => stellarSubdivisionLinearMap σ v (Finsupp.single i 1)) ''
         (τ : Set ι)) ∩
@@ -161,7 +166,7 @@ theorem convexHull_stellarSubdivision_inter (hvσ : v ∉ σ)
     simpa only [Finset.coe_image,
       ← Set.image_inter hB] using h
   rw [← himage, ← himage,
-    ← (injOn_stellarSubdivisionLinearMap hvσ).image_inter hτsub hρsub, hinter, himage]
+    ← injOn_stellarSubdivisionLinearMap.image_inter hτsub hρsub, hinter, himage]
 
 /-- The geometric stellar subdivision, placing `v` at the barycenter of `σ` and retaining the
 standard positions of the other vertices. Its face collection is the image of the abstract
@@ -183,7 +188,7 @@ def geometricStellarSubdivision (K : PreAbstractSimplicialComplex ι)
   inter_subset_convexHull := by
     rintro s t ⟨τ, hτ, rfl⟩ ⟨ρ, hρ, rfl⟩
     simp only [Finset.coe_image]
-    rw [convexHull_stellarSubdivision_inter hvσ hτ hρ]
+    rw [convexHull_stellarSubdivision_inter hτ hρ]
     exact convexHull_mono (Set.image_inter_subset _ _ _)
 
 /-- The geometric stellar faces are exactly the barycentric images of the abstract stellar

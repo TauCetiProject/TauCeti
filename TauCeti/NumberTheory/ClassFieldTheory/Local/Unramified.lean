@@ -79,25 +79,26 @@ variable (K L : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- The faithful character of the Galois group of an unramified extension which sends arithmetic
 Frobenius to `1 / [L : K]`. -/
 def frobeniusCharacter :
-    Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := by
+    Additive (Group.Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := by
   let _ : CommGroup Gal(L/K) := IsCyclic.commGroup
   let e : Gal(L/K) ≃* Multiplicative (ZMod (Module.finrank K L)) :=
     (zmodMulEquivOfGenerator
       (fun σ => by rw [zpowers_frobeniusAlgEquiv]; exact Subgroup.mem_top σ)
       (by rw [IsGalois.card_aut_eq_finrank])).symm
   exact (ZMod.toRatAddCircle (Module.finrank K L)).comp
-    (MulEquiv.toAdditiveLeft (Abelianization.equivOfComm.symm.trans e)).toAddMonoidHom
+    (MulEquiv.toAdditiveLeft (Group.Abelianization.equivOfComm.symm.trans e)).toAddMonoidHom
 
 /-- The Frobenius character takes arithmetic Frobenius to `1 / [L : K]`. -/
 @[simp]
 theorem frobeniusCharacter_frobenius :
     frobeniusCharacter K L
-        (Additive.ofMul (Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)))) =
+        (Additive.ofMul (Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)))) =
       ((1 / Module.finrank K L : ℚ) : AddCircle (1 : ℚ)) := by
   let _ : CommGroup Gal(L/K) := IsCyclic.commGroup
   rw [frobeniusCharacter, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     AddEquiv.toMultiplicativeRight_symm_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
-    Abelianization.equivOfComm_symm_apply, Abelianization.lift_apply_of, MonoidHom.id_apply,
+    Group.Abelianization.equivOfComm_symm_apply, Group.Abelianization.lift_apply_of,
+    MonoidHom.id_apply,
     zmodMulEquivOfGenerator_symm_apply_generator]
   simpa using ZMod.toRatAddCircle_natCast (Module.finrank K L) 1
 
@@ -107,7 +108,7 @@ theorem injective_frobeniusCharacter : Function.Injective (frobeniusCharacter K 
   let _ : NeZero (Module.finrank K L) := NeZero.of_pos Module.finrank_pos
   apply Function.Injective.comp (ZMod.toRatAddCircle_injective (Module.finrank K L))
   exact (MulEquiv.toAdditiveLeft
-    (Abelianization.equivOfComm.symm.trans
+    (Group.Abelianization.equivOfComm.symm.trans
       (zmodMulEquivOfGenerator
         (fun σ => by rw [zpowers_frobeniusAlgEquiv]; exact Subgroup.mem_top σ)
         (by rw [IsGalois.card_aut_eq_finrank])).symm)).injective
@@ -152,7 +153,7 @@ private def layerCommGroup (ι : L →ₐ[K] SeparableClosure K) :
 
 /-- The Frobenius character transported to the Galois group of a normal layer. -/
 private def layerFrobeniusCharacter (ι : L →ₐ[K] SeparableClosure K) :
-    Additive (Abelianization
+    Additive (Group.Abelianization
       (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).Gal) →+
         AddCircle (1 : ℚ) :=
   (frobeniusCharacter K L).comp
@@ -160,7 +161,7 @@ private def layerFrobeniusCharacter (ι : L →ₐ[K] SeparableClosure K) :
 
 /-- The transported character evaluates the Frobenius character on the concrete Galois group. -/
 private theorem layerFrobeniusCharacter_apply (ι : L →ₐ[K] SeparableClosure K)
-    (x : Additive (Abelianization
+    (x : Additive (Group.Abelianization
       (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).Gal)) :
     layerFrobeniusCharacter K L ι x =
       frobeniusCharacter K L (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr x) := by
@@ -169,10 +170,10 @@ private theorem layerFrobeniusCharacter_apply (ι : L →ₐ[K] SeparableClosure
 /-- The transported character takes layer Frobenius to the reciprocal of its order. -/
 private theorem layerFrobeniusCharacter_frobenius (ι : L →ₐ[K] SeparableClosure K) :
     layerFrobeniusCharacter K L ι
-        (Additive.ofMul (Abelianization.of (layerFrobenius K L ι))) =
+        (Additive.ofMul (Group.Abelianization.of (layerFrobenius K L ι))) =
       ((1 / orderOf (layerFrobenius K L ι) : ℚ) : AddCircle (1 : ℚ)) := by
   rw [layerFrobeniusCharacter_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
-    abelianizationCongr_of, orderOf_layerFrobenius, layerFrobenius, MulEquiv.apply_symm_apply,
+    Group.abelianizationCongr_of, orderOf_layerFrobenius, layerFrobenius, MulEquiv.apply_symm_apply,
     frobeniusCharacter_frobenius]
 
 /-- A ground-field unit as an invariant coefficient of the normal layer. -/
@@ -342,7 +343,7 @@ uniformizer of `K` to arithmetic Frobenius in `Gal(L/K)ᵃᵇ`. -/
 theorem localArtinMap_uniformizer (ι : L →ₐ[K] SeparableClosure K)
     {π : Kˣ} (hπ : IsUniformizer K π) :
     localArtinMap K L ι (Additive.ofMul π) =
-      Additive.ofMul (Abelianization.of (frobeniusAlgEquiv (K := K) (L := L))) := by
+      Additive.ofMul (Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L))) := by
   apply injective_frobeniusCharacter K L
   rw [frobeniusCharacter_frobenius, localArtinMap_apply, localArtinEquiv_mk,
     ← layerFrobeniusCharacter_apply, ← (localClassFormation K).character_artinMap]
@@ -354,7 +355,7 @@ Artin symbol in a finite unramified extension is arithmetic Frobenius raised to 
 theorem localArtinMap_eq_frobenius_pow_valuation
     (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ) :
     localArtinMap K L ι (Additive.ofMul x) =
-      Additive.ofMul (Abelianization.of
+      Additive.ofMul (Group.Abelianization.of
         (frobeniusAlgEquiv (K := K) (L := L) ^ (normalizedValuation K x).toAdd)) := by
   obtain ⟨π, hπ⟩ := exists_isUniformizer (K := K)
   let n := (normalizedValuation K x).toAdd
@@ -362,11 +363,11 @@ theorem localArtinMap_eq_frobenius_pow_valuation
   have huValuation : normalizedValuation K u = 1 :=
     (normalizedValuation_eq_one_iff u).2 <| (mem_unitFiltration_zero u).1 <|
       mul_zpow_neg_mem_unitFiltration_zero ((isUniformizer_def π).1 hπ) x
-  let f : Kˣ →* Abelianization Gal(L/K) :=
+  let f : Kˣ →* Group.Abelianization Gal(L/K) :=
     { toFun := fun a ↦ (localArtinMap K L ι (Additive.ofMul a)).toMul
       map_one' := by simp
       map_mul' := by simp }
-  have hfπ : f π = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) := by
+  have hfπ : f π = Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) := by
     simpa [f] using congrArg Additive.toMul (localArtinMap_uniformizer K L ι hπ)
   have hfu : f u = 1 := by
     have hu : localArtinMap K L ι (Additive.ofMul u) = 0 := by
@@ -376,11 +377,12 @@ theorem localArtinMap_eq_frobenius_pow_valuation
     simpa [f] using congrArg Additive.toMul hu
   have hx : x = π ^ n * u := by
     simp [u, n]
-  have hfx : f x = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := calc
+  have hfx : f x = Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := calc
     f x = f (π ^ n * u) := congrArg f hx
     _ = f π ^ n * f u := by rw [map_mul, map_zpow]
-    _ = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) ^ n := by rw [hfπ, hfu, mul_one]
-    _ = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := by rw [map_zpow]
+    _ = Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) ^ n := by rw [hfπ, hfu,
+        mul_one]
+    _ = Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := by rw [map_zpow]
   apply Additive.toMul.injective
   simpa [f, n] using hfx
 
@@ -396,7 +398,7 @@ uniformizer of `K` to arithmetic Frobenius. This is `localArtinMap_uniformizer` 
 multiplicative form of finite local reciprocity. -/
 theorem normResidue_uniformizer {π : Kˣ} (hπ : IsUniformizer K π) :
     normResidue K L (π : Kˣ ⧸ normGroup K L) =
-      Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) := by
+      Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) := by
   rw [normResidue_mk K L IsSepClosed.lift, localArtinMap_uniformizer K L _ hπ, toMul_ofMul]
 
 /-! ### The absolute unramified coordinate -/
@@ -415,27 +417,27 @@ theorem unramifiedCoordinate_artinMap (x : Kˣ) :
   apply AlgEquiv.ext
   intro y
   apply Subtype.ext
-  obtain ⟨f, hf, hy⟩ := mem_maximalUnramifiedExtension_iff.1 y.2
+  obtain ⟨f, _, hy⟩ := mem_maximalUnramifiedExtension_iff.1 y.2
   let L := unramifiedExtension K (AlgebraicClosure K) f
   let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L
   let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L
   have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) L
   have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L
-  have : IsUnramified K L := isUnramified_unramifiedExtension hf
+  have : IsUnramified K L := isUnramified_unramifiedExtension
   let hLsep : L ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure K _ L
   let ι : L →ₐ[K] SeparableClosure K := IntermediateField.inclusion hLsep
   let _ : CommGroup Gal(L/K) := IsCyclic.commGroup
   have hfinite := artinMap_restrict K L ι x σ hσ
   have hformula := localArtinMap_eq_frobenius_pow_valuation K L ι x
-  have hab : Abelianization.of
+  have hab : Group.Abelianization.of
       (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ)) =
-      Abelianization.of
+      Group.Abelianization.of
         (frobeniusAlgEquiv (K := K) (L := L) ^ (normalizedValuation K x).toAdd) := by
     apply Additive.ofMul.injective
     exact hfinite.symm.trans hformula
   have hres : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) =
       frobeniusAlgEquiv (K := K) (L := L) ^ (normalizedValuation K x).toAdd :=
-    Abelianization.equivOfComm.injective hab
+    Group.Abelianization.equivOfComm.injective hab
   have heval := DFunLike.congr_fun hres (⟨y, hy⟩ : L)
   have heval' := congrArg (fun z : L ↦ (z : AlgebraicClosure K)) heval
   rw [restrictMaximalUnramifiedHom_coe_apply,

@@ -88,9 +88,6 @@ indicator in `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Realiza
 
 ## References
 
-This builds the `IsRealForm` and `IsRealizableOverReal` targets of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 4.
 -/
@@ -161,13 +158,13 @@ theorem isRealForm_iff_nonempty_equiv :
 
 /-- The character of a representation with a real form is the character of that real form.  In
 particular it takes real values (`Representation.IsRealForm.conj_char`). -/
-theorem IsRealForm.char_eq [FiniteDimensional ℝ W] (h : IsRealForm ρ σ) (g : G) :
+theorem IsRealForm.char_eq (h : IsRealForm ρ σ) (g : G) :
     ρ.character g = (σ.character g : ℂ) := by
   obtain ⟨φ⟩ := isRealForm_iff_nonempty_equiv.mp h
   rw [← congrFun (char_iso φ) g, Representation.character_baseChange, Complex.coe_algebraMap]
 
 /-- The character of a representation with a real form is fixed by complex conjugation. -/
-theorem IsRealForm.conj_char [FiniteDimensional ℝ W] (h : IsRealForm ρ σ) (g : G) :
+theorem IsRealForm.conj_char (h : IsRealForm ρ σ) (g : G) :
     (starRingEnd ℂ) (ρ.character g) = ρ.character g := by
   rw [h.char_eq g, Complex.conj_ofReal]
 
@@ -313,28 +310,23 @@ include h
 
 /-- The action preserves the real points of a real structure: that is exactly the commutation
 `K (ρ g v) = ρ g (K v)` read on a fixed vector.  It is stated for the `ℝ`-linear restriction
-`(ρ g).restrictScalars ℝ` of the action, which is the shape `Representation.subrepresentation`
+`ρ.restrictScalars ℝ` of the action, which is the shape `Representation.subrepresentation`
 consumes in `Representation.IsRealStructure.rep`. -/
 theorem apply_mem_realPoints (g : G) :
-    ∀ v ∈ realPoints K, ((ρ g).restrictScalars ℝ) v ∈ realPoints K := by
+    ∀ v ∈ realPoints K, ρ.restrictScalars ℝ g v ∈ realPoints K := by
   intro v hv
   rw [mem_realPoints] at hv
-  rw [LinearMap.coe_restrictScalars, mem_realPoints, h.isIntertwining, hv]
+  rw [restrictScalars_apply, mem_realPoints, h.isIntertwining, hv]
 
 /-- **The real representation carried by the real points** of a real structure: reading `ρ` with
-only its `ℝ`-linearity, the real points are an invariant subspace, and
-`Representation.subrepresentation` restricts the action to them. -/
+only its `ℝ`-linearity (`Representation.restrictScalars`), the real points are an invariant
+subspace, and `Representation.subrepresentation` restricts the action to them. -/
 def rep : Representation ℝ G (realPoints K) :=
-  Representation.subrepresentation
-    { toFun := fun g => (ρ g).restrictScalars ℝ
-      map_one' := LinearMap.ext fun _ => by simp
-      map_mul' := fun _ _ => LinearMap.ext fun _ => by simp }
-    (realPoints K) h.apply_mem_realPoints
+  (ρ.restrictScalars ℝ).subrepresentation (realPoints K) h.apply_mem_realPoints
 
--- `(rfl)`, not `rfl`: the body of `rep` is not `@[expose]`d, so a bare `rfl` proof would be
--- rechecked against the exported environment, where the restriction is opaque.
 @[simp]
-theorem coe_rep_apply (g : G) (w : realPoints K) : (h.rep g w : V) = ρ g (w : V) := (rfl)
+theorem coe_rep_apply (g : G) (w : realPoints K) : (h.rep g w : V) = ρ g (w : V) := by
+  rw [rep, subrepresentation_apply, LinearMap.coe_restrict_apply, restrictScalars_apply]
 
 /-- **The real points of a real structure are a real form.**  The `ℂ`-linear isomorphism is
 `TauCeti.realPointsEquiv`, which says that `V` is the complexification of the real points, and it
@@ -368,9 +360,7 @@ theorem IsRealForm.exists_isRealStructure (h : IsRealForm ρ σ) :
   have hφ : ∀ (g : G) (u : ℂ ⊗[ℝ] W), e (baseChange ℂ σ g u) = ρ g (e u) := fun g u => by
     simpa [he, Equiv.toLinearEquiv_apply] using φ.isIntertwining (g := g) (v := u)
   -- The witness is a composition of semilinear maps; `LinearMap.comp` supplies its map laws.
-  refine ⟨e.toLinearMap ∘ₛₗ (tmulConj W ∘ₛₗ e.symm.toLinearMap), ?_, ?_⟩
-  · intro v
-    simp
+  refine ⟨e.conjugationOfComplexification, e.conjugationOfComplexification_involutive, ?_⟩
   · intro g v
     have hu : tmulConj W (baseChange ℂ σ g (e.symm v))
         = baseChange ℂ σ g (tmulConj W (e.symm v)) := by
@@ -378,7 +368,7 @@ theorem IsRealForm.exists_isRealStructure (h : IsRealForm ρ σ) :
       exact tmulConj_baseChange (σ g) (e.symm v)
     have hsymm : e.symm (ρ g v) = baseChange ℂ σ g (e.symm v) := by
       rw [e.symm_apply_eq, hφ, e.apply_symm_apply]
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe]
+    simp only [LinearEquiv.conjugationOfComplexification_apply]
     rw [hsymm, hu, hφ]
 
 /-- **Realizability over `ℝ` is the existence of a real structure.**  This is the working form of

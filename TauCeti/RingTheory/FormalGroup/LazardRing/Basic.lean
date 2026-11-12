@@ -10,7 +10,7 @@ public import Mathlib.Data.PNat.Defs
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.FormalGroup.BaseChange
-public import TauCeti.RingTheory.FormalGroup.Rescale
+public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -381,7 +381,7 @@ theorem isHomogeneous_relations :
     rw [← ker_mk, RingHom.mem_ker] at hp
     have := congrArg φ hp
     rw [← RingHom.comp_apply, hφ, map_zero] at this
-    simpa using congrArg (fun q ↦ Polynomial.coeff q n) this
+    simpa using congrArg (fun q ↦ AddMonoidAlgebra.coeff q n) this
   rwa [← MvPolynomial.weightedDecomposition.decompose'_apply] at key
 
 /-- The **grading of the Lazard ring** by homological degree: `Lₙ` consists of the classes of the

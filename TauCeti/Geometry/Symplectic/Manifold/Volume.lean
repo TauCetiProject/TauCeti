@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
+import TauCeti.Geometry.Symplectic.Volume
 
 /-!
 # The symplectic volume form and orientation of a symplectic manifold
@@ -42,6 +43,9 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
+* `TauCeti.SmoothTwoForm.volumeForm_smul`: the volume form of `c • σ` is `cⁿ` times that of `σ`.
+* `TauCeti.SmoothTwoForm.isNondegenerate_iff_volumeForm_apply_ne_zero`: a two-form is
+  nondegenerate exactly when its volume form vanishes nowhere.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_ne_zero`: the volume form of a
   nondegenerate two-form vanishes nowhere.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.orientation_eq_orientationAt_volumeOrientation_iff`: a
@@ -86,6 +90,14 @@ theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
     (σ.volumeForm n).1 x = ((n.factorial : ℝ)⁻¹) • (σ.1 x).wedgePow n := by
   rw [volumeForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply]
 
+/-- Rescaling the two-form by `c` rescales its symplectic volume form by `cⁿ`. -/
+@[simp]
+theorem volumeForm_smul (c : ℝ) (σ : SmoothTwoForm I M) (n : ℕ) :
+    (c • σ).volumeForm n = c ^ n • σ.volumeForm n := by
+  refine Subtype.ext (funext fun x ↦ ?_)
+  rw [Submodule.coe_smul, Pi.smul_apply, volumeForm_apply, volumeForm_apply, Submodule.coe_smul,
+    Pi.smul_apply, ContinuousAlternatingMap.wedgePow_smul, smul_comm]
+
 /-- **The symplectic volume form takes the value `1` on Darboux bases.** For a Darboux basis
 `(q₁, p₁, …, qₙ, pₙ)` of the tangent space at `x`, listed in this interleaved order,
 `(σⁿ / n!)(q₁, p₁, …, qₙ, pₙ) = 1`. -/
@@ -106,17 +118,24 @@ theorem IsNondegenerate.volumeForm_apply_reindex (h : σ.IsNondegenerate) {x : M
   rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply, Basis.coe_reindex, hb', hval,
     smul_eq_mul, inv_mul_cancel₀ (by positivity)]
 
+/-- **The volume criterion for nondegenerate two-forms.** On a manifold modelled on a space of
+dimension `2 * n`, a smooth two-form is fiberwise nondegenerate exactly when its volume form
+`σⁿ / n!` vanishes nowhere. -/
+theorem isNondegenerate_iff_volumeForm_apply_ne_zero [FiniteDimensional ℝ E]
+    (hn : finrank ℝ E = 2 * n) : σ.IsNondegenerate ↔ ∀ x, (σ.volumeForm n).1 x ≠ 0 := by
+  rw [isNondegenerate_iff_separatingLeft]
+  refine forall_congr' fun x ↦ ?_
+  rw [volumeForm_apply, smul_ne_zero_iff, and_iff_right (by positivity)]
+  simp only [SmoothBundleForm.eval₂_apply]
+  -- The tangent space `T_x M` is the model space `E`.
+  exact (ContinuousAlternatingMap.wedgePow_ne_zero_iff hn (σ.1 x)).symm
+
 /-- **The symplectic volume form of a nondegenerate two-form vanishes nowhere**, on a manifold
 modelled on a space of dimension `2 * n`. -/
 theorem IsNondegenerate.volumeForm_apply_ne_zero [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) (hn : finrank ℝ E = 2 * n) (x : M) :
-    (σ.volumeForm n).1 x ≠ 0 := by
-  obtain ⟨b, hb⟩ := (h.symplecticFormAt x).exists_isDarbouxBasis_of_finrank_eq
-    (n := n) (hn.trans (Nat.mul_comm 2 n))
-  rw [← ContinuousAlternatingMap.map_basis_ne_zero_iff _
-    (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))),
-    h.volumeForm_apply_reindex hb]
-  exact one_ne_zero
+    (σ.volumeForm n).1 x ≠ 0 :=
+  (isNondegenerate_iff_volumeForm_apply_ne_zero hn).1 h x
 
 /-- The **symplectic orientation** of a manifold modelled on a space of dimension `2 * n` with a
 fiberwise nondegenerate two-form `σ`: the orientation on which the volume form `σⁿ / n!` is
@@ -149,6 +168,22 @@ theorem IsNondegenerate.orientationAt_volumeOrientation [FiniteDimensional ℝ E
   rw [← hb.orientation_reindex hn (Nat.mul_comm n 2), eq_comm,
     h.orientation_eq_orientationAt_volumeOrientation_iff hn, h.volumeForm_apply_reindex hb]
   exact one_pos
+
+/-- **Pullback of the symplectic volume form.** If a map `f` pulls the two-form `τ` back to `σ`,
+then it pulls the volume form `τⁿ / n!` back to `σⁿ / n!`. -/
+theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {f : M → N} (hf : mpullback I J f τ.1 = σ.1) :
+    mpullback I J f (τ.volumeForm n).1 = (σ.volumeForm n).1 := by
+  ext x v
+  have hx : σ.1 x = (τ.1 (f x)).compContinuousLinearMap (mfderiv I J f x) := by
+    ext w
+    rw [← hf, mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      Function.comp_def]
+  rw [mpullback_apply, volumeForm_apply, volumeForm_apply, hx,
+    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
 
 end SmoothTwoForm
 

@@ -141,6 +141,29 @@ theorem shortExact_mayerVietoris (sqL : IsPushout t.left l.left r.left b.left) [
       (P₃.isColimitCokernelCoforkChainComplex R)
   · exact P₄.isColimitCokernelCoforkChainComplex R
 
+/-- The quotient maps to relative chains carry the last map of the absolute Mayer–Vietoris
+sequence of the ambient simplicial sets to that of the relative one. -/
+private lemma biprod_map_chainComplexπ_comp_desc :
+    biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R) ≫
+      biprod.desc (chainComplexMap r R) (chainComplexMap b R) =
+        biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R) ≫
+          P₄.chainComplexπ R := by
+  apply biprod.hom_ext' <;> simp [chainComplexπ_naturality]
+
+/-- The last map `C(P₂) ⊞ C(P₃) ⟶ C(P₄)` of the relative Mayer–Vietoris sequence of a square of
+pairs of simplicial sets is an epimorphism when the square of ambient simplicial sets is a
+pushout; no monomorphism hypothesis is needed. -/
+lemma epi_biprod_desc_chainComplexMap (sqR : IsPushout t.right l.right r.right b.right) :
+    Epi (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) := by
+  have : Epi (biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R)) :=
+    (sqR.map ((SSet.chainComplexFunctor C).obj R)).epi_shortComplex_g
+  have : Epi (P₄.chainComplexπ R) := (P₄.shortExact_chainComplexShortComplex R).epi_g
+  have : Epi (biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R) ≫
+      biprod.desc (chainComplexMap r R) (chainComplexMap b R)) := by
+    rw [biprod_map_chainComplexπ_comp_desc]
+    infer_instance
+  exact epi_of_epi (biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R)) _
+
 /-- In each degree, the last map `C(P₂) ⊞ C(P₃) ⟶ C(P₄)` of the relative Mayer–Vietoris sequence of
 a square of pairs of simplicial sets is a split epimorphism, when the square of ambient simplicial
 sets is a pushout with monomorphic top map. A section is the composite of a section
@@ -156,13 +179,7 @@ lemma isSplitEpi_mayerVietoris_g_f (sqR : IsPushout t.right l.right r.right b.ri
       ((biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R)).f i) :=
     hamb.isSplitMono_f_iff_isSplitEpi_g.1
       (SSet.isSplitMono_biprod_lift_chainComplexMap_f R (i := i))
-  -- The quotient maps to relative chains carry the last map of the absolute sequence to that of
-  -- the relative one.
-  have hπ : biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R) ≫
-      biprod.desc (chainComplexMap r R) (chainComplexMap b R) =
-        biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R) ≫
-          P₄.chainComplexπ R := by
-    apply biprod.hom_ext' <;> simp [chainComplexπ_naturality]
+  have hπ := biprod_map_chainComplexπ_comp_desc R (r := r) (b := b)
   have : IsSplitEpi ((P₄.chainComplexπ R).f i) :=
     ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
       (P₄.shortExact_chainComplexShortComplex R) i).isSplitMono_f_iff_isSplitEpi_g.1
@@ -298,7 +315,7 @@ lemma epi_mayerVietorisFromBiprod_zero : Epi (mayerVietorisFromBiprod R r b 0) :
   have : Epi (HomologicalComplex.homologyMap
       (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) 0) :=
     HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
-  exact HomologicalComplex.epi_biprod_desc_homologyMap 0
+  exact (HomologicalComplex.epi_biprod_desc_homologyMap_iff 0).2 inferInstance
 
 /-- **Naturality of the relative Mayer–Vietoris connecting morphism** in maps of squares of
 pairs. -/

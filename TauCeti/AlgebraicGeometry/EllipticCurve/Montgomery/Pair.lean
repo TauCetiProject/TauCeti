@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.LinearAlgebra.Projectivization.BaseChange
 public import Mathlib.Tactic.FinCases
 public import Mathlib.Tactic.LinearCombination
 
@@ -136,6 +136,18 @@ def map (f : R →+* S) (p : Pair R) : Pair S := ⟨f p.x, f p.z⟩
 @[simp] theorem map_x (f : R →+* S) (p : Pair R) : (p.map f).x = f p.x := (rfl)
 @[simp] theorem map_z (f : R →+* S) (p : Pair R) : (p.map f).z = f p.z := (rfl)
 
+/-- Taking the coordinate vector commutes with applying a ring homomorphism. -/
+@[simp]
+theorem vec_map (p : Pair R) (f : R →+* S) : (p.map f).vec = f ∘ p.vec := by
+  ext i
+  fin_cases i <;> simp
+
+/-- An injective change of ring preserves and reflects the zero pair. -/
+@[simp]
+theorem map_eq_zero_iff (p : Pair R) {f : R →+* S} (hf : Function.Injective f) :
+    p.map f = 0 ↔ p = 0 := by
+  simp only [eq_zero_iff, map_x, map_z, ← f.map_zero, hf.eq_iff]
+
 @[simp]
 theorem map_id (p : Pair R) : p.map (RingHom.id R) = p := (rfl)
 
@@ -252,6 +264,13 @@ def toProj (p : Pair K) (hp : p ≠ 0) : ℙ K (Fin 2 → K) :=
 
 theorem toProj_def (p : Pair K) (hp : p ≠ 0) :
     p.toProj hp = .mk K p.vec (vec_eq_zero_iff.not.mpr hp) := (rfl)
+
+/-- Passing from a raw pair to the projective line commutes with a field embedding. -/
+@[simp]
+theorem mapProjective_toProj {L : Type*} [Field L] (p : Pair K) (hp : p ≠ 0) (f : K →+* L) :
+    f.mapProjective (p.toProj hp) =
+      (p.map f).toProj ((p.map_eq_zero_iff f.injective).not.mpr hp) := by
+  simp [toProj_def]
 
 /-- **Two nonzero pairs define the same point of the projective line exactly when their cross
 difference vanishes.** -/

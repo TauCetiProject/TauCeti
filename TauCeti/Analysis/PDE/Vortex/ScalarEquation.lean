@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 
 /-!
 # The scalar equation of a plane vortex
@@ -25,6 +28,10 @@ on the open set where `α ≠ 0`. This is the reduction of the vortex equations 
 semilinear elliptic equation for `u = 2 log |α|`, which underlies the existence, uniqueness and
 reconstruction theory of vortices with prescribed zeros.
 
+If the section factors as `α = h f` with `f` holomorphic, then `log |f|` is harmonic off the zeros
+of `f`, so `u = log |h|` satisfies the regularized scalar equation `Δu = (|h|² |f|² - 1) / 8`.
+When `h` is smooth and nowhere zero, this extends by continuity across the zeros of `f`.
+
 ## Main results
 
 * `TauCeti.Vortex.fderiv_log_normSq_apply_one`, `TauCeti.Vortex.fderiv_log_normSq_apply_I`:
@@ -33,6 +40,10 @@ reconstruction theory of vortices with prescribed zeros.
   `Δ (log |α|²) = (|α|² - 1) / 4 - 2 E`, where `E` is the curvature defect `equation x z 0`.
 * `TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`: the scalar equation
   `Δ (log |α|²) = (|α|² - 1) / 4` near a nonzero point of a solution.
+* `TauCeti.Vortex.laplacian_log_norm_eq`: the regularized scalar equation for `log |h|`, where
+  `α = h f` with `f` holomorphic and nonzero at the point.
+* `TauCeti.Vortex.laplacian_log_norm_eq_of_dense`: the same equation everywhere on the plane, when
+  `f` is entire and its zeros have dense complement.
 * `TauCeti.Vortex.normSq_le_one_of_tendsto`: a `C²` solution on the whole plane with
   `|α| → 1` at infinity satisfies `|α| ≤ 1` everywhere, by the maximum principle.
 
@@ -51,16 +62,6 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex Filter Topology InnerProductSpace Laplacian
-
-/-- The derivative of `|α|² = 4 (p² + q²)` along `v`. -/
-private theorem fderiv_normSq_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
-    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
-    (v : ℂ) :
-    fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z v =
-      8 * (x z 2 * fderiv ℝ (fun w ↦ x w 2) z v + x z 3 * fderiv ℝ (fun w ↦ x w 3) z v) := by
-  rw [(((hp.hasFDerivAt.pow 2).fun_add (hq.hasFDerivAt.pow 2)).const_mul 4).fderiv]
-  simp
-  ring
 
 /-- At a point where `α ≠ 0` and `∂bar_a α = 0`, the derivative of `log |α|²` along `∂_s` is
 `2 (p ∂_t q - q ∂_t p) / (p² + q²) + 2 b₂`. -/
@@ -94,12 +95,51 @@ theorem fderiv_log_normSq_apply_I {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : 
     neg_div', div_sub' hα, div_eq_div_iff (mul_ne_zero four_ne_zero hα) hα]
   linear_combination (8 * (x z 2 ^ 2 + x z 3 ^ 2)) * (x z 2 * h₂ - x z 3 * h₁)
 
+/-- Where `α ≠ 0` and `∂bar_a α = 0` holds near `z`, the connection components `b₁, b₂` are
+determined by the section: `b₁ (p² + q²) = q (∂_s p - ∂_t q) - p (∂_s q + ∂_t p)` and
+`b₂ (p² + q²) = p (∂_s p - ∂_t q) + q (∂_s q + ∂_t p)`. So they are differentiable at `z` as soon
+as the section components are `C²` at `z`. -/
+theorem differentiableAt_connection_of_equation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
+    (hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0)
+    (hsol : ∀ᶠ w in 𝓝 z, equation x w 1 = 0 ∧ equation x w 2 = 0) :
+    DifferentiableAt ℝ (fun w ↦ x w 0) z ∧ DifferentiableAt ℝ (fun w ↦ x w 1) z := by
+  have hR : ContinuousAt (fun w ↦ x w 2 ^ 2 + x w 3 ^ 2) z :=
+    (hp.continuousAt.pow 2).add (hq.continuousAt.pow 2)
+  have hev := ((hp.eventually (by simp)).and ((hq.eventually (by simp)).and
+    ((hR.eventually_ne hα).and hsol)))
+  have hp' := hp.differentiableAt (by norm_num)
+  have hq' := hq.differentiableAt (by norm_num)
+  have hdp := (hp.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hdq := (hq.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hpart (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ (fun w ↦ x w 2) w v) z :=
+    hdp.clm_apply (differentiableAt_const _)
+  have hqart (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ (fun w ↦ x w 3) w v) z :=
+    hdq.clm_apply (differentiableAt_const _)
+  have hR' : DifferentiableAt ℝ (fun w ↦ x w 2 ^ 2 + x w 3 ^ 2) z := (hp'.pow 2).add (hq'.pow 2)
+  have hP := (hpart 1).sub (hqart I)
+  have hQ := (hqart 1).add (hpart I)
+  refine ⟨?_, ?_⟩
+  · refine (((hP.mul hq').sub (hQ.mul hp')).mul (hR'.inv hα)).congr_of_eventuallyEq ?_
+    filter_upwards [hev] with w ⟨_, _, hαw, h₁, h₂⟩
+    rw [equation_apply_one] at h₁
+    rw [equation_apply_two] at h₂
+    simp only [Pi.mul_apply, Pi.add_apply, Pi.sub_apply, Pi.inv_apply]
+    rw [eq_mul_inv_iff_mul_eq₀ hαw]
+    linear_combination (-(x w 3)) * h₁ + (x w 2) * h₂
+  · refine (((hP.mul hp').add (hQ.mul hq')).mul (hR'.inv hα)).congr_of_eventuallyEq ?_
+    filter_upwards [hev] with w ⟨_, _, hαw, h₁, h₂⟩
+    rw [equation_apply_one] at h₁
+    rw [equation_apply_two] at h₂
+    simp only [Pi.mul_apply, Pi.add_apply, Pi.sub_apply, Pi.inv_apply]
+    rw [eq_mul_inv_iff_mul_eq₀ hαw]
+    linear_combination (-(x w 2)) * h₁ - (x w 3) * h₂
+
 /-- If `∂bar_a α = 0` near a point `z` where `α ≠ 0`, then
 `Δ (log |α|²) = (|α|² - 1) / 4 - 2 E` at `z`, where `E = equation x z 0` is the defect in the
-curvature equation `*iF_a = (1 - |α|²) / 8`. Only the components `b` need be differentiable
-at `z`; the section components are `C²` at `z`. -/
+curvature equation `*iF_a = (1 - |α|²) / 8`. The section components are `C²` at `z`; the
+components `b` are then differentiable at `z`, being determined by the section. -/
 theorem laplacian_log_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
-    (hb₁ : DifferentiableAt ℝ (fun w ↦ x w 0) z) (hb₂ : DifferentiableAt ℝ (fun w ↦ x w 1) z)
     (hp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
     (hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0)
     (hsol : ∀ᶠ w in 𝓝 z, equation x w 1 = 0 ∧ equation x w 2 = 0) :
@@ -131,6 +171,7 @@ theorem laplacian_log_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     hdp.clm_apply (differentiableAt_const _)
   have hqart (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ (fun w ↦ x w 3) w v) z :=
     hdq.clm_apply (differentiableAt_const _)
+  obtain ⟨hb₁, hb₂⟩ := differentiableAt_connection_of_equation hp hq hα hsol
   have hRh := (hp'.hasFDerivAt.pow 2).fun_add (hq'.hasFDerivAt.pow 2)
   have hinv := (hasDerivAt_inv hα).comp_hasFDerivAt z hRh
   simp only [Function.comp_def] at hinv
@@ -156,19 +197,70 @@ theorem laplacian_log_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
 /-- The scalar equation of a plane vortex: if `x` solves the vortex equation near a point `z`
 where `α ≠ 0`, then `Δ (log |α|²) = (|α|² - 1) / 4` at `z`. -/
 theorem laplacian_log_normSq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
-    (hb₁ : DifferentiableAt ℝ (fun w ↦ x w 0) z) (hb₂ : DifferentiableAt ℝ (fun w ↦ x w 1) z)
     (hp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
     (hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0) (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0) :
     Δ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z =
       (4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 4 := by
-  rw [laplacian_log_normSq hb₁ hb₂ hp hq hα (hsol.mono fun w hw ↦ by simp [hw]),
+  rw [laplacian_log_normSq hp hq hα (hsol.mono fun w hw ↦ by simp [hw]),
     hsol.self_of_nhds]
   simp
+
+/-- **The scalar equation for the amplitude of a vortex.** Let `x` solve the vortex equation near
+`z`, with section `C²` at `z`, and suppose that its section is `α = h f` near `z`, where `h`
+is `C²` at `z` with `h z ≠ 0` and `f` is complex analytic at `z` with `f z ≠ 0`. Then
+`u = log |h|` satisfies the regularized scalar equation `Δu = (|h|² |f|² - 1) / 8` at `z`. -/
+theorem laplacian_log_norm_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {h f : ℂ → ℂ} {z : ℂ}
+    (hp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
+    (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0) (hh : ContDiffAt ℝ 2 h z) (hhz : h z ≠ 0)
+    (hf : AnalyticAt ℂ f z) (hfz : f z ≠ 0)
+    (hα : ∀ᶠ w in 𝓝 z, sectionValue x w = h w * f w) :
+    Δ (fun w ↦ Real.log ‖h w‖) z = (‖h z‖ ^ 2 * ‖f z‖ ^ 2 - 1) / 8 := by
+  have hH := hf.harmonicAt_log_norm hfz
+  have hℓh : ContDiffAt ℝ 2 (fun w ↦ Real.log ‖h w‖) z :=
+    (hh.norm ℝ hhz).log (norm_ne_zero_iff.2 hhz)
+  have hnorm (w : ℂ) : 4 * (x w 2 ^ 2 + x w 3 ^ 2) = ‖sectionValue x w‖ ^ 2 :=
+    (sq_norm_sectionValue x w).symm
+  have hxz : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun h0 ↦ mul_ne_zero hhz hfz
+    (by rw [← hα.self_of_nhds]; exact (sectionValue_eq_zero_iff x z).2 h0)
+  -- Near `z`, `log |α|² = 2 (log |h| + log |f|)`, and `log |f|` is harmonic.
+  have hev : (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =ᶠ[𝓝 z]
+      (2 : ℝ) • ((fun w ↦ Real.log ‖h w‖) + fun w ↦ Real.log ‖f w‖) := by
+    filter_upwards [hα, hh.continuousAt.eventually_ne hhz,
+      hf.continuousAt.eventually_ne hfz] with w hαw hhw hfw
+    rw [Pi.smul_apply, Pi.add_apply, hnorm, hαw, norm_mul, mul_pow,
+      Real.log_mul (pow_ne_zero 2 (norm_ne_zero_iff.2 hhw))
+        (pow_ne_zero 2 (norm_ne_zero_iff.2 hfw)), Real.log_pow, Real.log_pow, smul_eq_mul]
+    push_cast
+    ring
+  have hΔ := (laplacian_congr_nhds hev).eq_of_nhds
+  rw [laplacian_log_normSq_of_equation_eq_zero hp hq hxz hsol,
+    laplacian_smul (f := (fun w ↦ Real.log ‖h w‖) + fun w ↦ Real.log ‖f w‖) _ (hℓh.add hH.1),
+    hℓh.laplacian_add hH.1, hH.2.eq_of_nhds, hnorm,
+    hα.self_of_nhds, norm_mul, mul_pow] at hΔ
+  simp only [Pi.zero_apply, add_zero, smul_eq_mul] at hΔ
+  linarith
+
+/-- **The scalar equation for the amplitude, globally.** Let `x` be a `C²` solution of the vortex
+equation on the plane whose section is `α = h f`, where `h` is `C²` and nowhere zero and `f` is
+entire with zeros of dense complement. Then `u = log |h|` satisfies the regularized scalar equation
+`Δu = (|h|² |f|² - 1) / 8` everywhere, including at the zeros of `f`. -/
+theorem laplacian_log_norm_eq_of_dense {x : ℂ → EuclideanSpace ℝ (Fin 4)} {h f : ℂ → ℂ}
+    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0) (hh : ContDiff ℝ 2 h)
+    (hh₀ : ∀ z, h z ≠ 0) (hf : Differentiable ℂ f) (hfz : Dense {z | f z ≠ 0})
+    (hα : ∀ z, sectionValue x z = h z * f z) (z : ℂ) :
+    Δ (fun w ↦ Real.log ‖h w‖) z = (‖h z‖ ^ 2 * ‖f z‖ ^ 2 - 1) / 8 := by
+  have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hu : ContDiff ℝ 2 fun w ↦ Real.log ‖h w‖ :=
+    (hh.norm ℝ hh₀).log fun w ↦ norm_ne_zero_iff.2 (hh₀ w)
+  have hc : Continuous fun w ↦ (‖h w‖ ^ 2 * ‖f w‖ ^ 2 - 1) / 8 := by
+    have := hh.continuous; have := hf.continuous; fun_prop
+  refine congrFun (hu.continuous_laplacian.ext_on hfz hc fun w hw ↦ ?_) z
+  exact laplacian_log_norm_eq (hxi 2).contDiffAt (hxi 3).contDiffAt (.of_forall hsol)
+    hh.contDiffAt (hh₀ w) (hf.analyticAt w) hw (.of_forall hα)
 
 /-- A vortex on the whole plane whose section satisfies `|α| → 1` at infinity has `|α| ≤ 1`
 everywhere. -/
 theorem normSq_le_one_of_tendsto {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z : ℂ) :
@@ -186,8 +278,8 @@ theorem normSq_le_one_of_tendsto {x : ℂ → EuclideanSpace ℝ (Fin 4)}
   refine not_isLocalMax_of_laplacian_pos ?_ ?_ hmax
   · exact (contDiffAt_const.mul ((hp.contDiffAt.pow 2).add (hq.contDiffAt.pow 2))).log
       (mul_ne_zero four_ne_zero hα)
-  · rw [laplacian_log_normSq_of_equation_eq_zero hb₁.differentiableAt hb₂.differentiableAt
-      hp.contDiffAt hq.contDiffAt hα (Eventually.of_forall hsol)]
+  · rw [laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt hα
+      (Eventually.of_forall hsol)]
     linarith
 
 end TauCeti.Vortex

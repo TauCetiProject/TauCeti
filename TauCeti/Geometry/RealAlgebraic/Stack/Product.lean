@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Delineation
-import TauCeti.Topology.Algebra.Polynomial.RootMultiplicity
+import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 import TauCeti.RingTheory.Polynomial.Roots
 
 /-!

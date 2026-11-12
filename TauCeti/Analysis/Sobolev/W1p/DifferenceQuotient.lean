@@ -130,59 +130,19 @@ theorem W1p.gradient_differenceQuotient_ae {Omega V : Opens E} (hV : V ≤ Omega
 
 /-! ### Difference-quotient estimates -/
 
-/-- **The local translation estimate on `W^{1,p}(ℝⁿ)`.** If `T` is measurable and every segment
-`[x, x + h]` with `x ∈ K` lies in `T`, then
-
-`‖w(· + h) - w‖_{Lᵖ(K)} ≤ ‖⟪h, ∇w⟫‖_{Lᵖ(T)}`.
-
-This holds for `1 ≤ p < ∞`; neither `K` nor `T` needs to be compact. -/
-theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu ⊤ p) (h : E)
+/-- **The local translation estimate for a test function**, as an element of `W^{1,p}(ℝⁿ)`: the
+smooth estimate `ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply` for the value and the
+weak gradient of its jet. -/
+private theorem eLpNorm_value_ofTestFunctionₗ_comp_add_sub_le (phi : 𝓓((⊤ : Opens E), ℝ)) (h : E)
     {K T : Set E} (hT : MeasurableSet T) (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
-    eLpNorm (fun x ↦ W1p.value w (x + h) - W1p.value w x) p (mu.restrict K)
-      ≤ eLpNorm (fun x ↦ ⟪h, W1p.gradient w x⟫_ℝ) p (mu.restrict T) := by
-  set nu := mu.restrict ((⊤ : Opens E) : Set E)
-  have htop : nu = mu := by simp only [nu, Opens.coe_top, Measure.restrict_univ]
-  let _ : nu.IsAddHaarMeasure := by
-    rw [htop]
-    infer_instance
+    eLpNorm (fun x ↦ W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) (x + h) -
+      W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) x) p (mu.restrict K) ≤
+      eLpNorm (fun x ↦ ⟪h, W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi) x⟫_ℝ) p
+        (mu.restrict T) := by
+  have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
+    simp only [Opens.coe_top, Measure.restrict_univ]
   have hq : Tendsto (· + h) (ae mu) (ae mu) :=
     (measurePreserving_add_right mu h).quasiMeasurePreserving.tendsto_ae
-  -- Both sides are extended norms of continuous linear images of `w`.
-  set A : W1p mu ⊤ p →L[ℝ] Lp ℝ p (nu.restrict K) :=
-    (LpToLpRestrictCLM E ℝ ℝ nu p K).comp
-      (((nu.translateLp p h).toLinearIsometry.toContinuousLinearMap -
-        ContinuousLinearMap.id ℝ _).comp W1p.valueL)
-  set B : W1p mu ⊤ p →L[ℝ] Lp ℝ p (nu.restrict T) :=
-    (LpToLpRestrictCLM E ℝ ℝ nu p T).comp (((innerSL ℝ h).compLpL p nu).comp W1p.gradientL)
-  have hA : ∀ v : W1p mu ⊤ p, ‖A v‖ₑ =
-      eLpNorm (fun x ↦ W1p.value v (x + h) - W1p.value v x) p (mu.restrict K) := fun v ↦ by
-    rw [Lp.enorm_def]
-    refine (eLpNorm_congr_ae ?_).trans (by rw [htop])
-    filter_upwards [LpToLpRestrictCLM_coeFn ℝ K (nu.translateLp p h (W1p.valueL v) -
-        W1p.valueL v), ae_restrict_of_ae (Lp.coeFn_sub (nu.translateLp p h (W1p.valueL v))
-        (W1p.valueL v)), ae_restrict_of_ae (Measure.coeFn_translateLp (mu := nu) h
-        (W1p.valueL v))] with x h1 h2 h3
-    rw [← W1p.valueL_apply]
-    simp only [A, ContinuousLinearMap.comp_apply, FunLike.coe_sub, Pi.sub_apply,
-      LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
-      ContinuousLinearMap.id_apply]
-    rw [h1, h2, Pi.sub_apply, h3, Function.comp_apply]
-  have hB : ∀ v : W1p mu ⊤ p, ‖B v‖ₑ =
-      eLpNorm (fun x ↦ ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T) := fun v ↦ by
-    rw [Lp.enorm_def]
-    refine (eLpNorm_congr_ae ?_).trans (by rw [htop])
-    filter_upwards [LpToLpRestrictCLM_coeFn ℝ T ((innerSL ℝ h).compLpL p nu (W1p.gradientL v)),
-      ae_restrict_of_ae ((innerSL ℝ h).coeFn_compLpL (W1p.gradientL v))] with x h1 h2
-    simp only [B, ContinuousLinearMap.comp_apply]
-    rw [h1, h2, innerSL_apply_apply, W1p.gradientL_apply]
-  have hclosed : IsClosed {v : W1p mu ⊤ p |
-      eLpNorm (fun x ↦ W1p.value v (x + h) - W1p.value v x) p (mu.restrict K)
-        ≤ eLpNorm (fun x ↦ ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T)} := by
-    simp only [← hA, ← hB]
-    exact isClosed_le A.continuous.enorm B.continuous.enorm
-  -- Pass the smooth estimate to all of `W^{1,p}(ℝⁿ)` by density of test functions.
-  refine w1p0Submodule_subset_of_isClosed hclosed (fun phi ↦ ?_) (W1p.mem_w1p0Submodule_top hp w)
-  -- The estimate for a single test function is the smooth estimate.
   have hvalue : ⇑(W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi)) =ᵐ[mu] (phi : E → ℝ) := by
     rw [W1p.value_ofTestFunctionₗ]
     exact (testFunctionLp_apply_ae p phi).filter_mono (ae_mono htop.ge)
@@ -201,9 +161,61 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
     refine eLpNorm_congr_ae (ae_restrict_of_ae ?_)
     filter_upwards [hgrad] with x hx
     rw [hx, real_inner_comm, inner_gradient_left]
-  rw [Set.mem_ofPred_eq, hL, hR]
+  rw [hL, hR]
   have hphi : ContDiff ℝ 1 (phi : E → ℝ) := phi.contDiff.of_le (by simp)
   exact hphi.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply Fact.out h hT hKT
+
+/-- **The local translation estimate on `W^{1,p}(ℝⁿ)`.** If `T` is measurable and every segment
+`[x, x + h]` with `x ∈ K` lies in `T`, then
+
+`‖w(· + h) - w‖_{Lᵖ(K)} ≤ ‖⟪h, ∇w⟫‖_{Lᵖ(T)}`.
+
+This holds for `1 ≤ p < ∞`; neither `K` nor `T` needs to be compact. -/
+theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu ⊤ p) (h : E)
+    {K T : Set E} (hT : MeasurableSet T) (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
+    eLpNorm (fun x ↦ W1p.value w (x + h) - W1p.value w x) p (mu.restrict K)
+      ≤ eLpNorm (fun x ↦ ⟪h, W1p.gradient w x⟫_ℝ) p (mu.restrict T) := by
+  set nu := mu.restrict ((⊤ : Opens E) : Set E)
+  have htop : nu = mu := by simp only [nu, Opens.coe_top, Measure.restrict_univ]
+  let _ : nu.IsAddHaarMeasure := by
+    rw [htop]
+    infer_instance
+  -- Both sides are extended norms of continuous linear images of `w`.
+  set A : W1p mu ⊤ p →L[ℝ] Lp ℝ p (nu.restrict K) :=
+    (LpToLpRestrictCLM E ℝ ℝ nu p K).comp
+      (((nu.translateLp p h).toLinearIsometry.toContinuousLinearMap -
+        ContinuousLinearMap.id ℝ _).comp W1p.valueL)
+  set B : W1p mu ⊤ p →L[ℝ] Lp ℝ p (nu.restrict T) :=
+    (LpToLpRestrictCLM E ℝ ℝ nu p T).comp (((innerSL ℝ h).compLpL p nu).comp W1p.gradientL)
+  have hA : ∀ v : W1p mu ⊤ p, ‖A v‖ₑ =
+      eLpNorm (fun x ↦ W1p.value v (x + h) - W1p.value v x) p (mu.restrict K) := fun v ↦ by
+    rw [Lp.eNorm_def]
+    refine (eLpNorm_congr_ae ?_).trans (by rw [htop])
+    filter_upwards [LpToLpRestrictCLM_coeFn ℝ K (nu.translateLp p h (W1p.valueL v) -
+        W1p.valueL v), ae_restrict_of_ae (Lp.coeFn_sub (nu.translateLp p h (W1p.valueL v))
+        (W1p.valueL v)), ae_restrict_of_ae (Measure.coeFn_translateLp (mu := nu) h
+        (W1p.valueL v))] with x h1 h2 h3
+    rw [← W1p.valueL_apply]
+    simp only [A, ContinuousLinearMap.comp_apply, FunLike.coe_sub, Pi.sub_apply,
+      LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
+      ContinuousLinearMap.id_apply]
+    rw [h1, h2, Pi.sub_apply, h3, Function.comp_apply]
+  have hB : ∀ v : W1p mu ⊤ p, ‖B v‖ₑ =
+      eLpNorm (fun x ↦ ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T) := fun v ↦ by
+    rw [Lp.eNorm_def]
+    refine (eLpNorm_congr_ae ?_).trans (by rw [htop])
+    filter_upwards [LpToLpRestrictCLM_coeFn ℝ T ((innerSL ℝ h).compLpL p nu (W1p.gradientL v)),
+      ae_restrict_of_ae ((innerSL ℝ h).coeFn_compLpL (W1p.gradientL v))] with x h1 h2
+    simp only [B, ContinuousLinearMap.comp_apply]
+    rw [h1, h2, innerSL_apply_apply, W1p.gradientL_apply]
+  have hclosed : IsClosed {v : W1p mu ⊤ p |
+      eLpNorm (fun x ↦ W1p.value v (x + h) - W1p.value v x) p (mu.restrict K)
+        ≤ eLpNorm (fun x ↦ ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T)} := by
+    simp only [← hA, ← hB]
+    exact isClosed_le A.continuous.eNorm B.continuous.eNorm
+  -- Pass the smooth estimate to all of `W^{1,p}(ℝⁿ)` by density of test functions.
+  refine w1p0Submodule_subset_of_isClosed hclosed (fun phi ↦ ?_) (W1p.mem_w1p0Submodule_top hp w)
+  exact eLpNorm_value_ofTestFunctionₗ_comp_add_sub_le phi h hT hKT
 
 /-- **The local translation estimate on `W^{1,p}(Ω)`.** Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, and
 let `K` be compact. If every segment `[x, x + h]` with `x ∈ K` lies in a set `T ⊆ Ω`, then
@@ -275,7 +287,7 @@ theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le (hp : p ≠ ∞) (u : W1p
       ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T)) := by
         gcongr
     _ = eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T) := by
-        rw [← mul_assoc, ← enorm_mul, inv_mul_cancel₀ ht, enorm_one, one_mul]
+        rw [← mul_assoc, ← eNorm_mul, inv_mul_cancel₀ ht, eNorm_one, one_mul]
 
 /-- **Uniform bound on difference quotients near a compact set.** Let `u ∈ W^{1,p}(Ω)`,
 `1 ≤ p < ∞`, and let `K ⊆ Ω` be compact. Then for all sufficiently small `t`,
@@ -319,7 +331,7 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
             rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm]
             exact abs_real_inner_le_norm v _)
       _ = ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
-          rw [eLpNorm_const_smul, enorm_norm]
+          rw [eLpNorm_const_smul, eNorm_norm]
   -- The difference quotient itself, through the whole-space translation estimate.
   have hquot : eLpNorm (W1p.value q : E → ℝ) p nu
       ≤ ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
@@ -342,7 +354,7 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
     calc ‖t⁻¹‖ₑ * eLpNorm (fun x ↦ W1p.value u (x + t • v) - W1p.value u x) p nu
         ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu) := by gcongr
       _ = eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu := by
-          rw [← mul_assoc, ← enorm_mul, inv_mul_cancel₀ ht, enorm_one, one_mul]
+          rw [← mul_assoc, ← eNorm_mul, inv_mul_cancel₀ ht, eNorm_one, one_mul]
   have hfin : ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu ≠ ∞ :=
     ENNReal.mul_ne_top (by simp) (Lp.eLpNorm_ne_top _)
   calc ‖W1p.value q‖ = (eLpNorm (W1p.value q : E → ℝ) p nu).toReal := Lp.norm_def _
@@ -354,15 +366,15 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
 /-! ### Domains mapped onto themselves by the translation -/
 
 /-- **Difference quotients preserve zero boundary values.** If translation by `t • w` maps `Ω`
-onto itself, then for `p < ∞` the difference quotient of `u ∈ W^{1,p}_0(Ω)` in the direction `w`
+onto itself, then the difference quotient of `u ∈ W^{1,p}_0(Ω)` in the direction `w`
 with step `t` lies in `W^{1,p}_0(Ω)`. -/
-theorem W1p.differenceQuotient_mem_w1p0Submodule (hp : p ≠ ∞) {w : E} {t : ℝ}
+theorem W1p.differenceQuotient_mem_w1p0Submodule {w : E} {t : ℝ}
     (hVO : MapsTo (· + t • w) Omega Omega) (hΩ : ∀ x, x + t • w ∈ Omega → x ∈ Omega)
     {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     W1p.differenceQuotient le_rfl w t hVO u ∈ w1p0Submodule mu Omega p := by
   rw [W1p.differenceQuotient_def, W1p.restrictL_self]
   exact (w1p0Submodule mu Omega p).toSubmodule.smul_mem _
-    (sub_mem (W1p.translate_mem_w1p0Submodule hp hVO hΩ hu) hu)
+    (sub_mem (W1p.translate_mem_w1p0Submodule hVO hΩ hu) hu)
 
 /-- **Difference quotients commute with extension by zero.** Let translation by `t • w` map `Ω`
 onto itself and `p < ∞`. If `g ∈ W^{1,p}_0(Ω)` is the difference quotient of `u ∈ W^{1,p}_0(Ω)`
@@ -408,7 +420,7 @@ theorem W1p0.norm_value_differenceQuotient_le (hp : p ≠ ∞) {w : E} {t : ℝ}
       ‖w‖ * ‖W1p.gradient (u : W1p mu Omega p)‖ := by
   have h := W1p.norm_value_differenceQuotient_le hp w t (W1p0.extendByZeroL le_top u : W1p mu ⊤ p)
   rwa [← W1p0.extendByZeroL_eq_differenceQuotient (g := ⟨_,
-      W1p.differenceQuotient_mem_w1p0Submodule hp hVO hΩ u.2⟩) hVO hΩ rfl,
+      W1p.differenceQuotient_mem_w1p0Submodule hVO hΩ u.2⟩) hVO hΩ rfl,
     W1p0.norm_value_extendByZeroL, W1p0.norm_gradient_extendByZeroL] at h
 
 end TauCeti

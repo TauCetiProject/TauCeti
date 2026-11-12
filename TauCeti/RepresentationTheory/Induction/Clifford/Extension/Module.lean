@@ -102,6 +102,15 @@ noncomputable abbrev cliffordMultiplicityFunctor :
     apply ModuleCat.hom_ext
     exact LinearMap.ext fun f => by simp
 
+/-- The multiplicity functor sends an inertia intertwiner to postcomposition
+with its restriction to the normal subgroup. -/
+theorem cliffordMultiplicityFunctor_map_apply {W W' : FDRep k (inertia A)} (g : W ⟶ W')
+    (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
+    (cliffordMultiplicityFunctor A s hs).map g f =
+      f ≫ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).map g := by
+  simp only [cliffordMultiplicityFunctor, ModuleCat.hom_ofHom,
+    CrossedSystem.SemilinearAction.linearMap_apply, Linear.rightComp_apply]
+
 open scoped ModuleCat.Algebra
 
 instance : (cliffordMultiplicityFunctor A s hs).Additive where

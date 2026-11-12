@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.Forest
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Algebra.CharP.Two
@@ -65,6 +65,13 @@ noncomputable def modTwoCycleSpace : Submodule (ZMod 2) (O →₀ ZMod 2) :=
 
 variable {Γ O}
 
+/-- The integral cycle lattice is the kernel of the integral incidence boundary. -/
+theorem cycleLattice_def : Γ.cycleLattice O = (Γ.incidenceBoundary O ℤ).ker := (rfl)
+
+/-- The binary cycle space is the kernel of incidence over `ZMod 2`. -/
+theorem modTwoCycleSpace_def :
+    Γ.modTwoCycleSpace O = (Γ.incidenceBoundary O (ZMod 2)).ker := (rfl)
+
 @[simp] theorem incidenceBoundary_single (R : Type*) [Ring R] (e : O) (r : R) :
     Γ.incidenceBoundary O R (Finsupp.single e r) =
       r • (Finsupp.single (Γ.tgt e.1) 1 - Finsupp.single (Γ.src e.1) 1) := by
@@ -93,6 +100,27 @@ theorem incidenceBoundary_single_eq_zero_iff (R : Type*) [Ring R] [Nontrivial R]
       Γ.src e.1 = Γ.tgt e.1 := by
   rw [incidenceBoundary_single, one_smul, sub_eq_zero]
   exact (Finsupp.single_left_inj (one_ne_zero : (1 : R) ≠ 0)).trans eq_comm
+
+/-- The incidence boundary vanishes identically when every chosen dart is a loop. -/
+theorem incidenceBoundary_eq_zero (R : Type*) [Ring R] (h : ∀ e ∈ O, Γ.src e = Γ.tgt e) :
+    Γ.incidenceBoundary O R = 0 := by
+  apply Finsupp.lhom_ext
+  intro e r
+  simp [h e.1 e.2]
+
+/-- Over a nontrivial ring, the incidence boundary vanishes identically exactly when every
+chosen dart is a loop. Thus a single dart that is not a loop excludes zero incidence. -/
+theorem incidenceBoundary_eq_zero_iff (R : Type*) [Ring R] [Nontrivial R] :
+    Γ.incidenceBoundary O R = 0 ↔ ∀ e ∈ O, Γ.src e = Γ.tgt e :=
+  ⟨fun h e he => (incidenceBoundary_single_eq_zero_iff R ⟨e, he⟩).mp (by simp [h]),
+    incidenceBoundary_eq_zero R⟩
+
+/-- The difference of two parallel darts, with the same source and the same target, is a
+cycle over any ring. -/
+theorem single_sub_single_mem_ker_incidenceBoundary (R : Type*) [Ring R] {e f : O}
+    (hsrc : Γ.src f.1 = Γ.src e.1) (htgt : Γ.tgt f.1 = Γ.tgt e.1) :
+    Finsupp.single f (1 : R) - Finsupp.single e 1 ∈ (Γ.incidenceBoundary O R).ker := by
+  simp [hsrc, htgt]
 
 /-- An individual dart is an integral cycle exactly when it is a loop. -/
 theorem single_mem_cycleLattice_iff (e : O) :
@@ -127,6 +155,35 @@ theorem modTwoCycleBoundary_rev (e : Γ.E) (he : e ∈ O) (hre : Γ.rev e ∈ O)
     Γ.modTwoCycleBoundary O (Finsupp.single ⟨Γ.rev e, hre⟩ 1) =
       Γ.modTwoCycleBoundary O (Finsupp.single ⟨e, he⟩ 1) :=
   incidenceBoundary_rev_of_charTwo (ZMod 2) e he hre
+
+section
+
+variable {R : Type*} [Ring R]
+
+/-- Taking integer coefficients into a ring commutes with the signed incidence boundary. -/
+theorem incidenceBoundary_mapRange_intCast (Γ : SerreGraph) (O : Set Γ.E) (c : O →₀ ℤ) :
+    Γ.incidenceBoundary O R (c.mapRange (Int.cast : ℤ → R) Int.cast_zero) =
+      (Γ.incidenceBoundary O ℤ c).mapRange (Int.cast : ℤ → R) Int.cast_zero := by
+  classical
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd =>
+    simp only [Finsupp.mapRange_add (f := (Int.cast : ℤ → R)) (fun x y =>
+      Int.cast_add x y), map_add, hc, hd]
+  | single e n =>
+    ext v
+    simp [incidenceBoundary_single, Finsupp.mapRange_single, Finsupp.single_apply,
+      smul_sub, Int.cast_sub, Int.cast_ite]
+
+/-- The chain obtained by taking the coefficients of an integral cycle into a ring
+is again a cycle. -/
+theorem mapRange_intCast_mem_ker_incidenceBoundary (Γ : SerreGraph) (O : Set Γ.E)
+    (c : (Γ.incidenceBoundary O ℤ).ker) :
+    c.val.mapRange (Int.cast : ℤ → R) Int.cast_zero ∈ (Γ.incidenceBoundary O R).ker := by
+  rw [LinearMap.mem_ker, Γ.incidenceBoundary_mapRange_intCast, LinearMap.mem_ker.mp c.property]
+  simp
+
+end
 
 /-- Incidence boundaries commute with the pushforward of chains along a graph morphism. -/
 theorem Hom.incidenceBoundary_mapDomain {Δ : SerreGraph} (f : Γ.Hom Δ)
@@ -222,6 +279,26 @@ theorem incidenceBoundary_mapDomain_inclusion {O' : Set Γ.E} (h : O ⊆ O')
 section
 
 variable {F : Set Γ.E} {R : Type*} [Ring R]
+
+/-- The difference of two vertex unit chains is a boundary whenever the vertices are
+connected in the support graph. No acyclicity hypothesis is needed. -/
+theorem single_sub_single_mem_range_incidenceBoundary {a b : Γ.V}
+    (h : (Γ.supportGraph F).Reachable a b) :
+    Finsupp.single b (1 : R) - Finsupp.single a 1 ∈
+      LinearMap.range (Γ.incidenceBoundary F R) := by
+  obtain ⟨p⟩ := h
+  induction p with
+  | nil => simp
+  | @cons a b c hab p ih =>
+    have hedge : Finsupp.single b (1 : R) - Finsupp.single a 1 ∈
+        LinearMap.range (Γ.incidenceBoundary F R) := by
+      rcases (Γ.supportGraph_adj F a b).mp hab with ⟨-, h | h⟩
+      · obtain ⟨e, he, rfl, rfl⟩ := h
+        exact ⟨Finsupp.single ⟨e, he⟩ 1, by simp⟩
+      · obtain ⟨e, he, rfl, rfl⟩ := h
+        exact ⟨-Finsupp.single ⟨e, he⟩ 1, by simp [neg_sub]⟩
+    convert (LinearMap.range (Γ.incidenceBoundary F R)).add_mem ih hedge using 1
+    exact (sub_add_sub_cancel _ _ _).symm
 
 /-- A boundary-zero chain supported on a dart set with injective boundary vanishes.
 The chain may be written in any larger ambient dart set. -/

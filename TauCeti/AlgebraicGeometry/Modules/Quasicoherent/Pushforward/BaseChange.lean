@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.Pushforward.BaseChange
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
@@ -77,25 +78,21 @@ theorem bijective_pushforwardBaseChange_app_app (H : IsPullback g' f' f g) [Quas
   have : IsScalarTower Γ(S, W) Γ(S', W') Γ((pullback g).obj N, W') :=
     .of_algebraMap_smul fun _ _ ↦ rfl
   let alg₁ : Algebra Γ(S, W) Γ(S, W) := (Scheme.Hom.appLE (𝟙 S) W W le_rfl).hom.toAlgebra
-  have hid (Y : Scheme.{u}) (V : Y.Opens) : Scheme.Hom.appLE (𝟙 Y) V V le_rfl = 𝟙 _ :=
-    (Scheme.Hom.appLE_eq_app (𝟙 Y)).trans (Scheme.Hom.id_app V)
   have t₁ : @IsScalarTower Γ(S, W) Γ(S, W) Γ(N, W) alg₁.toSMul _ _ :=
     @IsScalarTower.of_algebraMap_smul _ _ _ _ _ alg₁ _ _ fun r n ↦ by
-      rw [RingHom.algebraMap_toAlgebra, hid]
+      rw [RingHom.algebraMap_toAlgebra, Scheme.Hom.appLE_eq_id_of_eq_id (f := 𝟙 S) rfl W le_rfl]
       rfl
   let alg₂ : Algebra Γ(S', W') Γ(S', W') := (Scheme.Hom.appLE (𝟙 S') W' W' le_rfl).hom.toAlgebra
   have t₂ : @IsScalarTower Γ(S', W') Γ(S', W') Γ((pullback g).obj N, W') alg₂.toSMul _ _ :=
     @IsScalarTower.of_algebraMap_smul _ _ _ _ _ alg₂ _ _ fun r n ↦ by
-      rw [RingHom.algebraMap_toAlgebra, hid]
+      rw [RingHom.algebraMap_toAlgebra,
+        Scheme.Hom.appLE_eq_id_of_eq_id (f := 𝟙 S') rfl W' le_rfl]
       rfl
   have hα := Scheme.Hom.isBaseChange_pullbackSectionsLEBaseLinear g N
     (IsPullback.id_vert g) hW hW' h (UX := W) le_rfl hW (UY := W') (by simpa using h)
   -- Then the target, the sections of `f'_* g'^* M` over `W'`, by flat base change over
   -- `W' ⟶ W`.
-  have hUY : f' ⁻¹ᵁ W' = g' ⁻¹ᵁ (f ⁻¹ᵁ W) ⊓ f' ⁻¹ᵁ W' := by
-    refine (inf_eq_right.mpr ?_).symm
-    rw [← Scheme.Hom.comp_preimage, H.w, Scheme.Hom.comp_preimage]
-    exact f'.preimage_mono h
+  have hUY := Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq H.w h
   let : Module Γ(S, W) Γ(M, f ⁻¹ᵁ W) := (inferInstance : Module Γ(S, W) Γ(N, W))
   let : Algebra Γ(S, W) Γ(X, f ⁻¹ᵁ W) := (f.appLE W (f ⁻¹ᵁ W) le_rfl).hom.toAlgebra
   have : IsScalarTower Γ(S, W) Γ(X, f ⁻¹ᵁ W) Γ(M, f ⁻¹ᵁ W) := .of_algebraMap_smul fun r m ↦ by

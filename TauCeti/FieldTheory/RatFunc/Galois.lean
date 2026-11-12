@@ -102,7 +102,7 @@ theorem mem_lifts_of_forall_map_mapRingEquiv_eq
     {μ : (RatFunc K)[X]} (hμ : ∀ σ ∈ S, μ.map (mapRingEquiv σ : RatFunc K →+* RatFunc K) = μ) :
     μ ∈ Polynomial.lifts (algebraMap (RatFunc F) (RatFunc K)) :=
   (Polynomial.lifts_iff_coeff_lifts μ).mpr fun n ↦ mem_range_of_forall_mapRingEquiv_eq hX hS
-    fun σ hσ ↦ by simpa using congr(Polynomial.coeff $(hμ σ hσ) n)
+    fun σ hσ ↦ by simpa using congr($(hμ σ hσ).coeff n)
 
 /-- **Polynomials over `K(X)` fixed by a set of automorphisms.** Let `S` be a set of automorphisms
 of `K` whose common fixed points are exactly the image of `F`. A polynomial with coefficients in
@@ -143,11 +143,9 @@ theorem mem_range_mapRingHom_iff_fixed (z : RatFunc K) :
         (Polynomial.map_injective _ (algebraMap F K).injective))).toAlgebra
   have hpoly (p : F[X]) : algebraMap (RatFunc F) (RatFunc K) (algebraMap F[X] _ p) =
       algebraMap K[X] _ (p.map (algebraMap F K)) := by
-    rw [RingHom.algebraMap_toAlgebra, coe_mapRingHom_eq_coe_map]
-    simpa using map_apply_div (Polynomial.mapRingHom (algebraMap F K)) _ p 1
-  have : IsScalarTower F (RatFunc F) (RatFunc K) := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply F K (RatFunc K), algebraMap_eq_C, algebraMap_eq_C,
-      ← algebraMap_C, ← algebraMap_C, hpoly, Polynomial.map_C]
+    rw [RingHom.algebraMap_toAlgebra, mapRingHom_algebraMap, Polynomial.coe_mapRingHom]
+  have := TauCeti.RatFunc.isScalarTower_of_algebraMap_C (F := F) (K := K) fun c ↦ by
+    rw [← algebraMap_C, ← algebraMap_C, hpoly, Polynomial.map_C]
   have hX : algebraMap (RatFunc F) (RatFunc K) X = X := by
     rw [← algebraMap_X, hpoly, Polynomial.map_X, algebraMap_X]
   rw [← RingHom.algebraMap_toAlgebra (mapRingHom _ _),

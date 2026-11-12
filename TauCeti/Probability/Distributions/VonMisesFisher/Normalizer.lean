@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.BesselI
 public import TauCeti.Probability.Distributions.VonMisesFisher.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Probability.Distributions.Uniform.Sphere.Coordinate
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 
@@ -74,7 +74,6 @@ private lemma integral_inner_pow_div_uniformSphereMeasure (hd : 2 ≤ Module.fin
         ((‖η‖ / 2) ^ (2 * (j : ℝ) + ((Module.finrank ℝ E : ℝ) / 2 - 1)) /
           (j ! * Gamma (j + ((Module.finrank ℝ E : ℝ) / 2 - 1) + 1))) := by
   set b : ℝ := (Module.finrank ℝ E : ℝ) / 2 with hb_def
-  have hκ : 0 < ‖η‖ := norm_pos_iff.2 hη
   have h2 : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
   have ha : 0 < ((Module.finrank ℝ E : ℝ) - 1) / 2 := by linarith
   have hb : 0 < b := by linarith
@@ -96,7 +95,7 @@ private lemma integral_inner_pow_div_uniformSphereMeasure (hd : 2 ≤ Module.fin
     have hfour : (2 : ℝ) ^ 2 = 4 := by norm_num
     rw [eq_div_iff hA.ne', ← rpow_add (by positivity), hsum, rpow_natCast, div_pow, pow_mul 2,
       hfour]
-  have hGb : 0 < Gamma (b + j) := Gamma_pos_of_pos (by positivity)
+  have _ : 0 < Gamma (b + j) := Gamma_pos_of_pos (by positivity)
   -- the Bessel series index `j + (d / 2 - 1) + 1` is the Beta moment index `d / 2 + j`
   have hidx : (j : ℝ) + (b - 1) + 1 = b + j := by ring
   rw [integral_div, hmoment, add_comm (1 / 2 : ℝ), Gamma_nat_add_half_eq_factorial,
@@ -113,7 +112,6 @@ theorem integral_exp_inner_uniformSphereMeasure_eq_besselI (hd : 2 ≤ Module.fi
       Gamma ((Module.finrank ℝ E : ℝ) / 2) *
         ((‖η‖ / 2) ^ (-((Module.finrank ℝ E : ℝ) / 2 - 1)) *
           besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖) := by
-  have hκ : 0 < ‖η‖ := norm_pos_iff.2 hη
   -- `⟪-η, x⟫` has the law of `⟪η, x⟫`, so the exponential moment is that of `cosh ⟪η, x⟫`
   have hsymm : ∫ x : sphere (0 : E) 1, exp ⟪-η, (x : E)⟫ ∂uniformSphereMeasure E =
       ∫ x : sphere (0 : E) 1, exp ⟪η, (x : E)⟫ ∂uniformSphereMeasure E := by
@@ -142,7 +140,7 @@ theorem integral_exp_inner_uniformSphereMeasure_eq_besselI (hd : 2 ≤ Module.fi
     simp only [hF, pow_mul]
     gcongr ?_ / _
     exact pow_le_pow_left₀ (sq_nonneg _) (sq_le_sq.2 hx) j
-  have hseries := (hasSum_besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) hκ).mul_left
+  have hseries := (hasSum_besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖).mul_left
     (Gamma ((Module.finrank ℝ E : ℝ) / 2) * (‖η‖ / 2) ^ (1 - (Module.finrank ℝ E : ℝ) / 2))
   have hsum := hasSum_integral_of_summable_integral_norm hF_int (by
     simp_rw [Real.norm_of_nonneg (hF_nonneg _ _), hF,
@@ -182,8 +180,6 @@ theorem integral_exp_inner_toSphere_eq_besselI (hd : 2 ≤ Module.finrank ℝ E)
         besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖ := by
   have hκ : 0 < ‖η‖ := norm_pos_iff.2 hη
   have : Nontrivial E := ⟨⟨η, 0, hη⟩⟩
-  have h2 : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
-  have hGb : 0 < Gamma ((Module.finrank ℝ E : ℝ) / 2) := Gamma_pos_of_pos (by linarith)
   have hsurf : (volume : Measure E).toSphere =
       (volume : Measure E).toSphere univ • uniformSphereMeasure E := by
     rw [uniformSphereMeasure_def, smul_smul,

@@ -48,32 +48,20 @@ theorem quotientMapOfLELeft_apply_mk {H H' : Subgroup G} (h : H ≤ H')
 /-- The double-coset quotient map induced by reflexivity is the identity. -/
 @[simp]
 theorem quotientMapOfLELeft_refl (H K : Subgroup G) :
-    quotientMapOfLELeft (le_refl H) K = id := by
-  funext q
-  induction q using Quotient.inductionOn' with
-  | h g => rw [quotientMapOfLELeft_apply_mk]; rfl
-
-private theorem quotientMapOfLELeft_trans_apply {H H' H'' : Subgroup G} (h : H ≤ H')
-    (h' : H' ≤ H'') (K : Subgroup G) (q : Quotient (H : Set G) K) :
-    quotientMapOfLELeft (h.trans h') K q =
-      quotientMapOfLELeft h' K (quotientMapOfLELeft h K q) := by
-  induction q using Quotient.inductionOn' with
-  | h g => simp only [quotientMapOfLELeft_apply_mk]
+    quotientMapOfLELeft (le_refl H) K = id :=
+  funext fun q ↦ q.inductionOn' fun _ ↦ rfl
 
 /-- Double-coset quotient maps compose along inclusions of left subgroups. -/
 theorem quotientMapOfLELeft_trans {H H' H'' : Subgroup G} (h : H ≤ H') (h' : H' ≤ H'')
     (K : Subgroup G) :
     quotientMapOfLELeft (h.trans h') K =
-      quotientMapOfLELeft h' K ∘ quotientMapOfLELeft h K := by
-  funext q
-  exact quotientMapOfLELeft_trans_apply h h' K q
+      quotientMapOfLELeft h' K ∘ quotientMapOfLELeft h K :=
+  funext fun q ↦ q.inductionOn' fun _ ↦ rfl
 
 /-- Enlarging the left subgroup gives a surjection on double-coset quotients. -/
 theorem quotientMapOfLELeft_surjective {H H' : Subgroup G} (h : H ≤ H') (K : Subgroup G) :
-    Function.Surjective (quotientMapOfLELeft h K) := by
-  intro q
-  induction q using Quotient.inductionOn' with
-  | h g => exact ⟨mk H K g, quotientMapOfLELeft_apply_mk h K g⟩
+    Function.Surjective (quotientMapOfLELeft h K) :=
+  fun q ↦ q.inductionOn' fun g ↦ ⟨mk H K g, rfl⟩
 
 /-- The map `H \ G / K → H \ G / K'` induced by an inclusion `K ≤ K'`. -/
 def quotientMapOfLERight (H : Subgroup G) {K K' : Subgroup G} (h : K ≤ K') :
@@ -92,32 +80,20 @@ theorem quotientMapOfLERight_apply_mk (H : Subgroup G) {K K' : Subgroup G} (h : 
 /-- The right double-coset quotient map induced by reflexivity is the identity. -/
 @[simp]
 theorem quotientMapOfLERight_refl (H K : Subgroup G) :
-    quotientMapOfLERight H (le_refl K) = id := by
-  funext q
-  induction q using Quotient.inductionOn' with
-  | h g => rw [quotientMapOfLERight_apply_mk]; rfl
-
-private theorem quotientMapOfLERight_trans_apply {K K' K'' : Subgroup G} (H : Subgroup G)
-    (h : K ≤ K') (h' : K' ≤ K'') (q : Quotient (H : Set G) K) :
-    quotientMapOfLERight H (h.trans h') q =
-      quotientMapOfLERight H h' (quotientMapOfLERight H h q) := by
-  induction q using Quotient.inductionOn' with
-  | h g => simp only [quotientMapOfLERight_apply_mk]
+    quotientMapOfLERight H (le_refl K) = id :=
+  funext fun q ↦ q.inductionOn' fun _ ↦ rfl
 
 /-- Double-coset quotient maps compose along inclusions of right subgroups. -/
 theorem quotientMapOfLERight_trans {K K' K'' : Subgroup G} (H : Subgroup G)
     (h : K ≤ K') (h' : K' ≤ K'') :
     quotientMapOfLERight H (h.trans h') =
-      quotientMapOfLERight H h' ∘ quotientMapOfLERight H h := by
-  funext q
-  exact quotientMapOfLERight_trans_apply H h h' q
+      quotientMapOfLERight H h' ∘ quotientMapOfLERight H h :=
+  funext fun q ↦ q.inductionOn' fun _ ↦ rfl
 
 /-- Enlarging the right subgroup gives a surjection on double-coset quotients. -/
 theorem quotientMapOfLERight_surjective (H : Subgroup G) {K K' : Subgroup G} (h : K ≤ K') :
-    Function.Surjective (quotientMapOfLERight H h) := by
-  intro q
-  induction q using Quotient.inductionOn' with
-  | h g => exact ⟨mk H K g, quotientMapOfLERight_apply_mk H h g⟩
+    Function.Surjective (quotientMapOfLERight H h) :=
+  fun q ↦ q.inductionOn' fun g ↦ ⟨mk H K g, rfl⟩
 
 /-- Right translation by `g` identifies quotients by `K` and by the conjugate `g⁻¹Kg`. -/
 def quotientConjRight (H K : Subgroup G) (g : G) :
@@ -134,14 +110,9 @@ def quotientConjRight (H K : Subgroup G) (g : G) :
     · rintro ⟨a, ha, b, hb, hxy⟩
       obtain ⟨c, hc, rfl⟩ := Subgroup.mem_map.mp hb
       refine ⟨a, ha, c, hc, ?_⟩
-      simp only [Equiv.coe_mulRight] at hxy
-      have hconj : ((MulAut.conj g).symm : G →* G) c = g⁻¹ * c * g :=
-        MulAut.conj_symm_apply g c
-      calc
-        y = (y * g) * g⁻¹ := by group
-        _ = (a * (x * g) * ((MulAut.conj g).symm : G →* G) c) * g⁻¹ := by rw [hxy]
-        _ = (a * (x * g) * (g⁻¹ * c * g)) * g⁻¹ := by rw [hconj]
-        _ = a * x * c := by group
+      simp only [Equiv.coe_mulRight, MonoidHom.coe_ofClass, MulAut.conj_symm_apply] at hxy
+      rw [← mul_left_inj g, hxy]
+      group
 
 /-- Right translation sends the double coset of `x` to the double coset of `x * g`.
 
@@ -190,8 +161,8 @@ theorem quotientCongr_apply_mk (H K : Subgroup G) {H' K' : Subgroup G'} (e : G �
 @[simp]
 theorem quotientCongr_symm_apply_mk (H K : Subgroup G) {H' K' : Subgroup G'} (e : G ≃* G')
     (hH : H.map e = H') (hK : K.map e = K') (g : G') :
-    (quotientCongr H K e hH hK).symm (mk H' K' g) = mk H K (e.symm g) := by
-  rw [Equiv.symm_apply_eq, quotientCongr_apply_mk, MulEquiv.apply_symm_apply]
+    (quotientCongr H K e hH hK).symm (mk H' K' g) = mk H K (e.symm g) :=
+  (rfl)
 
 variable {α β F : Type*} [Mul α] [Mul β] [FunLike F α β] [MulHomClass F α β]
 

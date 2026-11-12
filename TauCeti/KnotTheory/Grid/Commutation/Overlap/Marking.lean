@@ -247,17 +247,6 @@ private theorem mem_coveredSquares_pentagon_of_branch2
     rw [hsides.2.1, GridRectangleBetween.bottom_def, hleft]
     exact D.rectangle.bottom_def.symm
   have hPtop := D.pentagon_top_recutLeftEqLeft hcommon hone hrectangle hpentagon
-  have hspan : Grid.cIco D.rectangle.left D.pentagon.right ⊆
-      Grid.cIco D.rectangle.left D.rectangle.right :=
-    fun q hq => Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hq hcol
-  have hrect (q : Fin n × Fin n) (hcolumn : q.1 ∈ Grid.cIco D.rectangle.left D.rectangle.right)
-      (hrow : q.2 ∈ Grid.cIco D.rectangle.bottom D.rectangle.top) :
-      q ∈ D.rectangle.toGridRectangle.coveredSquares := by
-    refine (GridRectangle.mem_coveredSquares D.rectangle.toGridRectangle q).2 ⟨?_, ?_⟩
-    · simpa only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-        GridRectangleBetween.toGridRectangle_right] using hcolumn
-    · simpa only [GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_bottom,
-        GridRectangleBetween.toGridRectangle_top] using hrow
   rcases (GridPentagonBetween.mem_coveredSquares
       (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).pentagon p).mp hp with h | h | h
   · rw [hPleft, hPbottom, hPtop] at h
@@ -265,10 +254,11 @@ private theorem mem_coveredSquares_pentagon_of_branch2
     · refine Finset.mem_union.mpr (Or.inl
         ((GridPentagonBetween.mem_coveredSquares D.pentagon p).2 (Or.inl ⟨h.1, ?_, hrow⟩)))
       simpa only [hcommon] using h.2.1
-    · refine Finset.mem_union.mpr (Or.inr (hrect p ?_ ?_))
+    · refine Finset.mem_union.mpr (Or.inr
+        (D.rectangle.mem_toGridRectangle_coveredSquares.2 ⟨?_, ?_⟩))
       · have hcolumn : p.1 ∈ Grid.cIco D.rectangle.left D.pentagon.right := by
           simpa only [D.pentagon.right_eq] using h.2.1
-        exact hspan hcolumn
+        exact Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hcolumn hcol
       · have hsplit : p.2 ∈ Grid.cIco D.pentagon.bottom D.pentagon.top ∨
             p.2 ∈ Grid.cIco D.rectangle.bottom D.pentagon.bottom :=
           Finset.mem_union.mp
@@ -295,7 +285,8 @@ private theorem mem_coveredSquares_pentagon_of_branch2
         have hmem : D.pentagon.right ∈ Grid.cIco D.rectangle.left D.rectangle.right :=
           Grid.cIoo_subset_cIco _ _ hcol
         simpa only [h.1, D.pentagon.right_eq] using hmem
-      exact Finset.mem_union.mpr (Or.inr (hrect p hcolumn hsecond))
+      exact Finset.mem_union.mpr (Or.inr
+        (D.rectangle.mem_toGridRectangle_coveredSquares.2 ⟨hcolumn, hsecond⟩))
 
 /-- The squares covered by the promoted pentagon of the common-initial-side overlap recut are
 covered by the original pentagon or by the original rectangle. -/

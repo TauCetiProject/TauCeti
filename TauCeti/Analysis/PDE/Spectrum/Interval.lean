@@ -205,7 +205,6 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
     filter_upwards [hu, Lp.coeFn_zero ℝ 2
       (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
     rw [← h1, hval, h2]
-  have hk' : (0 : ℝ) < k := Nat.cast_pos.2 hk
   have hba : 0 < b - a := sub_pos.2 hab
   have hmem : lineEquiv (a + (b - a) / (2 * k)) ∈ intervalDomain a b := by
     rw [mem_intervalDomain, ← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
@@ -245,7 +244,8 @@ private theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
   have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioc a b)) := by
     rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     exact (Lp.memLp f).comp_measurePreserving hmpΩ
-  have hg0 := ae_eq_zero_of_forall_integral_mul_sin_eq_zero hg fun k hk => by
+  have hg0 := ae_eq_zero_of_forall_integral_mul_sin_eq_zero (hg.integrable one_le_two)
+    fun k hk => by
     rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h k hk,
       ← preimage_lineEquiv_intervalDomain, ← hmp.setIntegral_preimage_emb
         lineEquiv.toHomeomorph.measurableEmbedding]
@@ -301,36 +301,8 @@ theorem isLeast_isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) :
   refine ⟨by simpa using isDirichletEigenvalue_laplacian_intervalDomain hab one_pos,
     fun kappa hkappa => ?_⟩
   obtain ⟨k, hk, rfl⟩ := (isDirichletEigenvalue_laplacian_intervalDomain_iff hab).1 hkappa
-  have hba : 0 < b - a := sub_pos.2 hab
   gcongr
   exact le_mul_of_one_le_left Real.pi_pos.le (Nat.one_le_cast.2 hk)
-
-/-- The energy form of `-Δ` on `(a, b)` is bounded and coercive on `H¹₀(a, b)`, by the Poincaré
-inequality on a ball containing the interval. -/
-theorem exists_isCoercive_laplacian_intervalDomain (hab : a < b) :
-    ∃ hcoeff : MemLp (fun x ↦ energyIntegrand ((fun _ => (1 : Matrix (Fin 1) (Fin 1) ℝ)) x)
-        ((0 : EuclideanSpace ℝ (Fin 1) → EuclideanSpace ℝ (Fin 1)) x)
-        ((0 : EuclideanSpace ℝ (Fin 1) → ℝ) x)) ⊤
-        (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))),
-      IsCoercive (energyFormH1L0 hcoeff) := by
-  have h1 := uniformlyEllipticOn_const_one_one (n := Fin 1)
-    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))
-  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) h1.upper_nonneg
-    aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi ↦ h1.upper_bound hx eta xi) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
-  have hball : (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) ⊆
-      Metric.ball (lineEquiv ((a + b) / 2)) (b - a) := by
-    intro x hx
-    have hx' : lineEquiv.symm x ∈ Ioo a b := by rwa [lineEquiv_symm_apply]
-    rw [Metric.mem_ball, ← lineEquiv.apply_symm_apply x, lineEquiv.dist_map, Real.dist_eq,
-      abs_sub_lt_iff]
-    constructor <;> linarith [hx'.1, hx'.2]
-  exact ⟨hcoeff, isCoercive_energyFormH1L0 hcoeff
-    (energyFormH1_poincare_constant_pos h1.pos le_rfl (by linarith) (by simp))
-    fun w ↦ UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_ball h1
-      aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
-      (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp) (fun _ _ ↦ le_rfl) hball w.2⟩
 
 /-- The interval domain `(a, b)` is nonempty exactly when `a < b`. -/
 theorem nonempty_intervalDomain_iff :
@@ -377,7 +349,8 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
           energyFormH1 (fun _ => 1) 0 0 (u : W1p volume (intervalDomain a b) 2)
             (u : W1p volume (intervalDomain a b) 2)}
       ((π / (b - a)) ^ 2) := by
-  obtain ⟨hcoeff, hcoercive⟩ := exists_isCoercive_laplacian_intervalDomain hab
+  obtain ⟨hcoeff, hcoercive⟩ := exists_isCoercive_laplacian_of_isBounded (n := 0)
+    isBounded_intervalDomain
   rw [← firstDirichletEigenvalue_laplacian_intervalDomain hab hcoeff hcoercive]
   exact isGreatest_firstDirichletEigenvalue hcoeff hcoercive energyFormH1_laplacian_comm
     (nonempty_intervalDomain_iff.2 hab)

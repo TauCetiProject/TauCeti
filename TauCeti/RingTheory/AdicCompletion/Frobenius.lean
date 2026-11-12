@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.CharP.Lemmas
 public import TauCeti.RingTheory.AdicCompletion.Pi
+public import TauCeti.RingTheory.Ideal.Quotient.Frobenius
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -39,6 +40,9 @@ of Mathlib's `WittVector.surjective_fontaineTheta`, in the form of
 * `TauCeti.exists_mul_dvd_sub_pow`: in a `π`-adically complete ring in which every element is a
   `p`-th power modulo `π ^ p`, every element is a `p`-th power modulo `π p`.
 * `TauCeti.tfae_forall_exists_dvd_sub_pow`: the equivalence of the three conditions above.
+* `TauCeti.surjective_pow_modP_of_frobeniusModPow_surjective`,
+  `TauCeti.surjective_frobenius_modP_of_frobeniusModPow_surjective`: surjective relative Frobenius
+  `A ⧸ (π) → A ⧸ (π ^ p)` implies surjectivity of the `p`-th power map (Frobenius) on `ModP A p`.
 
 ## References
 
@@ -101,10 +105,11 @@ theorem exists_mul_dvd_sub_pow [IsHausdorff (Ideal.span {π}) A]
     ∃ y, π * p ∣ x - y ^ p := by
   obtain ⟨s, b, hs, hb, hbπ, hx⟩ := exists_seq_pow_add_mul h x
   -- the pairs `(s (m + 1), b (m + 1))` converge `π`-adically, to `(L 0, L 1)`
-  obtain ⟨L, hL⟩ := exists_forall_pow_dvd_sub π (fun m ↦ ![s (m + 1), b (m + 1)]) fun m i ↦ by
-    fin_cases i
-    · simpa using hs (m + 1)
-    · simpa using hb (m + 1)
+  obtain ⟨L, hL⟩ := exists_forall_pow_dvd_sub π (fun m ↦ ![s (m + 1), b (m + 1)])
+    fun m i ↦ (pow_dvd_pow π m.le_succ).trans <| by
+      fin_cases i
+      · simpa using hs (m + 1)
+      · simpa using hb (m + 1)
   have hLs (m : ℕ) : π ^ m ∣ L 0 - s (m + 1) := by simpa using hL m 0
   have hLb (m : ℕ) : π ^ m ∣ L 1 - b (m + 1) := by simpa using hL m 1
   -- in the limit, `x = L 0 ^ p + p * L 1`
@@ -140,5 +145,23 @@ theorem tfae_forall_exists_dvd_sub_pow [IsHausdorff (Ideal.span {π}) A]
   tfae_have 3 → 2 := fun h3 x ↦ (h3 x).imp fun _ ↦ (dvd_mul_left _ _).trans
   tfae_have 2 → 1 := fun h2 x ↦ (h2 x).imp fun _ ↦ h.trans
   tfae_finish
+
+/-- **Surjective relative Frobenius implies surjective `p`-th power map on `ModP A p`.** If `A` is
+`π`-adically complete and separated with `π ^ p ∣ p` and `frobeniusModPow p h` is surjective, then
+`x ↦ x ^ p` on `ModP A p = A ⧸ p` is surjective, with no nonunit assumption on `p`. -/
+theorem surjective_pow_modP_of_frobeniusModPow_surjective [IsHausdorff (Ideal.span {π}) A]
+    [IsPrecomplete (Ideal.span {π}) A] {h : π ^ p ∣ (p : A)}
+    (hs : Function.Surjective (frobeniusModPow p h)) :
+    Function.Surjective fun x : ModP A p ↦ x ^ p := by
+  have hs_mul := exists_mul_dvd_sub_pow ((frobeniusModPow_surjective_iff h).mp hs)
+  exact (surjective_pow_modP_iff A).mpr fun a ↦
+    (hs_mul a).imp fun _ ↦ (dvd_mul_left (p : A) π).trans
+
+/-- **Surjective relative Frobenius implies surjective Frobenius on `ModP A p`.** -/
+theorem surjective_frobenius_modP_of_frobeniusModPow_surjective [IsHausdorff (Ideal.span {π}) A]
+    [IsPrecomplete (Ideal.span {π}) A] [ExpChar (ModP A p) p] {h : π ^ p ∣ (p : A)}
+    (hs : Function.Surjective (frobeniusModPow p h)) :
+    Function.Surjective (frobenius (ModP A p) p) := by
+  simpa only [← frobenius_def] using surjective_pow_modP_of_frobeniusModPow_surjective hs
 
 end TauCeti

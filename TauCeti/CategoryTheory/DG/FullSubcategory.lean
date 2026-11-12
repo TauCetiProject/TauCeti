@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DG.Basic
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 
 /-!
 # Full differential graded subcategories
@@ -80,6 +80,14 @@ theorem inclusion_map (X Y : DGFullSubcategory P) :
     (inclusion (R := R) (P := P)).map X Y =
       eqToHom (by simp only [inclusion_obj]; rfl) := by
   simp only [inclusion]
+  rfl
+
+/-- The enriched inclusion retains a homogeneous morphism. The heterogeneous equality
+accounts for the object map of the inclusion in the target type. -/
+@[simp]
+theorem inclusion_dgMap_heq {X Y : DGFullSubcategory P} {n : ℤ} (f : DGHom R n X Y) :
+    (inclusion (R := R)).dgMap n f ≍ f := by
+  rw [CategoryTheory.EnrichedFunctor.dgMap_apply, inclusion_map]
   rfl
 
 /-- The Hom complex in the full DG subcategory is the ambient Hom complex. -/

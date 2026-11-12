@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Analytic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Semianalytic sets on real analytic manifolds
@@ -59,7 +60,7 @@ theorem MSemianalyticAt.congr {s t : Set M} {x : M} (hs : MSemianalyticAt I s x)
   apply (mSemianalyticAt_def I).2
   have hlim : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
     simpa only [extChartAt_to_inv] using (continuousAt_extChartAt_symm (I := I) x).tendsto
-  exact ((mSemianalyticAt_def I).1 hs).congr (hst.comp_tendsto hlim)
+  exact ((mSemianalyticAt_def I).1 hs).congr (hlim.eventually hst)
 
 /-- Germ-equivalent sets have the same semianalyticity at a manifold point. -/
 theorem mSemianalyticAt_congr {s t : Set M} {x : M} (hst : s =ᶠ[𝓝 x] t) :
@@ -274,7 +275,7 @@ theorem MSemianalyticAt.preimage {s : Set M'} {g : M → M'} {x : M}
     MSemianalyticAt I (g ⁻¹' s) x := by
   let c := writtenInExtChartAt I I' x g
   have hc : ContDiffAt ℝ ω c (extChartAt I x x) :=
-    (contMDiffAt_iff.1 hg).2.contDiffAt (by simp [I.range_eq_univ])
+    hg.contDiffAt_writtenInExtChartAt
   have hcx : c (extChartAt I x x) = extChartAt I' (g x) (g x) :=
     writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
   -- Neighborhood stability of C^ω needs no completeness of the target model.

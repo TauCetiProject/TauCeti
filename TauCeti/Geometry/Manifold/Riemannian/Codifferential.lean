@@ -9,11 +9,13 @@ public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence
 
 /-!
 # The codifferential and the Hodge Laplacian of an oriented Riemannian manifold
@@ -45,6 +47,14 @@ compactly supported form is harmonic exactly when it is closed and coclosed. The
 `⋆d*β = (-1) ^ (k + 1) d⋆β` and `⋆dα = (-1) ^ (k + 1) d*⋆α` show that `Δ` commutes with the Hodge
 star.
 
+Multiplication by a smooth function `f` commutes with `d` and `d*` up to zeroth-order terms:
+`d (f α) = f dα + df ∧ α` and `d*(f β) = f d*β - ι_(grad f) β`. Hence the double commutator of the
+Hodge Laplacian with `f` is `[[Δ, f], f] = -2 (ι_(grad f) ε_(df) + ε_(df) ι_(grad f)) = -2 |df|²`,
+and more generally `[[Δ, f], g] = -2 ⟪df, dg⟫` for smooth functions `f` and `g`.
+With the normalization `σ(P)(df) = ½ [[P, f], f]` of the principal symbol of a second-order
+operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id`, that is
+`|ξ|² Id` at `ξ = df_x` in the Fourier convention `σ(∂ⱼ) = i ξⱼ`.
+
 ## Main definitions
 
 * `TauCeti.SmoothForm.codifferential`: the codifferential `d* = (-1) ^ (m (k + 2) + 1) ⋆ d ⋆` of
@@ -67,6 +77,13 @@ star.
   smooth and compactly supported.
 * `TauCeti.SmoothForm.hodgeStar_mextDeriv`: `⋆dα = (-1) ^ (k + 1) d*⋆α`.
 * `TauCeti.SmoothForm.hodgeStar_hodgeLaplacian`: `⋆Δ = Δ⋆`.
+* `TauCeti.SmoothForm.hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami`: on functions,
+  `Δf = -div grad f`.
+* `TauCeti.SmoothForm.coe_codifferential_funSMulₗ`: the Leibniz rule
+  `d*(f β) = f d*β - ι_(grad f) β`.
+* `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ`,
+  `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ_self`: the principal symbol of the Hodge
+  Laplacian, `[[Δ, f], g] = -2 ⟪df, dg⟫` and `[[Δ, f], f] = -2 |df|²`.
 * `TauCeti.SmoothForm.integralTopForm_inner_codifferential_mextDeriv`,
   `TauCeti.SmoothForm.integralTopForm_inner_mextDeriv_codifferential`: Green's formulas for `d*d`
   and `dd*`.
@@ -88,7 +105,7 @@ public section
 noncomputable section
 
 open Bundle Set
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti
 
@@ -273,6 +290,25 @@ theorem hodgeLaplacian_add_one_add_one (o : Manifold.Orientation I M (Fin m))
       codifferential o hkl' (mextDerivₗ I (k + 1) α) + mextDerivₗ I k (codifferential o hkl α) :=
   (rfl)
 
+/-- In positive dimension the Hodge Laplacian of functions is `Δ = d* ∘ d`. -/
+theorem hodgeLaplacian_zero_add_one_eq_comp (o : Manifold.Orientation I M (Fin m))
+    (hkl : 0 + (l + 1) = m) (hkl' : 0 + 1 + l = m) :
+    hodgeLaplacian o hkl = codifferential o hkl' ∘ₗ mextDerivₗ I 0 :=
+  (rfl)
+
+/-- In the top degree the Hodge Laplacian is `Δ = d ∘ d*`. -/
+theorem hodgeLaplacian_add_one_zero_eq_comp (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + 0 = m) : hodgeLaplacian o hkl = mextDerivₗ I k ∘ₗ codifferential o hkl :=
+  (rfl)
+
+/-- Strictly between degree `0` and the top degree the Hodge Laplacian is
+`Δ = d* ∘ d + d ∘ d*`. -/
+theorem hodgeLaplacian_add_one_add_one_eq_comp_add_comp (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + (l + 1) = m) (hkl' : k + 1 + 1 + l = m) :
+    hodgeLaplacian o hkl =
+      codifferential o hkl' ∘ₗ mextDerivₗ I (k + 1) + mextDerivₗ I k ∘ₗ codifferential o hkl :=
+  (rfl)
+
 /-- The Hodge Laplacian does not depend on the orientation. -/
 @[simp]
 theorem hodgeLaplacian_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
@@ -340,6 +376,248 @@ theorem hodgeStar_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k
       hup (k := k + 1) (l := l) (by omega) (by omega) (by omega),
       hdown (k := k) (l := l + 1) (by omega) (by omega) (by omega)]
     exact add_comm _ _
+
+/-! ### Functions -/
+
+/-- **The Hodge Laplacian of a function is minus its Laplace–Beltrami operator**: for a smooth
+`0`-form `f`, with underlying function `x ↦ f x 0`, `Δf = d*df = -div grad f`. -/
+theorem hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami (o : Manifold.Orientation I M (Fin m))
+    (hl : 0 + l = m) (f : SmoothForm I M ℝ 0) :
+    (hodgeLaplacian o hl f : RoughForm I M ℝ 0) =
+      RoughForm.ofFunction I (-Manifold.laplaceBeltrami I fun x ↦ f.1 x 0) := by
+  set g : M → ℝ := fun x ↦ f.1 x 0
+  have hf : f.1 = RoughForm.ofFunction I g := RoughForm.eq_ofFunction _
+  rcases l with _ | l
+  · -- In dimension zero both sides vanish: the divergence is the trace of an endomorphism of the
+    -- zero space.
+    obtain rfl : m = 0 := by omega
+    have : Subsingleton E := Module.finrank_zero_iff.1 (by simpa using o.card_eq.symm)
+    funext x
+    ext v
+    have hA (A : Module.End ℝ (TangentSpace I x)) : A = 0 :=
+      LinearMap.ext fun _ ↦ Subsingleton.elim (α := E) _ _
+    rw [hodgeLaplacian_zero_zero, RoughForm.ofFunction_apply, Pi.neg_apply,
+      Manifold.laplaceBeltrami_def, Manifold.divergence_def, hA (_ : _ →L[ℝ] _).toLinearMap,
+      map_zero, neg_zero]
+    simp
+  · -- `Δf = -⋆d⋆df = -⋆d(ι_(grad f) vol) = -⋆((div grad f) vol) = -div grad f`.
+    obtain rfl : m = l + 1 := by omega
+    have hsmooth : ContMDiff I 𝓘(ℝ) ∞ g :=
+      isSmoothForm_ofFunction_iff.1 (hf ▸ f.isSmoothForm)
+    rw [hodgeLaplacian_zero_add_one o hl (by omega), codifferential_apply o _ (by omega),
+      Odd.neg_one_pow ⟨l + 1, by ring⟩]
+    simp only [SetLike.val_smul, coe_hodgeStar, mextDerivₗ_apply, hf]
+    rw [RoughForm.hodgeStar_mextDeriv_ofFunction, mextDeriv_interior_riemannianVolumeForm o
+        (Manifold.mdifferentiable_mgradient (hsmooth.of_le (by simp))),
+      RoughForm.hodgeStar_smul_riemannianVolumeForm]
+    funext x
+    ext v
+    simp [Manifold.laplaceBeltrami_def]
+
+/-! ### Commutators with functions and the principal symbol of the Hodge Laplacian -/
+
+/-- Exterior multiplication `ε_u` by the gradient `u = grad f x` of `f` at `x` on alternating
+forms of the tangent space, read through the identification of forms with the exterior algebra. -/
+private def gradWedge (f : M → ℝ) (j : ℕ) (x : M) :
+    (TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ :=
+  (alternatingFormEquiv _ (j + 1)).toLinearMap ∘ₗ
+    ExteriorAlgebra.wedgeLeft (Manifold.mgradient I f x) j ∘ₗ
+      (alternatingFormEquiv _ j).symm.toLinearMap
+
+/-- The contraction `ι_u` by the gradient `u = grad f x` of `f` at `x` on alternating forms of the
+tangent space, read through the identification of forms with the exterior algebra. -/
+private def gradContr (f : M → ℝ) (j : ℕ) (x : M) :
+    (TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ :=
+  (alternatingFormEquiv _ j).toLinearMap ∘ₗ
+    koszulDifferential (innerₗ _ (Manifold.mgradient I f x)) j ∘ₗ
+      (alternatingFormEquiv _ (j + 1)).symm.toLinearMap
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The contraction by the gradient is the interior product with it. -/
+private theorem gradContr_apply (f : M → ℝ) (j : ℕ) (β : RoughForm I M ℝ (j + 1)) (x : M) :
+    gradContr f j x (β x) = RoughForm.interior (Manifold.mgradient I f) β x := by
+  ext v
+  simp [gradContr, alternatingFormEquiv_koszulDifferential]
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- `ι_v ε_u = ⟪v, u⟫` on functions, for the gradients `u` of `f` and `v` of `g`. -/
+private theorem gradContr_gradWedge_zero (f g : M → ℝ) (x : M)
+    (w : TangentSpace I x [⋀^Fin 0]→L[ℝ] ℝ) :
+    gradContr g 0 x (gradWedge f 0 x w) =
+      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w := by
+  have h := LinearMap.congr_fun (koszulDifferential_comp_wedgeLeft_zero
+    (innerₗ _ (Manifold.mgradient I g x)) (Manifold.mgradient I f x))
+    ((alternatingFormEquiv _ 0).symm w)
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
+    innerₗ_apply_apply] at h
+  simp only [gradContr, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_apply, h, map_smul, LinearEquiv.apply_symm_apply]
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The Koszul homotopy identity `ε_u ι_v + ι_v ε_u = ⟪v, u⟫` in positive degrees, for the
+gradients `u` of `f` and `v` of `g`. -/
+private theorem gradWedge_gradContr_add (f g : M → ℝ) (j : ℕ) (x : M)
+    (w : TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ) :
+    gradWedge f j x (gradContr g j x w) + gradContr g (j + 1) x (gradWedge f (j + 1) x w) =
+      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w := by
+  have h := LinearMap.congr_fun (wedgeLeft_comp_koszulDifferential_add
+    (innerₗ _ (Manifold.mgradient I g x)) (Manifold.mgradient I f x) j)
+    ((alternatingFormEquiv _ (j + 1)).symm w)
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
+    innerₗ_apply_apply] at h
+  simp only [gradContr, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_apply, ← map_add, h, map_smul, LinearEquiv.apply_symm_apply]
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The Leibniz rule `d (f α) = f dα + df ∧ α` for smooth forms, with `df ∧ ·` written as exterior
+multiplication by the gradient. -/
+private theorem mextDerivₗ_funSMulₗ_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k)
+    (x : M) :
+    (mextDerivₗ I k (funSMulₗ f α)).1 x =
+      f x • (mextDerivₗ I k α).1 x + gradWedge f k x (α.1 x) := by
+  have hdf : mvfderiv I f x = innerSL ℝ (Manifold.mgradient I f x) := by
+    ext w
+    rw [innerSL_apply_apply, Manifold.inner_mgradient]
+  ext v
+  rw [mextDerivₗ_funSMulₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+    ← ContinuousAlternatingMap.wedge_def, mextDeriv_ofFunction, hdf, add_comm]
+  simp only [gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply,
+    ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+
+/-- **The Leibniz rule for the codifferential**: `d*(f β) = f d*β - ι_(grad f) β` for a smooth
+function `f` and a smooth `(k + 1)`-form `β`. The commutator `[d*, f] = -ι_(grad f)` is a
+zeroth-order operator, the principal symbol of `d*` at `df` up to the factor `i`. -/
+theorem coe_codifferential_funSMulₗ (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) (f : C^∞⟮I, M; ℝ⟯) (β : SmoothForm I M ℝ (k + 1)) :
+    (codifferential o hkl (funSMulₗ f β) : RoughForm I M ℝ k) =
+      (fun x ↦ f x • (codifferential o hkl β).1 x) -
+        RoughForm.interior (Manifold.mgradient I f) β.1 := by
+  have hlk : l + 1 + k = m := by omega
+  funext x
+  have hfin := o.fact_finrank_tangentSpace x
+  obtain ⟨b, hb⟩ := (alternatingFormEquiv (TangentSpace I x) (k + 1)).surjective (β.1 x)
+  rw [codifferential_apply o hkl hlk, hodgeStar_funSMulₗ, codifferential_apply o hkl hlk]
+  simp only [SetLike.val_smul, coe_hodgeStar, Pi.smul_apply, RoughForm.hodgeStar_apply,
+    mextDerivₗ_funSMulₗ_eq_gradWedge, map_add, map_smul, smul_add, Pi.sub_apply]
+  rw [smul_comm, sub_eq_add_neg, ← gradContr_apply, ← hb]
+  congr 1
+  simp only [gradWedge, gradContr, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Orientation.formHodgeStar_alternatingFormEquiv, LinearEquiv.symm_apply_apply]
+  -- `ι_u = (-1) ^ (m k) ⋆ ε_u ⋆` on `(k + 1)`-forms, and `(-1) ^ (m (k + 2) + 1 + m k) = -1`.
+  have key := (o.orientationAt x).koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar
+    (Manifold.mgradient I f x) (hkl.trans hfin.out.symm) (hlk.trans hfin.out.symm) b
+  replace key := congrArg ((-1 : ℝ) ^ (Module.finrank ℝ (TangentSpace I x) * k) • ·) key
+  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_smul] at key
+  have hsign :
+      (-1 : ℝ) ^ (m * (k + 2) + 1) * (-1) ^ (Module.finrank ℝ (TangentSpace I x) * k) = -1 := by
+    rw [hfin.out, ← pow_add]
+    exact Odd.neg_one_pow ⟨m * (k + 1), by ring⟩
+  rw [← key, map_smul, smul_smul, hsign]
+  exact neg_one_smul ℝ (M := TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) _
+
+/-- `[d*, f] = -ι_(grad f)`, in the form consumed by the double commutator computation. -/
+private theorem codifferential_funSMulₗ_apply (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) (f : C^∞⟮I, M; ℝ⟯) (β : SmoothForm I M ℝ (k + 1)) (x : M) :
+    (codifferential o hkl (funSMulₗ f β)).1 x =
+      f x • (codifferential o hkl β).1 x + (-gradContr f k x) (β.1 x) := by
+  rw [congrFun (coe_codifferential_funSMulₗ o hkl f β) x, Pi.sub_apply, sub_eq_add_neg,
+    LinearMap.neg_apply, gradContr_apply]
+
+omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The double commutator `[[Q P, f], g]` of a composite of two operators whose commutators
+`[P, h] = A h` and `[Q, h] = B h` with every smooth function `h` are fibrewise is
+`(B g) (A f) + (B f) (A g)`. -/
+private theorem lie_lie_comp_funSMulₗ_apply {j : ℕ}
+    (P : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ j)
+    (Q : SmoothForm I M ℝ j →ₗ[ℝ] SmoothForm I M ℝ k)
+    (A : C^∞⟮I, M; ℝ⟯ → ∀ x : M,
+      (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ)
+    (B : C^∞⟮I, M; ℝ⟯ → ∀ x : M,
+      (TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)
+    (hP : ∀ h α x, (P (funSMulₗ h α)).1 x = h x • (P α).1 x + A h x (α.1 x))
+    (hQ : ∀ h β x, (Q (funSMulₗ h β)).1 x = h x • (Q β).1 x + B h x (β.1 x))
+    (f g : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) (x : M) :
+    (⁅⁅Q ∘ₗ P, funSMulₗ (F := ℝ) (k := k) f⁆, funSMulₗ g⁆ α).1 x =
+      B g x (A f x (α.1 x)) + B f x (A g x (α.1 x)) := by
+  -- `P (f g α) = f P (g α) + g P (f α) - f g P α` as smooth forms.
+  have hγ : P (funSMulₗ f (funSMulₗ g α)) =
+      funSMulₗ f (P (funSMulₗ g α)) + funSMulₗ g (P (funSMulₗ f α)) -
+        funSMulₗ f (funSMulₗ g (P α)) := by
+    refine Subtype.ext (funext fun y ↦ ?_)
+    simp only [hP, coe_funSMulₗ, map_smul, Submodule.coe_add, Submodule.coe_sub, Pi.add_apply,
+      Pi.sub_apply]
+    module
+  simp only [Ring.lie_def, mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.comp_apply,
+    map_sub, map_add, hγ, hQ, hP, map_smul, Submodule.coe_add, Submodule.coe_sub, coe_funSMulₗ,
+    Pi.add_apply, Pi.sub_apply]
+  module
+
+/-- **The principal symbol of the Hodge Laplacian**, polarized: for smooth functions `f` and `g`,
+the double commutator of `Δ = d*d + dd*` with multiplication by `f` and `g` is multiplication by
+`-2 ⟪grad f, grad g⟫`, `[[Δ, f], g] α = -2 ⟪df, dg⟫ α`. -/
+theorem coe_lie_lie_hodgeLaplacian_funSMulₗ (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) (f g : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) :
+    (⁅⁅hodgeLaplacian o hkl, funSMulₗ (F := ℝ) (k := k) f⁆, funSMulₗ g⁆ α : RoughForm I M ℝ k) =
+      fun x ↦ (-2 * ⟪Manifold.mgradient I f x, Manifold.mgradient I g x⟫) • α.1 x := by
+  funext x
+  have hm := (o.fact_finrank_tangentSpace x).out
+  have hgf := real_inner_comm (Manifold.mgradient I f x) (Manifold.mgradient I g x)
+  rcases k with _ | k <;> rcases l with _ | l
+  · -- On a zero-dimensional manifold both sides vanish.
+    have : Subsingleton (TangentSpace I x) := Module.finrank_zero_iff.1 (hm.trans (by omega))
+    have hL : hodgeLaplacian o hkl = 0 := LinearMap.ext (hodgeLaplacian_zero_zero o hkl)
+    rw [hL, Subsingleton.elim (Manifold.mgradient I f x) 0]
+    simp [Ring.lie_def]
+  · -- On functions `Δ = d*d`, and `[[d*d, f], g] = -ι_v ε_u - ι_u ε_v = -2 ⟪u, v⟫`.
+    have h : 0 + 1 + l = m := by omega
+    rw [hodgeLaplacian_zero_add_one_eq_comp o hkl h,
+      lie_lie_comp_funSMulₗ_apply _ _ (fun f ↦ gradWedge f 0) (fun f ↦ -gradContr f 0)
+        (mextDerivₗ_funSMulₗ_eq_gradWedge ·) (codifferential_funSMulₗ_apply o h ·)]
+    simp only [Pi.neg_apply, LinearMap.neg_apply, gradContr_gradWedge_zero, hgf]
+    module
+  · -- In the top degree `Δ = dd*`, and `[[dd*, f], g] = -ε_v ι_u - ε_u ι_v = -2 ⟪u, v⟫`, since
+    -- exterior multiplication into degree `k + 2` vanishes.
+    have hε (f g : C^∞⟮I, M; ℝ⟯) :
+        gradWedge f k x (gradContr g k x (α.1 x)) =
+          ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • α.1 x := by
+      rw [← gradWedge_gradContr_add f g k x (α.1 x),
+        (gradWedge f (k + 1) x (α.1 x)).eq_zero_of_finrank_lt (by rw [Fintype.card_fin]; omega),
+        map_zero, add_zero]
+    rw [hodgeLaplacian_add_one_zero_eq_comp o hkl,
+      lie_lie_comp_funSMulₗ_apply _ _ (fun f ↦ -gradContr f k) (fun f ↦ gradWedge f k)
+        (codifferential_funSMulₗ_apply o hkl ·) (mextDerivₗ_funSMulₗ_eq_gradWedge ·)]
+    simp only [Pi.neg_apply, LinearMap.neg_apply, map_neg, hε, hgf]
+    module
+  · -- In between, `[[Δ, f], g] = -(ι_v ε_u + ε_u ι_v) - (ι_u ε_v + ε_v ι_u) = -2 ⟪u, v⟫`.
+    have h : k + 1 + 1 + l = m := by omega
+    -- The ring commutator is additive in its first argument; `add_lie` would need the Lie ring
+    -- structure of `Mathlib.Algebra.Lie.OfAssociative`, which is not imported here.
+    have hadd (a b c d : Module.End ℝ (SmoothForm I M ℝ (k + 1))) :
+        ⁅⁅a + b, c⁆, d⁆ = ⁅⁅a, c⁆, d⁆ + ⁅⁅b, c⁆, d⁆ := by
+      simp only [Ring.lie_def, add_mul, mul_add, sub_mul, mul_sub]
+      abel
+    rw [hodgeLaplacian_add_one_add_one_eq_comp_add_comp o hkl h, hadd]
+    simp only [LinearMap.add_apply, Submodule.coe_add, Pi.add_apply,
+      lie_lie_comp_funSMulₗ_apply _ _ (fun f ↦ gradWedge f (k + 1)) (fun f ↦ -gradContr f (k + 1))
+        (mextDerivₗ_funSMulₗ_eq_gradWedge ·) (codifferential_funSMulₗ_apply o h ·),
+      lie_lie_comp_funSMulₗ_apply _ _ (fun f ↦ -gradContr f k) (fun f ↦ gradWedge f k)
+        (codifferential_funSMulₗ_apply o hkl ·) (mextDerivₗ_funSMulₗ_eq_gradWedge ·),
+      Pi.neg_apply, LinearMap.neg_apply, map_neg]
+    linear_combination (norm := module) -gradWedge_gradContr_add f g k x (α.1 x) -
+      gradWedge_gradContr_add g f k x (α.1 x) - hgf • α.1 x
+
+/-- **The principal symbol of the Hodge Laplacian**: for a smooth function `f`, the double
+commutator of `Δ = d*d + dd*` with multiplication by `f` is multiplication by `-2 |grad f|²`,
+`[[Δ, f], f] α = -2 |df|² α`. With the normalization `σ(P)(df) = ½ [[P, f], f]` of second-order
+principal symbols, the symbol of `Δ` at `df_x` is `-|df_x|² Id`, or `|ξ|² Id` at `ξ = df_x` in the
+Fourier convention `σ(∂ⱼ) = i ξⱼ`. -/
+theorem coe_lie_lie_hodgeLaplacian_funSMulₗ_self (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) :
+    (⁅⁅hodgeLaplacian o hkl, funSMulₗ (F := ℝ) (k := k) f⁆, funSMulₗ f⁆ α : RoughForm I M ℝ k) =
+      fun x ↦ (-2 * ⟪Manifold.mgradient I f x, Manifold.mgradient I f x⟫) • α.1 x :=
+  coe_lie_lie_hodgeLaplacian_funSMulₗ o hkl f f α
 
 /-! ### The `L²` pairing -/
 

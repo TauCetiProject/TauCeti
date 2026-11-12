@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.CompTypeclasses
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
@@ -42,6 +44,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
   two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
   difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
+* `PadicInt.residueClopen`: the clopen fibre of a residue modulo `p ^ n`;
+  `PadicInt.mem_residueClopen_iff_dvd`: its description as a coset of `p ^ n ℤ_p`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
   whose residue modulo `8` squares to `1`; `PadicInt.eight_dvd_sq_sub_one_of_isUnit`: so the
   square of a unit is `1` modulo `8`; `PadicInt.eight_dvd_sub_or_eight_dvd_sub_add_of_eq`: for
@@ -101,6 +105,10 @@ public section
 namespace PadicInt
 
 variable {p : ℕ} [hp : Fact p.Prime]
+
+/-- P-adic truncation is surjective, allowing semilinear submodule images along it. -/
+instance (n : ℕ) : RingHomSurjective (toZModPow (p := p) n) :=
+  ⟨ZMod.ringHom_surjective _⟩
 
 /-- The residue field of `ℤ_p` is finite, being `ℤ/pℤ`. -/
 instance finite_residueField : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
@@ -173,6 +181,20 @@ theorem toZModPow_eq_iff_dvd_sub (n : ℕ) {x y : ℤ_[p]} :
     toZModPow n x = toZModPow n y ↔ (p : ℤ_[p]) ^ n ∣ y - x := by
   rw [eq_comm, ← sub_eq_zero, ← map_sub, toZModPow_eq_zero_iff_dvd]
 
+/-- The clopen residue class `a` modulo `p ^ n` in `ℤ_p`. -/
+noncomputable def residueClopen (n : ℕ) (a : ZMod (p ^ n)) : TopologicalSpace.Clopens ℤ_[p] :=
+  ⟨toZModPow n ⁻¹' {a}, (isClopen_discrete {a}).preimage (continuous_toZModPow n)⟩
+
+@[simp]
+theorem mem_residueClopen (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
+    x ∈ residueClopen n a ↔ toZModPow n x = a := Iff.rfl
+
+/-- A residue class is the coset of `p ^ n ℤ_p` represented by `a.val`. -/
+theorem mem_residueClopen_iff_dvd (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
+    x ∈ residueClopen n a ↔ (p : ℤ_[p]) ^ n ∣ x - (a.val : ℤ_[p]) := by
+  rw [mem_residueClopen, ← toZModPow_eq_iff_dvd_sub]
+  simp [eq_comm]
+
 /-- Divisibility by `8` in `ℤ_[2]` is equality of residues modulo `8`. -/
 theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
     (8 : ℤ_[2]) ∣ c - a ↔ toZModPow 3 a = toZModPow 3 c := by
@@ -195,6 +217,17 @@ theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
 theorem eight_dvd_sq_sub_one_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) : (8 : ℤ_[2]) ∣ z ^ 2 - 1 := by
   rw [eight_dvd_sub_iff_toZModPow_three_eq, map_one, map_pow, sq,
     isUnit_iff_toZModPow_three_mul_self.mp hz]
+
+/-- For a unit `a` of `ℤ_[2]`, a change by `5 a - a` is a change by `4` modulo `8`. -/
+theorem eight_dvd_sub_five_mul_sub_self_iff {a : ℤ_[2]} (ha : IsUnit a) {c : ℤ_[2]} :
+    (8 : ℤ_[2]) ∣ c - (5 * a - a) ↔ (8 : ℤ_[2]) ∣ c - 4 := by
+  have h4 : (8 : ℤ_[2]) ∣ 4 - 4 * a := by
+    rw [eight_dvd_sub_iff_toZModPow_three_eq, map_mul, map_ofNat]
+    have hA := isUnit_iff_toZModPow_three_mul_self.mp ha
+    generalize toZModPow 3 a = A at hA ⊢
+    revert A
+    decide
+  rw [show c - (5 * a - a) = c - 4 + (4 - 4 * a) by ring, dvd_add_left h4]
 
 /-- For `k ≥ 1`, a unit `c = a x² + 2ᵏ b y²` of `ℤ_[2]` is congruent to `a` or to `a + 2ᵏ b`
 modulo `8`: the values of the binary form `⟨a, 2ᵏ b⟩` that are units. -/

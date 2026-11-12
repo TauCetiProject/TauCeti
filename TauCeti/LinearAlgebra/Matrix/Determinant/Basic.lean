@@ -23,11 +23,22 @@ rows of `B` one at a time gives `n + 2` square matrices, and the alternating sum
 determinants vanishes. Indeed, it is the expansion along the first column of the square matrix
 obtained from `B` by adjoining a first column of ones, and that column is the sum of the others.
 
+A first column of ones also lets a square matrix drop one size: subtracting each row from its
+successor (`Matrix.det_eq_of_forall_row_eq_smul_add_pred`) leaves a single `1` in that column, and
+expanding along it (`Matrix.det_succ_column_zero`) leaves the matrix of consecutive row
+differences of the remaining columns.
+
 ## Main results
 
+* `Matrix.det_updateRow_updateRow_swap`: exchanging the vectors in two prescribed rows reverses
+  the determinant.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
 * `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
+* `Matrix.det_eq_det_of_col_zero_eq_one`: a square matrix whose first column is constant `1` has
+  the determinant of its consecutive row differences on the remaining columns.
+* `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
+  is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
 -/
 
 public section
@@ -73,5 +84,62 @@ theorem sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero
   have hA := det_updateCol_sum A 0 (Fin.cons 0 fun _ ↦ 1)
   rw [hcol, Fin.cons_zero, zero_smul, det_succ_column_zero] at hA
   simpa [A, hsub] using hA
+
+/-- **Expanding along a constant column `1`.** If the first column of a square matrix `N` is
+constant equal to `1`, then `det N` is the determinant of the matrix of consecutive row
+differences `N (i + 1) (j + 1) - N i (j + 1)` of the remaining columns.
+
+Subtracting each row from its successor leaves `1` as the only nonzero entry of the first column,
+in the first row, and the minor of that entry is the matrix of differences. -/
+theorem det_eq_det_of_col_zero_eq_one (N : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
+    (hN : ∀ i, N i 0 = 1) :
+    N.det = (of fun i j : Fin n => N i.succ j.succ - N i.castSucc j.succ).det := by
+  rw [det_eq_of_forall_row_eq_smul_add_pred (A := N)
+    (B := of (Fin.cons (N 0) fun i => N i.succ - N i.castSucc)) (fun _ => 1) (fun _ => rfl)
+    (fun _ _ => by simp), det_succ_column_zero, Fin.sum_univ_succ]
+  simp [hN, submatrix]
+
+end Matrix
+
+namespace Matrix
+
+/-- Interchanging the rows occupied by two prescribed vectors reverses the determinant. -/
+theorem det_updateRow_updateRow_swap {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (A : Matrix ι ι R) (j k : ι)
+    (a b : ι → R) (h : j ≠ k) :
+    ((A.updateRow j a).updateRow k b).det =
+      -((A.updateRow k a).updateRow j b).det := by
+  let M := (A.updateRow k a).updateRow j b
+  have hkj : k ≠ j := Ne.symm h
+  have he :
+      M.submatrix (Equiv.swap j k) id =
+        (A.updateRow j a).updateRow k b := by
+    ext r l
+    by_cases hrj : r = j
+    · subst r
+      simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply, h, hkj]
+    · by_cases hrk : r = k
+      · subst r
+        simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply]
+      · simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply, hrj, hrk,
+          Equiv.swap_apply_of_ne_of_ne hrj hrk]
+  rw [← he, Matrix.det_permute]
+  simp [M, Equiv.Perm.sign_swap h]
+
+/-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
+columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`
+is needed: the image of the minor of `A` is the minor of `A.map f` (`RingHom.map_det_submatrix`). -/
+theorem det_submatrix_ne_zero_of_map {m n R S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] (f : R →+* S) {A : Matrix m n R} {r : l → m} {c : l → n}
+    (h : ((A.map f).submatrix r c).det ≠ 0) : (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix] at h
+  exact ne_of_apply_ne f (by rwa [map_zero])
+
+/-- Along an injective ring homomorphism `f`, a minor of `A.map f` is nonzero exactly when the
+minor of `A` on the same rows and columns is nonzero. -/
+theorem det_submatrix_map_ne_zero_iff {m n R S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] {f : R →+* S} (hf : Function.Injective f) {A : Matrix m n R} {r : l → m}
+    {c : l → n} : ((A.map f).submatrix r c).det ≠ 0 ↔ (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix, map_ne_zero_iff f hf]
 
 end Matrix

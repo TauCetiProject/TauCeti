@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Operator.Basic
-import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
+import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 
 /-!
 # Compact perturbations of Fredholm operators and Atkinson's theorem

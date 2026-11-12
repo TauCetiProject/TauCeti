@@ -9,7 +9,9 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.KrullDimension
 public import TauCeti.RingTheory.GradedAlgebra.HilbertSeries
 import Mathlib.RingTheory.KrullDimension.Field
 import Mathlib.RingTheory.KrullDimension.Polynomial
+import Mathlib.RingTheory.AlgebraicIndependent.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
+import TauCeti.RingTheory.GradedAlgebra.AlgebraicIndependent
 import TauCeti.RingTheory.GradedAlgebra.Subalgebra
 
 /-!
@@ -34,6 +36,9 @@ Such systems are not unique, and this file proves that their numerical invariant
   These are the *degrees* of the group; for the reflection representation of the symmetric group
   `S_{n+1}`, with `n + 1` invertible, they are `2, 3, …, n + 1`
   (`TauCeti.map_univ_eq_of_bijective_aeval_standardRepresentation_dual`).
+* The degrees of a subgroup `H` are smaller than those of `G`: since `Sym(M)^G ⊆ Sym(M)^H`, for
+  every `n` there are at most as many basic invariants of `G` of degree at most `n` as there are
+  basic invariants of `H` of degree at most `n`.
 
 These statements are specializations of the corresponding facts for graded polynomial algebras
 (`TauCeti.RingTheory.GradedAlgebra.HilbertSeries`) to the grading of the invariant subalgebra by
@@ -53,6 +58,8 @@ average over `G` of `det(1 - t g)⁻¹` through the degrees.
   invariants have the same multiset of degrees.
 * `Representation.map_univ_eq_of_bijective_aeval_of_algEquiv_symmetricAlgebraInvariants`: the
   same, with the second system given by an algebra isomorphism from a polynomial algebra.
+* `Representation.card_filter_le_le_card_filter_le_of_comp_subtype`: a system of basic invariants
+  of a subgroup has, in each degree range `≤ n`, at least as many members as one of the group.
 
 ## References
 
@@ -147,21 +154,62 @@ theorem map_univ_eq_of_bijective_aeval_of_algEquiv_symmetricAlgebraInvariants [F
 
 end CommRing
 
+section Subgroup
+
+variable [CommRing R] [IsDomain R] [Group G] [AddCommMonoid M] [Module R M]
+  (ρ : Representation R G M) [Fintype ι] [Fintype κ] {f : ι → ρ.symmetricAlgebraInvariants}
+  {d : ι → ℕ}
+
+/-- **Degrees of the invariants of a subgroup.** Let `H` be a subgroup of `G`. If invariants `f i`
+of `G`, homogeneous of degrees `d i`, are algebraically independent, and invariants `g j` of `H`,
+homogeneous of degrees `e j`, generate the invariants of `H`, then for every `n` there are at most
+as many `f i` of degree at most `n` as there are `g j` of degree at most `n`. -/
+theorem card_filter_le_le_card_filter_le_of_comp_subtype {H : Subgroup G}
+    (hf : ∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i))
+    (hinj : Function.Injective (aeval (R := R) f))
+    {g : κ → symmetricAlgebraInvariants (ρ.comp H.subtype)} {e : κ → ℕ}
+    (hg : ∀ j, (g j : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (e j))
+    (hsurj : Function.Surjective (aeval (R := R) g)) (n : ℕ) :
+    Finset.card {i | d i ≤ n} ≤ Finset.card {j | e j ≤ n} := by
+  refine TauCeti.GradedAlgebra.card_filter_le_le_card_filter_le (homogeneousSubmodule R M) hf
+    (AlgebraicIndependent.map' (f := ρ.symmetricAlgebraInvariants.val) hinj
+      Subtype.val_injective) hg (fun i ↦ ?_) n
+  -- An invariant of `G` is an invariant of `H`, so a polynomial in the `g j`.
+  have hfi : (f i : SymmetricAlgebra R M) ∈ symmetricAlgebraInvariants (ρ.comp H.subtype) :=
+    (mem_symmetricAlgebraInvariants (ρ.comp H.subtype) _).2 fun h ↦ by
+      rw [symmetricAlgebra_comp_apply]
+      exact (ρ.mem_symmetricAlgebraInvariants _).1 (f i).2 h
+  obtain ⟨p, hp⟩ := hsurj ⟨_, hfi⟩
+  have hp' := congrArg Subtype.val hp
+  rw [← Subalgebra.coe_val, comp_aeval_apply, Subalgebra.coe_val] at hp'
+  rw [Algebra.adjoin_range_eq_range_aeval, AlgHom.mem_range]
+  exact ⟨p, hp'⟩
+
+end Subgroup
+
 section Field
 
-variable [Field k] [Group G] [Finite G] [AddCommGroup M] [Module k M] [FiniteDimensional k M]
+variable [Field k] [Group G] [Finite G] [AddCommGroup M] [Module k M]
 variable (ρ : Representation k G M)
 
-/-- **The number of basic invariants.** For a finite group acting on a finite-dimensional vector
-space `M`, if the invariant subalgebra is a polynomial algebra on a finite family of invariants,
-then this family has `finrank M` members. -/
-theorem card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants [Finite ι]
+/-- **The number of basic invariants.** For a finite group acting on a vector space `M`, if the
+invariant subalgebra is a polynomial algebra on a family of invariants, then this family has
+`finrank M` members. (For infinite-dimensional `M` both sides are `0`.) -/
+theorem card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants
     {f : ι → ρ.symmetricAlgebraInvariants} (hbij : Function.Bijective (aeval (R := k) f)) :
     Nat.card ι = Module.finrank k M := by
   have h := ringKrullDim_eq_of_ringEquiv (AlgEquiv.ofBijective (aeval f) hbij).toRingEquiv
-  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
-    zero_add, ρ.ringKrullDim_symmetricAlgebraInvariants, ringKrullDim_eq_finrank] at h
-  exact_mod_cast h
+  -- Both sides are polynomial rings over `k`, whose Krull dimension is the cardinality of the
+  -- variables.
+  let b := Module.Free.chooseBasis k M
+  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field, zero_add,
+    ρ.ringKrullDim_symmetricAlgebraInvariants,
+    ringKrullDim_eq_of_ringEquiv (SymmetricAlgebra.equivMvPolynomial b).toRingEquiv,
+    MvPolynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field,
+    zero_add] at h
+  have h2 : ENat.card ι = ENat.card (Module.Free.ChooseBasisIndex k M) := by exact_mod_cast h
+  rw [Module.finrank_eq_nat_card_basis b]
+  simpa using congrArg ENat.toNat h2
 
 end Field
 

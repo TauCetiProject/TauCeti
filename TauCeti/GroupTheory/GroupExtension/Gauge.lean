@@ -78,6 +78,13 @@ theorem gauge_sectionDiff (σ τ : S.Section) : σ.gauge (sectionDiff τ σ) = �
   intro g
   simp
 
+/-- The difference of two normalized sections is normalized. -/
+@[simp]
+theorem sectionDiff_one (σ τ : S.Section) (hσ : σ 1 = 1) (hτ : τ 1 = 1) :
+    sectionDiff σ τ 1 = 1 := by
+  apply S.inl_injective
+  simp [hσ, hτ]
+
 /-- Changing the section conjugates each kernel automorphism by the gauge value. -/
 theorem conjAct_gauge (σ : S.Section) (b : G → M) (g : G) (m : M) :
     S.conjAct (σ.gauge b g) m = b g * S.conjAct (σ g) m * (b g)⁻¹ := by
@@ -131,7 +138,7 @@ theorem nonempty_splitting_iff_exists_gauge (σ : S.Section) (hσ : σ 1 = 1) :
     · intro g h
       rw [← factorSetFun_gauge, gauge_sectionDiff]
       exact (s.toSection.factorSetFun_eq_one_iff).mpr (fun g h => map_mul s g h) g h
-  · rintro ⟨b, hb, h⟩
+  · rintro ⟨b, _, h⟩
     exact ⟨(σ.gauge b).splittingOfFactorSetEqOne (by
       intro g j
       rw [factorSetFun_gauge]

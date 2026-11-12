@@ -17,6 +17,7 @@ import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Topology.MetricSpace.ProperSpace
 import TauCeti.Topology.Sets.Opens
 
@@ -146,7 +147,7 @@ theorem integral_divergenceCLM_mul_eq_integral_integral_indicator
     refine ⟨.of_forall fun x =>
       (integrable_indicator_Iio_sub_indicator_Iio_zero (u x)).const_mul (divergenceCLM φ x), ?_⟩
     simp_rw [G, norm_mul, integral_const_mul]
-    simpa using (integrable_smul_of_locallyIntegrableOn hu (divergenceCLM φ)).integrableOn.norm
+    simpa using (TestFunction.integrable_smul (divergenceCLM φ) hu).integrableOn.norm
   calc ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x in Ω, ∫ t, G (x, t) ∂volume ∂μ := by
         rw [hrestrict]
         simp_rw [G, integral_const_mul, integral_indicator_Iio_sub_indicator_Iio_zero]
@@ -193,8 +194,8 @@ private theorem totalVariationOn_smoothTransition_comp (hu : LocallyLipschitzOn 
   refine setLIntegral_congr_fun_ae Ω.isOpen.measurableSet ?_
   filter_upwards [hu.ae_differentiableAt_of_mem (μ := μ) Ω.isOpen] with x hx hxΩ
   rw [((hx hxΩ).hasFDerivAt.sub_const t).const_mul c |>.smoothTransition |>.fderiv, smul_smul,
-    mul_comm, enorm_smul,
-    Real.enorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
+    mul_comm, eNorm_smul,
+    Real.eNorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
 
 /-- The indicator of `{u > t}` is the pointwise limit of the smoothed superlevel functions
 `ψ ((n + 1) (u - t))`, so by lower semicontinuity their variations bound the perimeter of
@@ -223,7 +224,7 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
   have hlim := tendsto_lintegral_of_dominated_convergence' (μ := μ.restrict K) (f := 0)
     (F := fun n x => ‖Real.smoothTransition (((n : ℝ) + 1) * (u x - t)) -
       {x | t < u x}.indicator 1 x‖ₑ) (fun _ => 1)
-    (fun n => ((((hv n).continuousOn.mono hKΩ).aemeasurable hKm).sub hind_meas).enorm)
+    (fun n => ((((hv n).continuousOn.mono hKΩ).aemeasurable hKm).sub hind_meas).eNorm)
     (fun n => .of_forall fun x => ?_) (by simpa using hK.measure_lt_top.ne)
     (.of_forall fun x => ?_)
   · simpa using hlim
@@ -232,7 +233,7 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
     have hi : {x | t < u x}.indicator (1 : E → ℝ) x ∈ Icc 0 1 := by
       by_cases hxt : t < u x <;> simp [hxt]
     dsimp only
-    rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
+    rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
     exact abs_sub_le_iff.2 ⟨by linarith [hi.1], by linarith [hi.2]⟩
   · refine tendsto_const_nhds.congr' ?_
     by_cases hxt : t < u x
@@ -271,11 +272,11 @@ theorem _root_.LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fder
       (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
     exact (ENNReal.measurable_ofReal.comp_aemeasurable ((hψ'.measurable.comp_aemeasurable
       ((hu2.sub measurable_fst.aemeasurable).const_mul _)).const_mul _)).mul
-      ((measurable_fderiv ℝ u).enorm.comp measurable_snd).aemeasurable
+      ((measurable_fderiv ℝ u).eNorm.comp measurable_snd).aemeasurable
   have hint (n : ℕ) : ∫⁻ t, ∫⁻ x in Ω, F n t x ∂μ = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ := by
     rw [lintegral_lintegral_swap (hF n)]
     refine lintegral_congr fun x => ?_
-    rw [lintegral_mul_const' _ _ enorm_ne_top,
+    rw [lintegral_mul_const' _ _ eNorm_ne_top,
       Real.smoothTransition.lintegral_ofReal_mul_deriv _ (by positivity), one_mul]
   -- Lower semicontinuity, then Fatou's lemma and Tonelli's theorem.
   calc ∫⁻ t, perimeter μ Ω {x | t < u x}
@@ -468,30 +469,16 @@ theorem measurable_variationMeasure_indicator_setOf_lt [IsLocallyFiniteMeasure �
       Measurable fun t => variationMeasure μ Ω ({x | t < u x}.indicator 1) W := by
     obtain ⟨U, hU, rfl⟩ := Ω.exists_le_preimage_coe_eq hW
     exact hopen hU
-  -- The traces of `V j` have finite measure, so the restrictions to them are measurable in `t`.
-  have hrestrict (j : ℕ) : Measurable fun t =>
-      (variationMeasure μ Ω ({x | t < u x}.indicator 1)).restrict ((↑) ⁻¹' (V j : Set E)) := by
-    have hK : IsCompact (((↑) : Ω → E) ⁻¹' closure (V j : Set E)) := by
-      rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using hVΩ j)]
-      exact hVc j
-    have (t : ℝ) : IsFiniteMeasure ((variationMeasure μ Ω ({x | t < u x}.indicator 1)).restrict
-        ((↑) ⁻¹' (V j : Set E))) :=
-      isFiniteMeasure_restrict.2 (ne_top_of_le_ne_top hK.measure_lt_top.ne
-        (measure_mono (preimage_mono subset_closure)))
-    refine .measure_of_isPiSystem BorelSpace.measurable_eq isPiSystem_isOpen
-      (fun W (hW : IsOpen W) => ?_) ?_
-    · simp_rw [Measure.restrict_apply hW.measurableSet]
-      exact hopen' (hW.inter ((V j).isOpen.preimage continuous_subtype_val))
-    · simp_rw [Measure.restrict_apply_univ]
-      exact hopen' ((V j).isOpen.preimage continuous_subtype_val)
-  -- A measure on `Ω` is the supremum of its restrictions to the traces of `V j`.
-  refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
-  convert Measurable.iSup fun j => (Measure.measurable_coe hs).comp (hrestrict j) using 1
-  funext t
-  simp_rw [Function.comp_apply]
-  rw [← Measure.restrict_iUnion_apply_eq_iSup ?_ hs, hcover, Measure.restrict_univ]
-  exact fun i j => ⟨max i j, preimage_mono (hVmono (le_max_left i j)),
-    preimage_mono (hVmono (le_max_right i j))⟩
+  -- Apply the generating π-system criterion along the finite-measure traces of `V j`.
+  refine Measurable.measure_of_isPiSystem_of_iUnion BorelSpace.measurable_eq
+    isPiSystem_isOpen (B := fun j ↦ (↑) ⁻¹' (V j : Set E))
+    (fun j ↦ (V j).isOpen.preimage continuous_subtype_val) hcover (fun t j ↦ ?_)
+    (fun W hW ↦ hopen' hW)
+  have hK : IsCompact (((↑) : Ω → E) ⁻¹' closure (V j : Set E)) := by
+    rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using hVΩ j)]
+    exact hVc j
+  exact ne_top_of_le_ne_top hK.measure_lt_top.ne
+    (measure_mono (preimage_mono subset_closure))
 
 /-- If `u` has locally finite variation on `Ω`, then for almost every level `t` the superlevel set
 `{u > t}` has locally finite perimeter in `Ω`: every compact `K ⊆ Ω` has an open neighbourhood `U`

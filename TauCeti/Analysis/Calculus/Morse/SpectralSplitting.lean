@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+public import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 -- Private: used only to turn the finite-dimensional algebraic splitting into a continuous
 -- projection; the public API exposes the resulting continuous linear map.
 import Mathlib.Analysis.Normed.Module.Complemented
@@ -25,7 +28,9 @@ unstable linear subspace.
 This file constructs those two subspaces, shows that both are invariant under the
 negative-gradient linearization, and identifies the dimension of the unstable subspace with the
 Morse index; the stable dimension and the Morse index therefore add up to the dimension of the
-ambient space.
+ambient space. When the Hessian is injective, the projections of this splitting are the
+orthogonal spectral projections `cfc ((Ioi 0).indicator 1)` and `cfc ((Iio 0).indicator 1)` of
+the Hessian.
 
 These are the linear data used by the local stable- and unstable-manifold theorems. No local
 invariant manifold is asserted here: those theorems additionally have to control the nonlinear
@@ -39,6 +44,8 @@ remainder of the negative-gradient field, supplied by
 * `ContDiffAt.map_neg_hessianOperator_stableLinearSubspace_le` and
   `ContDiffAt.map_neg_hessianOperator_unstableLinearSubspace_le`: both subspaces are invariant
   under the negative-gradient linearization `-hessianOperator f x`.
+* `ContDiffAt.exists_pos_mul_norm_sq_le_inner_hessianOperator`: the Hessian form is coercive on
+  the stable subspace and anticoercive on the unstable subspace, with a common constant.
 * `ContDiffAt.isCompl_unstableLinearSubspace_stableLinearSubspace`: when the Hessian is injective
   these subspaces are complementary, so the tangent space is their direct sum.
 * `ContDiffAt.finrank_unstableLinearSubspace`: the unstable dimension is the Morse index.
@@ -58,6 +65,13 @@ remainder of the negative-gradient field, supplied by
 * `TauCeti.IsNondegenerateCriticalPoint.stableProjection` and
   `TauCeti.IsNondegenerateCriticalPoint.unstableProjection`: the same two projections specialized
   to a nondegenerate critical point, which supplies Hessian injectivity.
+* `ContDiffAt.stableProjection_eq_cfc_indicator_Ioi` and
+  `ContDiffAt.unstableProjection_eq_cfc_indicator_Iio`: when the Hessian is injective, the stable
+  and unstable projections are the orthogonal spectral projections
+  `cfc ((Ioi 0).indicator 1)` and `cfc ((Iio 0).indicator 1)` of the Hessian;
+  `TauCeti.IsNondegenerateCriticalPoint.stableProjection_eq_cfc_indicator_Ioi` and
+  `TauCeti.IsNondegenerateCriticalPoint.unstableProjection_eq_cfc_indicator_Iio` state the same
+  at a nondegenerate critical point.
 
 ## References
 
@@ -153,38 +167,30 @@ theorem disjoint_unstableLinearSubspace_stableLinearSubspace (hf : ContDiffAt �
   exact hf.isSelfAdjoint_hessianOperator.isSymmetric
     |>.disjoint_negativeSpectralSubspace_positiveSpectralSubspace rfl
 
+/-- **The Hessian form is coercive on the stable and anticoercive on the unstable subspace.** At a
+`C²` point there is `c > 0` with `c ‖u‖ ^ 2 ≤ ⟪Hess f(x) u, u⟫` on the stable linear subspace and
+`⟪Hess f(x) u, u⟫ ≤ -(c ‖u‖ ^ 2)` on the unstable linear subspace. This does not require
+nondegeneracy: the zero eigenspace belongs to neither subspace. -/
+theorem exists_pos_mul_norm_sq_le_inner_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
+    ∃ c > 0, (∀ u ∈ hf.stableLinearSubspace, c * ‖u‖ ^ 2 ≤ ⟪hessianOperator f x u, u⟫_ℝ) ∧
+      ∀ u ∈ hf.unstableLinearSubspace, ⟪hessianOperator f x u, u⟫_ℝ ≤ -(c * ‖u‖ ^ 2) := by
+  have hT := hf.isSelfAdjoint_hessianOperator.isSymmetric
+  obtain ⟨c, hc, hceig⟩ := hT.exists_pos_forall_le_abs_eigenvalues rfl
+  refine ⟨c, hc, fun u hu ↦ ?_, fun u hu ↦ ?_⟩
+  · simpa using hT.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace rfl
+      (fun i hi ↦ by simpa [abs_of_pos hi] using hceig i hi.ne') hu
+  · simpa using hT.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace rfl
+      (fun i hi ↦ by simpa [abs_of_neg hi] using hceig i hi.ne) hu
+
 /-- In the Hessian eigenbasis, the number of negative eigenvalues, counted with multiplicity, is
 the Morse index. -/
 theorem morseIndex_eq_ncard_hessianOperator_eigenvalues_neg (hf : ContDiffAt ℝ 2 f x) :
     morseIndex f x =
       {i | hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvalues rfl i < 0}.ncard := by
-  let hT := hf.isSelfAdjoint_hessianOperator.isSymmetric
-  let b := hT.eigenvectorBasis rfl
-  have horth : (QuadraticMap.associated (hessianQuadraticForm f x)).IsOrthoᵢ b := by
-    rw [LinearMap.isOrthoᵢ_def]
-    intro i j hij
-    rw [associated_hessianQuadraticForm hf, ContinuousLinearMap.toBilinForm_apply,
-      ← inner_hessianOperator_left]
-    have heigen : hessianOperator f x (b i) =
-        (hT.eigenvalues rfl i : ℝ) • b i := by
-      exact hT.apply_eigenvectorBasis rfl i
-    rw [heigen, real_inner_smul_left, orthonormal_iff_ite.mp b.orthonormal i j]
-    simp [hij]
-  have hequiv : QuadraticMap.Equivalent (hessianQuadraticForm f x)
-      (QuadraticMap.weightedSumSquares ℝ fun i ↦ hessianQuadraticForm f x (b i)) :=
-    ⟨QuadraticForm.isometryEquivWeightedSumSquares (hessianQuadraticForm f x) b.toBasis horth⟩
-  have hweights : (fun i ↦ hessianQuadraticForm f x (b i)) = hT.eigenvalues rfl := by
-    funext i
-    rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left]
-    have heigen : hessianOperator f x (b i) =
-        (hT.eigenvalues rfl i : ℝ) • b i := by
-      exact hT.apply_eigenvectorBasis rfl i
-    rw [heigen, real_inner_smul_left, orthonormal_iff_ite.mp b.orthonormal i i]
-    simp
-  rw [hweights] at hequiv
   rw [morseIndex_def]
-  simpa only [hT] using
-    QuadraticForm.sigNeg_of_equiv_weightedSumSquares hequiv
+  exact hf.isSelfAdjoint_hessianOperator.isSymmetric.sigNeg_eq_ncard_eigenvalues_neg rfl
+    fun v ↦ by rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left,
+      ContinuousLinearMap.coe_coe]
 
 /-- The dimension of the unstable linear subspace at a `C²` point is its Morse index. -/
 @[simp]
@@ -251,8 +257,8 @@ noncomputable def stableProjection (hf : ContDiffAt ℝ 2 f x)
   hf.stableLinearSubspace.projectionL hf.unstableLinearSubspace
     (Submodule.IsCompl.isTopCompl_of_isClosed
       (hf.isCompl_unstableLinearSubspace_stableLinearSubspace hker).symm
-      hf.stableLinearSubspace.closed_of_finiteDimensional
-      hf.unstableLinearSubspace.closed_of_finiteDimensional)
+      hf.stableLinearSubspace.isClosed_of_finiteDimensional
+      hf.unstableLinearSubspace.isClosed_of_finiteDimensional)
 
 /-- The range of the stable projection is the stable linear subspace. -/
 @[simp]
@@ -393,6 +399,40 @@ theorem commute_neg_hessianOperator_unstableProjection (hf : ContDiffAt ℝ 2 f 
     Commute (-hessianOperator f x) (hf.unstableProjection hker) := by
   rw [unstableProjection]
   exact (Commute.one_right _).sub_right (hf.commute_neg_hessianOperator_stableProjection hker)
+
+/-- When the Hessian is injective, the stable projection is the orthogonal spectral projection
+`cfc ((Ioi 0).indicator 1)` of the Hessian onto its positive eigenvalues. In particular it is an
+orthogonal projection, and on the invertible Hessians it depends smoothly on the Hessian
+(`ContDiffOn.starProjection_pointSpectralSubspace_Ioi_zero`). -/
+theorem stableProjection_eq_cfc_indicator_Ioi (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    hf.stableProjection hker = cfc ((Ioi (0 : ℝ)).indicator 1) (hessianOperator f x) := by
+  have hs := hf.isSelfAdjoint_hessianOperator
+  rw [ContinuousLinearMap.cfc_indicator_eq_starProjection _ hs,
+    ← hf.stableLinearSubspace_eq_pointSpectralSubspace]
+  have hperp : hf.unstableLinearSubspace ≤ hf.stableLinearSubspaceᗮ := by
+    rw [hf.unstableLinearSubspace_eq_pointSpectralSubspace,
+      hf.stableLinearSubspace_eq_pointSpectralSubspace,
+      hs.isSymmetric.orthogonal_pointSpectralSubspace]
+    exact Module.End.pointSpectralSubspace_mono fun t ht ↦ not_lt.mpr (le_of_lt ht)
+  ext v
+  refine (Submodule.eq_starProjection_of_mem_orthogonal (hf.stableProjection_apply_mem hker v)
+    (hperp ?_)).symm
+  rw [← hf.unstableProjection_apply hker]
+  exact hf.unstableProjection_apply_mem hker v
+
+/-- When the Hessian is injective, the unstable projection is the orthogonal spectral projection
+`cfc ((Iio 0).indicator 1)` of the Hessian onto its negative eigenvalues. -/
+theorem unstableProjection_eq_cfc_indicator_Iio (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    hf.unstableProjection hker = cfc ((Iio (0 : ℝ)).indicator 1) (hessianOperator f x) := by
+  have hu : IsUnit (hessianOperator f x) :=
+    ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr
+      ((LinearMap.isUnit_iff_ker_eq_bot _).mpr hker)
+  rw [unstableProjection, hf.stableProjection_eq_cfc_indicator_Ioi hker,
+    ← ContinuousLinearMap.one_def,
+    ← TauCeti.cfc_indicator_Ioi_add_cfc_indicator_Iio hu hf.isSelfAdjoint_hessianOperator,
+    add_sub_cancel_left]
 
 end ContDiffAt
 
@@ -548,6 +588,20 @@ theorem commute_neg_hessianOperator_unstableProjection (h : IsNondegenerateCriti
     Commute (-hessianOperator f x) h.unstableProjection := by
   rw [h.unstableProjection_eq_contDiffAt]
   exact h.contDiffAt.commute_neg_hessianOperator_unstableProjection _
+
+/-- The stable projection at a nondegenerate critical point is the orthogonal spectral projection
+`cfc ((Ioi 0).indicator 1)` of the Hessian onto its positive eigenvalues. -/
+theorem stableProjection_eq_cfc_indicator_Ioi (h : IsNondegenerateCriticalPoint f x) :
+    h.stableProjection = cfc ((Ioi (0 : ℝ)).indicator 1) (hessianOperator f x) := by
+  rw [h.stableProjection_eq_contDiffAt]
+  exact h.contDiffAt.stableProjection_eq_cfc_indicator_Ioi _
+
+/-- The unstable projection at a nondegenerate critical point is the orthogonal spectral
+projection `cfc ((Iio 0).indicator 1)` of the Hessian onto its negative eigenvalues. -/
+theorem unstableProjection_eq_cfc_indicator_Iio (h : IsNondegenerateCriticalPoint f x) :
+    h.unstableProjection = cfc ((Iio (0 : ℝ)).indicator 1) (hessianOperator f x) := by
+  rw [h.unstableProjection_eq_contDiffAt]
+  exact h.contDiffAt.unstableProjection_eq_cfc_indicator_Iio _
 
 end IsNondegenerateCriticalPoint
 

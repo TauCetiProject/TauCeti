@@ -79,7 +79,8 @@ variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A] [AddCommGro
   [Module R M] [SMulCommClass R R M]
 
 /-- The cyclic operator `λ` on `n`-cochains, `(λφ)(a₀, …, aₙ) = (-1)ⁿ φ(aₙ, a₀, …, aₙ₋₁)`. -/
-def cyclicOperator (n : ℕ) : Module.End R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) where
+def cyclicOperator (n : ℕ) : Module.End R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+    M) where
   toFun φ := (-1 : ℤ) ^ n • φ.domDomCongr (finRotate (n + 1)).symm
   map_add' φ ψ := by
     ext
@@ -92,14 +93,15 @@ variable {R A M} {n : ℕ}
 
 /-- The cyclic operator rotates the arguments cyclically and multiplies by `(-1)ⁿ`. -/
 @[simp]
-theorem cyclicOperator_apply (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+theorem cyclicOperator_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
     (a : Fin (n + 1) → A) :
     cyclicOperator R A M n φ a = (-1 : ℤ) ^ n • φ (a ∘ (finRotate (n + 1)).symm) :=
   (rfl)
 
 /-- The powers of the cyclic operator: `(λᵏφ)(a) = (-1)ⁿᵏ φ(a ∘ t⁻ᵏ)` for the cyclic rotation
 `t` of the arguments. -/
-theorem cyclicOperator_pow_apply (k : ℕ) (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+theorem cyclicOperator_pow_apply (k : ℕ) (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+    A) M)
     (a : Fin (n + 1) → A) :
     (cyclicOperator R A M n ^ k) φ a =
       (-1 : ℤ) ^ (n * k) • φ (a ∘ (finRotate (n + 1) ^ k).symm) := by
@@ -123,7 +125,7 @@ theorem cyclicOperator_pow_eq_one (n : ℕ) : cyclicOperator R A M n ^ (n + 1) =
 
 /-- The cyclic cochains are the fixed points of the cyclic operator. -/
 theorem mem_cyclicCochains_iff_cyclicOperator_apply_eq_self
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} :
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} :
     φ ∈ cyclicCochains R A M n ↔ cyclicOperator R A M n φ = φ := by
   rw [mem_cyclicCochains_iff, MultilinearMap.ext_iff]
   refine forall_congr' fun a ↦ ?_
@@ -134,7 +136,7 @@ theorem mem_cyclicCochains_iff_cyclicOperator_apply_eq_self
 
 variable (R A M) in
 /-- The cyclic norm `N = 1 + λ + ⋯ + λⁿ` on `n`-cochains. -/
-def cyclicNorm (n : ℕ) : Module.End R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
+def cyclicNorm (n : ℕ) : Module.End R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :=
   ∑ k ∈ Finset.range (n + 1), cyclicOperator R A M n ^ k
 
 variable (R A M n) in
@@ -145,7 +147,7 @@ theorem cyclicNorm_def :
 
 /-- The cyclic norm evaluates as the signed sum of `φ` over the cyclic rotations of the
 arguments. -/
-theorem cyclicNorm_apply (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+theorem cyclicNorm_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
     (a : Fin (n + 1) → A) :
     cyclicNorm R A M n φ a =
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n * k) • φ (a ∘ (finRotate (n + 1) ^ k).symm) := by
@@ -186,14 +188,15 @@ theorem cyclicNorm_mul_cyclicOperator_pow (k : ℕ) :
   | succ k ih => rw [pow_succ', ← mul_assoc, cyclicNorm_mul_cyclicOperator, ih]
 
 /-- The cyclic norm of any cochain is a cyclic cochain. -/
-theorem cyclicNorm_mem_cyclicCochains (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+theorem cyclicNorm_mem_cyclicCochains (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+    M) :
     cyclicNorm R A M n φ ∈ cyclicCochains R A M n := by
   rw [mem_cyclicCochains_iff_cyclicOperator_apply_eq_self, ← _root_.mul_apply_eq_comp,
     cyclicOperator_mul_cyclicNorm]
 
 /-- On a cyclic cochain, the cyclic norm is multiplication by the number of arguments. -/
 theorem cyclicNorm_apply_of_mem_cyclicCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ cyclicCochains R A M n) :
     cyclicNorm R A M n φ = (n + 1 : R) • φ := by
   have hfix := mem_cyclicCochains_iff_cyclicOperator_apply_eq_self.1 hφ
@@ -247,7 +250,8 @@ variable {R A M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
 
 /-- The cyclic operator turns the zeroth coface into the last one:
 `λ (δ₀ φ) = (-1)ⁿ⁺¹ δₙ₊₁ φ`. -/
-theorem cyclicOperator_hochschildCoface_zero (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+theorem cyclicOperator_hochschildCoface_zero (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n +
+    1) ↦ A) M) :
     cyclicOperator R A M (n + 1) (hochschildCoface R A M 0 φ) =
       (-1 : ℤ) ^ (n + 1) • hochschildCoface R A M (Fin.last (n + 1)) φ := by
   ext a
@@ -255,7 +259,7 @@ theorem cyclicOperator_hochschildCoface_zero (φ : MultilinearMap R (fun _ : Fin
 
 /-- The cyclic operator moves the cofaces down: `λ (δᵢ₊₁ φ) = -δᵢ (λ φ)`. -/
 theorem cyclicOperator_hochschildCoface_succ (i : Fin (n + 1))
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicOperator R A M (n + 1) (hochschildCoface R A M i.succ φ) =
       -hochschildCoface R A M i.castSucc (cyclicOperator R A M n φ) := by
   ext a
@@ -265,7 +269,7 @@ theorem cyclicOperator_hochschildCoface_succ (i : Fin (n + 1))
 /-- The `k`-th power of the cyclic operator moves the `k`-th coface to the zeroth one:
 `λᵏ (δₖ φ) = (-1)ᵏ δ₀ (λᵏ φ)`. -/
 theorem cyclicOperator_pow_hochschildCoface (k : ℕ) (hk : k < n + 2)
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     (cyclicOperator R A M (n + 1) ^ k) (hochschildCoface R A M ⟨k, hk⟩ φ) =
       (-1 : ℤ) ^ k • hochschildCoface R A M 0 ((cyclicOperator R A M n ^ k) φ) := by
   induction k generalizing φ with
@@ -291,8 +295,8 @@ variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
 /-- The bar coboundary `b' : Cⁿ → Cⁿ⁺¹`, the alternating sum `∑_{i ≤ n} (-1)ⁱ δᵢ` of the
 Hochschild cofaces other than the last one. -/
 def barCoboundary (n : ℕ) :
-    MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M →ₗ[R]
-      MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M :=
   ∑ i : Fin (n + 1), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R A M i.castSucc
 
 variable {R A M} {n : ℕ}
@@ -300,14 +304,15 @@ variable {R A M} {n : ℕ}
 /-- The bar coboundary evaluates as the alternating sum of `φ` on the contractions of adjacent
 entries, `(b'φ)(a₀, …, aₙ₊₁) = ∑_{j ≤ n} (-1)ʲ φ(a₀, …, aⱼaⱼ₊₁, …, aₙ₊₁)`. -/
 @[simp]
-theorem barCoboundary_apply (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+theorem barCoboundary_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
     (a : Fin (n + 2) → A) :
     barCoboundary R A M n φ a =
       ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) • φ (Fin.contractNth j.castSucc (· * ·) a) := by
   simp [barCoboundary]
 
 /-- The Hochschild coboundary of `φ` is the alternating sum of its cofaces. -/
-private theorem hochschildCoboundary_eq_sum (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+private theorem hochschildCoboundary_eq_sum (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1)
+    ↦ A) M) :
     hochschildCoboundary R A M n φ =
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildCoface R A M i φ := by
   ext a
@@ -315,7 +320,7 @@ private theorem hochschildCoboundary_eq_sum (φ : MultilinearMap R (fun _ : Fin 
 
 /-- The Hochschild coboundary is the bar coboundary plus the signed last coface. -/
 theorem hochschildCoboundary_eq_barCoboundary_add
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     hochschildCoboundary R A M n φ =
       barCoboundary R A M n φ +
         (-1 : ℤ) ^ (n + 1) • hochschildCoface R A M (Fin.last (n + 1)) φ := by
@@ -325,7 +330,8 @@ theorem hochschildCoboundary_eq_barCoboundary_add
 
 /-- Conjugating the Hochschild coboundary by the cyclic operator gives the bar coboundary up to
 the last coface: `λ (b φ) = b' (λ φ) + (-1)ⁿ⁺¹ δₙ₊₁ φ`. -/
-theorem cyclicOperator_hochschildCoboundary (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+theorem cyclicOperator_hochschildCoboundary (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1)
+    ↦ A) M) :
     cyclicOperator R A M (n + 1) (hochschildCoboundary R A M n φ) =
       barCoboundary R A M n (cyclicOperator R A M n φ) +
         (-1 : ℤ) ^ (n + 1) • hochschildCoface R A M (Fin.last (n + 1)) φ := by
@@ -351,7 +357,8 @@ theorem one_sub_cyclicOperator_comp_hochschildCoboundary :
 
 /-- `N (b' φ) = N (δ₀ (N φ))`: after the cyclic norm, every face of the bar coboundary becomes
 the zeroth one. -/
-private theorem cyclicNorm_barCoboundary (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+private theorem cyclicNorm_barCoboundary (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+    A) M) :
     cyclicNorm R A M (n + 1) (barCoboundary R A M n φ) =
       cyclicNorm R A M (n + 1) (hochschildCoface R A M 0 (cyclicNorm R A M n φ)) := by
   have hface (i : Fin (n + 1)) :
@@ -370,7 +377,8 @@ private theorem cyclicNorm_barCoboundary (φ : MultilinearMap R (fun _ : Fin (n 
   rw [cyclicNorm_def, LinearMap.sum_apply]
 
 /-- `b (N φ) = N (δ₀ (N φ))`. -/
-private theorem hochschildCoboundary_cyclicNorm (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+private theorem hochschildCoboundary_cyclicNorm (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n
+    + 1) ↦ A) M) :
     hochschildCoboundary R A M n (cyclicNorm R A M n φ) =
       cyclicNorm R A M (n + 1) (hochschildCoface R A M 0 (cyclicNorm R A M n φ)) := by
   -- each signed coface of `N φ` is a power of `λ` applied to `δ₀ (N φ)`
@@ -420,7 +428,8 @@ variable {R A M : Type*} [Semiring R] [NonUnitalSemiring A] [Module R A]
 
 /-- The bar coboundary squares to zero. -/
 @[simp]
-theorem barCoboundary_barCoboundary (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+theorem barCoboundary_barCoboundary (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+    M) :
     barCoboundary R A M (n + 1) (barCoboundary R A M n φ) = 0 := by
   ext a
   simp only [barCoboundary_apply, ← hochschildFace_castSucc, _root_.zero_apply]
@@ -447,8 +456,8 @@ variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [One A] [Module R A] [Ad
 
 /-- The contraction `s : Cⁿ⁺¹ → Cⁿ` of the bar complex, `(sφ)(a₀, …, aₙ) = φ(1, a₀, …, aₙ)`. -/
 def barContraction (n : ℕ) :
-    MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M →ₗ[R]
-      MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M where
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M where
   toFun φ :=
     { toFun a := φ (Fin.cons 1 a)
       map_update_add' := by
@@ -466,7 +475,7 @@ variable {R A M} {n : ℕ}
 
 /-- The contraction evaluates `φ` with `1` inserted as the zeroth argument. -/
 @[simp]
-theorem barContraction_apply (φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M)
+theorem barContraction_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M)
     (a : Fin (n + 1) → A) :
     barContraction R A M n φ a = φ (Fin.cons 1 a) :=
   (rfl)
@@ -474,31 +483,32 @@ theorem barContraction_apply (φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) 
 variable (R A M) in
 /-- Connes' operator `B = N s (1 - λ) : Cⁿ⁺¹ → Cⁿ` on the cochains of a unital algebra. -/
 def connesB (n : ℕ) :
-    MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M →ₗ[R]
-      MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
   cyclicNorm R A M n ∘ₗ barContraction R A M n ∘ₗ (1 - cyclicOperator R A M (n + 1))
 
 /-- Connes' operator evaluates as `B φ = N (s (φ - λ φ))`. -/
-theorem connesB_apply (φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) :
+theorem connesB_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) :
     connesB R A M n φ =
       cyclicNorm R A M n (barContraction R A M n (φ - cyclicOperator R A M (n + 1) φ)) :=
   (rfl)
 
 /-- Connes' operator `B` takes values in the cyclic cochains. -/
-theorem connesB_mem_cyclicCochains (φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) :
+theorem connesB_mem_cyclicCochains (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) :
     connesB R A M n φ ∈ cyclicCochains R A M n :=
   cyclicNorm_mem_cyclicCochains _
 
 /-- Connes' operator `B` vanishes on cyclic cochains. -/
 theorem connesB_eq_zero_of_mem_cyclicCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M (n + 1)) :
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        (n + 1)) :
     connesB R A M n φ = 0 := by
   rw [connesB_apply, mem_cyclicCochains_iff_cyclicOperator_apply_eq_self.1 hφ, sub_self, map_zero,
     map_zero]
 
 /-- Connes' operator `B` squares to zero. -/
 @[simp]
-theorem connesB_connesB (φ : MultilinearMap R (fun _ : Fin (n + 3) ↦ A) M) :
+theorem connesB_connesB (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 3) ↦ A) M) :
     connesB R A M n (connesB R A M (n + 1) φ) = 0 :=
   connesB_eq_zero_of_mem_cyclicCochains (connesB_mem_cyclicCochains φ)
 
@@ -518,7 +528,8 @@ variable {R A M : Type*} [Semiring R] [NonAssocSemiring A] [Module R A]
 /-- The contraction `s` is a contracting homotopy of the bar complex in degree zero:
 `s (b' φ) = φ`. -/
 @[simp]
-theorem barContraction_barCoboundary_zero (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) :
+theorem barContraction_barCoboundary_zero (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A)
+    M) :
     barContraction R A M 0 (barCoboundary R A M 0 φ) = φ := by
   ext a
   simp only [barContraction_apply, barCoboundary_apply, Fin.sum_univ_succ, Fin.sum_univ_zero,
@@ -528,7 +539,7 @@ theorem barContraction_barCoboundary_zero (φ : MultilinearMap R (fun _ : Fin 1 
 /-- The contraction `s` is a contracting homotopy of the bar complex in positive degrees:
 `b' (s φ) + s (b' φ) = φ`. -/
 theorem barCoboundary_barContraction_add_barContraction_barCoboundary
-    (φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) :
     barCoboundary R A M n (barContraction R A M n φ) +
       barContraction R A M (n + 1) (barCoboundary R A M (n + 1) φ) = φ := by
   ext a
@@ -541,7 +552,7 @@ theorem barCoboundary_barContraction_add_barContraction_barCoboundary
 
 /-- Connes' operator `B` anticommutes with the Hochschild coboundary: `b (B φ) + B (b φ) = 0`. -/
 theorem hochschildCoboundary_connesB_add_connesB_hochschildCoboundary
-    (φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) :
     hochschildCoboundary R A M n (connesB R A M n φ) +
       connesB R A M (n + 1) (hochschildCoboundary R A M (n + 1) φ) = 0 := by
   have hN := LinearMap.congr_fun (hochschildCoboundary_comp_cyclicNorm R A M n)
@@ -564,7 +575,8 @@ theorem hochschildCoboundary_comp_connesB_add_connesB_comp_hochschildCoboundary 
 /-- The mixed-complex identity at the bottom degree: `B (b φ) = 0` for every degree-zero
 cochain `φ`. -/
 @[simp]
-theorem connesB_hochschildCoboundary_zero (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) :
+theorem connesB_hochschildCoboundary_zero (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A)
+    M) :
     connesB R A M 0 (hochschildCoboundary R A M 0 φ) = 0 :=
   connesB_eq_zero_of_mem_cyclicCochains (hochschildCoboundary_mem_cyclicCochains R A M (by simp))
 

@@ -36,15 +36,20 @@ identity.
 
 ## Main declarations
 
-* `ContinuousLinearMap.continuous_normDet`: the Jacobian `normDet` is continuous.
+* `ContinuousLinearMap.continuous_normDet`, `ContinuousLinearMap.continuous_normDet_adjoint`:
+  the Jacobian `normDet` and the coarea Jacobian `A ↦ A†.normDet` are continuous.
 * `LinearMap.normDet_eq_norm_apply_one`: for a map from `ℝ`, the Jacobian is the norm of the
   image of `1`.
 * `LinearMap.normDet_adjoint`: between spaces of equal dimension, the adjoint has the same
   Jacobian.
 * `LinearMap.normDet_adjoint_eq_normDet_comp_subtype`: the Jacobian of the adjoint of a surjective
   map is the Jacobian of its restriction to the orthogonal complement of the kernel.
-* `LinearMap.normDet_adjoint_pos_iff`: the Jacobian of the adjoint is positive exactly for
-  surjective maps.
+* `LinearMap.normDet_adjoint_pos_iff`, `LinearMap.normDet_adjoint_ne_zero_iff`,
+  `LinearMap.normDet_adjoint_eq_zero_iff` (and their `ContinuousLinearMap` counterparts): the
+  Jacobian of the adjoint is positive (nonzero) exactly for surjective maps, and vanishes exactly
+  for nonsurjective maps.
+* `ContinuousLinearMap.normDet_adjoint_eq_norm`: the Jacobian of the adjoint of a linear functional
+  is its norm.
 * `LinearMap.normDet_coprod_of_orthogonal`: the Jacobian of a sum of maps with orthogonal ranges
   on a Euclidean product is the product of their Jacobians.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
@@ -110,6 +115,21 @@ theorem normDet_adjoint_pos_iff {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommG
   rw [f.adjoint.normDet_nonneg.lt_iff_ne', Ne, normDet_eq_zero_iff_ker_ne_bot, not_not,
     ← orthogonal_range, Submodule.orthogonal_eq_bot_iff, range_eq_top]
 
+/-- The Jacobian of the adjoint of a linear map is nonzero exactly when the map is surjective. -/
+theorem normDet_adjoint_ne_zero_iff {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommGroup U]
+    [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U] [NormedAddCommGroup W]
+    [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W] {f : U →ₗ[𝕜] W} :
+    f.adjoint.normDet ≠ 0 ↔ Function.Surjective f := by
+  rw [← f.adjoint.normDet_nonneg.lt_iff_ne', normDet_adjoint_pos_iff]
+
+/-- The Jacobian of the adjoint of a linear map vanishes exactly when the map is not
+surjective. -/
+theorem normDet_adjoint_eq_zero_iff {𝕜 U W : Type*} [RCLike 𝕜] [NormedAddCommGroup U]
+    [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U] [NormedAddCommGroup W]
+    [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W] {f : U →ₗ[𝕜] W} :
+    f.adjoint.normDet = 0 ↔ ¬Function.Surjective f := by
+  simpa using (normDet_adjoint_ne_zero_iff (f := f)).not
+
 /-- The norm determinant of `(u, w) ↦ A u + B w` on the Euclidean product is the product of the
 norm determinants of `A` and `B` when their ranges are orthogonal. The codomain need not be
 finite dimensional. -/
@@ -145,18 +165,60 @@ end LinearMap
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
+omit [FiniteDimensional ℝ V] in
 /-- The `m`-dimensional Jacobian `normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends
 continuously on the map. -/
 theorem ContinuousLinearMap.continuous_normDet :
     Continuous fun A : U →L[ℝ] V => A.normDet := by
-  have h (A : U →L[ℝ] V) : A.normDet = √((ContinuousLinearMap.adjoint A ∘L A).det) := by
-    rw [← A.normDet_sq, RCLike.ofReal_real_eq_id, id, Real.sqrt_sq A.normDet_nonneg]
+  let b := stdOrthonormalBasis ℝ U
+  have h (A : U →L[ℝ] V) :
+      A.normDet = √(Matrix.gram ℝ fun i => A (b i)).det := by
+    have hsq := (A : U →ₗ[ℝ] V).normDet_sq_eq_det_gram b
+    simp only [RCLike.ofReal_real_eq_id, id] at hsq
+    exact (hsq ▸ Real.sqrt_sq A.normDet_nonneg).symm
   simp_rw [h]
-  exact (ContinuousLinearMap.continuous_det.comp
-    (ContinuousLinearMap.adjoint.continuous.clm_comp continuous_id)).sqrt
+  refine Continuous.sqrt (Continuous.matrix_det (continuous_matrix fun i j => ?_))
+  simp only [Matrix.gram_apply]
+  fun_prop
+
+omit [FiniteDimensional ℝ U] in
+/-- The coarea Jacobian `A ↦ A.adjoint.normDet` of a continuous linear map `U →L[ℝ] V` depends
+continuously on the map. -/
+theorem ContinuousLinearMap.continuous_normDet_adjoint [CompleteSpace U] :
+    Continuous fun A : U →L[ℝ] V => A.adjoint.normDet :=
+  ContinuousLinearMap.continuous_normDet.comp ContinuousLinearMap.adjoint.continuous
 
 namespace ContinuousLinearMap
 
+/-- The Jacobian of the adjoint of a continuous linear map into a finite-dimensional inner product
+space is positive exactly when the map is surjective. The domain need only be complete, not
+finite-dimensional. -/
+theorem normDet_adjoint_pos_iff {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] {f : E →L[𝕜] F} :
+    0 < f.adjoint.normDet ↔ Function.Surjective f := by
+  rw [f.adjoint.normDet_nonneg.lt_iff_ne', Ne, LinearMap.normDet_eq_zero_iff_ker_ne_bot, not_not,
+    ← f.orthogonal_range, Submodule.orthogonal_eq_bot_iff, LinearMap.range_eq_top, coe_coe]
+
+/-- The Jacobian of the adjoint of a continuous linear map into a finite-dimensional inner product
+space is nonzero exactly when the map is surjective. The domain need only be complete, not
+finite-dimensional. -/
+theorem normDet_adjoint_ne_zero_iff {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] {f : E →L[𝕜] F} :
+    f.adjoint.normDet ≠ 0 ↔ Function.Surjective f := by
+  rw [← f.adjoint.normDet_nonneg.lt_iff_ne', normDet_adjoint_pos_iff]
+
+/-- The Jacobian of the adjoint of a continuous linear map into a finite-dimensional inner product
+space vanishes exactly when the map is not surjective. The domain need only be complete, not
+finite-dimensional. -/
+theorem normDet_adjoint_eq_zero_iff {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] {f : E →L[𝕜] F} :
+    f.adjoint.normDet = 0 ↔ ¬Function.Surjective f := by
+  simpa using (normDet_adjoint_ne_zero_iff (f := f)).not
+
+omit [FiniteDimensional ℝ V] in
 /-- Around an injective linear map `B` there is a ball on which the antilipschitz constant is
 uniform and the Jacobian varies by a factor at most `τ`: every `C` within distance `ρ` of `B` is
 `K`-antilipschitz, and `C.normDet` and `B.normDet` agree up to the factor `τ`. -/
@@ -234,3 +296,12 @@ theorem ContinuousLinearMap.normDet_normalGraphL (A : U →L[ℝ] ℝ) :
     simp only [RCLike.ofReal_real_eq_id, id_eq] at h
     rw [h, hgram, Matrix.det_one_add_replicateCol_mul_replicateRow, hu]
   rw [← Real.sqrt_sq A.normalGraphL.normDet_nonneg, hsq]
+
+omit [FiniteDimensional ℝ U] in
+/-- The Jacobian of the adjoint of a linear functional is its norm. This is the coarea Jacobian
+of a real-valued map, the norm of its gradient. -/
+theorem ContinuousLinearMap.normDet_adjoint_eq_norm [CompleteSpace U] (A : U →L[ℝ] ℝ) :
+    A.adjoint.normDet = ‖A‖ := by
+  rw [LinearMap.normDet_eq_norm_apply_one, ContinuousLinearMap.coe_coe,
+    ← ContinuousLinearMap.toSpanSingletonLIE_symm_apply ℝ U, LinearIsometryEquiv.norm_map,
+    LinearIsometryEquiv.norm_map]

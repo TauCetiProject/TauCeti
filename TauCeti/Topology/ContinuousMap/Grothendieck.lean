@@ -9,13 +9,14 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Convex.PartitionOfUnity
+import TauCeti.Analysis.InnerProductSpace.BilinearSum
 import TauCeti.Analysis.Matrix.Grothendieck
 import TauCeti.LinearAlgebra.BilinearMap.Sum
 
 /-!
 # Grothendieck's inequality for bilinear forms on spaces of continuous functions
 
-Let `K` and `L` be compact normal spaces (for example compact Hausdorff spaces) and let `B` be a
+Let `K` and `L` be compact spaces and let `B` be a
 bilinear form on `C(K, 𝕜) × C(L, 𝕜)` with `‖B f g‖ ≤ C * ‖f‖ * ‖g‖` for the uniform norms; a
 continuous bilinear form satisfies this with `C = ‖B‖` (`ContinuousLinearMap.le_opNorm₂`, applied
 to `ContinuousLinearMap.toLinearMap₁₂`). For finite families `f i` in `C(K, 𝕜)` and `g i` in
@@ -59,7 +60,7 @@ variable [Fintype ι]
 /-- The matrix reduction: `∑ i, B (f i) (g i)` is within `2 * |ι| * C * δ` of a sum
 `∑ k, ∑ l, a k l * ⟪u k, v l⟫` for a finite matrix `a` with scalar bound `C` and Euclidean
 vectors of norm at most one. -/
-private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
+private theorem exists_matrix_norm_sub_le
     (B : C(K, 𝕜) →ₗ[𝕜] C(L, 𝕜) →ₗ[𝕜] 𝕜) {C : ℝ} (hC : 0 ≤ C)
     (hB : ∀ f g, ‖B f g‖ ≤ C * ‖f‖ * ‖g‖) {f : ι → C(K, 𝕜)} {g : ι → C(L, 𝕜)}
     (hf : ∀ x, ∑ i, ‖f i x‖ ^ 2 ≤ 1) (hg : ∀ y, ∑ i, ‖g i y‖ ^ 2 ≤ 1) {δ : ℝ} (hδ : 0 < δ) :
@@ -96,18 +97,8 @@ private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
   -- The approximating sum is the matrix sum, and the error is controlled by `δ`.
   set f' : ι → C(K, 𝕜) := fun i ↦ ∑ k : s, f i k • φ k
   set g' : ι → C(L, 𝕜) := fun i ↦ ∑ l : t, g i l • ψ l
-  have hmat : ∑ k : s, ∑ l : t, B (φ k) (ψ l) * ⟪(WithLp.toLp 2 fun i ↦ star (f i k) :
-      EuclideanSpace 𝕜 ι), WithLp.toLp 2 fun i ↦ g i l⟫_𝕜 = ∑ i, B (f' i) (g' i) := by
-    simp only [f', g', apply_sum_smul_sum_smul, smul_eq_mul, EuclideanSpace.inner_toLp_toLp,
-      dotProduct, Pi.star_apply, star_star, Finset.mul_sum]
-    calc _ = ∑ k : s, ∑ l : t, ∑ i, B (φ k) (ψ l) * f i k * g i l :=
-          Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦
-            Finset.sum_congr rfl fun i _ ↦ by ring
-      _ = ∑ k : s, ∑ i, ∑ l : t, B (φ k) (ψ l) * f i k * g i l :=
-          Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
-      _ = ∑ i, ∑ k : s, ∑ l : t, B (φ k) (ψ l) * f i k * g i l := Finset.sum_comm
-      _ = _ := Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
-          Finset.sum_congr rfl fun l _ ↦ by ring
+  have hmat := sum_apply_sum_smul_sum_smul_eq B φ ψ (fun i (k : s) ↦ f i k)
+    fun i (l : t) ↦ g i l
   rw [hmat, ← Finset.sum_sub_distrib]
   have hterm (i : ι) : ‖B (f i) (g i) - B (f' i) (g' i)‖ ≤ 2 * C * δ := by
     have heq : B (f i) (g i) - B (f' i) (g' i) =
@@ -128,7 +119,7 @@ private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
 
 /-- Grothendieck's inequality for bilinear forms follows from any matrix inequality with a
 constant `c`, by letting the error of the matrix reduction tend to zero. -/
-private theorem norm_sum_apply_apply_le_of_matrix [NormalSpace K] [NormalSpace L]
+private theorem norm_sum_apply_apply_le_of_matrix
     (B : C(K, 𝕜) →ₗ[𝕜] C(L, 𝕜) →ₗ[𝕜] 𝕜) {C : ℝ} (hC : 0 ≤ C)
     (hB : ∀ f g, ‖B f g‖ ≤ C * ‖f‖ * ‖g‖) {f : ι → C(K, 𝕜)} {g : ι → C(L, 𝕜)}
     (hf : ∀ x, ∑ i, ‖f i x‖ ^ 2 ≤ 1) (hg : ∀ y, ∑ i, ‖g i y‖ ^ 2 ≤ 1) {c : ℝ}
@@ -149,12 +140,12 @@ private theorem norm_sum_apply_apply_le_of_matrix [NormalSpace K] [NormalSpace L
   linarith [hc s t a u v ha hu hv]
 
 /-- **Grothendieck's inequality** for bounded bilinear forms on spaces of continuous functions,
-over an `RCLike` field with constant `κ_𝕜 = 16`. Let `K` and `L` be compact normal spaces and
+over an `RCLike` field with constant `κ_𝕜 = 16`. Let `K` and `L` be compact spaces and
 `B` a bilinear form on `C(K, 𝕜) × C(L, 𝕜)` with `‖B f g‖ ≤ C * ‖f‖ * ‖g‖`, such as a continuous
 bilinear form with `C = ‖B‖`. If the families `f i` in `C(K, 𝕜)` and `g i` in `C(L, 𝕜)` have
 square functions bounded by one, then `‖∑ i, B (f i) (g i)‖ ≤ 16 * C`. Over `ℝ`,
 `LinearMap.abs_sum_apply_apply_le_eight_mul` gives the constant `8`. -/
-theorem norm_sum_apply_apply_le_sixteen_mul [NormalSpace K] [NormalSpace L]
+theorem norm_sum_apply_apply_le_sixteen_mul
     (B : C(K, 𝕜) →ₗ[𝕜] C(L, 𝕜) →ₗ[𝕜] 𝕜) {C : ℝ} (hC : 0 ≤ C)
     (hB : ∀ f g, ‖B f g‖ ≤ C * ‖f‖ * ‖g‖) {f : ι → C(K, 𝕜)} {g : ι → C(L, 𝕜)}
     (hf : ∀ x, ∑ i, ‖f i x‖ ^ 2 ≤ 1) (hg : ∀ y, ∑ i, ‖g i y‖ ^ 2 ≤ 1) :
@@ -163,10 +154,10 @@ theorem norm_sum_apply_apply_le_sixteen_mul [NormalSpace K] [NormalSpace L]
     a.norm_sum_sum_mul_inner_le_sixteen_mul ha hu hv
 
 /-- **Grothendieck's inequality** for bounded real bilinear forms on spaces of continuous
-functions, with constant `κ_ℝ = 8`. Let `K` and `L` be compact normal spaces and `B` a bilinear
+functions, with constant `κ_ℝ = 8`. Let `K` and `L` be compact spaces and `B` a bilinear
 form on `C(K, ℝ) × C(L, ℝ)` with `|B f g| ≤ C * ‖f‖ * ‖g‖`. If `∑ i, f i x ^ 2 ≤ 1` and
 `∑ i, g i y ^ 2 ≤ 1` everywhere, then `|∑ i, B (f i) (g i)| ≤ 8 * C`. -/
-theorem abs_sum_apply_apply_le_eight_mul [NormalSpace K] [NormalSpace L]
+theorem abs_sum_apply_apply_le_eight_mul
     (B : C(K, ℝ) →ₗ[ℝ] C(L, ℝ) →ₗ[ℝ] ℝ) {C : ℝ} (hC : 0 ≤ C)
     (hB : ∀ f g, |B f g| ≤ C * ‖f‖ * ‖g‖) {f : ι → C(K, ℝ)} {g : ι → C(L, ℝ)}
     (hf : ∀ x, ∑ i, f i x ^ 2 ≤ 1) (hg : ∀ y, ∑ i, g i y ^ 2 ≤ 1) :

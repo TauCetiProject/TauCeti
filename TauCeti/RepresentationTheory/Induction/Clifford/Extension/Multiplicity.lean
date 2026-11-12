@@ -160,7 +160,6 @@ theorem cliffordMultiplicityRepresentation_mk_apply (p : implementers A)
       W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm x)) := (rfl)
 
 /-- A kernel unit acts on `Hom_N(A,W)` by precomposition with its inverse. -/
-@[simp]
 theorem cliffordMultiplicityRepresentation_mk_kernelLift (d : (End A)ˣ)
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
     cliffordMultiplicityRepresentation A W (QuotientGroup.mk (kernelLift A d)) f =
@@ -203,6 +202,16 @@ section Field
 
 variable [Field k] (A : FDRep k N) (W : FDRep k (inertia A))
   (s : (groupExtension A).Section)
+
+/-- Gauging a Clifford section multiplies its multiplicity operator on the right
+by the inverse gauge unit. -/
+theorem cliffordMultiplicityRepresentation_gauge
+    (b : Quotient A → (End A)ˣ) (q : Quotient A)
+    (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
+    cliffordMultiplicityRepresentation A W (s.gauge b q) f =
+      op (↑(b q)⁻¹ : End A) • cliffordMultiplicityRepresentation A W (s q) f := by
+  rw [GroupExtension.Section.gauge_apply, groupExtension_inl, map_mul, mul_apply_eq_comp,
+    inl_apply, cliffordMultiplicityRepresentation_mk_kernelLift]
 
 /-- Composing section operators introduces the inverse crossed-system factor on the right.
 Equivalently the left coefficient algebra for multiplicities uses the opposite coefficients

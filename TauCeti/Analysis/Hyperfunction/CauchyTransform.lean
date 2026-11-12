@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Hyperfunction.OneDimensional
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Distribution.Order
 import TauCeti.Basic.Complex.OfRealSub
 
 /-!
@@ -214,45 +215,34 @@ private theorem hasDerivAt_complexPairing_cauchyKernel (u : 𝓓'(Ω, ℂ)) (χ 
       (u.complexPairing (cauchyKernel χ 2 hz)) z := by
   obtain ⟨g, hgs, hgc, d, hd, him, hgw, hgd⟩ := exists_contDiff_slice_eq_cauchyKernel χ hz
   have hz' : ‖z - z‖ < d := by simpa using hd
-  -- The pairing of `u` with the Taylor remainder of the kernels is `o(|h|)`.
-  rw [hasDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
-  intro c hc
   let K : Compacts ℝ := ⟨tsupport χ, χ.hasCompactSupport.isCompact⟩
   obtain ⟨N, C, hC, hu⟩ := u.exists_norm_complexPairing_le (K := K) χ.tsupport_subset
-  have hε : 0 < c / (C + 1) := div_pos hc (by linarith)
-  have hrem := fun i ↦ hgc.exists_norm_iteratedFDeriv_prod_right_sub_sub_le hgs (i := i)
-    (by exact_mod_cast le_top) z hε
-  choose r hr hrem using hrem
-  let r₀ := min d ((Finset.range (N + 1)).inf' (by simp) r)
-  have hr₀ : 0 < r₀ := lt_min (by positivity) ((Finset.lt_inf'_iff _).2 fun i _ ↦ hr i)
-  filter_upwards [ball_mem_nhds (0 : ℂ) hr₀] with h hh
-  rw [mem_ball_zero_iff] at hh
-  have hhd : ‖z + h - z‖ < d := by
-    rw [add_sub_cancel_left]
-    exact hh.trans_le (min_le_left _ _)
-  have hzh : (z + h).im ≠ 0 := him _ hhd
-  set R : 𝓓(Ω, ℂ) := cauchyKernel χ 1 hzh - cauchyKernel χ 1 hz - h • cauchyKernel χ 2 hz
-  have hR : (R : ℝ → ℂ) = fun t ↦ g (z + h, t) - g (z, t) - fderiv ℝ g (z, t) (h, 0) := by
+  -- For non-real `z + h`, the Taylor remainder of the kernels; its pairing with `u` is `o(|h|)`.
+  let R (h : ℂ) : 𝓓(Ω, ℂ) := if hzh : (z + h).im ≠ 0 then
+    cauchyKernel χ 1 hzh - cauchyKernel χ 1 hz - h • cauchyKernel χ 2 hz else 0
+  have hd' : ∀ᶠ h in 𝓝 (0 : ℂ), ‖z + h - z‖ < d := by
+    filter_upwards [ball_mem_nhds (0 : ℂ) hd] with h hh
+    rwa [add_sub_cancel_left, ← mem_ball_zero_iff]
+  have hR (h : ℂ) (hhd : ‖z + h - z‖ < d) :
+      (R h : ℝ → ℂ) = fun t ↦ g (z + h, t) - g (z, t) - fderiv ℝ g (z, t) (h, 0) := by
     funext t
     rw [hgw _ hhd t, hgw z hz' t, hgd t h]
-    simp [R]
-  have hRK : tsupport R ⊆ K := closure_mono (Function.support_subset_iff'.2 fun t ht ↦ by
-    simp [R, cauchyKernel_apply, Function.notMem_support.1 ht])
-  have hRbound : ∀ i ≤ N, ∀ t, ‖iteratedFDeriv ℝ i R t‖ ≤ c / (C + 1) * ‖h‖ := by
-    intro i hi t
-    have hri : ‖h‖ < r i := hh.trans_le ((min_le_right _ _).trans
-      (Finset.inf'_le _ (Finset.mem_range.2 (Nat.lt_succ_of_le hi))))
-    rw [hR]
-    exact hrem i h hri t
-  have hval : u.complexPairing R = u.complexPairing (cauchyKernel χ 1 hzh) -
-      u.complexPairing (cauchyKernel χ 1 hz) - h • u.complexPairing (cauchyKernel χ 2 hz) := by
-    simp [R]
-  simp only [ne_eq, hzh, hz, not_false_eq_true, ↓reduceDIte]
-  rw [← hval]
-  calc ‖u.complexPairing R‖ ≤ C * (c / (C + 1) * ‖h‖) := hu R hRK _ (by positivity) hRbound
-    _ = C / (C + 1) * (c * ‖h‖) := by ring
-    _ ≤ c * ‖h‖ :=
-      mul_le_of_le_one_left (by positivity) ((div_le_one (by linarith)).2 (by linarith))
+    simp only [R, ne_eq, him _ hhd, not_false_eq_true, ↓reduceDIte]
+    simp
+  rw [hasDerivAt_iff_isLittleO_nhds_zero]
+  refine (isLittleO_apply_of_norm_iteratedFDeriv_le (R := R) hC hu (.of_forall fun h ↦ ?_)
+    fun i _ ε hε ↦ ?_).congr' ?_ EventuallyEq.rfl
+  · refine closure_mono (Function.support_subset_iff'.2 fun t ht ↦ ?_)
+    simp only [R]
+    split_ifs <;> simp [cauchyKernel_apply, Function.notMem_support.1 ht]
+  · obtain ⟨r, hr, hrem⟩ := hgc.exists_norm_iteratedFDeriv_prod_right_sub_sub_le hgs (i := i)
+      (by exact_mod_cast le_top) z hε
+    filter_upwards [hd', ball_mem_nhds (0 : ℂ) hr] with h hhd hh
+    rw [hR h hhd]
+    exact hrem h (mem_ball_zero_iff.1 hh)
+  · filter_upwards [hd'] with h hhd
+    simp only [R, ne_eq, him _ hhd, hz, not_false_eq_true, ↓reduceDIte]
+    simp
 
 /-- **The Cauchy transform is holomorphic off the real line**, with derivative
 `(2πi)⁻¹ ⟨u_t, χ(t) / (t - z)²⟩`. -/
@@ -310,9 +300,8 @@ theorem cauchyTransform_smul (c : ℂ) (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ))
 theorem cauchyTransform_delta (a : ℝ) (χ : 𝓓(Ω, ℝ)) {z : ℂ} (hz : z.im ≠ 0) :
     cauchyTransform (mapCLM ofRealCLM (delta a : 𝓓'(Ω, ℝ))) χ z =
       (2 * π * I)⁻¹ * (χ a / ((a : ℂ) - z)) := by
-  rw [cauchyTransform_of_im_ne_zero _ χ hz, complexPairing_apply]
-  simp only [mapCLM_apply, delta_apply, postcompCLM_apply, Function.comp_apply, ofRealCLM_apply,
-    reCLM_apply, imCLM_apply, mul_comm I, re_add_im, cauchyKernel_apply, pow_one]
+  rw [cauchyTransform_of_im_ne_zero _ χ hz, complexPairing_mapCLM_ofRealCLM_delta]
+  simp only [cauchyKernel_apply, pow_one]
 
 /-- **The normalization of the Cauchy transform.** For a cutoff with `χ(0) = 1`, the Cauchy
 transform of `δ₀` is `-(2πiz)⁻¹` on both half-planes. -/

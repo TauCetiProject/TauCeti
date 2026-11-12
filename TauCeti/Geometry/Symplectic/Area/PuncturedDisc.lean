@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 
 /-!
@@ -22,7 +23,12 @@ singularity has been proved. Both results hold in any finite-dimensional real no
 The vanishing-action result requires `C¹` regularity near the punctured closed disc and a
 square-integrable differential. The Stokes identity requires `C²` regularity there, including
 the outer boundary. For a `J`-holomorphic map, this area identity is the input to the radial
-energy-decay argument in removal of singularities.
+energy-decay argument in removal of singularities. For a map which is `C²` on the whole closed
+disc the energy is automatically finite, which gives Stokes' formula on the closed disc
+(`TauCeti.SymplecticForm.integral_fderiv_apply_closedBall`, with the boundary term written as the
+loop area of the boundary circle in
+`TauCeti.SymplecticForm.integral_fderiv_apply_closedBall_eq_loopArea`, and in the real coordinates
+`ℝ × ℝ ≃ ℂ`, `TauCeti.SymplecticForm.integral_fderiv_apply_preimage_closedBall`).
 
 ## References
 
@@ -50,7 +56,7 @@ theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V
     ∃ r : ℕ → ℝ, (∀ n, 0 < r n ∧ r n ≤ b) ∧ Tendsto r atTop (𝓝 0) ∧
       Tendsto (fun n ↦ ∫ θ in -π..π, ω (u (circleMap z₀ (r n) θ))
         (deriv (fun θ ↦ u (circleMap z₀ (r n) θ)) θ)) atTop (𝓝 0) := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let action (r : ℝ) := ∫ θ in -π..π, ω (u (circleMap z₀ r θ))
     (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)
   -- Use Euclidean coordinates only for Wirtinger; the original norm controls their energy.
@@ -123,7 +129,7 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
       ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) =
       (1 / 2 : ℝ) * ∫ θ in -π..π, ω (u (circleMap z₀ b θ))
         (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ) := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let D := {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   let A (r : ℝ) := {z : ℂ | r ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   let area (z : ℂ) := ω (fderiv ℝ u z 1) (fderiv ℝ u z I)
@@ -158,11 +164,81 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
   -- Annular Stokes identifies the same limit with half the outer boundary action.
   have heq (n : ℕ) : (∫ z in A (r n), area z) =
       (1 / 2 : ℝ) * (action b - action (r n)) :=
-    ω.integral_fderiv_apply_annulus z₀ (hr n).1 (hr n).2
+    ω.integral_fderiv_apply_annulus z₀ (hr n).1.le (hr n).2
       (fun z hz ↦ hu z (hsub (hr n).1 hz))
   have hstokes : Tendsto (fun n ↦ (1 / 2 : ℝ) * (action b - action (r n))) atTop
       (𝓝 ((1 / 2 : ℝ) * action b)) := by
     simpa using (tendsto_const_nhds.sub hactionlim).const_mul (1 / 2 : ℝ)
   exact tendsto_nhds_unique hlim (hstokes.congr (fun n ↦ (heq n).symm))
+
+/-- **Stokes' formula on a closed disc.** For a map which is `C²` at every point of the closed
+disc `‖z - z₀‖ ≤ b`, the integral over the disc of the pullback of a constant symplectic form is
+half the integral of `ω(u, ∂_θ u)` along the boundary circle. -/
+theorem integral_fderiv_apply_closedBall (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ) {b : ℝ}
+    (hb : 0 < b) (hu : ∀ z ∈ Metric.closedBall z₀ b, ContDiffAt ℝ 2 u z) :
+    (∫ z in Metric.closedBall z₀ b, ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (u (circleMap z₀ b θ))
+        (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ) := by
+  -- The punctured disc differs from the closed disc by the null set `{z₀}`.
+  have hD : {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} = Metric.closedBall z₀ b \ {z₀} := by
+    ext z
+    simp [dist_eq_norm, norm_pos_iff, sub_ne_zero, and_comm]
+  have hsub : {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆ Metric.closedBall z₀ b :=
+    hD ▸ sdiff_subset
+  -- The differential is continuous on the compact disc, so the map has finite energy.
+  have hcont : ContinuousOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (Metric.closedBall z₀ b) :=
+    fun z hz ↦ (((hu z hz).fderiv_right (m := 1) (by norm_num)).continuousAt.norm.pow
+      2).continuousWithinAt
+  rw [← setIntegral_congr_set (hD ▸ sdiff_null_ae_eq_self (measure_singleton z₀))]
+  exact ω.integral_fderiv_apply_punctured_disc z₀ hb (fun z hz ↦ hu z (hsub hz))
+    ((hcont.integrableOn_compact (isCompact_closedBall z₀ b)).mono_set hsub)
+
+/-- **Stokes' formula on a closed disc, as a loop area.** For a map which is `C²` at every point
+of the closed disc `‖z - z₀‖ ≤ b`, the symplectic area over the disc is the loop area of the
+boundary circle `t ↦ u(z₀ + b e^{2πit})`, traversed once counterclockwise. -/
+theorem integral_fderiv_apply_closedBall_eq_loopArea (ω : SymplecticForm V) {u : ℂ → V}
+    (z₀ : ℂ) {b : ℝ} (hb : 0 < b) (hu : ∀ z ∈ Metric.closedBall z₀ b, ContDiffAt ℝ 2 u z) :
+    ∫ z in Metric.closedBall z₀ b, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
+      ω.loopArea (fun t ↦ u (circleMap z₀ b (2 * π * t))) := by
+  have h := ω.loopArea_comp_add_mul (g := fun θ ↦ u (circleMap z₀ b θ))
+    ((periodic_circleMap z₀ b).comp u) 0
+  simp only [zero_add] at h
+  rw [ω.integral_fderiv_apply_closedBall z₀ hb hu]
+  exact h.symm
+
+/-- **Stokes' formula on a closed disc, in real coordinates.** For a map `u : ℝ × ℝ → V` which is
+`C²` at every point of the preimage of the closed disc `‖z - z₀‖ ≤ b` under `ℝ × ℝ ≃ ℂ`, the
+symplectic area of `u` over this preimage is half the integral of `ω(u, ∂_θ u)` along the
+boundary circle. -/
+theorem integral_fderiv_apply_preimage_closedBall (ω : SymplecticForm V) {u : ℝ × ℝ → V}
+    (z₀ : ℂ) {b : ℝ} (hb : 0 < b)
+    (hu : ∀ z ∈ equivRealProdCLM.symm ⁻¹' Metric.closedBall z₀ b, ContDiffAt ℝ 2 u z) :
+    ∫ z in equivRealProdCLM.symm ⁻¹' Metric.closedBall z₀ b,
+        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (u (equivRealProdCLM (circleMap z₀ b θ)))
+        (deriv (fun θ ↦ u (equivRealProdCLM (circleMap z₀ b θ))) θ) := by
+  set v : ℂ → V := u ∘ equivRealProdCLM
+  have hv (z : ℂ) (hz : z ∈ Metric.closedBall z₀ b) : ContDiffAt ℝ 2 v z :=
+    (hu (equivRealProdCLM z) (by rwa [mem_preimage, ContinuousLinearEquiv.symm_apply_apply])).comp
+      z equivRealProdCLM.contDiff.contDiffAt
+  -- Pass to the complex coordinate.
+  have h₁ : equivRealProdCLM 1 = stdComplexLineReal := by
+    rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
+  have hI : equivRealProdCLM I = stdComplexLineImag := by
+    rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
+  have hcoord : ∫ w in Metric.closedBall z₀ b, ω (fderiv ℝ v w 1) (fderiv ℝ v w I) =
+      ∫ z in equivRealProdCLM.symm ⁻¹' Metric.closedBall z₀ b,
+        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
+    simp only [v, ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, h₁, hI]
+    have hpre : measurableEquivRealProd ⁻¹'
+        (equivRealProdCLM.symm ⁻¹' Metric.closedBall z₀ b) = Metric.closedBall z₀ b := by
+      ext w
+      simp [measurableEquivRealProd]
+    rw [← volume_preserving_equiv_real_prod.setIntegral_preimage_emb
+      measurableEquivRealProd.measurableEmbedding _ _, hpre]
+    rfl
+  rw [← hcoord, ω.integral_fderiv_apply_closedBall z₀ hb hv]
+  rfl
 
 end TauCeti.SymplecticForm

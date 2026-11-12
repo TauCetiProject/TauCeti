@@ -55,9 +55,10 @@ proof is independent of the source's.
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
 * `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
-* `Matrix.SpecialLinearGroup.map_comp` and `Matrix.SpecialLinearGroup.map_id`: the two functor
-  laws for base change, which support whole-matrix reduction arguments such as the level
-  antitonicity of the principal congruence subgroups.
+* `Matrix.SpecialLinearGroup.map_comp`: base change along a composite is the composite of the
+  base changes. With Mathlib's `Matrix.SpecialLinearGroup.map_id`, these functor laws support
+  whole-matrix reduction arguments such as the level antitonicity of the principal congruence
+  subgroups.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
@@ -71,7 +72,12 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.intCast_comp_vecCons_eq_zsmul_vecMul_inv`: the bottom row of
   `γ⁻¹` for `γ = [a, b; c, d] ∈ SL₂(ℤ)` is `(-c, a)`, in any commutative ring; and
   `Matrix.SpecialLinearGroup.neg_vecMul_inv`: replacing `γ` by `-γ` negates `v ᵥ* γ⁻¹`.
+* `Matrix.SpecialLinearGroup.vecMul_inv_apply_zero` and
+  `Matrix.SpecialLinearGroup.vecMul_inv_apply_one`: the coordinates of `x ᵥ* γ⁻¹` for
+  `γ ∈ SL₂(R)` in terms of those of `x` and `γ`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
+* `Matrix.SpecialLinearGroup.coe_ne_zero`: a square matrix of determinant one over a nontrivial
+  ring, indexed by a nonempty type, is nonzero.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring.
@@ -119,11 +125,11 @@ instance {R : Type*} [CommRing R] [Countable R] {n : Type*} [Fintype n] [Decidab
   letI : Countable (Matrix n n R) := inferInstanceAs (Countable (n → n → R))
   inferInstanceAs (Countable { A : Matrix n n R // A.det = 1 })
 
-/-- **Functoriality of the induced map on special linear groups, identity law.** Base change
-along the identity ring hom is the identity. -/
-@[simp]
-theorem map_id {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n] :
-    map (n := n) (RingHom.id R) = MonoidHom.id (SpecialLinearGroup n R) := rfl
+/-- A square matrix of determinant one over a nontrivial ring, indexed by a nonempty type, is
+nonzero. -/
+theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
+    [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
+  A.det_ne_zero (by rw [h, det_zero])
 
 /-- **Functoriality of the induced map on special linear groups, composition law.** Base change
 along `f` and then along `g` is base change along `g ∘ f`, so a composite of induced maps is
@@ -228,6 +234,17 @@ theorem neg_vecMul_inv {R : Type*} [CommRing R] (v : Fin 2 → R) (γ : SL(2, �
     (-(v ᵥ* (γ⁻¹ : SL(2, ℤ))) : Fin 2 → R) = v ᵥ* ((-γ)⁻¹ : SL(2, ℤ)) := by
   ext i
   fin_cases i <;> simp [vecMul, dotProduct]
+
+/-- The first coordinate of `x γ⁻¹` for `γ ∈ SL₂(R)`. -/
+lemma vecMul_inv_apply_zero {R : Type*} [CommRing R] (x : Fin 2 → R) (γ : SL(2, R)) :
+    (x ᵥ* ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)) 0 = x 0 * γ 1 1 - x 1 * γ 1 0 := by
+  simp [vecMul, dotProduct, Matrix.adjugate_fin_two]
+  ring
+
+/-- The second coordinate of `x γ⁻¹` for `γ ∈ SL₂(R)`. -/
+lemma vecMul_inv_apply_one {R : Type*} [CommRing R] (x : Fin 2 → R) (γ : SL(2, R)) :
+    (x ᵥ* ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)) 1 = -(x 0 * γ 0 1) + x 1 * γ 0 0 := by
+  simp [vecMul, dotProduct, Matrix.adjugate_fin_two]
 
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
