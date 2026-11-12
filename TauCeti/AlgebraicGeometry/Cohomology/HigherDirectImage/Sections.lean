@@ -37,10 +37,12 @@ formation of `R^p f_* M` commutes with restriction to the affine open `V`.
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.toHigherDirectImageSections`: the comparison map
-  `H^p(f⁻¹ U, M) ⟶ Γ(U, R^p f_* M)`;
+  `H^p(f⁻¹ U, M) ⟶ Γ(U, R^p f_* M)`, compatible with restriction
+  (`AlgebraicGeometry.Scheme.Hom.toHigherDirectImageSections_naturality`);
 * `AlgebraicGeometry.Scheme.Hom.bijective_toHigherDirectImageSections_basicOpen`,
   `AlgebraicGeometry.Scheme.Hom.bijective_toHigherDirectImageSections_top`: it is bijective over
-  the basic opens of an affine target and over the target itself;
+  the basic opens of an affine target and over the target itself, so it is an isomorphism there
+  (`AlgebraicGeometry.Scheme.Hom.isIso_toHigherDirectImageSections_top`);
 * `AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsIso`: `Γ(V, R^p f_* M) ≅ H^p(f⁻¹ V, M)`
   for every affine open `V` of the target.
 
@@ -74,6 +76,19 @@ def toHigherDirectImageSections (U : Y.Opens) :
   (toSheafify (Opens.grothendieckTopology Y)
       ((Opens.map f.base).op ⋙ ((toSheaf X).obj M).cohomologyPresheaf p)).app (op U) ≫
     (f.toSheafHigherDirectImageObjIsoSheafify M p).inv.hom.app (op U)
+
+/-- The comparison maps `H^p(f⁻¹ U, M) ⟶ Γ(U, R^p f_* M)` commute with restriction to a smaller
+open `U' ≤ U`. -/
+@[reassoc]
+lemma toHigherDirectImageSections_naturality {U U' : Y.Opens} (h : U' ≤ U) :
+    cohomologyOnRes M p (f.preimage_mono h) ≫ toHigherDirectImageSections f M p U' =
+      toHigherDirectImageSections f M p U ≫
+        ((toSheaf Y).obj ((f.higherDirectImage p).obj M)).obj.map (homOfLE h).op := by
+  have h₁ := (toSheafify (Opens.grothendieckTopology Y)
+    ((Opens.map f.base).op ⋙ ((toSheaf X).obj M).cohomologyPresheaf p)).naturality (homOfLE h).op
+  have h₂ := (f.toSheafHigherDirectImageObjIsoSheafify M p).inv.hom.naturality (homOfLE h).op
+  exact ((Category.assoc _ _ _).symm.trans (h₁ =≫ _)).trans
+    ((Category.assoc _ _ _).trans (_ ≫= h₂))
 
 /-- `H^p(W, M)` as a module over `Γ(Y, ⊤)`, through `f^* : Γ(Y, ⊤) ⟶ Γ(X, ⊤)`. -/
 private def moduleOn (W : X.Opens) : ModuleCat.{u} Γ(Y, ⊤) :=
@@ -229,10 +244,11 @@ theorem bijective_toHigherDirectImageSections_basicOpen [QuasiCompact f] [QuasiS
   have := TopCat.Opens.coverDense_inducedFunctor (isBasis_basicOpen Y)
   let β := Functor.IsCoverDense.restrictHomEquivHom (basicOpenNatTrans f M p)
   have hβ (g' : Γ(Y, ⊤)) : Function.Bijective (β.app (op (Y.basicOpen g'))) := by
-    change Function.Bijective
-      ((Functor.whiskerLeft (inducedFunctor (basicOpenFamily Y)).op β).app (op g'))
-    rw [show Functor.whiskerLeft (inducedFunctor (basicOpenFamily Y)).op β = _ from
-      Functor.IsCoverDense.sheafHom_restrict_eq (basicOpenNatTrans f M p)]
+    -- On the basic open `D(g')`, the extension `β` restricts to `basicOpenNatTrans`.
+    have e : β.app (op (Y.basicOpen g')) = (basicOpenNatTrans f M p).app (op g') :=
+      NatTrans.congr_app (Functor.IsCoverDense.sheafHom_restrict_eq (basicOpenNatTrans f M p))
+        (op g')
+    rw [e]
     exact (basicOpenEquiv f M p g').bijective
   have h₁ := Functor.IsCoverDense.bijective_toSheafify_app
     (G := inducedFunctor (basicOpenFamily Y)) β hβ g
@@ -247,6 +263,18 @@ theorem bijective_toHigherDirectImageSections_top [QuasiCompact f] [QuasiSeparat
     [M.IsQuasicoherent] : Function.Bijective (toHigherDirectImageSections f M p ⊤) := by
   have := bijective_toHigherDirectImageSections_basicOpen f M p 1
   rwa [Scheme.basicOpen_one] at this
+
+/-- Over a basic open `D(g)` of an affine target, the comparison map is an isomorphism. -/
+instance isIso_toHigherDirectImageSections_basicOpen [QuasiCompact f] [QuasiSeparated f]
+    [M.IsQuasicoherent] (g : Γ(Y, ⊤)) :
+    IsIso (toHigherDirectImageSections f M p (Y.basicOpen g)) :=
+  (ConcreteCategory.isIso_iff_bijective _).2
+    (bijective_toHigherDirectImageSections_basicOpen f M p g)
+
+/-- Over an affine target, the comparison map `H^p(X, M) ⟶ Γ(Y, R^p f_* M)` is an isomorphism. -/
+instance isIso_toHigherDirectImageSections_top [QuasiCompact f] [QuasiSeparated f]
+    [M.IsQuasicoherent] : IsIso (toHigherDirectImageSections f M p ⊤) :=
+  (ConcreteCategory.isIso_iff_bijective _).2 (bijective_toHigherDirectImageSections_top f M p)
 
 end Affine
 
@@ -265,8 +293,7 @@ def higherDirectImageSectionsIso [QuasiCompact f] [QuasiSeparated f] [M.IsQuasic
     (Scheme.Modules.restrictAppIso V.ι _ ⊤).symm ≪≫
     ((sheafToPresheaf _ _).mapIso
       ((toSheaf V).mapIso ((f.higherDirectImageRestrictIso V p).app M))).app (op ⊤) ≪≫
-    (AddEquiv.ofBijective _ (bijective_toHigherDirectImageSections_top (f ∣_ V)
-      (M.restrict (f ⁻¹ᵁ V).ι) p)).toAddCommGrpIso.symm ≪≫
+    (asIso (toHigherDirectImageSections (f ∣_ V) (M.restrict (f ⁻¹ᵁ V).ι) p ⊤)).symm ≪≫
     cohomologyOnTopIso _ p ≪≫
     (Scheme.Modules.cohomologyOnOpensRangeIso (f ⁻¹ᵁ V).ι M p).symm ≪≫
     eqToIso (congrArg (cohomologyOn M p) (Scheme.Opens.opensRange_ι _))

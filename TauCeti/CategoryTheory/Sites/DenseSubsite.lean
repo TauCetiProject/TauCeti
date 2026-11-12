@@ -143,9 +143,7 @@ lemma bijective_toSheafify_app [HasWeakSheafify K A] [K.WEqualsLocallyBijective 
       isLocallySurjective_of_surjective_app β fun X ↦ (hβ X).2⟩
   have : IsIso ((presheafToSheaf K A).map β) := (K.W_iff β).1 hW
   have : IsIso (toSheafify K Q.obj) := isIso_toSheafify K Q.property
-  have : IsIso ((sheafifyMap K β).app (op (G.obj X))) := by
-    change IsIso (((sheafToPresheaf K A).map ((presheafToSheaf K A).map β)).app _)
-    infer_instance
+  have : IsIso ((sheafifyMap K β).app (op (G.obj X))) := inferInstance
   have e : ⇑((sheafifyMap K β).app (op (G.obj X))) ∘ ⇑((toSheafify K F).app (op (G.obj X))) =
       ⇑((toSheafify K Q.obj).app (op (G.obj X))) ∘ ⇑(β.app (op (G.obj X))) := by
     ext x
