@@ -200,7 +200,7 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
   let g : C(c.pt, M) := (hc.desc φ).hom
   have hg (k : ℕ) (w : F.obj k) : g (c.ι.app k w) = (S k).h w :=
     ConcreteCategory.congr_hom (hc.fac φ k) w
-  have hemb := isClosedEmbedding_ι_app_of_isColimit hF hc
+  have hemb := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc
   let eA (k : ℕ) : (range (c.ι.app k) : Set c.pt) ≃ₕ {x | f x ≤ a k} :=
     (hemb k).isEmbedding.toHomeomorph.symm.toHomotopyEquiv.trans (S k).h
   have heA (k : ℕ) (x : (range (c.ι.app k) : Set c.pt)) : (eA k x : M) = g x := by

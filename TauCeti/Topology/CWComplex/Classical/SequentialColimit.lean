@@ -48,7 +48,6 @@ is a subcomplex.
 
 * `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inl` and
   `TauCeti.coe_map_cwComplexOfIsColimitCellEquiv_symm_inr`: the characteristic maps of the cells.
-* `TauCeti.isClosedEmbedding_ι_app_of_isColimit`: the stages are closed subspaces of the colimit.
 * `TauCeti.hasHomotopyExtensionProperty_preimage_range_ι`: each stage has the homotopy extension
   property in the next one, inside the colimit.
 
@@ -75,18 +74,9 @@ variable {F : ℕ ⥤ TopCat.{u}} [∀ k, CWComplex (univ : Set (F.obj k))]
   (hι : ∀ (k n : ℕ) i, ⇑(map n (ι k n i)) = F.map (homOfLE k.le_succ) ∘ map n i)
   {c : Cocone F} (hc : IsColimit c)
 
-omit [∀ k, CWComplex (univ : Set (F.obj k))] in
-include hF hc in
-/-- The maps of the stages of a sequence of closed embeddings to its colimit are closed
-embeddings. -/
-theorem isClosedEmbedding_ι_app_of_isColimit (k : ℕ) : IsClosedEmbedding (c.ι.app k) :=
-  TopCat.isClosedEmbedding_ι_of_isColimit
-    (fun _ _ hij ↦ TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) hij)
-    hc k
-
 /-- The CW structure of the stage `F k`, read on its range in the colimit, relative to `∅`. -/
 private abbrev stageRelCWComplex (k : ℕ) : RelCWComplex (range (c.ι.app k)) ∅ :=
-  (isClosedEmbedding_ι_app_of_isColimit hF hc k).relCWComplex image_univ (image_empty _)
+  (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).relCWComplex image_univ (image_empty _)
 
 /-- The CW structure of the stage `F k`, read on its range in the colimit. -/
 private abbrev stageCWComplex (k : ℕ) : CWComplex (range (c.ι.app k)) :=
@@ -97,7 +87,7 @@ private abbrev stageCellEquiv (k n : ℕ) :
     @cell c.pt _ (range (c.ι.app k)) ∅
         (@CWComplex.instRelCWComplex _ _ _ (stageCWComplex hF hc k)) n ≃
       cell (univ : Set (F.obj k)) n :=
-  (isClosedEmbedding_ι_app_of_isColimit hF hc k).relCWComplexCellEquiv image_univ
+  (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).relCWComplexCellEquiv image_univ
     (image_empty _) n
 
 /-- The characteristic maps of the range of `F k` are those of `F k`, followed by the map to the
@@ -108,7 +98,7 @@ private theorem coe_map_stage (k n : ℕ)
     ⇑(@map c.pt _ (range (c.ι.app k)) ∅
         (@CWComplex.instRelCWComplex _ _ _ (stageCWComplex hF hc k)) n i) =
       c.ι.app k ∘ map n (stageCellEquiv hF hc k n i) :=
-  (isClosedEmbedding_ι_app_of_isColimit hF hc k).coe_map_relCWComplex image_univ
+  (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).coe_map_relCWComplex image_univ
     (image_empty _) n i
 
 /-- The cells of the stage `F k` as cells of the next stage, read in the colimit. -/
@@ -265,7 +255,7 @@ Inside the colimit, the range of `F k` has the homotopy extension property in th
 theorem hasHomotopyExtensionProperty_preimage_range_ι [∀ k, T2Space (F.obj k)] (k : ℕ) :
     HasHomotopyExtensionProperty
       ((↑) ⁻¹' (range (c.ι.app k) : Set c.pt) : Set ↥(range (c.ι.app (k + 1)) : Set c.pt)) := by
-  have hemb := isClosedEmbedding_ι_app_of_isColimit hF hc (k + 1)
+  have hemb := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc (k + 1)
   have h := (hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k)).image
     hemb.isEmbedding.toHomeomorph
   convert h using 1
