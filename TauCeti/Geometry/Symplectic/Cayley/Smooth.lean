@@ -289,6 +289,17 @@ theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexSt
       (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) :=
   fun p => h₀.contMDiffAt_cayley (hJ p) (hJs p)
 
+/-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an
+`ω`-compatible `J₀` are `C^n` is itself `C^n`. This is the converse of
+`TauCeti.SymplecticForm.Tames.contMDiff_cayley`. -/
+theorem Compatible.contMDiff_of_contMDiff_cayley (h₀ : ω.Compatible J₀)
+    {J : N → AlmostComplexStructure V} (hJ : ∀ y, ω.Tames (J y)) {n : WithTop ℕ∞}
+    (hCs : ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y)))) :
+    ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) :=
+  fun p => h₀.contMDiffAt_of_contMDiffAt_cayley hJ (hCs p)
+
 end Manifold
 
 /-- Interpolate from `J₀` to `J₁` by multiplying the Cayley coordinate of `J₁` by a

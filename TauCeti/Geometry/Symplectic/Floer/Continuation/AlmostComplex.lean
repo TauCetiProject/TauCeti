@@ -175,8 +175,7 @@ theorem contMDiff_continuationAlmostComplex (h₀ : ω.Compatible J₀)
       (fun p : (ℝ × ℝ) × M =>
         LinearMap.toContinuousLinearMap
           (continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ p.1 p.2).toLinearMap) := by
-  intro p
-  refine h₀.contMDiffAt_of_contMDiffAt_cayley (fun _ => tames_continuationAlmostComplex h₀ _ _) ?_
+  refine h₀.contMDiff_of_contMDiff_cayley (fun _ => tames_continuationAlmostComplex h₀ _ _) ?_
   simp only [toContinuousLinearMap_cayley_continuationAlmostComplex]
   -- Each Cayley transform is smooth in `(t, x)`, and the weights are smooth in `s`.
   have hst : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℝ).prod I) n
@@ -189,7 +188,7 @@ theorem contMDiff_continuationAlmostComplex (h₀ : ω.Compatible J₀)
     (fun p => hJ₁ p.1 p.2) hJ₁s).comp hst
   have h₂ := (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J₂ p.1 p.2)
     (fun p => hJ₂ p.1 p.2) hJ₂s).comp hst
-  exact ((ContMDiffAt.sub contMDiffAt_const (hβ p)).smul (h₁ p)).add ((hβ p).smul (h₂ p))
+  exact ((contMDiff_const.sub hβ).smul h₁).add (hβ.smul h₂)
 
 end Smooth
 
