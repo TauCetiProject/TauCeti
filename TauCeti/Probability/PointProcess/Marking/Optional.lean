@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.PointProcess.Marking.Tuple
+public import TauCeti.MeasureTheory.Measure.ProductKernel
+public import TauCeti.MeasureTheory.Measure.Measurability
+public import Mathlib.Probability.Kernel.Composition.Prod
+public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.MeasurableSpace.Option
 
@@ -28,7 +31,7 @@ to be used for independent marking of integer-valued measures.
 * G. Last and M. Penrose, *Lectures on the Poisson Process*, Cambridge University
   Press, 2018, Chapter 5 (independent marking).
 
-This extends `Kernel.tupleMarking` from total tuples to optional tuples, using
+Ordinary tuple marking is recovered by making every entry present. The construction uses
 Mathlib's infinite product measures and the countable Laplace factorization in
 `TauCeti.Probability.RandomMeasure.Superposition`.
 -/
@@ -152,17 +155,6 @@ theorem lintegral_expNeg_optionalTupleMarking {ι : Type*} [Countable ι]
     lintegral_optionalMark κ (x i) hL]
   cases x i <;> simp [lintegral_dirac' _ hf]
 
-/-- Marking a tuple with no absent entries agrees with ordinary tuple marking. -/
-@[simp]
-theorem optionalTupleMarking_some {ι : Type*} [Countable ι] (x : ι → X) :
-    κ.optionalTupleMarking ι (fun i => some (x i)) = κ.tupleMarking ι x := by
-  have hs : Measurable (Measure.sum : (ι → Measure (X × E)) → Measure (X × E)) :=
-    TauCeti.MeasureTheory.measurable_measure_sum
-  simp only [optionalTupleMarking_apply, optionalMark_some, tupleMarking_apply]
-  rw [← Measure.infinitePi_map_pi _ (fun _ => Measure.measurable_dirac),
-    Measure.map_map hs (by fun_prop)]
-  simp only [Function.comp_def]
-
 /-- An entirely absent tuple gives the empty configuration almost surely. -/
 @[simp]
 theorem optionalTupleMarking_none (ι : Type*) [Countable ι] :
@@ -204,12 +196,11 @@ theorem map_map_fst_optionalMark (x : Option X) :
   | some a =>
     rw [optionalMark_some, Measure.map_map (Measure.measurable_map _ measurable_fst)
       Measure.measurable_dirac]
-    have hground : ((Kernel.id ×ₖ κ) a).map Prod.fst = Measure.dirac a := by
-      rw [← Kernel.fst_apply, Kernel.fst_prod, Kernel.id_apply]
-    simpa only [Function.comp_def, Measure.map_dirac' measurable_fst, Option.elim_some,
-      hground, Measure.map_dirac' Measure.measurable_dirac] using
-      (Measure.map_map (μ := (Kernel.id ×ₖ κ) a)
-        Measure.measurable_dirac measurable_fst).symm
+    simp only [Function.comp_def, Measure.map_dirac' measurable_fst, Option.elim_some]
+    rw [← Function.comp_def Measure.dirac Prod.fst,
+      ← Measure.map_map Measure.measurable_dirac measurable_fst,
+      ← Kernel.fst_apply, Kernel.fst_prod, Kernel.id_apply,
+      Measure.map_dirac' Measure.measurable_dirac]
 
 /-- Forgetting every mark recovers the counting measure of the present entries,
 with multiplicities and with zero contribution from absent entries. -/
