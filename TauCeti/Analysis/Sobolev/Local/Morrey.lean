@@ -347,7 +347,7 @@ theorem MemWkpLoc.exists_norm_preciseRepresentative_le (hp : 2 < p) :
     simp only [s]
     ring
   rw [hexp]
-  have hU := ENNReal.toReal_nonneg (a := eLpNorm u p (volume.restrict B))
+  have _hU := ENNReal.toReal_nonneg (a := eLpNorm u p (volume.restrict B))
   have key : ‖c‖ - A ≤ (eLpNorm u p (volume.restrict B)).toReal / V ^ s := by
     rw [le_div_iff₀ hVs0]
     linarith

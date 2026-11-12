@@ -109,7 +109,7 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_eLpNorm (hp :
     have hmem : ∀ m, MemLp (f m) p (volume.restrict (cthickening R K)) := fun m =>
       memLpLoc_iff.1 (hf m).memLpLoc _ hRK hK'
     have hgK : MemLp g p (volume.restrict (cthickening R K)) := memLpLoc_iff.1 hg _ hRK hK'
-    have hDmem : ∀ m, MemLp (D m) p (volume.restrict (cthickening R K)) := fun m =>
+    have _hDmem : ∀ m, MemLp (D m) p (volume.restrict (cthickening R K)) := fun m =>
       memLpLoc_iff.1 ((hf m).memLpLoc_of_hasWeakFDerivOn (hD m)) _ hRK hK'
     rw [Metric.uniformCauchySeqOn_iff]
     intro ε hε
@@ -173,7 +173,7 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_eLpNorm (hp :
     have hm' := hN m hm
     have hn' := hN n hn
     rw [dist_eq_norm]
-    have hrα0 : 0 ≤ r ^ α := Real.rpow_nonneg hr0.le _
+    have _hrα0 : 0 ≤ r ^ α := Real.rpow_nonneg hr0.le _
     calc _ ≤ T * (eLpNorm (f m - f n) p (volume.restrict (ball x r))).toReal +
           C * (eLpNorm (D m - D n) p (volume.restrict (ball x (2 * r)))).toReal * r ^ α := hb
       _ ≤ T * (ε / (4 * (T + 1)) + ε / (4 * (T + 1))) + C * (2 * M) * r ^ α := by
@@ -277,7 +277,7 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_wkp (hp : 2 <
             (Eventually.of_forall fun z => innerSL_apply_norm _ _)
       _ ≤ ENNReal.ofReal ‖y‖ := (hb 0 (Nat.zero_le _)).2
       _ ≤ R.toNNReal := ENNReal.ofReal_le_ofReal hyR
-  · obtain ⟨W, hKW, hWc, hWΩ, hWle⟩ := exists_opens_of_isCompact hK hKΩ
+  · obtain ⟨W, hKW, hWc, hWΩ, _⟩ := exists_opens_of_isCompact hK hKΩ
     obtain ⟨R, hR⟩ := hu W hWc hWΩ
     choose V _ hV using hR
     obtain ⟨w, hw⟩ := hv.exists_wkp hWc hWΩ
