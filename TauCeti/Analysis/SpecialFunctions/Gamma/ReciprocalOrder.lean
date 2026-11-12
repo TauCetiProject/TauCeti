@@ -135,8 +135,6 @@ theorem not_isBigO_inv_Gammaℝ_exp_mul_norm (C : ℝ) :
     have hpow : ‖(π : ℂ) ^ (-(2 * (-(n : ℂ) - 1 / 2)) / 2)‖ = π ^ n * π ^ (1 / 2 : ℝ) := by
       rw [norm_cpow_eq_rpow_re_of_pos Real.pi_pos, hexp, ofReal_re, Real.rpow_add Real.pi_pos,
         Real.rpow_natCast]
-    have hp : 0 < π ^ (1 / 2 : ℝ) := by positivity
-    have hpn : 0 < π ^ n := by positivity
     simp only [Gammaℝ_def, hhalf, mul_inv, norm_mul, norm_inv, hpow]
     exact (factorial_le_norm_inv_Gamma hn).trans_eq (by rw [norm_inv]; field_simp)
 
@@ -159,8 +157,6 @@ theorem not_isBigO_inv_Gammaℂ_exp_mul_norm (C : ℝ) :
     have hc : 2 * (π : ℂ) = ((2 * π : ℝ) : ℂ) := by push_cast; ring
     rw [hc, norm_cpow_eq_rpow_re_of_pos h2π, hexp, ofReal_re,
       Real.rpow_add h2π, Real.rpow_natCast]
-  have hp : 0 < (2 * π) ^ (1 / 2 : ℝ) := by positivity
-  have hpn : 0 < (2 * π) ^ n := by positivity
   simp only [Gammaℂ_def, mul_inv, norm_mul, norm_inv, hpow, Complex.norm_two]
   exact (factorial_le_norm_inv_Gamma hn).trans_eq (by rw [norm_inv]; field_simp)
 
