@@ -18,9 +18,9 @@ Cauchy–Riemann equation of Hamiltonian Floer theory reads
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`,
 
 for a domain-dependent almost complex structure `J` and the Hamiltonian one-form `X`, as in
-`TauCeti.Geometry.Symplectic.Floer.Compactness`. The compactness theorem there extracts from a
-sequence of solutions of bounded energy a subsequence converging locally uniformly off finitely
-many bubbling points, with derivatives bounded on compact subsets of the complement, and
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`. The compactness theorem there extracts
+from a sequence of solutions of bounded energy a subsequence converging locally uniformly off
+finitely many bubbling points, with derivatives bounded on compact subsets of the complement, and
 `TauCeti.Geometry.Symplectic.Floer.WeakLimit` shows that the limit solves the equation almost
 everywhere. This file upgrades such convergence to convergence of the derivatives, in
 coordinates where the target is a finite-dimensional complex inner product space `F` and `J` is
