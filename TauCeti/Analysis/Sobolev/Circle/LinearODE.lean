@@ -101,6 +101,14 @@ theorem mulLoop_apply (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) (a : 
       ofContinuousMap T (applyContinuousLinearMap S (toContinuousMap T hs a)) :=
   (rfl)
 
+/-- The zero-order multiplication operator depends continuously in operator norm on its
+coefficient loop, with the uniform norm on coefficients. -/
+@[fun_prop]
+theorem continuous_mulLoop (hs : 1 / 2 < s) :
+    Continuous (mulLoop (E := E) T hs) := by
+  exact continuous_const.clm_comp
+    (ContinuousMap.applyContinuousLinearMap.continuous.clm_comp continuous_const)
+
 /-- Multiplication by `S` only depends on the continuous representative, so it commutes with the
 inclusions between the spaces `H^s`, `s > 1/2`. -/
 @[simp]
@@ -131,6 +139,12 @@ theorem loopOperator_apply (S : C(AddCircle T, E →L[ℝ] E)) (a : CircleSobole
     loopOperator T S a =
       derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a - mulLoop T (by norm_num) S a :=
   (rfl)
+
+/-- The periodic first-order operator depends continuously in operator norm on its
+coefficient loop, with the uniform norm on coefficients. -/
+@[fun_prop]
+theorem continuous_loopOperator : Continuous (loopOperator (E := E) T) :=
+  continuous_const.sub (continuous_mulLoop T (by norm_num))
 
 /-- `L_S` differs from the isomorphism `ζ ↦ ζ' + ζ` by a compact operator. -/
 private theorem loopOperator_eq_add (S : C(AddCircle T, E →L[ℝ] E)) :

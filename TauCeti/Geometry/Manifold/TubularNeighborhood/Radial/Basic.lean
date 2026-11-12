@@ -111,11 +111,12 @@ def normalBundleRadialInverse (f : M → V) (ε : ℝ)
   simp only [smul_smul, inv_mul_cancel₀ hε, one_smul]
   exact OpenPartialHomeomorph.univUnitBall.left_inv (mem_univ v)
 
-/-- Compression undoes expansion on the open normal ball of positive radius. -/
-@[simp] theorem normalBundleRadialMap_inverse (f : M → V) {ε : ℝ} (hε : 0 < ε)
+/-- Compression undoes expansion on the open normal ball of radius `ε`. -/
+@[simp] theorem normalBundleRadialMap_inverse (f : M → V) {ε : ℝ}
     (p : TotalSpace F (fun x => normalSubspace I f x)) (hp : ‖(p.2 : V)‖ < ε) :
     normalBundleRadialMap f ε (normalBundleRadialInverse f ε p) = p := by
   rcases p with ⟨x, v⟩
+  have hε : 0 < ε := (norm_nonneg _).trans_lt hp
   have hv : ε⁻¹ • v ∈ ball (0 : normalSubspace I f x) 1 := by
     rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
     exact (inv_mul_lt_iff₀ hε).mpr (by simpa using hp)
@@ -149,18 +150,22 @@ theorem contMDiff_normalBundleRadialMap
       ((OpenPartialHomeomorph.contDiff_univUnitBall.const_smul ε).contMDiff.comp
         (contMDiff_normalBundle_snd hf himm hdim))
 
-/-- Radial expansion is `C^n` on the open normal ball bundle of positive radius. -/
+/-- Radial expansion is `C^n` on the open normal ball bundle of radius `ε` (empty when `ε ≤ 0`). -/
 theorem contMDiffOn_normalBundleRadialInverse
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
-    {ε : ℝ} (hε : 0 < ε) :
+    {ε : ℝ} :
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     ContMDiffOn (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, F)) n
       (normalBundleRadialInverse (I := I) (F := F) f ε) {p | ‖(p.2 : V)‖ < ε} := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   let := normalFiberBundle (hf.of_le le_add_self) himm hdim
+  rcases le_or_gt ε 0 with hε | hε
+  · convert contMDiffOn_empty (I := I.prod 𝓘(ℝ, F)) (I' := I.prod 𝓘(ℝ, F)) (n := n)
+      (f := normalBundleRadialInverse (I := I) (F := F) f ε) using 1
+    exact Set.eq_empty_of_forall_notMem fun p hp => (norm_nonneg _).not_gt (hp.trans_le hε)
   rw [contMDiffOn_normalBundle_iff hf himm hdim]
   refine ⟨?_, ?_⟩
   · simpa only [normalBundleRadialInverse_proj] using
@@ -202,12 +207,12 @@ def normalBundleRadialPartialDiffeomorph
         exact (mul_lt_mul_of_pos_left (mem_ball_zero_iff.mp h) hε).trans_eq (mul_one ε)
       map_target' := fun _ _ => mem_univ _
       left_inv' := fun p _ => normalBundleRadialInverse_map f hε.ne' p
-      right_inv' := fun p hp => normalBundleRadialMap_inverse f hε p hp
+      right_inv' := fun p hp => normalBundleRadialMap_inverse f p hp
       open_source := isOpen_univ
       open_target := isOpen_lt
         ((contMDiff_normalBundle_snd hf himm hdim).continuous.norm) continuous_const
       contMDiffOn_toFun := (contMDiff_normalBundleRadialMap hf himm hdim ε).contMDiffOn
-      contMDiffOn_invFun := contMDiffOn_normalBundleRadialInverse hf himm hdim hε }
+      contMDiffOn_invFun := contMDiffOn_normalBundleRadialInverse hf himm hdim }
 
 /-- The radial diffeomorphism is defined on the entire normal bundle. -/
 @[simp] theorem normalBundleRadialPartialDiffeomorph_source

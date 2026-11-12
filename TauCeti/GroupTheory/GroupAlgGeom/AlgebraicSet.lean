@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.GroupTheory.Commutator.Basic
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Logic.Equiv.Set
 import Mathlib.Order.Concept
@@ -80,10 +84,27 @@ system `{a, b, x}` has no solutions; its radical and its normal closure are both
   `G`-homomorphisms from `G_{R(S)}` or from `G_S` to `H` correspond to the solutions of `S` in `H`.
 * `TauCeti.GroupAlgGeom.CoordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
   solution in a `G`-group.
+* `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_id`,
+  `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_comp`: a tuple of words mapping one
+  algebraic set into another induces a coefficient-preserving homomorphism of coordinate groups
+  in the opposite direction, contravariantly functorially.
 * `TauCeti.GroupAlgGeom.Rad_pow_eq_normalClosure`,
   `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
   injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
   strictly contains that of `x ^ n` when `n ≠ 1`.
+* `TauCeti.GroupAlgGeom.Rad_pow_mul_inl_pow_eq_normalClosure`,
+  `TauCeti.GroupAlgGeom.inr_of_mul_inl_notMem_normalClosure_pow_mul_inl`: over a group `H` with
+  unique roots and injective coefficients, the radical of the one-variable equation
+  `x ^ n * b ^ n` (`n ≠ 0`) is the normal closure of `x * b`. For `n ≠ 1`, the element `x * b`
+  does not lie in the normal closure of `x ^ n * d`, whatever the coefficients `b` and `d`.
+* `TauCeti.GroupAlgGeom.Rad_pow_eq_I_univ`, `TauCeti.GroupAlgGeom.inr_of_mem_Rad_pow_iff`: over a
+  group `H` all of whose elements have `n`-th power `1`, every point solves `x ^ n = 1` and its
+  radical is the ideal of all points; in general `x` lies in the radical of `x ^ n` exactly when
+  `H` has no nonidentity element of `n`-th power `1`.
+* `TauCeti.GroupAlgGeom.V_image_commutatorElement`,
+  `TauCeti.GroupAlgGeom.V_singleton_commutatorElement_of`: centralizers of sets of coefficients
+  are algebraic, cut out by the commutator equations `[x, m] = 1`; over a free group, the
+  solutions of `[x, a] = 1` for a free generator `a` are the powers of `a`.
 
 ## References
 
@@ -254,6 +275,14 @@ theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
 theorem V_eq_empty_of_inl_mem {g : G} (hg : ι g ≠ 1) (hS : inl g ∈ S) : V ι S = ∅ :=
   Set.subset_empty_iff.1 <|
     (V_antitone ι (Set.singleton_subset_iff.2 hS)).trans (V_singleton_inl_eq_empty hg).subset
+
+/-- If a coefficient `c` remains nontrivial in `H`, an equation `u⁻¹ c u = 1` saying that a
+conjugate of `c` is trivial has no solutions; `V_singleton_inl_eq_empty` is the case `u = 1`. In
+particular, for a variable `z`, the equation `z⁻¹ c z = 1` has no solutions. -/
+theorem V_singleton_inv_mul_inl_mul_eq_empty (u : GX G X) {c : G} (hc : ι c ≠ 1) :
+    V ι {u⁻¹ * inl c * u} = ∅ := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, hc]
 
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
@@ -593,6 +622,20 @@ theorem Rad_le_comap_of_mapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι 
   rw [← MonoidHom.comp_apply, eval_comp_eval]
   exact (mem_Rad.mp ht) _ ((mapsToWordMap_iff ι S T w).mp hw v hv)
 
+/-- The tuple of variables maps an algebraic set to itself. -/
+theorem mapsToWordMap_id : MapsToWordMap ι S S fun x => inr (FreeGroup.of x) :=
+  (mapsToWordMap_iff ι S S _).2 fun v hv => by rwa [wordMap_id]
+
+variable {ι S T} in
+/-- Substituting one tuple of words into another composes the corresponding maps of algebraic
+sets. -/
+theorem MapsToWordMap.comp {Z : Type*} {U : Set (GX G Z)} {w : Y → GX G X} {u : Z → GX G Y}
+    (hu : MapsToWordMap ι T U u) (hw : MapsToWordMap ι S T w) :
+    MapsToWordMap ι S U fun z => eval (inl : G →* GX G X) w (u z) := by
+  refine (mapsToWordMap_iff ι S U _).2 fun v hv => ?_
+  rw [← wordMap_wordMap]
+  exact (mapsToWordMap_iff ι T U u).1 hu _ ((mapsToWordMap_iff ι S T w).1 hw v hv)
+
 /-- A word map between algebraic sets induces a coefficient-preserving homomorphism of
 coordinate groups in the opposite direction. -/
 def homOfMapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) :
@@ -607,6 +650,21 @@ theorem homOfMapsToWordMap_mk (w : Y → GX G X) (hw : MapsToWordMap ι S T w)
     homOfMapsToWordMap ι S T w hw (t : CoordGroup ι T) =
       (eval (inl : G →* GX G X) w t : CoordGroup ι S) := by
   simp [homOfMapsToWordMap]
+
+/-- The tuple of variables induces the identity of the coordinate group. -/
+@[simp]
+theorem homOfMapsToWordMap_id :
+    homOfMapsToWordMap ι S S (fun x => inr (FreeGroup.of x)) (mapsToWordMap_id ι S) =
+      GHom.id (coeff ι S) :=
+  gHom_ext fun _ => by simp
+
+/-- The homomorphism induced by a composite of word maps is the composite of the induced
+homomorphisms, in the opposite order. -/
+theorem homOfMapsToWordMap_comp {Z : Type*} (U : Set (GX G Z)) {w : Y → GX G X}
+    {u : Z → GX G Y} (hw : MapsToWordMap ι S T w) (hu : MapsToWordMap ι T U u) :
+    homOfMapsToWordMap ι S U (fun z => eval (inl : G →* GX G X) w (u z)) (hu.comp hw) =
+      (homOfMapsToWordMap ι S T w hw).comp (homOfMapsToWordMap ι T U u hu) :=
+  gHom_ext fun _ => by simp
 
 /-- Evaluating the induced coordinate-group homomorphism at a point is the original word
 map of that point. -/
@@ -795,18 +853,55 @@ theorem Rad_pow_eq_normalClosure [IsMulTorsionFree H] (hι : Function.Injective 
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
-/-- The normal closure of the one-variable equation `x ^ n` does not contain `x` when `n ≠ 1`. -/
-theorem inr_of_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) :
-    (inr (of x) : GX G X) ∉ normalClosure {inr (of x) ^ n} := by
+/-- In a group `H` with unique roots, the equation `x ^ n * b ^ n = 1` (`n ≠ 0`) has the same
+solutions as `x * b = 1`: the only `n`-th root of `(b ^ n)⁻¹` is `b⁻¹`. -/
+theorem V_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    V ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = V ι {inr (of x) * inl b} := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+
+/-- In a group `H` with unique roots, the equations `x ^ n * b ^ n = 1` (`n ≠ 0`) and `x * b = 1`
+have the same radical. -/
+theorem Rad_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = Rad ι {inr (of x) * inl b} := by
+  rw [Rad_def, V_pow_mul_inl_pow hn, Rad_def]
+
+/-- For injective coefficients, the radical of the one-variable equation `x * b = 1` is its
+normal closure: the quotient `G[x] ⧸ ncl(x b)` is `G` itself. -/
+theorem Rad_inr_of_mul_inl [Subsingleton X] (hι : Function.Injective ι) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) * inl b} = normalClosure {inr (of x) * inl b} := by
+  have := uniqueOfSubsingleton x
+  have hV : V ι {(inr (of x) : GX G X) * inl b} = {ι ∘ fun _ => b⁻¹} := by
+    ext v
+    simp [funext_iff, Unique.forall_iff, Subsingleton.elim default x, mul_eq_one_iff_eq_inv]
+  rw [Rad_def, hV, I_singleton_comp hι]
+  simp [Set.range_unique, Subsingleton.elim default x]
+
+/-- Over a group `H` with unique roots and injective coefficients, the radical of the
+one-variable equation `x ^ n * b ^ n = 1` (`n ≠ 0`) is the normal closure of `x * b`. -/
+theorem Rad_pow_mul_inl_pow_eq_normalClosure [Subsingleton X] [HasUniqueRoots H]
+    (hι : Function.Injective ι) {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
+    Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = normalClosure {inr (of x) * inl b} := by
+  rw [Rad_pow_mul_inl_pow hn, Rad_inr_of_mul_inl hι]
+
+/-- When `n ≠ 1`, the normal closure of the equation `x ^ n * d` does not contain `x * b`, for
+any coefficients `b` and `d`. -/
+theorem inr_of_mul_inl_notMem_normalClosure_pow_mul_inl {n : ℕ} (hn : n ≠ 1) (x : X) (b d : G) :
+    (inr (of x) * inl b : GX G X) ∉ normalClosure {inr (of x) ^ n * inl d} := by
   -- Send the coefficients to `1` and the variables to a generator of `ℤ / n`.
   let f : GX G X →* Multiplicative (ZMod n) := eval 1 fun _ => .ofAdd 1
-  have hle : normalClosure {inr (of x) ^ n} ≤ f.ker := by
+  have hle : normalClosure {(inr (of x) : GX G X) ^ n * inl d} ≤ f.ker := by
     refine normalClosure_le_normal ?_
     rintro _ rfl
     simp [f, ← ofAdd_nsmul]
   intro h
   have : (Multiplicative.ofAdd 1 : Multiplicative (ZMod n)) = 1 := by simpa [f] using hle h
   exact hn (ZMod.one_eq_zero_iff.1 this)
+
+/-- The normal closure of the one-variable equation `x ^ n` does not contain `x` when `n ≠ 1`. -/
+theorem inr_of_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) :
+    (inr (of x) : GX G X) ∉ normalClosure {inr (of x) ^ n} := by
+  simpa using inr_of_mul_inl_notMem_normalClosure_pow_mul_inl hn x (1 : G) 1
 
 /-- For `n ≠ 1`, the normal closure of `x ^ n` differs from the normal closure of `x`. -/
 theorem normalClosure_pow_ne_normalClosure {n : ℕ} (hn : n ≠ 1) (x : X) :
@@ -823,6 +918,40 @@ theorem rad_sq :
   ⟨Rad_pow_eq_normalClosure Function.injective_id two_ne_zero,
     normalClosure_pow_ne_normalClosure (by decide) ()⟩
 
+end Pow
+
+/-! ### Equations of exponent type over a group with torsion -/
+
+section Torsion
+
+open FreeGroup
+
+/-- The solutions of the equation `x ^ n = 1` in the variable `x` are the points whose
+`x`-coordinate has `n`-th power `1`. -/
+theorem V_singleton_inr_of_pow (x : X) (n : ℕ) :
+    V ι {(inr (of x) : GX G X) ^ n} = {v | v x ^ n = 1} := by
+  ext
+  simp
+
+/-- Every point solves `x ^ n = 1` exactly when every element of `H` has `n`-th power `1`. -/
+theorem V_singleton_inr_of_pow_eq_univ_iff (x : X) {n : ℕ} :
+    V ι {(inr (of x) : GX G X) ^ n} = Set.univ ↔ ∀ h : H, h ^ n = 1 := by
+  rw [V_singleton_inr_of_pow, Set.eq_univ_iff_forall]
+  exact ⟨fun hV h => hV fun _ => h, fun hH v => hH (v x)⟩
+
+/-- Over a group `H` all of whose elements have `n`-th power `1`, the radical of `x ^ n = 1` is
+the ideal of all points: the equation carries no information. -/
+theorem Rad_pow_eq_I_univ {n : ℕ} (hH : ∀ h : H, h ^ n = 1) (x : X) :
+    Rad ι {(inr (of x) : GX G X) ^ n} = I ι Set.univ := by
+  rw [Rad_def, (V_singleton_inr_of_pow_eq_univ_iff x).2 hH]
+
+/-- The variable `x` lies in the radical of `x ^ n = 1` over `H` exactly when `H` has no
+nonidentity element of `n`-th power `1`. -/
+theorem inr_of_mem_Rad_pow_iff (x : X) {n : ℕ} :
+    (inr (of x) : GX G X) ∈ Rad ι {(inr (of x) : GX G X) ^ n} ↔ ∀ h : H, h ^ n = 1 → h = 1 := by
+  simp only [mem_Rad, V_singleton_inr_of_pow, Set.mem_ofPred_eq, eval_inr_of]
+  exact ⟨fun hV h hn => hV (fun _ => h) hn, fun hH v hn => hH (v x) hn⟩
+
 /-- The radical depends on the group in which solutions are taken: over `G = F(a, b)`, the
 variable `x` lies in the radical of `x²` over `G`, but not over `G × ℤ/2`, where `(1, 1)` is a
 nontrivial solution of `x² = 1`. -/
@@ -832,15 +961,57 @@ theorem rad_sq_prod_zmod_two :
       (inr (of ()) : GX (FreeGroup (Fin 2)) Unit) ∉
         Rad (.inl (FreeGroup (Fin 2)) (Multiplicative (ZMod 2))) {inr (of ()) ^ 2} := by
   refine ⟨rad_sq.1 ▸ subset_normalClosure rfl, fun h => ?_⟩
-  have hv : (fun _ => (1, .ofAdd 1)) ∈
-      V (.inl (FreeGroup (Fin 2)) (Multiplicative (ZMod 2))) {inr (of ()) ^ 2} := by
-    simp only [mem_V, Set.mem_singleton_iff, forall_eq, map_pow, eval_inr, lift_apply_of,
-      Prod.pow_mk, one_pow, Prod.mk_eq_one, true_and]
-    decide
-  have := mem_Rad.1 h _ hv
-  simp [Prod.ext_iff] at this
+  have := (inr_of_mem_Rad_pow_iff ()).1 h (1, .ofAdd 1) (by decide)
+  exact absurd this (by decide)
 
-end Pow
+/-- Over `G = ℤ/2` with one variable `x`, every point solves `x² = 1`, so the radical of `x²` is
+the ideal of all points. -/
+theorem Rad_sq_zmod_two :
+    Rad (.id (Multiplicative (ZMod 2))) {(inr (of ()) : GX (Multiplicative (ZMod 2)) Unit) ^ 2} =
+      I (.id (Multiplicative (ZMod 2))) Set.univ :=
+  Rad_pow_eq_I_univ (by decide) ()
+
+/-- Over `G = ℤ/2` with one variable `x`, the radical of `x²` is not the normal closure of `x`,
+in contrast with the torsion-free case. -/
+theorem Rad_sq_zmod_two_ne_normalClosure :
+    Rad (.id (Multiplicative (ZMod 2))) {(inr (of ()) : GX (Multiplicative (ZMod 2)) Unit) ^ 2} ≠
+      normalClosure {inr (of ())} := fun h =>
+  absurd ((inr_of_mem_Rad_pow_iff ()).1 (h ▸ subset_normalClosure rfl) (.ofAdd 1) (by decide))
+    (by decide)
+
+end Torsion
+
+/-! ### Centralizers as algebraic sets -/
+
+section Centralizer
+
+open FreeGroup
+open scoped commutatorElement
+
+/-- The centralizer of a set of coefficients is algebraic: the solutions of the commutator
+equations `[x, m] = 1`, `m ∈ M`, in the variable `x` are the points whose `x`-coordinate
+centralizes the image of `M` in `H`. -/
+theorem V_image_commutatorElement (x : X) (M : Set G) :
+    V ι ((fun m => ⁅(inr (of x) : GX G X), inl m⁆) '' M) = {v | v x ∈ centralizer (ι '' M)} := by
+  ext v
+  simp only [mem_V, Set.forall_mem_image, map_commutatorElement, eval_inr_of, eval_inl,
+    commutatorElement_eq_one_iff_mul_comm, Set.mem_ofPred_eq, mem_centralizer_iff]
+  exact forall₂_congr fun _ _ => eq_comm
+
+/-- The solutions of the commutator equation `[x, g] = 1` in the variable `x` are the points whose
+`x`-coordinate centralizes the image of the coefficient `g` in `H`. -/
+theorem V_singleton_commutatorElement (x : X) (g : G) :
+    V ι {⁅(inr (of x) : GX G X), inl g⁆} = {v | v x ∈ centralizer {ι g}} := by
+  simpa using V_image_commutatorElement (ι := ι) x {g}
+
+/-- Over a free group `F`, the solutions of the commutator equation `[x, a] = 1` for a free
+generator `a` are the points whose `x`-coordinate is a power of `a`. -/
+theorem V_singleton_commutatorElement_of {α : Type*} (x : X) (a : α) :
+    V (.id (FreeGroup α)) {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆} =
+      {v | v x ∈ zpowers (of a)} := by
+  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_singleton_of]
+
+end Centralizer
 
 /-! ### An inconsistent system
 

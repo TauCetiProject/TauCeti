@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.EventuallyConst
+public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -20,10 +21,10 @@ punctured neighbourhoods of a point of its source to those of the image
 detected by its chart representative `e' ∘ f ∘ e.symm` near `e x`
 (`OpenPartialHomeomorph.not_eventuallyConst_comp_symm`).
 
-A continuous function on the target that is constant off a compact subset of the target, read
-through the open partial homeomorphism on its source and extended by that constant, is continuous
-on a Hausdorff domain (`OpenPartialHomeomorph.continuous_ite_source_of_eq_off_compact`). This
-transplants a compactly supported function on a chart to the whole space.
+A function continuous on the target that is constant on the target off a compact subset of it,
+read through the open partial homeomorphism on its source and extended by that constant, is
+continuous on a Hausdorff domain (`OpenPartialHomeomorph.continuous_ite_source_of_eq_off_compact`).
+This transplants a compactly supported function on a chart to the whole space.
 -/
 
 public section
@@ -33,6 +34,15 @@ open Filter Set Topology
 namespace OpenPartialHomeomorph
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The parametrization `z ↦ φ.symm (φ x + z)` of the source of a chart `φ` around `x` is
+continuous at `0`. -/
+theorem continuousAt_symm_add {F : Type*} [TopologicalSpace F] [AddCommGroup F]
+    [IsTopologicalAddGroup F] {φ : OpenPartialHomeomorph X F} {x : X} (hxφ : x ∈ φ.source) :
+    ContinuousAt (fun z : F ↦ φ.symm (φ x + z)) 0 := by
+  have hcont : Continuous fun z : F ↦ φ x + z := continuous_const.add continuous_id
+  refine ContinuousAt.comp (f := fun z : F ↦ φ x + z) ?_ hcont.continuousAt
+  simpa using φ.continuousAt_symm (φ.map_source hxφ)
 
 /-- A point of the source of an open partial homeomorphism is not isolated if its image is not. -/
 theorem nhdsNE_neBot (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.source)
@@ -51,18 +61,20 @@ theorem tendsto_nhdsNE (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.sou
   tendsto_nhdsWithin_iff.mpr
     ⟨(e.continuousAt hx).tendsto.mono_left nhdsWithin_le_nhds, e.eventually_ne_nhdsWithin hx⟩
 
-/-- A continuous function `g` equal to `c` off a compact subset `K` of the target of `e`, read
-through `e` on its source and extended by `c`, is continuous when the domain is Hausdorff. -/
+/-- A function `g` that is continuous on the target of `e` and equal to `c` at the points of the
+target off a compact subset `K` of the target, read through `e` on its source and extended by `c`,
+is continuous when the domain is Hausdorff. Only the values of `g` on the target matter. -/
 theorem continuous_ite_source_of_eq_off_compact [T2Space X] (e : OpenPartialHomeomorph X Y)
     [∀ z, Decidable (z ∈ e.source)] {Z : Type*} [TopologicalSpace Z] {g : Y → Z}
-    (hg : Continuous g) {K : Set Y} (hK : IsCompact K) (hKt : K ⊆ e.target) {c : Z}
-    (hgK : ∀ z ∉ K, g z = c) :
+    (hg : ContinuousOn g e.target) {K : Set Y} (hK : IsCompact K) (hKt : K ⊆ e.target) {c : Z}
+    (hgK : ∀ z ∈ e.target, z ∉ K → g z = c) :
     Continuous fun z : X => if z ∈ e.source then g (e z) else c := by
   have hKclosed : IsClosed (e.symm '' K) :=
     (hK.image_of_continuousOn (e.continuousOn_symm.mono hKt)).isClosed
   refine continuous_iff_continuousAt.2 fun z => ?_
   by_cases hzs : z ∈ e.source
-  · refine (hg.continuousAt.comp (e.continuousAt hzs)).congr ?_
+  · have hgz : ContinuousAt g (e z) := hg.continuousAt (e.open_target.mem_nhds (e.map_source hzs))
+    refine (hgz.comp (e.continuousAt hzs)).congr ?_
     filter_upwards [e.open_source.mem_nhds hzs] with w hw
     simp [hw]
   · have hz : z ∉ e.symm '' K := fun ⟨w, hw, hwz⟩ => hzs (hwz ▸ e.map_target (hKt hw))
@@ -70,7 +82,7 @@ theorem continuous_ite_source_of_eq_off_compact [T2Space X] (e : OpenPartialHome
     filter_upwards [hKclosed.isOpen_compl.mem_nhds hz] with w hw
     by_cases hws : w ∈ e.source
     · simp only [hws, ↓reduceIte]
-      exact (hgK _ fun hK => hw ⟨e w, hK, e.left_inv hws⟩).symm
+      exact (hgK _ (e.map_source hws) fun hK => hw ⟨e w, hK, e.left_inv hws⟩).symm
     · simp [hws]
 
 /-- If `f` is not eventually constant near `x`, then its chart representative `e' ∘ f ∘ e.symm`
