@@ -42,6 +42,9 @@ nonunit, such an entry determines a perfect binary summand and an orthogonal dec
   the orthogonal complement of a vector with unit self-pairing in a unimodular form is unimodular.
 * `LinearMap.BilinForm.IsSymm.equivalent_of_equivalent_restrict_orthogonal` recombines two such
   splittings with the same Gram matrix into an isometry.
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_isUnit_det_of_isModular`: in a modular form, a
+  block whose Gram matrix has unit determinant up to the modularity factor has an orthogonal
+  complementary family of the same kind.
 -/
 
 public section
@@ -184,6 +187,37 @@ theorem IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det (hB : B.IsSymm)
   have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
   exact hvspan ▸ ⟨t, hTdet⟩
 
+/-- **The complement of a block in a modular form.** Let `B` be an `a`-modular symmetric form on a
+finite free module over a local ring, with `a` a non-zero-divisor, and let `v` be a family whose
+Gram matrix is `a * A` with `A` of unit determinant. Then `v` together with a family `t` orthogonal
+to it spans the module, and the Gram matrix of `t` is `a * G` with `G` of unit determinant. -/
+theorem IsSymm.exists_orthogonal_isUnit_det_of_isModular [Module.Free R M] [Module.Finite R M]
+    (hB : B.IsSymm) {a : R} (ha : a ∈ nonZeroDivisors R) (hmod : B.IsModular a) {k : ℕ}
+    {v : Fin k → M} {A : Matrix (Fin k) (Fin k) R} (hA : ∀ i j, B (v i) (v j) = a * A i j)
+    (hdet : IsUnit A.det) :
+    ∃ (m : ℕ) (t : Fin m → M) (G : Matrix (Fin m) (Fin m) R),
+      (∀ i j, B (t i) (t j) = a * G i j) ∧ IsUnit G.det ∧ (∀ i j, B (v i) (t j) = 0) ∧
+        Submodule.span R (Set.range v) ⊔ Submodule.span R (Set.range t) = ⊤ := by
+  obtain ⟨C, rfl, hC⟩ := isModular_def.mp hmod
+  have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
+  have hCs : C.IsSymm := ⟨fun x y ↦ hcan _ _ (by simpa using hB.eq x y)⟩
+  have hCA (i j : Fin k) : C (v i) (v j) = A i j := hcan _ _ (by simpa using hA i j)
+  -- Split off the span of `v` for the unimodular rescaling `C`, in a basis of size `m + k`.
+  have hk : k ≤ finrank R M := by
+    simpa using (linearIndependent_of_isUnit_det ha hA hdet).fintype_card_le_finrank
+  let b : Basis (Fin (finrank R M - k + k)) R M := Module.finBasisOfFinrankEq R M (by omega)
+  set S := Submodule.span R (Set.range v)
+  set T := C.orthogonal S
+  obtain ⟨hc, t, w, -, hdetb⟩ := hCs.exists_basis_orthogonal b hCA hdet
+  refine ⟨_, T.subtype ∘ t, (C.restrict T).toMatrix t, fun i j ↦ ?_, ?_, fun i j ↦ ?_, ?_⟩
+  · simp [toMatrix_apply]
+  · have hb : IsUnit (C.toMatrix b).det := b.isUnit_det_of_isPerfPair b C hC
+    rw [hdetb] at hb
+    exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hb)
+  · simp [(t j).2 (v i) (Submodule.subset_span ⟨i, rfl⟩)]
+  · rw [Set.range_comp, ← Submodule.map_span, t.span_eq, Submodule.map_top, Submodule.range_subtype]
+    exact hc.sup_eq_top
+
 end Blocks
 
 variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
@@ -284,7 +318,7 @@ theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal (hB : B.IsSymm)
     (hdet : IsUnit (B.toMatrix b).det) :
     ∃ S : Submodule R M,
       finrank R S = 2 ∧ (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
-  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det B hdet
+  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hdet
   obtain ⟨S, ⟨c⟩, hS, hc⟩ :=
     hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B
       (fun x hx ↦ h2 (isUnit_of_dvd_unit (heven x) hx)) (b 0) (b.coord 0) (by simp)

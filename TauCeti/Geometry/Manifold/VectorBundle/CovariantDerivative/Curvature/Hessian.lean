@@ -133,7 +133,7 @@ theorem hessian_norm_sq {X : Π x : M, TangentSpace I x} (hX : CMDiff ∞ (T% X)
       mvfderiv I (fun y ↦ ⟪X y, X y⟫_ℝ) x w = ⟪cov X x w, X x⟫_ℝ + ⟪X x, cov X x w⟫_ℝ := by
     have hXd : MDiffAt (T% X) x := hX.mdifferentiable (by simp) x
     simpa using hcov.mvfderiv_inner_eq (FiberBundle.extend E w) hXd hXd
-  obtain ⟨U, hU, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨U, _, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
   obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
   -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
   have hXX : CMDiff ∞ fun y ↦ ⟪X y, X y⟫_ℝ :=
