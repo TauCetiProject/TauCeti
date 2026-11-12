@@ -89,58 +89,19 @@ open MeasureTheory
 variable {ι : Type*} [Fintype ι] {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure]
   {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
 
-section Integrability
-
-/-! The integrands below are continuous and vanish off the support of the compactly supported
-form `φ`, so Mathlib's `Continuous.integrable_of_hasCompactSupport` applies to each of them. -/
-
-private theorem integrable_sum_sq (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
-    Integrable (fun x ↦ ∑ s, φ x s ^ 2) μ :=
-  (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hφ.continuous).pow 2)
-    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
-      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
-
-private theorem integrable_neg_fderiv_fderiv_apply_apply_mul (hφ : ContDiff ℝ 2 φ)
-    (hφc : HasCompactSupport φ) (v : ι → ℝ) (s : Finset ι) :
-    Integrable (fun x ↦ -fderiv ℝ (fderiv ℝ φ) x v v s * φ x s) μ :=
-  ((continuous_apply s).comp ((((hφ.fderiv_right (m := 1) (by norm_num)).continuous_fderiv
-    one_ne_zero).clm_apply continuous_const).clm_apply continuous_const)).neg.mul
-      ((continuous_apply s).comp hφ.continuous)
-    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
-      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
-
-private theorem integrable_fderiv_apply_apply_sq (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
-    (v : ι → ℝ) (s : Finset ι) : Integrable (fun x ↦ fderiv ℝ φ x v s ^ 2) μ :=
-  ((continuous_apply s).comp ((hφ.continuous_fderiv (by norm_num)).clm_apply
-    continuous_const)).pow 2
-    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
-      fun x hx ↦ by simp [fderiv_of_notMem_tsupport ℝ hx]
-
-private theorem integrable_mul_apply_sq (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
-    {g : (ι → ℝ) → ℝ} (hg : Continuous g) (s : Finset ι) :
-    Integrable (fun x ↦ g x * φ x s ^ 2) μ :=
-  (hg.mul (((continuous_apply s).comp hφ.continuous).pow 2))
-    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
-      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
-
-private theorem integrable_apply_sq (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
-    (s : Finset ι) : Integrable (fun x ↦ φ x s ^ 2) μ := by
-  simpa using integrable_mul_apply_sq (μ := μ) hφ hφc continuous_const (g := fun _ ↦ (1 : ℝ)) s
-
-end Integrability
-
 variable [LinearOrder ι]
 
 section General
 
+/-- The potential term `|df|² |φ|²` of the energy identity is integrable. -/
 private theorem integrable_sum_fderiv_sq_mul_sum_sq (hf : ContDiff ℝ 2 f) (hφ : ContDiff ℝ 2 φ)
     (hφc : HasCompactSupport φ) :
-    Integrable (fun x ↦ (∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2) μ :=
-  ((continuous_finsetSum _ fun i _ ↦
-    ((hf.continuous_fderiv (by norm_num)).clm_apply continuous_const).pow 2).mul
-    (continuous_finsetSum _ fun s _ ↦ ((continuous_apply s).comp hφ.continuous).pow 2))
-    |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
-      fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
+    Integrable (fun x ↦ (∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2) μ := by
+  simp only [Finset.mul_sum]
+  exact integrable_finsetSum _ fun s _ ↦ integrable_mul_sq_of_hasCompactSupport
+    (ContinuousLinearMap.proj s) (continuous_finsetSum _ fun i _ ↦
+      ((hf.continuous_fderiv (by norm_num)).clm_apply continuous_const).pow 2)
+    hφ.continuous hφc
 
 private theorem integrable_sum_hessian_lie_apply_mul (hf : ContDiff ℝ 2 f)
     (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
@@ -192,9 +153,14 @@ theorem integral_sum_euclideanWittenLaplacian_mul (hf : ContDiff ℝ 2 f) (hφ :
         t * ∫ x, ∑ s, (∑ i, ∑ j, fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) •
           ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆
             (φ x)) s * φ x s ∂μ := by
-  have hA := fun i s ↦ integrable_neg_fderiv_fderiv_apply_apply_mul (μ := μ) hφ hφc
-    (Pi.single i 1) s
-  have hA' := fun i s ↦ integrable_fderiv_apply_apply_sq (μ := μ) hφ hφc (Pi.single i 1) s
+  have hA : ∀ i s, Integrable
+      (fun x ↦ -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s) μ :=
+    fun i s ↦ integrable_neg_fderiv_fderiv_apply_mul_of_hasCompactSupport
+      (ContinuousLinearMap.proj s) hφ hφc (Pi.single i 1) (Pi.single i 1)
+  have hA' : ∀ i s, Integrable (fun x ↦ fderiv ℝ φ x (Pi.single i 1) s ^ 2) μ :=
+    fun i s ↦ integrable_sq_of_hasCompactSupport (ContinuousLinearMap.proj s)
+      ((hφ.continuous_fderiv (by norm_num)).clm_apply continuous_const)
+      (hφc.fderiv_apply (𝕜 := ℝ) (Pi.single i 1))
   have hG := integrable_sum_fderiv_sq_mul_sum_sq (μ := μ) hf hφ hφc
   have hK := integrable_sum_hessian_lie_apply_mul (μ := μ) hf hφ hφc
   simp only [sum_euclideanWittenLaplacian_apply_mul hf hφ]
@@ -228,7 +194,8 @@ theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul (hf : ContDiff
     (t ^ 2 * c - |t| * C) * ∫ x, ∑ s, φ x s ^ 2 ∂μ ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s ∂μ := by
   rw [integral_sum_euclideanWittenLaplacian_mul hf hφ hφc t]
-  have hN := integrable_sum_sq (μ := μ) hφ hφc
+  have hN : Integrable (fun x ↦ ∑ s, φ x s ^ 2) μ := integrable_finsetSum _ fun s _ ↦
+    integrable_sq_of_hasCompactSupport (ContinuousLinearMap.proj s) hφ.continuous hφc
   have hφ0 : ∀ x ∉ tsupport φ, φ x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   have h₁ : 0 ≤ ∫ x, ∑ i, ∑ s, fderiv ℝ φ x (Pi.single i 1) s ^ 2 ∂μ :=
     integral_nonneg fun x ↦ by positivity
@@ -293,11 +260,15 @@ theorem sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadra
     (a : ι → ℝ) (t : ℝ) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
     ∑ s, diagonalQuadraticWittenEigenvalue a t 0 s * ∫ x, φ x s ^ 2 ∂μ ≤
       ∫ x, ∑ s, euclideanWittenLaplacian (diagonalQuadratic a) t φ x s * φ x s ∂μ := by
-  have hA := fun i s ↦ integrable_neg_fderiv_fderiv_apply_apply_mul (μ := μ) hφ hφc
-    (Pi.single i 1) s
-  have hX := fun i s ↦ integrable_mul_apply_sq (μ := μ) hφ hφc (g := fun x ↦ x i ^ 2)
-    ((continuous_apply i).pow 2) s
-  have hN := fun s ↦ integrable_apply_sq (μ := μ) hφ hφc s
+  have hA : ∀ i s, Integrable
+      (fun x ↦ -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s) μ :=
+    fun i s ↦ integrable_neg_fderiv_fderiv_apply_mul_of_hasCompactSupport
+      (ContinuousLinearMap.proj s) hφ hφc (Pi.single i 1) (Pi.single i 1)
+  have hX : ∀ (i : ι) s, Integrable (fun x ↦ x i ^ 2 * φ x s ^ 2) μ :=
+    fun i s ↦ integrable_mul_sq_of_hasCompactSupport (ContinuousLinearMap.proj s)
+      ((continuous_apply i).pow 2) hφ.continuous hφc
+  have hN : ∀ s, Integrable (fun x ↦ φ x s ^ 2) μ :=
+    fun s ↦ integrable_sq_of_hasCompactSupport (ContinuousLinearMap.proj s) hφ.continuous hφc
   have hAX : ∀ i s, Integrable (fun x ↦
       -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s +
         t ^ 2 * a i ^ 2 * (x i ^ 2 * φ x s ^ 2)) μ :=
@@ -365,7 +336,8 @@ theorem two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQu
       ∫ x, ∑ s, euclideanWittenLaplacian (diagonalQuadratic a) t φ x s * φ x s ∂μ := by
   refine le_trans ?_
     (sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul a t hφ hφc)
-  have hN := fun s ↦ integrable_apply_sq (μ := μ) hφ hφc s
+  have hN : ∀ s, Integrable (fun x ↦ φ x s ^ 2) μ :=
+    fun s ↦ integrable_sq_of_hasCompactSupport (ContinuousLinearMap.proj s) hφ.continuous hφc
   rw [integral_finsetSum _ fun s _ ↦ hN s, Finset.mul_sum,
     ← Finset.sum_erase_add _ _ (Finset.mem_univ (Finset.univ.filter fun i ↦ a i < 0)),
     diagonalQuadraticWittenEigenvalue_zero_filter_neg, zero_mul, add_zero]
