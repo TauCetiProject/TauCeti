@@ -53,6 +53,8 @@ and each such term is bounded by a continuous seminorm of `u`
   both derivative formulas twice in every coordinate gives the exact commutator
   `Δ (Op(a) u) = Op(a) (Δ u) + Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a) u`, whose symbol is uniform of order
   `m + 1`.
+* `TauCeti.Symbol.besselMultiplier_two_quantizeUniformCLM`: the same commutator for the Bessel
+  multiplier `J² = 1 - (2π)⁻² Δ` of order `2`.
 * `TauCeti.Symbol.quantizeUniformCLM_const`: a constant symbol `T` quantizes to the composition
   with `T`.
 
@@ -354,6 +356,25 @@ theorem laplacian_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform)
     lineDerivOp_quantizeUniformCLM, quantizeUniformCLM_lineDerivOp _ (ha.spatialDeriv j)]
   simp only [add_apply, smul_apply]
   module
+
+/-- **Commutator with `J²`.** For a uniform symbol `a`,
+`J² (Op(a) u) = Op(a) (J² u) - (2π)⁻² Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a) u`. -/
+theorem besselMultiplier_two_quantizeUniformCLM [CompleteSpace V] [CompleteSpace W]
+    (a : Symbol n V W m) (ha : a.IsUniform) (u : 𝓢(CoordinateSpace n, V)) :
+    SchwartzMap.fourierMultiplierCLM W
+        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ))
+        (quantizeUniformCLM a ha u) =
+      quantizeUniformCLM a ha (SchwartzMap.fourierMultiplierCLM V
+        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ)) u) -
+        ((2 * π) ^ 2)⁻¹ • quantizeUniformCLM a.laplacianCommutator ha.laplacianCommutator u := by
+  have hw : (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ)) =
+      fun ζ ↦ ((1 + ‖ζ‖ ^ 2 : ℝ) : ℂ) := by
+    ext ζ
+    simp
+  rw [hw, SchwartzMap.fourierMultiplierCLM_one_add_norm_sq,
+    SchwartzMap.fourierMultiplierCLM_one_add_norm_sq, laplacian_quantizeUniformCLM, map_sub,
+    ContinuousLinearMap.map_smul_of_tower, smul_add]
+  abel
 
 /-- **Commutator with a coordinate function.** `x_j Op(a) u = Op(a) (x_j u) + i Op(∂_{ξ_j} a) u` in
 Schwartz space. -/

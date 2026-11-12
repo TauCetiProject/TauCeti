@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
 # Sobolev mapping of uniform symbols at even steps
@@ -42,12 +41,15 @@ Applying both twice in every coordinate gives the exact formula
 
 Mathlib's Bessel multiplier of order `2` is the differential operator `J² = 1 - (2π)⁻² Δ`
 (`SchwartzMap.fourierMultiplierCLM_one_add_norm_sq`), and composition with a Bessel multiplier on
-the right is exact: `Op(a) ∘ J^t` is the quantization of `a(x, ξ) ⟨ξ / 2π⟩^t`. With the
-commutator formula, `J² ∘ Op(a)` is therefore the quantization of a uniform symbol of order
-`m + 2`, and `Op(a)` is a combination of `J² ∘ Op(c)` and `Op(c')` for uniform symbols `c`, `c'` of
-order `m - 2`. Since `J^t : H^s → H^{s - t}` is an isometry, induction on `k` from the
-Calderón–Vaillancourt theorem shows that symbols of order `-2k` map `L²` to `H^{2k}` and symbols of
-order `2k` map `L²` to `H^{-2k}`; composing with `J^s` on the right gives the general statement.
+the right is exact: `Op(a) ∘ J^t` is the quantization of `a(x, ξ) ⟨ξ / 2π⟩^t`
+(`TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`). With the commutator formula
+(`TauCeti.Symbol.quantizeUniformCLM_comp_besselPotential_two`, in
+`TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier`), `J² ∘ Op(a)` is therefore the
+quantization of a uniform symbol of order `m + 2`, and `Op(a)` is a combination of `J² ∘ Op(c)`
+and `Op(c')` for uniform symbols `c`, `c'` of order `m - 2`. Since `J^t : H^s → H^{s - t}` is an
+isometry, induction on `k` from the Calderón–Vaillancourt theorem shows that symbols of order `-2k`
+map `L²` to `H^{2k}` and symbols of order `2k` map `L²` to `H^{-2k}`; composing with `J^s` on the
+right gives the general statement.
 
 Only even steps arise because `J²` is the only Bessel multiplier used on the left. Intermediate
 orders need either interpolation of the scale `H^s` between consecutive even orders, or the
@@ -55,11 +57,6 @@ composition of `J^t` with `Op(a)` on the left for every real `t`.
 
 ## Main results
 
-* `TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`: `Op(a) ∘ J^t` is the quantization
-  of `a ⟨ξ / 2π⟩ ^ t`.
-* `TauCeti.Symbol.besselMultiplier_two_quantizeUniformCLM`,
-  `TauCeti.Symbol.quantizeUniformCLM_comp_besselPotential_two`: the commutator of `J²` with
-  `Op(a)`, so that `J² ∘ Op(a)` is the quantization of a uniform symbol of order `m + 2`.
 * `TauCeti.Symbol.exists_quantizeUniformSobolev_of_sub_eq_two_mul`: the Sobolev mapping
   `H^s → H^{s - m}` for uniform symbols when `s - m ∈ 2ℤ`.
 
@@ -82,63 +79,6 @@ namespace TauCeti
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
-
-/-! ### Composition with Bessel multipliers -/
-
-section BesselMultiplier
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
-
-omit [CompleteSpace W] in
-/-- **Composition with a Bessel multiplier on the right is exact.** `Op(a) ∘ J^t` is the
-quantization of `a ⟨ξ / 2π⟩ ^ t`. -/
-theorem quantizeUniformCLM_comp_besselMultiplier (a : Symbol n V W m) (ha : a.IsUniform)
-    (t : ℝ) :
-    quantizeUniformCLM a ha ∘L SchwartzMap.fourierMultiplierCLM V
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) =
-      quantizeUniformCLM (a.comp (besselPotential t)) (ha.comp (isUniform_besselPotential t)) := by
-  ext u x
-  rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply,
-    quantizeSchwartzValue_fourierMultiplierCLM (by fun_prop)]
-  congr 1
-  ext1 p
-  simp [coefficient_comp, ContinuousLinearMap.comp_smul]
-
-/-- **Commutator with `J²`.** For a uniform symbol `a`,
-`J² (Op(a) u) = Op(a) (J² u) - (2π)⁻² Op((Δ_x + 2i ⟪ξ, ∇_x⟫) a) u`. -/
-theorem besselMultiplier_two_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform)
-    (u : 𝓢(CoordinateSpace n, V)) :
-    SchwartzMap.fourierMultiplierCLM W
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ))
-        (quantizeUniformCLM a ha u) =
-      quantizeUniformCLM a ha (SchwartzMap.fourierMultiplierCLM V
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ)) u) -
-        ((2 * π) ^ 2)⁻¹ • quantizeUniformCLM a.laplacianCommutator ha.laplacianCommutator u := by
-  have hw : (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ)) =
-      fun ζ ↦ ((1 + ‖ζ‖ ^ 2 : ℝ) : ℂ) := by
-    ext ζ
-    simp
-  rw [hw, SchwartzMap.fourierMultiplierCLM_one_add_norm_sq,
-    SchwartzMap.fourierMultiplierCLM_one_add_norm_sq, laplacian_quantizeUniformCLM, map_sub,
-    ContinuousLinearMap.map_smul_of_tower, smul_add]
-  abel
-
-/-- The commutator with `J²` in the form `Op(a) ∘ J² = J² ∘ Op(a) + (2π)⁻² Op(c)`, where
-`c = (Δ_x + 2i ⟪ξ, ∇_x⟫) a` and `Op(a) ∘ J²` is the quantization of `a ⟨ξ / 2π⟩²`. -/
-theorem quantizeUniformCLM_comp_besselPotential_two (a : Symbol n V W m)
-    (ha : a.IsUniform) :
-    quantizeUniformCLM (a.comp (besselPotential 2)) (ha.comp (isUniform_besselPotential 2)) =
-      SchwartzMap.fourierMultiplierCLM W
-          (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ ((2 : ℝ) / 2) : ℝ) : ℂ)) ∘L
-        quantizeUniformCLM a ha +
-        ((2 * π) ^ 2)⁻¹ • quantizeUniformCLM a.laplacianCommutator ha.laplacianCommutator := by
-  ext1 u
-  rw [← quantizeUniformCLM_comp_besselMultiplier a ha, ContinuousLinearMap.comp_apply, add_apply,
-    ContinuousLinearMap.comp_apply, besselMultiplier_two_quantizeUniformCLM, smul_apply]
-  abel
-
-end BesselMultiplier
 
 /-! ### Extension to Bessel-potential spaces -/
 
