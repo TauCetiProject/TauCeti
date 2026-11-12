@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.AreaWindow
 public import TauCeti.Geometry.Symplectic.JHolomorphic.ConfigurationCount
 
@@ -27,9 +26,10 @@ with normalization of genus `g` and singularity number `δ ≥ 0` satisfies
 `2 g ≤ C · C + κ · C + 2`.
 
 Since only finitely many classes have area at most `R`, this inequality bounds the genera of the
-curves of area at most `R` uniformly. The statements below take a set `T ⊆ H × ℕ` of types
-`(C, g)` whose classes lie in a comass bounded set `S` and which satisfy the adjunction inequality,
-and prove:
+curves of area at most `R` uniformly. The statements below only use that the genus of each type is
+bounded by some function `f` of its class; the adjunction inequality is the case
+`f C = (C · C + κ · C + 2) / 2`. They take a set `T ⊆ H × ℕ` of types `(C, g)` whose classes lie in
+a comass bounded set `S` and whose genera satisfy `g ≤ f C`, and prove:
 
 * only finitely many types of `T` have area at most `R`
   (`TauCeti.IsComassBounded.finite_setOf_area_fst_le`);
@@ -42,8 +42,8 @@ and prove:
   candidates and their classes `Prod.fst`, the first statement is the finiteness hypothesis of
   `TauCeti.finite_setOf_support_subset_area_le`.
 
-The geometric inputs, positivity of area, the comass bound and the adjunction inequality, are
-hypotheses here.
+The geometric inputs, positivity of area, the comass bound and the genus bound (in practice the
+adjunction inequality), are hypotheses here.
 
 ## References
 
@@ -57,30 +57,27 @@ hypotheses here.
 
 public section
 
-open LinearMap (BilinForm)
-
 namespace TauCeti
 
 namespace IsComassBounded
 
 variable {H E : Type*} [AddCommGroup H] [NormedAddCommGroup E] [AddGroup.FG H] [NormedSpace ℝ E]
-  {l : H →ₗ[ℤ] E} {ω : H →+ ℝ} {K : ℝ} {S : Set H} {B : BilinForm ℤ H} {κ : H}
+  {l : H →ₗ[ℤ] E} {ω : H →+ ℝ} {K : ℝ} {S : Set H} {f : H → ℤ}
   {T : Set (H × ℕ)}
 
 /-- **Finitely many types below an area bound.** Let `T` be a set of types `(C, g)` whose classes
-lie in a comass bounded set and which satisfy the adjunction inequality
-`2 g ≤ C · C + κ · C + 2`. If the real extension of the period map is injective, only finitely many
-types of `T` have area at most `R`. -/
+lie in a comass bounded set and whose genera are bounded by a function of the class, `g ≤ f C`
+(for instance by the adjunction inequality `2 g ≤ C · C + κ · C + 2`). If the real extension of
+the period map is injective, only finitely many types of `T` have area at most `R`. -/
 theorem finite_setOf_area_fst_le (h : IsComassBounded l ω K S)
     (hl : Function.Injective (l.liftBaseChange ℝ)) (hTS : ∀ p ∈ T, p.1 ∈ S)
-    (hT : ∀ p ∈ T, 2 * (p.2 : ℤ) ≤ B p.1 p.1 + B κ p.1 + 2) (R : ℝ) :
+    (hT : ∀ p ∈ T, (p.2 : ℤ) ≤ f p.1) (R : ℝ) :
     {p ∈ T | ω p.1 ≤ R}.Finite := by
-  -- Each of the finitely many classes of area at most `R` carries the genera at most
-  -- `C · C + κ · C + 2`.
+  -- Each of the finitely many classes of area at most `R` carries the genera at most `f C`.
   refine ((h.finite_setOf_area_le hl R).biUnion fun C _ =>
-    (Set.finite_singleton C).prod (Set.finite_Iic (B C C + B κ C + 2).toNat)).subset ?_
+    (Set.finite_singleton C).prod (Set.finite_Iic (f C).toNat)).subset ?_
   rintro ⟨C, g⟩ ⟨hp, hpR⟩
-  have hg : 2 * (g : ℤ) ≤ B C C + B κ C + 2 := hT _ hp
+  have hg : (g : ℤ) ≤ f C := hT _ hp
   simp only [Set.mem_iUnion, Set.mem_prod, Set.mem_singleton_iff, Set.mem_Iic]
   exact ⟨C, ⟨hTS _ hp, hpR⟩, rfl, by omega⟩
 
@@ -89,7 +86,7 @@ theorem finite_setOf_area_fst_le (h : IsComassBounded l ω K S)
 most `R` are bounded by a constant depending only on `R`. -/
 theorem exists_forall_snd_le (h : IsComassBounded l ω K S)
     (hl : Function.Injective (l.liftBaseChange ℝ)) (hTS : ∀ p ∈ T, p.1 ∈ S)
-    (hT : ∀ p ∈ T, 2 * (p.2 : ℤ) ≤ B p.1 p.1 + B κ p.1 + 2) (R : ℝ) :
+    (hT : ∀ p ∈ T, (p.2 : ℤ) ≤ f p.1) (R : ℝ) :
     ∃ G : ℕ, ∀ p ∈ T, ω p.1 ≤ R → p.2 ≤ G := by
   obtain ⟨G, hG⟩ := ((h.finite_setOf_area_fst_le hl hTS hT R).image Prod.snd).bddAbove
   exact ⟨G, fun p hp hpR => hG ⟨p, ⟨hp, hpR⟩, rfl⟩⟩
@@ -100,7 +97,7 @@ theorem exists_forall_snd_le (h : IsComassBounded l ω K S)
 multiplicities of a positive cycle of curves in class `A` take finitely many values. -/
 theorem finite_setOf_linearCombination_fst_eq (h : IsComassBounded l ω K S)
     (hl : Function.Injective (l.liftBaseChange ℝ)) (hTS : ∀ p ∈ T, p.1 ∈ S)
-    (hT : ∀ p ∈ T, 2 * (p.2 : ℤ) ≤ B p.1 p.1 + B κ p.1 + 2) (A : H) :
+    (hT : ∀ p ∈ T, (p.2 : ℤ) ≤ f p.1) (A : H) :
     {m : H × ℕ →₀ ℕ | ↑m.support ⊆ T ∧ Finsupp.linearCombination ℕ Prod.fst m = A}.Finite :=
   (finite_setOf_support_subset_area_le (fun p hp => h.area_pos _ (hTS p hp))
     (h.finite_setOf_area_fst_le hl hTS hT (ω A))).subset fun _ hm => ⟨hm.1, hm.2 ▸ le_rfl⟩
