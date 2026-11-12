@@ -60,6 +60,11 @@ theorem mem_binaryDeterminant23_carrier_iff (x : Fin 2 → ℚ) :
     x ∈ binaryDeterminant23.carrier ↔ ∀ i, ∃ n : ℤ, (n : ℚ) = x i :=
   mem_ofGramMatrix_basisFun_carrier_iff _ _ x
 
+/-- The carrier of `!![4, 1; 1, 6]` is the span of the standard basis of `ℚ²`. -/
+theorem binaryDeterminant23_carrier :
+    binaryDeterminant23.carrier = Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin 2))) := by
+  exact ofGramMatrix_carrier (Pi.basisFun ℚ (Fin 2)) _ _
+
 /-- The bilinear form of the determinant-23 lattice in coordinates. -/
 theorem binaryDeterminant23_form_apply (x y : Fin 2 → ℚ) :
     binaryDeterminant23.form x y =

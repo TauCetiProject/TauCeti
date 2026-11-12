@@ -247,16 +247,6 @@ private theorem binaryDeterminant23_form_eq_neighborLattice_form :
     neighborBasis_apply]
   fin_cases i <;> fin_cases j <;> norm_num [neighborVectors, principal23Matrix]
 
-/-- The carrier of `!![4, 1; 1, 6]` is the span of the standard basis of `ℚ²`. -/
-private theorem binaryDeterminant23_carrier :
-    binaryDeterminant23.carrier = Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin 2))) := by
-  have h : (Pi.basisFun ℚ (Fin 2) : Fin 2 → Fin 2 → ℚ) =
-      binaryDeterminant23.carrier.subtype ∘ binaryDeterminant23Basis := by
-    ext i : 1
-    simp
-  rw [h, Set.range_comp, ← Submodule.map_span, binaryDeterminant23Basis.span_eq,
-    Submodule.map_top, Submodule.range_subtype]
-
 /-- **`!![2, 1; 1, 12]` is a `3`-neighbor of `!![4, 1; 1, 6]`.** The change of basis from the
 standard basis to `(2/3, -1/3), (-1/3, -4/3)` passes the neighbor test. -/
 private theorem isNeighbor_binaryDeterminant23_neighborLattice :
