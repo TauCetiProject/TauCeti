@@ -46,7 +46,7 @@ of the removed base exponent and the full Lazard evaluation. The removed weight 
 exponent plus the sum of the negative branch exponents. Pole branches contribute nonzero
 scalar factors; the other branches contribute their finite limits, with repetitions. -/
 theorem lazardEval_eq_C_mul_prod_of_laurent
-    (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
+    (p : MvPolynomial (Fin n) (Polynomial 𝕜))
     (x : Fin n → 𝕜) (c : Fin n → ℕ)
     (hc : TauCeti.IsLazardEvaluator {p.lazardExponent (Polynomial.C ∘ x)} c)
     {a : ℤ} {e : ι → ℤ} {u : 𝕜 → 𝕜} {w : ι → 𝕜 → 𝕜}
@@ -63,6 +63,18 @@ theorem lazardEval_eq_C_mul_prod_of_laurent
           ∏ i ∈ Finset.univ.filter (fun i ↦ 0 ≤ e i),
             (Polynomial.X - Polynomial.C (if e i = 0 then w i 0 else 0)) := by
   classical
+  -- The factorization forces `p ≠ 0`: for `p = 0` its left side vanishes, but its right side
+  -- is nonzero at small nonzero `y`.
+  have hp : p ≠ 0 := by
+    rintro rfl
+    obtain ⟨y, ⟨hy, hyu⟩, hy0'⟩ := ((hfac.and (nhdsWithin_le_nhds
+      (hu.continuousAt.eventually_ne hu0))).and self_mem_nhdsWithin).exists
+    have hy0 : y ≠ 0 := by simpa using hy0'
+    have hne : Polynomial.C (y ^ a * u y) *
+        ∏ i, (Polynomial.X - Polynomial.C (y ^ e i * w i y)) ≠ 0 :=
+      mul_ne_zero (Polynomial.C_ne_zero.2 (mul_ne_zero (zpow_ne_zero _ hy0) hyu))
+        (Polynomial.monic_prod_of_monic _ _ fun _ _ ↦ Polynomial.monic_X_sub_C _).ne_zero
+    exact hne (by rw [← hy]; simp)
   -- Divide out the lowest Taylor weight, leaving the Lazard evaluation at the center.
   let v := p.lazardExponent (Polynomial.C ∘ x)
   obtain ⟨Q, hQ⟩ := p.exists_aeval_monomialCurve_eq_pow_mul
@@ -117,7 +129,7 @@ removed Lazard exponent. It is the exponent of the leading scalar plus the sum o
 root exponents. In particular, the right-hand side depends only on the Laurent exponents, not on
 their analytic unit factors or their finite limits. -/
 theorem weight_lazardExponent_eq_of_laurent
-    (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
+    (p : MvPolynomial (Fin n) (Polynomial 𝕜))
     (x : Fin n → 𝕜) (c : Fin n → ℕ)
     (hc : TauCeti.IsLazardEvaluator {p.lazardExponent (Polynomial.C ∘ x)} c)
     {a : ℤ} {e : ι → ℤ} {u : 𝕜 → 𝕜} {w : ι → 𝕜 → 𝕜}
@@ -129,7 +141,7 @@ theorem weight_lazardExponent_eq_of_laurent
           ∏ i, (Polynomial.X - Polynomial.C (y ^ e i * w i y))) :
     (Finsupp.weight c (p.lazardExponent (Polynomial.C ∘ x)) : ℤ) =
       a + ∑ i, min (e i) 0 :=
-  (lazardEval_eq_C_mul_prod_of_laurent p hp x c hc hu hu0 hw hw0 hfac).1
+  (lazardEval_eq_C_mul_prod_of_laurent p x c hc hu hu0 hw hw0 hfac).1
 
 /-- **Constant removed exponents from global Laurent exponents.** Suppose one evaluator controls
 the removed Lazard exponents of `p` on `S`, and at every point of `S` the monomial-curve
@@ -141,7 +153,7 @@ to make each Laurent factorization nondegenerate; the preceding weight formula s
 removed exponents have the same evaluator-weight, and evaluator injectivity recovers equality of
 the exponent vectors. -/
 theorem lazardExponent_eq_of_laurent
-    (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
+    (p : MvPolynomial (Fin n) (Polynomial 𝕜))
     (c : Fin n → ℕ) {V : Set (Fin n →₀ ℕ)} (hc : TauCeti.IsLazardEvaluator V c)
     {S : Set (Fin n → 𝕜)} {a : ℤ} {e : ι → ℤ}
     (hexponent : ∀ x ∈ S, p.lazardExponent (Polynomial.C ∘ x) ∈ V)
@@ -157,9 +169,9 @@ theorem lazardExponent_eq_of_laurent
   intro x hx y hy
   obtain ⟨ux, wx, hux, hux0, hwx, hwx0, hfacx⟩ := hLaurent x hx
   obtain ⟨uy, wy, huy, huy0, hwy, hwy0, hfacy⟩ := hLaurent y hy
-  have hxweight := weight_lazardExponent_eq_of_laurent p hp x c
+  have hxweight := weight_lazardExponent_eq_of_laurent p x c
     (hc.mono (Set.singleton_subset_iff.mpr (hexponent x hx))) hux hux0 hwx hwx0 hfacx
-  have hyweight := weight_lazardExponent_eq_of_laurent p hp y c
+  have hyweight := weight_lazardExponent_eq_of_laurent p y c
     (hc.mono (Set.singleton_subset_iff.mpr (hexponent y hy))) huy huy0 hwy hwy0 hfacy
   apply hc.weight_injOn (hexponent x hx) (hexponent y hy)
   apply Int.ofNat_injective
@@ -170,7 +182,7 @@ root multiset. A branch of exponent zero contributes its unit value at the origi
 of positive exponent contributes zero, and a branch with a pole contributes no finite root.
 Coincident limits are counted separately, so the equality includes root multiplicities. -/
 theorem roots_lazardEval_eq_map_of_laurent
-    (p : MvPolynomial (Fin n) (Polynomial 𝕜)) (hp : p ≠ 0)
+    (p : MvPolynomial (Fin n) (Polynomial 𝕜))
     (x : Fin n → 𝕜) (c : Fin n → ℕ)
     (hc : TauCeti.IsLazardEvaluator {p.lazardExponent (Polynomial.C ∘ x)} c)
     {a : ℤ} {e : ι → ℤ} {u : 𝕜 → 𝕜} {w : ι → 𝕜 → 𝕜}
@@ -184,7 +196,7 @@ theorem roots_lazardEval_eq_map_of_laurent
       (Finset.univ.filter (fun i ↦ 0 ≤ e i)).val.map
         (fun i ↦ if e i = 0 then w i 0 else 0) := by
   classical
-  rw [(p.lazardEval_eq_C_mul_prod_of_laurent hp x c hc hu hu0 hw hw0 hfac).2,
+  rw [(p.lazardEval_eq_C_mul_prod_of_laurent x c hc hu hu0 hw hw0 hfac).2,
     Polynomial.roots_C_mul _ (mul_ne_zero hu0 (Finset.prod_ne_zero_iff.mpr
       fun i hi ↦ neg_ne_zero.mpr (hw0 i (Finset.mem_filter.mp hi).2))),
     Polynomial.roots_prod _ _ (Finset.prod_ne_zero_iff.mpr

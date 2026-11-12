@@ -168,7 +168,7 @@ theorem curvatureCosine_sq_add_mul_curvatureSine_sq (κ t : ℝ) :
   have h := wronskian_eq_one_of_hasDerivAt (hasDerivAt_curvatureSine κ)
     (hasDerivAt_curvatureCosine κ) (hasDerivAt_curvatureCosine κ)
     (fun r ↦ ((hasDerivAt_curvatureSine κ r).const_mul (-κ)).congr_deriv (by ring))
-    (a := 0) (by simp) (by simp) (by simp) (by simp) t
+    (a := 0) (by simp) (by simp) (by simp) t
   nlinarith
 
 /-- The model sine is positive before the first positive spherical zero. -/

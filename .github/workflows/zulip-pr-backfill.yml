@@ -1,6 +1,6 @@
 name: Zulip PR backfill
 
-# Manually rewrite every existing bot-authored post in "Tau Ceti" > "PRs"
+# Manually rewrite every existing bot-authored post in "rss" > "Tau Ceti PRs"
 # from current GitHub metadata. This is deliberately separate from the
 # event-driven workflows: normal updates stay fast, while a format migration
 # can edit the full history in place without reposting or duplicating messages.
@@ -59,6 +59,8 @@ jobs:
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
+          ZULIP_CHANNEL: rss
+          ZULIP_TOPIC: Tau Ceti PRs
           DRY_RUN: ${{ inputs.dry_run }}
           BORS_ONLY: ${{ inputs.bors_only }}
         run: |

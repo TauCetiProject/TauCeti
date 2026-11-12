@@ -64,6 +64,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   finitely many exponent vectors of each degree, and of degree at most `n`.
 * `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
   vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
+* `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
+  `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
 -/
 
 public section
@@ -271,5 +273,29 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     Fintype {s : σ →₀ ℕ // s.degree = n} :=
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+
+end Finsupp
+
+namespace Finsupp
+
+/-- The weight `![1, B]` sends the exponent `μ` of `Z ^ μ 0 W ^ μ 1` to `μ 0 + B * μ 1`. -/
+theorem weight_vecCons_one (B : ℕ) (μ : Fin 2 →₀ ℕ) : weight ![1, B] μ = μ 0 + B * μ 1 := by
+  simp [weight_apply, Finsupp.sum_fintype, mul_comm]
+
+/-- The weight `![1, B]` is injective on the exponents `μ` with `μ 0 < B`: `μ 0` and `μ 1` are the
+remainder and the quotient of `μ 0 + B * μ 1` on division by `B`. -/
+theorem injOn_weight_vecCons_one (B : ℕ) :
+    Set.InjOn (weight ![1, B]) {μ : Fin 2 →₀ ℕ | μ 0 < B} := by
+  intro μ hμ ν hν h
+  simp only [Set.mem_ofPred_eq] at hμ hν
+  rw [weight_vecCons_one, weight_vecCons_one] at h
+  have hB : 0 < B := (Nat.zero_le _).trans_lt hμ
+  have h0 : μ 0 = ν 0 := by
+    simpa [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hμ, Nat.mod_eq_of_lt hν] using
+      congrArg (· % B) h
+  have h1 : μ 1 = ν 1 := by
+    simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
+      congrArg (· / B) h
+  exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
 
 end Finsupp

@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Exact.Glue
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.CategoryTheory.ObjectProperty.Shift
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 
 /-!
 # Acyclic complexes over an exact category
@@ -39,6 +40,12 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
 * `TauCeti.ExactStructure.acyclic_biprod`, and instances for isomorphisms, shifts and zero.
 * `TauCeti.ExactStructure.acyclic_mappingCone`: **Neeman's lemma**, the mapping cone of a chain
   map between acyclic complexes is acyclic.
+* `TauCeti.ExactStructure.acyclic_mappingCone_of_isPushout`: the mapping cone of a map built from
+  pushouts of inflations is acyclic, and `TauCeti.ExactStructure.acyclic_mappingCone_of_iso`:
+  acyclicity of mapping cones is invariant under isomorphisms of arrows.
+* `TauCeti.ExactStructure.AcyclicData.acyclic_of_truncation`: a complex mapping to an acyclic
+  complex by an isomorphism in negative degrees, onto the cycles `Z⁰` in degree `0`, and vanishing
+  above, is acyclic.
 
 ## References
 
@@ -185,6 +192,126 @@ instance (n : ℤ) : Epi (h.p n) := (E.isDeflation_g (h.conflation n)).epi
 
 end descZ
 
+section ofTruncation
+
+/-! ### Truncation at an object of cycles
+
+Let `c : K ⟶ L` map a complex `K` vanishing in positive degrees to an acyclic complex `L`, such
+that `c` is an isomorphism in negative degrees and identifies `K⁰` with the cycles `Z⁰ ↣ L⁰`.
+Then `K = (⋯ → L⁻² → L⁻¹ ↠ Z⁰ → 0)` is acyclic, with cycles `Zᵐ` for `m ≤ 0`, and zero above:
+the conflation in degree `0` is `Z⁰ ≅ K⁰ ↠ 0`. -/
+
+variable {K L : CochainComplex C ℤ} (hL : E.AcyclicData L) (c : K ⟶ L)
+  (hc : ∀ m < 0, IsIso (c.f m)) (e : K.X 0 ≅ hL.Z 0)
+
+/-- The cycles of the truncation: those of `L` in degrees `≤ 0`, zero above. -/
+private noncomputable def truncZ : ℤ → C
+  | Int.ofNat 0 => hL.Z 0
+  | Int.ofNat (_ + 1) => 0
+  | Int.negSucc k => hL.Z (Int.negSucc k)
+
+include hc in
+/-- The inflations of the cycles of the truncation. -/
+private noncomputable def truncI : ∀ m, truncZ hL m ⟶ K.X m
+  | Int.ofNat 0 => e.inv
+  | Int.ofNat (_ + 1) => 0
+  | Int.negSucc k =>
+    have := hc (Int.negSucc k) (Int.negSucc_lt_zero k)
+    hL.i _ ≫ inv (c.f _)
+
+/-- The deflations of the truncation onto the next cycles. -/
+private noncomputable def truncP : ∀ m, K.X m ⟶ truncZ hL (m + 1)
+  | Int.negSucc 0 => c.f _ ≫ hL.p (Int.negSucc 0)
+  | Int.negSucc (k + 1) => c.f _ ≫ hL.p (Int.negSucc (k + 1))
+  | Int.ofNat _ => 0
+
+variable [K.IsStrictlyLE 0] (he : e.hom ≫ hL.i 0 = c.f 0)
+
+include he in
+private theorem truncP_truncI (m : ℤ) :
+    truncP hL c m ≫ truncI hL c hc e (m + 1) = K.d m (m + 1) :=
+  match m with
+  | Int.negSucc 0 => by
+    have : Mono (c.f 0) := by
+      rw [← he]
+      have := (E.isInflation_f (hL.conflation 0)).mono
+      infer_instance
+    -- `truncP` and `truncI` are defined by matching on the degree, and `Int.negSucc 0 + 1`
+    -- reduces to `0` only by evaluation, so their equation lemmas do not apply; `change` states
+    -- the unfolded morphisms.
+    change (c.f _ ≫ hL.p (Int.negSucc 0)) ≫ e.inv = K.d (Int.negSucc 0) 0
+    have h₁ : hL.p (Int.negSucc 0) ≫ hL.i 0 = L.d (Int.negSucc 0) 0 := hL.fac _
+    rw [← cancel_mono (c.f 0), ← c.comm, ← he, Category.assoc, e.inv_hom_id_assoc,
+      Category.assoc, h₁]
+  | Int.negSucc (k + 1) => by
+    have := hc (Int.negSucc k) (Int.negSucc_lt_zero k)
+    -- As above, `Int.negSucc (k + 1) + 1` reduces to `Int.negSucc k` only by evaluation.
+    change (c.f _ ≫ hL.p (Int.negSucc (k + 1))) ≫ hL.i (Int.negSucc k) ≫ inv (c.f (Int.negSucc k)) =
+      K.d (Int.negSucc (k + 1)) (Int.negSucc k)
+    have h₁ : hL.p (Int.negSucc (k + 1)) ≫ hL.i (Int.negSucc k) =
+        L.d (Int.negSucc (k + 1)) (Int.negSucc k) := hL.fac _
+    rw [Category.assoc, reassoc_of% h₁, c.comm_assoc, IsIso.hom_inv_id, Category.comp_id]
+  | Int.ofNat k => (K.isZero_of_isStrictlyLE 0 _ (by lia)).eq_of_tgt _ _
+
+/-- The acyclicity data of a truncation of an acyclic complex at an object of cycles. -/
+private noncomputable def ofTruncation : E.AcyclicData K where
+  Z := truncZ hL
+  i := truncI hL c hc e
+  p := truncP hL c
+  zero m := match m with
+    | Int.negSucc 0 => by
+      have := hc (Int.negSucc 0) (Int.negSucc_lt_zero 0)
+      -- Unfold the matches defining `truncI` and `truncP` in this degree, as in `truncP_truncI`.
+      change (hL.i _ ≫ inv (c.f _)) ≫ c.f _ ≫ hL.p (Int.negSucc 0) = 0
+      simp [hL.zero]
+    | Int.negSucc (k + 1) => by
+      have := hc (Int.negSucc (k + 1)) (Int.negSucc_lt_zero (k + 1))
+      -- Unfold the matches defining `truncI` and `truncP` in this degree, as in `truncP_truncI`.
+      change (hL.i _ ≫ inv (c.f _)) ≫ c.f _ ≫ hL.p (Int.negSucc (k + 1)) = 0
+      simp [hL.zero]
+    | Int.ofNat _ => comp_zero
+  conflation m := match m with
+    | Int.negSucc 0 =>
+      have := hc (Int.negSucc 0) (Int.negSucc_lt_zero 0)
+      -- The squares hold by unfolding the truncation, so they are given as terms.
+      E.conflation_of_iso (S := ShortComplex.mk _ _ (hL.zero (Int.negSucc 0)))
+        (ShortComplex.isoMk (Iso.refl _) (asIso (c.f _)).symm (Iso.refl _)
+          (Category.id_comp (truncI hL c hc e (Int.negSucc 0)))
+          ((IsIso.inv_hom_id_assoc (c.f (Int.negSucc 0)) (hL.p (Int.negSucc 0))).trans
+            (Category.comp_id _).symm)) (hL.conflation (Int.negSucc 0))
+    | Int.negSucc (k + 1) =>
+      have := hc (Int.negSucc (k + 1)) (Int.negSucc_lt_zero (k + 1))
+      -- The squares hold by unfolding the truncation, so they are given as terms.
+      E.conflation_of_iso (S := ShortComplex.mk _ _ (hL.zero (Int.negSucc (k + 1))))
+        (ShortComplex.isoMk (Iso.refl _) (asIso (c.f _)).symm (Iso.refl _)
+          (Category.id_comp (truncI hL c hc e (Int.negSucc (k + 1))))
+          ((IsIso.inv_hom_id_assoc (c.f (Int.negSucc (k + 1))) (hL.p (Int.negSucc (k + 1)))).trans
+            (Category.comp_id _).symm)) (hL.conflation (Int.negSucc (k + 1)))
+    | Int.ofNat 0 => E.conflation_of_splitting
+      { r := e.hom
+        s := 0
+        f_r := e.inv_hom_id
+        s_g := (isZero_zero C).eq_of_src _ _
+        id := by rw [comp_zero, add_zero]; exact e.hom_inv_id }
+    | Int.ofNat (k + 1) =>
+      have hK : IsZero (K.X (Int.ofNat (k + 1))) := K.isZero_of_isStrictlyLE 0 _ (by lia)
+      E.conflation_of_splitting
+        { r := 0
+          s := 0
+          f_r := (isZero_zero C).eq_of_src _ _
+          s_g := (isZero_zero C).eq_of_src _ _
+          id := hK.eq_of_src _ _ }
+  fac m := truncP_truncI hL c hc e he m
+
+include hL hc he in
+/-- **A truncation of an acyclic complex at an object of cycles is acyclic.** If `c : K ⟶ L` is
+an isomorphism in negative degrees, `K` vanishes in positive degrees and `c⁰` is an isomorphism
+`K⁰ ≅ Z⁰` followed by the inflation `Z⁰ ↣ L⁰`, then `K` is acyclic. -/
+theorem acyclic_of_truncation : E.acyclic K :=
+  (ofTruncation hL c hc e he).acyclic
+
+end ofTruncation
+
 end AcyclicData
 
 /-- An acyclic complex stays acyclic under isomorphism of complexes. -/
@@ -214,7 +341,6 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
   open CochainComplex.mappingCone in
   obtain ⟨A⟩ := hK
   obtain ⟨B⟩ := hL
-  have hA (n : ℤ) := E.isKernelCokernelPair _ (A.conflation n)
   have hB (n : ℤ) := E.isKernelCokernelPair _ (B.conflation n)
   -- The chain map restricts to the cycles.
   have hz (n : ℤ) : (A.i n ≫ φ.f n) ≫ B.p n = 0 := by

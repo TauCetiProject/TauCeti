@@ -94,7 +94,6 @@ theorem kaplanskyFun_kaplanskyFunInv {s : ℝ} (hs : |s| ≤ 1) :
     kaplanskyFun (kaplanskyFunInv s) = s := by
   have h1 : 0 ≤ 1 - s ^ 2 := by nlinarith [sq_abs s, abs_nonneg s]
   have hr := Real.sq_sqrt h1
-  have hr0 := Real.sqrt_nonneg (1 - s ^ 2)
   rw [kaplanskyFun_def, kaplanskyFunInv_def]
   field_simp
   linear_combination (-s) * hr

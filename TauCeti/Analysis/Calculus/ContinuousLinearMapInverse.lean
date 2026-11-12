@@ -34,6 +34,9 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt`: the perturbation criterion phrased through
   an a priori estimate `‖x‖ ≤ C * ‖L x‖`, `C * ‖M - L‖ < 1`, as used in the method of
   continuity.
+* `ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt` and
+  `ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt`: if `‖A⁻¹‖ ≤ M` and
+  `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
@@ -109,7 +112,7 @@ theorem ContinuousLinearMap.isInvertible_of_norm_sub_le_half [CompleteSpace E]
     (L : E ≃L[𝕜] F) {A : E →L[𝕜] F}
     (h : ‖A - (L : E →L[𝕜] F)‖₊ ≤ ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2) : A.IsInvertible := by
   rcases eq_or_ne (‖(L.symm : F →L[𝕜] E)‖₊)⁻¹ 0 with h0 | h0
-  · rw [h0, zero_div, le_zero_iff, nnnorm_eq_zero, sub_eq_zero] at h
+  · rw [h0, zero_div, le_zero_iff, nnNorm_eq_zero, sub_eq_zero] at h
     exact h ▸ ContinuousLinearMap.isInvertible_equiv
   · exact ContinuousLinearMap.isInvertible_of_norm_sub_lt L (h.trans_lt (NNReal.half_lt_self h0))
 
@@ -136,6 +139,44 @@ theorem ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt [CompleteSpace E]
   push_cast
   calc ‖M - e‖ < C⁻¹ := by simpa using (lt_inv_mul_iff₀ hC0).2 hM
     _ ≤ ‖(e.symm : F →L[𝕜] E)‖⁻¹ := inv_anti₀ hsymm0 hsymm
+
+/-- A continuous linear map `B` with `M * ‖B - A‖ < 1`, where `M` bounds the inverse of an
+invertible `A`, is invertible. -/
+theorem ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt [CompleteSpace E] {A B : E →L[𝕜] F}
+    (hA : A.IsInvertible) {M : ℝ} (hM : ‖A.inverse‖ ≤ M) (h : M * ‖B - A‖ < 1) :
+    B.IsInvertible := by
+  obtain ⟨e, rfl⟩ := hA
+  refine isInvertible_of_mul_norm_sub_lt e.surjective (fun x ↦ ?_) h
+  rw [inverse_equiv] at hM
+  calc ‖x‖ = ‖(e.symm : F →L[𝕜] E) (e x)‖ := by simp
+    _ ≤ ‖(e.symm : F →L[𝕜] E)‖ * ‖e x‖ := le_opNorm _ _
+    _ ≤ M * ‖e x‖ := by gcongr
+
+/-- **The Neumann bound for the inverse of a perturbation.** If `‖A⁻¹‖ ≤ M` for an invertible
+`A` and `M * ‖B - A‖ < 1`, then `B` is invertible
+(`ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt`) and
+`‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`. -/
+theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [CompleteSpace E]
+    {A B : E →L[𝕜] F} (hA : A.IsInvertible) {M : ℝ} (hM : ‖A.inverse‖ ≤ M)
+    (h : M * ‖B - A‖ < 1) : ‖B.inverse‖ ≤ M / (1 - M * ‖B - A‖) := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans hM
+  have hδ : 0 < 1 - M * ‖B - A‖ := sub_pos.2 h
+  obtain ⟨f, rfl⟩ := hA.of_mul_norm_sub_lt hM h
+  rw [inverse_equiv]
+  refine opNorm_le_bound _ (div_nonneg hM0 hδ.le) fun y ↦ ?_
+  -- With `x = B⁻¹ y`, `‖x‖ ≤ M ‖A x‖ ≤ M ‖y‖ + M ‖B - A‖ ‖x‖`.
+  set x := (f.symm : F →L[𝕜] E) y
+  have hy : (f : E →L[𝕜] F) x = y := by simp [x]
+  have hAx : ‖A x‖ ≤ ‖y‖ + ‖(f : E →L[𝕜] F) - A‖ * ‖x‖ := by
+    calc ‖A x‖ = ‖y - ((f : E →L[𝕜] F) - A) x‖ := by simp [hy]
+      _ ≤ ‖y‖ + ‖((f : E →L[𝕜] F) - A) x‖ := norm_sub_le _ _
+      _ ≤ ‖y‖ + ‖(f : E →L[𝕜] F) - A‖ * ‖x‖ := by gcongr; exact le_opNorm _ _
+  have hx : ‖x‖ ≤ M * ‖A x‖ := by
+    calc ‖x‖ = ‖A.inverse (A x)‖ := by simp [hA.inverse_apply_self]
+      _ ≤ ‖A.inverse‖ * ‖A x‖ := le_opNorm _ _
+      _ ≤ M * ‖A x‖ := by gcongr
+  rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
+  nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
 
 end Perturbation
 
