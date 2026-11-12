@@ -191,9 +191,9 @@ def _root_.CategoryTheory.CommMon.relativeProjTwistingSheafMul (W : A.relativePr
     (fun r s t ↦ ext_chartSection A fun U ↦ by
       simp only [chartSection_smul, chartSection_mulAux, chartMul, LinearMap.map_smul₂])
     (fun s t t' ↦ ext_chartSection A fun U ↦ by
-      simp only [chartSection_add, chartSection_mulAux, chartMul, mul_add_right])
+      simp only [chartSection_add, chartSection_mulAux, chartMul, map_add])
     (fun r s t ↦ ext_chartSection A fun U ↦ by
-      simp only [chartSection_smul, chartSection_mulAux, chartMul, mul_smul_right])
+      simp only [chartSection_smul, chartSection_mulAux, chartMul, map_smul])
 
 section MulCharts
 

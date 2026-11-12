@@ -238,7 +238,7 @@ theorem isCompact_keplerBoundPhaseSpace_preimage_singleton [FiniteDimensional �
     IsCompact ((centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
       (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) ⁻¹'
       {centralForceEnergyMomentum b m (fun r ↦ -κ / r) x}) := by
-  obtain ⟨hq, hE, hℓ⟩ := x.2
+  obtain ⟨_, hE, hℓ⟩ := x.2
   rw [Subtype.isCompact_iff]
   convert isCompact_setOf_centralForceHamiltonian_kepler_eq b hm hκ hE hℓ using 1
   ext y

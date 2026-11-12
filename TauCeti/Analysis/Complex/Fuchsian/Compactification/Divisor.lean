@@ -77,7 +77,7 @@ theorem coeff_divisorPullback_ofCusp_eq_widthIndex (A : WeilDivisor Γ.Compactif
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     WeilDivisor.coeff (divisorPullback (compactifiedQuotientFiniteHolomorphicMap h) A)
         (ofCusp D.cuspOrbit) =
-      (Subgroup.CuspDatum.widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ : ℤ) *
+      (Subgroup.CuspDatum.widthIndex h D E hσ : ℤ) *
         WeilDivisor.coeff A (ofCusp E.cuspOrbit) := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   rw [coeff_divisorPullback, coe_compactifiedQuotientFiniteHolomorphicMap,
@@ -116,7 +116,7 @@ theorem coeff_ramificationDivisor_ofCusp_eq_widthIndex_sub_one (D : Δ.CuspDatum
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     WeilDivisor.coeff (ramificationDivisor (compactifiedQuotientFiniteHolomorphicMap h))
         (ofCusp D.cuspOrbit) =
-      (Subgroup.CuspDatum.widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ : ℤ) - 1 := by
+      (Subgroup.CuspDatum.widthIndex h D E hσ : ℤ) - 1 := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   rw [coeff_ramificationDivisor, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex h D E hσ]

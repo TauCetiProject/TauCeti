@@ -60,8 +60,6 @@ namespace TauCeti.NumberField.IntegralPrimitiveElement
 
 variable {K : Type*} [Field K] [NumberField K]
 
--- The comparison of the index with the conductor exponent follows the human-authored
--- specification `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`, Layers 3.4–3.5.
 /-- The conductor exponent of `θ` divides the index `[𝓞 K : ℤ[θ]]`. -/
 theorem exponent_dvd_index (θ : IntegralPrimitiveElement K) : exponent θ.1 ∣ θ.index := by
   rw [exponent_dvd_iff, mem_conductor_iff]

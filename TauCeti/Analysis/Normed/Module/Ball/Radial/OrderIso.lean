@@ -129,7 +129,7 @@ theorem exists_homeomorph_mapsTo_closedBall {r δ : ℝ} (hδ : 0 < δ) :
   · exact ⟨Homeomorph.refl E, fun _ _ ↦ rfl, fun x hx ↦ closedBall_subset_closedBall hrδ hx⟩
   have hr : 0 < r := hδ.trans hδr
   -- A radial homeomorphism rescaling the norm by a piecewise linear map.
-  set φ : ℝ → ℝ := fun t ↦ min t (max (δ / r * t) (2 * t - 2 * r)) with hφ_def
+  set φ : ℝ → ℝ := fun t ↦ min t (max (δ / r * t) (2 * t - 2 * r))
   have hk : 0 < δ / r := div_pos hδ hr
   have hk1 : δ / r ≤ 1 := (div_le_one hr).2 hδr.le
   have hmono : StrictMono φ := fun s t hst ↦
@@ -165,11 +165,11 @@ theorem exists_homeomorph_eqOn_closedBall_mapsTo_closedBall {t r δ : ℝ} (ht :
   have hr : 0 < r := by linarith
   -- A radial homeomorphism rescaling the norm by the identity up to `t`, and beyond `t` by the
   -- affine map of slope `k = (δ - t) / r ∈ (0, 1]` through `(t, t)`.
-  set k := (δ - t) / r with hk_def
+  set k := (δ - t) / r
   have hk : 0 < k := div_pos (by linarith) hr
   have hk1 : k ≤ 1 := (div_le_one hr).2 (by linarith)
   have hkr : k * r = δ - t := div_mul_cancel₀ _ hr.ne'
-  set φ : ℝ → ℝ := fun s ↦ min s (t + k * (s - t)) with hφ_def
+  set φ : ℝ → ℝ := fun s ↦ min s (t + k * (s - t))
   have hmono : StrictMono φ := fun s s' hss' ↦
     min_lt_min hss' (by nlinarith)
   have hcont : Continuous φ := by fun_prop
