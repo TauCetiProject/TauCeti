@@ -196,11 +196,9 @@ theorem log_det_gram_le {F : Type*} [NormedAddCommGroup F] [InnerProductSpace �
     (hv : LinearIndependent ℝ v) : Real.log (gram ℝ v).det ≤ ∑ i, 2 * Real.log ‖v i‖ := by
   simpa using log_re_det_gram_le hv
 
-end Matrix
-
 /-- The determinant, in the standard orthonormal basis of `EuclideanSpace 𝕜 ι`, of the rows of a
 square matrix `A` is `A.det`. -/
-theorem EuclideanSpace.basisFun_toBasis_det_toLp (A : Matrix ι ι 𝕜) :
+theorem basisFun_toBasis_det_toLp (A : Matrix ι ι 𝕜) :
     (EuclideanSpace.basisFun ι 𝕜).toBasis.det (fun i ↦ WithLp.toLp 2 (A i)) = A.det := by
   rw [Module.Basis.det_apply, ← Matrix.det_transpose]
   -- The transposed coordinate matrix has entries `(basisFun ι 𝕜).repr (toLp 2 (A i)) j = A i j`.
@@ -208,14 +206,12 @@ theorem EuclideanSpace.basisFun_toBasis_det_toLp (A : Matrix ι ι 𝕜) :
   simp only [Matrix.transpose_apply, Module.Basis.toMatrix_apply,
     OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr]
 
-namespace Matrix
-
 /-- The Gram determinant of the rows of a square matrix `A`, read in `EuclideanSpace 𝕜 ι`, is
 `‖A.det‖ ^ 2`. -/
 theorem det_gram_toLp_eq_norm_det_sq (A : Matrix ι ι 𝕜) :
     (gram 𝕜 fun i ↦ WithLp.toLp 2 (A i)).det = (‖A.det‖ : 𝕜) ^ 2 := by
   rw [(EuclideanSpace.basisFun ι 𝕜).det_gram_eq_norm_det_sq,
-    EuclideanSpace.basisFun_toBasis_det_toLp]
+    basisFun_toBasis_det_toLp]
 
 /-- The Gram determinant of the rows of a real square matrix `A`, read in `EuclideanSpace ℝ ι`,
 is `A.det ^ 2`. -/
@@ -227,7 +223,7 @@ theorem det_gram_toLp_eq_det_sq (A : Matrix ι ι ℝ) :
 product of the Euclidean norms of its rows. -/
 theorem norm_det_le_prod_norm_toLp (A : Matrix ι ι 𝕜) :
     ‖A.det‖ ≤ ∏ i, ‖WithLp.toLp 2 (A i)‖ := by
-  simpa only [EuclideanSpace.basisFun_toBasis_det_toLp] using
+  simpa only [basisFun_toBasis_det_toLp] using
     (EuclideanSpace.basisFun ι 𝕜).norm_det_le_prod_norm fun i ↦ WithLp.toLp 2 (A i)
 
 /-- **Hadamard's inequality for a real square matrix.** The absolute value of the determinant of

@@ -9,15 +9,14 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 
 /-!
-# Factorial determinant bounds for norms, embeddings and logarithms
+# Factorial determinant bounds for norms and logarithms
 
 For a square matrix `A` of size `n` whose row `i` is bounded entrywise by `b i`,
 `Matrix.abv_det_le_factorial_prod` bounds `abv A.det` by `n! · ∏ i, b i` for every absolute value
 `abv`. This file records the forms of that bound used for interpolation determinants:
 
-* the norm form over a normed commutative ring with multiplicative norm, such as `ℂ`;
-* the form after a ring homomorphism `σ` into such a ring, applied entrywise, such as a complex
-  embedding of a number field, where `‖σ x‖` is `NumberField.place σ x`;
+* the norm form over a normed commutative ring with `‖1‖ = 1`, such as `ℂ`; for a matrix over a
+  number field after a complex embedding `σ`, apply it to `σ.mapMatrix A` and use `σ.map_det`;
 * the logarithmic form for a real-valued absolute value and a nonzero determinant.
 
 In the logarithmic form every `b i` is positive: a nonzero determinant has no zero row, so each
@@ -26,7 +25,6 @@ row has an entry of positive absolute value.
 ## Main results
 
 * `Matrix.norm_det_le_factorial_prod`: `‖A.det‖ ≤ n! · ∏ i, b i` when `‖A i j‖ ≤ b i`.
-* `Matrix.norm_map_det_le_factorial_prod`: `‖σ A.det‖ ≤ n! · ∏ i, b i` when `‖σ (A i j)‖ ≤ b i`.
 * `Matrix.log_abv_det_le`: `log (abv A.det) ≤ log n! + ∑ i, log (b i)` when `A.det ≠ 0`.
 
 ## References
@@ -43,24 +41,25 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- **Factorial determinant bound, norm form.** Over a normed commutative ring with multiplicative
-norm, such as `ℂ`, if row `i` of `A` is bounded entrywise in norm by `b i`, then
-`‖A.det‖ ≤ n! · ∏ i, b i`, where `n` is the size of the matrix. -/
-theorem norm_det_le_factorial_prod {R : Type*} [NormedCommRing R] [NormMulClass R]
+/-- **Factorial determinant bound, norm form.** Over a normed commutative ring with `‖1‖ = 1`,
+such as `ℂ`, if row `i` of `A` is bounded entrywise in norm by `b i`, then
+`‖A.det‖ ≤ n! · ∏ i, b i`, where `n` is the size of the matrix. The norm need only be
+submultiplicative. -/
+theorem norm_det_le_factorial_prod {R : Type*} [NormedCommRing R] [NormOneClass R]
     (A : Matrix n n R) {b : n → ℝ} (hA : ∀ i j, ‖A i j‖ ≤ b i) :
-    ‖A.det‖ ≤ (Fintype.card n).factorial * ∏ i, b i :=
-  abv_det_le_factorial_prod A (IsAbsoluteValue.toAbsoluteValue norm) hA
-
-/-- **Factorial determinant bound after a ring homomorphism.** If `σ : R →+* F` maps into a normed
-commutative ring with multiplicative norm and `‖σ (A i j)‖ ≤ b i` for all `i, j`, then
-`‖σ A.det‖ ≤ n! · ∏ i, b i`. For a complex embedding `σ` of a number field, `‖σ x‖` is
-`NumberField.place σ x`. -/
-theorem norm_map_det_le_factorial_prod {R F : Type*} [CommRing R] [NormedCommRing F]
-    [NormMulClass F] (σ : R →+* F) (A : Matrix n n R) {b : n → ℝ}
-    (hA : ∀ i j, ‖σ (A i j)‖ ≤ b i) :
-    ‖σ A.det‖ ≤ (Fintype.card n).factorial * ∏ i, b i := by
-  rw [σ.map_det]
-  exact norm_det_le_factorial_prod _ hA
+    ‖A.det‖ ≤ (Fintype.card n).factorial * ∏ i, b i := by
+  -- Each of the `n!` Leibniz terms takes one entry from every row.
+  have hterm (σ : Equiv.Perm n) : ‖Equiv.Perm.sign σ • ∏ i, A (σ i) i‖ ≤ ∏ i, b i := by
+    rw [norm_units_zsmul]
+    calc ‖∏ i, A (σ i) i‖ ≤ ∏ i, ‖A (σ i) i‖ := Finset.norm_prod_le _ _
+      _ ≤ ∏ i, b (σ i) := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ hA _ _
+      _ = ∏ i, b i := Equiv.prod_comp σ b
+  rw [det_apply]
+  calc ‖∑ σ : Equiv.Perm n, Equiv.Perm.sign σ • ∏ i, A (σ i) i‖
+      ≤ ∑ σ : Equiv.Perm n, ‖Equiv.Perm.sign σ • ∏ i, A (σ i) i‖ := norm_sum_le _ _
+    _ ≤ ∑ _σ : Equiv.Perm n, ∏ i, b i := sum_le_sum fun σ _ ↦ hterm σ
+    _ = (Fintype.card n).factorial * ∏ i, b i := by
+      rw [sum_const, card_univ, Fintype.card_perm, nsmul_eq_mul]
 
 /-- **Factorial determinant bound, logarithmic form.** For a real-valued absolute value `abv`, if
 row `i` of `A` is bounded entrywise in `abv` by `b i` and `A.det ≠ 0`, then
