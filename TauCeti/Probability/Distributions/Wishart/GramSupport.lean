@@ -9,7 +9,6 @@ public import TauCeti.Probability.Distributions.Wishart.Basic
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.GramCone
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Analysis.Matrix.CovariancePseudoInverse
-import TauCeti.Analysis.Matrix.GramFactorization
 import TauCeti.Probability.Distributions.Gaussian.Density
 
 /-!
@@ -44,24 +43,6 @@ open scoped MatrixOrder
 namespace TauCeti.Probability
 
 variable {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
-
-/-- Gram sums of a finite family are exactly the positive-semidefinite matrices of rank
-at most the number of vectors. -/
-theorem range_wishartGram {ι : Type*} [Fintype ι] :
-    Set.range (wishartGram (p := p) (ι := ι)) =
-      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-        (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
-          (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ Fintype.card ι} := by
-  ext A
-  constructor
-  · rintro ⟨X, rfl⟩
-    exact ⟨posSemidef_coe_wishartGram X, rank_coe_wishartGram_le X⟩
-  · rintro ⟨hA, hr⟩
-    obtain ⟨B, hB⟩ := hA.exists_eq_conjTranspose_mul_self_of_rank_le hr
-    refine ⟨fun r ↦ WithLp.toLp 2 (B r), Subtype.ext ?_⟩
-    rw [coe_wishartGram, hB]
-    ext i j
-    simp [Matrix.sum_apply, Matrix.mul_apply, Matrix.vecMulVec_apply]
 
 /-- The exact support of a standard Gaussian-Gram law is the closed
 positive-semidefinite cone with rank at most its degree. -/
