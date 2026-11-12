@@ -38,7 +38,7 @@ variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
 /-- The maximal unramified extension has no values beyond those of the base field. -/
 theorem exists_algebraMap_veq (x : Unramified E) :
     ∃ r : E, algebraMap E (Unramified E) r =ᵥ x := by
-  obtain ⟨f, hf, hxf⟩ := mem_maximalUnramifiedExtension_iff.mp x.property
+  obtain ⟨f, _, hxf⟩ := mem_maximalUnramifiedExtension_iff.mp x.property
   let L := unramifiedExtension E (AlgebraicClosure E) f
   let := finiteIntermediateFieldValuativeRel E (AlgebraicClosure E) L
   let := finiteIntermediateFieldTopology E (AlgebraicClosure E) L

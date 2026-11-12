@@ -26,9 +26,8 @@ The file ends with the resulting `IsHeckeTriple` instance, on which the Hecke ri
 `𝕋 Δ SL_n(ℤ) ℤ` of `GL_n` is founded.
 
 Ported from the AINTLIB `LeanModularForms` project
-(`LeanModularForms/HeckeRIngs/GLn/Basic.lean`, Chris Birkbeck), realizing the Layer-2
-substrate of the ModularForms roadmap (the `GL₂` case specializes to the Hecke operators on
-modular forms); the AINTLIB `HeckePair` bundle is replaced by Mathlib's `IsHeckeTriple`.
+(`LeanModularForms/HeckeRIngs/GLn/Basic.lean`, Chris Birkbeck); the AINTLIB `HeckePair` bundle
+is replaced by Mathlib's `IsHeckeTriple`.
 
 ## Main definitions
 

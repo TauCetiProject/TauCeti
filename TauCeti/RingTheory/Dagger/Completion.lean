@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.GaussNorm
-public import Mathlib.Analysis.Normed.Module.Completion
+public import TauCeti.Analysis.Normed.Algebra.Completion
 
 /-!
 # Completion of the Monsky–Washnitzer algebra
@@ -38,43 +38,19 @@ section Complete
 
 variable [CompleteSpace K]
 
-private noncomputable def completionHom :
-    Completion (washnitzerAlgebra σ K) →ₐ[K]
-      IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)) where
-  __ := Completion.extensionHom (toTate σ K).toRingHom isometry_toTate.continuous
-  commutes' a :=
-    (Completion.extensionHom_coe (toTate σ K).toRingHom isometry_toTate.continuous
-      (algebraMap K _ a)).trans ((toTate σ K).commutes a)
-
-private theorem completionHom_coe (f : washnitzerAlgebra σ K) :
-    completionHom (f : Completion (washnitzerAlgebra σ K)) = toTate σ K f :=
-  Completion.extensionHom_coe (toTate σ K).toRingHom isometry_toTate.continuous f
-
-private theorem isometry_completionHom : Isometry (completionHom (σ := σ) (K := K)) :=
-  isometry_toTate.completion_extension
-
-private theorem completionHom_surjective :
-    Function.Surjective (completionHom (σ := σ) (K := K)) := by
-  have hd : DenseRange (completionHom (σ := σ) (K := K)) := denseRange_toTate.mono <| by
-    rintro _ ⟨f, rfl⟩
-    exact ⟨f, completionHom_coe f⟩
-  intro f
-  have hf := hd f
-  rwa [isometry_completionHom.isClosedEmbedding.isClosed_range.closure_eq] at hf
-
 variable (σ K) in
 /-- The completion of the Monsky–Washnitzer algebra is the unit-radius Tate algebra,
 as an algebra over the coefficient ring. -/
 noncomputable def completionAlgEquiv :
     Completion (washnitzerAlgebra σ K) ≃ₐ[K]
       IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)) :=
-  AlgEquiv.ofBijective completionHom ⟨isometry_completionHom.injective, completionHom_surjective⟩
+  (toTate σ K).completionAlgEquiv isometry_toTate denseRange_toTate
 
 /-- The completion comparison extends the original inclusion into the Tate algebra. -/
 @[simp]
 theorem completionAlgEquiv_coe (f : washnitzerAlgebra σ K) :
     completionAlgEquiv σ K (f : Completion (washnitzerAlgebra σ K)) = toTate σ K f :=
-  completionHom_coe f
+  AlgHom.completionAlgEquiv_coe _ _ _ f
 
 /-- The inverse completion comparison sends an overconvergent series to its completion class. -/
 @[simp]
@@ -84,13 +60,13 @@ theorem completionAlgEquiv_symm_toTate (f : washnitzerAlgebra σ K) :
 
 /-- The algebraic completion comparison is an isometry. -/
 theorem isometry_completionAlgEquiv : Isometry (completionAlgEquiv σ K) :=
-  isometry_completionHom
+  AlgHom.isometry_completionAlgEquiv _ _ _
 
 /-- The completion comparison preserves the Gauss norm. -/
 @[simp]
 theorem norm_completionAlgEquiv (f : Completion (washnitzerAlgebra σ K)) :
     ‖completionAlgEquiv σ K f‖ = ‖f‖ :=
-  (AddMonoidHomClass.isometry_iff_norm _).mp isometry_completionAlgEquiv f
+  AlgHom.norm_completionAlgEquiv _ _ _ f
 
 end Complete
 
