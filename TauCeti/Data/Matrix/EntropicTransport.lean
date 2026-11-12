@@ -428,7 +428,7 @@ theorem le_entropicTransportObjective (hε : 0 < ε) (hQ : Q ∈ transportPolyto
   have hrow (i : ι) (j : κ) : Q i j ≤ a i := (hQ.2.apply_le hQ.1 i j).1
   have hcol (i : ι) (j : κ) : Q i j ≤ b j := (hQ.2.apply_le hQ.1 i j).2
   obtain ⟨hQ0, hQm⟩ := hQ
-  obtain ⟨hQa, hQb⟩ := (hasMarginals_def Q a b).1 hQm
+  obtain ⟨hQa, _⟩ := (hasMarginals_def Q a b).1 hQm
   -- Cell by cell, this is the supporting line of `u ↦ u * log u` at the Gibbs density
   -- `a i * b j * exp ((f i + g j - C i j) / ε)`, evaluated at `Q i j`.
   have hcell (i : ι) (j : κ) :
@@ -732,7 +732,6 @@ private theorem abs_entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ �
   obtain ⟨hPa, hPb⟩ := (hasMarginals_def P a b).1 hP.2
   have hPpos := pos_of_eq_mul_exp ha hb hPfg
   set δ := ‖p - (a, b)‖
-  have hδ : 0 ≤ δ := norm_nonneg _
   have hh (i : ι) : |p.1 i - a i| ≤ δ :=
     (norm_le_pi_norm (p - (a, b)).1 i).trans (norm_fst_le (p - (a, b)))
   have hk (j : κ) : |p.2 j - b j| ≤ δ :=

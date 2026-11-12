@@ -15,11 +15,6 @@ This file equips the quotient of a right comodule by a subcomodule with the indu
 right-comodule structure. The quotient coaction is the unique linear map whose composite
 with the quotient map is `(N.mkQ ⊗ id) ∘ ρ`.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target on comodules and the
-finite-dimensional comodule category: after subcomodules, images, and kernels, quotient
-comodules provide the basic cokernel-style construction used by later representation-category
-bookkeeping.
-
 ## Main declarations
 
 * `TauCeti.Subcomodule.quotientCoact`: the descended coaction on `M ⧸ N`.
