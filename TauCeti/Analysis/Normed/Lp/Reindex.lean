@@ -24,12 +24,12 @@ a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most 
 sequence of dyadic pieces is replaced by another one in which each piece only interacts with the
 pieces of nearby index, as for two Littlewood–Paley decompositions of the same function.
 
-More generally, a matrix `w j k` whose entries decay geometrically away from the diagonal,
-`‖w j k‖ ≤ c r^{|k - j|} ‖x k‖` with `r < 1`, has row sums `∑ₖ w j k` forming a sequence in `ℓᵖ`
-of norm at most `c (∑_{d ∈ ℤ} r^{|d|}) ‖x‖`: it is a sum over the offsets `d = k - j` of shifts
-weighted by `r^{|d|}` (`lp.exists_hasSum_and_norm_le_of_norm_le_pow_natAbs`). This is how an
-operator that moves the Littlewood–Paley blocks of a function to blocks of nearby index, with
-geometric decay in the distance, is bounded on dyadic sequence spaces.
+More generally, a matrix `w j k` dominated by a summable kernel `a : ℤ → ℝ` of the offset,
+`‖w j k‖ ≤ c a(k - j) ‖x k‖`, has row sums `∑ₖ w j k` forming a sequence in `ℓᵖ` of norm at most
+`c (∑_{d ∈ ℤ} a d) ‖x‖`: it is a sum over the offsets `d = k - j` of shifts weighted by `a d`
+(`lp.exists_hasSum_and_norm_le_of_summable`). With the geometric kernel `a d = r^{|d|}`, `r < 1`,
+this is how an operator that moves the Littlewood–Paley blocks of a function to blocks of nearby
+index, with geometric decay in the distance, is bounded on dyadic sequence spaces.
 -/
 
 public section
@@ -107,23 +107,19 @@ theorem lp.norm_le_of_forall_eq_sum_Ico_sub_add [Fact (1 ≤ p)] {f f' : lp (fun
     _ ≤ ∑ _d ∈ Finset.range (2 * L), ‖f‖ := Finset.sum_le_sum fun d _ ↦ hT d
     _ = 2 * L * ‖f‖ := by simp
 
-/-- **Geometrically decaying interactions in `ℓᵖ`.** Let `1 ≤ p`, `0 ≤ r < 1`, `0 ≤ c`
-and `x ∈ ℓᵖ(ℕ, G)` with `G` complete. If `‖w j k‖ ≤ c r^{|k - j|} ‖x k‖` for all `j, k`, then for
-every `j` the series `∑ₖ w j k` converges, and its sums form a sequence `y ∈ ℓᵖ` with
-`‖y‖ ≤ c (∑_{d ∈ ℤ} r^{|d|}) ‖x‖`. This is Young's inequality for the convolution of a sequence
-in `ℓᵖ` with the summable kernel `r^{|d|}`, for a matrix dominated by it. -/
-theorem lp.exists_hasSum_and_norm_le_of_norm_le_pow_natAbs [Fact (1 ≤ p)] [CompleteSpace G]
-    (x : lp (fun _ : ℕ ↦ G) p) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) {c : ℝ} (hc : 0 ≤ c)
-    (w : ℕ → ℕ → G) (hw : ∀ j k, ‖w j k‖ ≤ c * r ^ ((k : ℤ) - j).natAbs * ‖x k‖) :
-    ∃ y : lp (fun _ : ℕ ↦ G) p, (∀ j, HasSum (w j) (y j)) ∧
-      ‖y‖ ≤ c * (∑' d : ℤ, r ^ d.natAbs) * ‖x‖ := by
+/-- **Interactions dominated by a summable kernel in `ℓᵖ`.** Let `1 ≤ p`, `0 ≤ c`,
+`x ∈ ℓᵖ(ℕ, G)` with `G` complete, and `a : ℤ → ℝ` nonnegative and summable. If
+`‖w j k‖ ≤ c a(k - j) ‖x k‖` for all `j, k`, then for every `j` the series `∑ₖ w j k` converges,
+and its sums form a sequence `y ∈ ℓᵖ` with `‖y‖ ≤ c (∑_{d ∈ ℤ} a d) ‖x‖`. This is Young's
+inequality for the convolution of a sequence in `ℓᵖ` with the summable kernel `a`, for a matrix
+dominated by it. -/
+theorem lp.exists_hasSum_and_norm_le_of_summable [Fact (1 ≤ p)] [CompleteSpace G]
+    (x : lp (fun _ : ℕ ↦ G) p) {a : ℤ → ℝ} (ha0 : ∀ d, 0 ≤ a d) (ha : Summable a) {c : ℝ}
+    (hc : 0 ≤ c) (w : ℕ → ℕ → G) (hw : ∀ j k, ‖w j k‖ ≤ c * a ((k : ℤ) - j) * ‖x k‖) :
+    ∃ y : lp (fun _ : ℕ ↦ G) p, (∀ j, HasSum (w j) (y j)) ∧ ‖y‖ ≤ c * (∑' d, a d) * ‖x‖ := by
   have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  have hsum : Summable fun d : ℤ ↦ r ^ d.natAbs :=
-    summable_int_iff_summable_nat_and_neg.2
-      ⟨by simpa using summable_geometric_of_lt_one hr0 hr1,
-        by simpa using summable_geometric_of_lt_one hr0 hr1⟩
   -- Group the entries by the offset `d = k - j`: the `d`-th group is `j ↦ w j (j + d)`, defined
-  -- where `j + d ≥ 0`, and is dominated by `c r^{|d|}` times a shift of `x`.
+  -- where `j + d ≥ 0`, and is dominated by `c a(d)` times a shift of `x`.
   have hinj (d : ℤ) : {j : ℕ | 0 ≤ (j : ℤ) + d}.InjOn fun j : ℕ ↦ ((j : ℤ) + d).toNat :=
     fun i hi j hj hij ↦ by
       have := congrArg (fun n : ℕ ↦ (n : ℤ)) hij
@@ -135,29 +131,30 @@ theorem lp.exists_hasSum_and_norm_le_of_norm_le_pow_natAbs [Fact (1 ≤ p)] [Com
   have hz (d : ℤ) : ‖z d‖ ≤ ‖x‖ :=
     lp.norm_le_of_forall_eq_indicator_comp hp (hinj d) fun _ ↦ rfl
   set t : ℤ → ℕ → G := fun d j ↦ if 0 ≤ (j : ℤ) + d then w j ((j : ℤ) + d).toNat else 0
-  have ht (d : ℤ) (j : ℕ) : ‖t d j‖ ≤ c * r ^ d.natAbs * ‖(z d : ℕ → G) j‖ := by
+  have ht (d : ℤ) (j : ℕ) : ‖t d j‖ ≤ c * a d * ‖(z d : ℕ → G) j‖ := by
     by_cases hj : 0 ≤ (j : ℤ) + d
     · have hk : (((j : ℤ) + d).toNat : ℤ) - j = d := by rw [Int.toNat_of_nonneg hj]; ring
       simp only [t, z, hj, ↓reduceIte]
       rw [Set.indicator_of_mem (show j ∈ {j : ℕ | 0 ≤ (j : ℤ) + d} from hj)]
       refine (hw j _).trans_eq ?_
       rw [hk, Function.comp_apply]
-    · have h0 : 0 ≤ c * r ^ d.natAbs * ‖(z d : ℕ → G) j‖ := by positivity
+    · have h0 : 0 ≤ c * a d * ‖(z d : ℕ → G) j‖ := by have := ha0 d; positivity
       simpa [t, hj] using h0
   set T : ℤ → lp (fun _ : ℕ ↦ G) p := fun d ↦
-    ⟨t d, ((lp.memℓp (z d)).norm.const_mul (c * r ^ d.natAbs)).mono (ht d)⟩
-  have hT (d : ℤ) : ‖T d‖ ≤ c * ‖x‖ * r ^ d.natAbs := by
+    ⟨t d, ((lp.memℓp (z d)).norm.const_mul (c * a d)).mono (ht d)⟩
+  have hT (d : ℤ) : ‖T d‖ ≤ c * ‖x‖ * a d := by
     -- Compare with the real sequence of the norms of `z d`.
+    have had := ha0 d
     set n : lp (fun _ : ℕ ↦ ℝ) p := ⟨fun j ↦ ‖(z d : ℕ → G) j‖, (lp.memℓp (z d)).norm⟩
-    calc ‖T d‖ ≤ ‖(c * r ^ d.natAbs) • n‖ := lp.norm_mono hp fun j ↦ by
+    calc ‖T d‖ ≤ ‖(c * a d) • n‖ := lp.norm_mono hp fun j ↦ by
           rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, Real.norm_of_nonneg (by positivity)]
           exact ht d j
-      _ ≤ c * r ^ d.natAbs * ‖x‖ := by
+      _ ≤ c * a d * ‖x‖ := by
           rw [lp.norm_const_smul hp, Real.norm_of_nonneg (by positivity)]
           gcongr
           exact (lp.norm_mono hp fun j ↦ (norm_norm _).le).trans (hz d)
       _ = _ := by ring
-  have hTs : Summable T := Summable.of_norm_bounded (hsum.mul_left (c * ‖x‖)) hT
+  have hTs : Summable T := Summable.of_norm_bounded (ha.mul_left (c * ‖x‖)) hT
   refine ⟨∑' d, T d, fun j ↦ ?_, ?_⟩
   · -- The `j`-th entry of the sum is `∑_d w j (j + d)`, reindexed by `k = j + d`.
     have h₁ : HasSum (fun d ↦ t d j) ((∑' d, T d) j) :=
@@ -171,6 +168,5 @@ theorem lp.exists_hasSum_and_norm_le_of_norm_le_pow_natAbs [Fact (1 ≤ p)] [Com
     convert (hg.hasSum_iff hsupp).2 h₁ using 1
     funext k
     simp [t]
-  · calc ‖∑' d, T d‖ ≤ c * ‖x‖ * ∑' d : ℤ, r ^ d.natAbs :=
-          tsum_of_norm_bounded (hsum.hasSum.mul_left _) hT
+  · calc ‖∑' d, T d‖ ≤ c * ‖x‖ * ∑' d, a d := tsum_of_norm_bounded (ha.hasSum.mul_left _) hT
       _ = _ := by ring

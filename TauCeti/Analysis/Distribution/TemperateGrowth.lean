@@ -30,6 +30,8 @@ A measure of temperate growth is finite on compact sets.
 
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le`: bounded derivatives give temperate
   growth.
+* `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`: bounded derivatives have a
+  common bound up to any finite order.
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: symbol estimates
   give temperate growth.
 * `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
@@ -90,6 +92,17 @@ theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
 
 end Function.HasTemperateGrowth
+
+/-- Bounded derivatives up to order `N` have a common bound. -/
+theorem TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F}
+    {N : ℕ} (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C) :
+    ∃ G, ∀ n ≤ N, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ G := by
+  choose C hC using fun n ↦ (em (n ≤ N)).elim (fun hn ↦ (hbd n hn).imp fun _ h _ ↦ h)
+    fun hn ↦ ⟨0, fun h ↦ absurd h hn⟩
+  exact ⟨∑ n ∈ Finset.range (N + 1), max (C n) 0, fun n hn x ↦ (hC n hn x).trans
+    ((le_max_left _ _).trans (Finset.single_le_sum (f := fun n ↦ max (C n) 0)
+      (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.2 (by omega))))⟩
 
 namespace Function
 
