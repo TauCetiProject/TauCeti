@@ -130,7 +130,7 @@ theorem tsum_tail_isBigO_pow {a : ℕ → ℂ}
   obtain ⟨r, hr, hs⟩ := ha
   set p := FormalMultilinearSeries.ofScalars ℂ a with hp
   -- `p` has positive radius: its terms at `ρ = r / 2` tend to `0`.
-  set ρ : NNReal := ⟨r / 2, by positivity⟩ with hρ
+  set ρ : NNReal := ⟨r / 2, by positivity⟩
   have hρr : (ρ : ℝ) = r / 2 := rfl
   have hρ0 : (0 : ENNReal) < ρ := by
     rw [ENNReal.coe_pos, ← NNReal.coe_pos, hρr]; positivity
