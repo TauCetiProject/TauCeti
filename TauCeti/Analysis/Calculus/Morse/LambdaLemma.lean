@@ -61,30 +61,6 @@ variable {F Eₛ Eᵤ : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Compl
   [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ] [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ]
   {n : ℕ∞ω} {z₀ : F} {ψ : F → WithLp 2 (Eₛ × Eᵤ)} {ψ' : F →L[ℝ] WithLp 2 (Eₛ × Eᵤ)} {U : Set F}
 
-/-- The norm of the contraction `e^{-t} • id` tends to zero as `t → ∞`. -/
-private theorem tendsto_norm_exp_neg_smul_id (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] :
-    Tendsto (fun t : ℝ ↦ ‖Real.exp (-t) • ContinuousLinearMap.id ℝ E‖) atTop (𝓝 0) := by
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun t ↦ ?_)
-    (Real.tendsto_exp_atBot.comp tendsto_neg_atTop_atBot)
-  refine (norm_smul_le (Real.exp (-t)) (ContinuousLinearMap.id ℝ E)).trans ?_
-  rw [Real.norm_of_nonneg (Real.exp_pos _).le, Function.comp_apply]
-  exact mul_le_of_le_one_right (Real.exp_pos _).le ContinuousLinearMap.norm_id_le
-
-/-- The expansion `e^t • id` as a continuous linear automorphism, with inverse `e^{-t} • id`. -/
-private noncomputable def expSMul (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] (t : ℝ) :
-    E ≃L[ℝ] E :=
-  .equivOfInverse (Real.exp t • ContinuousLinearMap.id ℝ E)
-    (Real.exp (-t) • ContinuousLinearMap.id ℝ E)
-    (fun v ↦ by simp [smul_smul, ← Real.exp_add]) (fun v ↦ by simp [smul_smul, ← Real.exp_add])
-
-private theorem expSMul_apply (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] (t : ℝ)
-    (v : E) : expSMul E t v = Real.exp t • v := by
-  simp [expSMul]
-
-private theorem coe_expSMul_symm (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] (t : ℝ) :
-    ((expSMul E t).symm : E →L[ℝ] E) = Real.exp (-t) • ContinuousLinearMap.id ℝ E := by
-  simp [expSMul]
-
 /-- **The λ-lemma for the split hyperbolic flow.** Let `ψ` be a `C^n` disc, `n ≥ 1`, through a
 point `ψ z₀` of the stable set `y = 0`, transverse to it: the derivative of its expanding
 component at `z₀` is invertible. Fix a neighbourhood `U` of `z₀` and a radius `R`. Then there is
@@ -108,26 +84,41 @@ theorem exists_splitQuadraticFlow_graph_tendstoUniformlyOn_iteratedFDeriv
       ∀ i : ℕ, i ≤ n → TendstoUniformlyOn
         (fun t v ↦ iteratedFDeriv ℝ i (fun v ↦ Real.exp (-t) • g (Real.exp (-t) • v)) v) 0 atTop
         (ball 0 R) := by
-  have hT : Tendsto (fun t ↦ ‖((expSMul Eᵤ t).symm : Eᵤ →L[ℝ] Eᵤ)‖) atTop (𝓝 0) := by
-    simpa only [coe_expSMul_symm] using tendsto_norm_exp_neg_smul_id Eᵤ
-  obtain ⟨g, hg, hg₀, himage, hconv⟩ := exists_graph_tendstoUniformlyOn_iteratedFDeriv
-    (tendsto_norm_exp_neg_smul_id Eₛ) hT
+  -- The contracting factor is `e^{-t} • id`; the expanding one is `smulLeft` by the unit `e^t`.
+  have hc : Tendsto (fun t : ℝ ↦ Real.exp (-t)) atTop (𝓝 0) :=
+    Real.tendsto_exp_atBot.comp tendsto_neg_atTop_atBot
+  have hS : Tendsto (fun t ↦ ‖Real.exp (-t) • ContinuousLinearMap.id ℝ Eₛ‖) atTop (𝓝 0) := by
+    simpa using (hc.smul_const (ContinuousLinearMap.id ℝ Eₛ)).norm
+  have hsymm : ∀ t : ℝ, ((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (M₁ := Eᵤ)
+      (Units.mk0 (Real.exp t) (Real.exp_pos t).ne')).symm : Eᵤ →L[ℝ] Eᵤ) =
+      Real.exp (-t) • ContinuousLinearMap.id ℝ Eᵤ := by
+    intro t
+    ext v
+    rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_eq,
+      ContinuousLinearEquiv.smulLeft_apply_apply]
+    simp [Units.smul_def, smul_smul, ← Real.exp_add]
+  have hT : Tendsto (fun t ↦ ‖((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (M₁ := Eᵤ)
+      (Units.mk0 (Real.exp t) (Real.exp_pos t).ne')).symm : Eᵤ →L[ℝ] Eᵤ)‖) atTop (𝓝 0) := by
+    simpa [hsymm] using (hc.smul_const (ContinuousLinearMap.id ℝ Eᵤ)).norm
+  obtain ⟨g, hg, hg₀, himage, hconv⟩ := exists_graph_tendstoUniformlyOn_iteratedFDeriv hS hT
     ((WithLp.fstL 2 ℝ Eₛ Eᵤ).contDiff.contDiffAt.comp z₀ hψ)
     ((WithLp.sndL 2 ℝ Eₛ Eᵤ).contDiff.contDiffAt.comp z₀ hψ)
     ((WithLp.sndL 2 ℝ Eₛ Eᵤ).hasFDerivAt.comp z₀ hψ') hψ'i (by simpa using hψ₀) hn hU R
   -- The graph transform of `S t × T t` is the rescaling `v ↦ e^{-t} g (e^{-t} v)`.
   have htransform : ∀ t : ℝ, (fun v ↦ (Real.exp (-t) • ContinuousLinearMap.id ℝ Eₛ)
-      (g ((expSMul Eᵤ t).symm v))) = fun v ↦ Real.exp (-t) • g (Real.exp (-t) • v) := by
+      (g ((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (M₁ := Eᵤ)
+        (Units.mk0 (Real.exp t) (Real.exp_pos t).ne')).symm v))) =
+      fun v ↦ Real.exp (-t) • g (Real.exp (-t) • v) := by
     intro t
     funext v
-    rw [← ContinuousLinearEquiv.coe_coe, coe_expSMul_symm]
+    rw [← ContinuousLinearEquiv.coe_coe, hsymm]
     simp
   refine ⟨g, hg, by simpa using hg₀, ?_, fun i hi ↦ ?_⟩
   · filter_upwards [himage] with t ht v hv
     obtain ⟨z, hzU, hfst, hsnd⟩ := ht v hv
     have h₁ : Real.exp (-t) • (ψ z).fst = Real.exp (-t) • g (Real.exp (-t) • v) := by
       simpa [← congr_fun (htransform t) v] using hfst
-    have h₂ : Real.exp t • (ψ z).snd = v := by simpa [expSMul_apply] using hsnd
+    have h₂ : Real.exp t • (ψ z).snd = v := by simpa [Units.smul_def] using hsnd
     exact ⟨z, hzU, by rw [splitQuadraticFlow_apply, h₁, h₂]⟩
   · simpa only [htransform] using hconv i hi
 
