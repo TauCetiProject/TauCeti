@@ -76,12 +76,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {γ : ℝ}
 
 /-! ### The regularized gradient and Hessian fields -/
 
-/-- The field `γ (‖x‖² + ε) ^ (γ / 2 - 1) x`: for `ε > 0` the gradient of `(‖x‖² + ε) ^ (γ / 2)`,
-and for `ε = 0` the gradient of `‖x‖ ^ γ` away from the origin. -/
-private def gradField (γ ε : ℝ) (x : E) : E :=
-  (γ * (‖x‖ ^ 2 + ε) ^ (γ / 2 - 1)) • x
-
-/-- The derivative of `TauCeti.gradField γ ε` at `x`. -/
+/-- The derivative of `TauCeti.regularizedNormRpowGradient γ ε` at `x`. -/
 private def hessField (γ ε : ℝ) (x : E) : E →L[ℝ] E :=
   (γ * (‖x‖ ^ 2 + ε) ^ (γ / 2 - 1)) • ContinuousLinearMap.id ℝ E +
     (γ * (γ - 2) * (‖x‖ ^ 2 + ε) ^ (γ / 2 - 2)) • (innerSL ℝ x).smulRight x
@@ -93,8 +88,8 @@ private theorem hessField_apply (γ ε : ℝ) (x v : E) :
     ContinuousLinearMap.id_apply, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
     smul_smul]
 
-private theorem hasFDerivAt_gradField (γ ε : ℝ) {x : E} (hx : ‖x‖ ^ 2 + ε ≠ 0) :
-    HasFDerivAt (gradField γ ε) (hessField γ ε x) x := by
+private theorem hasFDerivAt_regularizedNormRpowGradient (γ ε : ℝ) {x : E} (hx : ‖x‖ ^ 2 + ε ≠ 0) :
+    HasFDerivAt (regularizedNormRpowGradient γ ε) (hessField γ ε x) x := by
   have hs : HasFDerivAt (fun y : E => ‖y‖ ^ 2 + ε) (2 • innerSL ℝ x) x :=
     ((hasStrictFDerivAt_norm_sq x).hasFDerivAt).add_const ε
   have hc := ((hs.rpow_const (p := γ / 2 - 1) (Or.inl hx)).const_mul γ).smul
@@ -108,11 +103,6 @@ private theorem hasFDerivAt_gradField (γ ε : ℝ) {x : E} (hx : ‖x‖ ^ 2 + 
   congr 1
   ring
 
-private theorem gradField_zero (γ : ℝ) (x : E) :
-    gradField γ 0 x = (γ * ‖x‖ ^ (γ - 2)) • x := by
-  rw [gradField, add_zero, show γ / 2 - 1 = (γ - 2) / 2 by ring,
-    Real.sq_rpow_div_two (norm_nonneg x)]
-
 private theorem hessField_zero_apply (γ : ℝ) (x v : E) :
     hessField γ 0 x v = (γ * ‖x‖ ^ (γ - 2)) • v +
       (γ * (γ - 2) * ‖x‖ ^ (γ - 4) * ⟪x, v⟫_ℝ) • x := by
@@ -120,14 +110,17 @@ private theorem hessField_zero_apply (γ : ℝ) (x v : E) :
     show γ / 2 - 2 = (γ - 4) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x),
     Real.sq_rpow_div_two (norm_nonneg x)]
 
-private theorem norm_gradField_le [CompleteSpace E] {x : E} (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤ ε)
-    (hγ : γ ≤ 2) : ‖gradField γ ε x‖ ≤ |γ| * ‖x‖ ^ (γ - 1) := by
-  rw [← norm_gradient_norm_rpow_of_ne hx, gradient_norm_rpow_of_ne hx, gradField, norm_smul,
-    norm_smul, norm_mul, norm_mul, Real.norm_of_nonneg (Real.rpow_nonneg (by positivity) _),
-    Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
-  gcongr
-  exact (sq_add_rpow_le (e := γ / 2 - 1) (norm_ne_zero_iff.2 hx) hε (by linarith)).trans_eq <| by
-    rw [add_zero, show γ / 2 - 1 = (γ - 2) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x)]
+private theorem regularizedNormRpowGradient_zero (γ : ℝ) (x : E) :
+    regularizedNormRpowGradient γ 0 x = (γ * ‖x‖ ^ (γ - 2)) • x := by
+  rw [regularizedNormRpowGradient, add_zero, show γ / 2 - 1 = (γ - 2) / 2 by ring,
+    Real.sq_rpow_div_two (norm_nonneg x)]
+
+private theorem norm_regularizedNormRpowGradient_le_mul_rpow [CompleteSpace E] {x : E}
+    (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤ ε) (hγ : γ ≤ 2) :
+    ‖regularizedNormRpowGradient γ ε x‖ ≤ |γ| * ‖x‖ ^ (γ - 1) := by
+  rw [← norm_gradient_norm_rpow_of_ne hx, gradient_norm_rpow_of_ne hx,
+    ← regularizedNormRpowGradient_zero]
+  exact norm_regularizedNormRpowGradient_le hγ hε hx
 
 private theorem norm_hessField_le {x : E} (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤ ε) (hγ : γ ≤ 2) :
     ‖hessField γ ε x‖ ≤ |γ| * (3 - γ) * ‖x‖ ^ (γ - 2) := by
@@ -166,10 +159,6 @@ private theorem norm_hessField_le {x : E} (hx : x ≠ 0) {ε : ℝ} (hε : 0 ≤
 
 /-! ### Continuity in the regularization parameter -/
 
-private theorem continuous_gradField {ε : ℝ} (hε : 0 < ε) : Continuous (gradField (E := E) γ ε) :=
-  (continuous_const.mul (((continuous_norm.pow 2).add continuous_const).rpow_const
-    fun _ => Or.inl (add_pos_of_nonneg_of_pos (sq_nonneg _) hε).ne')).smul continuous_id
-
 private theorem continuous_hessField {ε : ℝ} (hε : 0 < ε) :
     Continuous (hessField (E := E) γ ε) := by
   have h : ∀ a : ℝ, Continuous fun x : E => (‖x‖ ^ 2 + ε) ^ a := fun a =>
@@ -181,8 +170,8 @@ private theorem continuous_hessField {ε : ℝ} (hε : 0 < ε) :
   exact ((continuous_const.mul (h _)).smul continuous_const).add
     ((continuous_const.mul (h _)).smul hK)
 
-private theorem continuousAt_gradField {x : E} (hx : x ≠ 0) :
-    ContinuousAt (fun ε : ℝ => gradField γ ε x) 0 := by
+private theorem continuousAt_regularizedNormRpowGradient {x : E} (hx : x ≠ 0) :
+    ContinuousAt (fun ε : ℝ => regularizedNormRpowGradient γ ε x) 0 := by
   have h : ContinuousAt (fun ε : ℝ => ‖x‖ ^ 2 + ε) 0 := by fun_prop
   exact ((h.rpow_const (Or.inl (by simpa using hx))).const_mul γ).smul continuousAt_const
 
@@ -197,17 +186,17 @@ private theorem continuousAt_hessField {x : E} (hx : x ≠ 0) :
 
 variable [FiniteDimensional ℝ E]
 
-private theorem gradient_norm_rpow_eq_gradField {x : E} (hx : x ≠ 0) :
-    ∇ (fun y : E => ‖y‖ ^ γ) x = gradField γ 0 x := by
-  rw [gradient_norm_rpow_of_ne hx, gradField_zero]
+private theorem gradient_norm_rpow_eq_regularizedNormRpowGradient {x : E} (hx : x ≠ 0) :
+    ∇ (fun y : E => ‖y‖ ^ γ) x = regularizedNormRpowGradient γ 0 x := by
+  rw [gradient_norm_rpow_of_ne hx, regularizedNormRpowGradient_zero]
 
 private theorem iteratedGradientChain_one_norm_rpow_eq_hessField {x : E} (hx : x ≠ 0) :
     iteratedGradientChain (fun y : E => ‖y‖ ^ γ) 1 x = hessField γ 0 x := by
   rw [iteratedGradientChain_succ, iteratedGradientChain_zero]
-  have hev : (∇ fun y : E => ‖y‖ ^ γ) =ᶠ[𝓝 x] gradField γ 0 :=
-    (eventually_ne_nhds hx).mono fun y hy => gradient_norm_rpow_eq_gradField hy
+  have hev : (∇ fun y : E => ‖y‖ ^ γ) =ᶠ[𝓝 x] regularizedNormRpowGradient γ 0 :=
+    (eventually_ne_nhds hx).mono fun y hy => gradient_norm_rpow_eq_regularizedNormRpowGradient hy
   rw [hev.fderiv_eq]
-  exact (hasFDerivAt_gradField γ 0
+  exact (hasFDerivAt_regularizedNormRpowGradient γ 0
     (by rw [add_zero]; exact pow_ne_zero 2 (norm_ne_zero_iff.2 hx))).fderiv
 
 /-- Away from the origin, the classical Hessian of `‖x‖ ^ γ`, the derivative of its gradient, is
@@ -258,23 +247,25 @@ theorem sum_inner_iteratedGradientChain_one_norm_rpow_apply {ι : Type*} [Fintyp
 
 variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-private theorem measurable_gradField (ε : ℝ) : Measurable (gradField (E := E) γ ε) := by
-  unfold gradField
+private theorem measurable_regularizedNormRpowGradient (ε : ℝ) :
+    Measurable (regularizedNormRpowGradient (E := E) γ ε) := by
+  unfold regularizedNormRpowGradient
   fun_prop
 
 /-- On a ball centred at the origin, the derivative of the gradient field `γ ‖x‖ ^ (γ - 2) x`
 across the origin is its classical derivative. -/
-private theorem hasWeakFDerivOn_ball_gradField [Nontrivial E] (hγ : γ ≤ 2)
+private theorem hasWeakFDerivOn_ball_regularizedNormRpowGradient [Nontrivial E] (hγ : γ ≤ 2)
     (hn : 2 < finrank ℝ E + γ) (R : ℝ) :
-    HasWeakFDerivOn μ ⟨ball 0 R, isOpen_ball⟩ (gradField γ 0) (hessField γ 0) := by
+    HasWeakFDerivOn μ ⟨ball 0 R, isOpen_ball⟩ (regularizedNormRpowGradient γ 0)
+      (hessField γ 0) := by
   have hs1 : -(finrank ℝ E : ℝ) < γ - 1 := by linarith
   have hs2 : -(finrank ℝ E : ℝ) < γ - 2 := by linarith
   have hae : ∀ᵐ x ∂μ.restrict (ball 0 R), x ≠ 0 := ae_restrict_of_ae (μ.ae_ne 0)
   -- The limit fields are integrable on the ball.
-  have hG : IntegrableOn (gradField γ 0) (ball 0 R) μ :=
+  have hG : IntegrableOn (regularizedNormRpowGradient γ 0) (ball 0 R) μ :=
     ((integrableOn_norm_rpow_ball (mu := μ) hs1).const_mul |γ|).mono'
-      (measurable_gradField 0).aestronglyMeasurable
-      (hae.mono fun x hx => norm_gradField_le hx le_rfl hγ)
+      (measurable_regularizedNormRpowGradient 0).aestronglyMeasurable
+      (hae.mono fun x hx => norm_regularizedNormRpowGradient_le_mul_rpow hx le_rfl hγ)
   have hH : ∀ v : E, IntegrableOn (fun x => hessField γ 0 x v) (ball 0 R) μ := fun v => by
     refine ((integrableOn_norm_rpow_ball (mu := μ) hs2).const_mul (|γ| * (3 - γ) * ‖v‖)).mono'
       ?_ (hae.mono fun x hx => ?_)
@@ -286,19 +277,22 @@ private theorem hasWeakFDerivOn_ball_gradField [Nontrivial E] (hγ : γ ≤ 2)
           exact norm_hessField_le hx le_rfl hγ
         _ = |γ| * (3 - γ) * ‖v‖ * ‖x‖ ^ (γ - 2) := by ring
   refine hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (l := atTop)
-    (u := fun k : ℕ => gradField γ (1 / (k + 1)))
+    (u := fun k : ℕ => regularizedNormRpowGradient γ (1 / (k + 1)))
     (U := fun k : ℕ => hessField γ (1 / (k + 1)))
     (hG.locallyIntegrableOn) (fun v => (hH v).locallyIntegrableOn) (fun k => ?_) ?_ ?_
   · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
-      (continuous_gradField (Nat.one_div_pos_of_nat (n := k))).continuousOn
+      (continuous_regularizedNormRpowGradient γ (Nat.one_div_pos_of_nat (n := k))).continuousOn
       ((continuous_hessField (Nat.one_div_pos_of_nat (n := k))).locallyIntegrable
         |>.locallyIntegrableOn _)
-      fun x _ => hasFDerivAt_gradField γ _ (by positivity)
+      fun x _ => hasFDerivAt_regularizedNormRpowGradient γ _ (by positivity)
   · exact tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow hs1
-      (fun k => (continuous_gradField (Nat.one_div_pos_of_nat (n := k))).aestronglyMeasurable)
-      (fun k x hx => norm_gradField_le hx (Nat.one_div_pos_of_nat (n := k)).le hγ)
+      (fun k => (continuous_regularizedNormRpowGradient γ
+        (Nat.one_div_pos_of_nat (n := k))).aestronglyMeasurable)
+      (fun k x hx =>
+        norm_regularizedNormRpowGradient_le_mul_rpow hx (Nat.one_div_pos_of_nat (n := k)).le hγ)
       fun x hx =>
-        (continuousAt_gradField hx).tendsto.comp tendsto_one_div_add_atTop_nhds_zero_nat
+        (continuousAt_regularizedNormRpowGradient hx).tendsto.comp
+          tendsto_one_div_add_atTop_nhds_zero_nat
   · exact tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow hs2
       (fun k => (continuous_hessField (Nat.one_div_pos_of_nat (n := k))).aestronglyMeasurable)
       (fun k x hx => norm_hessField_le hx (Nat.one_div_pos_of_nat (n := k)).le hγ)
@@ -310,11 +304,12 @@ private theorem nontrivial_of_two_lt (hγ : γ ≤ 2) (hn : 2 < finrank ℝ E + 
   Module.nontrivial_of_finrank_pos (R := ℝ)
     (by exact_mod_cast (by linarith : (0 : ℝ) < finrank ℝ E))
 
-private theorem hasWeakFDerivOn_gradField (hγ : γ ≤ 2) (hn : 2 < finrank ℝ E + γ) (Ω : Opens E) :
-    HasWeakFDerivOn μ Ω (gradField γ 0) (hessField γ 0) :=
+private theorem hasWeakFDerivOn_regularizedNormRpowGradient (hγ : γ ≤ 2)
+    (hn : 2 < finrank ℝ E + γ) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (regularizedNormRpowGradient γ 0) (hessField γ 0) :=
   have := nontrivial_of_two_lt hγ hn
   hasWeakFDerivOn_iff_locally.2 fun x _ => ⟨⟨ball 0 (‖x‖ + 1), isOpen_ball⟩,
-    mem_ball_zero_iff.2 (lt_add_one _), hasWeakFDerivOn_ball_gradField hγ hn _⟩
+    mem_ball_zero_iff.2 (lt_add_one _), hasWeakFDerivOn_ball_regularizedNormRpowGradient hγ hn _⟩
 
 /-! ### Weak derivatives across the origin -/
 
@@ -338,8 +333,9 @@ theorem hasWeakFDerivOn_gradient_norm_rpow (hn : 2 < finrank ℝ E + γ) (Ω : O
   rcases le_or_gt γ 2 with hγ | hγ
   · have := nontrivial_of_two_lt hγ hn
     have hae : ∀ᵐ x ∂μ.restrict Ω, x ≠ 0 := ae_restrict_of_ae (μ.ae_ne 0)
-    exact ((hasWeakFDerivOn_gradField hγ hn Ω).congr_ae
-      (hae.mono fun x hx => (gradient_norm_rpow_eq_gradField hx).symm)).congr_ae_deriv
+    exact ((hasWeakFDerivOn_regularizedNormRpowGradient hγ hn Ω).congr_ae
+      (hae.mono fun x hx =>
+        (gradient_norm_rpow_eq_regularizedNormRpowGradient hx).symm)).congr_ae_deriv
       (hae.mono fun x hx => (iteratedGradientChain_one_norm_rpow_eq_hessField hx).symm)
   · -- For `γ > 2` the function is `C²`, so its gradient is `C¹` with continuous derivative.
     have hC : ContDiff ℝ 2 (fun y : E => ‖y‖ ^ γ) :=

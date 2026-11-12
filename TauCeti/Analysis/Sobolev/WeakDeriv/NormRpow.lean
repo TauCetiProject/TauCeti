@@ -37,6 +37,8 @@ exponent `2 - n` by an arbitrary exponent; that theorem is derived from the gene
 
 ## Main declarations
 
+* `TauCeti.regularizedNormRpowGradient`: the gradient `s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) x` of the
+  regularized power, continuous for `t > 0` and dominated by its value at `t = 0` for `s ≤ 2`.
 * `TauCeti.locallyIntegrable_norm_rpow_smul_innerSL`: the classical derivative is locally
   integrable for `s > 1 - d`.
 * `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg`: integration by parts against `‖x‖ ^ s` for
@@ -61,9 +63,50 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {s : ℝ}
 private def regPow (s t : ℝ) (x : E) : ℝ :=
   (‖x‖ ^ 2 + t) ^ (s / 2)
 
+/-- The field `s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) x`: for `t > 0` the gradient of the regularized norm
+power `(‖x‖ ^ 2 + t) ^ (s / 2)`, and for `t = 0` the gradient of `‖x‖ ^ s` away from the
+origin. -/
+@[expose] def regularizedNormRpowGradient (s t : ℝ) (x : E) : E :=
+  (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1)) • x
+
+/-- For `t > 0` the regularized gradient `TauCeti.regularizedNormRpowGradient s t` is
+continuous. -/
+theorem continuous_regularizedNormRpowGradient (s : ℝ) {t : ℝ} (ht : 0 < t) :
+    Continuous (regularizedNormRpowGradient (E := E) s t) :=
+  (continuous_const.mul (((continuous_norm.pow 2).add continuous_const).rpow_const
+    fun _ ↦ Or.inl (add_pos_of_nonneg_of_pos (sq_nonneg _) ht).ne')).smul continuous_id
+
+/-- For `s ≤ 2` and `t ≥ 0`, away from the origin, every component of the regularized gradient
+`TauCeti.regularizedNormRpowGradient s t` is dominated by the corresponding component at
+`t = 0`. -/
+theorem abs_inner_regularizedNormRpowGradient_le (hs : s ≤ 2) {t : ℝ} (ht : 0 ≤ t) {x : E}
+    (hx : x ≠ 0) (v : E) :
+    |⟪regularizedNormRpowGradient s t x, v⟫| ≤ |⟪regularizedNormRpowGradient s 0 x, v⟫| := by
+  simp only [regularizedNormRpowGradient, real_inner_smul_left, abs_mul,
+    abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) ht) _),
+    abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) le_rfl) _)]
+  gcongr ?_ * _
+  exact mul_le_mul_of_nonneg_left (sq_add_rpow_le (norm_ne_zero_iff.mpr hx) ht (by linarith))
+    (abs_nonneg s)
+
+/-- For `s ≤ 2` and `t ≥ 0`, away from the origin, the regularized gradient
+`TauCeti.regularizedNormRpowGradient s t` is dominated in norm by its value at `t = 0`. -/
+theorem norm_regularizedNormRpowGradient_le (hs : s ≤ 2) {t : ℝ} (ht : 0 ≤ t) {x : E}
+    (hx : x ≠ 0) :
+    ‖regularizedNormRpowGradient s t x‖ ≤ ‖regularizedNormRpowGradient s 0 x‖ := by
+  set y := regularizedNormRpowGradient s t x
+  have h : ‖y‖ * ‖y‖ ≤ ‖regularizedNormRpowGradient s 0 x‖ * ‖y‖ := by
+    rw [← real_inner_self_eq_norm_mul_norm, ← abs_of_nonneg (real_inner_self_nonneg (x := y))]
+    exact (abs_inner_regularizedNormRpowGradient_le hs ht hx y).trans
+      (abs_real_inner_le_norm _ _)
+  rcases (norm_nonneg y).eq_or_lt with h0 | h0
+  · rw [← h0]
+    exact norm_nonneg _
+  · exact le_of_mul_le_mul_right h h0
+
 /-- The derivative of the regularized norm power in the direction `v`. -/
 private def regPowDeriv (s : ℝ) (v : E) (t : ℝ) (x : E) : ℝ :=
-  s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1) * ⟪x, v⟫
+  ⟪regularizedNormRpowGradient s t x, v⟫
 
 omit [InnerProductSpace ℝ E] in
 private lemma regPow_zero (s : ℝ) (x : E) : regPow s 0 x = ‖x‖ ^ s := by
@@ -72,7 +115,8 @@ private lemma regPow_zero (s : ℝ) (x : E) : regPow s 0 x = ‖x‖ ^ s := by
 private lemma regPowDeriv_zero (s : ℝ) (v : E) (x : E) :
     regPowDeriv s v 0 x = ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) v := by
   have hs : s / 2 - 1 = (s - 2) / 2 := by ring
-  rw [regPowDeriv, add_zero, hs, Real.sq_rpow_div_two (norm_nonneg x)]
+  rw [regPowDeriv, regularizedNormRpowGradient, real_inner_smul_left, add_zero, hs,
+    Real.sq_rpow_div_two (norm_nonneg x)]
   simp [mul_assoc]
 
 private lemma hasLineDerivAt_regPow (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) (x : E) :
@@ -81,7 +125,7 @@ private lemma hasLineDerivAt_regPow (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) (x 
   have h := ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.add_const t).rpow_const
     (p := s / 2) (Or.inl hpos.ne')
   refine (h.hasLineDerivAt v).congr_deriv ?_
-  rw [regPowDeriv, smul_apply, smul_apply,
+  rw [regPowDeriv, regularizedNormRpowGradient, real_inner_smul_left, smul_apply, smul_apply,
     innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
   ring
 
@@ -92,9 +136,7 @@ private lemma continuous_regPow (s : ℝ) {t : ℝ} (ht : 0 < t) : Continuous (r
 
 private lemma continuous_regPowDeriv (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) :
     Continuous (regPowDeriv s v t) :=
-  (continuous_const.mul (((continuous_norm.pow 2).add continuous_const).rpow_const
-    fun _ ↦ Or.inl (add_pos_of_nonneg_of_pos (sq_nonneg _) ht).ne')).mul
-      (continuous_id.inner continuous_const)
+  (continuous_regularizedNormRpowGradient s ht).inner continuous_const
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
   [μ.IsAddHaarMeasure]
@@ -121,18 +163,6 @@ private lemma abs_regPow_le (hs : s ≤ 0) {t : ℝ} (ht : 0 ≤ t) {x : E} (hx 
   simp only [regPow, abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) ht) _),
     abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) le_rfl) _)]
   exact sq_add_rpow_le (norm_ne_zero_iff.mpr hx) ht (by linarith)
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- For `s ≤ 2`, the derivatives of the regularized powers are dominated by the regularization at
-`t = 0` away from the origin. -/
-private lemma abs_regPowDeriv_le (hs : s ≤ 2) (v : E) {t : ℝ} (ht : 0 ≤ t) {x : E}
-    (hx : x ≠ 0) : |regPowDeriv s v t x| ≤ |regPowDeriv s v 0 x| := by
-  simp only [regPowDeriv, abs_mul,
-    abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) ht) _),
-    abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) le_rfl) _)]
-  gcongr ?_ * _
-  exact mul_le_mul_of_nonneg_left (sq_add_rpow_le (norm_ne_zero_iff.mpr hx) ht (by linarith))
-    (abs_nonneg s)
 
 /-- **Integration by parts against a singular norm power.** For `1 - dim E < s ≤ 0` and a `C¹`
 function `g` with compact support, `∫ ‖x‖ ^ s ∂ᵥg = -∫ s ‖x‖ ^ (s - 2) ⟪x, v⟫ g`, although for
@@ -189,8 +219,9 @@ theorem integral_norm_rpow_mul_fderiv_eq_neg (hs0 : s ≤ 0)
       (continuous_regPowDeriv s v ht).aestronglyMeasurable)
     (hintD.congr hderiv)
     (eventually_mem_nhdsWithin.mono fun t ht x hx ↦
-      abs_regPowDeriv_le (by linarith) v (le_of_lt ht) hx)
-    (fun x hx ↦ ((tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).const_mul _).mul_const _)
+      abs_inner_regularizedNormRpowGradient_le (by linarith) (le_of_lt ht) hx v)
+    (fun x hx ↦ ((((tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).const_mul s).smul_const
+      x).inner tendsto_const_nhds))
   simp only [regPow_zero] at hL
   rw [integral_congr_ae hderiv]
   exact tendsto_nhds_unique (hL.congr' hibp) hR.neg

@@ -114,13 +114,6 @@ theorem meyersCoefficient_apply (x : EuclideanSpace ℝ (Fin 2)) :
   ext i j
   simp [meyersCoefficient, radialCoefficient_apply, Matrix.one_apply, Matrix.vecMulVec_apply]
 
-/-- The bilinear form of Meyers' coefficient:
-`ηᵀ a(x) ξ = μ² ⟪η, ξ⟫ + (1 - μ²) ⟪η, x⟫ ⟪x, ξ⟫ / ‖x‖²`. -/
-theorem dotProduct_meyersCoefficient_mulVec (x η ξ : EuclideanSpace ℝ (Fin 2)) :
-    η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ) =
-      μ ^ 2 * ⟪η, ξ⟫_ℝ + (1 - μ ^ 2) / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ) :=
-  dotProduct_radialCoefficient_mulVec x η ξ
-
 /-- The bilinear form of Meyers' coefficient is bounded by `μ² + |1 - μ²|`. -/
 theorem abs_dotProduct_meyersCoefficient_mulVec_le (x η ξ : EuclideanSpace ℝ (Fin 2)) :
     |η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ)| ≤ (μ ^ 2 + |1 - μ ^ 2|) * ‖η‖ * ‖ξ‖ := by
@@ -357,7 +350,8 @@ private theorem dotProduct_meyersCoefficient_mulVec_radialCoordGradient
   have hinner : ∀ y z : EuclideanSpace ℝ (Fin 2), ⟪y, z⟫_ℝ = y 0 * z 0 + y 1 * z 1 := by
     intro y z
     simp [PiLp.inner_apply, Fin.sum_univ_two, mul_comm]
-  rw [dotProduct_meyersCoefficient_mulVec, hinner, hinner, hinner, hG, hG, hG, hG]
+  rw [meyersCoefficient, dotProduct_radialCoefficient_mulVec, hinner, hinner, hinner, hG, hG, hG,
+    hG]
   simp only [Fin.isValue, Fin.zero_eq_one_iff, OfNat.ofNat_ne_one,
     one_ne_zero, ↓reduceIte]
   generalize ‖x‖ ^ (μ - 3) = t
