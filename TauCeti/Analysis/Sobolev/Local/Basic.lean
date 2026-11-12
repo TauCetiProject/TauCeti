@@ -13,7 +13,6 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
-import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -35,9 +34,8 @@ multiplication of local `Lᵖ` functions by continuous factors (with extension b
 supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
 pairing, decreasing the integrability exponent, and decreasing the derivative order. On an open
 set, local `Lᵖ` membership is detected on the open subsets with compact closure inside it.
-Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension;
-in particular, so does holomorphy on an open neighbourhood. Smooth and entire maps on the whole
-plane are in every class on every set.
+Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension,
+and smooth maps on the whole plane are in every class on every set.
 Conversely, if `g` is `Cᵏ` on an open set `Ω` and agrees almost everywhere there with
 `u ∈ MemWkpLoc p Ω (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
 (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`, for `k ≥ 1`) and
@@ -523,23 +521,11 @@ theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
     refine ⟨(hf.continuousOn.mono hU).memLpLoc, fderiv ℝ f, ?_, ih hD⟩
     exact (hf.of_le (by simp)).hasWeakFDerivOn_fderiv.mono (interior_subset.trans hU)
 
-/-- A holomorphic map on an open set `Ω` is in every local Sobolev class on every subset of `Ω`,
-for every exponent: it is smooth on `Ω`. -/
-theorem _root_.DifferentiableOn.memWkpLoc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [CompleteSpace E] {f : ℂ → E} (hf : DifferentiableOn ℂ f Ω) (hU : U ⊆ Ω)
-    (k : ℕ) : MemWkpLoc p U k f :=
-  ((hf.contDiffOn Ω.isOpen (n := k)).restrict_scalars ℝ).memWkpLoc hU
-
 /-- A `Cᵏ` map on the whole plane is in the local class `W^{k,p}` on every set, for every
 exponent. -/
 theorem _root_.ContDiff.memWkpLoc [CompleteSpace F] (hf : ContDiff ℝ k f) :
     MemWkpLoc p U k f :=
   hf.contDiffOn.memWkpLoc (Ω := ⊤) ((Set.subset_univ U).trans_eq Opens.coe_top.symm)
-
-/-- An entire map is in every local Sobolev class on every set, for every exponent. -/
-theorem _root_.Differentiable.memWkpLoc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) (k : ℕ) : MemWkpLoc p U k f :=
-  ((hf.contDiff (n := k)).restrict_scalars ℝ).memWkpLoc
 
 /-! ### Bounds for chains of weak derivatives -/
 

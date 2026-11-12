@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Real powers used in quadratic regularizations
@@ -21,8 +22,9 @@ They provide convergence away from `a = 0` and domination for nonpositive expone
   regularization parameter tends to zero from above.
 * `TauCeti.sq_add_rpow_le`: for a nonpositive exponent, the regularized power is bounded by its
   value at zero.
-* `TauCeti.rpow_norm_sq_add_neg_half_le`: `(‖x‖ ^ 2 + c) ^ (-1 / 2) ≤ ‖x‖⁻¹` for `c ≥ 0`.
-* `TauCeti.continuous_rpow_norm_sq_add`: for `c > 0`, `x ↦ (‖x‖ ^ 2 + c) ^ q` is continuous.
+* `TauCeti.norm_sq_add_rpow_div_two_le`: `(‖x‖ ^ 2 + c) ^ (q / 2) ≤ ‖x‖ ^ q` for `c ≥ 0`,
+  `q ≤ 0` and `x ≠ 0`.
+* `TauCeti.continuous_norm_sq_add_rpow`: for `c > 0`, `x ↦ (‖x‖ ^ 2 + c) ^ q` is continuous.
 -/
 
 public section
@@ -51,21 +53,16 @@ theorem sq_add_rpow_le {a : ℝ} (ha : a ≠ 0) {t : ℝ} (ht : 0 ≤ t) {e : �
 
 section Norm
 
-variable {E : Type*} [NormedAddCommGroup E]
-
-/-- The power `(‖x‖ ^ 2) ^ (-1 / 2)` is `‖x‖⁻¹`. -/
-theorem rpow_norm_sq_neg_half (x : E) : (‖x‖ ^ 2) ^ (-(1 / 2) : ℝ) = ‖x‖⁻¹ := by
-  rw [Real.rpow_neg (sq_nonneg _), ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _)]
-
-/-- For `c ≥ 0` the regularized power `(‖x‖ ^ 2 + c) ^ (-1 / 2)` is at most `‖x‖⁻¹`. -/
-theorem rpow_norm_sq_add_neg_half_le {c : ℝ} (hc : 0 ≤ c) {x : E} (hx : x ≠ 0) :
-    (‖x‖ ^ 2 + c) ^ (-(1 / 2) : ℝ) ≤ ‖x‖⁻¹ :=
-  (sq_add_rpow_le (norm_ne_zero_iff.2 hx) hc (by norm_num)).trans_eq
-    (by rw [add_zero, rpow_norm_sq_neg_half])
+/-- For `c ≥ 0`, `q ≤ 0` and `x ≠ 0`, the regularized power `(‖x‖ ^ 2 + c) ^ (q / 2)` is at most
+`‖x‖ ^ q`. -/
+theorem norm_sq_add_rpow_div_two_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c)
+    {x : E} (hx : x ≠ 0) {q : ℝ} (hq : q ≤ 0) : (‖x‖ ^ 2 + c) ^ (q / 2) ≤ ‖x‖ ^ q :=
+  (sq_add_rpow_le (norm_ne_zero_iff.2 hx) hc (by linarith)).trans_eq
+    (by rw [add_zero, Real.sq_rpow_div_two (norm_nonneg x)])
 
 /-- For `c > 0` the map `x ↦ (‖x‖ ^ 2 + c) ^ q` is continuous, for every exponent `q`. -/
-theorem continuous_rpow_norm_sq_add {c : ℝ} (hc : 0 < c) (q : ℝ) :
-    Continuous fun x : E => (‖x‖ ^ 2 + c) ^ q :=
+theorem continuous_norm_sq_add_rpow {E : Type*} [SeminormedAddCommGroup E] {c : ℝ} (hc : 0 < c)
+    (q : ℝ) : Continuous fun x : E => (‖x‖ ^ 2 + c) ^ q :=
   (by fun_prop : Continuous fun x : E => ‖x‖ ^ 2 + c).rpow_const fun x => Or.inl (by positivity)
 
 end Norm
