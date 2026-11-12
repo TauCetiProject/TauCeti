@@ -128,10 +128,9 @@ theorem souriau_eq_souriau_iff_realImage_eq {U V : unitaryGroup n ℂ} :
       rw [map_mul, map_one, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply] at this
       rw [← transpose_map]
       exact this
-    apply Subtype.ext
-    simp only [Unitary.val_toUnits_apply] at hVO
-    rw [coe_souriau, coe_souriau, hVO, transpose_mul, mul_assoc,
-      ← mul_assoc _ _ (U : Matrix n n ℂ)ᵀ, hOO, one_mul]
+    have hV : V = U * ⟨O.map ((↑) : ℝ → ℂ), map_ofReal_mem_unitaryGroup hO⟩ :=
+      Subtype.ext (by simpa using hVO)
+    rw [hV, souriau_mul_of_mul_transpose_eq_one _ _ hOO]
 
 /-- The **loop of Lagrangians** `t ↦ γ t ℝⁿ` of a path `γ` of unitary frames whose Souriau maps
 agree at the endpoints, as a loop of maximal totally real subspaces of `ℂⁿ`. -/
@@ -163,19 +162,20 @@ theorem maslovPhase_eq_det_sq (U : unitaryGroup n ℂ) {L : Submodule ℝ (Eucli
     (hLU : L = (U : Matrix n n ℂ).realImage) :
     isMaximalTotallyReal_realSubspace.maslovPhase hL = (U : Matrix n n ℂ).det ^ 2 := by
   have hdet : (U : Matrix n n ℂ).det ≠ 0 := GeneralLinearGroup.det_ne_zero (Unitary.toUnits U)
+  -- `det_toEuclideanCLE` is stated over a general `RCLike` field, so its instances on
+  -- `EuclideanSpace ℂ n` agree with the ones in the phase only up to unfolding and `rw` cannot
+  -- match it; restate it for the `toLinearEquiv` coercion produced by `maslovPhase_map`.
+  have hdetU : LinearMap.det (((U : Matrix n n ℂ).toEuclideanCLE hdet).toLinearEquiv :
+      EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n) = (U : Matrix n n ℂ).det :=
+    det_toEuclideanCLE _ hdet
   rw [IsMaximalTotallyReal.maslovPhase_congr _ _
       (isMaximalTotallyReal_realSubspace.map_linearEquiv
         ((U : Matrix n n ℂ).toEuclideanCLE hdet).toLinearEquiv)
       (hLU.trans (realImage_eq_map_toEuclideanCLE hdet)),
-    IsMaximalTotallyReal.maslovPhase_map,
-    show LinearMap.det (((U : Matrix n n ℂ).toEuclideanCLE hdet).toLinearEquiv :
-      EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n) = (U : Matrix n n ℂ).det from
-      det_toEuclideanCLE _ hdet, div_eq_iff ((map_ne_zero _).2 hdet), sq, mul_assoc]
-  -- `conj (det U) * det U = 1` since `det U` is unitary.
-  have hunit : conj (U : Matrix n n ℂ).det * (U : Matrix n n ℂ).det = 1 := by
-    have h1 := congrArg det (star_mul_self U)
-    rwa [det_mul, det_one, star_eq_conjTranspose, det_conjTranspose, RCLike.star_def] at h1
-  rw [mul_comm (U : Matrix n n ℂ).det (conj (U : Matrix n n ℂ).det), hunit, mul_one]
+    IsMaximalTotallyReal.maslovPhase_map, hdetU, div_eq_iff ((map_ne_zero _).2 hdet), sq,
+    mul_assoc, mul_comm _ (conj _), ← RCLike.star_def,
+    -- `conj (det U) * det U = 1` since `det U` is unitary.
+    Unitary.star_mul_self_of_mem (det_of_mem_unitary U.2), mul_one]
 
 /-- **Loop comparison.** The native Maslov index of the loop of Lagrangians `t ↦ γ t ℝⁿ` of a path
 `γ` of unitary frames that closes up is the Robbin–Salamon index of `γ`. -/
