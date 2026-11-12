@@ -147,11 +147,9 @@ formulas of Diamond–Shurman §3.5.
   the same orbit differ by a nonzero constant after transport along `Γ`.
 * `TauCeti.Subgroup.CuspDatum.differentiableAt_automorphyDescent`: holomorphy of the coefficient
   at the points of the horodisc.
-* `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_mem`,
-  `TauCeti.Subgroup.CuspDatum.automorphyFrame_compatible` and
-  `TauCeti.Subgroup.CuspDatum.smul_cusp_eq_of_mem_horodisc_of_smul_mem_horodisc`: the
-  transformation law of the frame for the whole cusp stabilizer in `Γ'`, and its compatibility
-  on a precisely invariant horodisc.
+* `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_mem` and
+  `TauCeti.Subgroup.CuspDatum.automorphyFrame_compatible`: the transformation law of the frame
+  for the whole cusp stabilizer in `Γ'`, and its compatibility on a precisely invariant horodisc.
 * `TauCeti.Subgroup.CuspDatum.differentiableAt_automorphyDescent_automorphyExtension`,
   `TauCeti.Subgroup.CuspDatum.automorphyFrame_mul_automorphyDescent_automorphyExtension` and
   `TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_ne_zero`: the transition
@@ -340,7 +338,7 @@ include hs hfd in
 private theorem mdifferentiableAt_slash_inv {z : ℍ} (hz : A < z.im) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) z := by
   have hτ : s⁻¹ • z ∈ horodisc D A := (inv_smul_mem_horodisc_iff hs).mpr hz
-  refine MDifferentiableAt.slash_of_det_pos k (by simp) ?_
+  refine MDifferentiableAt.slash ?_ k
   rw [Matrix.SpecialLinearGroup.mapGL_smul]
   exact (hfd _ hτ).mdifferentiableAt ((isOpen_horodisc D A).mem_nhds hτ)
 
@@ -748,8 +746,7 @@ theorem differentiableAt_automorphyUntwist_sqrtCoordinate {τ : ℍ} (hτ : τ �
   rw [automorphyUntwist_def, UpperHalfPlane.cuspFunction, sqrtCoordinate_def, ← hs, pslMk_smul]
   exact TauCeti.UpperHalfPlane.differentiableAt_cuspFunction_qParam_of_lt_im
     (by positivity [D.width_pos]) (fun z hz ↦ slash_inv_two_mul_vadd hs hg hf hz) hτ'
-    (MDifferentiableAt.slash_of_det_pos k (by simp)
-      (by rwa [Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul]))
+    (MDifferentiableAt.slash (by rwa [Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul]) k)
 
 include hs hg hk hf in
 /-- **The coefficient of a section is holomorphic at the cusp coordinate of every point of the
@@ -839,17 +836,6 @@ theorem automorphyFrame_compatible
       automorphyFrame D s k r (g • σ) =
         denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * automorphyFrame D s k r σ :=
   fun g hg σ hσ hgσ ↦ automorphyFrame_smul_of_mem hΓ hs hk hg (hprec g hg σ hσ hgσ) σ
-
-/-- **High horodiscs are precisely invariant under the lifts of `Γ`.** For a discrete `Γ` and
-`Γ' ≤ SL(2, ℝ)` mapping into `Γ`, an element of `Γ'` moving a point of the horodisc of height at
-least the width into it fixes the cusp. This is
-`TauCeti.Subgroup.CuspDatum.mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc` for the lifts. -/
-theorem smul_cusp_eq_of_mem_horodisc_of_smul_mem_horodisc [DiscreteTopology Γ]
-    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) ≤ Γ) (hA : D.width ≤ A)
-    {g : SL(2, ℝ)} (hg : g ∈ Γ') {σ : ℍ} (hσ : σ ∈ horodisc D A) (hgσ : g • σ ∈ horodisc D A) :
-    (g : PSL(2, ℝ)) • D.cusp = D.cusp :=
-  mem_stabilizer_iff.mp (mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc D hA hσ
-    (g := ⟨g, hΓ (_root_.Subgroup.mem_map_of_mem _ hg)⟩) (by rwa [Subgroup.mk_smul, pslMk_smul]))
 
 variable (hgΓ : g ∈ Γ')
   (hF' : ∀ g ∈ Γ', ∀ σ ∈ U', g • σ ∈ U' →
