@@ -76,6 +76,30 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
   {φ : V → M} {y : V} {s : S}
 
+variable (i) in
+/-- The linear map `v ↦ [dφ_y v]` from `V` to the normal space at `s`. For `φ y = i s`, its
+bijectivity is the transversality of the slice `φ` to the submanifold. -/
+private def sliceNormalMap (φ : V → M) (y : V) (s : S) : V →ₗ[ℝ] i.NormalSpace s hn :=
+  -- Every tangent space of `M` is the model space `E`, so `dφ_y` lands in `T_{i s} M`.
+  (i.normalClass s hn).comp ((mfderiv 𝓘(ℝ, V) I φ y).toLinearMap : V →ₗ[ℝ] E)
+
+omit [I.Boundaryless] [IsManifold I 2 M] in
+private theorem sliceNormalMap_apply (v : V) :
+    i.sliceNormalMap hn φ y s v = i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
+  rfl
+
+omit [I.Boundaryless] [IsManifold I 2 M] in
+private theorem surjective_sliceNormalMap_iff :
+    Surjective (i.sliceNormalMap hn φ y s) ↔
+      Surjective fun v : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
+  Iff.rfl
+
+omit [I.Boundaryless] [IsManifold I 2 M] in
+private theorem bijective_sliceNormalMap_iff :
+    Bijective (i.sliceNormalMap hn φ y s) ↔
+      Bijective fun v : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
+  Iff.rfl
+
 namespace IsCriticalSubmanifold
 
 variable (h : i.IsCriticalSubmanifold f)
@@ -107,22 +131,11 @@ theorem fderiv_fderiv_comp_apply (hφy : φ y = i s) (hφ : ContMDiffAt 𝓘(ℝ
   rw [criticalHessian_modelSpace] at key
   exact key.trans (h.normalHessian_normalClass hn s _ _).symm
 
-/-- The linear map `v ↦ [dφ_y v]` from `V` to the normal space at `s`, for `φ y = i s`. Its
-bijectivity is the transversality of the slice `φ` to the submanifold. -/
-private def sliceNormalMap (_hφy : φ y = i s) : V →ₗ[ℝ] i.NormalSpace s hn :=
-  -- Every tangent space of `M` is the model space `E`, so `dφ_y` lands in `T_{i s} M`.
-  (i.normalClass s hn).comp ((mfderiv 𝓘(ℝ, V) I φ y).toLinearMap : V →ₗ[ℝ] E)
-
-omit h [I.Boundaryless] [IsManifold I 2 M] in
-private theorem sliceNormalMap_apply (hφy : φ y = i s) (v : V) :
-    sliceNormalMap hn hφy v = i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
-  rfl
-
 /-- In terms of `sliceNormalMap`, the Hessian of a slice is the normal Hessian. -/
 private theorem fderiv_fderiv_comp_apply_sliceNormalMap (hφy : φ y = i s)
     (hφ : ContMDiffAt 𝓘(ℝ, V) I 2 φ y) (u w : V) :
     fderiv ℝ (fderiv ℝ (f ∘ φ)) y u w =
-      h.normalHessian hn s (sliceNormalMap hn hφy u) (sliceNormalMap hn hφy w) := by
+      h.normalHessian hn s (i.sliceNormalMap hn φ y s u) (i.sliceNormalMap hn φ y s w) := by
   rw [sliceNormalMap_apply, sliceNormalMap_apply]
   exact h.fderiv_fderiv_comp_apply hn hφy hφ u w
 
@@ -136,9 +149,7 @@ theorem ker_normalHessian_eq_bot_of_isNondegenerateCriticalPoint_comp (hφy : φ
     LinearMap.ker (h.normalHessian hn s) = ⊥ := by
   obtain ⟨e, he⟩ := hN.isInvertible
   refine (Submodule.eq_bot_iff _).mpr fun p hp ↦ ?_
-  have hsurj' : Surjective (sliceNormalMap hn hφy) := by
-    simpa only [← sliceNormalMap_apply hn hφy] using hsurj
-  obtain ⟨v, rfl⟩ := hsurj' p
+  obtain ⟨v, rfl⟩ := ((surjective_sliceNormalMap_iff hn).2 hsurj) p
   -- A normal class in the kernel of the normal Hessian pairs to zero with every normal class, so
   -- its preimage lies in the kernel of the invertible Hessian of the slice.
   have hv : v = 0 := by
@@ -157,14 +168,13 @@ at `y` is the Morse index of `f` at `i s`. -/
 theorem morseIndex_comp (hφy : φ y = i s) (hφ : ContMDiffAt 𝓘(ℝ, V) I 2 φ y)
     (hbij : Bijective fun v : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v)) :
     morseIndex (f ∘ φ) y = manifoldMorseIndex I f (i s) := by
-  have hbij' : Bijective (sliceNormalMap hn hφy) := by
-    simpa only [← sliceNormalMap_apply hn hφy] using hbij
-  let L : V ≃ₗ[ℝ] i.NormalSpace s hn := LinearEquiv.ofBijective _ hbij'
+  let L : V ≃ₗ[ℝ] i.NormalSpace s hn :=
+    LinearEquiv.ofBijective _ ((bijective_sliceNormalMap_iff hn).2 hbij)
   have hQ : hessianQuadraticForm (f ∘ φ) y =
       (h.normalHessian hn s).toQuadraticMap.comp L.toLinearMap := by
     ext v
     rw [hessianQuadraticForm_apply, h.fderiv_fderiv_comp_apply_sliceNormalMap hn hφy hφ v v]
-    rfl
+    simp [L]
   rw [morseIndex_def, hQ, ← h.sigNeg_normalHessian hn s]
   exact QuadraticMap.Equivalent.sigNeg_eq
     ⟨(QuadraticMap.isometryEquivOfCompLinearEquiv (h.normalHessian hn s).toQuadraticMap L).symm⟩
@@ -188,9 +198,8 @@ theorem isNondegenerateCriticalPoint_comp [FiniteDimensional ℝ V] (hφy : φ y
   refine ⟨(hf.comp y hφ).contDiffAt,
     h.toIsCriticalSubmanifold.fderiv_comp_eq_zero hφy (hφ.mdifferentiableAt two_ne_zero),
     ContinuousLinearMap.isInvertible_of_injective ?_⟩
-  have hbij' : Bijective (IsCriticalSubmanifold.sliceNormalMap hn hφy) := by
-    simpa only [← IsCriticalSubmanifold.sliceNormalMap_apply hn hφy] using hbij
-  exact h.injective_of_normalHessian_eq hn (LinearEquiv.ofBijective _ hbij') fun u w ↦
+  exact h.injective_of_normalHessian_eq hn
+    (LinearEquiv.ofBijective _ ((bijective_sliceNormalMap_iff hn).2 hbij)) fun u w ↦
     (h.toIsCriticalSubmanifold.fderiv_fderiv_comp_apply_sliceNormalMap hn hφy hφ u w).symm
 
 end IsNondegenerateCriticalSubmanifold
