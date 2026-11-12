@@ -34,6 +34,8 @@ disc and `m_ρ` the divisor of `f` there. For a finitely supported exponent `d`,
 `∏ᶠ u, (· - u) ^ d u` at a point is a finite product
 (`Function.FactorizedRational.finprod_apply_eq_prod`), and its logarithmic derivative at a point
 `z` with `d z = 0` is `∑ᶠ u, d u / (z - u)` (`Function.FactorizedRational.logDeriv_eq_finsum`).
+For `0 ≤ d' ≤ d` the product splits into the products for `d'` and `d - d'`
+(`Function.FactorizedRational.finprod_eq_finprod_mul_finprod_sub`).
 -/
 
 public section
@@ -111,16 +113,45 @@ theorem logDeriv_eq_finsum (hd : d.support.Finite) {z : 𝕜} (hz : d z = 0) :
   have hzu (u : 𝕜) (hu : u ∈ hd.toFinset) : z - u ≠ 0 :=
     sub_ne_zero.2 fun h ↦ hd.mem_toFinset.1 hu (h ▸ hz)
   rw [finprod_eq_prod_of_mulSupport_subset _ (s := hd.toFinset)
-      (by rw [mulSupport d, hd.coe_toFinset]),
-    show (∏ u ∈ hd.toFinset, (· - u) ^ d u : 𝕜 → 𝕜) = ∏ u ∈ hd.toFinset, fun w ↦ (w - u) ^ d u
-      from rfl,
-    logDeriv_prod (f := fun u w ↦ (w - u) ^ d u) (fun u hu ↦ zpow_ne_zero _ (hzu u hu))
+      (by rw [mulSupport d, hd.coe_toFinset])]
+  simp only [Pi.pow_def]
+  rw [logDeriv_prod (f := fun u w ↦ (w - u) ^ d u) (fun u hu ↦ zpow_ne_zero _ (hzu u hu))
       fun u hu ↦ (differentiableAt_id.sub_const u).zpow (.inl (hzu u hu)),
     finsum_eq_sum_of_support_subset (s := hd.toFinset)]
   · refine Finset.sum_congr rfl fun u _ ↦ ?_
     rw [logDeriv_fun_zpow (f := fun w ↦ w - u) (by fun_prop)]
     simp [logDeriv_apply, div_eq_mul_inv]
   · exact fun u hu ↦ hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
+
+/-- **Splitting a factorized rational function.** If `0 ≤ d' ≤ d` pointwise and `d` has finite
+support, then `∏ᶠ u, (· - u) ^ d u` is the product of the factorized rational functions with
+exponents `d'` and `d - d'`. -/
+theorem finprod_eq_finprod_mul_finprod_sub {d' : 𝕜 → ℤ} (hd : d.support.Finite)
+    (h₀ : ∀ u, 0 ≤ d' u) (h : ∀ u, d' u ≤ d u) :
+    (∏ᶠ u, (· - u) ^ d u) = (∏ᶠ u, (· - u) ^ d' u) * ∏ᶠ u, (· - u) ^ (d u - d' u) := by
+  have hfin {e : 𝕜 → ℤ} (he : e.support.Finite) :
+      (fun u ↦ (· - u) ^ e u : 𝕜 → 𝕜 → 𝕜).HasFiniteMulSupport := by
+    rw [Function.HasFiniteMulSupport, mulSupport]
+    exact he
+  have hd' : d'.support.Finite := hd.subset fun u hu h' ↦ hu <| by
+    have := h₀ u
+    have := h u
+    omega
+  have hsub : (fun u ↦ d u - d' u).support.Finite := hd.subset fun u hu h' ↦ hu <| by
+    have := h₀ u
+    have := h u
+    beta_reduce
+    omega
+  rw [← finprod_mul_distrib (hfin hd') (hfin hsub)]
+  refine finprod_congr fun u ↦ funext fun x ↦ ?_
+  simp only [Pi.mul_apply, Pi.pow_apply]
+  rw [← zpow_add']
+  · simp
+  · have := h₀ u
+    have := h u
+    rcases eq_or_ne (d u) 0 with h' | h'
+    · exact .inr (.inr (by omega))
+    · exact .inr (.inl (by omega))
 
 end Function.FactorizedRational
 
@@ -141,46 +172,33 @@ theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)
         f z = (∏ᶠ ρ, (z - ρ) ^ divisor f (closedBall z₀ r) ρ) * G z := by
   classical
   set D := divisor f (closedBall z₀ R)
-  set D' := divisor f (closedBall z₀ r)
+  set D' := divisor f (closedBall z₀ r) with hD'_def
+  -- Extract all zeros of `f` on the large disc: `f = (∏ᶠ u, (· - u) ^ D u) • g` off a
+  -- codiscrete set, with `g` analytic and zero-free there.
   have hz₀R : z₀ ∈ closedBall z₀ R := mem_closedBall_self hR.le
   have hconn : IsConnected (closedBall z₀ R) :=
     (convex_closedBall z₀ R).isConnected ⟨z₀, hz₀R⟩
   obtain ⟨g, hg, hg0, hfg⟩ := hf.meromorphicOn.extract_zeros_poles
     (fun u ↦ hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ u.2)
     (D.finiteSupport (isCompact_closedBall z₀ R))
+  -- The divisor on the small disc is the restriction of `D`, so `0 ≤ D' ≤ D`.
   have hD' (ρ : ℂ) : D' ρ = if ρ ∈ closedBall z₀ r then D ρ else 0 := by
-    rw [show D' = divisor f (closedBall z₀ r) from rfl,
-      ← hf.meromorphicOn.divisor_restrict (closedBall_subset_closedBall hrR),
+    rw [hD'_def, ← hf.meromorphicOn.divisor_restrict (closedBall_subset_closedBall hrR),
       Function.locallyFinsuppWithin.restrict_apply]
   have hD (ρ : ℂ) : 0 ≤ D ρ := hf.divisor_nonneg ρ
   have hD'D (ρ : ℂ) : 0 ≤ D' ρ ∧ D' ρ ≤ D ρ := by
     rw [hD']; split_ifs <;> simp [hD ρ]
-  have hfin {d : ℂ → ℤ} (hd : d.support.Finite) :
-      (fun u ↦ (· - u) ^ d u : ℂ → ℂ → ℂ).HasFiniteMulSupport := by
-    rw [Function.HasFiniteMulSupport, Function.FactorizedRational.mulSupport]
-    exact hd
-  have hfinD : (fun u ↦ D u).support.Finite := D.finiteSupport (isCompact_closedBall _ _)
-  have hfinE : (fun u ↦ D u - D' u).support.Finite := hfinD.subset fun u hu h ↦ hu <| by
-    have := hD'D u
-    simp only [Function.mem_support] at h hu ⊢
-    omega
-  have hsplit : (∏ᶠ u, (· - u) ^ D u) =
-      (∏ᶠ u, (· - u) ^ D' u) * ∏ᶠ u, (· - u) ^ (D u - D' u) := by
-    rw [← finprod_mul_distrib (hfin (D'.finiteSupport (isCompact_closedBall _ _))) (hfin hfinE)]
-    refine finprod_congr fun u ↦ funext fun x ↦ ?_
-    simp only [Pi.mul_apply, Pi.pow_apply]
-    rw [← zpow_add']
-    · simp
-    · have := hD'D u
-      rcases eq_or_ne (D u) 0 with h | h
-      · exact .inr (.inr (by omega))
-      · exact .inr (.inl (by omega))
+  -- Split the zeros into those in the small disc (exponent `D'`) and the rest (`D - D'`).
+  have hsplit := Function.FactorizedRational.finprod_eq_finprod_mul_finprod_sub
+    (D.finiteSupport (isCompact_closedBall _ _)) (fun u ↦ (hD'D u).1) (fun u ↦ (hD'D u).2)
+  -- `G` is the factor for the zeros outside the small disc times `g`.
   refine ⟨(∏ᶠ u, (· - u) ^ (D u - D' u)) * g, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
   · exact (Function.FactorizedRational.analyticAt (d := fun u ↦ D u - D' u)
       (sub_nonneg.2 (hD'D z).2)).mul (hg z hz)
   · refine mul_ne_zero (Function.FactorizedRational.ne_zero (d := fun u ↦ D u - D' u) ?_)
       (hg0 ⟨z, closedBall_subset_closedBall hrR hz⟩)
     simp [hD' z, hz]
+  -- `f` agrees with `(∏ᶠ u, (· - u) ^ D u) • g` near `z₀`, hence on the whole connected disc.
   · have hQ : AnalyticOnNhd ℂ ((∏ᶠ u, (· - u) ^ D u) • g) (closedBall z₀ R) := fun x hx ↦
       (Function.FactorizedRational.analyticAt (d := fun u ↦ D u) (hD x)).smul (hg x hx)
     have hfreq : ∃ᶠ x in 𝓝[≠] z₀, f x = ((∏ᶠ u, (· - u) ^ D u) • g) x := by

@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Complex.JensenFormula
 public import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.Complex.AbsMax
-import Mathlib.Analysis.Complex.BorelCaratheodory
-import Mathlib.Analysis.Complex.Liouville
+import TauCeti.Analysis.Complex.BorelCaratheodory
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.JensenFormula
@@ -38,15 +37,13 @@ logarithmic derivative of `P` is `∑ m_ρ / (z - ρ)`
 (`Function.FactorizedRational.logDeriv_eq_finsum`). A holomorphic logarithm `h` of `G / G z₀` on
 the smaller disc has `h z₀ = 0` and `re h ≤ log M`, so the Borel–Carathéodory theorem bounds
 `‖h‖`, and the Cauchy estimate bounds `h' = logDeriv f - logDeriv P`. The last two steps form the
-standalone lemma `Complex.norm_deriv_le_of_forall_mem_ball_re_le`.
+lemma `Complex.norm_deriv_le_of_forall_mem_ball_re_le` in
+`TauCeti.Analysis.Complex.BorelCaratheodory`.
 
 ## Main results
 
 * `Complex.norm_le_of_forall_mem_sphere_norm_mul_le`: if `‖P w G w‖ ≤ M ‖P z₀ G z₀‖` on a sphere
   where `P` is nonzero and at least as large as at the centre, then `‖G‖ ≤ M ‖G z₀‖` on the disc.
-* `Complex.norm_deriv_le_of_forall_mem_ball_re_le`: the derivative of a function holomorphic on a
-  ball, vanishing at the centre and with real part at most `A`, is bounded by
-  `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * A`.
 * `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_le`: the lemma for zeros in `closedBall z₀ r`
   with `2 r ≤ R` and any `z` with `‖z - z₀‖ < r`, with the bound
   `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * log M`.
@@ -63,58 +60,6 @@ standalone lemma `Complex.norm_deriv_le_of_forall_mem_ball_re_le`.
 public section
 
 open Metric MeromorphicOn Filter Topology Set
-
-/-- **Derivative bound from a one-sided real-part bound.** Let `g` be holomorphic on
-`ball z₀ r` with `g z₀ = 0` and `re (g w) ≤ A` there. Then at every `z` with
-`‖z - z₀‖ < r`, `‖deriv g z‖ ≤ 4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * A`. -/
-theorem Complex.norm_deriv_le_of_forall_mem_ball_re_le {g : ℂ → ℂ} {z₀ : ℂ} {r A : ℝ}
-    (hg : DifferentiableOn ℂ g (ball z₀ r)) (hg₀ : g z₀ = 0)
-    (hre : ∀ w ∈ ball z₀ r, (g w).re ≤ A) {z : ℂ} (hz : ‖z - z₀‖ < r) :
-    ‖deriv g z‖ ≤ 4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * A := by
-  set d := ‖z - z₀‖
-  have hd : 0 ≤ d := norm_nonneg _
-  have hr : 0 < r := hd.trans_lt hz
-  have hA : 0 ≤ A := by simpa [hg₀] using hre z₀ (mem_ball_self hr)
-  -- Borel–Carathéodory for every real-part bound `K > A`.
-  have hBC (K : ℝ) (hK : A < K) (w : ℂ) (hw : w ∈ ball z₀ r) :
-      ‖g w‖ ≤ 2 * K * ‖w - z₀‖ / (r - ‖w - z₀‖) := by
-    have hball (u : ℂ) (hu : u ∈ ball (0 : ℂ) r) : z₀ + u ∈ ball z₀ r := by
-      simpa [dist_eq_norm] using hu
-    have := Complex.borelCaratheodory_zero (f := fun u ↦ g (z₀ + u)) (M := K)
-      (hA.trans_lt hK) (hg.comp (by fun_prop) fun u hu ↦ hball u hu)
-      (fun u hu ↦ (hre _ (hball u hu)).trans hK.le) hr
-      (by simpa [dist_eq_norm] using hw) (by simpa using hg₀)
-    simpa using this
-  -- The Cauchy estimate on the circle of radius `(r - d) / 2` about `z`.
-  have hderiv (K : ℝ) (hK : A < K) :
-      ‖deriv g z‖ ≤ 4 * (r + d) / (r - d) ^ 2 * K := by
-    have hK0 : 0 < K := hA.trans_lt hK
-    have hδ : 0 < (r - d) / 2 := by linarith
-    have hsub : closedBall z ((r - d) / 2) ⊆ ball z₀ r := fun w hw ↦ by
-      rw [mem_closedBall, dist_eq_norm] at hw
-      rw [mem_ball, dist_eq_norm]
-      linarith [norm_sub_le_norm_sub_add_norm_sub w z z₀]
-    have := Complex.norm_deriv_le_of_forall_mem_sphere_norm_le hδ
-      (DifferentiableOn.diffContOnCl (by rw [closure_ball z hδ.ne']; exact hg.mono hsub))
-      (C := 2 * K * ((r + d) / 2) / (r - (r + d) / 2)) fun w hw ↦ by
-        have hw' : ‖w - z₀‖ ≤ (r + d) / 2 := by
-          rw [mem_sphere, dist_eq_norm] at hw
-          linarith [norm_sub_le_norm_sub_add_norm_sub w z z₀]
-        refine (hBC K hK w (hsub (sphere_subset_closedBall hw))).trans ?_
-        gcongr
-        linarith
-    refine this.trans_eq ?_
-    have hrd : r - d ≠ 0 := by linarith
-    rw [show r - (r + d) / 2 = (r - d) / 2 by ring]
-    field_simp
-    ring
-  -- Let `K` decrease to `A`.
-  have hc : 0 < 4 * (r + d) / (r - d) ^ 2 := by
-    have : 0 < r - d := by linarith
-    positivity
-  refine le_of_forall_gt_imp_ge_of_dense fun a ha ↦ ?_
-  have := hderiv (a / (4 * (r + d) / (r - d) ^ 2)) (by rwa [lt_div_iff₀' hc])
-  rwa [mul_div_cancel₀ _ hc.ne'] at this
 
 /-- **Maximum modulus for a cofactor.** Let `G` be holomorphic on `closedBall z₀ R`, and let `P`
 be nonzero on `sphere z₀ R` with `‖P z₀‖ ≤ ‖P w‖` there. If `‖P w * G w‖ ≤ M ‖P z₀ * G z₀‖` on the
