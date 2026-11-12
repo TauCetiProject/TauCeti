@@ -53,6 +53,8 @@ weights this makes the moment function Morse–Bott.
 * `TauCeti.contMDiff_projectiveMomentFunction`: it is smooth.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_iff`: for arbitrary weights its critical
   points are the eigenlines of the diagonal form.
+* `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff`: the critical points of
+  value `c` are the lines in the weight space of `c`.
 * `TauCeti.criticalPoints_projectiveMomentFunction`: for distinct weights its critical points are
   the coordinate points `[eₖ]`.
 * `TauCeti.ProjectiveMomentChart.one_add_sum_mul_fderiv_fderiv_model_apply` and
@@ -514,6 +516,34 @@ theorem mk_mem_criticalPoints_projectiveMomentFunction_iff {w : Fin (n + 1) → 
   · rintro ⟨hf, h⟩ j
     rw [← hf] at h
     exact (h j).imp_left (hz j).2
+
+/-- **The critical points of a given value.** The line through `v` is a critical point of the
+moment function with value `c` exactly when `v` lies in the weight space of `c`: its coordinates
+`v i` of weight `w i ≠ c` vanish. -/
+theorem mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff {w : Fin (n + 1) → ℝ} {c : ℝ}
+    {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) :
+    mk 𝕜 v hv ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) ∧
+        projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = c ↔
+      ∀ i, w i ≠ c → v i = 0 := by
+  rw [mk_mem_criticalPoints_projectiveMomentFunction_iff hv]
+  refine ⟨fun ⟨h, hc⟩ i hi ↦ (h i).resolve_right (hc ▸ hi), fun h ↦ ?_⟩
+  -- Every nonzero coordinate carries the weight `c`, so the value at `[v]` is `c`.
+  have hval : projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = c := by
+    obtain ⟨k, hk⟩ := Function.ne_iff.1 hv
+    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 :=
+      (pow_pos (norm_pos_iff.2 hk) 2).trans_le
+        (Finset.single_le_sum (f := fun i ↦ ‖v i‖ ^ 2) (fun i _ ↦ by positivity)
+          (Finset.mem_univ k))
+    rw [projectiveMomentFunction_mk, div_eq_iff hpos.ne', Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    by_cases hi : w i = c
+    · rw [hi]
+    · simp [h i hi]
+  refine ⟨fun i ↦ ?_, hval⟩
+  rw [hval]
+  by_cases hi : w i = c
+  · exact Or.inr hi
+  · exact Or.inl (h i hi)
 
 /-- **The critical points of the moment function.** For pairwise distinct weights, the critical
 points of the moment function are exactly the `n + 1` coordinate points `[eₖ]`. -/

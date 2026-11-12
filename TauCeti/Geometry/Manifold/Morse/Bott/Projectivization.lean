@@ -44,8 +44,6 @@ and the projective line `{v₂ = 0}`, a circle of maxima of index `1`.
 
 ## Main results
 
-* `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff`: the critical points of
-  value `c` are the lines in the weight space of `c`.
 * `TauCeti.isNondegenerateCriticalSubmanifold_projectiveMomentFunction`: the projective subspace
   of a weight space is a Morse–Bott critical submanifold.
 * `TauCeti.manifoldMorseIndex_projectiveMomentFunction_of_mem_criticalPoints`: the Morse index at a
@@ -72,34 +70,6 @@ namespace TauCeti
 open Projectivization ProjectiveMomentChart
 
 variable {𝕜 : Type*} [RCLike 𝕜] {n m : ℕ} {w : Fin (n + 1) → ℝ} {c : ℝ}
-
-/-- **The critical points of a given value.** The line through `v` is a critical point of the
-moment function with value `c` exactly when `v` lies in the weight space of `c`: its coordinates
-`v i` of weight `w i ≠ c` vanish. -/
-theorem mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff {v : Fin (n + 1) → 𝕜}
-    (hv : v ≠ 0) :
-    mk 𝕜 v hv ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) ∧
-        projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = c ↔
-      ∀ i, w i ≠ c → v i = 0 := by
-  rw [mk_mem_criticalPoints_projectiveMomentFunction_iff hv]
-  refine ⟨fun ⟨h, hc⟩ i hi ↦ (h i).resolve_right (hc ▸ hi), fun h ↦ ?_⟩
-  -- Every nonzero coordinate carries the weight `c`, so the value at `[v]` is `c`.
-  have hval : projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = c := by
-    obtain ⟨k, hk⟩ := Function.ne_iff.1 hv
-    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 :=
-      (pow_pos (norm_pos_iff.2 hk) 2).trans_le
-        (Finset.single_le_sum (f := fun i ↦ ‖v i‖ ^ 2) (fun i _ ↦ by positivity)
-          (Finset.mem_univ k))
-    rw [projectiveMomentFunction_mk, div_eq_iff hpos.ne', Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    by_cases hi : w i = c
-    · rw [hi]
-    · simp [h i hi]
-  refine ⟨fun i ↦ ?_, hval⟩
-  rw [hval]
-  by_cases hi : w i = c
-  · exact Or.inr hi
-  · exact Or.inl (h i hi)
 
 /-- At a critical point of value `c`, the kernel of the critical Hessian of the moment function
 has real dimension at most `dim_ℝ 𝕜` times the number of coordinates of weight `c`, less one. It is
