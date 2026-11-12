@@ -134,6 +134,17 @@ theorem ramificationIndex_mul_inertiaDegree :
   refine Fintype.sum_eq_single (⟨𝓂[L], hmem⟩ : ↥(Ideal.primesOver 𝓂[K] 𝒪[L])) fun q hq ↦ ?_
   exact absurd (Subtype.ext (by simpa [hs] using q.2)) hq
 
+variable (K L) in
+/-- The ramification index is unchanged by an equivalence of extensions over the base field. -/
+theorem ramificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
+    [ValuativeExtension K M] (e : L ≃ₐ[K] M) :
+    ramificationIndex K L = ramificationIndex K M := by
+  apply Nat.eq_of_mul_eq_mul_right (inertiaDegree_pos (K := K) (L := L))
+  rw [ramificationIndex_mul_inertiaDegree K L, inertiaDegree_eq_of_algEquiv K L M e,
+    ramificationIndex_mul_inertiaDegree K M]
+  exact e.toLinearEquiv.finrank_eq
+
 /-- **Denominators of base-normalised valuations divide the degree.** If `α` has valuation
 `v_K(x) / q`, in lowest terms, for the valuation of `L` extending `v_K`, then `q ∣ [L : K]`: it
 divides `e(L/K)`, which divides `e(L/K) · f(L/K) = [L : K]`. -/
