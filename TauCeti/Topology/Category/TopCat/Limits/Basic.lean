@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
+public import Mathlib.Topology.Coherent
 
 /-!
 # Basic facts about colimits in `TopCat`
@@ -18,13 +19,17 @@ sense, `TopCat.CWComplex X`, which is a relative CW complex over the map out of 
 
 A directed colimit in `TopCat` along injective transition maps has injective colimit maps
 (`TauCeti.TopCat.injective_ι_of_isColimit`), since the forgetful functor to types preserves it.
+
+The images of the objects of any diagram in `TopCat` cover its colimit
+(`TauCeti.TopCat.iUnion_range_ι_of_isColimit`), and the colimit carries the topology coherent with
+these images (`TauCeti.TopCat.isCoherentWith_range_ι_of_isColimit`).
 -/
 
 public section
 
 open CategoryTheory Limits
 
-universe w u
+universe v w u
 
 namespace TopCat
 
@@ -45,5 +50,27 @@ theorem injective_ι_of_isColimit {J : Type w} [Preorder J] [IsDirectedOrder J]
   obtain ⟨k, g, hk⟩ :=
     (Types.FilteredColimit.isColimit_eq_iff' (isColimitOfPreserves (forget TopCat) hc) x y).1 h
   exact hF (leOfHom g) hk
+
+section Cover
+
+variable {J : Type w} [Category.{v} J] {F : J ⥤ TopCat.{u}} {c : Cocone F}
+
+/-- The images of the objects of a diagram in `TopCat` cover its colimit. -/
+theorem iUnion_range_ι_of_isColimit (hc : IsColimit c) :
+    (⋃ j, Set.range (c.ι.app j) : Set c.pt) = Set.univ :=
+  Set.eq_univ_of_forall fun x ↦ by
+    obtain ⟨j, y, rfl⟩ :=
+      Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) x
+    exact Set.mem_iUnion.2 ⟨j, y, rfl⟩
+
+/-- A colimit in `TopCat` carries the topology coherent with the images of the objects of the
+diagram: a set is open as soon as its trace on each image is open in that image. -/
+theorem isCoherentWith_range_ι_of_isColimit (hc : IsColimit c) :
+    Topology.IsCoherentWith (Set.range fun j ↦ (Set.range (c.ι.app j) : Set c.pt)) :=
+  ⟨fun u hu ↦ (TopCat.isOpen_iff_of_isColimit _ hc u).2 fun j ↦
+    (hu _ (Set.mem_range_self j)).preimage
+      ((c.ι.app j).hom.continuous.subtype_mk Set.mem_range_self)⟩
+
+end Cover
 
 end TauCeti.TopCat

@@ -43,6 +43,8 @@ with that property to one that extends homotopies with values in a space in any 
 * `TauCeti.HasHomotopyExtensionProperty.image` and
   `TauCeti.HasHomotopyExtensionProperty.image_of_isClosed`: transport of the property along a
   homeomorphism, inside one universe and, for a closed subset, across universes.
+* `TauCeti.HasHomotopyExtensionProperty.preimage_val_image_of_isEmbedding`: transport of the
+  property along an embedding onto its range.
 * `TauCeti.HasHomotopyExtensionProperty.image_of_isEmbedding`: cofibrations compose, the image of
   a subset with the property under an embedding whose image has the property has it too.
 * `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`: a homotopy followed by a
@@ -268,6 +270,18 @@ theorem HasHomotopyExtensionProperty.image {X' : Type u} [TopologicalSpace X']
     simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, hsymm]
     rw [hG₁ t ⟨a, ha⟩]
     exact congrArg (fun c => H (t, c)) (Subtype.ext hae)
+
+/-- The homotopy extension property transports along an embedding `j : X → X'` onto its range:
+the image `j '' A`, as a subset of the subspace `range j`, has the homotopy extension property. -/
+theorem HasHomotopyExtensionProperty.preimage_val_image_of_isEmbedding {X' : Type u}
+    [TopologicalSpace X'] (h : HasHomotopyExtensionProperty A) {j : X → X'}
+    (hj : Topology.IsEmbedding j) :
+    HasHomotopyExtensionProperty ((↑) ⁻¹' (j '' A) : Set (range j)) := by
+  have hA : ((↑) ⁻¹' (j '' A) : Set (range j)) = hj.toHomeomorph '' A := by
+    ext ⟨_, x, rfl⟩
+    simp [Subtype.ext_iff, hj.injective.eq_iff]
+  rw [hA]
+  apply h.image
 
 /-- For a closed subset, the homotopy extension property transports along a homeomorphism onto a
 space in an arbitrary universe.  Closedness enters because the cross-universe transport goes

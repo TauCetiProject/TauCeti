@@ -165,11 +165,7 @@ unit speed through the band `a ≤ f ≤ b`, where `a < b`, then for every `c �
 `{f ≤ a}` in `{f ≤ c}` has the homotopy extension property. -/
 theorem hasHomotopyExtensionProperty_range_sublevelInclusion_of_apply_eq_sub {c : ℝ}
     (hac : a ≤ c) : HasHomotopyExtensionProperty (range (sublevelInclusion f a c hac)) := by
-  have hrange : range (sublevelInclusion f a c hac) =
-      ((↑) ⁻¹' {x | f x ≤ a} : Set {x | f x ≤ c}) := by
-    rw [sublevelInclusion_eq_inclusion]
-    exact range_inclusion (sublevel_mono f hac)
-  rw [hrange]
+  rw [range_sublevelInclusion]
   exact ((sublevelNDRPair hf hab φ hφ hφ0 hφf).restrict fun t y hy ↦
     (apply_sublevelNDRPair_deformation_le hf hab φ hφ hφ0 hφf t y).trans
       hy).hasHomotopyExtensionProperty

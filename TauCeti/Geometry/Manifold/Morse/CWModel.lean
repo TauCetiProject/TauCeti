@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Cell.Adjunction
 public import TauCeti.Topology.CWComplex.Classical.AdjunctionModel
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
+import Mathlib.Order.SuccPred.IntervalSucc
 import TauCeti.Geometry.Manifold.Morse.Deformation.Cofibration
 import TauCeti.Geometry.Manifold.Morse.Exhaustion
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
@@ -458,7 +459,7 @@ the `m`-cells of `W 0` together with the `m`-cells of each `W (k + 1)` not comin
 private theorem exists_cwComplex_homotopyEquiv_of_tower (hfc : Continuous f) {a : ℕ → ℝ}
     (ha : StrictMono a) (hcov : ∀ x, ∃ k, f x < a k)
     (hHEP : ∀ k, HasHomotopyExtensionProperty
-      (range (sublevelInclusion f (a k) (a (k + 1)) (ha.monotone k.le_succ))))
+      ((↑) ⁻¹' {x | f x ≤ a k} : Set {x | f x ≤ a (k + 1)}))
     (W : ∀ k, SublevelCWModel f (a k)) (ι : ∀ k, C((W k).W, (W (k + 1)).W))
     (hι : ∀ k, IsClosedEmbedding (ι k)) (hA : ∀ k, HasHomotopyExtensionProperty (range (ι k)))
     (hh : ∀ k w, ((W (k + 1)).equiv (ι k w) : M) = (W k).equiv w)
@@ -474,11 +475,7 @@ private theorem exists_cwComplex_homotopyEquiv_of_tower (hfc : Continuous f) {a 
   have hF (k : ℕ) : F.map (homOfLE (Nat.le_add_right k 1)) = TopCat.ofHom (ι k) :=
     Functor.ofSequence_map_homOfLE_succ _ k
   have hFemb ⦃i l : ℕ⦄ (hil : i ≤ l) : IsClosedEmbedding (F.map (homOfLE hil)) :=
-    TopCat.isClosedEmbedding_map_of_isWellOrderContinuous F (fun k _ ↦ by
-      -- `Order.succ k` is `k + 1` by definition, so this is `hF k`.
-      have : F.map (homOfLE (Order.le_succ k)) = TopCat.ofHom (ι k) := hF k
-      rw [this]
-      exact hι k) hil
+    TopCat.isClosedEmbedding_ofSequence_map _ hι hil
   let hX := colimit.isColimit F
   let X := colimit F
   let j (k : ℕ) : C((W k).W, X) := (colimit.ι F k).hom
@@ -493,12 +490,8 @@ private theorem exists_cwComplex_homotopyEquiv_of_tower (hfc : Continuous f) {a 
   have hS : Monotone S := monotone_nat_of_le_succ fun k ↦ by
     rintro _ ⟨w, rfl⟩
     exact ⟨ι k w, hjι k w⟩
-  have hSX : ⋃ k, S k = univ := eq_univ_of_forall fun x ↦ by
-    obtain ⟨k, w, rfl⟩ := Types.jointly_surjective_of_isColimit
-      (isColimitOfPreserves (forget TopCat) hX) x
-    exact mem_iUnion.2 ⟨k, w, rfl⟩
-  have hSc : IsCoherentWith (range S) := ⟨fun u hu ↦ (TopCat.isOpen_iff_of_isColimit _ hX u).2
-    fun k ↦ (hu _ (mem_range_self k)).preimage ((j k).continuous.subtype_mk mem_range_self)⟩
+  have hSX : ⋃ k, S k = univ := TopCat.iUnion_range_ι_of_isColimit hX
+  have hSc : IsCoherentWith (range S) := TopCat.isCoherentWith_range_ι_of_isColimit hX
   -- Each `S k` is a CW complex, the image of `W k`, and these form a tower.
   let _ (k : ℕ) : RelCWComplex (S k) ∅ :=
     (hj k).relCWComplex (C := univ) (D := ∅) image_univ (image_empty _)
@@ -540,25 +533,17 @@ private theorem exists_cwComplex_homotopyEquiv_of_tower (hfc : Continuous f) {a 
     exact congrArg (fun v ↦ ((W k).equiv v : M)) ((hj k).isEmbedding.toHomeomorph_symm_apply w)
   -- Both towers consist of closed cofibrations, so `g` is a homotopy equivalence.
   have hSH (k : ℕ) : HasHomotopyExtensionProperty ((↑) ⁻¹' S k : Set (S (k + 1))) := by
-    convert (hA k).image (hj (k + 1)).isEmbedding.toHomeomorph using 1
-    ext ⟨_, w, rfl⟩
-    simp only [mem_preimage, mem_image, mem_range, exists_exists_eq_and, Subtype.ext_iff,
-      IsEmbedding.toHomeomorph_apply_coe, (hj (k + 1)).injective.eq_iff, S]
-    exact ⟨fun ⟨v, hv⟩ ↦ ⟨v, (hj (k + 1)).injective ((hjι k v).trans hv)⟩,
-      fun ⟨v, hv⟩ ↦ ⟨v, (hjι k v).symm.trans (congrArg _ hv)⟩⟩
-  have hBH (k : ℕ) :
-      HasHomotopyExtensionProperty ((↑) ⁻¹' {x | f x ≤ a k} : Set {x | f x ≤ a (k + 1)}) := by
-    have hr : range (sublevelInclusion f (a k) (a (k + 1)) (ha.monotone k.le_succ)) =
-        (↑) ⁻¹' {x | f x ≤ a k} := by
-      rw [sublevelInclusion_eq_inclusion]
-      exact range_inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans (ha.monotone k.le_succ))
-    exact hr ▸ hHEP k
+    have : S k = j (k + 1) '' range (ι k) := by
+      rw [← range_comp]
+      exact congrArg range (funext fun w ↦ (hjι k w).symm)
+    rw [this]
+    apply (hA k).preimage_val_image_of_isEmbedding (hj (k + 1)).isEmbedding
   obtain ⟨h, -, -⟩ := exists_homotopyEquiv_of_isCoherentWith (B := fun k ↦ {x | f x ≤ a k}) hS
     (fun _ _ hkl _ hx ↦ hx.trans (ha.monotone hkl)) hSX
     (eq_univ_of_forall fun x ↦ mem_iUnion.2 ((hcov x).imp fun _ hk ↦ hk.le)) hSc
     (.of_nhds fun x ↦ let ⟨k, hk⟩ := hcov x; ⟨_, mem_range_self k,
       Filter.mem_of_superset ((isOpen_lt hfc continuous_const).mem_nhds hk) fun _ hy ↦ le_of_lt hy⟩)
-    hSH hBH g e he
+    hSH hHEP g e he
   -- The cells of the union of the `S k` are the new cells of the stages.
   refine ⟨X, inferInstance, inferInstance, ?_⟩
   rw [← hSX]
@@ -579,28 +564,6 @@ private def SublevelCWModel.iterate {a : ℕ → ℝ} (s : SublevelCWModel f (a 
     ∀ k, SublevelCWModel f (a k)
   | 0 => s
   | k + 1 => t k (iterate s t k)
-
-/-- If the values of `f` lie above `a 0` and below some `a k`, for `a` strictly increasing, then
-every point lies in exactly one band `f⁻¹(a k, a (k + 1)]`. -/
-private def sigmaIocEquiv {a : ℕ → ℝ} (ha : StrictMono a) (ha0 : ∀ x, a 0 < f x)
-    (hcov : ∀ x, ∃ k, f x < a k) (P : M → Prop) :
-    (Σ k, ↥{x | P x ∧ f x ∈ Ioc (a k) (a (k + 1))}) ≃ {x // P x} :=
-  .ofBijective (fun p ↦ ⟨p.2, p.2.2.1⟩) <| by
-    classical
-    refine ⟨fun ⟨k, x, hx⟩ ⟨l, y, hy⟩ hxy ↦ ?_, fun ⟨x, hx⟩ ↦ ?_⟩
-    · obtain rfl : x = y := congrArg Subtype.val hxy
-      obtain rfl : k = l := by
-        by_contra hkl
-        rcases Nat.lt_or_gt_of_ne hkl with hkl | hkl
-        · exact (hx.2.2.trans (ha.monotone hkl)).not_gt hy.2.1
-        · exact (hy.2.2.trans (ha.monotone hkl)).not_gt hx.2.1
-      rfl
-    · -- The band of `x` is that below the first `a k` above `f x`.
-      have hex : ∃ k, f x ≤ a k := (hcov x).imp fun _ hk ↦ hk.le
-      obtain ⟨k, hk⟩ : ∃ k, Nat.find hex = k + 1 :=
-        Nat.exists_eq_succ_of_ne_zero fun h ↦ (ha0 x).not_ge (h ▸ Nat.find_spec hex)
-      refine ⟨⟨k, x, hx, not_le.1 (Nat.find_min hex (hk ▸ k.lt_succ_self)), hk ▸ Nat.find_spec hex⟩,
-        rfl⟩
 
 /-- **The CW model of a proper Morse function** (Milnor, Theorem 3.5). A boundaryless manifold
 `M` carrying a proper Morse function `f` which is bounded below is homotopy equivalent to a
@@ -624,8 +587,9 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
   have : IsEmpty {x | f x ≤ a 0} := ⟨fun x ↦ (ha0 x).not_ge x.2⟩
   let W := SublevelCWModel.iterate ⟨PEmpty.{u + 1}, Homeomorph.empty.toHomotopyEquiv⟩ t
   obtain ⟨X, _, _, _, h, hcell⟩ := exists_cwComplex_homotopyEquiv_of_tower hf.contMDiff.continuous
-    ha hcov (fun k ↦ hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
-      hf.contMDiff (ha k.lt_succ_self) (hcompact k) (hreg k) _)
+    ha hcov (fun k ↦ range_sublevelInclusion f (ha.monotone k.le_succ) ▸
+      hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue hf.contMDiff
+        (ha k.lt_succ_self) (hcompact k) (hreg k) _)
     W (fun k ↦ ι k (W k)) (fun k ↦ hι k (W k)) (fun k ↦ hA k (W k)) (fun k ↦ hh k (W k))
     (fun k m j ↦ (e k (W k) m).symm (.inl j)) fun k m j ↦ funext (he k (W k) m j)
   refine ⟨X, _, ‹_›, ‹_›, h, fun m ↦ ⟨(hcell m).some.trans ?_⟩⟩
@@ -633,13 +597,23 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
   -- critical points in the corresponding band.
   have : IsEmpty (W 0).W := inferInstanceAs (IsEmpty PEmpty)
   have : IsEmpty (cell (univ : Set (W 0).W) m) := ⟨fun j ↦ isEmptyElim (map m j 0)⟩
+  -- As all values of `f` lie above `a 0`, the bands `f⁻¹(a k, a (k + 1)]` partition `M`.
+  let C := {x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}
+  have hU : ⋃ k, Ioc (a k) (a (k + 1)) = Ioi (a 0) :=
+    iUnion_Ioc_map_succ_eq_Ioi (fun k ↦ ha.monotone k.zero_le)
+      (Filter.not_bddAbove_of_tendsto_atTop htop)
+  have hC : ⋃ k, C ∩ f ⁻¹' Ioc (a k) (a (k + 1)) = C := by
+    rw [← inter_iUnion, ← preimage_iUnion, hU]
+    exact inter_eq_left.2 fun x _ ↦ ha0 x
   refine (Equiv.emptySum _ _).trans ((Equiv.sigmaCongrRight fun k ↦ ?_).trans
-    (sigmaIocEquiv ha ha0 hcov (· ∈ {x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})))
+    ((unionEqSigmaOfDisjoint (t := fun k ↦ C ∩ f ⁻¹' Ioc (a k) (a (k + 1))) fun k l hkl ↦
+      ((ha.monotone.pairwise_disjoint_on_Ioc_succ hkl).preimage f).mono inter_subset_right
+        inter_subset_right).symm.trans (Set.equivOfEq hC)))
   refine ((e k (W k) m).subtypeEquiv (q := (· ∈ range Sum.inr)) fun j ↦ ?_).trans
     ((Equiv.ofInjective _ Sum.inr_injective).symm.trans (Equiv.subtypeEquivRight fun x ↦ ?_))
   · rw [← compl_range_inl, mem_compl_iff]
     exact not_congr (exists_congr fun _ ↦ Equiv.symm_apply_eq _)
-  · simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
+  · simp only [C, mem_ofPred_eq, mem_inter_iff, mem_preimage]
     tauto
 
 end TauCeti

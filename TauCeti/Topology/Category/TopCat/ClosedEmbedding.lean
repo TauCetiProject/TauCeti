@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.Preorder.WellOrderContinuous
 public import Mathlib.CategoryTheory.Limits.Types.Coproducts
@@ -25,7 +26,8 @@ complexes:
   (`TauCeti.TopCat.isClosedEmbedding_sigmaMap`);
 * transfinite composition: if every successor map of a well-order-continuous diagram is a closed
   embedding, then so is every transition map
-  (`TauCeti.TopCat.isClosedEmbedding_map_of_isWellOrderContinuous`), and a transfinite composition
+  (`TauCeti.TopCat.isClosedEmbedding_map_of_isWellOrderContinuous`; for a sequence given by its
+  successor maps, `TauCeti.TopCat.isClosedEmbedding_ofSequence_map`), and a transfinite composition
   of closed embeddings is a closed embedding (the `IsStableUnderTransfiniteComposition` instance).
   Mathlib's `MorphismProperty.TransfiniteCompositionOfShape.mem_incl_app` then shows that the map
   from each stage of such a composition to the composite is a closed embedding.
@@ -196,6 +198,18 @@ theorem isClosedEmbedding_map_of_isWellOrderContinuous (F : J ⥤ TopCat.{u})
     · exact isClosedEmbedding_ι_of_isColimit (fun a b hab ↦ ih b.1 b.2 _)
         (F.isColimitOfIsWellOrderContinuous j hj) ⟨i, hij⟩
     · simpa using IsClosedEmbedding.id
+
+/-- If every map `X n ⟶ X (n + 1)` of a sequence in `TopCat` is a closed embedding, then so is every
+transition map of the functor `ℕ ⥤ TopCat` it defines. -/
+theorem isClosedEmbedding_ofSequence_map {X : ℕ → TopCat.{u}} (f : ∀ n, X n ⟶ X (n + 1))
+    (hf : ∀ n, IsClosedEmbedding (f n)) {i j : ℕ} (hij : i ≤ j) :
+    IsClosedEmbedding ((Functor.ofSequence f).map (homOfLE hij)) :=
+  isClosedEmbedding_map_of_isWellOrderContinuous _ (fun n _ ↦ by
+    -- `Order.succ n` is `n + 1` by definition, so this is the `n`-th map of the sequence.
+    have : (Functor.ofSequence f).map (homOfLE (Order.le_succ n)) = f n :=
+      Functor.ofSequence_map_homOfLE_succ f n
+    rw [this]
+    exact hf n) hij
 
 /-- In a transfinite composition of closed embeddings in `TopCat`, the map from each stage to the
 composite is a closed embedding. Once the `IsStableUnderTransfiniteComposition` instance below is
