@@ -48,8 +48,7 @@ example (x : uniformTilt p (ℂ_[p] × ℂ_[p])) (n : ℕ) :
         (by simpa only [RingEquiv.coe_prodComm] using continuous_swap)
         (by simpa only [RingEquiv.coe_prodComm_symm] using continuous_swap) x) =
         (uniformTilt.coeff p (ℂ_[p] × ℂ_[p]) n x).swap := by
-  rw [RingEquiv.coeff_uniformTilt]
-  rfl
+  rw [RingEquiv.coeff_uniformTilt, RingEquiv.coe_prodComm]
 
 example :
     (RingEquiv.prodComm : ℂ_[p] × ℂ_[p] ≃+* ℂ_[p] × ℂ_[p]).uniformTilt
@@ -69,8 +68,7 @@ example (x : uniformTilt p (ℂ_[p] × ℂ_[p])) (n : ℕ) :
         (by simpa only [RingEquiv.coe_prodComm] using continuous_swap)
         (by simpa only [RingEquiv.coe_prodComm_symm] using continuous_swap)).symm x) =
         (uniformTilt.coeff p (ℂ_[p] × ℂ_[p]) n x).swap := by
-  rw [RingEquiv.coeff_uniformTilt_symm]
-  rfl
+  rw [RingEquiv.coeff_uniformTilt_symm, RingEquiv.coe_prodComm_symm]
 
 example : IsHomeomorph
     ((RingEquiv.prodComm : ℂ_[p] × ℂ_[p] ≃+* ℂ_[p] × ℂ_[p]).uniformTilt

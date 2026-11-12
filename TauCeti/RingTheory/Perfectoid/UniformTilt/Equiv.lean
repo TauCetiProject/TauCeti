@@ -82,10 +82,8 @@ theorem coeff_uniformTilt_symm (e : B ≃+* C) (he : Continuous e) (he' : Contin
 theorem uniformTilt_refl :
     (RingEquiv.refl B).uniformTilt (p := p) continuous_id continuous_id =
       RingEquiv.refl (TauCeti.Perfectoid.uniformTilt p B) := by
-  apply RingEquiv.toRingHom_injective
-  rw [RingEquiv.toRingHom_eq_coe,
-    toRingHom_uniformTilt (RingEquiv.refl B) continuous_id continuous_id]
-  simp
+  ext x n
+  simpa using coeff_uniformTilt (p := p) (RingEquiv.refl B) continuous_id continuous_id x n
 
 /-- The induced isomorphism of tilts is continuous. -/
 @[fun_prop, continuity]
@@ -111,10 +109,7 @@ theorem uniformTilt_trans (e : B ≃+* C) (he : Continuous e) (he' : Continuous 
     (f : C ≃+* D) (hf : Continuous f) (hf' : Continuous f.symm) :
     (e.trans f).uniformTilt (p := p) (hf.comp he) (he'.comp hf') =
       (e.uniformTilt he he').trans (f.uniformTilt hf hf') := by
-  apply RingEquiv.toRingHom_injective
-  simp only [RingEquiv.toRingHom_eq_coe]
-  rw [toRingHom_uniformTilt (e.trans f) (hf.comp he) (he'.comp hf')]
-  simp only [RingEquiv.toRingHom_trans, toRingHom_uniformTilt]
-  exact uniformTilt.map_comp e.toRingHom he f.toRingHom hf
+  ext x n
+  simp [coeff_uniformTilt (e.trans f) (hf.comp he) (he'.comp hf')]
 
 end RingEquiv
