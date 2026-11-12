@@ -61,36 +61,6 @@ namespace TauCeti
 variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
   [NormedSpace ℝ G] {p : ℝ≥0∞} {U K : Set ℂ}
 
-/-- To bound `‖f‖_{W^{1,p}(K)}` by `a + c ‖h‖_{W^{1,p}(K)}` it suffices to bound it by
-`a + c ‖D‖_{Lᵖ(K)}` for every weak derivative `D` of `h` on `interior K` that is almost everywhere
-strongly measurable on `K`. -/
-private theorem eLpNormWkp_one_le_add_mul {f : ℂ → G} {h : ℂ → F} {a c : ℝ≥0∞} (hc : c ≠ ∞)
-    (hh : eLpNormWkp p K 1 h ≠ ∞)
-    (H : ∀ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior K) h D →
-      AEStronglyMeasurable D (volume.restrict K) →
-        eLpNormWkp p K 1 f ≤ a + c * eLpNorm D p (volume.restrict K)) :
-    eLpNormWkp p K 1 f ≤ a + c * eLpNormWkp p K 1 h := by
-  rcases eq_or_ne c 0 with rfl | hc0
-  · obtain ⟨D, hD, hDp⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hh
-    rw [eLpNormWkp_zero] at hDp
-    simpa using H D hD (aestronglyMeasurable_of_eLpNorm_ne_top hDp)
-  calc eLpNormWkp p K 1 f
-      ≤ ⨅ (D : ℂ → ℂ →L[ℝ] F) (_ : HasWeakFDerivOn volume (Opens.interior K) h D),
-          a + c * eLpNormWkp p K 0 D :=
-        le_iInf₂ fun D hD => by
-          rw [eLpNormWkp_zero]
-          by_cases hDm : AEStronglyMeasurable D (volume.restrict K)
-          · exact H D hD hDm
-          · rw [eLpNorm_of_not_aestronglyMeasurable hDm, ENNReal.mul_top hc0, add_top]
-            exact le_top
-    _ = a + c * ⨅ (D : ℂ → ℂ →L[ℝ] F) (_ : HasWeakFDerivOn volume (Opens.interior K) h D),
-          eLpNormWkp p K 0 D := by
-        simp only [ENNReal.mul_iInf_of_ne hc0 hc, ENNReal.add_iInf]
-    _ ≤ a + c * eLpNormWkp p K 1 h := by
-        rw [eLpNormWkp_succ (k := 0)]
-        gcongr
-        exact le_add_self
-
 variable [CompleteSpace G]
 
 /-- **The `W^{1,p}` bound for composition with a `C¹` map.** Let `g` be `C¹` on an open set `W`
@@ -106,7 +76,8 @@ theorem eLpNormWkp_one_comp_le {u : ℂ → F} {g : F → G} {W : Set F} {C₀ C
     eLpNormWkp p K 1 (fun z => g (u z)) ≤
       C₀ * volume K ^ p.toReal⁻¹ + C₁ * eLpNormWkp p K 1 u := by
   -- The weak derivative of `g ∘ u` on `interior K` is `Dg(u) ∘ Du`.
-  refine eLpNormWkp_one_le_add_mul ENNReal.coe_ne_top hu fun D hD hDm => ?_
+  refine eLpNormWkp_one_le_add_mul_of_forall_hasWeakFDerivOn ENNReal.coe_ne_top hu
+    fun D hD hDm => ?_
   refine (eLpNormWkp_succ_le (hD.contDiffOn_comp (huc.mono interior_subset) hW hg
     (huW.mono_left interior_subset))).trans ?_
   rw [eLpNormWkp_zero]
@@ -160,8 +131,9 @@ theorem eLpNormWkp_one_comp_sub_le {v u : ℂ → F} {g : F → G} {W : Set F} {
           eLpNorm (fun z => (fderiv ℝ g (v z) - fderiv ℝ g (u z)).comp (Du z))
             p (volume.restrict K) +
         ENNReal.LpAddConst p * C * eLpNormWkp p K 1 (v - u) := by
-  refine eLpNormWkp_one_le_add_mul (ENNReal.mul_ne_top (ENNReal.LpAddConst_lt_top p).ne
-    ENNReal.coe_ne_top) hfin fun D hD hDm => ?_
+  refine eLpNormWkp_one_le_add_mul_of_forall_hasWeakFDerivOn
+    (ENNReal.mul_ne_top (ENNReal.LpAddConst_lt_top p).ne ENNReal.coe_ne_top) hfin
+    fun D hD hDm => ?_
   -- The weak derivative of `g ∘ v - g ∘ u` is `(Dg(v) - Dg(u)) ∘ Du + Dg(v) ∘ D`.
   have hDv : HasWeakFDerivOn volume (Opens.interior K) v (D + Du) := by
     simpa using hD.add hDu
@@ -187,18 +159,21 @@ theorem eLpNormWkp_one_comp_sub_le {v u : ℂ → F} {g : F → G} {W : Set F} {
   exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans (by gcongr; exact hC z hz)
 
 /-- **Continuity of composition with a `C¹` map in `W^{1,p}`.** Let `g` be `C¹` on an open set `W`
-and let `K` be compact. Let `u` be continuous on `K` with `u(K) ⊆ W` and finite `W^{1,p}(K)` size,
-and let `uₙ` be continuous on `K`, converge to `u` uniformly on `K`, and satisfy
+and let `K` be compact. Let `u` satisfy `u(K) ⊆ W` and have finite `W^{1,p}(K)` size, and let `uₙ`
+be continuous on `K`, converge to `u` uniformly on `K`, and satisfy
 `‖uₙ - u‖_{W^{1,p}(K)} → 0`. Then `‖g ∘ uₙ - g ∘ u‖_{W^{1,p}(K)} → 0`.
 
 This holds for every exponent `p`, including `p < 1` and `p = ∞`. -/
 theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι → ℂ → F}
     {u₀ : ℂ → F} {g : F → G} {W : Set F} (hK : IsCompact K) (hW : IsOpen W)
-    (hg : ContDiffOn ℝ 1 g W) (hu₀ : eLpNormWkp p K 1 u₀ ≠ ∞) (hu₀c : ContinuousOn u₀ K)
-    (hu₀W : MapsTo u₀ K W) (huc : ∀ᶠ n in l, ContinuousOn (u n) K)
-    (hunif : TendstoUniformlyOn u u₀ l K)
+    (hg : ContDiffOn ℝ 1 g W) (hu₀ : eLpNormWkp p K 1 u₀ ≠ ∞) (hu₀W : MapsTo u₀ K W)
+    (huc : ∀ᶠ n in l, ContinuousOn (u n) K) (hunif : TendstoUniformlyOn u u₀ l K)
     (hlim : Tendsto (fun n => eLpNormWkp p K 1 (u n - u₀)) l (𝓝 0)) :
     Tendsto (fun n => eLpNormWkp p K 1 (g ∘ u n - g ∘ u₀)) l (𝓝 0) := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact tendsto_bot
+  -- The uniform limit `u₀` is continuous on `K`.
+  have hu₀c : ContinuousOn u₀ K := hunif.continuousOn huc.frequently
   have hKm := hK.measurableSet
   have hDgc : ContinuousOn (fderiv ℝ g) W := hg.continuousOn_fderiv_of_isOpen hW le_rfl
   have hcpt : IsCompact (u₀ '' K) := hK.image_of_continuousOn hu₀c
@@ -263,17 +238,17 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
     (.of_forall fun _ => zero_le) key
 
 /-- **Continuity of composition with a `C¹` map in `W^{1,p}_loc`.** Let `g` be `C¹` on an open set
-`W`, and let `u` be continuous on `U`, in `W^{1,p}_loc(U)`, with `u(U) ⊆ W`. If continuous maps
-`uₙ` converge to `u` locally uniformly on `U`, and `‖uₙ - u‖_{W^{1,p}(K)} → 0` for every compact
-`K ⊆ U`, then `‖g ∘ uₙ - g ∘ u‖_{W^{1,p}(K)} → 0` for every compact `K ⊆ U`. -/
+`W`, and let `u` be in `W^{1,p}_loc(U)` with `u(U) ⊆ W`. If continuous maps `uₙ` converge to `u`
+locally uniformly on `U`, and `‖uₙ - u‖_{W^{1,p}(K)} → 0` for every compact `K ⊆ U`, then
+`‖g ∘ uₙ - g ∘ u‖_{W^{1,p}(K)} → 0` for every compact `K ⊆ U`. -/
 theorem MemWkpLoc.tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι → ℂ → F}
     {u₀ : ℂ → F} {g : F → G} {W : Set F} (hu₀ : MemWkpLoc p U 1 u₀)
-    (hu₀c : ContinuousOn u₀ U) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W) (hu₀W : MapsTo u₀ U W)
+    (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W) (hu₀W : MapsTo u₀ U W)
     (huc : ∀ᶠ n in l, ContinuousOn (u n) U) (hunif : TendstoLocallyUniformlyOn u u₀ l U)
     (hlim : ∀ K ⊆ U, IsCompact K → Tendsto (fun n => eLpNormWkp p K 1 (u n - u₀)) l (𝓝 0)) :
     ∀ K ⊆ U, IsCompact K → Tendsto (fun n => eLpNormWkp p K 1 (g ∘ u n - g ∘ u₀)) l (𝓝 0) :=
   fun K hKU hK => TauCeti.tendsto_eLpNormWkp_one_comp_sub hK hW hg
-    (hu₀.eLpNormWkp_ne_top_of_isCompact hKU hK) (hu₀c.mono hKU) (hu₀W.mono_left hKU)
+    (hu₀.eLpNormWkp_ne_top_of_isCompact hKU hK) (hu₀W.mono_left hKU)
     (huc.mono fun _ h => h.mono hKU)
     ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).1 (hunif.mono hKU))
     (hlim K hKU hK)
@@ -286,8 +261,8 @@ example [CompleteSpace F] {u₀ : ℂ → F} {g : F → G} {W : Set F} {c : ℕ 
     (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W) (hu₀ : eLpNormWkp p K 1 u₀ ≠ ∞)
     (hu₀c : ContinuousOn u₀ K) (hu₀W : MapsTo u₀ K W) (hc : Tendsto c atTop (𝓝 0)) :
     Tendsto (fun n => eLpNormWkp p K 1 (g ∘ (u₀ + fun _ => c n) - g ∘ u₀)) atTop (𝓝 0) := by
-  refine tendsto_eLpNormWkp_one_comp_sub (u := fun n => u₀ + fun _ => c n) hK hW hg hu₀ hu₀c
-    hu₀W (.of_forall fun _ => hu₀c.add continuousOn_const) ?_ ?_
+  refine tendsto_eLpNormWkp_one_comp_sub (u := fun n => u₀ + fun _ => c n) hK hW hg hu₀ hu₀W
+    (.of_forall fun _ => hu₀c.add continuousOn_const) ?_ ?_
   · refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
     filter_upwards [Metric.tendsto_nhds.1 hc ε hε] with n hn z _
     simpa [dist_eq_norm] using hn

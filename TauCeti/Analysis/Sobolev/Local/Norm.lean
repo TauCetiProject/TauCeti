@@ -24,8 +24,9 @@ This is the quantity in which interior estimates of elliptic equations are state
 supplies its unfolding, its value through a given weak derivative on an open set, monotonicity
 in the set, invariance under almost-everywhere change, the triangle inequality and the
 operator-norm bound under a continuous linear map of the codomain. A finite `W^{k+1,p}(U)` size
-supplies a weak derivative of finite `W^{k,p}(U)` size, and a member of `W^{k,p}_loc(U)` has
-finite `W^{k,p}(K)` size on every compact `K ⊆ U`.
+supplies a weak derivative of finite `W^{k,p}(U)` size, a bound on a `W^{1,p}(U)` size may be
+checked through each weak derivative separately, and a member of `W^{k,p}_loc(U)` has finite
+`W^{k,p}(K)` size on every compact `K ⊆ U`.
 
 ## References
 
@@ -86,6 +87,36 @@ theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (h : eLpNormWkp p U (k 
   obtain ⟨D, hD⟩ := iInf_lt_iff.1 (lt_top_iff_ne_top.2 (ENNReal.add_ne_top.1 h).2)
   obtain ⟨hD, hlt⟩ := iInf_lt_iff.1 hD
   exact ⟨D, hD, hlt.ne⟩
+
+/-- To bound `‖h‖_{W^{1,p}(U)}` by `a + c ‖f‖_{W^{1,p}(U)}` it suffices to bound it by
+`a + c ‖D‖_{Lᵖ(U)}` for every weak derivative `D` of `f` on `interior U` that is almost everywhere
+strongly measurable on `U`. -/
+theorem eLpNormWkp_one_le_add_mul_of_forall_hasWeakFDerivOn {h : ℂ → G} {a c : ℝ≥0∞}
+    (hc : c ≠ ∞) (hf : eLpNormWkp p U 1 f ≠ ∞)
+    (H : ∀ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D →
+      AEStronglyMeasurable D (volume.restrict U) →
+        eLpNormWkp p U 1 h ≤ a + c * eLpNorm D p (volume.restrict U)) :
+    eLpNormWkp p U 1 h ≤ a + c * eLpNormWkp p U 1 f := by
+  rcases eq_or_ne c 0 with rfl | hc0
+  · obtain ⟨D, hD, hDp⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
+    rw [eLpNormWkp_zero] at hDp
+    simpa using H D hD (aestronglyMeasurable_of_eLpNorm_ne_top hDp)
+  calc eLpNormWkp p U 1 h
+      ≤ ⨅ (D : ℂ → ℂ →L[ℝ] F) (_ : HasWeakFDerivOn volume (Opens.interior U) f D),
+          a + c * eLpNormWkp p U 0 D :=
+        le_iInf₂ fun D hD => by
+          rw [eLpNormWkp_zero]
+          by_cases hDm : AEStronglyMeasurable D (volume.restrict U)
+          · exact H D hD hDm
+          · rw [eLpNorm_of_not_aestronglyMeasurable hDm, ENNReal.mul_top hc0, add_top]
+            exact le_top
+    _ = a + c * ⨅ (D : ℂ → ℂ →L[ℝ] F) (_ : HasWeakFDerivOn volume (Opens.interior U) f D),
+          eLpNormWkp p U 0 D := by
+        simp only [ENNReal.mul_iInf_of_ne hc0 hc, ENNReal.add_iInf]
+    _ ≤ a + c * eLpNormWkp p U 1 f := by
+        rw [eLpNormWkp_succ (k := 0)]
+        gcongr
+        exact le_add_self
 
 /-- A member of `W^{k,p}_loc(U)` has finite `W^{k,p}(V)` norm on every compact `V ⊆ U`. -/
 theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) (hVU : V ⊆ U)
