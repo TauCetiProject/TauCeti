@@ -42,8 +42,9 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 * `RiemannianIsometry.riemannianExp_mfderiv`: an isometry intertwines the exponential maps.
 * `IsLocalRiemannianIsometry.geodesicInterval_subset_geodesicInterval_mfderiv`: a local isometry
   maps maximal geodesic intervals into maximal geodesic intervals.
-* `IsLocalRiemannianIsometry.riemannianExp_mfderiv_eq`: a local isometry intertwines the
-  exponential maps on the natural domain.
+* `IsLocalRiemannianIsometry.maximalGeodesic_mfderiv_of_mem`,
+  `IsLocalRiemannianIsometry.riemannianExp_mfderiv_of_mem`: a local isometry intertwines the
+  maximal geodesics and the exponential maps on their natural domains.
 * `IsLocalRiemannianIsometry.maximalGeodesic_mfderiv`,
   `IsLocalRiemannianIsometry.riemannianExp_mfderiv`: with completeness at `p`, a local isometry
   intertwines the maximal geodesics and the exponential maps.
@@ -171,13 +172,13 @@ theorem geodesicInterval_subset_geodesicInterval_mfderiv (hf : IsLocalRiemannian
   exact (mem_geodesicInterval_iff (I := J) (M := N)).2
     ⟨f ∘ γ, a, b, hf.isGeodesicCurveOnFrom_comp hγ, ht'⟩
 
-/-- If the geodesic from `p` with velocity `v` is defined on an open interval containing `1`, then
-`df_p v` lies in the domain of the exponential map at `f p`. -/
-theorem mfderiv_mem_expDomain (hf : IsLocalRiemannianIsometry I J f) {a b : ℝ}
-    (hγ : IsGeodesicCurveOnFrom I γ (Ioo a b) p v) (h1 : (1 : ℝ) ∈ Ioo a b) :
+/-- The differential of a local Riemannian isometry maps the natural domain of the exponential
+map at `p` into the natural domain at `f p`. -/
+theorem mfderiv_mem_expDomain (hf : IsLocalRiemannianIsometry I J f)
+    (hv : v ∈ expDomain I M p) :
     mfderiv I J f p v ∈ expDomain J N (f p) :=
-  mem_expDomain_iff.2 (mem_geodesicInterval_iff.2
-    ⟨f ∘ γ, a, b, hf.isGeodesicCurveOnFrom_comp hγ, h1⟩)
+  mem_expDomain_iff.2
+    (hf.geodesicInterval_subset_geodesicInterval_mfderiv p v (mem_expDomain_iff.1 hv))
 
 /-- **The exponential map through a local isometry.** If the geodesic `γ` from `p` with velocity
 `v` is defined on an open interval containing `1`, then `exp_{f p}(df_p v) = f (γ 1)`. -/
@@ -188,16 +189,32 @@ theorem riemannianExp_mfderiv_eq [J.Boundaryless] [T2Space N]
   rw [riemannianExp_def, (hf.isGeodesicCurveOnFrom_comp hγ).eqOn_maximalGeodesic h1,
     Function.comp_apply]
 
+/-- A local Riemannian isometry intertwines maximal geodesics at every time in the source
+maximal geodesic interval. -/
+theorem maximalGeodesic_mfderiv_of_mem [I.Boundaryless] [J.Boundaryless]
+    [T2Space M] [T2Space N] (hf : IsLocalRiemannianIsometry I J f) {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    maximalGeodesic J N (f p) (mfderiv I J f p v) t = f (maximalGeodesic I M p v t) := by
+  obtain ⟨γ, a, b, hγ, ht'⟩ := (mem_geodesicInterval_iff (I := I) (M := M)).1 ht
+  rw [hγ.eqOn_maximalGeodesic ht',
+    (hf.isGeodesicCurveOnFrom_comp hγ).eqOn_maximalGeodesic ht', Function.comp_apply]
+
 /-- If every geodesic leaving `p` is defined for all time, a local Riemannian isometry `f`
 intertwines the maximal geodesics leaving `p` and `f p`. -/
 theorem maximalGeodesic_mfderiv [I.Boundaryless] [J.Boundaryless] [T2Space M] [T2Space N]
     (hf : IsLocalRiemannianIsometry I J f) (hp : IsGeodesicallyCompleteAt I M p)
     (v : TangentSpace I p) (t : ℝ) :
-    maximalGeodesic J N (f p) (mfderiv I J f p v) t = f (maximalGeodesic I M p v t) := by
-  have hγ : IsGeodesicCurveOnFrom I (maximalGeodesic I M p v) univ p v := by
-    simpa only [hp.geodesicInterval_eq_univ v] using
-      isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
-  exact (hf.isGeodesicCurveOnFrom_comp hγ).eq_maximalGeodesic_of_univ t
+    maximalGeodesic J N (f p) (mfderiv I J f p v) t = f (maximalGeodesic I M p v t) :=
+  hf.maximalGeodesic_mfderiv_of_mem (hp.geodesicInterval_eq_univ v ▸ mem_univ t)
+
+/-- A local Riemannian isometry intertwines the exponential maps on the natural domain of the
+source exponential map. -/
+theorem riemannianExp_mfderiv_of_mem [I.Boundaryless] [J.Boundaryless]
+    [T2Space M] [T2Space N] (hf : IsLocalRiemannianIsometry I J f)
+    (hv : v ∈ expDomain I M p) :
+    riemannianExp J N (f p) (mfderiv I J f p v) = f (riemannianExp I M p v) := by
+  simpa only [riemannianExp_def] using
+    hf.maximalGeodesic_mfderiv_of_mem (mem_expDomain_iff.1 hv)
 
 /-- **Naturality of the exponential map under a local isometry.** If every geodesic leaving `p`
 is defined for all time, a local Riemannian isometry `f` satisfies
@@ -205,8 +222,9 @@ is defined for all time, a local Riemannian isometry `f` satisfies
 theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless] [T2Space M] [T2Space N]
     (hf : IsLocalRiemannianIsometry I J f) (hp : IsGeodesicallyCompleteAt I M p)
     (v : TangentSpace I p) :
-    riemannianExp J N (f p) (mfderiv I J f p v) = f (riemannianExp I M p v) := by
-  simp only [riemannianExp_def, hf.maximalGeodesic_mfderiv hp]
+    riemannianExp J N (f p) (mfderiv I J f p v) = f (riemannianExp I M p v) :=
+  hf.riemannianExp_mfderiv_of_mem
+    (mem_expDomain_iff.2 (hp.geodesicInterval_eq_univ v ▸ mem_univ 1))
 
 end TauCeti.IsLocalRiemannianIsometry
 
