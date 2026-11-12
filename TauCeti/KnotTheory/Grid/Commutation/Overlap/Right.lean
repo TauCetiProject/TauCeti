@@ -462,7 +462,6 @@ theorem recutRightEqRightFirst_toRectangleDecomposition
       recutRightEqRightFirst_pentagon_right] using
       (hfirst.trans D.pentagon.right_eq).symm
   · simp
-  · simp
 
 /-- The promoted first-branch decomposition is a genuine recut of the original two rectangles. -/
 theorem isRecut_recutRightEqRightFirst
@@ -598,9 +597,6 @@ theorem recutRightEqRightSecond_toRectangleDecomposition
   · simp
   · simp
   · simp
-  · simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right,
-      recutRightEqRightSecond_pentagon_right] using
-      (hsecond.trans D.pentagon.right_eq).symm
 
 /-- The promoted second-branch decomposition is a genuine recut of the original rectangles. -/
 theorem isRecut_recutRightEqRightSecond
