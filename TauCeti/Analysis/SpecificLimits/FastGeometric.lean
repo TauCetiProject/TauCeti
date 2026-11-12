@@ -36,7 +36,7 @@ The general statement `TauCeti.le_geom_of_le_mul_pow_mul_rpow` only asks for a r
 
 * `TauCeti.le_geom_of_le_mul_pow_mul_rpow`: geometric bound `Y n ≤ q ^ n * Y 0` for a
   superlinear recurrence from a small start.
-* `TauCeti.mul_rpow_rpow_neg_inv_le_one`,
+* `TauCeti.mul_rpow_neg_inv_rpow_le_one`,
   `TauCeti.mul_rpow_le_rpow_neg_inv_of_le_rpow_neg_inv_mul_rpow`: at the classical
   threshold, the ratio `b ^ (-α⁻¹)` satisfies the two scalar conditions of the general bound.
 * `TauCeti.le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow`: the same bound at the classical
@@ -139,26 +139,28 @@ theorem le_geom_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b q α : ℝ} (hY : 
       positivity
 
 /-- At the classical ratio `q = b ^ (-α⁻¹)` the condition `b * q ^ α ≤ 1` of
-`le_geom_of_le_mul_pow_mul_rpow` holds (with equality) for `b > 0` and `α > 0`. -/
-theorem mul_rpow_rpow_neg_inv_le_one {b α : ℝ} (hb : 0 < b) (hα : 0 < α) :
+`le_geom_of_le_mul_pow_mul_rpow` holds for `b ≥ 0` and `α ≠ 0` (with equality if `b > 0`). -/
+theorem mul_rpow_neg_inv_rpow_le_one {b α : ℝ} (hb : 0 ≤ b) (hα : α ≠ 0) :
     b * (b ^ (-α⁻¹)) ^ α ≤ 1 := by
+  rcases hb.eq_or_lt with rfl | hb
+  · simp
   rw [← Real.rpow_mul hb.le, show -α⁻¹ * α = -1 by field_simp, Real.rpow_neg_one,
     mul_inv_cancel₀ hb.ne']
 
 /-- At the classical ratio `q = b ^ (-α⁻¹)`, a starting value `Y₀ ≥ 0` with
 `Y₀ ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)` satisfies the condition `C * Y₀ ^ α ≤ q` of
-`le_geom_of_le_mul_pow_mul_rpow`, for `b > 0` and `α > 0`. -/
+`le_geom_of_le_mul_pow_mul_rpow`, for `b ≥ 0` and `α > 0`. -/
 theorem mul_rpow_le_rpow_neg_inv_of_le_rpow_neg_inv_mul_rpow {Y₀ C b α : ℝ}
-    (hY₀ : 0 ≤ Y₀) (hb : 0 < b) (hα : 0 < α)
+    (hY₀ : 0 ≤ Y₀) (hb : 0 ≤ b) (hα : 0 < α)
     (h0 : Y₀ ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) :
     C * Y₀ ^ α ≤ b ^ (-α⁻¹) := by
   rcases le_or_gt C 0 with hC | hC
   · exact (mul_nonpos_of_nonpos_of_nonneg hC (Real.rpow_nonneg hY₀ _)).trans
-      (Real.rpow_nonneg hb.le _)
+      (Real.rpow_nonneg hb _)
   calc C * Y₀ ^ α ≤ C * (C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) ^ α := by gcongr
     _ = b ^ (-α⁻¹) := by
         rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hC.le,
-          ← Real.rpow_mul hb.le, show -α⁻¹ * α = -1 by field_simp,
+          ← Real.rpow_mul hb, show -α⁻¹ * α = -1 by field_simp,
           show -(α ^ 2)⁻¹ * α = -α⁻¹ by field_simp, Real.rpow_neg_one,
           mul_inv_cancel_left₀ hC.ne']
 
@@ -166,14 +168,14 @@ theorem mul_rpow_le_rpow_neg_inv_of_le_rpow_neg_inv_mul_rpow {Y₀ C b α : ℝ}
 
 `Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)`
 
-for constants `b > 0` and `α > 0`. If `Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)`, then
+for constants `b ≥ 0` and `α > 0`. If `Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)`, then
 `Y n ≤ (b ^ (-α⁻¹)) ^ n * Y 0` for every `n`. -/
 theorem le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α : ℝ}
-    (hY : ∀ n, 0 ≤ Y n) (hb : 0 < b) (hα : 0 < α)
+    (hY : ∀ n, 0 ≤ Y n) (hb : 0 ≤ b) (hα : 0 < α)
     (h0 : Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹))
     (hrec : ∀ n, Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)) (n : ℕ) :
     Y n ≤ (b ^ (-α⁻¹)) ^ n * Y 0 := by
-  exact le_geom_of_le_mul_pow_mul_rpow hY (by linarith) (mul_rpow_rpow_neg_inv_le_one hb hα)
+  exact le_geom_of_le_mul_pow_mul_rpow hY (by linarith) (mul_rpow_neg_inv_rpow_le_one hb hα.ne')
     (mul_rpow_le_rpow_neg_inv_of_le_rpow_neg_inv_mul_rpow (hY 0) hb hα h0) hrec n
 
 /-- **Convergence to zero from a geometric bound.** If the ratio `q` in
@@ -208,8 +210,8 @@ theorem tendsto_atTop_zero_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α : �
   have hb₀ : 0 < b := one_pos.trans hb
   have hq : b ^ (-α⁻¹) < 1 := Real.rpow_lt_one_of_one_lt_of_neg hb (by simpa)
   exact tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY hq (by linarith)
-    (mul_rpow_rpow_neg_inv_le_one hb₀ hα)
-    (mul_rpow_le_rpow_neg_inv_of_le_rpow_neg_inv_mul_rpow (hY 0) hb₀ hα h0) hrec
+    (mul_rpow_neg_inv_rpow_le_one hb₀.le hα.ne')
+    (mul_rpow_le_rpow_neg_inv_of_le_rpow_neg_inv_mul_rpow (hY 0) hb₀.le hα h0) hrec
 
 /-- A real sequence with `cₙ₊₁ = 1 + κ (cₙ² - 1)`, where `κ > 0`, `c₀ > 1` and `κ (1 + c₀) < 1`,
 decreases strictly: while `1 < cₙ ≤ c₀`, the step `cₙ₊₁ - 1 = κ (cₙ + 1) (cₙ - 1)` multiplies
