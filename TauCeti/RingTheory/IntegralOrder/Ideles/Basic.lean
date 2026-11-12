@@ -69,6 +69,9 @@ its finite part, so `U(Λ)` is exactly the stabiliser of the lattices: `I(α) = 
 * `TauCeti.OrderIdeles.lattice_eq_lattice_iff`: `I(α) = I(β)` if and only if `α⁻¹ β ∈ U_f(Λ)`.
 * `TauCeti.OrderIdeles.lattice_principal_mul`: `I(bα) = b I(α)` for a unit `b` of `B`.
 * `TauCeti.OrderIdeles.lattice_one`: `I(1) = Λ` when `A` is not a field.
+* `TauCeti.OrderIdeles.lattice_mulSingle_principal`: an idele equal to a unit `b` of `B` at one
+  place and to `1` elsewhere has lattice `b Λ`, provided `b` is a unit of `Λ_v` at every other
+  place.
 * `TauCeti.OrderIdeles.mul_mem_lattice`: `I(α)` is a right `Λ`-module.
 * `TauCeti.OrderIdeles.isLattice_lattice`: when `Λ` is an order and `A` is not a field, `I(α)` is
   an `A`-lattice in `B`.
@@ -254,6 +257,23 @@ theorem lattice_principal_mul (hΛ : span F (Λ : Set B) = ⊤) (b : Bˣ) (α : 
     rw [← RestrictedProduct.inv_apply, ← map_inv, coe_principal_apply]
   rw [RestrictedProduct.mul_apply, mul_inv_rev, Units.val_mul, mul_assoc, hb,
     Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+
+/-- **Ideles concentrated at one place.** Let `b` be a unit of `B` whose image is a unit of `Λ_v`
+at every place `v ≠ w`. The idele which is `b` at `w` and `1` elsewhere has lattice `b Λ`. -/
+theorem lattice_mulSingle_principal [DecidableEq (HeightOneSpectrum A)]
+    (hΛ : span F (Λ : Set B) = ⊤) {w : HeightOneSpectrum A} {b : Bˣ}
+    (hb : ∀ v ≠ w, principal F Λ hΛ b v ∈
+      (Λ.baseChange (v.adicCompletionIntegers F)).toSubmonoid.units) :
+    lattice F Λ (.mulSingle _ w (principal F Λ hΛ b w)) = b • Subalgebra.toSubmodule Λ := by
+  rw [← lattice_one (F := F) (Ring.not_isField_of_ne_of_ne w.ne_bot w.isPrime.ne_top),
+    ← lattice_principal_mul hΛ, mul_one, lattice_eq_lattice_iff hΛ]
+  intro v
+  rw [RestrictedProduct.mul_apply, RestrictedProduct.inv_apply]
+  rcases eq_or_ne v w with rfl | hv
+  · rw [RestrictedProduct.mulSingle_eq_same, inv_mul_cancel]
+    exact one_mem _
+  · rw [RestrictedProduct.mulSingle_eq_of_ne _ _ hv, inv_one, one_mul]
+    exact hb v hv
 
 /-- **`I(α)` is a full lattice.** When `Λ` is an `A`-order in `B` and `A` is not a field, `I(α)` is
 an `A`-lattice in `B`: finitely generated and spanning `B` over `F`. -/
