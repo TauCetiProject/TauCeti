@@ -49,8 +49,12 @@ vectors again form a symplectic subspace
 
 ## Main results
 
+* `TauCeti.AlmostComplexStructure.invariants_mem_invtSubmodule`: the invariants of a
+  representation by maps complex linear for an almost complex structure `J` are `J`-stable.
 * `TauCeti.SymplecticForm.Tames.isSymplectic_invariants`: the invariants of a representation by
   maps complex linear for an almost complex structure `J` tamed by `ω` form a symplectic subspace.
+* `TauCeti.SymplecticForm.isComplexLinearMap_polarComplexStructure_of_inner`: a linear isometry
+  preserving `ω` commutes with the polar normalization of `ω`.
 * `TauCeti.SymplecticForm.isSymplectic_invariants_of_inner`: the fixed vectors of a
   representation by linear isometries preserving `ω` form a symplectic subspace.
 * `TauCeti.SymplecticForm.apply_mem_orthogonal`: the symplectic complement of a subspace stable
@@ -82,14 +86,22 @@ section Tames
 variable {J : AlmostComplexStructure V}
 
 /-- The vectors fixed by a representation of a group by maps complex linear for an almost complex
+structure `J` form a `J`-stable subspace. -/
+theorem _root_.TauCeti.AlmostComplexStructure.invariants_mem_invtSubmodule
+    (J : AlmostComplexStructure V) {G : Type*} [Group G] {ρ : Representation ℝ G V}
+    (hρ : ∀ g, IsComplexLinearMap J J (ρ g)) :
+    ρ.invariants ∈ Module.End.invtSubmodule J.toLinearMap :=
+  (Module.End.mem_invtSubmodule _).2 fun v hv ↦
+    (Representation.mem_invariants ρ _).2 fun g ↦ by
+      rw [(isComplexLinearMap_iff_apply J J (ρ g)).1 (hρ g) v,
+        (Representation.mem_invariants ρ v).1 hv g]
+
+/-- The vectors fixed by a representation of a group by maps complex linear for an almost complex
 structure tamed by `ω` form a symplectic subspace. -/
 theorem Tames.isSymplectic_invariants {G : Type*} [Group G] (hJ : ω.Tames J)
     {ρ : Representation ℝ G V} (hρ : ∀ g, IsComplexLinearMap J J (ρ g)) :
     ω.IsSymplectic ρ.invariants :=
-  hJ.isSymplectic_of_mem_invtSubmodule <| (Module.End.mem_invtSubmodule _).2 fun v hv ↦
-    (Representation.mem_invariants ρ _).2 fun g ↦ by
-      rw [(isComplexLinearMap_iff_apply J J (ρ g)).1 (hρ g) v,
-        (Representation.mem_invariants ρ v).1 hv g]
+  hJ.isSymplectic_of_mem_invtSubmodule (J.invariants_mem_invtSubmodule hρ)
 
 end Tames
 
@@ -100,21 +112,30 @@ section Isometric
 variable {E G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [Group G] {ω : SymplecticForm E} {ρ : Representation ℝ G E}
 
+/-- On a finite-dimensional real inner product space, a linear map preserving the inner product
+and a symplectic form `ω` commutes with the polar normalization of `ω`. -/
+theorem isComplexLinearMap_polarComplexStructure_of_inner (ω : SymplecticForm E) {f : E →ₗ[ℝ] E}
+    (hf : ∀ u v, inner ℝ (f u) (f v) = inner ℝ u v) (hω : ∀ u v, ω (f u) (f v) = ω u v) :
+    IsComplexLinearMap ω.polarComplexStructure ω.polarComplexStructure f := by
+  -- `f` is a linear isometric equivalence and a symplectomorphism.
+  let e : E ≃ₗᵢ[ℝ] E := (f.isometryOfInner hf).toLinearIsometryEquiv rfl
+  have he : IsSymplectomorphism ω ω e.toLinearEquiv :=
+    isSymplectomorphism_iff.2 fun u v ↦ hω u v
+  rw [isComplexLinearMap_iff_apply]
+  exact fun v ↦ (he.polarComplexStructure_apply v).symm
+
 /-- **The fixed vectors of a group of symplectic isometries form a symplectic subspace.** On a
 finite-dimensional real inner product space, the vectors fixed by a representation by linear
 isometries preserving a symplectic form `ω` form a symplectic subspace. No compactness or
 topology on the group is needed: the polar normalization of `ω` with respect to the invariant
-inner product commutes with every group element. -/
+inner product commutes with every group element
+(`TauCeti.SymplecticForm.isComplexLinearMap_polarComplexStructure_of_inner`), so the fixed vectors
+form a subspace stable under it
+(`TauCeti.AlmostComplexStructure.invariants_mem_invtSubmodule`). -/
 theorem isSymplectic_invariants_of_inner (hρ : ∀ g u v, inner ℝ (ρ g u) (ρ g v) = inner ℝ u v)
-    (hω : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) : ω.IsSymplectic ρ.invariants := by
-  refine Tames.isSymplectic_invariants ω.compatible_polarComplexStructure.tames fun g ↦ ?_
-  -- Each `ρ g` is a linear isometric equivalence and a symplectomorphism, so it commutes with
-  -- the polar normalization of `ω`.
-  let e : E ≃ₗᵢ[ℝ] E := ((ρ g).isometryOfInner (hρ g)).toLinearIsometryEquiv rfl
-  have he : IsSymplectomorphism ω ω e.toLinearEquiv :=
-    isSymplectomorphism_iff.2 fun u v ↦ hω g u v
-  rw [isComplexLinearMap_iff_apply]
-  exact fun v ↦ (he.polarComplexStructure_apply v).symm
+    (hω : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) : ω.IsSymplectic ρ.invariants :=
+  Tames.isSymplectic_invariants ω.compatible_polarComplexStructure.tames fun g ↦
+    ω.isComplexLinearMap_polarComplexStructure_of_inner (hρ g) (hω g)
 
 end Isometric
 

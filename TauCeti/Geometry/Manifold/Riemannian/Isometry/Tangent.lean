@@ -25,8 +25,8 @@ used for initial velocities and velocity lifts of curves.
   the differential of the inverse isometry.
 * `TauCeti.RiemannianIsometry.toDiffeomorph_tangent_apply`: the tangent-bundle lift has this
   fibrewise linear-isometry equivalence as its fibre map.
-* `TauCeti.RiemannianIsometry.mfderiv_mem_ball`: the differential of an isometry fixing `p` maps
-  every ball around the origin of `T_p M` into itself.
+* `TauCeti.RiemannianIsometry.mfderiv_mem_ball_of_apply_eq_self`: the differential of an
+  isometry fixing `p` maps every ball around the origin of `T_p M` into itself.
 -/
 
 public section
@@ -123,8 +123,8 @@ private theorem norm_congr {q p : M} (h : q = p) {w : TangentSpace I q} {v : Tan
 
 /-- The differential of an isometry fixing `p` maps every ball around the origin of `T_p M` into
 itself. -/
-theorem mfderiv_mem_ball {Φ : RiemannianIsometry I I M M} {p : M} (hp : Φ p = p) {r : ℝ}
-    {w : TangentSpace I p} (hw : w ∈ Metric.ball (0 : TangentSpace I p) r) :
+theorem mfderiv_mem_ball_of_apply_eq_self {Φ : RiemannianIsometry I I M M} {p : M}
+    (hp : Φ p = p) {r : ℝ} {w : TangentSpace I p} (hw : w ∈ Metric.ball (0 : TangentSpace I p) r) :
     mfderiv I I Φ p w ∈ (Metric.ball 0 r : Set (TangentSpace I p)) := by
   refine (mem_ball_zero_iff (E := TangentSpace I p)).2 ?_
   have key := norm_congr (I := I) hp (w := mfderiv I I Φ p w) (v := mfderiv I I Φ p w) rfl

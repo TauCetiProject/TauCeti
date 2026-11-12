@@ -33,11 +33,13 @@ In both cases the stabilizer acts on the symplectic complement by the normal rep
 
 At a point of the fixed locus `M^G` of `G` the stabilizer is all of `G`, and its invariant vectors
 are the tangent vectors fixed by the differential of every element
-(`TauCeti.mem_invariants_tangentRepresentation_iff`). For a group of isometries, `M^G` is near
-each of its points the image of this subspace under the Riemannian exponential map, so it is an
-embedded submanifold with these tangent spaces (`TauCeti.exists_isSliceChart_fixedPoints`). The
-results here then show that `σ` restricts to a nondegenerate two-form on it; when `σ` is moreover
-closed, so is its restriction, and `M^G` is a symplectic submanifold.
+(`TauCeti.mem_invariants_tangentRepresentation_iff_of_mem_fixedPoints`). For a group of
+isometries, `M^G` is near each of its points the image of this subspace under the Riemannian
+exponential map, and the Riemannian logarithm is a smooth slice chart flattening `M^G` onto it
+(`TauCeti.Manifold.IsNormalDomain.isSliceChart_fixedPoints`,
+`TauCeti.exists_isSliceChart_fixedPoints`). The results here then show that, near each fixed
+point, `σ` restricts to a nondegenerate two-form on the fixed locus; the dimension of these
+subspaces may vary from one fixed point to another.
 
 ## Main results
 
@@ -105,7 +107,8 @@ theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
     (hσ.symplecticFormAt x).IsSymplectic
       (tangentRepresentation hd).toRepresentation.invariants :=
-  SymplecticForm.isSymplectic_invariants_of_inner (inner_tangentRepresentation_apply hK hd)
+  SymplecticForm.isSymplectic_invariants_of_inner
+    (fun g u w ↦ (inner_tangentRepresentation_apply hd g u w).trans (hK g g.2 u w))
     (hσ.symplecticFormAt_tangentRepresentation hσG hd)
 
 end ConstSMul
