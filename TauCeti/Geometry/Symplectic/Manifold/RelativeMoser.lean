@@ -118,6 +118,13 @@ private theorem mpullback_prodMk_moserFamily (σ₀ σ₁ : SmoothTwoForm I M) (
   erw [SmoothForm.coe_funSMulₗ, mpullback_fun_smul, SmoothForm.coe_mpullback, hcomp]
   rfl
 
+/-- The slices of the Moser family, as rough forms. -/
+private theorem mpullback_prodMk_moserFamily_coe (σ₀ σ₁ : SmoothTwoForm I M) (t : ℝ) :
+    mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) (moserFamily σ₀ σ₁).1 =
+      (σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).1 :=
+  (SmoothForm.coe_mpullback _ _ _).symm.trans
+    (congrArg Subtype.val (mpullback_prodMk_moserFamily σ₀ σ₁ t))
+
 /-- The Moser vector field of the path `σ₀ + c(t) (σ₁ - σ₀)` and the primitive `β`, cut off by
 `ρ`: `X_t = ρ (σ_t♭)⁻¹ (-c'(t) β)`. -/
 private def moserField (σ₀ σ₁ : SmoothTwoForm I M) (β : SmoothForm I M ℝ 1) (ρ : M → ℝ)
@@ -203,16 +210,12 @@ private theorem exists_isOpen_isInvertible_flat {σ₀ σ₁ : SmoothTwoForm I M
     ∃ N, IsOpen N ∧ K ⊆ N ∧ ∀ t, ∀ x ∈ N,
       ((σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).flat x).IsInvertible := by
   set O := {p : ℝ × M | ((σ₀ + Real.smoothTransition p.1 • (σ₁ - σ₀)).flat p.2).IsInvertible}
-  have hO : IsOpen O := isOpen_iff_mem_nhds.2 fun p (hp : p ∈ O) ↦ by
-    have hp' : ((σ₀ + Real.smoothTransition p.1 • (σ₁ - σ₀)).flat p.2).IsInvertible := hp
-    -- The bundles and the base map are given explicitly: unification would otherwise read the
-    -- section along the identity of `M`.
-    have h := ContMDiffAt.eventually_isInvertible_clm_bundle (𝕜 := ℝ) (F₁ := E)
-      (F₂ := E →L[ℝ] ℝ) (E₁ := TangentSpace I)
-      (E₂ := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (x := p) (b := Prod.snd)
-      (ϕ := fun p : ℝ × M ↦ (σ₀ + Real.smoothTransition p.1 • (σ₁ - σ₀)).flat p.2)
-      (contMDiff_flat_moserFamily σ₀ σ₁ p) hp'
-    exact h
+  -- The bundles and the base map are given explicitly: unification would otherwise read the
+  -- section along the identity of `M`.
+  have hO : IsOpen O := Continuous.isOpen_setOf_clm_bundle_isInvertible (𝕜 := ℝ) (F₁ := E)
+    (F₂ := E →L[ℝ] ℝ) (E₁ := TangentSpace I) (E₂ := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)
+    (b := Prod.snd) (ϕ := fun p : ℝ × M ↦ (σ₀ + Real.smoothTransition p.1 • (σ₁ - σ₀)).flat p.2)
+    (contMDiff_flat_moserFamily σ₀ σ₁).continuous
   have hsub : Icc (0 : ℝ) 1 ×ˢ K ⊆ O := fun p hp ↦ isInvertible_flat_iff.2
     (hnd p.2 hp.2 _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩)
   obtain ⟨u, N, -, hN, hu, hKN, huN⟩ := generalized_tube_lemma isCompact_Icc hK hO hsub
@@ -238,10 +241,6 @@ private theorem moserRate_eq_zero {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ�
         (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) (moserFamily σ₀ σ₁).1) +
       mlieDerivForm (moserField σ₀ σ₁ β ρ t)
         (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) (moserFamily σ₀ σ₁).1)) y = 0 := by
-  have hslice (u : ℝ) : mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) (moserFamily σ₀ σ₁).1 =
-      (σ₀ + Real.smoothTransition u • (σ₁ - σ₀)).1 := by
-    exact (SmoothForm.coe_mpullback _ _ _).symm.trans
-      (congrArg Subtype.val (mpullback_prodMk_moserFamily σ₀ σ₁ u))
   -- The slices `σ₀ + c(u) (σ₁ - σ₀)` have velocity `c'(t) (σ₁ - σ₀)`.
   have hvel : mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
       (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) (moserFamily σ₀ σ₁).1) y =
@@ -284,7 +283,7 @@ private theorem moserRate_eq_zero {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ�
       rfl
     rw [mextDeriv_congr_of_eventuallyEq hev, mextDeriv_smul, hβ]
     rfl
-  rw [Pi.add_apply, hvel, hslice, hL, neg_smul, add_neg_cancel]
+  rw [Pi.add_apply, hvel, mpullback_prodMk_moserFamily_coe, hL, neg_smul, add_neg_cancel]
 
 variable [T2Space M]
 
@@ -339,11 +338,8 @@ theorem exists_diffeomorph_fix_mpullback_eq_of_mextDeriv_eq_sub {σ₀ σ₁ : S
   have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_Icc
     (hX.of_le (by simp)) hc ((moserFamily σ₀ σ₁).contMDiff.of_le (by simp)) zero_le_one x
     fun t ht ↦ moserRate_eq_zero h₀ hβ hρ hinv t (huW (mk_mem_prod (hu ht) hx))
-  have hslice (u : ℝ) : mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) (moserFamily σ₀ σ₁).1 =
-      (σ₀ + Real.smoothTransition u • (σ₁ - σ₀)).1 :=
-    (SmoothForm.coe_mpullback _ _ _).symm.trans
-      (congrArg Subtype.val (mpullback_prodMk_moserFamily σ₀ σ₁ u))
-  rw [hslice, hslice, Real.smoothTransition.one, Real.smoothTransition.zero, one_smul, zero_smul,
+  rw [mpullback_prodMk_moserFamily_coe, mpullback_prodMk_moserFamily_coe,
+    Real.smoothTransition.one, Real.smoothTransition.zero, one_smul, zero_smul,
     add_zero, add_sub_cancel] at h
   rw [SmoothForm.coe_mpullback, hΦ]
   exact h

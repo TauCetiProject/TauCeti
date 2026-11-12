@@ -199,11 +199,11 @@ theorem isInvertible_flat_iff [FiniteDimensional ℝ E] {x : M} :
 invertible. -/
 theorem isNondegenerate_iff_isInvertible_flat [FiniteDimensional ℝ E] :
     σ.IsNondegenerate ↔ ∀ x, (σ.flat x).IsInvertible := by
-  rw [isNondegenerate_iff_separatingLeft]
-  refine ⟨fun h x ↦ ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun v hv ↦
-    h x v fun w ↦ (flat_apply σ x v w).symm.trans (hv w), fun h x v hv ↦ (h x).injective ?_⟩
-  ext w
-  simpa using hv w
+  rw [isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot]
+  -- For the alternating form at `x`, nondegeneracy is triviality of the kernel.
+  refine forall_congr' fun x ↦ Iff.symm <| isInvertible_flat_iff.trans ?_
+  exact (SmoothForm.isAlt_bilinFormAt σ x).isRefl.nondegenerate_iff_separatingLeft.trans
+    LinearMap.separatingLeft_iff_ker_eq_bot
 
 /-- The flat maps of a nondegenerate two-form on a finite-dimensional manifold are invertible. -/
 theorem IsNondegenerate.isInvertible_flat [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
