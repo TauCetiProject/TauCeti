@@ -12,9 +12,9 @@ public import TauCeti.Analysis.Complex.Determinant
 # Real derivatives of complex differentiable maps
 
 The real derivative of a map `f : ℂ → ℂ` complex differentiable at `z` is multiplication by the
-complex derivative, `fderiv ℝ f z w = deriv f z * w`
-(`DifferentiableAt.complexToReal_fderiv_apply`), so its determinant is `‖deriv f z‖ ^ 2`
-(`DifferentiableAt.det_complexToReal_fderiv`).
+complex derivative, `fderiv ℝ f z w = w • deriv f z`
+(`DifferentiableAt.fderiv_restrictScalars_eq_smul_deriv`), so its determinant is
+`‖deriv f z‖ ^ 2` (`DifferentiableAt.det_complexToReal_fderiv`).
 
 Complex conjugation is real differentiable (Mathlib's `Complex.differentiable_conj`), but its real
 derivative `conjCLE` is not complex linear: it sends `1` to `1` and `I` to `-I`. Hence conjugation,
@@ -28,14 +28,6 @@ open scoped ComplexConjugate
 namespace DifferentiableAt
 
 variable {f : ℂ → ℂ} {z : ℂ}
-
-/-- The real derivative of a map complex differentiable at `z` is multiplication by its complex
-derivative. -/
-theorem complexToReal_fderiv_apply (hf : DifferentiableAt ℂ f z) (w : ℂ) :
-    fderiv ℝ f z w = deriv f z * w := by
-  rw [hf.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars',
-    hf.hasDerivAt.hasFDerivAt.fderiv]
-  simp [mul_comm]
 
 /-- **The Jacobian of a complex differentiable map.** The real derivative of a map complex
 differentiable at `z` has determinant `‖deriv f z‖ ^ 2`. -/
