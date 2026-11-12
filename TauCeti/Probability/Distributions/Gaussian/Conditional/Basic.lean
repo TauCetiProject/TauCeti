@@ -542,7 +542,6 @@ theorem condDistrib_multivariateGaussian {Ω : Type*} [MeasurableSpace Ω] {P : 
         (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2) P =ᵐ[
       P.map (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2)] m.gaussianCondKernel S := by
   let : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  let X₁ := fun ω => (EuclideanSpace.sumEquivProd (X ω)).1
   let X₂ := fun ω => (EuclideanSpace.sumEquivProd (X ω)).2
   have hX₂ := (gaussianSnd_hasLaw m hS).comp hX
   refine condDistrib_ae_eq_of_measure_eq_compProd (by fun_prop) (by fun_prop) ?_

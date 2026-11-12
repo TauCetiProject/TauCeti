@@ -250,7 +250,6 @@ theorem exists_norm_schwartzKernel_le : ∃ (C' : ℝ) (N' : ℕ), ∀ (h : smoo
     (2 ^ (2 * N + Fintype.card (a ⊕ b) + 2) *
       ∑' n : a ⊕ b → ℤ, ((1 + ‖n‖) ^ (Fintype.card (a ⊕ b) + 1))⁻¹),
     2 * N + Fintype.card (a ⊕ b) + 1, fun h M hM ↦ ?_⟩
-  have hM0 := hM.nonneg
   -- The `n`-th term is bounded by a constant times `M` times a summable weight.
   have key (n : a ⊕ b → ℤ) : ‖mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n •
       B (mFourierSmooth fun i ↦ n (.inl i)) (mFourierSmooth fun i ↦ n (.inr i))‖ ≤

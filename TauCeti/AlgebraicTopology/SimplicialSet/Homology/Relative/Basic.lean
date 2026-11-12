@@ -21,9 +21,9 @@ forms a natural transformation `SSetPair.homologyδNatTrans`.
 It also records that the quotient maps from ambient to relative chains and homology are natural in
 the pair: they commute with morphisms of simplicial-set pairs. The short exact sequence of chain
 complexes of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the
-injection of the `n`-simplices of `X` into those of `Y`; so the relative chains are a retract of
-the ambient chains (`SSetPair.chainComplexXRetract`), and are projective when those are
-(`SSetPair.projective_chainComplex_X`). A morphism of pairs which is a
+injection of the `n`-simplices of `X` into those of `Y` (`SSetPair.chainComplexXSplitting`); so
+the relative chains are a retract of the ambient chains (`SSetPair.chainComplexXRetract`), and are
+projective when those are (`SSetPair.projective_chainComplex_X`). A morphism of pairs which is a
 quasi-isomorphism on subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative
 chains (`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
 
@@ -93,20 +93,21 @@ instance (R : C) (P : SSetPair.{w}) (n : ℕ) : IsSplitMono ((SSet.chainComplexM
 
 variable {A : Type*} [Category* A] [HasCoproducts.{w} A] [Abelian A]
 
+/-- The degree-`n` part `0 ⟶ Cₙ(X; R) ⟶ Cₙ(Y; R) ⟶ Cₙ(Y, X; R) ⟶ 0` of the short exact sequence
+of chain complexes of a pair `X ⟶ Y` of simplicial sets is split: it is exact since the relative
+chains are the cokernel of the ambient chains, and its first map is a split monomorphism. -/
+noncomputable def chainComplexXSplitting (R : A) (P : SSetPair.{w}) (n : ℕ) :
+    (ShortComplex.mk _ _ (P.chainComplex_condition_f R n)).Splitting :=
+  ShortComplex.Splitting.ofExactOfRetraction _
+    (ShortComplex.exact_of_g_is_cokernel _ (P.isColimitCokernelCoforkChainComplexX R n))
+    (retraction ((SSet.chainComplexMap P.hom R).f n)) (IsSplitMono.id _) inferInstance
+
 /-- The relative chains `Cₙ(Y, X; R)` of a pair `X ⟶ Y` of simplicial sets are a retract of the
-ambient chains `Cₙ(Y; R)`: the degree-`n` sequence `0 ⟶ Cₙ(X) ⟶ Cₙ(Y) ⟶ Cₙ(Y, X) ⟶ 0` is short
-exact with split first map, so the quotient map to the relative chains has a section. -/
+ambient chains `Cₙ(Y; R)`: the degree-`n` sequence `0 ⟶ Cₙ(X) ⟶ Cₙ(Y) ⟶ Cₙ(Y, X) ⟶ 0` is split
+(`SSetPair.chainComplexXSplitting`), so the quotient map to the relative chains has a section. -/
 noncomputable def chainComplexXRetract (R : A) (P : SSetPair.{w}) (n : ℕ) :
     Retract ((P.chainComplex R).X n) ((P.right.chainComplex R).X n) :=
-  have hS := P.shortExact_chainComplexShortComplex R
-  have := hS.epi_g
-  have : (HomologicalComplex.eval A (ComplexShape.down ℕ) n).PreservesHomology := {}
-  let e := ShortComplex.Splitting.ofExactOfRetraction _
-    (hS.exact.map (HomologicalComplex.eval A _ n))
-    (retraction ((SSet.chainComplexMap P.hom R).f n))
-    (IsSplitMono.id ((SSet.chainComplexMap P.hom R).f n))
-    (inferInstance : Epi ((P.chainComplexπ R).f n))
-  ⟨e.s, (P.chainComplexπ R).f n, e.s_g⟩
+  ⟨(chainComplexXSplitting R P n).s, (P.chainComplexπ R).f n, (chainComplexXSplitting R P n).s_g⟩
 
 /-- The relative chains `Cₙ(Y, X; R)` of a pair of simplicial sets are projective whenever the
 ambient chains `Cₙ(Y; R)` are, for instance for chains with coefficients in a projective module. -/

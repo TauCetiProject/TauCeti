@@ -85,6 +85,9 @@ on `[Iⁿ⁺²]` forces `[Iⁿ⁺²]` to correspond to a unit of `k`.
   singular generator of `H₁(I¹, ∂I¹; k)` over every ring `k`.
 * `TauCeti.cubicalHomologyCubeBoundaryPairOneEquiv`: the isomorphism `k ≃ₗ[k] H₁(I¹, ∂I¹; k)`,
   `a ↦ a • [I¹]`, of relative cubical homology, over every ring `k`.
+* `TauCeti.isZero_cubicalHomology_cubeBoundaryPair_of_ne`: `Hⱼ(Iⁿ, ∂Iⁿ; k) = 0` for `j ≠ n`, so
+  the relative cubical homology of the cube pair is projective in every degree
+  (`TauCeti.projective_cubicalHomology_cubeBoundaryPair`).
 * `TauCeti.bijective_smul_homologyπ_cubeBoundaryCycle`,
   `TauCeti.cubicalHomologyCubeBoundaryEquiv`: the isomorphism `k ≃ₗ[k] Hₙ₊₁(∂Iⁿ⁺²; k)`,
   `a ↦ a • [∂Iⁿ⁺²]`, of cubical homology, for every commutative ring `k`.
@@ -499,6 +502,13 @@ theorem exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_e
   | succ n =>
     exact exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_add_two n
 
+/-- **The relative cubical homology of the cube pair vanishes outside its dimension**:
+`Hⱼ(Iⁿ, ∂Iⁿ; k) = 0` for `j ≠ n`, over every ring `k`. -/
+theorem isZero_cubicalHomology_cubeBoundaryPair_of_ne {n j : ℕ} (hj : j ≠ n) :
+    IsZero (((cubeBoundaryPair.{u} n).cubicalChainComplex k).homology j) :=
+  (isZero_singularHomology_cubeBoundaryPair_of_ne (ModuleCat.of k k) n hj).of_iso
+    (TopPair.singularCubicalHomologyIso k _ j).symm
+
 /-! ### The fundamental cycle generates over every commutative ring -/
 
 section CommRing
@@ -580,6 +590,17 @@ theorem cubicalHomologyCubeBoundaryEquiv_apply (n : ℕ) (a : k) :
         (n + 1) (cubeBoundaryCycle k (n + 1)) := by
   rw [cubicalHomologyCubeBoundaryEquiv, LinearEquiv.ofBijective_apply,
     LinearMap.toSpanSingleton_apply]
+
+/-- The relative cubical homology modules of the cube pair are projective in every degree: free of
+rank one in the dimension of the cube (`TauCeti.cubicalHomologyCubeBoundaryPairEquiv`), and zero in
+every other degree (`TauCeti.isZero_cubicalHomology_cubeBoundaryPair_of_ne`). -/
+instance projective_cubicalHomology_cubeBoundaryPair (m j : ℕ) :
+    Module.Projective k (((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homology j) := by
+  by_cases hj : j = m + 1
+  · subst hj
+    exact .of_equiv (cubicalHomologyCubeBoundaryPairEquiv k m)
+  · have := ModuleCat.subsingleton_of_isZero (isZero_cubicalHomology_cubeBoundaryPair_of_ne k hj)
+    infer_instance
 
 end CommRing
 
