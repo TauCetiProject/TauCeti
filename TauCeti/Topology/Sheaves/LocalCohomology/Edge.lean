@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.LocalCohomology.LongExactSequence
-import Mathlib.Topology.Sheaves.LocallySurjective
-import TauCeti.Topology.Sheaves.Stalks
 
 /-!
 # Support truncation and the edge comparison for module coefficients
@@ -29,16 +27,14 @@ these identify the complex vector space of sections of `𝓗_Mⁿ(𝓞_X)` over 
 Both results are proved by dimension shifting along an embedding `F ⟶ I` into an injective sheaf,
 for the more general statements in which `Γ_S(F)` is only assumed flasque and `𝓗_S^q(F) = 0` for
 `0 < q < n`. If `𝓗_S¹(F) = 0`, the supported-section functor keeps `0 ⟶ F ⟶ I ⟶ I / F ⟶ 0` short
-exact, because a section of `I / F` supported in `S` lifts locally; so `Γ_S(I / F)` is flasque as
-a quotient of the flasque sheaf `Γ_S(I)` by `Γ_S(F)`, and the connecting maps
+exact (`CategoryTheory.Sheaf.shortExact_map_supportedSubmoduleFunctor`); so `Γ_S(I / F)` is
+flasque as a quotient of the flasque sheaf `Γ_S(I)` by `Γ_S(F)`, and the connecting maps
 `H_S^q(-, I / F) ⟶ H_S^{q+1}(-, F)` are isomorphisms for `q > 0`. In degree one, for `Γ_S(F)`
 flasque, the degree-zero connecting maps identify `H_S¹(-, F)` with the cokernel sheaf of
 `Γ_S(I) ⟶ Γ_S(I / F)`, whose sections are computed objectwise.
 
 ## Main declarations
 
-* `CategoryTheory.Sheaf.shortExact_map_supportedSubmoduleFunctor`: `Γ_S` preserves a short exact
-  sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `𝓗_S¹(F₁) = 0`;
 * `CategoryTheory.Sheaf.subsingleton_supportedModuleH_of_isZero_supportedModuleHSheaf`: support
   truncation;
 * `CategoryTheory.Sheaf.isSheaf_supportedModuleHPresheaf_of_isZero_supportedModuleHSheaf`: if
@@ -67,100 +63,9 @@ variable {X : TopCat.{u}} {R : Type u} [CommRing R]
 
 noncomputable section
 
-/-- If the local cohomology sheaf `𝓗_Sⁿ(F)` vanishes, then every class in `H_Sⁿ(W, F)` vanishes
-locally: each point `x ∈ W` has an open neighbourhood `V ≤ W` on which the class restricts to
-zero. -/
-theorem exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSheaf {n : ℕ}
-    (h : IsZero (F.supportedModuleHSheaf S n)) {W : Opens X} (c : F.supportedModuleH S W n)
-    {x : X} (hx : x ∈ W) :
-    ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧
-      (F.supportedModuleHPresheaf S n).map (homOfLE hVW).op c = 0 :=
-  (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff_moduleCat _).1 h x W c hx
-
-/-- If the local cohomology sheaf `𝓗_S⁰(F)` vanishes, so does the presheaf of sections of `F`
-supported in `S`. -/
-theorem isZero_supportedSubmoduleSheaf_obj (h : IsZero (F.supportedModuleHSheaf S 0)) :
-    IsZero (F.supportedSubmoduleSheaf S).obj :=
-  (sheafToPresheaf _ _).map_isZero (h.of_iso (F.supportedModuleHSheafZeroIso S).symm)
-
-/-- If the local cohomology sheaf `𝓗_S⁰(F)` vanishes, then the presheaf of sections of `F`
-supported in `S` is flasque, being zero. -/
-theorem isFlasque_supportedSubmoduleSheaf_obj_of_isZero (h : IsZero (F.supportedModuleHSheaf S 0)) :
-    TopCat.Presheaf.IsFlasque (F.supportedSubmoduleSheaf S).obj :=
-  TopCat.Presheaf.IsFlasque.of_isZero (F.isZero_supportedSubmoduleSheaf_obj S h)
-
 section truncation
 
 variable {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))}
-
-/-- The Yoneda product with the extension class of a short exact sequence commutes with
-restriction of supported cohomology classes. -/
-private lemma supportedModuleHPresheaf_map_comp_extClass (hT : T.ShortExact) {n : ℕ}
-    {W W' : (Opens X)ᵒᵖ} (f : W ⟶ W') (c : T.X₃.supportedModuleH S W.unop n) :
-    (((T.X₃.supportedModuleHPresheaf S n).map f c : T.X₃.supportedModuleH S W'.unop n).comp
-        hT.extClass rfl : T.X₁.supportedModuleH S W'.unop (n + 1)) =
-      (T.X₁.supportedModuleHPresheaf S (n + 1)).map f (c.comp hT.extClass rfl) :=
-  Ext.comp_assoc _ c hT.extClass (zero_add n) rfl (by omega)
-
-/-- If the middle term of a short exact sequence is flasque, the Yoneda product with its extension
-class is bijective on supported cohomology in positive degrees. -/
-private lemma bijective_comp_extClass_succ (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj]
-    (W : Opens X) (n : ℕ) :
-    Function.Bijective (fun c : T.X₃.supportedModuleH S W (n + 1) ↦
-      (c.comp hT.extClass rfl : T.X₁.supportedModuleH S W (n + 2))) :=
-  have := isIso_supportedModuleHPresheafδ_succ S hT n
-  have e : (fun c : T.X₃.supportedModuleH S W (n + 1) ↦
-      (c.comp hT.extClass rfl : T.X₁.supportedModuleH S W (n + 2))) =
-      (supportedModuleHPresheafδ S hT (n + 1)).app (op W) :=
-    funext fun c ↦ (supportedModuleHPresheafδ_app_apply S hT (n + 1) (op W) c).symm
-  e ▸ (ConcreteCategory.isIso_iff_bijective _).1 inferInstance
-
-/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and the local cohomology sheaf `𝓗_S¹(F₁)` vanishes,
-then `Γ_S(F₂) ⟶ Γ_S(F₃)` is an epimorphism: a section of `F₃` supported in `S` lifts locally to a
-section of `F₂` supported in `S`. -/
-theorem epi_supportedSubmoduleFunctor_map_g (hT : T.ShortExact)
-    (h : IsZero (T.X₁.supportedModuleHSheaf S 1)) :
-    Epi ((supportedSubmoduleFunctor S).map T.g) := by
-  refine (TopCat.Sheaf.isLocallySurjective_iff_epi _).1 ?_
-  rw [TopCat.Presheaf.isLocallySurjective_iff]
-  intro W s x hx
-  -- the class `y` of `s` in `H_S⁰(W, F₃)` has image in `H_S¹(W, F₁)` vanishing near `x`
-  obtain ⟨y, rfl⟩ := (T.X₃.supportedModuleHZeroEquiv S W).surjective s
-  obtain ⟨V, hVW, hxV, hV⟩ :=
-    T.X₁.exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSheaf S h
-      (y.comp hT.extClass rfl) hx
-  rw [← supportedModuleHPresheaf_map_comp_extClass S hT] at hV
-  -- so near `x` the class `y` comes from a section of `F₂` supported in `S`
-  obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ rfl hV
-  refine ⟨V, hVW, ⟨T.X₂.supportedModuleHZeroEquiv S V z, Subtype.ext ?_⟩, hxV⟩
-  rw [coe_supportedSubmoduleFunctor_map_hom_app_apply,
-    ← coe_supportedModuleHZeroEquiv_naturality_right, hz, coe_supportedModuleHZeroEquiv_map]
-  rfl
-
-/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and the local cohomology sheaf `𝓗_S¹(F₁)` vanishes,
-then `0 ⟶ Γ_S(F₁) ⟶ Γ_S(F₂) ⟶ Γ_S(F₃) ⟶ 0` is short exact. -/
-theorem shortExact_map_supportedSubmoduleFunctor (hT : T.ShortExact)
-    (h : IsZero (T.X₁.supportedModuleHSheaf S 1)) :
-    (T.map (supportedSubmoduleFunctor S)).ShortExact :=
-  have := hT.mono_f
-  { exact := exact_map_supportedSubmoduleFunctor S hT.exact
-    mono_f := mono_supportedSubmoduleFunctor_map S T.f
-    epi_g := epi_supportedSubmoduleFunctor_map_g S hT h }
-
-/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact with `F₂` flasque and `𝓗_Sⁿ⁺²(F₁) = 0`, then
-`𝓗_Sⁿ⁺¹(F₃) = 0`. -/
-theorem isZero_supportedModuleHSheaf_X₃_of_shortExact (hT : T.ShortExact)
-    [TopCat.Presheaf.IsFlasque T.X₂.obj] {n : ℕ}
-    (h : IsZero (T.X₁.supportedModuleHSheaf S (n + 2))) :
-    IsZero (T.X₃.supportedModuleHSheaf S (n + 1)) := by
-  refine (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff_moduleCat _).2 fun x W c hx ↦ ?_
-  obtain ⟨V, hVW, hxV, hV⟩ :=
-    T.X₁.exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSheaf S h
-      (Ext.comp (c : T.X₃.supportedModuleH S W (n + 1)) hT.extClass rfl) hx
-  -- the connecting map commutes with restriction to `V`, where it is injective
-  refine ⟨V, hVW, hxV, (bijective_comp_extClass_succ S hT V n).1 ?_⟩
-  exact ((supportedModuleHPresheaf_map_comp_extClass S hT _ _).trans hV).trans
-    (Ext.zero_comp _ _ _ _ _).symm
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact with `F₂` flasque, `Γ_S(F₁)` flasque and
 `𝓗_S¹(F₁) = 0`, then `H_S¹(W, F₁) = 0` for every open `W`. This is the base step of
@@ -171,21 +76,16 @@ private theorem subsingleton_supportedModuleH_one_of_shortExact (hT : T.ShortExa
     [TopCat.Presheaf.IsFlasque (T.X₁.supportedSubmoduleSheaf S).obj]
     (h : IsZero (T.X₁.supportedModuleHSheaf S 1)) (W : Opens X) :
     Subsingleton (T.X₁.supportedModuleH S W 1) := by
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  -- `x` is the connecting image of a class `y` in `H_S⁰(W, F₃)`, which comes from `H_S⁰(W, F₂)`
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  -- `c` is the connecting image of a section of `F₃` supported in `S`, which comes from `F₂`
   -- because `Γ_S(F₂) ⟶ Γ_S(F₃)` is surjective on sections, `Γ_S(F₁)` being flasque
-  obtain ⟨y, rfl⟩ := Ext.covariant_sequence_exact₁ _ hT x
-    ((subsingleton_supportedModuleH_succ_of_isFlasque T.X₂ S W 0).elim _ _) (zero_add 1)
+  obtain ⟨s, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
+    (epi_supportedModuleHPresheafδZero_app S hT (op W)) c
   have hΓ := shortExact_map_supportedSubmoduleFunctor S hT h
   have : TopCat.Presheaf.IsFlasque (T.map (supportedSubmoduleFunctor S)).X₁.obj := ‹_›
-  obtain ⟨t, ht⟩ := hΓ.surjective_app_of_isFlasque (op W) (T.X₃.supportedModuleHZeroEquiv S W y)
-  obtain ⟨z, rfl⟩ := (T.X₂.supportedModuleHZeroEquiv S W).surjective t
-  have hy : z.comp (Ext.mk₀ T.g) (add_zero 0) = y :=
-    (T.X₃.supportedModuleHZeroEquiv S W).injective <| Subtype.ext <|
-      (coe_supportedModuleHZeroEquiv_naturality_right S W T.g z).trans <|
-        (coe_supportedSubmoduleFunctor_map_hom_app_apply S T.g (op W) _).symm.trans
-          (congrArg Subtype.val ht)
-  rw [← hy, Ext.comp_assoc_of_second_deg_zero, hT.comp_extClass, Ext.comp_zero]
+  obtain ⟨t, rfl⟩ := hΓ.surjective_app_of_isFlasque (op W) s
+  exact ConcreteCategory.congr_hom (NatTrans.congr_app
+    (supportedSubmoduleFunctor_map_g_hom_supportedModuleHPresheafδZero S hT) (op W)) t
 
 /-- The dimension-shifting form of support truncation: if `Γ_S(F)` is flasque and the local
 cohomology sheaves `𝓗_S^{q+1}(F)` vanish for `q < n`, then `H_S^{q+1}(W, F) = 0` for every
@@ -211,9 +111,11 @@ theorem subsingleton_supportedModuleH_succ_of_isZero_supportedModuleHSheaf_succ
       hΓ.isFlasque_X₃_of_isFlasque
     rcases q with _ | q
     · exact subsingleton_supportedModuleH_one_of_shortExact S hT h₁ W
-    · have := ih T.X₃ (fun q hq ↦ isZero_supportedModuleHSheaf_X₃_of_shortExact S hT
+    · have hsub := ih T.X₃ (fun q hq ↦ isZero_supportedModuleHSheaf_X₃_of_shortExact S hT
         (h (q + 1) (by omega))) (q := q) (by omega)
-      exact (bijective_comp_extClass_succ S hT W q).2.subsingleton
+      have := isIso_supportedModuleHPresheafδ_succ S hT q
+      exact ((asIso (supportedModuleHPresheafδ S hT (q + 1))).app (op W)).toLinearEquiv.toEquiv
+        |>.subsingleton_congr.mp hsub
 
 /-- **Support truncation.** If the local cohomology sheaves `𝓗_S^q(F)` vanish for all `q < n`,
 then the cohomology modules `H_S^q(W, F)` with supports in `S` vanish for all `q < n` and every
@@ -235,73 +137,15 @@ section edge
 
 variable {T : ShortComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))}
 
-/-- The degree-zero connecting maps `Γ_S(W, F₃) ⟶ H_S¹(W, F₁)` of a short exact sequence
-`0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, as a morphism of presheaves. -/
-private abbrev supportedModuleHPresheafδZero (hT : T.ShortExact) :
-    (T.X₃.supportedSubmoduleSheaf S).obj ⟶ T.X₁.supportedModuleHPresheaf S 1 :=
-  (T.X₃.supportedModuleHPresheafZeroIso S).inv ≫ supportedModuleHPresheafδ S hT 0
-
-private lemma supportedModuleHPresheafδZero_app_apply (hT : T.ShortExact) (W : (Opens X)ᵒᵖ)
-    (s : T.X₃.supportedSubmodule S W.unop) :
-    (supportedModuleHPresheafδZero S hT).app W s =
-      ((T.X₃.supportedModuleHZeroEquiv S W.unop).symm s).comp hT.extClass (zero_add 1) :=
-  (supportedModuleHPresheafδ_app_apply S hT 0 W _).trans <| congrArg (Ext.comp · hT.extClass _) <|
-    (LinearEquiv.eq_symm_apply _).2 <| Subtype.ext <|
-      (coe_supportedModuleHPresheafZeroIso_hom_app_apply S T.X₃ W _).symm.trans <|
-        congrArg Subtype.val (ConcreteCategory.congr_hom
-          ((T.X₃.supportedModuleHPresheafZeroIso S).inv_hom_id_app W) s)
-
-/-- Under `CategoryTheory.Sheaf.supportedModuleHZeroEquiv`, the image of a supported section of
-`F₂` in `F₃` corresponds to the image of its class. -/
-private lemma supportedModuleHZeroEquiv_symm_map_g (W : (Opens X)ᵒᵖ)
-    (s : T.X₂.supportedSubmodule S W.unop) :
-    (T.X₃.supportedModuleHZeroEquiv S W.unop).symm
-        (((supportedSubmoduleFunctor S).map T.g).hom.app W s) =
-      ((T.X₂.supportedModuleHZeroEquiv S W.unop).symm s).comp (Ext.mk₀ T.g) (add_zero 0) := by
-  refine (LinearEquiv.symm_apply_eq _).2 (Subtype.ext ?_)
-  rw [coe_supportedModuleHZeroEquiv_naturality_right, LinearEquiv.apply_symm_apply]
-  exact coe_supportedSubmoduleFunctor_map_hom_app_apply S T.g W s
-
-/-- The short complex `Γ_S(W, F₂) ⟶ Γ_S(W, F₃) ⟶ H_S¹(W, F₁)` of a short exact sequence
-`0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`. -/
-private abbrev supportedModuleHδZeroComplex (hT : T.ShortExact) (W : Opens X) :
-    ShortComplex (ModuleCat.{u} R) :=
-  ShortComplex.mk ((T.map (supportedSubmoduleFunctor S)).g.hom.app (op W))
-    ((supportedModuleHPresheafδZero S hT).app (op W)) <| by
-      ext s
-      refine (supportedModuleHPresheafδZero_app_apply S hT (op W) _).trans <|
-        (congrArg (fun z ↦ z.comp hT.extClass (zero_add 1))
-          (supportedModuleHZeroEquiv_symm_map_g S (op W) s)).trans ?_
-      rw [Ext.comp_assoc_of_second_deg_zero, hT.comp_extClass, Ext.comp_zero]
-      rfl
-
-/-- If `F₂` is flasque, the degree-zero connecting map `Γ_S(W, F₃) ⟶ H_S¹(W, F₁)` is surjective
-with kernel the image of `Γ_S(W, F₂)`. -/
-private lemma exact_supportedModuleHδZeroComplex (hT : T.ShortExact)
-    [TopCat.Presheaf.IsFlasque T.X₂.obj] (W : Opens X) :
-    (supportedModuleHδZeroComplex S hT W).Exact ∧ Epi (supportedModuleHδZeroComplex S hT W).g := by
-  refine ⟨(ShortComplex.moduleCat_exact_iff _).2 fun s hs ↦ ?_,
-    (ModuleCat.epi_iff_surjective _).2 fun c ↦ ?_⟩
-  · obtain ⟨z, hz⟩ := Ext.covariant_sequence_exact₃ _ hT _ (zero_add 1)
-      ((supportedModuleHPresheafδZero_app_apply S hT (op W) s).symm.trans hs)
-    refine ⟨T.X₂.supportedModuleHZeroEquiv S W z, ?_⟩
-    apply (T.X₃.supportedModuleHZeroEquiv S W).symm.injective
-    refine (supportedModuleHZeroEquiv_symm_map_g S (op W) _).trans ?_
-    rw [LinearEquiv.symm_apply_apply]
-    exact hz
-  · obtain ⟨y, rfl⟩ := Ext.covariant_sequence_exact₁ _ hT c
-      ((subsingleton_supportedModuleH_succ_of_isFlasque T.X₂ S W 0).elim _ _) (zero_add 1)
-    refine ⟨T.X₃.supportedModuleHZeroEquiv S W y, ?_⟩
-    exact (supportedModuleHPresheafδZero_app_apply S hT (op W) _).trans
-      (by rw [LinearEquiv.symm_apply_apply])
-
 /-- If `F₂` is flasque, `H_S¹(W, F₁)` is the cokernel of `Γ_S(W, F₂) ⟶ Γ_S(W, F₃)`, through the
 degree-zero connecting map. -/
 private def isColimitSupportedModuleHδZero (hT : T.ShortExact)
     [TopCat.Presheaf.IsFlasque T.X₂.obj] (W : Opens X) :
-    IsColimit (CokernelCofork.ofπ _ (supportedModuleHδZeroComplex S hT W).zero) :=
-  have := (exact_supportedModuleHδZeroComplex S hT W).2
-  (exact_supportedModuleHδZeroComplex S hT W).1.gIsCokernel
+    IsColimit (CokernelCofork.ofπ (f := ((supportedSubmoduleFunctor S).map T.g).hom.app (op W))
+      ((supportedModuleHPresheafδZero S hT).app (op W)) (by
+        rw [← NatTrans.comp_app, supportedSubmoduleFunctor_map_g_hom_supportedModuleHPresheafδZero,
+          NatTrans.app_zero])) :=
+  (exact_supportedModuleHPresheafδZero_app S hT (op W)).gIsCokernel
 
 /-- If `F₂` and `Γ_S(F₁)` are flasque, the sections over `W` of the cokernel sheaf of
 `Γ_S(F₂) ⟶ Γ_S(F₃)` are the cokernel of `Γ_S(W, F₂) ⟶ Γ_S(W, F₃)`. -/
@@ -352,7 +196,6 @@ private def supportedModuleHPresheafOneIsoCokernel (hT : T.ShortExact)
     T.X₁.supportedModuleHPresheaf S 1 ≅ (cokernel (T.map (supportedSubmoduleFunctor S)).g).obj :=
   NatIso.ofComponents (fun W ↦ supportedModuleHOneIsoCokernel S hT W.unop) fun {W W'} f ↦ by
     -- both composites agree after precomposing with the epimorphism `Γ_S(W, F₃) ⟶ H_S¹(W, F₁)`
-    have := (exact_supportedModuleHδZeroComplex S hT W.unop).2
     rw [← cancel_epi ((supportedModuleHPresheafδZero S hT).app W), ← NatTrans.naturality_assoc,
       supportedModuleHPresheafδZero_supportedModuleHOneIsoCokernel,
       supportedModuleHPresheafδZero_supportedModuleHOneIsoCokernel_assoc]

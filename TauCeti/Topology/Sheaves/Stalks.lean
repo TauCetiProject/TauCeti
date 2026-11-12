@@ -132,7 +132,7 @@ variable {R : Type u} [Ring R] (P : X.Presheaf (ModuleCat.{u} R))
 
 /-- The stalk of a module-valued presheaf at `x` vanishes if and only if every section over a
 neighbourhood of `x` restricts to zero on some smaller neighbourhood of `x`. -/
-theorem isZero_stalk_iff_moduleCat :
+theorem isZero_stalk_iff_moduleCat (x : X) :
     IsZero (P.stalk x) ↔ ∀ (U : Opens X) (s : P.obj (op U)), x ∈ U →
       ∃ (V : Opens X) (h : V ≤ U), x ∈ V ∧ P.map (homOfLE h).op s = 0 := by
   rw [ModuleCat.isZero_iff_subsingleton]
@@ -156,7 +156,7 @@ theorem isZero_presheafToSheaf_obj_iff_moduleCat :
   refine (TopCat.Sheaf.isZero_iff_stalkFunctor_obj_isZero (X := X)
     ((presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj P)).trans
       (forall_congr' fun x ↦ ?_)
-  exact (isZero_stalk_sheafify_iff x P).trans (isZero_stalk_iff_moduleCat x P)
+  exact (isZero_stalk_sheafify_iff x P).trans (P.isZero_stalk_iff_moduleCat x)
 
 end ModuleCat
 

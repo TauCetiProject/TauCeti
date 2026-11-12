@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Sheaves.LocalCohomology.Edge
+public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
 public import TauCeti.CategoryTheory.Abelian.AcyclicResolution
 public import TauCeti.Topology.Sheaves.Flasque.Module
 public import TauCeti.Topology.Sheaves.Flasque.Locality
+import TauCeti.Topology.Sheaves.LocalCohomology.LongExactSequence
 
 /-!
 # Flasque resolutions for supported sections
