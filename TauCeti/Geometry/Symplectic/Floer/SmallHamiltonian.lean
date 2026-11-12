@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent
+public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
@@ -23,7 +23,7 @@ Let `(V, ω)` be a symplectic vector space whose inner product is the metric `g 
 constant compatible almost complex structure `J`, and let `H : V → ℝ` be an autonomous
 Hamiltonian. For the cylindrical perturbation `K = H dt` the Floer equation reads
 `∂s u + J (∂t u - X_H(u)) = 0`. Its solutions that do not depend on `t` are the gradient lines of
-`H` (`TauCeti.Geometry.Symplectic.Floer.TimeIndependent`). This file proves the converse for
+`H` (`TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Basic`). This file proves the converse for
 `C²`-small Hamiltonians: every solution of period one in `t` with bounded derivative is
 independent of `t`, and so is a gradient line. This is the analytic step behind the
 identification of the Floer cylinders of a small Morse Hamiltonian with its gradient trajectories.
