@@ -26,12 +26,20 @@ JSJ trees are not unique, but any two of them dominate each other: by
 `GTree.IsJSJ.isEllipticSubgroup_iff` they all have the same elliptic subgroups.
 
 An `(𝒜, ℋ)`-tree all of whose vertices are rigid is a JSJ tree
-(`GTree.IsJSJ.of_forall_isRigidVertex`), in particular an `(𝒜, ℋ)`-tree with trivial vertex
-stabilizers (`GTree.IsJSJ.of_forall_stabilizer_eq_bot`). For instance, when `𝒜` contains the
-trivial subgroup and every member of `ℋ` is trivial, a minimal free action of a free group on a
-tree is a JSJ tree. For the infinite cyclic group, under the same two hypotheses on `𝒜` and `ℋ`,
-the line is a JSJ tree and the one-vertex tree is not (both in `GTree.{0, 0}`). For the trivial
-group the JSJ trees are exactly the one-vertex trees, whatever `𝒜` and `ℋ`.
+(`GTree.IsJSJ.of_forall_isRigidVertex`), and its elliptic subgroups are exactly the universally
+elliptic subgroups. In particular an `(𝒜, ℋ)`-tree with trivial vertex stabilizers is a JSJ tree
+(`GTree.IsJSJ.of_forall_stabilizer_eq_bot`); when there is one, the trivial subgroup is the only
+universally elliptic subgroup and the JSJ trees are exactly the `(𝒜, ℋ)`-trees with trivial
+vertex stabilizers, so for a nontrivial group no tree with one vertex is a JSJ tree. For
+instance, when `𝒜` contains the trivial subgroup and every member of `ℋ` is trivial, a minimal
+free action of a free group on a tree is a JSJ tree. For the infinite cyclic group, under the
+same two hypotheses on `𝒜` and `ℋ`, the line is a JSJ tree and the one-vertex tree is not, and
+its vertex is flexible (all in `GTree.{0, 0}`).
+
+A tree with one vertex is a JSJ tree exactly when `G` fixes a vertex of every universally
+elliptic `(𝒜, ℋ)`-tree, and its vertex is rigid exactly when `G` is universally elliptic. When a
+tree with one vertex is a JSJ tree, the JSJ trees are exactly the trees with one vertex; this is
+the case for the trivial group, whatever `𝒜` and `ℋ`.
 
 ## Rigid vertices
 
@@ -62,6 +70,13 @@ both are at least the universe of `G`; taking both equal to that universe is the
 * `TauCeti.GTree.IsJSJ.of_forall_isRigidVertex`, `TauCeti.GTree.IsJSJ.of_forall_stabilizer_eq_bot`:
   minimal relative trees with universally elliptic, in particular trivial, vertex stabilizers are
   JSJ trees.
+* `TauCeti.GTree.isUniversallyEllipticSubgroup_iff_isEllipticSubgroup`,
+  `TauCeti.GTree.isUniversallyEllipticSubgroup_iff_eq_bot`,
+  `TauCeti.GTree.IsJSJ.isJSJ_iff_forall_stabilizer_eq_bot`: the universally elliptic subgroups and
+  the JSJ trees in the presence of a minimal relative tree with rigid, or trivial, vertex
+  stabilizers.
+* `TauCeti.GTree.isJSJ_iff_of_subsingleton`, `TauCeti.GTree.IsJSJ.isJSJ_iff_subsingleton`: trees
+  with one vertex as JSJ trees.
 * `TauCeti.GTree.isJSJ_iff_subsingleton`: the JSJ trees of the trivial group.
 * `TauCeti.GTree.line_isJSJ`, `TauCeti.GTree.not_point_isJSJ_int`: over a family containing the
   trivial subgroup, relative to a family of trivial subgroups, the line is a JSJ tree of the
@@ -221,7 +236,8 @@ theorem isRigidVertex_iff :
 
 theorem isFlexibleVertex_iff : T.IsFlexibleVertex 𝒜 ℋ x ↔ ¬T.IsRigidVertex 𝒜 ℋ x := Iff.rfl
 
-theorem not_isFlexibleVertex_iff : ¬T.IsFlexibleVertex 𝒜 ℋ x ↔ T.IsRigidVertex 𝒜 ℋ x := not_not
+@[simp] theorem not_isFlexibleVertex_iff : ¬T.IsFlexibleVertex 𝒜 ℋ x ↔ T.IsRigidVertex 𝒜 ℋ x :=
+  not_not
 
 /-- A vertex is flexible exactly when its stabilizer is not elliptic in some minimal relative
 tree. -/
@@ -231,10 +247,27 @@ theorem isFlexibleVertex_iff_exists :
   simp only [isFlexibleVertex_iff, isRigidVertex_iff, isUniversallyEllipticSubgroup_iff,
     not_forall, exists_prop]
 
+/-- The stabilizer of a rigid vertex is universally elliptic. -/
+theorem IsRigidVertex.isUniversallyEllipticSubgroup_stabilizer (hx : T.IsRigidVertex 𝒜 ℋ x) :
+    IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ (stabilizer G x) :=
+  hx
+
 /-- The stabilizer of a rigid vertex is elliptic in every minimal relative tree. -/
 theorem IsRigidVertex.isEllipticSubgroup_stabilizer (hx : T.IsRigidVertex 𝒜 ℋ x)
     (hm : T'.IsMinimal) (hr : T'.IsRelative 𝒜 ℋ) : T'.IsEllipticSubgroup (stabilizer G x) :=
   hx T' hm hr
+
+/-- Rigidity is antitone in the family of edge stabilizers and monotone in the family of
+subgroups required to be elliptic. -/
+theorem IsRigidVertex.of_subset (hx : T.IsRigidVertex 𝒜' ℋ' x) (h𝒜 : 𝒜 ⊆ 𝒜') (hℋ : ℋ' ⊆ ℋ) :
+    T.IsRigidVertex 𝒜 ℋ x :=
+  hx.isUniversallyEllipticSubgroup_stabilizer.of_subset h𝒜 hℋ
+
+/-- Flexibility is monotone in the family of edge stabilizers and antitone in the family of
+subgroups required to be elliptic. -/
+theorem IsFlexibleVertex.of_subset (hx : T.IsFlexibleVertex 𝒜 ℋ x) (h𝒜 : 𝒜 ⊆ 𝒜')
+    (hℋ : ℋ' ⊆ ℋ) : T.IsFlexibleVertex 𝒜' ℋ' x :=
+  fun h => hx (h.of_subset h𝒜 hℋ)
 
 /-- Rigidity is constant on orbits of vertices. -/
 @[simp] theorem isRigidVertex_smul_iff {g : G} :
@@ -329,24 +362,113 @@ theorem IsJSJ.of_forall_stabilizer_eq_bot (hm : T.IsMinimal) (hr : T.IsRelative 
     (h : ∀ x : T.V, stabilizer G x = ⊥) : T.IsJSJ 𝒜 ℋ :=
   .of_forall_isRigidVertex hm hr fun x => isRigidVertex_of_stabilizer_eq_bot 𝒜 ℋ (h x)
 
+/-- In a minimal relative tree all of whose vertices are rigid, the universally elliptic
+subgroups are exactly the elliptic subgroups. -/
+theorem isUniversallyEllipticSubgroup_iff_isEllipticSubgroup (hm : T.IsMinimal)
+    (hr : T.IsRelative 𝒜 ℋ) (h : ∀ x : T.V, T.IsRigidVertex 𝒜 ℋ x) :
+    IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ H ↔ T.IsEllipticSubgroup H :=
+  ⟨fun hH => hH T hm hr, fun hH => (isEllipticSubgroup_iff.mp hH).elim fun x hx =>
+    (h x).isUniversallyEllipticSubgroup_stabilizer.mono hx⟩
+
+/-- If some minimal relative tree has trivial vertex stabilizers, the trivial subgroup is the
+only universally elliptic subgroup. -/
+theorem isUniversallyEllipticSubgroup_iff_eq_bot (hm : T.IsMinimal) (hr : T.IsRelative 𝒜 ℋ)
+    (h : ∀ x : T.V, stabilizer G x = ⊥) :
+    IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ H ↔ H = ⊥ := by
+  rw [isUniversallyEllipticSubgroup_iff_isEllipticSubgroup hm hr
+    fun x => isRigidVertex_of_stabilizer_eq_bot 𝒜 ℋ (h x)]
+  simp only [isEllipticSubgroup_iff, h, le_bot_iff, exists_const]
+
+/-- If some JSJ tree has trivial vertex stabilizers, the JSJ trees are exactly the minimal
+relative trees with trivial vertex stabilizers. -/
+theorem IsJSJ.isJSJ_iff_forall_stabilizer_eq_bot (hT : T.IsJSJ 𝒜 ℋ)
+    (h : ∀ x : T.V, stabilizer G x = ⊥) :
+    T'.IsJSJ 𝒜 ℋ ↔ T'.IsMinimal ∧ T'.IsRelative 𝒜 ℋ ∧ ∀ x : T'.V, stabilizer G x = ⊥ := by
+  refine ⟨fun hT' => ⟨hT'.isMinimal, hT'.isRelative, fun x => ?_⟩,
+    fun ⟨hm, hr, h'⟩ => .of_forall_stabilizer_eq_bot hm hr h'⟩
+  obtain ⟨y, hy⟩ := GTree.isEllipticSubgroup_iff.mp
+    ((hT'.isEllipticSubgroup_iff hT).mp (T'.isEllipticSubgroup_stabilizer x))
+  exact le_bot_iff.mp (h y ▸ hy)
+
+/-! ### Trees with one vertex -/
+
+/-- A vertex of a `G`-tree with one vertex is rigid exactly when `G` is universally elliptic. -/
+theorem isRigidVertex_iff_of_subsingleton [Subsingleton T.V] :
+    T.IsRigidVertex 𝒜 ℋ x ↔ IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ (⊤ : Subgroup G) := by
+  rw [isRigidVertex_iff, stabilizer_eq_top_of_subsingleton]
+
+/-- A vertex of a `G`-tree with one vertex is flexible exactly when `G` is not universally
+elliptic. -/
+theorem isFlexibleVertex_iff_of_subsingleton [Subsingleton T.V] :
+    T.IsFlexibleVertex 𝒜 ℋ x ↔ ¬IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ (⊤ : Subgroup G) :=
+  not_congr isRigidVertex_iff_of_subsingleton
+
+/-- A `G`-tree with one vertex is a JSJ tree exactly when `G` fixes a vertex of every universally
+elliptic minimal relative tree. -/
+theorem isJSJ_iff_of_subsingleton [Subsingleton T.V] :
+    T.IsJSJ 𝒜 ℋ ↔ ∀ T' : GTree.{u, v} G, T'.IsMinimal → T'.IsRelative 𝒜 ℋ →
+      T'.IsUniversallyElliptic 𝒜 ℋ → T'.IsEllipticSubgroup ⊤ :=
+  ⟨fun h _ hm hr hu => dominates_iff_of_subsingleton.mp (h.dominates hm hr hu),
+    fun h => ⟨isMinimal_of_subsingleton, T.isRelative_of_subsingleton 𝒜 ℋ,
+      T.isUniversallyElliptic_of_subsingleton 𝒜 ℋ,
+      fun T' hm hr hu => dominates_iff_of_subsingleton.mpr (h T' hm hr hu)⟩⟩
+
+/-- A `G`-tree with one vertex is a JSJ tree when `G` is universally elliptic. -/
+theorem isJSJ_of_subsingleton [Subsingleton T.V]
+    (h : IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ (⊤ : Subgroup G)) : T.IsJSJ 𝒜 ℋ :=
+  isJSJ_iff_of_subsingleton.mpr fun T' hm hr _ => h T' hm hr
+
+/-- If a `G`-tree with one vertex is a JSJ tree, the JSJ trees are exactly the trees with one
+vertex. -/
+theorem IsJSJ.isJSJ_iff_subsingleton [Subsingleton T.V] (hT : T.IsJSJ 𝒜 ℋ) :
+    T'.IsJSJ 𝒜 ℋ ↔ Subsingleton T'.V :=
+  ⟨fun h => h.isMinimal.subsingleton
+      ((hT.isEllipticSubgroup_iff h).mp (T.isEllipticSubgroup_of_subsingleton ⊤)),
+    fun _ => hT.of_dominates isMinimal_of_subsingleton (T'.isRelative_of_subsingleton 𝒜 ℋ)
+      (T'.isUniversallyElliptic_of_subsingleton 𝒜 ℋ) (T'.dominates_of_subsingleton)⟩
+
+/-- If some JSJ tree of a nontrivial group has trivial vertex stabilizers, no tree with one
+vertex is a JSJ tree. -/
+theorem IsJSJ.not_isJSJ_of_subsingleton [Nontrivial G] [Subsingleton T'.V] (hT : T.IsJSJ 𝒜 ℋ)
+    (h : ∀ x : T.V, stabilizer G x = ⊥) : ¬T'.IsJSJ 𝒜 ℋ := fun hT' => by
+  have hx := ((hT.isJSJ_iff_forall_stabilizer_eq_bot h).mp hT').2.2 (Classical.arbitrary T'.V)
+  rw [stabilizer_eq_top_of_subsingleton] at hx
+  exact top_ne_bot hx
+
 end Tree
 
 /-! ### The one-vertex tree -/
+
+/-- The one-vertex tree is universally elliptic. -/
+@[simp] theorem point_isUniversallyElliptic : (point.{u, v} G).IsUniversallyElliptic 𝒜 ℋ :=
+  isUniversallyElliptic_of_subsingleton _ 𝒜 ℋ
+
+/-- The vertex of the one-vertex tree is rigid exactly when `G` is universally elliptic. -/
+@[simp] theorem point_isRigidVertex_iff {x : (point.{u, v} G).V} :
+    (point.{u, v} G).IsRigidVertex 𝒜 ℋ x ↔
+      IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ (⊤ : Subgroup G) :=
+  isRigidVertex_iff_of_subsingleton
+
+/-- The vertex of the one-vertex tree is flexible exactly when `G` is not universally
+elliptic. -/
+@[simp] theorem point_isFlexibleVertex_iff {x : (point.{u, v} G).V} :
+    (point.{u, v} G).IsFlexibleVertex 𝒜 ℋ x ↔
+      ¬IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ (⊤ : Subgroup G) :=
+  isFlexibleVertex_iff_of_subsingleton
 
 /-- The one-vertex tree is a JSJ tree exactly when `G` fixes a vertex of every universally
 elliptic minimal relative tree. -/
 theorem point_isJSJ_iff :
     (point.{u, v} G).IsJSJ 𝒜 ℋ ↔ ∀ T : GTree.{u, v} G, T.IsMinimal → T.IsRelative 𝒜 ℋ →
       T.IsUniversallyElliptic 𝒜 ℋ → T.IsEllipticSubgroup ⊤ :=
-  ⟨fun h _ hm hr hu => point_dominates_iff.mp (h.dominates hm hr hu),
-    fun h => ⟨point_isMinimal G, point_isRelative G 𝒜 ℋ,
-      isUniversallyElliptic_of_subsingleton _ 𝒜 ℋ,
-      fun T hm hr hu => point_dominates_iff.mpr (h T hm hr hu)⟩⟩
+  isJSJ_iff_of_subsingleton
 
 /-- The one-vertex tree is a JSJ tree when `G` is universally elliptic. -/
 theorem point_isJSJ (h : IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ (⊤ : Subgroup G)) :
     (point.{u, v} G).IsJSJ 𝒜 ℋ :=
-  point_isJSJ_iff.mpr fun T hm hr _ => h T hm hr
+  isJSJ_of_subsingleton h
+
+/-! ### The trivial group -/
 
 variable (𝒜 ℋ) in
 /-- Every subgroup of the trivial group is universally elliptic. -/
@@ -356,11 +478,8 @@ theorem isUniversallyEllipticSubgroup_of_subsingleton [Subsingleton G] (H : Subg
 
 /-- The JSJ trees of the trivial group are the trees with one vertex. -/
 theorem isJSJ_iff_subsingleton [Subsingleton G] {T : GTree.{u, v} G} :
-    T.IsJSJ 𝒜 ℋ ↔ Subsingleton T.V := by
-  refine ⟨fun h => h.isMinimal.subsingleton ?_, fun _ => ?_⟩
-  · exact Subsingleton.elim (⊥ : Subgroup G) ⊤ ▸ T.isEllipticSubgroup_bot
-  · exact .of_forall_isRigidVertex isMinimal_of_subsingleton (T.isRelative_of_subsingleton 𝒜 ℋ)
-      fun x => isUniversallyEllipticSubgroup_of_subsingleton 𝒜 ℋ _
+    T.IsJSJ 𝒜 ℋ ↔ Subsingleton T.V :=
+  (point_isJSJ (isUniversallyEllipticSubgroup_of_subsingleton 𝒜 ℋ ⊤)).isJSJ_iff_subsingleton
 
 /-! ### The infinite cyclic group -/
 
@@ -371,30 +490,34 @@ theorem line_isJSJ {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))} (h𝒜 : ⊥
   .of_forall_stabilizer_eq_bot line_isMinimal
     (line_isRelative.mono (Set.singleton_subset_iff.mpr h𝒜) hℋ) line_stabilizer_vertex
 
+/-- The trivial subgroup is the only universally elliptic subgroup of the infinite cyclic group,
+over a family containing the trivial subgroup and relative to at most the trivial subgroup: the
+integers act freely on the line. -/
+theorem isUniversallyEllipticSubgroup_iff_eq_bot_int {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))}
+    (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) {H : Subgroup (Multiplicative ℤ)} :
+    IsUniversallyEllipticSubgroup.{0, 0} 𝒜 ℋ H ↔ H = ⊥ :=
+  isUniversallyEllipticSubgroup_iff_eq_bot line_isMinimal (line_isJSJ h𝒜 hℋ).isRelative
+    line_stabilizer_vertex
+
 /-- The infinite cyclic group is not universally elliptic over a family containing the trivial
-subgroup, relative to at most the trivial subgroup: it acts on the line without fixed vertex. -/
+subgroup, relative to at most the trivial subgroup. -/
 theorem not_isUniversallyEllipticSubgroup_top_int {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))}
     (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
     ¬IsUniversallyEllipticSubgroup.{0, 0} 𝒜 ℋ (⊤ : Subgroup (Multiplicative ℤ)) :=
-  fun h => not_point_dominates_line.{0, 0} <| point_dominates_iff.mpr <|
-    h line line_isMinimal (line_isRelative.mono (Set.singleton_subset_iff.mpr h𝒜) hℋ)
+  fun h => top_ne_bot ((isUniversallyEllipticSubgroup_iff_eq_bot_int h𝒜 hℋ).mp h)
 
 /-- The one-vertex tree is not a JSJ tree of the infinite cyclic group, over a family containing
-the trivial subgroup and relative to at most the trivial subgroup: it does not dominate the
-line. -/
+the trivial subgroup and relative to at most the trivial subgroup. -/
 theorem not_point_isJSJ_int {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))} (h𝒜 : ⊥ ∈ 𝒜)
     (hℋ : ℋ ⊆ {⊥}) : ¬(point.{0, 0} (Multiplicative ℤ)).IsJSJ 𝒜 ℋ :=
-  fun h => not_point_dominates_line.{0, 0} <|
-    h.dominates (line_isJSJ h𝒜 hℋ).isMinimal (line_isJSJ h𝒜 hℋ).isRelative
-      (line_isJSJ h𝒜 hℋ).isUniversallyElliptic
+  (line_isJSJ h𝒜 hℋ).not_isJSJ_of_subsingleton line_stabilizer_vertex
 
 /-- The vertex of the one-vertex tree of the infinite cyclic group is flexible, over a family
 containing the trivial subgroup and relative to at most the trivial subgroup. -/
 theorem point_isFlexibleVertex_int {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))} (h𝒜 : ⊥ ∈ 𝒜)
     (hℋ : ℋ ⊆ {⊥}) (x : (point.{0, 0} (Multiplicative ℤ)).V) :
     (point.{0, 0} (Multiplicative ℤ)).IsFlexibleVertex 𝒜 ℋ x :=
-  fun h => not_isUniversallyEllipticSubgroup_top_int h𝒜 hℋ <|
-    (isRigidVertex_iff.mp h).mono fun _ _ => mem_stabilizer_iff.mpr (Subsingleton.elim _ _)
+  point_isFlexibleVertex_iff.mpr (not_isUniversallyEllipticSubgroup_top_int h𝒜 hℋ)
 
 end GTree
 
