@@ -24,7 +24,7 @@ derivative is constant.
 
 ## Main results
 
-* `mfderiv_comp_add_right`: the derivative of a translate of `u` is the
+* `TauCeti.mfderiv_comp_add_right`: the derivative of a translate of `u` is the
   translate of the derivative of `u`.
 * `MDifferentiableAt.hasMFDerivAt_comp_add_smul`,
   `MDifferentiableAt.mfderiv_comp_add_smul_apply_one`: the derivative of `u` along the line
@@ -43,7 +43,7 @@ public section
 open Filter Function Topology
 open scoped Manifold
 
-section Translate
+namespace TauCeti
 
 variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H] {I : ModelWithCorners ℝ F H}
@@ -63,7 +63,7 @@ theorem mfderiv_comp_add_right (u : E → M) (z c : E) :
   rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
   rfl
 
-end Translate
+end TauCeti
 
 namespace MDifferentiableAt
 
