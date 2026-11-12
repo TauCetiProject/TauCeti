@@ -35,6 +35,8 @@ sets, `LinearMap.exists_schwartzKernel_supportedIn`.
 
 ## Main results
 
+* `ContDiffMapSupportedIn.differentiable`: for `1 ≤ n`, the elements of `𝓓^{n}_{K}(E, F)` are
+  differentiable.
 * `ContDiffMapSupportedIn.instCompleteSpace`: `𝓓^{n}_{K}(E, F)` is complete when `F` is.
 * `ContDiffMapSupportedIn.instBaireSpace`: with the countably generated uniformity
   (`ContDiffMapSupportedIn.instIsCountablyGeneratedUniformity`), completeness makes
@@ -59,6 +61,10 @@ namespace ContDiffMapSupportedIn
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {n : ℕ∞} {K : Compacts E}
+
+/-- For `1 ≤ n`, a `C^n` function supported in `K` is differentiable. -/
+protected theorem differentiable (hn : 1 ≤ n) (f : 𝓓^{n}_{K}(E, F)) : Differentiable ℝ f :=
+  f.contDiff.differentiable (by exact_mod_cast (one_ne_zero.bot_lt.trans_le hn).ne')
 
 /-- The topology of `𝓓^{n}_{K}(E, F)` is given by countably many seminorms, so it is first
 countable. -/
