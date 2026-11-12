@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.RealModel
 public import TauCeti.Algebra.Module.ZLattice.RootLattice
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Normalized
-import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Roots
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Roots
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
@@ -22,6 +22,9 @@ The real model of the root lattice `typeARootLattice 2` has theta series equal t
 the normalized weight-one Eisenstein series for the Kronecker character `χ₋₃ = (-3 / ·)`.
 Thus its number of vectors of rational norm `2m` is `6 ∑_{d ∣ m} χ₋₃(d)` for every positive
 `m`; in particular, its kissing number is six.
+The norm-two count and kissing number for all ranks are provided by
+`TauCeti.IntegralLattice.representationNumber_typeARootLattice_two` and
+`TauCeti.IntegralLattice.kissingNumber_typeARootLattice` in the root-lattice API.
 
 Both series are weight-one modular forms on `Γ₁(3)`. The index of this subgroup is eight,
 so the Sturm bound identifies them from their common constant coefficient one.
@@ -162,21 +165,5 @@ theorem representationNumber_typeARootLattice_two_mul {m : ℕ} (hm : m ≠ 0) :
   rw [thetaSeries_realModel_typeARootLattice_two, a2_six_eisenstein_coeff,
     a2_eisenstein_coeff hm] at hcoeff
   exact_mod_cast hcoeff.symm
-
-/-- The `A₂` root lattice has six vectors of norm two. -/
-@[simp]
-theorem representationNumber_typeARootLattice_two :
-    (typeARootLattice 2).representationNumber 2 = 6 := by
-  have h := (DynkinType.A 2).representationNumber_rootLattice_two
-    (DynkinType.isSimplyLaced_A 2) (by decide)
-  erw [DynkinType.rootLattice_A] at h
-  exact h
-
-/-- The kissing number of `A₂` is six. -/
-@[simp]
-theorem kissingNumber_typeARootLattice_two : (typeARootLattice 2).kissingNumber = 6 := by
-  rw [kissingNumber_eq_representationNumber (by simp [minimum_typeARootLattice 2 two_ne_zero]),
-    minimum_typeARootLattice 2 two_ne_zero]
-  exact representationNumber_typeARootLattice_two
 
 end TauCeti.IntegralLattice
