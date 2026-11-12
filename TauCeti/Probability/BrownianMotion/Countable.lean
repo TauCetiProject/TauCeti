@@ -5,66 +5,130 @@ Authors: pi
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
-public import TauCeti.Probability.Process.Kolmogorov
 public import Mathlib.Probability.BrownianMotion.GaussianProjectiveFamily
+public import Mathlib.Probability.HasLaw
+public import Mathlib.Probability.Process.Kolmogorov
+public import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Def
+public import Mathlib.Data.Nat.Factorial.DoubleFactorial
+
+import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
+import TauCeti.Probability.Process.Kolmogorov
+import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 
 /-!
-# Brownian laws on countable time sets
+# Brownian Gaussian skeletons on countable time sets
 
-Construct the Gaussian Brownian skeleton on any countable subset of nonnegative real time.
-Its finite-dimensional laws are Mathlib's `BrownianReal.projectiveFamily`, not independent
-Gaussian marginals. Its increments satisfy the fourth-moment Kolmogorov condition, so this
-construction supplies the countable-time input for continuous-modification arguments.
-No path continuity or law on continuous path space is asserted here.
+Construct a Gaussian skeleton on any countable subset of nonnegative real time, with
+Mathlib's `BrownianReal.projectiveFamily` as its finite-dimensional laws, not independent
+Gaussian marginals. The coordinate process satisfies every positive even-moment Kolmogorov
+bound. No path continuity or law on continuous path space is asserted here.
 
-The construction combines `TauCeti.Measure.exists_isProjectiveLimit_of_countable` with
-Mathlib's Gaussian projective family. See Karatzas–Shreve, *Brownian Motion and Stochastic
-Calculus*, second edition, Chapter 2, §2, for the Gaussian skeleton construction.
+The finite-dimensional laws are indexed directly by finite sets of nonnegative real times
+contained in the time set. Their single-coordinate Gaussian laws, increment laws, covariance
+and `IsGaussianProcess` property are available for arbitrary processes with these laws.
+
+The construction uses `Function.Embedding.exists_measurePreserving_finset_map_of_countable`
+and `ProbabilityTheory.isKolmogorovProcess_of_hasLaw_sub_gaussianReal`.
+See Karatzas–Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
+Chapter 2, §2, for the Gaussian skeleton construction.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Nat
 
 namespace TauCeti
 
-/-- A law with the Brownian finite-dimensional distributions on a time set has centered
-Gaussian increments, including increments of zero length. -/
-theorem hasLaw_sub_of_brownian_finset {S : Set ℝ≥0} {P : Measure (S → ℝ)}
-    (hP : ∀ J : Finset S, MeasurePreserving
-      (fun (x : S → ℝ) (i : J.map (Function.Embedding.subtype (· ∈ S))) ↦
-        x ((J.equivMap (Function.Embedding.subtype (· ∈ S))).symm i)) P
-      (BrownianReal.projectiveFamily (J.map (Function.Embedding.subtype (· ∈ S))))) (s t : S) :
-    HasLaw (fun x ↦ x s - x t) (gaussianReal 0 (nndist s.1 t.1)) P := by
-  classical
-  let J : Finset S := {s, t}
-  let e := Function.Embedding.subtype (· ∈ S)
-  let a : J := ⟨s, by simp [J]⟩
-  let b : J := ⟨t, by simp [J]⟩
-  have h := (BrownianReal.measurePreserving_eval_sub_eval_projectiveFamily (J.map e)
-    (J.equivMap e a) (J.equivMap e b)).comp (hP J)
-  dsimp only [e] at h
-  simpa only [Function.comp_def, Equiv.symm_apply_apply, Finset.equivMap_apply_coe,
-    Function.Embedding.subtype_apply, a, b] using h.hasLaw
+section Laws
 
-/-- On every countable time set there is a probability law with the Brownian finite-dimensional
-Gaussian laws and the fourth-moment Kolmogorov bound. Finite image coordinates retain their
-original nonnegative-real labels. In particular, this applies to nonnegative rational times. -/
-theorem exists_brownianLaw_on_countable (S : Set ℝ≥0) [Countable S] :
+variable {S : Set ℝ≥0} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+  {X : S → Ω → ℝ}
+  (hX : ∀ (I : Finset ℝ≥0) (hI : (I : Set ℝ≥0) ⊆ S),
+    HasLaw (fun ω (i : I) ↦ X ⟨i.1, hI i.2⟩ ω) (BrownianReal.projectiveFamily I) P)
+
+include hX
+
+/-- A process with the Brownian finite-dimensional laws has centered Gaussian marginals
+with variance equal to the time. -/
+theorem hasLaw_gaussianReal_of_hasLaw_brownianRealProjectiveFamily (s : S) :
+    HasLaw (X s) (gaussianReal 0 s.1) P := by
+  classical
+  let I : Finset ℝ≥0 := {s.1}
+  have hI : (I : Set ℝ≥0) ⊆ S := by simp [I]
+  exact (BrownianReal.measurePreserving_eval_projectiveFamily
+    (⟨s.1, by simp [I]⟩ : I)).comp_hasLaw (hX I hI)
+
+/-- A process with the Brownian finite-dimensional laws has centered Gaussian increments,
+including increments of zero length. No assumption on its sample space is needed. -/
+theorem hasLaw_sub_gaussianReal_of_hasLaw_brownianRealProjectiveFamily (s t : S) :
+    HasLaw (fun ω ↦ X s ω - X t ω) (gaussianReal 0 (nndist s.1 t.1)) P := by
+  classical
+  let I : Finset ℝ≥0 := {s.1, t.1}
+  have hI : (I : Set ℝ≥0) ⊆ S := by
+    simp [I, Set.insert_subset_iff, Set.singleton_subset_iff]
+  exact (BrownianReal.measurePreserving_eval_sub_eval_projectiveFamily I
+    ⟨s.1, by simp [I]⟩ ⟨t.1, by simp [I]⟩).comp_hasLaw (hX I hI)
+
+/-- Brownian finite-dimensional laws give covariance `min s t`, not independent marginals. -/
+theorem covariance_eq_min_of_hasLaw_brownianRealProjectiveFamily (s t : S) :
+    cov[X s, X t; P] = min (s.1 : ℝ) (t.1 : ℝ) := by
+  classical
+  let I : Finset ℝ≥0 := {s.1, t.1}
+  have hI : (I : Set ℝ≥0) ⊆ S := by
+    simp [I, Set.insert_subset_iff, Set.singleton_subset_iff]
+  have h := (hX I hI).covariance_comp
+    (f := fun x ↦ x ⟨s.1, by simp [I]⟩) (g := fun x ↦ x ⟨t.1, by simp [I]⟩)
+    (measurable_pi_apply _).aemeasurable (measurable_pi_apply _).aemeasurable
+  exact h.trans (BrownianReal.covariance_eval_projectiveFamily I _ _)
+
+/-- A process with the Brownian finite-dimensional laws is a Gaussian process. -/
+theorem isGaussianProcess_of_hasLaw_brownianRealProjectiveFamily : IsGaussianProcess X P := by
+  constructor
+  intro J
+  let e := Function.Embedding.subtype (· ∈ S)
+  have hI : (↑(J.map e) : Set ℝ≥0) ⊆ S := J.map_subtype_subset
+  let L : (J.map e → ℝ) →L[ℝ] (J → ℝ) :=
+    ContinuousLinearMap.pi fun j ↦ ContinuousLinearMap.proj (R := ℝ) (J.equivMap e j)
+  exact (hX (J.map e) hI).hasGaussianLaw.map L
+
+end Laws
+
+/-- Every countable set of nonnegative real times supports a probability law with the Brownian
+finite-dimensional Gaussian laws and all positive even-moment Kolmogorov bounds. Finite time
+sets are indexed directly by their original labels. In particular, this applies to nonnegative
+rational times. The choice `n = 2` gives exponents 4 and 2 and constant 3. -/
+theorem exists_measurePreserving_brownianRealProjectiveFamily_isKolmogorovProcess_of_countable
+    (S : Set ℝ≥0) [Countable S] :
     ∃ P : Measure (S → ℝ), IsProbabilityMeasure P ∧
-      (∀ J : Finset S, MeasurePreserving
-        (fun (x : S → ℝ) (i : J.map (Function.Embedding.subtype (· ∈ S))) ↦
-          x ((J.equivMap (Function.Embedding.subtype (· ∈ S))).symm i)) P
-        (BrownianReal.projectiveFamily (J.map (Function.Embedding.subtype (· ∈ S))))) ∧
-      IsKolmogorovProcess (fun (t : S) (x : S → ℝ) ↦ x t) P 4 2 3 := by
+      (∀ (I : Finset ℝ≥0) (hI : (I : Set ℝ≥0) ⊆ S),
+        MeasurePreserving (fun (x : S → ℝ) (i : I) ↦ x ⟨i.1, hI i.2⟩) P
+          (BrownianReal.projectiveFamily I)) ∧
+      ∀ ⦃n : ℕ⦄, n ≠ 0 →
+        IsKolmogorovProcess (fun (t : S) (x : S → ℝ) ↦ x t) P (2 * n : ℕ) n (2 * n - 1)‼ := by
+  classical
+  let e := Function.Embedding.subtype (· ∈ S)
   obtain ⟨P, hprob, hP⟩ := Function.Embedding.exists_measurePreserving_finset_map_of_countable
-    (Function.Embedding.subtype (· ∈ S)) BrownianReal.projectiveFamily
-    BrownianReal.isProjectiveMeasureFamily_projectiveFamily
-  refine ⟨P, hprob, hP, isKolmogorovProcess_of_hasLaw_sub_gaussianReal
-    (fun t ↦ measurable_pi_apply t) ?_⟩
-  intro s t
-  exact hasLaw_sub_of_brownian_finset hP s t
+    e BrownianReal.projectiveFamily BrownianReal.isProjectiveMeasureFamily_projectiveFamily
+  have hP' (I : Finset ℝ≥0) (hI : (I : Set ℝ≥0) ⊆ S) :
+      MeasurePreserving (fun (x : S → ℝ) (i : I) ↦ x ⟨i.1, hI i.2⟩) P
+        (BrownianReal.projectiveFamily I) := by
+    let J := I.subtype (· ∈ S)
+    have hmap : J.map e = I := Finset.subtype_map_of_mem (fun _ hi ↦ hI hi)
+    have hPJ (hJ : (↑(J.map e) : Set ℝ≥0) ⊆ S) : MeasurePreserving
+        (fun (x : S → ℝ) (i : J.map e) ↦ x ⟨i.1, hJ i.2⟩) P
+        (BrownianReal.projectiveFamily (J.map e)) := by
+      convert hP J using 1
+      funext x i
+      apply congrArg x
+      apply Subtype.ext
+      have h := congrArg Subtype.val ((J.equivMap e).apply_symm_apply i)
+      exact h.symm
+    rw [hmap] at hPJ
+    exact hPJ hI
+  refine ⟨P, hprob, hP', fun _ hn ↦ isKolmogorovProcess_of_hasLaw_sub_gaussianReal
+    (fun t ↦ measurable_pi_apply t) ?_ hn⟩
+  exact hasLaw_sub_gaussianReal_of_hasLaw_brownianRealProjectiveFamily
+    (fun I hI ↦ (hP' I hI).hasLaw)
 
 end TauCeti
