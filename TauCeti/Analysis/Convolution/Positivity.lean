@@ -83,11 +83,11 @@ theorem convolution_pos_iff_mem_interior_add_tsupport (hf : Continuous f) (hg : 
       hg.isOpen_support.add_left hx
   · intro hx
     have hsne : (interior (tsupport f)).Nonempty := by
-      obtain ⟨a, ha, b, hb, _⟩ := interior_subset hx
+      obtain ⟨a, ha, b, _, _⟩ := interior_subset hx
       obtain ⟨y, hy⟩ := closure_nonempty_iff.mp (nonempty_of_mem ha)
       exact ⟨y, interior_maximal (subset_tsupport f) hf.isOpen_support hy⟩
     have htne : (interior (tsupport g)).Nonempty := by
-      obtain ⟨a, ha, b, hb, _⟩ := interior_subset hx
+      obtain ⟨a, _, b, hb, _⟩ := interior_subset hx
       obtain ⟨y, hy⟩ := closure_nonempty_iff.mp (nonempty_of_mem hb)
       exact ⟨y, interior_maximal (subset_tsupport g) hg.isOpen_support hy⟩
     rw [hfs.interior_add hgs hsne htne] at hx

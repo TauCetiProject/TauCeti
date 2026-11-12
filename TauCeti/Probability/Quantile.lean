@@ -265,7 +265,6 @@ theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) :
     exact (le_cdf_quantile ν hu1).trans (hcdf _)
   · intro hquant x
     by_contra hle
-    have hlt : cdf μ x < cdf ν x := lt_of_not_ge hle
     let u := (cdf μ x + cdf ν x) / 2
     have hu0 : 0 < u := by
       dsimp [u]
@@ -591,7 +590,7 @@ theorem upperQuantile_eq_quantile_of_continuousWithinAt (μ : Measure ℝ) (h0 :
 /-- The upper quantile function is monotone on the levels where it is an honest generalized
 inverse. -/
 theorem monotoneOn_upperQuantile (μ : Measure ℝ) : MonotoneOn μ.upperQuantile (Ioo 0 1) := by
-  rintro s ⟨hs0, hs1⟩ t ⟨_, ht1⟩ hst
+  rintro s ⟨hs0, _⟩ t ⟨_, ht1⟩ hst
   exact csInf_le_csInf (bddBelow_setOf_lt_cdf μ hs0) (nonempty_setOf_lt_cdf μ ht1)
     fun _ hx ↦ hst.trans_lt hx
 
@@ -836,13 +835,13 @@ theorem continuousWithinAt_Ioi_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1
 /-- The quantile function is measurable. -/
 @[fun_prop]
 theorem measurable_quantile (μ : Measure ℝ) : Measurable μ.quantile :=
-  TauCeti.measurable_of_monotoneOn_Ioo_of_eq_const (monotoneOn_quantile μ) fun _ hs ↦
+  (monotoneOn_quantile μ).measurable_of_eq_const fun _ hs ↦
     hs.elim (fun h ↦ quantile_of_nonpos μ h.le) (quantile_of_one_lt μ)
 
 /-- The upper quantile function is measurable. -/
 @[fun_prop]
 theorem measurable_upperQuantile (μ : Measure ℝ) : Measurable μ.upperQuantile :=
-  TauCeti.measurable_of_monotoneOn_Ioo_of_eq_const (monotoneOn_upperQuantile μ) fun _ hs ↦
+  (monotoneOn_upperQuantile μ).measurable_of_eq_const fun _ hs ↦
     hs.elim (upperQuantile_of_neg μ) fun h ↦ upperQuantile_of_one_le μ h.le
 
 /-! ### Measurability in the law and the level -/
