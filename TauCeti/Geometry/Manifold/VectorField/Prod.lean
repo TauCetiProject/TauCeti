@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -43,6 +44,8 @@ is what makes the bracket of product fields split.
   of the Lie brackets.
 * `TauCeti.Manifold.mlieBracket_prodVectorField_horizontal_vertical`: horizontal and vertical
   lifts commute.
+* `IsMIntegralCurve.prodMk`: a pair of integral curves of `X` and `Y` is an integral curve of
+  `(X, Y)`.
 
 ## References
 
@@ -231,5 +234,24 @@ theorem mlieBracket_prodVectorField_horizontal_vertical
   exact Prod.mk_zero_zero
 
 end LieBracket
+
+section IntegralCurve
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {X : Π x : M, TangentSpace I x} {Y : Π y : N, TangentSpace J y} {γ : ℝ → M} {δ : ℝ → N}
+
+/-- A pair of integral curves of `X` and `Y` is an integral curve of the product field `(X, Y)`. -/
+theorem _root_.IsMIntegralCurve.prodMk (hγ : IsMIntegralCurve γ X) (hδ : IsMIntegralCurve δ Y) :
+    IsMIntegralCurve (fun t ↦ (γ t, δ t)) (prodVectorField X Y) := fun t ↦
+  -- Both derivatives send `s` to `(s • X (γ t), s • Y (δ t))`; the tangent spaces of the product
+  -- are products only up to unfolding `TangentSpace`, so `simp` lemmas about `Prod` do not fire.
+  ((hγ t).prodMk (hδ t)).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+end IntegralCurve
 
 end TauCeti.Manifold
