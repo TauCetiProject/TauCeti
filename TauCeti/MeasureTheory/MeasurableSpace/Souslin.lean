@@ -16,14 +16,14 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Defs
 A scheme assigns a set to each finite sequence of natural numbers. Its Souslin operation
 is the union, over infinite branches, of the intersections along their nonempty prefixes.
 The Souslin closure of a family consists of all sets obtained from schemes in that family.
-It contains the original family and is closed under natural-number-indexed unions and
+It contains the original family and is closed under nonempty countable unions and
 intersections, without any finite-lattice assumption on the original family.
 
 The intersection construction interleaves countably many branches with the natural-number
 pairing function. In particular it does not assume the scheme sets are measurable or compact.
 These set-theoretic closure properties underlie measurable and predictable section arguments.
 The empty prefix is deliberately ignored; its value can be any member of the original family.
-If the empty set, full set and complements of the generators are Souslin over the family,
+If the family is nonempty and complements of its generators are Souslin over it,
 every set in the generated sigma algebra is also Souslin over it.
 
 ## References
@@ -46,19 +46,32 @@ of those intersections. Only nonempty finite prefixes occur. -/
 def souslinOperation (f : List ℕ → Set α) : Set α :=
   ⋃ a : ℕ → ℕ, ⋂ n : ℕ, f (List.ofFn fun i : Fin (n + 1) ↦ a i)
 
+/-- The Souslin operation as an indexed union of branch intersections. -/
+theorem souslinOperation_def (f : List ℕ → Set α) :
+    souslinOperation f = ⋃ a : ℕ → ℕ, ⋂ n : ℕ,
+      f (List.ofFn fun i : Fin (n + 1) ↦ a i) := (rfl)
+
 /-- Membership in the Souslin operation means that one branch satisfies every finite
 prefix constraint. -/
+@[simp, grind =]
 theorem mem_souslinOperation_iff {f : List ℕ → Set α} {x : α} :
     x ∈ souslinOperation f ↔
       ∃ a : ℕ → ℕ, ∀ n : ℕ, x ∈ f (List.ofFn fun i : Fin (n + 1) ↦ a i) := by
   simp [souslinOperation]
 
-/-- Enlarging every scheme set enlarges its Souslin operation. -/
-theorem souslinOperation_mono {f g : List ℕ → Set α} (h : ∀ l, f l ⊆ g l) :
+/-- Enlarging every nonempty scheme set enlarges its Souslin operation. -/
+@[gcongr]
+theorem souslinOperation_mono {f g : List ℕ → Set α} (h : ∀ l ≠ [], f l ⊆ g l) :
     souslinOperation f ⊆ souslinOperation g := by
   intro x hx
   obtain ⟨a, ha⟩ := mem_souslinOperation_iff.mp hx
-  exact mem_souslinOperation_iff.mpr ⟨a, fun n ↦ h _ (ha n)⟩
+  exact mem_souslinOperation_iff.mpr ⟨a, fun n ↦ h _ (by simp) (ha n)⟩
+
+/-- Changing the unused empty prefix does not affect the Souslin operation. -/
+theorem souslinOperation_congr {f g : List ℕ → Set α}
+    (h : ∀ l ≠ [], f l = g l) : souslinOperation f = souslinOperation g :=
+  subset_antisymm (souslinOperation_mono fun l hl ↦ (h l hl).subset)
+    (souslinOperation_mono fun l hl ↦ (h l hl).superset)
 
 /-- A constant scheme has its constant value as Souslin operation. -/
 @[simp]
@@ -70,6 +83,11 @@ theorem souslinOperation_const (s : Set α) : souslinOperation (fun _ ↦ s) = s
 def souslinClosure (E : Set (Set α)) : Set (Set α) :=
   {s | ∃ f : List ℕ → Set α, (∀ l, f l ∈ E) ∧ souslinOperation f = s}
 
+/-- The Souslin closure as the sets represented by schemes in the original family. -/
+theorem souslinClosure_def (E : Set (Set α)) :
+    souslinClosure E =
+      {s | ∃ f : List ℕ → Set α, (∀ l, f l ∈ E) ∧ souslinOperation f = s} := (rfl)
+
 /-- A set belongs to the Souslin closure precisely when it is represented by a scheme in
 the original family. -/
 theorem mem_souslinClosure_iff {E : Set (Set α)} {s : Set α} :
@@ -78,11 +96,48 @@ theorem mem_souslinClosure_iff {E : Set (Set α)} {s : Set α} :
   Iff.rfl
 
 /-- Each member of a family belongs to its Souslin closure, by the constant scheme. -/
-theorem subset_souslinClosure (E : Set (Set α)) : E ⊆ souslinClosure E := by
+@[simp]
+theorem subset_souslinClosure {E : Set (Set α)} : E ⊆ souslinClosure E := by
   intro s hs
   exact ⟨fun _ ↦ s, fun _ ↦ hs, souslinOperation_const s⟩
 
+grind_pattern subset_souslinClosure => souslinClosure E
+
+/-- A scheme belongs to the Souslin closure if all its nonempty values are generators. -/
+@[grind ←]
+theorem souslinOperation_mem_souslinClosure {E : Set (Set α)} {f : List ℕ → Set α}
+    (hf : ∀ l ≠ [], f l ∈ E) : souslinOperation f ∈ souslinClosure E := by
+  classical
+  refine ⟨fun l ↦ if l = [] then f [0] else f l, ?_, ?_⟩
+  · intro l
+    dsimp only
+    split_ifs with hl
+    · exact hf [0] (by simp)
+    · exact hf l hl
+  · exact souslinOperation_congr fun l hl ↦ by simp only [hl, ↓reduceIte]
+
+/-- The empty family has empty Souslin closure. -/
+@[simp, grind =]
+theorem souslinClosure_empty : souslinClosure (∅ : Set (Set α)) = ∅ := by
+  ext s
+  simp [mem_souslinClosure_iff]
+
+/-- A singleton family is its own Souslin closure. -/
+@[simp, grind =]
+theorem souslinClosure_singleton (s : Set α) : souslinClosure {s} = {s} := by
+  apply subset_antisymm
+  · rintro t ⟨f, hf, rfl⟩
+    have heq : f = fun _ ↦ s := funext fun l ↦ mem_singleton_iff.mp (hf l)
+    simp [heq]
+  · exact subset_souslinClosure
+
+/-- The family of all sets is its own Souslin closure. -/
+@[simp, grind =]
+theorem souslinClosure_univ : souslinClosure (univ : Set (Set α)) = univ :=
+  subset_antisymm (subset_univ _) subset_souslinClosure
+
 /-- Souslin closure is monotone in its generating family. -/
+@[gcongr, grind ←]
 theorem souslinClosure_mono {E F : Set (Set α)} (h : E ⊆ F) :
     souslinClosure E ⊆ souslinClosure F := by
   rintro s ⟨f, hf, rfl⟩
@@ -129,6 +184,7 @@ private theorem interScheme_prefix (f : ℕ → List ℕ → Set α) (a : ℕ �
     simpa [Nat.pair_unpair] using Nat.lt_succ_of_le this
   rw [← List.getElem_eq_getD (h := by simpa only [List.length_ofFn, Fin.val_cast] using hk),
     List.getElem_ofFn]
+  -- The cast only changes the bound of the finite index, not its natural-number value.
   rfl
 
 private theorem souslinOperation_interScheme (f : ℕ → List ℕ → Set α) :
@@ -148,35 +204,69 @@ private theorem souslinOperation_interScheme (f : ℕ → List ℕ → Set α) :
     rw [interScheme_prefix f (fun n ↦ a (Nat.unpair n).1 (Nat.unpair n).2)]
     simpa only [Nat.unpair_pair] using ha (Nat.unpair n).1 (Nat.unpair n).2
 
-/-- The Souslin closure is closed under countable unions indexed by the natural numbers.
+/-- The Souslin closure is closed under nonempty countable unions.
 No union-closure hypothesis on the original family is required. -/
-theorem iUnion_mem_souslinClosure {E : Set (Set α)} {s : ℕ → Set α}
-    (hs : ∀ n, s n ∈ souslinClosure E) : (⋃ n, s n) ∈ souslinClosure E := by
+@[grind ←]
+theorem iUnion_mem_souslinClosure {ι : Sort*} [Countable ι] [Nonempty ι]
+    {E : Set (Set α)} {s : ι → Set α}
+    (hs : ∀ i, s i ∈ souslinClosure E) : (⋃ i, s i) ∈ souslinClosure E := by
   classical
-  choose f hf heq using hs
+  obtain ⟨e, he⟩ := exists_surjective_nat ι
+  rw [← iUnion_congr_of_surjective e he (fun _ ↦ rfl)]
+  choose f hf heq using fun n ↦ hs (e n)
   refine ⟨unionScheme f, fun l ↦ hf _ _, ?_⟩
   simp [souslinOperation_unionScheme, heq]
 
-/-- The Souslin closure is closed under countable intersections indexed by the natural
-numbers, even when the original family is not closed under finite intersections. -/
-theorem iInter_mem_souslinClosure {E : Set (Set α)} {s : ℕ → Set α}
-    (hs : ∀ n, s n ∈ souslinClosure E) : (⋂ n, s n) ∈ souslinClosure E := by
+/-- The Souslin closure is closed under nonempty countable intersections,
+even when the original family is not closed under finite intersections. -/
+@[grind ←]
+theorem iInter_mem_souslinClosure {ι : Sort*} [Countable ι] [Nonempty ι]
+    {E : Set (Set α)} {s : ι → Set α}
+    (hs : ∀ i, s i ∈ souslinClosure E) : (⋂ i, s i) ∈ souslinClosure E := by
   classical
-  choose f hf heq using hs
+  obtain ⟨e, he⟩ := exists_surjective_nat ι
+  rw [← iInter_congr_of_surjective e he (fun _ ↦ rfl)]
+  choose f hf heq using fun n ↦ hs (e n)
   refine ⟨interScheme f, fun l ↦ hf _ _, ?_⟩
   simp [souslinOperation_interScheme, heq]
 
-/-- If complements of the generators, the empty set and the full set are Souslin over a
-family, then so is every set in the generated sigma algebra. The original family need not
-itself be an algebra, and no measurability hypothesis on its members is needed. -/
-theorem measurableSet_mem_souslinClosure {E : Set (Set α)}
-    (hcompl : ∀ s ∈ E, sᶜ ∈ souslinClosure E)
-    (hempty : ∅ ∈ souslinClosure E) (huniv : univ ∈ souslinClosure E)
+/-- The Souslin closure is closed under binary unions. -/
+@[grind ←]
+theorem union_mem_souslinClosure {E : Set (Set α)} {s t : Set α}
+    (hs : s ∈ souslinClosure E) (ht : t ∈ souslinClosure E) :
+    s ∪ t ∈ souslinClosure E := by
+  rw [union_eq_iUnion]
+  apply iUnion_mem_souslinClosure
+  intro b
+  cases b <;> assumption
+
+/-- The Souslin closure is closed under binary intersections. -/
+@[grind ←]
+theorem inter_mem_souslinClosure {E : Set (Set α)} {s t : Set α}
+    (hs : s ∈ souslinClosure E) (ht : t ∈ souslinClosure E) :
+    s ∩ t ∈ souslinClosure E := by
+  rw [inter_eq_iInter]
+  apply iInter_mem_souslinClosure
+  intro b
+  cases b <;> assumption
+
+/-- If a family is nonempty and complements of its generators are Souslin over it, then so
+is every set in the generated sigma algebra. The original family need not itself be an
+algebra, and no measurability hypothesis on its members is needed. -/
+theorem mem_souslinClosure_of_measurableSet_generateFrom {E : Set (Set α)}
+    (hE : E.Nonempty) (hcompl : ∀ s ∈ E, sᶜ ∈ souslinClosure E)
     {s : Set α} (hs : MeasurableSet[MeasurableSpace.generateFrom E] s) :
     s ∈ souslinClosure E := by
+  obtain ⟨t, ht⟩ := hE
+  have ht' := subset_souslinClosure ht
+  have htc := hcompl t ht
+  have hempty : ∅ ∈ souslinClosure E := by
+    simpa only [inter_compl_self] using inter_mem_souslinClosure ht' htc
+  have huniv : univ ∈ souslinClosure E := by
+    simpa only [union_compl_self] using union_mem_souslinClosure ht' htc
   have h : s ∈ souslinClosure E ∧ sᶜ ∈ souslinClosure E := by
     induction s, hs using MeasurableSpace.generateFrom_induction with
-    | hC t ht => exact ⟨subset_souslinClosure E ht, hcompl t ht⟩
+    | hC t ht => exact ⟨subset_souslinClosure ht, hcompl t ht⟩
     | empty => simpa only [compl_empty] using And.intro hempty huniv
     | compl t _ ih => simpa only [compl_compl] using ih.symm
     | iUnion t _ ih =>
