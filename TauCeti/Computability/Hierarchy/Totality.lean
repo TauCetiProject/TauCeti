@@ -13,12 +13,12 @@ public import TauCeti.Computability.SingleOracle.Recursion
 # The totality index set
 
 `totality Z` consists of the indices of oracle programs defined on every natural input relative
-to `Z`. It is Π⁰₂-complete under ordinary computable many-one reductions, even when `Z` is
-noncomputable. The reduction specializes a single program for a Σ⁰₁ matrix; it does not use
-an oracle to transform indices.
+to `Z`. It is Π⁰₂-complete relative to `Z` under ordinary computable one-one and many-one
+reductions, even when `Z` is noncomputable. The reduction specializes a single program for a
+Σ⁰₁ matrix relative to `Z`; it does not use an oracle to transform indices.
 
-A diagonal argument proves that totality is not Σ⁰₂. Consequently it is neither c.e. nor
-co-c.e. at the empty oracle, and does not many-one reduce to relative halting.
+A diagonal argument proves that totality is not Σ⁰₂ relative to `Z`. Consequently it is
+neither c.e. nor co-c.e. for any oracle, and does not many-one reduce to relative halting.
 
 ## References
 
@@ -43,7 +43,7 @@ theorem mem_totality {Z : Set ℕ} {e : ℕ} :
 
 variable {Z : Set ℕ} {α : Type*} [Primcodable α] {p : α → Prop}
 
-/-- Totality is Π⁰₂ relative to its oracle: every input has a finite successful run. -/
+/-- Totality is Π⁰₂ relative to its oracle. -/
 theorem isPi_two_totality : IsPi Z 2 (· ∈ totality Z) := by
   have hdom : IsSigma Z 1 (fun a : ℕ × ℕ =>
       (Code.eval Z.oracle (ofNat Code a.1) a.2).Dom) := by
@@ -54,38 +54,45 @@ theorem isPi_two_totality : IsPi Z 2 (· ∈ totality Z) := by
       rw [hZ, Code.eval_universal]
   exact isPi_succ_iff.2 ⟨_, hdom, fun _ => mem_totality⟩
 
-/-- Every Π⁰₂ predicate many-one reduces to relative totality. The translating function is
-ordinary computable, even for a noncomputable oracle. -/
-theorem IsPi.manyOneReducible_totality (hp : IsPi Z 2 p) :
-    ManyOneReducible p (· ∈ totality Z) := by
+/-- Every Π⁰₂ predicate relative to `Z` one-one reduces to relative totality. The translating
+function is ordinary computable, even for a noncomputable oracle. -/
+theorem IsPi.oneOneReducible_totality (hp : IsPi Z 2 p) :
+    OneOneReducible p (· ∈ totality Z) := by
   obtain ⟨q, hq, heq⟩ := isPi_succ_iff.1 hp
   obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hq
   refine ⟨fun x => encode (Code.curry c (encode x)),
     Computable.encode.comp (Code.primrec₂_curry.to_comp.comp
-      (Computable.const c) Computable.encode), fun x => ?_⟩
+      (Computable.const c) Computable.encode),
+    fun _ _ h => encode_injective (Code.curry_inj (encode_injective h)).2, fun x => ?_⟩
   simpa only [mem_totality, ofNat_encode, Code.eval_curry, encode_prod_val, encode_nat] using
     (heq x).trans (forall_congr' fun y => hc (x, y))
 
-/-- **Π⁰₂-completeness of totality.** A predicate is Π⁰₂ exactly when it many-one reduces to
-relative totality by an ordinary computable function. -/
+/-- Every Π⁰₂ predicate relative to `Z` many-one reduces to relative totality by an ordinary
+computable function. -/
+theorem IsPi.manyOneReducible_totality (hp : IsPi Z 2 p) :
+    ManyOneReducible p (· ∈ totality Z) :=
+  hp.oneOneReducible_totality.to_many_one
+
+/-- A predicate is Π⁰₂ relative to `Z` exactly when it many-one reduces to relative totality
+by an ordinary computable function. -/
 theorem isPi_two_iff_manyOneReducible_totality :
     IsPi Z 2 p ↔ ManyOneReducible p (· ∈ totality Z) := by
   refine ⟨IsPi.manyOneReducible_totality, fun ⟨f, hf, heq⟩ => ?_⟩
   exact (isPi_two_totality.preimage hf.computableIn).of_eq fun x => (heq x).symm
 
-/-- Totality is not Σ⁰₂ relative to its oracle. Parameterized self-reference would otherwise
-produce a program total exactly when it is not total. -/
+/-- A predicate is Π⁰₂ relative to `Z` exactly when it one-one reduces to relative totality
+by an ordinary computable function. -/
+theorem isPi_two_iff_oneOneReducible_totality :
+    IsPi Z 2 p ↔ OneOneReducible p (· ∈ totality Z) :=
+  ⟨IsPi.oneOneReducible_totality,
+    fun h => isPi_two_iff_manyOneReducible_totality.2 h.to_many_one⟩
+
+/-- Totality is not Σ⁰₂ relative to its oracle. -/
 theorem not_isSigma_two_totality : ¬IsSigma Z 2 (· ∈ totality Z) := by
   intro h
   obtain ⟨q, hq, heq⟩ := isSigma_succ_iff.1 h
   obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 (isSigma_not_iff.2 hq)
-  have hf : Computable fun d : Code => Code.curry c (encode d) :=
-    Code.primrec₂_curry.to_comp.comp (Computable.const c) Computable.encode
-  obtain ⟨d, hd⟩ := Code.fixed_point hf
-  have hZ : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
-  have hd' : Code.eval Z.oracle (Code.curry c (encode d)) = Code.eval Z.oracle d := by
-    rw [hZ]
-    exact hd (Z.indicator 1)
+  let d := Code.fixedPoint c
   have hrow : (∀ x, (Code.eval Z.oracle c (Nat.pair (encode d) x)).Dom) ↔
       ¬encode d ∈ totality Z := by
     rw [heq (encode d)]
@@ -94,7 +101,7 @@ theorem not_isSigma_two_totality : ¬IsSigma Z 2 (· ∈ totality Z) := by
     intro x
     simpa only [encode_prod_val, encode_nat] using (hc (encode d, x)).symm
   have hdiag : encode d ∈ totality Z ↔ ¬encode d ∈ totality Z := by
-    simpa only [mem_totality, ofNat_encode, ← Code.eval_curry, hd'] using hrow
+    simpa only [d, mem_totality, ofNat_encode, Code.eval_fixedPoint] using hrow
   exact iff_not_self hdiag
 
 /-- Relative totality does not many-one reduce to the relative halting set. -/
@@ -104,16 +111,18 @@ theorem not_manyOneReducible_totality_jump :
   exact not_isSigma_two_totality
     (((isSigma_one_jump.preimage hf.computableIn).of_eq fun x => (heq x).symm).succ)
 
-/-- The ordinary totality index set is not computably enumerable. -/
-theorem not_rePred_totality : ¬REPred (· ∈ totality ∅) := by
+/-- The totality index set relative to any oracle is not computably enumerable. -/
+theorem not_rePred_mem_totality : ¬REPred (· ∈ totality Z) := by
   intro h
-  exact not_isSigma_two_totality (isSigma_one_empty_iff_rePred.2 h).succ
+  exact not_manyOneReducible_totality_jump (Z.oneOneReducible_jump_of_rePred h).to_many_one
 
-/-- The complement of the ordinary totality index set is not computably enumerable. -/
-theorem not_rePred_compl_totality : ¬REPred (· ∈ (totality ∅)ᶜ) := by
+/-- The complement of totality relative to any oracle is not computably enumerable. -/
+theorem not_rePred_mem_compl_totality : ¬REPred (· ∈ (totality Z)ᶜ) := by
   intro h
-  have hpi : IsPi ∅ 1 (· ∈ totality ∅) :=
-    isSigma_not_iff.1 (isSigma_one_empty_iff_rePred.2 h)
+  obtain ⟨f, hf, heq⟩ := (Z.oneOneReducible_jump_of_rePred h).to_many_one
+  have hpi : IsPi Z 1 (· ∈ totality Z) :=
+    isSigma_not_iff.1 ((isSigma_one_jump.preimage hf.computableIn).of_eq
+      fun x => (heq x).symm)
   exact not_isSigma_two_totality hpi.sigma_succ
 
 end TauCeti.ArithmeticalHierarchy
