@@ -925,16 +925,30 @@ theorem novikovProductOfMatrix_eq_kernelProduct {C : ℝ}
   ext p₀
   rw [novikovProductOfMatrix_apply_val, kernelProduct_apply_val]
 
+end Product
+
+section Coordinates
+
+variable [CommSemiring R] [Fintype ι₁] [Fintype ι₂] [Finite ι₀]
+  (M : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+
 /-- **The matrix formula for the product of a matrix.** In the coordinates relative to the
 reference generators, the product of `a` and `b` is `(a ⋆ b)ₖ = ∑ᵢ ∑ⱼ aᵢ bⱼ Mᵢⱼₖ`. -/
-theorem coordinates_novikovProductOfMatrix [Fintype ι₁] [Fintype ι₂] (a : NovikovModule R F₁)
-    (b : NovikovModule R F₂) (k : ι₀) :
+theorem coordinates_novikovProductOfMatrix (a : NovikovModule R F₁) (b : NovikovModule R F₂)
+    (k : ι₀) :
     coordinates hF₀ r₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M a b) k =
       ∑ i, ∑ j, coordinates hF₁ r₁ a i * coordinates hF₂ r₂ b j * M i j k := by
   rw [novikovProductOfMatrix_eq_kernelProduct hF₁ hF₂ hF₀ r₁ r₂ r₀ M
       (exists_potential_le_of_kernelOfMatrix_ne_zero hF₁ hF₂ hF₀ r₁ r₂ r₀ M).choose_spec,
     coordinates_kernelProduct hF₁ hF₂ hF₀ _ _ (kernelOfMatrix_vadd_fst r₁ r₂ r₀ M)
       (kernelOfMatrix_vadd_snd r₁ r₂ r₀ M), kernelMatrix_kernelOfMatrix]
+
+end Coordinates
+
+section ProductBasis
+
+variable [CommSemiring R] [Finite ι₁] [Finite ι₂] [Finite ι₀]
+  (M : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
 
 /-- The product of two reference basis vectors has the `(i, j)` entries of the matrix as its
 coordinates: `eᵢ ⋆ eⱼ = ∑ₖ Mᵢⱼₖ eₖ`. -/
@@ -966,7 +980,7 @@ theorem eq_novikovProductOfMatrix (B :
   refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
   rw [coordinates_novikovProductOfMatrix_basis]
 
-end Product
+end ProductBasis
 
 end OfMatrix
 
