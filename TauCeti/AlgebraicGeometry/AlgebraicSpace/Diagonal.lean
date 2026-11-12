@@ -139,28 +139,6 @@ private theorem locallyOfFiniteType_diag_snd (hF : yoneda.relativelyRepresentabl
   have := locallyOfFiniteType_of_comp (prod.lift (hr.fst' a) (hr.snd a)) prod.snd
   exact MorphismProperty.of_isPullback sq this
 
-/-- A property local at the target that descends along fpqc coverings descends along fppf
-coverings. This is Mathlib's instance in `Mathlib.AlgebraicGeometry.Morphisms.FlatDescent`, which
-instance search does not find for the properties used here: it unifies the property with an
-instance argument of type `MorphismProperty Scheme` only up to reducible transparency. -/
-private theorem descendsAlong_fppf_of_fpqc (P : MorphismProperty Scheme.{u})
-    [P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact)] [IsZariskiLocalAtTarget P] :
-    P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := by
-  have : MorphismProperty.IsStableUnderBaseChange (C := Scheme.{u})
-      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
-    have : MorphismProperty.IsStableUnderBaseChange (C := Scheme.{u}) (@Surjective ⊓ @Flat) :=
-      .inf (P := @Surjective) (Q := @Flat)
-    .inf (P := @Surjective ⊓ @Flat) (Q := @LocallyOfFinitePresentation)
-  apply IsZariskiLocalAtTarget.descendsAlong
-  rintro R X Y f g ⟨⟨h₁, h₂⟩, h₃⟩ H
-  obtain ⟨V : X.Opens, hV, e⟩ := f.isOpenMap.exists_opens_image_eq_of_prespectralSpace
-    f.continuous (by simp) isOpen_univ isCompact_univ
-  refine MorphismProperty.of_isPullback_of_descendsAlong (Q := @Surjective ⊓ @Flat ⊓ @QuasiCompact)
-    (.paste_vert (.of_hasPullback V.ι _) (.of_hasPullback f g)) ⟨⟨?_, inferInstance⟩,
-      (quasiCompact_iff_compactSpace _).mpr (isCompact_iff_compactSpace.mp hV)⟩ ?_
-  · exact ⟨fun x ↦ have ⟨y, hyV, e⟩ := e.ge (Set.mem_univ x); ⟨⟨y, hyV⟩, e⟩⟩
-  · exact IsZariskiLocalAtTarget.of_isPullback (.flip <| .of_hasPullback _ _) H
-
 /-- If `F` has representable diagonal and an étale atlas, then its diagonal is representable by
 morphisms of schemes locally of finite type. -/
 theorem locallyOfFiniteType_diag (hF : RepresentableDiagonal F) (ha : EtaleAtlas a) :
@@ -171,7 +149,11 @@ theorem locallyOfFiniteType_diag (hF : RepresentableDiagonal F) (ha : EtaleAtlas
     MorphismProperty.IsStableUnderBaseChange.respectsIso
   have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget _
-  have := descendsAlong_fppf_of_fpqc @LocallyOfFiniteType.{u}
+  -- Mathlib's fpqc-to-fppf instance in `Mathlib.AlgebraicGeometry.Morphisms.FlatDescent` is
+  -- only found with the transparency option it is declared under.
+  have : MorphismProperty.DescendsAlong @LocallyOfFiniteType.{u}
+      (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := by
+    set_option backward.isDefEq.respectTransparency.types false in exact inferInstance
   refine presheaf_of_forall_exists_cover (Q := @Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)
     hF fun T g ↦ ?_
   set hr := ha.relativelyRepresentable
