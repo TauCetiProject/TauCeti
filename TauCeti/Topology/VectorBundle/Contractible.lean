@@ -41,7 +41,7 @@ back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle beco
 continuous orthonormal frame along any continuous map from a contractible paracompact R₁ space
 (`TauCeti.exists_continuous_orthonormalBasis_of_contractibleSpace`): the pullback bundle is
 trivial, and Gram–Schmidt applied to the inverse images of a basis of `F` is continuous
-(`Continuous.gramSchmidtNormed_bundle`).
+(`Bundle.Trivialization.continuous_orthonormalBasis`).
 
 ## Main results
 
@@ -159,30 +159,19 @@ theorem exists_continuous_orthonormalBasis_of_contractibleSpace {Y : Type*} [Top
   have := FiniteDimensional.complete 𝕜 F
   obtain ⟨e, _, he⟩ :=
     exists_trivialization_baseSet_eq_univ_of_contractibleSpace 𝕜 F ((g : Y → B) *ᵖ E)
-  let c := Module.finBasis 𝕜 F
   have hy (y : Y) : y ∈ e.baseSet := he ▸ mem_univ y
-  let v : Fin (Module.finrank 𝕜 F) → ∀ y, E (g y) := fun j y ↦ e.symmL 𝕜 y (c j)
-  have hv (j : Fin (Module.finrank 𝕜 F)) : Continuous fun y ↦ TotalSpace.mk' F (g y) (v j y) := by
-    have H := e.continuousOn_symm_prodMk_left (v := c j)
-    have H' : Continuous fun y : Y ↦
-        (⟨y, e.symmL 𝕜 y (c j)⟩ : TotalSpace F ((g : Y → B) *ᵖ E)) :=
-      (H.comp_continuous continuous_id (fun y ↦ hy y)).congr fun y ↦
-        (e.mk_symm (hy y) (c j)).symm.trans
-          (congrArg (TotalSpace.mk y) (e.symmL_apply (hy y) (c j)).symm)
-    exact (Pullback.continuous_lift F E g).comp H'
-  have hli (y : Y) : LinearIndependent 𝕜 (fun j ↦ v j y) := by
-    have := (c.map (e.continuousLinearEquivAt 𝕜 y (hy y)).symm.toLinearEquiv).linearIndependent
-    simp only [Module.Basis.coe_map, ContinuousLinearEquiv.coe_toLinearEquiv,
-      Trivialization.symm_continuousLinearEquivAt_eq, Function.comp_def] at this
-    exact this
-  refine ⟨fun y ↦ OrthonormalBasis.mk (InnerProductSpace.gramSchmidtNormed_orthonormal (hli y)) ?_,
-    fun i ↦ ?_⟩
-  · rw [InnerProductSpace.span_gramSchmidtNormed_range, InnerProductSpace.span_gramSchmidt]
-    exact (c.map (e.continuousLinearEquivAt 𝕜 y (hy y)).symm.toLinearEquiv).span_eq.ge.trans
-      (by
-        simp only [v, Module.Basis.coe_map, Function.comp_def, e.symmL_apply (hy y)]
-        exact le_rfl)
-  · simpa only [OrthonormalBasis.coe_mk] using Continuous.gramSchmidtNormed_bundle hv hli i
+  -- The fibres of the pullback carry Mathlib's pulled-back topology and that of the pulled-back
+  -- norm. They are definitionally equal but not identified by instance synthesis, so the bundle
+  -- structures of the pullback are stated with the norm topology, used by
+  -- `Bundle.Trivialization.orthonormalBasis`.
+  let hF : @FiberBundle _ F _ _ ((g : Y → B) *ᵖ E) _
+      fun y ↦ (UniformSpace.toTopologicalSpace : TopologicalSpace ((g *ᵖ E) y)) :=
+    FiberBundle.pullback (F := F) (E := E) g
+  let _ : @VectorBundle 𝕜 _ F ((g : Y → B) *ᵖ E) _ _ _ _ _ _ _ _ hF :=
+    VectorBundle.pullback (𝕜 := 𝕜) (F := F) (E := E) g
+  let c := Module.finBasis 𝕜 F
+  exact ⟨fun y ↦ e.orthonormalBasis c ⟨y, hy y⟩, fun i ↦ (Pullback.continuous_lift F E g).comp
+    ((e.continuous_orthonormalBasis c i).comp (continuous_id.subtype_mk hy))⟩
 
 end Frame
 

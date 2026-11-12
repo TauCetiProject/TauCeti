@@ -26,6 +26,8 @@ splits off the interval coordinate.
 * `Fin.image_ball_initLastIsometry`, `Fin.image_closedBall_initLastIsometry`,
   `Fin.image_sphere_initLastIsometry`, `Fin.preimage_ball_prod_initLastIsometry`: its images of
   balls, closed balls and spheres around the origin, and its preimage of a product of balls.
+* `Fin.appendIsometryOfEq_symm_zero`: splitting a tuple into two blocks of coordinates with
+  `Fin.appendIsometryOfEq` fixes the origin.
 -/
 
 public section
@@ -69,6 +71,12 @@ theorem initLastIsometry_symm_apply {n : ℕ} (p : (Fin n → α) × α) :
 /-- Splitting off the last coordinate sends the origin to the origin. -/
 theorem initLastIsometry_zero [Zero α] (n : ℕ) : initLastIsometry α n 0 = 0 := by
   ext <;> simp [Fin.init]
+
+/-- Splitting the coordinates of a tuple into an initial and a final block sends the origin to the
+origin. -/
+theorem appendIsometryOfEq_symm_zero [Zero α] {n m l : ℕ} (h : m + l = n) :
+    (appendIsometryOfEq (α := α) h).symm 0 = 0 := by
+  ext <;> simp
 
 end PseudoEMetricSpace
 

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Prod
 public import Mathlib.Topology.MetricSpace.Isometry
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.PiCurry
+import TauCeti.Topology.MetricSpace.Isometry.Basic
 
 /-!
 # The product of two finite CW complexes
@@ -84,10 +85,6 @@ private theorem prodCellMap_apply {n : ℕ} (c : ProdCell C D n) (x : Fin n → 
     prodCellMap c x = Prod.map (map _ c.2.1) (map _ c.2.2) (prodCellIsometry c x) :=
   (rfl)
 
-private theorem prodCellIsometry_zero {n : ℕ} (c : ProdCell C D n) :
-    prodCellIsometry c 0 = 0 := by
-  ext <;> simp
-
 private theorem image_prodCellMap {n : ℕ} (c : ProdCell C D n) (s : Set (Fin n → ℝ)) :
     prodCellMap c '' s = Prod.map (map _ c.2.1) (map _ c.2.2) '' (prodCellIsometry c '' s) := by
   rw [image_image]
@@ -95,13 +92,13 @@ private theorem image_prodCellMap {n : ℕ} (c : ProdCell C D n) (s : Set (Fin n
 
 private theorem image_ball_prodCellMap {n : ℕ} (c : ProdCell C D n) :
     prodCellMap c '' ball 0 1 = openCell _ c.2.1 ×ˢ openCell _ c.2.2 := by
-  rw [image_prodCellMap, IsometryEquiv.image_ball, prodCellIsometry_zero, Prod.zero_eq_mk,
-    ← ball_prod_same, prodMap_image_prod, openCell, openCell]
+  rw [image_prodCellMap, IsometryEquiv.image_ball, Fin.appendIsometryOfEq_symm_zero,
+    Prod.zero_eq_mk, ← ball_prod_same, prodMap_image_prod, openCell, openCell]
 
 private theorem image_closedBall_prodCellMap {n : ℕ} (c : ProdCell C D n) :
     prodCellMap c '' closedBall 0 1 = closedCell _ c.2.1 ×ˢ closedCell _ c.2.2 := by
-  rw [image_prodCellMap, IsometryEquiv.image_closedBall, prodCellIsometry_zero, Prod.zero_eq_mk,
-    ← closedBall_prod_same, prodMap_image_prod, closedCell, closedCell]
+  rw [image_prodCellMap, IsometryEquiv.image_closedBall, Fin.appendIsometryOfEq_symm_zero,
+    Prod.zero_eq_mk, ← closedBall_prod_same, prodMap_image_prod, closedCell, closedCell]
 
 /-- The product cells of a given dimension form a finite type when `C` and `D` have finitely
 many cells in every dimension. -/
@@ -140,7 +137,8 @@ private theorem pairwiseDisjoint_prodCellMap :
 
 private theorem prodCellIsometry_mem_closedBall {n : ℕ} (c : ProdCell C D n) {x : Fin n → ℝ}
     (hx : x ∈ closedBall 0 1) : prodCellIsometry c x ∈ closedBall 0 1 ×ˢ closedBall 0 1 := by
-  rwa [closedBall_prod_same, ← Prod.zero_eq_mk, ← prodCellIsometry_zero c, mem_closedBall,
+  rwa [closedBall_prod_same, ← Prod.zero_eq_mk,
+    ← Fin.appendIsometryOfEq_symm_zero (α := ℝ) (Finset.mem_antidiagonal.1 c.1.2), mem_closedBall,
     IsometryEquiv.dist_eq]
 
 /-- The boundary of a product cell lies in the product cells of smaller dimension. -/
@@ -151,7 +149,7 @@ private theorem mapsTo_prodCellMap (n : ℕ) (c : ProdCell C D n) :
   rw [Finset.mem_antidiagonal] at hpq
   intro x hx
   have hx' : prodCellIsometry ⟨⟨(p, q), _⟩, i, j⟩ x ∈ sphere 0 1 := by
-    rwa [mem_sphere, ← prodCellIsometry_zero ⟨⟨(p, q), _⟩, i, j⟩, IsometryEquiv.dist_eq]
+    rwa [mem_sphere, ← Fin.appendIsometryOfEq_symm_zero (α := ℝ) hpq, IsometryEquiv.dist_eq]
   rw [prodCellMap_apply]
   set y := prodCellIsometry ⟨⟨(p, q), _⟩, i, j⟩ x
   simp only [sphere_prod, Prod.fst_zero, Prod.snd_zero, mem_union, mem_prod] at hx'
@@ -196,7 +194,8 @@ def cwComplexProd : CWComplex (C ×ˢ D) :=
     eventually_isEmpty_prodCell finite_prodCell
     (fun _ c ↦ by
       rw [prodCellMap, Equiv.transPartialEquiv_source, PartialEquiv.prod_source, source_eq,
-        source_eq, ball_prod_same, ← Prod.zero_eq_mk, ← prodCellIsometry_zero c]
+        source_eq, ball_prod_same, ← Prod.zero_eq_mk,
+        ← Fin.appendIsometryOfEq_symm_zero (α := ℝ) (Finset.mem_antidiagonal.1 c.1.2)]
       exact ((prodCellIsometry c).preimage_ball _ _).trans
         (by rw [IsometryEquiv.symm_apply_apply]))
     (fun _ c ↦ ((continuousOn _ c.2.1).prodMap (continuousOn _ c.2.2)).comp
@@ -254,7 +253,7 @@ theorem cellFrontier_cellProdEquiv_symm :
     cellFrontier n ((cellProdEquiv n).symm c) =
       cellFrontier _ c.2.1 ×ˢ closedCell _ c.2.2 ∪ closedCell _ c.2.1 ×ˢ cellFrontier _ c.2.2 := by
   rw [cellFrontier, map_cellProdEquiv_symm_eq_prodCellMap,
-    image_prodCellMap, IsometryEquiv.image_sphere, prodCellIsometry_zero, sphere_prod,
+    image_prodCellMap, IsometryEquiv.image_sphere, Fin.appendIsometryOfEq_symm_zero, sphere_prod,
     image_union, Prod.fst_zero, Prod.snd_zero, prodMap_image_prod, prodMap_image_prod,
     cellFrontier, cellFrontier, closedCell, closedCell]
 
