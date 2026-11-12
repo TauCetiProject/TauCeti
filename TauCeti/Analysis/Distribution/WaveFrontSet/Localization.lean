@@ -55,6 +55,10 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone`: at a point of microlocal smoothness
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`.
+* `Distribution.exists_cone_decay_of_forall_isMicrolocallySmoothAt`: if `T` is microlocally smooth
+  at `(x, ξ)` at every point `x` of `supp ψ ∩ supp T`, then the localized Fourier transform with
+  cutoff `ψ` decays rapidly on an open cone around `ξ`. The proof splits `ψ` by a partition of
+  unity subordinate to the neighbourhoods given by `IsMicrolocallySmoothAt.exists_nhds_cone`.
 * `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.waveFrontSet_add_subset`,
   `Distribution.waveFrontSet_sub_subset`, `Distribution.waveFrontSet_sum_subset`: the wave front
   set of a sum lies in the union of the wave front sets.
@@ -306,6 +310,56 @@ theorem waveFrontSet_sum_subset {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(�
   | insert i s hi ih =>
     rw [Finset.sum_insert hi, Finset.set_biUnion_insert]
     exact (waveFrontSet_add_subset _ _).trans (union_subset_union_right _ ih)
+
+/-- **Decay along the support of a cutoff.** If `T` is microlocally smooth at `(x, ξ)` at every
+point `x` of the support of `T` lying in the support of the cutoff `ψ`, then the localized Fourier
+transform of `T` with cutoff `ψ` decays rapidly on an open cone containing `ξ`. -/
+theorem exists_cone_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω, ℂ)} {ψ : 𝓓(Ω, ℂ)}
+    {ξ : E} (h : ∀ x ∈ tsupport ψ ∩ dsupport T, T.IsMicrolocallySmoothAt x ξ) :
+    ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C := by
+  classical
+  choose U hU Γ hΓ hξΓ hcone hdecay using
+    fun x : ↥(tsupport ψ ∩ dsupport T) ↦ (h x x.2).exists_nhds_cone
+  -- Split `ψ` into pieces supported off `dsupport T` or in the interior of some `U x`.
+  let V (i : Option ↥(tsupport ψ ∩ dsupport T)) : Set E := i.elim (dsupport T)ᶜ (interior ∘ U)
+  have hV (i) : IsOpen (V i) := by
+    rcases i with _ | x
+    exacts [isClosed_dsupport.isOpen_compl, isOpen_interior]
+  have hcover : tsupport ψ ⊆ ⋃ i, V i := fun x hx ↦ by
+    by_cases hxT : x ∈ dsupport T
+    · exact mem_iUnion.2 ⟨some ⟨x, hx, hxT⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx, hxT⟩)⟩
+    · exact mem_iUnion.2 ⟨none, hxT⟩
+  obtain ⟨s, φ, hφV, hsum, -⟩ := ψ.exists_sum_subordinate V hV hcover
+  -- The cone is the intersection of the cones `Γ x` of the pieces met by `dsupport T`.
+  let W (i : Option ↥(tsupport ψ ∩ dsupport T)) : Set E := i.elim univ Γ
+  refine ⟨⋂ i ∈ s, W i, isOpen_biInter_finset fun i _ ↦ ?_, mem_iInter₂.2 fun i _ ↦ ?_,
+    fun t ht η hη ↦ mem_iInter₂.2 fun i hi ↦ ?_, fun N ↦ ?_⟩
+  · rcases i with _ | x
+    exacts [isOpen_univ, hΓ x]
+  · rcases i with _ | x
+    exacts [trivial, hξΓ x]
+  · rcases i with _ | x
+    exacts [trivial, hcone x t ht η (mem_iInter₂.1 hη _ hi)]
+  have hpiece (i : s) :
+      ∃ C, ∀ η ∈ ⋂ i ∈ s, W i, (1 + ‖η‖) ^ N * ‖T.localFourier (φ i) η‖ ≤ C := by
+    obtain ⟨_ | x, hi⟩ := i
+    · have hdisj : Disjoint (tsupport (φ ⟨none, hi⟩)) (dsupport T) :=
+        disjoint_compl_left.mono_left (hφV ⟨none, hi⟩)
+      exact ⟨0, fun η _ ↦ by simp [localFourier_eq_zero_of_disjoint hdisj η]⟩
+    · obtain ⟨C, hC⟩ := hdecay x (φ ⟨some x, hi⟩) ((hφV _).trans interior_subset) N
+      exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη (some x) hi)⟩
+  choose C hC using hpiece
+  refine ⟨∑ i, C i, fun η hη ↦ ?_⟩
+  have hsplit : T.localFourier ψ η = ∑ i, T.localFourier (φ i) η := by
+    simp only [← hsum, localFourier_def, map_sum]
+  rw [hsplit]
+  calc (1 + ‖η‖) ^ N * ‖∑ i, T.localFourier (φ i) η‖
+      ≤ ∑ i, (1 + ‖η‖) ^ N * ‖T.localFourier (φ i) η‖ := by
+        rw [← Finset.mul_sum]
+        gcongr
+        exact norm_sum_le _ _
+    _ ≤ ∑ i, C i := Finset.sum_le_sum fun i _ ↦ hC i η hη
 
 section SmulLeft
 

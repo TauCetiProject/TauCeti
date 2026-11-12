@@ -51,6 +51,8 @@ not microlocally smooth.
   the wave front set is closed in `Ω × (E \ {0})`.
 * `Distribution.smul_mem_waveFrontSet_iff`: it is conic in the frequency variable.
 * `Distribution.waveFrontSet_subset_dsupport`: it lies over the support of `T`.
+* `Distribution.localFourier_eq_zero_of_disjoint`: a cutoff supported off the support of `T` has
+  vanishing localized Fourier transform.
 * `Distribution.localFourier_smulLeftCLM`, `Distribution.localFourier_restrictCLM`: the localized
   Fourier transforms of a smooth multiple and of a restriction, as localized Fourier transforms of
   `T` with modified cutoffs.
@@ -364,6 +366,16 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
+/-- The localized Fourier transform vanishes for a cutoff whose support does not meet the support
+of the distribution. -/
+theorem localFourier_eq_zero_of_disjoint {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
+    (h : Disjoint (tsupport φ) (dsupport T)) (η : E) : T.localFourier φ η = 0 := by
+  rw [localFourier, ← map_zero T.complexPairing]
+  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
+  refine complexPairing_eq_of_eventuallyEq T <| eventuallyEq_of_mem
+    ((isOpen_compl_iff.2 (isClosed_tsupport φ)).mem_nhdsSet.2 h.subset_compl_left) fun y hy => ?_
+  simp [image_eq_zero_of_notMem_tsupport hy]
+
 /-- A distribution is microlocally smooth in every direction at a point of `Ω` outside its
 support. -/
 theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω)
@@ -371,16 +383,10 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (
   obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem (isClosed_dsupport.isOpen_compl.mem_nhds hxT) (Ω.isOpen.mem_nhds hx))
     inter_subset_right (1 : ℂ)
-  refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
-    (fun N => ⟨0, fun η => ?_⟩) ξ
-  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
-  have hzero : T.localFourier φ η = 0 := by
-    rw [localFourier, ← map_zero T.complexPairing]
-    refine complexPairing_eq_of_eventuallyEq T ?_
-    refine (eventuallyEq_of_mem ((isOpen_compl_iff.2 (isClosed_tsupport φ)).mem_nhdsSet.2
-      fun y hy hyφ => (hφ hyφ).1 hy) fun y hy => ?_)
-    simp [image_eq_zero_of_notMem_tsupport hy]
-  simp [hzero]
+  have hdisj : Disjoint (tsupport φ) (dsupport T) :=
+    disjoint_left.2 fun y hyφ hyT => (hφ hyφ).1 hyT
+  exact isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
+    (fun N => ⟨0, fun η => by simp [localFourier_eq_zero_of_disjoint hdisj η]⟩) ξ
 
 /-- The wave front set lies over the support of the distribution. -/
 theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :

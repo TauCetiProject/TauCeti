@@ -50,6 +50,9 @@ used to push forward currents whose support is compact, see
 * `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` at every point
   near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
+* `TestFunction.cutoffCompCLM`: the pullback with a cutoff `f ↦ χ (f ∘ Φ)` of test functions, the
+  degree-zero case of `TestFunction.cutoffPullbackCLM`, with its values
+  `TestFunction.cutoffCompCLM_apply`.
 
 ## Implementation notes
 
@@ -489,6 +492,41 @@ theorem cutoffPullbackCLM_cutoffPullbackCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', �
     ext v
     simp [smul_smul, mul_comm, ContinuousLinearMap.coe_comp, Function.comp_assoc]
   · simp [image_eq_zero_of_notMem_tsupport hx]
+
+/-- The **pullback of test functions with a cutoff** `φ ↦ χ (φ ∘ Φ)` along a map `Φ` smooth on
+`Ω`, where `χ` is a test function on `Ω`: its value at `x` is `χ x • f (Φ x)`
+(`TestFunction.cutoffCompCLM_apply`). It is the degree-zero case of
+`TestFunction.cutoffPullbackCLM`, with values in `F` identified with `0`-forms by
+`ContinuousAlternatingMap.constOfIsEmptyLIE`. Its transpose pushes forward distributions
+(`Distribution.cutoffPushforwardCLM`). -/
+def cutoffCompCLM (χ : 𝓓(Ω, ℝ)) (Φ : E → E') (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) :
+    𝓓(Ω', F) →L[ℝ] 𝓓(Ω, F) :=
+  postcompCLM ((constOfIsEmptyLIE ℝ E F (Fin 0)).symm : (E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] F) ∘L
+    cutoffPullbackCLM χ Φ hΦ ∘L
+    postcompCLM ((constOfIsEmptyLIE ℝ E' F (Fin 0)) : F →L[ℝ] (E' [⋀^Fin 0]→L[ℝ] F))
+
+/-- The pullback of a test function with a cutoff is `x ↦ χ x • f (Φ x)`. -/
+@[simp]
+theorem cutoffCompCLM_apply (f : 𝓓(Ω', F)) (x : E) :
+    cutoffCompCLM χ Φ hΦ f x = χ x • f (Φ x) := by
+  simp [cutoffCompCLM]
+
+/-- The support of the pullback of a test function with a cutoff lies in the support of the
+cutoff, over the support of the test function. -/
+theorem tsupport_cutoffCompCLM_subset (f : 𝓓(Ω', F)) :
+    tsupport (cutoffCompCLM χ Φ hΦ f) ⊆ tsupport χ ∩ Φ ⁻¹' tsupport f :=
+  closure_minimal (fun x hx ↦ ⟨subset_tsupport _ fun h ↦ hx (by simp [h]),
+    subset_tsupport _ fun h ↦ hx (by simp [h])⟩) <|
+      (hΦ.continuousOn.mono χ.tsupport_subset).preimage_isClosed_of_isClosed
+        (isClosed_tsupport χ) (isClosed_tsupport f)
+
+/-- The pullback of test functions with a cutoff commutes with postcomposition by a continuous
+linear map of the values. -/
+theorem postcompCLM_cutoffCompCLM {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (L : F →L[ℝ] G) (f : 𝓓(Ω', F)) :
+    postcompCLM L (cutoffCompCLM χ Φ hΦ f) = cutoffCompCLM χ Φ hΦ (postcompCLM L f) := by
+  ext x
+  simp [postcompCLM_apply]
 
 end CutoffPullback
 

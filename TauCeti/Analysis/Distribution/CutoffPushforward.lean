@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
 
 /-!
-# Pushforward of compactly supported currents along smooth maps
+# Pushforward of compactly supported currents and distributions along smooth maps
 
 Let `Ω ⊆ E` and `Ω' ⊆ E'` be open subsets of real normed spaces, with `E` finite-dimensional, and
 let `T` be a current on `Ω`: a continuous linear map on test `k`-forms. Pushing `T` forward along a
@@ -31,6 +32,11 @@ where `χ Φ^*` is the pullback with cutoff `TestFunction.cutoffPullbackCLM`, de
 * if `|χ| ≤ 1` and `‖DΦ‖ ≤ L` on the support of `χ`, then `M(Φ_# T) ≤ L ^ k M(T)`;
 * functoriality: `(Ψ ∘ Φ)_# T = Ψ_# (Φ_# T)`.
 
+The same construction pushes forward distributions, through the pullback of test functions with a
+cutoff `TestFunction.cutoffCompCLM`: `Distribution.cutoffPushforwardCLM` is
+`Φ_* T = T ∘ (χ Φ^*)`, again independent of the cutoff and supported in the image of the support
+of `T`. Along a constant map it is a multiple of a point mass.
+
 ## Main declarations
 
 * `ContinuousLinearMap.comp_cutoffPullbackCLM_congr`: independence of the cutoff.
@@ -40,6 +46,10 @@ where `χ Φ^*` is the pullback with cutoff `TestFunction.cutoffPullbackCLM`, de
 * `ContinuousLinearMap.comp_cutoffPullbackCLM_comp_cutoffPullbackCLM`: functoriality.
 * `Distribution.dsupport_comp_cutoffPullbackCLM_subset`: `spt (Φ_# T) ⊆ Φ (tsupport χ ∩ spt T)`.
 * `Distribution.mass_comp_cutoffPullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)`.
+* `Distribution.cutoffPushforwardCLM`: the pushforward `Φ_* T` of a distribution, with
+  `Distribution.cutoffPushforwardCLM_congr` (independence of the cutoff),
+  `Distribution.dsupport_cutoffPushforwardCLM_subset` (its support) and
+  `Distribution.complexPairing_cutoffPushforwardCLM` (its pairing with complex test functions).
 
 ## References
 
@@ -171,5 +181,73 @@ theorem mass_comp_cutoffPullbackCLM_le [NormedAddCommGroup V] [NormedSpace ℝ V
         rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_pow L.coe_nonneg]
         exact ENNReal.ofReal_le_ofReal hb
     _ = (L : ℝ≥0∞) ^ k * mass T := mul_comm _ _
+
+end Distribution
+
+/-! ### Pushforward of distributions -/
+
+namespace Distribution
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] {Ω : Opens E} {Ω' : Opens E'} {Φ : E → E'}
+  {χ χ₁ χ₂ : 𝓓(Ω, ℝ)} {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω}
+  {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousSMul ℝ F]
+
+/-- The **pushforward of a distribution with a cutoff** along a map `Φ` smooth on `Ω`: the
+distribution `φ ↦ T (χ (φ ∘ Φ))` on `Ω'`, where `χ` is a test function on `Ω`. It is the transpose
+of `TestFunction.cutoffCompCLM`. When `χ` is equal to one near the support of `T`, this is the
+pushforward `Φ_* T` of `T`, which does not depend on `χ`
+(`Distribution.cutoffPushforwardCLM_congr`); for an arbitrary `χ` it is the pushforward of `χ T`.
+The open set `Ω'` carrying the pushforward is arbitrary: `Φ` need not map `Ω` into it. -/
+noncomputable def cutoffPushforwardCLM (χ : 𝓓(Ω, ℝ)) (Φ : E → E')
+    (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) (Ω' : Opens E') : 𝓓'(Ω, F) →L[ℝ] 𝓓'(Ω', F) :=
+  (cutoffCompCLM χ Φ hΦ).precompCompactConvergenceCLM F
+
+/-- The pushforward `Φ_* T` pairs a test function `φ` with `T` through `T (χ (φ ∘ Φ))`. -/
+@[simp]
+theorem cutoffPushforwardCLM_apply (T : 𝓓'(Ω, F)) (φ : 𝓓(Ω', ℝ)) :
+    cutoffPushforwardCLM χ Φ hΦ Ω' T φ = T (cutoffCompCLM χ Φ hΦ φ) :=
+  (rfl)
+
+/-- **Independence of the cutoff**: the pushforward of `T` with cutoff `χ` depends only on the germ
+of `χ` along the support of `T`. -/
+theorem cutoffPushforwardCLM_congr [FiniteDimensional ℝ E] (T : 𝓓'(Ω, F))
+    (h : (χ₁ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] χ₂) :
+    cutoffPushforwardCLM χ₁ Φ hΦ Ω' T = cutoffPushforwardCLM χ₂ Φ hΦ Ω' T := by
+  ext φ
+  exact map_eq_map_of_eventuallyEq T (h.mono fun x hx ↦ by simp [hx])
+
+/-- **The support of a pushforward**: the support of `Φ_* T` lies in the image under `Φ` of the
+part of the support of `T` in the support of the cutoff. -/
+theorem dsupport_cutoffPushforwardCLM_subset [FiniteDimensional ℝ E] (T : 𝓓'(Ω, F)) :
+    dsupport (cutoffPushforwardCLM χ Φ hΦ Ω' T) ⊆ Φ '' (tsupport χ ∩ dsupport T) := by
+  have hS : IsCompact (Φ '' (tsupport χ ∩ dsupport T)) :=
+    (IsCompact.inter_right χ.hasCompactSupport isClosed_dsupport).image_of_continuousOn
+      (hΦ.continuousOn.mono (inter_subset_left.trans χ.tsupport_subset))
+  -- A test function supported off this image pulls back to one supported off `dsupport T`.
+  have hvan : IsVanishingOn (cutoffPushforwardCLM χ Φ hΦ Ω' T)
+      (Φ '' (tsupport χ ∩ dsupport T))ᶜ := fun φ hφ ↦
+    map_eq_zero_of_disjoint_dsupport T <| disjoint_left.2 fun x hx hxT ↦
+      hφ (tsupport_cutoffCompCLM_subset φ hx).2 ⟨x, ⟨(tsupport_cutoffCompCLM_subset φ hx).1, hxT⟩,
+        rfl⟩
+  have h := (hvan.disjoint_dsupport hS.isClosed.isOpen_compl).subset_compl_left
+  rwa [compl_compl] at h
+
+/-- The pushforward along a constant map `x ↦ c` pairs a test function `φ` with `T` through
+`φ c • T χ`: it is the point mass at `c` with weight `T χ`. -/
+theorem cutoffPushforwardCLM_const_apply (c : E') (T : 𝓓'(Ω, F)) (φ : 𝓓(Ω', ℝ)) :
+    cutoffPushforwardCLM χ (fun _ ↦ c) contDiffOn_const Ω' T φ = φ c • T χ := by
+  have h : cutoffCompCLM χ (fun _ ↦ c) contDiffOn_const φ = φ c • χ := by
+    ext x
+    simp [mul_comm]
+  rw [cutoffPushforwardCLM_apply, h, map_smul]
+
+/-- The complex-linear extension of the pushforward `Φ_* T` of a complex distribution pairs a
+complex test function `φ` with `T` through `T (χ (φ ∘ Φ))`. -/
+theorem complexPairing_cutoffPushforwardCLM (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω', ℂ)) :
+    (cutoffPushforwardCLM χ Φ hΦ Ω' T).complexPairing φ =
+      T.complexPairing (cutoffCompCLM χ Φ hΦ φ) := by
+  simp only [complexPairing_apply, cutoffPushforwardCLM_apply, postcompCLM_cutoffCompCLM]
 
 end Distribution
