@@ -362,45 +362,27 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_sub_novikovProductOfMatrix_eq_
           (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
   refine (coordinates hG₀ s₀).injective (funext fun l => ?_)
   simp only [map_add, map_sub, map_smul, Pi.add_apply, Pi.sub_apply, Pi.smul_apply,
-    coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix]
+    coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right]
+  simp only [coordinates_novikovMapOfMatrix]
   have hs := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₁ r₁ hd₁ ha
   set x := coordinates hF₁ r₁ a
   set y := coordinates hF₂ r₂ b
-  -- Each of the five sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the
-  -- five terms of the continuation identity, by expanding the products and interchanging the
-  -- sums.
-  have h₁ : ∑ k, (∑ i, ∑ j, x i * y j * Q i j k) * Φ₀ k l =
-      ∑ i, ∑ j, x i * y j * ∑ k, Q i j k * Φ₀ k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₀))]
-    ac_rfl
-  have h₂ : ∑ s, ∑ t, (∑ i, x i * Φ₁ i s) * (∑ j, y j * Φ₂ j t) * Q' s t l =
+  -- The product of the two maps is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₛ ∑ₜ Φ₁ᵢₛ Φ₂ⱼₜ Q'ₛₜₗ` by
+  -- expanding the first map and interchanging the sums.
+  have h₂ : ∑ s, ∑ j, (∑ i, x i * Φ₁ i s) * y j * ∑ t, Φ₂ j t * Q' s t l =
       ∑ i, ∑ j, x i * y j * ∑ s, ∑ t, Φ₁ i s * Φ₂ j t * Q' s t l := by
     simp only [Finset.sum_mul, Finset.mul_sum]
-    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset κ₂)),
-      Finset.sum_comm (s := (Finset.univ : Finset κ₁))]
-    rw [Finset.sum_comm]
-    ac_rfl
-  have h₃ : ∑ m, (∑ i, ∑ j, x i * y j * K i j m) * D₀ m l =
-      ∑ i, ∑ j, x i * y j * ∑ m, K i j m * D₀ m l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset κ₀))]
-    ac_rfl
-  have h₄ : ∑ m, ∑ j, (∑ i, x i * D₁ i m) * y j * K m j l =
-      ∑ i, ∑ j, x i * y j * ∑ m, D₁ i m * K m j l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₂))]
-    rw [Finset.sum_comm]
-    ac_rfl
-  have h₅ : ∑ i, ∑ m, (x i * ∑ j, y j * D₂ j m) * K i m l =
-      ∑ i, ∑ j, x i * y j * ∑ m, D₂ j m * K i m l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_comm]
-    ac_rfl
+    refine (Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun j _ =>
+      Finset.sum_comm).trans ?_
+    refine (Finset.sum_congr rfl fun s _ => Finset.sum_comm).trans ?_
+    refine Finset.sum_comm.trans (Finset.sum_congr rfl fun i _ => Finset.sum_comm.trans ?_)
+    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun s _ =>
+      Finset.sum_congr rfl fun t _ => by ring
   -- Termwise, this is the continuation identity, with the sign of the orbit of `i` replaced by
   -- the sign of the degree of `a` on its nonzero coordinates.
-  rw [h₁, h₂, h₃, h₄, h₅]
+  rw [h₂]
   simp only [Finset.smul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← mul_sub, hC, mul_add, mul_add, mul_smul_comm, ← smul_mul_assoc, ← smul_mul_assoc, hs,
