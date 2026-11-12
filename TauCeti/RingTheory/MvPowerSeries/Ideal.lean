@@ -107,7 +107,7 @@ theorem maximalIdeal_eq_span_range_X :
 
 /-- Maximal-ideal powers in a finite-variable formal chart measure total-degree order. -/
 @[simp]
-theorem mem_maximalIdeal_pow_iff_order {f : MvPowerSeries σ k} {n : ℕ} :
+theorem mem_maximalIdeal_pow_iff_le_order {f : MvPowerSeries σ k} {n : ℕ} :
     f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ k) ^ n ↔ (n : ℕ∞) ≤ f.order := by
   rw [maximalIdeal_eq_span_range_X, mem_pow_span_range_X_iff_le_order]
 
@@ -118,12 +118,12 @@ theorem localOrder_span_singleton (f : MvPowerSeries σ k) :
   apply ENat.eq_of_forall_natCast_le_iff
   intro n
   rw [Ideal.natCast_le_localOrder_iff, Ideal.span_singleton_le_iff_mem,
-    mem_maximalIdeal_pow_iff_order]
+    mem_maximalIdeal_pow_iff_le_order]
 
 /-- Generator orders compute local ideal order in a finite-variable formal chart. In
 particular, a finite generating family's order is its minimum, and an empty family's is `∞`. -/
 @[simp]
-theorem localOrder_span_range {ι : Type*} (f : ι → MvPowerSeries σ k) :
+theorem localOrder_span_range_eq_iInf_order {ι : Type*} (f : ι → MvPowerSeries σ k) :
     (Ideal.span (Set.range f)).localOrder = ⨅ i, (f i).order := by
   simp [Ideal.localOrder_span_range]
 
@@ -147,7 +147,7 @@ theorem localOrder_eq_iInf_mvPowerSeries_order {σ k : Type*} [Finite σ] [Field
   apply ENat.eq_of_forall_natCast_le_iff
   intro n
   simp only [natCast_le_localOrder_iff, le_iInf_iff]
-  exact ⟨fun h f ↦ MvPowerSeries.mem_maximalIdeal_pow_iff_order.mp (h f.property),
-    fun h f hf ↦ MvPowerSeries.mem_maximalIdeal_pow_iff_order.mpr (h ⟨f, hf⟩)⟩
+  exact ⟨fun h f ↦ MvPowerSeries.mem_maximalIdeal_pow_iff_le_order.mp (h f.property),
+    fun h f hf ↦ MvPowerSeries.mem_maximalIdeal_pow_iff_le_order.mpr (h ⟨f, hf⟩)⟩
 
 end Ideal
