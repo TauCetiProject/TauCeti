@@ -111,9 +111,7 @@ private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
       hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
     a (b (a (b (a (E j))))) = E j := by
   let ti := hs.isSl2Triple hii hi
-  let tj := hs.isSl2Triple hjj hj
   let a := weylAut ti hei.exists_pow_apply_eq_zero hfi.exists_pow_apply_eq_zero
-  let b := weylAut tj hej.exists_pow_apply_eq_zero hfj.exists_pow_apply_eq_zero
   let c := (6⁻¹ : ℚ) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆
   let d := ⁅E j, c⁆
   have hne : i ≠ j := by intro h; subst j; omega
