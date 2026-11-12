@@ -94,7 +94,8 @@ theorem _root_.IntermediateField.LinearDisjoint.rank_le_adjoin_rank_left
     | mem x hx => exact subset_adjoin D _ hx
     | algebraMap r =>
       obtain ⟨y, hy⟩ := r.2
-      rw [show algebraMap D' L r = algebraMap D L y from hy.symm]
+      have hy' : algebraMap D L y = (r : L) := by simpa using hy
+      rw [show algebraMap D' L r = algebraMap D L y by simp [hy']]
       exact IntermediateField.algebraMap_mem _ y
     | add x y _ _ hx hy => exact add_mem hx hy
     | mul x y _ _ hx hy => exact mul_mem hx hy
