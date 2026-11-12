@@ -360,6 +360,25 @@ theorem integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im {P : E →
 
 /-! ### Smooth solutions in the plane -/
 
+/-- The weak form `∫ h (-f + P φ) = ∫ g φ` of `-Δh + P h = g`, with `f = Δφ`, rearranged into the
+weak form `∫ f h = ∫ φ (P h - g)` of `Δh = P h - g`. -/
+private theorem integral_mul_eq_integral_mul_sub_of_integral_mul_neg_add_mul_eq {α : Type*}
+    [MeasurableSpace α] {μ : Measure α} {f φ P h g : α → ℝ}
+    (i₁ : Integrable (fun z ↦ f z * h z) μ) (i₂ : Integrable (fun z ↦ φ z * (P z * h z)) μ)
+    (i₃ : Integrable (fun z ↦ φ z * g z) μ)
+    (e : ∫ z, h z * (-f z + P z * φ z) ∂μ = ∫ z, g z * φ z ∂μ) :
+    ∫ z, f z * h z ∂μ = ∫ z, φ z * (P z * h z - g z) ∂μ := by
+  have e₁ : ∫ z, h z * (-f z + P z * φ z) ∂μ =
+      -∫ z, f z * h z ∂μ + ∫ z, φ z * (P z * h z) ∂μ := by
+    rw [← integral_neg, ← integral_add (f := fun z ↦ -(f z * h z)) i₁.neg i₂]
+    exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
+  have e₂ : ∫ z, φ z * (P z * h z - g z) ∂μ =
+      ∫ z, φ z * (P z * h z) ∂μ - ∫ z, g z * φ z ∂μ := by
+    rw [← integral_sub i₂ (i₃.congr (ae_of_all _ fun z ↦ mul_comm _ _))]
+    exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
+  rw [e₂, ← e, e₁]
+  ring
+
 /-- **Smooth solutions in the plane.** Let `P` be a smooth bounded potential on `ℂ`, almost
 everywhere nonnegative and almost everywhere at least `a > 0` outside the closed ball of radius
 `R`, and let `g` be a smooth function in `L²(ℂ)`. Then `-Δh + P h = g` has a smooth solution
@@ -397,16 +416,8 @@ theorem exists_contDiff_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq {P
     have i₂ : Integrable (fun z ↦ φ z * (P z * h z)) volume := hφ2.integrable_mul hPh
     have i₃ : Integrable (fun z ↦ φ z * g z) volume := hφ2.integrable_mul hg
     have e := hw₀ φ hφ φ.hasCompactSupport
-    rw [integral_congr_ae (hae.mono fun z hz ↦ by rw [hz]),
-      integral_congr_ae (ae_of_all _ fun z ↦ by ring :
-        (fun z ↦ h z * (-Δ (φ : ℂ → ℝ) z + P z * φ z)) =ᵐ[volume]
-          fun z ↦ -(Δ (φ : ℂ → ℝ) z * h z) + φ z * (P z * h z)),
-      integral_add (f := fun z ↦ -(Δ (φ : ℂ → ℝ) z * h z)) i₁.neg i₂, integral_neg] at e
-    rw [integral_congr_ae (ae_of_all _ fun z ↦ by ring :
-        (fun z ↦ φ z * (P z * h z - g z)) =ᵐ[volume] fun z ↦ φ z * (P z * h z) - φ z * g z),
-      integral_sub i₂ i₃, ← integral_congr_ae (ae_of_all _ fun z ↦ by ring :
-        (fun z ↦ g z * φ z) =ᵐ[volume] fun z ↦ φ z * g z)]
-    linarith
+    rw [integral_congr_ae (hae.mono fun z hz ↦ by rw [hz])] at e
+    exact integral_mul_eq_integral_mul_sub_of_integral_mul_neg_add_mul_eq i₁ i₂ i₃ e
   -- Interior regularity for `Δh = P h - g` makes `h` smooth and the equation pointwise.
   have hF : ContDiffOn ℝ (⊤ : ℕ∞) (fun p : ℂ × ℝ ↦ P p.1 * p.2 - g p.1)
       ((⊤ : TopologicalSpace.Opens ℂ) ×ˢ Set.univ) :=

@@ -150,32 +150,18 @@ theorem logVariation_congr_nhds (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ 
   ext i
   fin_cases i <;> simp [hre, him, h.self_of_nhds]
 
-/-- Where `η` is holomorphic, the first connection component of its logarithmic variation
-vanishes, since `∂bar η = 0`. -/
-theorem logVariation_apply_zero_eq_zero_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4))
-    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 0 = 0 := by
-  have h := logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ)
-  rw [hη.conjWirtingerDeriv_eq_zero] at h
-  simpa using congrArg re h
-
-/-- Where `η` is holomorphic, the second connection component of its logarithmic variation
-vanishes, since `∂bar η = 0`. -/
-theorem logVariation_apply_one_eq_zero_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4))
-    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 1 = 0 := by
-  have h := logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ)
-  rw [hη.conjWirtingerDeriv_eq_zero] at h
-  simpa using congrArg im h
-
 /-- Where `η` is holomorphic, its logarithmic variation is the pure section variation
 `δα = α η`, with no connection part. -/
 theorem logVariation_eq_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η : ℂ → ℂ}
     {z : ℂ} (hη : DifferentiableAt ℂ η z) :
     logVariation x η z =
       !₂[0, 0, (sectionValue x z * η z / 2).re, (sectionValue x z * η z / 2).im] := by
+  have h := logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ)
+  rw [hη.conjWirtingerDeriv_eq_zero] at h
   ext i
   fin_cases i
-  · simpa using logVariation_apply_zero_eq_zero_of_differentiableAt x hη
-  · simpa using logVariation_apply_one_eq_zero_of_differentiableAt x hη
+  · simpa using congrArg re h
+  · simpa using congrArg im h
   · simp [sectionValue_apply]
     ring
   · simp [sectionValue_apply]
