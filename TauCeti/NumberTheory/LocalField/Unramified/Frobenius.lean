@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import TauCeti.NumberTheory.LocalField.Unramified.ResidueField
 import Mathlib.Data.Nat.Prime.Infinite
 import TauCeti.Data.Nat.Factorization.Basic
+import TauCeti.RingTheory.Algebraic.Basic
 import TauCeti.RingTheory.AlgebraicIndependent.Automorphism
 import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.RingTheory.Valuation.ValuativeRel.Frobenius
@@ -246,17 +247,12 @@ variable (E) in
 /-- **The fixed ring of Frobenius on `𝒪[Breve E]` is `𝒪[E]`.** -/
 theorem fixedPoints_integerFrobenius :
     {x : 𝒪[Breve E] | integerFrobenius E x = x} = Set.range (algebraMap 𝒪[E] 𝒪[Breve E]) := by
-  ext x
-  refine ⟨fun hx ↦ ?_, ?_⟩
-  · have hxB : frobenius E (x : Breve E) = (x : Breve E) :=
-      (coe_integerFrobenius_apply x).symm.trans (congrArg Subtype.val hx)
-    obtain ⟨c, hc⟩ := frobenius_eq_self_iff.1 hxB
-    have hc1 : valuation E c ≤ 1 :=
-      (ValuativeExtension.valuation_algebraMap_le_one_iff (B := Breve E) c).1
-        ((Valuation.mem_integer_iff _ _).1 (hc ▸ x.2))
-    exact ⟨⟨c, hc1⟩, Subtype.ext (by rw [coe_algebraMap_integerRing, hc])⟩
-  · rintro ⟨c, rfl⟩
-    exact (integerFrobenius E).commutes c
+  let _ := IsTopologicalAddGroup.rightUniformSpace E
+  have := isUniformAddGroup_of_addCommGroup (G := E)
+  exact Set.ext fun x ↦
+    (frobenius E).integerAlgEquivOfMemInteger_eq_self_iff_mem_range_algebraMap
+      frobenius_mem_integer_iff mapValueGroupWithZero_breve_surjective
+      (fun _ hz ↦ frobenius_congr hz) x
 
 /-- The `n`-th power of Frobenius on `Breve E` extends the `n`-th power of the arithmetic
 Frobenius of `E^{ur}`. -/

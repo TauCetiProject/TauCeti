@@ -22,10 +22,9 @@ already attained on `K`.
 This file packages the resulting algebraic consequences for the value group, valuation ring `𝒪[·]`,
 maximal ideal `𝓂[·]`, and residue field `𝓀[·]` of `Completion K`:
 
-* `ValuativeExtension.mapValueGroupWithZero K (Completion K)` is surjective, inducing an
-  order-monoid isomorphism `ValueGroupWithZero K ≃*o ValueGroupWithZero (Completion K)` and
-  transferring `IsNontrivial`, `IsDiscrete`, `IsRankLeOne`, `IsDiscreteValuationRing`,
-  `IsAdicComplete`, and irreducible uniformizers from `K` to `Completion K`.
+* `ValuativeExtension.mapValueGroupWithZero K (Completion K)` is surjective, transferring
+  `IsNontrivial`, `IsDiscrete`, `IsRankLeOne`, `IsDiscreteValuationRing`, `IsAdicComplete`, and
+  irreducible uniformizers from `K` to `Completion K`.
 * `algebraMap 𝒪[K] 𝒪[Completion K]` has dense range, and `algebraMap 𝓀[K] 𝓀[Completion K]` is
   bijective (`UniformSpace.Completion.residueFieldRingEquiv`).
 * Continuous maps on `Completion K` and `𝒪[Completion K]` inherit valuation invariance and
@@ -33,8 +32,6 @@ maximal ideal `𝓂[·]`, and residue field `𝓀[·]` of `Completion K`:
 
 ## Main definitions
 
-* `UniformSpace.Completion.valueGroupWithZeroOrderMonoidIso`: the canonical order-monoid
-  isomorphism `ValueGroupWithZero K ≃*o ValueGroupWithZero (Completion K)`.
 * `UniformSpace.Completion.residueFieldRingEquiv`: the canonical ring isomorphism
   `𝓀[K] ≃+* 𝓀[Completion K]`.
 
@@ -81,22 +78,6 @@ theorem mapValueGroupWithZero_surjective :
   apply ValuativeExtension.mapValueGroupWithZero_surjective_of_forall_exists_veq
   simpa only [Completion.algebraMap_def, Algebra.algebraMap_self_apply] using
     exists_coe_veq (K := K)
-
-variable (K) in
-/-- The canonical order-monoid isomorphism between the value groups with zero of `K` and
-`Completion K`. -/
-noncomputable def valueGroupWithZeroOrderMonoidIso :
-    ValueGroupWithZero K ≃*o ValueGroupWithZero (Completion K) :=
-  ValuativeExtension.valueGroupWithZeroOrderMonoidIsoOfSurjective
-    mapValueGroupWithZero_surjective
-
-variable (K) in
-@[simp]
-theorem valueGroupWithZeroOrderMonoidIso_apply (γ : ValueGroupWithZero K) :
-    valueGroupWithZeroOrderMonoidIso K γ =
-      ValuativeExtension.mapValueGroupWithZero K (Completion K) γ := by
-  rw [valueGroupWithZeroOrderMonoidIso,
-    ValuativeExtension.valueGroupWithZeroOrderMonoidIsoOfSurjective_apply]
 
 /-- Completion preserves nontriviality of a valued field. -/
 instance isNontrivial [IsNontrivial K] : IsNontrivial (Completion K) :=
