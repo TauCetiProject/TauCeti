@@ -354,9 +354,7 @@ theorem abelianizedLocalCyclotomicCharacter_infiniteArtinAt_norm (v : InfinitePl
     abelianizedLocalCyclotomicCharacter p w.Completion (infiniteArtinAt w x) =
       abelianizedLocalCyclotomicCharacter p v.Completion
         (infiniteArtinAt v (Algebra.normUnits v.Completion x)) := by
-  have : CharZero K := v.embedding.charZero
-  have : CharZero v.Completion :=
-    charZero_of_injective_algebraMap (algebraMap K v.Completion).injective
+  have : CharZero v.Completion := (Completion.extensionEmbedding v).charZero
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (infiniteArtinAt w x)
   let iota : w.Completion →ₐ[v.Completion] SeparableClosure v.Completion := IsSepClosed.lift
   have hx : Algebra.normUnits v.Completion x =
