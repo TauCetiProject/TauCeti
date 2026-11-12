@@ -268,7 +268,7 @@ private theorem exists_gaugeTransform_eq_of_tendsto_apply [l.NeBot]
     (hc : Tendsto (fun i ↦ (us i z₀ : ℂ)) l (𝓝 c)) :
     ∃ v : ℂ → Circle, Differentiable ℝ (fun z ↦ (v z : ℂ)) ∧ gaugeTransform v x = y ∧
       TendstoLocallyUniformly (fun i z ↦ (us i z : ℂ)) (fun z ↦ (v z : ℂ)) l := by
-  set ω : ℂ → ℂ →L[ℝ] ℝ := fun z ↦ connectionDifferenceCLM (x z, y z) with hω_def
+  set ω : ℂ → ℂ →L[ℝ] ℝ := fun z ↦ connectionDifferenceCLM (x z, y z)
   have hωc : Continuous ω := connectionDifferenceCLM.continuous.comp (hxc.prodMk hyc)
   have hgauge (i : ι) : gaugeForm (us i) = fun z ↦ connectionDifferenceCLM (xs i z, ys i z) :=
     funext fun z ↦ by rw [connectionDifferenceCLM_apply, (gaugeTransform_eq_iff.1 (hxy i) z).1]
