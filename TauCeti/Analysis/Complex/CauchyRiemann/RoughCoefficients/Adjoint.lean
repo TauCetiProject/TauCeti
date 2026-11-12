@@ -223,7 +223,7 @@ theorem IsSobolevCRCoefficients.crReflectedAdjoint (hc : IsSobolevCRCoefficients
 
 omit [InnerProductSpace ℝ V] [CompleteSpace V] in
 /-- Precomposition with `z ↦ -conj z` preserves local integrability on open sets. -/
-private theorem locallyIntegrableOn_comp_negConj [NormedSpace ℝ V] {U U' : Set ℂ} {u : ℂ → V}
+private theorem locallyIntegrableOn_comp_negConj {U U' : Set ℂ} {u : ℂ → V}
     (hu : LocallyIntegrableOn u U) (hU' : IsOpen U') (hU : MapsTo (fun z : ℂ => -conj z) U' U) :
     LocallyIntegrableOn (fun z => u (-conj z)) U' := by
   rw [locallyIntegrableOn_iff hU'.isLocallyClosed]
