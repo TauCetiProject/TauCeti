@@ -33,13 +33,13 @@ subsets of `U`, every statement applies verbatim to half-discs.
 
 ## Main results
 
-* `TauCeti.IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine`: composition with a `C¹` map
+* `TauCeti.IsWeakCauchyRiemannOn.contDiffOn_comp_of_intertwine`: composition with a `C¹` map
   intertwining `J` with a field `J'`.
 * `TauCeti.isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp`: invariance under `C¹`
   diffeomorphisms of the target. The field `Ψ_* J` is `OpenPartialHomeomorph.pullbackEnd` along
   `Ψ.symm` and the term `Ψ_* η` is Mathlib's `VectorField.pullback` along `Ψ.symm`.
-* `TauCeti.IsWeakCauchyRiemannOn.comp_graph_of_intertwine`: domain-dependent changes of target
-  coordinates `z ↦ Φ(z, u z)`.
+* `TauCeti.IsWeakCauchyRiemannOn.contDiffOn_comp_graph_of_intertwine`: domain-dependent changes
+  of target coordinates `z ↦ Φ(z, u z)`.
 * `TauCeti.IsWeakCauchyRiemannOn.conj_comp`: complex conjugation transports the standard
   structure `i` to `-i`; together with `TauCeti.not_isWeakCauchyRiemannOn_conj` this shows that
   the transport of `J` cannot be dropped.
@@ -70,7 +70,7 @@ almost every `z` in the interior of `U`, `J'(z, ψ(u z)) ∘ dψ(u z) = dψ(u z)
 `η'(z, ψ(u z)) = dψ(u z) (η(z, u z))`, then `ψ ∘ u` is a weak solution for `J'` and `η'`. The
 weak derivative of `ψ ∘ u` is `dψ(u) ∘ D` by the weak chain rule, and the equation is
 `dψ(u)` applied to `D 1 + J D I = η`. No invertibility of `ψ` is needed. -/
-theorem IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine [CompleteSpace W] {ψ : V → W}
+theorem IsWeakCauchyRiemannOn.contDiffOn_comp_of_intertwine [CompleteSpace W] {ψ : V → W}
     {O : Set V} (h : IsWeakCauchyRiemannOn p U J η u) (hO : IsOpen O)
     (hψ : ContDiffOn ℝ 1 ψ O) (huO : MapsTo u U O)
     (hJ : ∀ᵐ z ∂volume.restrict (interior U),
@@ -98,15 +98,6 @@ section Diffeomorphism
 
 variable {Ψ : OpenPartialHomeomorph V W}
 
-/-- A `C¹` open partial homeomorphism with `C¹` inverse is differentiable at every point `x` of
-its source, and its inverse is differentiable at `Ψ x`. -/
-private theorem differentiableAt_and_symm (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source)
-    (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) {x : V} (hx : x ∈ Ψ.source) :
-    DifferentiableAt ℝ Ψ x ∧ DifferentiableAt ℝ Ψ.symm (Ψ x) :=
-  ⟨(hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx),
-    (hΨs.differentiableOn one_ne_zero).differentiableAt
-      (Ψ.open_target.mem_nhds (Ψ.map_source hx))⟩
-
 /-- **Invariance under `C¹` diffeomorphisms of the target, forward direction.** If `Ψ` is a `C¹`
 open partial homeomorphism with `C¹` inverse whose source contains `u '' U`, and `u` is a weak
 solution for `J` and `η`, then `Ψ ∘ u` is a weak solution for `Ψ_* J` and `Ψ_* η`. The
@@ -119,11 +110,11 @@ theorem IsWeakCauchyRiemannOn.openPartialHomeomorph_comp [CompleteSpace W]
     (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) (huΨ : MapsTo u U Ψ.source) :
     IsWeakCauchyRiemannOn p U (fun z => Ψ.symm.pullbackEnd (J z))
       (fun z => VectorField.pullback ℝ Ψ.symm (η z)) (fun z => Ψ (u z)) := by
-  refine h.comp_contDiffOn_of_intertwine Ψ.open_source hΨ huΨ ?_ ?_ <;>
+  refine h.contDiffOn_comp_of_intertwine Ψ.open_source hΨ huΨ ?_ ?_ <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
   all_goals
     have hx := huΨ (interior_subset hz)
-    obtain ⟨hd, hds⟩ := differentiableAt_and_symm hΨ hΨs hx
+    obtain ⟨hd, hds⟩ := Ψ.differentiableAt_and_symm_of_contDiffOn hΨ hΨs one_ne_zero hx
   · exact Ψ.symm_pullbackEnd_comp_fderiv (J z) hx hd hds
   · exact Ψ.pullback_symm_apply (η z) hx hd hds
 
@@ -139,12 +130,12 @@ theorem isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp [CompleteSpace V] [
         (fun z => VectorField.pullback ℝ Ψ.symm (η z)) (fun z => Ψ (u z)) := by
   refine ⟨fun h => h.openPartialHomeomorph_comp hΨ hΨs huΨ, fun h => ?_⟩
   have hvΨ : MapsTo (fun z => Ψ (u z)) U Ψ.target := fun z hz => Ψ.map_source (huΨ hz)
-  refine (h.comp_contDiffOn_of_intertwine (J' := J) (η' := η) Ψ.open_target hΨs hvΨ ?_
+  refine (h.contDiffOn_comp_of_intertwine (J' := J) (η' := η) Ψ.open_target hΨs hvΨ ?_
     ?_).congr fun z hz => Ψ.left_inv (huΨ hz) <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
   all_goals
     have hx := huΨ (interior_subset hz)
-    obtain ⟨hd, hds⟩ := differentiableAt_and_symm hΨ hΨs hx
+    obtain ⟨hd, hds⟩ := Ψ.differentiableAt_and_symm_of_contDiffOn hΨ hΨs one_ne_zero hx
   · exact (Ψ.symm.fderiv_comp_pullbackEnd (J z) (Ψ.map_source hx) hds
       (by rwa [Ψ.symm_symm, Ψ.left_inv hx])).symm
   · exact (VectorField.fderiv_pullback Ψ.symm (η z) (Ψ (u z))
@@ -161,8 +152,8 @@ graph. If, for almost every `z` in the interior of `U`, `J'(z, Φ(z, u z)) ∘ �
 and `η'(z, Φ(z, u z)) = ∂ₓΦ (η(z, u z)) + ∂_zΦ 1 + J'(z, Φ(z, u z)) (∂_zΦ I)`, then
 `z ↦ Φ(z, u z)` is a weak solution for `J'` and `η'`. The extra terms come from the derivative of
 `Φ` in the domain variable. -/
-theorem IsWeakCauchyRiemannOn.comp_graph_of_intertwine [CompleteSpace W] {Φ : ℂ × V → W}
-    {O : Set (ℂ × V)} (h : IsWeakCauchyRiemannOn p U J η u) (hO : IsOpen O)
+theorem IsWeakCauchyRiemannOn.contDiffOn_comp_graph_of_intertwine [CompleteSpace W]
+    {Φ : ℂ × V → W} {O : Set (ℂ × V)} (h : IsWeakCauchyRiemannOn p U J η u) (hO : IsOpen O)
     (hΦ : ContDiffOn ℝ 1 Φ O) (huO : ∀ z ∈ U, (z, u z) ∈ O)
     (hJ : ∀ᵐ z ∂volume.restrict (interior U),
       (J' z (Φ (z, u z))).comp ((fderiv ℝ Φ (z, u z)).comp (ContinuousLinearMap.inr ℝ ℂ V)) =
@@ -201,12 +192,12 @@ section Checks
 equation for `J = i`, then `conj ∘ u` solves the homogeneous equation for `J = -i`: the
 derivative of conjugation intertwines `i` with `-i`. Since conjugation itself does not solve the
 equation for `i` (`TauCeti.not_isWeakCauchyRiemannOn_conj`), the transport of `J` in
-`TauCeti.IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine` cannot be dropped. -/
+`TauCeti.IsWeakCauchyRiemannOn.contDiffOn_comp_of_intertwine` cannot be dropped. -/
 theorem IsWeakCauchyRiemannOn.conj_comp {u : ℂ → ℂ}
     (h : IsWeakCauchyRiemannOn p U (fun _ _ => I • ContinuousLinearMap.id ℝ ℂ) (fun _ _ => 0) u) :
     IsWeakCauchyRiemannOn p U (fun _ _ => (-I) • ContinuousLinearMap.id ℝ ℂ) (fun _ _ => 0)
       (fun z => conj (u z)) :=
-  h.comp_contDiffOn_of_intertwine isOpen_univ conjCLE.contDiff.contDiffOn (mapsTo_univ _ _)
+  h.contDiffOn_comp_of_intertwine isOpen_univ conjCLE.contDiff.contDiffOn (mapsTo_univ _ _)
     (Filter.Eventually.of_forall fun z => ContinuousLinearMap.ext fun v => by
       simp)
     (Filter.Eventually.of_forall fun z => by simp)
@@ -227,7 +218,7 @@ example {u : ℂ → ℂ}
       (fun z => exp (u z)) := by
   have hd (x : ℂ) : fderiv ℝ exp x = exp x • (1 : ℂ →L[ℝ] ℂ) :=
     (hasDerivAt_exp x).complexToReal_fderiv.fderiv
-  refine h.comp_contDiffOn_of_intertwine isOpen_univ
+  refine h.contDiffOn_comp_of_intertwine isOpen_univ
     (Complex.contDiff_exp (𝕜 := ℝ)).contDiffOn (mapsTo_univ _ _)
     (Filter.Eventually.of_forall fun z => ContinuousLinearMap.ext fun v => ?_)
     (Filter.Eventually.of_forall fun z => by simp [hd])

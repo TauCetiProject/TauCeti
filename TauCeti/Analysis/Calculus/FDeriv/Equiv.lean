@@ -34,6 +34,9 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply`,
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: the same identities evaluated at a
   vector.
+* `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply_of_mem_source`,
+  `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply_of_mem_source`: the evaluated identities
+  at a point `p` of the source and its image `e p`.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
@@ -95,6 +98,22 @@ theorem fderiv_apply_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {p : F}
     fderiv 𝕜 e (e.symm p) (fderiv 𝕜 e.symm p w) = w := by
   simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
     DFunLike.congr_fun (e.fderiv_comp_fderiv_symm hp hd hds) w
+
+/-- Source-point form of `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply`: for `p` in the
+source, `De⁻¹_{e p} (De_p v) = v`. -/
+theorem fderiv_symm_apply_fderiv_apply_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p))
+    (v : E) : fderiv 𝕜 e.symm (e p) (fderiv 𝕜 e p v) = v := by
+  have h := e.fderiv_symm_apply_fderiv_apply (e.map_source hp) (by rwa [e.left_inv hp]) hds v
+  rwa [e.left_inv hp] at h
+
+/-- Source-point form of `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: for `p` in the
+source, `De_p (De⁻¹_{e p} w) = w`. -/
+theorem fderiv_apply_fderiv_symm_apply_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p))
+    (w : F) : fderiv 𝕜 e p (fderiv 𝕜 e.symm (e p) w) = w := by
+  have h := e.fderiv_apply_fderiv_symm_apply (e.map_source hp) (by rwa [e.left_inv hp]) hds w
+  rwa [e.left_inv hp] at h
 
 end OpenPartialHomeomorph
 

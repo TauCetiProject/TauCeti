@@ -29,6 +29,9 @@ the pullback is `C^n`.
   pullback with `J`.
 * `OpenPartialHomeomorph.symm_pullbackEnd_comp_fderiv`: the derivative of `e` intertwines `J`
   with its pullback along `e.symm`.
+* `OpenPartialHomeomorph.differentiableAt_and_symm_of_contDiffOn`: a `C^n` open partial
+  homeomorphism with `C^n` inverse, `n ≠ 0`, and its inverse are differentiable at corresponding
+  points.
 * `OpenPartialHomeomorph.pullback_symm_apply`: Mathlib's pullback `VectorField.pullback` of a
   vector field along `e.symm` is its pushforward `De_p (X p)` by `e`.
 * `OpenPartialHomeomorph.pullbackEnd_apply_pullbackEnd_apply`: the pullback of a field squaring
@@ -72,10 +75,8 @@ theorem fderiv_comp_pullbackEnd (J : F → F →L[𝕜] F) {p : E} (hp : p ∈ e
     (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p)) :
     (fderiv 𝕜 e p).comp (e.pullbackEnd J p) = (J (e p)).comp (fderiv 𝕜 e p) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  have h := e.fderiv_apply_fderiv_symm_apply (e.map_source hp) (by rwa [e.left_inv hp]) hs
-    (J (e p) (fderiv 𝕜 e p v))
-  rw [e.left_inv hp] at h
-  simpa only [ContinuousLinearMap.comp_apply, pullbackEnd_apply] using h
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, pullbackEnd_apply,
+    e.fderiv_apply_fderiv_symm_apply_of_mem_source hp he hs]
 
 /-- The derivative of `e` intertwines `J` with its pullback `e.symm.pullbackEnd J` along the
 inverse, that is with the pushforward `De ∘ J ∘ De⁻¹` of `J` by `e`. -/
@@ -83,20 +84,25 @@ theorem symm_pullbackEnd_comp_fderiv (J : E → E →L[𝕜] E) {p : E} (hp : p 
     (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p)) :
     (e.symm.pullbackEnd J (e p)).comp (fderiv 𝕜 e p) = (fderiv 𝕜 e p).comp (J p) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  have h := e.fderiv_symm_apply_fderiv_apply (e.map_source hp) (by rwa [e.left_inv hp]) hs v
-  rw [e.left_inv hp] at h
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, pullbackEnd_apply,
-    e.symm_symm, e.left_inv hp, h]
+    e.symm_symm, e.left_inv hp, e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs]
+
+/-- An open partial homeomorphism that is `C^n` on its source, with `n ≠ 0` and inverse `C^n` on
+its target, is differentiable at every point `p` of its source, and its inverse is differentiable
+at `e p`. -/
+theorem differentiableAt_and_symm_of_contDiffOn {n : ℕ∞ω} (he : ContDiffOn 𝕜 n e e.source)
+    (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {p : E} (hp : p ∈ e.source) :
+    DifferentiableAt 𝕜 e p ∧ DifferentiableAt 𝕜 e.symm (e p) :=
+  ⟨(he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hp),
+    (hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hp))⟩
 
 /-- The derivative of the inverse of an open partial homeomorphism at `e p` is invertible when
 `e` is differentiable at `p` and `e.symm` at `e p`; its inverse is the derivative of `e` at `p`. -/
 theorem isInvertible_fderiv_symm {p : E} (hp : p ∈ e.source) (he : DifferentiableAt 𝕜 e p)
-    (hs : DifferentiableAt 𝕜 e.symm (e p)) : (fderiv 𝕜 e.symm (e p)).IsInvertible := by
-  have hd : DifferentiableAt 𝕜 e (e.symm (e p)) := by rwa [e.left_inv hp]
-  have hleft := e.fderiv_symm_apply_fderiv_apply (e.map_source hp) hd hs
-  have hright := e.fderiv_apply_fderiv_symm_apply (e.map_source hp) hd hs
-  rw [e.left_inv hp] at hleft hright
-  exact ⟨.equivOfInverse (fderiv 𝕜 e.symm (e p)) (fderiv 𝕜 e p) hright hleft, rfl⟩
+    (hs : DifferentiableAt 𝕜 e.symm (e p)) : (fderiv 𝕜 e.symm (e p)).IsInvertible :=
+  ⟨.equivOfInverse (fderiv 𝕜 e.symm (e p)) (fderiv 𝕜 e p)
+    (e.fderiv_apply_fderiv_symm_apply_of_mem_source hp he hs)
+    (e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs), rfl⟩
 
 /-- **Pulling a vector field back along the inverse pushes it forward.** Mathlib's pullback
 `VectorField.pullback` of a vector field `X` on `E` along `e.symm` is, at `e p`, the
@@ -105,9 +111,9 @@ theorem pullback_symm_apply (X : E → E) {p : E} (hp : p ∈ e.source)
     (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p)) :
     VectorField.pullback 𝕜 e.symm X (e p) = fderiv 𝕜 e p (X p) := by
   have h := VectorField.fderiv_pullback e.symm X (e p) (e.isInvertible_fderiv_symm hp he hs)
-  have hleft := e.fderiv_symm_apply_fderiv_apply (e.map_source hp) (by rwa [e.left_inv hp]) hs
-  rw [e.left_inv hp] at h hleft
-  exact (e.isInvertible_fderiv_symm hp he hs).injective (h.trans (hleft (X p)).symm)
+  rw [e.left_inv hp] at h
+  exact (e.isInvertible_fderiv_symm hp he hs).injective
+    (h.trans (e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs (X p)).symm)
 
 /-- **The pullback of an almost complex structure is an almost complex structure.** If
 `J (e p)` squares to `-1`, so does the pulled-back endomorphism at `p`. -/
@@ -115,10 +121,7 @@ theorem pullbackEnd_apply_pullbackEnd_apply {J : F → F →L[𝕜] F} {p : E} (
     (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p))
     (hsq : ∀ w, J (e p) (J (e p) w) = -w) (v : E) :
     e.pullbackEnd J p (e.pullbackEnd J p v) = -v := by
-  have hd : DifferentiableAt 𝕜 e (e.symm (e p)) := by rwa [e.left_inv hp]
-  have hright := e.fderiv_apply_fderiv_symm_apply (e.map_source hp) hd hs
-  have hleft := e.fderiv_symm_apply_fderiv_apply (e.map_source hp) hd hs
-  rw [e.left_inv hp] at hright hleft
-  rw [pullbackEnd_apply, pullbackEnd_apply, hright, hsq, map_neg, hleft]
+  rw [pullbackEnd_apply, pullbackEnd_apply, e.fderiv_apply_fderiv_symm_apply_of_mem_source hp he hs,
+    hsq, map_neg, e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs]
 
 end OpenPartialHomeomorph
