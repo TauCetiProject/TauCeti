@@ -225,11 +225,13 @@ namespace ContinuousLinearMap
 variable {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
   [p.HolderConjugate q]
 
+omit [Fact (1 ≤ p)] in
 /-- For Hölder conjugate exponents `1 < p, q < ∞`, the `p`-th power of the norm of a functional
 on `ℓ^q` is the sum of the `p`-th powers of the norms of its coordinate values. -/
 theorem norm_rpow_eq_tsum_norm_lp_single_rpow (hp : p ≠ ∞) (hq : q ≠ ∞)
     (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
     ‖f‖ ^ p.toReal = ∑' i, ‖f (lp.single q i 1)‖ ^ p.toReal := by
+  have : Fact (1 ≤ p) := ⟨ENNReal.HolderConjugate.one_le p q⟩
   rw [← (lp.dualEquiv 𝕜 ι p q hq).symm.norm_map f,
     lp.norm_rpow_eq_tsum (ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp)]
   simp only [lp.dualEquiv_symm_apply]

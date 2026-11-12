@@ -88,10 +88,10 @@ def fromSimplicialPointed : SimplicialObject Pointed.{u} ⥤ PointedSSet.{u} whe
   obj X := Under.mk (show Δ[0] ⟶ X ⋙ forget Pointed from
     { app n := ↾(fun _ ↦ (X.obj n).point)
       naturality n m f := by
-        ext x
+        ext _
         exact ((X.map f).map_point).symm })
   map f := Under.homMk (CategoryTheory.Functor.whiskerRight f (forget Pointed)) (by
-    ext n x
+    ext n _
     exact (f.app n).map_point)
 
 @[simp]

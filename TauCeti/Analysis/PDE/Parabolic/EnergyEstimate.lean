@@ -166,7 +166,6 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
       χ s ≤ (‖w a‖ ^ 2 + α⁻¹ * ∫ r in a..t, ‖f r‖ ^ 2) + 2 * β * ∫ r in a..s, χ r := by
     intro s hs
     have hsb : s ∈ Icc a b := htb hs
-    have hsub : Ioo a s ⊆ Ioo a b := Ioo_subset_Ioo_right hsb.2
     have hφs := hφi.intervalIntegrable_of_mem_Icc ha hsb
     -- the energy identity, then the pointwise bound integrated over `(a, s)`
     have hid : ‖w s‖ ^ 2 - ‖w a‖ ^ 2 = ∫ r in a..s, 2 * u' r (u r) := by

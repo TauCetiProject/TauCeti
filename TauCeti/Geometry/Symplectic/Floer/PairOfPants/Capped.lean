@@ -251,12 +251,8 @@ theorem hasCompactSupport_cappedPerturbation_apply (a L : ℝ) (u : ℝ × ℝ �
 /-- **The datum vanishes near the poles `0` and `1`.** -/
 theorem eventually_cappedPerturbation_eq_zero_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) :
     ∀ᶠ w in 𝓝 c, ∀ x : M, cappedPerturbation a L H w x = 0 := by
-  have hT : c ∉ truncation (L + 3) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases hc with rfl | rfl
-    exacts [h₀ rfl, h₁ rfl]
-  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds hT] with w hw x
+  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds
+    (notMem_truncation_of_eq_zero_or_eq_one hc _)] with w hw x
   exact cappedPerturbation_eq_zero_of_notMem_truncation hw x
 
 /-- **The datum vanishes near the pole `∞`.** -/
@@ -557,8 +553,8 @@ private theorem setLIntegral_image_endChart_cappedPerturbation_le
       ENNReal.ofReal (2 * |a|) := by
     calc _ ≤ ∫⁻ s, ENNReal.ofReal |a| * (f₁ s + f₂ s) := by
           refine lintegral_mono fun s ↦ ?_
-          rw [deriv_const_mul_field', enorm_mul, Real.enorm_eq_ofReal_abs a, hf₁, hf₂,
-            ← ENNReal.ofReal_add (hψ _) (hψ _), Real.enorm_eq_ofReal_abs]
+          rw [deriv_const_mul_field', eNorm_mul, Real.eNorm_eq_ofReal_abs a, hf₁, hf₂,
+            ← ENNReal.ofReal_add (hψ _) (hψ _), Real.eNorm_eq_ofReal_abs]
           gcongr
           exact abs_deriv_cappedEndProfile_le _ _
       _ = ENNReal.ofReal |a| * 2 := by
@@ -632,9 +628,9 @@ theorem abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le
   have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
   rw [← ENNReal.ofReal_le_ofReal_iff
       (mul_nonneg zero_le_two (Finset.sum_nonneg fun q _ ↦ hB₀ q)),
-    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
+    ← Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
     ENNReal.ofReal_sum_of_nonneg fun q _ ↦ hB₀ q]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_cappedComparisonPerturbation_le ω hH hHs hB hR u))
 
 end TauCeti.SmoothTwoForm

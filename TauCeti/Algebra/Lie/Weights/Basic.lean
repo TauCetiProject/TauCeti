@@ -29,9 +29,13 @@ weight-space theory. The transport and finrank identities hold over any commutat
   corresponding weight space.
 * `LieModule.isTriangularizable_of_iSup_genWeightSpace_eq_top`: a module spanned by its
   generalized weight spaces is triangularizable, over any commutative ring and without finiteness.
+* `LieModuleHom.isTriangularizable_of_surjective`: triangularizability passes to the image of a
+  surjective Lie-module homomorphism.
 * `LieModule.genWeightSpaceOf_eq_iSup_genWeightSpace`: for a finite-dimensional triangularizable
   module, a generalized eigenspace of one element is the sum of the generalized weight spaces of
   the weights taking that eigenvalue there.
+* `LieModule.genWeightSpace_le_posFittingComp_of_ne_zero`: a generalized weight space of a nonzero
+  weight lies in the positive Fitting component.
 * `LieModuleEquiv.finrank_weightSpace_eq`: equivalent Lie modules have weight spaces of equal
   dimension.
 * `LieSubmodule.toSubmodule_map_weightSpace_incl`: inclusion identifies a submodule's weight space
@@ -169,6 +173,24 @@ theorem isTriangularizable_of_iSup_genWeightSpace_eq_top
   exact (Module.End.mem_maxGenEigenspace _ _ _).mpr
     ((mem_genWeightSpaceOf M (χ x) x m).mp (genWeightSpace_le_genWeightSpaceOf M x χ hm))
 
+omit [LieRing.IsNilpotent L] in
+/-- **Triangularizability passes to quotients.** The image of a triangularizable Lie module under a
+surjective Lie-module homomorphism is triangularizable. -/
+theorem _root_.LieModuleHom.isTriangularizable_of_surjective {M₂ : Type*} [AddCommGroup M₂]
+    [Module R M₂] [LieRingModule L M₂] [LieModule R L M₂] [IsTriangularizable R L M]
+    (f : M →ₗ⁅R,L⁆ M₂) (hf : Function.Surjective f) : IsTriangularizable R L M₂ := by
+  refine ⟨fun x ↦ top_unique fun p _ ↦ ?_⟩
+  obtain ⟨n, rfl⟩ := hf p
+  have hn : n ∈ ⨆ φ, (toEnd R L M x).maxGenEigenspace φ := by
+    rw [IsTriangularizable.maxGenEigenspace_eq_top]; trivial
+  have hle : (⨆ φ, (toEnd R L M x).maxGenEigenspace φ).map f.toLinearMap ≤
+      ⨆ φ, (toEnd R L M₂ x).maxGenEigenspace φ := by
+    rw [Submodule.map_iSup]
+    refine iSup_mono fun φ ↦ ?_
+    exact Module.End.map_genEigenspace_le f.toLinearMap
+      (LinearMap.ext fun m ↦ (f.map_lie x m).symm) φ ⊤
+  exact hle (Submodule.mem_map_of_mem hn)
+
 end Triangularizable
 
 section Field
@@ -192,6 +214,31 @@ theorem genWeightSpaceOf_eq_iSup_genWeightSpace (μ : K) (x : L) :
     exact hdisj.eq_bot.le.trans bot_le
 
 end Field
+
+section Fitting
+
+variable {K L M : Type*} [Field K] [LieRing L] [LieAlgebra K L] [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+
+/-- **A nonzero generalized weight space lies in the positive Fitting component.** If a nilpotent
+Lie algebra acts on a finite-dimensional module and `χ ≠ 0`, some `z` has `χ z ≠ 0`, so `z` acts
+invertibly on the `χ`-weight space, which therefore lies in the image of every power of `z`. -/
+theorem genWeightSpace_le_posFittingComp_of_ne_zero {χ : L → K} (hχ : χ ≠ 0) :
+    genWeightSpace M χ ≤ posFittingComp K L M := by
+  obtain ⟨z, hz⟩ := Function.ne_iff.mp hχ
+  replace hz : χ z ≠ 0 := hz
+  have hunit : IsUnit (toEnd K L (genWeightSpace M χ) z) := by
+    simpa using (isNilpotent_toEnd_sub_algebraMap M χ z).isUnit_add_left_of_commute
+      ((isUnit_iff_ne_zero.mpr hz).map (algebraMap K (Module.End K (genWeightSpace M χ))))
+      (Algebra.commutes _ _).symm
+  intro x hx
+  refine posFittingCompOf_le_posFittingComp K L M z ?_
+  rw [mem_posFittingCompOf]
+  intro k
+  obtain ⟨n, hn⟩ := (Module.End.isUnit_iff _ |>.mp (hunit.pow k)).2 ⟨x, hx⟩
+  exact ⟨n, by rw [← LieSubmodule.coe_toEnd_pow, hn]⟩
+
+end Fitting
 
 end LieModule
 

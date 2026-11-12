@@ -36,19 +36,19 @@ variable {R : Type u} {A : Type v} {G : Type w} [CommRing R] [CommRing A] [Algeb
   {S : Subgroup G} [S.FiniteIndex]
 
 private noncomputable def indBaseChangeLinearEquiv (V : Rep.{max t u} R S) :
-    A ⊗[R] Rep.ind S.subtype V ≃ₗ[A]
-      Rep.ind S.subtype (Rep.of (V.ρ.baseChange A)) := by
+    A ⊗[R] ind S.subtype V ≃ₗ[A]
+      ind S.subtype (of (V.ρ.baseChange A)) := by
   classical
   letI : Finite (Quotient (QuotientGroup.rightRel S)) :=
     .of_equiv _ (QuotientGroup.quotientRightRelEquivQuotientLeftRel S).symm
   letI : Fintype (Quotient (QuotientGroup.rightRel S)) := Fintype.ofFinite _
   exact ((TauCeti.Rep.indSubtypeEquivPi V).baseChange R A _ _).trans
     ((piRight R A A (fun _ : Quotient (QuotientGroup.rightRel S) ↦ V)).trans
-      (TauCeti.Rep.indSubtypeEquivPi (Rep.of (V.ρ.baseChange A))).symm)
+      (TauCeti.Rep.indSubtypeEquivPi (of (V.ρ.baseChange A))).symm)
 
 private theorem indBaseChangeLinearEquiv_tmul (V : Rep.{max t u} R S) (a : A)
-    (x : Rep.ind S.subtype V) (q : Quotient (QuotientGroup.rightRel S)) :
-    TauCeti.Rep.indSubtypeEquivPi (Rep.of (V.ρ.baseChange A))
+    (x : ind S.subtype V) (q : Quotient (QuotientGroup.rightRel S)) :
+    TauCeti.Rep.indSubtypeEquivPi (of (V.ρ.baseChange A))
         (indBaseChangeLinearEquiv V (a ⊗ₜ[R] x)) q =
       a ⊗ₜ[R] TauCeti.Rep.indSubtypeEquivPi V x q := by
   classical
@@ -57,8 +57,8 @@ private theorem indBaseChangeLinearEquiv_tmul (V : Rep.{max t u} R S) (a : A)
 /-- Extending scalars commutes with induction from a finite-index subgroup. The comparison
 identifies the scalar extensions of the coordinates in the right-coset model of induction. -/
 noncomputable def indBaseChangeEquiv (V : Rep.{max t u} R S) :
-    ((Rep.ind S.subtype V).ρ.baseChange A).Equiv
-      (Rep.ind S.subtype (Rep.of (V.ρ.baseChange A))).ρ :=
+    ((ind S.subtype V).ρ.baseChange A).Equiv
+      (ind S.subtype (of (V.ρ.baseChange A))).ρ :=
   Representation.Equiv.mk (indBaseChangeLinearEquiv V) fun g ↦ by
     apply LinearMap.ext
     intro z
@@ -66,7 +66,7 @@ noncomputable def indBaseChangeEquiv (V : Rep.{max t u} R S) :
     induction z using TensorProduct.inductionOn with
     | add z w hz hw => simpa only [map_add] using congrArg₂ (· + ·) hz hw
     | tmul a x =>
-      apply (TauCeti.Rep.indSubtypeEquivPi (Rep.of (V.ρ.baseChange A))).injective
+      apply (TauCeti.Rep.indSubtypeEquivPi (of (V.ρ.baseChange A))).injective
       funext q
       simp only [Representation.baseChange_apply, LinearMap.baseChange_tmul,
         indBaseChangeLinearEquiv_tmul (A := A) V]
@@ -78,8 +78,8 @@ noncomputable def indBaseChangeEquiv (V : Rep.{max t u} R S) :
 whose coordinate at `q` is `a ⊗ x(q)`. -/
 @[simp↓]
 theorem indBaseChangeEquiv_tmul (V : Rep.{max t u} R S) (a : A)
-    (x : Rep.ind S.subtype V) (q : Quotient (QuotientGroup.rightRel S)) :
-    TauCeti.Rep.indSubtypeEquivPi (Rep.of (V.ρ.baseChange A))
+    (x : ind S.subtype V) (q : Quotient (QuotientGroup.rightRel S)) :
+    TauCeti.Rep.indSubtypeEquivPi (of (V.ρ.baseChange A))
         (indBaseChangeEquiv V (a ⊗ₜ[R] x)) q =
       a ⊗ₜ[R] TauCeti.Rep.indSubtypeEquivPi V x q :=
   indBaseChangeLinearEquiv_tmul V a x q
@@ -92,15 +92,15 @@ theorem indBaseChangeEquiv_tmul_mk (V : Rep.{max t u} R S) (a : A) (g : G) (x : 
       Representation.IndV.mk S.subtype (V.ρ.baseChange A) g (a ⊗ₜ[R] x) := by
   classical
   let : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
-  apply (TauCeti.Rep.indSubtypeEquivPi (Rep.of (V.ρ.baseChange A))).injective
+  apply (TauCeti.Rep.indSubtypeEquivPi (of (V.ρ.baseChange A))).injective
   funext q
   rw [indBaseChangeEquiv_tmul, TauCeti.Rep.indSubtypeEquivPi_apply,
     TauCeti.Rep.indSubtypeEquivPi_apply]
   simp only [← Representation.IntertwiningMap.toLinearMap_apply,
-    Rep.indCoindIso_hom_hom_toLinearMap]
-  simp only [Rep.indToCoind, Representation.IndV.mk, LinearMap.comp_apply,
+    indCoindIso_hom_hom_toLinearMap]
+  simp only [indToCoind, Representation.IndV.mk, LinearMap.comp_apply,
     Representation.Coinvariants.lift_mk]
-  simp [Rep.indToCoindAux]
+  simp [indToCoindAux]
   split <;> simp
 
 /-- The inverse comparison moves a scalar-extended induced generator outside induction. -/
@@ -115,16 +115,16 @@ theorem indBaseChangeEquiv_symm_mk_tmul (V : Rep.{max t u} R S) (a : A) (g : G) 
 
 /-- The comparison commutes with an induced morphism and its scalar extension. -/
 theorem indBaseChangeEquiv_naturality {V W : Rep.{max t u} R S} (f : V ⟶ W)
-    (z : A ⊗[R] Rep.ind S.subtype V) :
-    indBaseChangeEquiv W ((Rep.indMap S.subtype f).hom.baseChange A z) =
-      (Rep.indMap S.subtype (Rep.ofHom (f.hom.baseChange A))).hom (indBaseChangeEquiv V z) := by
+    (z : A ⊗[R] ind S.subtype V) :
+    indBaseChangeEquiv W ((indMap S.subtype f).hom.baseChange A z) =
+      (indMap S.subtype (ofHom (f.hom.baseChange A))).hom (indBaseChangeEquiv V z) := by
   induction z using TensorProduct.inductionOn with
   | add z w hz hw => simpa only [map_add] using congrArg₂ (· + ·) hz hw
   | tmul a x =>
-    apply (TauCeti.Rep.indSubtypeEquivPi (Rep.of (W.ρ.baseChange A))).injective
+    apply (TauCeti.Rep.indSubtypeEquivPi (of (W.ρ.baseChange A))).injective
     funext q
     rw [Representation.IntertwiningMap.baseChange_tmul, indBaseChangeEquiv_tmul,
-      Rep.indSubtypeEquivPi_indMap, Rep.indSubtypeEquivPi_indMap, indBaseChangeEquiv_tmul]
+      indSubtypeEquivPi_indMap, indSubtypeEquivPi_indMap, indBaseChangeEquiv_tmul]
     simp
 
 end Rep

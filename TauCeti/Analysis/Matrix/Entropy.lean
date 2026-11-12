@@ -58,6 +58,9 @@ spin systems.
 
 ## Main results
 
+* `Matrix.continuousOn_vonNeumannEntropy` — the entropy is continuous on the Hermitian matrices;
+* `Matrix.PosSemidef.tendsto_vonNeumannEntropy_add_smul_one` — the entropy is continuous along
+  the regularization `ρ + t • 1`, `t → 0⁺`, after any continuous positivity-preserving map;
 * `Matrix.PosSemidef.re_trace_sub_trace_le_relativeEntropy` — Klein's inequality: for positive
   semidefinite `ρ` and `σ`, `Tr ρ - Tr σ ≤ D(ρ ‖ σ)`;
 * `Matrix.PosSemidef.relativeEntropy_nonneg` — positivity of the relative entropy of two positive
@@ -67,6 +70,8 @@ spin systems.
   matrix `ρ`;
 * `Matrix.PosSemidef.vonNeumannEntropy_le_partialTraceRight_add_partialTraceLeft` —
   subadditivity, `S(ρ) ≤ S(Tr₂ ρ) + S(Tr₁ ρ)` for a density matrix `ρ` of a bipartite system;
+* `Matrix.IsHermitian.relativeEntropy_one_kronecker_partialTraceLeft` —
+  `D(ρ ‖ 1 ⊗ₖ Tr₁ ρ) = -S(ρ) + S(Tr₁ ρ)` when `Tr₁ ρ` is positive definite;
 * `Matrix.PosSemidef.re_trace_mul_cfc_log_le` and `Matrix.PosSemidef.relativeEntropy_nonpos` —
   if `0 ≤ A ≤ B`, then `Tr (A log A) ≤ Tr (A log B)` and `D(A ‖ B) ≤ 0`;
 * `Matrix.concaveOn_vonNeumannEntropy` and `Matrix.sum_mul_vonNeumannEntropy_le` — concavity,
@@ -117,6 +122,27 @@ theorem vonNeumannEntropy_zero : (0 : Matrix n n 𝕜).vonNeumannEntropy = 0 := 
 @[simp]
 theorem vonNeumannEntropy_one : (1 : Matrix n n 𝕜).vonNeumannEntropy = 0 := by
   simp [vonNeumannEntropy_def, cfc_apply_one]
+
+/-- The von Neumann entropy is continuous on the Hermitian matrices. -/
+theorem continuousOn_vonNeumannEntropy :
+    ContinuousOn (vonNeumannEntropy : Matrix n n 𝕜 → ℝ) {A | A.IsHermitian} := by
+  simp_rw [funext vonNeumannEntropy_def]
+  exact (RCLike.continuous_re.comp (continuous_id.matrix_trace)).comp_continuousOn
+    (TauCeti.continuousOn_matrix_cfc Real.continuous_negMulLog)
+
+/-- Along the regularization `ρ + t • 1`, `t → 0⁺`, of a positive semidefinite `ρ`, the entropy of
+the image under a continuous positivity-preserving map `L` converges to that of `L ρ`. -/
+theorem PosSemidef.tendsto_vonNeumannEntropy_add_smul_one {ι : Type*} [DecidableEq ι]
+    {ρ : Matrix ι ι 𝕜} (hρ : ρ.PosSemidef) {L : Matrix ι ι 𝕜 → Matrix n n 𝕜} (hL : Continuous L)
+    (hLpsd : ∀ τ : Matrix ι ι 𝕜, τ.PosSemidef → (L τ).PosSemidef) :
+    Tendsto (fun t : ℝ ↦ (L (ρ + t • 1)).vonNeumannEntropy) (𝓝[>] 0)
+      (𝓝 (L ρ).vonNeumannEntropy) := by
+  have hγ : Continuous fun t : ℝ ↦ ρ + t • (1 : Matrix ι ι 𝕜) :=
+    continuous_const.add (continuous_id.smul continuous_const)
+  have h := (continuousOn_vonNeumannEntropy.comp (hL.comp hγ).continuousOn
+    fun t ht ↦ (hLpsd _ (hρ.add (PosSemidef.one.smul ht))).1).continuousWithinAt
+    (Set.self_mem_Ici (a := (0 : ℝ)))
+  simpa [Function.comp_def] using h.tendsto.mono_left (nhdsWithin_mono _ Set.Ioi_subset_Ici_self)
 
 variable {ρ σ : Matrix n n 𝕜}
 
@@ -357,6 +383,18 @@ theorem PosSemidef.vonNeumannEntropy_le_partialTraceRight_add_partialTraceLeft
     have : Continuous fun t : ℝ ↦ SA + SB + ((1 + t * a) * (1 + t * b) - 1) := by fun_prop
     simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
+
+/-- The relative entropy of a Hermitian `ρ` on a bipartite system with respect to `1 ⊗ₖ ρ_B`, where
+`ρ_B = Tr₁ ρ` is positive definite, is `D(ρ ‖ 1 ⊗ₖ ρ_B) = -S(ρ) + S(ρ_B)`. -/
+theorem IsHermitian.relativeEntropy_one_kronecker_partialTraceLeft
+    {ρ : Matrix (m × n) (m × n) 𝕜} (hρ : ρ.IsHermitian) (hτ : ρ.partialTraceLeft.PosDef) :
+    relativeEntropy ρ ((1 : Matrix m m 𝕜) ⊗ₖ ρ.partialTraceLeft) =
+      ((-ρ.vonNeumannEntropy + ρ.partialTraceLeft.vonNeumannEntropy : ℝ) : EReal) := by
+  rw [hρ.relativeEntropy_eq_neg_vonNeumannEntropy_sub (by
+      rw [LinearMap.ker_eq_bot.mpr (PosDef.one.kronecker hτ).mulVec_injective]; exact bot_le),
+    cfc_one_kronecker, ← trace_partialTraceLeft, partialTraceLeft_mul_one_kronecker,
+    hτ.1.vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log]
+  ring_nf
 
 /-! ### The relative entropy below the reference in the Loewner order -/
 

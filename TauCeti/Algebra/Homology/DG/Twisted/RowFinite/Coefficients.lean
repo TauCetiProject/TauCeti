@@ -93,17 +93,11 @@ theorem finsuppScalarRight_symm_mem_grading {n : ℤ} {f : P →₀ M}
   rw [mem_rowFiniteTotalGrading_iff] at hf
   rw [finsuppScalarRight_symm_apply, Finsupp.sum]
   refine Submodule.sum_mem _ fun x _ ↦ ?_
-  have hsingle : Finsupp.single x (1 : A) ∈ rowFiniteTotalGrading 𝒜 ind (-ind x) := by
-    rw [mem_rowFiniteTotalGrading_iff]
-    intro y
-    by_cases hxy : x = y
-    · subst y
-      simpa using SetLike.one_mem_graded 𝒜
-    · simp [Finsupp.single_eq_of_ne (Ne.symm hxy)]
   have := tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
     (InternalGrading.ofDecomposition (rowFiniteTotalGrading 𝒜 ind))
     (by simpa only [InternalGrading.ofDecomposition_piece] using hf x)
-    (by simpa only [InternalGrading.ofDecomposition_piece] using hsingle)
+    (by simpa only [InternalGrading.ofDecomposition_piece] using
+      single_one_mem_rowFiniteTotalGrading 𝒜 ind x)
   simpa only [add_neg_cancel_right] using this
 
 /-- The tensor grading is exactly the finite-support total grading under `finsuppScalarRight`. -/
@@ -155,6 +149,41 @@ theorem coefficientDifferential_single (x : P) {q : ℤ} {α : M} (hα : α ∈ 
     m.differential_single_one hA]
   rw [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
   simp
+
+/-- On an elementary vector at `x`, the twisting part of the differential is carried by the
+generators occurring in the row of `x`: it vanishes at every `z` with `m x z = 0`. -/
+theorem coefficientDifferential_single_sub_apply_of_m_eq_zero (x : P) (α : M) {z : P}
+    (hz : m.m x z = 0) :
+    (m.coefficientDifferential hM (Finsupp.single x α) - Finsupp.single x (dM α)) z = 0 := by
+  classical
+  induction α using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous q α =>
+    rw [m.coefficientDifferential_single hM x α.2, add_sub_cancel_left, Units.smul_def,
+      Finsupp.smul_apply, Finsupp.sum_apply,
+      Finsupp.sum_eq_single z (fun y _ hyz ↦ by simp [hyz]) (by simp)]
+    simp [hz]
+  | add α β hα hβ =>
+    rw [Finsupp.single_add, map_add, map_add, Finsupp.single_add, add_sub_add_comm,
+      Finsupp.add_apply, hα, hβ, add_zero]
+
+/-- At a generator `x` occurring in the row of no generator that carries `f`, the coefficient
+differential of `f` is the differential of the module applied to the coefficient of `x`. -/
+theorem coefficientDifferential_apply_of_forall_m_eq_zero {f : P →₀ M} {x : P}
+    (hx : ∀ y, f y ≠ 0 → m.m y x = 0) :
+    m.coefficientDifferential hM f x = dM (f x) := by
+  classical
+  have hsingle (y : P) (hy : y ∈ f.support) :
+      m.coefficientDifferential hM (Finsupp.single y (f y)) x = Finsupp.single y (dM (f y)) x := by
+    rw [← sub_eq_zero, ← Finsupp.sub_apply]
+    exact m.coefficientDifferential_single_sub_apply_of_m_eq_zero hM y (f y)
+      (hx y (Finsupp.mem_support_iff.mp hy))
+  conv_lhs => rw [← Finsupp.sum_single f]
+  rw [map_finsuppSum, Finsupp.sum, Finsupp.finsetSum_apply, Finset.sum_congr rfl hsingle]
+  simp only [Finsupp.single_apply, Finset.sum_ite_eq', Finsupp.mem_support_iff]
+  split_ifs with h
+  · rfl
+  · rw [not_not.mp h, map_zero]
 
 /-- The coefficient differential squares to zero by the balanced tensor differential law. -/
 @[simp]

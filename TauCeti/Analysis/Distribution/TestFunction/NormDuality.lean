@@ -66,13 +66,13 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- Pairing a field of continuous linear functionals `G` with a test vector field on `Ω` of norm
 at most one gives at most `∫_Ω ‖G‖`. -/
-theorem enorm_integral_apply_le_setLIntegral_enorm [OpensMeasurableSpace E] (φ : 𝓓(Ω, F))
+theorem enorm_integral_apply_le_setLIntegral_enorm (φ : 𝓓(Ω, F))
     (hφ : ∀ x, ‖φ x‖ ≤ 1) (G : E → F →L[ℝ] ℝ) :
     ‖∫ x, G x (φ x) ∂μ‖ₑ ≤ ∫⁻ x in Ω, ‖G x‖ₑ ∂μ := by
-  rw [← lintegral_indicator Ω.isOpen.measurableSet]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  refine (eNorm_integral_le_lintegral_eNorm _).trans
+    ((lintegral_mono fun x => ?_).trans (lintegral_indicator_le _ _))
   by_cases hx : x ∈ (Ω : Set E)
-  · rw [Set.indicator_of_mem hx, enorm_le_iff_norm_le]
+  · rw [Set.indicator_of_mem hx, eNorm_le_iff_norm_le]
     exact ((G x).le_opNorm (φ x)).trans (mul_le_of_le_one_right (norm_nonneg _) (hφ x))
   · simp [image_eq_zero_of_notMem_tsupport fun hmem => hx (φ.tsupport_subset hmem)]
 
@@ -94,7 +94,7 @@ private theorem ofReal_setIntegral_norm_le_iSup (hG : LocallyIntegrableOn G Ω �
   have hGL : IntegrableOn G (cthickening δ K) μ :=
     hG.integrableOn_compact_subset hδΩ hK.cthickening
   -- The unit field along the Riesz representative `g` of `G`, extended by zero outside `K`.
-  set g : E → F := fun x => (InnerProductSpace.toDual ℝ F).symm (G x) with hg_def
+  set g : E → F := fun x => (InnerProductSpace.toDual ℝ F).symm (G x)
   have hgm : AEStronglyMeasurable g (μ.restrict K) :=
     (InnerProductSpace.toDual ℝ F).symm.continuous.comp_aestronglyMeasurable
       (hGL.aestronglyMeasurable.mono_measure (Measure.restrict_mono hKL le_rfl))
@@ -127,7 +127,6 @@ private theorem ofReal_setIntegral_norm_le_iSup (hG : LocallyIntegrableOn G Ω �
       div_lt_div_of_pos_left hδ (by positivity)
         (by linarith [(by positivity : (0 : ℝ) < (n + 1 : ℕ))])⟩
   set ψ : ℕ → E → F := fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] σ
-    with hψ_def
   have hψs (n : ℕ) : tsupport (ψ n) ⊆ cthickening δ K := by
     have hsupp : Function.support (ψ n) ⊆ thickening (φ n).rOut K := by
       refine (support_convolution_subset _).trans ?_
@@ -180,7 +179,7 @@ theorem iSup_ofReal_integral_apply_eq_setLIntegral_enorm (hG : LocallyIntegrable
       ∫⁻ x in Ω, ‖G x‖ₑ ∂μ := by
   refine le_antisymm (iSup₂_le fun φ hφ => ?_) ?_
   · exact (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans <|
-      (Real.enorm_eq_ofReal_abs _).symm.trans_le (φ.enorm_integral_apply_le_setLIntegral_enorm hφ G)
+      (Real.eNorm_eq_ofReal_abs _).symm.trans_le (φ.enorm_integral_apply_le_setLIntegral_enorm hφ G)
   -- Exhaust `Ω` by the increasing compact sets `C n ∩ closedBall 0 n`.
   obtain ⟨C, hCc, hCΩ, hCU, hCm⟩ := Ω.isOpen.exists_iUnion_isClosed
   have hKm : Monotone fun n : ℕ => C n ∩ closedBall (0 : E) n := fun m n hmn =>
@@ -200,7 +199,7 @@ theorem iSup_ofReal_integral_apply_eq_setLIntegral_enorm (hG : LocallyIntegrable
     _ = ⨆ n : ℕ, ∫⁻ x in C n ∩ closedBall (0 : E) n, ‖G x‖ₑ ∂μ :=
         setLIntegral_iUnion_of_directed _ hKm.directed_le
     _ ≤ _ := iSup_le fun n => by
-        rw [← ofReal_integral_norm_eq_lintegral_enorm
+        rw [← ofReal_integral_norm_eq_lintegral_eNorm
           (hG.integrableOn_compact_subset (hKΩ n) (hKc n))]
         exact hG.ofReal_setIntegral_norm_le_iSup (hKc n) (hKΩ n)
 

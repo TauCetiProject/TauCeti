@@ -58,6 +58,10 @@ localizations alone.
 * `TauCeti.IntegralLattice.SameGenus.scaleIdeal_eq` and
   `TauCeti.IntegralLattice.SameGenus.normIdeal_eq`: lattices in one genus have the same scale and
   norm ideals.
+* `TauCeti.IntegralLattice.sameGenus_smul_iff` and
+  `TauCeti.IntegralLattice.SameGenus.exists_eq_smul`: scaling the forms by a nonzero integer `n`
+  preserves and reflects the genus, and every lattice in the genus of `n • L` is the scaling by
+  `n` of a lattice in the genus of `L`.
 * `TauCeti.IntegralLattice.SameGenus.completedRationalForm_equivalent`: lattices in one genus have
   isometric completed rational spaces at every prime.
 * `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_equivalent_primeFactors`: for equal
@@ -199,10 +203,8 @@ theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
     discriminant_def, habs]
 
 /-- Lattices in one genus have discriminant groups of the same order. -/
-theorem natCard_discriminantGroup_eq [L.IsNondegenerate] (h : L.SameGenus M) :
+theorem natCard_discriminantGroup_eq (h : L.SameGenus M) :
     Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
-  have : M.IsNondegenerate := ⟨M.determinant_ne_zero_iff.mp
-    (h.determinant_eq ▸ L.determinant_ne_zero_iff.mpr L.form_nondegenerate)⟩
   rw [natCard_discriminantGroup, natCard_discriminantGroup, discriminant_def, discriminant_def,
     h.determinant_eq]
 
@@ -228,6 +230,34 @@ theorem completedRationalForm_equivalent (h : L.SameGenus M) (p : ℕ) [Fact p.P
     (h.localIntegralForm_equivalent p)
 
 end SameGenus
+
+/-- Scaling by a common nonzero integer preserves and reflects the genus relation. -/
+theorem sameGenus_smul_iff {L : IntegralLattice V} {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) :
+    (n • L).SameGenus (n • M) ↔ L.SameGenus M := by
+  refine ⟨fun h ↦ (sameGenus_iff _ _).mpr ⟨?_, fun p _ ↦ ?_⟩, SameGenus.smul hn⟩
+  · have hsig := h.signature_eq
+    rcases hn.lt_or_gt with hneg | hpos
+    · rw [signature_smul_of_neg hneg, signature_smul_of_neg hneg, Prod.mk.injEq,
+        Prod.mk.injEq] at hsig
+      exact Prod.ext hsig.2.2 (Prod.ext hsig.2.1 hsig.1)
+    · rwa [signature_smul_of_pos hpos, signature_smul_of_pos hpos] at hsig
+  · have hloc := h.localIntegralForm_equivalent p
+    rw [localIntegralForm_smul, localIntegralForm_smul] at hloc
+    exact (LinearMap.BilinForm.equivalent_smul_iff
+      (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast hn))).mp hloc
+
+/-- A lattice in the genus of the scaling `n • L` by a nonzero integer is the scaling by `n` of a
+lattice in the genus of `L`. The genus fixes the scale ideal, so `n` divides every value of the
+integral form of such a lattice. -/
+theorem SameGenus.exists_eq_smul {L : IntegralLattice V} {M : IntegralLattice W} {n : ℤ}
+    (hn : n ≠ 0) (h : (n • L).SameGenus M) :
+    ∃ M' : IntegralLattice W, M = n • M' ∧ L.SameGenus M' := by
+  have hle : M.scaleIdeal ≤ Ideal.span {n} := by
+    rw [← h.scaleIdeal_eq, LinearMap.BilinForm.scaleIdeal_le_iff]
+    exact fun x y ↦ Ideal.mem_span_singleton.mpr ⟨_, integralForm_smul_apply n L x y⟩
+  obtain ⟨M', rfl⟩ := (exists_eq_smul_iff_forall_dvd hn).mpr fun x y ↦
+    Ideal.mem_span_singleton.mp (hle (M.integralForm.apply_mem_scaleIdeal x y))
+  exact ⟨M', rfl, (sameGenus_smul_iff hn).mp h⟩
 
 /-- An integral-lattice isometry preserves the genus. -/
 theorem Isometry.sameGenus {L : IntegralLattice V} {M : IntegralLattice W}
