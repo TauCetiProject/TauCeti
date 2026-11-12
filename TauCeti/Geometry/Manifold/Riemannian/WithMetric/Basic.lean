@@ -136,6 +136,14 @@ theorem coe_homeomorph : ⇑(homeomorph g) = ofWithMetric :=
 theorem coe_homeomorph_symm : ⇑(homeomorph g).symm = toWithMetric g :=
   (rfl)
 
+/-- The copy of a Hausdorff manifold is Hausdorff. -/
+instance [T2Space M] : T2Space (WithMetric g) :=
+  (homeomorph g).isEmbedding.t2Space
+
+/-- The copy of a regular Hausdorff manifold is regular Hausdorff. -/
+instance [T3Space M] : T3Space (WithMetric g) :=
+  (homeomorph g).isEmbedding.t3Space
+
 /-- The copy of a compact manifold is compact. -/
 instance [CompactSpace M] : CompactSpace (WithMetric g) :=
   (homeomorph g).symm.compactSpace
@@ -415,6 +423,15 @@ theorem inner_def (x : WithMetric g) (v w : TangentSpace I x) :
     inner ℝ v w =
       g.inner x.ofWithMetric (mfderiv I I ofWithMetric x v) (mfderiv I I ofWithMetric x w) :=
   ContMDiffRiemannianMetric.pullback_inner _ _ _ _ x v w
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)] in
+/-- If `g` dominates the given metric of `M`, the differential of the identification
+`ofWithMetric` of the copy carrying `g` with `M` does not increase norms. -/
+theorem norm_mfderiv_ofWithMetric_le (hg : ∀ x (v : TangentSpace I x), ‖v‖ ^ 2 ≤ g.inner x v v)
+    (x : WithMetric g) (v : TangentSpace I x) : ‖mfderiv I I ofWithMetric x v‖ ≤ ‖v‖ := by
+  have h := hg x.ofWithMetric (mfderiv I I ofWithMetric x v)
+  rw [← inner_def, real_inner_self_eq_norm_sq] at h
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h
 
 /-- The chart frames of the copy of `M` are those of `M`. -/
 theorem mfderiv_ofWithMetric_chartLocalFrame (α x : WithMetric g)
