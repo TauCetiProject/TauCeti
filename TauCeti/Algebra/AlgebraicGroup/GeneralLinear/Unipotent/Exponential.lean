@@ -26,9 +26,8 @@ defines the abstract polynomial one-parameter subgroup `t ↦ exp(t d)` of
 The abstract curve lies in every closed subgroup whose Lie algebra contains `d`, because `D`
 preserves the defining Hopf ideal. So for a closed subgroup `H ⊆ GLₙ` over a rational ring and a
 nilpotent matrix `X ∈ Lie H`, the matrices `exp(tX)` are points of `H` over every commutative
-value algebra, with no smoothness, connectedness or reducedness assumption on `H`. Over a rational
-domain this is the converse of
-`TauCeti.GeneralLinear.mem_map_lieSubalgebra_of_nilpotentExpUnit_mem`, and together with
+value algebra, with no smoothness, connectedness or reducedness assumption on `H`. This is the
+converse of `TauCeti.GeneralLinear.mem_map_lieSubalgebra_of_nilpotentExpUnit_mem`, and together with
 `TauCeti.GeneralLinear.log_mem_map_lieSubalgebra` it shows that the finite exponential and
 logarithm are inverse bijections between the nilpotent elements of `Lie H` and the
 unipotent points of `H`.
@@ -43,8 +42,8 @@ unipotent points of `H`.
 * `TauCeti.GeneralLinear.expSMulHom_mem_hopfIdealPointsSubgroup`: for nilpotent `X ∈ Lie H`, the
   curve `exp(tX)` lies in `H` over every rational value algebra.
 * `TauCeti.GeneralLinear.nilpotentExpUnit_mem_hopfIdealPointsSubgroup_iff`: over a rational
-  domain, `exp X ∈ H` exactly when `X ∈ Lie H`, for nilpotent `X`.
-* `TauCeti.GeneralLinear.expEquivHopfIdealPoints`: over a rational domain, exponential and
+  ring, `exp X ∈ H` exactly when `X ∈ Lie H`, for nilpotent `X`.
+* `TauCeti.GeneralLinear.expEquivHopfIdealPoints`: over a rational ring, exponential and
   logarithm identify the nilpotent elements of `Lie H` with the unipotent points of `H`.
 
 ## References
@@ -175,19 +174,19 @@ theorem nilpotentExpUnit_mem_hopfIdealPointsSubgroup
   ext i j
   simp
 
-/-- **Over a rational domain, a nilpotent matrix lies in the Lie algebra of a closed subgroup of
+/-- **Over a rational ring, a nilpotent matrix lies in the Lie algebra of a closed subgroup of
 `GLₙ` exactly when its exponential is a point of the subgroup.** -/
-theorem nilpotentExpUnit_mem_hopfIdealPointsSubgroup_iff [IsDomain R]
+theorem nilpotentExpUnit_mem_hopfIdealPointsSubgroup_iff
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) (hX : IsNilpotent X) :
     nilpotentExpUnit hX ∈ hopfIdealPointsSubgroup n I R ↔
       X ∈ (I.lieSubalgebra (B := R)).map (tangentLieEquivMatrix (R := R) (B := R) n).toLieHom :=
   ⟨mem_map_lieSubalgebra_of_nilpotentExpUnit_mem n I hX,
     nilpotentExpUnit_mem_hopfIdealPointsSubgroup n I hX⟩
 
-/-- **Over a rational domain, the finite exponential and logarithm identify the nilpotent
+/-- **Over a rational ring, the finite exponential and logarithm identify the nilpotent
 elements of the Lie algebra of a closed subgroup of `GLₙ` with its unipotent points.** This is an
 equivalence of sets, not of groups. -/
-noncomputable def expEquivHopfIdealPoints [IsDomain R]
+noncomputable def expEquivHopfIdealPoints
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     {X : Matrix (Fin n) (Fin n) R // X ∈ (I.lieSubalgebra (B := R)).map
         (tangentLieEquivMatrix (R := R) (B := R) n).toLieHom ∧ IsNilpotent X} ≃
@@ -204,7 +203,7 @@ noncomputable def expEquivHopfIdealPoints [IsDomain R]
 
 /-- The forward map of `expEquivHopfIdealPoints` is the finite exponential. -/
 @[simp]
-theorem coe_expEquivHopfIdealPoints_apply [IsDomain R]
+theorem coe_expEquivHopfIdealPoints_apply
     (I : HopfIdeal R (coordinateHopfAlgebra R n))
     (X : {X : Matrix (Fin n) (Fin n) R // X ∈ (I.lieSubalgebra (B := R)).map
         (tangentLieEquivMatrix (R := R) (B := R) n).toLieHom ∧ IsNilpotent X}) :
@@ -214,7 +213,7 @@ theorem coe_expEquivHopfIdealPoints_apply [IsDomain R]
 
 /-- The inverse map of `expEquivHopfIdealPoints` is the finite logarithm. -/
 @[simp]
-theorem coe_expEquivHopfIdealPoints_symm_apply [IsDomain R]
+theorem coe_expEquivHopfIdealPoints_symm_apply
     (I : HopfIdeal R (coordinateHopfAlgebra R n))
     (g : {g : Matrix.GeneralLinearGroup (Fin n) R //
         g ∈ hopfIdealPointsSubgroup n I R ∧ IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1)}) :
