@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
 import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
@@ -48,24 +47,6 @@ variable {E V P H G M N : Type*}
   [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω}
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-/-- The orthogonal complement of the tangent range of an embedding is its normal space
-`TauCeti.orthogonalNormalSpace` as an immersion. -/
-theorem orthogonal_tangentRange_eq_orthogonalNormalSpace (f : SmoothEmbedding I J n M N) (x : M)
-    (hn : n ≠ 0) : (f.tangentRange x hn)ᗮ = orthogonalNormalSpace I J f x := by
-  rw [orthogonalNormalSpace_def]
-  refine congrArg _ (Submodule.ext fun v ↦ ?_)
-  simp only [mem_tangentRange_iff, LinearMap.mem_range, ContinuousLinearMap.coe_coe]
-
-omit [FiniteDimensional ℝ E] in
-/-- The orthogonal representative of the normal class of an ambient vector is its orthogonal
-projection onto the normal space `TauCeti.orthogonalNormalSpace`. -/
-theorem normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace
-    (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) (v : TangentSpace J (f x)) :
-    f.normalRepresentative x hn (f.normalClass x hn v) =
-      (orthogonalNormalSpace I J f x).starProjection v := by
-  simp only [normalRepresentative_normalClass, orthogonal_tangentRange_eq_orthogonalNormalSpace]
 
 variable {m : ℕ∞ω} [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]

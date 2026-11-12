@@ -135,7 +135,7 @@ theorem starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse {f : M → N
   have : FiniteDimensional ℝ E :=
     Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] V).toLinearMap hinj
   intro d φ a
-  let : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos (E := E) fun w hw0 ↦
     RiemannianBundle.g.pos (f x) (d w) ((map_ne_zero_iff d hinj).mpr hw0)
   refine Submodule.eq_starProjection_of_mem_orthogonal' (z := d (a.inverse φ)) ?_ ?_
@@ -169,7 +169,7 @@ theorem contMDiff_starProjection_orthogonalNormalSpace {f : C^n⟮I, M; J, N⟯}
   have : FiniteDimensional ℝ E :=
     Module.Finite.of_injective (mfderiv I J f x₀ : E →L[ℝ] V).toLinearMap (hinj x₀)
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hf₁ : ContMDiff I J (m + 1) f := f.contMDiff.of_le hm
   -- The induced metric identifies tangent vectors with covectors on the source.
   let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
