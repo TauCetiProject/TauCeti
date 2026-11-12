@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RingTheory.Depth.Basic
 public import TauCeti.RingTheory.Depth.WeaklyRegular
 public import TauCeti.RingTheory.Regular.RegularSequence
+public import TauCeti.RingTheory.Flat.Noetherian
 public import TauCeti.RingTheory.Flat.QuotSMulTop
 public import TauCeti.RingTheory.QuotSMulTop
 
@@ -189,9 +190,7 @@ theorem depth_eq_add_of_flat {R S : Type u} [CommRing R] [CommRing S] [Algebra R
     depth (ModuleCat.of S S) = depth (ModuleCat.of R R) +
       depth (ModuleCat.of S (S ⧸ (maximalIdeal R).map (algebraMap R S))) := by
   have : Module.FaithfullyFlat R S := .of_flat_of_isLocalHom
-  have : IsNoetherianRing R :=
-    Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat (A := S) (M := R)
-      (isNoetherian_of_linearEquiv (AlgebraTensorModule.rid R S S).symm)
+  have : IsNoetherianRing R := .of_faithfullyFlat S
   have h := depth_tensorProduct_eq_add_of_flat (R := R) (S := S) (N := S) (M := R)
   rwa [depth_eq_of_linearEquiv (AlgebraTensorModule.rid R S S),
     depth_eq_of_linearEquiv (Submodule.quotEquivOfEq _ _ (by simp) :
