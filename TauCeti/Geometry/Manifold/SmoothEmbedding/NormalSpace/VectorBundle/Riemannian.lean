@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
@@ -56,7 +55,7 @@ omit [FiniteDimensional ℝ E] in
 `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
 ambient tangent vector may vary. -/
 theorem contMDiff_normalRepresentative_normalClass
-    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+    [IsManifold I (m + 1) M]
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
@@ -68,17 +67,12 @@ theorem contMDiff_normalRepresentative_normalClass
   have : FiniteDimensional ℝ E :=
     Module.Finite.of_injective (mfderiv I J f x₀ : E →L[ℝ] V).toLinearMap
       (f.isImmersion.mfderiv_injective hn x₀)
-  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
-  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
-  let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
-    ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
   have hbase : ContMDiff (I.prod 𝓘(ℝ, V)) I m
       (π V ((f : M → N) *ᵖ (TangentSpace J))) := contMDiff_proj _
   have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (Pullback.lift (f : M → N)) :=
-    ((Pullback.contMDiff_iff fc fc.contMDiff
-      (E := fun y : N => TangentSpace J y)).mp contMDiff_id).2
+    Pullback.contMDiff_lift (E := TangentSpace J) f
+      (f.contMDiff.of_le (le_self_add.trans hm))
   have hprojection := (f.contMDiff.of_le hm).starProjection_orthogonal_range_mfderiv
     (f.isImmersion.mfderiv_injective hn)
   refine ((hprojection.comp hbase).clm_bundle_apply hlift).congr fun p ↦ ?_

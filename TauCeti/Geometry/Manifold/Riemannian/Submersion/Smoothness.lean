@@ -77,12 +77,12 @@ theorem contMDiff_starProjection_orthogonal_ker (hn : n + 1 ≤ ∞) :
       have hX := (e.contMDiffOn_localFrame_baseSet (I := I) n
         (Module.finBasis ℝ E) j).contMDiffAt
         (e.open_baseSet.mem_nhds hx)
-      have hf := ((h.isSubmersion.contMDiff.of_le hn) x)
+      have hf := h.isSubmersion.contMDiff x
       have hdf : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
           (fun y ↦ TotalSpace.mk' F (f y)
             (mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y))) x :=
-        hf.mfderiv_apply_sectionAlong hX
-      have hlift := hf.mfderiv_adjoint_apply
+        hf.mfderiv_apply_sectionAlong hX hn
+      have hlift := (hf.of_le hn).mfderiv_adjoint_apply
         (W := fun y ↦ mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y)) hdf
       simpa only [Function.id_def, ← h.horizontalLift_apply, h.horizontalLift_mfderiv]
         using hlift.contMDiffWithinAt)

@@ -55,17 +55,29 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
-  {f : M → N} {s : ∀ y : M, TangentSpace I y} {x : M} {n : ℕ∞ω}
+  {f : M → N} {s : ∀ y : M, TangentSpace I y} {x : M} {m n : ℕ∞ω} {u : Set M}
 
-/-- The differential of a `C^(n+1)` map sends a `C^n` tangent section to a `C^n` tangent
-field along the map. No metric or finite-dimensionality assumption is needed. -/
-theorem ContMDiffAt.mfderiv_apply_sectionAlong (hf : ContMDiffAt I J (n + 1) f x)
-    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, E)) n (fun y ↦ Bundle.TotalSpace.mk' E y (s y)) x) :
-    ContMDiffAt I (J.prod 𝓘(𝕜, F)) n
-      (fun y ↦ Bundle.TotalSpace.mk' F (f y) (mfderiv I J f y (s y))) x := by
+/-- The differential of a map regular at a point sends a tangent section regular within a
+set to a field along the map, losing one derivative of the map. No metric or
+finite-dimensionality assumption is needed. -/
+theorem ContMDiffWithinAt.mfderiv_apply_sectionAlong
+    (hs : ContMDiffWithinAt I (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E y (s y)) u x)
+    (hf : ContMDiffAt I J m f x) (hnm : n + 1 ≤ m) :
+    ContMDiffWithinAt I (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f y) (mfderiv I J f y (s y))) u x := by
   -- The tangent map composed with a section is the bundled differential applied to that section.
   simpa only [Function.comp_def, tangentMap] using
-    (hf.contMDiffAt_tangentMap le_rfl).comp x hs
+    (hf.contMDiffAt_tangentMap hnm).comp_contMDiffWithinAt x hs
+
+/-- The differential of a `C^m` map sends a `C^n` tangent section to a `C^n` field along
+it when `n + 1 ≤ m`. No metric or finite-dimensionality assumption is needed. -/
+theorem ContMDiffAt.mfderiv_apply_sectionAlong (hf : ContMDiffAt I J m f x)
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, E)) n (fun y ↦ Bundle.TotalSpace.mk' E y (s y)) x)
+    (hnm : n + 1 ≤ m) :
+    ContMDiffAt I (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f y) (mfderiv I J f y (s y))) x :=
+  ContMDiffWithinAt.mfderiv_apply_sectionAlong hs hf hnm
 
 end SectionAlong
 

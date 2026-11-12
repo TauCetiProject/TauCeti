@@ -62,7 +62,7 @@ theorem ContMDiffAt.mfderiv_adjoint_apply (hf : ContMDiffAt I J (n + 1) f x)
         (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x))
     exact ContMDiffAt.inner_bundle (E := TangentSpace J) (F := F) (v := W)
       (w := fun y ↦ mfderiv I J f y (chartLocalFrame (I := I) x j y))
-      hW (hf.mfderiv_apply_sectionAlong hframe)
+      hW (hf.mfderiv_apply_sectionAlong hframe le_rfl)
   have heq (y : M) : (mfderiv I J f y).adjoint (W y) =
       Riemannian.Tensor.rieszDual (I := I) y (Φ y) := by
     apply Riemannian.Tensor.eq_rieszDual_iff_inner_eq.mpr

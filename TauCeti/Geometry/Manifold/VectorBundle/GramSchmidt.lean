@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Topology.VectorBundle.GramSchmidt
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
