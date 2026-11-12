@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Topology.Algebra.Module.Determinant
+import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
@@ -163,14 +165,9 @@ theorem contDiffAt_stripGeneratingFunction {n : ℕ∞} {p : ℝ × ℝ}
   have hg : ContDiffOn ℝ n (fun z : (ℝ × ℝ) × ℝ ↦ g (z.1.1, z.1.2 * z.2)) W :=
     (contDiffOn_snd_mul_fst_fderiv hU hFU (0, 1)).comp (by fun_prop) fun _ hz ↦ hz
   have hpW : {p} ×ˢ [[(0 : ℝ), 1]] ⊆ W := by
-    rintro ⟨q, s⟩ ⟨hq, hs⟩
-    rw [mem_singleton_iff] at hq
-    subst hq
-    rw [uIcc_of_le zero_le_one] at hs
-    refine hp ⟨rfl, ?_⟩
-    rcases le_total 0 q.2 with hq | hq
-    · exact mem_uIcc.2 (Or.inl ⟨by nlinarith [hs.1], by nlinarith [hs.2]⟩)
-    · exact mem_uIcc.2 (Or.inr ⟨by nlinarith [hs.2], by nlinarith [hs.1]⟩)
+    rintro ⟨q, s⟩ ⟨rfl, hs⟩
+    exact hp ⟨rfl, by
+      simpa only [image_const_mul_uIcc, mul_zero, mul_one] using mem_image_of_mem (q.2 * ·) hs⟩
   obtain ⟨u, v, hu, -, hpu, hv, huv⟩ :=
     generalized_tube_lemma isCompact_singleton isCompact_uIcc (hU.preimage (by fun_prop)) hpW
   have hint := ContDiffOn.parametric_intervalIntegral (μ := MeasureTheory.volume)
@@ -192,11 +189,8 @@ private theorem hasFDerivAt_snd_mul_fst_fderiv {q : ℝ × ℝ} (hF : ContDiffAt
       ((F q).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp ((fderiv ℝ (fderiv ℝ F) q).flip u) +
         (fderiv ℝ F q u).1 • (ContinuousLinearMap.snd ℝ ℝ ℝ).comp (fderiv ℝ F q)) q := by
   have hF1 : HasFDerivAt F (fderiv ℝ F q) q := (hF.differentiableAt two_ne_zero).hasFDerivAt
-  have hF2 : HasFDerivAt (fderiv ℝ F) (fderiv ℝ (fderiv ℝ F) q) q :=
-    ((hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).hasFDerivAt
-  have hu := hF2.clm_apply (hasFDerivAt_const u q)
-  simp only [ContinuousLinearMap.comp_zero, zero_add] at hu
-  exact (hasFDerivAt_snd.comp q hF1).mul (hasFDerivAt_fst.comp q hu)
+  exact (hasFDerivAt_snd.comp q hF1).mul
+    (hasFDerivAt_fst.comp q (hF.hasFDerivAt_fderiv_apply le_rfl u))
 
 /-- The `x`-derivative of the integrand `Y ∂_y X` of the generating function is the `y`-derivative
 of `Y ∂ₓ X` minus the Jacobian determinant of `F`. -/
@@ -237,8 +231,7 @@ private theorem hasDerivAt_stripGeneratingFunction_fst (hU : IsOpen U) (hF : Con
       continuousOn_const
   have hderiv (t : ℝ) (ht : t ∈ [[0, y]]) :
       HasDerivAt (fun t ↦ h (x, t)) (fderiv ℝ h (x, t) (0, 1)) t :=
-    ((hh.contDiffAt (hU.mem_nhds (hseg t ht))).differentiableAt one_ne_zero).hasFDerivAt
-      |>.comp_hasDerivAt t ((hasDerivAt_const t x).prodMk (hasDerivAt_id t))
+    hasDerivAt_slice_right ((hh.contDiffAt (hU.mem_nhds (hseg t ht))).differentiableAt one_ne_zero)
   have hFTC : ∫ t in (0 : ℝ)..y, fderiv ℝ h (x, t) (0, 1) = h (x, y) - h (x, 0) :=
     intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable
   have hdetint : ∫ t in (0 : ℝ)..y, (fderiv ℝ F (x, t)).det = y := by
@@ -284,14 +277,11 @@ theorem hasFDerivAt_stripGeneratingFunction {p : ℝ × ℝ}
   convert hS.hasFDerivAt using 1
   -- Compare the two partial derivatives.
   have hfst : HasDerivAt (fun s ↦ stripGeneratingFunction F (s, y))
-      (fderiv ℝ (stripGeneratingFunction F) (x, y) (1, 0)) x := by
-    -- Elaborate the composition first; its function `S ∘ (·, y)` is then unfolded by `exact`.
-    have h := hS.hasFDerivAt.comp_hasDerivAt x
-      (HasDerivAt.prodMk (hasDerivAt_id' x) (hasDerivAt_const x y))
-    exact h
+      (fderiv ℝ (stripGeneratingFunction F) (x, y) (1, 0)) x :=
+    hasDerivAt_slice_left hS
   have hsnd : HasDerivAt (fun t ↦ stripGeneratingFunction F (x, t))
       (fderiv ℝ (stripGeneratingFunction F) (x, y) (0, 1)) y :=
-    hS.hasFDerivAt.comp_hasDerivAt y (HasDerivAt.prodMk (hasDerivAt_const y x) (hasDerivAt_id' y))
+    hasDerivAt_slice_right hS
   -- The `y`-derivative is the fundamental theorem of calculus, on the open set `V` of heights `t`
   -- with `(x, t) ∈ U`.
   have hV : IsOpen ((fun t : ℝ ↦ (x, t)) ⁻¹' U) := hU.preimage (by fun_prop)
@@ -339,11 +329,9 @@ theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction {p : ℝ × ℝ}
       (hFp.hasStrictFDerivAt (hFp.differentiableAt two_ne_zero).hasFDerivAt two_ne_zero))
   -- Through the local inverse of `G`, `S'` is the generating function.
   set k := hG.localInverse G e p
-  have hk : Tendsto k (𝓝 (G p)) (𝓝 p) := by
-    have := hG.localInverse_continuousAt.tendsto
-    rwa [hG.eventually_left_inverse.self_of_nhds] at this
   have heq : S' =ᶠ[𝓝 (G p)] stripGeneratingFunction F ∘ k := by
-    filter_upwards [hG.eventually_right_inverse, hk.eventually hS'] with z hz hz'
+    filter_upwards [hG.eventually_right_inverse, hG.localInverse_tendsto.eventually hS']
+      with z hz hz'
     calc S' z = S' (G (k z)) := by rw [hz]
       _ = (stripGeneratingFunction F ∘ k) z := hz'
   -- The derivative of `S'` is `Λ`, since `Λ ∘ dG = dS`.
@@ -354,7 +342,7 @@ theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction {p : ℝ × ℝ}
   have hS : HasFDerivAt (stripGeneratingFunction F)
       ((F p).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p) -
         p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (k (G p)) := by
-    have hkp : k (G p) = p := hG.eventually_left_inverse.self_of_nhds
+    have hkp : k (G p) = p := hG.localInverse_apply_image
     rw [hkp]
     exact hasFDerivAt_stripGeneratingFunction hF hY hdet
   have hSk := hS.comp (G p) hG.to_localInverse.hasFDerivAt
