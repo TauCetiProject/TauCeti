@@ -307,8 +307,6 @@ theorem cdf_truncatedNormalMeasure_eq (hv : v ≠ 0) (hlr : l < r)
   rw [truncatedNormalMeasure_eq_cond_sdiff hv hs₁ hs₂]
   exact Measure.cdf_cond_sdiff _ ((IsLowerSet.Iic l).preimage EReal.coe_strictMono.monotone)
     ((IsLowerSet.Iic r).preimage EReal.coe_strictMono.monotone)
-    (measurableSet_Iic.preimage measurable_coe_real_ereal)
-    (measurableSet_Iic.preimage measurable_coe_real_ereal)
     (measureReal_gaussianReal_preimage_Iic_lt hv hlr) x
 
 /-- At positive variance and every level `0 < u < 1`, the quantile of a normal law truncated to
@@ -327,9 +325,7 @@ theorem quantile_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
   have hR : (gaussianReal m v).real (Real.toEReal ⁻¹' Iic r) ≤ 1 := measureReal_le_one
   rw [truncatedNormalMeasure_eq_cond_sdiff hv hs₁ hs₂,
     Measure.quantile_cond_sdiff _ ((IsLowerSet.Iic l).preimage EReal.coe_strictMono.monotone)
-      ((IsLowerSet.Iic r).preimage EReal.coe_strictMono.monotone)
-      (measurableSet_Iic.preimage measurable_coe_real_ereal)
-      (measurableSet_Iic.preimage measurable_coe_real_ereal) hLR hu]
+      ((IsLowerSet.Iic r).preimage EReal.coe_strictMono.monotone) hLR hu]
   refine quantile_gaussianReal_eq_add_mul m v ⟨?_, ?_⟩
   · nlinarith [hu.1]
   · nlinarith [hu.2]
