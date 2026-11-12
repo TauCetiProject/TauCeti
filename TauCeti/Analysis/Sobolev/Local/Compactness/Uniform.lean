@@ -227,17 +227,6 @@ section Rellich
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens ℂ} {k : ℕ}
 
-/-- If `y m → w` in `W^{n,p}(W)` and the values of `y m` and `w` represent `f m` and `g` on `W`,
-then `f m → g` in `Lᵖ(W)`. -/
-private theorem tendsto_eLpNorm_sub_of_tendsto_wkp {W : Opens ℂ} {n : ℕ}
-    {y : ℕ → Wkp volume W p n} {w : Wkp volume W p n} {f : ℕ → ℂ → ℝ} {g : ℂ → ℝ}
-    (hyw : Tendsto y atTop (𝓝 w)) (hy : ∀ m, Wkp.value n (y m) =ᵐ[volume.restrict W] f m)
-    (hw : Wkp.value n w =ᵐ[volume.restrict W] g) :
-    Tendsto (fun m => eLpNorm (f m - g) p (volume.restrict W)) atTop (𝓝 0) := by
-  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
-    (((Wkp.valueL n).continuous.tendsto w).comp hyw)).congr fun m => eLpNorm_congr_ae ?_
-  simpa only [Function.comp_apply, Wkp.valueL_apply] using (hy m).sub hw
-
 /-- Every compact subset of an open `Ω ⊆ ℂ` lies in an open `W` whose closure is compact and
 contained in `Ω`, and then `W ≤ Ω`. -/
 private theorem exists_opens_of_isCompact {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
@@ -296,7 +285,7 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_wkp (hp : 2 <
       rw [← Wkp.value_succ]
       exact hV m
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (tendsto_eLpNorm_sub_of_tendsto_wkp (hlim W hWc hWΩ _ w hy hw) hy hw) (fun _ => bot_le)
+      (Wkp.tendsto_eLpNorm_sub_of_tendsto (hlim W hWc hWΩ _ w hy hw) hy hw) (fun _ => bot_le)
       fun m => eLpNorm_mono_measure _ (Measure.restrict_mono hKW le_rfl)
 
 /-- **Locally uniform convergence of the iterated weak gradients of local Rellich limits.** Let

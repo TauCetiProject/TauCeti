@@ -65,6 +65,8 @@ The projections below are sealed instead, and are used through their characteris
   derivative identity.
 * `TauCeti.Wkp.ae_value_add_sum_eq`: almost everywhere, the value of a sum of Sobolev functions is
   the sum of the almost-everywhere values of the summands.
+* `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto`: convergence in `W^{k,p}(Ω)` gives convergence in
+  `Lᵖ(Ω)` of any almost-everywhere representatives of the values.
 
 ## References
 
@@ -296,6 +298,17 @@ theorem value_zero (u : Wkp mu Omega p 0) : value 0 u = u :=
 theorem value_succ (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     value (k + 1) u = value k (lowerOrder k u) :=
   (rfl)
+
+/-- If `u i → v` in `W^{k,p}(Ω)` along a filter `l` and the values of `u i` and `v` represent
+`f i` and `g` almost everywhere on `Ω`, then `f i → g` in `Lᵖ(Ω)` along `l`. -/
+theorem tendsto_eLpNorm_sub_of_tendsto {α : Type*} {l : Filter α} {k : ℕ}
+    {u : α → Wkp mu Omega p k} {v : Wkp mu Omega p k} {f : α → E → ℝ} {g : E → ℝ}
+    (huv : Filter.Tendsto u l (nhds v)) (hu : ∀ i, value k (u i) =ᵐ[mu.restrict Omega] f i)
+    (hv : value k v =ᵐ[mu.restrict Omega] g) :
+    Filter.Tendsto (fun i => eLpNorm (f i - g) p (mu.restrict Omega)) l (nhds 0) := by
+  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (((valueL k).continuous.tendsto v).comp huv)).congr fun i => eLpNorm_congr_ae ?_
+  simpa only [Function.comp_apply, valueL_apply] using (hu i).sub hv
 
 /-- At first order, the generic lower-order projection is the `W1p` value projection. -/
 @[simp]

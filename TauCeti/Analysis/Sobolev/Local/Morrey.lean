@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.W1p
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -142,16 +143,8 @@ private theorem eqOn_preciseRepresentative_coord (hp : 2 < p) (hu : MemWkpLoc p 
       (fun z => ∑ i, preciseRepresentative volume (fun w => ℓ i (u w)) z • b i) Ω :=
     continuousOn_finsetSum _ fun i _ =>
       (continuousOn_preciseRepresentative_real hp (hu.clm_comp (ℓ i))).smul continuousOn_const
-  refine ⟨eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
-    (hu.memLpLoc.locallyIntegrableOn hp1 Ω.isOpen.isLocallyClosed) ?_ hcont, hcont⟩
-  have hcoord : ∀ i, (fun w => ℓ i (u w)) =ᵐ[volume.restrict Ω]
-      preciseRepresentative volume (fun w => ℓ i (u w)) := fun i =>
-    (hu.clm_comp (ℓ i)).memLpLoc.ae_eq_preciseRepresentative hp1
-  filter_upwards [ae_all_iff.2 hcoord] with z hz
-  conv_lhs => rw [← b.sum_repr (u z)]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← hz i]
-  simp [ℓ]
+  exact ⟨b.eqOn_preciseRepresentative_sum_repr hp1 hu.memLpLoc fun i =>
+    continuousOn_preciseRepresentative_real hp (hu.clm_comp (ℓ i)), hcont⟩
 
 /-- **Continuity of `W^{1,p}_loc` maps for `p > 2`.** The precise representative of
 `u ∈ MemWkpLoc p Ω 1`, which agrees with `u` almost everywhere on `Ω`
