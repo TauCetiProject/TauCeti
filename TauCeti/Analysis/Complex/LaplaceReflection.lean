@@ -97,8 +97,8 @@ variable {R : V →L[ℝ] V} {ξ f g : ℂ → V} {z : ℂ}
 @[simp]
 theorem twistedReflection_of_pos (hz : 0 < z.im) : twistedReflection R ξ z = ξ z := by
   have hz' : conj z ∉ {w : ℂ | 0 < w.im} := by simpa using hz.le
-  rw [twistedReflection, indicator_of_mem (show z ∈ {w : ℂ | 0 < w.im} from hz),
-    indicator_of_notMem hz', map_zero, add_zero]
+  have hz'' : z ∈ {w : ℂ | 0 < w.im} := mem_ofPred.2 hz
+  rw [twistedReflection, indicator_of_mem hz'', indicator_of_notMem hz', map_zero, add_zero]
 
 /-- Below the real axis the twisted reflection of `ξ` is `R` applied to `ξ` at the mirror
 point. -/
@@ -137,7 +137,7 @@ private theorem locallyIntegrableOn_indicator_upper {Ω : Opens ℂ}
     hk.inter_right (isClosed_le continuous_const continuous_im)
   refine (hξ.integrableOn_compact_subset (inter_subset_inter_left _ hkΩ) hk').mono_set ?_
   rintro z ⟨hz, hzk⟩
-  exact ⟨hzk, (show 0 < z.im from hz).le⟩
+  exact ⟨hzk, (mem_ofPred.1 hz).le⟩
 
 /-- **Local integrability of the twisted reflection.** If `ξ` is locally integrable on `Ω` up to
 the real axis, its twisted reflection is locally integrable on the conjugation-invariant open set
@@ -223,10 +223,14 @@ private theorem integral_lapIntegrand_add_data (φ : 𝓓(Ω, ℝ)) {a b c a' b'
   simp only [lapIntegrand, Pi.add_apply, smul_add]
   abel
 
+private theorem mapsTo_conjLIE (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) :
+    MapsTo conjLIE.toContinuousLinearEquiv Ω Ω := fun z hz ↦ by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply, SetLike.mem_coe]
+    using hΩ z hz
+
 /-- The test function `z ↦ φ (conj z)` on a conjugation-invariant open set. -/
 private def conjTest (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) (φ : 𝓓(Ω, ℝ)) : 𝓓(Ω, ℝ) :=
-  conjLIE.toContinuousLinearEquiv.transportTestFunction
-    (show MapsTo conjLIE.toContinuousLinearEquiv Ω Ω from fun z hz ↦ hΩ z hz) φ
+  conjLIE.toContinuousLinearEquiv.transportTestFunction (mapsTo_conjLIE hΩ) φ
 
 private theorem conjTest_apply (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
     conjTest hΩ φ z = φ (conj z) := by
