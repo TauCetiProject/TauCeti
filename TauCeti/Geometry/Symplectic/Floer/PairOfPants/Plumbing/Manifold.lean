@@ -36,8 +36,11 @@ curvature bound
 differs from the area plus these Hamiltonian terms by at most the sum of bounds for the six end
 Hamiltonians, uniformly in `L` and `R`
 (`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedTruncation_sub_sum_le`).
-For a symplectic vector space target the area term is a signed sum of loop areas, and the
-identity is `SymplecticForm.integral_floerEnergyDensity_plumbedTruncation_eq_sum_hamiltonianAction`.
+For a solution of the Floer equation with tame almost complex structures the energy is
+nonnegative, so the area plus these Hamiltonian terms is at least minus that sum. For `R = L/2`
+the truncation `Σ_R` is `S_{L/2} ∪ ψ(S_{L/2})`. For a symplectic vector space target the area
+term is a signed sum of loop areas, and the identity is
+`SymplecticForm.integral_floerEnergyDensity_plumbedTruncation_eq_sum_hamiltonianAction`.
 
 The truncation `Σ_R` is the union of the part `±s ≤ L/2` of the end `q` of the truncation `S_R` of
 the receiving pair of pants and the image under `ψ` of the part `±s ≤ L/2` of the end at `∞` of
@@ -63,6 +66,10 @@ terms cancel.
 * `SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedTruncation_sub_sum_le`:
   the energy over `Σ_R` differs from the area plus the Hamiltonian terms of its four boundary
   loops by at most the sum of the six end bounds.
+* `SmoothTwoForm`'s
+  `IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedTruncation`: for
+  solutions of the Floer equation with tame almost complex structures, the area plus these
+  Hamiltonian terms is at least minus the sum of the six end bounds.
 
 ## References
 
@@ -409,5 +416,49 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_plumbedTruncation_sub_su
     sub_sub_cancel_left, abs_neg]
   exact ω.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL
     hBa hBb u _
+
+/-- **The topological energy of a solution on a truncated plumbed sphere is bounded below, for a
+manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on the truncated plumbed
+sphere `Σ_R` for almost complex structures `J z` on the tangent spaces `T_{u(z)} M` tamed by the
+two-form, under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedTruncation_sub_sum_le`.
+Since its energy is nonnegative, its symplectic area over `Σ_R` plus the Hamiltonian terms of the
+four boundary loops is at least `-(∑ r, Ba r + ∑ r, Bb r)`, whatever the neck length `L > 4` and
+`R ≥ L / 2`. -/
+theorem IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedTruncation
+    (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
+    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) {R : ℝ}
+    (hR : L / 2 ≤ R) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R,
+      (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap) :
+    -(∑ r, Ba r + ∑ r, Bb r) ≤
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1,
+          Hb r t (u (Complex.equivRealProdCLM
+            (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I))))) +
+        ∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1,
+          Ha r t (u (Complex.equivRealProdCLM
+            (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))) := by
+  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_plumbedTruncation q L R)
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have h := (abs_le.1 (hω.abs_integral_floerEnergyDensity_plumbedTruncation_sub_sum_le hq hHa hHb
+    hHas hHbs hab hL hBa hBb hR hu)).2
+  linarith
 
 end TauCeti.SmoothTwoForm
