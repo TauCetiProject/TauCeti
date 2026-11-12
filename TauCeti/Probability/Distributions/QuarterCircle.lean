@@ -134,7 +134,7 @@ theorem integral_rpow_quarterCircle {q : ℝ} (hq : -1 < q) :
     (a := 3 / 2) (q := q) (r := 0) (by norm_num) hq (by norm_num)
   simp only [rpow_zero, mul_one, add_zero] at hmom
   have hbeta : beta (1 / 2) (3 / 2) = π / 2 := by
-    rw [beta_one_half_left_eq_two_rpow_mul_beta_self (by norm_num),
+    rw [beta_one_half_left_eq_two_rpow_mul_beta_self,
       beta_three_halves_three_halves]
     norm_num
     ring
@@ -181,7 +181,7 @@ theorem map_sqrt_marchenkoPastur_one : (marchenkoPastur 1).map sqrt = quarterCir
 /-- The Marchenko–Pastur law of ratio one is the image of `Beta(1 / 2, 3 / 2)` under `t ↦ 4 t`. -/
 theorem marchenkoPastur_one_eq_map_betaMeasure :
     marchenkoPastur 1 = (betaMeasure (1 / 2) (3 / 2)).map (4 * ·) := by
-  rw [← map_sq_quarterCircle, ← betaMeasure_map_centered_sq (by norm_num),
+  rw [← map_sq_quarterCircle, ← betaMeasure_map_centered_sq,
     quarterCircle_def, semicircleReal_def, semicircleMeasure_eq_map_betaMeasure]
   rw [Measure.map_map (by fun_prop) (by fun_prop), Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop), Measure.map_map (by fun_prop) (by fun_prop)]

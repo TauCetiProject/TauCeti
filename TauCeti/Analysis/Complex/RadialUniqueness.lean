@@ -213,7 +213,7 @@ theorem eqOn_const_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_
   -- `log⁺ ‖f - a‖ ≤ log⁺ ‖f‖ + (log⁺ ‖a‖ + log 2)`, so `f - a` has bounded averages too.
   have hC' : ∃ᶠ r in 𝓝[<] R,
       circleAverage (fun z ↦ log⁺ ‖f z - a‖) c r ≤ C + (log⁺ ‖a‖ + Real.log 2) := by
-    refine (hC.and_eventually (Ioo_mem_nhdsLT hR)).mono fun r ⟨hr, hr0⟩ ↦ ?_
+    refine (hC.and_eventually (Ioo_mem_nhdsLT hR)).mono fun r ⟨_, hr0⟩ ↦ ?_
     exact ((hf.circleIntegrable_posLog_norm hr0).circleAverage_posLog_norm_sub_const_le a
       (hg.circleIntegrable_posLog_norm hr0)).trans (by linarith)
   intro z hz
