@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
-public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # Moser's stability theorem
