@@ -20,7 +20,7 @@ public import TauCeti.LinearAlgebra.Determinant.Prod
 
 Let `ρ (x, y) dx ∧ dy` be a positive area form on the closed annulus `(ℝ / ℤ) × [0, 1]`, given
 by a density `ρ : ℝ × ℝ → ℝ` on its universal cover that is `1`-periodic in `x` and positive on
-the closed strip `ℝ × [0, 1]`. Put
+the closed strip `ℝ × [0, 1]`; periodicity and positivity are only assumed on the strip. Put
 
 * `s(x) = ∫₀¹ ρ(x, r) dr`, the mass of the column over `x` (`TauCeti.stripColumnMass`);
 * `a = ∫₀¹ s(x) dx > 0`, the total area of the annulus (`TauCeti.stripTotalMass`);
@@ -45,10 +45,17 @@ detects the two boundary lines.
 
 Consequently a map of the strip preserving `ρ dx ∧ dy`, in the sense that
 `ρ(F p) · det DF_p = ρ(p)`, becomes area preserving for the standard form `dx ∧ dy` after
-conjugation by `N` (`TauCeti.det_fderiv_eq_one_of_comp_stripNormalize`). This reduces
-fixed-point theorems for area-preserving maps of the annulus with an arbitrary smooth positive
-area form, such as the Poincaré–Birkhoff theorem, to the standard area form. For the constant
-density the normalization is the identity (`TauCeti.stripNormalize_const`).
+conjugation by `N` (`TauCeti.det_fderivWithin_eq_one_of_comp_stripNormalize`), at the points of
+the boundary lines as well, where the conjugate is only defined on the strip. This reduces
+fixed-point theorems for area-preserving maps of the annulus with a smooth positive area form,
+such as the Poincaré–Birkhoff theorem, to the standard area form. For the constant density the
+normalization is the identity (`TauCeti.stripNormalize_const`).
+
+The smoothness statements assume that `ρ` is `C^n` on the whole plane `ℝ × ℝ`, not just on the
+closed strip: the inverse function theorem is applied at the boundary points of the strip, which
+needs `N` to be differentiable on a full neighbourhood of them. A density that is only known to
+be smooth on the closed strip must first be extended to a smooth density on the plane; that
+extension of smooth functions from a closed half-plane is not part of this file.
 
 ## References
 
@@ -126,9 +133,10 @@ theorem stripColumnMass_pos (hρ : Continuous ρ) (hpos : ∀ x, ∀ y ∈ Icc (
     (fun r hr ↦ hpos x r (Ioo_subset_Icc_self hr)) zero_lt_one
 
 /-- The column masses of an `x`-periodic density are periodic. -/
-theorem periodic_stripColumnMass (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y)) :
-    Function.Periodic (stripColumnMass ρ) 1 := fun x ↦ by
-  simp only [stripColumnMass_def, hper]
+theorem periodic_stripColumnMass
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) :
+    Function.Periodic (stripColumnMass ρ) 1 := fun x ↦
+  intervalIntegral.integral_congr fun r hr ↦ hper x r (by rwa [uIcc_of_le zero_le_one] at hr)
 
 /-- The total mass is positive when `ρ` is positive on the closed strip. -/
 theorem stripTotalMass_pos (hρ : Continuous ρ)
@@ -153,7 +161,8 @@ theorem continuous_stripAngle (hρ : Continuous ρ) : Continuous (stripAngle ρ)
 
 /-- The angular coordinate of an `x`-periodic density is a degree-one lift:
 `u(x + 1) = u(x) + 1`. -/
-theorem stripAngle_add_one (hρ : Continuous ρ) (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y))
+theorem stripAngle_add_one (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (x : ℝ) :
     stripAngle ρ (x + 1) = stripAngle ρ x + 1 := by
   have hs := continuous_stripColumnMass hρ
@@ -170,7 +179,8 @@ theorem strictMono_stripAngle (hρ : Continuous ρ)
 
 /-- The angular coordinate of an `x`-periodic density is a surjection of `ℝ`, since it is a
 continuous degree-one circle lift. -/
-theorem surjective_stripAngle (hρ : Continuous ρ) (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y))
+theorem surjective_stripAngle (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) : Function.Surjective (stripAngle ρ) :=
   let u : CircleDeg1Lift :=
     ⟨⟨stripAngle ρ, (strictMono_stripAngle hρ hpos).monotone⟩, stripAngle_add_one hρ hper hpos⟩
@@ -186,9 +196,14 @@ theorem stripHeight_mk_one (hρ : Continuous ρ) (hpos : ∀ x, ∀ y ∈ Icc (0
     (x : ℝ) : stripHeight ρ (x, 1) = 1 :=
   inv_mul_cancel₀ (stripColumnMass_pos hρ hpos x).ne'
 
-theorem stripHeight_add_one (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y)) (x y : ℝ) :
+theorem stripHeight_add_one (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
+    (x : ℝ) {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) :
     stripHeight ρ (x + 1, y) = stripHeight ρ (x, y) := by
-  simp only [stripHeight_def, periodic_stripColumnMass hper x, hper]
+  simp only [stripHeight_def, periodic_stripColumnMass hper x]
+  congr 1
+  refine intervalIntegral.integral_congr fun r hr ↦ hper x r ?_
+  rw [uIcc_of_le hy.1] at hr
+  exact ⟨hr.1, hr.2.trans hy.2⟩
 
 theorem continuous_stripHeight (hρ : Continuous ρ)
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) : Continuous (stripHeight ρ) :=
@@ -238,10 +253,11 @@ private theorem one_lt_stripHeight (hρ : Continuous ρ)
 /-! ### The normalization as a map of the strip -/
 
 /-- The area normalization commutes with the deck translation `(x, y) ↦ (x + 1, y)`. -/
-theorem stripNormalize_add_one (hρ : Continuous ρ) (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y))
-    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (x y : ℝ) :
+theorem stripNormalize_add_one (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) (x : ℝ) {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) :
     stripNormalize ρ (x + 1, y) = stripNormalize ρ (x, y) + (1, 0) := by
-  simp [stripAngle_add_one hρ hper hpos, stripHeight_add_one hper]
+  simp [stripAngle_add_one hρ hper hpos, stripHeight_add_one hper x hy]
 
 /-- The area normalization preserves the lower boundary line. -/
 theorem stripNormalize_mk_zero (x : ℝ) : stripNormalize ρ (x, 0) = (stripAngle ρ x, 0) := by
@@ -270,7 +286,8 @@ theorem injOn_stripNormalize (hρ : Continuous ρ)
   obtain rfl := (strictMono_stripAngle hρ hpos).injective h.1
   exact Prod.ext rfl ((strictMonoOn_stripHeight hρ hpos x).injOn hy hy' h.2)
 
-theorem surjOn_stripNormalize (hρ : Continuous ρ) (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y))
+theorem surjOn_stripNormalize (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     SurjOn (stripNormalize ρ) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) := by
   rintro ⟨ξ, η⟩ ⟨-, hη⟩
@@ -282,7 +299,8 @@ theorem surjOn_stripNormalize (hρ : Continuous ρ) (hper : ∀ x y, ρ (x + 1, 
   exact ⟨(x, y), ⟨mem_univ _, hy⟩, by simp [hyη]⟩
 
 /-- **The area normalization is a bijection of the closed strip `ℝ × [0, 1]`.** -/
-theorem bijOn_stripNormalize (hρ : Continuous ρ) (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y))
+theorem bijOn_stripNormalize (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     BijOn (stripNormalize ρ) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) :=
   ⟨mapsTo_stripNormalize hρ hpos, injOn_stripNormalize hρ hpos,
@@ -295,12 +313,14 @@ def stripNormalizeInv (ρ : ℝ × ℝ → ℝ) : ℝ × ℝ → ℝ × ℝ :=
 
 /-- On the closed strip, `TauCeti.stripNormalizeInv` is a two-sided inverse of the area
 normalization. -/
-theorem invOn_stripNormalizeInv (hρ : Continuous ρ) (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y))
+theorem invOn_stripNormalizeInv (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     InvOn (stripNormalizeInv ρ) (stripNormalize ρ) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) :=
   (bijOn_stripNormalize hρ hper hpos).invOn_invFunOn
 
-theorem bijOn_stripNormalizeInv (hρ : Continuous ρ) (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y))
+theorem bijOn_stripNormalizeInv (hρ : Continuous ρ)
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     BijOn (stripNormalizeInv ρ) (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1) :=
   (bijOn_stripNormalize hρ hper hpos).symm (invOn_stripNormalizeInv hρ hper hpos).symm
@@ -404,7 +424,8 @@ private theorem eventually_mem_strip_of_stripNormalize_mem (hρ : Continuous ρ)
 density with `n ≥ 1`, the inverse `TauCeti.stripNormalizeInv` of the area normalization is `C^n`
 on the closed strip `ℝ × [0, 1]`. -/
 theorem contDiffOn_stripNormalizeInv {n : ℕ∞} (hρ : ContDiff ℝ n ρ) (hn : 1 ≤ n)
-    (hper : ∀ x y, ρ (x + 1, y) = ρ (x, y)) (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
+    (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y))
+    (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) :
     ContDiffOn ℝ n (stripNormalizeInv ρ) (univ ×ˢ Icc 0 1) := by
   intro q hq
   have hinv := invOn_stripNormalizeInv hρ.continuous hper hpos
@@ -440,20 +461,28 @@ theorem contDiffOn_stripNormalizeInv {n : ℕ∞} (hρ : ContDiff ℝ n ρ) (hn 
 /-! ### Transport of area-preserving maps -/
 
 /-- **Area-preserving maps become standard area preserving.** Let `F` preserve the area form
-`ρ dx ∧ dy` at `p`, in the sense that `ρ(F p) · det DF_p = ρ(p)`, and let `G` be the conjugate of
-`F` by the area normalization `N` near `p`, so that `G ∘ N = N ∘ F` near `p`. If `ρ(p) ≠ 0`,
-then `G` preserves the standard area form `dx ∧ dy` at `N p`: `det DG_(N p) = 1`. -/
-theorem det_fderiv_eq_one_of_comp_stripNormalize (hρ : ContDiff ℝ 1 ρ)
+`ρ dx ∧ dy` at a point `p` of the closed strip, in the sense that `ρ(F p) · det DF_p = ρ(p)`, and
+let `G` be the conjugate of `F` by the area normalization `N` on the strip near `p`, so that
+`G ∘ N = N ∘ F` on the strip near `p`. Then `G` preserves the standard area form `dx ∧ dy` at
+`N p`: the determinant of the derivative of `G` within the strip at `N p` is `1`. This covers the
+points of the boundary lines, where `G` need only be defined on the strip, as for the conjugate
+`N ∘ F ∘ TauCeti.stripNormalizeInv`. -/
+theorem det_fderivWithin_eq_one_of_comp_stripNormalize (hρ : ContDiff ℝ 1 ρ)
     (hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 0 < ρ (x, y)) {F G : ℝ × ℝ → ℝ × ℝ} {p : ℝ × ℝ}
-    (hp : ρ p ≠ 0) (hF : DifferentiableAt ℝ F p)
-    (hG : DifferentiableAt ℝ G (stripNormalize ρ p))
+    (hp : p ∈ univ ×ˢ Icc 0 1) (hF : DifferentiableAt ℝ F p)
+    (hG : DifferentiableWithinAt ℝ G (univ ×ˢ Icc 0 1) (stripNormalize ρ p))
     (hFρ : ρ (F p) * (fderiv ℝ F p).det = ρ p)
-    (hconj : G ∘ stripNormalize ρ =ᶠ[𝓝 p] stripNormalize ρ ∘ F) :
-    (fderiv ℝ G (stripNormalize ρ p)).det = 1 := by
+    (hconj : G ∘ stripNormalize ρ =ᶠ[𝓝[univ ×ˢ Icc 0 1] p] stripNormalize ρ ∘ F) :
+    (fderivWithin ℝ G (univ ×ˢ Icc 0 1) (stripNormalize ρ p)).det = 1 := by
   have hN := (contDiff_stripNormalize hρ hpos).differentiable one_ne_zero
-  have hchain : (fderiv ℝ G (stripNormalize ρ p)).comp (fderiv ℝ (stripNormalize ρ) p) =
-      (fderiv ℝ (stripNormalize ρ) (F p)).comp (fderiv ℝ F p) := by
-    rw [← fderiv_comp p hG (hN p), hconj.fderiv_eq, fderiv_comp p (hN (F p)) hF]
+  have hchain : (fderivWithin ℝ G (univ ×ˢ Icc 0 1) (stripNormalize ρ p)).comp
+      (fderiv ℝ (stripNormalize ρ) p) =
+      (fderiv ℝ (stripNormalize ρ) (F p)).comp (fderiv ℝ F p) :=
+    ((uniqueDiffOn_univ.prod uniqueDiffOn_Icc_zero_one) p hp).eq
+      (hG.hasFDerivWithinAt.comp p (hN p).hasFDerivAt.hasFDerivWithinAt
+        (mapsTo_stripNormalize hρ.continuous hpos))
+      ((((hN (F p)).hasFDerivAt.comp p hF.hasFDerivAt).hasFDerivWithinAt).congr_of_eventuallyEq
+        hconj (hconj.eq_of_nhdsWithin hp))
   have hdet := congrArg ContinuousLinearMap.det hchain
   have ha := stripTotalMass_mul_det_fderiv_stripNormalize hρ hpos p
   have hb := stripTotalMass_mul_det_fderiv_stripNormalize hρ hpos (F p)
@@ -461,12 +490,12 @@ theorem det_fderiv_eq_one_of_comp_stripNormalize (hρ : ContDiff ℝ 1 ρ)
     ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp, LinearMap.det_comp] at hdet
   simp only [ContinuousLinearMap.det] at ha hb hFρ ⊢
   -- `det DG · ρ(p) = a · det DG · det DN_p = a · det DN_(F p) · det DF_p = ρ(F p) · det DF_p`.
-  have key : (LinearMap.det (fderiv ℝ G (stripNormalize ρ p) : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) - 1) * ρ p =
-      0 := by
-    linear_combination stripTotalMass ρ * hdet -
-      LinearMap.det (fderiv ℝ G (stripNormalize ρ p) : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) * ha +
+  set dG := LinearMap.det
+    (fderivWithin ℝ G (univ ×ˢ Icc 0 1) (stripNormalize ρ p) : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ)
+  have key : (dG - 1) * ρ p = 0 := by
+    linear_combination stripTotalMass ρ * hdet - dG * ha +
       LinearMap.det (fderiv ℝ F p : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) * hb + hFρ
-  exact sub_eq_zero.1 ((mul_eq_zero.1 key).resolve_right hp)
+  exact sub_eq_zero.1 ((mul_eq_zero.1 key).resolve_right (hpos p.1 p.2 hp.2).ne')
 
 /-! ### The constant density -/
 
