@@ -41,11 +41,11 @@ theorem ordProj_index_eq_ordProj_natCard {G : Type*} [Group G]
 provided the smaller subgroup has nonzero index. -/
 theorem padicValNat_index_le_of_le {G : Type*} [Group G] {A B : Subgroup G} (h : A ≤ B)
     (hA : A.index ≠ 0) (ℓ : ℕ) :
-    (padicValNat ℓ B.index : ℕ∞) ≤ padicValNat ℓ A.index := by
+    padicValNat ℓ B.index ≤ padicValNat ℓ A.index := by
   have hdvd := Subgroup.index_dvd_of_le h
   rcases eq_or_ne ℓ 1 with rfl | hℓ
   · simp [Nat.padicValNat_def]
-  rw [Nat.cast_le, Nat.padicValNat_def, Nat.padicValNat_def,
+  rw [Nat.padicValNat_def, Nat.padicValNat_def,
     ← Nat.pow_dvd_iff_le_multiplicity hℓ hA]
   exact (pow_multiplicity_dvd ℓ B.index).trans hdvd
 
