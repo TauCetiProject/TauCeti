@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Monad
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
+import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
 /-!
 # The Hopf algebroid `(L, L[b₁, b₂, …])` of strict coordinate changes
@@ -60,6 +61,8 @@ groupoid law in the group of strict coordinates. In the tensor model, the compos
   `μ (c ⊗ id) Δ = η_R ε` and `μ (id ⊗ c) Δ = η_L ε`.
 * `TauCeti.LazardRing.map_rightUnit_heightIdeal`: the height ideals `I_n` of the Lazard ring
   (`FormalGroup.heightIdeal`) are invariant ideals: `η_R(I_n) Γ = η_L(I_n) Γ`.
+* `TauCeti.LazardRing.rightUnit_sub_C_mem_map_heightIdeal`: `η_R(v_n) ≡ η_L(v_n)` modulo `I_n Γ`,
+  where `v_n` is the coefficient of `X^(pⁿ)` in the `p`-series of the universal formal group law.
 
 ## References
 
@@ -392,6 +395,21 @@ theorem map_rightUnit_heightIdeal (p n : ℕ) :
       (formalGroup.heightIdeal p n).map MvPolynomial.C := by
   rw [FormalGroup.map_heightIdeal, FormalGroup.map_heightIdeal, map_rightUnit,
     FormalGroup.heightIdeal_smul]
+
+/-- **The right unit fixes `v_n` modulo `I_n`.** Let `v_n ∈ L` be the coefficient of `X^(pⁿ)` in
+the `p`-series of the universal formal group law. Then `η_R(v_n) ≡ η_L(v_n)` modulo the extension of
+the height ideal `I_n` to `L[b₁, b₂, …]`, so the class of `v_n` modulo `I_n` is primitive. -/
+theorem rightUnit_sub_C_mem_map_heightIdeal (p n : ℕ) :
+    rightUnit (PowerSeries.coeff (p ^ n) (formalGroup.nsmulSeries p)) -
+        C (PowerSeries.coeff (p ^ n) (formalGroup.nsmulSeries p)) ∈
+      (formalGroup.heightIdeal p n).map C := by
+  have : (FormalGroup.smulIso universalStrictCoordinate (formalGroup.map C)).IsStrict :=
+    (FormalGroup.isStrict_smulIso_iff _ _).mpr <| MonoidHom.mem_ker.mp <| by
+      simpa using map_universalStrictCoordinate_mem_ker (RingHom.id _)
+  have h := (FormalGroup.smulIso universalStrictCoordinate
+    (formalGroup.map C)).coeff_nsmulSeries_sub_mem_heightIdeal_of_isStrict p n
+  rwa [← map_rightUnit, FormalGroup.coeff_nsmulSeries_map, FormalGroup.coeff_nsmulSeries_map,
+    ← FormalGroup.map_heightIdeal] at h
 
 end LazardRing
 

@@ -62,14 +62,14 @@ theorem HasFiniteMoment.comp_kernel [IsFiniteMeasure μ] (hμ : HasFiniteMoment 
   have hrad : Measurable (fun x ↦ eLpNorm (fun z ↦ edist y z) p (κ x)) :=
     measurable_eLpNorm_kernel κ measurable_edist_right.stronglyMeasurable
   have hdist : MemLp (fun x ↦ (L : ℝ≥0∞) * edist x₀ x) p μ :=
-    (hμ.memLp (x := x₀) measurable_edist_right.aestronglyMeasurable).of_enorm_le_mul (c := L)
+    (hμ.memLp (x := x₀) measurable_edist_right.aestronglyMeasurable).of_eNorm_le_mul (c := L)
       (measurable_edist_right.const_mul _).aestronglyMeasurable
       (.of_forall fun _ ↦ by simp)
   have hconst : MemLp (fun _ : X ↦ eLpNorm (fun z ↦ edist y z) p (κ x₀)) p μ :=
-    memLp_const_enorm (by simpa only [enorm_eq_self] using hy.eLpNorm_ne_top)
+    memLp_const_eNorm (by simpa only [eNorm_eq_self] using hy.eLpNorm_ne_top)
   refine (hasFiniteMoment_comp_iff_memLp y).2
-    ((hconst.add hdist).of_le_enorm hrad.aestronglyMeasurable (hκ.mono fun x hx ↦ ?_))
-  simp only [enorm_eq_self, Pi.add_apply]
+    ((hconst.add hdist).of_le_eNorm hrad.aestronglyMeasurable (hκ.mono fun x hx ↦ ?_))
+  simp only [eNorm_eq_self, Pi.add_apply]
   rw [← wassersteinEDist_dirac_left measurable_edist,
     ← wassersteinEDist_dirac_left measurable_edist]
   exact (wassersteinEDist_triangle measurable_edist hp1 (Measure.dirac y) (κ x₀) (κ x)).trans
