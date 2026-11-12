@@ -9,10 +9,9 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 public import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import Mathlib.LinearAlgebra.Complex.Determinant
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.Analysis.Analytic.IsolatedCriticalPoints
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Analysis.Complex.Determinant
 import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
 
 /-!
@@ -80,21 +79,22 @@ namespace HomologicalOrientation
 
 variable (o : HomologicalOrientation ℂ ℂ 2)
 
-/-- **A complex derivative has positive Jacobian.** If `f` is complex differentiable at `z` with
-nonzero derivative `c`, its local index at `z` is `1`: the real derivative is multiplication by
-`c`, of determinant `‖c‖² > 0`. -/
+/-- **Local index at a point with nonzero complex derivative is `1`.** If `f` is complex
+differentiable at `z` with nonzero derivative `c`, its local index at `z` is `1`: the real
+derivative is multiplication by `c`, whose Jacobian determinant `‖c‖²` is positive. -/
 theorem localIndex_eq_one_of_hasDerivAt {f : C(ℂ, ℂ)} {c z : ℂ} (hf : HasDerivAt f c z)
     (hc : c ≠ 0) : o.localIndex o f z = 1 := by
-  have hdet : ((ContinuousLinearMap.toSpanSingleton ℂ c).restrictScalars ℝ).det =
-      normSq c := by
-    simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply]
-  have hpos : 0 < normSq c := normSq_pos.2 hc
+  have hdet : ((ContinuousLinearMap.toSpanSingleton ℂ c).restrictScalars ℝ).det = ‖c‖ ^ 2 := by
+    simpa [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton] using
+      ContinuousLinearMap.det_restrictScalars_smulRight_one c
+  have hpos : 0 < ‖c‖ ^ 2 := pow_pos (norm_pos_iff.2 hc) 2
   rw [o.localIndex_eq_sign_det finrank_real_complex (hf.hasFDerivAt.restrictScalars ℝ)
     (hdet ▸ hpos.ne'), hdet, sign_pos hpos]
   rfl
 
 /-- **Complex conjugation reverses orientation**: it has local index `-1` at every point, for the
 same orientation of `ℂ` on source and target. -/
+@[simp]
 theorem localIndex_conj (z : ℂ) :
     o.localIndex o ⟨starRingEnd ℂ, continuous_conj⟩ z = -1 := by
   have hdet : (conjCLE : ℂ →L[ℝ] ℂ).det = -1 := det_conjAe
@@ -189,10 +189,8 @@ theorem localIndex_eq_analyticOrderNatAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : An
   rw [o.localDegree_eq_localIndex o hE hE g hfib₀,
     o.localIndex_congr o hE (hgf_nhds z₀ (mem_ball_self hr))] at hdeg₀
   -- ... and the number of preimages of `w`, each of local index `1`.
-  rw [hdeg₀, ← o.localDegree_eq_degree o hE hE hgp w,
-    o.localDegree_eq_sum_localIndex o hE hE g hfin',
-    Finset.sum_congr rfl fun x hx ↦ ?_, Finset.sum_const, nsmul_eq_mul, mul_one,
-    ← ncard_eq_toFinset_card _ hfin', hfibw, hncard]
+  rw [hdeg₀, o.degree_eq_sum_localIndex o hE hE hgp hfin', Finset.sum_congr rfl fun x hx ↦ ?_,
+    Finset.sum_const, nsmul_eq_mul, mul_one, ← ncard_eq_toFinset_card _ hfin', hfibw, hncard]
   rw [Finite.mem_toFinset, hfibw] at hx
   have hxz : x ≠ z₀ := fun h ↦ hwne (h ▸ hx.2).symm
   rw [o.localIndex_congr o hE (hgf_nhds x hx.1)]
@@ -214,6 +212,7 @@ theorem localIndex_pos_of_analyticAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : Analyt
   exact Nat.pos_of_ne_zero fun h ↦ hzero ((ENat.toNat_eq_zero.1 h).resolve_right htop)
 
 /-- The power map `z ↦ z ^ m` has local index `m` at `0`. -/
+@[simp]
 theorem localIndex_pow (m : ℕ) : o.localIndex o ⟨(· ^ m), continuous_pow m⟩ 0 = m := by
   rw [o.localIndex_eq_analyticOrderNatAt (analyticAt_id.pow m)]
   rcases eq_or_ne m 0 with rfl | hm

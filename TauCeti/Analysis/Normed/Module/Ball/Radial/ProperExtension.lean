@@ -43,8 +43,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E
 /-- **Proper radial extension.** If `f` is continuous on the closed ball of radius `r > 0` about
 `x₀` and stays at distance at least `δ > 0` from `f x₀` on its boundary sphere, then `f` agrees on
 the closed ball with a proper continuous map `g` which stays at distance at least `δ` from `f x₀`
-outside the open ball. Explicitly, `g x = f x₀ + (dist x x₀ / r) • (f y - f x₀)` outside the ball,
-where `y` is the radial retraction of `x` onto the closed ball. -/
+outside the open ball. The `g` constructed is `g x = f x₀ + (dist x x₀ / r) • (f y - f x₀)`
+outside the ball, where `y` is the radial retraction of `x` onto the closed ball. -/
 theorem ContinuousOn.exists_isProperMap_eqOn_closedBall {f : E → F} {x₀ : E} {r δ : ℝ}
     (hf : ContinuousOn f (closedBall x₀ r)) (hr : 0 < r) (hδ : 0 < δ)
     (hfδ : ∀ x ∈ sphere x₀ r, δ ≤ ‖f x - f x₀‖) :
