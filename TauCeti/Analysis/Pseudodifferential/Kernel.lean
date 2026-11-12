@@ -16,6 +16,7 @@ import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -47,6 +48,9 @@ the diagonal.
   uniform for `x` in compact sets.
 * `TauCeti.quantizeSchwartzValue_eq_integral_quantizationKernel`: **kernel representation**,
   `Op(a) u (x) = ∫ K_a(x, y) u(y) dy` for every Schwartz function `u`.
+* `IsOpen.eqOn_of_integral_clm_apply_eq`: two operator families continuous on an open set `U`
+  agree there if they have the same integrals against compactly supported Schwartz functions
+  supported in `U`.
 * `TauCeti.eq_quantizationKernel_of_forall`: **uniqueness**, a continuous kernel representing
   `u ↦ Op(a) u (x)` on Schwartz functions is `y ↦ K_a(x, y)`.
 * `TauCeti.inner_smul_quantizationKernel`: multiplying the kernel by `⟪x - y, v⟫` corresponds to
@@ -370,30 +374,48 @@ theorem quantizeSchwartzValue_eq_integral_quantizationKernel [CompleteSpace V] [
   rw [quantizeSchwartzValue_def, SchwartzMap.fourier_coe, ← h]
   simp only [Circle.smul_def, smul_apply]
 
+/-- **Kernels are determined by Schwartz test functions.** Two operator families `K₁`, `K₂`
+continuous on an open set `U` agree on `U` if `∫ K₁(y) u(y) dy = ∫ K₂(y) u(y) dy` for every
+compactly supported Schwartz function `u` with support in `U`. -/
+theorem _root_.IsOpen.eqOn_of_integral_clm_apply_eq [CompleteSpace W] {K₁ K₂ : E → V →L[ℂ] W}
+    {U : Set E} (hU : IsOpen U) (hK₁ : ContinuousOn K₁ U) (hK₂ : ContinuousOn K₂ U)
+    (h : ∀ u : 𝓢(E, V), HasCompactSupport u → tsupport u ⊆ U →
+      ∫ y, K₁ y (u y) = ∫ y, K₂ y (u y)) :
+    Set.EqOn K₁ K₂ U := by
+  intro y hy
+  ext v
+  set f : E → W := fun z ↦ K₁ z v - K₂ z v
+  have hf : ContinuousOn f U :=
+    (hK₁.clm_apply continuousOn_const).sub (hK₂.clm_apply continuousOn_const)
+  have hae := hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero (μ := volume)
+    (hf.locallyIntegrableOn hU.measurableSet) fun g hg hgs hgU ↦ ?_
+  · exact sub_eq_zero.1 (Measure.eqOn_open_of_ae_eq ((ae_restrict_iff' hU.measurableSet).2 hae)
+      hU hf continuousOn_const hy)
+  -- Test against `z ↦ g(z) v`, a compactly supported Schwartz function with support in `U`.
+  have hgc : ContDiff ℝ ∞ (fun z ↦ (g z : ℂ) • v) :=
+    (Complex.ofRealCLM.contDiff.comp hg).smul contDiff_const
+  have hgcs : HasCompactSupport (fun z ↦ (g z : ℂ) • v) :=
+    (hgs.comp_left Complex.ofReal_zero).smul_right
+  set u := hgcs.toSchwartzMap hgc
+  have huU : tsupport u ⊆ U :=
+    ((tsupport_smul_subset_left _ _).trans (tsupport_comp_subset Complex.ofReal_zero g)).trans hgU
+  have hpt (L : E → V →L[ℂ] W) (z : E) : g z • L z v = L z (u z) := by
+    rw [HasCompactSupport.toSchwartzMap_toFun, map_smul, Complex.coe_smul]
+  simp only [f, smul_sub, hpt K₁, hpt K₂]
+  rw [integral_sub (u.continuous.integrable_clm_apply_of_continuousOn hgcs huU hK₁)
+    (u.continuous.integrable_clm_apply_of_continuousOn hgcs huU hK₂), h u hgcs huU, sub_self]
+
 /-- **Uniqueness of the kernel.** If the frequency slice `ξ ↦ a(x, ξ)` is integrable and a
 continuous `K` represents `u ↦ Op(a) u (x)` on Schwartz functions, `Op(a) u (x) = ∫ K(y) u(y) dy`,
 then `K` is the kernel `y ↦ K_a(x, y)`. -/
 theorem eq_quantizationKernel_of_forall [CompleteSpace V] [CompleteSpace W] {K : E → V →L[ℂ] W}
     (hK : Continuous K) (ha : Integrable (fun ξ ↦ a (x, ξ)))
     (h : ∀ u : 𝓢(E, V), quantizeSchwartzValue a u x = ∫ y, K y (u y)) :
-    K = quantizationKernel a x := by
-  have hK₀ := continuous_quantizationKernel_right ha
-  funext y
-  ext v
-  -- Test against `y ↦ g(y) v` for smooth compactly supported real `g`.
-  have hae : ∀ᵐ y, K y v = quantizationKernel a x y v := by
-    refine ae_eq_of_integral_contDiff_smul_eq (hK.clm_apply continuous_const).locallyIntegrable
-      (hK₀.clm_apply continuous_const).locallyIntegrable fun g hg hgs ↦ ?_
-    have hgc : ContDiff ℝ ∞ (fun y ↦ (g y : ℂ) • v) :=
-      (Complex.ofRealCLM.contDiff.comp hg).smul contDiff_const
-    have hgcs : HasCompactSupport (fun y ↦ (g y : ℂ) • v) :=
-      (hgs.comp_left Complex.ofReal_zero).smul_right
-    have hpt (L : E → V →L[ℂ] W) (y : E) : g y • L y v = L y ((hgcs.toSchwartzMap hgc) y) := by
-      rw [HasCompactSupport.toSchwartzMap_toFun, map_smul, Complex.coe_smul]
-    simp_rw [hpt K, hpt (quantizationKernel a x), ← h,
-      quantizeSchwartzValue_eq_integral_quantizationKernel ha]
-  exact congrFun ((hK.clm_apply continuous_const).ae_eq_iff_eq volume
-    (hK₀.clm_apply continuous_const) |>.1 hae) y
+    K = quantizationKernel a x :=
+  funext fun y ↦ isOpen_univ.eqOn_of_integral_clm_apply_eq hK.continuousOn
+    (continuous_quantizationKernel_right ha).continuousOn
+    (fun u _ _ ↦ by rw [← h, quantizeSchwartzValue_eq_integral_quantizationKernel ha])
+    (Set.mem_univ y)
 
 /-- **Multiplication by the displacement.** If `ξ ↦ a(x, ξ)` has line derivative `a'(x, ξ)` in
 the direction `v` and both are integrable, then `⟪x - y, v⟫ K_a(x, y) = i K_{a'}(x, y)`. In terms

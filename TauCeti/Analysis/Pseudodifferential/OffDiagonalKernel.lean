@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Kernel
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TemperateGrowth
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The kernel of a pseudodifferential operator off the diagonal
@@ -229,38 +227,15 @@ theorem eqOn_offDiagonalKernel_of_forall [CompleteSpace V] [CompleteSpace W] (a 
     (h : ∀ u : 𝓢(CoordinateSpace n, V), HasCompactSupport u → x ∉ tsupport u →
       quantizeSchwartzValue a.coefficient u x = ∫ y, K y (u y)) :
     Set.EqOn K (offDiagonalKernel a x) {x}ᶜ := by
-  have hU : IsOpen ({x}ᶜ : Set (CoordinateSpace n)) := isOpen_compl_singleton
   have hK₀ : ContinuousOn (offDiagonalKernel a x) {x}ᶜ := by
     have hmaps : Set.MapsTo (fun y ↦ (x, y)) {x}ᶜ
         {p : CoordinateSpace n × CoordinateSpace n | p.1 ≠ p.2} := fun y hy ↦ Ne.symm hy
     exact ((continuousOn_offDiagonalKernel a).comp
       (continuous_const.prodMk continuous_id).continuousOn hmaps).congr
       fun y _ ↦ (Function.uncurry_apply_pair _ x y).symm
-  intro y hy
-  ext v
-  set f : CoordinateSpace n → W := fun z ↦ K z v - offDiagonalKernel a x z v
-  have hf : ContinuousOn f {x}ᶜ :=
-    (hK.clm_apply continuousOn_const).sub (hK₀.clm_apply continuousOn_const)
-  have hae := hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero (μ := volume)
-    (hf.locallyIntegrableOn hU.measurableSet) fun g hg hgs hgU ↦ ?_
-  · exact sub_eq_zero.1 (Measure.eqOn_open_of_ae_eq ((ae_restrict_iff' hU.measurableSet).2 hae)
-      hU hf continuousOn_const hy)
-  -- Test against `z ↦ g(z) v`, a compactly supported Schwartz function vanishing near `x`.
-  have hgc : ContDiff ℝ ∞ (fun z ↦ (g z : ℂ) • v) :=
-    (Complex.ofRealCLM.contDiff.comp hg).smul contDiff_const
-  have hgcs : HasCompactSupport (fun z ↦ (g z : ℂ) • v) :=
-    (hgs.comp_left Complex.ofReal_zero).smul_right
-  set u := hgcs.toSchwartzMap hgc
-  have huU : tsupport u ⊆ {x}ᶜ :=
-    ((tsupport_smul_subset_left _ _).trans (tsupport_comp_subset Complex.ofReal_zero g)).trans hgU
+  refine isOpen_compl_singleton.eqOn_of_integral_clm_apply_eq hK hK₀ fun u hu huU ↦ ?_
   have hxu : x ∉ tsupport u := fun hx ↦ huU hx rfl
-  have hpt (L : CoordinateSpace n → V →L[ℂ] W) (z : CoordinateSpace n) :
-      g z • L z v = L z (u z) := by
-    rw [HasCompactSupport.toSchwartzMap_toFun, map_smul, Complex.coe_smul]
-  simp only [f, smul_sub, hpt K, hpt (offDiagonalKernel a x)]
-  rw [integral_sub (u.continuous.integrable_clm_apply_of_continuousOn hgcs huU hK)
-    (u.continuous.integrable_clm_apply_of_continuousOn hgcs huU hK₀), ← h u hgcs hxu,
-    ← quantizeSchwartzValue_eq_integral_offDiagonalKernel a hgcs hxu, sub_self]
+  rw [← h u hu hxu, quantizeSchwartzValue_eq_integral_offDiagonalKernel a hu hxu]
 
 /-- **Decay off the diagonal.** For every `N` with `m - 2N < -n` and every compact set `K` of
 positions, `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x ∈ K` and all `y`. -/
