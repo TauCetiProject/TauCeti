@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -21,7 +21,7 @@ recorded explicitly for time-product measures used in stochastic integration.
 public section
 
 open MeasureTheory Set
-open scoped NNReal
+open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
 
@@ -65,35 +65,10 @@ theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
 instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
   ⟨by simp⟩
 
-/-- Finite linear combinations of initial-interval indicators are dense in the
-finite-horizon time `L²` space. -/
-theorem topologicalClosure_span_indicatorConstLp_Iic (T : ℝ≥0) :
-    (Submodule.span ℝ (range fun t : ℝ≥0 ↦
-      indicatorConstLp (μ := timeMeasure T) 2 (measurableSet_Iic (a := t))
-        (measure_ne_top _ _) (1 : ℝ))).topologicalClosure = ⊤ := by
-  have hgen : (inferInstance : MeasurableSpace ℝ≥0) =
-      MeasurableSpace.generateFrom (range Iic) := by
-    exact (BorelSpace.measurable_eq (α := ℝ≥0)).trans (borel_eq_generateFrom_Iic ℝ≥0)
-  have hcover : IsCountablySpanning (range (Iic : ℝ≥0 → Set ℝ≥0)) := by
-    refine ⟨fun n : ℕ ↦ Iic (n : ℝ≥0), fun n ↦ mem_range_self _, ?_⟩
-    ext t
-    simp only [mem_iUnion, mem_Iic, mem_univ, iff_true]
-    exact exists_nat_ge t
-  have hdense := TauCeti.topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
-    (μ := timeMeasure T) hgen isPiSystem_Iic hcover (fun _ _ ↦ measure_ne_top _ _)
-  have hset : {g : Lp ℝ 2 (timeMeasure T) |
-      ∃ (s : Set ℝ≥0) (hs : s ∈ range Iic),
-        g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
-          (measure_ne_top _ _) 1} = range (fun t : ℝ≥0 ↦
-        indicatorConstLp (μ := timeMeasure T) 2 (measurableSet_Iic (a := t))
-          (measure_ne_top _ _) (1 : ℝ)) := by
-    ext g
-    constructor
-    · rintro ⟨_, ⟨t, rfl⟩, rfl⟩
-      exact mem_range_self t
-    · rintro ⟨t, rfl⟩
-      exact ⟨Iic t, mem_range_self t, rfl⟩
-  rwa [hset] at hdense
+/-- Almost every time lies in the finite horizon, excluding the origin. -/
+theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ Ioc 0 T := by
+  rw [timeMeasure_def]
+  exact ae_restrict_mem measurableSet_Ioc
 
 /-- The horizon of length zero carries the zero measure. -/
 @[simp]
@@ -111,5 +86,63 @@ theorem timeMeasure_restrict (T S : ℝ≥0) :
     (timeMeasure T).restrict (Ioc 0 S) = timeMeasure (min S T) := by
   rw [timeMeasure_def, Measure.restrict_restrict measurableSet_Ioc, Ioc_inter_Ioc]
   simp [timeMeasure_def]
+
+/-- Initial-interval indicator classes only depend on the endpoint clipped to the horizon. -/
+theorem indicatorConstLp_Iic_min_timeMeasure {E : Type*} [NormedAddCommGroup E]
+    (p : ℝ≥0∞) (T t : ℝ≥0) (c : E) :
+    indicatorConstLp (μ := timeMeasure T) p (measurableSet_Iic (a := t))
+        (measure_ne_top _ _) c =
+      indicatorConstLp p (measurableSet_Iic (a := min t T)) (measure_ne_top _ _) c := by
+  apply Lp.ext
+  filter_upwards [indicatorConstLp_coeFn (μ := timeMeasure T) (p := p)
+    (hs := measurableSet_Iic (a := t)) (hμs := measure_ne_top _ _) (c := c),
+    indicatorConstLp_coeFn (μ := timeMeasure T) (p := p)
+      (hs := measurableSet_Iic (a := min t T)) (hμs := measure_ne_top _ _) (c := c),
+    ae_mem_Ioc_timeMeasure T] with u ht hm hu
+  rw [ht, hm]
+  simp only [indicator_apply, mem_Iic, le_min_iff, hu.2, and_true]
+
+section ExtendLp
+
+variable {𝕜 E : Type*} [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
+  [IsBoundedSMul 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {S T : ℝ≥0}
+
+variable (𝕜) in
+/-- Extend a finite-horizon `Lᵖ` function by zero to a longer horizon, isometrically. -/
+noncomputable def timeMeasureExtendLp (hST : S ≤ T) :
+    Lp E p (timeMeasure S) →ₗᵢ[𝕜] Lp E p (timeMeasure T) :=
+  extendByZeroLpₗᵢ 𝕜 (Measure.comap ((↑) : ℝ≥0 → ℝ) volume)
+    measurableSet_Ioc (Ioc_subset_Ioc_right hST)
+
+/-- The horizon extension is represented by the indicator of the shorter horizon. -/
+theorem coeFn_timeMeasureExtendLp (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
+    ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure T] (Ioc 0 S).indicator ⇑f := by
+  exact coeFn_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
+
+/-- Extending an initial-interval indicator within the shorter horizon preserves it. -/
+@[simp]
+theorem timeMeasureExtendLp_indicatorConstLp_Iic (hST : S ≤ T) {t : ℝ≥0}
+    (ht : t ≤ S) (c : E) :
+    timeMeasureExtendLp 𝕜 hST
+        (indicatorConstLp p (measurableSet_Iic (a := t)) (measure_ne_top _ _) c) =
+      indicatorConstLp p (measurableSet_Iic (a := t)) (measure_ne_top _ _) c := by
+  have hi : (Ioc 0 S).indicator ⇑(indicatorConstLp (μ := timeMeasure S) p
+      (measurableSet_Iic (a := t)) (measure_ne_top _ _) c) =ᵐ[timeMeasure T]
+      (Ioc 0 S).indicator ((Iic t).indicator (fun _ ↦ c)) :=
+    ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq measurableSet_Ioc).mp
+      (indicatorConstLp_coeFn (μ := timeMeasure S) (p := p)
+        (hs := measurableSet_Iic (a := t)) (hμs := measure_ne_top _ _) (c := c)))
+  apply Lp.ext
+  filter_upwards [coeFn_timeMeasureExtendLp (𝕜 := 𝕜) hST
+    (indicatorConstLp p (measurableSet_Iic (a := t)) (measure_ne_top _ _) c), hi,
+    indicatorConstLp_coeFn (μ := timeMeasure T) (p := p)
+      (hs := measurableSet_Iic (a := t)) (hμs := measure_ne_top _ _) (c := c),
+    ae_mem_Ioc_timeMeasure T] with u he hi hc hu
+  rw [he, hi, hc]
+  by_cases hut : u ≤ t
+  · simp [hut, hu.1, hut.trans ht]
+  · simp [hut, indicator_apply]
+
+end ExtendLp
 
 end TauCeti.Probability

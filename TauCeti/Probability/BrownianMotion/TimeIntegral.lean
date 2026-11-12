@@ -49,6 +49,12 @@ theorem coeFn_toL2 (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
     ⇑(hB.toL2 t) =ᵐ[P] B t :=
   MemLp.coeFn_toLp _
 
+/-- The Brownian evaluation class at time zero vanishes. -/
+@[simp]
+theorem toL2_zero (hB : IsPreBrownianReal B P) : hB.toL2 0 = 0 := by
+  exact Lp.eq_zero_iff_ae_eq_zero.2
+    ((hB.coeFn_toL2 0).trans hB.eval_zero_ae_eq_zero)
+
 /-- The inner product of two Brownian evaluation classes is their covariance `min s t`. -/
 @[simp]
 theorem inner_toL2 (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
