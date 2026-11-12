@@ -964,7 +964,9 @@ on row vectors, `φ ↦ ∑_k (f_{k+1} ⊗ 1) (φ ⊗ δ^k)`, the sum over the p
 (`TauCeti.TypeDStructure.typeABoxMapOfHom_apply_eq_sum`). It is the `M'`-component of the box
 tensor differential of the mapping cone of `f`, restricted to row vectors with values in `M`. As
 for `TauCeti.TypeDStructure.typeABoxDifferential`, the sum is finite when `N`, or `M`, `M'` and
-`f`, are bounded, and the construction is `0` by convention otherwise. -/
+`f`, are bounded; the construction is `0` by convention whenever the operations of the matrix
+module of the mapping cone of `f` along the coefficient matrix `δ` of `N` do not vanish from
+some arity on. -/
 noncomputable def typeABoxMapOfHom (N : TypeDStructure d ι X)
     (f : UngradedAInfinityRightModuleHom Mm Mm') : (X → M) →ₗ[R] X → M' :=
   (LinearMap.snd R M M').compLeft X ∘ₗ N.typeABoxDifferential f.cone ∘ₗ
