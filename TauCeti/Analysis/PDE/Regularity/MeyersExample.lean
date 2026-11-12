@@ -197,7 +197,6 @@ private theorem continuous_radialCoord (hμ : 0 < μ) (i : Fin 2) :
 private theorem norm_radialCoordGradient_le (hμ0 : 0 < μ) (hμ1 : μ ≤ 1) (i : Fin 2)
     {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0) :
     ‖radialCoordGradient μ i x‖ ≤ 2 * ‖x‖ ^ (μ - 1) := by
-  have hxpos := norm_pos_iff.2 hx
   have hxi : |x i| ≤ ‖x‖ := by simpa using PiLp.norm_apply_le x i
   calc ‖radialCoordGradient μ i x‖
       ≤ ‖x‖ ^ (μ - 1) * 1 + |μ - 1| * ‖x‖ ^ (μ - 3) * |x i| * ‖x‖ := by
@@ -413,10 +412,6 @@ private theorem mul_rpow_le_norm_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ 
   simp only [Fin.isValue, one_ne_zero, ↓reduceIte]
   generalize ‖x‖ ^ (μ - 3) = t
   rw [hr]
-  have key : (t * ((x 0 ^ 2 + x 1 ^ 2) * 1 + (μ - 1) * x 0 * x 0)) ^ 2 +
-      (t * ((x 0 ^ 2 + x 1 ^ 2) * 0 + (μ - 1) * x 0 * x 1)) ^ 2 -
-      (μ * (t * (x 0 ^ 2 + x 1 ^ 2))) ^ 2 =
-      t ^ 2 * (x 0 ^ 2 + x 1 ^ 2) * (1 - μ ^ 2) * x 1 ^ 2 := by ring
   have : 0 ≤ t ^ 2 * (x 0 ^ 2 + x 1 ^ 2) * (1 - μ ^ 2) * x 1 ^ 2 :=
     mul_nonneg (mul_nonneg (by positivity) hc) (sq_nonneg _)
   linarith

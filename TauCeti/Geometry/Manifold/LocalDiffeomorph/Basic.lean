@@ -86,6 +86,10 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
   diffeomorphisms out of the target of a local diffeomorphism.
 * `IsLocalDiffeomorphAt.of_comp_left`: a continuous map followed by a local diffeomorphism is a
   local diffeomorphism if the composite is one.
+* `TauCeti.isLocalDiffeomorphAt_of_writtenInExtChartAt`: at an interior point with interior image,
+  a continuous map whose extended-chart representative is a local diffeomorphism is one.
+* `TauCeti.isLocalDiffeomorphAt_of_fderiv_eq`: the inverse function theorem in a Banach space, as a
+  local diffeomorphism.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
 
 -/
@@ -532,6 +536,40 @@ theorem _root_.IsLocalDiffeomorphAt.of_comp_left {F' : Type*} [NormedAddCommGrou
   · obtain ⟨⟨hyΨ, hyt⟩, -⟩ : (y ∈ Ψ.source ∧ y ∈ t) ∧ _ := by simpa using hy
     simp [← hfeΨ hyΨ, hf.localInverse_left_inv (hte hyt)]
 
+/-- The extended chart at `x` is a `C^n` local diffeomorphism to the model vector space at every
+point of its source whose chart image lies in the interior of the chart target. -/
+theorem isLocalDiffeomorphAt_extChartAt [IsManifold I n M] {x y : M}
+    (hy : y ∈ (extChartAt I x).source) (hy' : extChartAt I x y ∈ interior (extChartAt I x).target) :
+    IsLocalDiffeomorphAt I 𝓘(𝕂, E) n (extChartAt I x) y :=
+  isLocalDiffeomorphAt_of_eqOn (by rw [extChartPartialDiffeomorph_source]; exact ⟨hy, hy'⟩)
+    fun _ _ ↦ by simp
+
+/-- The inverse of the extended chart at `x` is a `C^n` local diffeomorphism from the model vector
+space at every point of the interior of the chart target. -/
+theorem isLocalDiffeomorphAt_extChartAt_symm [IsManifold I n M] {x : M} {z : E}
+    (hz : z ∈ interior (extChartAt I x).target) :
+    IsLocalDiffeomorphAt 𝓘(𝕂, E) I n (extChartAt I x).symm z :=
+  isLocalDiffeomorphAt_of_eqOn (Φ := (extChartPartialDiffeomorph I n x).symm) (by simpa using hz)
+    fun _ _ ↦ by simp
+
+/-- **Local diffeomorphisms are detected in extended charts.** A map `f` continuous at an interior
+point `x` with interior image `f x`, whose representative in the extended charts at `x` and `f x` is
+a `C^n` local diffeomorphism at the chart image of `x`, is a `C^n` local diffeomorphism at `x`. -/
+theorem isLocalDiffeomorphAt_of_writtenInExtChartAt [IsManifold I n M] [IsManifold J n N]
+    {f : M → N} {x : M} (hIx : I.IsInteriorPoint x) (hJfx : J.IsInteriorPoint (f x))
+    (hf : ContinuousAt f x)
+    (hw : IsLocalDiffeomorphAt 𝓘(𝕂, E) 𝓘(𝕂, F) n (writtenInExtChartAt I J x f)
+      (extChartAt I x x)) :
+    IsLocalDiffeomorphAt I J n f x := by
+  -- Cancel the inverse chart on the right, then the chart at `f x` on the left.
+  -- By definition, `writtenInExtChartAt I J x f` is
+  -- `(extChartAt J (f x) ∘ f) ∘ (extChartAt I x).symm`.
+  have h := hw.of_comp_right (f := extChartAt J (f x) ∘ f) (e := (extChartAt I x).symm)
+    (isLocalDiffeomorphAt_extChartAt_symm ((ModelWithCorners.isInteriorPoint_iff (I := I)).mp hIx))
+  rw [extChartAt_to_inv] at h
+  exact h.of_comp_left (isLocalDiffeomorphAt_extChartAt (mem_extChartAt_source (f x))
+    ((ModelWithCorners.isInteriorPoint_iff (I := J)).mp hJfx)) hf
+
 end EqOn
 
 end General
@@ -548,6 +586,18 @@ variable {𝕂 : Type*} [RCLike 𝕂]
   {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
   [IsManifold I n M] [IsManifold J n N] {f : M → N} {s : Set M} {x : M}
 
+/-- **The inverse function theorem in a Banach space**, as a local diffeomorphism. If `g` is `C^n`
+on an open set `t` with `1 ≤ n`, `a` belongs to `t`, and the derivative at `a` is a continuous
+linear equivalence, then `g` is a `C^n` local diffeomorphism at `a`. -/
+theorem isLocalDiffeomorphAt_of_fderiv_eq {g : E → F} {t : Set E} {a : E}
+    (hg : ContDiffOn 𝕂 n g t) (ht : IsOpen t) (ha : a ∈ t) (hn : 1 ≤ n) {e : E ≃L[𝕂] F}
+    (he : (e : E →L[𝕂] F) = fderiv 𝕂 g a) :
+    IsLocalDiffeomorphAt 𝓘(𝕂, E) 𝓘(𝕂, F) n g a := by
+  obtain ⟨Θ, hΘcoe, hΘmem, hΘsub, hΘsymm⟩ := ContDiffOn.exists_openPartialHomeomorph hg ht ha hn he
+  exact isLocalDiffeomorphAt_of_eqOn
+    (Φ := PartialDiffeomorph.ofOpenPartialHomeomorph Θ (hΘcoe ▸ hg.mono hΘsub) hΘsymm) hΘmem
+    fun _ _ ↦ by simp [hΘcoe]
+
 /-- **The inverse function theorem for manifolds.** If `f` is `C^n` on an open set `s` with
 `1 ≤ n`, `x` belongs to `s` and is an interior point, and the differential at `x` is a
 continuous linear equivalence, then `f` is a `C^n` local diffeomorphism at `x`.
@@ -559,83 +609,31 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
     (he : (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = mfderiv I J f x) :
     IsLocalDiffeomorphAt I J n f x := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
-  set φ := extChartAt I x with hφ
-  set ψ := extChartAt J (f x) with hψ
-  set g : E → F := ψ ∘ f ∘ φ.symm with hg
-  set t : Set E := interior φ.target ∩ φ.symm ⁻¹' (s ∩ f ⁻¹' ψ.source) with ht
-  -- The set on which the chart representative of `f` is known to be `C^n` is open.
-  have hu : IsOpen (s ∩ f ⁻¹' ψ.source) :=
-    hf.continuousOn.isOpen_inter_preimage hs (isOpen_extChartAt_source (f x))
-  have htopen : IsOpen t :=
-    ((continuousOn_extChartAt_symm x).mono interior_subset).isOpen_inter_preimage
-      isOpen_interior hu
-  have hxt : φ x ∈ t := by
-    refine ⟨?_, ?_⟩
-    · simpa only [hφ] using (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hIx
-    simp only [hφ, hψ, mem_preimage, extChartAt_to_inv]
-    exact ⟨hx, mem_extChartAt_source (f x)⟩
-  -- `g` on `t` is exactly the chart representative of `f` appearing in `contMDiffOn_iff`.
-  have hgt : ContDiffOn 𝕂 n g t := by
-    have hfull := (contMDiffOn_iff.1 hf).2 x (f x)
-    have hcoord : ContDiffOn 𝕂 n g
-        (φ.target ∩ φ.symm ⁻¹' (s ∩ f ⁻¹' ψ.source)) := by
-      simpa only [hg, hφ, hψ] using hfull
-    apply hcoord.mono
-    intro y hy
-    rw [ht] at hy
-    exact ⟨interior_subset hy.1, hy.2⟩
-  -- Its derivative at `φ x` is the given equivalence: `g` is `f` written in the extended charts,
-  -- and `TangentSpace I x` and `TangentSpace J (f x)` are the model spaces `E` and `F`.
-  have hmdiff : MDifferentiableAt I J f x := (hf.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt hn0
-  have hsurj : Function.Surjective (mfderiv I J f x) := by
-    rw [← he]
-    exact e.surjective
+  have hmdiff : MDifferentiableAt I J f x :=
+    (hf.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt hn0
+  -- A surjective differential at an interior point has interior image.
   have hJfx : J.IsInteriorPoint (f x) :=
-    hmdiff.isInteriorPoint_of_surjective_mfderiv hsurj hIx
-  have hwritten : fderiv 𝕂 (writtenInExtChartAt I J x f) (φ x) = fderiv 𝕂 g (φ x) := by
-    simp only [hg, hφ, hψ, writtenInExtChartAt]
-  have hfd : (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = fderiv 𝕂 g (φ x) := by
-    rw [he, hmdiff.mfderiv]
-    rw [fderivWithin_of_mem_nhds]
-    · exact hwritten
-    · -- `IsInteriorPoint` is defined by membership in the interior of the model range, the
-      -- domain used by the extended-coordinate derivative.
-      simpa only [hφ] using mem_interior_iff_mem_nhds.mp hIx
-  obtain ⟨Θ, hΘcoe, hΘmem, hΘsub, hΘsymm⟩ :=
-    ContDiffOn.exists_openPartialHomeomorph hgt htopen hxt hn hfd
-  have hΘsmooth : ContDiffOn 𝕂 n Θ Θ.source := hΘcoe ▸ hgt.mono hΘsub
-  set Ψ : PartialDiffeomorph 𝓘(𝕂, E) J E N n :=
-    (PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘsmooth hΘsymm).trans
-      (extChartPartialDiffeomorph J n (f x)).symm with hΨ
-  set Φ : PartialDiffeomorph I J M N n :=
-    (extChartPartialDiffeomorph I n x).trans Ψ with hΦ
-  -- Compute the composite source and the composite map through Mathlib's `trans` and `symm`
-  -- simp lemmas for partial diffeomorphisms.
-  have hsource : Φ.source =
-      (φ.source ∩ φ ⁻¹' interior φ.target) ∩
-        φ ⁻¹' (Θ.source ∩ Θ ⁻¹' interior ψ.target) := by
-    simp [hΦ, hΨ, extChartPartialDiffeomorph_source, hφ, hψ, preimage_inter]
-  have hcoe (y : M) : Φ y = ψ.symm (Θ (φ y)) := by
-    simp [hΦ, hΨ, hφ, hψ]
-  have hinvx : φ.symm (φ x) = x := by rw [hφ]; exact extChartAt_to_inv x
-  have hgx : Θ (φ x) = ψ (f x) := by rw [hΘcoe]; simp only [hg, Function.comp_apply, hinvx]
-  have hxφ : φ x ∈ interior φ.target := by
-    simpa only [hφ] using (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hIx
-  have hxψ : ψ (f x) ∈ interior ψ.target := by
-    simpa only [hψ] using (ModelWithCorners.isInteriorPoint_iff (I := J)).mp hJfx
-  have hxΦ : x ∈ Φ.source := by
-    rw [hsource]
-    refine ⟨⟨mem_extChartAt_source x, hxφ⟩, hΘmem, ?_⟩
-    simpa only [mem_preimage, hgx] using hxψ
-  refine isLocalDiffeomorphAt_of_eqOn hxΦ fun y hy => ?_
-  rw [hsource] at hy
-  obtain ⟨⟨hy₁, -⟩, hy₂, -⟩ := hy
-  have hyinv : φ.symm (φ y) = y := φ.left_inv hy₁
-  have hyN : f y ∈ ψ.source := by
-    have := (hΘsub hy₂).2.2
-    rwa [hyinv] at this
-  have hgy : Θ (φ y) = ψ (f y) := by rw [hΘcoe]; simp only [hg, Function.comp_apply, hyinv]
-  rw [hcoe y, hgy, ψ.left_inv hyN]
+    hmdiff.isInteriorPoint_of_surjective_mfderiv (he ▸ e.surjective) hIx
+  refine isLocalDiffeomorphAt_of_writtenInExtChartAt hIx hJfx hmdiff.continuousAt ?_
+  -- The chart representative of `f` is `C^n` on an open neighbourhood `t` of `extChartAt I x x`.
+  let t : Set E := interior (extChartAt I x).target ∩
+    (extChartAt I x).symm ⁻¹' (s ∩ f ⁻¹' (extChartAt J (f x)).source)
+  have ht : IsOpen t :=
+    ((continuousOn_extChartAt_symm x).mono interior_subset).isOpen_inter_preimage isOpen_interior
+      (hf.continuousOn.isOpen_inter_preimage hs (isOpen_extChartAt_source (f x)))
+  have hxt : extChartAt I x x ∈ t := by
+    refine ⟨(ModelWithCorners.isInteriorPoint_iff (I := I)).mp hIx, ?_⟩
+    rw [mem_preimage, extChartAt_to_inv]
+    exact ⟨hx, mem_extChartAt_source (f x)⟩
+  have hgt : ContDiffOn 𝕂 n (writtenInExtChartAt I J x f) t := by
+    simp only [writtenInExtChartAt]
+    exact ((contMDiffOn_iff.1 hf).2 x (f x)).mono fun _ hy ↦ ⟨interior_subset hy.1, hy.2⟩
+  -- Its derivative there is `e`: the tangent spaces are the model spaces, and the model range is a
+  -- neighbourhood of the chart image of the interior point `x`.
+  have hfd : (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) =
+      fderiv 𝕂 (writtenInExtChartAt I J x f) (extChartAt I x x) := by
+    rw [he, hmdiff.mfderiv_abuse, fderivWithin_of_mem_nhds (mem_interior_iff_mem_nhds.mp hIx)]
+  exact isLocalDiffeomorphAt_of_fderiv_eq hgt ht hxt hn hfd
 
 /-- For a map which is `C^n` on an open set, with `1 ≤ n`, being a `C^n` local diffeomorphism at an
 interior point is exactly invertibility of the differential there. -/

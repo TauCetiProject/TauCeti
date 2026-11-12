@@ -220,9 +220,6 @@ theorem exists_isClosedImmersion_generalLinear
       (commHopfAlgCatOpEquivAffineGroupSchemeCat.functorCompιIso
         (CommRingCat.of k)).app (E.inverse.obj G)
   have hAfinite : Algebra.FiniteType k A := by
-    let : MorphismProperty.RespectsIso
-        (@LocallyOfFiniteType : MorphismProperty Scheme.{u}) :=
-      MorphismProperty.IsStableUnderBaseChange.respectsIso
     have hA : LocallyOfFiniteType
         ((hopfSpec (CommRingCat.of k)).obj (Opposite.op A)).X.hom :=
       (MorphismProperty.over_iso_iff

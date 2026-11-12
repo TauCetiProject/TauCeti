@@ -18,9 +18,6 @@ and right translation needed for averaging representations.
 
 The implementation reuses Mathlib's Bochner integral, its commutation with continuous linear maps,
 and the generic left-, right-, and inversion-invariance lemmas for integrals on groups.
-
-The construction is the averaging operator from Layer 0 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
 -/
 
 public section

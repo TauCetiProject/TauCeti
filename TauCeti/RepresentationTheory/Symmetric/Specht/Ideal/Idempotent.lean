@@ -43,6 +43,8 @@ It is the dimension of the ideal that appears below; nothing here assumes the co
   form `dim • (c_t * c_t) = n! • c_t`.
 * `TauCeti.YoungTableau.youngSymmetrizer_sq`: **essential idempotence**,
   `c_t * c_t = (n! / dim) • c_t`.
+* `TauCeti.YoungTableau.mul_youngSymmetrizer_of_mem_spechtIdeal`: right multiplication by `c_t` is
+  the same scalar on the whole left ideal `ℚ[Sₙ] c_t`.
 * `TauCeti.YoungTableau.isIdempotentElem_smul_youngSymmetrizer`: the normalisation
   `(dim / n!) • c_t` is idempotent.
 * `TauCeti.YoungTableau.youngSymmetrizerOver_sq`: essential idempotence of the Young symmetrizer
@@ -135,6 +137,15 @@ theorem youngSymmetrizer_sq (t : YoungTableau μ) :
     _ = ((μ.card.factorial : ℚ) / (finrank ℚ (spechtIdeal t) : ℚ)) • youngSymmetrizer (R := ℚ) t
       := by
         rw [smul_smul, div_eq_inv_mul]
+
+/-- **The essential idempotence on the left ideal**: right multiplication by `c_t` is the scalar
+`κ_t = n! / dim ℚ[Sₙ] c_t` on `ℚ[Sₙ] c_t`. -/
+theorem mul_youngSymmetrizer_of_mem_spechtIdeal {t : YoungTableau μ}
+    {x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))} (hx : x ∈ spechtIdeal t) :
+    x * youngSymmetrizer (R := ℚ) t =
+      ((μ.card.factorial : ℚ) / (finrank ℚ (spechtIdeal t) : ℚ)) • x := by
+  obtain ⟨a, rfl⟩ := (mem_spechtIdeal_iff t x).mp hx
+  rw [mul_assoc, youngSymmetrizer_sq, mul_smul_comm]
 
 /-- The square of a Young symmetrizer is nonzero: the scalar `n! / dim` is positive and `c_t`
 itself is nonzero. -/

@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
+public import TauCeti.LinearAlgebra.AffineSpace.Transverse
 
 /-!
 # Generic loci and finite affine arrangements
@@ -13,11 +14,20 @@ public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
 The generic locus of an affine family consists of the points avoiding every member.
 Finite exceptional arrangements support union and transport by affine equivalences,
 over an arbitrary ring, with points in an affine space whose direction module is
-implicit. No topology or chosen origin is required.
+implicit. No topology or chosen origin is required. The arrangement `point p` has a single
+point as its only exception, and a line starting at a generic point meets an arrangement at only
+finitely many parameters.
 
 Adapted from `Mei/Geometry/Affine/Generic.lean` at commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f`:
 https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15d0e7f/Mei/Geometry/Affine/Generic.lean
+
+The point arrangement and the finiteness of exceptional parameters along a line are adapted from
+`Mei/Geometry/Affine/Generic/Examples.lean` and `Mei/Geometry/Affine/Generic/Line.lean` in Mei at
+commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`. Original copyright and author credit are
+retained.
+
+Source: https://github.com/yuma-mizuno-lean/Mei/blob/3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca/Mei/Geometry/Affine/Generic/Examples.lean
 -/
 
 public section
@@ -135,6 +145,54 @@ theorem exceptions_comap (E : ExceptionalArrangement k Q) (e : P ≃ᵃ[k] Q) :
 theorem isGeneric_comap_iff {E : ExceptionalArrangement k Q} {e : P ≃ᵃ[k] Q} {x : P} :
     (E.comap e).IsGeneric x ↔ E.IsGeneric (e x) := by
   simpa [comap] using (isGeneric_map_iff (E := E) e.symm (x := e x))
+
+section Point
+
+variable [Nontrivial V]
+
+/-- The arrangement whose only exception is a point, in a nontrivial space. -/
+noncomputable def point (p : P) : ExceptionalArrangement k P :=
+  ⟨{({p} : AffineSubspace k P)}, fun S hS htop => by
+    obtain rfl := Finset.mem_singleton.mp hS
+    have : Nontrivial P := (vadd_right_injective p).nontrivial
+    exact AffineSubspace.singleton_ne_top k V p htop⟩
+
+/-- The only exception of `point p` is the subspace `{p}`. -/
+@[simp]
+theorem exceptions_point (p : P) :
+    (point p : ExceptionalArrangement k P).exceptions = {({p} : AffineSubspace k P)} := (rfl)
+
+/-- A point is generic for `point p` exactly when it differs from `p`. -/
+@[simp]
+theorem isGeneric_point_iff {p x : P} :
+    (point p : ExceptionalArrangement k P).IsGeneric x ↔ x ≠ p := by
+  simp [isGeneric_iff]
+
+end Point
+
+section Line
+
+variable {k : Type*} [DivisionRing k] {V P : Type*} [AddCommGroup V] [Module k V]
+  [AffineSpace V P]
+
+/-- A line starting at a generic point meets an arrangement at finitely many parameter values.
+No transversality or distinctness assumption on its second endpoint is required. -/
+theorem finite_setOf_not_isGeneric_lineMap (E : ExceptionalArrangement k P)
+    {x : P} (hx : E.IsGeneric x) (y : P) :
+    {t : k | ¬ E.IsGeneric (AffineMap.lineMap x y t)}.Finite := by
+  have hS (S : AffineSubspace k P) (hS : S ∈ E.exceptions) :
+      {t : k | AffineMap.lineMap x y t ∈ S}.Subsingleton :=
+    S.subsingleton_preimage_of_notMem (AffineMap.lineMap x y)
+      (t₀ := 0) (by simpa only [AffineMap.lineMap_apply_zero] using isGeneric_iff.mp hx S hS)
+  have he : {t : k | ¬ E.IsGeneric (AffineMap.lineMap x y t)} =
+      ⋃ S ∈ E.exceptions, {t : k | AffineMap.lineMap x y t ∈ S} := by
+    ext t
+    simp only [Set.mem_ofPred_eq, isGeneric_iff, not_forall, not_not, Set.mem_iUnion,
+      exists_prop]
+  rw [he]
+  exact E.exceptions.finite_toSet.biUnion fun S hmem => (hS S hmem).finite
+
+end Line
 
 end ExceptionalArrangement
 

@@ -102,9 +102,11 @@ theorem isFlasque_X₃_of_isFlasque [TopCat.Presheaf.IsFlasque S.X₁.obj]
 /-- **Global sections are exact on flasque kernels.** If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is a short exact
 sequence of sheaves of `R`-modules with `F₁` flasque, then
 `0 ⟶ Γ(F₁) ⟶ Γ(F₂) ⟶ Γ(F₃) ⟶ 0` is short exact. -/
-theorem map_Γ_of_isFlasque [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
+theorem map_Γ_of_isFlasque
     [TopCat.Presheaf.IsFlasque S.X₁.obj] :
     (S.map (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))).ShortExact := by
+  have : (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive :=
+    Functor.additive_of_preserves_binary_products _
   obtain ⟨h, hm⟩ := (Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono
     (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))).1 inferInstance S hS
   refine ShortComplex.ShortExact.mk' h hm ?_

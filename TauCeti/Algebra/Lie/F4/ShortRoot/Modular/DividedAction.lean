@@ -107,17 +107,37 @@ theorem f4ModularDividedAdjointSquare_rootVector_opposite (k : Fin 4 ⊕ Fin 4) 
   rw [f4ModularRootVector_eq]
   congr 1
 
-/-- A short-source second divided power carries a long root to another long root with unit
-coefficient after reduction modulo two. -/
+/-- **The second divided power of a short-source root vector, modulo two.** If the root `γ` is the
+endpoint `β + 2 α` of the double step from `β` along the signed simple root `α`, then the divided
+square carries the root vector of `β` to that of `γ`. If `β` is opposite to `α`, then `γ = α` and
+this is the exceptional opposite-root column. Otherwise `α` is short and `β` and `γ` are long, and
+the coefficient is one after reduction modulo two. -/
 theorem f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short
     (k : Fin 4 ⊕ Fin 4) (β γ : Fin 48)
-    (hα : f4Length (f4SignedSimpleRootIndex k) = 1)
-    (hβ : f4Length β = 2)
     (h : f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β +
         (2 : ℤ) • f4SimplyConnectedRootDatum.root (f4SignedSimpleRootIndex k)) :
     f4ModularDividedAdjointSquare k (f4ModularRootVector β) =
       f4ModularRootVector γ := by
+  rcases eq_or_ne β (f4OppositeRootIndex (f4SignedSimpleRootIndex k)) with rfl | hopp
+  · have hroot : f4SimplyConnectedRootDatum.root
+        (f4OppositeRootIndex (f4SignedSimpleRootIndex k)) =
+        -f4SimplyConnectedRootDatum.root (f4SignedSimpleRootIndex k) := by
+      rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum.root_reflectionPerm,
+        f4SimplyConnectedRootDatum.reflection_apply_self]
+    have hγ : γ = f4SignedSimpleRootIndex k := by
+      apply f4SimplyConnectedRootDatum.root.injective
+      rw [h, hroot]
+      module
+    rw [hγ]
+    exact f4ModularDividedAdjointSquare_rootVector_opposite k
+  have hneg : f4SimplyConnectedRootDatum.root β ≠
+      -f4SimplyConnectedRootDatum.root (f4SignedSimpleRootIndex k) := fun hb ↦ hopp (by
+    apply f4SimplyConnectedRootDatum.root.injective
+    rw [hb, f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum.root_reflectionPerm,
+      f4SimplyConnectedRootDatum.reflection_apply_self])
+  obtain ⟨hα, hβ⟩ :=
+    f4Length_eq_one_and_eq_two_of_root_eq_add_two_zsmul (f4SignedSimpleRootIndex k) β γ hneg h
   obtain ⟨ε, hεabs, hε⟩ :=
     exists_f4_dividedAd_sq_rootVector_eq_smul_of_long_add_two_short
       (f4SignedSimpleRootIndex k) β γ hα hβ h
@@ -180,12 +200,17 @@ theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_short
 /-- Modulo two, the divided square vanishes when the second root-string endpoint is absent. -/
 theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_no_endpoint
     (k : Fin 4 ⊕ Fin 4) (β : Fin 48)
-    (hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k))
     (hno : ∀ γ : Fin 48, f4SimplyConnectedRootDatum.root γ ≠
       f4SimplyConnectedRootDatum.root β +
         (2 : ℤ) •
           f4SimplyConnectedRootDatum.root (f4SignedSimpleRootIndex k)) :
     f4ModularDividedAdjointSquare k (f4ModularRootVector β) = 0 := by
+  have hopp : β ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k) := by
+    rintro rfl
+    refine hno (f4SignedSimpleRootIndex k) ?_
+    rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum.root_reflectionPerm,
+      f4SimplyConnectedRootDatum.reflection_apply_self]
+    module
   exact f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero k β
     (f4_dividedPower_two_ad_rootVector_eq_zero_of_no_endpoint
       (f4SignedSimpleRootIndex k) β hopp hno)

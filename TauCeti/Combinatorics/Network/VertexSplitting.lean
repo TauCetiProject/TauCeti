@@ -194,8 +194,8 @@ theorem splitLift_true {s t : V} (p : ArrowWalk Q s t) :
 /-- The projection of a walk in the split network to `Q`, which forgets its split arrows and keeps
 its original arrows. -/
 def splitProj {x : V × Bool} : ∀ {y : V × Bool}, ArrowWalk (SplitHom Q) x y → ArrowWalk Q x.1 y.1
-  | _, @Quiver.Path.nil _ .(_) _ => nil _
-  | _, @Quiver.Path.cons _ .(_) _ _ _ p e => (splitProj p).comp e.toWalk
+  | _, @Quiver.Path.nil _ .(_) .(x) => nil _
+  | _, @Quiver.Path.cons _ .(_) .(x) _ _ p e => (splitProj p).comp e.toWalk
 
 @[simp]
 theorem splitProj_nil (x : V × Bool) : (nil x : ArrowWalk (SplitHom Q) x x).splitProj = nil x.1 :=
@@ -428,12 +428,12 @@ starting at the exit of `s`: the lift of `p.cons e` with the split arrow of `s` 
 front. It ends at the entrance of `x` for `b = false` and at the exit of `x` for `b = true`. -/
 def splitLiftExit {s : V} : ∀ {t x : V} (b : Bool), ArrowWalk Q s t → Q t x →
     ArrowWalk (SplitHom Q) (s, true) (x, b)
-  | _, _, false, @Quiver.Path.nil _ .(_) _, e => (nil _).cons (SplitHom.original e)
-  | _, _, true, @Quiver.Path.nil _ .(_) _, e =>
+  | _, _, false, @Quiver.Path.nil _ .(_) .(s), e => (nil _).cons (SplitHom.original e)
+  | _, _, true, @Quiver.Path.nil _ .(_) .(s), e =>
     ((nil _).cons (SplitHom.original e)).cons (SplitHom.split _)
-  | _, _, false, @Quiver.Path.cons _ .(_) _ _ _ p e', e =>
+  | _, _, false, @Quiver.Path.cons _ .(_) .(s) _ _ p e', e =>
     (splitLiftExit true p e').cons (SplitHom.original e)
-  | _, _, true, @Quiver.Path.cons _ .(_) _ _ _ p e', e =>
+  | _, _, true, @Quiver.Path.cons _ .(_) .(s) _ _ p e', e =>
     ((splitLiftExit true p e').cons (SplitHom.original e)).cons (SplitHom.split _)
 
 @[simp]
