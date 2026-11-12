@@ -136,7 +136,7 @@ private lemma quasiIso_cechAugmentation_prod_finset {ι : Type u} (U : ι → Op
   | singleton a =>
     exact quasiIso_cechAugmentation_prod_of_hom _ isTerminalTop _ Y
       (i₀ := ⟨a, Finset.mem_singleton_self a⟩) (homOfLE (by simpa using hY))
-  | cons a s ha hs ih =>
+  | cons a s ha _ ih =>
     -- the cover refines the two-member cover by `U a` and `⋃_{i ∈ s} U i`
     let W : Finset.cons a s ha → Opens X := fun i ↦ U i
     let V : Fin 2 → Opens X := ![U a, s.sup U]

@@ -82,6 +82,17 @@ theorem HasSimilarityFactorizationAt.of_eqOn_ball {r : ℝ} (hr : 0 < r)
     hσ.analyticAt (ball_mem_nhds z₀ hr), eventually_of_mem (ball_mem_nhds z₀ hr) hξ⟩
 
 omit [CompleteSpace V] in
+/-- A family of real-linear maps continuous at `z₀` and invertible there carries a factorization of
+`η` at `z₀` to one of `z ↦ Φ z (η z)`. This reduces factorizations for a variable complex
+structure to the standard one. -/
+theorem HasSimilarityFactorizationAt.clm_apply {η : ℂ → V} (h : HasSimilarityFactorizationAt η z₀)
+    (hΦ : ContinuousAt Φ z₀) (hΦ₀ : IsUnit (Φ z₀)) :
+    HasSimilarityFactorizationAt (fun z ↦ Φ z (η z)) z₀ := by
+  obtain ⟨Φ', σ, hΦ', hΦ'₀, hσ, hη⟩ := h
+  exact ⟨fun z ↦ Φ z ∘L Φ' z, σ, hΦ.clm_comp hΦ', hΦ₀.mul hΦ'₀, hσ,
+    hη.mono fun z hz ↦ by simp [hz]⟩
+
+omit [CompleteSpace V] in
 /-- A function analytic at `z₀` factors there with `Φ = 1`. -/
 theorem _root_.AnalyticAt.hasSimilarityFactorizationAt (hξ : AnalyticAt ℂ ξ z₀) :
     HasSimilarityFactorizationAt ξ z₀ :=

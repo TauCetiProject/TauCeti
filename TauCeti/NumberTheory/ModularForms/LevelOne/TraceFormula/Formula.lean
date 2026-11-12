@@ -12,24 +12,32 @@ import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.P
 import TauCeti.NumberTheory.Divisors
 
 /-!
-# The class-number trace formula on period polynomials
+# The class-number trace formula for Popa–Zagier's explicit element
 
-This file assembles the trace of Popa–Zagier's explicit element on the full period-polynomial
-space `W_w`. For positive even `w` and `n > 0`, it is
+This file assembles the trace of Popa–Zagier's explicit element `Tₙ` on the ambient space `V_w` of
+even-degree binary forms and, for `w ≠ 0`, on the full period-polynomial space `W_w`. For even `w`
+and `n > 0` over a field of characteristic zero, the trace is
 
 `σ_{w+1}(n) - ∑_{ad=n} min(a,d)^{w+1} - ∑_{t²≤4n} H(4n-t²) P_{w+2}(t,n)`.
 
 Here Popa–Zagier's `P_{w+2}(t,n)` is `(dickson 2 n w).eval t`, the degree-`w`
 second-kind Dickson polynomial evaluated at `t`. The convention `H(0) = -1/12` absorbs the
-repeated-root contribution. The trace is on `W_w`, not on cusp forms: the latter requires the
-Hecke-equivariant Eichler–Shimura comparison and subtraction of the Eisenstein eigenvalue,
-followed by division by two.
+repeated-root contribution. For `w > 0`, the trace on `W_w` equals the ambient trace on `V_w` by
+Popa–Zagier's trace reduction; passing to cusp forms uses the Hecke-equivariant Eichler–Shimura
+comparison and subtraction of the Eisenstein eigenvalue `σ_{w+1}(n)`, followed by division by two.
 
 The inputs are the fixed-trace assembly in `ExplicitElement.Trace` and the elliptic,
 hyperbolic and repeated-root fibre evaluations. Pairing the fibres of traces `t` and `-t`
 removes the sign asymmetry of the explicit representative. Split hyperbolic traces correspond
 to unordered positive factorizations `n = ad`; the Dickson root formula changes their
 contribution into `d^{w+1} - a^{w+1}`.
+
+## Main results
+
+* `trace_periodAction_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber` and
+  `trace_periodActionRestrict_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber`
+  (in `TauCeti.TraceFormulaMatrixModule`): the class-number trace formula on `V_w` (for even `w`)
+  and on `W_w` (for positive even `w`).
 
 ## References
 
@@ -41,7 +49,7 @@ contribution into `d^{w+1} - a^{w+1}`.
 
 public section
 
-open Matrix Polynomial
+open Matrix MvPolynomial Polynomial
 open scoped ArithmeticFunction.sigma
 
 namespace TauCeti.TraceFormulaMatrixModule
@@ -139,7 +147,7 @@ private lemma fibreWeight_pair (n : ℕ) (hn : 0 < n) (t : ℤ) :
       12 * ∑ p ∈ n.divisorsAntidiagonal with p.1 < p.2,
         if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0 := by
   classical
-  set s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2) with hs
+  set s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)
   -- In the elliptic range no increasing factor pair can have trace ±t.
   by_cases hD : t ^ 2 ≤ 4 * n
   · have hz : ∑ p ∈ s,
@@ -187,7 +195,7 @@ private lemma sum_split_trace_mul_dickson (n w : ℕ) (hw : Even w) (p : ℕ × 
   classical
   set I := Finset.Icc (-4 * (n : ℤ)) (4 * n)
   let P (t : ℤ) : ℚ := (dickson 2 (n : ℚ) w).eval t
-  obtain ⟨hp, hlt⟩ := Finset.mem_filter.mp hp
+  have hp := (Finset.mem_filter.mp hp).1
   have ha := Nat.pos_of_mem_divisors (Nat.fst_mem_divisors_of_mem_antidiagonal hp)
   have hm := (Nat.mem_divisorsAntidiagonal.mp hp).1
   have hs : (0 : ℤ) < (p.1 : ℤ) + p.2 := by omega
@@ -273,6 +281,31 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
   dsimp only [I, P] at hsym'
   linarith
 
+/-- **The class-number trace formula on binary forms.** Over a characteristic-zero field `K`, for
+every even degree `w` (including `w = 0`) and `n > 0`, Popa–Zagier's explicit element `Tₙ` has
+trace `σ_{w+1}(n)` minus the divisor-minimum sum and the Hurwitz-class-number sum on the space
+`V_w` of degree-`w` binary forms, with `H(0) = -1/12` at discriminant zero. -/
+theorem trace_periodAction_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber
+    {K : Type*} [Field K] [CharZero K] (n : ℕ) (hn : 0 < n)
+    (w : ℕ) (hw : Even w) :
+    LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)
+        (periodAction hw (popaZagierElement K (n : ℤ))) =
+      (ArithmeticFunction.sigma (w + 1) n : K) -
+        (∑ p ∈ n.divisorsAntidiagonal, ((min p.1 p.2 : ℕ) : K) ^ (w + 1)) -
+        ∑ t ∈ (Finset.Icc (-4 * (n : ℤ)) (4 * n)).filter (fun t ↦ t ^ 2 ≤ 4 * (n : ℤ)),
+          (hurwitzClassNumber (4 * (n : ℤ) - t ^ 2).toNat : K) *
+            (dickson 2 (n : K) w).eval (t : K) := by
+  classical
+  have hP (t : ℤ) : (Rat.castHom K) ((dickson 2 (n : ℚ) w).eval (t : ℚ)) =
+      (dickson 2 (n : K) w).eval (t : K) := by
+    simpa only [map_dickson, map_natCast, map_intCast] using
+      (eval_map_apply (Rat.castHom K) (p := dickson 2 (n : ℚ) w) (t : ℚ)).symm
+  have h := congrArg (Rat.castHom K) (sum_fibreWeight n hn w hw)
+  simp only [map_mul, map_inv₀, map_ofNat, map_sum, map_sub, map_natCast, map_pow,
+    fibreWeight_cast, map_intCast, hP] at h
+  rw [trace_periodAction_popaZagierElement_eq_sum_trace_fibres (by exact_mod_cast hn.ne') w hw]
+  simpa only [Rat.coe_castHom, Rat.cast_natCast, Int.cast_natCast] using h
+
 /-- **The class-number trace formula on period polynomials.** For positive even degree `w`,
 Popa–Zagier's explicit Hecke element has trace `σ_{w+1}(n)` minus the divisor-minimum sum and
 the Hurwitz-class-number sum, whose weight `P_{w+2}(t,n)` in Popa–Zagier's indexing is
@@ -288,16 +321,7 @@ theorem trace_periodActionRestrict_popaZagierElement_eq_sigma_sub_min_sub_hurwit
         ∑ t ∈ (Finset.Icc (-4 * (n : ℤ)) (4 * n)).filter (fun t ↦ t ^ 2 ≤ 4 * (n : ℤ)),
           (hurwitzClassNumber (4 * (n : ℤ) - t ^ 2).toNat : K) *
             (dickson 2 (n : K) w).eval (t : K) := by
-  classical
-  have hP (t : ℤ) : (Rat.castHom K) ((dickson 2 (n : ℚ) w).eval (t : ℚ)) =
-      (dickson 2 (n : K) w).eval (t : K) := by
-    simpa only [map_dickson, map_natCast, map_intCast] using
-      (eval_map_apply (Rat.castHom K) (p := dickson 2 (n : ℚ) w) (t : ℚ)).symm
-  have h := congrArg (Rat.castHom K) (sum_fibreWeight n hn w hw)
-  simp only [map_mul, map_inv₀, map_ofNat, map_sum, map_sub, map_natCast, map_pow,
-    fibreWeight_cast, map_intCast, hP] at h
-  rw [trace_periodActionRestrict_popaZagierElement_eq_sum_trace_fibres
-    (by exact_mod_cast hn.ne') w hw hw₀]
-  simpa only [Rat.coe_castHom, Rat.cast_natCast, Int.cast_natCast] using h
+  rw [(exchangeRelations_popaZagierElement K (n : ℤ)).trace_periodActionRestrict_eq_trace hw hw₀,
+    trace_periodAction_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber n hn w hw]
 
 end TauCeti.TraceFormulaMatrixModule
