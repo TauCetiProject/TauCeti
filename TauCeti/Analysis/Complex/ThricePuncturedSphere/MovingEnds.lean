@@ -102,7 +102,7 @@ theorem norm_add_mul_cylindricalEndLift_sub (c a z : ℂ) :
 `‖a i‖ exp (-2π) / 2` from the center of the end. -/
 theorem add_mul_cylindricalEndLift_mem_puncturedSphereTruncation
     (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) (hR : 1 ≤ R) {i : ι} {z : ℂ}
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι} {z : ℂ}
     (h₁ : 1 ≤ z.re) (h₂ : z.re ≤ R) :
     c i + a i * zero.cylindricalEndLift z ∈ puncturedSphereTruncation c a R := by
   set w := c i + a i * zero.cylindricalEndLift z

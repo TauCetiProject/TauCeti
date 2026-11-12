@@ -122,7 +122,7 @@ private theorem le_norm_of_mem_movingEndPiece_none {z : ℝ × ℝ}
 /-- The pieces of the ends lie in the truncation `Σ_R`. -/
 private theorem movingEndPiece_subset
     (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) (hR : 1 ≤ R) (o : Option ι) :
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) (o : Option ι) :
     movingEndPiece c a R o ⊆
       Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R := by
   cases o with
@@ -136,7 +136,7 @@ private theorem movingEndPiece_subset
     rintro _ ⟨p, hp, rfl⟩
     refine mem_preimage.2 ?_
     rw [equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_mem_puncturedSphereTruncation hsep hout hR
+    exact add_mul_cylindricalEndLift_mem_puncturedSphereTruncation hsep hout
       (by simpa using hp.1.1) (by simpa using hp.1.2)
 
 /-- The pieces of the ends are measurable. -/
@@ -376,7 +376,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePertu
     refine mem_preimage.2 ?_
     rw [equivRealProdCLM_symm_realChart]
     exact add_mul_cylindricalEndLift_mem_puncturedSphereTruncation
-      (z := Complex.equivRealProdCLM.symm z) hsep hout hR
+      (z := Complex.equivRealProdCLM.symm z) hsep hout
       (by simpa using hz.1) (by simpa using hz.2))⟩
   obtain ⟨hint, h⟩ := hω.integral_floerEnergyDensity_puncturedSpherePerturbation_image
     (P := fun s ↦ smoothTransition (s - 1)) hH hHs hHout hHouts ha hVo hu hUo
@@ -567,7 +567,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation_
     hω.integral_floerEnergyDensity_puncturedSpherePerturbation_outputPiece hH hHs hHout hHouts ha
       hout hVo hTV hu hR
   -- The pieces lie in the truncation, are measurable, and are pairwise disjoint.
-  have hAT := movingEndPiece_subset hsep hout hR
+  have hAT := movingEndPiece_subset (R := R) hsep hout
   have hAm := measurableSet_movingEndPiece (c := c) (R := R) ha
   have hAd := pairwise_disjoint_movingEndPiece (R := R) ha hsep hout
   -- Off the pieces, the datum vanishes near every point of the truncation.
