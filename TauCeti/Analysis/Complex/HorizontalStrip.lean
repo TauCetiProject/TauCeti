@@ -41,15 +41,15 @@ namespace IsPreconnected
 
 open Complex Set
 
-/-- If the frontier of a set `U ⊆ ℂ` is, to the right of `R`, exactly the two horizontal lines at
-heights `hi` and `lo`, then a preconnected set `s` lying to the right of `R` and avoiding both
-lines is contained in `U` as soon as it meets `U`. -/
-theorem subset_of_frontier_eq_horizontal {U s : Set ℂ} {R hi lo : ℝ} (hs : IsPreconnected s)
-    (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
-    (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ hi ∧ w.im ≠ lo) (hmeet : (s ∩ U).Nonempty) : s ⊆ U :=
+/-- If, to the right of `R`, the frontier of a set `U ⊆ ℂ` lies on the two horizontal lines at
+heights `a` and `b`, then a preconnected set `s` lying to the right of `R` and avoiding both lines
+is contained in `U` as soon as it meets `U`. -/
+theorem subset_of_forall_mem_frontier_im_eq_or_eq {U s : Set ℂ} {R a b : ℝ}
+    (hs : IsPreconnected s) (hfr : ∀ w ∈ frontier U, R < w.re → w.im = a ∨ w.im = b)
+    (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ a ∧ w.im ≠ b) (hmeet : (s ∩ U).Nonempty) : s ⊆ U :=
   hs.subset_of_disjoint_frontier (Set.disjoint_left.mpr fun w hw hwfr =>
     let h := havoid w hw
-    ((hline w h.1).mp hwfr).elim h.2.1 h.2.2) hmeet
+    (hfr w hwfr h.1).elim h.2.1 h.2.2) hmeet
 
 end IsPreconnected
 
@@ -61,7 +61,8 @@ open Complex Set
 lines at heights `lo` and `hi`, and a point `z` of the band between them to the right of `R` is not
 in `U`, then every point of `U` to the right of `R` lies strictly below or strictly above the
 band. -/
-private theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R hi lo : ℝ}
+private theorem im_lt_or_lt_im_of_mem_of_mem_frontier_iff_im_eq_or_eq {U : Set ℂ}
+    (hUo : IsOpen U) {R hi lo : ℝ}
     (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo)) {z : ℂ}
     (hzR : R < z.re) (hzlo : lo < z.im) (hzhi : z.im < hi) (hz : z ∉ U) {w : ℂ} (hwR : R < w.re)
     (hwU : w ∈ U) : w.im < lo ∨ hi < w.im := by
@@ -71,8 +72,8 @@ private theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen
   rw [hline w hwR, not_or] at hne
   by_contra! hw
   have hS := (convex_halfSpace_re_gt R).inter ((convex_halfSpace_im_gt lo).inter
-    (convex_halfSpace_im_lt hi)) |>.isPreconnected.subset_of_frontier_eq_horizontal hline
-    (fun v hv => ⟨hv.1, hv.2.2.ne, hv.2.1.ne'⟩)
+    (convex_halfSpace_im_lt hi)) |>.isPreconnected.subset_of_forall_mem_frontier_im_eq_or_eq
+    (fun v hv hvR => (hline v hvR).mp hv) (fun v hv => ⟨hv.1, hv.2.2.ne, hv.2.1.ne'⟩)
     ⟨w, ⟨hwR, lt_of_le_of_ne hw.1 (Ne.symm hne.2), lt_of_le_of_ne hw.2 hne.1⟩, hwU⟩
   exact hz (hS ⟨hzR, hzlo, hzhi⟩)
 
@@ -80,40 +81,34 @@ private theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen
 lines at heights `lo` and `hi`, and a point `z` of the band between them to the right of `R` is
 not in `U`, then to the right of `R` the set `U` is exactly the set of points strictly below or
 strictly above the band. -/
-theorem mem_iff_im_lt_or_lt_im_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R hi lo : ℝ}
-    (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
+theorem mem_iff_im_lt_or_lt_im_of_mem_frontier_iff_im_eq_or_eq {U : Set ℂ} (hUo : IsOpen U)
+    {R hi lo : ℝ} (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
     {z : ℂ} (hzR : R < z.re) (hzlo : lo < z.im) (hzhi : z.im < hi) (hz : z ∉ U) {w : ℂ}
     (hwR : R < w.re) : w ∈ U ↔ w.im < lo ∨ hi < w.im := by
   have hgap : lo < hi := hzlo.trans hzhi
+  have hfr (v : ℂ) (hv : v ∈ frontier U) (hvR : R < v.re) : v.im = hi ∨ v.im = lo :=
+    (hline v hvR).mp hv
   have hout {w : ℂ} (hwR : R < w.re) (hwU : w ∈ U) : w.im < lo ∨ hi < w.im :=
-    im_lt_or_lt_im_of_mem_of_frontier_eq hUo hline hzR hzlo hzhi hz hwR hwU
-  -- Each line lies in the closure of `U`, so points of `U` come close to it.
-  have hnear (h : ℝ) (hh : h = hi ∨ h = lo) :
-      ∃ u ∈ U, R < u.re ∧ |u.im - h| < (hi - lo) / 2 := by
-    have hw₀ : (⟨R + 1, h⟩ : ℂ) ∈ closure U :=
-      frontier_subset_closure ((hline _ (lt_add_one R)).mpr hh)
-    obtain ⟨u, huU, hu⟩ := Metric.mem_closure_iff.mp hw₀ (min 1 ((hi - lo) / 2))
-      (lt_min one_pos (by linarith))
-    rw [dist_eq_norm] at hu
-    have hre := (abs_lt.mp ((abs_re_le_norm _).trans_lt (hu.trans_le (min_le_left _ _)))).2
-    have him := (abs_im_le_norm _).trans_lt (hu.trans_le (min_le_right _ _))
-    simp only [sub_re, sub_im] at hre him
-    rw [abs_sub_comm] at him
-    exact ⟨u, huU, by linarith, him⟩
+    im_lt_or_lt_im_of_mem_of_mem_frontier_iff_im_eq_or_eq hUo hline hzR hzlo hzhi hz hwR hwU
+  -- Each line lies in the closure of `U`, so `U` meets every open set around a point of it.
+  have hcl (h : ℝ) (hh : h = hi ∨ h = lo) : (⟨R + 1, h⟩ : ℂ) ∈ closure U :=
+    frontier_subset_closure ((hline _ (lt_add_one R)).mpr hh)
   have habove : {w : ℂ | R < w.re ∧ hi < w.im} ⊆ U := by
-    obtain ⟨u, huU, huR, hu⟩ := hnear hi (Or.inl rfl)
-    refine ((convex_halfSpace_re_gt R).inter
-      (convex_halfSpace_im_gt hi)).isPreconnected.subset_of_frontier_eq_horizontal hline
+    obtain ⟨u, ⟨huR, hulo⟩, huU⟩ := mem_closure_iff.mp (hcl hi (Or.inl rfl)) _
+      ((isOpen_lt continuous_const continuous_re).inter (isOpen_lt continuous_const continuous_im))
+      ⟨lt_add_one R, hgap⟩
+    exact ((convex_halfSpace_re_gt R).inter
+      (convex_halfSpace_im_gt hi)).isPreconnected.subset_of_forall_mem_frontier_im_eq_or_eq hfr
       (fun v hv => ⟨hv.1, hv.2.ne', (hgap.trans hv.2).ne'⟩)
-      ⟨u, ⟨huR, (hout huR huU).resolve_left fun h => ?_⟩, huU⟩
-    linarith [(abs_lt.mp hu).1]
+      ⟨u, ⟨huR, (hout huR huU).resolve_left hulo.not_gt⟩, huU⟩
   have hbelow : {w : ℂ | R < w.re ∧ w.im < lo} ⊆ U := by
-    obtain ⟨u, huU, huR, hu⟩ := hnear lo (Or.inr rfl)
-    refine ((convex_halfSpace_re_gt R).inter
-      (convex_halfSpace_im_lt lo)).isPreconnected.subset_of_frontier_eq_horizontal hline
+    obtain ⟨u, ⟨huR, huhi⟩, huU⟩ := mem_closure_iff.mp (hcl lo (Or.inr rfl)) _
+      ((isOpen_lt continuous_const continuous_re).inter (isOpen_lt continuous_im continuous_const))
+      ⟨lt_add_one R, hgap⟩
+    exact ((convex_halfSpace_re_gt R).inter
+      (convex_halfSpace_im_lt lo)).isPreconnected.subset_of_forall_mem_frontier_im_eq_or_eq hfr
       (fun v hv => ⟨hv.1, (hv.2.trans hgap).ne, hv.2.ne⟩)
-      ⟨u, ⟨huR, (hout huR huU).resolve_right fun h => ?_⟩, huU⟩
-    linarith [(abs_lt.mp hu).2]
+      ⟨u, ⟨huR, (hout huR huU).resolve_right huhi.not_gt⟩, huU⟩
   exact ⟨hout hwR, fun hw => hw.elim (fun h => hbelow ⟨hwR, h⟩) (fun h => habove ⟨hwR, h⟩)⟩
 
 end IsOpen
