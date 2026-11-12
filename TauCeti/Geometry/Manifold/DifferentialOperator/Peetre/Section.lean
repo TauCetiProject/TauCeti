@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Peetre.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
 import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalFrameCoeff
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Peetre's theorem for operators between sections of vector bundles
@@ -99,7 +100,7 @@ private theorem exists_mem_nhds_forall_apply_eq_zero_section
   let b := Module.finBasis ℝ F
   have he : e.baseSet ∈ 𝓝 x₀ := e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x₀)
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) he).mem_iff.mp he
-  let c := e.cutoffLocalFrameCoeff b ρ hρ
+  let c := e.cutoffLocalFrameCoeff b ⟨ρ, ρ.contMDiff⟩ hρ
   obtain ⟨fr', hfr', hfreq⟩ :=
     e.exists_contMDiff_eventuallyEq_localFrame (I := I) b (mem_baseSet_trivializationAt F V x₀)
   let fr (i : Fin (finrank ℝ F)) : Cₛ^∞⟮I; F, V⟯ := ⟨fr' i, hfr' i⟩
@@ -144,14 +145,14 @@ private theorem exists_mem_nhds_forall_apply_eq_zero_section
     have h := hloc (s - ∑ i, c i s • fr i) y (hKsub hy).1.1 <| by
       filter_upwards [isOpen_interior.mem_nhds (hKsub hy).2] with z hz
       rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero]
-      exact e.apply_eq_sum_cutoffLocalFrameCoeff_smul b ρ hρ fr s (interior_subset hz).1
-        (interior_subset hz).2
+      exact e.apply_eq_sum_cutoffLocalFrameCoeff_smul b ⟨ρ, ρ.contMDiff⟩ hρ fr s
+        (interior_subset hz).1 (interior_subset hz).2
     rwa [map_sub, map_sum, Pi.sub_apply, Finset.sum_apply, sub_eq_zero] at h
   rw [hsum]
   refine Finset.sum_eq_zero fun i _ ↦ ?_
   have hci : c i s ∈ TauCeti.smoothVanishingIdeal I y ^ (r i + 1) :=
     Ideal.pow_le_pow_right (Nat.succ_le_succ (Finset.le_sup (Finset.mem_univ i)))
-      (e.cutoffLocalFrameCoeff_mem_of_mem_smul_top b ρ hρ i hs)
+      ((c i).apply_mem_of_mem_smul_top hs)
   have h := hr i y hy _ hci
   rw [hQ] at h
   rw [← e'.symmL_continuousLinearMapAt (R := ℝ) (hKsub hy).1.2 (P _ y), h, map_zero]

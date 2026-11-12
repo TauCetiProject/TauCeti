@@ -11,18 +11,17 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 /-!
 # Cut-off local-frame coefficients of smooth sections
 
-Let `V` be a smooth real vector bundle of finite rank over a finite-dimensional Hausdorff manifold
-`M`, let `e` be a trivialization of `V`, let `b` be a basis of the model fibre and let `ρ` be a
-smooth bump function supported in `e.baseSet`. The `i`-th coefficient of a smooth section `s` in
-the local frame `e.localFrame b`, multiplied by `ρ`, is a globally smooth function. This file
-bundles it as a `C^∞(M)`-linear map `Γ(V) → C^∞(M)`.
+Let `V` be a `C^n` vector bundle of finite rank over a manifold `M`, over a complete nontrivially
+normed field `𝕜`, let `e` be a trivialization of `V`, let `b` be a basis of the model fibre and let
+`ρ` be a `C^n` function supported in `e.baseSet`. The `i`-th coefficient of a `C^n` section `s` in
+the local frame `e.localFrame b`, multiplied by `ρ`, is a globally `C^n` function. This file
+bundles it as a `C^n(M)`-linear map `Γ(V) → C^n(M)`. Every ideal `J` of `C^n(M)` is then sent
+into itself: `LinearMap.apply_mem_of_mem_smul_top` carries `J Γ(V)` into `J`.
 
 ## Main results
 
 * `Bundle.Trivialization.cutoffLocalFrameCoeff`: the cut-off frame coefficient as a
-  `C^∞(M)`-linear map from smooth sections to smooth functions.
-* `Bundle.Trivialization.cutoffLocalFrameCoeff_mem_of_mem_smul_top`: it sends `J Γ(V)` into `J`
-  for every ideal `J` of `C^∞(M)`.
+  `C^n(M)`-linear map from `C^n` sections to `C^n` functions.
 * `Bundle.Trivialization.apply_eq_sum_cutoffLocalFrameCoeff_smul`: where `ρ = 1`, a smooth section
   is the sum of its cut-off frame coefficients times sections agreeing with the local frame.
 -/
@@ -36,21 +35,23 @@ noncomputable section
 
 namespace Bundle.Trivialization
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
-  {ι : Type*} (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (b : Basis ι ℝ F)
-  {x₀ : M} (ρ : SmoothBumpFunction I x₀) (hρ : tsupport ρ ⊆ e.baseSet)
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] {n : ℕ∞ω} [ContMDiffVectorBundle 1 F V I]
+  [ContMDiffVectorBundle n F V I]
+  {ι : Type*} (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (b : Basis ι 𝕜 F)
+  (ρ : C^n⟮I, M; 𝕜⟯) (hρ : tsupport ρ ⊆ e.baseSet)
 
-/-- The `i`-th coefficient of a smooth section in the local frame of `e`, cut off by a bump
-function `ρ` supported in `e.baseSet`, as a `C^∞(M)`-linear map to smooth functions. -/
-def cutoffLocalFrameCoeff (i : ι) : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯ where
+/-- The `i`-th coefficient of a `C^n` section in the local frame of `e`, multiplied by a `C^n`
+function `ρ` supported in `e.baseSet`, as a `C^n(M)`-linear map to `C^n` functions. -/
+def cutoffLocalFrameCoeff (i : ι) : Cₛ^n⟮I; F, V⟯ →ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝕜⟯ where
   toFun s := ⟨fun y ↦ ρ y * e.localFrameCoeff I b i y (s y),
-    e.contMDiff_mul_localFrameCoeff b ρ hρ s.contMDiff i⟩
+    e.contMDiff_mul_localFrameCoeff b ρ.contMDiff.contMDiffOn hρ s.contMDiff.contMDiffOn i⟩
   -- Sums and products of smooth functions are evaluated pointwise by definition.
   map_add' s t := by
     ext y
@@ -63,24 +64,17 @@ def cutoffLocalFrameCoeff (i : ι) : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; 
 
 /-- The cut-off frame coefficient of `s` at `y` is `ρ y` times the frame coefficient of `s y`. -/
 @[simp]
-theorem cutoffLocalFrameCoeff_apply (i : ι) (s : Cₛ^∞⟮I; F, V⟯) (y : M) :
+theorem cutoffLocalFrameCoeff_apply (i : ι) (s : Cₛ^n⟮I; F, V⟯) (y : M) :
     e.cutoffLocalFrameCoeff b ρ hρ i s y = ρ y * e.localFrameCoeff I b i y (s y) :=
   (rfl)
 
-/-- The cut-off frame coefficients send `J Γ(V)` into `J`, for every ideal `J` of `C^∞(M)`. -/
-theorem cutoffLocalFrameCoeff_mem_of_mem_smul_top (i : ι) {J : Ideal C^∞⟮I, M; ℝ⟯}
-    {s : Cₛ^∞⟮I; F, V⟯} (hs : s ∈ J • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯)) :
-    e.cutoffLocalFrameCoeff b ρ hρ i s ∈ J := by
-  simpa [smul_eq_mul, Ideal.mul_top] using
-    Submodule.smul_comap_le_comap_smul (e.cutoffLocalFrameCoeff b ρ hρ i) ⊤ J (by simpa using hs)
-
 /-- At a point where `ρ = 1` and the sections `fr i` agree with the local frame of `e`, a smooth
 section is the sum of its cut-off frame coefficients times the `fr i`. -/
-theorem apply_eq_sum_cutoffLocalFrameCoeff_smul [Fintype ι] (fr : ι → Cₛ^∞⟮I; F, V⟯)
-    (s : Cₛ^∞⟮I; F, V⟯) {y : M} (hy : ρ y = 1) (hfr : ∀ i, fr i y = e.localFrame b i y) :
-    s y = (∑ i, e.cutoffLocalFrameCoeff b ρ hρ i s • fr i : Cₛ^∞⟮I; F, V⟯) y := by
+theorem apply_eq_sum_cutoffLocalFrameCoeff_smul [Fintype ι] (fr : ι → Cₛ^n⟮I; F, V⟯)
+    (s : Cₛ^n⟮I; F, V⟯) {y : M} (hy : ρ y = 1) (hfr : ∀ i, fr i y = e.localFrame b i y) :
+    s y = (∑ i, e.cutoffLocalFrameCoeff b ρ hρ i s • fr i : Cₛ^n⟮I; F, V⟯) y := by
   have hyb : y ∈ e.baseSet := hρ (subset_tsupport _ (by simp [hy]))
-  have h := congrFun (map_sum (ContMDiffSection.coeAddHom I F ∞ V)
+  have h := congrFun (map_sum (ContMDiffSection.coeAddHom I F n V)
     (fun i ↦ e.cutoffLocalFrameCoeff b ρ hρ i s • fr i) Finset.univ) y
   simp only [ContMDiffSection.coeAddHom_apply, Finset.sum_apply, ContMDiffSection.smul_apply,
     cutoffLocalFrameCoeff_apply, hfr, hy, one_mul] at h

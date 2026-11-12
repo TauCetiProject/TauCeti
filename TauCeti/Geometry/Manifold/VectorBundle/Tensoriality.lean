@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
-import Mathlib.Geometry.Manifold.Algebra.Structures
+import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
@@ -129,7 +129,7 @@ theorem eq_of_contMDiff_tensorial
       (t.contMDiffOn_localFrame_baseSet ∞ b i)
   have hcoeff' (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) (i) :
       ContMDiff I 𝓘(ℝ) ∞ (coeff' u i) :=
-    t.contMDiff_mul_localFrameCoeff b ρ hρt hu i
+    t.contMDiff_mul_localFrameCoeff b ρ.contMDiff.contMDiffOn hρt hu.contMDiffOn i
   have hterm (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) (i) :
       CMDiff ∞ (T% (coeff' u i • frame' i)) :=
     (hcoeff' u hu i).smul_section (hframe i)
