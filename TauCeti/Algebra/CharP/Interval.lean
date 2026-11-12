@@ -6,6 +6,8 @@ Authors: pi
 module
 
 public import Mathlib.Algebra.CharP.Basic
+public import Mathlib.Algebra.Order.Interval.Set.SuccPred
+public import Mathlib.Order.SuccPred.Int
 
 /-!
 # Integer intervals in positive characteristic
@@ -47,11 +49,7 @@ theorem intCast_injOn_Ico_iff (s t : ℤ) :
 endpoints is strictly less than the positive characteristic. -/
 theorem intCast_injOn_Icc_iff (s t : ℤ) :
     Set.InjOn (Int.cast : ℤ → R) (Set.Icc s t) ↔ t - s < p := by
-  have hset : Set.Icc s t = Set.Ico s (t + 1) := by
-    ext x
-    simp only [Set.mem_Icc, Set.mem_Ico]
-    omega
-  rw [hset, intCast_injOn_Ico_iff R p]
+  rw [← Set.Ico_add_one_right_eq_Icc s t, intCast_injOn_Ico_iff R p]
   omega
 
 end CharP
