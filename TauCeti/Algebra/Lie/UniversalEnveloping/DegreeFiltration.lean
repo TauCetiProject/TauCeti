@@ -23,7 +23,10 @@ injective, the Lie elements it sends into filtration order `k` are those of degr
 
 Adapted from `Mei/Algebra/Lie/UniversalEnveloping/DegreeFiltration.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). Original copyright and author credit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). The graded-embedding result
+`TauCeti.UniversalEnvelopingAlgebra.comap_degreeFiltration_ι` is adapted from
+`Mei/Algebra/Lie/UniversalEnveloping/GradedEmbedding.lean` in the same repository, commit
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0). Original copyright and author credit
 are retained.
 -/
 

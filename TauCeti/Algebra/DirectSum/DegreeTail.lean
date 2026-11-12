@@ -21,7 +21,10 @@ homogeneous embeddings.
 
 Adapted from `Mei/Algebra/DirectSum/Degree/Basic.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). Original copyright and author credit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). The comparison of degree tails along an
+injective homogeneous map, `LinearMap.comap_degreeTail_eq_of_injective`, is adapted from
+`Mei/Algebra/DirectSum/Degree/Map.lean` in the same repository, commit
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0). Original copyright and author credit
 are retained.
 -/
 
