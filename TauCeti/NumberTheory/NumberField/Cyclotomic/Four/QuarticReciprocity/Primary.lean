@@ -173,52 +173,6 @@ private theorem mul_powerResidueSymbolIdeal_add_mul_eq {ζ : K} {hζ : IsPrimiti
         rw [heq1, mul_assoc]
     _ = _ := by rw [heq2]; ring
 
-omit [IsCyclotomicExtension {4} ℚ K] in
-/-- If `π₁ = a + b i` and `π₂ = c + d i` are coprime in `𝓞 K` with `IsCoprime a b` and
-`IsCoprime c d`, then `a d - b c` and `a c + b d` are coprime in `ℤ`. -/
-private theorem isCoprime_sub_mul_add_mul {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
-    {a b c d : ℤ} {τ : 𝓞 K ≃+* 𝓞 K} (hτ : ∀ z : 𝓞 K, z ^ 4 = 1 → τ z = z ^ 3)
-    (hab : IsCoprime a b) (hcd : IsCoprime c d)
-    (hcop : IsCoprime (span {(c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger})
-      (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger})) :
-    IsCoprime (a * d - b * c) (a * c + b * d) := by
-  set i := hζ.toInteger
-  set π₁ : 𝓞 K := (a : 𝓞 K) + (b : 𝓞 K) * i
-  set π₂ : 𝓞 K := (c : 𝓞 K) + (d : 𝓞 K) * i
-  set m : ℤ := a * c + b * d
-  set k : ℤ := a * d - b * c
-  have hsq : i ^ 2 = -1 := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
-  have hi_unit : IsUnit i := hζ.toInteger_isPrimitiveRoot.isUnit (by decide)
-  have hτπ₁ : τ π₁ = (a : 𝓞 K) - (b : 𝓞 K) * i :=
-    hζ.apply_intCast_add_intCast_mul_toInteger_of_four hτ a b
-  have hid1 : (c : 𝓞 K) * π₁ - (m : 𝓞 K) = ((b : 𝓞 K) * i) * π₂ := by
-    simp only [π₁, π₂, m]; push_cast; linear_combination (-(b : 𝓞 K) * d) * hsq
-  have hid2 : (a : 𝓞 K) * π₂ - (m : 𝓞 K) = ((d : 𝓞 K) * i) * π₁ := by
-    simp only [π₁, π₂, m]; push_cast; linear_combination (-(b : 𝓞 K) * d) * hsq
-  have hid3 : τ π₁ * π₂ - (m : 𝓞 K) = (k : 𝓞 K) * i := by
-    rw [hτπ₁]; simp only [π₂, m, k]; push_cast; linear_combination (-(b : 𝓞 K) * d) * hsq
-  have hcπ₂ : IsCoprime (c : 𝓞 K) π₂ := by
-    simpa [π₂] using ((isCoprime_mul_unit_right_right hi_unit (c : 𝓞 K) (d : 𝓞 K)).mpr
-      hcd.intCast).mul_add_left_right 1
-  have haπ₁ : IsCoprime (a : 𝓞 K) π₁ := by
-    simpa [π₁] using ((isCoprime_mul_unit_right_right hi_unit (a : 𝓞 K) (b : 𝓞 K)).mpr
-      hab.intCast).mul_add_left_right 1
-  have hcop' : IsCoprime π₂ π₁ := (isCoprime_span_singleton_iff _ _).mp hcop
-  have hmπ₂ : IsCoprime (m : 𝓞 K) π₂ := by
-    obtain ⟨u, v, huv⟩ := hcπ₂.mul_left hcop'.symm
-    exact ⟨u, v + u * ((b : 𝓞 K) * i), by linear_combination huv - u * hid1⟩
-  have hmπ₁ : IsCoprime (m : 𝓞 K) π₁ := by
-    obtain ⟨u, v, huv⟩ := haπ₁.mul_left hcop'
-    exact ⟨u, v + u * ((d : 𝓞 K) * i), by linear_combination huv - u * hid2⟩
-  have hmτπ₁ : IsCoprime (m : 𝓞 K) (τ π₁) := by
-    simpa only [RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, map_intCast] using
-      hmπ₁.map τ.toRingHom
-  obtain ⟨u, v, huv⟩ := hmτπ₁.mul_right hmπ₂
-  have hki : IsCoprime (m : 𝓞 K) ((k : 𝓞 K) * i) :=
-    ⟨u + v, v, by linear_combination huv - v * hid3⟩
-  exact (RingOfIntegers.isCoprime_intCast.mp
-    ((isCoprime_mul_unit_right_right hi_unit _ _).mp hki)).symm
-
 /-- For an odd integer `n`, `x` divisible by `n`, and `y` coprime to `n`,
 `((x + y i) / n)_4 = (-1) ^ ((n² - 1) / 8)`, read in `K`. -/
 private theorem coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd {ζ : K}
@@ -284,9 +238,12 @@ private theorem coe_mul_powerResidueSymbolIdeal_add_mul_eq_zpow {ζ : K} {hζ : 
   have hL_sym : ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π₂) : 𝓞 K) :
       K) * ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ (τ π₁)) : 𝓞 K) :
       K) = (-1) ^ ((m ^ 2 - 1) / 8) := by
-    rw [mul_comm, ← coe_powerResidueSymbolIdeal_mk_mul, hprod]
-    exact coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd hζ hm_odd dvd_rfl
-      (isCoprime_sub_mul_add_mul hτ hab hcd hcop)
+    have h := coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd hζ hm_odd dvd_rfl
+      (hζ.isCoprime_mul_sub_mul_mul_add_mul_of_four hab hcd
+        ((isCoprime_span_singleton_iff _ _).mp hcop).symm)
+    rw [← hprod] at h
+    simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap] at h
+    rwa [mul_comm]
   rw [hπ₂.coe_quartic_reciprocity_intCast_add_mul_of_odd hm_odd, hτπ₁,
     hτπ₁_prim.coe_quartic_reciprocity_intCast_add_mul_of_odd hm_odd, ← hτπ₁,
     mul_mul_mul_comm, hL_sym, ← zpow_add₀ (by norm_num), ← zpow_add₀ (by norm_num), ← add_assoc]

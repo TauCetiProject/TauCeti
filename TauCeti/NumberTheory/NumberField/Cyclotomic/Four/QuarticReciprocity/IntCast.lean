@@ -427,8 +427,9 @@ private theorem coe_quartic_reciprocity_intCast_prime {π : 𝓞 K} (hπ : IsPri
         ((powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ x) : 𝓞 K) : K) *
           (-1) ^ (((p - 1) / 2) * N4) := by
     obtain ⟨t, ht⟩ := ho
-    rw [hx, coe_powerResidueSymbolIdeal_mk_mul, coe_powerResidueSymbolIdeal_mk_neg_one hπ,
-      mul_comm]
+    rw [hx]
+    simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap]
+    rw [coe_powerResidueSymbolIdeal_mk_neg_one hπ, mul_comm]
     congr 1
     exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num)
       (Int.modEq_iff_dvd.mpr ⟨t * N4, by rw [ht]; ring⟩)
@@ -474,9 +475,10 @@ private theorem coe_quartic_reciprocity_intCast_of_prime_of_odd {π : 𝓞 K}
     obtain ⟨hp_odd, hm'_odd⟩ := hm
     have hp0 : span {(p : 𝓞 K)} ≠ ⊥ := by simpa using hp_int.ne_zero
     have hm'_span0 : span {(m' : 𝓞 K)} ≠ ⊥ := by simpa using hm'0
-    rw [Int.cast_mul, coe_powerResidueSymbolIdeal_mk_mul, ← span_singleton_mul_span_singleton,
-      coe_powerResidueSymbolIdeal_mul_right hp0 hm'_span0,
-      coe_quartic_reciprocity_intCast_prime hπ hp hp_int hp_odd, ih hm'_odd,
+    rw [Int.cast_mul, ← span_singleton_mul_span_singleton,
+      powerResidueSymbolIdeal_mul_right hp0 hm'_span0]
+    simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap]
+    rw [coe_quartic_reciprocity_intCast_prime hπ hp hp_int hp_odd, ih hm'_odd,
       mul_mul_mul_comm, ← zpow_add₀ (by norm_num), ← add_mul]
     congr 1
     refine zpow_eq_zpow_of_modEq (n := 2) (by norm_num) (Int.ModEq.mul_right N4 ?_)
@@ -553,9 +555,11 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd {π : 𝓞 K}
       have hs0 : span {s.prod} ≠ ⊥ := by
         rw [Ne, span_singleton_eq_bot]
         exact fun h ↦ absurd (h ▸ hs_prim.odd_norm) (by simp)
-      rw [Multiset.prod_cons, ← span_singleton_mul_span_singleton,
-        coe_powerResidueSymbolIdeal_mul_right hp0 hs0, coe_powerResidueSymbolIdeal_mk_mul,
-        coe_quartic_reciprocity_intCast_of_prime_of_odd hp.2 hp.1 hm, ih hs',
+      rw [Multiset.prod_cons]
+      simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap]
+      rw [← span_singleton_mul_span_singleton, powerResidueSymbolIdeal_mul_right hp0 hs0]
+      simp only [RingHom.map_mul, ← RingOfIntegers.coe_eq_algebraMap]
+      rw [coe_quartic_reciprocity_intCast_of_prime_of_odd hp.2 hp.1 hm, ih hs',
         mul_mul_mul_comm,
         neg_one_zpow_mul_absNorm_sub_one_div_four hp0 hs0 hp.2.absNorm_span_singleton_coprime_four
           hs_prim.absNorm_span_singleton_coprime_four]

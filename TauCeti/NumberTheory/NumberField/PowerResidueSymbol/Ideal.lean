@@ -34,8 +34,7 @@ zero ideal, which has no prime factors, is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_of_isMaximal`: at a maximal ideal it is the prime symbol
   `Ideal.powerResidueSymbol`.
 * `Ideal.powerResidueSymbolIdeal_mul_right`: `(α / 𝔞 𝔟)_n = (α / 𝔞)_n (α / 𝔟)_n` for nonzero
-  `𝔞` and `𝔟`, with `Ideal.coe_powerResidueSymbolIdeal_mul_right` and
-  `Ideal.coe_powerResidueSymbolIdeal_mk_mul` recording multiplicativity in `K`.
+  `𝔞` and `𝔟`.
 * `Ideal.powerResidueSymbolIdeal_mul_right_intCast`: the same for a rational integer `m`, read in
   each quotient.
 * `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`.
@@ -165,24 +164,6 @@ theorem powerResidueSymbolIdeal_mul_right_intCast (h𝔞 : 𝔞 ≠ ⊥) (h𝔟 
     powerResidueSymbolIdeal (𝔞 * 𝔟) n (m : 𝓞 K ⧸ 𝔞 * 𝔟) =
       powerResidueSymbolIdeal 𝔞 n (m : 𝓞 K ⧸ 𝔞) * powerResidueSymbolIdeal 𝔟 n (m : 𝓞 K ⧸ 𝔟) := by
   simpa using powerResidueSymbolIdeal_mul_right (n := n) h𝔞 h𝔟 (m : 𝓞 K)
-
-/-- **Multiplicativity in the ideal, read in `K`.** -/
-theorem coe_powerResidueSymbolIdeal_mul_right (h𝔞 : 𝔞 ≠ ⊥) (h𝔟 : 𝔟 ≠ ⊥) (α : 𝓞 K) :
-    ((powerResidueSymbolIdeal (𝔞 * 𝔟) n (Quotient.mk (𝔞 * 𝔟) α) : 𝓞 K) : K) =
-      ((powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 α) : 𝓞 K) : K) *
-        ((powerResidueSymbolIdeal 𝔟 n (Quotient.mk 𝔟 α) : 𝓞 K) : K) := by
-  rw [powerResidueSymbolIdeal_mul_right h𝔞 h𝔟]
-  push_cast
-  rfl
-
-/-- **Multiplicativity in the numerator, read in `K`.** -/
-theorem coe_powerResidueSymbolIdeal_mk_mul (𝔞 : Ideal (𝓞 K)) (α β : 𝓞 K) :
-    ((powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 (α * β)) : 𝓞 K) : K) =
-      ((powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 α) : 𝓞 K) : K) *
-        ((powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 β) : 𝓞 K) : K) := by
-  rw [map_mul, map_mul]
-  push_cast
-  rfl
 
 /-- `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`. -/
 theorem powerResidueSymbolIdeal_pow_right (𝔞 : Ideal (𝓞 K)) (α : 𝓞 K) (k : ℕ) :
