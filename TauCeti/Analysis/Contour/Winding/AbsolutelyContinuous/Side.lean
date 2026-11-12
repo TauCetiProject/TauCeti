@@ -9,15 +9,15 @@ public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.Deriv.TraceNearTangent
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
-import TauCeti.Topology.JordanCurve.Interval
+import TauCeti.Order.Interval.Set.Injective
 
 /-!
 # The side of a Jordan curve entered by a transverse curve
 
-Near a point where a curve `γ` has derivative `v`, and which `γ` visits only once on a compact
-parameter set, the trace of `γ` lies in arbitrarily thin double cones
+Near a point where a curve `γ` has nonzero derivative `v`, and which `γ` visits only once on a
+compact parameter set, the trace of `γ` lies in arbitrarily thin double cones
 `|Im (conj v * (z - γ t₀))| ≤ η * ‖z - γ t₀‖` around the tangent line
-(`TauCeti.Contour.exists_pos_forall_abs_im_conj_mul_sub_le`).
+(`IsCompact.exists_pos_forall_abs_im_conj_mul_sub_le`).
 
 For a simple closed absolutely continuous curve, this upgrades the normal identification of the
 orientation sign `jordanSign γ a b` (normal rays at a regular point enter the inside or the
@@ -32,115 +32,16 @@ oriented curve and the unbounded outside of a negatively oriented one.
   a regular point on the side selected by `jordanSign γ a b` enters the bounded inside.
 * `AbsolutelyContinuousOnInterval.eventually_notMem_filledHull_of_hasDerivAt`: a curve leaving a
   regular point on the other side enters the unbounded outside.
+* `AbsolutelyContinuousOnInterval.mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff`:
+  a transverse curve enters the inside exactly when its direction agrees with the orientation.
+* `AbsolutelyContinuousOnInterval.mul_im_conj_mul_neg_iff_eventually_notMem_filledHull`:
+  a transverse curve enters the outside exactly when its direction opposes the orientation.
 -/
 
 public section
 
 open Complex ComplexConjugate Filter Metric Set
 open scoped Topology
-
-namespace TauCeti.Contour
-
-/-- **Lower bound across the tangent line along a segment.** Let `z` be the point at parameter
-`l ∈ [0, 1]` of the segment from `ε • w + e` to `ε • (I * u)`, written relative to its base point.
-If `w` and `I * u` both lie at least `κ` to the left of `u` (measured by `Im (conj u * ·)`), and
-the error `e` is small enough, then `z` lies at least `3 / 4 * κ * ε` to the left of `u`. -/
-private theorem le_im_conj_mul_smul_add_smul {u w e : ℂ} {κ η ε l : ℝ}
-    (hκw : κ ≤ (conj u * w).im) (hκu : κ ≤ ‖u‖ ^ 2) (hηu : ‖u‖ * η ≤ κ / 4) (hε : 0 < ε)
-    (hl0 : 0 ≤ l) (hl1 : l ≤ 1) (he : ‖e‖ ≤ η * ε) :
-    3 / 4 * κ * ε ≤ (conj u * (ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e)).im := by
-  have hn : (conj u * (I * u)).im = ‖u‖ ^ 2 := by
-    simp [mul_left_comm, Complex.conj_mul', ← Complex.ofReal_pow]
-  have him : (conj u * (ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e)).im =
-      ε * ((1 - l) * (conj u * w).im + l * ‖u‖ ^ 2) + (1 - l) * (conj u * e).im := by
-    rw [← hn]
-    simp only [mul_add, mul_smul_comm, add_im, smul_im, smul_eq_mul]
-  -- The error term moves the point by at most `κ / 4 * ε` across the tangent line.
-  have hime : |(conj u * e).im| ≤ κ / 4 * ε := by
-    refine (abs_im_conj_mul_le u e).trans ?_
-    calc ‖u‖ * ‖e‖ ≤ ‖u‖ * (η * ε) := mul_le_mul_of_nonneg_left he (norm_nonneg _)
-      _ = ‖u‖ * η * ε := by ring
-      _ ≤ κ / 4 * ε := mul_le_mul_of_nonneg_right hηu hε.le
-  -- The main term is a convex combination of two quantities which are both at least `κ`.
-  have h1 : κ ≤ (1 - l) * (conj u * w).im + l * ‖u‖ ^ 2 := by nlinarith
-  have h2 := (abs_le.mp hime).1
-  rw [him]
-  nlinarith [mul_le_mul_of_nonneg_left h1 hε.le, abs_nonneg (conj u * e).im]
-
-/-- **Upper bound on the norm along a segment.** The point at parameter `l ∈ [0, 1]` of the
-segment from `ε • w + e` to `ε • (I * u)` has norm at most `(‖w‖ + ‖u‖ + 1) * ε` when
-`‖e‖ ≤ η * ε` with `η ≤ 1`. -/
-private theorem norm_smul_add_smul_le {u w e : ℂ} {η ε l : ℝ} (hη1 : η ≤ 1) (hε : 0 < ε)
-    (hl0 : 0 ≤ l) (hl1 : l ≤ 1) (he : ‖e‖ ≤ η * ε) :
-    ‖ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e‖ ≤ (‖w‖ + ‖u‖ + 1) * ε := by
-  have hl1' : 0 ≤ 1 - l := sub_nonneg.mpr hl1
-  calc ‖ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e‖
-      ≤ ε * ((1 - l) * ‖w‖ + l * ‖u‖) + (1 - l) * (η * ε) := by
-        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-        · simp only [norm_smul, Real.norm_eq_abs, abs_of_pos hε]
-          refine mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans_eq ?_) hε.le
-          simp only [norm_smul, norm_mul, norm_I, one_mul, Real.norm_eq_abs, abs_of_nonneg hl0,
-            abs_of_nonneg hl1']
-        · simp only [norm_smul, Real.norm_eq_abs, abs_of_nonneg hl1']
-          exact mul_le_mul_of_nonneg_left he hl1'
-    _ ≤ (‖w‖ + ‖u‖ + 1) * ε := by
-        have hη0 : 0 ≤ η := nonneg_of_mul_nonneg_left ((norm_nonneg e).trans he) hε
-        nlinarith [norm_nonneg w, norm_nonneg u, mul_nonneg hl0 hε.le, mul_nonneg hl1' hε.le,
-          mul_nonneg (mul_nonneg hl0 hε.le) hη0]
-
-/-- If the trace near `γ t₀` lies in thin double cones around the line `ℝ • u`, and a curve `p`
-leaves `γ t₀` strictly to the left of `u`, then for small `ε > 0` the segment from `p ε` to the
-point `γ t₀ + ε • (I * u)` of the left normal ray does not meet the trace. -/
-private theorem eventually_segment_subset_compl {γ : ℝ → ℂ} {K : Set ℝ} {t₀ : ℝ} {u w : ℂ}
-    (hcone : ∀ η > 0, ∃ ρ > 0, ∀ s ∈ K, ‖γ s - γ t₀‖ < ρ →
-      |(conj u * (γ s - γ t₀)).im| ≤ η * ‖γ s - γ t₀‖)
-    {p : ℝ → ℂ} (hp0 : p 0 = γ t₀) (hp : HasDerivWithinAt p w (Ici 0) 0)
-    (hw : 0 < (conj u * w).im) :
-    ∀ᶠ ε in 𝓝[>] 0, segment ℝ (p ε) (γ t₀ + ε • (I * u)) ⊆ (γ '' K)ᶜ := by
-  have hu : u ≠ 0 := by
-    rintro rfl
-    simp at hw
-  -- `κ` bounds from below how far `w` and `I * u` lie to the left of `u`; the segment points stay
-  -- in a ball of radius `M * ε`, and `η` is the relative error allowed for `p ε` around `ε • w`.
-  set κ := min (conj u * w).im (‖u‖ ^ 2)
-  have hκ : 0 < κ := lt_min hw (by positivity)
-  set M := ‖w‖ + ‖u‖ + 1
-  have hM : 0 < M := by positivity
-  -- The cone of aperture `κ / (4 * M)` is too thin to contain points at distance `≤ M * ε` lying
-  -- `3 / 4 * κ * ε` to the left of the tangent.
-  obtain ⟨ρ, hρ, hc⟩ := hcone (κ / (4 * M)) (by positivity)
-  set η := min 1 (κ / (4 * (‖u‖ + 1)))
-  have hη : 0 < η := lt_min one_pos (by positivity)
-  have hηu : ‖u‖ * η ≤ κ / 4 := by
-    have h : η * (4 * (‖u‖ + 1)) ≤ κ := (le_div_iff₀ (by positivity)).mp (min_le_right _ _)
-    nlinarith [norm_nonneg u]
-  filter_upwards [nhdsWithin_mono _ Ioi_subset_Ici_self
-      ((hasDerivWithinAt_iff_isLittleO.mp hp).def hη),
-    nhdsWithin_le_nhds (eventually_lt_nhds (show (0 : ℝ) < ρ / M by positivity)),
-    self_mem_nhdsWithin] with ε hεo hερ (hε : 0 < ε)
-  set e := p ε - p 0 - (ε - 0) • w
-  have he : ‖e‖ ≤ η * ε := by simpa [Real.norm_eq_abs, abs_of_pos hε] using hεo
-  rw [segment_eq_image']
-  rintro _ ⟨l, ⟨hl0, hl1⟩, rfl⟩ ⟨s, hs, hsz⟩
-  have hz : γ s - γ t₀ = ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e := by
-    rw [hsz]
-    simp only [e, hp0, sub_zero]
-    module
-  have hlow : 3 / 4 * κ * ε ≤ (conj u * (γ s - γ t₀)).im :=
-    hz ▸ le_im_conj_mul_smul_add_smul (min_le_left _ _) (min_le_right _ _) hηu hε hl0 hl1 he
-  have hnorm : ‖γ s - γ t₀‖ ≤ M * ε :=
-    hz ▸ norm_smul_add_smul_le (min_le_left _ _) hε hl0 hl1 he
-  -- The point `γ s` is close to `γ t₀`, so it lies in the thin cone, which contradicts `hlow`.
-  have hρs : ‖γ s - γ t₀‖ < ρ :=
-    hnorm.trans_lt (by rwa [lt_div_iff₀ hM, mul_comm] at hερ)
-  have hup := (le_abs_self _).trans (hc s hs hρs)
-  have h3 : κ / (4 * M) * ‖γ s - γ t₀‖ ≤ κ / 4 * ε := by
-    calc κ / (4 * M) * ‖γ s - γ t₀‖ ≤ κ / (4 * M) * (M * ε) :=
-          mul_le_mul_of_nonneg_left hnorm (by positivity)
-      _ = κ / 4 * ε := by field_simp
-  nlinarith [mul_pos hκ hε]
-
-end TauCeti.Contour
 
 open TauCeti TauCeti.Contour
 
@@ -167,8 +68,8 @@ private theorem eventually_segment_subset_compl_of_hasDerivAt {σ : ℝ} (hab : 
     hinj.eq_of_mem_Icc_of_mem_Ioo hclosed ht₀ (uIcc_of_le hab.le ▸ ht)
   refine ⟨hv, ?_⟩
   simp only [← mul_smul_comm σ I v]
-  refine eventually_segment_subset_compl (fun η hη ↦ ?_) hp0 hp hw'
-  obtain ⟨ρ, hρ, h⟩ := exists_pos_forall_abs_im_conj_mul_sub_le isCompact_uIcc hγ.continuousOn
+  refine hp.eventually_segment_subset_compl_of_tangent_cone (fun η hη ↦ ?_) hp0 hw'
+  obtain ⟨ρ, hρ, h⟩ := isCompact_uIcc.exists_pos_forall_abs_im_conj_mul_sub_le hγ.continuousOn
     huniq hd.hasDerivWithinAt hη
   refine ⟨ρ, hρ, fun s hs hsρ ↦ ?_⟩
   rcases hu with hu | hu <;> simpa only [hu, map_neg, neg_mul, neg_im, abs_neg] using h s hs hsρ
@@ -220,5 +121,43 @@ theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
   have hmem := (convex_segment _ _).isPreconnected.subset_connectedComponentIn
     (right_mem_segment _ _ _) hseg (left_mem_segment _ _ _)
   rwa [← compl_filledHull_eq_connectedComponentIn hrank hbdd hn.2] at hmem
+
+/-- A transverse curve enters the bounded inside at all small positive times if and only if
+its right derivative lies on the side selected by the orientation sign. -/
+theorem mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
+    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p 0 = γ t₀)
+    (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : (conj v * w).im ≠ 0) :
+    0 < (jordanSign γ a b : ℝ) * (conj v * w).im ↔
+      ∀ᶠ ε in 𝓝[>] 0, p ε ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
+  refine ⟨hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp, ?_⟩
+  intro hmem
+  have hne : (jordanSign γ a b : ℝ) * (conj v * w).im ≠ 0 := by
+    refine mul_ne_zero ?_ hw
+    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> norm_num [h]
+  by_contra h
+  have hout := hγ.eventually_notMem_filledHull_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp
+    (lt_of_le_of_ne (le_of_not_gt h) hne)
+  obtain ⟨ε, hin, hout⟩ := (hmem.and hout).exists
+  exact hout hin.1
+
+/-- A transverse curve enters the unbounded outside at all small positive times if and only if
+its right derivative lies on the side opposite to the orientation sign. -/
+theorem mul_im_conj_mul_neg_iff_eventually_notMem_filledHull (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
+    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p 0 = γ t₀)
+    (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : (conj v * w).im ≠ 0) :
+    (jordanSign γ a b : ℝ) * (conj v * w).im < 0 ↔
+      ∀ᶠ ε in 𝓝[>] 0, p ε ∉ filledHull (γ '' uIcc a b) := by
+  refine ⟨hγ.eventually_notMem_filledHull_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp, ?_⟩
+  intro hout
+  have hne : (jordanSign γ a b : ℝ) * (conj v * w).im ≠ 0 := by
+    refine mul_ne_zero ?_ hw
+    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> norm_num [h]
+  by_contra h
+  have hmem := hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp
+    (lt_of_le_of_ne (le_of_not_gt h) hne.symm)
+  obtain ⟨ε, hin, hout⟩ := (hmem.and hout).exists
+  exact hout hin.1
 
 end AbsolutelyContinuousOnInterval

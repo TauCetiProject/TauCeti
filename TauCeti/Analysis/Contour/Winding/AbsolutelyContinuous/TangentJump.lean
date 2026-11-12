@@ -12,7 +12,7 @@ import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Continuity
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 import TauCeti.Analysis.Contour.Winding.Number.Segment.Jump
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
-import TauCeti.Topology.JordanCurve.Interval
+import TauCeti.Order.Interval.Set.Injective
 
 /-!
 # Winding-number jump across a regular point of an absolutely continuous curve

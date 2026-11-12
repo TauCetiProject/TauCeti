@@ -221,11 +221,12 @@ theorem jordanSign_const (c : ℂ) (a b : ℝ) : jordanSign (fun _ ↦ c) a b = 
 
 /-- The trace of a simple closed absolutely continuous curve on `[a, b]` (`a < b`, `γ a = γ b`,
 `InjOn γ (Ico a b)`) is a Jordan curve. -/
-theorem _root_.AbsolutelyContinuousOnInterval.isJordanCurve_image_uIcc {γ : ℝ → ℂ} {a b : ℝ}
+theorem _root_.AbsolutelyContinuousOnInterval.isJordanCurve_image_uIcc
+    {X : Type*} [PseudoMetricSpace X] [T2Space X] {γ : ℝ → X} {a b : ℝ}
     (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (hinj : InjOn γ (Ico a b)) : TauCeti.IsJordanCurve (γ '' uIcc a b) := by
   rw [uIcc_of_le hab.le]
-  exact TauCeti.isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
+  exact TauCeti.isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn') hclosed hinj
 
 /-- Pointwise form of the dichotomy: if two points `p`, `q` off the trace of a simple closed AC
 curve have winding numbers differing by `1`, then the winding number is `1` on all of
