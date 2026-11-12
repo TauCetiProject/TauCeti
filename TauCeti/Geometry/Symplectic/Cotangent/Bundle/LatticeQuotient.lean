@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
+public import TauCeti.Geometry.Symplectic.Lagrangian.Fibration
 public import TauCeti.Geometry.Symplectic.Manifold.Quotient
 public import TauCeti.Topology.FiberBundle.Countable
 public import TauCeti.Topology.FiberBundle.Separation
@@ -78,6 +79,8 @@ one-forms, such as the differentials of global action coordinates.
   back to `ω` and is symplectic.
 * `TauCeti.CotangentBundle.LatticeQuotient.isLagrangian_ker_mfderiv_proj`: the fibres of the
   projection are Lagrangian.
+* `TauCeti.CotangentBundle.LatticeQuotient.isLagrangianTorusFibration_proj`: the projection is a
+  regular Lagrangian torus fibration.
 
 ## References
 
@@ -572,6 +575,17 @@ theorem isLagrangian_ker_mfderiv_proj (hclosed : ∀ i, (α i).IsClosed) (y : La
     exact congrArg (fun f : _ →L[ℝ] _ ↦ f.toLinearMap.ker) hcomp.symm
   rw [hker, ← hsymp, SymplecticForm.isLagrangian_map_transport_iff]
   exact CotangentBundle.isLagrangian_ker_mfderiv_proj z
+
+/-- **`T*B/Λ → B` is a regular Lagrangian torus fibration** for the descended symplectic form: a
+proper submersion with connected Lagrangian fibres. It is the model torus bundle of the period
+lattice spanned by a closed coframe. -/
+theorem isLagrangianTorusFibration_proj (hclosed : ∀ i, (α i).IsClosed) :
+    (isSymplectic_symplecticForm hα hclosed).isNondegenerate.IsLagrangianTorusFibration I
+      (proj hα) where
+  isSubmersion := (isSubmersionOfComplement_proj hα).isSubmersion
+  isLagrangian_ker_mfderiv := isLagrangian_ker_mfderiv_proj hα hclosed
+  isProperMap := isProperMap_proj hα
+  isConnected_preimage_singleton := isConnected_proj_preimage_singleton hα
 
 end Manifold
 
