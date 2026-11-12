@@ -110,7 +110,7 @@ theorem map_tensorPowDiagonal {T : Type*} [CommSemiring T] [Algebra R T]
     φ (tensorPowDiagonal R S i j) =
       Algebra.TensorProduct.productMap (φ.comp (singleAlgHom i)) (φ.comp (singleAlgHom j))
         (Algebra.FormallyUnramified.elem R S) := by
-  rw [tensorPowDiagonal, ← AlgHom.comp_apply, AlgHom.comp_productMap]
+  rw [tensorPowDiagonal, ← AlgHom.comp_apply, Algebra.TensorProduct.comp_productMap]
 
 /-- `δᵢⱼ` is idempotent, as the image of the diagonal idempotent. -/
 theorem isIdempotentElem_tensorPowDiagonal (i j : ι) :

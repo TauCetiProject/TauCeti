@@ -61,9 +61,9 @@ ones, so the public `LinearMap.baseChange` API applies.
   kernel of multiplication `S ⊗[R] S → S`.
 * `Algebra.TensorProduct.productMap_mem_of_comp_eq`: if `f, g` agree modulo an ideal `J` of `T`,
   then `productMap f g e ∈ J` for every such `e`.
-* `AlgHom.comp_productMap`, `AlgHom.productMap_comp_includeLeft_includeRight`: post-composition
-  distributes over `productMap`, and an algebra map `g` out of `H₁ ⊗[R] H₂` is the `productMap`
-  of its restrictions along the two canonical inclusions; `H₁` and `H₂` need not be commutative.
+* `AlgHom.productMap_comp_includeLeft_includeRight`: an algebra map `g` out of `H₁ ⊗[R] H₂` is
+  the `productMap` of its restrictions along the two canonical inclusions; `H₁` and `H₂` need not
+  be commutative.
 * `Algebra.TensorProduct.mulLeft_map`, `Algebra.TensorProduct.mulLeft_map_includeRight`:
   naturality of tensor multiplication and cancellation of an inserted middle factor `1`.
 * `Algebra.TensorProduct.map_rTensor_eq_rTensor_lTensor`: `g ⊗ φ` after `f ⊗ id` is
@@ -406,14 +406,8 @@ namespace AlgHom
 
 section ProductMap
 
-variable {R H₁ H₂ A B : Type*} [CommSemiring R] [Semiring H₁] [Semiring H₂] [CommSemiring A]
-  [CommSemiring B] [Algebra R H₁] [Algebra R H₂] [Algebra R A] [Algebra R B]
-
-/-- Post-composition distributes over the tensor-product map induced by a pair of algebra maps. -/
-theorem comp_productMap (φ : A →ₐ[R] B) (f₁ : H₁ →ₐ[R] A) (f₂ : H₂ →ₐ[R] A) :
-    φ.comp (Algebra.TensorProduct.productMap f₁ f₂) =
-      Algebra.TensorProduct.productMap (φ.comp f₁) (φ.comp f₂) :=
-  Algebra.TensorProduct.ext' fun _ _ ↦ by simp
+variable {R H₁ H₂ A : Type*} [CommSemiring R] [Semiring H₁] [Semiring H₂] [CommSemiring A]
+  [Algebra R H₁] [Algebra R H₂] [Algebra R A]
 
 /-- An algebra map out of a tensor product is recovered from its two restrictions. -/
 @[simp]
