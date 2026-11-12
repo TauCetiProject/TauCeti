@@ -104,10 +104,8 @@ theorem tendsto_quantile_map_cast_poissonMeasure_atomMixture_zero_nhdsLT_one
         rw [Measure.atomMixture_def, ← add_smul,
           ← ENNReal.ofReal_add w.2.1 (sub_nonneg.mpr w.2.2)]
         simp
-      simpa [hr, poissonMeasure_zero, heq] using
-        (tendsto_quantile_map_cast_poissonMeasure_nhdsLT_one 0)
-    · simpa [hw, poissonMeasure_zero] using
-        (tendsto_quantile_map_cast_poissonMeasure_nhdsLT_one 0)
+      simp [hr, poissonMeasure_zero, heq]
+    · simp [hw]
   · rw [ite_eq_right h]
     apply Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one
     intro x
@@ -129,8 +127,7 @@ theorem tendsto_quantile_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zer
       (𝓝[>] 0) (𝓝 (if w = 0 then 1 else 0)) := by
   classical
   by_cases hw : w = 1
-  · simpa [hw, poissonMeasure_zero] using
-      (tendsto_quantile_map_cast_poissonMeasure_nhdsGT_zero 0)
+  · simp [hw]
   have hr : r ≠ 0 := h.resolve_right hw
   by_cases hw0 : w = 0
   · simpa [hw0] using tendsto_quantile_map_cast_poissonMeasure_cond_compl_zero_nhdsGT_zero hr
@@ -152,8 +149,7 @@ theorem tendsto_quantile_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zer
       (𝓝[<] 1) (𝓝 (if w = 1 then 0 else ⊤)) := by
   classical
   by_cases hw : w = 1
-  · simpa [hw, poissonMeasure_zero] using
-      (tendsto_quantile_map_cast_poissonMeasure_nhdsLT_one 0)
+  · simp [hw]
   have hr : r ≠ 0 := h.resolve_right hw
   let := isProbabilityMeasure_poissonMeasure_cond_compl_zero hr
   rw [ite_eq_right hw]
