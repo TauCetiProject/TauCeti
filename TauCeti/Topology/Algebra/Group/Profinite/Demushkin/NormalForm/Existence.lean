@@ -353,13 +353,6 @@ theorem exists_isDemushkin_range_eq_bot_of_even (hn : Even n) (hn0 : n ≠ 0) :
     existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordNeTwo 0 n (dvd_zero p) hn,
     fun _ hχ ↦ range_eq_bot_of_hasPrescriptionProperty_demushkinWordNeTwo hn rfl hχ⟩
 
-/-- Below level `2` the group `V^(f)` is all of `ℤ_2ˣ`, so `V^(max f 2) = V^(f)`. -/
-private theorem unitsPlusMinus_max_two (f : ℕ) : unitsPlusMinus (max f 2) = unitsPlusMinus f := by
-  rcases le_or_gt 2 f with hf | hf
-  · rw [max_eq_left hf]
-  · rw [max_eq_right hf.le, unitsPlusMinus_two]
-    exact (eq_top_iff.2 (unitsPlusMinus_two.ge.trans (unitsPlusMinus_antitone hf.le))).symm
-
 /-- **The principal unit group `U^(f) = 1 + p^f ℤ_p` is realized in every even rank `n ≥ 2`**, for
 `f ≥ 1`, and `f ≥ 2` when `p = 2`, by the relator `x₁^{p^f} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_isDemushkin_range_eq_unitsPrincipal_of_even (hn : Even n) (hn0 : n ≠ 0) {f : ℕ}
