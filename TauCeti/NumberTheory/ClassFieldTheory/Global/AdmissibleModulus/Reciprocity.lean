@@ -183,7 +183,7 @@ theorem rayClassArtinMap_comp_rayClassMk :
       NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois 𝔪.support
         h.isUnramifiedAway := by
   refine eq_artinHomAway_of_globalArtinMap L IsSepClosed.lift 𝔪.support h.isUnramifiedAway _
-    fun I v hv hI ↦ ?_
+    fun I v _ hI ↦ ?_
   rw [MonoidHom.comp_apply, ← rayClassQuotient_primeIdeleClass I hI,
     of_rayClassArtinMap_rayClassQuotient h IsSepClosed.lift, ofMul_toMul]
 
