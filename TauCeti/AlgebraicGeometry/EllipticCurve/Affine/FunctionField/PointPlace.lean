@@ -53,12 +53,6 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   equality of sets.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 0, **The point--place dictionary**: for elliptic
-`W`, identify `W.toAffine.Point` with the degree-one places, taking `O` to `infinityPlace` and an
-affine point to its maximal ideal.
-
 ## Provenance
 
 Not ported.  The proof composes Tau Ceti's generic normalized-place and affine-model APIs with the

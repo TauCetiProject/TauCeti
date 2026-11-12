@@ -23,7 +23,7 @@ With the arithmetic normalization of the slash action, the unnormalised diagonal
 `f ∣[k] diag(d, 1) = d ^ (k - 1) V_d f`.
 
 Consequently its `n`-th Fourier coefficient is `d ^ (k - 1) a_(n / d)` when `d ∣ n`, and zero
-otherwise. This is the second term in the roadmap's recurrence
+otherwise. This is the second term in the classical recurrence
 `a_n(T_p f) = a_(p n)(f) + χ(p) p ^ (k - 1) a_(n / p)(f)`; the factor `χ(p)` comes separately
 from the diamond operator and is not part of the diagonal slash.
 
