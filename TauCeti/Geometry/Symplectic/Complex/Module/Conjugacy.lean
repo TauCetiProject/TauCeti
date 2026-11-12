@@ -8,15 +8,15 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Geometry.Symplectic.Finrank
 
 /-!
 # Real-linear complex structures are conjugate to multiplication by `i`
 
 On a finite-dimensional complex normed space `V`, every real-linear `A` with `A² = -1` is
-conjugate to multiplication by `i` through a real-linear automorphism: it sends an adapted basis
-`(v₁, i v₁, …, vₙ, i vₙ)` of `i` (`TauCeti.AlmostComplexStructure.exists_basis_apply_one_eq`) to
-one `(w₁, A w₁, …, wₙ, A wₙ)` of `A`. This is the pointwise normal form behind the reduction of a
+conjugate to multiplication by `i` through a real-linear automorphism. This is the case `G = V` of
+`TauCeti.AlmostComplexStructure.exists_linearEquiv_I_smul`, applied to the almost complex
+structure `A`. This is the pointwise normal form behind the reduction of a
 variable complex structure to the standard one in the vector similarity principle.
 
 ## Main declarations
@@ -40,30 +40,13 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimension
 
 /-- **Adapted frames at a point.** A real-linear `A` with `A² = -1` on a finite-dimensional complex
 vector space is conjugate to multiplication by `i`: some real-linear automorphism `Φ₁` satisfies
-`A Φ₁ = Φ₁ i`. It sends an adapted basis `(v₁, i v₁, …, vₙ, i vₙ)` to an adapted basis
-`(w₁, A w₁, …, wₙ, A wₙ)`. -/
+`A Φ₁ = Φ₁ i`. This is `TauCeti.AlmostComplexStructure.exists_linearEquiv_I_smul` with `G = V`. -/
 theorem exists_continuousLinearEquiv_comp_eq_comp_I_smul (A : V →L[ℝ] V)
     (hA : A ∘L A = -ContinuousLinearMap.id ℝ V) :
     ∃ Φ₁ : V ≃L[ℝ] V,
       A ∘L (Φ₁ : V →L[ℝ] V) = (Φ₁ : V →L[ℝ] V) ∘L (I • ContinuousLinearMap.id ℝ V) := by
-  have hA' (v : V) : A (A v) = -v := congr($hA v)
-  let JA : AlmostComplexStructure V := ⟨A.toLinearMap, by ext v; exact hA' v⟩
-  obtain ⟨n, bA, hbA⟩ := JA.exists_basis_apply_one_eq
-  obtain ⟨m, bI, hbI⟩ := (AlmostComplexStructure.ofComplexModule V).exists_basis_apply_one_eq
-  obtain rfl : n = m := by
-    have h := (Module.finrank_eq_card_basis bA).symm.trans (Module.finrank_eq_card_basis bI)
-    simp only [Fintype.card_prod, Fintype.card_fin] at h
-    omega
-  have hbA' (i : Fin n) : bA (i, 1) = A (bA (i, 0)) := hbA i
-  have hbI₀ (i : Fin n) : I • bI (i, 0) = bI (i, 1) := by
-    rw [hbI i]
-    exact (AlmostComplexStructure.ofComplexModule_apply _).symm
-  have hbI₁ (i : Fin n) : I • bI (i, 1) = -bI (i, 0) := by
-    rw [← hbI₀, smul_smul, I_mul_I, neg_one_smul]
-  let e := (bI.equiv bA (Equiv.refl _)).toContinuousLinearEquiv
-  have he (x) : e (bI x) = bA x := bI.equiv_apply x bA (Equiv.refl _)
-  refine ⟨e, coe_injective (bI.ext fun ⟨i, k⟩ => ?_)⟩
-  -- Both sides send `bI (i, 0)` to `bA (i, 1)` and `bI (i, 1)` to `-bA (i, 0)`.
-  fin_cases k <;> simp [he, hbI₀, hbI₁, hbA', hA']
+  let JA : AlmostComplexStructure V := ⟨A.toLinearMap, by ext v; exact congr($hA v)⟩
+  obtain ⟨φ, hφ⟩ := JA.exists_linearEquiv_I_smul (G := V) (finrank_real_of_complex V)
+  exact ⟨φ.toContinuousLinearEquiv, ext fun z ↦ by simpa [JA] using (hφ z).symm⟩
 
 end ContinuousLinearMap
