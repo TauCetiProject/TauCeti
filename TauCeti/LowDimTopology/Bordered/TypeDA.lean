@@ -142,8 +142,11 @@ idempotents `ιA` and `ιB`, in a basis of generators `Y`. Each generator `y` li
 `ιA (idemLeft y) * M * ιB (idemRight y)`, and the structure map `δ¹_{n+1}` sends `y ⊗ b₁ ⊗ ⋯ ⊗ bₙ`
 to `∑ y', coeff n b y y' ⊗ y'`. The coefficients lie in the summands of the left idempotents, and
 `δ¹` respects the right idempotents: `δ¹₁` keeps them, and the coefficient of `y'` in
-`δ¹_{n+1}(y, b₁, …, bₙ)` only sees `bₙ * ιB (idemRight y')`. The structure relation of length `n`
-is `d δ_{n+1}(b) + TauCeti.typeDAStasheffComp + TauCeti.typeDAStasheffDiff +
+`δ¹_{n+1}(y, b₁, …, bₙ)` only sees `bₙ * ιB (idemRight y')`. The inputs are balanced over the
+idempotents of `B`: the coefficient from `y` only sees `ιB (idemRight y) * b₁`, and
+`δ¹_{n+1}(…, bₗ * ιB t, bₗ₊₁, …) = δ¹_{n+1}(…, bₗ, ιB t * bₗ₊₁, …)`, so `δ¹_{n+1}` is defined on
+`M ⊗ B ⊗ ⋯ ⊗ B` with the tensor products taken over the idempotents. The structure relation of
+length `n` is `d δ_{n+1}(b) + TauCeti.typeDAStasheffComp + TauCeti.typeDAStasheffDiff +
 TauCeti.typeDAStasheffMul = 0`, with no signs: over a ring of characteristic two these are the
 relations of Lipshitz, Ozsváth and Thurston, and no characteristic is imposed by the definition
 itself. -/
@@ -169,6 +172,16 @@ structure TypeDABimodule where
   coeff_succ_update_mul_idem (n : ℕ) (b : Fin (n + 1) → B) (y y' : Y) :
     coeff (n + 1) (Function.update b (Fin.last n) (b (Fin.last n) * ιB (idemRight y'))) y y' =
       coeff (n + 1) b y y'
+  /-- The coefficient from `y` in `δ¹_{n+2}(y, b₁, …, bₙ₊₁)` only depends on
+  `ιB (idemRight y) * b₁`. -/
+  coeff_succ_update_idem_mul (n : ℕ) (b : Fin (n + 1) → B) (y y' : Y) :
+    coeff (n + 1) (Function.update b 0 (ιB (idemRight y) * b 0)) y y' = coeff (n + 1) b y y'
+  /-- Adjacent inputs are balanced over the idempotents of `B`:
+  `δ¹_{n+3}(…, bₗ * ιB t, bₗ₊₁, …) = δ¹_{n+3}(…, bₗ, ιB t * bₗ₊₁, …)`. -/
+  coeff_update_mul_idem_eq_update_idem_mul (n : ℕ) (b : Fin (n + 2) → B) (l : Fin (n + 1))
+      (t : T) :
+    coeff (n + 2) (Function.update b l.castSucc (b l.castSucc * ιB t)) =
+      coeff (n + 2) (Function.update b l.succ (ιB t * b l.succ))
   /-- The structure relation of length `n`. -/
   stasheff (n : ℕ) (b : Fin n → B) :
     (coeff n b).map dA + typeDAStasheffComp coeff n b + typeDAStasheffDiff coeff dB n b +
