@@ -44,8 +44,7 @@ with trivial star, such as `ℝ`, this is the orthogonal group. -/
 theorem permutationGL_mem_unitarySubgroup {R : Type*} [Semiring R] [StarRing R] {ι : Type*}
     [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι) :
     permutationGL σ ∈ unitarySubgroup (GL ι R) := by
-  rw [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap, Units.coeHom_apply,
-    permutationGL_coe, Unitary.mem_iff]
-  simp [star_eq_conjTranspose, conjTranspose_permMatrix, ← permMatrix_mul]
+  simp [mem_unitarySubgroup_iff, Units.unitary_eq, Unitary.mem_iff, star_eq_conjTranspose,
+    conjTranspose_permMatrix, ← permMatrix_mul]
 
 end TauCeti
