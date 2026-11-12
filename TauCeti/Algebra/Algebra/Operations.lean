@@ -11,7 +11,7 @@ import Mathlib.Tactic.Ring
 /-!
 # Powers of submodules of an algebra
 
-Three facts about the powers of a submodule of an algebra.
+Product membership and bounds for powers of submodules of an algebra.
 
 Once the powers of a submodule `M` repeat once, `M ^ (n + 1) = M ^ n`, they are constant from `n`
 on. This is `TauCeti.pow_eq_pow_of_pow_succ_eq_pow` for submodules, which Mathlib makes a monoid
@@ -38,6 +38,8 @@ the computation of the cohomology of the twisting sheaves on the projective line
 
 ## Main results
 
+* `Submodule.list_prod_mem_pow`: a product of `n` members of `M` belongs to `M ^ n`.
+
 * `Submodule.pow_eq_pow_of_pow_succ_eq_pow`: `M ^ (n + 1) = M ^ n` propagates to all `k ≥ n`.
 * `Submodule.span_pow_succ_le_span_of_forall_mul_mem`: `span R s ^ (t + 1) ≤ span R (W t)` if
   `s ⊆ span R (W 0)` and right multiplication by `s` maps each `W t` into `span R (W (t + 1))`.
@@ -52,6 +54,16 @@ namespace Submodule
 section Semiring
 
 variable {R A : Type*} [Semiring R] [Semiring A] [Module R A] [IsScalarTower R A A]
+
+/-- A product of elements of a submodule lies in the power indexed by the number of factors. -/
+theorem list_prod_mem_pow {M : Submodule R A} {l : List A} (h : ∀ a ∈ l, a ∈ M) :
+    l.prod ∈ M ^ l.length := by
+  induction l using List.reverseRecOn with
+  | nil => exact Submodule.one_le.mp le_rfl
+  | append_singleton l a ih =>
+    rw [List.prod_append, List.prod_singleton, List.length_append, List.length_singleton,
+      Submodule.pow_succ]
+    exact Submodule.mul_mem_mul (ih fun b hb ↦ h b (by simp [hb])) (h a (by simp))
 
 /-- Once the powers of a submodule repeat once, they are constant from that point on.
 
