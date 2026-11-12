@@ -45,8 +45,6 @@ smooth near the chart point of `x₀`. A smooth solution `g` of `∂bar g = -B`
   `TauCeti.IsRealCauchyRiemannOperator.forall_apply_smul_eq_zero_iff`: against a nonvanishing
   holomorphic section `σ`, the section `f • σ` is in the kernel of `D` exactly when `f` is
   holomorphic.
-* `TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm`: on a
-  complex curve, a `(0,1)`-form read in a chart is `w ↦ conj w • η (∂/∂x)`.
 * `TauCeti.IsRealCauchyRiemannOperator.apply_localFrame_mfderivWithin_extChartAt_symm`: the
   operator on the frame of a trivialization, through its chart coefficient.
 * `TauCeti.IsRealCauchyRiemannOperator.exists_isNonvanishingHolomorphicOn`: local
@@ -256,39 +254,6 @@ variable {V : M → Type*} [TopologicalSpace (TotalSpace ℂ V)] [∀ x, Topolog
   [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
   [VectorBundle ℂ ℂ V] [VectorBundle ℝ ℂ V]
-
-omit [TopologicalSpace (TotalSpace ℂ V)] [FiberBundle ℂ V] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul ℝ (V x)] [∀ x, ContinuousSMul ℂ (V x)] [VectorBundle ℂ ℂ V]
-  [VectorBundle ℝ ℂ V] in
-/-- On a complex curve, a `(0,1)`-form at the point `φ⁻¹ z` of the chart `φ` at `x₀` is determined
-by its value on the coordinate vector `∂/∂x = dφ⁻¹ 1`: on `dφ⁻¹ w` it is `conj w` times that
-value. -/
-theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm {x₀ : M}
-    {z : ℂ} (hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) x₀).target)
-    {η : TangentSpace 𝓘(ℝ, ℂ) ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z) →L[ℝ]
-      V ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)}
-    (hη : (ofComplexManifold ℂ M).IsZeroOneForm η) (w : ℂ) :
-    η (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z w) =
-      starRingEnd ℂ w • η (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
-        (range 𝓘(ℝ, ℂ)) z (1 : ℂ)) := by
-  set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z
-  -- `dφ⁻¹` is complex linear, so `dφ⁻¹ i = j (dφ⁻¹ 1)`, on which `η` is `-i • η (dφ⁻¹ 1)`.
-  have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
-    have h : L (Complex.I • (1 : ℂ)) = (Complex.I • ContinuousLinearMap.id ℝ ℂ) (L (1 : ℂ)) :=
-      mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I (1 : ℂ)
-    rw [smul_eq_mul, mul_one] at h
-    rw [h]
-    exact (ofComplexManifold_apply (E := ℂ) _ _).symm
-  have hηI : η (L Complex.I) = -(Complex.I • η (L (1 : ℂ))) := by
-    rw [hLI]
-    exact isZeroOneForm_iff.1 hη _
-  have h : η (L w) = w.re • η (L (1 : ℂ)) + w.im • η (L Complex.I) :=
-    LinearMap.apply_eq_re_smul_one_add_im_smul_I (η.comp L).toLinearMap w
-  rw [h, hηI]
-  conv_rhs => rw [← Complex.re_add_im w]
-  simp only [map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
-    RCLike.real_smul_eq_coe_smul (K := ℂ) (E := V _)]
-  module
 
 /-- The coefficient of an operator `D` on a complex line bundle `V` over a complex curve, in the
 chart `φ` and the trivialization `e` at `x₀`: at the chart point `z`, the coordinate in `e` of

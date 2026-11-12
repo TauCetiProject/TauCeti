@@ -8,12 +8,14 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
+public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Geometry.Manifold.Notation
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -40,6 +42,8 @@ differentiable.
   (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_self_iff`).
 * `TauCeti.SmoothAlmostComplexStructure.zeroOnePart_smulRight_eq_zero_iff`: for `w ≠ 0`, the
   `(0,1)`-part of `η ⊗ w` vanishes exactly when the complex valued one-form `η` is complex linear.
+* `TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm`: on a
+  complex curve, a `(0,1)`-form read in a chart is `w ↦ conj w • η (∂/∂x)`.
 * `TauCeti.IsRealCauchyRiemannOperator.apply_eq_of_eventuallyEq`: locality, a real Cauchy–Riemann
   operator at `x` only sees the germ at `x` of a section differentiable at `x`.
 * `TauCeti.IsRealCauchyRiemannOperator.leibniz_complex`: the Leibniz rule
@@ -608,5 +612,53 @@ theorem antilinearPart_eq_of_eq_add (hD : IsRealCauchyRiemannOperator F j D)
 end ComplexPart
 
 end IsRealCauchyRiemannOperator
+
+end TauCeti
+
+/-! ### `(0,1)`-forms on complex curves -/
+
+namespace TauCeti
+
+section Curve
+
+open Set
+open scoped TauCeti.ComplexManifold
+open SmoothAlmostComplexStructure
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
+  {V : M → Type*} [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
+
+/-- On a complex curve, a `(0,1)`-form at the point `φ⁻¹ z` of the chart `φ` at `x₀` is determined
+by its value on the coordinate vector `∂/∂x = dφ⁻¹ 1`: on `dφ⁻¹ w` it is `conj w` times that
+value. -/
+theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm {x₀ : M}
+    {z : ℂ} (hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) x₀).target)
+    {η : TangentSpace 𝓘(ℝ, ℂ) ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z) →L[ℝ]
+      V ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)}
+    (hη : (ofComplexManifold ℂ M).IsZeroOneForm η) (w : ℂ) :
+    η (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z w) =
+      starRingEnd ℂ w • η (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+        (range 𝓘(ℝ, ℂ)) z (1 : ℂ)) := by
+  set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z
+  -- `dφ⁻¹` is complex linear, so `dφ⁻¹ i = j (dφ⁻¹ 1)`, on which `η` is `-i • η (dφ⁻¹ 1)`.
+  have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
+    have h : L (Complex.I • (1 : ℂ)) = (Complex.I • ContinuousLinearMap.id ℝ ℂ) (L (1 : ℂ)) :=
+      mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I (1 : ℂ)
+    rw [smul_eq_mul, mul_one] at h
+    rw [h]
+    exact (ofComplexManifold_apply (E := ℂ) _ _).symm
+  have hηI : η (L Complex.I) = -(Complex.I • η (L (1 : ℂ))) := by
+    rw [hLI]
+    exact isZeroOneForm_iff.1 hη _
+  have h : η (L w) = w.re • η (L (1 : ℂ)) + w.im • η (L Complex.I) :=
+    LinearMap.apply_eq_re_smul_one_add_im_smul_I (η.comp L).toLinearMap w
+  rw [h, hηI]
+  conv_rhs => rw [← Complex.re_add_im w]
+  simp only [map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
+    RCLike.real_smul_eq_coe_smul (K := ℂ) (E := V _)]
+  module
+
+end Curve
 
 end TauCeti
