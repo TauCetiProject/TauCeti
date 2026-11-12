@@ -71,21 +71,20 @@ polynomial ring `R[X]/(X ^ n)`.
 Stated over arbitrary commutative rings.
 
 This is consumed by `TauCeti/AlgebraicGeometry/EllipticCurve/Affine/CoordinateRingMap.lean`, which
-specialises it to the coordinate ring of a Weierstrass curve for the Hasse strand of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 3.
+specialises it to the coordinate ring of a Weierstrass curve.
 
 ## Provenance
 
 The surjectivity argument — lift a class to a polynomial, then lift that polynomial along `f` — is
-adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by
-that roadmap at `dev/hasse-weil @ 513e83879e2f`),
+adapted from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`),
 `HasseWeil/WeilPairing/FrobeniusFunctionFieldEquiv.lean`, declaration `coordRingMap_bijective`.
 There it is carried out for the coordinate ring of a Weierstrass curve and only for a base ring
 *equivalence*; here it is stated for `AdjoinRoot.map` along any surjective base homomorphism, with
 `map_mk` — which the source does not isolate — extracted as the step that makes it routine.
 `AdjoinRoot.exists_degree_lt_mk_eq` and `AdjoinRoot.mk_eq_mk_iff_of_degree_lt` are adapted from
 Michael Stoll's `EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`,
-Apache-2.0, pinned by `TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`. There the reduction step the first one uses is a separate
 lemma; here that step is Mathlib's `AdjoinRoot.mk_leftInverse`. The source proves the second from a
 named helper `eq_zero_of_monic_dvd_of_degree_lt`; that helper is a one-line composition of

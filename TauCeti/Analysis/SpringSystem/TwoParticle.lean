@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.GroupTheory.NoncommCoprod
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RepresentationTheory.Equiv
 public import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
@@ -93,13 +92,12 @@ not solutions of the spring equation.
 * `TauCeti.TwoParticleSpring.hasFDerivAt_exactForce_zero`,
   `TauCeti.TwoParticleSpring.hasFDerivAt_inv_smul_exactForce_zero`: the exact force linearizes to
   `κ H` at the rest configuration, and the acceleration of particles of mass `m` to `(κ / m) H`.
-* `TauCeti.TwoParticleSpring.forceMatrix_mulVec_symmetryRep`: `H` is equivariant.
-* `TauCeti.TwoParticleSpring.symmetryRep_dotProduct`: each symmetry is symmetric for the dot
+* `TauCeti.TwoParticleSpring.forceMatrix_mulVec_symmetryRep`: `H` is equivariant, and
+  `TauCeti.TwoParticleSpring.dotProduct_symmetryRep`: the action is orthogonal, so
+  `TauCeti.TwoParticleSpring.symmetryRep_dotProduct`: each symmetry is symmetric for the dot
   product.
 * `TauCeti.TwoParticleSpring.symmetryRep_stretch` and its three companions: the symmetry type of
   each eigenvector of `H`.
-* `TauCeti.TwoParticleSpring.iInf_eigenspace_symmetryRep_one` and its three companions: each joint
-  eigenspace of the symmetries is the line through the corresponding eigenvector of `H`.
 * `TauCeti.TwoParticleSpring.isotypicProjector_one_apply` and its three companions: the
   projectors are the orthogonal projections onto the eigenvector lines, and
   `TauCeti.TwoParticleSpring.isotypicProjector_add_add_add_eq_one`: they sum to the identity.
@@ -108,6 +106,11 @@ not solutions of the spring equation.
 * `TauCeti.TwoParticleSpring.isotypicProjector_mul_self`,
   `TauCeti.TwoParticleSpring.isotypicProjector_mul_isotypicProjector_of_ne`: the projectors are
   idempotent and those of distinct characters annihilate each other.
+* `TauCeti.TwoParticleSpring.mem_iInf_eigenspace_symmetryRep_iff`: a displacement lies in the
+  isotypic component of `χ` exactly when the two reflections act on it by the values of `χ`.
+* `TauCeti.TwoParticleSpring.range_isotypicProjector`: the image of each projector is its isotypic
+  component, and `TauCeti.TwoParticleSpring.iInf_eigenspace_symmetryRep_one` and its three
+  companions: the four isotypic components are exactly the eigenvector lines.
 * `TauCeti.TwoParticleSpring.toLin'_forceMatrix`: `H = -2 P`, with `P` the projector of the
   trivial character.
 * `TauCeti.TwoParticleSpring.springPotential_transverse`,
@@ -653,8 +656,18 @@ theorem forceMatrix_mulVec_symmetryRep (g : Multiplicative (ZMod 2) × Multiplic
       fin_cases i <;>
         simp [forceMatrix, mulVec, dotProduct, Fin.sum_univ_four, Prod.mk_one_one]
 
-/-- **Each symmetry is orthogonal**: an involution preserving the dot product, it is symmetric for
-the dot product. -/
+/-- **The action is orthogonal**: every symmetry preserves the standard dot product of
+displacements. -/
+theorem dotProduct_symmetryRep (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2))
+    (u v : Fin 4 → ℝ) :
+    symmetryRep g u ⬝ᵥ symmetryRep g v = u ⬝ᵥ v := by
+  obtain ⟨a, b⟩ := g
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    simp [dotProduct, Fin.sum_univ_four, Prod.mk_one_one] <;> ring
+
+/-- **Each symmetry is symmetric for the dot product**: an involution preserving the dot product,
+it is its own adjoint. -/
 theorem symmetryRep_dotProduct (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2))
     (u w : Fin 4 → ℝ) : symmetryRep g u ⬝ᵥ w = u ⬝ᵥ symmetryRep g w := by
   obtain ⟨a, b⟩ := g
@@ -704,104 +717,6 @@ theorem symmetryRep_transverse (g : Multiplicative (ZMod 2) × Multiplicative (Z
     rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     · ext i
       fin_cases i <;> simp [Prod.mk_one_one]
-
-/-! ### The joint eigenspaces -/
-
-/-- A displacement lies in the joint eigenspace of a real character `χ` of `C₂ × C₂` exactly when
-the two reflections multiply it by the values of `χ` at the two generators. -/
-theorem mem_iInf_eigenspace_symmetryRep_iff
-    (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) (u : Fin 4 → ℝ) :
-    u ∈ ⨅ g, Module.End.eigenspace (symmetryRep g) (χ g) ↔
-      axisReflection u = χ (.ofAdd 1, 1) • u ∧ bisectorReflection u = χ (1, .ofAdd 1) • u := by
-  rw [Submodule.mem_iInf]
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hr, hs⟩ g ↦ Module.End.mem_eigenspace_iff.2 ?_⟩
-  · simpa using Module.End.mem_eigenspace_iff.1 (h (.ofAdd 1, 1))
-  · simpa using Module.End.mem_eigenspace_iff.1 (h (1, .ofAdd 1))
-  have hχ : χ (.ofAdd 1, .ofAdd 1) = χ (1, .ofAdd 1) * χ (.ofAdd 1, 1) := by
-    rw [← map_mul, Prod.mk_mul_mk, one_mul, mul_one]
-  obtain ⟨a, b⟩ := g
-  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
-    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl
-  · simp [Prod.mk_one_one]
-  · simpa using hs
-  · simpa using hr
-  · rw [symmetryRep_ofAdd_one_ofAdd_one_apply, hs, map_smul, hr, smul_smul, hχ]
-
-/-- A joint eigenvector `v` of a character `χ` spans its joint eigenspace once every displacement
-on which the two reflections act by the values of `χ` is a multiple of `v`. -/
-private theorem iInf_eigenspace_symmetryRep_eq_span
-    {χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ} {v : Fin 4 → ℝ}
-    (hv : ∀ g, symmetryRep g v = χ g • v)
-    (hx : ∀ u, axisReflection u = χ (.ofAdd 1, 1) • u →
-      bisectorReflection u = χ (1, .ofAdd 1) • u → ∃ c : ℝ, c • v = u) :
-    ⨅ g, Module.End.eigenspace (symmetryRep g) (χ g) = ℝ ∙ v := by
-  ext u
-  rw [mem_iInf_eigenspace_symmetryRep_iff, Submodule.mem_span_singleton]
-  refine ⟨fun ⟨hr, hs⟩ ↦ hx u hr hs, ?_⟩
-  rintro ⟨c, rfl⟩
-  simp only [map_smul, ← symmetryRep_ofAdd_one_one_apply, ← symmetryRep_one_ofAdd_one_apply, hv,
-    smul_comm c, and_self]
-
-/-- The **trivial isotypic component** of the displacements is the line through the stretching
-mode `(1, 0, -1, 0)`. -/
-@[simp]
-theorem iInf_eigenspace_symmetryRep_one :
-    ⨅ g, Module.End.eigenspace (symmetryRep g) 1 =
-      ℝ ∙ (![1, 0, -1, 0] : Fin 4 → ℝ) := by
-  refine iInf_eigenspace_symmetryRep_eq_span (χ := 1) (by simp [symmetryRep_stretch])
-    fun u hr hs ↦ ⟨u 0, ?_⟩
-  have hr1 := congrFun hr 1
-  have hr3 := congrFun hr 3
-  have hs0 := congrFun hs 0
-  simp at hr1 hr3 hs0
-  ext i
-  fin_cases i <;> simp <;> linarith
-
-/-- The isotypic component of the sign character of the first factor, reversed by the axis
-reflection and fixed by the bisector reflection, is the line of vertical translations. -/
-@[simp]
-theorem iInf_eigenspace_symmetryRep_comp_fst :
-    ⨅ g, Module.End.eigenspace (symmetryRep g) (cyclicTwoSign ℝ g.1) =
-      ℝ ∙ (![0, 1, 0, 1] : Fin 4 → ℝ) := by
-  refine iInf_eigenspace_symmetryRep_eq_span (χ := (cyclicTwoSign ℝ).comp (MonoidHom.fst _ _))
-    symmetryRep_translation_y fun u hr hs ↦ ⟨u 1, ?_⟩
-  have hr0 := congrFun hr 0
-  have hr2 := congrFun hr 2
-  have hs1 := congrFun hs 1
-  simp at hr0 hr2 hs1
-  ext i
-  fin_cases i <;> simp <;> linarith
-
-/-- The isotypic component of the sign character of the second factor, fixed by the axis
-reflection and reversed by the bisector reflection, is the line of horizontal translations. -/
-@[simp]
-theorem iInf_eigenspace_symmetryRep_comp_snd :
-    ⨅ g, Module.End.eigenspace (symmetryRep g) (cyclicTwoSign ℝ g.2) =
-      ℝ ∙ (![1, 0, 1, 0] : Fin 4 → ℝ) := by
-  refine iInf_eigenspace_symmetryRep_eq_span (χ := (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _))
-    symmetryRep_translation_x fun u hr hs ↦ ⟨u 0, ?_⟩
-  have hr1 := congrFun hr 1
-  have hr3 := congrFun hr 3
-  have hs0 := congrFun hs 0
-  simp at hr1 hr3 hs0
-  ext i
-  fin_cases i <;> simp <;> linarith
-
-/-- The isotypic component of the product of the two sign characters, reversed by both
-reflections, is the line through the transverse mode `(0, 1, 0, -1)`. -/
-@[simp]
-theorem iInf_eigenspace_symmetryRep_mul :
-    ⨅ g, Module.End.eigenspace (symmetryRep g) (cyclicTwoSign ℝ g.1 * cyclicTwoSign ℝ g.2) =
-      ℝ ∙ (![0, 1, 0, -1] : Fin 4 → ℝ) := by
-  refine .trans (by simp) (iInf_eigenspace_symmetryRep_eq_span
-    (χ := (cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) * (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _))
-    symmetryRep_transverse fun u hr hs ↦ ⟨u 1, ?_⟩)
-  have hr0 := congrFun hr 0
-  have hr2 := congrFun hr 2
-  have hs1 := congrFun hs 1
-  simp at hr0 hr2 hs1
-  ext i
-  fin_cases i <;> simp <;> linarith
 
 /-! ### The regular representation -/
 
@@ -947,6 +862,99 @@ theorem isotypicProjector_add_add_add_eq_one :
   simp only [LinearMap.add_apply, isotypicProjector_one_apply, isotypicProjector_comp_fst_apply,
     isotypicProjector_comp_snd_apply, isotypicProjector_mul_apply, one_apply_eq_self]
   fin_cases i <;> simp [dotProduct, Fin.sum_univ_four, vecHead, vecTail] <;> ring
+
+/-! ### The isotypic components -/
+
+/-- A displacement lies in the joint eigenspace of a real character `χ` of `C₂ × C₂` exactly when
+the two reflections multiply it by the values of `χ` at the two generators. -/
+theorem mem_iInf_eigenspace_symmetryRep_iff
+    (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) (u : Fin 4 → ℝ) :
+    u ∈ ⨅ g, Module.End.eigenspace (symmetryRep g) (χ g) ↔
+      axisReflection u = χ (.ofAdd 1, 1) • u ∧ bisectorReflection u = χ (1, .ofAdd 1) • u := by
+  rw [Submodule.mem_iInf]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hr, hs⟩ g ↦ Module.End.mem_eigenspace_iff.2 ?_⟩
+  · simpa using Module.End.mem_eigenspace_iff.1 (h (.ofAdd 1, 1))
+  · simpa using Module.End.mem_eigenspace_iff.1 (h (1, .ofAdd 1))
+  have hχ : χ (.ofAdd 1, .ofAdd 1) = χ (1, .ofAdd 1) * χ (.ofAdd 1, 1) := by
+    rw [← map_mul, Prod.mk_mul_mk, one_mul, mul_one]
+  obtain ⟨a, b⟩ := g
+  rcases a.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
+    rcases b.eq_one_or_eq_ofAdd_one with rfl | rfl
+  · simp [Prod.mk_one_one]
+  · simpa using hs
+  · simpa using hr
+  · rw [symmetryRep_ofAdd_one_ofAdd_one_apply, hs, map_smul, hr, smul_smul, hχ]
+
+/-- The image of the isotypic projector of `χ` is the `χ`-isotypic component, the joint eigenspace
+on which every symmetry `g` acts by the scalar `χ g`. -/
+theorem range_isotypicProjector (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
+    LinearMap.range (isotypicProjector χ) = ⨅ g, Module.End.eigenspace (symmetryRep g) (χ g) :=
+  symmetryRep.range_asAlgebraHom_charIdempotent (Nat.cast_ne_zero.2 Nat.card_pos.ne').isUnit
+    χ.toHomUnits
+
+/-- The **trivial isotypic component**, on which both reflections act trivially, is the stretching
+line through `(1, 0, -1, 0)`. -/
+theorem iInf_eigenspace_symmetryRep_one :
+    ⨅ g, Module.End.eigenspace (symmetryRep g)
+        ((1 : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) g) =
+      ℝ ∙ ![1, 0, -1, 0] := by
+  have hP : isotypicProjector 1 =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![1, 0, -1, 0]).smulRight ![1, 0, -1, 0] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_one_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![1, 0, -1, 0]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
+
+/-- The isotypic component of the sign of the first factor, reversed by the axis reflection and
+fixed by the bisector reflection, is the line of vertical translations through `(0, 1, 0, 1)`. -/
+theorem iInf_eigenspace_symmetryRep_comp_fst :
+    ⨅ g, Module.End.eigenspace (symmetryRep g)
+        ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) g) = ℝ ∙ ![0, 1, 0, 1] := by
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![0, 1, 0, 1]).smulRight ![0, 1, 0, 1] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_comp_fst_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![0, 1, 0, 1]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
+
+/-- The isotypic component of the sign of the second factor, fixed by the axis reflection and
+reversed by the bisector reflection, is the line of horizontal translations through
+`(1, 0, 1, 0)`. -/
+theorem iInf_eigenspace_symmetryRep_comp_snd :
+    ⨅ g, Module.End.eigenspace (symmetryRep g)
+        ((cyclicTwoSign ℝ).comp (MonoidHom.snd _ _) g) = ℝ ∙ ![1, 0, 1, 0] := by
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.snd _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![1, 0, 1, 0]).smulRight ![1, 0, 1, 0] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_comp_snd_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![1, 0, 1, 0]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
+
+/-- The isotypic component of the product of the two signs, reversed by both reflections, is the
+line of the transverse mode `(0, 1, 0, -1)`. -/
+theorem iInf_eigenspace_symmetryRep_mul :
+    ⨅ g, Module.End.eigenspace (symmetryRep g)
+        (((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) * (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _) :
+          Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) g) = ℝ ∙ ![0, 1, 0, -1] := by
+  have hP : isotypicProjector ((cyclicTwoSign ℝ).comp (MonoidHom.fst _ _) *
+        (cyclicTwoSign ℝ).comp (MonoidHom.snd _ _)) =
+      ((2 : ℝ)⁻¹ • dotProductBilin ℝ ℝ ![0, 1, 0, -1]).smulRight ![0, 1, 0, -1] := by
+    refine LinearMap.ext fun u ↦ ?_
+    simp [isotypicProjector_mul_apply, div_eq_inv_mul]
+  rw [← range_isotypicProjector, hP]
+  apply LinearMap.range_smulRight_apply
+  intro h
+  have := LinearMap.congr_fun h ![0, 1, 0, -1]
+  norm_num [dotProduct, Fin.sum_univ_four] at this
 
 /-- **The spectral decomposition of `H`**: the force matrix is `-2` times the projector of the
 trivial character, so its eigenvalue is `-2` on the stretching mode and `0` on the other three

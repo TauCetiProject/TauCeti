@@ -46,8 +46,9 @@ The converse inclusion, that every broken trajectory is a limit of unbroken ones
 `IsMorseSmale.morseBrokenTrajectoryPairs_subset_closure`. Each broken trajectory moreover has a
 neighbourhood homeomorphic to a half-open interval, by
 `IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`. Together with
-`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this would show that the broken trajectory
-pairs are even in number, which is `∂ ∘ ∂ = 0` by
+`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this shows that the broken trajectory pairs
+are even in number (`TauCeti.Geometry.Manifold.Morse.Boundary.Differential`), which is
+`∂ ∘ ∂ = 0` by
 `IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTrajectoryPairs`.
 
 ## Main declarations
@@ -251,7 +252,7 @@ theorem ncard_morseBrokenTrajectoryPairs (hdf : MDifferentiable 𝓘(ℝ, E) �
   · intro w hw
     obtain ⟨x, hx, t₁, t₂, ht₁, ht₂⟩ :=
       hX.exists_mem_morseBrokenTrajectorySet_of_mem_morseBrokenTrajectoryPairs hdf hw
-    obtain ⟨q, hq, hpq, hqr, -, hyc, -, hzc⟩ := hw
+    obtain ⟨q, _, _, _, -, hyc, -, hzc⟩ := hw
     obtain ⟨hpq', hqr', hz₁, hz₂⟩ := mem_morseBrokenTrajectorySet'.1 hx
     -- The level points of the two components are the given pair.
     refine ⟨x, hx, Prod.ext ?_ ?_⟩
@@ -379,7 +380,7 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
     ∃ N ∈ 𝓝 (⟨w, hw⟩ : closure (hX.morseTrajectoryPairs p r c₁ c₂)),
       ∃ V : Set ℝ, IsOpen V ∧ Nonempty (V ≃ₜ N) := by
   have hpr : p ≠ r := by rintro rfl; omega
-  obtain ⟨Φ, hΦ⟩ := hX.exists_homeomorph_morseTrajectoryPairs
+  obtain ⟨Φ, _⟩ := hX.exists_homeomorph_morseTrajectoryPairs
     (hf.contMDiff.mdifferentiable (by simp)) hpr hr₂ (h₂₁.trans h₁p)
   -- The level slice is a manifold modelled on a line `L`.
   obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hpr
