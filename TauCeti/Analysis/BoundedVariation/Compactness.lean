@@ -161,7 +161,7 @@ theorem totallyBounded_of_setLIntegral_le_of_totalVariationOn_le (hK : IsCompact
       (huΩ u hu).locallyIntegrableOn).trans (by gcongr <;> simp [hvar u hu, hbdd u hu])
   -- The Fréchet--Kolmogorov criterion applies to the family of the `χ u` in `L¹`.
   have hT := totallyBounded_of_integrable_totalVariationOn_le (S := S) (F := (χ * ·))
-    hχc.isCompact.isBounded hM hB (fun u hu x hx => by
+    hχc.isCompact.isBounded hM hB (fun u _ x hx => by
       simp [image_eq_zero_of_notMem_tsupport hx]) hint
     (fun u hu => (hnorm u).trans (hbdd u hu)) hvarχ
   exact totallyBounded_restrict_of_forall_eqOn (g := (χ * ·)) hK.measurableSet

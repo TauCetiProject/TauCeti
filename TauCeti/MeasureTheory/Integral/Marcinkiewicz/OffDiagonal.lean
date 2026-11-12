@@ -496,10 +496,10 @@ private theorem lintegral_rpow_le_of_rpow_mul_meas_lt_le_rpow_of_lt (hv : AEMeas
   have hq₁ : 0 < q₁ := hp₁.trans_le hpq₁
   obtain ⟨hlt₀, hlt₁, hq0, hγ₀, hγ₁⟩ :=
     interpolation_exponents hp₀ hp₁ hq₀ hq₁ hpp hqq hθ₀ hθ₁ hp hq
-  set γ := (q - q₀) * p₀ / (q₀ * (p - p₀)) with hγdef
-  obtain ⟨hγ, -, hqq₀, hqq₁⟩ := ne_zero_and_pos_of_div_eq hp₀ hlt₀ hlt₁ hpq₀ hpq₁ hγ₀ hγ₁
+  set γ := (q - q₀) * p₀ / (q₀ * (p - p₀))
+  obtain ⟨hγ, -, _, _⟩ := ne_zero_and_pos_of_div_eq hp₀ hlt₀ hlt₁ hpq₀ hpq₁ hγ₀ hγ₁
   have hp0 : 0 < p := hp₀.trans hlt₀
-  set N := ∫⁻ x, ‖v x‖ₑ ^ p ∂μ with hN
+  set N := ∫⁻ x, ‖v x‖ₑ ^ p ∂μ
   -- The distributional estimate at the height `c t ^ γ`, for any `c > 0`.
   have hmain : ∀ c : ℝ, 0 < c → ∫⁻ y, T v y ^ q ∂ν ≤
       ENNReal.ofReal (q * c ^ (q₀ * (p₀ - p) / p₀) / |q - q₀|) *

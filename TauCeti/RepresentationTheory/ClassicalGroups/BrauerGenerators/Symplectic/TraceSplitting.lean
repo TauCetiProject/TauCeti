@@ -112,7 +112,7 @@ theorem symplecticCupCapAt_eq_comp_contractTensorPair {i j : Fin d} (hij : i ≠
   refine PiTensorProduct.ext <| MultilinearMap.ext fun v => ?_
   -- inserting into the two slots of the restricted input overwrites those slots of the input
   have hfun (x y : Fin n ⊕ Fin n) :
-      (fun a => if h : a ≠ i ∧ a ≠ j then v a else if a = i then Pi.single x (1 : k) else
+      (fun a => if _ : a ≠ i ∧ a ≠ j then v a else if a = i then Pi.single x (1 : k) else
         Pi.single y (1 : k)) =
         Function.update (Function.update v i (Pi.single x 1)) j (Pi.single y 1) := by
     funext a
