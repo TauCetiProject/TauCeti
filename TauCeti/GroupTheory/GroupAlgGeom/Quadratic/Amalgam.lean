@@ -41,6 +41,8 @@ needed.
 
 ## Main results
 
+* `TauCeti.GroupAlgGeom.Quadratic.mem_boundarySystem_iff`: the equations of the boundary system;
+  `TauCeti.GroupAlgGeom.Quadratic.finite_boundarySystem`: there are finitely many of them.
 * `TauCeti.GroupAlgGeom.Quadratic.mem_V_boundarySystem_iff`: the solutions of the boundary system;
   `TauCeti.GroupAlgGeom.Quadratic.boundarySystem_conj` and
   `TauCeti.GroupAlgGeom.Quadratic.boundarySystem_constant`: its relations in the group of the
@@ -89,6 +91,30 @@ def boundarySystem (c : Fin m → G) (d : G) (p : Fin (m + 1) → L) :
     {(inl (inl d) : GX (Monoid.Coprod G L) (Fin m)) *
       (inl (inr (p (Fin.last m))) : GX (Monoid.Coprod G L) (Fin m))⁻¹}
 
+theorem boundarySystem_def (c : Fin m → G) (d : G) (p : Fin (m + 1) → L) :
+    boundarySystem c d p =
+      (Set.range fun j : Fin m ↦
+          (inr (FreeGroup.of j) : GX (Monoid.Coprod G L) (Fin m))⁻¹ * inl (inl (c j)) *
+            inr (FreeGroup.of j) * (inl (inr (p j.castSucc)) : GX (Monoid.Coprod G L) (Fin m))⁻¹) ∪
+        {(inl (inl d) : GX (Monoid.Coprod G L) (Fin m)) *
+          (inl (inr (p (Fin.last m))) : GX (Monoid.Coprod G L) (Fin m))⁻¹} := (rfl)
+
+/-- The equations of the boundary system are the `zⱼ⁻¹ cⱼ zⱼ pⱼ⁻¹` (`j ≤ m`) and `d p_{m+1}⁻¹`. -/
+@[simp]
+theorem mem_boundarySystem_iff {c : Fin m → G} {d : G} {p : Fin (m + 1) → L}
+    {w : GX (Monoid.Coprod G L) (Fin m)} :
+    w ∈ boundarySystem c d p ↔
+      (∃ j : Fin m, (inr (FreeGroup.of j) : GX (Monoid.Coprod G L) (Fin m))⁻¹ * inl (inl (c j)) *
+          inr (FreeGroup.of j) * (inl (inr (p j.castSucc)) : GX (Monoid.Coprod G L) (Fin m))⁻¹ =
+            w) ∨
+        w = inl (inl d) * (inl (inr (p (Fin.last m))) : GX (Monoid.Coprod G L) (Fin m))⁻¹ :=
+  Iff.rfl
+
+/-- The boundary system is finite: it consists of at most `m + 1` equations. -/
+theorem finite_boundarySystem (c : Fin m → G) (d : G) (p : Fin (m + 1) → L) :
+    (boundarySystem c d p).Finite :=
+  (Set.finite_range _).union (Set.finite_singleton _)
+
 /-- A point `t` solves the boundary system when `tⱼ` conjugates `cⱼ` to `pⱼ` for every `j ≤ m`
 and `d = p_{m+1}`. -/
 theorem mem_V_boundarySystem_iff {H : Type*} [Group H] {c : Fin m → G} {d : G}
@@ -98,7 +124,7 @@ theorem mem_V_boundarySystem_iff {H : Type*} [Group H] {c : Fin m → G} {d : G}
         ι (inl d) = ι (inr (p (Fin.last m))) := by
   -- Squeezed for speed: the bare `simp` needs `and_comm` to reorder the conjuncts and takes
   -- several seconds.
-  simp only [boundarySystem, mem_V, Set.forall_mem_union, Set.forall_mem_range,
+  simp only [boundarySystem_def, mem_V, Set.forall_mem_union, Set.forall_mem_range,
     Set.forall_mem_singleton, map_mul, map_inv, eval_inl, eval_inr_of, mul_inv_eq_one]
 
 variable (c : Fin m → G) (d : G) (p : Fin (m + 1) → L)
@@ -118,20 +144,6 @@ theorem boundarySystem_constant :
       ((inl (inr (p (Fin.last m))) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _) := by
   simpa using (mem_V_boundarySystem_iff.1 (SystemGroup.homEquiv _ _ (GHom.id _)).2).2
 
--- In the group of the boundary system, the conjugates `zⱼ⁻¹ cⱼ zⱼ` followed by `d` are the
--- distinguished elements `p`.
-private theorem snoc_eq_boundarySystem :
-    Fin.snoc (α := fun _ ↦ SystemGroup _ (boundarySystem c d p))
-        (fun j ↦ ((inr (FreeGroup.of j) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _)⁻¹ *
-          ((inl (inl (c j)) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _) *
-            ((inr (FreeGroup.of j) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _))
-        ((inl (inl d) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _) =
-      fun j ↦ ((inl (inr (p j)) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _) := by
-  ext j
-  induction j using Fin.lastCases with
-  | last => simpa using boundarySystem_constant c d p
-  | cast j => simpa using boundarySystem_conj c d p j
-
 end BoundarySystem
 
 namespace Standard
@@ -145,55 +157,20 @@ section OrientableCoeff
 variable (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
   (surj : (Sum.elim (Sum.elim x y) z).Surjective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1)
 
--- The point of the boundary group at which `xᵢ`, `yᵢ`, `zⱼ` take the values `aᵢ`, `bᵢ`, `zⱼ`.
-private noncomputable def orientableCoeffPoint (x y : Fin n → X) (z : Fin m → X) (c : Fin m → G)
-    (d : G) : X → SystemGroup (Monoid.Coprod G (Orientable n (m + 1)))
-      (boundarySystem c d (Orientable.peripheral n (m + 1))) :=
-  Function.extend (Sum.elim (Sum.elim x y) z) (Sum.elim (Sum.elim
-    (fun i ↦ ((inl (inr (Orientable.a n (m + 1) i)) :
-      GX (Monoid.Coprod G (Orientable n (m + 1))) (Fin m)) : SystemGroup _ _))
-    (fun i ↦ ((inl (inr (Orientable.b n (m + 1) i)) :
-      GX (Monoid.Coprod G (Orientable n (m + 1))) (Fin m)) : SystemGroup _ _)))
-    (fun j ↦ ((inr (FreeGroup.of j) :
-      GX (Monoid.Coprod G (Orientable n (m + 1))) (Fin m)) : SystemGroup _ _))) 1
-
-include inj in
-private theorem orientableCoeffPoint_x (i : Fin n) :
-    orientableCoeffPoint x y z c d (x i) =
-      ((inl (inr (Orientable.a n (m + 1) i)) :
-        GX (Monoid.Coprod G (Orientable n (m + 1))) (Fin m)) : SystemGroup _ _) :=
-  inj.extend_apply _ _ (Sum.inl (Sum.inl i))
-
-include inj in
-private theorem orientableCoeffPoint_y (i : Fin n) :
-    orientableCoeffPoint x y z c d (y i) =
-      ((inl (inr (Orientable.b n (m + 1) i)) :
-        GX (Monoid.Coprod G (Orientable n (m + 1))) (Fin m)) : SystemGroup _ _) :=
-  inj.extend_apply _ _ (Sum.inl (Sum.inr i))
-
-include inj in
-private theorem orientableCoeffPoint_z (j : Fin m) :
-    orientableCoeffPoint x y z c d (z j) =
-      ((inr (FreeGroup.of j) :
-        GX (Monoid.Coprod G (Orientable n (m + 1))) (Fin m)) : SystemGroup _ _) :=
-  inj.extend_apply _ _ (Sum.inr j)
-
-private theorem orientableCoeffPoint_mem_V :
-    orientableCoeffPoint x y z c d ∈ V ((SystemGroup.coeff _).comp inl)
-      {(orientableCoeff n m hnm x y z inj c hc d hd).toWord} := by
-  rw [mem_V, Set.forall_mem_singleton, eval_toWord_orientableCoeff]
-  simp only [orientableCoeffPoint_x inj, orientableCoeffPoint_y inj, orientableCoeffPoint_z inj,
-    MonoidHom.comp_apply, SystemGroup.coeff_apply, snoc_eq_boundarySystem]
-  simpa using (map_orientableWord ((SystemGroup.coeff
-    (boundarySystem c d (Orientable.peripheral n (m + 1)))).comp inr)
-    (Orientable.a n (m + 1)) (Orientable.b n (m + 1)) (Orientable.peripheral n (m + 1))).symm
-
--- Evaluation of the group of the equation at the point `orientableCoeffPoint`.
+-- Evaluation of the group of the equation at the point of the boundary group at which `xᵢ`, `yᵢ`,
+-- `zⱼ` take the values `aᵢ`, `bᵢ`, `zⱼ`.
 private noncomputable def orientableCoeffToBoundary :
     SystemGroup G {(orientableCoeff n m hnm x y z inj c hc d hd).toWord} →*
       SystemGroup (Monoid.Coprod G (Orientable n (m + 1)))
         (boundarySystem c d (Orientable.peripheral n (m + 1))) :=
-  (SystemGroup.evalGHom _ (orientableCoeffPoint_mem_V hnm inj hc hd) : _ →* _)
+  (SystemGroup.evalGHom _ (orientableCoeffPoint_mem_V hnm inj hc hd
+    (ι := (SystemGroup.coeff (boundarySystem c d (Orientable.peripheral n (m + 1)))).comp inl)
+    ((SystemGroup.coeff _).comp inr)
+    (fun j ↦ ((inr (FreeGroup.of j) : GX (Monoid.Coprod G (Orientable n (m + 1))) (Fin m)) :
+      SystemGroup _ _))
+    (fun j ↦ by simpa using (boundarySystem_conj c d (Orientable.peripheral n (m + 1)) j).symm)
+    (by simpa using (boundarySystem_constant c d (Orientable.peripheral n (m + 1))).symm)) :
+    _ →* _)
 
 private theorem orientableCoeffOfBoundary_mem_V :
     (fun j ↦ ((inr (FreeGroup.of (z j)) : GX G X) :
@@ -338,46 +315,20 @@ section NonorientableCoeff
 variable {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
   (surj : (Sum.elim x z).Surjective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1)
 
--- The point of the boundary group at which `xᵢ`, `zⱼ` take the values `cᵢ`, `zⱼ`.
-private noncomputable def nonorientableCoeffPoint (x : Fin n → X) (z : Fin m → X) (c : Fin m → G)
-    (d : G) : X → SystemGroup (Monoid.Coprod G (Nonorientable n (m + 1)))
-      (boundarySystem c d (Nonorientable.peripheral n (m + 1))) :=
-  Function.extend (Sum.elim x z) (Sum.elim
-    (fun i ↦ ((inl (inr (Nonorientable.c n (m + 1) i)) :
-      GX (Monoid.Coprod G (Nonorientable n (m + 1))) (Fin m)) : SystemGroup _ _))
-    (fun j ↦ ((inr (FreeGroup.of j) :
-      GX (Monoid.Coprod G (Nonorientable n (m + 1))) (Fin m)) : SystemGroup _ _))) 1
-
-include inj in
-private theorem nonorientableCoeffPoint_x (i : Fin n) :
-    nonorientableCoeffPoint x z c d (x i) =
-      ((inl (inr (Nonorientable.c n (m + 1) i)) :
-        GX (Monoid.Coprod G (Nonorientable n (m + 1))) (Fin m)) : SystemGroup _ _) :=
-  inj.extend_apply _ _ (Sum.inl i)
-
-include inj in
-private theorem nonorientableCoeffPoint_z (j : Fin m) :
-    nonorientableCoeffPoint x z c d (z j) =
-      ((inr (FreeGroup.of j) :
-        GX (Monoid.Coprod G (Nonorientable n (m + 1))) (Fin m)) : SystemGroup _ _) :=
-  inj.extend_apply _ _ (Sum.inr j)
-
-private theorem nonorientableCoeffPoint_mem_V :
-    nonorientableCoeffPoint x z c d ∈ V ((SystemGroup.coeff _).comp inl)
-      {(nonorientableCoeff n m hn x z inj c hc d hd).toWord} := by
-  rw [mem_V, Set.forall_mem_singleton, eval_toWord_nonorientableCoeff]
-  simp only [nonorientableCoeffPoint_x inj, nonorientableCoeffPoint_z inj, MonoidHom.comp_apply,
-    SystemGroup.coeff_apply, snoc_eq_boundarySystem]
-  simpa using (map_nonorientableWord ((SystemGroup.coeff
-    (boundarySystem c d (Nonorientable.peripheral n (m + 1)))).comp inr)
-    (Nonorientable.c n (m + 1)) (Nonorientable.peripheral n (m + 1))).symm
-
--- Evaluation of the group of the equation at the point `nonorientableCoeffPoint`.
+-- Evaluation of the group of the equation at the point of the boundary group at which `xᵢ`, `zⱼ`
+-- take the values `cᵢ`, `zⱼ`.
 private noncomputable def nonorientableCoeffToBoundary :
     SystemGroup G {(nonorientableCoeff n m hn x z inj c hc d hd).toWord} →*
       SystemGroup (Monoid.Coprod G (Nonorientable n (m + 1)))
         (boundarySystem c d (Nonorientable.peripheral n (m + 1))) :=
-  (SystemGroup.evalGHom _ (nonorientableCoeffPoint_mem_V hn inj hc hd) : _ →* _)
+  (SystemGroup.evalGHom _ (nonorientableCoeffPoint_mem_V hn inj hc hd
+    (ι := (SystemGroup.coeff (boundarySystem c d (Nonorientable.peripheral n (m + 1)))).comp inl)
+    ((SystemGroup.coeff _).comp inr)
+    (fun j ↦ ((inr (FreeGroup.of j) : GX (Monoid.Coprod G (Nonorientable n (m + 1))) (Fin m)) :
+      SystemGroup _ _))
+    (fun j ↦ by simpa using (boundarySystem_conj c d (Nonorientable.peripheral n (m + 1)) j).symm)
+    (by simpa using (boundarySystem_constant c d (Nonorientable.peripheral n (m + 1))).symm)) :
+    _ →* _)
 
 private theorem nonorientableCoeffOfBoundary_mem_V :
     (fun j ↦ ((inr (FreeGroup.of (z j)) : GX G X) :
@@ -538,7 +489,7 @@ theorem exists_mulEquiv_amalgam_commutator :
       Fin.rec0 hd).trans
       (QuotientGroup.congr _ _ GX.equivOfIsEmpty ?_)), fun g ↦ ?_, ?_, ?_⟩
   · rw [Subgroup.map_normalClosure _ _ (MulEquiv.surjective _)]
-    simp [boundarySystem]
+    simp [boundarySystem_def]
   · simp
   · have h := Standard.orientableCoeffSystemGroupEquiv_mk_inr_of_x (n := 1) (m := 0)
       (c := Fin.elim0) one_pos inj surj Fin.rec0 hd 0

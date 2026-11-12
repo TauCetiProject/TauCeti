@@ -37,6 +37,10 @@ elements to conjugates of the coefficients `ι (cⱼ)` and the last one to `ι d
   `TauCeti.GroupAlgGeom.Quadratic.Standard.surfaceHomNonorientableCoeff`: the homomorphism
   `S⁺(n, m + 1) →* H`, respectively `S⁻(n, m + 1) →* H`, of a solution of an equation of type (2),
   respectively (4).
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.orientableCoeffPoint`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.nonorientableCoeffPoint`: conversely, the point of an
+  equation of type (2), respectively (4), given by a homomorphism from the surface group and values
+  of the variables `zⱼ`.
 
 ## Main results
 
@@ -46,6 +50,10 @@ elements to conjugates of the coefficients `ι (cⱼ)` and the last one to `ι d
   value of a standard quadratic equation at a point is a surface word.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_surfaceHomOrientable_eq` and its three
   analogues: the homomorphisms of surface groups that arise from solutions.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.orientableCoeffPoint_mem_V`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.nonorientableCoeffPoint_mem_V`: the point of a
+  homomorphism sending the peripheral elements to conjugates of the coefficients and to the
+  constant is a solution.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.mem_V_orientable_one_iff`: the solutions of the torus
   equation `[x, y] = 1` are the commuting pairs.
 
@@ -261,6 +269,53 @@ theorem surfaceHomOrientableCoeff_peripheral_last
     surfaceHomOrientableCoeff hv (Orientable.peripheral n (m + 1) (Fin.last m)) = ι d := by
   simp [surfaceHomOrientableCoeff]
 
+variable (x y z) in
+/-- The point of a homomorphism `f` from the orientable surface group `S⁺(n, m + 1)` and of values
+`t` of the variables `zⱼ`: the variables `xᵢ`, `yᵢ`, `zⱼ` take the values `f aᵢ`, `f bᵢ`, `tⱼ`, and
+every other variable the value `1`. -/
+noncomputable def orientableCoeffPoint (f : Orientable n (m + 1) →* H) (t : Fin m → H) : X → H :=
+  Function.extend (Sum.elim (Sum.elim x y) z) (Sum.elim (Sum.elim
+    (fun i => f (Orientable.a n (m + 1) i)) fun i => f (Orientable.b n (m + 1) i)) t) 1
+
+@[simp]
+theorem orientableCoeffPoint_x (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (f : Orientable n (m + 1) →* H) (t : Fin m → H) (i : Fin n) :
+    orientableCoeffPoint x y z f t (x i) = f (Orientable.a n (m + 1) i) :=
+  inj.extend_apply _ _ (Sum.inl (Sum.inl i))
+
+@[simp]
+theorem orientableCoeffPoint_y (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (f : Orientable n (m + 1) →* H) (t : Fin m → H) (i : Fin n) :
+    orientableCoeffPoint x y z f t (y i) = f (Orientable.b n (m + 1) i) :=
+  inj.extend_apply _ _ (Sum.inl (Sum.inr i))
+
+@[simp]
+theorem orientableCoeffPoint_z (inj : (Sum.elim (Sum.elim x y) z).Injective)
+    (f : Orientable n (m + 1) →* H) (t : Fin m → H) (j : Fin m) :
+    orientableCoeffPoint x y z f t (z j) = t j :=
+  inj.extend_apply _ _ (Sum.inr j)
+
+variable (hnm inj hc hd) in
+/-- The point of a homomorphism `f` from the orientable surface group `S⁺(n, m + 1)` sending the
+first `m` peripheral elements to the conjugates `tⱼ⁻¹ cⱼ tⱼ` of the coefficients and the last one to
+the constant `d` is a solution of the standard quadratic equation
+`∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`. -/
+theorem orientableCoeffPoint_mem_V (f : Orientable n (m + 1) →* H) (t : Fin m → H)
+    (ht : ∀ j, f (Orientable.peripheral n (m + 1) j.castSucc) = (t j)⁻¹ * ι (c j) * t j)
+    (hf : f (Orientable.peripheral n (m + 1) (Fin.last m)) = ι d) :
+    orientableCoeffPoint x y z f t ∈
+      V ι {(orientableCoeff n m hnm x y z inj c hc d hd).toWord} := by
+  have hp : Fin.snoc (α := fun _ => H) (fun j => (orientableCoeffPoint x y z f t (z j))⁻¹ *
+      ι (c j) * orientableCoeffPoint x y z f t (z j)) (ι d) =
+      fun j => f (Orientable.peripheral n (m + 1) j) := by
+    ext j
+    induction j using Fin.lastCases with
+    | last => simp [hf]
+    | cast j => simp [orientableCoeffPoint_z inj, ht]
+  rw [mem_V, Set.forall_mem_singleton, eval_toWord_orientableCoeff,
+    funext (orientableCoeffPoint_x inj f t), funext (orientableCoeffPoint_y inj f t), hp,
+    ← map_orientableWord, Orientable.orientableWord_a_b_peripheral, map_one]
+
 variable (hnm inj hc hd) in
 /-- A homomorphism from the orientable surface group `S⁺(n, m + 1)` is the homomorphism of a
 solution of the standard quadratic equation `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` as soon as it sends
@@ -271,26 +326,11 @@ theorem exists_surfaceHomOrientableCoeff_eq (f : Orientable n (m + 1) →* H) (t
     (hf : f (Orientable.peripheral n (m + 1) (Fin.last m)) = ι d) :
     ∃ (v : X → H) (hv : v ∈ V ι {(orientableCoeff n m hnm x y z inj c hc d hd).toWord}),
       surfaceHomOrientableCoeff hv = f := by
-  set u : X → H := Function.extend (Sum.elim (Sum.elim x y) z) (Sum.elim (Sum.elim
-    (fun i => f (Orientable.a n (m + 1) i)) fun i => f (Orientable.b n (m + 1) i)) t) 1
-  have hx (i : Fin n) : u (x i) = f (Orientable.a n (m + 1) i) :=
-    inj.extend_apply _ _ (Sum.inl (Sum.inl i))
-  have hy (i : Fin n) : u (y i) = f (Orientable.b n (m + 1) i) :=
-    inj.extend_apply _ _ (Sum.inl (Sum.inr i))
-  have hz (j : Fin m) : u (z j) = t j := inj.extend_apply _ _ (Sum.inr j)
-  have hp : Fin.snoc (α := fun _ => H) (fun j => (u (z j))⁻¹ * ι (c j) * u (z j)) (ι d) =
-      fun j => f (Orientable.peripheral n (m + 1) j) := by
-    ext j
-    induction j using Fin.lastCases with
-    | last => simp [hf]
-    | cast j => simp [hz, ht]
-  refine ⟨u, ?_, ?_⟩
-  · rw [mem_V, Set.forall_mem_singleton, eval_toWord_orientableCoeff, funext hx, funext hy, hp,
-      ← map_orientableWord, Orientable.orientableWord_a_b_peripheral, map_one]
-  · ext j
-    · simp [hx]
-    · simp [hy]
-    · simpa [surfaceHomOrientableCoeff] using congrFun hp j
+  refine ⟨_, orientableCoeffPoint_mem_V hnm inj hc hd f t ht hf, ?_⟩
+  ext j
+  · simp [orientableCoeffPoint_x inj]
+  · simp [orientableCoeffPoint_y inj]
+  · induction j using Fin.lastCases <;> simp [orientableCoeffPoint_z inj, ht, hf]
 
 end OrientableCoeff
 
@@ -362,6 +402,46 @@ theorem surfaceHomNonorientableCoeff_peripheral_last
     surfaceHomNonorientableCoeff hv (Nonorientable.peripheral n (m + 1) (Fin.last m)) = ι d := by
   simp [surfaceHomNonorientableCoeff]
 
+/-- The point of a homomorphism `f` from the nonorientable surface group `S⁻(n, m + 1)` and of
+values `t` of the variables `zⱼ`: the variables `xᵢ`, `zⱼ` take the values `f cᵢ`, `tⱼ`, and every
+other variable the value `1`. -/
+noncomputable def nonorientableCoeffPoint (x : Fin n → X) (z : Fin m → X)
+    (f : Nonorientable n (m + 1) →* H) (t : Fin m → H) : X → H :=
+  Function.extend (Sum.elim x z) (Sum.elim (fun i => f (Nonorientable.c n (m + 1) i)) t) 1
+
+@[simp]
+theorem nonorientableCoeffPoint_x (inj : (Sum.elim x z).Injective)
+    (f : Nonorientable n (m + 1) →* H) (t : Fin m → H) (i : Fin n) :
+    nonorientableCoeffPoint x z f t (x i) = f (Nonorientable.c n (m + 1) i) :=
+  inj.extend_apply _ _ (Sum.inl i)
+
+@[simp]
+theorem nonorientableCoeffPoint_z (inj : (Sum.elim x z).Injective)
+    (f : Nonorientable n (m + 1) →* H) (t : Fin m → H) (j : Fin m) :
+    nonorientableCoeffPoint x z f t (z j) = t j :=
+  inj.extend_apply _ _ (Sum.inr j)
+
+variable (hn inj hc hd) in
+/-- The point of a homomorphism `f` from the nonorientable surface group `S⁻(n, m + 1)` sending
+the first `m` peripheral elements to the conjugates `tⱼ⁻¹ cⱼ tⱼ` of the coefficients and the last
+one to the constant `d` is a solution of the standard quadratic equation
+`∏ᵢ xᵢ² ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`. -/
+theorem nonorientableCoeffPoint_mem_V (f : Nonorientable n (m + 1) →* H) (t : Fin m → H)
+    (ht : ∀ j, f (Nonorientable.peripheral n (m + 1) j.castSucc) = (t j)⁻¹ * ι (c j) * t j)
+    (hf : f (Nonorientable.peripheral n (m + 1) (Fin.last m)) = ι d) :
+    nonorientableCoeffPoint x z f t ∈
+      V ι {(nonorientableCoeff n m hn x z inj c hc d hd).toWord} := by
+  have hp : Fin.snoc (α := fun _ => H) (fun j => (nonorientableCoeffPoint x z f t (z j))⁻¹ *
+      ι (c j) * nonorientableCoeffPoint x z f t (z j)) (ι d) =
+      fun j => f (Nonorientable.peripheral n (m + 1) j) := by
+    ext j
+    induction j using Fin.lastCases with
+    | last => simp [hf]
+    | cast j => simp [nonorientableCoeffPoint_z inj, ht]
+  rw [mem_V, Set.forall_mem_singleton, eval_toWord_nonorientableCoeff,
+    funext (nonorientableCoeffPoint_x inj f t), hp, ← map_nonorientableWord,
+    Nonorientable.nonorientableWord_c_peripheral, map_one]
+
 variable (hn inj hc hd) in
 /-- A homomorphism from the nonorientable surface group `S⁻(n, m + 1)` is the homomorphism of a
 solution of the standard quadratic equation `∏ᵢ xᵢ² ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` as soon as it sends the
@@ -372,23 +452,10 @@ theorem exists_surfaceHomNonorientableCoeff_eq (f : Nonorientable n (m + 1) →*
     (hf : f (Nonorientable.peripheral n (m + 1) (Fin.last m)) = ι d) :
     ∃ (v : X → H) (hv : v ∈ V ι {(nonorientableCoeff n m hn x z inj c hc d hd).toWord}),
       surfaceHomNonorientableCoeff hv = f := by
-  set u : X → H := Function.extend (Sum.elim x z)
-    (Sum.elim (fun i => f (Nonorientable.c n (m + 1) i)) t) 1
-  have hx (i : Fin n) : u (x i) = f (Nonorientable.c n (m + 1) i) :=
-    inj.extend_apply _ _ (Sum.inl i)
-  have hz (j : Fin m) : u (z j) = t j := inj.extend_apply _ _ (Sum.inr j)
-  have hp : Fin.snoc (α := fun _ => H) (fun j => (u (z j))⁻¹ * ι (c j) * u (z j)) (ι d) =
-      fun j => f (Nonorientable.peripheral n (m + 1) j) := by
-    ext j
-    induction j using Fin.lastCases with
-    | last => simp [hf]
-    | cast j => simp [hz, ht]
-  refine ⟨u, ?_, ?_⟩
-  · rw [mem_V, Set.forall_mem_singleton, eval_toWord_nonorientableCoeff, funext hx, hp,
-      ← map_nonorientableWord, Nonorientable.nonorientableWord_c_peripheral, map_one]
-  · ext j
-    · simp [hx]
-    · simpa [surfaceHomNonorientableCoeff] using congrFun hp j
+  refine ⟨_, nonorientableCoeffPoint_mem_V hn inj hc hd f t ht hf, ?_⟩
+  ext j
+  · simp [nonorientableCoeffPoint_x inj]
+  · induction j using Fin.lastCases <;> simp [nonorientableCoeffPoint_z inj, ht, hf]
 
 end NonorientableCoeff
 
