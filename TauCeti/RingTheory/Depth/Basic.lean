@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
@@ -662,10 +663,10 @@ theorem mem_range_algebraMap_of_two_le_depth {R : Type u} [CommRing R] [IsLocalR
   refine ⟨y, (IsLocalization.map_units K b).mul_left_injective ?_⟩
   simp only [← map_mul, hy, one_mul, hcb]
 
-/-- The depth of a finite module localized at a prime is independent of the presentations of
+/-- The depth of a module localized at a prime is independent of the presentations of
 both the local ring and the localized module. -/
-theorem depth_eq_of_isLocalizedModule {R : Type u} [CommRing R] [IsNoetherianRing R]
-    {M : Type v} [AddCommGroup M] [Module R M] [Module.Finite R M]
+theorem depth_eq_of_isLocalizedModule {R : Type u} [CommRing R]
+    {M : Type v} [AddCommGroup M] [Module R M]
     (p : Ideal R) [p.IsPrime] (B : Type*) [CommRing B] [IsLocalRing B] [Algebra R B]
     [IsLocalization.AtPrime B p] {N : Type w} [AddCommGroup N] [Module R N] [Module B N]
     [IsScalarTower R B N] [Small.{w} B] (f : M →ₗ[R] N) [IsLocalizedModule p.primeCompl f] :
@@ -678,9 +679,31 @@ theorem depth_eq_of_isLocalizedModule {R : Type u} [CommRing R] [IsNoetherianRin
   have : IsScalarTower A B N := .of_compHom A B N
   have : IsScalarTower R A B := .of_algHom e.toAlgHom
   have : IsScalarTower R A N := .to₁₂₄ R A B N
-  have : Module.Finite B N := .of_isLocalizedModule p.primeCompl f
   have : Small.{w} A := small_map e.toEquiv
-  rw [← depth_eq_depth_of_surjective (R := A) e.surjective]
+  -- Restriction along the ring isomorphism preserves Ext without finiteness hypotheses.
+  have hdepth : depth (ModuleCat.of B N) = depth (ModuleCat.of A N) := by
+    let F := ModuleCat.restrictScalars.{w} e.toRingEquiv.toRingHom
+    have : F.IsEquivalence := ModuleCat.restrictScalars_isEquivalence_of_ringEquiv e.toRingEquiv
+    -- Use the equivalence's adjoints, which do not impose relations on the ring universes.
+    have : F.IsLeftAdjoint := F.asEquivalence.isLeftAdjoint_functor
+    have : F.IsRightAdjoint := F.asEquivalence.symm.isRightAdjoint_inverse
+    have h (X Y : ModuleCat.{w} B) : X.depth Y = (F.obj X).depth (F.obj Y) := by
+      simp only [ModuleCat.depth]
+      congr 1
+      ext n
+      exact forall₂_congr fun i _ ↦ (Equiv.ofBijective _
+        (F.mapExt_bijective_of_preservesProjectiveObjects X Y i)).subsingleton_congr
+    let eA : A ≃ₐ[A] B := { __ := e.toRingEquiv, commutes' := fun _ ↦ rfl }
+    let k := (ResidueField.mapAlgEquiv eA).toLinearEquiv
+    have : Small.{w} (ResidueField B) := inferInstanceAs (Small.{w} (B ⧸ maximalIdeal B))
+    have : Small.{w} (ResidueField A) := inferInstanceAs (Small.{w} (A ⧸ maximalIdeal A))
+    unfold depth Ideal.depth
+    refine (h _ _).trans ?_
+    exact ModuleCat.depth_eq_of_linearEquiv
+      ((Shrink.linearEquiv.{w} A (ResidueField B)).trans
+        (k.symm.trans (Shrink.linearEquiv.{w} A (ResidueField A)).symm))
+      (LinearEquiv.refl A N)
+  rw [hdepth]
   exact (depth_eq_of_linearEquiv
     ((IsLocalizedModule.iso p.primeCompl f).extendScalarsOfIsLocalization p.primeCompl A)).symm
 

@@ -12,7 +12,7 @@ import TauCeti.RingTheory.KrullDimension.Module
 /-!
 # Localization of Serre's condition for modules
 
-Serre's condition `(S_n)` is preserved by localization of a finite module over a Noetherian
+Serre's condition `(S_n)` is preserved by localization of a module over a commutative
 ring. The local rings of a localization are local rings of the original ring, and localizing
 the module twice gives its localization at the contracted prime.
 
@@ -34,10 +34,10 @@ open IsLocalRing
 
 namespace Module
 
-variable {R : Type u} [CommRing R] [IsNoetherianRing R]
-  {M : Type v} [AddCommGroup M] [Module R M] [Module.Finite R M] {n : ℕ}
+variable {R : Type u} [CommRing R]
+  {M : Type v} [AddCommGroup M] [Module R M] {n : ℕ}
 
-/-- The depth bound in `(S_n)` holds for any presentation of the localization of a finite
+/-- The depth bound in `(S_n)` holds for any presentation of the localization of a
 module at a prime, over any presentation of the local ring at that prime. -/
 theorem SatisfiesSerreS.le_depth_of_isLocalizedModule (h : SatisfiesSerreS n R M)
     (p : Ideal R) [p.IsPrime] (B : Type w) [CommRing B] [IsLocalRing B] [Algebra R B]
@@ -48,7 +48,7 @@ theorem SatisfiesSerreS.le_depth_of_isLocalizedModule (h : SatisfiesSerreS n R M
     supportDim_eq_of_isLocalizedModule p.primeCompl B f]
   exact (satisfiesSerreS_iff.mp h) p
 
-/-- Serre's condition `(S_n)` for a finite module over a Noetherian ring passes to every
+/-- Serre's condition `(S_n)` for a module over a commutative ring passes to every
 localization, with the localized module specified by its localization map. -/
 theorem SatisfiesSerreS.localization (h : SatisfiesSerreS n R M) (T : Submonoid R)
     (S : Type w) [CommRing S] [Algebra R S] [IsLocalization T S]

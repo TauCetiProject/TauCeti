@@ -30,7 +30,7 @@ embedded primes.
 ## Main results
 
 * `Module.supportDim_eq_of_surjective`: restriction along a surjective scalar map preserves the
-  support dimension of a finite module.
+  support dimension of a module.
 * `Module.exists_supportDim_eq_natCast`: a nonzero module over a ring of finite Krull dimension,
   such as a Noetherian local ring, has support of finite dimension.
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
@@ -46,25 +46,40 @@ namespace Module
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
 
 /-- Restriction of scalars along a surjective ring homomorphism preserves the support dimension
-of a finite module: the quotients of the two scalar rings by the annihilator are isomorphic. -/
+of a module: contraction gives an order isomorphism between the two supports. -/
 theorem supportDim_eq_of_surjective {S : Type*} [CommRing S] [Algebra R S]
-    [Module S M] [IsScalarTower R S M] [Module.Finite S M]
+    [Module S M] [IsScalarTower R S M]
     (hsurj : Function.Surjective (algebraMap R S)) : supportDim R M = supportDim S M := by
-  have : Module.Finite R S := .of_surjective (Algebra.linearMap R S) hsurj
-  have : Module.Finite R M := .trans S M
-  let f : R →+* S ⧸ annihilator S M := (Ideal.Quotient.mk _).comp (algebraMap R S)
-  have hf : Function.Surjective f := Ideal.Quotient.mk_surjective.comp hsurj
-  have hker : RingHom.ker f = annihilator R M := by
-    ext r
-    simp only [RingHom.mem_ker, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem,
-      mem_annihilator, algebraMap_smul, f]
-  rw [supportDim_eq_ringKrullDim_quotient_annihilator R M,
-    supportDim_eq_ringKrullDim_quotient_annihilator S M, ← hker]
-  exact ringKrullDim_eq_of_ringEquiv (RingHom.quotientKerEquivOfSurjective hf)
+  have hmem (q : PrimeSpectrum S) :
+      q.comap (algebraMap R S) ∈ support R M ↔ q ∈ support S M := by
+    simp only [mem_support_iff']
+    refine exists_congr fun m ↦ ⟨?_, ?_⟩
+    · intro h s hs
+      obtain ⟨r, rfl⟩ := hsurj s
+      simpa only [algebraMap_smul] using h r hs
+    · intro h r hr
+      simpa only [algebraMap_smul] using h _ hr
+  let e : support S M ↪o support R M :=
+    { toFun := fun q ↦ ⟨q.val.comap (algebraMap R S), (hmem q.val).2 q.property⟩
+      inj' := fun _ _ h ↦ Subtype.ext <|
+        PrimeSpectrum.comap_injective_of_surjective _ hsurj (congrArg Subtype.val h)
+      map_rel_iff' := Ideal.comap_le_comap_iff_of_surjective _ hsurj _ _ }
+  refine (Order.krullDim_eq_of_orderIso (OrderIso.ofSurjective e ?_)).symm
+  intro p
+  have hp : RingHom.ker (algebraMap R S) ≤ p.val.asIdeal := by
+    refine le_trans ?_ (annihilator_le_of_mem_support p.property)
+    intro r hr
+    rw [mem_annihilator]
+    intro m
+    rw [← algebraMap_smul S r m, RingHom.mem_ker.mp hr, zero_smul]
+  have hp : p.val ∈ PrimeSpectrum.zeroLocus (RingHom.ker (algebraMap R S) : Set R) := hp
+  rw [← range_comap_of_surjective S (algebraMap R S) hsurj] at hp
+  obtain ⟨q, hq⟩ := hp
+  exact ⟨⟨q, (hmem q).1 (hq ▸ p.property)⟩, Subtype.ext hq⟩
 
-/-- The support dimension of a localized finite module is independent of the presentations of
+/-- The support dimension of a localized module is independent of the presentations of
 both the localized ring and the localized module. -/
-theorem supportDim_eq_of_isLocalizedModule [Module.Finite R M] (T : Submonoid R)
+theorem supportDim_eq_of_isLocalizedModule (T : Submonoid R)
     (B : Type*) [CommRing B] [Algebra R B] [IsLocalization T B]
     {N : Type*} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
     (f : M →ₗ[R] N) [IsLocalizedModule T f] :
@@ -76,7 +91,6 @@ theorem supportDim_eq_of_isLocalizedModule [Module.Finite R M] (T : Submonoid R)
   have : IsScalarTower A B N := .of_compHom A B N
   have : IsScalarTower R A B := .of_algHom e.toAlgHom
   have : IsScalarTower R A N := .to₁₂₄ R A B N
-  have : Module.Finite B N := .of_isLocalizedModule T f
   rw [← supportDim_eq_of_surjective (R := A) e.surjective]
   exact (supportDim_eq_of_equiv
     ((IsLocalizedModule.iso T f).extendScalarsOfIsLocalization T A)).symm

@@ -75,9 +75,10 @@ variable (p : Ideal R) [p.IsPrime] {B : Type v} [CommRing B] [IsLocalRing B] [Al
   [IsLocalization.AtPrime B p] {M : Type w'} [AddCommGroup M] [Module R M] [Module.Finite R M]
   {N : Type w} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N] [Small.{w} B]
 
+omit [IsNoetherianRing R] [Module.Finite R M] in
 /-- Being Cohen–Macaulay at a prime `p` does not depend on how the localization is presented. Let
-`B` be a localization of a Noetherian ring `R` at `p`, and let `f : M → N` exhibit the `B`-module
-`N` as the localization of a finite `R`-module `M` at `p`. Then `N` is Cohen–Macaulay over `B`
+`B` be a localization of a commutative ring `R` at `p`, and let `f : M → N` exhibit the `B`-module
+`N` as the localization of an `R`-module `M` at `p`. Then `N` is Cohen–Macaulay over `B`
 exactly when `LocalizedModule p.primeCompl M` is Cohen–Macaulay over `Localization.AtPrime p`. For
 instance, this applies to the stalks of a quasi-coherent module on a scheme. -/
 theorem isCohenMacaulay_iff_of_isLocalizedModule (f : M →ₗ[R] N)
