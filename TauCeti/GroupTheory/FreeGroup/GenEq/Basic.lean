@@ -38,7 +38,11 @@ of every equation agree letter by letter (Definition 9). Reading the equations i
 gives the system `Ω*` over `F(A)` in the items (`TauCeti.GenEq.toSystem`); its coordinate group
 `F_{R(Ω)}` is the coordinate group of algebraic geometry over groups, and every solution of `Ω`
 gives a point of `Ω*`, hence an `F(A)`-homomorphism `F_{R(Ω)} → F(A)`. The converse fails:
-a group solution may cancel within a side (see the examples at the end of the file).
+a group solution may cancel within a side (see the examples at the end of the file). It holds for
+a tuple of nonempty reduced words which makes every side reduced as written (Remark 4), since two
+reduced words representing the same element of `F(A)` are equal. This is the form in which the
+elementary transformations of Makanin's process produce solutions: they change the equations in a
+way that is easy to follow in the group, and it remains to check that every side is reduced.
 
 A generalised equation is *formally consistent* (Definition 10) when five combinatorial
 conditions hold. They are decidable, and every generalised equation with a solution is formally
@@ -59,6 +63,8 @@ elementary transformations of the process act on generalised equations.
 * `TauCeti.GenEq.toSystem`: the system `Ω*` of group equations over `F(A)` in the items.
 * `TauCeti.GenEq.coordGroup`: the coordinate group `F_{R(Ω)}` of `Ω*` over `F(A)`.
 * `TauCeti.GenEq.Solution.toHom`: the `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution.
+* `TauCeti.GenEq.Solution.ofMemV`: the solution given by a tuple of nonempty reduced words which
+  is a point of `Ω*` and makes every side reduced as written.
 * `TauCeti.GenEq.Solution.prefixLength`: the position of a boundary in the words of a solution.
 
 ## Main results
@@ -66,13 +72,15 @@ elementary transformations of the process act on generalised equations.
 * `TauCeti.GenEq.mem_V_toSystem_iff`: the points of `Ω*` are the group solutions of the
   equations of `Ω`.
 * `TauCeti.GenEq.Solution.point_mem_V`: a solution of `Ω` is a solution of `Ω*` in `F(A)`.
+* `TauCeti.GenEq.substituteVars_eq_of_mem_V`: for a point of `Ω*`, the two sides of an equation
+  are equal as words as soon as both are reduced as written.
 * `TauCeti.GenEq.Solution.isFormallyConsistent`: a generalised equation with a solution is
   formally consistent.
 
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §4.1, Definitions 8–10 and Lemma 12.
+  (2005), §4.1, Definitions 8–10, Remark 4 and Lemma 12.
 * G. S. Makanin, *Equations in a free group*, Izv. Akad. Nauk SSSR Ser. Mat. 46 (1982).
 -/
 
@@ -315,6 +323,18 @@ theorem mem_V_toSystem_iff {H : Type*} [Group H] {ι : FreeGroup A →* H}
   simp only [toSystem, mem_V, Set.forall_mem_image, EqIneqSystem.eval_toGX,
     EqIneqSystem.eval_eq_lift, map_mul, map_inv, mul_inv_eq_one]
 
+variable {Ω} in
+/-- If a tuple of words is a point of `Ω*` in `F(A)` and both sides of an equation of `Ω` are
+reduced as written after substitution, the two sides are equal as words. -/
+theorem substituteVars_eq_of_mem_V {w : Fin Ω.numItems → List (A × Bool)}
+    (hV : (fun k => FreeGroup.mk (w k)) ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem)
+    {e : List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool)}
+    (he : e ∈ Ω.equations) (h₁ : FreeGroup.IsReduced (substituteVars w e.1))
+    (h₂ : FreeGroup.IsReduced (substituteVars w e.2)) :
+    substituteVars w e.1 = substituteVars w e.2 := by
+  refine h₁.eq_of_mk_eq h₂ ?_
+  simpa [mk_substituteVars] using Ω.mem_V_toSystem_iff.1 hV e he
+
 /-- The coordinate group `F_{R(Ω)}` of a generalised equation: the coordinate group of the system
 `Ω*` over `F(A)`, with solutions taken in `F(A)`. -/
 abbrev coordGroup : Type _ :=
@@ -343,6 +363,30 @@ theorem point_mem_V : U.point ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem := 
       cases y <;> simp
     rw [mk_substituteVars, MonoidHom.coe_id, Function.id_comp, hU]
   rw [h, h, U.subst_eq e he]
+
+/-- The solution given by a tuple of nonempty reduced words which is a point of `Ω*` in `F(A)` and
+makes both sides of every equation reduced as written. -/
+def ofMemV (w : Fin Ω.numItems → List (A × Bool)) (hw : ∀ k, FreeGroup.IsReduced (w k))
+    (hw' : ∀ k, w k ≠ [])
+    (hred : ∀ e ∈ Ω.equations, FreeGroup.IsReduced (substituteVars w e.1) ∧
+      FreeGroup.IsReduced (substituteVars w e.2))
+    (hV : (fun k => FreeGroup.mk (w k)) ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem) :
+    Ω.Solution where
+  word := w
+  isReduced_word := hw
+  word_ne_nil := hw'
+  isReduced_subst := hred
+  subst_eq e he := substituteVars_eq_of_mem_V hV he (hred e he).1 (hred e he).2
+
+/-- The words of the solution built from a point of `Ω*` are the given words. -/
+@[simp]
+theorem ofMemV_word (w : Fin Ω.numItems → List (A × Bool)) (hw : ∀ k, FreeGroup.IsReduced (w k))
+    (hw' : ∀ k, w k ≠ [])
+    (hred : ∀ e ∈ Ω.equations, FreeGroup.IsReduced (substituteVars w e.1) ∧
+      FreeGroup.IsReduced (substituteVars w e.2))
+    (hV : (fun k => FreeGroup.mk (w k)) ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem) :
+    (ofMemV w hw hw' hred hV).word = w :=
+  (rfl)
 
 /-- The `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution, sending each item to its word. -/
 def toHom : GHom (CoordGroup.coeff (MonoidHom.id (FreeGroup A)) Ω.toSystem)
@@ -763,6 +807,42 @@ example : (fun k => FreeGroup.mk (cancelWord k)) ∈
   rw [mem_V_toSystem_iff, forall_mem_equations]
   refine ⟨by decide, fun _ hb => absurd hb (Finset.notMem_empty _),
     fun _ hc => absurd hc (Finset.notMem_empty _)⟩
+
+/-- The generalised equation with the single basic equation `h₁ = h₂`. -/
+private abbrev equalExample : GenEq A where
+  numItems := 2
+  numBases := 2
+  left := ![0, 1]
+  right := ![1, 2]
+  left_lt_right := by decide
+  sign := fun _ => true
+  dual := ![1, 0]
+  dual_involutive := by unfold Function.Involutive; decide
+  constBases := ∅
+  connections := ∅
+  bounds_of_mem_connections := fun _ hc => absurd hc (Finset.notMem_empty _)
+  dual_mem_connections := fun _ hc => absurd hc (Finset.notMem_empty _)
+
+/-- Every nonempty reduced word `u` gives the solution `h₁ = h₂ = u` of the generalised equation
+`h₁ = h₂`: the tuple `(u, u)` is a point of `Ω*`, and both sides of the equation are the reduced
+word `u`. -/
+example {u : List (A × Bool)} (hu : FreeGroup.IsReduced u) (hu' : u ≠ []) :
+    ∃ U : (equalExample (A := A)).Solution, ∀ k, U.word k = u := by
+  have h₀ : (equalExample (A := A)).segment 0 1 true = [(Sum.inl 0, true)] :=
+    equalExample.segment_succ 0
+  have h₁ : (equalExample (A := A)).segment 1 2 true = [(Sum.inl 1, true)] :=
+    equalExample.segment_succ 1
+  have hsub : ∀ e ∈ (equalExample (A := A)).equations,
+      substituteVars (fun _ => u) e.1 = u ∧ substituteVars (fun _ => u) e.2 = u := by
+    refine (forall_mem_equations _).2 ⟨?_, by simp, by simp⟩
+    rw [Fin.forall_fin_two]
+    simp [h₀, h₁, substituteVars_singleton_inl]
+  refine ⟨Solution.ofMemV (fun _ => u) (fun _ => hu) (fun _ => hu')
+    (fun e he => by rw [(hsub e he).1, (hsub e he).2]; exact ⟨hu, hu⟩) ?_,
+    fun k => congrFun (Solution.ofMemV_word ..) k⟩
+  refine (mem_V_toSystem_iff _).2 fun e he => ?_
+  rw [MonoidHom.coe_id, Function.id_comp, ← mk_substituteVars, ← mk_substituteVars,
+    (hsub e he).1, (hsub e he).2]
 
 end GenEq
 
