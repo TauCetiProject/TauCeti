@@ -157,7 +157,7 @@ theorem memHomogeneousBesov_of_isVanishingOn {u : 𝓢'(E, F)}
 theorem MemHomogeneousBesov.of_bump {u : 𝓢'(E, F)} (hu : u.MemHomogeneousBesov φ s p q)
     (φ' : ContDiffBump (0 : E)) : u.MemHomogeneousBesov φ' s p q := by
   obtain ⟨f, hf, hmem⟩ := memHomogeneousBesov_iff.1 hu
-  obtain ⟨K, L, hK, hKL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
+  obtain ⟨K, L, -, hKL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
   obtain ⟨f', hf', hle⟩ := hKL f hf
   refine memHomogeneousBesov_iff.2 ⟨f', hf', ((hmem.sum_Ico_sub_add_int L).const_mul K).mono
     fun j ↦ ?_⟩
