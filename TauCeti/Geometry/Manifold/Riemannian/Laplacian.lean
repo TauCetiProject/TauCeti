@@ -712,7 +712,7 @@ theorem laplaceBeltrami_eq_finrank_mul_of_hessian_eq_mul_inner
 /-! ### Linear coordinates -/
 
 /-- **The Hessian in linear coordinates.** On a finite-dimensional real normed space `F` whose
-Riemannian metric is the field of bilinear forms `g`, differentiable at `x`, the Hessian of a
+Riemannian metric is the field of bilinear forms `g`, the Hessian of a
 function `f` that is `C²` at `x` is `Hess f(u, v) = D²f(u, v) - Df(Γ(u, v))`, where `Γ` is
 `TauCeti.Manifold.christoffelSecondKind g`. Tangent vectors are read in the model space through
 `tangentSpaceCastModel`. -/
@@ -723,7 +723,7 @@ theorem hessian_model_space_eq_fderiv_sub_christoffelSecondKind
     {g : F → F →L[ℝ] F →L[ℝ] ℝ}
     (hg : ∀ y (v w : TangentSpace 𝓘(ℝ, F) y), inner ℝ v w =
       g y (tangentSpaceCastModel 𝓘(ℝ, F) y v) (tangentSpaceCastModel 𝓘(ℝ, F) y w))
-    {x : F} (hgx : DifferentiableAt ℝ g x) {f : F → ℝ} (hf : ContDiffAt ℝ 2 f x) (u v : F) :
+    {x : F} {f : F → ℝ} (hf : ContDiffAt ℝ 2 f x) (u v : F) :
     hessian 𝓘(ℝ, F) f x ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm u)
         ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v) =
       fderiv ℝ (fderiv ℝ f) x u v - fderiv ℝ f x (christoffelSecondKind g x u v) := by
@@ -738,8 +738,8 @@ theorem hessian_model_space_eq_fderiv_sub_christoffelSecondKind
     -- `NormedSpace.fromTangentSpace z` is `tangentSpaceCastModel 𝓘(ℝ, F) z` by definition.
     simp [NormedSpace.fromTangentSpace]
   -- The Levi-Civita derivative of the constant field `C v` in the direction `u` is `Γ(u, v)`.
-  have hΓ := leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind (V := C v) hg
-    hgx (differentiableAt_const v) u
+  have hΓ := leviCivitaConnection_model_space_eq_fderiv_add_christoffelSecondKind
+    (V := C v) (x := x) hg (differentiableAt_const v) u
   -- Read in the model space, the constant field `C v` is the constant map `v`.
   have h0 : fderiv ℝ (C v) x = 0 := fderiv_const_apply (x := x) v
   have hD : DifferentiableAt ℝ (fderiv ℝ f) x :=
