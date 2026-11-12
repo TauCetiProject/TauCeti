@@ -180,11 +180,15 @@ theorem IsJordanCurve.not_isPreconnected_sdiff_pair (h : IsJordanCurve C) (hp : 
 /-- **A Jordan curve is the union of two closed arcs meeting in two given points.** For `p ≠ q` on
 a Jordan curve `C` there are compact connected sets `A` and `B` with `A ∪ B = C` and
 `A ∩ B = {p, q}`: the images of the closed arcs `Circle.path z w` and `Circle.path w z` of the
-circle, where `z` and `w` correspond to `p` and `q`. -/
+circle, where `z` and `w` correspond to `p` and `q`. For `p = q` take `A = C` and `B = {p}`. -/
 theorem IsJordanCurve.exists_isCompact_isConnected_union_eq_inter_eq_pair (h : IsJordanCurve C)
-    (hp : p ∈ C) (hq : q ∈ C) (hpq : p ≠ q) :
+    (hp : p ∈ C) (hq : q ∈ C) :
     ∃ A B : Set X, IsCompact A ∧ IsCompact B ∧ IsConnected A ∧ IsConnected B ∧
       A ∪ B = C ∧ A ∩ B = {p, q} := by
+  rcases eq_or_ne p q with rfl | hpq
+  · exact ⟨C, {p}, h.isCompact, isCompact_singleton, h.isConnected, isConnected_singleton,
+      union_eq_self_of_subset_right (singleton_subset_iff.2 hp),
+      by simpa using inter_eq_right.2 (singleton_subset_iff.2 hp)⟩
   obtain ⟨e⟩ := isJordanCurve_iff.mp h
   have hzw : e ⟨p, hp⟩ ≠ e ⟨q, hq⟩ := fun hh => hpq (congrArg Subtype.val (e.injective hh))
   set z := e ⟨p, hp⟩

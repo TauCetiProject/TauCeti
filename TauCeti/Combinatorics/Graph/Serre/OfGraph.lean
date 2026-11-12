@@ -169,7 +169,7 @@ noncomputable def toSerrePath {x y : V} (p : G.Walk x y)
     G.toSerreGraph.Path ⟨x, hx⟩ ⟨y, hy⟩ := by
   induction p with
   | nil => exact .nil
-  | cons e h p ih =>
+  | cons e h _ ih =>
     exact (G.toSerreGraphArrow ⟨e, h.edge_mem⟩ ⟨_, hx⟩
       ⟨_, h.right_mem⟩ h).toPath.comp (ih h.right_mem hy)
 
