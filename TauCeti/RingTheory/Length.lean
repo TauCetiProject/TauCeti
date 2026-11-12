@@ -90,6 +90,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   is equal to it.
 * `LinearMap.length_eq_of_bijective`: a bijective semilinear map along a surjective ring
   homomorphism preserves length.
+* `Ideal.length_quotient_map_of_surjective`: along a surjective ring homomorphism `ψ : A → B`, the
+  length of `B ⧸ ψ(I)` over `B` is the length of `A ⧸ (I + ker ψ)` over `A`.
 * `LinearEquiv.length_localizedModule_comap`: for a ring isomorphism `σ : A → B` and a
   `σ`-semilinear equivalence `N ≃ M`, the localizations `N_{σ⁻¹ 𝔮}` and `M_𝔮` have the same length,
   for every prime `𝔮` of `B`.
@@ -570,3 +572,25 @@ theorem length_localizedModule_comap (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [�
     exact ⟨LocalizedModule.mk (e.symm m) ⟨σ' t, hmem t⟩, by simp [localizedModuleComap_mk, hσ]⟩
 
 end LinearEquiv
+
+namespace Ideal
+
+/-- **Length of a quotient along a surjection.** For a surjective ring homomorphism `ψ : A → B`
+and an ideal `I` of `A`, the quotient `B ⧸ ψ(I)` has the same length over `B` as `A ⧸ (I + ker ψ)`
+over `A`, the two being identified by the semilinear bijection induced by `ψ`. -/
+theorem length_quotient_map_of_surjective {A B : Type*} [CommRing A] [CommRing B] (I : Ideal A)
+    {ψ : A →+* B} (hψ : Function.Surjective ψ) :
+    Module.length B (B ⧸ I.map ψ) = Module.length A (A ⧸ (I ⊔ RingHom.ker ψ)) := by
+  have : RingHomSurjective ψ := ⟨hψ⟩
+  have hc := comap_map_of_surjective' ψ hψ I
+  have H : I ⊔ RingHom.ker ψ ≤ (I.map ψ).comap ψ := hc.ge
+  let g : (A ⧸ (I ⊔ RingHom.ker ψ)) →ₛₗ[ψ] B ⧸ I.map ψ :=
+    { toFun := quotientMap (I.map ψ) ψ H
+      map_add' := map_add _
+      map_smul' a q := by
+        obtain ⟨q, rfl⟩ := Quotient.mk_surjective q
+        simp [Algebra.smul_def, Quotient.algebraMap_eq] }
+  exact (LinearMap.length_eq_of_bijective g
+    ⟨quotientMap_injective' (H := H) hc.le, quotientMap_surjective (H := H) hψ⟩).symm
+
+end Ideal

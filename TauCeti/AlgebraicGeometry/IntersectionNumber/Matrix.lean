@@ -62,6 +62,9 @@ is a rational multiple of the special fibre `Σᵢ mᵢ Cᵢ`.
   entries of `A` are nonnegative.
 * `AlgebraicGeometry.Scheme.Hom.dotProduct_mulVec_specialFiberIntersectionMatrix_nonpos`: the
   intersection form is negative semidefinite.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_eq_finsum`: an off-diagonal entry
+  is the sum over the points `x` of `Cᵢ ∩ Cⱼ` of the local intersection multiplicities
+  `ℓ(𝒪_{X,x} ⧸ (I_{Cᵢ} + I_{Cⱼ})_x)` weighted by the residue degrees.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_pos_iff`: an off-diagonal entry is
   positive exactly when the two components meet.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_reflTransGen`: for a connected
@@ -248,6 +251,52 @@ theorem specialFiberIntersectionMatrix_pos_iff {i j} (hij : i ≠ j) :
     IdealSheafData.range_subschemeι, IdealSheafData.coe_support_vanishingIdeal,
     IdealSheafData.coe_support_vanishingIdeal, TopologicalSpace.Closeds.coe_mk,
     TopologicalSpace.Closeds.coe_mk]
+
+/-- **Off-diagonal entries are sums of local intersection multiplicities.** Under the hypotheses of
+`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, distinct components `Cᵢ`
+and `Cⱼ` of the special fibre meet in finitely many points, and
+`(Cⱼ · Cᵢ) = Σ_x [κ(x) : κ] · ℓ(𝒪_{X,x} ⧸ (I_{Cᵢ} + I_{Cⱼ})_x)`, the sum over the points `x` of the
+scheme-theoretic intersection `Cᵢ ∩ Cⱼ` of the local intersection multiplicities of the two
+components, weighted by the residue degrees over the residue field `κ` of `R`. -/
+theorem specialFiberIntersectionMatrix_eq_finsum {i j} (hij : i ≠ j) :
+    letI := subschemeOverResidueField
+      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+        ((Set.Finite.mem_toFinset _).mp i.2))
+    toBase.specialFiberIntersectionMatrix hX hη i j =
+      ∑ᶠ z : ((vanishingIdeal ⟨closure {((j : CodimensionOnePoint X) : X)}, isClosed_closure⟩).comap
+        (vanishingIdeal
+          ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι).subscheme,
+        (((((vanishingIdeal ⟨closure {((j : CodimensionOnePoint X) : X)}, isClosed_closure⟩).comap
+          (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)},
+            isClosed_closure⟩).subschemeι).subschemeι ≫
+          (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme
+            ↘ Spec (.of (ResidueField R))).residueDegree z *
+          (Module.length (X.presheaf.stalk ((vanishingIdeal
+              ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
+                (((vanishingIdeal
+                  ⟨closure {((j : CodimensionOnePoint X) : X)}, isClosed_closure⟩).comap
+                    (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)},
+                      isClosed_closure⟩).subschemeι).subschemeι z)))
+            (X.presheaf.stalk ((vanishingIdeal
+              ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
+                (((vanishingIdeal
+                  ⟨closure {((j : CodimensionOnePoint X) : X)}, isClosed_closure⟩).comap
+                    (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)},
+                      isClosed_closure⟩).subschemeι).subschemeι z)) ⧸
+              (vanishingIdeal ⟨closure {((j : CodimensionOnePoint X) : X)}, isClosed_closure⟩ ⊔
+                vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)},
+                  isClosed_closure⟩).stalkIdeal ((vanishingIdeal
+                    ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
+                      (((vanishingIdeal
+                        ⟨closure {((j : CodimensionOnePoint X) : X)}, isClosed_closure⟩).comap
+                          (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)},
+                            isClosed_closure⟩).subschemeι).subschemeι z)))).toNat : ℕ) : ℤ) := by
+  have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.2
+  let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
+  obtain ⟨_, _, _, _⟩ := toBase.component_hypotheses hX h₀ h₁ hi
+  exact LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_subschemeι_eq_finsum _ _
+    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX
+      fun h ↦ hij (Subtype.ext h))
 
 omit hX h₀ h₁ [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] in
 /-- The special fibre is the union of its finitely many irreducible components. -/
