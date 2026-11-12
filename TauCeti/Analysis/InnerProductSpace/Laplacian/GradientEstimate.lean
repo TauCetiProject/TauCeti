@@ -146,7 +146,7 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
     field_simp
     ring
   -- The half-ball `K` on the side of `e`.
-  set K : Set E := closedBall x₀ d ∩ {x | 0 ≤ t x} with hK
+  set K : Set E := closedBall x₀ d ∩ {x | 0 ≤ t x}
   have htcont : Continuous t := (innerSL ℝ e).continuous.comp (continuous_id.sub continuous_const)
   have hKc : IsCompact K :=
     (isCompact_closedBall x₀ d).inter_right (isClosed_le continuous_const htcont)

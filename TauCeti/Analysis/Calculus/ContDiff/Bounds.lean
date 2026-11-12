@@ -354,7 +354,7 @@ theorem ContDiff.exists_norm_iteratedFDeriv_comp_le_mul {E F G : Type*} [NormedA
   | succ m =>
     -- Faà di Bruno with `D = B w^(1/(m+1))`, so that `D ^ (m+1) = B ^ (m+1) w` while every
     -- derivative of `f` of positive order is at most `B w ≤ D ^ j`.
-    set B := max |K| 1 with hB
+    set B := max |K| 1
     have hB₁ : 1 ≤ B := le_max_right _ _
     refine ⟨(m + 1).factorial * A * B ^ (m + 1), fun f x w hf hw₀ hw₁ hb ↦ ?_⟩
     have hx := hball f x w hw₀ hw₁ (hb 0 (Nat.zero_le _))
