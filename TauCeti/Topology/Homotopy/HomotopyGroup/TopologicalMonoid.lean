@@ -131,7 +131,9 @@ theorem bijective_map_mul_of_bijective_comp [DecidableEq N] [Nonempty N] {G : Ty
   · -- Correct `c` by the `f_*` class with the same image under `φ`; the rest lies in the image
     -- of `g_*`.
     obtain ⟨a, ha⟩ := hφf.2 (φ c)
-    obtain ⟨b, hb⟩ := (hφg ((map f hf a)⁻¹ * c)).1 (by simp_all)
+    rw [Function.comp_apply] at ha
+    obtain ⟨b, hb⟩ := (hφg ((map f hf a)⁻¹ * c)).1 <| by
+      rw [_root_.map_mul, _root_.map_inv, ha, inv_mul_cancel]
     exact ⟨(a, b), by simp [hb]⟩
 
 /-- The pointwise product `(p, q) ↦ f p * g q` induces a bijection on a homotopy group of positive

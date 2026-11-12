@@ -111,13 +111,6 @@ theorem hopfProduct_apply
     hopfProduct v j p = j p.1 * MooreLoopSpace.map ⟨mk n, continuous_mk n⟩ rfl p.2 :=
   (rfl)
 
-theorem hopfProduct_def
-    (j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v))) :
-    hopfProduct v j = j.comp ContinuousMap.fst *
-      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap.comp
-        ContinuousMap.snd :=
-  (rfl)
-
 /-- The based Hopf product acts on homotopy groups by `(j ⋆ Ωq)_* (a × b) = j_* a * (Ωq)_* b`. -/
 @[simp]
 theorem map_hopfProduct_prod {N : Type*} [DecidableEq N] [Nonempty N]
@@ -495,8 +488,10 @@ theorem exists_hopfLoopBoundaryHom_map_eq (hn : n ≠ 0) :
     rw [finrank_piLp_quaternion, Fintype.card_fin, Finset.card_univ, Fintype.card_fin]
     omega
   obtain ⟨w, hw, hLw⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank _ hcard
+  have hL (a : ℍ) : L a = op a • (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) := by
+    simp [L, LinearMap.smulRight_apply]
   have hvw (a : ℍ) : inner ℝ (op a • (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)) w = 0 := by
-    change inner ℝ (L a) w = 0
+    rw [← hL]
     rw [← b.sum_repr a, map_sum, sum_inner]
     refine Finset.sum_eq_zero fun i _ ↦ ?_
     rw [map_smul, real_inner_smul_left,
