@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.VectorBundle.ComplexSmulI
 import TauCeti.Topology.VectorBundle.RealForm
 
 /-!
@@ -26,7 +27,7 @@ its multiples `i σ`, it is a real `C^n` local frame of `V`, the doubled frame
 trivialization of this real frame sending `σ i x` to `b i` and `i σ i x` to `i b i` is
 complex-linear on fibres, lies in the maximal atlas of `C^n` trivializations of `V`, and sends
 `L x` onto the real span of `b`. With `F = ℂ^ι` and the standard basis, it identifies `(V, L)`
-near a point with `(U × ℂ^ι, U × ℝ^ι)`.
+over a neighbourhood `W` of a point with `(W × ℂ^ι, W × ℝ^ι)`.
 
 Maximal total reality is an open condition along a frame
 (`TauCeti.eventually_isMaximalTotallyReal`), so it suffices to assume it at a single point, and
@@ -134,28 +135,23 @@ theorem trivialization_complexDoubledFrame_apply_I_smul_frame {x : B} (hx : x �
 trivialization sending `σ i x` to `b i` and `i σ i x` to `i b i` commutes with multiplication
 by `i`, hence is complex-linear. -/
 instance isLinear_complex_trivialization_complexDoubledFrame :
-    (hs.trivialization hU (Complex.basisOneI.smulTower b)).IsLinear ℂ where
-  linear x hx := by
+    (hs.trivialization hU (Complex.basisOneI.smulTower b)).IsLinear ℂ :=
+  Trivialization.isLinear_complex_of_map_I_smul _ fun x hxe v ↦ by
     set e := hs.trivialization hU (Complex.basisOneI.smulTower b)
-    rw [baseSet_trivialization] at hx
-    have hlin := e.linear ℝ (by simpa [e] using hx)
-    let f : V x →ₗ[ℝ] F := ⟨⟨fun v ↦ (e ⟨x, v⟩).2, hlin.map_add⟩, hlin.map_smul⟩
-    let JV : V x →ₗ[ℝ] V x := (LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ
-    let JF : F →ₗ[ℝ] F := (LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ
-    -- Both composites agree on the real basis given by the doubled frame.
-    have hJ : f ∘ₗ JV = JF ∘ₗ f := by
-      refine (hs.toBasisAt hx).ext fun p ↦ ?_
-      obtain ⟨k, i⟩ := p
+    have hx : x ∈ U := by simpa [e] using hxe
+    -- Both sides are real-linear in `v` and agree on the real basis given by the doubled frame.
+    have hJ : e.linearMapAt ℝ x ∘ₗ (LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ =
+        (LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ ∘ₗ e.linearMapAt ℝ x := by
+      refine (hs.toBasisAt hx).ext fun ⟨k, i⟩ ↦ ?_
       have h0 := hs.trivialization_complexDoubledFrame_apply_frame hU b hx i
       have h1 := hs.trivialization_complexDoubledFrame_apply_I_smul_frame hU b hx i
       fin_cases k
-      · simp [toBasisAt_coe, f, JV, JF, e, h0, h1]
+      · simp [toBasisAt_coe, e.coe_linearMapAt_of_mem hxe, e, h0, h1]
       · have hneg : Complex.I • Complex.I • σ i x = -σ i x := by
           rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-        have hm := hlin.map_neg (σ i x)
-        simp [toBasisAt_coe, f, JV, JF, e, hneg, hm, h0, h1, smul_smul]
-    have h := (f.complexOfMapISmul (LinearMap.congr_fun hJ)).isLinear
-    rwa [LinearMap.coe_complexOfMapISmul f (LinearMap.congr_fun hJ)] at h
+        have hm := (e.linear ℝ hxe).map_neg (σ i x)
+        simp [toBasisAt_coe, e.coe_linearMapAt_of_mem hxe, e, hneg, hm, h0, h1, smul_smul]
+    simpa [e.coe_linearMapAt_of_mem hxe] using LinearMap.congr_fun hJ v
 
 omit [∀ x, IsScalarTower ℝ ℂ (V x)] in
 include hs in
@@ -284,9 +280,9 @@ namespace IsSubbundleFrameOn
 /-- **Standard form of a totally real subbundle along a frame, model fibre `ℂ^ι`.** For a `C^n`
 complex vector bundle with model fibre `ι → ℂ`, let `σ` be a `C^n` real local frame on an open
 set `U` of a family `L` of real subspaces of the fibres, maximal totally real at `x₀ ∈ U`. Within
-any neighbourhood `s` of `x₀`, a complex-linear trivialization of the maximal atlas around `x₀`
-identifies `(V, L)` with `(U × ℂ^ι, U × ℝ^ι)`: a vector lies in `L` exactly when its coordinates
-are real. -/
+any neighbourhood `s` of `x₀`, a complex-linear trivialization `e` of the maximal atlas around `x₀`
+identifies `(V, L)` over its base set `W ⊆ s` with `(W × ℂ^ι, W × ℝ^ι)`: a vector lies in `L`
+exactly when its coordinates are real. -/
 theorem exists_trivialization_totallyReal_pi
     (hX : IsSubbundleFrameOn (ι → ℂ) L σ U) (hU : IsOpen U)
     (hσ : ∀ i, ContMDiffOn IB (IB.prod 𝓘(ℝ, ι → ℂ)) n (fun x ↦ TotalSpace.mk' (ι → ℂ) x (σ i x)) U)
@@ -310,8 +306,8 @@ namespace HasLocalContMDiffSubbundleFrames
 /-- **Standard form of a totally real subbundle, model fibre `ℂ^ι`.** For a `C^n` complex vector
 bundle with model fibre `ι → ℂ` and a real subbundle `L` with `C^n` local frames whose fibre at
 `x₀` is maximal totally real, within any neighbourhood `s` of `x₀` a complex-linear
-trivialization of the maximal atlas around `x₀` identifies `(V, L)` with `(U × ℂ^ι, U × ℝ^ι)`: a
-vector lies in `L` exactly when its coordinates are real. -/
+trivialization `e` of the maximal atlas around `x₀` identifies `(V, L)` over its base set
+`W ⊆ s` with `(W × ℂ^ι, W × ℝ^ι)`: a vector lies in `L` exactly when its coordinates are real. -/
 theorem exists_trivialization_totallyReal_pi
     (hLs : HasLocalContMDiffSubbundleFrames IB n (ι → ℂ) ι L) {x₀ : B}
     (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x₀) Complex.I).restrictScalars ℝ) (L x₀))
