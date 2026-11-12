@@ -17,8 +17,9 @@ import Mathlib.Analysis.SpecificLimits.Basic
 The special linear group `SL(n, R)` carries the topology induced from the matrices, which is the
 product topology on the entries. So a sequence, or more generally a function along any filter,
 converges in `SL(n, R)` exactly when each of its entries converges. For the same reason `SL(n, R)`
-acts jointly continuously on column vectors. Over a `T1` topological ring it is a closed subset of
-the matrices, so it is σ-compact when `R` is.
+acts jointly continuously on column vectors, and it is second countable when `R` is; over a
+topological ring, so then is its quotient `PSL(n, R)`. Over a `T1` topological ring it is a closed
+subset of the matrices, so it is σ-compact when `R` is.
 
 ## Main results
 
@@ -28,9 +29,11 @@ the matrices, so it is σ-compact when `R` is.
   column vectors.
 * `Matrix.SpecialLinearGroup.instSigmaCompactSpace`: over a σ-compact `T1` topological ring,
   `SL(n, R)` is σ-compact.
-* `Matrix.SpecialLinearGroup.exists_tendsto_dilation_conj`: a sequence in `SL(2, ℝ)` whose diagonal
-  entries converge to those of a diagonal matrix `D`, and whose off-diagonal products tend to `0`,
-  converges to `D` after conjugating each term by a suitable power of a dilation.
+* `Matrix.SpecialLinearGroup.instSecondCountableTopology`: over a second-countable ring,
+  `SL(n, R)` is second countable, and hence so is its quotient `PSL(n, R)`.
+* `Matrix.SpecialLinearGroup.exists_tendsto_dilation_conj`: a sequence in `SL(2, ℝ)` whose first
+  diagonal entry converges to that of a diagonal matrix `D`, and whose off-diagonal products tend
+  to `0`, converges to `D` after conjugating each term by a suitable power of a dilation.
 -/
 
 public section
@@ -62,15 +65,41 @@ instance instSigmaCompactSpace [IsTopologicalRing R] [T1Space R] [SigmaCompactSp
     SigmaCompactSpace (SpecialLinearGroup n R) :=
   isClosedEmbedding_val.sigmaCompactSpace
 
-/-- If the diagonal entries of a sequence of matrices of `SL(2, ℝ)` converge to those of a diagonal
-matrix `D` and the products of its off-diagonal entries tend to `0`, then conjugating each term by a
-suitable power of `dilation s`, `s > 0`, gives a sequence converging to `D`. -/
+/-- Over a second-countable ring, `SL(n, R)` is second countable, as a subspace of the
+second-countable space of matrices.
+
+Over a topological ring, `PSL(n, R)` is the quotient of `SL(n, R)` by its centre, so it is then
+second countable as well, by `QuotientGroup.instSecondCountableTopology`; in particular `SL(2, ℝ)`
+and `PSL(2, ℝ)` are second countable. -/
+instance instSecondCountableTopology [SecondCountableTopology R] :
+    SecondCountableTopology (SpecialLinearGroup n R) :=
+  (IsInducing.subtypeVal (t := {A : Matrix n n R | A.det = 1})).secondCountableTopology
+
+/-- If the first diagonal entry of a sequence of matrices of `SL(2, ℝ)` converges to that of a
+diagonal matrix `D` and the products of its off-diagonal entries tend to `0`, then conjugating each
+term by a suitable power of `dilation s`, `s > 0`, gives a sequence converging to `D`. The other
+diagonal entry then converges too, by the determinant. -/
 theorem exists_tendsto_dilation_conj {s : ℝ} (hs : 0 < s) {M : ℕ → SL(2, ℝ)} {D : SL(2, ℝ)}
-    (h00 : Tendsto (fun n ↦ M n 0 0) atTop (𝓝 (D 0 0)))
-    (h11 : Tendsto (fun n ↦ M n 1 1) atTop (𝓝 (D 1 1))) (hD01 : D 0 1 = 0) (hD10 : D 1 0 = 0)
+    (h00 : Tendsto (fun n ↦ M n 0 0) atTop (𝓝 (D 0 0))) (hD01 : D 0 1 = 0) (hD10 : D 1 0 = 0)
     (hβ : Tendsto (fun n ↦ M n 0 1 * M n 1 0) atTop (𝓝 0)) :
     ∃ k : ℕ → ℤ, Tendsto (fun n ↦ dilation (k n * s) * M n * dilation (-(k n * s))) atTop
       (𝓝 D) := by
+  -- the other diagonal entry converges as well, by the determinant identities
+  have hdetD : D 0 0 * D 1 1 = 1 := by
+    have h := D.det_coe
+    rw [Matrix.det_fin_two, hD01, hD10] at h
+    linarith
+  have hD00 : D 0 0 ≠ 0 := left_ne_zero_of_mul_eq_one hdetD
+  have h11 : Tendsto (fun n ↦ M n 1 1) atTop (𝓝 (D 1 1)) := by
+    have h := (tendsto_const_nhds (x := (1 : ℝ)).add hβ).div h00 hD00
+    have hD11 : D 1 1 = (1 + 0) / D 0 0 := by field_simp; linarith
+    rw [hD11]
+    refine h.congr' ((h00.eventually_ne hD00).mono fun n hn ↦ ?_)
+    have hdet := (M n).det_coe
+    rw [Matrix.det_fin_two] at hdet
+    simp only [Pi.div_apply]
+    field_simp
+    linarith
   -- the radius `ρₙ = √|βₙ| + 1 / (n + 1)` bounds the balanced off-diagonal entries
   set ρ : ℕ → ℝ := fun n ↦ √|M n 0 1 * M n 1 0| + 1 / ((n : ℝ) + 1)
   have hρ0 (n : ℕ) : 0 < ρ n := by positivity

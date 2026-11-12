@@ -33,7 +33,8 @@ strictly quadratic but are not standard.
 This file defines the number of occurrences of a variable in an element of `G[X]`, quadratic and
 strictly quadratic finite systems, the four types of standard quadratic equations together with
 their atoms, atomic rank, genus and Euler characteristic, and degenerate, commutative and
-general-position solutions.
+general-position solutions. It also records the standard equation `[x, y] = [a, b]` of genus one
+and its solutions.
 
 The number of occurrences `occurrences x w` of `x` in `w` is defined as the least number of
 letters `x^{±1}` in an expression of `w` as a product of coefficients and letters `y^{±1}`. By
@@ -67,12 +68,16 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * `Standard.IsDegenerate`, `Standard.IsCommutative`, `Standard.IsGeneralPosition`: a point at
   which some atom vanishes, at which consecutive atoms commute, at which no two consecutive atoms
   commute.
+* `TauCeti.GroupAlgGeom.Quadratic.oneCommutatorEquation a b`: the equation `[x, y] = [a, b]` over
+  `G`.
 
 ## Main results
 
 * `TauCeti.GroupAlgGeom.Quadratic.le_occurrences`: the extremal characterization of
   `occurrences`.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isQuadratic`: standard equations are quadratic.
+* `TauCeti.GroupAlgGeom.Quadratic.isStandard_oneCommutatorEquation`: `[x, y] = [a, b]` is a
+  standard orientable quadratic equation of genus one.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
   `[x₁, y₁][x₂, y₂] = 1` is commutative, so this equation has no solution in general position.
 * `TauCeti.GroupAlgGeom.Quadratic.isGeneralPosition_genusThree`: `[x₁, y₁][x₂, y₂][x₃, y₃] = 1`
@@ -274,7 +279,7 @@ coefficients are deleted, is a lower bound for the number of occurrences of `x` 
 theorem countP_toWord_snd_le_occurrences [DecidableEq X] (x : X) (w : GX G X) :
     ((snd w).toWord.countP fun p => p.1 = x) ≤ occurrences x w := by
   refine le_occurrences x (fun u => (snd u).toWord.countP fun p => p.1 = x) (fun u v => ?_)
-    (fun g => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
+    (fun _ => by simp) (by simp [FreeGroup.toWord_of]) ?_ (fun y hy => ⟨?_, ?_⟩) w
   · rw [map_mul, ← List.countP_append]
     exact (FreeGroup.toWord_mul_sublist _ _).countP_le
   · simp [FreeGroup.toWord_inv, FreeGroup.toWord_of, FreeGroup.invRev]
@@ -467,6 +472,15 @@ theorem constant_nonorientableCoeff {x : Fin n → X} (hn : 0 < n)
     (nonorientableCoeff n m hn x z inj c hc d hd).constant = d := (rfl)
 
 theorem toWord_def (S : Standard G X) : S.toWord = S.atoms.prod * inl S.constant := (rfl)
+
+/-- The standard quadratic equation of type (4) with one square and no conjugated coefficient is
+`x² d = 1`. -/
+@[simp]
+theorem toWord_nonorientableCoeff_one_zero {x : Fin 1 → X} {z : Fin 0 → X} {c : Fin 0 → G}
+    (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord =
+      inr (FreeGroup.of (x 0)) ^ 2 * inl d := by
+  simp [toWord_def]
 
 theorem atomicRank_def (S : Standard G X) : S.atomicRank = S.atoms.length := (rfl)
 
@@ -715,6 +729,48 @@ theorem not_isGeneralPosition_of_mem_V_genusTwo {ι : G →* H} {v : X → H} {x
 end Commutators
 
 end Standard
+
+/-! ### The equation `[x, y] = [a, b]` -/
+
+section OneCommutator
+
+variable (a b : G)
+
+/-- The equation `[x, y] = [a, b]` over `G`, where `[x, y] = x⁻¹ y⁻¹ x y`: the element
+`[x, y] [a, b]⁻¹` of `G[x, y]`. -/
+def oneCommutatorEquation : GX G (Fin 2) :=
+  ⁅(inr (FreeGroup.of 0) : GX G (Fin 2))⁻¹, (inr (FreeGroup.of 1))⁻¹⁆ * inl ⁅a⁻¹, b⁻¹⁆⁻¹
+
+/-- The left side `[x, y] [a, b]⁻¹` of the equation `[x, y] = [a, b]`. -/
+theorem oneCommutatorEquation_def : oneCommutatorEquation a b =
+    ⁅(inr (FreeGroup.of 0) : GX G (Fin 2))⁻¹, (inr (FreeGroup.of 1))⁻¹⁆ * inl ⁅a⁻¹, b⁻¹⁆⁻¹ := (rfl)
+
+/-- The equation `[x, y] = [a, b]` is a standard orientable quadratic equation of genus one: it
+has a nontrivial constant if `a` and `b` do not commute, and is `[x, y] = 1` otherwise. -/
+theorem isStandard_oneCommutatorEquation :
+    ∃ S : Standard G (Fin 2),
+      S.toWord = oneCommutatorEquation a b ∧ S.IsOrientable ∧ S.genus = 1 := by
+  by_cases hd : ⁅a⁻¹, b⁻¹⁆⁻¹ = 1
+  · exact ⟨.orientable 1 one_pos ![0] ![1] (by decide),
+      by simp [Standard.toWord_def, oneCommutatorEquation_def, hd], by simp, by simp⟩
+  · exact ⟨.orientableCoeff 1 0 one_pos ![0] ![1] Fin.elim0 (by decide) Fin.elim0
+      (fun j => j.elim0) _ hd, by simp [Standard.toWord_def, oneCommutatorEquation_def],
+      by simp, by simp⟩
+
+variable {a b} {ι : G →* H} {v : Fin 2 → H}
+
+/-- The value of the left side of `[x, y] = [a, b]` at a pair. -/
+@[simp]
+theorem eval_oneCommutatorEquation : eval ι v (oneCommutatorEquation a b) =
+    ⁅(v 0)⁻¹, (v 1)⁻¹⁆ * ⁅(ι a)⁻¹, (ι b)⁻¹⁆⁻¹ := by
+  simp [oneCommutatorEquation_def, map_commutatorElement]
+
+/-- The solutions of `[x, y] = [a, b]` are the pairs with the commutator of `(a, b)`. -/
+theorem mem_V_oneCommutatorEquation :
+    v ∈ V ι {oneCommutatorEquation a b} ↔ ⁅(v 0)⁻¹, (v 1)⁻¹⁆ = ⁅(ι a)⁻¹, (ι b)⁻¹⁆ := by
+  simp [mul_eq_one_iff_eq_inv]
+
+end OneCommutator
 
 /-! ### Examples -/
 

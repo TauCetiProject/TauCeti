@@ -22,7 +22,8 @@ across zero with nonzero derivative. The pre-Schwarzian chain rule then gives
 `z * f''(z) / f'(z) → -2` along the upper half-plane, and in particular `f'' / f' → 0`.
 
 `TauCeti.tendsto_zero_cobounded_of_eqOn_logDeriv_deriv` transfers this decay to any
-conjugation-symmetric continuation of the pre-Schwarzian which is continuous near infinity.  It
+conjugation-symmetric continuation of the pre-Schwarzian which is continuous within the upper
+half-plane at all sufficiently distant real points.  It
 supplies the full-plane limit needed in the partial-fraction characterization of the
 Schwarz--Christoffel differential equation.
 The straight-edge hypotheses concern the map in the inverse coordinate, rather than assuming
@@ -103,7 +104,7 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv
     (hreal : ∀ z ∈ Ω, z.im = 0 → (g z).im = 0)
     (hupper : MapsTo g (Ω ∩ upperHalfPlaneSet) upperHalfPlaneSet)
     (hinj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
-    {φ : ℂ → ℂ} (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    {φ : ℂ → ℂ} (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφ : EqOn φ (logDeriv (deriv (fun w => g (-w⁻¹)))) upperHalfPlaneSet) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
@@ -186,7 +187,7 @@ half-plane in the coordinate `w ↦ -1 / w` at infinity and normalize the target
 If the result extends to a function `g` which is continuous and injective up to a real segment
 through `0`, holomorphic and upper half-plane valued above it, and real on it, then every
 conjugation-symmetric continuation `φ` of the pre-Schwarzian derivative of `f` which is continuous
-near infinity on the real axis tends to `0` at infinity.
+within the upper half-plane at all sufficiently distant real points tends to `0` at infinity.
 
 This is the form the Schwarz--Christoffel converse uses: `φ` is holomorphic off the finitely many
 prevertices, so it is automatically continuous near infinity, and the hypotheses on `g` say that
@@ -200,7 +201,7 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
     (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
     (hupper : MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet)
     (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
-    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hφconj : Filter.Eventually
       (fun z => φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z)) (cobounded ℂ))
     (hφf : EqOn φ (logDeriv (deriv f)) upperHalfPlaneSet) :
@@ -235,7 +236,7 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv
       |(g z).arg| = β * Real.pi / 2) :
     Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 ((β : ℂ) - 1)) := by
-  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet with hs_def
+  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet
   have hs : IsOpen s := Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
   have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
     rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]

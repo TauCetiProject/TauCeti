@@ -54,9 +54,15 @@ theorem surjective_commutatorMap_of_iterate (F : T →* T) (m : ℕ)
 /-- If an iterate of `F` is the `Q`-th power map, and every element has a
 `(Q - 1)`-st root, then the Lang map of `F` is surjective. -/
 theorem surjective_commutatorMap_of_iterate_eq_pow (F : T →* T) {m Q : ℕ}
-    (hQ : 0 < Q) (hF : ∀ t, (⇑F)^[m] t = t ^ Q)
+    (hF : ∀ t, (⇑F)^[m] t = t ^ Q)
     (hroot : Function.Surjective (fun t : T ↦ t ^ (Q - 1))) :
     Function.Surjective (commutatorMap F) := by
+  rcases Nat.eq_zero_or_pos Q with rfl | hQ
+  · -- `Q = 0`: the root map is constant, so `T` is trivial
+    intro a
+    obtain ⟨t, ht⟩ := hroot a
+    obtain rfl : a = 1 := by simpa using ht.symm
+    exact ⟨1, by simp [commutatorMap_apply]⟩
   apply F.surjective_commutatorMap_of_iterate m
   intro a
   obtain ⟨t, ht⟩ := hroot a⁻¹

@@ -228,8 +228,8 @@ def diagonalNormalizerQuotientMulEquivPerm
   constructor
   · exact (Subgroup.normalizerQuotientLift_injective_iff
       (diagonalTorus k n) φ hkill).mpr (diagonalNormalizerPerm_eq_one_iff hsep)
-  · exact Subgroup.normalizerQuotientLift_surjective_of_surjective
-      (diagonalTorus k n) φ hkill (diagonalNormalizerPerm_surjective hsep)
+  · exact (Subgroup.normalizerQuotientLift_surjective_iff
+      (diagonalTorus k n) φ hkill).mpr (diagonalNormalizerPerm_surjective hsep)
 
 /-- The quotient equivalence sends the class of a normalizer element to its coordinate
 permutation. -/

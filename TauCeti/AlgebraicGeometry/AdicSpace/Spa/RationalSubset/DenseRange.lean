@@ -106,10 +106,10 @@ theorem exists_pow_mem_rationalSubset_image_eq_of_denseRange [IsHuberRing A]
       (by simpa using hT) s
   obtain ⟨n, hn⟩ := hnu.exists_pow_mem_of_mem_nhds hV
   obtain ⟨G, p, hG, hTG, hGT, hs⟩ :=
-    exists_finset_superset_forall_sub_mem_of_denseRange hφ hV (Finset.mem_insert_self 0 T)
+    hφ.exists_finset_superset_forall_sub_mem hV (Finset.mem_insert_self 0 T)
       {u ^ n} (by simpa using hn) s
   refine ⟨n, G, p, hG (Finset.mem_singleton_self _), ?_⟩
-  have heq := hpert (G.image φ) (φ p) hTG hGT hs
+  have heq := hpert (G.image φ) (φ p) (by simpa using hTG) (by simpa using hGT) hs
   rw [rationalSubset_insert_of_forall_vle Aplus T s 0
     (fun v _ ↦ v.toValuativeRel.zero_vle s)] at heq
   exact heq

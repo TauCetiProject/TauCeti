@@ -113,6 +113,7 @@ theorem two_le_minCriticalCount [Nontrivial M] : 2 ≤ minCriticalCount I M :=
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 
+omit [FiniteDimensional ℝ E] in
 /-- On a compact boundaryless manifold the minimal number of critical points is finite: a Morse
 function exists, and it has finitely many critical points. -/
 theorem minCriticalCount_ne_top : minCriticalCount I M ≠ ⊤ := by

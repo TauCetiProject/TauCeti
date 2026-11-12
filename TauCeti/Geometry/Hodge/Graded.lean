@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.Geometry.Hodge.BaseChange
+import Mathlib.Data.Int.Interval
 
 /-!
 # Graded pieces of a rational weight filtration
@@ -46,10 +47,7 @@ quotient, and the Hodge filtration is transported across that identification.
 
 The conventions for opposed and induced filtrations follow Deligne, *Théorie de Hodge II*,
 §1.2.1; the graded-piece comparison is the one used throughout Peters–Steenbrink, *Mixed Hodge
-Structures*, Ch. 3. The signatures of `weightGradedRat`, `gradedComplexEquiv` and `gradedF` are
-adapted from the proposed definitions in
-[`HodgeStructures/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/HodgeStructures/Suggested.lean),
-whose definitive mathematical specification is the accompanying Hodge structures roadmap.
+Structures*, Ch. 3.
 -/
 
 public section
@@ -359,6 +357,52 @@ theorem gradedF_of_eq_bot (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange �
     (hp : F p = ⊥) : gradedF hℚ hℂ WQ hWQ F k p = ⊥ := by
   rw [gradedF, complexGradedF_of_eq_bot _ F hp, Submodule.comap_bot, LinearMap.ker_eq_bot]
   exact (gradedComplexEquiv hℚ hℂ WQ hWQ k).injective
+
+/-- Where the induced filtration on the `k`-th graded piece vanishes, the step of the Hodge
+filtration meets `W_k` inside `W_{k-1}`. -/
+theorem inf_le_of_gradedF_eq_bot (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    (WQ : ℤ → Submodule ℚ Vℚ) (hWQ : Monotone WQ) (F : ℤ → Submodule ℂ Vℂ) {k p : ℤ}
+    (hp : gradedF hℚ hℂ WQ hWQ F k p = ⊥) :
+    F p ⊓ rationalToComplexSubmodule hℚ hℂ (WQ k) ≤
+      rationalToComplexSubmodule hℚ hℂ (WQ (k - 1)) := by
+  rintro y ⟨hyF, hyk⟩
+  have hx : (gradedComplexEquiv hℚ hℂ WQ hWQ k).symm (Submodule.Quotient.mk ⟨y, hyk⟩) ∈
+      gradedF hℚ hℂ WQ hWQ F k p := by
+    rw [mem_gradedF_iff]
+    exact ⟨⟨y, hyk⟩, hyF, by simp⟩
+  simp only [hp, Submodule.mem_bot, LinearEquiv.symm_apply_eq, map_zero,
+    Submodule.Quotient.mk_eq_zero] at hx
+  exact hx
+
+/-- The Hodge filtration is separated as soon as its induced filtration is separated on every
+graded piece of a bounded weight filtration: a step that vanishes on the graded pieces of weight
+`≤ k` meets `W_k` trivially. -/
+theorem exists_eq_bot_of_forall_gradedF_eq_bot (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (WQ : ℤ → Submodule ℚ Vℚ) (hWQ : Monotone WQ)
+    (F : ℤ → Submodule ℂ Vℂ) (hF : Antitone F) (hW_top : ∃ k, WQ k = ⊤)
+    (hW_bot : ∃ k, WQ k = ⊥) (h : ∀ k, ∃ p, gradedF hℚ hℂ WQ hWQ F k p = ⊥) :
+    ∃ p, F p = ⊥ := by
+  choose p hp using h
+  obtain ⟨k₀, hk₀⟩ := hW_bot
+  obtain ⟨k₁, hk₁⟩ := hW_top
+  have hK : WQ (max k₀ k₁) = ⊤ := top_unique (hk₁ ▸ hWQ (le_max_right _ _))
+  obtain ⟨P, hP⟩ := ((Finset.Icc k₀ (max k₀ k₁)).image p).bddAbove
+  refine ⟨P, ?_⟩
+  -- Climb the weights from `k₀`, where `W` is zero, to `max k₀ k₁`, where it is everything.
+  have hclimb (n : ℤ) : n ≤ max k₀ k₁ → F P ⊓ rationalToComplexSubmodule hℚ hℂ (WQ n) = ⊥ := by
+    refine Int.inductionOn' n k₀ ?_ (fun n hn ih hn1 ↦ ?_) fun n hn _ _ ↦ ?_
+    · exact fun _ ↦ by rw [hk₀, rationalToComplexSubmodule_bot, inf_bot_eq]
+    · have hpP : p (n + 1) ≤ P := hP (Finset.mem_coe.2 (Finset.mem_image_of_mem p
+        (Finset.mem_Icc.2 ⟨by omega, hn1⟩)))
+      have hz : gradedF hℚ hℂ WQ hWQ F (n + 1) P = ⊥ :=
+        le_bot_iff.1 ((gradedF_antitone hℚ hℂ WQ hWQ F hF _ hpP).trans (hp _).le)
+      have hle := inf_le_of_gradedF_eq_bot hℚ hℂ WQ hWQ F hz
+      rw [add_sub_cancel_right] at hle
+      exact eq_bot_iff.2 ((le_inf inf_le_left hle).trans (ih (by omega)).le)
+    · have : WQ (n - 1) = ⊥ := le_bot_iff.1 (hk₀ ▸ hWQ (by omega))
+      rw [this, rationalToComplexSubmodule_bot, inf_bot_eq]
+  have := hclimb (max k₀ k₁) le_rfl
+  rwa [hK, rationalToComplexSubmodule_top, inf_top_eq] at this
 
 section GradedConjugation
 

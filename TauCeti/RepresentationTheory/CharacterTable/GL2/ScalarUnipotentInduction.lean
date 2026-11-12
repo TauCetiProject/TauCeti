@@ -22,7 +22,7 @@ public import Mathlib.Algebra.Group.AddChar
 import TauCeti.GroupTheory.QuotientGroup.Basic
 -- Non-public: the sum of a nontrivial additive character over the nonzero field elements is used
 -- in the Jordan computation.
-import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 
 /-!
 # Induction from the scalar--unipotent subgroup of `GL₂(𝔽_q)`

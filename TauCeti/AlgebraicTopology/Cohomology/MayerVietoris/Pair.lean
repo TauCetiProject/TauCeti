@@ -60,6 +60,12 @@ cochains (`SSetPair.quasiIso_cochainComplexMap`).
   `Hⁿ(A, C) ⊞ Hⁿ(B, D)` and at `Hⁿ(A ∩ B, C ∩ D)`.
 * `TopCat.mono_singularCohomologyPairMayerVietorisToBiprod_zero`: injectivity at the degree-zero
   endpoint.
+* `SSetPair.mayerVietorisCochainδ_naturality`: the relative cochain connecting morphism is natural
+  in maps of squares of pairs of simplicial sets.
+* `TopCat.singularCohomologyPairMayerVietorisδ_naturality`: the connecting morphism is natural in
+  maps `f : X ⟶ Y` carrying `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'`, and
+  `TopCat.singularCohomologyPairMayerVietorisδ_naturality_of_subset` is the case of the inclusions
+  for `A ⊆ A'`, `B ⊆ B'`, `C ⊆ C'` and `D ⊆ D'` in `X`.
 * `TopCat.quasiIso_cochainComplexMap_smallSingularSubcomplexPairToUnion` and
   `TopCat.isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion`: for `U` and `V`
   open in `U ∪ V`, the cochains of `X` relative to its singular simplices lying in `U` or in `V`
@@ -192,9 +198,10 @@ lemma shortExact_mayerVietorisCochainShortComplex :
     (((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
       (linearYonedaFunctor k M).mapBiprod _ _).symm)
     (Iso.refl ((linearYonedaFunctor k M).obj (op (P₁.chainComplex R)))) ?_ ?_
-  · rw [Iso.symm_hom, he]
+  · rw [Iso.symm_hom]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
-    simp [biprod.desc_eq, ← Functor.map_comp, ← op_comp, -linearYonedaFunctor_obj]
+    rw [Category.id_comp]
+    exact (Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv _ _ _).symm
   · rw [Iso.symm_hom, he]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     apply biprod.hom_ext' <;>
@@ -251,18 +258,45 @@ lemma mayerVietorisCochain_exact₃ (n m : ℕ) (h : n + 1 = m := by lia) :
     (by simpa) using 2
   exacts [mayerVietorisCochainFromBiprod_eq R k M n, rfl]
 
-include sqL sqR in
+include sqR in
+omit [Mono t.left] [Mono t.right] in
 /-- The map `H⁰(P₄) ⟶ H⁰(P₂) ⊞ H⁰(P₃)` at the start of the relative cochain Mayer–Vietoris
 sequence is a monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero :
     Mono (mayerVietorisCochainToBiprod R k M r b 0) := by
-  have := (shortExact_mayerVietorisCochainShortComplex R k M sqL sqR).mono_f
-  have : Mono (HomologicalComplex.homologyMap
-      (mayerVietorisCochainShortComplex R k M (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w)).f 0) :=
+  have hepi := epi_biprod_desc_chainComplexMap R (r := r) (b := b) sqR
+  have : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
+      (cochainComplexMap b)) :=
+    mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f k M _ _ fun i ↦ inferInstance
+  have : Mono (HomologicalComplex.homologyMap (biprod.lift
+      (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b)) 0) :=
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega
   exact (HomologicalComplex.mono_biprod_lift_homologyMap_iff 0).2 inferInstance
+
+variable {Q₁ Q₂ Q₃ Q₄ : SSetPair.{w}} {t' : Q₁ ⟶ Q₂} {l' : Q₁ ⟶ Q₃} {r' : Q₂ ⟶ Q₄}
+  {b' : Q₃ ⟶ Q₄} (φ₁ : P₁ ⟶ Q₁) (φ₂ : P₂ ⟶ Q₂) (φ₃ : P₃ ⟶ Q₃) (φ₄ : P₄ ⟶ Q₄)
+
+/-- **Naturality of the relative cochain Mayer–Vietoris connecting morphism** in maps of squares
+of pairs. -/
+@[reassoc]
+lemma mayerVietorisCochainδ_naturality (sqL' : IsPushout t'.left l'.left r'.left b'.left)
+    [Mono t'.left] (sqR' : IsPushout t'.right l'.right r'.right b'.right) [Mono t'.right]
+    (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+    (hb : b ≫ φ₄ = φ₃ ≫ b') (n m : ℕ) (h : n + 1 = m := by lia) :
+    mayerVietorisCochainδ R k M sqL' sqR' n m h ≫
+        HomologicalComplex.homologyMap (cochainComplexMap φ₄) m =
+      HomologicalComplex.homologyMap (cochainComplexMap φ₁) n ≫
+        mayerVietorisCochainδ R k M sqL sqR n m h := by
+  let ψ : mayerVietorisCochainShortComplex R k M (MorphismProperty.Arrow.Hom.ext sqL'.w sqR'.w) ⟶
+      mayerVietorisCochainShortComplex R k M (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w) :=
+    { τ₁ := cochainComplexMap φ₄
+      τ₂ := biprod.map (cochainComplexMap φ₂) (cochainComplexMap φ₃)
+      τ₃ := cochainComplexMap φ₁
+      comm₁₂ := by apply biprod.hom_ext <;> simp [← cochainComplexMap_comp, hr, hb]
+      comm₂₃ := by apply biprod.hom_ext' <;> simp [← cochainComplexMap_comp, ht, hl] }
+  exact HomologicalComplex.HomologySequence.δ_naturality ψ _ _ n m (by simpa)
 
 end SSetPair
 
@@ -556,8 +590,99 @@ lemma mono_singularCohomologyPairMayerVietorisToBiprod_zero :
     Mono (singularCohomologyPairMayerVietorisToBiprod R k M hCA hDB 0) := by
   have := isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion R k M hCA hDB hA hB hC hD 0
   have := SSetPair.mono_mayerVietorisCochainToBiprod_zero R k M
-    (isPushout_toSmallSingularPair_left hCA hDB) (isPushout_toSmallSingularPair_right hCA hDB)
+    (isPushout_toSmallSingularPair_right hCA hDB)
   rw [← homologyMap_smallSingularPairToUnion_comp_mayerVietorisCochainToBiprod R k M hCA hDB 0]
   infer_instance
+
+/-! #### Naturality of the connecting morphism -/
+
+section Naturality
+
+variable {Y : TopCat.{w}} {A' B' C' D' : Set Y} (hCA' : C' ⊆ A') (hDB' : D' ⊆ B')
+  (hA' : IsOpen ((↑) ⁻¹' A' : Set ↥(A' ∪ B'))) (hB' : IsOpen ((↑) ⁻¹' B' : Set ↥(A' ∪ B')))
+  (hC' : IsOpen ((↑) ⁻¹' C' : Set ↥(C' ∪ D'))) (hD' : IsOpen ((↑) ⁻¹' D' : Set ↥(C' ∪ D')))
+  (f : X ⟶ Y) (hfA : Set.MapsTo f A A') (hfB : Set.MapsTo f B B') (hfC : Set.MapsTo f C C')
+  (hfD : Set.MapsTo f D D')
+
+/-- **Naturality of the connecting morphism of the Mayer–Vietoris sequence of two pairs.** A map
+`f : X ⟶ Y` carrying `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'` commutes with the
+connecting morphisms, where `(A ∩ B, C ∩ D) ⟶ (A' ∩ B', C' ∩ D')` and
+`(A ∪ B, C ∪ D) ⟶ (A' ∪ B', C' ∪ D')` are the maps of pairs given by the restrictions of `f`. -/
+@[reassoc]
+lemma singularCohomologyPairMayerVietorisδ_naturality (n m : ℕ) (h : n + 1 = m := by lia) :
+    singularCohomologyPairMayerVietorisδ R k M hCA' hDB' hA' hB' hC' hD' n m h ≫
+        TopPair.singularCohomologyMap (TopPair.ofInclusionMap (Set.union_subset_union hCA hDB)
+          (Set.union_subset_union hCA' hDB') ⟨(hfA.union_union hfB).restrict,
+            f.hom.continuous.restrict (hfA.union_union hfB)⟩
+          fun _ hx ↦ hfC.union_union hfD hx) m =
+      TopPair.singularCohomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB)
+          (Set.inter_subset_inter hCA' hDB') ⟨(hfA.inter_inter hfB).restrict,
+            f.hom.continuous.restrict (hfA.inter_inter hfB)⟩
+          fun _ hx ↦ hfC.inter_inter hfD hx) n ≫
+        singularCohomologyPairMayerVietorisδ R k M hCA hDB hA hB hC hD n m h := by
+  have := isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion R k M hCA hDB hA hB hC hD m
+  have := isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion R k M hCA' hDB' hA' hB' hC'
+    hD' m
+  have hnat := SSetPair.mayerVietorisCochainδ_naturality R k M
+    (isPushout_toSmallSingularPair_left hCA hDB) (isPushout_toSmallSingularPair_right hCA hDB)
+    (TopPair.toSSetPair.map (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB)
+      (Set.inter_subset_inter hCA' hDB') ⟨(hfA.inter_inter hfB).restrict,
+        f.hom.continuous.restrict (hfA.inter_inter hfB)⟩ fun _ hx ↦ hfC.inter_inter hfD hx))
+    (TopPair.toSSetPair.map (TopPair.ofInclusionMap hCA hCA' ⟨hfA.restrict,
+      f.hom.continuous.restrict hfA⟩ fun _ hx ↦ hfC hx))
+    (TopPair.toSSetPair.map (TopPair.ofInclusionMap hDB hDB' ⟨hfB.restrict,
+      f.hom.continuous.restrict hfB⟩ fun _ hx ↦ hfD hx))
+    (smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD)
+    (isPushout_toSmallSingularPair_left hCA' hDB') (isPushout_toSmallSingularPair_right hCA' hDB')
+    (by
+      rw [← Functor.map_comp, ← Functor.map_comp]
+      exact congrArg _ (TopPair.ofInclusionMap_comp_ofInclusionMap_eq _ _ _ _ _ _ _ _ fun _ ↦ rfl))
+    (by
+      rw [← Functor.map_comp, ← Functor.map_comp]
+      exact congrArg _ (TopPair.ofInclusionMap_comp_ofInclusionMap_eq _ _ _ _ _ _ _ _ fun _ ↦ rfl))
+    (toSmallSingularPair_comp_smallSingularPairMap _ _ _ _ f hfA hfB hfC hfD _ _ _ _ _ _ hfA hfC)
+    (toSmallSingularPair_comp_smallSingularPairMap _ _ _ _ f hfA hfB hfC hfD _ _ _ _ _ _ hfB hfD)
+    n m h
+  have hsmall : inv (HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (R := R) (k := k)
+        (M := M) (smallSingularPairToUnion hCA' hDB')) m) ≫
+        HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (TopPair.toSSetPair.map
+          (TopPair.ofInclusionMap (Set.union_subset_union hCA hDB)
+            (Set.union_subset_union hCA' hDB') ⟨(hfA.union_union hfB).restrict,
+              f.hom.continuous.restrict (hfA.union_union hfB)⟩
+            fun _ hx ↦ hfC.union_union hfD hx))) m =
+      HomologicalComplex.homologyMap (SSetPair.cochainComplexMap
+          (smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD)) m ≫
+        inv (HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (R := R) (k := k)
+          (M := M) (smallSingularPairToUnion hCA hDB)) m) := by
+    rw [IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv]
+    simp only [← HomologicalComplex.homologyMap_comp, ← SSetPair.cochainComplexMap_comp]
+    rw [smallSingularPairToUnion_comp_ofInclusionMap]
+  simp only [singularCohomologyPairMayerVietorisδ, TopPair.singularCohomologyMap_eq,
+    Category.assoc, hsmall, reassoc_of% hnat]
+
+end Naturality
+
+variable {A' B' C' D' : Set X} (hCA' : C' ⊆ A') (hDB' : D' ⊆ B')
+  (hA' : IsOpen ((↑) ⁻¹' A' : Set ↥(A' ∪ B'))) (hB' : IsOpen ((↑) ⁻¹' B' : Set ↥(A' ∪ B')))
+  (hC' : IsOpen ((↑) ⁻¹' C' : Set ↥(C' ∪ D'))) (hD' : IsOpen ((↑) ⁻¹' D' : Set ↥(C' ∪ D')))
+  (hAA' : A ⊆ A') (hBB' : B ⊆ B') (hCC' : C ⊆ C') (hDD' : D ⊆ D')
+
+/-- **Naturality of the connecting morphism of the Mayer–Vietoris sequence of two pairs in
+inclusions.** For `A ⊆ A'`, `B ⊆ B'`, `C ⊆ C'` and `D ⊆ D'`, the connecting morphisms commute with
+the restrictions along the inclusions `(A ∩ B, C ∩ D) ⟶ (A' ∩ B', C' ∩ D')` and
+`(A ∪ B, C ∪ D) ⟶ (A' ∪ B', C' ∪ D')`. -/
+@[reassoc]
+lemma singularCohomologyPairMayerVietorisδ_naturality_of_subset (n m : ℕ)
+    (h : n + 1 = m := by lia) :
+    singularCohomologyPairMayerVietorisδ R k M hCA' hDB' hA' hB' hC' hD' n m h ≫
+        TopPair.singularCohomologyMap (TopPair.ofInclusionMap (Set.union_subset_union hCA hDB)
+          (Set.union_subset_union hCA' hDB') (ContinuousMap.inclusion
+            (Set.union_subset_union hAA' hBB')) fun _ hx ↦ Set.union_subset_union hCC' hDD' hx) m =
+      TopPair.singularCohomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB)
+          (Set.inter_subset_inter hCA' hDB') (ContinuousMap.inclusion
+            (Set.inter_subset_inter hAA' hBB')) fun _ hx ↦ Set.inter_subset_inter hCC' hDD' hx) n ≫
+        singularCohomologyPairMayerVietorisδ R k M hCA hDB hA hB hC hD n m h :=
+  singularCohomologyPairMayerVietorisδ_naturality R k M hCA hDB hA hB hC hD hCA' hDB' hA' hB' hC'
+    hD' (𝟙 X) hAA' hBB' hCC' hDD' n m h
 
 end TopCat
