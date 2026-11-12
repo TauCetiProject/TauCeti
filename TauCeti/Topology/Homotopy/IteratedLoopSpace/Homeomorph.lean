@@ -22,7 +22,8 @@ carries the basepoint (the constant iterated loop) to the constant cube loop.
   `Ω^[k] X ≃ₜ Ω^ (Fin k) X x`, with `iteratedLoopSpaceHomeomorph_zero` and
   `iteratedLoopSpaceHomeomorph_succ` its defining equations, and
   `iteratedLoopSpaceHomeomorph_map` its naturality in `X`, and
-  `iteratedLoopSpaceHomeomorph_two_apply` its value on a double loop.
+  `iteratedLoopSpaceHomeomorph_zero_apply`, `iteratedLoopSpaceHomeomorph_one_apply` and
+  `iteratedLoopSpaceHomeomorph_two_apply` its values on points, loops and double loops.
 -/
 
 public section
@@ -107,6 +108,33 @@ theorem iteratedLoopSpaceHomeomorph_map :
         (ContinuousMap.genLoopLoopHomeomorph_map f.toContinuousMap f.map_basepoint
           f.loopSpace.toContinuousMap (fun γ t => Hom.loopSpace_apply' f γ t) k _)
 
+-- `Ω^[0] X` is `X` by definitional unfolding of the exposed `iteratedLoopSpace`, so a point of
+-- `X` is an element of its carrier.
+/-- With no cube directions, the cube loop of a point `x` is constant at `x`: the inverse of
+Mathlib's `genLoopHomeoOfIsEmpty` sends a point to the constant generalized loop at it. -/
+theorem iteratedLoopSpaceHomeomorph_zero_apply (X : BasedTopologicalSpace.{u}) (x : X.carrier)
+    (t : Fin 0 → unitInterval) :
+    iteratedLoopSpaceHomeomorph 0 X x t = x := by
+  rw [iteratedLoopSpaceHomeomorph_zero]
+  -- The inverse of `genLoopHomeoOfIsEmpty` is the constant generalized loop.
+  rfl
+
+-- `Ω^[1] X` is `Ω X` by definitional unfolding of the exposed `iteratedLoopSpace`, so a loop is
+-- an element of its carrier.
+/-- A loop `γ`, read as a cube loop in one direction, takes the value `γ t₀` at `t₀`. -/
+theorem iteratedLoopSpaceHomeomorph_one_apply (X : BasedTopologicalSpace.{u})
+    (γ : Path X.basepoint X.basepoint) (t : Fin 1 → unitInterval) :
+    iteratedLoopSpaceHomeomorph 1 X γ t = γ (t 0) := by
+  have h := GenLoop.genLoopLoopHomeomorph_apply X.basepoint 0
+    (iteratedLoopSpaceHomeomorph 0 X.loopSpace γ) t
+  rw [iteratedLoopSpaceHomeomorph_succ]
+  -- `Homeomorph.trans_apply` holds by `rfl`; it cannot be rewritten with here because
+  -- `Ω^ (Fin 0) X.loopSpace.carrier _` is the source of `genLoopLoopHomeomorph` only up to
+  -- unfolding `BasedTopologicalSpace.loopSpace`, and the cube loop value is a loop of
+  -- `X.loopSpace` only up to the same unfolding.
+  exact h.trans (congrArg (fun γ' : Path X.basepoint X.basepoint => γ' (t (Fin.last 0)))
+    (iteratedLoopSpaceHomeomorph_zero_apply X.loopSpace γ _))
+
 -- `Ω^[2] X` is `Ω (Ω X)` by definitional unfolding of the exposed `iteratedLoopSpace`, so a double
 -- loop is an element of its carrier.
 /-- A double loop `γ`, read as a cube loop in two directions, takes the value `γ t₀ t₁` at
@@ -116,9 +144,10 @@ theorem iteratedLoopSpaceHomeomorph_two_apply (X : BasedTopologicalSpace.{u})
     iteratedLoopSpaceHomeomorph 2 X γ t = γ (t 0) (t 1) := by
   have h := GenLoop.genLoopLoopHomeomorph_apply X.basepoint 1
     (iteratedLoopSpaceHomeomorph 1 X.loopSpace γ) t
-  have h' := GenLoop.genLoopLoopHomeomorph_apply X.loopSpace.basepoint 0
-    (iteratedLoopSpaceHomeomorph 0 X.loopSpace.loopSpace γ) (fun i => t i.castSucc)
-  exact h.trans (congrArg (· (t (Fin.last 1))) h')
+  rw [iteratedLoopSpaceHomeomorph_succ]
+  -- As in `iteratedLoopSpaceHomeomorph_one_apply`, `Homeomorph.trans_apply` is used by `rfl`.
+  exact h.trans (congrArg (fun γ' : Path X.basepoint X.basepoint => γ' (t (Fin.last 1)))
+    (iteratedLoopSpaceHomeomorph_one_apply X.loopSpace γ _))
 
 end BasedTopologicalSpace
 
