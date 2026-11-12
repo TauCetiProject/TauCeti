@@ -89,7 +89,7 @@ theorem continuous_multivariateGaussian_gaussianRankChangeCovariance :
     have hv : Continuous v := by
       apply continuous_pi
       intro i
-      rcases i with i | i
+      rcases i with _ | _
       · exact continuous_const
       · exact continuous_id'
     have hcov : gaussianRankChangeCovariance =
