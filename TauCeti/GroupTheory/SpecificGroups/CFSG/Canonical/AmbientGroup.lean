@@ -161,10 +161,11 @@ theorem closure_canonicalRootSubgroup_union_range_canonicalTorus :
             ((d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid).reflectionPerm
               (d.dynkinType.simpleIndex d.dynkinType_valid i)
               (d.dynkinType.simpleIndex d.dynkinType_valid i)))) := by
-  simpa only [ChevalleyDatum.rootTorusSubgroup_def, canonicalRootSubgroup_def,
-    canonicalTorus_def] using
+  have h :=
     (d.dynkinType.scChevalleyDatum d.dynkinType_valid).rootTorusSubgroup_eq_closure_rootSubgroup
       d.Closure
+  rw [ChevalleyDatum.rootTorusSubgroup_def] at h
+  exact h
 
 end
 
