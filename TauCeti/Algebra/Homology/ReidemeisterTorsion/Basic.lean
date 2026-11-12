@@ -141,12 +141,11 @@ open CategoryTheory Module
 
 namespace HomologicalComplex
 
-variable {F : Type*} [Field F]
-
 section IsoMatrix
 
-variable {ι : Type*} {s : ComplexShape ι} {C D : HomologicalComplex (ModuleCat F) s} (e : C ≅ D)
-  {n : ι → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
+variable {R : Type*} [CommRing R] {ι : Type*} {s : ComplexShape ι}
+  {C D : HomologicalComplex (ModuleCat R) s} (e : C ≅ D)
+  {n : ι → ℕ} (c : ∀ i, Basis (Fin (n i)) R (C.X i))
 
 /-- Transporting bases along an isomorphism of complexes `e : C ≅ D` does not change the matrices
 of the differentials: the matrix of `D.d i j` in the bases transported from `c i` and `c j` is the
@@ -162,6 +161,8 @@ theorem toMatrix_map_isoApp_d (i j : ι) :
   rw [← ConcreteCategory.comp_apply, ← comp_f, e.hom_inv_id, id_f, ConcreteCategory.id_apply]
 
 end IsoMatrix
+
+variable {F : Type*} [Field F]
 
 /-! ### Brackets
 

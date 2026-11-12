@@ -97,6 +97,33 @@ open CategoryTheory Module
 
 namespace HomologicalComplex
 
+section Exactness
+
+variable {R : Type*} [Ring R] {C : ChainComplex (ModuleCat R) (ZMod 2)}
+
+/-- In a parity complex exact in degree `i`, the boundaries `d(Cᵢ₊₁) ⊆ Cᵢ` are the cycles of
+degree `i`. -/
+theorem range_d_eq_ker_d (i : ZMod 2) (h : C.ExactAt i) :
+    LinearMap.range (C.d (i + 1) i).hom = LinearMap.ker (C.d i (i + 1)).hom :=
+  (ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
+    ((C.exactAt_iff' (i + 1) i (i + 1) (ChainComplex.prev _ i)
+      (by rw [ChainComplex.next, CharTwo.sub_eq_add])).1 h)
+
+/-- In an acyclic parity complex whose differential `Cᵢ → Cᵢ₊₁` vanishes, the differential
+`Cᵢ₊₁ → Cᵢ` is bijective. -/
+theorem bijective_d_of_d_eq_zero (h : C.Acyclic) (i : ZMod 2) (hd : C.d i (i + 1) = 0) :
+    Function.Bijective (C.d (i + 1) i).hom := by
+  have hker := range_d_eq_ker_d (i + 1) (h (i + 1))
+  rw [add_assoc, CharTwo.add_self_eq_zero, add_zero, hd] at hker
+  refine ⟨?_, fun y ↦ ?_⟩
+  · rw [← LinearMap.ker_eq_bot, ← hker]
+    exact LinearMap.range_zero
+  · have hy : y ∈ LinearMap.ker (C.d i (i + 1)).hom := by simp [hd]
+    rw [← range_d_eq_ker_d i (h i)] at hy
+    exact hy
+
+end Exactness
+
 variable {F : Type*} [Field F] (C : ChainComplex (ModuleCat F) (ZMod 2))
 
 variable {n : ZMod 2 → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
@@ -248,28 +275,6 @@ end Elementary
 section TwoTerm
 
 variable {C} (h : C.Acyclic)
-
-/-- In a parity complex exact in degree `i`, the boundaries `d(Cᵢ₊₁) ⊆ Cᵢ` are the cycles of
-degree `i`. -/
-theorem range_d_eq_ker_d (i : ZMod 2) (h : C.ExactAt i) :
-    LinearMap.range (C.d (i + 1) i).hom = LinearMap.ker (C.d i (i + 1)).hom :=
-  (ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
-    ((C.exactAt_iff' (i + 1) i (i + 1) (ChainComplex.prev _ i)
-      (by rw [ChainComplex.next, CharTwo.sub_eq_add])).1 h)
-
-include h in
-/-- In an acyclic parity complex whose differential `Cᵢ → Cᵢ₊₁` vanishes, the differential
-`Cᵢ₊₁ → Cᵢ` is bijective. -/
-theorem bijective_d_of_d_eq_zero (i : ZMod 2) (hd : C.d i (i + 1) = 0) :
-    Function.Bijective (C.d (i + 1) i).hom := by
-  have hker := range_d_eq_ker_d (i + 1) (h (i + 1))
-  rw [add_assoc, CharTwo.add_self_eq_zero, add_zero, hd] at hker
-  refine ⟨?_, fun y ↦ ?_⟩
-  · rw [← LinearMap.ker_eq_bot, ← hker]
-    exact LinearMap.range_zero
-  · have hy : y ∈ LinearMap.ker (C.d i (i + 1)).hom := by simp [hd]
-    rw [← range_d_eq_ker_d i (h i)] at hy
-    exact hy
 
 include c h in
 /-- An acyclic parity complex whose differential `Cᵢ → Cᵢ₊₁` vanishes has bases of the same size
