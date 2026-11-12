@@ -73,9 +73,9 @@ is deliberately not imported here, since only the `Fin`-level reversal is used.
 
 The sign in `e_a ↦ -e_{rev a}` is forced: `e_a ↦ e_{rev a}` sends `αᵢ = e_i - e_{i+1}` to
 `e_{rev i} - e_{rev (i + 1)} = -α_{rev i}`, a negative root, so it does not preserve the base. The
-composite with the opposition `-1` is the automorphism below. This is unrelated to
-`TauCeti.opposition`, which is built from the longest Weyl element and needs the root-system
-hypotheses this simply connected datum does not carry.
+composite with `-1` is the automorphism below. This constructs the full `RootPairing.Aut`
+directly from coordinate reversal, without importing the reducedness or longest-element opposition
+API. Its root-index involution is the opposition `-w₀` described by `TauCeti.opposition`.
 
 ## Main definitions
 

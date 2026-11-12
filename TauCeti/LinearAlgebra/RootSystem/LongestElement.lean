@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # The longest element of a finite Weyl group
@@ -36,8 +37,7 @@ spelled throughout as `(inversions P b w).ncard`.
 
 ## Main results
 
-* `TauCeti.exists_inversions_eq_posRoots_of_finite_weylGroup` and
-  `TauCeti.eq_of_inversions_eq_posRoots`: exactly one Weyl-group element inverts every positive
+* `TauCeti.eq_of_inversions_eq_posRoots`: at most one Weyl-group element inverts every positive
   root.
 * `TauCeti.inversions_longestElement` and `TauCeti.image_weylGroupToPerm_longestElement_posRoots`:
   `w₀` exchanges the positive and the negative roots.
@@ -61,8 +61,7 @@ spelled throughout as `(inversions P b w).ncard`.
 
 `RootPairing.finite_weylGroup_of_base` supplies finiteness of the Weyl group without a
 spanning assumption. In particular, the construction and chamber comparisons apply to reductive
-root data with a nontrivial central lattice, as well as to empty root systems. The existence
-theorem behind the definition takes finiteness of the Weyl group explicitly.
+root data with a nontrivial central lattice, as well as to empty root systems.
 
 ## References
 
@@ -164,16 +163,12 @@ theorem eq_of_inversions_eq_posRoots {v w : P.weylGroup} (hv : inversions P b v 
       ((inversions_eq_posRoots_iff P b w).mp hw hi)
   exact inv_mul_eq_one.mp (eq_one_of_mapsTo_posRoots (b := b) hmaps)
 
-section FiniteWeylGroup
-
-variable [Finite P.weylGroup]
-
-/-- **Some Weyl-group element inverts every positive root**, for a crystallographic reduced pairing
-with finitely many roots whose Weyl group is finite. An element with as many inversions as possible
-has every simple root among its inversions, since otherwise appending that simple reflection would
-produce one inversion more. -/
-theorem exists_inversions_eq_posRoots_of_finite_weylGroup :
+/-- **Some Weyl-group element inverts every positive root.** An element with as many inversions as
+possible has every simple root among its inversions, since otherwise appending that simple
+reflection would produce one inversion more. -/
+private theorem exists_inversions_eq_posRoots :
     ∃ w : P.weylGroup, inversions P b w = posRoots P b := by
+  have := P.finite_weylGroup_of_base b
   obtain ⟨w, hw⟩ := Finite.exists_max fun w : P.weylGroup ↦ (inversions P b w).ncard
   refine ⟨w, inversions_eq_posRoots_of_support_subset fun i hi ↦ ?_⟩
   by_contra hiw
@@ -181,20 +176,16 @@ theorem exists_inversions_eq_posRoots_of_finite_weylGroup :
   have hle := hw (w * RootPairing.weylGroup.ofIdx P i)
   omega
 
-end FiniteWeylGroup
-
 /-- **The longest element `w₀` of a finite Weyl group**: the unique element sending every positive
 root to a negative root. Its inversion set is all of the positive roots, so among all Weyl-group
 elements it has the most inversions, that is, the greatest Coxeter length. -/
 noncomputable def longestElement : P.weylGroup :=
-  letI := P.finite_weylGroup_of_base b
-  (exists_inversions_eq_posRoots_of_finite_weylGroup P b).choose
+  (exists_inversions_eq_posRoots P b).choose
 
 /-- **The longest element inverts every positive root.** -/
 @[simp]
 theorem inversions_longestElement : inversions P b (longestElement P b) = posRoots P b :=
-  letI := P.finite_weylGroup_of_base b
-  (exists_inversions_eq_posRoots_of_finite_weylGroup P b).choose_spec
+  (exists_inversions_eq_posRoots P b).choose_spec
 
 /-- **The longest element sends every positive root to a negative root.** -/
 theorem mapsTo_posRoots_negRoots_longestElement :
@@ -357,7 +348,7 @@ end Combinatorics
 section Chamber
 
 variable [LinearOrder R] [IsStrictOrderedRing R] (b : P.Base)
-  [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced]
+  [Finite ι] [P.IsCrystallographic] [P.IsReduced]
 
 variable {P b} in
 /-- **The longest element carries the dominant chamber into its negative.** A simple coroot
@@ -365,6 +356,7 @@ functional evaluated on `w₀ • x` is the coroot functional of a negative root
 which is nonpositive when `x` is dominant. -/
 theorem neg_smul_mem_dominantChamber_longestElement {x : M} (hx : x ∈ dominantChamber P b) :
     -(longestElement P b • x) ∈ dominantChamber P b := by
+  have := P.flip_isReduced
   rw [mem_dominantChamber]
   intro i hi
   have hneg := mapsTo_posRoots_negRoots_longestElement P b (support_subset_posRoots P b hi)
@@ -376,6 +368,7 @@ variable {P b} in
 theorem neg_smul_mem_openDominantChamber_longestElement {x : M}
     (hx : x ∈ openDominantChamber P b) :
     -(longestElement P b • x) ∈ openDominantChamber P b := by
+  have := P.flip_isReduced
   rw [mem_openDominantChamber]
   intro i hi
   have hneg := mapsTo_posRoots_negRoots_longestElement P b (support_subset_posRoots P b hi)
