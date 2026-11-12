@@ -66,7 +66,12 @@ theorem tendstoInMeasure_sub_sum_taylor_two (hB : IsBrownianReal B P)
     have hc := hf.continuous
     have hc' := hf.continuous_deriv (by norm_num)
     have hc'' := hf'.continuous_deriv (by norm_num)
-    fun_prop
+    refine AEStronglyMeasurable.sub (by fun_prop) ?_
+    apply AEStronglyMeasurable.const_mul
+    apply Finset.aestronglyMeasurable_fun_sum
+    intro i _
+    exact (hc''.comp_aestronglyMeasurable (hcoord (grid k i))).mul
+      (((hcoord (grid k (i + 1))).sub (hcoord (grid k i))).pow 2)
   have hQ : TendstoInMeasure P (fun k ω ↦ ∑ i ∈ Finset.range (N k),
       (B (grid k (i + 1)) ω - B (grid k i) ω) ^ 2) atTop (fun _ ↦ (b : ℝ) - a) := by
     have h := hB.toIsPreBrownianReal.tendstoInMeasure_quadraticSum
