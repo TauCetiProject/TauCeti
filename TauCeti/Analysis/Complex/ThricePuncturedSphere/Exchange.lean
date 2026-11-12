@@ -203,12 +203,15 @@ theorem mem_cappedExchangeTruncation {c R : ℝ} {w : ℂ} :
       ‖w - c‖ ≤ 2 * Real.exp (2 * π * R) := by
   simp [cappedExchangeTruncation, dist_eq_norm]
 
+/-- The capped truncation is closed. -/
+theorem isClosed_cappedExchangeTruncation (c R : ℝ) : IsClosed (cappedExchangeTruncation c R) :=
+  (isClosed_le continuous_const
+    (continuous_norm.comp (continuous_id.sub continuous_const))).inter Metric.isClosed_closedBall
+
 /-- The capped truncation is compact. -/
 theorem isCompact_cappedExchangeTruncation (c R : ℝ) :
     IsCompact (cappedExchangeTruncation c R) :=
-  Metric.isCompact_of_isClosed_isBounded
-    ((isClosed_le continuous_const
-      (continuous_norm.comp (continuous_id.sub continuous_const))).inter Metric.isClosed_closedBall)
+  Metric.isCompact_of_isClosed_isBounded (isClosed_cappedExchangeTruncation c R)
     (Metric.isBounded_closedBall.subset Set.inter_subset_right)
 
 /-- The capped truncation lies in the capped sphere `ℂ ∖ {1}`. -/

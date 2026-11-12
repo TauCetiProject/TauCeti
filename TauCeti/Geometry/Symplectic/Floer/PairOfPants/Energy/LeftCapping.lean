@@ -32,12 +32,12 @@ which contains the capped puncture `0`. For a map `u` which is `C²` on `ℂ ∖
 Hamiltonians `H_q`, a neck length `L > 4` and `R ≥ L - 1`, the Floer energy of `u` for `K_c` over
 this truncation is
 
-`∫ E = A_{H_1}(ℓ_1(R)) - A_{H_∞}(ℓ^c_∞(R)) - ∫_S R_{K_c}(u)`
+`∫ E = A_{H_1}(ℓ_1(R)) - A_{H_∞}(ℓ^c_∞(R)) - ∫_{ℂ ∖ {1}} R_{K_c}(u)`
 
 (`SymplecticForm.integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTruncation`),
-where `A_H` is the Hamiltonian action `TauCeti.SymplecticForm.hamiltonianAction` and
-`S = ℂ ∖ {0, 1}`. The Hamiltonian `H_0` of the capped input contributes to the curvature but to no
-boundary term. If `|H_q| ≤ B_q`, the curvature bound
+where `A_H` is the Hamiltonian action `TauCeti.SymplecticForm.hamiltonianAction`. The
+Hamiltonian `H_0` of the capped input contributes to the curvature but to no boundary term. If
+`|H_q| ≤ B_q`, the curvature bound
 `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le` shows
 that the energy differs from the change of action by at most `B_0 + B_0 + B_1 + B_∞`, uniformly in
 `c`, `L` and `R` (in `SymplecticForm`,
@@ -58,12 +58,15 @@ the signed longitudinal coordinate of that end is at most `1`. The annulus lies 
 truncation with recentred output end once `R ≥ L - 1`, so the energy plus the integrated curvature
 over that truncation is the same for both data
 (`SymplecticForm.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn`), while
-outside that truncation the curvature of `K_c` vanishes on `S`
-(`SymplecticForm.hamiltonianCurvature_cappedExchangePerturbation_eq_zero`). The capped
-truncation adds to it the disc about `0` cut out by the circle `s = R` of the end at `0`, where the
-capped datum vanishes and the energy is the symplectic area. By Stokes' formula
-(`SymplecticForm.integral_fderiv_apply_preimage_ball_eq_neg_loopArea`) this area cancels the loop
-area of the boundary loop of the disc, which is the action of that loop for the zero Hamiltonian.
+outside that truncation the curvature of `K_c` vanishes on `ℂ ∖ {1}`
+(`SymplecticForm.hamiltonianCurvature_cappedExchangePerturbation_eq_zero`) and that of the
+input-exchange datum vanishes on `S = ℂ ∖ {0, 1}`
+(`SymplecticForm.hamiltonianCurvature_exchangePerturbation_eq_zero`). The capped truncation adds
+to it the disc about `0` cut out by the circle `s = R` of the end at `0`, where the capped datum
+vanishes and the energy is the symplectic area. By Stokes' formula
+(`SymplecticForm.integral_fderiv_apply_preimage_ball_eq_neg_loopArea_cylindricalEndLift`) this area
+cancels the loop area of the boundary loop of the disc, which is the action of that loop for the
+zero Hamiltonian.
 
 ## References
 
@@ -88,31 +91,6 @@ open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {L c : ℝ}
-
-/-- For `L > 2`, `0 ≤ c ≤ 1` and `R ≥ max (L - 1) 2`, the curvature of the member `c` of the
-capped family vanishes on `S = ℂ ∖ {0, 1}` outside the truncation with recentred output end, where
-the capped datum is the input-exchange datum with `H_0` replaced by `0`. -/
-theorem hamiltonianCurvature_cappedExchangePerturbation_eq_zero (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 2 < L)
-    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {R : ℝ} (hR : L - 1 ≤ R) (hR₂ : 2 ≤ R) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
-    (hzT : Complex.equivRealProdCLM.symm z ∉ exchangeTruncation c R) (x : V) :
-    ω.hamiltonianCurvature
-      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z x = 0 := by
-  set e := Complex.equivRealProdCLM
-  -- Near `z` the point stays outside the truncation, where the two data agree.
-  have hn : ∀ᶠ y in 𝓝 z, e.symm y ∉ exchangeTruncation c R :=
-    ((isCompact_exchangeTruncation c R).isClosed.preimage e.symm.continuous).isOpen_compl.mem_nhds
-      hzT
-  have hK (v : ℂ) : (fun y x ↦ cappedExchangePerturbation H L c (e.symm y) x v) =ᶠ[𝓝 z]
-      fun y x ↦ exchangePerturbation (update H zero 0) c (e.symm y) x v :=
-    hn.mono fun y hy ↦ funext fun x ↦ by
-      beta_reduce
-      rw [cappedExchangePerturbation_of_notMem_exchangeTruncation hL hc₀ hc₁ hR hy x]
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I)]
-  exact hamiltonianCurvature_exchangePerturbation_update_zero_eq_zero ω hH hHs hc₀ hc₁ hR₂ hz hzT x
 
 /-- For `L > 2`, `0 ≤ c ≤ 1` and `R ≥ L - 1`, the member `c` of the capped family vanishes on the
 disc of radius `exp (-2πR) / 2` about the capped puncture `0`, so the Floer energy there of a map
@@ -146,7 +124,12 @@ private theorem integral_floerEnergyDensity_cappedExchangePerturbation_ball (ω 
       (funext fun x ↦ hB z hz 1 x) (funext fun x ↦ hB z hz Complex.I x), floerEnergyDensity_zero]]
   -- By Stokes' formula the area over `B` is minus the loop area of its boundary loop.
   have hUo : IsOpen {z : ℝ × ℝ | e.symm z ≠ 1} := isOpen_ne_fun e.symm.continuous continuous_const
-  exact integral_fderiv_apply_preimage_ball_eq_neg_loopArea ω R fun z hz ↦
+  have hρ : ‖zero.endScale‖ * Real.exp (-(2 * π * R)) = Real.exp (-(2 * π * R)) / 2 := by
+    rw [norm_endScale (by decide)]
+    ring
+  have h := integral_fderiv_apply_preimage_ball_eq_neg_loopArea_cylindricalEndLift ω (u := u) zero R
+  rw [endCenter_zero, hρ] at h
+  exact h fun z hz ↦
     hu.contDiffAt (hUo.mem_nhds fun h ↦ by
       have h' : ‖e.symm z‖ ≤ Real.exp (-(2 * π * R)) / 2 := by simpa using hz
       rw [h, norm_one] at h'
@@ -160,9 +143,9 @@ the global coordinate `z = s + i t` of `ℂ`, and let `u` be a map which is `C²
 `ℂ ∖ {1}`. For `R ≥ L - 1`, the Floer energy of `u` over the capped truncation with recentred output
 end is the change of action between the loop `ℓ_1(t) = u(φ_1(R + i t))` along the boundary circle
 of the remaining input end and the loop `ℓ^c_∞(t) = u(c + φ_∞(-R + i t))` along the boundary circle
-of the recentred output end, minus the integrated curvature over `S = ℂ ∖ {0, 1}`:
+of the recentred output end, minus the integrated curvature over the capped domain `ℂ ∖ {1}`:
 
-`∫ E = A_{H_1}(ℓ_1) - A_{H_∞}(ℓ^c_∞) - ∫_S R_{K_c}(u)`. -/
+`∫ E = A_{H_1}(ℓ_1) - A_{H_∞}(ℓ^c_∞) - ∫_{ℂ ∖ {1}} R_{K_c}(u)`. -/
 theorem integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTruncation
     (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
     (hL : 4 < L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {u : ℝ × ℝ → V}
@@ -176,8 +159,7 @@ theorem integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTru
           (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) -
         ω.hamiltonianAction (H inf) (fun t ↦ u (Complex.equivRealProdCLM
           (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) -
-        ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-            Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
+        ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
           (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
@@ -220,15 +202,16 @@ theorem integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchangeTru
   have h₂ := ω.integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation
     (periodic_update_zero hH zero) (contDiff_uncurry_update_zero hHs zero) hc₀ hc₁ (hu.mono hSU)
     hR₂
-  -- Both curvatures vanish on `S` outside `T`, so their integrals over `S` are those over `T`.
+  -- The curvatures vanish on `S`, respectively `U`, outside `T`, so their integrals over these
+  -- sets are those over `T`.
   have hR' (z : ℝ × ℝ) (hz : z ∈ S \ T) :=
-    hamiltonianCurvature_exchangePerturbation_update_zero_eq_zero ω hH hHs hc₀ hc₁ hR₂ hz.1 hz.2
-      (u z)
-  have hRcap (z : ℝ × ℝ) (hz : z ∈ S \ T) :=
+    hamiltonianCurvature_exchangePerturbation_eq_zero ω (periodic_update_zero hH zero)
+      (contDiff_uncurry_update_zero hHs zero) hc₀ hc₁ hR₂ hz.1 hz.2 (u z)
+  have hRcap (z : ℝ × ℝ) (hz : z ∈ U \ T) :=
     hamiltonianCurvature_cappedExchangePerturbation_eq_zero ω hH hHs (by linarith) hc₀ hc₁ hR hR₂
       hz.1 hz.2 (u z)
   rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hSo.measurableSet hTS hR'] at h₂
-  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hSo.measurableSet hTS hRcap]
+  rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hUo.measurableSet (hTS.trans hSU) hRcap]
   -- The capped truncation is `T` together with the disc `B` about the capped puncture.
   have hcap : e.symm ⁻¹' cappedExchangeTruncation c R = T ∪ B := by
     rw [cappedExchangeTruncation_eq_union (abs_le.2 ⟨by linarith, hc₁⟩) (by linarith),
@@ -313,7 +296,7 @@ theorem hamiltonianAction_le_add_add_sum_of_cappedExchangePerturbation (ω : Sym
         (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) + B zero + ∑ q, B q := by
   -- The energy over the capped truncation is nonnegative.
   have hE := setIntegral_nonneg (μ := volume)
-    ((isCompact_cappedExchangeTruncation c R).isClosed.preimage
+    ((isClosed_cappedExchangeTruncation c R).preimage
       Complex.equivRealProdCLM.symm.continuous).measurableSet fun z hz ↦
         ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have h := (abs_le.1

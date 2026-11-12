@@ -43,11 +43,15 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
   output end recentred at `c`
   (`TauCeti.Floer.cappedExchangePerturbation_add_cylindricalEndLift_inf`);
 * it is jointly `C^n` in `c`, the point of the capped domain `ℂ ∖ {1}` and the target point
-  (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`), and for a normed target `C¹` in real
-  coordinates (`TauCeti.Floer.contDiffAt_uncurry_cappedExchangePerturbation`);
+  (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`); for `C^n` Hamiltonians on a normed
+  space, each member is `C^n` jointly in the point of `ℂ ∖ {1}`, in real coordinates, and the
+  target point (`TauCeti.Floer.contDiffAt_uncurry_cappedExchangePerturbation`);
 * for a symplectic vector space target and `|H_q| ≤ B_q`, its integrated curvature along any map
   is at most `B_0 + (B_0 + B_1 + B_∞)`, uniformly in `c` and in the neck length
-  (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`).
+  (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`),
+  and for `R ≥ max (L - 1) 2` its curvature vanishes on `ℂ ∖ {1}` outside the truncation
+  `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`
+  (`TauCeti.SymplecticForm.hamiltonianCurvature_cappedExchangePerturbation_eq_zero`).
 
 At `c = 0` it is the capping family at `0`
 (`TauCeti.Floer.cappedExchangePerturbation_zero`). At `c = 1` it is the pullback along the
@@ -58,8 +62,9 @@ coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder d
 exchanged Hamiltonians (`TauCeti.Floer.cappedCylinderComponent_exchangeEndData`). It is
 therefore `H_1(t) dt` for `s ≥ 2` and `H_∞(t + 1/2) dt` for `s ≤ -3`, like a continuation datum on
 the standard cylinder, and the energy identity and action bounds of
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder` apply to it. The energy identity and
-the action bounds of every member of the family, uniform in `c` and in the neck length, are in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder` apply to it. For a symplectic
+vector space target, the energy identity and the action bounds of every member of the family,
+uniform in `c` and in the neck length, are in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.LeftCapping`.
 
 ## References
@@ -254,10 +259,10 @@ theorem cappedExchangePerturbation_eq_zero (hL : 2 < L) (hc₀ : 0 ≤ c) (hc₁
     plumbedPerturbation_single_inf_eq_zero (by decide) hL (by simpa using hw),
     negativePlanePerturbation_sub_eq_zero_of_norm_le hc₀ hc₁ hn, add_zero]
 
-/-- For `L ≥ 2`, away from the disc of radius `1/2` about `0`, the capped datum is the
+/-- For `L ≥ 0`, away from the disc of radius `1/2` about `0`, the capped datum is the
 input-exchange datum of the Hamiltonians with `H_0` replaced by `0`: the component of the
 input-exchange datum on the end at `0` is switched off there. -/
-theorem cappedExchangePerturbation_of_le_norm (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) (x : M) :
+theorem cappedExchangePerturbation_of_le_norm (hL : 0 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) (x : M) :
     cappedExchangePerturbation H L c w x = exchangePerturbation (update H zero 0) c w x := by
   have hre : (zero.endCoord w).re ≤ 0 :=
     re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rwa [endCenter_zero, sub_zero])
@@ -330,13 +335,13 @@ section VectorSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
-/-- **The family is `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed space
-and neck length `L > 4`, the member `c` of the family is `C¹` jointly in the domain point of the
-capped domain `ℂ ∖ {1}`, in real coordinates, and the target point. -/
-theorem contDiffAt_uncurry_cappedExchangePerturbation (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 4 < L) (c : ℝ) {z : ℝ × ℝ}
+/-- **The family is `C^n` in real coordinates.** For period-one `C^n` Hamiltonians on a normed
+space and neck length `L > 4`, the member `c` of the family is `C^n` jointly in the domain point of
+the capped domain `ℂ ∖ {1}`, in real coordinates, and the target point. -/
+theorem contDiffAt_uncurry_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (hL : 4 < L) (c : ℝ) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 1) (x : V) (v : ℂ) :
-    ContDiffAt ℝ 1
+    ContDiffAt ℝ n
       (uncurry fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x v)
       (z, x) := by
   have hz' : Complex.equivRealProdCLM.symm z = zero.endCenter ∨
@@ -361,7 +366,7 @@ end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
-open Floer
+open Floer Topology
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {L : ℝ}
@@ -405,5 +410,41 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
         simpa only [update_inf_zero, update_of_ne (show zero ≠ inf by decide)] using hBin
     _ = ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (B q) := by
         simp [Puncture.sum_univ, add_assoc]
+
+/-- For `L > 2`, `0 ≤ c ≤ 1` and `R ≥ max (L - 1) 2`, the curvature of the member `c` of the
+capped family vanishes on the capped domain `ℂ ∖ {1}` outside the truncation with recentred output
+end: near the capped puncture `0` the datum vanishes, and elsewhere there it is the input-exchange
+datum with `H_0` replaced by `0`. -/
+theorem hamiltonianCurvature_cappedExchangePerturbation_eq_zero (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 2 < L)
+    {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {R : ℝ} (hR : L - 1 ≤ R) (hR₂ : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 1)
+    (hzT : Complex.equivRealProdCLM.symm z ∉ exchangeTruncation c R) (x : V) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 := by
+  set e := Complex.equivRealProdCLM
+  rcases eq_or_ne (e.symm z) 0 with h₀ | h₀
+  -- Near the capped puncture the datum vanishes.
+  · have hz₀ : ‖e.symm z‖ < Real.exp (-(2 * π * (L - 1))) / 2 := by
+      rw [h₀, norm_zero]
+      positivity
+    have hev := (continuous_norm.comp e.symm.continuous).continuousAt.eventually (gt_mem_nhds hz₀)
+    refine ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero ?_ ?_ x <;>
+      exact hev.mono fun y hy ↦ funext fun x ↦ by
+        simp [cappedExchangePerturbation_eq_zero (H := H) hL hc₀ hc₁ hy.le x]
+  -- Near `z` the point stays outside the truncation, where the capped datum is the input-exchange
+  -- datum with `H_0` replaced by `0`.
+  have hn : ∀ᶠ y in 𝓝 z, e.symm y ∉ exchangeTruncation c R :=
+    ((isClosed_exchangeTruncation c R).preimage e.symm.continuous).isOpen_compl.mem_nhds hzT
+  have hK (v : ℂ) : (fun y x ↦ cappedExchangePerturbation H L c (e.symm y) x v) =ᶠ[𝓝 z]
+      fun y x ↦ exchangePerturbation (update H zero 0) c (e.symm y) x v :=
+    hn.mono fun y hy ↦ funext fun x ↦ by
+      beta_reduce
+      rw [cappedExchangePerturbation_of_notMem_exchangeTruncation hL hc₀ hc₁ hR hy x]
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I)]
+  exact hamiltonianCurvature_exchangePerturbation_eq_zero ω (periodic_update_zero hH zero)
+    (contDiff_uncurry_update_zero hHs zero) hc₀ hc₁ hR₂ ⟨h₀, hz⟩ hzT x
 
 end TauCeti.SymplecticForm
