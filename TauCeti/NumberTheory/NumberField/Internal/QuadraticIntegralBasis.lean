@@ -16,7 +16,7 @@ Internal helper: in a quadratic number field `K`, an integral element `x` that i
 packages the pair `{1, x}` as a `ℚ`-basis of `K` whose two vectors are algebraic integers. It is
 *not* claimed to be a `ℤ`-basis of the full ring of integers `𝓞 K`. This construction is shared by
 the effective discriminant bound `NumberField.abs_discr_le_of_sq_intCast` and the
-roadmap's `ℚ(i)` discriminant worked example, so it lives in the generic `NumberField.Internal`
+`ℚ(i)` discriminant worked example, so it lives in the generic `NumberField.Internal`
 namespace rather than being duplicated inline or exposed from either headline API file.
 -/
 
