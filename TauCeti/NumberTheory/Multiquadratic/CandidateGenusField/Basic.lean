@@ -21,8 +21,10 @@ the fundamental discriminant `fundamentalDiscriminant d`. This compositum is unr
 genus field of `ℚ(√d)`. For real `d` it is only the *narrow* candidate and may ramify at the
 infinite places: e.g. `d = 3` has `disc = 12 = (-4)·(-3)`, so the compositum is `ℚ(i, √3)`, ramified
 at the real places over `ℚ(√3)`. The imaginary identification is
-`isGenusField_candidateGenusField`; identifying the ordinary genus field for real `d`, which needs
-the infinite-place condition, remains future work.
+`isGenusField_candidateGenusField`. For positive nonsquare `d`,
+`isGenusField_candidateGenusFieldReal` instead identifies the ordinary genus field with the maximal
+totally real subfield `candidateGenusFieldReal hd` of the compositum. Both theorems are in
+`TauCeti.NumberTheory.Multiquadratic.GenusField`.
 
 This file gives the object a name. `CandidateGenusField.Construction` proves the underlying
 square-class facts for an arbitrary finite set of prime discriminants with chosen roots; here we
@@ -115,8 +117,9 @@ noncomputable def genusFieldRoot {d : ℤ} (hd : Squarefree d)
 /-- **The candidate genus field of `ℚ(√d)`.** For squarefree `d`, the compositum over `ℚ` of the
 chosen complex square roots of the radicands of the prime discriminants dividing
 `fundamentalDiscriminant d`. Unramified at the finite places, it is the genus field of `ℚ(√d)` for
-imaginary `d` by `isGenusField_candidateGenusField` and only the narrow candidate for real `d`;
-the ordinary real genus field remains future work. -/
+imaginary `d` by `isGenusField_candidateGenusField` and only the narrow candidate for real `d`.
+For positive nonsquare `d` the genus field is its maximal totally real subfield
+`candidateGenusFieldReal hd`, by `isGenusField_candidateGenusFieldReal`. -/
 noncomputable def candidateGenusField {d : ℤ} (hd : Squarefree d) : IntermediateField ℚ ℂ :=
   adjoin ℚ (Set.range (genusFieldRoot hd))
 
