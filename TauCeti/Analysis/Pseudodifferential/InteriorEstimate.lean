@@ -23,9 +23,9 @@ near `tsupport φ`. Then for all real `r ≤ s` there is a constant `C` with
 (`TauCeti.Symbol.exists_norm_smulLeftCLM_le_of_eventually_comp_eq_id`). The norm of `φ u` in
 `H^s` is controlled by the norm of `Op(a) u` in `H^{s - m}`: near `tsupport φ`, the `m`
 derivatives that `Op(a)` loses are recovered, up to an arbitrarily weak norm of `u`. This is the
-estimate behind local elliptic regularity. The typical case is the
-localization `a = ψ p` of a symbol `p` elliptic above some radius
-(`TauCeti.Symbol.IsEllipticAbove`) by a function `ψ` equal to `1` near `tsupport φ`, so that
+estimate behind local elliptic regularity. The typical case is a symbol `a` agreeing near
+`tsupport φ` with a symbol `p` elliptic above some radius (`TauCeti.Symbol.IsEllipticAbove`),
+such as the localization `a = ψ p` by a function `ψ` equal to `1` near `tsupport φ`, so that
 `Op(a) u = ψ Op(p) u` (`TauCeti.Symbol.IsEllipticAbove.exists_norm_smulLeftCLM_le`). Only a left
 inverse of the symbol is needed: the estimate holds for injectively elliptic symbols, between
 fibres of different dimensions.
@@ -78,9 +78,9 @@ private theorem toDistr_quantizeSobolev_eq_sub_sub (ha : a.HasCompactSpatialSupp
         ((q.comp a - Symbol.inclusion (le_of_eq (by ring)) F).quantizeSobolev hsmK s u).toDistr -
           ((q.sharp a ha - q.comp a).quantizeSobolev ((hq.sharp ha).sub (hq.comp_right a))
             s u).toDistr := by
-  rw [← toDistr_quantizeSobolev_sharp hq ha, ← toDistr_sub, ← toDistr_sub, ← _root_.sub_apply,
-    ← _root_.sub_apply, ← quantizeSobolev_sub (hq.sharp ha) hsmK ((hq.sharp ha).sub hsmK),
-    ← quantizeSobolev_sub ((hq.sharp ha).sub hsmK) ((hq.sharp ha).sub (hq.comp_right a))
+  rw [← toDistr_quantizeSobolev_sharp hq ha,
+    ← toDistr_quantizeSobolev_sub_apply _ _ ((hq.sharp ha).sub hsmK),
+    ← toDistr_quantizeSobolev_sub_apply _ _
       (((hq.sharp ha).sub hsmK).sub ((hq.sharp ha).sub (hq.comp_right a)))]
   refine toDistr_quantizeSobolev_congr ?_ hF _ rfl
   funext p
@@ -99,11 +99,8 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
       C * (‖a.quantizeSobolev ha s u‖ +
         ‖smulLeftCLM (s - 1) χ (BesselPotentialSpace.inclusion (sub_le_self s zero_le_one) u)‖ +
           ‖BesselPotentialSpace.inclusion hrs u‖) := by
-  have hφd : ContDiff ℝ ∞ fun x ↦ φ x • ContinuousLinearMap.id ℂ V :=
-    (φ.smooth ⊤).smul contDiff_const
-  set F := ofSpatial _ hφd
-  have hF : F.HasCompactSpatialSupport :=
-    (hasCompactSpatialSupport_ofSpatial_iff _).2 (hφ.mono fun x hx h ↦ hx (by simp [h]))
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
+  set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
   have hφ0 : ∀ x ∉ tsupport φ, φ x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   -- The parametrix symbol `q = φ e`: `q ∘ a - φ` vanishes at large frequencies, and
   -- `q # a - q ∘ a` is a symbol `rem` of order `-1` vanishing outside `tsupport φ`.
@@ -127,7 +124,7 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
     simp [q, F, hφ0 x hx]
   obtain ⟨C₁, hC₁⟩ := exists_norm_quantizeSobolev_le_smulLeftCLM hremK hrem0 hχ hχφ
     (min_le_right r (s - 1))
-  obtain ⟨C₂, hC₂0, hC₂⟩ := hsm.exists_toDistr_quantizeSobolev_eq hsmK hrs s
+  obtain ⟨C₂, hC₂0, hC₂⟩ := hsm.exists_toDistr_quantizeSobolev_eq_and_norm_le hsmK hrs s
   refine ⟨‖q.quantizeSobolev hq (s - m)‖ + C₂ + max C₁ 0, fun u ↦ ?_⟩
   set v := BesselPotentialSpace.inclusion (sub_le_self s zero_le_one) u
   obtain ⟨w, hw, hwle⟩ := hC₂ u
@@ -138,7 +135,7 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
         BesselPotentialSpace.inclusion (le_of_eq (by push_cast; ring))
           (rem.quantizeSobolev hremK (s - 1) v) := by
     refine BesselPotentialSpace.ext ?_
-    rw [← toDistr_quantizeSobolev_ofSpatial φ hφd hF,
+    rw [← toDistr_quantizeSobolev_ofSpatial φ hF,
       toDistr_quantizeSobolev_eq_sub_sub ha hq hF hsmK, toDistr_sub, toDistr_sub,
       toDistr_inclusion, toDistr_inclusion, hw,
       toDistr_quantizeSobolev_congr hrem _ hremK (toDistr_inclusion _ u).symm]
@@ -229,23 +226,23 @@ theorem exists_norm_smulLeftCLM_le_of_eventually_comp_eq_id (ha : a.HasCompactSp
   exact exists_norm_smulLeftCLM_le_of_sub_le ha hU heU r ⌈s - r⌉₊ s hrs (Nat.le_ceil _) hφ hφU
 
 /-- **Interior estimate for elliptic operators.** Let `p` be a symbol of order `m` elliptic above
-some radius, and `a = ψ p` its localization by a function `ψ` equal to `1` on a neighbourhood of
-the support of a compactly supported Schwartz function `φ`, so that `Op(a) = ψ Op(p)`. If `a` has
-compact spatial support, then for all real `r ≤ s` there is `C` with
+some radius, `φ` a compactly supported Schwartz function, and `a` a symbol with compact spatial
+support that agrees with `p` on a neighbourhood of `tsupport φ`, for instance the localization
+`a = ψ p` by a function `ψ` equal to `1` near `tsupport φ`, so that `Op(a) = ψ Op(p)`. Then for all
+real `r ≤ s` there is `C` with
 
 `‖φ u‖_{H^s} ≤ C (‖Op(a) u‖_{H^{s - m}} + ‖u‖_{H^r})` for every `u ∈ H^s(ℝⁿ; V)`. -/
 theorem IsEllipticAbove.exists_norm_smulLeftCLM_le {p : Symbol n V W m} (hp : p.IsEllipticAbove R)
-    (ha : a.HasCompactSpatialSupport) {ψ : CoordinateSpace n → ℂ}
-    (hap : ∀ x ξ, a.coefficient (x, ξ) = ψ x • p.coefficient (x, ξ))
-    {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
-    (hψ : ∀ᶠ x in 𝓝ˢ (tsupport φ), ψ x = 1) {r s : ℝ} (hrs : r ≤ s) :
+    (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
+    (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ))
+    {r s : ℝ} (hrs : r ≤ s) :
     ∃ C, ∀ u : H^{s}(CoordinateSpace n, V),
       ‖smulLeftCLM s φ u‖ ≤
         C * (‖a.quantizeSobolev ha s u‖ + ‖BesselPotentialSpace.inclusion hrs u‖) := by
   obtain ⟨e, R', he⟩ := exists_isEllipticAbove_iff.1 ⟨R, hp⟩
   refine exists_norm_smulLeftCLM_le_of_eventually_comp_eq_id (e := e) (R := R') ha hφ
-    (hψ.mono fun x hx ξ hξ ↦ ?_) hrs
-  rw [hap, hx, one_smul]
+    (hap.mono fun x hx ξ hξ ↦ ?_) hrs
+  rw [hx]
   exact (he x ξ hξ).1
 
 end Symbol

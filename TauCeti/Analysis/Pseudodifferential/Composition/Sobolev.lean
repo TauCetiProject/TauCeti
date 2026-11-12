@@ -83,11 +83,8 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
     ∃ C, ∀ v : H^{t}(CoordinateSpace n, V),
       ‖c.quantizeSobolev hc t v‖ ≤ C * (‖BesselPotentialSpace.smulLeftCLM t χ v‖ +
         ‖BesselPotentialSpace.inclusion hrt v‖) := by
-  have hχd : ContDiff ℝ ∞ fun x ↦ χ x • ContinuousLinearMap.id ℂ V :=
-    (χ.smooth ⊤).smul contDiff_const
-  set F := ofSpatial _ hχd
-  have hF : F.HasCompactSpatialSupport :=
-    (hasCompactSpatialSupport_ofSpatial_iff _).2 (hχ.mono fun x hx h ↦ hx (by simp [h]))
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hχ
+  set F := ofSpatial (fun x ↦ χ x • ContinuousLinearMap.id ℂ V) ((χ.smooth ⊤).smul contDiff_const)
   have hχ1 : ∀ x ∈ K, χ x = 1 := fun x hx ↦ hχK.self_of_nhdsSet x hx
   -- `c ∘ χ = c`, and `c # χ - c ∘ χ` is smoothing.
   have hcomp : (c.comp F).coefficient =
@@ -101,7 +98,7 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
       (hχK.filter_mono (nhds_le_nhdsSet hx)).mono fun y hy ξ ↦ by simp [F, hy, hχ1 x hx]
   have hsmK : (c.sharp F hF - c.comp F).HasCompactSpatialSupport :=
     (hc.sharp hF).sub (hF.comp_left c)
-  obtain ⟨C, hC0, hC⟩ := hsm.exists_toDistr_quantizeSobolev_eq hsmK hrt (t - m)
+  obtain ⟨C, hC0, hC⟩ := hsm.exists_toDistr_quantizeSobolev_eq_and_norm_le hsmK hrt (t - m)
   refine ⟨‖c.quantizeSobolev hc t‖ + C, fun v ↦ ?_⟩
   obtain ⟨w, hw, hwle⟩ := hC v
   -- `Op(c) v = Op(c # χ) v - Op(c # χ - c ∘ χ) v = Op(c) (χ v) - w`.
@@ -111,14 +108,13 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
     have h₁ : (c.quantizeSobolev hc t v).toDistr =
         ((c.sharp F hF).quantizeSobolev (hc.sharp hF) t v).toDistr -
           ((c.sharp F hF - c.comp F).quantizeSobolev hsmK t v).toDistr := by
-      rw [← BesselPotentialSpace.toDistr_sub, ← _root_.sub_apply,
-        ← quantizeSobolev_sub (hc.sharp hF) hsmK ((hc.sharp hF).sub hsmK)]
+      rw [← toDistr_quantizeSobolev_sub_apply _ _ ((hc.sharp hF).sub hsmK)]
       exact toDistr_quantizeSobolev_congr (by rw [coefficient_sub, coefficient_sub, hcomp,
         coefficient_inclusion, sub_sub_cancel]) hc _ rfl
     have h₂ : ((c.sharp F hF).quantizeSobolev (hc.sharp hF) t v).toDistr =
         (c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v)).toDistr := by
       rw [toDistr_quantizeSobolev_sharp hc hF]
-      exact toDistr_quantizeSobolev_congr rfl hc hc (toDistr_quantizeSobolev_ofSpatial χ hχd hF t v)
+      exact toDistr_quantizeSobolev_congr rfl hc hc (toDistr_quantizeSobolev_ofSpatial χ hF t v)
     rw [h₁, h₂, ← hw, BesselPotentialSpace.toDistr_sub]
   rw [hv]
   calc ‖c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v) - w‖
