@@ -123,17 +123,17 @@ private theorem exists_eLpNorm_dyadicCube_le_mul_rpow {κ : ℝ} (hκ : 0 < κ) 
     intro t ht
     have hsub : {y | ENNReal.ofReal t < ‖u y‖ₑ} ∩ Q ⊆ {y | t ≤ u y} ∩ Q := fun y hy ↦ by
       have h := hy.1
-      rw [mem_ofPred_eq, Real.enorm_eq_ofReal (hnonneg y (hQ hy.2))] at h
+      rw [mem_ofPred_eq, Real.eNorm_eq_ofReal (hnonneg y (hQ hy.2))] at h
       exact ⟨((ENNReal.ofReal_lt_ofReal_iff').1 h).1.le, hy.2⟩
     rw [Measure.restrict_apply' hQm, Measure.restrict_apply_univ]
     exact (measure_mono hsub).trans
       (H hc hR ha hLam hcont hu hnonneg hsuper hf hx (one_pos.trans ht))
   have hint := (volume.restrict Q).lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul
-    hum.enorm hp (by simp only [p]; linarith) hC.le hlevel
+    hum.eNorm hp (by simp only [p]; linarith) hC.le hlevel
   rw [Measure.restrict_apply_univ, hvolQ] at hint
   -- Take the `p`-th root.
   have hpne : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hpne ENNReal.ofReal_ne_top hum,
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hpne ENNReal.ofReal_ne_top hum,
     ENNReal.toReal_ofReal hp.le]
   calc (∫⁻ y in Q, ‖u y‖ₑ ^ p) ^ (1 / p)
       ≤ (ENNReal.ofReal K₀ * ENNReal.ofReal ((2 ^ k) ^ n)) ^ (1 / p) :=
@@ -179,11 +179,9 @@ theorem exists_eLpNorm_dyadicCube_le_mul_rpow_mul_add {κ : ℝ} (hκ : 0 < κ) 
   intro lam Lam R k m c a u f hc hR ha hLam hcont hu hnonneg hsuper hfLp x hx
   set n := Fintype.card ι
   set L : ℝ := (2 ^ k) ^ ((n : ℝ) / p)
-  have hL : 0 ≤ L := Real.rpow_nonneg (zpow_pos two_pos k).le _
   have hlam : 0 < lam := ha.pos
   have hR0 : 0 < R := lt_of_lt_of_le (by positivity) hR
   set F := (eLpNorm (fun y ↦ (f y)⁺) n (volume.restrict (ball c R))).toReal
-  have hF0 : 0 ≤ F := ENNReal.toReal_nonneg
   have hF : eLpNorm (fun y ↦ (f y)⁺) n (volume.restrict (ball c R)) = ENNReal.ofReal F :=
     (ENNReal.ofReal_toReal hfLp.eLpNorm_ne_top).symm
   have hxR : x ∈ closedBall c R := by
@@ -201,7 +199,7 @@ theorem exists_eLpNorm_dyadicCube_le_mul_rpow_mul_add {κ : ℝ} (hκ : 0 < κ) 
         funext y
         simp only [Pi.smul_apply, smul_eq_mul, posPart_def,
           mul_max_of_nonneg _ _ (inv_pos.2 hs).le, mul_zero]
-      rw [h, eLpNorm_const_smul, hF, Real.enorm_eq_ofReal (inv_pos.2 hs).le,
+      rw [h, eLpNorm_const_smul, hF, Real.eNorm_eq_ofReal (inv_pos.2 hs).le,
         ← ENNReal.ofReal_mul (inv_pos.2 hs).le, ← ENNReal.ofReal_mul hR0.le]
       refine ENNReal.ofReal_le_ofReal ?_
       rw [← mul_assoc, mul_comm R, mul_assoc, inv_mul_le_iff₀ hs]
@@ -216,7 +214,7 @@ theorem exists_eLpNorm_dyadicCube_le_mul_rpow_mul_add {κ : ℝ} (hκ : 0 < κ) 
     have hu' : u = s • fun y ↦ s⁻¹ * u y := by
       funext y
       simp [smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hs.ne']
-    rw [hu', eLpNorm_const_smul, Real.enorm_eq_ofReal hs.le]
+    rw [hu', eLpNorm_const_smul, Real.eNorm_eq_ofReal hs.le]
     calc ENNReal.ofReal s * eLpNorm (fun y ↦ s⁻¹ * u y) (ENNReal.ofReal p)
           (volume.restrict (WithLp.ofLp ⁻¹' dyadicCube k m))
         ≤ ENNReal.ofReal s * ENNReal.ofReal (K * L) := by gcongr
@@ -291,7 +289,6 @@ theorem exists_eLpNorm_ball_le_mul_rpow_mul_add {κ : ℝ} (hκ : 0 < κ) :
   -- The dyadic scale `2ᵏ ∈ [2 r, 4 r)`.
   obtain ⟨j, hj₁, hj₂⟩ := exists_mem_Ioc_zpow (by positivity : 0 < 2 * r) one_lt_two
   set k : ℤ := j + 1
-  have hk₁ : 2 * r ≤ 2 ^ k := hj₂
   have hk₂ : (2 : ℝ) ^ k < 4 * r := by
     rw [zpow_add_one₀ two_ne_zero]
     linarith

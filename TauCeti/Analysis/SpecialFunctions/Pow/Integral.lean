@@ -627,7 +627,6 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_mul (ν : Measure β) {u : �
     (h : ∀ t : ℝ, 1 < t → ν {y | ENNReal.ofReal t < u y} ≤
       ENNReal.ofReal (C * t ^ (-q)) * ν univ) :
     ∫⁻ y, u y ^ p ∂ν ≤ ENNReal.ofReal (1 + C * p / (q - p)) * ν univ := by
-  have hqp : 0 < q - p := sub_pos.2 hpq
   -- Near the origin the superlevel sets are bounded by the total mass.
   have h₁ : ∫⁻ t in Ioc (0 : ℝ) 1, ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (p - 1)) ≤
       ν univ * ENNReal.ofReal (1 / p) := by
