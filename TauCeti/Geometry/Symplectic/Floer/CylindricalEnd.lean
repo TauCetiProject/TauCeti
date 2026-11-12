@@ -245,7 +245,7 @@ theorem exists_forall_norm_fderiv_le_of_lintegral_ne_top
   have hrδ : r ≤ δ / 8 := min_le_right _ _
   have hπr : π * r ^ 2 < δ / 2 := by nlinarith [Real.pi_le_four, Real.pi_pos]
   -- Far out along the end, the energy over one period of the half-strip is below `δ / 4`.
-  obtain ⟨R, hR, hRa⟩ := ((tendsto_setLIntegral_reProdIm_Ioi_atTop hfin).eventually
+  obtain ⟨R, hR, _⟩ := ((tendsto_setLIntegral_reProdIm_Ioi_atTop hfin).eventually
     (gt_mem_nhds (ENNReal.ofReal_pos.2 (by linarith : 0 < δ / 4)))).and
     (eventually_ge_atTop a) |>.exists
   -- On the compact part `b ≤ re z ≤ R + r` of the end, `du` is bounded by continuity.
@@ -272,8 +272,6 @@ theorem exists_forall_norm_fderiv_le_of_lintegral_ne_top
     have hE := hper'.setIntegral_ball_le_two_mul (fun _ ↦ sq_nonneg _) hr2 (by linarith)
       (by linarith) ((hcont.mono ball_subset_closedBall).norm.pow 2 |>.aestronglyMeasurable
         measurableSet_ball) hR'
-    have hE0 : 0 ≤ ∫ y in ball z r, ‖fderiv ℝ u y 1‖ ^ 2 :=
-      setIntegral_nonneg measurableSet_ball fun _ _ ↦ sq_nonneg _
     have hmv := hmean hr.le (by linarith) (hu.mono (ball_subset_closedBall.trans hball)) hcont
       (fun y hy ↦ hCR y (hball (ball_subset_closedBall hy)))
       (fun y hy ↦ huK y (hball (ball_subset_closedBall hy))) (by linarith)
@@ -323,7 +321,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-- A `1`-periodic family `J_t(x)`, continuous on `ℝ × K` for a compact `K` and tamed by `ω` there,
 has uniform taming and norm constants: `c ‖v‖² ≤ ω(v, J_t(x) v)` and `‖J_t(x) v‖ ≤ M ‖v‖` for
 all `t` and all `x ∈ K`, with `c > 0`. -/
-private theorem exists_pos_forall_mul_norm_sq_le_and_norm_le (hK : IsCompact K)
+theorem exists_pos_forall_mul_norm_sq_le_and_norm_le (hK : IsCompact K)
     (hJ : ContinuousOn (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
       (univ ×ˢ K))
     (hJper : Periodic J 1) (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x)) :

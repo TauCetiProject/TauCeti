@@ -88,7 +88,7 @@ theorem nonempty_arrowWalk_of_symmetrify
   obtain ⟨p⟩ := p
   induction p with
   | nil => exact ⟨ArrowWalk.nil _⟩
-  | @cons x y p e ih =>
+  | @cons x y _ e ih =>
     obtain ⟨q⟩ := ih
     rcases e with e | e
     · exact ⟨q.cons e⟩

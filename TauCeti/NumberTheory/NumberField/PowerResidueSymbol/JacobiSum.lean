@@ -58,7 +58,7 @@ theorem jacobiSum_powerResidueSymbol_pow_mem (hP : (absNorm P).Coprime n) {a b :
     (ha : a ≠ 0) (hb : b ≠ 0) (hab : a + b < n) :
     jacobiSum (powerResidueSymbol P n ^ a) (powerResidueSymbol P n ^ b) ∈ P := by
   let _ := Ideal.Quotient.field P
-  set k := (absNorm P - 1) / n with hk_def
+  set k := (absNorm P - 1) / n
   have hN : absNorm P - 1 ≠ 0 := by
     rw [absNorm_eq_natCard, ← Nat.card_units]
     exact Nat.card_pos.ne'
