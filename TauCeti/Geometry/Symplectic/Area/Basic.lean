@@ -37,7 +37,11 @@ formula says that the symplectic area of `u` is `a(u(b, ·)) - a(u(a, ·))`
 area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_smul_eq_loopArea`). Reparametrizing one
 period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its area over `[-π, π]`
-(`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
+(`TauCeti.SymplecticForm.loopArea_comp_sub_mul`); in particular a circle traversed clockwise has
+minus the loop area of the counterclockwise circle
+(`TauCeti.SymplecticForm.loopArea_comp_circleMap_sub_mul`).
+The area of `u` vanishes when `u` vanishes on the slices `s = a` and `s = b`
+(`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
 Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
@@ -67,7 +71,7 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     (ω : SymplecticForm V) {u : ℂ → V} {D : Set ℂ}
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) D) :
     IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) D := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let : MeasurableSpace V := borel V
   let : BorelSpace V := ⟨rfl⟩
   let B := ω.toBilinForm.toContinuousBilinearMap
@@ -204,6 +208,18 @@ theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
     intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
   ring
 
+/-- **The loop area of a circle traversed clockwise.** The loop `t ↦ u(c + r e^{i(θ₀ - 2πt)})`,
+which runs once clockwise around the circle of radius `r` about `c`, has minus the loop area of
+the counterclockwise loop `t ↦ u(c + r e^{2πit})`. -/
+theorem loopArea_comp_circleMap_sub_mul (ω : SymplecticForm V) (u : ℂ → V) (c : ℂ) (r θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ u (circleMap c r (θ₀ - 2 * π * t))) =
+      -ω.loopArea (fun t ↦ u (circleMap c r (2 * π * t))) := by
+  have hg : Function.Periodic (fun θ ↦ u (circleMap c r θ)) (2 * π) :=
+    (periodic_circleMap c r).comp u
+  have h := ω.loopArea_comp_add_mul hg 0
+  simp only [zero_add] at h
+  rw [ω.loopArea_comp_sub_mul hg θ₀, h]
+
 /-- **The loop area of a loop traversed backwards.** If `x` is `1`-periodic, the loop
 `t ↦ x(-t)` has the opposite loop area. -/
 theorem loopArea_comp_neg (ω : SymplecticForm V) {x : ℝ → V} (hx : Function.Periodic x 1) :
@@ -258,6 +274,18 @@ theorem integral_symplecticForm_fderiv_eq_loopArea_sub (ω : SymplecticForm V) (
   rw [hvert ⟨hab, le_rfl⟩, hvert ⟨le_rfl, hab⟩, hhor, ← hR] at harea
   rw [loopArea_def, loopArea_def, stdComplexLineReal_eq, stdComplexLineImag_eq, harea]
   ring
+
+/-- **The symplectic area of a cylinder with vanishing ends.** Let `u` be `C²` near
+`[a, b] × [0, 1]`, with `u(s, 1) = u(s, 0)` for `s ∈ [a, b]`, and let `u` vanish on the slices
+`s = a` and `s = b`. Then the symplectic area of `u` over the rectangle is zero. -/
+theorem integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic (ω : SymplecticForm V)
+    (hab : a ≤ b) (hu : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 2 u z)
+    (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) (ha : ∀ t, u (a, t) = 0)
+    (hb : ∀ t, u (b, t) = 0) :
+    ∫ z in Icc a b ×ˢ Icc 0 1,
+      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) = 0 := by
+  rw [ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab hu hper]
+  simp only [ha, hb, loopArea_const, sub_self]
 
 /-- **The loop area is the area of a cap.** For a loop `x` that is `C²` near `[0, 1]` with
 `x 1 = x 0`, the symplectic area of the cone `D(r, t) = r x(t)` over `[0, 1] × [0, 1]`, a disc

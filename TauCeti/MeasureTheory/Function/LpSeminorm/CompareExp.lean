@@ -150,7 +150,7 @@ theorem tendsto_integral_norm_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGr
   refine hreal.congr' ?_
   filter_upwards [h.eventually_lt_const ENNReal.zero_lt_top] with i hi
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hi.ne
-  rw [eLpNorm_one_eq_lintegral_enorm hf, integral_norm_eq_lintegral_enorm hf]
+  rw [eLpNorm_one_eq_lintegral_eNorm hf, integral_norm_eq_lintegral_eNorm hf]
 
 /-- If, for all large `m`, the terms `f n` with `n` large stay at `L¹` distance at least `ε` from
 `f m`, then no subsequence of `f` converges in `Lᵖ` for any `1 ≤ p`, on a finite measure. -/
@@ -193,14 +193,14 @@ theorem eLpNorm_le_one_of_exponent_le (hf : AEStronglyMeasurable f μ) (hp : 0 <
   by_cases hq : q = ∞
   · subst q
     rw [eLpNorm_exponent_top hf]
-    exact eLpNormEssSup_le_of_ae_enorm_bound hf1
+    exact eLpNormEssSup_le_of_ae_eNorm_bound hf1
   have hp' : p ≠ ∞ := ne_top_of_le_ne_top hq hpq
   have hq0 : q ≠ 0 := (hp.trans_le hpq).ne'
   have hint : (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ≤ 1 := by
     rw [eLpNorm_eq_eLpNorm' hp.ne' hp' hf] at hfp
-    rw [lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp.ne' hp')]
+    rw [lintegral_rpow_eNorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp.ne' hp')]
     exact ENNReal.rpow_le_one hfp ENNReal.toReal_nonneg
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq hf]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq hf]
   apply ENNReal.rpow_le_one _ (by positivity)
   refine (lintegral_mono_ae ?_).trans hint
   filter_upwards [hf1] with x hx
@@ -215,9 +215,9 @@ theorem eLpNorm_le_of_exponent_le
   have hnorm : ∀ r, eLpNorm (M⁻¹ • fun x => ‖f x‖) r μ =
       (ENNReal.ofReal M)⁻¹ * eLpNorm f r μ := by
     intro r
-    rw [eLpNorm_const_smul, eLpNorm_congr_enorm_ae hf.norm hf
-      (Filter.Eventually.of_forall fun x => enorm_norm (f x)),
-      Real.enorm_of_nonneg (by positivity), ENNReal.ofReal_inv_of_pos hM]
+    rw [eLpNorm_const_smul, eLpNorm_congr_eNorm_ae hf.norm hf
+      (Filter.Eventually.of_forall fun x => eNorm_norm (f x)),
+      Real.eNorm_of_nonneg (by positivity), ENNReal.ofReal_inv_of_pos hM]
   have hscaled : eLpNorm (M⁻¹ • fun x => ‖f x‖) p μ ≤ 1 := by
     rw [hnorm]
     exact (mul_le_mul_right hfp _).trans_eq

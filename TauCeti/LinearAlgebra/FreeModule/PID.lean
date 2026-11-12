@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.LinearAlgebra.Basis.Prod
