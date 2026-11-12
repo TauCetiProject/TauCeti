@@ -153,15 +153,15 @@ lemma absoluteSingularCap_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Ty
     (SSetPair.chainComplexPairing_naturality (toSSetPair.map f) μ).symm p q n h α
 
 /-- **The cap product with an absolute class commutes with the connecting morphism of a pair**, up
-to the sign `(-1)^p`: for a class `x` of `Hₙ₊₁(X, A)` and a class `α` of `Hᵖ(X)`, the connecting
-morphism `∂ : H_{q+1}(X, A) ⟶ H_q(A)` sends `x ⌢ α` to `(-1)^p ∂x ⌢ α|_A`, where `α|_A` is the
-restriction of `α` to the subspace and `p + q = n`. -/
+to the sign `(-1)^p`: for a class `x` of `H_{n'}(X, A)` and a class `α` of `Hᵖ(X)`, the connecting
+morphism `∂ : H_{q'}(X, A) ⟶ H_q(A)` sends `x ⌢ α` to `(-1)^p ∂x ⌢ α|_A`, where `α|_A` is the
+restriction of `α` to the subspace, `p + q = n`, `q + 1 = q'` and `n + 1 = n'`. -/
 theorem absoluteSingularCap_comp_singularHomologyδ (P : TopPair.{w}) (k : Type*) [Ring k]
-    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q n : ℕ)
-    (h : p + q = n) (α : P.fst.singularCohomology R k M p) :
-    P.absoluteSingularCap k u μ p (q + 1) (n + 1) (by omega) α ≫
-        P.singularHomologyδ N (q + 1) q =
-      ((-1 : ℤ) ^ p) • (P.singularHomologyδ T (n + 1) n ≫
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q n q' n' : ℕ)
+    (h : p + q = n) (h' : p + q' = n') (α : P.fst.singularCohomology R k M p)
+    (hq : q + 1 = q' := by lia) (hn : n + 1 = n' := by lia) :
+    P.absoluteSingularCap k u μ p q' n' h' α ≫ P.singularHomologyδ N q' q hq =
+      ((-1 : ℤ) ^ p) • (P.singularHomologyδ T n' n hn ≫
         P.snd.singularCap k u μ p q n h (TopCat.singularCohomologyMap P.map p α)) := by
   rw [absoluteSingularCap_def, TopCat.singularCap_def]
   exact TauCeti.ChainComplex.cap_comp_δ (P.shortExact_singularChainComplexShortComplex T)
@@ -174,6 +174,6 @@ theorem absoluteSingularCap_comp_singularHomologyδ (P : TopPair.{w}) (k : Type*
     (TopCat.alexanderWhitneyDiagonal_naturality P.map u)
     (SSet.chainComplexPairing_naturality (TopCat.toSSet.map P.map) μ).symm
     (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
-    (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h α
+    (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n q' n' h h' α hq hn
 
 end TopPair
