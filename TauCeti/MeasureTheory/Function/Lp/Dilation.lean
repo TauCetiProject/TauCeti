@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -30,7 +31,8 @@ norm of the gradient and the critical `L^{p⋆}` norm are invariant.
 More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
 `|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
 the `Lᵖ` seminorm on `s`, for any set `s`. The same holds for a homothety of ratio `r ≠ 0`, with
-the factor `|r ^ n|^(-1 / p)`. The codomain only needs a continuous extended norm.
+the factor `|r ^ n|^(-1 / p)`. Replacing an additive Haar measure by another, `k` times it,
+multiplies the `Lᵖ` seminorm by `k^(1 / p)`. The codomain only needs a continuous extended norm.
 
 ## Main declarations
 
@@ -44,6 +46,9 @@ the factor `|r ^ n|^(-1 / p)`. The codomain only needs a continuous extended nor
   homothety.
 * `MeasureTheory.Measure.eLpNorm_comp_homothety_restrict_le`: the resulting bound for a
   homothety on a set that it maps into itself.
+* `MeasureTheory.Measure.eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul`: the `Lᵖ` seminorms
+  for two additive Haar measures differ by the factor `k^(1 / p)`, where `k` is the ratio of the
+  measures.
 -/
 
 public section
@@ -127,6 +132,17 @@ theorem eLpNorm_comp_homothety (u : E → G) (x : E) {r : ℝ} (hr : r ≠ 0) (p
     eLpNorm (u ∘ AffineMap.homothety x r) p μ =
       ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| ^ (1 / p).toReal * eLpNorm u p μ := by
   simpa using eLpNorm_comp_homothety_restrict_preimage μ u x hr p (s := Set.univ)
+
+/-- **Comparison of additive Haar measures in the `Lᵖ` seminorm:** for additive Haar measures `μ`
+and `ν`, so that `μ = k • ν` with `k = μ.addHaarScalarFactor ν`, the `Lᵖ` seminorm for `μ` on any
+set `s` is `k^(1 / p)` times the `Lᵖ` seminorm for `ν` on `s`. -/
+theorem eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul (ν : Measure E) [ν.IsAddHaarMeasure]
+    (u : E → G) (p : ℝ≥0∞) (s : Set E) :
+    eLpNorm u p (μ.restrict s) =
+      (μ.addHaarScalarFactor ν : ℝ≥0∞) ^ (1 / p).toReal * eLpNorm u p (ν.restrict s) := by
+  conv_lhs => rw [μ.isAddLeftInvariant_eq_smul ν, restrict_smul, ← coe_nnreal_smul]
+  rw [eLpNorm_smul_measure_of_ne_zero (by simpa using
+    (addHaarScalarFactor_pos_of_isAddHaarMeasure μ ν).ne'), smul_eq_mul]
 
 variable {μ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {r s : ℝ}

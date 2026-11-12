@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Matrix.Contraction
+import TauCeti.Analysis.Normed.Affine.AddTorsor.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 import TauCeti.Analysis.Sobolev.Wkp.Mollification
 import TauCeti.MeasureTheory.Function.Lp.Dilation
@@ -133,29 +134,6 @@ private theorem ofReal_mul_eLpNorm_posPart_const_mul_le {F f : α → ℝ} {b R 
 
 end Smallness
 
-section Homothety
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A homothety of ratio `s ≥ 0` about `c` scales the distance to `c` by `s`. -/
-private theorem dist_homothety_center_of_nonneg (c x : E) {s : ℝ} (hs : 0 ≤ s) :
-    dist (AffineMap.homothety c s x) c = s * dist x c := by
-  rw [dist_homothety_center, Real.norm_eq_abs, abs_of_nonneg hs, dist_comm]
-
-/-- A homothety of ratio `0 ≤ s ≤ 1` maps a ball about its centre into itself. -/
-private theorem mapsTo_homothety_ball (c : E) {s R : ℝ} (hs0 : 0 ≤ s) (hs1 : s ≤ 1) :
-    MapsTo (AffineMap.homothety c s) (ball c R) (ball c R) := fun x hx ↦ by
-  rw [mem_ball, dist_homothety_center_of_nonneg c x hs0]
-  exact (mul_le_of_le_one_left dist_nonneg hs1).trans_lt hx
-
-/-- A homothety of ratio `0 ≤ s ≤ 1` maps a closed ball about its centre into itself. -/
-private theorem mapsTo_homothety_closedBall (c : E) {s R : ℝ} (hs0 : 0 ≤ s) (hs1 : s ≤ 1) :
-    MapsTo (AffineMap.homothety c s) (closedBall c R) (closedBall c R) := fun x hx ↦ by
-  rw [mem_closedBall, dist_homothety_center_of_nonneg c x hs0]
-  exact (mul_le_of_le_one_left dist_nonneg hs1).trans hx
-
-end Homothety
-
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The operator of a nearby Hessian.** If `∑ᵢⱼ aⁱʲ Hⱼᵢ ≤ y` and `|aⁱʲ| ≤ Λ`, then
@@ -241,6 +219,7 @@ private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le
   set K := (n : ℝ) ^ 2 * Lam
   have hK : 0 ≤ K := by positivity
   set A := AffineMap.homothety c s
+  have hsn : ‖s‖ ≤ 1 := (Real.norm_of_nonneg hs0.le).trans_le hs1.le
   set H := Wkp.iteratedGradient 1 u
   set Hψ := Wkp.smoothField ψ H
   set D := Hψ - (H : EuclideanSpace ℝ ι → _)
@@ -260,7 +239,7 @@ private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le
   have hpt : ∀ᵐ x ∂μ.restrict (ball c R), G x ≤ (s ^ 2 • g) (A x) := by
     have h := hqmp.ae ((ae_restrict_iff' measurableSet_ball).1 hsuper)
     filter_upwards [ae_restrict_of_ae h, ae_restrict_mem measurableSet_ball] with x hx hxB
-    have hAB : A x ∈ ball c R := mapsTo_homothety_ball c hs0.le hs1.le hxB
+    have hAB : A x ∈ ball c R := mapsTo_homothety_ball c hsn R hxB
     have hsum : G x = s ^ 2 * ∑ i, ∑ j, a (A x) i j * Hψ (A x) (EuclideanSpace.single j 1) i := by
       simp only [G, A, fderiv_fderiv_smoothField_comp_homothety_apply u hs0 ψ hψ hxB,
         Finset.mul_sum]
@@ -288,7 +267,7 @@ private theorem exists_sum_mul_fderiv_fderiv_smoothField_comp_le
       ENNReal.pow_rpow_inv_natCast (by positivity)]
   calc _ ≤ ENNReal.ofReal s⁻¹ * eLpNorm (s ^ 2 • g) n (μ.restrict (ball c R)) :=
         (Measure.eLpNorm_comp_homothety_restrict_le μ _ c hs0.ne' _
-          (mapsTo_homothety_ball c hs0.le hs1.le)).trans_eq (by rw [hC])
+          (mapsTo_homothety_ball c hsn R)).trans_eq (by rw [hC])
     _ ≤ ENNReal.ofReal s⁻¹ * (ENNReal.ofReal (s ^ 2) *
           (eLpNorm (fun y ↦ (f y)⁺) n (μ.restrict (ball c R)) +
             ENNReal.ofReal K * eLpNorm D n (μ.restrict (ball c R)))) := by
@@ -368,7 +347,8 @@ theorem exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp
   refine ⟨w ∘ A, F, (contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2).comp
     (contDiff_homothety c s), fun x hx ↦ ?_, hF, ?_⟩
   · -- `w (A x)` is within `η / 2` of `ū (A x)`, which is within `η / 2` of `ū x`.
-    have hAB : A x ∈ closedBall c R := mapsTo_homothety_closedBall c hs0.le hs1.le hx
+    have hAB : A x ∈ closedBall c R :=
+      mapsTo_homothety_closedBall c ((Real.norm_of_nonneg hs0.le).trans_le hs1.le) R hx
     rw [mem_closedBall] at hx
     have hsub : ball (A x) ψ.rOut ⊆ ball c R := fun z hz ↦ by
       rw [mem_ball] at hz ⊢
@@ -405,17 +385,88 @@ private theorem le_ofReal_mul_rpow_of_forall_pos {m V : ℝ≥0∞} {C t ε : �
     exact h.mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun η hη ↦ h η hη)
 
-omit [DecidableEq ι] in
-/-- The `Lᵖ` seminorm for an additive Haar measure `μ = k • volume` is `k^(1 / p)` times the `Lᵖ`
-seminorm for `volume`. -/
-private theorem eLpNorm_restrict_addHaar_eq (μ : Measure (EuclideanSpace ℝ ι))
-    [μ.IsAddHaarMeasure] (g : EuclideanSpace ℝ ι → ℝ) (p : ℝ≥0∞) (S : Set (EuclideanSpace ℝ ι)) :
-    eLpNorm g p (μ.restrict S) =
-      (μ.addHaarScalarFactor volume : ℝ≥0∞) ^ (1 / p).toReal * eLpNorm g p (volume.restrict S) := by
-  conv_lhs => rw [μ.isAddLeftInvariant_eq_smul volume, Measure.restrict_smul,
-    ← Measure.coe_nnreal_smul]
-  rw [eLpNorm_smul_measure_of_ne_zero (by simpa using
-    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'), smul_eq_mul]
+/-- **The power decay for a strong supersolution, from the classical one**, on a fixed ball
+`B(c, R)`, for an additive Haar measure `μ`, sets `Q ⊆ B(c, R)` and `B ⊆ closedBall c R`, and
+constants `C`, `ε`, `ε₀ > 0`. Suppose every nonnegative classical supersolution `w` on `B(c, R)`,
+for coefficients uniformly elliptic with constants `λ ≤ Λ` and a right-hand side `F` with
+`R ‖F⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`, with `w ≤ 1` somewhere in `B`, satisfies
+`μ({w ≥ t} ∩ Q) ≤ C t^(-ε) μ(Q)` for every `t > 0`. Then so does every strong supersolution
+`u ∈ W^{2,n}(B(c, R))` with such a right-hand side and a representative `ū` continuous and
+nonnegative on `closedBall c R`. The classical bound for a normalized classical approximant of
+`ū`, within `η` of it, bounds the superlevel set of `t` by `C (t / (1 + 2η))^(-ε) μ(Q)`; then
+`η → 0`. -/
+private theorem measure_setOf_le_inter_le_rpow_mul_of_wkp
+    {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p = Fintype.card ι) {C ε ε₀ lam Lam R : ℝ} {c : EuclideanSpace ℝ ι}
+    {Q B : Set (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {ū f : EuclideanSpace ℝ ι → ℝ} (hR : 0 < R) (hε₀ : 0 < ε₀) (hQ : Q ⊆ ball c R)
+    (hB : B ⊆ closedBall c R)
+    (H : ∀ ⦃a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃w F : EuclideanSpace ℝ ι → ℝ⦄,
+      UniformlyEllipticOn (ball c R) a' lam Lam →
+      ContinuousOn w (closedBall c R) → ContDiffOn ℝ 2 w (ball c R) →
+      (∀ x ∈ closedBall c R, 0 ≤ w x) →
+      (∀ x ∈ ball c R, ∑ i, ∑ j, a' x i j * fderiv ℝ (fderiv ℝ w) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ F x) →
+      ENNReal.ofReal R * eLpNorm (fun x ↦ (F x)⁺) (Fintype.card ι)
+        (μ.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
+      (∃ x ∈ B, w x ≤ 1) →
+      ∀ ⦃t : ℝ⦄, 0 < t → μ ({x | t ≤ w x} ∩ Q) ≤ ENNReal.ofReal (C * t ^ (-ε)) * μ Q)
+    (u : Wkp μ ⟨ball c R, isOpen_ball⟩ p 2) (ha : UniformlyEllipticOn (ball c R) a lam Lam)
+    (hcont : ContinuousOn ū (closedBall c R))
+    (hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ.restrict (ball c R)] ū)
+    (hnonneg : ∀ x ∈ closedBall c R, 0 ≤ ū x)
+    (hsuper : ∀ᵐ x ∂μ.restrict (ball c R), ∑ i, ∑ j, a x i j *
+      Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x)
+    (hf : ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
+      (μ.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam))
+    (hx : ∃ x ∈ B, ū x ≤ 1) {t : ℝ} (ht : 0 < t) :
+    μ ({x | t ≤ ū x} ∩ Q) ≤ ENNReal.ofReal (C * t ^ (-ε)) * μ Q := by
+  have hlam : 0 < lam := ha.pos
+  obtain ⟨x₀, hx₀, hux₀⟩ := hx
+  refine le_ofReal_mul_rpow_of_forall_pos ht ((measure_mono hQ).trans_lt measure_ball_lt_top).ne
+    fun η hη ↦ ?_
+  obtain ⟨s, hs0, hs1, happrox⟩ := exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp hp u
+    hR hη (fun x hx i j ↦ ha.abs_apply_le hx i j) hcont hū hsuper
+  obtain ⟨v, F, hv, hvū, hvF, hF⟩ :=
+    happrox ((1 - s) * ε₀ * lam / R) (by have := sub_pos.2 hs1; positivity)
+  have hη2 : 0 < 1 + 2 * η := by positivity
+  set w : EuclideanSpace ℝ ι → ℝ := (1 + 2 * η)⁻¹ • fun x ↦ v x + η
+  have hv' : (fderiv ℝ fun x ↦ v x + η) = fderiv ℝ v := funext fun _ ↦ fderiv_add_const η
+  have hw2 (x : EuclideanSpace ℝ ι) :
+      fderiv ℝ (fderiv ℝ w) x = (1 + 2 * η)⁻¹ • fderiv ℝ (fderiv ℝ v) x := by
+    rw [fderiv_fderiv_const_smul, hv']
+  have hA := mapsTo_homothety_ball c ((Real.norm_of_nonneg hs0.le).trans_le hs1.le) R
+  have h := H (a' := fun x ↦ a (AffineMap.homothety c s x)) (w := w)
+    (F := fun x ↦ (1 + 2 * η)⁻¹ * F x)
+    (UniformlyEllipticOn.of_bounds ha.pos ha.le (fun x hx ξ ↦ ha.lower_bound (hA hx) ξ)
+      fun x hx ζ ξ ↦ ha.upper_bound (hA hx) ζ ξ)
+    ((continuous_const.smul (hv.continuous.add continuous_const)).continuousOn)
+    ((contDiff_const.smul (hv.add contDiff_const)).contDiffOn)
+    (fun x hx ↦ by
+      have := (abs_le.1 (hvū x hx)).1
+      have := hnonneg x hx
+      simp only [w, Pi.smul_apply, smul_eq_mul]
+      exact mul_nonneg (inv_pos.2 hη2).le (by linarith))
+    (fun x hx ↦ by
+      simp only [hw2, smul_apply, smul_eq_mul, mul_left_comm _ (1 + 2 * η)⁻¹, ← Finset.mul_sum]
+      gcongr
+      exact hvF x hx)
+    (ofReal_mul_eLpNorm_posPart_const_mul_le (inv_pos.2 hη2).le
+      (inv_le_one_of_one_le₀ (by linarith)) hR hs0 hs1 (by positivity) hF hf)
+    ⟨x₀, hx₀, by
+      have := (abs_le.1 (hvū x₀ (hB hx₀))).2
+      simp only [w, Pi.smul_apply, smul_eq_mul]
+      rw [inv_mul_le_iff₀ hη2]
+      linarith⟩
+    (t := t / (1 + 2 * η)) (by positivity)
+  refine (measure_mono ?_).trans h
+  rintro x ⟨hxt, hxQ⟩
+  refine ⟨?_, hxQ⟩
+  have := (abs_le.1 (hvū x (ball_subset_closedBall (hQ hxQ)))).1
+  simp only [mem_ofPred_eq, w, Pi.smul_apply, smul_eq_mul] at hxt ⊢
+  rw [div_eq_inv_mul]
+  gcongr
+  linarith
 
 /-- **Power decay of the superlevel sets of a strong supersolution**, the `L^ε` estimate of Krylov
 and Safonov for `W^{2,n}` functions (Gilbarg–Trudinger, Section 9.7; Caffarelli–Cabré, Lemma 4.6).
@@ -472,71 +523,23 @@ theorem exists_addHaar_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
     rw [WithLp.toLp_ofLp, ← hc] at h
     rw [mem_ball]
     nlinarith
-  obtain ⟨x₀, hx₀, hux₀⟩ := hx
-  have hx₀R : x₀ ∈ closedBall c R := by
-    rw [mem_ball] at hx₀
+  have hB : ball c (2 * 2 ^ k * √(Fintype.card ι)) ⊆ closedBall c R := fun x hx ↦ by
+    rw [mem_ball] at hx
     rw [mem_closedBall]
     nlinarith
-  -- The estimate for `volume`: for every `η > 0`, the classical power decay for a normalized
-  -- classical approximant `w` of `ū` bounds the superlevel set of `t` by
-  -- `C (t / (1 + 2η))^(-ε) |Q₀|`; then let `η → 0`.
-  have hvol : volume ({x | t ≤ ū x} ∩ Q) ≤ ENNReal.ofReal (C * t ^ (-ε)) * volume Q := by
-    refine le_ofReal_mul_rpow_of_forall_pos ht ((measure_mono hQ).trans_lt measure_ball_lt_top).ne
-      fun η hη ↦ ?_
-    obtain ⟨s, hs0, hs1, happrox⟩ := exists_forall_abs_sub_le_and_eLpNorm_posPart_le_of_wkp rfl u
-      hR0 hη (fun x hx i j ↦ ha.abs_apply_le hx i j) hcont hū hsuper
-    obtain ⟨v, F, hv, hvū, hvF, hF⟩ :=
-      happrox ((1 - s) * (ε₀ * θ.toReal) * lam / R) (by have := sub_pos.2 hs1; positivity)
-    have hη2 : 0 < 1 + 2 * η := by positivity
-    set w : EuclideanSpace ℝ ι → ℝ := (1 + 2 * η)⁻¹ • fun x ↦ v x + η
-    have hv' : (fderiv ℝ fun x ↦ v x + η) = fderiv ℝ v := funext fun _ ↦ fderiv_add_const η
-    have hw2 (x : EuclideanSpace ℝ ι) :
-        fderiv ℝ (fderiv ℝ w) x = (1 + 2 * η)⁻¹ • fderiv ℝ (fderiv ℝ v) x := by
-      rw [fderiv_fderiv_const_smul, hv']
-    have hA := mapsTo_homothety_ball (R := R) c hs0.le hs1.le
-    -- The smallness condition for the normalized right-hand side, first for `μ`, then for
-    -- `volume`.
-    have hsmall : ENNReal.ofReal R * eLpNorm (fun x ↦ ((1 + 2 * η)⁻¹ * F x)⁺)
-        (Fintype.card ι) (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) := by
-      have h := ofReal_mul_eLpNorm_posPart_const_mul_le (inv_pos.2 hη2).le
-        (inv_le_one_of_one_le₀ (by linarith)) hR0 hs0 hs1 (by positivity) hF hf
-      rw [eLpNorm_restrict_addHaar_eq, mul_right_comm ε₀, ENNReal.ofReal_mul (by positivity),
-        ENNReal.ofReal_toReal hθtop, mul_left_comm, mul_comm _ θ] at h
-      exact (ENNReal.mul_le_mul_iff_right hθ0 hθtop).1 h
-    have h := H (lam := lam) (Lam := Lam) (a := fun x ↦ a (AffineMap.homothety c s x)) (u := w)
-      (f := fun x ↦ (1 + 2 * η)⁻¹ * F x) hc hR
-      (UniformlyEllipticOn.of_bounds ha.pos ha.le (fun x hx ξ ↦ ha.lower_bound (hA hx) ξ)
-        fun x hx ζ ξ ↦ ha.upper_bound (hA hx) ζ ξ) hLam
-      ((continuous_const.smul (hv.continuous.add continuous_const)).continuousOn)
-      ((contDiff_const.smul (hv.add contDiff_const)).contDiffOn)
-      (fun x hx ↦ by
-        have := (abs_le.1 (hvū x hx)).1
-        have := hnonneg x hx
-        simp only [w, Pi.smul_apply, smul_eq_mul]
-        exact mul_nonneg (inv_pos.2 hη2).le (by linarith))
-      (fun x hx ↦ by
-        simp only [hw2, smul_apply, smul_eq_mul, mul_left_comm _ (1 + 2 * η)⁻¹, ← Finset.mul_sum]
-        gcongr
-        exact hvF x hx)
-      hsmall
-      ⟨x₀, hx₀, by
-        have := (abs_le.1 (hvū x₀ hx₀R)).2
-        simp only [w, Pi.smul_apply, smul_eq_mul]
-        rw [inv_mul_le_iff₀ hη2]
-        linarith⟩
-      (t := t / (1 + 2 * η)) (by positivity)
-    refine (measure_mono ?_).trans h
-    rintro x ⟨hxt, hxQ⟩
-    refine ⟨?_, hxQ⟩
-    have := (abs_le.1 (hvū x (ball_subset_closedBall (hQ hxQ)))).1
-    simp only [mem_ofPred_eq, w, Pi.smul_apply, smul_eq_mul] at hxt ⊢
-    rw [div_eq_inv_mul]
-    gcongr
-    linarith
-  -- Transfer to `μ = k • volume`.
+  refine measure_setOf_le_inter_le_rpow_mul_of_wkp rfl hR0 (mul_pos hε₀ hθpos) hQ hB
+    (fun a' w F ha' hw hw2 hw0 hwF hF hw1 t ht ↦ ?_) u ha hcont hū hnonneg hsuper hf hx ht
+  -- The classical power decay for `μ = k • volume`: its smallness condition for `volume` is the
+  -- one for `μ` divided by `θ`, and its conclusion for `volume` scales by `k`.
+  have hsmall : ENNReal.ofReal R * eLpNorm (fun x ↦ (F x)⁺) (Fintype.card ι)
+      (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) := by
+    rw [Measure.eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul μ volume, mul_right_comm ε₀,
+      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_toReal hθtop, mul_left_comm,
+      mul_comm _ θ] at hF
+    exact (ENNReal.mul_le_mul_iff_right hθ0 hθtop).1 hF
   rw [μ.isAddLeftInvariant_eq_smul volume, Measure.coe_nnreal_smul_apply,
     Measure.coe_nnreal_smul_apply, mul_left_comm]
-  exact mul_le_mul_right hvol _
+  exact mul_le_mul_right (H hc hR ha' hLam hw hw2 hw0 hwF hsmall hw1 ht) _
 
 end PDE
 
