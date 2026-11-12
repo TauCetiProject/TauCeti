@@ -33,8 +33,10 @@ uniqueness mechanism for the curvature equation of conformal metrics on closed s
   `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the second-derivative test.
 * `TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax`,
   `TauCeti.Manifold.laplaceBeltrami_nonneg_of_isLocalMin`: the sign of `Δ` at local extrema.
-* `TauCeti.Manifold.exists_forall_le_and_laplaceBeltrami_nonpos`: on a compact manifold a `C²`
-  function attains its maximum at a point where `Δ` is nonpositive.
+* `TauCeti.Manifold.exists_forall_le_and_laplaceBeltrami_nonpos`,
+  `TauCeti.Manifold.exists_forall_ge_and_laplaceBeltrami_nonneg`: on a compact manifold a `C²`
+  function attains its maximum at a point where `Δ` is nonpositive, and its minimum at a point
+  where `Δ` is nonnegative.
 * `TauCeti.Manifold.le_of_le_laplaceBeltrami_of_laplaceBeltrami_le`: the comparison principle.
 * `TauCeti.Manifold.le_one_add_mul_div_of_laplaceBeltrami_le`: the bound `u ≤ 1 + 4 k / r` for a
   subsolution of `-Δu / 2 + (r / 4) (u - 1) u ≤ k u`.
@@ -106,6 +108,14 @@ theorem exists_forall_le_and_laplaceBeltrami_nonpos [CompactSpace M] [Nonempty M
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hf.continuous.continuousOn
   exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
     laplaceBeltrami_nonpos_of_isLocalMax hf.contMDiffAt (hx₀.isLocalMax Filter.univ_mem)⟩
+
+/-- On a compact boundaryless Riemannian manifold, a `C²` function attains its minimum at a point
+where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonnegative. -/
+theorem exists_forall_ge_and_laplaceBeltrami_nonneg [CompactSpace M] [Nonempty M]
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) : ∃ x₀, (∀ y, f x₀ ≤ f y) ∧ 0 ≤ laplaceBeltrami I f x₀ := by
+  obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty hf.continuous.continuousOn
+  exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
+    laplaceBeltrami_nonneg_of_isLocalMin hf.contMDiffAt (hx₀.isLocalMin Filter.univ_mem)⟩
 
 /-- **The comparison principle** for semilinear equations `Δ u = h(x, u)` on a compact
 boundaryless Riemannian manifold, with `h(x, ·)` strictly increasing for every `x`: a `C²`
