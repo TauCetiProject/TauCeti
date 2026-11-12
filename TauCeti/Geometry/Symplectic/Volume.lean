@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
 import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
-import TauCeti.Geometry.Symplectic.Darboux.Basis
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Alternating.TopDegree
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
@@ -21,9 +21,9 @@ wedge power `ωⁿ` is nonzero (`ContinuousAlternatingMap.wedgePow_ne_zero_iff`)
 stated elementwise: the only vector `v` with `ω(v, w) = 0` for every `w` is zero.
 
 If `ω` is nondegenerate, a Darboux basis `(q₁, p₁, …, qₙ, pₙ)` exists and `ωⁿ` takes the value
-`n!` on it. Conversely, if `ι_v ω = 0` for a nonzero vector `v`, then the power rule
-`ι_v (ωⁿ) = n (ι_v ω ∧ ωⁿ⁻¹)` gives `ι_v (ωⁿ) = 0`, and a top-degree form with a nonzero vector in
-its kernel vanishes.
+`n!` on it (`ContinuousAlternatingMap.wedgePow_apply_reindex_of_isDarbouxBasis`). Conversely, if
+`ι_v ω = 0` for a nonzero vector `v`, then the power rule `ι_v (ωⁿ) = n (ι_v ω ∧ ωⁿ⁻¹)` gives
+`ι_v (ωⁿ) = 0`, and a top-degree form with a nonzero vector in its kernel vanishes.
 
 This is the linear volume criterion for symplectic forms. It is the pointwise statement behind
 the nonvanishing of the symplectic volume form `σⁿ / n!` of a nondegenerate two-form on a
@@ -31,10 +31,12 @@ manifold, and the step from the symplectic to the contact volume criterion.
 
 The top power of a direct sum `ω₁ ⊕ ω₂` on `E × F`, with `dim E = 2 n` and `dim F = 2 m`, takes
 the value `C(n + m, n) ω₁ⁿ(v) ω₂ᵐ(w)` on a family `(vᵢ, 0)` followed by `(0, wⱼ)`
-(`ContinuousAlternatingMap.wedgePow_prod_apply`). Equivalently the normalized volume forms satisfy
-`(ω₁ ⊕ ω₂)ⁿ⁺ᵐ / (n + m)! = ω₁ⁿ / n! · ω₂ᵐ / m!` on such families: the symplectic volume of a
-product is the product of the symplectic volumes. If both forms are nondegenerate, Darboux bases
-of the summands concatenate to a Darboux basis of the sum; otherwise both sides vanish.
+(`ContinuousAlternatingMap.wedgePow_add_compContinuousLinearMap_fst_snd_apply`). Equivalently the
+normalized volume forms satisfy `(ω₁ ⊕ ω₂)ⁿ⁺ᵐ / (n + m)! = ω₁ⁿ / n! · ω₂ᵐ / m!` on such families
+(`ContinuousAlternatingMap.inv_factorial_smul_wedgePow_add_compContinuousLinearMap_fst_snd_apply`):
+the symplectic volume of a product is the product of the symplectic volumes. If both forms are
+nondegenerate, Darboux bases of the summands concatenate to a Darboux basis of the sum; otherwise
+both sides vanish.
 
 ## References
 
@@ -52,6 +54,20 @@ namespace ContinuousAlternatingMap
 
 variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [FiniteDimensional ℝ E]
   [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [FiniteDimensional ℝ F] {n m : ℕ}
+
+omit [FiniteDimensional ℝ E] in
+/-- A two-form agreeing with a symplectic form `S` takes the value `n!` in its `n`-th power on a
+Darboux basis of `S`, listed in the interleaved order `(q₁, p₁, …, qₙ, pₙ)`. -/
+theorem wedgePow_apply_reindex_of_isDarbouxBasis (ω : E [⋀^Fin 2]→L[ℝ] ℝ)
+    {S : TauCeti.SymplecticForm E} (hS : ∀ x y, S x y = ω ![x, y])
+    {b : Basis (Fin n × Fin 2) ℝ E} (hb : S.IsDarbouxBasis b) :
+    ω.wedgePow n (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
+      n.factorial := by
+  convert wedgePow_apply_finProdFinEquiv ω b (fun i j ↦ (hS _ _).symm.trans (hb.apply_fst_fst i j))
+    (fun i j ↦ (hS _ _).symm.trans (hb.apply_fst_snd i j)) using 2
+  funext r
+  simp only [Basis.coe_reindex, Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm,
+    finCongr_apply]
 
 /-- **The volume criterion for linear symplectic forms.** On a real vector space of dimension
 `2 n`, a two-form `ω` is nondegenerate, in the sense that the only vector `v` with `ω(v, w) = 0`
@@ -75,42 +91,12 @@ theorem wedgePow_ne_zero_iff (hn : finrank ℝ E = 2 * n) (ω : E [⋀^Fin 2]→
         coe_zero, Pi.zero_apply, _root_.zero_apply]
   · intro h
     -- A Darboux basis for the symplectic form `ω`, on which `ω ^ n` takes the value `n!`.
-    set ωs := TauCeti.SymplecticForm.ofContinuousAlternatingMap ω h
-    obtain ⟨b, hb⟩ := ωs.exists_isDarbouxBasis_of_finrank_eq (hn.trans (Nat.mul_comm 2 n))
-    have hval := wedgePow_apply_finProdFinEquiv ω b
-      (fun i j ↦ by simpa [ωs] using hb.apply_fst_fst i j)
-      (fun i j ↦ by simpa [ωs] using hb.apply_fst_snd i j)
-    have hb' : ⇑(b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
-        fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) r)) := by
-      funext r
-      simp only [Basis.coe_reindex, Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm,
-        finCongr_apply]
+    obtain ⟨b, hb⟩ := TauCeti.SymplecticForm.exists_isDarbouxBasis_of_finrank_eq
+      (TauCeti.SymplecticForm.ofContinuousAlternatingMap ω h) (hn.trans (Nat.mul_comm 2 n))
     rw [← map_basis_ne_zero_iff _ (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))),
-      hb', hval]
+      wedgePow_apply_reindex_of_isDarbouxBasis ω
+        (TauCeti.SymplecticForm.ofContinuousAlternatingMap_apply ω h) hb]
     exact Nat.cast_ne_zero.2 n.factorial_ne_zero
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- The direct sum `ω₁ ∘ pr₁ + ω₂ ∘ pr₂` of two two-forms evaluates componentwise. -/
-private theorem add_compContinuousLinearMap_fst_snd_apply (ω₁ : E [⋀^Fin 2]→L[ℝ] ℝ)
-    (ω₂ : F [⋀^Fin 2]→L[ℝ] ℝ) (x y : E × F) :
-    (ω₁.compContinuousLinearMap (.fst ℝ E F) + ω₂.compContinuousLinearMap (.snd ℝ E F)) ![x, y] =
-      ω₁ ![x.1, y.1] + ω₂ ![x.2, y.2] := by
-  simp only [add_apply, compContinuousLinearMap_apply]
-  congr 2 <;> funext i <;> fin_cases i <;> rfl
-
-omit [FiniteDimensional ℝ E] in
-/-- A two-form agreeing with a symplectic form `S` takes the value `n!` in its `n`-th power on a
-Darboux basis of `S`, listed in the interleaved order `(q₁, p₁, …, qₙ, pₙ)`. -/
-private theorem wedgePow_apply_reindex_of_isDarbouxBasis (ω : E [⋀^Fin 2]→L[ℝ] ℝ)
-    {S : TauCeti.SymplecticForm E} (hS : ∀ x y, S x y = ω ![x, y])
-    {b : Basis (Fin n × Fin 2) ℝ E} (hb : S.IsDarbouxBasis b) :
-    ω.wedgePow n (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
-      n.factorial := by
-  convert wedgePow_apply_finProdFinEquiv ω b (fun i j ↦ (hS _ _).symm.trans (hb.apply_fst_fst i j))
-    (fun i j ↦ (hS _ _).symm.trans (hb.apply_fst_snd i j)) using 2
-  funext r
-  simp only [Basis.coe_reindex, Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm,
-    finCongr_apply]
 
 /-- If one summand of a direct sum of two-forms is degenerate, so is the sum, and its top power
 vanishes. -/
@@ -170,9 +156,9 @@ private theorem det_reindex_prod_sumElim (b : Basis (Fin n × Fin 2) ℝ E)
 dimension `2 n` and `ω₂` on a space `F` of dimension `2 m`, the top power of their direct sum
 `ω₁ ⊕ ω₂ = ω₁ ∘ pr₁ + ω₂ ∘ pr₂` on `E × F` takes the value `C(n + m, n) ω₁ⁿ(v) ω₂ᵐ(w)` on the
 family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)`. -/
-theorem wedgePow_prod_apply (hn : finrank ℝ E = 2 * n) (hm : finrank ℝ F = 2 * m)
-    (ω₁ : E [⋀^Fin 2]→L[ℝ] ℝ) (ω₂ : F [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin (2 * n) → E)
-    (w : Fin (2 * m) → F) :
+theorem wedgePow_add_compContinuousLinearMap_fst_snd_apply (hn : finrank ℝ E = 2 * n)
+    (hm : finrank ℝ F = 2 * m) (ω₁ : E [⋀^Fin 2]→L[ℝ] ℝ) (ω₂ : F [⋀^Fin 2]→L[ℝ] ℝ)
+    (v : Fin (2 * n) → E) (w : Fin (2 * m) → F) :
     (ω₁.compContinuousLinearMap (.fst ℝ E F) + ω₂.compContinuousLinearMap (.snd ℝ E F)).wedgePow
         (n + m) (fun r ↦ Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j))
           (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r))) =
@@ -206,5 +192,25 @@ theorem wedgePow_prod_apply (hn : finrank ℝ E = 2 * n) (hm : finrank ℝ F = 2
   · rw [add_compContinuousLinearMap_fst_snd_apply, TauCeti.SymplecticForm.prod_apply,
       TauCeti.SymplecticForm.ofContinuousAlternatingMap_apply,
       TauCeti.SymplecticForm.ofContinuousAlternatingMap_apply]
+
+/-- **The symplectic volume of a direct sum of two-forms.** For two-forms `ω₁` on a space `E` of
+dimension `2 n` and `ω₂` on a space `F` of dimension `2 m`, the normalized top power
+`(ω₁ ⊕ ω₂)ⁿ⁺ᵐ / (n + m)!` of their direct sum takes the value `(ω₁ⁿ / n!)(v) (ω₂ᵐ / m!)(w)` on the
+family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)`. -/
+theorem inv_factorial_smul_wedgePow_add_compContinuousLinearMap_fst_snd_apply
+    (hn : finrank ℝ E = 2 * n) (hm : finrank ℝ F = 2 * m) (ω₁ : E [⋀^Fin 2]→L[ℝ] ℝ)
+    (ω₂ : F [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin (2 * n) → E) (w : Fin (2 * m) → F) :
+    ((((n + m).factorial : ℝ)⁻¹) •
+        (ω₁.compContinuousLinearMap (.fst ℝ E F) + ω₂.compContinuousLinearMap (.snd ℝ E F)).wedgePow
+          (n + m)) (fun r ↦ Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j))
+          (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r))) =
+      (((n.factorial : ℝ)⁻¹) • ω₁.wedgePow n) v * (((m.factorial : ℝ)⁻¹) • ω₂.wedgePow m) w := by
+  rw [smul_apply, smul_apply, smul_apply, smul_eq_mul, smul_eq_mul, smul_eq_mul,
+    wedgePow_add_compContinuousLinearMap_fst_snd_apply hn hm,
+    ← Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right n m), Nat.add_sub_cancel_left]
+  have hc : ((n + m).choose n : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (Nat.choose_pos (Nat.le_add_right n m)).ne'
+  push_cast
+  field_simp
 
 end ContinuousAlternatingMap

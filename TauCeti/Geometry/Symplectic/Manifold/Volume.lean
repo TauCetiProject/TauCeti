@@ -113,17 +113,11 @@ theorem IsNondegenerate.volumeForm_apply_reindex (h : σ.IsNondegenerate) {x : M
     (hb : (h.symplecticFormAt x).IsDarbouxBasis b) :
     (σ.volumeForm n).1 x (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
       1 := by
-  have hσ (v w : TangentSpace I x) : σ.1 x ![v, w] = h.symplecticFormAt x v w := by
+  have hσ (v w : TangentSpace I x) : h.symplecticFormAt x v w = σ.1 x ![v, w] := by
     rw [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
-  have hval := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (σ.1 x) (m := n) b
-    (fun i j ↦ by rw [hσ, hb.apply_fst_fst])
-    (fun i j ↦ by rw [hσ, hb.apply_fst_snd])
-  have hb' : ⇑b ∘ (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).symm =
-      fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) r)) := by
-    funext r
-    simp only [Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm, finCongr_apply]
-  rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply, Basis.coe_reindex, hb', hval,
-    smul_eq_mul, inv_mul_cancel₀ (by positivity)]
+  rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.wedgePow_apply_reindex_of_isDarbouxBasis (σ.1 x) hσ hb, smul_eq_mul,
+    inv_mul_cancel₀ (by positivity)]
 
 /-- **The volume criterion for nondegenerate two-forms.** On a manifold modelled on a space of
 dimension `2 * n`, a smooth two-form is fiberwise nondegenerate exactly when its volume form
@@ -206,26 +200,12 @@ theorem volumeForm_prod_apply {E' H' N : Type*} [NormedAddCommGroup E'] [NormedS
         (fun r ↦ Sum.elim (fun i ↦ ((v i, 0) : E × E')) (fun j ↦ (0, w j))
           (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r))) =
       (σ.volumeForm n).1 x v * (τ.volumeForm m).1 y w := by
-  have hσ : (σ.prod τ).1 (x, y) = (σ.1 x).compContinuousLinearMap (.fst ℝ E E') +
-      (τ.1 y).compContinuousLinearMap (.snd ℝ E E') := by
-    rw [prod_def]
-    ext u
-    simp only [SmoothForm.add_toRoughForm, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-      SmoothForm.mpullback_apply, mfderiv_fst, mfderiv_snd]
-    -- The tangent spaces of `M` and `N` are the model spaces `E` and `E'`.
-    rfl
-  simp only [volumeForm_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul, hσ]
+  rw [volumeForm_apply, volumeForm_apply, volumeForm_apply, prod_toRoughForm_apply]
   -- The tangent spaces carry their instances through `TangentSpace`, so the linear identity is
   -- applied up to unfolding rather than by rewriting.
-  refine (congrArg (_ * ·)
-    (ContinuousAlternatingMap.wedgePow_prod_apply hn hm (σ.1 x) (τ.1 y) v w)).trans ?_
-  rw [← Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right n m), Nat.add_sub_cancel_left]
-  have hc : ((n + m).choose n : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.2 (Nat.choose_pos (Nat.le_add_right n m)).ne'
-  push_cast
-  field_simp
-  -- The two sides differ only in the instances of the tangent spaces.
-  rfl
+  exact
+    ContinuousAlternatingMap.inv_factorial_smul_wedgePow_add_compContinuousLinearMap_fst_snd_apply
+      hn hm (σ.1 x) (τ.1 y) v w
 
 end SmoothTwoForm
 

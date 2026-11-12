@@ -27,6 +27,8 @@ coisotropic and Lagrangian submanifolds of the factors are again of the same kin
 * `TauCeti.SmoothTwoForm.prod`: the product form `pr₁*σ + pr₂*τ` on `M × N`.
 * `TauCeti.SmoothTwoForm.prod_apply`, `TauCeti.SmoothTwoForm.eval₂_prod`: its evaluation on the
   components of tangent vectors.
+* `TauCeti.SmoothTwoForm.prod_toRoughForm_apply`: its value at `(x, y)` is the direct sum
+  `σ_x ∘ pr₁ + τ_y ∘ pr₂` of the values of the factors.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.prod`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_prod`: nondegenerate factors give a
   nondegenerate product, whose tangent-space forms are the linear direct sums.
@@ -78,6 +80,18 @@ theorem prod_apply (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) (p : M × N
     Pi.add_apply, ContinuousAlternatingMap.add_apply, SmoothForm.mpullback_apply, mfderiv_fst,
     mfderiv_snd]
   -- The projections act on product tangent vectors through the identity identification.
+  rfl
+
+/-- The value of the product form at `(x, y)` is the direct sum `σ_x ∘ pr₁ + τ_y ∘ pr₂` of the
+values of the factors, the tangent spaces being the model spaces. -/
+theorem prod_toRoughForm_apply (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) (x : M) (y : N) :
+    (prod σ τ).1 (x, y) = (σ.1 x).compContinuousLinearMap (.fst ℝ E F) +
+      (τ.1 y).compContinuousLinearMap (.snd ℝ E F) := by
+  rw [prod_def]
+  ext u
+  simp only [SmoothForm.add_toRoughForm, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    SmoothForm.mpullback_apply, mfderiv_fst, mfderiv_snd]
+  -- The tangent spaces of `M` and `N` are the model spaces `E` and `F`.
   rfl
 
 /-- The product form evaluates on two tangent vectors of `M × N` as the sum of the factor forms
