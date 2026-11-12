@@ -339,10 +339,7 @@ theorem fourierInv_exp_neg_mul_norm_sq {t : ℝ} (ht : 0 < t) :
     funext fun ξ ↦ (fourier_heatKernel ht ξ).symm
   have hF : 𝓕 (fun x : E ↦ (heatKernel t x : ℂ)) =
       ⇑(SchwartzMap.gaussian (V := E) hb) := by
-    funext ξ
-    rw [fourier_heatKernel ht, SchwartzMap.gaussian_apply, Complex.ofReal_exp]
-    push_cast
-    ring_nf
+    rw [SchwartzMap.coe_gaussian_ofReal, hsym]
   rw [hsym]
   exact (Complex.continuous_ofReal.comp
     (contDiff_heatKernel (k := 0) t).continuous).fourierInv_fourier_eq

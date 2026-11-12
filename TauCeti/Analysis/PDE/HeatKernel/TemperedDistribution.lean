@@ -119,12 +119,7 @@ theorem heatSemigroup_compL_heatSemigroup (s t : ℝ≥0) :
 private theorem heatSemigroup_eq_fourierMultiplierCLM_gaussian {t : ℝ≥0}
     (hb : 0 < ((4 * π ^ 2 * t : ℝ) : ℂ).re) :
     heatSemigroup E F t = fourierMultiplierCLM F ⇑(SchwartzMap.gaussian (V := E) hb) := by
-  rw [heatSemigroup]
-  congr 1
-  funext ξ
-  rw [SchwartzMap.gaussian_apply, Complex.ofReal_exp]
-  push_cast
-  ring_nf
+  rw [heatSemigroup, SchwartzMap.coe_gaussian_ofReal]
 
 variable [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -140,12 +135,7 @@ theorem exists_heatSemigroup_eq_and_ae_eq_convolution {t : ℝ≥0} (ht : t ≠ 
     rw [Complex.ofReal_re]
     positivity
   have hK : 𝓕⁻ (SchwartzMap.gaussian (V := E) hb : E → ℂ) = fun x ↦ (heatKernel t x : ℂ) := by
-    rw [← fourierInv_exp_neg_mul_norm_sq ht']
-    congr 1
-    funext ξ
-    rw [SchwartzMap.gaussian_apply, Complex.ofReal_exp]
-    push_cast
-    ring_nf
+    rw [SchwartzMap.coe_gaussian_ofReal, fourierInv_exp_neg_mul_norm_sq ht']
   obtain ⟨g, hg, hgK, hgn⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq
     (SchwartzMap.gaussian (V := E) hb) f (q := p) (r := 1) le_rfl (by rw [inv_one, add_comm])
   refine ⟨g, by rw [heatSemigroup_eq_fourierMultiplierCLM_gaussian hb, hg], ?_, ?_⟩
