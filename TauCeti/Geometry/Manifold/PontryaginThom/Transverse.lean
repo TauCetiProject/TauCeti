@@ -146,7 +146,7 @@ theorem exists_isLocalDiffeomorphAt_snd_comp_of_transverse [FiniteDimensional �
         (mfderiv IS IQ f y)).range = ⊤) :
     ∃ g : M → S × V, τ ∘ g =ᶠ[𝓝 x] σ ∧ IsLocalDiffeomorphAt IM 𝓘(𝕂, V) n (Prod.snd ∘ g) x := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
-  have : CompleteSpace EM := FiniteDimensional.complete 𝕂 EM
+  have : CompleteSpace EM := FiniteDimensional.completeSpace 𝕂 EM
   set L := hτ.localInverse
   have hτy : τ (y, 0) = σ x := (h.apply_zero y).trans hy
   -- The normal coordinate `m ↦ (L (σ m)).2` is defined where `σ` lands in the source of `L`.
