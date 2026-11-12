@@ -228,6 +228,15 @@ theorem MemLpLoc.continuousOn_smul {χ : ℂ → ℝ} (hf : MemLpLoc p U f) (hχ
   memLpLoc_iff.2 fun K hK hc =>
     (memLpLoc_iff.1 (hχ.memLpLoc (p := ⊤)) K hK hc).smul (memLpLoc_iff.1 hf K hK hc)
 
+/-- A locally `Lᵖ` field of continuous linear maps applied to a map continuous on `U` is locally
+`Lᵖ` on `U`, since the map is bounded on every compact subset of `U`. -/
+theorem MemLpLoc.clm_apply_continuousOn {A : ℂ → F →L[ℝ] G} (hA : MemLpLoc p U A)
+    (hf : ContinuousOn f U) : MemLpLoc p U (fun z => A z (f z)) :=
+  memLpLoc_iff.2 fun K hK hc =>
+    (memLpLoc_iff.1 hA K hK hc).of_bilin (fun B x => B x) 1
+      (memLpLoc_iff.1 (hf.memLpLoc (p := ⊤)) K hK hc) isBoundedBilinearMap_apply.continuous
+      (.of_forall fun z => by simpa using (A z).le_opNNNorm (f z))
+
 /-- A continuous factor supported in `U` extends a local `Lᵖ` function on `U` by zero to a local
 `Lᵖ` function on the whole plane: on a compact set `K` the product only sees
 `K ∩ tsupport χ`, a compact subset of `U`. -/
