@@ -121,18 +121,12 @@ section Fibre
 
 variable [∀ b, NormedSpace ℝ (E b)] [VectorBundle ℝ F E]
 
-private theorem extChartAt_zeroSection_self (a : B) :
-    extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a) (zeroSection F E a) =
-      (extChartAt IB a a, 0) := by
-  rw [Bundle.extChartAt_apply_of_mem_baseSet _ (mem_baseSet_trivializationAt F E a),
-    zeroSection_proj, (trivializationAt F E a).zeroSection ℝ (mem_baseSet_trivializationAt F E a)]
-
 private theorem chartDomain_mem_nhds [IB.Boundaryless] (a : B) (hW : IsOpen W)
     (hzero : ∀ b, zeroSection F E b ∈ W) :
     (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a)).target ∩
       (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a)).symm ⁻¹' W ∈
         𝓝 (extChartAt IB a a, (0 : F)) := by
-  rw [← extChartAt_zeroSection_self (IB := IB) (F := F) (E := E) a]
+  rw [← Bundle.extChartAt_zeroSection_self (IB := IB) (F := F) (V := E) a]
   refine (isOpen_chartDomain a hW).mem_nhds ⟨mem_extChartAt_target _, ?_⟩
   rw [mem_preimage, extChartAt_to_inv]
   exact hzero a
@@ -197,6 +191,14 @@ private def localCoord (g : TotalSpace F E → ℝ) (a : B) (x : TotalSpace F E)
     (parametricMorseCoord (chartFamily IB g a)
       (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a) x))
 
+omit [FiniteDimensional ℝ EB] [IB.Boundaryless] in
+/-- The coordinate read in the chart at `0_i` vanishes at the zero vectors over the base set of the
+trivialization at `i`. -/
+private theorem localCoord_zeroSection (i : B) {b : B}
+    (hb : b ∈ (trivializationAt F E i).baseSet) : localCoord IB g i (zeroSection F E b) = 0 := by
+  rw [localCoord, Bundle.extChartAt_zeroSection_of_mem_baseSet i hb, parametricMorseCoord_mk_zero]
+  exact (Trivialization.symmL_apply (R := ℝ) _ hb 0).symm.trans (map_zero _)
+
 /-- **The parametric Morse lemma in the chart at a zero vector.** Near `0_a`, the map
 `x ↦ ⟨x.proj, localCoord IB g a x⟩` is a `C^n` partial diffeomorphism of the total space, with
 source in `W`, in which `g` is in fibrewise normal form. -/
@@ -214,7 +216,7 @@ private theorem exists_partialDiffeomorph_localCoord (a : B) (hW : IsOpen W)
           (localCoord IB g a x) (localCoord IB g a x) := by
   set τ := extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a)
   set e := trivializationAt F E a
-  have hτa := extChartAt_zeroSection_self (IB := IB) (F := F) (E := E) a
+  have hτa := Bundle.extChartAt_zeroSection_self (IB := IB) (F := F) (V := E) a
   have : IsManifold (IB.prod 𝓘(ℝ, F)) n (TotalSpace F E) := .of_le (n := n + 2) le_self_add
   -- The parametric Morse chart `Θ` of the chart family, on a product `U₀ ×ˢ ball 0 r`.
   obtain ⟨U₀, r, Θ, -, haU₀, hr, hΘsource, hΘW, hΘeq, hnf⟩ :=
@@ -308,7 +310,7 @@ private theorem eventually_localCoord_eq {a i : B} (hai : a ∈ (trivializationA
   -- Pull back to the total space along the chart at `0_a`.
   have hτ : Tendsto (extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E a))
       (𝓝 (zeroSection F E a)) (𝓝 (c a, 0)) := by
-    rw [← extChartAt_zeroSection_self (IB := IB) (F := F) (E := E) a]
+    rw [← Bundle.extChartAt_zeroSection_self (IB := IB) (F := F) (V := E) a]
     exact (continuousAt_extChartAt _).tendsto
   have hproj : {x : TotalSpace F E | x.proj ∈ ea.baseSet ∩ (extChartAt IB a).source ∩
       ei.baseSet ∩ (extChartAt IB i).source} ∈ 𝓝 (zeroSection F E a) :=
@@ -445,16 +447,8 @@ theorem exists_parametric_morse_partialDiffeomorph (hW : IsOpen W)
   have hzO : range (zeroSection F E) ⊆ O := by
     rintro _ ⟨a, rfl⟩
     exact ⟨⟨(hlocal a).1, mem_interior_iff_mem_nhds.2 (hlocal a).2⟩, hzero a⟩
-  have hψ0 (b : B) : ψ (zeroSection F E b) = 0 := by
-    have hb := (hKsub _ (hj b)).1
-    have hτ : extChartAt (IB.prod 𝓘(ℝ, F)) (zeroSection F E (j b)) (zeroSection F E b) =
-        (extChartAt IB (j b) b, (trivializationAt F E (j b) (zeroSection F E b)).2) :=
-      Bundle.extChartAt_apply_of_mem_baseSet _ hb
-    simp only [ψ, localCoord, zeroSection_proj]
-    rw [hτ, (trivializationAt F E (j b)).zeroSection ℝ hb,
-      parametricMorseCoord_mk_zero, ← Trivialization.symmL_apply (R := ℝ) _ hb, map_zero]
-    -- The fibre `E (zeroSection F E b).proj` is `E b` by definition.
-    rfl
+  have hψ0 (b : B) : ψ (zeroSection F E b) = 0 :=
+    localCoord_zeroSection (j b) (hKsub _ (hj b)).1
   have hind : IsInducing (Φ₀ ∘ zeroSection F E) := by
     have h : Φ₀ ∘ zeroSection F E = zeroSection F E := funext fun b ↦ by
       simp only [comp_apply, Φ₀, hψ0]

@@ -25,7 +25,9 @@ projection, Mathlib's `Bundle.contMDiff_proj`, is recovered from this by
 The preferred charts are computed explicitly over the base set of the trivialization at their
 base point (`Bundle.mem_extChartAt_source_iff`, `Bundle.extChartAt_apply_of_mem_baseSet`,
 `Bundle.extChartAt_symm_apply_of_mem_baseSet` and
-`Bundle.extChartAt_symm_apply_extChartAt_of_mem_baseSet`).
+`Bundle.extChartAt_symm_apply_extChartAt_of_mem_baseSet`). For a vector bundle, the preferred
+chart at a zero vector sends the zero vectors over that base set to the zero fibre coordinate
+(`Bundle.extChartAt_zeroSection_of_mem_baseSet`, `Bundle.extChartAt_zeroSection_self`).
 
 The same chart computation identifies the derivative of the projection: composed with the
 derivative of the inverse of a preferred chart of the total space, it is the derivative of the
@@ -39,7 +41,8 @@ base commutes with the derivative of the projection
 inverse of the derivative of the projection, hence injective
 (`Bundle.mfderiv_injective_of_proj_comp_eq_id`).
 
-No linear structure on the fibres is used, and the regularity order `n` is arbitrary.
+Apart from the zero-section computations, no linear structure on the fibres is used, and the
+regularity order `n` is arbitrary.
 -/
 
 public section
@@ -121,6 +124,28 @@ theorem extChartAt_symm_apply_extChartAt_of_mem_baseSet [∀ x, Zero (V x)] (p :
       ⟨b, (trivializationAt F V p.proj).symm b w⟩ := by
   have h := (extChartAt IB p.proj).left_inv hb'
   rw [extChartAt_symm_apply_of_mem_baseSet p (h.symm ▸ hb), h]
+
+section ZeroSection
+
+variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+
+/-- In the preferred chart of a vector bundle at the zero vector `0_a`, a zero vector `0_b` over the
+base set of the trivialization at `a` has coordinates `b` in the chart of the base and `0`. -/
+theorem extChartAt_zeroSection_of_mem_baseSet (a : B) {b : B}
+    (hb : b ∈ (trivializationAt F V a).baseSet) :
+    extChartAt (IB.prod 𝓘(𝕜, F)) (zeroSection F V a) (zeroSection F V b) =
+      (extChartAt IB a b, 0) := by
+  rw [extChartAt_apply_of_mem_baseSet _ hb, zeroSection_proj, zeroSection_proj,
+    (trivializationAt F V a).zeroSection 𝕜 hb]
+
+/-- The preferred chart of a vector bundle at the zero vector `0_a` sends `0_a` to the coordinate
+of `a` in the chart of the base and `0`. -/
+theorem extChartAt_zeroSection_self (a : B) :
+    extChartAt (IB.prod 𝓘(𝕜, F)) (zeroSection F V a) (zeroSection F V a) =
+      (extChartAt IB a a, 0) :=
+  extChartAt_zeroSection_of_mem_baseSet a (mem_baseSet_trivializationAt F V a)
+
+end ZeroSection
 
 /-- The projection of a fibre bundle is a submersion, with the model fibre as complement: in the
 preferred charts of the total space and of the base, it is the first projection. -/

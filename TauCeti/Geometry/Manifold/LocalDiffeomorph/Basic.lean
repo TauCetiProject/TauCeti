@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -308,8 +309,10 @@ theorem mem_extChartPartialDiffeomorph_trans_trans_symm_source (x : M)
         (extChartPartialDiffeomorph I n x).symm).source ↔
       y ∈ (extChartPartialDiffeomorph I n x).source ∧ extChartAt I x y ∈ Θ.source ∧
         Θ (extChartAt I x y) ∈ interior (extChartAt I x).target := by
-  rw [← extChartPartialDiffeomorph_target I n x, ← coe_extChartPartialDiffeomorph I n x]
-  exact and_assoc
+  simp only [PartialDiffeomorph.trans_source, PartialDiffeomorph.coe_trans,
+    PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source,
+    extChartPartialDiffeomorph_target, coe_extChartPartialDiffeomorph, mem_inter_iff, mem_preimage,
+    Function.comp_apply, and_assoc]
 
 variable {n} in
 /-- A partial diffeomorphism `Θ` of the model space read through the restricted extended chart at
@@ -319,8 +322,9 @@ theorem extChartPartialDiffeomorph_trans_trans_symm_apply (x : M)
     (((extChartPartialDiffeomorph I n x).trans Θ).trans
         (extChartPartialDiffeomorph I n x).symm) y =
       (extChartAt I x).symm (Θ (extChartAt I x y)) := by
-  rw [← coe_extChartPartialDiffeomorph I n x, ← extChartPartialDiffeomorph_symm_apply I n x]
-  rfl
+  rw [PartialDiffeomorph.coe_trans, PartialDiffeomorph.coe_trans, Function.comp_apply,
+    Function.comp_apply, coe_extChartPartialDiffeomorph,
+    ← extChartPartialDiffeomorph_symm_apply I n x, ← PartialDiffeomorph.symm_toPartialEquiv]
 
 /-- A diffeomorphism of the model space, composed with the extended chart at `x₀` restricted to the
 preimage of an open set `V₀` inside the interior of the chart target, is a `C^n` partial
