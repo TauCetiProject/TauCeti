@@ -103,11 +103,13 @@ theorem delFunction_apply (σ : M → F) (x : M) (v : E) :
   sub_apply _ _ v
 
 /-- The differential splits as `dσ = ∂ σ + ∂bar σ`. -/
+@[simp]
 theorem delFunction_add_dbarFunction (σ : M → F) (x : M) :
     j.delFunction σ x + j.dbarFunction σ x = mvfderiv I σ x :=
   sub_add_cancel _ _
 
 /-- `∂ σ` is a `(1,0)`-form: it is complex linear, `∂ σ (j v) = i • ∂ σ (v)`. -/
+@[simp]
 theorem delFunction_apply_almostComplex (σ : M → F) (x : M) (v : TangentSpace I x) :
     j.delFunction σ x (j x v) = Complex.I • j.delFunction σ x v := by
   have hjj : j x (j x v) = -v := by

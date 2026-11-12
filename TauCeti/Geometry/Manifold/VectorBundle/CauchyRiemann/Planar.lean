@@ -111,6 +111,7 @@ theorem isRealCauchyRiemannOperator_dbarFunction_add_conjSMulDzbar :
     conjSMulDzbar isZeroOneForm_conjSMulDzbar
 
 /-- The complex linear part of `∂bar + ξbar dzbar` is `∂bar`. -/
+@[simp]
 theorem sectionComplexLinearPart_dbarFunction_add_conjSMulDzbar {σ : M → ℂ} {x : M}
     (hσ : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) σ x) :
     sectionComplexLinearPart (V := Bundle.Trivial M ℂ)
@@ -143,6 +144,7 @@ theorem not_isComplexLinearOperator_dbarFunction_add_conjSMulDzbar [Nonempty M] 
 
 /-- The antilinear zeroth-order part of `∂bar + ξbar dzbar`, in the decomposition of
 McDuff–Salamon, Exercise C.1.7, is `ξ ↦ ξbar dzbar`. -/
+@[simp]
 theorem antilinearPart_dbarFunction_add_conjSMulDzbar
     (hD : IsRealCauchyRiemannOperator ℂ (ofComplexManifold ℂ M) (V := Bundle.Trivial M ℂ)
       fun σ x ↦ (ofComplexManifold ℂ M).dbarFunction σ x + conjSMulDzbar x (σ x))
