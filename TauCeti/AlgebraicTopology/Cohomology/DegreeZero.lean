@@ -180,6 +180,18 @@ lemma eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne [Unique X]
     rw [Unique.eq_default x, map_smul, singularCohomologyZeroEval_singularCohomologyZeroOne,
       smul_eq_mul, mul_one]
 
+/-- Pulling back a degree-zero class along the constant map at `x` gives its value at `x` times
+the unit class. -/
+@[simp]
+lemma singularCohomologyMap_const_zero {Y : TopCat.{w}} (x : X)
+    (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
+    TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.const Y x)) 0 u =
+      singularCohomologyZeroEval x u • singularCohomologyZeroOne Y :=
+  singularCohomologyZero_ext fun y ↦ by
+    rw [singularCohomologyZeroEval_naturality, map_smul,
+      singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
+    rfl
+
 /-- **The values are multiplicative for the cup product.** -/
 @[simp]
 theorem singularCohomologyZeroEval_singularCup (x : X)

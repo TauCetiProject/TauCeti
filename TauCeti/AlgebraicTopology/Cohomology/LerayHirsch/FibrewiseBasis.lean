@@ -380,15 +380,6 @@ private lemma singularCohomologyMap_prodFibreInclusion_lerayHirschProd (x : X) (
     (g : LHSource k X ι p) :
     TopCat.singularCohomologyMap (prodFibreInclusion X F x) p (lerayHirschProd X F p b g) =
       ∑ i', singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) • b p i' := by
-  -- Pulling back the degree-zero class `e` along the constant map `F ⟶ X` at `x` gives the
-  -- multiple `e(x) • 1` of the unit.
-  have hconst (e : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
-      TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.const F x)) 0 e =
-        singularCohomologyZeroEval x e • singularCohomologyZeroOne F :=
-    singularCohomologyZero_ext fun f ↦ by
-      rw [singularCohomologyZeroEval_naturality, map_smul,
-        singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
-      rfl
   -- In positive degrees the constant map induces zero.
   have hpos {q : ℕ} (hq : q ≠ 0) :
       TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
@@ -415,8 +406,8 @@ private lemma singularCohomologyMap_prodFibreInclusion_lerayHirschProd (x : X) (
     by_cases hq : q' = 0
     · subst hq
       obtain rfl : p' = p := by omega
-      rw [hconst, LinearMap.map_smul₂, singularCup_singularCohomologyZeroOne_left,
-        Finset.sum_eq_single i]
+      rw [singularCohomologyMap_const_zero, LinearMap.map_smul₂,
+        singularCup_singularCohomologyZeroOne_left, Finset.sum_eq_single i]
       · rw [lhLof_apply_self]
       · intro l _ hl
         rw [lhLof_apply_of_ne _ _ hl, map_zero, zero_smul]
