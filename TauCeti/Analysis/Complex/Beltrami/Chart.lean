@@ -36,7 +36,7 @@ The pointwise statements are `TauCeti.Beltrami.isComplexLinear_iff_conjWirtinger
 * `TauCeti.Beltrami.wirtingerDeriv_normalizedChart_self`: normalizing at `c` gives holomorphic
   derivative `1` at `c` whenever `∂ψ(c) ≠ 0`.
 * `TauCeti.Beltrami.isInvertible_fderiv_normalizedChart`: the normalized chart has invertible real
-  derivative wherever that of `ψ` is within distance `1` of the identity.
+  derivative wherever `ψ` does.
 * `TauCeti.Beltrami.exists_isComplexLinear_chart`: the normalized Beltrami solution is a
   `C¹` local chart at `c`, `J`-holomorphic on its source, with value `0` and holomorphic derivative
   `1` at `c`.
@@ -135,15 +135,11 @@ theorem wirtingerDeriv_normalizedChart_self {ψ : ℂ → ℂ} {c : ℂ} (hc : w
   rw [wirtingerDeriv_normalizedChart, inv_mul_cancel₀ hc]
 
 /-- **Invertibility of the normalized differential.** If `∂ψ(c) ≠ 0` and the real derivative of
-`ψ` at `z` is within distance `1` of the identity, then the normalized chart has invertible real
-derivative at `z`. -/
+`ψ` at `z` is invertible, then the normalized chart has invertible real derivative at `z`. -/
 theorem isInvertible_fderiv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} (hc : wirtingerDeriv ψ c 1 ≠ 0)
-    (hψ : ‖fderiv ℝ ψ z - ContinuousLinearMap.id ℝ ℂ‖ < 1) :
+    (hψ : (fderiv ℝ ψ z).IsInvertible) :
     (fderiv ℝ (normalizedChart ψ c) z).IsInvertible := by
-  obtain ⟨L, hL⟩ := ContinuousLinearMap.isInvertible_of_norm_sub_lt
-    (ContinuousLinearEquiv.refl ℝ ℂ) (A := fderiv ℝ ψ z) (by
-      rw [← NNReal.coe_lt_coe]
-      simpa using hψ)
+  obtain ⟨L, hL⟩ := hψ
   refine ⟨L.trans (ContinuousLinearEquiv.smulLeft (Units.mk0 _ (inv_ne_zero hc))), ?_⟩
   ext v
   simp [fderiv_normalizedChart, Units.smul_def, ← hL]
@@ -281,7 +277,10 @@ theorem exists_isComplexLinear_chart_contDiffAt_symm {α : ℝ≥0} {r : ℝ} (h
     e.contDiffOn_symm_of_isInvertible_fderiv (fun z hz ↦ (heC z hz).contDiffWithinAt)
       fun z hz ↦ by
         rw [he]
-        exact isInvertible_fderiv_normalizedChart ha ((hnear z (hsub (hesub hz))).trans_lt hCμ)
+        refine isInvertible_fderiv_normalizedChart ha
+          (ContinuousLinearMap.isInvertible_of_norm_sub_lt (ContinuousLinearEquiv.refl ℝ ℂ) ?_)
+        rw [← NNReal.coe_lt_coe]
+        simpa using (hnear z (hsub (hesub hz))).trans_lt hCμ
   refine ⟨e, hce, by rw [he]; exact hφc, hesub, heC,
     fun z hz ↦ (hesC z hz).contDiffAt (e.open_target.mem_nhds hz), fun z hz ↦ ?_⟩
   rw [he]
