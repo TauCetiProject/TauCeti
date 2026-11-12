@@ -28,8 +28,8 @@ Second the **inversion**: the ideal class of `σI` is the inverse of the class o
 combined with `ClassGroup.mk0_eq_mk0_inv_iff`. Since each `C⁻¹` and `C` differ by a square,
 inversion is trivial on the elementary-2 quotient, giving the identity on `Cl/Cl²`.
 
-This is Layer 3 of the multiquadratic roadmap: the summit isomorphism
-`Gal(K_gen/K) ≅ Cl(K)/Cl(K)²` factors the conjugation action through its triviality on `Cl/Cl²`.
+In genus theory, the isomorphism `Gal(K_gen/K) ≅ Cl(K)/Cl(K)²` factors the conjugation action
+through its triviality on `Cl/Cl²`.
 
 See D. A. Cox, *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*, for the
 classical genus theory behind the inversion action of conjugation on the class group.

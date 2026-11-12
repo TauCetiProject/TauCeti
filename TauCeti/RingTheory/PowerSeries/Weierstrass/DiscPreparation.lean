@@ -248,7 +248,7 @@ theorem dvd_of_le [CompleteSpace K] (h : IsDiscPreparation r d f P U)
     h'.constantCoeff_eq_one).mpr hVr1).exists_right_inv
   have hVW : V * (W : PowerSeries K) = 1 := congrArg Subtype.val hW
   -- Normalise `P` to the monic polynomial `ω = a⁻¹ • P`, distinguished of degree `d` at `r`.
-  set a := P.leadingCoeff with ha_def
+  set a := P.leadingCoeff
   have ha : a ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr h.ne_zero
   set ω : Polynomial K := Polynomial.C a⁻¹ * P with hω_def
   have hω : ω.IsMonicOfDegree d :=
@@ -285,7 +285,7 @@ theorem unique [CompleteSpace K] (h : IsDiscPreparation r d f P U)
   obtain ⟨c, -, rfl⟩ := Polynomial.isUnit_iff.mp (IsUnit.of_mul_eq_one _ huu)
   have hc : c = 1 := by
     simpa [h.coeff_zero_eq_one, h'.coeff_zero_eq_one, eq_comm] using
-      congrArg (Polynomial.coeff · 0) hu
+      congrArg (AddMonoidAlgebra.coeff · 0) hu
   have hPQ : P = Q := by rw [hu, hc, Polynomial.C_1, mul_one]
   refine ⟨hPQ, mul_left_cancel₀ (by exact_mod_cast h.ne_zero : (P : PowerSeries K) ≠ 0) ?_⟩
   rw [← h.eq_mul, hPQ, ← h'.eq_mul]
@@ -302,7 +302,7 @@ theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K] (hf : IsDisti
   obtain ⟨e, ω, he, hω, heω⟩ :=
     hf.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hf.coeff_ne_zero) hr hfr
   -- `f(0) = e(0) * ω(0) = 1`, so `b = ω(0)` is nonzero. Put `P = b⁻¹ • ω` and `U = b • e`.
-  set b := ω.coeff 0 with hb_def
+  set b := ω.coeff 0
   have h0 : b * constantCoeff (e : PowerSeries K) = 1 := by
     rw [← hf0, ← heω, map_mul, Polynomial.constantCoeff_coe, mul_comm]
   have hb : b ≠ 0 := left_ne_zero_of_mul_eq_one h0

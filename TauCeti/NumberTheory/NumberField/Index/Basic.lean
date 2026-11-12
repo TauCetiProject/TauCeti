@@ -64,8 +64,6 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
--- The carrier and index API shape follow the human-authored specification in
--- `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`.
 /-- An integral primitive element of a number field `K`: an element of `𝓞 K` whose image in
 `K` generates `K` as a `ℚ`-algebra. -/
 @[expose]

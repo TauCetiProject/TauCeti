@@ -49,15 +49,20 @@ theorem linearIndependent_of_isRightRegular_leadingCoeff
     have hzero (c : ℕ → R) : (∑ j ∈ s, c j • S j).coeff a = 0 := by
       rw [finsetSum_coeff]
       exact Finset.sum_eq_zero fun j hj => by
-        rw [coeff_smul, coeff_eq_zero_of_natDegree_lt (by simpa using hlt j hj), smul_zero]
+        rw [AddMonoidAlgebra.coeff_smul_apply,
+          coeff_eq_zero_of_natDegree_lt (by simpa using hlt j hj), smul_zero]
     rw [Finset.sum_insert ha, Finset.sum_insert ha] at hsum
     have hfg : f a = g a := hCoeff a <| by
-      simpa [hzero, leadingCoeff] using congrArg (coeff · a) hsum
+      have hcoeff := congrArg (fun p : R[X] ↦ p.coeff a) hsum
+      simp only [Polynomial.coeff_add, hzero, add_zero] at hcoeff
+      simpa [leadingCoeff] using hcoeff
     rcases Finset.mem_insert.1 hi with rfl | hi
     · exact hfg
     · have := AddCommMagma.IsRightCancelAdd.toIsLeftCancelAdd R
-      refine ih (Polynomial.ext fun n => add_left_cancel (a := (g a • S a).coeff n) ?_) i hi
-      simpa only [hfg, coeff_add] using congrArg (coeff · n) hsum
+      refine ih (AddMonoidAlgebra.ext <| Finsupp.ext fun n =>
+        add_left_cancel (a := (g a • S a).coeff n) ?_) i hi
+      simpa only [hfg, Polynomial.coeff_add] using
+        congrArg (fun p : R[X] ↦ p.coeff n) hsum
 
 end Semiring
 
