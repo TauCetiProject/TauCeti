@@ -23,6 +23,9 @@ integrability domain of the negative-binomial probability-generating function.
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
+* `TauCeti.one_le_radius_binomialSeries` — the binomial series `binomialSeries A a` has radius at
+  least `1` in every normed algebra `A`, not only in a normed division ring.
+* `TauCeti.summable_norm_choose_smul_pow` — its terms are absolutely summable on the unit ball.
 -/
 
 public section
@@ -82,6 +85,40 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
   refine ⟨fun hs => not_le.1 fun hq => hnot (hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le)
     fun n => le_mul_of_one_le_right (hcoeff_pos n).le (one_le_pow₀ hq)), fun hq => ?_⟩
   exact (hasSum_multichoose_mul_geometric_of_abs_lt_one (by simpa using hq)).summable
+
+section NormedAlgebra
+
+variable {𝕂 : Type*} [RCLike 𝕂] {A : Type*} [NormedRing A] [NormedAlgebra 𝕂 A] {a : 𝕂}
+
+/-- The binomial series has radius at least `1` in any normed algebra, not only in a normed
+division ring as in `binomialSeries_radius_ge_one`: its coefficients are bounded by those of the
+scalar series. -/
+theorem one_le_radius_binomialSeries : 1 ≤ (binomialSeries A a).radius := by
+  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
+  have hR : (r : ℝ≥0∞) < (binomialSeries 𝕂 a).radius :=
+    hr.trans_le binomialSeries_radius_ge_one
+  refine FormalMultilinearSeries.le_radius_of_summable_norm _ ?_
+  refine Summable.of_norm_bounded_eventually
+    ((binomialSeries 𝕂 a).summable_norm_mul_pow hR) ?_
+  filter_upwards [eventually_cofinite_ne 0] with n hn
+  rw [norm_mul, norm_norm, norm_pow, NNReal.norm_eq]
+  gcongr
+  calc ‖binomialSeries A a n‖ ≤ ‖Ring.choose a n‖ :=
+        FormalMultilinearSeries.ofScalars_norm_le A _ n (Nat.pos_of_ne_zero hn)
+    _ = ‖binomialSeries 𝕂 a n‖ := by
+        rw [binomialSeries, FormalMultilinearSeries.ofScalars_norm]
+
+/-- On the unit ball of a normed algebra, the terms `Ring.choose a n • x ^ n` of the binomial
+series are absolutely summable. -/
+theorem summable_norm_choose_smul_pow {x : A} (hx : ‖x‖ < 1) :
+    Summable fun n ↦ ‖Ring.choose a n • x ^ n‖ := by
+  have hmem : x ∈ Metric.eball (0 : A) (binomialSeries A a).radius := by
+    refine lt_of_lt_of_le ?_ one_le_radius_binomialSeries
+    rwa [edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+  simpa [binomialSeries, FormalMultilinearSeries.ofScalars_apply_eq] using
+    (binomialSeries A a).summable_norm_apply hmem
+
+end NormedAlgebra
 
 end TauCeti
 

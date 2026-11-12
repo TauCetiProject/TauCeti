@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.Analysis.Calculus.Bilinear
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Module
+import TauCeti.Analysis.Analytic.Binomial
 
 /-!
 # Square roots near the identity in a Banach algebra
@@ -48,7 +49,7 @@ here is a square root near `1` in a bare Banach algebra, with smooth dependence 
 * `TauCeti.sqrtNearOne`: the binomial square root, with `TauCeti.sqrtNearOne_eq_tsum`.
 * `TauCeti.sqrtNearOne_one`, `TauCeti.analyticAt_sqrtNearOne`, `TauCeti.contDiffAt_sqrtNearOne`:
   it fixes `1` and is analytic, hence smooth, there.
-* `TauCeti.sqrtNearOne_mul_self`: on the unit ball around `1` it is a square root.
+* `TauCeti.mul_self_sqrtNearOne`: on the unit ball around `1` it is a square root.
 * `TauCeti.eventually_mul_self_sqrtNearOne`: near `1` it is a right inverse of squaring.
 * `TauCeti.eventually_sqrtNearOne_mul_self`: near `1` it is a left inverse of squaring, which is
   the uniqueness statement: an element close to `1` is recovered from its square.
@@ -88,27 +89,9 @@ private theorem hasStrictFDerivAt_mul_self_one :
   rw [he] at h
   exact h
 
-/-- The binomial series of exponent `1/2` converges on the unit ball of any normed algebra: its
-coefficients are those of the scalar series, of radius `1`. -/
-private theorem one_le_radius_binomialSeries :
-    1 ≤ (binomialSeries A (2⁻¹ : ℝ)).radius := by
-  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
-  have hR : (r : ENNReal) < (binomialSeries ℝ (2⁻¹ : ℝ)).radius :=
-    hr.trans_le binomialSeries_radius_ge_one
-  refine FormalMultilinearSeries.le_radius_of_summable_norm _ ?_
-  refine Summable.of_norm_bounded_eventually
-    ((binomialSeries ℝ (2⁻¹ : ℝ)).summable_norm_mul_pow hR) ?_
-  filter_upwards [eventually_cofinite_ne 0] with n hn
-  rw [norm_mul, norm_norm, norm_pow, NNReal.norm_eq]
-  gcongr
-  calc ‖binomialSeries A (2⁻¹ : ℝ) n‖ ≤ ‖Ring.choose (2⁻¹ : ℝ) n‖ :=
-        FormalMultilinearSeries.ofScalars_norm_le A _ n (Nat.pos_of_ne_zero hn)
-    _ = ‖binomialSeries ℝ (2⁻¹ : ℝ) n‖ := by
-        rw [binomialSeries, FormalMultilinearSeries.ofScalars_norm]
-
 /-- The **square root near the identity** of a Banach algebra: the sum of the binomial series
 `∑ (1/2 choose n) (a - 1) ^ n` (`TauCeti.sqrtNearOne_eq_tsum`). It is a square root when
-`‖a - 1‖ < 1` (`TauCeti.sqrtNearOne_mul_self`), and the only one near `1`
+`‖a - 1‖ < 1` (`TauCeti.mul_self_sqrtNearOne`), and the only one near `1`
 (`TauCeti.eventually_sqrtNearOne_mul_self`); it is only meaningful there. -/
 noncomputable def sqrtNearOne (a : A) : A :=
   (binomialSeries A (2⁻¹ : ℝ)).sum (a - 1)
@@ -127,23 +110,14 @@ theorem sqrtNearOne_one : sqrtNearOne A 1 = 1 := by
   rw [sqrtNearOne, sub_self, binomialSeries, ← FormalMultilinearSeries.ofScalarsSum,
     FormalMultilinearSeries.ofScalarsSum_zero, Ring.choose_zero_right, one_smul]
 
-/-- On the unit ball around `1`, the terms of the binomial series are absolutely summable. -/
-private theorem summable_norm_binomial_term {a : A} (ha : ‖a - 1‖ < 1) :
-    Summable fun n ↦ ‖Ring.choose (2⁻¹ : ℝ) n • (a - 1) ^ n‖ := by
-  have hmem : a - 1 ∈ Metric.eball (0 : A) (binomialSeries A (2⁻¹ : ℝ)).radius := by
-    refine lt_of_lt_of_le ?_ (one_le_radius_binomialSeries A)
-    rwa [edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
-  simpa [binomialSeries, FormalMultilinearSeries.ofScalars_apply_eq] using
-    (binomialSeries A (2⁻¹ : ℝ)).summable_norm_apply hmem
-
 variable [CompleteSpace A]
 
 /-- **The binomial square root is a square root on the unit ball around `1`.** The Cauchy square
 of the binomial series of exponent `1/2` is the binomial series of exponent `1`, by the
 Chu–Vandermonde identity, and that series is `1 + x`. -/
-theorem sqrtNearOne_mul_self {a : A} (ha : ‖a - 1‖ < 1) :
+theorem mul_self_sqrtNearOne {a : A} (ha : ‖a - 1‖ < 1) :
     sqrtNearOne A a * sqrtNearOne A a = a := by
-  have hs := summable_norm_binomial_term ha
+  have hs := summable_norm_choose_smul_pow (a := (2⁻¹ : ℝ)) ha
   rw [sqrtNearOne_eq_tsum, tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm hs hs]
   have hterm (n : ℕ) : ∑ kl ∈ Finset.antidiagonal n,
       Ring.choose (2⁻¹ : ℝ) kl.1 • (a - 1) ^ kl.1 * Ring.choose (2⁻¹ : ℝ) kl.2 • (a - 1) ^ kl.2 =
@@ -163,7 +137,7 @@ neighborhood on which it is smooth to every finite order. -/
 theorem analyticAt_sqrtNearOne : AnalyticAt ℝ (sqrtNearOne A) 1 := by
   have hp : AnalyticAt ℝ (binomialSeries A (2⁻¹ : ℝ)).sum 0 :=
     ((binomialSeries A (2⁻¹ : ℝ)).hasFPowerSeriesOnBall
-      (zero_lt_one.trans_le (one_le_radius_binomialSeries A))).analyticAt
+      (zero_lt_one.trans_le one_le_radius_binomialSeries)).analyticAt
   have hsub : AnalyticAt ℝ (fun a : A ↦ a - 1) 1 := analyticAt_id.sub analyticAt_const
   exact hp.comp_of_eq hsub (sub_self _)
 
@@ -179,7 +153,7 @@ theorem continuousAt_sqrtNearOne : ContinuousAt (sqrtNearOne A) 1 :=
 theorem eventually_mul_self_sqrtNearOne :
     ∀ᶠ a in 𝓝 (1 : A), sqrtNearOne A a * sqrtNearOne A a = a := by
   filter_upwards [Metric.ball_mem_nhds (1 : A) one_pos] with a ha
-  exact sqrtNearOne_mul_self (by rwa [← dist_eq_norm])
+  exact mul_self_sqrtNearOne (by rwa [← dist_eq_norm])
 
 /-- Near the identity, an element is recovered from its square by `TauCeti.sqrtNearOne`.  This is
 the uniqueness half: two elements close to `1` with the same square are equal. Squaring is
