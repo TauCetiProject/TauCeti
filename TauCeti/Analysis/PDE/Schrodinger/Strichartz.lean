@@ -144,8 +144,7 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le (hE : Module.finrank ℝ
     simpa using holderConjugate_four_div_three_four.symm.coe_ennreal
   refine (continuous_phasePropagator_apply _ f).aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
-      (p' := ((4 / 3 : ℝ≥0) : ℝ≥0∞)) (q' := 1) (by simp)
-      fun G s hs hGs hG ↦ ?_
+      (p' := ((4 / 3 : ℝ≥0) : ℝ≥0∞)) (q' := 1) fun G s hs hGs hG ↦ ?_
   -- A bounded `G` vanishing off a set of finite measure is integrable, and so is `S(-t) G(t)`.
   have hGint : Integrable G :=
     memLp_one_iff_integrable.1 (hG.mono_exponent_of_measure_support_ne_top hGs hs le_top)
