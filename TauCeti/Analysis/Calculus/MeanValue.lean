@@ -17,10 +17,17 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Mean value estimates
+
+## Exact increments along continuous real paths
+
+`ContinuousOn.exists_deriv_comp_mul_sub_eq` realizes the mean value derivative at a time
+on a continuous real path. This supplies the exact per-cell increments used in the
+finite-variation chain rule, without requiring the path itself to be differentiable.
 
 ## A directional mean value inequality
 
@@ -106,6 +113,39 @@ theorem Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le {X Y : Type*} [NormedA
   rwa [hxy, sub_self, sub_zero] at h
 
 open Set
+
+/-- Along a continuous real path, some time realizes an exact mean value increment of `f`.
+Continuity is required on the image and the specified derivative only in its interior;
+no derivative of the path is needed. -/
+theorem ContinuousOn.exists_deriv_comp_mul_sub_eq {g f f' : ℝ → ℝ} {l u : ℝ}
+    (hgc : ContinuousOn g (Icc l u)) (hlu : l ≤ u)
+    (hfc : ContinuousOn f (g '' Icc l u))
+    (hf : ∀ x ∈ interior (g '' Icc l u), HasDerivAt f (f' x) x) :
+    ∃ t ∈ Icc l u, f' (g t) * (g u - g l) = f (g u) - f (g l) := by
+  have hmean {p q : ℝ} (hfc : ContinuousOn f (uIcc p q))
+      (hf : ∀ x ∈ interior (uIcc p q), HasDerivAt f (f' x) x) :
+      ∃ x ∈ uIcc p q, f' x * (q - p) = f q - f p := by
+    wlog hpq : p ≤ q generalizing p q
+    · obtain ⟨x, hx, he⟩ := this (by simpa only [uIcc_comm] using hfc)
+        (by simpa only [uIcc_comm] using hf) (le_of_not_ge hpq)
+      refine ⟨x, by simpa only [uIcc_comm] using hx, ?_⟩
+      rw [← neg_sub p q, mul_neg, he, neg_sub]
+    rcases hpq.eq_or_lt with rfl | hpq
+    · exact ⟨p, by simp, by simp⟩
+    obtain ⟨x, hx, he⟩ := exists_hasDerivAt_eq_slope f f' hpq
+      (by simpa only [uIcc_of_le hpq.le] using hfc)
+      (by simpa only [uIcc_of_le hpq.le, interior_Icc] using hf)
+    refine ⟨x, by simpa only [uIcc_of_le hpq.le] using Ioo_subset_Icc_self hx, ?_⟩
+    rw [he, div_mul_cancel₀ _ (sub_ne_zero.mpr hpq.ne')]
+  -- The intermediate value theorem turns the state-space mean value into a time tag.
+  have himage : uIcc (g l) (g u) ⊆ g '' Icc l u := by
+    simpa only [uIcc_of_le hlu] using
+      (intermediate_value_uIcc (a := l) (b := u) (f := g)
+        (by simpa only [uIcc_of_le hlu] using hgc))
+  obtain ⟨x, hx, he⟩ := hmean (hfc.mono himage)
+    (fun x hx ↦ hf x (interior_mono himage hx))
+  obtain ⟨t, ht, rfl⟩ := himage hx
+  exact ⟨t, ht, he⟩
 
 namespace Convex
 

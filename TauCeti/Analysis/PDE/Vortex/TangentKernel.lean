@@ -327,7 +327,7 @@ private theorem gaugeFixedOperator_logVariation_add_sectionVariation_eq_zero {ν
 /-- The logarithmic variation of a smooth `h` whose real and imaginary parts lie in `H²(ℂ)` is
 square integrable, at a smooth field with `|α|² → 1` at infinity. Its connection part
 `2 i ∂bar h` is in `L²` because `h ∈ H¹`, and its section part `α h` because `α` is bounded. -/
-private theorem memLp_logVariation {h : ℂ → ℂ} (hx : ContDiff ℝ ∞ x)
+private theorem memLp_two_logVariation {h : ℂ → ℂ} (hx : ContDiff ℝ ∞ x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hh : ContDiff ℝ ∞ h) (hre : (fun z ↦ (h z).re) ∈ realSobolevFunctions ℂ 2 2)
     (him : (fun z ↦ (h z).im) ∈ realSobolevFunctions ℂ 2 2) :
@@ -413,7 +413,7 @@ theorem exists_gaugeFixedOperator_eq_zero_and_sectionValue_eq_mul_add_exp_mul
       simp only [c]
       abel
     rw [e]
-    exact (memLp_logVariation hx hlim hh hre him).add (hc.memLp_of_hasCompactSupport hcc)
+    exact (memLp_two_logVariation hx hlim hh hre him).add (hc.memLp_of_hasCompactSupport hcc)
   · rw [sectionValue_add, sectionValue_logVariation, sectionValue_sectionVariation]
 
 /-- **Every principal part is realized by a kernel element.** Under the hypotheses of

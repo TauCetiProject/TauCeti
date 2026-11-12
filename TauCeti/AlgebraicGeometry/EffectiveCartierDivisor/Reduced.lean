@@ -95,7 +95,7 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff_ord_le_one
         norm_cast)
     have hb : X.presheaf.germ ⊤ (η : X) trivial f ≠ 0 := fun he ↦
       hf (germ_injective_of_isIntegral X η trivial (he.trans (map_zero _).symm))
-    have hle := (TauCeti.Ring.squarefree_iff_ord_le_one hb).mp ((h η).squarefree hb)
+    have hle := TauCeti.Ring.squarefree_iff_ord_le_one.mp ((h η).squarefree hb)
     have hnt := Ring.ord_ne_top (mem_nonZeroDivisors_of_ne_zero hb)
     obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp hnt
     rw [← X.algebraMap_germ_eq_germToFunctionField (x := (η : X)) trivial f,
