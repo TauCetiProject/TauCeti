@@ -207,6 +207,4 @@ theorem Irreducible.not_isSquare_algebraMap_breve {π : 𝒪[E]} (hπ : Irreduci
   let z₀ : 𝒪[Breve E] := ⟨z, hz1⟩
   have hsq : algebraMap 𝒪[E] 𝒪[Breve E] π = z₀ * z₀ :=
     Subtype.ext (by simpa [z₀, TauCeti.coe_algebraMap_integerRing] using hz)
-  have hirr : Irreducible (algebraMap 𝒪[E] 𝒪[Breve E] π) := hπ.algebraMap_integer_breve
-  rcases hirr.isUnit_or_isUnit hsq with hu | hu <;>
-    exact hirr.not_isUnit (hsq ▸ hu.mul hu)
+  exact hπ.algebraMap_integer_breve.not_isSquare ⟨z₀, hsq⟩

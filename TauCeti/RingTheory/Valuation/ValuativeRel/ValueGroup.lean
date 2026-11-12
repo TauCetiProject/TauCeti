@@ -312,14 +312,7 @@ only if its image in `𝒪[L]` is irreducible, with no discreteness assumption o
 ring. -/
 theorem irreducible_algebraMap_integer_iff_of_surjective_mapValueGroupWithZero
     (h : Function.Surjective (mapValueGroupWithZero K L)) {ϖ : 𝒪[K]} :
-    Irreducible (algebraMap 𝒪[K] 𝒪[L] ϖ) ↔ Irreducible ϖ := by
-  have hunit {x : 𝒪[K]} : IsUnit (algebraMap 𝒪[K] 𝒪[L] x) ↔ IsUnit x := by
-    rw [isUnit_iff_dvd_one, isUnit_iff_dvd_one, ← map_one (algebraMap 𝒪[K] 𝒪[L]),
-      TauCeti.algebraMap_integerRing_dvd_iff]
-  refine ⟨fun hL ↦ ⟨fun hu ↦ hL.not_isUnit (hunit.2 hu), fun a b hab ↦ ?_⟩,
-    fun hϖ ↦ hϖ.algebraMap_integer_of_surjective_mapValueGroupWithZero h⟩
-  have habL : algebraMap 𝒪[K] 𝒪[L] ϖ = algebraMap 𝒪[K] 𝒪[L] a * algebraMap 𝒪[K] 𝒪[L] b := by
-    rw [hab, map_mul]
-  exact (hL.isUnit_or_isUnit habL).imp hunit.1 hunit.1
+    Irreducible (algebraMap 𝒪[K] 𝒪[L] ϖ) ↔ Irreducible ϖ :=
+  ⟨fun hL ↦ hL.of_map, fun hϖ ↦ hϖ.algebraMap_integer_of_surjective_mapValueGroupWithZero h⟩
 
 end ValuativeExtension
