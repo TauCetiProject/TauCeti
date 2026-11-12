@@ -147,6 +147,7 @@ theorem center_normalClosure_eq_normalCore_subgroupOf
     · exact h
     -- A perfect commutative group is trivial.
     have : IsMulCommutative P := Subgroup.center_eq_top_iff.mp h
+    have : Subsingleton P := Group.IsPerfect.subsingleton_of_isMulCommutative
     intro x _
     rw [Subsingleton.elim x 1]
     exact one_mem _
