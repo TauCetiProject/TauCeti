@@ -23,8 +23,9 @@ empty.
   nonemptiness is essential.
 * **The point skyscraper.** For the skyscraper sheaf `ℂ_x` with stalk `ℂ` at a point `x`, which
   is the cokernel sheaf in the point-twist sequence `0 → 𝒪(D) → 𝒪(D + x) → ℂ_x → 0`, the
-  degree-zero Čech cohomology is one-dimensional and every positive-degree group vanishes. In
-  particular `H⁰(ℂ_x)` is not zero.
+  degree-zero Čech cohomology is one-dimensional and every positive-degree group vanishes
+  (`TauCeti.Topology.isZero_cechCohomology_skyscraperPresheaf`). In particular `H⁰(ℂ_x)` is not
+  zero.
 * **The zero sheaf.** A presheaf all of whose sections are zero has vanishing Čech cohomology in
   every degree (`TauCeti.Topology.isZero_cechCohomology_obj_of_isZero`). This is what treating
   the support of `ℂ_x` as empty would produce, and it disagrees with `H⁰(ℂ_x) = ℂ`.
@@ -37,11 +38,14 @@ statements.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_zero_holomorphicStructureSheafModules`:
   `dim H⁰(X, 𝒪) = 1` on a nonempty compact connected complex curve.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_holomorphicStructureSheafModules_of_isEmpty`:
-  on the empty curve `dim Hⁿ(X, 𝒪) = 0` for every `n`, in particular `dim H⁰(X, 𝒪) = 0`.
+  on the empty curve `dim Hⁿ(X, 𝒪) = 0` for every `n`, in particular `dim H⁰(X, 𝒪) = 0`. The
+  vanishing itself is `TauCeti.Topology.isZero_cechCohomology_obj_of_isEmpty`.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_zero_skyscraperSheaf`: `dim H⁰(X, ℂ_x) = 1`.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_succ_skyscraperSheaf`: `dim Hⁿ⁺¹(X, ℂ_x) = 0`.
+  The vanishing itself is `TauCeti.Topology.isZero_cechCohomology_skyscraperPresheaf`.
 * `TauCeti.RiemannSurface.finrank_cechCohomology_of_isZero_sections`: a presheaf with zero
-  sections has `dim Hⁿ = 0` for every `n`.
+  sections has `dim Hⁿ = 0` for every `n`. The vanishing itself is
+  `TauCeti.Topology.isZero_cechCohomology_obj_of_isZero`.
 
 ## References
 
@@ -78,7 +82,9 @@ theorem finrank_cechCohomology_zero_holomorphicStructureSheafModules [IsManifold
 cohomology group of the holomorphic structure sheaf has dimension zero. In degree zero this gives
 dimension zero, not one, although the curve is compact and preconnected. Nonemptiness is the extra
 condition that makes a preconnected space connected. Compare
-`finrank_cechCohomology_zero_holomorphicStructureSheafModules`. -/
+`finrank_cechCohomology_zero_holomorphicStructureSheafModules`. The groups themselves vanish by
+`TauCeti.Topology.isZero_cechCohomology_obj_of_isEmpty`, which applies to every presheaf on the
+empty space; this statement records the dimension. -/
 theorem finrank_cechCohomology_holomorphicStructureSheafModules_of_isEmpty [IsEmpty X] (n : ℕ) :
     Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) = 0 :=
@@ -109,8 +115,10 @@ theorem not_isZero_cechCohomology_zero_skyscraperSheaf :
   simpa [ModuleCat.finrank_eq_zero_of_isZero h] using finrank_cechCohomology_zero_skyscraperSheaf x
 
 open Classical in
-/-- **The point skyscraper is acyclic.** Every positive-degree Čech cohomology group of the
-skyscraper sheaf with stalk `ℂ` at `x` has dimension zero. -/
+/-- Every positive-degree Čech cohomology group of the skyscraper sheaf with stalk `ℂ` at `x`
+has dimension zero. The acyclicity of the skyscraper, that is the vanishing of these groups, is
+`TauCeti.Topology.isZero_cechCohomology_skyscraperPresheaf`, for any coefficient object; this
+statement records the dimension. -/
 theorem finrank_cechCohomology_succ_skyscraperSheaf (n : ℕ) :
     Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) (n + 1)).obj
       (skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift ℂ))).obj) = 0 :=
@@ -119,10 +127,11 @@ theorem finrank_cechCohomology_succ_skyscraperSheaf (n : ℕ) :
 
 /-! ### The zero sheaf -/
 
-/-- **The zero sheaf has no cohomology.** If every section of `P` is zero, every Čech
-cohomology group of `P` has dimension zero. This is the answer that treating the support of the
-point skyscraper as empty would give, which `not_isZero_cechCohomology_zero_skyscraperSheaf`
-rules out in degree zero. -/
+/-- If every section of `P` is zero, every Čech cohomology group of `P` has dimension zero. This
+is the answer that treating the support of the point skyscraper as empty would give, which
+`not_isZero_cechCohomology_zero_skyscraperSheaf` rules out in degree zero. The vanishing of these
+groups is `TauCeti.Topology.isZero_cechCohomology_obj_of_isZero`; this statement records the
+dimension. -/
 theorem finrank_cechCohomology_of_isZero_sections
     (P : (Opens (TopCat.of X))ᵒᵖ ⥤ ModuleCat.{0} ℂ) (hP : ∀ U, IsZero (P.obj U)) (n : ℕ) :
     Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj P) = 0 :=
