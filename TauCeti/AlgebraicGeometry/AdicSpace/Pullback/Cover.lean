@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.GlueMorphisms
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
 
 /-!
 # Fibre products of adic spaces are local on the source
@@ -188,11 +187,8 @@ private theorem t'_fst_fV (i k l : ι) :
   exact pullback.lift_fst _ _ _
 
 private instance (i : ι) : IsIso (fV f g j i i) := by
-  let s : P f g j i ⟶ V f g j i i :=
-    pullback.lift (𝟙 _) (pullback.fst (j i ≫ f) g).hom (by simp [p_eq])
-  have hs : s ≫ fV f g j i i = 𝟙 _ := by simp [s, fV_eq]
-  refine ⟨s, ?_, hs⟩
-  rw [← cancel_mono (fV f g j i i), Category.assoc, hs, Category.comp_id, Category.id_comp]
+  rw [fV_eq]
+  exact pullback_snd_iso_of_left_factors_mono (pullback.fst (j i ≫ f) g).hom (j i).hom
 
 /-- The glue data of the fibre products `U i ×_S Y` along the overlaps `V i k`. -/
 private noncomputable def glueData : PreAdicSpace.GlueData.{u} where
