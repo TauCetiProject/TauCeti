@@ -148,8 +148,8 @@ variable {D : Set (realSpace K)}
 
 /-- Over a unit fundamental domain `D`, the units carrying a positive parameter into the cone
 above `D` form a coset of the torsion. -/
-theorem exists_unitScale_mem_unitCone_iff (hD : IsUnitFundamentalDomain K D) {y : realSpace K}
-    (hy : ∀ w, 0 < y w) :
+theorem exists_forall_unitScale_mem_unitCone_iff_mul_inv_mem_torsion
+    (hD : IsUnitFundamentalDomain K D) {y : realSpace K} (hy : ∀ w, 0 < y w) :
     ∃ u₀ : (𝓞 K)ˣ, ∀ u, unitScale u y ∈ unitCone D ↔ u * u₀⁻¹ ∈ Units.torsion K := by
   obtain ⟨u₀, hu₀⟩ := hD.exists_unitScale_mem _ (surfacePart_mem_normOneSurface hy)
   refine ⟨u₀, fun u ↦ ?_⟩
@@ -165,7 +165,7 @@ theorem hasSum_indicator_unitScale_inv_mem_unitCone (hD : IsUnitFundamentalDomai
     HasSum ({u : (𝓞 K)ˣ | unitScale u⁻¹ y ∈ unitCone D}.indicator fun _ ↦ c)
       (Units.torsionOrder K • c) := by
   classical
-  obtain ⟨u₀, hu₀⟩ := hD.exists_unitScale_mem_unitCone_iff hy
+  obtain ⟨u₀, hu₀⟩ := hD.exists_forall_unitScale_mem_unitCone_iff_mul_inv_mem_torsion hy
   have hT : HasSum ((Units.torsion K : Set (𝓞 K)ˣ).indicator fun _ ↦ c)
       (Units.torsionOrder K • c) := by
     refine hasSum_subtype_iff_indicator.mp ?_

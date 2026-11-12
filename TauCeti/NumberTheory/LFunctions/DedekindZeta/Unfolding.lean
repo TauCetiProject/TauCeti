@@ -122,6 +122,20 @@ private theorem norm_ne_zero_of_ne_zero
     mixedEmbedding.norm (z : mixedSpace K) ≠ 0 :=
   norm_ne_zero_of_mem_idealLattice z.1.2 fun h ↦ z.2 (Submodule.coe_eq_zero.mp h)
 
+/-- A unit multiple of a point of `σ(J)` in the fundamental cone has nonzero norm. -/
+private theorem norm_unit_smul_idealSet_ne_zero (a : idealSet K J) (u : (𝓞 K)ˣ) :
+    mixedEmbedding.norm (u • (a : mixedSpace K)) ≠ 0 := by
+  rw [norm_unit_smul]
+  exact (norm_pos_of_mem a.2.1).ne'
+
+/-- The Gaussian of a nonzero point of `σ(J)` against `N(y)^(s/2)` is integrable on the cone
+for `0 < Re s`. -/
+private theorem integrableOn_unitCone_archGaussian_mul_archNorm_cpow
+    (z : {z : idealLattice K (FractionalIdeal.mk0 K J) // z ≠ 0}) (hs : 0 < s.re) :
+    IntegrableOn (fun y ↦ archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2))
+      (unitCone D) (archHaar K) :=
+  (integrable_archGaussian_mul_archNorm_cpow (norm_ne_zero_of_ne_zero J z) hs).integrableOn
+
 /-- The unfolded double sum over the points `a` of `σ(J)` in the fundamental cone and the units
 `u`: for `Re s > 1`, the cone integrals of the Gaussians of `u a` sum absolutely to `w` times
 `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ ∑_a |N(a)|^(-s)`. -/
@@ -135,14 +149,12 @@ private theorem hasSum_integral_unitCone_archGaussian_idealSet_prod
   set φ : ℂ → mixedSpace K → ℂ := fun r z ↦
     ∫ y in unitCone D, archGaussian y z * (archNorm y : ℂ) ^ (r / 2) ∂archHaar K
   have hσ : 1 < (s.re : ℂ).re := by simpa using hs
-  have hnorm (a : idealSet K J) (u : (𝓞 K)ˣ) : mixedEmbedding.norm (u • (a : mixedSpace K)) ≠ 0 :=
-    by rw [norm_unit_smul]; exact (norm_pos_of_mem a.2.1).ne'
   -- the sum over the units, for each point in the cone
   have hfib (r : ℂ) (hr : 1 < r.re) (a : idealSet K J) : HasSum (fun u : (𝓞 K)ˣ ↦
       φ r (u • (a : mixedSpace K))) (torsionOrder K * (Γ r *
         (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r))) := by
     simpa [φ, Γ, mul_assoc] using hasSum_integral_unitCone_archGaussian_unit_smul hD
-      (by simpa using hnorm a 1) (zero_lt_one.trans hr)
+      (by simpa using norm_unit_smul_idealSet_ne_zero J a 1) (zero_lt_one.trans hr)
   -- the sum over the points in the cone of the sums over the units
   have hcone (r : ℂ) (hr : 1 < r.re) : HasSum (fun a : idealSet K J ↦
       (torsionOrder K : ℂ) * (Γ r * (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r)))
@@ -153,7 +165,8 @@ private theorem hasSum_integral_unitCone_archGaussian_idealSet_prod
   have hbound (p : idealSet K J × (𝓞 K)ˣ) :
       ‖φ s (p.2 • (p.1 : mixedSpace K))‖ ≤ (φ s.re (p.2 • (p.1 : mixedSpace K))).re :=
     (norm_integral_le_integral_norm _).trans_eq
-      (integral_unitCone_norm_archGaussian_mul_archNorm_cpow hD.measurableSet (hnorm p.1 p.2)
+      (integral_unitCone_norm_archGaussian_mul_archNorm_cpow hD.measurableSet
+        (norm_unit_smul_idealSet_ne_zero J p.1 p.2)
         (zero_lt_one.trans hs))
   have hsummable : Summable fun p : idealSet K J × (𝓞 K)ˣ ↦ φ s (p.2 • (p.1 : mixedSpace K)) := by
     refine Summable.of_norm_bounded ((summable_prod_of_nonneg fun p ↦
@@ -181,9 +194,8 @@ theorem hasSum_integral_unitCone_archGaussian (hD : IsUnitFundamentalDomain K D)
   -- regroup the double sum along `(a, u) ↦ u a`, whose fibres have `w` points
   let Φ : idealSet K J × (𝓞 K)ˣ → {z : L // z ≠ 0} := fun p ↦
     ⟨⟨p.2 • (p.1 : mixedSpace K), (Units.unitSMul_mem_idealLattice_iff _ _ _).mpr p.1.2.2⟩,
-      fun h ↦ (norm_pos_of_mem p.1.2.1).ne' (by
-        rw [← norm_unit_smul p.2]
-        exact (congrArg mixedEmbedding.norm (Submodule.coe_eq_zero.mpr h)).trans (map_zero _))⟩
+      fun h ↦ norm_unit_smul_idealSet_ne_zero J p.1 p.2
+        ((congrArg mixedEmbedding.norm (Submodule.coe_eq_zero.mpr h)).trans (map_zero _))⟩
   have hfiber (z : {z : L // z ≠ 0}) :
       ∑' p : Φ ⁻¹' {z}, φ ((p : idealSet K J × (𝓞 K)ˣ).2 • (p.1.1 : mixedSpace K)) =
         torsionOrder K * φ (z : mixedSpace K) := by
@@ -230,11 +242,8 @@ theorem integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one
   set L := idealLattice K (FractionalIdeal.mk0 K J)
   have : Countable L := Countable.of_moduleFinite (R := ℤ)
   have hcone := measurableSet_unitCone hD.measurableSet
-  have hint (z : {z : L // z ≠ 0}) : IntegrableOn
-      (fun y ↦ archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2)) (unitCone D)
-        (archHaar K) :=
-    (integrable_archGaussian_mul_archNorm_cpow (norm_ne_zero_of_ne_zero J z)
-      (zero_lt_one.trans hs)).integrableOn
+  have hint (z : {z : L // z ≠ 0}) :=
+    integrableOn_unitCone_archGaussian_mul_archNorm_cpow J (D := D) z (zero_lt_one.trans hs)
   have hcont : ContinuousOn (fun y ↦ (archNorm y : ℂ) ^ (s / 2) * (latticeTheta L y - 1))
       (unitCone D) := fun y hy ↦ ContinuousAt.continuousWithinAt <|
     ((continuousAt_ofReal_cpow_const _ _ (Or.inr (archNorm_pos (mem_unitCone.mp hy).1).ne')).comp
@@ -273,11 +282,8 @@ theorem integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one
         ∑' a : idealSet K J, (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-s) := by
   set L := idealLattice K (FractionalIdeal.mk0 K J)
   have : Countable L := Countable.of_moduleFinite (R := ℤ)
-  have hint (z : {z : L // z ≠ 0}) : Integrable
-      (fun y ↦ archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2))
-        ((archHaar K).restrict (unitCone D)) :=
-    (integrable_archGaussian_mul_archNorm_cpow (norm_ne_zero_of_ne_zero J z)
-      (zero_lt_one.trans hs)).integrableOn
+  have hint (z : {z : L // z ≠ 0}) :=
+    integrableOn_unitCone_archGaussian_mul_archNorm_cpow J (D := D) z (zero_lt_one.trans hs)
   rw [← (hasSum_integral_of_summable_integral_norm hint
     (summable_integral_unitCone J hD hs)).unique (hasSum_integral_unitCone_archGaussian J hD hs)]
   exact setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun y hy ↦
@@ -314,8 +320,7 @@ theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant
   rw [integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one J hD hs] at h
   rw [mellinConstant_eq_mul_surfaceHaar_real hD]
   convert h using 1
-  · push_cast
-    rfl
+  · simp only [ofReal_mul, ofReal_div, ofReal_pow, ofReal_ofNat, ofReal_natCast]
   · rw [LSeries_rayClassCoeff_one_eq_tsum_idealSet J hJ hs, cpow_neg]
     field_simp
 
