@@ -211,18 +211,16 @@ private theorem lintegral_rpow_neg_mul_min {θ A B : ℝ} (hA : 0 < A) (hB : 0 <
   have hmp : MeasurePreserving (c * ·) multHaar multHaar :=
     ⟨measurable_const_mul c, map_multHaar_mul_left hc⟩
   have hmeas : Measurable fun t : ℝ => ‖t ^ (-θ) * min 1 t‖ₑ := by fun_prop
-  rw [kMethodConst_def, eLpNorm_one_eq_lintegral_enorm
+  rw [kMethodConst_def, eLpNorm_one_eq_lintegral_eNorm
     (by fun_prop : Measurable fun t : ℝ => t ^ (-θ) * min 1 t).aestronglyMeasurable,
     ← hmp.lintegral_comp hmeas,
     ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine lintegral_congr_ae ?_
   filter_upwards [ae_pos_multHaar] with t ht
   have hct : 0 < c * t := mul_pos hc ht
-  rw [Real.enorm_of_nonneg (mul_nonneg (Real.rpow_nonneg hct.le _) (le_min zero_le_one hct.le)),
+  rw [Real.eNorm_of_nonneg (mul_nonneg (Real.rpow_nonneg hct.le _) (le_min zero_le_one hct.le)),
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
-  have hα : 0 < A ^ θ := Real.rpow_pos_of_pos hA θ
-  have hβ : 0 < B ^ θ := Real.rpow_pos_of_pos hB θ
   have h1 : A ^ (1 - θ) = A / A ^ θ := by rw [Real.rpow_sub hA, Real.rpow_one]
   have h2 : (c * t) ^ (-θ) = A ^ θ / B ^ θ * t ^ (-θ) := by
     rw [Real.mul_rpow hc.le ht.le, hc_def, Real.rpow_neg (div_pos hB hA).le,
@@ -344,7 +342,7 @@ private theorem lintegral_lintegral_mul_kernel_mul_le {θ₀ θ₁ : ℝ} (hθ�
         have hs : Measurable fun r => κ s r * g r := hκg.comp measurable_prodMk_left
         rw [Pi.mul_apply, lintegral_const_mul _ hs]
     _ = eLpNorm (f * fun s => ∫⁻ r, κ s r * g r ∂multHaar) 1 multHaar := by
-        rw [eLpNorm_one_eq_lintegral_enorm (hf.mul hH).aestronglyMeasurable]
+        rw [eLpNorm_one_eq_lintegral_eNorm (hf.mul hH).aestronglyMeasurable]
         simp
     _ ≤ eLpNorm f p multHaar * eLpNorm (fun s => ∫⁻ r, κ s r * g r ∂multHaar) p' multHaar :=
         eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal_of_pos one_pos
@@ -371,11 +369,11 @@ private theorem measurable_and_eLpNorm_eq (θ : ℝ) (p : ℝ≥0∞) (x : C.Sum
     (((measurable_id (α := ℝ)).pow_const _).mul hmono.measurable).ennreal_ofReal
   refine ⟨hm, ?_⟩
   rw [kMethodENorm_def]
-  refine eLpNorm_congr_enorm_ae hm.aestronglyMeasurable
+  refine eLpNorm_congr_eNorm_ae hm.aestronglyMeasurable
     (aestronglyMeasurable_rpow_neg_mul_kFunctional θ x) ?_
   filter_upwards [ae_pos_multHaar] with s hs
-  rw [max_eq_left hs.le, Real.enorm_of_nonneg
-    (mul_nonneg (Real.rpow_nonneg hs.le _) (kFunctional_nonneg hs.le)), enorm_eq_self]
+  rw [max_eq_left hs.le, Real.eNorm_of_nonneg
+    (mul_nonneg (Real.rpow_nonneg hs.le _) (kFunctional_nonneg hs.le)), eNorm_eq_self]
 
 end Weighted
 
@@ -444,7 +442,6 @@ private theorem kFunctional_remainder_le
     C.kFunctional t (T S y' + T S z' + T y b + T z b) ≤ 2⁻¹ ^ N *
       (8 * M₀ * ‖A.interFst a‖ * ‖B.interSnd b‖ + 10 * t * M₁ * ‖A.interFst a‖ * ‖B.interFst b‖ +
         2 * M₀ * ‖A.interSnd a‖ * ‖B.interFst b‖) := by
-  have h2 : (0 : ℝ) ≤ 2⁻¹ ^ N := by positivity
   have e1 := (hK t ht S y').1
   have e2 := (hK t ht S z').2.1
   have e3 := (hK t ht y b).1
@@ -530,7 +527,6 @@ private theorem ofReal_rpow_mul_kFunctional_le_tsum_tsum (hM₀ : 0 ≤ M₀) (h
   set R := 8 * M₀ * ‖A.interFst a‖ * ‖B.interSnd b‖ +
     10 * t * M₁ * ‖A.interFst a‖ * ‖B.interFst b‖ + 2 * M₀ * ‖A.interSnd a‖ * ‖B.interFst b‖
   set Q := t ^ (-θ) * R
-  have hQ : 0 ≤ Q := by positivity
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
   obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one
     (div_pos (NNReal.coe_pos.2 hε) (by positivity : (0 : ℝ) < Q + 1)) (by norm_num : (2⁻¹ : ℝ) < 1)
@@ -639,14 +635,14 @@ private theorem kMethodENorm_le_tsum_tsum_lintegral (hM₀ : 0 ≤ M₀) (hM₁ 
   have hmeas (c : C.SumSpace) :
       AEMeasurable (fun t => ENNReal.ofReal (t ^ (-θ) * C.kFunctional t c)) multHaar :=
     (aestronglyMeasurable_rpow_neg_mul_kFunctional θ c).aemeasurable.ennreal_ofReal
-  rw [kMethodENorm_def, eLpNorm_one_eq_lintegral_enorm
+  rw [kMethodENorm_def, eLpNorm_one_eq_lintegral_eNorm
     (aestronglyMeasurable_rpow_neg_mul_kFunctional θ _)]
   calc ∫⁻ t, ‖t ^ (-θ) * C.kFunctional t (T a b)‖ₑ ∂multHaar
       ≤ ∫⁻ t, ∑' j, ∑' k, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (u j) (v k)))
           ∂multHaar := by
         refine lintegral_mono_ae ?_
         filter_upwards [ae_pos_multHaar] with t ht
-        rw [Real.enorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht.le _) (kFunctional_nonneg ht.le))]
+        rw [Real.eNorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht.le _) (kFunctional_nonneg ht.le))]
         exact ofReal_rpow_mul_kFunctional_le_tsum_tsum hM₀ hM₁ hK ht hua hSa hya hza hvb hyb hzb
     _ = _ := by
         rw [lintegral_tsum fun j => AEMeasurable.tsum fun k => hmeas _]
