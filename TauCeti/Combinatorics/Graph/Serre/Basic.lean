@@ -218,6 +218,12 @@ attribute [simp] Hom.map_src Hom.map_rev
     Δ.tgt (f.mapE e) = f.mapV (Γ.tgt e) := by
   simp only [tgt, ← f.map_rev, f.map_src]
 
+/-- `Hom.map_tgt` with the terminal vertex of the dart written as the source of its reverse:
+`tgt [e] = [src (rev e)]`. -/
+theorem Hom.tgt_mapE_eq_mapV_src_rev {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (e : Γ.E) : Δ.tgt (f.mapE e) = f.mapV (Γ.src (Γ.rev e)) := by
+  rw [Hom.map_tgt, tgt_def]
+
 /-- A morphism of Serre graphs sends darts with the same geometric edge to darts with the same
 geometric edge. -/
 theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)

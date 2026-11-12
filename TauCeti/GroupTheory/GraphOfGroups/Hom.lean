@@ -33,8 +33,8 @@ induced map described above.
 Morphisms compose, with `δ^{ΨΦ}_e = ψ(δ^Φ_e) · δ^Ψ_[e]`, and composition is associative and
 unital. A morphism `Φ` induces a homomorphism `π₁(𝔸, T) →* π₁(𝔹, T')` of the groups relative to
 sets of darts, provided the image `δ_e · [e] · δ_{rev e}⁻¹` of every dart of `T` is trivial in
-`π₁(𝔹, T')`; this holds when `Φ` maps `T` into `T'` and has trivial twisting elements on `T`, and
-always holds for `T = ∅`. The induced homomorphisms are functorial.
+`π₁(𝔹, T')`; this holds when `Φ` maps `T` into `T'` and has trivial twisting elements on the darts
+of `T` and their reverses, and always holds for `T = ∅`. The induced homomorphisms are functorial.
 
 `Hom.id` and `Hom.comp` are reducible, with underlying graph morphisms given by structure
 literals, so that `A_{(Hom.id 𝔸).graph.mapV v}` reduces to `A_v` and the vertex group homomorphisms
@@ -129,25 +129,23 @@ twisting element of the reverse dart: `φ_{tgt e} (ω_e c) = δ_{rev e} · ω_[e
 The vertex `tgt e` is written `src (rev e)`, the vertex at which `δ_{rev e}` lives. -/
 theorem vertexHom_ω (Φ : Hom 𝔸 𝔹) (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
     Φ.vertexHom (Γ.src (Γ.rev e)) (𝔸.ω e c) =
-      Φ.twist (Γ.rev e) * MulEquiv.cast (M := 𝔹.vertexGroup)
-        ((Δ.src_rev _).symm.trans <| (congrArg Δ.src (Φ.graph.map_rev e).symm).trans <|
-          Φ.graph.map_src (Γ.rev e))
+      Φ.twist (Γ.rev e) * MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.tgt_mapE_eq_mapV_src_rev e)
         (𝔹.ω (Φ.graph.mapE e) (Φ.edgeHom e c)) * (Φ.twist (Γ.rev e))⁻¹ := by
   -- `α` at a dart equal to `rev (Φ.graph.mapE e)` is `ω` at `Φ.graph.mapE e`, up to transport.
   have key : ∀ (e' : Δ.E) (_ : e' = Δ.rev (Φ.graph.mapE e))
       (h₁ : Δ.toGeomEdge (Φ.graph.mapE e) = Δ.toGeomEdge e')
       (h₂ : Δ.src e' = Φ.graph.mapV (Γ.src (Γ.rev e)))
-      (h₃ : Δ.tgt (Φ.graph.mapE e) = Φ.graph.mapV (Γ.src (Γ.rev e)))
       (x : 𝔹.edgeGroup (Δ.toGeomEdge (Φ.graph.mapE e))),
       MulEquiv.cast (M := 𝔹.vertexGroup) h₂ (𝔹.α e' (MulEquiv.cast (M := 𝔹.edgeGroup) h₁ x)) =
-        MulEquiv.cast (M := 𝔹.vertexGroup) h₃ (𝔹.ω (Φ.graph.mapE e) x) := by
-    rintro _ rfl h₁ h₂ h₃ x
+        MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.tgt_mapE_eq_mapV_src_rev e)
+          (𝔹.ω (Φ.graph.mapE e) x) := by
+    rintro _ rfl h₁ h₂ x
     simp only [α_rev_apply, MulEquiv.cast_apply, cast_cast, cast_eq]
+    -- Both sides are now `ω_[e] x` transported to the same vertex group; the two transports
+    -- start at `src (rev [e])` and at `tgt [e]`, which agree by unfolding `SerreGraph.tgt`.
     rfl
   have h := Φ.vertexHom_α (Γ.rev e) (MulEquiv.cast (M := 𝔸.edgeGroup) (Γ.toGeomEdge_rev e).symm c)
-  rw [Φ.edgeHom_rev, key _ (Φ.graph.map_rev e) _ _
-    ((Δ.src_rev _).symm.trans <| (congrArg Δ.src (Φ.graph.map_rev e).symm).trans <|
-      Φ.graph.map_src (Γ.rev e))] at h
+  rw [Φ.edgeHom_rev, key _ (Φ.graph.map_rev e)] at h
   simpa only [α_rev_apply, MulEquiv.cast_apply, cast_cast, cast_eq] using h
 
 /-! ### Identities and composition -/
@@ -155,13 +153,13 @@ theorem vertexHom_ω (Φ : Hom 𝔸 𝔹) (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toG
 variable (𝔸) in
 /-- The identity morphism of a graph of groups, with trivial twisting elements. -/
 protected abbrev id : Hom 𝔸 𝔸 where
-  graph := ⟨_root_.id, _root_.id, fun _ => rfl, fun _ => rfl⟩
+  graph := ⟨fun v => v, fun e => e, fun _ => rfl, fun _ => rfl⟩
   vertexHom _ := MonoidHom.id _
   edgeHom _ := MonoidHom.id _
   twist _ := 1
   edgeHom_rev e c := by simp only [MonoidHom.id_apply, MulEquiv.cast_apply, cast_cast, cast_eq]
   vertexHom_α e c := by simp only [MonoidHom.id_apply, MulEquiv.cast_apply, cast_eq, one_mul,
-    inv_one, mul_one, id_eq]
+    inv_one, mul_one]
 
 /-- The composite of two morphisms of graphs of groups. Its twisting elements are
 `ψ(δ^Φ_e) · δ^Ψ_[e]`. -/
@@ -176,6 +174,8 @@ abbrev comp (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) : Hom 𝔸 ℂ where
       (Ψ.twist (Φ.graph.mapE e))
   edgeHom_rev e c := by
     simp only [MonoidHom.comp_apply, Φ.edgeHom_rev]
+    -- The transport on the right is along `[ΨΦ e]`, which unfolds to `Ψ [Φ e]` because the graph
+    -- morphism above is a structure literal; `exact` sees through this.
     exact Ψ.edgeHom_cast _ _
   vertexHom_α e c := by
     simp only [MonoidHom.comp_apply, Φ.vertexHom_α, map_mul, map_inv, Ψ.vertexHom_cast,
@@ -230,16 +230,26 @@ theorem comp_twist (e : Γ.E) :
 
 end comp
 
+-- In the next three proofs the underlying graph morphisms agree by `rfl`: `Hom.id` and `Hom.comp`
+-- are reducible and give their graph morphisms as structure literals, so both sides unfold to the
+-- same pair of maps. The types of the remaining fields then agree, and `heq_of_eq` compares them.
+
+/-- The identity morphism is a left unit for composition. -/
 @[simp] theorem id_comp (Φ : Hom 𝔸 𝔹) : (Hom.id 𝔹).comp Φ = Φ :=
-  Hom.ext rfl HEq.rfl HEq.rfl <| heq_of_eq <| funext fun e => by
+  Hom.ext rfl (heq_of_eq <| funext fun _ => MonoidHom.id_comp _)
+    (heq_of_eq <| funext fun _ => MonoidHom.id_comp _) <| heq_of_eq <| funext fun e => by
     simp only [MonoidHom.id_apply, map_one, mul_one]
 
+/-- The identity morphism is a right unit for composition. -/
 @[simp] theorem comp_id (Φ : Hom 𝔸 𝔹) : Φ.comp (Hom.id 𝔸) = Φ :=
-  Hom.ext rfl HEq.rfl HEq.rfl <| heq_of_eq <| funext fun e => by simp
+  Hom.ext rfl (heq_of_eq <| funext fun _ => MonoidHom.comp_id _)
+    (heq_of_eq <| funext fun _ => MonoidHom.comp_id _) <| heq_of_eq <| funext fun e => by simp
 
+/-- Composition of morphisms of graphs of groups is associative. -/
 theorem comp_assoc (Ω : Hom ℂ 𝔻) (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) :
     (Ω.comp Ψ).comp Φ = Ω.comp (Ψ.comp Φ) :=
-  Hom.ext rfl HEq.rfl HEq.rfl <| heq_of_eq <| funext fun e => by
+  Hom.ext rfl (heq_of_eq <| funext fun _ => MonoidHom.comp_assoc _ _ _)
+    (heq_of_eq <| funext fun _ => MonoidHom.comp_assoc _ _ _) <| heq_of_eq <| funext fun e => by
     simp only [MonoidHom.comp_apply, map_mul, vertexHom_cast, mul_assoc]
     simp only [MulEquiv.cast_apply, cast_cast]
 
@@ -267,7 +277,7 @@ private theorem of_twist_congr {e e' : Γ.E} (h : e = e') :
   rfl
 
 /-- The image of the reverse dart is the inverse of the image of the dart. -/
-theorem edgeImage_rev (e : Γ.E) : Φ.edgeImage T' (Γ.rev e) = (Φ.edgeImage T' e)⁻¹ := by
+@[simp] theorem edgeImage_rev (e : Γ.E) : Φ.edgeImage T' (Γ.rev e) = (Φ.edgeImage T' e)⁻¹ := by
   simp only [edgeImage_def, Φ.graph.map_rev, π₁Tree.edge_rev, mul_inv_rev, inv_inv, mul_assoc,
     of_twist_congr Φ T' (Γ.rev_rev e)]
 
@@ -327,7 +337,8 @@ end map
 @[simp] theorem map_id (hT : ∀ e ∈ T, (Hom.id 𝔸).edgeImage T e = 1 := fun e he => by
       rw [Hom.edgeImage_id, edge_eq_one he]) :
     map (Hom.id 𝔸) hT = MonoidHom.id (π₁Tree 𝔸 T) :=
-  hom_ext (fun v => by rw [map_comp_of]; rfl) fun e => by simp
+  hom_ext (fun v => by rw [map_comp_of, Hom.id_vertexHom, MonoidHom.comp_id, MonoidHom.id_comp])
+    fun e => by simp
 
 /-- The image of a dart under a composite morphism is the image under the second morphism of its
 image under the first. -/
