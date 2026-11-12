@@ -114,7 +114,7 @@ private theorem exists_equiv_linearEquiv_aux :
     refine Submodule.nontrivial_iff_ne_bot.mp (hQind j₁).nontrivial ?_
     simpa [hbot] using (le_top : Q j₁ ≤ ⊤)
   -- The summand `P i₀` is complemented by the other `P`s.
-  set s : Set ι := {i | i ≠ i₀} with hs
+  set s : Set ι := {i | i ≠ i₀}
   set S : Submodule A M := ⨆ i ∈ s, P i
   have hcomplP : IsCompl (P i₀) S := hP.isCompl_biSup_ne hPt i₀
   -- Exchange it for a summand of the second decomposition; its endomorphism ring is local, which is
