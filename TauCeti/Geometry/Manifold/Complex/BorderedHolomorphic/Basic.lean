@@ -338,31 +338,10 @@ theorem toOpenPartialHomeomorph_mem_borderedHolomorphicGroupoid
     {h : ClosedUpperHalfPlane ≃ₜ ClosedUpperHalfPlane} {F G : ℂ → ℂ}
     (hF : Differentiable ℂ F) (hG : Differentiable ℂ G)
     (hhF : ∀ z, (h z : ℂ) = F z) (hhG : ∀ z, (h.symm z : ℂ) = G z) :
-    h.toOpenPartialHomeomorph ∈ borderedHolomorphicGroupoid := by
-  have hcoord : ∀ {k : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {K : ℂ → ℂ},
-      (∀ z, (k z : ℂ) = K z) → ∀ {z : ℂ}, 0 ≤ z.im →
-        (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm) z = K z := by
-    intro k K hk z hz
-    simp only [Function.comp_apply, closedUpperHalfPlaneModel_apply, hk]
-    rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz]
-  have hsmooth : ∀ {k : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {K : ℂ → ℂ},
-      Differentiable ℂ K → (∀ z, (k z : ℂ) = K z) →
-        ContDiffOn ℝ ∞ (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm)
-          (closedUpperHalfPlaneModel.symm ⁻¹' univ ∩ range closedUpperHalfPlaneModel) := by
-    intro k K hK hk
-    refine ((hK.contDiff (n := ∞)).restrict_scalars ℝ).contDiffOn.congr fun z hz ↦ ?_
-    exact hcoord hk (by simpa using hz.2)
-  have hholo : ∀ {k : ClosedUpperHalfPlane → ClosedUpperHalfPlane} {K : ℂ → ℂ},
-      Differentiable ℂ K → (∀ z, (k z : ℂ) = K z) →
-        DifferentiableOn ℂ (closedUpperHalfPlaneModel ∘ k ∘ closedUpperHalfPlaneModel.symm)
-          (closedUpperHalfPlaneModel.symm ⁻¹' univ ∩ {z | 0 < z.im}) := by
-    intro k K hK hk
-    exact hK.differentiableOn.congr fun z hz ↦ hcoord hk (le_of_lt hz.2)
-  refine mem_borderedHolomorphicGroupoid_iff.2 ⟨⟨?_, ?_⟩, ?_, ?_⟩
-  · simpa [contDiffPregroupoid] using hsmooth hF hhF
-  · simpa [contDiffPregroupoid] using hsmooth hG hhG
-  · simpa using hholo hF hhF
-  · simpa using hholo hG hhG
+    h.toOpenPartialHomeomorph ∈ borderedHolomorphicGroupoid :=
+  mem_borderedHolomorphicGroupoid_of_contDiffAt
+    (fun w _ ↦ ⟨(hF.contDiff (n := ∞)).contDiffAt, hhF w⟩)
+    (fun w _ ↦ ⟨(hG.contDiff (n := ∞)).contDiffAt, hhG w⟩)
 
 /-- Translation by one, as a homeomorphism of the closed upper half-plane. -/
 def addOne : ClosedUpperHalfPlane ≃ₜ ClosedUpperHalfPlane :=
