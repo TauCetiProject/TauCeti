@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Sobolev
 /-!
 # The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)` for coefficients of small oscillation
 
-Let `0 < n` and `1 < p < ∞`. For `u ∈ W^{2,p}(ℝⁿ)` write `D²u` for its weak Hessian
+Let `1 < p < ∞`. For `u ∈ W^{2,p}(ℝⁿ)` write `D²u` for its weak Hessian
 `TauCeti.Wkp.iteratedGradient 1 u`, an `Lᵖ` field of endomorphisms of `ℝⁿ`, so that
 `⟪D²u(x) eᵢ, eⱼ⟫` is the weak second derivative `∂ᵢ∂ⱼu`. This file proves the strong-solution
 estimate for the non-divergence-form operator `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu` with coefficients of small

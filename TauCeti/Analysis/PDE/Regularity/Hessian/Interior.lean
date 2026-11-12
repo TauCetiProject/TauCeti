@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 /-!
 # The interior Calderón–Zygmund estimate on balls
 
-Let `0 < n` and `1 < p < ∞`. This file proves the interior `W^{2,p}` estimate on a ball for strong
+Let `1 < p < ∞`. This file proves the interior `W^{2,p}` estimate on a ball for strong
 solutions of a non-divergence-form equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ⟪b, ∇u⟫ + c u = f` whose principal
 coefficients have small oscillation and whose lower-order coefficients are bounded
 (`TauCeti.PDE.exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq`).

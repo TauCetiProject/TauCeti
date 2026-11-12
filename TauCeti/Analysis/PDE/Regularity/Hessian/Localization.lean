@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 /-!
 # The localized Calderón–Zygmund estimate on a domain
 
-Let `0 < n`, `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file localizes the whole-space
+Let `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file localizes the whole-space
 `W^{2,p}` estimate for coefficients of small oscillation
 (`TauCeti.PDE.exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le`) to a
 strong solution on `Ω`, by a smooth cutoff

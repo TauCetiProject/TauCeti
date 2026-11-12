@@ -13,7 +13,7 @@ import TauCeti.Topology.Instances.Matrix
 /-!
 # The interior Calderón–Zygmund estimate for continuous coefficients
 
-Let `0 < n`, `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file proves the interior `W^{2,p}`
+Let `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file proves the interior `W^{2,p}`
 estimate for strong solutions of a non-divergence-form equation
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ⟪b, ∇u⟫ + c u = f` whose principal coefficients are continuous on `Ω` and whose
 lower-order coefficients are bounded, in

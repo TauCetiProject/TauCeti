@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 /-!
 # The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)` for uniformly continuous coefficients
 
-Let `0 < n` and `1 < p < ∞`. This file proves the global `W^{2,p}` estimate on the whole space for
+Let `1 < p < ∞`. This file proves the global `W^{2,p}` estimate on the whole space for
 strong solutions of a non-divergence-form equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` whose coefficients are
 uniformly elliptic, bounded and uniformly continuous: there is a constant `C` such that every
 `u ∈ W^{2,p}(ℝⁿ)` with `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f ∈ Lᵖ(ℝⁿ)` almost everywhere satisfies
