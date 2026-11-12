@@ -35,15 +35,16 @@ group of the quadratic equation.
 [IFT], §2.7, and puts the commutators first, `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`.
 
 When there is no coefficient atom (`m = 0`) the two shapes coincide: the product of the atoms of
-the equation is the word `S₀` of its own variables (`basicWord_orientable`,
-`basicWord_orientableCoeff`), and the basic sequence `basicSeq S` is the sequence `basicWordSeq`
-of [IFT] in these variables, beginning with `y₁ ↦ x₁ y₁`.
+the equation is the word `S₀` of its own variables (`basicWord_eq_prod_atoms_orientable`,
+`basicWord_eq_prod_atoms_orientableCoeff_zero`), and the basic sequence `basicSeq S` is the
+sequence `basicWordSeq` of [IFT] in these variables, beginning with `y₁ ↦ x₁ y₁`.
 
 When there are coefficient atoms (`m ≠ 0`) the two shapes are exchanged by inversion: the inverse
 of `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ` is the word `S₀` for the mirrored variables and coefficients
 `xᵢ' = y_{n+1-i}`, `yᵢ' = x_{n+1-i}`, `zⱼ' = z_{m+1-j}` and `cⱼ' = c_{m+1-j}⁻¹`
-(`basicWord_rev_orientableCoeff`), and `basicSeq S` is by definition the sequence `basicWordSeq`
-of these mirrored data, so that the formulas of [IFT] apply verbatim to `S₀`.
+(`basicWord_rev_eq_inv_prod_atoms_orientableCoeff`), and `basicSeq S` is by definition the
+sequence `basicWordSeq` of these mirrored data, so that the formulas of [IFT] apply verbatim to
+`S₀`.
 
 In both cases the automorphisms of `basicSeq S` fix the coefficients and the left side of `S`
 (`apply_toWord_of_mem_basicSeq`).
@@ -73,6 +74,8 @@ automorphism `γ_j^{p_j}` is applied first: `z^{φ_j} = (z^{γ_j^{p_j}})^{φ_{j-
   sequence of a standard orientable quadratic equation fix its left side.
 * `TauCeti.GroupAlgGeom.Lift.phi_basicSeq_toWord`: the automorphisms `φ_{j,p}` fix the left side
   of the equation.
+* `TauCeti.GroupAlgGeom.Lift.wordMap_phi_basicSeq_mem_V_iff`: the automorphisms `φ_{j,p}` permute
+  the solutions of the equation.
 
 ## References
 
@@ -227,6 +230,27 @@ theorem phi_concat (p : List ℕ) (e : ℕ) :
     phi Γ (p ++ [e]) = phi Γ p * Γ.getD (p.length % Γ.length) 1 ^ e := by
   simp [phi, List.zipIdx_append]
 
+/-- For the empty sequence, `φ_{j,p}` is the identity. -/
+@[simp]
+theorem phi_nil_left (p : List ℕ) : phi ([] : List M) p = 1 := by
+  simp [phi]
+
+/-- `φ_{1,(e)} = γ₁ ^ e`. -/
+@[simp]
+theorem phi_singleton (e : ℕ) : phi Γ [e] = Γ.getD 0 1 ^ e := by
+  simp [phi]
+
+/-- `φ_{j,p}` is periodic: if the length of `p` is a multiple of the length of the sequence, then
+`φ` of `p` followed by `q` is `φ` of `p` times `φ` of `q`. -/
+theorem phi_append_of_dvd {p : List ℕ} (h : Γ.length ∣ p.length) (q : List ℕ) :
+    phi Γ (p ++ q) = phi Γ p * phi Γ q := by
+  obtain ⟨k, hk⟩ := h
+  induction q using List.reverseRecOn with
+  | nil => simp
+  | append_singleton q e ih =>
+    rw [← List.append_assoc, phi_concat, ih, phi_concat, mul_assoc, List.length_append, hk,
+      Nat.mul_add_mod]
+
 /-- With all exponents zero, `φ_{j,p}` is the identity. -/
 @[simp]
 theorem phi_replicate_zero (j : ℕ) : phi Γ (List.replicate j 0) = 1 := by
@@ -260,6 +284,12 @@ theorem phi_apply_of_forall_mem {H : Type*} [Mul H] {Γ : List (MulAut H)} {w : 
       exact h _ (List.getElem_mem hlt)
     · rw [List.getD_eq_default _ _ hle, MulAut.one_apply]
 
+/-- For a sequence of automorphisms of `H`, the inverses of the automorphisms `φ_{j,p}` fix every
+element fixed by all the automorphisms of the sequence. -/
+theorem phi_symm_apply_of_forall_mem {H : Type*} [Mul H] {Γ : List (MulAut H)} {w : H}
+    (h : ∀ γ ∈ Γ, γ w = w) (p : List ℕ) : (phi Γ p).symm w = w :=
+  (phi Γ p).symm_apply_eq.2 (phi_apply_of_forall_mem h p).symm
+
 section SeqPhi
 
 variable {x y : Fin n → X} {z : Fin m → X} (inj : (Sum.elim (Sum.elim x y) z).Injective)
@@ -276,6 +306,16 @@ theorem phi_basicWordSeq_basicWord (p : List ℕ) :
 theorem phi_basicWordSeq_inl (p : List ℕ) (g : G) : phi (basicWordSeq inj c) p (inl g) = inl g :=
   phi_apply_of_forall_mem (fun _ hγ => apply_inl_of_mem_basicWordSeq inj c hγ g) p
 
+@[simp]
+theorem phi_basicWordSeq_symm_basicWord (p : List ℕ) :
+    (phi (basicWordSeq inj c) p).symm (basicWord x y z c) = basicWord x y z c :=
+  phi_symm_apply_of_forall_mem (fun _ hγ => apply_basicWord_of_mem_basicWordSeq inj c hγ) p
+
+@[simp]
+theorem phi_basicWordSeq_symm_inl (p : List ℕ) (g : G) :
+    (phi (basicWordSeq inj c) p).symm (inl g) = inl g :=
+  phi_symm_apply_of_forall_mem (fun _ hγ => apply_inl_of_mem_basicWordSeq inj c hγ g) p
+
 end SeqPhi
 
 /-! ### Standard orientable quadratic equations -/
@@ -291,7 +331,7 @@ variable {c : Fin m → G} {d : G}
 /-- The inverse of the product of the atoms of the standard equation
 `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` is the word `S₀` of the mirrored variables and coefficients:
 the indices are reversed, `x` and `y` are exchanged and the coefficients are inverted. -/
-theorem basicWord_rev_orientableCoeff (hnm : 0 < n + m)
+theorem basicWord_rev_eq_inv_prod_atoms_orientableCoeff (hnm : 0 < n + m)
     (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     basicWord (y ∘ Fin.rev) (x ∘ Fin.rev) (z ∘ Fin.rev) (fun j => (c j.rev)⁻¹) =
       (orientableCoeff n m hnm x y z inj c hc d hd).atoms.prod⁻¹ := by
@@ -304,14 +344,15 @@ theorem basicWord_rev_orientableCoeff (hnm : 0 < n + m)
 
 /-- The product of the atoms of the standard equation `∏ᵢ [xᵢ, yᵢ] d = 1` without coefficient
 atoms is the word `S₀` of its variables. -/
-theorem basicWord_orientableCoeff {z : Fin 0 → X} {c : Fin 0 → G} (hn : 0 < n + 0)
-    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+theorem basicWord_eq_prod_atoms_orientableCoeff_zero {z : Fin 0 → X} {c : Fin 0 → G}
+    (hn : 0 < n + 0) (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1)
+    (hd : d ≠ 1) :
     basicWord x y z c = (orientableCoeff n 0 hn x y z inj c hc d hd).atoms.prod := by
   simp [atoms_orientableCoeff, basicWord_def, funext (commAtom_def x y)]
 
 /-- The product of the atoms of the standard equation `∏ᵢ [xᵢ, yᵢ] = 1` is the word `S₀` of its
 variables. -/
-theorem basicWord_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+theorem basicWord_eq_prod_atoms_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     basicWord x y Fin.elim0 (Fin.elim0 : Fin 0 → G) = (orientable n hn x y inj).atoms.prod := by
   simp [atoms_orientable, basicWord_def, funext (commAtom_def x y)]
 
@@ -382,15 +423,16 @@ theorem apply_prod_atoms_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) :
     γ S.atoms.prod = S.atoms.prod := by
   cases S with
   | orientable n hn x y inj =>
-    simpa only [basicWord_orientable hn inj] using apply_basicWord_of_mem_basicWordSeq _ _ hγ
+    simpa only [basicWord_eq_prod_atoms_orientable hn inj] using
+      apply_basicWord_of_mem_basicWordSeq _ _ hγ
   | orientableCoeff n m hnm x y z inj c hc d hd =>
     rw [basicSeq] at hγ
     split_ifs at hγ with hm
     · subst hm
-      simpa only [basicWord_orientableCoeff hnm inj hc hd] using
+      simpa only [basicWord_eq_prod_atoms_orientableCoeff_zero hnm inj hc hd] using
         apply_basicWord_of_mem_basicWordSeq _ _ hγ
     · have h := apply_basicWord_of_mem_basicWordSeq _ _ hγ
-      rwa [basicWord_rev_orientableCoeff hnm inj hc hd, map_inv, inv_inj] at h
+      rwa [basicWord_rev_eq_inv_prod_atoms_orientableCoeff hnm inj hc hd, map_inv, inv_inj] at h
   | nonorientable n hn x inj => exact (not_isOrientable_nonorientable hn inj hS).elim
   | nonorientableCoeff n m hn x z inj c hc d hd =>
     exact (not_isOrientable_nonorientableCoeff hn inj hc hd hS).elim
@@ -412,6 +454,43 @@ coefficients. -/
 @[simp]
 theorem phi_basicSeq_inl (p : List ℕ) (g : G) : phi (basicSeq S hS) p (inl g) = inl g :=
   phi_apply_of_forall_mem (fun _ hγ => apply_inl_of_mem_basicSeq hS hγ g) p
+
+@[simp]
+theorem phi_basicSeq_symm_toWord (p : List ℕ) : (phi (basicSeq S hS) p).symm S.toWord = S.toWord :=
+  phi_symm_apply_of_forall_mem (fun _ hγ => apply_toWord_of_mem_basicSeq hS hγ) p
+
+@[simp]
+theorem phi_basicSeq_symm_inl (p : List ℕ) (g : G) : (phi (basicSeq S hS) p).symm (inl g) = inl g :=
+  phi_symm_apply_of_forall_mem (fun _ hγ => apply_inl_of_mem_basicSeq hS hγ g) p
+
+variable {H : Type*} [Group H] (ι : G →* H)
+
+/-- Every automorphism of the basic sequence of a standard orientable quadratic equation `S = 1`
+permutes the solutions of `S = 1`: a point `v` is a solution exactly when the point
+`x ↦ (γ x)(v)` is. -/
+theorem wordMap_mem_V_iff_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) (v : X → H) :
+    wordMap ι (fun x => γ (inr (.of x))) v ∈ V ι {S.toWord} ↔ v ∈ V ι {S.toWord} := by
+  have h := DFunLike.congr_fun
+    (eval_wordMap (ι := ι) (.ofMulEquiv γ fun g => apply_inl_of_mem_basicSeq hS hγ g) v) S.toWord
+  simp_all [apply_toWord_of_mem_basicSeq hS hγ]
+
+/-- For a standard orientable quadratic equation `S = 1`, the value of the left side of `S` at the
+point `x ↦ (φ_{j,p} x)(v)` is its value at `v`. -/
+@[simp]
+theorem eval_wordMap_phi_basicSeq_toWord (p : List ℕ) (v : X → H) :
+    eval ι (wordMap ι (fun x => phi (basicSeq S hS) p (inr (.of x))) v) S.toWord =
+      eval ι v S.toWord := by
+  have h := DFunLike.congr_fun
+    (eval_wordMap (ι := ι) (.ofMulEquiv (phi (basicSeq S hS) p) (phi_basicSeq_inl hS p)) v)
+    S.toWord
+  simp_all
+
+/-- The automorphisms `φ_{j,p}` of a standard orientable quadratic equation `S = 1` permute the
+solutions of `S = 1`: a point `v` is a solution exactly when the point `x ↦ (φ_{j,p} x)(v)` is. -/
+theorem wordMap_phi_basicSeq_mem_V_iff (p : List ℕ) (v : X → H) :
+    wordMap ι (fun x => phi (basicSeq S hS) p (inr (.of x))) v ∈ V ι {S.toWord} ↔
+      v ∈ V ι {S.toWord} := by
+  simp
 
 /-- The basic sequence of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` has `4n - 1` terms. -/
 @[simp]

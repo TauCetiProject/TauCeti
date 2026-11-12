@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Twist
 public import Mathlib.Algebra.Group.Commutator
 import TauCeti.Data.List.ProdOfFn
 import Mathlib.GroupTheory.Commutator.Basic
+import Mathlib.GroupTheory.GroupAction.FixedPoints
 import Mathlib.Tactic.Group
 
 /-!
@@ -47,8 +48,12 @@ formulas with `A ^ k` in place of `A`, for every integer `k` ([IFT], Lemma 41).
 
 ## Main results
 
+* `TauCeti.GroupAlgGeom.Lift.eval_coeffAtom`, `eval_commAtom`, `eval_basicWord`: the values of
+  the atoms and of `S₀` at a point.
 * `TauCeti.GroupAlgGeom.Lift.basicCoeff_basicWord`, `basicLink_basicWord`, `basicY_basicWord`,
-  `basicX_basicWord`, `basicComm_basicWord`: the basic automorphisms fix `S₀`.
+  `basicX_basicWord`, `basicComm_basicWord`: the basic automorphisms fix `S₀`; so do their
+  inverses and their natural and integer powers (`basicY_symm_basicWord`, `basicY_pow_basicWord`,
+  `basicY_zpow_basicWord`, and the same for the other four).
 * `TauCeti.GroupAlgGeom.Lift.basicCoeff_inl`, `basicCoeff_inr_of_left` and the lemmas after them:
   the basic automorphisms, their inverses and their natural and integer powers on the
   coefficients and on the variables.
@@ -101,6 +106,25 @@ theorem basicWord_def :
 private theorem basicWord_eq_prod_append :
     basicWord x y z c = (List.ofFn (Fin.append (coeffAtom z c) (commAtom x y))).prod := by
   rw [List.ofFn_fin_append, List.prod_append, basicWord_def]
+
+variable {H : Type*} [Group H] (ι : G →* H) (u : X → H)
+
+@[simp]
+theorem eval_coeffAtom (j : Fin m) :
+    eval ι u (coeffAtom z c j) = (u (z j))⁻¹ * ι (c j) * u (z j) := by
+  simp [coeffAtom_def]
+
+@[simp]
+theorem eval_commAtom (i : Fin n) : eval ι u (commAtom x y i) = ⁅(u (x i))⁻¹, (u (y i))⁻¹⁆ := by
+  simp [commAtom_def, map_commutatorElement]
+
+/-- The value of the word `S₀` at a point `u`: `∏ⱼ u(zⱼ)⁻¹ ι(cⱼ) u(zⱼ) ∏ᵢ [u(xᵢ), u(yᵢ)]`. -/
+@[simp]
+theorem eval_basicWord :
+    eval ι u (basicWord x y z c) =
+      (List.ofFn fun j => (u (z j))⁻¹ * ι (c j) * u (z j)).prod *
+        (List.ofFn fun i => ⁅(u (x i))⁻¹, (u (y i))⁻¹⁆).prod := by
+  simp [basicWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
 
 end Word
 
@@ -295,6 +319,20 @@ theorem basicCoeff_basicWord (hj : (j : ℕ) + 1 = j') :
       (twistHom_coeffTerm inj c j j' (.refl _))
   · exact twistHom_prod_commAtom inj (fun _ => rfl) fun _ => rfl
 
+theorem basicCoeff_zpow_basicWord (hj : (j : ℕ) + 1 = j') (k : ℤ) :
+    (basicCoeff inj c j j' ^ k) (basicWord x y z c) = basicWord x y z c := by
+  rw [← MulAut.smul_def]
+  exact MulAction.mem_fixedBy_zpow
+    ((MulAut.smul_def _ _).trans (basicCoeff_basicWord inj c j j' hj)) k
+
+theorem basicCoeff_symm_basicWord (hj : (j : ℕ) + 1 = j') :
+    (basicCoeff inj c j j').symm (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicCoeff_zpow_basicWord inj c j j' hj (-1)
+
+theorem basicCoeff_pow_basicWord (hj : (j : ℕ) + 1 = j') (k : ℕ) :
+    (basicCoeff inj c j j' ^ k) (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicCoeff_zpow_basicWord inj c j j' hj k
+
 end Coeff
 
 section Link
@@ -451,6 +489,20 @@ theorem basicLink_basicWord (hj : (j : ℕ) + 1 = m) (hi : (i : ℕ) = 0) :
     simp only [Pi.single_eq_same, commAtom_def, commutatorElement_def]
     group
 
+theorem basicLink_zpow_basicWord (hj : (j : ℕ) + 1 = m) (hi : (i : ℕ) = 0) (k : ℤ) :
+    (basicLink inj c j i ^ k) (basicWord x y z c) = basicWord x y z c := by
+  rw [← MulAut.smul_def]
+  exact MulAction.mem_fixedBy_zpow
+    ((MulAut.smul_def _ _).trans (basicLink_basicWord inj c j i hj hi)) k
+
+theorem basicLink_symm_basicWord (hj : (j : ℕ) + 1 = m) (hi : (i : ℕ) = 0) :
+    (basicLink inj c j i).symm (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicLink_zpow_basicWord inj c j i hj hi (-1)
+
+theorem basicLink_pow_basicWord (hj : (j : ℕ) + 1 = m) (hi : (i : ℕ) = 0) (k : ℕ) :
+    (basicLink inj c j i ^ k) (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicLink_zpow_basicWord inj c j i hj hi k
+
 end Link
 
 section Y
@@ -520,6 +572,7 @@ theorem basicY_pow_inr_of_of_ne {v : X} (hy : v ≠ y i) (k : ℕ) :
   simpa using basicY_zpow_inr_of_of_ne inj i hy k
 
 /-- The basic automorphism `y_i ↦ x_i y_i` fixes the word `S₀`. -/
+@[simp]
 theorem basicY_basicWord : basicY inj i (basicWord x y z c) = basicWord x y z c := by
   rw [basicY, twist_apply, basicWord_def, map_mul]
   congr 1
@@ -531,6 +584,21 @@ theorem basicY_basicWord : basicY inj i (basicWord x y z c) = basicWord x y z c 
       commutatorElement_def]
     group
   · simp [hl]
+
+@[simp]
+theorem basicY_zpow_basicWord (k : ℤ) :
+    (basicY inj i ^ k) (basicWord x y z c) = basicWord x y z c := by
+  rw [← MulAut.smul_def]
+  exact MulAction.mem_fixedBy_zpow ((MulAut.smul_def _ _).trans (basicY_basicWord inj c i)) k
+
+@[simp]
+theorem basicY_symm_basicWord : (basicY inj i).symm (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicY_zpow_basicWord inj c i (-1)
+
+@[simp]
+theorem basicY_pow_basicWord (k : ℕ) :
+    (basicY inj i ^ k) (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicY_zpow_basicWord inj c i k
 
 end Y
 
@@ -601,6 +669,7 @@ theorem basicX_pow_inr_of_of_ne {v : X} (hx : v ≠ x i) (k : ℕ) :
   simpa using basicX_zpow_inr_of_of_ne inj i hx k
 
 /-- The basic automorphism `x_i ↦ y_i x_i` fixes the word `S₀`. -/
+@[simp]
 theorem basicX_basicWord : basicX inj i (basicWord x y z c) = basicWord x y z c := by
   rw [basicX, twist_apply, basicWord_def, map_mul]
   congr 1
@@ -612,6 +681,21 @@ theorem basicX_basicWord : basicX inj i (basicWord x y z c) = basicWord x y z c 
       commutatorElement_def]
     group
   · simp [hl]
+
+@[simp]
+theorem basicX_zpow_basicWord (k : ℤ) :
+    (basicX inj i ^ k) (basicWord x y z c) = basicWord x y z c := by
+  rw [← MulAut.smul_def]
+  exact MulAction.mem_fixedBy_zpow ((MulAut.smul_def _ _).trans (basicX_basicWord inj c i)) k
+
+@[simp]
+theorem basicX_symm_basicWord : (basicX inj i).symm (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicX_zpow_basicWord inj c i (-1)
+
+@[simp]
+theorem basicX_pow_basicWord (k : ℕ) :
+    (basicX inj i ^ k) (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicX_zpow_basicWord inj c i k
 
 end X
 
@@ -789,6 +873,20 @@ theorem basicComm_basicWord (hi : (i : ℕ) + 1 = i') :
   rw [map_mul, twistHom_commAtom inj, twistHom_commAtom inj]
   simp only [↓reduceIte, hne, hne.symm, commAtom_def, commutatorElement_def]
   group
+
+theorem basicComm_zpow_basicWord (hi : (i : ℕ) + 1 = i') (k : ℤ) :
+    (basicComm inj i i' ^ k) (basicWord x y z c) = basicWord x y z c := by
+  rw [← MulAut.smul_def]
+  exact MulAction.mem_fixedBy_zpow
+    ((MulAut.smul_def _ _).trans (basicComm_basicWord inj c i i' hi)) k
+
+theorem basicComm_symm_basicWord (hi : (i : ℕ) + 1 = i') :
+    (basicComm inj i i').symm (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicComm_zpow_basicWord inj c i i' hi (-1)
+
+theorem basicComm_pow_basicWord (hi : (i : ℕ) + 1 = i') (k : ℕ) :
+    (basicComm inj i i' ^ k) (basicWord x y z c) = basicWord x y z c := by
+  simpa using basicComm_zpow_basicWord inj c i i' hi k
 
 end Comm
 
