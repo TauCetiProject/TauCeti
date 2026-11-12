@@ -18,6 +18,10 @@ Completeness then gives summability in the ring itself. In a complete seminormed
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
 test.
 
+Integer powers `r ^ n` of a base `r > 1` tend to zero as `n → -∞`. Hence a family whose norms are
+bounded by `r ^ g a`, with integer exponents `g a → -∞`, tends to zero. This is how valuation
+bounds on coefficients give convergence of series.
+
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
 norm. Finite products of geometric series converge unconditionally over all exponent vectors,
@@ -87,6 +91,25 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     refine Summable.of_norm_bounded_eventually_nat (g := fun _ ↦ 0) summable_zero ?_
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
+
+/-- Integer powers `r ^ n` of a base `r > 1` tend to zero as `n → -∞`. -/
+theorem tendsto_zpow_atBot_of_one_lt {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [Archimedean 𝕜] [TopologicalSpace 𝕜] [OrderTopology 𝕜] {r : 𝕜}
+    (hr : 1 < r) : Filter.Tendsto (fun n : ℤ ↦ r ^ n) Filter.atBot (nhds 0) := by
+  -- For `n ≤ 0`, `r ^ n` is the inverse of the natural power `r ^ (-n).toNat`.
+  have h : Filter.Tendsto (fun n : ℤ ↦ (-n).toNat) Filter.atBot Filter.atTop :=
+    Filter.tendsto_atBot_atTop.2 fun b ↦ ⟨-b, fun n hn ↦ by omega⟩
+  refine ((tendsto_inv_atTop_zero.comp (tendsto_pow_atTop_atTop_of_one_lt hr)).comp h).congr'
+    ((Filter.eventually_le_atBot 0).mono fun n hn ↦ ?_)
+  rw [Function.comp_apply, Function.comp_apply, ← zpow_natCast, Int.toNat_of_nonneg (by omega),
+    zpow_neg, inv_inv]
+
+/-- A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a`
+tending to `-∞`, tends to zero. -/
+theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : Filter α}
+    {f : α → F} {r : ℝ} (hr : 1 < r) {g : α → ℤ} (hf : ∀ a, ‖f a‖ ≤ r ^ g a)
+    (hg : Filter.Tendsto g l Filter.atBot) : Filter.Tendsto f l (nhds 0) :=
+  squeeze_zero_norm hf ((tendsto_zpow_atBot_of_one_lt hr).comp hg)
 
 variable {K : Type*} [NormedField K]
 

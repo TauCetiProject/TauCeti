@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
-import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # The annular coefficient ring `ℤ_p⟦T, p/T⟧`
@@ -58,8 +58,7 @@ is larger than the `p`-adic completion of `ℤ_p⟦T⟧[p/T]`, in which they ten
   `(p, T) = (T)`.
 * `TauCeti.AnnularRing.coeff_T_pow`, `TauCeti.AnnularRing.coeff_U_pow`: the normal forms of
   `T ^ n` and `U ^ n = p ^ n T ^ (-n)`.
-* `TauCeti.AnnularRing.coeff_normalForm_natCast`, `TauCeti.AnnularRing.coeff_normalForm_neg_succ`:
-  the coefficients of `f(T) + U g(U)`, which determine it.
+* `TauCeti.AnnularRing.coeff_normalForm`: the coefficients of `f(T) + U g(U)`, which determine it.
 * `TauCeti.AnnularRing.one_sub_U_mul_ofPowerSeriesU_mk_one`: `(1 - U) ∑_{j ≥ 0} U ^ j = 1`.
 
 ## References
@@ -220,6 +219,10 @@ instance : AddCommGroup (AnnularRing p) :=
 instance : Module ℤ_[p] (AnnularRing p) :=
   coeff_injective.module ℤ_[p] ⟨⟨coeff, funext coeff_zero⟩, fun _ _ ↦ (rfl)⟩ fun _ _ ↦ (rfl)
 
+@[simp] theorem coeff_sum {ι : Type*} (s : Finset ι) (x : ι → AnnularRing p) (m : ℤ) :
+    (∑ i ∈ s, x i).coeff m = ∑ i ∈ s, (x i).coeff m :=
+  map_sum (⟨⟨(coeff · m), rfl⟩, fun _ _ ↦ rfl⟩ : AnnularRing p →+ ℤ_[p]) x s
+
 /-! ### The convolution product -/
 
 instance : One (AnnularRing p) where
@@ -341,6 +344,38 @@ instance : Algebra ℤ_[p] (AnnularRing p) :=
     (ofNat(n) : AnnularRing p).coeff m = if m = 0 then ofNat(n) else 0 :=
   coeff_natCast n m
 
+@[simp] theorem coeff_algebraMap_mul (c : ℤ_[p]) (x : AnnularRing p) (m : ℤ) :
+    (algebraMap ℤ_[p] (AnnularRing p) c * x).coeff m = c * x.coeff m := by
+  rw [Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul, coeff_smul]
+
+@[simp] theorem coeff_mul_algebraMap (x : AnnularRing p) (c : ℤ_[p]) (m : ℤ) :
+    (x * algebraMap ℤ_[p] (AnnularRing p) c).coeff m = x.coeff m * c := by
+  rw [mul_comm, coeff_algebraMap_mul, mul_comm]
+
+@[simp] theorem coeff_natCast_mul (n : ℕ) (x : AnnularRing p) (m : ℤ) :
+    ((n : AnnularRing p) * x).coeff m = n * x.coeff m := by
+  rw [natCast_def, smul_mul_assoc, one_mul, coeff_smul]
+
+@[simp] theorem coeff_mul_natCast (x : AnnularRing p) (n : ℕ) (m : ℤ) :
+    (x * (n : AnnularRing p)).coeff m = x.coeff m * n := by
+  rw [mul_comm, coeff_natCast_mul, mul_comm]
+
+@[simp] theorem coeff_intCast_mul (n : ℤ) (x : AnnularRing p) (m : ℤ) :
+    ((n : AnnularRing p) * x).coeff m = n * x.coeff m := by
+  rw [intCast_def, smul_mul_assoc, one_mul, coeff_smul]
+
+@[simp] theorem coeff_mul_intCast (x : AnnularRing p) (n : ℤ) (m : ℤ) :
+    (x * (n : AnnularRing p)).coeff m = x.coeff m * n := by
+  rw [mul_comm, coeff_intCast_mul, mul_comm]
+
+@[simp] theorem coeff_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : AnnularRing p) (m : ℤ) :
+    ((ofNat(n) : AnnularRing p) * x).coeff m = ofNat(n) * x.coeff m :=
+  coeff_natCast_mul n x m
+
+@[simp] theorem coeff_mul_ofNat (x : AnnularRing p) (n : ℕ) [n.AtLeastTwo] (m : ℤ) :
+    (x * (ofNat(n) : AnnularRing p)).coeff m = x.coeff m * ofNat(n) :=
+  coeff_mul_natCast x n m
+
 instance : Nontrivial (AnnularRing p) :=
   ⟨⟨0, 1, fun h ↦ by simpa using congr_arg (coeff · 0) h⟩⟩
 
@@ -360,9 +395,9 @@ def U : AnnularRing p :=
     · simp [hm, PadicInt.norm_p]
     · simp only [norm_zero]; positivity⟩
 
-theorem coeff_T (m : ℤ) : (T : AnnularRing p).coeff m = if m = 1 then 1 else 0 := (rfl)
+@[simp] theorem coeff_T (m : ℤ) : (T : AnnularRing p).coeff m = if m = 1 then 1 else 0 := (rfl)
 
-theorem coeff_U (m : ℤ) : (U : AnnularRing p).coeff m = if m = -1 then (p : ℤ_[p]) else 0 :=
+@[simp] theorem coeff_U (m : ℤ) : (U : AnnularRing p).coeff m = if m = -1 then (p : ℤ_[p]) else 0 :=
   (rfl)
 
 /-- Multiplication by `T` shifts the normal form up by one degree. -/
@@ -376,7 +411,7 @@ theorem coeff_U (m : ℤ) : (U : AnnularRing p).coeff m = if m = -1 then (p : �
   rw [coeff_mul_of_coeff_eq_zero (k := -1) fun i hi ↦ by simp [coeff_U, hi]]
   simp [coeff_U]
 
-theorem coeff_T_pow (n : ℕ) (m : ℤ) :
+@[simp] theorem coeff_T_pow (n : ℕ) (m : ℤ) :
     ((T : AnnularRing p) ^ n).coeff m = if m = n then 1 else 0 := by
   induction n generalizing m with
   | zero => simp [coeff_one]
@@ -385,7 +420,7 @@ theorem coeff_T_pow (n : ℕ) (m : ℤ) :
     congr 1
     simp only [Nat.cast_succ, sub_eq_iff_eq_add]
 
-theorem coeff_U_pow (n : ℕ) (m : ℤ) :
+@[simp] theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     ((U : AnnularRing p) ^ n).coeff m = if m = -n then (p : ℤ_[p]) ^ n else 0 := by
   induction n generalizing m with
   | zero => simp [coeff_one]
@@ -394,6 +429,39 @@ theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     by_cases hm : m = -(n + 1 : ℕ)
     · simp [hm, pow_succ']
     · rw [ite_eq_right (show ¬m + 1 = -(n : ℤ) by omega), ite_eq_right hm, mul_zero]
+
+/-- Multiplication by `T` shifts the normal form up by one degree. -/
+@[simp] theorem coeff_mul_T (x : AnnularRing p) (m : ℤ) : (x * T).coeff m = x.coeff (m - 1) := by
+  rw [mul_comm, coeff_T_mul]
+
+/-- Multiplication by `U` shifts the normal form down by one degree and multiplies it by `p`. -/
+@[simp] theorem coeff_mul_U (x : AnnularRing p) (m : ℤ) :
+    (x * U).coeff m = p * x.coeff (m + 1) := by
+  rw [mul_comm, coeff_U_mul]
+
+/-- Multiplication by `T ^ n` shifts the normal form up by `n` degrees. -/
+@[simp] theorem coeff_T_pow_mul (n : ℕ) (x : AnnularRing p) (m : ℤ) :
+    (T ^ n * x).coeff m = x.coeff (m - n) := by
+  rw [coeff_mul_of_coeff_eq_zero (k := n) fun i hi ↦ by simp [hi]]
+  simp
+
+/-- Multiplication by `T ^ n` shifts the normal form up by `n` degrees. -/
+@[simp] theorem coeff_mul_T_pow (x : AnnularRing p) (n : ℕ) (m : ℤ) :
+    (x * T ^ n).coeff m = x.coeff (m - n) := by
+  rw [mul_comm, coeff_T_pow_mul]
+
+/-- Multiplication by `U ^ n` shifts the normal form down by `n` degrees and multiplies it by
+`p ^ n`. -/
+@[simp] theorem coeff_U_pow_mul (n : ℕ) (x : AnnularRing p) (m : ℤ) :
+    (U ^ n * x).coeff m = (p : ℤ_[p]) ^ n * x.coeff (m + n) := by
+  rw [coeff_mul_of_coeff_eq_zero (k := -n) fun i hi ↦ by simp [hi]]
+  simp
+
+/-- Multiplication by `U ^ n` shifts the normal form down by `n` degrees and multiplies it by
+`p ^ n`. -/
+@[simp] theorem coeff_mul_U_pow (x : AnnularRing p) (n : ℕ) (m : ℤ) :
+    (x * U ^ n).coeff m = (p : ℤ_[p]) ^ n * x.coeff (m + n) := by
+  rw [mul_comm, coeff_U_pow_mul]
 
 /-- The defining relation `T U = p` of the annular coefficient ring. -/
 @[simp] theorem T_mul_U : (T : AnnularRing p) * U = (p : AnnularRing p) := by
@@ -515,21 +583,37 @@ def ofPowerSeriesU : ℤ_[p]⟦X⟧ →ₐ[ℤ_[p]] AnnularRing p where
     by_cases hm : m = 0 <;> simp [coeff_seriesU, PowerSeries.coeff_C, hm]
     omega
 
-@[simp] theorem coeff_ofPowerSeriesT_natCast (f : ℤ_[p]⟦X⟧) (n : ℕ) :
+@[simp] theorem coeff_ofPowerSeriesT (f : ℤ_[p]⟦X⟧) (m : ℤ) :
+    (ofPowerSeriesT f).coeff m = if 0 ≤ m then PowerSeries.coeff m.toNat f else 0 := (rfl)
+
+@[simp] theorem coeff_ofPowerSeriesU (g : ℤ_[p]⟦X⟧) (m : ℤ) :
+    (ofPowerSeriesU g).coeff m =
+      if m ≤ 0 then (p : ℤ_[p]) ^ (-m).toNat * PowerSeries.coeff (-m).toNat g else 0 :=
+  (rfl)
+
+theorem coeff_ofPowerSeriesT_natCast (f : ℤ_[p]⟦X⟧) (n : ℕ) :
     (ofPowerSeriesT f).coeff n = PowerSeries.coeff n f := by
-  simp [ofPowerSeriesT, coeff_seriesT]
+  simp
 
 theorem coeff_ofPowerSeriesT_of_neg (f : ℤ_[p]⟦X⟧) {m : ℤ} (hm : m < 0) :
     (ofPowerSeriesT f).coeff m = 0 := by
-  simp [ofPowerSeriesT, coeff_seriesT, not_le.2 hm]
+  simp [not_le.2 hm]
 
-@[simp] theorem coeff_ofPowerSeriesU_neg_natCast (g : ℤ_[p]⟦X⟧) (n : ℕ) :
+theorem coeff_ofPowerSeriesU_neg_natCast (g : ℤ_[p]⟦X⟧) (n : ℕ) :
     (ofPowerSeriesU g).coeff (-n) = (p : ℤ_[p]) ^ n * PowerSeries.coeff n g := by
-  simp [ofPowerSeriesU, coeff_seriesU]
+  simp
 
 theorem coeff_ofPowerSeriesU_of_pos (g : ℤ_[p]⟦X⟧) {m : ℤ} (hm : 0 < m) :
     (ofPowerSeriesU g).coeff m = 0 := by
-  simp [ofPowerSeriesU, coeff_seriesU, not_le.2 hm]
+  simp [not_le.2 hm]
+
+@[simp] theorem ofPowerSeriesT_C (c : ℤ_[p]) :
+    ofPowerSeriesT (C c) = algebraMap ℤ_[p] (AnnularRing p) c := by
+  simpa using (ofPowerSeriesT (p := p)).commutes c
+
+@[simp] theorem ofPowerSeriesU_C (c : ℤ_[p]) :
+    ofPowerSeriesU (C c) = algebraMap ℤ_[p] (AnnularRing p) c := by
+  simpa using (ofPowerSeriesU (p := p)).commutes c
 
 @[simp] theorem ofPowerSeriesT_X : ofPowerSeriesT (X : ℤ_[p]⟦X⟧) = T := by
   ext m : 2
@@ -617,13 +701,25 @@ def normalForm : (ℤ_[p]⟦X⟧ × ℤ_[p]⟦X⟧) ≃ₗ[ℤ_[p]] AnnularRing 
 theorem normalForm_apply (f g : ℤ_[p]⟦X⟧) :
     normalForm (f, g) = ofPowerSeriesT f + U * ofPowerSeriesU g := (rfl)
 
-@[simp] theorem coeff_normalForm_natCast (f g : ℤ_[p]⟦X⟧) (n : ℕ) :
+theorem coeff_normalForm_natCast (f g : ℤ_[p]⟦X⟧) (n : ℕ) :
     (normalForm (f, g)).coeff n = PowerSeries.coeff n f :=
   coeff_normalFormLinearMap_natCast (f, g) n
 
 theorem coeff_normalForm_neg_succ (f g : ℤ_[p]⟦X⟧) (n : ℕ) :
     (normalForm (f, g)).coeff (-(n + 1)) = (p : ℤ_[p]) ^ (n + 1) * PowerSeries.coeff n g :=
   coeff_normalFormLinearMap_neg_succ (f, g) n
+
+/-- The coefficients of `f(T) + U g(U)`: `a_m` at `T ^ m` for `m ≥ 0`, and `p ^ (-m) b_(-m-1)`
+at `T ^ m` for `m < 0`, where `f = ∑ a_n X ^ n` and `g = ∑ b_n X ^ n`. -/
+@[simp] theorem coeff_normalForm (f g : ℤ_[p]⟦X⟧) (m : ℤ) :
+    (normalForm (f, g)).coeff m = if 0 ≤ m then PowerSeries.coeff m.toNat f
+      else (p : ℤ_[p]) ^ (-m).toNat * PowerSeries.coeff ((-m).toNat - 1) g := by
+  rcases le_or_gt 0 m with hm | hm
+  · lift m to ℕ using hm
+    rw [coeff_normalForm_natCast, ite_eq_left (Nat.cast_nonneg _), Int.toNat_natCast]
+  · obtain ⟨n, rfl⟩ : ∃ n : ℕ, m = -(n + 1) := ⟨(-m).toNat - 1, by omega⟩
+    rw [coeff_normalForm_neg_succ, ite_eq_right (by omega),
+      show (-(-((n : ℤ) + 1))).toNat = n + 1 by omega, Nat.add_sub_cancel]
 
 @[simp] theorem coeff_normalForm_symm_fst (x : AnnularRing p) (n : ℕ) :
     PowerSeries.coeff n (normalForm.symm x).1 = x.coeff n := by
@@ -632,6 +728,14 @@ theorem coeff_normalForm_neg_succ (f g : ℤ_[p]⟦X⟧) (n : ℕ) :
 theorem pow_mul_coeff_normalForm_symm_snd (x : AnnularRing p) (n : ℕ) :
     (p : ℤ_[p]) ^ (n + 1) * PowerSeries.coeff n (normalForm.symm x).2 = x.coeff (-(n + 1)) := by
   simpa using (coeff_normalForm_neg_succ (normalForm.symm x).1 (normalForm.symm x).2 n).symm
+
+theorem ofPowerSeriesT_injective : Function.Injective (ofPowerSeriesT (p := p)) := fun f g h ↦ by
+  simpa using normalForm.injective
+    (show normalForm (f, 0) = normalForm (g, 0) by simp only [normalForm_apply, h])
+
+theorem ofPowerSeriesU_injective : Function.Injective (ofPowerSeriesU (p := p)) := fun f g h ↦ by
+  simpa using normalForm.injective
+    (show normalForm (0, f) = normalForm (0, g) by simp only [normalForm_apply, h])
 
 end AnnularRing
 
