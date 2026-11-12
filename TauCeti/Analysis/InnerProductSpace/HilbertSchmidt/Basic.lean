@@ -291,7 +291,7 @@ theorem hilbertSchmidtNorm_add_le (S T : E →L[𝕜] F) (b : HilbertBasis ι �
       by_contra h
       have h1 := rpow_hilbertSchmidtEnergy_add_le (S + T) (-S) b
       rw [show S + T + -S = T by abel, hT, ← neg_one_smul 𝕜 S, hilbertSchmidtEnergy_smul] at h1
-      simp only [enorm_neg, enorm_one, one_pow, one_mul] at h1
+      simp only [eNorm_neg, eNorm_one, one_pow, one_mul] at h1
       have hfin : ∀ U : E →L[𝕜] F, U.hilbertSchmidtEnergy b ≠ ∞ →
           U.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) ≠ ∞ := fun U hU ↦
         ENNReal.rpow_ne_top_of_nonneg (by positivity) hU
