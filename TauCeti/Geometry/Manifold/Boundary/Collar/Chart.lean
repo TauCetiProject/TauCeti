@@ -40,18 +40,16 @@ its target, for a chart in `IsManifold.maximalAtlas`. Read with
 of a collar chart is `⇑collarDiffeomorph ⁻¹' e.target`, an open subset of the product model, and
 shrinking it to a product neighbourhood `V × [0, 1)` is not proved here.
 
-This serves the collar-neighbourhood target in Layer 1 of the GeometricTopology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), after `Boundary.Collar.Basic`'s standard-model
-calculation. `Boundary.Collar.Manifold` uses the two smoothness lemmas above to prove that these
-charts have `C^k` transitions. The remaining global statement is that a whole neighbourhood of
-`I.boundary M` is diffeomorphic to
-  `I.boundary M × [0, 1)`. The two textbook routes differ in what they need. Lee Thm 9.25 goes
-  through the Boundary Flowout Theorem, gluing an inward-pointing vector field and flowing it,
-  which needs flows from boundary points; Mathlib's integral curves are still restricted to
-  interior points, so that route waits on them. Hirsch Thm 6.1 instead glues local retractions
-  with a bump function and pairs the resulting retraction `r` with a `g` vanishing on the boundary
-  and regular there, taking `h = (r, g)`; that route needs no flows. (Hirsch §5.2 gives the
-  differential-equations proof as an alternative.)
+After `Boundary.Collar.Basic`'s standard-model calculation, this is the next step towards the
+collar-neighbourhood theorem. `Boundary.Collar.Manifold` uses the two smoothness lemmas above to
+prove that these charts have `C^k` transitions. The remaining global statement is that a whole
+neighbourhood of `I.boundary M` is diffeomorphic to `I.boundary M × [0, 1)`. The two textbook
+routes differ in what they need. Lee Thm 9.25 goes through the Boundary Flowout Theorem, gluing an
+inward-pointing vector field and flowing it, which needs flows from boundary points; Mathlib's
+integral curves are still restricted to interior points, so that route waits on them. Hirsch
+Thm 6.1 instead glues local retractions with a bump function and pairs the resulting retraction
+`r` with a `g` vanishing on the boundary and regular there, taking `h = (r, g)`; that route needs
+no flows. (Hirsch §5.2 gives the differential-equations proof as an alternative.)
 
 ## Main definitions
 

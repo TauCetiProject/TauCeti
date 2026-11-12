@@ -24,7 +24,7 @@ any prescribed positive Lipschitz constant. The chart radii may depend on the bo
 neither boundedness of the domain nor compactness of its boundary is needed for this comparison.
 
 The analytic inputs are Mathlib's
-`ContDiffAt.exists_lipschitzOnWith_of_nnnorm_lt` and `LipschitzOnWith.extend_real`.
+`ContDiffAt.exists_lipschitzOnWith_of_nnNorm_lt` and `LipschitzOnWith.extend_real`.
 
 ## References
 
@@ -56,7 +56,7 @@ theorem exists_isLipschitzChartWith_of_contDiffAt (ha : 0 < a) (hb : 0 < b)
     (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ φ z.snd < z.fst)) :
     ∃ (ψ : E → ℝ) (b' : ℝ), 0 < b' ∧ b' ≤ b ∧ EqOn φ ψ (ball 0 b') ∧
       Omega.IsLipschitzChartWith L e ψ a b' := by
-  obtain ⟨t, ht, hφt⟩ := hφ.exists_lipschitzOnWith_of_nnnorm_lt L hL
+  obtain ⟨t, ht, hφt⟩ := hφ.exists_lipschitzOnWith_of_nnNorm_lt L hL
   obtain ⟨r, hr, hrt⟩ := Metric.mem_nhds_iff.mp ht
   let b' := min b r
   have hb' : 0 < b' := lt_min hb hr
@@ -102,7 +102,7 @@ theorem isLipschitzDomainWith_of_contDiffAt_fderiv_eq_zero (hOmega : IsOpen Omeg
   apply isLipschitzDomainWith_of_contDiffAt hOmega
   intro x hx
   obtain ⟨e, φ, a, b, hex, ha, hb, hφ0, hφ, hdφ, hgraph⟩ := h x hx
-  exact ⟨e, φ, a, b, hex, ha, hb, hφ0, hφ, by simpa only [hdφ, nnnorm_zero] using hL,
+  exact ⟨e, φ, a, b, hex, ha, hb, hφ0, hφ, by simpa only [hdφ, nnNorm_zero] using hL,
     hgraph⟩
 
 end TauCeti

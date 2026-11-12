@@ -188,15 +188,15 @@ theorem eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs {E F : Type*} [NormedAd
   have hexp : (1 - p.toReal⁻¹) + p.toReal⁻¹ = 1 := sub_add_cancel _ _
   calc eLpNorm u p volume
       ≤ eLpNorm (fun t ↦ ∫⁻ s, k t s * ‖f s‖ₑ) p volume :=
-        eLpNorm_mono_enorm hu fun t ↦ by simpa only [enorm_eq_self] using h t
+        eLpNorm_mono_eNorm hu fun t ↦ by simpa only [eNorm_eq_self] using h t
     _ ≤ ENNReal.ofReal (2 * c / a) ^ (1 - p.toReal⁻¹) *
           ENNReal.ofReal (2 * c / a) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ ‖f s‖ₑ) p volume :=
-        eLpNorm_lintegral_mul_le hk hf.enorm hp (ae_of_all _ hrow) (ae_of_all _ hcol)
+        eLpNorm_lintegral_mul_le hk hf.eNorm hp (ae_of_all _ hrow) (ae_of_all _ hcol)
     _ = ENNReal.ofReal (2 * c / a) * eLpNorm f p volume := by
       have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
         simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hp
       rw [← ENNReal.rpow_add_of_nonneg _ _ h₀ (inv_nonneg.2 ENNReal.toReal_nonneg), hexp,
-        ENNReal.rpow_one, eLpNorm_enorm _ hf]
+        ENNReal.rpow_one, eLpNorm_eNorm _ hf]
 
 /-- The two-sided exponential times a unimodular oscillation `exp (b * x * I)` is integrable on
 the line. -/

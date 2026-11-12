@@ -205,15 +205,15 @@ theorem enorm_scalarGreenIntegral_le (hpos : ∀ s, 0 < g s)
     (hK : ∀ s t, s ≤ t → g s ≤ K * Real.exp (-α * (t - s)) * g t) (f : ℝ → E) (s : ℝ) :
     ‖scalarGreenIntegral g f s‖ₑ ≤
       ∫⁻ t, ENNReal.ofReal (K * Real.exp (-(α * |s - t|))) * ‖f t‖ₑ := by
-  rw [scalarGreenIntegral_eq_neg_integral, enorm_neg]
-  refine (enorm_integral_le_lintegral_enorm _).trans
+  rw [scalarGreenIntegral_eq_neg_integral, eNorm_neg]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans
     ((lintegral_mono_ae ?_).trans (setLIntegral_le_lintegral _ _))
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t hst
   have hk : g s / g t ≤ K * Real.exp (-(α * |s - t|)) := by
     rw [div_le_iff₀ (hpos t), abs_of_nonpos (sub_nonpos.2 (le_of_lt hst)),
       show -(α * -(s - t)) = -α * (t - s) by ring]
     exact hK s t (le_of_lt hst)
-  rw [enorm_smul, Real.enorm_eq_ofReal (div_pos (hpos s) (hpos t)).le]
+  rw [eNorm_smul, Real.eNorm_eq_ofReal (div_pos (hpos s) (hpos t)).le]
   gcongr
 
 /-- **The Green integral is bounded on `Lᵖ`.** If `g` is a positive solution of `v' = b v` with
