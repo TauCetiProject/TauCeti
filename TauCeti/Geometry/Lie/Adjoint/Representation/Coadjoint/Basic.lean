@@ -33,6 +33,8 @@ moment maps of Hamiltonian group actions are equivariant.
 
 ## Main results
 
+* `TauCeti.Lie.coadjointRepresentation_eq_one`: the coadjoint action of a commutative Lie group is
+  trivial.
 * `TauCeti.Lie.coadjointRepresentation_apply_comp_tangentAd`: the translate `Ad*_g ν` pulls back
   along the adjoint automorphism `Ad_g` to `ν`.
 * `TauCeti.Lie.contMDiff_coadjointRepresentation_apply`: for a smooth real Lie group with
@@ -87,6 +89,14 @@ theorem coadjointRepresentation_apply (g : G) (ν : Module.Dual 𝕜 (GroupLieAl
     (X : GroupLieAlgebra I G) :
     coadjointRepresentation 𝕜 I G g ν X = ν (adjointContinuousLinearMap (I := I) g⁻¹ X) :=
   (rfl)
+
+/-- **The coadjoint action of a commutative Lie group is trivial**, since its adjoint action is
+(`TauCeti.Lie.adjointContinuousLinearMap_eq_id`). -/
+@[simp]
+theorem coadjointRepresentation_eq_one [IsMulCommutative G] (g : G) :
+    coadjointRepresentation 𝕜 I G g = 1 := by
+  ext ν X
+  simp
 
 section TangentAd
 

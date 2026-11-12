@@ -31,9 +31,11 @@ distinct simple classes hom orthogonal.
 * `TauCeti.SimpleClasses.equiv`: an equivalence of categories induces an equivalence between their
   types of simple classes;
 * `TauCeti.SimpleClasses.homOrthogonal_repr`: in a preadditive category with kernels, the chosen
-  representatives of distinct simple classes are hom orthogonal (Schur's lemma).
+  representatives of distinct simple classes are hom orthogonal (Schur's lemma);
 * `TauCeti.SimpleClasses.classOf_eq_of_ne_zero`: simple objects related by a nonzero morphism have
-  the same class.
+  the same class;
+* `TauCeti.SimpleClasses.sum_comp_classOfReprIso_eq_id`: a biproduct decomposition into simple
+  objects resolves the identity through the chosen representatives of their classes.
 -/
 
 public section
@@ -163,6 +165,19 @@ theorem classOf_eq_of_ne_zero {D : Type u₁} [Category.{v₁} D] [Preadditive D
     {X Y : D} [Simple X] [Simple Y] {f : X ⟶ Y} (hf : f ≠ 0) : classOf X = classOf Y :=
   have := isIso_of_hom_simple hf
   (classOf_eq_iff_nonempty_iso X Y).2 ⟨asIso f⟩
+
+/-- A biproduct decomposition `e : Y ≅ ⨁ a` into simple objects resolves `𝟙 Y` through the chosen
+representatives `(classOf (a i)).repr` of their isomorphism classes. -/
+theorem sum_comp_classOfReprIso_eq_id {D : Type u₁} [Category.{v₁} D] [Preadditive D]
+    {Y : D} {ι : Type*} [Fintype ι] (a : ι → D) [∀ i, Simple (a i)] [HasBiproduct a]
+    (e : Y ≅ ⨁ a) :
+    ∑ i : ι, (e.hom ≫ biproduct.π a i ≫ (classOfReprIso (a i)).inv) ≫
+      ((classOfReprIso (a i)).hom ≫ biproduct.ι a i ≫ e.inv) = 𝟙 Y := by
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
+  calc ∑ i, e.hom ≫ biproduct.π a i ≫ biproduct.ι a i ≫ e.inv
+      = e.hom ≫ (∑ i, biproduct.π a i ≫ biproduct.ι a i) ≫ e.inv := by
+          simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc]
+    _ = 𝟙 Y := by rw [biproduct.total, Category.id_comp, e.hom_inv_id]
 
 end SimpleClasses
 
