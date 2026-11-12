@@ -24,36 +24,32 @@ public section
 
 namespace TauCeti.DynkinType
 
-/-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
-instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :
-    ((B n).rationalRootSystem hn).IsNotG2 where
+private theorem isNotG2_rationalRootSystem_of_abs_pairing_le_two
+    {t : DynkinType} {ht : t.Valid}
+    (hbound : ∀ i j, |(t.simplyConnectedRootDatum ht).pairing i j| ≤ 2) :
+    (t.rationalRootSystem ht).IsNotG2 where
   pairingIn_mem_zero_one_two i j := by
-    have heq : ((B n).rationalRootSystem hn).pairingIn ℤ i j =
-        ((B n).simplyConnectedRootDatum hn).pairing i j := by
+    have heq : (t.rationalRootSystem ht).pairingIn ℤ i j =
+        (t.simplyConnectedRootDatum ht).pairing i j := by
       rw [pairingIn_rationalRootSystem]
-      exact ((B n).simplyConnectedRootDatum hn).algebraMap_pairingIn ℤ i j
-    have h : |((B n).simplyConnectedRootDatum hn).pairing i j| ≤ 2 := by
-      rw [simplyConnectedRootDatum_B]
-      exact abs_pairing_typeBSimplyConnectedRootDatum_le_two i j
-    rw [abs_le] at h
+      exact (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ i j
+    have h := abs_le.mp (hbound i j)
     rw [heq]
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
     omega
 
+/-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
+instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :
+    ((B n).rationalRootSystem hn).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_abs_pairing_le_two (by
+    rw [simplyConnectedRootDatum_B]
+    exact abs_pairing_typeBSimplyConnectedRootDatum_le_two)
+
 /-- The Cartan integers of the rational type-C system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemC (n : ℕ) (hn : (C n).Valid) :
-    ((C n).rationalRootSystem hn).IsNotG2 where
-  pairingIn_mem_zero_one_two i j := by
-    have heq : ((C n).rationalRootSystem hn).pairingIn ℤ i j =
-        ((C n).simplyConnectedRootDatum hn).pairing i j := by
-      rw [pairingIn_rationalRootSystem]
-      exact ((C n).simplyConnectedRootDatum hn).algebraMap_pairingIn ℤ i j
-    have h : |((C n).simplyConnectedRootDatum hn).pairing i j| ≤ 2 := by
-      rw [simplyConnectedRootDatum_C]
-      exact abs_pairing_typeCSimplyConnectedRootDatum_le_two i j
-    rw [abs_le] at h
-    rw [heq]
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    omega
+    ((C n).rationalRootSystem hn).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_abs_pairing_le_two (by
+    rw [simplyConnectedRootDatum_C]
+    exact abs_pairing_typeCSimplyConnectedRootDatum_le_two)
 
 end TauCeti.DynkinType
