@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.NondegenerateOrbit
 public import TauCeti.Geometry.Manifold.MFDeriv.Parametric.FixedPoint
+import TauCeti.Geometry.Manifold.Flow.Related
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
@@ -114,18 +115,31 @@ theorem contMDiff_verticalField [IsManifold J 1 N] [IsManifold I 1 M] {n : ℕ�
     (hv : ContMDiff (J.prod I) I.tangent n
       (fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M))) :
     ContMDiff (J.prod I) (J.prod I).tangent n
-      (fun z : N × M ↦ (⟨z, verticalField v z⟩ : TangentBundle (J.prod I) (N × M))) :=
-  (contMDiff_equivTangentBundleProd_symm (I := J) (M := N) (I' := I) (M' := M)).comp
+      (fun z : N × M ↦ (⟨z, verticalField v z⟩ : TangentBundle (J.prod I) (N × M))) := by
+  -- The vertical field is the zero section of `TN` paired with `v`, read through
+  -- `TangentBundle (J.prod I) (N × M) ≃ TangentBundle J N × TangentBundle I M`.
+  have h : (fun z : N × M ↦ (⟨z, verticalField v z⟩ : TangentBundle (J.prod I) (N × M))) =
+      (equivTangentBundleProd J N I M).symm ∘
+        fun z ↦ (Bundle.zeroSection F (TangentSpace J) z.1, ⟨z.2, v z.1 z.2⟩) :=
+    funext fun _ ↦ rfl
+  rw [h]
+  exact contMDiff_equivTangentBundleProd_symm.comp
     (((Bundle.contMDiff_zeroSection ℝ (TangentSpace J (M := N))).comp contMDiff_fst).prodMk hv)
+
+/-- The map `x ↦ (a, x)` carries `v a` to the vertical field. -/
+private theorem mfderiv_prodMk_apply_verticalField (v : N → (x : M) → TangentSpace I x) (a : N)
+    (x : M) : mfderiv I (J.prod I) (Prod.mk a) x (v a x) = verticalField v (a, x) := by
+  rw [mfderiv_prod_right]
+  -- `inr` sends `v a x` to `(0, v a x)` in `T_a N × T_x M = T_(a, x) (N × M)`.
+  rfl
 
 /-- An integral curve of `v a` on a set, paired with the constant parameter `a`, is an integral
 curve of the vertical field on that set. -/
 theorem _root_.IsMIntegralCurveOn.prodMk_verticalField {v : N → (x : M) → TangentSpace I x}
     {a : N} {γ : ℝ → M} {s : Set ℝ} (hγ : IsMIntegralCurveOn γ (v a) s) :
-    IsMIntegralCurveOn (fun t ↦ (a, γ t)) (verticalField (J := J) v) s := fun t ht ↦
-  -- Both derivatives send `r` to `(0, r • v a (γ t))`, read in `F × E`.
-  ((hasMFDerivWithinAt_const a s t).prodMk (hγ t ht)).congr_mfderiv
-    (ContinuousLinearMap.ext fun (r : ℝ) ↦ Prod.ext (smul_zero (A := F) r).symm rfl)
+    IsMIntegralCurveOn (fun t ↦ (a, γ t)) (verticalField (J := J) v) s :=
+  hγ.map_of_mfderiv_eq (fun _ _ ↦ mdifferentiableAt_const.prodMk mdifferentiableAt_id)
+    (fun _ _ ↦ mfderiv_prodMk_apply_verticalField v a _)
 
 /-- Along an integral curve of the vertical field on an open interval, the parameter is constant
 and the component in `M` is an integral curve of the field of that parameter. -/
@@ -169,10 +183,8 @@ theorem mem_flowDomain_verticalField_iff [IsManifold J 1 N] {v : N → (x : M) �
     have h2 := (hγ.of_verticalField h0).2
     simp only [hγ0] at h2
     exact h2.subset_maximalIntegralCurveInterval h0 (by simp [hγ0]) ht
-  · intro h
-    obtain ⟨η, α, β, hη, hη0, h0, ht, -⟩ := exists_isMIntegralCurveOn_maximalIntegralCurve_eq h
-    exact (hη.prodMk_verticalField (J := J)).subset_maximalIntegralCurveInterval h0
-      (by simp [hη0]) ht
+  · exact fun h ↦ (mdifferentiable_const.prodMk mdifferentiable_id
+      ).maximalIntegralCurveInterval_subset (mfderiv_prodMk_apply_verticalField v a) x h
 
 /-- **The flow of the vertical field** keeps the parameter fixed and follows the flow of the
 field of that parameter: wherever the flow of `v a` is defined at `(t, x)`,
