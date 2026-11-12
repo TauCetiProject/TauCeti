@@ -107,16 +107,10 @@ theorem hasDerivWithinAt_chartVolumeDensity (α : M) (hx : x ∈ (chartAt H α).
     (A' := G') (fun i j ↦ hg _ _) hdet.ne'.isUnit) hdet.ne'
   -- The trace of `G⁻¹ G'` is the metric trace of `h`, since `G⁻¹` is symmetric.
   have htr : ((G t)⁻¹ * G').trace = bilinFormTrace h := by
-    let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx'
-    have hb : ⇑b = e :=
-      funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) α hx i).symm
-    have hgram : Matrix.gram ℝ b = G t := by
-      rw [hGt]
-      ext i j
-      rw [Matrix.gram_apply, chartGramMatrix_apply, hb]
     have hsymm := (posDef_chartGramMatrix (I := I) α hx').inv.isHermitian
     rw [← hGt] at hsymm
-    rw [bilinFormTrace_eq_sum_inv_gram h b, hgram, Matrix.trace_mul_comm, hb]
+    rw [bilinFormTrace_eq_sum_chartInvGramMatrix α hx, chartInvGramMatrix_def, ← hGt,
+      Matrix.trace_mul_comm]
     simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply, G', Matrix.of_apply]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
     rw [show (G t)⁻¹ j i = (G t)⁻¹ i j by simpa using hsymm.apply i j]
