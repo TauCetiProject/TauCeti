@@ -143,8 +143,6 @@ theorem norm_integral_cpow_smul_le_of_re_le {f : ℝ → E} {C₀ c α R : ℝ}
     ((integrableOn_rpow_mul_exp_neg_mul_rpow_div (R := R) hc hα).const_mul C₀)
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
   have hu0 : 0 < u := zero_lt_one.trans hu
-  have hC₀ : 0 ≤ C₀ := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hbound u hu))
-    (exp_pos _)
   rw [norm_smul, Complex.norm_cpow_eq_rpow_re_of_pos hu0, Complex.sub_re, Complex.one_re,
     rpow_sub hu0, rpow_one]
   calc

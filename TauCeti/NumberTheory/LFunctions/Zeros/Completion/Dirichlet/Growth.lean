@@ -52,7 +52,6 @@ theorem exists_norm_dirichletData_completed_le_exp_mul_log (hne : χ ≠ 1) :
     ∃ C > 0, ∀ s : ℂ, ‖(dirichletData χ hχ).completed s‖ ≤
       Real.exp (C * (1 + ‖s‖) * Real.log (2 + ‖s‖)) := by
   obtain ⟨C, hC, hb⟩ := ZMod.exists_norm_completedLFunction₀_le_exp_mul_log (χ ·)
-  have hL : 0 ≤ Real.log N := Real.log_natCast_nonneg N
   refine ⟨Real.log N + C, by positivity, fun s ↦ ?_⟩
   have hpow := norm_natCast_cpow_ofReal_mul_le_exp_mul_log (NeZero.ne N) (1 / 2) s
   rw [show ((1 / 2 : ℝ) : ℂ) * s = s / 2 by push_cast; ring,

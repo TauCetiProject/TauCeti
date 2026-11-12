@@ -177,10 +177,8 @@ theorem exists_norm_completedLFunction₀_le_exp_mul_log (Φ : ZMod N → ℂ) :
   -- `K` dominates every Hurwitz constant and `S` is the total mass of `Φ`.
   set K := ∑ j, (CE j + CO j)
   set S := ∑ j, ‖Φ j‖
-  have hL : 0 ≤ Real.log N := Real.log_natCast_nonneg N
   have hpos : ∀ j ∈ Finset.univ, 0 ≤ CE j + CO j := fun j _ ↦ (add_pos (hCE j) (hCO j)).le
   have hK : 0 ≤ K := Finset.sum_nonneg hpos
-  have hS : 0 ≤ S := Finset.sum_nonneg fun j _ ↦ norm_nonneg _
   have hEK : ∀ j ∈ Finset.univ, CE j ≤ K := fun j hj ↦
     (le_add_of_nonneg_right (hCO j).le).trans (Finset.single_le_sum hpos hj)
   have hOK : ∀ j ∈ Finset.univ, CO j ≤ K := fun j hj ↦
