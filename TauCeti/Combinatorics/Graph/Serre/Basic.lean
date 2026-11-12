@@ -477,8 +477,11 @@ end TauCeti
 
 namespace SimpleGraph
 
-/-- The Serre graph of a simple graph has its darts as directed edges. -/
-@[expose] def toSerreGraph {V : Type u} (G : SimpleGraph V) : TauCeti.SerreGraph.{u, u} where
+/-- The Serre graph of a simple graph has its darts as directed edges. The definition unfolds at
+instance transparency, so that a vertex or a dart of the simple graph is accepted as a vertex or a
+dart of its Serre graph by rewriting and simplification. -/
+@[expose, instance_reducible] def toSerreGraph {V : Type u} (G : SimpleGraph V) :
+    TauCeti.SerreGraph.{u, u} where
   V := V
   E := G.Dart
   src := fun e => e.fst

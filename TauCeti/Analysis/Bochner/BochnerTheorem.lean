@@ -87,7 +87,6 @@ than through `MeasureTheory.charFun`.
 
 * S. Bochner, *Vorlesungen über Fouriersche Integrale*, Akademische Verlagsgesellschaft (1932).
 * W. Rudin, *Fourier Analysis on Groups* (1962), Theorem 1.4.3.
-* Roadmap: TauCetiRoadmap/OneParameterSemigroups/README.md, Part C (Bochner milestone).
 -/
 
 public section

@@ -97,11 +97,11 @@ theorem existential_iff_systems
         φ.Realize v xs ↔
           ∃ ys : Fin k → G, ∃ S ∈ systems, S.IsSolution (Sum.elim v (Sum.elim xs ys)) c := by
   induction hφ with
-  | of_isQF h =>
-    obtain ⟨systems, hsys⟩ := quantifierFree_iff_systems h
-    refine ⟨0, systems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)), fun G _ v c xs => ?_⟩
+  | @of_isQF _ φ h =>
+    refine ⟨0, φ.eqIneqSystems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)),
+      fun G _ v c xs => ?_⟩
     rw [exists_solution_relabel_inl_iff]
-    exact hsys G v c xs
+    exact quantifierFree_iff_systems h v c xs
   | ex _ ih =>
     obtain ⟨k, systems, hsys⟩ := ih
     refine ⟨k + 1, systems.map (EqIneqSystem.relabel (Sum.map id (snocWitness _ k))),
@@ -124,12 +124,13 @@ theorem universal_iff_systems
         φ.Realize v xs ↔
           ¬∃ ys : Fin k → G, ∃ S ∈ systems, S.IsSolution (Sum.elim v (Sum.elim xs ys)) c := by
   induction hφ with
-  | of_isQF h =>
-    obtain ⟨systems, hsys⟩ := quantifierFree_iff_systems h.not
-    refine ⟨0, systems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)), fun G _ v c xs => ?_⟩
+  | @of_isQF _ φ h =>
+    refine ⟨0, φ.not.eqIneqSystems.map (EqIneqSystem.relabel (Sum.map id Sum.inl)),
+      fun G _ v c xs => ?_⟩
     let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
     let : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
-    rw [exists_solution_relabel_inl_iff, ← hsys G v c xs, BoundedFormula.realize_not, not_not]
+    rw [exists_solution_relabel_inl_iff, ← quantifierFree_iff_systems h.not v c xs,
+      BoundedFormula.realize_not, not_not]
   | all _ ih =>
     obtain ⟨k, systems, hsys⟩ := ih
     refine ⟨k + 1, systems.map (EqIneqSystem.relabel (Sum.map id (snocWitness _ k))),
