@@ -262,7 +262,6 @@ theorem hasHomotopyExtensionProperty_preimage_range_ι [∀ k, T2Space (F.obj k)
     HasHomotopyExtensionProperty
       ((↑) ⁻¹' (range (c.ι.app k) : Set c.pt) : Set ↥(range (c.ι.app (k + 1)) : Set c.pt)) := by
   have hemb := isClosedEmbedding_ι_app hF hc (k + 1)
-  have hinj := hemb.injective
   have h := (hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k)).image
     hemb.isEmbedding.toHomeomorph
   convert h using 1
