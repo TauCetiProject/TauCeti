@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.QuadraticAlgebra.FiniteField
 public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
 import Mathlib.NumberTheory.LegendreSymbol.Basic
+import TauCeti.FieldTheory.Finite.EulerCriterion
 
 /-!
 # The integral Frobenius congruence in `ℤ[√r]`
@@ -163,3 +164,19 @@ example : (ω : QuadraticAlgebra ℤ 3 0) ^ 3 - star ω ∉
   omega_pow_sub_star_notMem_span_natCast ⟨0, rfl⟩
 
 end QuadraticAlgebra
+
+namespace Int
+
+/-- **Euler's criterion times `v`.** For a prime `p` modulo which the integer `r` is not a square
+and every integer `v`, `p ∣ v ^ p * r ^ ((p - 1) / 2) + v`: by Fermat `v ^ p ≡ v` and by Euler's
+criterion `r ^ ((p - 1) / 2) ≡ -1`, the exponent being written `p / 2`. For `p ∤ v` this is Euler's
+criterion for `r` itself. -/
+theorem dvd_pow_mul_pow_div_two_add {p : ℕ} [Fact p.Prime] {r : ℤ}
+    (hr : ¬IsSquare (r : ZMod p)) (v : ℤ) : (p : ℤ) ∣ v ^ p * r ^ (p / 2) + v := by
+  rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+  have h := TauCeti.FiniteField.pow_card_div_two_eq_neg_one hr
+  rw [Nat.card_zmod] at h
+  push_cast
+  rw [ZMod.pow_card, h, mul_neg_one, neg_add_cancel]
+
+end Int
