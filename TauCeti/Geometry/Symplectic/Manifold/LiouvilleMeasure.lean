@@ -119,8 +119,7 @@ theorem liouvilleMeasure_def : σ.liouvilleMeasure n = RoughForm.measure (σ.vol
 /-- On a surface the Liouville measure of `σ` is the measure `|σ|` of the two-form itself. -/
 theorem liouvilleMeasure_one [Fact (finrank ℝ E = 2 * 1)] (σ : SmoothTwoForm I M) :
     σ.liouvilleMeasure 1 = RoughForm.measure σ.1 := by
-  rw [liouvilleMeasure_def]
-  exact RoughForm.measure_eq_of_forall_abs_apply_eq fun x v ↦ by rw [volumeForm_one_apply]
+  rw [liouvilleMeasure_def, volumeForm_one]
 
 /-- **The Liouville measure in coordinates.** The Liouville measure of a measurable subset of a
 chart source is the integral over its coordinate image of the absolute value of the coefficient of

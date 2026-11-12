@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Volume
+import TauCeti.Topology.Algebra.Module.Alternating.Wedge.TwoForm
 
 /-!
 # The symplectic volume form and orientation of a symplectic manifold
@@ -41,7 +42,7 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.volumeForm_one_apply`: the volume form `σ¹ / 1!` is `σ` itself.
+* `TauCeti.SmoothTwoForm.volumeForm_one`: the volume form `σ¹ / 1!` is `σ` itself.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
 * `TauCeti.SmoothTwoForm.volumeForm_smul`: the volume form of `c • σ` is `cⁿ` times that of `σ`.
@@ -93,19 +94,10 @@ theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
 
 /-- The symplectic volume form `σ¹ / 1!` is the two-form `σ` itself. On a surface it is the
 volume form of `σ`. -/
-theorem volumeForm_one_apply (σ : SmoothTwoForm I M) (x : M)
-    (v : Fin (2 * 1) → TangentSpace I x) : (σ.volumeForm 1).1 x v = σ.1 x v := by
-  have h := ContinuousAlternatingMap.wedgePow_succ_apply_vecCons (σ.1 x) 0 (v 0) (Fin.tail v)
-  rw [Matrix.vecCons, Fin.cons_self_tail] at h
-  rw [volumeForm_apply, Nat.factorial_one, Nat.cast_one, inv_one, one_smul, h,
-    ContinuousAlternatingMap.pairedWedge_apply_zero_right]
-  simp only [ContinuousLinearMap.mul_apply',
-    ContinuousAlternatingMap.curryLeftTopological_apply_apply,
-    ContinuousAlternatingMap.wedgePow_zero_apply, Nat.cast_zero, zero_add, one_mul, mul_one]
-  -- The two tuples differ only by value-preserving `Fin.cast`s.
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+theorem volumeForm_one (σ : SmoothTwoForm I M) : σ.volumeForm 1 = σ := by
+  ext x : 2
+  rw [volumeForm_apply, ContinuousAlternatingMap.wedgePow_one, Nat.factorial_one, Nat.cast_one,
+    inv_one, one_smul]
 
 /-- Rescaling the two-form by `c` rescales its symplectic volume form by `cⁿ`. -/
 @[simp]
