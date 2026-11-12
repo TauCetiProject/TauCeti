@@ -37,7 +37,10 @@ The rate may be zero, in which case the process vanishes almost surely at every 
   filtration.
 * `IsFilteredPoissonProcess.hasLaw_eval`, `integral_eval`, `variance_eval`, `memLp_eval`: `N t`
   has the Poisson law of parameter `α * t`, hence every finite moment, mean `α * t` and variance
-  `α * t`.
+  `α * t`; `integral_sub`, `variance_sub`, `memLp_sub` are the same statements for increments.
+* `IsFilteredPoissonProcess.measureReal_setOf_eval_eq_natCast`,
+  `measureReal_setOf_sub_eq_natCast`: the Poisson point probabilities of `N t` and of
+  `N t - N s`; `measureReal_setOf_eval_eq_zero` gives `P(N t = 0) = exp (-(α * t))`.
 * `IsFilteredPoissonProcess.indepFun_sub_sub`, `hasIndepIncrements`: increments over disjoint
   intervals are independent.
 * `IsFilteredPoissonProcess.of_le`, `natural`, `ambientNullAugmentation`: the property passes to
@@ -59,7 +62,7 @@ The rate may be zero, in which case the process vanishes almost surely at every 
 public section
 
 open MeasureTheory ProbabilityTheory Real
-open scoped NNReal
+open scoped NNReal ENNReal Nat
 
 namespace TauCeti.Probability
 
@@ -88,6 +91,11 @@ variable {ℱ : Filtration ℝ≥0 mΩ} {α : ℝ≥0} {N : ℝ≥0 → Ω → �
 theorem adapted (h : IsFilteredPoissonProcess ℱ α N P) : Adapted ℱ N :=
   h.stronglyAdapted.adapted
 
+/-- Each value of a Poisson process is strongly measurable. -/
+theorem stronglyMeasurable (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
+    StronglyMeasurable (N t) :=
+  (h.stronglyAdapted t).mono (ℱ.le t)
+
 /-- Each value of a Poisson process is measurable. -/
 theorem measurable (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) : Measurable (N t) :=
   (h.adapted t).mono (ℱ.le t) le_rfl
@@ -103,30 +111,72 @@ theorem hasLaw_eval (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
   filter_upwards [h.eval_zero_ae_eq_zero] with ω hω
   simp [hω]
 
-/-- A Poisson process has finite moments of every finite order. -/
-theorem memLp_eval (h : IsFilteredPoissonProcess ℱ α N P) (t p : ℝ≥0) :
-    MemLp (N t) p P :=
-  (h.hasLaw_eval t).memLp (memLp_id_map_cast_poissonMeasure _ p)
+/-- A value of a Poisson process has finite moments of every finite order. -/
+theorem memLp_eval (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) {p : ℝ≥0∞} (hp : p ≠ ∞) :
+    MemLp (N t) p P := by
+  lift p to ℝ≥0 using hp
+  exact (h.hasLaw_eval t).memLp (memLp_id_map_cast_poissonMeasure _ p)
+
+/-- An increment of a Poisson process has finite moments of every finite order. -/
+theorem memLp_sub (h : IsFilteredPoissonProcess ℱ α N P) {s t : ℝ≥0} (hst : s ≤ t) {p : ℝ≥0∞}
+    (hp : p ≠ ∞) : MemLp (N t - N s) p P := by
+  lift p to ℝ≥0 using hp
+  exact (h.hasLaw_sub hst).memLp (memLp_id_map_cast_poissonMeasure _ p)
+
+/-- A value of a Poisson process is integrable. -/
+theorem integrable_eval (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) : Integrable (N t) P :=
+  memLp_one_iff_integrable.mp (h.memLp_eval t ENNReal.one_ne_top)
+
+/-- An increment of a Poisson process is integrable. -/
+theorem integrable_sub (h : IsFilteredPoissonProcess ℱ α N P) {s t : ℝ≥0} (hst : s ≤ t) :
+    Integrable (N t - N s) P :=
+  memLp_one_iff_integrable.mp (h.memLp_sub hst ENNReal.one_ne_top)
 
 /-- The mean of `N t` is `α * t`. -/
 theorem integral_eval (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
     ∫ ω, N t ω ∂P = α * t := by
   rw [integral_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_eval t), NNReal.coe_mul]
 
+/-- The mean of the increment `N t - N s`, `s ≤ t`, is `α * (t - s)`. -/
+theorem integral_sub (h : IsFilteredPoissonProcess ℱ α N P) {s t : ℝ≥0} (hst : s ≤ t) :
+    ∫ ω, (N t - N s) ω ∂P = α * (t - s) := by
+  rw [integral_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_sub hst), NNReal.coe_mul,
+    NNReal.coe_sub hst]
+
 /-- The variance of `N t` is `α * t`. -/
 theorem variance_eval (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
     variance (N t) P = α * t := by
   rw [variance_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_eval t), NNReal.coe_mul]
 
+/-- The variance of the increment `N t - N s`, `s ≤ t`, is `α * (t - s)`. -/
+theorem variance_sub (h : IsFilteredPoissonProcess ℱ α N P) {s t : ℝ≥0} (hst : s ≤ t) :
+    variance (N t - N s) P = α * (t - s) := by
+  rw [variance_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_sub hst), NNReal.coe_mul,
+    NNReal.coe_sub hst]
+
+/-- Exactly `n` events occur by time `t` with probability `exp (-(α * t)) * (α * t) ^ n / n!`. -/
+theorem measureReal_setOf_eval_eq_natCast (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0)
+    (n : ℕ) : P.real {ω | N t ω = n} = exp (-(α * t)) * (α * t) ^ n / n ! := by
+  rw [measureReal_setOf_eq_natCast_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_eval t),
+    NNReal.coe_mul]
+
+/-- Exactly `n` events occur in the interval `(s, t]` with probability
+`exp (-(α * (t - s))) * (α * (t - s)) ^ n / n!`. -/
+theorem measureReal_setOf_sub_eq_natCast (h : IsFilteredPoissonProcess ℱ α N P) {s t : ℝ≥0}
+    (hst : s ≤ t) (n : ℕ) :
+    P.real {ω | (N t - N s) ω = n} = exp (-(α * (t - s))) * (α * (t - s)) ^ n / n ! := by
+  rw [measureReal_setOf_eq_natCast_of_hasLaw_map_cast_poissonMeasure (h.hasLaw_sub hst),
+    NNReal.coe_mul, NNReal.coe_sub hst]
+
 /-- The probability that no event has occurred by time `t` is `exp (-(α * t))`. -/
-theorem measureReal_eval_eq_zero (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
+theorem measureReal_setOf_eval_eq_zero (h : IsFilteredPoissonProcess ℱ α N P) (t : ℝ≥0) :
     P.real {ω | N t ω = 0} = exp (-(α * t)) := by
-  rw [(h.hasLaw_eval t).measureReal_eq (measurableSet_singleton (0 : ℝ)),
-    Set.ofPred_eq_eq_singleton, map_measureReal_apply (by fun_prop) (measurableSet_singleton 0)]
-  have hpre : (Nat.cast : ℕ → ℝ) ⁻¹' {0} = {0} := by
-    ext n
-    simp
-  rw [hpre, poissonMeasure_real_singleton_zero, NNReal.coe_mul]
+  simpa using h.measureReal_setOf_eval_eq_natCast t 0
+
+/-- The probability that no event occurs in the interval `(s, t]` is `exp (-(α * (t - s)))`. -/
+theorem measureReal_setOf_sub_eq_zero (h : IsFilteredPoissonProcess ℱ α N P) {s t : ℝ≥0}
+    (hst : s ≤ t) : P.real {ω | (N t - N s) ω = 0} = exp (-(α * (t - s))) := by
+  simpa using h.measureReal_setOf_sub_eq_natCast hst 0
 
 /-- A Poisson process of rate zero vanishes almost surely at every time. -/
 theorem eval_ae_eq_zero (h : IsFilteredPoissonProcess ℱ 0 N P) (t : ℝ≥0) :
@@ -140,10 +190,8 @@ independent. Only `s ≤ u` and `t ≤ u` are used, so the first interval may al
 empty. -/
 theorem indepFun_sub_sub (h : IsFilteredPoissonProcess ℱ α N P) {s t u v : ℝ≥0}
     (hsu : s ≤ u) (htu : t ≤ u) (huv : u ≤ v) :
-    IndepFun (N t - N s) (N v - N u) P := by
-  rw [IndepFun_iff_Indep]
-  exact indep_of_indep_of_le_left (h.indep_sub huv).symm
-    ((h.adapted.measurable_le htu).sub (h.adapted.measurable_le hsu)).comap_le
+    IndepFun (N t - N s) (N v - N u) P :=
+  h.adapted.indepFun_sub_sub hsu htu (h.indep_sub huv)
 
 /-- A Poisson process has independent increments. -/
 theorem hasIndepIncrements (h : IsFilteredPoissonProcess ℱ α N P) : HasIndepIncrements N P :=
@@ -161,11 +209,10 @@ theorem of_le (h : IsFilteredPoissonProcess ℱ α N P) {𝒢 : Filtration ℝ�
 
 /-- A Poisson process relative to some filtration is a Poisson process relative to its natural
 filtration. -/
-theorem natural (h : IsFilteredPoissonProcess ℱ α N P)
-    (hmeas : ∀ t, StronglyMeasurable (N t)) :
-    IsFilteredPoissonProcess (Filtration.natural N hmeas) α N P :=
-  h.of_le ((Filtration.natural_le_iff N hmeas ℱ).mpr h.adapted)
-    (Filtration.stronglyAdapted_natural hmeas)
+theorem natural (h : IsFilteredPoissonProcess ℱ α N P) :
+    IsFilteredPoissonProcess (Filtration.natural N h.stronglyMeasurable) α N P :=
+  h.of_le ((Filtration.natural_le_iff N h.stronglyMeasurable ℱ).mpr h.adapted)
+    (Filtration.stronglyAdapted_natural h.stronglyMeasurable)
 
 /-- Adjoining ambient-measurable null events to the filtration preserves the Poisson property,
 without completing the ambient measurable space. -/
@@ -189,34 +236,23 @@ theorem congr (h : IsFilteredPoissonProcess ℱ α N P) {M : ℝ≥0 → Ω → 
   eval_zero_ae_eq_zero := by
     filter_upwards [h.eval_zero_ae_eq_zero, hNM 0] with ω hω hω' using hω' ▸ hω
   hasLaw_sub s t hst := (h.hasLaw_sub hst).congr ((hNM t).sub (hNM s)).symm
-  indep_sub s t hst := by
-    have hi : @IndepFun Ω ℝ Ω mΩ inferInstance (ℱ s) (N t - N s) id P := by
-      simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using h.indep_sub hst
-    have hj := hi.congr ((hNM t).sub (hNM s)) (Filter.EventuallyEq.refl ..)
-    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hj
+  indep_sub s t hst := (h.indep_sub hst).comap_congr ((hNM t).sub (hNM s))
 
 /-- The future increment process `(N (s + u) - N s)_u` of a Poisson process is independent of
 `ℱ s`. -/
 theorem indep_comap_shift (h : IsFilteredPoissonProcess ℱ α N P) (s : ℝ≥0) :
-    Indep (.comap (fun ω u ↦ N (s + u) ω - N s ω) inferInstance) (ℱ s) P := by
+    Indep (.comap (fun ω u ↦ N (s + u) ω - N s ω) inferInstance) (ℱ s) P :=
   have := h.isProbabilityMeasure
-  refine indep_of_indep_of_le_left (h.adapted.indep_comap_sub_Ici h.indep_sub s) ?_
-  have hg : Measurable fun (z : Set.Ici s → ℝ) (u : ℝ≥0) ↦
-      z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩ := by
-    fun_prop
-  have hcomp : (fun ω u ↦ N (s + u) ω - N s ω) =
-      (fun (z : Set.Ici s → ℝ) (u : ℝ≥0) ↦ z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩) ∘
-        fun ω (t : Set.Ici s) ↦ N t ω - N s ω :=
-    rfl
-  rw [hcomp, ← MeasurableSpace.comap_comp]
-  exact MeasurableSpace.comap_mono hg.comap_le
+  h.adapted.indep_comap_shift h.indep_sub s
 
 /-- The future increment process `(N (s + u) - N s)_u` of a Poisson process relative to `ℱ` is a
 Poisson process of the same rate relative to its own natural filtration. -/
-theorem shift (h : IsFilteredPoissonProcess ℱ α N P) (s : ℝ≥0)
-    (hmeas : ∀ u, StronglyMeasurable fun ω ↦ N (s + u) ω - N s ω) :
-    IsFilteredPoissonProcess (Filtration.natural (fun u ω ↦ N (s + u) ω - N s ω) hmeas) α
+theorem shift (h : IsFilteredPoissonProcess ℱ α N P) (s : ℝ≥0) :
+    IsFilteredPoissonProcess (Filtration.natural (fun u ω ↦ N (s + u) ω - N s ω)
+      fun u ↦ (h.stronglyMeasurable (s + u)).sub (h.stronglyMeasurable s)) α
       (fun u ω ↦ N (s + u) ω - N s ω) P := by
+  have hmeas (u : ℝ≥0) : StronglyMeasurable fun ω ↦ N (s + u) ω - N s ω :=
+    (h.stronglyMeasurable (s + u)).sub (h.stronglyMeasurable s)
   have hsub (u v : ℝ≥0) : ((fun ω ↦ N (s + v) ω - N s ω) - fun ω ↦ N (s + u) ω - N s ω) =
       N (s + v) - N (s + u) := by
     ext ω
@@ -254,8 +290,7 @@ theorem isFilteredPoissonProcess_natural (hN : HasIndepIncrements N P)
   hasLaw_sub := hlaw
   indep_sub s t hst := by
     rw [Filtration.natural_eq_comap]
-    -- The history theorem is stated at `⊥`, which is `0` in `ℝ≥0` by definition.
     exact ((IndepFun_iff_Indep _ _ _).mp
-      (hN.indepFun_past_sub (fun t ↦ (hmeas t).measurable) h0 hst)).symm
+      (hN.indepFun_past_sub (fun t ↦ (hmeas t).measurable) (by rwa [bot_eq_zero]) hst)).symm
 
 end ProbabilityTheory.HasIndepIncrements

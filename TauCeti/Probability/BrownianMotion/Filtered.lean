@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Process.Adapted
+import TauCeti.Probability.Independence.Completion
 import TauCeti.Probability.Independence.Filtration
 
 /-!
@@ -81,11 +82,7 @@ theorem IsFilteredPreBrownianReal.congr {ℱ : Filtration ℝ≥0 mΩ} {B W : �
     (h : ∀ t, B t =ᵐ[P] W t) : IsFilteredPreBrownianReal ℱ W P where
   toIsPreBrownianReal := hB.toIsPreBrownianReal.congr h
   adapted := hW
-  indep_sub s t hst := by
-    have hi : @IndepFun Ω ℝ Ω mΩ inferInstance (ℱ s) (B t - B s) id P := by
-      simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hB.indep_sub hst
-    have hj := hi.congr ((h t).sub (h s)) (Filter.EventuallyEq.refl ..)
-    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hj
+  indep_sub s t hst := (hB.indep_sub hst).comap_congr ((h t).sub (h s))
 
 end TauCeti.Probability
 

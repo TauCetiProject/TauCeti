@@ -22,10 +22,13 @@ file derives the consequences that do not depend on the law of the increments.
 
 * `MeasureTheory.Adapted.indep_comap_sub_of_indep_comap_sub`: increments independent of the past
   on `[s, u]` and on `[u, t]` give an increment independent of the past on `[s, t]`.
+* `MeasureTheory.Adapted.indepFun_sub_sub`: an increment independent of the past is independent
+  of every earlier increment.
 * `MeasureTheory.Adapted.hasIndepIncrements`: increments independent of the past are independent
   increments in the sense of `ProbabilityTheory.HasIndepIncrements`.
-* `MeasureTheory.Adapted.indep_comap_sub_Ici`: increments independent of the past make the whole
-  future increment process `(X t - X s)_{t ≥ s}` independent of `ℱ s`.
+* `MeasureTheory.Adapted.indep_comap_sub_Ici`, `indep_comap_shift`: increments independent of the
+  past make the whole future increment process `(X t - X s)_{t ≥ s}`, equivalently the shifted
+  process `(X (s + u) - X s)_u`, independent of `ℱ s`.
 -/
 
 public section
@@ -56,6 +59,17 @@ theorem indep_comap_sub_of_indep_comap_sub [AddGroup E] [MeasurableSub₂ E]
   rw [← sub_add_sub_cancel (X t) (X u) (X s)]
   exact ((comap_measurable _).mono le_sup_right le_rfl).add
     ((comap_measurable _).mono le_sup_left le_rfl)
+
+/-- If the increment of an adapted process over `(u, v]` is independent of `ℱ u`, then it is
+independent of its increment over `(s, t]` for `s, t ≤ u`. In particular, increments over intervals
+`(s, t]` and `(u, v]` with `t ≤ u` are independent; the first interval may also be reversed or
+empty. -/
+theorem indepFun_sub_sub [Sub E] [MeasurableSub₂ E] (hX : Adapted ℱ X) {s t u v : ι}
+    (hsu : s ≤ u) (htu : t ≤ u) (h : Indep (.comap (X v - X u) inferInstance) (ℱ u) μ) :
+    IndepFun (X t - X s) (X v - X u) μ := by
+  rw [IndepFun_iff_Indep]
+  exact indep_of_indep_of_le_left h.symm
+    ((hX.measurable_le htu).sub (hX.measurable_le hsu)).comap_le
 
 /-- A process adapted to `ℱ` whose increments `X t - X s`, `s ≤ t`, are independent of `ℱ s` has
 independent increments. -/
@@ -136,5 +150,21 @@ theorem indep_comap_sub_Ici (hX : Adapted ℱ X)
     exact iSup₂_le fun t ht ↦
       le_iSup₂_of_le (t : ι) (Finset.mem_map_of_mem _ ht) le_rfl
   · exact iSup₂_le fun _ _ ↦ (hX.measurable.sub hX.measurable).comap_le
+
+/-- If the increments of an adapted process are independent of the past, then the shifted
+increment process `(X (s + u) - X s)_u` is independent of `ℱ s`. -/
+theorem indep_comap_shift [Add ι] [CanonicallyOrderedAdd ι] (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) (s : ι) :
+    Indep (.comap (fun ω u ↦ X (s + u) ω - X s ω) inferInstance) (ℱ s) μ := by
+  refine indep_of_indep_of_le_left (hX.indep_comap_sub_Ici hindep s) ?_
+  have hg : Measurable fun (z : Set.Ici s → E) (u : ι) ↦
+      z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩ := by
+    fun_prop
+  have hcomp : (fun ω u ↦ X (s + u) ω - X s ω) =
+      (fun (z : Set.Ici s → E) (u : ι) ↦ z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩) ∘
+        fun ω (t : Set.Ici s) ↦ X t ω - X s ω :=
+    rfl
+  rw [hcomp, ← MeasurableSpace.comap_comp]
+  exact MeasurableSpace.comap_mono hg.comap_le
 
 end MeasureTheory.Adapted

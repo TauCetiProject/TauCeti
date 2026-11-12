@@ -12,7 +12,8 @@ public import Mathlib.MeasureTheory.Measure.NullMeasurable
 # Independence and completion
 
 Completing a measure does not change independence of sigma-algebras. Adjoining ambient
-null events to either of two independent sigma-algebras also preserves independence.
+null events to either of two independent sigma-algebras also preserves independence, and so does
+modifying a generating function on a null set.
 These facts allow filtrations to be augmented without changing increment independence.
 -/
 
@@ -45,5 +46,13 @@ theorem Indep.eventuallyMeasurableSpace_right (h : Indep m₁ m₂ P) :
 theorem Indep.eventuallyMeasurableSpace_left (h : Indep m₁ m₂ P) :
     Indep (eventuallyMeasurableSpace m₁ (ae P)) m₂ P :=
   h.symm.eventuallyMeasurableSpace_right.symm
+
+/-- Modifying a function on a null set does not change the independence of the sigma-algebra it
+generates from another sigma-algebra. -/
+theorem Indep.comap_congr {β : Type*} {mβ : MeasurableSpace β} {f g : Ω → β}
+    (h : Indep (.comap f mβ) m₂ P) (hfg : f =ᵐ[P] g) : Indep (.comap g mβ) m₂ P := by
+  have hf : @IndepFun Ω β Ω mΩ mβ m₂ f id P := by
+    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using h
+  simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hf.congr hfg .rfl
 
 end ProbabilityTheory

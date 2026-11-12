@@ -241,4 +241,14 @@ theorem variance_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace
   rw [hX.variance_eq]
   exact variance_id_map_cast_poissonMeasure r
 
+/-- A real random variable with Poisson law of rate `r` takes the value `n` with probability
+`exp (-r) * r ^ n / n!`. -/
+theorem measureReal_setOf_eq_natCast_of_hasLaw_map_cast_poissonMeasure {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P)
+    (n : ℕ) : P.real {ω | X ω = n} = exp (-r) * r ^ n / n ! := by
+  rw [hX.measureReal_eq (measurableSet_singleton (n : ℝ)), Set.ofPred_eq_eq_singleton,
+    map_measureReal_apply (by fun_prop) (measurableSet_singleton _),
+    ← Set.image_singleton (f := (Nat.cast : ℕ → ℝ)), Nat.cast_injective.preimage_image,
+    poissonMeasure_real_singleton]
+
 end TauCeti.Probability
