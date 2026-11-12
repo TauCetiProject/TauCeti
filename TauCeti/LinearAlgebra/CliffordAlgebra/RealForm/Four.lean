@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Subalgebra.Center
-import TauCeti.RingTheory.Semisimple.BasicAlgebra
+import TauCeti.RingTheory.Nilpotent.Reduced
 
 /-!
 # The compact four-dimensional even Clifford algebra

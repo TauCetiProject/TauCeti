@@ -82,7 +82,9 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
   -- `L` is the entrywise identification `Matrix.of`, as a continuous linear map.
   have hL (B : n → n → 𝕜) : L B = Matrix.of B := by
     exact (congrFun (ContinuousLinearMap.coe_mk' _ _) B).trans (by simp)
-  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by simp [hL, A']
+  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by
+    have hAy : Matrix.of (A y).row = A y := by ext; simp only [Matrix.of_apply, Matrix.row_apply]
+    simp [hL, A', hAy]
   have hcomp := mvfderiv_comp_apply_of_differentiableAt hdet'.differentiableAt hA' v
   rw [Function.comp_def, hLA] at hcomp
   rw [hcomp, hdet'.fderiv]

@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 
 /-!
-# Geodesics are the critical points of the energy
+# Geodesics and the first variation of energy and length
 
 The first variation formula `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_energy` of
 `TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic` expresses the derivative at `s = 0`
@@ -33,6 +35,19 @@ the first-variation integrand of such a variation is
 (`TauCeti.Manifold.continuousAt_inner_variationField_acceleration`).  A bump supported where
 `g > 0` then gives a variation whose first variation `-∫_a^b φ g` is nonzero.
 
+For the length, the first variation formula
+`TauCeti.Manifold.hasDerivAt_toReal_pathELength` of
+`TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length` allows moving endpoints. When the
+central curve `γ` has constant speed `C > 0` and is a geodesic on `(a, b)`, its integral term
+vanishes and only the boundary terms `(⟪V(b), γ'(b)⟫ - ⟪V(a), γ'(a)⟫) / C` remain. Hence, if the
+length of `F s` has a local extremum at `s = 0`, then `⟪V(a), γ'(a)⟫ = ⟪V(b), γ'(b)⟫`; if it has a
+local minimum among the parameters `s ≥ 0`, then `⟪V(a), γ'(a)⟫ ≤ ⟪V(b), γ'(b)⟫`. When the
+endpoint `F s b` does not depend on `s`, the field `V` vanishes at `b`
+(`TauCeti.Manifold.variationField_eq_zero`), and these read `⟪V(a), γ'(a)⟫ = 0` and
+`⟪V(a), γ'(a)⟫ ≤ 0`. The equality is how a shortest geodesic from a submanifold to a point is
+seen to leave the submanifold orthogonally; the inequality is the corresponding statement at a
+boundary point of the submanifold, where only one-sided variations are available.
+
 ## Main definitions and results
 
 * `TauCeti.Manifold.IsGeodesicCurveOn.isEnergyCritical`: **geodesics are critical points of the
@@ -40,12 +55,20 @@ the first-variation integrand of such a variation is
 * `TauCeti.Manifold.IsEnergyCritical.isGeodesicCurveOn`: **critical points of the energy are
   geodesics**, for `2 ≤ n ≤ ∞`.
 * `TauCeti.Manifold.isEnergyCritical_iff_isGeodesicCurveOn`: the two combined.
+* `TauCeti.Manifold.hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn`: the first variation of
+  the length of a constant-speed geodesic is the difference of the boundary terms.
+* `TauCeti.Manifold.inner_variationField_curveVelocity_eq_of_isLocalExtr`: at a local extremum of
+  the length, the two boundary terms of a constant-speed geodesic are equal.
+* `TauCeti.Manifold.inner_variationField_curveVelocity_le_of_isLocalMinOn_Ici`: at a local minimum
+  of the length among the parameters `s ≥ 0`, they satisfy an inequality.
 
 ## References
 
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 9, §2, Propositions 2.4 and 2.5.
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton, 1963, §12,
   Corollary 12.3.
+* J. M. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2nd ed., 2018, Ch. 6, the first
+  variation formula for length.
 -/
 
 public section
@@ -69,7 +92,6 @@ section EnergyCritical
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **Geodesics are critical points of the energy.** For `2 ≤ n`, a geodesic on the open interval
@@ -112,7 +134,6 @@ private theorem isFixedEndpointVariation_chartVariation [IsManifold I n M] (hJo 
 
 variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ E]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- The first-variation integrand of the chart variation: `φ t` times the pairing of the tangent
@@ -231,6 +252,80 @@ theorem isEnergyCritical_iff_isGeodesicCurveOn [IsManifold I n M] (hn : 2 ≤ n)
     fun h ↦ h.isEnergyCritical (WithTop.coe_le_coe.mpr hn) hγ⟩
 
 end Converse
+
+/-! ### Geodesics and local extrema of length -/
+
+section Length
+
+open scoped InnerProductSpace
+
+variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {F : ℝ → ℝ → M}
+
+/-- **The first variation of length of a geodesic.** Let `F` be a two-parameter family which is
+`C²` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has constant speed `C > 0` on
+`[a, b]` and is a geodesic on the open interval `(a, b)`. Then the derivative at `s = 0` of the
+length of `F s` between `a` and `b` is `(⟪V(b), γ'(b)⟫ - ⟪V(a), γ'(a)⟫) / C`, where `V` is the
+variation field: it only depends on the variation field at the two endpoints. -/
+theorem hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn (hab : a ≤ b)
+    (hF : ∀ t ∈ Icc a b,
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
+    {C : ℝ} (hC : 0 < C) (hγ : ∀ t ∈ Icc a b, ‖curveVelocity I (F 0) t‖ = C)
+    (hgeo : IsGeodesicCurveOn I (F 0) (Ioo a b)) :
+    HasDerivAt (fun s ↦ (Manifold.pathELength I (F s) a b).toReal)
+      ((⟪variationField I F b, curveVelocity I (F 0) b⟫_ℝ -
+        ⟪variationField I F a, curveVelocity I (F 0) a⟫_ℝ) / C) 0 := by
+  have hacc : ∫ t in a..b, ⟪variationField I F t,
+      acceleration (leviCivitaConnection I M) (F 0) t⟫_ℝ = 0 := by
+    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
+      intervalIntegral.integral_zero
+    rw [uIoo_of_le hab] at ht
+    simp only [((isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).mp hgeo).2 t ht, inner_zero_right]
+  simpa only [hacc, sub_zero] using hasDerivAt_toReal_pathELength hab hF hC hγ
+
+/-- **The first variation at a local extremum of length.** Let `F` be a two-parameter family which
+is `C²` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has constant speed `C > 0`
+on `[a, b]` and is a geodesic on the open interval `(a, b)`. If the length of `F s` between `a` and
+`b` has a local extremum at `s = 0`, for example a local minimum, then
+`⟪V(a), γ'(a)⟫ = ⟪V(b), γ'(b)⟫`, where `V` is the variation field.
+
+When the endpoint `F s b` does not depend on `s` near `0`, the right-hand side vanishes by
+`variationField_eq_zero`, so `γ'(a)` is orthogonal to `V(a)`. -/
+theorem inner_variationField_curveVelocity_eq_of_isLocalExtr (hab : a ≤ b)
+    (hF : ∀ t ∈ Icc a b,
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
+    {C : ℝ} (hC : 0 < C) (hγ : ∀ t ∈ Icc a b, ‖curveVelocity I (F 0) t‖ = C)
+    (hgeo : IsGeodesicCurveOn I (F 0) (Ioo a b))
+    (hextr : IsLocalExtr (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) 0) :
+    ⟪variationField I F a, curveVelocity I (F 0) a⟫_ℝ =
+      ⟪variationField I F b, curveVelocity I (F 0) b⟫_ℝ := by
+  have h := hextr.hasDerivAt_eq_zero
+    (hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn hab hF hC hγ hgeo)
+  exact (sub_eq_zero.mp ((div_eq_zero_iff.mp h).resolve_right hC.ne')).symm
+
+/-- **The first variation at a one-sided local minimum of length.** Let `F` be a two-parameter
+family which is `C²` at every point of `{0} × [a, b]`, whose central curve `γ = F 0` has constant
+speed `C > 0` on `[a, b]` and is a geodesic on the open interval `(a, b)`. If the length of `F s`
+between `a` and `b` has a local minimum at `s = 0` among the parameters `s ≥ 0`, then
+`⟪V(a), γ'(a)⟫ ≤ ⟪V(b), γ'(b)⟫`, where `V` is the variation field.
+
+When the endpoint `F s b` does not depend on `s` near `0`, the right-hand side vanishes by
+`variationField_eq_zero`, so `⟪V(a), γ'(a)⟫ ≤ 0`. -/
+theorem inner_variationField_curveVelocity_le_of_isLocalMinOn_Ici (hab : a ≤ b)
+    (hF : ∀ t ∈ Icc a b,
+      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t))
+    {C : ℝ} (hC : 0 < C) (hγ : ∀ t ∈ Icc a b, ‖curveVelocity I (F 0) t‖ = C)
+    (hgeo : IsGeodesicCurveOn I (F 0) (Ioo a b))
+    (hmin : IsLocalMinOn (fun s ↦ (Manifold.pathELength I (F s) a b).toReal) (Ici 0) 0) :
+    ⟪variationField I F a, curveVelocity I (F 0) a⟫_ℝ ≤
+      ⟪variationField I F b, curveVelocity I (F 0) b⟫_ℝ := by
+  have h := hmin.hasDerivWithinAt_Ici_nonneg
+    (hasDerivAt_toReal_pathELength_of_isGeodesicCurveOn hab hF hC hγ hgeo).hasDerivWithinAt
+  exact sub_nonneg.mp (by simpa only [zero_mul] using (le_div_iff₀ hC).mp h)
+
+end Length
 
 end TauCeti.Manifold
 

@@ -32,7 +32,11 @@ the projective-class separation interface:
   Their disjointness on countable nonempty carriers yields, via `pcSeparation`, a
   pure-equality sentence of `Language.empty` separating even from odd nonempty finite sets in every
   universe, and the countable disjunction `evenCardSentence` asserting "exactly `2n` elements for
-  some `n`" gives an explicit such sentence.
+  some `n`" gives an explicit such sentence. The theorems are
+  `TauCeti.ParityOfFiniteSetsExample.pcMem_evenFiniteSentence_iff` and
+  `TauCeti.ParityOfFiniteSetsExample.pcMem_oddFiniteSentence_iff`, which describe the two projective
+  classes, and `TauCeti.ParityOfFiniteSetsExample.realize_evenCardSentence_iff`, which describes the
+  models of `evenCardSentence`.
 -/
 
 public noncomputable section

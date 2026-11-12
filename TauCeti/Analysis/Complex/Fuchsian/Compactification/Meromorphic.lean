@@ -126,9 +126,8 @@ cusp chart of the cusp datum `D` is the cusp extension of `f` at `D`. -/
 theorem comp_cuspChart_symm_eventuallyEq (D : Γ.CuspDatum) {A : ℝ} (hA : D.width ≤ A)
     (hF : ∀ z, F (ofQuotient (Quotient.mk _ z)) = f z) :
     F ∘ (cuspChart D hA).symm =ᶠ[𝓝[≠] 0] cuspExtension D f := by
-  filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds 0 (cuspRadius_pos D A)),
-    self_mem_nhdsWithin] with q hq hq0
-  rw [Function.comp_apply, cuspChart_symm_of_ne_zero D hA (by rwa [cuspChart_target]) hq0, hF,
+  filter_upwards [self_mem_nhdsWithin] with q hq0
+  rw [Function.comp_apply, cuspChart_symm_of_ne_zero D hA hq0, hF,
     cuspExtension_def, UpperHalfPlane.cuspFunction,
     Function.Periodic.cuspFunction_eq_of_ne_zero _ _ hq0, Function.comp_apply]
 
