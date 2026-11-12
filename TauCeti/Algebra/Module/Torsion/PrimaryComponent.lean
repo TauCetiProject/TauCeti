@@ -283,6 +283,7 @@ theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] 
   · intro h
     refine eq_bot_iff.mpr fun x hx ↦ ?_
     obtain ⟨n, hn⟩ := (mem_primaryComponent_span_singleton_iff r).mp hx
+    rw [Submodule.mem_bot]
     exact (h.pow n) (hn.trans (smul_zero _).symm)
 
 /-- For a finitely generated ideal `𝔞`, the quotient of a module by its `𝔞`-primary component has

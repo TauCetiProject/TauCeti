@@ -38,18 +38,24 @@ open Function Submodule
 
 namespace Ideal
 
+/-- A finite module consisting of ideal-power torsion is complete for that ideal. -/
+theorem isAdicComplete_of_primaryComponent_eq_top {R M : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [Module.Finite R M] {I : Ideal R}
+    (h : I.primaryComponent M = ⊤) : IsAdicComplete I M := by
+  obtain ⟨k, hk⟩ := I.exists_le_torsionBySet_pow_of_le_primaryComponent
+    Module.Finite.fg_top h.ge
+  have hkill : I ^ k • (⊤ : Submodule R M) = ⊥ := by
+    apply eq_bot_iff.mpr
+    refine Submodule.smul_le.mpr fun a ha x hx ↦ ?_
+    rw [Submodule.mem_bot]
+    exact (Submodule.mem_torsionBySet_iff _ _).mp (hk hx) ⟨a, ha⟩
+  exact TauCeti.isAdicComplete_of_pow_smul_eq_bot hkill
+
 /-- A finite ideal-power torsion submodule is complete for that ideal. -/
 instance isAdicComplete_primaryComponent_of_finite {R M : Type*} [CommRing R]
     [AddCommGroup M] [Module R M] (I : Ideal R) [Module.Finite R (I.primaryComponent M)] :
-    IsAdicComplete I (I.primaryComponent M) := by
-  obtain ⟨k, hk⟩ := I.exists_le_torsionBySet_pow_of_le_primaryComponent
-    (P := I.primaryComponent M) (Module.Finite.iff_fg.mp inferInstance) le_rfl
-  have hkill : I ^ k • (⊤ : Submodule R (I.primaryComponent M)) = ⊥ := by
-    apply eq_bot_iff.mpr
-    refine Submodule.smul_le.mpr fun a ha x _ ↦ ?_
-    apply Subtype.ext
-    exact (Submodule.mem_torsionBySet_iff _ _).mp (hk x.2) ⟨a, ha⟩
-  exact TauCeti.isAdicComplete_of_pow_smul_eq_bot hkill
+    IsAdicComplete I (I.primaryComponent M) :=
+  isAdicComplete_of_primaryComponent_eq_top I.primaryComponent_primaryComponent_eq_top
 
 end Ideal
 
@@ -89,7 +95,8 @@ theorem primaryComponent_map_of_bijective_of_isAdicComplete
     obtain ⟨z, hz⟩ := (hex (y : AdicCompletion I M)).mp hy
     obtain ⟨t, rfl⟩ := of_surjective I T z
     refine ⟨t, Subtype.ext ?_⟩
-    exact (map_of I T.subtype t).symm.trans hz
+    simpa only [Ideal.primaryComponent.map_apply_coe, Submodule.subtype_apply] using
+      (map_of I T.subtype t).symm.trans hz
 
 /-- Bounded parameter-power torsion is unchanged by principal-adic completion. There are
 no Noetherian or finite-generation hypotheses: only the torsion submodule must be killed by
@@ -118,7 +125,7 @@ theorem coe_primaryComponentEquiv_apply
     (x : (Ideal.span {r}).primaryComponent M) :
     (primaryComponentEquiv r x : AdicCompletion (Ideal.span {r}) M) =
       of (Ideal.span {r}) M (x : M) := by
-  rfl
+  rw [primaryComponentEquiv, LinearEquiv.ofBijective_apply, Ideal.primaryComponent.map_apply_coe]
 
 /-- Applying the canonical completion map to the inverse torsion comparison recovers the
 original torsion element of the completion. -/
