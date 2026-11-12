@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.Complex.Basic
 
 /-!
 # The trace of a curve near a point visited once lies in thin cones around the tangent
@@ -69,7 +69,7 @@ theorem exists_pos_forall_abs_im_conj_mul_sub_le {γ : ℝ → ℂ} {K : Set ℝ
       ring
     rw [show γ s - γ t₀ = (s - t₀) • v + e by simp [e], mul_add, add_im, hreal, zero_add]
   have hime : |(conj v * e).im| ≤ ‖v‖ * ‖e‖ :=
-    (abs_im_le_norm _).trans_eq (by rw [norm_mul, Complex.norm_conj])
+    abs_im_conj_mul_le v e
   have hlow : ‖v‖ / 2 * |s - t₀| ≤ ‖γ s - γ t₀‖ := by
     have h1 := norm_sub_le (γ s - γ t₀) e
     rw [show γ s - γ t₀ - e = (s - t₀) • v by simp [e], norm_smul, Real.norm_eq_abs] at h1

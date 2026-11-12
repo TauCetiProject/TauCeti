@@ -12,6 +12,7 @@ import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Continuity
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 import TauCeti.Analysis.Contour.Winding.Number.Segment.Jump
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+import TauCeti.Topology.JordanCurve.Interval
 
 /-!
 # Winding-number jump across a regular point of an absolutely continuous curve
@@ -443,16 +444,6 @@ private theorem exists_window_slitCompl {γ : ℝ → ℂ} {a b t₀ : ℝ} {v :
 end Helpers
 
 end TauCeti.Contour
-
-/-- A closed curve injective on `[a, b)` visits the value at an interior parameter `t₀ ∈ (a, b)`
-nowhere else on `[a, b]`: the endpoint `b` carries the value of `a`, which differs from `γ t₀`. -/
-theorem Set.InjOn.eq_of_mem_Icc_of_mem_Ioo {α : Type*} {γ : ℝ → α} {a b t₀ t : ℝ}
-    (hinj : InjOn γ (Ico a b)) (hclosed : γ a = γ b) (ht₀ : t₀ ∈ Ioo a b) (ht : t ∈ Icc a b)
-    (heq : γ t = γ t₀) : t = t₀ := by
-  rcases ht.2.eq_or_lt with rfl | htb
-  · exact absurd (hinj ⟨le_rfl, ht₀.1.trans ht₀.2⟩ (Ioo_subset_Ico_self ht₀) (hclosed.trans heq))
-      ht₀.1.ne
-  · exact hinj ⟨ht.1, htb⟩ (Ioo_subset_Ico_self ht₀) heq
 
 open TauCeti.Contour
 

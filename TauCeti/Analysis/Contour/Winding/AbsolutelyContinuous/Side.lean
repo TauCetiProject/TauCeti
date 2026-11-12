@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Calculus.Deriv.TangentCone
+import TauCeti.Analysis.Calculus.Deriv.TraceNearTangent
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
-import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.TangentJump
+import TauCeti.Topology.JordanCurve.Interval
 
 /-!
 # The side of a Jordan curve entered by a transverse curve
@@ -50,15 +50,14 @@ private theorem le_im_conj_mul_smul_add_smul {u w e : ℂ} {κ η ε l : ℝ}
     (hl0 : 0 ≤ l) (hl1 : l ≤ 1) (he : ‖e‖ ≤ η * ε) :
     3 / 4 * κ * ε ≤ (conj u * (ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e)).im := by
   have hn : (conj u * (I * u)).im = ‖u‖ ^ 2 := by
-    rw [mul_left_comm, Complex.conj_mul', ← Complex.ofReal_pow, Complex.I_mul_im,
-      Complex.ofReal_re]
+    simp [mul_left_comm, Complex.conj_mul', ← Complex.ofReal_pow]
   have him : (conj u * (ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e)).im =
       ε * ((1 - l) * (conj u * w).im + l * ‖u‖ ^ 2) + (1 - l) * (conj u * e).im := by
     rw [← hn]
     simp only [mul_add, mul_smul_comm, add_im, smul_im, smul_eq_mul]
   -- The error term moves the point by at most `κ / 4 * ε` across the tangent line.
   have hime : |(conj u * e).im| ≤ κ / 4 * ε := by
-    refine ((abs_im_le_norm _).trans_eq (by rw [norm_mul, Complex.norm_conj])).trans ?_
+    refine (abs_im_conj_mul_le u e).trans ?_
     calc ‖u‖ * ‖e‖ ≤ ‖u‖ * (η * ε) := mul_le_mul_of_nonneg_left he (norm_nonneg _)
       _ = ‖u‖ * η * ε := by ring
       _ ≤ κ / 4 * ε := mul_le_mul_of_nonneg_right hηu hε.le
@@ -149,23 +148,30 @@ namespace AbsolutelyContinuousOnInterval
 
 variable {γ : ℝ → ℂ} {a b t₀ : ℝ} {v w : ℂ} {p : ℝ → ℂ}
 
-/-- A curve leaving a regular point strictly to the left of `u = ± v` avoids the trace on a segment
-to the left normal ray of `u`. -/
-private theorem eventually_segment_subset_compl_of_hasDerivAt {u : ℂ} (hab : a < b)
+/-- A transverse curve on the side selected by `σ = ±1` avoids the trace on a segment to
+that side's normal ray. The transverse inequality also guarantees that the tangent is nonzero. -/
+private theorem eventually_segment_subset_compl_of_hasDerivAt {σ : ℝ} (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
-    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hu : u = v ∨ u = -v) (hp0 : p 0 = γ t₀)
-    (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : 0 < (conj u * w).im) :
-    ∀ᶠ ε in 𝓝[>] 0, segment ℝ (p ε) (γ t₀ + ε • (I * u)) ⊆ (γ '' uIcc a b)ᶜ := by
+    (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hσ : σ = 1 ∨ σ = -1) (hp0 : p 0 = γ t₀)
+    (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : 0 < σ * (conj v * w).im) :
+    v ≠ 0 ∧ ∀ᶠ ε in 𝓝[>] 0,
+      segment ℝ (p ε) (γ t₀ + ε • (σ • (I * v))) ⊆ (γ '' uIcc a b)ᶜ := by
+  have hv : v ≠ 0 := by
+    rintro rfl
+    simp at hw
+  have hu : σ • v = v ∨ σ • v = -v := by
+    rcases hσ with rfl | rfl <;> simp
+  have hw' : 0 < (conj (σ • v) * w).im := by
+    simpa [Complex.real_smul, mul_assoc] using hw
   have huniq : ∀ t ∈ uIcc a b, γ t = γ t₀ → t = t₀ := fun t ht ↦
     hinj.eq_of_mem_Icc_of_mem_Ioo hclosed ht₀ (uIcc_of_le hab.le ▸ ht)
-  refine eventually_segment_subset_compl (fun η hη ↦ ?_) hp0 hp hw
+  refine ⟨hv, ?_⟩
+  simp only [← mul_smul_comm σ I v]
+  refine eventually_segment_subset_compl (fun η hη ↦ ?_) hp0 hp hw'
   obtain ⟨ρ, hρ, h⟩ := exists_pos_forall_abs_im_conj_mul_sub_le isCompact_uIcc hγ.continuousOn
     huniq hd.hasDerivWithinAt hη
   refine ⟨ρ, hρ, fun s hs hsρ ↦ ?_⟩
-  rcases hu with rfl | rfl
-  · exact h s hs hsρ
-  · rw [map_neg, neg_mul, neg_im, abs_neg]
-    exact h s hs hsρ
+  rcases hu with hu | hu <;> simpa only [hu, map_neg, neg_mul, neg_im, abs_neg] using h s hs hsρ
 
 /-- **A transverse curve enters the inside on the side selected by the orientation.** Let `γ` be
 a simple closed absolutely continuous curve on `[a, b]`, with derivative `v` at an interior
@@ -179,19 +185,11 @@ theorem eventually_mem_filledHull_sdiff_of_hasDerivAt (hab : a < b)
     (hp : HasDerivWithinAt p w (Ici 0) 0)
     (hw : 0 < (jordanSign γ a b : ℝ) * (conj v * w).im) :
     ∀ᶠ ε in 𝓝[>] 0, p ε ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
-  have hv : v ≠ 0 := by
-    rintro rfl
-    simp at hw
-  set σ : ℝ := ((jordanSign γ a b : ℤ) : ℝ)
-  have hu : σ • v = v ∨ σ • v = -v := by
-    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> simp [σ, h]
-  have hw' : 0 < (conj (σ • v) * w).im := by
-    rwa [Complex.real_smul, map_mul, conj_ofReal, mul_assoc, im_ofReal_mul]
+  obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd
+    (by exact_mod_cast hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj) hp0 hp hw
   have hC := hγ.isJordanCurve_image_uIcc hab hclosed hinj
   filter_upwards [hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj
-    ht₀ hd hv, eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd hu hp0 hp
-    hw'] with ε hn hseg
-  rw [mul_smul_comm] at hseg
+    ht₀ hd hv, hseg] with ε hn hseg
   rw [hC.filledHull_sdiff_eq_connectedComponentIn hn.1]
   exact (convex_segment _ _).isPreconnected.subset_connectedComponentIn (right_mem_segment _ _ _)
     hseg (left_mem_segment _ _ _)
@@ -208,23 +206,17 @@ theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
     (hp : HasDerivWithinAt p w (Ici 0) 0)
     (hw : (jordanSign γ a b : ℝ) * (conj v * w).im < 0) :
     ∀ᶠ ε in 𝓝[>] 0, p ε ∉ filledHull (γ '' uIcc a b) := by
-  have hv : v ≠ 0 := by
-    rintro rfl
-    simp at hw
-  set σ : ℝ := ((jordanSign γ a b : ℤ) : ℝ)
-  have hu : -(σ • v) = v ∨ -(σ • v) = -v := by
-    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> simp [σ, h]
-  have hw' : 0 < (conj (-(σ • v)) * w).im := by
-    rwa [Complex.real_smul, map_neg, map_mul, conj_ofReal, neg_mul, mul_assoc, neg_im,
-      im_ofReal_mul, neg_pos]
+  have hσ : -((jordanSign γ a b : ℤ) : ℝ) = 1 ∨ -((jordanSign γ a b : ℤ) : ℝ) = -1 := by
+    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> simp [h]
+  obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd
+    hσ hp0 hp (by simpa using hw)
   have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
     rw [Complex.rank_real_complex]
     exact Cardinal.one_lt_two
   have hbdd := (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).isBounded
   filter_upwards [hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj
-    ht₀ hd hv, eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd hu hp0 hp
-    hw'] with ε hn hseg
-  rw [mul_neg, mul_smul_comm, smul_neg, ← sub_eq_add_neg] at hseg
+    ht₀ hd hv, hseg] with ε hn hseg
+  simp only [neg_smul, smul_neg, ← sub_eq_add_neg] at hseg
   have hmem := (convex_segment _ _).isPreconnected.subset_connectedComponentIn
     (right_mem_segment _ _ _) hseg (left_mem_segment _ _ _)
   rwa [← compl_filledHull_eq_connectedComponentIn hrank hbdd hn.2] at hmem
