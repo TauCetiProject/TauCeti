@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Contour.HomologyCauchy
 public import TauCeti.Analysis.Contour.MeromorphicLaurent
 import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
 # Polar-part decompositions
@@ -233,6 +234,25 @@ private theorem remainder_differentiableAt_mem {f : ℂ → ℂ} {S : Finset ℂ
   exact h_full.differentiableAt_iff.mpr hg_an.differentiableAt
 
 namespace PolarPartDecomposition
+
+/-- **A polar decomposition makes `f` meromorphic at each point of the open set `U`.** Near
+`s ∈ U` the function `f` is the analytic remainder plus finitely many Laurent tails. -/
+theorem meromorphicAt {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} (decomp : PolarPartDecomposition f S U)
+    (hU : IsOpen U) {s : ℂ} (hsU : s ∈ U) : MeromorphicAt f s := by
+  have h_rem : MeromorphicAt decomp.analyticRemainder s :=
+    (decomp.analyticRemainder_differentiableOn.analyticAt (hU.mem_nhds hsU)).meromorphicAt
+  have h_pol : ∀ s' : S, MeromorphicAt (decomp.polarPart s') s := fun s' ↦ by
+    rw [show decomp.polarPart s' = fun z ↦ ∑ k : Fin (decomp.order s'),
+      decomp.coeff s' k / (z - (s' : ℂ)) ^ (k.val + 1) from funext (decomp.polarPart_eq s')]
+    refine MeromorphicAt.fun_sum fun k _ ↦ ?_
+    fun_prop
+  have h_sum : MeromorphicAt
+      (fun z ↦ decomp.analyticRemainder z + ∑ s' ∈ S.attach, decomp.polarPart s' z) s :=
+    h_rem.add (MeromorphicAt.fun_sum fun s' _ ↦ h_pol s')
+  refine h_sum.congr ?_
+  filter_upwards [eventually_notMem_nhdsNE S s,
+    eventually_nhdsWithin_of_eventually_nhds (hU.mem_nhds hsU)] with z hz hzU
+  exact (decomp.f_eq z ⟨hzU, hz⟩).symm
 
 /-- **The decomposition of a meromorphic integrand.** From `f` differentiable on `U \ S` and
 meromorphic at each `s ∈ S`, the canonical Laurent data assembles into a
