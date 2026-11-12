@@ -414,7 +414,7 @@ private theorem height_add_ringKrullDim_quotient_of_isDomain {A : Type*} [CommRi
       _ = ((p.map (Ideal.Quotient.mk P)).height + 1 : ℕ∞) + ringKrullDim (A ⧸ p) := by
         push_cast
         exact add_right_comm _ _ _
-      _ ≤ p.height + ringKrullDim (A ⧸ p) := by gcongr; exact_mod_cast hht
+      _ ≤ p.height + ringKrullDim (A ⧸ p) := by gcongr
 
 variable (k) in
 /-- **The dimension formula.** In a finitely generated algebra `A` with irreducible spectrum over a
