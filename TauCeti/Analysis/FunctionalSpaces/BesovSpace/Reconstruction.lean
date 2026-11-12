@@ -25,7 +25,8 @@ Lemma 2.84). A sequence bounding `2^{js} ‖uⱼ‖_p` termwise may be used on t
 This is how Besov regularity is recognised for a sum of pieces that are localised in balls rather
 than in annuli. The typical example is the resonant term `∑ⱼ Δⱼ f · Δⱼ g` of Bony's paraproduct
 decomposition: each product of two blocks of frequency `2^j` has its spectrum in a ball of radius
-of order `2^j`, but not in an annulus, and the lemma gives `R(f, g) ∈ 𝒞^{α+β}` when `α + β > 0`.
+of order `2^j`, but not in an annulus. Once these products are also known to satisfy the right
+size bounds, the lemma is the summation step showing `R(f, g) ∈ 𝒞^{α+β}` when `α + β > 0`.
 The hypothesis `s > 0` cannot be dropped: for `s ≤ 0` all the pieces could carry the same low
 frequencies, and their sum need not even converge.
 
@@ -38,13 +39,15 @@ the spectrum of `uⱼ`
 (`TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall`).
 Since `s > 0`, the norms `‖uⱼ‖_p ≤ 2^{-js} ‖w‖` are summable, so the series converges in `Lᵖ`.
 Writing the series as `∑ᵢ Tuᵢ` with the shifted sequence `Tuᵢ = u_{i-L}` (and `Tuᵢ = 0` for
-`i < L`), only the tail `∑_{m ≥ 0} Tu_{k+m}` contributes to `Δₖ u`, so
+`i < L`), only the tail `∑_{m ≥ 0} Tu_{k+m}` contributes to `Δₖ u`
+(`TemperedDistribution.littlewoodPaleyBlock_tsum_nat_add`), so
 
 `2^{ks} ‖Δₖ u‖_p ≤ C₀ 2^{Ls} ∑_{m ≥ 0} 2^{-ms} Tw_{k+m}`,
 
-where `Tw` is the same shift of a dominating sequence `w`. The right side is a one-sided
-convolution of `Tw` with the summable kernel `2^{-ms}`, whose `ℓ^q` norm is at most
-`(1 - 2^{-s})⁻¹ ‖Tw‖_{ℓ^q} ≤ (1 - 2^{-s})⁻¹ ‖w‖_{ℓ^q}` (`lp.exists_hasSum_geometric_shiftRight`).
+where `Tw` is the same shift of a dominating sequence `w`, with `‖Tw‖_{ℓ^q} = ‖w‖_{ℓ^q}`
+(`lp.norm_shiftRight`). The right side is a one-sided convolution of `Tw` with the summable
+kernel `2^{-ms}`, whose `ℓ^q` norm is at most `(1 - 2^{-s})⁻¹ ‖w‖_{ℓ^q}`
+(`lp.exists_hasSum_smul_add_and_norm_le`).
 
 ## References
 
@@ -110,12 +113,6 @@ theorem exists_hasSum_toDistr_eq_and_norm_le (φ : ContDiffBump (0 : E)) (R : �
     refine (hasSum_nat_add_iff' L).1 ?_
     rw [Finset.sum_eq_zero fun i hi ↦ shiftRight_of_lt u (Finset.mem_range.1 hi), sub_zero]
     simpa only [Tu, shiftRight_add] using hsum.hasSum
-  have hblock_Tu {i k : ℕ} (hik : i < k) :
-      littlewoodPaleyBlock F φ k (Tu i : 𝓢'(E, F)) = 0 := by
-    by_cases hi : L ≤ i
-    · simp only [Tu, shiftRight_of_le u hi]
-      exact hL _ _ _ (hu _) (by omega)
-    · simp [Tu, shiftRight_of_lt u (not_le.1 hi)]
   have hTu_norm (i : ℕ) : ‖Tu i‖ ≤ ρ ^ L * (ρ⁻¹ ^ i * Tw i) := by
     by_cases hi : L ≤ i
     · obtain ⟨j, rfl⟩ : ∃ j, i = j + L := ⟨i - L, by omega⟩
@@ -126,50 +123,39 @@ theorem exists_hasSum_toDistr_eq_and_norm_le (φ : ContDiffBump (0 : E)) (R : �
             linear_combination (-(ρ⁻¹ ^ j * w j)) * hρr L
     · simp [Tu, Tw, shiftRight_of_lt _ (not_le.1 hi)]
   -- The dominating sequence: the one-sided convolution of `Tw` with the kernel `ρ⁻ᵐ`.
-  have hr : ‖ρ⁻¹‖ < 1 := by rwa [Real.norm_of_nonneg hr0]
-  obtain ⟨y, hy, hy_norm⟩ := lp.exists_hasSum_geometric_shiftRight hr L w
-  rw [Real.norm_of_nonneg hr0] at hy_norm
-  simp only [smul_eq_mul] at hy
+  have hgeom : Summable fun m : ℕ ↦ ‖ρ⁻¹ ^ m‖ := by
+    simpa only [norm_pow, Real.norm_of_nonneg hr0] using summable_geometric_of_lt_one hr0 hr1
+  obtain ⟨y, hy, hy_norm⟩ := lp.exists_hasSum_smul_add_and_norm_le hgeom (lp.shiftRight L w)
+  simp only [smul_eq_mul, lp.coeFn_shiftRight] at hy
+  rw [lp.norm_shiftRight hq0] at hy_norm
+  simp only [norm_pow, Real.norm_of_nonneg hr0, tsum_geometric_of_lt_one hr0 hr1] at hy_norm
   -- Only the tail of the shifted series contributes to the `k`-th block.
-  set tail : ℕ → Lp F p (volume : Measure E) := fun k ↦ f - ∑ i ∈ Finset.range k, Tu i
-  have htail (k : ℕ) : HasSum (fun m ↦ Tu (m + k)) (tail k) := (hasSum_nat_add_iff' k).2 hTu
-  have hblock_tail (k : ℕ) : littlewoodPaleyBlock F φ k (tail k : 𝓢'(E, F)) =
-      littlewoodPaleyBlock F φ k (f : 𝓢'(E, F)) := by
-    -- The coercion to tempered distributions commutes with finite sums.
-    have hcoe : ((∑ i ∈ Finset.range k, Tu i : Lp F p volume) : 𝓢'(E, F)) =
-        ∑ i ∈ Finset.range k, (Tu i : 𝓢'(E, F)) :=
-      map_sum (Lp.toTemperedDistributionCLM F volume p) _ _
-    simp only [tail]
-    rw [Lp.toTemperedDistribution_sub, map_sub, hcoe, map_sum,
-      Finset.sum_eq_zero fun i hi ↦ hblock_Tu (Finset.mem_range.1 hi), sub_zero]
-  have htail_norm (k : ℕ) : ‖tail k‖ ≤ ρ ^ L * ρ⁻¹ ^ k * y k :=
+  have htail (k : ℕ) : HasSum (fun m ↦ Tu (m + k)) (∑' m, Tu (m + k)) :=
+    ((summable_nat_add_iff k).2 hTu.summable).hasSum
+  have hblock_tail (k : ℕ) : littlewoodPaleyBlock F φ k ((∑' m, Tu (m + k) : Lp F p volume) :
+      𝓢'(E, F)) = littlewoodPaleyBlock F φ k (f : 𝓢'(E, F)) := by
+    rw [littlewoodPaleyBlock_tsum_nat_add φ hTu.summable fun i hik ↦ ?_, hTu.tsum_eq]
+    by_cases hi : L ≤ i
+    · simp only [Tu, shiftRight_of_le u hi]
+      exact hL _ _ _ (hu _) (by omega)
+    · simp [Tu, shiftRight_of_lt u (not_le.1 hi)]
+  have htail_norm (k : ℕ) : ‖∑' m, Tu (m + k)‖ ≤ ρ ^ L * ρ⁻¹ ^ k * y k :=
     (htail k).norm_le_of_bounded ((hy k).mul_left _) fun m ↦
       (hTu_norm (m + k)).trans_eq (by rw [add_comm m k, pow_add]; ring)
   -- The blocks of the sum, as `Lᵖ` functions, and their weighted bounds.
-  choose b hb hbn using fun k ↦ hC₀ k (tail k)
-  have hbk (k : ℕ) : 2 ^ (s * k) * ‖b k‖ ≤ C₁ * ρ ^ L * y k := by
-    rw [hpow]
+  choose b hb hbn using fun k ↦ hC₀ k (∑' m, Tu (m + k))
+  have hbk (k : ℕ) : 2 ^ (s * k) * ‖b k‖ ≤ ((C₁ * ρ ^ L) • y) k := by
+    rw [hpow, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul]
     calc ρ ^ k * ‖b k‖ ≤ ρ ^ k * (C₁ * (ρ ^ L * ρ⁻¹ ^ k * y k)) := by
           gcongr
           exact (hbn k).trans (mul_le_mul (le_max_left _ _) (htail_norm k) (norm_nonneg _)
             (le_max_right _ _))
       _ = C₁ * ρ ^ L * y k := by
           linear_combination (C₁ * ρ ^ L * y k) * hρr k
-  have hmem : Memℓp (fun k : ℕ ↦ (((2 : ℝ) ^ (s * k) : ℝ) : ℂ) • b k) q :=
-    ((lp.memℓp y).const_smul (C₁ * ρ ^ L)).mono fun k ↦ by
-      rw [norm_smul, Complex.norm_of_nonneg (by positivity), Pi.smul_apply, smul_eq_mul]
-      exact hbk k
-  let B : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q := ⟨_, hmem⟩
-  have hB (k : ℕ) : B k = (((2 : ℝ) ^ (s * k) : ℝ) : ℂ) • b k := (rfl)
-  let v : BesovSpace F φ s p q := ⟨f, B, fun k ↦ by
-    rw [hB, Lp.toTemperedDistribution_smul, ← hb k, hblock_tail]⟩
-  refine ⟨v, f, hsum.hasSum, rfl, ?_⟩
-  calc ‖v‖ = ‖B‖ := (norm_weightedBlocks v).symm
-    _ ≤ ‖(C₁ * ρ ^ L) • y‖ := lp.norm_mono hq0 fun k ↦ by
-        rw [hB, norm_smul, Complex.norm_of_nonneg (by positivity), lp.coeFn_smul, Pi.smul_apply,
-          smul_eq_mul]
-        exact (hbk k).trans (Real.le_norm_self _)
-    _ = C₁ * ρ ^ L * ‖y‖ := by
+  obtain ⟨v, hv, hv_norm⟩ := exists_toDistr_eq_and_norm_le_of_forall_rpow_mul_norm_le
+    (fun k ↦ (hblock_tail k).symm.trans (hb k)) _ hbk
+  refine ⟨v, f, hsum.hasSum, hv, hv_norm.trans ?_⟩
+  calc ‖(C₁ * ρ ^ L) • y‖ = C₁ * ρ ^ L * ‖y‖ := by
         rw [norm_smul, Real.norm_of_nonneg (by positivity)]
     _ ≤ C₁ * ρ ^ L * ((1 - ρ⁻¹)⁻¹ * ‖w‖) := by gcongr
     _ = C₁ * ρ ^ L * (1 - ρ⁻¹)⁻¹ * ‖w‖ := by ring

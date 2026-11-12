@@ -84,6 +84,8 @@ blocks `Δⱼ u`.
   `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
+* `TemperedDistribution.littlewoodPaleyBlock_tsum_nat_add`: a block that annihilates the first
+  `k` terms of a series in `Lᵖ` agrees on its sum and on the sum of its tail.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
   `‖Δⱼ u‖_r ≤ C 2^{j n (1/p - 1/r)} ‖Δⱼ u‖_p` for `p ≤ r`.
 
@@ -415,6 +417,18 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
   obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
   rw [hσ_coe] at hg hgf
   exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
+
+/-- **A block sees only the tail of a series.** If the block `Δₖ` annihilates the first `k`
+terms of a convergent series `∑ᵢ uᵢ` in `Lᵖ`, then it takes the same value on the sum of the
+series and on the sum `∑ₘ u (m + k)` of its tail. -/
+theorem littlewoodPaleyBlock_tsum_nat_add [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {u : ℕ → Lp F p (volume : Measure E)} (hu : Summable u) {k : ℕ}
+    (hk : ∀ i < k, littlewoodPaleyBlock F φ k (u i : 𝓢'(E, F)) = 0) :
+    littlewoodPaleyBlock F φ k ((∑' m, u (m + k) : Lp F p (volume : Measure E)) : 𝓢'(E, F)) =
+      littlewoodPaleyBlock F φ k ((∑' i, u i : Lp F p (volume : Measure E)) : 𝓢'(E, F)) := by
+  simp_rw [← hu.sum_add_tsum_nat_add k, ← Lp.toTemperedDistributionCLM_apply, map_add, map_sum,
+    Lp.toTemperedDistributionCLM_apply, Finset.sum_eq_zero fun i hi ↦ hk i (Finset.mem_range.1 hi),
+    zero_add]
 
 /-- **Bernstein's inequality for the Littlewood–Paley blocks.** For `1 ≤ p ≤ r ≤ ∞` there is `C`,
 depending only on `E`, `F`, `p`, `r` and `φ`, with the following property. If the block `Δⱼ u` of

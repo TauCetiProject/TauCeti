@@ -50,8 +50,10 @@ both its tempered distribution and this `Lᵖ` data.
   their tempered distribution `toDistr` and weighted blocks `weightedBlocks`.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
   `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
-  (`q = ∞`) expressing the norm through the blocks, and the single-block bound
-  `TauCeti.BesovSpace.rpow_mul_norm_block_le`.
+  (`q = ∞`) expressing the norm through the blocks, the single-block bound
+  `TauCeti.BesovSpace.rpow_mul_norm_block_le`, and conversely the bound
+  `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_forall_rpow_mul_norm_le` by any `ℓ^q`
+  sequence dominating the weighted `Lᵖ` norms of the blocks.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
   tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
   `B^s_{p,q}` is a Banach space.
@@ -472,6 +474,22 @@ theorem rpow_mul_norm_block_le (u : BesovSpace F φ s p q) (j : ℕ) :
     2 ^ (s * j) * ‖u.block j‖ ≤ ‖u‖ := by
   rw [← norm_weightedBlocks_apply, ← norm_weightedBlocks]
   exact lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' _ j
+
+/-- **A Besov bound from dominated blocks.** If every block `Δⱼ u` of a tempered distribution is
+an `Lᵖ` function `bⱼ` with `2^{js} ‖bⱼ‖_p ≤ zⱼ` for some `z ∈ ℓ^q`, then `u` is an element of
+`B^s_{p,q}` of norm at most `‖z‖_{ℓ^q}`. -/
+theorem exists_toDistr_eq_and_norm_le_of_forall_rpow_mul_norm_le {u : 𝓢'(E, F)}
+    {b : ℕ → Lp F p (volume : Measure E)} (hb : ∀ j, littlewoodPaleyBlock F φ j u = b j)
+    (z : lp (fun _ : ℕ ↦ ℝ) q) (hz : ∀ j : ℕ, 2 ^ (s * j) * ‖b j‖ ≤ z j) :
+    ∃ v : BesovSpace F φ s p q, v.toDistr = u ∧ ‖v‖ ≤ ‖z‖ := by
+  have hle (j : ℕ) : ‖(((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • b j‖ ≤ z j := by
+    rw [norm_smul, Complex.norm_of_nonneg (by positivity)]
+    exact hz j
+  let B : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q := ⟨_, (lp.memℓp z).mono hle⟩
+  have hB (j : ℕ) : B j = (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • b j := (rfl)
+  refine ⟨⟨u, B, fun j ↦ by rw [hB, Lp.toTemperedDistribution_smul, hb]⟩, rfl, ?_⟩
+  exact lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦
+    (hB j ▸ hle j).trans (Real.le_norm_self _)
 
 /-- For `q < ∞` the Besov norm is `(∑ⱼ (2^{js} ‖Δⱼ u‖_p)^q)^{1/q}`. -/
 theorem norm_eq_tsum_rpow (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
