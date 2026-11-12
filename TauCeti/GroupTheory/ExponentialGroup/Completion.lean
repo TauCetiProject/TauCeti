@@ -48,8 +48,8 @@ The universal property quantifies over the `A`-groups `H` of one universe, which
 parameter of `IsCompletion` (the first one). The comparison isomorphism `IsCompletion.mulEquiv` is
 therefore stated for two completions living in that universe.
 
-`IsCompletion A μ` does not ask the target of `μ` to be an `A`-group; that is a hypothesis of the
-results that need it.
+`IsCompletion` is a structure, whose target `K` carries its `A`-group structure as an instance
+argument: the universal property itself mentions only the exponentiation of `K`.
 
 ## References
 
@@ -73,35 +73,40 @@ section Completion
 
 variable (A : Type uA) [Semiring A] {G : Type uG} [Group G]
 
-/-- The universal property of an `A`-completion of the group `G`: every homomorphism from `G` to
-an `A`-group `H` factors through `μ : G →* K` by a unique homomorphism `K → H` commuting with
-exponentiation. The `A`-groups `H` range over the universe `w`. -/
-def IsCompletion {K : Type uK} [Group K] [Pow K A] (μ : G →* K) : Prop :=
-  ∀ (H : Type w) [Group H] [Pow H A] [IsExponentialGroup A H] (φ : G →* H),
+/-- The universal property of an `A`-completion of the group `G`, for a homomorphism `μ : G →* K`
+to an `A`-group `K`: every homomorphism from `G` to an `A`-group `H` factors through `μ` by a
+unique homomorphism `K → H` commuting with exponentiation. The `A`-groups `H` range over the
+universe `w`. -/
+structure IsCompletion {K : Type uK} [Group K] [Pow K A] [IsExponentialGroup A K]
+    (μ : G →* K) : Prop where
+  /-- Every homomorphism from `G` to an `A`-group `H` is `ψ ∘ μ` for a unique homomorphism
+  `ψ : K → H` commuting with exponentiation. -/
+  existsUnique (H : Type w) [Group H] [Pow H A] [IsExponentialGroup A H] (φ : G →* H) :
     ∃! ψ : ExponentialHom A K H, ψ.toMonoidHom.comp μ = φ
 
 variable {A}
 
-theorem isCompletion_iff {K : Type uK} [Group K] [Pow K A] {μ : G →* K} :
+theorem isCompletion_iff {K : Type uK} [Group K] [Pow K A] [IsExponentialGroup A K]
+    {μ : G →* K} :
     IsCompletion.{w} A μ ↔ ∀ (H : Type w) [Group H] [Pow H A] [IsExponentialGroup A H]
       (φ : G →* H), ∃! ψ : ExponentialHom A K H, ψ.toMonoidHom.comp μ = φ :=
-  Iff.rfl
+  ⟨fun h => h.existsUnique, fun h => ⟨h⟩⟩
 
 namespace IsCompletion
 
 section Lift
 
-variable {K : Type uK} [Group K] [Pow K A] {μ : G →* K} {H : Type w} [Group H] [Pow H A]
-  [IsExponentialGroup A H]
+variable {K : Type uK} [Group K] [Pow K A] [IsExponentialGroup A K] {μ : G →* K}
+  {H : Type w} [Group H] [Pow H A] [IsExponentialGroup A H]
 
 /-- The homomorphism commuting with exponentiation that extends `φ : G →* H` along an
 `A`-completion `μ : G →* K`. -/
 noncomputable def lift (h : IsCompletion.{w} A μ) (φ : G →* H) : ExponentialHom A K H :=
-  (h H φ).exists.choose
+  (h.existsUnique H φ).exists.choose
 
 @[simp]
 theorem lift_comp (h : IsCompletion.{w} A μ) (φ : G →* H) : (h.lift φ).toMonoidHom.comp μ = φ :=
-  (h H φ).exists.choose_spec
+  (h.existsUnique H φ).exists.choose_spec
 
 @[simp]
 theorem lift_eq (h : IsCompletion.{w} A μ) (φ : G →* H) (g : G) : h.lift φ (μ g) = φ g :=
@@ -111,7 +116,7 @@ theorem lift_eq (h : IsCompletion.{w} A μ) (φ : G →* H) (g : G) : h.lift φ 
 if they agree on the image of `μ`. -/
 theorem hom_ext (h : IsCompletion.{w} A μ) {ψ ψ' : ExponentialHom A K H}
     (hψ : ψ.toMonoidHom.comp μ = ψ'.toMonoidHom.comp μ) : ψ = ψ' :=
-  (h H (ψ'.toMonoidHom.comp μ)).unique hψ rfl
+  (h.existsUnique H (ψ'.toMonoidHom.comp μ)).unique hψ rfl
 
 /-- The extension of `φ` along an `A`-completion is the only homomorphism commuting with
 exponentiation that restricts to `φ`. -/
@@ -124,14 +129,11 @@ end Lift
 section Unique
 
 variable {K₁ K₂ : Type w} [Group K₁] [Group K₂] [Pow K₁ A] [Pow K₂ A]
-  {μ₁ : G →* K₁} {μ₂ : G →* K₂}
+  [IsExponentialGroup A K₁] [IsExponentialGroup A K₂] {μ₁ : G →* K₁} {μ₂ : G →* K₂}
 
 @[simp]
-theorem lift_self [IsExponentialGroup A K₁] (h₁ : IsCompletion.{w} A μ₁) :
-    h₁.lift μ₁ = ExponentialHom.id A K₁ :=
+theorem lift_self (h₁ : IsCompletion.{w} A μ₁) : h₁.lift μ₁ = ExponentialHom.id A K₁ :=
   (h₁.eq_lift (by simp)).symm
-
-variable [IsExponentialGroup A K₁] [IsExponentialGroup A K₂]
 
 /-- The extensions of two `A`-completions of one group along each other are mutually inverse. -/
 @[simp]
@@ -175,7 +177,7 @@ end Completion
 
 section RankOne
 
-attribute [local instance] multiplicativePow
+attribute [local instance] multiplicativePow multiplicative
 
 variable (A : Type uA) {G : Type uG} [Group G] [Pow G A]
 
@@ -200,8 +202,7 @@ infinite cyclic group by `n ↦ (n : A)`, is the `A`-completion of the infinite 
 the free `A`-group on the generator `ofAdd 1`. -/
 theorem isCompletion_intCast [CommRing A] :
     IsCompletion.{w} A (Int.castAddHom A).toMultiplicative := by
-  intro H _ _ _ φ
-  refine ⟨powHom A (φ (.ofAdd 1)), ?_, fun ψ hψ => ?_⟩
+  refine ⟨fun H _ _ _ φ => ⟨powHom A (φ (.ofAdd 1)), ?_, fun ψ hψ => ?_⟩⟩
   · ext
     simp
   · ext x
