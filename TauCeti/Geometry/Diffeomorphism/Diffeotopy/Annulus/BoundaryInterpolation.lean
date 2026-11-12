@@ -238,6 +238,11 @@ horizontal component of `B_t`. It is the inverse of `B_t` on the lines whose hei
 def stripInterpolationInv (t : ℝ) (p : ℝ × ℝ) : ℝ × ℝ :=
   (invFun (fun x ↦ (b₀.stripInterpolation b₁ t (x, p.2)).1) p.1, p.2)
 
+theorem stripInterpolationInv_apply (t : ℝ) (p : ℝ × ℝ) :
+    b₀.stripInterpolationInv b₁ t p =
+      (invFun (fun x ↦ (b₀.stripInterpolation b₁ t (x, p.2)).1) p.1, p.2) :=
+  (rfl)
+
 /-- The inverse of the boundary interpolation preserves every horizontal line. -/
 @[simp]
 theorem stripInterpolationInv_snd (t : ℝ) (p : ℝ × ℝ) :
@@ -245,12 +250,14 @@ theorem stripInterpolationInv_snd (t : ℝ) (p : ℝ × ℝ) :
   (rfl)
 
 /-- On a horizontal line whose parameters lie in the domain, `B_t⁻¹ ∘ B_t` is the identity. -/
+@[simp]
 theorem stripInterpolationInv_stripInterpolation (h₀ : Differentiable ℝ b₀)
     (h₁ : Differentiable ℝ b₁) {p : ℝ × ℝ} (h : (t, p.2) ∈ b₀.stripInterpolationDomain b₁) :
     b₀.stripInterpolationInv b₁ t (b₀.stripInterpolation b₁ t p) = p :=
   Prod.ext (leftInverse_invFun (bijective_stripInterpolation_fst h₀ h₁ h).1 p.1) rfl
 
 /-- On a horizontal line whose parameters lie in the domain, `B_t ∘ B_t⁻¹` is the identity. -/
+@[simp]
 theorem stripInterpolation_stripInterpolationInv (h₀ : Differentiable ℝ b₀)
     (h₁ : Differentiable ℝ b₁) {p : ℝ × ℝ} (h : (t, p.2) ∈ b₀.stripInterpolationDomain b₁) :
     b₀.stripInterpolation b₁ t (b₀.stripInterpolationInv b₁ t p) = p :=
