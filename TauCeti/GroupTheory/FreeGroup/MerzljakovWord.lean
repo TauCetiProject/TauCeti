@@ -278,10 +278,10 @@ private theorem exists_merzljakovBlock_isInfix_of_append_eq_flatten {s : List (�
     ∀ (L : List (List (α × Bool))) {ms : List ℕ} {p : List (α × Bool)},
       p ++ merzljakovWord a b ms ++ s = L.flatten → L.length ≤ ms.length →
       ∃ m ∈ ms, ∃ u ∈ L, merzljakovBlock a b m <:+: u
-  | [], ms, p, h, _ => by
+  | [], _, _, h, _ => by
     have := congrArg length h
     simp at this
-  | u :: L, [], p, h, hL => by simp at hL
+  | _ :: _, [], _, _, hL => by simp at hL
   | u :: L, k :: ms, p, h, hL => by
     obtain ⟨tl, htl⟩ : ∃ tl, merzljakovWord a b ms = (b, true) :: tl := ⟨_, rfl⟩
     have h' : (p ++ (b, true) :: replicate k (a, true)) ++ (merzljakovWord a b ms ++ s) =
@@ -294,7 +294,7 @@ private theorem exists_merzljakovBlock_isInfix_of_append_eq_flatten {s : List (�
     -- Either the piece `u` ends inside `p b a^k`, or it reaches beyond it. In the first case the
     -- remaining pieces contain the Merzljakov word of the remaining exponents; in the second
     -- case `u` contains the block `b a^k b`.
-    obtain ⟨c, hc, hc'⟩ | ⟨c, hc, hc'⟩ := append_eq_append_iff.1 h'
+    obtain ⟨c, hc, hc'⟩ | ⟨c, -, hc'⟩ := append_eq_append_iff.1 h'
     · cases c with
       | nil => exact ih [] (by simpa using hc')
       | cons x c =>
