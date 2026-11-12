@@ -1,0 +1,218 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.Pompeiu.Basic
+import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Complex.Conformal.NormalFamilies
+import TauCeti.MeasureTheory.Integral.RiemannSum
+
+/-!
+# Discretizing the Cauchy–Pompeiu formula on a compact set
+
+Let `K` be a compact subset of an open set `V ⊆ ℂ`. This file approximates every holomorphic
+function on `V` uniformly on `K` by a combination of simple fractions with *fixed* poles:
+for every `ε > 0` there are finitely many points `ζ i ∈ V \ K` and coefficients `c i` such that
+
+`‖f w - ∑ i, c i (w - ζ i)⁻¹ f (ζ i)‖ ≤ ε M`  for all `w ∈ K`,
+
+whenever `f` is holomorphic on `V` and bounded by `M` there
+(`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`). The approximation is linear in `f`, its
+poles and coefficients do not depend on `f`, and the values of `f` enter only at the points
+`ζ i`. This is the first half of the construction of a finite-rank Runge operator: replacing
+each simple fraction `(z - ζ i)⁻¹` by a function holomorphic on a larger domain, which Runge's
+theorem allows when `K` has no holes in that domain, gives a finite-rank linear operator with
+the same uniform estimate.
+
+The proof has two steps.
+
+* **Reconstruction through a cutoff.** If `χ` is a compactly supported `C¹` function whose
+  topological support lies in `V`, the Cauchy–Pompeiu formula applied to `χ f` gives
+  `χ w f w = π⁻¹ ∫ (w - z)⁻¹ \bar∂χ(z) f z` for every `w`, because `\bar∂ (χ f) = (\bar∂χ) f` for
+  holomorphic `f` (`HasCompactSupport.cauchyTransform_conjWirtingerDeriv_smul`). When `χ` is equal
+  to one near `K`, the weight `\bar∂χ` vanishes off a compact set `S ⊆ V` disjoint from `K`.
+* **Uniform Riemann sums.** On `S` the integrands `z ↦ (w - z)⁻¹ f z`, for `w ∈ K` and `f` bounded
+  by `M` on `V`, are uniformly Lipschitz with constant proportional to `M`: the kernel because `S`
+  is at positive distance from `K`, and `f` by Cauchy's estimate. A single Riemann sum for the
+  weight `\bar∂χ` on `S` therefore approximates all of them at once
+  (`IsCompact.exists_norm_setIntegral_smul_sub_sum_le`).
+
+## References
+
+* A. Rainer, *Advanced Complex Analysis*, lecture notes, Theorem 10.3 (the Cauchy–Pompeiu formula
+  with a cutoff) and Theorem 11.1 (Runge's theorem).
+* L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
+  North-Holland, 1990, Theorem 1.2.1.
+-/
+
+public section
+
+open MeasureTheory Complex Set Metric Filter Function
+open scoped Real Topology
+
+namespace TauCeti
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- **The Cauchy–Pompeiu formula with a cutoff.** If `χ` is a compactly supported `C¹` function
+whose topological support lies in an open set `V` on which `f` is holomorphic, then
+`χ w • f w` is the Cauchy transform of `\bar∂χ • f`, for every `w ∈ ℂ`. -/
+theorem _root_.HasCompactSupport.cauchyTransform_conjWirtingerDeriv_smul {χ : ℂ → ℂ}
+    {f : ℂ → F} {V : Set ℂ} (hχ : HasCompactSupport χ) (hχd : ContDiff ℝ 1 χ) (hV : IsOpen V)
+    (hχV : tsupport χ ⊆ V) (hf : DifferentiableOn ℂ f V) (w : ℂ) :
+    cauchyTransform (fun z ↦ conjWirtingerDeriv χ z 1 • f z) w = χ w • f w := by
+  have hfV : ContDiffOn ℝ 1 f V := (hf.contDiffOn hV).restrict_scalars ℝ
+  have hg : ContDiff ℝ 1 fun z ↦ χ z • f z :=
+    (ContinuousLinearMap.lsmul ℝ ℂ).flip.contDiff_of_tsupport_subset_right hfV hχd.contDiffOn hV
+      hχV
+  have hdg (z : ℂ) :
+      conjWirtingerDeriv (fun z ↦ χ z • f z) z 1 = conjWirtingerDeriv χ z 1 • f z := by
+    by_cases hz : z ∈ V
+    · have hfz : DifferentiableAt ℂ f z := hf.differentiableAt (hV.mem_nhds hz)
+      rw [conjWirtingerDeriv_smul_apply (hχd.differentiable one_ne_zero z)
+        (hfz.restrictScalars ℝ), hfz.conjWirtingerDeriv_eq_zero]
+      simp
+    · have hχz : χ =ᶠ[𝓝 z] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hχV h)
+      have hgz : (fun z ↦ χ z • f z) =ᶠ[𝓝 z] fun _ ↦ 0 := by
+        filter_upwards [hχz] with y hy
+        simp [hy]
+      rw [hgz.conjWirtingerDeriv_eq, hχz.conjWirtingerDeriv_eq]
+      simp
+  simp_rw [← hdg]
+  exact (hχ.smul_right).cauchyTransform_conjWirtingerDeriv hg w
+
+/-- The cutoff representation on `K`: a continuous weight `a`, vanishing off a compact set
+`S ⊆ V` disjoint from `K`, reproduces every function holomorphic on `V` at the points of `K`. -/
+private theorem exists_continuous_setIntegral_representation {K V : Set ℂ} (hK : IsCompact K)
+    (hV : IsOpen V) (hKV : K ⊆ V) :
+    ∃ (a : ℂ → ℂ) (S : Set ℂ), Continuous a ∧ IsCompact S ∧ S ⊆ V ∧ K ⊆ Sᶜ ∧
+      ∀ (f : ℂ → F), DifferentiableOn ℂ f V → ∀ w ∈ K,
+        f w = (π : ℂ)⁻¹ • ∫ z in S, a z • (w - z)⁻¹ • f z := by
+  -- A cutoff `χ` equal to one near `K`; its `\bar∂` is supported in the compact shell `S`.
+  obtain ⟨ψ, hψd, -, hψ1, hψc, hψV⟩ := hK.exists_contDiff_cutoff hV hKV
+  set χ : ℂ → ℂ := fun z ↦ (ψ z : ℂ)
+  have hχd : ContDiff ℝ 1 χ := ofRealCLM.contDiff.comp (hψd.of_le (by simp))
+  have hχc : HasCompactSupport χ := hψc.comp_left ofReal_zero
+  have hχV : tsupport χ ⊆ V := (tsupport_comp_subset ofReal_zero ψ).trans hψV
+  set S := tsupport ψ \ interior (ψ ⁻¹' {1})
+  have ha0 (z : ℂ) (hz : z ∉ S) : conjWirtingerDeriv χ z 1 = 0 := by
+    have hconst : ∃ b : ℂ, χ =ᶠ[𝓝 z] fun _ ↦ b := by
+      by_cases hzψ : z ∈ tsupport ψ
+      · have hz1 : z ∈ interior (ψ ⁻¹' {1}) := by_contra fun h ↦ hz ⟨hzψ, h⟩
+        refine ⟨1, ?_⟩
+        filter_upwards [isOpen_interior.mem_nhds hz1] with y hy
+        simp [χ, show ψ y = 1 from interior_subset hy]
+      · refine ⟨0, ?_⟩
+        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hzψ] with y hy
+        simp [χ, hy]
+    obtain ⟨b, hb⟩ := hconst
+    simp [hb.conjWirtingerDeriv_eq]
+  refine ⟨fun z ↦ conjWirtingerDeriv χ z 1, S, continuous_iff_continuousAt.2 fun z ↦
+      (hχd.contDiffAt.conjWirtingerDeriv_apply (m := 0) (by simp) 1).continuousAt,
+    hψc.isCompact.diff isOpen_interior, sdiff_subset.trans hψV, fun w hw hwS ↦ hwS.2 (hψ1 hw),
+    fun f hf w hw ↦ ?_⟩
+  have h := hχc.cauchyTransform_conjWirtingerDeriv_smul hχd hV hχV hf w
+  rw [show χ w = 1 by simp [χ, show ψ w = 1 from interior_subset (hψ1 hw)], one_smul,
+    cauchyTransform_apply] at h
+  rw [← h, setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by simp [ha0 z hz]]
+  congr 1
+  exact integral_congr_ae (Eventually.of_forall fun z ↦ smul_comm _ _ _)
+
+omit [CompleteSpace F] in
+/-- The integrand `z ↦ (w - z)⁻¹ • f z` of the cutoff representation is Lipschitz near `y`: if `f`
+is holomorphic and bounded by `M` on `V ⊇ closedBall y (2 * r)` and `w` is at distance at least
+`d > 0` from `x` and `y`, its values at `x` and `y` differ by at most a multiple of `M * dist x y`.
+-/
+private theorem norm_inv_smul_sub_inv_smul_le {f : ℂ → F} {V : Set ℂ} {M d r : ℝ} {w x y : ℂ}
+    (hV : IsOpen V) (hf : DifferentiableOn ℂ f V) (hM : ∀ z ∈ V, ‖f z‖ ≤ M) (hd : 0 < d)
+    (hr : 0 < r) (hball : closedBall y (2 * r) ⊆ V) (hxy : dist x y < r) (hwx : d ≤ ‖w - x‖)
+    (hwy : d ≤ ‖w - y‖) :
+    ‖(w - x)⁻¹ • f x - (w - y)⁻¹ • f y‖ ≤ M * (r⁻¹ * d⁻¹ + (d ^ 2)⁻¹) * dist x y := by
+  have hx0 : w - x ≠ 0 := norm_pos_iff.1 (hd.trans_le hwx)
+  have hy0 : w - y ≠ 0 := norm_pos_iff.1 (hd.trans_le hwy)
+  have hfy : ‖f y‖ ≤ M := hM y (hball (mem_closedBall_self (by positivity)))
+  -- Cauchy's estimate makes `f` `M / r`-Lipschitz on `ball y r`.
+  have hlip : dist (f x) (f y) ≤ M / r * dist x y :=
+    dist_le_of_forall_mem_closedBall_two_mul_norm_le hV hf hr hball
+      (fun z hz ↦ hM z (hball hz)) (mem_ball.2 hxy) (mem_ball_self hr)
+  have hsplit : (w - x)⁻¹ • f x - (w - y)⁻¹ • f y =
+      (w - x)⁻¹ • (f x - f y) + ((x - y) * ((w - x)⁻¹ * (w - y)⁻¹)) • f y := by
+    have hinv : (w - x)⁻¹ - (w - y)⁻¹ = (x - y) * ((w - x)⁻¹ * (w - y)⁻¹) := by
+      field_simp
+      ring
+    rw [← hinv, smul_sub, sub_smul]
+    abel
+  have hxi : ‖(w - x)⁻¹‖ ≤ d⁻¹ := by rw [norm_inv]; exact inv_anti₀ hd hwx
+  have hyi : ‖(w - y)⁻¹‖ ≤ d⁻¹ := by rw [norm_inv]; exact inv_anti₀ hd hwy
+  rw [hsplit]
+  refine (norm_add_le _ _).trans ?_
+  simp only [norm_smul, norm_mul, ← dist_eq_norm]
+  calc _ ≤ d⁻¹ * (M / r * dist x y) + dist x y * (d⁻¹ * d⁻¹) * M := by
+        gcongr
+    _ = M * (r⁻¹ * d⁻¹ + (d ^ 2)⁻¹) * dist x y := by ring
+
+/-- **Discretized Cauchy–Pompeiu formula.** Let `K` be a compact subset of an open set `V ⊆ ℂ`.
+For every `ε > 0` there are finitely many poles `ζ i ∈ V \ K` and coefficients `c i` such that every
+`f` holomorphic on `V` and bounded by `M` there satisfies
+`‖f w - ∑ i, (c i * (w - ζ i)⁻¹) • f (ζ i)‖ ≤ ε * M` for every `w ∈ K`.
+
+The poles and coefficients depend only on `K`, `V` and `ε`, so the approximation is a linear
+operator of finite rank in `f`, uniformly accurate on the bounded holomorphic functions. -/
+theorem _root_.IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le {K V : Set ℂ} (hK : IsCompact K)
+    (hV : IsOpen V) (hKV : K ⊆ V) {ε : ℝ} (hε : 0 < ε) :
+    ∃ (N : ℕ) (ζ : Fin N → ℂ) (c : Fin N → ℂ), (∀ i, ζ i ∈ V \ K) ∧
+      ∀ (f : ℂ → F) (M : ℝ), DifferentiableOn ℂ f V → (∀ z ∈ V, ‖f z‖ ≤ M) →
+        ∀ w ∈ K, ‖f w - ∑ i, (c i * (w - ζ i)⁻¹) • f (ζ i)‖ ≤ ε * M := by
+  obtain ⟨a, S, ha, hS, hSV, hKS, hrep⟩ :=
+    exists_continuous_setIntegral_representation (F := F) hK hV hKV
+  -- `S` is at distance more than `d` from `K`, and its `2 * r`-neighbourhood lies in `V`.
+  obtain ⟨d, hd, hdK⟩ := hK.exists_cthickening_subset_open hS.isClosed.isOpen_compl hKS
+  obtain ⟨ρ, hρ, hρS⟩ := hS.exists_cthickening_subset_open hV hSV
+  have hdist {w z : ℂ} (hw : w ∈ K) (hz : z ∈ S) : d ≤ ‖w - z‖ := by
+    by_contra h
+    refine hdK (closedBall_subset_cthickening hw d ?_) hz
+    rw [mem_closedBall, dist_eq_norm, norm_sub_rev]
+    exact (not_le.1 h).le
+  set r := ρ / 2 with hr_def
+  have hr : 0 < r := by positivity
+  have hball {y : ℂ} (hy : y ∈ S) : closedBall y (2 * r) ⊆ V :=
+    (closedBall_subset_cthickening hy _).trans (by rwa [show 2 * r = ρ by rw [hr_def]; ring])
+  -- Choose the mesh `δ` of the Riemann sums against the Lipschitz constant `M * C`.
+  set A := ∫ z in S, ‖a z‖
+  have hA : 0 ≤ A := setIntegral_nonneg_of_ae (Eventually.of_forall fun _ ↦ norm_nonneg _)
+  set C := r⁻¹ * d⁻¹ + (d ^ 2)⁻¹
+  have hC : 0 ≤ C := by positivity
+  obtain ⟨δ₀, hδ₀, hδ₀ε⟩ := exists_pos_mul_lt (mul_pos hε Real.pi_pos) (C * A)
+  obtain ⟨N, ζ, c, hζS, hsum⟩ :=
+    hS.exists_norm_setIntegral_smul_sub_sum_le (μ := volume) (E := F)
+      (ha.continuousOn.integrableOn_compact hS) (lt_min hr hδ₀)
+  refine ⟨N, ζ, fun i ↦ (π : ℂ)⁻¹ * c i, fun i ↦ ⟨hSV (hζS i), fun h ↦ hKS h (hζS i)⟩,
+    fun f M hf hM w hw ↦ ?_⟩
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM w (hKV hw))
+  have hφc : ContinuousOn (fun z ↦ (w - z)⁻¹ • f z) S := by
+    refine (ContinuousOn.inv₀ (f := fun z : ℂ ↦ w - z) (by fun_prop) fun z hz h ↦ hKS hw ?_).smul
+      (hf.continuousOn.mono hSV)
+    rwa [sub_eq_zero.1 h]
+  have hR := hsum (fun z ↦ (w - z)⁻¹ • f z) (M * C * min r δ₀)
+    ((ha.continuousOn.smul hφc).integrableOn_compact hS) fun x hx y hy hxy ↦
+      (norm_inv_smul_sub_inv_smul_le hV hf hM hd hr (hball hy) (hxy.trans_le (min_le_left _ _))
+        (hdist hw hx) (hdist hw hy)).trans
+        (mul_le_mul_of_nonneg_left hxy.le (mul_nonneg hM0 hC))
+  have hsum_eq : ∑ i, ((π : ℂ)⁻¹ * c i * (w - ζ i)⁻¹) • f (ζ i) =
+      (π : ℂ)⁻¹ • ∑ i, c i • (w - ζ i)⁻¹ • f (ζ i) := by
+    simp only [Finset.smul_sum, smul_smul, mul_assoc]
+  have hπ : ‖(π : ℂ)⁻¹‖ = π⁻¹ := by simp [abs_of_pos Real.pi_pos]
+  rw [hsum_eq, hrep f hf w hw, ← smul_sub, norm_smul, hπ, inv_mul_le_iff₀ Real.pi_pos]
+  have hδA : C * A * min r δ₀ ≤ ε * π :=
+    (mul_le_mul_of_nonneg_left (min_le_right _ _) (mul_nonneg hC hA)).trans hδ₀ε.le
+  calc _ ≤ M * C * min r δ₀ * A := hR
+    _ = M * (C * A * min r δ₀) := by ring
+    _ ≤ M * (ε * π) := mul_le_mul_of_nonneg_left hδA hM0
+    _ = π * (ε * M) := by ring
+
+end TauCeti
