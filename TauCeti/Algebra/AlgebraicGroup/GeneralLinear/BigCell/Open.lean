@@ -97,7 +97,7 @@ theorem blockBigCellι_def :
 /-- In bundled Hopf-algebra coordinates, the inclusion is induced by the coordinate map
 composed with the inverse coordinate equivalence. -/
 @[reassoc (attr := simp)]
-theorem blockBigCellι_comp_groupScheme_X_left :
+theorem blockBigCellι_comp_eqToHom :
     blockBigCellι R n b ≫ eqToHom (groupScheme_X_left R n) =
       Spec.map (CommRingCat.ofHom ((blockBigCellCoordinateMap R n b).comp
         (coordinateHopfAlgebraAlgEquiv R n).symm.toAlgHom)) := by
