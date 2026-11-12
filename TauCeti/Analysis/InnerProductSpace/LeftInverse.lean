@@ -12,8 +12,16 @@ public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 
 For an injective operator out of a finite-dimensional real inner product space, its Gram
 operator is invertible. The Gram inverse composed with the adjoint is an actual left inverse,
-and depends smoothly on the operator throughout the injective locus. This construction is
-useful for the tangent-coordinate projection of secants of an immersed manifold.
+and depends smoothly on the operator throughout the injective locus.
+
+This supplies the inverse-Gram factor in the normal projection required by
+[RiemannianGeometry R5a, Immersion geometry and first variation][r5a].
+In local orthonormal frames, write `A` for the immersion differential. The roadmap's formula
+for the normal representative is `v ↦ v - A (gramLeftInverse A v)`.
+The cancellation lemma makes this expression invariant under adding `A u` to `v`, and the
+smoothness lemma supplies the smoothly varying left inverse used in that formula.
+
+[r5a]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RiemannianGeometry/README.md#r5a-immersion-geometry-and-first-variation
 -/
 
 public section
