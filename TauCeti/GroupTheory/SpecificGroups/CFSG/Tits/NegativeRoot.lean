@@ -16,8 +16,8 @@ exponent one at long source roots and two at short source roots. This is the neg
 the root equation needed for a pinning-preserving comparison of Steinberg maps.
 
 The proof specializes `F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints` using the
-numbering adapters of `Tits.Basic`, just as for the positive simple roots. The root maps are
-those of the existing carrier; no new root-map assembly is defined.
+numbering adapters of `Tits.Basic`, just as for the positive simple roots. The indexed negative
+root maps use the existing carrier's numbered lowering subgroups.
 
 ## References
 
@@ -34,18 +34,15 @@ variable (d : TitsLieIndex)
 
 /-- The Tits Steinberg map reverses negative simple roots with the indexed source-root exponent.
 The separate Tits index has the exceptional parameter `m = 0`. -/
--- Rewrite before simplification expands the dependent node adapter.
-@[simp↓]
-theorem steinberg_rootSubgroupPoints_inr (i : Fin d.1.rank)
+@[simp]
+theorem steinberg_negativeSimpleRootSubgroup (i : Fin d.1.rank)
     (u : Multiplicative d.1.Closure) :
-    d.steinberg
-        (F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i))
-          d.1.Closure u) =
-      F4ShortRoot.PrimeField.rootSubgroupPoints
-        (.inr (finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i))) d.1.Closure
+    d.steinberg (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
-  rw [steinberg_def, F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints,
-    carrierNode_lengthPerm, ← carrierExponent]
+  rw [steinberg_def, negativeSimpleRootSubgroup_def,
+    F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, negativeSimpleRootSubgroup_def,
+    finCongr_lengthPerm, ← isogenyExponent_inl_finCongr]
   simp only [F4ShortRoot.isogenyReverse, Sum.map_inr,
     F4ShortRoot.isogenyExponent, Sum.elim_inr, Sum.elim_inl]
 

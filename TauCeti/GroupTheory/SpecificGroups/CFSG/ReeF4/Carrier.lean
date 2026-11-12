@@ -131,6 +131,17 @@ theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
       F4ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.1.Closure :=
   (rfl)
 
+/-- The negative simple-root subgroup at the Bourbaki-numbered node `i` of the `F₄` diagram. -/
+def negativeSimpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
+  F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.1.Closure
+
+/-- The negative simple-root subgroup is the carrier's numbered lowering subgroup.
+This unfolding equation is not a simp lemma, so indexed action equations remain applicable. -/
+theorem negativeSimpleRootSubgroup_def (i : Fin d.1.rank) :
+    d.negativeSimpleRootSubgroup i =
+      F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.1.Closure :=
+  (rfl)
+
 /-- **The simple-root subgroups sit at the simple roots of the `F₄` root datum.** The character by
 which the carrier's split weight torus rescales the parameter of `simpleRootSubgroup i` is the
 `i`-th simple root of `TauCeti.DynkinType.simplyConnectedRootDatum` at `F₄`, in the same Bourbaki

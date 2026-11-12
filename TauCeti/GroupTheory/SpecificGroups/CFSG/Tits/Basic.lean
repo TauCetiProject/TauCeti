@@ -54,7 +54,7 @@ theorem steinberg_eq_specialIsogeny_pow :
   rw [steinberg_def, frobenius_def, F4ShortRoot.PrimeField.specialIsogeny_specialIsogeny]
 
 /-- The indexed length permutation reverses the short-root carrier's four nodes. -/
-theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
+theorem finCongr_lengthPerm (i : Fin d.1.rank) :
     finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i) =
       Fin.revPerm (finCongr d.rank_eq_four i) := by
   obtain rfl := d.eq_of
@@ -62,7 +62,7 @@ theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
     lengthPermF4_apply]
 
 /-- The carrier's positive-root exponent agrees with the indexed source-root exponent. -/
-theorem carrierExponent (i : Fin d.1.rank) :
+theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
     F4ShortRoot.isogenyExponent (.inl (finCongr d.rank_eq_four i)) =
       d.toSuzukiReeIndex.exponent i := by
   rw [exponent_eq]
@@ -79,7 +79,7 @@ two on short roots, matching the validated index. -/
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
   rw [steinberg_def, simpleRootSubgroup_def,
     F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, simpleRootSubgroup_def,
-    carrierNode_lengthPerm, ← carrierExponent]
+    finCongr_lengthPerm, ← isogenyExponent_inl_finCongr]
   simp only [F4ShortRoot.isogenyReverse, Sum.map_inl]
 
 /-- The fixed subgroup of the exceptional F4 endomorphism at the Tits index. -/

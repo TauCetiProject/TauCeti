@@ -15,7 +15,8 @@ the characteristic-two short-root carrier. The parameter exponents are attached 
 node, exactly as for the positive simple roots. These equations supply the negative half of the
 pinning needed to compare Steinberg maps by their values on signed simple root subgroups.
 
-The root maps are the existing carrier maps. The proof specializes
+The indexed negative root maps use the existing carrier's numbered lowering subgroups.
+The proof specializes
 `F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints` and applies
 `SuzukiReeIndex.pow_fieldExponent_apply_lengthPerm`, as in the positive-root construction in
 `ReeF4.Basic`.
@@ -37,39 +38,32 @@ variable (d : ReeF4LieIndex)
 
 /-- The exceptional endomorphism reverses negative simple roots with the indexed source-root
 exponent: one on the long roots and two on the short roots. -/
--- Rewrite before simplification expands the dependent node adapter.
-@[simp↓]
-theorem halfFrobenius_rootSubgroupPoints_inr (i : Fin d.1.rank)
+@[simp]
+theorem halfFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
     (u : Multiplicative d.1.Closure) :
-    d.halfFrobenius
-        (F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i))
-          d.1.Closure u) =
-      F4ShortRoot.PrimeField.rootSubgroupPoints
-        (.inr (finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i))) d.1.Closure
+    d.halfFrobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
-  rw [halfFrobenius_def, F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints,
-    carrierNode_lengthPerm, ← carrierExponent]
+  rw [halfFrobenius_def, negativeSimpleRootSubgroup_def,
+    F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, negativeSimpleRootSubgroup_def,
+    finCongr_lengthPerm, ← isogenyExponent_inl_finCongr]
   simp only [F4ShortRoot.isogenyReverse, Sum.map_inr,
     F4ShortRoot.isogenyExponent, Sum.elim_inr, Sum.elim_inl]
 
 /-- The Ree Steinberg map has parameter exponent `p^m * aᵢ` on each negative simple root,
 where `aᵢ` is the exceptional exponent at the source node. -/
-@[simp↓]
-theorem steinberg_rootSubgroupPoints_inr (i : Fin d.1.rank)
+@[simp]
+theorem steinberg_negativeSimpleRootSubgroup (i : Fin d.1.rank)
     (u : Multiplicative d.1.Closure) :
-    d.steinberg
-        (F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i))
-          d.1.Closure u) =
-      F4ShortRoot.PrimeField.rootSubgroupPoints
-        (.inr (finCongr d.rank_eq_four (d.toSuzukiReeIndex.lengthPerm i))) d.1.Closure
+    d.steinberg (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^
           (d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
             d.toSuzukiReeIndex.exponent i))) := by
   rw [steinberg_def]
   exact d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
-    (x := fun j t => F4ShortRoot.PrimeField.rootSubgroupPoints
-      (.inr (finCongr d.rank_eq_four j)) d.1.Closure t)
-    (fun j t => d.halfFrobenius_rootSubgroupPoints_inr j t) i u
+    (x := fun j t => d.negativeSimpleRootSubgroup j t)
+    (fun j t => d.halfFrobenius_negativeSimpleRootSubgroup j t) i u
 
 end
 

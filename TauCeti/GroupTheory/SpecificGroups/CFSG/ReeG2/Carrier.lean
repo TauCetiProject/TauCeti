@@ -117,6 +117,17 @@ theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
       G2ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_two i)) d.1.Closure :=
   (rfl)
 
+/-- The negative simple-root subgroup at the Bourbaki-numbered node `i` of the `G₂` diagram. -/
+def negativeSimpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
+  G2ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_two i)) d.1.Closure
+
+/-- The negative simple-root subgroup is the carrier's numbered lowering subgroup.
+This unfolding equation is not a simp lemma, so indexed action equations remain applicable. -/
+theorem negativeSimpleRootSubgroup_def (i : Fin d.1.rank) :
+    d.negativeSimpleRootSubgroup i =
+      G2ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_two i)) d.1.Closure :=
+  (rfl)
+
 /-- The represented weight torus in the fundamental-weight coordinates of the validated
 index. The rank-two reindexing preserves the Bourbaki numbering. -/
 def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=

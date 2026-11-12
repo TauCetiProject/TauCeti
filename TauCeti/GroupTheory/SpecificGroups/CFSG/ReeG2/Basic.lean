@@ -50,7 +50,7 @@ theorem halfFrobenius_def :
     G2ShortRoot.PrimeField.specialIsogeny_specialIsogeny]
 
 /-- The indexed length permutation is the node swap in the short-root carrier. -/
-theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
+theorem finCongr_lengthPerm (i : Fin d.1.rank) :
     finCongr d.rank_eq_two (d.toSuzukiReeIndex.lengthPerm i) =
       Equiv.swap 0 1 (finCongr d.rank_eq_two i) := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
@@ -61,7 +61,7 @@ theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
   simp [toSuzukiReeIndex, SuzukiReeIndex.lengthPerm_reeG2, Equiv.permCongr_def, hswap]
 
 /-- The carrier's positive-root exponent agrees with the indexed source-root exponent. -/
-theorem carrierExponent (i : Fin d.1.rank) :
+theorem specialIsogenyExponent_inl_finCongr (i : Fin d.1.rank) :
     G2ShortRoot.PrimeField.specialIsogenyExponent (.inl (finCongr d.rank_eq_two i)) =
       d.toSuzukiReeIndex.exponent i := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
@@ -92,7 +92,7 @@ theorem carrierExponent (i : Fin d.1.rank) :
   rw [halfFrobenius_def, simpleRootSubgroup_def,
     G2ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, simpleRootSubgroup_def,
     G2ShortRoot.PrimeField.specialIsogenyRootIndex_inl,
-    carrierNode_lengthPerm, ← carrierExponent]
+    finCongr_lengthPerm, ← specialIsogenyExponent_inl_finCongr]
   simp only [toAdd_ofAdd]
 
 /-- The Steinberg endomorphism is the recorded odd power of the exceptional endomorphism. -/
