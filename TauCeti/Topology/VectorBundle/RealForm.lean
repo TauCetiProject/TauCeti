@@ -64,13 +64,29 @@ def IsSubbundleFrameOn.complexBasis (hX : IsSubbundleFrameOn F L σ U) {x : B} (
     Module.Basis ι ℂ (V x) :=
   hL.complexBasis (hX.basis hx)
 
+theorem IsSubbundleFrameOn.complexBasis_def (hX : IsSubbundleFrameOn F L σ U) {x : B}
+    (hx : x ∈ U)
+    (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
+    hX.complexBasis hx hL = hL.complexBasis (hX.basis hx) :=
+  (rfl)
+
 @[simp]
 theorem IsSubbundleFrameOn.coe_complexBasis (hX : IsSubbundleFrameOn F L σ U) {x : B}
     (hx : x ∈ U)
     (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
     ⇑(hX.complexBasis hx hL) = (σ · x) := by
   ext i
-  simp [complexBasis, hX.coe_basis hx]
+  simp [complexBasis_def, hX.coe_basis hx]
+
+/-- The complex coordinates of a vector of `L x` in `hX.complexBasis hx hL` are its real
+coordinates in the frame basis `hX.basis hx`. -/
+@[simp]
+theorem IsSubbundleFrameOn.complexBasis_repr_coe (hX : IsSubbundleFrameOn F L σ U) {x : B}
+    (hx : x ∈ U)
+    (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x))
+    (v : L x) (i : ι) :
+    (hX.complexBasis hx hL).repr v i = (hX.basis hx).repr v i := by
+  rw [complexBasis_def, hL.complexBasis_repr_coe]
 
 end ComplexBasis
 

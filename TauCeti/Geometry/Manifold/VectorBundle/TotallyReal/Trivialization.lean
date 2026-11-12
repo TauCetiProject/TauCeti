@@ -80,15 +80,19 @@ variable {B : Type*} {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Modul
 def complexDoubledFrame (σ : ι → Π x, V x) : Fin 2 × ι → Π x, V x :=
   fun p x ↦ Complex.basisOneI p.1 • σ p.2 x
 
+theorem complexDoubledFrame_apply (σ : ι → Π x, V x) (p : Fin 2 × ι) (x : B) :
+    complexDoubledFrame σ p x = Complex.basisOneI p.1 • σ p.2 x :=
+  (rfl)
+
 @[simp]
 theorem complexDoubledFrame_zero (σ : ι → Π x, V x) (i : ι) (x : B) :
     complexDoubledFrame σ (0, i) x = σ i x := by
-  simp [complexDoubledFrame]
+  simp [complexDoubledFrame_apply]
 
 @[simp]
 theorem complexDoubledFrame_one (σ : ι → Π x, V x) (i : ι) (x : B) :
     complexDoubledFrame σ (1, i) x = Complex.I • σ i x := by
-  simp [complexDoubledFrame]
+  simp [complexDoubledFrame_apply]
 
 end Frame
 
@@ -197,7 +201,7 @@ theorem isLocalFrameOn_complexDoubledFrame (hX : IsSubbundleFrameOn F L σ U)
   have hb {x : B} (hx : x ∈ U) : (complexDoubledFrame σ · x) =
       ⇑(Complex.basisOneI.smulTower (hX.complexBasis hx (hL x hx))) := by
     ext p
-    simp [complexDoubledFrame, Basis.smulTower_apply]
+    simp [complexDoubledFrame_apply, Basis.smulTower_apply]
   exact ⟨fun hx ↦ hb hx ▸ Basis.linearIndependent _, fun hx ↦ hb hx ▸ (Basis.span_eq _).ge,
     fun p ↦ contMDiffOn_const.smul_totalSpace (hσ p.2)⟩
 
@@ -297,7 +301,7 @@ theorem exists_trivialization_totallyReal_pi
   obtain ⟨e, he, hmem, hx₀e, hes, heL⟩ :=
     hX.exists_trivialization_totallyReal hU hσ hx₀ hL (Pi.basisFun ℂ ι) hs
   exact ⟨e, he, hmem, hx₀e, hes, fun x hx v ↦ (heL x hx v).trans
-    (mem_span_range_basisFun_iff _)⟩
+    (mem_span_real_range_basisFun_iff _)⟩
 
 end IsSubbundleFrameOn
 
