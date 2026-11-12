@@ -41,6 +41,7 @@ carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`.
 * `ModuleCat.inl_comp_biprodIsoProd_hom`, `ModuleCat.inr_comp_biprodIsoProd_hom`: under
   `ModuleCat.biprodIsoProd`, the binary biproduct inclusions are `LinearMap.inl` and
   `LinearMap.inr`.
+* `ModuleCat.bijective_biprod_map`: a biproduct of two bijective linear maps is bijective.
 -/
 
 public section
@@ -129,5 +130,16 @@ theorem inr_comp_biprodIsoProd_hom :
     biprod.inr ≫ (biprodIsoProd M N).hom = ofHom (LinearMap.inr R M N) := by
   rw [← Iso.eq_comp_inv]
   apply biprod.hom_ext <;> ext x <;> simp
+
+variable {M N} {M' N' : ModuleCat.{v} R}
+
+/-- A biproduct of two bijective linear maps is bijective. -/
+theorem bijective_biprod_map {f : M ⟶ M'} {g : N ⟶ N'} (hf : Function.Bijective f)
+    (hg : Function.Bijective g) : Function.Bijective (biprod.map f g) := by
+  have : Mono f := (mono_iff_injective f).2 hf.1
+  have : Mono g := (mono_iff_injective g).2 hg.1
+  have : Epi f := (epi_iff_surjective f).2 hf.2
+  have : Epi g := (epi_iff_surjective g).2 hg.2
+  exact ⟨(mono_iff_injective _).1 inferInstance, (epi_iff_surjective _).1 inferInstance⟩
 
 end ModuleCat
