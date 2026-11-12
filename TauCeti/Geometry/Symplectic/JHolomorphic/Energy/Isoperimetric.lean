@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Isoperimetric
-import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.Analysis.Complex.ClosedAnnulus
 import TauCeti.Topology.MetricSpace.Annulus
 
 /-!

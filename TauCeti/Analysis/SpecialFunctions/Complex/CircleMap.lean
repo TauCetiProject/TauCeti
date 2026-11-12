@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.MeasureTheory.Integral.CircleIntegral
-import TauCeti.Topology.MetricSpace.Annulus
 
 /-!
 # Circles in punctured discs and half-annuli, and powers of circle maps
@@ -22,7 +21,6 @@ import TauCeti.Topology.MetricSpace.Annulus
   diameter bounding the upper half-disc.
 * `TauCeti.circleMap_mem_halfAnnulus`: a point of a circle of radius `r ∈ [a, b]` at an angle in
   `[0, π]` lies in the closed upper half-annulus of radii `a` and `b`.
-* `TauCeti.isCompact_halfAnnulus`: the closed upper half-annulus is compact.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
 -/
 
@@ -65,15 +63,6 @@ theorem circleMap_mem_halfAnnulus (z₀ : ℂ) {a b r θ : ℝ} (ha : 0 ≤ a) (
   · simpa [abs_of_nonneg hr0] using hr.2
   · simpa [circleMap, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin] using
       mul_nonneg hr0 (Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2)
-
-/-- A closed upper half-annulus, the points `z` with `a ≤ ‖z - z₀‖ ≤ b` and `0 ≤ im (z - z₀)`,
-is compact. -/
-theorem isCompact_halfAnnulus (z₀ : ℂ) (a b : ℝ) :
-    IsCompact {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ 0 ≤ (z - z₀).im} := by
-  have hclosed : IsClosed {z : ℂ | 0 ≤ (z - z₀).im} :=
-    isClosed_le continuous_const (Complex.continuous_im.comp (continuous_sub_right z₀))
-  simpa only [← ofPred_and, and_assoc] using
-    (isCompact_setOf_le_norm_sub_le z₀ a b).inter_right hclosed
 
 /-- The integer powers `θ ↦ (R e^{iθ}) ^ k = R ^ k e^{ikθ}` of a circle about the origin are
 smooth. -/
