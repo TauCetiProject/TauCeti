@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Morse.Stable.Frame
 public import TauCeti.LinearAlgebra.Orientation.Prod
+import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.LinearAlgebra.Ray
 
 /-!
@@ -337,37 +338,6 @@ theorem trajectorySign_eq_one_or_eq_neg_one (hMS : hX.IsMorseSmale) (hf : IsMors
   trajectorySign_eq_one_or_eq_neg_one_of_bijective
     (bijective_trajectoryComparison hφp hφq hMS hf hpq hy)
 
-omit hφp hφq in
-/-- An endomorphism of `ℝ × V` that fixes the second component of every vector and sends `(1, 0)`
-to a vector with positive first component has positive determinant: it is triangular, with
-diagonal blocks this first component and the identity of `V`. -/
-private theorem det_pos_of_snd_eq {V : Type*} [AddCommGroup V] [Module ℝ V]
-    [FiniteDimensional ℝ V] (B : ℝ × V →ₗ[ℝ] ℝ × V) (hB : ∀ v, (B v).2 = v.2)
-    (h1 : 0 < (B (1, 0)).1) : 0 < LinearMap.det B := by
-  set W := LinearMap.ker (LinearMap.snd ℝ ℝ V)
-  have hW : W ≤ W.comap B := fun v hv ↦ by
-    simp only [W, Submodule.mem_comap, LinearMap.mem_ker, LinearMap.snd_apply, hB] at hv ⊢
-    exact hv
-  -- On the axis `W = ℝ × 0`, `B` is multiplication by `(B (1, 0)).1`.
-  have hR : B.restrict (p := W) (q := W) hW = (B (1, 0)).1 • LinearMap.id := by
-    refine LinearMap.ext fun ⟨w, hw⟩ ↦ Subtype.ext ?_
-    have hw2 : w.2 = 0 := hw
-    have hw' : w = w.1 • ((1 : ℝ), (0 : V)) := Prod.ext (by simp) (by simp [hw2])
-    have hB1 : B (1, 0) = ((B (1, 0)).1, 0) := Prod.ext rfl (hB _)
-    change B w = (B (1, 0)).1 • w
-    conv_lhs => rw [hw']
-    rw [map_smul, hB1]
-    exact Prod.ext (by simp [mul_comm]) (by simp [hw2])
-  -- On the quotient by `W`, `B` is the identity.
-  have hQ : W.mapQ W B hW = LinearMap.id := by
-    refine Submodule.linearMap_qext _ (LinearMap.ext fun v ↦ ?_)
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
-      LinearMap.id_apply, Submodule.Quotient.eq]
-    simp [W, hB]
-  rw [LinearMap.det_eq_det_mul_det (W := W) B hW, hR, hQ, LinearMap.det_id, mul_one,
-    LinearMap.det_smul, LinearMap.det_id, mul_one]
-  exact pow_pos h1 _
-
 /-- **The sign is constant along a trajectory.** Moving a point of a trajectory between critical
 points of consecutive index by the flow does not change its sign, so the sign is an invariant of
 the unparametrized trajectory. Along the flow, the unstable frame and the normal coordinates are
@@ -431,7 +401,7 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
     rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]
     omega
   rw [hmap, ((Orientation.map _ e op).map_eq_iff_det_pos B hcard).2
-    (det_pos_of_snd_eq _ hB h1)]
+    (by rw [LinearMap.det_eq_fst_of_snd_eq _ hB]; exact h1)]
 
 /-- **The signed count reduces to the trajectory count modulo two.** -/
 theorem intCast_signedTrajectoryCount (hMS : hX.IsMorseSmale)

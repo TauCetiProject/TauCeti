@@ -87,36 +87,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → ℝ} {x : M} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
-
-namespace MorseChart
-
-variable (φ : MorseChart E f x)
-
-/-- The linear flow multiplies `φ.negativeExtend c` by `e^{-s}` at time `-s`. -/
-theorem linearFlow_neg_coord_negativeExtend (s : ℝ) (c : {i // φ.weight i < 0} → ℝ) :
-    φ.linearFlow (-s) (φ.coord (φ.negativeExtend c)) =
-      Real.exp (-s) • φ.coord (φ.negativeExtend c) := by
-  funext i
-  rw [Pi.smul_apply, smul_eq_mul]
-  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
-  · rw [φ.linearFlow_of_weight_eq_neg_one hi]
-  · rw [linearFlow_apply, φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num),
-      mul_zero, mul_zero]
-
-/-- If the coordinates of `a` are those of `b` moved by the linear flow for the time `s`, the
-coordinates of negative weight of `a` are `e^{s}` times those of `b`. -/
-theorem negativeCoord_eq_exp_smul_of_coord_eq {s : ℝ} {a b : E}
-    (h : φ.coord a = φ.linearFlow s (φ.coord b)) :
-    φ.negativeCoord a = Real.exp s • φ.negativeCoord b := by
-  funext i
-  have hi : φ.weight i = -1 :=
-    (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.2)
-  rw [Pi.smul_apply, negativeCoord_apply, negativeCoord_apply, h, smul_eq_mul,
-    φ.linearFlow_of_weight_eq_neg_one hi]
-
-end MorseChart
-
-variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+  [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
 
 namespace IsAdaptedPseudoGradient
 
