@@ -57,34 +57,20 @@ theorem map_span_singleton_injective_of_bounded_torsion {f : M →ₗ[R] N}
     (hf : Function.Injective f)
     (hbound : ∀ x : N ⧸ f.range, (∃ n : ℕ, r ^ n • x = 0) → r ^ k • x = 0) :
     Function.Injective (map (Ideal.span {r}) f) := by
-  have hfil (n : ℕ) (x : M)
-      (hx : f x ∈ ((Ideal.span {r}) ^ (n + k) • ⊤ : Submodule R N)) :
-      x ∈ ((Ideal.span {r}) ^ n • ⊤ : Submodule R M) := by
-    rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul,
-      Submodule.mem_smul_pointwise_iff_exists] at hx ⊢
-    obtain ⟨y, -, hy⟩ := hx
-    have hq : r ^ k • (Submodule.Quotient.mk y : N ⧸ f.range) = 0 := by
-      apply hbound _ ⟨n + k, ?_⟩
-      rw [← Submodule.Quotient.mk_smul, hy, Submodule.Quotient.mk_eq_zero]
-      exact LinearMap.mem_range_self f x
-    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hq
-    obtain ⟨z, hz⟩ := hq
-    refine ⟨z, Submodule.mem_top, hf ?_⟩
-    rw [map_smul, hz, smul_smul, ← pow_add, hy]
-  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-  intro x hx
-  apply AdicCompletion.ext
-  intro n
-  obtain ⟨y, hy⟩ := Submodule.Quotient.mk_surjective _ (x.val (n + k))
-  have hfy : f y ∈ ((Ideal.span {r}) ^ (n + k) • ⊤ : Submodule R N) := by
-    apply (Submodule.Quotient.mk_eq_zero _).mp
-    have he := congrArg (fun z ↦ z.val (n + k)) hx
-    simpa only [map_val_apply, ← hy, LinearMap.reduceModIdeal_apply, val_zero_apply] using he
-  have he := x.property (Nat.le_add_right n k)
-  -- Transition maps are quotient factor maps; evaluate them on the chosen representative.
-  simp only [← hy, transitionMap, Submodule.factorPow, Submodule.factor,
-    Submodule.mapQ_apply, LinearMap.id_apply] at he
-  rw [← he, (Submodule.Quotient.mk_eq_zero _).mpr (hfil n y hfy), val_zero_apply]
+  apply map_injective_of_comap_pow_smul_le (k := k)
+  intro n x hx
+  rw [Submodule.mem_comap] at hx
+  rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul,
+    Submodule.mem_smul_pointwise_iff_exists] at hx ⊢
+  obtain ⟨y, -, hy⟩ := hx
+  have hq : r ^ k • (Submodule.Quotient.mk y : N ⧸ f.range) = 0 := by
+    apply hbound _ ⟨n + k, ?_⟩
+    rw [← Submodule.Quotient.mk_smul, hy, Submodule.Quotient.mk_eq_zero]
+    exact LinearMap.mem_range_self f x
+  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hq
+  obtain ⟨z, hz⟩ := hq
+  refine ⟨z, Submodule.mem_top, hf ?_⟩
+  rw [map_smul, hz, smul_smul, ← pow_add, hy]
 
 /-- Completion preserves middle exactness when the parameter is regular on the last map's
 range and the parameter-power torsion of its cokernel is bounded. The last map need not be

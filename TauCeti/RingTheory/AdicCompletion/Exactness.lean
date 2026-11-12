@@ -47,6 +47,26 @@ theorem map_injective_of_reduceModIdeal_injective
   exact AdicCompletion.ext fun n ↦ hf n (by
     simpa only [map_val_apply] using congrArg (fun z ↦ z.val n) h)
 
+/-- Completion is injective if preimages of ideal powers lie in the source filtration with
+a fixed shift. No Noetherianity or finite-generation hypothesis is needed. -/
+theorem map_injective_of_comap_pow_smul_le {k : ℕ}
+    (hf : ∀ n, (I ^ (n + k) • ⊤ : Submodule R N).comap f ≤ I ^ n • ⊤) :
+    Function.Injective (map I f) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro x hx
+  apply AdicCompletion.ext
+  intro n
+  obtain ⟨y, hy⟩ := Submodule.Quotient.mk_surjective _ (x.val (n + k))
+  have hfy : f y ∈ (I ^ (n + k) • ⊤ : Submodule R N) := by
+    apply (Submodule.Quotient.mk_eq_zero _).mp
+    have he := congrArg (fun z ↦ z.val (n + k)) hx
+    simpa only [map_val_apply, ← hy, LinearMap.reduceModIdeal_apply, val_zero_apply] using he
+  have he := x.property (Nat.le_add_right n k)
+  -- Transition maps are quotient factor maps; evaluate them on the chosen representative.
+  simp only [← hy, transitionMap, Submodule.factorPow, Submodule.factor,
+    Submodule.mapQ_apply, LinearMap.id_apply] at he
+  rw [← he, (Submodule.Quotient.mk_eq_zero _).mpr (hf n hfy), val_zero_apply]
+
 /-- Completion preserves a right exact sequence if its first map is injective modulo every
 power of the defining ideal. No finiteness hypothesis is needed. -/
 theorem map_exact_of_reduceModIdeal_injective
