@@ -299,7 +299,7 @@ theorem dyadicProj_eq_sum {N : ℕ} (hN : 0 < N) (f : Lp ℝ p (volume : Measure
       (⨍ y in dyadicCell n, f y) • (dyadicCell n).indicator fun _ => (1 : ℝ) :=
     (Lp.coeFn_smul _ _).trans (indicatorConstLp_coeFn.const_smul _)
   filter_upwards [dyadicProj_ae_eq hN.ne' f,
-    condExp_dyadicFiltration_ae_eq ((Lp.memLp f).integrable Fact.out),
+    condExp_dyadicFiltration_ae_eq N ((Lp.memLp f).integrable Fact.out),
     Lp.coeFn_finsetSum (Finset.Ico N (2 * N)) fun n => (⨍ y in dyadicCell n, f y) •
       indicatorConstLp p (measurableSet_dyadicCell n) (measure_ne_top _ _) (1 : ℝ),
     ae_all_iff.2 hv] with x h1 h2 h3 h4
