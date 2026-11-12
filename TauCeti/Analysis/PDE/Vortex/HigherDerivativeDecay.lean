@@ -73,14 +73,12 @@ private theorem exists_log_normSq_decay (hx : ContDiff ℝ ∞ x) (hsol : ∀ z,
       (∀ z, R < ‖z‖ → Real.exp (L z) = 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ∧
       ∀ z, R + n < ‖z‖ → ∀ i ≤ n, ‖iteratedFDeriv ℝ i L z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   have hcd (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := contDiff_euclidean.1 hx i
-  have hb₁ : Differentiable ℝ fun w ↦ x w 0 := (hcd 0).differentiable (by simp)
-  have hb₂ : Differentiable ℝ fun w ↦ x w 1 := (hcd 1).differentiable (by simp)
   have hp : ContDiff ℝ 2 fun w ↦ x w 2 := (hcd 2).of_le (by simp)
   have hq : ContDiff ℝ 2 fun w ↦ x w 3 := (hcd 3).of_le (by simp)
-  set s : ℂ → ℝ := fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2) with hs
+  set s : ℂ → ℝ := fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)
   have hscd : ContDiff ℝ ∞ s := contDiff_normSq (hcd 2) (hcd 3)
   have hs₀ : ∀ w, 0 ≤ s w := fun w ↦ by positivity
-  have hs₁ : ∀ w, s w ≤ 1 := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim
+  have hs₁ : ∀ w, s w ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim
   -- Outside a disc of radius `R₀`, `|α|² > 1 / 2`.
   have hhalf : (1 / 2 : ℝ) < 1 := by norm_num
   obtain ⟨R₁, -, hR₁⟩ := hasBasis_cobounded_norm.eventually_iff.mp
@@ -114,10 +112,10 @@ private theorem exists_log_normSq_decay (hx : ContDiff ℝ ∞ x) (hsol : ∀ z,
     intro z hz
     rw [(laplacian_congr_nhds (hLeq z hz)).eq_of_nhds, hexp z hz]
     have hsz := hsR z (by linarith)
-    exact laplacian_log_normSq_of_equation_eq_zero (hb₁ z) (hb₂ z) hp.contDiffAt hq.contDiffAt
+    exact laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt
       (by nlinarith) (Eventually.of_forall hsol)
   -- The exponential decay of `L` itself: `|log s| ≤ 2 (1 - s)` for `1 / 2 ≤ s ≤ 1`.
-  obtain ⟨K₀, hK₀⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
+  obtain ⟨K₀, hK₀⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
   have hdecay : ∀ z, R < ‖z‖ → |L z| ≤ 2 * K₀ * Real.exp (-(c * ‖z‖)) := by
     intro z hz
     have hsz := hsR z (by linarith)

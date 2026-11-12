@@ -95,7 +95,6 @@ theorem _root_.ContDiff.exists_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_co
         (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)
     set d : ℝ := (Module.finrank ℝ E : ℝ)
     set K₃ := d * (K₀ * Real.exp c) + K₂ * Real.exp c / 2
-    have hK₃ : 0 ≤ K₃ := by positivity
     refine ⟨max K₀ K₃, le_max_of_le_left hK₀, fun z hz i hi ↦ ?_⟩
     have hz' : R + n < ‖z‖ := lt_trans (by push_cast; linarith) hz
     rcases Nat.lt_succ_iff_lt_or_eq.mp (Nat.lt_succ_of_le hi) with hi | rfl
