@@ -94,6 +94,7 @@ theorem contCohomologyClass_map_equivariantKernelMap :
 
 include φ hright
 
+omit [TotallyDisconnectedSpace N] in
 /-- A weak comparison of extensions detects a generating source class when the two second
 cohomology groups have the same finite order and the target class generates. No surjectivity
 of the comparison or its restriction to the kernels is assumed. -/
@@ -102,6 +103,10 @@ theorem zmultiples_contCohomologyClass_eq_top_of_comparison
     (hcard : Nat.card (H2 G (Additive M)) = Nat.card (H2 G (Additive N)))
     (hy : AddSubgroup.zmultiples Y.contCohomologyClass = ⊤) :
     AddSubgroup.zmultiples X.contCohomologyClass = ⊤ := by
+  -- The kernel `N` embeds in the totally disconnected `Y.E`.
+  have : TotallyDisconnectedSpace N :=
+    (Y.continuous_inl.isClosedEmbedding Y.toGroupExtension.inl_injective).isEmbedding
+      |>.isTotallyDisconnected_range.mp (isTotallyDisconnected_of_totallyDisconnectedSpace _)
   let k := X.equivariantKernelMap Y φ hright
   let c := explicitCoeff2 G (Additive M) k.toAdditive
     (k.continuous_toAdditive (X.continuous_equivariantKernelMap Y φ hright))
