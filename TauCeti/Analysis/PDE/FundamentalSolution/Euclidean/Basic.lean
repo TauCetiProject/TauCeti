@@ -160,7 +160,7 @@ theorem newtonianKernel_lt_newtonianKernel_of_norm_lt (n : ℕ) (hn : n ≠ 2)
     newtonianKernel n y < newtonianKernel n x := by
   rw [newtonianKernel_def, newtonianKernel_def,
     ← Real.sq_rpow_div_two (norm_nonneg y), ← Real.sq_rpow_div_two (norm_nonneg x)]
-  exact newtonianKernel_rpow_sq_lt n hn (pos_of_ne_zero_euclideanSpace hx)
+  exact newtonianKernel_rpow_sq_lt n hn (pos_of_ne_euclideanSpace hx)
     (by positivity) (by nlinarith [norm_nonneg x, norm_nonneg y])
 
 /-- The Fréchet derivative of the Newtonian kernel away from its pole. -/

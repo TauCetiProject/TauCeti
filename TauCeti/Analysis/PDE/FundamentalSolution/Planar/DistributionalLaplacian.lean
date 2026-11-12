@@ -46,7 +46,8 @@ The argument has the same two steps as in higher dimensions.
 * `TauCeti.locallyIntegrable_planarNewtonianKernel`: `G` is locally integrable.
 * `TauCeti.locallyIntegrable_fderiv_planarNewtonianKernel`: so is its derivative.
 * `TauCeti.integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul`: integration by parts
-  against `G`.
+  against `G`, and `TauCeti.integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul` with
+  the pole at `a`.
 * `TauCeti.hasWeakFDerivOn_planarNewtonianKernel`: the classical derivative of `G` is its weak
   derivative.
 * `TauCeti.integral_laplacian_mul_planarNewtonianKernel`: `-Δ G = δ₀`.
@@ -234,6 +235,19 @@ theorem integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul {g : ℂ →
   rw [integral_congr_ae hderiv]
   exact tendsto_nhds_unique (hL.congr' hibp) hR.neg
 
+/-- Integration by parts against the logarithmic kernel with its pole moved to `a`: for a `C¹`
+function `g` with compact support, `∫ G(z - a) ∂ᵥg = -∫ (∂ᵥG)(z - a) g`. -/
+theorem integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul {g : ℂ → ℝ}
+    (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g) (v a : ℂ) :
+    ∫ z, planarNewtonianKernel (z - a) * fderiv ℝ g z v =
+      -∫ z, fderiv ℝ planarNewtonianKernel (z - a) v * g z := by
+  have h := integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul (g := fun y ↦ g (y + a))
+    (hg.comp (contDiff_id.add contDiff_const)) (hc.comp_homeomorph (Homeomorph.addRight a)) v
+  simp only [fderiv_comp_add_right] at h
+  rw [← integral_add_right_eq_self (fun z ↦ planarNewtonianKernel (z - a) * fderiv ℝ g z v) a,
+    ← integral_add_right_eq_self (fun z ↦ fderiv ℝ planarNewtonianKernel (z - a) v * g z) a]
+  simpa only [add_sub_cancel_right] using h
+
 /-- **The planar Newtonian kernel is weakly differentiable.** On every open subset of `ℂ`, the
 classical derivative of `G`, which exists away from the origin, is a weak derivative of `G`. -/
 theorem hasWeakFDerivOn_planarNewtonianKernel (Ω : Opens ℂ) :
@@ -289,5 +303,17 @@ theorem integral_laplacian_mul_planarNewtonianKernel_sub {f : ℂ → ℝ} (hf :
   rw [laplacian_comp_add_right, zero_add] at h
   rw [← h, ← integral_add_right_eq_self _ a]
   simp
+
+/-- For a `C²` function `f` with compact support on `ℂ`, the integrand `Δ f · G(· - a)` of the
+distributional identity `-Δ G(· - a) = δₐ` is integrable. -/
+theorem integrable_laplacian_mul_planarNewtonianKernel_sub {f : ℂ → ℝ} (hf : ContDiff ℝ 2 f)
+    (hc : HasCompactSupport f) (a : ℂ) :
+    Integrable fun z ↦ Δ f z * planarNewtonianKernel (z - a) := by
+  have hg : Integrable fun z ↦ planarNewtonianKernel z • (Δ f ∘ Homeomorph.addRight a) z :=
+    locallyIntegrable_planarNewtonianKernel.integrable_smul_right_of_hasCompactSupport
+      (hf.continuous_laplacian.comp (Homeomorph.addRight a).continuous)
+      (hc.laplacian.comp_homeomorph (Homeomorph.addRight a))
+  simpa only [Function.comp_apply, Homeomorph.coe_addRight, sub_add_cancel, smul_eq_mul,
+    mul_comm] using hg.comp_sub_right a
 
 end TauCeti

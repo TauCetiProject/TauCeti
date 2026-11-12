@@ -55,6 +55,8 @@ nilpotently.
 
 * `TauCeti.DynkinType.chevalleyRootSubgroup`: the root subgroup `x_γ` of every root on the points
   of a Kostant-stable lattice.
+* `TauCeti.DynkinType.chevalleyToralRootSubgroupPoints`: the same root subgroup in a lattice
+  basis, valued in the pinned toral-closure points.
 
 ## Main results
 
@@ -439,6 +441,60 @@ theorem basisMatrix_chevalleyRootSubgroup_mem_toralPoints
       (Subgroup.mem_map_of_mem _
         (chevalleyRootSubgroup_mem_kostantElementarySubgroup ρ M hM hnil γ
           (CommAlgCat.of ℤ A) u)))
+
+/-- Every numbered root defines a homomorphism into the matrix-valued points of the pinned
+Kostant toral closure, over any commutative value ring. -/
+def chevalleyToralRootSubgroupPoints
+    {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (χ : Fin n → Fin t.rank → ℤ)
+    (γ : Fin t.numRoots) (A : Type*) [CommRing A] :
+    Multiplicative A →* kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator
+      (t.lieBasis ht).h ρ M hM hnil b χ A :=
+  MonoidHom.codRestrict
+    ((Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom).comp
+      (chevalleyRootSubgroup ρ M hM hnil γ (CommAlgCat.of ℤ A))) _
+    (basisMatrix_chevalleyRootSubgroup_mem_toralPoints ρ M hM hnil b χ γ A)
+
+/-- The all-root toral point is the matrix of the lattice exponential in the chosen basis. -/
+theorem coe_chevalleyToralRootSubgroupPoints
+    {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (χ : Fin n → Fin t.rank → ℤ)
+    (γ : Fin t.numRoots) (A : Type*) [CommRing A] (u : Multiplicative A) :
+    (chevalleyToralRootSubgroupPoints ρ M hM hnil b χ γ A u :
+        Matrix.GeneralLinearGroup (Fin n) A) =
+      Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
+        (chevalleyRootSubgroup ρ M hM hnil γ (CommAlgCat.of ℤ A) u) :=
+  (rfl)
+
+/-- At a simple root the all-root toral homomorphism is the numbered positive root
+homomorphism of the Kostant data. -/
+@[simp]
+theorem chevalleyToralRootSubgroupPoints_simpleIndex
+    {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (χ : Fin n → Fin t.rank → ℤ)
+    (i : Fin t.rank) (A : Type*) [CommRing A] :
+    chevalleyToralRootSubgroupPoints ρ M hM hnil b χ (t.simpleIndex ht i) A =
+      kostantToralRootSubgroupPoints (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        ρ M hM hnil b χ (.inl i) A := by
+  refine MonoidHom.ext fun u => Subtype.ext ?_
+  rw [coe_chevalleyToralRootSubgroupPoints, chevalleyRootSubgroup_simpleIndex,
+    coe_kostantToralRootSubgroupPoints]
+  exact basisMatrix_kostantRootSubgroupParam (t.lieBasis ht).rootGenerator
+    (t.lieBasis ht).h ρ M hM hnil b A (.inl i) u
+
+/-- At a negative simple root the all-root toral homomorphism is the numbered negative root
+homomorphism of the Kostant data. -/
+@[simp]
+theorem chevalleyToralRootSubgroupPoints_reflectionPerm_simpleIndex
+    {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (χ : Fin n → Fin t.rank → ℤ)
+    (i : Fin t.rank) (A : Type*) [CommRing A] :
+    chevalleyToralRootSubgroupPoints ρ M hM hnil b χ
+        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i))
+        A =
+      kostantToralRootSubgroupPoints (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        ρ M hM hnil b χ (.inr i) A := by
+  refine MonoidHom.ext fun u => Subtype.ext ?_
+  rw [coe_chevalleyToralRootSubgroupPoints, chevalleyRootSubgroup_reflectionPerm_simpleIndex,
+    coe_kostantToralRootSubgroupPoints]
+  exact basisMatrix_kostantRootSubgroupParam (t.lieBasis ht).rootGenerator
+    (t.lieBasis ht).h ρ M hM hnil b A (.inr i) u
 
 end ToralPoints
 
