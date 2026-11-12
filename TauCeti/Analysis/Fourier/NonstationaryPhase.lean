@@ -160,7 +160,6 @@ private theorem norm_integral_mul_coeff_le {h : ℝ → ℂ} (hh : Continuous h)
   have hhi : Integrable h := hh.integrable_of_hasCompactSupport
     (HasCompactSupport.of_support_subset_isCompact (isCompact_Icc (a := -R) (b := R))
       ((subset_tsupport h).trans hhR))
-  have htp : 0 < |t| := abs_pos.2 ht
   rw [← integral_mul_const]
   refine norm_integral_le_of_norm_le (hhi.norm.mul_const _) (Eventually.of_forall fun r ↦ ?_)
   rw [norm_mul, norm_phase, one_mul, norm_mul, norm_real, Real.norm_eq_abs]

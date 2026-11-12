@@ -157,7 +157,6 @@ theorem rpow_neg_le_mul_rpow_neg {x y a q : ℝ} (hx : 0 < x) (hy : 0 < y) (ha :
     (hq : 0 ≤ q) (hxy : x ≤ a * y) : y ^ (-q) ≤ a ^ q * x ^ (-q) := by
   have h1 : (a * y) ^ (-q) ≤ x ^ (-q) := rpow_le_rpow_of_nonpos hx hxy (by linarith)
   rw [mul_rpow ha.le hy.le, rpow_neg ha.le] at h1
-  have hapos : 0 < a ^ q := rpow_pos_of_pos ha q
   calc y ^ (-q) = a ^ q * ((a ^ q)⁻¹ * y ^ (-q)) := by field_simp
     _ ≤ a ^ q * x ^ (-q) := by gcongr
 
