@@ -26,7 +26,8 @@ by a smooth function.
 
 The extensions of `Op(a)` to the various Bessel-potential spaces agree as maps into tempered
 distributions, since they agree on the dense subspace of Schwartz functions
-(`TauCeti.Symbol.toDistr_apply_eq_toDistr_quantizeSobolev`). As `a` has every order `m'`, the
+(`TauCeti.Symbol.toDistr_quantizeSobolev_congr`,
+`TauCeti.Symbol.toDistr_apply_eq_toDistr_quantizeSobolev`). As `a` has every order `m'`, the
 distribution `T u` lies in `H^{s - m'}` for every `m'`, so in every `H^t`
 (`TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`), and the Sobolev embedding
 `TemperedDistribution.exists_contDiff_ae_eq_of_forall_memSobolev` makes it a smooth function. For
@@ -77,8 +78,7 @@ theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev (ha : a.IsSmoothing)
   -- The coefficient of `a` is also a symbol `b` of order `s - t`, and `Op(b)` maps `H^s` to `H^t`.
   obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - t)
   have hbc := hc.of_coefficient_eq hb
-  rw [← toDistr_apply_eq_toDistr_quantizeSobolev hc (T := b.quantizeSobolev hbc s) (fun v φ ↦ by
-    rw [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hb])]
+  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
   exact (b.quantizeSobolev hbc s u).memSobolev_toDistr.mono (sub_sub_cancel s t).ge
 
 /-- A smooth representative of `Op(a) u` vanishes at every position `x` outside a closed set `L`
