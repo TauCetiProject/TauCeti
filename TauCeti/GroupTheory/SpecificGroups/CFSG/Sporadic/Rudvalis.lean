@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the Rudvalis group
 
-This file carries the `Ru` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records Leonard Soicher's `tcenum` presentation of
-the Rudvalis group as a `TauCeti.GroupPresentation`, together with its exact source, generator
-convention, transcription notes, expected counts, and decidable checks on the transcription.
+This file carries the `Ru` row of the sporadic presentation data. It records Leonard Soicher's
+`tcenum` presentation of the Rudvalis group as a `TauCeti.GroupPresentation`, together with its
+exact source, generator convention, transcription notes, expected counts, and decidable checks on
+the transcription.
 
 The complete presentation is
 
