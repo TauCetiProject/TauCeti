@@ -17,7 +17,7 @@ Let `μ` be a left-invariant and negation-invariant s-finite measure on a measur
 additive group `G`, for instance Lebesgue measure on `ℝ`, and let `W ⊆ G` be measurable. For each
 `t` the translated window `{s | s - t ∈ W}` has measure `μ W`, and every point `s` lies in the
 windows of exactly the `t` with `s - t ∈ W`, again a set of measure `μ W`. By Tonelli's theorem,
-averaging a nonnegative function over the sliding windows multiplies its integral by `μ W`:
+integrating a nonnegative function over the sliding windows multiplies its integral by `μ W`:
 
 `∫ (∫_{s - t ∈ W} f(s) ds) dt = μ W ∫ f`.
 
@@ -31,7 +31,7 @@ and the square-function form
 of length `L`, these are the estimates for a time pairing localized to `|s - t| ≈ L`.
 
 The window integral `t ↦ ∫_{s - t ∈ W} f(s) ds` is the convolution `1_{-W} ⋆ₗ f`
-(`MeasureTheory.lconvolution`), and the second inequality is the case `L¹ ⋆ L² ⊆ L²` of Young's
+(`MeasureTheory.lconvolution`), and the window-kernel bound is the case `L¹ ⋆ L² ⊆ L²` of Young's
 inequality combined with Cauchy–Schwarz; the statements here keep the windows explicit, which is
 the form in which time-localized pairings arise.
 
@@ -68,7 +68,7 @@ theorem lintegral_setLIntegral_sub_preimage (hW : MeasurableSet W) {f : G → �
     (measurable_snd.sub measurable_fst) hW
   have hind (t s : G) : ((fun s ↦ s - t) ⁻¹' W).indicator g s =
       {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ g p.2) (t, s) :=
-    rfl
+    indicator_eq_indicator (by simp only [mem_preimage, mem_ofPred_eq]) rfl
   have hmeas : Measurable (uncurry fun t s ↦
       {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ g p.2) (t, s)) :=
     (hg.comp measurable_snd).indicator hS
@@ -83,7 +83,7 @@ theorem lintegral_setLIntegral_sub_preimage (hW : MeasurableSet W) {f : G → �
         refine lintegral_congr fun s ↦ ?_
         have h : (fun t ↦ {p : G × G | p.2 - p.1 ∈ W}.indicator (fun p ↦ g p.2) (t, s)) =
             ((fun t ↦ s - t) ⁻¹' W).indicator fun _ ↦ g s :=
-          rfl
+          funext fun t ↦ indicator_eq_indicator (by simp only [mem_preimage, mem_ofPred_eq]) rfl
         have hmp : μ ((fun t ↦ s - t) ⁻¹' W) = μ W :=
           (μ.measurePreserving_sub_left s).measure_preimage (hW.nullMeasurableSet (μ := μ))
         rw [h, lintegral_indicator_const (measurable_const_sub s hW), hmp, mul_comm]
@@ -100,8 +100,7 @@ theorem measurable_setLIntegral_sub_preimage (hW : MeasurableSet W) {f : G → �
     rw [← lintegral_indicator (measurable_sub_const t hW)]
     refine lintegral_congr_ae ?_
     filter_upwards [hf.ae_eq_mk] with s hs
-    simp only [indicator, hs]
-    rfl
+    exact indicator_eq_indicator (by simp only [mem_preimage, mem_ofPred_eq]) hs
   simp only [h]
   exact Measurable.lintegral_prod_right'
     ((hf.measurable_mk.comp measurable_snd).indicator ((measurable_snd.sub measurable_fst) hW))
@@ -147,8 +146,9 @@ theorem lintegral_setLIntegral_sub_preimage_mul_le (hW : MeasurableSet W) {f g :
         hf.restrict.aestronglyMeasurable, Measure.restrict_apply_univ,
       (measurePreserving_sub_right μ t).measure_preimage hW.nullMeasurableSet] at h
     simp only [enorm_eq_self, ENNReal.toReal_one, ENNReal.toReal_ofNat] at h
-    calc _ ≤ _ := h
-      _ = _ := by norm_num [mul_comm]
+    have hexp : (1 / 1 - 1 / 2 : ℝ) = 2⁻¹ := by norm_num
+    rw [hexp, one_div, mul_comm] at h
+    exact h
   calc ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ) * g t ∂μ
       ≤ ∫⁻ t, μ W ^ (2⁻¹ : ℝ) *
           ((∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ^ (2 : ℝ) ∂μ) ^ (2⁻¹ : ℝ) * g t) ∂μ :=
