@@ -191,30 +191,27 @@ has a continuous orthonormal frame: orthonormal bases `d x` of the fibres `E (χ
 theorem exists_continuous_orthonormalBasis_of_contractibleSpace (χ : C(X, B)) :
     ∃ d : ∀ x, OrthonormalBasis (Fin (Module.finrank ℝ F)) ℝ (E (χ x)),
       ∀ i, Continuous fun x ↦ TotalSpace.mk' F (χ x) (d x i) := by
-  -- The map `χ` is null-homotopic, so its pullback is isomorphic to a product bundle.
-  obtain ⟨y, hy⟩ : χ.Nullhomotopic := by
-    simpa using (id_nullhomotopic X).comp_right χ
-  obtain ⟨Φ, -, hΦ'⟩ := hy.exists_continuousLinearEquiv_pullback (𝕜 := ℝ) (F := F) (E := E)
-  let e₀ := trivializationAt F E y
-  have hy₀ : y ∈ e₀.baseSet := mem_baseSet_trivializationAt F E y
-  let Ψ : ∀ x, E (χ x) ≃L[ℝ] F := fun x ↦ (Φ x).trans (e₀.continuousLinearEquivAt ℝ y hy₀)
+  -- The pullback of `E` along `χ` is a bundle over a contractible space, hence trivial.
+  have := FiniteDimensional.complete ℝ F
+  obtain ⟨e, _, he⟩ := exists_trivialization_baseSet_eq_univ_of_contractibleSpace ℝ F (χ *ᵖ E)
+  have hx (x : X) : x ∈ e.baseSet := he ▸ mem_univ x
   let c := Module.finBasis ℝ F
-  -- The frame `x ↦ Ψ⁻¹ (c i)` is continuous and a basis in every fibre.
+  -- The frame `x ↦ e⁻¹ (x, c i)` is continuous and a basis in every fibre.
   have hv (i : Fin (Module.finrank ℝ F)) :
-      Continuous fun x ↦ TotalSpace.mk' F (χ x) ((Ψ x).symm (c i)) := by
-    have hι : Continuous fun x : X ↦ TotalSpace.mk' F
-        (E := ((ContinuousMap.const X y : C(X, B)) : X → B) *ᵖ E) x
-        ((e₀.continuousLinearEquivAt ℝ y hy₀).symm (c i)) :=
-      Pullback.continuous_iff.2 ⟨continuous_id, (continuous_const : Continuous fun _ : X ↦
-        TotalSpace.mk' F y ((e₀.continuousLinearEquivAt ℝ y hy₀).symm (c i)))⟩
-    exact (Pullback.continuous_lift F E χ).comp (hΦ'.comp hι)
+      Continuous fun x ↦ TotalSpace.mk' F (χ x) (e.symmL ℝ x (c i)) := by
+    have h : Continuous fun x ↦ TotalSpace.mk' F (E := χ *ᵖ E) x (e.symmL ℝ x (c i)) :=
+      (e.continuousOn_symm_prodMk_left (v := c i)).comp_continuous continuous_id hx
+        |>.congr fun x ↦ (e.mk_symm (hx x) (c i)).symm.trans
+          (congrArg (TotalSpace.mk x) (e.symmL_apply (hx x) (c i)).symm)
+    exact (Pullback.continuous_lift F E χ).comp h
   let b : ∀ x, Module.Basis (Fin (Module.finrank ℝ F)) ℝ (E (χ x)) := fun x ↦
-    c.map (Ψ x).symm.toLinearEquiv
+    c.map (e.continuousLinearEquivAt ℝ x (hx x)).symm.toLinearEquiv
   refine ⟨fun x ↦ OrthonormalBasis.mk
     (InnerProductSpace.gramSchmidtNormed_orthonormal (b x).linearIndependent)
     (by rw [InnerProductSpace.span_gramSchmidtNormed_range, InnerProductSpace.span_gramSchmidt,
       (b x).span_eq]), fun i ↦ ?_⟩
-  have hb (x : X) : ⇑(b x) = fun i ↦ (Ψ x).symm (c i) := funext fun i ↦ by simp [b]
+  have hb (x : X) : ⇑(b x) = fun i ↦ e.symmL ℝ x (c i) := funext fun i ↦
+    (e.symmL_apply (hx x) (c i)).symm
   simpa [hb] using Continuous.gramSchmidtNormed_bundle (b := χ) hv
     (fun x ↦ hb x ▸ (b x).linearIndependent) i
 

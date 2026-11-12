@@ -27,7 +27,7 @@ multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
 continuous section (`ContinuousOn.smul_section_of_tsupport`). For global continuity of
 fibrewise sums along a varying base map from another space, use `Continuous.add_totalSpace`, and
-`continuous_finsetSum_totalSpace` for finite sums.
+`TauCeti.continuous_finsetSum_totalSpace` for finite sums.
 
 A linear trivialization reconstructs a section from arbitrary model coordinates by
 `Bundle.Trivialization.sectionFromCoordinates`, with the two coordinate inverse laws on its base
@@ -126,6 +126,8 @@ theorem Continuous.add_totalSpace
     Continuous (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) :=
   continuous_iff_continuousAt.2 fun _ ↦ hs.continuousAt.add_totalSpace 𝕜 ht.continuousAt
 
+namespace TauCeti
+
 variable (𝕜) in
 include 𝕜 in
 /-- A finite fibrewise sum of continuous maps into a vector bundle over a common continuous base map
@@ -142,6 +144,8 @@ theorem continuous_finsetSum_totalSpace {ι : Type*} (s : Finset ι) {v : ι →
     simp only [Finset.sum_insert hi]
     exact (hv i (Finset.mem_insert_self i s)).add_totalSpace 𝕜
       (ih fun j hj ↦ hv j (Finset.mem_insert_of_mem hj))
+
+end TauCeti
 
 end MovingBase
 
