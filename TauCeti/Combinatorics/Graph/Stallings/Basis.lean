@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Folded
-public import TauCeti.GroupTheory.GraphOfGroups.PathGroup
-public import TauCeti.GroupTheory.FreeGroup.Rank
+public import TauCeti.GroupTheory.GraphOfGroups.Rank
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 
 /-!
@@ -27,12 +26,16 @@ this basis.
 
 Consequently the accepted subgroup is finitely generated exactly when there are finitely many
 positive non-tree darts, its rank is then their number, and it is trivial exactly when there
-are none.
+are none. Counting the darts of a spanning tree gives the Euler form of the rank: for a
+connected folded graph with finitely many vertices and a finitely generated accepted subgroup,
+the rank plus the number of vertices is the number of edges plus one
+(`StallingsGraph.rank_subgroup_add_card`), so that as an integer the rank is the number of
+edges minus the number of vertices plus one.
 
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
-  §6, Lemma 6.1 and Corollary 6.8.
+  §6, Lemma 6.1 and Corollary 6.8; §8, Lemma 8.2.
 * A. Hatcher, *Algebraic Topology*, §1.A, Proposition 1A.2.
 -/
 
@@ -245,6 +248,35 @@ theorem subgroup_eq_bot_iff (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
     have : IsEmpty ↥(O \ T.darts) := ⟨fun e => e.2.2 (h e.2.1)⟩
     have := (S.basisEquiv T a hS hO).symm.toEquiv.subsingleton
     exact Subgroup.eq_bot_of_subsingleton _
+
+/-! ### The Euler form of the rank -/
+
+/-- The rank of the subgroup accepted by a connected folded graph with finitely many vertices,
+when finitely generated, plus the number of vertices is the number of positive darts of any
+orientation `O`, that is the number of edges, plus one. -/
+theorem rank_subgroup_add_card (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    Group.rank (S.subgroup a) + Nat.card S.graph.V = Nat.card O + 1 := by
+  have := (isMulFG_congr (S.pathGroupEquivSubgroup hS a)).mpr ‹_›
+  rw [Group.rank_congr (S.pathGroupEquivSubgroup hS a).symm, hO.rank_pathGroup_add_card h a]
+
+/-- The rank of the subgroup accepted by a connected folded graph with finitely many vertices,
+when finitely generated, is the number of positive darts of any orientation `O` plus one minus
+the number of vertices. -/
+theorem rank_subgroup_eq_card_add_one_sub_card (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    Group.rank (S.subgroup a) = Nat.card O + 1 - Nat.card S.graph.V := by
+  have := S.rank_subgroup_add_card a hS hO h
+  omega
+
+/-- As an integer, the rank of the subgroup accepted by a connected folded graph with finitely
+many vertices, when finitely generated, is the number of positive darts of any orientation `O`
+minus the number of vertices plus one. -/
+theorem rank_subgroup_eq_card_sub_card_add_one (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    (Group.rank (S.subgroup a) : ℤ) = Nat.card O - Nat.card S.graph.V + 1 := by
+  have := S.rank_subgroup_add_card a hS hO h
+  omega
 
 end
 end TauCeti.StallingsGraph
