@@ -21,8 +21,8 @@ interior and its norms on `U` itself, matching `TauCeti.MemWkpLoc`. On an open s
 derivatives are unique almost everywhere, so the minimum is attained by every weak derivative.
 
 This is the quantity in which interior estimates of elliptic equations are stated. The file
-supplies its unfolding, its value through a given weak derivative on an open set, a weak
-derivative realizing a finite first-order norm on an open set, the almost-everywhere vanishing of
+supplies its unfolding, its value through a given weak derivative on an open set, the extraction
+of a weak derivative from a finite successor-order norm, the almost-everywhere vanishing of
 a function of zero norm, monotonicity in the set, invariance under almost-everywhere change, the
 triangle inequality and the operator-norm bound under a continuous linear map of the codomain.
 
@@ -115,21 +115,27 @@ theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ 
   gcongr
   exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
 
-/-- On an open set, a finite first-order norm is realized by a weak derivative, and then the
-function and that derivative are `Lᵖ` there. -/
-theorem exists_weakFDeriv_memLp_of_eLpNormWkp_one_ne_top {W : Set ℂ} (hW : IsOpen W)
-    (hf : eLpNormWkp p W 1 f ≠ ∞) :
-    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume ⟨W, hW⟩ f D ∧
-      MemLp f p (volume.restrict W) ∧ MemLp D p (volume.restrict W) ∧
-      eLpNormWkp p W 1 f = eLpNorm f p (volume.restrict W) + eLpNorm D p (volume.restrict W) := by
+/-- A finite successor-order norm makes the function `Lᵖ` and provides a weak derivative on the
+interior of finite norm of the previous order. -/
+theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf : eLpNormWkp p U (k + 1) f ≠ ∞) :
+    MemLp f p (volume.restrict U) ∧ ∃ D : ℂ → ℂ →L[ℝ] F,
+      HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D ≠ ∞ := by
   rw [eLpNormWkp_succ, ENNReal.add_ne_top] at hf
   obtain ⟨D, hD, hlt⟩ : ∃ D : ℂ → ℂ →L[ℝ] F,
-      HasWeakFDerivOn volume (Opens.interior W) f D ∧ eLpNorm D p (volume.restrict W) < ∞ := by
+      HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D < ∞ := by
     simpa [iInf_lt_iff, lt_top_iff_ne_top] using hf.2
-  have hD' : HasWeakFDerivOn volume ⟨W, hW⟩ f D :=
-    hD.mono (le_of_eq (SetLike.ext' hW.interior_eq.symm))
-  refine ⟨D, hD', memLp_iff.2 (lt_top_iff_ne_top.2 hf.1), memLp_iff.2 hlt, ?_⟩
-  exact (eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD').trans (by rw [eLpNormWkp_zero]; rfl)
+  exact ⟨memLp_iff.2 (lt_top_iff_ne_top.2 hf.1), D, hD, hlt.ne⟩
+
+/-- On an open set, a finite successor-order norm is realized by a weak derivative of finite norm
+of the previous order, and the function is `Lᵖ` there. -/
+theorem exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top {Ω : Opens ℂ}
+    (hf : eLpNormWkp p Ω (k + 1) f ≠ ∞) :
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemLp f p (volume.restrict Ω) ∧
+      eLpNormWkp p Ω k D ≠ ∞ ∧
+      eLpNormWkp p Ω (k + 1) f = eLpNorm f p (volume.restrict Ω) + eLpNormWkp p Ω k D := by
+  obtain ⟨hfp, D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
+  rw [Opens.interior_coe] at hD
+  exact ⟨D, hD, hfp, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
 
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]
