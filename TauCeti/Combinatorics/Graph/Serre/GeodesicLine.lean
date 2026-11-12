@@ -32,29 +32,31 @@ namespace SerreGraph
 
 variable {Γ : SerreGraph}
 
-/-- In a preconnected graph, a family of vertices indexed by the integers whose consecutive
-members are at distance at most one does not increase distances. -/
-theorem Preconnected.dist_le_natAbs (h : Γ.Preconnected) {c : ℤ → Γ.V}
+/-- A family of vertices indexed by the integers whose consecutive members are joined by a path
+and at distance at most one does not increase distances. -/
+theorem dist_le_natAbs {c : ℤ → Γ.V} (h : ∀ n, Nonempty (Γ.Path (c n) (c (n + 1))))
     (hc : ∀ n, Γ.dist (c n) (c (n + 1)) ≤ 1) (m n : ℤ) : Γ.dist (c m) (c n) ≤ (m - n).natAbs := by
-  have key : ∀ (m : ℤ) (k : ℕ), Γ.dist (c m) (c (m + k)) ≤ k := by
+  have key : ∀ (m : ℤ) (k : ℕ), Nonempty (Γ.Path (c m) (c (m + k))) ∧
+      Γ.dist (c m) (c (m + k)) ≤ k := by
     intro m k
     induction k with
-    | zero => simp
+    | zero => exact ⟨⟨(Quiver.Path.nil).cast rfl (by simp)⟩, by simp⟩
     | succ k ih =>
-      have htri := dist_triangle ((preconnected_iff Γ).mp h (c m) (c (m + k)))
-        ((preconnected_iff Γ).mp h (c (m + k)) (c (m + k + 1)))
+      obtain ⟨⟨p⟩, hk⟩ := ih
+      obtain ⟨q⟩ := h (m + k)
+      have htri := dist_triangle ⟨p⟩ ⟨q⟩
       have := hc (m + k)
       rw [Int.natCast_add, Int.natCast_one, ← Int.add_assoc]
-      omega
+      exact ⟨⟨p.comp q⟩, by omega⟩
   rcases le_total m n with hmn | hmn
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = m + k := ⟨(n - m).toNat, by omega⟩
-    exact (key m k).trans (by omega)
+    exact (key m k).2.trans (by omega)
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, m = n + k := ⟨(m - n).toNat, by omega⟩
     rw [dist_comm]
-    exact (key n k).trans (by omega)
+    exact (key n k).2.trans (by omega)
 
-/-- Two vertices of a geodesic line are joined by a path along the line whose length is their
-distance. -/
+/-- For `m : ℤ` and `k : ℕ`, the vertices `c m` and `c (m + k)` of a geodesic line `c` are joined
+by a path of length `k` all of whose darts join vertices of the line. -/
 theorem exists_path_length_eq_of_dist_eq_natAbs {c : ℤ → Γ.V}
     (hc : ∀ m n, Γ.dist (c m) (c n) = (m - n).natAbs) (m : ℤ) (k : ℕ) :
     ∃ p : Γ.Path (c m) (c (m + k)), p.length = k ∧

@@ -25,8 +25,9 @@ A path no longer than the distance between its endpoints is reduced. In an acycl
 unique reduced path between two vertices realizes their distance, since free reduction never
 lengthens a path. In a preconnected graph, a pair of vertices at minimal distance between two
 nonempty sets of vertices is joined by a reduced path meeting the first set only at its start and
-the second only at its end; in an acyclic graph, the reduced path from a vertex to a nearest
-vertex of a set meets the set only at its end.
+the second only at its end. The distance from a vertex attains a minimum on every nonempty set
+of vertices, and a shortest path from the vertex to a minimizer meets the set only at its end; in
+an acyclic graph this applies to the reduced path.
 
 ## References
 
@@ -165,8 +166,8 @@ theorem Hom.dist_le {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} (h : Nonempty
         dist_le_length (f.toPrefunctor.mapPath p)
     _ = Γ.dist a b := by rw [Prefunctor.length_mapPath, hp]
 
-/-- The vertices after the first dart and before the last dart of a path with at least two darts
-are joined by the path with these two darts removed. -/
+/-- In a path with at least two darts, the target of the first dart `f` and the source of the
+last dart `e` are at distance at most the length of the path minus two. -/
 theorem Path.dist_tgt_src_add_two_le {a b : Γ.V} (p : Γ.Path a b) {e f : Γ.E}
     (hf : f ∈ (Path.darts Γ p).head?) (he : e ∈ (Path.darts Γ p).getLast?)
     (h : 2 ≤ p.length) : Γ.dist (Γ.tgt f) (Γ.src e) + 2 ≤ p.length := by
@@ -238,22 +239,31 @@ theorem Preconnected.exists_isReduced_path (h : Γ.Preconnected) {A B : Set Γ.V
   · have := (hmin a ha _ hB').trans (dist_le_length q)
     omega
 
-/-- Every vertex has a nearest vertex in a nonempty set of vertices. -/
+/-- The distance from a vertex attains a minimum on every nonempty set of vertices. When the vertex
+is joined to every vertex of the set, as in a preconnected graph, the minimizer is a nearest
+vertex of the set. -/
 theorem exists_forall_dist_le {C : Set Γ.V} (hC : C.Nonempty) (v : Γ.V) :
     ∃ a ∈ C, ∀ b ∈ C, Γ.dist v a ≤ Γ.dist v b := by
   obtain ⟨a, ha, hmin⟩ := exists_minimalFor_of_wellFoundedLT (· ∈ C) (Γ.dist v) hC
   exact ⟨a, ha, fun b hb => (le_total _ _).elim id (hmin hb)⟩
 
-/-- In an acyclic graph, the reduced path from a vertex to a nearest vertex of a set of vertices
-meets the set only at its end. -/
-theorem IsAcyclic.src_notMem_of_forall_dist_le (h : Γ.IsAcyclic) {C : Set Γ.V} {v a : Γ.V}
-    (hmin : ∀ b ∈ C, Γ.dist v a ≤ Γ.dist v b) {q : Γ.Path v a} (hq : Path.IsReduced Γ q)
+/-- If `a` minimizes the distance from `v` on a set `C` of vertices, then no dart of a shortest
+path from `v` to `a` starts in `C`. -/
+theorem Path.src_notMem_of_forall_dist_le {C : Set Γ.V} {v a : Γ.V}
+    (hmin : ∀ b ∈ C, Γ.dist v a ≤ Γ.dist v b) {q : Γ.Path v a} (hq : q.length ≤ Γ.dist v a)
     {e : Γ.E} (he : e ∈ Path.darts Γ q) : Γ.src e ∉ C := by
   intro hC
   obtain ⟨q₁, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ q he
   have h₁ := (hmin _ hC).trans (dist_le_length q₁)
-  rw [h.dist_eq_length hq, Quiver.Path.length_comp, Quiver.Path.length_cons] at h₁
+  rw [Quiver.Path.length_comp, Quiver.Path.length_cons] at hq
   omega
+
+/-- In an acyclic graph, if `a` minimizes the distance from `v` on a set `C` of vertices, then no
+dart of the reduced path from `v` to `a` starts in `C`. -/
+theorem IsAcyclic.src_notMem_of_forall_dist_le (h : Γ.IsAcyclic) {C : Set Γ.V} {v a : Γ.V}
+    (hmin : ∀ b ∈ C, Γ.dist v a ≤ Γ.dist v b) {q : Γ.Path v a} (hq : Path.IsReduced Γ q)
+    {e : Γ.E} (he : e ∈ Path.darts Γ q) : Γ.src e ∉ C :=
+  Path.src_notMem_of_forall_dist_le hmin (h.dist_eq_length hq).ge he
 
 end SerreGraph
 end TauCeti

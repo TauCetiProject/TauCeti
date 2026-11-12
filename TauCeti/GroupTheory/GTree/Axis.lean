@@ -22,11 +22,14 @@ in every nonempty convex set of vertices invariant under `g`, and every vertex `
 
 The argument follows Serre. At a vertex `x` moved by `ℓ(g)`, the geodesic from `x` to `g • x`
 cannot be followed by its translate with backtracking: otherwise `g` would either invert an edge
-or move the second vertex of the geodesic by `ℓ(g) - 2`. Hence the translates of this geodesic by
-the powers of `g` line up into a geodesic line. Conversely, if `C` is a convex invariant set and
-`a` is the vertex of `C` nearest to `v`, then the geodesic from `v` to `a`, the geodesic from
+or move the second vertex of the geodesic by `ℓ(g) - 2`. Hence, when `ℓ(g) > 0`, the translates
+of this geodesic by the powers of `g` line up into a geodesic line. Conversely, let `C` be a
+convex invariant set and `a` a vertex of `C` nearest to `v`, and suppose that `C` contains the
+vertices fixed by `g` in case `g` fixes `a`. Then the geodesic from `v` to `a`, the geodesic from
 `a` to `g • a` and the translate of the first one, reversed, form a geodesic from `v` to `g • v`,
 so that `d(v, g v) = d(a, g a) + 2 d(v, a)`.
+
+Consequently `ℓ(gⁿ) = |n| ℓ(g)`, and a nonzero power of a hyperbolic element has the same axis.
 
 ## Main declarations
 
@@ -34,19 +37,23 @@ so that `d(v, g v) = d(a, g a) + 2 d(v, a)`.
 * `TauCeti.GTree.smul_ne_rev_of_mem_axis`, `TauCeti.GTree.mem_axis_of_isReduced`: a vertex `x`
   lies in the characteristic set exactly when the geodesic from `x` to `g • x` is followed by its
   translate without backtracking.
-* `TauCeti.GTree.dist_pow_smul_of_mem_axis`: `d(x, gⁿ x) = n ℓ(g)` on the axis.
+* `TauCeti.GTree.dist_pow_smul_of_mem_axis`, `TauCeti.GTree.dist_zpow_smul_of_mem_axis`:
+  `d(x, gⁿ x) = |n| ℓ(g)` on the characteristic set.
 * `TauCeti.GTree.dist_smul_eq_dist_smul_add_two_mul_dist`: the displacement of a vertex in terms
-  of its nearest vertex in a convex invariant set.
+  of its nearest vertex `a` in a convex invariant set `C`, provided that `C` contains the vertices
+  fixed by `g` in case `g` fixes `a`.
 * `TauCeti.GTree.IsHyperbolic.exists_range_eq_axis`: the axis of a hyperbolic element is a
   geodesic line translated by the translation length.
 * `TauCeti.GTree.IsHyperbolic.axis_subset`, `TauCeti.GTree.IsHyperbolic.range_eq_axis`: the axis
   lies in every nonempty convex invariant set, and it is the unique invariant geodesic line.
-* `TauCeti.GTree.axis_eq_range_of_smul_eq_add`,
-  `TauCeti.GTree.translationLength_eq_natAbs_of_smul_eq_add`: a geodesic line translated by `g`
-  is the axis of `g`, and the translation length is read off from it.
+* `TauCeti.GTree.axis_eq_range_of_smul_eq_add`, `TauCeti.GTree.isHyperbolic_of_smul_eq_add`: a
+  geodesic line translated by `g` by a nonzero amount `t` is the axis of `g`, which is then
+  hyperbolic; `TauCeti.GTree.translationLength_eq_natAbs_of_smul_eq_add`: `ℓ(g) = |t|` for every
+  amount `t`.
 * `TauCeti.GTree.dist_smul_eq_translationLength_add`: `d(v, g v) = ℓ(g) + 2 d(v, axis)`.
-* `TauCeti.GTree.line_axis`, `TauCeti.GTree.line_translationLength`: on the line, every vertex
-  lies on the axis of every translation, and the translation by `k` has translation length `|k|`.
+* `TauCeti.GTree.translationLength_zpow`, `TauCeti.GTree.IsHyperbolic.axis_zpow`: `ℓ(gⁿ) =
+  |n| ℓ(g)`, and `gⁿ` has the axis of `g` when `g` is hyperbolic and `n ≠ 0`.
+* `TauCeti.GTree.line_axis`: on the line, every vertex lies on the axis of every translation.
 
 ## References
 
@@ -62,7 +69,7 @@ universe u v w
 namespace TauCeti
 namespace GTree
 
-open SerreGraph _root_.MulAction
+open SerreGraph _root_.MulAction Pointwise
 
 variable {G : Type w} [Group G] {T : GTree.{u, v} G}
 
@@ -78,13 +85,47 @@ def axis (g : G) : Set T.V :=
 theorem mem_axis_iff {g : G} {v : T.V} :
     v ∈ T.axis g ↔ T.dist v (g • v) = T.translationLength g := Iff.rfl
 
+variable (T) in
 /-- Some vertex is moved by exactly the translation length. -/
-theorem axis_nonempty (g : G) : (T.axis g).Nonempty :=
+@[simp] theorem axis_nonempty (g : G) : (T.axis g).Nonempty :=
   exists_dist_eq_translationLength g
+
+/-- The characteristic set of an element, as a type, is nonempty. -/
+instance (g : G) : Nonempty (T.axis g) :=
+  (T.axis_nonempty g).to_subtype
+
+variable (T) in
+/-- Every vertex lies in the characteristic set of the identity. -/
+@[simp] theorem axis_one : T.axis (1 : G) = Set.univ :=
+  Set.eq_univ_of_forall fun v => by rw [mem_axis_iff, one_smul, dist_self, translationLength_one]
+
+variable (T) in
+/-- In a tree with at most one vertex, the characteristic set of every element is everything. -/
+@[simp] theorem axis_eq_univ_of_subsingleton [Subsingleton T.V] (g : G) : T.axis g = Set.univ :=
+  (T.axis_nonempty g).eq_univ
 
 /-- The characteristic set of `g` is invariant under `g`. -/
 @[simp] theorem smul_mem_axis_iff {g : G} {v : T.V} : g • v ∈ T.axis g ↔ v ∈ T.axis g := by
   rw [mem_axis_iff, mem_axis_iff, dist_smul]
+
+/-- The characteristic set of `g` is invariant under every element commuting with `g`. -/
+theorem smul_mem_axis_iff_of_commute {g h : G} (hgh : Commute g h) {v : T.V} :
+    h • v ∈ T.axis g ↔ v ∈ T.axis g := by
+  rw [mem_axis_iff, mem_axis_iff, ← mul_smul, hgh.eq, mul_smul, dist_smul]
+
+/-- The characteristic set of `g` is invariant under `g⁻¹`. -/
+@[simp] theorem inv_smul_mem_axis_iff {g : G} {v : T.V} : g⁻¹ • v ∈ T.axis g ↔ v ∈ T.axis g :=
+  smul_mem_axis_iff_of_commute (Commute.refl g).inv_right
+
+/-- The characteristic set of `g` is invariant under the powers of `g`. -/
+@[simp] theorem pow_smul_mem_axis_iff {g : G} (n : ℕ) {v : T.V} :
+    g ^ n • v ∈ T.axis g ↔ v ∈ T.axis g :=
+  smul_mem_axis_iff_of_commute (Commute.self_pow g n)
+
+/-- The characteristic set of `g` is invariant under the integer powers of `g`. -/
+@[simp] theorem zpow_smul_mem_axis_iff {g : G} (n : ℤ) {v : T.V} :
+    g ^ n • v ∈ T.axis g ↔ v ∈ T.axis g :=
+  smul_mem_axis_iff_of_commute (Commute.self_zpow g n)
 
 /-- An element and its inverse have the same characteristic set. -/
 @[simp] theorem axis_inv (g : G) : T.axis g⁻¹ = T.axis g := by
@@ -97,6 +138,13 @@ characteristic set of `g`. -/
 theorem mem_axis_conj_iff {g h : G} {v : T.V} : v ∈ T.axis (h * g * h⁻¹) ↔ h⁻¹ • v ∈ T.axis g := by
   rw [mem_axis_iff, mem_axis_iff, translationLength_conj, ← T.dist_smul h (h⁻¹ • v),
     smul_inv_smul, mul_smul, mul_smul]
+
+variable (T) in
+/-- The translate by `h` of the characteristic set of `g` is the characteristic set of the
+conjugate `h * g * h⁻¹`. -/
+theorem smul_axis (g h : G) : h • T.axis g = T.axis (h * g * h⁻¹) := by
+  ext v
+  rw [Set.mem_smul_set_iff_inv_smul_mem, mem_axis_conj_iff]
 
 /-- A fixed vertex lies in the characteristic set. -/
 theorem mem_axis_of_smul_eq {g : G} {v : T.V} (hv : g • v = v) : v ∈ T.axis g := by
@@ -144,53 +192,50 @@ theorem dist_pow_smul_of_mem_axis {g : G} {x : T.V} (hx : x ∈ T.axis g) (n : �
   obtain ⟨p, hp, -⟩ := T.isTree.existsUnique_isReduced x (g • x)
   rw [dist_pow_smul_eq_mul hp (smul_ne_rev_of_mem_axis hx hp) n, mem_axis_iff.mp hx]
 
+/-- A vertex `x` moved by the translation length satisfies `d(x, gⁿ x) = |n| ℓ(g)` for every
+integer `n`. -/
+theorem dist_zpow_smul_of_mem_axis {g : G} {x : T.V} (hx : x ∈ T.axis g) (n : ℤ) :
+    T.dist x (g ^ n • x) = n.natAbs * T.translationLength g := by
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
+  · rw [zpow_natCast, Int.natAbs_natCast, dist_pow_smul_of_mem_axis hx]
+  · rw [zpow_neg, zpow_natCast, Int.natAbs_neg, Int.natAbs_natCast, ← T.dist_smul (g ^ k),
+      smul_inv_smul, dist_comm, dist_pow_smul_of_mem_axis hx]
+
 /-- If a reduced path from `x` to `g • x` is followed by its translate under `g` without
 backtracking, then `x` is moved by the translation length of `g`. -/
 theorem mem_axis_of_isReduced {g : G} {x : T.V} {p : T.Path x (g • x)}
     (hp : Path.IsReduced T.toSerreGraph p) (hg : ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
-      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e) : x ∈ T.axis g := by
-  obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
-  refine mem_axis_iff.mpr (le_antisymm ?_ (translationLength_le g x))
-  -- Compare the displacements of `x` and `v` under a large power of `g`.
-  set n := 2 * T.dist x v + 1
-  have h₁ := dist_pow_smul_eq_mul hp hg n
-  have h₂ := T.dist_pow_smul_le g v n
-  have h₃ := dist_triangle (T.nonempty_path x v) (T.nonempty_path v (g ^ n • x))
-  have h₄ := dist_triangle (T.nonempty_path v (g ^ n • v)) (T.nonempty_path _ (g ^ n • x))
-  rw [dist_smul, dist_comm v x] at h₄
-  rw [hv] at h₂
-  have h : n * T.dist x (g • x) < n * (T.translationLength g + 1) := by
-    rw [mul_add, mul_one]
-    omega
-  exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_left h)
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e) : x ∈ T.axis g :=
+  dist_smul_eq_translationLength_of_isReduced hp hg
 
 /-! ### Displacement and the nearest vertex of a convex invariant set -/
 
-/-- If the path `q` from `v` to `a` followed by the path `p` from `a` to `g • a` is reduced and
-does not end with the translate of the last dart of `q`, then following it by the reversed
-translate of `q` gives a reduced path from `v` to `g • v`. -/
+/-- Let `q` be a path from `v` to `a` and `p` a path from `a` to `g • a` such that `q` followed by
+`p` is reduced and does not end with the translate under `g` of the last dart of `q`. Then
+`d(v, g v) = 2 |q| + |p|`. -/
 private theorem dist_smul_eq_of_isReduced_comp {g : G} {v a : T.V} {q : T.Path v a}
     {p : T.Path a (g • a)} (hqp : Path.IsReduced T.toSerreGraph (q.comp p))
     (h : ∀ e ∈ (Path.darts T.toSerreGraph (q.comp p)).getLast?,
       ∀ f ∈ (Path.darts T.toSerreGraph q).getLast?, g • f ≠ e) :
     T.dist v (g • v) = 2 * q.length + p.length := by
-  obtain ⟨r, hr, hrr⟩ := T.exists_path_darts_eq_map_smul g q
-  have hred : Path.IsReduced T.toSerreGraph ((q.comp p).comp r.reverse) := by
-    refine (Path.isReduced_comp_iff _ _ _).mpr ⟨hqp, (Path.isReduced_reverse _ r).mpr
-      (hrr.mpr (hqp.of_comp_left T.toSerreGraph)), fun e he f hf => ?_⟩
-    simp only [Path.darts_reverse, hr, List.head?_map, List.head?_reverse, List.getLast?_map,
-      Option.map_map, Option.mem_def, Option.map_eq_some_iff, Function.comp_apply] at hf
+  -- `q`, then `p`, then the translate of `q` reversed, is a reduced path from `v` to `g • v`.
+  have hred : Path.IsReduced T.toSerreGraph ((q.comp p).comp (smulPath g q).reverse) := by
+    refine (Path.isReduced_comp_iff _ _ _).mpr ⟨hqp, (Path.isReduced_reverse _ _).mpr
+      ((isReduced_smulPath g q).mpr (hqp.of_comp_left T.toSerreGraph)), fun e he f hf => ?_⟩
+    simp only [Path.darts_reverse, darts_smulPath, List.head?_map, List.head?_reverse,
+      List.getLast?_map, Option.map_map, Option.mem_def, Option.map_eq_some_iff,
+      Function.comp_apply] at hf
     obtain ⟨f', hf', rfl⟩ := hf
     rw [Ne, T.rev_injective.eq_iff]
     exact h e he f' hf'
   rw [(IsTree.isAcyclic _ T.isTree).dist_eq_length hred, Quiver.Path.length_comp,
-    Quiver.Path.length_comp, Quiver.Path.length_reverse, ← Path.length_darts _ r, hr,
-    List.length_map, Path.length_darts]
+    Quiver.Path.length_comp, Quiver.Path.length_reverse, length_smulPath]
   omega
 
-/-- The displacement of `v` in terms of a nearest vertex `a` of a convex invariant set `C`,
-provided that `g` fixes no vertex outside `C` in case it fixes `a`. -/
-private theorem dist_smul_eq_aux {g : G} {C : Set T.V} (hC : T.IsConvex C)
+/-- Let `C` be a convex set of vertices invariant under `g`, and let `a` be a vertex of `C`
+nearest to `v`. Suppose that `C` contains the vertices fixed by `g` in case `g` fixes `a`. Then
+`d(v, g v) = d(a, g a) + 2 d(v, a)`. -/
+theorem dist_smul_eq_dist_smul_add_two_mul_dist {g : G} {C : Set T.V} (hC : T.IsConvex C)
     (hgC : ∀ x, g • x ∈ C ↔ x ∈ C) {v a : T.V} (ha : a ∈ C)
     (hmin : ∀ b ∈ C, T.dist v a ≤ T.dist v b) (hfix : g • a = a → ∀ x, g • x = x → x ∈ C) :
     T.dist v (g • v) = T.dist a (g • a) + 2 * T.dist v a := by
@@ -217,22 +262,14 @@ private theorem dist_smul_eq_aux {g : G} {C : Set T.V} (hC : T.IsConvex C)
     rw [← hfe, src_smul, hgC] at he'
     exact hf' he'
 
-/-- Let `C` be a convex set of vertices invariant under `g` and containing the vertices fixed by
-`g`, and let `a` be a vertex of `C` nearest to `v`. Then `d(v, g v) = d(a, g a) + 2 d(v, a)`. -/
-theorem dist_smul_eq_dist_smul_add_two_mul_dist {g : G} {C : Set T.V} (hC : T.IsConvex C)
-    (hgC : ∀ x, g • x ∈ C ↔ x ∈ C) (hfix : ∀ x, g • x = x → x ∈ C) {v a : T.V} (ha : a ∈ C)
-    (hmin : ∀ b ∈ C, T.dist v a ≤ T.dist v b) :
-    T.dist v (g • v) = T.dist a (g • a) + 2 * T.dist v a :=
-  dist_smul_eq_aux hC hgC ha hmin fun _ => hfix
-
 /-- The characteristic set of a hyperbolic element is contained in every nonempty convex set of
 vertices invariant under it. -/
 theorem IsHyperbolic.axis_subset {g : G} (hg : T.IsHyperbolic g) {C : Set T.V}
     (hC : T.IsConvex C) (hgC : ∀ x, g • x ∈ C ↔ x ∈ C) (hne : C.Nonempty) : T.axis g ⊆ C := by
   intro v hv
   obtain ⟨a, ha, hmin⟩ := exists_forall_dist_le hne v
-  have h := dist_smul_eq_dist_smul_add_two_mul_dist hC hgC
-    (fun x hx => absurd hx (isHyperbolic_iff.mp hg x)) ha hmin
+  have h := dist_smul_eq_dist_smul_add_two_mul_dist hC hgC ha hmin
+    fun h => absurd h (isHyperbolic_iff.mp hg a)
   have := translationLength_le g a
   rw [mem_axis_iff.mp hv] at h
   rwa [(dist_eq_zero_iff (T.nonempty_path v a)).mp (by omega)]
@@ -258,8 +295,9 @@ private theorem exists_dist_smul_eq_natAbs_add
     refine fun x => ⟨fun ⟨n, hn⟩ => ⟨n - t, ?_⟩, fun ⟨n, hn⟩ => ⟨n + t, by rw [← hn, hg]⟩⟩
     rw [← smul_left_cancel_iff g, hg, sub_add_cancel, hn]
   refine ⟨m, ?_⟩
-  rw [dist_smul_eq_aux ((IsTree.isAcyclic _ T.isTree).isConvex_range_of_dist_eq_natAbs hc) hgC
-    (Set.mem_range_self m) hmin fun h => absurd h hne, hg, hc]
+  rw [dist_smul_eq_dist_smul_add_two_mul_dist
+    ((IsTree.isAcyclic _ T.isTree).isConvex_range_of_dist_eq_natAbs hc) hgC (Set.mem_range_self m)
+    hmin fun h => absurd h hne, hg, hc]
   congr 1
   omega
 
@@ -343,7 +381,7 @@ private theorem dist_eq_natAbs_of_smul_eq_add_translationLength {g : G} {c : ℤ
     (hg : ∀ n, c (n + T.translationLength g) = g • c n)
     (hstep : ∀ n, T.dist (c n) (c (n + 1)) ≤ 1) (m n : ℤ) :
     T.dist (c m) (c n) = (m - n).natAbs := by
-  have hup := ((connected_iff _).mp (IsTree.connected _ T.isTree)).2.dist_le_natAbs hstep
+  have hup := dist_le_natAbs (fun _ => T.nonempty_path _ _) hstep
   have hpow : ∀ (k : ℕ) (n : ℤ), c (n + (k * T.translationLength g : ℕ)) = g ^ k • c n := by
     intro k n
     induction k with
@@ -392,7 +430,7 @@ variable (T) in
 the axis of a hyperbolic element span subtrees. -/
 theorem isConvex_axis (g : G) : T.IsConvex (T.axis g) := by
   by_cases hg : T.IsHyperbolic g
-  · obtain ⟨x, hx⟩ := axis_nonempty (T := T) g
+  · obtain ⟨x, hx⟩ := T.axis_nonempty g
     obtain ⟨c, -, hc, -, hrange⟩ := hg.exists_range_eq_axis hx
     rw [← hrange]
     exact (IsTree.isAcyclic _ T.isTree).isConvex_range_of_dist_eq_natAbs hc
@@ -413,7 +451,7 @@ theorem IsHyperbolic.range_eq_axis {g : G} (hg : T.IsHyperbolic g) {c : ℤ → 
     rw [← hrange] at h
     obtain ⟨n, hn⟩ := h
     exact ⟨n, smul_left_cancel g hn⟩
-  obtain ⟨x, hx⟩ := axis_nonempty (T := T) g
+  obtain ⟨x, hx⟩ := T.axis_nonempty g
   obtain ⟨c₀, -, hc₀, -, hr⟩ := hg.exists_range_eq_axis hx
   have hsub := hg.axis_subset ((IsTree.isAcyclic _ T.isTree).isConvex_range_of_dist_eq_natAbs hc)
     hinv (Set.range_nonempty c)
@@ -425,48 +463,112 @@ theorem IsHyperbolic.range_eq_axis {g : G} (hg : T.IsHyperbolic g) {c : ℤ → 
 /-- A vertex is moved by at most the translation length plus twice its distance to any vertex of
 the characteristic set. -/
 theorem dist_smul_le_of_mem_axis {g : G} {a : T.V} (ha : a ∈ T.axis g) (v : T.V) :
-    T.dist v (g • v) ≤ T.translationLength g + 2 * T.dist v a := by
-  have h₁ := dist_triangle (T.nonempty_path v a) (T.nonempty_path a (g • v))
-  have h₂ := dist_triangle (T.nonempty_path a (g • a)) (T.nonempty_path (g • a) (g • v))
-  rw [dist_smul, mem_axis_iff.mp ha, dist_comm a v] at h₂
-  omega
+    T.dist v (g • v) ≤ T.translationLength g + 2 * T.dist v a :=
+  (T.dist_smul_le_dist_smul_add_two_mul_dist g a v).trans_eq <| by rw [mem_axis_iff.mp ha]
 
 /-- A vertex `v` is moved by the translation length plus twice its distance to a nearest vertex
 `a` of the characteristic set. -/
 theorem dist_smul_eq_translationLength_add_two_mul_dist {g : G} {v a : T.V} (ha : a ∈ T.axis g)
     (hmin : ∀ b ∈ T.axis g, T.dist v a ≤ T.dist v b) :
     T.dist v (g • v) = T.translationLength g + 2 * T.dist v a := by
-  rw [dist_smul_eq_dist_smul_add_two_mul_dist (T.isConvex_axis g) (fun _ => smul_mem_axis_iff)
-    (fun _ => mem_axis_of_smul_eq) ha hmin, mem_axis_iff.mp ha]
+  rw [dist_smul_eq_dist_smul_add_two_mul_dist (T.isConvex_axis g) (fun _ => smul_mem_axis_iff) ha
+    hmin fun _ _ => mem_axis_of_smul_eq, mem_axis_iff.mp ha]
 
 /-- Every vertex `v` satisfies `d(v, g v) = ℓ(g) + 2 d(v, A)`, where `A` is the characteristic
 set of `g`: its set of fixed vertices if `g` is elliptic and its axis if `g` is hyperbolic. -/
 theorem dist_smul_eq_translationLength_add (g : G) (v : T.V) :
     T.dist v (g • v) = T.translationLength g + 2 * ⨅ a : T.axis g, T.dist v a := by
-  obtain ⟨a, ha, hmin⟩ := exists_forall_dist_le (axis_nonempty (T := T) g) v
-  have : Nonempty (T.axis g) := ⟨⟨a, ha⟩⟩
+  obtain ⟨a, ha, hmin⟩ := exists_forall_dist_le (T.axis_nonempty g) v
   rw [dist_smul_eq_translationLength_add_two_mul_dist ha hmin]
   congr 2
   exact le_antisymm (le_ciInf fun b => hmin b b.2)
     (ciInf_le (OrderBot.bddBelow _) (⟨a, ha⟩ : T.axis g))
 
+/-! ### Translation lengths and characteristic sets of powers -/
+
+/-- If `g` translates a family of vertices indexed by the integers by `t`, then `gᵏ` translates it
+by `k t`. -/
+private theorem zpow_smul_eq_add_mul {g : G} {c : ℤ → T.V} {t : ℤ}
+    (hg : ∀ n, g • c n = c (n + t)) (k n : ℤ) : g ^ k • c n = c (n + k * t) := by
+  induction k using Int.induction_on generalizing n with
+  | zero => simp
+  | succ k ih =>
+    rw [zpow_add_one, mul_smul, hg, ih, add_mul, one_mul]
+    congr 1
+    omega
+  | pred k ih =>
+    have h : g⁻¹ • c n = c (n - t) := inv_smul_eq_iff.mpr (by rw [hg, sub_add_cancel])
+    rw [zpow_sub_one, mul_smul, h, ih, sub_mul, one_mul]
+    congr 1
+    omega
+
+/-- The `n`-th power of `g`, for an integer `n`, has translation length `|n| ℓ(g)`. -/
+@[simp] theorem translationLength_zpow (g : G) (n : ℤ) :
+    T.translationLength (g ^ n) = n.natAbs * T.translationLength g := by
+  by_cases hg : T.IsHyperbolic g
+  · obtain ⟨x, hx⟩ := T.axis_nonempty g
+    obtain ⟨c, -, hc, hgc, -⟩ := hg.exists_range_eq_axis hx
+    rw [translationLength_eq_natAbs_of_smul_eq_add hc (zpow_smul_eq_add_mul hgc n),
+      Int.natAbs_mul, Int.natAbs_natCast]
+  · have hg := not_isHyperbolic_iff.mp hg
+    rw [translationLength_eq_zero_iff.mpr hg, translationLength_eq_zero_iff.mpr (hg.zpow n),
+      mul_zero]
+
+/-- The `n`-th power of `g` has translation length `n ℓ(g)`. -/
+@[simp] theorem translationLength_pow (g : G) (n : ℕ) :
+    T.translationLength (g ^ n) = n * T.translationLength g := by
+  rw [← zpow_natCast, translationLength_zpow, Int.natAbs_natCast]
+
+/-- A nonzero integer power of `g` is elliptic exactly when `g` is. -/
+theorem isElliptic_zpow_iff {g : G} {n : ℤ} (hn : n ≠ 0) :
+    T.IsElliptic (g ^ n) ↔ T.IsElliptic g := by
+  rw [← translationLength_eq_zero_iff, ← translationLength_eq_zero_iff, translationLength_zpow,
+    Nat.mul_eq_zero, Int.natAbs_eq_zero, or_iff_right hn]
+
+/-- A nonzero power of `g` is elliptic exactly when `g` is. -/
+theorem isElliptic_pow_iff {g : G} {n : ℕ} (hn : n ≠ 0) :
+    T.IsElliptic (g ^ n) ↔ T.IsElliptic g := by
+  simpa only [zpow_natCast] using isElliptic_zpow_iff (T := T) (g := g) (Int.natCast_ne_zero.mpr hn)
+
+/-- A nonzero integer power of `g` is hyperbolic exactly when `g` is. -/
+theorem isHyperbolic_zpow_iff {g : G} {n : ℤ} (hn : n ≠ 0) :
+    T.IsHyperbolic (g ^ n) ↔ T.IsHyperbolic g := by
+  rw [← not_iff_not, not_isHyperbolic_iff, not_isHyperbolic_iff, isElliptic_zpow_iff hn]
+
+/-- A nonzero power of `g` is hyperbolic exactly when `g` is. -/
+theorem isHyperbolic_pow_iff {g : G} {n : ℕ} (hn : n ≠ 0) :
+    T.IsHyperbolic (g ^ n) ↔ T.IsHyperbolic g := by
+  rw [← not_iff_not, not_isHyperbolic_iff, not_isHyperbolic_iff, isElliptic_pow_iff hn]
+
+variable (T) in
+/-- The characteristic set of `g` is contained in that of every integer power of `g`. -/
+theorem axis_subset_axis_zpow (g : G) (n : ℤ) : T.axis g ⊆ T.axis (g ^ n) := fun _ hx => by
+  rw [mem_axis_iff, dist_zpow_smul_of_mem_axis hx, translationLength_zpow]
+
+variable (T) in
+/-- The characteristic set of `g` is contained in that of every power of `g`. -/
+theorem axis_subset_axis_pow (g : G) (n : ℕ) : T.axis g ⊆ T.axis (g ^ n) := fun _ hx => by
+  rw [mem_axis_iff, dist_pow_smul_of_mem_axis hx, translationLength_pow]
+
+/-- A nonzero integer power of a hyperbolic element has the same axis. -/
+theorem IsHyperbolic.axis_zpow {g : G} (hg : T.IsHyperbolic g) {n : ℤ} (hn : n ≠ 0) :
+    T.axis (g ^ n) = T.axis g := by
+  obtain ⟨x, hx⟩ := T.axis_nonempty g
+  obtain ⟨c, -, hc, hgc, hrange⟩ := hg.exists_range_eq_axis hx
+  have hℓ := translationLength_pos_iff.mpr hg
+  rw [axis_eq_range_of_smul_eq_add hc (mul_ne_zero hn (by omega)) (zpow_smul_eq_add_mul hgc n),
+    hrange]
+
+/-- A nonzero power of a hyperbolic element has the same axis. -/
+theorem IsHyperbolic.axis_pow {g : G} (hg : T.IsHyperbolic g) {n : ℕ} (hn : n ≠ 0) :
+    T.axis (g ^ n) = T.axis g := by
+  simpa only [zpow_natCast] using hg.axis_zpow (Int.natCast_ne_zero.mpr hn)
+
 /-! ### The line -/
 
-/-- The translation of the line by `k` has translation length `|k|`. -/
-theorem line_translationLength (k : Multiplicative ℤ) :
-    line.translationLength k = k.toAdd.natAbs :=
-  translationLength_eq_natAbs_of_smul_eq_add (c := fun n => (lineVertexEquiv.symm n : line.V))
-    (fun m n => Int.ofNat_inj.mp <| (line_dist _ _).trans <| by
-      rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, Int.natCast_natAbs])
-    fun n => lineVertexEquiv.injective ((lineVertexEquiv_line_smul k _).trans (by
-      rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, add_comm]))
-
 /-- Every vertex of the line lies on the axis of every translation. -/
-theorem line_axis (k : Multiplicative ℤ) : line.axis k = Set.univ := by
-  refine Set.eq_univ_of_forall fun v => ?_
-  rw [mem_axis_iff, line_translationLength]
-  refine Int.ofNat_inj.mp <| (line_dist _ _).trans ?_
-  rw [lineVertexEquiv_line_smul, Int.natCast_natAbs, sub_add_cancel_right, abs_neg]
+@[simp] theorem line_axis (k : Multiplicative ℤ) : line.axis k = Set.univ :=
+  Set.eq_univ_of_forall fun v => by rw [mem_axis_iff, line_dist_smul, line_translationLength]
 
 end GTree
 end TauCeti

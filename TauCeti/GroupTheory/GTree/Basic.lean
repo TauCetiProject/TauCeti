@@ -112,30 +112,57 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
 
-/-- The translate of a path by an element of the group: it traverses the translates of the
-darts of the path, and it is reduced exactly when the path is. -/
-theorem exists_path_darts_eq_map_smul (g : G) {a b : T.V} (p : T.Path a b) :
-    ∃ q : T.Path (g • a) (g • b),
-      Path.darts T.toSerreGraph q = (Path.darts T.toSerreGraph p).map (g • ·) ∧
-        (Path.IsReduced T.toSerreGraph q ↔ Path.IsReduced T.toSerreGraph p) := by
-  refine ⟨((T.action g).toHom.toPrefunctor.mapPath p).cast
-    (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, ← smul_vertex_def])
-    (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, ← smul_vertex_def]), ?_, ?_⟩
-  · rw [Path.darts_cast, Hom.darts_mapPath]
-    exact List.map_congr_left fun e _ => Aut.toHom_mapE _ e
-  · rw [Path.isReduced_cast]
-    exact Hom.isReduced_mapPath_iff _ _ (T.action g).toHom_mapE_injective p
+section Translate
+
+variable {T}
+
+/-- The translate of a path by an element of the group: the path through the translates of its
+darts. -/
+def smulPath (g : G) {a b : T.V} (p : T.Path a b) : T.Path (g • a) (g • b) :=
+  (T.action g).smulPath p
+
+/-- The translate of a path traverses the translates of its darts. -/
+@[simp] theorem darts_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    Path.darts T.toSerreGraph (smulPath g p) = (Path.darts T.toSerreGraph p).map (g • ·) :=
+  Aut.darts_smulPath (T.action g) p
+
+/-- The translate of a path is reduced exactly when the path is. -/
+@[simp] theorem isReduced_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    Path.IsReduced T.toSerreGraph (smulPath g p) ↔ Path.IsReduced T.toSerreGraph p :=
+  Aut.isReduced_smulPath (T.action g) p
+
+/-- The translate of a path has the same length as the path. -/
+@[simp] theorem length_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    (smulPath g p).length = p.length :=
+  Aut.length_smulPath (T.action g) p
+
+end Translate
 
 /-- The `n`-th power of an element moves a vertex by at most `n` times as much as the element. -/
 theorem dist_pow_smul_le (g : G) (v : T.V) (n : ℕ) :
     T.dist v (g ^ n • v) ≤ n * T.dist v (g • v) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have h := dist_triangle (T.nonempty_path v (g ^ n • v)) (T.nonempty_path _ (g ^ (n + 1) • v))
-    rw [pow_succ, mul_smul, dist_smul] at h
-    rw [pow_succ, mul_smul, Nat.succ_mul]
-    exact h.trans (Nat.add_le_add_right ih _)
+  rw [smul_vertex_def, smul_vertex_def, map_pow]
+  exact Aut.dist_pow_smul_le (T.action g) (T.nonempty_path _ _) n
+
+/-- The `n`-th power of an element moves a vertex by at most `|n|` times as much as the
+element. -/
+theorem dist_zpow_smul_le (g : G) (v : T.V) (n : ℤ) :
+    T.dist v (g ^ n • v) ≤ n.natAbs * T.dist v (g • v) := by
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
+  · rw [zpow_natCast, Int.natAbs_natCast]
+    exact T.dist_pow_smul_le g v k
+  · rw [zpow_neg, zpow_natCast, Int.natAbs_neg, Int.natAbs_natCast, ← T.dist_smul (g ^ k),
+      smul_inv_smul, dist_comm]
+    exact T.dist_pow_smul_le g v k
+
+/-- A vertex `v` is moved by at most the displacement of another vertex `a` plus twice the
+distance between them. -/
+theorem dist_smul_le_dist_smul_add_two_mul_dist (g : G) (a v : T.V) :
+    T.dist v (g • v) ≤ T.dist a (g • a) + 2 * T.dist v a := by
+  have h₁ := dist_triangle (T.nonempty_path v a) (T.nonempty_path a (g • v))
+  have h₂ := dist_triangle (T.nonempty_path a (g • a)) (T.nonempty_path (g • a) (g • v))
+  rw [dist_smul, dist_comm a v] at h₂
+  omega
 
 instance : Nonempty T.V := ((connected_iff _).mp (IsTree.connected _ T.isTree)).1
 
