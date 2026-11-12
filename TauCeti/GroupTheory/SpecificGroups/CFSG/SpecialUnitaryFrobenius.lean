@@ -44,7 +44,7 @@ For `ε = (-1) ^ r`, the trace `t ↦ t + ε t ^ q` of the field with `q²` elem
 elements `s` with `s ^ q = ε s` and has a nonzero kernel element
 (`TauCeti.FiniteField.exists_add_neg_one_pow_mul_pow_eq` and
 `TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero`). These are the hypotheses
-of `Matrix.isPreprimitive_isotropicPoints`, `Matrix.isPretransitive_isotropicPoints`, and
+of `Matrix.isPreprimitive_isotropicPoints` and
 `Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`, so `SU_{r+1}(q)` acts primitively on
 the isotropic points of projective space and an element fixing all of them is central (trivially
 so in rank `0`, where the group is trivial).
@@ -78,8 +78,6 @@ description of the special linear matrices with coordinates in it from
 * `TauCeti.ValidLieTypeIndex.unitaryForm_mulVec_mulVec`: `SU_{r+1}(q)` preserves the form.
 * `TauCeti.ValidLieTypeIndex.unitaryForm_single_single`: the coordinate vectors off the middle
   coordinate are isotropic.
-* `TauCeti.ValidLieTypeIndex.isPretransitive_isotropicPoints_galoisField`: `SU_{r+1}(q)` acts
-  transitively on its isotropic points.
 * `TauCeti.ValidLieTypeIndex.isPreprimitive_isotropicPoints_galoisField`: `SU_{r+1}(q)` acts
   primitively on its isotropic points.
 * `TauCeti.ValidLieTypeIndex.mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField`: an
@@ -320,25 +318,6 @@ private theorem exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero :
       a + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent a = 0 := by
   simp_rw [iterateFrobenius_def]
   exact FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero natCard_galoisField r
-
-/-- **`SU_{r+1}(q)` acts transitively on its isotropic points.** The special isometry group of
-the form `B(x, y) = σ(x)ᵀ Q y`, with `σ : x ↦ x ^ q` and `Q` the signed reversal matrix, acts
-transitively on the isotropic points of the projective space of `𝔽_{q²} ^ (r + 1)`. -/
-instance isPretransitive_isotropicPoints_galoisField :
-    MulAction.IsPretransitive
-      ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1))
-          (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
-        (iterateFrobenius _ d.characteristic d.fieldExponent))
-      ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
-        Matrix (Fin (r + 1)) (Fin (r + 1))
-          (GaloisField d.characteristic (d.fieldExponent * 2))).isotropicPoints
-        (iterateFrobenius _ d.characteristic d.fieldExponent)) :=
-  isPretransitive_isotropicPoints involutive_iterateFrobenius_galoisField
-    transpose_map_typeAGraphConjugator_galoisField
-    (by rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]) (isUnits_det_units _).ne_zero
-    (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
-    exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero
 
 /-- **`SU_{r+1}(q)` acts primitively on its isotropic points.** The special isometry group of
 the form `B(x, y) = σ(x)ᵀ Q y`, with `σ : x ↦ x ^ q` and `Q` the signed reversal matrix, acts

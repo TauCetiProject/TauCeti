@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
 import Mathlib.Tactic.Module
-import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -42,17 +41,18 @@ S(u, w₁, c₁) S(u, w₂, c₂) = S(u, w₁ + w₂, c₁ + c₂ - ε B(w₁, w
 
 (`Matrix.siegelTransvection_mul_siegelTransvection`), and a matrix `g` preserving `B` conjugates
 `S(u, w, c)` to `S(g u, g w, c)` (`Matrix.mul_siegelTransvection`). When `σ` is an involution, `Q`
-is `ε`-Hermitian (`σ(Q)ᵀ = ε Q`), and `B(u, u) = B(u, w) = B(w, u) = 0`, the isometry defect of
-`S(u, w, c)` is `(c + ε σ(c) + ε B(w, w)) (Q u) (σ(u)ᵀ Q)`
-(`Matrix.transpose_map_siegelTransvection_mul_mul`), so `S(u, w, c)` preserves `B` whenever
-`c + ε σ(c) + ε B(w, w) = 0` (`Matrix.transpose_map_siegelTransvection_mul_mul_self`).
+is `ε`-Hermitian (`σ(Q)ᵀ = ε Q`), and `B(u, u) = B(u, w) = 0`, the isometry defect of `S(u, w, c)`
+is `(c + ε σ(c) + ε B(w, w)) (Q u) (σ(u)ᵀ Q)` (`Matrix.transpose_map_siegelTransvection_mul_mul`),
+so `S(u, w, c)` preserves `B` whenever `c + ε σ(c) + ε B(w, w) = 0`
+(`Matrix.transpose_map_siegelTransvection_mul_mul_self`).
 
-In a unitary space over a field, Siegel transformations along `u` act transitively on the isotropic
-vectors sharing a given nonzero pairing with `u`, including in Witt index one where every vector of
-`u^⊥` outside `K ∙ u` is anisotropic and the only unitary transvections fixing `u` are those along
-`u`. That point-stabilizer transitivity and the resulting primitivity of the special unitary group
-on its isotropic points are proved in
-`TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/Primitive.lean`.
+In a unitary space over a field, Siegel transformations supply special isometries fixing `u` that
+move isotropic vectors sharing a given nonzero pairing with `u`, including in Witt index one where
+every vector of `u^⊥` outside `K ∙ u` is anisotropic and the only unitary transvections fixing `u`
+are those along `u`. `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/Primitive.lean` uses
+them to prove transitivity of the point stabilizer in `Q.specialIsometryGroup σ` on each
+orthogonality class off `K ∙ u` and the resulting primitivity of the special unitary group on its
+isotropic points.
 
 ## Main definitions
 
@@ -68,13 +68,13 @@ on its isotropic points are proved in
   isotropic `u`, and determinant one when `B(u, w) = B(w, u) = 0`.
 * `Matrix.siegelTransvection_mul_siegelTransvection` and
   `Matrix.siegelTransvection_mul_siegelTransvection_neg_eq_one`: the Heisenberg multiplication law
-  and explicit inverse `S(u, -w, -c - ε B(w, w))`.
+  and explicit right inverse `S(u, -w, -c - ε B(w, w))`.
 * `Matrix.mul_siegelTransvection`: the conjugation law `g S(u, w, c) = S(g u, g w, c) g`.
 * `Matrix.transpose_map_siegelTransvection_mul`,
   `Matrix.transpose_map_siegelTransvection_mul_mul`, and
   `Matrix.transpose_map_siegelTransvection_mul_mul_self`: `σ(S(u, w, c))ᵀ Q` and, when
-  `B(u, u) = B(u, w) = B(w, u) = 0`, the isometry defect and the condition
-  `c + ε σ(c) + ε B(w, w) = 0` for `S(u, w, c)` to preserve `B`.
+  `B(u, u) = B(u, w) = 0`, the isometry defect and the condition `c + ε σ(c) + ε B(w, w) = 0` for
+  `S(u, w, c)` to preserve `B`.
 
 ## References
 
@@ -111,10 +111,6 @@ theorem siegelTransvection_def (Q : Matrix n n R) (σ : R →+* R) (ε : R) (u w
 theorem siegelTransvection_zero_eq_unitaryTransvection (c : R) :
     Q.siegelTransvection σ ε u 0 c = Q.unitaryTransvection σ u c := by
   simp [siegelTransvection_def, unitaryTransvection_def, smul_vecMulVec]
-
-/-- For `w = 0` and `c = 0`, the Siegel transformation is the identity matrix. -/
-theorem siegelTransvection_zero_zero : Q.siegelTransvection σ ε u 0 0 = 1 := by
-  rw [siegelTransvection_zero_eq_unitaryTransvection, unitaryTransvection_zero]
 
 /-- Along the zero vector `u = 0`, every Siegel transformation is the identity matrix. -/
 @[simp]
@@ -184,17 +180,17 @@ theorem siegelTransvection_mul_siegelTransvection (hu : (σ ∘ u) ⬝ᵥ (Q *�
   module
 
 /-- **Inverting a Siegel transformation.** If `B(u, u) = B(u, w) = B(w, u) = 0`, then
-`S(u, -w, -c - ε B(w, w))` is the inverse of `S(u, w, c)`. -/
+`S(u, -w, -c - ε B(w, w))` is a right inverse of `S(u, w, c)`. -/
 theorem siegelTransvection_mul_siegelTransvection_neg_eq_one (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
     {w : n → R} (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (hwu : (σ ∘ w) ⬝ᵥ (Q *ᵥ u) = 0) (c : R) :
     Q.siegelTransvection σ ε u w c *
         Q.siegelTransvection σ ε u (-w) (-c - ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w))) = 1 := by
   have huw' : (σ ∘ u) ⬝ᵥ (Q *ᵥ (-w)) = 0 := by simp [mulVec_neg, huw]
-  rw [siegelTransvection_mul_siegelTransvection hu huw' hwu]
-  convert siegelTransvection_zero_zero (Q := Q) (σ := σ) (ε := ε) (u := u) using 2
-  · exact add_neg_cancel w
-  · simp [mulVec_neg]
-    ring
+  rw [siegelTransvection_mul_siegelTransvection hu huw' hwu, add_neg_cancel,
+    siegelTransvection_zero_eq_unitaryTransvection]
+  convert unitaryTransvection_zero (Q := Q) (σ := σ) (v := u) using 2
+  simp [mulVec_neg]
+  ring
 
 /-- **The conjugation law.** A matrix `g` preserving the form, `σ(g)ᵀ Q g = Q`, conjugates
 `S(u, w, c)` to `S(g u, g w, c)`: `g * S(u, w, c) = S(g u, g w, c) * g`. -/
@@ -231,13 +227,14 @@ theorem transpose_map_siegelTransvection_mul (hσ : Function.Involutive σ)
     smul_mul_assoc, vecMulVec_mul, smul_smul, ← smul_vecMulVec (σ ε * ε), ← smul_mulVec, hεQ]
 
 /-- **The isometry defect of a Siegel transformation.** Let `σ` be an involution, let the Gram
-matrix satisfy `σ(Q)ᵀ = ε Q`, and let `B(u, u) = B(u, w) = B(w, u) = 0`. Then
+matrix satisfy `σ(Q)ᵀ = ε Q`, and let `B(u, u) = B(u, w) = 0`. Then
 `σ(S(u, w, c))ᵀ Q S(u, w, c) = Q + (c + ε σ(c) + ε B(w, w)) (Q u) (σ(u)ᵀ Q)`. -/
 theorem transpose_map_siegelTransvection_mul_mul (hσ : Function.Involutive σ)
     (hQ : (Q.map σ)ᵀ = ε • Q) (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0) {w : n → R}
-    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (hwu : (σ ∘ w) ⬝ᵥ (Q *ᵥ u) = 0) (c : R) :
+    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (c : R) :
     ((Q.siegelTransvection σ ε u w c).map σ)ᵀ * Q * Q.siegelTransvection σ ε u w c =
       Q + (c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w))) • vecMulVec (Q *ᵥ u) ((σ ∘ u) ᵥ* Q) := by
+  have hwu : (σ ∘ w) ⬝ᵥ (Q *ᵥ u) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp huw
   -- Compare both sides on an arbitrary column vector `v`.
   refine mulVec_injective (funext fun v ↦ ?_)
   set Sv := Q.siegelTransvection σ ε u w c *ᵥ v with hSv
@@ -260,15 +257,15 @@ theorem transpose_map_siegelTransvection_mul_mul (hσ : Function.Involutive σ)
   module
 
 /-- **Admissible Siegel transformations are isometries.** Let `σ` be an involution, let the Gram
-matrix satisfy `σ(Q)ᵀ = ε Q`, and let `B(u, u) = B(u, w) = B(w, u) = 0`. If
+matrix satisfy `σ(Q)ᵀ = ε Q`, and let `B(u, u) = B(u, w) = 0`. If
 `c + ε σ(c) + ε B(w, w) = 0`, then `S(u, w, c)` preserves the form:
 `σ(S(u, w, c))ᵀ Q S(u, w, c) = Q`. -/
 theorem transpose_map_siegelTransvection_mul_mul_self (hσ : Function.Involutive σ)
     (hQ : (Q.map σ)ᵀ = ε • Q) (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0) {w : n → R}
-    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (hwu : (σ ∘ w) ⬝ᵥ (Q *ᵥ u) = 0) {c : R}
+    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) {c : R}
     (hc : c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0) :
     ((Q.siegelTransvection σ ε u w c).map σ)ᵀ * Q * Q.siegelTransvection σ ε u w c = Q := by
-  rw [transpose_map_siegelTransvection_mul_mul hσ hQ hu huw hwu, hc, zero_smul, add_zero]
+  rw [transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, hc, zero_smul, add_zero]
 
 end Matrix
 

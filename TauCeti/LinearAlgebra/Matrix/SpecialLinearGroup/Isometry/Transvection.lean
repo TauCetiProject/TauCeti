@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.SiegelTransvection
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # Unitary transvection groups of isotropic points
@@ -21,7 +22,7 @@ lies in the special isometry group when `a + ε σ(a) = 0`. Over a field, for a 
 `v ≠ 0`, only then. For a Hermitian form (`ε = 1`) the admissible parameters are the elements of
 trace zero. An isometry `g` conjugates `τ_{v,a}` to `τ_{g v,a}`. More generally, the Siegel
 transformation `S(u, w, c)` (`Matrix.siegelTransvection`) along an isotropic `u` with
-`h(u, w) = h(w, u) = 0` lies in the special isometry group when `c + ε σ(c) + ε h(w, w) = 0`, and
+`h(u, w) = 0` lies in the special isometry group when `c + ε σ(c) + ε h(w, w) = 0`, and
 is conjugated by `g` to `S(g u, g w, c)`.
 
 To an isotropic point `p` of projective space this attaches the group
@@ -104,13 +105,13 @@ theorem coe_mul_siegelTransvection_mul_coe_inv {g : SpecialLinearGroup n K}
 /-- **Admissible Siegel transformations belong to the special isometry group.** -/
 theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection (hσ : Function.Involutive σ)
     {ε : K} (hQ : (Q.map σ)ᵀ = ε • Q) {u w : n → K} (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
-    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) (hwu : (σ ∘ w) ⬝ᵥ (Q *ᵥ u) = 0) {c : K}
+    (huw : (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0) {c : K}
     (hc : c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0) :
     ∃ g ∈ Q.specialIsometryGroup σ,
       (g : Matrix n n K) = Q.siegelTransvection σ ε u w c :=
-  ⟨⟨_, det_siegelTransvection hu huw hwu c⟩,
+  ⟨⟨_, det_siegelTransvection hu huw ((comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp huw) c⟩,
     mem_specialIsometryGroup_iff.mpr
-      (transpose_map_siegelTransvection_mul_mul_self hσ hQ hu huw hwu hc),
+      (transpose_map_siegelTransvection_mul_mul_self hσ hQ hu huw hc),
     rfl⟩
 
 end CommRing

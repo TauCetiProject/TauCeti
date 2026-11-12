@@ -39,8 +39,9 @@ special isometries:
 
 * **Non-orthogonal orbit (`B(u, x) ≠ 0` and `B(u, y) ≠ 0`).** After normalizing `u` to `u'` with
   `B(u', x) = 1` and rescaling `y` so that `B(u', y) = 1`, the Siegel transformation
-  `Matrix.siegelTransvection Q σ ε u' (y - x - c • u') c` with `c = ε B(x, y)` fixes `u` and sends
-  `x` to `y` (`Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq`), without using
+  `Matrix.siegelTransvection Q σ ε u' (y - x - c • u') c` with `c = ε B(x, y)` lies in
+  `Q.specialIsometryGroup σ`, fixes `u`, and sends `x` to `y`, giving a special isometry with this
+  action (`Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq`) without using
   either trace hypothesis or nondegeneracy of `Q`.
 * **Orthogonal orbit (`B(u, x) = 0` and `B(u, y) = 0`, off `K ∙ u`).** When `B(y, x) ≠ 0`, a
   unitary transvection along `c • y - x` fixes `u` (since `c • y - x ∈ u^⊥`) and sends `x` to
@@ -60,7 +61,7 @@ The block-closure argument is modeled on the symplectic case in
 
 ## Main results
 
-* `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq`: a Siegel transformation in
+* `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq`: an element of
   `Q.specialIsometryGroup σ` fixes an isotropic `u` and sends an isotropic `x` to an isotropic `y`
   whenever `B(u, x) = B(u, y) ≠ 0`.
 * `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul`: the stabilizer of an
@@ -88,9 +89,9 @@ variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {Q : Matrix n n K} 
 
 /-! ### Stabilizer orbits on isotropic vectors -/
 
-/-- **A Siegel transformation joins two isotropic vectors at a given nonzero pairing with `u`.**
-If `u`, `x`, `y` are isotropic and `B(u, x) = B(u, y) ≠ 0`, then a Siegel transformation along a
-scalar multiple of `u` lies in the special isometry group, fixes `u`, and sends `x` to `y`. -/
+/-- **A special isometry joins two isotropic vectors at a given nonzero pairing with `u`.** If
+`u`, `x`, `y` are isotropic and `B(u, x) = B(u, y) ≠ 0`, then some element of
+`Q.specialIsometryGroup σ` fixes `u` and sends `x` to `y`. -/
 theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1)
     {u x y : n → K} (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
@@ -113,14 +114,14 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq
   have hu'w : (σ ∘ u') ⬝ᵥ (Q *ᵥ w) = 0 := by
     simp [w, mulVec_sub, mulVec_smul, hu'y, hu'x, hu']
   have hwu' : (σ ∘ w) ⬝ᵥ (Q *ᵥ u') = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp hu'w
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hu'w
   have hxu' : (σ ∘ x) ⬝ᵥ (Q *ᵥ u') = ε := by
     rw [comp_dotProduct_mulVec_swap hσ hQ hε, hu'x, map_one, mul_one]
   have hxw : (σ ∘ x) ⬝ᵥ (Q *ᵥ w) = 0 := by
     simp only [w, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul, hx, hxu']
     linear_combination -((σ ∘ x) ⬝ᵥ (Q *ᵥ y)) * hε
   have hwx : (σ ∘ w) ⬝ᵥ (Q *ᵥ x) = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp hxw
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hxw
   -- Isotropy of `y = (x + w) + c • u'` gives `c + ε σ(c) + ε B(w, w) = 0`.
   have hc : c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0 := by
     have hy_eq : (x + w) + c • u' = y := by dsimp [w]; abel
@@ -132,7 +133,7 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq
     rw [hy_eq, hy, hxw_self, hxwu', map_mul, hσε, mul_left_comm ε (σ c) ε, hε, mul_one] at h0
     linear_combination -ε * h0 - c * hε
   obtain ⟨g, hg, hS⟩ :=
-    exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ hu' hu'w hwu' hc
+    exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ hu' hu'w hc
   refine ⟨g, hg, ?_, ?_⟩
   · have hσb : σ b ≠ 0 := (map_ne_zero σ).mpr hux
     have hu_eq : σ b • u' = u := smul_inv_smul₀ hσb u
@@ -163,15 +164,15 @@ private theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smu
     exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero_pair hσ.surjective hdet hx_span hy_span
   obtain ⟨a, hz⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr hx hvx
   set z := v + a • x
-  have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp hux
-  have hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp hyx
+  have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hux
+  have hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hyx
   have huz : (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0 := by
-    rw [comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε]
+    rw [comp_dotProduct_mulVec_eq_zero_comm hσ hQ]
     simp [z, comp_smul_dotProduct_mulVec, hvu, hxu]
   have hzx : (σ ∘ z) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by
     simpa [z, comp_smul_dotProduct_mulVec, hx] using hvx
   have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) ≠ 0 := by
-    rw [comp_dotProduct_mulVec_ne_zero_comm hσ hQ hε]
+    rw [comp_dotProduct_mulVec_ne_zero_comm hσ hQ]
     simpa [z, comp_smul_dotProduct_mulVec, hxy] using hvy
   obtain ⟨g₁, hg₁, c₁, hc₁, hg₁u, hg₁x⟩ :=
     exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
@@ -265,7 +266,7 @@ private theorem isotropicPointMk_mem_of_isBlock_of_ne_zero (hσ : Function.Invol
   · exact isotropicPointMk_mem_of_isBlock hσ hQ hdet htr hadm hB hu₀ hu hx hy hx_span hy_span
       huB hxB (iff_of_false hux huy)
   have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) ≠ 0 :=
-    (comp_dotProduct_mulVec_ne_zero_comm hσ hQ hε).mp hux
+    (comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mp hux
   have hnot_x : ∀ z, (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0 → z ∉ K ∙ u → z ∉ K ∙ x := fun z hz hzu hzx ↦ by
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hzx
     obtain rfl : c = 0 := by simpa [mulVec_smul, hux] using hz
@@ -278,7 +279,7 @@ private theorem isotropicPointMk_mem_of_isBlock_of_ne_zero (hσ : Function.Invol
   -- Both `u` and `x` are orthogonal to `y`, so `[y + u]` is isotropic, orthogonal to `u`, and
   -- paired nontrivially with `x`.
   have hyu : (σ ∘ y) ⬝ᵥ (Q *ᵥ u) = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp huy
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp huy
   have hs : (σ ∘ (y + u)) ⬝ᵥ (Q *ᵥ (y + u)) = 0 := by
     simpa [hy, hyu] using comp_add_smul_dotProduct_mulVec_add_smul hσ hQ hε hu y 1
   have hsu : (σ ∘ u) ⬝ᵥ (Q *ᵥ (y + u)) = 0 := by
@@ -304,7 +305,7 @@ theorem isPreprimitive_isotropicPoints (hσ : Function.Involutive σ)
   · exact IsPreprimitive.of_subsingleton
   have : Nonempty n := let ⟨i, _⟩ := Function.ne_iff.mp (p₀ : ℙ K (n → K)).rep_ne_zero; ⟨i⟩
   have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
-  have := isPretransitive_isotropicPoints hσ hQ hε hdet htr hadm
+  have := isPretransitive_isotropicPoints hσ hQ hdet htr hadm
   refine { isTrivialBlock_of_isBlock := fun {B} hB ↦ ?_ }
   rcases B.subsingleton_or_nontrivial with hB₁ | ⟨p, hpB, q, hqB, hpq⟩
   · exact Or.inl hB₁
@@ -332,9 +333,10 @@ theorem isPreprimitive_isotropicPoints (hσ : Function.Involutive σ)
     · exact isotropicPointMk_mem_of_isBlock hσ hQ hdet htr hadm hB hu₀ hu hx hy hx_span hy_span
         hpB hqB (iff_of_true hux huy)
     have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) = 0 :=
-      (comp_dotProduct_mulVec_eq_zero_comm hσ hQ hε).mp hux
+      (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hux
     obtain ⟨s, hs, hxs, hus⟩ :=
-      exists_isotropic_ortho_and_not_ortho hσ hQ hdet htr hu hu_span hux
+      exists_comp_dotProduct_mulVec_self_eq_zero_and_eq_zero_and_ne_zero hσ hQ hdet htr hu hu_span
+        hux
     have hsB := isotropicPointMk_mem_of_isBlock hσ hQ hdet htr hadm hB hx₀ hx hu hs hu_span
       (notMem_span_of_dotProduct_mulVec hux hus) hqB hpB (iff_of_true hxu hxs)
     exact isotropicPointMk_mem_of_isBlock hσ hQ hdet htr hadm hB hu₀ hu hs hy
