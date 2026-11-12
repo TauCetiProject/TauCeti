@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Group
 public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Inversion
 public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Reflection
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.UpperHalfSpace
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Determinant
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
