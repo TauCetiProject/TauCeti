@@ -109,10 +109,8 @@ variable {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'}
 theorem riemannianTotalVolume_eq
     (Φ : RiemannianIsometry I J M N) :
     riemannianTotalVolume I M = riemannianTotalVolume J N := by
-  apply Homeomorph.riemannianTotalVolume_eq Φ.toDiffeomorph.toHomeomorph
-  intro x v w
-  -- See `measurePreserving_riemannianVolume` for the coercion normalization.
-  change ⟪mfderiv I J Φ x v, mfderiv I J Φ x w⟫_ℝ = ⟪v, w⟫_ℝ
+  refine Φ.toDiffeomorph.toHomeomorph.riemannianTotalVolume_eq fun x v w ↦ ?_
+  rw [Diffeomorph.coe_toHomeomorph, coe_toDiffeomorph]
   exact Φ.inner_mfderiv x v w
 
 end RiemannianIsometry

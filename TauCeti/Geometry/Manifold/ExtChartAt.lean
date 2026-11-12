@@ -635,9 +635,10 @@ theorem measurableEmbedding_extChartAt_restrict (x : M) :
 
 /-- A subset of an extended chart's source is measurable exactly when its image in the model
 space is measurable. -/
-theorem measurableSet_image_extChartAt_iff {s : Set M} (x : M)
+theorem measurableSet_image_extChartAt_iff [MeasurableSpace E] [BorelSpace E] {s : Set M} (x : M)
     (hsource : s ⊆ (extChartAt I x).source) :
     MeasurableSet ((extChartAt I x) '' s) ↔ MeasurableSet s := by
+  obtain rfl : ‹MeasurableSpace E› = extChartAtMeasurableSpaceE := ‹BorelSpace E›.measurable_eq
   have himage : (extChartAt I x) '' s =
       (extChartAt I x).source.domRestrict (extChartAt I x) '' (Subtype.val ⁻¹' s) := by
     rw [Set.image_domRestrict, Set.inter_eq_left.mpr hsource]
