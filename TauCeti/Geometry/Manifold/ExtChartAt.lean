@@ -738,10 +738,10 @@ theorem extChartAt_model_symm_eq_chartAt_symm :
     ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by
   ext; simp
 
-/-- On a manifold modelled on its model space, the preferred extended chart sends a point to the
-same coordinate as the preferred chart. -/
-theorem extChartAt_model_apply_eq_chartAt_apply :
-    extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by
+/-- On a manifold modelled on its model space, the preferred extended chart sends every point to
+the same coordinate as the preferred chart. -/
+theorem extChartAt_model_apply_eq_chartAt_apply (x : N) :
+    extChartAt 𝓘(𝕜, E) z x = chartAt E z x := by
   simp
 
 end SelfModel
