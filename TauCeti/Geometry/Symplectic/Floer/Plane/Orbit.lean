@@ -171,7 +171,7 @@ private theorem lintegral_floerEnergyDensity_comp_realChart_positive_ne_top
     measurableSet_Ioi.prod measurableSet_Ico
   have hae : (Ioi (2 : ℝ) ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ioi 2 ×ˢ Ico 0 1 := by
     rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq EventuallyEq.rfl Ico_ae_eq_Icc.symm
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
   rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hS
     injOn_realChart_positive
     (fun z _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable
