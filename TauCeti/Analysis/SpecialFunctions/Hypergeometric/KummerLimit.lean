@@ -26,23 +26,38 @@ open scoped Nat Topology
 
 namespace Complex
 
+private theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
+    b ≠ -(n : ℂ) := by
+  intro h
+  have heq := congrArg re h
+  simp only [neg_re, natCast_re] at heq
+  linarith [n.cast_nonneg (α := ℝ)]
+
+private theorem eventually_kummer_parameters (c : ℂ) :
+    ∀ᶠ k : ℕ in atTop, 0 < (k : ℝ) ∧ 0 ≤ (k : ℝ) + c.re := by
+  filter_upwards [tendsto_natCast_atTop_atTop.eventually
+    (eventually_gt_atTop (max 0 (-c.re)))] with k hk
+  constructor <;> linarith [le_max_left 0 (-c.re), le_max_right 0 (-c.re)]
+
+private theorem kummer_coeff_succ (c : ℂ) {k : ℕ}
+    (hb : 0 < (2 * (k : ℂ) + c).re) (n : ℕ) :
+    Gamma (2 * k + c) * regularizedHGFunCoeff {(k : ℂ)} {2 * k + c} (n + 1) =
+      (Gamma (2 * k + c) * regularizedHGFunCoeff {(k : ℂ)} {2 * k + c} n) *
+        (((k : ℂ) + n) / (2 * k + c + n) / (n + 1)) := by
+  rw [regularizedHGFunCoeff_add_one
+    (by simpa using ne_neg_natCast_of_re_pos hb n)]
+  simp only [Multiset.map_singleton, Multiset.prod_singleton]
+  rw [div_mul_eq_div_div]
+  ring
+
 private theorem kummer_coeff_bound (c : ℂ) {k : ℕ} (hk : 0 < (k : ℝ))
     (hc : 0 ≤ (k : ℝ) + c.re) (n : ℕ) :
     ‖Gamma (2 * k + c) * regularizedHGFunCoeff {(k : ℂ)} {2 * k + c} n‖ ≤
       1 / (n ! : ℝ) := by
   have hb : 0 < (2 * (k : ℂ) + c).re := by simp; linarith
-  have hnonpole (m : ℕ) : 2 * (k : ℂ) + c ≠ -m := by
-    intro h
-    have := congrArg re h
-    simp at this
-    linarith [m.cast_nonneg (α := ℝ)]
   induction n with
   | zero => simp [regularizedHGFunCoeff, Gamma_ne_zero_of_re_pos hb]
   | succ n ih =>
-    have hrec := regularizedHGFunCoeff_add_one
-      (a := {(k : ℂ)}) (b := {2 * (k : ℂ) + c}) (n := n)
-      (by simpa using hnonpole n)
-    simp only [Multiset.map_singleton, Multiset.prod_singleton] at hrec
     have hratio : ‖((k : ℂ) + n) / (2 * k + c + n)‖ ≤ 1 := by
       rw [norm_div]
       apply (div_le_one (by
@@ -53,23 +68,22 @@ private theorem kummer_coeff_bound (c : ℂ) {k : ℕ} (hk : 0 < (k : ℝ))
               rw [← Nat.cast_add, norm_natCast, Nat.cast_add]
         _ ≤ (2 * (k : ℂ) + c + n).re := by simp; linarith
         _ ≤ ‖2 * (k : ℂ) + c + n‖ := re_le_norm _
-    rw [hrec, ← mul_assoc, div_mul_eq_div_div, norm_mul, norm_div,
-      ← Nat.cast_add_one, norm_natCast, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add,
-      Nat.cast_one]
+    rw [kummer_coeff_succ c hb n, norm_mul, norm_div]
+    rw [← Nat.cast_add_one, norm_natCast]
+    push_cast
     calc _ ≤ (1 / (n ! : ℝ)) * (1 / ((n : ℝ) + 1)) := by gcongr
-      _ = 1 / (((n : ℝ) + 1) * n !) := by
-          simp only [div_eq_mul_inv, one_mul, mul_inv_rev]
+      _ = 1 / ((n + 1)! : ℝ) := by
+          simp [Nat.factorial_succ, div_eq_mul_inv, mul_comm]
 
 private theorem tendsto_kummer_coeff (c : ℂ) (n : ℕ) :
     Tendsto (fun k : ℕ => Gamma (2 * k + c) *
       regularizedHGFunCoeff {(k : ℂ)} {2 * k + c} n)
       atTop (𝓝 ((1 / 2 : ℂ) ^ n / n !)) := by
   have hpos : ∀ᶠ k : ℕ in atTop, 0 < (2 * (k : ℂ) + c).re := by
-    filter_upwards [tendsto_natCast_atTop_atTop.eventually
-      (eventually_gt_atTop (max 0 (-c.re)))] with k hk
+    filter_upwards [eventually_kummer_parameters c] with k hk
     simp only [mul_re, re_ofNat, natCast_re, im_ofNat, natCast_im, mul_zero,
       sub_zero, add_re]
-    linarith [le_max_left 0 (-c.re), le_max_right 0 (-c.re)]
+    linarith [hk.1, hk.2]
   induction n with
   | zero =>
     apply tendsto_const_nhds.congr'
@@ -91,20 +105,11 @@ private theorem tendsto_kummer_coeff (c : ℂ) (n : ℕ) :
     rw [heq] at hlim
     apply hlim.congr'
     filter_upwards [hpos] with k hk
-    have hnonpole : 2 * (k : ℂ) + c ≠ -(n : ℂ) := by
-      intro h
-      have hp : 0 < 2 * (k : ℝ) + c.re := by simpa using hk
-      have heq : 2 * (k : ℝ) + c.re = -(n : ℝ) := by
-        simpa using congrArg re h
-      linarith [n.cast_nonneg (α := ℝ)]
-    rw [regularizedHGFunCoeff_add_one (by simpa using hnonpole)]
-    simp only [Multiset.map_singleton, Multiset.prod_singleton]
-    rw [div_mul_eq_div_div]
-    ring
+    exact (kummer_coeff_succ c hk n).symm
 
 /-- The ordinary Kummer function with upper parameter `k` and lower parameter `2k + c`
 converges to `exp (z / 2)` for every fixed pair of complex numbers `c` and `z`. -/
-theorem tendsto_Gamma_mul_regularizedHGFun_kummer (c z : ℂ) :
+theorem tendsto_Gamma_mul_regularizedHGFun_nhds_exp_div_two (c z : ℂ) :
     Tendsto (fun k : ℕ => Gamma (2 * k + c) *
       regularizedHGFun {(k : ℂ)} {2 * k + c} z) atTop (𝓝 (exp (z / 2))) := by
   have hlim := tendsto_tsum_of_dominated_convergence
@@ -125,13 +130,11 @@ theorem tendsto_Gamma_mul_regularizedHGFun_kummer (c z : ℂ) :
     ext k
     simpa only [mul_assoc] using ((hasSum_regularizedHGFun (a := {(k : ℂ)})
       (b := {2 * (k : ℂ) + c}) (by simp) z).mul_left (Gamma (2 * k + c))).tsum_eq.symm
-  · filter_upwards [tendsto_natCast_atTop_atTop.eventually
-      (eventually_gt_atTop (max 0 (-c.re)))] with k hk n
+  · filter_upwards [eventually_kummer_parameters c] with k hk n
     rw [norm_mul, norm_pow]
     calc _ ≤ (1 / (n ! : ℝ)) * ‖z‖ ^ n := by
           gcongr
-          exact kummer_coeff_bound c (lt_of_le_of_lt (le_max_left _ _) hk)
-            (by linarith [le_max_right 0 (-c.re)]) n
+          exact kummer_coeff_bound c hk.1 hk.2 n
       _ = ‖z‖ ^ n / n ! := by ring
 
 end Complex
