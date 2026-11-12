@@ -24,7 +24,9 @@ derivative has the symbol `2πi ξ`, so by the Plancherel identity
 
 `‖u‖²_{H^{1,2}} = ‖u‖²_{L²} + (2π)⁻² ‖u'‖²_{L²}`.
 
-For the Gaussian `g(x) = exp(-b x²)`, `0 < Re b`, this is
+For the Gaussian `g(x) = exp(-b x²)`, `0 < Re b`, the squared `L²` norms of `g` and `g'` are
+`√(π / (2 Re b))` and `√(π / (2 Re b)) |b|² / Re b` (`TauCeti.norm_toLp_gaussian_sq`,
+`TauCeti.norm_toLp_lineDerivOp_one_gaussian_sq`), so `‖g‖²_{H^{1,2}}` is
 `√(π / (2 Re b)) (1 + |b|² / (4π² Re b))`
 (`TauCeti.norm_toBesselPotentialSpaceCLM_one_gaussian_sq`), whereas the sum of the squared `L²`
 norms of `g` and `g'` is `√(π / (2 Re b)) (1 + |b|² / Re b)`
@@ -53,18 +55,21 @@ open scoped ENNReal SchwartzMap BesselPotentialSpace LineDeriv Real
 
 namespace TauCeti
 
-/-- `∫ |exp(-b x²)|² dx = √(π / (2 Re b))`. -/
-private theorem integral_norm_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
-    ∫ x : ℝ, ‖SchwartzMap.gaussian (V := ℝ) hb x‖ ^ 2 = √(π / (2 * b.re)) := by
+/-- **The `L²` norm of a Gaussian.** For `g(x) = exp(-b x²)` on `ℝ`, `0 < Re b`,
+`‖g‖²_{L²} = ∫ |exp(-b x²)|² dx = √(π / (2 Re b))`. -/
+theorem norm_toLp_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
+    ‖(SchwartzMap.gaussian (V := ℝ) hb).toLp 2‖ ^ 2 = √(π / (2 * b.re)) := by
   have h (x : ℝ) : ‖SchwartzMap.gaussian (V := ℝ) hb x‖ ^ 2 = Real.exp (-(2 * b.re) * x ^ 2) := by
     rw [SchwartzMap.norm_gaussian, Real.norm_eq_abs, sq_abs, sq (Real.exp _), ← Real.exp_add]
     ring_nf
-  simp only [h, integral_gaussian]
+  simp only [SchwartzMap.norm_toLp_sq, h, integral_gaussian]
 
-/-- `∫ |∂ₓ exp(-b x²)|² dx = √(π / (2 Re b)) |b|² / Re b`. -/
-private theorem integral_norm_lineDerivOp_one_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
-    ∫ x : ℝ, ‖∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ)) x‖ ^ 2 =
+/-- **The `L²` norm of the derivative of a Gaussian.** For `g(x) = exp(-b x²)` on `ℝ`,
+`0 < Re b`, `‖g'‖²_{L²} = ∫ |∂ₓ exp(-b x²)|² dx = √(π / (2 Re b)) |b|² / Re b`. -/
+theorem norm_toLp_lineDerivOp_one_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
+    ‖(∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ))).toLp 2‖ ^ 2 =
       √(π / (2 * b.re)) * (‖b‖ ^ 2 / b.re) := by
+  rw [SchwartzMap.norm_toLp_sq]
   have h (x : ℝ) : ‖∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ)) x‖ ^ 2 =
       4 * ‖b‖ ^ 2 * (x ^ 2 * Real.exp (-(2 * b.re) * x ^ 2)) := by
     rw [SchwartzMap.lineDerivOp_gaussian_apply, norm_mul, norm_mul, norm_mul,
@@ -92,9 +97,9 @@ theorem norm_toBesselPotentialSpaceCLM_one_gaussian_sq {b : ℂ} (hb : 0 < b.re)
   simp only [BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
     OrthonormalBasis.singleton_apply, BesselPotentialSpace.lineDerivCLM_toBesselPotentialSpaceCLM,
     Finset.univ_unique, Finset.sum_singleton, ← BesselPotentialSpace.norm_toLp_eq,
-    SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero, SchwartzMap.norm_toLp_sq] at key
-  rw [← BesselPotentialSpace.norm_toLp_eq, key, integral_norm_gaussian_sq,
-    integral_norm_lineDerivOp_one_gaussian_sq]
+    SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero] at key
+  rw [← BesselPotentialSpace.norm_toLp_eq, key, norm_toLp_gaussian_sq,
+    norm_toLp_lineDerivOp_one_gaussian_sq]
   have : 0 < b.re := hb
   field_simp
   ring
@@ -108,8 +113,7 @@ theorem norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq {b : ℂ
     ‖(SchwartzMap.gaussian (V := ℝ) hb).toLp 2‖ ^ 2 +
         ‖(∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ))).toLp 2‖ ^ 2 =
       √(π / (2 * b.re)) * (1 + ‖b‖ ^ 2 / b.re) := by
-  rw [SchwartzMap.norm_toLp_sq, SchwartzMap.norm_toLp_sq, integral_norm_gaussian_sq,
-    integral_norm_lineDerivOp_one_gaussian_sq]
+  rw [norm_toLp_gaussian_sq, norm_toLp_lineDerivOp_one_gaussian_sq]
   ring
 
 /-- **The indicator of an interval is not in `H^s(ℝ)` for `s > 1/2`.** For `a < b`, an `Lᵖ`

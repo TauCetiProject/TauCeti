@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -132,10 +133,8 @@ theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
   exact f.norm_le_seminorm ℝ x
 
 /-- The squared `L²` norm of a Schwartz function is the integral of its squared pointwise norm. -/
-theorem norm_toLp_sq (f : 𝓢(E, F)) : ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ := by
-  rw [norm_toLp' two_ne_zero ENNReal.ofNat_ne_top, ← Real.rpow_natCast,
-    ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
-  norm_num
+theorem norm_toLp_sq (f : 𝓢(E, F)) : ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ :=
+  (f.memLp 2 μ).norm_toLp_sq
 
 omit [SecondCountableTopology E] in
 /-- A Schwartz function vanishes if and only if the integral of its squared norm does, against a

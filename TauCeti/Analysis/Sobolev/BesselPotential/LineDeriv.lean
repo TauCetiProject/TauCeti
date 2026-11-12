@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -132,24 +131,22 @@ private theorem smulLeftCLM_fourier_lineDerivOp_eq (m : E) (f : 𝓢'(E, F)) :
           (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ))
         (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) (𝓕 f)) := by
   have hm : (fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  have hsymb : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) : ℝ) : ℂ)) *
-      fun x : E ↦ (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
-        (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) =
-      (2 * π * Complex.I) • ((fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)) *
-        fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) := by
+  have hw := smulLeftCLM_rpow_sub_smulLeftCLM r (r + 1) (𝓕 f)
+  rw [show r - (r + 1) = -1 by ring] at hw
+  have hsymb : (fun x : E ↦ (2 * π * Complex.I) * ((inner ℝ x m : ℝ) : ℂ) *
+      (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) =
+      (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) : ℝ) : ℂ)) *
+        (2 * π * Complex.I) • fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ) := by
     ext x
-    have hw : (1 + ‖x‖ ^ 2) ^ ((r + 1) / 2) * (1 + ‖x‖ ^ 2) ^ ((-1 : ℝ) / 2) =
-        (1 + ‖x‖ ^ 2) ^ (r / 2) := by
-      rw [← Real.rpow_add (by positivity)]
-      congr 1
-      ring
     simp only [Pi.smul_apply, Pi.mul_apply, smul_eq_mul]
-    rw [← hw]
-    push_cast
     ring
-  rw [fourier_lineDerivOp_eq, map_smul, smulLeftCLM_smulLeftCLM_apply hm (by fun_prop),
-    smulLeftCLM_smulLeftCLM_apply (by fun_prop) (hasTemperateGrowth_lineDerivSymbol m), hsymb,
-    smulLeftCLM_smul (by fun_prop), FunLike.coe_smul, Pi.smul_apply]
+  have hcm : ((2 * π * Complex.I) • fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)).HasTemperateGrowth := by
+    fun_prop
+  rw [hsymb, ← smulLeftCLM_smulLeftCLM_apply (by fun_prop) hcm, hw,
+    smulLeftCLM_smulLeftCLM_apply (by fun_prop) hcm, mul_smul_comm,
+    smulLeftCLM_smul (by fun_prop), fourier_lineDerivOp_eq, map_smul,
+    smulLeftCLM_smulLeftCLM_apply hm (by fun_prop), mul_comm (fun x : E ↦ ((inner ℝ x m : ℝ) : ℂ)),
+    FunLike.coe_smul, Pi.smul_apply]
 
 /-- `∂_m u ∈ H^r` for `u ∈ H^{r+1}`. -/
 private theorem memSobolev_lineDerivOp (u : H^{r + 1}(E, F)) (m : E) :

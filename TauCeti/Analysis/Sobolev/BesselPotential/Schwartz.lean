@@ -37,6 +37,9 @@ normed complex `F`.
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
+* `BesselPotentialSpace.smulLeftCLM_rpow_sub_smulLeftCLM`: the Bessel weights multiply,
+  `⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s f = ⟨ξ⟩ ^ r f`.
+* `BesselPotentialSpace.norm_one_add_norm_sq_rpow_sub_le`: `⟨ξ⟩ ^ (r - s) ≤ 1` for `r ≤ s`.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
   norm is the `L²` norm of the weighted Fourier transform.
 * `BesselPotentialSpace.smulLeftCLM_fourier_toDistr_eq`: for Hilbert-space values, the weighted
@@ -157,6 +160,30 @@ theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp F p (volume : Measure E)) :
     ((toLpₗᵢ E F 0 p).symm f).toDistr = (f : 𝓢'(E, F)) := by
   rw [toLpₗᵢ_symm_apply, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+/-- The Bessel weights multiply: `⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s f = ⟨ξ⟩ ^ r f`. -/
+theorem smulLeftCLM_rpow_sub_smulLeftCLM (r s : ℝ) (f : 𝓢'(E, F)) :
+    smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ))
+        (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f) =
+      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) f := by
+  have hweight : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) *
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)) =
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ) := by
+    ext x
+    simp only [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity :
+      (0 : ℝ) < 1 + ‖x‖ ^ 2)]
+    congr 2
+    ring
+  rw [smulLeftCLM_smulLeftCLM_apply (by fun_prop) (by fun_prop), hweight]
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The Bessel weight `⟨ξ⟩ ^ (r - s)` is at most `1` for `r ≤ s`. -/
+theorem norm_one_add_norm_sq_rpow_sub_le {r s : ℝ} (h : r ≤ s) (x : E) :
+    ‖(((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)‖ ≤ 1 := by
+  rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+  exact Real.rpow_le_one_of_one_le_of_nonpos (by simp)
+    (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
 
 /-- The `H^s` norm is the `L²` norm of the weighted Fourier transform: if `⟨ξ⟩ ^ s 𝓕 u` is the
 tempered distribution of `G ∈ L²`, then `‖u‖ = ‖G‖`. -/

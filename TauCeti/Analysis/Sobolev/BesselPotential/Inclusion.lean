@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
 # The inclusion `H^s ⊆ H^r` of Bessel-potential spaces
@@ -55,30 +54,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace BesselPotentialSpace
 
 variable {r s : ℝ}
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
-/-- The Bessel weights multiply: `⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s f = ⟨ξ⟩ ^ r f`. -/
-private theorem smulLeftCLM_rpow_sub_smulLeftCLM (r s : ℝ) (f : 𝓢'(E, F)) :
-    smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ))
-        (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f) =
-      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) f := by
-  have hweight : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) *
-      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)) =
-      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ) := by
-    ext x
-    simp only [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity :
-      (0 : ℝ) < 1 + ‖x‖ ^ 2)]
-    congr 2
-    ring
-  rw [smulLeftCLM_smulLeftCLM_apply (by fun_prop) (by fun_prop), hweight]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The Bessel weight `⟨ξ⟩ ^ (r - s)` is at most `1` for `r ≤ s`. -/
-private theorem norm_one_add_norm_sq_rpow_sub_le (h : r ≤ s) (x : E) :
-    ‖(((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)‖ ≤ 1 := by
-  rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_one_of_one_le_of_nonpos (by simp)
-    (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
 
 /-- The inclusion `H^s(E, F) ⊆ H^r(E, F)` of Bessel-potential spaces for `r ≤ s`, as a continuous
 linear map. It keeps the underlying tempered distribution (`BesselPotentialSpace.toDistr_inclusion`)

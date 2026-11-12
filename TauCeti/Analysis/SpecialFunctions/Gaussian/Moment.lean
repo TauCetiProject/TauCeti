@@ -11,8 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
-import Mathlib.MeasureTheory.Integral.Gamma
-import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.MeasureTheory.Integral.Gamma
 
 /-!
 # Moments of the Gaussian
@@ -20,8 +19,8 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 This file computes the moments of the Gaussian `exp(-b x²)`, `b > 0`, over the real line. The
 absolute moment of every real order `q > -1` is
 `∫ |x| ^ q exp(-b x²) dx = b ^ (-(q + 1) / 2) Γ((q + 1) / 2)`
-(`TauCeti.integral_abs_rpow_mul_exp_neg_mul_sq`): the integrand is even, so the integral is twice
-the integral over `(0, ∞)`, which Mathlib's `integral_rpow_mul_exp_neg_mul_rpow` evaluates.
+(`TauCeti.integral_abs_rpow_mul_exp_neg_mul_sq`), the case `p = 2` of the two-sided Gamma integral
+`TauCeti.integral_abs_rpow_mul_exp_neg_mul_abs_rpow`.
 
 At even integer orders, Mathlib's `Real.Gamma_nat_add_half` turns this into
 `∫ x ^ (2k) exp(-b x²) dx = (2k - 1)‼ √π / ((2b) ^ k √b)`
@@ -43,11 +42,9 @@ namespace TauCeti
 theorem integral_abs_rpow_mul_exp_neg_mul_sq {b q : ℝ} (hb : 0 < b) (hq : -1 < q) :
     ∫ x : ℝ, |x| ^ q * Real.exp (-b * x ^ 2) =
       b ^ (-(q + 1) / 2) * Real.Gamma ((q + 1) / 2) := by
-  have h := integral_comp_abs (f := fun y ↦ y ^ q * Real.exp (-b * y ^ 2))
-  simp only [sq_abs] at h
-  have h2 := integral_rpow_mul_exp_neg_mul_rpow (p := 2) two_pos hq hb
-  simp only [Real.rpow_two] at h2
-  rw [h, h2]
+  have h := integral_abs_rpow_mul_exp_neg_mul_abs_rpow two_pos hq hb
+  simp only [Real.rpow_two, sq_abs] at h
+  rw [h]
   ring
 
 /-- The even moments of the Gaussian: for `b > 0`,
