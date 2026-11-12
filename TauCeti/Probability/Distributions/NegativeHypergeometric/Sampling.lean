@@ -87,6 +87,12 @@ theorem map_failuresBeforeSuccess_uniformOn_powersetCard {N K r : ℕ}
         (fun s : Finset ℕ ↦ #(s ∩ range (k + r))) ⁻¹' Set.Ici r) := congrArg μ hinter
     _ = _ := uniformOn_inter_self ((range N).powersetCard K).finite_toSet
 
+end TauCeti.Probability
+
+namespace Finset
+
+open TauCeti.Probability
+
 variable {N r : ℕ}
     [MeasurableSpace (Equiv.Perm (Fin N))] [MeasurableSingletonClass (Equiv.Perm (Fin N))]
 
@@ -94,7 +100,7 @@ variable {N r : ℕ}
 the labels in `s` successes. The number of failures drawn before the `r`th success has the
 negative hypergeometric law with `#s` successes. This includes `r = 0` and `N = 0`. -/
 theorem map_failuresBeforeSuccess_preimage_uniformOn_perm (s : Finset (Fin N)) (hr : r ≤ #s) :
-    (uniformOn (univ : Set (Equiv.Perm (Fin N)))).map (fun σ : Equiv.Perm (Fin N) ↦
+    (uniformOn (Set.univ : Set (Equiv.Perm (Fin N)))).map (fun σ : Equiv.Perm (Fin N) ↦
         ((s.preimage σ σ.injective.injOn).map Fin.valEmbedding).failuresBeforeSuccess r) =
       negativeHypergeometricMeasure N #s r := by
   have hsN : #s ≤ N := by simpa using s.card_le_univ
@@ -107,7 +113,7 @@ theorem map_failuresBeforeSuccess_preimage_uniformOn_perm (s : Finset (Fin N)) (
     Measure.map_map (measurable_of_countable _) (measurable_of_countable _)] at h
   exact h
 
-end TauCeti.Probability
+end Finset
 
 namespace ProbabilityTheory.HasLaw
 
@@ -137,7 +143,7 @@ theorem failuresBeforeSuccess_preimage_negativeHypergeometricMeasure
     HasLaw (fun ω ↦ ((s.preimage (σ ω) (σ ω).injective.injOn).map
         Fin.valEmbedding).failuresBeforeSuccess r)
       (TauCeti.Probability.negativeHypergeometricMeasure N #s r) P := by
-  rw [← TauCeti.Probability.map_failuresBeforeSuccess_preimage_uniformOn_perm s hr]
+  rw [← s.map_failuresBeforeSuccess_preimage_uniformOn_perm hr]
   exact (hasLaw_map (measurable_of_countable (fun τ : Equiv.Perm (Fin N) ↦
     ((s.preimage τ τ.injective.injOn).map Fin.valEmbedding).failuresBeforeSuccess r)
       ).aemeasurable).comp hσ
