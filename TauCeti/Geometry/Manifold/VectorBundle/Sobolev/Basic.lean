@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
 
@@ -57,6 +58,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
 * `TauCeti.SectionChartData.lowerOrderL`: the continuous inclusion of order `k + 1` into order `k`.
 * `TauCeti.SectionChartData.ofComponents`: the linear map into the Sobolev sections from a space of
   sections with chartwise Sobolev components.
+* `TauCeti.SectionChartData.fibreMap`, `TauCeti.SectionChartData.fibreMapData`: a constant linear
+  map between model fibres acting on the components of a tuple of scalar Sobolev functions,
+  followed by restriction to smaller open subsets.
 * `TauCeti.FiniteBundleAtlas.sectionChartData`: the chart data of a finite bundle atlas.
 * `TauCeti.SobolevSection A μ p k`: the Banach space `W^{k,p}(V)`.
 
@@ -72,6 +76,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
   norms.
 * `TauCeti.SectionChartData.eq_of_ae_eq_coord`: an element of the Sobolev sections is determined by
   the section whose readings its chart data are.
+* `TauCeti.SectionChartData.chartValueL_ae_of_eq_fibreMap`: components related by a constant fibre
+  map `L` have chart data related by `L`.
 * `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
   section whose coordinates its chart data are.
 
@@ -554,6 +560,88 @@ theorem coord_ae_eq_zero_of_ofComponents_eq_zero {t : T} (ht : C.ofComponents μ
   exact (C.chartValueL_ofComponents_ae μ p k ι h t i).symm.trans hz
 
 end Components
+
+section FibreMap
+
+variable {G₁ : Type*} [NormedAddCommGroup G₁] [NormedSpace ℝ G₁] [FiniteDimensional ℝ G₁]
+  {G₂ : Type*} [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [FiniteDimensional ℝ G₂]
+
+/-- The constant fibre map `L : G₁ →L[ℝ] G₂` on the components of a tuple of scalar Sobolev
+functions, followed by restriction to an open subset. -/
+def fibreMap (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U) :
+    (Fin (finrank ℝ G₁) → Wkp μ U p k) →L[ℝ] (Fin (finrank ℝ G₂) → Wkp μ U' p k) :=
+  ContinuousLinearMap.pi fun c ↦ ∑ a, LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂)
+    L.toLinearMap c a • (Wkp.restrictL hU k).comp (ContinuousLinearMap.proj a)
+
+/-- Component `c` of the image of `w` under the constant fibre map `L` is the combination of the
+restricted components of `w` with the coefficients of row `c` of the matrix of `L` in the bases
+`Module.finBasis ℝ G₁` and `Module.finBasis ℝ G₂`. -/
+@[simp]
+theorem fibreMap_apply (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U)
+    (w : Fin (finrank ℝ G₁) → Wkp μ U p k) (c : Fin (finrank ℝ G₂)) :
+    fibreMap μ p k L hU w c = ∑ a, LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂)
+      L.toLinearMap c a • Wkp.restrictL hU k (w a) := by
+  simp [fibreMap]
+
+/-- Almost everywhere on `U'`, the values of the components of the image of `w` under the constant
+fibre map `L` are the matrix of `L` applied to the values of the components of `w`. -/
+theorem value_fibreMap_ae (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U)
+    (w : Fin (finrank ℝ G₁) → Wkp μ U p k) :
+    ∀ᵐ y ∂μ.restrict U', ∀ c, Wkp.value k (fibreMap μ p k L hU w c) y =
+      (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap).mulVec
+        (fun a ↦ Wkp.value k (w a) y) c := by
+  refine ae_all_iff.2 fun c ↦ ?_
+  have hsmul (a : Fin (finrank ℝ G₁)) :=
+    Lp.coeFn_smul (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap c a)
+      (Wkp.value k (Wkp.restrictL hU k (w a)))
+  have hres (a : Fin (finrank ℝ G₁)) := Wkp.value_restrictL_ae hU k (w a)
+  filter_upwards [Wkp.value_finsetSum_ae k Finset.univ fun a ↦
+      LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap c a •
+        Wkp.restrictL hU k (w a),
+    ae_all_iff.2 hsmul, ae_all_iff.2 hres] with y hy hs hr
+  rw [fibreMap_apply, hy, Matrix.mulVec, dotProduct]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  rw [Wkp.value_smul, hs a, Pi.smul_apply, hr a, smul_eq_mul]
+
+/-- The constant fibre map `L` on the components of a tuple, in every chart. -/
+def fibreMapData (L : G₁ →L[ℝ] G₂) {n : ℕ} {U U' : Fin n → Opens E}
+    (hU : ∀ i, U' i ≤ U i) :
+    (∀ (i : Fin n) (_ : Fin (finrank ℝ G₁)), Wkp μ (U i) p k) →L[ℝ]
+      (∀ (i : Fin n) (_ : Fin (finrank ℝ G₂)), Wkp μ (U' i) p k) :=
+  ContinuousLinearMap.piMap fun i ↦ fibreMap μ p k L (hU i)
+
+/-- In chart `i`, the constant fibre map on tuples acts as `fibreMap` on the chart-`i` components.
+-/
+@[simp]
+theorem fibreMapData_apply (L : G₁ →L[ℝ] G₂) {n : ℕ} {U U' : Fin n → Opens E}
+    (hU : ∀ i, U' i ≤ U i) (w : ∀ (i : Fin n) (_ : Fin (finrank ℝ G₁)), Wkp μ (U i) p k)
+    (i : Fin n) : fibreMapData μ p k L hU w i = fibreMap μ p k L (hU i) (w i) := by
+  simp [fibreMapData]
+
+variable {S₁ : Type*} [AddCommGroup S₁] [Module ℝ S₁] {S₂ : Type*} [AddCommGroup S₂]
+  [Module ℝ S₂]
+
+/-- If the chart-`i₂` components of `w₂` are obtained from the chart-`i₁` components of `w₁` by
+the constant fibre map `L`, then the chart data of `w₂` are `L` applied to those of `w₁`. -/
+theorem chartValueL_ae_of_eq_fibreMap {C₁ : SectionChartData E G₁ S₁}
+    {C₂ : SectionChartData E G₂ S₂} (L : G₁ →L[ℝ] G₂) {i₁ : Fin C₁.n} {i₂ : Fin C₂.n}
+    (hU : C₂.image i₂ ≤ C₁.image i₁) {w₁ : C₁.SobolevData μ p k} {w₂ : C₂.SobolevData μ p k}
+    (hw : w₂ i₂ = fibreMap μ p k L hU (w₁ i₁)) :
+    C₂.chartValueL μ p k i₂ w₂ =ᵐ[μ.restrict (C₂.image i₂)]
+      fun y ↦ L (C₁.chartValueL μ p k i₁ w₁ y) := by
+  filter_upwards [C₂.chartValueL_apply_ae μ p k i₂ w₂,
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (C₁.chartValueL_apply_ae μ p k i₁ w₁),
+    value_fibreMap_ae μ p k L hU (w₁ i₁)] with y h₂ h₁ hv
+  rw [h₂, h₁, hw]
+  simp_rw [hv]
+  have hL := Matrix.toLin_apply (finBasis ℝ G₁) (finBasis ℝ G₂)
+    (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap)
+    (∑ a, Wkp.value k (w₁ i₁ a) y • finBasis ℝ G₁ a)
+  rw [Matrix.toLin_toMatrix, (finBasis ℝ G₁).repr_sum_self] at hL
+  exact hL.symm
+
+end FibreMap
 
 end Sobolev
 
