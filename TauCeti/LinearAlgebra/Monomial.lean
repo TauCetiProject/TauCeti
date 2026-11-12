@@ -21,9 +21,10 @@ when the coefficient semiring has only one unit. The construction allows infinit
 sets; only the dot-product and matrix statements require finite coordinates.
 
 The application, composition, inverse, support and matrix formulas provide the coordinate
-description used to compare monomial linear automorphisms with monomial matrices. In particular
-these subgroups make sense over small fields where the normalizer of the rational points of a
-diagonal torus need not be the monomial subgroup.
+description used to compare monomial linear automorphisms with monomial matrices. The subgroups
+are defined directly rather than as a normalizer, so they are the intended groups also over small
+fields, where the normalizer of the rational points of a diagonal torus need not be the monomial
+subgroup.
 
 The code-specific invariants and automorphism groups are developed in
 `TauCeti.InformationTheory.Coding.Equivalence`.
@@ -113,24 +114,11 @@ theorem dotProduct_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
     (∀ x y : ι → R, monomialEquiv u e x ⬝ᵥ monomialEquiv u e y = x ⬝ᵥ y) ↔
       ∀ i, (u i : R) ^ 2 = 1 := by
   classical
-  have hdot (x y : ι → R) :
-      monomialEquiv u e x ⬝ᵥ monomialEquiv u e y =
-        (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) := by
-    rw [monomialEquiv_apply_eq_comp, monomialEquiv_apply_eq_comp,
-      comp_equiv_dotProduct_comp_equiv]
-  constructor
-  · intro h i
-    have hi := h (Pi.single i 1) (Pi.single i 1)
-    rw [hdot] at hi
-    simpa [dotProduct, Pi.single_apply, pow_two] using hi
-  · intro h x y
-    rw [hdot]
-    simp only [dotProduct]
-    apply Finset.sum_congr rfl
-    intro i _
-    calc
-      (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
-      _ = x i * y i := by rw [h i]; simp
+  -- The relabelling `e` does not change the dot product, so only the rescaling matters.
+  simp only [monomialEquiv_apply_eq_comp, comp_equiv_dotProduct_comp_equiv]
+  refine ⟨fun h i ↦ ?_, fun h x y ↦ Finset.sum_congr rfl fun i _ ↦ ?_⟩
+  · simpa [dotProduct, Pi.single_apply, sq] using h (Pi.single i 1) (Pi.single i 1)
+  · rw [mul_mul_mul_comm, ← sq, h i, one_mul]
 
 end DotProduct
 
@@ -194,7 +182,7 @@ def permutationGroup (R ι : Type*) [Semiring R] : Subgroup ((ι → R) ≃ₗ[R
       rw [Equiv.symm_trans, LinearEquiv.funCongrLeft_comp, LinearEquiv.mul_eq_trans]⟩
   inv_mem' := by
     rintro f ⟨e, rfl⟩
-    exact ⟨e.symm, by rw [Equiv.symm_symm, ← LinearEquiv.funCongrLeft_symm]; rfl⟩
+    exact ⟨e.symm, (LinearEquiv.funCongrLeft_symm R R e.symm).symm⟩
 
 variable [Semiring R]
 
@@ -215,7 +203,8 @@ section PermutationLeMonomial
 
 variable [CommSemiring R]
 
-/-- A coordinate permutation is the monomial transformation with all scalars equal to one. -/
+/-- The permutation group lies in the monomial group: a coordinate permutation is the monomial
+transformation with all scalars equal to one. -/
 theorem permutationGroup_le_monomialGroup : permutationGroup R ι ≤ monomialGroup R ι := by
   intro f hf
   obtain ⟨e, rfl⟩ := mem_permutationGroup.1 hf
@@ -227,8 +216,8 @@ section TrivialUnits
 
 variable [CommSemiring R] [Subsingleton Rˣ]
 
-/-- When one is the only unit, a monomial transformation is its underlying coordinate
-permutation. -/
+/-- When one is the only unit, a monomial equivalence is its underlying coordinate
+relabelling. -/
 @[simp]
 theorem monomialEquiv_eq_funCongrLeft (u : ι → Rˣ) (e : ι ≃ κ) :
     monomialEquiv u e = LinearEquiv.funCongrLeft R R e.symm := by
