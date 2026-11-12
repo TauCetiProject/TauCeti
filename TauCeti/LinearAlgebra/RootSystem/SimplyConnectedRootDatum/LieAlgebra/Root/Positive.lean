@@ -49,18 +49,6 @@ variable (hM : ∀ u ∈ kostantForm (t.lieBasis ht).rootGenerator (t.lieBasis h
 variable (hnil : ∀ i, IsNilpotent
   (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))))
 
-/-- Every numbered simple root is positive in the pinned rational base. -/
-theorem simpleIndex_mem_posRoots (i : Fin t.rank) :
-    t.simpleIndex ht i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
-  (mem_posRoots _ _ _).mpr (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))
-
-/-- The positive roots split into a punctured set and the omitted simple root. -/
-theorem posRoots_eq_diff_union_simpleIndex (i : Fin t.rank) :
-    posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) ∪
-        {t.simpleIndex ht i} :=
-  (Set.sdiff_union_of_subset (Set.singleton_subset_iff.mpr (simpleIndex_mem_posRoots i))).symm
-
 -- Match the tensor product to the integral algebra structure of the value ring.
 attribute [local instance high] Algebra.toModule
 
