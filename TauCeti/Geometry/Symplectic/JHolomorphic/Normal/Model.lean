@@ -358,7 +358,7 @@ theorem le_normalModelForm_apply_normalModelStructure {p : ℂ × ℂ}
     (ha : ‖A p.1‖ ≤ a) (hb : ‖extDeriv A p.1‖ ≤ b) (hR : ‖p.2‖ ≤ R)
     (hK : R ^ 2 * (3 * (m + a) ^ 2 + b) + δ ≤ K) (X : ℂ × ℂ) :
     δ * ‖X.1‖ ^ 2 + ‖X.2‖ ^ 2 / 2 ≤ normalModelForm K A p ![X, normalModelStructure ν μ p X] := by
-  set c := ν p.1 * p.2 + μ p.1 * conj p.2 with hc_def
+  set c := ν p.1 * p.2 + μ p.1 * conj p.2
   set x := ‖X.1‖
   set y := ‖X.2‖
   set r := ‖p.2‖
@@ -464,7 +464,6 @@ theorem exists_forall_normalModelForm_apply_normalModelStructure_pos {S : Set �
   by_cases hξ : ξ = 0
   · have hη : 0 < ‖η‖ := norm_pos_iff.2 (by rintro rfl; exact hX (by simp [hξ]))
     positivity
-  · have hξ' : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-    positivity
+  · positivity
 
 end TauCeti
