@@ -125,7 +125,7 @@ private theorem memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient {j : ℕ}
     (hG : G =ᵐ[mu.restrict Omega] iteratedGradient j y) :
     MemLp G p (mu.restrict Omega) ∧ eLpNorm G p (mu.restrict Omega) ≤ ENNReal.ofReal ‖y‖ := by
   refine ⟨(Lp.memLp _).ae_eq hG.symm, ?_⟩
-  rw [eLpNorm_congr_ae hG, ← Lp.enorm_def, ← ofReal_norm]
+  rw [eLpNorm_congr_ae hG, ← Lp.eNorm_def, ← ofReal_norm]
   exact ENNReal.ofReal_le_ofReal (norm_iteratedGradient_le j y)
 
 /-- **A weak derivative chain recovers the recorded derivatives.** Let `y ∈ W^{n+1,p}(Ω)` and let

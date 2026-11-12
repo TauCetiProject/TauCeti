@@ -51,9 +51,9 @@ theorem le_toReal_eLpNorm_div_add_of_ae_le (hp : 1 ≤ p) {s : Set X} (h0 : μ s
       _ = _ := by rw [eLpNorm_norm _ hu.aestronglyMeasurable]
   rw [eLpNorm_const _ hp0 hμ, eLpNorm_const _ hp0 hμ, Measure.restrict_apply_univ] at hle
   have hsfin : μ s ^ (1 / p.toReal) ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) htop
-  have hfin := ENNReal.mul_ne_top (enorm_ne_top (x := A)) hsfin
+  have hfin := ENNReal.mul_ne_top (eNorm_ne_top (x := A)) hsfin
   have hreal := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hu.eLpNorm_ne_top, hfin⟩) hle
-  simp only [ENNReal.toReal_add hu.eLpNorm_ne_top hfin, ENNReal.toReal_mul, toReal_enorm,
+  simp only [ENNReal.toReal_add hu.eLpNorm_ne_top hfin, ENNReal.toReal_mul, toReal_eNorm,
     Real.norm_of_nonneg ht, Real.norm_of_nonneg hA, ← ENNReal.toReal_rpow] at hreal
   have key : t - A ≤ (eLpNorm u p (μ.restrict s)).toReal / (μ s).toReal ^ (1 / p.toReal) := by
     rw [le_div_iff₀ hV]
