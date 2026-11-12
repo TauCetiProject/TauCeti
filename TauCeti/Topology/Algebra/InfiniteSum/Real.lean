@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Unbounded weights preserving summability
+# Real summability, finite repetitions, and unbounded weights
 
 A summable real sequence `a` remains summable after multiplication by suitable weights
 `c n ≥ 1` tending to infinity: no summable sequence decays at a slowest possible rate. This is
@@ -19,10 +19,21 @@ one factor tends to zero while the other stays absolutely summable.
 The weights count the blocks into which the tails of `|a|` are cut: `c n` is one more than the
 number of indices `k` with `N k ≤ n`, where the tail of `|a|` beyond `N k` is at most `2⁻ᵏ`.
 
+Natural multiplicities can also be expressed by repeating each nonnegative real term
+through a finite fiber. Summability of the repeated family is equivalent to summability of
+the original family weighted by those multiplicities.
+
+A square-summable real family is eventually small: `b i * C ≤ 1` for all but finitely many
+`i`, for any fixed real `C`.
+
 ## Main results
 
 * `Summable.exists_tendsto_atTop_summable_mul`: weights `c n ≥ 1` with `c n → ∞` and
   `∑ n, c n * a n` summable.
+* `TauCeti.summable_sigma_fin_iff`: repeating each nonnegative term `m i` times is summable
+  exactly when `∑ i, m i * a i` is.
+* `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
+  `b i * C ≤ 1`.
 -/
 
 public section
@@ -101,3 +112,34 @@ theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summa
     gcongr with k
     simp only [hb_def]
     split_ifs <;> simp
+
+namespace TauCeti
+
+/-- Repeating each nonnegative real term a finite natural number of times preserves
+summability exactly when the multiplicity-weighted family is summable. -/
+theorem summable_sigma_fin_iff {ι : Type*} {a : ι → ℝ} (ha : ∀ i, 0 ≤ a i) (m : ι → ℕ) :
+    Summable (fun p : Σ i, Fin (m i) ↦ a p.1) ↔
+      Summable (fun i ↦ (m i : ℝ) * a i) := by
+  rw [summable_sigma_of_nonneg (fun p ↦ ha p.1)]
+  constructor
+  · rintro ⟨_, h⟩
+    simpa using h
+  · intro h
+    refine ⟨fun _ ↦ Summable.of_finite, ?_⟩
+    simpa using h
+
+/-- A family with summable squares eventually satisfies `b i * C ≤ 1`, for any real `C`. -/
+theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
+    (hb : Summable (fun i ↦ b i ^ 2)) (C : ℝ) : ∀ᶠ i in cofinite, b i * C ≤ 1 := by
+  filter_upwards [hb.tendsto_cofinite_zero.eventually
+    (ge_mem_nhds (show (0 : ℝ) < (C ^ 2 + 1)⁻¹ by positivity))] with i hi
+  have hsq : (b i * C) ^ 2 ≤ 1 :=
+    calc
+      _ = b i ^ 2 * C ^ 2 := by ring
+      _ ≤ (C ^ 2 + 1)⁻¹ * C ^ 2 := by gcongr
+      _ ≤ 1 := by
+        rw [inv_mul_le_iff₀ (by positivity)]
+        linarith
+  nlinarith
+
+end TauCeti
