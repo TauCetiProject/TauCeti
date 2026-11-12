@@ -13,18 +13,19 @@ import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
 /-!
 # Prime divisors of homogeneous cyclotomic values
 
-Let `p` be a prime not dividing `b`. Then `p` divides the homogeneous cyclotomic value
-`Φ_n(a, b)` (`TauCeti.homogeneousCyclotomic`) exactly when the order of `a / b` modulo `p` is the
-`p`-free part `ordCompl[p] n` of `n`: reducing modulo `p`, `a / b` is a root of the cyclotomic
+Let `p` be a prime not dividing `b` and let `n ≠ 0`. Then `p` divides the homogeneous cyclotomic
+value `Φ_n(a, b)` (`TauCeti.homogeneousCyclotomic`) exactly when the order of `a / b` modulo `p` is
+the `p`-free part `ordCompl[p] n` of `n`: reducing modulo `p`, `a / b` is a root of the cyclotomic
 polynomial `Φ_n` over `ZMod p`, and in characteristic `p` the roots of `Φ_{p ^ e m}` with
 `p ∤ m` are the primitive `m`-th roots of unity.
 
 Consequently every prime divisor `p` of `Φ_n(a, b)` with `p ∤ b` is at least every prime factor
-of `n`, and for coprime bases the primitive prime divisors of `a ^ n - b ^ n` are exactly the
-prime divisors of `Φ_n(a, b)` that do not divide `n`. A nonprimitive prime divisor `p` of
-`Φ_n(a, b)` therefore divides `n` and is its largest prime factor, and it divides `Φ_n(a, b)`
-exactly once, except when `p = n = 2`. This is the dichotomy behind the Bang–Zsigmondy theorem:
-if `a ^ n - b ^ n` has no primitive prime divisor, then `Φ_n(a, b)` is `1` or the largest prime
+of `n`. For coprime natural bases `b ≤ a` and `0 < n`, the primitive prime divisors of
+`a ^ n - b ^ n` are exactly the prime divisors of `Φ_n(a, b)` that do not divide `n`. For coprime
+natural bases `b < a` and `n ≠ 2`, a nonprimitive prime divisor `p` of `Φ_n(a, b)` therefore
+divides `n`, is its largest prime factor, and divides `Φ_n(a, b)` exactly once. This is the
+dichotomy behind the Bang–Zsigmondy theorem: for coprime natural bases `b < a` and `n ≠ 2`, if
+`a ^ n - b ^ n` has no primitive prime divisor, then `Φ_n(a, b)` is `1` or the largest prime
 factor of `n`.
 
 ## Main results
@@ -32,12 +33,21 @@ factor of `n`.
 * `Nat.Prime.dvd_homogeneousCyclotomic_iff_orderOf_eq`: for `p ∤ b` and `n ≠ 0`,
   `p ∣ Φ_n(a, b)` iff the order of `a / b` in `ZMod p` is `ordCompl[p] n`.
 * `Nat.Prime.ordCompl_dvd_sub_one_of_dvd_homogeneousCyclotomic`,
-  `Nat.Prime.le_of_dvd_of_dvd_homogeneousCyclotomic`: for such `p`, `ordCompl[p] n ∣ p - 1`
-  and every prime factor of `n` is at most `p`.
-* `Nat.Prime.primitive_divisor_iff_dvd_homogeneousCyclotomic`: for coprime `b ≤ a`, `p` is a
-  primitive prime divisor of `a ^ n - b ^ n` iff `p ∣ Φ_n(a, b)` and `p ∤ n`.
-* `Nat.Prime.multiplicity_homogeneousCyclotomic_eq_one`: for `b < a`, `p ∤ b`, `p ∣ n` and
-  `n ≠ 2`, a prime divisor `p` of `Φ_n(a, b)` divides it exactly once.
+  `Nat.Prime.le_of_dvd_homogeneousCyclotomic_of_prime_of_dvd`: for `p ∤ b` dividing
+  `Φ_n(a, b)`, `ordCompl[p] n ∣ p - 1` and every prime factor of `n` is at most `p`.
+* `Nat.Coprime.not_dvd_mul_of_dvd_homogeneousCyclotomic`: for coprime natural bases, a prime
+  divisor of `Φ_n(a, b)` divides neither base.
+* `Nat.Prime.primitive_divisor_iff_dvd_homogeneousCyclotomic`: for coprime natural bases
+  `b ≤ a` and `0 < n`, `p` is a primitive prime divisor of `a ^ n - b ^ n` iff `p ∣ Φ_n(a, b)`
+  and `p ∤ n`.
+* `Nat.Prime.multiplicity_homogeneousCyclotomic_eq_one`: for natural bases `b < a`, `p ∤ b`,
+  `p ∣ n` and `n ≠ 2`, a prime divisor `p` of `Φ_n(a, b)` divides it exactly once.
+* `Nat.Prime.multiplicity_homogeneousCyclotomic_of_not_primitive`: for coprime natural bases
+  `b < a` and `n ≠ 2`, a prime divisor `p` of `Φ_n(a, b)` dividing some `a ^ k - b ^ k` with
+  `0 < k < n` divides `n`, is its largest prime factor, and divides `Φ_n(a, b)` exactly once.
+* `Nat.Coprime.homogeneousCyclotomic_eq_one_or_eq_prime_of_not_exists_prime_dvd_pow_sub_pow`: for
+  coprime natural bases `b < a` and `n ≠ 2`, if `a ^ n - b ^ n` has no primitive prime divisor,
+  then `Φ_n(a, b)` is `1` or the largest prime factor of `n`.
 
 ## References
 
@@ -73,33 +83,25 @@ theorem dvd_homogeneousCyclotomic_iff_orderOf_eq (hp : p.Prime) {a b : ℤ}
     ← isRoot_cyclotomic_prime_pow_mul_iff_of_charP (k := n.factorization p),
     Nat.ordProj_mul_ordCompl_eq_self, IsRoot.def]
 
-/-- A prime dividing `Φ_0(a, b) = 1` is impossible, so a prime divisor of `Φ_n(a, b)` has
-`n ≠ 0`. -/
-private theorem ne_zero_of_dvd_homogeneousCyclotomic (hp : p.Prime) {a b : ℤ} {n : ℕ}
-    (h : (p : ℤ) ∣ homogeneousCyclotomic n a b) : n ≠ 0 := by
-  rintro rfl
-  rw [homogeneousCyclotomic_zero] at h
-  exact hp.not_dvd_one (Int.natCast_dvd_natCast.1 (by simpa using h))
-
-/-- For a prime `p ∤ b` dividing `Φ_n(a, b)`, the `p`-free part of `n` divides `p - 1`: it is the
-order of `a / b` in `(ZMod p)ˣ`. -/
+/-- For a prime `p ∤ b` dividing `Φ_n(a, b)`, the `p`-free part of `n` divides `p - 1`. -/
 theorem ordCompl_dvd_sub_one_of_dvd_homogeneousCyclotomic (hp : p.Prime) {a b : ℤ}
     (hb : ¬(p : ℤ) ∣ b) {n : ℕ} (h : (p : ℤ) ∣ homogeneousCyclotomic n a b) :
     ordCompl[p] n ∣ p - 1 := by
   have := Fact.mk hp
-  have hn := hp.ne_zero_of_dvd_homogeneousCyclotomic h
+  have hn := ne_zero_of_dvd_homogeneousCyclotomic (Nat.prime_iff_prime_int.1 hp).not_isUnit h
+  -- The `p`-free part of `n` is the order of `a / b` in `(ZMod p)ˣ`.
   rw [hp.dvd_homogeneousCyclotomic_iff_orderOf_eq hb hn] at h
   rw [← h]
   refine ZMod.orderOf_dvd_card_sub_one fun h0 => (Nat.ordCompl_pos p hn).ne' ?_
   rw [← h, h0, orderOf_zero]
 
-/-- Every prime factor `q` of `n` is at most any prime divisor `p ∤ b` of `Φ_n(a, b)`: if
-`q ≠ p`, then `q` divides the order of `a / b` modulo `p`, which divides `p - 1`. -/
-theorem le_of_dvd_of_dvd_homogeneousCyclotomic (hp : p.Prime) {a b : ℤ}
+/-- Every prime factor `q` of `n` is at most any prime divisor `p ∤ b` of `Φ_n(a, b)`. -/
+theorem le_of_dvd_homogeneousCyclotomic_of_prime_of_dvd (hp : p.Prime) {a b : ℤ}
     (hb : ¬(p : ℤ) ∣ b) {n q : ℕ} (h : (p : ℤ) ∣ homogeneousCyclotomic n a b) (hq : q.Prime)
     (hqn : q ∣ n) : q ≤ p := by
   rcases eq_or_ne q p with rfl | hqp
   · rfl
+  -- For `q ≠ p`, `q` divides the `p`-free part of `n`, which divides `p - 1`.
   have hpq : ¬p ∣ q := fun hpq => hqp ((Nat.prime_dvd_prime_iff_eq hp hq).1 hpq).symm
   have := Nat.le_of_dvd (Nat.sub_pos_of_lt hp.one_lt)
     ((Nat.dvd_ordCompl_of_dvd_not_dvd hqn hpq).trans
@@ -108,11 +110,11 @@ theorem le_of_dvd_of_dvd_homogeneousCyclotomic (hp : p.Prime) {a b : ℤ}
 
 end Nat.Prime
 
-/-- A prime divisor of `Φ_n(a, b)` for coprime natural bases divides neither base, since it divides
-`a ^ n - b ^ n`. -/
+/-- A prime divisor of `Φ_n(a, b)` for coprime natural bases divides neither base. -/
 theorem Nat.Coprime.not_dvd_mul_of_dvd_homogeneousCyclotomic {a b n p : ℕ} (hab : a.Coprime b)
     (hp : p.Prime) (h : (p : ℤ) ∣ homogeneousCyclotomic n (a : ℤ) b) : ¬p ∣ a * b := by
-  have hn := hp.ne_zero_of_dvd_homogeneousCyclotomic h
+  have hn := ne_zero_of_dvd_homogeneousCyclotomic (Nat.prime_iff_prime_int.1 hp).not_isUnit h
+  -- `p` divides `a ^ n - b ^ n`, so dividing one base forces it to divide the other.
   have hdvd : (p : ℤ) ∣ ((a ^ n : ℕ) : ℤ) - ((b ^ n : ℕ) : ℤ) := by
     push_cast
     exact h.trans (homogeneousCyclotomic_dvd_pow_sub_pow dvd_rfl _ _)
@@ -154,9 +156,7 @@ theorem primitive_divisor_iff_dvd_homogeneousCyclotomic (hp : p.Prime) {a b n : 
     simpa using hord
 
 /-- If a prime `p ∤ b` divides `Φ_{p k}(a, b)`, then `a ^ (p k) - b ^ (p k)` is
-`Φ_{p k}(a, b) X (a ^ k - b ^ k)` for some `X` prime to `p`: `X` is the product of the
-`Φ_d(a, b)` over the divisors `d ≠ p k` of `p k` not dividing `k`, and each such index has the
-wrong `p`-free part for `p` to divide `Φ_d(a, b)`. -/
+`Φ_{p k}(a, b) X (a ^ k - b ^ k)` for some `X` prime to `p`. -/
 private theorem exists_pow_sub_pow_eq_homogeneousCyclotomic_mul (hp : p.Prime) {a b : ℤ}
     (hb : ¬(p : ℤ) ∣ b) {k : ℕ} (hk : k ≠ 0) (h : (p : ℤ) ∣ homogeneousCyclotomic (p * k) a b) :
     ∃ X : ℤ, ¬(p : ℤ) ∣ X ∧
@@ -171,6 +171,8 @@ private theorem exists_pow_sub_pow_eq_homogeneousCyclotomic_mul (hp : p.Prime) {
     have := Nat.le_of_dvd (Nat.pos_of_ne_zero hk) (Nat.dvd_of_mem_divisors hk')
     have := Nat.mul_le_mul_right k hp.two_le
     omega
+  -- `X` is the product of the `Φ_d(a, b)` over the divisors `d ≠ p k` of `p k` not dividing `k`;
+  -- each such index has the wrong `p`-free part for `p` to divide `Φ_d(a, b)`.
   refine ⟨∏ d ∈ S.erase (p * k), homogeneousCyclotomic d a b, ?_, ?_⟩
   · rw [(Nat.prime_iff_prime_int.1 hp).dvd_finsetProd_iff]
     rintro ⟨d, hd, hpd⟩
@@ -180,7 +182,7 @@ private theorem exists_pow_sub_pow_eq_homogeneousCyclotomic_mul (hp : p.Prime) {
     have hdord := (hp.dvd_homogeneousCyclotomic_iff_orderOf_eq hb
       (ne_zero_of_dvd_ne_zero hn hdvd)).1 hpd
     rw [hord, hcompl] at hdord
-    exact hdne (Nat.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq hp hdvd
+    exact hdne (hp.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq hdvd
       (fun h => hdk (Nat.mem_divisors.2 ⟨h, hk⟩)) hdord.symm)
   · rw [Finset.mul_prod_erase S (fun d => homogeneousCyclotomic d a b) hmem, hS,
       ← prod_homogeneousCyclotomic_eq_pow_sub_pow (Nat.pos_of_ne_zero hk) a b,
@@ -194,7 +196,7 @@ theorem multiplicity_homogeneousCyclotomic_eq_one (hp : p.Prime) {a b n : ℕ} (
     (hb : ¬p ∣ b) (hpn : p ∣ n) (hn2 : n ≠ 2) (h : (p : ℤ) ∣ homogeneousCyclotomic n (a : ℤ) b) :
     multiplicity (p : ℤ) (homogeneousCyclotomic n (a : ℤ) b) = 1 := by
   have := Fact.mk hp
-  have hn := hp.ne_zero_of_dvd_homogeneousCyclotomic h
+  have hn := ne_zero_of_dvd_homogeneousCyclotomic (Nat.prime_iff_prime_int.1 hp).not_isUnit h
   have hb' : ¬(p : ℤ) ∣ (b : ℤ) := fun h => hb (Int.natCast_dvd_natCast.1 h)
   have hord := (hp.dvd_homogeneousCyclotomic_iff_orderOf_eq hb' hn).1 h
   simp only [Int.cast_natCast] at hord
@@ -240,9 +242,30 @@ theorem multiplicity_homogeneousCyclotomic_eq_one (hp : p.Prime) {a b n : ℕ} (
     _root_.multiplicity_mul (Nat.prime_iff_prime_int.1 hp) hfin,
     multiplicity_eq_zero_of_not_dvd hX, add_zero] at hval
 
+/-- **Nonprimitive prime divisors of a cyclotomic value.** For coprime natural bases `b < a` and
+`n ≠ 2`, a prime `p` dividing `Φ_n(a, b)` and some `a ^ k - b ^ k` with `0 < k < n` divides `n`,
+is at least every prime factor of `n`, and divides `Φ_n(a, b)` exactly once. -/
+theorem multiplicity_homogeneousCyclotomic_of_not_primitive (hp : p.Prime) {a b n : ℕ}
+    (hab : a.Coprime b) (hba : b < a) (hn2 : n ≠ 2)
+    (h : (p : ℤ) ∣ homogeneousCyclotomic n (a : ℤ) b)
+    (hk : ∃ k, 0 < k ∧ k < n ∧ p ∣ a ^ k - b ^ k) :
+    p ∣ n ∧ (∀ q : ℕ, q.Prime → q ∣ n → q ≤ p) ∧
+      multiplicity (p : ℤ) (homogeneousCyclotomic n (a : ℤ) b) = 1 := by
+  have hprod := hab.not_dvd_mul_of_dvd_homogeneousCyclotomic hp h
+  have hb : ¬p ∣ b := fun hb => hprod (dvd_mul_of_dvd_right hb a)
+  have hb' : ¬(p : ℤ) ∣ (b : ℤ) := fun h => hb (Int.natCast_dvd_natCast.1 h)
+  -- A prime divisor of `Φ_n(a, b)` not dividing `n` would be primitive.
+  have hpn : p ∣ n := by
+    by_contra hpn
+    obtain ⟨k, hk0, hkn, hpk⟩ := hk
+    exact ((hp.primitive_divisor_iff_dvd_homogeneousCyclotomic hab hba.le
+      (hk0.trans hkn)).2 ⟨h, hpn⟩).2 k hk0 hkn hpk
+  exact ⟨hpn, fun q hq hqn => hp.le_of_dvd_homogeneousCyclotomic_of_prime_of_dvd hb' h hq hqn,
+    hp.multiplicity_homogeneousCyclotomic_eq_one hba hb hpn hn2 h⟩
+
 end Nat.Prime
 
-namespace TauCeti
+namespace Nat.Coprime
 
 /-- **Cyclotomic values without primitive prime divisors.** For coprime natural bases `b < a` and
 `n ≠ 2`, if `a ^ n - b ^ n` has no primitive prime divisor, then `Φ_n(a, b)` is `1` or a prime
@@ -268,14 +291,15 @@ theorem homogeneousCyclotomic_eq_one_or_eq_prime_of_not_exists_prime_dvd_pow_sub
     refine ⟨hqΦ, fun hqb => hprod (dvd_mul_of_dvd_right (Int.natCast_dvd_natCast.1 hqb) a),
       by_contra fun hqn => h ⟨q, hq, ?_⟩⟩
     exact (hq.primitive_divisor_iff_dvd_homogeneousCyclotomic hab hba.le
-      (Nat.pos_of_ne_zero (hq.ne_zero_of_dvd_homogeneousCyclotomic hqΦ))).2 ⟨hqΦ, hqn⟩
+      (Nat.pos_of_ne_zero (ne_zero_of_dvd_homogeneousCyclotomic
+        (Nat.prime_iff_prime_int.1 hq).not_isUnit hqΦ))).2 ⟨hqΦ, hqn⟩
   obtain ⟨p, hp, hpN⟩ := Nat.exists_prime_and_dvd h1
   obtain ⟨hpΦ, hpb, hpn⟩ := hdvd p hp hpN
   -- Two prime divisors of `Φ_n(a, b)` each bound the other, so `p` is the only one.
   have huniq : ∀ {q}, q.Prime → q ∣ N → q = p := fun hq hqN =>
     have ⟨hqΦ, hqb, hqn⟩ := hdvd _ hq hqN
-    le_antisymm (hp.le_of_dvd_of_dvd_homogeneousCyclotomic hpb hpΦ hq hqn)
-      (hq.le_of_dvd_of_dvd_homogeneousCyclotomic hqb hqΦ hp hpn)
+    le_antisymm (hp.le_of_dvd_homogeneousCyclotomic_of_prime_of_dvd hpb hpΦ hq hqn)
+      (hq.le_of_dvd_homogeneousCyclotomic_of_prime_of_dvd hqb hqΦ hp hpn)
   have hpow : N = p ^ N.primeFactorsList.length :=
     Nat.eq_prime_pow_of_unique_prime_dvd (Int.natAbs_ne_zero.2 hpos.ne') huniq
   have hmul := hp.multiplicity_homogeneousCyclotomic_eq_one hba
@@ -283,7 +307,7 @@ theorem homogeneousCyclotomic_eq_one_or_eq_prime_of_not_exists_prime_dvd_pow_sub
   rw [← hN, Int.natCast_multiplicity, hpow,
     multiplicity_pow_self_of_prime (Nat.prime_iff.1 hp)] at hmul
   refine Or.inr ⟨p, hp, hpn, fun q hq hqn => ?_, ?_⟩
-  · exact hp.le_of_dvd_of_dvd_homogeneousCyclotomic hpb hpΦ hq hqn
+  · exact hp.le_of_dvd_homogeneousCyclotomic_of_prime_of_dvd hpb hpΦ hq hqn
   · rw [← hN, hpow, hmul, pow_one]
 
-end TauCeti
+end Nat.Coprime

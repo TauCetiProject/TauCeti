@@ -15,9 +15,9 @@ its full multiplicity gives a smaller number. Removing the `p`-part erases `p` f
 factors. These facts support induction by successively removing prime-power blocks. For a
 divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
-of roots of unity acts on their `p`-primary parts. A divisor of `p * k` with the same `p`-free
-part as `k` either divides `k` or is `p * k`. The product of any set of prime factors of `n`
-divides `n`.
+of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
+same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
+factors of `n` divides `n`.
 -/
 
 public section
@@ -58,10 +58,10 @@ theorem div_mul_ordCompl_of_dvd {m n : ℕ} (p : ℕ) (h : n ∣ m) :
   rw [mul_assoc, mul_comm (ordCompl[p] n), ordProj_mul_ordCompl_eq_self, Nat.div_mul_cancel h,
     mul_assoc, ← pow_add, Nat.sub_add_cancel hle, mul_comm, ordProj_mul_ordCompl_eq_self]
 
-/-- A divisor of `p * k` with the same `p`-free part as `k` either divides `k` or is `p * k`:
-its `p`-part lies between those of `k` and `p * k`, which differ by a single factor `p`. -/
-theorem eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.Prime) (hd : d ∣ p * k)
-    (hdk : ¬d ∣ k) (h : ordCompl[p] d = ordCompl[p] k) : d = p * k := by
+/-- For a prime `p`, a divisor `d` of `p * k` with the same `p`-free part as `k` that does not
+divide `k` is `p * k`. -/
+theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.Prime)
+    (hd : d ∣ p * k) (hdk : ¬d ∣ k) (h : ordCompl[p] d = ordCompl[p] k) : d = p * k := by
   have hk : k ≠ 0 := by
     rintro rfl
     exact hdk (dvd_zero d)
