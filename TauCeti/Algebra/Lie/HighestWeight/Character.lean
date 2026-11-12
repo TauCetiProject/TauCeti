@@ -71,9 +71,6 @@ every weight in the orbit occurs, and occurs simply.
   and its **coefficient at `lam` is `1`**.
 * `TauCeti.formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top`:
   **the whole Weyl orbit of the highest weight carries the coefficient `1`**.
-* `TauCeti.genWeightSpace_weylGroup_smul_ne_bot_of_isHighestWeightVector`: **every Weyl translate of
-  the highest weight is a weight**, for any module with a highest weight vector, with no generation
-  assumption.
 * `TauCeti.formalCharacter_mul_weylDenominator_eq_of_forall_coeff_isDominantIntegral_eq`: **that
   product is determined by its coefficients at the dominant integral weights**, with
   `TauCeti.exists_intCast_eq_coroot'_of_sub_mem_posRootCone` the integrality of the weights below
@@ -155,14 +152,6 @@ theorem formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector_of_
     (formalCharacter K H M).coeff (w • lam) = 1 := by
   rw [formalCharacter_coeff_weylGroup_smul]
   exact formalCharacter_coeff_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen
-
-omit hgen in
-/-- **A Weyl translate of the highest weight is a weight**: the orbit of `lam` under the Weyl group
-is contained in the set of weights of a module with a highest weight vector of weight `lam`. -/
-theorem genWeightSpace_weylGroup_smul_ne_bot_of_isHighestWeightVector
-    (w : (IsKilling.rootSystem H).weylGroup) :
-    genWeightSpace M ((w • lam : Dual K H) : H → K) ≠ ⊥ :=
-  genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot w hv.genWeightSpace_ne_bot
 
 /-- **The two factors of `ch M · Δ` are supported downwards from `lam` and from `0`**: if
 `chi = chi₁ + chi₂` with `chi₁` a weight of `M` and `chi₂` in the support of the denominator, then
