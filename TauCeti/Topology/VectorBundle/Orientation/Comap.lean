@@ -122,7 +122,8 @@ private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank
     have hLc : ContinuousAt (fun x ↦ (L x).det) b' :=
       ContinuousLinearMap.continuous_det.continuousAt.comp
         ((continuousOn_const.clm_comp
-          (continuousOn_fiberwise_inCoordinates hφ e e')).continuousAt hU)
+          (continuousOn_fiberwise_inCoordinates (φ := fun b' ↦ (φ b' : E' b' →L[ℝ] E (g b')))
+            hφ e e')).continuousAt hU)
     have hLb : (L b').det = 1 := by
       rw [hL b' hb' hb, ContinuousLinearEquiv.self_trans_symm]
       exact LinearMap.det_id
