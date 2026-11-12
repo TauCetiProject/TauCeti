@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Logic.Equiv.Set
 import Mathlib.Order.Concept
@@ -68,6 +70,9 @@ normal closure of `x ^ n` when `n ≠ 1`.
   `G`-homomorphisms from `G_{R(S)}` or from `G_S` to `H` correspond to the solutions of `S` in `H`.
 * `TauCeti.GroupAlgGeom.CoordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
   solution in a `G`-group.
+* `TauCeti.GroupAlgGeom.CoordGroup.subsingleton_iff`: `G_{R(S)}` is trivial exactly when
+  evaluation at every solution of `S` in `H` is trivial, for instance when `S` has no solution in
+  `H` (`TauCeti.GroupAlgGeom.CoordGroup.subsingleton_of_V_eq_empty`) or `H` is trivial.
 * `TauCeti.GroupAlgGeom.Rad_pow_eq_normalClosure`,
   `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
   injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
@@ -238,6 +243,13 @@ theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
   ext v
   simp [hg]
 
+open scoped commutatorElement in
+/-- A point solves the equation `[x, y] = 1` if and only if its coordinates at `x` and `y`
+commute. -/
+theorem mem_V_commutator_iff {x y : X} :
+    v ∈ V ι {⁅(inr (FreeGroup.of x) : GX G X), inr (FreeGroup.of y)⁆} ↔ Commute (v x) (v y) := by
+  simp [commutatorElement_eq_one_iff_commute]
+
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
   SetLike.coe_injective ((lowerPolar_union _ Y Z).trans (coe_inf (I ι Y) (I ι Z)).symm)
@@ -348,6 +360,16 @@ theorem Rad_normalClosure (S : Set (GX G X)) :
 @[simp]
 theorem Rad_empty : Rad ι (∅ : Set (GX G X)) = I ι Set.univ := by
   rw [Rad_def, V_empty]
+
+/-- The radical of `S` is the whole of `G[X]` if and only if evaluation at every solution of `S` in
+`H` is trivial. -/
+theorem Rad_eq_top_iff : Rad ι S = ⊤ ↔ ∀ v ∈ V ι S, eval ι v = 1 := by
+  simp only [eq_top_iff', mem_Rad, MonoidHom.ext_iff, MonoidHom.one_apply]
+  exact ⟨fun h v hv w => h w v hv, fun h w v hv => h v hv w⟩
+
+/-- The radical of a system without solutions in `H` is the whole of `G[X]`. -/
+theorem Rad_eq_top_of_V_eq_empty (hS : V ι S = ∅) : Rad ι S = ⊤ := by
+  rw [Rad_def, hS, I_empty]
 
 /-- For injective coefficients, the ideal of a point `ι ∘ g` with coordinates in the image of `G`
 is the normal closure of the equations `x (g x)⁻¹`, `x ∈ X`. -/
@@ -540,6 +562,19 @@ variable (ι) in
 @[simp]
 theorem toGGroup_coeff (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     (toGGroup ι hι hS).coeff = coeff ι S := (rfl)
+
+/-- The coordinate group of `S` is trivial if and only if evaluation at every solution of `S` in
+`H` is trivial. -/
+theorem subsingleton_iff : Subsingleton (CoordGroup ι S) ↔ ∀ v ∈ V ι S, eval ι v = 1 :=
+  QuotientGroup.subsingleton_iff.trans Rad_eq_top_iff
+
+/-- The coordinate group of a system without solutions in `H` is trivial. -/
+theorem subsingleton_of_V_eq_empty (hS : V ι S = ∅) : Subsingleton (CoordGroup ι S) :=
+  QuotientGroup.subsingleton_iff.2 (Rad_eq_top_of_V_eq_empty hS)
+
+/-- Every coordinate group over a trivial group is trivial. -/
+instance [Subsingleton H] : Subsingleton (CoordGroup ι S) :=
+  subsingleton_iff.2 fun _ _ => MonoidHom.ext fun _ => Subsingleton.elim _ _
 
 variable (ι) in
 /-- The generic point `μ : X → G_{R(S)}` of a system `S`: the tuple of the images of the

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.Commutator
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
-import Mathlib.GroupTheory.Commutator.Basic
 import TauCeti.GroupTheory.FreeGroup.Commuting
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
@@ -29,17 +28,21 @@ of equations and let `T ⊆ G[X ⊔ Y]` be a system in the variables `X` and fur
   that `t(θ, Y) = 1` is solvable in `H` for every `θ ∈ Θ` admits a complete `S`-lift.
 
 Evaluating at a solution of `S` specialises a formal solution, so an `S`-lift of a system of
-equations forces compatibility (`HasLift.isCompatible`). This fails as soon as an inequation is
-present: over the empty system, `y = x ∧ y ≠ 1` has the solution `y = x` at the generic point but
-no solution at `x = 1`. In the other direction, over a free group `F` on a nonempty set the
-formula `x = z² ∨ y = z² ∨ x y = z²` holds at every solution of `[x, y] = 1` in `F`, but not at
-the generic point of `[x, y] = 1` (`compatible_no_lift`). Over a non-abelian free group this
-formula is equivalent to an equation, so there compatibility of an equation does not imply a
-lift.
+equations forces compatibility (`HasLift.isCompatible`). This can fail once an inequation is
+present: over a nontrivial group and the empty system, `y = x ∧ y ≠ 1` has the solution `y = x`
+at the generic point but no solution at `x = 1` (`hasLiftNe_diagonal`,
+`not_isCompatibleNe_diagonal`). In the other direction, over a free group `F` on a nonempty set
+the formula `x = z² ∨ y = z² ∨ x y = z²` holds at every solution of `[x, y] = 1` in `F`
+(`mem_V_commutator_iff`, `IsFreeGroup.exists_eq_sq_of_commute`), but not at the generic point of
+`[x, y] = 1` (`not_exists_genericPoint_eq_sq`). Over a non-abelian free group a disjunction of
+equations is equivalent to a single equation; with that encoding, which is not formalized here,
+this example gives an equation compatible with `[x, y] = 1` without an `S`-lift.
 
 The definitions follow the sources, which take `H = G` and assume that `S` has a solution. For a
 system `S` without solutions the coordinate group is trivial, so every system of equations is
-compatible with `S` and admits an `S`-lift, while no system admits a complete `S`-lift.
+compatible with `S` and admits an `S`-lift (`isCompatible_of_V_eq_empty`,
+`hasLift_of_V_eq_empty`), while no system admits a complete `S`-lift
+(`not_hasCompleteLift_of_V_eq_empty`).
 
 ## Main definitions
 
@@ -67,11 +70,12 @@ compatible with `S` and admits an `S`-lift, while no system admits a complete `S
   system compatible with `S` admits a complete `S`-lift, and the solution is a generic family.
 * `TauCeti.GroupAlgGeom.Lift.isGenericFamily_empty_iff`: the empty family is generic exactly over
   a trivial group.
-* `TauCeti.GroupAlgGeom.Lift.hasLift_sq_eq_sq`, `TauCeti.GroupAlgGeom.Lift.not_isCompatible_sqrt`:
-  `y² = x²` lifts over every system, while `y² = x` is not compatible with the empty system over
-  a free group.
-* `TauCeti.GroupAlgGeom.Lift.compatible_no_lift`: over a free group, a disjunction of equations
-  that holds at every solution of `[x, y] = 1` but not at its generic point.
+* `TauCeti.GroupAlgGeom.Lift.hasLift_sq_eq_sq`,
+  `TauCeti.GroupAlgGeom.Lift.not_isCompatible_empty_sq`: `y² = x²` lifts over every system, while
+  `y² = x` is not compatible with the empty system over a free group.
+* `TauCeti.GroupAlgGeom.Lift.not_exists_genericPoint_eq_sq`: over a free group on a nonempty set,
+  none of `x`, `y` and `x y` is a square at the generic point of `[x, y] = 1`, while one of them is
+  a square at every solution (`IsFreeGroup.exists_eq_sq_of_commute`).
 
 ## References
 
@@ -177,7 +181,7 @@ theorem not_isCompatible_singleton_inl {a : G} (ha : ι a ≠ 1) (hS : (V ι S).
   obtain ⟨v, hv⟩ := hS
   intro h
   obtain ⟨w, hw⟩ := h v hv
-  exact ha (by simpa using hw)
+  exact (V_singleton_inl_eq_empty ha).subset hw
 
 /-- Over a trivial group no inequation is compatible. -/
 theorem not_isCompatibleNe_of_subsingleton [Subsingleton H] : ¬IsCompatibleNe ι S T W := by
@@ -211,16 +215,16 @@ theorem HasLift.mono (h : HasLift ι S T) (hT : T' ⊆ T) : HasLift ι S T' :=
 theorem hasLift_empty : HasLift ι S (∅ : Set (GX G (X ⊕ Y))) :=
   ⟨fun _ => 1, by simp⟩
 
-/-- A system of equations with an `S`-lift is compatible with `S`: evaluating a solution at the
-generic point at a solution `v` of `S` gives a solution over `v`. -/
+/-- A system of equations with an `S`-lift is compatible with `S`. -/
 theorem HasLift.isCompatible (h : HasLift ι S T) : IsCompatible ι S T := by
   obtain ⟨w, hw⟩ := h
   intro v hv
+  -- Evaluation at `v` maps the solution at the generic point to a solution over `v`.
   refine ⟨CoordGroup.evalGHom v hv ∘ w, ?_⟩
   simpa [Sum.comp_elim] using (CoordGroup.evalGHom v hv).comp_mem_V hw
 
 /-- A solution `Y(X)` of `T` in `G[X]` at the tuple of variables gives an `S`-lift of `T` for
-every system `S`, by passing to the coordinate group. -/
+every system `S`. -/
 theorem hasLift_of_mem_V_inl {w : Y → GX G X}
     (hw : Sum.elim (fun x => inr (FreeGroup.of x)) w ∈ V (inl : G →* GX G X) T) :
     HasLift ι S T := by
@@ -231,11 +235,19 @@ theorem hasLift_of_mem_V_inl {w : Y → GX G X}
   rw [Sum.comp_elim, hμ] at h
   exact ⟨_, h⟩
 
-/-- Over a trivial group every system of equations admits an `S`-lift. -/
-theorem hasLift_of_subsingleton [Subsingleton H] : HasLift ι S T := by
-  have hS : Rad ι S = ⊤ := eq_top_iff.2 fun _ _ => mem_Rad.2 fun _ _ => Subsingleton.elim _ _
-  have : Subsingleton (CoordGroup ι S) := QuotientGroup.subsingleton_iff.2 hS
-  exact ⟨fun _ => 1, mem_V.2 fun _ _ => Subsingleton.elim _ _⟩
+/-- When the coordinate group of `S` is trivial, for instance over a trivial group, every system
+of equations admits an `S`-lift. -/
+theorem hasLift_of_subsingleton [Subsingleton (CoordGroup ι S)] : HasLift ι S T :=
+  ⟨fun _ => 1, mem_V.2 fun _ _ => Subsingleton.elim _ _⟩
+
+/-- Every system of equations admits an `S`-lift when `S` has no solution in `H`. -/
+theorem hasLift_of_V_eq_empty (hS : V ι S = ∅) : HasLift ι S T :=
+  have := CoordGroup.subsingleton_of_V_eq_empty hS
+  hasLift_of_subsingleton
+
+/-- When the coordinate group of `S` is trivial, no inequation admits an `S`-lift. -/
+theorem not_hasLiftNe_of_subsingleton [Subsingleton (CoordGroup ι S)] : ¬HasLiftNe ι S T W :=
+  fun ⟨_, _, hw⟩ => hw (Subsingleton.elim _ _)
 
 /-! ### Complete lifts -/
 
@@ -256,36 +268,33 @@ theorem HasCompleteLift.isCompatible (h : HasCompleteLift ι S T) : IsCompatible
 
 /-- When some coefficient `a` is nontrivial in `H`, a system admits a complete `S`-lift if and
 only if it is compatible with `S` and every compatible extension of it by an inequation admits
-an `S`-lift: the `S`-lift of the system itself is the one of its extension by `a ≠ 1`. -/
+an `S`-lift. -/
 theorem hasCompleteLift_iff_of_ne {a : G} (ha : ι a ≠ 1) :
     HasCompleteLift ι S T ↔
       IsCompatible ι S T ∧ ∀ W : GX G (X ⊕ Y), IsCompatibleNe ι S T W → HasLiftNe ι S T W :=
+  -- The `S`-lift of the system itself is the one of its extension by `a ≠ 1`.
   ⟨fun h => ⟨h.isCompatible, h.2⟩,
     fun h => ⟨(h.2 _ (h.1.isCompatibleNe_inl ha)).hasLift, h.2⟩⟩
 
-/-- No system admits a complete `S`-lift when `S` has no solution in `H`: the coordinate group
-of `S` is then trivial, while every inequation is compatible with `S`. -/
-theorem not_hasCompleteLift_of_V_eq_empty (hS : V ι S = ∅) : ¬HasCompleteLift ι S T := by
-  intro h
-  have hRad : Rad ι S = ⊤ := eq_top_iff.2 fun _ _ => mem_Rad.2 fun v hv => by simp [hS] at hv
-  have : Subsingleton (CoordGroup ι S) := QuotientGroup.subsingleton_iff.2 hRad
-  obtain ⟨w, -, hw⟩ := h.hasLiftNe (W := 1) fun v hv => by simp [hS] at hv
-  exact hw (Subsingleton.elim _ _)
+/-- No system admits a complete `S`-lift when `S` has no solution in `H`. -/
+theorem not_hasCompleteLift_of_V_eq_empty (hS : V ι S = ∅) : ¬HasCompleteLift ι S T := fun h =>
+  -- The coordinate group of `S` is trivial, while every inequation is compatible with `S`.
+  have := CoordGroup.subsingleton_of_V_eq_empty hS
+  not_hasLiftNe_of_subsingleton (h.hasLiftNe (W := 1) fun v hv => by simp [hS] at hv)
 
-/-- Over a trivial group every system of equations admits a complete lift: it admits a lift, and
-no inequation is compatible. -/
+/-- Over a trivial group every system of equations admits a complete lift. -/
 theorem hasCompleteLift_of_subsingleton [Subsingleton H] : HasCompleteLift ι S T :=
   ⟨hasLift_of_subsingleton, fun _ hW => (not_isCompatibleNe_of_subsingleton hW).elim⟩
 
-/-- A system with a unique solution `g` in `G` has coordinate group `G`, so every solution over
-`g` of a system `T`, with or without an inequation, is a solution at the generic point: every
-system compatible with `S` admits a complete `S`-lift. -/
+/-- If `S` has a unique solution in `G`, every system compatible with `S` over `G` admits a
+complete `S`-lift. -/
 theorem IsCompatible.hasCompleteLift_of_V_eq_singleton {S : Set (GX G X)} {T : Set (GX G (X ⊕ Y))}
     {g : X → G} (hS : V (.id G) S = {g}) (h : IsCompatible (.id G) S T) :
     HasCompleteLift (.id G) S T := by
-  have hg : g ∈ V (.id G) S := hS ▸ rfl
+  have hg : g ∈ V (.id G) S := hS ▸ Set.mem_singleton g
   -- The coefficient map `G → G_{R(S)}` is an injective `G`-homomorphism sending `g` to the
-  -- generic point.
+  -- generic point, so every solution over `g` of `T`, with or without an inequation, gives a
+  -- solution at the generic point.
   let φ : GHom (.id G) (CoordGroup.coeff (.id G) S) := ⟨CoordGroup.coeff (.id G) S, fun _ => rfl⟩
   have hφ : Function.Injective φ := CoordGroup.coeff_injective Function.injective_id ⟨g, hg⟩
   have hμ : φ ∘ g = CoordGroup.genericPoint (.id G) S :=
@@ -347,27 +356,24 @@ theorem isGenericFamily_singleton_one :
     ext v
     simp [funext_iff, Unique.forall_iff]
 
-/-- The empty family of solutions of `S` is generic exactly over a trivial group. Over a
-nontrivial group `H` genericity of the empty family would give every single equation a complete
-`S`-lift, in particular make it compatible with `S`; so every solution of `S` in `H` would be
-trivial with trivial coefficients, the coordinate group would be trivial, and the compatible
-inequation `y ≠ 1` would have no `S`-lift. -/
+/-- The empty family of solutions of `S` is generic if and only if `H` is trivial. -/
 theorem isGenericFamily_empty_iff : IsGenericFamily ι S ∅ ↔ Subsingleton H := by
   refine ⟨fun h => ?_, fun _ => ⟨Set.empty_subset _, fun _ _ _ => hasCompleteLift_of_subsingleton⟩⟩
+  -- Genericity of the empty family gives every single equation a complete `S`-lift.
   have hc {n : ℕ} (t : GX G (X ⊕ Fin n)) : HasCompleteLift ι S {t} := h.hasCompleteLift (by simp)
-  have hev : ∀ v ∈ V ι S, eval ι v = 1 := fun v hv =>
+  -- The equations `a = 1` and `x = 1` are then compatible with `S`, so every solution of `S` is
+  -- trivial with trivial coefficients, and the coordinate group of `S` is trivial.
+  have : Subsingleton (CoordGroup ι S) := CoordGroup.subsingleton_iff.2 fun v hv =>
     hom_ext (MonoidHom.ext fun a => by
         obtain ⟨w, hw⟩ := (hc (n := 0) (inl a)).isCompatible v hv
         simpa using hw)
       (FreeGroup.ext_hom _ _ fun x => by
         obtain ⟨w, hw⟩ := (hc (n := 0) (inr (FreeGroup.of (Sum.inl x)))).isCompatible v hv
         simpa using hw)
-  have hRad : Rad ι S = ⊤ := eq_top_iff.2 fun q _ => mem_Rad.2 fun v hv => by simp [hev v hv]
-  have : Subsingleton (CoordGroup ι S) := QuotientGroup.subsingleton_iff.2 hRad
-  refine subsingleton_of_forall_eq 1 fun h₀ => by_contra fun hh₀ => ?_
-  obtain ⟨w, -, hw⟩ := (hc (n := 1) 1).hasLiftNe (W := inr (FreeGroup.of (Sum.inr 0))) <|
-    isCompatibleNe_iff.2 fun v _ => ⟨fun _ => h₀, by simp, by simpa using hh₀⟩
-  exact hw (Subsingleton.elim _ _)
+  -- So for `h₀ ≠ 1` the compatible inequation `y ≠ 1`, with `y = h₀`, has no `S`-lift.
+  refine subsingleton_of_forall_eq 1 fun h₀ => by_contra fun hh₀ => not_hasLiftNe_of_subsingleton <|
+    (hc (n := 1) 1).hasLiftNe (W := inr (FreeGroup.of (Sum.inr 0))) <|
+      isCompatibleNe_iff.2 fun v _ => ⟨fun _ => h₀, by simp, by simpa using hh₀⟩
 
 /-- Over a nontrivial group the empty family of solutions is not generic. -/
 theorem not_isGenericFamily_empty [Nontrivial H] : ¬IsGenericFamily ι S ∅ :=
@@ -402,13 +408,14 @@ theorem isCompatible_empty_sq_iff (ι : G →* H) :
     exact ⟨fun _ => r, by simp [hr]⟩
 
 /-- Over a free group on a nonempty set, the equation `y² = x` is not compatible with the empty
-system: a free generator has no square root. -/
-theorem not_isCompatible_sqrt {α : Type*} [Nonempty α] :
+system. -/
+theorem not_isCompatible_empty_sq {α : Type*} [Nonempty α] :
     ¬IsCompatible (.id (FreeGroup α)) (∅ : Set (GX (FreeGroup α) Unit))
       {(inr (of (Sum.inr ())) : GX (FreeGroup α) (Unit ⊕ Unit)) ^ 2 *
         (inr (of (Sum.inl ())))⁻¹} := by
   obtain ⟨a⟩ := ‹Nonempty α›
   intro h
+  -- A free generator `a` is not a square.
   obtain ⟨r, hr⟩ := (isSquare_iff_exists_sq _).1 ((isCompatible_empty_sq_iff _).1 h (of a))
   exact not_isProperPower_of a (hr ▸ Group.isProperPower_pow r le_rfl)
 
@@ -424,8 +431,9 @@ theorem hasLiftNe_diagonal [Nontrivial H] (ι : G →* H) :
     simpa [CoordGroup.genericPoint_apply, QuotientGroup.eq_one_iff]
   exact fun hmem => hh (by simpa using mem_Rad.1 hmem (fun _ => h) (by simp))
 
-/-- The system `y = x ∧ y ≠ 1` is not compatible with the empty system, having no solution over
-`x = 1`: a lift of a system with an inequation does not force compatibility. -/
+/-- The system `y = x ∧ y ≠ 1` is not compatible with the empty system. Together with
+`hasLiftNe_diagonal`, this shows that a lift of a system with an inequation does not force
+compatibility. -/
 theorem not_isCompatibleNe_diagonal (ι : G →* H) :
     ¬IsCompatibleNe ι (∅ : Set (GX G Unit))
       {(inr (of (Sum.inr ())) : GX G (Unit ⊕ Unit)) * (inr (of (Sum.inl ())))⁻¹}
@@ -433,12 +441,6 @@ theorem not_isCompatibleNe_diagonal (ι : G →* H) :
   intro h
   obtain ⟨w, hw, hne⟩ := h (fun _ => 1) (by simp)
   exact hne (by simpa using hw)
-
-/-- A point solves the equation `[x, y] = 1` if and only if its coordinates at `x` and `y`
-commute. -/
-theorem mem_V_commutator_iff {ι : G →* H} {x y : X} {v : X → H} :
-    v ∈ V ι {⁅(inr (of x) : GX G X), inr (of y)⁆} ↔ Commute (v x) (v y) := by
-  simp [commutatorElement_eq_one_iff_commute]
 
 /-- Over a free group on a nonempty set, none of `x`, `y` and `x y` is a square in the coordinate
 group of the equation `[x, y] = 1`. -/
@@ -461,20 +463,6 @@ theorem not_exists_genericPoint_eq_sq {α : Type*} [Nonempty α] :
   · exact hsq _ (by simpa using congrArg (CoordGroup.evalGHom _ h₁) hz)
   · exact hsq _ (by simpa using congrArg (CoordGroup.evalGHom _ h₂) hz)
   · exact hsq _ (by simpa using congrArg (CoordGroup.evalGHom _ h₁) hz)
-
-/-- Over a free group `F` on a nonempty set, the formula `x = z² ∨ y = z² ∨ x y = z²` holds at
-every solution `(x, y)` of `[x, y] = 1` in `F`, but not at the generic point of `[x, y] = 1`.
-Over a non-abelian free group this formula is equivalent to an equation, so there compatibility
-of an equation does not imply a lift. -/
-theorem compatible_no_lift {α : Type*} [Nonempty α] :
-    (∀ v ∈ V (.id (FreeGroup α)) {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆},
-        ∃ z : FreeGroup α, v false = z ^ 2 ∨ v true = z ^ 2 ∨ v false * v true = z ^ 2) ∧
-      ¬∃ z : CoordGroup (.id (FreeGroup α))
-          {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆},
-        CoordGroup.genericPoint _ _ false = z ^ 2 ∨ CoordGroup.genericPoint _ _ true = z ^ 2 ∨
-          CoordGroup.genericPoint _ _ false * CoordGroup.genericPoint _ _ true = z ^ 2 :=
-  ⟨fun _ hv => IsFreeGroup.exists_eq_sq_of_commute (mem_V_commutator_iff.1 hv),
-    not_exists_genericPoint_eq_sq⟩
 
 end Examples
 
