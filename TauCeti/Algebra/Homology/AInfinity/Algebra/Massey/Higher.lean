@@ -203,8 +203,8 @@ theorem ext {S T : 𝒜.MasseyDefiningSystem x}
   subst he
   rfl
 
-/-- The suspended Taylor map vanishes on the block word of every block, including the
-blocks of length one (and the empty block, by convention). -/
+/-- The suspended Taylor map vanishes on the block word of every proper block (every block other
+than the whole interval), including the blocks of length one and the empty block. -/
 theorem taylor_blockWord_eq_zero {a b : ℕ} (hbn : b ≤ n + 1) (hab : a + b ≤ n + 2) :
     𝒜.taylor (blockWord R S.entry a b) = 0 := by
   rcases Nat.lt_or_ge b 2 with h | h
