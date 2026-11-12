@@ -191,7 +191,7 @@ theorem hasseDerivRow_eq_jetMatrix (d : σ → ℕ) (α : σ → R) (μ : σ →
       jetMatrix {ν | ∀ j, ν j ≤ d j} (fun _ : Unit ↦ α) (fun _ ↦ μ) ()
         ⟨boxMonomial d I, boxMonomial_le d I⟩ := by
   rw [hasseDerivRow_def, Finset.prod_mul_distrib, jetMatrix_apply]
-  simp only [Finsupp.prod_fintype _ _ (fun j ↦ Nat.choose_zero_right _),
+  simp only [Finsupp.prod_fintype _ _ (fun _ ↦ Nat.choose_zero_right _),
     Finsupp.prod_fintype _ _ (fun j ↦ pow_zero (α j)), Finsupp.tsub_apply, boxMonomial_apply,
     Nat.cast_prod]
 
