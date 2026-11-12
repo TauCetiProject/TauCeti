@@ -59,10 +59,11 @@ homomorphism arises in this way from exactly one such family.
 * `TauCeti.GraphOfGroups.π₁Tree.equivCoprod`, `TauCeti.GraphOfGroups.π₁Tree.ofCoprod_bijective`:
   with trivial edge groups and `T` closed under reversal, `π₁(𝔸, T)` is the free product of the
   vertex groups and of the free group on the darts of `O \ T` for any orientation `O`, since the
-  relations `e ω_e(c) e⁻¹ = α_e(c)` become trivial. For a segment with trivial edge group and
-  `T` its two darts this is the free product of the two vertex groups. Combined with the
-  description of a group acting on a tree as the fundamental group of its quotient graph of
-  groups, this is the algebraic input of the proof of Kurosh's subgroup theorem.
+  relations `e ω_e(c) e⁻¹ = α_e(c)` become trivial; a dart generator corresponds to its signed
+  coordinate in the free factor (`equivCoprod_edge_eq_dartWord`). For a segment with trivial
+  edge group and `T` its two darts this is the free product of the two vertex groups. Combined
+  with the description of a group acting on a tree as the fundamental group of its quotient
+  graph of groups, this is the algebraic input of the proof of Kurosh's subgroup theorem.
 
 ## References
 
@@ -396,17 +397,24 @@ noncomputable def equivCoprod [∀ y, Subsingleton (𝔸.edgeGroup y)] (hO : Γ.
       (fun _ c => by simp [Subsingleton.elim c 1]))
     (ofCoprod 𝔸 T O)
     (by ext <;> simp [lift_dartWord (SerreGraph.IsOrientation.mem_or_rev_mem _ hO)])
-    (by ext <;> simp [dartWord_of_mem])
+    (by ext <;> simp)
 
 @[simp] theorem equivCoprod_of [∀ y, Subsingleton (𝔸.edgeGroup y)] (hO : Γ.IsOrientation O)
     (hT : ∀ e ∈ T, Γ.rev e ∈ T) (v : Γ.V) (a : 𝔸.vertexGroup v) :
     equivCoprod 𝔸 hO hT (of T v a) = Monoid.Coprod.inl (Monoid.CoprodI.of a) := by
   simp [equivCoprod]
 
+/-- The free-product coordinate of a dart generator is the signed coordinate of the dart in the
+free factor. -/
+theorem equivCoprod_edge_eq_dartWord [∀ y, Subsingleton (𝔸.edgeGroup y)]
+    (hO : Γ.IsOrientation O) (hT : ∀ e ∈ T, Γ.rev e ∈ T) (e : Γ.E) :
+    equivCoprod 𝔸 hO hT (edge T e) = Monoid.Coprod.inr (dartWord O T e) := by
+  simp [equivCoprod]
+
 @[simp] theorem equivCoprod_edge [∀ y, Subsingleton (𝔸.edgeGroup y)] (hO : Γ.IsOrientation O)
     (hT : ∀ e ∈ T, Γ.rev e ∈ T) {e : Γ.E} (he : e ∈ O \ T) :
     equivCoprod 𝔸 hO hT (edge T e) = Monoid.Coprod.inr (FreeGroup.of ⟨e, he⟩) := by
-  simp [equivCoprod, dartWord_of_mem he]
+  rw [equivCoprod_edge_eq_dartWord, dartWord_of_mem he]
 
 @[simp] theorem equivCoprod_symm_apply [∀ y, Subsingleton (𝔸.edgeGroup y)]
     (hO : Γ.IsOrientation O) (hT : ∀ e ∈ T, Γ.rev e ∈ T)
