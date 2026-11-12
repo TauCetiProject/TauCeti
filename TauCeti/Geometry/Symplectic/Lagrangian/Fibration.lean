@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Complete
+public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
@@ -39,10 +40,13 @@ back from the base generate the vertical motions:
   back to `M`, form an involutive family with independent differentials;
 * every maximal integral curve of such a vertical field stays in one fibre, so for a proper `π` the
   Hamiltonian vector field of every smooth pulled-back function is complete
-  (`IsLagrangianFibration.isCompleteVectorField_hamiltonianVectorField_comp`).
+  (`IsLagrangianFibration.isCompleteVectorField_hamiltonianVectorField_comp`);
+* the flow of such a vertical field through `x` depends only on the differential of the function
+  at `π x` (`IsLagrangianFibration.globalFlow_hamiltonianVectorField_comp_eq_of_mvfderiv_eq`).
 
 These vertical Hamiltonian flows generate the fibrewise action of `T*B` from which the period
-lattice `Λ ⊆ T*B` of the fibration is built; that action is not constructed here.
+lattice `Λ ⊆ T*B` of the fibration is built, in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.CotangentFiberAction`.
 
 ## References
 
@@ -172,6 +176,39 @@ theorem isCompleteVectorField_hamiltonianVectorField_comp [FiniteDimensional ℝ
     (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp)
       (by rw [one_add_one_eq_two]; exact hg.comp (h.contMDiff.of_le (by simp)))) hπ
     fun _ _ ht ↦ h.apply_maximalIntegralCurve_hamiltonianVectorField_comp hg ht
+
+/-- **Vertical Hamiltonian flows only see the differential on the base.** If `g` and `g'` have the
+same differential at `π x`, the complete flows of the Hamiltonian vector fields of `g ∘ π` and
+`g' ∘ π` agree on the point `x` at all times. Indeed both fields agree along the fibre of `x`, in
+which the flow line of `g ∘ π` through `x` stays. -/
+theorem globalFlow_hamiltonianVectorField_comp_eq_of_mvfderiv_eq [FiniteDimensional ℝ E]
+    [T2Space M] [BoundarylessManifold I M] [IsManifold J 1 B] {g g' : B → ℝ}
+    (hg : ContMDiff J 𝓘(ℝ) 2 g) (hg' : ContMDiff J 𝓘(ℝ) 2 g') {x : M}
+    (hgg' : mvfderiv J g (π x) = mvfderiv J g' (π x))
+    (hv : ContMDiff I I.tangent 1 fun y ↦
+      (⟨y, σ.hamiltonianVectorField (g ∘ π) y⟩ : TangentBundle I M))
+    (hc : IsCompleteVectorField (σ.hamiltonianVectorField (g ∘ π)))
+    (hv' : ContMDiff I I.tangent 1 fun y ↦
+      (⟨y, σ.hamiltonianVectorField (g' ∘ π) y⟩ : TangentBundle I M))
+    (hc' : IsCompleteVectorField (σ.hamiltonianVectorField (g' ∘ π))) (t : ℝ) :
+    globalFlow _ hv hc t x = globalFlow _ hv' hc' t x := by
+  have hfib (s : ℝ) : π (globalFlow _ hv hc s x) = π x := by
+    rw [globalFlow_apply]
+    exact h.apply_maximalIntegralCurve_hamiltonianVectorField_comp hg
+      (hc.mem_maximalIntegralCurveInterval x s)
+  have hγ : IsMIntegralCurve (fun s ↦ globalFlow _ hv hc s x)
+      (σ.hamiltonianVectorField (g' ∘ π)) := by
+    intro s
+    set y := globalFlow _ hv hc s x
+    have hd : mvfderiv I (g ∘ π) y = mvfderiv I (g' ∘ π) y := by
+      ext w
+      rw [mvfderiv_comp_apply y ((hg _).mdifferentiableAt (by simp)) (h.mdifferentiableAt y),
+        mvfderiv_comp_apply y ((hg' _).mdifferentiableAt (by simp)) (h.mdifferentiableAt y),
+        hfib s, hgg']
+    rw [← σ.hamiltonianVectorField_eq_of_mvfderiv_eq hd]
+    exact isMIntegralCurve_globalFlow hv hc x s
+  exact congrFun (isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0) hv' hγ
+    (isMIntegralCurve_globalFlow hv' hc' x) (by simp only [Flow.map_zero_apply])) t
 
 end IsLagrangianFibration
 

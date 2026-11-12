@@ -55,6 +55,41 @@ variable {E H M F H' B : Type*}
   [T2Space B]
   {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate} {π : M → B}
 
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
+  [FiniteDimensional ℝ F] [IsManifold J ∞ B] in
+/-- **A fibre is a connected component of a level of pulled-back functions.** If `κ` is injective
+on an open neighbourhood of `π x`, then the connected component of `x` in its level of `κ ∘ π` is
+the fibre of `π` through `x`. -/
+theorem connectedComponentIn_preimage_comp_eq (h : hσ.IsLagrangianTorusFibration J π)
+    {Y : Type*} {κ : B → Y} {W : Set B} {x : M} (hW : IsOpen W) (hxW : π x ∈ W)
+    (hκ : InjOn κ W) :
+    connectedComponentIn ((κ ∘ π) ⁻¹' {(κ ∘ π) x}) x = π ⁻¹' {π x} := by
+  refine Subset.antisymm ?_ ((h.isConnected_preimage_singleton (π x)).isPreconnected
+    |>.subset_connectedComponentIn (by simp) fun y hy ↦ ?_)
+  · -- The level splits into the closed sets over `π x` and over the complement of `W`.
+    have hcover : connectedComponentIn ((κ ∘ π) ⁻¹' {(κ ∘ π) x}) x ⊆
+        π ⁻¹' {π x} ∪ π ⁻¹' Wᶜ := by
+      intro y hy
+      have hyG := connectedComponentIn_subset _ _ hy
+      simp only [mem_preimage, mem_singleton_iff, comp_apply] at hyG
+      by_cases hyW : π y ∈ W
+      · exact Or.inl (hκ hyW hxW hyG)
+      · exact Or.inr hyW
+    have hdisj : connectedComponentIn ((κ ∘ π) ⁻¹' {(κ ∘ π) x}) x ∩
+        (π ⁻¹' {π x} ∩ π ⁻¹' Wᶜ) = ∅ := by
+      ext y
+      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_compl_iff,
+        mem_empty_iff_false, iff_false, not_and, not_not]
+      intro _ hyb
+      exact hyb ▸ hxW
+    rcases isPreconnected_iff_subset_of_disjoint_closed.1 isPreconnected_connectedComponentIn
+      (π ⁻¹' {π x}) (π ⁻¹' Wᶜ) (isClosed_singleton.preimage h.contMDiff.continuous)
+      (hW.isClosed_compl.preimage h.contMDiff.continuous) hcover hdisj with hb | hW'
+    · exact hb
+    · exact absurd (hW' (mem_connectedComponentIn (by simp))) (by simpa using hxW)
+  · simp only [mem_preimage, mem_singleton_iff] at hy
+    simp [hy]
+
 /-- **The fibres of a regular Lagrangian torus fibration are tori.** If `σ` is closed, so
 symplectic, every fibre of a regular Lagrangian torus fibration `π : M → B` over a Hausdorff
 manifold of dimension `n` is homeomorphic to the torus `(ℝ / ℤ)ⁿ`. -/
@@ -63,57 +98,34 @@ theorem nonempty_homeomorph_unitAddTorus (h : hσ.IsLagrangianTorusFibration J �
     Nonempty (π ⁻¹' {b} ≃ₜ UnitAddTorus (Fin (finrank ℝ F))) := by
   obtain ⟨x, hx⟩ := (h.isConnected_preimage_singleton b).nonempty
   rw [mem_preimage, mem_singleton_iff] at hx
+  subst hx
   have : Nonempty M := ⟨x⟩
-  -- A smooth map `κ₀ : B → F` with the germ of the chart at `b`, and coordinates on `F`.
-  obtain ⟨κ₀, hκ₀⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := J) b
+  -- A smooth map `κ₀ : B → F` with the germ of the chart at `π x`, and coordinates on `F`.
+  obtain ⟨κ₀, hκ₀⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := J) (π x)
   let e : F ≃L[ℝ] (Fin (finrank ℝ F) → ℝ) := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  set G : M → Fin (finrank ℝ F) → ℝ := (e : F →L[ℝ] Fin (finrank ℝ F) → ℝ) ∘ (κ₀ ∘ π) with hG
+  set G : M → Fin (finrank ℝ F) → ℝ := ((e : F →L[ℝ] Fin (finrank ℝ F) → ℝ) ∘ κ₀) ∘ π
   have hκ : ContMDiff J 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ (e ∘ κ₀) :=
     e.contDiff.comp_contMDiff κ₀.contMDiff
   have hGs : ContMDiff I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ G := hκ.comp h.contMDiff
-  -- `κ₀` is injective near `b`: it agrees there with the chart.
+  -- `κ₀` is injective near `π x`: it agrees there with the chart.
   obtain ⟨W, hWsub, hWo, hbW⟩ := mem_nhds_iff.1
-    (hκ₀.and (extChartAt_source_mem_nhds (I := J) b))
-  have hinj (c : B) (hc : c ∈ W) (hcb : e (κ₀ c) = e (κ₀ b)) : c = b := by
-    have h1 := hWsub hc
-    have h2 := hWsub hbW
-    refine (extChartAt J b).injOn h1.2 h2.2 ?_
-    rw [← h1.1, ← h2.1]
-    exact e.injective hcb
-  -- The connected component of `x` in its level of `G` is the fibre of `π` through `x`.
-  have hcomp : connectedComponentIn (G ⁻¹' {G x}) x = π ⁻¹' {b} := by
-    refine Subset.antisymm ?_ ((h.isConnected_preimage_singleton b).isPreconnected
-      |>.subset_connectedComponentIn (by simp [hx]) fun y hy ↦ ?_)
-    · -- The level splits into the closed sets over `b` and over the complement of `W`.
-      have hcover : connectedComponentIn (G ⁻¹' {G x}) x ⊆ π ⁻¹' {b} ∪ π ⁻¹' Wᶜ := by
-        intro y hy
-        have hyG := connectedComponentIn_subset _ _ hy
-        simp only [mem_preimage, mem_singleton_iff, hG, comp_apply, hx] at hyG
-        by_cases hyW : π y ∈ W
-        · exact Or.inl (hinj _ hyW hyG)
-        · exact Or.inr hyW
-      have hdisj : connectedComponentIn (G ⁻¹' {G x}) x ∩ (π ⁻¹' {b} ∩ π ⁻¹' Wᶜ) = ∅ := by
-        ext y
-        simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_compl_iff,
-          mem_empty_iff_false, iff_false, not_and, not_not]
-        intro _ hyb
-        exact hyb ▸ hbW
-      rcases isPreconnected_iff_subset_of_disjoint_closed.1 isPreconnected_connectedComponentIn
-        (π ⁻¹' {b}) (π ⁻¹' Wᶜ) (isClosed_singleton.preimage h.contMDiff.continuous)
-        (hWo.isClosed_compl.preimage h.contMDiff.continuous) hcover hdisj with hb | hW
-      · exact hb
-      · exact absurd (hW (mem_connectedComponentIn (by simp))) (by simpa [hx] using hbW)
-    · simp only [mem_preimage, mem_singleton_iff] at hy
-      simp [hG, hy, hx]
+    (hκ₀.and (extChartAt_source_mem_nhds (I := J) (π x)))
+  have hinj : InjOn (e ∘ κ₀) W := fun c hc d hd hcd ↦ by
+    refine (extChartAt J (π x)).injOn (hWsub hc).2 (hWsub hd).2 ?_
+    rw [← (hWsub hc).1, ← (hWsub hd).1]
+    exact e.injective hcd
+  have hcomp : connectedComponentIn (G ⁻¹' {G x}) x = π ⁻¹' {π x} :=
+    h.connectedComponentIn_preimage_comp_eq hWo hbW hinj
   have hreg : ∀ y ∈ connectedComponentIn (G ⁻¹' {G x}) x,
       IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) G y := by
     intro y hy
     rw [hcomp, mem_preimage, mem_singleton_iff] at hy
-    refine isRegularPoint_iff_surjective_mvfderiv.2 (mvfderiv_comp_surjective ?_ _ e.surjective)
-    -- `d(κ₀ ∘ π)_y = dκ₀_b ∘ dπ_y`, and `dκ₀_b` is the derivative of the chart at `b`.
-    rw [mfderiv_comp y (κ₀.contMDiff.mdifferentiableAt (by simp)) (h.mdifferentiableAt y), hy,
-      hκ₀.mfderiv_eq, mfderiv_extChartAt_self]
-    exact (h.surjective_mfderiv y)
+    refine IsRegularPoint.comp (isRegularPoint_iff_surjective_mvfderiv.2
+      (mvfderiv_comp_surjective ?_ (e : F →L[ℝ] Fin (finrank ℝ F) → ℝ) e.surjective))
+      (isRegularPoint_iff.2 (h.surjective_mfderiv y))
+    -- `dκ₀` at `π y = π x` is the derivative of the chart there.
+    rw [hy, hκ₀.mfderiv_eq, mfderiv_extChartAt_self]
+    exact surjective_id
   have hσS : σ.IsSymplectic := ⟨hσc, hσ⟩
   have hGi (i : Fin (finrank ℝ F)) : ContMDiff J 𝓘(ℝ) ∞ fun c ↦ e (κ₀ c) i :=
     contMDiff_pi_module_iff.1 hκ i
@@ -123,7 +135,7 @@ theorem nonempty_homeomorph_unitAddTorus (h : hσ.IsLagrangianTorusFibration J �
     (fun i ↦ h.isCompleteVectorField_hamiltonianVectorField_comp h.isProperMap
       ((hGi i).of_le (by simp)))
     hreg (by rw [Fintype.card_fin, h.two_mul_finrank])
-    (hcomp ▸ h.isCompact_preimage_singleton b)
+    (hcomp ▸ h.isCompact_preimage_singleton (π x))
   exact ⟨(Homeomorph.setCongr hcomp.symm).trans φ⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration
