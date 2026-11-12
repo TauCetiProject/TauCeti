@@ -144,7 +144,7 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution [FiniteDimensional ℂ E
       exact mul_ne_zero (pow_ne_zero _ hb.2.2)
         (hu0 b (prod_mono subset_rfl sdiff_subset hb))
     exact hc (by simp [hz])
-  let : CompleteSpace E := FiniteDimensional.complete ℂ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
   obtain ⟨r, hra, hr⟩ := exists_analyticOnNhd_eq_C_mul_prod_X_sub_C_powerSubstitution
     hU hn hR hdvd (fun i hi ↦ (hF i hi).mono (prod_mono subset_rfl sdiff_subset))
     hdeg (fun b hb ↦ (discr_ne_zero_iff (hne b hb)).mp (hdiscr b hb))
