@@ -278,8 +278,8 @@ theorem norm_contDiffSMulL_le (k : ℕ) {psi : E → ℝ}
           Wkp.norm_ofTestFunctionₗ_bilinLeftCLM_le (mu := mu) (p := p)
             k hpsi hbound phi)
 
-/-- Smooth multiplication is the unique continuous linear endomorphism of `W^{k,p}_0(Ω)`
-with its stated action on test functions. -/
+/-- Any continuous linear endomorphism of `W^{k,p}_0(Ω)` acting as pointwise multiplication by
+`psi` on test functions equals `contDiffSMulL k hpsi`. -/
 theorem contDiffSMulL_unique (k : ℕ) {psi : E → ℝ}
     (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi)
     (T : Wkp0 mu Omega p k →L[ℝ] Wkp0 mu Omega p k)
