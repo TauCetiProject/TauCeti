@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Module.ProjectiveCover.Simple
-public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.AlmostSplit
+public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.AlmostSplit.Basic
 
 /-!
 # The inclusion of the radical of a projective module
