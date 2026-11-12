@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
 
 /-!
 # Unitary permutation matrices as invertible matrices
@@ -46,8 +45,7 @@ theorem permutationGL_mem_unitarySubgroup {R : Type*} [Semiring R] [StarRing R] 
     [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι) :
     permutationGL σ ∈ unitarySubgroup (GL ι R) := by
   rw [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap, Units.coeHom_apply,
-    permutationGL_coe, Unitary.mem_iff, star_eq_conjTranspose, conjTranspose_permMatrix,
-    ← permMatrix_mul, ← permMatrix_mul, inv_inv, inv_mul_cancel, mul_inv_cancel, permMatrix_one]
-  exact ⟨rfl, rfl⟩
+    permutationGL_coe, Unitary.mem_iff]
+  simp [star_eq_conjTranspose, conjTranspose_permMatrix, ← permMatrix_mul]
 
 end TauCeti
