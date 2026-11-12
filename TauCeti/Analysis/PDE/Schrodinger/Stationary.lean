@@ -44,7 +44,9 @@ on the whole space, for every `g ∈ L²(E)`, with a solution `h` in the Sobolev
   `L²` because `P` is bounded. Elliptic regularity of `-Δ + 1`
   (`TemperedDistribution.memSobolev_add_two_iff_neg_laplacian_add_smul`) puts `h` in `H²(E)`
   (`TauCeti.mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq`). Only the
-  boundedness of `P` is used here.
+  boundedness of `P` is used here. For `P = 1` the same argument gains two derivatives at every
+  order: a weak `L²` solution of `-Δh + h = g` with `g ∈ H^s` lies in `H^(s+2)`
+  (`TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_eq`).
 
 Together, every `g ∈ L²(E)` has a weak solution `h ∈ H²(E)`
 (`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`). Solving
@@ -62,6 +64,8 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
   solution operator of `-Δ + P` on `L²(E)`.
 * `TauCeti.mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq`: weak `L²`
   solutions lie in `H²(E)`.
+* `TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_eq`: weak `L²`
+  solutions of `-Δh + h = g` with `g ∈ H^s(E)` lie in `H^(s+2)(E)`.
 * `TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`: existence of
   an `H²` weak solution for every `L²` right-hand side.
 * `TauCeti.integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im`: real weak solutions
@@ -205,35 +209,25 @@ end Weak
 
 section Regularity
 
-/-- **Weak solutions of the stationary Schrödinger equation lie in `H²`.** Let `P` be a bounded
-measurable potential, and let `h`, `g ∈ L²(E)` satisfy `-Δh + P h = g` weakly:
-`∫ h (-Δφ + P φ) = ∫ g φ` for every smooth compactly supported function `φ`. Then `h ∈ H²(E)`. -/
-theorem mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq {P : E → ℝ}
-    (hP : MemLp P ⊤ volume) {h g : E → ℝ} (hh : MemLp h 2 volume) (hg : MemLp g 2 volume)
+/-- **Elliptic regularity for weak solutions of `-Δh + h = g`.** Let `h ∈ L²(E)` and let `g` be a
+real function in `H^s(E)`. If `-Δh + h = g` weakly, `∫ h (-Δφ + φ) = ∫ g φ` for every smooth
+compactly supported function `φ`, then `h ∈ H^{s+2}(E)`. -/
+theorem mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_eq {s : ℝ}
+    {h g : E → ℝ} (hh : MemLp h 2 volume) (hg : g ∈ realSobolevFunctions E s 2)
     (hweak : ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
-      ∫ z, h z * (-Δ (φ : E → ℝ) z + P z * φ z) = ∫ z, g z * φ z) :
-    h ∈ realSobolevFunctions E 2 2 := by
+      ∫ z, h z * (-Δ (φ : E → ℝ) z + φ z) = ∫ z, g z * φ z) :
+    h ∈ realSobolevFunctions E (s + 2) 2 := by
   set u := hh.toLp h
-  -- The right side of `-Δh + h = g + (1 - P) h`.
-  have hf : MemLp (fun z ↦ g z + (1 - P z) * h z) 2 volume :=
-    hg.add ((memLp_top_const 1).sub hP |>.mul hh)
-  set v := hf.toLp _
+  obtain ⟨v, hvg, hv⟩ := mem_realSobolevFunctions.1 hg
   set U := Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)
-  -- In the sense of tempered distributions, `-Δh + h = g + (1 - P) h`.
+  -- In the sense of tempered distributions, `-Δh + h = g`.
   have hU : -Δ U + (1 : ℝ) • U = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp v) := by
     refine TemperedDistribution.ext_real fun φ hφc ↦ ?_
     have hφ : ContDiff ℝ ∞ φ := φ.smooth ⊤
     have hφ2 : MemLp φ 2 volume := φ.continuous.memLp_of_hasCompactSupport hφc
-    have hΔ2 : MemLp (Δ φ : 𝓢(E, ℝ)) 2 volume := (Δ φ).memLp 2
     have hi₁ : Integrable (fun z ↦ (Δ φ : 𝓢(E, ℝ)) z * u z) volume :=
-      hΔ2.integrable_mul (Lp.memLp u)
+      ((Δ φ).memLp 2).integrable_mul (Lp.memLp u)
     have hi₂ : Integrable (fun z ↦ φ z * u z) volume := hφ2.integrable_mul (Lp.memLp u)
-    have hi₃ : Integrable (fun z ↦ h z * (-Δ (φ : E → ℝ) z + P z * φ z)) volume :=
-      hh.integrable_mul (memLp_neg_laplacian_add_mul hP (hφ.of_le (by simp)) hφc)
-    have hi₄ : Integrable (fun z ↦ h z * ((1 - P z) * φ z)) volume :=
-      hh.integrable_mul
-        ((memLp_top_const 1).sub hP |>.mul hφ2 : MemLp (fun z ↦ (1 - P z) * φ z) 2 volume)
-    have hi₅ : Integrable (fun z ↦ g z * φ z) volume := hg.integrable_mul hφ2
     simp only [add_apply, neg_apply, TemperedDistribution.laplacian_apply_apply, smul_apply,
       laplacian_postcompCLM]
     rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
@@ -242,28 +236,52 @@ theorem mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq {P
       Complex.ofReal_one, one_mul, ← Complex.ofReal_neg, ← Complex.ofReal_add, ← integral_neg]
     congr 1
     rw [← integral_add (f := fun z ↦ -((Δ φ : 𝓢(E, ℝ)) z * u z)) hi₁.neg hi₂]
-    -- Both sides are `∫ h (-Δφ + φ)`, using the weak equation for the part `-Δφ + P φ`.
-    have hw := hweak φ hφ hφc
     calc ∫ z, (-((Δ φ : 𝓢(E, ℝ)) z * u z) + φ z * u z)
-        = ∫ z, (h z * (-Δ (φ : E → ℝ) z + P z * φ z) + h z * ((1 - P z) * φ z)) := by
+        = ∫ z, h z * (-Δ (φ : E → ℝ) z + φ z) := by
           refine integral_congr_ae ?_
           filter_upwards [hh.coeFn_toLp] with z hz
           rw [hz, SchwartzMap.laplacian_apply]
           ring
-      _ = ∫ z, (g z * φ z + h z * ((1 - P z) * φ z)) := by
-          rw [integral_add hi₃ hi₄, integral_add hi₅ hi₄, hw]
       _ = ∫ z, φ z * v z := by
+          rw [hweak φ hφ hφc]
           refine integral_congr_ae ?_
-          filter_upwards [hf.coeFn_toLp] with z hz
+          filter_upwards [hvg] with z hz
           rw [hz]
           ring
-  have hv : MemSobolev 0 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp v)) :=
-    memSobolev_zero_iff.2 ⟨_, rfl⟩
-  have hU2 : MemSobolev 2 2 U := by
-    have := (memSobolev_add_two_iff_neg_laplacian_add_smul (s := 0) (F := ℂ) one_pos).2
-      (hU ▸ hv)
-    simpa using this
-  exact mem_realSobolevFunctions.2 ⟨u, hh.coeFn_toLp, hU2⟩
+  exact mem_realSobolevFunctions.2
+    ⟨u, hh.coeFn_toLp, (memSobolev_add_two_iff_neg_laplacian_add_smul one_pos).2 (hU ▸ hv)⟩
+
+/-- **Weak solutions of the stationary Schrödinger equation lie in `H²`.** Let `P` be a bounded
+measurable potential, and let `h`, `g ∈ L²(E)` satisfy `-Δh + P h = g` weakly:
+`∫ h (-Δφ + P φ) = ∫ g φ` for every smooth compactly supported function `φ`. Then `h ∈ H²(E)`. -/
+theorem mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq {P : E → ℝ}
+    (hP : MemLp P ⊤ volume) {h g : E → ℝ} (hh : MemLp h 2 volume) (hg : MemLp g 2 volume)
+    (hweak : ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ z, h z * (-Δ (φ : E → ℝ) z + P z * φ z) = ∫ z, g z * φ z) :
+    h ∈ realSobolevFunctions E 2 2 := by
+  -- The right side of `-Δh + h = g + (1 - P) h` is square integrable since `P` is bounded.
+  have hf : MemLp (fun z ↦ g z + (1 - P z) * h z) 2 volume :=
+    hg.add ((memLp_top_const 1).sub hP |>.mul hh)
+  have h0 := mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_eq (s := 0) hh
+    (mem_realSobolevFunctions_zero_iff.2 hf) fun φ hφ hφc ↦ by
+      have hφ2 : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hφc
+      have hi₃ : Integrable (fun z ↦ h z * (-Δ (φ : E → ℝ) z + P z * φ z)) volume :=
+        hh.integrable_mul (memLp_neg_laplacian_add_mul hP (hφ.of_le (by simp)) hφc)
+      have hi₄ : Integrable (fun z ↦ h z * ((1 - P z) * φ z)) volume :=
+        hh.integrable_mul
+          ((memLp_top_const 1).sub hP |>.mul hφ2 : MemLp (fun z ↦ (1 - P z) * φ z) 2 volume)
+      have hi₅ : Integrable (fun z ↦ g z * φ z) volume := hg.integrable_mul hφ2
+      calc ∫ z, h z * (-Δ (φ : E → ℝ) z + φ z)
+          = ∫ z, (h z * (-Δ (φ : E → ℝ) z + P z * φ z) + h z * ((1 - P z) * φ z)) := by
+            congr 1
+            ext z
+            ring
+        _ = ∫ z, (g z + (1 - P z) * h z) * φ z := by
+            rw [integral_add hi₃ hi₄, hweak φ hφ hφc, ← integral_add hi₅ hi₄]
+            congr 1
+            ext z
+            ring
+  simpa using h0
 
 end Regularity
 
