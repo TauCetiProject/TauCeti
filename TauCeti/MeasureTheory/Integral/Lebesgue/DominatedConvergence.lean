@@ -32,6 +32,9 @@ is pointwise and the vector-valued factor converges only in `L¹`.
   coefficients preserve `L¹` convergence in any seminormed module.
 * `TauCeti.limsup_setLIntegral_le`: `limsup ∫⁻_{s n} f ≤ ∫⁻_{limsup s n} f` when the `s n` lie
   in a set over which `f` has finite integral.
+* `TauCeti.tendsto_lintegral_filter_limsup_of_dominated_convergence`: dominated convergence of
+  `∫⁻ x, F j x ∂μ` to `∫⁻ x, limsup (fun j ↦ F j x) l ∂μ` under almost-everywhere convergence to
+  some limit, without requiring a globally named limit function.
 -/
 
 public section
@@ -144,5 +147,19 @@ theorem limsup_setLIntegral_le {f : α → ℝ≥0∞} {s : ℕ → Set α} {t :
   · rw [not_frequently] at hx
     rw [limsup_congr (hx.mono fun n hn ↦ Set.indicator_of_notMem hn _)]
     simp
+
+/-- **Dominated convergence to the pointwise `limsup`**, requiring only almost-everywhere
+convergence to *some* limit rather than a globally named limit function. -/
+theorem tendsto_lintegral_filter_limsup_of_dominated_convergence {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {F : ι → α → ℝ≥0∞} (bound : α → ℝ≥0∞)
+    (hF_meas : ∀ᶠ j in l, AEMeasurable (F j) μ)
+    (h_bound : ∀ᶠ j in l, ∀ᵐ x ∂μ, F j x ≤ bound x)
+    (h_fin : ∫⁻ x, bound x ∂μ ≠ ∞)
+    (h_lim : ∀ᵐ x ∂μ, ∃ c, Tendsto (fun j ↦ F j x) l (𝓝 c)) :
+    Tendsto (fun j ↦ ∫⁻ x, F j x ∂μ) l (𝓝 (∫⁻ x, limsup (fun j ↦ F j x) l ∂μ)) := by
+  rcases eq_or_neBot l with rfl | _
+  · exact tendsto_bot
+  · refine tendsto_lintegral_filter_of_dominated_convergence' bound hF_meas h_bound h_fin ?_
+    exact h_lim.mono fun _ ⟨_, hc⟩ ↦ hc.limsup_eq ▸ hc
 
 end TauCeti

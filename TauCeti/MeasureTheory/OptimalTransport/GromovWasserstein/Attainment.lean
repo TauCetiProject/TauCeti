@@ -87,10 +87,10 @@ private theorem exists_isClosed_continuousOn_kernels
       ContinuousOn (fun q : (X × Y) × (X × Y) ↦ (ωX (q.1.1, q.2.1), ωY (q.1.2, q.2.2))) C ∧
       ∀ π : Measure (X × Y), IsCoupling π μ ν → π.prod π Cᶜ ≤ ε := by
   have hε2 : ε / 2 ≠ 0 := (ENNReal.half_pos hε).ne'
-  obtain ⟨K, -, hK, hKμ, hωK⟩ :=
-    hωX.exists_isClosed_measure_sdiff_lt_continuousOn MeasurableSet.univ (measure_ne_top _ _) hε2
-  obtain ⟨L, -, hL, hLν, hωL⟩ :=
-    hωY.exists_isClosed_measure_sdiff_lt_continuousOn MeasurableSet.univ (measure_ne_top _ _) hε2
+  obtain ⟨K, -, hK, hKμ, hωK⟩ := hωX.exists_isClosed_measure_sdiff_lt_continuousOn
+    nullMeasurableSet_univ (measure_ne_top _ _) hε2
+  obtain ⟨L, -, hL, hLν, hωL⟩ := hωY.exists_isClosed_measure_sdiff_lt_continuousOn
+    nullMeasurableSet_univ (measure_ne_top _ _) hε2
   rw [← compl_eq_univ_sdiff] at hKμ hLν
   have hfst : Continuous (Prod.map Prod.fst Prod.fst : (X × Y) × (X × Y) → X × X) := by fun_prop
   have hsnd : Continuous (Prod.map Prod.snd Prod.snd : (X × Y) × (X × Y) → Y × Y) := by fun_prop
