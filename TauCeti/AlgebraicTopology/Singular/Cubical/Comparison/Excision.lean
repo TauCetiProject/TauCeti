@@ -54,8 +54,6 @@ of `TauCeti.AlgebraicTopology.Singular.Excision`.
   prescribed boundary.
 * `TopPair.exists_sub_eq_boundary_add_map`: such chains are unique up to boundaries and cycles of
   the subspace.
-* `TopPair.exists_boundary_eq_sub_add_map_of_injective`: when `Hₙ(X) → Hₙ(X, A)` is injective,
-  two relative cycles representing the same class differ, up to a chain of `A`, by a boundary.
 * `TopPair.cubicalHomologyδ_homologyπ_cubicalCycleOfCube`: the connecting morphism sends the class
   of a relative cube to the class of its boundary.
 * `TopPair.isIso_cubicalHomologyδ_of_contractibleSpace`: with contractible ambient space, the
@@ -213,54 +211,6 @@ theorem exists_sub_eq_boundary_add_map (m : ℕ) (s s' : NormalizedCubicalChain 
   · rw [← normalizedCubicalChainComplexXEquiv_d_apply, normalizedCubicalChainComplexXEquiv_apply,
       normalizedCubicalChainComplexXEquiv_apply]
     exact hab.trans (congrArg _ (normalizedCubicalChainComplex_map_f_apply P.map (m + 1) a))
-
-/-- **A cycle with vanishing relative class is a boundary when relative classes determine
-absolute ones.** Let `s, s'` be normalized cubical `n`-chains of `X` which are relative cycles
-representing the same class of `Hₙ(X, A)`, and `a` an `n`-chain of `A` such that `s - s' + a` is
-a cycle of `X`. If the map `Hₙ(X) → Hₙ(X, A)` is injective, as it is when `Hₙ(A) = 0`, then
-`s - s' + a` is a boundary: its relative class, that of `s - s'`, vanishes. -/
-theorem exists_boundary_eq_sub_add_map_of_injective (n : ℕ)
-    (s s' : NormalizedCubicalChain P.fst k n) (a : NormalizedCubicalChain P.snd k n)
-    (hd : ((normalizedCubicalChainComplex k).obj P.fst).d n (n - 1)
-      (s - s' + NormalizedCubicalChain.map k P.map.hom n a) = 0)
-    (r r' : (P.cubicalChainComplex k).cycles n)
-    (hs : ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom s =
-      ((P.cubicalChainComplex k).iCycles n).hom r)
-    (hs' : ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom s' =
-      ((P.cubicalChainComplex k).iCycles n).hom r')
-    (hr : ((P.cubicalChainComplex k).homologyπ n).hom r =
-      ((P.cubicalChainComplex k).homologyπ n).hom r')
-    (hinj : Function.Injective (HomologicalComplex.homologyMap
-      (cokernel.π ((normalizedCubicalChainComplex k).map P.map)) n).hom) :
-    ∃ b : NormalizedCubicalChain P.fst k (n + 1),
-      NormalizedCubicalChain.boundary P.fst k n b =
-        s - s' + NormalizedCubicalChain.map k P.map.hom n a := by
-  set K := (normalizedCubicalChainComplex k).obj P.fst
-  set π := cokernel.π ((normalizedCubicalChainComplex k).map P.map)
-  have hnext : (ComplexShape.down ℕ).next n = n - 1 := by
-    rcases n with _ | m
-    · exact ChainComplex.next_nat_zero
-    · exact ChainComplex.next_nat_succ m
-  obtain ⟨w, hw⟩ : ∃ w : K.cycles n, K.iCycles n w =
-      (normalizedCubicalChainComplexXEquiv P.fst n).symm
-        (s - s' + NormalizedCubicalChain.map k P.map.hom n a) :=
-    ⟨_, K.iCycles_moduleCatCyclesMk n _ _ hnext hd⟩
-  -- The relative class of the cycle `w` is that of `s - s'`, which vanishes.
-  have hπw : HomologicalComplex.cyclesMap π n w = r - r' := by
-    refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
-    have ha : π.f n (NormalizedCubicalChain.map k P.map.hom n a) = 0 :=
-      congrArg (fun f ↦ f.hom a) (cubicalChainComplex_condition_f k P n)
-    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hw]
-    simp only [map_add, map_sub]
-    simp only [normalizedCubicalChainComplexXEquiv_symm_apply, ha, add_zero, hs, hs']
-  have hw₀ : K.homologyπ n w = 0 := hinj (by
-    rw [HomologicalComplex.moduleCat_homologyMap_homologyπ π n w, hπw, map_sub, hr, sub_self,
-      map_zero])
-  obtain ⟨b, hb⟩ := (K.moduleCat_homologyπ_eq_zero_iff (m := n + 1) (by simp) w).1 hw₀
-  refine ⟨normalizedCubicalChainComplexXEquiv P.fst (n + 1) b, ?_⟩
-  rw [← normalizedCubicalChainComplexXEquiv_d_apply, normalizedCubicalChainComplexXEquiv_apply,
-    ← HomologicalComplex.moduleCat_iCycles_toCycles_apply, hb, hw,
-    normalizedCubicalChainComplexXEquiv_symm_apply]
 
 /-- **Singular relative classes lift to cubical chains with a prescribed boundary.** Let `μ` be a
 class of the relative singular homology `Hₘ₊₁(X, A)` and `z` a normalized cubical `m`-cycle of
