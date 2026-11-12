@@ -128,7 +128,7 @@ private theorem ReducedTensorWords.gradedCoderivSummand_tprod (G : InternalGradi
   · rw [gradedCoderivSummand, coderivSummand_eq_zero R F h, LinearMap.zero_comp,
       LinearMap.zero_apply]
     exact (splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)).symm
-  obtain ⟨hd, hpd⟩ := h
+  obtain ⟨_, hpd⟩ := h
   have hsub : subword R
       (fun i => (if i.val < p then koszulTwist G q else LinearMap.id) (x i)) p d =
       subword R x p d :=
@@ -565,7 +565,9 @@ theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M
         (((q * ∑ i, degree i).negOnePow : ℤ) : R) =
           ∏ i, (((q * degree i).negOnePow : ℤ) : R) := by
       simp only [← negOnePowCast_eq_intCast, Finset.mul_sum, negOnePowCast_sum]
-    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ, map_smul, ← hD, ← hsign]
+    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ]
+    simp only [RingHom.id_apply]
+    rw [map_smul, ← hD, ← hsign]
   · intro u v _ _ hu hv
     simp only [map_add, hu, hv, smul_add]
   · intro a u _ hu

@@ -333,7 +333,7 @@ private lemma truncated_integral_spec_right (hre : w.re = 1 / 2)
   obtain ⟨hwl, hwr, hL, hR⟩ := right_window_endpoints hre hε hεc hεv
   obtain ⟨hfl, hfr, hnear⟩ := right_window_bounds hre hε hε₁ hεa hεc hεv
   obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := -1)
-    (neg_ne_zero.mpr one_ne_zero) hwl.le hδpos (by linarith)
+    hwl.le hδpos (by linarith)
     (fun t ht htw ↦ slit_branch_vertical_right hre ht.2 (fdBoundary_ne_right hre
       (by linarith) him_lo himH fun h ↦ htw (by rw [h]; exact ⟨by linarith, by linarith⟩)))
     hfl hfr hnear
@@ -453,7 +453,7 @@ private lemma truncated_integral_spec_left (hre : w.re = -(1 / 2))
   obtain ⟨hwl, hwr, hL, hR⟩ := left_window_endpoints hre hε hεc hεv
   obtain ⟨hfl, hfr⟩ := left_window_bounds hre hε hε₁ hεa hεc hεv
   have hnear := left_window_near hre hε hεc hεv
-  obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := 1) one_ne_zero
+  obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := 1)
     (t₀ := 3 + (w.im - Real.sqrt 3 / 2) / (H - Real.sqrt 3 / 2)) (by linarith) hδpos
     (by linarith)
     (fun t ht htw ↦ by
