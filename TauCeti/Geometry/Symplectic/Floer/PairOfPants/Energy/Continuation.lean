@@ -597,7 +597,8 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncati
     z (u z)) fun z hz q hq ↦
       hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero_of_lt ω hH hHs hz
         (by linarith) (by linarith [hRL q]) _
-  have hP := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hu
+  have hP := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs
+    isOpen_thricePuncturedSphereReal (preimage_truncation_subset_thricePuncturedSphereReal R) hu
     (by linarith : 1 ≤ R)
   rw [smoothTransition.one_of_one_le (by linarith), one_mul] at hP
   rw [hRS]

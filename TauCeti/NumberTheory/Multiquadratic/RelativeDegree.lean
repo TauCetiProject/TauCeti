@@ -48,8 +48,7 @@ relative degree the genus-field constructions consume.
 
 ## Provenance
 
-The subfield/subspace dictionary and the absolute-degree reading this refines are migrated, with the
-rest of the multiquadratic Layer 0, from
+The subfield/subspace dictionary and the absolute-degree reading this refines are migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The relative-degree
 reading assembles that absolute reading with Mathlib's tower law

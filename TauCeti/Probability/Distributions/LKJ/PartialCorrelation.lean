@@ -101,7 +101,7 @@ theorem map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure (hη : 0 <
       (betaMeasure (lkjPartialCorrelationShape p η ij)
         (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x) =
         volume.withDensity (D ij) :=
-    betaMeasure_map_centered_eq_withDensity (lkjPartialCorrelationShape_pos hη ij)
+    betaMeasure_map_centered_eq_withDensity _
   let _ (ij : strictLowerTriangle p) : IsProbabilityMeasure (volume.withDensity (D ij)) := by
     rw [← hfactor]
     have := isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη ij)

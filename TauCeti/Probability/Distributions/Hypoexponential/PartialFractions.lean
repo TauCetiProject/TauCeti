@@ -182,7 +182,7 @@ theorem prod_div_add_eq_sum_hypoexponentialCoeff [Nonempty ι] {K : Type*} [Fiel
   have hden : ∏ i, (z + algebraMap ℝ K (r i)) =
       (z + algebraMap ℝ K ρ) ^ #{i | r i = ρ} * aeval z (otherFactors r ρ) := by
     simpa [otherFactors] using congrArg (aeval z)
-      (prod_X_add_C_eq_pow_card_filter_mul_prod_filter_ne r ρ)
+      (prod_X_add_C_eq_pow_card_filter_mul_prod_filter_ne univ r ρ)
   have hden0 : ∏ i, (z + algebraMap ℝ K (r i)) ≠ 0 := prod_ne_zero_iff.2 fun i _ ↦ hz i
   obtain ⟨i, -, rfl⟩ := mem_image.1 hρ
   rw [hden, map_mul, mul_div_mul_right _ _ (right_ne_zero_of_mul (hden ▸ hden0)),
