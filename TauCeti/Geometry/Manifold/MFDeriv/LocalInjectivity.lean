@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Analysis.Calculus.ContDiff.LocalInjectivity
 
 /-!
@@ -21,6 +22,9 @@ No boundary or smoothness assumption is placed on `M` or `N`: in the extended ch
 and its derivative within that range is `mfderiv I J f x`, so the relative local injectivity
 theorem `ContDiffWithinAt.exists_nhdsWithin_injOn` applies. In particular this covers boundary
 points, where the inverse function theorem is not available.
+
+In particular a curve which is `C^n`, `n ≠ 0`, at a parameter where its velocity does not vanish
+is injective near that parameter (`ContMDiffAt.exists_mem_nhds_injOn_of_curveVelocity_ne_zero`).
 
 Without any smoothness assumption, an injective manifold derivative at `x` still isolates `x` in
 its fibre (`TauCeti.eventually_ne_of_mfderiv_injective`): the derivative of the coordinate
@@ -67,6 +71,19 @@ theorem ContMDiffAt.exists_mem_nhds_injOn {n : WithTop ℕ∞} (hf : ContMDiffAt
   rintro a ⟨ha, hat⟩ b ⟨hb, hbt⟩ hab
   refine (extChartAt I x).injOn ha hb (hinjt hat hbt ?_)
   simp only [comp_apply, (extChartAt I x).left_inv ha, (extChartAt I x).left_inv hb, hab]
+
+/-- A curve in a real or complex manifold that is `C^n`, `n ≠ 0`, at `t` and has nonzero velocity
+at `t` is injective on a neighbourhood of `t`. The manifold may have boundary or corners. -/
+theorem ContMDiffAt.exists_mem_nhds_injOn_of_curveVelocity_ne_zero {n : WithTop ℕ∞} {γ : 𝕜 → N}
+    {t : 𝕜} (hγ : ContMDiffAt 𝓘(𝕜, 𝕜) J n γ t) (hn : n ≠ 0)
+    (hv : TauCeti.Manifold.curveVelocity J γ t ≠ 0) : ∃ u ∈ 𝓝 t, InjOn γ u := by
+  refine hγ.exists_mem_nhds_injOn hn <| (injective_iff_map_eq_zero _).2 fun (c : 𝕜) hc ↦ ?_
+  -- On the parameter line the derivative is `c ↦ c • γ' t`: by linearity `c • γ' t` is the
+  -- derivative applied to `c • 1`, which is `c * 1` since the tangent space there is `𝕜` itself.
+  have hc' : c • TauCeti.Manifold.curveVelocity J γ t = 0 := by
+    rw [TauCeti.Manifold.curveVelocity_apply, ← (mfderiv 𝓘(𝕜, 𝕜) J γ t).map_smul c (1 : 𝕜)]
+    exact (congrArg (mfderiv 𝓘(𝕜, 𝕜) J γ t) (mul_one c)).trans hc
+  exact (smul_eq_zero.1 hc').resolve_right hv
 
 namespace TauCeti
 

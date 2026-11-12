@@ -378,12 +378,12 @@ theorem exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith
   -- coming from order `k + 1`.
   have ha : ∀ (j : ℕ) x, 2 ^ ((α : ℝ) * j) * ‖iteratedFDeriv ℝ k (G j) x‖ ≤
       (((B k).toNNReal * ‖u‖₊ : ℝ≥0) : ℝ) := fun j x ↦ by
-    rw [NNReal.coe_mul, Real.coe_toNNReal _ (hB k), coe_nnnorm]
+    rw [NNReal.coe_mul, Real.coe_toNNReal _ (hB k), coe_nnNorm]
     exact rpow_mul_norm_iteratedFDeriv_smoothBlock_le φ le_rfl n₀ j u x
   have hb : ∀ (j : ℕ) x y, 2 ^ ((α : ℝ) * j) *
       dist (iteratedFDeriv ℝ k (G j) x) (iteratedFDeriv ℝ k (G j) y) ≤
         (((B (k + 1)).toNNReal * ‖u‖₊ : ℝ≥0) : ℝ) * 2 ^ j * dist x y := fun j x y ↦ by
-    rw [NNReal.coe_mul, Real.coe_toNNReal _ (hB _), coe_nnnorm]
+    rw [NNReal.coe_mul, Real.coe_toNNReal _ (hB _), coe_nnNorm]
     exact rpow_mul_dist_iteratedFDeriv_smoothBlock_le φ n₀ j u x y
   have hH : HolderWith (C * ‖u‖₊) α (iteratedFDeriv ℝ k f₀) := by
     rw [hDf₀ k le_rfl]
