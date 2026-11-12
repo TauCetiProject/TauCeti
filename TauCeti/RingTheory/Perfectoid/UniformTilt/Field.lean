@@ -35,8 +35,6 @@ normed field. It is perfect of characteristic `p`, hence a perfectoid field.
 
 ## Main results
 
-* `TauCeti.Perfectoid.uniformTilt.coeff_zero_eq_zero_iff`: in the tilt of a reduced ring, `x♯ = 0`
-  only for `x = 0`.
 * `TauCeti.Perfectoid.uniformTilt.norm_coeff_zero_add_le`: `‖(x + y)♯‖ ≤ max ‖x♯‖ ‖y♯‖`.
 * `TauCeti.Perfectoid.tiltField.isHomeomorph_equiv`: the norm topology of `tiltField p K` is the
   inverse-limit topology of `uniformTilt p K`.
@@ -59,23 +57,6 @@ namespace TauCeti.Perfectoid
 namespace uniformTilt
 
 variable {p : ℕ} [hp : Fact p.Prime]
-
-section Reduced
-
-variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
-  [IsTateRing B] [CompleteSpace B] [T2Space B] [IsUniform B]
-  [Fact (IsTopologicallyNilpotent (p : B))]
-
-/-- **In the tilt of a reduced ring, `x♯ = 0` only for `x = 0`**: every coordinate `x⁽ⁿ⁾` is a
-`p ^ n`-th root of `x♯`. -/
-theorem coeff_zero_eq_zero_iff [IsReduced B] {x : uniformTilt p B} :
-    coeff p B 0 x = 0 ↔ x = 0 := by
-  refine ⟨fun h ↦ ext fun n ↦ ?_, fun h ↦ h ▸ coeff_zero 0⟩
-  rw [coeff_zero]
-  refine IsReduced.eq_zero _ ⟨p ^ n, ?_⟩
-  rw [← h, ← coeff_pow_p_pow x 0 n, zero_add]
-
-end Reduced
 
 section Field
 
