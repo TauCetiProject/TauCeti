@@ -39,6 +39,15 @@ theorem sectionCoordAlongMap_apply (f : N → M) (V : ∀ x, TangentSpace I (f x
       (trivializationAt E (TangentSpace I) a).continuousLinearMapAt 𝕜 (f x) (V x) := by
   unfold sectionCoordAlongMap
   rfl
+/-- Inverting the coordinate reading recovers the section wherever the image point lies in
+the trivialization base set. -/
+@[simp]
+theorem symmL_sectionCoordAlongMap (f : N → M) (V : ∀ x, TangentSpace I (f x))
+    (a : M) (x : N) (ha : f x ∈ (chartAt H a).source) :
+    (trivializationAt E (TangentSpace I) a).symmL 𝕜 (f x)
+      (sectionCoordAlongMap f V a x) = V x := by
+  rw [sectionCoordAlongMap_apply]
+  exact (trivializationAt E (TangentSpace I) a).symmL_continuousLinearMapAt ha (V x)
 /-- Coordinate reading along a map commutes with pointwise addition of sections. -/
 theorem sectionCoordAlongMap_add (f : N → M) (V W : ∀ x, TangentSpace I (f x)) (a : M) :
     sectionCoordAlongMap f (fun x => V x + W x) a =

@@ -77,11 +77,8 @@ theorem alongMap_smul (g : N → 𝕜) {x : N} (hg : MDifferentiableAt J 𝓘(�
     cov.alongMap (J := J) f (fun y => g y • V y) x =
       g x • cov.alongMap f V x + (mvfderiv J g x).smulRight (V x) := by
   ext v
-  have hV₀ : (trivializationAt E (TangentSpace I) (f x)).symmL 𝕜 (f x)
-      (sectionCoordAlongMap f V (f x) x) = V x := by
-    rw [sectionCoordAlongMap_apply]
-    exact (trivializationAt E (TangentSpace I) (f x)).symmL_continuousLinearMapAt (R := 𝕜)
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (f x)) (V x)
+  have hV₀ := symmL_sectionCoordAlongMap f V (f x) x
+    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (f x))
   simp only [alongMap_apply, sectionCoordAlongMap_smul, mvfderiv_smul hg hV, Pi.smul_apply',
     map_smul, add_apply, smul_apply,
     ContinuousLinearMap.smulRight_apply, map_add, hV₀, smul_add]
@@ -143,8 +140,8 @@ theorem alongMap_pullback {X : ∀ y, TangentSpace I y} {x : N}
     mdifferentiableAt_sectionCoordAlongMap hX ha
   have heq : ∀ᶠ y in 𝓝 (f x), X y = e.symm y (sectionCoordAlongMap id X (f x) y) := by
     filter_upwards [e.open_baseSet.mem_nhds ha] with y hy
-    rw [sectionCoordAlongMap_apply, id_eq, ← e.symmL_apply (R := 𝕜) hy]
-    exact (e.symmL_continuousLinearMapAt (R := 𝕜) hy (X y)).symm
+    rw [← e.symmL_apply (R := 𝕜) hy]
+    exact (symmL_sectionCoordAlongMap id X (f x) y hy).symm
   have hY : MDifferentiableAt I I.tangent
       (T% (fun y => e.symm y (sectionCoordAlongMap id X (f x) y))) (f x) :=
     hX.congr_of_eventuallyEq (heq.mono fun y hy => congrArg (TotalSpace.mk' E y) hy.symm)
