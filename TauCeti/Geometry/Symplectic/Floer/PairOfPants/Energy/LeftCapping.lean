@@ -279,8 +279,8 @@ theorem abs_integral_floerEnergyDensity_cappedExchangePerturbation_cappedExchang
       ENNReal.ofReal (B zero + ∑ q, B q) := by
     rw [ENNReal.ofReal_add (hB₀ _) (Finset.sum_nonneg fun q _ ↦ hB₀ q),
       ENNReal.ofReal_sum_of_nonneg fun q _ ↦ hB₀ q]
-  rw [← ENNReal.ofReal_le_ofReal_iff hsum₀, ← Real.enorm_eq_ofReal_abs, ← hsum]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  rw [← ENNReal.ofReal_le_ofReal_iff hsum₀, ← Real.eNorm_eq_ofReal_abs, ← hsum]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le ω hH hHs hL hB hc₀ hc₁ u))
 
 /-- **The action bound along the input-exchange family capped at `0`.** Let `K_c` be the member
