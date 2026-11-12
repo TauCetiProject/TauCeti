@@ -91,7 +91,8 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
   have hsector_closed := fun z (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) =>
     arg_mem_Icc_of_arg_mem_sector (f := fun z => f z - w) hΩopen
       ⟨div_nonneg (mul_nonneg hβ.1.le Real.pi_pos.le) (by norm_num), hangle.le⟩
-      (hfcont.sub continuousOn_const) hsector_open' hz
+      (hfcont.sub continuousOn_const)
+      (fun y hy => Ioo_subset_Icc_self (hsector_open' y hy)) hz
   have hrecover : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
       ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := fun z hz => by
     refine cpow_inv_cpow_of_arg_mem_Ioc hβ.1 (Icc_subset_Ioc ?_ ?_ (hsector_closed z hz)) <;>
