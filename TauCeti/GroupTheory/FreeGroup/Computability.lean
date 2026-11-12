@@ -39,9 +39,10 @@ Mathlib's `FreeGroup.lift_mk` and `Primrec.list_foldr`.
 reduced representatives. It uses `Encodable.decode₂`, which rejects noncanonical
 codes even if the alphabet's decoder accepts redundant codes.
 
-For a finite alphabet, `wordsOfLengthLE` lists the finitely many words of length at most a
-given bound, primitive recursively in the bound; it is the search space of exhaustive searches
-over bounded tuples of words.
+`wordsOverOfLengthLE` lists the finitely many words of length at most a given bound in the
+letters of a given list, primitive recursively in the list and the bound; for a finite alphabet,
+`wordsOfLengthLE` lists all words of length at most the bound. They are the search spaces of
+exhaustive searches over bounded tuples of words.
 -/
 
 public section
@@ -178,25 +179,47 @@ theorem primrec₂_lift_mk_fin (hmul : Primrec₂ ((· * ·) : G → G → G))
 
 section Words
 
-variable {A : Type*} [Finite A]
+variable {A : Type*}
+
+/-- The words of length at most `N` in the letters of a list `l` and their inverses; the words
+need not be reduced. -/
+def wordsOverOfLengthLE (l : List A) (N : ℕ) : List (List (A × Bool)) :=
+  (List.range (N + 1)).flatMap fun k => (List.replicate k (l ×ˢ [true, false])).sections
+
+/-- A word is listed among the words of length at most `N` in the letters of `l` exactly when
+its length is at most `N` and all its letters lie in `l`. -/
+@[simp] theorem mem_wordsOverOfLengthLE {l : List A} {N : ℕ} {w : List (A × Bool)} :
+    w ∈ wordsOverOfLengthLE l N ↔ w.length ≤ N ∧ ∀ y ∈ w, y.1 ∈ l := by
+  simp [wordsOverOfLengthLE, List.mem_sections_replicate, Nat.lt_succ_iff]
+
+/-- The list of words of length at most `N` in the letters of `l` is primitive recursive in `l`
+and `N`. -/
+theorem primrec₂_wordsOverOfLengthLE [Primcodable A] :
+    Primrec₂ (wordsOverOfLengthLE : List A → ℕ → List (List (A × Bool))) := by
+  have hl : Primrec fun l : List A => l ×ˢ [true, false] :=
+    (Primrec.list_flatMap Primrec.id (Primrec.list_map (Primrec.const [true, false])
+      (Primrec.pair (Primrec.snd.comp Primrec.fst) Primrec.snd).to₂).to₂).of_eq fun l => by
+      induction l <;> simp_all
+  exact (Primrec.list_flatMap (Primrec.list_range.comp (Primrec.succ.comp Primrec.snd))
+    (Primrec.list_sections.comp (Primrec.list_replicate.comp Primrec.snd
+      (hl.comp (Primrec.fst.comp Primrec.fst)))).to₂).to₂
+
+variable [Finite A]
 
 variable (A) in
 /-- The words of length at most `N` in the letters of a finite alphabet and their inverses. -/
 noncomputable def wordsOfLengthLE (N : ℕ) : List (List (A × Bool)) :=
-  (List.range (N + 1)).flatMap fun k =>
-    (List.replicate k ((Set.finite_univ (α := A)).toFinset.toList ×ˢ [true, false])).sections
+  wordsOverOfLengthLE (Set.finite_univ (α := A)).toFinset.toList N
 
 /-- A word is listed among the words of length at most `N` exactly when its length is at
 most `N`. -/
 @[simp] theorem mem_wordsOfLengthLE {N : ℕ} {w : List (A × Bool)} :
     w ∈ wordsOfLengthLE A N ↔ w.length ≤ N := by
-  simp [wordsOfLengthLE, List.mem_sections_replicate, Nat.lt_succ_iff]
+  simp [wordsOfLengthLE]
 
 /-- The list of words of length at most `N` is primitive recursive in `N`. -/
 theorem primrec_wordsOfLengthLE [Primcodable A] : Primrec (wordsOfLengthLE A) :=
-  Primrec.list_flatMap (Primrec.list_range.comp Primrec.succ)
-    (Primrec.list_sections.comp
-      (Primrec.list_replicate.comp Primrec.snd (Primrec.const _))).to₂
+  primrec₂_wordsOverOfLengthLE.comp (Primrec.const _) Primrec.id
 
 end Words
 

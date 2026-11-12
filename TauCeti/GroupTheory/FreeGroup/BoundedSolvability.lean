@@ -33,7 +33,7 @@ solution yields Makanin's decidability theorem: there are finitely
 many tuples of words of length at most `N` over the finite alphabet `A`
 (`FreeGroup.wordsOfLengthLE`), only the variables occurring in the system matter
 (`TauCeti.EqIneqSystem.eval_mk_congr`), and each tuple is tested by substitution and free
-reduction.
+reduction (`TauCeti.EqIneqSystem.primrecRel_isSolution_mk_getD`).
 
 ## References
 
@@ -101,7 +101,10 @@ private theorem isSolution_mk_getD_iff
         ∀ w ∈ p.2, ¬ FreeGroup.mk (substituteVars (fun x => u.getD x []) w) = 1 := by
   simp [isSolution_ofWords_iff, mk_substituteVars, eval_eq_lift]
 
-private theorem primrecRel_isSolution_mk_getD [Primcodable A] :
+/-- Whether a table of words solves a system is primitive recursive in the table and the
+system. The `x`-th word of the table represents the value of the variable `x`, the variables
+beyond the table take the value `1`, and the letters of `A` stand for themselves. -/
+theorem primrecRel_isSolution_mk_getD [Primcodable A] :
     PrimrecRel fun (u : List (List (A × Bool)))
         (p : List (List ((ℕ ⊕ A) × Bool)) × List (List ((ℕ ⊕ A) × Bool))) =>
       (ofWords p).IsSolution (fun x => FreeGroup.mk (u.getD x [])) of := by
