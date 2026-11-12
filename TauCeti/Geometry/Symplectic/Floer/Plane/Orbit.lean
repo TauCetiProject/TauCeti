@@ -242,7 +242,7 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le (hH
   -- The closed band differs from the half-open one by a null set.
   have hae : (P ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] s := by
     rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ico_ae_eq_Icc.symm
+    exact Measure.set_prod_ae_eq EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
   -- On the band the energy density is the Jacobian times the energy density of `u`.
   have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
       (u ∘ realChart p.cylindricalEndLift) ζ =
