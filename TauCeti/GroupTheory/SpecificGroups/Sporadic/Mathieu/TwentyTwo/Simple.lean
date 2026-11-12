@@ -9,12 +9,12 @@ public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Mathieu.TwentyTwo.Basi
 public import TauCeti.GroupTheory.GroupAction.Simple.Basic
 
 /-!
-# Simplicity of the canonical Mathieu group `M₂₂`
+# Simplicity of the canonical permutation model of `M₂₂`
 
-The canonical `TauCeti.Sporadic.M22` permutation model is simple. Its doubly transitive action
-on `22` points is primitive, and `11` divides its order `443520` exactly once. Thus every
-nontrivial normal subgroup contains the element `a * b` of order `11`, provided that element
-normally generates the model.
+The canonical `TauCeti.Sporadic.M22` permutation model is simple. Its faithful doubly transitive
+action on `22` points is primitive, and `11` divides its order `443520` exactly once. Thus every
+nontrivial normal subgroup has index coprime to `11` and contains the element `a * b` of order
+`11`. Normal generation by this element then forces that subgroup to be the whole model.
 
 Normal generation is certified by a short identity: `a` is a product of two conjugates of
 `a * b` by words in the canonical ATLAS generators. Then `b = a⁻¹ * (a * b)` also belongs to
@@ -69,15 +69,16 @@ theorem normalClosure_a_mul_b_eq_top :
   apply top_unique
   rw [← hgen]
   apply (Subgroup.closure_le N).mpr
-  rintro ⟨x, hx⟩ (rfl | rfl : x = a ∨ x = b)
+  rintro ⟨x, hx⟩ hx'
+  simp only [Set.mem_preimage, Subgroup.coe_subtype, Set.mem_insert_iff,
+    Set.mem_singleton_iff] at hx'
+  rcases hx' with rfl | rfl
   exacts [ha, hb]
 
 end M22
 
 /-- The canonical `22`-point permutation model of `M₂₂` is simple. -/
 instance isSimpleGroup_M22 : IsSimpleGroup M22 := by
-  have : MulAction.IsPreprimitive M22 (Fin 22) :=
-    MulAction.isPreprimitive_of_is_two_pretransitive M22.isMultiplyPretransitive_two
   exact TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_prime_dvd_card (X := Fin 22)
     Nat.prime_eleven (by simp) (by rw [card_M22]; norm_num) _
     (by

@@ -511,7 +511,8 @@ instance isPretransitive : MulAction.IsPretransitive M22 (Fin 22) := by
   have h : ∀ x : Fin 22, ∃ r ∈ transversal 0, r 0 = x := by decide +kernel
   refine MulAction.IsPretransitive.of_orbit (x₀ := 0) fun x ↦ ?_
   obtain ⟨r, hr, hx⟩ := h x
-  exact ⟨⟨r, mem_of_mem_transversal hr⟩, hx⟩
+  exact ⟨⟨r, mem_of_mem_transversal hr⟩,
+    by simpa only [Subgroup.mk_smul, Equiv.Perm.smul_def] using hx⟩
 
 /-- The model acts doubly transitively on its `22` points. -/
 instance isMultiplyPretransitive_two : MulAction.IsMultiplyPretransitive M22 (Fin 22) 2 := by
@@ -523,8 +524,15 @@ instance isMultiplyPretransitive_two : MulAction.IsMultiplyPretransitive M22 (Fi
     (x₀ := ⟨1, (SubMulAction.mem_ofStabilizer_iff M22 0).mpr (by decide)⟩) fun x ↦ ?_
   obtain ⟨r, hr, hzero, hx⟩ := h x
     ((SubMulAction.mem_ofStabilizer_iff M22 0).mp x.property)
-  refine ⟨⟨⟨r, mem_of_mem_transversal hr⟩, hzero⟩, ?_⟩
-  exact Subtype.ext hx
+  refine ⟨⟨⟨r, mem_of_mem_transversal hr⟩, ?_⟩, ?_⟩
+  · simpa only [MulAction.mem_stabilizer_iff, Subgroup.mk_smul, Equiv.Perm.smul_def]
+      using hzero
+  · apply Subtype.ext
+    simpa only [SubMulAction.val_smul, Subgroup.mk_smul, Equiv.Perm.smul_def] using hx
+
+/-- The model acts primitively on its `22` points. -/
+instance isPreprimitive : MulAction.IsPreprimitive M22 (Fin 22) :=
+  MulAction.isPreprimitive_of_is_two_pretransitive isMultiplyPretransitive_two
 
 end M22
 
