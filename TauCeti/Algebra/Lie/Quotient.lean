@@ -23,8 +23,11 @@ and supporting receiver notation on the ideal and the homomorphism.
 
 ## Main definitions
 
+* `LieIdeal.quotEquivOfEq`: the Lie equivalence between quotients by equal ideals.
 * `LieIdeal.liftQ`: the homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism
   `L →ₗ⁅R⁆ L'` whose kernel contains `I`.
+* `LieIdeal.factor`: the transition `L ⧸ I →ₗ⁅R⁆ L ⧸ J` between the quotients by nested ideals
+  `I ≤ J`.
 * `LieIdeal.quotientEquivOfIsCompl`: the isomorphism `L ⧸ I ≃ₗ⁅R⁆ S` for a Lie subalgebra `S`
   complementary to `I`.
 * `LieHom.quotKerEquivOfSurjective`: the first isomorphism theorem, identifying the quotient of
@@ -35,16 +38,26 @@ and supporting receiver notation on the ideal and the homomorphism.
 * `LieIdeal.liftQ_mkQ`: the lifted homomorphism restricts to the original one along the quotient
   map.
 * `LieIdeal.coe_liftQ`: the lifted homomorphism is `Submodule.liftQ` of the underlying linear map.
-* `LieIdeal.liftQ_injective` and `LieIdeal.liftQ_surjective`: the lifted homomorphism is injective
-  when the ideal exhausts the kernel, and surjective when the original homomorphism is.
+* `LieIdeal.liftQ_injective_iff` and `LieIdeal.liftQ_surjective`: the lifted homomorphism is
+  injective exactly when the ideal exhausts the kernel, and surjective when the original
+  homomorphism is.
 * `LieIdeal.lieHom_qext`: two homomorphisms from the quotient are equal when they agree after the
   quotient map.
 * `LieIdeal.eq_liftQ`: the lifted homomorphism is the unique such factorization.
 * `LieIdeal.ker_liftQ_mkQ`: for ideals `J ≤ I`, the kernel of `L ⧸ J → L ⧸ I` is the image of `I`.
+* `LieIdeal.factor_refl`, `LieIdeal.factor_comp`, `LieIdeal.factor_surjective` and
+  `LieIdeal.ker_factor`: the transitions between nested quotients are the identity at equal ideals,
+  compose, are surjective, and have the image of the larger ideal as kernel.
+* `LieIdeal.coe_mkQ`: the linear map underlying `LieIdeal.mkQ` is the quotient map of submodules.
 * `LieIdeal.mkQ_comp_incl_surjective`: a Lie subalgebra `P` with `I + P = L` maps onto `L ⧸ I`.
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
 * `LieIdeal.isCompl_map_incl`: a complement of `I ∩ P` inside a supplement `P` of `I` is a
   complement of `I` in `L`.
+
+The transitions `LieIdeal.factor` and their lemmas are adapted from
+`Mei/Algebra/Lie/Quotient/Map.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
 -/
 
 public section
@@ -53,6 +66,30 @@ namespace LieIdeal
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 variable (I : LieIdeal R L)
+
+/-- Quotienting by equal Lie ideals gives equivalent Lie algebras, refining
+`Submodule.quotEquivOfEq` by retaining the Lie bracket. -/
+def quotEquivOfEq (J : LieIdeal R L) (h : I = J) : (L ⧸ I) ≃ₗ⁅R⁆ L ⧸ J where
+  __ := Submodule.quotEquivOfEq I.toSubmodule J.toSubmodule (congrArg LieSubmodule.toSubmodule h)
+  map_lie' {x y} := by
+    induction x using Submodule.Quotient.induction_on
+    induction y using Submodule.Quotient.induction_on
+    -- The underlying quotient equivalence preserves representatives definitionally.
+    rfl
+
+/-- The equivalence between quotients by equal ideals preserves representatives. -/
+@[simp]
+theorem quotEquivOfEq_mk (J : LieIdeal R L) (h : I = J) (x : L) :
+    I.quotEquivOfEq J h (LieSubmodule.Quotient.mk x) = LieSubmodule.Quotient.mk x :=
+  Submodule.quotEquivOfEq_mk _ _ (congrArg LieSubmodule.toSubmodule h) x
+
+/-- The inverse equivalence between quotients by equal ideals preserves representatives. -/
+@[simp]
+theorem quotEquivOfEq_symm_mk (J : LieIdeal R L) (h : I = J) (x : L) :
+    (I.quotEquivOfEq J h).symm (LieSubmodule.Quotient.mk x) =
+      LieSubmodule.Quotient.mk x := by
+  apply (I.quotEquivOfEq J h).injective
+  simp
 
 /-- The homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism `f : L →ₗ⁅R⁆ L'` whose kernel
 contains the ideal `I`. -/
@@ -77,10 +114,11 @@ theorem coe_liftQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
           (LieHom.ker_toSubmodule f).le) :=
   (rfl)
 
-/-- The homomorphism induced on the quotient is injective as soon as the ideal quotiented by
+/-- The homomorphism induced on the quotient is injective exactly when the ideal quotiented by
 exhausts the kernel. -/
-theorem liftQ_injective (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (h' : f.ker ≤ I) :
-    Function.Injective (I.liftQ f h) := by
+theorem liftQ_injective_iff (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
+    Function.Injective (I.liftQ f h) ↔ f.ker ≤ I := by
+  refine ⟨fun hf x hx => I.mkQ_eq_zero.1 (hf (by simpa using hx)), fun h' => ?_⟩
   rw [← LieHom.coe_toLinearMap, ← LinearMap.ker_eq_bot, coe_liftQ]
   exact Submodule.ker_liftQ_eq_bot _ (f : L →ₗ[R] L') _ <| by
     rw [← LieHom.ker_toSubmodule, LieSubmodule.toSubmodule_le_toSubmodule]; exact h'
@@ -121,6 +159,41 @@ theorem ker_liftQ_mkQ {J : LieIdeal R L} (h : J ≤ I.mkQ.ker) :
   rw [← LieSubmodule.toSubmodule_inj, LieHom.ker_toSubmodule, coe_liftQ, Submodule.ker_liftQ,
     ← LieHom.ker_toSubmodule, mkQ_ker, coe_map_of_surjective J.surjective_mkQ]
   rfl
+
+/-- The linear map underlying the quotient homomorphism is the quotient map of submodules. -/
+theorem coe_mkQ : (I.mkQ : L →ₗ[R] L ⧸ I) = I.toSubmodule.mkQ := (rfl)
+
+/-- The transition from the quotient by a smaller ideal to the quotient by a larger ideal. This is
+the Lie algebra analogue of `Submodule.factor`. -/
+def factor {I J : LieIdeal R L} (h : I ≤ J) : L ⧸ I →ₗ⁅R⁆ L ⧸ J :=
+  I.liftQ J.mkQ (by rwa [mkQ_ker])
+
+/-- A quotient transition sends each class to the class of the same representative. -/
+@[simp]
+theorem factor_apply {I J : LieIdeal R L} (h : I ≤ J) (x : L) :
+    factor h (LieSubmodule.Quotient.mk x) = LieSubmodule.Quotient.mk x := by
+  simp [factor]
+
+/-- A quotient transition at the same ideal is the identity. -/
+@[simp]
+theorem factor_refl : factor (le_refl I) = LieHom.id := by
+  ext x
+  simp [mkQ_apply]
+
+/-- Successive quotient transitions compose to the direct transition. -/
+@[simp]
+theorem factor_comp {I J K : LieIdeal R L} (hIJ : I ≤ J) (hJK : J ≤ K) :
+    (factor hJK).comp (factor hIJ) = factor (hIJ.trans hJK) := by
+  ext x
+  simp [mkQ_apply]
+
+/-- Quotient transitions are surjective. -/
+theorem factor_surjective {I J : LieIdeal R L} (h : I ≤ J) : Function.Surjective (factor h) :=
+  liftQ_surjective _ _ _ J.surjective_mkQ
+
+/-- The kernel of a quotient transition is the image of the larger ideal. -/
+theorem ker_factor {I J : LieIdeal R L} (h : I ≤ J) : (factor h).ker = J.map I.mkQ :=
+  J.ker_liftQ_mkQ _
 
 section Supplement
 
@@ -199,7 +272,7 @@ by its kernel is isomorphic to the target. -/
 noncomputable def quotKerEquivOfSurjective (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) :
     (L ⧸ f.ker) ≃ₗ⁅R⁆ L' :=
   LieEquiv.ofBijective (f.ker.liftQ f le_rfl)
-    ⟨f.ker.liftQ_injective f le_rfl le_rfl, f.ker.liftQ_surjective f le_rfl hf⟩
+    ⟨(f.ker.liftQ_injective_iff f le_rfl).2 le_rfl, f.ker.liftQ_surjective f le_rfl hf⟩
 
 /-- The first isomorphism theorem sends the class of `x` to `f x`. -/
 @[simp]

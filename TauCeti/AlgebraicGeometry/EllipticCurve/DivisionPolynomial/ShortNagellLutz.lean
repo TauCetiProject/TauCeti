@@ -35,7 +35,7 @@ is elliptic. See the Provenance note.
 
 ## Main results
 
-* `WeierstrassCurve.lutz_nagell`: the theorem at the roadmap's explicit short model
+* `WeierstrassCurve.lutz_nagell`: the theorem at the explicit short model
   `y² = x³ + Ax + B` — integral coordinates together with `y₀ = 0 ∨ y₀² ∣ Δ`.
 * `WeierstrassCurve.isInteger_of_torsion`: the integrality half, with no order-two exception, for
   any integral model in characteristic-≠-2 normal form.
@@ -46,12 +46,9 @@ at `shortCurve`: no step uses `a₂ = 0`, and the cubic `X³ + a₂X² + a₄X +
 `lutz_nagell` is their specialisation, and costs nothing to obtain — Mathlib's
 `isCharNeTwoNF_of_isShortNF` supplies the instance.
 
-## Roadmap
+## References
 
-New mathematics: `TauCetiRoadmap/EllipticCurves/README.md:821` — "**The torsion subgroup and
-Nagell–Lutz**". Lines `:828`–`:830` name this target: for an integral **short** model
-`y² = x³ + Ax + B`, "the classical full form — `x, y ∈ ℤ` and `y = 0` or `y² ∣ Δ`
-(`lutz_nagell`; AEC VIII.7)".
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VIII.7.
 
 ## Provenance
 
@@ -144,10 +141,9 @@ variable (A B : ℤ)
 finite order on `y² = x³ + Ax + B`. Then `x` and `y` are integers, and either `y = 0` or
 `y² ∣ Δ`.
 
-This is the classical statement, and the form `TauCetiRoadmap/EllipticCurves/README.md:830` names
-`lutz_nagell`. It is the specialisation of the two theorems above at a short model: Mathlib's
-`isCharNeTwoNF_of_isShortNF` supplies the instance, so there is nothing to discharge. No hypothesis
-`Δ ≠ 0` is needed — see the module docstring. -/
+This is the classical statement. It is the specialisation of the two theorems above at a short
+model: Mathlib's `isCharNeTwoNF_of_isShortNF` supplies the instance, so there is nothing to
+discharge. No hypothesis `Δ ≠ 0` is needed — see the module docstring. -/
 theorem lutz_nagell {x y : ℚ}
     (hns : ((shortCurve A B).baseChange ℚ).toAffine.Nonsingular x y)
     (htor : IsOfFinAddOrder (Affine.Point.some _ _ hns)) :

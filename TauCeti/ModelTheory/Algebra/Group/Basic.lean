@@ -27,6 +27,11 @@ Including group-language terms into the coefficient language preserves the group
 The coefficient sentence `a * b = b * a` holds exactly when the coefficients of `a` and `b`
 commute, so it is false in the free group on two letters and true in `ℤ²`, with the bases as
 coefficients.
+A group isomorphism carrying the named coefficients of one group to those of another is an
+isomorphism of coefficient-language structures, so the two groups are elementarily equivalent
+in the coefficient language, and Mathlib's `StrongHomClass` lemmas transport the realization of
+every formula along it. For instance, relabelling the basis of a free group does not change its
+theory with the basis as coefficients.
 
 The choice of symbols and coefficient letters follows Kharlampovich and Myasnikov,
 *Implicit function theorem over free groups*, §2.3. The language and structure interface
@@ -580,3 +585,84 @@ end Coefficients
 end Group
 
 end TauCeti
+
+namespace MulEquiv
+
+open FirstOrder TauCeti.Group
+
+section Isomorphisms
+
+variable {G H A : Type*} [Group G] [Group H]
+
+attribute [local instance] structureOfGroup
+
+/-- A group isomorphism carrying the coefficient map `c` to `d` is an isomorphism of structures
+of the group language with constants `A`, named in `G` by `c` and in `H` by `d`. -/
+def coeffGroupLanguageEquiv (e : G ≃* H) (c : A → G) (d : A → H) (hc : ∀ a, e (c a) = d a) :
+    @Language.Equiv Language.group[[A]] G H
+      (@Language.withConstantsStructure Language.group G (structureOfGroup G) A
+        (Language.constantsOn.structure c))
+      (@Language.withConstantsStructure Language.group H (structureOfGroup H) A
+        (Language.constantsOn.structure d)) :=
+  letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+  letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+  { toEquiv := e.toEquiv
+    -- The underlying map of `e` is that of its coefficient language homomorphism.
+    map_fun' := (MonoidHom.coeffGroupLanguageHom e.toMonoidHom c d hc).map_fun'
+    map_rel' := fun r => r.elim (fun r => nomatch r) (fun r => nomatch r) }
+
+/-- The coefficient language isomorphism acts as the original group isomorphism. -/
+@[simp] theorem coeffGroupLanguageEquiv_apply (e : G ≃* H) (c : A → G) (d : A → H)
+    (hc : ∀ a, e (c a) = d a) (x : G) : e.coeffGroupLanguageEquiv c d hc x = e x := (rfl)
+
+/-- The inverse of the coefficient language isomorphism is that of the inverse group
+isomorphism, which carries `d` back to `c`. -/
+@[simp] theorem coeffGroupLanguageEquiv_symm (e : G ≃* H) (c : A → G) (d : A → H)
+    (hc : ∀ a, e (c a) = d a) :
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+    (e.coeffGroupLanguageEquiv c d hc).symm =
+      e.symm.coeffGroupLanguageEquiv d c fun a => e.symm_apply_eq.2 (hc a).symm := (rfl)
+
+/-- The language homomorphism underlying the coefficient language isomorphism of `e` is the
+coefficient language homomorphism of `e`. -/
+@[simp] theorem coeffGroupLanguageEquiv_toHom (e : G ≃* H) (c : A → G) (d : A → H)
+    (hc : ∀ a, e (c a) = d a) :
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+    (e.coeffGroupLanguageEquiv c d hc).toHom =
+      MonoidHom.coeffGroupLanguageHom (e : G →* H) c d hc := (rfl)
+
+/-- Groups related by an isomorphism carrying the coefficient map `c` to `d` are elementarily
+equivalent in the group language with constants `A`, named by `c` and `d`. -/
+theorem elementarilyEquivalent_coeff (e : G ≃* H) (c : A → G) (d : A → H)
+    (hc : ∀ a, e (c a) = d a) :
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+    G ≅[Language.group[[A]]] H :=
+  letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+  letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+  Language.StrongHomClass.elementarilyEquivalent (e.coeffGroupLanguageEquiv c d hc)
+
+-- Realization of coefficient-language formulas transports along the isomorphism.
+example (e : G ≃* H) (c : A → G) (d : A → H) (hc : ∀ a, e (c a) = d a) {α : Type*}
+    (φ : Language.group[[A]].Formula α) (v : α → G) :
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+    φ.Realize (e ∘ v) ↔ φ.Realize v :=
+  letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+  letI : (Language.constantsOn A).Structure H := Language.constantsOn.structure d
+  Language.StrongHomClass.realize_formula (e.coeffGroupLanguageEquiv c d hc) φ
+
+-- Relabelling the basis of a free group keeps its theory with the basis as coefficients.
+example {B : Type*} (e : A ≃ B) :
+    letI : (Language.constantsOn A).Structure (FreeGroup A) :=
+      Language.constantsOn.structure FreeGroup.of
+    letI : (Language.constantsOn A).Structure (FreeGroup B) :=
+      Language.constantsOn.structure fun a => FreeGroup.of (e a)
+    FreeGroup A ≅[Language.group[[A]]] FreeGroup B :=
+  (FreeGroup.freeGroupCongr e).elementarilyEquivalent_coeff _ _ fun _ => by simp
+
+end Isomorphisms
+
+end MulEquiv

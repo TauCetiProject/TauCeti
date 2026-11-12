@@ -641,14 +641,20 @@ theorem IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le_of_mem_criticalPo
     manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E + q :=
   h.manifoldMorseIndex_le (hf.of_le hr) (mem_criticalPoints.1 hx)
 
+omit [FiniteDimensional ℂ E] in
 /-- **The index bound for strictly plurisubharmonic functions on a complex manifold.** At a
 critical point `x` of a function `f` which is `C²` at `x` and strictly plurisubharmonic at `x`, the
-Morse index of `f` is at most `dim_ℂ E`. -/
+Morse index of `f` is at most `dim_ℂ E`. In infinite dimensions the index is `0` and
+`finrank ℂ E = 0` by convention. -/
 theorem IsManifoldStrictlyPlurisubharmonicAt.manifoldMorseIndex_le [IsManifold 𝓘(ℂ, E) 2 M]
     (h : IsManifoldStrictlyPlurisubharmonicAt E f x) (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x)
     (hcrit : mvfderiv 𝓘(ℝ, E) f x = 0) :
     manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E := by
-  simpa using (h.isManifoldStronglyPseudoconvexAt 0).manifoldMorseIndex_le hf hcrit
+  by_cases hE : FiniteDimensional ℂ E
+  · simpa using (h.isManifoldStronglyPseudoconvexAt 0).manifoldMorseIndex_le hf hcrit
+  · rw [manifoldMorseIndex_def, morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+      hE (Module.Finite.of_restrictScalars_finite ℝ ℂ E)]
+    exact Nat.zero_le _
 
 end Critical
 
