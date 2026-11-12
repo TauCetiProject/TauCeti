@@ -735,7 +735,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_exchangePerturbation_exchang
     integral_floerEnergyDensity_image_exchangeMap ω hH hHs hc₀ hc₁ hu hs hsS,
     integral_area_image_exchangeMap ω hc₀ hc₁ hu hs hsS,
     integral_hamiltonianCurvature_image_exchangeMap ω hH hHs hc₀ hc₁ u hs hsS,
-    hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hv hR]
+    hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs
+      isOpen_thricePuncturedSphereReal hsS hv hR]
   -- The boundary loops of `u ∘ Φ_c` are those of `u` on the recentred ends.
   simp only [Puncture.sum_univ, endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul,
     comp_apply, exchangeMap_cylindricalEndLift c (q := zero) (by decide) (by linarith : 0 ≤ R),
