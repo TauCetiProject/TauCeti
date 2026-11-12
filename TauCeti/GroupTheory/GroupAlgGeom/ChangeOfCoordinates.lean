@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
+public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 
 /-!
 # Changes of coordinates in equations over groups
@@ -15,10 +16,9 @@ this action transports solution sets and radicals, and induces an isomorphism of
 groups. The results apply to inconsistent systems and arbitrary coefficient homomorphisms.
 
 A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection `imageEquivV` between the solutions of a
-system `S` and those of its image `φ S`. Multiplying every variable on the right by a coefficient
-is a change of coordinates. The change of coordinates `x ↦ x g` of one variable fixes the
-commutator equation `[x, g] = 1`, so it carries its solutions, the centralizer of `ι g`, onto
-themselves.
+system `S` and those of its image `φ S`. The change of coordinates `x ↦ x g` of one variable, a
+transvection, fixes the commutator equation `[x, g] = 1`, so it carries its solutions, the
+centralizer of `ι g`, onto themselves.
 
 ## Main definitions
 
@@ -36,10 +36,8 @@ themselves.
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
 * `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`: membership in the solutions of the image of a
   system under a `G`-isomorphism.
-* `TauCeti.GroupAlgGeom.GX.evalGHom_inr_of_mul_inl_bijective`,
-  `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V_singleton_commutatorElement`: right
-  translation of the variables by coefficients is a change of coordinates, and `x ↦ x g` carries
-  the solutions of `[x, g] = 1` onto themselves.
+* `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V_singleton_commutatorElement`: the change of
+  coordinates `x ↦ x g` carries the solutions of `[x, g] = 1` onto themselves.
 
 ## References
 
@@ -221,49 +219,28 @@ theorem mem_V_image_mulEquiv_iff (S : Set (GX G X)) (v : Y → H) :
 
 end MulEquiv
 
-/-! ### Right translation of the variables -/
+/-! ### The commutator equation -/
 
-section Translation
+section Commutator
 
 open FreeGroup
 open scoped commutatorElement
 
-/-- Right multiplication of every variable by a coefficient, `x ↦ x (g x)`, is a change of
-coordinates of `G[X]`. -/
-theorem GX.evalGHom_inr_of_mul_inl_bijective (g : X → G) :
-    Function.Bijective (evalGHom (inl : G →* GX G X) fun x => inr (of x) * inl (g x)) := by
-  set σ := evalGHom (inl : G →* GX G X) fun x => inr (of x) * inl (g x)
-  -- The inverse multiplies every variable on the right by the inverse coefficient.
-  set τ := evalGHom (inl : G →* GX G X) fun x => inr (of x) * inl (g x)⁻¹
-  have h₁ : σ.comp τ = GHom.id _ := by
-    ext x
-    simp [σ, τ]
-  have h₂ : τ.comp σ = GHom.id _ := by
-    ext x
-    simp [σ, τ]
-  exact ⟨Function.LeftInverse.injective (g := τ) fun w => by simpa using DFunLike.congr_fun h₂ w,
-    Function.RightInverse.surjective (g := τ) fun w => by simpa using DFunLike.congr_fun h₁ w⟩
-
-/-- The change of coordinates `x ↦ x g` of `G[x]` fixes the commutator `[x, g]`. -/
-theorem GX.evalGHom_inr_of_mul_inl_commutatorElement (g : G) :
-    evalGHom (inl : G →* GX G Unit) (fun x => inr (of x) * inl g)
-        ⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆ =
-      ⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆ := by
-  simp [commutatorElement_def]
-
-/-- The change of coordinates `x ↦ x g` carries the solutions of `[x, g] = 1`, the centralizer of
-`ι g`, onto themselves. -/
+/-- The change of coordinates `x ↦ x g` of `G[x]`, the transvection `GX.transvection () 1 (inl g)`,
+carries the solutions of `[x, g] = 1`, the centralizer of `ι g`, onto themselves. -/
 theorem image_coordinateChangeEquiv_V_singleton_commutatorElement (g : G) :
-    coordinateChangeEquiv ι _ (GX.evalGHom_inr_of_mul_inl_bijective fun _ : Unit => g) ''
+    coordinateChangeEquiv ι
+        (GHom.ofMulEquiv (GX.transvection () 1 (inl g) (one_mem _) (GX.inl_mem_avoiding () g))
+          (GX.transvection_inl _ _))
+        (GHom.ofMulEquiv_bijective _ _) ''
         V ι {⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆} =
       V ι {⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆} := by
-  have hσ := GX.evalGHom_inr_of_mul_inl_bijective fun _ : Unit => g
-  have hc := GX.evalGHom_inr_of_mul_inl_commutatorElement g
-  -- The change of coordinates fixes the equation, so it fixes the system.
-  refine (image_coordinateChangeEquiv_V ι _ hσ _).trans (congrArg (V ι) ?_)
-  exact Set.ext fun w => ⟨fun h => hσ.1 (h.trans hc.symm), fun h => (congrArg _ h).trans hc⟩
+  refine (image_coordinateChangeEquiv_V ι _ _ _).trans (congrArg (V ι) ?_)
+  -- The transvection fixes the commutator, so it fixes the system.
+  ext w
+  simp [← MulEquiv.eq_symm_apply, commutatorElement_def, mul_assoc]
 
-end Translation
+end Commutator
 
 end GroupAlgGeom
 end TauCeti
