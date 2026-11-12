@@ -47,14 +47,17 @@ non-isomorphic.
   space of morphisms `Zᵢ ⟶ V`.
 * `Representation.intrinsicMultiplicity_congr`: the multiplicities are invariant under
   equivalences of representations, across carriers in different universes.
-* `Representation.intrinsicMultiplicity_prod`: they are additive on binary products
-  (`Representation.prod`) of finite-dimensional representations.
+* `Representation.intrinsicMultiplicity_prod`, `Representation.intrinsicMultiplicity_directSum`:
+  they are additive on binary products (`Representation.prod`) and on finite direct sums
+  (`Representation.directSum`) of finite-dimensional representations.
 * `Representation.intrinsicMultiplicity_of_subsingleton`: they vanish on the zero representation.
 * `Representation.intrinsicMultiplicity_of_isIrreducible`: an irreducible representation has
   multiplicity `1` at its own class and `0` at every other, and in particular
-  `Representation.intrinsicMultiplicity_irreducibleRepresentation`: `m_{Zⱼ}(i) = δᵢⱼ`.
+  `TauCeti.intrinsicMultiplicity_irreducibleRepresentation`: `m_{Zⱼ}(i) = δᵢⱼ`.
 * `Representation.nonempty_regrouping`: **the regrouping**. A finite-dimensional `ρ` is, as a
   `k[G]`-module, the direct sum of `m_ρ(i)` copies of each `Zᵢ`.
+* `Representation.nonempty_equiv_iff_intrinsicMultiplicity_eq`: two finite-dimensional
+  representations are equivalent exactly when their intrinsic multiplicities agree.
 
 ## References
 
@@ -145,6 +148,36 @@ theorem intrinsicMultiplicity_prod [FiniteDimensional k V] {W : Type w'} [AddCom
     (IntertwiningMap.equivLinearMapAsModule _ _).symm.prodCongr
       (IntertwiningMap.equivLinearMapAsModule _ _).symm).finrank_eq
 
+/-- **The intrinsic multiplicities are additive on finite direct sums**
+(`Representation.directSum`) of finite-dimensional representations: an intertwining map into the
+direct sum is the family of its components. -/
+@[simp]
+theorem intrinsicMultiplicity_directSum {ι : Type*} [Fintype ι] {W : ι → Type w'}
+    [∀ j, AddCommGroup (W j)] [∀ j, Module k (W j)] [∀ j, FiniteDimensional k (W j)]
+    (σ : ∀ j, Representation k G (W j)) (i : Fin (Nat.card (ConjClasses G))) :
+    (directSum σ).intrinsicMultiplicity i = ∑ j, (σ j).intrinsicMultiplicity i := by
+  classical
+  simp only [intrinsicMultiplicity_def, ← finrank_pi_fintype]
+  let e := DirectSum.linearEquivFunOnFintype k ι W
+  have he (g : G) (x : DirectSum ι W) (j : ι) : e (directSum σ g x) j = σ j g (e x j) := by
+    simp [e, directSum_apply]
+  refine LinearEquiv.finrank_eq
+    { toFun f := fun j ↦ ⟨LinearMap.proj j ∘ₗ e.toLinearMap ∘ₗ f.toLinearMap, fun g ↦
+        LinearMap.ext fun x ↦ by
+          simp only [LinearMap.comp_apply, LinearMap.proj_apply, LinearEquiv.coe_coe,
+            IntertwiningMap.coe_toLinearMap]
+          rw [f.isIntertwining, he]⟩
+      invFun f := ⟨e.symm.toLinearMap ∘ₗ LinearMap.pi fun j ↦ (f j).toLinearMap, fun g ↦
+        LinearMap.ext fun x ↦ e.injective <| funext fun j ↦ by
+          simp only [LinearMap.comp_apply]
+          rw [he]
+          simp [IntertwiningMap.isIntertwining]⟩
+      left_inv f := IntertwiningMap.ext <| LinearMap.ext fun x ↦ e.injective <| funext fun j ↦ by
+        simp
+      right_inv f := funext fun j ↦ IntertwiningMap.ext <| LinearMap.ext fun x ↦ by simp
+      map_add' f f' := funext fun j ↦ IntertwiningMap.ext <| LinearMap.ext fun x ↦ by simp
+      map_smul' c f := funext fun j ↦ IntertwiningMap.ext <| LinearMap.ext fun x ↦ by simp }
+
 open Classical in
 /-- **The cross-universe Hom-dimension formula**: an irreducible representation, with carrier in
 any universe, has intrinsic multiplicity `1` at the row of the model it is equivalent to and `0` at
@@ -161,7 +194,8 @@ theorem intrinsicMultiplicity_of_isIrreducible [ρ.IsIrreducible]
 
 /-- **The multiplicities of the models are a Kronecker delta**: `m_{Zⱼ}(i) = δᵢⱼ`. -/
 @[simp]
-theorem intrinsicMultiplicity_irreducibleRepresentation (i j : Fin (Nat.card (ConjClasses G))) :
+theorem _root_.TauCeti.intrinsicMultiplicity_irreducibleRepresentation
+    (i j : Fin (Nat.card (ConjClasses G))) :
     (irreducibleRepresentation k j).intrinsicMultiplicity i = if i = j then 1 else 0 := by
   classical
   rw [intrinsicMultiplicity_of_isIrreducible]
@@ -201,5 +235,18 @@ theorem nonempty_regrouping [FiniteDimensional k V] :
     LinearEquiv.piCongrRight (fun i ↦ LinearEquiv.funCongrLeft k[G] _
       (Fintype.equivFinOfCardEq (hcount i)).symm) ≪≫ₗ
     DFinsupp.linearEquivFunOnFintype.symm⟩
+
+variable {ρ} in
+/-- **Finite-dimensional representations are classified by their intrinsic multiplicities**,
+in every characteristic not dividing `|G|` and across carrier universes: `ρ` and `σ` are
+equivalent exactly when `m_ρ(i) = m_σ(i)` for every row `i`. -/
+theorem nonempty_equiv_iff_intrinsicMultiplicity_eq [FiniteDimensional k V] {W : Type w'}
+    [AddCommGroup W] [Module k W] [FiniteDimensional k W] {σ : Representation k G W} :
+    Nonempty (ρ.Equiv σ) ↔ ρ.intrinsicMultiplicity = σ.intrinsicMultiplicity := by
+  refine ⟨fun ⟨e⟩ ↦ intrinsicMultiplicity_congr e, fun h ↦ ?_⟩
+  obtain ⟨eρ⟩ := ρ.nonempty_regrouping
+  obtain ⟨eσ⟩ := σ.nonempty_regrouping
+  rw [h] at eρ
+  exact TauCeti.Representation.nonempty_equiv_iff.mpr ⟨eρ ≪≫ₗ eσ.symm⟩
 
 end Representation
