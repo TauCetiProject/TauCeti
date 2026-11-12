@@ -41,21 +41,6 @@ open InnerProductSpace Laplacian
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The Laplacian commutes with left composition by a linear isometry equivalence. -/
-private theorem laplacian_linearIsometryEquiv_comp {G H : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H] (L : G ≃ₗᵢ[ℝ] H) (g : E → G) :
-    Δ (L ∘ g) = L ∘ Δ g := by
-  have h := laplacian_CLE_comp_left (f := g) (l := L.toContinuousLinearEquiv)
-  simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] at h
-  exact h
-
-/-- In an orthonormal basis the Laplacian is the trace of the second derivative. -/
-private theorem laplacian_eq_sum_fderiv_fderiv {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (g : E → G) (x : E) :
-    Δ g x = ∑ i, fderiv ℝ (fderiv ℝ g) x (stdOrthonormalBasis ℝ E i)
-      (stdOrthonormalBasis ℝ E i) := by
-  simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
-
 /-- **The Laplacian commutes with the derivative.** If `f` is `C³` at `x`, then the Laplacian of
 the derivative field `fderiv ℝ f : E → E →L[ℝ] F` at `x` is the derivative of `Δ f` at `x`. -/
 theorem ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffAt ℝ 3 f x) :
@@ -69,8 +54,11 @@ theorem ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffAt ℝ 3
   have hsymm := (hf.fderiv_right (m := 2) (by norm_num)).isSymmSndFDerivAt
     (by norm_num [minSmoothness_of_isRCLikeNormedField])
   ext h
-  rw [laplacian_eq_sum_fderiv_fderiv, funext (laplacian_eq_sum_fderiv_fderiv f),
-    fderiv_fun_sum fun i _ ↦ hterm i, sum_apply, sum_apply]
+  -- In an orthonormal basis the Laplacian is the trace of the second derivative.
+  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis,
+    laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
+  rw [fderiv_fun_sum fun i _ ↦ hterm i, sum_apply, sum_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   -- `D³f(x)(eᵢ, eᵢ, h) = D³f(x)(eᵢ, h, eᵢ) = D³f(x)(h, eᵢ, eᵢ)`.
   rw [TauCeti.fderiv_clm_apply_const_apply₂ hD2, TauCeti.fderiv_fderiv_fderiv_apply_comm hf
@@ -83,14 +71,17 @@ theorem ContDiff.laplacian_iteratedFDeriv {f : E → F} {n : ℕ} (hf : ContDiff
     Δ (iteratedFDeriv ℝ n f) = iteratedFDeriv ℝ n (Δ f) := by
   induction n with
   | zero =>
-    rw [iteratedFDeriv_zero_eq_comp, iteratedFDeriv_zero_eq_comp,
-      laplacian_linearIsometryEquiv_comp]
+    have hL := laplacian_CLE_comp_left (f := f)
+      (l := LinearIsometryEquiv.toContinuousLinearEquiv (continuousMultilinearCurryFin0 ℝ E F).symm)
+    simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hL
+    rw [iteratedFDeriv_zero_eq_comp, iteratedFDeriv_zero_eq_comp, hL]
   | succ n ih =>
     have h3 : ContDiff ℝ 3 (iteratedFDeriv ℝ n f) :=
       hf.iteratedFDeriv_right (by norm_cast; omega)
-    have hL := laplacian_linearIsometryEquiv_comp
-      (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) F).symm
-      (fderiv ℝ (iteratedFDeriv ℝ n f))
+    have hL := laplacian_CLE_comp_left (f := fderiv ℝ (iteratedFDeriv ℝ n f))
+      (l := LinearIsometryEquiv.toContinuousLinearEquiv
+        (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) F).symm)
+    simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hL
     rw [iteratedFDeriv_succ_eq_comp_left, iteratedFDeriv_succ_eq_comp_left, hL,
       funext fun x ↦ (h3.contDiffAt (x := x)).laplacian_fderiv,
       ih (hf.of_le (by norm_cast; omega))]

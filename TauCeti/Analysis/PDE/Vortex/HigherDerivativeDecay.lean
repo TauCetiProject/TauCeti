@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.SmulConst
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.InnerProductSpace.Laplacian.IteratedFDeriv
+import TauCeti.Analysis.SpecialFunctions.Exp.IteratedFDerivComp
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
@@ -54,8 +56,8 @@ of derivatives in the divisor parameters are not treated here.
 ## Main results
 
 * `TauCeti.Vortex.exists_eventually_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq`: every
-  derivative of a solution of `Δ ℓ = (exp ℓ - 1) / 4` with decaying gradient decays at every rate
-  `c < 1 / 2`.
+  derivative of a solution of `Δ ℓ = (exp ℓ - 1) / 4` whose gradient decays at a rate
+  `0 < c < 1 / 2` decays at the same rate.
 * `TauCeti.Vortex.exists_eventually_norm_iteratedFDeriv_log_normSq_le_mul_exp`: every derivative
   of `log |α|²` decays at every rate `c < 1 / 2`.
 * `exists_eventually_norm_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_le_mul_exp`:
@@ -93,145 +95,6 @@ private theorem natCast_add_two_le_infty (n : ℕ) : (n : WithTop ℕ∞) + 2 �
   rw [← Nat.cast_ofNat, ← Nat.cast_add]
   exact WithTop.coe_le_coe.2 le_top
 
-/-- The derivative of `exp ∘ ℓ` is `exp ℓ • fderiv ℓ`. -/
-private theorem fderiv_exp_comp {ℓ : ℂ → ℝ} (hℓ : Differentiable ℝ ℓ) :
-    fderiv ℝ (fun w ↦ Real.exp (ℓ w)) = fun w ↦ Real.exp (ℓ w) • fderiv ℝ ℓ w :=
-  funext fun w ↦ fderiv_exp (hℓ w)
-
-/-- **Derivatives of `exp ∘ ℓ`.** If `exp ∘ ℓ` is bounded and the derivatives of `ℓ` of orders
-`1, …, N` are `O(exp (-c |z|))` at infinity, then so are those of `exp ∘ ℓ`. -/
-private theorem isBigO_norm_iteratedFDeriv_exp {ℓ : ℂ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) {c : ℝ}
-    (hc : 0 ≤ c) (hbdd : (fun z ↦ Real.exp (ℓ z)) =O[cocompact ℂ] fun _ ↦ (1 : ℝ)) {N : ℕ}
-    (hdec : ∀ j, 1 ≤ j → j ≤ N →
-      (fun z ↦ ‖iteratedFDeriv ℝ j ℓ z‖) =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)))
-    {i : ℕ} (hi₁ : 1 ≤ i) (hiN : i ≤ N) :
-    (fun z ↦ ‖iteratedFDeriv ℝ i (fun w ↦ Real.exp (ℓ w)) z‖) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  induction i using Nat.strong_induction_on with
-  | _ i ih =>
-  obtain ⟨k, rfl⟩ : ∃ k, i = k + 1 := ⟨i - 1, by omega⟩
-  have hE : ContDiff ℝ ∞ (fun w ↦ Real.exp (ℓ w)) := Real.contDiff_exp.comp hℓ
-  have hℓ' : ContDiff ℝ ∞ (fderiv ℝ ℓ) := hℓ.fderiv_right (by norm_cast)
-  -- Leibniz: `D^(k+1) exp ℓ = D^k (exp ℓ • Dℓ)`.
-  have hle (z : ℂ) : ‖iteratedFDeriv ℝ (k + 1) (fun w ↦ Real.exp (ℓ w)) z‖ ≤
-      ∑ j ∈ Finset.range (k + 1), (k.choose j : ℝ) *
-        ‖iteratedFDeriv ℝ j (fun w ↦ Real.exp (ℓ w)) z‖ * ‖iteratedFDeriv ℝ (k + 1 - j) ℓ z‖ := by
-    rw [← norm_iteratedFDeriv_fderiv, fderiv_exp_comp (hℓ.differentiable (by simp))]
-    refine (norm_iteratedFDeriv_smul_le hE hℓ' z (by exact_mod_cast le_top)).trans_eq
-      (Finset.sum_congr rfl fun j hj ↦ ?_)
-    rw [norm_iteratedFDeriv_fderiv, show k - j + 1 = k + 1 - j by
-      have := Finset.mem_range.mp hj; omega]
-  have hsum : (fun z ↦ ∑ j ∈ Finset.range (k + 1), (k.choose j : ℝ) *
-      ‖iteratedFDeriv ℝ j (fun w ↦ Real.exp (ℓ w)) z‖ * ‖iteratedFDeriv ℝ (k + 1 - j) ℓ z‖)
-      =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
-    apply IsBigO.fun_sum
-    intro j hj
-    have hj := Finset.mem_range.mp hj
-    -- The factor `D^j exp ℓ` is bounded and `D^(k+1-j) ℓ` decays.
-    have hEj : (fun z ↦ ‖iteratedFDeriv ℝ j (fun w ↦ Real.exp (ℓ w)) z‖) =O[cocompact ℂ]
-        fun _ ↦ (1 : ℝ) := by
-      rcases Nat.eq_zero_or_pos j with rfl | hj₀
-      · have h0 : (fun z ↦ ‖iteratedFDeriv ℝ 0 (fun w ↦ Real.exp (ℓ w)) z‖) =
-            fun z ↦ ‖Real.exp (ℓ z)‖ := funext fun z ↦ norm_iteratedFDeriv_zero
-        rw [h0]
-        exact hbdd.norm_left
-      · exact (ih j hj hj₀ (by omega)).trans (isBigO_exp_neg_mul_norm_one hc)
-    have hprod := (hEj.mul (hdec (k + 1 - j) (by omega) (by omega))).const_mul_left
-      (k.choose j : ℝ)
-    simpa only [one_mul, mul_assoc] using hprod
-  refine IsBigO.trans (IsBigO.of_bound 1 (Eventually.of_forall fun z ↦ ?_)) hsum
-  rw [norm_norm, one_mul, Real.norm_of_nonneg (Finset.sum_nonneg fun j _ ↦ by positivity)]
-  exact hle z
-
-/-- **The Leibniz residual of `exp ∘ ℓ`.** The `(k+1)`-st derivative of `exp ∘ ℓ` is
-`exp ℓ` times that of `ℓ`, up to terms involving only derivatives of order at most `k`. -/
-private theorem norm_iteratedFDeriv_exp_sub_smul_le {ℓ : ℂ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) (k : ℕ)
-    (z : ℂ) :
-    ‖iteratedFDeriv ℝ (k + 1) (fun w ↦ Real.exp (ℓ w)) z -
-        Real.exp (ℓ z) • iteratedFDeriv ℝ (k + 1) ℓ z‖ ≤
-      ∑ j ∈ Finset.Ico 1 (k + 1), (k.choose j : ℝ) *
-        ‖iteratedFDeriv ℝ j (fun w ↦ Real.exp (ℓ w)) z‖ * ‖iteratedFDeriv ℝ (k + 1 - j) ℓ z‖ := by
-  set E : ℂ → ℝ := fun w ↦ Real.exp (ℓ w)
-  have hE : ContDiff ℝ ∞ E := Real.contDiff_exp.comp hℓ
-  have hℓ' : ContDiff ℝ ∞ (fderiv ℝ ℓ) := hℓ.fderiv_right (by norm_cast)
-  have hEc : ContDiff ℝ ∞ (fun w ↦ E w - E z) := hE.sub contDiff_const
-  -- Subtracting `exp ℓ(z) • Dℓ` turns the top term into the derivative of `(E - E z) • Dℓ`.
-  have hsub : iteratedFDeriv ℝ k (fun w ↦ E w • fderiv ℝ ℓ w) z - E z • iteratedFDeriv ℝ k
-      (fderiv ℝ ℓ) z = iteratedFDeriv ℝ k (fun w ↦ (E w - E z) • fderiv ℝ ℓ w) z := by
-    rw [← iteratedFDeriv_const_smul_apply' (hℓ'.contDiffAt.of_le (by exact_mod_cast le_top)),
-      ← iteratedFDeriv_sub_apply (f := fun w ↦ E w • fderiv ℝ ℓ w)
-        (g := fun w ↦ E z • fderiv ℝ ℓ w)
-        ((hE.smul hℓ').contDiffAt.of_le (by exact_mod_cast le_top))
-        ((hℓ'.const_smul (E z)).contDiffAt.of_le (by exact_mod_cast le_top))]
-    congr 1
-    ext1 w
-    simp [sub_smul]
-  set Ψ := (continuousMultilinearCurryRightEquiv' ℝ k ℂ ℝ).symm
-  have hΨE : iteratedFDeriv ℝ (k + 1) E z = Ψ (iteratedFDeriv ℝ k (fderiv ℝ E) z) := by
-    rw [iteratedFDeriv_succ_eq_comp_right]; rfl
-  have hΨℓ : iteratedFDeriv ℝ (k + 1) ℓ z = Ψ (iteratedFDeriv ℝ k (fderiv ℝ ℓ) z) := by
-    rw [iteratedFDeriv_succ_eq_comp_right]; rfl
-  rw [hΨE, hΨℓ, ← Ψ.map_smul, ← Ψ.map_sub, Ψ.norm_map,
-    fderiv_exp_comp (hℓ.differentiable (by simp)), hsub]
-  refine (norm_iteratedFDeriv_smul_le hEc hℓ' z (by exact_mod_cast le_top)).trans_eq ?_
-  rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (by omega), norm_iteratedFDeriv_zero,
-    sub_self, norm_zero, mul_zero, zero_mul, zero_add]
-  refine Finset.sum_congr rfl fun j hj ↦ ?_
-  have hj := Finset.mem_Ico.mp hj
-  rw [norm_iteratedFDeriv_fderiv, show k - j + 1 = k + 1 - j by omega,
-    show (fun w ↦ E w - E z) = E - fun _ ↦ E z from rfl,
-    iteratedFDeriv_sub_apply (hE.contDiffAt.of_le (by exact_mod_cast le_top)) contDiffAt_const,
-    iteratedFDeriv_const_of_ne (by omega), Pi.zero_apply, sub_zero]
-
-/-- The derivative of the Leibniz residual `D^n (exp ∘ ℓ) - exp ℓ • D^n ℓ` is the residual of order
-`n + 1`, up to the term `D (exp ∘ ℓ) ⊗ D^n ℓ`. -/
-private theorem norm_fderiv_residual_le {ℓ : ℂ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) (n : ℕ) (z : ℂ) :
-    ‖fderiv ℝ (fun w ↦ iteratedFDeriv ℝ n (fun v ↦ Real.exp (ℓ v)) w -
-        Real.exp (ℓ w) • iteratedFDeriv ℝ n ℓ w) z‖ ≤
-      ‖iteratedFDeriv ℝ (n + 1) (fun v ↦ Real.exp (ℓ v)) z -
-          Real.exp (ℓ z) • iteratedFDeriv ℝ (n + 1) ℓ z‖ +
-        ‖fderiv ℝ (fun v ↦ Real.exp (ℓ v)) z‖ * ‖iteratedFDeriv ℝ n ℓ z‖ := by
-  set E : ℂ → ℝ := fun w ↦ Real.exp (ℓ w)
-  have hE : ContDiff ℝ ∞ E := Real.contDiff_exp.comp hℓ
-  have hGd : DifferentiableAt ℝ (iteratedFDeriv ℝ n E) z :=
-    (hE.differentiable_iteratedFDeriv (by exact_mod_cast WithTop.coe_lt_top _)) z
-  have hFd : DifferentiableAt ℝ (iteratedFDeriv ℝ n ℓ) z :=
-    (hℓ.differentiable_iteratedFDeriv (by exact_mod_cast WithTop.coe_lt_top _)) z
-  set Φ := continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ ℂ) ℝ
-  have hΦE : fderiv ℝ (iteratedFDeriv ℝ n E) z = Φ (iteratedFDeriv ℝ (n + 1) E z) := by
-    rw [fderiv_iteratedFDeriv]; rfl
-  have hΦℓ : fderiv ℝ (iteratedFDeriv ℝ n ℓ) z = Φ (iteratedFDeriv ℝ (n + 1) ℓ z) := by
-    rw [fderiv_iteratedFDeriv]; rfl
-  have hEd : DifferentiableAt ℝ E z := hE.differentiable (by simp) z
-  rw [fderiv_fun_sub (f := iteratedFDeriv ℝ n E) (g := fun w ↦ E w • iteratedFDeriv ℝ n ℓ w) hGd
-    (DifferentiableAt.smul hEd hFd), fderiv_fun_smul hEd hFd, hΦE, hΦℓ, ← sub_sub, ← Φ.map_smul,
-    ← Φ.map_sub]
-  refine (norm_sub_le (E := ℂ →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin n ↦ ℂ) ℝ) _ _).trans
-    (le_of_eq ?_)
-  rw [Φ.norm_map, ContinuousLinearMap.norm_smulRight_apply]
-
-/-- A mean value bound for a map whose derivative decays exponentially outside a ball. -/
-private theorem norm_sub_comp_add_le_of_norm_fderiv_le {B : Type*} [NormedAddCommGroup B]
-    [NormedSpace ℝ B] {φ : ℂ → B} (hφ : Differentiable ℝ φ) {c K R : ℝ} (hc : 0 ≤ c)
-    (hK : 0 ≤ K) (hbd : ∀ w : ℂ, R ≤ ‖w‖ → ‖fderiv ℝ φ w‖ ≤ K * Real.exp (-(c * ‖w‖)))
-    {z k : ℂ} (hz : R + 1 ≤ ‖z‖) (hk : ‖k‖ ≤ 1) :
-    ‖φ z - φ (z + k)‖ ≤ K * Real.exp c * Real.exp (-(c * ‖z‖)) * ‖k‖ := by
-  have hball : ∀ w ∈ closedBall z 1,
-      ‖fderiv ℝ φ w‖ ≤ K * Real.exp c * Real.exp (-(c * ‖z‖)) := by
-    intro w hw
-    rw [mem_closedBall, dist_eq_norm] at hw
-    have hw' : ‖z‖ - 1 ≤ ‖w‖ := by
-      have := norm_sub_norm_le z w
-      rw [norm_sub_rev] at this
-      linarith
-    refine (hbd w (by linarith)).trans ?_
-    rw [mul_assoc, ← Real.exp_add]
-    exact mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (by nlinarith)) hK
-  have h := (convex_closedBall z 1).norm_image_sub_le_of_norm_fderiv_le (fun w _ ↦ hφ w) hball
-    (mem_closedBall_self zero_le_one)
-    (show z + k ∈ closedBall z 1 by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left])
-  rwa [add_sub_cancel_left, norm_sub_rev] at h
-
 /-- Outside the disc where `Δ ℓ = (exp ℓ - 1) / 4` holds, the Laplacian of `D^n ℓ`, `n ≥ 1`, is
 `(1 / 4) • D^n (exp ∘ ℓ)`. -/
 private theorem laplacian_iteratedFDeriv_of_laplacian_eq {ℓ : ℂ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ)
@@ -248,40 +111,6 @@ private theorem laplacian_iteratedFDeriv_of_laplacian_eq {ℓ : ℂ → ℝ} (h�
     iteratedFDeriv_sub_apply ((hE.const_smul _).contDiffAt.of_le (by exact_mod_cast le_top))
       contDiffAt_const, iteratedFDeriv_const_of_ne hn, Pi.zero_apply, sub_zero,
     iteratedFDeriv_const_smul_apply' (hE.contDiffAt.of_le (by exact_mod_cast le_top))]
-
-/-- If the derivatives of `ℓ` of orders `1, …, n` decay at rate `c` and `exp ∘ ℓ` is bounded,
-the derivative of the Leibniz residual `D^n (exp ∘ ℓ) - exp ℓ • D^n ℓ` decays at rate `c`. -/
-private theorem isBigO_norm_fderiv_residual {ℓ : ℂ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) {c : ℝ}
-    (hc : 0 ≤ c) (hbdd : (fun z ↦ Real.exp (ℓ z)) =O[cocompact ℂ] fun _ ↦ (1 : ℝ)) {n : ℕ}
-    (hn : 1 ≤ n)
-    (hdec : ∀ j, 1 ≤ j → j ≤ n →
-      (fun z ↦ ‖iteratedFDeriv ℝ j ℓ z‖) =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖))) :
-    (fun z ↦ ‖fderiv ℝ (fun w ↦ iteratedFDeriv ℝ n (fun v ↦ Real.exp (ℓ v)) w -
-        Real.exp (ℓ w) • iteratedFDeriv ℝ n ℓ w) z‖) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  have hEdec := fun i (hi₁ : 1 ≤ i) (hin : i ≤ n) ↦
-    isBigO_norm_iteratedFDeriv_exp hℓ hc hbdd hdec hi₁ hin
-  have hres : (fun z ↦ ∑ j ∈ Finset.Ico 1 (n + 1), (n.choose j : ℝ) *
-      ‖iteratedFDeriv ℝ j (fun v ↦ Real.exp (ℓ v)) z‖ * ‖iteratedFDeriv ℝ (n + 1 - j) ℓ z‖)
-      =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
-    apply IsBigO.fun_sum
-    intro j hj
-    have hj := Finset.mem_Ico.mp hj
-    simpa only [one_mul, mul_assoc] using
-      (((hEdec j hj.1 (by omega)).trans (isBigO_exp_neg_mul_norm_one hc)).mul
-        (hdec (n + 1 - j) (by omega) (by omega))).const_mul_left (n.choose j : ℝ)
-  have hE1 : (fun z ↦ ‖fderiv ℝ (fun v ↦ Real.exp (ℓ v)) z‖ * ‖iteratedFDeriv ℝ n ℓ z‖)
-      =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
-    have h1 := (hEdec 1 le_rfl hn).trans (isBigO_exp_neg_mul_norm_one hc)
-    simp only [norm_iteratedFDeriv_one] at h1
-    simpa only [one_mul] using h1.mul (hdec n hn le_rfl)
-  refine IsBigO.trans (IsBigO.of_bound 1 (Eventually.of_forall fun z ↦ ?_)) (hres.add hE1)
-  have h := (norm_fderiv_residual_le hℓ n z).trans
-    (add_le_add (norm_iteratedFDeriv_exp_sub_smul_le hℓ n z) le_rfl)
-  have h0 := ContinuousLinearMap.opNorm_nonneg (fderiv ℝ (fun w ↦ iteratedFDeriv ℝ n
-    (fun v ↦ Real.exp (ℓ v)) w - Real.exp (ℓ w) • iteratedFDeriv ℝ n ℓ w) z)
-  rw [Real.norm_eq_abs, abs_of_nonneg h0, one_mul, Real.norm_eq_abs, abs_of_nonneg (h0.trans h)]
-  exact h
 
 /-- **The forcing of a translation difference.** Write `E = exp ∘ ℓ`, `F = D^n ℓ`, `n ≥ 1`, and
 `ρ = D^n E - E • F` for the Leibniz residual. Where `Δ ℓ = (E - 1) / 4` holds at `w` and `w + k`,
@@ -309,18 +138,6 @@ private theorem laplacian_sub_comp_add_sub_smul {ℓ : ℂ → ℝ} (hℓ : Cont
   simp only [smul_sub, smul_add, sub_smul, smul_smul, div_eq_mul_inv]
   abel_nf
   module
-
-/-- An `O(exp (-c |z|))` bound outside a compact set, with a nonnegative constant and an explicit
-radius. -/
-private theorem exists_nonneg_forall_norm_le_of_isBigO {f : ℂ → ℝ} {c : ℝ}
-    (h : f =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖))) :
-    ∃ K R, 0 ≤ K ∧ ∀ z : ℂ, R ≤ ‖z‖ → ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK⟩ := h.bound
-  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.mp
-    (cobounded_eq_cocompact (α := ℂ) ▸ hK)
-  refine ⟨max K 0, R, le_max_right _ _, fun z hz ↦ (hR hz).trans ?_⟩
-  rw [Real.norm_of_nonneg (Real.exp_pos _).le]
-  exact mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le
 
 /-- **One more derivative decays.** Let `ℓ` be a smooth solution of `Δ ℓ = (exp ℓ - 1) / 4`
 outside a disc with `ℓ → 0` at infinity, and let `0 < c < 1 / 2`. If the derivatives of `ℓ` of
@@ -353,12 +170,14 @@ private theorem isBigO_norm_iteratedFDeriv_succ {ℓ : ℂ → ℝ} (hℓ : Cont
     rwa [Real.exp_zero] at h
   have hEbdd : E =O[cocompact ℂ] fun _ ↦ (1 : ℝ) := hElim.isBigO_one ℝ
   -- Explicit bounds for `D ρ`, `D E` and `F` outside a disc of radius `R₁`.
-  obtain ⟨K₁, R₁, hK₁, hρb⟩ := exists_nonneg_forall_norm_le_of_isBigO
-    (isBigO_norm_fderiv_residual hℓ hc₀.le hEbdd hn hdec)
-  have hE1 := isBigO_norm_iteratedFDeriv_exp hℓ hc₀.le hEbdd hdec le_rfl hn
+  obtain ⟨K₁, R₁, hK₁, hρb⟩ := exists_nonneg_forall_norm_le_mul_exp_of_isBigO
+    (isBigO_norm_fderiv_iteratedFDeriv_exp_comp_sub_smul hℓ (isBigO_exp_neg_mul_norm_one hc₀.le)
+      hEbdd hn hdec)
+  have hE1 := isBigO_norm_iteratedFDeriv_exp_comp hℓ (isBigO_exp_neg_mul_norm_one hc₀.le) hEbdd
+    hdec le_rfl hn
   simp only [norm_iteratedFDeriv_one] at hE1
-  obtain ⟨K₂, R₂, hK₂, hEb⟩ := exists_nonneg_forall_norm_le_of_isBigO hE1
-  obtain ⟨K₃, R₃, hK₃, hFb⟩ := exists_nonneg_forall_norm_le_of_isBigO (hdec n hn le_rfl)
+  obtain ⟨K₂, R₂, hK₂, hEb⟩ := exists_nonneg_forall_norm_le_mul_exp_of_isBigO hE1
+  obtain ⟨K₃, R₃, hK₃, hFb⟩ := exists_nonneg_forall_norm_le_mul_exp_of_isBigO (hdec n hn le_rfl)
   simp only [norm_norm] at hEb hFb
   replace hρb : ∀ z : ℂ, R₁ ≤ ‖z‖ → ‖fderiv ℝ ρ z‖ ≤ K₁ * Real.exp (-(c * ‖z‖)) := fun z hz ↦ by
     have h := hρb z hz
@@ -480,26 +299,21 @@ private theorem isBigO_norm_iteratedFDeriv_succ {ℓ : ℂ → ℝ} (hℓ : Cont
   exact hle
 
 /-- **All derivatives of a solution of `Δ ℓ = (exp ℓ - 1) / 4` decay exponentially.** Let `ℓ` be
-a smooth function on the plane which solves `Δ ℓ = (exp ℓ - 1) / 4` outside a compact set, tends
-to `0` at infinity, and whose gradient is bounded by `K exp (-c |z|)` outside a compact set for
-every `c < 1 / 2`. Then for every `n ≥ 1` and every `c < 1 / 2` the `n`-th derivative of `ℓ` is
-bounded by `K exp (-c |z|)` outside a compact set. -/
+a smooth function on the plane which solves `Δ ℓ = (exp ℓ - 1) / 4` outside a compact set and tends
+to `0` at infinity, and let `0 < c < 1 / 2`. If the gradient of `ℓ` is bounded by `K exp (-c |z|)`
+outside a compact set, then for every `n ≥ 1` so is the `n`-th derivative of `ℓ`, with another
+constant `K`. -/
 theorem exists_eventually_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq {ℓ : ℂ → ℝ}
     (hℓ : ContDiff ℝ ∞ ℓ) (heq : ∀ᶠ z in cocompact ℂ, Δ ℓ z = (Real.exp (ℓ z) - 1) / 4)
-    (hlim : Tendsto ℓ (cocompact ℂ) (𝓝 0))
-    (hgrad : ∀ c < 1 / 2, ∃ K, ∀ᶠ z in cocompact ℂ,
-      ‖fderiv ℝ ℓ z‖ ≤ K * Real.exp (-(c * ‖z‖)))
-    {n : ℕ} (hn : 1 ≤ n) {c : ℝ} (hc : c < 1 / 2) :
+    (hlim : Tendsto ℓ (cocompact ℂ) (𝓝 0)) {c : ℝ} (hc₀ : 0 < c) (hc : c < 1 / 2)
+    (hgrad : ∃ K, ∀ᶠ z in cocompact ℂ, ‖fderiv ℝ ℓ z‖ ≤ K * Real.exp (-(c * ‖z‖)))
+    {n : ℕ} (hn : 1 ≤ n) :
     ∃ K, ∀ᶠ z in cocompact ℂ, ‖iteratedFDeriv ℝ n ℓ z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
-  -- Work at the rate `c' = max c (1 / 4) ∈ (0, 1 / 2)`, which is at least `c`.
-  set c' := max c (1 / 4) with hc'def
-  have hc'₀ : 0 < c' := lt_max_of_lt_right (by norm_num)
-  have hc' : c' < 1 / 2 := max_lt hc (by norm_num)
   obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
     (cobounded_eq_cocompact (α := ℂ) ▸ heq)
   have heq' : ∀ z : ℂ, R₀ < ‖z‖ → Δ ℓ z = (Real.exp (ℓ z) - 1) / 4 := fun z hz ↦ hR₀ hz.le
   have key (m : ℕ) : ∀ j, 1 ≤ j → j ≤ m →
-      (fun z ↦ ‖iteratedFDeriv ℝ j ℓ z‖) =O[cocompact ℂ] fun z ↦ Real.exp (-(c' * ‖z‖)) := by
+      (fun z ↦ ‖iteratedFDeriv ℝ j ℓ z‖) =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
     induction m with
     | zero => intro j h₁ h₂; omega
     | succ m ih =>
@@ -507,17 +321,13 @@ theorem exists_eventually_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq {ℓ : 
       rcases (show j ≤ m ∨ j = m + 1 by omega) with h | rfl
       · exact ih j h₁ h
       rcases Nat.eq_zero_or_pos m with rfl | hm
-      · obtain ⟨K, hK⟩ := hgrad c' hc'
+      · obtain ⟨K, hK⟩ := hgrad
         refine IsBigO.of_bound K (hK.mono fun z hz ↦ ?_)
         rwa [norm_norm, norm_iteratedFDeriv_one, Real.norm_of_nonneg (Real.exp_pos _).le]
-      · exact isBigO_norm_iteratedFDeriv_succ hℓ heq' hlim hc'₀ hc' hm ih
-  obtain ⟨K, R, hK, hb⟩ := exists_nonneg_forall_norm_le_of_isBigO (key n n hn le_rfl)
-  refine ⟨K, ?_⟩
-  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop R] with z hz
-  have h₁ : ‖iteratedFDeriv ℝ n ℓ z‖ ≤ K * Real.exp (-(c' * ‖z‖)) := by
-    simpa only [norm_norm] using hb z hz
-  refine h₁.trans (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) hK)
-  exact neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+      · exact isBigO_norm_iteratedFDeriv_succ hℓ heq' hlim hc₀ hc hm ih
+  obtain ⟨K, hK⟩ := (key n n hn le_rfl).bound
+  refine ⟨K, hK.mono fun z hz ↦ ?_⟩
+  rwa [norm_norm, Real.norm_of_nonneg (Real.exp_pos _).le] at hz
 
 /-! ### The logarithmic modulus of a plane vortex -/
 
@@ -596,18 +406,26 @@ private theorem exists_eventually_norm_iteratedFDeriv_le_mul_exp_of_log_normSq
         nlinarith
       linarith
     linarith [hK z]
-  -- For `n ≥ 1`, apply the decay of the derivatives of solutions of the scalar equation.
-  exact exists_eventually_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq hℓ
+  -- For `n ≥ 1`, apply the decay of the derivatives of solutions of the scalar equation at the
+  -- rate `c' = max c (1 / 4) ∈ (0, 1 / 2)`, which is at least `c`.
+  set c' := max c (1 / 4)
+  have hc' : c' < 1 / 2 := max_lt hc (by norm_num)
+  obtain ⟨K, hK⟩ := exists_eventually_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq hℓ
     (hev.mono fun z hz ↦ (hR z hz).2.1)
     (by
       have h := (Real.continuousAt_log one_ne_zero).tendsto.comp hlim
       rw [Real.log_one] at h
       exact h.congr' (hev.mono fun z hz ↦ ((hR z hz).1.eq_of_nhds).symm))
-    (fun c hc ↦ by
+    (lt_max_of_lt_right (by norm_num)) hc'
+    (by
       obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hb₁ hb₂ hp hq hsol
-        hlim hc
+        hlim hc'
       exact ⟨K, (hK.and hev).mono fun z hz ↦ by rw [(hR z hz.2).1.fderiv_eq]; exact hz.1⟩)
-    hn hc
+    hn
+  refine ⟨max K 0, hK.mono fun z hz ↦ hz.trans ?_⟩
+  refine (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le).trans
+    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) (le_max_right _ _))
+  exact neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
 
 /-- **Exponential decay of all derivatives of `log |α|²`.** A smooth vortex on the whole plane
 whose section satisfies `|α| → 1` at infinity has, for every order `n` and every rate
@@ -705,18 +523,6 @@ private theorem gaugeTransform_inv_windingPhase_apply_eq (hx : ContDiff ℝ ∞ 
   · simpa using hsec.self_of_nhds.1
   · simpa using hsec.self_of_nhds.2
 
-/-- The `n`-th derivative of a scalar function times a unit coordinate vector is bounded by the
-`n`-th derivative of the function. -/
-private theorem norm_iteratedFDeriv_smul_single_le {f : ℂ → ℝ} (hf : ContDiff ℝ ∞ f) (i : Fin 4)
-    (n : ℕ) (z : ℂ) :
-    ‖iteratedFDeriv ℝ n (fun w ↦ f w • EuclideanSpace.single i (1 : ℝ)) z‖ ≤
-      ‖iteratedFDeriv ℝ n f z‖ := by
-  rw [iteratedFDeriv_smul_const_apply (hf.contDiffAt.of_le (by exact_mod_cast le_top))]
-  refine (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans ?_
-  refine (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)).trans_eq (one_mul _)
-  rw [ContinuousLinearMap.norm_smulRight_apply, PiLp.norm_single, norm_one, mul_one]
-  exact ContinuousLinearMap.norm_id_le
-
 /-- The derivatives of `(exp (ℓ / 2) - 1) / 2` decay at rate `c ≥ 0` when those of `ℓ` of every
 order do. -/
 private theorem exists_eventually_norm_iteratedFDeriv_exp_half_le {ℓ : ℂ → ℝ}
@@ -727,22 +533,11 @@ private theorem exists_eventually_norm_iteratedFDeriv_exp_half_le {ℓ : ℂ →
       ‖iteratedFDeriv ℝ n (fun w ↦ (Real.exp (ℓ w / 2) - 1) / 2) z‖ ≤
         K * Real.exp (-(c * ‖z‖)) := by
   have hℓ2 : ContDiff ℝ ∞ (fun w ↦ ℓ w / 2) := hℓ.div_const 2
-  have hE : ContDiff ℝ ∞ (fun w ↦ Real.exp (ℓ w / 2)) := Real.contDiff_exp.comp hℓ2
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · -- `|exp (ℓ / 2) - 1| ≤ |ℓ|` once `|ℓ| ≤ 2`.
-    obtain ⟨K, hK⟩ := hdec 0
-    refine ⟨K / 2, (hK.and (hlim.eventually (Metric.closedBall_mem_nhds 0 two_pos))).mono
-      fun z hz ↦ ?_⟩
-    have hz2 : |ℓ z| ≤ 2 := by simpa [dist_zero_right] using hz.2
-    have hz1 := hz.1
-    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs] at hz1
-    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, abs_div, abs_two]
-    have h := Real.abs_exp_sub_one_le (x := ℓ z / 2) (by rw [abs_div, abs_two]; linarith)
-    rw [abs_div, abs_two] at h
-    linarith
-  -- For `n ≥ 1`, the constant drops out and `ℓ / 2` has decaying derivatives.
-  have hdec2 : ∀ j, 1 ≤ j → j ≤ n → (fun z ↦ ‖iteratedFDeriv ℝ j (fun w ↦ ℓ w / 2) z‖)
-      =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := fun j _ _ ↦ by
+  have hE : ContDiff ℝ ∞ (fun w ↦ Real.exp (ℓ w / 2) - 1) :=
+    (Real.contDiff_exp.comp hℓ2).sub contDiff_const
+  -- The derivatives of `ℓ / 2` are half those of `ℓ`.
+  have hdec2 : ∀ j ≤ n, (fun z ↦ ‖iteratedFDeriv ℝ j (fun w ↦ ℓ w / 2) z‖)
+      =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := fun j _ ↦ by
     obtain ⟨K, hK⟩ := hdec j
     refine IsBigO.of_bound (K / 2) (hK.mono fun z hz ↦ ?_)
     have h2 : (fun w ↦ ℓ w / 2) = fun w ↦ (1 / 2 : ℝ) • ℓ w := funext fun w ↦ by
@@ -752,23 +547,15 @@ private theorem exists_eventually_norm_iteratedFDeriv_exp_half_le {ℓ : ℂ →
       Real.norm_of_nonneg (Real.exp_pos _).le]
     norm_num
     linarith
-  have hbdd : (fun z ↦ Real.exp (ℓ z / 2)) =O[cocompact ℂ] fun _ ↦ (1 : ℝ) := by
-    have h := (Real.continuous_exp.tendsto 0).comp
-      (by simpa using hlim.div_const 2 : Tendsto (fun z ↦ ℓ z / 2) (cocompact ℂ) (𝓝 0))
-    rw [Real.exp_zero] at h
-    exact h.isBigO_one ℝ
-  obtain ⟨K, R, hK, hb⟩ := exists_nonneg_forall_norm_le_of_isBigO
-    (isBigO_norm_iteratedFDeriv_exp hℓ2 hc hbdd hdec2 hn le_rfl)
-  refine ⟨K / 2, (tendsto_norm_cocompact_atTop.eventually_ge_atTop R).mono fun z hz ↦ ?_⟩
+  obtain ⟨K, hK⟩ := (isBigO_norm_iteratedFDeriv_exp_comp_sub_one hℓ2
+    (isBigO_exp_neg_mul_norm_one hc) (by simpa using hlim.div_const 2) hdec2).bound
+  refine ⟨K / 2, hK.mono fun z hz ↦ ?_⟩
+  rw [norm_norm, Real.norm_of_nonneg (Real.exp_pos _).le] at hz
   have h2 : (fun w ↦ (Real.exp (ℓ w / 2) - 1) / 2) =
-      (fun w ↦ (1 / 2 : ℝ) • Real.exp (ℓ w / 2)) - fun _ ↦ (1 / 2 : ℝ) :=
-    funext fun w ↦ by rw [Pi.sub_apply, smul_eq_mul]; ring
-  rw [h2, iteratedFDeriv_sub_apply ((hE.const_smul _).contDiffAt.of_le
-      (by exact_mod_cast le_top)) contDiffAt_const, iteratedFDeriv_const_of_ne (by omega),
-    Pi.zero_apply, sub_zero, iteratedFDeriv_const_smul_apply'
-      (hE.contDiffAt.of_le (by exact_mod_cast le_top)), norm_smul]
-  have := hb z hz
-  rw [norm_norm] at this
+      fun w ↦ (1 / 2 : ℝ) • (Real.exp (ℓ w / 2) - 1) :=
+    funext fun w ↦ by rw [smul_eq_mul]; ring
+  rw [h2, iteratedFDeriv_const_smul_apply' (hE.contDiffAt.of_le (by exact_mod_cast le_top)),
+    norm_smul]
   norm_num
   linarith
 
@@ -792,6 +579,13 @@ private theorem norm_iteratedFDeriv_endField_le {ℓ : ℂ → ℝ} (hℓ : Cont
       ← norm_iteratedFDeriv_fderiv]
     exact mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_clm_apply_const hℓ'.contDiffAt
       (by exact_mod_cast le_top)) (abs_nonneg a)
+  -- The coordinate vectors have norm one.
+  have hsingle (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) (i : Fin 4) :
+      ‖iteratedFDeriv ℝ n (fun w ↦ f w • EuclideanSpace.single i (1 : ℝ)) z‖ ≤
+        ‖iteratedFDeriv ℝ n f z‖ := by
+    refine (norm_iteratedFDeriv_smul_const_le
+      (hf.contDiffAt.of_le (by exact_mod_cast le_top)) _).trans_eq ?_
+    rw [PiLp.norm_single, norm_one, mul_one]
   have hcd₀ : ContDiff ℝ ∞ fun w ↦ -(fderiv ℝ ℓ w I / 2) :=
     ((hℓ'.clm_apply contDiff_const).div_const 2).neg
   have hcd₁ : ContDiff ℝ ∞ fun w ↦ fderiv ℝ ℓ w 1 / 2 :=
@@ -813,20 +607,20 @@ private theorem norm_iteratedFDeriv_endField_le {ℓ : ℂ → ℝ} (hℓ : Cont
     iteratedFDeriv_add_apply (hA.contDiffAt.of_le (by exact_mod_cast le_top))
       (hB.contDiffAt.of_le (by exact_mod_cast le_top))]
   have hA' : ‖iteratedFDeriv ℝ n A z‖ ≤ 1 / 2 * ‖iteratedFDeriv ℝ (n + 1) ℓ z‖ := by
-    refine (norm_iteratedFDeriv_smul_single_le hcd₀ 0 n z).trans ?_
+    refine (hsingle _ hcd₀ 0).trans ?_
     rw [show (fun w ↦ -(fderiv ℝ ℓ w I / 2)) = fun w ↦ (-1 / 2) * fderiv ℝ ℓ w I from
       funext fun w ↦ by ring]
     refine (hcomp I (-1 / 2)).trans_eq ?_
     rw [norm_I]
     norm_num
   have hB' : ‖iteratedFDeriv ℝ n B z‖ ≤ 1 / 2 * ‖iteratedFDeriv ℝ (n + 1) ℓ z‖ := by
-    refine (norm_iteratedFDeriv_smul_single_le hcd₁ 1 n z).trans ?_
+    refine (hsingle _ hcd₁ 1).trans ?_
     rw [show (fun w ↦ fderiv ℝ ℓ w 1 / 2) = fun w ↦ (1 / 2) * fderiv ℝ ℓ w 1 from
       funext fun w ↦ by ring]
     refine (hcomp 1 (1 / 2)).trans_eq ?_
     rw [norm_one]
     norm_num
-  have hC' := norm_iteratedFDeriv_smul_single_le hcd₂ 2 n z
+  have hC' := hsingle _ hcd₂ 2
   calc _ ≤ _ := norm_add₃_le
     _ ≤ _ := by linarith
 
