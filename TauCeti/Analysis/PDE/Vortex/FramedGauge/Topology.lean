@@ -112,7 +112,7 @@ theorem sobolevGaugeCoord_injective :
 @[simp]
 theorem sobolevGaugeCoord_one : sobolevGaugeCoord (1 : sobolevGaugeGroup hs) = 0 := by
   rw [sobolevGaugeCoord_eq_iff (by linarith : (0 : ℝ) ≤ s), map_zero]
-  filter_upwards [Lp.coeFn_zero ℂ 2 (volume : Measure ℂ)] with z hz
+  filter_upwards with z
   simp
 
 /-- The `H^s` coordinate of `u ∈ G_s` vanishes exactly when `u` is the identity. -/
