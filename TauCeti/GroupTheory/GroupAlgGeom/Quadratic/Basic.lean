@@ -268,15 +268,15 @@ theorem occurrences_inr_of [DecidableEq X] (x y : X) :
 of `w`. -/
 theorem occurrences_eq_countVar_reducedWord (x : X) (w : GX G X) :
     occurrences x w = countVar x (reducedWord w) := by
-  refine le_antisymm (occurrences_le_countVar x (prod_reducedWord w)) <|
-    le_occurrences x (fun u => countVar x (reducedWord u)) (fun u v => ?_) (fun g => ?_) ?_ ?_
-      (fun y hy => ⟨?_, ?_⟩) w
-  · simpa using countVar_reducedWord_le x (reducedWord u ++ reducedWord v)
-  · simpa using countVar_reducedWord_le (G := G) x [.inl g]
-  · simpa using countVar_reducedWord_le (G := G) x [.inr (x, true)]
-  · simpa using countVar_reducedWord_le (G := G) x [.inr (x, false)]
-  · simpa [hy] using countVar_reducedWord_le (G := G) x [.inr (y, true)]
-  · simpa [hy] using countVar_reducedWord_le (G := G) x [.inr (y, false)]
+  obtain ⟨l, rfl, hl⟩ := exists_countVar_eq_occurrences x w
+  exact le_antisymm (occurrences_le_countVar x (prod_reducedWord _))
+    ((countVar_reducedWord_le x l).trans_eq hl)
+
+/-- The number of occurrences of `x` in an element `f` of `F(X)` is the number of letters `x^{±1}`
+in the reduced word of `f`. -/
+theorem occurrences_inr [DecidableEq X] (x : X) (f : FreeGroup X) :
+    occurrences x (inr f : GX G X) = f.toWord.countP fun p => p.1 = x := by
+  rw [occurrences_eq_countVar_reducedWord, reducedWord_inr, countVar_map_inr]
 
 /-- The number of occurrences of `x` in the product of a reduced word is its number of letters
 `x^{±1}`. -/
@@ -405,14 +405,14 @@ theorem exists_isCyclicallyReduced_conj (w : GX G X) :
 
 /-- Cyclic reduction of a strictly quadratic word `w`: it is a conjugate `u l u⁻¹` of the product
 of a cyclically reduced word `l` which is again strictly quadratic. Every variable either occurs in
-`l` as often as in `w` and not in the conjugator `u`, or occurs once in `u` and disappears from
-`l`. -/
+`l` as often as in `w` and not in the conjugator `u`, or occurs twice in `w`, once in `u` and not
+in `l`. -/
 theorem IsStrictlyQuadratic.exists_isCyclicallyReduced_conj {w : GX G X}
     (hw : IsStrictlyQuadratic {w}) :
     ∃ (u : GX G X) (l : List (G ⊕ X × Bool)), IsCyclicallyReduced l ∧
       u * (l.map letter).prod * u⁻¹ = w ∧ IsStrictlyQuadratic {(l.map letter).prod} ∧
       ∀ x, occurrences x (l.map letter).prod = occurrences x w ∧ occurrences x u = 0 ∨
-        occurrences x (l.map letter).prod = 0 ∧ occurrences x u = 1 := by
+        occurrences x w = 2 ∧ occurrences x (l.map letter).prod = 0 ∧ occurrences x u = 1 := by
   obtain ⟨u, l, hl, hprod, hocc⟩ := Quadratic.exists_isCyclicallyReduced_conj w
   rw [isStrictlyQuadratic_singleton] at hw
   refine ⟨u, l, hl, hprod, isStrictlyQuadratic_singleton.2 fun x => ?_, fun x => ?_⟩ <;>

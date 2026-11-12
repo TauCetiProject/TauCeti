@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Algebra.Group.End
 import Mathlib.Tactic.Group
+import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # Reduced and cyclically reduced words in the free `G`-group `G[X]`
@@ -27,11 +28,19 @@ letter cancels against the first letter or is prepended.
 
 A reduced word is *cyclically reduced* when moreover, if it has at least two letters, its last and
 first letters do not combine: they are not both coefficients, and they are not a variable letter
-and its inverse. Every reduced word is a conjugate `u l u⁻¹` of a cyclically reduced word `l`, where
-`u` is an initial segment of the word; this is cyclic reduction relative to `G`, which cancels a
-variable letter at the start against its inverse at the end and merges a coefficient at the end
-into the coefficient at the start. Every letter `x^{±1}` of the word is either a letter of `l` or
-one of a pair of letters of `u` and `u⁻¹`.
+and its inverse. Cyclic reduction relative to `G` writes the product of a reduced word `l` as the
+conjugate of the product of a cyclically reduced word `m` by the product of an initial segment `u`
+of `l`, and for every variable `x` the word `l` has as many letters `x^{±1}` as `m` plus twice as
+many as `u`. When the first and last letters of `l` combine, they are removed into the conjugator:
+a variable letter at the start cancels against its inverse at the end, as do coefficients `g` at
+the start and `h` at the end with `h * g = 1`; if `h * g ≠ 1`, then `g m' h` is the conjugate of
+`m' (h * g)` by `g`, so `g` merges into the coefficient at the end.
+
+Counting the letters `x^{±1}` of the reduced word gives the number of occurrences of a variable in
+an element of `G[X]`. Cyclic reduction replaces an equation `w = 1` over `G` by an equation with
+the same solutions whose left side is cyclically reduced; in a quadratic equation, the variables
+of the conjugator disappear from it. This is a step towards the standard form of strictly
+quadratic words [IFT, §2.7, Lemma 1].
 
 Mathlib has no normal form for the binary free product `Monoid.Coprod`, and the source's reduced
 forms write each syllable from `F(X)` as a reduced word of `F(X)`, so the normal form is proved
@@ -45,6 +54,7 @@ directly for words in letters.
   variable letter and its inverse.
 * `TauCeti.GroupAlgGeom.GX.IsReduced`, `TauCeti.GroupAlgGeom.GX.IsCyclicallyReduced`: reduced and
   cyclically reduced words.
+* `TauCeti.GroupAlgGeom.GX.invRev`: the formal inverse of a word.
 * `TauCeti.GroupAlgGeom.GX.reducedWord w`: the reduced word of `w ∈ G[X]`.
 
 ## Main results
@@ -52,15 +62,17 @@ directly for words in letters.
 * `TauCeti.GroupAlgGeom.GX.prod_reducedWord`, `TauCeti.GroupAlgGeom.GX.reducedWord_eq_iff`: the
   normal form theorem: `w` is the product of `reducedWord w`, which is the only reduced word with
   product `w`.
+* `TauCeti.GroupAlgGeom.GX.reducedWord_inv`, `TauCeti.GroupAlgGeom.GX.reducedWord_inr`: the
+  reduced words of `w⁻¹` and of the elements of `F(X)`.
 * `TauCeti.GroupAlgGeom.GX.countVar_reducedWord_le`: reduction does not increase the number of
   letters `x^{±1}`.
-* `TauCeti.GroupAlgGeom.GX.IsReduced.exists_isCyclicallyReduced`: cyclic reduction of reduced
-  words.
+* `TauCeti.GroupAlgGeom.GX.IsReduced.exists_isCyclicallyReduced`: cyclic reduction relative to
+  `G` of reduced words.
 
 ## References
 
 * [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
-  290 (2005), §2.2.
+  290 (2005), §2.2 and §2.7.
 * R. C. Lyndon, P. E. Schupp, *Combinatorial group theory*, Springer (1977), Chapter IV, §1.
 -/
 
@@ -96,25 +108,23 @@ theorem letter_inr_true (y : X) : letter (.inr (y, true) : G ⊕ X × Bool) = in
 theorem letter_inr_false (y : X) :
     letter (.inr (y, false) : G ⊕ X × Bool) = (inr (FreeGroup.of y))⁻¹ := (rfl)
 
+/-- The product of a word in variable letters is the image in `G[X]` of the element of the free
+group `F(X)` that the word spells. -/
+theorem prod_map_letter_map_inr (L : List (X × Bool)) :
+    ((L.map Sum.inr).map (letter (G := G))).prod = inr (FreeGroup.mk L) := by
+  rw [MonoidHom.apply_freeGroup_mk (inr : FreeGroup X →* GX G X), List.map_map]
+  exact congrArg List.prod <| List.map_congr_left fun ⟨_, b⟩ _ => by cases b <;> rfl
+
 theorem letter_inr (p : X × Bool) : letter (.inr p : G ⊕ X × Bool) = inr (FreeGroup.mk [p]) := by
-  rcases p with ⟨y, _ | _⟩
-  · simp [← map_inv, FreeGroup.inv_mk, FreeGroup.invRev, FreeGroup.of]
-  · rfl
+  simpa using prod_map_letter_map_inr (G := G) [p]
 
 /- Every element of `G[X]` is a product of letters. -/
 private theorem exists_map_letter_prod_eq (w : GX G X) :
     ∃ l : List (G ⊕ X × Bool), (l.map letter).prod = w := by
+  classical
   induction w using Monoid.Coprod.induction_on with
   | inl g => exact ⟨[.inl g], by simp⟩
-  | inr f =>
-    induction f using FreeGroup.induction_on with
-    | one => exact ⟨[], by simp⟩
-    | of y => exact ⟨[.inr (y, true)], by simp⟩
-    | inv_of y _ => exact ⟨[.inr (y, false)], by simp⟩
-    | mul f₁ f₂ h₁ h₂ =>
-      obtain ⟨l₁, hl₁⟩ := h₁
-      obtain ⟨l₂, hl₂⟩ := h₂
-      exact ⟨l₁ ++ l₂, by simp [hl₁, hl₂]⟩
+  | inr f => exact ⟨f.toWord.map Sum.inr, by rw [prod_map_letter_map_inr, FreeGroup.mk_toWord]⟩
   | mul u v hu hv =>
     obtain ⟨l₁, hl₁⟩ := hu
     obtain ⟨l₂, hl₂⟩ := hv
@@ -155,6 +165,30 @@ theorem countVar_append (x : X) (l₁ l₂ : List (G ⊕ X × Bool)) :
     countVar x (l₁ ++ l₂) = countVar x l₁ + countVar x l₂ := by
   simp [countVar]
 
+theorem countVar_eq_countP [DecidableEq X] (x : X) (l : List (G ⊕ X × Bool)) :
+    countVar x l = l.countP fun a => a.elim (fun _ => false) (fun p => p.1 = x) := by
+  unfold countVar
+  congr!
+
+theorem countVar_eq_zero {x : X} {l : List (G ⊕ X × Bool)} :
+    countVar x l = 0 ↔ ∀ b, .inr (x, b) ∉ l := by
+  classical
+  rw [countVar_eq_countP, List.countP_eq_zero]
+  refine ⟨fun h b hb => by simpa using h _ hb, ?_⟩
+  rintro h (_ | ⟨y, b⟩) hm
+  · simp
+  · simpa using fun hy : y = x => h b (hy ▸ hm)
+
+@[simp]
+theorem countVar_map_inl (x : X) (L : List G) :
+    countVar x (L.map Sum.inl : List (G ⊕ X × Bool)) = 0 := by
+  simp [countVar, Function.comp_def]
+
+@[simp]
+theorem countVar_map_inr [DecidableEq X] (x : X) (L : List (X × Bool)) :
+    countVar x (L.map Sum.inr : List (G ⊕ X × Bool)) = L.countP fun p => p.1 = x := by
+  simp [countVar_eq_countP, Function.comp_def]
+
 end CountVar
 
 /-! ### Reduced words -/
@@ -181,6 +215,12 @@ theorem not_combines_inl_inr (g : G) (p : X × Bool) : ¬Combines (.inl g) (.inr
 
 @[simp]
 theorem not_combines_inr_inl (p : X × Bool) (g : G) : ¬Combines (.inr p) (.inl g) := id
+
+theorem combines_comm {a b : G ⊕ X × Bool} : Combines a b ↔ Combines b a := by
+  rcases a with _ | ⟨y, e⟩ <;> rcases b with _ | ⟨z, f⟩ <;> simp [eq_comm]
+
+theorem Combines.symm {a b : G ⊕ X × Bool} (h : Combines a b) : Combines b a :=
+  combines_comm.1 h
 
 /- Combining with a coefficient only depends on the other letter being a coefficient. -/
 private theorem combines_inl_iff {g h : G} {c : G ⊕ X × Bool} :
@@ -220,6 +260,7 @@ theorem isReduced_cons {a : G ⊕ X × Bool} {l : List (G ⊕ X × Bool)} :
     List.isChain_nil, and_true, or_imp, forall_and]
   tauto
 
+@[simp]
 theorem isReduced_cons_cons {a b : G ⊕ X × Bool} {l : List (G ⊕ X × Bool)} :
     IsReduced (a :: b :: l) ↔ IsReduced [a] ∧ ¬Combines a b ∧ IsReduced (b :: l) := by
   simp [isReduced_cons (l := b :: l)]
@@ -234,7 +275,73 @@ theorem IsReduced.infix {l₁ l₂ : List (G ⊕ X × Bool)} (h : IsReduced l₂
     IsReduced l₁ :=
   ⟨fun g hg => h.1 g (h'.subset hg), h.2.infix h'⟩
 
+/-- A word in variable letters is reduced exactly when it is a reduced word of the free group
+`F(X)`. -/
+@[simp]
+theorem isReduced_map_inr {L : List (X × Bool)} :
+    IsReduced (L.map Sum.inr : List (G ⊕ X × Bool)) ↔ FreeGroup.IsReduced L := by
+  simp [IsReduced, FreeGroup.IsReduced, List.isChain_map]
+
 end Reduced
+
+/-! ### Inverse words -/
+
+section InvRev
+
+/-- The formal inverse of a word in coefficients and variable letters: the inverse letters `g⁻¹`
+and `x^{-ε}` in reverse order. On words in variable letters it is `FreeGroup.invRev`
+(`invRev_map_inr`). -/
+def invRev [Inv G] (l : List (G ⊕ X × Bool)) : List (G ⊕ X × Bool) :=
+  (l.map (Sum.map (·⁻¹) fun p => (p.1, !p.2))).reverse
+
+@[simp]
+theorem invRev_nil [Inv G] : invRev ([] : List (G ⊕ X × Bool)) = [] := (rfl)
+
+@[simp]
+theorem invRev_append [Inv G] (l₁ l₂ : List (G ⊕ X × Bool)) :
+    invRev (l₁ ++ l₂) = invRev l₂ ++ invRev l₁ := by
+  simp [invRev]
+
+@[simp]
+theorem invRev_invRev [InvolutiveInv G] (l : List (G ⊕ X × Bool)) : invRev (invRev l) = l := by
+  simp only [invRev, List.map_reverse, List.reverse_reverse, List.map_map]
+  exact List.map_id'' (fun a => by rcases a with _ | _ <;> simp) l
+
+@[simp]
+theorem invRev_map_inr [Inv G] (L : List (X × Bool)) :
+    invRev (L.map Sum.inr : List (G ⊕ X × Bool)) = (FreeGroup.invRev L).map Sum.inr := by
+  simp [invRev, FreeGroup.invRev, Function.comp_def]
+
+@[simp]
+theorem countVar_invRev [Inv G] (x : X) (l : List (G ⊕ X × Bool)) :
+    countVar x (invRev l) = countVar x l := by
+  classical
+  simp only [countVar_eq_countP, invRev, List.countP_reverse, List.countP_map]
+  congr 1 with (_ | _) <;> rfl
+
+/- Inverting two letters does not change whether they combine. -/
+private theorem combines_map_inv [Inv G] {a b : G ⊕ X × Bool} :
+    Combines (Sum.map (·⁻¹) (fun p => (p.1, !p.2)) a) (Sum.map (·⁻¹) (fun p => (p.1, !p.2)) b) ↔
+      Combines a b := by
+  rcases a with _ | ⟨y, e⟩ <;> rcases b with _ | ⟨z, f⟩ <;> simp
+
+@[simp]
+theorem isReduced_invRev [DivisionMonoid G] {l : List (G ⊕ X × Bool)} :
+    IsReduced (invRev l) ↔ IsReduced l := by
+  rw [isReduced_iff, isReduced_iff, invRev, List.isChain_reverse, List.isChain_map]
+  refine and_congr ?_ ⟨fun h => h.imp fun a b h' hab => h' (combines_map_inv.2 hab.symm),
+    fun h => h.imp fun a b h' hab => h' (combines_map_inv.1 hab).symm⟩
+  simp [Sum.exists]
+
+theorem prod_map_letter_invRev [Group G] (l : List (G ⊕ X × Bool)) :
+    ((invRev l).map letter).prod = ((l.map letter).prod)⁻¹ := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [← List.singleton_append, invRev_append, List.map_append, List.prod_append, ih]
+    rcases a with g | ⟨y, _ | _⟩ <;> simp [invRev]
+
+end InvRev
 
 /-! ### The normal form theorem -/
 
@@ -276,7 +383,7 @@ private theorem letterMul_inl_mul {l : List (G ⊕ X × Bool)} (hl : IsReduced l
   · simp only [letterMul]; split_ifs <;> simp_all
   -- a leading coefficient `k` absorbs `h`; the letter after it is not a coefficient
   all_goals first
-    | simp [isReduced_cons_cons] at hl; done
+    | simp at hl; done
     | simp only [letterMul]; split_ifs <;> simp_all [mul_assoc]
 
 private theorem letterMul_inl_one {l : List (G ⊕ X × Bool)} (hl : IsReduced l) :
@@ -382,15 +489,18 @@ private theorem letterMul_of_isReduced_cons {a : G ⊕ X × Bool} {l : List (G �
     (h : IsReduced (a :: l)) : letterMul a l = a :: l := by
   rcases a with g | p <;> rcases l with _ | ⟨h' | q, l⟩ <;> simp only [letterMul]
   · simp_all
-  · simp [isReduced_cons_cons] at h
-  · simp_all [isReduced_cons_cons]
+  · simp at h
+  · simp_all
   · have := (isReduced_cons_cons.1 h).2.1
     simp only [combines_inr_inr] at this
     simp [this]
 
+/-- The reduced word of `w` is reduced. -/
+@[simp]
 theorem isReduced_reducedWord (w : GX G X) : IsReduced (reducedWord w) :=
   (act w _).2
 
+/-- The product of the letters of the reduced word of `w` is `w`. -/
 @[simp]
 theorem prod_reducedWord (w : GX G X) : ((reducedWord w).map letter).prod = w := by
   obtain ⟨l, rfl⟩ := exists_map_letter_prod_eq w
@@ -415,6 +525,10 @@ theorem reducedWord_injective : Function.Injective (reducedWord : GX G X → _) 
   fun u v h => by simpa using congrArg (fun l => (l.map letter).prod) h
 
 @[simp]
+theorem reducedWord_inj {u v : GX G X} : reducedWord u = reducedWord v ↔ u = v :=
+  reducedWord_injective.eq_iff
+
+@[simp]
 theorem reducedWord_eq_nil_iff {w : GX G X} : reducedWord w = [] ↔ w = 1 := by
   simp [reducedWord_eq_iff isReduced_nil, eq_comm]
 
@@ -422,6 +536,7 @@ theorem reducedWord_eq_nil_iff {w : GX G X} : reducedWord w = [] ↔ w = 1 := by
 theorem reducedWord_one : reducedWord (1 : GX G X) = [] :=
   reducedWord_eq_nil_iff.2 rfl
 
+@[simp]
 theorem reducedWord_inl_of_ne_one {g : G} (hg : g ≠ 1) : reducedWord (inl g : GX G X) = [.inl g] :=
   (reducedWord_eq_iff (by simpa using hg)).2 (by simp)
 
@@ -429,16 +544,20 @@ theorem reducedWord_inl_of_ne_one {g : G} (hg : g ≠ 1) : reducedWord (inl g : 
 in the free group `F(X)`. -/
 @[simp]
 theorem reducedWord_inr [DecidableEq X] (f : FreeGroup X) :
-    reducedWord (inr f : GX G X) = f.toWord.map .inr := by
-  refine (reducedWord_eq_iff ⟨by simp, ?_⟩).2 ?_
-  · exact (List.isChain_map _).2 <| FreeGroup.isReduced_toWord.imp fun a b h ⟨h₁, h₂⟩ => h₂ (h h₁)
-  · rw [List.map_map]
-    conv_rhs => rw [← FreeGroup.mk_toWord (x := f)]
-    induction f.toWord with
-    | nil => simp [← FreeGroup.one_eq_mk]
-    | cons p L ih =>
-      rw [List.map_cons, List.prod_cons, ih, Function.comp_apply, letter_inr, ← map_mul,
-        FreeGroup.mul_mk, List.singleton_append]
+    reducedWord (inr f : GX G X) = f.toWord.map Sum.inr :=
+  (reducedWord_eq_iff (isReduced_map_inr.2 FreeGroup.isReduced_toWord)).2 <| by
+    rw [prod_map_letter_map_inr, FreeGroup.mk_toWord]
+
+@[simp]
+theorem reducedWord_inr_of (y : X) :
+    reducedWord (inr (FreeGroup.of y) : GX G X) = [.inr (y, true)] :=
+  (reducedWord_eq_iff (isReduced_singleton_inr _)).2 (by simp)
+
+/-- The reduced word of `w⁻¹` is the formal inverse of the reduced word of `w`. -/
+@[simp]
+theorem reducedWord_inv (w : GX G X) : reducedWord w⁻¹ = invRev (reducedWord w) :=
+  (reducedWord_eq_iff (isReduced_invRev.2 (isReduced_reducedWord w))).2 <| by
+    rw [prod_map_letter_invRev, prod_reducedWord]
 
 /-- Reduction does not increase the number of letters `x^{±1}`: the reduced word of the product of
 a word `l` has at most as many letters `x^{±1}` as `l`. -/
@@ -468,6 +587,10 @@ here but not there, and `z⁻¹ y z` (one syllable of `F(X)`) is not cyclically 
 def IsCyclicallyReduced (l : List (G ⊕ X × Bool)) : Prop :=
   IsReduced l ∧ ∀ a b m, l = a :: (m ++ [b]) → ¬Combines b a
 
+theorem isCyclicallyReduced_iff {l : List (G ⊕ X × Bool)} :
+    IsCyclicallyReduced l ↔ IsReduced l ∧ ∀ a b m, l = a :: (m ++ [b]) → ¬Combines b a :=
+  Iff.rfl
+
 theorem IsCyclicallyReduced.isReduced {l : List (G ⊕ X × Bool)} (h : IsCyclicallyReduced l) :
     IsReduced l :=
   h.1
@@ -488,11 +611,18 @@ theorem isCyclicallyReduced_cons_append {a b : G ⊕ X × Bool} {m : List (G ⊕
   obtain ⟨rfl, rfl, rfl⟩ := he
   exact h.2
 
+@[simp]
+theorem isCyclicallyReduced_cons_cons {a b : G ⊕ X × Bool} {l : List (G ⊕ X × Bool)} :
+    IsCyclicallyReduced (a :: b :: l) ↔
+      IsReduced (a :: b :: l) ∧ ¬Combines ((b :: l).getLast (List.cons_ne_nil b l)) a := by
+  conv_lhs => rw [← List.dropLast_append_getLast (List.cons_ne_nil b l)]
+  rw [isCyclicallyReduced_cons_append, List.dropLast_append_getLast]
+
 /-- The word `z⁻¹ a z` is not cyclically reduced: its last letter `z` cancels against its first
 letter `z⁻¹`. -/
 theorem not_isCyclicallyReduced_inv_inl_self {a : G} {z : X} :
-    ¬IsCyclicallyReduced ([.inr (z, false), .inl a, .inr (z, true)] : List (G ⊕ X × Bool)) :=
-  fun h => h.2 _ _ [.inl a] rfl (by simp)
+    ¬IsCyclicallyReduced ([.inr (z, false), .inl a, .inr (z, true)] : List (G ⊕ X × Bool)) := by
+  simp
 
 end Cyclic
 
@@ -502,8 +632,9 @@ section CyclicReduction
 
 variable [Group G]
 
-/-- `l` is the conjugate of a cyclically reduced word `m` by the product of an initial segment `u`
-of `l`, and every letter `x^{±1}` of `l` is a letter of `m` or one of a pair in `u` and `u⁻¹`. -/
+/-- The product of `l` is the conjugate of the product of a cyclically reduced word `m` by the
+product of an initial segment `u` of `l`, and each variable has as many letters in `l` as in `m`
+plus twice as many as in `u`. -/
 private def HasCyclicReduction (l : List (G ⊕ X × Bool)) : Prop :=
   ∃ u m : List (G ⊕ X × Bool), u <+: l ∧ IsCyclicallyReduced m ∧
     (u.map letter).prod * (m.map letter).prod * ((u.map letter).prod)⁻¹ = (l.map letter).prod ∧
@@ -542,9 +673,9 @@ private theorem hasCyclicReduction_inl_inl {g h : G} {m : List (G ⊕ X × Bool)
   subst hb
   exact (combines_inl_right_iff (h := h)).not.2 (hl''.2.2 a ha (.inl h) rfl)
 
-/-- Cyclic reduction relative to `G`: a reduced word `l` is the conjugate `u m u⁻¹` of a
-cyclically reduced word `m` by the product of an initial segment `u` of `l`, and every letter
-`x^{±1}` of `l` is a letter of `m` or one of a pair of letters of `u` and `u⁻¹`. -/
+/-- Cyclic reduction relative to `G`: the product of a reduced word `l` is the conjugate of the
+product of a cyclically reduced word `m` by the product of an initial segment `u` of `l`, and
+`countVar x l = countVar x m + 2 * countVar x u` for every variable `x`. -/
 theorem IsReduced.exists_isCyclicallyReduced {l : List (G ⊕ X × Bool)} (hl : IsReduced l) :
     ∃ u m : List (G ⊕ X × Bool), u <+: l ∧ IsCyclicallyReduced m ∧
       (u.map letter).prod * (m.map letter).prod * ((u.map letter).prod)⁻¹ = (l.map letter).prod ∧
@@ -582,7 +713,7 @@ variable [Group G] {a : G} {z : X}
 theorem reducedWord_inv_mul_inl_mul (ha : a ≠ 1) :
     reducedWord ((inr (FreeGroup.of z))⁻¹ * inl a * inr (FreeGroup.of z) : GX G X) =
       [.inr (z, false), .inl a, .inr (z, true)] :=
-  (reducedWord_eq_iff (by simp [isReduced_cons_cons, ha])).2 (by simp [mul_assoc])
+  (reducedWord_eq_iff (by simp [ha])).2 (by simp [mul_assoc])
 
 end Examples
 
