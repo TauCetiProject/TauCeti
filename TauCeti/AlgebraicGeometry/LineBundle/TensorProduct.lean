@@ -38,8 +38,6 @@ associativity, and unit isomorphisms provide the categorical API for manipulatin
 of line bundles.
 -/
 
--- This implementation follows `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A.
-
 public section
 
 open CategoryTheory AlgebraicGeometry MonoidalCategory

@@ -19,6 +19,10 @@ the compatibility with scalars of a chosen ring), but not these consequences for
 structure every preadditive category carries.  The integer multiples are the signs of the
 simplicial boundary and of the Koszul rule, which have to be moved through tensor products of
 morphisms.
+
+Consequently, if a natural number `e` kills an object `X`, in the sense that `e • 𝟙 X = 0`, then it
+kills `X ⊗ Y` and `Y ⊗ X` (`CategoryTheory.nsmul_id_tensor_eq_zero_of_left` and
+`CategoryTheory.nsmul_id_tensor_eq_zero_of_right`).
 -/
 
 public section
@@ -58,6 +62,16 @@ lemma nsmul_whiskerRight (n : ℕ) {Y Z : C} (g : Y ⟶ Z) (U : C) : (n • g) �
 @[simp]
 lemma whiskerLeft_nsmul (n : ℕ) (U : C) {Y Z : C} (g : Y ⟶ Z) : U ◁ (n • g) = n • (U ◁ g) :=
   (tensorLeft U).map_nsmul
+
+/-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills `X ⊗ Y`. -/
+lemma nsmul_id_tensor_eq_zero_of_left {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) :
+    e • 𝟙 (X ⊗ Y) = 0 := by
+  rw [← id_whiskerRight, ← nsmul_whiskerRight, hX, MonoidalPreadditive.zero_whiskerRight]
+
+/-- If a natural number `e` kills `Y`, in the sense that `e • 𝟙 Y = 0`, then it kills `X ⊗ Y`. -/
+lemma nsmul_id_tensor_eq_zero_of_right {Y : C} {e : ℕ} (hY : e • 𝟙 Y = 0) (X : C) :
+    e • 𝟙 (X ⊗ Y) = 0 := by
+  rw [← whiskerLeft_id, ← whiskerLeft_nsmul, hY, MonoidalPreadditive.whiskerLeft_zero]
 
 /-- Right whiskering commutes with integer scalar multiplication. -/
 @[simp]

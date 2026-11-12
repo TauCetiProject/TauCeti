@@ -29,6 +29,8 @@ map into a `ZMod 2`-space of dimension `#ι`, and lets such a family be compared
 * `TauCeti.hilbertSign`: the sign dictionary `ZMod 2 → ℤˣ`, sending `0` to `1` and `1` to `-1`.
 * `TauCeti.additiveIntUnitsLinearEquiv`: the linear equivalence `Additive ℤˣ ≃ₗ[ZMod 2] ZMod 2`.
 * `TauCeti.finrank_zmod_two_additive_intUnits`: `Module.finrank (ZMod 2) (Additive ℤˣ) = 1`.
+* `TauCeti.uzpow_intCast_eq_negOnePow`: the sign `(-1) ^ (n mod 2)` of a parity is the sign
+  `Int.negOnePow n` of any integer lift.
 -/
 
 public section
@@ -80,6 +82,10 @@ theorem hilbertSign_one : hilbertSign 1 = -1 := by
 theorem hilbertSign_eq_one_iff (x : ZMod 2) : hilbertSign x = 1 ↔ x = 0 := by
   rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
 
+/-- The sign `(-1) ^ i` of the parity `i` of an integer `n` is the sign `Int.negOnePow n`. -/
+theorem uzpow_intCast_eq_negOnePow (n : ℤ) : (-1 : ℤˣ) ^ (n : ZMod 2) = n.negOnePow := by
+  rw [uzpow_intCast, Int.negOnePow_def]
+
 /-- The sign dictionary turns addition of mod-two invariants into multiplication of signs. -/
 theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
   ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm.map_mul
@@ -127,13 +133,18 @@ theorem additiveIntUnitsCoordinateSum_apply (ι : Type*) [Fintype ι]
   classical
   simp [additiveIntUnitsCoordinateSum]
 
-/-- The hyperplane of sign vectors of coordinate sum zero has dimension one less than the number
-of coordinates. -/
-theorem finrank_ker_additiveIntUnitsCoordinateSum (ι : Type*) [Fintype ι] [Nonempty ι] :
+/-- The space of sign vectors of coordinate sum zero has dimension `#ι - 1`, with natural-number
+subtraction. For nonempty `ι` this is a hyperplane, of dimension one less than the number of
+coordinates; for empty `ι` the whole space is trivial and the dimension is `0`. -/
+theorem finrank_ker_additiveIntUnitsCoordinateSum (ι : Type*) [Fintype ι] :
     Module.finrank (ZMod 2) (LinearMap.ker (additiveIntUnitsCoordinateSum ι)) =
       Fintype.card ι - 1 := by
   classical
-  let i₀ : ι := Classical.choice inferInstance
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- no coordinates: the ambient space is trivial
+    rw [Module.finrank_zero_of_subsingleton]
+    simp
+  let i₀ : ι := Classical.choice hι
   have hpi : Module.finrank (ZMod 2) (ι → Additive ℤˣ) = Fintype.card ι := by
     rw [Module.finrank_pi_fintype, finrank_zmod_two_additive_intUnits]
     simp

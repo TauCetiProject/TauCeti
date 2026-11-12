@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Geometry.Symplectic.Floer.Translation
+import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.ApproximateBound
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
@@ -62,12 +62,12 @@ the energy density under tameness
 `u` from the integral equation of the Hamiltonian flow. Both defects therefore vanish in the
 limit, which converges uniformly on compact windows.
 
-The convergence of the translates is an assumption here. In applications it is to come from
-compactness away from bubbling points (`TauCeti.Geometry.Symplectic.Floer.Compactness`): the
-energy over the translated windows tends to zero, so no bubbling point survives there. That
-combination, which also needs a bound on the image of `u`, is not carried out here. Nor are the
+The convergence of the translates is an assumption here. For periodic data and a solution with
+image in a compact set, it comes from the bounded derivatives of finite-energy solutions on
+cylindrical ends: `TauCeti.Geometry.Symplectic.Floer.CylindricalEnd` extracts locally uniformly
+convergent subsequences of translates and applies the results of this file to them. The
 nondegeneracy of the orbits, the convergence of the whole half-cylinder rather than a sequence of
-translates, or the exponential decay along the end.
+translates, and the exponential decay along the end are not treated here.
 
 ## Main results
 
@@ -431,7 +431,7 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
   set A := v (0, t₂) - v (0, t₁) - ∫ t in t₁..t₂, Φ (t, v (0, t))
   -- The defects of the translates along the segments `{r} × [t₁, t₂]` tend to zero in `L¹`, and
   -- they converge uniformly in `r ∈ [0, 1]` to the defect `A` of the limit.
-  have hzero : ∫⁻ r in Icc (0 : ℝ) 1, ‖A‖ₑ = 0 := by
+  have hzero : ∫⁻ _ in Icc (0 : ℝ) 1, ‖A‖ₑ = 0 := by
     refine lintegral_eq_zero_of_eventually_le_add
       (f := fun k r ↦ ‖u (r + s k, t₂) - u (r + s k, t₁) -
         ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ₑ)

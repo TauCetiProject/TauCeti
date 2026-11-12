@@ -370,7 +370,7 @@ private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (
     simp [hz, mem_ball, hγnorm] at hmem
   have hγ' : ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (nodeInterp N node t) := fun t =>
     coe_normalizeToSphere_apply (nodeInterp N node) hcontL hLne t
-  exact ⟨γ', γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hcontL hγ' hGne, hγ'⟩
+  exact ⟨γ', γ.homotopic_of_segment_ne_zero γ' (nodeInterp N node) hγ' hGne, hγ'⟩
 
 /-- In a real vector space of rank greater than two, finitely many two-vector spans do not
 cover: some nonzero vector lies in none of them. -/

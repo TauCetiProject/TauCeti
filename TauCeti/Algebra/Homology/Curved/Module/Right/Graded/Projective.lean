@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Homology.Curved.Module.Right.Abelian
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangulated
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Basic
 public import TauCeti.Algebra.Homology.Curved.Module.Right.SecondKind
-public import TauCeti.CategoryTheory.Triangulated.Orthogonal
+public import TauCeti.CategoryTheory.Triangulated.Orthogonal.Basic
 
 /-!
 # Graded-projective curved modules and contraacyclic objects

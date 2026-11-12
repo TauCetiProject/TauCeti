@@ -406,7 +406,6 @@ theorem exists_compatible_forall_isComplexLinearMap {E G : Type*} [NormedAddComm
   -- Choose a linear isomorphism `k` with a Euclidean space for which Weyl's unitarian trick makes
   -- the transported representation `ρ = k π k⁻¹` unitary. Then `ρ` preserves the transported
   -- symplectic form, hence its polar normalization, which transports back along `k`.
-  borelize G
   let F := EuclideanSpace ℝ (Fin (Module.finrank ℝ E))
   let f : E ≃L[ℝ] F := (LinearEquiv.ofFinrankEq E F (by simp [F])).toContinuousLinearEquiv
   obtain ⟨e, he⟩ := (ContinuousLinearEquiv.congr f π).exists_isUnitary_congr

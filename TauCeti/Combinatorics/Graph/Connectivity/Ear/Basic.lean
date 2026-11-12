@@ -110,6 +110,16 @@ theorem toWalk_fst_mem (e : G.Ear H) : e.toWalk.1 ∈ V(H) := by
   | «open» _ _ _ start_mem => exact start_mem
   | «closed» _ _ _ base_mem => exact base_mem
 
+/-- The ending vertex of an ear belongs to its base graph. -/
+theorem toWalk_snd_mem (e : G.Ear H) : e.toWalk.2.1 ∈ V(H) := by
+  cases e with
+  | «open» h walk isPath start_mem end_mem endpoints_ne internal_new edges_new =>
+      rw [toWalk_open]
+      exact end_mem
+  | «closed» h walk isCycle base_mem internal_new edges_new =>
+      rw [toWalk_closed]
+      exact base_mem
+
 /-- Ears are equal when they have the same kind and the same endpoint-indexed walk. -/
 @[ext]
 theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWalk) :
@@ -156,6 +166,13 @@ theorem edgeSet_toGraph (e : G.Ear H) :
     E(e.toGraph) = {f | f ∈ e.toWalk.2.2.edges} :=
   e.toWalk.2.2.edgeSet_walkGraph
 
+/-- Every edge traversed by an ear belongs to the graph traced by that ear. -/
+theorem edges_subset_edgeSet_toGraph (e : G.Ear H) :
+    ∀ f ∈ e.toWalk.2.2.edges, f ∈ E(e.toGraph) := by
+  intro f hf
+  rw [edgeSet_toGraph]
+  exact hf
+
 /-- The base of an ear is a subgraph of its ambient graph. -/
 theorem base_le : ∀ _e : G.Ear H, H ≤ G
   | .open hHG .. => hHG
@@ -167,6 +184,16 @@ theorem length_pos : ∀ e : G.Ear H, 0 < e.toWalk.2.2.length
       Nat.pos_of_ne_zero fun h ↦ endpoints_ne (walk.eq_of_length_eq_zero h)
   | .closed _ _walk isCycle _ _ _ =>
       Nat.pos_of_ne_zero fun h ↦ isCycle.not_nil ((Walk.length_eq_zero_iff.mp h))
+
+/-- The underlying walk of an ear is a trail. -/
+theorem isTrail (e : G.Ear H) : e.toWalk.2.2.IsTrail := by
+  cases e with
+  | «open» h walk isPath start_mem end_mem endpoints_ne internal_new edges_new =>
+      rw [toWalk_open]
+      exact isPath.isTrail
+  | «closed» h walk isCycle base_mem internal_new edges_new =>
+      rw [toWalk_closed]
+      exact isCycle.isTrail
 
 /-- The graph traced by an ear is a subgraph of its ambient graph. -/
 theorem toGraph_le (e : G.Ear H) : e.toGraph ≤ G :=
@@ -201,6 +228,10 @@ theorem base_le_add (e : G.Ear H) : H ≤ e.add :=
 /-- The graph traced by an ear is a subgraph of the result of adjoining it. -/
 theorem toGraph_le_add (e : G.Ear H) : e.toGraph ≤ e.add :=
   e.compatible.right_le_union
+
+/-- Adjoining an ear is the compatible union of its base and traced graph. -/
+theorem add_eq_union (e : G.Ear H) : e.add = e.compatible.union :=
+  (rfl)
 
 /-- Every edge traversed by an ear belongs to the graph obtained by adjoining the ear. -/
 theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
@@ -237,6 +268,13 @@ theorem edge_notMem_base (e : G.Ear H) {f : β} (hf : f ∈ e.toWalk.2.2.edges) 
   cases e with
   | «open» _ _ _ _ _ _ _ edges_new => exact edges_new f hf
   | «closed» _ _ _ _ _ edges_new => exact edges_new f hf
+
+/-- The edge set traced by an ear is disjoint from the edge set of its base graph. -/
+theorem disjoint_edgeSet_toGraph (e : G.Ear H) : Disjoint E(H) E(e.toGraph) := by
+  rw [Set.disjoint_left]
+  intro f hfH hfEar
+  rw [e.edgeSet_toGraph] at hfEar
+  exact e.edge_notMem_base hfEar hfH
 
 /-- The edges of an ear are disjoint from those of a walk in its base graph. -/
 theorem edges_disjoint_of_le_base (e : G.Ear H) {x y : α} (q : H.Walk x y) :
@@ -353,6 +391,12 @@ theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .cycle walk isCycle => walk.walkGraph_le_of_pos <|
       Nat.pos_of_ne_zero fun h ↦ isCycle.not_nil (Walk.length_eq_zero_iff.mp h)
 
+/-- Every permitted initial graph of an ear decomposition has an actual vertex. -/
+theorem vertexSet_nonempty (start : G.EarStart H) : V(H).Nonempty := by
+  cases start with
+  | vertex x => exact ⟨x, by simp⟩
+  | @cycle x p hp => exact ⟨x, by rw [p.vertexSet_walkGraph]; exact p.start_mem_support⟩
+
 end EarStart
 
 /-- A finite ear decomposition in `G`, indexed by its final graph `H`.
@@ -425,6 +469,15 @@ theorem walkAt_eq (d : G.EarDecomposition H) (i : Fin d.length) :
 def IsOpen (d : G.EarDecomposition H) : Prop :=
   d.start.IsCycle ∧ ∀ i, d.kindAt i = .open
 
+/-- An ear decomposition starts from a single actual vertex rather than from a cycle. -/
+def IsVertexStart (d : G.EarDecomposition H) : Prop :=
+  ∃ v : V(G), d.initial = Graph.noEdge {v.1} β
+
+/-- Characterization of a vertex-starting ear decomposition by its initial graph. -/
+theorem isVertexStart_iff (d : G.EarDecomposition H) :
+    d.IsVertexStart ↔ ∃ v : V(G), d.initial = Graph.noEdge {v.1} β :=
+  Iff.rfl
+
 /-- Characterization of an open ear decomposition by its initial data and ear kinds. -/
 theorem isOpen_iff (d : G.EarDecomposition H) :
     d.IsOpen ↔ d.start.IsCycle ∧ ∀ i, d.kindAt i = .open :=
@@ -452,6 +505,16 @@ def vertex (v : V(G)) : G.EarDecomposition (Graph.noEdge {v.1} β) where
 
 @[simp]
 theorem length_vertex (v : V(G)) : (vertex v).length = 0 := (rfl)
+
+@[simp]
+theorem graphAfter_vertex_zero (v : V(G)) :
+    (vertex v).graphAfter 0 = Graph.noEdge {v.1} β :=
+  by rw [vertex]
+
+/-- A decomposition consisting only of one vertex starts from a vertex. -/
+@[simp]
+theorem isVertexStart_vertex (v : V(G)) : (vertex v).IsVertexStart :=
+  ⟨v, rfl⟩
 
 /-- A decomposition consisting only of one cycle. -/
 def cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
@@ -508,6 +571,18 @@ theorem graphAfter_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
     -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
     change Fin.lastCases ear.add d.graphAfter (Fin.cast rfl i).castSucc = d.graphAfter i
     rw [Fin.cast_eq_self, Fin.lastCases_castSucc]
+
+/-- Adjoining an ear does not change the initial graph of a decomposition. -/
+@[simp]
+theorem graphAfter_snoc_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
+    (d.snoc ear).graphAfter 0 = d.graphAfter 0 := by
+  exact snoc_graphAfter_zero d ear
+
+/-- Adjoining an ear preserves the property of starting from a single vertex. -/
+@[simp]
+theorem isVertexStart_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
+    (d.snoc ear).IsVertexStart ↔ d.IsVertexStart := by
+  simp only [isVertexStart_iff, initial_eq_graphAfter, graphAfter_snoc_zero]
 
 @[simp]
 theorem earAt_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
@@ -624,6 +699,16 @@ theorem graphAfter_induction (d : G.EarDecomposition H) {P : Graph α β → Pro
   · intro j ih
     rw [d.graphAfter_succ]
     exact snoc j ih
+
+/-- The final graph of every ear decomposition has an actual vertex. -/
+theorem vertexSet_nonempty (d : G.EarDecomposition H) : V(H).Nonempty := by
+  rw [← d.graphAfter_last]
+  apply d.graphAfter_induction (P := fun L ↦ V(L).Nonempty)
+  · rw [d.initial_eq_graphAfter]
+    exact d.start.vertexSet_nonempty
+  · intro i hi
+    rw [← d.earAt_fst i] at hi
+    exact hi.mono (d.earAt i).2.base_le_add.vertexSet_mono
 
 /-- A prefix decomposition contains exactly as many ears as its index. -/
 @[simp]
