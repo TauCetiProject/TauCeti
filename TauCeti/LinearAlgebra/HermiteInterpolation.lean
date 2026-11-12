@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Polynomial.DegreeLT
+import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
 # Hermite interpolation
@@ -32,7 +33,7 @@ by `∏ i, (X - a i) ^ m i`: at one node this is Taylor's formula
 coprime. The map is surjective by the Chinese remainder theorem, so it identifies
 `R[X] ⧸ (∏ i, (X - a i) ^ m i)` with the jet space (`Polynomial.hasseJetQuotientEquiv`); since the
 product is monic of degree `M`, the restriction `Polynomial.hermiteJet a m` to polynomials of
-degree below `M` is bijective.
+degree below `M` is bijective (`AdjoinRoot.degreeLTEquiv`).
 
 ## Main definitions
 
@@ -162,43 +163,28 @@ theorem hasseJetQuotientEquiv_mk (f : R[X]) :
     hasseJetQuotientEquiv ha m (Ideal.Quotient.mk _ f) = hasseJet a m f :=
   (hasseJet a m).quotKerEquivOfSurjective_apply_mk (hasseJet_surjective ha m) f
 
-/-- The Hermite jet map is injective when the differences of the nodes are units: a polynomial of
-degree below `∑ i, m i` divisible by the monic `∏ i, (X - a i) ^ m i` of that degree is zero. -/
-theorem hermiteJet_injective : Injective (hermiteJet a m) := by
-  nontriviality R
-  refine (injective_iff_map_eq_zero _).2 fun f hf => ?_
-  have hdvd := (all_jets_vanish_iff_dvd_of_pairwise_isUnit_sub ha m f).1 fun i k => by
-    simpa using congr_fun (congr_fun hf i) k
-  have hmon := monic_prod_X_sub_C_pow univ a m
-  by_contra hf0
-  refine hmon.not_dvd_of_degree_lt (Subtype.coe_ne_coe.2 hf0) ?_ hdvd
-  rw [degree_eq_natDegree hmon.ne_zero, natDegree_prod_X_sub_C_pow]
-  simpa using mem_degreeLT.1 f.2
-
-/-- **Hermite interpolation** over a commutative ring: when the differences of the nodes are
-units, the Hermite jet map on the polynomials of degree below `∑ i, m i` is bijective. -/
-theorem hermiteJet_bijective_of_pairwise_isUnit_sub : Bijective (hermiteJet a m) := by
-  refine ⟨hermiteJet_injective ha m, fun c => ?_⟩
-  nontriviality R
-  have hmon := monic_prod_X_sub_C_pow univ a m
-  obtain ⟨g, rfl⟩ := hasseJet_surjective ha m c
-  refine ⟨⟨g %ₘ ∏ i, (X - C (a i)) ^ m i, ?_⟩, ?_⟩
-  · simpa [natDegree_prod_X_sub_C_pow] using modByMonic_mem_degreeLT hmon g
-  · rw [hermiteJet_apply, ← hasseJetQuotientEquiv_mk ha, ← hasseJetQuotientEquiv_mk ha]
-    refine congr_arg _ ((Ideal.Quotient.mk_eq_mk_iff_sub_mem _ _).2 ?_)
-    rw [Ideal.mem_span_singleton, Subtype.coe_mk, modByMonic_eq_sub_mul_div]
-    simp
-
 /-- Hermite interpolation as a linear equivalence, when the differences of the nodes are units: a
 polynomial of degree below `∑ i, m i` is determined by its Hasse jets of the orders `k < m i` at
-the nodes `a i`, and every jet datum is attained. -/
+the nodes `a i`, and every jet datum is attained. It is `AdjoinRoot.degreeLTEquiv` for the monic
+`∏ i, (X - a i) ^ m i` of degree `∑ i, m i`, followed by `hasseJetQuotientEquiv`. -/
 noncomputable def hermiteJetEquiv : degreeLT R (∑ i, m i) ≃ₗ[R] ∀ i, Fin (m i) → R :=
-  LinearEquiv.ofBijective (hermiteJet a m) (hermiteJet_bijective_of_pairwise_isUnit_sub ha m)
+  LinearEquiv.ofEq _ _ (by nontriviality R; rw [natDegree_prod_X_sub_C_pow]) ≪≫ₗ
+    AdjoinRoot.degreeLTEquiv (monic_prod_X_sub_C_pow univ a m) ≪≫ₗ hasseJetQuotientEquiv ha m
 
 @[simp]
 theorem hermiteJetEquiv_apply (f : degreeLT R (∑ i, m i)) :
     hermiteJetEquiv ha m f = hermiteJet a m f := by
-  simp [hermiteJetEquiv]
+  rw [hermiteJet_apply, ← hasseJetQuotientEquiv_mk ha m]
+  -- `hermiteJetEquiv ha m f` unfolds to `hasseJetQuotientEquiv ha m` of `AdjoinRoot.degreeLTEquiv`
+  -- of `f`, and `AdjoinRoot.mk g` is `Ideal.Quotient.mk (Ideal.span {g})` by definition.
+  exact congr_arg (hasseJetQuotientEquiv ha m) <| AdjoinRoot.degreeLTEquiv_apply
+    (monic_prod_X_sub_C_pow univ a m)
+    (LinearEquiv.ofEq _ _ (by nontriviality R; rw [natDegree_prod_X_sub_C_pow]) f)
+
+/-- **Hermite interpolation** over a commutative ring: when the differences of the nodes are
+units, the Hermite jet map on the polynomials of degree below `∑ i, m i` is bijective. -/
+theorem hermiteJet_bijective_of_pairwise_isUnit_sub : Bijective (hermiteJet a m) :=
+  _root_.funext (hermiteJetEquiv_apply ha m) ▸ (hermiteJetEquiv ha m).bijective
 
 /-- The Hermite interpolation polynomial of the jet datum `c` has the Hasse jets `c`. -/
 @[simp]
