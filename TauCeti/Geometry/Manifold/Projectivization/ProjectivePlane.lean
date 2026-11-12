@@ -160,10 +160,9 @@ theorem inner_traceFreePole (X : EuclideanSpace ℝ (Fin 3 × Fin 3)) :
 theorem norm_traceFreePole : ‖traceFreePole‖ = 1 := by
   rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, ← real_inner_self_eq_norm_sq,
     inner_traceFreePole]
-  simp only [traceFreePole, PiLp.toLp_apply, of_apply, cons_val', cons_val_fin_one, cons_val_zero,
-    cons_val, cons_val_one, mul_one, mul_neg, sub_neg_eq_add]
-  rw [← two_mul, mul_left_comm, ← mul_inv, Real.mul_self_sqrt zero_le_two,
-    mul_inv_cancel₀ two_ne_zero]
+  simp [traceFreePole]
+  field_simp
+  norm_num
 
 /-- The frame is orthonormal. -/
 theorem orthonormal_traceFreeFrame : Orthonormal ℝ traceFreeFrame := by
@@ -216,6 +215,7 @@ theorem inner_traceFreePole_traceFreeProjector_lt_one (p : ℙ ℝ (Fin 3 → �
   nlinarith [sq_nonneg (x 1), sq_nonneg (x 2)]
 
 /-- The pole is not a value of the normalized trace-free projector. -/
+@[simp]
 theorem traceFreeProjector_ne_traceFreePole (p : ℙ ℝ (Fin 3 → ℝ)) :
     traceFreeProjector p ≠ traceFreePole := fun h ↦ by
   have := inner_traceFreePole_traceFreeProjector_lt_one p
@@ -284,6 +284,10 @@ private theorem toProjectorEntries_traceFreeProjector (p : ℙ ℝ (Fin 3 → �
   simp only [toProjectorEntries, traceFreeProjector_apply, inv_mul_cancel_left₀ h32,
     sub_add_cancel]
 
+private theorem toProjectorEntries_comp_traceFreeProjector :
+    toProjectorEntries ∘ traceFreeProjector = fun p q ↦ projector p q.1 q.2 :=
+  funext toProjectorEntries_traceFreeProjector
+
 /-- The inverse stereographic projection of the frame vector with the coordinates of the embedding
 recovers the normalized trace-free projector. -/
 theorem stereoInvFunAux_sum_projectivePlaneEmbedding_smul (p : ℙ ℝ (Fin 3 → ℝ)) :
@@ -310,8 +314,7 @@ theorem isSmoothEmbedding_traceFreeProjector {r : ℕ∞ω} (hr : 1 ≤ r) :
     (fun _ ↦ (contDiff_toProjectorEntries (r := 1)).contMDiff.mdifferentiableAt one_ne_zero) ?_,
     ((contMDiff_traceFreeProjector r).continuous.isClosedEmbedding
       traceFreeProjector_injective).isEmbedding⟩
-  rw [show toProjectorEntries ∘ traceFreeProjector = fun p q ↦ projector p q.1 q.2 from
-    funext toProjectorEntries_traceFreeProjector]
+  rw [toProjectorEntries_comp_traceFreeProjector]
   exact isImmersion_projector hr
 
 /-- The left inverse of `projectivePlaneEmbedding`, valued in the projector entries. -/
@@ -327,6 +330,10 @@ private theorem projectivePlaneEmbeddingInv_projectivePlaneEmbedding (p : ℙ �
     projectivePlaneEmbeddingInv (projectivePlaneEmbedding p) = fun q ↦ projector p q.1 q.2 := by
   rw [projectivePlaneEmbeddingInv, stereoInvFunAux_sum_projectivePlaneEmbedding_smul,
     toProjectorEntries_traceFreeProjector]
+
+private theorem projectivePlaneEmbeddingInv_comp_projectivePlaneEmbedding :
+    projectivePlaneEmbeddingInv ∘ projectivePlaneEmbedding = fun p q ↦ projector p q.1 q.2 :=
+  funext projectivePlaneEmbeddingInv_projectivePlaneEmbedding
 
 /-- The embedding of the real projective plane in `ℝ⁴` is injective. -/
 theorem projectivePlaneEmbedding_injective : Injective projectivePlaneEmbedding := fun p p' h ↦
@@ -364,8 +371,7 @@ theorem isSmoothEmbedding_projectivePlaneEmbedding {r : ℕ∞ω} (hr : 1 ≤ r)
     (fun _ ↦ (contDiff_projectivePlaneEmbeddingInv (r := 1)).contMDiff.mdifferentiableAt
       one_ne_zero) ?_,
     isClosedEmbedding_projectivePlaneEmbedding.isEmbedding⟩
-  rw [show projectivePlaneEmbeddingInv ∘ projectivePlaneEmbedding = fun p q ↦ projector p q.1 q.2
-    from funext projectivePlaneEmbeddingInv_projectivePlaneEmbedding]
+  rw [projectivePlaneEmbeddingInv_comp_projectivePlaneEmbedding]
   exact isImmersion_projector hr
 
 end Projectivization

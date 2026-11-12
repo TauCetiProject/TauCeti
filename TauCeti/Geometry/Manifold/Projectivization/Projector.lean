@@ -39,8 +39,6 @@ embedding: analytic and semialgebraic in both directions on every standard affin
 * `Projectivization.isImmersion_projector`: it is a `C^r` immersion for every `r ≥ 1`.
 * `Projectivization.isSmoothEmbedding_projector`: it is a closed `C^r` embedding for every `r ≥ 1`,
   in particular a closed analytic embedding.
-* `Projectivization.exists_projector_eq_vecMulVec`: the projector of a real line is the outer
-  product `x xᵀ` of a unit vector spanning it.
 
 ## References
 
@@ -61,21 +59,6 @@ open scoped ContDiff Manifold LinearAlgebra.Projectivization
 namespace Projectivization
 
 open TauCeti
-
-/-- Every line of `ι → ℝ` is spanned by a vector `x` with `x ⬝ᵥ x = 1`, and its projector is then
-the outer product `x xᵀ`. -/
-theorem exists_projector_eq_vecMulVec {ι : Type*} [Fintype ι] (p : ℙ ℝ (ι → ℝ)) :
-    ∃ x : ι → ℝ, x ⬝ᵥ x = 1 ∧ projector p = Matrix.vecMulVec x x := by
-  induction p using Projectivization.ind with | h v hv => ?_
-  have hs : 0 < v ⬝ᵥ v :=
-    lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (v i))
-      (Ne.symm (dotProduct_self_eq_zero.not.mpr hv))
-  have hc : (√(v ⬝ᵥ v))⁻¹ ≠ 0 := inv_ne_zero (Real.sqrt_pos.2 hs).ne'
-  have h1 : ((√(v ⬝ᵥ v))⁻¹ • v) ⬝ᵥ ((√(v ⬝ᵥ v))⁻¹ • v) = 1 := by
-    rw [dotProduct_smul, smul_dotProduct, smul_eq_mul, smul_eq_mul, ← mul_assoc, ← mul_inv,
-      Real.mul_self_sqrt hs.le, inv_mul_cancel₀ hs.ne']
-  refine ⟨_, h1, ?_⟩
-  rw [projector_mk, ← rankOneProjector_smul hc v, rankOneProjector_def, h1, inv_one, one_smul]
 
 variable {n : ℕ}
 
