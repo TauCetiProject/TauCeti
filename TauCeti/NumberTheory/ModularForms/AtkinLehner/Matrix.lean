@@ -11,6 +11,10 @@ public import TauCeti.Data.ZMod.ExactDivisor
 -- `mem_Gamma0_iff_dvd`, used only inside proofs.
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
+-- Cayley–Hamilton and the pencil determinant for `2 × 2` matrices, used only inside proofs.
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
+
 /-!
 # Atkin–Lehner matrices
 
@@ -353,8 +357,7 @@ private lemma IsAtkinLehnerMatrix.eq_of_eq_zero (hQ : Q = 0) (hN : N = 0)
   fin_cases i <;> fin_cases j <;> simp [h00, h10, h11]
 
 /-- At level `N = 0` and `Q = 0`, an Atkin–Lehner matrix `W` and an element `γ` of `Γ₀(0)` satisfy
-both `W γ = δ W` and `γ W = W δ` for `δ ∈ Γ₀(0)` the element obtained by swapping the diagonal
-entries of `γ`. -/
+both `W γ = δ W` and `γ W = W δ` for `δ = γ⁻¹ ∈ Γ₀(0)`. -/
 private lemma IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_of_eq_zero (hN : N = 0)
     (h : IsAtkinLehnerMatrix N 0 M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧
@@ -362,15 +365,11 @@ private lemma IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_of_eq_zero (hN : 
       (γ : Matrix (Fin 2) (Fin 2) ℤ) * M = M * (δ : Matrix (Fin 2) (Fin 2) ℤ) := by
   subst hN
   have h10 : γ 1 0 = 0 := by simpa using mem_Gamma0_iff_dvd.mp hγ
-  have hdet : γ 1 1 * γ 0 0 - 0 * 0 = 1 := by
-    have := Matrix.SpecialLinearGroup.det_coe γ
-    rw [Matrix.det_fin_two, h10] at this
-    linear_combination this
-  refine ⟨⟨!![γ 1 1, 0; 0, γ 0 0], by rwa [Matrix.det_fin_two_of]⟩,
-    mem_Gamma0_iff_dvd.mpr (by simp), ?_, ?_⟩ <;>
+  refine ⟨γ⁻¹, inv_mem hγ, ?_, ?_⟩ <;>
   · rw [h.eq_of_eq_zero rfl rfl]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, h10, mul_comm]
+    fin_cases i <;> fin_cases j <;>
+      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.adjugate_fin_two, h10, mul_comm]
 
 /-- **An Atkin–Lehner matrix intertwines `Γ₀(N)` with itself**: `W γ = δ W` with `δ ∈ Γ₀(N)`.
 For `Q ≠ 0` (an invertible `W`) this says that `W` normalizes `Γ₀(N)`, which turns the weight-`k`
@@ -405,21 +404,20 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self (h : IsAtkinLehnerMatrix 
   obtain ⟨a, ha⟩ := h.dvd_apply_zero_zero
   obtain ⟨d, hd⟩ := h.dvd_apply_one_one
   obtain ⟨c, hc⟩ := h.dvd_apply_one_zero
-  have hdet := h.det_eq
-  rw [Matrix.det_fin_two, ha, hd] at hdet
-  set G : Matrix (Fin 2) (Fin 2) ℤ :=
-    !![(a + d) * M 0 0 - 1, (a + d) * M 0 1; (a + d) * M 1 0, (a + d) * M 1 1 - 1] with hG
+  set G : Matrix (Fin 2) (Fin 2) ℤ := (a + d) • M - 1 with hG
+  have htr : M.trace = Q * (a + d) := by rw [Matrix.trace_fin_two, ha, hd]; ring
   have hdetG : G.det = 1 := by
-    rw [hG, Matrix.det_fin_two_of, ha, hd]
-    linear_combination (a + d) ^ 2 * hdet
-  have hdvd : (N : ℤ) ∣ G 1 0 := ⟨(a + d) * c, by rw [hG]; simp [hc]; ring⟩
+    have := TauCeti.Matrix.det_smul_sub_smul_one_fin_two M (a + d) 1
+    rw [one_smul] at this
+    rw [hG, this, h.det_eq, htr]
+    ring
+  have hdvd : (N : ℤ) ∣ G 1 0 := ⟨(a + d) * c, by
+    rw [hG, Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply_ne (by decide), hc]
+    simp only [smul_eq_mul, sub_zero]
+    ring⟩
   refine ⟨⟨G, hdetG⟩, mem_Gamma0_iff_dvd.mpr hdvd, ?_⟩
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, hG, ha, hd]
-  · linear_combination (-1 : ℤ) * hdet
-  · ring
-  · ring
-  · linear_combination (-1 : ℤ) * hdet
+  rw [Matrix.SpecialLinearGroup.coe_mk, ← sq, Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two,
+    htr, h.det_eq, hG, smul_sub, smul_smul]
 
 /-- **Multiplicativity of the family.** As soon as `Q * R` divides the level, an Atkin–Lehner
 matrix for `Q` times one for `R` is an Atkin–Lehner matrix for `Q * R`. Coprime exact divisors
