@@ -16,7 +16,7 @@ Consequently a product chart followed by multiplication in a monoid object evalu
 product of its two sections. This is useful for restricting group operations to a subscheme
 covered by sections.
 
-This file also records `TauCeti.CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullback`: if
+This file also records `CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullback`: if
 the base change of `f : X ⊗ Y ⟶ Z` in `Over S` along `y ≫ Y.hom` factors through the second
 projection in `Over R`, then the restriction of `f.left` to the fibre of
 `pullback.snd X.hom Y.hom` over `y : R ⟶ Y.left` factors through the projection to `R`.
@@ -55,6 +55,12 @@ theorem pullback_map_comp_mul_left {D G : Over S} [MonObj G] (i : D ⟶ G)
   · simp [pullback.map, Category.assoc]
   · simp [pullback.map, Category.assoc, hab]
 
+end TauCeti.CategoryTheory.Over
+
+namespace CategoryTheory.Over
+
+variable {C : Type*} [Category* C] [HasPullbacks C] {S : C}
+
 /-- If the base change of `f : X ⊗ Y ⟶ Z` in `Over S` along `y ≫ Y.hom` factors through the second
 projection in `Over R`, then the restriction of `f.left` to the pullback of
 `pullback.snd X.hom Y.hom` along `y : R ⟶ Y.left` factors through the projection to `R`. -/
@@ -69,18 +75,18 @@ theorem exists_pullback_snd_comp_eq_of_pullback {R : C} {X Y Z : Over S} (f : X 
   let c := pullback.snd X.hom Y.hom
   let s := y ≫ Y.hom
   let F : Over S ⥤ Over R := Over.pullback s
-  let wX : pullback c y ⟶ (F.obj X).left :=
+  let wX : Limits.pullback c y ⟶ (F.obj X).left :=
     pullback.lift (pullback.fst c y ≫ pullback.fst X.hom Y.hom) (pullback.snd c y)
       (by rw [Category.assoc, pullback.condition, pullback.condition_assoc])
   let yR : R ⟶ (F.obj Y).left := pullback.lift y (𝟙 R) (by simp [s])
-  let φ : pullback c y ⟶ pullback (F.obj X).hom (F.obj Y).hom :=
+  let φ : Limits.pullback c y ⟶ Limits.pullback (F.obj X).hom (F.obj Y).hom :=
     pullback.lift wX (pullback.snd c y ≫ yR) (by simp [F, wX, yR])
   have hμ : φ ≫ (Functor.LaxMonoidal.μ F X Y).left ≫ pullback.fst (X ⊗ Y).hom s =
       pullback.fst c y := by
     apply pullback.hom_ext
-    · rw [Category.assoc, Category.assoc, CategoryTheory.Over.μ_pullback_left_fst_fst X Y]
+    · rw [Category.assoc, Category.assoc, μ_pullback_left_fst_fst X Y]
       simp [φ, F, wX]
-    · rw [Category.assoc, Category.assoc, CategoryTheory.Over.μ_pullback_left_fst_snd X Y]
+    · rw [Category.assoc, Category.assoc, μ_pullback_left_fst_snd X Y]
       simp [φ, F, yR, c, pullback.condition]
   have hmap : (F.map f).left ≫ pullback.fst Z.hom s = pullback.fst (X ⊗ Y).hom s ≫ f.left := by
     simp [F]
@@ -92,4 +98,4 @@ theorem exists_pullback_snd_comp_eq_of_pullback {R : C} {X Y Z : Over S} (f : X 
       rw [hgR, Over.comp_left]
       simp [φ, F, s, Category.assoc]
 
-end TauCeti.CategoryTheory.Over
+end CategoryTheory.Over

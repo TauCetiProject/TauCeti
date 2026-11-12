@@ -131,7 +131,7 @@ theorem factorsThrough_snd_left_of_isProper {X Y Z : Over S}
       rw [← Category.assoc, ← F.map_id, Functor.Monoidal.toUnit_ε_assoc, ← F.map_comp,
         Functor.Monoidal.lift_μ, ← F.map_comp, hf, F.map_comp,
         Functor.Monoidal.toUnit_ε_assoc])
-  obtain ⟨h, hfactor⟩ := TauCeti.CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullback f y H
+  obtain ⟨h, hfactor⟩ := Over.exists_pullback_snd_comp_eq_of_pullback f y H
   rw [hfactor]
   rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩
   simp only [Scheme.Hom.comp_apply,
