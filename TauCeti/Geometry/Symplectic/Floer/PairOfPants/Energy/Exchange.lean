@@ -155,9 +155,9 @@ private theorem exchangeCutoff_le_one (r : ℝ) : exchangeCutoff r ≤ 1 := by
   · exact (exists_exchangeCutoff.choose_spec.2.1 hr).trans (exchangeCutoff_of_le le_rfl).le
 
 private theorem lipschitzWith_exchangeCutoff : LipschitzWith (1 / 4) exchangeCutoff := by
-  refine lipschitzWith_of_nnnorm_deriv_le (contDiff_exchangeCutoff.differentiable two_ne_zero)
+  refine lipschitzWith_of_nnNorm_deriv_le (contDiff_exchangeCutoff.differentiable two_ne_zero)
     fun r ↦ ?_
-  rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs]
+  rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs]
   exact (exists_exchangeCutoff.choose_spec.2.2.2.2.2.1 r).trans_eq (by simp)
 
 /-- The horizontal displacement `c (1 - μ(|w|))` of `Φ_c` at `w = s + i t`. -/
@@ -248,7 +248,7 @@ private theorem approximatesLinearOn_exchangeMap (hc : |c| ≤ 1) :
 private theorem one_half_lt_inv_nnnorm_refl :
     (1 / 2 : ℝ≥0) < ‖((ContinuousLinearEquiv.refl ℝ (ℝ × ℝ)).symm : ℝ × ℝ →L[ℝ] ℝ × ℝ)‖₊⁻¹ := by
   rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
-    ContinuousLinearMap.nnnorm_id, inv_one]
+    ContinuousLinearMap.nnNorm_id, inv_one]
   norm_num
 
 private theorem injective_exchangeMap (hc : |c| ≤ 1) : Injective (exchangeMap c) :=

@@ -37,7 +37,7 @@ theorem contMDiffAt_mk_iff {b : M → B} {f : M → F} {x : M} :
     ContMDiffAt J (I.prod 𝓘(𝕜, F)) n
         (fun y ↦ TotalSpace.mk' F (E := Trivial B F) (b y) (f y)) x ↔
       ContMDiffAt J I n b x ∧ ContMDiffAt J 𝓘(𝕜, F) n f x := by
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   simp
 
 /-- A map into the trivial bundle is smooth exactly when its base map and its fibre map are
