@@ -16,15 +16,15 @@ chart data of a section in chart `i` are compared with those in chart `j` on the
 in the base sets of the bundle charts `i` and `j`. This file collects the geometry of transfer
 domains used to move chart data between charts.
 
-For a smooth vector bundle over a smooth manifold without boundary modelled on a real normed space,
-the coordinate change of the bundle, read in chart `i`, is smooth on the transfer domain.
+For a `C^n` vector bundle over a `C^n` manifold without boundary modelled on a real normed space,
+the coordinate change of the bundle, read in chart `i`, is `C^n` on the transfer domain.
 
 If `M` is Hausdorff, the image of each chart is covered by finitely many open pieces with compact
 closure in a transfer domain, each mapped by the chart coordinate change
 `(A.chart i).symm ≫ₕ A.chart j` into an open set with compact closure in the image of another chart.
 These pieces are built from the shrinking `TauCeti.FiniteBundleAtlas.exists_shrinking` of the chart
-domains; smoothness and invertible derivative of chart coordinate changes are in
-`TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic`.
+domains; regularity and invertible derivative of chart coordinate changes are
+`TauCeti.contDiffOn_chartAt_coordChange` and `TauCeti.det_fderiv_chartAt_coordChange_ne_zero`.
 
 ## Main definitions
 
@@ -35,7 +35,7 @@ domains; smoothness and invertible derivative of chart coordinate changes are in
 
 * `TauCeti.FiniteBundleAtlas.exists_transfer_cover`: the transfer cover of the chart images.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coordChangeL_transferDomain`: the coordinate change of the
-  bundle, read in chart `i`, is smooth on the transfer domain.
+  bundle, read in chart `i`, is `C^n` on the transfer domain.
 -/
 
 public section
@@ -43,7 +43,7 @@ public section
 noncomputable section
 
 open Bundle Set TopologicalSpace
-open scoped Manifold ContDiff Topology
+open scoped Manifold Topology
 
 universe u
 
@@ -144,14 +144,15 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [To
   [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  [IsManifold 𝓘(ℝ, E) ∞ M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] (A : FiniteBundleAtlas E M F V)
+  {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] [ContMDiffVectorBundle n F V 𝓘(ℝ, E)]
+  (A : FiniteBundleAtlas E M F V)
 
 namespace FiniteBundleAtlas
 
-/-- The coordinate change from bundle chart `j` to bundle chart `i`, read in chart `i`, is smooth on
+/-- The coordinate change from bundle chart `j` to bundle chart `i`, read in chart `i`, is `C^n` on
 the transfer domain. -/
 theorem contDiffOn_coordChangeL_transferDomain (i j : Fin A.n) :
-    ContDiffOn ℝ ∞
+    ContDiffOn ℝ n
       (fun y ↦ ((A.triv j).coordChangeL ℝ (A.triv i) ((A.chart i).symm y) : F →L[ℝ] F))
       (A.transferDomain i j) := by
   rw [← contMDiffOn_iff_contDiffOn]

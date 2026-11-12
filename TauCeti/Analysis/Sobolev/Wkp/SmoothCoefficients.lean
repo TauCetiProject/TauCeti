@@ -63,6 +63,7 @@ def contDiffOnMatrixSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set
   ContinuousLinearMap.pi fun m ↦
     ∑ l, (contDiffOnSMulL hU hΩ hΩU k (ha m l)).comp (ContinuousLinearMap.proj l)
 
+@[simp]
 theorem contDiffOnMatrixSMulL_apply (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (ha : ∀ m l, ContDiffOn ℝ ∞ (a m l) U)
     (u : ι → Wkp mu Omega p k) (m : κ) :

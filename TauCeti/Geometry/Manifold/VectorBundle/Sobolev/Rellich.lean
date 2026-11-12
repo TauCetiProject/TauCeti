@@ -101,8 +101,9 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
           using 1
         funext w
         simp only [Function.comp_apply, ContinuousLinearMap.coe_comp]
-        rw [Wkp.lowerOrderL_apply]
-        rfl
+        -- The inclusion followed by the two projections evaluates `w` at `j` and `l`. This holds
+        -- by definition only, as the index type `Fin A.sectionChartData.n` unfolds to `Fin A.n`.
+        exact congrArg _ (Wkp.lowerOrderL_apply k _).symm
     convert hrel.clm_comp ((ContinuousLinearMap.proj m).comp
       (A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j))) using 1
     funext w
@@ -110,11 +111,22 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
         (A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) i' m' =
           Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i' m') :=
       SectionChartData.lowerOrderL_apply _ _ _ _ w i' m'
-    exact (congrArg (Wkp.restrictL (hPi i j) k) (e i m).symm).trans
-      ((congrFun (A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).2
-        (hP i j) (hPc i j) (hPD i j) (hQi j) (hPQ i j)) m).trans
-        (congrArg (fun u ↦ A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j) u m)
-          (funext fun l ↦ congrArg (Wkp.restrictL (hQi j) k) (e j l))))
+    -- The index types `Fin A.sectionChartData.n` and `Fin A.n` agree only by definition, so the
+    -- steps are congruences rather than rewrites.
+    calc Wkp.restrictL (hPi i j) k
+          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m))
+      _ = Wkp.restrictL (hPi i j) k
+          ((A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) i m) :=
+        congrArg _ (e i m).symm
+      _ = A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j) (fun l ↦ Wkp.restrictL (hQi j) k
+          ((A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) j l))
+          m :=
+        congrFun (A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).2
+          (hP i j) (hPc i j) (hPD i j) (hQi j) (hPQ i j)) m
+      _ = A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j) (fun l ↦ Wkp.restrictL (hQi j) k
+          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) j l))) m :=
+        congrArg (fun u ↦ A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j) u m)
+          (funext fun l ↦ congrArg _ (e j l))
   -- Gluing the pieces gives compactness of the chart-`i` components.
   have hchart (i : Fin A.n) (m : Fin (finrank ℝ F)) :
       IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦

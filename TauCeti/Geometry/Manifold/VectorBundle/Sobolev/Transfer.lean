@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Transfer
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 
@@ -24,10 +25,11 @@ change `(A.chart i).symm ≫ₕ A.chart j` is a change of variables of every ord
 `TauCeti.Wkp.IsChangeOfVariables`, and the coordinate change of the bundle is a smooth
 operator-valued coefficient. If `P` lies in the overlap of the two chart domains, where the chart
 coordinate change is the transition `A.transition j i`, the chart-`i` data of an element of
-`W^{k,p}(V)` restricted to `P` are the image of its chart-`j` data restricted to any open set `Q`
-containing the image of `P` under the continuous linear map `TauCeti.FiniteBundleAtlas.transferL`:
-precomposition with the chart coordinate change followed by multiplication by the coordinate change
-of the bundle (`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`). The multiplication is
+`W^{k,p}(V)` restricted to `P` are the image of its chart-`j` data restricted to any open set
+`Q ⊆ A.image j` containing the image of `P` under the chart coordinate change, under the continuous
+linear map `TauCeti.FiniteBundleAtlas.transferL`: precomposition with the chart coordinate change
+followed by multiplication by the coordinate change of the bundle
+(`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`). The multiplication is
 `TauCeti.Wkp.contDiffOnOperatorSMulL`.
 
 ## Main definitions
@@ -76,10 +78,11 @@ theorem exists_isChangeOfVariables_coordChange (k : ℕ) {i j : Fin A.n} {P Q : 
     ∃ L c, Wkp.IsChangeOfVariables k P Q ((A.chart i).symm ≫ₕ A.chart j) L c := by
   have hPO := hPD.trans (transferDomain_subset_source A i j)
   exact Wkp.exists_isChangeOfVariables_of_isCompact_closure
-    ((A.chart i).symm ≫ₕ A.chart j).open_source (contDiffOn_chart_coordChange A i j)
+    ((A.chart i).symm ≫ₕ A.chart j).open_source
+    (contDiffOn_chartAt_coordChange (n := ∞) (A.center i) (A.center j))
     (by exact_mod_cast le_top) (by simp)
     (((A.chart i).symm ≫ₕ A.chart j).injOn.mono (subset_closure.trans hPO))
-    (fun x hx ↦ det_fderiv_chart_coordChange_ne_zero A (hPO hx)) hPc hPO hPQ
+    (fun x hx ↦ det_fderiv_chartAt_coordChange_ne_zero (hPO hx)) hPc hPO hPQ
 
 end FiniteBundleAtlas
 
@@ -92,11 +95,11 @@ variable (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)
 namespace FiniteBundleAtlas
 
 /-- **Transfer of chart data.** For an open set `P` of chart-`i` coordinates with compact closure in
-the transfer domain, and an open set `Q` containing the image of `P` under the chart transition,
-the continuous linear map sending chart-`j` components `u` on `Q` to the chart-`i` components on
-`P` of `y ↦ g y (u (A.chart j ((A.chart i).symm y)))`, where `g` is the coordinate change from
-bundle chart `j` to bundle chart `i`. The chart data of a Sobolev section are related by this map
-(`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`). -/
+the transfer domain, and an open set `Q` containing the image of `P` under the chart coordinate
+change `(A.chart i).symm ≫ₕ A.chart j`, the continuous linear map sending chart-`j` components `u`
+on `Q` to the chart-`i` components on `P` of `y ↦ g y (u (A.chart j ((A.chart i).symm y)))`,
+where `g` is the coordinate change from bundle chart `j` to bundle chart `i`. The chart data of a
+Sobolev section are related by this map (`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`). -/
 def transferL (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
     (hPc : IsCompact (closure (P : Set E))) (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
     (hPQ : MapsTo ((A.chart i).symm ≫ₕ A.chart j) P Q) :
@@ -126,9 +129,9 @@ theorem value_transferL_ae (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
 
 /-- **Chart data of Sobolev sections are transferred between charts.** If `P` lies in the overlap
 of the domains of charts `j` and `i` (read in chart `i`) and has compact closure in the transfer
-domain, and `Q ⊆ A.image j` contains the image of `P` under the chart transition, then the chart-`i`
-components of an element of `W^{k,p}(V)` restricted to `P` are the transfer of its chart-`j`
-components restricted to `Q`. -/
+domain, and `Q ⊆ A.image j` contains the image of `P` under the chart coordinate change
+`(A.chart i).symm ≫ₕ A.chart j`, then the chart-`i` components of an element of `W^{k,p}(V)`
+restricted to `P` are the transfer of its chart-`j` components restricted to `Q`. -/
 theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : A.sectionChartData.SobolevData μ p k}
     (hw : w ∈ A.sectionChartData.sobolevSections μ p k) {i j : Fin A.n} {P Q : Opens E}
     (hP : (P : Set E) ⊆ A.overlap j i) (hPc : IsCompact (closure (P : Set E)))
