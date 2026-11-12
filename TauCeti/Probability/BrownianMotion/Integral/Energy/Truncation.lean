@@ -14,7 +14,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 
 Finite-budget truncations of predictable real processes are Brownian integrable under a finite
 sample measure, without moment assumptions on the original process. For a locally
-Brownian-integrable process, integer-budget truncations eventually recover the original process
+Brownian-integrable process, finite-budget truncations eventually recover the original process
 on every finite horizon outside one common sample-null set. These are integrand-domain results;
 they do not construct stochastic integrals or stopping times.
 
@@ -47,12 +47,12 @@ theorem MeasureTheory.IsStronglyPredictable.brownianIntegrable_energyTruncation
 namespace TauCeti
 
 /-- For a locally Brownian-integrable process, on one sample-full event and each finite
-horizon, integer-budget truncations eventually agree with the original process everywhere
+horizon, finite-budget truncations eventually agree with the original process everywhere
 on that horizon. There is no uniform deterministic budget across samples. -/
 theorem LocallyBrownianIntegrable.ae_eventually_energyTruncation_eqOn
     (hH : LocallyBrownianIntegrable ℱ P H) :
-    ∀ᵐ ω ∂P, ∀ T : ℝ≥0, ∀ᶠ n : ℕ in atTop,
-      EqOn (fun t ↦ nnvolume.energyTruncation H n t ω)
+    ∀ᵐ ω ∂P, ∀ T : ℝ≥0, ∀ᶠ C : ℝ≥0 in atTop,
+      EqOn (fun t ↦ nnvolume.energyTruncation H C t ω)
         (fun t ↦ H t ω) (Iic T) := by
   filter_upwards [hH.ae_memLp] with ω hω
   intro T

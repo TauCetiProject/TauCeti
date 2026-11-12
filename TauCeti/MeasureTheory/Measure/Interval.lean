@@ -24,8 +24,9 @@ Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(
 Reflection exchanges the two open tails, and a negation-invariant measure gives `(-∞, x]` and
 `(-x, ∞)` the same mass when `{-x}` is null.
 
-In a second-countable order topology, a set has mass at most `C` if every closed initial
-segment `(-∞, x]` with `x` in the set has mass at most `C`; the set need not be measurable.
+In a second-countable topology with closed upper rays, a set has mass at most `C` if every
+closed initial segment `(-∞, x]` with `x` in the set has mass at most `C`;
+the set need not be measurable.
 
 On `ℝ`, a uniform bound `C` on the mass of the unit windows `[a, a + 1]` bounds the mass of
 longer windows linearly in their length, and so makes the measure locally finite.
@@ -189,10 +190,10 @@ theorem continuous_cumulative_restrict_lt_top (μ : Measure α) [NullSingletonCl
       · exact fun ⟨hyt, hy⟩ ↦ ⟨hyt.trans hx.le, hy⟩
     exact continuousWithinAt_const.congr (fun x hx ↦ heq x hx) rfl
 
-omit [FirstCountableTopology α] [OpensMeasurableSpace α] in
+omit [OrderTopology α] [FirstCountableTopology α] [OpensMeasurableSpace α] in
 /-- A set has mass at most `C` if every closed initial segment ending in that set has
 mass at most `C`. No measurability or finiteness assumption on the set is needed. -/
-theorem measure_le_of_forall_measure_Iic_le [SecondCountableTopology α]
+theorem measure_le_of_forall_measure_Iic_le [ClosedIciTopology α] [SecondCountableTopology α]
     (μ : Measure α) {s : Set α} {C : ℝ≥0∞}
     (h : ∀ x ∈ s, μ (Iic x) ≤ C) : μ s ≤ C := by
   classical

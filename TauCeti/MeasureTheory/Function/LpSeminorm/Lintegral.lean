@@ -69,7 +69,8 @@ namespace MeasureTheory
 
 /-- An almost everywhere strongly measurable function is in `L²` exactly when the lower
 integral of its squared extended norm is finite. -/
-theorem AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top {f : α → ε}
+theorem AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top
+    {ε : Type*} [TopologicalSpace ε] [ENorm ε] {f : α → ε}
     (hf : AEStronglyMeasurable f μ) :
     MemLp f 2 μ ↔ ∫⁻ x, ‖f x‖ₑ ^ 2 ∂μ < ∞ := by
   rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top

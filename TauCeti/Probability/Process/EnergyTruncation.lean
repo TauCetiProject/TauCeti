@@ -17,9 +17,9 @@ original path has infinite energy. Under a finite sample measure the truncation 
 belongs to the expected-square-energy domain. No moment assumption on the original
 integrand or usual conditions on the filtration are needed.
 
-On any finite-energy path and horizon, the integer-budget truncations eventually agree
+On any finite-energy path and horizon, the finite-budget truncations eventually agree
 with the original integrand on that horizon. Brownian-specific integrability and almost-everywhere
-recovery results are in `TauCeti.Probability.BrownianMotion.Integral.EnergyTruncation`.
+recovery results are in `TauCeti.Probability.BrownianMotion.Integral.Energy.Truncation`.
 These approximations do not themselves construct stochastic integrals or stopping times.
 
 ## References
@@ -78,7 +78,7 @@ theorem energyTruncation_eqOn {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → E}
 
 /-- The total square energy of each truncated path is bounded by its budget. No
 measurability, integrability or atomlessness assumption is needed for this pathwise bound. -/
-theorem lintegral_sq_energyTruncation_le (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E)
+theorem lintegral_enorm_sq_energyTruncation_le (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E)
     (C : ℝ≥0∞) (ω : Ω) :
     ∫⁻ t, ‖μ.energyTruncation H C t ω‖ₑ ^ 2 ∂μ ≤ C := by
   have heq (t : ℝ≥0) : ‖μ.energyTruncation H C t ω‖ₑ ^ 2 =
@@ -90,18 +90,15 @@ theorem lintegral_sq_energyTruncation_le (μ : Measure ℝ≥0) (H : ℝ≥0 →
   simpa only [heq] using
     μ.lintegral_indicator_setLIntegral_Iic_le (fun t ↦ ‖H t ω‖ₑ ^ 2) C
 
-/-- On a finite-energy horizon, integer budgets eventually recover the whole original path
+/-- On a finite-energy horizon, finite budgets eventually recover the whole original path
 on that horizon. The required budget may depend on the path and horizon. -/
 theorem eventually_energyTruncation_eqOn {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → E}
     {T : ℝ≥0} {ω : Ω} (h : μ.accumulatedEnergy H T ω < ∞) :
-    ∀ᶠ n : ℕ in atTop, EqOn (fun t ↦ μ.energyTruncation H n t ω)
+    ∀ᶠ C : ℝ≥0 in atTop, EqOn (fun t ↦ μ.energyTruncation H C t ω)
       (fun t ↦ H t ω) (Iic T) := by
-  obtain ⟨n, hn⟩ := exists_nat_ge (μ.accumulatedEnergy H T ω).toReal
-  have hAn : μ.accumulatedEnergy H T ω ≤ (n : ℝ≥0∞) := by
-    apply (ENNReal.toReal_le_toReal h.ne (ENNReal.natCast_ne_top n)).mp
-    simpa using hn
-  filter_upwards [eventually_ge_atTop n] with m hm
-  exact energyTruncation_eqOn (hAn.trans (by exact_mod_cast hm))
+  filter_upwards [eventually_ge_atTop (μ.accumulatedEnergy H T ω).toNNReal] with C hC
+  exact energyTruncation_eqOn
+    ((ENNReal.coe_toNNReal h.ne).symm.le.trans (ENNReal.coe_le_coe.mpr hC))
 
 end MeasureTheory.Measure
 
@@ -130,7 +127,7 @@ theorem memLp_energyTruncation {P : Measure Ω} [IsFiniteMeasure P]
     _ = ∫⁻ ω, ∫⁻ t, ‖μ.energyTruncation H C t ω‖ₑ ^ 2 ∂μ ∂P :=
       lintegral_prod_symm _ (hm.enorm.pow_const 2).aemeasurable
     _ ≤ ∫⁻ _ : Ω, (C : ℝ≥0∞) ∂P :=
-      lintegral_mono (μ.lintegral_sq_energyTruncation_le H C)
+      lintegral_mono (μ.lintegral_enorm_sq_energyTruncation_le H C)
     _ < ∞ := by simp [ENNReal.mul_lt_top, measure_lt_top]
 
 end MeasureTheory.IsStronglyPredictable

@@ -70,10 +70,10 @@ theorem isLeftContinuous_setLIntegral_Iic (μ : Measure ι) [NullSingletonClass 
   simpa only [← restrict_Iio_eq_restrict_Iic] using
     isLeftContinuous_setLIntegral_Iio μ f
 
-omit [DenselyOrdered ι] [FirstCountableTopology ι] in
+omit [OrderTopology ι] [DenselyOrdered ι] [FirstCountableTopology ι] in
 /-- Truncating a nonnegative integrand when its accumulated mass exceeds `C` bounds its
 total mass by `C`. The original accumulated mass may become infinite. -/
-theorem lintegral_indicator_setLIntegral_Iic_le [OpensMeasurableSpace ι]
+theorem lintegral_indicator_setLIntegral_Iic_le [OrderClosedTopology ι] [OpensMeasurableSpace ι]
     [SecondCountableTopology ι] (μ : Measure ι) (f : ι → ℝ≥0∞) (C : ℝ≥0∞) :
     ∫⁻ t, {u | ∫⁻ v in Iic u, f v ∂μ ≤ C}.indicator f t ∂μ ≤ C := by
   let ν := μ.withDensity f
