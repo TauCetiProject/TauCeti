@@ -53,8 +53,9 @@ an arbitrary `g : (ι → ℝ) → ℝ≥0∞` in place of `‖f‖ₑ`.
   `TauCeti.biUnion_calderonZygmundCubes_subset`,
   `TauCeti.ae_le_of_forall_notMem_calderonZygmundCubes`,
   `TauCeti.mul_volume_biUnion_calderonZygmundCubes_le` and
-  `TauCeti.mul_volume_biUnion_closedBall_le` (the same estimate for the union of the closed
-  balls around the cubes dilated by a factor `c`, at the cost of a factor `cⁿ`).
+  `TauCeti.mul_volume_biUnion_closedBall_calderonZygmundCubes_le` (the same estimate for the
+  union of the closed balls around the cubes dilated by a factor `c`, at the cost of a factor
+  `cⁿ`).
 * `TauCeti.calderonZygmundBad`, `TauCeti.calderonZygmundGood`: the bad parts and the good part,
   with `TauCeti.calderonZygmundGood_add_tsum_calderonZygmundBad` (the decomposition),
   `TauCeti.integral_calderonZygmundBad`, `TauCeti.lintegral_enorm_calderonZygmundBad_le`,
@@ -284,7 +285,8 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
 
 /-- The union of the balls `c B_Q` around the Calderón–Zygmund cubes `Q` of `g` at height `t` has
 measure at most `cⁿ / t` times the integral of `g`. -/
-theorem mul_volume_biUnion_closedBall_le (c : ℝ) (g : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) :
+theorem mul_volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) (g : (ι → ℝ) → ℝ≥0∞)
+    (t : ℝ≥0∞) :
     t * volume (⋃ q ∈ calderonZygmundCubes g t,
         Metric.closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
       ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x := by

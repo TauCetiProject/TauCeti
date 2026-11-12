@@ -66,8 +66,8 @@ through the diagonal `Lʳ` bound, which is the hypothesis of the Marcinkiewicz e
 
 * `TauCeti.mul_volume_lt_rpow_tsum_maximalFunction_rpow_le`: the weak type `(1, 1)` bound for the
   `ℓʳ`-valued maximal function.
-* `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt`: the vector-valued maximal
-  inequality for `1 < p < r`.
+* `TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le_of_one_lt_of_lt`: the vector-valued
+  maximal inequality for `1 < p < r`.
 
 ## References
 
@@ -358,7 +358,8 @@ private theorem mul_volume_lt_three_pow_mul_le (hg : ∀ i, Measurable (g i)) (h
           rw [show (2 : ℝ) * (2 ^ q.1 / 2) = 2 ^ q.1 by ring]
           exact ball_subset_closedBall
       _ ≤ 2 ^ n * ∫⁻ x, G x := by
-          simpa only [ENNReal.ofReal_ofNat] using mul_volume_biUnion_closedBall_le 2 G t
+          simpa only [ENNReal.ofReal_ofNat] using
+            mul_volume_biUnion_closedBall_calderonZygmundCubes_le 2 G t
   have hsub : {x | 3 ^ n * t < (∑' i, maximalFunction volume (g i) x ^ r) ^ (1 / r)} ⊆
       Ωs ∪ S := by
     intro x hx
@@ -567,7 +568,7 @@ it depends only on `n`, `r` and `p`. Together with the diagonal case
 (`TauCeti.lintegral_rpow_tsum_maximalFunction_rpow_le`) this covers every `1 < p < ∞`; for
 `r = 2` it is the square-function form
 `‖(∑' i, (M fᵢ) ^ 2) ^ (1 / 2)‖_p ≤ C' ‖(∑' i, ‖fᵢ‖ ^ 2) ^ (1 / 2)‖_p` for `1 < p < 2`. -/
-theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_lt
+theorem lintegral_rpow_tsum_maximalFunction_rpow_le_of_one_lt_of_lt
     (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ)) {p : ℝ} (hp : 1 < p) (hpr : p < r) :
     ∫⁻ x, (∑' i, maximalFunction volume (f i) x ^ r) ^ (p / r) ≤
       (ENNReal.ofReal (p / (p - 1)) * (2 * (3 ^ Fintype.card ι * (2 ^ Fintype.card ι +
