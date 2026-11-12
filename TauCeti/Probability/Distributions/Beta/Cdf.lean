@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.HasLaw
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.Probability.Cdf
 

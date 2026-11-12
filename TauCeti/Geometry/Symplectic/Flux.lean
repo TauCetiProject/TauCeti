@@ -46,6 +46,8 @@ operator is `TauCeti.homotopyOperator_mpullback_prodMap_id`.
 ## Main results
 
 * `TauCeti.Diffeotopy.fluxForm_apply`: the integral formula for the flux form.
+* `TauCeti.Diffeotopy.curryLeft_mfderiv_cylinderMap_apply`: its integrand, evaluated on tangent
+  vectors.
 * `TauCeti.Diffeotopy.mextDerivₗ_fluxForm`: `d (Flux φ) = φ₁^* σ - σ` for closed `σ`.
 * `TauCeti.Diffeotopy.flux_refl`: the constant diffeotopy has zero flux.
 * `TauCeti.Diffeotopy.flux_mextDerivₗ`: for `σ = dθ`, the flux is the class of `φ₁^* θ - θ`.
@@ -140,6 +142,50 @@ theorem fluxForm_apply (σ : SmoothForm J M ℝ 2) (x : M) :
     (Fin.cons _ fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1))))).trans ?_
   exact congrArg _ (funext fun i ↦ by cases i using Fin.cases <;> rfl)
 
+/-- **The integrand of the flux form, evaluated.** On spatial tangent vectors `v`, the integrand
+of `TauCeti.Diffeotopy.fluxForm_apply` at `p = (x, t)` is `σ` at the moving point applied to the
+time derivative `∂ₜ φ_t x` of the motion followed by the spatial derivatives `dφ_t (v i)`. -/
+theorem curryLeft_mfderiv_cylinderMap_apply (σ : SmoothForm J M ℝ 2) (p : M × unitInterval)
+    (v : Fin 1 → E) :
+    (ContinuousAlternatingMap.curryLeft (E := E)
+        (σ.1 (Φ.cylinderMap p) : E [⋀^Fin 2]→L[ℝ] ℝ)
+        (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p
+          ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)))).compContinuousLinearMap
+        ((mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p :
+          E × EuclideanSpace ℝ (Fin 1) →L[ℝ] E).comp (.inl ℝ E (EuclideanSpace ℝ (Fin 1)))) v =
+      σ.1 (Φ.cylinderMap p) (Matrix.vecCons
+        (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)))
+        fun i ↦ mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p
+          ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
+  -- The tangent spaces of the cylinder are the model spaces by definition, so the currying and
+  -- composition operators unfold definitionally.
+  (rfl)
+
+/-- Pulling a form back to the cylinder along the motion and then restricting to the initial time
+`t = 0` gives the form itself. -/
+theorem mpullback_slice_zero_mpullback_cylinderMap {k : ℕ} (ψ : SmoothForm J M ℝ k) :
+    SmoothForm.mpullback (fun x ↦ (x, (0 : unitInterval))) (contMDiff_id.prodMk contMDiff_const)
+      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ) = ψ := by
+  have hslice : MDifferentiable J (J.prod (𝓡∂ 1)) fun x : M ↦ (x, (0 : unitInterval)) :=
+    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
+  apply Subtype.ext
+  rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+    ← TauCeti.mpullback_comp hslice (Φ.contMDiff_cylinderMap.mdifferentiable (by simp)),
+    cylinderMap_comp_zero, TauCeti.mpullback_id]
+
+/-- Pulling a form back to the cylinder along the motion and then restricting to the final time
+`t = 1` gives the pullback of the form by the final diffeomorphism. -/
+theorem mpullback_slice_one_mpullback_cylinderMap {k : ℕ} (ψ : SmoothForm J M ℝ k) :
+    SmoothForm.mpullback (fun x ↦ (x, (1 : unitInterval))) (contMDiff_id.prodMk contMDiff_const)
+      (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ) =
+        SmoothForm.mpullback Φ.final Φ.final.contMDiff ψ := by
+  have hslice : MDifferentiable J (J.prod (𝓡∂ 1)) fun x : M ↦ (x, (1 : unitInterval)) :=
+    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
+  apply Subtype.ext
+  rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+    ← TauCeti.mpullback_comp hslice (Φ.contMDiff_cylinderMap.mdifferentiable (by simp)),
+    cylinderMap_comp_one, SmoothForm.coe_mpullback]
+
 /-- Pulling a form back to the cylinder along the motion and then restricting to the two ends
 gives the pullback by the final diffeomorphism and the form itself. -/
 private theorem mpullback_slice_one_sub_mpullback_slice_zero {k : ℕ} (ψ : SmoothForm J M ℝ k)
@@ -149,13 +195,9 @@ private theorem mpullback_slice_one_sub_mpullback_slice_zero {k : ℕ} (ψ : Smo
       mpullback J (J.prod (𝓡∂ 1)) (fun y ↦ (y, 0))
         (SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap ψ).1 x =
       (SmoothForm.mpullback Φ.final Φ.final.contMDiff ψ).1 x - ψ.1 x := by
-  have hcyl : MDifferentiable (J.prod (𝓡∂ 1)) J Φ.cylinderMap :=
-    Φ.contMDiff_cylinderMap.mdifferentiable (by simp)
-  have hslice (s : unitInterval) : MDifferentiable J (J.prod (𝓡∂ 1)) fun y : M ↦ (y, s) :=
-    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
-  rw [SmoothForm.coe_mpullback, ← TauCeti.mpullback_comp (hslice 1) hcyl,
-    ← TauCeti.mpullback_comp (hslice 0) hcyl, cylinderMap_comp_one, cylinderMap_comp_zero,
-    TauCeti.mpullback_id, SmoothForm.coe_mpullback]
+  rw [← SmoothForm.coe_mpullback (fun y ↦ (y, 1)) (contMDiff_id.prodMk contMDiff_const),
+    ← SmoothForm.coe_mpullback (fun y ↦ (y, 0)) (contMDiff_id.prodMk contMDiff_const),
+    mpullback_slice_one_mpullback_cylinderMap, mpullback_slice_zero_mpullback_cylinderMap]
 
 /-- **The exterior derivative of the flux form.** For a closed two-form `σ`, the flux form of a
 diffeotopy is a primitive of the difference between the pullback of `σ` by the final

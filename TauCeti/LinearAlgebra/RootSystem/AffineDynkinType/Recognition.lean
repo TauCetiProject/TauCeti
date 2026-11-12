@@ -77,7 +77,7 @@ theorem Connected.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso
       (fun i ↦ by simp)
       (fun h ↦ ha (funext fun i ↦ by simpa using congrFun h i))
       (fun i ↦ by exact_mod_cast (hsum i).le)
-    exact ⟨t, ⟨ht, hg, ⟨e.symm⟩⟩, fun t' ⟨ht', hg', ⟨e'⟩⟩ ↦
+    exact ⟨t, ⟨ht, hg, ⟨e.symm⟩⟩, fun t' ⟨ht', _, ⟨e'⟩⟩ ↦
       AffineDynkinType.eq_of_graph_iso ht' ht (e'.symm.trans e.symm)⟩
   · rintro ⟨t, ⟨ht, hg, ⟨e⟩⟩, -⟩
     -- The marks, transported along the isomorphism.
