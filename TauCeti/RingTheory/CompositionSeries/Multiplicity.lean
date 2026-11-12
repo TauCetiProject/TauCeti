@@ -66,12 +66,9 @@ definitional identity.
 
 ## References
 
-The Jordan-Hölder multiplicities `[Pᵢ : Sⱼ]` are what the Cartan matrix of a finite-dimensional
-algebra is defined by, in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` ("The Cartan matrix of an
-algebra", *"defined primarily by the Jordan-Hölder multiplicities `Cᵢⱼ = [Pᵢ : Sⱼ]` of `Sⱼ` in the
-projective cover `Pᵢ`, well-defined by Jordan-Hölder"*); this file supplies that multiplicity and
-its well-definedness.
+The Cartan matrix of a finite-dimensional algebra is defined by the Jordan-Hölder multiplicities
+`Cᵢⱼ = [Pᵢ : Sⱼ]` of the simple modules `Sⱼ` in the projective covers `Pᵢ`, well defined by the
+Jordan-Hölder theorem; this file supplies that multiplicity and its well-definedness.
 
 * Assem, Simson and Skowroński, *Elements of the Representation Theory of Associative Algebras* I,
   §I.4 and §III.3.
