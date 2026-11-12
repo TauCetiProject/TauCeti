@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.Convex.Homogenization
+public import TauCeti.Analysis.Convex.Homogenization.Basic
 public import TauCeti.Geometry.Convex.Cone.Face.Exposed
 
 /-!
@@ -102,11 +102,8 @@ theorem homogenization_isFaceOf {P F : Set V} (hF : IsExposed ℝ P F)
   rw [hzero]
   exact hconv.homogenization_inter_ker_isFaceOf hclosed f hg (hzero ▸ ⟨p, hp⟩)
 
-/-- Every nonempty exposed face of a closed convex set has the same lineality
-space, measured by the lineality of its recession cone.
-
-This follows from `PointedCone.IsFaceOf.lineal_congr` applied to
-the actual homogenizations; no polyhedral or finite-dimensional hypothesis is needed. -/
+/-- A nonempty exposed face of a closed convex set and the ambient set have the same
+recession-cone lineality space, without polyhedral or finite-dimensional assumptions. -/
 theorem lineal_recessionCone_eq {P F : Set V} (hF : IsExposed ℝ P F)
     (hconv : Convex ℝ P) (hclosed : IsClosed P) (hne : F.Nonempty) :
     (Set.recessionCone ℝ F).lineal = (Set.recessionCone ℝ P).lineal := by
