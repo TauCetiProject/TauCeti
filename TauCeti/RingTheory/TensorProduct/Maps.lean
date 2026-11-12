@@ -100,6 +100,14 @@ theorem Subalgebra.toSubmodule_baseChange {R S : Type*} [CommSemiring R] [Semiri
   -- The algebra tensor map and the base change of the linear inclusion have the same function.
   rfl
 
+/-- Base change of subalgebras is monotone. -/
+theorem Subalgebra.baseChange_mono {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    (T : Type*) [CommSemiring T] [Algebra R T] {C D : Subalgebra R S} (h : C ≤ D) :
+    C.baseChange T ≤ D.baseChange T := by
+  rw [← Subalgebra.toSubmodule.le_iff_le, Subalgebra.toSubmodule_baseChange,
+    Subalgebra.toSubmodule_baseChange]
+  exact Submodule.baseChange_mono T (Subalgebra.toSubmodule.monotone h)
+
 /-- The base change of the bottom subalgebra is the bottom subalgebra: `t ⊗ r = (r t) ⊗ 1` for
 `r` in the image of `R`. -/
 @[simp]

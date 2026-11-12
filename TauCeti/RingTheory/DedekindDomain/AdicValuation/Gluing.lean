@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.FaithfullyFlat
 import TauCeti.Algebra.Module.Lattice
+import TauCeti.LinearAlgebra.TensorProduct.Tower
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 
 /-!
@@ -41,6 +42,8 @@ of an order.
 
 * `TauCeti.le_glueCompletions_iff`: `M ≤ glueCompletions K L` if and only if every completion of
   `M` lies in the corresponding `L v`.
+* `TauCeti.eventually_baseChange_le`: the completions of a finitely generated submodule lie in
+  those of a spanning submodule at all but finitely many places.
 * `TauCeti.exists_sub_tmul_mem_baseChange_and_forall_ne`: strong approximation for a spanning
   submodule `N`: every element of `𝒪_v ⊗[R] V` is congruent modulo `N.baseChange 𝒪_v` to the image
   of a vector whose image lies in `N.baseChange 𝒪_w` at every other place `w`.
@@ -107,6 +110,26 @@ theorem glueCompletions_mono
   le_glueCompletions_iff.2 fun v ↦ (baseChange_glueCompletions_le v).trans (h v)
 
 variable [Module K V] [IsScalarTower R K V]
+
+/-- **Completions of lattices agree almost everywhere.** If `M` is finitely generated and `N` spans
+`V` over `K`, then the completion of `M` at `v` lies in that of `N` for all but finitely many
+height-one primes `v`. -/
+theorem eventually_baseChange_le {M N : Submodule R V} (hM : M.FG)
+    (hN : span K (N : Set V) = ⊤) :
+    ∀ᶠ v : HeightOneSpectrum R in Filter.cofinite,
+      M.baseChange (v.adicCompletionIntegers K) ≤ N.baseChange (v.adicCompletionIntegers K) := by
+  obtain ⟨s, rfl⟩ := hM
+  -- Each generator `x` has a nonzero multiple `a x • x ∈ N`, and `a x` is a unit of `𝒪_v` for
+  -- all but the finitely many `v` containing it.
+  choose a ha hax using IsLattice.exists_ne_zero_smul_mem K N hN
+  have hfin (x : V) : ∀ᶠ v : HeightOneSpectrum R in Filter.cofinite, a x ∉ v.asIdeal :=
+    Filter.eventually_cofinite.2 <|
+      (Ideal.finite_factors (I := Ideal.span {a x}) (by simpa using ha x)).subset
+        fun v hv ↦ by simpa [Ideal.dvd_span_singleton] using hv
+  filter_upwards [(Filter.eventually_all_finset s).2 fun x _ ↦ hfin x] with v hv
+  rw [baseChange_le_iff_le_comap, span_le]
+  exact fun x hx ↦ N.one_tmul_mem_baseChange_of_smul_mem
+    ((v.isUnit_algebraMap_adicCompletionIntegers_iff _).2 (hv x hx)) (hax x)
 
 /-- **Strong approximation for a spanning submodule.** Let `N` be an `R`-submodule spanning `V`
 over `K`. Every element `y` of `𝒪_v ⊗[R] V` is congruent modulo `N.baseChange 𝒪_v` to the image
