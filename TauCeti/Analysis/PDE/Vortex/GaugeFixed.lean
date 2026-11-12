@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
@@ -30,6 +31,9 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 
 ## Main results
 
+* `gaugeFixedOperator_eq_gaugeFixedFirstOrder_add`: `L_x y` splits as its constant-coefficient
+  first-order part `gaugeFixedFirstOrder`, applied to the gradients of the coordinates of `y`, plus
+  its zeroth-order part `gaugeFixedZerothOrder`, bilinear in the values of `x` and `y`.
 * `gaugeAdjoint_gaugeDirection`: `d₀* d₀ f = -Δ f + (|α|² / 4) f` pointwise, at every field.
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
@@ -70,7 +74,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex MeasureTheory
-open scoped Laplacian RealInnerProductSpace
+open scoped Laplacian InnerProductSpace RealInnerProductSpace Gradient
 
 /-- The formal `L²` adjoint `d₀*` of the infinitesimal gauge action `gaugeDirection x`, applied to
 a variation `y`: `d₀* y = ∂₁ y₀ + ∂₂ y₁ + p y₃ - q y₂`. See `integral_mul_gaugeAdjoint`. -/
@@ -236,6 +240,58 @@ theorem gaugeFixedAdjoint_smul (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
     congrFun (fderiv_const_smul_field t) z
   ext i
   fin_cases i <;> simp [hd] <;> ring
+
+/-- The zeroth-order part of the gauge-fixed operator `L_x`, as a bilinear map of the value `ξ` of
+the field and the value `v` of the variation: the terms of `L_x y` without derivatives of `y`. -/
+def gaugeFixedZerothOrder :
+    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.toContinuousLinearMap <|
+    (LinearMap.toContinuousLinearMap :
+        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4)) ≃ₗ[ℝ]
+          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))).toLinearMap ∘ₗ
+      LinearMap.mk₂ ℝ (fun ξ v : EuclideanSpace ℝ (Fin 4) ↦
+        !₂[ξ 2 * v 3 - ξ 3 * v 2, ξ 2 * v 2 + ξ 3 * v 3,
+          -ξ 0 * v 3 - v 0 * ξ 3 - ξ 1 * v 2 - v 1 * ξ 2,
+          ξ 0 * v 2 + v 0 * ξ 2 - ξ 1 * v 3 - v 1 * ξ 3])
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
+
+/-- The defining formula of `gaugeFixedZerothOrder`. -/
+theorem gaugeFixedZerothOrder_apply (ξ v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedZerothOrder ξ v =
+      !₂[ξ 2 * v 3 - ξ 3 * v 2, ξ 2 * v 2 + ξ 3 * v 3,
+        -ξ 0 * v 3 - v 0 * ξ 3 - ξ 1 * v 2 - v 1 * ξ 2,
+        ξ 0 * v 2 + v 0 * ξ 2 - ξ 1 * v 3 - v 1 * ξ 3] :=
+  (rfl)
+
+/-- The first-order part of the gauge-fixed operator `L_x`, as a linear map of the gradients
+`g j = ∇y_j` of the four coordinates of the variation. Along the frame `(∂₁, ∂₂) = (1, i)`,
+`∂_k y_j = ⟪g j, e_k⟫`, and the rows are `∂₁y₀ + ∂₂y₁`, `∂₂y₀ - ∂₁y₁`, `∂₁y₂ - ∂₂y₃` and
+`∂₁y₃ + ∂₂y₂`. -/
+def gaugeFixedFirstOrder : (Fin 4 → ℂ) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun g ↦ !₂[⟪g 0, 1⟫_ℝ + ⟪g 1, I⟫_ℝ, ⟪g 0, I⟫_ℝ - ⟪g 1, 1⟫_ℝ,
+        ⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 3, 1⟫_ℝ + ⟪g 2, I⟫_ℝ]
+      map_add' := fun _ _ ↦ by ext i; fin_cases i <;> simp [inner_add_left] <;> ring
+      map_smul' := fun _ _ ↦ by ext i; fin_cases i <;> simp <;> ring }
+
+/-- The defining formula of `gaugeFixedFirstOrder`. -/
+theorem gaugeFixedFirstOrder_apply (g : Fin 4 → ℂ) :
+    gaugeFixedFirstOrder g = !₂[⟪g 0, 1⟫_ℝ + ⟪g 1, I⟫_ℝ, ⟪g 0, I⟫_ℝ - ⟪g 1, 1⟫_ℝ,
+        ⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 3, 1⟫_ℝ + ⟪g 2, I⟫_ℝ] :=
+  (rfl)
+
+/-- The gauge-fixed operator is the sum of its first-order part, applied to the gradients of
+the coordinates of the variation, and its zeroth-order part. -/
+theorem gaugeFixedOperator_eq_gaugeFixedFirstOrder_add (x y : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) :
+    gaugeFixedOperator x y z =
+      gaugeFixedFirstOrder (fun j ↦ ∇ (fun w ↦ y w j) z) + gaugeFixedZerothOrder (x z) (y z) := by
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedFirstOrder_apply, gaugeFixedZerothOrder_apply, inner_gradient_left] <;> ring
 
 /-- The principal symbol of the gauge-fixed vortex adjoint, acting on a real covector
 and a target field value. It is independent of the vortex coefficients. -/

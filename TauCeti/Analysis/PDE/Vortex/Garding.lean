@@ -55,11 +55,12 @@ For every `a < 1 / 4` this gives a Gårding inequality with a compact remainder
 
 For variations vanishing on the disc of radius `R` it gives the exterior bound
 `TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`, and in addition it
-controls the covariant gradient of the variation. Combined with the compactness of `H¹ → L²` on
-the disc, an estimate of this form gives finite-dimensionality of the kernel and closedness of
-the range of `L_x` on the completed spaces. The radius and the constant depend on the vortex and
-on `a`. These are classical test-field estimates; no completed Fredholm realization is
-constructed here.
+controls the covariant gradient of the variation, which bounds the flat gradient up to the
+connection coefficients of the field (`TauCeti.Vortex.sum_norm_gradient_sq_le`). Combined with
+the compactness of `H¹ → L²` on the disc, an estimate of this form gives finite-dimensionality of
+the kernel and closedness of the range of `L_x` on the completed spaces. The radius and the
+constant depend on the vortex and on `a`. These are classical test-field estimates; no completed
+Fredholm realization is constructed here.
 
 ## References
 
@@ -77,7 +78,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex MeasureTheory Filter Metric
-open scoped Topology
+open scoped Topology Gradient
 
 /-- The covariant gradient density `|∇b|² + |∇_a ψ|²` of a variation `y = (b₁, b₂, p, q)` at the
 field `x`, where `ψ = p + i q` is differentiated with the connection `a = i (A₁ ds + A₂ dt)` of
@@ -130,6 +131,26 @@ theorem gaugeFixedGradientDensity_nonneg (x y : ℂ → EuclideanSpace ℝ (Fin 
     0 ≤ gaugeFixedGradientDensity x y z := by
   rw [gaugeFixedGradientDensity_def]
   positivity
+
+/-- The covariant gradient density controls the flat gradient of a variation, up to the
+connection coefficients of the field. -/
+theorem sum_norm_gradient_sq_le (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ∑ j : Fin 4, ‖∇ (fun w ↦ y w j) z‖ ^ 2 ≤
+      2 * gaugeFixedGradientDensity x y z + 2 * ‖x z‖ ^ 2 * ‖y z‖ ^ 2 := by
+  have hg (f : ℂ → ℝ) : ‖∇ f z‖ ^ 2 = fderiv ℝ f z 1 ^ 2 + fderiv ℝ f z I ^ 2 := by
+    rw [← Complex.orthonormalBasisOneI.sum_sq_inner_left]
+    simp [Fin.sum_univ_two, inner_gradient_left]
+  simp only [Fin.sum_univ_four, hg, gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq]
+  nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z 1 - 2 * x z 0 * y z 3),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z 1 + 2 * x z 0 * y z 2),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z I - 2 * x z 1 * y z 3),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z I + 2 * x z 1 * y z 2),
+    mul_nonneg (add_nonneg (sq_nonneg (x z 2)) (sq_nonneg (x z 3)))
+      (add_nonneg (sq_nonneg (y z 2)) (sq_nonneg (y z 3))),
+    mul_nonneg (add_nonneg (sq_nonneg (x z 0)) (sq_nonneg (x z 1)))
+      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1))),
+    mul_nonneg (add_nonneg (sq_nonneg (x z 2)) (sq_nonneg (x z 3)))
+      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1)))]
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 

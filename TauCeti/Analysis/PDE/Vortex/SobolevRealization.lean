@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Garding
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import Mathlib.MeasureTheory.Function.Holder
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Sobolev.W1p.Density
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
@@ -16,6 +15,9 @@ import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Analysis.Distribution.TestFunction.PiLp
+import TauCeti.Analysis.Normed.Group.Pi
+import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 
 /-!
 # The gauge-fixed vortex operator on `H¹` has finite-dimensional kernel and closed range
@@ -44,8 +46,8 @@ same formula with weak gradients (`TauCeti.Vortex.sobolevGaugeFixedOperator_appl
 fields of test functions it is the classical operator
 (`TauCeti.Vortex.sobolevGaugeFixedOperator_ofTestFunctionₗ_ae`).
 
-At a `C¹` vortex `x` with `|α| → 1` and `∇₁ α → 0` at infinity whose coordinates are bounded,
-the Gårding inequality
+At a `C¹` vortex `x` with `|α| → 1` and `∇₁ α → 0` at infinity and with an `L∞` class `a`, so
+that its coordinates are bounded by `‖a‖`, the Gårding inequality
 `TauCeti.Vortex.exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le` bounds the
 covariant gradient and the `L²` norm of a test field by `‖L_x y‖²` and the `L²` norm of `y` on a
 disc. The covariant gradient controls the flat gradient up to the bounded connection
@@ -82,78 +84,6 @@ namespace TauCeti.Vortex
 
 open Complex MeasureTheory Filter Metric TopologicalSpace
 open scoped ENNReal Topology InnerProductSpace Gradient Distributions
-
-/-- The zeroth-order part of the gauge-fixed operator `L_x`, as a bilinear map of the value `ξ` of
-the field and the value `v` of the variation: the terms of `L_x y` without derivatives of `y`. -/
-def gaugeFixedZerothOrder :
-    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-  LinearMap.toContinuousLinearMap <|
-    (LinearMap.toContinuousLinearMap :
-        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4)) ≃ₗ[ℝ]
-          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))).toLinearMap ∘ₗ
-      LinearMap.mk₂ ℝ (fun ξ v : EuclideanSpace ℝ (Fin 4) ↦
-        !₂[ξ 2 * v 3 - ξ 3 * v 2, ξ 2 * v 2 + ξ 3 * v 3,
-          -ξ 0 * v 3 - v 0 * ξ 3 - ξ 1 * v 2 - v 1 * ξ 2,
-          ξ 0 * v 2 + v 0 * ξ 2 - ξ 1 * v 3 - v 1 * ξ 3])
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-
-/-- The defining formula of `gaugeFixedZerothOrder`. -/
-theorem gaugeFixedZerothOrder_apply (ξ v : EuclideanSpace ℝ (Fin 4)) :
-    gaugeFixedZerothOrder ξ v =
-      !₂[ξ 2 * v 3 - ξ 3 * v 2, ξ 2 * v 2 + ξ 3 * v 3,
-        -ξ 0 * v 3 - v 0 * ξ 3 - ξ 1 * v 2 - v 1 * ξ 2,
-        ξ 0 * v 2 + v 0 * ξ 2 - ξ 1 * v 3 - v 1 * ξ 3] :=
-  (rfl)
-
-/-- The first-order part of the gauge-fixed operator `L_x`, as a linear map of the gradients
-`g j = ∇y_j` of the four coordinates of the variation. Along the frame `(∂₁, ∂₂) = (1, i)`,
-`∂_k y_j = ⟪g j, e_k⟫`, and the rows are `∂₁y₀ + ∂₂y₁`, `∂₂y₀ - ∂₁y₁`, `∂₁y₂ - ∂₂y₃` and
-`∂₁y₃ + ∂₂y₂`. -/
-def gaugeFixedFirstOrder : (Fin 4 → ℂ) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun g ↦ !₂[⟪g 0, 1⟫_ℝ + ⟪g 1, I⟫_ℝ, ⟪g 0, I⟫_ℝ - ⟪g 1, 1⟫_ℝ,
-        ⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 3, 1⟫_ℝ + ⟪g 2, I⟫_ℝ]
-      map_add' := fun _ _ ↦ by ext i; fin_cases i <;> simp [inner_add_left] <;> ring
-      map_smul' := fun _ _ ↦ by ext i; fin_cases i <;> simp <;> ring }
-
-/-- The defining formula of `gaugeFixedFirstOrder`. -/
-theorem gaugeFixedFirstOrder_apply (g : Fin 4 → ℂ) :
-    gaugeFixedFirstOrder g = !₂[⟪g 0, 1⟫_ℝ + ⟪g 1, I⟫_ℝ, ⟪g 0, I⟫_ℝ - ⟪g 1, 1⟫_ℝ,
-        ⟪g 2, 1⟫_ℝ - ⟪g 3, I⟫_ℝ, ⟪g 3, 1⟫_ℝ + ⟪g 2, I⟫_ℝ] :=
-  (rfl)
-
-/-- The gauge-fixed operator is the sum of its first-order part, applied to the gradients of
-the coordinates of the variation, and its zeroth-order part. -/
-theorem gaugeFixedOperator_eq_gaugeFixedFirstOrder_add (x y : ℂ → EuclideanSpace ℝ (Fin 4))
-    (z : ℂ) :
-    gaugeFixedOperator x y z =
-      gaugeFixedFirstOrder (fun j ↦ ∇ (fun w ↦ y w j) z) + gaugeFixedZerothOrder (x z) (y z) := by
-  ext i
-  fin_cases i <;>
-    simp [gaugeFixedFirstOrder_apply, gaugeFixedZerothOrder_apply, inner_gradient_left] <;> ring
-
-/-- The covariant gradient density controls the flat gradient of a variation, up to the
-connection coefficients of the field. -/
-theorem sum_norm_gradient_sq_le (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ∑ j : Fin 4, ‖∇ (fun w ↦ y w j) z‖ ^ 2 ≤
-      2 * gaugeFixedGradientDensity x y z + 2 * ‖x z‖ ^ 2 * ‖y z‖ ^ 2 := by
-  have hg (f : ℂ → ℝ) : ‖∇ f z‖ ^ 2 = fderiv ℝ f z 1 ^ 2 + fderiv ℝ f z I ^ 2 := by
-    rw [← Complex.orthonormalBasisOneI.sum_sq_inner_left]
-    simp [Fin.sum_univ_two, inner_gradient_left]
-  simp only [Fin.sum_univ_four, hg, gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq]
-  nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z 1 - 2 * x z 0 * y z 3),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z 1 + 2 * x z 0 * y z 2),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z I - 2 * x z 1 * y z 3),
-    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z I + 2 * x z 1 * y z 2),
-    mul_nonneg (add_nonneg (sq_nonneg (x z 2)) (sq_nonneg (x z 3)))
-      (add_nonneg (sq_nonneg (y z 2)) (sq_nonneg (y z 3))),
-    mul_nonneg (add_nonneg (sq_nonneg (x z 0)) (sq_nonneg (x z 1)))
-      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1))),
-    mul_nonneg (add_nonneg (sq_nonneg (x z 2)) (sq_nonneg (x z 3)))
-      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1)))]
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
 
@@ -272,31 +202,6 @@ private theorem norm_discValues_apply_sq (R : ℝ) (y : Fin 4 → W1p (volume : 
     ContinuousLinearMap.proj_apply, W1p.valueL_apply, Real.norm_eq_abs, sq_abs]
   exact congrArg (· ^ 2) hz
 
-private theorem norm_sq_le_sum_norm_sq (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    ‖y‖ ^ 2 ≤ ∑ j, ‖y j‖ ^ 2 := by
-  have h : ‖y‖ ≤ √(∑ j, ‖y j‖ ^ 2) :=
-    (pi_norm_le_iff_of_nonneg (Real.sqrt_nonneg _)).2 fun j ↦ Real.le_sqrt_of_sq_le
-      (Finset.single_le_sum (f := fun j ↦ ‖y j‖ ^ 2) (fun _ _ ↦ sq_nonneg _)
-        (Finset.mem_univ j))
-  calc ‖y‖ ^ 2 ≤ √(∑ j, ‖y j‖ ^ 2) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) h 2
-    _ = ∑ j, ‖y j‖ ^ 2 := Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
-
-/-- The field assembled from four test functions is smooth. -/
-private theorem contDiff_testField (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
-    ContDiff ℝ 2 (fun z ↦ WithLp.toLp 2 fun j ↦ φ j z : ℂ → EuclideanSpace ℝ (Fin 4)) :=
-  (contDiff_piLp 2).2 fun j ↦ ((φ j).contDiff).of_le (by simp)
-
-/-- The field assembled from four test functions has compact support. -/
-private theorem hasCompactSupport_testField (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
-    HasCompactSupport (fun z ↦ WithLp.toLp 2 fun j ↦ φ j z : ℂ → EuclideanSpace ℝ (Fin 4)) := by
-  refine (isCompact_iUnion fun j ↦ (φ j).hasCompactSupport).of_isClosed_subset
-    (isClosed_tsupport _) (closure_minimal ?_ (isClosed_iUnion_of_finite fun j ↦
-      isClosed_tsupport _))
-  intro z hz
-  by_contra h
-  simp only [Set.mem_iUnion, not_exists] at h
-  exact hz (by ext j; simpa using image_eq_zero_of_notMem_tsupport (h j))
-
 /-- The `H¹` norm of a field of test functions is controlled by the integrals of its squared
 values and gradients. -/
 private theorem norm_sq_le_integral_testField (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
@@ -331,7 +236,7 @@ private theorem norm_sq_le_integral_testField (φ : Fin 4 → 𝓓((⊤ : Opens 
       integral_congr_ae ((hgrad j).mono fun z hz ↦ by simp only [hz])
     rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq, ← W1p.integral_value_sq_eq_norm_value_sq,
       ← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq, hint, hint, h₁, h₂]
-  refine (norm_sq_le_sum_norm_sq y).trans (le_of_eq ?_)
+  refine (Pi.norm_pow_le_sum_norm_pow y two_ne_zero).trans (le_of_eq ?_)
   simp_rw [hnorm, Finset.sum_add_distrib]
   rw [← integral_finsetSum _ fun j _ ↦ hφi j, ← integral_finsetSum _ fun j _ ↦ hgi j,
     ← integral_add (integrable_finsetSum _ fun j _ ↦ hφi j)
@@ -360,8 +265,8 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
   have hae {P : ℂ → Prop} (h : ∀ᵐ z ∂μ⊤, P z) : ∀ᵐ z ∂(volume : Measure ℂ), P z := by
     rwa [hμ] at h
   have hint (f : ℂ → ℝ) : ∫ z, f z ∂μ⊤ = ∫ z, f z := by rw [hμ]
-  have hY := contDiff_testField φ
-  have hYc := hasCompactSupport_testField φ
+  have hY : ContDiff ℝ 2 Y := (TestFunction.contDiff_toLp_pi 2 φ).of_le (by simp)
+  have hYc : HasCompactSupport Y := TestFunction.hasCompactSupport_toLp_pi 2 φ
   have hYi : Integrable (fun z ↦ ‖Y z‖ ^ 2) :=
     (hY.continuous.norm.pow 2).integrable_of_hasCompactSupport
       (hYc.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp) : HasCompactSupport fun z ↦ ‖Y z‖ ^ 2)
@@ -419,23 +324,25 @@ private theorem norm_sq_le_of_testFunction {x : ℂ → EuclideanSpace ℝ (Fin 
       (mul_le_mul_of_nonneg_left hdisc (le_max_right K 0))
   nlinarith [sq_nonneg M]
 
-variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {M : ℝ} {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
+variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
 
 /-- **The coercive estimate for `L_x` on `H¹`.** At a `C¹` vortex `x` with `|α| → 1` and
-`∇₁ α → 0` at infinity and bounded coordinates, there are a radius `R` and a constant `C` with
+`∇₁ α → 0` at infinity and with `L∞` class `a`, there are a radius `R` and a constant `C` with
 `‖y‖²_{H¹} ≤ C (‖L_x y‖²_{L²} + ‖y‖²_{L²(B_R)})` for every `y ∈ H¹(ℂ)⁴`. -/
 theorem exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
-    (hM : ∀ z, ‖x z‖ ≤ M) (hax : a =ᵐ[μ⊤] x) :
+    (hax : a =ᵐ[μ⊤] x) :
     ∃ R > 0, ∃ C ≥ 0, ∀ y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2,
       ‖y‖ ^ 2 ≤ C * (‖sobolevGaugeFixedOperator a y‖ ^ 2 +
         ∑ j, ∫ z in ball (0 : ℂ) R, W1p.value (y j) z ^ 2) := by
   obtain ⟨R, hR, K, hG⟩ := exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le
     (μ := volume) hx hsol hlim hcov (a := 1 / 8) (by norm_num)
-  set C := 8 * (1 + 2 * M ^ 2) * max 1 (max K 0) with hC
-  have hC₀ : 0 ≤ 8 * (1 + 2 * M ^ 2) := by positivity
+  have : (μ⊤).IsOpenPosMeasure := by rw [show μ⊤ = volume by simp]; infer_instance
+  have hM := Lp.norm_le_norm_top_of_ae_eq_of_continuous hx.continuous hax
+  set C := 8 * (1 + 2 * ‖a‖ ^ 2) * max 1 (max K 0) with hC
+  have hC₀ : 0 ≤ 8 * (1 + 2 * ‖a‖ ^ 2) := by positivity
   refine ⟨R + 1, by linarith, C, mul_nonneg hC₀ (zero_le_one.trans (le_max_left _ _)), ?_⟩
   intro y
   have hdisc (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
@@ -464,7 +371,7 @@ theorem exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add (hx : ContDi
         max 1 (max K 0) * (X + ∑ j, ‖discValues (R + 1) (Pi.map
           (fun _ ↦ ⇑(W1p.ofTestFunctionₗ volume ⊤ 2)) φ) j‖ ^ 2) := by
       nlinarith [le_max_left 1 (max K 0), le_max_right 1 (max K 0)]
-    calc _ ≤ 8 * (1 + 2 * M ^ 2) * (max 1 (max K 0) * (X + ∑ j, ‖discValues (R + 1) (Pi.map
+    calc _ ≤ 8 * (1 + 2 * ‖a‖ ^ 2) * (max 1 (max K 0) * (X + ∑ j, ‖discValues (R + 1) (Pi.map
           (fun _ ↦ ⇑(W1p.ofTestFunctionₗ volume ⊤ 2)) φ) j‖ ^ 2)) :=
           mul_le_mul_of_nonneg_left key hC₀
       _ = _ := by rw [hC]; ring
@@ -473,11 +380,11 @@ theorem exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add (hx : ContDi
 private theorem exists_compact_estimate (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
-    (hM : ∀ z, ‖x z‖ ≤ M) (hax : a =ᵐ[μ⊤] x) :
+    (hax : a =ᵐ[μ⊤] x) :
     ∃ R C : ℝ, ∀ y, ‖y‖ ≤ C * ‖sobolevGaugeFixedOperator a y‖ +
       ‖((2 * C) • discValues R) y‖ := by
   obtain ⟨R, -, C, hC, hest⟩ :=
-    exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add hx hsol hlim hcov hM hax
+    exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add hx hsol hlim hcov hax
   refine ⟨R, √C, fun y ↦ ?_⟩
   have h := hest y
   simp_rw [← norm_discValues_apply_sq] at h
@@ -494,27 +401,27 @@ private theorem exists_compact_estimate (hx : ContDiff ℝ 1 x) (hsol : ∀ z, e
       (sobolevGaugeFixedOperator a y))) (mul_nonneg hs₀ (norm_nonneg (discValues R y)))]
 
 /-- **The kernel of `L_x` on `H¹` is finite dimensional** at a `C¹` vortex `x` with `|α| → 1`
-and `∇₁ α → 0` at infinity and bounded coordinates. -/
+and `∇₁ α → 0` at infinity and with `L∞` class `a`. -/
 theorem finiteDimensional_ker_sobolevGaugeFixedOperator (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
-    (hM : ∀ z, ‖x z‖ ≤ M) (hax : a =ᵐ[μ⊤] x) :
+    (hax : a =ᵐ[μ⊤] x) :
     FiniteDimensional ℝ (sobolevGaugeFixedOperator a).ker := by
-  obtain ⟨R, C, h⟩ := exists_compact_estimate hx hsol hlim hcov hM hax
+  obtain ⟨R, C, h⟩ := exists_compact_estimate hx hsol hlim hcov hax
   exact (sobolevGaugeFixedOperator a).finiteDimensional_ker_of_compact_estimate
     ((isCompactOperator_discValues R).smul (2 * C)) h
 
 /-- **The range of `L_x : H¹ → L²` is closed** at a `C¹` vortex `x` with `|α| → 1` and
-`∇₁ α → 0` at infinity and bounded coordinates. -/
+`∇₁ α → 0` at infinity and with `L∞` class `a`. -/
 theorem isClosed_range_sobolevGaugeFixedOperator (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
-    (hM : ∀ z, ‖x z‖ ≤ M) (hax : a =ᵐ[μ⊤] x) :
+    (hax : a =ᵐ[μ⊤] x) :
     IsClosed ((sobolevGaugeFixedOperator a).range :
       Set (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤)) := by
-  obtain ⟨R, C, h⟩ := exists_compact_estimate hx hsol hlim hcov hM hax
+  obtain ⟨R, C, h⟩ := exists_compact_estimate hx hsol hlim hcov hax
   exact (sobolevGaugeFixedOperator a).isClosed_range_of_compact_estimate
     ((isCompactOperator_discValues R).smul (2 * C)) h
 
