@@ -37,6 +37,9 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
   equivalence induces bijections of fundamental groups.
 * `ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective`: on a path-connected space it
   suffices to check bijectivity on homotopy groups at a single base point.
+* `ContinuousMap.isWeakHomotopyEquivalence_of_forall_bijective_succ`: between path-connected
+  spaces it suffices to check bijectivity on positive-dimensional homotopy groups at a single base
+  point.
 * `HomotopyGroup.map_injective_of_isEmpty_of_joined`,
   `HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined`: in degree zero, the induced map is
   injective or surjective as soon as the map is on path components.
@@ -388,6 +391,22 @@ theorem isWeakHomotopyEquivalence_iff_forall_bijective [PathConnectedSpace X] (x
     rw [← φY.apply_symm_apply (ZerothHomotopy.mk y), ← ha,
       homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk]
   · exact (f.bijective_map_iff_of_path (PathConnectedSpace.somePath x x')).1 (h n)
+
+/-- **Between path-connected spaces, weak homotopy equivalences can be detected in positive
+degrees at one point.** A map between path-connected spaces sending `x` to `y` is a weak homotopy
+equivalence as soon as it induces a bijection `π_(n+1)(X, x) → π_(n+1)(Y, y)` for every `n`. -/
+theorem isWeakHomotopyEquivalence_of_forall_bijective_succ [PathConnectedSpace X]
+    [PathConnectedSpace Y] {x : X} {y : Y} (hf : f x = y)
+    (h : ∀ n, Function.Bijective (HomotopyGroup.map (N := Fin (n + 1)) f hf)) :
+    f.IsWeakHomotopyEquivalence := by
+  subst hf
+  refine (isWeakHomotopyEquivalence_iff_forall_bijective x).2 fun n ↦ ?_
+  rcases n with _ | n
+  · -- Degree zero: both homotopy sets are trivial.
+    have := (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
+    have := (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (f x)).1 inferInstance
+    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
+  · exact h n
 
 /-- **Weak homotopy equivalences through path components.** A map is a weak homotopy equivalence
 exactly when it induces a bijection on path components, that is, every point of `Y` is joined to a

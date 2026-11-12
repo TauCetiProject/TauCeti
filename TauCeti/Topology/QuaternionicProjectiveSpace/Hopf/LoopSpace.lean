@@ -9,6 +9,7 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
 public import TauCeti.Topology.QuaternionicProjectiveSpace.Hopf.Exact
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 
 /-!
@@ -29,11 +30,12 @@ that it is a weak homotopy equivalence when `j` splits the boundary map of the H
 Unlike the complex case `S¹ × ΩS²ⁿ⁺¹ → ΩCPⁿ`, the fibre `S³` has nontrivial homotopy groups in
 infinitely many degrees, so `j` must split the boundary map in every degree, not only on `π₁`.
 Write `∂ : π_{k+1}(ΩHPⁿ) ≅ π_{k+2}(HPⁿ) → π_{k+1}(S³)` for the Moore loop-space shift followed by
-the boundary map (`TauCeti.QuaternionicProjectiveSpace.hopfLoopBoundary`). The exact homotopy
-sequence of the Hopf fibration shows that `(Ωq)_*` maps `π_{k+1}(ΩS⁴ⁿ⁺³)` onto the kernel of `∂`,
-and it is injective as soon as `∂` is onto in the next degree, because the fibre inclusion is then
-trivial on homotopy groups. If `∂ ∘ j_*` is bijective in every degree, then
-`(j ⋆ Ωq)_* (a × b) = j_* a * (Ωq)_* b` is bijective
+the boundary map (`TauCeti.QuaternionicProjectiveSpace.hopfLoopBoundaryHom`). The exact homotopy
+sequence of the Hopf fibration shows that `(Ωq)_*` maps `π_{k+1}(ΩS⁴ⁿ⁺³)` onto the kernel of `∂`
+(`TauCeti.QuaternionicProjectiveSpace.ker_hopfLoopBoundaryHom`), and it is injective as soon as `∂`
+is onto in the next degree, because the fibre inclusion is then trivial on homotopy groups
+(`TauCeti.QuaternionicProjectiveSpace.injective_homotopyGroupMap_mooreLoopSpaceMap`). If
+`∂ ∘ j_*` is bijective in every degree, then `(j ⋆ Ωq)_* (a × b) = j_* a * (Ωq)_* b` is bijective
 (`HomotopyGroup.bijective_map_mul_of_bijective_comp`).
 
 The splitting map is built from a based null-homotopy of the fibre inclusion `u ↦ v u` in
@@ -53,15 +55,22 @@ the integral homology of `ΩHPⁿ` to that of `S³ × ΩS⁴ⁿ⁺³`.
 ## Main definitions
 
 * `TauCeti.QuaternionicProjectiveSpace.hopfProduct`: the based Hopf product `j ⋆ Ωq`.
-* `TauCeti.QuaternionicProjectiveSpace.hopfLoopBoundary`: the homomorphism
+* `TauCeti.QuaternionicProjectiveSpace.hopfLoopBoundaryHom`: the homomorphism
   `π_{k+1}(ΩHPⁿ, 1) → π_{k+1}(S³, 1)`, the Moore loop-space shift followed by the boundary map of
   the Hopf fibration.
 
 ## Main results
 
+* `TauCeti.QuaternionicProjectiveSpace.map_hopfProduct_prod`:
+  `(j ⋆ Ωq)_* (a × b) = j_* a * (Ωq)_* b`.
+* `TauCeti.QuaternionicProjectiveSpace.hopfLoopBoundaryHom_eq_one_iff`,
+  `TauCeti.QuaternionicProjectiveSpace.ker_hopfLoopBoundaryHom`: the kernel of `∂` is the image
+  of `(Ωq)_*`.
+* `TauCeti.QuaternionicProjectiveSpace.injective_homotopyGroupMap_mooreLoopSpaceMap`: `(Ωq)_*` is
+  injective on `π_{k+1}` when `∂` is onto in the next degree.
 * `TauCeti.QuaternionicProjectiveSpace.isWeakHomotopyEquivalence_hopfProduct`: `j ⋆ Ωq` is a
   weak homotopy equivalence whenever `∂ ∘ j_*` is bijective in every positive degree.
-* `TauCeti.QuaternionicProjectiveSpace.exists_hopfLoopBoundary_map_eq`: for `n ≥ 1` there is a
+* `TauCeti.QuaternionicProjectiveSpace.exists_hopfLoopBoundaryHom_map_eq`: for `n ≥ 1` there is a
   based map `j : S³ → ΩHPⁿ` with `∂ (j_* a) = a` in every positive degree.
 * `TauCeti.QuaternionicProjectiveSpace.exists_isWeakHomotopyEquivalence_hopfProduct`: for
   `n ≥ 1` there is a based map `j` for which `j ⋆ Ωq` is a weak homotopy equivalence.
@@ -102,40 +111,54 @@ theorem hopfProduct_apply
     hopfProduct v j p = j p.1 * MooreLoopSpace.map ⟨mk n, continuous_mk n⟩ rfl p.2 :=
   (rfl)
 
+theorem hopfProduct_def
+    (j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v))) :
+    hopfProduct v j = j.comp ContinuousMap.fst *
+      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap.comp
+        ContinuousMap.snd :=
+  (rfl)
+
+/-- The based Hopf product acts on homotopy groups by `(j ⋆ Ωq)_* (a × b) = j_* a * (Ωq)_* b`. -/
+@[simp]
+theorem map_hopfProduct_prod {N : Type*} [DecidableEq N] [Nonempty N]
+    {j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v))}
+    (hj : j 1 = 1) (h : hopfProduct v j (1, 1) = 1) (a : HomotopyGroup N (sphere (0 : ℍ) 1) 1)
+    (b : HomotopyGroup N (MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v) 1) :
+    HomotopyGroup.map (hopfProduct v j) h (HomotopyGroup.prod a b) =
+      HomotopyGroup.map j hj a *
+        HomotopyGroup.map (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap
+          (map_one (MooreLoopSpace.map _ _)) b :=
+  HomotopyGroup.map_mul_prod _ _ hj (map_one (MooreLoopSpace.map _ _)) a b
+
 /-- The **boundary map on the loop space** `π_{k+1}(ΩHPⁿ, 1) → π_{k+1}(S³, 1)` of the
 quaternionic Hopf fibration: the Moore loop-space shift `π_{k+1}(ΩHPⁿ, 1) ≅ π_{k+2}(HPⁿ, [v])`,
 followed by the boundary map `π_{k+2}(HPⁿ, [v]) → π_{k+1}(S³, 1)`. The loop coordinate, the last
 cube direction of the shift, is the direction in which the boundary map lifts. -/
-def hopfLoopBoundary (k : ℕ) :
+def hopfLoopBoundaryHom (k : ℕ) :
     π_ (k + 1) (MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)) 1 →*
       π_ (k + 1) (sphere (0 : ℍ) 1) 1 :=
   (hopfBoundaryHom v (Fin (k + 1))).comp <|
     (HomotopyGroup.congrMulEquiv (finSuccEquivLast (n := k + 1))).toMonoidHom.comp
       (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) k).toMonoidHom
 
-theorem hopfLoopBoundary_apply (k : ℕ)
+theorem hopfLoopBoundaryHom_apply (k : ℕ)
     (a : π_ (k + 1) (MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)) 1) :
-    hopfLoopBoundary v k a = hopfBoundary v (Fin (k + 1))
+    hopfLoopBoundaryHom v k a = hopfBoundary v (Fin (k + 1))
       (HomotopyGroup.congrEquiv finSuccEquivLast
         (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) k a)) := by
-  simp [hopfLoopBoundary]
+  simp [hopfLoopBoundaryHom]
 
 /-! ### The splitting criterion -/
 
-/-- The map `π_{k+1}(ΩS⁴ⁿ⁺³, 1) → π_{k+1}(ΩHPⁿ, 1)` induced by the Moore loop map of the Hopf
-fibration. -/
-private abbrev loopMap (k : ℕ) :
-    π_ (k + 1) (MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v) 1 →
-      π_ (k + 1) (MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)) 1 :=
-  HomotopyGroup.map (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap
-    (map_one (MooreLoopSpace.map _ _))
-
-/-- **Exactness at `π_{k+1}(ΩHPⁿ)`.** A class of `π_{k+1}(ΩHPⁿ, 1)` comes from `ΩS⁴ⁿ⁺³` exactly
-when its boundary in `π_{k+1}(S³)` is trivial. -/
-private theorem hopfLoopBoundary_eq_one_iff (k : ℕ)
+/-- **Exactness at `π_{k+1}(ΩHPⁿ)`.** A class of `π_{k+1}(ΩHPⁿ, 1)` comes from `ΩS⁴ⁿ⁺³` under the
+Moore loop map `Ωq` of the Hopf fibration exactly when its boundary in `π_{k+1}(S³)` is trivial. -/
+theorem hopfLoopBoundaryHom_eq_one_iff (k : ℕ)
     (c : π_ (k + 1) (MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)) 1) :
-    hopfLoopBoundary v k c = 1 ↔ c ∈ range (loopMap v k) := by
-  rw [hopfLoopBoundary_apply, HomotopyGroup.one_def, ← mem_range_homotopyGroupMap_mk_iff]
+    hopfLoopBoundaryHom v k c = 1 ↔
+      c ∈ range (HomotopyGroup.map
+        (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap
+        (map_one (MooreLoopSpace.map _ _))) := by
+  rw [hopfLoopBoundaryHom_apply, HomotopyGroup.one_def, ← mem_range_homotopyGroupMap_mk_iff]
   constructor
   · rintro ⟨d, hd⟩
     refine ⟨(MooreLoopSpace.homotopyGroupMulEquiv v k).symm
@@ -148,12 +171,33 @@ private theorem hopfLoopBoundary_eq_one_iff (k : ℕ)
     exact ⟨HomotopyGroup.congrEquiv finSuccEquivLast (MooreLoopSpace.homotopyGroupMulEquiv v k b),
       by rw [HomotopyGroup.map_congrEquiv, MooreLoopSpace.homotopyGroupMulEquiv_map]⟩
 
+/-- The boundary map kills the image of the Moore loop map `Ωq` of the Hopf fibration. -/
+@[simp]
+theorem hopfLoopBoundaryHom_homotopyGroupMap_mooreLoopSpaceMap (k : ℕ)
+    (b : π_ (k + 1) (MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v) 1) :
+    hopfLoopBoundaryHom v k (HomotopyGroup.map
+      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl : C(_, _))
+      (map_one (MooreLoopSpace.map _ _)) b) = 1 :=
+  (hopfLoopBoundaryHom_eq_one_iff v k _).2 ⟨b, rfl⟩
+
+/-- **Exactness at `π_{k+1}(ΩHPⁿ)`**, as an equality of subgroups: the kernel of the boundary map
+is the image of the Moore loop map `Ωq` of the Hopf fibration. -/
+theorem ker_hopfLoopBoundaryHom (k : ℕ) :
+    (hopfLoopBoundaryHom v k).ker = (HomotopyGroup.mapHom (N := Fin (k + 1))
+      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap
+      (map_one (MooreLoopSpace.map _ _))).range := by
+  ext c
+  rw [MonoidHom.mem_ker, hopfLoopBoundaryHom_eq_one_iff, MonoidHom.mem_range]
+  simp [HomotopyGroup.mapHom_apply]
+
 /-- **The Moore loop map of the Hopf fibration is injective on `π_{k+1}`** when the boundary map
 `π_{k+3}(HPⁿ) → π_{k+2}(S³)` is onto: then the fibre inclusion is trivial on `π_{k+2}(S³)`, so
 `q_*` is injective on `π_{k+2}(S⁴ⁿ⁺³)`. -/
-private theorem injective_loopMap (k : ℕ)
+theorem injective_homotopyGroupMap_mooreLoopSpaceMap (k : ℕ)
     (hk : Function.Surjective (hopfBoundary v (Fin (k + 2)))) :
-    Function.Injective (loopMap v k) := by
+    Function.Injective (HomotopyGroup.map (N := Fin (k + 1))
+      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap
+      (map_one (MooreLoopSpace.map _ _))) := by
   have hq : Function.Injective
       (HomotopyGroup.map (N := Fin (k + 2)) (x := v) ⟨mk n, continuous_mk n⟩ rfl) := by
     refine (injective_iff_map_eq_one (HomotopyGroup.mapHom (N := Fin (k + 2)) (x := v)
@@ -175,7 +219,7 @@ theorem isWeakHomotopyEquivalence_hopfProduct
     {j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v))}
     (hj : j 1 = 1)
     (hjb : ∀ k, Function.Bijective
-      (hopfLoopBoundary v k ∘ HomotopyGroup.map (N := Fin (k + 1)) j hj)) :
+      (hopfLoopBoundaryHom v k ∘ HomotopyGroup.map (N := Fin (k + 1)) j hj)) :
     (hopfProduct v j).IsWeakHomotopyEquivalence := by
   -- `S³`, `ΩS⁴ⁿ⁺³` and `ΩHPⁿ` are path connected, since `S³`, `S⁴ⁿ⁺³` and `HPⁿ` are simply
   -- connected.
@@ -189,31 +233,16 @@ theorem isWeakHomotopyEquivalence_hopfProduct
   have : PathConnectedSpace (MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)) :=
     (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 _).2
       (HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton_congr.2 inferInstance)
-  rw [ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective (1, 1)]
-  intro k
-  -- The product sends the base point to the unit; the homotopy groups are compared there.
-  have h1 : hopfProduct v j (1, 1) = 1 := by simp [hj]
-  have key : ∀ {y} (h : hopfProduct v j (1, 1) = y),
-      Function.Bijective (HomotopyGroup.map (N := Fin k) (x := (1, 1)) (hopfProduct v j) h) →
-        Function.Bijective
-          (HomotopyGroup.map (N := Fin k) (x := (1, 1)) (hopfProduct v j) rfl) := by
-    rintro y rfl hb
-    exact hb
-  refine key h1 ?_
-  rcases k with _ | k
-  · -- Degree zero: both spaces are path connected.
-    have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero ((1, 1) : sphere (0 : ℍ) 1 ×
-      MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v)).1 inferInstance
-    have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero
-      (1 : MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v))).1 inferInstance
-    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
-  · -- Positive degrees: `j_*` splits the exact sequence `π(ΩS⁴ⁿ⁺³) ↪ π(ΩHPⁿ) → π(S³)`.
-    refine HomotopyGroup.bijective_map_mul_of_bijective_comp hj
-      (map_one (MooreLoopSpace.map _ _)) (hopfLoopBoundary v k) (hjb k)
-      (injective_loopMap v k fun c ↦ ?_) (hopfLoopBoundary_eq_one_iff v k)
-    -- The boundary map is onto in the next degree, since `∂ ∘ j_*` is.
-    obtain ⟨a, ha⟩ := (hjb (k + 1)).2 c
-    exact ⟨_, (hopfLoopBoundary_apply v (k + 1) _).symm.trans ha⟩
+  refine ContinuousMap.isWeakHomotopyEquivalence_of_forall_bijective_succ
+    (x := (1, 1)) (by simp [hj] : hopfProduct v j (1, 1) = 1) fun k ↦ ?_
+  -- `j_*` splits the exact sequence `π(ΩS⁴ⁿ⁺³) ↪ π(ΩHPⁿ) → π(S³)`.
+  refine HomotopyGroup.bijective_map_mul_of_bijective_comp hj
+    (map_one (MooreLoopSpace.map _ _)) (hopfLoopBoundaryHom v k) (hjb k)
+    (injective_homotopyGroupMap_mooreLoopSpaceMap v k fun c ↦ ?_)
+    (hopfLoopBoundaryHom_eq_one_iff v k)
+  -- The boundary map is onto in the next degree, since `∂ ∘ j_*` is.
+  obtain ⟨a, ha⟩ := (hjb (k + 1)).2 c
+  exact ⟨_, (hopfLoopBoundaryHom_apply v (k + 1) _).symm.trans ha⟩
 
 /-! ### A splitting of the boundary map -/
 
@@ -240,7 +269,7 @@ of the fibre inclusion `u ↦ v u` of the Hopf fibration. -/
 private def liftVector (u : sphere (0 : ℍ) 1) (s : I) : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ :=
   op (liftCoeff u s) • (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) + (1 - ‖liftCoeff u s‖ ^ 2) • w
 
-/-- The vector `liftVector` is `v u` when `α = (1 - s) + s u` is a unit quaternion. -/
+/-- The vector `liftVector` is `v α` when `α = (1 - s) + s u` is a unit quaternion. -/
 private theorem liftVector_of_norm_eq_one {u : sphere (0 : ℍ) 1} {s : I}
     (h : ‖liftCoeff u s‖ = 1) :
     liftVector v w u s = op (liftCoeff u s) • (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) := by
@@ -273,9 +302,8 @@ normalization of `liftVector`, which runs from `v` at `s = 0` to `v u` at `s = 1
 `v` for `u = 1`. -/
 private def hopfLift :
     C(sphere (0 : ℍ) 1 × I, sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) where
-  toFun p := ⟨‖liftVector v w p.1 p.2‖⁻¹ • liftVector v w p.1 p.2, by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 (liftVector_ne_zero hw hvw _ _))]⟩
+  toFun p := ⟨‖liftVector v w p.1 p.2‖⁻¹ • liftVector v w p.1 p.2,
+    mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm (𝕜 := ℝ) (liftVector_ne_zero hw hvw _ _))⟩
   continuous_toFun := by
     have hc : Continuous fun p : sphere (0 : ℍ) 1 × I ↦ liftCoeff p.1 p.2 := by
       unfold liftCoeff
@@ -403,14 +431,16 @@ private theorem toPath_hopfLoop (u : sphere (0 : ℍ) 1) (s : I) :
 /-- **The splitting loop splits the boundary map**: `∂ (j_* a) = a` for every class `a` of
 `π_{k+1}(S³, 1)`. The family of lifts `(s, t) ↦ hopfLift (a t, s)` of the shifted loops starts
 at `v` and ends at the fibre loop `t ↦ v (a t)`, which is `a` read in `S³`. -/
-private theorem hopfLoopBoundary_map_hopfLoop (k : ℕ) (a : π_ (k + 1) (sphere (0 : ℍ) 1) 1) :
-    hopfLoopBoundary v k (HomotopyGroup.map (hopfLoop v w hw hvw) (hopfLoop_one hw hvw) a) = a := by
+private theorem hopfLoopBoundaryHom_map_hopfLoop (k : ℕ)
+    (a : π_ (k + 1) (sphere (0 : ℍ) 1) 1) :
+    hopfLoopBoundaryHom v k (HomotopyGroup.map (hopfLoop v w hw hvw) (hopfLoop_one hw hvw) a) =
+      a := by
   induction a using Quotient.inductionOn with
   | h a =>
   let G : C(I × (I^(Fin (k + 1))),
       _root_.TopCat.of (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1)) :=
     (hopfLift v w hw hvw).comp ⟨fun p ↦ (a p.2, p.1), by fun_prop⟩
-  rw [hopfLoopBoundary_apply, MooreLoopSpace.homotopyGroupMulEquiv_apply, hopfBoundary_apply]
+  rw [hopfLoopBoundaryHom_apply, MooreLoopSpace.homotopyGroupMulEquiv_apply, hopfBoundary_apply]
   simp only [HomotopyGroup.map_mk, HomotopyGroup.pathLoopSpaceMulEquiv_mk,
     HomotopyGroup.congrEquiv_mk]
   refine (congrArg (HomotopyGroup.homeomorphEquivOfEq (N := Fin (k + 1))
@@ -449,22 +479,38 @@ end Splitting
 based map `j : S³ → ΩHPⁿ` such that `∂ (j_* a) = a` for every class `a` of `π_{k+1}(S³, 1)`,
 where `∂ : π_{k+1}(ΩHPⁿ, 1) → π_{k+1}(S³, 1)` is the loop-space shift followed by the boundary
 map. -/
-theorem exists_hopfLoopBoundary_map_eq (hn : n ≠ 0) :
+theorem exists_hopfLoopBoundaryHom_map_eq (hn : n ≠ 0) :
     ∃ (j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)))
       (hj : j 1 = 1),
-      ∀ k a, hopfLoopBoundary v k (HomotopyGroup.map (N := Fin (k + 1)) j hj a) = a := by
-  obtain ⟨w, hw, hvw⟩ := exists_norm_eq_one_forall_inner_op_smul_eq_zero
-    (by rw [finrank_piLp_quaternion, Fintype.card_fin]; omega) (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)
-  exact ⟨hopfLoop v w hw hvw, hopfLoop_one hw hvw, hopfLoopBoundary_map_hopfLoop hw hvw⟩
+      ∀ k a, hopfLoopBoundaryHom v k (HomotopyGroup.map (N := Fin (k + 1)) j hj a) = a := by
+  classical
+  -- A unit vector orthogonal to `v 1, v i, v j, v k` is orthogonal to the quaternionic line `v ℍ`,
+  -- by real linearity of `a ↦ v a`.
+  let b := Quaternion.orthonormalBasisOneIJK
+  let L : ℍ →ₗ[ℝ] PiLp 2 fun _ : Fin (n + 1) ↦ ℍ :=
+    (opLinearEquiv ℝ).toLinearMap.smulRight (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)
+  have hcard :
+      (Finset.univ.image (L ∘ b)).card < Module.finrank ℝ (PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) := by
+    refine Finset.card_image_le.trans_lt ?_
+    rw [finrank_piLp_quaternion, Fintype.card_fin, Finset.card_univ, Fintype.card_fin]
+    omega
+  obtain ⟨w, hw, hLw⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank _ hcard
+  have hvw (a : ℍ) : inner ℝ (op a • (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)) w = 0 := by
+    change inner ℝ (L a) w = 0
+    rw [← b.sum_repr a, map_sum, sum_inner]
+    refine Finset.sum_eq_zero fun i _ ↦ ?_
+    rw [map_smul, real_inner_smul_left,
+      hLw (L (b i)) (Finset.mem_image_of_mem (L ∘ b) (Finset.mem_univ i)), mul_zero]
+  exact ⟨hopfLoop v w hw hvw, hopfLoop_one hw hvw, hopfLoopBoundaryHom_map_hopfLoop hw hvw⟩
 
 /-- **The based Hopf product realizes the splitting.** For `n ≥ 1` there is a based map
 `j : S³ → ΩHPⁿ` for which `j ⋆ Ωq : S³ × ΩS⁴ⁿ⁺³ → ΩHPⁿ` is a weak homotopy equivalence. -/
 theorem exists_isWeakHomotopyEquivalence_hopfProduct (hn : n ≠ 0) :
     ∃ j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v)),
       j 1 = 1 ∧ (hopfProduct v j).IsWeakHomotopyEquivalence := by
-  obtain ⟨j, hj, hjb⟩ := exists_hopfLoopBoundary_map_eq v hn
+  obtain ⟨j, hj, hjb⟩ := exists_hopfLoopBoundaryHom_map_eq v hn
   refine ⟨j, hj, isWeakHomotopyEquivalence_hopfProduct v hj fun k ↦ ?_⟩
-  have h : hopfLoopBoundary v k ∘ HomotopyGroup.map (N := Fin (k + 1)) j hj = id :=
+  have h : hopfLoopBoundaryHom v k ∘ HomotopyGroup.map (N := Fin (k + 1)) j hj = id :=
     funext (hjb k)
   rw [h]
   exact Function.bijective_id
