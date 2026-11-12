@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import Mathlib.Analysis.Distribution.Distribution
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 public import TauCeti.Analysis.Fourier.Torus.Periodization
-import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Distribution.Gluing
 import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Complexify
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
@@ -67,14 +67,14 @@ this is the form continuity takes on each pair `𝓓_{K₁} × 𝓓_{K₂}`. Cov
 `ball c r` with `r < 1/4` whose closed balls of radius `2 r` lie in `Ω`, respectively `O`. On a box
 `ball c r ×ˢ ball c' r'` the kernel on compact sets, applied to the complex-bilinear extension
 `(φ, ψ) ↦ B (Re φ) (Re ψ) - B (Im φ) (Im ψ) + i (B (Re φ) (Im ψ) + B (Im φ) (Re ψ))` of `B`
-restricted to the closed balls of radius `2 r` and `2 r'`, gives a distribution on the box which
-agrees with `B` on tensor products. Two of these local kernels agree on the intersection of their
-boxes, which is again a box, because tensor products of test functions span a dense subspace
-(`TestFunction.ext_prodSMulCLM`). They therefore glue to a distribution on `Ω ×ˢ O`
-(`Distribution.existsUnique_gluing`). It agrees with `B` on tensor products of test functions
-supported in balls of the cover, and hence on all tensor products, because an additive map on test
-functions which vanishes locally vanishes (`AddMonoidHom.eq_zero_of_locally_vanishing`). Uniqueness
-is again the density of tensor products.
+restricted to the closed balls of radius `2 r` and `2 r'` (`LinearMap.complexifySupportedIn`), gives
+a distribution on the box which agrees with `B` on tensor products. Two of these local kernels agree
+on the intersection of their boxes, which is again a box, because tensor products of test functions
+span a dense subspace (`TestFunction.ext_prodSMulCLM`). They therefore glue to a distribution on
+`Ω ×ˢ O` (`Distribution.existsUnique_gluing`). It agrees with `B` on tensor products of test
+functions supported in balls of the cover, and hence on all tensor products, because an additive
+map on test functions which vanishes locally vanishes
+(`AddMonoidHom.eq_zero_of_locally_vanishing`). Uniqueness is again the density of tensor products.
 
 ## Main results
 
@@ -437,68 +437,6 @@ namespace LinearMap
 
 open Complex ContDiffMapSupportedIn TestFunction Metric
 
-section Complexify
-
-variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
-  [NormedSpace ℝ D] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {K₁ : Compacts E} {K₂ : Compacts D}
-
-/-- The complex-bilinear extension
-`(φ, ψ) ↦ B (Re φ) (Re ψ) - B (Im φ) (Im ψ) + i (B (Re φ) (Im ψ) + B (Im φ) (Re ψ))` of a
-real-bilinear map on real smooth functions supported in compact sets to complex ones. -/
-private def complexify (B : 𝓓_{K₁}(E, ℝ) →ₗ[ℝ] 𝓓_{K₂}(D, ℝ) →ₗ[ℝ] F) :
-    𝓓_{K₁}(E, ℂ) →ₗ[ℂ] 𝓓_{K₂}(D, ℂ) →ₗ[ℂ] F :=
-  LinearMap.mk₂ ℂ (fun φ ψ ↦
-      B (postcompLM (𝕜 := ℝ) reCLM φ) (postcompLM (𝕜 := ℝ) reCLM ψ) -
-        B (postcompLM (𝕜 := ℝ) imCLM φ) (postcompLM (𝕜 := ℝ) imCLM ψ) +
-      I • (B (postcompLM (𝕜 := ℝ) reCLM φ) (postcompLM (𝕜 := ℝ) imCLM ψ) +
-        B (postcompLM (𝕜 := ℝ) imCLM φ) (postcompLM (𝕜 := ℝ) reCLM ψ)))
-    (fun φ φ' ψ ↦ by simp only [map_add, LinearMap.add_apply]; module)
-    (fun c φ ψ ↦ by
-      simp only [postcompLM_reCLM_smul, postcompLM_imCLM_smul, map_sub, map_add, map_smul,
-        LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, ← Complex.coe_smul]
-      conv_rhs => rw [← re_add_im c]
-      match_scalars <;> apply Complex.ext <;> simp)
-    (fun φ ψ ψ' ↦ by simp only [map_add]; module)
-    (fun c φ ψ ↦ by
-      simp only [postcompLM_reCLM_smul, postcompLM_imCLM_smul, map_sub, map_add, map_smul,
-        ← Complex.coe_smul]
-      conv_rhs => rw [← re_add_im c]
-      match_scalars <;> apply Complex.ext <;> simp)
-
-/-- On real functions, the complex-bilinear extension of `B` is `B`. -/
-private theorem complexify_postcompLM_ofRealCLM (B : 𝓓_{K₁}(E, ℝ) →ₗ[ℝ] 𝓓_{K₂}(D, ℝ) →ₗ[ℝ] F)
-    (φ : 𝓓_{K₁}(E, ℝ)) (ψ : 𝓓_{K₂}(D, ℝ)) :
-    complexify B (postcompLM (𝕜 := ℝ) ofRealCLM φ) (postcompLM (𝕜 := ℝ) ofRealCLM ψ) =
-      B φ ψ := by
-  simp [complexify, postcompLM_reCLM_ofRealCLM, postcompLM_imCLM_ofRealCLM]
-
-/-- A bound of `B` by a product of `C^k` seminorms gives one of its complex-bilinear extension. -/
-private theorem norm_complexify_le {B : 𝓓_{K₁}(E, ℝ) →ₗ[ℝ] 𝓓_{K₂}(D, ℝ) →ₗ[ℝ] F} {C : ℝ}
-    {k : ℕ} (hC : 0 ≤ C)
-    (hB : ∀ φ ψ, ‖B φ ψ‖ ≤ C * ContDiffMapSupportedIn.supSeminorm ℝ E ℝ ⊤ K₁ k φ *
-      ContDiffMapSupportedIn.supSeminorm ℝ D ℝ ⊤ K₂ k ψ)
-    (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
-    ‖complexify B φ ψ‖ ≤ 4 * C * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K₁ k φ *
-      ContDiffMapSupportedIn.supSeminorm ℂ D ℂ ⊤ K₂ k ψ := by
-  have h {T₁ T₂ : ℂ →L[ℝ] ℝ} (h₁ : ‖T₁‖ ≤ 1) (h₂ : ‖T₂‖ ≤ 1) :
-      ‖B (postcompLM (𝕜 := ℝ) T₁ φ) (postcompLM (𝕜 := ℝ) T₂ ψ)‖ ≤
-        C * ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K₁ k φ *
-          ContDiffMapSupportedIn.supSeminorm ℂ D ℂ ⊤ K₂ k ψ :=
-    (hB _ _).trans (by gcongr <;> exact supSeminorm_postcompLM_le ‹_› k _)
-  have hre : ‖reCLM‖ ≤ 1 := reCLM_norm.le
-  have him : ‖imCLM‖ ≤ 1 := imCLM_norm.le
-  simp only [complexify, mk₂_apply]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_smul, norm_I, one_mul]
-  linarith [norm_sub_le (B (postcompLM (𝕜 := ℝ) reCLM φ) (postcompLM (𝕜 := ℝ) reCLM ψ))
-      (B (postcompLM (𝕜 := ℝ) imCLM φ) (postcompLM (𝕜 := ℝ) imCLM ψ)),
-    norm_add_le (B (postcompLM (𝕜 := ℝ) reCLM φ) (postcompLM (𝕜 := ℝ) imCLM ψ))
-      (B (postcompLM (𝕜 := ℝ) imCLM φ) (postcompLM (𝕜 := ℝ) reCLM ψ)),
-    h hre hre, h him him, h hre him, h him hre]
-
-end Complexify
-
 section SmallBall
 
 variable {d : Type*} [Fintype d] {Ω : Opens (d → ℝ)}
@@ -595,10 +533,10 @@ private theorem exists_kernel_box
       Ω' ≤ i.ball → O' ≤ j.ball → ∀ (φ : 𝓓(Ω', ℝ)) (ψ : 𝓓(O', ℝ)) (f : 𝓓(box i j, ℝ)),
         (⇑f = fun p ↦ ψ p.2 • φ p.1) → S f = B (monoCLM ℝ φ) (monoCLM ℝ ψ) := by
   obtain ⟨C, k, hCk⟩ := hB i.outer j.outer i.outer_subset j.outer_subset
-  have hbound : ∃ (C : ℝ) (k : ℕ), ∀ φ ψ, ‖complexify (restrictOuter B i j) φ ψ‖ ≤
+  have hbound : ∃ (C : ℝ) (k : ℕ), ∀ φ ψ, ‖complexifySupportedIn (restrictOuter B i j) φ ψ‖ ≤
       C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ i.outer k φ *
         ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ j.outer k ψ :=
-    ⟨4 * max C 0, k, norm_complexify_le (le_max_right _ _) fun φ ψ ↦ (hCk φ ψ).trans
+    ⟨4 * max C 0, k, norm_complexifySupportedIn_le (le_max_right _ _) fun φ ψ ↦ (hCk φ ψ).trans
       (by gcongr; exact le_max_left _ _)⟩
   obtain ⟨T, hT, -⟩ := exists_schwartzKernel_supportedIn _ hbound
     (fun _ hx _ ↦ i.eq_zero_of_add_mem_outer hx) (fun _ hy _ ↦ j.eq_zero_of_add_mem_outer hy)
@@ -630,8 +568,8 @@ private theorem exists_kernel_box
     simp [SetLike.coe_subset_coe.1 j.inner_subset_outer]
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
     ContinuousLinearMap.coe_restrictScalars', htensor, hT, hmono₁, hmono₂,
-    complexify_postcompLM_ofRealCLM, restrictOuter, compl₁₂_apply, ContinuousLinearMap.coe_coe,
-    coe_ofSupportedInCLM, ofSupportedIn_toSupportedInCLM]
+    complexifySupportedIn_postcompLM_ofRealCLM, restrictOuter, compl₁₂_apply,
+    ContinuousLinearMap.coe_coe, coe_ofSupportedInCLM, ofSupportedIn_toSupportedInCLM]
 
 /-- The boxes `ball i ×ˢ ball j` cover `Ω ×ˢ O`. -/
 private theorem iSup_box {V : Opens ((a → ℝ) × (b → ℝ))}
