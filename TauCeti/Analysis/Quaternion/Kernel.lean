@@ -116,11 +116,28 @@ theorem continuousOn_cauchyFueterKernel {s : Set ℍ} {q₀ : ℍ} (h : q₀ ∉
   exact (contDiffAt_cauchyFueterKernel (ne_of_mem_of_not_mem hq h)
     (n := 0)).continuousAt.continuousWithinAt
 
-/-- The real derivative of the kernel, evaluated in an arbitrary tangent direction. -/
-theorem fderiv_cauchyFueterKernel_apply {q q₀ : ℍ} (hq : q ≠ q₀) (h : ℍ) :
+/-- The real derivative of the kernel, evaluated in an arbitrary tangent direction. At the pole
+the kernel is not differentiable and both sides vanish. -/
+theorem fderiv_cauchyFueterKernel_apply {q q₀ : ℍ} (h : ℍ) :
     fderiv ℝ (fun x ↦ cauchyFueterKernel x q₀) q h =
       (‖q - q₀‖ ^ 4)⁻¹ • star h -
         (4 * ⟪q - q₀, h⟫ / ‖q - q₀‖ ^ 6) • star (q - q₀) := by
+  by_cases hq : q = q₀
+  · -- At the pole the kernel is unbounded, hence not differentiable, and both sides are `0`.
+    subst hq
+    open Filter Topology in
+    have hnd : ¬ DifferentiableAt ℝ (fun x ↦ cauchyFueterKernel x q) q := by
+      intro hd
+      have h0 : Tendsto (fun x ↦ ‖cauchyFueterKernel x q‖) (𝓝[≠] q) (𝓝 0) := by
+        simpa [cauchyFueterKernel_self] using
+          hd.continuousAt.norm.tendsto.mono_left nhdsWithin_le_nhds
+      have h1 : Tendsto (fun x : ℍ ↦ (‖x - q‖ ^ 3)⁻¹) (𝓝[≠] q) atTop := by
+        simpa only [Function.comp_def, Pi.inv_apply, inv_pow] using
+          (Filter.tendsto_pow_atTop (by decide : (3 : ℕ) ≠ 0)).comp
+            ((tendsto_norm_sub_self_nhdsNE q).inv_tendsto_nhdsGT_zero)
+      simp only [norm_cauchyFueterKernel] at h0
+      exact not_tendsto_nhds_of_tendsto_atTop h1 0 h0
+    simp [fderiv_zero_of_not_differentiableAt hnd]
   let C : ℍ →L[ℝ] ℍ :=
     ((Quaternion.starAe : ℍ ≃ₐ[ℝ] ℍᵐᵒᵖ).toLinearEquiv.trans
       (MulOpposite.opLinearEquiv ℝ).symm).toContinuousLinearMap
@@ -148,7 +165,7 @@ theorem leftFueterAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) :
   apply ((contDiffAt_cauchyFueterKernel hq (n := 1)).differentiableAt
     one_ne_zero).hasFDerivAt.leftFueterAt_iff.mpr
   rw [fueterLeft_apply]
-  simp only [fderiv_cauchyFueterKernel_apply hq]
+  simp only [fderiv_cauchyFueterKernel_apply]
   have hn := normSq_eq_norm_mul_self (q - q₀)
   simp only [normSq_def', re_sub, imI_sub, imJ_sub, imK_sub] at hn
   have hn0 : ‖q - q₀‖ ≠ 0 := norm_ne_zero_iff.mpr (sub_ne_zero.mpr hq)
@@ -167,7 +184,7 @@ theorem rightFueterAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) :
   apply ((contDiffAt_cauchyFueterKernel hq (n := 1)).differentiableAt
     one_ne_zero).hasFDerivAt.rightFueterAt_iff.mpr
   rw [fueterRight_apply]
-  simp only [fderiv_cauchyFueterKernel_apply hq]
+  simp only [fderiv_cauchyFueterKernel_apply]
   have hn := normSq_eq_norm_mul_self (q - q₀)
   simp only [normSq_def', re_sub, imI_sub, imJ_sub, imK_sub] at hn
   have hn0 : ‖q - q₀‖ ≠ 0 := norm_ne_zero_iff.mpr (sub_ne_zero.mpr hq)

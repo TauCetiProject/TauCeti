@@ -104,10 +104,21 @@ theorem gaussSum_pow_char_pow {A : Type*} [CommRing A] [Fintype A] {R : Type*} [
 omit [Fintype F] in
 /-- An additive character factoring through the trace to `𝔽_p` is invariant under the Frobenius:
 if `ψ x = g (Tr x)` for all `x`, then `ψ (x ^ p) = ψ x`. -/
-theorem apply_pow_char_of_trace {p : ℕ} [Fact p.Prime] [Finite F] [Algebra (ZMod p) F]
+theorem apply_pow_char_of_trace {p : ℕ} [Fact p.Prime] [Algebra (ZMod p) F]
     {R : Type*} [Monoid R] {ψ : AddChar F R} {g : ZMod p → R}
     (hψ : ∀ x, ψ x = g (Algebra.trace (ZMod p) F x)) (x : F) :
     ψ (x ^ p) = ψ x := by
+  by_cases hF : Finite F
+  swap
+  · -- an infinite field is not finite over `ZMod p`, so the trace vanishes
+    have hb : ¬∃ s : Finset F, Nonempty (Module.Basis s (ZMod p) F) := by
+      rintro ⟨s, ⟨b⟩⟩
+      have := Module.Finite.of_basis b
+      exact hF (Module.finite_of_finite (ZMod p))
+    have h0 (y : F) : Algebra.trace (ZMod p) F y = 0 := by
+      rw [Algebra.trace_eq_zero_of_not_exists_basis _ hb]
+      rfl
+    rw [hψ, hψ, h0, h0]
   have h : x ^ p = FiniteField.frobeniusAlgEquivOfAlgebraic (ZMod p) F x := by
     rw [FiniteField.coe_frobeniusAlgEquivOfAlgebraic, ZMod.card]
   rw [hψ, hψ, h, Algebra.trace_eq_of_algEquiv]
@@ -121,9 +132,10 @@ variable {F : Type*} [Field F] [Fintype F]
 /-- **Gauss sums are invariant under the Frobenius.** If `F` has characteristic `p` and the
 additive character `ψ` satisfies `ψ (x ^ p) = ψ x`, then `g(χ ^ p, ψ) = g(χ, ψ)` for every
 multiplicative character `χ`. -/
-theorem gaussSum_pow_char_left {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP F p]
+theorem gaussSum_pow_char_left {R : Type*} [CommRing R] {p : ℕ} [CharP F p]
     (χ : MulChar F R) {ψ : AddChar F R} (hψ : ∀ x, ψ (x ^ p) = ψ x) :
     gaussSum (χ ^ p) ψ = gaussSum χ ψ := by
+  have : Fact p.Prime := ⟨CharP.char_is_prime F p⟩
   conv_rhs => rw [gaussSum, ← (frobeniusEquiv F p).toEquiv.sum_comp]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   simp [frobenius_def, hψ, MulChar.pow_apply' χ (Fact.out : p.Prime).ne_zero]

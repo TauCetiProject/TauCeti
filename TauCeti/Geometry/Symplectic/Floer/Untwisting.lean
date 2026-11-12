@@ -93,7 +93,7 @@ theorem perturbedMFDeriv_timeDependentFlowOf (s : ℝ) {v : ℝ × ℝ → M} {z
         mfderiv 𝓘(ℝ, ℝ × ℝ) I v z := by
   have hτ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) Prod.snd z (ContinuousLinearMap.snd ℝ ℝ ℝ) :=
     hasMFDerivAt_iff_hasFDerivAt.2 (hasFDerivAt_snd)
-  have hw := hasMFDerivAt_timeDependentFlowOf_comp hc le_rfl hX hτ hv.hasMFDerivAt s
+  have hw := hasMFDerivAt_timeDependentFlowOf_comp hc hX hτ hv.hasMFDerivAt s
   refine ContinuousLinearMap.ext fun a ↦ ?_
   rw [perturbedMFDeriv_apply, hw.mfderiv]
   simp only [hamiltonianVectorField_const, Pi.zero_apply, smul_zero, sub_zero]
@@ -124,6 +124,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_timeDependentFlowOf_iff (s : ℝ) {v
   exact (DFunLike.congr_fun (perturbedMFDeriv_timeDependentFlowOf hX hc s hv) a).trans
     (timeDependentFlowMFDerivEquiv_apply hc le_rfl hX s z.2 (v z) _).symm
 
+omit [FiniteDimensional ℝ E] in
 /-- **The seam condition.** If `H` is `1`-periodic in time, the map `w(s', t) = φ_t (v(s', t))`,
 with `φ_t = φ_{s, t}`, is `1`-periodic in `t` exactly when `v` satisfies the seam condition
 `v(s', t + 1) = ψ⁻¹ (v(s', t))` for the return map `ψ = φ_{s, s + 1}`, whose inverse is the flow

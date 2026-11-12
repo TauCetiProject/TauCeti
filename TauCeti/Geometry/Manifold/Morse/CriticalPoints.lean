@@ -17,12 +17,12 @@ import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
+import TauCeti.Topology.Instances.Real.SeparatingGrid
 
 /-!
 # The critical set of a real function on a manifold
@@ -70,6 +70,8 @@ polynomial in the Morse inequalities.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
+* `TauCeti.finiteDimensional_of_isCompact_sublevel`: a nonempty compact sublevel of a regular
+  value forces the model space to be finite dimensional.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
@@ -90,8 +92,10 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsCriticalBand` and `TauCeti.IsCriticalBandCut`: compact bands with at most one
   critical value, strictly inside, and sequences of values cutting `f` into such bands, which are
   strictly increasing (`TauCeti.IsCriticalBandCut.strictMono`), with
-  `TauCeti.IsMorse.exists_isCriticalBandCut`: on a compact manifold a critical-band cut exists,
-  starting below and ending above all values of `f`.
+  `TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints` and
+  `TauCeti.IsMorse.exists_isCriticalBandCut`: on a compact manifold a critical-band cut exists for
+  a function with finitely many critical values, such as a Morse function, starting below and
+  ending above all values of `f`.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
   from its validity across bands without critical points, across single critical levels, and
   along triples of levels.
@@ -428,6 +432,30 @@ theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
   have hglobal : IsMinOn f univ x := fun y _ ↦
     (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
   exact ⟨x, (hglobal.isLocalMin univ_mem).mem_criticalPoints, hx⟩
+
+/-- **A nonempty compact regular sublevel forces the model space to be finite dimensional.** If
+`f` is continuous, the sublevel `{f ≤ b}` is compact and nonempty, and `b` is a regular value, then
+`E` is finite dimensional. -/
+theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Continuous f)
+    (hcompact : IsCompact {x | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b)
+    [hK : Nonempty {x | f x ≤ b}] : FiniteDimensional ℝ E := by
+  obtain ⟨x₀, hcrit, hx₀b⟩ := exists_mem_criticalPoints_of_isCompact_sublevel (I := I)
+    hf.continuousOn hcompact (Set.nonempty_coe_sort.1 hK)
+  -- A critical point cannot have the regular value `b`, so it lies strictly below `b`.
+  have hlt : f x₀ < b := hx₀b.lt_of_ne fun heq ↦
+    isRegularValue_iff_notMem_image_criticalPoints.1 hb ⟨x₀, hcrit, heq⟩
+  let U : TopologicalSpace.Opens M := ⟨{x | f x < b}, isOpen_lt hf continuous_const⟩
+  have : Nonempty U := ⟨⟨x₀, hlt⟩⟩
+  have : CompactSpace {x | f x ≤ b} := isCompact_iff_compactSpace.1 hcompact
+  have : LocallyCompactSpace U :=
+    (Topology.IsOpenEmbedding.inclusion (s := (U : Set M)) (t := {x | f x ≤ b})
+      -- A point of `U` lies in `{f < b}`: the underlying set of the `Opens` structure `U` is
+      -- `{x | f x < b}`, and membership in it is the strict inequality by definition.
+      (fun x hx ↦ by
+        have hlt : f x < b := hx
+        simpa using hlt.le)
+      (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
+  exact FiniteDimensional.of_locallyCompact_manifold U I
 
 end Boundaryless
 
@@ -782,50 +810,40 @@ theorem IsCriticalBandCut.strictMono {a : ℤ → ℝ} (h : IsCriticalBandCut I 
 theorem IsCriticalBandCut.monotone {a : ℤ → ℝ} (h : IsCriticalBandCut I f a) : Monotone a :=
   h.strictMono.monotone
 
-/-- **Critical-band cuts exist on compact manifolds.** A Morse function `f` on a compact manifold
-has a critical-band cut `a : ℤ → ℝ` which starts below and ends above all values of `f`, so that
-the filtration `q ↦ {f ≤ a q}` is finite. -/
-theorem IsMorse.exists_isCriticalBandCut [IsManifold I 1 M] [CompactSpace M] (hf : IsMorse I f) :
+/-- **Critical-band cuts exist on compact manifolds with finitely many critical values.** A
+continuous function `f` on a compact manifold with finitely many critical values has a
+critical-band cut `a : ℤ → ℝ` which starts below and ends above all values of `f`, so that the
+filtration `q ↦ {f ≤ a q}` is finite. -/
+theorem exists_isCriticalBandCut_of_finite_image_criticalPoints [CompactSpace M]
+    (hf : Continuous f) (hfin : (f '' criticalPoints I f).Finite) :
     ∃ a : ℤ → ℝ, IsCriticalBandCut I f a ∧ (∃ q₀, ∀ x, a q₀ < f x) ∧ ∃ q₁, ∀ x, f x ≤ a q₁ := by
-  -- The cut values form an arithmetic progression whose step is smaller than every gap between
-  -- distinct critical values, started off the countably many translates of the critical values.
-  set S := f '' criticalPoints I f
-  have hS : S.Finite := hf.finite_criticalPoints.image f
-  -- A step `δ` smaller than every gap between distinct critical values.
-  obtain ⟨δ, hδ, hgap⟩ : ∃ δ : ℝ, 0 < δ ∧ ∀ s ∈ S, ∀ t ∈ S, s ≠ t → δ < |s - t| := by
-    have hev : ∀ᶠ δ in nhdsWithin (0 : ℝ) (Ioi 0), ∀ p ∈ (S ×ˢ S) ∩ {p | p.1 ≠ p.2},
-        δ < |p.1 - p.2| :=
-      ((hS.prod hS).inter_of_left _).eventually_all.2 fun p hp ↦
-        (nhdsWithin_le_nhds (eventually_lt_nhds (abs_pos.2 (sub_ne_zero.2 hp.2))))
-    obtain ⟨δ, hδ, hδS⟩ := (hev.and self_mem_nhdsWithin).exists
-    exact ⟨δ, hδS, fun s hs t ht hst ↦ hδ (s, t) ⟨⟨hs, ht⟩, hst⟩⟩
-  -- An offset `t₀` such that no cut value `t₀ + q δ` is a critical value.
-  obtain ⟨t₀, ht₀⟩ : ∃ t₀ : ℝ, t₀ ∉ ⋃ q : ℤ, (fun s ↦ s - q * δ) '' S :=
-    ((countable_iUnion fun _ ↦ (hS.image _).countable).dense_compl ℝ).nonempty
-  have hcut (q : ℤ) (x : M) (hx : x ∈ criticalPoints I f) : f x ≠ t₀ + q * δ := fun h ↦
-    ht₀ (mem_iUnion.2 ⟨q, f x, mem_image_of_mem f hx, by rw [h]; ring⟩)
-  have hfc : Continuous f := hf.contMDiff.continuous
-  obtain ⟨L, hL⟩ := (isCompact_range hfc).bddBelow
-  obtain ⟨U, hU⟩ := (isCompact_range hfc).bddAbove
-  obtain ⟨q₀, hq₀⟩ := exists_int_lt ((L - t₀) / δ)
-  obtain ⟨q₁, hq₁⟩ := exists_int_gt ((U - t₀) / δ)
-  refine ⟨fun q ↦ t₀ + q * δ, ⟨fun q ↦
-    ⟨(isClosed_Icc.preimage hfc).isCompact, ?_⟩⟩, ⟨q₀, fun x ↦ ?_⟩, ⟨q₁, fun x ↦ ?_⟩⟩
-  · by_cases hx : ∃ x ∈ criticalPoints I f, f x ∈ Icc (t₀ + q * δ) (t₀ + ↑(q + 1) * δ)
-    · obtain ⟨x, hx, hfx⟩ := hx
-      refine ⟨f x, ⟨(hfx.1.lt_of_ne' (hcut q x hx)), hfx.2.lt_of_ne (hcut (q + 1) x hx)⟩,
-        fun y hy hfy ↦ ?_⟩
-      by_contra hne
-      push_cast at hfx hfy
-      exact (hgap _ (mem_image_of_mem f hy) _ (mem_image_of_mem f hx) hne).not_ge
-        (abs_sub_le_iff.2 ⟨by linarith [hfx.1, hfy.2], by linarith [hfx.2, hfy.1]⟩)
-    · push Not at hx
-      refine ⟨t₀ + q * δ + δ / 2, ⟨by linarith, by push_cast; linarith⟩, fun y hy hfy ↦
-        absurd hfy (hx y hy)⟩
-  · have := (lt_div_iff₀ hδ).1 hq₀
-    linarith [hL (mem_range_self x)]
-  · have := (div_lt_iff₀ hδ).1 hq₁
-    linarith [hU (mem_range_self x)]
+  -- Cut at the points of a grid separating the critical values.
+  obtain ⟨a, ha, hbot, htop, hreg, hsub⟩ := hfin.exists_strictMono_notMem_subsingleton_inter_Icc
+  obtain ⟨m, hm⟩ := (isCompact_range hf).bddBelow
+  obtain ⟨m', hm'⟩ := (isCompact_range hf).bddAbove
+  obtain ⟨q₀, hq₀⟩ := (hbot.eventually (eventually_lt_atBot m)).exists
+  obtain ⟨q₁, hq₁⟩ := (htop.eventually (eventually_ge_atTop m')).exists
+  refine ⟨a, ⟨fun q ↦ ⟨(isClosed_Icc.preimage hf).isCompact, ?_⟩⟩,
+    ⟨q₀, fun x ↦ hq₀.trans_le (hm (mem_range_self x))⟩,
+    ⟨q₁, fun x ↦ (hm' (mem_range_self x)).trans hq₁⟩⟩
+  by_cases hx : ∃ x ∈ criticalPoints I f, f x ∈ Icc (a q) (a (q + 1))
+  · obtain ⟨x, hx, hfx⟩ := hx
+    have hxC : f x ∈ f '' criticalPoints I f := mem_image_of_mem f hx
+    exact ⟨f x, ⟨hfx.1.lt_of_ne fun h ↦ hreg q (by rwa [h]),
+      hfx.2.lt_of_ne fun h ↦ hreg (q + 1) (by rwa [← h])⟩,
+      fun y hy hfy ↦ hsub q ⟨mem_image_of_mem f hy, hfy⟩ ⟨hxC, hfx⟩⟩
+  · push Not at hx
+    have := ha (lt_add_one q)
+    exact ⟨(a q + a (q + 1)) / 2, ⟨by linarith, by linarith⟩,
+      fun y hy hfy ↦ absurd hfy (hx y hy)⟩
+
+/-- **Critical-band cuts exist for Morse functions on compact manifolds.** A Morse function `f` on
+a compact manifold has a critical-band cut `a : ℤ → ℝ` which starts below and ends above all values
+of `f`, so that the filtration `q ↦ {f ≤ a q}` is finite. -/
+theorem IsMorse.exists_isCriticalBandCut [IsManifold I 1 M] [CompactSpace M] (hf : IsMorse I f) :
+    ∃ a : ℤ → ℝ, IsCriticalBandCut I f a ∧ (∃ q₀, ∀ x, a q₀ < f x) ∧ ∃ q₁, ∀ x, f x ≤ a q₁ :=
+  exists_isCriticalBandCut_of_finite_image_criticalPoints hf.contMDiff.continuous
+    (hf.finite_criticalPoints.image f)
 
 /-! ### Counting critical points -/
 
@@ -1004,7 +1022,7 @@ theorem sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le {n : ℕ}
     (hn : Module.finrank ℝ E ≤ n) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
       ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
-  refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun i hi hi' ↦ ?_).symm
+  refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun i _ hi' ↦ ?_).symm
   rw [criticalCount_eq_zero_of_finrank_lt (by simp_all), ENat.toNat_zero, Nat.cast_zero, mul_zero]
 
 /-- **Parity of the critical count.** If `f` has finitely many critical points, their number is

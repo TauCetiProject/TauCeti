@@ -74,7 +74,6 @@ private lemma integral_inner_pow_div_uniformSphereMeasure (hd : 2 ≤ Module.fin
         ((‖η‖ / 2) ^ (2 * (j : ℝ) + ((Module.finrank ℝ E : ℝ) / 2 - 1)) /
           (j ! * Gamma (j + ((Module.finrank ℝ E : ℝ) / 2 - 1) + 1))) := by
   set b : ℝ := (Module.finrank ℝ E : ℝ) / 2 with hb_def
-  have hκ : 0 < ‖η‖ := norm_pos_iff.2 hη
   have h2 : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
   have ha : 0 < ((Module.finrank ℝ E : ℝ) - 1) / 2 := by linarith
   have hb : 0 < b := by linarith
@@ -96,7 +95,7 @@ private lemma integral_inner_pow_div_uniformSphereMeasure (hd : 2 ≤ Module.fin
     have hfour : (2 : ℝ) ^ 2 = 4 := by norm_num
     rw [eq_div_iff hA.ne', ← rpow_add (by positivity), hsum, rpow_natCast, div_pow, pow_mul 2,
       hfour]
-  have hGb : 0 < Gamma (b + j) := Gamma_pos_of_pos (by positivity)
+  have _ : 0 < Gamma (b + j) := Gamma_pos_of_pos (by positivity)
   -- the Bessel series index `j + (d / 2 - 1) + 1` is the Beta moment index `d / 2 + j`
   have hidx : (j : ℝ) + (b - 1) + 1 = b + j := by ring
   rw [integral_div, hmoment, add_comm (1 / 2 : ℝ), Gamma_nat_add_half_eq_factorial,
@@ -181,8 +180,6 @@ theorem integral_exp_inner_toSphere_eq_besselI (hd : 2 ≤ Module.finrank ℝ E)
         besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖ := by
   have hκ : 0 < ‖η‖ := norm_pos_iff.2 hη
   have : Nontrivial E := ⟨⟨η, 0, hη⟩⟩
-  have h2 : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
-  have hGb : 0 < Gamma ((Module.finrank ℝ E : ℝ) / 2) := Gamma_pos_of_pos (by linarith)
   have hsurf : (volume : Measure E).toSphere =
       (volume : Measure E).toSphere univ • uniformSphereMeasure E := by
     rw [uniformSphereMeasure_def, smul_smul,

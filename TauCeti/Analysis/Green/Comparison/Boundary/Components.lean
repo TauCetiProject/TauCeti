@@ -33,10 +33,10 @@ local notation "E" => EuclideanSpace ℝ (Fin 1)
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
 
-/-- A finite family of actual positively oriented arcs computes the canonical
-circulation integral. All component curve integrabilities are conclusions. -/
+/-- A finite family of actual positively oriented arcs covering a one-dimensional manifold
+outside a finite seam set computes the canonical circulation integral; the manifold is then
+automatically compact. All component curve integrabilities are conclusions. -/
 theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
-    [CompactSpace N]
     (o : Manifold.Orientation 𝓘(ℝ, E) N (Fin 1))
     (p r : ι → N) (q : ∀ i, Path (p i) (r i))
     (f : N → ℂ) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, ℂ) 1 f)
@@ -62,6 +62,18 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
         (mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)) =
           ∑ i, curveIntegral (oneForm P Q) ((q i).map hf.continuous) := by
   classical
+  -- The arcs and the finite seam set cover `N`, so `N` is compact.
+  have : CompactSpace N := by
+    refine ⟨?_⟩
+    have hcover : (univ : Set N) = Z ∪ ⋃ i, range (q i) := by
+      refine (eq_univ_of_forall fun x ↦ ?_).symm
+      by_cases hx : x ∈ Z
+      · exact Or.inl hx
+      · rw [← mem_compl_iff, ← hqimage] at hx
+        obtain ⟨i, y, -, rfl⟩ := mem_iUnion.mp hx
+        exact Or.inr (mem_iUnion.mpr ⟨i, by rw [← (q i).extend_range]; exact mem_range_self y⟩)
+    rw [hcover]
+    exact hZ.isCompact.union (isCompact_iUnion fun i ↦ isCompact_range (q i).continuous)
   obtain ⟨l, rfl⟩ := o.exists_lift
   simp only [Manifold.Orientation.orientationAt_mk] at hqo
   let φ := mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)

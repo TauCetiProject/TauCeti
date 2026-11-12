@@ -16,6 +16,12 @@ Riemannian isometry. This allows Hessians to be compared on distinct manifold ca
 identifying their metric instances. The result uses the native Levi-Civita connection and its
 naturality under local Riemannian isometries.
 
+Taking traces in orthonormal bases, the Laplace–Beltrami operator is natural as well:
+`Δ_M (u ∘ f) = (Δ_N u) ∘ f` for every local Riemannian isometry `f : M → N`. Applied to the
+covering map of a quotient by a free isometric action, this says that the Laplacian of a pulled-back
+function is the pullback of the Laplacian on the quotient; applied to an isometry `q` of `M`, it
+says that the Laplacian commutes with the action `u ↦ u ∘ q⁻¹` on functions.
+
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Chapter 5 (naturality of the connection).
@@ -79,5 +85,16 @@ theorem hessian_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
   rw [hsource, htarget]
   congr 1
   exact congrArg (fun L ↦ L v) hdirectional
+
+/-- A local Riemannian isometry pulls back the Laplace–Beltrami operator:
+`Δ_M (u ∘ f) = (Δ_N u) ∘ f` at every point where `u` is `C²`. -/
+theorem laplaceBeltrami_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {u : N → ℝ} {x : M} (hu : ContMDiffAt J 𝓘(ℝ) 2 u (f x)) :
+    laplaceBeltrami I (u ∘ f) x = laplaceBeltrami J u (f x) := by
+  obtain ⟨e, he⟩ := hf.exists_linearIsometryEquiv_eq_mfderiv x
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [laplaceBeltrami_eq_sum_hessian I (u ∘ f) x b,
+    laplaceBeltrami_eq_sum_hessian J u (f x) (b.map e)]
+  simp only [OrthonormalBasis.map_apply, he, hf.hessian_comp hu]
 
 end TauCeti.IsLocalRiemannianIsometry

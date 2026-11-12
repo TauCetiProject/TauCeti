@@ -1,13 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
-import Mathlib.Analysis.Calculus.Deriv.Slope
+public import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.LinearAlgebra.AffineSpace.Ordered
 
@@ -30,6 +30,11 @@ For a real function, a positive one-sided derivative at `a` fixes the sign of `f
 `x > a` close to `a`, and if the left derivative at `a` is positive, then `f x < f a` for every
 `x < a` close to `a`.
 
+Comparing the slopes of two curves leaving a common point with the same right derivative shows
+that they do not separate linearly: their distance is `o(s - t)` at parameter `s`.
+
+A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
@@ -37,6 +42,9 @@ For a real function, a positive one-sided derivative at `a` fixes the sign of `f
 * `HasDerivWithinAt.eventually_nhdsGT_lt_of_pos`,
   `HasDerivWithinAt.eventually_nhdsLT_lt_of_pos`: a positive right (left) derivative at `a`
   makes `f` larger (smaller) than `f a` just to the right (left) of `a`.
+* `HasDerivWithinAt.nonpos_of_mul_le_norm_sub`: two curves with the same right derivative at a
+  common point do not separate linearly.
+* `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
 -/
 
 public section
@@ -73,7 +81,7 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
     · simp [ht, hn]
   -- `HasDerivAt` and `𝓝[≠] x` are by definition the filter forms used by `tendsto_slope`.
   refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
+  filter_upwards with n
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
 
 /-- If `f : ℝ → ℝ` has positive right derivative at `a`, then `f a < f x` for every `x > a`
@@ -91,3 +99,26 @@ theorem HasDerivWithinAt.eventually_nhdsLT_lt_of_pos {f : ℝ → ℝ} {f' a : �
   filter_upwards [((hasDerivWithinAt_iff_tendsto_slope' self_notMem_Iio).mp hf).eventually
     (lt_mem_nhds hf'), self_mem_nhdsWithin] with x hx hxa
   exact (slope_pos_iff_gt hxa).mp hx
+
+/-- Two curves leaving a common point with the same right derivative do not separate linearly:
+if `(s - t) * a ≤ ‖γ₁ s - γ₂ s‖` for all `s > t` close to `t`, then `a ≤ 0`. -/
+theorem HasDerivWithinAt.nonpos_of_mul_le_norm_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {γ₁ γ₂ : ℝ → E} {u : E} {t a : ℝ}
+    (h₁ : HasDerivWithinAt γ₁ u (Ioi t) t) (h₂ : HasDerivWithinAt γ₂ u (Ioi t) t)
+    (h0 : γ₁ t = γ₂ t) (hle : ∀ᶠ s in 𝓝[>] t, (s - t) * a ≤ ‖γ₁ s - γ₂ s‖) : a ≤ 0 := by
+  have hslope := (hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl t)).mp (h₁.sub h₂)
+  rw [sub_self] at hslope
+  refine ge_of_tendsto (by simpa using hslope.norm) ?_
+  filter_upwards [hle, self_mem_nhdsWithin] with s hs (hst : t < s)
+  simpa [slope_def_module, h0, norm_smul, abs_of_pos (sub_pos.2 hst),
+    le_inv_mul_iff₀ (sub_pos.2 hst)] using hs
+
+/-- A negative right derivative at `x` forces `f t < f x` for all `t > x` sufficiently close
+to `x`. -/
+theorem HasDerivWithinAt.eventually_lt_of_neg {f : ℝ → ℝ} {a x : ℝ}
+    (hf : HasDerivWithinAt f a (Ioi x) x) (ha : a < 0) :
+    ∀ᶠ t in 𝓝[>] x, f t < f x := by
+  filter_upwards [hf.limsup_slope_le' (lt_irrefl x) ha, self_mem_nhdsWithin]
+    with t ht hxt
+  rw [slope_def_field, div_lt_iff₀ (sub_pos.mpr hxt), zero_mul] at ht
+  exact sub_neg.mp ht

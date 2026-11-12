@@ -44,7 +44,7 @@ open Filter Topology
 /-- `log (1 / (s - a))` tends to `+∞` as `s` decreases to `a`. At `a = 1` this is the divergence
 driving the Dirichlet density asymptotics. -/
 theorem tendsto_log_one_div_sub_atTop (a : ℝ) :
-    Tendsto (fun s : ℝ ↦ Real.log (1 / (s - a))) (𝓝[>] a) atTop := by
+    Tendsto (fun s : ℝ ↦ log (1 / (s - a))) (𝓝[>] a) atTop := by
   simpa only [one_div, pow_one, Function.comp_def] using
     tendsto_log_atTop.comp (TauCeti.tendsto_inv_pow_sub_nhdsGT (a := a) one_ne_zero)
 

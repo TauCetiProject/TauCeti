@@ -188,7 +188,7 @@ private theorem sum_mul_jacobiTheta₂_eq (N : ℕ) [NeZero N] {Y : ℝ} (hY : 0
   have huim : u.im = N / 2 := by simp [hu]
   have hu0 : u ≠ 0 := fun h ↦ hY.ne' (by rw [← hure, h, zero_re])
   have huslit : u ∈ slitPlane := Or.inl (by rw [hure]; exact hY)
-  set s : ℂ := Complex.sqrt u with hs
+  set s : ℂ := Complex.sqrt u
   have hs2 : s ^ 2 = u := Complex.sq_sqrt u
   have hsre : 0 < s.re := (Complex.sqrt_re_pos_iff u).2 huslit
   have hsim : 0 ≤ s.im := Complex.sqrt_im_nonneg (by rw [huim]; positivity)
