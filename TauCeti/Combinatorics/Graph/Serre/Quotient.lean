@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Line
+public import TauCeti.Combinatorics.Graph.Serre.Aut
 public import Mathlib.GroupTheory.GroupAction.Basic
 
 /-!
@@ -20,14 +20,18 @@ the reversal has no fixed orbit exactly because there are no inversions.
 The projection `Γ.quotientMap φ hφ` is a morphism of Serre graphs which is surjective on vertices
 and on darts, whose fibres are the orbits, and which is invariant under the action. It is
 universal with this property: an invariant morphism out of `Γ` factors uniquely through it
-(`SerreGraph.quotientLift`, `SerreGraph.quotient_hom_ext`). Darts lift along the projection with
-a prescribed source, so the projection is surjective on the stars of vertices, and the quotient
-of a connected graph is connected.
+(`SerreGraph.quotientLift`, `SerreGraph.quotient_hom_ext`), and invariant functions on vertices
+or on darts descend to the quotient (`SerreGraph.quotientLiftV`, `SerreGraph.quotientLiftE`).
+Darts lift along the projection with a prescribed source, so the projection is surjective on the
+stars of vertices, and the quotient of a connected graph is connected.
 
 The hypothesis on inversions cannot be dropped: a morphism of Serre graphs invariant under an
 automorphism forces that automorphism to invert no dart
-(`SerreGraph.Aut.smul_ne_rev_of_comp_toHom_eq`), so that, for instance, no morphism out of the
-segment is invariant under the exchange of its two vertices.
+(`SerreGraph.Aut.smul_ne_rev_of_comp_toHom_eq`).
+
+In Bass–Serre theory, a group acting without inversions on a tree has the quotient graph as the
+underlying graph of its quotient graph of groups; for a `G`-tree `T` the construction applies to
+the action homomorphism `T.action`, which has no inversions.
 
 ## Main declarations
 
@@ -37,17 +41,18 @@ segment is invariant under the exchange of its two vertices.
   `TauCeti.SerreGraph.quotientMap_mapV_preimage_singleton`,
   `TauCeti.SerreGraph.quotientMap_mapE_preimage_singleton`: the fibres of the projection are the
   orbits.
+* `TauCeti.SerreGraph.quotientLiftV`, `TauCeti.SerreGraph.quotientLiftE`: invariant functions on
+  vertices and on darts descend to the quotient graph.
 * `TauCeti.SerreGraph.quotientLift`: the morphism induced on the quotient by an invariant
   morphism.
 * `TauCeti.SerreGraph.exists_quotientMap_mapE_eq_of_src_eq`: lifting of darts with a given source.
-* `TauCeti.SerreGraph.lineQuotientDartEquiv`: the quotient of the line by its translations has a
-  single vertex and a single pair of mutually reverse darts.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §3.1 (quotient graphs) and §5.4.
+* J.-P. Serre, *Trees*, Chapter I, §3.1 (quotient graphs); the quotient graph of groups of an
+  action on a tree, which this construction underlies, is Chapter I, §5.4.
 * I. Kapovich, R. Weidmann and A. Myasnikov, *Foldings, graphs of groups and the membership
-  problem*, Internat. J. Algebra Comput. 15 (2005), §2, Proposition 2.6.
+  problem*, Internat. J. Algebra Comput. 15 (2005), §2, Proposition 2.6 (the same application).
 -/
 
 public section
@@ -56,22 +61,6 @@ universe u v w x
 
 namespace TauCeti
 namespace SerreGraph
-
-/-- A morphism of Serre graphs invariant under an automorphism forces that automorphism to map no
-dart to its reverse: an inversion admits no invariant morphism, hence no quotient graph. -/
-theorem Aut.smul_ne_rev_of_comp_toHom_eq {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
-    (f : Γ.Hom Δ) (g : Γ.Aut) (h : Hom.comp f g.toHom = f) (e : Γ.E) : g • e ≠ Γ.rev e := by
-  intro he
-  have h₁ : f.mapE (g • e) = f.mapE e := by
-    simpa using congrArg (fun k : Γ.Hom Δ => k.mapE e) h
-  rw [he, f.map_rev] at h₁
-  exact Δ.rev_ne _ h₁
-
-/-- No morphism out of the segment is invariant under the exchange of its two vertices, which
-inverts the edge: the segment has no quotient graph by this automorphism. -/
-theorem segment_comp_segmentSwap_toHom_ne {Δ : SerreGraph.{w, x}} (f : segment.Hom Δ) :
-    Hom.comp f segmentSwap.toHom ≠ f := fun h =>
-  Aut.smul_ne_rev_of_comp_toHom_eq f segmentSwap h true (segmentSwap_smul true)
 
 variable {G : Type*} [Group G] (Γ : SerreGraph.{u, v}) (φ : G →* Γ.Aut)
   (hφ : ∀ (g : G) (e : Γ.E), φ g • e ≠ Γ.rev e)
@@ -85,17 +74,17 @@ def quotient : SerreGraph.{u, v} where
   E := @MulAction.orbitRel.Quotient G Γ.E _ (MulAction.compHom Γ.E φ)
   src := Quotient.map Γ.src (by
     rintro _ e ⟨g, rfl⟩
-    exact ⟨g, (Aut.src_smul (φ g) e).symm⟩)
+    exact ⟨g, by simp [MulAction.compHom_smul_def]⟩)
   rev := Quotient.map Γ.rev (by
     rintro _ e ⟨g, rfl⟩
-    exact ⟨g, (Aut.rev_smul (φ g) e).symm⟩)
+    exact ⟨g, by simp [MulAction.compHom_smul_def]⟩)
   rev_rev := by
     rintro ⟨e⟩
     exact congrArg (Quotient.mk _) (Γ.rev_rev e)
   rev_ne := by
     rintro ⟨e⟩ h
     obtain ⟨g, hg⟩ := Quotient.exact h
-    exact hφ g e hg
+    exact hφ g e (by simpa [MulAction.compHom_smul_def] using hg)
 
 /-- The projection of a Serre graph onto its quotient by a group acting without inversions,
 sending a vertex or a dart to its orbit. -/
@@ -111,13 +100,15 @@ variable {Γ φ hφ}
 orbit. -/
 theorem quotientMap_mapV_eq_iff {a b : Γ.V} :
     (Γ.quotientMap φ hφ).mapV a = (Γ.quotientMap φ hφ).mapV b ↔ ∃ g : G, φ g • a = b :=
-  eq_comm.trans (Quotient.eq (r := @MulAction.orbitRel G Γ.V _ (MulAction.compHom Γ.V φ)))
+  eq_comm.trans <| (Quotient.eq (r := @MulAction.orbitRel G Γ.V _ (MulAction.compHom Γ.V φ))).trans
+    (by simp [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, MulAction.compHom_smul_def])
 
 /-- Two darts have the same image in the quotient graph exactly when they are in the same
 orbit. -/
 theorem quotientMap_mapE_eq_iff {e f : Γ.E} :
     (Γ.quotientMap φ hφ).mapE e = (Γ.quotientMap φ hφ).mapE f ↔ ∃ g : G, φ g • e = f :=
-  eq_comm.trans (Quotient.eq (r := @MulAction.orbitRel G Γ.E _ (MulAction.compHom Γ.E φ)))
+  eq_comm.trans <| (Quotient.eq (r := @MulAction.orbitRel G Γ.E _ (MulAction.compHom Γ.E φ))).trans
+    (by simp [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, MulAction.compHom_smul_def])
 
 /-- A vertex and its translates have the same image in the quotient graph. -/
 @[simp] theorem quotientMap_mapV_smul (g : G) (a : Γ.V) :
@@ -202,9 +193,64 @@ theorem quotient_preconnected (h : Γ.Preconnected) : (Γ.quotient φ hφ).Preco
 theorem quotient_connected (h : Γ.Connected) : (Γ.quotient φ hφ).Connected :=
   (Γ.quotientMap φ hφ).connected_of_surjective (quotientMap_mapV_surjective Γ φ hφ) h
 
+/-! ### Instances on the quotient graph
+
+Finiteness, nonemptiness, emptiness and being a subsingleton pass from the vertices and the darts
+of a graph to those of its quotient graph, along the surjective projection. -/
+
+instance [Finite Γ.V] : Finite (Γ.quotient φ hφ).V :=
+  Finite.of_surjective _ (quotientMap_mapV_surjective Γ φ hφ)
+
+instance [Finite Γ.E] : Finite (Γ.quotient φ hφ).E :=
+  Finite.of_surjective _ (quotientMap_mapE_surjective Γ φ hφ)
+
+instance [Nonempty Γ.V] : Nonempty (Γ.quotient φ hφ).V :=
+  .map (Γ.quotientMap φ hφ).mapV inferInstance
+
+instance [Nonempty Γ.E] : Nonempty (Γ.quotient φ hφ).E :=
+  .map (Γ.quotientMap φ hφ).mapE inferInstance
+
+instance [IsEmpty Γ.V] : IsEmpty (Γ.quotient φ hφ).V :=
+  (quotientMap_mapV_surjective Γ φ hφ).isEmpty
+
+instance [IsEmpty Γ.E] : IsEmpty (Γ.quotient φ hφ).E :=
+  (quotientMap_mapE_surjective Γ φ hφ).isEmpty
+
+instance [Subsingleton Γ.V] : Subsingleton (Γ.quotient φ hφ).V :=
+  (quotientMap_mapV_surjective Γ φ hφ).subsingleton
+
+instance [Subsingleton Γ.E] : Subsingleton (Γ.quotient φ hφ).E :=
+  (quotientMap_mapE_surjective Γ φ hφ).subsingleton
+
 /-! ### The universal property -/
 
 section Lift
+
+variable (hφ) in
+/-- A function on vertices which is invariant under the action descends to the vertices of the
+quotient graph. -/
+def quotientLiftV {β : Sort*} (f : Γ.V → β) (hf : ∀ (g : G) (a : Γ.V), f (φ g • a) = f a) :
+    (Γ.quotient φ hφ).V → β :=
+  Quotient.lift f (by
+    rintro _ a ⟨g, rfl⟩
+    simpa [MulAction.compHom_smul_def] using hf g a)
+
+variable (hφ) in
+/-- A function on darts which is invariant under the action descends to the darts of the quotient
+graph. -/
+def quotientLiftE {β : Sort*} (f : Γ.E → β) (hf : ∀ (g : G) (e : Γ.E), f (φ g • e) = f e) :
+    (Γ.quotient φ hφ).E → β :=
+  Quotient.lift f (by
+    rintro _ e ⟨g, rfl⟩
+    simpa [MulAction.compHom_smul_def] using hf g e)
+
+@[simp] theorem quotientLiftV_quotientMap {β : Sort*} (f : Γ.V → β)
+    (hf : ∀ (g : G) (a : Γ.V), f (φ g • a) = f a) (a : Γ.V) :
+    quotientLiftV hφ f hf ((Γ.quotientMap φ hφ).mapV a) = f a := (rfl)
+
+@[simp] theorem quotientLiftE_quotientMap {β : Sort*} (f : Γ.E → β)
+    (hf : ∀ (g : G) (e : Γ.E), f (φ g • e) = f e) (e : Γ.E) :
+    quotientLiftE hφ f hf ((Γ.quotientMap φ hφ).mapE e) = f e := (rfl)
 
 variable {Δ : SerreGraph.{w, x}}
 
@@ -223,20 +269,16 @@ variable (hφ) in
 morphism out of the quotient graph. -/
 def quotientLift (f : Γ.Hom Δ) (hf : ∀ g : G, Hom.comp f (φ g).toHom = f) :
     (Γ.quotient φ hφ).Hom Δ where
-  mapV := Quotient.lift f.mapV (by
-    rintro _ a ⟨g, rfl⟩
-    exact (by simpa using congrArg (fun k : Γ.Hom Δ => k.mapV a) (hf g) :
-      f.mapV (φ g • a) = f.mapV a))
-  mapE := Quotient.lift f.mapE (by
-    rintro _ e ⟨g, rfl⟩
-    exact (by simpa using congrArg (fun k : Γ.Hom Δ => k.mapE e) (hf g) :
-      f.mapE (φ g • e) = f.mapE e))
-  map_src := by
-    rintro ⟨e⟩
-    exact f.map_src e
-  map_rev := by
-    rintro ⟨e⟩
-    exact f.map_rev e
+  mapV := quotientLiftV hφ f.mapV fun g a => by
+    simpa using congrArg (fun k : Γ.Hom Δ => k.mapV a) (hf g)
+  mapE := quotientLiftE hφ f.mapE fun g e => by
+    simpa using congrArg (fun k : Γ.Hom Δ => k.mapE e) (hf g)
+  map_src y := by
+    obtain ⟨e, rfl⟩ := quotientMap_mapE_surjective Γ φ hφ y
+    simp
+  map_rev y := by
+    obtain ⟨e, rfl⟩ := quotientMap_mapE_surjective Γ φ hφ y
+    simp [← Hom.map_rev]
 
 variable (f : Γ.Hom Δ) (hf : ∀ g : G, Hom.comp f (φ g).toHom = f)
 
@@ -262,76 +304,28 @@ end Lift
 
 /-! ### The trivial action -/
 
-/-- The trivial action of a monoid on a graph inverts no dart. -/
-theorem one_apply_smul_ne_rev (M : Type*) [MulOneClass M] (Γ : SerreGraph.{u, v}) (g : M)
-    (e : Γ.E) : (1 : M →* Γ.Aut) g • e ≠ Γ.rev e := by
-  simpa using (Γ.rev_ne e).symm
-
 variable (Γ) in
-/-- For the trivial action the projection onto the quotient graph is bijective on vertices: the
-quotient is the graph itself. -/
+/-- For the trivial action the projection onto the quotient graph is bijective on vertices. -/
 theorem quotientMap_one_mapV_bijective
-    (h : ∀ (g : G) (e : Γ.E), (1 : G →* Γ.Aut) g • e ≠ Γ.rev e := one_apply_smul_ne_rev G Γ) :
+    (h : ∀ (g : G) (e : Γ.E), (1 : G →* Γ.Aut) g • e ≠ Γ.rev e := one_apply_smul_ne_rev Γ G) :
     Function.Bijective (Γ.quotientMap (1 : G →* Γ.Aut) h).mapV :=
-  ⟨quotientMap_mapV_injective_iff.mpr fun _ _ => one_smul _ _, quotientMap_mapV_surjective _ _ _⟩
+  ⟨quotientMap_mapV_injective_iff.mpr fun _ _ => by simp, quotientMap_mapV_surjective _ _ _⟩
 
 variable (Γ) in
 /-- For the trivial action the projection onto the quotient graph is bijective on darts. -/
 theorem quotientMap_one_mapE_bijective
-    (h : ∀ (g : G) (e : Γ.E), (1 : G →* Γ.Aut) g • e ≠ Γ.rev e := one_apply_smul_ne_rev G Γ) :
+    (h : ∀ (g : G) (e : Γ.E), (1 : G →* Γ.Aut) g • e ≠ Γ.rev e := one_apply_smul_ne_rev Γ G) :
     Function.Bijective (Γ.quotientMap (1 : G →* Γ.Aut) h).mapE :=
-  ⟨quotientMap_mapE_injective_iff.mpr fun _ _ => one_smul _ _, quotientMap_mapE_surjective _ _ _⟩
+  ⟨quotientMap_mapE_injective_iff.mpr fun _ _ => by simp, quotientMap_mapE_surjective _ _ _⟩
 
 /-- When the group fixes every vertex and every dart, the identity induces a morphism from the
-quotient graph back to the graph which is inverse to the projection. -/
+quotient graph back to the graph which is a right inverse of the projection; it is a left inverse
+by `SerreGraph.quotientLift_comp_quotientMap`. -/
 theorem quotientMap_comp_quotientLift_id
     (hf : ∀ g : G, Hom.comp (Hom.id Γ) (φ g).toHom = Hom.id Γ) :
     Hom.comp (Γ.quotientMap φ hφ) (quotientLift hφ (Hom.id Γ) hf) = Hom.id (Γ.quotient φ hφ) := by
   ext : 1
   rw [← Hom.comp_assoc, quotientLift_comp_quotientMap, Hom.comp_id, Hom.id_comp]
-
-/-! ### The quotient of the line by its translations -/
-
-/-- The quotient of the line by its translations has a single vertex. -/
-instance : Unique (line.quotient lineShift lineShift_smul_ne_rev).V where
-  default := (line.quotientMap lineShift lineShift_smul_ne_rev).mapV (lineVertexEquiv.symm 0)
-  uniq a := by
-    obtain ⟨a, rfl⟩ := quotientMap_mapV_surjective _ _ _ a
-    refine quotientMap_mapV_eq_iff.mpr
-      ⟨Multiplicative.ofAdd (-lineVertexEquiv a), lineVertexEquiv.injective ?_⟩
-    rw [lineVertexEquiv_lineShift_smul, toAdd_ofAdd, neg_add_cancel, Equiv.apply_symm_apply]
-
-/-- The darts of the quotient of the line by its translations are its two orientations: the
-quotient is a loop, a single vertex with one pair of mutually reverse darts. -/
-def lineQuotientDartEquiv : (line.quotient lineShift lineShift_smul_ne_rev).E ≃ Bool where
-  toFun := Quotient.lift (fun e : ℤ × Bool => e.2) (by
-    -- Translation does not change the orientation of a dart.
-    rintro _ e ⟨k, rfl⟩
-    have h : (lineShift k • e).2 = e.2 := by rw [lineShift_smul_dart]
-    exact h)
-  invFun d := (line.quotientMap lineShift lineShift_smul_ne_rev).mapE (0, d)
-  left_inv y := by
-    obtain ⟨e, rfl⟩ := quotientMap_mapE_surjective _ _ _ y
-    exact quotientMap_mapE_eq_iff.mpr ⟨Multiplicative.ofAdd e.1,
-      (lineShift_smul_dart _ _).trans (Prod.ext (by simp) rfl)⟩
-  right_inv _ := rfl
-
-/-- The orbit of a dart of the line under translation is its orientation. -/
-@[simp] theorem lineQuotientDartEquiv_quotientMap (e : line.E) :
-    lineQuotientDartEquiv ((line.quotientMap lineShift lineShift_smul_ne_rev).mapE e) =
-      Prod.snd e := (rfl)
-
-@[simp] theorem lineQuotientDartEquiv_symm_apply (d : Bool) :
-    lineQuotientDartEquiv.symm d =
-      (line.quotientMap lineShift lineShift_smul_ne_rev).mapE (0, d) := (rfl)
-
-/-- Reversal exchanges the two darts of the quotient of the line by its translations. -/
-@[simp] theorem lineQuotientDartEquiv_rev (y : (line.quotient lineShift lineShift_smul_ne_rev).E) :
-    lineQuotientDartEquiv ((line.quotient lineShift lineShift_smul_ne_rev).rev y) =
-      !lineQuotientDartEquiv y := by
-  obtain ⟨e, rfl⟩ := quotientMap_mapE_surjective _ _ _ y
-  rw [← Hom.map_rev, lineQuotientDartEquiv_quotientMap, lineQuotientDartEquiv_quotientMap]
-  exact congrArg Prod.snd (line_rev e)
 
 end SerreGraph
 end TauCeti
