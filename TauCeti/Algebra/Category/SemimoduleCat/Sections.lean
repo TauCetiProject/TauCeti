@@ -107,6 +107,37 @@ theorem sectionsMap_comp (α : F ⟶ G) (β : G ⟶ H) :
   ext x j
   rfl
 
+/-- Restriction along an index functor commutes with changing coefficients. -/
+theorem sectionsPrecomp_naturality {K : Type*} [Category* K]
+    (p : K ⥤ J) (α : F ⟶ G) :
+    (sectionsMap (Functor.whiskerLeft p α)).comp (sectionsPrecomp p F) =
+      (sectionsPrecomp p G).comp (sectionsMap α) := by
+  ext s k
+  rfl
+
+/-- The pointwise form of coefficient naturality for section restriction. -/
+theorem sectionsPrecomp_naturality_apply {K : Type*} [Category* K]
+    (p : K ⥤ J) (α : F ⟶ G) (s : sectionsSubmodule F) :
+    sectionsMap (Functor.whiskerLeft p α) (sectionsPrecomp p F s) =
+      sectionsPrecomp p G (sectionsMap α s) :=
+  LinearMap.congr_fun (sectionsPrecomp_naturality p α) s
+
+/-- An index transformation transports restricted sections to the new restriction. -/
+theorem sectionsPrecomp_whiskerRight {K : Type*} [Category* K]
+    {p q : K ⥤ J} (β : p ⟶ q) (F : J ⥤ SemimoduleCat R) :
+    (sectionsMap (Functor.whiskerRight β F)).comp (sectionsPrecomp p F) =
+      sectionsPrecomp q F := by
+  ext s k
+  exact (mem_sectionsSubmodule.mp s.property) (β.app k)
+
+/-- Pointwise transport along an index transformation agrees with restriction. -/
+theorem sectionsPrecomp_whiskerRight_apply {K : Type*} [Category* K]
+    {p q : K ⥤ J} (β : p ⟶ q) (F : J ⥤ SemimoduleCat R)
+    (s : sectionsSubmodule F) :
+    sectionsMap (Functor.whiskerRight β F) (sectionsPrecomp p F s) =
+      sectionsPrecomp q F s :=
+  LinearMap.congr_fun (sectionsPrecomp_whiskerRight β F) s
+
 end Maps
 
 end SemimoduleCat

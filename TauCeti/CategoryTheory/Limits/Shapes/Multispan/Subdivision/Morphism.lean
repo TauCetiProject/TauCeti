@@ -54,7 +54,7 @@ theorem mapNatTrans_comp {I'' : MultispanIndex J C}
 
 /-- A copied original face carries its original coefficient transformation. -/
 @[simp]
-theorem mapNatTrans_app_copy (η : I.multispan ⟶ I'.multispan)
+theorem mapNatTrans_app_left_inl (η : I.multispan ⟶ I'.multispan)
     (b : J.L) (a : D.faces b) :
     (D.mapNatTrans η).app (.left (.inl ⟨b, a⟩)) = η.app (.left b) := by
   simp only [mapNatTrans, NatTrans.comp_app, multispanIso_hom_app,
@@ -65,7 +65,7 @@ theorem mapNatTrans_app_copy (η : I.multispan ⟶ I'.multispan)
 
 /-- An inserted identity face carries the old chamber transformation. -/
 @[simp]
-theorem mapNatTrans_app_edge (η : I.multispan ⟶ I'.multispan)
+theorem mapNatTrans_app_left_inr (η : I.multispan ⟶ I'.multispan)
     (j : J.R) (e : D.edges j) :
     (D.mapNatTrans η).app (.left (.inr ⟨j, e⟩)) = η.app (.right j) := by
   simp only [mapNatTrans, NatTrans.comp_app, multispanIso_hom_app,
