@@ -213,7 +213,7 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : IsOpen s)
 
 /-- **Chart independence on the whole surface.** For `k ≤ 1`, it suffices to test the coordinate
 expressions in the charts of a family `A` of holomorphic charts covering `X` and a family `B` of
-smooth charts covering `M`. -/
+smooth charts covering the image of `u`. -/
 theorem memWkpLocMap_iff_of_subset_maximalAtlas (hk : k ≤ 1)
     {A : Set (OpenPartialHomeomorph X ℂ)} (hA : A ⊆ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
     (hAs : ∀ x, ∃ φ ∈ A, x ∈ φ.source)
