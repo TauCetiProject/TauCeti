@@ -178,6 +178,7 @@ theorem covariantDerivative_ofDeriv (hcov : IsCovariantDerivativeOn F cov U)
 
 /-- **A covariant derivative splits the first-jet sequence**: the covariant derivative of jets is
 a left inverse of the inclusion `Hom(TₓM, Vₓ) → J¹Vₓ`. -/
+@[simp]
 theorem covariantDerivative_comp_ofDeriv (hcov : IsCovariantDerivativeOn F cov U) :
     covariantDerivative hcov x ∘L ofDeriv I F x = ContinuousLinearMap.id 𝕜 _ :=
   ContinuousLinearMap.ext (covariantDerivative_ofDeriv hcov)
