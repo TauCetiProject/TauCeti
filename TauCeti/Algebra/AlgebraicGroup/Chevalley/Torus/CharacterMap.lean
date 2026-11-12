@@ -37,12 +37,12 @@ full-weight parametrization only, which is the whole actual torus for the full-w
   at the simple roots are carried to Steinberg's elements.
 * `TauCeti.DynkinType.ChevalleyDatum.map_simpleCorootPoints_eq_simpleCorootPoints_pow`: the simple
   coroots are carried to simple coroots, with the parameter raised to the exponent.
-* `TauCeti.DynkinType.ChevalleyDatum.map_torusPoints_fullWeightTorusRestriction_of_simpleRoot`: the
-  resulting equation on the full-weight torus parameters.
-* `TauCeti.DynkinType.ChevalleyDatum.isCharacterMap_of_simpleRoot`: the character map of an
-  endomorphism, on the full-weight parametrization of the torus.
-* `TauCeti.DynkinType.isCharacterMap_scChevalleyDatum_of_simpleRoot`: the character map on the
-  whole torus of the full-weight datum.
+* `ChevalleyDatum.map_torusPoints_fullWeightTorusRestriction_torusPointMap_of_rootSubgroupPoints`:
+  the resulting equation on the full-weight torus parameters.
+* `TauCeti.DynkinType.ChevalleyDatum.isCharacterMap_of_rootSubgroupPoints`: the character map of
+  an endomorphism, on the full-weight parametrization of the torus.
+* `TauCeti.DynkinType.isCharacterMap_scChevalleyDatum_of_rootSubgroupPoints`: the character map on
+  the whole torus of the full-weight datum.
 
 ## References
 
@@ -112,7 +112,8 @@ variable {D E}
 homomorphism sends `x_{±αᵢ}(u)` to `x_{±α_{σ i}}(cᵢ^{±1} u ^ eᵢ)`, with `(-1) ^ eᵢ = -1`, then on
 full-weight torus parameters it acts through any `φ` with `(φ χ) i = eᵢ χ (σ i)`; that is, the
 coordinate of the image at `j` is `∏_{σ i = j} sᵢ ^ eᵢ`. -/
-theorem map_torusPoints_fullWeightTorusRestriction_of_simpleRoot (f : D.points A →* E.points A)
+theorem map_torusPoints_fullWeightTorusRestriction_torusPointMap_of_rootSubgroupPoints
+    (f : D.points A →* E.points A)
     (σ : Fin t.rank → Fin t.rank) (c : Fin t.rank → Aˣ) (e : Fin t.rank → ℕ)
     (he : ∀ i, (-1 : A) ^ e i = -1)
     (hpos : ∀ i (u : A), f (D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd u)) =
@@ -148,7 +149,7 @@ theorem map_torusPoints_fullWeightTorusRestriction_of_simpleRoot (f : D.points A
 endomorphism of the points sends `x_{±αᵢ}(u)` to `x_{±α_{σ i}}(cᵢ^{±1} u ^ eᵢ)`, with
 `(-1) ^ eᵢ = -1`, then on the full-weight parametrization of the torus it pulls characters back by
 any `φ` with `(φ χ) i = eᵢ χ (σ i)`. -/
-theorem isCharacterMap_of_simpleRoot (F : D.points A →* D.points A)
+theorem isCharacterMap_of_rootSubgroupPoints (F : D.points A →* D.points A)
     (σ : Fin t.rank → Fin t.rank) (c : Fin t.rank → Aˣ) (e : Fin t.rank → ℕ)
     (he : ∀ i, (-1 : A) ^ e i = -1)
     (hpos : ∀ i (u : A), F (D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd u)) =
@@ -161,7 +162,8 @@ theorem isCharacterMap_of_simpleRoot (F : D.points A →* D.points A)
     (φ : Module.End ℤ (Fin t.rank → ℤ)) (hφ : ∀ χ i, φ χ i = e i * χ (σ i)) :
     IsCharacterMap ((D.torusPoints A).comp (D.fullWeightTorusRestriction A)) F φ :=
   isCharacterMap_iff.mpr fun s =>
-    map_torusPoints_fullWeightTorusRestriction_of_simpleRoot F σ c e he hpos hneg φ hφ s
+    map_torusPoints_fullWeightTorusRestriction_torusPointMap_of_rootSubgroupPoints F σ c e he hpos
+      hneg φ hφ s
 
 end
 
@@ -179,7 +181,7 @@ variable {t : DynkinType} {ht : t.Valid} {A : Type v} [CommRing A]
 an endomorphism of the points of `G_sc(t)` sends `x_{±αᵢ}(u)` to `x_{±α_{σ i}}(cᵢ^{±1} u ^ eᵢ)`,
 with `(-1) ^ eᵢ = -1`, then it pulls characters of the whole torus back by any `φ` with
 `(φ χ) i = eᵢ χ (σ i)`. -/
-theorem isCharacterMap_scChevalleyDatum_of_simpleRoot
+theorem isCharacterMap_scChevalleyDatum_of_rootSubgroupPoints
     (F : (t.scChevalleyDatum ht).points A →* (t.scChevalleyDatum ht).points A)
     (σ : Fin t.rank → Fin t.rank) (c : Fin t.rank → Aˣ) (e : Fin t.rank → ℕ)
     (he : ∀ i, (-1 : A) ^ e i = -1)
@@ -197,6 +199,6 @@ theorem isCharacterMap_scChevalleyDatum_of_simpleRoot
     IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A) F φ :=
   isCharacterMap_iff.mpr fun s => by
     simpa only [MonoidHom.comp_apply, scChevalleyDatum_fullWeightTorusRestriction] using
-      (isCharacterMap_of_simpleRoot F σ c e he hpos hneg φ hφ).map_apply s
+      (isCharacterMap_of_rootSubgroupPoints F σ c e he hpos hneg φ hφ).map_apply s
 
 end TauCeti.DynkinType
