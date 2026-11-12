@@ -444,7 +444,7 @@ private theorem eq_zero_of_sum_C_mul_X_pow_eq_zero {m : ℕ} {t : Fin m × Fin 2
   -- The coefficient of `X ^ i.1` is `t (i.1, 0) + t (i.1, 1) i`.
   have hcoeff : ∑ k : Fin m × Fin 2,
       (if (i.1 : ℕ) = (k.1 : ℕ) then (t k : ℂ) * ![1, I] k.2 else 0) = 0 := by
-    have := congrArg (fun p ↦ Polynomial.coeff p (i.1 : ℕ)) ht
+    have := congrArg (fun p : Polynomial ℂ ↦ p.coeff (i.1 : ℕ)) ht
     simpa only [Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul_X_pow,
       Polynomial.coeff_zero] using this
   rw [Fintype.sum_prod_type, Finset.sum_eq_single i.1
