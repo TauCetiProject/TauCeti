@@ -68,7 +68,9 @@ blocks `Δⱼ u`.
   whose Fourier transform is carried by the region where `ψⱼ = 1` is its own `j`-th block and has
   no other block.
 * `ContDiffBump.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels
-  `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm.
+  `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm, and
+  `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ`: their `Lʳ` norms grow like
+  `2^{j n (1 - 1/r)}`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
@@ -103,6 +105,19 @@ theorem integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
   simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
   exact TauCeti.integral_norm_fourierInv_comp_smul
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (inv_ne_zero (pow_ne_zero _ two_ne_zero))
+
+open MeasureTheory in
+/-- **The `Lʳ` norms of the dyadic kernels.** Since `𝓕⁻ ψ_{j+1} = 2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in
+dimension `n`, the `Lʳ` norm of `𝓕⁻ ψ_{j+1}` is `(2^j)^{n - n/r}` times that of `𝓕⁻ ψ₁`, where
+`1/∞ = 0`. -/
+theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) (r : ENNReal) :
+    eLpNorm (𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) r volume =
+      ENNReal.ofReal
+          ((2 ^ j : ℝ) ^ ((Module.finrank ℝ E : ℝ) - Module.finrank ℝ E / r.toReal)) *
+        eLpNorm (𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) r volume := by
+  simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
+  exact TauCeti.eLpNorm_fourierInv_comp_inv_smul
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (pow_pos two_pos j) r
 
 end ContDiffBump
 
