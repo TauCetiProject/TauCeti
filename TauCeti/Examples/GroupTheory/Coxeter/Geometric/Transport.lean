@@ -20,8 +20,9 @@ system on small examples.
   simple reflection acts on `Fin 1 → ℝ` by `-1`, which is not the identity.
 * For an infinite entry the Gram matrix of the two simple roots is `!![1, -1; -1, 1]`, of
   determinant zero, yet `(sᵢ sⱼ)ⁿ` sends `αᵢ` to `(2 n + 1) αᵢ + 2 n αⱼ`.
-* Reindexing `A₂` by its transposition sends `αᵢ` to `αⱼ` and `σᵢ` to `σⱼ`, not to `σᵢ`. For
-  `w = s₀ s₁` both sides of the transport equation send `α₀` to `α'₀`.
+* Reindexing `A₂` by its transposition `Equiv.swap 0 1` sends `α₀` to `α₁`, and conjugates `σ₀`
+  to the reflection `σ'₁` of the reindexed system, not to `σ'₀`. For `w = s₀ s₁` both sides of
+  the transport equation send `α₀` to `α'₀`.
 * For three orthogonal nodes and the cycle `e = (0 1 2)`, the inverse of
   `CoxeterMatrix.reindexGroupEquiv` sends generator `0` to generator `1`, while the forward map
   sends the reindexed generator `0` to the original generator `2`.
@@ -41,31 +42,27 @@ namespace TauCeti
 /-- With no generators the Coxeter group is trivial, the representation space is zero, and the
 geometric representation is injective. -/
 example {B W : Type*} [Group W] [IsEmpty B] {M : CoxeterMatrix B} (cs : CoxeterSystem M W) :
-    Subsingleton W ∧ Subsingleton (B →₀ ℝ) ∧ Function.Injective cs.geometricRepresentation := by
-  refine ⟨⟨fun w w' ↦ ?_⟩, inferInstance, cs.geometricRepresentation_injective⟩
-  have h1 : ∀ v : W, v = 1 := fun v ↦
-    cs.simple_induction (p := fun v ↦ v = 1) v (fun i ↦ isEmptyElim i) rfl fun _ _ h h' ↦ by
-      rw [h, h', one_mul]
-  rw [h1 w, h1 w']
+    Subsingleton W ∧ Subsingleton (B →₀ ℝ) ∧ Function.Injective cs.geometricRepresentation :=
+  ⟨cs.subsingleton_of_isEmpty, inferInstance, cs.geometricRepresentation_injective⟩
 
-/-- In rank one the simple reflection acts on coordinate functions by `-1`. -/
-theorem rankOne_geometricRepresentationFun_simple (v : Fin 1 → ℝ) :
-    (CoxeterMatrix.A 1).toCoxeterSystem.geometricRepresentationFun
-        ((CoxeterMatrix.A 1).toCoxeterSystem.simple 0) v = -v := by
-  rw [CoxeterSystem.geometricRepresentationFun_simple_apply]
-  ext k
-  fin_cases k
-  simp [CoxeterMatrix.A]
-  ring
-
-/-- In rank one `ρ(s) = -1` differs from `ρ(1) = 1`. -/
+/-- In rank one the simple reflection acts on coordinate functions by `-1`, so `ρ(s) = -1`
+differs from `ρ(1) = 1`. -/
 example :
+    (∀ v : Fin 1 → ℝ, (CoxeterMatrix.A 1).toCoxeterSystem.geometricRepresentationFun
+        ((CoxeterMatrix.A 1).toCoxeterSystem.simple 0) v = -v) ∧
     (CoxeterMatrix.A 1).toCoxeterSystem.geometricRepresentationFun
         ((CoxeterMatrix.A 1).toCoxeterSystem.simple 0) ≠
       (CoxeterMatrix.A 1).toCoxeterSystem.geometricRepresentationFun 1 := by
-  intro h
+  have hs (v : Fin 1 → ℝ) : (CoxeterMatrix.A 1).toCoxeterSystem.geometricRepresentationFun
+      ((CoxeterMatrix.A 1).toCoxeterSystem.simple 0) v = -v := by
+    rw [CoxeterSystem.geometricRepresentationFun_simple_apply]
+    ext k
+    fin_cases k
+    simp [CoxeterMatrix.A]
+    ring
+  refine ⟨hs, fun h ↦ ?_⟩
   have := congr_fun (LinearMap.congr_fun h fun _ ↦ 1) 0
-  rw [rankOne_geometricRepresentationFun_simple, map_one, one_apply_eq_self] at this
+  rw [hs, map_one, one_apply_eq_self] at this
   norm_num at this
 
 /-! ### An infinite entry -/
@@ -74,34 +71,38 @@ section Infinite
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W) {i j : B}
 
-/-- For an infinite entry the Gram matrix `!![1, -1; -1, 1]` of the two simple roots is singular. -/
+/-- For an infinite entry the Gram matrix of the two simple roots is `!![1, -1; -1, 1]`, which is
+singular. -/
 example (h : M i j = 0) :
     !![M.geometricForm (Finsupp.single i 1) (Finsupp.single i 1),
         M.geometricForm (Finsupp.single i 1) (Finsupp.single j 1);
       M.geometricForm (Finsupp.single j 1) (Finsupp.single i 1),
-        M.geometricForm (Finsupp.single j 1) (Finsupp.single j 1)].det = 0 := by
-  simp [Matrix.det_fin_two, M.symmetric j i, h]
+        M.geometricForm (Finsupp.single j 1) (Finsupp.single j 1)] = !![1, -1; -1, 1] ∧
+    (!![1, -1; -1, 1] : Matrix (Fin 2) (Fin 2) ℝ).det = 0 := by
+  refine ⟨?_, by simp [Matrix.det_fin_two]⟩
+  ext a b
+  fin_cases a <;> fin_cases b <;> simp [M.symmetric j i, h]
 
-/-- For an infinite entry, `(sᵢ sⱼ)ⁿ` sends `αᵢ` to `(2 n + 1) αᵢ + 2 n αⱼ`. -/
-example (h : M i j = 0) (n : ℕ) :
-    cs.geometricRepresentation ((cs.simple i * cs.simple j) ^ n) (Finsupp.single i 1) =
-      (2 * n + 1 : ℝ) • Finsupp.single i 1 + (2 * n : ℝ) • Finsupp.single j 1 := by
-  rw [map_pow, map_mul, cs.geometricRepresentation_simple, cs.geometricRepresentation_simple]
-  exact M.pow_geometricReflection_mul_apply_single_of_eq_zero i j h n
-
-/-- The first three values `(1, 0)`, `(3, 2)` and `(5, 4)`. -/
+/-- For an infinite entry, `(sᵢ sⱼ)ⁿ` sends `αᵢ` to `(2 n + 1) αᵢ + 2 n αⱼ`, with first three
+values `(1, 0)`, `(3, 2)` and `(5, 4)`. -/
 example (h : M i j = 0) :
+    (∀ n : ℕ,
+      cs.geometricRepresentation ((cs.simple i * cs.simple j) ^ n) (Finsupp.single i 1) =
+        (2 * n + 1 : ℝ) • Finsupp.single i 1 + (2 * n : ℝ) • Finsupp.single j 1) ∧
     cs.geometricRepresentation 1 (Finsupp.single i 1) = Finsupp.single i 1 ∧
-      cs.geometricRepresentation (cs.simple i * cs.simple j) (Finsupp.single i 1) =
-        Finsupp.single i 3 + Finsupp.single j 2 ∧
-      cs.geometricRepresentation ((cs.simple i * cs.simple j) ^ 2) (Finsupp.single i 1) =
-        Finsupp.single i 5 + Finsupp.single j 4 := by
-  have hn (n : ℕ) := M.pow_geometricReflection_mul_apply_single_of_eq_zero i j h n
-  refine ⟨by simp, ?_, ?_⟩
-  · rw [map_mul, mul_apply_eq_comp, cs.geometricRepresentation_simple,
-      cs.geometricRepresentation_simple, ← mul_apply_eq_comp, ← pow_one (_ * _), hn]
+    cs.geometricRepresentation (cs.simple i * cs.simple j) (Finsupp.single i 1) =
+      Finsupp.single i 3 + Finsupp.single j 2 ∧
+    cs.geometricRepresentation ((cs.simple i * cs.simple j) ^ 2) (Finsupp.single i 1) =
+      Finsupp.single i 5 + Finsupp.single j 4 := by
+  have hn (n : ℕ) :
+      cs.geometricRepresentation ((cs.simple i * cs.simple j) ^ n) (Finsupp.single i 1) =
+        (2 * n + 1 : ℝ) • Finsupp.single i 1 + (2 * n : ℝ) • Finsupp.single j 1 := by
+    rw [map_pow, map_mul, cs.geometricRepresentation_simple, cs.geometricRepresentation_simple]
+    exact M.pow_geometricReflection_mul_apply_single_of_eq_zero i j h n
+  refine ⟨hn, by simp, ?_, ?_⟩
+  · rw [← pow_one (cs.simple i * cs.simple j), hn]
     norm_num [Finsupp.smul_single]
-  · rw [map_pow, map_mul, cs.geometricRepresentation_simple, cs.geometricRepresentation_simple, hn]
+  · rw [hn]
     norm_num [Finsupp.smul_single]
 
 end Infinite
@@ -110,45 +111,35 @@ end Infinite
 
 section ReindexA₂
 
-/-- In `A₂`, `s₀ s₁` sends `α₀` to `α₁`. -/
-theorem a₂_geometricRepresentation_simple_mul_simple :
-    (CoxeterMatrix.A 2).toCoxeterSystem.geometricRepresentation
-        ((CoxeterMatrix.A 2).simple 0 * (CoxeterMatrix.A 2).simple 1) (Finsupp.single 0 1) =
-      Finsupp.single 1 1 := by
-  rw [← CoxeterMatrix.toCoxeterSystem_simple, map_mul, mul_apply_eq_comp,
-    CoxeterSystem.geometricRepresentation_simple, CoxeterSystem.geometricRepresentation_simple]
-  ext k
-  fin_cases k <;> norm_num [CoxeterMatrix.A, cos_pi_div_three]
-
 /-- The coordinate equivalence of the transposition sends `α₀` to `α₁`. -/
 example : Finsupp.domLCongr (R := ℝ) (Equiv.swap (0 : Fin 2) 1) (Finsupp.single 0 (1 : ℝ)) =
     Finsupp.single 1 1 := by
   simp
 
-/-- The inverse of `CoxeterMatrix.reindexGroupEquiv` sends generator `0` to generator `1`. -/
-theorem a₂_reindexGroupEquiv_symm_simple_zero :
+/-- For `A₂` and the transposition `Equiv.swap 0 1`, the inverse of
+`CoxeterMatrix.reindexGroupEquiv` sends generator `0` to generator `1`. -/
+example :
     ((CoxeterMatrix.A 2).reindexGroupEquiv (Equiv.swap 0 1)).symm ((CoxeterMatrix.A 2).simple 0) =
       ((CoxeterMatrix.A 2).reindex (Equiv.swap 0 1)).simple 1 := by
-  simp [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple]
+  rw [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple, Equiv.swap_apply_left]
 
-/-- Reindexing by the transposition conjugates `σ₀` into `σ'₁`. -/
-theorem a₂_conj_geometricReflection_zero :
+/-- Reindexing `A₂` by the transposition `Equiv.swap 0 1` conjugates `σ₀` into `σ'₁`, and not into
+`σ'₀`: distinct generators act by distinct reflections. -/
+example :
     (Finsupp.domLCongr (Equiv.swap (0 : Fin 2) 1)).conj
         ((CoxeterMatrix.A 2).geometricReflection 0) =
-      ((CoxeterMatrix.A 2).reindex (Equiv.swap 0 1)).geometricReflection 1 := by
-  have h := (CoxeterMatrix.A 2).geometricRepresentation_reindexGroupEquiv_symm (Equiv.swap 0 1)
-    ((CoxeterMatrix.A 2).simple 0)
-  rw [a₂_reindexGroupEquiv_symm_simple_zero, ← CoxeterMatrix.toCoxeterSystem_simple,
-    ← CoxeterMatrix.toCoxeterSystem_simple, CoxeterSystem.geometricRepresentation_simple,
-    CoxeterSystem.geometricRepresentation_simple] at h
-  exact h.symm
-
-/-- The conjugate of `σ₀` is not `σ'₀`: distinct generators act by distinct reflections. -/
-example :
+      ((CoxeterMatrix.A 2).reindex (Equiv.swap 0 1)).geometricReflection 1 ∧
     (Finsupp.domLCongr (Equiv.swap (0 : Fin 2) 1)).conj
         ((CoxeterMatrix.A 2).geometricReflection 0) ≠
       ((CoxeterMatrix.A 2).reindex (Equiv.swap 0 1)).geometricReflection 0 := by
-  rw [a₂_conj_geometricReflection_zero]
+  have hconj := (CoxeterMatrix.A 2).geometricRepresentation_reindexGroupEquiv_symm
+    (Equiv.swap 0 1) ((CoxeterMatrix.A 2).simple 0)
+  rw [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple, Equiv.swap_apply_left,
+    ← CoxeterMatrix.toCoxeterSystem_simple, ← CoxeterMatrix.toCoxeterSystem_simple,
+    CoxeterSystem.geometricRepresentation_simple,
+    CoxeterSystem.geometricRepresentation_simple] at hconj
+  refine ⟨hconj.symm, ?_⟩
+  rw [← hconj]
   intro h
   set cs := ((CoxeterMatrix.A 2).reindex (Equiv.swap 0 1)).toCoxeterSystem
   rw [← cs.geometricRepresentation_simple, ← cs.geometricRepresentation_simple] at h
@@ -169,13 +160,16 @@ example :
       ((CoxeterMatrix.A 2).toCoxeterSystem.geometricRepresentation
         ((CoxeterMatrix.A 2).simple 0 * (CoxeterMatrix.A 2).simple 1) (Finsupp.single 0 1)) =
       Finsupp.single 0 1 := by
-    rw [a₂_geometricRepresentation_simple_mul_simple]
-    simp
+    rw [← CoxeterMatrix.toCoxeterSystem_simple, map_mul, mul_apply_eq_comp,
+      CoxeterSystem.geometricRepresentation_simple, CoxeterSystem.geometricRepresentation_simple]
+    ext k
+    fin_cases k <;> norm_num [CoxeterMatrix.A, cos_pi_div_three]
   refine ⟨h, ?_⟩
   rw [CoxeterMatrix.geometricRepresentation_reindexGroupEquiv_symm,
     LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply, h]
 
-/-- The inverse reindexing followed by the reindexing fixes both generators. -/
+/-- Reindexing along the transposition and then along its inverse sends each generator `sᵢ` to the
+generator `sᵢ` of the doubly reindexed system. -/
 example (i : Fin 2) :
     (((CoxeterMatrix.A 2).reindex (Equiv.swap 0 1)).reindexGroupEquiv (Equiv.swap 0 1).symm).symm
         (((CoxeterMatrix.A 2).reindexGroupEquiv (Equiv.swap 0 1)).symm
@@ -199,7 +193,7 @@ example :
         (((⊥ : SimpleGraph (Fin 3)).coxeterMatrix.reindex (finRotate 3)).simple 0) =
       (⊥ : SimpleGraph (Fin 3)).coxeterMatrix.simple 2 :=
   ⟨by simp [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple],
-    by simp [CoxeterMatrix.reindexGroupEquiv_apply_simple]; rfl⟩
+    by rw [CoxeterMatrix.reindexGroupEquiv_apply_simple, show (finRotate 3).symm 0 = 2 by decide]⟩
 
 /-! ### Extension by zero from a parabolic subset -/
 

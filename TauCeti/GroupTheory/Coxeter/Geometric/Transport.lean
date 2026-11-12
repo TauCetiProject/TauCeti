@@ -113,9 +113,10 @@ theorem geometricRepresentation_reindex (e : B ≃ B') (w : W) :
 
 /-- **The identity reindexing does not change the geometric representation.** -/
 @[simp]
-theorem geometricRepresentation_reindex_refl (w : W) :
-    (cs.reindex (Equiv.refl B)).geometricRepresentation w = cs.geometricRepresentation w := by
-  rw [geometricRepresentation_reindex, Finsupp.domLCongr_refl, LinearEquiv.conj_refl]
+theorem geometricRepresentation_reindex_refl :
+    (cs.reindex (Equiv.refl B)).geometricRepresentation = cs.geometricRepresentation :=
+  MonoidHom.ext fun w ↦ by
+    rw [geometricRepresentation_reindex, Finsupp.domLCongr_refl, LinearEquiv.conj_refl]
 
 /-- **Reindexings compose**: reindexing along `e` and then along `e'` conjugates the geometric
 representation by the coordinate equivalence of the composite bijection `e.trans e'`. -/
@@ -163,6 +164,21 @@ noncomputable def geometricRepresentationEquivFun :
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, geometricRepresentationFun_apply,
       LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
 
+/-- The underlying linear equivalence of `CoxeterSystem.geometricRepresentationEquivFun` is the
+coordinate equivalence. -/
+@[simp]
+theorem geometricRepresentationEquivFun_toLinearEquiv :
+    cs.geometricRepresentationEquivFun.toLinearEquiv = Finsupp.linearEquivFunOnFinite ℝ ℝ B :=
+  (rfl)
+
+/-- The underlying linear equivalence of the inverse of
+`CoxeterSystem.geometricRepresentationEquivFun` is the inverse coordinate equivalence. -/
+@[simp]
+theorem geometricRepresentationEquivFun_symm_toLinearEquiv :
+    cs.geometricRepresentationEquivFun.symm.toLinearEquiv =
+      (Finsupp.linearEquivFunOnFinite ℝ ℝ B).symm :=
+  (rfl)
+
 @[simp]
 theorem geometricRepresentationEquivFun_apply (v : B →₀ ℝ) :
     cs.geometricRepresentationEquivFun v = ⇑v :=
@@ -172,6 +188,14 @@ theorem geometricRepresentationEquivFun_apply (v : B →₀ ℝ) :
 theorem geometricRepresentationEquivFun_symm_apply (v : B → ℝ) :
     cs.geometricRepresentationEquivFun.symm v = Finsupp.equivFunOnFinite.symm v :=
   (rfl)
+
+/-- **The transported geometric representation is faithful**, by Tits' theorem
+`CoxeterSystem.geometricRepresentation_injective`. -/
+theorem geometricRepresentationFun_injective : Function.Injective cs.geometricRepresentationFun :=
+  ((Finsupp.linearEquivFunOnFinite ℝ ℝ B).conjAlgEquiv ℝ).injective.comp
+    cs.geometricRepresentation_injective
+
+end Finite
 
 /-- **The reflection formula on coordinate functions**: the `i`-th simple reflection acts by
 `v ↦ v - 2 (∑ⱼ -cos (π / M i j) vⱼ) eᵢ`, where `eᵢ = Pi.single i 1` is the `i`-th simple root and
@@ -185,14 +209,6 @@ theorem geometricRepresentationFun_simple_apply [Fintype B] [DecidableEq B] (i :
     simp [Finsupp.equivFunOnFinite_symm_eq_sum, mul_comm]
   ext k
   simp [hform, Pi.single_apply, Finsupp.single_apply, eq_comm]
-
-/-- **The transported geometric representation is faithful**, by Tits' theorem
-`CoxeterSystem.geometricRepresentation_injective`. -/
-theorem geometricRepresentationFun_injective : Function.Injective cs.geometricRepresentationFun :=
-  ((Finsupp.linearEquivFunOnFinite ℝ ℝ B).conjAlgEquiv ℝ).injective.comp
-    cs.geometricRepresentation_injective
-
-end Finite
 
 end CoxeterSystem
 
