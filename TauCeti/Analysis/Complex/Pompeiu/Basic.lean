@@ -16,7 +16,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.LinearAlgebra.Complex.Module
-import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Convolution.Holder
 

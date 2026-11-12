@@ -15,7 +15,8 @@ import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.Basic
-import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Cauchy transform at infinity

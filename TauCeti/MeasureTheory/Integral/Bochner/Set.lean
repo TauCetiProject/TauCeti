@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Continuity of parametric integrals with compactly supported integrand
@@ -35,10 +34,6 @@ on nonempty open sets.
   exponential `exp (t x I)` are integrable on a set of finite measure.
 * `MeasureTheory.setIntegral_mul_le_mul_setIntegral_abs`: the pairing of an integrable `f` on `Ω`
   with a function `g` bounded by `S` on `V ⊆ Ω` is at most `S ∫_Ω |f|`.
-* `MeasureTheory.Integrable.smul_of_support_subset` and
-  `MeasureTheory.norm_integral_smul_le_of_support_subset`: a multiplier `g` bounded by `K` on a
-  set containing the support of an integrable `f` gives an integrable `g • f` with
-  `‖∫ g • f‖ ≤ K ∫ ‖f‖`.
 * `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
   over `A` is `ofReal` of the Bochner integral of `‖f‖ ^ 2`, and
   `MeasureTheory.setLIntegral_enorm_sq_le_ofReal` the corresponding bound.
@@ -187,31 +182,6 @@ theorem setIntegral_mul_le_mul_setIntegral_abs {α : Type*} [MeasurableSpace α]
     _ ≤ S * ∫ x in Ω, |f x| ∂ν :=
         mul_le_mul_of_nonneg_left (setIntegral_mono_set hf.abs
           (ae_of_all _ fun _ => abs_nonneg _) (ae_of_all _ hVΩ)) hS0
-
-section SupportSubset
-
-variable {α 𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {f : α → E} {g : α → 𝕜} {s : Set α} {K : ℝ}
-
-/-- An integrable function times a multiplier bounded on a set containing its support is
-integrable. -/
-theorem Integrable.smul_of_support_subset [MeasurableSpace α] {μ : Measure α}
-    (hf : Integrable f μ) (hsupp : support f ⊆ s)
-    (hg : AEStronglyMeasurable g μ) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
-    Integrable (fun x ↦ g x • f x) μ :=
-  (hf.norm.const_mul K).mono' (hg.smul hf.1)
-    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
-
-/-- The integral of `g • f`, for a multiplier bounded by `K` on a set containing the support of
-the integrable function `f`, is at most `K ∫ ‖f‖`. -/
-theorem norm_integral_smul_le_of_support_subset [MeasurableSpace α] {μ : Measure α}
-    [NormedSpace ℝ E] (hf : Integrable f μ) (hsupp : support f ⊆ s) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
-    ‖∫ x, g x • f x ∂μ‖ ≤ K * ∫ x, ‖f x‖ ∂μ := by
-  rw [← integral_const_mul]
-  exact norm_integral_le_of_norm_le (hf.norm.const_mul K)
-    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
-
-end SupportSubset
 
 /-- The Lebesgue integral of `‖f‖ₑ ^ 2` over `A` is the `ENNReal.ofReal` of the Bochner integral of
 `‖f‖ ^ 2`, when `‖f‖ ^ 2` is integrable on `A`. -/
