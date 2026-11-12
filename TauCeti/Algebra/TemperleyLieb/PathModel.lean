@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.Algebra.TemperleyLieb.Trace.Basic
+public import TauCeti.Combinatorics.SimpleGraph.WalkFrom
 public import TauCeti.LinearAlgebra.Matrix.ExtendLast
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.LinearAlgebra.Matrix.PosDef
@@ -28,7 +29,7 @@ the weights `√[t + 1]` this is the sufficiency half of Jones's positivity theo
 values `2 cos (π / m)`; see `TauCeti.Algebra.TemperleyLieb.Positivity`.
 
 The algebra on `n` strands acts on functions of vertex sequences `s : Fin (n + 1) → V`, among
-which the walks from `v₀` (`TauCeti.TemperleyLieb.IsWalkFrom`) are the states of the model. The
+which the walks from `v₀` (`SimpleGraph.IsWalkFrom`) are the states of the model. The
 generator `e i` acts on the vertex at position `b = i + 1`, between the positions `a = i` and
 `c = i + 2`: on a walk `s` with `s a = s c` it is the rank-one matrix
 `(r (s a) ^ 2)⁻¹ • w wᵀ` on the vertex at `b`, where `w` is the vector of weights `r x` of the
@@ -49,7 +50,6 @@ is a sum of absolute squares with nonnegative weights.
 
 ## Main definitions
 
-* `TauCeti.TemperleyLieb.IsWalkFrom`: a vertex sequence is a walk in `G` from `v₀`.
 * `TauCeti.TemperleyLieb.pathGenerator`: the matrix of a generator in the path model.
 * `TauCeti.TemperleyLieb.pathRep`: the path representation of the Temperley–Lieb algebra.
 * `TauCeti.TemperleyLieb.pathWeight`: the weight of a vertex sequence in the trace.
@@ -83,82 +83,9 @@ is a sum of absolute squares with nonnegative weights.
 public section
 
 open Function Matrix
+open SimpleGraph (isWalkFrom_iff_init isWalkFrom_snoc isWalkFrom_zero)
 
 namespace TauCeti.TemperleyLieb
-
-section Walk
-
-variable {V : Type*} (G : SimpleGraph V) (v₀ : V)
-
-/-- `s` is a walk in `G` with `m` steps starting at `v₀`, recorded by its sequence of `m + 1`
-vertices. -/
-def IsWalkFrom {m : ℕ} (s : Fin (m + 1) → V) : Prop :=
-  s 0 = v₀ ∧ ∀ i : Fin m, G.Adj (s i.castSucc) (s i.succ)
-
-instance [DecidableEq V] [DecidableRel G.Adj] {m : ℕ} (s : Fin (m + 1) → V) :
-    Decidable (IsWalkFrom G v₀ s) :=
-  inferInstanceAs (Decidable (s 0 = v₀ ∧ ∀ i : Fin m, G.Adj (s i.castSucc) (s i.succ)))
-
-variable {G v₀}
-
-/-- A vertex sequence is a walk from `v₀` exactly when it starts at `v₀` and consecutive vertices
-are adjacent. -/
-theorem isWalkFrom_iff {m : ℕ} (s : Fin (m + 1) → V) :
-    IsWalkFrom G v₀ s ↔ s 0 = v₀ ∧ ∀ i : Fin m, G.Adj (s i.castSucc) (s i.succ) :=
-  (Iff.rfl)
-
-/-- A walk with no steps is just its starting vertex. -/
-@[simp]
-theorem isWalkFrom_zero (s : Fin 1 → V) : IsWalkFrom G v₀ s ↔ s 0 = v₀ := by
-  simp [isWalkFrom_iff]
-
-/-- A walk from `v₀` starts at `v₀`. -/
-theorem IsWalkFrom.apply_zero {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) :
-    s 0 = v₀ :=
-  ((isWalkFrom_iff s).1 hs).1
-
-/-- A walk extended by one vertex is a walk exactly when the new vertex is adjacent to the old
-endpoint. -/
-theorem isWalkFrom_snoc {m : ℕ} (s : Fin (m + 1) → V) (y : V) :
-    IsWalkFrom G v₀ (Fin.snoc s y : Fin (m + 2) → V) ↔
-      IsWalkFrom G v₀ s ∧ G.Adj (s (Fin.last m)) y := by
-  rw [IsWalkFrom, IsWalkFrom, Fin.forall_fin_succ']
-  simp [and_assoc, Fin.succ_castSucc, -Fin.castSucc_succ]
-
-/-- A vertex sequence is a walk exactly when its initial segment is a walk whose endpoint is
-adjacent to the last vertex. -/
-theorem isWalkFrom_iff_init {m : ℕ} (s : Fin (m + 2) → V) :
-    IsWalkFrom G v₀ s ↔
-      IsWalkFrom G v₀ (Fin.init s) ∧ G.Adj (Fin.init s (Fin.last m)) (s (Fin.last (m + 1))) := by
-  conv_lhs => rw [← Fin.snoc_init_self s]
-  exact isWalkFrom_snoc _ _
-
-/-- Consecutive vertices of a walk are adjacent. -/
-theorem IsWalkFrom.adj {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
-    {a b : Fin (m + 1)} (hab : a.val + 1 = b.val) : G.Adj (s a) (s b) := by
-  have h := hs.2 ⟨a, by omega⟩
-  rwa [show (⟨a, _⟩ : Fin m).castSucc = a from Fin.ext rfl,
-    show (⟨a, _⟩ : Fin m).succ = b from Fin.ext (by simp [hab])] at h
-
-/-- Moving the vertex at an interior position `b` of a walk, whose two neighbouring positions
-carry the same vertex, to another neighbour of that vertex gives a walk. -/
-theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
-    {a b c : Fin (m + 1)} (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val) (hac : s a = s c)
-    {x : V} (hx : G.Adj (s a) x) : IsWalkFrom G v₀ (update s b x) := by
-  refine ⟨by rw [update_of_ne (by rintro rfl; simp at hab)]; exact hs.1, fun i ↦ ?_⟩
-  by_cases h₁ : i.succ = b
-  · have ha : i.castSucc = a := Fin.ext (by simp [← h₁] at hab ⊢; omega)
-    rw [h₁, update_self, update_of_ne (by rw [ha]; exact fun h ↦ by simp [h] at hab), ha]
-    exact hx
-  by_cases h₂ : i.castSucc = b
-  · have hc : i.succ = c := Fin.ext (by simp [← h₂] at hbc ⊢; omega)
-    rw [h₂, update_self, update_of_ne (by rw [hc]; exact fun h ↦ by simp [h] at hbc), hc,
-      ← hac]
-    exact hx.symm
-  · rw [update_of_ne h₁, update_of_ne h₂]
-    exact hs.2 i
-
-end Walk
 
 variable {K : Type*} [Field K] {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
   [DecidableRel G.Adj] (v₀ : V) (r : V → K)
@@ -174,14 +101,14 @@ configuration `t` differs from `s` at most at position `b`, and `t b` is a neigh
 is `0` otherwise. -/
 def pathGenerator (a b c : Fin (m + 1)) : Matrix (Fin (m + 1) → V) (Fin (m + 1) → V) K :=
   Matrix.of fun s t ↦
-    if IsWalkFrom G v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b) then
+    if G.IsWalkFrom v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b) then
       r (s b) * r (t b) / r (s a) ^ 2
     else 0
 
 omit [Fintype V] in
 theorem pathGenerator_apply (a b c : Fin (m + 1)) (s t : Fin (m + 1) → V) :
     pathGenerator G v₀ r a b c s t =
-      if IsWalkFrom G v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b) then
+      if G.IsWalkFrom v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b) then
         r (s b) * r (t b) / r (s a) ^ 2
       else 0 := (rfl)
 
@@ -193,7 +120,7 @@ of `s a`. -/
 theorem pathGenerator_mul_apply (a b c : Fin (m + 1))
     (X : Matrix (Fin (m + 1) → V) (Fin (m + 1) → V) K) (s u : Fin (m + 1) → V) :
     (pathGenerator G v₀ r a b c * X) s u =
-      if IsWalkFrom G v₀ s ∧ s a = s c then
+      if G.IsWalkFrom v₀ s ∧ s a = s c then
         ∑ x ∈ G.neighborFinset (s a), r (s b) * r x / r (s a) ^ 2 * X (update s b x) u
       else 0 := by
   rw [Matrix.mul_apply]
@@ -216,7 +143,7 @@ theorem pathGenerator_mul_apply (a b c : Fin (m + 1))
 omit [Fintype V] in
 /-- A generator matrix evaluated at a walk whose vertex at position `b` has been moved. -/
 theorem pathGenerator_update_apply {a b c : Fin (m + 1)} (hab : a.val + 1 = b.val)
-    (hbc : b.val + 1 = c.val) {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) (hac : s a = s c)
+    (hbc : b.val + 1 = c.val) {s : Fin (m + 1) → V} (hs : G.IsWalkFrom v₀ s) (hac : s a = s c)
     {x : V} (hx : G.Adj (s a) x) (u : Fin (m + 1) → V) :
     pathGenerator G v₀ r a b c (update s b x) u =
       if u = update s b (u b) ∧ G.Adj (s a) (u b) then r x * r (u b) / r (s a) ^ 2 else 0 := by
@@ -269,7 +196,7 @@ theorem pathGenerator_zigzag_left {a b c d : Fin (m + 1)} (hab : a.val + 1 = b.v
   have hcb : c ≠ b := fun h ↦ by simp [h] at hbc
   ext s v
   rw [mul_assoc, pathGenerator_mul_apply, pathGenerator_apply]
-  by_cases hs : IsWalkFrom G v₀ s ∧ s a = s c
+  by_cases hs : G.IsWalkFrom v₀ s ∧ s a = s c
   · -- Only the move of the vertex at `b` to `s d` survives the middle generator, and then only
     -- the move of the vertex at `c` back to `s a` survives the last one.
     have hdmem : s d ∈ G.neighborFinset (s a) := by
@@ -309,7 +236,7 @@ theorem pathGenerator_zigzag_right {a b c d : Fin (m + 1)} (hab : a.val + 1 = b.
   have hdb : d ≠ b := fun h ↦ by simp [h] at hbc hcd; omega
   ext s v
   rw [mul_assoc, pathGenerator_mul_apply, pathGenerator_apply]
-  by_cases hs : IsWalkFrom G v₀ s ∧ s b = s d
+  by_cases hs : G.IsWalkFrom v₀ s ∧ s b = s d
   · -- Only the move of the vertex at `c` to `s a` survives the middle generator, and then only
     -- the move of the vertex at `b` to `s d` survives the last one.
     have hamem : s a ∈ G.neighborFinset (s b) := by
@@ -342,12 +269,12 @@ theorem pathGenerator_mul_pathGenerator_apply {a b c a' b' c' : Fin (m + 1)}
     (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val) (h₁ : b ≠ a') (h₂ : b ≠ b')
     (h₃ : b ≠ c') (s v : Fin (m + 1) → V) :
     (pathGenerator G v₀ r a b c * pathGenerator G v₀ r a' b' c') s v =
-      if IsWalkFrom G v₀ s ∧ s a = s c ∧ s a' = s c' ∧
+      if G.IsWalkFrom v₀ s ∧ s a = s c ∧ s a' = s c' ∧
           v = update (update s b (v b)) b' (v b') ∧ G.Adj (s a) (v b) ∧ G.Adj (s a') (v b') then
         r (s b) * r (v b) / r (s a) ^ 2 * (r (s b') * r (v b') / r (s a') ^ 2)
       else 0 := by
   rw [pathGenerator_mul_apply]
-  by_cases hs : IsWalkFrom G v₀ s ∧ s a = s c
+  by_cases hs : G.IsWalkFrom v₀ s ∧ s a = s c
   swap
   · rw [ite_eq_right hs, ite_eq_right fun h ↦ hs ⟨h.1, h.2.1⟩]
   rw [ite_eq_left hs]
@@ -387,7 +314,7 @@ theorem pathGenerator_mul_pathGenerator_comm {a b c a' b' c' : Fin (m + 1)}
 /-- On walks, the generator matrix at positions away from the last one is extended from the
 walks with one step fewer. -/
 theorem pathGenerator_castSucc_apply {a b c : Fin (m + 1)} {s : Fin (m + 2) → V}
-    (hs : IsWalkFrom G v₀ s) (t : Fin (m + 2) → V) :
+    (hs : G.IsWalkFrom v₀ s) (t : Fin (m + 2) → V) :
     pathGenerator G v₀ r a.castSucc b.castSucc c.castSucc s t =
       extendLast (α := fun _ ↦ V) (pathGenerator G v₀ r a b c) s t := by
   obtain ⟨s, y, rfl⟩ : ∃ s' y, s = Fin.snoc s' y := ⟨_, _, (Fin.snoc_init_self s).symm⟩
@@ -439,7 +366,7 @@ theorem pathRep_e (i : Fin (n - 1)) :
 /-- The path representation preserves walks and their endpoints: its matrix entry at `s` and `t`
 vanishes unless `s` and `t` are both walks from `v₀` or both not, and end at the same vertex. -/
 theorem pathRep_apply_eq_zero (x : TemperleyLieb K δ n) {s t : Fin (n + 1) → V}
-    (h : ¬((IsWalkFrom G v₀ s ↔ IsWalkFrom G v₀ t) ∧ s (Fin.last n) = t (Fin.last n))) :
+    (h : ¬((G.IsWalkFrom v₀ s ↔ G.IsWalkFrom v₀ t) ∧ s (Fin.last n) = t (Fin.last n))) :
     pathRep G v₀ hr hδ x s t = 0 := by
   induction x using TemperleyLieb.induction generalizing s t with
   | e i =>
@@ -457,14 +384,14 @@ theorem pathRep_apply_eq_zero (x : TemperleyLieb K δ n) {s t : Fin (n + 1) → 
   | mul x y hx hy =>
     rw [map_mul, Matrix.mul_apply]
     refine Finset.sum_eq_zero fun u _ ↦ ?_
-    by_cases hsu : (IsWalkFrom G v₀ s ↔ IsWalkFrom G v₀ u) ∧ s (Fin.last n) = u (Fin.last n)
+    by_cases hsu : (G.IsWalkFrom v₀ s ↔ G.IsWalkFrom v₀ u) ∧ s (Fin.last n) = u (Fin.last n)
     · rw [hy fun hut ↦ h ⟨hsu.1.trans hut.1, hsu.2.trans hut.2⟩, mul_zero]
     · rw [hx hsu, zero_mul]
 
 /-- On the rows of walks, adding a straight strand acts on the path representation by extending
 walks by one step: the matrix of `strandIncl x` agrees with `extendLast` of the matrix of `x`. -/
 theorem pathRep_strandIncl_apply (x : TemperleyLieb K δ (n + 1)) {s : Fin (n + 3) → V}
-    (hs : IsWalkFrom G v₀ s) (t : Fin (n + 3) → V) :
+    (hs : G.IsWalkFrom v₀ s) (t : Fin (n + 3) → V) :
     pathRep G v₀ hr hδ (strandIncl x) s t =
       extendLast (α := fun _ ↦ V) (pathRep G v₀ hr hδ x) s t := by
   induction x using TemperleyLieb.induction generalizing s t with
@@ -477,7 +404,7 @@ theorem pathRep_strandIncl_apply (x : TemperleyLieb K δ (n + 1)) {s : Fin (n + 
     rw [map_mul, map_mul, map_mul, map_mul, Matrix.mul_apply, Matrix.mul_apply]
     refine Finset.sum_congr rfl fun u _ ↦ ?_
     rw [hx hs]
-    by_cases hu : IsWalkFrom G v₀ u
+    by_cases hu : G.IsWalkFrom v₀ u
     · rw [hy hu]
     -- A row of a walk has no entry in the column of a non-walk.
     rw [extendLast_apply, ite_eq_right_iff.2 fun hlast ↦ pathRep_apply_eq_zero hr hδ x
@@ -492,11 +419,11 @@ variable (G v₀ r) in
 /-- The weight of a vertex sequence in the trace of the path model: `(r v / r v₀) ^ 2` for a walk
 from `v₀` ending at the vertex `v`, and `0` for every other sequence. -/
 def pathWeight {m : ℕ} (s : Fin (m + 1) → V) : K :=
-  if IsWalkFrom G v₀ s then (r (s (Fin.last m)) / r v₀) ^ 2 else 0
+  if G.IsWalkFrom v₀ s then (r (s (Fin.last m)) / r v₀) ^ 2 else 0
 
 omit [Fintype V] in
 theorem pathWeight_def {m : ℕ} (s : Fin (m + 1) → V) :
-    pathWeight G v₀ r s = if IsWalkFrom G v₀ s then (r (s (Fin.last m)) / r v₀) ^ 2 else 0 :=
+    pathWeight G v₀ r s = if G.IsWalkFrom v₀ s then (r (s (Fin.last m)) / r v₀) ^ 2 else 0 :=
   (rfl)
 
 /-- Extending walks by one step multiplies the total weight by `δ`: the weights of the neighbours
@@ -538,9 +465,9 @@ theorem pathTrace_one : pathTrace G v₀ hr hδ (1 : TemperleyLieb K δ n) = δ 
   induction n with
   | zero =>
     rw [Fintype.sum_eq_single (fun _ ↦ v₀) fun s hs ↦ ?_, pow_zero, pathWeight_def,
-      ite_eq_left ⟨rfl, fun i ↦ i.elim0⟩, div_self (hr v₀), one_pow]
+      ite_eq_left ((isWalkFrom_zero (v₀ := v₀) _).2 rfl), div_self (hr v₀), one_pow]
     rw [pathWeight_def, ite_eq_right fun h ↦ hs (funext fun i ↦ by
-      rw [Fin.fin_one_eq_zero i]; exact h.1)]
+      rw [Fin.fin_one_eq_zero i]; exact h.apply_zero)]
   | succ n ih =>
     rw [Fintype.sum_fin_snoc, Finset.sum_congr rfl fun t _ ↦ sum_pathWeight_snoc hδ t,
       ← Finset.mul_sum, ih, pow_succ, mul_comm]
@@ -551,7 +478,7 @@ theorem commute_diagonal_pathWeight_pathRep (x : TemperleyLieb K δ n) :
     Commute (diagonal (pathWeight G v₀ r)) (pathRep G v₀ hr hδ x) := by
   ext s t
   rw [diagonal_mul, mul_diagonal]
-  by_cases h : (IsWalkFrom G v₀ s ↔ IsWalkFrom G v₀ t) ∧ s (Fin.last n) = t (Fin.last n)
+  by_cases h : (G.IsWalkFrom v₀ s ↔ G.IsWalkFrom v₀ t) ∧ s (Fin.last n) = t (Fin.last n)
   · rw [pathWeight_def, pathWeight_def, if_congr h.1 (by rw [h.2]) rfl, mul_comm]
   · rw [pathRep_apply_eq_zero hr hδ x h, mul_zero, zero_mul]
 
@@ -567,7 +494,7 @@ private theorem pathWeight_mul_pathRep_strandIncl (x : TemperleyLieb K δ (n + 1
     (s t : Fin (n + 3) → V) :
     pathWeight G v₀ r s * pathRep G v₀ hr hδ (strandIncl x) s t =
       pathWeight G v₀ r s * extendLast (α := fun _ ↦ V) (pathRep G v₀ hr hδ x) s t := by
-  by_cases hs : IsWalkFrom G v₀ s
+  by_cases hs : G.IsWalkFrom v₀ s
   · rw [pathRep_strandIncl_apply hr hδ x hs]
   · rw [pathWeight_def, ite_eq_right hs, zero_mul, zero_mul]
 
@@ -598,7 +525,7 @@ private theorem trace_pathGenerator_mul_pathRep_strandIncl (x : TemperleyLieb K 
   refine Finset.sum_congr rfl fun t _ ↦ ?_
   simp only [Fin.snoc_castSucc, Fin.snoc_last, isWalkFrom_snoc]
   have ha'l : a'.val + 1 = (Fin.last (n + 1)).val := by simp [ha']
-  by_cases ht : IsWalkFrom G v₀ t
+  by_cases ht : G.IsWalkFrom v₀ t
   swap
   · -- Neither side sees a sequence that is not a walk.
     rw [Finset.sum_eq_zero fun y _ ↦ by rw [ite_eq_right fun h ↦ ht h.1.1], pathWeight_def,
@@ -651,8 +578,8 @@ omit [Fintype V] [DecidableEq V] [DecidableRel G.Adj] in
 vertex sequences, which then agree at the position `a`. -/
 private theorem pathGenerator_cond_symm {m : ℕ} {a b c : Fin (m + 1)} (hab : a.val + 1 = b.val)
     (hbc : b.val + 1 = c.val) {s t : Fin (m + 1) → V}
-    (h : IsWalkFrom G v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b)) :
-    (IsWalkFrom G v₀ t ∧ t a = t c ∧ s = update t b (s b) ∧ G.Adj (t a) (s b)) ∧ t a = s a := by
+    (h : G.IsWalkFrom v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b)) :
+    (G.IsWalkFrom v₀ t ∧ t a = t c ∧ s = update t b (s b) ∧ G.Adj (t a) (s b)) ∧ t a = s a := by
   obtain ⟨hs, hac, hst, hadj⟩ := h
   have ha : t a = s a := by rw [hst, update_of_ne fun h ↦ by simp [h] at hab]
   have hc : t c = s c := by rw [hst, update_of_ne fun h ↦ by simp [h] at hbc]
@@ -668,7 +595,7 @@ theorem conjTranspose_pathGenerator (hrs : ∀ v, IsSelfAdjoint (r v)) {m : ℕ}
     (pathGenerator G v₀ r a b c)ᴴ = pathGenerator G v₀ r a b c := by
   ext s t
   rw [conjTranspose_apply, pathGenerator_apply, pathGenerator_apply]
-  by_cases h : IsWalkFrom G v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b)
+  by_cases h : G.IsWalkFrom v₀ s ∧ s a = s c ∧ t = update s b (t b) ∧ G.Adj (s a) (t b)
   · obtain ⟨h', ha⟩ := pathGenerator_cond_symm hab hbc h
     rw [ite_eq_left h', ite_eq_left h, ha]
     simp [(hrs _).star_eq, mul_comm]
