@@ -286,6 +286,13 @@ ambient space of its Thom pair. -/
 def thomPairProj : (thomPair F E).fst ⟶ TopCat.of B :=
   TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩
 
+/-- The projection of a Thom pair is the bundle projection `π F E`, so the pairs over subsets `W`
+of the base built from it (as in `TopCat.pullbackCupRestrict`) are the Thom pairs
+`thomPairOver F E W`. -/
+theorem thomPairProj_def :
+    thomPairProj F E = TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩ :=
+  (rfl)
+
 @[simp]
 theorem thomPairProj_apply (v : TotalSpace F E) : thomPairProj F E v = v.proj :=
   (rfl)

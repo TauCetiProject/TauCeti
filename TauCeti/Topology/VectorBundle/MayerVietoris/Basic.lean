@@ -156,10 +156,9 @@ private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V
     (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtype_val
   have hopen₀ {W : Set B} (hW : IsOpen W) {T : Set (TotalSpace F E)}
       (hT : T ⊆ zeroSectionCompl F E) :
-      IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W ∩ zeroSectionCompl F E)) := by
-    convert hopen hW T using 1
-    ext x
-    simp [hT x.2]
+      IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W ∩ zeroSectionCompl F E)) :=
+    TopCat.isOpen_subtypeVal_preimage_preimage_inter (X := TopCat.of (TotalSpace F E)) (π F E) _
+      (FiberBundle.continuous_proj F E) hW hT
   have hT : π F E ⁻¹' U ∩ zeroSectionCompl F E ∪ π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆
       zeroSectionCompl F E := union_subset inter_subset_right inter_subset_right
   exact ⟨hopen hU _, hopen hV _, hopen₀ hU hT, hopen₀ hV hT⟩

@@ -257,6 +257,8 @@ lemma ofSubsetPreimageValIso_hom_snd_apply (x : (Subtype.val ⁻¹' s : Set t)) 
 lemma ofSubsetPreimageValIso_inv_fst_apply (x : t) :
     Hom.fst (ofSubsetPreimageValIso hst).inv x = x := (rfl)
 
+lemma ofSubsetPreimageValIso_inv_fst : Hom.fst (ofSubsetPreimageValIso hst).inv = 𝟙 _ := (rfl)
+
 @[simp]
 lemma ofSubsetPreimageValIso_inv_snd_apply (x : s) :
     (Hom.snd (ofSubsetPreimageValIso hst).inv x).1 = ⟨x.1, hst x.2⟩ := (rfl)
@@ -504,6 +506,15 @@ lemma restrictPreimagePairMap_snd_apply (S : Set Y) (x : ↥(π ⁻¹' S ∩ Z))
     TopPair.Hom.snd (restrictPreimagePairMap π Z S) x = ⟨x.1, x.2.2⟩ :=
   (rfl)
 
+/-- For a continuous `π` and an open `S ⊆ Y`, the points of `Z` lying over `S` are open in any
+subspace `T ⊆ Z`. -/
+lemma isOpen_subtypeVal_preimage_preimage_inter [TopologicalSpace Y] (hπ : Continuous π)
+    {S : Set Y} (hS : IsOpen S) {T : Set X} (hT : T ⊆ Z) :
+    IsOpen ((↑) ⁻¹' (π ⁻¹' S ∩ Z) : Set T) := by
+  convert (hS.preimage hπ).preimage (continuous_subtype_val (p := (· ∈ T))) using 1
+  ext x
+  exact and_iff_left (hT x.2)
+
 /-- Over a set `S` containing the image of `π`, the pair over `S` is `(X, Z)`. -/
 lemma isIso_restrictPreimagePairMap {S : Set Y} (hS : ∀ x, π x ∈ S) :
     IsIso (restrictPreimagePairMap π Z S) := by
@@ -587,19 +598,15 @@ lemma restrictPreimagePairInterIso_inv_fst (U V : Set Y) :
       ofHom (ContinuousMap.inclusion fun _ h ↦ h) :=
   (rfl)
 
-end RestrictPreimage
-
-section RestrictPreimageRestrictPreimage
-
-variable {X Y : TopCat.{u}} (π : X ⟶ Y) (Z : Set X) {S W : Set Y}
+variable {S W : Set Y}
 
 /-- For `S ⊆ W`, restricting the pair `(X, Z)` over `W` along `π`, and then the resulting pair over
-the preimage of `S` in `W` along the restriction `π⁻¹ W ⟶ W` of `π`, is restricting `(X, Z)` over
+the preimage of `S` in `W` along the restriction `π⁻¹ W → W` of `π`, is restricting `(X, Z)` over
 `S`. -/
 def restrictPreimagePairRestrictPreimageIso (hSW : S ⊆ W) :
-    TopPair.ofInclusion (Set.inter_subset_left :
-      ofHom (π.hom.restrictPreimage W) ⁻¹' ((↑) ⁻¹' S) ∩ ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) ⊆
-        ofHom (π.hom.restrictPreimage W) ⁻¹' ((↑) ⁻¹' S)) ≅
+    TopPair.ofInclusion (X := of ↥(π ⁻¹' W)) (Set.inter_subset_left :
+      W.restrictPreimage π ⁻¹' ((↑) ⁻¹' S) ∩ ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) ⊆
+        W.restrictPreimage π ⁻¹' ((↑) ⁻¹' S)) ≅
       TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) where
   hom := TopPair.ofHom (ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩)
     (ofHom ⟨fun x ↦ ⟨x.1.1, x.2.1, x.2.2.2⟩, by fun_prop⟩) (by ext; rfl)
@@ -610,7 +617,7 @@ def restrictPreimagePairRestrictPreimageIso (hSW : S ⊆ W) :
 
 @[simp]
 lemma restrictPreimagePairRestrictPreimageIso_hom_fst_apply (hSW : S ⊆ W)
-    (x : ↥(ofHom (π.hom.restrictPreimage W) ⁻¹' (((↑) : W → Y) ⁻¹' S))) :
+    (x : ↥(W.restrictPreimage π ⁻¹' (((↑) : W → Y) ⁻¹' S))) :
     (TopPair.Hom.fst (restrictPreimagePairRestrictPreimageIso π Z hSW).hom x).1 = x.1.1 :=
   (rfl)
 
@@ -629,6 +636,6 @@ lemma restrictPreimagePairRestrictPreimageIso_inv_fst (hSW : S ⊆ W) :
       ofHom ⟨fun x ↦ ⟨⟨x.1, hSW x.2⟩, x.2⟩, by fun_prop⟩ :=
   (rfl)
 
-end RestrictPreimageRestrictPreimage
+end RestrictPreimage
 
 end TopCat

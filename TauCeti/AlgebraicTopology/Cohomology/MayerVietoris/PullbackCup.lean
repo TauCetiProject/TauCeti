@@ -25,15 +25,15 @@ trivializing open sets (Milnor and Stasheff, proof of Theorem 10.4). Let `π : X
 `π(U') ⊆ U` and `π(V') ⊆ V` (for instance their preimages). Let `A ⊆ U'` and `B ⊆ V'` be open in
 `A ∪ B`, and `u` a class of the pair `(U' ∪ V', A ∪ B)`. Restricting `u` and `π` gives such maps
 over `U`, over `V` and over `U ∩ V`, with values in the cohomology of the pairs `(U', A)`,
-`(V', B)` and `(U' ∩ V', A ∩ B)`. If these three maps are bijective in degrees `p ≤ N`, and
-`Hⁿ⁻¹(U' ∩ V', A ∩ B; M) = 0`, then the map over `Y` is bijective in degrees `p ≤ N`
+`(V', B)` and `(U' ∩ V', A ∩ B)`. If these three maps are bijective in degrees `q ≤ p`, and
+`Hⁿ⁻¹(U' ∩ V', A ∩ B; M) = 0`, then the map over `Y` is bijective in degree `p`
 (`TopPair.bijective_pullbackCup_union`).
 
 For the induction over finite unions of trivializing open sets the step is restated for the maps
 `TopCat.pullbackCupRestrict` over subsets of the base of a fixed map `π : X ⟶ Y` and pair `(X, Z)`:
-if the maps over open sets `U`, `V` and `U ∩ V` are bijective in degrees `p ≤ N` and
-`Hⁿ⁻¹(π⁻¹(U ∩ V), π⁻¹(U ∩ V) ∩ Z; M) = 0`, then the map over `U ∪ V` is bijective in degrees
-`p ≤ N` (`TopCat.bijective_pullbackCupRestrict_union`).
+if the maps over open sets `U`, `V` and `U ∩ V` are bijective in degrees `q ≤ p` and
+`Hⁿ⁻¹(π⁻¹(U ∩ V), π⁻¹(U ∩ V) ∩ Z; M) = 0`, then the map over `U ∪ V` is bijective in degree `p`
+(`TopCat.bijective_pullbackCupRestrict_union`).
 
 The proof compares the Mayer–Vietoris sequence of the cover `{U, V}` of `Y`
 (`TopCat.singularCohomologyMayerVietorisδ`) with that of the pairs `(U', A)` and `(V', B)`
@@ -275,47 +275,48 @@ include hU' hV' hUV' hA hB hU hV hUV in
 cover `{U', V'}` of `X` into those of an open cover `{U, V}` of `Y`, let `A ⊆ U'` and `B ⊆ V'` be
 open in `A ∪ B`, and let `u ∈ Hⁿ(U' ∪ V', A ∪ B; K)`. Suppose that the maps `a ↦ π^*a ⌣ u` over `U`,
 `V` and `U ∩ V`, with values in the cohomology of `(U', A)`, `(V', B)` and `(U' ∩ V', A ∩ B)` and
-the restrictions of `π` and `u`, are bijective in degrees `p ≤ N`, and that
+the restrictions of `π` and `u`, are bijective in degrees `q ≤ p`, and that
 `Hⁿ⁻¹(U' ∩ V', A ∩ B; M) = 0`. Then `a ↦ π^*a ⌣ u` is bijective from `Hᵖ(Y; M)` to
-`Hᵖ⁺ⁿ(U' ∪ V', A ∪ B; M)` in every degree `p ≤ N`. -/
-theorem bijective_pullbackCup_union {N : ℕ}
+`Hᵖ⁺ⁿ(U' ∪ V', A ∪ B; M)`. -/
+theorem bijective_pullbackCup_union {p m : ℕ}
     (hI₀ : ∀ q, q + 1 = n → IsZero
       ((TopPair.ofInclusion (inter_subset_inter hAU hBV)).singularCohomology (ModuleCat.of K K) K
         M q))
-    (hΦU : ∀ p ≤ N, ∀ m (h : p + n = m), Function.Bijective ((TopPair.ofInclusion hAU).pullbackCup M
-      (TopCat.ofHom ⟨hπU.restrict, π.hom.continuous.restrict hπU⟩) n p m h
+    (hΦU : ∀ q ≤ p, Function.Bijective ((TopPair.ofInclusion hAU).pullbackCup M
+      (TopCat.ofHom ⟨hπU.restrict, π.hom.continuous.restrict hπU⟩) n q (q + n) rfl
       (TopPair.singularCohomologyMap (leftToUnionMap hAU hBV) n u)))
-    (hΦV : ∀ p ≤ N, ∀ m (h : p + n = m), Function.Bijective ((TopPair.ofInclusion hBV).pullbackCup M
-      (TopCat.ofHom ⟨hπV.restrict, π.hom.continuous.restrict hπV⟩) n p m h
+    (hΦV : ∀ q ≤ p, Function.Bijective ((TopPair.ofInclusion hBV).pullbackCup M
+      (TopCat.ofHom ⟨hπV.restrict, π.hom.continuous.restrict hπV⟩) n q (q + n) rfl
       (TopPair.singularCohomologyMap (rightToUnionMap hAU hBV) n u)))
-    (hΦI : ∀ p ≤ N, ∀ m (h : p + n = m), Function.Bijective
+    (hΦI : ∀ q ≤ p, Function.Bijective
       ((TopPair.ofInclusion (inter_subset_inter hAU hBV)).pullbackCup M
         (TopCat.ofHom ⟨(hπU.inter_inter hπV).restrict,
-          π.hom.continuous.restrict (hπU.inter_inter hπV)⟩) n p m h
+          π.hom.continuous.restrict (hπU.inter_inter hπV)⟩) n q (q + n) rfl
         (TopPair.singularCohomologyMap (interToUnionMap hAU hBV) n u)))
-    {p m : ℕ} (hp : p ≤ N) (h : p + n = m) :
+    (h : p + n = m) :
     Function.Bijective ((TopPair.ofInclusion (union_subset_union hAU hBV)).pullbackCup M
       (TopCat.ofHom (ContinuousMap.subtypeVal (U' ∪ V')) ≫ π) n p m h u) := by
-  have hbiprod : ∀ p ≤ N, ∀ m (h : p + n = m), Function.Bijective
-      (biprod.map (ΦU π hAU hBV hπU u p m h) (ΦV π hAU hBV hπV u p m h)) := fun p hp m h ↦
-    ModuleCat.bijective_biprod_map _ _ (hΦU p hp m h) (hΦV p hp m h)
+  subst h
+  have hbiprod : ∀ q ≤ p, Function.Bijective
+      (biprod.map (ΦU π hAU hBV hπU u q (q + n) rfl) (ΦV π hAU hBV hπV u q (q + n) rfl)) :=
+    fun q hq ↦ ModuleCat.bijective_biprod_map _ _ (hΦU q hq) (hΦV q hq)
   cases p with
   | zero =>
-    exact bijective_pullbackCup_union_zero π hAU hBV hπU hπV u hU' hV' hA hB hU hV hUV hI₀ h
-      (hbiprod 0 hp m h) (hΦI 0 hp m h).1
+    exact bijective_pullbackCup_union_zero π hAU hBV hπU hπV u hU' hV' hA hB hU hV hUV hI₀ rfl
+      (hbiprod 0 le_rfl) (hΦI 0 le_rfl).1
   | succ q =>
     -- In positive degrees the five lemma applies to the two Mayer–Vietoris sequences.
     have hU'' := hU'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
     have hV'' := hV'.preimage (continuous_subtype_val (p := (· ∈ U' ∪ V')))
-    have hq : q + n + 1 = m := by lia
-    have hq' : q ≤ N := by lia
+    have hq : q + n + 1 = q + 1 + n := by lia
+    have hq' : q ≤ q + 1 := by lia
     exact LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective _ _ _ _ _ _ _ _
       _ _ _ _ _
       (congrArg ModuleCat.Hom.hom (fromBiprod_comm π hAU hBV hπU hπV u q (q + n) rfl)).symm
       (congrArg ModuleCat.Hom.hom (δ_comm π hAU hBV hπU hπV u hU' hV' hUV' hA hB hU hV hUV q
-        (q + n) m rfl hq h))
-      (congrArg ModuleCat.Hom.hom (toBiprod_comm π hAU hBV hπU hπV u (q + 1) m h)).symm
-      (congrArg ModuleCat.Hom.hom (fromBiprod_comm π hAU hBV hπU hπV u (q + 1) m h)).symm
+        (q + n) (q + 1 + n) rfl hq rfl))
+      (congrArg ModuleCat.Hom.hom (toBiprod_comm π hAU hBV hπU hπV u (q + 1) _ rfl)).symm
+      (congrArg ModuleCat.Hom.hom (fromBiprod_comm π hAU hBV hπU hπV u (q + 1) _ rfl)).symm
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
         (singularCohomologyMayerVietoris_exact₃ (ModuleCat.of K K) K M hU hV hUV q (q + 1) rfl))
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
@@ -324,15 +325,14 @@ theorem bijective_pullbackCup_union {N : ℕ}
         (singularCohomologyMayerVietoris_exact₂ (ModuleCat.of K K) K M hU hV hUV (q + 1)))
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
         (singularCohomologyPairMayerVietoris_exact₃ (ModuleCat.of K K) K M hAU hBV hU'' hV'' hA hB
-          (q + n) m hq))
+          (q + n) _ hq))
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
         (singularCohomologyPairMayerVietoris_exact₁ (ModuleCat.of K K) K M hAU hBV hU'' hV'' hA hB
-          (q + n) m hq))
+          (q + n) _ hq))
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
         (singularCohomologyPairMayerVietoris_exact₂ (ModuleCat.of K K) K M hAU hBV hU'' hV'' hA hB
-          m))
-      (hbiprod q hq' (q + n) rfl).2 (hΦI q hq' (q + n) rfl) (hbiprod (q + 1) hp m h)
-      (hΦI (q + 1) hp m h).1
+          (q + 1 + n)))
+      (hbiprod q hq').2 (hΦI q hq') (hbiprod (q + 1) le_rfl) (hΦI (q + 1) le_rfl).1
 
 end MayerVietoris
 
@@ -347,15 +347,6 @@ variable {K : Type w} [CommRing K] {X Y : TopCat.{w}} (π : X ⟶ Y) (Z : Set X)
 section Cover
 
 variable {U V : Set Y}
-
-/-- Over an open set `S` of the base, the points of `Z` lying over `S` are open among the points of
-`Z` lying over `U` or `V`. -/
-private theorem isOpen_preimage_inter {S : Set Y} (hS : IsOpen S) :
-    IsOpen ((↑) ⁻¹' (π ⁻¹' S ∩ Z) : Set ↥(π ⁻¹' U ∩ Z ∪ π ⁻¹' V ∩ Z)) := by
-  convert (hS.preimage π.hom.continuous).preimage
-    (continuous_subtype_val (p := (· ∈ π ⁻¹' U ∩ Z ∪ π ⁻¹' V ∩ Z))) using 1
-  ext ⟨x, hx⟩
-  exact and_iff_left (hx.elim (·.2) (·.2))
 
 variable (M : ModuleCat.{w} K)
 
@@ -383,43 +374,45 @@ private theorem bijective_pullbackCup_restrict_iff {S : Set Y}
         rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, restrictPreimagePairUnionIso_hom_fst,
           restrictPreimagePairMap_fst, restrictPreimagePairMap_fst]
         exact TopCat.ext fun x ↦ ConcreteCategory.congr_hom hφ x),
-    LinearMap.ext (pullbackCupRestrict_apply π Z S h u)]
+    pullbackCupRestrict_apply π Z M S h u]
 
 /-- **The Mayer–Vietoris step for the pair `(X, Z)` and an open cover of the base.** Let
 `π : X ⟶ Y` be a map, `Z ⊆ X`, `u ∈ Hⁿ(X, Z; K)`, and let `U` and `V` be open sets covering `Y`.
 Suppose that the maps `TopCat.pullbackCupRestrict` of `u` over `U`, `V` and `U ∩ V` are bijective
-in degrees `p ≤ N`, and that `Hⁿ⁻¹(π⁻¹(U ∩ V), π⁻¹(U ∩ V) ∩ Z; M)` vanishes. Then
-`Hᵖ(Y; M) ⟶ Hᵖ⁺ⁿ(X, Z; M)`, `a ↦ π^*a ⌣ u`, is bijective in degrees `p ≤ N`. -/
+in degrees `q ≤ p`, and that `Hⁿ⁻¹(π⁻¹(U ∩ V), π⁻¹(U ∩ V) ∩ Z; M)` vanishes. Then
+`Hᵖ(Y; M) ⟶ Hᵖ⁺ⁿ(X, Z; M)`, `a ↦ π^*a ⌣ u`, is bijective. -/
 theorem bijective_pullbackCup_of_union_eq_univ (hU : IsOpen U) (hV : IsOpen V)
-    (hUV : U ∪ V = univ) {n : ℕ}
+    (hUV : U ∪ V = univ) {n p m : ℕ}
     (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
-    (N : ℕ) (hU' : ∀ p ≤ N, Function.Bijective (pullbackCupRestrict π Z M U n p (p + n) rfl u))
-    (hV' : ∀ p ≤ N, Function.Bijective (pullbackCupRestrict π Z M V n p (p + n) rfl u))
-    (hUV' : ∀ p ≤ N, Function.Bijective (pullbackCupRestrict π Z M (U ∩ V) n p (p + n) rfl u))
+    (hU' : ∀ q ≤ p, Function.Bijective (pullbackCupRestrict π Z M U n q (q + n) rfl u))
+    (hV' : ∀ q ≤ p, Function.Bijective (pullbackCupRestrict π Z M V n q (q + n) rfl u))
+    (hUV' : ∀ q ≤ p, Function.Bijective (pullbackCupRestrict π Z M (U ∩ V) n q (q + n) rfl u))
     (hUV₀ : ∀ j, j + 1 = n → IsZero ((TopPair.ofInclusion (inter_subset_left :
-      π ⁻¹' (U ∩ V) ∩ Z ⊆ π ⁻¹' (U ∩ V))).singularCohomology (ModuleCat.of K K) K M j)) :
-    ∀ p ≤ N, Function.Bijective ((TopPair.ofSubset Z).pullbackCup M π n p (p + n) rfl u) := by
+      π ⁻¹' (U ∩ V) ∩ Z ⊆ π ⁻¹' (U ∩ V))).singularCohomology (ModuleCat.of K K) K M j))
+    (h : p + n = m) :
+    Function.Bijective ((TopPair.ofSubset Z).pullbackCup M π n p m h u) := by
   have hUV'' : π ⁻¹' U ∪ π ⁻¹' V = univ := by rw [← preimage_union, hUV, preimage_univ]
   have := isIso_restrictPreimagePairMap π Z (S := U ∪ V) fun _ ↦ hUV ▸ mem_univ _
-  intro p hp
+  have hZ : π ⁻¹' U ∩ Z ∪ π ⁻¹' V ∩ Z ⊆ Z := union_subset inter_subset_right inter_subset_right
   refine (TopPair.bijective_pullbackCup_iff_of_isIso
     ((restrictPreimagePairUnionIso π Z U V).hom ≫ restrictPreimagePairMap π Z (U ∪ V)) (𝟙 Y)
     (g := ofHom (ContinuousMap.subtypeVal _) ≫ π) (by
       rw [TopPair.Hom.fst_comp, restrictPreimagePairUnionIso_hom_fst, restrictPreimagePairMap_fst]
-      exact TopCat.ext fun _ ↦ rfl) rfl u).1 ?_
+      exact TopCat.ext fun _ ↦ rfl) h u).1 ?_
   refine TopPair.bijective_pullbackCup_union π (inter_subset_left : π ⁻¹' U ∩ Z ⊆ π ⁻¹' U)
     (inter_subset_left : π ⁻¹' V ∩ Z ⊆ π ⁻¹' V) (mapsTo_preimage π U) (mapsTo_preimage π V) _
     (hU.preimage π.hom.continuous) (hV.preimage π.hom.continuous) hUV''
-    (isOpen_preimage_inter π Z hU) (isOpen_preimage_inter π Z hV) hU hV hUV
+    (isOpen_subtypeVal_preimage_preimage_inter π Z π.hom.continuous hU hZ)
+    (isOpen_subtypeVal_preimage_preimage_inter π Z π.hom.continuous hV hZ) hU hV hUV
     (fun j hj ↦ ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K M j).mapIso
-      (restrictPreimagePairInterIso π Z U V).op).isZero_iff.1 (hUV₀ j hj)) ?_ ?_ ?_ hp rfl
-  · rintro p hp m rfl
+      (restrictPreimagePairInterIso π Z U V).op).isZero_iff.1 (hUV₀ j hj)) ?_ ?_ ?_ h
+  · intro q hq
     exact (bijective_pullbackCup_restrict_iff π Z M _
-      (by rw [TopPair.ofInclusionMap_fst]; rfl) rfl u).2 (hU' p hp)
-  · rintro p hp m rfl
+      (by rw [TopPair.ofInclusionMap_fst]; rfl) rfl u).2 (hU' q hq)
+  · intro q hq
     exact (bijective_pullbackCup_restrict_iff π Z M _
-      (by rw [TopPair.ofInclusionMap_fst]; rfl) rfl u).2 (hV' p hp)
-  · rintro p hp m rfl
+      (by rw [TopPair.ofInclusionMap_fst]; rfl) rfl u).2 (hV' q hq)
+  · intro q hq
     rw [← TopPair.singularCohomologyMap_comp_apply,
       show interToUnionMap _ _ ≫ (restrictPreimagePairUnionIso π Z U V).hom ≫
           restrictPreimagePairMap π Z (U ∪ V) =
@@ -435,7 +428,7 @@ theorem bijective_pullbackCup_of_union_eq_univ (hU : IsOpen U) (hV : IsOpen V)
       (by
         rw [restrictPreimagePairInterIso_hom_fst]
         exact TopCat.ext fun _ ↦ rfl) rfl _).2
-      (by rw [← LinearMap.ext (pullbackCupRestrict_apply π Z (U ∩ V) rfl u)]; exact hUV' p hp)
+      (by rw [← pullbackCupRestrict_apply π Z M (U ∩ V) rfl u]; exact hUV' q hq)
 
 end Cover
 
@@ -478,10 +471,7 @@ private theorem bijective_pullbackCupRestrict_restrict_iff (hSW : S ⊆ W) {n p 
         simp only [TopPair.Hom.fst_comp, TopPair.ofSubsetPreimageValIso_hom_fst,
           restrictPreimagePairRestrictPreimageIso_hom_fst, restrictPreimagePairMap_fst]
         exact TopCat.ext fun _ ↦ rfl))
-  rw [show pullbackCupRestrict (ofHom (π.hom.restrictPreimage W)) ((↑) ⁻¹' (π ⁻¹' W ∩ Z)) M
-      ((↑) ⁻¹' S) n p m h (restrictClass π Z W u) = _ from
-      LinearMap.ext (pullbackCupRestrict_apply _ _ _ h _),
-    LinearMap.ext (pullbackCupRestrict_apply π Z S h u), hu]
+  rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply π Z M S h u, hu]
   have hS : S ⊆ range ((↑) : W → Y) := by rwa [Subtype.range_coe]
   let g := isoOfHomeo (X := of ↥((↑) ⁻¹' S : Set ↥W)) (Y := of ↥S)
     (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange hS)
@@ -493,17 +483,19 @@ private theorem bijective_pullbackCupRestrict_restrict_iff (hSW : S ⊆ W) {n p 
 
 /-- **The Mayer–Vietoris step over a union.** Let `π : X ⟶ Y` be a map, `Z ⊆ X`,
 `u ∈ Hⁿ(X, Z; K)`, and let `U` and `V` be open sets of `Y`. Suppose that the maps
-`TopCat.pullbackCupRestrict` of `u` over `U`, `V` and `U ∩ V` are bijective in degrees `p ≤ N`, and
+`TopCat.pullbackCupRestrict` of `u` over `U`, `V` and `U ∩ V` are bijective in degrees `q ≤ p`, and
 that `Hⁿ⁻¹(π⁻¹(U ∩ V), π⁻¹(U ∩ V) ∩ Z; M)` vanishes. Then the map of `u` over `U ∪ V` is bijective
-in degrees `p ≤ N`. -/
-theorem bijective_pullbackCupRestrict_union {U V : Set Y} (hU : IsOpen U) (hV : IsOpen V) {n : ℕ}
+in degree `p`. -/
+theorem bijective_pullbackCupRestrict_union {U V : Set Y} (hU : IsOpen U) (hV : IsOpen V)
+    {n p m : ℕ}
     (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
-    (N : ℕ) (hU' : ∀ p ≤ N, Function.Bijective (pullbackCupRestrict π Z M U n p (p + n) rfl u))
-    (hV' : ∀ p ≤ N, Function.Bijective (pullbackCupRestrict π Z M V n p (p + n) rfl u))
-    (hUV' : ∀ p ≤ N, Function.Bijective (pullbackCupRestrict π Z M (U ∩ V) n p (p + n) rfl u))
+    (hU' : ∀ q ≤ p, Function.Bijective (pullbackCupRestrict π Z M U n q (q + n) rfl u))
+    (hV' : ∀ q ≤ p, Function.Bijective (pullbackCupRestrict π Z M V n q (q + n) rfl u))
+    (hUV' : ∀ q ≤ p, Function.Bijective (pullbackCupRestrict π Z M (U ∩ V) n q (q + n) rfl u))
     (hUV₀ : ∀ j, j + 1 = n → IsZero ((TopPair.ofInclusion (inter_subset_left :
-      π ⁻¹' (U ∩ V) ∩ Z ⊆ π ⁻¹' (U ∩ V))).singularCohomology (ModuleCat.of K K) K M j)) :
-    ∀ p ≤ N, Function.Bijective (pullbackCupRestrict π Z M (U ∪ V) n p (p + n) rfl u) := by
+      π ⁻¹' (U ∩ V) ∩ Z ⊆ π ⁻¹' (U ∩ V))).singularCohomology (ModuleCat.of K K) K M j))
+    (h : p + n = m) :
+    Function.Bijective (pullbackCupRestrict π Z M (U ∪ V) n p m h u) := by
   have hUVW : U ∩ V ⊆ U ∪ V := inter_subset_left.trans subset_union_left
   -- The cover case, for the restriction of `π` over `U ∪ V` and the cover of `U ∪ V` by the
   -- preimages of `U` and `V`, whose hypotheses are those over `U`, `V` and `U ∩ V`.
@@ -511,26 +503,23 @@ theorem bijective_pullbackCupRestrict_union {U V : Set Y} (hU : IsOpen U) (hV : 
     (ofHom (π.hom.restrictPreimage (U ∪ V))) ((↑) ⁻¹' (π ⁻¹' (U ∪ V) ∩ Z)) M
     (U := ((↑) : ↥(U ∪ V) → Y) ⁻¹' U) (V := ((↑) : ↥(U ∪ V) → Y) ⁻¹' V)
     (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
-    (eq_univ_of_forall fun x ↦ x.2) (n := n)
-  replace key := key (restrictClass π Z (U ∪ V) u) N
-    (fun p hp ↦ (bijective_pullbackCupRestrict_restrict_iff π Z M subset_union_left rfl u).2
-      (hU' p hp))
-    (fun p hp ↦ (bijective_pullbackCupRestrict_restrict_iff π Z M subset_union_right rfl u).2
-      (hV' p hp))
-    (fun p hp ↦ (bijective_pullbackCupRestrict_restrict_iff π Z M hUVW rfl u).2 (hUV' p hp))
+    (eq_univ_of_forall fun x ↦ x.2) (n := n) (p := p) (m := m)
+  replace key := key (restrictClass π Z (U ∪ V) u)
+    (fun q hq ↦ (bijective_pullbackCupRestrict_restrict_iff π Z M subset_union_left rfl u).2
+      (hU' q hq))
+    (fun q hq ↦ (bijective_pullbackCupRestrict_restrict_iff π Z M subset_union_right rfl u).2
+      (hV' q hq))
+    (fun q hq ↦ (bijective_pullbackCupRestrict_restrict_iff π Z M hUVW rfl u).2 (hUV' q hq))
     fun j hj ↦ by
       have := (hUV₀ j hj).of_iso ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K M
         j).mapIso (restrictPreimagePairRestrictPreimageIso π Z hUVW).op).symm
       rwa [preimage_inter (s := U) (t := V)] at this
-  intro p hp
-  rw [show pullbackCupRestrict π Z M (U ∪ V) n p (p + n) rfl u = _ from
-    LinearMap.ext fun a ↦ pullbackCupRestrict_apply π Z (U ∪ V) rfl u a]
-  refine (TopPair.bijective_pullbackCup_iff_of_isIso (TopPair.ofSubsetPreimageValIso
+  rw [pullbackCupRestrict_apply π Z M (U ∪ V) h u]
+  exact (TopPair.bijective_pullbackCup_iff_of_isIso (TopPair.ofSubsetPreimageValIso
     (inter_subset_left : π ⁻¹' (U ∪ V) ∩ Z ⊆ π ⁻¹' (U ∪ V))).hom (𝟙 _)
     (g := ofHom (π.hom.restrictPreimage (U ∪ V)))
-    (by rw [TopPair.ofSubsetPreimageValIso_hom_fst]; exact TopCat.ext fun _ ↦ rfl) rfl
-    (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z (U ∪ V)) n u)).1 ?_
-  exact key p hp
+    (by rw [TopPair.ofSubsetPreimageValIso_hom_fst]; exact TopCat.ext fun _ ↦ rfl) h
+    (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z (U ∪ V)) n u)).1 (key h)
 
 end Union
 

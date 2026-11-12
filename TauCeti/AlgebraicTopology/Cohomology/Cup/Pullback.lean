@@ -149,15 +149,22 @@ def pullbackCupRestrict (S : Set Y) (n p m : ℕ) (h : p + n = m) :
       (ofHom (π.hom.restrictPreimage S)) n p m h ∘ₗ
     (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n).hom
 
-variable {M} in
-/-- The map over `S` is `TopPair.pullbackCup` of the restriction of `u` to the pair over `S`. -/
+/-- The map over `S` is `TopPair.pullbackCup` composed with the restriction to the pair over `S`. -/
+theorem pullbackCupRestrict_def (S : Set Y) (n p m : ℕ) (h : p + n = m) :
+    pullbackCupRestrict π Z M S n p m h =
+      (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).pullbackCup M
+          (ofHom (π.hom.restrictPreimage S)) n p m h ∘ₗ
+        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n).hom :=
+  (rfl)
+
+/-- The map over `S` of `u` is `TopPair.pullbackCup` of the restriction of `u` to the pair over
+`S`. -/
 theorem pullbackCupRestrict_apply (S : Set Y) {n p m : ℕ} (h : p + n = m)
-    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
-    (a : (of S).singularCohomology (ModuleCat.of K K) K M p) :
-    pullbackCupRestrict π Z M S n p m h u a =
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    pullbackCupRestrict π Z M S n p m h u =
       (TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)).pullbackCup M
         (ofHom (π.hom.restrictPreimage S)) n p m h
-        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n u) a :=
+        (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n u) :=
   (rfl)
 
 end TopCat
