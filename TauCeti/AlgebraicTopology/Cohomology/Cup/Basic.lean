@@ -46,7 +46,8 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
 * `TopCat.singularCup_precomp`: compatibility of the cup product with the change of chain
   coefficients `TopCat.singularCohomologyChainCoefficientMap`.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
-  associativity of the cup product of cochains and on cohomology.
+  associativity of the cup product of cochains and on cohomology, with
+  `TopCat.singularCup_assoc_tensorUnit` its form along the left unitor of the unit object.
 * `TopCat.cupCochain_constCochain_left`, `TopCat.cupCochain_constCochain_right`,
   `TopCat.singularCup_constSingularCocycle_left` and
   `TopCat.singularCup_constSingularCocycle_right`: the unit laws.
@@ -291,6 +292,19 @@ lemma singularCup_assoc (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
   apply HomologicalComplex.moduleCat_iCycles_injective
   simp only [TauCeti.ChainComplex.iCycles_cupCycles]
   exact TopCat.cupCochain_alexanderWhitneyDiagonal_assoc X hu hμ h₁₂ h h₂₃ h' _ _ _
+
+/-- **Associativity of the cup product with unit coefficient object**: for coefficients in an
+object `M` with an associative pairing `μ : M ⊗ M ⟶ M`, the cup product along the left unitor of
+the unit object satisfies `(a ⌣ b) ⌣ c = a ⌣ (b ⌣ c)`. This is `TopCat.singularCup_assoc` with
+the coassociativity of the left unitor discharged. -/
+lemma singularCup_assoc_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {μ : M ⊗ M ⟶ M} (hμ : μ ▷ M ≫ μ = (α_ M M M).hom ≫ M ◁ μ ≫ μ)
+    {p q r m m' n : ℕ} (h₁₂ : p + q = m) (h : m + r = n) (h₂₃ : q + r = m') (h' : p + m' = n)
+    (a : X.singularCohomology (𝟙_ C) k M p) (b : X.singularCohomology (𝟙_ C) k M q)
+    (c : X.singularCohomology (𝟙_ C) k M r) :
+    X.singularCup k (λ_ _).inv μ m r n h (X.singularCup k (λ_ _).inv μ p q m h₁₂ a b) c =
+      X.singularCup k (λ_ _).inv μ p m' n h' a (X.singularCup k (λ_ _).inv μ q r m' h₂₃ b c) :=
+  singularCup_assoc X k (by monoidal) hμ h₁₂ h h₂₃ h' a b c
 
 /-- **The left unit law for the cup product on singular cohomology**: the class of the constant
 `0`-cocycle with value `e` is a left unit, under the hypotheses of
