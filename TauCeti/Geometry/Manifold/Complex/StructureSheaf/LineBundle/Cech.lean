@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Basic
 public import TauCeti.Topology.Sheaves.Cech.Colimit
 
@@ -20,25 +20,23 @@ holomorphic coordinate changes this is the Čech cohomology `Hⁿ(X, 𝒪(L))` o
 bundle `L` (Forster, *Lectures on Riemann Surfaces*, §29), the cohomology of line bundles on
 compact Riemann surfaces.
 
-The results are the cohomological form of the sheaf-level API of
-`TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Basic`: degree zero is the space of
-global holomorphic sections, isomorphic bundles have isomorphic cohomology, the trivial line
-bundle has the cohomology of the holomorphic structure sheaf, and the cohomology of a direct sum
-is the direct sum of the cohomologies. No hypothesis is made on `X` beyond its charted space
-structure, except for the dimension count of global sections of the trivial bundle, which needs
-`X` to be a nonempty compact connected complex manifold without boundary (`IsManifold I 1 X`,
-`I.Boundaryless`).
+Since `TauCeti.holomorphicSectionCechCohomology` is an abbreviation for the cover-colimit Čech
+cohomology functor `Topology.cechCohomology` applied to this sheaf, its functoriality in
+morphisms of sheaves of holomorphic sections, and in particular its invariance under the
+sheaf-level isomorphism `TauCeti.holomorphicSectionSheaf.isoOfLinearEquiv` induced by an
+isomorphism of holomorphic bundles, is that of the functor. Likewise its degree zero
+identification with global holomorphic sections is `Topology.cechCohomologyZeroIso` applied to
+`TauCeti.holomorphicSectionSheaf I F V`. This file adds the results specific to these sheaves: the
+trivial line bundle has the cohomology of the holomorphic structure sheaf, and the cohomology of a
+direct sum is the direct sum of the cohomologies. No hypothesis is made on `X` beyond its charted
+space structure, except for the dimension count of global sections of the trivial bundle, which
+needs `X` to be a nonempty compact connected complex manifold without boundary
+(`IsManifold I 1 X`, `I.Boundaryless`).
 
 ## Main definitions
 
 * `TauCeti.holomorphicSectionCechCohomology I F V n`: the degree `n` Čech cohomology of the sheaf
   of holomorphic sections of `V`.
-* `TauCeti.holomorphicSectionCechCohomology.map`: the map on cohomology induced by a morphism of
-  sheaves of holomorphic sections, and `mapIso` for an isomorphism.
-* `TauCeti.holomorphicSectionCechCohomology.zeroIso`: degree zero cohomology is the space of global
-  holomorphic sections.
-* `TauCeti.holomorphicSectionCechCohomology.isoOfLinearEquiv`: an isomorphism of holomorphic
-  vector bundles induces an isomorphism on cohomology.
 * `TauCeti.holomorphicSectionCechCohomology.trivialIso`: the cohomology of the trivial line bundle
   is the cohomology of the holomorphic structure sheaf.
 * `TauCeti.holomorphicSectionCechCohomology.prodIso`: the cohomology of a direct sum `V₁ ×ᵇ V₂` is
@@ -46,8 +44,6 @@ structure, except for the dimension count of global sections of the trivial bund
 
 ## Main results
 
-* `TauCeti.holomorphicSectionCechCohomology.zeroIso_hom_naturality`: the degree zero
-  identification is natural in morphisms of sheaves of holomorphic sections.
 * `TauCeti.holomorphicSectionCechCohomology.finrank_trivial_zero`: on a nonempty compact connected
   complex manifold the trivial line bundle has a one-dimensional `H⁰`.
 * `TauCeti.holomorphicSectionCechCohomology.finrank_prod`: dimensions of finite-dimensional
@@ -81,27 +77,6 @@ abbrev holomorphicSectionCechCohomology (n : ℕ) : ModuleCat.{0} ℂ :=
 
 namespace holomorphicSectionCechCohomology
 
-/-! ### Functoriality and degree zero -/
-
-/-- **Degree zero cohomology is global sections.** The degree zero Čech cohomology of the sheaf
-of holomorphic sections of `V` is the space of holomorphic sections of `V` over all of `X`. -/
-def zeroIso :
-    (holomorphicSectionSheaf I F V).obj.obj (op ⊤) ≅ holomorphicSectionCechCohomology I F V 0 :=
-  Topology.cechCohomologyZeroIso (holomorphicSectionSheaf I F V)
-
-/-- The degree zero identification as a linear equivalence. -/
-def zeroLinearEquiv :
-    (holomorphicSectionSheaf I F V).obj.obj (op ⊤) ≃ₗ[ℂ] holomorphicSectionCechCohomology I F V 0 :=
-  (zeroIso I F V).toLinearEquiv
-
-@[simp]
-theorem zeroLinearEquiv_apply (s : (holomorphicSectionSheaf I F V).obj.obj (op ⊤)) :
-    zeroLinearEquiv I F V s = (zeroIso I F V).hom s := (rfl)
-
-@[simp]
-theorem zeroLinearEquiv_symm_apply (c : holomorphicSectionCechCohomology I F V 0) :
-    (zeroLinearEquiv I F V).symm c = (zeroIso I F V).inv c := (rfl)
-
 variable {I}
 variable {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℂ F₁]
   {V₁ : X → Type} [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)]
@@ -109,92 +84,6 @@ variable {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℂ F₁]
   {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℂ F₂]
   {V₂ : X → Type} [TopologicalSpace (TotalSpace F₂ V₂)] [∀ x, TopologicalSpace (V₂ x)]
   [FiberBundle F₂ V₂] [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℂ (V₂ x)] [VectorBundle ℂ F₂ V₂]
-
-/-- The map on degree `n` Čech cohomology induced by a morphism of sheaves of holomorphic
-sections. -/
-def map (f : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂) (n : ℕ) :
-    holomorphicSectionCechCohomology I F₁ V₁ n ⟶ holomorphicSectionCechCohomology I F₂ V₂ n :=
-  (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map f.hom
-
-@[simp]
-theorem map_id (n : ℕ) :
-    map (𝟙 (holomorphicSectionSheaf I F₁ V₁)) n = 𝟙 (holomorphicSectionCechCohomology I F₁ V₁ n) :=
-  (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map_id _
-
-@[reassoc (attr := simp)]
-theorem map_comp {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace ℂ F₃]
-    {V₃ : X → Type} [TopologicalSpace (TotalSpace F₃ V₃)] [∀ x, TopologicalSpace (V₃ x)]
-    [FiberBundle F₃ V₃] [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℂ (V₃ x)] [VectorBundle ℂ F₃ V₃]
-    (f : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂)
-    (g : holomorphicSectionSheaf I F₂ V₂ ⟶ holomorphicSectionSheaf I F₃ V₃) (n : ℕ) :
-    map f n ≫ map g n = map (f ≫ g) n :=
-  ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map_comp _ _).symm
-
-@[simp]
-theorem map_zero (n : ℕ) :
-    map (0 : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂) n = 0 :=
-  (sheafToPresheaf _ _ ⋙ Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map_zero _ _
-
-@[simp]
-theorem map_add (f g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂)
-    (n : ℕ) : map (f + g) n = map f n + map g n :=
-  (sheafToPresheaf _ _ ⋙ Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map_add
-
-/-- The degree zero identification is natural: on global sections, a morphism of sheaves of
-holomorphic sections induces its map on degree zero cohomology. -/
-@[reassoc]
-theorem zeroIso_hom_naturality
-    (f : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂) :
-    f.hom.app (op ⊤) ≫ (zeroIso I F₂ V₂).hom = (zeroIso I F₁ V₁).hom ≫ map f 0 :=
-  Topology.cechCohomologyZeroIso_hom_naturality _ f
-
-/-- The isomorphism on degree `n` Čech cohomology induced by an isomorphism of sheaves of
-holomorphic sections. -/
-def mapIso (e : holomorphicSectionSheaf I F₁ V₁ ≅ holomorphicSectionSheaf I F₂ V₂) (n : ℕ) :
-    holomorphicSectionCechCohomology I F₁ V₁ n ≅ holomorphicSectionCechCohomology I F₂ V₂ n :=
-  (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).mapIso
-    ((sheafToPresheaf _ _).mapIso e)
-
-@[simp]
-theorem mapIso_hom (e : holomorphicSectionSheaf I F₁ V₁ ≅ holomorphicSectionSheaf I F₂ V₂)
-    (n : ℕ) : (mapIso e n).hom = map e.hom n := (rfl)
-
-@[simp]
-theorem mapIso_inv (e : holomorphicSectionSheaf I F₁ V₁ ≅ holomorphicSectionSheaf I F₂ V₂)
-    (n : ℕ) : (mapIso e n).inv = map e.inv n := (rfl)
-
-/-! ### Isomorphic bundles -/
-
-/-- **Isomorphism invariance.** An isomorphism of holomorphic vector bundles, given as fibrewise
-complex linear isomorphisms whose total-space maps in both directions are complex analytic,
-induces an isomorphism on every Čech cohomology of the sheaves of holomorphic sections. -/
-def isoOfLinearEquiv (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
-    (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
-    (hφ' : ContMDiff (I.prod 𝓘(ℂ, F₂)) (I.prod 𝓘(ℂ, F₁)) ω
-      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.2))) (n : ℕ) :
-    holomorphicSectionCechCohomology I F₁ V₁ n ≅ holomorphicSectionCechCohomology I F₂ V₂ n :=
-  mapIso (holomorphicSectionSheaf.isoOfLinearEquiv φ hφ hφ') n
-
-@[simp]
-theorem isoOfLinearEquiv_hom (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
-    (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
-    (hφ' : ContMDiff (I.prod 𝓘(ℂ, F₂)) (I.prod 𝓘(ℂ, F₁)) ω
-      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.2))) (n : ℕ) :
-    (isoOfLinearEquiv φ hφ hφ' n).hom =
-      map (holomorphicSectionSheaf.isoOfLinearEquiv φ hφ hφ').hom n :=
-  (rfl)
-
-@[simp]
-theorem isoOfLinearEquiv_inv (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
-    (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
-    (hφ' : ContMDiff (I.prod 𝓘(ℂ, F₂)) (I.prod 𝓘(ℂ, F₁)) ω
-      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.2))) (n : ℕ) :
-    (isoOfLinearEquiv φ hφ hφ' n).inv =
-      map (holomorphicSectionSheaf.isoOfLinearEquiv φ hφ hφ').inv n :=
-  (rfl)
 
 /-! ### The trivial line bundle -/
 
@@ -235,7 +124,9 @@ theorem finrank_trivial_zero [I.Boundaryless] [IsManifold I 1 X] [CompactSpace X
   have e : (holomorphicSectionSheaf I ℂ (Trivial X ℂ)).obj.obj (op ⊤) ≅
       (holomorphicStructureSheafModules I X).obj.obj (op ⊤) :=
     ((sheafToPresheaf _ _).mapIso (holomorphicSectionSheaf.trivialIso I X)).app (op ⊤)
-  rw [← (zeroIso I ℂ (Trivial X ℂ)).toLinearEquiv.finrank_eq, e.toLinearEquiv.finrank_eq]
+  rw [← (Topology.cechCohomologyZeroIso
+    (holomorphicSectionSheaf I ℂ (Trivial X ℂ))).toLinearEquiv.finrank_eq,
+    e.toLinearEquiv.finrank_eq]
   exact holomorphicStructureSheafModules.finrank_globalSections I X
 
 end Trivial
@@ -265,22 +156,30 @@ theorem prodBicone_pt (n : ℕ) :
 
 @[simp]
 theorem prodBicone_fst (n : ℕ) :
-    (prodBicone I F₁ V₁ F₂ V₂ n).fst = map (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂) n :=
+    (prodBicone I F₁ V₁ F₂ V₂ n).fst =
+      (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+        (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂).hom :=
   (rfl)
 
 @[simp]
 theorem prodBicone_snd (n : ℕ) :
-    (prodBicone I F₁ V₁ F₂ V₂ n).snd = map (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂) n :=
+    (prodBicone I F₁ V₁ F₂ V₂ n).snd =
+      (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+        (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂).hom :=
   (rfl)
 
 @[simp]
 theorem prodBicone_inl (n : ℕ) :
-    (prodBicone I F₁ V₁ F₂ V₂ n).inl = map (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂) n :=
+    (prodBicone I F₁ V₁ F₂ V₂ n).inl =
+      (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+        (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂).hom :=
   (rfl)
 
 @[simp]
 theorem prodBicone_inr (n : ℕ) :
-    (prodBicone I F₁ V₁ F₂ V₂ n).inr = map (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂) n :=
+    (prodBicone I F₁ V₁ F₂ V₂ n).inr =
+      (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+        (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂).hom :=
   (rfl)
 
 /-- **Additivity.** The Čech cohomology of the sheaf of holomorphic sections of a direct sum
@@ -304,8 +203,11 @@ def prodIso (n : ℕ) :
 @[simp]
 theorem prodIso_hom (n : ℕ) :
     (prodIso I F₁ V₁ F₂ V₂ n).hom =
-      biprod.lift (map (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂) n)
-        (map (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂) n) :=
+      biprod.lift
+        ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+          (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂).hom)
+        ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+          (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂).hom) :=
   (rfl)
 
 /-- The inverse of the isomorphism with the biproduct is given by the maps induced by the two
@@ -313,8 +215,11 @@ inclusions. -/
 @[simp]
 theorem prodIso_inv (n : ℕ) :
     (prodIso I F₁ V₁ F₂ V₂ n).inv =
-      biprod.desc (map (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂) n)
-        (map (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂) n) :=
+      biprod.desc
+        ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+          (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂).hom)
+        ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+          (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂).hom) :=
   (rfl)
 
 /-- The Čech cohomology of a direct sum `V₁ ×ᵇ V₂` is the product of the two cohomologies, as
@@ -332,19 +237,13 @@ by the two projections. -/
 theorem prodLinearEquiv_apply (n : ℕ)
     (c : holomorphicSectionCechCohomology I (F₁ × F₂) (V₁ ×ᵇ V₂) n) :
     prodLinearEquiv I F₁ V₁ F₂ V₂ n c =
-      (map (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂) n c,
-        map (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂) n c) := by
-  have h₁ := (Iso.inv_comp_eq _).1 (ModuleCat.biprodIsoProd_inv_comp_fst
-    (holomorphicSectionCechCohomology I F₁ V₁ n) (holomorphicSectionCechCohomology I F₂ V₂ n))
-  have h₂ := (Iso.inv_comp_eq _).1 (ModuleCat.biprodIsoProd_inv_comp_snd
-    (holomorphicSectionCechCohomology I F₁ V₁ n) (holomorphicSectionCechCohomology I F₂ V₂ n))
-  refine Prod.ext ?_ ?_
-  · have := ConcreteCategory.congr_hom ((prodIso I F₁ V₁ F₂ V₂ n).hom ≫= h₁) c
-    rw [prodIso_hom, biprod.lift_fst] at this
-    exact this.symm
-  · have := ConcreteCategory.congr_hom ((prodIso I F₁ V₁ F₂ V₂ n).hom ≫= h₂) c
-    rw [prodIso_hom, biprod.lift_snd] at this
-    exact this.symm
+      ((Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+          (holomorphicSectionSheaf.prodFst I F₁ V₁ F₂ V₂).hom c,
+        (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+          (holomorphicSectionSheaf.prodSnd I F₁ V₁ F₂ V₂).hom c) := by
+  rw [prodLinearEquiv, Iso.toLinearEquiv_apply, Iso.trans_hom, ConcreteCategory.comp_apply,
+    ModuleCat.biprodIsoProd_hom_apply, ← ConcreteCategory.comp_apply,
+    ← ConcreteCategory.comp_apply, prodIso_hom, biprod.lift_fst, biprod.lift_snd]
 
 /-- The inverse of the linear equivalence with the product sends a pair of classes to the sum of
 their images under the maps induced by the two inclusions. -/
@@ -352,10 +251,16 @@ their images under the maps induced by the two inclusions. -/
 theorem prodLinearEquiv_symm_apply (n : ℕ) (a : holomorphicSectionCechCohomology I F₁ V₁ n)
     (b : holomorphicSectionCechCohomology I F₂ V₂ n) :
     (prodLinearEquiv I F₁ V₁ F₂ V₂ n).symm (a, b) =
-      map (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂) n a +
-        map (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂) n b := by
+      (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+          (holomorphicSectionSheaf.prodInl I F₁ V₁ F₂ V₂).hom a +
+        (Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).map
+          (holomorphicSectionSheaf.prodInr I F₁ V₁ F₂ V₂).hom b := by
   rw [LinearEquiv.symm_apply_eq, prodLinearEquiv_apply]
-  simp [← ConcreteCategory.comp_apply]
+  simp only [map_add, ← ConcreteCategory.comp_apply, ← Functor.map_comp, ← ObjectProperty.ι_map,
+    ← Functor.comp_map]
+  rw [holomorphicSectionSheaf.prodInl_prodFst, holomorphicSectionSheaf.prodInl_prodSnd,
+    holomorphicSectionSheaf.prodInr_prodFst, holomorphicSectionSheaf.prodInr_prodSnd]
+  simp
 
 /-- The cohomology of a direct sum is finite-dimensional when both summands' are. -/
 instance finiteDimensional_prod (n : ℕ)
