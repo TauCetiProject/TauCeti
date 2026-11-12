@@ -105,7 +105,6 @@ private theorem corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
   have hk2 : (√2)⁻¹ < 1 := inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two
   set k : ℝ := (√2)⁻¹
   rw [abs_lt] at hu hv ⊢
-  have hk : 0 < k := by linarith
   simp only [mem_Ioo]
   constructor
   · rintro ⟨⟨h1, -⟩, h2, -⟩
@@ -252,7 +251,6 @@ theorem not_exists_isLipschitzChart_slitUnitDisc {p : WithLp 2 (ℝ × ℝ)} (hp
   have hγ := hc.apply_zero_of_mem_frontier (mem_frontier_slitUnitDisc hp hp') hep
   have hh := hc.height_pos
   have hr := hc.radius_pos
-  have hK : (0 : ℝ) < K + 1 := by positivity
   set ε := min (min (h / 2) r) ((1 - p.fst) / 2)
   have hε : 0 < ε := lt_min (lt_min (by linarith) hr) (by linarith [hp.2])
   have hεh : ε ≤ h / 2 := (min_le_left _ _).trans (min_le_left _ _)
@@ -361,7 +359,6 @@ theorem not_exists_isLipschitzChart_sqrtAbsCusp :
   have hγ := hc.apply_zero_of_mem_frontier zero_mem_frontier_sqrtAbsCusp he0
   have hh := hc.height_pos
   have hr := hc.radius_pos
-  have hK : (0 : ℝ) < K + 1 := by positivity
   set c : ℝ := 1 / (2 * (K + 1))
   have hc0 : 0 < c := by positivity
   have hKc : (K + 1) * c = 1 / 2 := by simp only [c]; field_simp
