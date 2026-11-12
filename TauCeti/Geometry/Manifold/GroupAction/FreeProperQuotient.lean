@@ -287,8 +287,8 @@ theorem exists_sliceTube_of_stabilizer_eq_bot {x : M} (hx : stabilizer G x = ⊥
       σ 0 = x ∧ IsOpen U ∧ 0 ∈ U ∧ InjOn (fun p : G × _ ↦ p.1 • σ p.2) (univ ×ˢ U) ∧
         IsLocalDiffeomorphOn (I.prod 𝓘(ℝ, Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ))
           I' ∞ (fun p : G × _ ↦ p.1 • σ p.2) (univ ×ˢ U) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
-  have : CompleteSpace E' := FiniteDimensional.complete ℝ E'
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
   set F := Fin (Module.finrank ℝ E' - Module.finrank ℝ E) → ℝ
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
