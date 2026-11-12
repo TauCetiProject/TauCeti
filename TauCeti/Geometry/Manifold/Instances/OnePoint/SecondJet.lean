@@ -141,10 +141,9 @@ theorem deriv_writtenInExtChartAt_mul_smul (g h : PGL(2, 𝕜)) (x : OnePoint �
       deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (h • x) fun y ↦ g • y)
           (extChartAt 𝓘(𝕜) (h • x) (h • x)) *
         deriv (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x fun y ↦ h • y) (extChartAt 𝓘(𝕜) x x) := by
-  rw [pgl_mul_smul_eq_comp]
-  exact TauCeti.Manifold.deriv_writtenInExtChartAt_comp
+  rw [pgl_mul_smul_eq_comp, TauCeti.Manifold.deriv_writtenInExtChartAt_comp
     ((contMDiffAt_pgl_smul (n := 1) g _).mdifferentiableAt one_ne_zero)
-    ((contMDiffAt_pgl_smul (n := 1) h x).mdifferentiableAt one_ne_zero)
+    ((contMDiffAt_pgl_smul (n := 1) h x).mdifferentiableAt one_ne_zero), smul_eq_mul, mul_comm]
 
 /-- **The second-order chain rule for Möbius transformations.** Read in the preferred charts, the
 second derivative of `g * h` at `x` is `g''(h x) h'(x) ^ 2 + g'(h x) h''(x)`. -/
@@ -158,9 +157,9 @@ theorem iteratedDeriv_two_writtenInExtChartAt_mul_smul (g h : PGL(2, 𝕜)) (x :
             (extChartAt 𝓘(𝕜) (h • x) (h • x)) *
           iteratedDeriv 2 (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) x fun y ↦ h • y)
             (extChartAt 𝓘(𝕜) x x) := by
-  rw [pgl_mul_smul_eq_comp]
-  exact TauCeti.Manifold.iteratedDeriv_two_writtenInExtChartAt_comp (contMDiffAt_pgl_smul g _)
-    (contMDiffAt_pgl_smul h x)
+  rw [pgl_mul_smul_eq_comp, TauCeti.Manifold.iteratedDeriv_two_writtenInExtChartAt_comp
+    (contMDiffAt_pgl_smul g _) (contMDiffAt_pgl_smul h x), smul_eq_mul, smul_eq_mul]
+  ring
 
 omit [DecidableEq 𝕜] in
 /-- The affine chart at `0` sends `0` to `0`. -/
