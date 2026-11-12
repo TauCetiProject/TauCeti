@@ -42,6 +42,8 @@ is the Strichartz estimate at the energy pair `(∞, 2)`: the solution lies in `
 ## Main declarations
 
 * `TauCeti.schrodingerDuhamel`: Duhamel's formula.
+* `TauCeti.duhamel_schrodinger` and `TauCeti.schrodingerDuhamel_eq_realOperator_add_duhamel`:
+  Duhamel's formula through the Schrödinger group and its abstract Duhamel integral.
 * `TauCeti.continuous_schrodingerDuhamel` and `TauCeti.norm_schrodingerDuhamel_le`: continuity in
   time and the energy estimate.
 * `TauCeti.isForcedMildSolution_schrodingerDuhamel` and
@@ -96,7 +98,7 @@ theorem schrodingerDuhamel_zero_forcing (f : Lp F 2 (volume : Measure E)) (t : �
   simp [schrodingerDuhamel_def]
 
 /-- The Duhamel integral of the Schrödinger group is `∫_{(0,t]} S(t - s) G(s) ds`. -/
-private theorem duhamel_schrodinger (G : ℝ → Lp F 2 (volume : Measure E)) (t : ℝ) :
+theorem duhamel_schrodinger (G : ℝ → Lp F 2 (volume : Measure E)) (t : ℝ) :
     (phaseGroup E F laplacianSymbol).toSemigroup.duhamel G t =
       ∫ s in Ioc 0 t, schrodingerPropagator F (t - s) (G s) := by
   rw [Semigroups.StronglyContinuousSemigroup.duhamel_def]
@@ -106,15 +108,13 @@ private theorem duhamel_schrodinger (G : ℝ → Lp F 2 (volume : Measure E)) (t
 
 /-- Duhamel's formula through the Schrödinger group and its Duhamel integral, at nonnegative
 times. -/
-private theorem schrodingerDuhamel_eq_realOperator_add_duhamel {t : ℝ} (ht : 0 ≤ t) :
+theorem schrodingerDuhamel_eq_realOperator_add_duhamel {t : ℝ} (ht : 0 ≤ t) :
     schrodingerDuhamel f G t =
       (phaseGroup E F laplacianSymbol).toSemigroup.realOperator t f +
         (phaseGroup E F laplacianSymbol).toSemigroup.duhamel ((-Complex.I) • G) t := by
   rw [Semigroups.StronglyContinuousGroup.toSemigroup_realOperator_of_nonneg _ ht, phaseGroup_apply,
-    duhamel_schrodinger, schrodingerDuhamel_def, sub_eq_add_neg, ← neg_smul, ← integral_smul]
-  congr 1
-  refine setIntegral_congr_fun measurableSet_Ioc fun s _ => ?_
-  simp only [Pi.smul_apply, map_smul]
+    duhamel_schrodinger, schrodingerDuhamel_def]
+  simp [sub_eq_add_neg, integral_neg, integral_smul]
 
 /-- Duhamel's formula is continuous in time, with values in `L²`. -/
 theorem continuous_schrodingerDuhamel (f : Lp F 2 (volume : Measure E))

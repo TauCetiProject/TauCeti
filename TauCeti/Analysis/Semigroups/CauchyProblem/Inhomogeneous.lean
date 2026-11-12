@@ -148,6 +148,12 @@ theorem congr (hu : IsForcedMildSolution A F x u) {v : ℝ → X} (huv : EqOn u 
 
 end IsForcedMildSolution
 
+omit [NormedSpace ℝ X] in
+/-- A forcing term locally integrable on `[0, ∞)` is integrable on every `(0, t]`. -/
+private theorem integrableOn_Ioc_of_locallyIntegrableOn {F : ℝ → X}
+    (hF : LocallyIntegrableOn F (Ici 0)) (t : ℝ) : IntegrableOn F (Ioc 0 t) :=
+  (hF.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set Ioc_subset_Icc_self
+
 namespace StronglyContinuousSemigroup
 
 variable (S : StronglyContinuousSemigroup X) {F G : ℝ → X} {t : ℝ}
@@ -178,15 +184,20 @@ theorem duhamel_zero_left (t : ℝ) : S.duhamel 0 t = 0 := by
 theorem duhamel_smul (c : ℝ) (F : ℝ → X) (t : ℝ) : S.duhamel (c • F) t = c • S.duhamel F t := by
   simp only [duhamel_def, Pi.smul_apply, map_smul, integral_smul]
 
+/-- The Duhamel integrand `s ↦ S(t - s) F(s)` is bounded a.e. on `(0, t]` by the bound of `S` on
+`[0, t]` times `‖F s‖`. -/
+private theorem ae_norm_realOperator_sub_apply_le {M : ℝ}
+    (hM : ∀ τ ∈ Icc 0 t, ‖S.realOperator τ‖ ≤ M) :
+    ∀ᵐ s ∂volume.restrict (Ioc 0 t), ‖S.realOperator (t - s) (F s)‖ ≤ M * ‖F s‖ :=
+  (ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun s hs =>
+    (S.realOperator (t - s)).le_of_opNorm_le (hM _ ⟨by linarith [hs.2], by linarith [hs.1]⟩) _)
+
 /-- The Duhamel integral is bounded by the bound of `S` on `[0, t]` times the `L¹` norm of the
 forcing on `(0, t]`. -/
 theorem norm_duhamel_le {M : ℝ} (hM : ∀ τ ∈ Icc 0 t, ‖S.realOperator τ‖ ≤ M)
     (hF : IntegrableOn F (Ioc 0 t)) : ‖S.duhamel F t‖ ≤ M * ∫ s in Ioc 0 t, ‖F s‖ := by
   rw [← integral_const_mul]
-  refine norm_integral_le_of_norm_le (hF.norm.const_mul M) ?_
-  refine (ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun s hs => ?_)
-  exact (S.realOperator (t - s)).le_of_opNorm_le
-    (hM _ ⟨by linarith [hs.2], by linarith [hs.1]⟩) _
+  exact norm_integral_le_of_norm_le (hF.norm.const_mul M) (S.ae_norm_realOperator_sub_apply_le hM)
 
 /-- The Duhamel integral as an integral over a fixed interval `(0, R]` containing `(0, t]`. -/
 private theorem duhamel_eq_setIntegral_indicator {R : ℝ} (htR : t ≤ R) :
@@ -206,10 +217,9 @@ private theorem aestronglyMeasurable_realOperator_sub_apply {μ : Measure ℝ}
 theorem integrableOn_realOperator_sub_apply (hF : IntegrableOn F (Ioc 0 t)) :
     IntegrableOn (fun s => S.realOperator (t - s) (F s)) (Ioc 0 t) := by
   obtain ⟨C, -, hC⟩ := S.exists_norm_realOperator_le t
-  refine Integrable.mono' (hF.norm.const_mul C)
-    (S.aestronglyMeasurable_realOperator_sub_apply hF.aestronglyMeasurable t) ?_
-  refine (ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun s hs => ?_)
-  exact (S.realOperator (t - s)).le_of_opNorm_le (hC _ (by linarith [hs.1])) _
+  exact Integrable.mono' (hF.norm.const_mul C)
+    (S.aestronglyMeasurable_realOperator_sub_apply hF.aestronglyMeasurable t)
+    (S.ae_norm_realOperator_sub_apply_le fun τ hτ => hC τ hτ.2)
 
 /-- The Duhamel integral is additive in integrable forcing terms. -/
 theorem duhamel_add (hF : IntegrableOn F (Ioc 0 t)) (hG : IntegrableOn G (Ioc 0 t)) :
@@ -222,9 +232,7 @@ theorem duhamel_add (hF : IntegrableOn F (Ioc 0 t)) (hG : IntegrableOn G (Ioc 0 
 theorem continuous_duhamel (hF : LocallyIntegrableOn F (Ici 0)) : Continuous (S.duhamel F) := by
   refine continuous_iff_continuousAt.2 fun t₀ => ?_
   set R := max t₀ 0 + 1
-  have hFR : IntegrableOn F (Ioc 0 R) :=
-    (hF.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
-      Ioc_subset_Icc_self
+  have hFR : IntegrableOn F (Ioc 0 R) := integrableOn_Ioc_of_locallyIntegrableOn hF R
   obtain ⟨C, hC0, hC⟩ := S.exists_norm_realOperator_le R
   have hnear : ∀ᶠ t in 𝓝 t₀, t < R := eventually_lt_nhds (by linarith [le_max_left t₀ 0])
   refine ContinuousAt.congr (f := fun t => ∫ s in Ioc 0 R,
@@ -257,44 +265,6 @@ theorem continuous_duhamel (hF : LocallyIntegrableOn F (Ici 0)) : Continuous (S.
     exact (S.duhamel_eq_setIntegral_indicator ht.le).symm
 
 /-! ### The generator on the time integral of the Duhamel integral -/
-
-/-- Joint continuity of `(τ, y) ↦ ∫_0^τ S(σ) y dσ`. -/
-private theorem continuous_intervalIntegral_orbit :
-    Continuous fun p : ℝ × X => ∫ σ in (0 : ℝ)..p.1, S.realOperator σ p.2 :=
-  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous
-    (f := fun (p : ℝ × X) σ => S.realOperator σ p.2)
-    (S.continuous_realOperator_uncurry.comp
-      (continuous_snd.prodMk (continuous_snd.comp continuous_fst))) continuous_fst
-
-/-- `S(a) ∫_0^b S(σ) y dσ = ∫_a^{a+b} S(σ) y dσ` for `a, b ≥ 0`. -/
-private theorem realOperator_intervalIntegral_orbit {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (y : X) :
-    S.realOperator a (∫ σ in (0 : ℝ)..b, S.realOperator σ y) =
-      ∫ σ in a..a + b, S.realOperator σ y := by
-  rw [← (S.realOperator a).intervalIntegral_comp_comm
-      ((S.continuous_realOperator_apply y).intervalIntegrable _ _),
-    intervalIntegral.integral_congr (g := fun σ => S.realOperator (σ + a) y)]
-  · rw [intervalIntegral.integral_comp_add_right (fun σ => S.realOperator σ y), zero_add,
-      add_comm b a]
-  · intro σ hσ
-    rw [uIcc_of_le hb] at hσ
-    simp only
-    rw [← S.realOperator_add_apply a σ ha hσ.1, add_comm]
-
-/-- `(S(h) - 1) ∫_0^τ S = (S(τ) - 1) ∫_0^h S` for `τ, h ≥ 0`: both sides are
-`∫_τ^{τ+h} S - ∫_0^h S`. -/
-private theorem realOperator_intervalIntegral_orbit_sub_comm {τ h : ℝ} (hτ : 0 ≤ τ) (hh : 0 ≤ h)
-    (y : X) :
-    S.realOperator h (∫ σ in (0 : ℝ)..τ, S.realOperator σ y) -
-        ∫ σ in (0 : ℝ)..τ, S.realOperator σ y =
-      S.realOperator τ (∫ σ in (0 : ℝ)..h, S.realOperator σ y) -
-        ∫ σ in (0 : ℝ)..h, S.realOperator σ y := by
-  have hi (a b : ℝ) : IntervalIntegrable (fun σ => S.realOperator σ y) volume a b :=
-    (S.continuous_realOperator_apply y).intervalIntegrable a b
-  have e₁ := intervalIntegral.integral_add_adjacent_intervals (hi 0 h) (hi h (h + τ))
-  have e₂ := intervalIntegral.integral_add_adjacent_intervals (hi 0 τ) (hi τ (τ + h))
-  rw [S.realOperator_intervalIntegral_orbit hh hτ, S.realOperator_intervalIntegral_orbit hτ hh,
-    sub_eq_sub_iff_add_eq_add, add_comm, e₁, add_comm h τ, ← e₂]
-  exact add_comm _ _
 
 /-- Fubini's theorem for the time integral of the Duhamel integral:
 `∫_{(0,t]} ∫_{(0,r]} S(r - s) F(s) ds dr = ∫_{(0,t]} ∫_0^{t-s} S(σ) F(s) dσ ds`. -/
@@ -350,17 +320,6 @@ private theorem integral_duhamel_eq (hF : IntegrableOn F (Ioc 0 t)) :
     _ = ∫ s in Ioc 0 t, ∫ σ in (0 : ℝ)..(t - s), S.realOperator σ (F s) :=
         setIntegral_congr_fun measurableSet_Ioc hR
 
-omit [CompleteSpace X] in
-/-- `‖∫_0^τ S(σ) y dσ‖ ≤ C ‖y‖ τ` when `S` is bounded by `C` up to time `τ`. -/
-private theorem norm_intervalIntegral_orbit_le {C τ : ℝ} (hτ : 0 ≤ τ)
-    (hC : ∀ σ ≤ τ, ‖S.realOperator σ‖ ≤ C) (y : X) :
-    ‖∫ σ in (0 : ℝ)..τ, S.realOperator σ y‖ ≤ C * ‖y‖ * τ := by
-  have h := intervalIntegral.norm_integral_le_of_norm_le_const
-    (a := 0) (b := τ) (f := fun σ => S.realOperator σ y) (C := C * ‖y‖) fun σ hσ => by
-      rw [uIoc_of_le hτ] at hσ
-      exact (S.realOperator σ).le_of_opNorm_le (hC _ hσ.2) _
-  rwa [sub_zero, abs_of_nonneg hτ] at h
-
 /-- Dominated convergence for the averages `h⁻¹ ∫_0^h S(σ) y dσ → y` inside the Duhamel
 integrand: `∫_{(0,t]} (S(t - s) - 1) (h⁻¹ ∫_0^h S(σ) F(s) dσ) ds → ∫_{(0,t]} (S(t - s) - 1) F(s) ds`
 as `h → 0⁺`. -/
@@ -394,12 +353,10 @@ private theorem tendsto_setIntegral_realOperator_sub_average (hF : IntegrableOn 
     exact (S.continuous_realOperator_uncurry.comp_aestronglyMeasurable
       ((continuous_const.sub continuous_id).aestronglyMeasurable.prodMk hmeas)).sub hmeas
   · filter_upwards [Ioo_mem_nhdsGT (zero_lt_one' ℝ)] with h hh
-    refine (ae_restrict_iff' measurableSet_Ioc).2 (Eventually.of_forall fun s hs => ?_)
+    filter_upwards [S.ae_norm_realOperator_sub_apply_le (F := fun s => avg h (F s))
+      fun τ hτ => hC τ (hτ.2.trans (le_max_left t 1))] with s hs
     calc ‖S.realOperator (t - s) (avg h (F s)) - avg h (F s)‖
-        ≤ C * ‖avg h (F s)‖ + ‖avg h (F s)‖ :=
-          (norm_sub_le _ _).trans (add_le_add_left
-            ((S.realOperator (t - s)).le_of_opNorm_le
-              (hC _ (by linarith [hs.1, le_max_left t 1])) _) _)
+        ≤ C * ‖avg h (F s)‖ + ‖avg h (F s)‖ := (norm_sub_le _ _).trans (add_le_add_left hs _)
       _ = (C + 1) * ‖avg h (F s)‖ := by ring
       _ ≤ (C + 1) * (C * ‖F s‖) := mul_le_mul_of_nonneg_left (havg_le hh _) (by linarith)
   · exact Eventually.of_forall fun s =>
@@ -467,9 +424,7 @@ theorem isForcedMildSolution_realOperator_add_duhamel (hF : LocallyIntegrableOn 
     IsForcedMildSolution S.generator F x (fun t => S.realOperator t x + S.duhamel F t) := by
   refine ⟨inferInstance, hF, (S.realOperator_continuousOn_Ici x).add
     (S.continuous_duhamel hF).continuousOn, by simp, fun t _ => ?_⟩
-  have hFt : IntegrableOn F (Ioc 0 t) :=
-    (hF.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
-      Ioc_subset_Icc_self
+  have hFt : IntegrableOn F (Ioc 0 t) := integrableOn_Ioc_of_locallyIntegrableOn hF t
   have h₁ := S.integral_orbit_mem_domain x t
   have h₂ := S.integral_duhamel_mem_domain hFt
   have hint : ∫ s in Ioc 0 t, (S.realOperator s x + S.duhamel F s) =
