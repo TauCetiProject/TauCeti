@@ -24,10 +24,13 @@ Consequently, if a natural number `e` kills an object `X`, in the sense that `e 
 kills `X ⊗ Y` and `Y ⊗ X` (`CategoryTheory.nsmul_id_tensor_eq_zero_of_left` and
 `CategoryTheory.nsmul_id_tensor_eq_zero_of_right`).
 
-In particular whiskering is `ℤ`-linear for the `ℤ`-linear structure of a preadditive category
-(`CategoryTheory.monoidalLinearInt`). This is not an instance: a category such as `ModuleCat ℤ`
-also carries its own `ℤ`-linear structure, for which Mathlib states `MonoidalLinear ℤ`, while
-instance search finds the preadditive one; files needing the latter use it as a local instance.
+In particular every monoidal preadditive category is `MonoidalLinear ℤ` for the `ℤ`-linear
+structure `CategoryTheory.Linear.preadditiveIntLinear` of a preadditive category
+(`CategoryTheory.MonoidalPreadditive.monoidalLinearInt`).  For a category of modules such as
+`ModuleCat ℤ` this is the `ℤ`-linear structure found by instance search, to which Mathlib's
+`MonoidalLinear` instance for its structure as a category of modules does not apply; files working
+with integral coefficients install it as a local instance.  It is not a global instance, as the
+simp lemmas of `MonoidalLinear` would then subsume the integer-multiple simp lemmas above.
 -/
 
 public section
@@ -102,10 +105,10 @@ lemma tensorHom_zsmul {W X Y Z : C} (m : ℤ) (f : W ⟶ X) (g : Y ⟶ Z) :
   rw [tensorHom_def', tensorHom_def', ← Preadditive.zsmul_comp]
   exact congrArg (· ≫ f ▷ Z) ((tensorLeft W).map_zsmul (f := g) (r := m))
 
-variable (C) in
-/-- Whiskering commutes with the integer multiples of a monoidal preadditive category, that is,
-it is linear for the `ℤ`-linear structure `CategoryTheory.Linear.preadditiveIntLinear`. -/
-abbrev monoidalLinearInt : MonoidalLinear ℤ C where
+/-- A monoidal preadditive category is monoidal linear over `ℤ`, for the `ℤ`-linear structure
+`Linear.preadditiveIntLinear` of a preadditive category: whiskering commutes with integer
+multiples. Install it with `attribute [local instance]` where needed. -/
+lemma MonoidalPreadditive.monoidalLinearInt : MonoidalLinear ℤ C where
   whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
   smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
 

@@ -67,8 +67,9 @@ cochains on them with values in `L`. The cap product pairs the two along the rig
 `φ(σ|[0, …, p]) • σ|[p, …, n]`. A module over a ring enters through its underlying abelian group.
 
 Instance search finds the `ℤ`-linear structure of `ModuleCat ℤ` as a preadditive category, for
-which Mathlib's `MonoidalLinear ℤ` instance does not apply; `CategoryTheory.monoidalLinearInt`
-supplies it as a local instance, as for `TopCat.integralCup`.
+which Mathlib's `MonoidalLinear ℤ` instance does not apply;
+`CategoryTheory.MonoidalPreadditive.monoidalLinearInt` supplies it as a local instance, as for
+`TopCat.integralCup`.
 
 ## References
 
@@ -85,7 +86,7 @@ open CategoryTheory MonoidalCategory Module TopologicalSpace Topology Set
 
 namespace TauCeti
 
-attribute [local instance] monoidalLinearInt
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 
 namespace HomologicalOrientation
 

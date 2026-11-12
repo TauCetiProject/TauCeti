@@ -72,10 +72,7 @@ noncomputable section
 
 open CategoryTheory MonoidalCategory
 
--- Mathlib's `MonoidalLinear ℤ` instance on `ModuleCat ℤ` is stated for its `ℤ`-linear structure
--- as a category of modules, while instance search finds the `ℤ`-linear structure of a preadditive
--- category.
-attribute [local instance] monoidalLinearInt
+attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 
 namespace TauCeti
 
