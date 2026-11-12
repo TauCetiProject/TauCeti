@@ -7,10 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
-public import TauCeti.AlgebraicGeometry.Modules.Biprod
-public import TauCeti.CategoryTheory.ObjectProperty
-public import TauCeti.CategoryTheory.ObjectProperty.Kernels
-public import Mathlib.CategoryTheory.Abelian.Subcategory
 
 /-!
 # Coherent sheaves on locally Noetherian schemes
@@ -42,47 +38,6 @@ public section
 open CategoryTheory Limits AlgebraicGeometry
 
 universe u
-
-namespace AlgebraicGeometry.Scheme.Modules
-
-/-- Finitely presented sheaves are closed under ambient cokernels on every scheme. -/
-instance isFinitePresentation_isClosedUnderCokernels (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderCokernels where
-  cokernels_le := by
-    rintro _ ⟨f, c, hc, hM, hN⟩
-    have := hM
-    have := hN
-    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
-      (colimit.isoColimitCocone ⟨c, hc⟩) (isFinitePresentation_cokernel f)
-
-/-- Coherent sheaves on a locally Noetherian scheme are closed under ambient kernels. -/
-instance isFinitePresentation_isClosedUnderKernels (X : Scheme.{u}) [IsLocallyNoetherian X] :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderKernels where
-  kernels_le := by
-    rintro _ ⟨f, k, hk, hM, hN⟩
-    have := hM
-    have := hN
-    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
-      (limit.isoLimitCone ⟨k, hk⟩) (isFinitePresentation_kernel f)
-
-/-- The zero module sheaf is finitely presented. -/
-instance isFinitePresentation_containsZero (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).ContainsZero where
-  exists_zero := ⟨_, TauCeti.SheafOfModules.isZero_free PEmpty, inferInstance⟩
-
-/-- Finitely presented sheaves are closed under binary products, computed as direct sums. -/
-instance isFinitePresentation_isClosedUnderBinaryProducts (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderBinaryProducts :=
-  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun A B hA hB ↦ by
-    let := hA
-    let := hB
-    exact Scheme.Modules.isFinitePresentation_biprod A B
-
-/-- Finitely presented sheaves are closed under finite products. -/
-instance isFinitePresentation_isClosedUnderFiniteProducts (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderFiniteProducts := .mk'
-
-end AlgebraicGeometry.Scheme.Modules
 
 namespace TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf
 
