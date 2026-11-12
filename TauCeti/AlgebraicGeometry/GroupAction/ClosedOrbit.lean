@@ -17,8 +17,10 @@ translation by the rational points of `G`, and of strictly smaller dimension tha
 (`TauCeti.SchemeAction.topologicalKrullDim_orbitBoundary_lt`).
 
 A closed subset of `X` stable under rational translations contains the whole geometric orbit of
-a rational point as soon as it contains that point: the closed points of the orbit are its
-rational translates, and they are dense in the locally closed orbit. Hence the orbit of a
+a rational point as soon as it contains that point: its preimage under the orbit morphism is a
+closed subset of `G` containing every closed point, because the orbit morphism sends a closed
+point, which is a rational point of `G`, to a rational translate of the point; closed points are
+dense in the Jacobson scheme `G`. Hence the orbit of a
 rational point `y` of the boundary of `O_x` lies in that boundary, and has strictly smaller
 dimension than `O_x`. Since a nonempty closed subset of `X` contains a rational point, an orbit
 whose dimension is minimal among the orbits of the rational points of its closure has empty
@@ -76,13 +78,8 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
     (y : 𝟙_ (Over (Spec (.of k))) ⟶ X) (a : (𝟙_ (Over (Spec (.of k)))).left) :
     orbit G y ⊆ Z ↔ y.left a ∈ Z := by
   have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
-  -- `y` lies in its own orbit, as the image of the identity of `G`.
-  have hmem : y.left a ∈ orbit G y := by
-    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G (1 : 𝟙_ (Over (Spec (.of k))) ⟶ G) y)
-    simp only [toUnit_unit, Category.id_comp, Over.comp_left, one_smul] at h
-    exact (mem_orbit G y _).mpr
-      ⟨(1 : 𝟙_ (Over (Spec (.of k))) ⟶ G).left a, by rw [← Scheme.Hom.comp_apply, h]⟩
-  refine ⟨fun h ↦ h hmem, fun hy ↦ ?_⟩
+  refine ⟨fun h ↦ h (by simpa only [one_smul] using left_apply_smul_mem_orbit G y 1 a),
+    fun hy ↦ ?_⟩
   -- The preimage of `Z` in `G` is closed and contains every closed point, which is a rational
   -- point of `G`; closed points are dense in the Jacobson scheme `G`.
   have hcl : IsClosed ((orbitMap G y).left ⁻¹' Z) := hZ.preimage (orbitMap G y).left.continuous
@@ -90,23 +87,13 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
     refine Set.eq_univ_of_univ_subset ?_
     rw [← closure_closedPoints (X := G.left), hcl.closure_subset_iff]
     intro c hc
-    let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
-      Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c (mem_closedPoints_iff.mp hc))
-        (pointOfClosedPoint_comp G.hom c _)
-    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g y)
-    simp only [toUnit_unit, Category.id_comp, Over.comp_left, g, Over.homMk_left] at h
-    have hc' : (orbitMap G y).left c = (g • y).left a := by
-      obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
-      rw [← h]
-      exact ((Scheme.Hom.comp_apply _ _ _).trans
-        (congrArg _ (pointOfClosedPoint_apply G.hom c _ _))).symm
+    obtain ⟨g, hc'⟩ := exists_orbitMap_left_eq_smul_left G y (mem_closedPoints_iff.mp hc) a
     rw [Set.mem_preimage]
     let := translationMulAction G X
     rw [hc', ← translationMulAction_smul_apply, translationMulAction_smul]
     exact hinv g hy
-  intro p hp
-  obtain ⟨z, rfl⟩ := (mem_orbit G y p).mp hp
-  exact (Set.ext_iff.mp hall z).mpr trivial
+  rw [orbit_def]
+  exact Set.preimage_eq_univ_iff.mp hall
 
 omit [CompactSpace G.left] [CompactSpace X.left] [LocallyOfFiniteType X.hom] in
 /-- A closed subset of `X` stable under translation by the rational points of `G` contains the

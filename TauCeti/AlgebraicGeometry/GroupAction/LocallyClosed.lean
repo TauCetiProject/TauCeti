@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
 public import TauCeti.AlgebraicGeometry.RationalPoint.Image
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.Topology.Algebra.MulAction.Orbit
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # Orbits of algebraic group actions are locally closed
@@ -74,6 +75,37 @@ section RationalPoints
 variable [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
   [LocallyOfFiniteType X.hom]
 
+omit [IsAlgClosed k] [LocallyOfFiniteType G.hom] [LocallyOfFiniteType X.hom] in
+/-- The orbit morphism sends a rational point `g` of `G` to the translate `g • x`, as a morphism
+of underlying schemes. -/
+@[reassoc (attr := simp)]
+theorem left_comp_orbitMap_left (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
+    g.left ≫ (orbitMap G x).left = (g • x).left := by
+  simpa only [toUnit_unit, Category.id_comp, Over.comp_left] using
+    congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
+
+omit [IsAlgClosed k] [LocallyOfFiniteType G.hom] [LocallyOfFiniteType X.hom] in
+/-- A translate of a rational point `x` by a rational point of `G` lies in the geometric orbit
+of `x`. -/
+theorem left_apply_smul_mem_orbit (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+    (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) (a : (𝟙_ (Over (Spec (.of k)))).left) :
+    (g • x).left a ∈ orbit G x :=
+  (mem_orbit G x _).mpr ⟨g.left a, by rw [← Scheme.Hom.comp_apply, left_comp_orbitMap_left]⟩
+
+omit [LocallyOfFiniteType X.hom] in
+/-- Over an algebraically closed field, the orbit morphism sends every closed point of `G` to a
+translate of `x` by a rational point of `G`. -/
+theorem exists_orbitMap_left_eq_smul_left (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) {c : G.left}
+    (hc : IsClosed {c}) (a : (𝟙_ (Over (Spec (.of k)))).left) :
+    ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (orbitMap G x).left c = (g • x).left a := by
+  let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
+    Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c hc)
+      (pointOfClosedPoint_comp G.hom c _)
+  refine ⟨g, ?_⟩
+  rw [← left_comp_orbitMap_left, Scheme.Hom.comp_apply]
+  exact congrArg _ (pointOfClosedPoint_apply G.hom c hc a).symm
+
 /-- Over an algebraically closed field, a rational point of `X` lies in the geometric orbit of
 `x` exactly when it is a translate of `x` by a rational point of `G`. -/
 theorem left_apply_mem_orbit_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
@@ -84,46 +116,48 @@ theorem left_apply_mem_orbit_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
     rw [hw]
     infer_instance
   obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
-  rw [mem_orbit]
-  refine Iff.trans
-    ((orbitMap G x).left.exists_comp_eq_iff_mem_range X.hom y.left (Over.w y)).symm ?_
-  symm
-  constructor
+  refine ⟨fun h ↦ ?_, ?_⟩
+  swap
   · rintro ⟨g, rfl⟩
-    refine ⟨g.left, ?_⟩
-    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
-    simp only [toUnit_unit, Category.id_comp, Over.comp_left] at h
-    exact h
-  · rintro ⟨q, hq⟩
-    have hqG : q ≫ G.hom = (𝟙_ (Over (Spec (.of k)))).hom := by
-      rw [← hw, ← Category.assoc, hq, Over.w y]
-    let g : 𝟙_ (Over (Spec (.of k))) ⟶ G := Over.homMk (U := 𝟙_ _) (V := G) q hqG
-    refine ⟨g, ?_⟩
-    ext1
-    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
-    simp only [toUnit_unit, Category.id_comp, Over.comp_left, g, Over.homMk_left, hq] at h
-    exact h.symm
+    exact left_apply_smul_mem_orbit G x g _
+  obtain ⟨q, hq⟩ :=
+    ((orbitMap G x).left.exists_comp_eq_iff_mem_range X.hom y.left (Over.w y)).2
+      ((mem_orbit G x _).mp h)
+  have hqG : q ≫ G.hom = (𝟙_ (Over (Spec (.of k)))).hom := by
+    rw [← hw, ← Category.assoc, hq, Over.w y]
+  let g : 𝟙_ (Over (Spec (.of k))) ⟶ G := Over.homMk (U := 𝟙_ _) (V := G) q hqG
+  refine ⟨g, ?_⟩
+  ext1
+  have h := left_comp_orbitMap_left G x g
+  simp only [g, Over.homMk_left, hq] at h
+  exact h.symm
 
+omit [LocallyOfFiniteType X.hom] in
+/-- Over an algebraically closed field, with `G` locally of finite type, the closed points of the
+geometric orbit of `x` are the points underlying translates of `x` by rational points of `G`. -/
+theorem orbit_inter_closedPoints_subset (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
+    orbit G x ∩ closedPoints X.left ⊆
+      ⋃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, Set.range (g • x).left := by
+  rintro p ⟨hpo, hpc⟩
+  have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
+  obtain ⟨c, hc, hfc⟩ := (orbitMap G x).left.continuous.exists_isClosed_singleton_of_mem_range
+    (mem_closedPoints_iff.mp hpc).isLocallyClosed ((mem_orbit G x p).mp hpo)
+  obtain ⟨g, hg⟩ := exists_orbitMap_left_eq_smul_left G x hc (IsLocalRing.closedPoint k)
+  exact Set.mem_iUnion.mpr ⟨g, _, hg.symm.trans hfc⟩
+
+omit [LocallyOfFiniteType X.hom] in
 /-- Over an algebraically closed field, the closed points of the geometric orbit of `x` are
 exactly the points underlying its translates by rational points of `G`. -/
 theorem orbit_inter_closedPoints (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) :
     orbit G x ∩ closedPoints X.left =
       ⋃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, Set.range (g • x).left := by
-  ext p
-  simp only [Set.mem_iUnion, Set.mem_range]
-  constructor
-  · rintro ⟨hp, hpc⟩
-    let y : 𝟙_ (Over (Spec (.of k))) ⟶ X :=
-      Over.homMk (pointOfClosedPoint X.hom p (mem_closedPoints_iff.mp hpc))
-        (pointOfClosedPoint_comp X.hom p _)
-    have hy (a) : y.left a = p := pointOfClosedPoint_apply X.hom p _ a
-    obtain ⟨g, hg⟩ := (left_apply_mem_orbit_iff G x y (IsLocalRing.closedPoint k)).mp
-      ((hy _).symm ▸ hp)
-    exact ⟨g, IsLocalRing.closedPoint k, hg ▸ hy _⟩
-  · rintro ⟨g, a, rfl⟩
-    refine ⟨(left_apply_mem_orbit_iff G x (g • x) a).mpr ⟨g, rfl⟩, ?_⟩
-    obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
-    exact ((pointEquivClosedPoint X.hom) ⟨(g • x).left, Over.w (g • x)⟩).property
+  refine (orbit_inter_closedPoints_subset G x).antisymm ?_
+  simp only [Set.iUnion_subset_iff]
+  rintro g _ ⟨a, rfl⟩
+  refine ⟨left_apply_smul_mem_orbit G x g a, ?_⟩
+  obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
+  exact mem_closedPoints_iff.mpr
+    (TauCeti.AlgebraicGeometry.isClosed_singleton_of_section (Over.w (g • x)))
 
 end RationalPoints
 
@@ -141,26 +175,9 @@ theorem exists_translation_eq_of_mem_orbit_inter_closedPoints
     (hq : q ∈ orbit G x ∩ closedPoints X.left) :
     ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (translation X g).hom.left p = q := by
   let := translationMulAction G X
-  have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
-  -- A closed point of `X` in the orbit is the image of a closed point of `G`, hence the
-  -- underlying point of a translate of `x` by a rational point of `G`.
-  have key {p : X.left} (hp : p ∈ orbit G x ∩ closedPoints X.left) :
-      ∃ (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) (a : (𝟙_ (Over (Spec (.of k)))).left),
-        (g • x).left a = p := by
-    obtain ⟨hpo, hpc⟩ := hp
-    obtain ⟨c, hc, hfc⟩ := (orbitMap G x).left.continuous.exists_isClosed_singleton_of_mem_range
-      (mem_closedPoints_iff.mp hpc).isLocallyClosed ((mem_orbit G x p).mp hpo)
-    let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
-      Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c hc)
-        (pointOfClosedPoint_comp G.hom c _)
-    refine ⟨g, IsLocalRing.closedPoint k, ?_⟩
-    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
-    simp only [toUnit_unit, Category.id_comp, Over.comp_left, g, Over.homMk_left] at h
-    rw [← h]
-    refine (Scheme.Hom.comp_apply _ _ _).trans ?_
-    exact (congrArg _ (pointOfClosedPoint_apply G.hom c _ _)).trans hfc
-  obtain ⟨g, a, rfl⟩ := key hp
-  obtain ⟨h, b, rfl⟩ := key hq
+  rw [orbit_inter_closedPoints] at hp hq
+  obtain ⟨g, a, rfl⟩ := Set.mem_iUnion.mp hp
+  obtain ⟨h, b, rfl⟩ := Set.mem_iUnion.mp hq
   obtain rfl : b = a := Subsingleton.elim (α := Spec (.of k)) _ _
   refine ⟨h * g⁻¹, ?_⟩
   rw [← translationMulAction_smul, translationMulAction_smul_apply,
