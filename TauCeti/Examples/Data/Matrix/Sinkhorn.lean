@@ -92,7 +92,7 @@ theorem relEntropy_optimalPlan_le {P : Matrix (Fin 2) (Fin 2) ℝ}
 
 /-- The projective diameter is exactly the logarithm of four. -/
 @[simp] theorem projectiveDiameter_kernel : kernel.projectiveDiameter = log 4 := by
-  rw [projectiveDiameter_fin_two kernel_pos]
+  rw [projectiveDiameter_fin_two kernel]
   norm_num [kernel_def, abs_of_nonneg (log_nonneg (by norm_num : (1 : ℝ) ≤ 4))]
 
 /-- Each half-step has contraction factor `1/3`, not merely an unspecified factor below one. -/

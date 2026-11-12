@@ -48,11 +48,6 @@ namespace Subgroup
 
 variable {G : Type*} [Group G] {g : G}
 
--- Source. The statement is specified by the Chebotarev roadmap:
--- `TauCetiRoadmap/Chebotarev/README.md` §8.2 asks for the residue degree `f(𝔓/𝔭)` as the least
--- `n ≥ 1` with `Frob_{L/K}(Q)^n ∈ ⟨σ⟩`, and pins it at
--- `TauCetiRoadmap/Chebotarev/Suggested.lean` as `inertiaDeg_fixedField_eq_one_iff`.
-
 /-- **Membership in a subgroup of a cyclic group is divisibility of the index.** If `g` generates
 `G`, then `g ^ n` lies in `K` exactly when `K.index` divides `n`.
 
