@@ -659,7 +659,7 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
         (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
           (ad ℚ (F4.lieAlgebra valid_F4)
             (f4ChevalleyRootVector (f4KillingRoot α))) 2 _ hdiv)
-    · rcases f4Length_eq_one_or_eq_two α with hα | hα
+    · rcases f4Length_eq_one_or_eq_two α with _ | hα
       · apply f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 3 hopp
         intro δ hpinned
         exact (f4_not_root_eq_add_three_zsmul α β δ hpinned).elim
