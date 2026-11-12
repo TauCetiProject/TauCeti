@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.GroupTheory.ExponentPrime
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.Topology.Separation.Connected
 
 /-!
@@ -253,6 +254,33 @@ every natural number `p`. -/
 theorem isTopCharacteristic_proPFrattini (p : ℕ) :
     IsTopCharacteristic G (proPFrattini p G) :=
   isTopCharacteristic_iff_map_eq.mpr fun φ ↦ ContinuousMulEquiv.map_proPFrattini_eq φ
+
+/-- The pro-`p` Frattini subgroup of a discrete elementary abelian `p`-group is trivial, for `p`
+prime: every nonzero element is missed by the kernel of a linear form to `𝔽_p`, which is an open
+normal subgroup of index `p`. -/
+theorem proPFrattini_multiplicative_eq_bot (hp : p.Prime) {M : Type v} [AddCommGroup M]
+    [TopologicalSpace M] [DiscreteTopology M] (hpM : ∀ m : M, p • m = 0) :
+    proPFrattini p (Multiplicative M) = ⊥ := by
+  have := Fact.mk hp
+  have : NeZero p := ⟨hp.ne_zero⟩
+  have : Module (ZMod p) M := AddCommGroup.zmodModule hpM
+  refine (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
+  by_contra hx1
+  obtain ⟨f, hf⟩ : ∃ f : M →ₗ[ZMod p] ZMod p, f x.toAdd ≠ 0 :=
+    Module.Projective.exists_dual_ne_zero (ZMod p) (x := x.toAdd) hx1
+  let ψ : Multiplicative M →* Multiplicative (ZMod p) :=
+    AddMonoidHom.toMultiplicative f.toAddMonoidHom
+  have hψ : Function.Surjective ψ := fun y ↦
+    ⟨Multiplicative.ofAdd ((y.toAdd * (f x.toAdd)⁻¹) • x.toAdd), by
+      apply Multiplicative.toAdd.injective
+      simp [ψ, hf]⟩
+  let U : OpenNormalSubgroup (Multiplicative M) :=
+    ⟨⟨ψ.ker, isOpen_discrete _⟩, inferInstanceAs ψ.ker.Normal⟩
+  have hU : U.toSubgroup.index = p := by
+    change ψ.ker.index = p
+    rw [Subgroup.index_ker, MonoidHom.range_eq_top.2 hψ, Subgroup.card_top]
+    exact Nat.card_zmod p
+  exact hf (proPFrattini_le hU hx)
 
 /-! ### The verbal description -/
 
