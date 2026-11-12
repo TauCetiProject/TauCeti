@@ -242,11 +242,11 @@ theorem exists_isDemushkin_range_demushkinCharacter_eq_iff_of_odd {n : ℕ} (hn 
       (by rwa [hrank]) with h | ⟨hn₃, hf⟩
     · exact Or.inl h
     · exact Or.inr ⟨by omega, hf⟩
-  · rintro (rfl | ⟨hn₃, f, hf, rfl⟩)
+  · rintro (rfl | ⟨hn₃, f, -, rfl⟩)
     · obtain ⟨r, hG, hrank, -, hrange⟩ := exists_isDemushkin_range_eq_zpowers_neg_one_of_odd hn
       exact ⟨r, hG, hrank, hrange _ (hasPrescriptionProperty_demushkinCharacter hG)⟩
     · obtain ⟨r, hG, hrank, -, hrange⟩ :=
-        exists_isDemushkin_range_eq_unitsPlusMinus_of_odd hn hn₃ hf
+        exists_isDemushkin_range_eq_unitsPlusMinus_of_odd hn hn₃
       exact ⟨r, hG, hrank, hrange _ (hasPrescriptionProperty_demushkinCharacter hG)⟩
 
 end TauCeti
