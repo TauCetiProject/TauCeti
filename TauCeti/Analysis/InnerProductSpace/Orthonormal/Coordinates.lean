@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 
 /-!
 # Orthonormal coordinates
@@ -171,35 +172,29 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- **Complex coordinates in a frame.** For an orthonormal basis `(b₀, b₁, b₂, b₃)`, the complex
 coordinates `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, v⟫ i)` of a vector `v`. They identify `V` with
-`ℂ²`, turning the complex structure `b₀ ↦ b₁`, `b₂ ↦ b₃` into multiplication by `i`. -/
-noncomputable def complexCoords : V ≃ₗ[ℝ] (Fin 2 → ℂ) where
-  toFun v :=
-    ![inner ℝ (b 0) v + inner ℝ (b 1) v * Complex.I, inner ℝ (b 2) v + inner ℝ (b 3) v * Complex.I]
-  invFun z := (z 0).re • b 0 + (z 0).im • b 1 + (z 1).re • b 2 + (z 1).im • b 3
-  map_add' v w := by
-    ext i : 1
-    fin_cases i <;> apply Complex.ext <;> simp [inner_add_right]
-  map_smul' c v := by
-    ext i : 1
-    fin_cases i <;> apply Complex.ext <;> simp [real_inner_smul_right]
-  left_inv v := by
-    conv_rhs => rw [← b.sum_repr' v]
-    simp [Fin.sum_univ_four]
-  right_inv z := by
-    ext i : 1
-    fin_cases i <;> apply Complex.ext <;>
-      simp [inner_add_right, real_inner_smul_right, b.inner_eq_ite]
+`ℂ²`, turning the complex structure `b₀ ↦ b₁`, `b₂ ↦ b₃` into multiplication by `i`. They are
+the frame coordinates `b.repr` read through the inverse of the interleaved real coordinates
+`TauCeti.complexEuclideanRealLinearIsometryEquiv 2` of `ℂ²`. -/
+noncomputable def complexCoords : V ≃ₗ[ℝ] (Fin 2 → ℂ) :=
+  (b.repr.trans (TauCeti.complexEuclideanRealLinearIsometryEquiv 2).symm).toLinearEquiv.trans
+    (WithLp.linearEquiv 2 ℝ (Fin 2 → ℂ))
 
 @[simp]
 theorem complexCoords_apply (v : V) :
     b.complexCoords v =
       ![inner ℝ (b 0) v + inner ℝ (b 1) v * Complex.I,
-        inner ℝ (b 2) v + inner ℝ (b 3) v * Complex.I] :=
-  (rfl)
+        inner ℝ (b 2) v + inner ℝ (b 3) v * Complex.I] := by
+  ext i : 1
+  change (TauCeti.complexEuclideanRealLinearIsometryEquiv 2).symm (b.repr v) i = _
+  rw [TauCeti.complexEuclideanRealLinearIsometryEquiv_symm_apply]
+  fin_cases i <;> simp [b.repr_apply_apply] <;> rfl
 
 @[simp]
 theorem complexCoords_symm_apply (z : Fin 2 → ℂ) :
-    b.complexCoords.symm z = (z 0).re • b 0 + (z 0).im • b 1 + (z 1).re • b 2 + (z 1).im • b 3 :=
-  (rfl)
+    b.complexCoords.symm z = (z 0).re • b 0 + (z 0).im • b 1 + (z 1).re • b 2 + (z 1).im • b 3 := by
+  rw [LinearEquiv.symm_apply_eq, complexCoords_apply]
+  ext i : 1
+  fin_cases i <;> apply Complex.ext <;>
+    simp [inner_add_right, real_inner_smul_right, b.inner_eq_ite]
 
 end OrthonormalBasis

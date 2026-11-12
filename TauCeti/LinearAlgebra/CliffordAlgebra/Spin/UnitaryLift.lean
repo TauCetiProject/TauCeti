@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
-import TauCeti.Analysis.Complex.Circle
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
@@ -73,11 +72,6 @@ open scoped Quaternion
 open CliffordAlgebra Matrix TauCeti
 
 /-! ### The lift in the compact coordinate model -/
-
-private theorem coe_star_circleToUnitary_inv (w : Circle) :
-    ((star (Quaternion.circleToUnitary w⁻¹) : unitary ℍ[ℝ]) : ℍ[ℝ]) = ((w : ℂ) : ℍ[ℝ]) := by
-  rw [Unitary.coe_star, Quaternion.coe_circleToUnitary]
-  ext <;> simp
 
 /-- The class `[(a, w⁻¹), w]` in `Spinᶜ(4)` of the compact coordinate model, whose rotation is
 `q ↦ a q w` in quaternion coordinates. -/
@@ -141,7 +135,8 @@ private theorem toSpecialOrthogonal_spinCOfPair_coordVec (p : unitary ℍ[ℝ] �
   refine EquivLike.injective realCliffordFourZeroQuaternionEquiv ?_
   rw [realSpinFourEquivQuaternionUnitaryProd_action, MulEquiv.apply_symm_apply, coordVec,
     coordVec, QuadraticMap.IsometryEquiv.apply_symm_apply,
-    QuadraticMap.IsometryEquiv.apply_symm_apply, coe_star_circleToUnitary_inv,
+    QuadraticMap.IsometryEquiv.apply_symm_apply, Quaternion.star_circleToUnitary, inv_inv,
+    Quaternion.coe_circleToUnitary,
     Quaternion.coe_unitaryProdCircleToUnitaryGroup_apply, smul_mulVec,
     Quaternion.ofFirstColumn_smul, Quaternion.ofFirstColumn_toComplexMatrix_mulVec]
 

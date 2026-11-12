@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
-import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The group `Spinᶜ(Q)`
@@ -364,7 +363,7 @@ theorem card_fiber_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
 by its composite with `Spinᶜ(Q) → SO(Q) × U(1)`**, for a finite-dimensional nondegenerate form.
 Two such homomorphisms differ by a homomorphism into the central kernel `{1, [1, -1]}`, and this is
 trivial because every element of the source is a square while the kernel has exponent two. This
-applies to the circle (`Circle.exists_pow_nat_eq`) and to the unitary groups
+applies to the circle (`Circle.isSquare`) and to the unitary groups
 (`Matrix.UnitaryGroup.isSquare`). -/
 theorem hom_ext_of_isSquare [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate) {G : Type*} [Monoid G]
     (hG : ∀ g : G, IsSquare g) {φ ψ : G →* spinCGroup Q hQ}

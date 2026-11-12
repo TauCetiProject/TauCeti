@@ -39,6 +39,7 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.isSquare`: every point of the circle is a square.
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
 -/
@@ -129,6 +130,10 @@ theorem mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
 theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle, y ^ n = z :=
   ⟨exp (Complex.arg z / n), by
     rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
+
+/-- Every point of the circle is a square on the circle. -/
+theorem isSquare (z : Circle) : IsSquare z :=
+  (z.exists_pow_nat_eq two_ne_zero).imp fun y hy ↦ by rw [← hy, sq]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/
