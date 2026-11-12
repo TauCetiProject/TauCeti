@@ -120,7 +120,6 @@ theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure �
   have hfirst := (htop.mul (r := 2) hexp).const_mul (1 / 8)
   refine (hfirst.add (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm)).ae_eq
     (Eventually.of_forall fun z ↦ ?_)
-  have hpos : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2 := by positivity
   simp only [Pi.add_apply, Pi.mul_apply, reducedSource_def, backgroundSource_def,
     backgroundWeight_def, Polynomial.deriv, h]
   field_simp

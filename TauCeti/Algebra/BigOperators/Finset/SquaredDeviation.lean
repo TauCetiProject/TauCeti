@@ -29,20 +29,20 @@ theorem sum_sq_sub_mean {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) 
   by_cases hs : s.Nonempty
   · let w : ℝ := 1 / s.card
     have hcard : (s.card : ℝ) ≠ 0 := by
-      exact_mod_cast (Finset.card_ne_zero.mpr hs)
-    have hw : ∑ i ∈ s, w = 1 := by
-      simp only [Finset.sum_const, nsmul_eq_mul]
+      exact_mod_cast (card_ne_zero.mpr hs)
+    have hw : ∑ _ ∈ s, w = 1 := by
+      simp only [sum_const, nsmul_eq_mul]
       dsimp [w]
       field_simp
-    have h := Finset.sum_mul_sub_sq_eq s (w := fun _ => w) hw c t
-    simp only [← Finset.mul_sum] at h
+    have h := sum_mul_sub_sq_eq s (w := fun _ => w) hw c t
+    simp only [← mul_sum] at h
     have hmean : w * ∑ i ∈ s, t i = (∑ i ∈ s, t i) / s.card := by
       dsimp [w]
       ring
     rw [hmean] at h
     have hreverse (a : ℝ) : (∑ i ∈ s, (a - t i) ^ 2) =
         ∑ i ∈ s, (t i - a) ^ 2 := by
-      apply Finset.sum_congr rfl
+      apply sum_congr rfl
       intro i _
       ring
     rw [hreverse c, hreverse ((∑ i ∈ s, t i) / s.card)] at h
@@ -52,7 +52,7 @@ theorem sum_sq_sub_mean {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) 
     have hscaled := congrArg (fun x : ℝ => (s.card : ℝ) * x) h
     simp only [mul_add, ← mul_assoc, hscale, one_mul] at hscaled
     simpa only [add_comm] using hscaled
-  · have hempty : s = ∅ := Finset.not_nonempty_iff_eq_empty.mp hs
+  · have hempty : s = ∅ := not_nonempty_iff_eq_empty.mp hs
     subst s
     simp
 
@@ -75,7 +75,7 @@ theorem sum_sq_sub_mean_eq_iff {ι : Type*} (s : Finset ι) (t : ι → ℝ)
       c = (∑ j ∈ s, t j) / s.card := by
   rw [sum_sq_sub_mean, add_eq_left]
   have hcard : (s.card : ℝ) ≠ 0 := by
-    exact_mod_cast (Finset.card_ne_zero.mpr hs)
+    exact_mod_cast (card_ne_zero.mpr hs)
   rw [mul_eq_zero, or_iff_right hcard, sq_eq_zero_iff, sub_eq_zero]
 
 end Finset

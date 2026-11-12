@@ -72,7 +72,6 @@ restated through `Matrix.PosSemidef`.
 
 * W. Rudin, *Fourier Analysis on Groups* (1962), Theorem 1.4.3.
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, §4.2, Lemma 4.8.
-* Roadmap: TauCetiRoadmap/OneParameterSemigroups/README.md, Part C (Bochner milestone).
 -/
 
 public section
@@ -688,8 +687,6 @@ private theorem integral_norm_fourierIntegral_gaussian_eq_one {t : ℝ} (ht : 0 
   have hg_pd : Matrix.PosSemidef
       fun a b : V => Complex.exp (-(t * ‖a - b‖ ^ 2 : ℝ)) :=
     posSemidef_cexp_neg_mul_sq_norm ht.le
-  have hg_int : Integrable fun x : V => Complex.exp (-(t * ‖x‖ ^ 2 : ℝ)) :=
-    integrable_cexp_neg_mul_sq_norm ht
   have hg_cont : Continuous fun x : V => Complex.exp (-(t * ‖x‖ ^ 2 : ℝ)) :=
     continuous_cexp_neg_mul_sq_norm t
   have hft_int := integrable_fourierIntegral_gaussian (V := V) ht
@@ -760,7 +757,7 @@ private theorem lintegral_enorm_fourierIntegral_mul_gaussian_le (F : V → ℂ)
   have hprod_int : Integrable fun ξ : V => 𝓕 F ξ * Complex.exp (-(t * ‖ξ‖ ^ 2 : ℝ)) :=
     (integrable_cexp_neg_mul_sq_norm ht).bdd_mul hft_cont.aestronglyMeasurable
       (ae_of_all _ fun ξ => hbound ξ)
-  rw [← ofReal_integral_norm_eq_lintegral_enorm hprod_int]
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm hprod_int]
   refine ENNReal.ofReal_le_ofReal ?_
   have hnorm_eq : ∀ ξ : V, ‖𝓕 F ξ * Complex.exp (-(t * ‖ξ‖ ^ 2 : ℝ))‖ =
       (𝓕 F ξ * Complex.exp (-(t * ‖ξ‖ ^ 2 : ℝ))).re := by
@@ -792,7 +789,7 @@ theorem integrable_fourier_of_posSemidef (F : V → ℂ)
   have htn_lim : Tendsto tn atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
   have hf_meas : ∀ n : ℕ, Measurable fun ξ : V =>
       ‖𝓕 F ξ * Complex.exp (-(tn n * ‖ξ‖ ^ 2 : ℝ))‖ₑ := fun n =>
-    ((hft_cont.mul (continuous_cexp_neg_mul_sq_norm (tn n))).measurable).enorm
+    ((hft_cont.mul (continuous_cexp_neg_mul_sq_norm (tn n))).measurable).eNorm
   have hf_tendsto : ∀ ξ : V, Tendsto
       (fun n : ℕ => ‖𝓕 F ξ * Complex.exp (-(tn n * ‖ξ‖ ^ 2 : ℝ))‖ₑ)
       atTop (𝓝 ‖𝓕 F ξ‖ₑ) := by
@@ -802,7 +799,7 @@ theorem integrable_fourier_of_posSemidef (F : V → ℂ)
     have h3 : Tendsto (fun n : ℕ => 𝓕 F ξ * Complex.exp (-(tn n * ‖ξ‖ ^ 2 : ℝ)))
         atTop (𝓝 (𝓕 F ξ)) := by
       simpa using tendsto_const_nhds.mul h2
-    exact h3.enorm
+    exact h3.eNorm
   have hbound : ∫⁻ ξ, ‖𝓕 F ξ‖ₑ ≤ ENNReal.ofReal (F 0).re := by
     calc ∫⁻ ξ, ‖𝓕 F ξ‖ₑ
         = ∫⁻ ξ, liminf

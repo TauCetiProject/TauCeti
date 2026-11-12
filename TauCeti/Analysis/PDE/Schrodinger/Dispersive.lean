@@ -281,8 +281,8 @@ theorem eLpNorm_schrodingerPropagator_le {t : ℝ} (ht : t ≠ 0)
     (f : Lp F 2 (volume : Measure E)) (hf : Integrable f) :
     eLpNorm (schrodingerPropagator F t f) ∞ volume ≤
       ENNReal.ofReal ((4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2)) * eLpNorm f 1 volume := by
-  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_enorm,
-    ← ofReal_integral_norm_eq_lintegral_enorm hf, ← ENNReal.ofReal_mul (by positivity)]
+  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_eNorm,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hf, ← ENNReal.ofReal_mul (by positivity)]
   · exact eLpNormEssSup_le_of_ae_bound (norm_schrodingerPropagator_apply_le ht f hf)
   all_goals exact Lp.aestronglyMeasurable _
 
@@ -349,7 +349,6 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
   filter_upwards [(𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ))).coeFn_toLp 2] with x hx
   have h1 : (1 + 4 * π * t * I : ℂ).arg ≠ π :=
     (mem_slitPlane_iff_arg.1 (mem_slitPlane_iff.2 (Or.inl (by simp)))).1
-  have h0 : (1 + 4 * π * t * I : ℂ) ≠ 0 := fun h ↦ by simpa using congrArg re h
   -- The coefficient `π / b` of the inverse-Fourier Gaussian is `(1 + 4πit)⁻¹`.
   have hcoeff : (π : ℂ) / b = (1 + 4 * π * t * I)⁻¹ := by
     simp only [b]
