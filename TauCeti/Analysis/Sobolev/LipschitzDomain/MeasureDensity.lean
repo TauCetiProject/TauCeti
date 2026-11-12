@@ -11,12 +11,13 @@ import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 import TauCeti.Topology.Frontier
 
 /-!
-# The measure density property of bounded Lipschitz domains
+# The measure density property of Lipschitz domains
 
-A bounded Lipschitz domain `Ω` satisfies the **interior corkscrew condition**: for every `R > 0`
-there is `δ > 0` such that every ball `B(x, r)` centred in the closure of `Ω` with `r ≤ R` contains
-a ball of radius `δ r` lying in `Ω`. Consequently `Ω` has the **measure density property**: for an
-additive Haar measure `μ` there is `c > 0` with
+A Lipschitz domain `Ω` with compact frontier, for instance a bounded one, satisfies the
+**interior corkscrew condition**: for every `R > 0` there is `δ > 0` such that every ball `B(x, r)`
+centred in the closure of `Ω` with `r ≤ R` contains a ball of radius `δ r` lying in `Ω`.
+Consequently `Ω` has the **measure density property**: for an additive Haar measure `μ` there is
+`c > 0` with
 
 `c μ(B(x, r)) ≤ μ(B(x, r) ∩ Ω)`
 
@@ -26,6 +27,14 @@ characterization of Hölder continuity, proved in `TauCeti.MeasureTheory.Functio
 with the measure density property, holds on every bounded Lipschitz domain: for `p ≥ 1` and
 `α > 0`, a locally integrable function on `Ω` agrees almost everywhere with an `α`-Hölder function
 on `Ω` exactly when it lies in the Campanato space `𝓛^{p, n + p α}(Ω)`, where `n` is the dimension.
+
+The exterior `(closure Ω)ᶜ` is again a Lipschitz domain with the same frontier, and its closure is
+the complement of `Ω` (`Set.IsLipschitzDomain.compl_closure`). The same two statements applied to
+it give the **exterior corkscrew condition** and the **exterior measure density property**: every
+ball `B(x, r)` with `x ∉ Ω` and `r ≤ R` contains a ball of radius `δ r` outside the closure of `Ω`,
+so that `c μ(B(x, r)) ≤ μ(B(x, r) \ closure Ω)`. A positive proportion of the complement in every
+small ball about a boundary point is the hypothesis under which De Giorgi's oscillation estimates
+hold at the boundary for functions vanishing there.
 
 ## The argument
 
@@ -44,9 +53,13 @@ to `R` reduce to the radius `ρ` at the cost of the factor `ρ / R`.
 * `Set.IsLipschitzChart.exists_ball_subset_inter_ball`: the inner ball above a point of the closure
   inside a chart.
 * `Set.IsLipschitzDomain.exists_ball_subset_inter_ball`: the interior corkscrew condition of a
-  bounded Lipschitz domain.
+  Lipschitz domain with compact frontier.
+* `Set.IsLipschitzDomain.exists_ball_subset_compl_closure_inter_ball`: the exterior corkscrew
+  condition.
 * `Set.IsLipschitzDomain.exists_pos_mul_measure_closedBall_le_measure_closedBall_inter`: the
-  measure density property of a bounded Lipschitz domain.
+  measure density property of a Lipschitz domain with compact frontier.
+* `Set.IsLipschitzDomain.exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure`: the exterior
+  measure density property.
 * `Set.IsLipschitzDomain.exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top`: Campanato's
   characterization `𝓛^{p, n + p α}(Ω) = C^{0,α}(Ω)` on a bounded Lipschitz domain.
 
@@ -57,6 +70,8 @@ to `R` reduce to the radius `ρ` at the cost of the factor `ρ / R`.
 * P. Grisvard, *Elliptic Problems in Nonsmooth Domains*, Definition 1.2.1.1 and Theorem 1.2.2.2.
 * D. S. Jerison, C. E. Kenig, *Boundary behavior of harmonic functions in non-tangentially
   accessible domains*, Adv. Math. 46 (1982), 80–147 (the corkscrew condition).
+* D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  §8.10 (boundary estimates under an exterior measure condition).
 -/
 
 public section
@@ -127,15 +142,14 @@ end IsLipschitzChart
 
 namespace IsLipschitzDomain
 
-/-- **The interior corkscrew condition.** For a bounded Lipschitz domain `Ω` and `R > 0` there is
-`δ > 0` such that for every `x` in the closure of `Ω` and every `0 < r ≤ R`, the ball `B(x, r)`
-contains a ball of radius `δ r` lying in `Ω`. -/
-theorem exists_ball_subset_inter_ball [ProperSpace F] (hΩ : Ω.IsLipschitzDomain E)
-    (hb : IsBounded Ω) {R : ℝ} (hR : 0 < R) :
+/-- **The interior corkscrew condition.** For a Lipschitz domain `Ω` with compact frontier and
+`R > 0` there is `δ > 0` such that for every `x` in the closure of `Ω` and every `0 < r ≤ R`, the
+ball `B(x, r)` contains a ball of radius `δ r` lying in `Ω`. -/
+theorem exists_ball_subset_inter_ball (hΩ : Ω.IsLipschitzDomain E)
+    (hcompact : IsCompact (frontier Ω)) {R : ℝ} (hR : 0 < R) :
     ∃ δ > 0, ∀ x ∈ closure Ω, ∀ r : ℝ, 0 < r → r ≤ R → ∃ y, ball y (δ * r) ⊆ Ω ∩ ball x r := by
-  obtain ⟨K, m, e, γ, h, ρ, hc, hcov⟩ := hΩ.exists_finite_cover_of_isBounded hb
-  obtain ⟨ρ₀, hρ₀, hleb⟩ := lebesgue_number_lemma_of_metric
-    (isCompact_of_isClosed_isBounded isClosed_frontier (hb.closure.subset frontier_subset_closure))
+  obtain ⟨K, m, e, γ, h, ρ, hc, hcov⟩ := hΩ.exists_finite_cover hcompact
+  obtain ⟨ρ₀, hρ₀, hleb⟩ := lebesgue_number_lemma_of_metric hcompact
     (fun i ↦ (isOpen_normalCylinder (h i) (ρ i)).preimage (e i).continuous) hcov
   have hK : (0 : ℝ) ≤ K := K.2
   -- The corkscrew condition at radii up to the Lebesgue number `ρ₀`, with `δ = 1 / (4 (1 + K))`.
@@ -177,18 +191,31 @@ theorem exists_ball_subset_inter_ball [ProperSpace F] (hΩ : Ω.IsLipschitzDomai
     _ ≤ 1 / 4 / (1 + K) * min r ρ₀ := by gcongr
     _ = min r ρ₀ / 4 / (1 + K) := by ring
 
+/-- **The exterior corkscrew condition.** For a Lipschitz domain `Ω` with compact frontier and
+`R > 0` there is `δ > 0` such that for every `x ∉ Ω` and every `0 < r ≤ R`, the ball `B(x, r)`
+contains a ball of radius `δ r` disjoint from the closure of `Ω`. -/
+theorem exists_ball_subset_compl_closure_inter_ball (hΩ : Ω.IsLipschitzDomain E)
+    (hcompact : IsCompact (frontier Ω)) {R : ℝ} (hR : 0 < R) :
+    ∃ δ > 0, ∀ x ∉ Ω, ∀ r : ℝ, 0 < r → r ≤ R →
+      ∃ y, ball y (δ * r) ⊆ (closure Ω)ᶜ ∩ ball x r := by
+  -- This is the interior corkscrew condition of the exterior, whose closure is `Ωᶜ`.
+  obtain ⟨δ, hδ, hball⟩ := hΩ.compl_closure.exists_ball_subset_inter_ball
+    (by rwa [frontier_compl, hΩ.frontier_closure]) hR
+  refine ⟨δ, hδ, fun x hx ↦ hball x ?_⟩
+  rwa [closure_compl, hΩ.interior_closure]
+
 variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] {μ : Measure F}
   [μ.IsAddHaarMeasure]
 
-/-- **The measure density property of a bounded Lipschitz domain.** For a bounded Lipschitz domain
-`Ω`, an additive Haar measure `μ` and `R > 0`, there is `c > 0` such that
+/-- **The measure density property of a Lipschitz domain.** For a Lipschitz domain `Ω` with
+compact frontier, an additive Haar measure `μ` and `R > 0`, there is `c > 0` such that
 `c μ(B(x, r)) ≤ μ(B(x, r) ∩ Ω)` for every `x` in the closure of `Ω` and every `0 < r ≤ R`, where
 `B(x, r)` is the closed ball. -/
 theorem exists_pos_mul_measure_closedBall_le_measure_closedBall_inter
-    (hΩ : Ω.IsLipschitzDomain E) (hb : IsBounded Ω) {R : ℝ} (hR : 0 < R) :
+    (hΩ : Ω.IsLipschitzDomain E) (hcompact : IsCompact (frontier Ω)) {R : ℝ} (hR : 0 < R) :
     ∃ c : ℝ≥0, 0 < c ∧ ∀ x ∈ closure Ω, ∀ r : ℝ, 0 < r → r ≤ R →
       (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω) := by
-  obtain ⟨δ, hδ, hball⟩ := hΩ.exists_ball_subset_inter_ball hb hR
+  obtain ⟨δ, hδ, hball⟩ := hΩ.exists_ball_subset_inter_ball hcompact hR
   refine ⟨Real.toNNReal (δ ^ finrank ℝ F), by simp [hδ], fun x hx r hr hrR ↦ ?_⟩
   obtain ⟨y, hy⟩ := hball x hx r hr hrR
   calc ((Real.toNNReal (δ ^ finrank ℝ F) : ℝ≥0) : ℝ≥0∞) * μ (closedBall x r)
@@ -198,6 +225,25 @@ theorem exists_pos_mul_measure_closedBall_le_measure_closedBall_inter
           mul_pow, ENNReal.ofReal_mul (by positivity), mul_assoc]
     _ ≤ μ (closedBall x r ∩ Ω) := measure_mono fun w hw ↦
         ⟨ball_subset_closedBall (hy hw).2, (hy hw).1⟩
+
+/-- **The exterior measure density property of a Lipschitz domain.** For a Lipschitz domain `Ω`
+with compact frontier, an additive Haar measure `μ` and `R > 0`, there is `c > 0` such that the
+exterior of `Ω` fills the proportion `c` of every ball `B(x, r)` with `x ∉ Ω` and `0 < r ≤ R`:
+`c μ(B(x, r)) ≤ μ(B(x, r) \ closure Ω)`, where `B(x, r)` is the open ball. This is the exterior
+density condition under which De Giorgi's oscillation estimates hold at the boundary. -/
+theorem exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure
+    (hΩ : Ω.IsLipschitzDomain E) (hcompact : IsCompact (frontier Ω)) {R : ℝ} (hR : 0 < R) :
+    ∃ c : ℝ≥0, 0 < c ∧ ∀ x ∉ Ω, ∀ r : ℝ, 0 < r → r ≤ R →
+      (c : ℝ≥0∞) * μ (ball x r) ≤ μ (ball x r \ closure Ω) := by
+  obtain ⟨δ, hδ, hball⟩ := hΩ.exists_ball_subset_compl_closure_inter_ball hcompact hR
+  refine ⟨Real.toNNReal (δ ^ finrank ℝ F), by simp [hδ], fun x hx r hr hrR ↦ ?_⟩
+  obtain ⟨y, hy⟩ := hball x hx r hr hrR
+  calc ((Real.toNNReal (δ ^ finrank ℝ F) : ℝ≥0) : ℝ≥0∞) * μ (ball x r)
+      = μ (ball y (δ * r)) := by
+        rw [← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (by positivity),
+          Measure.addHaar_ball_of_pos μ x hr, Measure.addHaar_ball_of_pos μ y (by positivity),
+          mul_pow, ENNReal.ofReal_mul (by positivity), mul_assoc]
+    _ ≤ μ (ball x r \ closure Ω) := measure_mono fun w hw ↦ ⟨(hy hw).2, (hy hw).1⟩
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {f : F → G}
 
@@ -213,7 +259,8 @@ theorem exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top (hΩ : Ω.IsLi
   have hdiam : 2 * ediam Ω ≠ ⊤ := ENNReal.mul_ne_top ENNReal.ofNat_ne_top
     (isBounded_iff_ediam_ne_top.1 hb)
   obtain ⟨c, hc, hdens⟩ := hΩ.exists_pos_mul_measure_closedBall_le_measure_closedBall_inter
-    (μ := μ) hb (R := (2 * ediam Ω).toReal + 1) (by positivity)
+    (μ := μ) (hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure)
+    (R := (2 * ediam Ω).toReal + 1) (by positivity)
   refine TauCeti.MeasureTheory.exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top hα hp hc
     hΩ.isOpen.nullMeasurableSet hf fun x hx r hr hr' ↦ hdens x (subset_closure hx) r hr ?_
   linarith [(ENNReal.ofReal_le_iff_le_toReal hdiam).1 hr']
