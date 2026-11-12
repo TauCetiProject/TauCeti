@@ -46,6 +46,8 @@ operator is `TauCeti.homotopyOperator_mpullback_prodMap_id`.
 ## Main results
 
 * `TauCeti.Diffeotopy.fluxForm_apply`: the integral formula for the flux form.
+* `TauCeti.Diffeotopy.curryLeft_mfderiv_cylinderMap_apply`: its integrand, evaluated on tangent
+  vectors.
 * `TauCeti.Diffeotopy.mextDerivₗ_fluxForm`: `d (Flux φ) = φ₁^* σ - σ` for closed `σ`.
 * `TauCeti.Diffeotopy.flux_refl`: the constant diffeotopy has zero flux.
 * `TauCeti.Diffeotopy.flux_mextDerivₗ`: for `σ = dθ`, the flux is the class of `φ₁^* θ - θ`.
@@ -139,6 +141,25 @@ theorem fluxForm_apply (σ : SmoothForm J M ℝ 2) (x : M) :
   refine (SmoothForm.mpullback_apply Φ.cylinderMap Φ.contMDiff_cylinderMap σ _
     (Fin.cons _ fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1))))).trans ?_
   exact congrArg _ (funext fun i ↦ by cases i using Fin.cases <;> rfl)
+
+/-- **The integrand of the flux form, evaluated.** On spatial tangent vectors `v`, the integrand
+of `TauCeti.Diffeotopy.fluxForm_apply` at `p = (x, t)` is `σ` at the moving point applied to the
+time derivative `∂ₜ φ_t x` of the motion followed by the spatial derivatives `dφ_t (v i)`. -/
+theorem curryLeft_mfderiv_cylinderMap_apply (σ : SmoothForm J M ℝ 2) (p : M × unitInterval)
+    (v : Fin 1 → E) :
+    (ContinuousAlternatingMap.curryLeft (E := E)
+        (σ.1 (Φ.cylinderMap p) : E [⋀^Fin 2]→L[ℝ] ℝ)
+        (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p
+          ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)))).compContinuousLinearMap
+        ((mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p :
+          E × EuclideanSpace ℝ (Fin 1) →L[ℝ] E).comp (.inl ℝ E (EuclideanSpace ℝ (Fin 1)))) v =
+      σ.1 (Φ.cylinderMap p) (Matrix.vecCons
+        (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)))
+        fun i ↦ mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p
+          ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
+  -- The tangent spaces of the cylinder are the model spaces by definition, so the currying and
+  -- composition operators unfold definitionally.
+  (rfl)
 
 /-- Pulling a form back to the cylinder along the motion and then restricting to the initial time
 `t = 0` gives the form itself. -/
