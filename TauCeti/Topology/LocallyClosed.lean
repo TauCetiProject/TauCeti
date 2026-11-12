@@ -11,7 +11,7 @@ public import Mathlib.Topology.Separation.Hausdorff
 public import Mathlib.Topology.LocallyClosed
 
 /-!
-# Interiors of locally closed sets
+# Locally closed sets
 
 A locally closed set is nowhere dense exactly when its interior is empty
 (`IsLocallyClosed.isNowhereDense_iff`). Since finite unions of nowhere dense sets are nowhere dense,
@@ -20,12 +20,12 @@ interior (`TauCeti.nonempty_interior_of_iUnion_of_isLocallyClosed`). This is the
 of the Baire category argument `nonempty_interior_of_iUnion_of_closed`, valid in every
 topological space.
 
-Conversely, a locally compact subspace of a Hausdorff space is locally closed
-(`TauCeti.isLocallyClosed_of_locallyCompactSpace`), the converse of
-`IsLocallyClosed.locallyCompactSpace`.
-
 A set with empty interior need not be nowhere dense: the rationals have empty interior and are
 dense in the real line. They are not locally closed.
+
+A locally compact subspace of a Hausdorff space is locally closed
+(`TauCeti.isLocallyClosed_of_locallyCompactSpace`), the converse of
+`IsLocallyClosed.locallyCompactSpace`.
 -/
 
 public section
