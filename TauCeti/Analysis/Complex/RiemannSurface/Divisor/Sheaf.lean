@@ -62,6 +62,8 @@ injective on sections, and functorial in the divisor.
   their values outside a closed discrete set.
 * `TauCeti.RiemannSurface.divisorSheafMapOfLE_app_injective`, `divisorSheafMapOfLE_refl` and
   `divisorSheafMapOfLE_comp`: the inclusions are injective and functorial.
+* `TauCeti.RiemannSurface.finrank_divisorSheaf_zero_globalSections`: on a compact connected
+  curve, `h⁰(𝒪) = 1`.
 
 ## References
 
@@ -501,6 +503,16 @@ def divisorSheafZeroIso :
       change divisorSectionsZeroEquiv _ (divisorRestrict 0 h.unop f) x =
         (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.map h (divisorSectionsZeroEquiv _ f) x
       simp [divisorSectionsZeroEquiv, divisorRestrict]
+
+variable (X) in
+/-- On a compact connected complex curve the structure sheaf `𝒪 = 𝒪_0` has one-dimensional
+global sections: `h⁰(𝒪) = 1`. -/
+@[simp]
+theorem finrank_divisorSheaf_zero_globalSections [CompactSpace X] [ConnectedSpace X] :
+    Module.finrank ℂ ((divisorSheaf (0 : WeilDivisor X)).obj.obj (op ⊤)) = 1 :=
+  (((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X)).app
+    (op ⊤)).toLinearEquiv.finrank_eq.trans
+      (holomorphicStructureSheafModules.finrank_globalSections 𝓘(ℂ) X)
 
 -- Through the unexposed section carriers, simp uses this lemma when it is given its arguments,
 -- as in simp only [divisorSheafZeroIso_hom_app_apply U f x].

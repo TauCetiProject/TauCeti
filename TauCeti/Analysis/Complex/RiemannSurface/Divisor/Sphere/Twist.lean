@@ -6,31 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Basic
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Map
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 
 /-!
-# Divisor cohomology of point twists on the Riemann sphere
+# Divisor cohomology on the Riemann sphere
 
-For a point `x` of the Riemann sphere `ℙ¹ = OnePoint ℂ` and an integer `n`, write `𝒪(n)` for the
-divisor sheaf of `n • [x]`. Stepping through the six-term point-twist sequence from
-`h⁰(𝒪) = 1` and `h¹(𝒪) = 0`, we compute
+For a divisor `D` on the Riemann sphere `ℙ¹ = OnePoint ℂ`, stepping through the six-term
+point-twist sequence from `h⁰(𝒪) = 1` and `h¹(𝒪) = 0` shows that `H¹(𝒪(D))` is
+finite-dimensional with `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`. Since `h⁰(𝒪(D)) = 0` for `deg D < 0`
+and `h¹` does not increase with `D`, we obtain
 
-`h⁰(𝒪(n)) = max(n + 1, 0)` and `h¹(𝒪(n)) = max(-n - 1, 0)`,
+`h⁰(𝒪(D)) = max(deg D + 1, 0)` and `h¹(𝒪(D)) = max(-deg D - 1, 0)`.
 
-so `h⁰ - h¹ = n + 1` for every `n`. In particular `𝒪(-1)` has `(h⁰, h¹) = (0, 0)` and `𝒪(-2)`
-has `(h⁰, h¹) = (0, 1)`. Only point twists of a single point are treated; no general
-Riemann–Roch theorem is asserted.
+In particular a divisor of degree `-1`, such as `-[x]`, has `(h⁰, h¹) = (0, 0)`, and a divisor of
+degree `-2` has `(h⁰, h¹) = (0, 1)`. No Riemann–Roch theorem for curves of higher genus is
+asserted.
 
 ## Main results
 
-* `TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one_zsmul_ofPoint_sphere`:
-  `H¹(𝒪(n))` is finite-dimensional.
-* `TauCeti.RiemannSurface.finrank_zsmul_ofPoint_euler_characteristic_sphere`:
-  `h⁰(𝒪(n)) - h¹(𝒪(n)) = n + 1`.
-* `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere_of_neg_one_le`:
-  `h¹(𝒪(n)) = 0` for `n ≥ -1`.
-* `TauCeti.RiemannSurface.finrank_divisorSheaf_zsmul_ofPoint_globalSections_sphere` and
-  `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere`: the closed
-  dimension formulas.
+* `TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one_sphere`: `H¹(𝒪(D))` is
+  finite-dimensional.
+* `TauCeti.RiemannSurface.finrank_euler_characteristic_sphere`:
+  `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`.
+* `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree` and
+  `TauCeti.RiemannSurface.isZero_divisorCechCohomology_one_sphere_of_neg_one_le_degree`:
+  `h¹(𝒪(D)) = 0` for `deg D ≥ -1`.
+* `TauCeti.RiemannSurface.finrank_divisorSheaf_globalSections_sphere` and
+  `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_sphere`: the closed dimension
+  formulas.
 
 ## References
 
@@ -40,83 +44,95 @@ Riemann–Roch theorem is asserted.
 
 public noncomputable section
 
-open CategoryTheory Limits Opposite
+open CategoryTheory Limits OnePoint Opposite
 open TauCeti.AlgebraicGeometry
 
 namespace TauCeti.RiemannSurface
 
-variable (x : OnePoint ℂ)
+/-- A property of divisors which holds for `0` and is unchanged by adding a point divisor holds
+for every divisor, since the point divisors generate the divisor group. -/
+private theorem weilDivisor_induction_add_ofPoint {X : Type*} {P : WeilDivisor X → Prop}
+    (zero : P 0) (add_ofPoint : ∀ D x, P (D + WeilDivisor.ofPoint x) ↔ P D)
+    (D : WeilDivisor X) : P D := by
+  suffices h : ∀ E ∈ AddSubgroup.closure (WeilDivisor.ofPoint '' Set.univ), ∀ D, P (D + E) ↔ P D by
+    simpa [zero] using h D (WeilDivisor.mem_closure_ofPoint_image_of_support_subset
+      (Set.subset_univ _)) 0
+  intro E hE
+  induction hE using AddSubgroup.closure_induction with
+  | mem _ hx =>
+    obtain ⟨x, -, rfl⟩ := hx
+    exact fun D ↦ add_ofPoint D x
+  | zero => simp
+  | add E F _ _ hE hF => exact fun D ↦ by rw [← add_assoc, hF, hE]
+  | neg E _ hE => exact fun D ↦ by rw [← hE, neg_add_cancel_right]
 
-/-- The first cohomology of `𝒪(n • [x])` on `ℙ¹` is finite-dimensional. -/
-instance finiteDimensional_divisorCechCohomology_one_zsmul_ofPoint_sphere (n : ℤ) :
-    FiniteDimensional ℂ (divisorCechCohomology (n • WeilDivisor.ofPoint x) 1) := by
-  induction n using Int.induction_on with
+/-- On `ℙ¹`, `H¹(𝒪(D))` is finite-dimensional and `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`: both hold
+for `D = 0` and are unchanged by a point twist. -/
+private theorem finiteDimensional_and_euler_characteristic_sphere
+    (D : WeilDivisor (OnePoint ℂ)) :
+    FiniteDimensional ℂ (divisorCechCohomology D 1) ∧
+      (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
+        Module.finrank ℂ (divisorCechCohomology D 1) = WeilDivisor.degree D + 1 := by
+  induction D using weilDivisor_induction_add_ofPoint with
   | zero =>
-    rw [zero_zsmul]
     have := ModuleCat.isZero_iff_subsingleton.1 isZero_divisorCechCohomology_zero_one_sphere
-    infer_instance
-  | succ i ih =>
-    rw [add_one_zsmul]
-    exact (finiteDimensional_divisorCechCohomology_one_add_point_iff _ x).2 ih
-  | pred i ih =>
-    refine (finiteDimensional_divisorCechCohomology_one_add_point_iff _ x).1 ?_
-    rwa [← add_one_zsmul, sub_add_cancel]
+    refine ⟨inferInstance, ?_⟩
+    rw [finrank_divisorSheaf_zero_globalSections, finrank_divisorCechCohomology_zero_one_sphere]
+    simp
+  | add_ofPoint D x =>
+    rw [finiteDimensional_divisorCechCohomology_one_add_point_iff, map_add,
+      WeilDivisor.degree_ofPoint]
+    refine and_congr_right fun _ ↦ ?_
+    rw [finrank_pointTwist_euler_characteristic]
+    constructor <;> intro h <;> omega
 
-/-- **Riemann–Roch for point twists on `ℙ¹`.** `h⁰(𝒪(n • [x])) - h¹(𝒪(n • [x])) = n + 1`. -/
-theorem finrank_zsmul_ofPoint_euler_characteristic_sphere (n : ℤ) :
-    (Module.finrank ℂ ((divisorSheaf (n • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) : ℤ) -
-      Module.finrank ℂ (divisorCechCohomology (n • WeilDivisor.ofPoint x) 1) = n + 1 := by
-  induction n using Int.induction_on with
-  | zero =>
-    rw [zero_zsmul, finrank_divisorSheaf_zero_globalSections,
-      finrank_divisorCechCohomology_zero_one_sphere]
-    norm_num
-  | succ i ih =>
-    rw [add_one_zsmul, finrank_pointTwist_euler_characteristic, ih]
-  | pred i ih =>
-    have h := finrank_pointTwist_euler_characteristic ((-i - 1 : ℤ) • WeilDivisor.ofPoint x) x
-    rw [← add_one_zsmul, sub_add_cancel, ih] at h
+/-- The first cohomology of every divisor sheaf on `ℙ¹` is finite-dimensional. -/
+instance finiteDimensional_divisorCechCohomology_one_sphere (D : WeilDivisor (OnePoint ℂ)) :
+    FiniteDimensional ℂ (divisorCechCohomology D 1) :=
+  (finiteDimensional_and_euler_characteristic_sphere D).1
+
+/-- **Riemann–Roch on `ℙ¹`.** `h⁰(𝒪(D)) - h¹(𝒪(D)) = deg D + 1`. -/
+theorem finrank_euler_characteristic_sphere (D : WeilDivisor (OnePoint ℂ)) :
+    (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
+      Module.finrank ℂ (divisorCechCohomology D 1) = WeilDivisor.degree D + 1 :=
+  (finiteDimensional_and_euler_characteristic_sphere D).2
+
+/-- `h¹(𝒪(D)) = 0` on `ℙ¹` when `deg D ≥ -1`. -/
+theorem finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree
+    {D : WeilDivisor (OnePoint ℂ)} (hD : -1 ≤ WeilDivisor.degree D) :
+    Module.finrank ℂ (divisorCechCohomology D 1) = 0 := by
+  obtain ⟨E, hle, hE⟩ : ∃ E ≤ D, WeilDivisor.degree E = -1 :=
+    ⟨D - (WeilDivisor.degree D + 1) • WeilDivisor.ofPoint ∞,
+      sub_le_self _ (zsmul_nonneg (WeilDivisor.ofPoint_nonneg _) (by omega)), by simp⟩
+  have h := finrank_euler_characteristic_sphere E
+  rw [finrank_divisorSheaf_globalSections_of_degree_neg (by omega), hE] at h
+  have := finrank_divisorCechCohomology_one_le_of_le hle
+  omega
+
+/-- `H¹(𝒪(D))` vanishes on `ℙ¹` when `deg D ≥ -1`. -/
+theorem isZero_divisorCechCohomology_one_sphere_of_neg_one_le_degree
+    {D : WeilDivisor (OnePoint ℂ)} (hD : -1 ≤ WeilDivisor.degree D) :
+    IsZero (divisorCechCohomology D 1) :=
+  ModuleCat.isZero_iff_subsingleton.2 <| Module.finrank_zero_iff.1 <|
+    finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree hD
+
+/-- **The dimension of `H⁰` of a divisor sheaf on `ℙ¹`.** `h⁰(𝒪(D)) = max(deg D + 1, 0)`. -/
+@[simp]
+theorem finrank_divisorSheaf_globalSections_sphere (D : WeilDivisor (OnePoint ℂ)) :
+    Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) = (WeilDivisor.degree D + 1).toNat := by
+  have h := finrank_euler_characteristic_sphere D
+  rcases le_or_gt 0 (WeilDivisor.degree D) with hD | hD
+  · rw [finrank_divisorCechCohomology_one_sphere_of_neg_one_le_degree (by omega)] at h
+    omega
+  · rw [finrank_divisorSheaf_globalSections_of_degree_neg hD]
     omega
 
-/-- `h¹(𝒪(n • [x])) = 0` on `ℙ¹` for `n ≥ -1`. -/
-theorem finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere_of_neg_one_le {n : ℤ}
-    (hn : -1 ≤ n) :
-    Module.finrank ℂ (divisorCechCohomology (n • WeilDivisor.ofPoint x) 1) = 0 := by
-  obtain rfl | hn := hn.eq_or_lt
-  · have h := finrank_zsmul_ofPoint_euler_characteristic_sphere x (-1)
-    rw [finrank_divisorSheaf_zsmul_ofPoint_globalSections_of_neg x (by norm_num)] at h
-    omega
-  have key (m : ℕ) :
-      Module.finrank ℂ (divisorCechCohomology ((m : ℤ) • WeilDivisor.ofPoint x) 1) = 0 := by
-    induction m with
-    | zero =>
-      rw [Nat.cast_zero, zero_zsmul]
-      exact finrank_divisorCechCohomology_zero_one_sphere
-    | succ m ih =>
-      rw [Nat.cast_succ, add_one_zsmul]
-      have h := LinearMap.finrank_le_finrank_of_surjective
-        (pointTwistCohomologyMap_one_surjective ((m : ℤ) • WeilDivisor.ofPoint x) x)
-      rw [ih] at h
-      omega
-  lift n to ℕ using (by omega)
-  exact key n
-
-/-- **The dimension of `H⁰` of a point twist on `ℙ¹`.** `h⁰(𝒪(n • [x])) = max(n + 1, 0)`. -/
-theorem finrank_divisorSheaf_zsmul_ofPoint_globalSections_sphere (n : ℤ) :
-    Module.finrank ℂ ((divisorSheaf (n • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) =
-      (n + 1).toNat := by
-  have h := finrank_zsmul_ofPoint_euler_characteristic_sphere x n
-  rcases le_or_gt 0 n with hn | hn
-  · rw [finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere_of_neg_one_le x (by omega)] at h
-    omega
-  · rw [finrank_divisorSheaf_zsmul_ofPoint_globalSections_of_neg x hn]
-    omega
-
-/-- **The dimension of `H¹` of a point twist on `ℙ¹`.** `h¹(𝒪(n • [x])) = max(-n - 1, 0)`. -/
-theorem finrank_divisorCechCohomology_one_zsmul_ofPoint_sphere (n : ℤ) :
-    Module.finrank ℂ (divisorCechCohomology (n • WeilDivisor.ofPoint x) 1) = (-n - 1).toNat := by
-  have h := finrank_zsmul_ofPoint_euler_characteristic_sphere x n
-  rw [finrank_divisorSheaf_zsmul_ofPoint_globalSections_sphere] at h
+/-- **The dimension of `H¹` of a divisor sheaf on `ℙ¹`.** `h¹(𝒪(D)) = max(-deg D - 1, 0)`. -/
+@[simp]
+theorem finrank_divisorCechCohomology_one_sphere (D : WeilDivisor (OnePoint ℂ)) :
+    Module.finrank ℂ (divisorCechCohomology D 1) = (-WeilDivisor.degree D - 1).toNat := by
+  have h := finrank_euler_characteristic_sphere D
+  rw [finrank_divisorSheaf_globalSections_sphere] at h
   omega
 
 end TauCeti.RiemannSurface

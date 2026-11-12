@@ -6,24 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Degree
-public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Twist
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Basic
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 
 /-!
 # Canonical divisors of the Riemann sphere and `h¹(𝒪)`
 
-The canonical divisor `-2[∞]` of `ℙ¹ = OnePoint ℂ`
-(`TauCeti.RiemannSurface.isCanonicalDivisor_neg_two_infty`) is the point twist `𝒪(-2)`, so
-`h⁰(K) = h¹(𝒪)`, both being zero. Every canonical divisor of `ℙ¹` has degree `-2`
+Every canonical divisor `K` of `ℙ¹ = OnePoint ℂ`, for example `-2[∞]`
+(`TauCeti.RiemannSurface.isCanonicalDivisor_neg_two_infty`), has degree `-2`
 (`TauCeti.RiemannSurface.IsCanonicalDivisor.degree_eq_neg_two_of_sphere`), which is
-`2 h¹(𝒪) - 2`.
+`2 h¹(𝒪) - 2`. Having negative degree, it has no nonzero global sections, so `h⁰(K) = h¹(𝒪)`,
+both being zero.
 
 ## Main results
 
-All declarations are in the namespace `TauCeti.RiemannSurface`.
+All declarations are in the namespace `TauCeti.RiemannSurface.IsCanonicalDivisor`.
 
-* `finrank_divisorSheaf_neg_two_infty_globalSections_eq_finrank_divisorCechCohomology_zero_one`:
-  `h⁰(-2[∞]) = h¹(𝒪)` on `ℙ¹`.
-* `IsCanonicalDivisor.degree_eq_two_mul_finrank_divisorCechCohomology_zero_one_sub_two_of_sphere`:
+* `finrank_divisorSheaf_globalSections_eq_finrank_divisorCechCohomology_zero_one_of_sphere`:
+  every canonical divisor `K` of `ℙ¹` has `h⁰(K) = h¹(𝒪)`.
+* `degree_eq_two_mul_finrank_divisorCechCohomology_zero_one_sub_two_of_sphere`:
   every canonical divisor `K` of `ℙ¹` has `deg K = 2 h¹(𝒪) - 2`.
 
 ## References
@@ -34,23 +35,20 @@ All declarations are in the namespace `TauCeti.RiemannSurface`.
 
 public section
 
-open OnePoint Opposite
+open Opposite
 open TauCeti.AlgebraicGeometry
 
 namespace TauCeti.RiemannSurface
 
-/-- On `ℙ¹` the canonical divisor `-2[∞]` (`isCanonicalDivisor_neg_two_infty`) has
-`h⁰(K) = h¹(𝒪)`, both being zero. -/
-theorem
-    finrank_divisorSheaf_neg_two_infty_globalSections_eq_finrank_divisorCechCohomology_zero_one :
-    Module.finrank ℂ
-        ((divisorSheaf ((-2 : ℤ) • WeilDivisor.ofPoint (∞ : OnePoint ℂ))).obj.obj (op ⊤)) =
-      Module.finrank ℂ (divisorCechCohomology (0 : WeilDivisor (OnePoint ℂ)) 1) := by
-  rw [finrank_divisorSheaf_zsmul_ofPoint_globalSections_sphere,
-    finrank_divisorCechCohomology_zero_one_sphere]
-  rfl
-
 namespace IsCanonicalDivisor
+
+/-- Every canonical divisor `K` of `ℙ¹` has `h⁰(K) = h¹(𝒪)`, both being zero. -/
+theorem finrank_divisorSheaf_globalSections_eq_finrank_divisorCechCohomology_zero_one_of_sphere
+    {K : WeilDivisor (OnePoint ℂ)} (hK : IsCanonicalDivisor K) :
+    Module.finrank ℂ ((divisorSheaf K).obj.obj (op ⊤)) =
+      Module.finrank ℂ (divisorCechCohomology (0 : WeilDivisor (OnePoint ℂ)) 1) := by
+  rw [finrank_divisorSheaf_globalSections_of_degree_neg (by simp [hK.degree_eq_neg_two_of_sphere]),
+    finrank_divisorCechCohomology_zero_one_sphere]
 
 /-- Every canonical divisor of `ℙ¹` has degree `2 h¹(𝒪) - 2`, the value `-2` for
 `h¹(𝒪) = 0`. -/

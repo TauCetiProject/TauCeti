@@ -30,7 +30,7 @@ point-twist steps in the Euler-characteristic calculation for divisor sheaves.
 Where `D + [x]` vanishes at `x`, the new coefficient of a global section is its value at `x`
 (`TauCeti.RiemannSurface.pointTwistGlobalCoefficient_eq_apply`). On a compact connected curve
 `h⁰(𝒪) = 1`, so the coefficient map of the sequence for `𝒪(-[x]) → 𝒪` is bijective and
-`h⁰(𝒪(n • [x])) = 0` for `n < 0`.
+`h⁰(𝒪(-[x])) = 0`.
 
 ## References
 
@@ -129,39 +129,8 @@ variable {D x} in
 `𝒪(D + [x])` is its value at `x`. -/
 theorem pointTwistGlobalCoefficient_eq_apply (hD : D x = -1)
     (f : (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.obj (op ⊤)) :
-    pointTwistGlobalCoefficient D x f = (divisorSheafSectionsEquiv _ ⊤ f).1 ⟨x, trivial⟩ := by
-  set s := divisorSheafSectionsEquiv _ ⊤ f
-  have hx : (D + WeilDivisor.ofPoint x) x = 0 := by
-    have h₁ : (WeilDivisor.ofPoint x) x = 1 := WeilDivisor.coeff_ofPoint_self x
-    simp [hD, h₁]
-  have hg := analyticAt_comp_chartAt_symm ((contMDiffAt_iff_eventually_mdifferentiableAt
-    (by simp)).1 ((isDivisorSectionAt_extend s.2 ⟨x, trivial⟩).contMDiffAt hx.le))
-  rw [pointTwistGlobalCoefficient_apply, divisorSections.pointTwistCoefficient_apply,
-    meromorphicGerms.coeff_apply]
-  have he : -(-D x - 1) - 1 = (-1 : ℤ) := by omega
-  simp only [he]
-  rw [zpow_neg_one]
-  set g := Function.extend Subtype.val s.1 (0 : X → ℂ) ∘ (chartAt ℂ x).symm
-  set a := chartAt ℂ x x
-  have hm : _root_.MeromorphicAt (fun z ↦ (z - a)⁻¹ * g z) a :=
-    (Contour.meromorphicAt_sub_inv a).mul hg.meromorphicAt
-  have hgerm : (meromorphicGerms.coordinate a)⁻¹ *
-      divisorSections.toChartGerm (D + WeilDivisor.ofPoint x) ⊤ ⟨x, trivial⟩ s =
-      meromorphicGerms.mk _ hm := by
-    apply Subtype.ext
-    rw [Subring.coe_mul, meromorphicGerms.coe_inv, meromorphicGerms.coe_coordinate,
-      divisorSections.coe_toChartGerm, meromorphicGerms.coe_mk]
-    rfl
-  rw [hgerm, meromorphicGerms.residue_mk]
-  have hres := Contour.residue_div_sub_pow_of_analyticAt hg 0
-  simp only [zero_add, pow_one, iteratedDeriv_zero, Nat.factorial_zero, Nat.cast_one,
-    div_one] at hres
-  rw [show (fun z ↦ (z - a)⁻¹ * g z) = fun z ↦ g z / (z - a) by
-    funext z; rw [div_eq_inv_mul], hres]
-  -- Unfold the chart representative `g` at the chart image of `x`.
-  change Function.extend Subtype.val s.1 (0 : X → ℂ) ((chartAt ℂ x).symm (chartAt ℂ x x)) = _
-  rw [(chartAt ℂ x).left_inv (mem_chart_source ℂ x)]
-  exact Subtype.val_injective.extend_apply _ _ (⟨x, trivial⟩ : (⊤ : Opens X))
+    pointTwistGlobalCoefficient D x f = (divisorSheafSectionsEquiv _ ⊤ f).1 ⟨x, trivial⟩ :=
+  divisorSections.pointTwistCoefficient_eq_apply (x := ⟨x, trivial⟩) hD _
 
 /-- At a twist of `-[x]`, every scalar is the newly permitted coefficient of a global section of
 `𝒪(-[x] + [x])`. -/
@@ -178,15 +147,6 @@ section Compact
 
 variable [CompactSpace X] [ConnectedSpace X]
 
-variable (X) in
-/-- On a compact connected complex curve the structure sheaf `𝒪 = 𝒪_0` has one-dimensional
-global sections: `h⁰(𝒪) = 1`. -/
-theorem finrank_divisorSheaf_zero_globalSections :
-    Module.finrank ℂ ((divisorSheaf (0 : WeilDivisor X)).obj.obj (op ⊤)) = 1 :=
-  (((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X)).app
-    (op ⊤)).toLinearEquiv.finrank_eq.trans
-      (holomorphicStructureSheafModules.finrank_globalSections 𝓘(ℂ) X)
-
 /-- On a compact connected complex curve, in the six-term sequence of `𝒪(-[x]) → 𝒪`, the
 coefficient map `H⁰(𝒪(-[x] + [x])) → ℂ` is bijective. -/
 theorem pointTwistGlobalCoefficient_neg_ofPoint_bijective :
@@ -201,16 +161,6 @@ theorem finrank_divisorSheaf_neg_ofPoint_globalSections :
   have h₀ := (exact_pointTwist_globalSections_coefficient (-WeilDivisor.ofPoint x) x).finrank_eq_add
     (divisorSheafMapOfLE_app_injective _ ⊤) (pointTwistGlobalCoefficient_neg_ofPoint_surjective x)
   rw [neg_add_cancel, finrank_divisorSheaf_zero_globalSections, Module.finrank_self] at h₀
-  omega
-
-/-- On a compact connected complex curve `h⁰(𝒪(n • [x])) = 0` for `n < 0`. -/
-theorem finrank_divisorSheaf_zsmul_ofPoint_globalSections_of_neg {n : ℤ} (hn : n < 0) :
-    Module.finrank ℂ ((divisorSheaf (n • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) = 0 := by
-  have hle : n • WeilDivisor.ofPoint x ≤ -WeilDivisor.ofPoint x := by
-    simpa using zsmul_le_zsmul_left (WeilDivisor.ofPoint_nonneg x) (Int.le_sub_one_of_lt hn)
-  have h := LinearMap.finrank_le_finrank_of_injective
-    (f := ((divisorSheafMapOfLE hle).hom.app (op ⊤)).hom) (divisorSheafMapOfLE_app_injective _ ⊤)
-  rw [finrank_divisorSheaf_neg_ofPoint_globalSections] at h
   omega
 
 end Compact
