@@ -49,6 +49,10 @@ global one. It does extend after multiplication by a cutoff:
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
+Conversely, the local estimates can be checked one compact set at a time:
+`TauCeti.LocalSymbol.ofEventuallyEq` makes a local symbol out of a function that vanishes outside
+`U` and agrees, near every position of `U`, with some symbol on `ℝⁿ`.
+
 ## References
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
@@ -212,6 +216,49 @@ instance : Module ℂ (LocalSymbol U V W m) :=
     coefficient_smul
 
 end Module
+
+section Localization
+
+/-- **Localization of the symbol estimates.** A function on `ℝⁿ × ℝⁿ` that vanishes at the
+positions outside `U` and, near every position of `U`, agrees with some symbol of order `m` on
+`ℝⁿ`, is a local symbol of order `m` on `U`. -/
+def ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ x ∈ U, ∃ a : Symbol n V W m, ∀ᶠ y in 𝓝 x, ∀ ξ, a.coefficient (y, ξ) = f (y, ξ)) :
+    LocalSymbol U V W m where
+  coefficient := f
+  contDiffOn_coefficient := by
+    rintro ⟨x, ξ⟩ ⟨hx, -⟩
+    obtain ⟨a, ha⟩ := h x hx
+    have hfa : a.coefficient =ᶠ[𝓝 (x, ξ)] f :=
+      ((continuous_fst.tendsto (x, ξ)).eventually ha).mono fun p hp => hp p.2
+    exact (a.contDiff_coefficient.contDiffAt.congr_of_eventuallyEq hfa.symm).contDiffWithinAt
+  coefficient_of_notMem := hf
+  exists_bound K hKU hK α β := by
+    have hw : ∀ ξ : CoordinateSpace n, 0 ≤ (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+      fun ξ => (Real.rpow_pos_of_pos (by positivity) _).le
+    refine hK.induction_on (p := fun s => ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ s, ∀ ξ,
+        ‖mixedDeriv α β f x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))
+      ⟨0, le_rfl, by simp⟩ (fun s t hst ⟨C, hC, hb⟩ => ⟨C, hC, fun x hx => hb x (hst hx)⟩)
+      (fun s t ⟨C, hC, hb⟩ ⟨D, _, hb'⟩ => ⟨max C D, le_max_of_le_left hC, ?_⟩) fun x hx => ?_
+    · rintro x (hx | hx) ξ
+      · exact (hb x hx ξ).trans (mul_le_mul_of_nonneg_right (le_max_left C D) (hw ξ))
+      · exact (hb' x hx ξ).trans (mul_le_mul_of_nonneg_right (le_max_right C D) (hw ξ))
+    -- Near `x`, use the estimates on a closed ball of a symbol agreeing with `f` around it.
+    obtain ⟨a, ha⟩ := h x (hKU hx)
+    obtain ⟨r, hr, hra⟩ := Metric.nhds_basis_closedBall.mem_iff.1 ha.eventually_nhds
+    obtain ⟨C, hC, hb⟩ := a.exists_bound _ (isCompact_closedBall x r) α β
+    exact ⟨Metric.closedBall x r, mem_nhdsWithin_of_mem_nhds (Metric.closedBall_mem_nhds x hr),
+      C, hC, fun y hy ξ => mixedDeriv_congr_of_eventually (hra hy) α β ξ ▸ hb y hy ξ⟩
+
+@[simp]
+theorem coefficient_ofEventuallyEq (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ∀ x ∉ U, ∀ ξ, f (x, ξ) = 0)
+    (h : ∀ x ∈ U, ∃ a : Symbol n V W m, ∀ᶠ y in 𝓝 x, ∀ ξ, a.coefficient (y, ξ) = f (y, ξ)) :
+    (ofEventuallyEq f hf h).coefficient = f :=
+  (rfl)
+
+end Localization
 
 section Restrict
 
