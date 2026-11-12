@@ -549,14 +549,15 @@ lemma restrictPreimagePairMap_snd_apply (S : Set Y) (x : ↥(π ⁻¹' S ∩ Z))
     TopPair.Hom.snd (restrictPreimagePairMap π Z S) x = ⟨x.1, x.2.2⟩ :=
   (rfl)
 
-/-- For a continuous `π` and an open `S ⊆ Y`, the points of `Z` lying over `S` are open in any
-subspace `T ⊆ Z`. -/
-lemma isOpen_subtypeVal_preimage_preimage_inter [TopologicalSpace Y] (hπ : Continuous π)
-    {S : Set Y} (hS : IsOpen S) {T : Set X} (hT : T ⊆ Z) :
-    IsOpen ((↑) ⁻¹' (π ⁻¹' S ∩ Z) : Set T) := by
-  convert (hS.preimage hπ).preimage (continuous_subtype_val (p := (· ∈ T))) using 1
-  ext x
-  exact and_iff_left (hT x.2)
+/-- For `S ⊆ T`, the inclusion of the pair over `S` into the pair over `T`, followed by the
+inclusion of the pair over `T` into `(X, Z)`, is the inclusion of the pair over `S`. -/
+@[reassoc (attr := simp)]
+lemma ofInclusionMap_inclusion_comp_restrictPreimagePairMap {S T : Set Y} (h : S ⊆ T) :
+    TopPair.ofInclusionMap (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S)
+        Set.inter_subset_left (ContinuousMap.inclusion (Set.preimage_mono h))
+        (fun _ hx ↦ ⟨h hx.1, hx.2⟩) ≫ restrictPreimagePairMap π Z T =
+      restrictPreimagePairMap π Z S :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
 
 /-- Over a set `S` containing the image of `π`, the pair over `S` is `(X, Z)`. -/
 lemma isIso_restrictPreimagePairMap {S : Set Y} (hS : ∀ x, π x ∈ S) :

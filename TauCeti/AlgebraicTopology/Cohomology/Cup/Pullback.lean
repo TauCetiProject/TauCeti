@@ -26,6 +26,8 @@ bijective when `u` is a Thom class.
 
 For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, restricting `u ∈ Hⁿ(X, Z)` to the pair
 `(π⁻¹ S, π⁻¹ S ∩ Z)` and `π` to `π⁻¹ S ⟶ S` gives the map over `S` (`TopCat.pullbackCupRestrict`).
+It is natural in `S` (`TopCat.pullbackCupRestrict_naturality`), and over the whole base it is
+bijective exactly when `a ↦ π^*a ⌣ u` is (`TopCat.bijective_pullbackCupRestrict_univ_iff`).
 For a vector bundle and `Z` its nonzero vectors, this pair is the Thom pair `(E|_S, E₀|_S)` of the
 restriction of the bundle to `S`.
 
@@ -36,6 +38,8 @@ restriction of the bundle to `S`.
 * `TopPair.pullbackCup_one`: `1 ↦ u`.
 * `TopPair.bijective_pullbackCup_iff_of_isIso`: invariance of bijectivity under isomorphisms.
 * `TopCat.pullbackCupRestrict`: the map over a subset of the base.
+* `TopCat.pullbackCupRestrict_naturality`: its naturality in the subset.
+* `TopCat.bijective_pullbackCupRestrict_univ_iff`: over the whole base it is `a ↦ π^*a ⌣ u`.
 -/
 
 public section
@@ -166,5 +170,39 @@ theorem pullbackCupRestrict_apply (S : Set Y) {n p m : ℕ} (h : p + n = m)
         (ofHom (π.hom.restrictPreimage S)) n p m h
         (TopPair.singularCohomologyMap (restrictPreimagePairMap π Z S) n u) :=
   (rfl)
+
+/-- **Naturality of the map over a subset of the base in the subset.** For `S ⊆ T`, the map over
+`S` of `u` at the restriction of `a ∈ Hᵖ(T; M)` to `S` is the restriction to the pair over `S` of
+the map over `T` of `u` at `a`. -/
+theorem pullbackCupRestrict_naturality {S T : Set Y} (hST : S ⊆ T) {n p m : ℕ} (h : p + n = m)
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (a : (of T).singularCohomology (ModuleCat.of K K) K M p) :
+    pullbackCupRestrict π Z M S n p m h u
+        (TopCat.singularCohomologyMap (ofHom (ContinuousMap.inclusion hST)) p a) =
+      TopPair.singularCohomologyMap (TopPair.ofInclusionMap
+        (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) Set.inter_subset_left
+        (ContinuousMap.inclusion (Set.preimage_mono hST)) fun _ hx ↦ ⟨hST hx.1, hx.2⟩) m
+        (pullbackCupRestrict π Z M T n p m h u a) := by
+  have hg : TopPair.Hom.fst (TopPair.ofInclusionMap
+      (Set.inter_subset_left : π ⁻¹' S ∩ Z ⊆ π ⁻¹' S) Set.inter_subset_left
+      (ContinuousMap.inclusion (Set.preimage_mono hST)) fun _ hx ↦ ⟨hST hx.1, hx.2⟩) ≫
+        ofHom (π.hom.restrictPreimage T) =
+      ofHom (π.hom.restrictPreimage S) ≫ ofHom (ContinuousMap.inclusion hST) :=
+    TopCat.ext fun x ↦ Subtype.ext (congrArg (fun y : ↥(π ⁻¹' T) ↦ π y.1)
+      (TopPair.ofInclusionMap_fst_apply _ _ x))
+  rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply,
+    ← ofInclusionMap_inclusion_comp_restrictPreimagePairMap π Z hST,
+    TopPair.singularCohomologyMap_comp_apply, TopPair.pullbackCup_naturality _ _ _ _ hg]
+
+/-- Over the whole base, the map over `S` of `u` is bijective exactly when `a ↦ π^*a ⌣ u` is. -/
+theorem bijective_pullbackCupRestrict_univ_iff {n p m : ℕ} (h : p + n = m)
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    Function.Bijective (pullbackCupRestrict π Z M Set.univ n p m h u) ↔
+      Function.Bijective ((TopPair.ofSubset Z).pullbackCup M π n p m h u) := by
+  have := isIso_restrictPreimagePairMap π Z (S := Set.univ) fun _ ↦ Set.mem_univ _
+  rw [pullbackCupRestrict_apply]
+  exact TopPair.bijective_pullbackCup_iff_of_isIso (restrictPreimagePairMap π Z Set.univ)
+    (isoOfHomeo (Homeomorph.Set.univ Y)).hom
+    (TopCat.ext fun x ↦ congrArg π (restrictPreimagePairMap_fst_apply π Z Set.univ x)) h u
 
 end TopCat
