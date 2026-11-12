@@ -121,7 +121,7 @@ theorem tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one (hr : 0 ≤
   by_cases hdeg : r = 0 ∨ p = 1
   · rw [ite_eq_left hdeg]
     apply tendsto_const_nhds.congr'
-    filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with v hv
+    filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with v _
     rcases hdeg with rfl | rfl
     · exact_mod_cast (quantile_map_cast_negativeBinomialMeasure_zero).symm
     · exact_mod_cast (quantile_map_cast_negativeBinomialMeasure_one).symm
