@@ -44,6 +44,8 @@ of projective space.
 
 * `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
   not vanish form an open set.
+* `ContinuousLinearEquiv.mapProjectivization`: a continuous linear equivalence `V ≃L[K] W`
+  induces a homeomorphism `ℙ K V ≃ₜ ℙ K W`.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
   points, two nonzero vectors span the same line iff all the `2 × 2` minors
   `f v * g w - f w * g v` vanish.
@@ -85,6 +87,35 @@ theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
   convert (isOpen_compl_singleton (x := (0 : W))).preimage (hG.comp continuous_subtype_val) using 1
   ext v
   simp [mk'_eq_mk]
+
+section MapProjectivization
+
+variable {W : Type*} [AddCommGroup W] [Module K W] [TopologicalSpace W]
+
+/-- A continuous linear equivalence `V ≃L[K] W` induces a homeomorphism `ℙ K V ≃ₜ ℙ K W`, sending
+the line spanned by `v` to the line spanned by `e v`. -/
+@[expose] def _root_.ContinuousLinearEquiv.mapProjectivization (e : V ≃L[K] W) :
+    ℙ K V ≃ₜ ℙ K W where
+  toFun := map (e : V →ₗ[K] W) e.injective
+  invFun := map (e.symm : W →ₗ[K] V) e.symm.injective
+  left_inv p := by
+    induction p using ind with | h v hv => simp [map_mk]
+  right_inv p := by
+    induction p using ind with | h v hv => simp [map_mk]
+  continuous_toFun := continuous_map _ e.continuous
+  continuous_invFun := continuous_map _ e.symm.continuous
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.mapProjectivization_mk (e : V ≃L[K] W) (v : V) (hv : v ≠ 0) :
+    e.mapProjectivization (mk K v hv) = mk K (e v) ((map_ne_zero_iff e e.injective).2 hv) :=
+  rfl
+
+@[simp]
+theorem _root_.ContinuousLinearEquiv.symm_mapProjectivization (e : V ≃L[K] W) :
+    e.mapProjectivization.symm = e.symm.mapProjectivization :=
+  rfl
+
+end MapProjectivization
 
 variable [ContinuousConstSMul Kˣ V]
 

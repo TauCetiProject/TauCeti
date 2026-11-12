@@ -23,6 +23,8 @@ homeomorphism, whose inverse sends a line `[v]` to the class of `v / ‖v‖`.
 
 * `TauCeti.ComplexProjectiveSpace.homeomorphProjectivization`: the homeomorphism
   `CPⁿ ≃ₜ ℙ ℂ (Fin (n + 1) → ℂ)` sending the class of a unit vector to the line it spans.
+* `TauCeti.ComplexProjectiveSpace.homeomorphProjectivization_symm_mk_eq_mk_inv_norm_smul`: its
+  inverse sends a line `[v]` to the class of `v / ‖v‖`.
 -/
 
 public section
@@ -97,6 +99,25 @@ theorem homeomorphProjectivization_mk (x : sphere (0 : EuclideanSpace ℂ (Fin (
       Projectivization.mk ℂ (WithLp.ofLp (x : EuclideanSpace ℂ (Fin (n + 1))))
         ((WithLp.ofLp_eq_zero _).not.2 (ne_zero_of_mem_sphere one_ne_zero x)) :=
   lift_lineOfSphere_mk n x
+
+/-- The inverse of `CPⁿ ≃ₜ ℙ ℂ (Fin (n + 1) → ℂ)` sends the line spanned by a unit vector to its
+class. -/
+@[simp]
+theorem homeomorphProjectivization_symm_mk (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1)
+    (hx : WithLp.ofLp (x : EuclideanSpace ℂ (Fin (n + 1))) ≠ 0) :
+    (homeomorphProjectivization n).symm (Projectivization.mk ℂ (WithLp.ofLp
+      (x : EuclideanSpace ℂ (Fin (n + 1)))) hx) = mk n x :=
+  (homeomorphProjectivization n).symm_apply_eq.2 (homeomorphProjectivization_mk n x).symm
+
+/-- The inverse of `CPⁿ ≃ₜ ℙ ℂ (Fin (n + 1) → ℂ)` sends the line `[v]` to the class of the unit
+vector `v / ‖v‖`. -/
+theorem homeomorphProjectivization_symm_mk_eq_mk_inv_norm_smul (v : Fin (n + 1) → ℂ)
+    (hv : v ≠ 0) :
+    (homeomorphProjectivization n).symm (Projectivization.mk ℂ v hv) =
+      mk n ⟨(‖WithLp.toLp 2 v‖⁻¹ : ℂ) • WithLp.toLp 2 v,
+        mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm ((WithLp.toLp_eq_zero 2).not.2 hv))⟩ := by
+  rw [Homeomorph.symm_apply_eq, homeomorphProjectivization_mk]
+  exact ((Projectivization.mk_eq_mk_iff' ℂ _ _ _ _).2 ⟨_, rfl⟩).symm
 
 end ComplexProjectiveSpace
 

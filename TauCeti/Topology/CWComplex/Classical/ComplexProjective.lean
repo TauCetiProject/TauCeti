@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Projectivization.Cardinality
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Data.Fin.Basic
-public import TauCeti.Topology.ComplexProjectiveSpace.Basic
+public import TauCeti.Topology.ComplexProjectiveSpace.Projectivization
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 
 /-!
@@ -46,6 +47,8 @@ of the real coordinates `TauCeti.complexEuclideanRealCoords`.
   (`TauCeti.ComplexProjectiveSpace.finite_cwComplex`) with one cell in each even dimension
   `m ≤ 2n` and none otherwise (`TauCeti.ComplexProjectiveSpace.nat_card_cell_cwComplex`).
 * `TauCeti.ComplexProjectiveSpace.finiteCWType`: `CPⁿ` has finite CW type.
+* `TauCeti.finiteCWType_projectivization_complex`: the projectivization `ℙ ℂ V` of a
+  finite-dimensional complex space has finite CW type.
 
 ## References
 
@@ -471,5 +474,21 @@ instance finiteCWType : FiniteCWType (ComplexProjectiveSpace n) :=
   (Homeomorph.Set.univ _).symm.finiteCWType
 
 end ComplexProjectiveSpace
+
+open scoped LinearAlgebra.Projectivization in
+/-- The projectivization `ℙ ℂ V` of a finite-dimensional Hausdorff complex topological vector space
+has finite CW type. It is empty when `V = 0`, and otherwise homeomorphic to `CPⁿ` for
+`n + 1 = dim V` (`TauCeti.ComplexProjectiveSpace.homeomorphProjectivization`). -/
+instance finiteCWType_projectivization_complex {V : Type} [AddCommGroup V] [Module ℂ V]
+    [FiniteDimensional ℂ V] [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℂ V]
+    [T2Space V] : FiniteCWType (ℙ ℂ V) := by
+  cases h : Module.finrank ℂ V with
+  | zero =>
+    have := Module.finrank_zero_iff.1 h
+    exact FiniteCWType.of_discreteTopology _
+  | succ n =>
+    exact ((ComplexProjectiveSpace.homeomorphProjectivization n).trans
+      (ContinuousLinearEquiv.ofFinrankEq (E := Fin (n + 1) → ℂ) (F := V)
+        (by simp [h])).mapProjectivization).symm.finiteCWType
 
 end TauCeti
