@@ -15,14 +15,14 @@ They provide convergence away from `a = 0` and domination for nonpositive expone
 
 ## Main declarations
 
+* `TauCeti.continuousAt_sq_add_rpow`: for `a ≠ 0`, the regularized power is continuous in the
+  regularization parameter at zero.
 * `TauCeti.tendsto_sq_add_rpow`: a quadratically regularized real power converges as the
   regularization parameter tends to zero from above.
 * `TauCeti.sq_add_rpow_le`: for a nonpositive exponent, the regularized power is bounded by its
   value at zero.
 * `TauCeti.rpow_norm_sq_add_neg_half_le`: `(‖x‖ ^ 2 + c) ^ (-1 / 2) ≤ ‖x‖⁻¹` for `c ≥ 0`.
 * `TauCeti.continuous_rpow_norm_sq_add`: for `c > 0`, `x ↦ (‖x‖ ^ 2 + c) ^ q` is continuous.
-* `TauCeti.continuousAt_zero_rpow_norm_sq_add_right`: for `x ≠ 0`, `c ↦ (‖x‖ ^ 2 + c) ^ q` is
-  continuous at `c = 0`.
 -/
 
 public section
@@ -31,11 +31,15 @@ namespace TauCeti
 
 open Filter Topology
 
+/-- If `a ≠ 0`, then `t ↦ (a ^ 2 + t) ^ e` is continuous at `t = 0`. -/
+theorem continuousAt_sq_add_rpow {a : ℝ} (ha : a ≠ 0) (e : ℝ) :
+    ContinuousAt (fun t : ℝ ↦ (a ^ 2 + t) ^ e) 0 :=
+  (continuousAt_const.add continuousAt_id).rpow_const (Or.inl (by simp [ha]))
+
 /-- If `a ≠ 0`, then `(a ^ 2 + t) ^ e` converges to `(a ^ 2) ^ e` as `t → 0⁺`. -/
 theorem tendsto_sq_add_rpow {a : ℝ} (ha : a ≠ 0) (e : ℝ) :
     Tendsto (fun t : ℝ ↦ (a ^ 2 + t) ^ e) (𝓝[>] 0) (𝓝 ((a ^ 2 + 0) ^ e)) :=
-  ((continuousAt_const.add continuousAt_id).rpow_const
-    (Or.inl (by simp [ha]))).tendsto.mono_left nhdsWithin_le_nhds
+  (continuousAt_sq_add_rpow ha e).tendsto.mono_left nhdsWithin_le_nhds
 
 /-- If `a ≠ 0`, `t ≥ 0`, and `e ≤ 0`, then the regularized power `(a ^ 2 + t) ^ e` is bounded by
 its value at `t = 0`. -/
@@ -63,12 +67,6 @@ theorem rpow_norm_sq_add_neg_half_le {c : ℝ} (hc : 0 ≤ c) {x : E} (hx : x �
 theorem continuous_rpow_norm_sq_add {c : ℝ} (hc : 0 < c) (q : ℝ) :
     Continuous fun x : E => (‖x‖ ^ 2 + c) ^ q :=
   (by fun_prop : Continuous fun x : E => ‖x‖ ^ 2 + c).rpow_const fun x => Or.inl (by positivity)
-
-/-- At a point `x ≠ 0` the power `(‖x‖ ^ 2 + c) ^ q` is continuous in `c` at `c = 0`. -/
-theorem continuousAt_zero_rpow_norm_sq_add_right {x : E} (hx : x ≠ 0) (q : ℝ) :
-    ContinuousAt (fun c : ℝ => (‖x‖ ^ 2 + c) ^ q) 0 :=
-  (continuousAt_const.add continuousAt_id).rpow_const
-    (Or.inl (by simp [hx]))
 
 end Norm
 

@@ -36,7 +36,8 @@ supported in the domain), composition of local `Lᵖ` operator families with con
 pairing, decreasing the integrability exponent, and decreasing the derivative order. On an open
 set, local `Lᵖ` membership is detected on the open subsets with compact closure inside it.
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension;
-in particular, so does holomorphy on an open neighbourhood.
+in particular, so does holomorphy on an open neighbourhood. Smooth and entire maps on the whole
+plane are in every class on every set.
 On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane the interior is
 `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), and since the real axis is null, local
 `Lᵖ` membership there is detected on the upper halves `W ∩ {0 < im}`
@@ -524,6 +525,17 @@ theorem _root_.DifferentiableOn.memWkpLoc {E : Type*} [NormedAddCommGroup E] [No
     [CompleteSpace E] {f : ℂ → E} (hf : DifferentiableOn ℂ f Ω) (hU : U ⊆ Ω)
     (k : ℕ) : MemWkpLoc p U k f :=
   ((hf.contDiffOn Ω.isOpen (n := k)).restrict_scalars ℝ).memWkpLoc hU
+
+/-- A `Cᵏ` map on the whole plane is in the local class `W^{k,p}` on every set, for every
+exponent. -/
+theorem _root_.ContDiff.memWkpLoc [CompleteSpace F] (hf : ContDiff ℝ k f) :
+    MemWkpLoc p U k f :=
+  hf.contDiffOn.memWkpLoc (Ω := ⊤) ((Set.subset_univ U).trans_eq Opens.coe_top.symm)
+
+/-- An entire map is in every local Sobolev class on every set, for every exponent. -/
+theorem _root_.Differentiable.memWkpLoc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) (k : ℕ) : MemWkpLoc p U k f :=
+  ((hf.contDiff (n := k)).restrict_scalars ℝ).memWkpLoc
 
 /-! ### Bounds for chains of weak derivatives -/
 

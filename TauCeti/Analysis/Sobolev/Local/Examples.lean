@@ -39,7 +39,7 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
 * The map `z ↦ ‖z‖` is in every local `W^{1,p}` class, as a Lipschitz map
   (`LipschitzWith.memWkpLoc_one`).
 * Polynomials are in every local Sobolev class on every set, as holomorphic maps on the plane
-  (`DifferentiableOn.memWkpLoc`).
+  (`Differentiable.memWkpLoc`).
 * The map `z ↦ ‖z‖` is in the local class `W^{2,p}` exactly when `p < 2`, on every set whose
   interior contains the origin: away from the origin its second derivative has norm between
   `‖z‖⁻¹` and `2 ‖z‖⁻¹`, and `‖z‖ ^ (-p)` is integrable near the origin of the plane exactly when
@@ -94,8 +94,7 @@ theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
 /-- Every complex polynomial is in every local Sobolev class on every set. -/
 protected theorem _root_.Polynomial.memWkpLoc (P : Polynomial ℂ) (U : Set ℂ) (k : ℕ) :
     MemWkpLoc p U k (fun z => P.eval z) :=
-  P.differentiable.differentiableOn.memWkpLoc (Ω := ⊤)
-    ((subset_univ U).trans_eq Opens.coe_top.symm) k
+  P.differentiable.memWkpLoc k
 
 /-! ### The norm is not in `W^{2,p}` for `p ≥ 2` -/
 
@@ -245,12 +244,12 @@ private theorem measurable_unitRadialCoordDeriv (c : ℝ) (e : ℂ) :
 
 private theorem tendsto_unitRadialCoord (e : ℂ) {z : ℂ} (hz : z ≠ 0) :
     Tendsto (fun c => unitRadialCoord c e z) (𝓝 0) (𝓝 (unitRadialCoord 0 e z)) :=
-  ((continuousAt_zero_rpow_norm_sq_add_right hz _).mul continuousAt_const).tendsto
+  ((continuousAt_sq_add_rpow (norm_ne_zero_iff.2 hz) _).mul continuousAt_const).tendsto
 
 private theorem tendsto_unitRadialCoordDeriv (e : ℂ) {z : ℂ} (hz : z ≠ 0) :
     Tendsto (fun c => unitRadialCoordDeriv c e z) (𝓝 0) (𝓝 (unitRadialCoordDeriv 0 e z)) :=
-  (((continuousAt_zero_rpow_norm_sq_add_right hz _).smul continuousAt_const).sub
-    (((continuousAt_zero_rpow_norm_sq_add_right hz _).mul continuousAt_const).smul
+  (((continuousAt_sq_add_rpow (norm_ne_zero_iff.2 hz) _).smul continuousAt_const).sub
+    (((continuousAt_sq_add_rpow (norm_ne_zero_iff.2 hz) _).mul continuousAt_const).smul
       continuousAt_const)).tendsto
 
 private theorem locallyIntegrable_unitRadialCoord {c : ℝ} (hc : 0 ≤ c) (e : ℂ) :
@@ -340,17 +339,13 @@ private theorem memWkpLoc_one_unitRadialCoord (hp : p < 2) (e : ℂ) :
   · have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
     exact MemLp.of_bound (measurable_unitRadialCoord 0 e).aestronglyMeasurable ‖e‖
       (Eventually.of_forall (norm_unitRadialCoord_le le_rfl e))
-  · obtain ⟨R, hR⟩ := hK.isBounded.subset_ball 0
-    have hp2 : p.toReal < 2 := by
-      simpa using (ENNReal.toReal_lt_toReal (ne_top_of_lt hp) (by simp)).2 hp
-    have hker : MemLp (fun z : ℂ => ‖z‖ ^ (-1 : ℝ)) p (volume.restrict (ball 0 R)) :=
-      memLp_norm_rpow_ball (ne_top_of_lt hp) (by simp [Complex.finrank_real_complex]; linarith)
-    refine ((hker.const_mul (2 * ‖e‖)).mono_measure
-      (Measure.restrict_mono hR le_rfl)).of_le
+  · have hker : MemLp (fun z : ℂ => ‖z‖⁻¹) p (volume.restrict K) :=
+      hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using hp)
+    refine (hker.const_mul (2 * ‖e‖)).of_le
       (measurable_unitRadialCoordDeriv 0 e).aestronglyMeasurable
-      (ae_restrict_of_ae ((norm_unitRadialCoordDeriv_le_rpow e).mono fun z hz => ?_))
+      (ae_restrict_of_ae ((volume.ae_ne 0).mono fun z hz => ?_))
     rw [Real.norm_of_nonneg (by positivity)]
-    exact hz
+    exact norm_unitRadialCoordDeriv_le le_rfl e hz
 
 
 /-- The derivative of the norm of `ℂ` away from the origin, in the coordinates `re` and `im`. -/
@@ -819,7 +814,6 @@ theorem not_memWkpLoc_two_planarReflection_higherReflectionCoeff_one_im :
 theorem memWkpLoc_planarReflection_higherReflectionCoeff_two_im (U : Set ℂ) (k : ℕ) :
     MemWkpLoc p U k (planarReflection (higherReflectionCoeff 2) fun z => z.im) := by
   rw [planarReflection_higherReflectionCoeff_two_im]
-  exact ContDiffOn.memWkpLoc (Ω := ⊤) Complex.imCLM.contDiff.contDiffOn
-    ((subset_univ U).trans_eq Opens.coe_top.symm)
+  exact Complex.imCLM.contDiff.memWkpLoc
 
 end TauCeti
