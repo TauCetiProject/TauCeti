@@ -100,7 +100,6 @@ private theorem exists_forall_energyFormH1_eq_neg_setIntegral_inner_ae_abs_le [N
           |W1p.value (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x| ≤
             K * ρ ^ (1 - (Fintype.card ι : ℝ) / q) *
               (eLpNorm F q (mu.restrict (ball x₀ ρ))).toReal / lam := by
-  have hn : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
   obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow_divergence (mu := mu) hq hqn
   refine ⟨C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^
       ((Fintype.card ι : ℝ)⁻¹ - (q : ℝ)⁻¹),
@@ -165,7 +164,7 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
             ρ ^ (1 - (Fintype.card ι : ℝ) / q) *
               (eLpNorm F q (mu.restrict (ball x₀ ρ))).toReal) / lam := by
   obtain ⟨K₁, hK₁, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
-  obtain ⟨K₂, hK₂, hdiv⟩ :=
+  obtain ⟨K₂, -, hdiv⟩ :=
     exists_forall_energyFormH1_eq_neg_setIntegral_inner_ae_abs_le (mu := mu) hq hqn
   refine ⟨max K₁ K₂, lt_max_of_lt_left hK₁, ?_⟩
   intro Omega a lam Lam f F u x₀ ρ h ha hf hF hu hρ hball
@@ -197,10 +196,6 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
       (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2), W1p.value_restrictL_ae hB u]
     with x hx hwx hxs hxr
   rw [hxs, Pi.sub_apply, hxr] at hx
-  have hf0 : 0 ≤ ρ ^ (2 - (Fintype.card ι : ℝ) / r) *
-      (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam := by positivity
-  have hF0 : 0 ≤ ρ ^ (1 - (Fintype.card ι : ℝ) / q) *
-      (eLpNorm F q (mu.restrict (ball x₀ ρ))).toReal / lam := by positivity
   calc |W1p.value u x - W1p.value g x|
       ≤ |W1p.value u x - W1p.value (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x - W1p.value g x| +
           |W1p.value (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x| := by
@@ -344,7 +339,7 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp_divergence [Nonempty ι] {lam La
           (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
             R ^ (1 - (Fintype.card ι : ℝ) / q) *
               (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam) := by
-  obtain ⟨K, hK, hsplit⟩ :=
+  obtain ⟨K, -, hsplit⟩ :=
     exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence (mu := mu) hr hrn hq hqn
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le (mu := mu) (lam := lam) (Lam := Lam)
@@ -388,7 +383,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp_divergence [Nonemp
           (R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal +
             R ^ (1 - (Fintype.card ι : ℝ) / q) *
               (eLpNorm F q (mu.restrict (ball x₀ R))).toReal) / lam)) := by
-  obtain ⟨K, hK, hcmp⟩ :=
+  obtain ⟨K, -, hcmp⟩ :=
     exists_forall_exists_ae_abs_sub_le_of_memLp_divergence (mu := mu) hr hrn hq hqn
   obtain ⟨α, C, hα, hα1, hC, hosc⟩ :=
     exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
@@ -444,7 +439,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp_divergence [Nonempty 
               R ^ (1 - (Fintype.card ι : ℝ) / q) *
                 (eLpNorm F q (mu.restrict Omega)).toReal) / lam)).toNNReal α
           (preciseRepresentative mu (W1p.value u)) K := by
-  obtain ⟨Ks, hKs, hcmp⟩ :=
+  obtain ⟨Ks, -, hcmp⟩ :=
     exists_forall_exists_ae_abs_sub_le_of_memLp_divergence (mu := mu) hr hrn hq hqn
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
     exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
