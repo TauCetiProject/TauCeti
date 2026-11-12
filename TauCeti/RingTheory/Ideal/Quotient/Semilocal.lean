@@ -52,3 +52,16 @@ theorem finite_setOfPred_isMaximal_and_le_of_ne_bot {R : Type*} [CommRing R] [Is
     mem_minimalPrimes_of_ne_bot h𝔞 h𝔞P
 
 end Ideal
+
+namespace TauCeti
+
+/-- A maximal ideal of `B` containing `b` is the preimage of a maximal ideal of `B ⧸ bB`. -/
+theorem exists_maximalSpectrum_comap_mk_eq {B : Type*} [CommRing B] {b : B}
+    {m : MaximalSpectrum B} (hbm : b ∈ m.asIdeal) :
+    ∃ q : MaximalSpectrum (B ⧸ Ideal.span {b}),
+      q.asIdeal.comap (Ideal.Quotient.mk _) = m.asIdeal := by
+  have hle : Ideal.span {b} ≤ m.asIdeal := (Ideal.span_singleton_le_iff_mem _).2 hbm
+  exact ⟨⟨_, Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
+    (by rwa [Ideal.mk_ker])⟩, Ideal.comap_map_mk hle⟩
+
+end TauCeti
