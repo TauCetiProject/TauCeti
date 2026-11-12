@@ -163,6 +163,21 @@ instance of_krullDimLE_one [Order.KrullDimLE 1 α] : IsCatenary α :=
 
 end TauCeti.Order.IsCatenary
 
+namespace TauCeti.Order
+
+variable {α : Type*} [Preorder α] {a b : α}
+
+open _root_.Order in
+/-- An interval `[a, b]` between equivalent elements `a ≤ b ≤ a` has Krull dimension zero: it is
+nonempty and all its elements are equivalent. -/
+theorem krullDim_Icc_eq_zero_of_le_of_le (hab : a ≤ b) (hba : b ≤ a) :
+    krullDim (Set.Icc a b) = 0 :=
+  have : Nonempty (Set.Icc a b) := ⟨⟨a, le_rfl, hab⟩⟩
+  le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.2.2.trans (hba.trans x.2.1))
+    krullDim_nonneg
+
+end TauCeti.Order
+
 namespace CovBy
 
 variable {α : Type*} [Preorder α] {a b : α}
@@ -281,9 +296,7 @@ theorem krullDim_Icc_eq_length_of_add
   induction hs : s.length generalizing s with
   | zero =>
     rw [show s.last = s.head from congrArg s (Fin.ext (by simp [hs])), Nat.cast_zero]
-    have : Nonempty (Set.Icc s.head s.head) := ⟨⟨s.head, le_rfl, le_rfl⟩⟩
-    exact le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.2.2.trans x.2.1)
-      krullDim_nonneg
+    exact krullDim_Icc_eq_zero_of_le_of_le le_rfl le_rfl
   | succ n ih =>
     have hpos : s.length ≠ 0 := by omega
     -- Split off the first covering pair `s.head ⋖ s 1` of `s`.
@@ -309,24 +322,19 @@ theorem isCatenary_iff_krullDim_Icc_add :
     IsCatenary α ↔ (∀ a b : α, a ≤ b → krullDim (Set.Icc a b) ≠ ⊤) ∧
       ∀ a b c : α, a ≤ b → b ≤ c →
         krullDim (Set.Icc a c) = krullDim (Set.Icc a b) + krullDim (Set.Icc b c) := by
-  -- An interval `[a, b]` with `b ≤ a` has Krull dimension zero: its elements are all equivalent.
-  have hzero {a b : α} (hab : a ≤ b) (hba : b ≤ a) : krullDim (Set.Icc a b) = 0 :=
-    have : Nonempty (Set.Icc a b) := ⟨⟨a, le_rfl, hab⟩⟩
-    le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.2.2.trans (hba.trans x.2.1))
-      krullDim_nonneg
   refine ⟨fun _ => ⟨fun a b hab => ?_, fun a b c hab hbc => ?_⟩, fun ⟨hfin, hadd⟩ => ?_⟩
   · by_cases hba : b ≤ a
-    · exact (hzero hab hba).trans_ne (by decide)
+    · exact (krullDim_Icc_eq_zero_of_le_of_le hab hba).trans_ne (by decide)
     obtain ⟨s, rfl, rfl⟩ := exists_covBy_series_of_lt (hab.lt_of_not_ge hba)
     rw [krullDim_Icc_eq_length, ← WithBot.coe_top, ← WithBot.coe_natCast, Ne, WithBot.coe_inj]
     exact ENat.natCast_ne_top _
   · -- If `b` is equivalent to `a` or to `c`, one interval has Krull dimension zero and the other
     -- two coincide.
     by_cases hba : b ≤ a
-    · rw [hzero hab hba, zero_add,
+    · rw [krullDim_Icc_eq_zero_of_le_of_le hab hba, zero_add,
         (Set.Icc_subset_Icc_left hba).antisymm (Set.Icc_subset_Icc_left hab)]
     by_cases hcb : c ≤ b
-    · rw [hzero hbc hcb, add_zero,
+    · rw [krullDim_Icc_eq_zero_of_le_of_le hbc hcb, add_zero,
         (Set.Icc_subset_Icc_right hcb).antisymm (Set.Icc_subset_Icc_right hbc)]
     -- Otherwise concatenate saturated chains from `a` to `b` and from `b` to `c`.
     obtain ⟨s, rfl, rfl⟩ := exists_covBy_series_of_lt (hab.lt_of_not_ge hba)
