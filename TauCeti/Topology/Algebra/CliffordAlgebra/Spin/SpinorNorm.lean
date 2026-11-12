@@ -10,10 +10,10 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.Norm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
-public import TauCeti.Analysis.Normed.Field.Squares
 public import TauCeti.Topology.Algebra.Group.Connected
 import Mathlib.Analysis.Normed.Field.ProperSpace
 import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.Analysis.Normed.Field.Squares
 
 /-!
 # The spinor kernel is open
