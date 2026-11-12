@@ -39,8 +39,7 @@ Hamiltonian `H` whose time-one map `ψ`
 
 Since `ψ` is the time-one map of a Hamiltonian flow it preserves the area form
 (`TauCeti.SymplecticForm.apply_fderiv_hamiltonianFlow`), so `φ ∘ ψ` is area preserving whenever
-`φ` is. The case of a single orbit is
-`TauCeti.exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero`.
+`φ` is.
 
 The Hamiltonian is a sum of radial twists `w ↦ -θᵢ G(‖w - p i‖²) / 2`
 (`TauCeti.radialHamiltonian`) for a smooth profile `G` equal to the identity near `0` and
@@ -64,7 +63,6 @@ controlled.
 * `TauCeti.exists_hamiltonianFlow_forall_forall_det_one_sub_pow_ne_zero`: localized, arbitrarily
   small Hamiltonian twists make finitely many periodic orbits nondegenerate in all iterates at
   once.
-* `TauCeti.exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero`: the case of one orbit.
 
 ## References
 
@@ -101,9 +99,10 @@ private theorem exists_twist_profile {A : ℂ →L[ℝ] ℂ} (hdet : A.det = 1) 
   obtain ⟨C, hC⟩ := (hG₁.continuous_deriv (by simp)).bounded_above_of_compact_support hG₁c.deriv
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
   -- Choose a small angle `θ` outside the countable set of degenerate angles.
+  have hbound : (0 : ℝ) < ε / ((C + 1) * r) := by positivity
   obtain ⟨θ, hθ, hθ0, hθε⟩ :=
     ((LinearMap.countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero hdet).dense_compl
-      ℝ).exists_between (show (0 : ℝ) < ε / ((C + 1) * r) by positivity)
+      ℝ).exists_between hbound
   refine ⟨fun s ↦ θ * G₁ s, θ, contDiff_const.mul hG₁, fun s hs ↦ ?_, ?_, fun s ↦ ?_,
     fun n hn h ↦ hθ ⟨n, hn, ?_⟩⟩
   · simp [hG₁R s (hs.trans (le_abs_self s))]
@@ -175,10 +174,11 @@ theorem exists_hamiltonianFlow_forall_forall_det_one_sub_pow_ne_zero {ι : Type*
   set ψ := stdComplexSymplecticForm.hamiltonianFlow H hX 1
   -- On the disc of radius `r / 2` about `p i`, the time-one map is the twist about `p i`, and
   -- away from these discs it is the identity.
+  have hr3 : r ^ 2 / 9 = (r / 3) ^ 2 := by ring
   have htwist (i : ι) (w : ℂ) (hw : ‖w - p i‖ < r / 2) :
       ψ w = p i + exp (I * ↑(1 * deriv (G i) (‖w - p i‖ ^ 2))) * (w - p i) :=
     hamiltonianFlow_sum_radialHamiltonian hGR hX (hdiff i _) (fun j hji ↦ by
-      rw [show r ^ 2 / 9 = (r / 3) ^ 2 by ring, Real.sqrt_sq (by positivity)]
+      rw [hr3, Real.sqrt_sq (by positivity)]
       linarith [hsep i j hji]) 1
   have hfix (w : ℂ) (hw : ∀ i, r / 2 ≤ ‖w - p i‖) : ψ =ᶠ[𝓝 w] id :=
     hamiltonianFlow_sum_radialHamiltonian_eventuallyEq_id hGR hX (fun i ↦ by nlinarith [hw i]) 1
@@ -186,8 +186,8 @@ theorem exists_hamiltonianFlow_forall_forall_det_one_sub_pow_ne_zero {ι : Type*
   · -- Each disc turns through a small angle, and the rest of the plane is fixed.
     by_cases hw : ∃ i, ‖w - p i‖ < r / 2
     · obtain ⟨i, hi⟩ := hw
-      rw [htwist i w hi, show ∀ e : ℂ, p i + e * (w - p i) - w = (e - 1) * (w - p i) by
-        intro e; ring, norm_mul]
+      have hsub (e : ℂ) : p i + e * (w - p i) - w = (e - 1) * (w - p i) := by ring
+      rw [htwist i w hi, hsub, norm_mul]
       calc _ ≤ |1 * deriv (G i) (‖w - p i‖ ^ 2)| * ‖w - p i‖ := by
             gcongr
             exact Real.norm_exp_I_mul_ofReal_sub_one_le
@@ -216,36 +216,5 @@ theorem exists_hamiltonianFlow_forall_forall_det_one_sub_pow_ne_zero {ι : Type*
     refine ⟨hψp, ?_, _, (hA i).iterate_comp_of_eventuallyEq_id hψ' (hk i) hψp (hφ i) hid, hθ i⟩
     rw [(Function.iterate_comp_eventuallyEq_of_eventuallyEq_id (hk i) hψp hψ'.continuousAt (hφ i)
       hid).eq_of_nhds, Function.comp_apply, hψp, hp]
-
-/-- **A localized Hamiltonian twist makes a periodic orbit nondegenerate in all iterates.** Let
-`p` be a periodic point of period `k > 0` of a map `φ` of the plane, continuous along the orbit,
-whose linearized return map `A` has determinant one, and let `r > 0` be at most the distance from
-`p` to the other points of its orbit. For every `ε > 0` there is a smooth compactly supported
-Hamiltonian `H` whose time-one map `ψ` fixes `p` and every point at distance at least `r` from `p`,
-moves no point by more than `ε`, and makes `p` a periodic point of `φ ∘ ψ` of period `k` whose
-linearized return map `B` has `det (1 - B ^ n) ≠ 0` for every `n ≠ 0`. The conclusions hold for
-every Lipschitz constant of the Hamiltonian vector field, one of which exists. This is the case of
-a single orbit of `TauCeti.exists_hamiltonianFlow_forall_forall_det_one_sub_pow_ne_zero`. -/
-theorem exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero {φ : ℂ → ℂ} {p : ℂ} {k : ℕ}
-    {A : ℂ →L[ℝ] ℂ} (hk : 0 < k) (hp : φ^[k] p = p) (hA : HasFDerivAt φ^[k] A p)
-    (hdet : A.det = 1) (hφ : ∀ j < k, ContinuousAt φ (φ^[j] p)) {r : ℝ} (hr : 0 < r)
-    (horb : ∀ j, 0 < j → j < k → r ≤ ‖φ^[j] p - p‖) {ε : ℝ} (hε : 0 < ε) :
-    ∃ H : ℂ → ℝ, ContDiff ℝ ∞ H ∧ HasCompactSupport H ∧
-      (∃ K, LipschitzWith K (stdComplexSymplecticForm.hamiltonianVectorField H)) ∧
-      ∀ {K : NNReal} (hX : LipschitzWith K (stdComplexSymplecticForm.hamiltonianVectorField H)),
-        stdComplexSymplecticForm.hamiltonianFlow H hX 1 p = p ∧
-        (∀ w, r ≤ ‖w - p‖ → stdComplexSymplecticForm.hamiltonianFlow H hX 1 w = w) ∧
-        (∀ w, ‖stdComplexSymplecticForm.hamiltonianFlow H hX 1 w - w‖ ≤ ε) ∧
-        (φ ∘ stdComplexSymplecticForm.hamiltonianFlow H hX 1)^[k] p = p ∧
-        ∃ B : ℂ →L[ℝ] ℂ, HasFDerivAt (φ ∘ stdComplexSymplecticForm.hamiltonianFlow H hX 1)^[k]
-          B p ∧ ∀ n ≠ 0, (1 - B ^ n).det ≠ 0 := by
-  obtain ⟨H, hHc, hHs, hlip, h⟩ :=
-    exists_hamiltonianFlow_forall_forall_det_one_sub_pow_ne_zero (ι := Unit) (fun _ ↦ hk)
-      (fun _ ↦ hp) (fun _ ↦ hA) (fun _ ↦ hdet) (fun _ ↦ hφ) hr
-      (fun _ _ m hm hne ↦ horb m (Nat.pos_of_ne_zero fun h ↦ hne (by rw [h])) hm) hε
-  refine ⟨H, hHc, hHs, hlip, fun hX ↦ ?_⟩
-  obtain ⟨hfix, hmove, hper⟩ := h hX
-  obtain ⟨hψp, hpk, hB⟩ := hper ()
-  exact ⟨hψp, fun w hw ↦ (hfix w fun _ ↦ by linarith).eq_of_nhds, hmove, hpk, hB⟩
 
 end TauCeti
