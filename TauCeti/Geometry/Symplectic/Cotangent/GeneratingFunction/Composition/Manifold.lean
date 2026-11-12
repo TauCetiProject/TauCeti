@@ -139,9 +139,67 @@ private theorem generatingTarget_eq_generatingSource_iff_extChartAt
     cotangentGeneratingTarget_eq_cotangentGeneratingSource_iff hS hT, mvfderiv_eq_zero_iff,
     mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero ha hsum, hcoord]
 
+omit [TopologicalSpace M₂] [TopologicalSpace M₃] [I₁.Boundaryless] [I₂.Boundaryless]
+  [I₃.Boundaryless] [IsManifold I₂ 1 M₂] [IsManifold I₃ 1 M₃] in
+/-- The source covectors of `f` at `(q, c)` and of `g` at `(q, d)` agree when, near the image of
+`q` in the extended chart at `x₁`, the slices of `f` and `g` through `q` read as slices of
+coordinate expressions `f'` and `g'` that have the same source covector. -/
+private theorem generatingSource_eq_of_extChartAt (x₁ : M₁) {f : M₁ × M₃ → ℝ}
+    {g : M₁ × M₂ → ℝ} {f' : E₁ × E₃ → ℝ} {g' : E₁ × E₂ → ℝ} {q : M₁} {c : M₃} {d : M₂}
+    {c' : E₃} {d' : E₂} (hq : q ∈ (extChartAt I₁ x₁).source)
+    (hf : (fun q' ↦ f (q', c)) ∘ (extChartAt I₁ x₁).symm =ᶠ[𝓝 (extChartAt I₁ x₁ q)]
+      fun v ↦ f' (v, c'))
+    (hg : (fun q' ↦ g (q', d)) ∘ (extChartAt I₁ x₁).symm =ᶠ[𝓝 (extChartAt I₁ x₁ q)]
+      fun v ↦ g' (v, d'))
+    (hf' : DifferentiableAt ℝ f' (extChartAt I₁ x₁ q, c'))
+    (hg' : DifferentiableAt ℝ g' (extChartAt I₁ x₁ q, d'))
+    (h : cotangentGeneratingSource f' (extChartAt I₁ x₁ q, c') =
+      cotangentGeneratingSource g' (extChartAt I₁ x₁ q, d')) :
+    generatingSource I₁ f (q, c) = generatingSource I₁ g (q, d) := by
+  have hmv : mvfderiv I₁ (fun q' ↦ f (q', c)) q = mvfderiv I₁ (fun q' ↦ g (q', d)) q := by
+    refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq hq hf hg
+      (hf'.comp (extChartAt I₁ x₁ q) (differentiableAt_id.prodMk (differentiableAt_const _)))
+      (hg'.comp (extChartAt I₁ x₁ q) (differentiableAt_id.prodMk (differentiableAt_const _))) ?_
+    rw [fderiv_slice_left hf', fderiv_slice_left hg']
+    ext w
+    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
+      cotangentGeneratingSource_snd_apply] using congr($h.2 w)
+  exact CotangentBundle.ext (by simp) fun v ↦ by
+    rw [generatingSource_snd, generatingSource_snd]
+    exact congr($hmv v)
+
+omit [TopologicalSpace M₁] [TopologicalSpace M₂] [I₁.Boundaryless] [I₂.Boundaryless]
+  [I₃.Boundaryless] [IsManifold I₁ 1 M₁] [IsManifold I₂ 1 M₂] in
+/-- The target covectors of `f` at `(c, Q)` and of `g` at `(d, Q)` agree when, near the image of
+`Q` in the extended chart at `x₃`, the slices of `f` and `g` through `Q` read as slices of
+coordinate expressions `f'` and `g'` that have the same target covector. -/
+private theorem generatingTarget_eq_of_extChartAt (x₃ : M₃) {f : M₁ × M₃ → ℝ}
+    {g : M₂ × M₃ → ℝ} {f' : E₁ × E₃ → ℝ} {g' : E₂ × E₃ → ℝ} {Q : M₃} {c : M₁} {d : M₂}
+    {c' : E₁} {d' : E₂} (hQ : Q ∈ (extChartAt I₃ x₃).source)
+    (hf : (fun Q' ↦ f (c, Q')) ∘ (extChartAt I₃ x₃).symm =ᶠ[𝓝 (extChartAt I₃ x₃ Q)]
+      fun u ↦ f' (c', u))
+    (hg : (fun Q' ↦ g (d, Q')) ∘ (extChartAt I₃ x₃).symm =ᶠ[𝓝 (extChartAt I₃ x₃ Q)]
+      fun u ↦ g' (d', u))
+    (hf' : DifferentiableAt ℝ f' (c', extChartAt I₃ x₃ Q))
+    (hg' : DifferentiableAt ℝ g' (d', extChartAt I₃ x₃ Q))
+    (h : cotangentGeneratingTarget f' (c', extChartAt I₃ x₃ Q) =
+      cotangentGeneratingTarget g' (d', extChartAt I₃ x₃ Q)) :
+    generatingTarget I₃ f (c, Q) = generatingTarget I₃ g (d, Q) := by
+  have hmv : mvfderiv I₃ (fun Q' ↦ f (c, Q')) Q = mvfderiv I₃ (fun Q' ↦ g (d, Q')) Q := by
+    refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq hQ hf hg
+      (hf'.comp (extChartAt I₃ x₃ Q) ((differentiableAt_const _).prodMk differentiableAt_id))
+      (hg'.comp (extChartAt I₃ x₃ Q) ((differentiableAt_const _).prodMk differentiableAt_id)) ?_
+    rw [fderiv_slice_right hf', fderiv_slice_right hg']
+    ext w
+    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply,
+      cotangentGeneratingTarget_snd_apply, neg_inj] using congr($h.2 w)
+  exact CotangentBundle.ext (by simp) fun v ↦ by
+    rw [generatingTarget_snd, generatingTarget_snd]
+    exact congr((-$hmv) v)
+
 /-- **Composition of generating functions on manifolds by stationary elimination.**
 
-Let `S` on `M₁ × M₂` and `T` on `M₂ × M₃` be `C^(n+2)` near `(q₀, a₀)` and `(a₀, Q₀)`, and let
+Let `S` on `M₁ × M₂` and `T` on `M₂ × M₃` be `C^(n+2)` at `(q₀, a₀)` and `(a₀, Q₀)`, and let
 `a₀` be a nondegenerate critical point of `a ↦ S(q₀, a) + T(a, Q₀)`, so that the relations they
 generate match at `(q₀, a₀, Q₀)`. Then there are a stationary branch `b : M₁ × M₃ → M₂` through
 `a₀`, `C^(n+1)` at `(q₀, Q₀)`, and the generating function `R(q, Q) = S(q, b) + T(b, Q)` of the
@@ -174,22 +232,8 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
   let S' : E₁ × E₂ → ℝ := fun z ↦ S (e₁.symm z.1, e₂.symm z.2)
   let T' : E₂ × E₃ → ℝ := fun z ↦ T (e₂.symm z.1, e₃.symm z.2)
   -- `S'` and `T'` are `S` and `T` read in the product charts at the base points.
-  have hS' : ContDiffAt ℝ (n + 2) S' (e₁ q₀, e₂ a₀) := by
-    have hfun : S ∘ (extChartAt (I₁.prod I₂) (q₀, a₀)).symm = S' := by
-      rw [extChartAt_prod, PartialEquiv.prod_symm]
-      rfl
-    have hpt : extChartAt (I₁.prod I₂) (q₀, a₀) (q₀, a₀) = (e₁ q₀, e₂ a₀) := by
-      rw [extChartAt_prod, PartialEquiv.prod_coe]
-    rw [← hfun, ← hpt]
-    exact hS.contDiffAt_comp_extChartAt_symm
-  have hT' : ContDiffAt ℝ (n + 2) T' (e₂ a₀, e₃ Q₀) := by
-    have hfun : T ∘ (extChartAt (I₂.prod I₃) (a₀, Q₀)).symm = T' := by
-      rw [extChartAt_prod, PartialEquiv.prod_symm]
-      rfl
-    have hpt : extChartAt (I₂.prod I₃) (a₀, Q₀) (a₀, Q₀) = (e₂ a₀, e₃ Q₀) := by
-      rw [extChartAt_prod, PartialEquiv.prod_coe]
-    rw [← hfun, ← hpt]
-    exact hT.contDiffAt_comp_extChartAt_symm
+  have hS' : ContDiffAt ℝ (n + 2) S' (e₁ q₀, e₂ a₀) := hS.contDiffAt_comp_prod_extChartAt_symm
+  have hT' : ContDiffAt ℝ (n + 2) T' (e₂ a₀, e₃ Q₀) := hT.contDiffAt_comp_prod_extChartAt_symm
   have h1 : (1 : WithTop ℕ∞) ≤ n + 2 := le_add_left one_le_two
   have hv₀ : e₁ q₀ ∈ e₁.target := mem_extChartAt_target q₀
   have hw₀ : e₂ a₀ ∈ e₂.target := mem_extChartAt_target a₀
@@ -300,43 +344,20 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
     · rw [generatingTarget_eq_generatingSource_iff_extChartAt q₀ a₀ Q₀ hq hbs hQ
         (by rwa [hbe]) (by rwa [hbe]), hbe]
       exact hr₁
+    -- By definition of `b`, `S'` and `T'`, the slices of `S` and `T` through `b (q, Q)` read in
+    -- the charts as the slices of `S'` and `T'` through `b' y'`.
     · have hslice : (fun q' ↦ R (q', Q)) ∘ e₁.symm =ᶠ[𝓝 (e₁ q)] fun v ↦ R' (v, e₃ Q) := by
         have hcont : ContinuousAt (fun v : E₁ ↦ (v, e₃ Q)) (e₁ q) := by fun_prop
         filter_upwards [hcont.eventually hReq] with v hv
         simpa only [comp_apply, e₃.left_inv hQ] using hv
-      -- By definition of `b` and `S'`, the slice of `S` through `b (q, Q)` reads in the chart as
-      -- the slice of `S'` through `b' y'`.
-      have hmv : mvfderiv I₁ (fun q' ↦ R (q', Q)) q =
-          mvfderiv I₁ (fun q' ↦ S (q', b (q, Q))) q := by
-        refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq (g' := fun v ↦ S' (v, b' y')) hq
-          hslice .rfl (hRy'.comp (e₁ q) (differentiableAt_id.prodMk (differentiableAt_const _)))
-          (DifferentiableAt.comp (g := S') (e₁ q) hS'y
-            (differentiableAt_id.prodMk (differentiableAt_const _))) ?_
-        rw [fderiv_slice_left hRy', fderiv_slice_left hS'y]
-        ext w
-        simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
-          cotangentGeneratingSource_snd_apply] using congr($hr₂.2 w)
-      exact CotangentBundle.ext (by simp) fun v ↦ by
-        rw [generatingSource_snd, generatingSource_snd]
-        exact congr($hmv v)
+      exact generatingSource_eq_of_extChartAt q₀ hq hslice (g' := S') (d' := b' y') .rfl hRy'
+        hS'y hr₂
     · have hslice : (fun Q' ↦ R (q, Q')) ∘ e₃.symm =ᶠ[𝓝 (e₃ Q)] fun u ↦ R' (e₁ q, u) := by
         have hcont : ContinuousAt (fun u : E₃ ↦ (e₁ q, u)) (e₃ Q) := by fun_prop
         filter_upwards [hcont.eventually hReq] with u hu
         simpa only [comp_apply, e₁.left_inv hq] using hu
-      -- As above, the slice of `T` through `b (q, Q)` reads in the chart as that of `T'`.
-      have hmv : mvfderiv I₃ (fun Q' ↦ R (q, Q')) Q =
-          mvfderiv I₃ (fun Q' ↦ T (b (q, Q), Q')) Q := by
-        refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq (g' := fun u ↦ T' (b' y', u)) hQ
-          hslice .rfl (hRy'.comp (e₃ Q) ((differentiableAt_const _).prodMk differentiableAt_id))
-          (DifferentiableAt.comp (g := T') (e₃ Q) hT'y
-            ((differentiableAt_const _).prodMk differentiableAt_id)) ?_
-        rw [fderiv_slice_right hRy', fderiv_slice_right hT'y]
-        ext w
-        simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply,
-          cotangentGeneratingTarget_snd_apply, neg_inj] using congr($hr₃.2 w)
-      exact CotangentBundle.ext (by simp) fun v ↦ by
-        rw [generatingTarget_snd, generatingTarget_snd]
-        exact congr((-$hmv) v)
+      exact generatingTarget_eq_of_extChartAt Q₀ hQ hslice (g' := T') (d' := b' y') .rfl hRy'
+        hT'y hr₃
   /- Step 5: transport the local uniqueness of the stationary branch. -/
   · have hmap : ContinuousAt (fun x : (M₁ × M₃) × M₂ ↦ ((e₁ x.1.1, e₃ x.1.2), e₂ x.2))
         ((q₀, Q₀), a₀) :=

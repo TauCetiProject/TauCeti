@@ -51,6 +51,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
   differentiable) at the chart image of the point.
+* `ContMDiffAt.contDiffAt_comp_prod_extChartAt_symm`: the same for a map on a product of
+  boundaryless manifolds, read in the product of the preferred charts at the two factors.
 * `ContMDiffAt.contDiffAt_writtenInExtChartAt` and
   `MDifferentiableAt.differentiableAt_writtenInExtChartAt`: the same for a map between manifolds,
   read in the extended charts at the point and at its image.
@@ -360,6 +362,18 @@ theorem _root_.ContMDiffAt.contDiffAt_comp_extChartAt_symm {n : WithTop ℕ∞}
     (hf : ContMDiffAt I 𝓘(𝕜, F) n f x) :
     ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
   TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.mp hf
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a product of boundaryless manifolds, a map into a normed space which is `C^n` at `(x, x')`
+has a `C^n` coordinate expression in the preferred extended charts at `x` and `x'`, at the pair of
+chart images. -/
+theorem _root_.ContMDiffAt.contDiffAt_comp_prod_extChartAt_symm [I'.Boundaryless]
+    {n : WithTop ℕ∞} {g : M × M' → F} {x' : M'}
+    (hg : ContMDiffAt (I.prod I') 𝓘(𝕜, F) n g (x, x')) :
+    ContDiffAt 𝕜 n (fun z : E × E' ↦ g ((extChartAt I x).symm z.1, (extChartAt I' x').symm z.2))
+      (extChartAt I x x, extChartAt I' x' x') := by
+  simpa only [extChartAt_prod, PartialEquiv.prod_coe_symm, PartialEquiv.prod_coe,
+    Function.comp_def] using hg.contDiffAt_comp_extChartAt_symm
 
 omit [IsManifold I 1 M] in
 /-- On a boundaryless manifold, a map into a normed space which is differentiable at `x` has a
