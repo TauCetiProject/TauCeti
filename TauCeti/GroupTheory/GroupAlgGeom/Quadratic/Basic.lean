@@ -72,6 +72,12 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 
 * `TauCeti.GroupAlgGeom.Quadratic.le_occurrences`: the extremal characterization of
   `occurrences`.
+* `TauCeti.GroupAlgGeom.Quadratic.occurrences_map_le`,
+  `TauCeti.GroupAlgGeom.Quadratic.occurrences_map_eq_zero`: bounds on the occurrence counts in the
+  images under a homomorphism `G[X] → H[Y]`, from those in the images of the generators.
+* `TauCeti.GroupAlgGeom.Quadratic.isQuadratic_map_iff`,
+  `TauCeti.GroupAlgGeom.Quadratic.isStrictlyQuadratic_map_iff`: an injective map transporting
+  occurrence counts along a bijection of the variables preserves (strictly) quadratic systems.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isQuadratic`: standard equations are quadratic.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
   `[x₁, y₁][x₂, y₂] = 1` is commutative, so this equation has no solution in general position.
@@ -299,6 +305,39 @@ theorem occurrences_inr_of [DecidableEq X] (x y : X) :
   · subst h; exact occurrences_inr_of_self y
   · exact occurrences_inr_of_of_ne h
 
+/-- A homomorphism `φ : G[X] → H[Y]` does not increase occurrence counts from `x` to `y` when
+`y` does not occur in the images of the coefficients and of the variables other than `x`, and
+occurs at most once in the image of `x`. -/
+theorem occurrences_map_le {Y F : Type*} [FunLike F (GX G X) (GX H Y)]
+    [MonoidHomClass F (GX G X) (GX H Y)] (φ : F) (x : X) (y : Y)
+    (hcoeff : ∀ g, occurrences y (φ (inl g)) = 0)
+    (hx : occurrences y (φ (inr (FreeGroup.of x))) ≤ 1)
+    (hne : ∀ z, z ≠ x → occurrences y (φ (inr (FreeGroup.of z))) = 0) (w : GX G X) :
+    occurrences y (φ w) ≤ occurrences x w :=
+  le_occurrences x (fun u => occurrences y (φ u))
+    (fun u v => by simpa using occurrences_mul_le y (φ u) (φ v)) hcoeff hx (by simpa using hx)
+    (fun z hz => ⟨hne z hz, by simpa using hne z hz⟩) w
+
+/-- A variable `y` occurs in no image under a homomorphism `φ : G[X] → H[Y]` when it occurs
+neither in the images of the coefficients nor in the images of the variables. -/
+theorem occurrences_map_eq_zero {Y F : Type*} [FunLike F (GX G X) (GX H Y)]
+    [MonoidHomClass F (GX G X) (GX H Y)] (φ : F) (y : Y)
+    (hcoeff : ∀ g, occurrences y (φ (inl g)) = 0)
+    (hvar : ∀ x, occurrences y (φ (inr (FreeGroup.of x))) = 0) (w : GX G X) :
+    occurrences y (φ w) = 0 := by
+  have hmul : ∀ u v, occurrences y (φ u) = 0 → occurrences y (φ v) = 0 →
+      occurrences y (φ (u * v)) = 0 := fun u v hu hv =>
+    Nat.eq_zero_of_le_zero <| by simpa [hu, hv] using occurrences_mul_le y (φ u) (φ v)
+  induction w using Monoid.Coprod.induction_on with
+  | inl g => exact hcoeff g
+  | inr f =>
+    induction f using FreeGroup.induction_on with
+    | one => simp
+    | of x => exact hvar x
+    | inv_of x ih => simpa using ih
+    | mul f₁ f₂ h₁ h₂ => simpa using hmul _ _ h₁ h₂
+  | mul u v hu hv => exact hmul u v hu hv
+
 end Occurrences
 
 /-! ### Quadratic systems -/
@@ -336,6 +375,34 @@ theorem IsStrictlyQuadratic.isQuadratic {S : Finset (GX G X)} (h : IsStrictlyQua
 
 theorem IsQuadratic.mono {S T : Finset (GX G X)} (hT : IsQuadratic T) (h : S ⊆ T) :
     IsQuadratic S := fun x => (Finset.sum_le_sum_of_subset h).trans (hT x)
+
+section Map
+
+variable {Y : Type*} {S : Finset (GX G X)} (φ : GX G X ↪ GX H Y) (σ : X ≃ Y)
+
+private theorem sum_occurrences_map
+    (h : ∀ x, ∀ w ∈ S, occurrences (σ x) (φ w) = occurrences x w) (y : Y) :
+    ∑ w ∈ S.map φ, occurrences y w = ∑ w ∈ S, occurrences (σ.symm y) w := by
+  rw [Finset.sum_map]
+  exact Finset.sum_congr rfl fun w hw => by simpa using h (σ.symm y) w hw
+
+/-- An injective map `G[X] → H[Y]` transporting the occurrence counts in the words of a system
+along a bijection of the variables preserves quadratic systems. -/
+theorem isQuadratic_map_iff (h : ∀ x, ∀ w ∈ S, occurrences (σ x) (φ w) = occurrences x w) :
+    IsQuadratic (S.map φ) ↔ IsQuadratic S := by
+  simp only [isQuadratic_iff, sum_occurrences_map φ σ h]
+  exact σ.symm.forall_congr_right (q := fun x => ∑ w ∈ S, occurrences x w ≤ 2)
+
+/-- An injective map `G[X] → H[Y]` transporting the occurrence counts in the words of a system
+along a bijection of the variables preserves strictly quadratic systems. -/
+theorem isStrictlyQuadratic_map_iff
+    (h : ∀ x, ∀ w ∈ S, occurrences (σ x) (φ w) = occurrences x w) :
+    IsStrictlyQuadratic (S.map φ) ↔ IsStrictlyQuadratic S := by
+  simp only [isStrictlyQuadratic_iff, sum_occurrences_map φ σ h]
+  exact σ.symm.forall_congr_right
+    (q := fun x => ∑ w ∈ S, occurrences x w = 0 ∨ ∑ w ∈ S, occurrences x w = 2)
+
+end Map
 
 end IsQuadratic
 
