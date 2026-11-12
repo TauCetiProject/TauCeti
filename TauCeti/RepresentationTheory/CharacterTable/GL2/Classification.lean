@@ -442,17 +442,6 @@ private theorem ncard_image_GL2CuspidalVirtualCharacter_of_ne_one {ψ : AddChar 
   have := (count_arith (Fintype.one_lt_card (α := F))).1
   omega
 
-/-- Two parameters give the same virtual character for one additive character exactly when they
-do for any other: the fibres of `θ ↦ χ_θ` are the orbits `{θ, θ^q}` whatever `ψ` is. -/
-private theorem GL2CuspidalVirtualCharacter_apply_eq_of_eq (θ θ' : Eˣ →* ℂˣ)
-    (ψ ψ' : AddChar F ℂ)
-    (h : (GL2CuspidalVirtualCharacter F E θ ψ).1 = (GL2CuspidalVirtualCharacter F E θ' ψ).1) :
-    (GL2CuspidalVirtualCharacter F E θ ψ').1 = (GL2CuspidalVirtualCharacter F E θ' ψ').1 := by
-  rcases eq_or_eq_comp_powMonoidHom_of_GL2CuspidalVirtualCharacter_eq (Subtype.ext h) with
-    rfl | rfl
-  · rfl
-  · rw [GL2CuspidalVirtualCharacter_comp_powMonoidHom]
-
 /-- For every additive character `ψ`, the virtual characters `χ_θ` with `θ^q ≠ θ` take
 `½ q (q - 1)` distinct values, one for each orbit `{θ, θ^q}` of characters of `Eˣ`.
 For nontrivial `ψ`, these are the cuspidal characters of `GL₂(F)`. -/
@@ -466,8 +455,8 @@ theorem ncard_image_GL2CuspidalVirtualCharacter (ψ : AddChar F ℂ) :
   simp only [Set.ncard_def]
   apply congrArg ENat.toNat
   exact Set.encard_image_eq_encard_image_of_eq_iff (fun θ θ' =>
-    ⟨GL2CuspidalVirtualCharacter_apply_eq_of_eq F E θ θ' _ _,
-      GL2CuspidalVirtualCharacter_apply_eq_of_eq F E θ θ' _ _⟩) _
+    ⟨GL2CuspidalVirtualCharacter_apply_eq_of_eq θ θ' _ _,
+      GL2CuspidalVirtualCharacter_apply_eq_of_eq θ θ' _ _⟩) _
 
 end Classification
 
