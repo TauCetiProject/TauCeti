@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
@@ -83,7 +84,9 @@ Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
 * `TauCeti.lagrangianEnergy`: the energy `E_L(v) = FL(v)(v) - L(v)`, with
   `TauCeti.contMDiff_lagrangianEnergy`.
 * `TauCeti.fiberHessian`, `TauCeti.IsRegularLagrangian`: the fibre Hessian of a Lagrangian, and
-  regular Lagrangians.
+  regular Lagrangians; `TauCeti.fiberHessian_apply_comm`: the fibre Hessian is symmetric.
+* `TauCeti.mvfderiv_lagrangianEnergy_vertical`: the derivative of the energy along the vertical
+  vector at `v` with fibre direction `u` is `∂²L/∂v∂v (u, v)`.
 * `TauCeti.isInvertible_mfderiv_legendreMap_iff`: the differential of `FL` is invertible exactly
   where the fibre Hessian is.
 * `TauCeti.isLocalDiffeomorphAt_legendreMap_iff`, `TauCeti.isLocalDiffeomorph_legendreMap_iff`:
@@ -179,7 +182,7 @@ theorem contMDiff_legendreMap [IsManifold I 2 M] {L : TangentBundle I M → 𝕜
         (fun p : TangentBundle I M × E ↦ p.1.proj) (v₀, (e v₀).2) :=
       (contMDiffAt_proj (TangentSpace I)).comp (v₀, (e v₀).2)
         (contMDiffAt_fst (I := I.tangent) (J := 𝓘(𝕜, E)))
-    rw [contMDiffAt_totalSpace]
+    rw [contMDiffAt_totalSpace_iff]
     refine ⟨hproj,
       contMDiffAt_snd.congr_of_eventuallyEq ?_⟩
     filter_upwards [continuousAt_fst.preimage_mem_nhds hbase] with p hp
@@ -236,7 +239,7 @@ theorem contMDiff_lagrangianEnergy [IsManifold I 2 M] {L : TangentBundle I M →
   -- Apply the covector `FL(v)` to `v` as sections of bundles over `TM`, then read off the scalar.
   have h := ContMDiff.clm_bundle_apply (E₂ := Trivial M 𝕜) (v := fun v : TangentBundle I M ↦ v.2)
     (contMDiff_legendreMap hL hmn) contMDiff_id
-  exact fun v ↦ (contMDiffAt_totalSpace.1 (h v)).2.sub (hL.of_le (le_self_add.trans hmn) v)
+  exact fun v ↦ (contMDiffAt_totalSpace_iff.1 (h v)).2.sub (hL.of_le (le_self_add.trans hmn) v)
 
 end LegendreMap
 
@@ -277,6 +280,15 @@ theorem fiberHessian_sub_comp_proj (L : TangentBundle I M → 𝕜) (V : M → �
   exact funext fun w ↦
     fderiv_sub_const (𝕜 := 𝕜) (f := fun w : E ↦ L (TotalSpace.mk' E v.proj w)) (V v.proj)
 
+/-- **The fibre Hessian is symmetric**: `∂²L/∂v∂v (u, w) = ∂²L/∂v∂v (w, u)` for a Lagrangian of
+class `minSmoothness 𝕜 2`, that is `C²` over `ℝ` or `ℂ`, by symmetry of second derivatives. -/
+theorem fiberHessian_apply_comm [IsManifold I 1 M] {n : WithTop ℕ∞}
+    (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L) (hn : minSmoothness 𝕜 2 ≤ n)
+    (v : TangentBundle I M) (u w : TangentSpace I v.proj) :
+    fiberHessian L v u w = fiberHessian L v w u :=
+  (contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id v.proj))
+    ).contDiffAt.isSymmSndFDerivAt hn u w
+
 /-- A Lagrangian `L : TM → 𝕜` is **regular** when its fibre Hessian is invertible at every
 tangent vector: contraction with the fibre Hessian is an isomorphism from each tangent space onto
 its dual. -/
@@ -305,7 +317,7 @@ variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 
 /-- In bundle charts, the differential of the Legendre map keeps the base coordinate, because the
 Legendre map covers the identity of `M`. -/
-private theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
     (hn : 2 ≤ n) (v : TangentBundle I M) :
     ContinuousLinearMap.fst 𝕜 E (E →L[𝕜] 𝕜) ∘L
         mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v =
@@ -324,7 +336,7 @@ private theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜
 differential of the Legendre map at `v` sends the vertical vector with fibre coordinate `w` to the
 vertical covector with fibre coordinate the fibre Hessian `∂²L/∂v∂v` applied to `w`. It is stated
 for the differential `T` read as a map between the model spaces of the charts. -/
-private theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
     (hn : 2 ≤ n) (v : TangentBundle I M) {T : E × E →L[𝕜] E × (E →L[𝕜] 𝕜)}
     (hT : mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v = T)
     (w : TangentSpace I v.proj) :
@@ -385,6 +397,56 @@ private theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜
   have h := DFunLike.congr_fun hEq 1
   simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
     one_apply_eq_self, one_smul] using h
+
+/-- **The derivative of the energy on vertical vectors.** The derivative of the energy along the
+vertical vector at `v` with fibre direction `u` is `Hess_v(u, v)`. The vertical vector is the
+velocity of the line `r ↦ v + r u` in the fibre, read in the preferred chart at `v`
+(`TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul`). -/
+theorem mvfderiv_lagrangianEnergy_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+    (hn : 2 ≤ n) (v : TangentBundle I M) (u : TangentSpace I v.proj) :
+    mvfderiv I.tangent (lagrangianEnergy L) v
+      ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj u) =
+      fiberHessian L v u v.2 := by
+  have hn1 : 1 + 1 ≤ n := by simpa [one_add_one_eq_two] using hn
+  obtain ⟨x, a⟩ := v
+  -- On the fibre over `x`, `E_L(w) = D(w)(w) - f(w)` for `f = L|_{T_x M}` and `D = df`.
+  have hγ := TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul (F := E)
+    (V := TangentSpace I) (IB := I) x a u
+  let f : E → 𝕜 := fun w ↦ L (TotalSpace.mk' E x w)
+  have hf : ContDiff 𝕜 n f :=
+    contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id x))
+  -- The fibre `TangentSpace I x` is `E` by definition: `b` and `a₀` are `u` and `a` read as
+  -- vectors of `E`, so that `fderiv` on `E` applies to them.
+  let b : E := u
+  let a₀ : E := a
+  let D : E → E →L[𝕜] 𝕜 := fderiv 𝕜 f
+  have hHess : fiberHessian L ⟨x, a⟩ = fderiv 𝕜 D a₀ := fiberHessian_def L _
+  have hD : HasFDerivAt D (fderiv 𝕜 D a₀) a₀ :=
+    ((hf.fderiv_right (m := 1) hn1).differentiable one_ne_zero _).hasFDerivAt
+  have hc : HasDerivAt (fun r : 𝕜 ↦ a₀ + r • b) b 0 := by
+    simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const b).const_add (a₀ : E)
+  have hD' : HasDerivAt (fun r : 𝕜 ↦ D (a₀ + r • b)) (fderiv 𝕜 D a₀ b) 0 :=
+    hD.comp_hasDerivAt_of_eq 0 hc (by simp)
+  have hf' : HasDerivAt (fun r : 𝕜 ↦ f (a₀ + r • b)) (D a₀ b) 0 :=
+    ((hf.differentiable (ne_bot_of_le_ne_bot two_ne_zero hn)) a₀).hasFDerivAt.comp_hasDerivAt_of_eq
+      0 hc (by simp)
+  have hE : HasDerivAt (fun r : 𝕜 ↦ lagrangianEnergy L (TotalSpace.mk' E x (a + r • u)))
+      (fderiv 𝕜 D a₀ b a₀) 0 := by
+    have h := (hD'.clm_apply hc).sub hf'
+    simp only [zero_smul, add_zero, add_sub_cancel_right] at h
+    convert h using 1
+    funext r
+    rw [lagrangianEnergy_apply, legendreMap_snd]
+    simp only [f, D, a₀, b, Pi.sub_apply]
+    -- The two sides differ only in reading the fibre `TangentSpace I x` as `E`.
+    rfl
+  have hEd := Manifold.hasDerivAt_comp_curve (g := lagrangianEnergy L)
+    (((contMDiff_lagrangianEnergy (m := 1) hL hn1) _).mdifferentiableAt one_ne_zero) hγ
+  have h := hEd.unique hE
+  have h0 : (TotalSpace.mk' E x (a + (0 : 𝕜) • u) : TangentBundle I M) = ⟨x, a⟩ := by simp
+  rw [h0] at h
+  rw [hHess]
+  exact h
 
 /-- **The differential of the Legendre map is invertible exactly where the fibre Hessian is.** In
 bundle charts the differential of `FL` is block lower triangular, keeping the base coordinate and
@@ -606,7 +668,7 @@ theorem contMDiff_mechanicalLagrangian [IsManifold I 1 M] {n : WithTop ℕ∞}
     ContMDiff.clm_bundle_apply₂ (F₁ := E) (F₂ := E) (hg.comp (contMDiff_proj _)) contMDiff_id
       contMDiff_id
   have hq' : ContMDiff I.tangent 𝓘(ℝ) n (fun v : TangentBundle I M ↦ g v.proj v.2 v.2) :=
-    fun v ↦ (contMDiffAt_totalSpace.1 (hq v)).2
+    fun v ↦ (contMDiffAt_totalSpace_iff.1 (hq v)).2
   have hhalf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n (fun t : ℝ ↦ 2⁻¹ * t) :=
     (contDiff_const.mul contDiff_id).contMDiff
   rw [funext (mechanicalLagrangian_apply g V)]
