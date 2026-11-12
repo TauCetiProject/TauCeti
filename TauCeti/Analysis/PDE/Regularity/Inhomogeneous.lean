@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
-import TauCeti.Analysis.PDE.FredholmAlternative
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DecayIteration
@@ -120,17 +119,6 @@ namespace PDE
 
 /-! ### Comparison with a solution of the homogeneous equation -/
 
-omit [DecidableEq ι] in
-/-- A bound that holds almost everywhere on a ball of positive radius for an absolute value is
-nonnegative. -/
-private theorem nonneg_of_ae_abs_le_ball {g : EuclideanSpace ℝ ι → ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {ρ W : ℝ} (hρ : 0 < ρ)
-    (h : ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |g x| ≤ W) : 0 ≤ W := by
-  have : (ae (mu.restrict (ball x₀ ρ))).NeBot :=
-    ae_restrict_neBot.2 (measure_ball_pos mu x₀ hρ).ne'
-  obtain ⟨x, hx⟩ := h.exists
-  exact (abs_nonneg _).trans hx
-
 /-- Absorbing the constant `K` of the datum: `Q + K P ≤ max 1 K (Q + P)` for `Q, P ≥ 0`. -/
 private theorem add_mul_le_max_mul_add {Q P K : ℝ} (hQ : 0 ≤ Q) (hP : 0 ≤ P) :
     Q + K * P ≤ max 1 K * (Q + P) := by
@@ -165,7 +153,8 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le [Nonempty ι] {lam Lam :
   set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
   refine ⟨max (√2 * D₀) (√2 * D₀ * √ω + 1), lt_max_of_lt_left (by positivity), ?_⟩
   intro Omega a u x₀ R W g h ha hg hug hR hball
-  have hW : 0 ≤ W := nonneg_of_ae_abs_le_ball hR hug
+  have : (ae (mu.restrict (ball x₀ R))).NeBot := ae_restrict_neBot.2 (measure_ball_pos mu x₀ hR).ne'
+  have hW : 0 ≤ W := nonneg_of_ae_abs_le hug
   -- De Giorgi's bound for the homogeneous solution `g` on `B(x₀, R/2)`.
   have hgbound := hbound (Omega := ⟨ball x₀ R, isOpen_ball⟩) (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hg hR (subset_refl _)
@@ -231,7 +220,10 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le [Nonempty 
   refine ⟨α₀, C₀, 2 * C₀ + 2, hα₀, hα₀1, hC₀, by positivity, ?_⟩
   intro Omega a u x₀ ρ s M W g h ha hg hug hs hsρ hball hM
   have hρ : 0 < ρ := hs.trans_le hsρ
-  have hW0 : 0 ≤ W := nonneg_of_ae_abs_le_ball hρ hug
+  have hW0 : 0 ≤ W :=
+    have : (ae (mu.restrict (ball x₀ ρ))).NeBot :=
+      ae_restrict_neBot.2 (measure_ball_pos mu x₀ hρ).ne'
+    nonneg_of_ae_abs_le hug
   have : (ae (mu.restrict (ball x₀ s))).NeBot :=
     ae_restrict_neBot.2 (measure_ball_pos mu x₀ hs).ne'
   set m := essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ ρ))
@@ -298,8 +290,9 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le [No
   intro Omega a u x₀ R s A h ha happrox hs hsR hball
   have hR : 0 < R := by linarith only [hs, hsR]
   obtain ⟨g₀, hg₀, hug₀⟩ := happrox R hR le_rfl
+  have : (ae (mu.restrict (ball x₀ R))).NeBot := ae_restrict_neBot.2 (measure_ball_pos mu x₀ hR).ne'
   have hA : 0 ≤ A :=
-    (mul_nonneg_iff_of_pos_left (Real.rpow_pos_of_pos hR γ)).1 (nonneg_of_ae_abs_le_ball hR hug₀)
+    (mul_nonneg_iff_of_pos_left (Real.rpow_pos_of_pos hR γ)).1 (nonneg_of_ae_abs_le hug₀)
   obtain ⟨Q, hQdef⟩ : ∃ Q : ℝ,
       Q = R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) :=
     ⟨_, rfl⟩
@@ -379,8 +372,9 @@ theorem exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le [Nonem
     (ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK)
   have hA : 0 ≤ A := by
     obtain ⟨g, -, hug⟩ := happrox x₁ hx₁ R hR le_rfl
-    exact (mul_nonneg_iff_of_pos_left (Real.rpow_pos_of_pos hR γ)).1
-      (nonneg_of_ae_abs_le_ball hR hug)
+    have : (ae (mu.restrict (ball x₁ R))).NeBot :=
+      ae_restrict_neBot.2 (measure_ball_pos mu x₁ hR).ne'
+    exact (mul_nonneg_iff_of_pos_left (Real.rpow_pos_of_pos hR γ)).1 (nonneg_of_ae_abs_le hug)
   -- The scaled norms of `u` and of the datum on such a ball are at most `N`, their values on `Ω`.
   obtain ⟨N, hNdef⟩ : ∃ N : ℝ, N =
       R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu) + R ^ γ * A :=
@@ -418,6 +412,137 @@ theorem exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le [Nonem
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
     rw [← hNdef]
     exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le hD.le hN0 hC hM hρ
+
+/-! ### Splitting off a datum on balls -/
+
+/-- The common last step of splitting off a right-hand side on a ball `B = B(x₀, ρ) ⊆ Ω`: if
+`w ∈ H¹₀(B)` has the same energy form as `u|_B` against `H¹₀(B)` and `|w| ≤ C N / λ · μ(B)^e`,
+then `h = u|_B - w` solves the homogeneous equation on `B` and
+`|u - h| ≤ C μ(B(0, 1))^e ρ^γ N / λ`, where `γ = n e`. -/
+private theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_abs_le
+    {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {ρ C N e γ : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hρ : 0 < ρ)
+    (hB : (⟨ball x₀ ρ, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) ≤ Omega)
+    (hγ : (Fintype.card ι : ℝ) * e = γ) (w : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2)
+    (hw : ∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+      energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) =
+        energyFormH1 a 0 0 (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2)
+          (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2))
+    (hwbound : ∀ᵐ x ∂mu.restrict (ball x₀ ρ),
+      |W1p.value (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x| ≤
+        C * N / lam * mu.real (ball x₀ ρ) ^ e) :
+    ∃ g : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+      (∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+        energyFormH1 a 0 0 g (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) = 0) ∧
+      ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x - W1p.value g x| ≤
+        C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e * ρ ^ γ * N / lam := by
+  have hBell : UniformlyEllipticOn (ball x₀ ρ) a lam Lam := h.mono_set hB
+  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
+    hBell.upper_nonneg (ha.mono_measure (Measure.restrict_mono hB le_rfl))
+    aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _x hx eta xi => hBell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  refine ⟨W1p.restrictL hB u - (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2), fun v => ?_, ?_⟩
+  · rw [energyFormH1_sub_left hcoeff, hw v, sub_self]
+  -- `mu(B)^e = ρ^γ mu(B(0, 1))^e`.
+  have hmeas : mu.real (ball x₀ ρ) ^ e =
+      ρ ^ γ * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
+    rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace, hγ]
+  filter_upwards [hwbound,
+    W1p.value_sub_ae (W1p.restrictL hB u) (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2),
+    W1p.value_restrictL_ae hB u] with x hx hxs hxr
+  rw [hxs, Pi.sub_apply, hxr, sub_sub_cancel]
+  refine hx.trans_eq ?_
+  rw [hmeas]
+  ring
+
+/-- Local boundedness for a function within `K R^γ N / λ` of a solution of the homogeneous
+equation on `B(x₀, R)`, as supplied by a splitting lemma: the form of
+`TauCeti.PDE.exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le` with the splitting constant `K`
+absorbed into `D`. -/
+private theorem exists_ae_abs_value_le_mul_add_of_exists_ae_abs_sub_le [Nonempty ι]
+    {lam Lam : ℝ} (K : ℝ) :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι}
+      {R γ N : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∃ g : W1p mu ⟨ball x₀ R, isOpen_ball⟩ 2,
+        (∀ v : W1p0 mu ⟨ball x₀ R, isOpen_ball⟩ 2,
+          energyFormH1 a 0 0 g (v : W1p mu ⟨ball x₀ R, isOpen_ball⟩ 2) = 0) ∧
+        ∀ᵐ x ∂mu.restrict (ball x₀ R), |W1p.value u x - W1p.value g x| ≤
+          K * R ^ γ * N / lam) →
+      0 ≤ N → 0 < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), |W1p.value u x| ≤
+        D * (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
+          R ^ γ * N / lam) := by
+  obtain ⟨D, hD, hbound⟩ :=
+    exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le (mu := mu) (lam := lam) (Lam := Lam)
+  refine ⟨D * max 1 K, by positivity, ?_⟩
+  intro Omega a u x₀ R γ N h ha hsplit hN hR hball
+  have hlam := h.pos
+  obtain ⟨g, hg, hug⟩ := hsplit
+  filter_upwards [hbound h ha hg hug hR hball] with x hx
+  set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
+  set P := R ^ γ * N / lam
+  have hmax := add_mul_le_max_mul_add (K := K) (by positivity : 0 ≤ Q)
+    (div_nonneg (mul_nonneg (Real.rpow_nonneg hR.le γ) hN) hlam.le : 0 ≤ P)
+  calc |W1p.value u x| ≤ D * (Q + K * P) := hx.trans_eq (by simp only [P]; ring)
+    _ ≤ D * (max 1 K * (Q + P)) := by gcongr
+    _ = _ := by ring
+
+/-- Hölder continuity for a function within `K₀ ρ^γ N(B(x, ρ)) / λ` of a solution of the
+homogeneous equation on every ball `B(x, ρ) ⊆ Ω`, as supplied by a splitting lemma, where the
+norm `N` of the datum on a set is at most its norm `N(Ω)` on `Ω`: the form of
+`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le` with
+`A = K₀ N(Ω) / λ` and the splitting constant `K₀` absorbed into `C`. -/
+private theorem exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le
+    [Nonempty ι] {lam Lam γ K₀ : ℝ} (hγ : 0 < γ) (hK₀ : 0 ≤ K₀) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {K : Set (EuclideanSpace ℝ ι)} {R : ℝ} {N : Set (EuclideanSpace ℝ ι) → ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ x ρ, 0 < ρ → ball x ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+        ∃ g : W1p mu ⟨ball x ρ, isOpen_ball⟩ 2,
+          (∀ v : W1p0 mu ⟨ball x ρ, isOpen_ball⟩ 2,
+            energyFormH1 a 0 0 g (v : W1p mu ⟨ball x ρ, isOpen_ball⟩ 2) = 0) ∧
+          ∀ᵐ y ∂mu.restrict (ball x ρ), |W1p.value u y - W1p.value g y| ≤
+            K₀ * ρ ^ γ * N (ball x ρ) / lam) →
+      (∀ s ⊆ (Omega : Set (EuclideanSpace ℝ ι)), N s ≤ N Omega) → 0 ≤ N Omega →
+      0 < R → cthickening R K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+        HolderOnWith (C * R ^ (-(α : ℝ)) *
+          (R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu) +
+            R ^ γ * N Omega / lam)).toNNReal α
+          (preciseRepresentative mu (W1p.value u)) K := by
+  obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
+    exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
+      (Lam := Lam) hγ
+  refine ⟨α, C * max 1 K₀, hα, hα1, by positivity, ?_⟩
+  intro Omega a u K R N h ha hsplit hmono hN hR hRK
+  have hlam := h.pos
+  -- On every ball `B(x, ρ)`, `x ∈ K`, `ρ ≤ R`, the splitting error is at most
+  -- `ρ^γ K₀ N(Ω) / λ`.
+  refine (hhol (A := K₀ * N Omega / lam) h ha (fun x hx ρ hρ hρR => ?_) hR hRK).mono_const ?_
+  · have hballρ : ball x ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := (ball_subset_ball hρR).trans
+      ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
+    obtain ⟨g, hg, hug⟩ := hsplit x ρ hρ hballρ
+    refine ⟨g, hg, hug.mono fun y hy => hy.trans ?_⟩
+    calc K₀ * ρ ^ γ * N (ball x ρ) / lam ≤ K₀ * ρ ^ γ * N Omega / lam := by
+          gcongr
+          exact hmono _ hballρ
+      _ = _ := by ring
+  · -- `C (Q + K₀ P) ≤ C max 1 K₀ (Q + P)`.
+    refine Real.toNNReal_le_toNNReal ?_
+    set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
+    set P := R ^ γ * N Omega / lam
+    have hmax := add_mul_le_max_mul_add (K := K₀) (by positivity : 0 ≤ Q)
+      (div_nonneg (mul_nonneg (Real.rpow_nonneg hR.le γ) hN) hlam.le : 0 ≤ P)
+    calc C * R ^ (-(α : ℝ)) * (Q + R ^ γ * (K₀ * N Omega / lam)) =
+          C * R ^ (-(α : ℝ)) * (Q + K₀ * P) := by simp only [P]; ring
+      _ ≤ C * R ^ (-(α : ℝ)) * (max 1 K₀ * (Q + P)) := by gcongr
+      _ = _ := by ring
 
 /-! ### A right-hand side in `Lʳ` -/
 
@@ -465,32 +590,16 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le [Nonempty ι] {r : ℝ�
   have hBell : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam := h.mono_set hball
   have hBmeas : AEStronglyMeasurable a (mu.restrict B) :=
     ha.mono_measure (Measure.restrict_mono hball le_rfl)
-  -- The weak solution `w ∈ H¹₀(B)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f` on `B`, and its bound.
+  -- The weak solution `w ∈ H¹₀(B)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f` on `B`, and its bound; `u|_B - w` is the
+  -- homogeneous part.
   obtain ⟨w, hw, -⟩ :=
     hBell.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (c := 0) (gamma := 0) hBmeas
       aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin hr hrn' hf
-  have hwbound := hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas
-    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hf hw
-  -- The homogeneous part `h = u|_B - w`.
-  have huB := energyFormH1_restrictL_eq_setIntegral hB hu
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    hBell.upper_nonneg hBmeas aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => hBell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
-  refine ⟨W1p.restrictL hB u - (w : W1p mu B 2), fun v => ?_, ?_⟩
-  · rw [energyFormH1_sub_left hcoeff, huB v, hw v, sub_self]
-  -- `mu(B)^e = ρ^(2 - n/r) mu(B(0, 1))^e`.
-  have hmeas : mu.real (ball x₀ ρ) ^ e =
-      ρ ^ (2 - n / r) * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
-    rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace]
-    congr 2
-    simp only [e, n]
-    field_simp
-  filter_upwards [hwbound, W1p.value_sub_ae (W1p.restrictL hB u) (w : W1p mu B 2),
-    W1p.value_restrictL_ae hB u] with x hx hxs hxr
-  rw [hxs, Pi.sub_apply, hxr, sub_sub_cancel]
-  refine hx.trans_eq ?_
-  simp only [B, Opens.coe_mk, hmeas]
-  ring
+  exact exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_abs_le h ha hρ hB
+    (by simp only [e, n]; field_simp) w
+    (fun v => (energyFormH1_restrictL_eq_setIntegral hB hu v).trans (hw v).symm)
+    (hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas aestronglyMeasurable_const
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hf hw)
 
 /-- **Local boundedness of weak solutions with a right-hand side.** Let `n ≥ 1` be the dimension
 and let `r > 1` with `r > n/2`. There is `D > 0`, depending only on `λ`, `Λ`, `n`, `r` and the
@@ -518,20 +627,10 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
           R ^ (2 - (Fintype.card ι : ℝ) / r) *
             (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam) := by
   obtain ⟨K, -, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
-  obtain ⟨D, hD, hbound⟩ :=
-    exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le (mu := mu) (lam := lam) (Lam := Lam)
-  refine ⟨D * max 1 K, by positivity, ?_⟩
-  intro Omega a f u x₀ R h ha hf hu hR hball
-  have hlam := h.pos
-  obtain ⟨g, hg, hug⟩ := hsplit h ha hf hu hR hball
-  filter_upwards [hbound h ha hg hug hR hball] with x hx
-  set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
-  set P := R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal /
-    lam
-  have hmax := add_mul_le_max_mul_add (K := K) (by positivity : 0 ≤ Q) (by positivity : 0 ≤ P)
-  calc |W1p.value u x| ≤ D * (Q + K * P) := hx.trans_eq (by simp only [P]; ring)
-    _ ≤ D * (max 1 K * (Q + P)) := by gcongr
-    _ = _ := by ring
+  obtain ⟨D, hD, hbound⟩ := exists_ae_abs_value_le_mul_add_of_exists_ae_abs_sub_le (mu := mu)
+    (lam := lam) (Lam := Lam) K
+  exact ⟨D, hD, fun h ha hf hu hR hball =>
+    hbound h ha (hsplit h ha hf hu hR hball) ENNReal.toReal_nonneg hR hball⟩
 
 /-- **De Giorgi's theorem with a right-hand side.** Let `n ≥ 1` be the dimension and let `r > 1`
 with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, `n`, `r` and the
@@ -565,37 +664,16 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
   have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
   obtain ⟨K₀, hK₀, hsplit⟩ := exists_forall_energyFormH1_eq_zero_ae_abs_sub_le (mu := mu) hr hrn
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
-      (Lam := Lam) (γ := 2 - (Fintype.card ι : ℝ) / r)
-      (sub_pos.2 ((div_lt_iff₀ hr0).2 (by linarith only [hrn])))
-  refine ⟨α, C * max 1 K₀, hα, hα1, by positivity, ?_⟩
-  intro Omega a f u K R h ha hf hu hR hRK
-  have hlam := h.pos
-  -- On every ball `B(x, ρ)`, `x ∈ K`, `ρ ≤ R`, the splitting error is at most
-  -- `ρ^(2 - n/r) K₀ ‖f‖_{Lʳ(Ω)} / λ`.
-  refine (hhol (A := K₀ * (eLpNorm f r (mu.restrict Omega)).toReal / lam) h ha
-    (fun x hx ρ hρ hρR => ?_) hR hRK).mono_const ?_
-  · have hballρ : ball x ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := (ball_subset_ball hρR).trans
-      ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
-    have hle := Measure.restrict_mono hballρ (le_refl mu)
-    obtain ⟨g, hg, hug⟩ := hsplit h ha (hf.mono_measure hle) hu hρ hballρ
-    refine ⟨g, hg, hug.mono fun y hy => hy.trans ?_⟩
-    calc K₀ * ρ ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x ρ))).toReal /
-          lam ≤ K₀ * ρ ^ (2 - (Fintype.card ι : ℝ) / r) *
-            (eLpNorm f r (mu.restrict Omega)).toReal / lam := by
-          gcongr
-          exact hf.eLpNorm_ne_top
-      _ = _ := by ring
-  · -- `C (Q + K₀ P) ≤ C max 1 K₀ (Q + P)`.
-    refine Real.toNNReal_le_toNNReal ?_
-    set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
-    set P := R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict Omega)).toReal / lam
-    have hmax := add_mul_le_max_mul_add (K := K₀) (by positivity : 0 ≤ Q) (by positivity : 0 ≤ P)
-    calc C * R ^ (-(α : ℝ)) * (Q + R ^ (2 - (Fintype.card ι : ℝ) / r) *
-          (K₀ * (eLpNorm f r (mu.restrict Omega)).toReal / lam)) =
-          C * R ^ (-(α : ℝ)) * (Q + K₀ * P) := by simp only [P]; ring
-      _ ≤ C * R ^ (-(α : ℝ)) * (max 1 K₀ * (Q + P)) := by gcongr
-      _ = _ := by ring
+    exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le (mu := mu)
+      (lam := lam) (Lam := Lam) (γ := 2 - (Fintype.card ι : ℝ) / r)
+      (sub_pos.2 ((div_lt_iff₀ hr0).2 (by linarith only [hrn]))) hK₀.le
+  refine ⟨α, C, hα, hα1, hC, fun {Omega a f u K R} h ha hf hu hR hRK => ?_⟩
+  exact hhol (N := fun s => (eLpNorm f r (mu.restrict s)).toReal) h ha
+    (fun x ρ hρ hballρ =>
+      hsplit h ha (hf.mono_measure (Measure.restrict_mono hballρ le_rfl)) hu hρ hballρ)
+    (fun s hs => ENNReal.toReal_mono hf.eLpNorm_ne_top
+      (eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)))
+    ENNReal.toReal_nonneg hR hRK
 
 /-! ### A right-hand side in divergence form -/
 
@@ -610,7 +688,7 @@ elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solu
 `|u - h| ≤ K ρ^(1 - n/q) ‖F‖_{L^q(B)} / λ` almost everywhere on `B`.
 
 The difference `u - h` is the solution in `H¹₀(B)` of the Dirichlet problem on `B` with datum
-`∂ᵢFⁱ`, bounded by Stampacchia's estimate
+`∂ᵢFⁱ`, the functional `TauCeti.PDE.divergenceForcing F`, bounded by Stampacchia's estimate
 `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_divergence`. -/
 theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι] {q : ℝ≥0}
     (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
@@ -644,54 +722,26 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence [Nonempty ι
   have hBell : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam := h.mono_set hball
   have hBmeas : AEStronglyMeasurable a (mu.restrict B) :=
     ha.mono_measure (Measure.restrict_mono hball le_rfl)
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    hBell.upper_nonneg hBmeas aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => hBell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
-  -- The datum `v ↦ -∫_B ⟪F, ∇v⟫` is a continuous linear functional on `H¹₀(B)`, since `F ∈ L²(B)`.
+  -- The datum `v ↦ -∫_B ⟪F, ∇v⟫` is the functional `divergenceForcing F`, since `F ∈ L²(B)`.
   have hF2 : MemLp F 2 (mu.restrict B) :=
     hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
-  let ℓ : StrongDual ℝ (W1p0 mu B 2) := -((innerSL ℝ (hF2.toLp F)).comp
-    (W1p.gradientL.comp (w1p0Submodule mu B 2).toSubmodule.subtypeL))
-  have hℓ : ∀ v : W1p0 mu B 2,
-      ℓ v = -∫ x in B, ⟪F x, W1p.gradient (v : W1p mu B 2) x⟫ ∂mu := fun v => by
-    simp only [ℓ, neg_apply, ContinuousLinearMap.comp_apply,
-      innerSL_apply_apply, Submodule.subtypeL_apply, W1p.gradientL_apply, L2.inner_def, neg_inj]
+  have hℓ : ∀ v : W1p0 mu B 2, divergenceForcing (hF2.toLp F) v =
+      -∫ x in B, ⟪F x, W1p.gradient (v : W1p mu B 2) x⟫ ∂mu := fun v => by
+    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
     refine integral_congr_ae ?_
     filter_upwards [hF2.coeFn_toLp] with x hx
     rw [hx]
-  -- The homogeneous Dirichlet problem on `B` has only the trivial solution, by uniqueness for the
-  -- datum `0 ∈ L²(B)`; hence the Dirichlet problem with datum `∂ᵢFⁱ` is solvable on `B`.
-  have hker : ∀ w : W1p0 mu B 2, (∀ v : W1p0 mu B 2,
-      energyFormH1 a 0 0 (w : W1p mu B 2) (v : W1p mu B 2) = 0) → w = 0 := by
-    intro w hw
-    obtain ⟨w₀, -, huniq⟩ :=
-      hBell.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (c := 0) (gamma := 0)
-        (r := 2) (f := 0) hBmeas aestronglyMeasurable_const (fun _ _ => by simp)
-        (fun _ _ => le_rfl) hBfin one_lt_two (by norm_num) MemLp.zero
-    rw [huniq w fun v => by simpa using hw v, huniq 0 fun v => by simp]
-  obtain ⟨w, hw, -⟩ := hBell.existsUnique_forall_energyFormH1_eq (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) hBmeas aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _ _ => by simp) (fun _ _ => by simp) isBounded_ball hker ℓ
-  have hwbound := hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas
-    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hF
-    (fun v => (hw v).trans (hℓ v))
-  -- The homogeneous part `h = u|_B - w`.
-  have huB := energyFormH1_restrictL_eq_neg_setIntegral_inner hB hu
-  refine ⟨W1p.restrictL hB u - (w : W1p mu B 2), fun v => ?_, ?_⟩
-  · rw [energyFormH1_sub_left hcoeff, huB v, hw v, hℓ v, sub_self]
-  -- `mu(B)^e = ρ^(1 - n/q) mu(B(0, 1))^e`.
-  have hmeas : mu.real (ball x₀ ρ) ^ e =
-      ρ ^ (1 - n / q) * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e := by
-    rw [Measure.addHaar_real_ball_rpow _ _ hρ, finrank_euclideanSpace]
-    congr 2
-    simp only [e, n]
-    field_simp
-  filter_upwards [hwbound, W1p.value_sub_ae (W1p.restrictL hB u) (w : W1p mu B 2),
-    W1p.value_restrictL_ae hB u] with x hx hxs hxr
-  rw [hxs, Pi.sub_apply, hxr, sub_sub_cancel]
-  refine hx.trans_eq ?_
-  simp only [B, Opens.coe_mk, hmeas]
-  ring
+  -- The weak solution `w ∈ H¹₀(B)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = ∂ᵢFⁱ` on `B`, and its bound; `u|_B - w` is
+  -- the homogeneous part.
+  obtain ⟨w, hw, -⟩ := hBell.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
+    (gamma := 0) hBmeas aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin
+    (divergenceForcing (hF2.toLp F))
+  exact exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_of_ae_abs_le h ha hρ hB
+    (by simp only [e, n]; field_simp) w
+    (fun v => (energyFormH1_restrictL_eq_neg_setIntegral_inner hB hu v).trans
+      ((hw v).trans (hℓ v)).symm)
+    (hstamp (Omega := B) (c := 0) (gamma := 0) hBfin hBell hBmeas aestronglyMeasurable_const
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hF (fun v => (hw v).trans (hℓ v)))
 
 /-- **Local boundedness of weak solutions with a right-hand side in divergence form.** Let
 `n ≥ 1` be the dimension and let `q > 2` with `q > n`. There is `D > 0`, depending only on `λ`,
@@ -718,20 +768,10 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp_divergence [Nonempty ι] {lam La
             (eLpNorm F q (mu.restrict (ball x₀ R))).toReal / lam) := by
   obtain ⟨K, -, hsplit⟩ :=
     exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence (mu := mu) hq hqn
-  obtain ⟨D, hD, hbound⟩ :=
-    exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le (mu := mu) (lam := lam) (Lam := Lam)
-  refine ⟨D * max 1 K, by positivity, ?_⟩
-  intro Omega a F u x₀ R h ha hF hu hR hball
-  have hlam := h.pos
-  obtain ⟨g, hg, hug⟩ := hsplit h ha hF hu hR hball
-  filter_upwards [hbound h ha hg hug hR hball] with x hx
-  set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
-  set P := R ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict (ball x₀ R))).toReal /
-    lam
-  have hmax := add_mul_le_max_mul_add (K := K) (by positivity : 0 ≤ Q) (by positivity : 0 ≤ P)
-  calc |W1p.value u x| ≤ D * (Q + K * P) := hx.trans_eq (by simp only [P]; ring)
-    _ ≤ D * (max 1 K * (Q + P)) := by gcongr
-    _ = _ := by ring
+  obtain ⟨D, hD, hbound⟩ := exists_ae_abs_value_le_mul_add_of_exists_ae_abs_sub_le (mu := mu)
+    (lam := lam) (Lam := Lam) K
+  exact ⟨D, hD, fun h ha hF hu hR hball =>
+    hbound h ha (hsplit h ha hF hu hR hball) ENNReal.toReal_nonneg hR hball⟩
 
 /-- **De Giorgi's theorem with a right-hand side in divergence form.** Let `n ≥ 1` be the
 dimension and let `q > 2` with `q > n`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
@@ -767,36 +807,16 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp_divergence [Nonempty 
   obtain ⟨K₀, hK₀, hsplit⟩ :=
     exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_divergence (mu := mu) hq hqn
   obtain ⟨α, C, hα, hα1, hC, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le (mu := mu) (lam := lam)
-      (Lam := Lam) (γ := 1 - (Fintype.card ι : ℝ) / q) (sub_pos.2 ((div_lt_one hq0).2 hqn))
-  refine ⟨α, C * max 1 K₀, hα, hα1, by positivity, ?_⟩
-  intro Omega a F u K R h ha hF hu hR hRK
-  have hlam := h.pos
-  -- On every ball `B(x, ρ)`, `x ∈ K`, `ρ ≤ R`, the splitting error is at most
-  -- `ρ^(1 - n/q) K₀ ‖F‖_{L^q(Ω)} / λ`.
-  refine (hhol (A := K₀ * (eLpNorm F q (mu.restrict Omega)).toReal / lam) h ha
-    (fun x hx ρ hρ hρR => ?_) hR hRK).mono_const ?_
-  · have hballρ : ball x ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := (ball_subset_ball hρR).trans
-      ((ball_subset_thickening hx R).trans ((thickening_subset_cthickening R K).trans hRK))
-    have hle := Measure.restrict_mono hballρ (le_refl mu)
-    obtain ⟨g, hg, hug⟩ := hsplit h ha (hF.mono_measure hle) hu hρ hballρ
-    refine ⟨g, hg, hug.mono fun y hy => hy.trans ?_⟩
-    calc K₀ * ρ ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict (ball x ρ))).toReal /
-          lam ≤ K₀ * ρ ^ (1 - (Fintype.card ι : ℝ) / q) *
-            (eLpNorm F q (mu.restrict Omega)).toReal / lam := by
-          gcongr
-          exact hF.eLpNorm_ne_top
-      _ = _ := by ring
-  · -- `C (Q + K₀ P) ≤ C max 1 K₀ (Q + P)`.
-    refine Real.toNNReal_le_toNNReal ?_
-    set Q := R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in Omega, W1p.value u y ^ 2 ∂mu)
-    set P := R ^ (1 - (Fintype.card ι : ℝ) / q) * (eLpNorm F q (mu.restrict Omega)).toReal / lam
-    have hmax := add_mul_le_max_mul_add (K := K₀) (by positivity : 0 ≤ Q) (by positivity : 0 ≤ P)
-    calc C * R ^ (-(α : ℝ)) * (Q + R ^ (1 - (Fintype.card ι : ℝ) / q) *
-          (K₀ * (eLpNorm F q (mu.restrict Omega)).toReal / lam)) =
-          C * R ^ (-(α : ℝ)) * (Q + K₀ * P) := by simp only [P]; ring
-      _ ≤ C * R ^ (-(α : ℝ)) * (max 1 K₀ * (Q + P)) := by gcongr
-      _ = _ := by ring
+    exists_holderOnWith_preciseRepresentative_of_forall_exists_ae_abs_sub_le (mu := mu)
+      (lam := lam) (Lam := Lam) (γ := 1 - (Fintype.card ι : ℝ) / q)
+      (sub_pos.2 ((div_lt_one hq0).2 hqn)) hK₀.le
+  refine ⟨α, C, hα, hα1, hC, fun {Omega a F u K R} h ha hF hu hR hRK => ?_⟩
+  exact hhol (N := fun s => (eLpNorm F q (mu.restrict s)).toReal) h ha
+    (fun x ρ hρ hballρ =>
+      hsplit h ha (hF.mono_measure (Measure.restrict_mono hballρ le_rfl)) hu hρ hballρ)
+    (fun s hs => ENNReal.toReal_mono hF.eLpNorm_ne_top
+      (eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)))
+    ENNReal.toReal_nonneg hR hRK
 
 /-! ### Continuity for a locally integrable right-hand side -/
 
