@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
