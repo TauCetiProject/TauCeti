@@ -78,7 +78,7 @@ private theorem cusp_mem_maximalIdeal : cusp k ∈ maximalIdeal k⟦X⟧⟦X⟧ 
 private theorem ker_toDualNumbers : RingHom.ker (toDualNumbers k) = span {cusp k} ⊔ span {X} := by
   rw [← RingHom.comap_ker, mk_ker, ← constantCoeff_cusp, ← Set.image_singleton, ← map_span,
     comap_map_of_surjective _ (constantCoeff_surj (R := k⟦X⟧)), ← RingHom.ker_eq_comap_bot,
-    TauCeti.PowerSeries.ker_constantCoeff]
+    PowerSeries.ker_constantCoeff]
 
 private theorem toDualNumbers_surjective : Function.Surjective (toDualNumbers k) :=
   Ideal.Quotient.mk_surjective.comp constantCoeff_surj
