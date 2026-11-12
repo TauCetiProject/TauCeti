@@ -126,10 +126,6 @@ private theorem dualTensorHom_rTensor_dualMulLeftAct_mk_one (φ : Module.Dual R 
 
 variable [Module.Finite R H] [Module.Projective R H]
 
-private theorem dualTensorHom_coact (φ : Module.Dual R H) :
-    dualTensorHom R H H (coact φ) = antipodeContract φ := by
-  rw [dual_coact, dualTensorHom_dualCoact]
-
 /-- The linear dual `H*` is a right Hopf module: the dual of the regular comodule, with `H` acting
 by precomposition with left multiplication. -/
 theorem isHopfModuleAction_dualMulLeftAct :
@@ -140,7 +136,7 @@ theorem isHopfModuleAction_dualMulLeftAct :
     apply (dualTensorHom_bijective (R := R) (M := H) (N := H)).1
     ext x
     rw [tensorCoact_tmul, instSelf_coact, dualTensorHom_rTensor_dualMulLeftAct_tensorCombine,
-      dualTensorHom_coact, dualTensorHom_coact]
+      dual_coact, dualTensorHom_dualCoact, dualTensorHom_dualCoact]
     have hg : antipodeContract φ ∘ₗ LinearMap.mulRight R x =
         LinearMap.mul' R H ∘ₗ TensorProduct.map
           (HopfAlgebra.antipode R ∘ₗ
@@ -150,7 +146,7 @@ theorem isHopfModuleAction_dualMulLeftAct :
       ext y
       exact antipodeContract_mul φ x y
     rw [hg, TauCeti.HopfAlgebra.mul'_rTensor_mul'_map_antipode_comul]
-    simp [antipodeContract]
+    simp
 
 /-- The fixed vectors of the Hopf module `H*` are exactly the right cointegrals. A fixed vector
 `φ` satisfies `S(Σ φ(x₁) x₂) = φ(x) 1`; colinearity of the action at `x = 1` removes the
@@ -162,7 +158,7 @@ theorem mem_fixedSubcomodule_dual_iff {φ : Module.Dual R H} :
   · intro hφ h
     have hcoact := congrArg (fun t ↦ dualTensorHom R H H t 1)
       (isHopfModuleAction_dualMulLeftAct.coact_act_of_mem_fixedSubcomodule hφ h)
-    simp only [dualTensorHom_coact, antipodeContract_apply, Bialgebra.comul_one,
+    simp only [dual_coact, dualTensorHom_dualCoact, antipodeContract_apply, Bialgebra.comul_one,
       Algebra.TensorProduct.one_def, LinearMap.rTensor_tmul, TensorProduct.lid_tmul,
       dualMulLeftAct_tmul_apply, mul_one, map_smul, HopfAlgebra.antipode_one,
       dualTensorHom_rTensor_dualMulLeftAct_mk_one] at hcoact
@@ -171,7 +167,7 @@ theorem mem_fixedSubcomodule_dual_iff {φ : Module.Dual R H} :
     rw [mem_fixedSubcomodule]
     apply (dualTensorHom_bijective (R := R) (M := H) (N := H)).1
     ext x
-    rw [dualTensorHom_coact, antipodeContract_apply, hφ x]
+    rw [dual_coact, dualTensorHom_dualCoact, antipodeContract_apply, hφ x]
     simp [dualTensorHom_apply]
 
 /-- The fixed subcomodule of the Hopf module `H*` is the submodule of right cointegrals. -/
