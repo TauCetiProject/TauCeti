@@ -192,17 +192,17 @@ applies to loop spaces, whose fundamental group is `π₂` of the space. -/
 theorem bijective_hurewiczIntHom_zero [PathConnectedSpace X] {H : Type*} [CommGroup H]
     (e : FundamentalGroup X x ≃* H) : Function.Bijective (hurewiczIntHom X x 0) := by
   -- The abelianization of the commutative group `π₁(X, x)` is `π₁(X, x)` itself.
-  have hab : Function.Bijective (Abelianization.of : FundamentalGroup X x →* _) := by
-    have h : ⇑(Abelianization.of : FundamentalGroup X x →* _) =
-        (MulEquiv.abelianizationCongr e).symm ∘ Abelianization.equivOfComm ∘ e := by
+  have hab : Function.Bijective (Group.Abelianization.of : FundamentalGroup X x →* _) := by
+    have h : ⇑(Group.Abelianization.of : FundamentalGroup X x →* _) =
+        (MulEquiv.abelianizationCongr e).symm ∘ Group.Abelianization.equivOfComm ∘ e := by
       funext g
-      simp [Abelianization.equivOfComm]
+      simp [Group.Abelianization.equivOfComm]
     rw [h]
     exact (MulEquiv.abelianizationCongr e).symm.bijective.comp
-      (Abelianization.equivOfComm.bijective.comp e.bijective)
+      (Group.Abelianization.equivOfComm.bijective.comp e.bijective)
   have h : ⇑(hurewiczIntHom X x 0) = Neg.neg ∘ hurewiczHomologyAddEquiv (X := TopCat.of X) x ∘
-      Additive.ofMul ∘ Abelianization.of ∘ homotopyGroupEquivFundamentalGroupOfUnique (Fin 1) ∘
-        Additive.toMul := by
+      Additive.ofMul ∘ Group.Abelianization.of ∘
+        homotopyGroupEquivFundamentalGroupOfUnique (Fin 1) ∘ Additive.toMul := by
     funext a
     rw [hurewiczIntHom_apply, ← hurewiczHom_apply,
       hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv]
