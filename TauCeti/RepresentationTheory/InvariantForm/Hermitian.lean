@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import TauCeti.LinearAlgebra.SesquilinearForm.Balance
 public import TauCeti.RepresentationTheory.InvariantForm
 
 /-!
@@ -263,14 +264,11 @@ theorem exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero (ρ : Represe
     intro x y
     simp [hH₀, Matrix.toLinearMapₛₗ₂_apply, Matrix.one_apply, smul_eq_mul, mul_comm,
       Finset.sum_ite_eq]
-  have hH₀symm : H₀.IsSymm := by
-    refine ⟨fun x y => ?_⟩
-    simp only [hH₀apply, map_sum, map_mul, Complex.conj_conj]
-    exact Finset.sum_congr rfl fun i _ => mul_comm _ _
   have hH₀nonneg : H₀.IsNonneg := by
     refine ⟨fun x => ?_⟩
     rw [hH₀apply]
     exact Finset.sum_nonneg fun i _ => star_mul_self_nonneg _
+  have hH₀symm : H₀.IsSymm := hH₀nonneg.isSymm
   have hH₀def : ∀ x : V, H₀ x x = 0 → x = 0 := by
     intro x hx
     rw [hH₀apply] at hx

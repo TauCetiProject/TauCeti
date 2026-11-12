@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.PermutationForm
 
 /-!
 # Summing a bilinear form over the conjugates of a representation
@@ -163,43 +162,23 @@ theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W) [Nontr
     ∃ B : BilinForm k W, IsInvariantForm σ B ∧ B.IsSymm ∧ B ≠ 0 := by
   classical
   have : Fintype G := Fintype.ofFinite G
-  set b := Module.Free.chooseBasis k W with _
-  -- The dot product of the coordinate vectors: the sum over their joint support of the products
-  -- of matching coordinates, which is a finite sum even when the basis is infinite.
-  let D : (Module.Free.ChooseBasisIndex k W →₀ k) →ₗ[k]
-      (Module.Free.ChooseBasisIndex k W →₀ k) →ₗ[k] k :=
-    Finsupp.lsum k fun i => LinearMap.toSpanSingleton k _ (Finsupp.lapply i)
-  have hD : ∀ x y, D x y = ∑ i ∈ x.support ∪ y.support, x i * y i := fun x y => by
-    simp only [D, Finsupp.lsum_apply, Finsupp.sum, LinearMap.sum_apply,
-      LinearMap.toSpanSingleton_apply, LinearMap.smul_apply, Finsupp.lapply_apply, smul_eq_mul]
-    refine Finset.sum_subset Finset.subset_union_left fun i _ hi => ?_
-    simp_all
-  set B₀ : BilinForm k W := D.compl₁₂ b.repr.toLinearMap b.repr.toLinearMap with hB₀
-  have hB₀apply : ∀ x y : W, B₀ x y
-      = ∑ i ∈ (b.repr x).support ∪ (b.repr y).support, b.repr x i * b.repr y i := fun x y => by
-    rw [hB₀, LinearMap.compl₁₂_apply, hD]
-    rfl
-  have hB₀symm : B₀.IsSymm :=
-    ⟨fun x y => by simp only [hB₀apply, Finset.union_comm, mul_comm]⟩
-  have hB₀nonneg : ∀ x : W, 0 ≤ B₀ x x := fun x => by
-    rw [hB₀apply]
-    exact Finset.sum_nonneg fun i _ => mul_self_nonneg _
+  -- The permutation form of the coordinate space, pulled back along the coordinates of a basis.
+  let e : W ≃ₗ[k] MonoidAlgebra k (Module.Free.ChooseBasisIndex k W) :=
+    (Module.Free.chooseBasis k W).repr.trans (MonoidAlgebra.coeffLinearEquiv k).symm
+  set B₀ : BilinForm k W :=
+    (TauCeti.permutationForm k (Module.Free.ChooseBasisIndex k W)).compl₁₂ e.toLinearMap
+      e.toLinearMap with hB₀
+  have hB₀pos : B₀.toQuadraticMap.PosDef := fun y hy => by
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, hB₀, LinearMap.compl₁₂_apply]
+    exact TauCeti.permutationForm_self_pos (e.map_ne_zero_iff.mpr hy)
   refine ⟨sumOfConjugatesForm σ B₀, isInvariantForm_sumOfConjugatesForm σ B₀,
-    isSymm_sumOfConjugatesForm hB₀symm, ?_⟩
-  obtain ⟨x, hx⟩ := exists_ne (0 : W)
-  have hpos : 0 < B₀ x x := by
-    obtain ⟨i, hi⟩ : ∃ i, b.repr x i ≠ 0 := by
-      by_contra h
-      push Not at h
-      exact hx (b.repr.map_eq_zero_iff.mp (Finsupp.ext h))
-    rw [hB₀apply]
-    refine Finset.sum_pos' (fun i _ => mul_self_nonneg _) ⟨i, ?_, mul_self_pos.mpr hi⟩
-    simpa using hi
-  have hle : B₀ x x ≤ sumOfConjugatesForm σ B₀ x x := le_sumOfConjugatesForm_apply_self hB₀nonneg x
-  intro hzero
-  rw [hzero] at hle
-  simp only [LinearMap.zero_apply] at hle
-  exact absurd (hpos.trans_le hle) (lt_irrefl 0)
+    isSymm_sumOfConjugatesForm ?_, ?_⟩
+  · exact ⟨fun x y => TauCeti.permutationForm_comm _ _⟩
+  · obtain ⟨x, hx⟩ := exists_ne (0 : W)
+    intro hzero
+    have := posDef_toQuadraticMap_sumOfConjugatesForm (σ := σ) hB₀pos x hx
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, hzero] at this
+    exact lt_irrefl _ this
 
 end OrderedField
 
