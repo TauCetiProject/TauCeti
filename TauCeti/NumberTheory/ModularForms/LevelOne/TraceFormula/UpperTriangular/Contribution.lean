@@ -31,7 +31,7 @@ the contribution of each representative to the ambient binary-form trace.
 * `TauCeti.PopaZagier.weight_upperTriangular`: the unnormalised Popa--Zagier weight.
 * `TauCeti.PopaZagier.upperTriangularCoeff`: the normalised coefficient of `(a b; 0 d)`.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_upperTriangular`: the coefficient
-  of a positive-diagonal upper-triangular matrix.
+  of an upper-triangular matrix with positive upper-left entry.
 * `TauCeti.TraceFormulaMatrixModule.trace_popaZagierElement_single_upperTriangularRep`: the
   contribution of one canonical representative.
 
@@ -66,8 +66,8 @@ theorem trace_binaryFormRep_upperTriangular_eq_dickson_eval {R : Type*} [CommRin
 
 namespace PopaZagier
 
-/-- The unnormalised Popa--Zagier weight of a positive-diagonal upper-triangular matrix. The
-four cases give weights `12`, `2`, `6`, and `0`; division by `12` produces the coefficient of
+/-- The unnormalised Popa--Zagier weight of an upper-triangular matrix `(a b; 0 d)` with `0 < a`.
+The four cases give weights `12`, `2`, `6`, and `0`; division by `12` produces the coefficient of
 the explicit Hecke element. -/
 theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) :
     weight !![a, b; 0, d] =
@@ -79,7 +79,7 @@ theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) :
     Fin.isValue]
   grind [weight₁, weight₂, weight₃, weight₄, chainWeight₃]
 
-/-- The coefficient of the positive-diagonal upper-triangular matrix `(a b; 0 d)` in
+/-- The coefficient of the upper-triangular matrix `(a b; 0 d)` with `0 < a` in
 Popa--Zagier's explicit Hecke element: `1` in the interior of the interval `0 ≤ b ≤ d - a`,
 `1/6` at a scalar matrix, `1/2` at a non-scalar endpoint, and `0` outside the interval. -/
 def upperTriangularCoeff (a b d : ℤ) : ℚ :=
@@ -100,9 +100,10 @@ end PopaZagier
 
 namespace TraceFormulaMatrixModule
 
-/-- The coefficient of a positive-diagonal upper-triangular matrix in Popa--Zagier's explicit
-Hecke element. Interior matrices have coefficient `1`, non-scalar endpoints have coefficient
-`1/2`, a scalar matrix has coefficient `1/6`, and all other matrices have coefficient `0`. -/
+/-- The coefficient of an upper-triangular matrix with positive upper-left entry in
+Popa--Zagier's explicit Hecke element. Interior matrices have coefficient `1`, non-scalar
+endpoints have coefficient `1/2`, a scalar matrix has coefficient `1/6`, and all other matrices
+have coefficient `0`. -/
 theorem coeff_popaZagierElement_upperTriangular {n : ℤ} (A : TraceFormulaMatrix n)
     (hc : A.1 1 0 = 0) (ha : 0 < A.1 0 0) :
     (popaZagierElement ℚ n).coeff (mk A) =
@@ -126,8 +127,6 @@ theorem trace_popaZagierElement_single_upperTriangularRep {n : ℤ}
       PopaZagier.upperTriangularCoeff (A.1 0 0) (A.1 0 1) (A.1 1 1) *
         (Polynomial.dickson 2 (n : ℚ) w).eval ((A.1 0 0 + A.1 1 1 : ℤ) : ℚ) := by
   obtain ⟨hc, ha, -, -⟩ := hA
-  have had : A.1 0 0 * A.1 1 1 = n :=
-    FixedDetMatrices.apply_zero_zero_mul_apply_one_one hc
   rw [trace_periodAction_single_eq_dickson_eval w hw A, Matrix.trace_fin_two,
     coeff_popaZagierElement_upperTriangular A hc ha]
 
