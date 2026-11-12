@@ -54,7 +54,7 @@ theorem eq_of_forall_ne [PerfectSpace M] {s t : Cₛ^n⟮I; F, V⟯} {x : M}
     have hz := mem_baseSet_trivializationAt F V z
     have hcont (u : Cₛ^n⟮I; F, V⟯) :
         ContinuousAt (fun y ↦ (trivializationAt F V z ⟨y, u y⟩).2) z :=
-      ((contMDiffAt_section z).1 (u.contMDiff z)).continuousAt
+      ((contMDiffAt_section_iff z).1 (u.contMDiff z)).continuousAt
     have heq : (fun y ↦ (trivializationAt F V z ⟨y, s y⟩).2) =ᶠ[𝓝[≠] z]
         fun y ↦ (trivializationAt F V z ⟨y, t y⟩).2 :=
       eventually_nhdsWithin_of_forall fun y hy ↦ by dsimp only; rw [h y hy]

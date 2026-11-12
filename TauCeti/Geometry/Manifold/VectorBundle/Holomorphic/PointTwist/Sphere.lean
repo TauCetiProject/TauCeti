@@ -37,9 +37,9 @@ theorem contMDiff_pointTwistOfPole_affineChart :
   refine contMDiff_pointTwistOfPole (fun z hz ↦ ?_) ?_ ?_
   · have h := contMDiffOn_of_mem_maximalAtlas
       (affineChart_mem_maximalAtlas (𝕜 := ℂ) (n := ω))
-    exact ((contMDiffAt_section z).2 (h.contMDiffAt
+    exact ((contMDiffAt_section_iff z).2 (h.contMDiffAt
       (affineChart.open_source.mem_nhds (by simpa using hz)))).contMDiffWithinAt
-  · exact (contMDiffAt_section _).2 contMDiffAt_const
+  · exact (contMDiffAt_section_iff _).2 contMDiffAt_const
   · filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds
       ((chartAt ℂ (∞ : OnePoint ℂ)).open_source.mem_nhds (mem_chart_source ℂ (∞ : OnePoint ℂ)))]
       with z hzi hz

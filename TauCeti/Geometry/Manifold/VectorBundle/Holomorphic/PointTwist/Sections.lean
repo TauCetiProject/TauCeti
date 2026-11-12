@@ -158,7 +158,7 @@ theorem exists_pointTwistMul_eq [CompleteSpace F] (hn : n ≠ 0) {x : X}
   have hhx : (trivializationAt F E x ⟨x, pointTwistPoleMul F E x x (τ x)⟩).2 = 0 := by
     rw [hτx, ← (trivializationAt F E x).continuousLinearMapAt_apply_of_mem ℂ hx, map_zero]
   obtain ⟨k, hk, hhk⟩ := exists_contMDiffAt_eventually_eq_pointTwistCoord_smul hn
-    ((contMDiffAt_section x).1 (contMDiffAt_pointTwist_section_iff_self.1 (hτ x))) hhx
+    ((contMDiffAt_section_iff x).1 (contMDiffAt_pointTwist_section_iff_self.1 (hτ x))) hhx
   have hτ0 : τ x = 0 := (trivializationAt_pointTwistPoleMul_self (F := F) x (τ x)).symm.trans hhx
   -- the section of `E`: off `x` the reading of `τ`, at `x` the value of `k` in the chart of `E`
   let σ : ∀ z, E z := Function.update (fun z ↦ pointTwistDiv F E x z (τ z)) x
@@ -169,7 +169,7 @@ theorem exists_pointTwistMul_eq [CompleteSpace F] (hn : n ≠ 0) {x : X}
   refine ⟨σ, fun z₀ ↦ ?_, fun z ↦ ?_⟩
   · by_cases hz₀ : z₀ = x
     · subst hz₀
-      rw [contMDiffAt_section]
+      rw [contMDiffAt_section_iff]
       refine hk.congr_of_eventuallyEq ?_
       filter_upwards [hhk, (trivializationAt F E z₀).open_baseSet.mem_nhds hx,
         (chartAt ℂ z₀).open_source.mem_nhds (mem_chart_source ℂ z₀)] with z hz hzb hzc
@@ -214,7 +214,7 @@ theorem range_pointTwistMulₗ [CompleteSpace F] (hn : n ≠ 0) (x : X) :
 theorem finiteDimensional_contMDiffSection_pointTwistCore [FiniteDimensional ℂ F] (hn : n ≠ 0)
     (x : X) [FiniteDimensional ℂ Cₛ^n⟮𝓘(ℂ); F, E⟯] :
     FiniteDimensional ℂ Cₛ^n⟮𝓘(ℂ); F, (pointTwistCore F E x).Fiber⟯ := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have := VectorBundle.finiteDimensional ℂ F E x
   refine ⟨Submodule.fg_of_fg_map_of_fg_inf_ker (pointTwistEvalₗ F E x)
     (IsNoetherian.noetherian _) ?_⟩
@@ -226,7 +226,7 @@ theorem finrank_contMDiffSection_pointTwistCore_le [FiniteDimensional ℂ F] (hn
     (x : X) [FiniteDimensional ℂ Cₛ^n⟮𝓘(ℂ); F, E⟯] :
     Module.finrank ℂ Cₛ^n⟮𝓘(ℂ); F, (pointTwistCore F E x).Fiber⟯ ≤
       Module.finrank ℂ Cₛ^n⟮𝓘(ℂ); F, E⟯ + Module.finrank ℂ F := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have := finiteDimensional_contMDiffSection_pointTwistCore (F := F) (E := E) hn x
   have := VectorBundle.finiteDimensional ℂ F E x
   rw [← LinearMap.finrank_range_add_finrank_ker (pointTwistEvalₗ F E x), ← range_pointTwistMulₗ hn,
