@@ -242,7 +242,7 @@ the number of parts, corrected by the ambient cardinality. This is `Equiv.Perm.s
 in the convention that keeps the fixed points, and the parity invariant of a Galois image is
 computed from it. -/
 theorem sign_of_parts_partition (σ : Equiv.Perm α) :
-    Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Fintype.card α + Multiset.card σ.partition.parts) := by
+    sign σ = (-1 : ℤˣ) ^ (Fintype.card α + Multiset.card σ.partition.parts) := by
   have hle : σ.support.card ≤ Fintype.card α := by
     simpa using σ.support.card_le_univ
   have h : Fintype.card α + Multiset.card σ.partition.parts =
@@ -323,7 +323,7 @@ theorem parts_partition_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
 /-- `fullCycleType` is the unbundled parts of Mathlib's permutation partition. -/
 theorem fullCycleType_def (σ : Equiv.Perm α) :
     fullCycleType σ = σ.partition.parts := by
-  rw [fullCycleType, Equiv.Perm.parts_partition]
+  rw [fullCycleType, parts_partition]
 
 /-! The filter and conjugacy forms of the partition API. -/
 
@@ -332,7 +332,7 @@ theorem fullCycleType_def (σ : Equiv.Perm α) :
 theorem filter_fullCycleType_eq_cycleType {σ : Equiv.Perm α} :
     (fullCycleType σ).filter (fun n => 2 ≤ n) = σ.cycleType := by
   rw [fullCycleType_def]
-  exact Equiv.Perm.filter_parts_partition_eq_cycleType
+  exact filter_parts_partition_eq_cycleType
 
 /-- A permutation has a single cycle length `n`, and no other, exactly when it is a cycle
 moving `n` points. -/
@@ -347,7 +347,7 @@ theorem cycleType_eq_singleton_iff {σ : Equiv.Perm α} {n : ℕ} :
 theorem fullCycleType_eq_of_isConj {σ τ : Equiv.Perm α}
     (hστ : IsConj σ τ) : fullCycleType σ = fullCycleType τ := by
   rw [fullCycleType_def, fullCycleType_def]
-  exact congrArg Nat.Partition.parts (Equiv.Perm.partition_eq_of_isConj.1 hστ)
+  exact congrArg Nat.Partition.parts (partition_eq_of_isConj.1 hστ)
 
 /-- The full cycle lengths of a permutation sum to the cardinality of its carrier. -/
 @[simp]
@@ -368,13 +368,13 @@ theorem pos_of_mem_fullCycleType {σ : Equiv.Perm α} {n : ℕ}
 theorem count_fullCycleType_of_ne_one (σ : Equiv.Perm α) {n : ℕ} (hn : n ≠ 1) :
     (fullCycleType σ).count n = σ.cycleType.count n := by
   rw [fullCycleType_def]
-  exact Equiv.Perm.count_parts_partition_of_ne_one σ hn
+  exact count_parts_partition_of_ne_one σ hn
 
 /-- The identity has one full cycle-type part for every point of the carrier. -/
 @[simp]
 theorem fullCycleType_one :
     fullCycleType (1 : Equiv.Perm α) = Multiset.replicate (Fintype.card α) 1 := by
-  rw [fullCycleType_def, Equiv.Perm.parts_partition_one]
+  rw [fullCycleType_def, parts_partition_one]
 
 /-- The identity is the only permutation all of whose full cycle lengths are one. -/
 @[simp]
@@ -390,20 +390,20 @@ theorem forall_mem_fullCycleType_eq_one_iff {σ : Equiv.Perm α} :
 @[simp]
 theorem fullCycleType_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
     fullCycleType σ = 0 := by
-  rw [fullCycleType_def, Equiv.Perm.parts_partition_of_isEmpty]
+  rw [fullCycleType_def, parts_partition_of_isEmpty]
 
 /-- The full cycle type is empty exactly when the carrier is empty. -/
 @[simp]
 theorem fullCycleType_eq_zero_iff {σ : Equiv.Perm α} :
     fullCycleType σ = 0 ↔ Fintype.card α = 0 := by
   simpa only [fullCycleType_def] using
-    (Equiv.Perm.parts_partition_eq_zero_iff (σ := σ))
+    (parts_partition_eq_zero_iff (σ := σ))
 
 /-- The full cycle type agrees with the cycle type exactly when there are no fixed points. -/
 theorem fullCycleType_eq_cycleType_iff {σ : Equiv.Perm α} :
     fullCycleType σ = σ.cycleType ↔ σ.support = Finset.univ := by
   simpa only [fullCycleType_def] using
-    (Equiv.Perm.parts_partition_eq_cycleType_iff (σ := σ))
+    (parts_partition_eq_cycleType_iff (σ := σ))
 
 /-- A fixed-point-free permutation has no one-parts in its full cycle type. -/
 theorem fullCycleType_eq_cycleType {σ : Equiv.Perm α}
@@ -416,28 +416,28 @@ theorem fullCycleType_eq_cycleType {σ : Equiv.Perm α}
 theorem fullCycleType_conj (g σ : Equiv.Perm α) :
     fullCycleType (g * σ * g⁻¹) = fullCycleType σ := by
   rw [fullCycleType_def, fullCycleType_def,
-    Equiv.Perm.parts_partition_conj]
+    parts_partition_conj]
 
 /-- Inverting a permutation does not change its full cycle type. -/
 @[simp]
 theorem fullCycleType_inv (σ : Equiv.Perm α) :
     fullCycleType σ⁻¹ = fullCycleType σ := by
   rw [fullCycleType_def, fullCycleType_def,
-    Equiv.Perm.parts_partition_inv]
+    parts_partition_inv]
 
 /-- Relabelling the carrier does not change a permutation's full cycle type. -/
 @[simp]
 theorem fullCycleType_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
     fullCycleType (e.permCongr σ) = fullCycleType σ := by
   rw [fullCycleType_def, fullCycleType_def,
-    Equiv.Perm.parts_partition_permCongr]
+    parts_partition_permCongr]
 
 /-- The parts equal to one in the full cycle type are precisely the fixed points. -/
 @[simp]
 theorem count_one_fullCycleType (σ : Equiv.Perm α) :
     (fullCycleType σ).count 1 = Fintype.card α - σ.support.card := by
   rw [fullCycleType_def]
-  exact Equiv.Perm.count_one_parts_partition σ
+  exact count_one_parts_partition σ
 
 open scoped Classical in
 /-- The fibres of `m` meeting the support of `σ` have the sizes of the cycles of `σ`. -/
@@ -812,18 +812,18 @@ end OrbitSizes
 
 The three shapes that the degree-four recognition theorems read off a factorization type. -/
 
-example : Equiv.Perm.fullCycleType (1 : Equiv.Perm (Fin 4)) = {1, 1, 1, 1} := by
-  rw [Equiv.Perm.fullCycleType_one]
+example : fullCycleType (1 : Equiv.Perm (Fin 4)) = {1, 1, 1, 1} := by
+  rw [fullCycleType_one]
   rfl
 
-example : Equiv.Perm.fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} := by
+example : fullCycleType (swap 0 1 : Equiv.Perm (Fin 4)) = {2, 1, 1} := by
   have h : (0 : Fin 4) ≠ 1 := by decide
-  simp only [Equiv.Perm.fullCycleType, Equiv.Perm.support_swap h, Finset.card_pair h,
-    Fintype.card_fin, Equiv.Perm.isSwap_iff_cycleType.mp (Equiv.Perm.swap_isSwap_iff.mpr h)]
+  simp only [fullCycleType, support_swap h, Finset.card_pair h,
+    Fintype.card_fin, isSwap_iff_cycleType.mp (swap_isSwap_iff.mpr h)]
   rfl
 
-example : Equiv.Perm.fullCycleType (finRotate 4) = {4} := by
-  rw [Equiv.Perm.fullCycleType_eq_cycleType (support_finRotate_of_le (by norm_num)),
+example : fullCycleType (finRotate 4) = {4} := by
+  rw [fullCycleType_eq_cycleType (support_finRotate_of_le (by norm_num)),
     cycleType_finRotate_of_le (by norm_num)]
 
 end Equiv.Perm

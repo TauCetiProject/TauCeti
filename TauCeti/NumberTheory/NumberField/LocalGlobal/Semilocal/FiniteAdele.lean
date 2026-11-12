@@ -300,7 +300,7 @@ theorem finiteIdeleSemilocalHom_finiteIdeleOfSemilocalUnits
   refine Units.ext ((semilocalEquiv L v).injective (funext fun w ↦ ?_))
   rw [semilocalEquiv_finiteIdeleSemilocalHom]
   obtain ⟨w, hw⟩ := w
-  obtain rfl := under_eq_of_liesOver hw
+  obtain rfl := under_eq_iff_liesOver.mpr hw
   exact coe_finiteIdeleOfSemilocalUnits_apply y hy w
 
 end SemilocalComponent
