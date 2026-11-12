@@ -70,16 +70,6 @@ is asserted here. Those are subsequent steps in the pinned Chevalley--Demazure c
 * The carrier API follows the formal template of
   `TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme`, specialized here to the doubled minuscule
   representation, lattice, and weights.
-
-## Roadmap
-
-This is a type-`E₆` instance of "The Chevalley--Demazure construction" and "Root subgroup maps" in
-Layer 9, "pinned Chevalley--Demazure group schemes over `ℤ`", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: an explicitly constructed group scheme over `ℤ` with
-its numbered root subgroup maps and the equations pinning them against a split torus. It does not
-close that layer on this diagram, which still owes the reductivity, the maximality of the torus,
-the identification of the carrier's root datum with
-`TauCeti.DynkinType.simplyConnectedRootDatum` at `E₆`, and the pinning datum itself.
 -/
 
 public section

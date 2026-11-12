@@ -56,8 +56,8 @@ structure over `D`, carried to the
 adjunction space along the closed embedding of `W`. The boundary of the cell of the `i`-th disk is
 the image of `b i`, which lies in `skeletonLT W (n i)`: this is the compatibility condition of the
 composite. The homotopy equivalence composes the change of base along `h`
-(`CategoryTheory.IsPushout.exists_homotopic_id_of_homotopic_id`) with the reattachment along a
-homotopy `h ∘ b ≃ a` (`CategoryTheory.IsPushout.exists_homotopicRel_id_of_homotopy`).
+(`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_relCWAdjunctionSpace`) with the reattachment
+along a homotopy `h ∘ b ≃ a` (`CategoryTheory.IsPushout.exists_homotopicRel_id_of_homotopy`).
 
 ## Main definitions
 
@@ -508,39 +508,25 @@ theorem _root_.ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_sigmaDiskAdjunct
     ((ContinuousMap.Homotopic.refl h.toFun).comp (hgb i)).symm.trans
       (h.right_inv.comp (ContinuousMap.Homotopic.refl (a i)))
   refine ⟨b, hb, hhb, ?_⟩
-  have hi := isEmbedding_relCWBaseInclusion C
-  have hA := hasHomotopyExtensionProperty_range_relCWBaseInclusion C
-  let i₀ := relCWBaseInclusion C
-  let ab := TopCat.ofHom (sigmaDiskAttachingMap b)
-  let f := TopCat.ofHom h.toFun
-  let g := TopCat.ofHom h.invFun
   -- First change the base `W` to `Z` along `h`, attaching along `h ∘ b`.
-  have hP := IsPushout.of_hasPushout i₀ ab
-  have hP' := IsPushout.of_hasPushout i₀ (ab ≫ f)
-  have hw : i₀ ≫ pushout.inl i₀ (ab ≫ f) = ab ≫ f ≫ pushout.inr i₀ (ab ≫ f) := by
-    rw [← Category.assoc]
-    exact pushout.condition
-  let F : pushout i₀ ab ⟶ pushout i₀ (ab ≫ f) :=
-    hP.desc (pushout.inl i₀ (ab ≫ f)) (f ≫ pushout.inr i₀ (ab ≫ f)) hw
-  obtain ⟨G, -, hFG, hGF⟩ := hP.exists_homotopic_id_of_homotopic_id hP' hi hA (g := g) rfl
-    h.left_inv h.right_inv (hP.inl_desc _ _ hw) (hP.inr_desc _ _ hw)
+  obtain ⟨E₁, hE₁, -⟩ := h.exists_homotopyEquiv_relCWAdjunctionSpace C (sigmaDiskAttachingMap b)
+  let i₀ := relCWBaseInclusion C
+  let hb' := h.toFun.comp (sigmaDiskAttachingMap b)
   -- Then reattach along a homotopy `h ∘ b ≃ a`, assembled from the homotopies `h ∘ b i ≃ a i` on
   -- the boundary spheres.
-  have hK : (ab ≫ f).hom.Homotopic (TopCat.ofHom (sigmaDiskAttachingMap a)).hom := by
-    rw [TopCat.hom_comp, TopCat.hom_ofHom, TopCat.hom_ofHom, TopCat.hom_ofHom,
-      ← ContinuousMap.sigmaDiskAttachingMap_comp]
+  have hK : (TopCat.ofHom (h.toFun.comp (sigmaDiskAttachingMap b))).hom.Homotopic
+      (TopCat.ofHom (sigmaDiskAttachingMap a)).hom := by
+    rw [TopCat.hom_ofHom, TopCat.hom_ofHom, ← ContinuousMap.sigmaDiskAttachingMap_comp]
     exact homotopic_sigmaDiskAttachingMap hhb
-  obtain ⟨φ, ψ, hφ, -, hφψ, hψφ⟩ := hP'.exists_homotopicRel_id_of_homotopy
-    (IsPushout.of_hasPushout i₀ (TopCat.ofHom (sigmaDiskAttachingMap a))) hi hA hK.some
-  let E₁ : (pushout i₀ ab : TopCat.{u}) ≃ₕ (pushout i₀ (ab ≫ f) : TopCat.{u}) :=
-    ⟨F.hom, G.hom, hFG, hGF⟩
-  let E₂ : (pushout i₀ (ab ≫ f) : TopCat.{u}) ≃ₕ
-      (pushout i₀ (TopCat.ofHom (sigmaDiskAttachingMap a)) : TopCat.{u}) :=
+  obtain ⟨φ, ψ, hφ, -, hφψ, hψφ⟩ :=
+    (IsPushout.of_hasPushout i₀ (TopCat.ofHom hb')).exists_homotopicRel_id_of_homotopy
+      (IsPushout.of_hasPushout i₀ (TopCat.ofHom (sigmaDiskAttachingMap a)))
+      (isEmbedding_relCWBaseInclusion C) (hasHomotopyExtensionProperty_range_relCWBaseInclusion C)
+      hK.some
+  let E₂ : relCWAdjunctionSpace C hb' ≃ₕ relCWAdjunctionSpace C (sigmaDiskAttachingMap a) :=
     ⟨φ.hom, ψ.hom, hφψ.homotopic, hψφ.homotopic⟩
   refine ⟨E₁.trans E₂, fun w ↦ ?_⟩
-  have h₁ : F (pushout.inr i₀ ab w) = pushout.inr i₀ (ab ≫ f) (h w) :=
-    ConcreteCategory.congr_hom (hP.inr_desc _ _ hw) w
-  exact (congrArg φ h₁).trans (ConcreteCategory.congr_hom hφ (h w))
+  exact (congrArg φ (hE₁ w)).trans (ConcreteCategory.congr_hom hφ (h w))
 
 section Pushout
 

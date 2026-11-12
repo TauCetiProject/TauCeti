@@ -20,10 +20,10 @@ import TauCeti.LinearAlgebra.RootSystem.Weyl.CartanType
 /-!
 # The Cartan-Killing classification of finite-type Cartan matrices
 
-This file proves the central theorem of Layer 5 of the root systems roadmap: every nonempty
-connected finite-type Cartan matrix reindexes to the standard Cartan matrix of a **unique valid**
-`DynkinType`, and every base of an irreducible reduced crystallographic finite root system has a
-unique valid `DynkinType` (`TauCeti.existsUnique_dynkinType`).
+This file proves the Cartan-Killing classification: every nonempty connected finite-type Cartan
+matrix reindexes to the standard Cartan matrix of a **unique valid** `DynkinType`, and every base
+of an irreducible reduced crystallographic finite root system has a unique valid `DynkinType`
+(`TauCeti.existsUnique_dynkinType`).
 
 The proof assembles the four geometric branches established in the subdiagram modules:
 1. **Triple edge**:
@@ -71,7 +71,6 @@ statements in `TauCeti.LinearAlgebra.RootSystem.FiniteType.RationalClassificatio
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1.5 and §4.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Ch. III, §11.
-* `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, Layer 5.
 -/
 
 public section

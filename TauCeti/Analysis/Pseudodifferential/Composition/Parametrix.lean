@@ -43,11 +43,11 @@ same equations for the homogeneous terms of a classical symbol, nothing here ass
 * `TauCeti.Symbol.isAsymptoticSum_sharpTerm_left_iff`,
   `TauCeti.Symbol.isAsymptoticSum_sharpTerm_right_iff`: the left and the right parametrix symbols
   are exactly the symbols differing from a two-sided one by a smoothing symbol.
-* `TauCeti.Symbol.isSmoothing_sharp_sub_ofSmul`: **the local left parametrix identity**. If `b` is
-  a left parametrix symbol of `a`, `c` is a symbol with compact spatial support that agrees with
-  `a` on an open set `Ω`, and `φ` is a smooth function with `tsupport φ ⊆ Ω`, then
-  `(φ b) # c - φ` is smoothing. The terms `sharpTerm b c k` at a position `x ∈ Ω` only involve
-  the derivatives of `c` at `x`, which are those of `a`
+* `TauCeti.Symbol.isSmoothing_sharp_sub_ofSpatial_smul_id`: **the local left parametrix
+  identity**. If `b` is a left parametrix symbol of `a`, `c` is a symbol with compact spatial
+  support that agrees with `a` on an open set `Ω`, and `φ` is a smooth function with
+  `tsupport φ ⊆ Ω`, then `(φ b) # c - φ` is smoothing. The terms `sharpTerm b c k` at a position
+  `x ∈ Ω` only involve the derivatives of `c` at `x`, which are those of `a`
   (`TauCeti.Symbol.coefficient_sharpTerm_congr_of_eventually`). This is the symbol-level step of
   Taylor, Lecture I, (4.6)–(4.11); its consequences on Bessel-potential spaces are in
   `TauCeti.Analysis.Pseudodifferential.EllipticRegularity`.
@@ -345,8 +345,8 @@ section LocalParametrix
 `1 ∼ ∑ₖ sharpTerm b a k`, let `c` be a symbol with compact spatial support that agrees with `a` on
 an open set `Ω`, and let `φ` be a smooth function with `tsupport φ ⊆ Ω`. If `q = φ b`, then
 `q # c - φ` is smoothing. -/
-theorem isSmoothing_sharp_sub_ofSmul [CompleteSpace V] [CompleteSpace W] {a : Symbol n V W m}
-    {b : Symbol n W V (-m)}
+theorem isSmoothing_sharp_sub_ofSpatial_smul_id [CompleteSpace V] [CompleteSpace W]
+    {a : Symbol n V W m} {b : Symbol n W V (-m)}
     (hL : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
       (b.sharpTerm a))
     {Ω : Set (CoordinateSpace n)} (hΩ : IsOpen Ω) {c : Symbol n V W m}
@@ -354,14 +354,18 @@ theorem isSmoothing_sharp_sub_ofSmul [CompleteSpace V] [CompleteSpace W] {a : Sy
     (hca : ∀ x ∈ Ω, ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
     {φ : CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ) (hφΩ : tsupport φ ⊆ Ω)
     {q : Symbol n W V (-m)} (hq : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ)) :
-    (q.sharp c hc - inclusion (neg_add_cancel m).ge (ofSmul φ hφ)).IsSmoothing := by
+    (q.sharp c hc - inclusion (neg_add_cancel m).ge
+      (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+        (hφ.smul contDiff_const))).IsSmoothing := by
   refine isSmoothing_iff.2 fun m'' ↦ ?_
   obtain ⟨N, hN⟩ : ∃ N : ℕ, -(N : ℝ) ≤ m'' := ⟨⌈-m''⌉₊, by linarith [Nat.le_ceil (-m'')]⟩
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hL N
-  refine ⟨inclusion (by linarith) ((ofSmul φ hφ).comp (b.sharpRemainder c hc N - r)), ?_⟩
+  refine ⟨inclusion (by linarith) ((ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
+    (hφ.smul contDiff_const)).comp (b.sharpRemainder c hc N - r)), ?_⟩
   funext ⟨x, ξ⟩
-  simp only [coefficient_inclusion, coefficient_ofSmul_comp, coefficient_ofSmul, coefficient_sub,
-    Pi.sub_apply, coefficient_sharpRemainder]
+  simp only [coefficient_inclusion, coefficient_comp, coefficient_ofSpatial, coefficient_sub,
+    Pi.sub_apply, coefficient_sharpRemainder, ContinuousLinearMap.smul_comp,
+    ContinuousLinearMap.id_comp]
   rw [coefficient_sharp_of_coefficient_eq_smul hc (hq x) ξ]
   by_cases hx : x ∈ Ω
   · have hev : ∀ᶠ y in 𝓝 x, ∀ η, c.coefficient (y, η) = a.coefficient (y, η) :=
