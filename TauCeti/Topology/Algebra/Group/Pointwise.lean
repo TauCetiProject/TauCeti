@@ -29,6 +29,11 @@ the first coordinate ranges over a noncompact set.
   `TauCeti.closure_sub_closure_subset`.
 * `IsClosed.image_mul_of_snd_subset`, with its additive form
   `IsClosed.image_add_of_snd_subset`.
+* `IsCompact.exists_isOpen_superset_mul_subset`, with its additive form
+  `IsCompact.exists_isOpen_superset_add_subset`: an open set containing `A * K` with `K` compact
+  contains `V * K` for an open superset `V` of `A`. Outer regularity arguments use it to thicken
+  an arbitrary set to an open one.
+* `IsClosed.div_right_of_isCompact`, with its additive form `IsClosed.sub_right_of_isCompact`.
 -/
 
 public section
@@ -68,5 +73,31 @@ theorem IsClosed.image_mul_of_snd_subset {G : Type*} [TopologicalSpace G]
     exact ⟨(p.1 * p.2, ⟨p.2, hsub ⟨p, hp, rfl⟩⟩), by simpa, rfl⟩
   · rintro ⟨p, hp, rfl⟩
     exact ⟨(p.1 / p.2, p.2), hp, by simp⟩
+
+/-- If `A * K` lies in an open set `U` and `K` is compact, then so does `V * K` for an open
+superset `V` of `A`, namely the complement of the closed set `Uᶜ * K⁻¹`. The set `A` is
+arbitrary. -/
+@[to_additive /-- If `A + K` lies in an open set `U` and `K` is compact, then so does `V + K` for
+an open superset `V` of `A`, namely the complement of the closed set `Uᶜ + -K`. The set `A` is
+arbitrary. -/]
+theorem IsCompact.exists_isOpen_superset_mul_subset {G : Type*} [TopologicalSpace G] [Group G]
+    [IsTopologicalGroup G] {A K U : Set G} (hK : IsCompact K) (hU : IsOpen U) (h : A * K ⊆ U) :
+    ∃ V, IsOpen V ∧ A ⊆ V ∧ V * K ⊆ U := by
+  refine ⟨(Uᶜ * K⁻¹)ᶜ, (hU.isClosed_compl.mul_right_of_isCompact hK.inv).isOpen_compl, ?_, ?_⟩
+  · -- If `x = u * k` with `u ∉ U` and `k⁻¹ ∈ K`, then `u = x * k⁻¹ ∈ A * K ⊆ U`.
+    rintro x hx ⟨u, hu, k, hk, rfl⟩
+    exact hu (h ⟨u * k, hx, k⁻¹, hk, mul_inv_cancel_right u k⟩)
+  · -- If `v * k ∉ U`, then `v = (v * k) * k⁻¹ ∈ Uᶜ * K⁻¹`.
+    rintro _ ⟨v, hv, k, hk, rfl⟩
+    by_contra hvk
+    exact hv ⟨v * k, hvk, k⁻¹, inv_mem_inv.2 hk, mul_inv_cancel_right v k⟩
+
+/-- The quotient `t / s` of a closed set `t` by a compact set `s` is closed. -/
+@[to_additive /-- The difference `t - s` of a closed set `t` and a compact set `s` is closed. -/]
+theorem IsClosed.div_right_of_isCompact {G : Type*} [TopologicalSpace G] [Group G]
+    [IsTopologicalGroup G] {s t : Set G} (ht : IsClosed t) (hs : IsCompact s) :
+    IsClosed (t / s) := by
+  rw [div_eq_mul_inv]
+  exact ht.mul_right_of_isCompact hs.inv
 
 end
