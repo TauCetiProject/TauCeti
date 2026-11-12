@@ -610,16 +610,11 @@ theorem tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn (ω : Symplect
       (∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ (fun t ↦ f (s, t)) t) ∧
         ContinuousOn (deriv fun t ↦ f (s, t)) (Icc 0 1) ∧
         ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv (fun t ↦ f (s, t)) t‖ ≤ L := by
-    have hd (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :=
-      hasDerivAt_slice_right ((hf.contDiffAt (hU.mem_nhds (hsU t ht))).differentiableAt
-        two_ne_zero)
-    have hderiv : EqOn (deriv fun t ↦ f (s, t)) (fun t ↦ fderiv ℝ f (s, t) (0, 1)) (Icc 0 1) :=
-      fun t ht ↦ (hd t ht).deriv
-    refine ⟨fun t ht ↦ (hd t ht).differentiableAt, ContinuousOn.congr ?_ hderiv, fun t ht ↦ ?_⟩
-    · exact ((hf.continuousOn_fderiv_of_isOpen hU one_le_two).comp
-        (continuous_const.prodMk continuous_id).continuousOn hsU).clm_apply continuousOn_const
-    · rw [hderiv ht]
-      exact ((fderiv ℝ f (s, t)).le_opNorm _).trans (by simpa using hfL t ht)
+    have hd (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : DifferentiableAt ℝ f (s, t) :=
+      (hf.contDiffAt (hU.mem_nhds (hsU t ht))).differentiableAt two_ne_zero
+    exact ⟨fun t ht ↦ (hasDerivAt_slice_right (hd t ht)).differentiableAt,
+      (hf.of_le one_le_two).continuousOn_deriv_slice_right hU hsU,
+      fun t ht ↦ (norm_deriv_slice_right_le (hd t ht)).trans (hfL t ht)⟩
   have hsa := hu.and hL |>.mono fun i hi ↦
     hslice a (fun t ht ↦ hRU ⟨⟨le_rfl, hab⟩, ht⟩) hi.1 fun t ht ↦ (hi.2 t ht).1
   have hsb := hu.and hL |>.mono fun i hi ↦

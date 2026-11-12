@@ -17,6 +17,7 @@ import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.ApproximateBound
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import TauCeti.Topology.UniformSpace.UniformConvergence.Translate
 
@@ -561,12 +562,8 @@ theorem tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add
       ((univ : Set ℝ) ×ˢ Icc 0 1)) :
     Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ u (s k, t))) atTop
       (𝓝 (ω.hamiltonianAction H (fun t ↦ v (0, t)))) := by
-  set γ : ℝ → ℝ × ℝ := fun t ↦ (0, t)
-  have hγ : Icc (0 : ℝ) 1 ⊆ γ ⁻¹' (γ '' Icc 0 1) := subset_preimage_image γ _
-  have hK : IsCompact (γ '' Icc 0 1) := isCompact_Icc.image (by fun_prop)
-  have hKs : γ '' Icc 0 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 := by
-    rintro _ ⟨t, ht, rfl⟩
-    exact ⟨mem_univ _, ht⟩
+  have hKs : ∀ t ∈ Icc (0 : ℝ) 1, ((0 : ℝ), t) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 :=
+    fun _ ht ↦ ⟨mem_univ _, ht⟩
   have hdiff : ∀ᶠ k in atTop, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ u (s k, t) :=
     hsU.mono fun k hk t ht ↦
       (hu.differentiableOn one_ne_zero _ (hk t ht)).differentiableAt (hU.mem_nhds (hk t ht))
@@ -575,20 +572,13 @@ theorem tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add
   -- uniformly on `[0, 1]`.
   refine ω.tendsto_hamiltonianAction hH
     (hsU.mono fun k hk ↦ hu.continuousOn.comp (hline k).continuousOn fun t ht ↦ hk t ht)
-    ((hsU.and hdiff).mono fun k hk ↦
-      (((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).comp
-        (hline k).continuousOn fun t ht ↦ hk.1 t ht).congr fun t ht ↦
-          (hasDerivAt_slice_right (hk.2 t ht)).deriv)
-    ?_ ?_
-  · simpa [comp_def, γ] using
-      (((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).1
-        (hx.mono hKs)).comp γ).mono hγ
-  · have h := (((ContinuousLinearMap.apply ℝ V ((0 : ℝ), (1 : ℝ))).uniformContinuous
-      |>.comp_tendstoUniformlyOn ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
-        hK).1 (hdx.mono hKs))).comp γ).mono hγ
+    (hsU.mono fun k hk ↦ hu.continuousOn_deriv_slice_right hU hk) ?_ ?_
+  · simpa using hx.tendstoUniformlyOn_slice_right isCompact_Icc hKs
+  · have h := (ContinuousLinearMap.apply ℝ V ((0 : ℝ), (1 : ℝ))).uniformContinuous
+      |>.comp_tendstoUniformlyOn (hdx.tendstoUniformlyOn_slice_right isCompact_Icc hKs)
     refine (h.congr (hdiff.mono fun k hk t ht ↦ ?_)).congr_right fun t ht ↦ ?_
-    · simp [γ, (hasDerivAt_slice_right (hk t ht)).deriv]
-    · simp [γ, (hasDerivAt_slice_right (hv t ht)).deriv]
+    · simp [(hasDerivAt_slice_right (hk t ht)).deriv]
+    · simp [(hasDerivAt_slice_right (hv t ht)).deriv]
 
 end Action
 
@@ -626,15 +616,8 @@ theorem exists_apply_ne_apply_of_tendstoLocallyUniformlyOn (hH : ContDiff ℝ 1 
     ∃ t ∈ Icc (0 : ℝ) 1, g (a, t) ≠ g (b, t) := by
   -- Along each boundary loop of the window the convergence is uniform.
   have hslice (s : ℝ) (hs : s ∈ Icc a b) :
-      TendstoUniformlyOn (fun i t ↦ f i (s, t)) (fun t ↦ g (s, t)) l (Icc 0 1) := by
-    set γ : ℝ → ℝ × ℝ := fun t ↦ (s, t)
-    have hK : IsCompact (γ '' Icc 0 1) := isCompact_Icc.image (by fun_prop)
-    have hKU : γ '' Icc 0 1 ⊆ U := by
-      rintro _ ⟨t, ht, rfl⟩
-      exact hRU ⟨hs, ht⟩
-    simpa [comp_def, γ] using
-      (((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).1
-        (hlim.mono hKU)).comp γ).mono (subset_preimage_image γ _)
+      TendstoUniformlyOn (fun i t ↦ f i (s, t)) (fun t ↦ g (s, t)) l (Icc 0 1) :=
+    hlim.tendstoUniformlyOn_slice_right isCompact_Icc fun _ ht ↦ hRU ⟨hs, ht⟩
   by_contra! hg
   -- If the two loops of `g` agreed, the energy over the window would tend to zero.
   have h := ω.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn hH hU hf hab hRU hper hL
