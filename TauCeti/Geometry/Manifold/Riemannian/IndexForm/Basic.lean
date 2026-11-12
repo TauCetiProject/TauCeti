@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCu
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AlongCurve
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
 
 /-!
 # The index form and integration by parts
@@ -21,39 +21,45 @@ of `V` and `W` on `[a, b]` is
 `I(V, W) = ∫_a^b ⟪D_t V, D_t W⟫ - ⟪R(V, γ') γ', W⟫ dt`,
 
 with the curvature convention `R(X, Y) Z = [∇_X, ∇_Y] Z - ∇_[X, Y] Z` of the Jacobi equation. The
-velocity and the covariant derivatives are taken within a parameter set `s`, so that the index
-form is defined on closed segments; where `s` is a neighbourhood of the open segment, it agrees
-with the index form for unrestricted derivatives. It only depends on the fields on the open
-segment. It is symmetric, and on `C¹` fields it is bilinear and additive over adjacent segments.
+integral uses unrestricted derivatives. On a closed segment it can equally be computed with
+derivatives within any parameter set containing the open segment. Values at endpoints and
+finitely many corners do not affect the integral. It only depends on the curve and the fields
+on the open segment. It is symmetric, bilinear on `C¹` fields, and additive over adjacent
+segments whenever the integrands are interval integrable on each piece.
 
 For a `C²` field `V`, `⟪D_t V, W⟫` differentiates to the integrand plus `⟪D_t² V + R(V, γ') γ', W⟫`,
 which gives the integration by parts
 `I(V, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫ - ∫_a^b ⟪D_t² V + R(V, γ') γ', W⟫ dt`.
-For a Jacobi field `V` the last integral vanishes. If moreover `D_t V(a) = -S V(a)` for an
-endomorphism `S` of the initial tangent space, the initial boundary term is `⟪S V(a), W(a)⟫`.
-This is the correction of the index form for an initial point moving along a submanifold with
-shape operator `S`.
+For a Jacobi field `V` the last integral vanishes. If `D_t V(a) + u` is orthogonal to `W(a)`,
+the initial boundary term is `⟪u, W(a)⟫`. Taking `u` to be the ambient image of the shape
+operator applied to `V(a)` gives the correction for an initial point moving along a submanifold,
+without requiring the normal component of `D_t V(a) + u` to vanish.
 
 ## Main definitions and results
 
-* `TauCeti.Manifold.indexFormIntegrandWithin` and `TauCeti.Manifold.indexFormWithin`: the
-  integrand of the index form and the index form.
-* `TauCeti.Manifold.indexFormWithin_congr`: the index form depends only on the curve and on the
-  fields on the open segment.
-* `TauCeti.Manifold.indexFormWithin_of_mem_nhds`: on a neighbourhood of the open segment,
-  derivatives within the parameter set give the unrestricted index form.
-* `TauCeti.Manifold.indexFormWithin_comm`, `TauCeti.Manifold.indexFormWithin_add_left`,
-  `TauCeti.Manifold.indexFormWithin_const_smul_left` and
-  `TauCeti.Manifold.indexFormWithin_add_adjacent_intervals`: symmetry, bilinearity and
-  additivity over segments.
-* `TauCeti.Manifold.indexFormWithin_eq_boundary_sub_integral`: integration by parts.
-* `TauCeti.Manifold.IsJacobiFieldOn.indexFormWithin_eq_boundary`: Jacobi integration by parts.
-* `TauCeti.Manifold.IsJacobiFieldOn.indexFormWithin_sub_initial_eq_boundary`: the corrected
-  index form against a Jacobi field with prescribed initial derivative is its terminal pairing,
-  so that it vanishes on the Jacobi field itself when it vanishes at `b`
-  (`TauCeti.Manifold.IsJacobiFieldOn.indexFormWithin_self_sub_initial_eq_zero`) and is negative
-  against a field with value `-D_t V(b) ≠ 0` at `b`
-  (`TauCeti.Manifold.IsJacobiFieldOn.indexFormWithin_sub_initial_neg`).
+* `TauCeti.Manifold.indexFormIntegrand` and `TauCeti.Manifold.indexForm`: the unrestricted
+  integrand and its interval integral.
+* `TauCeti.Manifold.indexFormIntegrandWithin` and
+  `TauCeti.Manifold.indexForm_eq_integral_indexFormIntegrandWithin`: computation using derivatives
+  within a parameter set, including at closed interval endpoints.
+* `TauCeti.Manifold.indexForm_congr`: invariance under curves and fields agreeing on the open
+  segment.
+* `TauCeti.Manifold.indexForm_comm`, `TauCeti.Manifold.indexForm_add_left`,
+  `TauCeti.Manifold.indexForm_const_smul_left` and their right-slot versions: symmetry and
+  bilinearity, with zero, negation, subtraction and finite-sum laws.
+* `TauCeti.Manifold.intervalIntegrable_indexFormIntegrand`:
+  integrability from `C¹` lifts on a set containing the closed interval.
+* `TauCeti.Manifold.indexForm_add_adjacent_intervals` and
+  `TauCeti.Manifold.sum_indexForm_adjacent_intervals`: additivity over pieces with separately
+  integrable integrands, allowing corners at the joining parameters.
+* `TauCeti.Manifold.indexForm_eq_inner_sub_inner_sub_integral`: integration by parts.
+* `TauCeti.Manifold.IsJacobiFieldOn.indexForm_eq_inner_sub_inner`: Jacobi integration by parts.
+* `TauCeti.Manifold.IsJacobiFieldOn.indexForm_sub_inner_eq_inner`: the corrected index form is
+  the terminal pairing when `D_t V(a) + u` is orthogonal to the initial test value. It vanishes
+  on the Jacobi field itself when it vanishes at `b`
+  (`TauCeti.Manifold.IsJacobiFieldOn.indexForm_self_sub_inner_eq_zero`) and is negative against a
+  field with value `-D_t V(b) ≠ 0` at `b`
+  (`TauCeti.Manifold.IsJacobiFieldOn.indexForm_sub_inner_neg`).
 
 ## References
 
@@ -94,58 +100,75 @@ theorem indexFormIntegrandWithin_def (t : ℝ) : indexFormIntegrandWithin I γ V
     inner ℝ ((leviCivitaConnection I M).curvatureTensor (γ t) (V t)
       (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) (W t) := by rfl
 
-variable (I γ V W s a b) in
-/-- The index form `∫_a^b ⟪D_t V, D_t W⟫ - ⟪R(V, γ') γ', W⟫ dt` of the fields `V` and `W` along
-`γ`, with the velocity and the covariant derivatives within the parameter set `s`. -/
-def indexFormWithin : ℝ :=
-  ∫ t in a..b, indexFormIntegrandWithin I γ V W s t
+variable (I γ V W) in
+/-- The unrestricted integrand of the index form. Its integral also applies to fields smooth
+only on each piece of a finite partition. -/
+def indexFormIntegrand (t : ℝ) : ℝ := indexFormIntegrandWithin I γ V W univ t
+
+/-- The unrestricted integrand is the within-set integrand on the whole parameter line. -/
+theorem indexFormIntegrand_def (t : ℝ) :
+    indexFormIntegrand I γ V W t = indexFormIntegrandWithin I γ V W univ t := (rfl)
+
+variable (I γ V W a b) in
+/-- The index form of two tangent fields along a curve on an oriented parameter interval.
+Values of the integrand at finitely many corners do not affect this integral. -/
+def indexForm : ℝ := ∫ t in a..b, indexFormIntegrand I γ V W t
 
 /-- The defining integral of the index form. -/
-theorem indexFormWithin_def : indexFormWithin I γ V W s a b =
-    ∫ t in a..b, inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s t)
-        (alongCurveWithin (leviCivitaConnection I M) γ W s t) -
-      inner ℝ ((leviCivitaConnection I M).curvatureTensor (γ t) (V t)
-        (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) (W t) := by rfl
+theorem indexForm_def : indexForm I γ V W a b =
+    ∫ t in a..b, indexFormIntegrand I γ V W t := (rfl)
 
-/-- The index form depends only on the curve and on the fields on the open segment. The fields
-may live along equal curves given by different expressions. -/
-theorem indexFormWithin_congr {δ : ℝ → M}
-    {P Q : ∀ t, TangentSpace I (δ t)} (hγ : γ = δ)
+/-- Where the parameter set is a neighbourhood of `t`, the integrand uses unrestricted
+derivatives. -/
+theorem indexFormIntegrandWithin_of_mem_nhds {t : ℝ} (hs : s ∈ 𝓝 t) :
+    indexFormIntegrandWithin I γ V W s t = indexFormIntegrand I γ V W t := by
+  simp only [indexFormIntegrand_def, indexFormIntegrandWithin_def, alongCurveWithin_univ,
+    curveVelocityWithin_univ, alongCurveWithin_of_mem_nhds _ γ V hs,
+    alongCurveWithin_of_mem_nhds _ γ W hs, curveVelocityWithin_of_mem_nhds (I := I) (γ := γ) hs]
+
+/-- The index form can be computed with derivatives within any set containing the open
+parameter interval. No regularity is needed at the endpoints. -/
+theorem indexForm_eq_integral_indexFormIntegrandWithin (hs : uIoo a b ⊆ s) :
+    indexForm I γ V W a b = ∫ t in a..b, indexFormIntegrandWithin I γ V W s t := by
+  rw [indexForm_def]
+  exact intervalIntegral.integral_congr_uIoo fun t ht ↦
+    (indexFormIntegrandWithin_of_mem_nhds
+      (mem_of_superset (isOpen_Ioo.mem_nhds ht) hs)).symm
+
+/-- The within-set integrand depends only on the germs of the curve and the two fields,
+together with their values at the tested parameter. -/
+theorem indexFormIntegrandWithin_congr {δ : ℝ → M} {P Q : ∀ r, TangentSpace I (δ r)}
+    {t : ℝ} (hγ : γ =ᶠ[𝓝[s] t] δ) (hγt : γ t = δ t)
+    (hV : ∀ᶠ r in 𝓝[s] t, HEq (V r) (P r)) (hVt : HEq (V t) (P t))
+    (hW : ∀ᶠ r in 𝓝[s] t, HEq (W r) (Q r)) (hWt : HEq (W t) (Q t)) :
+    indexFormIntegrandWithin I γ V W s t = indexFormIntegrandWithin I δ P Q s t := by
+  have hdV := alongCurveWithin_congr_heq (leviCivitaConnection I M) V hγ hγt hV hVt
+  have hdW := alongCurveWithin_congr_heq (leviCivitaConnection I M) W hγ hγt hW hWt
+  have hv := hγ.curveVelocityLiftWithin_eq (I := I) hγt
+  rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply] at hv
+  have hvel : HEq (curveVelocityWithin I γ s t) (curveVelocityWithin I δ s t) :=
+    (TotalSpace.ext_iff.mp hv).2
+  rw [indexFormIntegrandWithin_def, indexFormIntegrandWithin_def]
+  generalize γ t = x at *
+  generalize δ t = y at *
+  subst y
+  rw [eq_of_heq hdV, eq_of_heq hdW, eq_of_heq hVt, eq_of_heq hWt, eq_of_heq hvel]
+
+/-- The index form depends only on the curve and the fields on the open parameter interval.
+The two fields may be given along different, locally equal curves. -/
+theorem indexForm_congr {δ : ℝ → M} {P Q : ∀ t, TangentSpace I (δ t)}
+    (hγ : EqOn γ δ (uIoo a b))
     (hV : ∀ t ∈ uIoo a b, HEq (V t) (P t))
     (hW : ∀ t ∈ uIoo a b, HEq (W t) (Q t)) :
-    indexFormWithin I γ V W s a b = indexFormWithin I δ P Q s a b := by
-  subst δ
-  -- `uIoo a b` is the open interval `Ioo (a ⊓ b) (a ⊔ b)`.
-  have hnhds (t : ℝ) (ht : t ∈ uIoo a b) : uIoo a b ∈ 𝓝 t := by
-    rw [uIoo] at ht ⊢
-    exact isOpen_Ioo.mem_nhds ht
-  -- Fields agreeing on the open segment have the same value and covariant derivative there.
-  have hcongr {X Y : ∀ t, TangentSpace I (γ t)} (hXY : ∀ t ∈ uIoo a b, HEq (X t) (Y t))
-      (t : ℝ) (ht : t ∈ uIoo a b) : X t = Y t ∧
-        alongCurveWithin (leviCivitaConnection I M) γ X s t =
-          alongCurveWithin (leviCivitaConnection I M) γ Y s t := by
-    have hpt : X t = Y t := eq_of_heq (hXY t ht)
-    refine ⟨hpt, alongCurveWithin_congr _ γ X ?_ hpt⟩
-    filter_upwards [nhdsWithin_le_nhds (hnhds t ht)] with r hr using eq_of_heq (hXY r hr)
-  rw [indexFormWithin, indexFormWithin]
+    indexForm I γ V W a b = indexForm I δ P Q a b := by
+  rw [indexForm_def, indexForm_def]
   refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
-  obtain ⟨hv, hdv⟩ := hcongr hV t ht
-  obtain ⟨hw, hdw⟩ := hcongr hW t ht
-  rw [indexFormIntegrandWithin_def, indexFormIntegrandWithin_def, hdv, hdw, hv, hw]
-
-/-- Where the parameter set is a neighbourhood of `t`, the integrand of the index form at `t`
-is the one with unrestricted derivatives. -/
-theorem indexFormIntegrandWithin_of_mem_nhds {t : ℝ} (hs : s ∈ 𝓝 t) :
-    indexFormIntegrandWithin I γ V W s t = indexFormIntegrandWithin I γ V W univ t := by
-  simp only [indexFormIntegrandWithin_def, alongCurveWithin_univ, curveVelocityWithin_univ,
-    alongCurveWithin_of_mem_nhds _ γ V hs, alongCurveWithin_of_mem_nhds _ γ W hs,
-    curveVelocityWithin_of_mem_nhds (I := I) (γ := γ) hs]
-
-/-- If the parameter set is a neighbourhood of every point of the open segment, the index form is
-the one with unrestricted derivatives. -/
-theorem indexFormWithin_of_mem_nhds (hs : ∀ t ∈ uIoo a b, s ∈ 𝓝 t) :
-    indexFormWithin I γ V W s a b = indexFormWithin I γ V W univ a b :=
-  intervalIntegral.integral_congr_uIoo fun t ht ↦ indexFormIntegrandWithin_of_mem_nhds (hs t ht)
+  have hmem : uIoo a b ∈ 𝓝[univ] t := nhdsWithin_le_nhds (isOpen_Ioo.mem_nhds ht)
+  simp only [indexFormIntegrand_def]
+  exact indexFormIntegrandWithin_congr
+    (eventually_of_mem hmem hγ) (hγ ht)
+    (eventually_of_mem hmem hV) (hV t ht)
+    (eventually_of_mem hmem hW) (hW t ht)
 
 /-! ### Symmetry and bilinearity -/
 
@@ -165,18 +188,20 @@ theorem indexFormIntegrandWithin_comm (t : ℝ) :
     real_inner_comm (V t), real_inner_comm (alongCurveWithin _ γ V s t)]
 
 /-- The index form is symmetric in the two fields. -/
-theorem indexFormWithin_comm :
-    indexFormWithin I γ V W s a b = indexFormWithin I γ W V s a b :=
-  intervalIntegral.integral_congr fun t _ ↦ indexFormIntegrandWithin_comm t
+theorem indexForm_comm :
+    indexForm I γ V W a b = indexForm I γ W V a b := by
+  simp only [indexForm_def, indexFormIntegrand_def]
+  exact intervalIntegral.integral_congr fun t _ ↦ indexFormIntegrandWithin_comm (s := univ) t
 
 /-- The integrand of the index form is additive in the first field, at a parameter where both
 fields are differentiable within the parameter set. -/
 theorem indexFormIntegrandWithin_add_left {t : ℝ}
     (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
     (hV' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V' (γ t)) s t) :
-    indexFormIntegrandWithin I γ (fun r ↦ V r + V' r) W s t =
+    indexFormIntegrandWithin I γ (V + V') W s t =
       indexFormIntegrandWithin I γ V W s t + indexFormIntegrandWithin I γ V' W s t := by
-  simp only [indexFormIntegrandWithin_def, alongCurveWithin_add _ γ V V' s hV hV', map_add,
+  simp only [Pi.add_def, indexFormIntegrandWithin_def,
+    alongCurveWithin_add _ γ V V' s hV hV', map_add,
     LinearMap.add_apply, inner_add_left]
   ring
 
@@ -185,36 +210,244 @@ fields are differentiable within the parameter set. -/
 theorem indexFormIntegrandWithin_add_right {t : ℝ}
     (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
     (hW' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W' (γ t)) s t) :
-    indexFormIntegrandWithin I γ V (fun r ↦ W r + W' r) s t =
+    indexFormIntegrandWithin I γ V (W + W') s t =
       indexFormIntegrandWithin I γ V W s t + indexFormIntegrandWithin I γ V W' s t := by
   rw [indexFormIntegrandWithin_comm, indexFormIntegrandWithin_add_left hW hW',
     indexFormIntegrandWithin_comm, indexFormIntegrandWithin_comm (V := W')]
 
 /-- The integrand of the index form is homogeneous in the first field. -/
+@[simp]
 theorem indexFormIntegrandWithin_const_smul_left (c : ℝ) (t : ℝ) :
-    indexFormIntegrandWithin I γ (fun r ↦ c • V r) W s t =
+    indexFormIntegrandWithin I γ (c • V) W s t =
       c * indexFormIntegrandWithin I γ V W s t := by
-  simp only [indexFormIntegrandWithin_def, alongCurveWithin_const_smul, map_smul,
+  simp only [Pi.smul_def, indexFormIntegrandWithin_def, alongCurveWithin_const_smul, map_smul,
     LinearMap.smul_apply, real_inner_smul_left]
   ring
 
 /-- The integrand of the index form is homogeneous in the second field. -/
+@[simp]
 theorem indexFormIntegrandWithin_const_smul_right (c : ℝ) (t : ℝ) :
-    indexFormIntegrandWithin I γ V (fun r ↦ c • W r) s t =
+    indexFormIntegrandWithin I γ V (c • W) s t =
       c * indexFormIntegrandWithin I γ V W s t := by
   rw [indexFormIntegrandWithin_comm, indexFormIntegrandWithin_const_smul_left,
     indexFormIntegrandWithin_comm]
 
 /-- The index form is homogeneous in the first field. -/
-theorem indexFormWithin_const_smul_left (c : ℝ) :
-    indexFormWithin I γ (fun r ↦ c • V r) W s a b = c * indexFormWithin I γ V W s a b := by
-  simp only [indexFormWithin, indexFormIntegrandWithin_const_smul_left,
+@[simp]
+theorem indexForm_const_smul_left (c : ℝ) :
+    indexForm I γ (c • V) W a b = c * indexForm I γ V W a b := by
+  simp only [indexForm_def, indexFormIntegrand_def, indexFormIntegrandWithin_const_smul_left,
     intervalIntegral.integral_const_mul]
 
 /-- The index form is homogeneous in the second field. -/
-theorem indexFormWithin_const_smul_right (c : ℝ) :
-    indexFormWithin I γ V (fun r ↦ c • W r) s a b = c * indexFormWithin I γ V W s a b := by
-  rw [indexFormWithin_comm, indexFormWithin_const_smul_left, indexFormWithin_comm]
+@[simp]
+theorem indexForm_const_smul_right (c : ℝ) :
+    indexForm I γ V (c • W) a b = c * indexForm I γ V W a b := by
+  rw [indexForm_comm, indexForm_const_smul_left, indexForm_comm]
+
+/-- The within-set integrand is zero when its left field is zero. -/
+@[simp]
+theorem indexFormIntegrandWithin_zero_left (t : ℝ) :
+    indexFormIntegrandWithin I γ (0) W s t = 0 := by
+  simpa only [zero_smul, zero_mul] using
+    (indexFormIntegrandWithin_const_smul_left (I := I) (γ := γ)
+      (V := 0) (W := W) (s := s) 0 t)
+
+/-- Negating the left field negates the within-set integrand. -/
+@[simp]
+theorem indexFormIntegrandWithin_neg_left (t : ℝ) :
+    indexFormIntegrandWithin I γ (-V) W s t = -indexFormIntegrandWithin I γ V W s t := by
+  simpa only [neg_one_smul, neg_one_mul] using
+    (indexFormIntegrandWithin_const_smul_left (I := I) (γ := γ) (V := V) (W := W)
+      (s := s) (-1) t)
+
+/-- The integrand is zero when its left field is zero. -/
+@[simp]
+theorem indexFormIntegrand_zero_left (t : ℝ) :
+    indexFormIntegrand I γ (0) W t = 0 := by
+  simpa only [zero_smul, zero_mul, indexFormIntegrand_def] using
+    (indexFormIntegrandWithin_const_smul_left (I := I) (γ := γ)
+      (V := 0) (W := W) (s := univ) 0 t)
+
+/-- Negating the left field negates the integrand. -/
+@[simp]
+theorem indexFormIntegrand_neg_left (t : ℝ) :
+    indexFormIntegrand I γ (-V) W t = -indexFormIntegrand I γ V W t := by
+  simpa only [neg_one_smul, neg_one_mul, indexFormIntegrand_def] using
+    (indexFormIntegrandWithin_const_smul_left (I := I) (γ := γ) (V := V) (W := W)
+      (s := univ) (-1) t)
+
+/-- The index form vanishes when its left field is zero. -/
+@[simp]
+theorem indexForm_zero_left : indexForm I γ (0) W a b = 0 := by
+  simp only [indexForm_def, indexFormIntegrand_zero_left, intervalIntegral.integral_zero]
+
+/-- Negating the left field negates the index form. -/
+@[simp]
+theorem indexForm_neg_left :
+    indexForm I γ (-V) W a b = -indexForm I γ V W a b := by
+  simp only [indexForm_def, indexFormIntegrand_neg_left, intervalIntegral.integral_neg]
+
+/-- The unrestricted integrand is homogeneous in its left field. -/
+@[simp]
+theorem indexFormIntegrand_const_smul_left (c : ℝ) (t : ℝ) :
+    indexFormIntegrand I γ (c • V) W t = c * indexFormIntegrand I γ V W t := by
+  simp only [indexFormIntegrand_def, indexFormIntegrandWithin_const_smul_left]
+
+/-- The within-set integrand is zero when its right field is zero. -/
+@[simp]
+theorem indexFormIntegrandWithin_zero_right (t : ℝ) :
+    indexFormIntegrandWithin I γ V (0) s t = 0 := by
+  simpa only [zero_smul, zero_mul] using
+    (indexFormIntegrandWithin_const_smul_right (I := I) (γ := γ)
+      (V := V) (W := 0) (s := s) 0 t)
+
+/-- Negating the right field negates the within-set integrand. -/
+@[simp]
+theorem indexFormIntegrandWithin_neg_right (t : ℝ) :
+    indexFormIntegrandWithin I γ V (-W) s t = -indexFormIntegrandWithin I γ V W s t := by
+  simpa only [neg_one_smul, neg_one_mul] using
+    (indexFormIntegrandWithin_const_smul_right (I := I) (γ := γ) (V := V) (W := W)
+      (s := s) (-1) t)
+
+/-- The integrand is zero when its right field is zero. -/
+@[simp]
+theorem indexFormIntegrand_zero_right (t : ℝ) :
+    indexFormIntegrand I γ V (0) t = 0 := by
+  simpa only [zero_smul, zero_mul, indexFormIntegrand_def] using
+    (indexFormIntegrandWithin_const_smul_right (I := I) (γ := γ)
+      (V := V) (W := 0) (s := univ) 0 t)
+
+/-- Negating the right field negates the integrand. -/
+@[simp]
+theorem indexFormIntegrand_neg_right (t : ℝ) :
+    indexFormIntegrand I γ V (-W) t = -indexFormIntegrand I γ V W t := by
+  simpa only [neg_one_smul, neg_one_mul, indexFormIntegrand_def] using
+    (indexFormIntegrandWithin_const_smul_right (I := I) (γ := γ) (V := V) (W := W)
+      (s := univ) (-1) t)
+
+/-- The index form vanishes when its right field is zero. -/
+@[simp]
+theorem indexForm_zero_right : indexForm I γ V (0) a b = 0 := by
+  simp only [indexForm_def, indexFormIntegrand_zero_right, intervalIntegral.integral_zero]
+
+/-- Negating the right field negates the index form. -/
+@[simp]
+theorem indexForm_neg_right :
+    indexForm I γ V (-W) a b = -indexForm I γ V W a b := by
+  simp only [indexForm_def, indexFormIntegrand_neg_right, intervalIntegral.integral_neg]
+
+/-- The unrestricted integrand is homogeneous in its right field. -/
+@[simp]
+theorem indexFormIntegrand_const_smul_right (c : ℝ) (t : ℝ) :
+    indexFormIntegrand I γ V (c • W) t = c * indexFormIntegrand I γ V W t := by
+  simp only [indexFormIntegrand_def, indexFormIntegrandWithin_const_smul_right]
+
+/-- The integrand is symmetric in its two fields. -/
+theorem indexFormIntegrand_comm (t : ℝ) :
+    indexFormIntegrand I γ V W t = indexFormIntegrand I γ W V t := by
+  simp only [indexFormIntegrand_def, indexFormIntegrandWithin_comm]
+
+/-- The index form vanishes on a degenerate parameter interval. -/
+@[simp]
+theorem indexForm_self : indexForm I γ V W a a = 0 := by
+  simp only [indexForm_def, intervalIntegral.integral_same]
+
+/-- Reversing the orientation of the interval negates the index form. -/
+theorem indexForm_symm : indexForm I γ V W b a = -indexForm I γ V W a b := by
+  rw [indexForm_def, indexForm_def, intervalIntegral.integral_symm]
+
+/-- The within-set integrand respects subtraction in its first field. -/
+theorem indexFormIntegrandWithin_sub_left {t : ℝ}
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hV' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V' (γ t)) s t) :
+    indexFormIntegrandWithin I γ (V - V') W s t =
+      indexFormIntegrandWithin I γ V W s t - indexFormIntegrandWithin I γ V' W s t := by
+  simp only [Pi.sub_def, indexFormIntegrandWithin_def,
+    alongCurveWithin_sub _ γ V V' s hV hV', map_sub,
+    LinearMap.sub_apply, inner_sub_left]
+  ring
+
+/-- The within-set integrand respects subtraction in its second field. -/
+theorem indexFormIntegrandWithin_sub_right {t : ℝ}
+    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
+    (hW' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W' (γ t)) s t) :
+    indexFormIntegrandWithin I γ V (W - W') s t =
+      indexFormIntegrandWithin I γ V W s t - indexFormIntegrandWithin I γ V W' s t := by
+  rw [indexFormIntegrandWithin_comm, indexFormIntegrandWithin_sub_left hW hW',
+    indexFormIntegrandWithin_comm, indexFormIntegrandWithin_comm (V := W')]
+
+/-- The within-set integrand commutes with a finite sum in its first field. -/
+theorem indexFormIntegrandWithin_sum_left {ι : Type*} (A : Finset ι)
+    (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
+    (hX : ∀ i ∈ A, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) s t) :
+    indexFormIntegrandWithin I γ (∑ i ∈ A, X i) W s t =
+      ∑ i ∈ A, indexFormIntegrandWithin I γ (X i) W s t := by
+  simp only [Finset.sum_fn, indexFormIntegrandWithin_def, alongCurveWithin_sum _ γ A X hX, map_sum,
+    LinearMap.sum_apply, sum_inner, Finset.sum_sub_distrib]
+
+/-- The within-set integrand commutes with a finite sum in its second field. -/
+theorem indexFormIntegrandWithin_sum_right {ι : Type*} (A : Finset ι)
+    (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
+    (hX : ∀ i ∈ A, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) s t) :
+    indexFormIntegrandWithin I γ V (∑ i ∈ A, X i) s t =
+      ∑ i ∈ A, indexFormIntegrandWithin I γ V (X i) s t := by
+  simp_rw [indexFormIntegrandWithin_comm (V := V)]
+  exact indexFormIntegrandWithin_sum_left A X hX
+
+/-- The integrand respects addition in its left field at differentiable parameters. -/
+theorem indexFormIntegrand_add_left {t : ℝ}
+    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hV' : DifferentiableAt ℝ (sectionCoord (F := E) γ V' (γ t)) t) :
+    indexFormIntegrand I γ (V + V') W t =
+      indexFormIntegrand I γ V W t + indexFormIntegrand I γ V' W t := by
+  simpa only [indexFormIntegrand_def] using
+    indexFormIntegrandWithin_add_left hV.differentiableWithinAt hV'.differentiableWithinAt
+
+/-- The integrand respects addition in its right field at differentiable parameters. -/
+theorem indexFormIntegrand_add_right {t : ℝ}
+    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
+    (hW' : DifferentiableAt ℝ (sectionCoord (F := E) γ W' (γ t)) t) :
+    indexFormIntegrand I γ V (W + W') t =
+      indexFormIntegrand I γ V W t + indexFormIntegrand I γ V W' t := by
+  simpa only [indexFormIntegrand_def] using
+    indexFormIntegrandWithin_add_right hW.differentiableWithinAt hW'.differentiableWithinAt
+
+/-- The integrand respects subtraction in its left field at differentiable parameters. -/
+theorem indexFormIntegrand_sub_left {t : ℝ}
+    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hV' : DifferentiableAt ℝ (sectionCoord (F := E) γ V' (γ t)) t) :
+    indexFormIntegrand I γ (V - V') W t =
+      indexFormIntegrand I γ V W t - indexFormIntegrand I γ V' W t := by
+  simpa only [indexFormIntegrand_def] using
+    indexFormIntegrandWithin_sub_left hV.differentiableWithinAt hV'.differentiableWithinAt
+
+/-- The integrand respects subtraction in its right field at differentiable parameters. -/
+theorem indexFormIntegrand_sub_right {t : ℝ}
+    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
+    (hW' : DifferentiableAt ℝ (sectionCoord (F := E) γ W' (γ t)) t) :
+    indexFormIntegrand I γ V (W - W') t =
+      indexFormIntegrand I γ V W t - indexFormIntegrand I γ V W' t := by
+  simpa only [indexFormIntegrand_def] using
+    indexFormIntegrandWithin_sub_right hW.differentiableWithinAt hW'.differentiableWithinAt
+
+/-- The integrand commutes with a finite sum in its left field. -/
+theorem indexFormIntegrand_sum_left {ι : Type*} (A : Finset ι)
+    (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
+    (hX : ∀ i ∈ A, DifferentiableAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) t) :
+    indexFormIntegrand I γ (∑ i ∈ A, X i) W t =
+      ∑ i ∈ A, indexFormIntegrand I γ (X i) W t := by
+  simpa only [indexFormIntegrand_def] using
+    (indexFormIntegrandWithin_sum_left A X fun i hi ↦ (hX i hi).differentiableWithinAt)
+
+/-- The integrand commutes with a finite sum in its right field. -/
+theorem indexFormIntegrand_sum_right {ι : Type*} (A : Finset ι)
+    (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
+    (hX : ∀ i ∈ A, DifferentiableAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) t) :
+    indexFormIntegrand I γ V (∑ i ∈ A, X i) t =
+      ∑ i ∈ A, indexFormIntegrand I γ V (X i) t := by
+  simpa only [indexFormIntegrand_def] using
+    (indexFormIntegrandWithin_sum_right A X fun i hi ↦ (hX i hi).differentiableWithinAt)
 
 /-! ### Integrability -/
 
@@ -233,13 +466,16 @@ theorem continuousOn_indexFormIntegrandWithin (hs : UniqueDiffOn ℝ s)
   have hD :=
     (ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := γ)
       (h := IsContMDiffRiemannianBundle.of_le (n := ∞) zero_le)
-      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) hs (by simpa using hV))
-      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) hs
+      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) (m := ∞) (k := ∞)
+        (by simp) (by simp) hs (by simpa using hV))
+      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) (m := ∞) (k := ∞)
+        (by simp) (by simp) hs
         (by simpa using hW))).continuousOn
   have hR :=
     (ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := γ)
       (h := IsContMDiffRiemannianBundle.of_le (n := ∞) zero_le)
-      ((leviCivitaConnection I M).contMDiffOn_curvatureTensor (by simp)
+      ((leviCivitaConnection I M).contMDiffOn_curvatureTensor (F := E) (V := TangentSpace I)
+        (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x))) (by simp)
         (hV.of_le zero_le_one) hvel hvel)
       (hW.of_le zero_le_one)).continuousOn
   exact (hD.sub hR).congr fun t _ ↦ indexFormIntegrandWithin_def t
@@ -254,14 +490,17 @@ theorem intervalIntegrable_indexFormIntegrandWithin (hs : UniqueDiffOn ℝ s)
   ((continuousOn_indexFormIntegrandWithin hs hV hW).mono hsub).intervalIntegrable
 
 /-- The index form is additive in the first field on `C¹` fields. -/
-theorem indexFormWithin_add_left (hs : UniqueDiffOn ℝ s)
+theorem indexForm_add_left (hs : UniqueDiffOn ℝ s)
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
     (hV' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V' r)) s)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
     (hsub : uIcc a b ⊆ s) :
-    indexFormWithin I γ (fun r ↦ V r + V' r) W s a b =
-      indexFormWithin I γ V W s a b + indexFormWithin I γ V' W s a b := by
-  rw [indexFormWithin, indexFormWithin, indexFormWithin, ← intervalIntegral.integral_add
+    indexForm I γ (V + V') W a b =
+      indexForm I γ V W a b + indexForm I γ V' W a b := by
+  rw [indexForm_eq_integral_indexFormIntegrandWithin (uIoo_subset_uIcc_self.trans hsub),
+    indexForm_eq_integral_indexFormIntegrandWithin (uIoo_subset_uIcc_self.trans hsub),
+    indexForm_eq_integral_indexFormIntegrandWithin (uIoo_subset_uIcc_self.trans hsub),
+    ← intervalIntegral.integral_add
     (intervalIntegrable_indexFormIntegrandWithin hs hV hW hsub)
     (intervalIntegrable_indexFormIntegrandWithin hs hV' hW hsub)]
   exact intervalIntegral.integral_congr fun t ht ↦ indexFormIntegrandWithin_add_left
@@ -271,34 +510,125 @@ theorem indexFormWithin_add_left (hs : UniqueDiffOn ℝ s)
       one_ne_zero) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
 
 /-- The index form is additive in the second field on `C¹` fields. -/
-theorem indexFormWithin_add_right (hs : UniqueDiffOn ℝ s)
+theorem indexForm_add_right (hs : UniqueDiffOn ℝ s)
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
     (hW' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W' r)) s)
     (hsub : uIcc a b ⊆ s) :
-    indexFormWithin I γ V (fun r ↦ W r + W' r) s a b =
-      indexFormWithin I γ V W s a b + indexFormWithin I γ V W' s a b := by
-  rw [indexFormWithin_comm, indexFormWithin_add_left hs hW hW' hV hsub, indexFormWithin_comm,
-    indexFormWithin_comm (V := W')]
+    indexForm I γ V (W + W') a b =
+      indexForm I γ V W a b + indexForm I γ V W' a b := by
+  rw [indexForm_comm, indexForm_add_left hs hW hW' hV hsub, indexForm_comm,
+    indexForm_comm (V := W')]
 
-/-- The index form of `C¹` fields is additive over adjacent segments. -/
-theorem indexFormWithin_add_adjacent_intervals {c : ℝ} (hs : UniqueDiffOn ℝ s)
+/-- The index form respects subtraction in its first field on `C¹` fields. -/
+theorem indexForm_sub_left (hs : UniqueDiffOn ℝ s)
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
+    (hV' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V' r)) s)
+    (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
+    (hsub : uIcc a b ⊆ s) :
+    indexForm I γ (V - V') W a b =
+      indexForm I γ V W a b - indexForm I γ V' W a b := by
+  simp_rw [indexForm_eq_integral_indexFormIntegrandWithin (uIoo_subset_uIcc_self.trans hsub)]
+  rw [← intervalIntegral.integral_sub
+    (intervalIntegrable_indexFormIntegrandWithin hs hV hW hsub)
+    (intervalIntegrable_indexFormIntegrandWithin hs hV' hW hsub)]
+  exact intervalIntegral.integral_congr fun t ht ↦ indexFormIntegrandWithin_sub_left
+    (differentiableWithinAt_sectionCoord γ V ((hV t (hsub ht)).mdifferentiableWithinAt
+      one_ne_zero) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
+    (differentiableWithinAt_sectionCoord γ V' ((hV' t (hsub ht)).mdifferentiableWithinAt
+      one_ne_zero) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
+
+/-- The index form respects subtraction in its second field on `C¹` fields. -/
+theorem indexForm_sub_right (hs : UniqueDiffOn ℝ s)
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
-    (hab : uIcc a b ⊆ s) (hbc : uIcc b c ⊆ s) :
-    indexFormWithin I γ V W s a b + indexFormWithin I γ V W s b c =
-      indexFormWithin I γ V W s a c :=
-  intervalIntegral.integral_add_adjacent_intervals
-    (intervalIntegrable_indexFormIntegrandWithin hs hV hW hab)
-    (intervalIntegrable_indexFormIntegrandWithin hs hV hW hbc)
+    (hW' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W' r)) s)
+    (hsub : uIcc a b ⊆ s) :
+    indexForm I γ V (W - W') a b =
+      indexForm I γ V W a b - indexForm I γ V W' a b := by
+  rw [indexForm_comm, indexForm_sub_left hs hW hW' hV hsub, indexForm_comm,
+    indexForm_comm (V := W')]
+
+/-- The index form commutes with finite sums of `C¹` fields in its first slot. -/
+theorem indexForm_sum_left {ι : Type*} (A : Finset ι) (X : ι → ∀ r, TangentSpace I (γ r))
+    (hs : UniqueDiffOn ℝ s)
+    (hX : ∀ i ∈ A, ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ r) (X i r)) s)
+    (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
+    (hsub : uIcc a b ⊆ s) :
+    indexForm I γ (∑ i ∈ A, X i) W a b =
+      ∑ i ∈ A, indexForm I γ (X i) W a b := by
+  simp_rw [indexForm_eq_integral_indexFormIntegrandWithin (uIoo_subset_uIcc_self.trans hsub)]
+  rw [← intervalIntegral.integral_finsetSum
+    (fun i hi ↦ intervalIntegrable_indexFormIntegrandWithin hs (hX i hi) hW hsub)]
+  exact intervalIntegral.integral_congr fun t ht ↦ indexFormIntegrandWithin_sum_left A X
+    fun i hi ↦ differentiableWithinAt_sectionCoord γ (X i)
+      ((hX i hi t (hsub ht)).mdifferentiableWithinAt one_ne_zero)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+
+/-- The index form commutes with finite sums of `C¹` fields in its second slot. -/
+theorem indexForm_sum_right {ι : Type*} (A : Finset ι) (X : ι → ∀ r, TangentSpace I (γ r))
+    (hs : UniqueDiffOn ℝ s)
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
+    (hX : ∀ i ∈ A, ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ r) (X i r)) s)
+    (hsub : uIcc a b ⊆ s) :
+    indexForm I γ V (∑ i ∈ A, X i) a b =
+      ∑ i ∈ A, indexForm I γ V (X i) a b := by
+  simp_rw [indexForm_comm (V := V)]
+  exact indexForm_sum_left A X hs hX hV hsub
+
+/-- The unrestricted integrand is interval integrable when the fields have `C¹` lifts on a
+set containing the closed interval. Derivatives at the endpoints need not be unrestricted. -/
+theorem intervalIntegrable_indexFormIntegrand (hs : UniqueDiffOn ℝ s)
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
+    (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
+    (hsub : uIcc a b ⊆ s) :
+    IntervalIntegrable (indexFormIntegrand I γ V W) MeasureTheory.volume a b :=
+  (intervalIntegrable_indexFormIntegrandWithin hs hV hW hsub).congr_uIoo fun _ ht ↦
+    indexFormIntegrandWithin_of_mem_nhds
+      (mem_of_superset (isOpen_Ioo.mem_nhds ht) (uIoo_subset_uIcc_self.trans hsub))
+
+/-- The index form is additive over adjacent intervals with integrable integrands.
+The fields may have corners at the joining parameter. -/
+theorem indexForm_add_adjacent_intervals {c : ℝ}
+    (hab : IntervalIntegrable (indexFormIntegrand I γ V W) MeasureTheory.volume a b)
+    (hbc : IntervalIntegrable (indexFormIntegrand I γ V W) MeasureTheory.volume b c) :
+    indexForm I γ V W a b + indexForm I γ V W b c = indexForm I γ V W a c :=
+  intervalIntegral.integral_add_adjacent_intervals hab hbc
+
+/-- The index form is additive over any finite partition on which the integrand is integrable.
+The partition need not be strict or increasing. -/
+theorem sum_indexForm_adjacent_intervals {n : ℕ} (τ : Fin (n + 1) → ℝ)
+    (hint : ∀ i : Fin n, IntervalIntegrable (indexFormIntegrand I γ V W)
+      MeasureTheory.volume (τ i.castSucc) (τ i.succ)) :
+    ∑ i : Fin n, indexForm I γ V W (τ i.castSucc) (τ i.succ) =
+      indexForm I γ V W (τ 0) (τ (Fin.last n)) := by
+  let a (k : ℕ) := τ (Fin.ofNat (n + 1) k)
+  have ha (i : Fin (n + 1)) : a i = τ i := by
+    simp [a, Fin.ofNat_eq_cast]
+  simp_rw [indexForm_def]
+  have hint' (k : ℕ) (hk : k < n) : IntervalIntegrable
+      (indexFormIntegrand I γ V W) MeasureTheory.volume (a k) (a (k + 1)) := by
+    simpa only [← ha (⟨k, hk⟩ : Fin n).castSucc, ← ha (⟨k, hk⟩ : Fin n).succ,
+      Fin.val_castSucc, Fin.val_succ, Fin.val_mk] using hint ⟨k, hk⟩
+  have h0 : a 0 = τ 0 := by simpa only [Fin.val_zero] using ha 0
+  have hn : a n = τ (Fin.last n) := by simpa only [Fin.val_last] using ha (Fin.last n)
+  have hsum := intervalIntegral.sum_integral_adjacent_intervals hint'
+  rw [← Fin.sum_univ_eq_sum_range, h0, hn] at hsum
+  rw [← hsum]
+  apply Finset.sum_congr rfl
+  intro i _
+  simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
 
 /-! ### Integration by parts -/
 
 /-- For a `C²` field `V`, the pairing `⟪D_t V, W⟫` differentiates to the integrand of the index
 form plus `⟪D_t² V + R(V, γ') γ', W⟫`. -/
 theorem hasDerivWithinAt_inner_alongCurveWithin (hs : UniqueDiffOn ℝ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
-    {t : ℝ} (ht : t ∈ s)
+    {t : ℝ} (hV : ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent 2
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t)
+    (ht : t ∈ s)
     (hW : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I.tangent
       (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s t) :
     HasDerivWithinAt (fun r ↦ inner ℝ
@@ -310,8 +640,9 @@ theorem hasDerivWithinAt_inner_alongCurveWithin (hs : UniqueDiffOn ℝ s)
             (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) (W t)) s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t :=
-    ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := 2)).comp_contMDiffOn
-      hV t ht).mdifferentiableWithinAt (by norm_num)
+    ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := 2)).contMDiffAt
+      |>.comp_contMDiffWithinAt t
+      hV).mdifferentiableWithinAt (by norm_num)
   have hd := hm.hasDerivWithinAt_inner_alongCurveWithin hγ
     (differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs hV ht)
     (differentiableWithinAt_sectionCoord γ W hW
@@ -323,11 +654,11 @@ theorem hasDerivWithinAt_inner_alongCurveWithin (hs : UniqueDiffOn ℝ s)
 /-- **Integration by parts.** For a `C²` field `V` and a `C¹` field `W` on a parameter set with
 unique derivatives containing `[a, b]`,
 `I(V, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫ - ∫_a^b ⟪D_t² V + R(V, γ') γ', W⟫ dt`. -/
-theorem indexFormWithin_eq_boundary_sub_integral (hs : UniqueDiffOn ℝ s)
+theorem indexForm_eq_inner_sub_inner_sub_integral (hs : UniqueDiffOn ℝ s)
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
     (hsub : uIcc a b ⊆ s) :
-    indexFormWithin I γ V W s a b =
+    indexForm I γ V W a b =
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s b) (W b) -
         inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s a) (W a) -
         ∫ t in a..b, inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ
@@ -343,10 +674,11 @@ theorem indexFormWithin_eq_boundary_sub_integral (hs : UniqueDiffOn ℝ s)
     apply contMDiffOn_iff_contDiffOn.mp
     exact ContMDiffOn.inner_bundle (IB := I) (F := E)
       (E := fun x : M ↦ TangentSpace I x) (b := γ)
-      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 1) hs hV) hW
+      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 1) (m := ∞) (k := ∞)
+        (by simp) (by simp) hs hV) hW
   have hd (t : ℝ) (ht : t ∈ s) :
       derivWithin A s t = indexFormIntegrandWithin I γ V W s t + J t :=
-    (hasDerivWithinAt_inner_alongCurveWithin hs hV ht
+    (hasDerivWithinAt_inner_alongCurveWithin hs (hV t ht) ht
       ((hW t ht).mdifferentiableWithinAt one_ne_zero)).derivWithin (hs t ht)
   have hdA : ContinuousOn (derivWithin A s) s := hA.continuousOn_derivWithin hs le_rfl
   have hJ : ContinuousOn J s :=
@@ -361,8 +693,9 @@ theorem indexFormWithin_eq_boundary_sub_integral (hs : UniqueDiffOn ℝ s)
     have hs' : s ∈ 𝓝 t := mem_of_superset (Icc_mem_nhds ht.1 ht.2) hsub'
     exact ((hA t (hsub' (Ioo_subset_Icc_self ht))).differentiableWithinAt one_ne_zero
       |>.hasDerivWithinAt |>.hasDerivAt hs').hasDerivWithinAt
-  calc indexFormWithin I γ V W s a b = ∫ t in a..b, (derivWithin A s t - J t) := by
-        rw [indexFormWithin]
+  calc indexForm I γ V W a b = ∫ t in a..b, (derivWithin A s t - J t) := by
+        rw [indexForm_eq_integral_indexFormIntegrandWithin
+          (uIoo_subset_uIcc_self.trans hsub)]
         refine intervalIntegral.integral_congr fun t ht ↦ ?_
         rw [hd t (hsub ht), add_sub_cancel_right]
     _ = A b - A a - ∫ t in a..b, J t := by
@@ -379,55 +712,57 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_inner_alongCurveWithin
         (alongCurveWithin (leviCivitaConnection I M) γ V s r) (W r))
       (indexFormIntegrandWithin I γ V W s t) s t := by
   simpa only [h.equation t ht, inner_zero_left, add_zero] using
-    TauCeti.Manifold.hasDerivWithinAt_inner_alongCurveWithin h.uniqueDiffOn h.contMDiffOn ht hW
+    TauCeti.Manifold.hasDerivWithinAt_inner_alongCurveWithin h.uniqueDiffOn
+      (h.contMDiffOn t ht) ht hW
 
 /-- **Jacobi integration by parts.** For a Jacobi field `V` and a `C¹` field `W` on a parameter
 set containing `[a, b]`, `I(V, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫`. -/
-theorem IsJacobiFieldOn.indexFormWithin_eq_boundary (h : IsJacobiFieldOn I γ V s)
+theorem IsJacobiFieldOn.indexForm_eq_inner_sub_inner (h : IsJacobiFieldOn I γ V s)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
     (hsub : uIcc a b ⊆ s) :
-    indexFormWithin I γ V W s a b =
+    indexForm I γ V W a b =
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s b) (W b) -
         inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s a) (W a) := by
-  rw [indexFormWithin_eq_boundary_sub_integral h.uniqueDiffOn h.contMDiffOn hW hsub,
+  rw [indexForm_eq_inner_sub_inner_sub_integral h.uniqueDiffOn h.contMDiffOn hW hsub,
     intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ by
       simp only [h.equation t (hsub ht), inner_zero_left],
     intervalIntegral.integral_zero, sub_zero]
 
-/-- If the Jacobi field `V` has initial derivative `D_t V(a) = -S V(a)`, then
-`I(V, W) - ⟪S V(a), W(a)⟫ = ⟪D_t V(b), W(b)⟫`. -/
-theorem IsJacobiFieldOn.indexFormWithin_sub_initial_eq_boundary
+/-- If `D_t V(a) + u` is orthogonal to the initial test value, then
+`I(V, W) - ⟪u, W(a)⟫ = ⟪D_t V(b), W(b)⟫`. -/
+theorem IsJacobiFieldOn.indexForm_sub_inner_eq_inner
     (h : IsJacobiFieldOn I γ V s)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
-    (hsub : uIcc a b ⊆ s) {S : TangentSpace I (γ a) →ₗ[ℝ] TangentSpace I (γ a)}
-    (hinit : alongCurveWithin (leviCivitaConnection I M) γ V s a = -S (V a)) :
-    indexFormWithin I γ V W s a b - inner ℝ (S (V a)) (W a) =
+    (hsub : uIcc a b ⊆ s) {u : TangentSpace I (γ a)}
+    (hinit : inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s a + u) (W a) = 0) :
+    indexForm I γ V W a b - inner ℝ u (W a) =
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s b) (W b) := by
-  rw [h.indexFormWithin_eq_boundary hW hsub, hinit, inner_neg_left]
-  ring
+  rw [h.indexForm_eq_inner_sub_inner hW hsub]
+  rw [inner_add_left] at hinit
+  linarith
 
-/-- If the Jacobi field `V` has initial derivative `D_t V(a) = -S V(a)` and vanishes at `b`, then
-`I(V, V) - ⟪S V(a), V(a)⟫ = 0`. -/
-theorem IsJacobiFieldOn.indexFormWithin_self_sub_initial_eq_zero
+/-- If `D_t V(a) + u` is orthogonal to `V(a)` and the Jacobi field vanishes at `b`, then
+`I(V, V) - ⟪u, V(a)⟫ = 0`. -/
+theorem IsJacobiFieldOn.indexForm_self_sub_inner_eq_zero
     (h : IsJacobiFieldOn I γ V s) (hsub : uIcc a b ⊆ s)
-    {S : TangentSpace I (γ a) →ₗ[ℝ] TangentSpace I (γ a)}
-    (hinit : alongCurveWithin (leviCivitaConnection I M) γ V s a = -S (V a))
+    {u : TangentSpace I (γ a)}
+    (hinit : inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s a + u) (V a) = 0)
     (hzero : V b = 0) :
-    indexFormWithin I γ V V s a b - inner ℝ (S (V a)) (V a) = 0 := by
+    indexForm I γ V V a b - inner ℝ u (V a) = 0 := by
   simpa only [hzero, inner_zero_right] using
-    h.indexFormWithin_sub_initial_eq_boundary (h.contMDiffOn.of_le (by norm_num)) hsub hinit
+    h.indexForm_sub_inner_eq_inner (h.contMDiffOn.of_le (by norm_num)) hsub hinit
 
-/-- If the Jacobi field `V` has initial derivative `D_t V(a) = -S V(a)` and `W(b) = -D_t V(b)`
-is nonzero, then `I(V, W) - ⟪S V(a), W(a)⟫ < 0`. -/
-theorem IsJacobiFieldOn.indexFormWithin_sub_initial_neg
+/-- If `D_t V(a) + u` is orthogonal to the initial test value and `W(b) = -D_t V(b)`
+is nonzero, then `I(V, W) - ⟪u, W(a)⟫ < 0`. -/
+theorem IsJacobiFieldOn.indexForm_sub_inner_neg
     (h : IsJacobiFieldOn I γ V s)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s)
-    (hsub : uIcc a b ⊆ s) {S : TangentSpace I (γ a) →ₗ[ℝ] TangentSpace I (γ a)}
-    (hinit : alongCurveWithin (leviCivitaConnection I M) γ V s a = -S (V a))
+    (hsub : uIcc a b ⊆ s) {u : TangentSpace I (γ a)}
+    (hinit : inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s a + u) (W a) = 0)
     (hterminal : W b = -alongCurveWithin (leviCivitaConnection I M) γ V s b)
     (hne : alongCurveWithin (leviCivitaConnection I M) γ V s b ≠ 0) :
-    indexFormWithin I γ V W s a b - inner ℝ (S (V a)) (W a) < 0 := by
-  rw [h.indexFormWithin_sub_initial_eq_boundary hW hsub hinit, hterminal,
+    indexForm I γ V W a b - inner ℝ u (W a) < 0 := by
+  rw [h.indexForm_sub_inner_eq_inner hW hsub hinit, hterminal,
     inner_neg_right, real_inner_self_eq_norm_sq]
   exact neg_neg_of_pos (sq_pos_of_pos (norm_pos_iff.mpr hne))
 

@@ -98,7 +98,8 @@ theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin (h : IsJacobiFieldOn I γ V
     ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r)
         (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s :=
-  contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 1) h.uniqueDiffOn h.contMDiffOn
+  contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 1) (m := ∞) (k := ∞)
+    (by simp) (by simp) h.uniqueDiffOn h.contMDiffOn
 
 /-- The covariant derivative has differentiable coordinate readings within the parameter set. -/
 theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_alongCurveWithin
@@ -106,7 +107,7 @@ theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_alongCurveWithin
     DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
   differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
-    h.uniqueDiffOn h.contMDiffOn ht
+    h.uniqueDiffOn (h.contMDiffOn t ht) ht
 
 /-- The Jacobi equation solved for the second covariant derivative. -/
 theorem IsJacobiFieldOn.alongCurveWithin_alongCurveWithin_eq
