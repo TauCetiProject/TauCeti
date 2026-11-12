@@ -29,7 +29,7 @@ variable {R : Type*} [LinearOrder R] [DenselyOrdered R]
 theorem exists_right_gap (S : Finset R) {r b : R} (hrb : r < b) :
     ∃ c, r < c ∧ c < b ∧ ∀ x ∈ S, r < x → c < x := by
   classical
-  obtain ⟨c, hrc, hc⟩ := Finset.exists_between (s := {r}) (t := insert b (S.filter (r < ·)))
+  obtain ⟨c, hrc, hc⟩ := exists_between (s := {r}) (t := insert b (S.filter (r < ·)))
     (singleton_nonempty r) (insert_nonempty _ _) (by simp +contextual [hrb])
   exact ⟨c, hrc r (mem_singleton_self r), hc b (mem_insert_self _ _),
     fun x hx hrx => hc x (mem_insert_of_mem (mem_filter.2 ⟨hx, hrx⟩))⟩
@@ -47,7 +47,7 @@ theorem filter_lt_lt_eq_insert (S : Finset R) {a b c r : R} (hrS : r ∈ S) (har
     (hrc : r ≤ c) (hcb : c < b) (hsingle : ∀ x ∈ S, x ∈ Ioc a c → x = r) :
     S.filter (fun x => a < x ∧ x < b) = insert r (S.filter (fun x => c < x ∧ x < b)) := by
   ext x
-  simp only [Finset.mem_filter, Finset.mem_insert]
+  simp only [mem_filter, mem_insert]
   constructor
   · rintro ⟨hxS, hax, hxb⟩
     by_cases hxr : x = r
@@ -65,12 +65,12 @@ theorem exists_first_event (S : Finset R) {a b : R} (ha : a ∉ S)
     (hT : (S.filter (fun x => a < x ∧ x < b)).Nonempty) :
     ∃ r c, r ∈ S ∧ a < r ∧ r < c ∧ c < b ∧ c ∉ S ∧ ∀ x ∈ S, x ∈ Icc a c → x = r := by
   set T := S.filter (fun x => a < x ∧ x < b)
-  obtain ⟨hrS, har, hrb⟩ := Finset.mem_filter.mp (T.min'_mem hT)
+  obtain ⟨hrS, har, hrb⟩ := mem_filter.mp (T.min'_mem hT)
   obtain ⟨c, hrc, hcb, hc⟩ := exists_right_gap S hrb
   refine ⟨T.min' hT, c, hrS, har, hrc, hcb, fun hcS => (hc c hcS hrc).false,
     fun x hx haxc => le_antisymm (le_of_not_gt fun h => (hc x hx h).not_ge haxc.2) ?_⟩
   have hax : a < x := haxc.1.lt_of_ne (by rintro rfl; exact ha hx)
-  exact T.min'_le x (Finset.mem_filter.mpr ⟨hx, hax, haxc.2.trans_lt hcb⟩)
+  exact T.min'_le x (mem_filter.mpr ⟨hx, hax, haxc.2.trans_lt hcb⟩)
 
 /-- Local changes at isolated events sum to the total change between two
 points outside the event set. -/
@@ -92,18 +92,18 @@ theorem sum_jumps {G : Type*} [AddCommGroup G] (S : Finset R) (V w : R → G)
       by_cases hT : (S.filter (fun x => a < x ∧ x < b₀)).Nonempty
       · obtain ⟨r, c, hrS, har, hrc, hcb, hcS, hsingle⟩ := exists_first_event S ha hT
         have hrU : r ∉ S.filter (fun x => c < x ∧ x < b₀) :=
-          fun h => (Finset.mem_filter.mp h).2.1.not_gt hrc
+          fun h => (mem_filter.mp h).2.1.not_gt hrc
         have hTU := filter_lt_lt_eq_insert S hrS har hrc.le hcb
           fun x hx hxc => hsingle x hx (Ioc_subset_Icc_self hxc)
         have hcard : (S.filter (fun x => c < x ∧ x < b₀)).card < n := by
-          rw [← hn, hTU, Finset.card_insert_of_notMem hrU]
+          rw [← hn, hTU, card_insert_of_notMem hrU]
           omega
-        rw [hTU, Finset.sum_insert hrU, ← hjump a r c haa hcb.le har hrc hrS hsingle,
+        rw [hTU, sum_insert hrU, ← hjump a r c haa hcb.le har hrc hrS hsingle,
           ← ih _ hcard c (haa.trans (har.trans hrc).le) hcb hcS rfl, sub_add_sub_cancel]
       · have hno : ∀ x ∈ S, x ∉ Icc a b₀ := fun x hx hxab =>
-          hT ⟨x, Finset.mem_filter.mpr ⟨hx, hxab.1.lt_of_ne (by rintro rfl; exact ha hx),
+          hT ⟨x, mem_filter.mpr ⟨hx, hxab.1.lt_of_ne (by rintro rfl; exact ha hx),
             hxab.2.lt_of_ne (by rintro rfl; exact hb hx)⟩⟩
-        rw [Finset.not_nonempty_iff_eq_empty.mp hT, Finset.sum_empty,
+        rw [not_nonempty_iff_eq_empty.mp hT, sum_empty,
           hconst a b₀ haa le_rfl hab hno, sub_self]
   exact aux a₀ le_rfl hab ha
 

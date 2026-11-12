@@ -23,8 +23,7 @@ The main result is the instance
 the scheme-level finitely-presented-sheaf packaging is in
 `TauCeti/AlgebraicGeometry/FinitelyPresentedSheaf/Basic.lean`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, from Layer A's invertible sheaves to
-Layer B's coherent sheaves. No formalization is vendored.
+No formalization is vendored.
 -/
 
 public section

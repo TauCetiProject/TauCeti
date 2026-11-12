@@ -92,8 +92,6 @@ theorem gradedProjectiveExtEuler_bijective_iff_finrank_end_eq_one :
   rw [gradedProjectiveExtEuler_bijective_iff _ he.idem he₀ hI
     (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso) _
     (gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso)
-    (fun i => smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
-      (hprim i).ne_zero)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
       hprim)]
   exact forall_congr' fun i =>
@@ -112,8 +110,6 @@ theorem gradedProjectiveExtEuler_flip_bijective_iff_finrank_end_eq_one :
   rw [gradedProjectiveExtEuler_flip_bijective_iff _ he.idem he₀ hI
     (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso) _
     (gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso)
-    (fun i => smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
-      (hprim i).ne_zero)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
       hprim)]
   exact forall_congr' fun i =>

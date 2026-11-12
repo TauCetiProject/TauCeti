@@ -374,10 +374,8 @@ private theorem trans_of_le (h₁ : HasHenstockIntervalIntegral f a c y)
       exact ((hasHenstockIntervalIntegral_iff_of_lt hac).mp h₁).integrable
     · cases WithBot.coe_injective hJ
       exact ((hasHenstockIntervalIntegral_iff_of_lt hcb).mp h₂).integrable
-  have hg := hasIntegral_Henstock_of_partition (Prepartition.split I 0 c)
-    (Prepartition.isPartitionSplit I 0 c)
-    (fun J ↦ integral J IntegrationParams.Henstock (fun x ↦ f (x 0)) BoxAdditiveMap.volume)
-    (fun J hJ ↦ (hi J hJ).hasIntegral)
+  have hg := (Prepartition.isPartitionSplit I 0 c).hasIntegral_sum rfl rfl
+    fun J hJ ↦ (hi J hJ).hasIntegral
   have hg' := (hasHenstockIntervalIntegral_iff_of_lt (hac.trans hcb)).mpr hg
   rwa [← add_eq_of_mem hg' (by rw [uIcc_of_le (hac.trans hcb).le]; exact ⟨hac.le, hcb.le⟩) h₁ h₂]
     at hg'

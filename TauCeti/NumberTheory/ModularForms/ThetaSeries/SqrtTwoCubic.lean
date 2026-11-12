@@ -200,11 +200,11 @@ theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis {t : ℤ} {a : ℕ}
   have hlevel : level (√2 • span ℤ (Set.range b)) ∣ 4 := by
     rcases isEmpty_or_nonempty ι with hι | hι
     · exact level_dvd_iff.mpr fun x _ ↦ ⟨0, by rw [← b.sum_repr x]; simp⟩
-    · exact dvd_of_eq (by simpa using level_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero)
+    · exact dvd_of_eq (by simpa using level_sqrt_smul_span_orthonormalBasis b (m := 2))
   have hdvd : (a * level (√2 • span ℤ (Set.range b)) : ℤ) ∣ t :=
     (mul_dvd_mul_left (a : ℤ) (Int.natCast_dvd_natCast.mpr hlevel)).trans (by rwa [mul_comm])
   have hcard : Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) = 2 ^ finrank ℝ E := by
-    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero
+    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2)
   rw [dualGaussSum_eq_pow_mul_card_of_dvd _ hdvd, hcard, finrank_eq_card_basis b.toBasis]
   push_cast
   ring
@@ -223,7 +223,7 @@ theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis_ne_jacobiSym (hι : Fin
       Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) *
         jacobiSym (-Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b)))) 3 * 3 := by
   have hcard : Nat.card (DiscriminantGroup (√2 • span ℤ (Set.range b))) = 2 ^ finrank ℝ E := by
-    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2) two_ne_zero
+    simpa using natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis b (m := 2)
   rw [dualGaussSum_sqrt_two_smul_span_orthonormalBasis b (by norm_num), hcard,
     finrank_eq_card_basis b.toBasis, hι]
   norm_num
