@@ -26,7 +26,7 @@ exactly when `a ^ ((q - 1) / n) = 1`. At `n = 2` this is Mathlib's `FiniteField.
   `n`-th powers in a finite field.
 * `TauCeti.FiniteField.pow_card_div_two_eq_neg_one`: a nonsquare `r` satisfies
   `r ^ (#F / 2) = -1`.
-* `TauCeti.Int.dvd_pow_mul_pow_div_two_add`: for a prime `p` modulo which `r` is not a square and
+* `Int.dvd_pow_mul_pow_div_two_add`: for a prime `p` modulo which `r` is not a square and
   every integer `v`, `p ∣ v ^ p * r ^ ((p - 1) / 2) + v`.
 -/
 
@@ -71,7 +71,7 @@ theorem pow_card_div_two_eq_neg_one {F : Type*} [Field F] [Finite F] {r : F}
 
 end TauCeti.FiniteField
 
-namespace TauCeti.Int
+namespace Int
 
 /-- **Euler's criterion times `v`.** For a prime `p` modulo which the integer `r` is not a square
 and every integer `v`, `p ∣ v ^ p * r ^ ((p - 1) / 2) + v`: by Fermat `v ^ p ≡ v` and by Euler's
@@ -85,4 +85,4 @@ theorem dvd_pow_mul_pow_div_two_add {p : ℕ} [Fact p.Prime] {r : ℤ}
   push_cast
   rw [ZMod.pow_card, h, mul_neg_one, neg_add_cancel]
 
-end TauCeti.Int
+end Int

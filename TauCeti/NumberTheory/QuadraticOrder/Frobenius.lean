@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.QuadraticAlgebra.FiniteField
 public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
 import Mathlib.NumberTheory.LegendreSymbol.Basic
-import TauCeti.FieldTheory.Finite.Card
 
 /-!
 # The integral Frobenius congruence in `ℤ[√r]`
@@ -30,9 +29,10 @@ violates the congruence.
   `ρ_p (z ^ p) = star (ρ_p z) = ρ_p (star z)` for reduction `ρ_p` modulo `p`.
 * `QuadraticAlgebra.frobenius_congruence`: `z ^ p - star z ∈ (p)`.
 * `QuadraticAlgebra.re_pow_modEq` and `QuadraticAlgebra.im_pow_modEq`: the coordinate form
-  `(z ^ p).re ≡ u` and `(z ^ p).im ≡ -v` modulo `p`. The integer consequence
+  `(z ^ p).re ≡ u` and `(z ^ p).im ≡ -v` modulo `p`; the first needs only `p` odd, for every `r`.
+  The integer consequence
   `p ∣ v ^ p * r ^ ((p - 1) / 2) + v` is Euler's criterion `r ^ ((p - 1) / 2) ≡ -1` multiplied by
-  `v` (`TauCeti.Int.dvd_pow_mul_pow_div_two_add`).
+  `v` (`Int.dvd_pow_mul_pow_div_two_add`).
 * `QuadraticAlgebra.omega_pow_sub_star_notMem_span_natCast` and
   `QuadraticAlgebra.forall_pow_sub_star_mem_span_natCast_iff`: when `r` is a square modulo `p`
   the congruence fails at `ω`, so it holds for every `z` exactly when `r` is not a square
@@ -85,10 +85,25 @@ theorem frobenius_congruence (hr : ¬IsSquare (r : ZMod p)) (z : QuadraticAlgebr
   rw [← ker_mapRingHom_intCastRingHom, RingHom.mem_ker, map_sub,
     mapRingHom_intCastRingHom_pow_eq_star hr, mapRingHom_star, sub_self]
 
-/-- The first coordinate of the Frobenius congruence: `(z ^ p).re ≡ z.re` modulo `p`. -/
-theorem re_pow_modEq (hr : ¬IsSquare (r : ZMod p)) (z : QuadraticAlgebra ℤ r 0) :
+/-- The first coordinate of the Frobenius congruence: for an odd prime `p` and every integer `r`,
+`(z ^ p).re ≡ z.re` modulo `p`. Over `ℤ/p` the `p`-th power map fixes the first coordinate
+(`QuadraticAlgebra.pow_card_eq_mk`), whether or not `r` is a square modulo `p`. -/
+theorem re_pow_modEq (hp : p ≠ 2) (z : QuadraticAlgebra ℤ r 0) :
     (z ^ p).re ≡ z.re [ZMOD p] := by
-  simpa using (sub_mem_span_natCast_iff.mp (frobenius_congruence hr z)).1
+  have hodd : Odd (Nat.card (ZMod p)) := by
+    rw [Nat.card_zmod]
+    exact (Fact.out : p.Prime).odd_of_ne_two hp
+  -- The reduced parameter `Int.castRingHom (ZMod p) 0` is `0` only propositionally.
+  have key : ∀ b : ZMod p, b = 0 → ∀ w : QuadraticAlgebra (ZMod p) (r : ZMod p) b,
+      (w ^ p).re = w.re := by
+    rintro _ rfl w
+    have h := pow_card_eq_mk hodd w
+    rw [Nat.card_zmod] at h
+    rw [h]
+  have h := key _ (map_zero _) (mapRingHom (Int.castRingHom (ZMod p)) r 0 z)
+  rw [← map_pow] at h
+  rw [← ZMod.intCast_eq_intCast_iff]
+  exact h
 
 /-- The second coordinate of the Frobenius congruence: `(z ^ p).im ≡ -z.im` modulo `p`. -/
 theorem im_pow_modEq (hr : ¬IsSquare (r : ZMod p)) (z : QuadraticAlgebra ℤ r 0) :
@@ -99,7 +114,7 @@ theorem im_pow_modEq (hr : ¬IsSquare (r : ZMod p)) (z : QuadraticAlgebra ℤ r 
 and `p = 2`, then the generator `ω = √r` violates the Frobenius congruence. Modulo an odd `p`, the
 power `ω ^ p` reduces to `0` when `r ≡ 0` and to `ω` otherwise, while for `p = 2` it is the scalar
 `ω ^ 2 = r`. In all cases `ω ^ p - star ω = ω ^ p + ω` has second coordinate `1` or `2` modulo `p`,
-which is nonzero. -/
+which is nonzero (`QuadraticAlgebra.omega_pow_card_ne_star` over `ℤ/p`). -/
 theorem omega_pow_sub_star_notMem_span_natCast (hr : IsSquare (r : ZMod p)) :
     (ω : QuadraticAlgebra ℤ r 0) ^ p - star ω ∉ Ideal.span {(p : QuadraticAlgebra ℤ r 0)} := by
   rw [← ker_mapRingHom_intCastRingHom, RingHom.mem_ker, map_sub, map_pow, mapRingHom_star,
@@ -109,22 +124,7 @@ theorem omega_pow_sub_star_notMem_span_natCast (hr : IsSquare (r : ZMod p)) :
       (ω : QuadraticAlgebra (ZMod p) (r : ZMod p) b) ^ p - star ω ≠ 0 from
     key _ (map_zero _)
   rintro _ rfl h
-  have him := congrArg im h
-  have hp := (Fact.out : p.Prime)
-  rcases hp.eq_two_or_odd' with rfl | hodd
-  · simp [sq] at him
-  have hodd' : Odd (Nat.card (ZMod p)) := by rwa [Nat.card_zmod]
-  by_cases hr0 : (r : ZMod p) = 0
-  · have hpow := pow_card_eq_mk hodd' (ω : QuadraticAlgebra (ZMod p) (r : ZMod p) 0)
-    rw [Nat.card_zmod] at hpow
-    rw [hpow, hr0, zero_pow (Nat.div_pos hp.two_le two_pos).ne'] at him
-    simp at him
-  · have hpow := pow_card_eq_self_of_square hodd' hr hr0
-      (ω : QuadraticAlgebra (ZMod p) (r : ZMod p) 0)
-    rw [Nat.card_zmod] at hpow
-    rw [hpow] at him
-    simp only [im_sub, im_star, im_omega, sub_neg_eq_add, one_add_one_eq_two] at him
-    exact Ring.two_ne_zero (TauCeti.FiniteField.ringChar_ne_two_of_odd_card hodd') him
+  exact omega_pow_card_ne_star hr (by rwa [Nat.card_zmod, ← sub_eq_zero])
 
 /-- **The congruence characterizes the nonsquares.** For a prime `p`, every `z ∈ ℤ[√r]` satisfies
 `z ^ p ≡ star z` modulo `p` exactly when `r` is not a square modulo `p`. -/
