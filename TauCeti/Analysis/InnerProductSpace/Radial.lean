@@ -14,8 +14,9 @@ A *radial map* of a real inner product space `E` is a map `x ↦ g(‖x‖²) �
 `g`. Where `g` is differentiable at `s = ‖z‖²`, its derivative at `z` is
 `v ↦ g(s) v + 2 g'(s) ⟪z, v⟫ z` (`TauCeti.hasFDerivAt_smul_self_of_hasDerivAt_sq_norm`).
 
-Mathlib's diffeomorphism `OpenPartialHomeomorph.univBall c r` of `E` onto the ball of radius `r`
-is such a radial map, followed by the translation to `c`. Mathlib proves its inverse smooth on the
+For `r > 0`, Mathlib's diffeomorphism `OpenPartialHomeomorph.univBall c r` of `E` onto the ball of
+radius `r` about `c` is such a radial map, followed by the translation to `c`; for `r ≤ 0` it is
+just the translation by `c`, with target the whole space. Mathlib proves its inverse smooth on the
 ball; `OpenPartialHomeomorph.contDiffOn_univBall_symm_target` states this on the target of
 `univBall c r` for every `r`, so that it applies directly to charts built from `univBall c r`.
 

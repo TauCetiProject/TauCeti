@@ -104,6 +104,7 @@ def discChart (r : ℝ) : PartialDiffeomorph 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (OneP
 theorem discChart_source : (discChart r).source = {(∞ : OnePoint ℂ)}ᶜ :=
   (rfl)
 
+@[simp]
 theorem discChart_target (hr : 0 < r) : (discChart r).target = ball 0 r :=
   univBall_target (0 : ℂ) hr
 
