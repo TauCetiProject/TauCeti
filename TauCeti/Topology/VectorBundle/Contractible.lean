@@ -37,10 +37,10 @@ closed unit ball of `F`, by a homeomorphism carrying the unit sphere bundle `S(E
 
 These are the product structures used to build cells of disc bundles over a CW complex: pulled
 back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle becomes
-`Dᵠ × (Dʳ, Sʳ⁻¹)`. Without pulling the fibre metric back, the same conclusion is reached along any
-continuous map `χ` from a contractible paracompact R₁ space: the pullback of `E` along `χ` is
-trivial, which gives a continuous frame of the fibres `E (χ x)`, and Gram–Schmidt in each fibre
-(`Continuous.gramSchmidtNormed_bundle`) makes it a continuous orthonormal frame
+`Dᵠ × (Dʳ, Sʳ⁻¹)`. The same conclusion is reached along any continuous map `χ` from a
+contractible paracompact R₁ space: the pullback of `E` along `χ` is trivial, and Gram–Schmidt in
+such a global trivialization (`Bundle.Trivialization.orthonormalBasis`) gives a continuous
+orthonormal frame of the fibres `E (χ x)`
 (`TauCeti.exists_continuous_orthonormalBasis_of_contractibleSpace`).
 
 ## Main results
@@ -195,25 +195,17 @@ theorem exists_continuous_orthonormalBasis_of_contractibleSpace (χ : C(X, B)) :
   have := FiniteDimensional.complete ℝ F
   obtain ⟨e, _, he⟩ := exists_trivialization_baseSet_eq_univ_of_contractibleSpace ℝ F (χ *ᵖ E)
   have hx (x : X) : x ∈ e.baseSet := he ▸ mem_univ x
-  let c := Module.finBasis ℝ F
-  -- The frame `x ↦ e⁻¹ (x, c i)` is continuous and a basis in every fibre.
-  have hv (i : Fin (Module.finrank ℝ F)) :
-      Continuous fun x ↦ TotalSpace.mk' F (χ x) (e.symmL ℝ x (c i)) := by
-    have h : Continuous fun x ↦ TotalSpace.mk' F (E := χ *ᵖ E) x (e.symmL ℝ x (c i)) :=
-      (e.continuousOn_symm_prodMk_left (v := c i)).comp_continuous continuous_id hx
-        |>.congr fun x ↦ (e.mk_symm (hx x) (c i)).symm.trans
-          (congrArg (TotalSpace.mk x) (e.symmL_apply (hx x) (c i)).symm)
-    exact (Pullback.continuous_lift F E χ).comp h
-  let b : ∀ x, Module.Basis (Fin (Module.finrank ℝ F)) ℝ (E (χ x)) := fun x ↦
-    c.map (e.continuousLinearEquivAt ℝ x (hx x)).symm.toLinearEquiv
-  refine ⟨fun x ↦ OrthonormalBasis.mk
-    (InnerProductSpace.gramSchmidtNormed_orthonormal (b x).linearIndependent)
-    (by rw [InnerProductSpace.span_gramSchmidtNormed_range, InnerProductSpace.span_gramSchmidt,
-      (b x).span_eq]), fun i ↦ ?_⟩
-  have hb (x : X) : ⇑(b x) = fun i ↦ e.symmL ℝ x (c i) := funext fun i ↦
-    (e.symmL_apply (hx x) (c i)).symm
-  simpa [hb] using Continuous.gramSchmidtNormed_bundle (b := χ) hv
-    (fun x ↦ hb x ▸ (b x).linearIndependent) i
+  -- Mathlib's pullback bundle instances use the fibre topologies `E (χ x)` directly, while the
+  -- Gram–Schmidt frame topologizes the fibres by their norms; restate the instances for the latter.
+  let _ : @FiberBundle X F _ _ (χ *ᵖ E) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
+    FiberBundle.pullback (F := F) (E := E) χ
+  let _ : @VectorBundle ℝ X F (χ *ᵖ E) _ _ _ _ _ _ _
+      (fun _ ↦ UniformSpace.toTopologicalSpace) ‹_› :=
+    VectorBundle.pullback (𝕜 := ℝ) (F := F) (E := E) (f := χ)
+  -- Gram–Schmidt in this global trivialization gives the frame.
+  exact ⟨fun x ↦ e.orthonormalBasis (Module.finBasis ℝ F) ⟨x, hx x⟩, fun i ↦
+    (Pullback.continuous_lift F E χ).comp
+      ((e.continuous_orthonormalBasis (Module.finBasis ℝ F) i).comp (continuous_id.subtype_mk hx))⟩
 
 end Frame
 

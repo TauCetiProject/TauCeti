@@ -36,7 +36,8 @@ difference of the two skeleta.
   to the `(n-1)`-skeleton gives a closed set.
 * `TauCeti.notMem_skeletonLT_union_of_mem_openCell`: a point of an open `n`-cell lies outside the
   closed set obtained by adjoining all the other closed `n`-cells to the `(n-1)`-skeleton.
-* `TauCeti.disjoint_openCell_cellFrontier`: an open cell is disjoint from its boundary.
+* `TauCeti.disjoint_openCell_cellFrontier`: an open cell is disjoint from its boundary, so the
+  boundary is the closed cell with the open cell removed (`TauCeti.closedCell_diff_openCell`).
 * `TauCeti.skeletonLT_succ_diff_skeletonLT`: the difference of two consecutive skeleta is the
   union of the open cells of the top dimension.
 * `TauCeti.notMem_skeletonLT_of_mem_openCell`: a point of an open `n`-cell lies outside the
@@ -122,6 +123,13 @@ lemma disjoint_openCell_cellFrontier (i : cell C n) :
   refine Disjoint.mono_right hI (disjoint_union_right.2 ⟨disjointBase n i, ?_⟩)
   simp_rw [disjoint_iUnion₂_right]
   exact fun m hm k _ ↦ disjoint_openCell_of_ne fun h ↦ hm.ne' (Sigma.mk.inj_iff.1 h).1
+
+omit [T2Space X] in
+/-- The boundary of a cell is its closed cell with the open cell removed. -/
+lemma closedCell_diff_openCell (i : cell C n) :
+    closedCell n i \ openCell n i = cellFrontier n i := by
+  rw [← cellFrontier_union_openCell_eq_closedCell, union_sdiff_right,
+    (disjoint_openCell_cellFrontier n i).symm.sdiff_eq_left]
 
 omit [T2Space X] in
 /-- A closed `m`-cell other than the `n`-cell `j` misses the open cell of `j` when `m ≤ n`: its

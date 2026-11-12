@@ -69,6 +69,8 @@ topology of the base, and its complement gives a neighbourhood of `y` missing `S
 * `TauCeti.closedCell_relCWComplexDiscBundle`, `TauCeti.openCell_relCWComplexDiscBundle` and
   `TauCeti.proj_map_relCWComplexDiscBundle`: its closed cells, open cells and characteristic maps
   lie over those of the base.
+* `TauCeti.cellFrontier_relCWComplexDiscBundle`: the boundary of a cell is the part of `D(E)` over
+  the boundary of the base cell together with the part of `S(E)` over the closed base cell.
 
 ## References
 
@@ -647,6 +649,30 @@ theorem openCell_relCWComplexDiscBundle {q : ℕ} (j : cell (univ : Set B) q) :
       {v : discBundle F E |
         (v : TotalSpace F E).proj ∈ openCell q j ∧ ‖(v : TotalSpace F E).2‖ < 1} :=
   image_discCellMap_ball (discCellOf j)
+
+/-- The boundary of the cell of the disc bundle over the `q`-cell `j` of the base consists of the
+vectors of the disc bundle over the boundary of `j`, together with the unit vectors over the closed
+cell `j`. -/
+@[simp]
+theorem cellFrontier_relCWComplexDiscBundle {q : ℕ} (j : cell (univ : Set B) q) :
+    @cellFrontier _ _ (univ : Set (discBundle F E)) _ (relCWComplexDiscBundle A F E)
+      (q + finrank ℝ F) ((cellDiscBundleEquiv A F E q).symm j) =
+      {v : discBundle F E | (v : TotalSpace F E).proj ∈ cellFrontier q j ∨
+        (v : TotalSpace F E).proj ∈ closedCell q j ∧ ‖(v : TotalSpace F E).2‖ = 1} := by
+  let _ := relCWComplexDiscBundle A F E
+  rw [← closedCell_diff_openCell, closedCell_relCWComplexDiscBundle,
+    openCell_relCWComplexDiscBundle, ← closedCell_diff_openCell]
+  ext v
+  have hv : ‖(v : TotalSpace F E).2‖ ≤ 1 := mem_discBundle.1 v.2
+  simp only [mem_sdiff, mem_ofPred_eq, not_and, not_lt]
+  constructor
+  · rintro ⟨hc, ho⟩
+    by_cases h : (v : TotalSpace F E).proj ∈ openCell q j
+    · exact Or.inr ⟨hc, le_antisymm hv (ho h)⟩
+    · exact Or.inl ⟨hc, h⟩
+  · rintro (⟨hc, ho⟩ | ⟨hc, h1⟩)
+    · exact ⟨hc, fun h ↦ absurd h ho⟩
+    · exact ⟨hc, fun _ ↦ h1.ge⟩
 
 /-- On the closed unit ball, the characteristic map of the disc bundle over the `q`-cell `j` of the
 base lies over the characteristic map of `j`, evaluated on the first `q` coordinates. -/
