@@ -128,29 +128,31 @@ abbrev thomPairOver (W : Set B) : TopPair.{w} :=
   TopPair.ofInclusion (X := TopCat.of (TotalSpace F E))
     (inter_subset_left : π F E ⁻¹' W ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' W)
 
-/-- The map of pairs `(E|_B, E₀|_B) ⟶ (E, E₀)` forgetting that every vector lies over the base. -/
-private def thomPairOverUnivHom : thomPairOver F E univ ⟶ thomPair F E :=
-  TopPair.ofHom (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
-      (Homeomorph.Set.univ (TotalSpace F E)))).hom
-    (TopCat.ofHom ⟨fun v ↦ ⟨v.1, v.2.2⟩, by fun_prop⟩) (by ext; rfl)
-
 /-- Over the whole base, the Thom pair `(E|_B, E₀|_B)` of the restriction is the Thom pair
 `(E, E₀)`. -/
 def thomPairOverUnivIso : thomPairOver F E univ ≅ thomPair F E :=
-  have : IsIso (TopPair.Hom.fst (thomPairOverUnivHom F E)) := (TopCat.isoOfHomeo _).isIso_hom
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (thomPairOverUnivHom F E) fun v ↦
-    ⟨⟨v.1, trivial, v.2⟩, rfl⟩
-  asIso (thomPairOverUnivHom F E)
+  have := TopCat.isIso_restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
+    (zeroSectionCompl F E) (S := univ) fun _ ↦ trivial
+  asIso (TopCat.restrictPreimagePairMap _ _ univ)
+
+/-- The isomorphism `thomPairOverUnivIso` is the inclusion `TopCat.restrictPreimagePairMap` of the
+pair over the whole base into `(E, E₀)`. -/
+theorem thomPairOverUnivIso_hom :
+    (thomPairOverUnivIso F E).hom = TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E))
+      (π F E) (zeroSectionCompl F E) univ :=
+  (rfl)
 
 @[simp]
 theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
     TopPair.Hom.fst (thomPairOverUnivIso F E).hom v = v.1 :=
-  (rfl)
+  TopCat.restrictPreimagePairMap_fst_apply (X := TopCat.of (TotalSpace F E)) (π F E)
+    (zeroSectionCompl F E) univ v
 
 @[simp]
 theorem thomPairOverUnivIso_hom_snd_apply (v : ↥(π F E ⁻¹' univ ∩ zeroSectionCompl F E)) :
     TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.1, v.2.2⟩ :=
-  (rfl)
+  TopCat.restrictPreimagePairMap_snd_apply (X := TopCat.of (TotalSpace F E)) (π F E)
+    (zeroSectionCompl F E) univ v
 
 @[simp]
 theorem thomPairOverUnivIso_inv_fst_apply (v : TotalSpace F E) :
@@ -176,6 +178,12 @@ theorem thomPairOverMap_fst_apply {W W' : Set B} (h : W ⊆ W') (v : π F E ⁻�
     TopPair.Hom.fst (thomPairOverMap F E h) v = ⟨v.1, h v.2⟩ :=
   (rfl)
 
+/-- The map of ambient spaces of `thomPairOverMap F E h` is the inclusion `E|_W ⊆ E|_{W'}`. -/
+theorem thomPairOverMap_fst {W W' : Set B} (h : W ⊆ W') :
+    TopPair.Hom.fst (thomPairOverMap F E h) =
+      TopCat.ofHom (ContinuousMap.inclusion (preimage_mono h)) :=
+  (rfl)
+
 @[simp]
 theorem thomPairOverMap_snd_apply {W W' : Set B} (h : W ⊆ W')
     (v : (thomPairOver F E W).snd) :
@@ -190,6 +198,16 @@ theorem thomPairOverMap_self {W : Set B} : thomPairOverMap F E (subset_refl W) =
 theorem thomPairOverMap_comp_thomPairOverMap {W W' W'' : Set B} (h : W ⊆ W') (h' : W' ⊆ W'') :
     thomPairOverMap F E h ≫ thomPairOverMap F E h' = thomPairOverMap F E (h.trans h') :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+/-- For `W ⊆ W'`, the inclusion of Thom pairs `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` followed by the
+inclusion of `(E|_{W'}, E₀|_{W'})` into `(E, E₀)` is the inclusion of `(E|_W, E₀|_W)`. -/
+@[reassoc (attr := simp)]
+theorem thomPairOverMap_comp_restrictPreimagePairMap {W W' : Set B} (h : W ⊆ W') :
+    thomPairOverMap F E h ≫ TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E))
+      (π F E) (zeroSectionCompl F E) W' = TopCat.restrictPreimagePairMap _ _ W :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
+    (TopCat.restrictPreimagePairMap_fst_apply _ _ _ _).trans
+      (TopCat.restrictPreimagePairMap_fst_apply _ _ _ v).symm)
 
 variable {F E} {X : Type w} [TopologicalSpace X]
 
@@ -279,6 +297,12 @@ theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
   unfold fiberThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
+/-- The map of ambient spaces of the fibre inclusion over `b` is `x ↦ (b, x)`. -/
+theorem fiberThomPairMap_fst (b : B) :
+    TopPair.Hom.fst (fiberThomPairMap F E b) =
+      TopCat.ofHom ⟨TotalSpace.mk b, FiberBundle.continuous_totalSpaceMk F E b⟩ :=
+  TopCat.ext (fiberThomPairMap_fst_apply F E b)
+
 /-- The fibre inclusion of a Thom pair is the map of pairs induced by `x ↦ (b, x)`. -/
 theorem fiberThomPairMap_eq_ofSubsetMap (b : B) :
     fiberThomPairMap F E b = TopPair.ofSubsetMap
@@ -290,6 +314,13 @@ theorem fiberThomPairMap_eq_ofSubsetMap (b : B) :
 ambient space of its Thom pair. -/
 def thomPairProj : (thomPair F E).fst ⟶ TopCat.of B :=
   TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩
+
+/-- The projection of a Thom pair is the bundle projection `π F E`, so the pairs over subsets `W`
+of the base built from it (as in `TopCat.pullbackCupRestrict`) are the Thom pairs
+`thomPairOver F E W`. -/
+theorem thomPairProj_def :
+    thomPairProj F E = TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩ :=
+  (rfl)
 
 @[simp]
 theorem thomPairProj_apply (v : TotalSpace F E) : thomPairProj F E v = v.proj :=
@@ -317,6 +348,23 @@ theorem fiberThomPairOverMap_fst_apply {W : Set B} {b : B} (hb : b ∈ W) (x : E
     TopPair.Hom.fst (fiberThomPairOverMap F E hb) x = ⟨TotalSpace.mk b x, hb⟩ :=
   (rfl)
 
+/-- The map of ambient spaces of the fibre inclusion over `b ∈ W` is `x ↦ (b, x)`. -/
+theorem fiberThomPairOverMap_fst {W : Set B} {b : B} (hb : b ∈ W) :
+    TopPair.Hom.fst (fiberThomPairOverMap F E hb) =
+      TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x, hb⟩,
+        (FiberBundle.continuous_totalSpaceMk F E b).subtype_mk _⟩ :=
+  (rfl)
+
+/-- The fibre inclusion into `(E|_W, E₀|_W)` followed by the inclusion of `(E|_W, E₀|_W)` into
+`(E, E₀)` is the fibre inclusion into the Thom pair `(E, E₀)`. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairOverMap_comp_restrictPreimagePairMap {W : Set B} {b : B} (hb : b ∈ W) :
+    fiberThomPairOverMap F E hb ≫ TopCat.restrictPreimagePairMap
+      (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W = fiberThomPairMap F E b :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦
+    (TopCat.restrictPreimagePairMap_fst_apply _ _ _ _).trans
+      (fiberThomPairMap_fst_apply F E b x).symm)
+
 /-- The fibre inclusions commute with the restriction maps of Thom pairs. -/
 @[reassoc (attr := simp)]
 theorem fiberThomPairOverMap_comp_thomPairOverMap {W W' : Set B} (h : W ⊆ W') {b : B}
@@ -330,7 +378,8 @@ Thom pair `(E, E₀)`. -/
 theorem fiberThomPairOverMap_comp_thomPairOverUnivIso_hom (b : B) :
     fiberThomPairOverMap F E (mem_univ b) ≫ (thomPairOverUnivIso F E).hom =
       fiberThomPairMap F E b :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ (fiberThomPairMap_fst_apply F E b x).symm)
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦
+    (thomPairOverUnivIso_hom_fst_apply F E _).trans (fiberThomPairMap_fst_apply F E b x).symm)
 
 /-- The fibre inclusion over `b` into the Thom pair `(E, E₀)`, followed by the inclusion of the
 pair over the whole base into the pair over a set `W'` covering the base, is the fibre inclusion
