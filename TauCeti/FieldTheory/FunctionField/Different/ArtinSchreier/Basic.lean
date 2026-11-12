@@ -54,25 +54,12 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [FiniteDimensional F F']
-
-omit [FiniteDimensional F F'] in
-/-- In characteristic zero (`p = 0`), an Artin--Schreier generator forces `F' = F`: the equation
-`y ^ 0 - y = algebraMap F F' a` says `y = 1 - a`. -/
-private theorem finrank_eq_one_of_pow_zero_sub_self_eq {y : F'} {a : F} (hgen : F⟮y⟯ = ⊤)
-    (hy : y ^ 0 - y = algebraMap F F' a) : Module.finrank F F' = 1 := by
-  rw [← IntermediateField.bot_eq_top_iff_finrank_eq_one, ← hgen, eq_comm,
-    IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
-  refine ⟨1 - a, ?_⟩
-  simp only [pow_zero] at hy
-  rw [map_sub, map_one, ← hy]
-  ring
 
 variable (k F) {P' : Place k' F'}
 
-section Separable
+section Regular
 
-variable [Algebra.IsSeparable F F']
+variable [FiniteDimensional F F'] [Algebra.IsSeparable F F']
 
 /-- An Artin--Schreier generator whose right-hand side is regular has different exponent zero.
 
@@ -85,7 +72,7 @@ theorem differentExponent_eq_zero_of_pow_sub_self_eq_of_mem_integers
   rcases CharP.char_is_prime_or_zero F p with hp | rfl
   swap
   · exact differentExponent_eq_zero_of_finrank_eq_one k F P'
-      (finrank_eq_one_of_pow_zero_sub_self_eq hgen hy)
+      (ArtinSchreier.finrank_eq_one_of_eq_zero hy hgen rfl)
   have : Fact p.Prime := ⟨hp⟩
   let ψ : F[X] := X ^ p - (X + C a)
   have hmonic : ψ.Monic := by
@@ -108,17 +95,6 @@ theorem differentExponent_eq_zero_of_pow_sub_self_eq_of_mem_integers
   rw [hder, P'.valuation.map_neg]
   exact P'.valuation.map_one
 
-/-- An Artin--Schreier generator whose right-hand side is regular has ramification index one at
-every place above the given place. -/
-theorem ramificationIdx_eq_one_of_pow_sub_self_eq_of_mem_integers
-    (p : ℕ) [CharP F p] {y : F'} {a : F}
-    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' a)
-    (ha : a ∈ (P'.restrict k F).integers) :
-    ramificationIdx F P' = 1 := by
-  have hle := ramificationIdx_le_differentExponent_add_one k F P'
-  rw [differentExponent_eq_zero_of_pow_sub_self_eq_of_mem_integers k F p hgen hy ha] at hle
-  exact le_antisymm hle (ramificationIdx_pos F P')
-
 /-- If an Artin--Schreier class has a representative regular at the place below `P'`, then the
 different exponent at `P'` is zero. -/
 theorem differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers
@@ -130,7 +106,7 @@ theorem differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers
   rcases CharP.char_is_prime_or_zero F p with hp | rfl
   swap
   · exact differentExponent_eq_zero_of_finrank_eq_one k F P'
-      (finrank_eq_one_of_pow_zero_sub_self_eq hgen hy)
+      (ArtinSchreier.finrank_eq_one_of_eq_zero hy hgen rfl)
   have : Fact p.Prime := ⟨hp⟩
   have hadj : F⟮y - algebraMap F F' w⟯ = F⟮y⟯ := by
     simpa [sub_eq_add_neg] using IntermediateField.adjoin_simple_add_algebraMap y (-w)
@@ -139,17 +115,61 @@ theorem differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers
   · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
   · exact hw
 
+end Regular
+
+section Ramification
+
+variable [Algebra.IsIntegral F F']
+
 /-- If an Artin--Schreier class has a representative regular at the place below `P'`, then `P'`
-has ramification index one over that place. -/
+has ramification index one over that place. Finiteness and separability of `F' / F` follow from
+the Artin--Schreier generator. -/
 theorem ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers
     (p : ℕ) [CharP F p] {y : F'} {u : F}
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
     (hreg : ∃ w : F, u - (w ^ p - w) ∈ (P'.restrict k F).integers) :
     ramificationIdx F P' = 1 := by
+  have := ArtinSchreier.isSplittingField hy hgen
+  have : FiniteDimensional F F' := IsSplittingField.finiteDimensional F' (X ^ p - X - C u)
+  have : IsGalois F F' := ArtinSchreier.isGalois hy hgen
   have hle := ramificationIdx_le_differentExponent_add_one k F P'
   rw [differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers k F p hgen hy hreg]
     at hle
   exact le_antisymm hle (ramificationIdx_pos F P')
+
+/-- An Artin--Schreier generator whose right-hand side is regular has ramification index one at
+every place above the given place. -/
+theorem ramificationIdx_eq_one_of_pow_sub_self_eq_of_mem_integers
+    (p : ℕ) [CharP F p] {y : F'} {a : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' a)
+    (ha : a ∈ (P'.restrict k F).integers) :
+    ramificationIdx F P' = 1 :=
+  ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers k F p hgen hy
+    ⟨1, by simpa using ha⟩
+
+/-- At a reduced Artin--Schreier pole, `p` divides the ramification index: comparing orders in
+`(y - w) ^ p - (y - w) = u - (w ^ p - w)` gives `p · ord (y - w) = e · ord (u - (w ^ p - w))`,
+and `p` does not divide the second order. -/
+private theorem dvd_ramificationIdx_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    p ∣ ramificationIdx F P' := by
+  obtain ⟨w, hwneg, hwdvd⟩ := hpole
+  have : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
+  have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F
+    (Fact.out : p.Prime).one_lt (y := y - algebraMap F F' w) (P' := P')
+    (by rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]) hwneg
+  exact Int.natCast_dvd_natCast.mp
+    (((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).dvd_or_dvd ⟨_, hkey.symm⟩).resolve_right
+      hwdvd)
+
+end Ramification
+
+section Pole
+
+variable [FiniteDimensional F F'] [Algebra.IsSeparable F F']
 
 /-- If the different exponent is the sum of `P'.ord (z - σ z)` over the nontrivial automorphisms
 `σ`, each term is `m + 1`, and there are `p` automorphisms, then the different exponent is
@@ -256,47 +276,51 @@ theorem isWild_of_exists_reduced_artinSchreier_pole
         IsLocalRing.maximalIdeal ((P'.restrict k F).integers))).injective p
   rw [isWild_iff]
   right
-  obtain ⟨w, hwneg, hwdvd⟩ := hpole
-  have : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
-  have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F
-    (Fact.out : p.Prime).one_lt (y := y - algebraMap F F' w) (P' := P')
-    (by rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]) hwneg
-  have hdvd : (p : ℤ) ∣ (ramificationIdx F P' : ℤ) :=
-    ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).dvd_or_dvd ⟨_, hkey.symm⟩).resolve_right
-      hwdvd
-  exact (CharP.cast_eq_zero_iff _ p _).mpr (Int.natCast_dvd_natCast.mp hdvd)
+  exact (CharP.cast_eq_zero_iff _ p _).mpr
+    (dvd_ramificationIdx_of_exists_reduced_artinSchreier_pole k F p hy hpole)
 
 /-- At a reduced Artin--Schreier pole the different exponent is at least `p`.  This is the wild
 lower bound; the exact exponent additionally requires the upper bound
 `d(P' | P) ≤ (p - 1) * (m + 1)`. -/
 theorem p_le_differentExponent_of_exists_reduced_artinSchreier_pole
-    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
-    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (p : ℕ) [CharP F p] {y : F'} {u : F}
+    (hy : y ^ p - y = algebraMap F F' u)
     (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
       ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
     p ≤ differentExponent k F P' := by
-  rw [← ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy hpole]
-  exact (ramificationIdx_le_differentExponent_iff k F P').mpr
-    (isWild_of_exists_reduced_artinSchreier_pole k F p hy hpole)
+  rcases CharP.char_is_prime_or_zero F p with hp | rfl
+  swap
+  · exact Nat.zero_le _
+  have : Fact p.Prime := ⟨hp⟩
+  exact (Nat.le_of_dvd (ramificationIdx_pos F P')
+    (dvd_ramificationIdx_of_exists_reduced_artinSchreier_pole k F p hy hpole)).trans
+    ((ramificationIdx_le_differentExponent_iff k F P').mpr
+      (isWild_of_exists_reduced_artinSchreier_pole k F p hy hpole))
 
 /-- For a supplied reduced Artin--Schreier representative, a place is either unramified with
 different exponent zero, or is totally ramified and satisfies the wild lower bound for the
 different exponent.  This statement does not require the residue field to be perfect. -/
 theorem differentExponent_eq_zero_and_ramificationIdx_eq_one_or_p_le_differentExponent
-    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (p : ℕ) [CharP F p] {y : F'} {u : F}
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
     (hred : ∃ w : F, u - (w ^ p - w) ∈ (P'.restrict k F).integers ∨
       ((P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
         ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w)))) :
     (differentExponent k F P' = 0 ∧ ramificationIdx F P' = 1) ∨
       (p ≤ differentExponent k F P' ∧ ramificationIdx F P' = p) := by
-  obtain ⟨w, hw | hw⟩ := hred
-  · exact Or.inl ⟨
+  have hreg (w : F) (hw : u - (w ^ p - w) ∈ (P'.restrict k F).integers) :
+      (differentExponent k F P' = 0 ∧ ramificationIdx F P' = 1) ∨
+        (p ≤ differentExponent k F P' ∧ ramificationIdx F P' = p) :=
+    Or.inl ⟨
       differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers k F p hgen hy ⟨w, hw⟩,
       ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers k F p hgen hy ⟨w, hw⟩⟩
-  · exact Or.inr ⟨
-      p_le_differentExponent_of_exists_reduced_artinSchreier_pole
-        k F p hgen hy ⟨w, hw⟩,
+  rcases CharP.char_is_prime_or_zero F p with hp | rfl
+  swap
+  · exact hreg (1 - u) (by simp)
+  have : Fact p.Prime := ⟨hp⟩
+  obtain ⟨w, hw | hw⟩ := hred
+  · exact hreg w hw
+  · exact Or.inr ⟨p_le_differentExponent_of_exists_reduced_artinSchreier_pole k F p hy ⟨w, hw⟩,
       ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy ⟨w, hw⟩⟩
 
 /-- Over a perfect residue field, an Artin--Schreier place is either unramified with different
@@ -304,7 +328,7 @@ exponent zero, or is totally ramified and satisfies the wild lower bound.  The r
 representative is produced inside `F`, without passing to a completion. -/
 theorem
     differentExponent_eq_zero_and_ramificationIdx_eq_one_or_p_le_differentExponent_of_perfectField
-    (p : ℕ) [Fact p.Prime] [CharP F p] [PerfectField (P'.restrict k F).ResidueField]
+    (p : ℕ) [CharP F p] [PerfectField (P'.restrict k F).ResidueField]
     {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u) :
     (differentExponent k F P' = 0 ∧ ramificationIdx F P' = 1) ∨
       (p ≤ differentExponent k F P' ∧ ramificationIdx F P' = p) := by
@@ -312,8 +336,9 @@ theorem
     k F p hgen hy
   exact (P'.restrict k F).exists_reduced_artinSchreier_representative p u
 
-end Separable
+end Pole
 
+variable [Algebra.IsIntegral F F'] in
 /-- **The ramified places of an Artin--Schreier extension.** Let `S` be a set of places of `F`
 at each of which some `u - (w ^ p - w)` has a pole of order prime to `p`, while at every other
 place some `u - (w ^ p - w)` is regular. Then a place of `F'` is ramified over `F` exactly when
@@ -326,7 +351,6 @@ theorem one_lt_ramificationIdx_iff_restrict_mem_of_pow_sub_self_eq
       ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w)))
     (hreg : ∀ P ∉ S, ∃ w : F, u - (w ^ p - w) ∈ P.integers) :
     1 < ramificationIdx F P' ↔ P'.restrict k F ∈ S := by
-  have : IsGalois F F' := ArtinSchreier.isGalois hy hgen
   by_cases hP : P'.restrict k F ∈ S
   · simp only [hP, iff_true,
       ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy (hpole _ hP)]
