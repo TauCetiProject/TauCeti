@@ -44,6 +44,8 @@ along `c'` is `v` followed by the descent of `h` along `c`.
 * `AlgebraicGeometry.Scheme.Hom.existsUnique_comp_eq_of_isQuotientMap`: the universal property.
 * `AlgebraicGeometry.Scheme.Hom.existsUnique_comp_eq_of_universallyClosed`: the universal
   property for a universally closed surjective `c`, for instance a proper surjective one.
+* `AlgebraicGeometry.Scheme.Hom.epi_of_surjective_of_mono_app`: a surjective `c` for which
+  `𝒪_Y → c_* 𝒪_X` is injective is an epimorphism of schemes.
 * `AlgebraicGeometry.Scheme.Hom.descOfIsQuotientMap_comp_eq`: descent preserves morphisms over a
   base `S`.
 * `AlgebraicGeometry.Scheme.Hom.descOfIsQuotientMap_of_commSq`: compatibility with commutative
@@ -66,6 +68,14 @@ universe u
 namespace Scheme.Hom
 
 variable {X Y Z : Scheme.{u}}
+
+/-- A surjective morphism of schemes `c : X ⟶ Y` for which every `Γ(Y, U) ⟶ Γ(X, c⁻¹ U)` is a
+monomorphism is an epimorphism of schemes. This applies to the contractions below, for which these
+maps are isomorphisms. -/
+theorem epi_of_surjective_of_mono_app (c : X ⟶ Y) [Surjective c] (hc : ∀ U, Mono (c.app U)) :
+    Epi c :=
+  Functor.epi_of_epi_map Scheme.forgetToLocallyRingedSpace <|
+    LocallyRingedSpace.epi_of_base_surjective_of_c_app_mono _ c.surjective fun U ↦ hc U.unop
 
 section Desc
 
