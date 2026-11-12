@@ -87,7 +87,7 @@ theorem _root_.Ideal.exists_mk_eq_and_norm_eq_washnitzerAlgebra (I : Ideal W) (q
 
 /-- Extension of an ideal to the Tate algebra preserves the quotient Gauss norm of every
 Monsky–Washnitzer series. -/
-theorem _root_.Ideal.norm_mk_map_toTate (I : Ideal W) (f : W) :
+@[simp] theorem _root_.Ideal.norm_mk_map_toTate (I : Ideal W) (f : W) :
     ‖Ideal.Quotient.mk (I.map (toTate σ K)) (toTate σ K f)‖ =
       ‖Ideal.Quotient.mk I f‖ := by
   apply le_antisymm
