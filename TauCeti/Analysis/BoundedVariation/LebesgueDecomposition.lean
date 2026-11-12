@@ -145,7 +145,8 @@ theorem integral_divergenceCLM_mul_eq_neg_integral_inner_acDerivativeDensity_sub
         ∫ x : Ω, ⟪φ x, polarDensity μ Ω u x⟫ ∂(variationMeasure μ Ω u).singularPart ν := by
   have := Ω.isOpen.locallyCompactSpace
   let lam := variationMeasure μ Ω u
-  have hint := φ.integrable_inner_subtype (locallyIntegrable_polarDensity hu hfin)
+  have hint := φ.integrable_inner_subtype
+    (locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := u))
   have hac := hint.mono_measure (Measure.withDensity_rnDeriv_le lam ν)
   have hsing := hint.mono_measure (Measure.singularPart_le lam ν)
   have hsplit := congrArg
@@ -168,7 +169,8 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
   have := Ω.isOpen.locallyCompactSpace
   let ω := (variationMeasure μ Ω u).singularPart ν
   have hσ : LocallyIntegrable (polarDensity μ Ω u) ω :=
-    (locallyIntegrable_polarDensity hu hfin).mono_measure (Measure.singularPart_le _ _)
+    (locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := u)).mono_measure
+      (Measure.singularPart_le _ _)
   -- The norms of the two singular densities give a locally finite dominating measure,
   -- even when the candidate singular reference measure itself is not σ-finite.
   let η := ξ.withDensity (fun x => ‖τ x‖ₑ) +
@@ -193,7 +195,7 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
   have hle := ae_enorm_le_of_forall_enorm_integral_inner_le hf
     (Measure.measurable_rnDeriv η ρ)
     (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
-    fun U hU φ hφU hφ => by
+    fun U _ φ hφU hφ => by
       -- Bound each singular pairing by its norm measure on the support of the test field.
       have heq : ∫ x : Ω, ⟪φ x, f x⟫ ∂ρ =
           (∫ x : Ω, ⟪φ x, polarDensity μ Ω u x⟫ ∂ω) - ∫ x : Ω, ⟪φ x, τ x⟫ ∂ξ := by

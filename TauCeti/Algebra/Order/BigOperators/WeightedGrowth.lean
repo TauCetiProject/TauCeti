@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -44,33 +43,32 @@ namespace TauCeti
 /-- **Linear growth under a second-order inequality.** A sequence with `2 s_0 ≤ s_1` and
 `2 s_{j+1} ≤ s_{j+2} + s_j` whenever `j + 2 ≤ n` has increments at least `s_0` up to `n`, so
 `(n + 1) s_0 ≤ s_n`. -/
-theorem add_one_mul_le_of_two_mul_le_add {S : Type*} [CommRing S] [LinearOrder S]
-    [IsStrictOrderedRing S] {s : ℕ → S} {n : ℕ} (h1 : 2 * s 0 ≤ s 1)
+theorem add_one_mul_le_of_two_mul_le_add {S : Type*} [NonAssocSemiring S] [PartialOrder S]
+    [IsOrderedCancelAddMonoid S] {s : ℕ → S} {n : ℕ} (h1 : 2 * s 0 ≤ s 1)
     (h : ∀ j, j + 2 ≤ n → 2 * s (j + 1) ≤ s (j + 2) + s j) : ((n : S) + 1) * s 0 ≤ s n := by
-  have hstep (j : ℕ) (hj : j + 1 ≤ n) :
-      s 0 ≤ s (j + 1) - s j ∧ ((j : S) + 2) * s 0 ≤ s (j + 1) := by
+  -- Each step up to `n` adds at least `s 0`.
+  have hstep (j : ℕ) (hj : j + 1 ≤ n) : s j + s 0 ≤ s (j + 1) := by
     induction j with
-    | zero => constructor <;> [linarith; (push_cast; linarith)]
+    | zero => rwa [← two_mul]
     | succ j ih =>
-      obtain ⟨h₁, h₂⟩ := ih (by omega)
-      have h₃ := h j (by omega)
-      push_cast
-      constructor <;> linarith
-  cases n with
+      refine le_of_add_le_add_right (a := s j) ?_
+      calc s (j + 1) + s 0 + s j = s (j + 1) + (s j + s 0) := by rw [add_assoc, add_comm (s 0)]
+        _ ≤ 2 * s (j + 1) := by rw [two_mul]; gcongr; exact ih (by omega)
+        _ ≤ s (j + 1 + 1) + s j := h j (by omega)
+  induction n with
   | zero => simp
-  | succ n =>
-    have := (hstep n le_rfl).2
-    push_cast
-    linarith
+  | succ n ih =>
+    rw [Nat.cast_succ, add_one_mul]
+    grw [ih (fun j hj => h j (by omega)) fun j hj => hstep j (by omega)]
+    exact hstep n le_rfl
 
 /-- **Weighting by `δ` doubles at most to the weighted transposed sum.** If `2 δ_i ≤ ∑_j c_{ij} δ_j`
 and `e ≥ 0`, then `2 ∑_i δ_i e_i ≤ ∑_j δ_j ∑_i c_{ij} e_i`. -/
-theorem two_mul_sum_mul_le_sum_mul_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommRing S]
-    [LinearOrder S] [IsStrictOrderedRing S] (c : ι → ι → S) {δ : ι → S}
+theorem two_mul_sum_mul_le_sum_mul_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommSemiring S]
+    [PartialOrder S] [IsOrderedRing S] (c : ι → ι → S) {δ : ι → S}
     (hδ : ∀ i, 2 * δ i ≤ ∑ j, c i j * δ j) {e : ι → S} (he : 0 ≤ e) :
     2 * ∑ i, δ i * e i ≤ ∑ j, δ j * ∑ i, c i j * e i :=
-  calc 2 * ∑ i, δ i * e i = ∑ i, (2 * δ i) * e i := by
-        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun i _ => by ring
+  calc 2 * ∑ i, δ i * e i = ∑ i, (2 * δ i) * e i := by simp only [Finset.mul_sum, mul_assoc]
     _ ≤ ∑ i, (∑ j, c i j * δ j) * e i :=
         Finset.sum_le_sum fun i _ => mul_le_mul_of_nonneg_right (hδ i) (he i)
     _ = ∑ j, δ j * ∑ i, c i j * e i := by
@@ -82,10 +80,10 @@ theorem two_mul_sum_mul_le_sum_mul_sum_mul {ι : Type*} [Fintype ι] {S : Type*}
 `∑_i c_{ij} d_0(i) ≤ d_1(j)` and `∑_i c_{ij} d_{m+1}(i) ≤ d_{m+2}(j) + d_m(j)`, and a
 nonnegative weight `δ` satisfies `2 δ_i ≤ ∑_j c_{ij} δ_j`, then the weighted sums
 `s_m = ∑_j δ_j d_m(j)` grow at least linearly: `(m + 1) s_0 ≤ s_m`. -/
-theorem add_one_mul_sum_mul_le_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommRing S]
-    [LinearOrder S] [IsStrictOrderedRing S] (c : ι → ι → S) {δ : ι → S} (hδ0 : 0 ≤ δ)
-    (hδ : ∀ i, 2 * δ i ≤ ∑ j, c i j * δ j) {d : ℕ → ι → S} (hd0 : ∀ m j, 0 ≤ d m j)
-    (h1 : ∀ j, ∑ i, c i j * d 0 i ≤ d 1 j)
+theorem add_one_mul_sum_mul_le_sum_mul {ι : Type*} [Fintype ι] {S : Type*} [CommSemiring S]
+    [PartialOrder S] [IsOrderedRing S] [IsOrderedCancelAddMonoid S] (c : ι → ι → S) {δ : ι → S}
+    (hδ0 : 0 ≤ δ) (hδ : ∀ i, 2 * δ i ≤ ∑ j, c i j * δ j) {d : ℕ → ι → S}
+    (hd0 : ∀ m j, 0 ≤ d m j) (h1 : ∀ j, ∑ i, c i j * d 0 i ≤ d 1 j)
     (h2 : ∀ m j, ∑ i, c i j * d (m + 1) i ≤ d (m + 2) j + d m j) (m : ℕ) :
     ((m : S) + 1) * ∑ j, δ j * d 0 j ≤ ∑ j, δ j * d m j := by
   set s : ℕ → S := fun m => ∑ j, δ j * d m j with hs

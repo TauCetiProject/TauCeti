@@ -37,9 +37,9 @@ operator; for bounded Lipschitz domains it is
 
 ## References
 
-Lane A.6 of `TauCetiRoadmap/PDE/README.md`; H. Brezis, *Functional Analysis, Sobolev Spaces and
-Partial Differential Equations*, Corollary 9.16; L. C. Evans, *Partial Differential Equations*,
-Section 5.7.  The compactness criterion used here is the Kolmogorov--Riesz form proved in
+H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
+Corollary 9.16; L. C. Evans, *Partial Differential Equations*, Section 5.7.  The compactness
+criterion used here is the Kolmogorov--Riesz form proved in
 `TauCeti/MeasureTheory/Function/Lp/FrechetKolmogorov.lean`.
 -/
 

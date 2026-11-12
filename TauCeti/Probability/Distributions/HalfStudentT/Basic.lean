@@ -47,22 +47,25 @@ positive. Invalid parameters give the zero measure. -/
 def halfStudentTMeasure (ν s : ℝ) : Measure ℝ :=
   if 0 < ν ∧ 0 < s then (studentTMeasure ν).map (fun x ↦ s * |x|) else 0
 
-/-- The defining folded and scaled Student t construction at valid parameters. -/
-theorem halfStudentTMeasure_of_pos (hν : 0 < ν) (hs : 0 < s) :
+/-- The defining folded and scaled Student t construction at positive scale. For nonpositive
+degrees both sides are the zero measure. -/
+theorem halfStudentTMeasure_of_pos (hs : 0 < s) :
     halfStudentTMeasure ν s = (studentTMeasure ν).map (fun x ↦ s * |x|) := by
-  simp [halfStudentTMeasure, hν, hs]
+  rcases lt_or_ge 0 ν with hν | hν
+  · simp [halfStudentTMeasure, hν, hs]
+  · simp [halfStudentTMeasure, not_lt.mpr hν, studentTMeasure_of_nonpos hν]
 
 /-- A half-Student t law is the scaled square-root image of a beta-prime law with shapes
 `1 / 2` and `ν / 2`. -/
 theorem halfStudentTMeasure_eq_map_betaPrimeMeasure (hν : 0 < ν) (hs : 0 < s) :
     halfStudentTMeasure ν s =
       (betaPrimeMeasure (1 / 2) (ν / 2)).map (fun x ↦ s * √(ν * x)) := by
-  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure one_half_pos (half_pos hν)]
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure]
   norm_num only [mul_one_div, mul_div_cancel_left₀ _ (two_ne_zero : (2 : ℝ) ≠ 0)]
   have hdegrees : 2 * (ν / 2) = ν := by ring
-  rw [hdegrees, ← studentTMeasure_map_sq hν,
+  rw [hdegrees, ← studentTMeasure_map_sq ν,
     Measure.map_map (by fun_prop) (by fun_prop),
-    Measure.map_map (by fun_prop) (by fun_prop), halfStudentTMeasure_of_pos hν hs]
+    Measure.map_map (by fun_prop) (by fun_prop), halfStudentTMeasure_of_pos hs]
   congr 1
   ext x
   simp only [Function.comp_apply]
@@ -79,7 +82,7 @@ theorem halfStudentTMeasure_of_not_pos (h : ¬ (0 < ν ∧ 0 < s)) :
 /-- Positive degrees and scale give a probability measure. -/
 theorem isProbabilityMeasure_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s) :
     IsProbabilityMeasure (halfStudentTMeasure ν s) := by
-  rw [halfStudentTMeasure_of_pos hν hs]
+  rw [halfStudentTMeasure_of_pos hs]
   let _ := isProbabilityMeasure_studentTMeasure hν
   infer_instance
 
@@ -90,11 +93,14 @@ def halfStudentTPDFReal (ν s x : ℝ) : ℝ :=
 /-- The extended nonnegative half-Student t density. -/
 def halfStudentTPDF (ν s x : ℝ) : ℝ≥0∞ := ENNReal.ofReal (halfStudentTPDFReal ν s x)
 
-/-- The density on the positive half-line at valid parameters. -/
+/-- The density on the positive half-line at positive scale. For nonpositive degrees both sides
+vanish. -/
 @[simp]
-theorem halfStudentTPDFReal_of_pos (hν : 0 < ν) (hs : 0 < s) (hx : 0 < x) :
+theorem halfStudentTPDFReal_of_pos (hs : 0 < s) (hx : 0 < x) :
     halfStudentTPDFReal ν s x = 2 * studentTPDFReal ν (x / s) / s := by
-  simp [halfStudentTPDFReal, hν, hs, hx]
+  rcases lt_or_ge 0 ν with hν | hν
+  · simp [halfStudentTPDFReal, hν, hs, hx]
+  · simp [halfStudentTPDFReal, not_lt.mpr hν, studentTPDFReal_of_nonpos hν]
 
 /-- The density vanishes outside its positive-parameter, positive-coordinate domain. -/
 @[simp]
@@ -105,7 +111,7 @@ theorem halfStudentTPDFReal_of_not_pos (h : ¬ (0 < ν ∧ 0 < s ∧ 0 < x)) :
 /-- The half-Student t density is nonnegative. -/
 theorem halfStudentTPDFReal_nonneg (ν s x : ℝ) : 0 ≤ halfStudentTPDFReal ν s x := by
   by_cases h : 0 < ν ∧ 0 < s ∧ 0 < x
-  · rw [halfStudentTPDFReal_of_pos h.1 h.2.1 h.2.2]
+  · rw [halfStudentTPDFReal_of_pos h.2.1 h.2.2]
     exact div_nonneg (mul_nonneg (by norm_num) (studentTPDFReal_nonneg _ _)) h.2.1.le
   · simp [h]
 
@@ -113,7 +119,7 @@ theorem halfStudentTPDFReal_nonneg (ν s x : ℝ) : 0 ≤ halfStudentTPDFReal ν
 theorem halfStudentTPDFReal_pos_iff (hν : 0 < ν) (hs : 0 < s) :
     0 < halfStudentTPDFReal ν s x ↔ 0 < x := by
   by_cases hx : 0 < x
-  · rw [halfStudentTPDFReal_of_pos hν hs hx]
+  · rw [halfStudentTPDFReal_of_pos hs hx]
     exact iff_of_true (div_pos (mul_pos two_pos (studentTPDFReal_pos hν _)) hs) hx
   · simp [halfStudentTPDFReal, hx]
 
@@ -121,11 +127,16 @@ theorem halfStudentTPDFReal_pos_iff (hν : 0 < ν) (hs : 0 < s) :
 theorem halfStudentTPDF_eq_ofReal (ν s x : ℝ) :
     halfStudentTPDF ν s x = ENNReal.ofReal (halfStudentTPDFReal ν s x) := (rfl)
 
-/-- The extended density on the positive half-line at valid parameters. -/
+/-- The extended density on the positive half-line. At nonpositive scale both sides vanish. -/
 @[simp]
-theorem halfStudentTPDF_of_pos (hν : 0 < ν) (hs : 0 < s) (hx : 0 < x) :
+theorem halfStudentTPDF_of_pos (hx : 0 < x) :
     halfStudentTPDF ν s x = ENNReal.ofReal (2 * studentTPDFReal ν (x / s) / s) := by
-  rw [halfStudentTPDF_eq_ofReal, halfStudentTPDFReal_of_pos hν hs hx]
+  rcases lt_or_ge 0 s with hs | hs
+  · rw [halfStudentTPDF_eq_ofReal, halfStudentTPDFReal_of_pos hs hx]
+  · rw [halfStudentTPDF_eq_ofReal, halfStudentTPDFReal_of_not_pos (fun h ↦ not_lt.mpr hs h.2.1),
+      eq_comm, ENNReal.ofReal_zero, ENNReal.ofReal_eq_zero]
+    exact div_nonpos_of_nonneg_of_nonpos
+      (mul_nonneg two_pos.le (studentTPDFReal_nonneg _ _)) hs
 
 /-- The extended density vanishes outside the valid positive-coordinate domain. -/
 @[simp]
@@ -162,9 +173,9 @@ theorem measurable_halfStudentTPDF (ν s : ℝ) : Measurable (halfStudentTPDF ν
   measurable_uncurry_halfStudentTPDF.comp (by fun_prop : Measurable fun x : ℝ ↦ ((ν, s), x))
 
 /-- Folding first and then scaling gives the half-Student t law. -/
-theorem halfStudentTMeasure_eq_map_abs (hν : 0 < ν) (hs : 0 < s) :
+theorem halfStudentTMeasure_eq_map_abs (hs : 0 < s) :
     halfStudentTMeasure ν s = ((studentTMeasure ν).map (|·|)).map (fun x ↦ s * x) := by
-  rw [halfStudentTMeasure_of_pos hν hs, Measure.map_map (by fun_prop) (by fun_prop)]
+  rw [halfStudentTMeasure_of_pos hs, Measure.map_map (by fun_prop) (by fun_prop)]
   rfl
 
 /-- The folded and scaled law has the named Lebesgue density, for every parameter value. -/
@@ -174,14 +185,14 @@ theorem halfStudentTMeasure_eq_withDensity (ν s : ℝ) :
   · have hscale := map_affine_withDensity_volume (a := 0) (b := s)
       ((Ioi 0).indicator fun x ↦ studentTPDF ν x + studentTPDF ν (-x)) h.2.ne'
     simp only [zero_add] at hscale
-    rw [halfStudentTMeasure_eq_map_abs h.1 h.2, studentTMeasure_def,
+    rw [halfStudentTMeasure_eq_map_abs h.2, studentTMeasure_def,
       map_abs_withDensity (measurable_studentTPDF ν), hscale]
     apply withDensity_congr_ae
     refine .of_forall fun x ↦ ?_
     simp only [affineDensity_apply, abs_of_pos h.2, sub_zero]
     by_cases hx : 0 < x
     · simp only [indicator_of_mem (mem_Ioi.mpr (div_pos hx h.2)),
-        halfStudentTPDF_eq_ofReal, halfStudentTPDFReal_of_pos h.1 h.2 hx,
+        halfStudentTPDF_eq_ofReal, halfStudentTPDFReal_of_pos h.2 hx,
         studentTPDF_eq_ofReal, studentTPDFReal_neg]
       rw [← ENNReal.ofReal_add (studentTPDFReal_nonneg _ _) (studentTPDFReal_nonneg _ _),
         ← ENNReal.ofReal_mul (inv_nonneg.mpr h.2.le)]
@@ -207,10 +218,10 @@ theorem measurable_halfStudentTMeasure :
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : Ω → ℝ}
 
 /-- Folding and positively scaling a Student t variable gives the half-Student t law. -/
-theorem hasLaw_halfStudentTMeasure (hν : 0 < ν) (hs : 0 < s)
+theorem hasLaw_halfStudentTMeasure (hs : 0 < s)
     (hT : HasLaw T (studentTMeasure ν) P) :
     HasLaw (fun ω ↦ s * |T ω|) (halfStudentTMeasure ν s) P := by
-  rw [halfStudentTMeasure_of_pos hν hs]
+  rw [halfStudentTMeasure_of_pos hs]
   exact (hasLaw_map (by fun_prop : Measurable fun x : ℝ ↦ s * |x|).aemeasurable).comp hT
 
 /-- Every variable with a half-Student t law admits a Lebesgue density. -/
@@ -263,8 +274,8 @@ theorem ae_pos_halfStudentTMeasure (ν s : ℝ) :
 theorem halfStudentTMeasure_map_const_mul (hc : 0 < c) :
     (halfStudentTMeasure ν s).map (fun x ↦ c * x) = halfStudentTMeasure ν (c * s) := by
   by_cases h : 0 < ν ∧ 0 < s
-  · rw [halfStudentTMeasure_of_pos h.1 h.2,
-      halfStudentTMeasure_of_pos h.1 (mul_pos hc h.2),
+  · rw [halfStudentTMeasure_of_pos h.2,
+      halfStudentTMeasure_of_pos (mul_pos hc h.2),
       Measure.map_map (by fun_prop) (by fun_prop)]
     congr 1
     ext x
@@ -287,7 +298,7 @@ abbrev halfCauchyMeasure (s : ℝ) : Measure ℝ := halfStudentTMeasure 1 s
 /-- At positive scale, the half-Cauchy law is the scaled absolute value of a standard Cauchy. -/
 theorem halfCauchyMeasure_eq_map_cauchyMeasure (hs : 0 < s) :
     halfCauchyMeasure s = (cauchyMeasure 0 1).map (fun x ↦ s * |x|) := by
-  rw [halfCauchyMeasure, halfStudentTMeasure_of_pos one_pos hs, studentTMeasure_one]
+  rw [halfCauchyMeasure, halfStudentTMeasure_of_pos hs, studentTMeasure_one]
 
 /-- Folding a centered Cauchy law of positive scale gives the half-Cauchy law of that scale. -/
 theorem cauchyMeasure_map_abs {s : ℝ≥0} (hs : 0 < s) :

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -251,7 +252,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
 `e† ∘ D²u(e ·) ∘ e`. If `u` solves `tr (A D²u) = f` on `W` and the Hessian of `v` is bounded by
 `C` times the norm of its trace, then `‖D²u‖ ≤ (C / λ) ‖f‖`. -/
 theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ] E} (e : E ≃L[ℝ] E)
-    (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = A) {lam : ℝ} (hlam : 0 < lam)
+    (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = A) {lam : ℝ}
     (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) (hUW : (U : Set E) = e ⁻¹' W)
     {u : Wkp mu W p 2} {v : Wkp mu U p 2}
     (hD : Wkp.iteratedGradient 1 v =ᵐ[mu.restrict U] fun x =>
@@ -262,6 +263,19 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       (traceCLM ℝ E).compLpL p _ (Wkp.iteratedGradient 1 v) = g →
         ‖Wkp.iteratedGradient 1 v‖ ≤ C * ‖g‖) :
     ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
+  -- If `lam ≤ 0` then `he` forces `E` to be trivial and both norms vanish.
+  by_cases hlam : 0 < lam
+  swap
+  · have hE : Subsingleton E := subsingleton_of_forall_eq 0 fun x => by
+      have h := he (e x)
+      rw [Real.sqrt_eq_zero_of_nonpos (not_lt.1 hlam), inv_zero, zero_mul] at h
+      simpa using h
+    have hu : Wkp.iteratedGradient 1 u = 0 := Lp.eq_zero_iff_ae_eq_zero.2
+      (Filter.Eventually.of_forall fun x => Subsingleton.elim _ _)
+    have hf0 : f = 0 := Lp.eq_zero_iff_ae_eq_zero.2 (by
+      filter_upwards [hf] with x hx
+      rw [← hx, Subsingleton.elim (A ∘L Wkp.iteratedGradient 1 u x) 0, map_zero, Pi.zero_apply])
+    simp [hu, hf0]
   have habs := abs_det_pos e
   have hmap : (mu.restrict U).map e ≤
       (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ • mu.restrict W :=
@@ -296,7 +310,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       ((Lp.aestronglyMeasurable _).comp_quasiMeasurePreserving hqmp) ?_ p
     filter_upwards [hD] with y hy
     rw [hy, Function.comp_apply]
-    exact e.norm_le_inv_mul_norm_adjoint_comp_comp hlam he (Wkp.iteratedGradient 1 u (e y))
+    exact e.norm_le_inv_mul_norm_adjoint_comp_comp he (Wkp.iteratedGradient 1 u (e y))
   -- Back to real norms, cancelling `δ`.
   have hδr : 0 < δ.toReal := by
     rw [hδ, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
@@ -403,6 +417,33 @@ theorem add_const (a : E) (hA : MapsTo (· + a) U V) :
           simp
       pos := one_pos
       le_abs_det := fun x _ ↦ by simp [ContinuousLinearMap.det] }
+
+/-- **Changes of variables on relatively compact sets.** Let `Φ` be `Cᵏ` with `k ≥ 1` on an open
+set `Ω`. If the closure of an open `U` is compact and contained in `Ω`, `Φ` is injective on `U`
+with invertible derivative on `closure U`, and `Φ` maps `U` into `V`, then `Φ` is a change of
+variables of order `k` from `U` into `V`. The constant `L` is a bound for the derivatives of
+orders `1` through `k` on `closure U`, and `c` is a positive lower bound for the absolute value
+of the Jacobian determinant there; both exist by compactness. -/
+theorem exists_of_isCompact_closure {Ω : Set E} (hΩ : IsOpen Ω)
+    (hk : 1 ≤ k) (hΦ : ContDiffOn ℝ k Φ Ω) (hinj : InjOn Φ U)
+    (hdet : ∀ x ∈ closure (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
+    (hUc : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω)
+    (hUV : MapsTo Φ U V) : ∃ L c, IsChangeOfVariables k U V Φ L c := by
+  have hk' : (1 : ℕ∞ω) ≤ k := by exact_mod_cast hk
+  obtain ⟨L, -, hL⟩ := hΦ.exists_nonneg_bound_iteratedFDeriv_of_isOpen hΩ hUc hUΩ
+  have hdetc : ContinuousOn (fun x => |(fderiv ℝ Φ x).det|) (closure (U : Set E)) :=
+    (ContinuousLinearMap.continuous_det.comp_continuousOn
+      ((hΦ.continuousOn_fderiv_of_isOpen hΩ hk').mono hUΩ)).abs
+  obtain ⟨c, hc, hcdet⟩ := hUc.exists_forall_le' hdetc fun x hx => abs_pos.2 (hdet x hx)
+  refine ⟨L, c,
+    { contDiffOn := hΦ.mono (subset_closure.trans hUΩ)
+      differentiableOn :=
+        (hΦ.mono (subset_closure.trans hUΩ)).differentiableOn (by positivity)
+      injOn := hinj
+      mapsTo := hUV
+      norm_iteratedFDeriv_le := fun i _ hik x hx => hL i hik x (subset_closure hx)
+      pos := hc
+      le_abs_det := fun x hx => hcdet x (subset_closure hx) }⟩
 
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 

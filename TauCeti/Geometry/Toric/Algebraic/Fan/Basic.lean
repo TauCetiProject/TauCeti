@@ -8,7 +8,7 @@ module
 public import Mathlib.Order.Preorder.Finite
 public import TauCeti.Geometry.Convex.Cone.Face.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 /-!
 # Finite fans of toric cones and their morphisms
@@ -93,7 +93,6 @@ variable {N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup V]
 
 /-- A *finite fan* for the lattice map `i : N →+ V` is a finite family of toric cones in `V`,
 closed under passing to faces, whose pairwise intersections are faces of both members. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 structure Fan (i : N →+ V) where
   /-- The ambient map of integral vectors is an integral lattice. -/
   lattice : IsIntegralLattice i
@@ -352,7 +351,6 @@ end Fan
 /-- A *morphism of fans* is a map of the integral vectors together with the compatible real-linear
 map, subject to the condition that every cone of the source lands inside some cone of the
 target. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 structure FanHom (Φ : Fan i) (Ψ : Fan i') where
   /-- The underlying map of integral vectors. -/
   latticeMap : N →+ N'

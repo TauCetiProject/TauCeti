@@ -35,7 +35,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 hyperplane glue to one exponent and one analytic unit on the full product. The unit is
 nowhere zero, including on the hyperplane. No value of the original function there is used. -/
 theorem exists_analyticOnNhd_eq_zpow_mul {f : E × ℂ → ℂ} {U : Set E} {s : Set ℂ}
-    (hU : IsOpen U) (hUc : IsConnected U) (hs : IsOpen s) (h0 : (0 : ℂ) ∈ s)
+    (hU : IsOpen U) (hUc : IsConnected U) (hs : IsOpen s)
     (hf : AnalyticOnNhd ℂ f (U ×ˢ (s \ {0})))
     (hf0 : ∀ p ∈ U ×ˢ (s \ {0}), f p ≠ 0)
     (hlocal : ∀ x ∈ U, ∃ e : ℤ, ∃ w : E × ℂ → ℂ,
@@ -44,6 +44,11 @@ theorem exists_analyticOnNhd_eq_zpow_mul {f : E × ℂ → ℂ} {U : Set E} {s :
     ∃ e : ℤ, ∃ w : E × ℂ → ℂ, AnalyticOnNhd ℂ w (U ×ˢ s) ∧
       (∀ p ∈ U ×ˢ s, w p ≠ 0) ∧
       ∀ p ∈ U ×ˢ (s \ {0}), f p = p.2 ^ e * w p := by
+  -- If `0 ∉ s` nothing needs to be glued.
+  by_cases h0 : (0 : ℂ) ∈ s
+  swap
+  · rw [sdiff_singleton_eq_self h0] at hf hf0
+    exact ⟨0, f, hf, hf0, fun p _ ↦ by simp⟩
   -- Connectedness identifies the integer exponents of the local unit forms via
   -- TauCeti.exists_laurentExponents_of_isPreconnected.
   obtain ⟨e, -, he⟩ := exists_laurentExponents_of_isPreconnected

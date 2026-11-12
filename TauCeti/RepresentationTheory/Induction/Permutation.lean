@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Induction.Projection
 public import TauCeti.RepresentationTheory.Induction.Transitivity
+public import TauCeti.RepresentationTheory.Rep.OfMulAction
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -442,5 +443,27 @@ theorem char_ind_trivial [Finite (G ⧸ H)] (g : G) :
   rw [Representation.char_iso (indTrivialEquiv k H), char_ofMulAction]
 
 end Character
+
+section Index
+
+variable (k : Type u) [CommRing k] [StrongRankCondition k] {G : Type v} [Group G]
+  (H K : Subgroup G)
+
+/-- **Equivalently induced trivial representations force equal indices.** The coset space `G ⧸ H`
+has cardinality `H.index`, so this is
+`TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction` on the coset spaces, read through
+`Subgroup.index = Nat.card (G ⧸ ·)`. It is the one numerical condition on `H` and `K` that is
+visible without any character computation, and so holds over every coefficient ring with the
+strong rank condition. -/
+theorem index_eq_of_nonempty_equiv_ind_trivial
+    (h : Nonempty (((Representation.trivial k H k).ind H.subtype).Equiv
+      ((Representation.trivial k K k).ind K.subtype))) :
+    H.index = K.index := by
+  rw [Subgroup.index_eq_card, Subgroup.index_eq_card]
+  refine natCard_eq_of_nonempty_equiv_ofMulAction (G := G) (X := G ⧸ H) (Y := G ⧸ K) k ?_
+  obtain ⟨φ⟩ := h
+  exact ⟨((indTrivialEquiv k H).symm.trans φ).trans (indTrivialEquiv k K)⟩
+
+end Index
 
 end TauCeti

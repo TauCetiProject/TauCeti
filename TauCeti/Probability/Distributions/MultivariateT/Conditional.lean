@@ -178,7 +178,7 @@ theorem _root_.EuclideanSpace.map_snd_fst_multivariateTMeasure (m : EuclideanSpa
         rw [EuclideanSpace.map_snd_fst_multivariateGaussian m (hS.smul (inv_pos.mpr hτ).le),
           Measure.compProd_apply hA]
         simp only [Matrix.submatrix_smul, Pi.smul_apply,
-          EuclideanSpace.gaussianCondKernel_inv_smul m hS₂₂ hτ]
+          EuclideanSpace.gaussianCondKernel_inv_smul m hτ]
         -- The sides differ only by the local abbreviations `m₂`, `mean` and `C`.
         rfl
     _ = ∫⁻ x₂, ∫⁻ τ, multivariateGaussian (mean x₂) (τ⁻¹ • C) (Prod.mk x₂ ⁻¹' A)

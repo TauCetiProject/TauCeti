@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 import TauCeti.Analysis.ODE.ScalarLinear
-import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
 # Time-dependent families of forms along time-dependent flows
@@ -17,7 +17,8 @@ A time-dependent family of differential forms on a manifold `M` is represented b
 inclusion `ι_t : y ↦ (t, y)`, and its *time derivative* at time `t` is the slice
 `ι_t^* (L_{∂_t} α)` of the Lie derivative along the unit vector field `∂_t` of the time coordinate.
 This is the velocity of the slices: `d/dt (α_t)_y = (ι_t^* L_{∂_t} α)_y`
-(`TauCeti.hasDerivAt_mpullback_prodMk`).
+(`TauCeti.hasDerivAt_mpullback_prodMk`). For a smooth form, `L_{∂_t} α` is again a smooth form,
+the time derivative `TauCeti.SmoothForm.timeDeriv`.
 
 Let `X` be a jointly `C²` time-dependent vector field on a finite-dimensional manifold without
 boundary whose suspension `Z = (1, X)` on `ℝ × M` is complete, and let `φ_{s,t}` be its
@@ -51,6 +52,8 @@ to make the rate a multiple of the contact form.
 ## Main results
 
 * `TauCeti.hasDerivAt_mpullback_prodMk`: the slices of `α` have velocity `ι_t^* L_{∂_t} α`.
+* `TauCeti.SmoothForm.timeDeriv`, `TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`: the
+  same velocity for a smooth form, as a smooth form on `ℝ × M`.
 * `TauCeti.mpullback_prodMk_mlieDerivForm_vertical`: `ι_t^* L_{(0, X)} α = L_{X_t} α_t`.
 * `TauCeti.mpullback_prodMk_mlieDerivForm_timeDependentSuspensionField`:
   `ι_t^* L_Z α = ι_t^* L_{∂_t} α + L_{X_t} α_t`.
@@ -138,6 +141,38 @@ theorem hasDerivAt_mpullback_prodMk (t : ℝ) (x : M)
   refine (h.congr_of_eventuallyEq (Eventually.of_forall hslice)).congr_deriv ?_
   exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm
 
+/-! ### The time derivative of a smooth family -/
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- The **time derivative** `∂_t α` of a smooth form `α` on `ℝ × M`, which represents the
+time-dependent family of its slices `α_t = ι_t^* α`: the Lie derivative `L_{∂_t} α` along the unit
+vector field `∂_t = (1, 0)` of the time coordinate. It is again a smooth form, and its slices are
+the velocities of the slices of `α` (`TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`). -/
+def SmoothForm.timeDeriv (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
+    SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k :=
+  ⟨mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1, SmoothForm.mlieDerivForm_mem_smoothBundleForms α
+    (contMDiff_const_prod_field 1 (X := 0)
+      ((contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd))⟩
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- The underlying form of the time derivative is the Lie derivative along `∂_t`. -/
+@[simp]
+theorem SmoothForm.coe_timeDeriv (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
+    α.timeDeriv.1 = mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- The slices of the time derivative are the velocities of the slices:
+`d/dt (α_t)ₓ = ((∂_t α)_t)ₓ`. -/
+theorem SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
+    (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) (t : ℝ) (x : M) :
+    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
+      (fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x)
+      ((SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x)
+      t := by
+  simpa only [SmoothForm.coe_mpullback, SmoothForm.coe_timeDeriv] using
+    hasDerivAt_mpullback_prodMk t x (α.mdifferentiableAt (t, x))
+
 variable (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
   (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
 include hX
@@ -186,7 +221,7 @@ theorem mpullback_prodMk_mlieDerivForm_vertical (t : ℝ) (x : M)
       (ContinuousLinearMap.ext fun r ↦ Prod.ext (smul_zero _).symm (rfl))
   have hψ := hasDerivAt_mpullback_of_eq_id (I := 𝓘(ℝ, ℝ).prod I) (ψ := ψ)
     (V := fun p : ℝ × M ↦ ((0 : ℝ), X p.1 p.2)) (t := 0) (t, x)
-    (Eventually.of_forall fun p ↦ by simp [ψ, timeDependentFlowOf_self hX₁])
+    (Eventually.of_forall fun p ↦ by simp [ψ, timeDependentFlowOf_self])
     (hψsmooth 0 (t, x) (by simpa using mem_timeDependentFlowDomain_self hX₁ t x))
     (Eventually.of_forall hψvel) (hα.mdifferentiableAt one_ne_zero)
   -- Slicing at time `t` turns `ψ_r` into the time-dependent flow from `t` to `t + r`.
@@ -274,7 +309,6 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
       (mpullback I I (timeDependentFlowOf X s t)
         (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
           (mlieDerivForm (timeDependentSuspensionField X) α)) x) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
   have hZ := contMDiff_timeDependentSuspensionField hX
   have hφ := contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX
   have hι (u : ℝ) : MDifferentiable I (𝓘(ℝ, ℝ).prod I) (Prod.mk u : M → ℝ × M) :=
@@ -284,7 +318,7 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
   have hΨ (r : ℝ) : flowOf (timeDependentSuspensionField X) r =
       fun p : ℝ × M ↦ (p.1 + r, timeDependentFlowOf X p.1 (p.1 + r) p.2) := by
     funext p
-    have h := flowOf_timeDependentSuspensionField hX₁ (s := p.1) (t := p.1 + r) (x := p.2)
+    have h := flowOf_timeDependentSuspensionField (s := p.1) (t := p.1 + r) (x := p.2)
       ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)
     rwa [add_sub_cancel_left] at h
   have hΨsmooth (r : ℝ) : MDifferentiable (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I)
@@ -314,7 +348,7 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
       ((𝓘(ℝ, ℝ).prod I).prod 𝓘(ℝ, (ℝ × E) [⋀^Fin k]→L[ℝ] F))
       (fun p ↦ TotalSpace.mk' ((ℝ × E) [⋀^Fin k]→L[ℝ] F) p (α p))
       (flowOf (timeDependentSuspensionField X) (t - s) (s, x)) := by
-    rwa [flowOf_timeDependentSuspensionField hX₁
+    rwa [flowOf_timeDependentSuspensionField
       ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)]
   have h := ((compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
     (t - s) (hasDerivAt_mpullback_flowOf hZ (hc.mem_flowDomain _ _) hαΨ)).comp_sub_const t s
@@ -364,7 +398,6 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
       Real.exp (∫ u in s..t, g (u, timeDependentFlowOf X s u x)) •
         mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
   -- The pullbacks at `x`, as alternating maps on the model space.
   set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦
     mpullback I I (timeDependentFlowOf X s u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α) x
@@ -376,12 +409,13 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
       hα.contMDiffAt
     rwa [hL u, mpullback_fun_smul] at h
   have hP0 : P s = mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self hX₁ s)
+    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
     exact (congrArg (fun f ↦ mpullback I I f (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α) x)
       h).trans (congrFun (mpullback_id _) x)
   rw [← hP0]
-  exact eq_exp_integral_smul_of_hasDerivAt_smul (V := E [⋀^Fin k]→L[ℝ] F) isOpen_univ
-    ordConnected_univ hcont.continuousOn hP (mem_univ s) (mem_univ t)
+  exact eq_exp_integral_smul_of_hasDerivWithinAt_smul (V := E [⋀^Fin k]→L[ℝ] F)
+    ordConnected_univ hcont.continuousOn (fun u hu ↦ (hP u hu).hasDerivWithinAt) (mem_univ s)
+    (mem_univ t)
 
 /-- **Moser's principle for families of forms**, invariance case. Let `X` be a jointly `C²`
 time-dependent vector field with complete suspension and time-dependent flow `φ`, and let `α` be

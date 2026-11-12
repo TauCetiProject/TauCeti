@@ -340,7 +340,7 @@ private theorem stasheffTerm_loopOps_self {p t : ℕ} (h : p + 1 + t ≠ 2) (e :
     (x : ℕ → nonisolatedZigzagQuotient k G) :
     stasheffTerm (loopOps k G hns c) e x p n t = 0 := by
   rcases eq_or_ne n 2 with hn | hn
-  · exact stasheffTerm_eq_zero_of_outer_eq_zero _ _ _ (loopOps_eq_zero c h fun h' ↦ by omega)
+  · exact stasheffTerm_eq_zero_of_outer_eq_zero _ _ _ (loopOps_eq_zero c h fun _ ↦ by omega)
   rw [stasheffTerm_def, evalNat_def,
     loopOps_eq_zero_of_coord c h _ ⟨p, Nat.lt_add_right t (Nat.lt_succ_self p)⟩ fun d ↦ ?_,
     smul_zero]

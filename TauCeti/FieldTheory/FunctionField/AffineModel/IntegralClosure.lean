@@ -39,11 +39,11 @@ The places missing from the finite chart are the poles of `x`, of which there ar
 * `TauCeti.isDedekindDomain_integralClosure_adjoin` and
   `TauCeti.isFractionRing_integralClosure_adjoin`: `R_x` is a Dedekind domain with fraction field
   `F`.
-* `TauCeti.finiteType_integralClosure_adjoin`: `R_x` is a finitely generated `k`-algebra.
 * `TauCeti.isDedekindDomain_holomorphyRing_setOf_mem` and
-  `TauCeti.finiteType_holomorphyRing_setOf_mem`: the same two properties for `R_x` presented as
-  the holomorphy ring of the places at which `x` is regular, the form in which it is a chart of
-  the scheme of `F` in `TauCeti/AlgebraicGeometry/Curves/TwoChartModel/`.
+  `TauCeti.finiteType_holomorphyRing_setOf_mem`: `R_x` is a Dedekind domain and a finitely
+  generated `k`-algebra, presented as the holomorphy ring of the places at which `x` is regular,
+  the form in which it is a chart of the scheme of `F` in
+  `TauCeti/AlgebraicGeometry/Curves/TwoChartModel/`.
 * `TauCeti.isDedekindDomain_holomorphyRing_compl` and `TauCeti.finiteType_holomorphyRing_compl`:
   the ring of functions regular outside a finite nonempty set `T` of places is a finitely generated
   Dedekind domain, since it is `R_x` for a function `x` whose pole set is `T`
@@ -183,17 +183,6 @@ theorem isFractionRing_integralClosure_adjoin (hF : IsFunctionField k F)
   have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   exact integralClosure.isFractionRing_of_finite_extension k⟮x⟯ F
 
-/-- **`R_x` is a finitely generated `k`-algebra**: for `x` transcendental over `k` and `F` finite
-over `k(x)`, for instance an algebraic function field, the integral closure of `k[x]` in `F` is a
-finite `k[x]`-module. No separability of `F / k(x)` is assumed. -/
-theorem finiteType_integralClosure_adjoin [FiniteDimensional k⟮x⟯ F] (hx : Transcendental k x) :
-    Algebra.FiniteType k (integralClosure (Algebra.adjoin k {x}) F) := by
-  have : Module.Finite (Algebra.adjoin k {x}) (integralClosure (Algebra.adjoin k {x}) F) :=
-    IsIntegralClosure.finite_adjoin_of_transcendental k hx F _
-  have : Algebra.FiniteType k (Algebra.adjoin k {x}) :=
-    .adjoin_of_finite (Set.finite_singleton x)
-  exact .trans (S := Algebra.adjoin k {x}) inferInstance inferInstance
-
 /-- **The functions regular wherever `x` is form a Dedekind domain**, for `x` transcendental over
 `k`: this holomorphy ring is `R_x`. -/
 theorem isDedekindDomain_holomorphyRing_setOf_mem (hF : IsFunctionField k F)
@@ -209,7 +198,7 @@ theorem finiteType_holomorphyRing_setOf_mem (hF : IsFunctionField k F)
     Algebra.FiniteType k (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
   have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
   rw [← restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x]
-  exact finiteType_integralClosure_adjoin hx
+  exact finiteType_integralClosure_adjoin
 
 end Model
 
