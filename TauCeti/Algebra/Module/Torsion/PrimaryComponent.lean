@@ -267,7 +267,7 @@ theorem mem_primaryComponent_span_iff {N : Type*} [AddCommMonoid N] [Module R N]
     exact ⟨n, fun r hr ↦ (mem_torsionOf_iff _ _).mp (hn hr)⟩
 
 /-- An element is in the primary component of `(r)` exactly when a power of `r` kills it. -/
-theorem mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid N] [Module R N]
+@[simp] theorem mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid N] [Module R N]
     (r : R) {x : N} : x ∈ (span {r}).primaryComponent N ↔ ∃ n : ℕ, r ^ n • x = 0 := by
   simpa only [Finset.coe_singleton, Finset.mem_singleton, forall_eq] using
     (mem_primaryComponent_span_iff (N := N) {r} (y := x))
