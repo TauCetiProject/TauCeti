@@ -43,6 +43,8 @@ metric this expresses the star through the inverse metric and the volume of the 
 ## Main results
 
 * `Orientation.wedge_formHodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`.
+* `Orientation.alternatingFormEquiv_wedge_alternatingFormEquiv_apply`: the wedge of the forms of
+  `x` and `y` is `⟪x, ⋆⁻¹ y⟫ vol`.
 * `Orientation.formHodgeStar_formHodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
 * `Orientation.formHodgeStar_alternatingFormEquiv_ιMulti_apply`: the star of the form dual to
   `u₁ ∧ ⋯ ∧ uₖ` evaluates on `(w₁, …, wₗ)` as `vol(u₁, …, uₖ, w₁, …, wₗ)`.
@@ -131,6 +133,16 @@ theorem wedge_formHodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V)
     alternatingFormEquiv_apply, alternatingFormInner_alternatingFormEquiv,
     ← o.wedgePairing_hodgeStar hkl, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ z rfl]
   exact o.inner_ιMulti_eq_volumeEquiv_mul_volumeForm hkl _ z rfl v
+
+/-- **The wedge of the forms of two elements**: for `x ∈ ⋀ᵏ V` and `y ∈ ⋀ˡ V`, the wedge of their
+forms is `⟪x, ⋆⁻¹ y⟫ vol`, read in degree `k + l = finrank ℝ V`. -/
+theorem alternatingFormEquiv_wedge_alternatingFormEquiv_apply {k l : ℕ}
+    (hkl : k + l = finrank ℝ V) (x : ⋀[ℝ]^k V) (y : ⋀[ℝ]^l V) (v : Fin (k + l) → V) :
+    (alternatingFormEquiv V k x).wedge (alternatingFormEquiv V l y) v =
+      ⟪x, (o.hodgeStar hkl).symm y⟫ * o.volumeForm (v ∘ finCongr (hkl.trans _i.out).symm) := by
+  conv_lhs => rw [← (o.hodgeStar hkl).apply_symm_apply y,
+    ← o.formHodgeStar_alternatingFormEquiv hkl]
+  rw [o.wedge_formHodgeStar_apply hkl, alternatingFormInner_alternatingFormEquiv]
 
 /-- The Hodge star preserves the inner product of forms. -/
 @[simp]

@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.MeasureTheory.Function.Coarea.Eilenberg
 import TauCeti.MeasureTheory.Measure.WithDensity
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Polar integration against Hausdorff measure on spheres
@@ -56,6 +57,9 @@ from Mathlib's Lebesgue differentiation theorem on the line,
   over the whole space and over balls.
 * `TauCeti.ae_integrableOn_sphere`, `TauCeti.integrableOn_Ioi_setIntegral_sphere`: integrability on
   almost every sphere and of the sphere integrals.
+* `TauCeti.integral_setIntegral_Ioi_norm_sub_mul_eq_integral_mul_setIntegral_ball`: a radial
+  weight `∫_{‖y - c‖}^∞ ϕ` integrates against `g` as `ϕ` integrates against the ball integrals of
+  `g`.
 * `TauCeti.integral_eq_integral_Ioi_setIntegral_sphere`,
   `TauCeti.setIntegral_ball_eq_integral_Ioo_setIntegral_sphere`: Bochner polar integration over
   the whole space and over balls.
@@ -347,5 +351,57 @@ theorem ae_hasDerivAt_measureReal_inter_ball (c : E) {s : Set E}
   rw [hm, measureReal_def, hr', ← measureReal_def, ← measureReal_restrict_apply ht,
     ← integral_indicator_one ht]
   exact hr
+
+/-- **Slicing a radial weight into balls.** If `ϕ` is integrable and vanishes from `R` on, and `g`
+is integrable on `ball c R`, then the weight `∫_{‖y - c‖}^∞ ϕ` integrates against `g` as `ϕ`
+integrates against the ball integrals of `g`:
+
+`∫ (∫_{‖y - c‖}^∞ ϕ) g(y) dy = ∫ ϕ(s) (∫_{ball c s} g) ds`. -/
+theorem integral_setIntegral_Ioi_norm_sub_mul_eq_integral_mul_setIntegral_ball (c : E) {R : ℝ}
+    {ϕ : ℝ → ℝ} {g : E → ℝ} (hϕ : Integrable ϕ) (hϕR : ∀ t, R ≤ t → ϕ t = 0)
+    (hg : IntegrableOn g (ball c R)) :
+    ∫ y, (∫ s in Ioi ‖y - c‖, ϕ s) * g y = ∫ s, ϕ s * ∫ y in ball c s, g y := by
+  set S : Set (E × ℝ) := {p | ‖p.1 - c‖ < p.2}
+  have hS : MeasurableSet S :=
+    (isOpen_lt (continuous_fst.sub continuous_const).norm continuous_snd).measurableSet
+  set gR := (ball c R).indicator g
+  have hgR : Integrable gR := (integrable_indicator_iff measurableSet_ball).2 hg
+  have hint : Integrable (S.indicator fun p ↦ gR p.1 * ϕ p.2) ((volume : Measure E).prod volume) :=
+    (hgR.mul_prod hϕ).indicator hS
+  -- On `S`, a nonzero value of `ϕ` forces `‖y - c‖ < s < R`, so `gR` may replace `g`.
+  have hpt (y : E) (s : ℝ) :
+      S.indicator (fun p ↦ gR p.1 * ϕ p.2) (y, s) = (Ioi ‖y - c‖).indicator ϕ s * g y := by
+    by_cases hys : ‖y - c‖ < s
+    · have hmem : (y, s) ∈ S := hys
+      rw [indicator_of_mem hmem, indicator_of_mem (mem_Ioi.2 hys)]
+      by_cases hsR : s < R
+      · have hgy : gR y = g y :=
+          indicator_of_mem (by rw [mem_ball, dist_eq_norm]; exact hys.trans hsR) g
+        rw [hgy]
+        ring
+      · rw [hϕR s (not_lt.1 hsR)]; ring
+    · have hmem : (y, s) ∉ S := hys
+      rw [indicator_of_notMem hmem, indicator_of_notMem (mt mem_Ioi.1 hys)]
+      ring
+  have hswap := integral_integral_swap (f := fun y s ↦ S.indicator (fun p ↦ gR p.1 * ϕ p.2) (y, s))
+    hint
+  simp only [hpt] at hswap
+  calc ∫ y, (∫ s in Ioi ‖y - c‖, ϕ s) * g y
+      = ∫ y, ∫ s, (Ioi ‖y - c‖).indicator ϕ s * g y := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun y ↦ ?_)
+        simp only [integral_mul_const, integral_indicator measurableSet_Ioi]
+    _ = ∫ s, ∫ y, (Ioi ‖y - c‖).indicator ϕ s * g y := hswap
+    _ = ∫ s, ϕ s * ∫ y in ball c s, g y := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun s ↦ ?_)
+        dsimp only
+        rw [← integral_const_mul, ← integral_indicator measurableSet_ball]
+        refine integral_congr_ae (Filter.Eventually.of_forall fun y ↦ ?_)
+        dsimp only
+        by_cases hys : ‖y - c‖ < s
+        · rw [indicator_of_mem (mem_Ioi.2 hys),
+            indicator_of_mem (by rw [mem_ball, dist_eq_norm]; exact hys)]
+        · rw [indicator_of_notMem (mt mem_Ioi.1 hys),
+            indicator_of_notMem (by rw [mem_ball, dist_eq_norm]; exact hys)]
+          simp
 
 end TauCeti
