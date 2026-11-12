@@ -328,7 +328,7 @@ private theorem intervalIntegrable_realWindingIntegrand_of_crossing_windows {γ 
     (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).2])
     (fun t ht t' ht' hne ↦ (h_pair t ((Finset.mem_sort _).mp ht) t'
       ((Finset.mem_sort _).mp ht') hne).le)
-    (fun t ht ↦ hρ_lip_int t ((Finset.mem_sort _).mp ht) ρ hρ_pos
+    (fun t ht _ ↦ hρ_lip_int t ((Finset.mem_sort _).mp ht) ρ hρ_pos
       (hρ_le_ρlip t ((Finset.mem_sort _).mp ht)))
     (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
 
@@ -387,7 +387,6 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
   -- exactly that real part built in already (`exists_radius_perWindow_tendsto_log_norm_add_arg`).
   obtain ⟨L, hHCPV, hRe0⟩ := exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
     (g := fun z ↦ (z - s)⁻¹) (Ψ := fun t ↦ Real.log ‖γ t - s‖) hab T
-    (fun _ ↦ hρ_pos.le)
     (fun t ht ↦ by linarith [(h_endpts t ht).1])
     (fun t ht ↦ by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne ↦ (h_pair t ht t' ht' hne).le)
