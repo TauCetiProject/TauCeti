@@ -512,14 +512,15 @@ theorem contDiff_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m 
       (contDiff_and_bounded_sub_referenceField_apply hx (hmem (n + 2)) i).1
   simpa using hd.add (contDiff_referenceField f m)
 
-/-- **Fields in every `A_m^k` have bounded derivatives.** Every iterated derivative of every
-coordinate of a continuous field lying in `A_m^k` for every `k` is bounded on the whole plane:
-the reference field has bounded derivatives, and so has the defect, by the Sobolev embedding. -/
-theorem exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
-    {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x)
-    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (i : Fin 4) (n : ℕ) :
+/-- **Fields in `A_m^(n+2)` have bounded derivatives of order `n`.** The `n`-th iterated
+derivative of every coordinate of a continuous field lying in `A_m^(n+2)` is bounded on the whole
+plane: the reference field has bounded derivatives, and so has the defect, by the Sobolev
+embedding. -/
+theorem exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
+    {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) (i : Fin 4) (n : ℕ)
+    (hmem : x ∈ framedFieldSpace f m (n + 2 : ℕ)) :
     ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C := by
-  obtain ⟨hd, C₁, hC₁⟩ := contDiff_and_bounded_sub_referenceField_apply hx (hmem (n + 2)) i
+  obtain ⟨hd, C₁, hC₁⟩ := contDiff_and_bounded_sub_referenceField_apply hx hmem i
   obtain ⟨C₂, hC₂⟩ := exists_norm_iteratedFDeriv_referenceField_apply_le f m i n
   have href : ContDiff ℝ n fun z ↦ referenceField f m z i :=
     (contDiff_euclidean.1 (contDiff_referenceField f m) i).of_le (by exact_mod_cast le_top)

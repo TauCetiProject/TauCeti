@@ -40,7 +40,7 @@ The vortex hypotheses enter only through the spectral gap of `L_x*`, which needs
 infinity, and through the elliptic bootstrap, which needs bounded derivatives of `x`. A
 continuous field in every `A_m^k` is smooth with bounded derivatives
 (`contDiff_of_forall_mem_framedFieldSpace`,
-`exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace`), and `|α| → 1` by the end framing.
+`exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace`), and `|α| → 1` by the end framing.
 
 ## References
 
@@ -194,7 +194,7 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_s
     (μ := volume) (hxs.of_le (by exact_mod_cast le_top)) hsol hlim
   refine ⟨Q, hQ, hQK, fun k f hf ↦ ?_⟩
   exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hxs
-    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
     (Lp.memLp _) hf fun η hη hηc ↦ hQ f η (hη.of_le (by norm_cast)) hηc
 
 /-- **Classical surjectivity at a vortex.** Let `x` be a continuous solution of the plane vortex
@@ -211,7 +211,7 @@ theorem exists_contDiff_gaugeFixedOperator_eq_of_forall_mem_framedFieldSpace (hx
   have hfL : MemLp f 2 volume := by simpa using hf 0
   obtain ⟨y, hy, -, hyk, heq⟩ := exists_contDiff_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem)
+    (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
     (Lp.memLp (Q (hfL.toLp f))) hf hfc fun η hη hηc ↦ by
       rw [hQ _ η (hη.of_le (by norm_cast)) hηc]
       exact integral_congr_ae (hfL.coeFn_toLp.mono fun z hz ↦ by simp only [hz])
