@@ -244,8 +244,6 @@ theorem convexHull_range_fixedMoment {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc
     set m := x 0 / (a + 2 * b + c - x 2)
     have hsc : s * c = x 2 - b := div_mul_cancel₀ _ hc.ne'
     have hm : m * (a + 2 * b + c - x 2) = x 0 := div_mul_cancel₀ _ (by linarith)
-    have hs0 : 0 ≤ s := div_nonneg (by linarith) hc.le
-    have hs1 : s ≤ 1 := (div_le_one hc).2 (by linarith)
     have hm0 : 0 ≤ m := div_nonneg h0 (by linarith)
     have hm1 : m ≤ 1 := (div_le_one (by linarith)).2 (by linarith)
     refine key ![0, 0, (1 - s) * m, s * m, 0, 0, (1 - s) * (1 - m), s * (1 - m)]
@@ -311,7 +309,7 @@ theorem extremePoints_momentPolygon {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc 
       have h₄ : θ * (M - u) = 0 := by linarith
       linarith [(mul_eq_zero.1 h₄).resolve_left hθ.ne']
     obtain ⟨hp₁, hp₂, hp₃, hp₄, hp₅⟩ := hp
-    obtain ⟨hq₁, hq₂, hq₃, hq₄, hq₅⟩ := hq
+    obtain ⟨-, hq₂, hq₃, hq₄, hq₅⟩ := hq
     have e₀ := congrFun hv 0
     have e₁ := congrFun hv 1
     have e₂ := congrFun hv 2
