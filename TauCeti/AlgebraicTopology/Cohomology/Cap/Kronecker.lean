@@ -74,6 +74,7 @@ theorem singularCap_comp_singularKronecker (X : TopCat.{w}) (k : Type*) [CommRin
 /-- **The augmentation of a cap product into degree zero**, `ε (x ⌢ α) = ⟨α, x⟩`: capping a class
 of degree `n` with a class `α` of the same degree, along the unitors of the tensor unit, and then
 applying the augmentation of zeroth homology is the Kronecker pairing with `α`. -/
+@[reassoc (attr := simp)]
 theorem singularCap_comp_singularHomology₀ε (X : TopCat.{w}) (k : Type*) [CommRing k]
     [Linear k C] [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n)
     (α : X.singularCohomology (𝟙_ C) k (𝟙_ C) n) :

@@ -518,6 +518,7 @@ theorem finite_singularHomology_of_finite_reducedSingularHomology (q : ℕ)
 
 /-- The zeroth singular homology of a path-connected space with coefficients in a module has the
 rank of the coefficient module, the augmentation being an isomorphism. -/
+@[simp]
 theorem finrank_singularHomology_zero_of_pathConnectedSpace [PathConnectedSpace X] :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X) =
       Module.finrank k M :=

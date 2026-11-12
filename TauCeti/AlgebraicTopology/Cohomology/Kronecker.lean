@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 
 /-!
@@ -131,25 +132,22 @@ lemma singularKroneckerEquiv_apply (X : TopCat.{w}) (k : Type*) [Ring k] [Linear
 /-- **The Kronecker pairing of a constant `0`-cocycle**: evaluating the class of the constant
 `0`-cocycle with value `e : R ⟶ M` on zeroth homology is the augmentation followed by `e`. For `e`
 the identity, the unit class of `H⁰(X; R)` pairs with zeroth homology as the augmentation. -/
+@[simp, reassoc]
 lemma singularKronecker_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
     (e : R ⟶ M) :
     X.singularKronecker k 0
         ((X.singularCochainComplex R k M).homologyπ 0 (X.constSingularCocycle k e)) =
-      X.singularHomology₀ε R ≫ e := by
-  apply (cancel_epi (((toSSet.obj X).chainComplex R).homologyπ 0)).1
-  apply (cancel_epi (((toSSet.obj X).chainComplex R).cycles₀Iso.inv)).1
-  refine SSet.chainComplex_hom_ext fun x ↦ ?_
-  -- A vertex, viewed as a cycle, is evaluated by the constant cochain to `e`, and its class is
-  -- sent by the augmentation to the identity.
-  have hx : (toSSet.obj X).ιChainComplex x ≫ ((toSSet.obj X).chainComplex R).cycles₀Iso.inv =
-      ((toSSet.obj X).chainComplex R).liftCycles ((toSSet.obj X).ιChainComplex x) 0
-        (by simp) (by simp) := by
-    apply (cancel_mono (((toSSet.obj X).chainComplex R).iCycles 0)).1
-    simp
-  simp only [reassoc_of% hx, singularHomology₀ε, singularKronecker_homologyπ,
-    HomologicalComplex.liftCycles_i_assoc, iCycles_constSingularCocycle,
-    SSet.ιChainComplex_constCochain]
-  exact (SSet.liftCycles_ιChainComplex_homologyπ_homology₀ε_assoc (X := toSSet.obj X) R x e).symm
+      X.singularHomology₀ε R ≫ e :=
+  -- The constant cochain evaluates a vertex to `e`, and the augmentation sends its class to `𝟙 R`.
+  -- Zeroth singular homology is the homology of the singular chain complex only after unfolding
+  -- `singularHomologyFunctor`, so `Category.assoc` is applied as a term rather than rewritten.
+  SSet.homology₀_hom_ext R fun x ↦ by
+    rw [SSet.ιHomology₀_def]
+    refine (Category.assoc _ _ _).trans ?_
+    simp only [singularKronecker_homologyπ, HomologicalComplex.liftCycles_i_assoc,
+      iCycles_constSingularCocycle, SSet.ιChainComplex_constCochain]
+    exact ((Category.assoc _ _ _).trans
+      (SSet.liftCycles_ιChainComplex_homologyπ_homology₀ε_assoc (X := toSSet.obj X) R x e)).symm
 
 end TopCat
 

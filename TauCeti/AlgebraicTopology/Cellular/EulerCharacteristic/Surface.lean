@@ -55,21 +55,11 @@ theorem eulerChar_eq_two_sub_finrank_singularHomology_one :
         (TopCat.of M)) : ℤ) := by
   have := ChartedSpace.locallyPathConnectedSpace E M
   have : PathConnectedSpace M := pathConnectedSpace_iff_connectedSpace.mpr inferInstance
-  have h₀ : finrank ℚ
-      (((singularHomologyFunctor (ModuleCat.{0} ℚ) 0).obj (ModuleCat.of ℚ ℚ)).obj
-        (TopCat.of M)) = 1 := by
-    rw [(asIso ((TopCat.of M).singularHomology₀ε (ModuleCat.of ℚ ℚ))).toLinearEquiv.finrank_eq]
-    exact finrank_self ℚ
-  have h₂ : finrank ℚ
-      (((singularHomologyFunctor (ModuleCat.{0} ℚ) 2).obj (ModuleCat.of ℚ ℚ)).obj
-        (TopCat.of M)) = 1 := by
-    rw [(o.rationalFundamentalClassEquiv hn).symm.finrank_eq]
-    exact finrank_self ℚ
   rw [eulerChar_eq_finsum_finrank_singularHomology M ℚ,
     ModuleCat.finsum_neg_one_pow_finrank_eq_sum_range (N := 3)
       (fun i hi ↦ isZero_singularHomology_of_compactSpace (M := M) (E := E)
         (ModuleCat.of ℚ ℚ) hn (by omega))]
-  simp [Finset.sum_range_succ, h₀, h₂]
+  simp [Finset.sum_range_succ, o.finrank_rat_singularHomology_top hn]
   ring
 
 /-- A closed connected homologically oriented surface of finite CW type has Euler characteristic
