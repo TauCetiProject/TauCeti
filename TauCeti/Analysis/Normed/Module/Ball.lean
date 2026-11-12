@@ -26,6 +26,10 @@ scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres 
 `‖c‖ ≠ 0`. Over a normed division ring these conditions are equivalent to `c ≠ 0`, via
 `norm_pos_iff` and `norm_ne_zero_iff` respectively.
 
+Sets that agree on `ball x (r * R)` have preimages under the blow-up map `y ↦ x + r • y`,
+`r > 0`, that agree on `ball 0 R` (`TauCeti.preimage_add_smul_inter_ball_eq`), and hence the same
+symmetric difference with any set inside it (`TauCeti.preimage_add_smul_symmDiff_inter_eq`).
+
 The range formula identifies a positive real scaling of the unit sphere with the sphere
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
 centered at zero lie on the same line exactly when they are equal or antipodal.
@@ -49,7 +53,8 @@ For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact se
 `t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
 
 A scalar of norm one maps the product of a set with a ball about zero to itself when it acts on the
-ball factor (`TauCeti.mapsTo_prodMk_smul_ball`).
+ball factor (`TauCeti.mapsTo_prodMk_smul_ball`). A scalar `c` maps the ball of radius `R` about
+zero into the ball of radius `ρ` once `‖c‖ * R < ρ` (`TauCeti.smul_mem_ball_zero_of_norm_mul_lt`).
 
 A closed ball of positive radius is homeomorphic to the closed unit ball by a rescaling that
 matches the boundary spheres (`TauCeti.exists_homeomorph_closedBall_one_norm_eq`).
@@ -59,6 +64,10 @@ centrally symmetric up to translation lies in a ball of half its diameter about 
 
 The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint
 (`TauCeti.pairwise_disjoint_ball_add_natCast_smul`).
+
+For `ρ ≤ ‖ξ‖ / 2`, the points of the dilate `t • ball ξ ρ` with `t > 0` have norms strictly between
+`t ‖ξ‖ / 2` and `3 t ‖ξ‖ / 2` (`TauCeti.norm_bounds_of_mem_smul_ball`), so the dilates
+`c ^ k • ball ξ ρ` with `c ≥ 3` are pairwise disjoint (`TauCeti.pairwise_disjoint_pow_smul_ball`).
 -/
 
 public section
@@ -100,6 +109,34 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : ‖c‖ ≠ 0) (r : �
 
 end Preimage
 
+section Locality
+
+open scoped symmDiff
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {x : E} {r R : ℝ}
+
+/-- Sets that agree on `Metric.ball x (r * R)` have preimages under `y ↦ x + r • y`, `r > 0`, that
+agree on `Metric.ball 0 R`. -/
+theorem preimage_add_smul_inter_ball_eq {a b : Set E} (hr : 0 < r)
+    (h : a ∩ Metric.ball x (r * R) = b ∩ Metric.ball x (r * R)) :
+    (fun y ↦ x + r • y) ⁻¹' a ∩ Metric.ball 0 R = (fun y ↦ x + r • y) ⁻¹' b ∩ Metric.ball 0 R := by
+  have hball : (fun y ↦ x + r • y) ⁻¹' Metric.ball x (r * R) = Metric.ball 0 R := by
+    simpa [abs_of_pos hr, add_comm] using
+      preimage_smul_vadd_ball_norm x (c := r) (norm_pos_iff.2 hr.ne') R
+  rw [← hball, ← Set.preimage_inter, ← Set.preimage_inter, h]
+
+/-- Sets that agree on `Metric.ball x (r * R)` have preimages under `y ↦ x + r • y`, `r > 0`, with
+the same symmetric difference with `c` inside every `K ⊆ Metric.ball 0 R`. -/
+theorem preimage_add_smul_symmDiff_inter_eq {a b c K : Set E} (hr : 0 < r)
+    (h : a ∩ Metric.ball x (r * R) = b ∩ Metric.ball x (r * R)) (hK : K ⊆ Metric.ball 0 R) :
+    (((fun y ↦ x + r • y) ⁻¹' a) ∆ c) ∩ K = (((fun y ↦ x + r • y) ⁻¹' b) ∆ c) ∩ K := by
+  have hK' : (fun y ↦ x + r • y) ⁻¹' a ∩ K = (fun y ↦ x + r • y) ⁻¹' b ∩ K := by
+    rw [← Set.inter_eq_right.2 hK, ← Set.inter_assoc, preimage_add_smul_inter_ball_eq hr h,
+      Set.inter_assoc]
+  rw [Set.inter_symmDiff_distrib_right, Set.inter_symmDiff_distrib_right, hK']
+
+end Locality
+
 section ProdBall
 
 open Metric Set
@@ -115,6 +152,23 @@ theorem mapsTo_prodMk_smul_ball {U : Set α} {R : ℝ} {ζ : 𝕜} (hζ : ‖ζ�
   simpa only [mem_ball_zero_iff, norm_smul, hζ, one_mul] using hb.2
 
 end ProdBall
+
+section SMulBall
+
+open Metric
+
+variable {𝕜 E : Type*} [SeminormedAddGroup 𝕜] [SeminormedAddGroup E] [SMul 𝕜 E]
+  [NormSMulClass 𝕜 E]
+
+/-- Scaling by `c` maps the ball of radius `R` about zero into the ball of radius `ρ` once
+`‖c‖ * R < ρ`. -/
+theorem smul_mem_ball_zero_of_norm_mul_lt {c : 𝕜} {R ρ : ℝ} (hc : ‖c‖ * R < ρ) {z : E}
+    (hz : z ∈ ball (0 : E) R) : c • z ∈ ball (0 : E) ρ := by
+  rw [mem_ball_zero_iff] at hz ⊢
+  rw [norm_smul]
+  exact (mul_le_mul_of_nonneg_left hz.le (norm_nonneg c)).trans_lt hc
+
+end SMulBall
 
 section Sphere
 
@@ -288,6 +342,40 @@ theorem subset_closedBall_diam_div_two_of_neg_eq_vadd {H : Set E}
   exact norm_half_smul_sub_le (dist_eq_norm y _ ▸ dist_le_diam_of_mem hH hy hy')
 
 end Diameter
+
+section Dilate
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A point of the dilate `t • ball ξ ρ`, for `t > 0` and `ρ ≤ ‖ξ‖ / 2`, has norm between
+`t ‖ξ‖ / 2` and `3 t ‖ξ‖ / 2`. -/
+theorem norm_bounds_of_mem_smul_ball {ξ : E} {ρ t : ℝ} (hρ : ρ ≤ ‖ξ‖ / 2) (ht : 0 < t)
+    {x : E} (hx : x ∈ t • ball ξ ρ) : t * ‖ξ‖ / 2 < ‖x‖ ∧ ‖x‖ < 3 * t * ‖ξ‖ / 2 := by
+  obtain ⟨y, hy, rfl⟩ := mem_smul_set.1 hx
+  have hy' : ‖y - ξ‖ < ‖ξ‖ / 2 := (mem_ball_iff_norm.1 hy).trans_le hρ
+  have h₁ := norm_sub_norm_le y ξ
+  have h₂ := norm_sub_norm_le ξ y
+  rw [norm_sub_rev] at h₂
+  rw [norm_smul, Real.norm_of_nonneg ht.le]
+  constructor <;> nlinarith
+
+/-- For `ρ ≤ ‖ξ‖ / 2` and `c ≥ 3`, the dilates `c ^ k • ball ξ ρ` are pairwise disjoint: their
+norms lie in the disjoint intervals `(c ^ k ‖ξ‖ / 2, 3 c ^ k ‖ξ‖ / 2)`. -/
+theorem pairwise_disjoint_pow_smul_ball {c : ℝ} (hc : 3 ≤ c) {ξ : E} {ρ : ℝ}
+    (hρ : ρ ≤ ‖ξ‖ / 2) :
+    Pairwise (Function.onFun Disjoint fun k : ℕ ↦ (c ^ k) • ball ξ ρ) := by
+  have hc0 : 0 < c := by linarith
+  refine (pairwise_disjoint_on _).2 fun j k hjk ↦ Set.disjoint_left.2 fun x hxj hxk ↦ ?_
+  have h₁ := (norm_bounds_of_mem_smul_ball hρ (pow_pos hc0 j) hxj).2
+  have h₂ := (norm_bounds_of_mem_smul_ball hρ (pow_pos hc0 k) hxk).1
+  -- `3 c ^ j ≤ c ^ (j + 1) ≤ c ^ k`, so the two norm intervals cannot overlap.
+  have hpow : 3 * c ^ j ≤ c ^ k :=
+    calc 3 * c ^ j ≤ c * c ^ j := by gcongr
+      _ = c ^ (j + 1) := (pow_succ' c j).symm
+      _ ≤ c ^ k := pow_le_pow_right₀ (by linarith) hjk
+  nlinarith [norm_nonneg ξ]
+
+end Dilate
 
 section Rescaling
 

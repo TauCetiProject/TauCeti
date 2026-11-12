@@ -73,7 +73,7 @@ theorem negativeHypergeometricMeasure_real_Iic_eq_one (hr : r ≤ K) (hK : K ≤
   · simp
 
 private theorem negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail_of_le
-    (hr : 0 < r) (hrK : r ≤ K) (hK : K ≤ N) (hk : k + r ≤ N) :
+    (hrK : r ≤ K) (hK : K ≤ N) (hk : k + r ≤ N) :
     (negativeHypergeometricMeasure N K r).real (Iic k) =
       (hypergeometricMeasure N K (k + r)).real (Ici r) := by
   let _ := isProbabilityMeasure_hypergeometricMeasure hK hk
@@ -103,10 +103,10 @@ private theorem negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail_of
     have hjK : j ≤ K := by
       have := Finset.mem_range.mp hj
       omega
-    rw [hypergeometricMeasure_real_singleton hk hK, ite_eq_left hjK]
+    rw [hypergeometricMeasure_real_singleton hk, ite_eq_left hjK]
     simp only [Nat.sub_sub]
   have hsum := congrArg (Nat.cast : ℕ → ℝ)
-    (Nat.sum_range_choose_mul_choose_add_sum_range_choose_mul_choose hr hrK hk)
+    (Nat.sum_range_choose_mul_choose_add_sum_range_choose_mul_choose hrK hk)
   push_cast at hsum
   have hC : (N.choose K : ℝ) ≠ 0 := by exact_mod_cast Nat.choose_ne_zero hK
   rw [htail, hleft, hright]
@@ -120,15 +120,12 @@ theorem negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail
     (hr : r ≤ K) (hK : K ≤ N) (k : ℕ) :
     (negativeHypergeometricMeasure N K r).real (Iic k) =
       (hypergeometricMeasure N K (min N (k + r))).real (Ici r) := by
-  rcases Nat.eq_zero_or_pos r with rfl | hrpos
-  · let _ := isProbabilityMeasure_hypergeometricMeasure hK (min_le_left N (k + 0))
-    simp [negativeHypergeometricMeasure_zero_successes hK]
-  · by_cases hk : k + r ≤ N
-    · rw [min_eq_right hk]
-      exact negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail_of_le hrpos hr hK hk
-    · rw [min_eq_left (by omega), hypergeometricMeasure_full_sample hK,
-        negativeHypergeometricMeasure_real_Iic_eq_one hr hK (by omega)]
-      simp [hr]
+  by_cases hk : k + r ≤ N
+  · rw [min_eq_right hk]
+    exact negativeHypergeometricMeasure_real_Iic_eq_hypergeometric_tail_of_le hr hK hk
+  · rw [min_eq_left (by omega), hypergeometricMeasure_full_sample hK,
+      negativeHypergeometricMeasure_real_Iic_eq_one hr hK (by omega)]
+    simp [hr]
 
 /-- At a nonnegative real cutoff, the negative hypergeometric cdf sums its explicit masses
 through the natural floor. -/

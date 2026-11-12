@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
@@ -24,7 +25,9 @@ The characteristic contraction equation determines the field uniquely. Since `dH
 differentiable Hamiltonian is constant along every integral curve of `X_H`
 (`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField`). The linearization of
 `X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
-identity used to show that Hamiltonian flows preserve the symplectic form.
+identity used to show that Hamiltonian flows preserve the symplectic form. Contracting the
+linearization with `ω` gives the Hessian, so `dX_H(x)` has the kernel of the Hessian
+(`TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_apply_eq_zero_iff`).
 A Lipschitz bound `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on a ball gives the second-order Taylor bound
 `|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` there
 (`TauCeti.SymplecticForm.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le`).
@@ -169,6 +172,15 @@ theorem apply_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : V → �
     (ω.isInvertible_toContinuousBilinearMap.self_apply_inverse
       (fderiv ℝ (fderiv ℝ H) x u))
 
+/-- The linearization of the Hamiltonian vector field has the kernel of the Hessian: where `dH`
+is differentiable, `dX_H(x) u = 0` exactly when `d²H(x)(u, ·) = 0`, because
+`ω(dX_H(x) u, v) = d²H(x)(u, v)` and `ω` is nondegenerate. -/
+theorem fderiv_hamiltonianVectorField_apply_eq_zero_iff (ω : SymplecticForm V) {H : V → ℝ}
+    {x : V} (hH : DifferentiableAt ℝ (fderiv ℝ H) x) (u : V) :
+    fderiv ℝ (ω.hamiltonianVectorField H) x u = 0 ↔ ∀ v, fderiv ℝ (fderiv ℝ H) x u v = 0 := by
+  simp_rw [← ω.apply_fderiv_hamiltonianVectorField hH u]
+  exact ⟨fun h v ↦ by rw [h]; exact LinearMap.map_zero₂ _ v, ω.separatingLeft _⟩
+
 /-- The linearization of a `C²` Hamiltonian vector field is infinitesimally symplectic. -/
 theorem apply_fderiv_hamiltonianVectorField_add (ω : SymplecticForm V) {H : V → ℝ}
     {x : V} (hH : ContDiffAt ℝ 2 H x) (u v : V) :
@@ -198,6 +210,14 @@ theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
   rw [eq_comm, eq_hamiltonianVectorField_iff, h.fderiv]
   intro v
   exact (LinearMap.toContinuousBilinearMap_apply _ a v).symm
+
+/-- Adding a constant to a Hamiltonian does not change its Hamiltonian vector field. No
+differentiability is needed: `H` and `H + c` are differentiable at the same points. -/
+@[simp]
+theorem hamiltonianVectorField_add_const (ω : SymplecticForm V) (H : V → ℝ) (c : ℝ) :
+    ω.hamiltonianVectorField (fun x ↦ H x + c) = ω.hamiltonianVectorField H := by
+  funext x
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_add_const]
 
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
@@ -366,6 +386,18 @@ theorem poissonBracket_const_right (ω : SymplecticForm V) (F : V → ℝ) (c : 
     ω.poissonBracket F (fun _ ↦ c) x = 0 := by
   simp [poissonBracket_def]
 
+/-- Adding a constant to the first Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_left (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (G : V → ℝ)
+    (x : V) : ω.poissonBracket (fun y ↦ F y + c) G x = ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
+/-- Adding a constant to the second Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_right (ω : SymplecticForm V) (F G : V → ℝ) (c : ℝ) (x : V) :
+    ω.poissonBracket F (fun y ↦ G y + c) x = ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
 /-- The Poisson bracket is homogeneous in its first argument: `{c F, G} = c {F, G}`. -/
 @[simp]
 theorem poissonBracket_const_mul_left (ω : SymplecticForm V) (c : ℝ) (F G : V → ℝ) (x : V) :
@@ -417,6 +449,44 @@ theorem poissonBracket_fun_sum_right (ω : SymplecticForm V) {ι : Type*} {s : F
     (F : V → ℝ) {G : ι → V → ℝ} {x : V} (hG : ∀ i ∈ s, DifferentiableAt ℝ (G i) x) :
     ω.poissonBracket F (fun y ↦ ∑ i ∈ s, G i y) x = ∑ i ∈ s, ω.poissonBracket F (G i) x := by
   simp only [poissonBracket_eq_fderiv, ω.hamiltonianVectorField_fun_sum hG, map_sum]
+
+/-- The Poisson bracket of two combinations `a F + b G` and `c F + d G` is `a d - b c` times
+`{F, G}`, with no differentiability hypothesis: where a combination is not differentiable its
+Hamiltonian field is zero, and then `{F, G}` or the bracket of the combinations vanishes too. -/
+theorem poissonBracket_comb (ω : SymplecticForm V) (F G : V → ℝ) (a b c d : ℝ) (x : V) :
+    ω.poissonBracket (fun y ↦ a * F y + b * G y) (fun y ↦ c * F y + d * G y) x =
+      (a * d - b * c) * ω.poissonBracket F G x := by
+  by_cases hdet : a * d - b * c = 0
+  · rw [hdet, zero_mul]
+    by_cases hab : a = 0 ∧ b = 0
+    · obtain ⟨rfl, rfl⟩ := hab
+      simp
+    · have hs : 0 < a ^ 2 + b ^ 2 := by
+        by_contra h
+        exact hab ⟨by nlinarith [sq_nonneg a, sq_nonneg b], by nlinarith [sq_nonneg a, sq_nonneg b]⟩
+      have hB : (fun y ↦ c * F y + d * G y) =
+          fun y ↦ ((c * a + d * b) / (a ^ 2 + b ^ 2)) * (a * F y + b * G y) := by
+        funext y
+        field_simp
+        linear_combination (G y * a - F y * b) * hdet
+      rw [hB, poissonBracket_const_mul_right, poissonBracket_self, mul_zero]
+  · by_cases hFG : DifferentiableAt ℝ F x ∧ DifferentiableAt ℝ G x
+    · simp only [poissonBracket_def, ω.hamiltonianVectorField_const_mul_add_const_mul hFG.1 hFG.2]
+      exact ω.apply_smul_add_smul _ _ _ _ _ _
+    · have hzero : ∀ H : V → ℝ, ¬ DifferentiableAt ℝ H x → ω.hamiltonianVectorField H x = 0 :=
+        fun H hH ↦ by
+          rw [hamiltonianVectorField_eq_zero_iff, fderiv_zero_of_not_differentiableAt hH]
+      have hRHS : ω.poissonBracket F G x = 0 := by
+        rw [poissonBracket_def]
+        by_cases hF : DifferentiableAt ℝ F x
+        · simp [hzero G fun hG ↦ hFG ⟨hF, hG⟩]
+        · simp [hzero F hF]
+      rw [hRHS, mul_zero, poissonBracket_def]
+      by_cases hA : DifferentiableAt ℝ (fun y ↦ a * F y + b * G y) x
+      · have hB : ¬ DifferentiableAt ℝ (fun y ↦ c * F y + d * G y) x :=
+          fun hB ↦ hFG (differentiableAt_and_of_differentiableAt_comb hdet hA hB)
+        simp [hzero _ hB]
+      · simp [hzero _ hA]
 
 end PoissonBracket
 

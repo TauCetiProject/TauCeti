@@ -38,7 +38,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 section CommRing
 

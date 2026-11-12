@@ -68,8 +68,6 @@ API replace them.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Regularity of the Levi-Civita connection".
 * M. P. do Carmo, *Riemannian Geometry*, Chapter 2.
 * Poincare-Conjecture, `DoCarmoLib/Riemannian/TensorBundle/MusicalIso.lean`, stages 1--5,
   revision `24f32e4d600878bfaac6bc2f2f9324175571c321` (Apache-2.0).
@@ -442,9 +440,22 @@ theorem contMDiffAt_chartDualFrame (α : M) {y : M}
 
 end Smooth
 
+end Tensor
+end Riemannian
+
+namespace Riemannian
+namespace Tensor
+
 section Derivative
 
-variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+/-! The derivative formulas assume a `C²` manifold; the `C¹` structure that the chart frame and
+the Gram matrix ask for is derived from it. -/
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **The derivative of the chart metric.** For a connection `∇` compatible with the metric, the
 derivative along `v` of the metric coefficient `gᵢⱼ = ⟪eᵢ, eⱼ⟫` in the chart frame at `α` is

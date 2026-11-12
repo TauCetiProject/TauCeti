@@ -30,11 +30,6 @@ For finite measures on the real line, uniformly bounded second moments also impl
   a fixed measure off finitely many indices has tight range.
 * `TauCeti.isTightMeasureSet_of_integral_sq_le`: finite real measures with uniformly bounded
   second moments form a tight set.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone), "measure extraction via Prokhorov tightness".
 -/
 
 public section

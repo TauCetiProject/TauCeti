@@ -276,7 +276,7 @@ private lemma cechIsoAux_naturality [Finite ι] (n : ℕ) :
           AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f n) := by
   induction n with
   | zero =>
-    intro F G hF hG f
+    intro F G _ _ f
     exact homologyMap_comp_homologyZeroCechIso_hom U hU f
   | succ n ih =>
     intro F G hF hG f

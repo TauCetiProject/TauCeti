@@ -136,7 +136,7 @@ private theorem integrable_pow_two_mul_of_clampPow_integral_le
         intro x
         rw [clampPow_apply]
         exact (even_two_mul k).pow_nonneg _
-      simp_rw [Real.enorm_eq_ofReal (hnonneg _)]
+      simp_rw [Real.eNorm_eq_ofReal (hnonneg _)]
       rw [← ofReal_integral_eq_lintegral_ofReal (BoundedContinuousFunction.integrable _ _)
         (ae_of_all _ hnonneg)]
       exact ENNReal.ofReal_le_ofReal (htrunc k N)

@@ -38,6 +38,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
 
 * `TopPair.cubicalChainComplex k P`: the relative normalized cubical chain complex of a pair.
 * `TopPair.cubicalChainComplexMap k f`: the chain map induced by a map of pairs.
+* `TopPair.IsCubicalRepresentative k c μ`: a normalized cubical chain of the ambient space is a
+  relative cycle with relative class `μ`; every class has one
+  (`TopPair.exists_isCubicalRepresentative`).
 * `TopPair.cubicalChainComplexXDesc k g hg`: a linear map out of the chains of the ambient space,
   vanishing on the chains of the subspace, descended to the relative chains.
 * `TopPair.cubicalChainOfCube k c`, `TopPair.cubicalCycleOfCube k c hc`: a singular cube as a
@@ -59,11 +62,16 @@ relative homotopy invariance of cubical homology is transported from the simplic
 
 ## Main results
 
-* The terms of `TopPair.cubicalChainComplex k P` are projective `k`-modules (an instance).
+* The terms of `TopPair.cubicalChainComplex k P` are projective `k`-modules (an instance), and in
+  each degree the chains of the subspace split off those of the ambient space
+  (`TopPair.isSplitMono_normalizedCubicalChainComplex_map_f`).
 * `TopPair.quasiIso_singularToCubicalRel`, `TopPair.quasiIso_cubicalToSingularRel`: the relative
   comparison maps are quasi-isomorphisms.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
   same map on relative cubical homology.
+* `TopPair.exists_boundary_eq_sub_add_map_of_injective`: when `Hₙ(X) → Hₙ(X, A)` is injective
+  and `s`, `s'` are relative cycles representing the same class, any cycle `s - s' + a` with `a` a
+  chain of `A` is a boundary.
 
 ## References
 
@@ -90,6 +98,14 @@ instance mono_normalizedCubicalChainComplex_map (P : TopPair.{u}) :
     Mono ((normalizedCubicalChainComplex k).map P.map) :=
   HomologicalComplex.mono_of_mono_f _ fun n ↦ (ModuleCat.mono_iff_injective _).2
     (NormalizedCubicalChain.map_injective k P.map.hom P.isEmbedding_map.injective n)
+
+/-- In each degree, the inclusion of the normalized cubical chains of the subspace of a pair into
+those of the ambient space is a split monomorphism
+(`TauCeti.NormalizedCubicalChain.exists_comp_map_eq_id`). -/
+instance isSplitMono_normalizedCubicalChainComplex_map_f (P : TopPair.{u}) (n : ℕ) :
+    IsSplitMono (((normalizedCubicalChainComplex k).map P.map).f n) := by
+  obtain ⟨r, hr⟩ := NormalizedCubicalChain.exists_comp_map_eq_id k P.isEmbedding_map.injective n
+  exact .mk' ⟨ModuleCat.ofHom r, ModuleCat.hom_ext hr⟩
 
 /-- The **relative normalized cubical chain complex** of a topological pair `(X, A)`: the
 cokernel of the map of normalized cubical chains induced by the inclusion `A → X`. -/
@@ -141,6 +157,83 @@ private theorem surjective_cokernel_π_f (P : TopPair.{u}) (n : ℕ) :
     Function.Surjective ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n) :=
   (ModuleCat.epi_iff_surjective _).1
     (shortExact_cubicalChainComplexShortComplex_map_eval k P n).epi_g
+
+/-- A normalized cubical `n`-chain `c` of the ambient space of a pair `(X, A)` **represents** the
+class `μ` of the relative cubical homology `Hₙ(X, A)` when its image in the relative chains is a
+relative cycle whose class is `μ`. -/
+def IsCubicalRepresentative (P : TopPair.{u}) {n : ℕ} (c : NormalizedCubicalChain P.fst k n)
+    (μ : (P.cubicalChainComplex k).homology n) : Prop :=
+  ∃ r : (P.cubicalChainComplex k).cycles n,
+    ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom c =
+        ((P.cubicalChainComplex k).iCycles n).hom r ∧
+      ((P.cubicalChainComplex k).homologyπ n).hom r = μ
+
+variable {k} in
+theorem isCubicalRepresentative_iff {P : TopPair.{u}} {n : ℕ}
+    (c : NormalizedCubicalChain P.fst k n) (μ : (P.cubicalChainComplex k).homology n) :
+    P.IsCubicalRepresentative k c μ ↔ ∃ r : (P.cubicalChainComplex k).cycles n,
+      ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom c =
+          ((P.cubicalChainComplex k).iCycles n).hom r ∧
+        ((P.cubicalChainComplex k).homologyπ n).hom r = μ :=
+  Iff.rfl
+
+/-- Every class of the relative cubical homology of a pair is represented by a chain of the
+ambient space. -/
+theorem exists_isCubicalRepresentative (P : TopPair.{u}) {n : ℕ}
+    (μ : (P.cubicalChainComplex k).homology n) :
+    ∃ c : NormalizedCubicalChain P.fst k n, P.IsCubicalRepresentative k c μ := by
+  obtain ⟨r, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi ((P.cubicalChainComplex k).homologyπ n)) μ
+  obtain ⟨c, hc⟩ := surjective_cokernel_π_f k P n (((P.cubicalChainComplex k).iCycles n).hom r)
+  exact ⟨c, r, hc, rfl⟩
+
+/-- **A cycle with vanishing relative class is a boundary when relative classes determine
+absolute ones.** Let `s, s'` be normalized cubical `n`-chains of `X` which are relative cycles
+representing the same class of `Hₙ(X, A)`, and `a` an `n`-chain of `A` such that `s - s' + a` is
+a cycle of `X`. If the map `Hₙ(X) → Hₙ(X, A)` is injective, as it is when `Hₙ(A) = 0`, then
+`s - s' + a` is a boundary: its relative class, that of `s - s'`, vanishes. -/
+theorem exists_boundary_eq_sub_add_map_of_injective (P : TopPair.{u}) (n : ℕ)
+    (s s' : NormalizedCubicalChain P.fst k n) (a : NormalizedCubicalChain P.snd k n)
+    (hd : ((normalizedCubicalChainComplex k).obj P.fst).d n (n - 1)
+      (s - s' + NormalizedCubicalChain.map k P.map.hom n a) = 0)
+    (r r' : (P.cubicalChainComplex k).cycles n)
+    (hs : ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom s =
+      ((P.cubicalChainComplex k).iCycles n).hom r)
+    (hs' : ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom s' =
+      ((P.cubicalChainComplex k).iCycles n).hom r')
+    (hr : ((P.cubicalChainComplex k).homologyπ n).hom r =
+      ((P.cubicalChainComplex k).homologyπ n).hom r')
+    (hinj : Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map P.map)) n).hom) :
+    ∃ b : NormalizedCubicalChain P.fst k (n + 1),
+      NormalizedCubicalChain.boundary P.fst k n b =
+        s - s' + NormalizedCubicalChain.map k P.map.hom n a := by
+  set K := (normalizedCubicalChainComplex k).obj P.fst
+  set π := cokernel.π ((normalizedCubicalChainComplex k).map P.map)
+  have hnext : (ComplexShape.down ℕ).next n = n - 1 := by
+    rcases n with _ | m
+    · exact ChainComplex.next_nat_zero
+    · exact ChainComplex.next_nat_succ m
+  obtain ⟨w, hw⟩ : ∃ w : K.cycles n, K.iCycles n w =
+      (normalizedCubicalChainComplexXEquiv P.fst n).symm
+        (s - s' + NormalizedCubicalChain.map k P.map.hom n a) :=
+    ⟨_, K.iCycles_moduleCatCyclesMk n _ _ hnext hd⟩
+  -- The relative class of the cycle `w` is that of `s - s'`, which vanishes.
+  have hπw : HomologicalComplex.cyclesMap π n w = r - r' := by
+    refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
+    have ha : π.f n (NormalizedCubicalChain.map k P.map.hom n a) = 0 :=
+      congrArg (fun f ↦ f.hom a) (cubicalChainComplex_condition_f k P n)
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hw]
+    simp only [map_add, map_sub]
+    simp only [normalizedCubicalChainComplexXEquiv_symm_apply, ha, add_zero, hs, hs']
+  have hw₀ : K.homologyπ n w = 0 := hinj (by
+    rw [HomologicalComplex.moduleCat_homologyMap_homologyπ π n w, hπw, map_sub, hr, sub_self,
+      map_zero])
+  obtain ⟨b, hb⟩ := (K.moduleCat_homologyπ_eq_zero_iff (m := n + 1) (by simp) w).1 hw₀
+  refine ⟨normalizedCubicalChainComplexXEquiv P.fst (n + 1) b, ?_⟩
+  rw [← normalizedCubicalChainComplexXEquiv_d_apply, normalizedCubicalChainComplexXEquiv_apply,
+    ← HomologicalComplex.moduleCat_iCycles_toCycles_apply, hb, hw,
+    normalizedCubicalChainComplexXEquiv_symm_apply]
 
 /-- A linear map out of the normalized cubical `n`-chains of the ambient space of a pair which
 vanishes on the chains of the subspace, descended to the relative chains

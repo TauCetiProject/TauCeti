@@ -99,11 +99,6 @@ than a quotient map on one fixed group.
 * J.-P. Serre, *Local Fields*, Chapter VII, §5, and Chapter XI, §1.
 -/
 
--- The signatures of `LayerRefinement`, `relativeDegree`, `cohomologyInfl`, `tateInfl`,
--- `groundEquiv`, the tower lemmas and `exists_commonRefinement` below follow the Tau Ceti
--- `ClassFieldTheory` blueprint, `README.md` and `Suggested.lean`, which write down the refinement
--- relation between two normal layers formalised here.
-
 public noncomputable section
 
 open CategoryTheory

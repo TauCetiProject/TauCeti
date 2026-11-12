@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Complex
+public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Topology.Perfect
 
 import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Compact open sets and injective holomorphic maps
@@ -24,18 +26,23 @@ holomorphic map to a complex normed space, so it is not a complex submanifold of
 the affine charts of projective space, this shows that a hyperplane section of a projective
 variety meets each of its connected components of positive dimension.
 
+On a compact connected complex manifold every holomorphic function is constant, so evaluation at a
+point identifies the holomorphic functions `M → F` with `F`.
+
 ## Main results
 
 * `MDifferentiableOn.eq_empty_of_injOn_of_isCompact_of_isOpen`: a compact open set on which a
   holomorphic map is injective is empty, on a complex manifold without isolated points.
 * `MDifferentiable.isEmpty_of_injective`: a compact complex manifold without isolated points with an
   injective holomorphic map to a complex normed space is empty.
+* `TauCeti.holomorphicEquivOfCompactSpace`: on a compact connected complex manifold, the complex
+  `C^∞` maps `M → F` are identified with `F` by evaluation.
 -/
 
 public section
 
 open Set
-open scoped Manifold
+open scoped Manifold ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -52,14 +59,11 @@ theorem MDifferentiableOn.eq_empty_of_injOn_of_isCompact_of_isOpen {U : Set M}
   refine eq_empty_iff_forall_notMem.2 fun a ha ↦ ?_
   have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
   have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
-  have : CompactSpace U := isCompact_iff_compactSpace.1 hc
   -- The connected component of `a` in `U` is open, compact and connected, so `f` is constant
   -- on it; injectivity makes it the open singleton `{a}`.
-  set K := connectedComponentIn U a with hKdef
+  set K := connectedComponentIn U a
   have hKo : IsOpen K := ho.connectedComponentIn
-  have hKc : IsCompact K := by
-    rw [hKdef, connectedComponentIn_eq_image ha]
-    exact isClosed_connectedComponent.isCompact.image continuous_subtype_val
+  have hKc : IsCompact K := hc.connectedComponentIn a
   have hK : K = {a} := by
     refine eq_singleton_iff_unique_mem.2 ⟨mem_connectedComponentIn ha, fun x hx ↦ hinj
       (connectedComponentIn_subset U a hx) ha ?_⟩
@@ -73,3 +77,42 @@ theorem MDifferentiable.isEmpty_of_injective [CompactSpace M] (hf : MDifferentia
     (hinj : Function.Injective f) : IsEmpty M :=
   univ_eq_empty_iff.1 <| hf.mdifferentiableOn.eq_empty_of_injOn_of_isCompact_of_isOpen
     hinj.injOn isCompact_univ isOpen_univ
+
+namespace TauCeti
+
+section CompactSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H) [I.Boundaryless]
+  (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [CompactSpace M] [PreconnectedSpace M] [Nonempty M]
+
+/-- **Holomorphic functions on a compact connected complex manifold are the constants.** The
+complex `C^∞` maps `M → F` are constant, so evaluation at a point identifies them with `F`. -/
+noncomputable def holomorphicEquivOfCompactSpace : C^∞⟮I, M; 𝓘(ℂ, F), F⟯ ≃ₗ[ℂ] F where
+  toFun g := g (Classical.arbitrary M)
+  invFun c := ⟨fun _ ↦ c, contMDiff_const⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv g := ContMDiffMap.ext fun x ↦
+    MDifferentiable.apply_eq_of_compactSpace (g.contMDiff.mdifferentiable (by simp)) _ _
+  right_inv _ := rfl
+
+variable {I M}
+
+/-- The constant corresponding to a holomorphic function is its value at any point. This is not a
+`simp` lemma, since the point `x` is free on the right. -/
+theorem holomorphicEquivOfCompactSpace_apply (g : C^∞⟮I, M; 𝓘(ℂ, F), F⟯) (x : M) :
+    holomorphicEquivOfCompactSpace I M g = g x :=
+  MDifferentiable.apply_eq_of_compactSpace (g.contMDiff.mdifferentiable (by simp)) _ _
+
+/-- The holomorphic function corresponding to a vector `c` is the constant function `c`. -/
+@[simp]
+theorem holomorphicEquivOfCompactSpace_symm_apply (c : F) (x : M) :
+    (holomorphicEquivOfCompactSpace I M).symm c x = c :=
+  (rfl)
+
+end CompactSpace
+
+end TauCeti

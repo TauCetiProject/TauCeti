@@ -8,6 +8,14 @@ module
 public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
+public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
+public import Mathlib.Topology.Algebra.Ring.Real
+public import Mathlib.Topology.Order.Compact
+public import Mathlib.Analysis.Normed.Group.Constructions
+public import Mathlib.Analysis.Normed.Group.Real
+import Mathlib.Algebra.BigOperators.Pi
+import Mathlib.Analysis.Convex.Combination
+import Mathlib.Analysis.Normed.MulAction
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -30,10 +38,29 @@ Similarly, the standard simplex is the convex join of the facet opposite a verte
 vertex, the `i`-th coordinate recovering the position along each segment. This is the local model
 of a closed vertex star whose link is a combinatorial ball.
 
+The faces of the standard simplex, the convex hulls of sets of vertices `Pi.single i 1`, are
+described in coordinates. A point of one face is moved into its intersection with a second face
+by transferring the coordinates outside the intersection to a common vertex; the distance moved
+is at most `card ι` times the distance to any point of the second face. Disjoint faces are
+likewise separated by at least `(card ι)⁻¹`.
+
 ## Main results
 
+* `Convexity.StdSimplex.mem_range_toFun_comp_weights_iff`: the weight vectors of the standard
+  simplex are the vectors with nonnegative coordinates summing to one.
 * `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
   simplex form a convex set.
+* `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
+  the standard simplex, the points with some vanishing coordinate, and its compactness.
+* `TauCeti.mem_convexHull_pi_single_iff`: membership in the face of the standard simplex spanned
+  by a set of vertices, in coordinates.
+* `TauCeti.norm_sub_le_one_of_mem_convexHull_pi_single`: points of faces of the standard
+  simplex are within distance one.
+* `TauCeti.exists_mem_convexHull_inter_norm_sub_le`: a point `x` of one coordinate face has a
+  point of its intersection with a second face within `card ι * ‖x - y‖`, for any `y` in the
+  second face.
+* `TauCeti.one_le_card_mul_norm_sub_of_disjoint`: disjoint coordinate faces are at distance at
+  least `(card ι)⁻¹`.
 * `TauCeti.card_mul_inf'_smul_add_smul_barycenter`: `card ι` times the least coordinate recovers
   the parameter along a segment from a boundary point to the barycentre.
 * `TauCeti.convexJoin_boundary_stdSimplex_barycenter`: the standard simplex is the convex join of
@@ -53,6 +80,14 @@ open Set Finset Convexity
 
 namespace Convexity.StdSimplex
 
+/-- A vector is a weight vector of the standard simplex if and only if its coordinates are
+nonnegative and sum to one. -/
+theorem mem_range_toFun_comp_weights_iff {R : Type*} [Semiring R] [PartialOrder R]
+    {X : Type*} [Fintype X] {x : X → R} :
+    x ∈ (range fun t : StdSimplex R X => ⇑t.weights) ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 := by
+  rw [range_toFun_comp_weights]
+  simp
+
 /-- The weight vectors of the standard simplex form a convex set. -/
 theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R]
     [IsOrderedRing R] (X : Type*) :
@@ -64,11 +99,192 @@ theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R
   · simp [Finsupp.sum_add_index', Finsupp.sum_smul_index', ← Finsupp.mul_sum, s.total, t.total,
       hab]
 
+/-- A coordinate of a point of the standard simplex is less than one if some other coordinate
+is positive. -/
+theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] {ι : Type*} [Finite ι] {x : ι → R}
+    (hx : x ∈ range fun s : StdSimplex R ι => ⇑s.weights) {i j : ι} (hij : j ≠ i)
+    (hxj : 0 < x j) : x i < 1 := by
+  classical
+  have := Fintype.ofFinite ι
+  obtain ⟨hx0, hx1⟩ := mem_range_toFun_comp_weights_iff.1 hx
+  have := sum_le_sum_of_subset_of_nonneg (subset_univ {i, j}) fun k _ _ => hx0 k
+  rw [sum_pair hij.symm, hx1] at this
+  exact (lt_add_of_pos_right (x i) hxj).trans_le this
+
 end Convexity.StdSimplex
 
 namespace TauCeti
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
+
+section Boundary
+
+variable (ι) in
+/-- The relative boundary of the standard simplex: its points with some vanishing coordinate. -/
+def stdSimplexBoundary : Set (ι → ℝ) :=
+  {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0}
+
+variable (ι) in
+/-- The relative boundary of the standard simplex is the set of its points with some vanishing
+coordinate. -/
+theorem stdSimplexBoundary_def :
+    stdSimplexBoundary ι = {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0} :=
+  (rfl)
+
+/-- Membership in the relative boundary of the standard simplex. -/
+@[simp]
+theorem mem_stdSimplexBoundary {x : ι → ℝ} :
+    x ∈ stdSimplexBoundary ι ↔ x ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) ∧ ∃ i, x i = 0 :=
+  Iff.rfl
+
+/-- The relative boundary lies in the standard simplex. -/
+theorem stdSimplexBoundary_subset :
+    stdSimplexBoundary ι ⊆ range fun s : StdSimplex ℝ ι => ⇑s.weights :=
+  fun _ hx => hx.1
+
+variable [Finite ι]
+
+/-- The relative boundary of the standard simplex is compact. -/
+theorem isCompact_stdSimplexBoundary : IsCompact (stdSimplexBoundary ι) := by
+  have hZ : IsClosed {y : ι → ℝ | ∃ i, y i = 0} := by
+    simpa only [ofPred_exists] using
+      isClosed_iUnion_of_finite fun i => isClosed_eq (continuous_apply i) continuous_const
+  exact (isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights ℝ ι).continuous).inter_right
+    hZ
+
+/-- A point of the standard simplex lies on its relative boundary or in its open part. -/
+theorem mem_stdSimplexBoundary_or_forall_pos {x : ι → ℝ}
+    (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) :
+    x ∈ stdSimplexBoundary ι ∨ ∀ i, 0 < x i := by
+  have := Fintype.ofFinite ι
+  by_cases h : ∀ i, 0 < x i
+  · exact Or.inr h
+  · obtain ⟨i, hi⟩ := not_forall.1 h
+    exact Or.inl ⟨hx, i,
+      le_antisymm (not_lt.1 hi) ((StdSimplex.mem_range_toFun_comp_weights_iff.1 hx).1 i)⟩
+
+end Boundary
+
+/-- A face of the standard simplex, the convex hull of a set of vertices `Pi.single i 1`,
+consists of weight vectors of `Convexity.StdSimplex`. -/
+theorem convexHull_pi_single_subset_range_toFun_comp_weights [DecidableEq ι] (s : Set ι) :
+    convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s) ⊆
+      range fun t : StdSimplex ℝ ι => ⇑t.weights := by
+  refine convexHull_min (fun _ hi => ?_) (StdSimplex.convex_range_toFun_comp_weights ℝ ι)
+  obtain ⟨i, _, rfl⟩ := hi
+  exact ⟨StdSimplex.single i, by
+    ext j
+    simp [Finsupp.single_apply, Pi.single_apply, eq_comm]⟩
+
+variable [Fintype ι]
+
+/-- Membership in a face of the standard simplex is nonnegativity, total mass one,
+and vanishing of the coordinates outside the face. The empty face has empty convex hull. -/
+@[simp]
+theorem mem_convexHull_pi_single_iff [DecidableEq ι] {s : Set ι} {x : ι → ℝ} :
+    x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s) ↔
+      (∀ i, 0 ≤ x i) ∧ (∑ i, x i = 1) ∧ ∀ i ∉ s, x i = 0 := by
+  constructor
+  · intro hx
+    have hsimplex : (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 :=
+      StdSimplex.mem_range_toFun_comp_weights_iff.1
+        (convexHull_pi_single_subset_range_toFun_comp_weights s hx)
+    refine ⟨hsimplex.1, hsimplex.2, fun i hi => ?_⟩
+    apply convexHull_min (fun _ hz => ?_) (convex_hyperplane (LinearMap.proj i).isLinear 0) hx
+    obtain ⟨j, hj, rfl⟩ := hz
+    simp [ne_of_mem_of_not_mem hj hi]
+  · rintro ⟨hnonneg, hsum, hsupp⟩
+    classical
+    have hmem (i : ι) (hi : x i ≠ 0) : i ∈ s := by_contra fun his => hi (hsupp i his)
+    have hsums : ∑ i ∈ univ with i ∈ s, x i = 1 := by
+      rw [sum_filter_of_ne fun i _ => hmem i, hsum]
+    have hrepr : ∑ i ∈ univ with i ∈ s, x i • Pi.single i (1 : ℝ) = x := by
+      rw [sum_filter_of_ne fun i _ hi => hmem i (left_ne_zero_of_smul hi), ← pi_eq_sum_univ']
+    rw [← hrepr]
+    exact (convex_convexHull ℝ _).sum_mem (fun i _ => hnonneg i) hsums
+      (fun i hi => subset_convexHull ℝ _ ⟨i, (mem_filter.mp hi).2, rfl⟩)
+
+section Faces
+
+variable [DecidableEq ι]
+
+/-- Two points of faces of the standard simplex are within distance one in the sup norm. -/
+theorem norm_sub_le_one_of_mem_convexHull_pi_single {s t : Set ι} {x y : ι → ℝ}
+    (hx : x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s))
+    (hy : y ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' t)) :
+    ‖x - y‖ ≤ 1 := by
+  rw [← dist_eq_norm]
+  exact (Metric.dist_le_diam_of_mem (StdSimplex.isBounded_range_toFun_comp_weights ι)
+    (convexHull_pi_single_subset_range_toFun_comp_weights s hx)
+    (convexHull_pi_single_subset_range_toFun_comp_weights t hy)).trans
+    (StdSimplex.diam_range_toFun_comp_weights_subset_closedBall ι)
+
+/-- For points `x` and `y` of the faces spanned by `s` and `t`, every coordinate of `x` outside
+`s ∩ t` is at most `‖x - y‖`: either it vanishes, or the corresponding coordinate of `y` does. -/
+theorem apply_le_norm_sub_of_notMem_inter {s t : Set ι} {x y : ι → ℝ}
+    (hx : x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s))
+    (hy : y ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' t)) {i : ι}
+    (hi : i ∉ s ∩ t) : x i ≤ ‖x - y‖ := by
+  obtain ⟨hnonneg, -, hsupp⟩ := mem_convexHull_pi_single_iff.mp hx
+  by_cases his : i ∈ s
+  · have hyi := (mem_convexHull_pi_single_iff.mp hy).2.2 i fun hit => hi ⟨his, hit⟩
+    simpa [hyi, abs_of_nonneg (hnonneg i)] using norm_le_pi_norm (x - y) i
+  · rw [hsupp i his]
+    exact norm_nonneg _
+
+/-- Two intersecting coordinate faces admit a short route through their intersection.
+The point in the intersection is within `card ι * ‖x - y‖` of `x`, including at the boundary
+of either face. No positive-coordinate hypothesis is needed. -/
+theorem exists_mem_convexHull_inter_norm_sub_le {σ τ : Finset ι} {x y : ι → ℝ}
+    (hx : x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' (σ : Set ι)))
+    (hy : y ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' (τ : Set ι)))
+    (hστ : (σ ∩ τ).Nonempty) :
+    ∃ z ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' (σ ∩ τ : Finset ι)),
+      ‖x - z‖ ≤ (Fintype.card ι : ℝ) * ‖x - y‖ := by
+  obtain ⟨v, hv⟩ := hστ
+  obtain ⟨hnonneg, hsum, -⟩ := mem_convexHull_pi_single_iff.mp hx
+  -- Keep the coordinates in `σ ∩ τ`, and move every other coordinate to the vertex `v`.
+  let r (i : ι) := if i ∈ σ ∩ τ then i else v
+  have hr (i : ι) : r i ∈ σ ∩ τ := by
+    simp only [r]
+    split_ifs with hi
+    exacts [hi, hv]
+  refine ⟨∑ i, x i • Pi.single (r i) 1, (convex_convexHull ℝ _).sum_mem
+    (fun i _ => hnonneg i) hsum (fun i _ => subset_convexHull ℝ _ ⟨r i, hr i, rfl⟩), ?_⟩
+  have hterm (i : ι) : ‖x i • ((Pi.single i (1 : ℝ) : ι → ℝ) - Pi.single (r i) 1)‖ ≤ ‖x - y‖ := by
+    by_cases hi : i ∈ σ ∩ τ
+    · simp [r, Finset.mem_inter.mp hi]
+    · have hxi : x i ≤ ‖x - y‖ :=
+        apply_le_norm_sub_of_notMem_inter hx hy (by simpa only [← coe_inter, mem_coe] using hi)
+      have he : ‖(Pi.single i (1 : ℝ) : ι → ℝ) - Pi.single (r i) 1‖ ≤ 1 :=
+        norm_sub_le_one_of_mem_convexHull_pi_single (s := {i}) (t := {r i})
+          (subset_convexHull ℝ _ ⟨i, rfl, rfl⟩) (subset_convexHull ℝ _ ⟨r i, rfl, rfl⟩)
+      rw [norm_smul, Real.norm_of_nonneg (hnonneg i)]
+      exact (mul_le_of_le_one_right (hnonneg i) he).trans hxi
+  calc
+    ‖x - ∑ i, x i • Pi.single (r i) 1‖ =
+        ‖∑ i, x i • ((Pi.single i (1 : ℝ) : ι → ℝ) - Pi.single (r i) 1)‖ := by
+      simp_rw [smul_sub]
+      rw [sum_sub_distrib, ← pi_eq_sum_univ']
+    _ ≤ ∑ i, ‖x i • ((Pi.single i (1 : ℝ) : ι → ℝ) - Pi.single (r i) 1)‖ := norm_sum_le _ _
+    _ ≤ ∑ _i : ι, ‖x - y‖ := sum_le_sum fun i _ => hterm i
+    _ = (Fintype.card ι : ℝ) * ‖x - y‖ := by simp
+
+/-- Disjoint coordinate faces are quantitatively separated, even if they are not maximal
+faces of a complex. The estimate is uniform over all pairs of faces. -/
+theorem one_le_card_mul_norm_sub_of_disjoint {σ τ : Finset ι} {x y : ι → ℝ}
+    (hx : x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' (σ : Set ι)))
+    (hy : y ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' (τ : Set ι)))
+    (hστ : Disjoint σ τ) :
+    1 ≤ (Fintype.card ι : ℝ) * ‖x - y‖ := by
+  calc
+    1 = ∑ i, x i := (mem_convexHull_pi_single_iff.mp hx).2.1.symm
+    _ ≤ ∑ _i : ι, ‖x - y‖ := sum_le_sum fun i _ => apply_le_norm_sub_of_notMem_inter hx hy
+        fun hi => disjoint_left.mp hστ hi.1 hi.2
+    _ = (Fintype.card ι : ℝ) * ‖x - y‖ := by simp
+
+end Faces
 
 /-- Along the segment from a point `y` with nonnegative coordinates, one of them zero, to the
 barycentre of the standard simplex, `card ι` times the least coordinate is the parameter `t`. -/
@@ -89,10 +305,10 @@ theorem card_mul_inf'_smul_add_smul_barycenter [Nonempty ι] {y : ι → ℝ} (h
 /-- **Pseudo-radial decomposition of the standard simplex.** The standard simplex is the convex
 join of its relative boundary, the points with some vanishing coordinate, with its barycentre. -/
 theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
-    convexJoin ℝ {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∃ i, y i = 0}
-      {⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights} =
+    convexJoin ℝ (stdSimplexBoundary ι) {⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights} =
       range fun s : StdSimplex ℝ ι => ⇑s.weights := by
   classical
+  rw [stdSimplexBoundary_def]
   set c : ℝ := (Fintype.card ι : ℝ)
   have hc : 0 < c := Nat.cast_pos.mpr Fintype.card_pos
   have hS : (range fun s : StdSimplex ℝ ι => ⇑s.weights) =

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -131,6 +132,57 @@ private theorem compCLE_mem_w1p0Submodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
 
 /-! ### Precomposition with a linear automorphism in `W^{2,p}` -/
 
+/-- Almost-everywhere statements on `W` pull back along a linear automorphism `e` to
+`U = e⁻¹(W)`. -/
+private theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
+    (hUW : (U : Set E) = e ⁻¹' W) :
+    QuasiMeasurePreserving e (mu.restrict U) (mu.restrict W) :=
+  (Measure.ContinuousLinearMap.quasiMeasurePreserving mu (e : E →L[ℝ] E)
+    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero).restrict (mapsTo_of_coe_eq_preimage e hUW)
+
+/-- Each component `⟪∇u, c⟫` of the weak gradient of `u ∈ W^{2,p}(W)` is the value of a function
+`d ∈ W^{1,p}(W)` whose weak gradient has the components `⟪D²u f, c⟫`. -/
+private theorem exists_w1p_value_eq_inner_gradient (u : Wkp mu W p 2) (c : E) :
+    ∃ d : W1p mu W p,
+      W1p.value d =ᵐ[mu.restrict W]
+        (fun y => ⟪Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) y, c⟫_ℝ) ∧
+      ∀ f : E, (fun y => ⟪W1p.gradient d y, f⟫_ℝ) =ᵐ[mu.restrict W]
+        fun y => ⟪Wkp.iteratedGradient 1 u y f, c⟫_ℝ := by
+  set g := Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)
+  obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 u c
+  have h1 : HasWeakLineDerivOn mu W (Wkp.value 2 u) (fun y => ⟪g y, c⟫_ℝ) c := by
+    have h := (W1p.hasWeakFDerivOn (Wkp.firstOrder 1 u)).hasWeakLineDerivOn c
+    rw [Wkp.value_firstOrder, Wkp.gradient_firstOrder_one] at h
+    simpa only [innerSL_apply_apply] using h
+  have hvd : W1p.value d =ᵐ[mu.restrict W] (fun y => ⟪g y, c⟫_ℝ) := by
+    rw [← Wkp.value_one]
+    exact hd.ae_eq h1
+  refine ⟨d, hvd, fun f => ?_⟩
+  have h2 : HasWeakLineDerivOn mu W (fun y => ⟪g y, c⟫_ℝ)
+      (fun y => ⟪Wkp.iteratedGradient 1 u y f, c⟫_ℝ) f := by
+    simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm c] using
+      ((Wkp.hasWeakFDerivOn_iteratedGradient 0 u).clm_comp (innerSL ℝ c)).hasWeakLineDerivOn f
+  have h3 : HasWeakLineDerivOn mu W (fun y => ⟪g y, c⟫_ℝ)
+      (fun y => ⟪W1p.gradient d y, f⟫_ℝ) f := by
+    simpa only [innerSL_apply_apply] using
+      ((W1p.hasWeakFDerivOn d).hasWeakLineDerivOn f).congr_ae hvd
+  exact h3.ae_eq h2
+
+/-- If the weak gradient of `d ∈ W^{1,p}(W)` has components `⟪D²u f, e c⟫`, then the weak gradient
+of `d ∘ e` has components `⟪(e† ∘ D²u(e ·) ∘ e) f, c⟫`. -/
+private theorem inner_gradient_compCLE_ae (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
+    (hUW : (U : Set E) = e ⁻¹' W) (u : Wkp mu W p 2) (c : E) (d : W1p mu W p)
+    (hd : ∀ f : E, (fun y => ⟪W1p.gradient d y, f⟫_ℝ) =ᵐ[mu.restrict W]
+      fun y => ⟪Wkp.iteratedGradient 1 u y f, e c⟫_ℝ) (f : E) :
+    (fun x => ⟪W1p.gradient (compCLE hp e hUW d) x, f⟫_ℝ) =ᵐ[mu.restrict U]
+      fun x => ⟪((e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L
+        (e : E →L[ℝ] E)) f, c⟫_ℝ := by
+  filter_upwards [gradient_compCLE_ae hp e hUW d,
+    quasiMeasurePreserving_restrict_of_coe_eq_preimage e hUW |>.ae (hd (e f))] with x h1 h2
+  rw [h1, ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, h2]
+
 /-- **Linear changes of variables in `W^{2,p}`.** Let `e` be a continuous linear automorphism of
 `E` and `U = e⁻¹(W)`. For `1 ≤ p < ∞` and `u ∈ W^{2,p}(W)`, the composition `u ∘ e` lies in
 `W^{2,p}(U)`, with weak Hessian `e† ∘ D²u(e x) ∘ e`, where `e†` is the adjoint of `e` and `D²u`
@@ -145,43 +197,14 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
       (Wkp.firstOrder 1 u ∈ w1p0Submodule mu W p →
         Wkp.firstOrder 1 w ∈ w1p0Submodule mu U p) := by
   set T := compCLE (mu := mu) hp e hUW
-  -- almost-everywhere statements on `W` pull back along `e` to `U = e⁻¹(W)`
-  have hqmp : QuasiMeasurePreserving e (mu.restrict U) (mu.restrict W) :=
-    (Measure.ContinuousLinearMap.quasiMeasurePreserving mu (e : E →L[ℝ] E)
-      (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero).restrict
-        (mapsTo_of_coe_eq_preimage e hUW)
+  have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
   set u₁ := Wkp.firstOrder 1 u
-  set g := Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)
-  have hu₁ : u₁ = Wkp.lowerOrder 1 u := (Wkp.firstOrder_succ 0 u).trans (Wkp.firstOrder_zero _)
-  have hgrad : W1p.gradient u₁ = g :=
-    (congrArg W1p.gradient hu₁).trans (Wkp.iteratedGradient_zero (Wkp.lowerOrder 1 u)).symm
-  have hval : W1p.value u₁ = Wkp.value 2 u := by
-    rw [Wkp.value_succ, Wkp.value_one, hu₁]
+  have hgrad : W1p.gradient u₁ = Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) :=
+    Wkp.gradient_firstOrder_one u
+  have hval := Wkp.value_firstOrder 1 u
   -- Each component `⟪∇u, c⟫` is the value of some `d c ∈ W^{1,p}(W)`, whose weak gradient has
   -- the components `⟪D²u f, c⟫`.
-  have hcomp (c : E) : ∃ d : W1p mu W p,
-      W1p.value d =ᵐ[mu.restrict W] (fun y => ⟪g y, c⟫_ℝ) ∧
-      ∀ f : E, (fun y => ⟪W1p.gradient d y, f⟫_ℝ) =ᵐ[mu.restrict W]
-        fun y => ⟪Wkp.iteratedGradient 1 u y f, c⟫_ℝ := by
-    obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 u c
-    have h1 : HasWeakLineDerivOn mu W (Wkp.value 2 u) (fun y => ⟪g y, c⟫_ℝ) c := by
-      have h := (W1p.hasWeakFDerivOn u₁).hasWeakLineDerivOn c
-      rw [hval, hgrad] at h
-      simpa only [innerSL_apply_apply] using h
-    have hvd : W1p.value d =ᵐ[mu.restrict W] (fun y => ⟪g y, c⟫_ℝ) := by
-      rw [← Wkp.value_one]
-      exact hd.ae_eq h1
-    refine ⟨d, hvd, fun f => ?_⟩
-    have h2 : HasWeakLineDerivOn mu W (fun y => ⟪g y, c⟫_ℝ)
-        (fun y => ⟪Wkp.iteratedGradient 1 u y f, c⟫_ℝ) f := by
-      simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm c] using
-        ((Wkp.hasWeakFDerivOn_iteratedGradient 0 u).clm_comp (innerSL ℝ c)).hasWeakLineDerivOn f
-    have h3 : HasWeakLineDerivOn mu W (fun y => ⟪g y, c⟫_ℝ)
-        (fun y => ⟪W1p.gradient d y, f⟫_ℝ) f := by
-      simpa only [innerSL_apply_apply] using
-        ((W1p.hasWeakFDerivOn d).hasWeakLineDerivOn f).congr_ae hvd
-    exact h3.ae_eq h2
-  choose d hdv hdg using hcomp
+  choose d hdv hdg using exists_w1p_value_eq_inner_gradient u
   set w₁ := T u₁
   -- The component `⟪∇(u ∘ e), c⟫ = ⟪∇u, e c⟫ ∘ e` is the value of `d (e c) ∘ e`.
   have hw₁ (c : E) : (fun x => ⟪W1p.gradient w₁ x, c⟫_ℝ) =ᵐ[mu.restrict U]
@@ -193,14 +216,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
       (fun x => ⟪W1p.gradient (T (d (e c))) x, f⟫_ℝ) f := by
     simpa only [innerSL_apply_apply] using
       ((W1p.hasWeakFDerivOn (T (d (e c)))).hasWeakLineDerivOn f).congr_ae (hw₁ c).symm
-  have hDe (c f : E) : (fun x => ⟪W1p.gradient (T (d (e c))) x, f⟫_ℝ) =ᵐ[mu.restrict U]
-      fun x => ⟪((e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L
-        (e : E →L[ℝ] E)) f, c⟫_ℝ := by
-    filter_upwards [gradient_compCLE_ae hp e hUW (d (e c)),
-      hqmp.ae (hdg (e c) (e f))] with x h1 h2
-    rw [h1, ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, h2]
+  have hDe (c f : E) := inner_gradient_compCLE_ae hp e hUW u c (d (e c)) (hdg (e c)) f
   set b := stdOrthonormalBasis ℝ E
   obtain ⟨w, hw⟩ := W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn w₁ b fun i j =>
     ⟨(innerSL ℝ (b i)).compLp (W1p.gradient (T (d (e (b j))))),
@@ -226,7 +242,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
     filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry (b j) (b i)] with x hx
     exact ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
       InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
-  · rw [Wkp.firstOrder_succ, Wkp.firstOrder_zero, hw]
+  · rw [Wkp.firstOrder_one, hw]
     exact compCLE_mem_w1p0Submodule hp e hUW hu
 
 /-! ### Transferring Hessian estimates along a linear change of variables -/
@@ -236,7 +252,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
 `e† ∘ D²u(e ·) ∘ e`. If `u` solves `tr (A D²u) = f` on `W` and the Hessian of `v` is bounded by
 `C` times the norm of its trace, then `‖D²u‖ ≤ (C / λ) ‖f‖`. -/
 theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ] E} (e : E ≃L[ℝ] E)
-    (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = A) {lam : ℝ} (hlam : 0 < lam)
+    (hee : (e : E →L[ℝ] E) ∘L (e : E →L[ℝ] E).adjoint = A) {lam : ℝ}
     (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) (hUW : (U : Set E) = e ⁻¹' W)
     {u : Wkp mu W p 2} {v : Wkp mu U p 2}
     (hD : Wkp.iteratedGradient 1 v =ᵐ[mu.restrict U] fun x =>
@@ -247,6 +263,19 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       (traceCLM ℝ E).compLpL p _ (Wkp.iteratedGradient 1 v) = g →
         ‖Wkp.iteratedGradient 1 v‖ ≤ C * ‖g‖) :
     ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
+  -- If `lam ≤ 0` then `he` forces `E` to be trivial and both norms vanish.
+  by_cases hlam : 0 < lam
+  swap
+  · have hE : Subsingleton E := subsingleton_of_forall_eq 0 fun x => by
+      have h := he (e x)
+      rw [Real.sqrt_eq_zero_of_nonpos (not_lt.1 hlam), inv_zero, zero_mul] at h
+      simpa using h
+    have hu : Wkp.iteratedGradient 1 u = 0 := Lp.eq_zero_iff_ae_eq_zero.2
+      (Filter.Eventually.of_forall fun x => Subsingleton.elim _ _)
+    have hf0 : f = 0 := Lp.eq_zero_iff_ae_eq_zero.2 (by
+      filter_upwards [hf] with x hx
+      rw [← hx, Subsingleton.elim (A ∘L Wkp.iteratedGradient 1 u x) 0, map_zero, Pi.zero_apply])
+    simp [hu, hf0]
   have habs := abs_det_pos e
   have hmap : (mu.restrict U).map e ≤
       (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ • mu.restrict W :=
@@ -255,7 +284,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       fun x _ => abs_det_le e x
   have hC' : (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ ≠ ⊤ :=
     ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 habs).ne'
-  have hqmp := QuasiMeasurePreserving.of_map_le_smul e.continuous.measurable hmap
+  have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
   -- `v` solves Poisson's equation with forcing term `f ∘ e`
   set f' := Lp.compOfMapLeSmul ℝ e.continuous.measurable hC' hmap f
   have hf'e := Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) e.continuous.measurable hC' hmap f
@@ -281,7 +310,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       ((Lp.aestronglyMeasurable _).comp_quasiMeasurePreserving hqmp) ?_ p
     filter_upwards [hD] with y hy
     rw [hy, Function.comp_apply]
-    exact e.norm_le_inv_mul_norm_adjoint_comp_comp hlam he (Wkp.iteratedGradient 1 u (e y))
+    exact e.norm_le_inv_mul_norm_adjoint_comp_comp he (Wkp.iteratedGradient 1 u (e y))
   -- Back to real norms, cancelling `δ`.
   have hδr : 0 < δ.toReal := by
     rw [hδ, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
@@ -389,6 +418,33 @@ theorem add_const (a : E) (hA : MapsTo (· + a) U V) :
       pos := one_pos
       le_abs_det := fun x _ ↦ by simp [ContinuousLinearMap.det] }
 
+/-- **Changes of variables on relatively compact sets.** Let `Φ` be `Cᵏ` with `k ≥ 1` on an open
+set `Ω`. If the closure of an open `U` is compact and contained in `Ω`, `Φ` is injective on `U`
+with invertible derivative on `closure U`, and `Φ` maps `U` into `V`, then `Φ` is a change of
+variables of order `k` from `U` into `V`. The constant `L` is a bound for the derivatives of
+orders `1` through `k` on `closure U`, and `c` is a positive lower bound for the absolute value
+of the Jacobian determinant there; both exist by compactness. -/
+theorem exists_of_isCompact_closure {Ω : Set E} (hΩ : IsOpen Ω)
+    (hk : 1 ≤ k) (hΦ : ContDiffOn ℝ k Φ Ω) (hinj : InjOn Φ U)
+    (hdet : ∀ x ∈ closure (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
+    (hUc : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω)
+    (hUV : MapsTo Φ U V) : ∃ L c, IsChangeOfVariables k U V Φ L c := by
+  have hk' : (1 : ℕ∞ω) ≤ k := by exact_mod_cast hk
+  obtain ⟨L, -, hL⟩ := hΦ.exists_nonneg_bound_iteratedFDeriv_of_isOpen hΩ hUc hUΩ
+  have hdetc : ContinuousOn (fun x => |(fderiv ℝ Φ x).det|) (closure (U : Set E)) :=
+    (ContinuousLinearMap.continuous_det.comp_continuousOn
+      ((hΦ.continuousOn_fderiv_of_isOpen hΩ hk').mono hUΩ)).abs
+  obtain ⟨c, hc, hcdet⟩ := hUc.exists_forall_le' hdetc fun x hx => abs_pos.2 (hdet x hx)
+  refine ⟨L, c,
+    { contDiffOn := hΦ.mono (subset_closure.trans hUΩ)
+      differentiableOn :=
+        (hΦ.mono (subset_closure.trans hUΩ)).differentiableOn (by positivity)
+      injOn := hinj
+      mapsTo := hUV
+      norm_iteratedFDeriv_le := fun i _ hik x hx => hL i hik x (subset_closure hx)
+      pos := hc
+      le_abs_det := fun x hx => hcdet x (subset_closure hx) }⟩
+
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 
 /-- A change of variables is almost everywhere measurable on `U`. -/
@@ -459,7 +515,7 @@ private theorem eLpNorm_iteratedFDeriv_comp_le (h : IsChangeOfVariables k U V Φ
           fun j hj1 hji => h.norm_iteratedFDeriv_le j hj1 (hji.trans hi) x hx
     _ = ENNReal.ofReal (max 1 L ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
           fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        rw [← Real.enorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
+        rw [← Real.eNorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
           ← eLpNorm_const_smul]
         congr 1
         funext x

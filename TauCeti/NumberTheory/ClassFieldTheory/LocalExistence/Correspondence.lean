@@ -197,7 +197,7 @@ abbrev AbelianLayerPrimeTo
 
 /-- Prime-to-residue-characteristic local existence on the bundled carriers. -/
 theorem exists_localClassField_primeToResidueCharacteristic
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
+    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
     ∃ V : AbelianLayerPrimeTo K p,
       localNormSubgroup K V.1.1 = N.1.1.toSubgroup := by
   obtain ⟨V, hV, hN⟩ :=
@@ -208,21 +208,21 @@ theorem exists_localClassField_primeToResidueCharacteristic
 
 /-- The local class field attached to a prime-to-`p` norm subgroup. -/
 def localClassFieldPrimeToResidueCharacteristic
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
+    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
     AbelianLayerPrimeTo K p :=
   (exists_localClassField_primeToResidueCharacteristic p N).choose
 
 /-- The prime-to-`p` local class field has the prescribed norm subgroup. -/
 @[simp]
 theorem localClassFieldPrimeToResidueCharacteristic_normSubgroup
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
+    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
     localNormSubgroup K (localClassFieldPrimeToResidueCharacteristic p N).1.1 =
       N.1.1.toSubgroup :=
   (exists_localClassField_primeToResidueCharacteristic p N).choose_spec
 
 /-- The prime-to-`p` local class-field assignment preserves the subgroup order. -/
 theorem localClassFieldPrimeToResidueCharacteristic_le_iff
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p]
+    (p : ℕ) [CharP 𝓀[K] p]
     (N₁ N₂ : LocalNormSubgroupsPrimeTo K p) :
     N₁ ≤ N₂ ↔
       (localClassFieldPrimeToResidueCharacteristic p N₁).1.1 ≤
@@ -236,7 +236,7 @@ theorem localClassFieldPrimeToResidueCharacteristic_le_iff
 /-- **The prime-to-residue-characteristic local class-field correspondence.** This is the full
 range available in equal characteristic without Artin–Schreier–Witt theory. -/
 def localClassFieldCorrespondencePrimeToResidueCharacteristic
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] :
+    (p : ℕ) [CharP 𝓀[K] p] :
     LocalNormSubgroupsPrimeTo K p ≃o AbelianLayerPrimeTo K p where
   toFun := localClassFieldPrimeToResidueCharacteristic p
   invFun V := ⟨localNormOpenSubgroup K V.1.1, by
@@ -262,7 +262,7 @@ def localClassFieldCorrespondencePrimeToResidueCharacteristic
 /-- The prime-to-residue-characteristic correspondence sends `N` to its local class field. -/
 @[simp]
 theorem localClassFieldCorrespondencePrimeToResidueCharacteristic_apply
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
+    (p : ℕ) [CharP 𝓀[K] p] (N : LocalNormSubgroupsPrimeTo K p) :
     localClassFieldCorrespondencePrimeToResidueCharacteristic p N =
       localClassFieldPrimeToResidueCharacteristic p N := by
   unfold localClassFieldCorrespondencePrimeToResidueCharacteristic
@@ -272,7 +272,7 @@ theorem localClassFieldCorrespondencePrimeToResidueCharacteristic_apply
 subgroup. -/
 @[simp]
 theorem localClassFieldCorrespondencePrimeToResidueCharacteristic_symm_apply_coe
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p] (V : AbelianLayerPrimeTo K p) :
+    (p : ℕ) [CharP 𝓀[K] p] (V : AbelianLayerPrimeTo K p) :
     ((localClassFieldCorrespondencePrimeToResidueCharacteristic (K := K) p).symm V).1 =
       localNormOpenSubgroup K V.1.1 := by
   unfold localClassFieldCorrespondencePrimeToResidueCharacteristic
@@ -280,7 +280,7 @@ theorem localClassFieldCorrespondencePrimeToResidueCharacteristic_symm_apply_coe
 
 /-- On fixed fields, the prime-to-residue-characteristic correspondence reverses inclusions. -/
 theorem localClassFieldPrimeToResidueCharacteristic_orderReversing
-    (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p]
+    (p : ℕ) [CharP 𝓀[K] p]
     (N₁ N₂ : LocalNormSubgroupsPrimeTo K p) :
     N₁ ≤ N₂ ↔
       classField K (localClassFieldPrimeToResidueCharacteristic p N₂).1.1 ≤

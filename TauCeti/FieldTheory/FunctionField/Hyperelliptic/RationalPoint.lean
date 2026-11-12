@@ -86,7 +86,7 @@ private theorem ord_sub_pos_iff_not_ord_add_pos (h2 : (2 : k) ≠ 0) {f : k[X]}
   obtain ⟨hD0, hS0⟩ := mul_ne_zero_iff.mp (hfac ▸ hG0)
   have hy0 : P.ord y = 0 := by
     have h := congrArg P.ord hy
-    rw [ord_pow, ord_algebraMap_eq_of_restrict_eq (irreducible_X_sub_C a) hP hf0,
+    rw [ord_pow, ord_algebraMap_eq_of_restrict_eq (irreducible_X_sub_C a) hP,
       multiplicity_eq_zero_of_not_dvd hfa] at h
     push_cast at h
     omega
