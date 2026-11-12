@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.ModEq
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
@@ -64,6 +65,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.criticalPoints`: the critical set, with `TauCeti.mem_criticalPoints_iff_mfderiv_eq_zero`,
   on boundaryless manifolds `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`,
   and on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`.
+* `TauCeti.criticalPoints_pow`: the only critical point of `y ↦ yᵐ` on the real line, `m ≥ 2`,
+  is `0`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
@@ -161,6 +164,22 @@ theorem mem_criticalPoints_iff_fderiv_eq_zero {f : E → ℝ} {x : E} :
   rw [mem_criticalPoints, mvfderiv_eq_fderiv]
   -- `NormedSpace.fromTangentSpace x` is the identity of `E`, read on the tangent space.
   exact Iff.rfl
+
+/-- On the real line, the only critical point of `y ↦ y ^ m` with `m ≥ 2` is `0`. -/
+theorem criticalPoints_pow {m : ℕ} (hm : 2 ≤ m) :
+    criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ m) = {0} := by
+  ext y
+  have hderiv : deriv (fun y : ℝ ↦ y ^ m) y = m * y ^ (m - 1) := by
+    have h := iteratedDeriv_pow (𝕜 := ℝ) (x := y) m 1
+    rwa [iteratedDeriv_one, Nat.descFactorial_one] at h
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, mem_singleton_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have h1 := fderiv_apply_one_eq_deriv (f := fun y : ℝ ↦ y ^ m) (x := y)
+    rw [h, hderiv, zero_apply] at h1
+    exact pow_eq_zero_iff (by omega) |>.1 <|
+      (mul_eq_zero.1 h1.symm).resolve_left (by exact_mod_cast (by omega : m ≠ 0))
+  · rw [← toSpanSingleton_deriv, hderiv, h, zero_pow (by omega), mul_zero,
+      ContinuousLinearMap.toSpanSingleton_zero]
 
 /-- The critical set is the zero locus of the manifold derivative `mfderiv I 𝓘(ℝ) f`. -/
 theorem criticalPoints_eq_setOf_mfderiv_eq_zero :

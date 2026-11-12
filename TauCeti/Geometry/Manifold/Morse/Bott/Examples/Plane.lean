@@ -49,22 +49,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-/-- On the real line, the only critical point of `y ↦ y ^ m` with `m ≥ 2` is `0`. -/
-private theorem criticalPoints_pow {m : ℕ} (hm : 2 ≤ m) :
-    criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ m) = {0} := by
-  ext y
-  have hderiv : deriv (fun y : ℝ ↦ y ^ m) y = m * y ^ (m - 1) := by
-    have h := iteratedDeriv_pow (𝕜 := ℝ) (x := y) m 1
-    rwa [iteratedDeriv_one, Nat.descFactorial_one] at h
-  rw [mem_criticalPoints_iff_fderiv_eq_zero, mem_singleton_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have h1 := fderiv_apply_one_eq_deriv (f := fun y : ℝ ↦ y ^ m) (x := y)
-    rw [h, hderiv, zero_apply] at h1
-    exact pow_eq_zero_iff (by omega) |>.1 <|
-      (mul_eq_zero.1 h1.symm).resolve_left (by exact_mod_cast (by omega : m ≠ 0))
-  · rw [← toSpanSingleton_deriv, hderiv, h, zero_pow (by omega), mul_zero,
-      ContinuousLinearMap.toSpanSingleton_zero]
-
 /-- The functions of the plane studied here are functions of the second coordinate. -/
 private theorem snd_pow_eq_comp (m : ℕ) :
     (fun p : ℝ × ℝ ↦ p.2 ^ m) = (fun y : ℝ ↦ y ^ m) ∘ Prod.snd :=
@@ -77,12 +61,6 @@ private theorem contDiffAt_comp_extChartAt_symm {q : ℝ → ℝ} (hq : ContDiff
   simpa using hq
 
 /-! ### The Morse–Bott function `y²` -/
-
-/-- The function `y ↦ y²` has a nondegenerate critical point at `0`. -/
-private theorem isNondegenerateCriticalPoint_sq :
-    IsNondegenerateCriticalPoint (fun y : ℝ ↦ y ^ 2) 0 := by
-  rw [isNondegenerateCriticalPoint_real_iff (by fun_prop)]
-  constructor <;> simp [← iteratedDeriv_one]
 
 /-- **`y²` is Morse–Bott on the plane.** The critical set of `(x, y) ↦ y²` is the line `ℝ × {0}`,
 and the embedding `x ↦ (x, 0)` of this line alone exhibits the function as a Morse–Bott
