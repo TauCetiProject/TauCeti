@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Topology.Algebra.Polynomial
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Polynomial.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.MeasureTheory.Integral.Asymptotics
@@ -38,6 +40,14 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   zero at infinity.
 * `Polynomial.memLp_inv_one_add_norm_eval_sq`: `(1 + ‖P‖²)⁻¹` is square integrable when `P` is
   nonconstant.
+
+The growth is controlled explicitly by a disc containing the roots. For
+`P = ∏_{a ∈ D} (X - a)` with `‖a‖ ≤ R`, `(‖z‖ - R)ᵐ ≤ ‖P z‖ ≤ (‖z‖ + R)ᵐ` for `‖z‖ ≥ R`, and the
+Cauchy estimate on the unit circle gives `‖P' z‖ ≤ (‖z‖ + R + 1)ᵐ`
+(`Polynomial.norm_eval_multiset_prod_X_sub_C_le`,
+`Polynomial.pow_le_norm_eval_multiset_prod_X_sub_C`,
+`Polynomial.norm_derivative_eval_multiset_prod_X_sub_C_le`). These bounds depend on the roots only
+through `R`.
 -/
 
 public section
@@ -198,5 +208,54 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
     rw [← pow_mul]
     exact pow_le_pow_right₀ h₁ (by omega)
   linarith [hpow.trans ha]
+
+section RootBound
+
+variable {𝕜 : Type*} [NormedField 𝕜] {D : Multiset 𝕜} {R : ℝ}
+
+private theorem eval_multiset_prod_X_sub_C (D : Multiset 𝕜) (z : 𝕜) :
+    ((D.map fun a ↦ X - C a).prod).eval z = (D.map fun a ↦ z - a).prod := by
+  simp [eval_multiset_prod, Multiset.map_map]
+
+/-- A polynomial whose roots lie in the closed disc of radius `R` grows at most like
+`(‖z‖ + R)ᵐ`. -/
+theorem norm_eval_multiset_prod_X_sub_C_le (hD : ∀ a ∈ D, ‖a‖ ≤ R) (z : 𝕜) :
+    ‖((D.map fun a ↦ X - C a).prod).eval z‖ ≤ (‖z‖ + R) ^ Multiset.card D := by
+  rw [eval_multiset_prod_X_sub_C, Multiset.norm_prod_map]
+  calc (D.map fun a ↦ ‖z - a‖).prod ≤ (D.map fun _ ↦ ‖z‖ + R).prod :=
+        Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ norm_nonneg _)
+          fun a ha ↦ (norm_sub_le z a).trans (by linarith [hD a ha])
+    _ = (‖z‖ + R) ^ Multiset.card D := by simp
+
+/-- A polynomial whose roots lie in the closed disc of radius `R` grows at least like
+`(‖z‖ - R)ᵐ` outside that disc. -/
+theorem pow_le_norm_eval_multiset_prod_X_sub_C (hD : ∀ a ∈ D, ‖a‖ ≤ R) {z : 𝕜}
+    (hz : R ≤ ‖z‖) :
+    (‖z‖ - R) ^ Multiset.card D ≤ ‖((D.map fun a ↦ X - C a).prod).eval z‖ := by
+  rw [eval_multiset_prod_X_sub_C, Multiset.norm_prod_map]
+  calc (‖z‖ - R) ^ Multiset.card D = (D.map fun _ ↦ ‖z‖ - R).prod := by simp
+    _ ≤ (D.map fun a ↦ ‖z - a‖).prod :=
+        Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ sub_nonneg.mpr hz)
+          fun a ha ↦ by linarith [norm_sub_norm_le z a, hD a ha]
+
+end RootBound
+
+/-- The derivative of a complex polynomial whose roots lie in the closed disc of radius `R ≥ 0`
+grows at most like `(‖z‖ + R + 1)ᵐ`, by the Cauchy estimate on the unit circle around `z`. -/
+theorem norm_derivative_eval_multiset_prod_X_sub_C_le {D : Multiset ℂ} {R : ℝ} (hR : 0 ≤ R)
+    (hD : ∀ a ∈ D, ‖a‖ ≤ R) (z : ℂ) :
+    ‖((D.map fun a ↦ X - C a).prod).derivative.eval z‖ ≤ (‖z‖ + R + 1) ^ Multiset.card D := by
+  set P := (D.map fun a ↦ X - C a).prod
+  have hsphere : ∀ ζ ∈ Metric.sphere z 1, ‖P.eval ζ‖ ≤ (‖z‖ + R + 1) ^ Multiset.card D := by
+    intro ζ hζ
+    have hζz : ‖ζ‖ ≤ ‖z‖ + 1 := by
+      have := norm_le_norm_add_norm_sub' ζ z
+      rw [mem_sphere_iff_norm.mp hζ] at this
+      linarith
+    exact (norm_eval_multiset_prod_X_sub_C_le hD ζ).trans
+      (pow_le_pow_left₀ (by positivity) (by linarith) _)
+  have h := Complex.norm_deriv_le_of_forall_mem_sphere_norm_le (f := fun z ↦ P.eval z) one_pos
+    P.differentiable.diffContOnCl hsphere
+  rwa [Polynomial.deriv, div_one] at h
 
 end Polynomial

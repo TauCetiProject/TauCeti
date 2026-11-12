@@ -50,6 +50,10 @@ The proof has two steps.
 
 * `TauCeti.mul_le_setIntegral_ball_add_of_neg_le_laplacian`: the mean-value inequality for
   `Δ w ≥ -K`, in any dimension.
+* `TauCeti.le_one_div_two_add_setIntegral_sq_div_add_of_neg_le_laplacian`: its consequence
+  `w x₀ ≤ 1 / 2 + ∫ w² / (2 μ (ball x₀ R)) + K R² / (2 (n + 2))`, a pointwise bound by the
+  `L²` norm on the ball, and its global form
+  `TauCeti.le_one_div_two_add_integral_sq_div_add_of_neg_le_laplacian`.
 * `TauCeti.mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian`: **the mean-value
   inequality** for `Δ w ≥ -A w²` in dimension two.
 
@@ -123,6 +127,57 @@ theorem mul_le_setIntegral_ball_add_of_neg_le_laplacian {w : E → ℝ} {x₀ : 
     zero_pow two_ne_zero, mul_zero, add_zero] at hsub
   calc μ.real (ball x₀ R) * w x₀ ≤ _ := hsub
     _ = _ := by rw [hc_def]; field_simp
+
+/-- **A pointwise bound from an `L²` bound and `Δ w ≥ -K`.** If `w` is `C²` on the ball
+`ball x₀ R`, `R > 0`, continuous on its closure, and `Δ w ≥ -K` on the ball, then, in dimension
+`n`, the value at the centre is bounded by the integral of `w²` over the ball:
+`w x₀ ≤ 1 / 2 + ∫ w² / (2 μ (ball x₀ R)) + K R² / (2 (n + 2))`. -/
+theorem le_one_div_two_add_setIntegral_sq_div_add_of_neg_le_laplacian {w : E → ℝ} {x₀ : E}
+    {R K : ℝ} (hR : 0 < R) (hw : ContDiffOn ℝ 2 w (ball x₀ R))
+    (hwc : ContinuousOn w (closedBall x₀ R)) (hΔ : ∀ x ∈ ball x₀ R, -K ≤ Δ w x) :
+    w x₀ ≤ 1 / 2 + (∫ x in ball x₀ R, w x ^ 2 ∂μ) / (2 * μ.real (ball x₀ R)) +
+      K * R ^ 2 / (2 * (Module.finrank ℝ E + 2)) := by
+  have hV : 0 < μ.real (ball x₀ R) := by
+    rw [measureReal_def]
+    exact ENNReal.toReal_pos (measure_ball_pos μ x₀ hR).ne' measure_ball_lt_top.ne
+  have hmv := mul_le_setIntegral_ball_add_of_neg_le_laplacian (μ := μ) hw hwc hΔ
+  have hwint : IntegrableOn w (ball x₀ R) μ :=
+    (hwc.integrableOn_compact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall
+  have hw2int : IntegrableOn (fun x ↦ w x ^ 2) (ball x₀ R) μ :=
+    ((hwc.pow 2).integrableOn_compact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall
+  -- `w ≤ (1 + w²) / 2` pointwise, so `∫ w ≤ (μ (ball x₀ R) + ∫ w²) / 2`.
+  have hint : ∫ x in ball x₀ R, w x ∂μ ≤
+      (μ.real (ball x₀ R) + ∫ x in ball x₀ R, w x ^ 2 ∂μ) / 2 := by
+    have h1 : IntegrableOn (fun _ ↦ (1 : ℝ)) (ball x₀ R) μ :=
+      integrableOn_const measure_ball_lt_top.ne
+    have hle : ∫ x in ball x₀ R, w x ∂μ ≤ ∫ x in ball x₀ R, (1 + w x ^ 2) / 2 ∂μ :=
+      setIntegral_mono_on hwint ((h1.add hw2int).div_const 2) measurableSet_ball
+        fun x _ ↦ by nlinarith [sq_nonneg (w x - 1)]
+    rwa [integral_div, integral_add h1 hw2int, setIntegral_const, smul_eq_mul, mul_one] at hle
+  rw [← mul_le_mul_iff_of_pos_left hV]
+  calc μ.real (ball x₀ R) * w x₀ ≤ _ := hmv
+    _ ≤ (μ.real (ball x₀ R) + ∫ x in ball x₀ R, w x ^ 2 ∂μ) / 2 +
+        K * R ^ 2 / (2 * (Module.finrank ℝ E + 2)) * μ.real (ball x₀ R) := by linarith
+    _ = _ := by field_simp
+
+/-- **A sup bound from an `L²` bound and `Δ v ≥ -L`.** A `C²` function `v` on `E` with `v²`
+integrable and `Δ v ≥ -L` everywhere satisfies, in dimension `n`,
+`v x₀ ≤ 1 / 2 + ∫ v² / (2 μ (ball 0 1)) + L / (2 (n + 2))` at every point `x₀`. -/
+theorem le_one_div_two_add_integral_sq_div_add_of_neg_le_laplacian {v : E → ℝ}
+    (hv : ContDiff ℝ 2 v) (hv2 : Integrable (fun x ↦ v x ^ 2) μ) {L : ℝ}
+    (hL : ∀ x, -L ≤ Δ v x) (x₀ : E) :
+    v x₀ ≤ 1 / 2 + (∫ x, v x ^ 2 ∂μ) / (2 * μ.real (ball (0 : E) 1)) +
+      L / (2 * (Module.finrank ℝ E + 2)) := by
+  have h := le_one_div_two_add_setIntegral_sq_div_add_of_neg_le_laplacian (μ := μ) (x₀ := x₀)
+    one_pos hv.contDiffOn hv.continuous.continuousOn fun x _ ↦ hL x
+  rw [Measure.addHaar_real_ball_center, one_pow, mul_one] at h
+  have hV : 0 < μ.real (ball (0 : E) 1) := by
+    rw [measureReal_def]
+    exact ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hset : ∫ x in ball x₀ 1, v x ^ 2 ∂μ ≤ ∫ x, v x ^ 2 ∂μ :=
+    setIntegral_le_integral hv2 (.of_forall fun x ↦ sq_nonneg _)
+  have := div_le_div_of_nonneg_right hset (by positivity : 0 ≤ 2 * μ.real (ball (0 : E) 1))
+  linarith
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **Choice of the centre.** For `w` continuous on `closedBall x₀ r`, a maximum `(ρ, z)` of
