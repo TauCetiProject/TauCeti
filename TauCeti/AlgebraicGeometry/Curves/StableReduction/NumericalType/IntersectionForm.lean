@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
-public import TauCeti.Data.Fintype.CardLT
+public import TauCeti.Data.Fintype.Card.LT
 public import TauCeti.LinearAlgebra.Matrix.NegSemidef
 import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Tactic.LinearCombination
