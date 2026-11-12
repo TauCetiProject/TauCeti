@@ -87,6 +87,11 @@ variable {j k : ℤ} {m m' : ι → ℤ} {x y : ι → ℝ}
 theorem mem_dyadicCube : x ∈ dyadicCube k m ↔ dyadicIndex k x = m :=
   Iff.rfl
 
+/-- In dimension zero every dyadic cube is the whole space. -/
+@[simp]
+theorem dyadicCube_eq_univ [IsEmpty ι] (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ :=
+  eq_univ_of_forall fun _ => mem_dyadicCube.2 (Subsingleton.elim _ _)
+
 /-- Every point lies in the dyadic cube of each level indexed by its own dyadic index. -/
 theorem mem_dyadicCube_dyadicIndex (k : ℤ) (x : ι → ℝ) : x ∈ dyadicCube k (dyadicIndex k x) :=
   mem_dyadicCube.2 rfl

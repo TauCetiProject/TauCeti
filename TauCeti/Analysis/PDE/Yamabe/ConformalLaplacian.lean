@@ -167,7 +167,7 @@ theorem conformalLaplacian_bubble (hn : finrank ℝ F ≠ 2) {t : ℝ} (ht : 0 <
       (finrank ℝ F : ℝ) * (finrank ℝ F - 1) *
         bubble t b x ^ (criticalExponent (finrank ℝ F) - 1) := by
   have hgrad : DifferentiableAt ℝ (∇ (bubble t b)) x :=
-    (((contDiff_bubble ht.ne' b (m := 2)).gradient_right (m := 1) (by norm_num)).differentiable
+    (((contDiff_bubble t b (m := 2)).gradient_right (m := 1) (by norm_num)).differentiable
       (by norm_num)) x
   rw [conformalLaplacian_eq_conformalCoefficient_mul_neg_laplacian hgrad,
     conformalCoefficient_mul_neg_laplacian_bubble hn ht]

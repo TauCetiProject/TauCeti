@@ -351,7 +351,7 @@ private theorem mul_volume_czUnion_two_mul_inter_le {f : (ι → ℝ) → F} (hf
 `m(2t) ≤ 2²ⁿ⁺¹ γ m(t) + |{f^# > γ t}|`,
 
 where `m(s)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `s`. -/
-private theorem volume_czUnion_two_mul_le [Nonempty ι] {f : (ι → ℝ) → F} {p₀ : ℝ≥0∞}
+private theorem volume_czUnion_two_mul_le {f : (ι → ℝ) → F} {p₀ : ℝ≥0∞}
     (hf : MemLp f p₀) (hp₀ : 1 ≤ p₀) (hp₀' : p₀ ≠ ∞) {t : ℝ≥0∞} (ht : t ≠ 0) (ht' : t ≠ ∞)
     (γ : ℝ≥0∞) :
     volume (czUnion f (2 * t)) ≤ 2 ^ (2 * Fintype.card ι + 1) * γ * volume (czUnion f t) +
@@ -385,9 +385,13 @@ private theorem volume_czUnion_two_mul_le [Nonempty ι] {f : (ι → ℝ) → F}
   have hdisj : Pairwise (Function.onFun Disjoint fun q :
       calderonZygmundCubes (fun x => ‖f x‖ₑ) t => dyadicCube q.1.1 q.1.2) :=
     fun q q' hne => pairwiseDisjoint_calderonZygmundCubes q.2 q'.2 (Subtype.coe_ne_coe.2 hne)
-  have hsub : czUnion f (2 * t) ⊆ czUnion f t :=
-    biUnion_calderonZygmundCubes_subset_of_tendsto
-      (tendsto_setLAverage_enorm_dyadicCube_atTop hf hp₀ hp₀') ht (two_mul t ▸ le_self_add)
+  have hsub : czUnion f (2 * t) ⊆ czUnion f t := by
+    rcases isEmpty_or_nonempty ι with hι | hι
+    · have : IsFiniteMeasure (volume : Measure (ι → ℝ)) := ⟨by simp⟩
+      exact biUnion_calderonZygmundCubes_subset (hf.integrable hp₀).2.ne ht
+        (two_mul t ▸ le_self_add)
+    · exact biUnion_calderonZygmundCubes_subset_of_tendsto
+        (tendsto_setLAverage_enorm_dyadicCube_atTop hf hp₀ hp₀') ht (two_mul t ▸ le_self_add)
   calc volume (czUnion f (2 * t))
       = volume (⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
           czUnion f (2 * t) ∩ dyadicCube q.1.1 q.1.2) := by
@@ -519,7 +523,7 @@ and
 where `m(t)` is the measure of the union of the Calderón–Zygmund cubes of `‖f‖` at height `t`.
 Substituting `t = 2s` and applying the good-`λ` inequality bounds the left side by half of itself
 plus the right side, and the left side is finite, so the first term is absorbed. -/
-private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι → ℝ) → F}
+private theorem setLIntegral_volume_czUnion_mul_rpow_le {f : (ι → ℝ) → F}
     {p₀ : ℝ≥0∞} {p : ℝ} (hf : MemLp f p₀) (hp₀ : 1 ≤ p₀) (hp₀p : p₀ ≤ ENNReal.ofReal p)
     (hp : 1 < p) {N : ℝ} (hN : 0 ≤ N) :
     ∫⁻ t in Ioo 0 N, volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1)) ≤
