@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Ideal.Norm.RelNorm
 # Coefficients of the relative discriminant
 
 The relative discriminant `relDiscr A B` is the relative norm of the different ideal, so its
-coefficient at a nonzero maximal ideal `p` of `A` is determined by the coefficients of the
+coefficient at a maximal ideal `p` of `A` is determined by the coefficients of the
 different at the primes of `B` above `p`, each weighted by a residue degree:
 
 `mult_p(relDiscr A B) = Σ_{P ∣ p} f(P / p) · mult_P(𝔇(B / A))`.
@@ -54,18 +54,8 @@ theorem multiplicity_relDiscr (p : Ideal A) [p.IsMaximal]
     multiplicity p (relDiscr A B) =
       ∑ P ∈ (p.primesOver B).toFinset,
         P.inertiaDeg A * multiplicity P (differentIdeal A B) := by
-  by_cases hp : p = ⊥
-  · subst hp
-    have hbot : ∀ I : Ideal B, I ≠ ⊥ → ∀ Q : Ideal B, Q = ⊥ → multiplicity Q I = 0 :=
-      fun I hI Q hQ ↦ multiplicity_eq_zero_of_not_dvd fun hdvd ↦
-        hI (le_bot_iff.mp (hQ ▸ Ideal.dvd_iff_le.mp hdvd))
-    rw [multiplicity_eq_zero_of_not_dvd fun hdvd ↦
-      (relDiscr_eq_bot_iff.not.mpr hd) (le_bot_iff.mp (Ideal.dvd_iff_le.mp hdvd))]
-    refine (Finset.sum_eq_zero fun P hP ↦ ?_).symm
-    have := (Set.mem_toFinset.mp hP).2
-    rw [hbot _ hd P (Ideal.eq_bot_of_liesOver_bot A P), Nat.mul_zero]
-  · rw [relDiscr_def]
-    exact multiplicity_relNorm B p hp hd
+  rw [relDiscr_def]
+  exact multiplicity_relNorm B p hd
 
 end TauCeti
 

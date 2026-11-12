@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 /-!
 # Coefficients of a relative norm
 
-For a finite torsion-free extension `A → B` of Dedekind domains and a nonzero maximal ideal `p`
+For a finite torsion-free extension `A → B` of Dedekind domains and a maximal ideal `p`
 of `A`, the coefficient of `Ideal.relNorm A I` at `p` is determined by the coefficients of `I` at
 the primes of `B` above `p`, each weighted by a residue degree:
 
@@ -92,13 +92,10 @@ private theorem multiplicity_relNorm_prime (p : Ideal A) [p.IsMaximal] (hp : p �
 
 end Prime
 
-variable (B) in
-/-- **The coefficients of a relative norm.** For a nonzero ideal `I` of `B` and a nonzero
-maximal ideal `p` of `A`, the coefficient of `relNorm A I` at `p` is the sum, over the primes
-`P` of `B` above `p`, of the coefficient of `I` at `P` weighted by the residue degree of `P`
-over `p`. -/
-theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥) {I : Ideal B}
-    (hI : I ≠ ⊥) :
+/-- **The coefficients of a relative norm at a nonzero maximal ideal.** This is
+`multiplicity_relNorm` away from the zero ideal, by induction on the prime factorization of `I`. -/
+private theorem multiplicity_relNorm_of_ne_bot (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥)
+    {I : Ideal B} (hI : I ≠ ⊥) :
     multiplicity p (relNorm A I) =
       ∑ P ∈ (p.primesOver B).toFinset, P.inertiaDeg A * multiplicity P I := by
   classical
@@ -134,6 +131,24 @@ theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥) {I : I
     rw [multiplicity_mul (Ideal.prime_of_isPrime hQ0 hQp)
       (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hQ0 hQp)
         (mul_ne_zero hP0 hJ)), Nat.mul_add]
+
+variable (B) in
+/-- **The coefficients of a relative norm.** For a nonzero ideal `I` of `B` and a maximal
+ideal `p` of `A`, the coefficient of `relNorm A I` at `p` is the sum, over the primes
+`P` of `B` above `p`, of the coefficient of `I` at `P` weighted by the residue degree of `P`
+over `p`. -/
+theorem multiplicity_relNorm (p : Ideal A) [p.IsMaximal] {I : Ideal B} (hI : I ≠ ⊥) :
+    multiplicity p (relNorm A I) =
+      ∑ P ∈ (p.primesOver B).toFinset, P.inertiaDeg A * multiplicity P I := by
+  by_cases hp : p = ⊥
+  · subst hp
+    -- The zero ideal has coefficient `0` everywhere, and every prime above `⊥` is `⊥`.
+    rw [show multiplicity (⊥ : Ideal A) (relNorm A I) = 0 from multiplicity_zero_left _]
+    refine (Finset.sum_eq_zero fun P hP ↦ ?_).symm
+    have : P.LiesOver ⊥ := (Set.mem_toFinset.mp hP).2
+    rw [Ideal.eq_bot_of_liesOver_bot A P,
+      show multiplicity (⊥ : Ideal B) I = 0 from multiplicity_zero_left _, Nat.mul_zero]
+  · exact multiplicity_relNorm_of_ne_bot p hp hI
 
 end TauCeti
 

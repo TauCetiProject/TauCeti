@@ -77,7 +77,7 @@ private lemma valuation_norm_algebraMap {r : B} (hr : r ≠ 0) :
   have hspan : Ideal.span {r} ≠ ⊥ := by simpa using hr
   rw [← Algebra.algebraMap_intNorm (A := R) (K := K), valuation_of_algebraMap,
     intValuation_eq_exp_neg_multiplicity v hN, ← Ideal.relNorm_singleton,
-    TauCeti.multiplicity_relNorm B v.asIdeal v.ne_bot hspan]
+    TauCeti.multiplicity_relNorm B v.asIdeal hspan]
   have hexp (s : Finset {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal})
       (g : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} → ℤ) :
       ∏ i ∈ s, exp (g i) = exp (∑ i ∈ s, g i) := by
