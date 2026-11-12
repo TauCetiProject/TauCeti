@@ -406,6 +406,17 @@ theorem localDegree_comap {M' : Type} [TopologicalSpace M'] [T2Space M'] [Charte
     rw [(o.comap hj).localDegree_of_not_isCompact o' hE _ hc',
       o.localDegree_of_not_isCompact o' hE f hc]
 
+/-- The preimage of a compact set `K` under an embedding `j` is compact when `K` lies in the union
+of the range of `j` and an open set `V` disjoint from it: it is the preimage of `K ∖ V`. -/
+private theorem isCompact_preimage_of_subset_union {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {j : X → Y} (hj : IsInducing j) {V : Set Y} (hV : IsOpen V)
+    (hdisj : Disjoint (range j) V) {K : Set Y} (hK : IsCompact K) (hKV : K ⊆ range j ∪ V) :
+    IsCompact (j ⁻¹' K) := by
+  have h : j ⁻¹' (K \ V) = j ⁻¹' K :=
+    Set.ext fun z ↦ and_iff_left (hdisj.notMem_of_mem_left (mem_range_self z))
+  exact h ▸ (hj.isCompact_preimage_iff (K := K \ V) fun _ ⟨hz, hz'⟩ ↦
+    (hKV hz).resolve_right hz').2 (hK.diff hV)
+
 include hF in
 /-- **Additivity of the local degree.** Let `j₁ : M₁ → M` and `j₂ : M₂ → M` be open embeddings
 with disjoint images which together contain the fibre `f⁻¹(y)`, and suppose that this fibre is
@@ -418,20 +429,12 @@ theorem localDegree_eq_add {M₁ M₂ : Type} [TopologicalSpace M₁] [T2Space M
     o.localDegree o' hE f y =
       (o.comap hj₁).localDegree o' hE (f.comp ⟨j₁, hj₁.continuous⟩) y +
         (o.comap hj₂).localDegree o' hE (f.comp ⟨j₂, hj₂.continuous⟩) y := by
-  -- The part of the fibre in the range of `j₁` is the fibre minus the open range of `j₂`, hence
-  -- compact, and its preimage under `j₁` is the fibre of `f ∘ j₁`; similarly for `j₂`.
-  have hc₁ : IsCompact ((f.comp ⟨j₁, hj₁.continuous⟩) ⁻¹' {y}) := by
-    have h : j₁ ⁻¹' (f ⁻¹' {y} \ range j₂) = (f.comp ⟨j₁, hj₁.continuous⟩) ⁻¹' {y} :=
-      Set.ext fun z ↦ and_iff_left (hdisj.notMem_of_mem_left (mem_range_self z))
-    exact h ▸ (hj₁.isInducing.isCompact_preimage_iff (K := f ⁻¹' {y} \ range j₂)
-      fun _ ⟨hz, hz'⟩ ↦
-      (hy hz).resolve_right hz').2 (hc.diff hj₂.isOpen_range)
-  have hc₂ : IsCompact ((f.comp ⟨j₂, hj₂.continuous⟩) ⁻¹' {y}) := by
-    have h : j₂ ⁻¹' (f ⁻¹' {y} \ range j₁) = (f.comp ⟨j₂, hj₂.continuous⟩) ⁻¹' {y} :=
-      Set.ext fun z ↦ and_iff_left (hdisj.notMem_of_mem_right (mem_range_self z))
-    exact h ▸ (hj₂.isInducing.isCompact_preimage_iff (K := f ⁻¹' {y} \ range j₁)
-      fun _ ⟨hz, hz'⟩ ↦
-      (hy hz).resolve_left hz').2 (hc.diff hj₁.isOpen_range)
+  -- The fibres of `f ∘ j₁` and `f ∘ j₂` are the preimages of the compact fibre of `f`.
+  have hc₁ : IsCompact ((f.comp ⟨j₁, hj₁.continuous⟩) ⁻¹' {y}) :=
+    isCompact_preimage_of_subset_union hj₁.isInducing hj₂.isOpen_range hdisj hc hy
+  have hc₂ : IsCompact ((f.comp ⟨j₂, hj₂.continuous⟩) ⁻¹' {y}) :=
+    isCompact_preimage_of_subset_union hj₂.isInducing hj₁.isOpen_range hdisj.symm hc
+      (hy.trans (union_comm _ _).subset)
   have h₁ : (⟨j₁, hj₁.continuous⟩ : C(M₁, M)) ⁻¹' (f ⁻¹' {y}) ⊆
       (f.comp ⟨j₁, hj₁.continuous⟩) ⁻¹' {y} :=
     fun _ h ↦ h
@@ -451,15 +454,12 @@ theorem localDegree_eq_add {M₁ M₂ : Type} [TopologicalSpace M₁] [T2Space M
     rw [map_add]
     rcases hy hx with ⟨a, rfl⟩ | ⟨b, rfl⟩
     · rw [o.localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap hE hj₁ hc₁ _ hx,
-        ← ConcreteCategory.comp_apply,
-        localHomologyMap_comp_localHomologyRestriction_of_notMem_range _ _ _ hx
-          (hdisj.notMem_of_mem_left (mem_range_self a))]
-      simp
-    · rw [o.localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap hE hj₂ hc₂ _ hx,
-        ← ConcreteCategory.comp_apply,
-        localHomologyMap_comp_localHomologyRestriction_of_notMem_range _ _ _ hx
-          (hdisj.notMem_of_mem_right (mem_range_self b))]
-      simp
+        localHomologyRestriction_localHomologyMap_of_notMem_range _ _ _ hx
+          (hdisj.notMem_of_mem_left (mem_range_self a)), add_zero]
+    · rw [localHomologyRestriction_localHomologyMap_of_notMem_range _ _ _ hx
+          (hdisj.notMem_of_mem_right (mem_range_self b)),
+        o.localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap hE hj₂ hc₂ _ hx,
+        zero_add]
   rw [localDegree_eq_iff o o' hE hF f hc, ← hsum, map_add, ← ConcreteCategory.comp_apply,
     localHomologyMap_comp, ← ConcreteCategory.comp_apply, localHomologyMap_comp,
     (o.comap hj₁).localHomologyMap_fundamentalClassOn_preimage_singleton o' hE _ hc₁,

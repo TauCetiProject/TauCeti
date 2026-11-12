@@ -363,9 +363,8 @@ private theorem localHomologyRestriction_compClass_of_ne {S : Set M} (hS : S.Fin
       (o.compClass hS x) = 0 := by
   have hx'S : x' ∉ range (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) :=
     fun ⟨z, (hz : (z : M) = x')⟩ ↦ z.2 ⟨hz ▸ hx', fun h ↦ hxx' (hz ▸ h).symm⟩
-  rw [compClass, ← ConcreteCategory.comp_apply,
-    localHomologyMap_comp_localHomologyRestriction_of_notMem_range _ _ _ hx' hx'S]
-  simp
+  rw [compClass]
+  exact localHomologyRestriction_localHomologyMap_of_notMem_range _ _ _ hx' hx'S n _
 
 /-- The classes of the points of a finite set `S` sum to the fundamental class along `S`. -/
 private theorem sum_compClass {S : Set M} (hS : S.Finite) :

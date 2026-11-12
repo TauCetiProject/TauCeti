@@ -43,7 +43,8 @@ compatibility with composition characterizes the transport
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.localHomologyMap_eq_zero_of_preimage_eq_empty`: the map of local homology to a set
   with empty preimage is zero; in particular its restriction to a point outside the range of `j`
-  vanishes (`TauCeti.localHomologyMap_comp_localHomologyRestriction_of_notMem_range`).
+  vanishes (`TauCeti.localHomologyMap_comp_localHomologyRestriction_of_notMem_range`, and
+  elementwise `TauCeti.localHomologyRestriction_localHomologyMap_of_notMem_range`).
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
 * `TauCeti.localHomologyTransport`: the transport of local homology along a path class.
@@ -265,6 +266,23 @@ theorem localHomologyMap_comp_localHomologyRestriction_of_notMem_range {S : Set 
     (eq_empty_of_forall_notMem fun z (hz : j z = x) ↦ hx ⟨z, hz⟩) k
 
 end Map
+
+section ModuleCat
+
+variable {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ) {M N : Type w} [TopologicalSpace M]
+  [TopologicalSpace N] (j : C(M, N))
+
+/-- A class mapped along `j` restricts to `0` at a point outside the range of `j`: the elementwise
+form of `localHomologyMap_comp_localHomologyRestriction_of_notMem_range`. -/
+theorem localHomologyRestriction_localHomologyMap_of_notMem_range {S : Set M} {T : Set N}
+    (h : j ⁻¹' T ⊆ S) {x : N} (hxT : x ∈ T) (hx : x ∉ range j) (k : ℕ)
+    (c : localHomology (A := ModuleCat.{w} Λ) R S k) :
+    localHomologyRestriction R (singleton_subset_iff.2 hxT) k (localHomologyMap R j h k c) = 0 := by
+  rw [← ConcreteCategory.comp_apply,
+    localHomologyMap_comp_localHomologyRestriction_of_notMem_range R j h hxT hx k]
+  simp
+
+end ModuleCat
 
 section Chart
 
