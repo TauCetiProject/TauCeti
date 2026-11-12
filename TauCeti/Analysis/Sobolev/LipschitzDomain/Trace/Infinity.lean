@@ -171,7 +171,7 @@ theorem eq_frontierTraceTop
     T = frontierTraceTop hΩ hb := by
   apply ContinuousLinearMap.ext
   intro u
-  obtain ⟨f, K, hK, hu, hf⟩ := exists_lipschitzWith_ae_eq_frontierTraceTop hΩ hb u
+  obtain ⟨f, _, _, hu, hf⟩ := exists_lipschitzWith_ae_eq_frontierTraceTop hΩ hb u
   exact Lp.ext ((hT u f f.continuous.continuousOn hu).trans hf.symm)
 
 /-- The `L∞` trace agrees almost everywhere with every finite-exponent trace of the same
@@ -186,7 +186,7 @@ theorem frontierTrace_ofExponentLE_ae_eq_frontierTraceTop {p : ℝ≥0∞} [Fact
         (frontier (Ω : Set (WithLp 2 (ℝ × E))))] frontierTraceTop hΩ hb u := by
   let : IsFiniteMeasure (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))) :=
     isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
-  obtain ⟨f, K, hK, hu, hf⟩ := exists_lipschitzWith_ae_eq_frontierTraceTop hΩ hb u
+  obtain ⟨f, _, _, hu, hf⟩ := exists_lipschitzWith_ae_eq_frontierTraceTop hΩ hb u
   exact (frontierTrace_ae_eq_of_continuousOn hp hΩ hb f.continuous.continuousOn
     ((value_ofExponentLE_ae le_top u).trans hu)).trans hf.symm
 
