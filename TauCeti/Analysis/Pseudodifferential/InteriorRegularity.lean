@@ -156,14 +156,10 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev
   obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeSobolev_localize hab hψ hp hpa (r - (s + m))
   rw [hψu r u, toDistr_quantizeSobolev_congr _
     (MemSobolev.toBesselPotentialSpace_toDistr hu).symm]
-  have h₁ := BesselPotentialSpace.memSobolev_toDistr
-    (((localize ψ b).quantizeSobolev (hasCompactSpatialSupport_localize hψ b) s
-      hu.toBesselPotentialSpace).copy (s + m) (by ring))
-  have h₂ := BesselPotentialSpace.memSobolev_toDistr
-    ((R.quantizeSobolev hR r u).copy (s + m) (by ring))
-  rw [BesselPotentialSpace.toDistr_copy _ (by ring)] at h₁
-  rw [BesselPotentialSpace.toDistr_copy _ (by ring)] at h₂
-  exact h₁.sub h₂
+  have hmem {t : ℝ} (f : H^{t}(CoordinateSpace n, V)) (ht : t = s + m) :
+      MemSobolev (s + m) 2 f.toDistr :=
+    ht ▸ f.memSobolev_toDistr
+  exact (hmem _ (by ring)).sub (hmem _ (by ring))
 
 /-- **Interior elliptic estimate.** Let `b` be a formal left parametrix of the symbol `a` of order
 `m`, `1 ∼ ∑ₖ sharpTerm b a k`, let `ψ` be a compactly supported Schwartz function, and `p` a
@@ -187,14 +183,12 @@ theorem exists_norm_smulLeftCLM_le
   set T := R.quantizeSobolev hR r
   refine ⟨max ‖Q‖ ‖T‖, fun u ↦ ?_⟩
   -- `ψ u = Q (Op(p) u) - T u`, compared in `H^{s + m}`.
+  have hnorm {t : ℝ} (f : H^{t}(CoordinateSpace n, V)) (ht : t = s + m) :
+      ‖f.copy (s + m) ht‖ = ‖f‖ := by
+    rw [← BesselPotentialSpace.norm_toLp_eq, BesselPotentialSpace.toLp_copy _ ht,
+      BesselPotentialSpace.norm_toLp_eq]
   set X := BesselPotentialSpace.copy (s + m) (Q (p.quantizeSobolev hp (s + m) u)) (by ring)
   set Y := BesselPotentialSpace.copy (s + m) (T (BesselPotentialSpace.inclusion hr u)) (by ring)
-  have hX : ‖X‖ = ‖Q (p.quantizeSobolev hp (s + m) u)‖ := by
-    rw [← BesselPotentialSpace.norm_toLp_eq, BesselPotentialSpace.toLp_copy _ (by ring),
-      BesselPotentialSpace.norm_toLp_eq]
-  have hY : ‖Y‖ = ‖T (BesselPotentialSpace.inclusion hr u)‖ := by
-    rw [← BesselPotentialSpace.norm_toLp_eq, BesselPotentialSpace.toLp_copy _ (by ring),
-      BesselPotentialSpace.norm_toLp_eq]
   have hXY : BesselPotentialSpace.smulLeftCLM (s + m) ψ u = X - Y := by
     refine BesselPotentialSpace.ext ?_
     rw [BesselPotentialSpace.toDistr_smulLeftCLM, BesselPotentialSpace.toDistr_sub,
@@ -204,7 +198,7 @@ theorem exists_norm_smulLeftCLM_le
     exact toDistr_quantizeSobolev_congr hR (by simp)
   calc ‖BesselPotentialSpace.smulLeftCLM (s + m) ψ u‖ ≤ ‖X‖ + ‖Y‖ := hXY ▸ norm_sub_le X Y
     _ ≤ ‖Q‖ * ‖p.quantizeSobolev hp (s + m) u‖ + ‖T‖ * ‖BesselPotentialSpace.inclusion hr u‖ := by
-      rw [hX, hY]
+      rw [hnorm, hnorm]
       exact add_le_add (Q.le_opNorm _) (T.le_opNorm _)
     _ ≤ _ := by
       rw [mul_add]
