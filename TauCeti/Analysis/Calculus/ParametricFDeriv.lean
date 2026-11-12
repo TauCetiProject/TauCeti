@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.TangentCone.Prod
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 
 /-!
 # Mixed derivatives of a parametric map
@@ -379,10 +380,7 @@ second variable is jointly `C^n` at `z`. -/
 theorem contDiffAt_deriv_snd {n : ℕ∞ω} {g : 𝕜 × 𝕜 → F'} {z : 𝕜 × 𝕜}
     (hg : ContDiffAt 𝕜 (n + 1) g z) :
     ContDiffAt 𝕜 n (fun w : 𝕜 × 𝕜 ↦ _root_.deriv (fun r ↦ g (w.1, r)) w.2) z := by
-  have h : ContDiffAt 𝕜 (n + 1) (Function.uncurry fun (w : 𝕜 × 𝕜) (r : 𝕜) ↦ g (w.1, r))
-      (z, z.2) :=
-    hg.comp (z, z.2) (contDiffAt_fst.fst.prodMk contDiffAt_snd)
-  exact ((h.fderiv contDiffAt_snd le_rfl).clm_apply (contDiffAt_const (c := (1 : 𝕜))))
+  exact ((hg.fderiv_slice le_rfl).clm_apply (contDiffAt_const (c := (1 : 𝕜))))
     |>.congr_of_eventuallyEq (Eventually.of_forall fun _ ↦ fderiv_apply_one_eq_deriv.symm)
 
 /-- For a map of two scalar variables which is `C²` at `(t, x)`, the partial derivative in the
