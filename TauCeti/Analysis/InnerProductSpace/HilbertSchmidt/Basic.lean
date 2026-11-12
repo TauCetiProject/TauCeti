@@ -135,6 +135,7 @@ theorem rpow_hilbertSchmidtEnergy_add_le (S T : E →L[𝕜] F) (b : HilbertBasi
   exact _root_.tsum_le_tsum fun i ↦ by gcongr; exact eNorm_add_le _ _
 
 /-- Embedding the target into its completion does not change the energy. -/
+@[simp]
 theorem hilbertSchmidtEnergy_toComplL_comp (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     ((UniformSpace.Completion.toComplL : F →L[𝕜] UniformSpace.Completion F) ∘L
       T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by

@@ -126,8 +126,8 @@ theorem image_completion_ball {f : E →SL[σ₁₂] F} (hf₁ : ‖f‖ ≤ 1)
 
 section ToCompl
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Composing a bounded linear map with the embedding of its codomain into the completion does
 not change its operator norm. -/
