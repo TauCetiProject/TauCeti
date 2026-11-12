@@ -21,9 +21,10 @@ allowed throughout, and no finiteness is assumed. A rose has exactly one spannin
 darts.
 
 Any two vertices are joined by a unique reduced path whose darts lie in a spanning tree `T`, the
-tree path `T.path a b`. The tree paths from a base vertex `v` give a free basis of the
-fundamental group of a graph: choose one dart `e` from each reversal pair outside `T`; the basis
-consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
+tree path `T.path a b`; a dart weight that is trivial on `T` is trivial along tree paths. The
+tree paths from a base vertex `v` give a free basis of the fundamental group of a graph: choose
+one dart `e` from each reversal pair outside `T`; the basis consists of the loops
+`T.path v (src e) · e · T.path (tgt e) v`.
 
 ## Main definitions
 
@@ -358,6 +359,20 @@ tree to the tree paths of the tree. -/
     (fun _ he => (T.mem_restrict_darts S hS hTS).mp he) Subtype.val_injective a b
 
 end Restrict
+
+/-- A dart weight that is trivial on the darts of a spanning tree is trivial along every tree
+path. -/
+theorem weight_path_eq_one {M : Type*} [Monoid M] {wt : Γ.E → M}
+    (hwt : ∀ e ∈ T.darts, wt e = 1) (a b : Γ.V) :
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
+  have key {a b : Γ.V} (p : Γ.Path a b) (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) :
+      p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
+    induction p with
+    | nil => simp
+    | cons p e ih =>
+      simp only [Path.darts_cons, List.mem_append, List.mem_singleton] at hp
+      simp [ih fun d hd => hp d (Or.inl hd), hwt e.1 (hp e.1 (Or.inr rfl))]
+  exact key _ fun _ => T.mem_of_mem_darts_path
 
 end SpanningTree
 
