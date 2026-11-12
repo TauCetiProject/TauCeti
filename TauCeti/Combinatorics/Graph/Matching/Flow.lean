@@ -35,36 +35,6 @@ namespace Graph
 variable {α : Type u} {β : Type v} {G : Graph α β}
 variable [Fintype V(G)] [Fintype E(G)] {L R : Finset V(G)}
 
-/-- An edge assignment, oriented from left to right, has excess minus its incident sum on the
-left side. -/
-theorem IsBipartition.excessAt_bipartiteHom_left (hLR : G.IsBipartition L R)
-    {K : Type*} [AddCommGroup K] (x : E(G) → K) {a : V(G)} (ha : a ∈ L) :
-    excessAt (fun {v w} (e : G.BipartiteHom L v w) ↦ x e.edge) a =
-      -(∑ e ∈ G.incidentEdges {a}, x e) := by
-  rw [excessAt_def, sum_bipartiteHom_out x ha]
-  have hin : ∑ y, ∑ e : G.BipartiteHom L y a, x e.edge = 0 := by
-    apply sum_eq_zero
-    intro y _
-    apply sum_eq_zero
-    intro e _
-    exact (disjoint_left.1 hLR.disjoint ha (e.target_mem hLR)).elim
-  rw [hin, zero_sub]
-
-/-- An edge assignment, oriented from left to right, has excess its incident sum on the right
-side. -/
-theorem IsBipartition.excessAt_bipartiteHom_right (hLR : G.IsBipartition L R)
-    {K : Type*} [AddCommGroup K] (x : E(G) → K) {a : V(G)} (ha : a ∈ R) :
-    excessAt (fun {v w} (e : G.BipartiteHom L v w) ↦ x e.edge) a =
-      ∑ e ∈ G.incidentEdges {a}, x e := by
-  rw [excessAt_def, hLR.sum_bipartiteHom_in x ha]
-  have hout : ∑ y, ∑ e : G.BipartiteHom L a y, x e.edge = 0 := by
-    apply sum_eq_zero
-    intro y _
-    apply sum_eq_zero
-    intro e _
-    exact (disjoint_left.1 hLR.disjoint e.source_mem ha).elim
-  rw [hout, sub_zero]
-
 omit [Fintype V(G)] in
 /-- The assignment associated to edge multiplicities: original arrows carry the multiplicity,
 and each terminal arrow carries the total usage of its vertex. -/
@@ -176,12 +146,8 @@ theorem IsBipartition.natCast_flowMultiplicity (hLR : G.IsBipartition L R)
     {b : V(G) → ℕ} (f : Flow (bipartiteCapacity L R b) (inr false) (inr true))
     {a c : V(G)} (e : G.BipartiteHom L a c) :
     (hLR.flowMultiplicity f e.edge : ℤ) = f.toFun (AuxTerminalHom.original e) := by
-  rw [flowMultiplicity, Int.toNat_of_nonneg (f.nonneg _)]
-  have he : hLR.bipartiteEdgeEquiv.symm e.edge = ⟨a, c, e⟩ := by
-    rw [← hLR.bipartiteEdgeEquiv_apply ⟨a, c, e⟩]
-    exact hLR.bipartiteEdgeEquiv.symm_apply_apply _
-  exact congrArg (fun z : Σ a, Σ c, G.BipartiteHom L a c ↦
-    f.toFun (AuxTerminalHom.original z.2.2)) he
+  rw [flowMultiplicity, hLR.bipartiteEdgeEquiv_symm_apply_edge e,
+    Int.toNat_of_nonneg (f.nonneg _)]
 
 private theorem restrict_eq_multiplicity (hLR : G.IsBipartition L R)
     {b : V(G) → ℕ} (f : Flow (bipartiteCapacity L R b) (inr false) (inr true)) :
@@ -250,9 +216,10 @@ theorem IsCapacitatedMatching.flowMultiplicity_toBipartiteFlow {b : V(G) → ℕ
     {x : E(G) → ℕ} (hx : G.IsCapacitatedMatching b x) (hLR : G.IsBipartition L R) :
     hLR.flowMultiplicity (hx.toBipartiteFlow hLR) = x := by
   funext e
-  have he := hLR.bipartiteEdgeEquiv.apply_symm_apply e
-  simp only [IsBipartition.bipartiteEdgeEquiv_apply] at he
-  simp [IsBipartition.flowMultiplicity, he]
+  obtain ⟨⟨a, c, e⟩, rfl⟩ := hLR.bipartiteEdgeEquiv.surjective e
+  rw [hLR.bipartiteEdgeEquiv_apply, IsBipartition.flowMultiplicity,
+    hLR.bipartiteEdgeEquiv_symm_apply_edge e]
+  simp
 
 /-- Multiset capacitated matchings correspond exactly to integer flows of the bipartite network.
 Original arrows retain their edge multiplicities; terminal arrows carry vertex usages. -/

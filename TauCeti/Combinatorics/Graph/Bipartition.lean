@@ -211,6 +211,24 @@ theorem target_mem {L R : Finset V(G)} (hLR : G.IsBipartition L R) {x y : V(G)}
     (e : G.BipartiteHom L x y) : y ∈ R :=
   hLR.mem_right_of_isLink e.isLink e.source_mem
 
+/-- For a fixed source, the underlying edge determines the target and bipartite arrow. -/
+theorem edge_out_injective {x : V(G)} :
+    Function.Injective (fun a : Σ y, G.BipartiteHom L x y ↦ a.2.edge) := by
+  rintro ⟨y, a⟩ ⟨z, b⟩ hab
+  change a.edge = b.edge at hab
+  have hyz : y = z := Subtype.ext (a.isLink.right_unique (hab ▸ b.isLink))
+  subst z
+  exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+
+/-- For a fixed target, the underlying edge determines the source and bipartite arrow. -/
+theorem edge_in_injective {x : V(G)} :
+    Function.Injective (fun a : Σ y, G.BipartiteHom L y x ↦ a.2.edge) := by
+  rintro ⟨y, a⟩ ⟨z, b⟩ hab
+  change a.edge = b.edge at hab
+  have hyz : y = z := Subtype.ext (a.isLink.left_unique (hab ▸ b.isLink))
+  subst z
+  exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+
 end BipartiteHom
 
 /-- Orienting each edge from the left side gives exactly one bipartite arrow per actual edge. -/
@@ -224,10 +242,7 @@ noncomputable def IsBipartition.bipartiteEdgeEquiv (hLR : G.IsBipartition L R) :
       exact (hvu x ⟨a.source_mem, a.isLink.inc_left⟩).trans
         (hvu z ⟨b.source_mem, hab' ▸ b.isLink.inc_left⟩).symm
     subst z
-    have hyw : y = w := Subtype.ext (a.isLink.right_unique (hab' ▸ b.isLink))
-    subst w
-    exact congrArg (fun e : G.BipartiteHom L x y ↦
-      (⟨x, y, e⟩ : Σ x, Σ y, G.BipartiteHom L x y)) (BipartiteHom.ext hab'), by
+    exact congrArg (Sigma.mk x) (BipartiteHom.edge_out_injective hab'), by
     intro e
     obtain ⟨x, hx, -⟩ := hLR.existsUnique_mem_left_inc e
     exact ⟨⟨x, ⟨hx.2.other, hx.2.isLink_other.right_mem⟩,
@@ -238,6 +253,12 @@ theorem IsBipartition.bipartiteEdgeEquiv_apply (hLR : G.IsBipartition L R)
     (a : Σ x, Σ y, G.BipartiteHom L x y) :
     hLR.bipartiteEdgeEquiv a = a.2.2.edge :=
   (rfl)
+
+@[simp]
+theorem IsBipartition.bipartiteEdgeEquiv_symm_apply_edge (hLR : G.IsBipartition L R)
+    {x y : V(G)} (e : G.BipartiteHom L x y) :
+    hLR.bipartiteEdgeEquiv.symm e.edge = ⟨x, y, e⟩ :=
+  hLR.bipartiteEdgeEquiv.symm_apply_apply ⟨x, y, e⟩
 
 section Sums
 
@@ -252,11 +273,7 @@ theorem sum_bipartiteHom_out (f : E(G) → M) {x : V(G)} (hx : x ∈ L) :
   refine sum_bij (fun a _ ↦ a.2.edge) (fun a _ ↦ ?_) (fun a _ b _ hab ↦ ?_)
     (fun e he ↦ ?_) (fun _ _ ↦ rfl)
   · exact (mem_incidentEdges G).2 ⟨x, by simp, a.2.isLink.inc_left⟩
-  · obtain ⟨y, a⟩ := a
-    obtain ⟨z, b⟩ := b
-    have hyz : y = z := Subtype.ext (a.isLink.right_unique (hab ▸ b.isLink))
-    subst z
-    exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+  · exact BipartiteHom.edge_out_injective hab
   · obtain ⟨v, hv, hev⟩ := (mem_incidentEdges G).1 he
     obtain rfl := mem_singleton.1 hv
     exact ⟨⟨⟨hev.other, hev.isLink_other.right_mem⟩, ⟨e, hev.isLink_other, hx⟩⟩,
@@ -272,11 +289,7 @@ theorem IsBipartition.sum_bipartiteHom_in (hLR : G.IsBipartition L R) (f : E(G) 
   refine sum_bij (fun a _ ↦ a.2.edge) (fun a _ ↦ ?_) (fun a _ b _ hab ↦ ?_)
     (fun e he ↦ ?_) (fun _ _ ↦ rfl)
   · exact (mem_incidentEdges G).2 ⟨x, by simp, a.2.isLink.inc_right⟩
-  · obtain ⟨y, a⟩ := a
-    obtain ⟨z, b⟩ := b
-    have hyz : y = z := Subtype.ext (a.isLink.left_unique (hab ▸ b.isLink))
-    subst z
-    exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+  · exact BipartiteHom.edge_in_injective hab
   · obtain ⟨v, hv, hev⟩ := (mem_incidentEdges G).1 he
     obtain rfl := mem_singleton.1 hv
     let y : V(G) := ⟨hev.other, hev.isLink_other.right_mem⟩
