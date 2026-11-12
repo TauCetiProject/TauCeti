@@ -49,7 +49,7 @@ def submodel [IsFractionRing O E] [IsNoetherianRing O] :
       Submodule.subtype_apply, ContinuousRep.coe_subrepresentation_apply] using Λ.stable g x hx
 
 @[simp]
-theorem submodel_lattice [IsFractionRing O E] [IsNoetherianRing O] :
+theorem lattice_submodel [IsFractionRing O E] [IsNoetherianRing O] :
     (Λ.submodel W hW).lattice = Λ.lattice.comap (W.subtype.restrictScalars O) :=
   (rfl)
 
@@ -96,7 +96,7 @@ def quotientModel : IntegralModel O (ρ.quotient W hW) where
     exact ⟨ρ g y, Λ.stable g y hy, by simp⟩
 
 @[simp]
-theorem quotientModel_lattice :
+theorem lattice_quotientModel :
     (Λ.quotientModel W hW).lattice = Λ.lattice.map (W.mkQ.restrictScalars O) :=
   (rfl)
 
