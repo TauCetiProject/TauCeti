@@ -85,53 +85,20 @@ function `℘[L]`. Its value at the class of `0` is the junk value `℘[L] 0 = 0
 def torusWeierstrassP : AddAction.orbitRel.Quotient L.lattice ℂ → ℂ :=
   Quotient.lift ℘[L] fun z w h ↦ by
     obtain ⟨l, rfl⟩ := h
-    change ℘[L] ((l : ℂ) + w) = ℘[L] w
+    simp only [Submodule.vadd_def, vadd_eq_add]
     rw [add_comm, weierstrassP_add_coe]
 
 @[simp]
 theorem torusWeierstrassP_mk (z : ℂ) : L.torusWeierstrassP (mk z) = ℘[L] z :=
   (rfl)
 
-variable {L}
-
-/-- The inverse of the chart of `ℂ / L` at `x` is the orbit projection on the chart target. -/
-private theorem symm_chartAt_eq_mk (x : AddAction.orbitRel.Quotient L.lattice ℂ) {w : ℂ}
-    (hw : w ∈ (chartAt ℂ x).target) : (chartAt ℂ x).symm w = mk w := by
-  obtain ⟨z, hz⟩ := TauCeti.exists_symm_eq_addQuotientMk_of_mem_atlas_addQuotient
-    (chart_mem_atlas ℂ x)
-  simpa [chartAt_self_eq] using (hz w hw).2
-
-/-- The coordinate of `x` in its chart is a representative of `x`. -/
-private theorem mk_chartAt_self (x : AddAction.orbitRel.Quotient L.lattice ℂ) :
-    mk (chartAt ℂ x x) = x := by
-  rw [← symm_chartAt_eq_mk x ((chartAt ℂ x).map_source (mem_chart_source ℂ x)),
-    (chartAt ℂ x).left_inv (mem_chart_source ℂ x)]
-
-/-- Read in the chart at `x`, a function on `ℂ / L` is its pullback to `ℂ`. -/
-private theorem comp_symm_chartAt_eventuallyEq {E : Type*}
-    (F : AddAction.orbitRel.Quotient L.lattice ℂ → E)
-    (x : AddAction.orbitRel.Quotient L.lattice ℂ) :
-    F ∘ (chartAt ℂ x).symm =ᶠ[𝓝 (chartAt ℂ x x)] F ∘ mk := by
-  filter_upwards [(chartAt ℂ x).open_target.mem_nhds
-    ((chartAt ℂ x).map_source (mem_chart_source ℂ x))] with w hw
-  simp [symm_chartAt_eq_mk x hw]
-
-/-- Near `x`, a function on `ℂ / L` is its pullback to `ℂ` composed with the chart at `x`. -/
-private theorem eventuallyEq_comp_chartAt {E : Type*}
-    (F : AddAction.orbitRel.Quotient L.lattice ℂ → E)
-    (x : AddAction.orbitRel.Quotient L.lattice ℂ) :
-    F =ᶠ[𝓝 x] (F ∘ mk) ∘ chartAt ℂ x := by
-  filter_upwards [(chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x)] with y hy
-  simp [← symm_chartAt_eq_mk x ((chartAt ℂ x).map_source hy), (chartAt ℂ x).left_inv hy]
-
-variable (L)
-
 /-- The Weierstrass function on the torus is meromorphic at every point. -/
 theorem meromorphicAt_torusWeierstrassP (x : AddAction.orbitRel.Quotient L.lattice ℂ) :
     MeromorphicAt L.torusWeierstrassP x := by
   rw [meromorphicAt_def]
   exact (L.meromorphic_weierstrassP _).congr
-    ((comp_symm_chartAt_eventuallyEq L.torusWeierstrassP x).symm.filter_mono nhdsWithin_le_nhds)
+    ((TauCeti.comp_symm_chartAt_addQuotient_eventuallyEq L.torusWeierstrassP x).symm.filter_mono
+      nhdsWithin_le_nhds)
 
 /-- The order of the Weierstrass function on the torus at `x` is the order of `℘` at the
 coordinate of `x`. -/
@@ -140,7 +107,8 @@ private theorem meromorphicOrderAt_torusWeierstrassP_eq
     meromorphicOrderAt L.torusWeierstrassP x = _root_.meromorphicOrderAt ℘[L] (chartAt ℂ x x) := by
   rw [meromorphicOrderAt_def]
   exact _root_.meromorphicOrderAt_congr
-    ((comp_symm_chartAt_eventuallyEq L.torusWeierstrassP x).filter_mono nhdsWithin_le_nhds)
+    ((TauCeti.comp_symm_chartAt_addQuotient_eventuallyEq L.torusWeierstrassP x).filter_mono
+      nhdsWithin_le_nhds)
 
 /-- **`℘` has a double pole at the class of `0`.** -/
 @[simp]
@@ -148,14 +116,14 @@ theorem meromorphicOrderAt_torusWeierstrassP_zero :
     meromorphicOrderAt L.torusWeierstrassP 0 = -2 := by
   rw [meromorphicOrderAt_torusWeierstrassP_eq]
   refine L.order_weierstrassP _ ?_
-  rw [← Submodule.orbitRelQuotient_mk_eq_zero_iff, mk_chartAt_self]
+  rw [← Submodule.orbitRelQuotient_mk_eq_zero_iff, TauCeti.addQuotientMk_chartAt_self]
 
 /-- Away from the class of `0`, the Weierstrass function on the torus is continuous. -/
 theorem continuousAt_torusWeierstrassP {x : AddAction.orbitRel.Quotient L.lattice ℂ}
     (hx : x ≠ 0) : ContinuousAt L.torusWeierstrassP x := by
   have hmem : chartAt ℂ x x ∉ L.lattice := by
-    rwa [← Submodule.orbitRelQuotient_mk_eq_zero_iff, mk_chartAt_self]
-  refine ContinuousAt.congr ?_ (eventuallyEq_comp_chartAt _ x).symm
+    rwa [← Submodule.orbitRelQuotient_mk_eq_zero_iff, TauCeti.addQuotientMk_chartAt_self]
+  refine ContinuousAt.congr ?_ (TauCeti.eventuallyEq_comp_chartAt_addQuotient _ x).symm
   exact ((L.analyticOnNhd_weierstrassP _ hmem).continuousAt).comp
     ((chartAt ℂ x).continuousAt (mem_chart_source ℂ x))
 
@@ -183,6 +151,7 @@ theorem coe_weierstrassSphereMap :
   FiniteHolomorphicMap.coe_ofMeromorphic _ _
 
 /-- **The only pole of `℘` on the torus is the class of `0`.** -/
+@[simp]
 theorem weierstrassSphereMap_eq_infty_iff {x : AddAction.orbitRel.Quotient L.lattice ℂ} :
     L.weierstrassSphereMap x = ∞ ↔ x = 0 := by
   rw [coe_weierstrassSphereMap, sphereMap_eq_infty_iff (L.meromorphicAt_torusWeierstrassP x)]
@@ -191,13 +160,13 @@ theorem weierstrassSphereMap_eq_infty_iff {x : AddAction.orbitRel.Quotient L.lat
   exact (meromorphicOrderAt_nonneg_of_continuousAt (L.continuousAt_torusWeierstrassP hx)).not_gt h
 
 /-- Away from the class of `0`, the Weierstrass map takes the value of `℘`. -/
+@[simp]
 theorem weierstrassSphereMap_of_ne_zero {x : AddAction.orbitRel.Quotient L.lattice ℂ}
     (hx : x ≠ 0) : L.weierstrassSphereMap x = L.torusWeierstrassP x := by
   rw [coe_weierstrassSphereMap, sphereMap_of_continuousAt (L.continuousAt_torusWeierstrassP hx)]
 
 /-- **The Weierstrass map has local multiplicity `2` at the class of `0`**, the order of the pole
 of `℘`. -/
-@[simp]
 theorem localMultiplicity_weierstrassSphereMap_zero :
     localMultiplicity L.weierstrassSphereMap 0 = 2 := by
   set f := L.weierstrassSphereMap
@@ -248,6 +217,14 @@ theorem ramificationDegree_weierstrassSphereMap :
 /-- The four **half-period points** `0`, `ω₁/2`, `ω₂/2`, `(ω₁ + ω₂)/2` of the torus `ℂ / L`. -/
 def torusHalfPeriods : Set (AddAction.orbitRel.Quotient L.lattice ℂ) :=
   {0, mk (L.ω₁ / 2), mk (L.ω₂ / 2), mk ((L.ω₁ + L.ω₂) / 2)}
+
+/-- A point of the torus is a half-period point when it is one of the four classes `0`, `ω₁/2`,
+`ω₂/2`, `(ω₁ + ω₂)/2`. -/
+@[simp]
+theorem mem_torusHalfPeriods_iff {x : AddAction.orbitRel.Quotient L.lattice ℂ} :
+    x ∈ L.torusHalfPeriods ↔
+      x = 0 ∨ x = mk (L.ω₁ / 2) ∨ x = mk (L.ω₂ / 2) ∨ x = mk ((L.ω₁ + L.ω₂) / 2) :=
+  .rfl
 
 /-- A rational combination `α ω₁ + β ω₂` with a non-integral coefficient is not a period. -/
 private theorem rat_combination_notMem {α β : ℚ} (h : α.den ≠ 1 ∨ β.den ≠ 1) {z : ℂ}
@@ -375,6 +352,7 @@ private theorem localMultiplicity_weierstrassSphereMap_sub_one (x :
     · simpa [s, g] using hxs
 
 /-- **The Weierstrass map has local multiplicity `2` at each half-period point.** -/
+@[simp]
 theorem localMultiplicity_weierstrassSphereMap_of_mem
     {x : AddAction.orbitRel.Quotient L.lattice ℂ} (hx : x ∈ L.torusHalfPeriods) :
     localMultiplicity L.weierstrassSphereMap x = 2 := by
@@ -383,6 +361,7 @@ theorem localMultiplicity_weierstrassSphereMap_of_mem
   omega
 
 /-- **The Weierstrass map is unramified away from the half-period points.** -/
+@[simp]
 theorem localMultiplicity_weierstrassSphereMap_of_notMem
     {x : AddAction.orbitRel.Quotient L.lattice ℂ} (hx : x ∉ L.torusHalfPeriods) :
     localMultiplicity L.weierstrassSphereMap x = 1 := by
