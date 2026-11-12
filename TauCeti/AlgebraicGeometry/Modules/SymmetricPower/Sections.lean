@@ -63,8 +63,6 @@ theorem bijective_symmetricPower_unit_app (hU : IsAffineOpen U) (n : ℕ) :
           (op U)) := by
   let P := (PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val
   let S : X.Modules := (PresheafOfModules.sheafification (𝟙 X.ringCatSheaf.obj)).obj P
-  have : S.IsQuasicoherent := (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
-    (SheafOfModules.symmetricPowerIso n M) inferInstance
   let η : P ⟶ S.val :=
     (PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app P
   have : Presheaf.IsLocallyInjective (Opens.grothendieckTopology X)
