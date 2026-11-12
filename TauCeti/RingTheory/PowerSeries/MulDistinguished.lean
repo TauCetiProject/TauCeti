@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 import TauCeti.Analysis.Normed.Ring.MulUnit
+import TauCeti.RingTheory.PowerSeries.CoeffProd
+import TauCeti.RingTheory.PowerSeries.GaussNorm.Estimates
 
 /-!
 # Multiplicatively distinguished power series
@@ -215,49 +217,7 @@ theorem isMulDistinguished_iff_gaussNorm_eq (hc : 0 < c) {p : Polynomial R}
     rw [← h, ← Polynomial.coeff_coe]
     exact PowerSeries.le_gaussNorm norm c _ hb k
 
-/-- The cross term of `(X - a) q` is dominated by `c` times the weighted norm of the coefficient. -/
-private theorem norm_mul_mul_pow_le (hc : 0 < c) {a x : R} (ha : ‖a‖ ≤ c) (m : ℕ) :
-    ‖a * x‖ * c ^ m ≤ c * (‖x‖ * c ^ m) :=
-  calc ‖a * x‖ * c ^ m ≤ (‖a‖ * ‖x‖) * c ^ m :=
-        mul_le_mul_of_nonneg_right (norm_mul_le _ _) (pow_nonneg hc.le m)
-    _ ≤ (c * ‖x‖) * c ^ m :=
-        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ha (norm_nonneg _))
-          (pow_nonneg hc.le m)
-    _ = c * (‖x‖ * c ^ m) := by ring
-
-/-- The coefficients of `(X - a) q` in positive degree. -/
-private theorem _root_.PowerSeries.coeff_succ_X_sub_C_mul (a : R) (q : PowerSeries R) (m : ℕ) :
-    ((PowerSeries.X - PowerSeries.C a) * q).coeff (m + 1) = q.coeff m - a * q.coeff (m + 1) := by
-  rw [sub_mul, map_sub, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_C_mul]
-
-/-- The constant coefficient of `(X - a) q`. -/
-private theorem _root_.PowerSeries.coeff_zero_X_sub_C_mul (a : R) (q : PowerSeries R) :
-    ((PowerSeries.X - PowerSeries.C a) * q).coeff 0 = -(a * q.coeff 0) := by
-  rw [sub_mul, map_sub, PowerSeries.coeff_zero_X_mul, PowerSeries.coeff_C_mul, zero_sub]
-
 variable [IsUltrametricDist R]
-
-/-- Multiplying by `X - a` with `‖a‖ ≤ c` multiplies no weighted coefficient beyond `c` times the
-Gauss norm. -/
-private theorem norm_coeff_X_sub_C_mul_mul_pow_le (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c)
-    (hq : q.HasGaussNorm norm c) (m : ℕ) :
-    ‖((PowerSeries.X - PowerSeries.C a) * q).coeff m‖ * c ^ m ≤ c * q.gaussNorm norm c := by
-  have hqle (m : ℕ) : ‖q.coeff m‖ * c ^ m ≤ q.gaussNorm norm c :=
-    PowerSeries.le_gaussNorm norm c q hq m
-  have hcross (m : ℕ) : ‖a * q.coeff m‖ * c ^ m ≤ c * (‖q.coeff m‖ * c ^ m) :=
-    norm_mul_mul_pow_le hc ha m
-  rcases m with _ | m
-  · rw [PowerSeries.coeff_zero_X_sub_C_mul, norm_neg]
-    exact (hcross 0).trans (mul_le_mul_of_nonneg_left (hqle 0) hc.le)
-  · rw [PowerSeries.coeff_succ_X_sub_C_mul]
-    have hsub : ‖q.coeff m - a * q.coeff (m + 1)‖ ≤ max ‖q.coeff m‖ ‖a * q.coeff (m + 1)‖ := by
-      simpa [sub_eq_add_neg] using IsUltrametricDist.norm_add_le_max (q.coeff m)
-        (-(a * q.coeff (m + 1)))
-    refine (mul_le_mul_of_nonneg_right hsub (pow_nonneg hc.le (m + 1))).trans ?_
-    rw [max_mul_of_nonneg _ _ (by positivity)]
-    refine max_le ?_ ((hcross (m + 1)).trans (mul_le_mul_of_nonneg_left (hqle _) hc.le))
-    calc ‖q.coeff m‖ * c ^ (m + 1) = c * (‖q.coeff m‖ * c ^ m) := by ring
-      _ ≤ c * q.gaussNorm norm c := mul_le_mul_of_nonneg_left (hqle m) hc.le
 
 /-- **The multiplication estimate.** Left multiplication by a multiplicatively distinguished
 series multiplies the Gauss norm of a restricted series by the Gauss norm of the divisor, at
@@ -285,15 +245,15 @@ theorem gaussNorm_X_sub_C_mul (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c)
   rcases eq_or_ne q 0 with rfl | hq0
   · simp [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
   obtain ⟨k, hk⟩ := exists_isDistinguished hc hq hq0
-  have hupper := norm_coeff_X_sub_C_mul_mul_pow_le hc ha hk.hasGaussNorm (a := a)
+  have hupper := PowerSeries.norm_coeff_X_sub_C_mul_mul_pow_le hc.le ha hk.hasGaussNorm
   have hlower : c * q.gaussNorm norm c ≤
       ‖((PowerSeries.X - PowerSeries.C a) * q).coeff (k + 1)‖ * c ^ (k + 1) := by
-    have hlt : ‖a * q.coeff (k + 1)‖ * c ^ (k + 1) < ‖q.coeff k‖ * c ^ (k + 1) :=
-      (norm_mul_mul_pow_le hc ha _).trans_lt <| (mul_lt_mul_of_pos_left
-        (hk.norm_coeff_mul_pow_lt _ (Nat.lt_succ_self k)) hc).trans_eq <| by
-          rw [← hk.norm_coeff_mul_pow_eq, pow_succ]; ring
-    have hlt' : ‖a * q.coeff (k + 1)‖ < ‖q.coeff k‖ :=
-      lt_of_mul_lt_mul_right hlt (pow_nonneg hc.le _)
+    have hlt' : ‖a * q.coeff (k + 1)‖ < ‖q.coeff k‖ := by
+      refine (norm_mul_le_of_le ha le_rfl).trans_lt
+        (lt_of_mul_lt_mul_right ?_ (pow_nonneg hc.le k))
+      calc c * ‖q.coeff (k + 1)‖ * c ^ k = ‖q.coeff (k + 1)‖ * c ^ (k + 1) := by ring
+        _ < q.gaussNorm norm c := hk.norm_coeff_mul_pow_lt _ (Nat.lt_succ_self k)
+        _ = ‖q.coeff k‖ * c ^ k := hk.norm_coeff_mul_pow_eq.symm
     have hq' : ‖q.coeff k‖ ≤ ‖((PowerSeries.X - PowerSeries.C a) * q).coeff (k + 1)‖ := by
       rw [PowerSeries.coeff_succ_X_sub_C_mul, sub_eq_add_neg,
         IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [norm_neg]; exact hlt'.ne'),

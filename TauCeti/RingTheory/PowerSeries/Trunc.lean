@@ -202,19 +202,9 @@ theorem trunc_val_zpow_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
 
 end Ring
 
-section CommRing
+section CommSemiring
 
-variable {R : Type*} [CommRing R]
-
-/-- The `m`-truncation of `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depends only on
-`trunc (m + 1) u`. -/
-theorem trunc_val_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
-    (h : trunc (m + 1) (u : R⟦X⟧) = trunc (m + 1) (v : R⟦X⟧)) (k : ℤ) :
-    trunc m ((↑(u ^ k) : R⟦X⟧) * d⁄dX (u : R⟦X⟧)) =
-      trunc m ((↑(v ^ k) : R⟦X⟧) * d⁄dX (v : R⟦X⟧)) :=
-  trunc_mul_eq_of_trunc_eq
-    (trunc_val_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
-    (by rw [trunc_derivative, trunc_derivative, h])
+variable {R : Type*} [CommSemiring R]
 
 /-- Evaluation at an element `x` of a possibly noncommutative `R`-algebra with `x ^ n = 0` sees a
 power series only through its coefficients below `n`: any polynomial with the same coefficients
@@ -234,6 +224,22 @@ theorem aeval_trunc_eq_aeval_of_pow_eq_zero {A : Type*} [Semiring A] [Algebra R 
   exact Finset.sum_congr rfl fun d hd => by
     rw [Finset.mem_range] at hd
     simp [coeff_trunc, hd, h d hd]
+
+end CommSemiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- The `m`-truncation of `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depends only on
+`trunc (m + 1) u`. -/
+theorem trunc_val_zpow_mul_derivative_eq_of_trunc_eq {m : ℕ} {u v : R⟦X⟧ˣ}
+    (h : trunc (m + 1) (u : R⟦X⟧) = trunc (m + 1) (v : R⟦X⟧)) (k : ℤ) :
+    trunc m ((↑(u ^ k) : R⟦X⟧) * d⁄dX (u : R⟦X⟧)) =
+      trunc m ((↑(v ^ k) : R⟦X⟧) * d⁄dX (v : R⟦X⟧)) :=
+  trunc_mul_eq_of_trunc_eq
+    (trunc_val_zpow_eq_of_trunc_eq (trunc_eq_of_trunc_eq_of_le h (Nat.le_succ m)) k)
+    (by rw [trunc_derivative, trunc_derivative, h])
 
 end CommRing
 
