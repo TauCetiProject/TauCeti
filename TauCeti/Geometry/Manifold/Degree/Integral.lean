@@ -59,6 +59,9 @@ The two manifolds may be modelled on different spaces of the same dimension.
   forms supported in regular values of a fixed degree.
 * `TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue`: the
   integral formula when every value is regular and `N` is preconnected.
+* `IsLocalDiffeomorph.integralTopForm_mpullback_eq_ncard_mul`: an orientation-preserving local
+  diffeomorphism onto a preconnected manifold integrates every integrable top form as the number
+  of preimages of any point times its integral.
 
 ## References
 
@@ -337,15 +340,9 @@ private theorem integrableTopForm_and_integralTopForm_mpullback_of_forall_mem_ts
       ⟨by linarith [ρ.nonneg i y], ρ.le_one i y⟩
   have hφ'V (i : t) : _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) (φ' i) ⊆ V i :=
     (tsupport_smul_subset_left _ _).trans ((hρ i).trans interior_subset)
-  have hsum : φ = ∑ i, φ' i := by
-    funext y
-    rw [Finset.sum_apply]
-    simp only [φ', ← Finset.sum_smul]
-    by_cases hy : y ∈ K
-    · rw [← finsum_eq_sum_of_fintype, ρ.sum_eq_one hy, one_smul]
-    · -- The fibre is `E' [⋀^Fin k]→L[ℝ] ℝ` up to unfolding, where `smul_zero` applies.
-      rw [image_eq_zero_of_notMem_tsupport hy]
-      exact (smul_zero (_ : ℝ) : _ • (0 : E' [⋀^Fin k]→L[ℝ] ℝ) = 0).symm
+  have hsum : φ = ∑ i, φ' i :=
+    (φ.eq_sum_fun_smul (fun i : t ↦ ρ i) fun y hy ↦ by
+      rw [← finsum_eq_sum_of_fintype]; exact ρ.sum_eq_one hy).trans (Finset.sum_fn _ _).symm
   have hpull : mpullback I J f φ = ∑ i, mpullback I J f (φ' i) := by
     rw [hsum]
     exact map_sum (AddMonoidHom.mk' (mpullback I J f) (mpullback_add f)) _ _
@@ -396,5 +393,22 @@ theorem integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegula
     integralTopForm o (mpullback I J f φ) = degreeAtRegularValue o o' f y * integralTopForm o' φ :=
   integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport o o' hf hφ fun y' _ ↦
     ⟨hreg y', degreeAtRegularValue_eq_of_forall_isRegularValue o o' hf hreg y' y⟩
+
+/-- **The integral formula for an orientation-preserving local diffeomorphism.** Let `f : M → N`
+be a `C¹` local diffeomorphism from a compact Hausdorff boundaryless manifold to a preconnected
+Hausdorff manifold, preserving the orientations `o` and `o'` at every point. Then
+`∫_M f^*φ = |f⁻¹(p)| · ∫_N φ` for every integrable top form `φ` and every point `p` of `N`: the
+fibres all have the same finite number of points, the degree of `f`. -/
+theorem _root_.IsLocalDiffeomorph.integralTopForm_mpullback_eq_ncard_mul [CompactSpace M]
+    [T2Space M] [T2Space N] [PreconnectedSpace N] [BoundarylessManifold I M] {n : WithTop ℕ∞}
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0)
+    (hor : ∀ x, IsOrientationPreservingAt o o' f x) (p : N) {φ : RoughForm J N ℝ k}
+    (hφ : IntegrableTopForm φ) :
+    integralTopForm o (mpullback I J f φ) = (f ⁻¹' {p}).ncard * integralTopForm o' φ := by
+  rw [integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue o o'
+    (hf.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)) (hf.isRegularValue hn) p hφ,
+    degreeAtRegularValue_eq_ncard (hf.finite_preimage hn p) fun x _ ↦ hor x,
+    Int.cast_natCast]
 
 end TauCeti

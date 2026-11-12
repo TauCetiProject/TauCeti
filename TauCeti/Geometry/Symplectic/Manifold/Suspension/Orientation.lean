@@ -56,8 +56,8 @@ and does not depend on `p`: since `v` preserves orientation everywhere, `k` is t
 which is constant because `v` has no critical values
 (`TauCeti.degreeAtRegularValue_eq_of_forall_isRegularValue`). The integral formula for the degree
 (`TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue`) then
-says that `u` integrates every two-form `β` on `X_φ` as `k` copies of the embedded orbit torus,
-`∫_C u^* β = k ∫ τ^* β`
+says that `u` integrates every two-form `β` on `X_φ` whose pullback `τ^* β` is integrable as `k`
+copies of the embedded orbit torus, `∫_C u^* β = k ∫ τ^* β`
 (`TauCeti.SmoothMappingTorus.integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq`). As a
 current, an immersed curve of zero vertical area is therefore its image `(ℝ / ℤ) × γ` with
 multiplicity `k`, and its `Ω`-area is `k d`, a positive multiple of the least period
@@ -81,7 +81,7 @@ multiplicity `k`, and its `Ω`-area is `k d`, a positive multiple of the least p
   vertical area has `Ω`-area the least period of its closed orbit.
 * `integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq`: a curve factoring through the
   orbit torus by an orientation-preserving local diffeomorphism with `k` sheets integrates every
-  two-form as `k` times the orbit torus.
+  two-form with integrable pullback to the orbit torus as `k` times the orbit torus.
 * `exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul`: an immersed curve of zero
   vertical area has `Ω`-area `k d`, where `k ≥ 1` is the number of sheets with which it covers its
   image and `d` the least period of its closed orbit.
@@ -223,7 +223,8 @@ theorem integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq
 `τ` of a point of period `d` and a local diffeomorphism `v : C → (ℝ / ℤ) × (ℝ / dℤ)` from a compact
 Hausdorff boundaryless surface that preserves orientation at every point, for the product of the
 positive orientations of the two circles. Then `v` covers the torus with a constant number `k` of
-sheets, and `u` integrates every two-form `β` on `X_φ` as `k` times the orbit torus does:
+sheets, and `u` integrates every two-form `β` on `X_φ` whose pullback `τ^* β` is integrable as `k`
+times the orbit torus does:
 `∫_C u^* β = k ∫ τ^* β`, where `k = |v⁻¹(p)|` for any point `p` of the torus. -/
 theorem integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq [CompactSpace C]
     [T2Space C] [BoundarylessManifold I' C] (hv : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
@@ -237,17 +238,9 @@ theorem integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq [CompactSpa
       (v ⁻¹' {p}).ncard * integralTopForm
         ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
         (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) β) := by
-  set oT := (AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))
-  have hdim : Module.finrank ℝ E' = Module.finrank ℝ (ℝ × ℝ) := o.card_eq.symm.trans oT.card_eq
-  -- Every value of the local diffeomorphism `v` is regular, and its degree counts the sheets.
-  have hreg := hv.isRegularValue (by simp)
-  have hdeg : degreeAtRegularValue o oT v p = (v ⁻¹' {p}).ncard :=
-    degreeAtRegularValue_eq_ncard ((hreg p).finite_preimage hdim hv.contMDiff.continuous)
-      fun c _ ↦ hor c
   rw [← hτv, mpullback_comp (hv.contMDiff.mdifferentiable (by simp))
     ((contMDiff_orbitTorus h).mdifferentiable (by simp)),
-    integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue o oT
-      (hv.contMDiff.of_le (by simp)) hreg p hβ, hdeg, Int.cast_natCast]
+    hv.integralTopForm_mpullback_eq_ncard_mul o _ (by simp) hor p hβ]
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [I'.Boundaryless] [CompactSpace C]
   [ConnectedSpace C]
@@ -387,10 +380,7 @@ theorem exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul [T2Space C]
   refine ⟨v, hloc, hsurj, hτv, fun p ↦ ⟨?_, ?_⟩⟩
   · -- The fibre is finite, as a fibre of a local diffeomorphism from a compact surface, and
     -- nonempty since `v` is onto.
-    have hdim : Module.finrank ℝ E' = Module.finrank ℝ (ℝ × ℝ) := o.card_eq.symm.trans
-      ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))).card_eq
-    refine (ncard_pos ((hloc.isRegularValue (by simp) p).finite_preimage hdim
-      hloc.contMDiff.continuous)).2 ?_
+    refine (ncard_pos (hloc.finite_preimage (by simp) p)).2 ?_
     obtain ⟨c', hc'⟩ := hsurj p
     exact ⟨c', hc'⟩
   · -- The orbit torus pulls `Ω` back to the area form `ds ∧ dt_d`, of total area `d`.

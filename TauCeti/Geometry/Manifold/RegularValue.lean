@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
@@ -49,6 +50,7 @@ to manifolds, including manifolds with boundary or corners.
   regularity is injectivity of the manifold derivative.
 * `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
   over a complete field, regularity is invertibility of the manifold derivative.
+* `IsLocalDiffeomorph.isRegularValue`: every value of a local diffeomorphism is regular.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
@@ -203,6 +205,12 @@ theorem isRegularPoint_iff_isInvertible_mfderiv [CompleteSpace 𝕜] [FiniteDime
   exact ⟨(LinearEquiv.ofBijective (mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x))
     ⟨(isRegularPoint_iff_injective_mfderiv hdim).1 h, h⟩).toContinuousLinearEquiv,
     ContinuousLinearMap.ext fun _ ↦ rfl⟩
+
+/-- Every value of a local diffeomorphism is a regular value: its manifold derivative is invertible
+at every point. -/
+theorem _root_.IsLocalDiffeomorph.isRegularValue {n : WithTop ℕ∞}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) (y : N) : IsRegularValue I J f y :=
+  isRegularValue_iff.2 fun x _ ↦ isRegularPoint_iff.2 (hf.isInvertible_mfderiv hn x).surjective
 
 /-- A regular point of a map into a normed space is a point of differentiability. Without
 differentiability the derivative is `0`, so the target is the zero space and the map is constant. -/

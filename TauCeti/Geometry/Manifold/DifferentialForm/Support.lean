@@ -272,7 +272,7 @@ theorem exists_finset_partition_eq (φ : RoughForm I M F k) (hc : IsCompact
       simp [hρ]
 
 /-- Weights summing to one on the support give an actual finite form decomposition. -/
-theorem eq_sum_fun_smul {n : ℕ} (φ : RoughForm I M F k) (ρ : Fin n → M → ℝ)
+theorem eq_sum_fun_smul [Fintype ι] (φ : RoughForm I M F k) (ρ : ι → M → ℝ)
     (hρ : ∀ x ∈ (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ), ∑ i, ρ i x = 1) :
     φ = (fun x ↦ ∑ i, ρ i x • φ x) := by
   funext x

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.RegularValue
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Topology.DiscreteSubset
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 
@@ -32,7 +31,7 @@ function theorem.
   over a regular value is finite.
 * `TauCeti.IsRegularValue.finite_preimage_of_isProperMap`: for a proper map, the fibre over a
   regular value is finite.
-* `IsLocalDiffeomorph.isRegularValue`: every value of a local diffeomorphism is regular, so all
+* `IsLocalDiffeomorph.finite_preimage`: every value of a local diffeomorphism is regular, so all
   fibres of a local diffeomorphism from a compact manifold are finite.
 
 ## References
@@ -85,11 +84,16 @@ theorem IsRegularValue.finite_preimage_of_isProperMap
     (hy : IsRegularValue I J f y) : (f ⁻¹' {y}).Finite :=
   (hf.isCompact_preimage isCompact_singleton).finite (hy.isDiscrete_preimage hdim)
 
-omit [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 E'] in
-/-- Every value of a local diffeomorphism is a regular value: its manifold derivative is invertible
-at every point. -/
-theorem _root_.IsLocalDiffeomorph.isRegularValue {n : WithTop ℕ∞}
-    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) (y : N) : IsRegularValue I J f y :=
-  isRegularValue_iff.2 fun x _ ↦ isRegularPoint_iff.2 (hf.isInvertible_mfderiv hn x).surjective
+/-- Every fibre of a `C¹` local diffeomorphism from a compact manifold is finite: every value is
+regular, and the invertible derivative forces the two models to have the same dimension. -/
+theorem _root_.IsLocalDiffeomorph.finite_preimage [CompactSpace M] [T1Space N] {n : WithTop ℕ∞}
+    (hf : IsLocalDiffeomorph I J n f) (hn : n ≠ 0) (y : N) : (f ⁻¹' {y}).Finite := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+  · exact Set.toFinite _
+  · -- `TangentSpace I x` is `E` and `TangentSpace J (f x)` is `E'` by definition.
+    have hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E' := by
+      obtain ⟨e, -⟩ := hf.isInvertible_mfderiv hn x
+      exact LinearEquiv.finrank_eq (R := 𝕜) (M := E) (N := E') e.toLinearEquiv
+    exact (hf.isRegularValue hn y).finite_preimage hdim hf.contMDiff.continuous
 
 end TauCeti
