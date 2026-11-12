@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
 
 /-!
 # Cohomology maps of divisor inclusions
