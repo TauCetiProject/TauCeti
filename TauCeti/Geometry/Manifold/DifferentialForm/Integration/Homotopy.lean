@@ -10,12 +10,14 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
+public import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.Instances.Icc
 
 /-!
 # Integrals of two-forms over rectangles and their homotopy invariance
@@ -57,6 +59,12 @@ Stokes' formula: the integral of an exact form `dα` over a map of a rectangle i
 the line integrals of `α` along the images of the four edges
 (`TauCeti.rectangleIntegral_mextDeriv`).
 
+The homotopy operator `h` of the cylinder `M × [0, 1]` (`TauCeti.homotopyOperator`) is related to
+these integrals by the rectangle swept out by a curve: for a continuous two-form `β` on the
+cylinder and a curve `γ`, the line integral of `h β` along `γ` is minus the integral of `β` over
+`(s, t) ↦ (γ s, t)` (`TauCeti.pathIntegral_homotopyOperator`), the sign recording that `h`
+contracts with `∂ₜ` first.
+
 The proof pulls `φ` back to the flat form `ψ = Φ^* φ` on `(ℝ × ℝ) × ℝ`, which is closed because
 pullback commutes with the exterior derivative, and expresses the integral over each face of the
 cube as an iterated integral of `ψ` by the chain rule. The flat statement is Stokes' formula on the
@@ -85,6 +93,8 @@ operator and Stokes' formula on a rectangle; no Stokes theorem on a manifold wit
   maps of a rectangle, for a closed form.
 * `TauCeti.rectangleIntegral_eq_of_homotopy`: homotopy invariance of the integral of a closed form
   over a cylinder whose boundary loops stay fixed or constant.
+* `TauCeti.pathIntegral_homotopyOperator`: the line integral of the homotopy operator along a
+  curve is minus the integral over the rectangle the curve sweeps in the time direction.
 
 ## References
 
@@ -150,15 +160,25 @@ theorem IsSmoothForm.setIntegral_eq_rectangleIntegral [IsManifold I 1 M] {φ : R
   refine setIntegral_congr_fun measurableSet_Icc fun s _ ↦ ?_
   rw [intervalIntegral.integral_of_le hab.2, ← integral_Icc_eq_integral_Ioc]
 
-/-- The integral is natural under pullback of forms. -/
+/-- The integral is natural under pullback of forms. Differentiability is only needed on the
+open rectangle, since its boundary is a null set. -/
 theorem rectangleIntegral_mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
     [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
     [ChartedSpace H' M'] {f : M → M'} (φ : RoughForm I' M' F 2) {u : ℝ × ℝ → M} {a b : ℝ × ℝ}
-    (hf : ∀ z ∈ [[a.1, b.1]] ×ˢ [[a.2, b.2]], MDifferentiableAt I I' f (u z))
-    (hu : ∀ z ∈ [[a.1, b.1]] ×ˢ [[a.2, b.2]], MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) :
+    (hf : ∀ z ∈ Ioo (min a.1 b.1) (max a.1 b.1) ×ˢ Ioo (min a.2 b.2) (max a.2 b.2),
+      MDifferentiableAt I I' f (u z))
+    (hu : ∀ z ∈ Ioo (min a.1 b.1) (max a.1 b.1) ×ˢ Ioo (min a.2 b.2) (max a.2 b.2),
+      MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) :
     rectangleIntegral (mpullback I I' f φ) u a b = rectangleIntegral φ (f ∘ u) a b := by
-  refine intervalIntegral.integral_congr fun s hs ↦ intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [mpullback_comp_at (hu _ ⟨hs, ht⟩) (hf _ ⟨hs, ht⟩)]
+  have hne (x y : ℝ) : ∀ᵐ r ∂volume, r ≠ max x y := by
+    simpa using (countable_singleton (max x y)).ae_notMem volume
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [hne a.1 b.1] with s hs₁ hs₂
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [hne a.2 b.2] with t ht₁ ht₂
+  have hmem : (s, t) ∈ Ioo (min a.1 b.1) (max a.1 b.1) ×ˢ Ioo (min a.2 b.2) (max a.2 b.2) :=
+    ⟨⟨hs₂.1, lt_of_le_of_ne hs₂.2 hs₁⟩, ⟨ht₂.1, lt_of_le_of_ne ht₂.2 ht₁⟩⟩
+  rw [mpullback_comp_at (hu _ hmem) (hf _ hmem)]
 
 /-- The integral only depends on the map on the closed rectangle. -/
 theorem rectangleIntegral_congr {φ : RoughForm I M F 2} {u v : ℝ × ℝ → M} {a b : ℝ × ℝ}
@@ -339,6 +359,75 @@ theorem rectangleIntegral_comp_prodMap {φ : RoughForm I M F 2} (hφ : IsSmoothF
   fin_cases i <;> rfl
 
 end Continuous
+
+/-! ### The homotopy operator along a curve -/
+
+section HomotopyOperator
+
+variable [IsManifold I 1 M]
+
+/-- **The homotopy operator integrated along a curve.** For a continuous two-form `β` on the
+cylinder `M × [0, 1]` with values in a Banach space, and a curve `γ` differentiable on `[a, b]`,
+the line integral of the one-form `h β` (`TauCeti.homotopyOperator`) along `γ` is minus the
+integral of `β` over the rectangle `(s, t) ↦ (γ s, t)`, `(s, t) ∈ [a, b] × [0, 1]`, swept out
+by `γ` in the time direction. The sign records the order of the coordinates: `h` contracts `β`
+with `∂ₜ` first, whereas `TauCeti.rectangleIntegral` evaluates on `(∂_s, ∂_t)`. -/
+theorem pathIntegral_homotopyOperator [CompleteSpace F]
+    {β : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F 2}
+    (hβ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 β) {γ : ℝ → M} {a b : ℝ}
+    (hγ : ∀ s ∈ [[a, b]], MDifferentiableAt 𝓘(ℝ) I γ s) :
+    pathIntegral (homotopyOperator β) γ a b =
+      -rectangleIntegral β (fun p ↦ (γ p.1, projIcc 0 1 zero_le_one p.2)) (a, 0) (b, 1) := by
+  have hne : ∀ᵐ t ∂volume, t ≠ (1 : ℝ) := by
+    simpa using (countable_singleton (1 : ℝ)).ae_notMem volume
+  rw [pathIntegral_def, rectangleIntegral_eq, ← intervalIntegral.integral_neg]
+  refine intervalIntegral.integral_congr fun s hs ↦
+    (homotopyOperator_apply_apply hβ (γ s) _).trans ?_
+  rw [← intervalIntegral.integral_neg]
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [hne] with t ht₁ ht
+  rw [uIoc_of_le zero_le_one] at ht
+  have ht' : t ∈ Ioo (0 : ℝ) 1 := ⟨ht.1, lt_of_le_of_ne ht.2 ht₁⟩
+  -- At an interior time the derivative of `(s, t) ↦ (γ s, t)` is the product of those of `γ` and
+  -- of the projection onto the interval.
+  have h₁ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.fst) (s, t)
+      ((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)) :=
+    (hγ s hs).hasMFDerivAt.comp (s, t) hasFDerivAt_fst.hasMFDerivAt
+  have h₂ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one ∘ Prod.snd) (s, t)
+      ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ)) :=
+    (mdifferentiableAt_projIcc ht').hasMFDerivAt.comp (s, t) hasFDerivAt_snd.hasMFDerivAt
+  have h : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (I.prod (𝓡∂ 1))
+      (fun p ↦ (γ p.1, projIcc 0 1 zero_le_one p.2)) (s, t)
+      (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
+        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ))) :=
+    h₁.prodMk h₂
+  rw [h.mfderiv]
+  -- The rectangle is evaluated on `(γ' s, 0)` and `∂ₜ`, and exchanging these two vectors changes
+  -- the sign of the alternating form.
+  let v : Fin 2 → E × EuclideanSpace ℝ (Fin 1) :=
+    ![(Manifold.curveVelocity I γ s, 0), (0, (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))]
+  have hswap := (β (γ s, projIcc 0 1 zero_le_one t)).toAlternatingMap.map_swap (v := v) (i := 0)
+    (j := 1) (by decide)
+  have hv : v ∘ Equiv.swap (0 : Fin 2) 1 =
+      Matrix.vecCons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
+        fun _ ↦ (Manifold.curveVelocity I γ s, 0) := by
+    funext i
+    fin_cases i <;> rfl
+  have hD : ![(((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
+        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ))) (1, 0),
+      (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
+        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ))) (0, 1)] = v := by
+    funext i
+    fin_cases i
+    · simp only [v, Fin.zero_eta, Matrix.cons_val_zero, ContinuousLinearMap.prod_apply,
+        Manifold.curveVelocity_apply]
+      exact Prod.ext rfl (map_zero (mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc (0 : ℝ) 1 zero_le_one) t))
+    · simp only [v, Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_zero,
+        ContinuousLinearMap.prod_apply]
+      exact Prod.ext (map_zero (mfderiv 𝓘(ℝ) I γ s)) (mfderiv_projIcc_one ht')
+  exact (congrArg (β _) hv).symm.trans (hswap.trans (congrArg (fun w ↦ -β _ w) hD.symm))
+
+end HomotopyOperator
 
 /-- A side face of a homotopy, over `[y₀, y₁] × [0, 1]`, has zero integral when its edge stays
 fixed, or remains a constant path at `y`, during the homotopy. -/
