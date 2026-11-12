@@ -26,8 +26,9 @@ holds although `J` varies with `z`
 (`SymplecticForm.setIntegral_stdComplexLineEnergyDensity_eq_of_setIntegral_symplecticForm_eq_zero`).
 Because `ω` is constant, no smallness of the variation of `J` is needed. The area vanishes for
 `C²` maps with compact support in `K` (`SymplecticForm.setIntegral_symplecticForm_fderiv_eq_zero`
-in `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.CompactSupport`), and for `C²` maps of period
-one in `t` that vanish on the two slices `s = a` and `s = b` of the rectangle `[a, b] × [0, 1]`
+in `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.CompactSupport`), and for `C²` maps that close
+up in `t`, `ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]`, and vanish on the two slices `s = a` and `s = b`
+of the rectangle `[a, b] × [0, 1]`
 (`SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic` in
 `TauCeti.Geometry.Symplectic.Area.Basic`).
 
@@ -197,8 +198,8 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset
 
 /-- **The `L²` estimate on a finite cylinder.** Let `J(z)` be `ω`-compatible at every point of
 the rectangle `[a, b] × [0, 1]` and depend continuously on `z` there, and let `T` be continuous
-on the rectangle. Then there is a constant `C ≥ 0` such that every `C²` map `ξ` of period one in
-`t` that vanishes on the slices `s = a` and `s = b` satisfies
+on the rectangle. Then there is a constant `C ≥ 0` such that every `C²` map `ξ` with
+`ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]` that vanishes on the slices `s = a` and `s = b` satisfies
 
 `∫ (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫ (‖∂s ξ + J(z) ∂t ξ + T(z) ξ‖² + ‖ξ‖²)`
 
@@ -209,7 +210,7 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic
     (hJc : ContinuousOn (fun z ↦ (J z).toLinearMap.toContinuousLinearMap)
       (Icc a b ×ˢ Icc 0 1))
     (hT : ContinuousOn T (Icc a b ×ˢ Icc 0 1)) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s ∈ Icc a b, ξ (s, 1) = ξ (s, 0)) →
       (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
       ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
@@ -220,7 +221,7 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic
       (μ := volume) (isCompact_Icc.prod isCompact_Icc) hJ hJc hT
   exact ⟨C, hC, fun ξ hξ hper ha hb ↦ h (hξ.of_le one_le_two)
     (ω.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic hab
-      (fun _ _ ↦ hξ.contDiffAt) (fun s _ ↦ by simpa using hper s 0) ha hb)⟩
+      (fun _ _ ↦ hξ.contDiffAt) hper ha hb)⟩
 
 end SymplecticForm
 

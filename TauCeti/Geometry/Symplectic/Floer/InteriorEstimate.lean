@@ -28,8 +28,8 @@ domain there is a constant `C`, depending only on the data, the map `u` and `K`,
 
 for every `C²` section `ξ` with support in `K`, which is
 `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset`,
-and on a finite cylinder `[a, b] × [0, 1]` for every `C²` section of period one in `t` vanishing on
-the slices `s = a` and `s = b`
+and on a finite cylinder `[a, b] × [0, 1]` for every `C²` section closing up in `t`,
+`ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]`, and vanishing on the slices `s = a` and `s = b`
 (`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_periodic`).
 
 No nondegeneracy, no Floer equation for `u` and no smallness of the data is assumed: the regularity
@@ -101,7 +101,7 @@ theorem
 hypotheses of
 `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset`
 on the rectangle `[a, b] × [0, 1]`, there is a constant `C ≥ 0` such that every `C²` section `ξ`
-of period one in `t` that vanishes on the slices `s = a` and `s = b` satisfies
+with `ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]` that vanishes on the slices `s = a` and `s = b` satisfies
 `∫ (‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C ∫ (‖D_u ξ‖² + ‖ξ‖²)` over the rectangle. -/
 theorem
   exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_periodic
@@ -113,7 +113,7 @@ theorem
     (hKt : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
     (hu : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ContDiffAt ℝ 1 u z)
     (hc : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ω.Compatible (J z (u z))) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s ∈ Icc a b, ξ (s, 1) = ξ (s, 0)) →
       (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
       ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
