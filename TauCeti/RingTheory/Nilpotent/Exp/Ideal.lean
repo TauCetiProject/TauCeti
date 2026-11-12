@@ -14,6 +14,8 @@ public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 Finite exponentials of elements of an ideal are congruent to one modulo the
 ideal, as are products of such exponentials. These arguments apply to left
 ideals in associative rational algebras, without commutativity or topology.
+If the ideal has vanishing `n`-th power, the difference from one of a product of
+two such exponentials also has vanishing `n`-th power.
 
 The ideal membership follows from `IsNilpotent.exists_commute_mul_eq_exp_sub_one`.
 
@@ -46,5 +48,16 @@ theorem exp_mul_exp_sub_one_mem {a b : A} (ha : a ∈ I) (hb : b ∈ I)
     abel
   rw [he]
   exact I.add_mem (I.mul_mem_left _ (I.exp_sub_one_mem hb hnb)) (I.exp_sub_one_mem ha hna)
+
+/-- The difference from one of a product of finite exponentials of elements of a left ideal
+has vanishing `n`-th power whenever the ideal does. -/
+theorem exp_mul_exp_sub_one_pow_eq_zero {n : ℕ} (hI : I ^ n = ⊥)
+    {x y : A} (hx : x ∈ I) (hy : y ∈ I) :
+    (IsNilpotent.exp x * IsNilpotent.exp y - 1) ^ n = 0 := by
+  have hI0 : I ^ n = 0 := by simpa only [Ideal.zero_eq_bot] using hI
+  exact Ideal.pow_eq_zero_of_mem hI0 le_rfl
+    (I.exp_mul_exp_sub_one_mem hx hy
+      ⟨n, Ideal.pow_eq_zero_of_mem hI0 le_rfl hx⟩
+      ⟨n, Ideal.pow_eq_zero_of_mem hI0 le_rfl hy⟩)
 
 end Ideal

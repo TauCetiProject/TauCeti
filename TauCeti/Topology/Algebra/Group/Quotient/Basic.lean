@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 public import TauCeti.Topology.Discrete
@@ -315,8 +316,7 @@ noncomputable def quotientSubgroupOfEquivMap (V W : Subgroup G) [V.Normal]
   haveI : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
   haveI : DiscreteTopology (W ⧸ V.subgroupOf W) :=
     QuotientGroup.discreteTopology (W.subgroupOf_isOpen V hV)
-  { QuotientGroup.liftEquiv (V.subgroupOf W) ((QuotientGroup.mk' V).subgroupMap_surjective W)
-      (by rw [Subgroup.ker_subgroupMap, QuotientGroup.ker_mk']) with
+  { quotientSubgroupOfMulEquivMap V W with
     continuous_toFun := continuous_of_discreteTopology
     continuous_invFun := continuous_of_discreteTopology }
 
@@ -326,7 +326,7 @@ theorem coe_quotientSubgroupOfEquivMap_mk (V W : Subgroup G) [V.Normal]
     (hV : IsOpen (V : Set G)) (w : W) :
     ((quotientSubgroupOfEquivMap V W hV (w : W ⧸ V.subgroupOf W) : W.map (QuotientGroup.mk' V)) :
       G ⧸ V) = ((w : G) : G ⧸ V) :=
-  (rfl)
+  coe_quotientSubgroupOfMulEquivMap_mk V W w
 
 end SubgroupOf
 
