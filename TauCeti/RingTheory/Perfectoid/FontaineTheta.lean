@@ -122,10 +122,8 @@ private theorem exists_ker_p_add_teichmuller_mul {ϖ : A♭} {hdvd : ϖ.untilt ^
   obtain ⟨g, rfl⟩ := (PreTilt.dvd_iff_untilt_dvd hreg hbij.1).mpr hf_dvd
   obtain ⟨w, hw⟩ := surjective_fontaineTheta_of_frobeniusModPow_surjective hbij.2 c
   refine ⟨teichmuller p g + (p : WittVector p A♭) * w, ?_⟩
-  rw [RingHom.mem_ker, map_add, map_natCast, map_mul, map_add, map_mul, map_natCast,
-    fontaineTheta_teichmuller, fontaineTheta_teichmuller, hw]
-  have hfg : (ϖ * g).untilt = ϖ.untilt * g.untilt := map_mul PreTilt.untilt ϖ g
-  linear_combination -hc - hfg
+  suffices (p : A) + ϖ.untilt * (g.untilt + (p : A) * c) = 0 by simpa [hw]
+  linear_combination -hc - map_mul PreTilt.untilt ϖ g
 
 /-- One `[ϖ]`-division step inside `ker θ`: if `ξ ∈ ker θ` is distinguished with `ϖ ∣ ξ.coeff 0`,
 then every `x ∈ ker θ` satisfies `x ≡ [ϖ] y (mod ξ)` for some `y ∈ ker θ`. -/
@@ -148,10 +146,9 @@ private theorem ker_fontaineTheta_div_step {ϖ : A♭} {hdvd : ϖ.untilt ^ p ∣
     exact hϖ_dvd
   obtain ⟨u, y, huy⟩ := mem_span_pair.mp hx_mem
   have hy_ker : y ∈ RingHom.ker (fontaineTheta A p) := by
-    have hθ := congrArg (fontaineTheta A p) huy
-    rw [RingHom.mem_ker.mp x.2, map_add, map_mul, RingHom.mem_ker.mp hker, mul_zero, zero_add,
-      map_mul, fontaineTheta_teichmuller, mul_comm] at hθ
-    exact RingHom.mem_ker.mpr ((mul_left_mem_nonZeroDivisors_eq_zero_iff hreg).mp hθ)
+    rw [RingHom.mem_ker, ← mul_right_mem_nonZeroDivisors_eq_zero_iff hreg]
+    simpa [RingHom.mem_ker.mp x.2, RingHom.mem_ker.mp hker] using
+      congrArg (fontaineTheta A p) huy
   refine ⟨⟨y, hy_ker⟩, mem_span_singleton.mpr ⟨u, ?_⟩⟩
   linear_combination -huy
 

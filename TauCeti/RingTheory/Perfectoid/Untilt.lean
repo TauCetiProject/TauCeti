@@ -41,8 +41,9 @@ isomorphism `PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)`.
 * `PreTilt.untilt_equivPerfection_symm`, `PreTilt.teichmuller₀_equivPerfection`,
   `PreTilt.untilt_zero`: compatibility of `PreTilt.untilt` and `Perfection.teichmuller₀` across
   `PreTilt.equivPerfection`, and `(0 : PreTilt A p).untilt = 0`.
-* `PreTilt.coeff_eq_mk_untilt_iterate`: the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the
-  reduction modulo `p` of `untilt ((frobeniusEquiv.symm^[n]) x)`.
+* `PreTilt.coeff_eq_mk_untilt_iterate`, `PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow`:
+  the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the reduction modulo `p` of
+  `untilt ((frobeniusEquiv.symm^[n]) x)`, whose `p`-th powers step along the root tower.
 * `PreTilt.mem_nonZeroDivisors_of_untilt`: `ϖ` is a nonzerodivisor of `PreTilt A p` whenever
   `ϖ.untilt` is a nonzerodivisor of `A`.
 * `PreTilt.exists_mul_natCast_dvd_sub_untilt`, `PreTilt.exists_associated_untilt`: every element of
@@ -75,6 +76,13 @@ theorem coeff_eq_mk_untilt_iterate (n : ℕ) (x : PreTilt A p) :
     simpa only [zero_add] using coeff_iterate_frobeniusEquiv_symm 0 n x
   exact h0.symm.trans (mk_untilt_eq_coeff_zero _).symm
 
+/-- Raising the untilt of `(frobeniusEquiv.symm^[n + 1]) x` to the `p`-th power recovers the untilt
+of `(frobeniusEquiv.symm^[n]) x`. -/
+theorem untilt_iterate_frobeniusEquiv_symm_succ_pow (x : PreTilt A p) (n : ℕ) :
+    untilt (((frobeniusEquiv (PreTilt A p) p).symm^[n + 1]) x) ^ p =
+      untilt (((frobeniusEquiv (PreTilt A p) p).symm^[n]) x) := by
+  rw [← map_pow, Function.iterate_succ_apply', frobeniusEquiv_symm_pow_p]
+
 /-- `PreTilt.untilt` on `equivPerfection.symm x` is `Perfection.teichmuller₀` on `x`. -/
 @[simp]
 theorem untilt_equivPerfection_symm (x : Perfection (ModP A p) p) :
@@ -104,13 +112,8 @@ theorem mem_nonZeroDivisors_of_untilt {ϖ : PreTilt A p} (hreg : ϖ.untilt ∈ A
     ϖ ∈ (PreTilt A p)⁰ := by
   refine mem_nonZeroDivisors_iff_left.mpr fun x hx ↦ ext fun n ↦ ?_
   set ψ : PreTilt A p ≃+* PreTilt A p := (frobeniusEquiv (PreTilt A p) p).symm
-  have hψ_mul (k : ℕ) : (ψ^[k]) (ϖ * x) = (ψ^[k]) ϖ * (ψ^[k]) x := by
-    induction k with
-    | zero => rfl
-    | succ k ih => rw [Function.iterate_succ_apply', Function.iterate_succ_apply',
-        Function.iterate_succ_apply', ih, map_mul]
   have hmul : untilt ((ψ^[n]) ϖ) * untilt ((ψ^[n]) x) = 0 := by
-    rw [← map_mul, ← hψ_mul, hx, Function.iterate_fixed (map_zero ψ), untilt_zero]
+    rw [← map_mul, ← iterate_map_mul ψ n ϖ x, hx, iterate_map_zero ψ n, untilt_zero]
   have hpow : untilt ((ψ^[n]) ϖ) ^ p ^ n = ϖ.untilt :=
     untilt_iterate_frobeniusEquiv_symm_pow ϖ n
   have hreg_n : untilt ((ψ^[n]) ϖ) ∈ A⁰ :=
@@ -179,14 +182,8 @@ theorem dvd_iff_untilt_dvd {ϖ : PreTilt A p} {hdvd : ϖ.untilt ^ p ∣ (p : A)}
   set ψ : PreTilt A p ≃+* PreTilt A p := (frobeniusEquiv (PreTilt A p) p).symm
   set w : ℕ → A := fun n ↦ untilt ((ψ^[n]) ϖ)
   set y : ℕ → A := fun n ↦ untilt ((ψ^[n]) f)
-  have hw_pow (n : ℕ) : w (n + 1) ^ p = w n := by
-    rw [← map_pow]
-    exact congrArg untilt
-      (by rw [Function.iterate_succ_apply']; exact frobeniusEquiv_symm_pow_p _ p ((ψ^[n]) ϖ))
-  have hy_pow (n : ℕ) : y (n + 1) ^ p = y n := by
-    rw [← map_pow]
-    exact congrArg untilt
-      (by rw [Function.iterate_succ_apply']; exact frobeniusEquiv_symm_pow_p _ p ((ψ^[n]) f))
+  have hw_pow (n : ℕ) : w (n + 1) ^ p = w n := untilt_iterate_frobeniusEquiv_symm_succ_pow ϖ n
+  have hy_pow (n : ℕ) : y (n + 1) ^ p = y n := untilt_iterate_frobeniusEquiv_symm_succ_pow f n
   -- Inductively propagate regularity, root-divisibility, and `w n ∣ y n` along the root tower.
   have hstep (n : ℕ) :
       w n ∈ A⁰ ∧ (∀ z : A, w n ^ p ∣ z ^ p → w n ∣ z) ∧ w n ∣ y n := by

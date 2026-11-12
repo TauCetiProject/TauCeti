@@ -78,7 +78,7 @@ example :
     PreTilt.isAdicComplete_span_singleton (hϖ.symm ▸ dvd_rfl)
   have hker : (p : WittVector p _) - WittVector.teichmuller p ϖ ∈
       RingHom.ker (WittVector.fontaineTheta (Pair.powerBounded ℂ_[p]).plus p) := by
-    rw [RingHom.mem_ker, map_sub, map_natCast, WittVector.fontaineTheta_teichmuller, hϖ, sub_self]
+    simp [hϖ]
   refine ⟨ϖ, hϖ, ?_⟩
   rw [ker_fontaineTheta_eq_span_iff_isDistinguished (Pair.powerBounded ℂ_[p]) hker]
   have heq : (p : WittVector p _) - WittVector.teichmuller p ϖ =
