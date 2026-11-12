@@ -31,7 +31,7 @@ violates the congruence.
 * `QuadraticAlgebra.frobenius_congruence`: `z ^ p - star z ∈ (p)`.
 * `QuadraticAlgebra.re_pow_modEq` and `QuadraticAlgebra.im_pow_modEq`: the coordinate form
   `(z ^ p).re ≡ u` and `(z ^ p).im ≡ -v` modulo `p`. The integer consequence
-  `p ∣ v ^ p r ^ ((p - 1) / 2) + v` is Euler's criterion `r ^ ((p - 1) / 2) ≡ -1` multiplied by
+  `p ∣ v ^ p * r ^ ((p - 1) / 2) + v` is Euler's criterion `r ^ ((p - 1) / 2) ≡ -1` multiplied by
   `v` (`TauCeti.Int.dvd_pow_mul_pow_div_two_add`).
 * `QuadraticAlgebra.omega_pow_sub_star_notMem_span_natCast` and
   `QuadraticAlgebra.forall_pow_sub_star_mem_span_natCast_iff`: when `r` is a square modulo `p`
