@@ -24,6 +24,8 @@ conjugating twice gives back `V`, and conjugation commutes with products.
 * `TauCeti.Conjugate.toConjL`: the identity as a continuous conjugate-linear equivalence;
   `TauCeti.Conjugate.toConjL'` is the identity as a continuous real-linear one.
 * `ContinuousLinearMap.conjugate`: the conjugate of a continuous complex-linear map, an isometry.
+* `ContinuousLinearMap.toConjugate`: continuous conjugate-linear maps `V → W` are equivalent to
+  continuous complex-linear maps `V → Conjugate W`.
 * `TauCeti.Conjugate.conjugateConjugateL`: `Conjugate (Conjugate V) ≃L[ℂ] V`.
 * `TauCeti.Conjugate.prodL`: `Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W`.
 * `TauCeti.Conjugate.complexConjL`: complex conjugation is a complex-linear isomorphism
@@ -187,6 +189,49 @@ theorem conjugate_comp {U : Type*} [AddCommGroup U] [Module ℂ U] [TopologicalS
     (g : W →L[ℂ] U) (f : V →L[ℂ] W) : (g.comp f).conjugate = g.conjugate.comp f.conjugate :=
   (rfl)
 
+@[simp] theorem conjugate_zero : (0 : V →L[ℂ] W).conjugate = 0 := (rfl)
+
+@[simp] theorem conjugate_neg [IsTopologicalAddGroup W] (f : V →L[ℂ] W) :
+    (-f).conjugate = -f.conjugate :=
+  (rfl)
+
+/-- A scalar picks up a complex conjugate when the map is conjugated. -/
+@[simp] theorem conjugate_smul [ContinuousConstSMul ℂ W] (c : ℂ) (f : V →L[ℂ] W) :
+    (c • f).conjugate = conj c • f.conjugate := by
+  ext v
+  simp
+
+theorem conjugate_injective :
+    Function.Injective (conjugate : (V →L[ℂ] W) → Conjugate V →L[ℂ] Conjugate W) :=
+  fun f g h ↦ ext fun v ↦ by simpa using congr($h (toConj v))
+
+/-- Continuous conjugate-linear maps `V → W` are the continuous complex-linear maps
+`V → Conjugate W`. -/
+def toConjugate : (V →L⋆[ℂ] W) ≃ (V →L[ℂ] Conjugate W) where
+  toFun f :=
+    { toFun v := toConj (f v)
+      map_add' v w := by simp
+      map_smul' c v := by simp
+      cont := continuous_toConj.comp f.continuous }
+  invFun g :=
+    { toFun v := ofConj (g v)
+      map_add' v w := by simp
+      map_smul' c v := by simp
+      cont := continuous_ofConj.comp g.continuous }
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp] theorem toConjugate_apply (f : V →L⋆[ℂ] W) (v : V) : toConjugate f v = toConj (f v) :=
+  (rfl)
+
+@[simp] theorem toConjugate_symm_apply (g : V →L[ℂ] Conjugate W) (v : V) :
+    toConjugate.symm g v = ofConj (g v) :=
+  (rfl)
+
+@[simp] theorem coe_toConjugate (f : V →L⋆[ℂ] W) :
+    (toConjugate f : V →ₗ[ℂ] Conjugate W) = LinearMap.toConjugate (f : V →ₗ⋆[ℂ] W) :=
+  LinearMap.ext fun v ↦ by simp
+
 end TopologicalModule
 
 section Normed
@@ -237,6 +282,13 @@ def conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V where
 
 @[simp] theorem conjugateConjugateL_symm_apply (v : V) :
     (conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V).symm v = toConj (toConj v) := (rfl)
+
+/-- Conjugating a map twice gives back the map, up to `conjugateConjugateL`. -/
+theorem _root_.ContinuousLinearMap.conjugate_conjugate (f : V →L[ℂ] W) :
+    f.conjugate.conjugate = ((conjugateConjugateL : Conjugate (Conjugate W) ≃L[ℂ] W).symm :
+      W →L[ℂ] Conjugate (Conjugate W)) ∘L f ∘L
+        (conjugateConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V) :=
+  (rfl)
 
 /-- The conjugate of a product is the product of the conjugates. -/
 def prodL : Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W where

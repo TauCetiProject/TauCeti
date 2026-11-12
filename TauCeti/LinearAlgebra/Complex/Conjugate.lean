@@ -14,8 +14,8 @@ public import Mathlib.RingTheory.Finiteness.Basic
 For a complex module `V`, `TauCeti.Conjugate V` is a type synonym for `V` carrying the same
 additive group and real module structure, and the conjugated complex action
 `c • v = conj c • v` (`Module.compHom V (starRingEnd ℂ)`). The identity `V → Conjugate V` is then
-a conjugate-linear equivalence (`TauCeti.Conjugate.toConjₗ`), and a conjugate-linear map `V → W`
-becomes a complex-linear map `V → Conjugate W` (`LinearMap.toConjugate`).
+a conjugate-linear equivalence (`TauCeti.Conjugate.toConjₗ`), and the conjugate-linear maps `V → W`
+are the complex-linear maps `V → Conjugate W` (`LinearMap.toConjugate`).
 
 A real subspace of `V` is read as a real subspace of `Conjugate V` (`Submodule.conjugate`); the
 totally real subspaces of `V` and `Conjugate V` correspond under it
@@ -44,7 +44,8 @@ non-definitionally-equal real module structures on `Conjugate V` when the scalar
   `TauCeti.Conjugate.ofConj`.
 * `TauCeti.Conjugate.toConjₗ`: the identity as a conjugate-linear equivalence;
   `TauCeti.Conjugate.toConjₗ'` is the identity as a real-linear one.
-* `LinearMap.toConjugate`: a conjugate-linear map as a complex-linear map into the conjugate.
+* `LinearMap.toConjugate`: conjugate-linear maps `V → W` are equivalent to complex-linear maps
+  `V → Conjugate W`.
 * `Submodule.conjugate`: a real subspace of `V`, read as a real subspace of `Conjugate V`.
 -/
 
@@ -166,13 +167,24 @@ namespace LinearMap
 
 variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [AddCommGroup W] [Module ℂ W]
 
-/-- A conjugate-linear map `V → W` as a complex-linear map `V → Conjugate W`. -/
-def toConjugate (f : V →ₗ⋆[ℂ] W) : V →ₗ[ℂ] Conjugate W where
-  toFun v := toConj (f v)
-  map_add' v w := by simp
-  map_smul' c v := by simp
+/-- Conjugate-linear maps `V → W` are the complex-linear maps `V → Conjugate W`. -/
+def toConjugate : (V →ₗ⋆[ℂ] W) ≃ (V →ₗ[ℂ] Conjugate W) where
+  toFun f :=
+    { toFun v := toConj (f v)
+      map_add' v w := by simp
+      map_smul' c v := by simp }
+  invFun g :=
+    { toFun v := ofConj (g v)
+      map_add' v w := by simp
+      map_smul' c v := by simp }
+  left_inv _ := rfl
+  right_inv _ := rfl
 
-@[simp] theorem toConjugate_apply (f : V →ₗ⋆[ℂ] W) (v : V) : f.toConjugate v = toConj (f v) :=
+@[simp] theorem toConjugate_apply (f : V →ₗ⋆[ℂ] W) (v : V) : toConjugate f v = toConj (f v) :=
+  (rfl)
+
+@[simp] theorem toConjugate_symm_apply (g : V →ₗ[ℂ] Conjugate W) (v : V) :
+    toConjugate.symm g v = ofConj (g v) :=
   (rfl)
 
 end LinearMap

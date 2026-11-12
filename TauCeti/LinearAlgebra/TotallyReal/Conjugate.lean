@@ -39,7 +39,7 @@ a fibre with its conjugate along a totally real boundary condition. -/
 theorem toConjugate_conjugationOfMaximalTotallyReal_eq_iff [Module ℝ V] [IsScalarTower ℝ ℂ V]
     {U : Type*} [AddCommGroup U] [Module ℝ U] (f : U →ₗ[ℝ] V) (hf : Function.Injective f)
     (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ) f.range)
-    (v : V) : (f.conjugationOfMaximalTotallyReal hf hmax).toConjugate v = toConj v ↔
+    (v : V) : toConjugate (f.conjugationOfMaximalTotallyReal hf hmax) v = toConj v ↔
       v ∈ f.range := by
   rw [toConjugate_apply, toConj_inj, conjugationOfMaximalTotallyReal_eq_self_iff]
 
