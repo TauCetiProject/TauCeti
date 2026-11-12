@@ -23,6 +23,8 @@ smoothly to positions outside `U`.
 This file defines the carrier `TauCeti.LocalClassicalSymbol U V W m` and relates it to the
 classical symbols `TauCeti.ClassicalSymbol n V W m` on `ℝⁿ`:
 
+* `TauCeti.ClassicalSymbol.restrictTopEquiv`: the classical symbols on `⊤` are the classical
+  symbols on `ℝⁿ`;
 * `TauCeti.ClassicalSymbol.restrict`: a classical symbol on `ℝⁿ` restricts to a classical symbol
   on `U`, with the restricted homogeneous terms;
 * `TauCeti.LocalClassicalSymbol.restrict`: a classical symbol on `U` restricts to every smaller open
@@ -118,8 +120,7 @@ section Remainder
 variable (a : LocalClassicalSymbol U V W m) (χ : FrequencyCutoff (CoordinateSpace n))
 
 /-- **Independence of the cutoff.** For every frequency cutoff `χ` and every `N`, the remainder
-`a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol on `U` is a symbol of order `m - N` on `U`: near
-every compact set of positions it agrees with the remainder of a cut-off extension to `ℝⁿ`. -/
+`a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol on `U` is a symbol of order `m - N` on `U`. -/
 theorem exists_remainder (N : ℕ) :
     ∃ r : LocalSymbol U V W (m - N), ∀ p, r.coefficient p =
       a.toLocalSymbol.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (a.term j).coefficient p := by
@@ -158,8 +159,7 @@ end Remainder
 section Uniqueness
 
 /-- **Uniqueness of the homogeneous terms.** Two classical symbols on `U` with the same full
-symbol have the same homogeneous terms. At a position `x ∈ U`, compare the cut-off extensions for a
-cutoff equal to `1` near `x`, which are classical symbols on `ℝⁿ` with the same full symbol. -/
+symbol have the same homogeneous terms. -/
 theorem term_eq_of_toLocalSymbol_eq {a b : LocalClassicalSymbol U V W m}
     (h : a.toLocalSymbol = b.toLocalSymbol) (j : ℕ) : a.term j = b.term j := by
   refine LocalHomogeneousSymbol.ext_of_mem fun x hx ξ _ => ?_
@@ -282,6 +282,17 @@ instance : Module ℂ (LocalClassicalSymbol U V W m) :=
   toLocalSymbol_injective.module ℂ ⟨⟨toLocalSymbol, toLocalSymbol_zero⟩, toLocalSymbol_add⟩
     fun c a => toLocalSymbol_smul a c
 
+@[simp]
+theorem toLocalSymbol_sum {ι : Type*} (s : Finset ι) (a : ι → LocalClassicalSymbol U V W m) :
+    (∑ i ∈ s, a i).toLocalSymbol = ∑ i ∈ s, (a i).toLocalSymbol :=
+  map_sum (AddMonoidHom.mk' toLocalSymbol toLocalSymbol_add) a s
+
+@[simp]
+theorem term_sum {ι : Type*} (s : Finset ι) (a : ι → LocalClassicalSymbol U V W m) (j : ℕ) :
+    (∑ i ∈ s, a i).term j = ∑ i ∈ s, (a i).term j :=
+  map_sum (AddMonoidHom.mk' (fun a : LocalClassicalSymbol U V W m => a.term j)
+    fun a b => term_add a b j) a s
+
 end Module
 
 section Extend
@@ -365,27 +376,62 @@ namespace ClassicalSymbol
 variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
   [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
-variable (U) in
-/-- The restriction of a classical symbol on `ℝⁿ` to the open set `U` of positions: the restricted
-full symbol is classical on `U`, with the restricted homogeneous terms. -/
-def restrict : ClassicalSymbol n V W m →ₗ[ℂ] LocalClassicalSymbol U V W m where
+/-- Over all of `ℝⁿ`, the classical symbols on an open set are exactly the classical symbols on
+`ℝⁿ × ℝⁿ`: a classical symbol on `ℝⁿ × ℝⁿ` is a classical symbol on `⊤` with the same full symbol
+and homogeneous terms, and this is a linear equivalence. -/
+def restrictTopEquiv : ClassicalSymbol n V W m ≃ₗ[ℂ]
+    LocalClassicalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m where
   toFun a :=
-    { toLocalSymbol := a.toSymbol.restrict U
-      term j := HomogeneousSymbol.restrict U (a.term j)
-      exists_remainder' := ⟨default, fun N => ⟨(a.remainder default N).restrict U,
-        fun ⟨x, ξ⟩ => by by_cases hx : x ∈ U <;> simp [hx]⟩⟩ }
-  map_add' a b := LocalClassicalSymbol.ext (by simp)
-  map_smul' c a := LocalClassicalSymbol.ext (by simp)
+    { toLocalSymbol := Symbol.restrictTopEquiv a.toSymbol
+      term j := HomogeneousSymbol.restrictTopEquiv (a.term j)
+      exists_remainder' := ⟨default, fun N =>
+        ⟨Symbol.restrictTopEquiv (a.remainder default N), fun p => by simp⟩⟩ }
+  map_add' _ _ := LocalClassicalSymbol.ext (by simp)
+  map_smul' _ _ := LocalClassicalSymbol.ext (by simp)
+  invFun a :=
+    { toSymbol := Symbol.restrictTopEquiv.symm a.toLocalSymbol
+      term j := HomogeneousSymbol.restrictTopEquiv.symm (a.term j)
+      exists_remainder' := ⟨default, fun N =>
+        ⟨Symbol.restrictTopEquiv.symm (a.remainder default N), fun p => by simp⟩⟩ }
+  left_inv a := ClassicalSymbol.ext (Symbol.restrictTopEquiv.symm_apply_apply a.toSymbol)
+  right_inv a := LocalClassicalSymbol.ext (Symbol.restrictTopEquiv.apply_symm_apply a.toLocalSymbol)
+
+@[simp]
+theorem toLocalSymbol_restrictTopEquiv_apply (a : ClassicalSymbol n V W m) :
+    (restrictTopEquiv a).toLocalSymbol = Symbol.restrictTopEquiv a.toSymbol := (rfl)
+
+@[simp]
+theorem term_restrictTopEquiv_apply (a : ClassicalSymbol n V W m) (j : ℕ) :
+    (restrictTopEquiv a).term j = HomogeneousSymbol.restrictTopEquiv (a.term j) := (rfl)
+
+@[simp]
+theorem toSymbol_restrictTopEquiv_symm_apply
+    (a : LocalClassicalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) :
+    (restrictTopEquiv.symm a : ClassicalSymbol n V W m).toSymbol =
+      Symbol.restrictTopEquiv.symm a.toLocalSymbol := (rfl)
+
+@[simp]
+theorem term_restrictTopEquiv_symm_apply
+    (a : LocalClassicalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) (j : ℕ) :
+    (restrictTopEquiv.symm a : ClassicalSymbol n V W m).term j =
+      HomogeneousSymbol.restrictTopEquiv.symm (a.term j) := (rfl)
+
+variable (U) in
+/-- The restriction of a classical symbol on `ℝⁿ` to the open set `U` of positions: the restriction
+from `⊤` to `U` of the corresponding classical symbol on `⊤`, with the restricted full symbol and
+homogeneous terms. -/
+def restrict : ClassicalSymbol n V W m →ₗ[ℂ] LocalClassicalSymbol U V W m :=
+  LocalClassicalSymbol.restrict le_top ∘ₗ restrictTopEquiv.toLinearMap
 
 @[simp]
 theorem toLocalSymbol_restrict (a : ClassicalSymbol n V W m) :
     (restrict U a).toLocalSymbol = a.toSymbol.restrict U :=
-  (rfl)
+  LocalSymbol.ext_of_mem fun x hx ξ => by simp [restrict, hx]
 
 @[simp]
 theorem term_restrict (a : ClassicalSymbol n V W m) (j : ℕ) :
     (restrict U a).term j = HomogeneousSymbol.restrict U (a.term j) :=
-  (rfl)
+  LocalHomogeneousSymbol.ext_of_mem fun x hx ξ _ => by simp [restrict, hx]
 
 /-- The remainders of the restriction are the restrictions of the remainders. -/
 @[simp]
@@ -396,7 +442,13 @@ theorem remainder_restrict (a : ClassicalSymbol n V W m) (χ : FrequencyCutoff (
 @[simp]
 theorem restrict_restrict (h : U' ≤ U) (a : ClassicalSymbol n V W m) :
     LocalClassicalSymbol.restrict h (restrict U a) = restrict U' a :=
-  LocalClassicalSymbol.ext (by simp)
+  LocalClassicalSymbol.restrict_restrict le_top h (restrictTopEquiv a)
+
+/-- Restricting a classical symbol to all of `ℝⁿ` gives the corresponding classical symbol on
+`⊤`. -/
+@[simp]
+theorem restrict_top (a : ClassicalSymbol n V W m) : restrict ⊤ a = restrictTopEquiv a :=
+  LocalClassicalSymbol.restrict_self (restrictTopEquiv a)
 
 end ClassicalSymbol
 

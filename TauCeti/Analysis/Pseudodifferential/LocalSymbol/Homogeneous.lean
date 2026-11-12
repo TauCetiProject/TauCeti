@@ -24,6 +24,8 @@ at every position outside `U`. So a homogeneous symbol on `U` is determined by i
 This file defines the class `TauCeti.LocalHomogeneousSymbol U V W m`, shows that it is a complex
 vector space, and compares it with the homogeneous symbols on `ℝⁿ`:
 
+* `TauCeti.HomogeneousSymbol.restrictTopEquiv`: the homogeneous symbols on `⊤` are the homogeneous
+  symbols on `ℝⁿ`;
 * `TauCeti.HomogeneousSymbol.restrict`: a homogeneous symbol on `ℝⁿ` restricts to `U`;
 * `TauCeti.LocalHomogeneousSymbol.restrict`: a homogeneous symbol on `U` restricts to every smaller
   open set, and restrictions compose;
@@ -240,27 +242,47 @@ namespace HomogeneousSymbol
 variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
   [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
+/-- Over all of `ℝⁿ`, the homogeneous symbols on an open set are exactly the homogeneous symbols
+on `ℝⁿ × ℝⁿ`: a homogeneous symbol on `ℝⁿ × ℝⁿ` is a homogeneous symbol on `⊤` with the same
+coefficient, and this is a linear equivalence. -/
+def restrictTopEquiv : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m ≃ₗ[ℂ]
+    LocalHomogeneousSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m where
+  toFun a :=
+    { coefficient := a.coefficient
+      coefficient_of_notMem := fun x hx => absurd (TopologicalSpace.Opens.mem_top x) hx
+      zero_covector := a.zero_covector
+      contDiffOn_coefficient := a.contDiffOn_coefficient.mono fun _ hp => (mem_prod.1 hp).2
+      homogeneous := a.homogeneous }
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun a :=
+    { coefficient := a.coefficient
+      zero_covector := a.zero_covector
+      contDiffOn_coefficient := a.contDiffOn_coefficient.mono fun _ hp =>
+        mk_mem_prod (TopologicalSpace.Opens.mem_top _) hp
+      homogeneous := a.homogeneous }
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coefficient_restrictTopEquiv_apply
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (restrictTopEquiv a).coefficient = a.coefficient := (rfl)
+
+@[simp]
+theorem coefficient_restrictTopEquiv_symm_apply
+    (a : LocalHomogeneousSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) :
+    (restrictTopEquiv.symm a :
+      HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m).coefficient =
+      a.coefficient := (rfl)
+
 variable (U) in
 /-- The restriction of a homogeneous symbol on `ℝⁿ` to the open set `U` of positions, extended by
-zero at positions outside `U`. -/
+zero at positions outside `U`: the restriction from `⊤` to `U` of the corresponding homogeneous
+symbol on `⊤`. -/
 def restrict : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m →ₗ[ℂ]
-    LocalHomogeneousSymbol U V W m where
-  toFun a :=
-    { coefficient := ((U : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient
-      coefficient_of_notMem := fun x hx ξ => indicator_of_notMem (by simp [hx]) _
-      zero_covector := fun x => by simp
-      contDiffOn_coefficient := (a.contDiffOn_coefficient.mono fun _ hp => (mem_prod.1 hp).2).congr
-        fun _ hp => indicator_of_mem (mk_mem_prod hp.1 (mem_univ _)) _
-      homogeneous := fun x ξ t ht => by
-        by_cases hx : x ∈ U
-        · simp [hx, a.homogeneous x ξ t ht]
-        · simp [hx] }
-  map_add' a b := by
-    ext1
-    exact indicator_add' _ _ _
-  map_smul' c a := by
-    ext1
-    exact indicator_const_smul _ c _
+    LocalHomogeneousSymbol U V W m :=
+  LocalHomogeneousSymbol.restrict le_top ∘ₗ restrictTopEquiv.toLinearMap
 
 theorem coefficient_restrict (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
     (restrict U a).coefficient = ((U : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient :=
@@ -271,7 +293,7 @@ theorem coefficient_restrict_of_mem
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) {x : CoordinateSpace n}
     (hx : x ∈ U) (ξ : CoordinateSpace n) :
     (restrict U a).coefficient (x, ξ) = a.coefficient (x, ξ) :=
-  indicator_of_mem (mk_mem_prod hx (mem_univ ξ)) _
+  LocalHomogeneousSymbol.coefficient_restrict_of_mem le_top (restrictTopEquiv a) hx ξ
 
 @[simp]
 theorem coefficient_restrict_of_notMem
@@ -283,7 +305,14 @@ theorem coefficient_restrict_of_notMem
 theorem restrict_restrict (h : U' ≤ U)
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
     LocalHomogeneousSymbol.restrict h (restrict U a) = restrict U' a :=
-  LocalHomogeneousSymbol.ext_of_mem fun x hx ξ _ => by simp [hx, h hx]
+  LocalHomogeneousSymbol.restrict_restrict le_top h (restrictTopEquiv a)
+
+/-- Restricting a homogeneous symbol to all of `ℝⁿ` gives the corresponding homogeneous symbol on
+`⊤`. -/
+@[simp]
+theorem restrict_top (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    restrict ⊤ a = restrictTopEquiv a :=
+  LocalHomogeneousSymbol.restrict_self (restrictTopEquiv a)
 
 end HomogeneousSymbol
 
@@ -360,8 +389,7 @@ section CutoffSymbol
 variable (χ : FrequencyCutoff (CoordinateSpace n))
 
 /-- The cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol `a` of degree `m` on `U`, as a symbol
-of order `m` on `U`. Near every compact set of positions in `U` it agrees with the cut-off term of
-an extension of `a` to `ℝⁿ`, which satisfies the symbol estimates. -/
+of order `m` on `U`. -/
 def cutoffSymbol : LocalHomogeneousSymbol U V W m →ₗ[ℂ] LocalSymbol U V W m where
   toFun a := LocalSymbol.ofEventuallyEq (fun p => χ p.2 • a.coefficient p)
     (fun x hx ξ => by simp [a.coefficient_of_notMem x hx ξ]) fun K hKU hK => by
