@@ -62,7 +62,7 @@ theorem singularValue_le_mul_of_forall_norm_apply_le {T : E →L[𝕜] F} {A : E
     (h : ∀ x, ‖T x‖ ≤ C * ‖A x‖) (n : ℕ) :
     T.singularValue n ≤ C * A.singularValue n := by
   have hV : ‖T.factorThru A‖₊ ≤ C := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm]
+    rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact norm_factorThru_le C.coe_nonneg h
   calc T.singularValue n = (T.factorThru A ∘L A).singularValue n := by
         rw [factorThru_comp ⟨C, h⟩]

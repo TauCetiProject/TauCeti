@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
+public import TauCeti.MeasureTheory.Measure.Support
 
 /-!
 # Conditional measures and the law of total probability
@@ -53,6 +54,7 @@ recovers the law.
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
 * `ProbabilityTheory.map_cond_preimage`
+* `ProbabilityTheory.cond_univ_restrict`
 * `ProbabilityTheory.cond_compl_singleton_real`,
   `ProbabilityTheory.cond_compl_singleton_real_singleton`,
   `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
@@ -67,6 +69,19 @@ public section
 
 open MeasureTheory Set
 open scoped ENNReal NNReal
+
+/-- On a discrete space, conditioning on a finite-mass event retains precisely the original
+support points in that event. A null event gives empty support. -/
+theorem MeasureTheory.Measure.support_cond {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [MeasurableSpace X] [MeasurableSingletonClass X]
+    (μ : Measure X) (s : Set X) (hμs : μ s ≠ ⊤) :
+    (ProbabilityTheory.cond μ s).support = μ.support ∩ s := by
+  rw [ProbabilityTheory.cond,
+    Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr hμs)]
+  ext x
+  simp only [Measure.mem_support_iff_measure_singleton_pos, Set.mem_inter_iff,
+    Measure.restrict_apply (measurableSet_singleton x)]
+  by_cases hx : x ∈ s <;> simp [hx]
 
 namespace ProbabilityTheory
 
@@ -349,6 +364,11 @@ theorem integral_cond_compl_singleton_of_eq_zero {E : Type*} [NormedAddCommGroup
 
 end ComplSingleton
 
+/-- Conditioning the restriction of a measure to `s` on the whole space is conditioning on `s`. -/
+@[simp]
+theorem cond_univ_restrict (μ : Measure Ω) (s : Set Ω) : (μ.restrict s)[|univ] = μ[|s] := by
+  rw [cond, cond, Measure.restrict_apply_univ, Measure.restrict_univ]
+
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
@@ -386,7 +406,7 @@ theorem tvDist_cond_self {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
       · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA,
           inter_self]
         apply Measure.le_iff.mpr
-        intro B hB
+        intro B _
         rw [_root_.smul_apply, smul_eq_mul]
         have hi : 1 ≤ (μ A)⁻¹ := by
           simpa using ENNReal.inv_le_inv.mpr (prob_le_one (μ := μ) (s := A))

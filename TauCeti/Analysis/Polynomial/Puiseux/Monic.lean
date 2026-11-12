@@ -53,7 +53,7 @@ The factors retain their multiplicities at `t = 0` and are pointwise distinct of
 hyperplane. The exponent can be any
 nonzero multiple of `d!`. -/
 theorem exists_analyticOnNhd_prod_X_sub_C_powerSubstitution_ball
-    (hU : IsOpen U) (hR' : 0 < R')
+    (hU : IsOpen U)
     (hF : ∀ i < d, AnalyticOnNhd ℂ (fun b ↦ (F b).coeff i) (U ×ˢ (ball 0 R \ {0})))
     (hcoeff : ∀ i < d, ContinuousOn (fun b ↦ (F b).coeff i) (U ×ˢ ball 0 R))
     (hmonic : ∀ b ∈ U ×ˢ ball 0 R, (F b).Monic)
@@ -64,11 +64,11 @@ theorem exists_analyticOnNhd_prod_X_sub_C_powerSubstitution_ball
       (∀ i, AnalyticOnNhd ℂ (r i) (U ×ˢ ball 0 R')) ∧
       (∀ b ∈ U ×ˢ ball 0 R', F (b.1, b.2 ^ n) = ∏ i, (X - C (r i b))) ∧
       ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), Injective (fun i ↦ r i b) := by
-  let : CompleteSpace E := FiniteDimensional.complete ℂ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
   have hsub : U ×ˢ (ball (0 : ℂ) R \ {0}) ⊆ U ×ˢ ball 0 R :=
     prod_mono subset_rfl sdiff_subset
   obtain ⟨s, hs, hfac⟩ := exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution hU
-    hR' hn hR hdvd hF (fun b hb ↦ hmonic b (hsub hb))
+    hn hR hdvd hF (fun b hb ↦ hmonic b (hsub hb))
     (fun b hb ↦ hdeg b (hsub hb)) hsep
   let Q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
   have hQ : MapsTo Q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) := by
@@ -122,7 +122,7 @@ theorem exists_analyticOnNhd_prod_X_sub_C_of_discr_eq_pow_mul
   have hfit : R' ^ d.factorial ≤ R :=
     (pow_le_of_le_one hR'.le hR'1 d.factorial_ne_zero).trans hR'R
   obtain ⟨r, hr, hfac, hinj⟩ := exists_analyticOnNhd_prod_X_sub_C_powerSubstitution_ball
-    hU hR' (fun i hi ↦ (hF i hi).mono (prod_mono subset_rfl sdiff_subset))
+    hU (fun i hi ↦ (hF i hi).mono (prod_mono subset_rfl sdiff_subset))
     (fun i hi ↦ (hF i hi).continuousOn) hmonic hdeg hsep
     d.factorial_ne_zero hfit (dvd_refl _)
   refine ⟨R', hR', hfit, r, hr, hfac, hinj, ?_⟩

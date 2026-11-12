@@ -42,7 +42,10 @@ it does not change the quotient (Bühler, Remark 10.5).
 
 ## Main results
 
-* The bounded acyclic objects form a triangulated subcategory.
+* The bounded acyclic objects form a triangulated subcategory, and
+  `TauCeti.ExactStructure.acyclicBounded_trW_iff` describes the morphisms it inverts; a map of
+  bounded complexes with acyclic mapping cone is one of them
+  (`TauCeti.ExactStructure.acyclicBounded_trW_homMk_quotient_map`).
 * `Dᵇ(E)` is a triangulated category and `Q` is a triangulated functor.
 * Bounded acyclic complexes become zero in `Dᵇ(E)`, by the general
   `ObjectProperty.TrWLocalization.isZero_obj`.
@@ -185,6 +188,26 @@ theorem acyclicBounded_iff (X : HomotopyCategory.Bounded C) :
 instance : E.acyclicBounded.IsTriangulated := by
   dsimp only [acyclicBounded]
   infer_instance
+
+/-- A morphism of `Kᵇ(C)` is in `E.acyclicBounded.trW` exactly when its image in the homotopy
+category is in `E.boundedAcyclic.trW`. -/
+theorem acyclicBounded_trW_iff {X Y : HomotopyCategory.Bounded C} (f : X ⟶ Y) :
+    E.acyclicBounded.trW f ↔ E.boundedAcyclic.trW f.hom :=
+  ObjectProperty.inverseImage_trW_iff _ _ f
+
+/-- **A map of bounded complexes with acyclic mapping cone is inverted in `Dᵇ(E)`**: the class in
+`Kᵇ(C)` of a map `g` between the underlying complexes of two objects lies in
+`E.acyclicBounded.trW`. -/
+theorem acyclicBounded_trW_homMk_quotient_map {X Y : HomotopyCategory.Bounded C}
+    (g : X.obj.as ⟶ Y.obj.as) (hg : E.acyclic (CochainComplex.mappingCone g)) :
+    E.acyclicBounded.trW
+      (ObjectProperty.homMk ((HomotopyCategory.quotient C (.up ℤ)).map g) : X ⟶ Y) := by
+  rw [acyclicBounded_trW_iff]
+  exact (E.boundedAcyclic.trW_iff_of_distinguished _
+    (HomotopyCategory.mappingCone_triangleh_distinguished g)).2
+      (E.boundedAcyclic_quotient_obj (CochainComplex.bounded_mappingCone g
+        ((TauCeti.HomotopyCategory.bounded_quotient_obj_iff X.obj.as).1 X.property)
+        ((TauCeti.HomotopyCategory.bounded_quotient_obj_iff Y.obj.as).1 Y.property)) hg)
 
 /-- The **bounded derived category** `Dᵇ(E)` of an exact category: the Verdier quotient of the
 bounded homotopy category by the bounded acyclic complexes. -/

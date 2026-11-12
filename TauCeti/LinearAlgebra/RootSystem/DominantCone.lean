@@ -234,17 +234,19 @@ private theorem mem_of_sub_eq_sum_nsmul_root_of_reflection_stable {lam : M} {S T
     have hback : P.reflection i (P.reflection i mu) = mu := P.reflection_same i mu
     exact hback ▸ hTrefl i _ hmem
 
-omit [Finite ι] [IsDomain R] [P.IsRootSystem] [P.IsCrystallographic] in
+omit [Finite ι] [CharZero R] [IsDomain R] [P.IsRootSystem] [P.IsCrystallographic] in
 /-- **A member of a reflection-stable set of weights below a weight has a dominant Weyl
 translate in the set.** Let `S` be a set of weights with `lam - mu` in the positive root cone for
 every `mu ∈ S`, on which every simple coroot takes integer values, and which every simple
 reflection carries into itself. Then every `mu ∈ S` has a Weyl-group element `w` for which `w • mu`
 again lies in `S` and every simple coroot takes a natural value on it.
 
-A member on which some simple coroot is negative is moved by the corresponding reflection strictly
-closer to `lam`, so the induction on the height of `lam - mu` stops exactly at a dominant member;
-the set of weights admitting such a `w` is reflection stable, which is what lets the induction run
-inside it.
+In positive characteristic `p` every integer cast equals the natural cast of its residue mod `p`,
+so the integrality hypothesis already makes `mu` itself dominant and `w = 1` works. In
+characteristic zero, a member on which some simple coroot is negative is moved by the corresponding
+reflection strictly closer to `lam`, so the induction on the height of `lam - mu` stops exactly at
+a dominant member; the set of weights admitting such a `w` is reflection stable, which is what lets
+the induction run inside it.
 
 `RootPairing.exists_mem_dominantChamber` is the same statement for an arbitrary weight, with
 dominance read as `0 ≤ ⟨mu, αᵢ^∨⟩` and no reference to `lam`. It needs a `[LinearOrder R]` on the
@@ -261,6 +263,19 @@ theorem exists_weylGroup_smul_dominant_of_forall_reflection_mem_of_sub_mem_posRo
     ∃ w : P.weylGroup, w • mu ∈ S ∧
       ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i (w • mu) = (n : R) := by
   classical
+  by_cases hc : CharZero R
+  swap
+  · -- In positive characteristic every integer is congruent to a natural number, so `w = 1` works.
+    obtain ⟨p, hp⟩ := CharP.exists R
+    have hp0 : p ≠ 0 := by
+      rintro rfl
+      exact hc (CharP.charP_to_charZero R)
+    refine ⟨1, by rwa [one_smul], fun i hi ↦ ?_⟩
+    obtain ⟨z, hz⟩ := hint mu hmu i hi
+    refine ⟨(z % p).toNat, ?_⟩
+    rw [one_smul, hz, ← Int.cast_natCast,
+      Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast hp0))]
+    exact CharP.intCast_eq_intCast_mod R p
   -- Undoing a reflection by appending it to the Weyl-group element on the right.
   have hsmul : ∀ (i : ι) (x : M) (w : P.weylGroup),
       (w * RootPairing.weylGroup.ofIdx P i) • P.reflection i x = w • x := fun i x w ↦ by
@@ -301,7 +316,7 @@ theorem finite_of_forall_reflection_mem_of_sub_mem_posRootCone {lam : M} {S : Se
       hrefl hmu
   exact ⟨w, w • mu, ⟨hcone _ hwS, hwdom⟩, inv_smul_smul w mu⟩
 
-omit [IsDomain R] in
+omit [IsDomain R] [CharZero R] in
 /-- **The only antidominant member of the positive root cone is zero.** A nonnegative integer
 combination `nu` of the simple roots on which every simple coroot takes a nonpositive value is
 zero.

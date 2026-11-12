@@ -241,9 +241,6 @@ private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U �
   have hρφ : IsSmoothForm I ∞
       fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1.1 y :=
     φ.1.isSmoothForm.fun_smul (hρ.comp (contMDiff_inclusion inf_le_sup))
-  have hρφ' : IsSmoothForm I ∞
-      fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1.1 y :=
-    φ.1.isSmoothForm.fun_smul ((hρ.comp (contMDiff_inclusion inf_le_sup)).sub contMDiff_const)
   rw [mextDerivₗ_apply, mextDerivₗ_apply, cutoffLeft, cutoffRight,
     RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero,
     RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero,

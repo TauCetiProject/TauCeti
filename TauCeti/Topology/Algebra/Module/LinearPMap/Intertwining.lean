@@ -27,7 +27,7 @@ K. Schmüdgen, *Unbounded Self-adjoint Operators on Hilbert Space*, Sections 1.1
 
 public section
 
-namespace TauCeti
+namespace LinearPMap
 
 variable {𝕜 E F G : Type*} [Ring 𝕜]
   [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
@@ -36,8 +36,7 @@ variable {𝕜 E F G : Type*} [Ring 𝕜]
 
 /-- A continuous linear map intertwines two partial operators if it transports their
 domains and their actions: `X A ⊆ B X`. -/
-structure _root_.LinearPMap.Intertwines (A : E →ₗ.[𝕜] E) (B : F →ₗ.[𝕜] F)
-    (X : E →L[𝕜] F) : Prop where
+structure Intertwines (A : E →ₗ.[𝕜] E) (B : F →ₗ.[𝕜] F) (X : E →L[𝕜] F) : Prop where
   /-- The intertwiner sends the source operator's domain into the target domain. -/
   mem_domain (x : A.domain) : X x ∈ B.domain
   /-- The actions agree on the source operator's domain. -/
@@ -48,40 +47,36 @@ variable {A : E →ₗ.[𝕜] E} {B : F →ₗ.[𝕜] F} {C : G →ₗ.[𝕜] G}
 
 /-- Intertwining is equivalent to transporting every point of the source graph to
 the target graph by applying the continuous linear map to both coordinates. -/
-theorem _root_.LinearPMap.intertwines_iff_forall_mem_graph :
+theorem intertwines_iff_forall_mem_graph :
     A.Intertwines B X ↔ ∀ p ∈ A.graph, (X p.1, X p.2) ∈ B.graph := by
-  constructor
-  · intro h p hp
-    obtain ⟨x, hx, hAx⟩ := A.mem_graph_iff.mp hp
-    exact B.mem_graph_iff.mpr ⟨⟨X x, h.mem_domain x⟩,
-      congrArg X hx, (h.apply_eq x).symm.trans (congrArg X hAx)⟩
-  · intro h
-    have hmem (x : A.domain) : X x ∈ B.domain := by
-      obtain ⟨y, hy, _⟩ := B.mem_graph_iff.mp (h _ (A.mem_graph x))
-      simp only at hy
-      exact hy ▸ y.property
-    refine ⟨hmem, fun x => ?_⟩
-    obtain ⟨y, hy, hBy⟩ := B.mem_graph_iff.mp (h _ (A.mem_graph x))
-    have heq : y = ⟨X x, hmem x⟩ := Subtype.ext hy
-    exact hBy.symm.trans (congrArg B heq)
+  refine ⟨fun h p hp => ?_, fun h => ?_⟩
+  · obtain ⟨x, rfl⟩ := A.mem_graph_iff'.mp hp
+    exact (B.image_iff (h.mem_domain x)).mp (h.apply_eq x)
+  · have hmem (x : A.domain) : X x ∈ B.domain :=
+      B.mem_domain_iff.mpr ⟨_, h _ (A.mem_graph x)⟩
+    exact ⟨hmem, fun x => (B.image_iff (hmem x)).mpr (h _ (A.mem_graph x))⟩
 
 /-- The identity intertwines a partial operator with itself. -/
-@[simp] theorem _root_.LinearPMap.intertwines_id (A : E →ₗ.[𝕜] E) :
+@[simp] theorem intertwines_id (A : E →ₗ.[𝕜] E) :
     A.Intertwines A (ContinuousLinearMap.id 𝕜 E) where
   mem_domain x := x.property
   apply_eq _ := rfl
 
 /-- Domain-aware intertwiners compose. -/
-theorem _root_.LinearPMap.Intertwines.comp (hAB : A.Intertwines B X)
+theorem Intertwines.comp (hAB : A.Intertwines B X)
     (hBC : B.Intertwines C Y) : A.Intertwines C (Y ∘L X) where
   mem_domain x := hBC.mem_domain ⟨X x, hAB.mem_domain x⟩
-  apply_eq x := by
-    simp only [ContinuousLinearMap.comp_apply]
-    rw [hAB.apply_eq x, hBC.apply_eq ⟨X x, hAB.mem_domain x⟩]
+  apply_eq x := (congrArg Y (hAB.apply_eq x)).trans (hBC.apply_eq ⟨X x, hAB.mem_domain x⟩)
+
+end LinearPMap
+
+variable {𝕜 E F : Type*} [Ring 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F]
 
 /-- For bounded everywhere-defined operators, domain-aware intertwining is exactly
 the equality of the two continuous linear compositions. -/
-@[simp] theorem _root_.ContinuousLinearMap.intertwines_toPMap_top_iff
+@[simp] theorem ContinuousLinearMap.intertwines_toPMap_top_iff
     (S : E →L[𝕜] E) (T : F →L[𝕜] F) (X : E →L[𝕜] F) :
     ((S : E →ₗ[𝕜] E).toPMap ⊤).Intertwines
       ((T : F →ₗ[𝕜] F).toPMap ⊤) X ↔ X ∘L S = T ∘L X := by
@@ -93,5 +88,3 @@ the equality of the two continuous linear compositions. -/
     refine ⟨fun _ => Submodule.mem_top, fun x => ?_⟩
     rcases x with ⟨x, hx⟩
     simpa [LinearMap.toPMap_apply] using DFunLike.congr_fun h x
-
-end TauCeti

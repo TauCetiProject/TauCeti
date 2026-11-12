@@ -87,7 +87,6 @@ than through `MeasureTheory.charFun`.
 
 * S. Bochner, *Vorlesungen über Fouriersche Integrale*, Akademische Verlagsgesellschaft (1932).
 * W. Rudin, *Fourier Analysis on Groups* (1962), Theorem 1.4.3.
-* Roadmap: TauCetiRoadmap/OneParameterSemigroups/README.md, Part C (Bochner milestone).
 -/
 
 public section
@@ -114,9 +113,9 @@ theorem integral_fourierAtom_withDensity_re_fourierInv (F : V → ℂ)
   have hft_int : Integrable (𝓕 F) :=
     integrable_fourier_of_posSemidef F hpd hint hcont
   have hre : ∀ ξ, 0 ≤ (𝓕⁻ F ξ).re :=
-    fourierInv_re_nonneg_of_posSemidef F hpd hint hcont
+    fourierInv_re_nonneg_of_posSemidef F hpd hcont
   have hreal : ∀ ξ, 𝓕⁻ F ξ = ((𝓕⁻ F ξ).re : ℂ) :=
-    fourierInv_eq_re_of_posSemidef F hpd hint
+    fourierInv_eq_re_of_posSemidef F hpd
   rw [integral_withDensity_eq_integral_toReal_smul₀
     (measurable_ofReal_re_fourierInv hint).aemeasurable
     (ae_of_all _ fun ξ => ENNReal.ofReal_lt_top) _]

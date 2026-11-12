@@ -35,6 +35,11 @@ the later Morera-based reflection theorem: the reflected branch is continuous on
 sets, and the explicit Schwarz-reflection extension is continuous across the real axis when
 the boundary values are real.
 
+`starSchwarzReflection` is the same extension for functions valued in any additive monoid with a
+`star` operation, whose fixed points play the role of the real values: it is `ξ z` on the closed
+upper half-plane and `star (ξ (conj z))` below it, and it agrees with `schwarzReflection` for
+scalar functions. It is the reflection used by the weak Schwarz reflection principle.
+
 The last section turns conjugation symmetry into a statement about limits at a real point: a
 holomorphic function on a punctured disc about a real point which commutes with conjugation has a
 two-sided limit there as soon as it has one along the upper half-plane.  Symmetry transports the
@@ -425,7 +430,6 @@ lemma differentiableOn_schwarzReflection_inter_im_ne_zero_of_symmetric {Ω : Set
   · apply (differentiableWithinAt_congr_set ?_).mp (hlower z ⟨hz.1, hzneg⟩)
     filter_upwards [
       (isOpen_lt Complex.continuous_im continuous_const).mem_nhds hzneg] with w hw
-    apply propext
     constructor
     · rintro ⟨hwΩ, _⟩
       exact ⟨hwΩ, ne_of_lt hw⟩
@@ -434,7 +438,6 @@ lemma differentiableOn_schwarzReflection_inter_im_ne_zero_of_symmetric {Ω : Set
   · apply (differentiableWithinAt_congr_set ?_).mp (hupper z ⟨hz.1, hzpos⟩)
     filter_upwards [
       (isOpen_lt continuous_const Complex.continuous_im).mem_nhds hzpos] with w hw
-    apply propext
     constructor
     · rintro ⟨hwΩ, _⟩
       exact ⟨hwΩ, ne_of_gt hw⟩
@@ -483,6 +486,56 @@ conjugate of the derivative of the original function at the conjugate point. -/
           fun w hw => schwarzReflection_of_im_neg (f := f) hw
     _ = (starRingEnd ℂ) (deriv f ((starRingEnd ℂ) z)) := by
       simpa only [Function.comp_def] using congrFun deriv_conj_conj z
+
+/-! ### Reflection of vector-valued functions -/
+
+section StarSchwarzReflection
+
+variable {F : Type*} [Star F] {ξ : ℂ → F}
+
+/-- Schwarz reflection across the real axis with respect to the real structure `star` of the
+coefficients: `ξ z` on the closed upper half-plane and `star (ξ (conj z))` below it. -/
+noncomputable def starSchwarzReflection (ξ : ℂ → F) (z : ℂ) : F :=
+  if 0 ≤ z.im then ξ z else star (ξ (conj z))
+
+@[simp]
+theorem starSchwarzReflection_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
+    starSchwarzReflection ξ z = ξ z := ite_eq_left_iff.2 fun h ↦ (h hz).elim
+
+@[simp]
+theorem starSchwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
+    starSchwarzReflection ξ z = star (ξ (conj z)) := ite_eq_right_iff.2 fun h ↦ (hz.not_ge h).elim
+
+/-- For scalar functions the reflection is the classical Schwarz reflection. -/
+theorem starSchwarzReflection_eq_schwarzReflection (f : ℂ → ℂ) :
+    starSchwarzReflection f = schwarzReflection f := by
+  ext z
+  rw [schwarzReflection_def, starSchwarzReflection, Complex.star_def]
+
+@[simp]
+theorem starSchwarzReflection_zero {F : Type*} [AddMonoid F] [StarAddMonoid F] :
+    starSchwarzReflection (0 : ℂ → F) = 0 := by
+  ext z
+  simp [starSchwarzReflection]
+
+/-- Off the real axis the reflection is conjugation-symmetric. -/
+theorem starSchwarzReflection_conj {F : Type*} [InvolutiveStar F] {ξ : ℂ → F} {z : ℂ}
+    (hz : z.im ≠ 0) :
+    starSchwarzReflection ξ (conj z) = star (starSchwarzReflection ξ z) := by
+  rcases hz.lt_or_gt with hz | hz
+  · rw [starSchwarzReflection_of_im_nonneg (by simpa using hz.le),
+      starSchwarzReflection_of_im_neg hz, star_star]
+  · rw [starSchwarzReflection_of_im_neg (by simpa using hz),
+      starSchwarzReflection_of_im_nonneg hz.le, conj_conj]
+
+/-- **Check.** The reflection of the identity, which is real on the real axis, is the identity. -/
+theorem starSchwarzReflection_id : starSchwarzReflection (id : ℂ → ℂ) = id := by
+  ext1 z
+  by_cases hz : 0 ≤ z.im
+  · simp [starSchwarzReflection_of_im_nonneg hz]
+  · simp [starSchwarzReflection_of_im_neg (not_le.1 hz)]
+
+end StarSchwarzReflection
 
 section RealPoint
 

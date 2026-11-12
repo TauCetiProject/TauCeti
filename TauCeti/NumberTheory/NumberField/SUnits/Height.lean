@@ -157,12 +157,11 @@ theorem norm_logEmbedding_le_logHeight₁ (x : (S : Set (HeightOneSpectrum (𝓞
   rw [Real.norm_eq_abs]
   cases i with
   | inl w =>
-    rw [logEmbedding_apply_inl, ← Real.log_pow, ← GlobalNumberFields.normalizedAbsValue_inr]
-    exact GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ _
+    rw [logEmbedding_apply_inl]
+    exact InfinitePlace.abs_mult_mul_log_le_logHeight₁ _ _
   | inr v =>
-    rw [logEmbedding_apply_inr, FinitePlace.mk_apply, FinitePlace.norm_embedding,
-      ← GlobalNumberFields.normalizedAbsValue_inl]
-    exact GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ _
+    rw [logEmbedding_apply_inr]
+    exact FinitePlace.abs_log_le_logHeight₁ _ _
 
 open Classical in
 /-- The logarithmic height of an `S`-unit is at most `rank K + #S`, the dimension of the

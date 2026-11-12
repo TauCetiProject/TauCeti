@@ -51,6 +51,9 @@ multiplied by a Lipschitz constant of `Φ` on `closure W`, and these tend to zer
 ## Main declarations
 
 * `TauCeti.HasWeakFDerivOn.comp_measurePreserving`: the weak chain rule.
+* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv`,
+  `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff`: the case of a measure-preserving
+  continuous linear equivalence, such as a linear isometry between inner product spaces.
 
 ## References
 
@@ -106,7 +109,7 @@ private theorem hasWeakFDerivOn_comp_of_tendsto [OpensMeasurableSpace E] {W : Op
   · exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hf
       (fun _ => bot_le) fun k =>
         (setLIntegral_le_lintegral _ _).trans <|
-          (hΦ.lintegral_comp' (hfm k).enorm).le.trans lintegral_enorm_le_eLpNorm_one
+          (hΦ.lintegral_comp' (hfm k).eNorm).le.trans lintegral_eNorm_le_eLpNorm_one
   · have hGM := ENNReal.Tendsto.mul_const (b := ENNReal.ofReal M) hG
       (Or.inr ENNReal.ofReal_ne_top)
     rw [zero_mul] at hGM
@@ -121,7 +124,7 @@ private theorem hasWeakFDerivOn_comp_of_tendsto [OpensMeasurableSpace E] {W : Op
       _ = (∫⁻ x in W, ‖G k (Φ x) - H (Φ x)‖ₑ ∂μ) * ENNReal.ofReal M :=
           lintegral_mul_const' _ _ ENNReal.ofReal_ne_top
       _ ≤ _ := mul_le_mul_left ((setLIntegral_le_lintegral _ _).trans <|
-          (hΦ.lintegral_comp' (hGm k).enorm).le.trans lintegral_enorm_le_eLpNorm_one) _
+          (hΦ.lintegral_comp' (hGm k).eNorm).le.trans lintegral_eNorm_le_eLpNorm_one) _
 
 /-- **Mollifying the pieces of the chain rule.** Let `u` have weak derivative `D` on `V`, let `Φ`
 be locally Lipschitz on `W` and Lipschitz on `W`, mapping `W` into a compact `K ⊆ V`, and let `O`
@@ -220,5 +223,33 @@ theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u :
   filter_upwards [hindD] with x hx
   simp only [Function.comp_apply] at hx
   rw [hx]
+
+
+/-- **The weak chain rule for linear changes of variables.** If `u` has weak derivative `D` on the
+open set `V`, and the continuous linear equivalence `e` carries `μ` to `ν` and maps `U` into `V`,
+then `u ∘ e` has weak derivative `x ↦ D (e x) ∘L e` on `U`. Linear isometries between
+finite-dimensional real inner product spaces carry volume to volume
+(`LinearIsometryEquiv.measurePreserving`). -/
+theorem HasWeakFDerivOn.comp_continuousLinearEquiv {U : Opens E} {V : Opens E'} {u : E' → F}
+    {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D) (e : E ≃L[ℝ] E')
+    (he : MeasurePreserving e μ ν) (hUV : MapsTo e U V) :
+    HasWeakFDerivOn μ U (u ∘ e) fun x => (D (e x)).comp (e : E →L[ℝ] E') := by
+  simpa only [e.fderiv] using h.comp_measurePreserving he
+    (e : E →L[ℝ] E').lipschitzWith.locallyLipschitz.locallyLipschitzOn hUV
+
+/-- **Weak derivatives through a linear change of variables.** If the continuous linear
+equivalence `e` carries `μ` to `ν` and `U = e ⁻¹' V`, then `u ∘ e` has weak derivative
+`x ↦ D (e x) ∘L e` on `U` exactly when `u` has weak derivative `D` on `V`. -/
+theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff {U : Opens E} {V : Opens E'}
+    {u : E' → F} {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E') (he : MeasurePreserving e μ ν)
+    (hUV : (U : Set E) = e ⁻¹' V) :
+    HasWeakFDerivOn μ U (u ∘ e) (fun x => (D (e x)).comp (e : E →L[ℝ] E')) ↔
+      HasWeakFDerivOn ν V u D := by
+  refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv e he (hUV ▸ mapsTo_preimage e V)⟩
+  have he' : MeasurePreserving e.symm ν μ :=
+    MeasurePreserving.symm e.toHomeomorph.toMeasurableEquiv he
+  have hVU : MapsTo e.symm V U := fun y hy => by simpa [hUV] using hy
+  simpa [Function.comp_def, ContinuousLinearMap.comp_assoc] using
+    h.comp_continuousLinearEquiv e.symm he' hVU
 
 end TauCeti
