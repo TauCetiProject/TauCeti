@@ -36,6 +36,10 @@ charted space in its preferred charts and to check that it is well behaved.
 * `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
 * `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space modelled on a second
   countable space is second countable.
+
+The last result supplies the second countability of a Lindelöf source manifold used in
+TangentialBordism B1.6's Sard and transversality arguments: its strata inherit second
+countability as subspaces, hence are Lindelöf.
 -/
 
 public section
