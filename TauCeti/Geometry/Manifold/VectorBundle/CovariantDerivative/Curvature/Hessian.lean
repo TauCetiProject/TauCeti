@@ -151,7 +151,7 @@ theorem hessian_norm_sq (hcov : cov.IsMetricCompatible) {σ : Π x : M, V x}
       mvfderiv I (fun y ↦ ⟪σ y, σ y⟫_ℝ) x w = ⟪cov σ x w, σ x⟫_ℝ + ⟪σ x, cov σ x w⟫_ℝ := by
     have hσd : MDiffAt (T% σ) x := hσ.mdifferentiable (by simp) x
     simpa using hcov.mvfderiv_inner_eq (FiberBundle.extend E w) hσd hσd
-  obtain ⟨U, hU, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨U, _, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
   obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
   have hsq : ContMDiffAt I 𝓘(ℝ) 2 (fun y ↦ ‖σ y‖ ^ 2) x := by
     rw [hfun]
