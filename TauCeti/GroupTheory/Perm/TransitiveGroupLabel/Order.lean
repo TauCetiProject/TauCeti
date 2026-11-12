@@ -79,6 +79,13 @@ theorem TransitiveGroupLabel.natCard_mem_four {j : TransitiveGroupIndex 4}
   · rw [h.natCard_eq, natCard_referenceSubgroup_four_four]
     simp
 
+/-- **The degree divides the order of a reference subgroup.** The reference subgroup `nTj` is
+transitive on `Fin n`, so its order is divisible by `n`. -/
+theorem dvd_natCard_referenceSubgroup (n : ℕ) [NeZero n] (j : TransitiveGroupIndex n) :
+    n ∣ Nat.card (referenceSubgroup n j) := by
+  have := (transitiveGroupLabel_referenceSubgroup n j).isPretransitive
+  simpa using natCard_dvd_natCard_of_isPretransitive (G := referenceSubgroup n j) (X := Fin n)
+
 /-- **Order recognition in degree three.** A subgroup of `S₃` is labelled `3Tj` exactly when its
 order is that of `3Tj`: the orders `3, 6` of `3T1` and `3T2` are distinct. -/
 @[simp]
@@ -86,11 +93,7 @@ theorem transitiveGroupLabel_three_iff_natCard_eq (j : TransitiveGroupIndex 3)
     (G : Subgroup (Perm (Fin 3))) :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 3 j) :=
   ⟨fun h => h.natCard_eq, fun h => by
-    -- The reference subgroup is transitive, so its order is divisible by three.
-    have h3 : 3 ∣ Nat.card G := by
-      have := (transitiveGroupLabel_referenceSubgroup 3 j).isPretransitive
-      simpa [h] using natCard_dvd_natCard_of_isPretransitive (G := referenceSubgroup 3 j)
-        (X := Fin 3)
+    have h3 : 3 ∣ Nat.card G := h ▸ dvd_natCard_referenceSubgroup 3 j
     obtain ⟨k, hk⟩ := G.exists_transitiveGroupLabel_three_of_three_dvd_natCard h3
     have hjk : j = k := by
       have h2 : Nat.card (referenceSubgroup 3 j) = Nat.card (referenceSubgroup 3 k) :=
@@ -114,11 +117,7 @@ theorem transitiveGroupLabel_five_iff_natCard_eq (j : TransitiveGroupIndex 5)
     (G : Subgroup (Perm (Fin 5))) :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 5 j) :=
   ⟨fun h => h.natCard_eq, fun h => by
-    -- The reference subgroup is transitive, so its order is divisible by five.
-    have h5 : 5 ∣ Nat.card G := by
-      have := (transitiveGroupLabel_referenceSubgroup 5 j).isPretransitive
-      simpa [h] using natCard_dvd_natCard_of_isPretransitive (G := referenceSubgroup 5 j)
-        (X := Fin 5)
+    have h5 : 5 ∣ Nat.card G := h ▸ dvd_natCard_referenceSubgroup 5 j
     obtain ⟨k, hk⟩ := G.exists_transitiveGroupLabel_five_of_five_dvd_natCard h5
     have hjk : j = k := by
       have h2 : Nat.card (referenceSubgroup 5 j) = Nat.card (referenceSubgroup 5 k) :=
@@ -150,7 +149,8 @@ theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4))) :
     obtain ⟨g, hg⟩ := hcyc.exists_generator
     have hord : orderOf g = 4 := (orderOf_eq_card_of_forall_mem_zpowers hg).trans hcard
     refine G.transitiveGroupLabel_four_zero_of_exists_sq_ne_one hcard ⟨g, g.2, fun h => ?_⟩
-    have hdvd : orderOf g ∣ 2 := orderOf_dvd_of_pow_eq_one (Subtype.ext h)
+    have hdvd : orderOf g ∣ 2 := orderOf_dvd_of_pow_eq_one
+      (Subtype.ext (by rw [Subgroup.coe_pow]; exact h))
     rw [hord] at hdvd
     omega
 
