@@ -41,6 +41,10 @@ shrinking part.
   corepresentability instance.
 * `TauCeti.HopfAlgebra.pointsGroupPresheaf` and `TauCeti.HopfAlgebra.pointsPresheaf`: the
   group- and type-valued points functors as presheaves on opposite commutative algebras.
+* `CommHopfAlgCat.pointsPresheaf_map_op_apply`: restriction in the points presheaf
+  post-composes with the morphism of value algebras.
+* `CommHopfAlgCat.pointsRightMul`: right multiplication by an `R`-point, as a natural
+  endomorphism of the universe-lifted points presheaf.
 * `TauCeti.CommHopfAlgCat.groupYonedaPointsFunctor`: the group-object Yoneda model of the
   functor of points.
 * `TauCeti.CommHopfAlgCat.groupYonedaPointsHomEquiv`: the carrier equivalence from the opaque
@@ -698,3 +702,63 @@ instance pointsPresheaf_isRepresentable (H : _root_.CommHopfAlgCat.{u} R) :
 end HopfAlgebra
 
 end TauCeti
+
+namespace CommHopfAlgCat
+
+open TauCeti
+
+universe u
+
+variable {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{u} R)
+
+/-- The points presheaf restricts a point along a morphism of affine schemes by post-composing
+it with the corresponding morphism of value algebras. -/
+theorem pointsPresheaf_map_op_apply {X Y : (CommAlgCat.{u} R)ᵒᵖ} (f : Y ⟶ X)
+    (g : HopfAlgebra.points (R := R) (H := H) X.unop) :
+    (HopfAlgebra.pointsPresheaf H).map f.op g = HopfAlgebra.mapPoints (H := H) f.unop g :=
+  (rfl)
+
+/-- Right multiplication by the extension of a ground-ring point `g`, as a natural endomorphism
+of the universe-lifted points presheaf of `H`. -/
+@[expose] noncomputable def pointsRightMul
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
+      HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} where
+  app A := ↾fun x : ULift.{u + 1} (HopfAlgebra.points (R := R) (H := H) A.unop.unop) ↦
+    ULift.up (x.down * HopfAlgebra.extendPoint H A.unop.unop g)
+  naturality {A B} χ := by
+    ext ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
+    -- Present both sides of the naturality square as lifted products of points.
+    change ULift.up (HopfAlgebra.mapPoints (H := H) χ.unop.unop x *
+        HopfAlgebra.extendPoint H B.unop.unop g) =
+      ULift.up (HopfAlgebra.mapPoints (H := H) χ.unop.unop
+        (x * HopfAlgebra.extendPoint H A.unop.unop g))
+    rw [map_mul, HopfAlgebra.mapPoints_extendPoint]
+
+/-- Right multiplication by `g` multiplies each point on the right by the extension of `g`. -/
+@[simp]
+theorem pointsRightMul_app (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    dsimp% (pointsRightMul H g).app A (ULift.up x) =
+      ULift.up (x * HopfAlgebra.extendPoint H A.unop.unop g) :=
+  (rfl)
+
+/-- Right multiplication by the identity point is the identity. -/
+@[simp]
+theorem pointsRightMul_one : pointsRightMul H 1 = 𝟙 _ := by
+  ext A ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
+  exact congrArg ULift.up (by rw [map_one, mul_one])
+
+/-- Right multiplication by `g` followed by right multiplication by `g'` is right multiplication
+by `g * g'`. -/
+@[reassoc (attr := simp)]
+theorem pointsRightMul_comp_pointsRightMul
+    (g g' : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    pointsRightMul H g ≫ pointsRightMul H g' = pointsRightMul H (g * g') := by
+  ext A ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
+  have hx : x * HopfAlgebra.extendPoint H A.unop.unop g * HopfAlgebra.extendPoint H A.unop.unop g' =
+      x * HopfAlgebra.extendPoint H A.unop.unop (g * g') := by
+    rw [map_mul, mul_assoc]
+  exact congrArg ULift.up hx
+
+end CommHopfAlgCat

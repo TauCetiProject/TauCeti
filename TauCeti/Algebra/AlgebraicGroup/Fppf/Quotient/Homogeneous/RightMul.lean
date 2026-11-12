@@ -31,7 +31,6 @@ that `G(A) → (G/Q)(A)` identifies exactly the left cosets of `Q(A)`, for every
 
 ## Main declarations
 
-* `CommHopfAlgCat.pointsRightMul`: right multiplication by an `R`-point on the points of `G`.
 * `CommHopfAlgCat.fppfHomogeneousQuotientRightMul`: the morphism `G/P ⟶ G/Q`, `xP ↦ xgQ`.
 * `CommHopfAlgCat.fppfHomogeneousQuotientRightMul_eq_iff`: its characterization by the
   projection from `G`.
@@ -61,48 +60,6 @@ noncomputable section
 variable {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{u} R)
 
 variable {I J K : HopfIdeal R H}
-
-/-- Right multiplication by the extension of a ground-ring point `g`, as a natural endomorphism
-of the universe-lifted points presheaf of `G`. -/
-def pointsRightMul (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} where
-  app A := ↾fun x : ULift.{u + 1} (HopfAlgebra.points (R := R) (H := H) A.unop.unop) ↦
-    ULift.up (x.down * HopfAlgebra.extendPoint H A.unop.unop g)
-  naturality {A B} χ := by
-    ext ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
-    -- Present both sides of the naturality square as lifted products of points.
-    change ULift.up (HopfAlgebra.mapPoints (H := H) χ.unop.unop x *
-        HopfAlgebra.extendPoint H B.unop.unop g) =
-      ULift.up (HopfAlgebra.mapPoints (H := H) χ.unop.unop
-        (x * HopfAlgebra.extendPoint H A.unop.unop g))
-    rw [map_mul, HopfAlgebra.mapPoints_extendPoint]
-
-/-- Right multiplication by `g` multiplies each point on the right by the extension of `g`. -/
-@[simp]
-theorem pointsRightMul_app (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
-    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
-    dsimp% (pointsRightMul H g).app A (ULift.up x) =
-      ULift.up (x * HopfAlgebra.extendPoint H A.unop.unop g) :=
-  (rfl)
-
-/-- Right multiplication by the identity point is the identity. -/
-@[simp]
-theorem pointsRightMul_one : pointsRightMul H 1 = 𝟙 _ := by
-  ext A ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
-  exact congrArg ULift.up (by rw [map_one, mul_one])
-
-/-- Right multiplication by `g` followed by right multiplication by `g'` is right multiplication
-by `g * g'`. -/
-@[reassoc (attr := simp)]
-theorem pointsRightMul_comp_pointsRightMul
-    (g g' : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    pointsRightMul H g ≫ pointsRightMul H g' = pointsRightMul H (g * g') := by
-  ext A ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
-  have hx : x * HopfAlgebra.extendPoint H A.unop.unop g * HopfAlgebra.extendPoint H A.unop.unop g' =
-      x * HopfAlgebra.extendPoint H A.unop.unop (g * g') := by
-    rw [map_mul, mul_assoc]
-  exact congrArg ULift.up hx
 
 private theorem pointsRightMul_comp_projection_invariant
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
@@ -159,9 +116,10 @@ theorem fppfHomogeneousQuotientRightMul_app_basePoint
       (by rw [one_mul, HopfAlgebra.extendPoint_self]))
 
 /-- For the identity point, `xP ↦ xQ` is the projection induced by the inclusion `P ⊆ Q`. -/
-theorem fppfHomogeneousQuotientRightMul_one (hJI : J ≤ I) :
-    fppfHomogeneousQuotientRightMul H 1 (by rwa [HopfIdeal.conjugate_one]) =
-      fppfHomogeneousQuotientMap H hJI := by
+@[simp]
+theorem fppfHomogeneousQuotientRightMul_one (h : J.conjugate 1 ≤ I) :
+    fppfHomogeneousQuotientRightMul H 1 h =
+      fppfHomogeneousQuotientMap H (by rwa [HopfIdeal.conjugate_one] at h) := by
   apply fppfHomogeneousQuotient_hom_ext
   rw [fppfHomogeneousQuotientProjection_comp_rightMul, pointsRightMul_one, Category.id_comp,
     fppfHomogeneousQuotientProjection_comp_map]

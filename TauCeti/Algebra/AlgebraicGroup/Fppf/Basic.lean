@@ -37,7 +37,7 @@ assert that such a quotient sheaf is representable; representability requires se
 
 * `TauCeti.HopfAlgebra.pointsPresheaf_isSheaf`: affine-group points satisfy fppf descent.
 * `TauCeti.HopfAlgebra.pointsFppfSheaf`: affine-group points bundled as an fppf sheaf.
-* `TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_of_mem_fppfTopology`: membership in a closed
+* `CommHopfAlgCat.mem_quotientPointsSubgroup_of_mem_fppfTopology`: membership in a closed
   subgroup is fppf local.
 
 ## References
@@ -87,16 +87,15 @@ theorem pointsFppfSheaf_obj (H : _root_.CommHopfAlgCat.{u} R) :
     (pointsFppfSheaf H).obj = pointsGroupPresheaf H :=
   by rw [pointsFppfSheaf]
 
-/-- The points presheaf restricts a point along a morphism of affine schemes by post-composing
-it with the corresponding morphism of value algebras. -/
-theorem pointsPresheaf_map_op_apply (H : _root_.CommHopfAlgCat.{u} R)
-    {X Y : (CommAlgCat.{u} R)ᵒᵖ} (f : Y ⟶ X) (g : points (R := R) (H := H) X.unop) :
-    (pointsPresheaf H).map f.op g = mapPoints (H := H) f.unop g :=
-  (rfl)
-
 end HopfAlgebra
 
+end TauCeti
+
 namespace CommHopfAlgCat
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+universe u
 
 variable {R : Type u} [CommRing R]
 
@@ -127,7 +126,7 @@ theorem mem_quotientPointsSubgroup_of_mem_fppfTopology (H : _root_.CommHopfAlgCa
     rw [Presieve.compatible_iff_sieveCompatible]
     intro Y Z f k hf
     apply quotientPointsHom_injective H I Z.unop
-    rw [HopfAlgebra.pointsPresheaf_map_op_apply, ← mapPoints_quotientPointsHom, hx _ _ hf,
+    rw [pointsPresheaf_map_op_apply, ← mapPoints_quotientPointsHom, hx _ _ hf,
       hx _ _ (S.downward_closed hf k), unop_comp, HopfAlgebra.mapPoints_comp,
       ConcreteCategory.comp_apply]
   -- Glue the lifts to a quotient point; it includes as `g`, having the same restrictions.
@@ -138,10 +137,8 @@ theorem mem_quotientPointsSubgroup_of_mem_fppfTopology (H : _root_.CommHopfAlgCa
     ⟨hN.amalgamate x hcompat, fun _ f hf ↦ hN.valid_glue hcompat f hf⟩
   have hglue : quotientPointsHom H I X.unop n = g := by
     refine hG.isSeparatedFor.ext fun Y f hf ↦ ?_
-    rw [HopfAlgebra.pointsPresheaf_map_op_apply, HopfAlgebra.pointsPresheaf_map_op_apply,
+    rw [pointsPresheaf_map_op_apply, pointsPresheaf_map_op_apply,
       mapPoints_quotientPointsHom, hn f hf, hx _ _ hf]
   exact hglue ▸ quotientPointsHom_mem_quotientPointsSubgroup H I X.unop n
 
 end CommHopfAlgCat
-
-end TauCeti
