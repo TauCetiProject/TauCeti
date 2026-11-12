@@ -33,8 +33,10 @@ the tensor product of distributions.
 
 For complex smooth functions `φ` supported in a compact set `K₁ ⊆ E` and `ψ` supported in a
 compact set `K₂ ⊆ D`, the tensor product `(x, y) ↦ φ x * ψ y` is a smooth function supported in
-`K₁ ×ˢ K₂` (`ContDiffMapSupportedIn.tensor`), bilinear in `φ` and `ψ`. These are the tensor
-products of test functions against which Schwartz kernels are tested.
+`K₁ ×ˢ K₂` (`ContDiffMapSupportedIn.tensor`), bilinear in `φ` and `ψ`. Likewise, for complex test
+functions `φ` on `Ω` and `ψ` on `O` it is a test function on any open set containing `Ω ×ˢ O`
+(`TestFunction.tensor`). These are the tensor products of test functions against which Schwartz
+kernels are tested.
 
 ## Main declarations
 
@@ -45,6 +47,9 @@ products of test functions against which Schwartz kernels are tested.
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
   `TestFunction.sliceRight_lineDerivOp_zero_prod`.
+* `TestFunction.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex test functions on
+  `Ω` and `O`, with `TestFunction.tensor_apply`, its support `TestFunction.tsupport_tensor_subset`
+  and its bilinearity.
 * `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex smooth
   functions `φ`, `ψ` supported in compact sets `K₁`, `K₂`, supported in `K₁ ×ˢ K₂`, with
   `ContDiffMapSupportedIn.tensor_apply` and its bilinearity.
@@ -212,6 +217,60 @@ theorem sliceRight_prodSMulCLM (ψ : 𝓓(O, ℝ)) (hV : (Ω : Set E) ×ˢ (O : 
     (φ : 𝓓(Ω, ℝ)) (x : E) : sliceRight hO (prodSMulCLM ψ hV φ) x = φ x • ψ := by
   ext y
   simp [mul_comm]
+
+section Tensor
+
+variable {n : ℕ∞}
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ D] in
+/-- The function `(x, y) ↦ φ x * ψ y` is supported in `tsupport φ ×ˢ tsupport ψ`. -/
+private theorem tsupport_mul_subset (φ : E → ℂ) (ψ : D → ℂ) :
+    tsupport (fun p : E × D ↦ φ p.1 * ψ p.2) ⊆ tsupport φ ×ˢ tsupport ψ :=
+  closure_minimal (fun _ hp ↦ ⟨subset_tsupport _ (left_ne_zero_of_mul hp),
+    subset_tsupport _ (right_ne_zero_of_mul hp)⟩) ((isClosed_tsupport _).prod (isClosed_tsupport _))
+
+/-- The tensor product `(x, y) ↦ φ x * ψ y` of complex test functions `φ` on `Ω` and `ψ` on `O`,
+a test function on every open set `V` containing `Ω ×ˢ O`. -/
+def tensor (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) :
+    𝓓^{n}(V, ℂ) :=
+  ⟨fun p ↦ φ p.1 * ψ p.2, (φ.contDiff.comp contDiff_fst).mul (ψ.contDiff.comp contDiff_snd),
+    (φ.hasCompactSupport.prod ψ.hasCompactSupport).of_isClosed_subset (isClosed_tsupport _)
+      (tsupport_mul_subset _ _),
+    (tsupport_mul_subset _ _).trans ((prod_mono φ.tsupport_subset ψ.tsupport_subset).trans hV)⟩
+
+variable (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V)
+
+@[simp]
+theorem tensor_apply (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) (p : E × D) :
+    φ.tensor ψ hV p = φ p.1 * ψ p.2 :=
+  (rfl)
+
+/-- The tensor product `φ ⊗ ψ` is supported in `tsupport φ ×ˢ tsupport ψ`. -/
+theorem tsupport_tensor_subset (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
+    tsupport (φ.tensor ψ hV) ⊆ tsupport φ ×ˢ tsupport ψ :=
+  tsupport_mul_subset _ _
+
+theorem tensor_add_left (φ φ' : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
+    (φ + φ').tensor ψ hV = φ.tensor ψ hV + φ'.tensor ψ hV := by
+  ext p
+  simp [add_mul]
+
+theorem tensor_add_right (φ : 𝓓^{n}(Ω, ℂ)) (ψ ψ' : 𝓓^{n}(O, ℂ)) :
+    φ.tensor (ψ + ψ') hV = φ.tensor ψ hV + φ.tensor ψ' hV := by
+  ext p
+  simp [mul_add]
+
+theorem tensor_smul_left (c : ℂ) (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
+    (c • φ).tensor ψ hV = c • φ.tensor ψ hV := by
+  ext p
+  simp [mul_assoc]
+
+theorem tensor_smul_right (c : ℂ) (φ : 𝓓^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
+    φ.tensor (c • ψ) hV = c • φ.tensor ψ hV := by
+  ext p
+  simp [mul_left_comm]
+
+end Tensor
 
 end TestFunction
 
