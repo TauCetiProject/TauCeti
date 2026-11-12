@@ -36,16 +36,10 @@ steps, following McDuff–Salamon, Appendix E.
 
 Restricting the chart of `ν` to the unit disc, where `ν` is the coefficient of the rescaled
 structure, and composing it with `w ↦ ε⁻¹ A (w - c)` gives the chart of `J`
-(`TauCeti.Beltrami.exists_isComplexLinear_chart_comp_affine`).
+(`OpenPartialHomeomorph.exists_isComplexLinear_chart_comp_affine`).
 
 ## Main results
 
-* `TauCeti.Beltrami.exists_transport_eq_std_and_contDiffAt`: a `Cⁿ` structure tame at `c` is
-  carried to the standard structure at `c` by a real-linear automorphism, and stays `Cⁿ` when read
-  through it.
-* `TauCeti.Beltrami.exists_isComplexLinear_chart_comp_affine`: precomposing a `Cⁿ` chart with
-  `Cⁿ` inverse, in which `J'` is standard, with an affine equivalence carrying `J` to `J'` gives
-  such a chart for `J`.
 * `TauCeti.Beltrami.exists_isothermalChart_of_contDiffAt`: a `C¹` structure tame at `c` has a
   `C¹` chart at `c`, with `C¹` inverse, in which it is the standard structure.
 
@@ -63,85 +57,6 @@ open Complex Filter Metric Set Topology
 open scoped NNReal Manifold ContDiff BoundedContinuousFunction
 
 namespace TauCeti.Beltrami
-
-/-- **Normalization at a point.** Let `J` be a field of almost complex structures on the plane,
-tame at `c`, with `z ↦ J z` of class `Cⁿ` at `c` in the operator norm. There is a real-linear
-automorphism `A` of the plane carrying `J c` to the standard structure, and the field
-`w ↦ J (c + A⁻¹ w)` transported by `A` is of class `Cⁿ` at `0`. -/
-theorem exists_transport_eq_std_and_contDiffAt {n : WithTop ℕ∞}
-    {J : ℂ → AlmostComplexStructure ℂ} {c : ℂ} (hJ : stdComplexSymplecticForm.Tames (J c))
-    (hJs : ContDiffAt ℝ n (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap) c) :
-    ∃ A : ℂ ≃L[ℝ] ℂ,
-      (J c).transport A.toLinearEquiv = AlmostComplexStructure.ofComplexModule ℂ ∧
-      ContDiffAt ℝ n (fun w ↦ LinearMap.toContinuousLinearMap
-        ((J (c + A.symm w)).transport A.toLinearEquiv).toLinearMap) 0 := by
-  refine ⟨_, transport_linearEquiv_eq_std (J c) hJ, ?_⟩
-  set A := linearEquiv (coefficientEquiv ⟨J c, hJ⟩).val _
-  have hcl : (fun w ↦ LinearMap.toContinuousLinearMap
-      ((J (c + A.symm w)).transport A.toLinearEquiv).toLinearMap) = fun w ↦
-      (A : ℂ →L[ℝ] ℂ) ∘L LinearMap.toContinuousLinearMap (J (c + A.symm w)).toLinearMap ∘L
-        (A.symm : ℂ →L[ℝ] ℂ) := by
-    funext w
-    ext v
-    simp [AlmostComplexStructure.transport_toLinearMap, LinearEquiv.conj_apply]
-  rw [hcl]
-  have hin : ContDiffAt ℝ n (fun w : ℂ ↦ c + A.symm w) 0 :=
-    contDiffAt_const.add A.symm.contDiff.contDiffAt
-  have hJs' : ContDiffAt ℝ n (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap)
-      (c + A.symm 0) := by
-    simpa using hJs
-  have hJc : ContDiffAt ℝ n
-      (fun w ↦ LinearMap.toContinuousLinearMap (J (c + A.symm w)).toLinearMap) 0 :=
-    ContDiffAt.comp (g := fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap)
-      (f := fun w ↦ c + A.symm w) (0 : ℂ) hJs' hin
-  exact contDiffAt_const.clm_comp (hJc.clm_comp contDiffAt_const)
-
-/-- **Precomposing a chart with an affine equivalence.** Let `e` be an open partial homeomorphism
-of the plane, of class `Cⁿ` on its source with `Cⁿ` inverse on its target, whose real differential
-carries `J' z` to multiplication by `i` at every point `z` of its source. If the real-linear
-automorphism `B` carries `J z` to `J' (B (z - c))` whenever `B (z - c)` lies in the source of `e`,
-then `z ↦ e (B (z - c))` is an open partial homeomorphism with the same properties for `J`. -/
-theorem exists_isComplexLinear_chart_comp_affine {n : WithTop ℕ∞}
-    {J J' : ℂ → AlmostComplexStructure ℂ} (e : OpenPartialHomeomorph ℂ ℂ) (B : ℂ ≃L[ℝ] ℂ) (c : ℂ)
-    (he : ∀ z ∈ e.source, ContDiffAt ℝ n e z) (hes : ∀ z ∈ e.target, ContDiffAt ℝ n e.symm z)
-    (hJ' : ∀ z ∈ e.source, IsComplexLinear (J' z).toLinearMap
-      (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap (fderiv ℝ e z).toLinearMap)
-    (hB : ∀ z, B (z - c) ∈ e.source → ∀ v, B (J z v) = J' (B (z - c)) (B v)) :
-    ∃ e' : OpenPartialHomeomorph ℂ ℂ, (∀ z, z ∈ e'.source ↔ B (z - c) ∈ e.source) ∧
-      (∀ z, e' z = e (B (z - c))) ∧
-      (∀ z ∈ e'.source, ContDiffAt ℝ n e' z) ∧ (∀ z ∈ e'.target, ContDiffAt ℝ n e'.symm z) ∧
-      ∀ z ∈ e'.source, IsComplexLinear (J z).toLinearMap
-        (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap (fderiv ℝ e' z).toLinearMap := by
-  let S : OpenPartialHomeomorph ℂ ℂ :=
-    ((Homeomorph.subRight c).trans B.toHomeomorph).toOpenPartialHomeomorph
-  have hS : ⇑S = fun w ↦ B (w - c) := by
-    funext w
-    simp [S]
-  have hSs : ⇑S.symm = fun z ↦ B.symm z + c := by
-    funext z
-    simp [S]
-  have hSe : ∀ z, (S.trans e) z = e (B (z - c)) := fun z ↦ by
-    rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply, hS]
-  have hsrc : ∀ z, z ∈ (S.trans e).source ↔ B (z - c) ∈ e.source := fun z ↦ by
-    rw [OpenPartialHomeomorph.trans_source, hS]
-    simp [S]
-  refine ⟨S.trans e, hsrc, hSe, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · rw [OpenPartialHomeomorph.coe_trans, hS]
-    exact (he _ ((hsrc z).1 hz)).comp z
-      (B.contDiff.comp (contDiff_id.sub contDiff_const)).contDiffAt
-  · rw [OpenPartialHomeomorph.trans_target] at hz
-    rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.coe_trans, hSs]
-    exact (B.symm.contDiff.add contDiff_const).contDiffAt.comp z (hes z hz.1)
-  · have hd : fderiv ℝ (S.trans e) z = (fderiv ℝ e (B (z - c))).comp (B : ℂ →L[ℝ] ℂ) := by
-      rw [show ⇑(S.trans e) = fun w ↦ (e ∘ B) (w - c) from funext hSe, fderiv_comp_sub,
-        B.comp_right_fderiv]
-    rw [hd]
-    refine isComplexLinear_of_apply fun v ↦ ?_
-    have := (hJ' _ ((hsrc z).1 hz)).apply (B v)
-    simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe] at this ⊢
-    rw [hB z ((hsrc z).1 hz)]
-    exact this
 
 /-- **Planar isothermal charts.** Let `J` be a field of almost complex structures on the plane,
 tame at `c`, with `z ↦ J z` of class `C¹` at `c` in the operator norm. Then there is an open
@@ -233,7 +148,7 @@ theorem exists_isothermalChart_of_contDiffAt {J : ℂ → AlmostComplexStructure
         rw [ContinuousLinearEquiv.symm_apply_apply, add_sub_cancel]
       rw [hJ''J₁ _ ((he₁s _).1 hz).2, hεS, hB, hB, map_smul, hJ₁, hzc]
   obtain ⟨e', he'src, he'app, he'C, he'sC, he'lin⟩ :=
-    exists_isComplexLinear_chart_comp_affine e₁ B c (fun z hz ↦ heC z ((he₁s z).1 hz).1)
+    e₁.exists_isComplexLinear_chart_comp_affine B c (fun z hz ↦ heC z ((he₁s z).1 hz).1)
       (fun z hz ↦ hesC z hz.1) (fun z hz ↦ helin z ((he₁s z).1 hz).1) hBJ
   refine ⟨e', (he'src c).2 ?_, ?_, he'C, he'sC, he'lin⟩
   · rw [sub_self, map_zero, he₁s]
