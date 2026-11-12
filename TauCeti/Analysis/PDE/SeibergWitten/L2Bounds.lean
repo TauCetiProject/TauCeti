@@ -157,7 +157,6 @@ theorem sqrt_integral_norm_sq_add_sqrt_mul_sqrt_integral_norm_sq_le {g : X → �
   have hsQ := Real.sq_sqrt hQ
   have hsT₁ := Real.sq_sqrt hT₁
   have hsT₂ := Real.sq_sqrt hT₂
-  have hrpos : 0 < √r := Real.sqrt_pos.2 hr
   -- Square both sides: `(√P + √r √Q)² ≤ 2 (P + r Q) ≤ 256 c² (T₁ + T₂) / r`.
   have hPQ : P + r * Q ≤ 128 * c ^ 2 / r * (T₁ + T₂) := by
     have : P ≤ 16 * P := by linarith
@@ -220,7 +219,6 @@ theorem integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : X → F₃} {Dbar : 
   have hK : 16 * c ^ 4 / r ≤ 1 / 2 := by
     rw [div_le_iff₀ hr]
     linarith
-  have hK0 : 0 ≤ 16 * c ^ 4 / r := by positivity
   have hc2 : 0 ≤ 2 * c ^ 2 := by positivity
   -- `Z ≤ (16 c⁴ / r) (T' + T₂) + (16 c⁴ / r) Z`, and the last term is absorbed.
   have hZ' : Z ≤ 16 * c ^ 4 / r * (T' + T₂) + 16 * c ^ 4 / r * Z := by
