@@ -246,6 +246,7 @@ theorem washnitzerBasis_apply (i : σ) : washnitzerBasis σ K i = d K W (X σ K 
   · simp
   · simp [h, washnitzerAlgebra.pderiv_X_of_ne h.symm]
 
+omit [Finite σ] in
 /-- **The differential of an overconvergent series**: `dg = ∑ᵢ (∂g/∂Xᵢ) dXᵢ`. -/
 theorem d_eq_sum [Fintype σ] (g : W) :
     d K W g = ∑ i, pderiv σ K i g • d K W (X σ K i) := by

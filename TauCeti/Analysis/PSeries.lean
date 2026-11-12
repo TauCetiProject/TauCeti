@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.PSeries
+public import TauCeti.Analysis.SpecialFunctions.Log.Base
+public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.NumberTheory.ZetaValues
 
 /-!
-# `p`-series: a clean constant bound beyond exponent two, and shifted weights on `ℤ`
+# `p`-series and weighted summability from sublevel counts
 
 `∑' m : ℕ, m ^ (-t) ≤ 2` for every real `t ≥ 2`. Mathlib supplies the exact value at the endpoint,
 `ζ (2) = π ^ 2 / 6`, and summability throughout `t > 1`, but no inequality valid across a range of
@@ -28,11 +32,19 @@ The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`, and th
 the shifted weights `(1 + |n|) ^ r` for `r < -1`, the form in which the `p`-series enters
 weighted sequence spaces.
 
+A weighted family of radii with finite sublevel sets also has summable reciprocal powers
+when its weighted counts grow at a smaller exponent. The proof partitions the radii into
+dyadic annuli and compares their contributions with a geometric series.
+
 ## Main results
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
 * `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
+* `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
+  when sublevel counts grow at a smaller exponent.
+* `TauCeti.not_summable_norm_zpow_neg_add_mul` — along a nonvanishing arithmetic progression
+  `w + v n` in `ℂ`, the norms of the inverse `k`-th powers are not summable for `k < 2`.
 -/
 
 public section
@@ -79,6 +91,108 @@ theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :
   rw [neg_neg, Real.norm_of_nonneg (by positivity)]
   exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
     (le_add_of_nonneg_left zero_le_one) (by linarith)
+
+open Filter Topology
+
+/-- Weighted reciprocal powers are summable when the weighted sublevel counts grow at a
+strictly smaller power. The radii are at least one and every sublevel set is finite. -/
+theorem summable_mul_rpow_of_count_growth {ι : Type*} (r w : ι → ℝ)
+    (hr : ∀ i, 1 ≤ r i) (hw : ∀ i, 0 ≤ w i)
+    (hfinite : ∀ R : ℝ, {i | r i ≤ R}.Finite)
+    {C B p : ℝ} (hp : 0 ≤ p) (hBp : B < p)
+    (hcount : ∀ᶠ R : ℝ in atTop,
+      (∑' i : {i | r i ≤ R}, w i) ≤ C * R ^ B) :
+    Summable (fun i ↦ w i * (r i) ^ (-p)) := by
+  classical
+  -- Partition the radii into dyadic annuli, each with a finite index set.
+  let bin (i : ι) : ℕ := ⌊Real.logb 2 (r i)⌋₊
+  have hb (i : ι) : (2 : ℝ) ^ bin i ≤ r i ∧ r i < (2 : ℝ) ^ (bin i + 1) :=
+    ⟨Real.pow_natFloor_logb_le_self (by norm_num) (hr i),
+      Real.lt_pow_natFloor_logb_add_one (by norm_num) (by linarith [hr i])⟩
+  have hbinfinite (n : ℕ) : {i | bin i = n}.Finite :=
+    (hfinite ((2 : ℝ) ^ (n + 1))).subset (fun i hi ↦ by
+      have hi' : bin i = n := hi
+      rw [Set.mem_ofPred_eq]
+      simpa only [hi'] using (hb i).2.le)
+  let (n : ℕ) : Fintype {i | bin i = n} := (hbinfinite n).fintype
+  let (R : ℝ) : Fintype {i | r i ≤ R} := (hfinite R).fintype
+  rw [summable_partition (fun i ↦ mul_nonneg (hw i) (Real.rpow_nonneg (by linarith [hr i]) _))
+    (s := fun n ↦ {i | bin i = n}) (fun i ↦ ⟨bin i, rfl, fun n hn ↦ hn.symm⟩)]
+  refine ⟨fun n ↦ Summable.of_finite, ?_⟩
+  -- The annular upper bounds form a convergent geometric series because B < p.
+  let q : ℝ := 2 ^ (B - p)
+  have hq0 : 0 ≤ q := Real.rpow_nonneg (by norm_num) _
+  have hq1 : q < 1 := Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (sub_neg.mpr hBp)
+  have hgeo := (summable_geometric_of_lt_one hq0 hq1).mul_left (C * 2 ^ B)
+  apply hgeo.of_norm_bounded_eventually_nat
+  have ht : Tendsto (fun n : ℕ ↦ (2 : ℝ) ^ (n + 1)) atTop atTop :=
+    (tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 2)).comp
+      (tendsto_add_atTop_nat 1)
+  filter_upwards [ht.eventually hcount] with n hn
+  have hsum0 : 0 ≤ ∑' i : {i | bin i = n}, w i * (r i) ^ (-p) :=
+    tsum_nonneg (fun i ↦ mul_nonneg (hw i) (Real.rpow_nonneg (by linarith [hr i]) _))
+  rw [Real.norm_eq_abs, abs_of_nonneg hsum0]
+  -- Compare the weight of one annulus with the enclosing sublevel count.
+  have hweight : (∑' i : {i | bin i = n}, w i) ≤
+      ∑' i : {i | r i ≤ (2 : ℝ) ^ (n + 1)}, w i := by
+    let e : {i | bin i = n} → {i | r i ≤ (2 : ℝ) ^ (n + 1)} :=
+      fun i ↦ ⟨i, by
+        have hi : bin i = n := i.property
+        rw [Set.mem_ofPred_eq]
+        simpa only [hi] using (hb i).2.le⟩
+    apply Summable.tsum_le_tsum_of_inj e
+      (fun i j h ↦ Subtype.ext (congrArg
+        (fun t : {i | r i ≤ (2 : ℝ) ^ (n + 1)} ↦ (t : ι)) h))
+      (fun i _ ↦ hw i) (fun i ↦ le_rfl) Summable.of_finite Summable.of_finite
+  have hscale : ((2 : ℝ) ^ (n + 1)) ^ B * ((2 : ℝ) ^ n) ^ (-p) =
+      2 ^ B * q ^ n := by
+    simpa only [q, sub_eq_add_neg] using Real.pow_succ_rpow_mul_pow_rpow two_pos B (-p) n
+  calc
+    _ ≤ ∑' i : {i | bin i = n}, w i * ((2 : ℝ) ^ n) ^ (-p) := by
+      apply Summable.tsum_le_tsum _ Summable.of_finite Summable.of_finite
+      intro i
+      apply mul_le_mul_of_nonneg_left _ (hw i)
+      apply Real.rpow_le_rpow_of_nonpos (by positivity) _ (neg_nonpos.mpr hp)
+      have hi : bin i = n := i.property
+      simpa only [hi] using (hb i).1
+    _ = (∑' i : {i | bin i = n}, w i) * ((2 : ℝ) ^ n) ^ (-p) := tsum_mul_right
+    _ ≤ (C * ((2 : ℝ) ^ (n + 1)) ^ B) * ((2 : ℝ) ^ n) ^ (-p) :=
+      mul_le_mul_of_nonneg_right (hweight.trans hn) (by positivity)
+    _ = (C * 2 ^ B) * q ^ n := by rw [mul_assoc, hscale]; ring
+
+/-- Along a nonvanishing arithmetic progression `w + v n`, the norms of the inverse `k`-th powers
+are not summable for `k < 2`: they are bounded below by a multiple of the harmonic series. -/
+theorem not_summable_norm_zpow_neg_add_mul {k : ℕ} {v : ℂ} (hk : k < 2) {w : ℂ}
+    (hne : ∀ n : ℕ, w + v * n ≠ 0) :
+    ¬ Summable fun n : ℕ ↦ ‖(w + v * n) ^ (-(k : ℤ))‖ := by
+  intro h1
+  set C : ℝ := ‖w‖ + ‖v‖ + 1 with hC
+  have hC1 : 1 ≤ C := by linarith [norm_nonneg w, norm_nonneg v]
+  -- the harmonic lower bound `‖w + v n‖ ≤ C (n + 1)`, hence `1 / (C (n + 1)) ≤ ‖(w + v n)⁻ᵏ‖`
+  have hbound (n : ℕ) : 1 / (C * (n + 1)) ≤ ‖(w + v * n) ^ (-(k : ℤ))‖ := by
+    have hpos : 0 < ‖w + v * n‖ := norm_pos_iff.mpr (hne n)
+    have hle : ‖w + v * n‖ ≤ C * (n + 1) := by
+      calc ‖w + v * n‖ ≤ ‖w‖ + ‖v‖ * n := by
+            refine (norm_add_le _ _).trans ?_
+            simp
+        _ ≤ C * (n + 1) := by
+            rw [hC]
+            have : (0 : ℝ) ≤ n := n.cast_nonneg
+            nlinarith [norm_nonneg w, norm_nonneg v]
+    interval_cases k
+    · simp only [Nat.cast_zero, neg_zero, zpow_zero, norm_one]
+      rw [div_le_one (by positivity)]
+      nlinarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
+    · simp only [Nat.cast_one, zpow_neg, zpow_one, norm_inv]
+      rw [← one_div]
+      exact one_div_le_one_div_of_le hpos hle
+  have h2 : Summable fun n : ℕ ↦ 1 / (C * (n + 1)) :=
+    h1.of_nonneg_of_le (fun n ↦ by positivity) hbound
+  have h3 : Summable fun n : ℕ ↦ 1 / ((n + 1 : ℕ) : ℝ) := by
+    refine (h2.mul_left C).congr fun n ↦ ?_
+    push_cast
+    field_simp
+  exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp h3)
 
 end TauCeti
 

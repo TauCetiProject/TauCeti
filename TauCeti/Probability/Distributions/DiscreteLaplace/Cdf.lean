@@ -59,7 +59,7 @@ theorem discreteLaplaceMeasure_real_Iic_of_le (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q
   have hterm (n : ℕ) :
       (discreteLaplaceMeasure m q {k - (n : ℤ)}).toReal =
         ((1 - q) * q ^ (m - k).toNat / (1 + q)) * q ^ n := by
-    rw [← measureReal_def, discreteLaplaceMeasure_real_singleton m hq0 hq1,
+    rw [← measureReal_def, discreteLaplaceMeasure_real_singleton m hq0 hq1.le,
       discreteLaplaceWeightReal_def]
     have habs : (k - (n : ℤ) - m).natAbs = (m - k).toNat + n := by omega
     rw [habs, pow_add]

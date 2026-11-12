@@ -45,12 +45,8 @@ Mathlib's `leadingCoeff_preΨ` (`= n` for odd `n` and `= n / 2` for even `n`) an
 * `WeierstrassCurve.den_dvd_four_of_order_two`: order two is the genuine exception — the
   coordinates need not be integral, but the denominator of `x` divides `4`.
 
-## Roadmap
-
-New mathematics: `TauCetiRoadmap/EllipticCurves/README.md:821` — "**The torsion subgroup and
-Nagell–Lutz**", whose route is stated at `:830`–`:831` as "division polynomials". The roadmap asks
-for the theorem over `ℚ` for both integral models; these are the UFD-level statements that
-specialise to it.
+These are the UFD-level statements that specialise to the Nagell–Lutz theorem over `ℚ`, for both
+integral models.
 
 ## Provenance
 
@@ -59,8 +55,8 @@ Ported from J. Xu and D. K. Angdinata's
 (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`):
 `x_isInteger_of_odd_prime_torsion_squarefree`
 (`:118`), `two_nsmul_eq_zero_of_ψ₂_eq_zero` (`:143`), `integrality_of_order_four_squarefree`
-(`:156`) and `den_dvd_of_order_two` (`:183`). That file is byte-identical at `9fec8eba7652`, the
-revision the roadmap pins, so the citations hold at either.
+(`:156`) and `den_dvd_of_order_two` (`:183`). That file is byte-identical at `9fec8eba7652`
+(`dev/modular-curves`), so the citations hold at either.
 
 Its remaining two declarations are **already in this repository** and are called rather than
 restated: `isInteger_of_root_squarefree_leading_coeff` (`:88`) is `Integrality.lean`'s

@@ -316,9 +316,10 @@ theorem isLipschitzParametrizable_frontier_normLeOne :
     simpa using TauCeti.IsLipschitzParametrizable.image_unitCube_of_contDiffOn
       (d := nrComplexPlaces K) (f := id) rfl contDiffOn_id
   -- `rank K + r₂` is the codimension-one dimension: the identity is
-  -- `NumberField.rank_add_nrComplexPlaces_add_one`, transported across `mixedEmbedding.finrank`.
+  -- `NumberField.Units.rank_add_nrComplexPlaces_add_one`, transported across
+  -- `mixedEmbedding.finrank`.
   have hdim : rank K + nrComplexPlaces K = finrank ℝ (mixedSpace K) - 1 := by
-    rw [mixedEmbedding.finrank, ← rank_add_nrComplexPlaces_add_one K]
+    rw [mixedEmbedding.finrank, ← Units.rank_add_nrComplexPlaces_add_one K]
     omega
   rw [← hdim]
   refine .mono (.iUnion fun s ↦ .image_of_locallyLipschitz (contDiff_liftMap K s).locallyLipschitz

@@ -124,7 +124,7 @@ theorem not_differentiableOn_of_LSeriesHasSum_eulerLogCoeff_one {Ω : Set ℂ} {
       (c := fun n ↦ (1 : DirichletCharacter ℂ N) n)
       (fun p _ ↦ (1 : DirichletCharacter ℂ N).norm_le_one p)
       (fun _ hn ↦ eulerLogCoeff_eq_zero_of_not_isPrimePow _ hn)
-      (fun _ _ hp hk ↦ eulerLogCoeff_prime_pow _ hp hk)
+      (fun _ _ hp _ ↦ eulerLogCoeff_prime_pow _ hp)
       (TauCeti.LSeries.boundedDirichlet_tendsto_ordered_at_one
         (fun n _ ↦ norm_eulerLogCoeff_le_one _ n) hΩ hcover hF hseries)
 

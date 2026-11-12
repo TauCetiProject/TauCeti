@@ -9,18 +9,20 @@ module
 -- also the Mathlib file that `algEquivMatrix` itself lives in.
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
--- `FiniteDimensional` and `Module.finrank` occur in the statement, and
--- `Module.finBasisOfFinrankEq` in the body.
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+-- `Module.Free`, `Module.Finite` and `Module.finrank` occur in the statement, and
+-- `Module.finBasisOfFinrankEq`, which this import defines, in the body.
+public import Mathlib.LinearAlgebra.Dimension.Free
+-- `LinearMap.det` occurs in the statement of `TauCeti.Algebra.det_endAlgEquivMatrix`.
+public import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Matrix realizations of endomorphisms and their action on a basis
 
-Mathlib's `algEquivMatrix` turns `Module.End K M` into matrices indexed by the index type of a
-chosen basis of `M`. This file records the form of it that is wanted when the *dimension* of `M` is
-known but no particular basis is: for `Module.finrank K M = n`, an isomorphism
+Mathlib's `algEquivMatrix` turns `Module.End R M` into matrices indexed by the index type of a
+chosen basis of `M`. This file records the form of it that is wanted when `M` is finite free of
+known *rank* but no particular basis is: for `Module.finrank R M = n`, an isomorphism
 
-`Module.End K M ≃ₐ[K] Matrix (Fin n) (Fin n) K`.
+`Module.End R M ≃ₐ[R] Matrix (Fin n) (Fin n) R`.
 
 In the other direction it records how a matrix unit acts on the basis it is read in, which is the
 computation every matrix model of a Lie algebra performs on its root vectors.
@@ -30,6 +32,7 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `TauCeti.Algebra.endAlgEquivMatrix`: the above, read off the basis
   `Module.finBasisOfFinrankEq`.
 * `TauCeti.Algebra.endAlgEquivMatrix_apply`: its evaluation as `LinearMap.toMatrix` in that basis.
+* `TauCeti.Algebra.det_endAlgEquivMatrix`: its matrices compute determinants of endomorphisms.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
@@ -43,6 +46,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
+  matrix of `φ` applied to `x`.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
@@ -192,6 +197,22 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
 
 end LinearMap
 
+namespace LinearMap
+
+open Matrix
+
+/-- **Coordinates through the coefficient matrix.** The coordinate vector of
+`φ (∑ j, x j • v j)` in the basis `b` is the coefficient matrix `LinearMap.toMatrix v b φ` applied
+to `x`. -/
+theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommMonoid V]
+    [Module R V] [AddCommMonoid M] [Module R M] [Fintype κ] [DecidableEq κ] [Finite ι]
+    (v : Module.Basis κ R V) (b : Module.Basis ι R M) (φ : V →ₗ[R] M) (x : κ → R) :
+    toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
+  rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
+    LinearEquiv.apply_symm_apply]
+
+end LinearMap
+
 namespace Matrix
 
 /-- The rows of an identity matrix are linearly independent: they are the standard basis
@@ -247,33 +268,52 @@ end Algebra
 
 namespace TauCeti.Algebra
 
-variable (K : Type*) [Field K] (M : Type*) [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+section CommSemiring
 
-/-- A `K`-vector space `M` of dimension `n` has `Module.End K M ≃ₐ[K] Matrix (Fin n) (Fin n) K`,
-read off a chosen `K`-basis of `M`.
+variable (R : Type*) [CommSemiring R] [StrongRankCondition R] (M : Type*) [AddCommMonoid M]
+  [Module R M] [Module.Free R M] [Module.Finite R M]
+
+/-- A finite free `R`-module `M` of rank `n` has `Module.End R M ≃ₐ[R] Matrix (Fin n) (Fin n) R`,
+read off a chosen `R`-basis of `M`.
 
 This is Mathlib's `algEquivMatrix` at the basis `Module.finBasisOfFinrankEq`, named here because it
-is wanted wherever a finite-dimensional endomorphism algebra has to be turned into matrices of a
-known size, including the second half of the opposite isomorphism
+is wanted wherever the endomorphism algebra of a finite free module has to be turned into
+matrices of a known size, including the second half of the opposite isomorphism
 `TauCeti.Algebra.tensorOpAlgEquivMatrix`.
 
-The basis is a choice, and nothing downstream should depend on which one it is; there is
-deliberately no lemma computing the matrix entries. -/
-noncomputable def endAlgEquivMatrix {n : ℕ} (hn : Module.finrank K M = n) :
-    Module.End K M ≃ₐ[K] Matrix (Fin n) (Fin n) K :=
-  algEquivMatrix (Module.finBasisOfFinrankEq K M hn)
+The basis is a choice: beyond `endAlgEquivMatrix_apply`, which reads the matrix in
+`Module.finBasisOfFinrankEq`, this file proves nothing about which basis that is. -/
+noncomputable def endAlgEquivMatrix {n : ℕ} (hn : Module.finrank R M = n) :
+    Module.End R M ≃ₐ[R] Matrix (Fin n) (Fin n) R :=
+  algEquivMatrix (Module.finBasisOfFinrankEq R M hn)
 
 /-- The chosen-basis matrix of an endomorphism is its `LinearMap.toMatrix` in
 `Module.finBasisOfFinrankEq`. This is the stable unfolding rule for `endAlgEquivMatrix`; it does
 not compute the entries of the chosen basis. -/
 @[simp]
-theorem endAlgEquivMatrix_apply {n : ℕ} (hn : Module.finrank K M = n) (f : Module.End K M) :
-    endAlgEquivMatrix K M hn f =
-      LinearMap.toMatrix (Module.finBasisOfFinrankEq K M hn)
-        (Module.finBasisOfFinrankEq K M hn) f :=
-  by
-    ext i j
-    simp [endAlgEquivMatrix, algEquivMatrix, algEquivMatrix',
-      LinearEquiv.conjAlgEquiv_apply, LinearMap.toMatrix_apply]
+theorem endAlgEquivMatrix_apply {n : ℕ} (hn : Module.finrank R M = n) (f : Module.End R M) :
+    endAlgEquivMatrix R M hn f =
+      LinearMap.toMatrix (Module.finBasisOfFinrankEq R M hn)
+        (Module.finBasisOfFinrankEq R M hn) f := by
+  ext i j
+  simp [endAlgEquivMatrix, algEquivMatrix, algEquivMatrix',
+    LinearEquiv.conjAlgEquiv_apply, LinearMap.toMatrix_apply]
+
+end CommSemiring
+
+section CommRing
+
+-- `LinearMap.det` needs a commutative ring and an additive group.
+variable (R : Type*) [CommRing R] [StrongRankCondition R] (M : Type*) [AddCommGroup M]
+  [Module R M] [Module.Free R M] [Module.Finite R M]
+
+/-- The chosen-basis matrix of an endomorphism has the determinant of the endomorphism. Since
+`endAlgEquivMatrix` is an algebra isomorphism, this computes the determinant of every polynomial
+expression in `f`, such as `det (1 - f ^ n)`, as that of the same expression in its matrix. -/
+theorem det_endAlgEquivMatrix {n : ℕ} (hn : Module.finrank R M = n) (f : Module.End R M) :
+    (endAlgEquivMatrix R M hn f).det = LinearMap.det f := by
+  rw [endAlgEquivMatrix_apply, LinearMap.det_toMatrix]
+
+end CommRing
 
 end TauCeti.Algebra

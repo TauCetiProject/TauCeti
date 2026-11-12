@@ -145,6 +145,19 @@ theorem hamiltonianAction_add_const (ω : SymplecticForm V) {H : ℝ → V → �
       ω.hamiltonianAction H x + ∫ t in (0 : ℝ)..1, c t := by
   rw [hamiltonianAction_def, hamiltonianAction_def, intervalIntegral.integral_add hH hc, add_assoc]
 
+/-- **Reversing time negates the action.** If the loop `x` and the Hamiltonian `H` are
+`1`-periodic, the reversed loop `t ↦ x(-t)` has, for the reversed Hamiltonian
+`(t, y) ↦ -H(-t, y)`, the opposite action. -/
+theorem hamiltonianAction_comp_neg (ω : SymplecticForm V) {H : ℝ → V → ℝ} {x : ℝ → V}
+    (hH : Periodic H 1) (hx : Periodic x 1) :
+    ω.hamiltonianAction (fun t y ↦ -H (-t) y) (fun t ↦ x (-t)) = -ω.hamiltonianAction H x := by
+  have hper : Periodic (fun t ↦ H t (x t)) 1 := fun t ↦ by simp only [hH t, hx t]
+  have h := hper.intervalIntegral_add_eq (-1) 0
+  rw [neg_add_cancel, zero_add] at h
+  simp only [hamiltonianAction_def, ω.loopArea_comp_neg hx, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun t ↦ H t (x t)), neg_zero, h]
+  ring
+
 end Action
 
 section Curvature
