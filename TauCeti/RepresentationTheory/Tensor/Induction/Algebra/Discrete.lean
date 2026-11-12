@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Tensor.Induction.Algebra.Basic
+public import TauCeti.RepresentationTheory.Tensor.Induction.Algebra.Multiplication
 public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Discrete
 
 /-!

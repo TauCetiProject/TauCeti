@@ -10,33 +10,30 @@ public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
 
 /-!
-# Factorwise algebra homomorphisms and equivalences on indexed tensor products
+# Factorwise algebra homomorphisms on indexed tensor products
 
 Given families of `R`-algebras `A` and `B` indexed by `ι`, a family of `R`-algebra homomorphisms
 `f : ∀ i, A i →ₐ[R] B i` induces an `R`-algebra homomorphism on the indexed tensor product
-`⨂[R] i, A i →ₐ[R] ⨂[R] i, B i`, and a family of `R`-algebra equivalences induces an `R`-algebra
-equivalence. These upgrade `PiTensorProduct.map` and `PiTensorProduct.congr` from linear maps to
-algebra maps, matching `Algebra.TensorProduct.map` and `Algebra.TensorProduct.congr` for binary
-tensor products.
+`⨂[R] i, A i →ₐ[R] ⨂[R] i, B i`, upgrading `PiTensorProduct.map` from linear maps to algebra maps
+and matching `Algebra.TensorProduct.map` for binary tensor products.
 
-We also record how factorwise algebra maps commute with `PiTensorProduct.reindexAlgEquiv` and how
-`PiTensorProduct.mulAlgHom` is invariant under reindexing and permutations of the tensor factors.
+We also relate `PiTensorProduct.mapAlgHom` to `PiTensorProduct.congrAlgEquiv`, record functoriality
+and commutation with `PiTensorProduct.reindexAlgEquiv`, and show that `PiTensorProduct.mulAlgHom`
+is invariant under reindexing and permutations of the tensor factors.
 
 ## Main definitions
 
 * `PiTensorProduct.mapAlgHom`: the `R`-algebra homomorphism `(⨂[R] i, A i) →ₐ[R] ⨂[R] i, B i`
   induced by a family `f : ∀ i, A i →ₐ[R] B i`.
-* `PiTensorProduct.congrAlgEquiv`: the `R`-algebra equivalence `(⨂[R] i, A i) ≃ₐ[R] ⨂[R] i, B i`
-  induced by a family `f : ∀ i, A i ≃ₐ[R] B i`.
 
 ## Main results
 
 * `PiTensorProduct.mapAlgHom_tprod`, `PiTensorProduct.mapAlgHom_singleAlgHom`: action of
   `mapAlgHom` on pure tensors and factor inclusions.
 * `PiTensorProduct.mapAlgHom_id`, `PiTensorProduct.mapAlgHom_comp`: functoriality of `mapAlgHom`.
-* `PiTensorProduct.congrAlgEquiv_tprod`, `PiTensorProduct.congrAlgEquiv_symm`,
-  `PiTensorProduct.congrAlgEquiv_refl`, `PiTensorProduct.congrAlgEquiv_trans`: basic API for
-  `congrAlgEquiv`.
+* `PiTensorProduct.congrAlgEquiv_toAlgHom`, `PiTensorProduct.congrAlgEquiv_symm`,
+  `PiTensorProduct.congrAlgEquiv_refl`, `PiTensorProduct.congrAlgEquiv_trans`: compatibility and
+  groupoid API for `PiTensorProduct.congrAlgEquiv`.
 * `PiTensorProduct.reindexAlgEquiv_mapAlgHom`,
   `PiTensorProduct.reindexAlgEquiv_trans_congrAlgEquiv`: commutation of reindexing with factorwise
   algebra maps and equivalences.
@@ -153,37 +150,12 @@ variable {ι : Type*} {A B C : ι → Type*}
   [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
   [∀ i, Semiring (C i)] [∀ i, Algebra R (C i)]
 
-/-- A family of `R`-algebra equivalences `f i : A i ≃ₐ[R] B i` induces an `R`-algebra equivalence
-on the indexed tensor product, sending `⨂ₜ aᵢ` to `⨂ₜ fᵢ aᵢ`.
-
-This upgrades `PiTensorProduct.congr` to `AlgEquiv`. -/
-noncomputable def congrAlgEquiv (f : ∀ i, A i ≃ₐ[R] B i) :
-    (⨂[R] i, A i) ≃ₐ[R] ⨂[R] i, B i :=
-  AlgEquiv.ofLinearEquiv (congr fun i ↦ (f i).toLinearEquiv)
-    (by simp [one_def, congr_tprod, Pi.one_def]) <|
-    LinearMap.map_mul_iff _ |>.mpr <| by
-      ext a b
-      simp [tprod_mul_tprod, congr_tprod, Pi.mul_def]
-
-/-- The underlying linear equivalence of `PiTensorProduct.congrAlgEquiv` is
-`PiTensorProduct.congr`. -/
-@[simp]
-theorem congrAlgEquiv_toLinearEquiv (f : ∀ i, A i ≃ₐ[R] B i) :
-    (congrAlgEquiv f).toLinearEquiv = congr fun i ↦ (f i).toLinearEquiv := (rfl)
-
 /-- The underlying algebra homomorphism of `PiTensorProduct.congrAlgEquiv` is
 `PiTensorProduct.mapAlgHom`. -/
 @[simp]
 theorem congrAlgEquiv_toAlgHom (f : ∀ i, A i ≃ₐ[R] B i) :
     (congrAlgEquiv f).toAlgHom = mapAlgHom fun i ↦ (f i).toAlgHom :=
-  AlgHom.toLinearMap_injective rfl
-
-/-- `PiTensorProduct.congrAlgEquiv` applies each algebra equivalence to the corresponding entry of
-a pure tensor. -/
-@[simp]
-theorem congrAlgEquiv_tprod (f : ∀ i, A i ≃ₐ[R] B i) (a : ∀ i, A i) :
-    congrAlgEquiv f (tprod R a) = tprod R fun i ↦ f i (a i) := by
-  simp [congrAlgEquiv]
+  AlgHom.toLinearMap_injective <| ext <| MultilinearMap.ext fun a ↦ by simp
 
 /-- The inverse of `PiTensorProduct.congrAlgEquiv` is `congrAlgEquiv` of the slotwise inverses. -/
 @[simp]
@@ -194,14 +166,6 @@ theorem congrAlgEquiv_symm (f : ∀ i, A i ≃ₐ[R] B i) :
   | smul_tprod r b => simp only [map_smul, congrAlgEquiv_tprod, AlgEquiv.apply_symm_apply]
   | add x y hx hy => rw [map_add, map_add, ← hx, ← hy]
 
-/-- `PiTensorProduct.congrAlgEquiv` acts on the factor inclusion at `i` by applying `f i` in slot
-`i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise unfold the factor inclusion
-first. -/
-@[simp↓]
-theorem congrAlgEquiv_singleAlgHom [DecidableEq ι] (f : ∀ i, A i ≃ₐ[R] B i) (i : ι) (a : A i) :
-    congrAlgEquiv f (singleAlgHom i a) = singleAlgHom i (f i a) :=
-  mapAlgHom_singleAlgHom (fun j ↦ (f j).toAlgHom) i a
-
 variable (R A) in
 /-- `PiTensorProduct.congrAlgEquiv` of the identity equivalences is `AlgEquiv.refl`. -/
 @[simp]
@@ -211,16 +175,21 @@ theorem congrAlgEquiv_refl :
 
 /-- `PiTensorProduct.congrAlgEquiv` respects slotwise transitivity of algebra equivalences. -/
 theorem congrAlgEquiv_trans (f : ∀ i, A i ≃ₐ[R] B i) (g : ∀ i, B i ≃ₐ[R] C i) :
-    congrAlgEquiv (fun i ↦ (f i).trans (g i)) = (congrAlgEquiv f).trans (congrAlgEquiv g) :=
-  AlgEquiv.toLinearEquiv_injective <| LinearEquiv.toLinearMap_injective <|
-    map_comp (fun i ↦ (g i).toLinearMap) (fun i ↦ (f i).toLinearMap)
+    congrAlgEquiv (fun i ↦ (f i).trans (g i)) = (congrAlgEquiv f).trans (congrAlgEquiv g) := by
+  refine AlgEquiv.ext fun x ↦ ?_
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r a => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Reindexing followed by slotwise algebra equivalences equals slotwise algebra equivalences
 followed by reindexing. -/
 theorem reindexAlgEquiv_trans_congrAlgEquiv {κ : Type*} (e : ι ≃ κ) (f : ∀ i, A i ≃ₐ[R] B i) :
     (reindexAlgEquiv (R := R) A e).trans (congrAlgEquiv fun j ↦ f (e.symm j)) =
-      (congrAlgEquiv f).trans (reindexAlgEquiv (R := R) B e) :=
-  AlgEquiv.ext fun x ↦ (reindexAlgEquiv_mapAlgHom e (fun i ↦ (f i).toAlgHom) x).symm
+      (congrAlgEquiv f).trans (reindexAlgEquiv (R := R) B e) := by
+  refine AlgEquiv.ext fun x ↦ ?_
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r a => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Congr
 
