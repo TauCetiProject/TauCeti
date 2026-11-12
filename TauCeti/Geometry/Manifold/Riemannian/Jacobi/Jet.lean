@@ -111,7 +111,7 @@ theorem IsJacobiFieldOn.alongCurveWithin_three_of_eq_zero
   have hA := (hJ.isGeodesicCurveOn.contMDiffOn_jacobiOperator a ha).mdifferentiableWithinAt
     (by simp)
   have hprod := alongCurveWithin_clm_apply_of_eq_zero (leviCivitaConnection I M) γ J A
-    (hJ.uniqueDiffOn a ha) hA ((hJ.contMDiffOn a ha).mdifferentiableWithinAt (by norm_num)) hzero
+    hA ((hJ.contMDiffOn a ha).mdifferentiableWithinAt (by norm_num)) hzero
   have heq : ∀ r ∈ s, alongCurveWithin (leviCivitaConnection I M) γ
       (alongCurveWithin (leviCivitaConnection I M) γ J s) s r = (-1 : ℝ) • A r (J r) := by
     intro r hr
