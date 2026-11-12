@@ -35,6 +35,7 @@ theorems take the degree and continuation equations as hypotheses, and the bundl
 ## Main definitions
 
 * `TauCeti.continuationMap R M ν`: the map `(P → M) →ₗ[R] (Q → M)` of a matrix `ν`.
+* `TauCeti.continuationMapLinear R M`: the continuation map as a linear function of the matrix.
 * `TauCeti.ContinuationCocycle mP mQ`: continuation cocycles between twisting cocycles, with
   `refl` and `comp`.
 
@@ -104,6 +105,23 @@ theorem continuationMap_zero : continuationMap R M (0 : Matrix P Q A) = 0 :=
   LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (0 : Matrix P Q A) f y).trans <| by
     simp only [Matrix.zero_apply, op_zero, zero_smul, Finset.sum_const_zero, LinearMap.zero_apply,
       Pi.zero_apply]
+
+variable (R M) in
+/-- The continuation map as a linear function of the matrix, `ν ↦ continuationMap R M ν`. -/
+noncomputable def continuationMapLinear [Module R A] [IsScalarTower R Aᵐᵒᵖ M] :
+    Matrix P Q A →ₗ[R] (P → M) →ₗ[R] Q → M where
+  toFun F := continuationMap R M F
+  map_add' := continuationMap_add
+  map_smul' r F := LinearMap.ext fun f ↦ funext fun y ↦ by
+    simp only [LinearMap.smul_apply, Pi.smul_apply, RingHom.id_apply,
+      continuationMap_apply (r • F), continuationMap_apply F, Finset.smul_sum, Matrix.smul_apply,
+      op_smul, smul_assoc]
+
+/-- Evaluating the linear bundle at a matrix gives its continuation map. -/
+@[simp]
+theorem continuationMapLinear_apply [Module R A] [IsScalarTower R Aᵐᵒᵖ M] (F : Matrix P Q A) :
+    continuationMapLinear R M F = continuationMap R M F :=
+  (rfl)
 
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
 @[simp]

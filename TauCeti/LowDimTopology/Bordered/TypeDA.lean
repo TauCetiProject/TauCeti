@@ -195,33 +195,6 @@ variable {dA dB ιA ιB Y}
 
 section Induced
 
-variable (R) in
-/-- The right action of matrices on row vectors, `F ↦ (φ ↦ φ ⬝ F)`, the continuation map
-`TauCeti.continuationMap R A F` as a linear function of the matrix. -/
-private noncomputable def rowAct : Matrix Y Y A →ₗ[R] (Y → A) →ₗ[R] Y → A where
-  toFun F := continuationMap R A F
-  map_add' := continuationMap_add
-  map_smul' r F := LinearMap.ext fun φ => funext fun y => by
-    simp only [LinearMap.smul_apply, Pi.smul_apply, RingHom.id_apply,
-      continuationMap_apply (R := R) (M := A) (r • F), continuationMap_apply (R := R) (M := A) F,
-      Finset.smul_sum, Matrix.smul_apply, op_smul_eq_mul, mul_smul_comm]
-
-private theorem rowAct_eq (F : Matrix Y Y A) : rowAct R F = continuationMap R A F :=
-  (rfl)
-
-private theorem rowAct_apply (F : Matrix Y Y A) (φ : Y → A) (y' : Y) :
-    rowAct R F φ y' = ∑ y, φ y * F y y' := by
-  simp only [rowAct_eq, continuationMap_apply (R := R) (M := A) F, op_smul_eq_mul]
-
-private theorem rowAct_mul (F G : Matrix Y Y A) (φ : Y → A) :
-    rowAct R (F * G) φ = rowAct R G (rowAct R F φ) := by
-  simp only [rowAct_eq, continuationMap_matMul, LinearMap.comp_apply]
-
-/-- The Leibniz rule `d (φ ⬝ F) = d φ ⬝ F + φ ⬝ d F`. -/
-private theorem map_rowAct (hdA : IsUngradedDGAlgebra dA) (F : Matrix Y Y A) (φ : Y → A) :
-    (fun y => dA (rowAct R F φ y)) = rowAct R F (fun y => dA (φ y)) + rowAct R (F.map dA) φ :=
-  funext fun y => hdA.isUngradedDGRightModule.map_continuationMap φ F y
-
 variable (dA) in
 /-- The differential term of the induced operations: `d` on `m₁`, and nothing on the higher
 operations. -/
@@ -267,10 +240,11 @@ private theorem coeff_tail (M : TypeDABimodule dA dB ιA ιB Y) {n : ℕ} (b : F
 `n = 0`. -/
 private noncomputable def inducedAct (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) :
     MultilinearMap R (fun _ : Fin n => B) ((Y → A) →ₗ[R] Y → A) :=
-  (rowAct R).compMultilinearMap (M.coeff n) + diffAct dA n
+  (continuationMapLinear R A).compMultilinearMap (M.coeff n) + diffAct dA n
 
 private theorem inducedAct_apply (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) (b : Fin n → B)
-    (φ : Y → A) : M.inducedAct n b φ = rowAct R (M.coeff n b) φ + diffAct dA n b φ :=
+    (φ : Y → A) :
+    M.inducedAct n b φ = continuationMapLinear R A (M.coeff n b) φ + diffAct dA n b φ :=
   (rfl)
 
 /-- The composite terms of the induced module: the composite terms of the structure relation and
@@ -278,28 +252,33 @@ the derivative of `δ_{n+1}`, the two copies of `d φ ⬝ δ_{n+1}` cancelling. 
 private theorem ungradedStasheffComp_inducedAct [CharP R 2] (hdA : IsUngradedDGAlgebra dA)
     (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) (b : Fin n → B) (φ : Y → A) :
     ungradedStasheffComp M.inducedAct n b φ =
-      rowAct R (typeDAStasheffComp M.coeff n b) φ + rowAct R ((M.coeff n b).map dA) φ := by
+      continuationMapLinear R A (typeDAStasheffComp M.coeff n b) φ +
+        continuationMapLinear R A ((M.coeff n b).map dA) φ := by
   simp only [ungradedStasheffComp_def, inducedAct_apply, map_add, Finset.sum_add_distrib]
   -- The four kinds of terms: `φ ⬝ δ ⬝ δ`, `d φ ⬝ δ` from the left end, `d (φ ⬝ δ)` from the right
   -- end, and `d d φ`.
   have h1 : ∑ k : Fin (n + 1),
-      rowAct R (M.coeff (n - k) fun l => b ⟨k + l, by have := l.isLt; omega⟩)
-        (rowAct R (M.coeff k fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) =
-      rowAct R (typeDAStasheffComp M.coeff n b) φ := by
+      continuationMapLinear R A (M.coeff (n - k) fun l => b ⟨k + l, by have := l.isLt; omega⟩)
+        (continuationMapLinear R A
+          (M.coeff k fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) =
+      continuationMapLinear R A (typeDAStasheffComp M.coeff n b) φ := by
     rw [typeDAStasheffComp, map_sum, LinearMap.sum_apply]
-    exact Finset.sum_congr rfl fun k _ => (rowAct_mul _ _ φ).symm
+    exact Finset.sum_congr rfl fun k _ => by
+      simp only [continuationMapLinear_apply, continuationMap_matMul, LinearMap.comp_apply]
   have h2 : ∑ k : Fin (n + 1),
-      rowAct R (M.coeff (n - k) fun l => b ⟨k + l, by have := l.isLt; omega⟩)
+      continuationMapLinear R A (M.coeff (n - k) fun l => b ⟨k + l, by have := l.isLt; omega⟩)
         (diffAct dA k (fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) =
-      rowAct R (M.coeff n b) fun y => dA (φ y) := by
+      continuationMapLinear R A (M.coeff n b) fun y => dA (φ y) := by
     rw [Finset.sum_eq_single 0 (fun k _ hk => by
       rw [diffAct_of_ne_zero (Fin.val_ne_iff.mpr hk), zero_apply, LinearMap.zero_apply,
         map_zero]) (by simp), diffAct_apply_of_eq_zero (by simp)]
     rw [M.coeff_tail b 0 (by simp)]
   have h3 : ∑ k : Fin (n + 1),
       diffAct dA (n - k) (fun l => b ⟨k + l, by have := l.isLt; omega⟩)
-        (rowAct R (M.coeff k fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) =
-      rowAct R (M.coeff n b) (fun y => dA (φ y)) + rowAct R ((M.coeff n b).map dA) φ := by
+        (continuationMapLinear R A
+          (M.coeff k fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) =
+      continuationMapLinear R A (M.coeff n b) (fun y => dA (φ y)) +
+        continuationMapLinear R A ((M.coeff n b).map dA) φ := by
     rw [Finset.sum_eq_single (Fin.last n) (fun k _ hk => by
       rw [diffAct_of_ne_zero (by
           have h := Fin.val_ne_iff.mpr hk
@@ -307,7 +286,8 @@ private theorem ungradedStasheffComp_inducedAct [CharP R 2] (hdA : IsUngradedDGA
           have := k.isLt
           omega), zero_apply, LinearMap.zero_apply]) (by simp),
       diffAct_apply_of_eq_zero (by simp), M.coeff_init b (Fin.last n) (by simp)]
-    exact map_rowAct hdA _ φ
+    simp only [continuationMapLinear_apply]
+    exact funext fun y => hdA.isUngradedDGRightModule.map_continuationMap φ (M.coeff n b) y
   have h4 : ∑ k : Fin (n + 1),
       diffAct dA (n - k) (fun l => b ⟨k + l, by have := l.isLt; omega⟩)
         (diffAct dA k (fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) = 0 := by
@@ -328,7 +308,7 @@ private theorem ungradedStasheffComp_inducedAct [CharP R 2] (hdA : IsUngradedDGA
 private theorem ungradedStasheffDiff_inducedAct (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ)
     (b : Fin n → B) (φ : Y → A) :
     ungradedStasheffDiff M.inducedAct dB n b φ =
-      rowAct R (typeDAStasheffDiff M.coeff dB n b) φ := by
+      continuationMapLinear R A (typeDAStasheffDiff M.coeff dB n b) φ := by
   rw [ungradedStasheffDiff_def, typeDAStasheffDiff, map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun l _ => ?_
   rw [inducedAct_apply, diffAct_of_ne_zero (by have := l.isLt; omega), zero_apply,
@@ -338,7 +318,7 @@ private theorem ungradedStasheffDiff_inducedAct (M : TypeDABimodule dA dB ιA ι
 private theorem ungradedStasheffMul_inducedAct (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ)
     (b : Fin n → B) (φ : Y → A) :
     ungradedStasheffMul M.inducedAct n b φ =
-      rowAct R (typeDAStasheffMul M.coeff n b) φ := by
+      continuationMapLinear R A (typeDAStasheffMul M.coeff n b) φ := by
   cases n with
   | zero => simp
   | succ n =>
@@ -358,33 +338,38 @@ noncomputable def inducedModule (hdA : IsUngradedDGAlgebra dA) (M : TypeDABimodu
   act := M.inducedAct
   stasheff n b φ := by
     rw [ungradedStasheffComp_inducedAct hdA, ungradedStasheffDiff_inducedAct,
-      ungradedStasheffMul_inducedAct, add_comm (rowAct R _ φ), ← LinearMap.add_apply,
-      ← map_add, ← LinearMap.add_apply, ← map_add, ← LinearMap.add_apply, ← map_add,
-      M.stasheff n b, map_zero, LinearMap.zero_apply]
+      ungradedStasheffMul_inducedAct, add_comm (continuationMapLinear R A _ φ),
+      ← LinearMap.add_apply, ← map_add, ← LinearMap.add_apply, ← map_add, ← LinearMap.add_apply,
+      ← map_add, M.stasheff n b, map_zero, LinearMap.zero_apply]
 
 /-- The operation `m₁` of the induced module is `φ ↦ d φ + φ ⬝ δ₁`. -/
 theorem inducedModule_act_zero (hdA : IsUngradedDGAlgebra dA) (M : TypeDABimodule dA dB ιA ιB Y)
     (b : Fin 0 → B) (φ : Y → A) :
-    (M.inducedModule hdA).act 0 b φ = (fun y => dA (φ y)) + continuationMap R A (M.coeff 0 b) φ :=
-  add_comm _ _
+    (M.inducedModule hdA).act 0 b φ =
+      (fun y => dA (φ y)) + continuationMap R A (M.coeff 0 b) φ := by
+  rw [← continuationMapLinear_apply (R := R) (M := A), add_comm]
+  rfl
 
 /-- The higher operations of the induced module are `φ ↦ φ ⬝ δ_{n+2}(b)`. -/
 theorem inducedModule_act_succ (hdA : IsUngradedDGAlgebra dA) (M : TypeDABimodule dA dB ιA ιB Y)
     (n : ℕ) (b : Fin (n + 1) → B) (φ : Y → A) :
-    (M.inducedModule hdA).act (n + 1) b φ = continuationMap R A (M.coeff (n + 1) b) φ :=
-  add_zero _
+    (M.inducedModule hdA).act (n + 1) b φ = continuationMap R A (M.coeff (n + 1) b) φ := by
+  rw [← continuationMapLinear_apply (R := R) (M := A)]
+  exact add_zero _
 
 /-- The `y'`-component of an operation of the induced module. -/
 theorem inducedModule_act_apply (hdA : IsUngradedDGAlgebra dA)
     (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) (b : Fin n → B) (φ : Y → A) (y' : Y) :
     (M.inducedModule hdA).act n b φ y' =
       ∑ y, φ y * M.coeff n b y y' + if n = 0 then dA (φ y') else 0 := by
-  change M.inducedAct n b φ y' = _
-  rw [inducedAct_apply, Pi.add_apply, rowAct_apply]
-  congr 1
-  split_ifs with hn
-  · rw [diffAct_apply_of_eq_zero hn]
-  · rw [diffAct_of_ne_zero hn, zero_apply, LinearMap.zero_apply, Pi.zero_apply]
+  cases n with
+  | zero =>
+    rw [inducedModule_act_zero, Pi.add_apply, add_comm]
+    simp only [↓reduceIte, continuationMap_apply (R := R) (M := A) (M.coeff 0 b), op_smul_eq_mul]
+  | succ n =>
+    rw [inducedModule_act_succ]
+    simp only [Nat.succ_ne_zero, ↓reduceIte, add_zero,
+      continuationMap_apply (R := R) (M := A) (M.coeff (n + 1) b), op_smul_eq_mul]
 
 end Induced
 
@@ -428,7 +413,8 @@ theorem pathCoeff_apply (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure
 /-- The **coefficients of the box tensor product** `M ⊠ N`: the coefficient of `y' ⊗ z` in
 `δ¹(y ⊗ x)` is the sum over the paths `x = x₀ → ⋯ → xₙ = z` of the `(y, y')` entry of
 `δ_{n+1}(ε x₀ x₁, …, ε xₙ₋₁ xₙ)`. The sum over `n` is finite when `N` is bounded or when `δ_{n+1}`
-vanishes for large `n`; otherwise this `finsum` is `0` by convention. -/
+vanishes for large `n`. When the sequence of these entries has infinite support, this `finsum` is
+`0` by convention. -/
 noncomputable def boxCoeff (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X) :
     Matrix (Y × X) (Y × X) A :=
   fun p q => ∑ᶠ n, M.pathCoeff N n p.2 q.2 p.1 q.1
@@ -545,33 +531,14 @@ theorem boxCoeff_eq_add_of_coeff_eq_zero (M : TypeDABimodule dA dB ιA ιB Y)
     M.boxCoeff N (y, x) (y', z) =
       (if x = z then M.coeff 0 ![] y y' else 0) + M.coeff 1 ![N.coeff x z] y y' := by
   rw [M.boxCoeff_eq_sum_of_coeff_eq_zero N hM, Finset.sum_range_succ, Finset.sum_range_one,
-    pathCoeff_apply, pathCoeff_apply]
+    pathCoeff_eq_lift_iteratedCoeff, pathCoeff_eq_lift_iteratedCoeff, N.iteratedCoeff_zero,
+    N.iteratedCoeff_one, PiTensorProduct.lift.tprod]
   congr 1
-  · rw [Finset.sum_eq_single (fun _ => x) (fun r _ hr => ?_) (by simp)]
-    · by_cases hxz : x = z
-      · subst hxz
-        simp only [and_self, ↓reduceIte]
-        exact congrFun (congrFun (congrArg (M.coeff 0) (Subsingleton.elim _ _)) y) y'
-      · simp [hxz]
-    · split_ifs with h
-      · refine absurd (funext fun i => ?_) hr
-        fin_cases i
-        exact h.1
-      · rfl
-  · rw [Finset.sum_eq_single ![x, z] (fun r _ hr => ?_) (by simp)]
-    · have hl : (fun l : Fin 1 => N.coeff (![x, z] l.castSucc) (![x, z] l.succ)) =
-          ![N.coeff x z] := by
-        funext l
-        fin_cases l
-        rfl
-      rw [hl]
-      simp
-    · split_ifs with h
-      · refine absurd (funext fun i => ?_) hr
-        fin_cases i
-        · simpa using h.1
-        · simpa using h.2
-      · rfl
+  · split_ifs
+    · rw [PiTensorProduct.lift.tprod, Subsingleton.elim Fin.elim0 ![]]
+    · rw [map_zero, Matrix.zero_apply]
+  · rw [show (fun _ : Fin 1 => N.coeff x z) = ![N.coeff x z] from
+      funext fun l => by rw [Fin.fin_one_eq_zero l]; rfl]
 
 variable [CharP R 2]
 
@@ -685,8 +652,10 @@ noncomputable def boxTensor [DecidableEq T] (hdA : IsUngradedDGAlgebra dA)
     rw [Matrix.add_apply, Matrix.mul_apply, ← Fintype.sum_subtype_add_sum_subtype
       (fun r : Y × X => M.idemRight r.1 = N.idem r.2), h0, add_zero] at h
     rw [Matrix.map_apply, Matrix.zero_apply] at h
-    change dA (M.boxCoeff N p.1 q.1) + ∑ r : {r : Y × X // M.idemRight r.1 = N.idem r.2},
-      M.boxCoeff N p.1 r.1 * M.boxCoeff N r.1 q.1 = 0
+    -- The coefficients are the plain function `fun p q => M.boxCoeff N p.1 q.1` rather than a
+    -- `Matrix`-typed term, so `Matrix.map_apply` and `Matrix.mul_apply` do not rewrite them; the
+    -- remaining goal is `h` after unfolding `Matrix.map` and the matrix product.
+    rw [Matrix.add_apply, Matrix.zero_apply]
     exact h
 
 section BoxTensorStructure
