@@ -149,11 +149,6 @@ private theorem integrable_log_sub {w : ℂ} (hw : 0 < w.im) :
     simpa using restrict_Icc_semicircleReal 0 1
   rwa [IntegrableOn, hrestrict] at h
 
-private theorem not_mem_range_ofReal_of_im_pos {z : ℂ} (hz : 0 < z.im) :
-    z ∉ Set.range (algebraMap ℝ ℂ) := by
-  rintro ⟨x, hx⟩
-  exact ofReal_ne_of_im_pos hz x hx
-
 /-- The complex logarithmic potential is holomorphic in the upper half-plane, with derivative the
 Cauchy transform `∫ (z - y)⁻¹`. -/
 private theorem hasDerivAt_logPotential (hz : 0 < z.im) :

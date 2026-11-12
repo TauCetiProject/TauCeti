@@ -29,6 +29,12 @@ theorem ofReal_ne_of_im_pos {z : ℂ} (hz : 0 < z.im) (y : ℝ) : (y : ℂ) ≠ 
   simp at him
   linarith
 
+/-- A point in the upper half-plane is not in the range of the real embedding. -/
+theorem not_mem_range_ofReal_of_im_pos {z : ℂ} (hz : 0 < z.im) :
+    z ∉ Set.range (algebraMap ℝ ℂ) := by
+  rintro ⟨x, hx⟩
+  exact ofReal_ne_of_im_pos hz x hx
+
 /-- A ball of radius `z.im / 2` around `z` stays above height `z.im / 2`. -/
 theorem im_gt_of_mem_ball {z w : ℂ} (hw : w ∈ Metric.ball z (z.im / 2)) :
     z.im / 2 < w.im := by
