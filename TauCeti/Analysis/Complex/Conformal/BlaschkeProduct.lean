@@ -165,11 +165,9 @@ lemma analyticOnNhd_blaschkeFactor (a : ℂ) :
   by_cases ha : ‖a‖ < 1
   · have hden := one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one
       (mem_closedBall_zero_iff.1 hz) ha
-    rw [show blaschkeFactor a = fun z => (z - a) / (1 - conj a * z) from
-      funext (blaschkeFactor_of_norm_lt_one ha)]
+    rw [funext (blaschkeFactor_of_norm_lt_one ha)]
     fun_prop (disch := exact hden)
-  · rw [show blaschkeFactor a = fun _ => -a from
-      funext (blaschkeFactor_of_one_le_norm (not_lt.1 ha))]
+  · rw [funext (blaschkeFactor_of_one_le_norm (not_lt.1 ha))]
     exact analyticAt_const
 
 /-! ### Finite Blaschke products -/
