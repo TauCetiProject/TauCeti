@@ -392,9 +392,10 @@ theorem exists_topologicalClosure_zpowers_eq_of_isClosed_of_neg_one_notMem {A : 
   · exact (h1 (Subgroup.mem_zpowers _)).elim
   · exact ⟨u, rfl⟩
 
-/-- `V^(f)` is **not procyclic** for `f ≥ 2`: `[V^(f) : U^(f+1)] = 4`, while a closed subgroup
+/-- `V^(f)` is not procyclic for `f ≥ 2`: `[V^(f) : U^(f+1)] = 4`, while a closed subgroup
 `closure ⟨u⟩` with `u² ∈ U^(f+1)` is contained in `U^(f+1) ∪ u U^(f+1)`. -/
-theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) :
+private theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus_of_two_le {f : ℕ}
+    (hf : 2 ≤ f) :
     ¬ ∃ u : ℤ_[2]ˣ, (Subgroup.zpowers u).topologicalClosure = unitsPlusMinus f := by
   rintro ⟨u, hu⟩
   have hu' : u ∈ unitsPlusMinus f :=
@@ -408,6 +409,15 @@ theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus {f : ℕ} (hf : 
       (sq_mem_unitsPrincipal_succ_of_mem_unitsPlusMinus hu') hb).symm
   rw [relIndex_unitsPrincipal_succ_unitsPlusMinus hf] at h2
   norm_num at h2
+
+/-- `V^(f)` is **not procyclic**, for every level `f`: for `f ≥ 2`, `[V^(f) : U^(f+1)] = 4`, while
+a closed subgroup `closure ⟨u⟩` with `u² ∈ U^(f+1)` is contained in `U^(f+1) ∪ u U^(f+1)`; for
+`f ≤ 2` the group `V^(f)` is all of `ℤ_2ˣ`, which is `V^(2)`. -/
+theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus {f : ℕ} :
+    ¬ ∃ u : ℤ_[2]ˣ, (Subgroup.zpowers u).topologicalClosure = unitsPlusMinus f := by
+  rintro ⟨u, hu⟩
+  exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus_of_two_le (le_max_right f 2)
+    ⟨u, hu.trans (unitsPlusMinus_max_two f).symm⟩
 
 open Subgroup in
 /-- **The level of the second marked value.** Let `f ≥ 2` and let `a`, `b` be units of `ℤ₂` such
