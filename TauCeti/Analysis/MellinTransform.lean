@@ -9,7 +9,10 @@ public import Mathlib.Analysis.MellinTransform
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
-# Mellin transforms of decaying exponentials, and their congruence on `(0, ∞)`
+# Mellin transforms of dilations and decaying exponentials, and congruence on `(0, ∞)`
+
+`HasMellin.comp_mul_right` transports a convergent Mellin transform under a positive dilation,
+combining Mathlib's `MellinConvergent.comp_mul_left` and `mellin_comp_mul_right`.
 
 For `c > 0` the Mellin transform of `t ↦ e^(-c t)` converges on `0 < Re z`
 (`TauCeti.mellinConvergent_exp_neg_mul`). At `c = 1` this is the convergence of Euler's integral
@@ -45,3 +48,17 @@ theorem mellinConvergent_exp_neg_mul {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : 0 < 
   exact (GammaIntegral_convergent hz).congr_fun (fun t _ ↦ mul_comm _ _) measurableSet_Ioi
 
 end TauCeti
+
+namespace HasMellin
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- Dilation of the Mellin variable preserves convergence and multiplies the transform by
+`a^(-s)`. -/
+theorem comp_mul_right {f : ℝ → E} {s : ℂ} {m : E} (h : HasMellin f s m)
+    {a : ℝ} (ha : 0 < a) : HasMellin (fun t ↦ f (t * a)) s ((a : ℂ) ^ (-s) • m) := by
+  constructor
+  · simpa only [mul_comm] using (MellinConvergent.comp_mul_left (f := f) (s := s) ha).mpr h.1
+  · rw [mellin_comp_mul_right f s ha, h.2]
+
+end HasMellin

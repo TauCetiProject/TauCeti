@@ -7,8 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
@@ -19,8 +17,7 @@ A function continuous on a compact set `K` is bounded there, so it lies in `L^�
 every measurable `s ⊆ K` (`ContinuousOn.memLp_top_restrict_of_subset_isCompact`). Allowing `s ⊊ K`
 covers the usual case of an open interval `(a, b)` inside the compact interval `[a, b]`. This is the
 continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-measure counterpart
-of `Continuous.memLp_top_of_hasCompactSupport`. A continuous function on `ℝ` with limits at `-∞`
-and `+∞` is bounded, so it lies in `L^∞(μ)` for every measure (`Continuous.memLp_top_of_tendsto`).
+of `Continuous.memLp_top_of_hasCompactSupport`.
 
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
@@ -73,12 +70,3 @@ theorem Continuous.eLpNorm_eq_integral_rpow_norm {F : Type*} [NormedAddCommGroup
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hpt : p ≠ ∞) :
     eLpNorm f p μ = ENNReal.ofReal ((∫ x, ‖f x‖ ^ p.toReal ∂μ) ^ p.toReal⁻¹) :=
   (hf.memLp_of_hasCompactSupport (.of_compactSpace f)).eLpNorm_eq_integral_rpow_norm hp0 hpt
-
-/-- A continuous function on `ℝ` with limits at `-∞` and at `+∞` is bounded, so it is essentially
-bounded for every measure. -/
-theorem Continuous.memLp_top_of_tendsto {F : Type*} [NormedAddCommGroup F] {f : ℝ → F}
-    (hf : Continuous f) {a b : F} (hbot : Filter.Tendsto f Filter.atBot (nhds a))
-    (htop : Filter.Tendsto f Filter.atTop (nhds b)) (μ : Measure ℝ) : MemLp f ∞ μ := by
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1
-    (hf.isBounded_range_iff_isBigO_atTop_atBot.2 ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩)
-  exact memLp_top_of_bound hf.aestronglyMeasurable C (.of_forall fun s ↦ hC _ ⟨s, rfl⟩)

@@ -33,8 +33,7 @@ file is independent of the power-series development and can be applied to it lat
 ## Provenance
 
 Adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean`, its `FieldChord` section —
 declarations `chord_x_ne`, `chord_point_nonsingular`, `chord_addX_addY` and `chord_point_add`.
 -/

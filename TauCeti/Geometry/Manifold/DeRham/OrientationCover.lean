@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
 public import TauCeti.Geometry.Manifold.Orientation.Cover.Descent
+import TauCeti.Geometry.Manifold.DeRham.Integration.Bijective
 import TauCeti.Geometry.Manifold.Orientation.Cover.Integration
 
 /-!
@@ -31,10 +32,12 @@ integral of a `τ`-invariant top form on `M'` equals its own negative. Pullbacks
 (`TauCeti.Manifold.OrientationCover.integralTopForm_mpullback_proj_eq_zero`), and integration
 `H^n_c(M') → ℝ` vanishes on the image of `π^*`.
 
-These are the two steps by which top-degree cohomology of a nonorientable manifold is reduced to
-the orientable case. When `M` is connected and nonorientable, `M'` is connected and oriented, so
-if integration is injective on `H^n_c(M')`, the class `π^*[φ]` of integral zero vanishes and then
-`[φ] = 0` in `H^n_c(M)`.
+**Top cohomology of a nonorientable manifold vanishes.** These two steps reduce top-degree
+cohomology of a nonorientable manifold to the orientable case. When `M` is connected and
+nonorientable, `M'` is connected and oriented, so integration is injective on `H^n_c(M')`. The
+class `π^*[φ]` has integral zero, hence vanishes, and then `[φ] = 0` in `H^n_c(M)`. Together with
+the orientable case, `H^n_c(M)` is nonzero exactly when `M` is orientable, for connected
+boundaryless Hausdorff σ-compact `M`; for compact `M` the same holds for `H^n_dR(M)`.
 
 ## Main results
 
@@ -44,11 +47,18 @@ if integration is injective on `H^n_c(M')`, the class `π^*[φ]` of integral zer
   pullback to the orientation cover is injective on compactly supported de Rham cohomology.
 * `TauCeti.Manifold.OrientationCover.integral_map_proj_eq_zero`: integration on top compactly
   supported cohomology of the cover vanishes on classes pulled back from `M`.
+* `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_of_not_orientable`: `H^n_c(M) = 0` for
+  a preconnected nonorientable boundaryless Hausdorff σ-compact manifold `M` of dimension `n`.
+* `TauCeti.nontrivial_compactlySupportedDeRhamCohomology_iff_orientable`: for connected such `M`,
+  `H^n_c(M) ≠ 0` if and only if `M` is orientable.
+* `TauCeti.subsingleton_deRhamCohomology_of_not_orientable`,
+  `TauCeti.nontrivial_deRhamCohomology_iff_orientable`: the same for `H^n_dR(M)` when `M` is
+  compact.
 
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, second edition, Graduate Texts in
-  Mathematics 218, Springer, 2013, proof of Theorem 17.34.
+  Mathematics 218, Springer, 2013, Theorem 17.34 and its proof.
 * R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, GTM 82, Chapter I, §6
   (forms on a covering invariant under the deck transformations).
 -/
@@ -137,3 +147,61 @@ theorem integral_map_proj_eq_zero [IsManifold I ∞ M] [BoundarylessManifold I M
 end Integral
 
 end TauCeti.Manifold.OrientationCover
+
+namespace TauCeti
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M]
+
+open Manifold.OrientationCover in
+/-- **Top compactly supported cohomology of a nonorientable manifold.** On a preconnected,
+nonorientable, boundaryless, Hausdorff, σ-compact finite-dimensional smooth manifold `M` of
+dimension `n`, the top compactly supported de Rham cohomology `H^n_c(M)` vanishes. -/
+theorem subsingleton_compactlySupportedDeRhamCohomology_of_not_orientable [SigmaCompactSpace M]
+    [PreconnectedSpace M] (h : ¬ Orientable I M) :
+    Subsingleton (compactlySupportedDeRhamCohomology I M (Module.finrank ℝ E)) := by
+  -- The orientation cover is connected when `M` is nonempty, and empty otherwise.
+  have : PreconnectedSpace (Manifold.OrientationCover I M) := by
+    rcases isEmpty_or_nonempty M with hM | hM
+    · have := Function.isEmpty
+        (VectorBundleOrientationCover.proj : Manifold.OrientationCover I M → M)
+      infer_instance
+    · have : ConnectedSpace M := { toNonempty := hM }
+      have := not_not.mp (orientable_iff_not_connectedSpace.not.mp h)
+      infer_instance
+  -- A class pulled back to the oriented cover has integral zero, so it vanishes there.
+  refine subsingleton_of_forall_eq 0 fun c ↦
+    compactlySupportedDeRhamCohomology_map_proj_injective _ ?_
+  rw [map_zero]
+  exact (injective_iff_map_eq_zero _).mp
+    (compactlySupportedDeRhamCohomology.injective_integral canonicalOrientation) _
+    (integral_map_proj_eq_zero c)
+
+/-- On a connected boundaryless Hausdorff σ-compact finite-dimensional smooth manifold `M` of
+dimension `n`, the top compactly supported de Rham cohomology `H^n_c(M)` is nonzero if and only
+if `M` is orientable. -/
+theorem nontrivial_compactlySupportedDeRhamCohomology_iff_orientable [SigmaCompactSpace M]
+    [ConnectedSpace M] :
+    Nontrivial (compactlySupportedDeRhamCohomology I M (Module.finrank ℝ E)) ↔ Orientable I M :=
+  ⟨fun hc ↦ by_contra fun h ↦ not_nontrivial_iff_subsingleton.mpr
+    (subsingleton_compactlySupportedDeRhamCohomology_of_not_orientable h) hc, fun ⟨⟨o⟩⟩ ↦
+    (compactlySupportedDeRhamCohomologyIntegralEquiv o).symm.injective.nontrivial⟩
+
+/-- **Top de Rham cohomology of a compact nonorientable manifold.** On a compact, preconnected,
+nonorientable, boundaryless, Hausdorff finite-dimensional smooth manifold `M` of dimension `n`,
+the top de Rham cohomology `H^n_dR(M)` vanishes. -/
+theorem subsingleton_deRhamCohomology_of_not_orientable [CompactSpace M] [PreconnectedSpace M]
+    (h : ¬ Orientable I M) : Subsingleton (deRhamCohomology I M (Module.finrank ℝ E)) :=
+  have := subsingleton_compactlySupportedDeRhamCohomology_of_not_orientable h
+  (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I _).surjective.subsingleton
+
+/-- A compact connected boundaryless Hausdorff finite-dimensional smooth manifold `M` of
+dimension `n` is orientable if and only if its top de Rham cohomology `H^n_dR(M)` is nonzero. -/
+theorem nontrivial_deRhamCohomology_iff_orientable [CompactSpace M] [ConnectedSpace M] :
+    Nontrivial (deRhamCohomology I M (Module.finrank ℝ E)) ↔ Orientable I M := by
+  rw [← nontrivial_compactlySupportedDeRhamCohomology_iff_orientable]
+  exact (Equiv.ofBijective _
+    (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I _)).nontrivial_congr.symm
+
+end TauCeti

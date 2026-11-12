@@ -263,7 +263,6 @@ private theorem min_mul_norm_le_norm_sub (hT : IsSelfAdjoint T) {c : ℝ}
   have hw : w ∈ K := K.neg_mem (K.smul_mem _ (K.starProjection_apply_mem x))
   -- Each component is bounded below.
   set m := min (c - |r|) |r|
-  have hm : 0 ≤ m := le_min (sub_nonneg.2 hrc) (abs_nonneg r)
   have hu' : m * ‖x₁‖ ≤ ‖u‖ := by
     have h₁ := hc x₁ hx₁
     have h₂ : ‖T x₁‖ ≤ ‖u‖ + |r| * ‖x₁‖ := by
