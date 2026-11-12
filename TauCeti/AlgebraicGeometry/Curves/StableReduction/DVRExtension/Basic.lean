@@ -65,15 +65,6 @@ namespace TauCeti
 
 open IsLocalRing
 
--- Source: the chosen-place convention (choose a maximal ideal of the integral closure above the
--- closed point and localize there, never treating the integral closure itself as a discrete
--- valuation ring) is the standing convention "DVR extensions are local data" of the Tau Ceti
--- `StableReduction` roadmap's `README.md`,
--- https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/README.md
--- and this structure adapts the `FiniteDVRExtension` signature (same carriers, algebra maps,
--- scalar towers and chosen prime) of that roadmap's `Suggested.lean`,
--- https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/StableReduction/Suggested.lean
-
 /-- A finite separable extension of the fraction field `K` of a discrete valuation ring `R`,
 together with a chosen place of that extension above the closed point of `R`.
 

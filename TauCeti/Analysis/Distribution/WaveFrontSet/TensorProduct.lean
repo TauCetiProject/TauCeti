@@ -120,7 +120,7 @@ private theorem exists_prod_cutoff {p : WithLp 2 (E × D)} (hp : p ∈ W) {U₁ 
   obtain ⟨ψ, hψ, hψp⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem (inter_mem hU₂ hB₂) (O.isOpen.mem_nhds hpV.2)) inter_subset_right (1 : ℂ)
   -- The product cutoff is supported in the compact set `ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)`.
-  set K : Set (WithLp 2 (E × D)) := ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ) with hK_def
+  set K : Set (WithLp 2 (E × D)) := ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)
   have hK : IsCompact K :=
     (prodContinuousLinearEquiv 2 ℝ E D).toHomeomorph.isCompact_preimage.2
       (φ.hasCompactSupport.isCompact.prod ψ.hasCompactSupport.isCompact)

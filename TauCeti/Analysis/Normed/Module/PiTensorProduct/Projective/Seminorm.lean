@@ -77,7 +77,7 @@ theorem seminorm_le_mul_projectiveSeminormOf (p : ∀ i, Seminorm 𝕜 (E i))
   rw [← List.sum_map_mul_left]
   refine List.Forall₂.sum_le_sum ?_
   simp only [List.forall₂_map_left_iff, List.forall₂_map_right_iff, List.forall₂_same]
-  intro a ha
+  intro a _
   simpa [map_smul_eq_mul, mul_assoc, mul_left_comm] using
     mul_le_mul_of_nonneg_left (h a.2) (norm_nonneg a.1)
 

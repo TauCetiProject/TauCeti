@@ -48,9 +48,8 @@ whose diagrams are also paths, and without the degree bound they are `Dₙ` and 
 ## References
 
 This is the type `Aₙ` case of the reindexing step of the classification of finite-type Cartan
-matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, and Bourbaki,
-*Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
+matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, and
+Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
