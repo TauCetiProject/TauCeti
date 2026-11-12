@@ -165,7 +165,7 @@ first: for `n = k + 1`, the module-first unsuspension of `b n`.  On homogeneous 
 twists multiply to the Koszul sign of the suspension of `n` inputs.  There is no arity-zero
 operation, and `m 0` is the junk value `0`. -/
 noncomputable def m (MM : AInfinityRightModule AA M) :
-    (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M
+    (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M
   | 0 => 0
   | n + 1 => unsuspend MM.grading AA.grading n (MM.b (n + 1))
 
@@ -194,7 +194,7 @@ inputs, `m` multiplied by the Koszul sign of suspending the module input of degr
 algebra inputs of degrees `d 0, …, d (k - 1)`. -/
 private theorem apply_tmul_of_tprod_of_mem {G : InternalGrading R M}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] M}
-    {m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M}
+    {m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M}
     (hFm : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         m (n + 1) (G.koszulTwist n x)
@@ -502,7 +502,7 @@ whose inner operation is `m (k + 1)`, and the second those with `r = p + 1`, who
 is `m s` of `AA`.  The module Stasheff equation `TauCeti.AInfinityRightModule.stasheff` says that
 it vanishes on homogeneous inputs. -/
 def stasheffSum (AA : AInfinityAlgebra R A)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M)
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M)
     (x : M) (e : ℤ) (d : ℕ → ℤ) (a : ℕ → A) (n : ℕ) : M :=
   ∑ k ∈ Finset.range (n + 1),
       negOnePowCast R (((k : ℤ) + 1) * ((n : ℤ) - k)) •
@@ -515,7 +515,7 @@ def stasheffSum (AA : AInfinityAlgebra R A)
 
 /-- The defining double sum of the unsuspended module Stasheff expression. -/
 theorem stasheffSum_def (AA : AInfinityAlgebra R A)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M)
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M)
     (x : M) (e : ℤ) (d : ℕ → ℤ) (a : ℕ → A) (n : ℕ) :
     stasheffSum AA m x e d a n =
       ∑ k ∈ Finset.range (n + 1),
@@ -530,7 +530,7 @@ theorem stasheffSum_def (AA : AInfinityAlgebra R A)
 /-- The unsuspended module Stasheff expression of arity `n + 1` only reads the first `n` supplied
 degrees and algebra inputs. -/
 theorem stasheffSum_congr (AA : AInfinityAlgebra R A)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M)
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M)
     (x : M) (e : ℤ) (d : ℕ → ℤ) (a : ℕ → A) (n : ℕ) {d' : ℕ → ℤ} {a' : ℕ → A}
     (hd : ∀ i < n, d i = d' i) (ha : ∀ i < n, a i = a' i) :
     stasheffSum AA m x e d a n = stasheffSum AA m x e d' a' n := by
@@ -562,7 +562,7 @@ Koszul-twisted inputs is, on homogeneous inputs, the unsuspended module Stasheff
 multiplied by the Koszul sign of suspending all the inputs. -/
 private theorem suspendedStasheff_eq_smul {G : InternalGrading R M}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] M}
-    {m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M}
+    {m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M}
     (hFm : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         m (n + 1) (G.koszulTwist n x)
@@ -584,7 +584,7 @@ private theorem suspendedStasheff_eq_smul {G : InternalGrading R M}
       apply_comp_subword_of_mem (f := fun r ↦ m (r + 1)) (h := fun r ↦ m (r + 1))
         hFm hm hFm (q := 1) (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) hx d a ha,
     Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦
-      apply_algebra_splice_of_mem (f := fun r ↦ m (r + 1)) hFm (Finset.mem_Icc.1 hs).1
+      apply_algebra_splice_of_mem (f := fun r ↦ m (r + 1)) hFm
         (by have := (Finset.mem_Icc.1 hs).2; have := Finset.mem_range.1 hp; omega) hx d a ha]
   simp only [← Finset.smul_sum, ← smul_add]
 
@@ -641,7 +641,7 @@ attribute [local instance] Comodule.cofree
 Koszul-twisted inputs has degree one. -/
 private theorem isHomogeneous_of_apply_tmul_of_tprod {G : InternalGrading R M}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] M}
-    {m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M}
+    {m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M}
     (hFm : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         m (n + 1) (G.koszulTwist n x)
@@ -682,7 +682,7 @@ private theorem isHomogeneous_of_apply_tmul_of_tprod {G : InternalGrading R M}
 vanishes after the coderivation it generates. -/
 private theorem apply_comp_gradedCoderiv_eq_zero {G : InternalGrading R M}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] M}
-    {m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M}
+    {m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M}
     (hFm : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         m (n + 1) (G.koszulTwist n x)
@@ -712,7 +712,7 @@ private theorem apply_comp_gradedCoderiv_eq_zero {G : InternalGrading R M}
 `n + 1` satisfying the unsuspended module Stasheff equations on homogeneous inputs, together with a
 Taylor map `F` evaluating `m` on Koszul-twisted inputs. -/
 noncomputable def ofStasheff (G : InternalGrading R M)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M)
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M)
     (hm : ∀ (n : ℕ) {x : M} {p : ℤ}, x ∈ G.piece p → ∀ (a : Fin n → A) (d : Fin n → ℤ),
       (∀ i, a i ∈ AA.grading.piece (d i)) → m (n + 1) x a ∈ G.piece (p + ∑ i, d i + (1 - n)))
     (F : (M ⊗[R] TensorWords R A) →ₗ[R] M)
@@ -730,14 +730,16 @@ noncomputable def ofStasheff (G : InternalGrading R M)
 /-- The grading of the module built from unsuspended operations is the given grading. -/
 @[simp]
 theorem ofStasheff_grading (G : InternalGrading R M)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm hSI) :
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm
+        hSI) :
     (ofStasheff (AA := AA) G m hm F hFm hSI).grading = G := by
   rw [ofStasheff, ofTaylor_grading]
 
 /-- The Taylor map of the module built from unsuspended operations is the given Taylor map. -/
 @[simp]
 theorem ofStasheff_taylor (G : InternalGrading R M)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm hSI) :
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm
+        hSI) :
     (ofStasheff (AA := AA) G m hm F hFm hSI).taylor = F := by
   rw [ofStasheff, ofTaylor_taylor]
 
@@ -745,7 +747,7 @@ theorem ofStasheff_taylor (G : InternalGrading R M)
 soon as the junk value `m 0` vanishes. -/
 @[simp]
 theorem ofStasheff_m (G : InternalGrading R M)
-    (m : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm hSI)
+    (m : (n : ℕ) → M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n - 1) ↦ A) M) (hm F hFm hSI)
     (hm0 : m 0 = 0) : (ofStasheff (AA := AA) G m hm F hFm hSI).m = m := by
   funext n
   obtain _ | n := n

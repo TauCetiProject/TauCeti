@@ -112,7 +112,7 @@ private theorem norm_transportedDuhamelL_le (hα₀ : 0 < α) (hα₁ : α < 1) 
     refine (HolderSpace.norm_compLipschitzL_le _).trans
       (max_le (Real.one_le_rpow hK (by positivity)) ?_)
     refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
-    rw [NNReal.coe_max, coe_nnnorm, NNReal.coe_one]
+    rw [NNReal.coe_max, coe_nnNorm, NNReal.coe_one]
     exact max_le he hK
   calc ‖transportedDuhamelL hα₀ hα₁ hT e‖
       ≤ ‖compSpatialL α ℝ hT e.symm.toContinuousLinearMap‖ *
