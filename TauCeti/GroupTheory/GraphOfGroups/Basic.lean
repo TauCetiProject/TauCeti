@@ -130,6 +130,12 @@ theorem ωArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
     𝔸.ωArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2 (𝔸.ω e.1 c) :=
   (rfl)
 
+@[simp] theorem αArrow_mk (e : Γ.E) : 𝔸.αArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) = 𝔸.α e :=
+  (rfl)
+
+@[simp] theorem ωArrow_mk (e : Γ.E) : 𝔸.ωArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) = 𝔸.ω e :=
+  (rfl)
+
 theorem αArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.αArrow e) :=
   (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1).injective.comp (𝔸.α_injective e.1)
 
@@ -137,7 +143,8 @@ theorem ωArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.ωArrow e) :=
   (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2).injective.comp (𝔸.ω_injective e.1)
 
 /-- The map `α` of a reversed dart is `ω` of the dart. -/
-theorem αArrow_reverse (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
+theorem αArrow_reverse_apply (e : a ⟶ b)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
     𝔸.αArrow (Quiver.reverse e) c =
       𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) := by
   obtain ⟨e, rfl, rfl⟩ := e
@@ -147,13 +154,14 @@ theorem αArrow_reverse (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver
       𝔸.αArrow (⟨f, h₁, h₂⟩ : Γ.tgt e ⟶ Γ.src e) c =
         𝔸.ωArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) (MulEquiv.cast (M := 𝔸.edgeGroup) h c) := by
     rintro f rfl h₁ h₂ h c
-    rw [αArrow_apply, ωArrow_apply, α_rev_apply]
+    rw [αArrow_apply, ωArrow_mk, α_rev_apply]
     simp only [MulEquiv.cast_apply]
     rfl
   refine key _ (Γ.reverse_val _) ?_ ?_ _ c <;> simp
 
 /-- The map `ω` of a reversed dart is `α` of the dart. -/
-theorem ωArrow_reverse (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
+theorem ωArrow_reverse_apply (e : a ⟶ b)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
     𝔸.ωArrow (Quiver.reverse e) c =
       𝔸.αArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) := by
   obtain ⟨e, rfl, rfl⟩ := e
@@ -162,31 +170,38 @@ theorem ωArrow_reverse (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver
       𝔸.ωArrow (⟨f, h₁, h₂⟩ : Γ.tgt e ⟶ Γ.src e) c =
         𝔸.αArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) (MulEquiv.cast (M := 𝔸.edgeGroup) h c) := by
     rintro f rfl h₁ h₂ h c
-    rw [αArrow_apply, ωArrow_apply, ω_rev_apply]
-    simp only [MulEquiv.cast_apply, cast_cast]
+    rw [ωArrow_apply, αArrow_mk, ω_rev_apply]
+    simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
   refine key _ (Γ.reverse_val _) ?_ ?_ _ c <;> simp
+
+/-- An edge group element `c` of a dart `e`, read as an element `c'` of the edge group of
+`rev e`: `α_{rev e}(c') = ω_e(c)` and `ω_{rev e}(c') = α_e(c)`. -/
+theorem exists_αArrow_reverse_eq_and_ωArrow_reverse_eq (e : a ⟶ b)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    ∃ c' : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1),
+      𝔸.αArrow (Quiver.reverse e) c' = 𝔸.ωArrow e c ∧
+        𝔸.ωArrow (Quiver.reverse e) c' = 𝔸.αArrow e c :=
+  ⟨(MulEquiv.cast (M := 𝔸.edgeGroup) (by simp)).symm c, by
+    rw [αArrow_reverse_apply, MulEquiv.apply_symm_apply], by
+    rw [ωArrow_reverse_apply, MulEquiv.apply_symm_apply]⟩
 
 theorem range_αArrow_reverse (e : a ⟶ b) :
     (𝔸.αArrow (Quiver.reverse e)).range = (𝔸.ωArrow e).range := by
   ext g
-  refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (𝔸.αArrow_reverse e c).symm.trans hc⟩, fun ⟨c, hc⟩ ↦ ?_⟩
-  exact ⟨(MulEquiv.cast (M := 𝔸.edgeGroup) (by simp)).symm c, by
-    rw [αArrow_reverse, MulEquiv.apply_symm_apply, hc]⟩
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (𝔸.αArrow_reverse_apply e c).symm.trans hc⟩, fun ⟨c, hc⟩ ↦ ?_⟩
+  obtain ⟨c', hc', -⟩ := 𝔸.exists_αArrow_reverse_eq_and_ωArrow_reverse_eq e c
+  exact ⟨c', hc'.trans hc⟩
 
 theorem range_ωArrow_reverse (e : a ⟶ b) :
     (𝔸.ωArrow (Quiver.reverse e)).range = (𝔸.αArrow e).range := by
-  ext g
-  refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (𝔸.ωArrow_reverse e c).symm.trans hc⟩, fun ⟨c, hc⟩ ↦ ?_⟩
-  exact ⟨(MulEquiv.cast (M := 𝔸.edgeGroup) (by simp)).symm c, by
-    rw [ωArrow_reverse, MulEquiv.apply_symm_apply, hc]⟩
+  rw [← 𝔸.range_αArrow_reverse, Quiver.reverse_reverse]
 
 /-- At a vertex where a dart `e'` is followed by its reverse `e`, the image of `ω_{e'}` is the
 image of `α_e`. -/
 theorem range_ωArrow_eq_range_αArrow {c : Γ.V} (e' : a ⟶ b) (e : b ⟶ c) (h : e'.1 = Γ.rev e.1) :
     (𝔸.ωArrow e').range = (𝔸.αArrow e).range := by
-  have ha : a = c := by rw [← e'.2.1, h, Γ.src_rev, e.2.2]
-  subst ha
-  obtain rfl : e' = Quiver.reverse e := Subtype.ext (h.trans (Γ.reverse_val e).symm)
+  obtain rfl := Γ.src_eq_tgt_of_val_eq_rev h
+  obtain rfl := Γ.eq_reverse_of_val_eq_rev h
   exact 𝔸.range_ωArrow_reverse e
 
 end Arrow
