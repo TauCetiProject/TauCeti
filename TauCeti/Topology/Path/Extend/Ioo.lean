@@ -178,13 +178,13 @@ theorem continuousOn_Icc_extendIoo [TopologicalSpace α] [OrderClosedTopology α
     (hv : Tendsto g (𝓝[<] b) (𝓝 v)) : ContinuousOn (extendIoo a b u v g) (Icc a b) := by
   have hleft : ContinuousWithinAt (extendIoo a b u v g) (Icc a b) a := by
     refine ContinuousWithinAt.mono ?_ Icc_subset_Ici_self
-    rw [← Ioi_insert, continuousWithinAt_insert_self]
+    rw [← insert_Ioi, continuousWithinAt_insert_self]
     have heq : g =ᶠ[𝓝[>] a] extendIoo a b u v g := by
       filter_upwards [Ioo_mem_nhdsGT hab] with y hy using (extendIoo_apply_of_mem_Ioo hy).symm
     simpa only [ContinuousWithinAt, extendIoo_apply_of_le_left le_rfl] using hu.congr' heq
   have hright : ContinuousWithinAt (extendIoo a b u v g) (Icc a b) b := by
     refine ContinuousWithinAt.mono ?_ Icc_subset_Iic_self
-    rw [← Iio_insert, continuousWithinAt_insert_self]
+    rw [← insert_Iio, continuousWithinAt_insert_self]
     have heq : g =ᶠ[𝓝[<] b] extendIoo a b u v g := by
       filter_upwards [Ioo_mem_nhdsLT hab] with y hy using (extendIoo_apply_of_mem_Ioo hy).symm
     simpa only [ContinuousWithinAt, extendIoo_apply_of_left_lt_of_right_le hab le_rfl] using
