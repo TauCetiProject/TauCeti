@@ -7,8 +7,9 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.CharacterTable.SimpleModule
 import TauCeti.RepresentationTheory.Maschke
-import TauCeti.RepresentationTheory.OfModule
+import TauCeti.RingTheory.Semisimple.Multiplicity
 
 /-!
 # Intrinsic multiplicities of the irreducible representations
@@ -21,16 +22,17 @@ each row `i` of the character table. For a representation `ρ` of `G` over `k`, 
 
 `m_ρ(i) = dim_k Hom_G(Zᵢ, ρ)` (`Representation.intrinsicMultiplicity`).
 
-It needs no decomposition of `ρ` to be defined, and it is the number of copies of `Zᵢ` in every
-decomposition of a finite-dimensional `ρ` into irreducibles: `ρ` regroups, as a `k[G]`-module, into
-exactly `m_ρ(i)` copies of each `Zᵢ` (`Representation.nonempty_regrouping`). The carrier of `ρ`
+It needs no decomposition of `ρ` to be defined, and a finite-dimensional `ρ` admits a
+decomposition with exactly `m_ρ(i)` copies of each `Zᵢ`: it regroups, as a `k[G]`-module, into
+`Π₀ i, Fin (m_ρ(i)) → Zᵢ` (`Representation.nonempty_regrouping`). The carrier of `ρ`
 may live in any universe, in particular in one other than that of `k`, where the models `Zᵢ` live.
 
 The regrouping decomposes `ρ` into simple submodules (Maschke's theorem makes `k[G]` semisimple)
 and identifies each summand with one of the models; this lookup of a simple `k[G]`-module in any
 universe is `TauCeti.existsUnique_nonempty_linearEquiv_irreducibleRepresentation`. It then counts
-the summands of each class by Schur's lemma: `Hom_G(Zⱼ, Zᵢ)` is `k` when `i = j` and zero otherwise
-(`Representation.intrinsicMultiplicity_irreducibleRepresentation`).
+the summands of each class by the multiplicity theorem for semisimple modules, a consequence of
+Schur's lemma (`TauCeti.finrank_linearMap_eq_natCard_of_linearEquiv_pi`), the models being pairwise
+non-isomorphic.
 
 ## Main definitions
 
@@ -39,7 +41,9 @@ the summands of each class by Schur's lemma: `Hom_G(Zⱼ, Zᵢ)` is `k` when `i 
 ## Main results
 
 * `Representation.characterPairing_ofCharacter_irreducibleRepresentation`: the pairing of the
-  character of `ρ` with the `i`-th irreducible character is `m_ρ(i)`.
+  character of `ρ` with the `i`-th irreducible character is `(m_ρ(i) : k)`. The equality holds in
+  `k`, so in characteristic `p` it determines `m_ρ(i)` only modulo `p`; this is why the
+  multiplicity is defined as a Hom dimension rather than as a pairing.
 * `FDRep.intrinsicMultiplicity_ρ_eq_finrank_hom`: in `FDRep`, `m_V(i)` is the dimension of the
   space of morphisms `Zᵢ ⟶ V`.
 * `Representation.intrinsicMultiplicity_congr`: the multiplicities are invariant under
@@ -48,8 +52,6 @@ the summands of each class by Schur's lemma: `Hom_G(Zⱼ, Zᵢ)` is `k` when `i 
 * `Representation.intrinsicMultiplicity_of_isIrreducible`: an irreducible representation has
   multiplicity `1` at its own class and `0` at every other, and in particular
   `Representation.intrinsicMultiplicity_irreducibleRepresentation`: `m_{Zⱼ}(i) = δᵢⱼ`.
-* `TauCeti.existsUnique_nonempty_linearEquiv_irreducibleRepresentation`: every simple
-  `k[G]`-module, in any universe, is isomorphic to `Zᵢ` for exactly one `i`.
 * `Representation.nonempty_regrouping`: **the regrouping**. A finite-dimensional `ρ` is, as a
   `k[G]`-module, the direct sum of `m_ρ(i)` copies of each `Zᵢ`.
 
@@ -65,34 +67,6 @@ open Module
 open scoped MonoidAlgebra
 
 universe u v w w'
-
-namespace TauCeti
-
-variable (k : Type u) {G : Type v} [Field k] [IsAlgClosed k] [Group G] [Finite G]
-  [Invertible (Nat.card G : k)]
-
-/-- **Every simple `k[G]`-module is one of the chosen irreducible models**, and only one: for a
-simple `k[G]`-module `N` whose `k`-module structure is the restricted one, there is exactly one row
-`i` of the character table with `N ≅ Zᵢ` as `k[G]`-modules. The module `N` may lie in any universe,
-not only in that of `k`. -/
-theorem existsUnique_nonempty_linearEquiv_irreducibleRepresentation (N : Type w) [AddCommGroup N]
-    [Module k N] [Module k[G] N] [IsScalarTower k k[G] N] [IsSimpleModule k[G] N] :
-    ∃! i : Fin (Nat.card (ConjClasses G)),
-      Nonempty (N ≃ₗ[k[G]] (irreducibleRepresentation k i).asModule) := by
-  have : (_root_.Representation.ofModule' (k := k) (G := G) N).IsIrreducible :=
-    (Representation.isIrreducible_ofModule'_iff N).mpr inferInstance
-  obtain ⟨i, ⟨φ⟩⟩ := ClassFunction.exists_nonempty_equiv (irreducibleRepresentation k)
-    (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp)
-    (_root_.Representation.ofModule' (k := k) (G := G) N)
-  refine ⟨i, ⟨(Representation.ofModule'AsModuleEquiv N).symm ≪≫ₗ
-    Representation.asModuleLinearEquivOfEquiv φ⟩, fun j ⟨e⟩ ↦ ?_⟩
-  by_contra hji
-  exact (pairwise_isEmpty_equiv_irreducibleRepresentation k hji).elim
-    (Representation.equivOfAsModuleLinearEquiv (e.symm ≪≫ₗ
-      (Representation.ofModule'AsModuleEquiv N).symm ≪≫ₗ
-      Representation.asModuleLinearEquivOfEquiv φ))
-
-end TauCeti
 
 namespace Representation
 
@@ -114,7 +88,9 @@ theorem intrinsicMultiplicity_def (i : Fin (Nat.card (ConjClasses G))) :
     ρ.intrinsicMultiplicity i = finrank k (IntertwiningMap (irreducibleRepresentation k i) ρ) :=
   (rfl)
 
-/-- **The character pairing computes the intrinsic multiplicity**: `⟨χ_ρ, χᵢ⟩ = m_ρ(i)`. -/
+/-- **The character pairing computes the intrinsic multiplicity**: `⟨χ_ρ, χᵢ⟩ = (m_ρ(i) : k)`.
+The equality holds in `k`, so in characteristic `p` the pairing determines `m_ρ(i)` only modulo
+`p`. -/
 theorem characterPairing_ofCharacter_irreducibleRepresentation [Fintype G]
     [FiniteDimensional k V] (i : Fin (Nat.card (ConjClasses G))) :
     ClassFunction.characterPairing (ClassFunction.ofCharacter ρ)
@@ -210,17 +186,14 @@ theorem nonempty_regrouping [FiniteDimensional k V] :
   let E : ρ.asModule ≃ₗ[k[G]] Π j, (irreducibleRepresentation k (c j)).asModule :=
     e ≪≫ₗ DFinsupp.mapRange.linearEquiv (fun j ↦ (f j).some) ≪≫ₗ
       DFinsupp.linearEquivFunOnFintype
-  -- Count the summands in each class by Schur's lemma.
+  -- Count the summands in each class by the multiplicity theorem.
   have hcount (i) : Fintype.card {j // c j = i} = ρ.intrinsicMultiplicity i := by
-    rw [intrinsicMultiplicity_eq_finrank_linearMap, (LinearEquiv.congrLeft _ k E).finrank_eq,
-      ← (LinearMap.lsum k[G] (fun j ↦ (irreducibleRepresentation k (c j)).asModule) k
-        (M := (irreducibleRepresentation k i).asModule)).finrank_eq,
-      (LinearEquiv.piCongrRight fun j ↦ (IntertwiningMap.equivLinearMapAsModule
-        (irreducibleRepresentation k (c j)) (irreducibleRepresentation k i)).symm).finrank_eq,
-      finrank_pi_fintype]
-    simp_rw [← intrinsicMultiplicity_def, intrinsicMultiplicity_irreducibleRepresentation,
-      Finset.sum_boole, Fintype.card_subtype]
-    simp [eq_comm]
+    rw [intrinsicMultiplicity_def, (IntertwiningMap.equivLinearMapAsModule _ _).finrank_eq,
+      finrank_linearMap_eq_natCard_of_linearEquiv_pi (k := k) E, ← Nat.card_eq_fintype_card]
+    refine Nat.card_congr (Equiv.subtypeEquivRight fun j ↦ ?_)
+    rw [← TauCeti.Representation.nonempty_equiv_iff]
+    exact ⟨fun h ↦ ⟨h ▸ Equiv.refl _⟩, fun ⟨e⟩ ↦ by_contra fun hij ↦
+      (pairwise_isEmpty_equiv_irreducibleRepresentation k (Ne.symm hij)).elim e⟩
   -- Regroup the summands by class.
   exact ⟨E ≪≫ₗ LinearEquiv.piCongrLeft k[G] (fun s ↦ (irreducibleRepresentation k s.1).asModule)
       (Equiv.sigmaFiberEquiv c).symm ≪≫ₗ
