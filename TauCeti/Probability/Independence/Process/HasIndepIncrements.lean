@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import TauCeti.Probability.IdentDistrib
+public import TauCeti.MeasureTheory.Group.Arithmetic
 import Mathlib.Probability.Independence.Process.Basic
 import Mathlib.Probability.IdentDistribIndep
 import Mathlib.Probability.Process.FiniteDimensionalLaws
@@ -54,8 +55,10 @@ theorem HasIndepIncrements.shift {T Ω E : Type*} [Preorder T] [Add T] [AddLeftM
   refine h.congr fun i ↦ ae_of_all _ fun ω ↦ ?_
   exact (sub_sub_sub_cancel_right _ _ _).symm
 
+attribute [local instance] TauCeti.measurableAdd₂_of_measurableSub₂
+
 variable {T Ω E : Type*} [LinearOrder T] [OrderBot T] [MeasurableSpace Ω]
-  [MeasurableSpace E] [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+  [MeasurableSpace E] [AddCommGroup E] [MeasurableSub₂ E]
   {P : Measure Ω} {X : T → Ω → E}
 
 /-- A finite vector of past values is independent of a later increment. -/
@@ -81,7 +84,7 @@ theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
     apply Measurable.of_eval
     intro i
     apply Finset.measurable_sum
-    intro j hj
+    intro j _
     split_ifs <;> fun_prop
   have hrec : (fun ω ↦ f (fun i ↦ D i ω)) =ᵐ[P] (fun ω (i : I) ↦ X i ω) := by
     filter_upwards [h0] with ω hω
@@ -114,7 +117,7 @@ theorem HasIndepIncrements.indepFun_past_sub (hX : HasIndepIncrements X P)
   let J : Finset T := I.image Subtype.val
   have hj : ∀ i ∈ J, i ≤ s := by
     simp only [J, Finset.mem_image]
-    rintro i ⟨j, hj, rfl⟩
+    rintro i ⟨j, -, rfl⟩
     exact j.property
   have h := hX.indepFun_finset_sub hm h0 J hj hst
   exact h.comp (Measurable.of_eval fun (i : I) ↦ measurable_pi_apply
@@ -203,7 +206,6 @@ theorem HasIndepIncrements.indepFun_future_past (hX : HasIndepIncrements X P)
         simp [hi]
     exact hX.indepFun_future_past_insert hm h0 s J hJ a haJ ih
 
-omit [MeasurableAdd₂ E] in
 /-- Two processes starting at zero with equal increment laws have the same law at one time. -/
 private theorem identDistrib_singleton {Ω' : Type*} [MeasurableSpace Ω']
     {Q : Measure Ω'} {Y : T → Ω' → E} (a : T) (hmX : ∀ t, Measurable (X t))
@@ -367,7 +369,7 @@ path law after shifting time by `t` and subtracting its current value, provided 
 laws are invariant under this fixed shift. -/
 theorem HasIndepIncrements.identDistrib_shift {T Ω E : Type*} [LinearOrder T]
     [AddCommMonoid T] [CanonicallyOrderedAdd T] [MeasurableSpace Ω] [MeasurableSpace E]
-    [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+    [AddCommGroup E] [MeasurableSub₂ E]
     {P : Measure Ω} {X : T → Ω → E} (hX : HasIndepIncrements X P)
     (hm : ∀ s, Measurable (X s)) (h0 : ∀ᵐ ω ∂P, X 0 ω = 0) (t : T)
     (hlaw : ∀ s u, s ≤ u → IdentDistrib (fun ω ↦ X (t + u) ω - X (t + s) ω)

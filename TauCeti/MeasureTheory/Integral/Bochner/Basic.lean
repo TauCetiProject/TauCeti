@@ -28,6 +28,12 @@ for set and probability integrals.
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
 
+## Differences of integrals
+
+* `TauCeti.MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub` bounds the difference
+  of two integrals by the integral of the norm of the difference, with no integrability
+  assumption.
+
 ## Counting measures of multisets
 
 * `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is
@@ -48,8 +54,9 @@ for set and probability integrals.
   a real-valued function `h` with `|h| ≤ C` almost everywhere.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
   integral one) total extended mass one.
-* `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
-  integrands sum, almost everywhere, to at most a third integrable function.
+* `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals `∫ F` and
+  `∫ G` whose integrands satisfy `0 ≤ F ≤ N` and `F + G ≤ N` almost everywhere, for an
+  integrable function `N`.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
 * `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
@@ -71,19 +78,23 @@ for set and probability integrals.
 * `setIntegral_norm_sub_sq_le_add_of_le` transfers a square-mean decay estimate from `K` on a
   pair of sets `s ⊆ S` to any `f` close to `K` in square mean on `S`.
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
-  integral, in squared form.
+  integral, in squared form; on a probability space, with `S` the whole space, it is the
+  second-moment lower bound `(∫ f)² ≤ ∫ f²`.
 * `measureReal_inter_lt_le_setIntegral_max_sub_sq_div` is Chebyshev's inequality for truncations:
   the level set `{l < g}` in `s` has measure at most `∫_s ((g - k)⁺)² / (l - k)²`.
 * `ae_le_of_setIntegral_max_sub_sq_eq_zero` gives `g ≤ k` almost everywhere on `s` when the
   squared truncation `((g - k)⁺)²` has zero integral over `s`.
+* `integral_sq_le_two_mul_integral_sq_add` and `sqrt_integral_sq_le_of_ae_abs_sub_le`: if `u²` is
+  integrable and `|u - g| ≤ W` almost everywhere for a finite measure `ν` (with `0 ≤ W` for the
+  second), then `∫ g² ≤ 2 ∫ u² + 2 W² ν(univ)` and `√∫ g² ≤ √2 √∫ u² + √2 W √(ν univ)`.
+* `measure_eq_zero_of_integral_eq_zero_of_ae_pos`: a measure against which an integrable, almost
+  everywhere positive function has integral zero is zero.
 * `setIntegral_rpow_le_rpow_mul_setIntegral_rpow` interpolates `L^q` between `L^∞` and `Lᵖ`:
-  `∫_s w^q ≤ F^{q-p} ∫_t wᵖ` for `p ≤ q`, `0 ≤ w` almost everywhere on `t` and `w ≤ F` almost
-  everywhere on `s ⊆ t`.
+  `∫_s w^q ≤ F^{q-p} ∫_t wᵖ` for `0 ≤ F`, `p ≤ q`, `q ≠ 0`, `wᵖ` integrable on `t`, `0 ≤ w`
+  almost everywhere on `t` and `w ≤ F` almost everywhere on `s ⊆ t`.
 * `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
   integral over a larger set, for a weight in `[0, 1]` almost everywhere on the larger set and
   equal to one on the smaller set.
-* The set-integral inequality specializes to the second-moment lower bound for a real-valued
-  function on a probability space.
 * `integral_max_sub_sq_le_mul_measureReal` bounds the integral of the squared truncation
   `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`.
 * `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
@@ -96,6 +107,9 @@ in the seminorm form `eLpNorm (f i - g) 1 μ → 0` (for instance by
 `MeasureTheory.tendstoInMeasure_of_tendsto_eLpNorm`).
 
 * `tendsto_eLpNorm_one_of_tendsto_integral_norm_sub` converts the former into the latter.
+* `tendsto_lintegral_enorm_of_tendsto_integral_norm` converts the vanishing of the
+  integrals of `‖f j‖` over sets `B j`, for `f j` eventually integrable on `B j`, into that
+  of the lower Lebesgue integrals of `‖f j‖ₑ`.
 
 The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose home is
 `Mathlib.MeasureTheory.Integral.Bochner.Basic`, plus continuity of `ENNReal.ofReal` at `0`.
@@ -104,7 +118,8 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose
   convergence of integrals against an almost everywhere bounded scalar multiplier vanishing
   almost everywhere outside `s`.
 * `TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub`: uniform convergence on a set of finite
-  measure is `L¹` convergence on that set.
+  measure sends the lower integrals `∫⁻_s ‖f i - g‖ₑ` to `0`, which is `L¹` convergence on that set
+  when the differences are almost everywhere strongly measurable.
 * `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a continuous weight with
   compact support in an open set `Ω` pass to limits of maps continuous on `Ω` that converge
   uniformly on the support of the weight.
@@ -205,6 +220,24 @@ theorem integrable_exp_neg_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : 
   (integrable_const 1).mono' hf.neg.exp.aestronglyMeasurable <| by
     filter_upwards [hf0] with x hx
     simpa [Real.abs_exp] using hx
+
+/-- The difference of the integrals of two almost everywhere strongly measurable functions is at
+most the integral of the norm of their difference. No integrability is assumed: when `u - v` is
+integrable, `u` and `v` are either both integrable or both not, and in the latter case both
+integrals vanish. -/
+theorem enorm_integral_sub_integral_le_lintegral_enorm_sub {α E : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedSpace ℝ E] {u v : α → E}
+    (hu : AEStronglyMeasurable u μ) (hv : AEStronglyMeasurable v μ) :
+    ‖∫ x, u x ∂μ - ∫ x, v x ∂μ‖ₑ ≤ ∫⁻ x, ‖u x - v x‖ₑ ∂μ := by
+  rcases eq_or_ne (∫⁻ x, ‖u x - v x‖ₑ ∂μ) ∞ with h | h
+  · simp [h]
+  have huv : Integrable (fun x => u x - v x) μ := ⟨hu.sub hv, lt_top_iff_ne_top.2 h⟩
+  by_cases hvi : Integrable v μ
+  · rw [← integral_sub ((huv.add hvi).congr (.of_forall fun x => by simp)) hvi]
+    exact enorm_integral_le_lintegral_enorm _
+  · have hui : ¬Integrable u μ := fun hui =>
+      hvi ((hui.sub huv).congr (.of_forall fun x => by simp))
+    simp [integral_undef hui, integral_undef hvi]
 
 /-- An even function obtained by composing with absolute value is integrable on the whole real
 line whenever the original function is integrable on the positive half-line. -/
@@ -516,6 +549,18 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
     ← ofReal_integral_norm_eq_lintegral_enorm hi]
   simp only [Function.comp_apply, Pi.sub_apply]
 
+/-- If the integrals of `‖f j‖` over the sets `B j` tend to zero, and `f j` is eventually
+integrable on `B j`, then the lower Lebesgue integrals of `‖f j‖ₑ` over `B j` tend to zero. -/
+theorem tendsto_lintegral_enorm_of_tendsto_integral_norm {α E ι : Type*} {m : MeasurableSpace α}
+    [NormedAddCommGroup E] {μ : Measure α} {l : Filter ι} {f : ι → α → E} {B : ι → Set α}
+    (hf : ∀ᶠ j in l, IntegrableOn (f j) (B j) μ)
+    (h : Tendsto (fun j ↦ ∫ x in B j, ‖f j x‖ ∂μ) l (𝓝 0)) :
+    Tendsto (fun j ↦ ∫⁻ x in B j, ‖f j x‖ₑ ∂μ) l (𝓝 0) := by
+  refine (ENNReal.tendsto_ofReal h).congr' ?_ |>.trans ?_
+  · filter_upwards [hf] with j hj
+    exact ofReal_integral_norm_eq_lintegral_enorm hj
+  · rw [ENNReal.ofReal_zero]
+
 /-- If `a i → b` in `L¹(s)`, then the integrals `∫ x, c x • a i x ∂μ` converge to
 `∫ x, c x • b x ∂μ` for an almost everywhere bounded scalar multiplier `c` vanishing
 almost everywhere outside `s`.
@@ -552,9 +597,11 @@ theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {α 𝕜 F ι : Typ
     _ = ENNReal.ofReal K * ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ :=
         lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
 
-/-- **Uniform convergence on a set of finite measure gives `L¹` convergence on it.** If `f i → g`
-uniformly on a set `s` with `μ s ≠ ∞`, then `∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ → 0`. Neither the set
-nor the functions need be measurable. -/
+/-- **Uniform convergence on a set of finite measure sends the lower integrals of the differences
+to `0`.** If `f i → g` uniformly on a set `s` with `μ s ≠ ∞`, then
+`∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ → 0`. This is `L¹` convergence on `s` when the differences
+`f i - g` are almost everywhere strongly measurable; neither the set nor the functions need be
+measurable. -/
 theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub {α E ι : Type*}
     [MeasurableSpace α] [NormedAddCommGroup E] {μ : Measure α} {s : Set α} {l : Filter ι}
     {f : ι → α → E} {g : α → E} (h : TendstoUniformlyOn f g l s) (hμs : μ s ≠ ∞) :
@@ -725,8 +772,9 @@ theorem ae_le_of_setIntegral_max_sub_sq_eq_zero {X : Type*} [MeasurableSpace X] 
   have hmax : max (g x - k) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
   linarith [le_max_left (g x - k) 0]
 
-/-- **Interpolation of `L^q` between `L^∞` and `Lᵖ`.** If `w ≥ 0` and `w ≤ F` almost everywhere
-on `s`, `s ⊆ t`, `p ≤ q` and `q ≠ 0`, then `∫_s w^q ≤ F^{q-p} ∫_t wᵖ`. -/
+/-- **Interpolation of `L^q` between `L^∞` and `Lᵖ`.** If `0 ≤ F`, `w ≥ 0` almost everywhere on
+`t`, `w ≤ F` almost everywhere on `s ⊆ t`, `wᵖ` is integrable on `t`, `p ≤ q` and `q ≠ 0`, then
+`∫_s w^q ≤ F^{q-p} ∫_t wᵖ`. -/
 theorem setIntegral_rpow_le_rpow_mul_setIntegral_rpow {X : Type*} [MeasurableSpace X]
     {ν : Measure X} {w : X → ℝ} {s t : Set X} {F p q : ℝ} (hF : 0 ≤ F) (hst : s ⊆ t)
     (hpq : p ≤ q) (hq : q ≠ 0) (hw0 : ∀ᵐ x ∂ν.restrict t, 0 ≤ w x)

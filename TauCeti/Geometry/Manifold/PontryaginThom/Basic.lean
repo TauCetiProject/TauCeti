@@ -103,7 +103,7 @@ theorem pontryaginThomCollapse_eq_infty_iff (hτ : Injective τ) {m : M} :
 theorem pontryaginThomCollapse_eq_coe_iff (hτ : Injective τ) {m : M} {v : V} :
     pontryaginThomCollapse τ m = v ↔ ∃ x, τ (x, v) = m := by
   rw [pontryaginThomCollapse, onePointCollapse_eq_coe_iff hτ]
-  exact ⟨fun ⟨⟨x, w⟩, hw, hm⟩ ↦ ⟨x, hw ▸ hm⟩, fun ⟨x, hm⟩ ↦ ⟨(x, v), rfl, hm⟩⟩
+  exact ⟨fun ⟨⟨x, _⟩, hw, hm⟩ ↦ ⟨x, hw ▸ hm⟩, fun ⟨x, hm⟩ ↦ ⟨(x, v), rfl, hm⟩⟩
 
 namespace IsFramedTube
 
@@ -220,6 +220,14 @@ noncomputable def pontryaginThomSphereMap {k : ℕ} [CompactSpace S] [T2Space M]
     C(M, Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :=
   (onePointHomeomorphSphere k s₀ : C(OnePoint (Fin k → ℝ), _)).comp
     (pontryaginThomCollapseMap hτ)
+
+/-- The collapse onto the sphere is the Pontryagin–Thom collapse followed by the homeomorphism
+`OnePoint ℝᵏ ≃ₜ Sᵏ`. -/
+theorem coe_pontryaginThomSphereMap {k : ℕ} [CompactSpace S] [T2Space M]
+    {τ : S × (Fin k → ℝ) → M} (hτ : IsOpenEmbedding τ)
+    (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
+    ⇑(pontryaginThomSphereMap hτ s₀) = onePointHomeomorphSphere k s₀ ∘ pontryaginThomCollapse τ :=
+  (rfl)
 
 @[simp]
 theorem pontryaginThomSphereMap_apply {k : ℕ} [CompactSpace S] [T2Space M]

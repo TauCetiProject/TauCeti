@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
+import TauCeti.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 /-!
 # Degrees of polynomial factors modulo a prime
@@ -150,7 +151,7 @@ theorem factorDegrees_eq_singleton_of_irreducible (f : ℤ[X]) (p : ℕ)
 theorem irreducible_map_of_card_factorDegrees_eq_one {f : ℤ[X]} {p : ℕ}
     [Fact p.Prime] (h : (f.factorDegrees p).card = 1) :
     Irreducible (f.map (Int.castRingHom (ZMod p))) :=
-  Polynomial.irreducible_of_card_normalizedFactors_eq_one (by simpa using h)
+  card_normalizedFactors_eq_one_iff.mp (by simpa using h)
 
 /-- The factor degrees of `f` modulo `p` are the singleton `{n}` exactly when the reduction is
 irreducible of degree `n`. -/
@@ -202,7 +203,7 @@ theorem count_one_factorDegrees_eq_card_roots {f : ℤ[X]} {p : ℕ}
     [Fact p.Prime] (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) (hd : ¬ (p : ℤ) ∣ f.discr) :
     (f.factorDegrees p).count 1 = (f.map (Int.castRingHom (ZMod p))).roots.toFinset.card := by
   have hsep := (f.separable_map_zmod_iff_not_dvd_discr p hlc).mpr hd
-  rw [factorDegrees_def, count_one_map_natDegree_normalizedFactors hsep.ne_zero hsep.squarefree]
+  rw [factorDegrees_def, count_one_map_natDegree_normalizedFactors hsep.squarefree]
 
 /-- If the prime `p` divides neither the leading coefficient nor the discriminant of `f`, then at
 most `p` factor degrees equal `1`: the reduction is squarefree, so its linear factors are distinct

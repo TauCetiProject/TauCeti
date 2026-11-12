@@ -114,11 +114,18 @@ theorem natCard_sq_add_one_eq_zero (N : ℕ) :
 
 /-! ### The congruence `x² - x + 1 ≡ 0` -/
 
-/-- Modulo a power `p ^ k`, `k ≠ 0`, of a prime `p ≠ 2, 3`, the polynomial `x² - x + 1` has
-`1 + (p | 3)` roots. -/
-theorem natCard_sq_sub_self_add_one_eq_zero_prime_pow (hp2 : p ≠ 2) (hp3 : p ≠ 3) {k : ℕ}
+/-- Modulo a power `p ^ k`, `k ≠ 0`, of a prime `p ≠ 3`, the polynomial `x² - x + 1` has
+`1 + (p | 3)` roots. At `p = 2` there are none, as `(2 | 3) = -1`. -/
+theorem natCard_sq_sub_self_add_one_eq_zero_prime_pow (hp3 : p ≠ 3) {k : ℕ}
     (hk : k ≠ 0) :
     (Nat.card {x : ZMod (p ^ k) // x ^ 2 - x + 1 = 0} : ℤ) = 1 + legendreSym 3 p := by
+  -- Modulo `2`, and hence modulo `2 ^ k`, the polynomial `x² - x + 1` has no roots.
+  rcases eq_or_ne p 2 with rfl | hp2
+  · have h0 := ZMod.natCard_aeval_eq_zero_eq_zero_of_dvd (P := .X ^ 2 - .X + 1) (m := 2)
+      (dvd_pow_self 2 hk) (by simp)
+    simp only [map_add, map_sub, map_pow, Polynomial.aeval_X, map_one] at h0
+    rw [h0, Nat.cast_zero, Nat.cast_ofNat, _root_.legendreSym.at_two (p := 3) (by norm_num)]
+    decide
   have h2 : IsUnit (2 : ZMod (p ^ k)) := by
     rw [ZMod.isUnit_prime_pow_iff_castHom_ne_zero p k (Nat.pos_of_ne_zero hk), map_ofNat]
     exact Ring.two_ne_zero (by rwa [ZMod.ringChar_zmod_n])
@@ -171,18 +178,10 @@ theorem natCard_sq_sub_self_add_one_eq_zero (N : ℕ) :
     have : Fact p.Prime := ⟨hpp⟩
     have hk : N.factorization p ≠ 0 :=
       (hpp.factorization_pos_of_dvd hN (Nat.dvd_of_mem_primeFactors hp)).ne'
-    rcases eq_or_ne p 2 with rfl | hp2
-    · -- Modulo `2`, and hence modulo `2 ^ v₂(N)`, the polynomial `x² - x + 1` has no roots.
-      have h0 := ZMod.natCard_aeval_eq_zero_eq_zero_of_dvd (P := .X ^ 2 - .X + 1) (m := 2)
-        (dvd_pow_self 2 hk) (by simp)
-      simp only [map_add, map_sub, map_pow, Polynomial.aeval_X, map_one] at h0
-      rw [h0, Nat.cast_zero, Nat.cast_ofNat,
-        _root_.legendreSym.at_two (p := 3) (by norm_num)]
-      decide
     rcases eq_or_ne p 3 with rfl | hp3
     · have hthreeExponent : N.factorization 3 = 1 := by omega
       rw [hthreeExponent, pow_one, Nat.card_eq_fintype_card]
       decide
-    · exact natCard_sq_sub_self_add_one_eq_zero_prime_pow hp2 hp3 hk
+    · exact natCard_sq_sub_self_add_one_eq_zero_prime_pow hp3 hk
 
 end TauCeti.ZMod

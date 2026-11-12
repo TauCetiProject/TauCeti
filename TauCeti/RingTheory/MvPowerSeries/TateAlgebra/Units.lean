@@ -81,6 +81,7 @@ section NormOne
 
 variable [NormOneClass R]
 
+omit [NormOneClass R] in
 /-- Constant series preserve multiplicative units, since taking constant series is a
 norm-preserving ring homomorphism. -/
 theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
@@ -90,7 +91,8 @@ theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
 
 variable [CompleteSpace R]
 
-/-- **Neumann series criterion.** Over a complete ultrametric norm-one ring, a restricted series
+omit [NormOneClass R] in
+/-- **Neumann series criterion.** Over a complete ultrametric ring, a restricted series
 whose distance from a constant multiplicative unit `a` is less than `‖a‖` is a multiplicative
 unit. -/
 theorem isNormMulUnit_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
@@ -98,6 +100,7 @@ theorem isNormMulUnit_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     IsNormMulUnit f :=
   (isNormMulUnit_C ha).of_norm_sub_lt (by rwa [norm_C])
 
+omit [NormOneClass R] in
 /-- **The Neumann series of the inverse.** If `‖f - a‖ < ‖a‖` for a constant multiplicative unit
 `a`, then `x = a⁻¹ * (a - f)` has norm less than one and `f⁻¹ = ∑ₙ xⁿ * a⁻¹`. -/
 theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
@@ -118,6 +121,7 @@ theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
     (by rwa [hA, norm_C])
   rwa [hA, hA'] at h
 
+omit [NormOneClass R] in
 /-- If `‖f - a‖ < ‖a‖` for a constant multiplicative unit `a`, then the inverse of `f` has norm
 `‖a‖⁻¹`. -/
 theorem norm_inverse_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
@@ -141,7 +145,7 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
     exact h0.isUnit.ne_zero (by simp [a])
   -- The Gauss norm of `f` is attained at the constant coefficient.
   have hfa : ‖f‖ = ‖a‖ := by
-    obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+    obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
     rw [AchievesGaussNorm, ← norm_eq_gaussNorm] at ht
     rcases eq_or_ne t 0 with rfl | ht0
     · simpa [a, coeff_zero_eq_constantCoeff_apply] using ht.symm
@@ -150,7 +154,7 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
       simpa [a, coeff_zero_eq_constantCoeff_apply] using norm_coeff_mul_prod_le f 0
   -- Restrictedness bounds the nonconstant weighted coefficients uniformly below `‖a‖`.
   obtain ⟨ε, hε0, hεf, hε⟩ := exists_norm_coeff_mul_prod_gap f hf0
-  refine isNormMulUnit_of_norm_sub_C_lt h0 (lt_of_le_of_lt ((norm_le_iff hε0).mpr fun t ↦ ?_)
+  refine isNormMulUnit_of_norm_sub_C_lt h0 (lt_of_le_of_lt (norm_le_iff.mpr fun t ↦ ?_)
     (hfa ▸ hεf))
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_C]
   split_ifs with ht

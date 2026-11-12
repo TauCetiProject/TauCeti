@@ -12,6 +12,8 @@ import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Constructions.UnitInterval
@@ -382,7 +384,7 @@ theorem extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv (hs : StarConvex
     extDeriv (poincareHomotopy x₀ ω) x + poincareHomotopy x₀ (extDeriv ω) x = ω x := by
   have hK : poincareHomotopy x₀ (extDeriv ω) x = poincareHomotopy x₀ (extDerivWithin ω s) x :=
     poincareHomotopy_congr fun y hy ↦ by
-      rw [extDerivWithin, extDeriv, fderivWithin_of_isOpen hso (hs.segment_subset hx hy)]
+      rw [extDerivWithin_of_isOpen hso (hs.segment_subset hx hy)]
   rw [extDeriv_poincareHomotopy_eq hs hso hω hx, hK]
   exact integral_add_poincareHomotopy_extDerivWithin_eq hs hso.uniqueDiffOn hω hx
 

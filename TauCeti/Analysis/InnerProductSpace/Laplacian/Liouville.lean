@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
+public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -16,6 +17,10 @@ A nonnegative integrable `C²` function on a nontrivial finite-dimensional real 
 space with nonnegative Laplacian is zero. The sub-mean-value inequality bounds its value by
 its total integral divided by the volume of an arbitrarily large ball. This is useful for
 vanishing arguments in which a squared norm is subharmonic and the original field is in `L²`.
+
+In particular a `C²` solution in `L²` of the Schrödinger equation `Δf = V f` with nonnegative
+potential `V` vanishes (`TauCeti.eq_zero_of_memLp_of_laplacian_eq_smul`): the Laplacian of
+`‖f‖²` is `2 ‖Df‖² + 2 V ‖f‖² ≥ 0`.
 -/
 
 public section
@@ -45,5 +50,25 @@ theorem eq_zero_of_integrable_of_nonneg_of_laplacian_nonneg
     (x₀ := x) (R := r) hf.contDiffOn hf.continuous.continuousOn (fun y _ ↦ hΔ y)
   rw [μ.addHaar_real_ball_of_pos x hr] at hmean
   exact (hmean.trans (setIntegral_le_integral hfi (Filter.Eventually.of_forall hf₀))).not_gt hbig
+
+/-- A `C²` solution in `L²` of the Schrödinger equation `Δf = V f` with nonnegative potential `V`,
+on a nontrivial Euclidean space and with values in a real inner product space, is zero. No
+regularity of `V` is needed. The measure can be any additive Haar measure. -/
+theorem eq_zero_of_memLp_of_laplacian_eq_smul
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] {f : E → G} {V : E → ℝ}
+    (hf : ContDiff ℝ 2 f) (hf₂ : MemLp f 2 μ) (hV : ∀ x, 0 ≤ V x)
+    (hΔ : ∀ x, Δ f x = V x • f x) : f = 0 := by
+  have hnorm : (fun x ↦ ‖f x‖ ^ 2) = 0 := by
+    refine eq_zero_of_integrable_of_nonneg_of_laplacian_nonneg (μ := μ) (hf.norm_sq ℝ)
+      ((memLp_two_iff_integrable_sq_norm hf₂.aestronglyMeasurable).mp hf₂)
+      (fun x ↦ sq_nonneg ‖f x‖) fun x ↦ ?_
+    rw [hf.contDiffAt.laplacian_norm_sq (stdOrthonormalBasis ℝ E), hΔ, inner_smul_right,
+      real_inner_self_eq_norm_sq]
+    have := hV x
+    positivity
+  funext x
+  exact norm_eq_zero.mp (sq_eq_zero_iff.mp (by simpa using congrFun hnorm x))
 
 end TauCeti

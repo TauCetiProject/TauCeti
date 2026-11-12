@@ -497,7 +497,7 @@ private lemma exists_weight_and_multiplicity_dvd_and_le (h : T.IsGenusOneMinimal
     ⟨hcard, c, hc, -, h5⟩ |
     hstar | hfive |
     ⟨n, c, hn, hcard, hc, -, hlong⟩ |
-    ⟨t, c, b, ht, hcard, hf, hfork⟩ |
+    ⟨t, c, b, _, hcard, hf, hfork⟩ |
     ⟨t, c, left, right, ht, hcard, hr, hl, hD⟩ |
     hE6 | hE7 | hE8⟩
   · exact T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) j₀ j₀

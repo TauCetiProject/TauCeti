@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 import TauCeti.RingTheory.Valuation.FinsetDvd
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.ScaleCoord
 
 /-!
 # Elementary automorphisms of a free pro-`p` group and the exponent vector of a relator
@@ -371,27 +372,28 @@ theorem dilation_mul (v : ℤ_[p]ˣ) :
 /-- **The exponent vector under a dilation.** The dilation `x₀ ↦ x₀ ^ u` multiplies the coordinate
 at `x₀` of the exponent vector by `u` and leaves the other coordinates unchanged. -/
 @[simp]
-theorem toAdd_exponentSum_dilation [Finite X] [DecidableEq X] (y : freeProP p X) :
+theorem toAdd_exponentSum_dilation [DecidableEq X] (y : freeProP p X) :
     (exponentSum p X (dilation x₀ u y)).toAdd =
       Function.update (exponentSum p X y).toAdd x₀ (u * (exponentSum p X y).toAdd x₀) := by
-  cases nonempty_fintype X
-  have hc : ∀ x, (exponentSum p X ((dilation x₀ u : freeProP p X →ₜ* freeProP p X) (of x))).toAdd =
-      Pi.single x (if x = x₀ then (u : ℤ_[p]) else 1) := by
-    intro x
-    rw [ContinuousMonoidHom.coe_coe]
-    by_cases hx : x = x₀
-    · subst hx
-      rw [dilation_of_self, exponentSum_padicPow_of, toAdd_ofAdd, ite_eq_left rfl]
-    · rw [dilation_of_of_ne x₀ u hx, exponentSum_of, toAdd_ofAdd, ite_eq_right hx]
-  rw [← ContinuousMonoidHom.coe_coe (dilation x₀ u),
-    toAdd_exponentSum_apply_eq_sum_smul p X (dilation x₀ u : freeProP p X →ₜ* freeProP p X)]
-  funext k
-  simp only [hc, Finset.sum_apply, Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_zero,
-    Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-  by_cases hk : k = x₀
-  · subst hk
-    rw [Function.update_self, ite_eq_left rfl, mul_comm]
-  · rw [Function.update_of_ne hk, ite_eq_right hk, mul_one]
+  have h : (exponentSum p X).comp (dilation x₀ u : freeProP p X →ₜ* freeProP p X) =
+      (ContinuousMonoidHom.scaleCoord x₀ (u : ℤ_[p])).comp (exponentSum p X) :=
+    hom_ext fun x ↦ by
+      simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_coe,
+        exponentSum_of]
+      by_cases hx : x = x₀
+      · subst hx
+        rw [dilation_of_self, exponentSum_padicPow_of]
+        apply Multiplicative.toAdd.injective
+        funext k
+        by_cases hk : k = x <;> simp [ContinuousMonoidHom.toAdd_scaleCoord_apply, hk]
+      · rw [dilation_of_of_ne x₀ u hx, exponentSum_of]
+        apply Multiplicative.toAdd.injective
+        funext k
+        by_cases hk : k = x₀ <;> by_cases hk' : k = x <;>
+          simp [ContinuousMonoidHom.toAdd_scaleCoord_apply, hk, hk', hx, Ne.symm hx]
+  have h' := congrArg Multiplicative.toAdd (DFunLike.congr_fun h y)
+  simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_coe,
+    ContinuousMonoidHom.toAdd_scaleCoord] using h'
 
 end Dilation
 
