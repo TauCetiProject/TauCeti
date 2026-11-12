@@ -9,17 +9,18 @@ public import TauCeti.Analysis.BoundedVariation.Slicing.Basic
 import TauCeti.Analysis.BoundedVariation.Real
 
 /-!
-# Measurable perimeter and noninterval sections
+# Null-measurability of noninterval sections
 
-The perimeters of parallel line sections of a finite-volume null-measurable set depend
-measurably, up to null sets, on the transverse parameter. No finiteness assumption on the
-ambient perimeter is needed. The same holds for the variation of sections of an integrable
-function.
+This file uses `TauCeti.aemeasurable_perimeter_lineSection` from
+`TauCeti.Analysis.BoundedVariation.Slicing.Basic` to prove that the family of noninterval
+sections of a finite-volume null-measurable set is null-measurable. No finiteness assumption
+on the ambient perimeter is needed.
 
 In one dimension, finite-length sets with perimeter at most two are precisely intervals up to
 null sets, including the empty interval. Thus the family of sections which are not intervals
-up to null sets is null-measurable. This allows slicing-excess estimates to be applied to the
-entire family of noninterval sections, rather than just a supplied measurable subfamily.
+up to null sets is null-measurable (`TauCeti.nullMeasurableSet_noninterval_lineSection`). This
+allows slicing-excess estimates to be applied to the entire family of noninterval sections,
+rather than just a supplied measurable subfamily.
 -/
 
 public section

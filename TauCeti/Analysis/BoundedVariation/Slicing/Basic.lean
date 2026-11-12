@@ -71,6 +71,11 @@ on each such line (`TauCeti.totalVariationOn_le_liminf`) and Fatou's lemma concl
 
 ## Main results
 
+* `TauCeti.aemeasurable_totalVariationOn_line`: the variation of line restrictions of an
+  integrable function is a.e. measurable in the transverse parameter.
+* `TauCeti.aemeasurable_perimeter_lineSection`: the perimeters of line sections of a
+  finite-volume null-measurable set are a.e. measurable in the transverse parameter, without
+  assuming finite ambient perimeter.
 * `ContDiff.lintegral_totalVariationOn_line_eq`: for `C¹` functions the line variations integrate
   to `∫_E |∂_e w|`.
 * `TauCeti.lintegral_totalVariationOn_line_le`: the slicing inequality for integrable functions.
