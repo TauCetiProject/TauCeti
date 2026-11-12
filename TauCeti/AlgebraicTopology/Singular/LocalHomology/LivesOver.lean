@@ -57,7 +57,9 @@ needed for the statements below.
 * **Fibrations with a section.** For a section `σ` of `p`, the class `α - σ_* p_* α` is killed
   by `p`, and lives over the fundamental class at `b` when the localization of `α` is not the
   image under `σ` of a local homology class of `M` at `b`
-  (`TauCeti.livesOverFundamentalClass_sub_homologyMap_of_leftInverse`). Conversely the
+  (`TauCeti.livesOverFundamentalClass_sub_homologyMap_of_leftInverse`); such a class itself lives
+  over the fundamental class
+  (`TauCeti.livesOverFundamentalClass_of_notMem_range_localHomologyMap`). Conversely the
   localization of a class living over the fundamental class and killed by `p` is not such an
   image (`TauCeti.LivesOverFundamentalClass.notMem_range_localHomologyMap`). This is the
   reduction in the proof of the source's Theorem 6.12.
@@ -205,6 +207,16 @@ evaluation fibration `Map(S², Q) → Q` and its section by constant spheres. -/
 variable {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ)
   {E M : Type w} [TopologicalSpace E] [TopologicalSpace M] {p : C(E, M)} {σ : C(M, E)}
 
+/-- A class whose localization at the fibre over `b` is not the image of a local homology class
+of `M` at `b` under a map `σ : M → E` lives over the fundamental class at `b`, since the zero
+class is such an image. -/
+theorem livesOverFundamentalClass_of_notMem_range_localHomologyMap {b : M} {k : ℕ}
+    (hs : σ ⁻¹' (p ⁻¹' {b}) ⊆ {b})
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)}
+    (hα : (fiberLocalization R p b k).hom α ∉ LinearMap.range (localHomologyMap R σ hs k).hom) :
+    LivesOverFundamentalClass R p b α :=
+  fun h ↦ hα ⟨0, by rw [map_zero, h]⟩
+
 /-- **Removing the part of a class coming from a section.** Let `σ` be a section of `p` and
 `α ∈ Hₖ(E)`. Then `α - σ_* p_* α` is killed by `p`, and lives over the fundamental class at `b` as
 soon as the localization of `α` at the fibre over `b` is not the image under `σ` of a local
@@ -223,15 +235,14 @@ theorem livesOverFundamentalClass_sub_homologyMap_of_leftInverse
   exact ConcreteCategory.congr_hom (homologyMap_comp_fiberLocalization R σ hσ.comp_eq_id b k) _
 
 /-- The class `α - σ_* p_* α` is killed by `p`, for a section `σ` of `p`. -/
-theorem homologyMap_sub_homologyMap_of_leftInverse (hσ : Function.LeftInverse p σ) {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+theorem homologyMap_sub_homologyMap_eq_zero_of_leftInverse (hσ : Function.LeftInverse p σ)
+    {k : ℕ} (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
     (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
         (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k).hom
           ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) = 0 := by
   rw [map_sub, sub_eq_zero, ← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
     ← TopCat.ofHom_comp, show p.comp σ = ContinuousMap.id M from ContinuousMap.ext hσ,
-    TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id]
-  rfl
+    TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id, CategoryTheory.id_apply]
 
 /-- **Classes killed by the projection.** If `α ∈ Hₖ(E)` lives over the fundamental class at `b`
 and `p_* α = 0`, then the localization of `α` at the fibre over `b` is not the image under a

@@ -33,23 +33,28 @@ localization with `H₀(Ω²Q)` (`TauCeti.TopCat.singularHomologyComplFiberIso`)
 to the span of the class of the constant sphere at `b`, the kernel of `H₀(Ω²Q) → H₀(Ω²Q, pt)`, by
 its naturality for the section `σ`; that comparison is not formalized here. The second condition
 is therefore stated as: the localization of `α` is not the image under `σ` of a local homology
-class of `Q` at `b` (`TauCeti.IsAbundantWithTwoSpheres`).
+class of `Q` at `b`. This already implies the first condition, since the zero class is such an
+image, and outside degree `n` it is equivalent to the first condition, since the local homology
+of `Q` at `b` vanishes there. So the definition (`TauCeti.IsAbundantWithTwoSpheres`) asks for a
+single class satisfying it in some degree, and needs neither the dimension `n` nor charts; for a
+space with charts to an `n`-dimensional normed space it is equivalent to conditions 1 and 2
+(`TauCeti.isAbundantWithTwoSpheres_iff_of_finrank_eq`).
 
 The proof of Theorem H only uses abundance through a class `α'` that lives over the
 fundamental class and is killed by evaluation, `ev_* α' = 0`: in degree `n` it replaces `α` by
 `α - σ_* ev_* α`. This file proves that abundance is equivalent to the existence of such a class
 (`TauCeti.isAbundantWithTwoSpheres_iff`). The converse direction holds because evaluation sends
 the image of `σ` in local homology isomorphically back to the local homology of `Q` at `b`.
-Outside degree `n` the local homology of `Q` at `b` vanishes, so there the second condition is
-automatic.
 
 ## Main definitions
 
-* `TauCeti.IsAbundantWithTwoSpheres R M n s₀ b`: the manifold `M` of dimension `n` is abundant
-  with 2-spheres at `b`, for evaluation at `s₀ ∈ S²` and coefficients `R`.
+* `TauCeti.IsAbundantWithTwoSpheres R M s₀ b`: the space `M` is abundant with 2-spheres at `b`,
+  for evaluation at `s₀ ∈ S²` and coefficients `R`.
 
 ## Main results
 
+* `TauCeti.isAbundantWithTwoSpheres_iff_of_finrank_eq`: for a manifold of dimension `n`,
+  abundance is the existence of a class satisfying conditions 1 and 2 of the source.
 * `TauCeti.isAbundantWithTwoSpheres_iff`: abundance holds exactly when some class of
   `Map(S², M)` lives over the fundamental class and is killed by evaluation.
 * `TauCeti.IsAbundantWithTwoSpheres.exists_livesOverFundamentalClass`: such a class can be chosen
@@ -74,39 +79,36 @@ namespace TauCeti
 
 variable {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ) (M : Type w) [TopologicalSpace M]
 
-/-- The manifold `M` of dimension `n` is **abundant with 2-spheres** at `b`, with coefficients
-in `R` (Barraud–Damian–Humilière–Oancea, Definition 6.11), if some class
-`α ∈ Hₖ(Map(S², M); R)`, for evaluation `ev : Map(S², M) → M` at `s₀ ∈ S²`, satisfies:
+/-- The space `M` is **abundant with 2-spheres** at `b`, with coefficients in `R`
+(Barraud–Damian–Humilière–Oancea, Definition 6.11), if for evaluation `ev : Map(S², M) → M` at
+`s₀ ∈ S²` some class `α ∈ Hₖ(Map(S², M); R)` has a localization at the fibre over `b` that is not
+the image of a local homology class of `M` at `b` under the section of `ev` by constant spheres.
 
-1. `α` lives over the fundamental class at `b` for `ev`;
-2. if `k = n`, the localization of `α` at the fibre over `b` is not the image of a local homology
-   class of `M` at `b` under the section of `ev` by constant spheres.
-
-Read through the identification of the localization at the fibre with `H₀(Ω²M)` in degree `n`,
-the second condition is the source's: the shriek image of `α` in `H₀(Ω²M)` is not a multiple of
-the class of the constant sphere. In degrees `k ≠ n` the condition would be automatic for a class
-living over the fundamental class, since the local homology of `M` at `b` vanishes there. -/
-def IsAbundantWithTwoSpheres (n : ℕ) (s₀ : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) (b : M) :
-    Prop :=
+Such a class lives over the fundamental class at `b` for `ev`, since the zero class is such an
+image (`TauCeti.livesOverFundamentalClass_of_notMem_range_localHomologyMap`). When `M` is a
+manifold of dimension `n`, the local homology of `M` at `b` vanishes outside degree `n`, so the
+definition says exactly that some class lives over the fundamental class and, in degree `n`,
+satisfies the condition above (`TauCeti.isAbundantWithTwoSpheres_iff_of_finrank_eq`): the
+source's conditions (i) and (ii). Read through the identification of the localization at the
+fibre with `H₀(Ω²M)` in degree `n`, which is not formalized here, condition (ii) is the
+source's: the shriek image of `α` in `H₀(Ω²M)` is not a multiple of the class of the constant
+sphere. -/
+def IsAbundantWithTwoSpheres (s₀ : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) (b : M) : Prop :=
   ∃ (k : ℕ) (α : ((TopCat.toSSet.obj
       (TopCat.of C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, M))).homology R k : ModuleCat.{w} Λ)),
-    LivesOverFundamentalClass R (mappingSpaceEval s₀) b α ∧
-      (k = n → (fiberLocalization R (mappingSpaceEval s₀) b k).hom α ∉ LinearMap.range
-        (localHomologyMap R ContinuousMap.const'
-          ((leftInverse_mappingSpaceEval_const s₀).preimage_preimage {b}).subset k).hom)
+    (fiberLocalization R (mappingSpaceEval s₀) b k).hom α ∉ LinearMap.range
+      (localHomologyMap R ContinuousMap.const'
+        ((leftInverse_mappingSpaceEval_const s₀).preimage_preimage {b}).subset k).hom
 
-variable {M} [T1Space M] {V : Type w} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [FiniteDimensional ℝ V] [ChartedSpace V M] {n : ℕ}
+variable {M}
 
 /-- **Abundance through classes killed by evaluation** (the reduction in the proof of
-Barraud–Damian–Humilière–Oancea, Theorem 6.12). A manifold `M` of dimension `n` is abundant
-with 2-spheres at `b` exactly when some class of `Map(S², M)` lives over the fundamental class at
-`b` and is killed by evaluation `ev : Map(S², M) → M` at `s₀`. Given a class `α` as in the
-definition, the class `α - σ_* ev_* α`, for the section `σ` by constant spheres, is such a
-class. -/
-theorem isAbundantWithTwoSpheres_iff (hn : finrank ℝ V = n)
-    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) (b : M) :
-    IsAbundantWithTwoSpheres R M n s₀ b ↔
+Barraud–Damian–Humilière–Oancea, Theorem 6.12). The space `M` is abundant with 2-spheres at `b`
+exactly when some class of `Map(S², M)` lives over the fundamental class at `b` and is killed by
+evaluation `ev : Map(S², M) → M` at `s₀`. Given a class `α` as in the definition, the class
+`α - σ_* ev_* α`, for the section `σ` by constant spheres, is such a class. -/
+theorem isAbundantWithTwoSpheres_iff (s₀ : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) (b : M) :
+    IsAbundantWithTwoSpheres R M s₀ b ↔
       ∃ (k : ℕ) (α : ((TopCat.toSSet.obj
           (TopCat.of C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, M))).homology
           R k : ModuleCat.{w} Λ)),
@@ -116,9 +118,35 @@ theorem isAbundantWithTwoSpheres_iff (hn : finrank ℝ V = n)
   have hσ : Function.LeftInverse (mappingSpaceEval (X := M) s₀) ContinuousMap.const' :=
     leftInverse_mappingSpaceEval_const s₀
   constructor
+  · rintro ⟨k, α, hα⟩
+    exact ⟨k, _, livesOverFundamentalClass_sub_homologyMap_of_leftInverse R hσ hα,
+      homologyMap_sub_homologyMap_eq_zero_of_leftInverse R hσ α⟩
+  · rintro ⟨k, α, hα, hα₀⟩
+    exact ⟨k, α, hα.notMem_range_localHomologyMap R hσ hα₀⟩
+
+/-- **Abundance of manifolds** (Barraud–Damian–Humilière–Oancea, Definition 6.11, as stated
+there). A space `M` with charts to an `n`-dimensional normed space is abundant with 2-spheres at
+`b` exactly when some class of `Map(S², M)` lives over the fundamental class at `b` for
+evaluation at `s₀` and, if it has degree `n`, its localization at the fibre over `b` is not the
+image of a local homology class of `M` at `b` under the section by constant spheres. Outside
+degree `n` the second condition is automatic, since the local homology of `M` at `b`
+vanishes. -/
+theorem isAbundantWithTwoSpheres_iff_of_finrank_eq [T1Space M] {V : Type w}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [ChartedSpace V M] {n : ℕ}
+    (hn : finrank ℝ V = n) (s₀ : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) (b : M) :
+    IsAbundantWithTwoSpheres R M s₀ b ↔
+      ∃ (k : ℕ) (α : ((TopCat.toSSet.obj
+          (TopCat.of C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, M))).homology
+          R k : ModuleCat.{w} Λ)),
+        LivesOverFundamentalClass R (mappingSpaceEval s₀) b α ∧
+          (k = n → (fiberLocalization R (mappingSpaceEval s₀) b k).hom α ∉ LinearMap.range
+            (localHomologyMap R ContinuousMap.const'
+              ((leftInverse_mappingSpaceEval_const s₀).preimage_preimage {b}).subset k).hom) := by
+  constructor
+  · rintro ⟨k, α, hα⟩
+    exact ⟨k, α, livesOverFundamentalClass_of_notMem_range_localHomologyMap R _ hα, fun _ ↦ hα⟩
   · rintro ⟨k, α, hα, hn'⟩
-    refine ⟨k, _, livesOverFundamentalClass_sub_homologyMap_of_leftInverse R hσ ?_,
-      homologyMap_sub_homologyMap_of_leftInverse R hσ α⟩
+    refine ⟨k, α, ?_⟩
     by_cases hk : k = n
     · exact hn' hk
     · -- Outside the dimension the local homology of `M` at `b` vanishes.
@@ -127,8 +155,6 @@ theorem isAbundantWithTwoSpheres_iff (hn : finrank ℝ V = n)
         (isZero_singularHomology_complSingleton_of_ne R (chartAt V b) (mem_chart_source V b) hn
           hk)).elim y 0
       exact (livesOverFundamentalClass_iff R _ b α).1 hα (by rw [← hy, hy₀, map_zero])
-  · rintro ⟨k, α, hα, hα₀⟩
-    exact ⟨k, α, hα, fun _ ↦ hα.notMem_range_localHomologyMap R hσ hα₀⟩
 
 /-- **Abundance gives a class killed by every evaluation.** If `M` is abundant with 2-spheres at
 `b`, some class of `Map(S², M)` lives over the fundamental class at `b` for evaluation at `s₀` and
@@ -136,9 +162,9 @@ is killed by evaluation at every point of `S²`: evaluations at two points of th
 homotopic. This is the form in which the proof of Barraud–Damian–Humilière–Oancea,
 Theorem 6.12, uses abundance, where `Map(S², M)` is read as a space of paths of free loops and its
 evaluations at the initial and the final point are compared. -/
-theorem IsAbundantWithTwoSpheres.exists_livesOverFundamentalClass (hn : finrank ℝ V = n)
+theorem IsAbundantWithTwoSpheres.exists_livesOverFundamentalClass
     {s₀ : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1} {b : M}
-    (h : IsAbundantWithTwoSpheres R M n s₀ b) :
+    (h : IsAbundantWithTwoSpheres R M s₀ b) :
     ∃ (k : ℕ) (α : ((TopCat.toSSet.obj
         (TopCat.of C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, M))).homology
         R k : ModuleCat.{w} Λ)),
@@ -146,7 +172,7 @@ theorem IsAbundantWithTwoSpheres.exists_livesOverFundamentalClass (hn : finrank 
         ∀ s₁ : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1,
           (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (mappingSpaceEval s₁))) R k).hom
             α = 0 := by
-  obtain ⟨k, α, hα, hα₀⟩ := (isAbundantWithTwoSpheres_iff R hn s₀ b).1 h
+  obtain ⟨k, α, hα, hα₀⟩ := (isAbundantWithTwoSpheres_iff R s₀ b).1 h
   refine ⟨k, α, hα, fun s₁ ↦ ?_⟩
   have : PathConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :=
     isPathConnected_iff_pathConnectedSpace.1 <| isPathConnected_sphere
