@@ -110,7 +110,7 @@ private theorem exists_vectorField_remainder_data (hn : 1 ≤ n) (hV : ContDiffA
     simpa only [N, Pi.sub_def, sub_self] using hVx.sub A.hasFDerivAt
   obtain ⟨ε, hε, hsmall⟩ := exists_pos_two_mul_mul_lt (K := K) hα
   have hN1 : ContDiffAt ℝ 1 N 0 := hN.of_le (by exact_mod_cast hn)
-  obtain ⟨s, hs, hNs⟩ := (hN1.hasStrictFDerivAt hN' one_ne_zero).exists_lipschitzOnWith_of_nnnorm_lt
+  obtain ⟨s, hs, hNs⟩ := (hN1.hasStrictFDerivAt hN' one_ne_zero).exists_lipschitzOnWith_of_nnNorm_lt
     ε (by simpa using hε)
   obtain ⟨r₁, hr₁, hr₁s⟩ := Metric.mem_nhds_iff.1 hs
   obtain ⟨r₂, hr₂, hNn⟩ := hN.exists_uniformContDiffOn_closedBall
