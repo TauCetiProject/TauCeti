@@ -48,8 +48,8 @@ and `J e₂ = e₃` as a witness that the orientation is the complex orientation
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.deformationSymbol o hkl ξ`: the principal symbol `σ_ξ` of
-  `δ₀ = (-d*, √2 d⁺)`, a linear map `V → ℝ × ⋀² V`.
+* `TauCeti.SeibergWitten.deformationSymbol o hkl`: the principal symbol `(ξ, a) ↦ σ_ξ(a)` of
+  `δ₀ = (-d*, √2 d⁺)`, a bilinear map `V → V → ℝ × ⋀² V`.
 * `TauCeti.SeibergWitten.deformationComplexStructure J`: the complex structure `J′` of
   `ℝ ⊕ Λ⁺`, as a linear endomorphism of `ℝ × ⋀² V`.
 
@@ -98,15 +98,22 @@ local instance finiteDimensional_of_finrank_eq_four : FiniteDimensional ℝ V :=
 
 /-- **The principal symbol of `δ₀ = (-d*, √2 d⁺)`** at `ξ`:
 `σ_ξ(a) = (⟪ξ, a⟫, √2 (ξ ∧ a)⁺)`, where `(ξ ∧ a)⁺ = (ξ ∧ a + ⋆(ξ ∧ a)) / 2` is the self-dual part,
-so that the second component is `(√2 / 2) (ξ ∧ a + ⋆(ξ ∧ a))`. -/
-def deformationSymbol (ξ : V) : V →ₗ[ℝ] ℝ × ⋀[ℝ]^2 V where
-  toFun a := (⟪ξ, a⟫, (√2 / 2) • (ιMulti ℝ 2 ![ξ, a] + o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a])))
-  map_add' a b := by
-    simp only [inner_add_right, ιMulti_two_add_right, map_add, Prod.mk_add_mk, smul_add]
-    abel_nf
-  map_smul' c a := by
-    simp only [real_inner_smul_right, ιMulti_two_smul_right, map_smul, ← smul_add, smul_comm c,
-      RingHom.id_apply, Prod.smul_mk, smul_eq_mul]
+so that the second component is `(√2 / 2) (ξ ∧ a + ⋆(ξ ∧ a))`. It is bilinear in `(ξ, a)`. -/
+def deformationSymbol : V →ₗ[ℝ] V →ₗ[ℝ] ℝ × ⋀[ℝ]^2 V :=
+  LinearMap.mk₂ ℝ
+    (fun ξ a ↦ (⟪ξ, a⟫, (√2 / 2) • (ιMulti ℝ 2 ![ξ, a] + o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a]))))
+    (fun ξ ξ' a ↦ by
+      simp only [inner_add_left, ιMulti_two_add_left, map_add, Prod.mk_add_mk, smul_add]
+      abel_nf)
+    (fun c ξ a ↦ by
+      simp only [real_inner_smul_left, ιMulti_two_smul_left, map_smul, ← smul_add, smul_comm c,
+        Prod.smul_mk, smul_eq_mul])
+    (fun ξ a b ↦ by
+      simp only [inner_add_right, ιMulti_two_add_right, map_add, Prod.mk_add_mk, smul_add]
+      abel_nf)
+    (fun c ξ a ↦ by
+      simp only [real_inner_smul_right, ιMulti_two_smul_right, map_smul, ← smul_add, smul_comm c,
+        Prod.smul_mk, smul_eq_mul])
 
 @[simp]
 theorem deformationSymbol_apply_fst (ξ a : V) : (deformationSymbol o hkl ξ a).1 = ⟪ξ, a⟫ :=
