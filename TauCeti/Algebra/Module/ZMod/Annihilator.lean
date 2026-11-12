@@ -9,18 +9,20 @@ public import TauCeti.Algebra.Module.ZMod.Dual
 public import Mathlib.GroupTheory.Index
 
 /-!
-# Annihilators in finite pairings into `ℤ/n`
+# Annihilators in biadditive pairings into `ℤ/n`
 
-For a perfect biadditive pairing `e : M →+ N →+ ZMod n`, the annihilator of a subgroup
-`H ≤ N` is the kernel of the restricted pairing `e.compl₂ H.subtype`. Its order is the
-index of `H`. Consequently an orthogonal subgroup `U ≤ M` is the full annihilator exactly
-when `#U · #H = #M`.
+Let `n ≠ 0`, let `N` be an additive commutative group killed by `n`, and suppose the left
+adjoint `e : M →+ N →+ ZMod n` is bijective. The annihilator of a subgroup `H ≤ N` is the
+kernel of the restricted pairing `e.compl₂ H.subtype`. Its `Nat.card` equals the index of
+`H`, and `Nat.card (e.compl₂ H.subtype).ker * Nat.card H = Nat.card M`. Neither identity
+requires finiteness. The first gives zero on both sides when `H` has infinite index; the
+second gives zero on both sides whenever `N` (and hence `M`) is infinite.
 
-This counting criterion upgrades orthogonality and order computations to equality of local
-conditions under finite Tate pairings. It works for composite `n`, without choosing module
-structures or bases. The annihilator count itself does not require finiteness: both sides
-are `Nat.card`, so infinite groups have count zero. The equality criterion does require
-finiteness.
+When `N` is finite, an arbitrary subgroup `U ≤ M` equals this annihilator if and only if
+it is orthogonal to `H` and `Nat.card U * Nat.card H = Nat.card M`. This counting criterion
+upgrades orthogonality and order computations to equality of local conditions under finite
+Tate pairings. It works for composite `n`, without choosing module structures or bases.
+Bijectivity of the left adjoint is not asserted to be two-sided perfection for infinite `N`.
 
 The proofs use Mathlib's identification of the kernel of character restriction with the
 characters of the quotient, and `TauCeti.natCard_addMonoidHom_zmod` for their order.
@@ -38,9 +40,9 @@ namespace AddMonoidHom
 variable {n : ℕ} [NeZero n] {M N : Type*} [AddCommGroup M] [AddCommGroup N]
   (e : M →+ N →+ ZMod n)
 
-/-- In a perfect pairing into `ℤ/n`, the annihilator of `H` has order `[N : H]`.
-Finiteness is not required; the assertion uses `Nat.card`. -/
-theorem natCard_ker_compl₂_eq_index (he : Function.Bijective e)
+/-- If `n ≠ 0`, `N` is killed by `n`, and the left adjoint `e` is bijective, the
+annihilator of `H` has `Nat.card` equal to `[N : H]`. No finiteness is required. -/
+theorem natCard_ker_compl₂_subtype_eq_index_zmod (he : Function.Bijective e)
     (hN : ∀ y : N, n • y = 0) (H : AddSubgroup N) :
     Nat.card (e.compl₂ H.subtype).ker = H.index := by
   let E := Equiv.ofBijective e he
@@ -56,18 +58,19 @@ theorem natCard_ker_compl₂_eq_index (he : Function.Bijective e)
     obtain ⟨y, rfl⟩ := QuotientAddGroup.mk'_surjective H y
     rw [← map_nsmul, hN, map_zero]
 
-/-- The orders of a subgroup and its annihilator multiply to the order of either side of a
-perfect pairing. The identity uses `Nat.card` and does not require finiteness. -/
-theorem natCard_ker_compl₂_mul_natCard (he : Function.Bijective e)
+/-- If `n ≠ 0`, `N` is killed by `n`, and the left adjoint `e` is bijective, the product
+of the `Nat.card`s of the annihilator and `H` equals `Nat.card M`. No finiteness is required. -/
+theorem natCard_ker_compl₂_subtype_mul_natCard_zmod (he : Function.Bijective e)
     (hN : ∀ y : N, n • y = 0) (H : AddSubgroup N) :
     Nat.card (e.compl₂ H.subtype).ker * Nat.card H = Nat.card M := by
-  rw [e.natCard_ker_compl₂_eq_index he hN, H.index_mul_card,
+  rw [e.natCard_ker_compl₂_subtype_eq_index_zmod he hN, H.index_mul_card,
     Nat.card_congr (Equiv.ofBijective e he), TauCeti.natCard_addMonoidHom_zmod hN]
 
-/-- An orthogonal subgroup is the full annihilator if and only if its order is the expected
-one. This criterion applies to finite groups killed by any nonzero `n`, not just primes. -/
-theorem eq_ker_compl₂_iff [Finite N] (he : Function.Bijective e)
-    (hN : ∀ y : N, n • y = 0) (U : AddSubgroup M) (H : AddSubgroup N) :
+/-- For finite `N` killed by `n ≠ 0` and bijective left adjoint `e`, a subgroup `U ≤ M`
+equals the annihilator of `H` if and only if `U` is orthogonal to `H` and
+`Nat.card U * Nat.card H = Nat.card M`. -/
+theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod [Finite N]
+    (he : Function.Bijective e) (hN : ∀ y : N, n • y = 0) (U : AddSubgroup M) (H : AddSubgroup N) :
     U = (e.compl₂ H.subtype).ker ↔
       (∀ x ∈ U, ∀ y ∈ H, e x y = 0) ∧ Nat.card U * Nat.card H = Nat.card M := by
   have : Finite (N →+ ZMod n) := Finite.of_injective _ DFunLike.coe_injective
@@ -77,10 +80,10 @@ theorem eq_ker_compl₂_iff [Finite N] (he : Function.Bijective e)
       Subtype.forall, AddSubgroup.subtype_apply]
   constructor
   · intro h
-    exact ⟨hle.mp h.le, h ▸ e.natCard_ker_compl₂_mul_natCard he hN H⟩
+    exact ⟨hle.mp h.le, h ▸ e.natCard_ker_compl₂_subtype_mul_natCard_zmod he hN H⟩
   · rintro ⟨horth, hcard⟩
     apply AddSubgroup.eq_of_le_of_card_ge (hle.mpr horth)
-    have h := e.natCard_ker_compl₂_mul_natCard he hN H
+    have h := e.natCard_ker_compl₂_subtype_mul_natCard_zmod he hN H
     exact (Nat.mul_right_cancel Nat.card_pos (h.trans hcard.symm)).le
 
 end AddMonoidHom
