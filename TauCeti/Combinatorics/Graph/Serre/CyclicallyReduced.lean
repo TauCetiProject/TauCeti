@@ -380,14 +380,15 @@ private theorem Path.IsCyclicallyReduced.exists_core_path {v : Γ.V} {a : (Γ.co
   obtain ⟨q₀⟩ := Γ.core_reachable v a
   obtain ⟨q, rfl⟩ : ∃ q : (Γ.core v).Path a a, _ := Γ.exists_subgraph_path _ _ _ _ c
     (fun e he => hc.mem_coreDarts ((Γ.coreInclusion v).toPrefunctor.mapPath q₀) he) a.2 a.2
-  exact ⟨q, ((Γ.coreInclusion v).isCyclicallyReduced_mapPath_iff _ Subtype.val_injective q).mp hc,
-    rfl⟩
+  exact ⟨q, ((Γ.coreInclusion v).isCyclicallyReduced_mapPath_iff _
+    (Γ.subgraphInclusion_mapE_injective _ _ _ _) q).mp hc, rfl⟩
 
 /-- A vertex of a based core lies on a cyclically reduced closed path of the core exactly when it
 does so in the ambient graph. -/
 theorem mem_cyclicVertices_core_iff (v : Γ.V) (a : (Γ.core v).V) :
     a ∈ (Γ.core v).cyclicVertices ↔ a.1 ∈ Γ.cyclicVertices := by
-  refine ⟨(Γ.coreInclusion v).map_mem_cyclicVertices _ Subtype.val_injective, ?_⟩
+  refine ⟨(Γ.coreInclusion v).map_mem_cyclicVertices _
+    (Γ.subgraphInclusion_mapE_injective _ _ _ _), ?_⟩
   rintro ⟨c, h0, hc⟩
   obtain ⟨q, hq, rfl⟩ := hc.exists_core_path
   exact ⟨q, h0.trans_eq (Prefunctor.length_mapPath _ q), hq⟩
@@ -396,7 +397,8 @@ theorem mem_cyclicVertices_core_iff (v : Γ.V) (a : (Γ.core v).V) :
 does so in the ambient graph. -/
 theorem mem_cyclicDarts_core_iff (v : Γ.V) (e : (Γ.core v).E) :
     e ∈ (Γ.core v).cyclicDarts ↔ e.1 ∈ Γ.cyclicDarts := by
-  refine ⟨(Γ.coreInclusion v).map_mem_cyclicDarts _ Subtype.val_injective, ?_⟩
+  refine ⟨(Γ.coreInclusion v).map_mem_cyclicDarts _
+    (Γ.subgraphInclusion_mapE_injective _ _ _ _), ?_⟩
   rintro ⟨a, c, hc, he⟩
   -- Restart the closed path at `e`, whose initial vertex lies in the core.
   obtain ⟨c', hc', -, hcc'⟩ := hc.exists_rotate Γ he

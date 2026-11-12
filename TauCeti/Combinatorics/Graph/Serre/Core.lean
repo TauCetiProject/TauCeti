@@ -12,14 +12,12 @@ import TauCeti.Combinatorics.Graph.Serre.Reduction
 /-!
 # Based cores of Serre graphs
 
-A set of vertices together with a reversal-closed set of darts starting at those vertices forms
-a subgraph (`SerreGraph.subgraph`), through whose inclusion every path with darts in the subgraph
-lifts. The core at a vertex is the subgraph consisting of the darts occurring in reduced loops at
-that vertex, together with their endpoints and the base vertex itself. It retains the stem from a
-base vertex to a circuit. Every reduced based loop lifts to the core, and every core vertex is
-reachable from the base within the core. Finite graphs have finite cores. Moving the base vertex
-back along a path keeps every dart of the core that the path does not traverse
-(`SerreGraph.mem_coreDarts_or_mem_darts`).
+The core at a vertex is the subgraph (`SerreGraph.subgraph`) consisting of the darts occurring
+in reduced loops at that vertex, together with their endpoints and the base vertex itself. It
+retains the stem from a base vertex to a circuit. Every reduced based loop lifts to the core,
+and every core vertex is reachable from the base within the core. Finite graphs have finite
+cores. Moving the base vertex back along a path keeps every dart of the core that the path does
+not traverse (`SerreGraph.mem_coreDarts_or_mem_darts`).
 
 ## References
 
@@ -32,67 +30,6 @@ public section
 namespace TauCeti.SerreGraph
 
 variable (Γ : SerreGraph) (v : Γ.V)
-
-section Subgraph
-
-variable (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, Γ.src e ∈ A)
-  (hrev : ∀ e ∈ D, Γ.rev e ∈ D)
-
-/-- The subgraph of `Γ` on a set `A` of vertices and a reversal-closed set `D` of darts starting
-in `A`. Its carriers compute to these subtypes so that paths can be lifted through them. -/
-@[expose] def subgraph : SerreGraph where
-  V := A
-  E := D
-  src e := ⟨Γ.src e.1, hsrc e.1 e.2⟩
-  rev e := ⟨Γ.rev e.1, hrev e.1 e.2⟩
-  rev_rev e := Subtype.ext (Γ.rev_rev e.1)
-  rev_ne e he := Γ.rev_ne e.1 (congrArg Subtype.val he)
-
-@[simp] theorem subgraph_src_val (e : (Γ.subgraph A D hsrc hrev).E) :
-    ((Γ.subgraph A D hsrc hrev).src e).1 = Γ.src e.1 := (rfl)
-
-@[simp] theorem subgraph_rev_val (e : (Γ.subgraph A D hsrc hrev).E) :
-    ((Γ.subgraph A D hsrc hrev).rev e).1 = Γ.rev e.1 := (rfl)
-
-@[simp] theorem subgraph_tgt_val (e : (Γ.subgraph A D hsrc hrev).E) :
-    ((Γ.subgraph A D hsrc hrev).tgt e).1 = Γ.tgt e.1 := by
-  rw [(Γ.subgraph A D hsrc hrev).tgt_def, Γ.tgt_def]
-  rfl
-
-instance [Finite Γ.V] : Finite (Γ.subgraph A D hsrc hrev).V := inferInstanceAs (Finite A)
-instance [Finite Γ.E] : Finite (Γ.subgraph A D hsrc hrev).E := inferInstanceAs (Finite D)
-
-/-- Inclusion of a subgraph into the ambient graph. -/
-@[expose] def subgraphInclusion : (Γ.subgraph A D hsrc hrev).Hom Γ where
-  mapV := Subtype.val
-  mapE := Subtype.val
-  map_src _ := rfl
-  map_rev _ := rfl
-
-@[simp] theorem subgraphInclusion_mapV (a : (Γ.subgraph A D hsrc hrev).V) :
-    (Γ.subgraphInclusion A D hsrc hrev).mapV a = a.1 := (rfl)
-
-@[simp] theorem subgraphInclusion_mapE (e : (Γ.subgraph A D hsrc hrev).E) :
-    (Γ.subgraphInclusion A D hsrc hrev).mapE e = e.1 := (rfl)
-
-/-- A path between vertices of `A` all of whose darts lie in `D` lifts through the inclusion of
-the subgraph. -/
-theorem exists_subgraph_path {a b : Γ.V} (p : Γ.Path a b) (hp : ∀ e ∈ Path.darts Γ p, e ∈ D)
-    (ha : a ∈ A) (hb : b ∈ A) :
-    ∃ q : (Γ.subgraph A D hsrc hrev).Path ⟨a, ha⟩ ⟨b, hb⟩,
-      (Γ.subgraphInclusion A D hsrc hrev).toPrefunctor.mapPath q = p := by
-  induction p with
-  | nil => exact ⟨.nil, rfl⟩
-  | @cons b c p e ih =>
-    have he : e.1 ∈ D := hp e.1 (by simp)
-    have hprev : b ∈ A := e.2.1 ▸ hsrc e.1 he
-    obtain ⟨q, hq⟩ := ih (fun f hf => hp f (by simp [hf])) hprev
-    let f : @Quiver.Hom (Γ.subgraph A D hsrc hrev).V (Γ.subgraph A D hsrc hrev).toQuiver
-        ⟨b, hprev⟩ ⟨c, hb⟩ :=
-      ⟨⟨e.1, he⟩, Subtype.ext e.2.1, Subtype.ext ((Γ.subgraph_tgt_val A D hsrc hrev _).trans e.2.2)⟩
-    exact ⟨q.cons f, congrArg (fun t => t.cons e) hq⟩
-
-end Subgraph
 
 /-- The darts occurring in reduced loops at the specified base vertex. -/
 def coreDarts : Set Γ.E :=
@@ -192,7 +129,8 @@ theorem core_isCore : (Γ.core v).IsCore (Γ.coreBase v) := by
   obtain ⟨q, hq⟩ := Γ.exists_core_loop v p hp
   subst p
   refine ⟨q, ?_, ?_⟩
-  · exact ((Γ.coreInclusion v).isReduced_mapPath_iff _ Subtype.val_injective q).mp hp
+  · exact ((Γ.coreInclusion v).isReduced_mapPath_iff _
+      (Γ.subgraphInclusion_mapE_injective _ _ _ _) q).mp hp
   · have hd := Hom.darts_mapPath (Γ.core v) (Γ.coreInclusion v) q
     have hm := Eq.mp (congrArg (fun l => e.1 ∈ l) hd) he
     obtain ⟨f, hf, hfe⟩ := List.mem_map.mp hm

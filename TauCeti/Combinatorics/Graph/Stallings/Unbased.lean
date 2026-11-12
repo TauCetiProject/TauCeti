@@ -49,6 +49,10 @@ original one, so that paths of the two graphs are the same. -/
 
 @[simp] theorem withBase_base_self (S : StallingsGraph α) : S.withBase S.base = S := rfl
 
+/-- Moving the base vertex twice is moving it once, to the second vertex. -/
+@[simp] theorem withBase_withBase (S : StallingsGraph α) (v w : S.graph.V) :
+    (S.withBase v).withBase w = S.withBase w := rfl
+
 @[simp] theorem read_withBase (S : StallingsGraph α) (v : S.graph.V) {a b : S.graph.V}
     (p : S.graph.Path a b) : (S.withBase v).read p = S.read p := by
   -- The path is stated in the quiver of `S.graph`, so `simp` does not rewrite with the reading
