@@ -26,8 +26,9 @@ evaluates it at `l = #s * (#s + 1) * η / 2`, the minimizer of the leading,
 degree-independent quadratic term. The block degrees may differ, and their error is measured
 by the sum of their reciprocals.
 `Finset.exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le`
-absorbs that error into any positive slack in the exponent of the upper bound. Such bounds count
-the linear vanishing conditions in the construction of multihomogeneous auxiliary polynomials.
+absorbs that error into any positive slack in the per-block exponent (rate) of the upper bound.
+Such bounds count the linear vanishing conditions in the construction of multihomogeneous
+auxiliary polynomials.
 
 ## References
 
@@ -187,8 +188,8 @@ theorem card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
   field_simp
   ring
 
-/-- The reciprocal-degree error in the monomial lower-tail estimate can be made arbitrarily
-small by a lower bound on every block degree, uniform in the coordinate and block index type.
+/-- A lower bound `D` on every block degree makes the per-block reciprocal-degree error at most
+`ε`, bounding the total correction by `ε * Fintype.card κ`, uniformly in `i ∈ s` and `κ`.
 The exponent per block approaches `-s.card * (s.card + 1) * η ^ 2 / 4`, the large-degree
 exponent of the quadratic upper bound, without requiring all blocks to have the same degree. -/
 theorem exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
@@ -226,8 +227,9 @@ theorem exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_s
   dsimp [C] at herror
   nlinarith only [herror]
 
-/-! The empty block family has exactly one monomial; its tail at the mean has probability one.
-The estimates therefore allow no blocks and non-strict inequalities at the threshold. -/
+/-- The empty block family has exactly one monomial; its tail at the mean has probability one.
+For `i ∈ s`, the lower-tail estimates still apply with non-strict thresholds: their exponents
+vanish when `Fintype.card κ = 0`. -/
 example (s : Finset ι) (i : ι) :
     ((Fintype.piFinset (fun _h : Fin 0 ↦ finsuppAntidiag s (1 : ℕ))).filter
       (fun f ↦ ∑ h, (f h i : ℝ) ≤ 0)).card = 1 := by
