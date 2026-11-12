@@ -76,7 +76,7 @@ theorem residuePsi_coe_polynomial_of_natDegree_lt (p : ℕ) (P : Polynomial (ZMo
     exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
   · rw [coeff_C, ite_eq_right (Nat.succ_ne_zero n)]
     apply Finset.sum_eq_zero
-    intro i hi
+    intro i _
     rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_natDegree_lt, mul_zero]
     nlinarith
 
