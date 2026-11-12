@@ -161,6 +161,13 @@ def parameterProj : (D₁.coprod D₂).ker →L[𝕜] Λ :=
 theorem parameterProj_apply (v : (D₁.coprod D₂).ker) : parameterProj D₁ D₂ v = (v : E × Λ).2 :=
   (rfl)
 
+/-- A pair lies in the kernel of the total linearization exactly when `D₁` carries its first
+component to the effect of the negated parameter. -/
+theorem mem_ker_coprod_iff (x : E) (l : Λ) :
+    (x, l) ∈ (D₁.coprod D₂).ker ↔ D₁ x = D₂ (-l) := by
+  rw [LinearMap.mem_ker, map_neg, eq_neg_iff_add_eq_zero]
+  simp
+
 /-! ### Exactness at the candidate tangent space: the kernel of the projection -/
 
 /-- The embedding `x ↦ (x, 0)` of `ker D₁` into the kernel of the total linearization: the formal
@@ -592,16 +599,15 @@ theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
 
 end Dimension
 
-section Fredholm
+section OpenMap
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 : Type*} [Ring 𝕜]
 variable {E Λ F : Type*}
-variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E]
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
 variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [ContinuousNeg Λ]
 variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
 variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F)
 
-omit [ContinuousAdd E] in
 /-- The parameter projection of the kernel of `D₁.coprod D₂` is open onto its range as soon as
 `D₁` is open onto its range. Indeed, this kernel is the pullback of the open map
 `D₁ : E → range D₁` along `l ↦ D₂ (-l)`. -/
@@ -614,29 +620,41 @@ theorem isOpenMap_rangeFactorization_parameterProj
   obtain ⟨T, hT, rfl⟩ := isOpen_induced_iff.1 hW
   obtain ⟨U, V, hU, hV, hkU, hkV, hUV⟩ := isOpen_prod_iff.1 hT k.1.1 k.1.2 hk
   obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hopen U hU)
-  have hk0 : D₁ k.1.1 + D₂ k.1.2 = 0 := by simpa using k.2
+  have hk0 : D₁ k.1.1 = D₂ (-k.1.2) := (mem_ker_coprod_iff D₁ D₂ _ _).1 k.2
   refine Filter.mem_of_superset
     (((hV.preimage continuous_subtype_val).inter (hO.preimage
       (D₂.continuous.comp (continuous_neg.comp continuous_subtype_val)))).mem_nhds
         ⟨hkV, ?_⟩) ?_
   · have hmem : D₂ (-k.1.2) ∈ (D₁ : E →ₗ[𝕜] F).range :=
-      ⟨k.1.1, by simp [eq_neg_of_add_eq_zero_left hk0]⟩
+      ⟨k.1.1, hk0⟩
     have : (⟨D₂ (-k.1.2), hmem⟩ : (D₁ : E →ₗ[𝕜] F).range) ∈ Subtype.val ⁻¹' O := by
       rw [hOU]
-      exact ⟨k.1.1, hkU, Subtype.ext (by simp [eq_neg_of_add_eq_zero_left hk0])⟩
+      exact ⟨k.1.1, hkU, Subtype.ext hk0⟩
     exact Set.mem_preimage.2 this
   · rintro r ⟨hrV, hrO⟩
     obtain ⟨y, hy⟩ := r.2
-    have hy0 : D₁ y.1.1 + D₂ y.1.2 = 0 := by simpa using y.2
+    have hy0 : D₁ y.1.1 = D₂ (-y.1.2) := (mem_ker_coprod_iff D₁ D₂ _ _).1 y.2
     have hyr : y.1.2 = r.1 := by simpa only [parameterProj_apply] using hy
     have hmem : D₂ (-r.1) ∈ (D₁ : E →ₗ[𝕜] F).range :=
-      ⟨y.1.1, by simp [eq_neg_of_add_eq_zero_left hy0, hyr]⟩
+      ⟨y.1.1, by simpa [hyr] using hy0⟩
     obtain ⟨x, hxU, hx⟩ : (⟨D₂ (-r.1), hmem⟩ : (D₁ : E →ₗ[𝕜] F).range) ∈
         (D₁ : E →ₗ[𝕜] F).rangeRestrict '' U := by
       rw [← hOU]
       exact hrO
     have hx' : D₁ x = D₂ (-r.1) := congrArg Subtype.val hx
-    refine ⟨⟨(x, r.1), by simp [hx']⟩, hUV ⟨hxU, hrV⟩, Subtype.ext (parameterProj_apply D₁ D₂ _)⟩
+    refine ⟨⟨(x, r.1), (mem_ker_coprod_iff D₁ D₂ _ _).2 hx'⟩, hUV ⟨hxU, hrV⟩,
+      Subtype.ext (parameterProj_apply D₁ D₂ _)⟩
+
+end OpenMap
+
+section Fredholm
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+variable {E Λ F : Type*}
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [ContinuousNeg Λ]
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F)
 
 /-- **The parameter projection is Fredholm** as soon as `D₁` is, when `E` has continuous addition,
 `Λ` continuous negation and `F` continuous addition. When the total linearization is
