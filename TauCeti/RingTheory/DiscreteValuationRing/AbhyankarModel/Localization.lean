@@ -70,7 +70,21 @@ private theorem exists_algHom_abhyankarModel {γ : S} (hγ : γ ^ e = algebraMap
     AdjoinRoot.liftAlgHom_root _ _ _ _,
     (AdjoinRoot.liftAlgHom_of _ _ _ _ _).trans (AdjoinRoot.liftAlgHom_root _ _ _ _)⟩
 
-variable [IsDomain B] [IsDiscreteValuationRing B] [IsLocalRing S] [IsLocalHom (algebraMap B S)]
+variable [IsDomain B] [IsDiscreteValuationRing B]
+
+/-- The local ring of the Abhyankar model at a maximal ideal is a discrete valuation ring with
+uniformizer `x`. -/
+private theorem isDiscreteValuationRing_localization_abhyankarModel (hϖ : Irreducible ϖ)
+    (hu : IsUnit u) (he : IsUnit (e : B)) (hd : d ≠ 0) (M : Ideal (abhyankarModel ϖ u e d))
+    [M.IsMaximal] :
+    ∃ _ : IsDomain (Localization.AtPrime M), IsDiscreteValuationRing (Localization.AtPrime M) ∧
+      Irreducible (algebraMap _ (Localization.AtPrime M) (abhyankarModelRoot ϖ u e d)) := by
+  have := isRegularLocalRing_abhyankarModel (Localization.AtPrime M) M hϖ hu he hd
+  have := isDiscreteValuationRing_abhyankarModel (Localization.AtPrime M) M hϖ hu he hd
+  exact ⟨inferInstance, inferInstance, (IsDiscreteValuationRing.irreducible_iff_uniformizer _).mpr
+    (maximalIdeal_eq_span_abhyankarModelRoot _ M hϖ hu he hd)⟩
+
+variable [IsLocalRing S] [IsLocalHom (algebraMap B S)]
 
 /-- The kernel of the residue map of `S`, pulled back along a `B`-algebra map from the Abhyankar
 model, is a maximal ideal over the maximal ideal of `B`. -/
@@ -178,11 +192,7 @@ theorem exists_algEquiv_localization_abhyankarModel (hϖ : Irreducible ϖ) (hu :
     ⟨IsLocalization.liftAlgHom hunit, fun _ ↦ IsLocalization.lift_eq _ _⟩
   have hψx : ψ (algebraMap _ _ (abhyankarModelRoot ϖ u e d)) = β := by
     rw [hψ, hφx]
-  have := isRegularLocalRing_abhyankarModel (Localization.AtPrime M) M hϖ hu he hd
-  have := isDiscreteValuationRing_abhyankarModel (Localization.AtPrime M) M hϖ hu he hd
-  have hx : Irreducible (algebraMap _ (Localization.AtPrime M) (abhyankarModelRoot ϖ u e d)) :=
-    (IsDiscreteValuationRing.irreducible_iff_uniformizer _).mpr
-      (maximalIdeal_eq_span_abhyankarModelRoot _ M hϖ hu he hd)
+  obtain ⟨_, _, hx⟩ := isDiscreteValuationRing_localization_abhyankarModel hϖ hu he hd M
   exact ⟨M, inferInstance, inferInstance, .ofBijective ψ
     ⟨IsDiscreteValuationRing.injective_of_map_ne_zero ψ hx (hψx ▸ hβ₀),
       surjective_localization_abhyankarModel hϖ hγ' hβ₀ hβm hgen φ hφx hφy hx ψ hψ⟩, hψx⟩
@@ -194,8 +204,7 @@ theorem isDiscreteValuationRing_of_pow_eq_unit_mul_pow (hϖ : Irreducible ϖ) (h
     (hgen : ∀ c : S, ∃ s : B, s ≠ 0 ∧ algebraMap B S s * c ∈ Algebra.adjoin B {β}) :
     IsDiscreteValuationRing S := by
   obtain ⟨M, _, _, σ, -⟩ := exists_algEquiv_localization_abhyankarModel hϖ hu he hd hβ hgen
-  have := isRegularLocalRing_abhyankarModel (Localization.AtPrime M) M hϖ hu he hd
-  have := isDiscreteValuationRing_abhyankarModel (Localization.AtPrime M) M hϖ hu he hd
+  obtain ⟨_, _, -⟩ := isDiscreteValuationRing_localization_abhyankarModel hϖ hu he hd M
   exact _root_.IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing σ
 
 /-- **The root is a uniformizer.** Under the hypotheses of
@@ -206,11 +215,9 @@ theorem irreducible_of_pow_eq_unit_mul_pow (hϖ : Irreducible ϖ) (hu : IsUnit u
     (hgen : ∀ c : S, ∃ s : B, s ≠ 0 ∧ algebraMap B S s * c ∈ Algebra.adjoin B {β}) :
     Irreducible β := by
   obtain ⟨M, _, _, σ, hσ⟩ := exists_algEquiv_localization_abhyankarModel hϖ hu he hd hβ hgen
-  have := isRegularLocalRing_abhyankarModel (Localization.AtPrime M) M hϖ hu he hd
-  have := isDiscreteValuationRing_abhyankarModel (Localization.AtPrime M) M hϖ hu he hd
+  obtain ⟨_, _, hx⟩ := isDiscreteValuationRing_localization_abhyankarModel hϖ hu he hd M
   rw [← hσ]
-  exact ((IsDiscreteValuationRing.irreducible_iff_uniformizer _).mpr
-    (maximalIdeal_eq_span_abhyankarModelRoot _ M hϖ hu he hd)).map σ
+  exact hx.map σ
 
 /-- **The residue field extension is separable.** Under the hypotheses of
 `TauCeti.exists_algEquiv_localization_abhyankarModel`, the residue field of `S` is separable over
@@ -227,9 +234,12 @@ theorem isSeparable_residueField_of_pow_eq_unit_mul_pow (hϖ : Irreducible ϖ) (
     ⟨fun b hb ↦ (isUnit_map_iff (algebraMap B S) b).mp (σ.commutes b ▸ hb.map σ)⟩
   let τ := (IsLocalization.AtPrime.equivQuotMaximalIdeal M (Localization.AtPrime M)).restrictScalars
     B
-  have : Algebra.IsSeparable (ResidueField B) (ResidueField (Localization.AtPrime M)) :=
+  have : Algebra.IsSeparable (B ⧸ maximalIdeal B)
+      (Localization.AtPrime M ⧸ maximalIdeal (Localization.AtPrime M)) :=
     (AlgEquiv.Algebra.isSeparable_iff (τ.extendScalarsOfSurjective (R := B)
       (S := B ⧸ maximalIdeal B) Ideal.Quotient.mk_surjective)).mp inferInstance
+  -- `ResidueField R` is defined as `R ⧸ maximalIdeal R`, with the quotient algebra structures, so
+  -- `this` is separability of `ResidueField (Localization.AtPrime M)` over `ResidueField B`.
   exact (AlgEquiv.Algebra.isSeparable_iff (ResidueField.mapAlgEquiv' σ)).mp this
 
 end TauCeti
