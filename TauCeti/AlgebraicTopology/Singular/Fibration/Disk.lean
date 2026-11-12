@@ -326,24 +326,32 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
     exact hg x
   have hH : H.map g ≫ H.map ι' = H.map ι ≫ H.map f :=
     (H.map_comp _ _).symm.trans ((congrArg H.map hgι).trans (H.map_comp _ _))
-  -- `π` and `H.map ι` are the two maps whose inverses make up `emptyIso`.
   have hπ := TopPair.singularHomologyπ_naturality
     (subspaceComplPairMap f (proj_apply_of_comp_eq hf) (⊤ : Submodule ℝ V)) (ModuleCat.of R R) n
   rw [subspaceComplPairMap_fst] at hπ
-  have he : (emptyIso R hp hK h₀ n).inv =
-      H.map ι ≫ (pair p (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n := rfl
-  have he' : (emptyIso R hp' hK h₀ n).inv =
-      H.map ι' ≫ (pair p' (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n := rfl
+  -- `emptyIso` is the inverse of `H.map ι` followed by `π`; chase the square of `g` and `f`
+  -- through the inclusions, then use the naturality of `π`.
   have key : H.map g ≫ (emptyIso R hp' hK h₀ n).inv =
       (emptyIso R hp hK h₀ n).inv ≫
         TopPair.singularHomologyMap (subspaceComplPairMap f (proj_apply_of_comp_eq hf) ⊤)
           (ModuleCat.of R R) n :=
-    (congrArg (H.map g ≫ ·) he').trans (((Category.assoc _ _ _).symm.trans
-      ((congrArg (· ≫ _) hH).trans (Category.assoc _ _ _))).trans
-      ((congrArg (H.map ι ≫ ·) hπ).trans
-        ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) he.symm))))
-  exact ((Iso.inv_comp_eq _).1
-    (((Iso.comp_inv_eq _).1 key).trans (Category.assoc _ _ _)).symm).symm
+    calc H.map g ≫ (emptyIso R hp' hK h₀ n).inv
+        = H.map g ≫ H.map ι' ≫
+            (pair p' (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n :=
+          rfl
+      _ = (H.map ι ≫ H.map f ≫
+            (pair p' (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n :
+              H.obj (_root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0})) ⟶ _) :=
+          ((reassoc_of% hH) _).trans (Category.assoc _ _ _)
+      _ = (H.map ι ≫ (pair p (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n ≫
+            TopPair.singularHomologyMap (subspaceComplPairMap f (proj_apply_of_comp_eq hf) ⊤)
+              (ModuleCat.of R R) n : H.obj (_root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0})) ⟶ _) :=
+          congrArg (H.map ι ≫ ·) hπ
+      _ = (emptyIso R hp hK h₀ n).inv ≫
+            TopPair.singularHomologyMap (subspaceComplPairMap f (proj_apply_of_comp_eq hf) ⊤)
+              (ModuleCat.of R R) n :=
+          (Category.assoc _ _ _).symm
+  rw [← Iso.comp_inv_eq, Category.assoc, key, Iso.hom_inv_id_assoc]
 
 omit [FiniteDimensional ℝ V] in
 private lemma botIso_hom_naturality (hf : f ≫ p' = p) :
@@ -416,10 +424,17 @@ theorem singularHomologyPreimageSphereIso_hom_naturality (hp : serreFibrations p
   have hι := (TopPair.singularHomologyMap_comp _ _ _ _).symm.trans
     ((congrArg (TopPair.singularHomologyMap · (ModuleCat.of R R) m) hpair).trans
       (TopPair.singularHomologyMap_comp _ _ _ _))
-  exact ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hι)).trans
-    ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·)
-      (singularHomologyPreimageNeZeroIso_hom_naturality R hp hp' (convex_closedBall 0 1)
-        (closedBall_mem_nhds 0 one_pos) hf g hg n m h)).trans (Category.assoc _ _ _).symm))
+  -- `singularHomologyPreimageSphereIso` is this inclusion followed by
+  -- `singularHomologyPreimageNeZeroIso`, whose naturality was proved above.
+  calc _ = (_ ≫ _) ≫ (singularHomologyPreimageNeZeroIso R hp' (convex_closedBall 0 1)
+          (closedBall_mem_nhds 0 one_pos) n m h).hom :=
+        (Category.assoc _ _ _).symm.trans (hι =≫ _)
+    _ = _ ≫ (singularHomologyPreimageNeZeroIso R hp (convex_closedBall 0 1)
+          (closedBall_mem_nhds 0 one_pos) n m h).hom ≫ _ :=
+        (Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+          (singularHomologyPreimageNeZeroIso_hom_naturality R hp hp' (convex_closedBall 0 1)
+            (closedBall_mem_nhds 0 one_pos) hf g hg n m h))
+    _ = _ := (Category.assoc _ _ _).symm
 
 end Naturality
 

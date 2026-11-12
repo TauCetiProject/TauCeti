@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Sigma
 public import TauCeti.AlgebraicTopology.Singular.Fibration.CellFiber
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Skeleton
@@ -43,7 +42,8 @@ skeleta `Xⁿ` of `B`.
 * By induction on `n`, starting from the empty `E₋₁`, the five lemma for the ambient space of a
   pair (`TopPair.isIso_homologyMap_fst_of_isIso`) gives isomorphisms `Hₖ(Eₙ) ≅ Hₖ(E'ₙ)`.
 * `Hₖ(Eₙ) ⟶ Hₖ(E)` is an isomorphism once `n ≥ k + 2`, because `Hₘ(E, Eₙ) = 0` for `m < n`
-  (`TauCeti.TopCat.isZero_singularHomology_preimage_skeletonLT`).
+  (`TauCeti.TopCat.isZero_singularHomology_preimage_skeletonLT`,
+  `TopPair.isIso_homologyMap_fst_of_isZero`).
 
 Over an arbitrary base, both fibrations are pulled back along a CW approximation of `B`
 (`TauCeti.sigmaCWApproximationMap`). This does not change the fibres, and the projections of the
@@ -52,7 +52,6 @@ pullbacks to `E` and `E'` are weak homotopy equivalences
 
 ## Main results
 
-* `TopPair.isIso_homologyMap_fst_of_isIso`: the five lemma for the ambient space of a pair.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_commSq`: a map of Serre fibrations over `B` which
   is a homology isomorphism on every fibre is a homology isomorphism of the total spaces.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point`: a Serre fibration whose
@@ -76,32 +75,6 @@ universe w v u
 
 open CategoryTheory Limits Metric Set Topology Topology.RelCWComplex
 
-namespace TopPair
-
-variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-
-/-- **The five lemma for the ambient space of a pair.** A map of pairs `f : (X, A) ⟶ (X', A')`
-inducing isomorphisms `Hₙ(A) ≅ Hₙ(A')` and `Hₙ(X, A) ≅ Hₙ(X', A')`, an epimorphism
-`Hₙ₊₁(X, A) ⟶ Hₙ₊₁(X', A')` and a monomorphism `Hₘ(A) ⟶ Hₘ(A')` for `m + 1 = n`, induces an
-isomorphism `Hₙ(X) ≅ Hₙ(X')`. -/
-lemma isIso_homologyMap_fst_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ)
-    (hrel' : Epi (TopPair.singularHomologyMap f R (n + 1)))
-    (hsnd : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n))
-    (hrel : IsIso (TopPair.singularHomologyMap f R n))
-    (hsnd' : ∀ m, m + 1 = n → Mono (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m)) :
-    IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
-  have := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₂
-    (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R)
-    ((toSSetPair.obj P).shortExact_chainComplexShortComplex R)
-    ((toSSetPair.obj P').shortExact_chainComplexShortComplex R) n
-  simp only [SSetPair.chainComplexShortComplexMap_τ₁, SSetPair.chainComplexShortComplexMap_τ₂,
-    SSetPair.chainComplexShortComplexMap_τ₃, ComplexShape.down_Rel] at this
-  -- The homology maps of these chain maps are `SSet.homologyMap` and
-  -- `TopPair.singularHomologyMap` by definition.
-  exact this (fun i (hi : n + 1 = i) ↦ hi ▸ hrel') hsnd hrel fun m (hm : m + 1 = n) ↦ hsnd' m hm
-
-end TopPair
-
 namespace TauCeti
 
 namespace TopCat
@@ -114,54 +87,11 @@ section Preimage
 
 variable (hf : f ≫ p' = p)
 
-/-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B` to the parts over `S ⊆ B`. -/
-private def preimageMap (S : Set B) :
-    _root_.TopCat.of (p ⁻¹' S) ⟶ _root_.TopCat.of (p' ⁻¹' S) :=
-  _root_.TopCat.ofHom ⟨(TopCat.Hom.mapsTo_preimage_of_comp_eq hf S).restrict f _ _,
-    f.hom.continuous.restrict (TopCat.Hom.mapsTo_preimage_of_comp_eq hf S)⟩
-
-private lemma coe_preimageMap_apply (S : Set B) (x : _root_.TopCat.of (p ⁻¹' S)) :
-    (preimageMap hf S x : E') = f x :=
-  (rfl)
-
 /-- The map of pairs `(p⁻¹(T), p⁻¹(S)) ⟶ (p'⁻¹(T), p'⁻¹(S))` induced by a map `f` over `B`. -/
 private def preimagePairMap {S T : Set B} (hST : S ⊆ T) :
     TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST) ⟶
       TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST) :=
-  TopPair.ofHom (preimageMap hf T) (preimageMap hf S) rfl
-
-/-- If the inclusions `p⁻¹(S) ⊆ p⁻¹(T)` and `p'⁻¹(S) ⊆ p'⁻¹(T)` have vanishing relative homology
-in degrees `k` and `k + 1`, and the restriction of `f` over `S` is an isomorphism on `Hₖ`, then so
-is its restriction over `T`. -/
-private lemma isIso_homologyMap_preimageMap_of_isZero {A : Type v} [Category.{w} A]
-    [HasCoproducts.{u} A] [Abelian A] (R : A) {S T : Set B} (hST : S ⊆ T) (k : ℕ)
-    (hS : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (preimageMap hf S)) R k))
-    (h₁ : IsZero ((TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST)).singularHomology R
-      (k + 1)))
-    (h₀ : IsZero ((TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST)).singularHomology R k))
-    (h₁' : IsZero ((TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST)).singularHomology R
-      (k + 1)))
-    (h₀' : IsZero ((TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST)).singularHomology R
-      k)) :
-    IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (preimageMap hf T)) R k) := by
-  let H := (AlgebraicTopology.singularHomologyFunctor A k).obj R
-  have hι := TopPair.isIso_homologyMap_map_of_isZero _ R h₁ h₀
-  have hι' := TopPair.isIso_homologyMap_map_of_isZero _ R h₁' h₀'
-  -- The restrictions of `f` commute with the inclusions.
-  have hcomm : (TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST)).map ≫
-      preimageMap hf T =
-        preimageMap hf S ≫ (TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST)).map :=
-    rfl
-  have hsq : H.map (TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST)).map ≫
-        H.map (preimageMap hf T) =
-      H.map (preimageMap hf S) ≫
-        H.map (TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST)).map :=
-    (H.map_comp _ _).symm.trans ((congrArg H.map hcomm).trans (H.map_comp _ _))
-  have : IsIso (H.map (TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST)).map ≫
-      H.map (preimageMap hf T)) := by
-    rw [hsq]
-    exact @IsIso.comp_isIso _ _ _ _ _ _ _ hS hι'
-  exact @IsIso.of_isIso_comp_left _ _ _ _ _ _ _ hι this
+  TopPair.ofHom (TopCat.Hom.preimageMap hf T) (TopCat.Hom.preimageMap hf S) rfl
 
 end Preimage
 
@@ -193,7 +123,7 @@ private lemma cellDiskPullbackPairMap_comp_preimagePairMap (n : ℕ) (j : cell C
       cellDiskPullbackPairHom hf n j ≫ cellDiskPullbackPairMap p' C n j :=
   TopPair.hom_ext_of_fst _ (by
     ext x
-    exact Subtype.ext (((coe_preimageMap_apply hf _ _).trans
+    exact Subtype.ext (((TopCat.Hom.coe_preimageMap_apply hf _ _).trans
       (congrArg f (coe_cellDiskPullbackPairMap_fst_apply n j x))).trans
       ((coe_cellDiskPullbackPairMap_fst_apply (p := p') n j
         (TopPair.Hom.fst (cellDiskPullbackPairHom hf n j) x)).trans
@@ -304,7 +234,7 @@ skeleton. -/
 private lemma isIso_singularHomologyMap_preimageMap_skeletonLT
     (hfib : ∀ b ∈ C, ∀ q, IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R)
       q).obj (ModuleCat.of R R)).map (sq.fiberMap b))) :
-    ∀ (n k : ℕ), IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (preimageMap
+    ∀ (n k : ℕ), IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (TopCat.Hom.preimageMap
       (sq.w.trans (Category.comp_id p)) (skeletonLT C n : Set B))) (ModuleCat.of R R) k)
   | 0, k => by
     -- Over the empty `(-1)`-skeleton both spaces are empty.
@@ -315,7 +245,7 @@ private lemma isIso_singularHomologyMap_preimageMap_skeletonLT
     have h₀' : IsEmpty (p' ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) := by
       rw [hD, preimage_empty]
       infer_instance
-    have : IsIso (preimageMap (sq.w.trans (Category.comp_id p))
+    have : IsIso (TopCat.Hom.preimageMap (sq.w.trans (Category.comp_id p))
         (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) :=
       (_root_.TopCat.isIso_iff_isHomeomorph _).2
         ⟨by fun_prop, fun _ _ ↦ by simp [Set.eq_empty_of_isEmpty],
@@ -344,18 +274,20 @@ private theorem isIso_singularHomologyMap_preimage_of_commSq
     (hfib : ∀ b ∈ C, ∀ q, IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R)
       q).obj (ModuleCat.of R R)).map (sq.fiberMap b))) (k : ℕ) :
     IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
-      (preimageMap (sq.w.trans (Category.comp_id p)) C)) (ModuleCat.of R R) k) := by
+      (TopCat.Hom.preimageMap (sq.w.trans (Category.comp_id p)) C)) (ModuleCat.of R R) k) := by
   have hf : f ≫ p' = p := sq.w.trans (Category.comp_id p)
   -- `Hₖ(p⁻¹(Xᵏ⁺¹)) ⟶ Hₖ(p⁻¹(C))` is an isomorphism, since `Hₘ(p⁻¹(C), p⁻¹(Xᵏ⁺¹)) = 0` for
   -- `m ≤ k + 1`, and likewise for `p'`.
   have hS := isIso_singularHomologyMap_preimageMap_skeletonLT hp hp' R sq hfib (k + 1 + 1) k
   rw [Nat.cast_succ (k + 1)] at hS
-  have := isIso_homologyMap_preimageMap_of_isZero hf (ModuleCat.of R R)
-    (skeletonLT_mono (C := C) (le_top : ((k + 1 : ℕ) : ℕ∞) + 1 ≤ ⊤)) k hS
-    (isZero_singularHomology_preimage_skeletonLT hp R le_top (by lia))
-    (isZero_singularHomology_preimage_skeletonLT hp R le_top (by lia))
-    (isZero_singularHomology_preimage_skeletonLT hp' R le_top (by lia))
-    (isZero_singularHomology_preimage_skeletonLT hp' R le_top (by lia))
+  have : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
+      (TopCat.Hom.preimageMap hf (skeletonLT C ⊤ : Set B))) (ModuleCat.of R R) k) :=
+    TopPair.isIso_homologyMap_fst_of_isZero (ModuleCat.of R R)
+      (preimagePairMap hf (skeletonLT_mono (C := C) (le_top : ((k + 1 : ℕ) : ℕ∞) + 1 ≤ ⊤)))
+      (isZero_singularHomology_preimage_skeletonLT hp R le_top (by lia))
+      (isZero_singularHomology_preimage_skeletonLT hp R le_top (by lia))
+      (isZero_singularHomology_preimage_skeletonLT hp' R le_top (by lia))
+      (isZero_singularHomology_preimage_skeletonLT hp' R le_top (by lia)) hS
   rw [skeletonLT_top] at this
   exact this
 
@@ -389,13 +321,14 @@ private theorem isIso_singularHomologyMap_of_commSq_of_cwComplex (sq : CommSq f 
         Subtype.val_injective, fun x ↦ ⟨⟨x, trivial⟩, rfl⟩⟩
   have hsq : H.map (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
         _root_.TopCat.of (p ⁻¹' univ) ⟶ E) ≫ H.map f =
-      H.map (preimageMap hf univ) ≫
+      H.map (TopCat.Hom.preimageMap hf univ) ≫
         H.map (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
           _root_.TopCat.of (p' ⁻¹' univ) ⟶ E') := by
     have hcomm : (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
           _root_.TopCat.of (p ⁻¹' univ) ⟶ E) ≫ f =
-        preimageMap hf univ ≫ (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-          _root_.TopCat.of (p' ⁻¹' univ) ⟶ E') :=
+        TopCat.Hom.preimageMap hf univ ≫
+          (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
+            _root_.TopCat.of (p' ⁻¹' univ) ⟶ E') :=
       rfl
     exact (H.map_comp _ _).symm.trans ((congrArg H.map hcomm).trans (H.map_comp _ _))
   have := hι E p
