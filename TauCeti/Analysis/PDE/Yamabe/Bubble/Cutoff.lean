@@ -288,7 +288,6 @@ private lemma cutoff_bubble_critical_norm_bounds (hn : 2 < finrank ℝ E) {χ : 
     (∫ x, |χ x * bubble t b x| ^ criticalExponent (finrank ℝ E)) ^
         (2 / criticalExponent (finrank ℝ E)) ≤
       roundSphereVolume (finrank ℝ E) ^ (2 / criticalExponent (finrank ℝ E)) := by
-  have hn' : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
   have hV := roundSphereVolume_pos (finrank ℝ E)
   have hq0 : 0 ≤ 2 / criticalExponent (finrank ℝ E) :=
     div_nonneg zero_le_two (criticalExponent_pos hn).le

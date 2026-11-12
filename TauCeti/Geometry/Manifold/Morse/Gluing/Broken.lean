@@ -139,7 +139,7 @@ private theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
     have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hqr hb₂m
     rw [hb] at this
     exact this.2.ne rfl
-  set ε := min ‖φ.coord (φ.toChart b₁)‖ ‖φ.coord (φ.toChart b₂)‖ with hεdef
+  set ε := min ‖φ.coord (φ.toChart b₁)‖ ‖φ.coord (φ.toChart b₂)‖
   have hε : 0 < ε := lt_min hz₁ hz₂
   have hεδ : ε < δ := (min_le_left _ _).trans_lt hb₁δ
   -- Flow the two points to the faces of the box of radius `ε`.
@@ -200,7 +200,6 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
   -- (`exists_morseBox_of_broken`), apply the model gluing theorem there, and take as `B` the points
   -- with the coordinates of the gluing pairs of small parameter. Uniqueness of the passage gives
   -- the injectivity clause, and `splitPassage_splitEntryTime_eq_splitExitTime` the last clause.
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have hpq' : p ≠ q := by rintro rfl; omega
   have hqr' : q ≠ r := by rintro rfl; omega
   have hpr' : p ≠ r := by rintro rfl; omega
@@ -292,9 +291,9 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
       ((φ.splitCoordL.symm.continuous.continuousAt (x := z)).congr
         (.of_forall fun _ ↦ φ.splitCoordL_symm_apply _))
   -- Restrict to gluing parameters small enough for the passage to be unique.
-  set n : ℝ := (Module.finrank ℝ E : ℝ) with hndef
+  set n : ℝ := (Module.finrank ℝ E : ℝ)
   have hn : 0 ≤ n := Nat.cast_nonneg _
-  set r₁ := min r₀ (1 / (n + 1)) with hr₁def
+  set r₁ := min r₀ (1 / (n + 1))
   have hr₁ : 0 < r₁ := lt_min hr₀ (by positivity)
   have hr₁r₀ : r₁ ≤ r₀ := min_le_left _ _
   have hr₁1 : r₁ ≤ 1 := (min_le_right _ _).trans
@@ -613,7 +612,7 @@ theorem IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet
     h.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet hf hpq hqr ha₁ ha₂
   -- The points of the half-open interval `δ / (n + 2)` tend to `0`, and their images are unbroken.
   set u : ℕ → Ico (0 : ℝ) δ := fun n ↦ ⟨δ / (n + 2), by positivity,
-    (div_lt_self hδ (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))⟩ with hudef
+    (div_lt_self hδ (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))⟩
   have hu : Tendsto u atTop (𝓝 ⟨0, left_mem_Ico.2 hδ⟩) := by
     refine tendsto_subtype_rng.2 ?_
     simpa using tendsto_const_nhds.div_atTop
