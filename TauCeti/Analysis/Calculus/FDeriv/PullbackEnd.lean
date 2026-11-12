@@ -96,23 +96,17 @@ theorem differentiableAt_and_symm_of_contDiffOn {n : ℕ∞ω} (he : ContDiffOn 
   ⟨(he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hp),
     (hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hp))⟩
 
-/-- The derivative of the inverse of an open partial homeomorphism at `e p` is invertible when
-`e` is differentiable at `p` and `e.symm` at `e p`; its inverse is the derivative of `e` at `p`. -/
-theorem isInvertible_fderiv_symm {p : E} (hp : p ∈ e.source) (he : DifferentiableAt 𝕜 e p)
-    (hs : DifferentiableAt 𝕜 e.symm (e p)) : (fderiv 𝕜 e.symm (e p)).IsInvertible :=
-  ⟨.equivOfInverse (fderiv 𝕜 e.symm (e p)) (fderiv 𝕜 e p)
-    (e.fderiv_apply_fderiv_symm_apply_of_mem_source hp he hs)
-    (e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs), rfl⟩
-
 /-- **Pulling a vector field back along the inverse pushes it forward.** Mathlib's pullback
 `VectorField.pullback` of a vector field `X` on `E` along `e.symm` is, at `e p`, the
 pushforward `De_p (X p)`. -/
 theorem pullback_symm_apply (X : E → E) {p : E} (hp : p ∈ e.source)
     (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p)) :
     VectorField.pullback 𝕜 e.symm X (e p) = fderiv 𝕜 e p (X p) := by
-  have h := VectorField.fderiv_pullback e.symm X (e p) (e.isInvertible_fderiv_symm hp he hs)
+  have hinv : (fderiv 𝕜 e.symm (e p)).IsInvertible :=
+    e.symm.isInvertible_fderiv (e.map_source hp) hs (by rwa [e.symm_symm, e.left_inv hp])
+  have h := VectorField.fderiv_pullback e.symm X (e p) hinv
   rw [e.left_inv hp] at h
-  exact (e.isInvertible_fderiv_symm hp he hs).injective
+  exact hinv.injective
     (h.trans (e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs (X p)).symm)
 
 /-- **The pullback of an almost complex structure is an almost complex structure.** If

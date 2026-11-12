@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import Mathlib.Topology.Sets.Opens
@@ -37,6 +38,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply_of_mem_source`,
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply_of_mem_source`: the evaluated identities
   at a point `p` of the source and its image `e p`.
+* `OpenPartialHomeomorph.isInvertible_fderiv`: hence the derivative at such a point is
+  invertible.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
@@ -114,6 +117,15 @@ theorem fderiv_apply_fderiv_symm_apply_of_mem_source (e : OpenPartialHomeomorph 
     (w : F) : fderiv 𝕜 e p (fderiv 𝕜 e.symm (e p) w) = w := by
   have h := e.fderiv_apply_fderiv_symm_apply (e.map_source hp) (by rwa [e.left_inv hp]) hds w
   rwa [e.left_inv hp] at h
+
+/-- An open partial homeomorphism which is differentiable at a point of its source, and whose
+inverse is differentiable at the image point, has an invertible derivative there. -/
+theorem isInvertible_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).IsInvertible :=
+  .of_inverse (g := fderiv 𝕜 e.symm (e y))
+    (ContinuousLinearMap.ext (e.fderiv_apply_fderiv_symm_apply_of_mem_source hy he hes))
+    (ContinuousLinearMap.ext (e.fderiv_symm_apply_fderiv_apply_of_mem_source hy he hes))
 
 end OpenPartialHomeomorph
 

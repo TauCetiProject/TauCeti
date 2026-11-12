@@ -139,7 +139,8 @@ theorem isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp [CompleteSpace V] [
   · exact (Ψ.symm.fderiv_comp_pullbackEnd (J z) (Ψ.map_source hx) hds
       (by rwa [Ψ.symm_symm, Ψ.left_inv hx])).symm
   · exact (VectorField.fderiv_pullback Ψ.symm (η z) (Ψ (u z))
-      (Ψ.isInvertible_fderiv_symm hx hd hds)).symm
+      (Ψ.symm.isInvertible_fderiv (Ψ.map_source hx) hds
+        (by rwa [Ψ.symm_symm, Ψ.left_inv hx]))).symm
 
 end Diffeomorphism
 
