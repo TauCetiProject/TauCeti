@@ -44,6 +44,7 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
 * `ContinuousLinearMap.isPositive_modulus`, `ContinuousLinearMap.isSelfAdjoint_modulus`: the
   modulus is positive and self-adjoint.
 * `ContinuousLinearMap.modulus_comp_modulus`: `|T| |T| = T† T`.
+* `ContinuousLinearMap.modulus_smul`: `|c T| = ‖c‖ |T|`.
 * `ContinuousLinearMap.eq_modulus_iff`: the modulus is the unique positive square root of
   `T† T`; in particular `ContinuousLinearMap.IsPositive.modulus_eq`: a positive operator is its
   own modulus.
@@ -158,6 +159,13 @@ theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
 @[simp]
 theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
   (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
+
+/-- Scaling an operator scales its modulus by the absolute value: `|c T| = ‖c‖ |T|`. -/
+theorem modulus_smul (c : 𝕜) (T : E →L[𝕜] F) : (c • T).modulus = (‖c‖ : 𝕜) • T.modulus := by
+  refine (eq_modulus_iff.2 ⟨T.isPositive_modulus.smul_of_nonneg (RCLike.ofReal_nonneg.2
+    (norm_nonneg c)), ?_⟩).symm
+  rw [map_smulₛₗ adjoint, smul_comp, comp_smul, smul_comp, comp_smul, modulus_comp_modulus,
+    smul_smul, smul_smul, ← RCLike.ofReal_mul, ← sq, RCLike.ofReal_pow, ← RCLike.conj_mul]
 
 /-- The modulus is natural under linear isometric equivalences of the source and target:
 `|e₁ T e₂⁻¹| = e₂ |T| e₂⁻¹`. In particular the modulus commutes with conjugation by a linear

@@ -37,7 +37,9 @@ on `T`.
 * `ContinuousLinearMap.ker_polarFactor`, `ContinuousLinearMap.range_polarFactor`: `ker U = ker T`
   and the range of `U` is the closure of the range of `T`.
 * `ContinuousLinearMap.adjoint_polarFactor_comp_polarFactor`,
-  `ContinuousLinearMap.polarFactor_comp_adjoint_polarFactor`: the initial and final projections.
+  `ContinuousLinearMap.polarFactor_comp_adjoint_polarFactor`: the initial and final projections;
+  `U† U = 1` when `T` is injective and `U U† = 1` when `T` has dense range.
+* `ContinuousLinearMap.polarFactor_smul`: the polar factor of `c T` is `(c / ‖c‖) U`.
 * `ContinuousLinearMap.eq_polarFactor_iff`: uniqueness of the polar factor.
 * `ContinuousLinearMap.modulus_adjoint`: `|T†| = T U†`.
 * `ContinuousLinearMap.polarFactor_adjoint`: the polar factor of `T†` is `U†`.
@@ -136,6 +138,20 @@ theorem polarFactor_comp_adjoint_polarFactor :
     T.polarFactor ∘L T.polarFactor† = T.range.topologicalClosure.starProjection :=
   factorThru_comp_adjoint_factorThru (fun x ↦ (T.norm_modulus_apply x).symm)
 
+/-- The polar factor of an injective operator is an isometry: `U† U = 1`. -/
+theorem adjoint_polarFactor_comp_polarFactor_of_injective (hT : Function.Injective T) :
+    T.polarFactor† ∘L T.polarFactor = 1 := by
+  simp [adjoint_polarFactor_comp_polarFactor, LinearMap.ker_eq_bot.2 hT,
+    Submodule.starProjection_top']
+
+/-- The polar factor of an operator with dense range is a coisometry: `U U† = 1`. -/
+theorem polarFactor_comp_adjoint_polarFactor_of_denseRange (hT : DenseRange T) :
+    T.polarFactor ∘L T.polarFactor† = 1 := by
+  have h : T.range.topologicalClosure = ⊤ := by
+    rw [← Submodule.dense_iff_topologicalClosure_eq_top]
+    exact hT
+  simp [polarFactor_comp_adjoint_polarFactor, h, Submodule.starProjection_top']
+
 variable {T} in
 /-- **Uniqueness of the polar factor.** A bounded operator `V` with `V |T| = T` that vanishes on
 `ker T` is the polar factor of `T`. It is not assumed to be a partial isometry. -/
@@ -172,6 +188,15 @@ theorem polarFactor_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSp
 @[simp]
 theorem polarFactor_zero : (0 : E →L[𝕜] F).polarFactor = 0 :=
   (eq_polarFactor (by simp) fun _ _ ↦ rfl).symm
+
+/-- Scaling an operator by `c` scales its polar factor by the phase `c / ‖c‖`. -/
+theorem polarFactor_smul (c : 𝕜) : (c • T).polarFactor = (c / ‖c‖) • T.polarFactor := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  refine (eq_polarFactor ?_ fun x hx ↦ ?_).symm
+  · rw [modulus_smul, smul_comp, comp_smul, polarFactor_comp_modulus, smul_smul,
+      div_mul_cancel₀ _ (RCLike.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hc))]
+  · rw [smul_apply, T.polarFactor_apply_of_mem_ker (by simpa [hc] using hx), smul_zero]
 
 /-! ### The adjoint of the polar factor -/
 

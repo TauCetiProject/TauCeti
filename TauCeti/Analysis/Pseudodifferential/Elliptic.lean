@@ -76,6 +76,13 @@ theorem isElliptic_iff_bijective [CompleteSpace V] [CompleteSpace W]
     a.IsElliptic ↔ ∀ x ξ, ξ ≠ 0 → Function.Bijective (a.coefficient (x, ξ)) := by
   simp only [isElliptic_iff, ContinuousLinearMap.isInvertible_iff_bijective]
 
+/-- The values of an elliptic symbol at nonzero frequencies are injective. -/
+theorem IsElliptic.injective {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) :
+    ∀ x ξ, ξ ≠ 0 → Function.Injective (a.coefficient (x, ξ)) := fun x ξ hξ ↦ by
+  obtain ⟨e, he⟩ := ha x ξ hξ
+  rw [← he]
+  exact e.injective
+
 /-- On a trivial frequency space there is no nonzero frequency, so every homogeneous symbol is
 elliptic. -/
 theorem isElliptic_of_subsingleton [Subsingleton E] (a : HomogeneousSymbol X E V W m) :
