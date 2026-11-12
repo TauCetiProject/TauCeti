@@ -435,7 +435,7 @@ theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [C
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hinj : Injective f) :
     ∃ ε > 0, IsOpenEmbedding ((normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2) := by
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨_⟩⟩
   · exact ⟨1, one_pos, .of_isEmpty _⟩
   choose W hWo hxW δ hδ hinjOn hopen using exists_injOn_isOpen_image_normalTube hf himm
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover W hWo
