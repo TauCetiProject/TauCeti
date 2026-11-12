@@ -11,8 +11,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Deg
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Torus
 public import TauCeti.Analysis.Complex.RiemannSurface.SphereMap
 import TauCeti.Algebra.Module.ZLattice.Quotient
-import TauCeti.Analysis.Complex.RiemannSurface.FunctionField
-import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
+import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
 import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
 import TauCeti.Geometry.Manifold.Instances.Quotient
 
@@ -48,6 +47,9 @@ made here.
 * `PeriodPair.torusWeierstrassP`: `℘` on the torus `ℂ / L`.
 * `PeriodPair.weierstrassSphereMap`: the finite holomorphic map `ℂ / L → ℙ¹` defined by `℘`.
 * `PeriodPair.weierstrassSphereMap_eq_infty_iff`: its only pole is the class of `0`.
+* `PeriodPair.mk_mem_torusHalfPeriods_iff` and
+  `PeriodPair.mem_torusHalfPeriods_iff_two_nsmul_eq_zero`: the half-period points are the classes
+  of the points `z` with `2 z ∈ L`, that is, the `2`-torsion points of the torus.
 * `PeriodPair.degree_weierstrassSphereMap`: it has degree `2`.
 * `PeriodPair.ramificationDegree_weierstrassSphereMap`: it has ramification degree `4`.
 * `PeriodPair.localMultiplicity_weierstrassSphereMap_of_mem` and
@@ -92,12 +94,25 @@ def torusWeierstrassP : AddAction.orbitRel.Quotient L.lattice ℂ → ℂ :=
 theorem torusWeierstrassP_mk (z : ℂ) : L.torusWeierstrassP (mk z) = ℘[L] z :=
   (rfl)
 
+/-- The Weierstrass function on the torus takes the junk value `0` at the class of `0`. -/
+@[simp]
+theorem torusWeierstrassP_zero : L.torusWeierstrassP 0 = 0 := by
+  rw [← Submodule.orbitRelQuotient_mk_zero L.lattice, torusWeierstrassP_mk, weierstrassP_zero]
+
+/-- The Weierstrass function on the torus is even. -/
+@[simp]
+theorem torusWeierstrassP_neg (x : AddAction.orbitRel.Quotient L.lattice ℂ) :
+    L.torusWeierstrassP (-x) = L.torusWeierstrassP x := by
+  obtain ⟨z, rfl⟩ := Quotient.mk_surjective x
+  rw [← Submodule.orbitRelQuotient_mk_neg, torusWeierstrassP_mk, torusWeierstrassP_mk,
+    weierstrassP_neg]
+
 /-- The Weierstrass function on the torus is meromorphic at every point. -/
 theorem meromorphicAt_torusWeierstrassP (x : AddAction.orbitRel.Quotient L.lattice ℂ) :
     MeromorphicAt L.torusWeierstrassP x := by
   rw [meromorphicAt_def]
   exact (L.meromorphic_weierstrassP _).congr
-    ((TauCeti.comp_symm_chartAt_addQuotient_eventuallyEq L.torusWeierstrassP x).symm.filter_mono
+    ((TauCeti.comp_chartAt_addQuotient_symm_eventuallyEq L.torusWeierstrassP x).symm.filter_mono
       nhdsWithin_le_nhds)
 
 /-- The order of the Weierstrass function on the torus at `x` is the order of `℘` at the
@@ -107,7 +122,7 @@ private theorem meromorphicOrderAt_torusWeierstrassP_eq
     meromorphicOrderAt L.torusWeierstrassP x = _root_.meromorphicOrderAt ℘[L] (chartAt ℂ x x) := by
   rw [meromorphicOrderAt_def]
   exact _root_.meromorphicOrderAt_congr
-    ((TauCeti.comp_symm_chartAt_addQuotient_eventuallyEq L.torusWeierstrassP x).filter_mono
+    ((TauCeti.comp_chartAt_addQuotient_symm_eventuallyEq L.torusWeierstrassP x).filter_mono
       nhdsWithin_le_nhds)
 
 /-- **`℘` has a double pole at the class of `0`.** -/
@@ -129,14 +144,10 @@ theorem continuousAt_torusWeierstrassP {x : AddAction.orbitRel.Quotient L.lattic
 
 /-- The Weierstrass function on the torus is not constant near the class of `0`. -/
 theorem not_eventuallyConst_torusWeierstrassP :
-    ¬ EventuallyConst L.torusWeierstrassP (𝓝[≠] 0) := by
-  classical
-  intro h
-  obtain ⟨c, hc⟩ := eventuallyConst_iff_exists_eventuallyEq.1 h
-  have hord := TauCeti.RiemannSurface.meromorphicOrderAt_congr hc
-  rw [meromorphicOrderAt_torusWeierstrassP_zero,
-    TauCeti.RiemannSurface.meromorphicOrderAt_const] at hord
-  split_ifs at hord <;> simp at hord
+    ¬ EventuallyConst L.torusWeierstrassP (𝓝[≠] 0) :=
+  not_eventuallyConst_of_meromorphicOrderAt_ne_zero
+    (by rw [meromorphicOrderAt_torusWeierstrassP_zero]; decide)
+    (by rw [meromorphicOrderAt_torusWeierstrassP_zero]; decide)
 
 /-! ### The map to the sphere -/
 
@@ -165,27 +176,33 @@ theorem weierstrassSphereMap_of_ne_zero {x : AddAction.orbitRel.Quotient L.latti
     (hx : x ≠ 0) : L.weierstrassSphereMap x = L.torusWeierstrassP x := by
   rw [coe_weierstrassSphereMap, sphereMap_of_continuousAt (L.continuousAt_torusWeierstrassP hx)]
 
+/-- The Weierstrass map sends the class of `0` to `∞`. -/
+theorem weierstrassSphereMap_zero : L.weierstrassSphereMap 0 = ∞ :=
+  L.weierstrassSphereMap_eq_infty_iff.2 rfl
+
+/-- The Weierstrass map is invariant under `x ↦ -x`. -/
+@[simp]
+theorem weierstrassSphereMap_neg (x : AddAction.orbitRel.Quotient L.lattice ℂ) :
+    L.weierstrassSphereMap (-x) = L.weierstrassSphereMap x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · rw [neg_zero]
+  · rw [L.weierstrassSphereMap_of_ne_zero (neg_ne_zero.2 hx), L.weierstrassSphereMap_of_ne_zero hx,
+      torusWeierstrassP_neg]
+
 /-- **The Weierstrass map has local multiplicity `2` at the class of `0`**, the order of the pole
 of `℘`. -/
 theorem localMultiplicity_weierstrassSphereMap_zero :
     localMultiplicity L.weierstrassSphereMap 0 = 2 := by
-  set f := L.weierstrassSphereMap
-  have hf0 : f 0 = ∞ := L.weierstrassSphereMap_eq_infty_iff.2 rfl
-  -- The affine coordinate is meromorphic at `∞`, with a simple pole there.
-  have hmer : MeromorphicAt (affineChart : OnePoint ℂ → ℂ) (f 0) := by
-    rw [hf0, ← MeromorphicFunction.finitePart_coordinate]
-    exact MeromorphicFunction.coordinate.meromorphicAt_finitePart _
-  have h := meromorphicOrderAt_comp hmer (.of_forall fun y ↦ f.holomorphic y)
-    (f.not_eventuallyConst 0)
-  -- Read in the affine coordinate, `f` is `℘` away from `0`.
-  have hcongr : (affineChart : OnePoint ℂ → ℂ) ∘ f =ᶠ[𝓝[≠] 0] L.torusWeierstrassP := by
-    simpa [f, Function.comp_def, coe_weierstrassSphereMap] using
+  have h := L.weierstrassSphereMap.meromorphicOrderAt_affineChart_comp_of_eq_infty
+    L.weierstrassSphereMap_zero
+  -- Read in the affine coordinate, the Weierstrass map is `℘` away from `0`.
+  have hcongr : (fun y ↦ affineChart (L.weierstrassSphereMap y)) =ᶠ[𝓝[≠] 0]
+      L.torusWeierstrassP := by
+    simpa [coe_weierstrassSphereMap] using
       affineChart_sphereMap_eventuallyEq (L.meromorphicAt_torusWeierstrassP 0)
-  rw [meromorphicOrderAt_congr hcongr, meromorphicOrderAt_torusWeierstrassP_zero, hf0,
-    meromorphicOrderAt_affineChart_infty] at h
-  have h' : ((-2 : ℤ) : WithTop ℤ) = ((-1 * (localMultiplicity f 0 : ℤ) : ℤ) : WithTop ℤ) := by
-    rw [WithTop.coe_mul]
-    exact h
+  rw [meromorphicOrderAt_congr hcongr, meromorphicOrderAt_torusWeierstrassP_zero] at h
+  have h' : ((-2 : ℤ) : WithTop ℤ) =
+      ((-(localMultiplicity L.weierstrassSphereMap 0 : ℤ) : ℤ) : WithTop ℤ) := h
   have := WithTop.coe_injective h'
   omega
 
@@ -218,6 +235,10 @@ theorem ramificationDegree_weierstrassSphereMap :
 def torusHalfPeriods : Set (AddAction.orbitRel.Quotient L.lattice ℂ) :=
   {0, mk (L.ω₁ / 2), mk (L.ω₂ / 2), mk ((L.ω₁ + L.ω₂) / 2)}
 
+theorem torusHalfPeriods_def :
+    L.torusHalfPeriods = {0, mk (L.ω₁ / 2), mk (L.ω₂ / 2), mk ((L.ω₁ + L.ω₂) / 2)} :=
+  (rfl)
+
 /-- A point of the torus is a half-period point when it is one of the four classes `0`, `ω₁/2`,
 `ω₂/2`, `(ω₁ + ω₂)/2`. -/
 @[simp]
@@ -248,6 +269,7 @@ private theorem halfPeriods_pairwise_ne :
     rat_combination_notMem L (α := -1 / 2) (β := 0) (by norm_num) (by push_cast; ring)⟩
 
 /-- There are exactly four half-period points. -/
+@[simp]
 theorem ncard_torusHalfPeriods : L.torusHalfPeriods.ncard = 4 := by
   obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ := L.halfPeriods_pairwise_ne
   rw [torusHalfPeriods, ncard_insert_of_notMem (by simp [h₁, h₂, h₃]),
@@ -263,6 +285,40 @@ private theorem two_mul_mem_lattice_of_mem_torusHalfPeriods
   · exact ⟨_, by simpa [mul_div_cancel₀] using L.ω₂_mem_lattice, rfl⟩
   · exact ⟨_, by simpa [mul_div_cancel₀] using add_mem L.ω₁_mem_lattice L.ω₂_mem_lattice, rfl⟩
 
+/-- **The half-period points are the classes of the points `z` with `2 z ∈ L`.** -/
+theorem mk_mem_torusHalfPeriods_iff (z : ℂ) : mk z ∈ L.torusHalfPeriods ↔ 2 * z ∈ L.lattice := by
+  refine ⟨fun hz ↦ ?_, fun hz ↦ ?_⟩
+  · obtain ⟨h, h2, hh⟩ := L.two_mul_mem_lattice_of_mem_torusHalfPeriods hz
+    rw [Submodule.orbitRelQuotient_mk_eq_mk_iff] at hh
+    convert L.lattice.sub_mem h2 (L.lattice.smul_mem (2 : ℤ) hh) using 1
+    rw [zsmul_eq_mul]
+    push_cast
+    ring
+  -- Writing `2 z = m ω₁ + n ω₂`, the class of `z` is that of `(m % 2) ω₁ / 2 + (n % 2) ω₂ / 2`.
+  obtain ⟨m, n, e⟩ := mem_lattice.1 hz
+  have hm : (m : ℂ) = ((m % 2 : ℤ) : ℂ) + 2 * ((m / 2 : ℤ) : ℂ) := by
+    exact_mod_cast (by omega : m = m % 2 + 2 * (m / 2))
+  have hn : (n : ℂ) = ((n % 2 : ℤ) : ℂ) + 2 * ((n / 2 : ℤ) : ℂ) := by
+    exact_mod_cast (by omega : n = n % 2 + 2 * (n / 2))
+  have hmk : mk z = mk (((m % 2 : ℤ) : ℂ) / 2 * L.ω₁ + ((n % 2 : ℤ) : ℂ) / 2 * L.ω₂) := by
+    rw [Submodule.orbitRelQuotient_mk_eq_mk_iff, mem_lattice]
+    exact ⟨m / 2, n / 2, by linear_combination e / 2 - (L.ω₁ / 2) * hm - (L.ω₂ / 2) * hn⟩
+  rw [hmk, mem_torusHalfPeriods_iff]
+  rcases Int.emod_two_eq_zero_or_one m with hm2 | hm2 <;>
+    rcases Int.emod_two_eq_zero_or_one n with hn2 | hn2 <;>
+    simp only [hm2, hn2, Int.cast_zero, Int.cast_one]
+  · exact Or.inl (by simp)
+  · exact Or.inr (Or.inr (Or.inl (congrArg mk (by ring))))
+  · exact Or.inr (Or.inl (congrArg mk (by ring)))
+  · exact Or.inr (Or.inr (Or.inr (congrArg mk (by ring))))
+
+/-- **The half-period points are the `2`-torsion points of the torus.** -/
+theorem mem_torusHalfPeriods_iff_two_nsmul_eq_zero (x : AddAction.orbitRel.Quotient L.lattice ℂ) :
+    x ∈ L.torusHalfPeriods ↔ 2 • x = 0 := by
+  obtain ⟨z, rfl⟩ := Quotient.mk_surjective x
+  rw [mk_mem_torusHalfPeriods_iff, two_nsmul, ← Submodule.orbitRelQuotient_mk_add,
+    Submodule.orbitRelQuotient_mk_eq_zero_iff, two_mul]
+
 /-- **The Weierstrass map is ramified at a nonzero half-period point.** Since `℘` is even and
 periodic, it takes the same value at `z` and at `2 h - z`, and these have distinct classes for
 `z ≠ h` near `h`, so the map is injective on no neighbourhood of the class of `h`. -/
@@ -270,11 +326,9 @@ private theorem one_lt_localMultiplicity_weierstrassSphereMap_of_two_mul_mem {h 
     (h2 : 2 * h ∈ L.lattice) (hh : h ∉ L.lattice) :
     1 < localMultiplicity L.weierstrassSphereMap (mk h) := by
   set f := L.weierstrassSphereMap
-  have hmd : ∀ᶠ y in 𝓝 (mk h), MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y :=
-    .of_forall fun y ↦ f.holomorphic y
-  have hpos := (localMultiplicity_pos_iff hmd).2 (f.not_eventuallyConst _)
-  refine lt_of_le_of_ne hpos fun h1 ↦ ?_
-  obtain ⟨U, hU, hinj⟩ := (localMultiplicity_eq_one_iff hmd).1 h1.symm
+  refine lt_of_le_of_ne (localMultiplicity_pos f (mk h)) fun h1 ↦ ?_
+  obtain ⟨U, hU, hinj⟩ :=
+    (localMultiplicity_eq_one_iff (.of_forall fun y ↦ f.holomorphic y)).1 h1.symm
   have hx0 : mk h ≠ 0 := by rwa [Ne, Submodule.orbitRelQuotient_mk_eq_zero_iff]
   -- `V` is a neighbourhood of `mk h` in `U` avoiding the pole.
   set V := U ∩ {y | y ≠ 0}
@@ -284,16 +338,12 @@ private theorem one_lt_localMultiplicity_weierstrassSphereMap_of_two_mul_mem {h 
   have hB : (fun z ↦ 2 * h - z) ⁻¹' (mk ⁻¹' V) ∈ 𝓝 h := by
     refine (continuous_const.sub continuous_id).continuousAt.preimage_mem_nhds ?_
     simpa [two_mul] using hA
-  have hC : (fun z ↦ 2 * z) ⁻¹' (↑L.lattice \ {2 * h})ᶜ ∈ 𝓝 h :=
-    (continuous_const.mul continuous_id).continuousAt.preimage_mem_nhds
-      (L.compl_lattice_sdiff_singleton_mem_nhds _)
-  have hall : ∀ᶠ z in 𝓝[≠] h, z ∈ mk ⁻¹' V ∩ ((fun z ↦ 2 * h - z) ⁻¹' (mk ⁻¹' V) ∩
-      (fun z ↦ 2 * z) ⁻¹' (↑L.lattice \ {2 * h})ᶜ) :=
-    nhdsWithin_le_nhds (inter_mem hA (inter_mem hB hC))
-  obtain ⟨z, hzh, hzA, hzB, hzC⟩ := (eventually_mem_nhdsWithin.and hall).exists
-  rw [mem_compl_singleton_iff] at hzh
-  have h2z : 2 * z ∉ L.lattice := fun hm ↦
-    hzC ⟨hm, fun heq ↦ hzh (mul_left_cancel₀ two_ne_zero heq)⟩
+  have hC : ∀ᶠ z in 𝓝[≠] h, 2 * z ∉ L.lattice :=
+    ((Homeomorph.mulLeft₀ (2 : ℂ) two_ne_zero).map_punctured_nhds_eq h).le
+      (L.eventually_notMem_lattice (2 * h))
+  have hAB : ∀ᶠ z in 𝓝[≠] h, z ∈ mk ⁻¹' V ∩ (fun z ↦ 2 * h - z) ⁻¹' (mk ⁻¹' V) :=
+    nhdsWithin_le_nhds (inter_mem hA hB)
+  obtain ⟨z, ⟨hzA, hzB⟩, h2z⟩ := (hAB.and hC).exists
   have hzB' : mk (2 * h - z) ∈ V := hzB
   have hfeq : f (mk z) = f (mk (2 * h - z)) := by
     rw [L.weierstrassSphereMap_of_ne_zero hzA.2, L.weierstrassSphereMap_of_ne_zero hzB'.2,
@@ -326,20 +376,17 @@ private theorem localMultiplicity_weierstrassSphereMap_sub_one (x :
   set g : AddAction.orbitRel.Quotient L.lattice ℂ → ℕ := fun x ↦ localMultiplicity f x - 1
   have hfin := f.finite_support_localMultiplicity_sub_one
   set s := hfin.toFinset
-  obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ := L.halfPeriods_pairwise_ne
   set t : Finset (AddAction.orbitRel.Quotient L.lattice ℂ) :=
     {0, mk (L.ω₁ / 2), mk (L.ω₂ / 2), mk ((L.ω₁ + L.ω₂) / 2)}
   have ht : ∀ y, y ∈ t ↔ y ∈ L.torusHalfPeriods := fun y ↦ by simp [t, torusHalfPeriods]
   have htcard : t.card = 4 := by
-    rw [Finset.card_insert_of_notMem (by simp [h₁, h₂, h₃]),
-      Finset.card_insert_of_notMem (by simp [h₄, h₅]), Finset.card_pair h₆]
+    rw [← Set.ncard_coe_finset, show (t : Set _) = L.torusHalfPeriods from Set.ext ht,
+      ncard_torusHalfPeriods]
   have hgt : ∀ y ∈ t, 1 ≤ g y := fun y hy ↦
     Nat.le_sub_one_of_lt (L.one_lt_localMultiplicity_weierstrassSphereMap_of_mem ((ht y).1 hy))
   have hts : t ⊆ s := fun y hy ↦ hfin.mem_toFinset.2 (Nat.one_le_iff_ne_zero.1 (hgt y hy))
   have hsum : ∑ y ∈ s, g y = 4 := by
-    rw [← finsum_eq_sum_of_support_subset g
-      fun y hy ↦ Finset.mem_coe.2 (hfin.mem_toFinset.2 hy), ← ramificationDegree_def,
-      ramificationDegree_weierstrassSphereMap]
+    rw [← finsum_eq_sum g hfin, ← ramificationDegree_def, ramificationDegree_weierstrassSphereMap]
   have hsplit := Finset.sum_sdiff hts (f := g)
   have hlow : t.card ≤ ∑ y ∈ t, g y := by
     simpa using Finset.card_nsmul_le_sum t g 1 hgt
@@ -366,12 +413,12 @@ theorem localMultiplicity_weierstrassSphereMap_of_notMem
     {x : AddAction.orbitRel.Quotient L.lattice ℂ} (hx : x ∉ L.torusHalfPeriods) :
     localMultiplicity L.weierstrassSphereMap x = 1 := by
   have h := L.localMultiplicity_weierstrassSphereMap_sub_one x
-  have hpos := (localMultiplicity_pos_iff (.of_forall fun y ↦
-    L.weierstrassSphereMap.holomorphic y)).2 (L.weierstrassSphereMap.not_eventuallyConst x)
+  have hpos := localMultiplicity_pos L.weierstrassSphereMap x
   simp only [hx, ↓reduceIte] at h
   omega
 
 /-- **The branch points of the Weierstrass map are the four half-period points.** -/
+@[simp]
 theorem setOf_one_lt_localMultiplicity_weierstrassSphereMap :
     {x | 1 < localMultiplicity L.weierstrassSphereMap x} = L.torusHalfPeriods := by
   ext x
