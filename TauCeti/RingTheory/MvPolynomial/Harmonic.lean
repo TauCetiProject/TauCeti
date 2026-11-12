@@ -364,7 +364,7 @@ theorem homogeneousSubmodule_eq_iSup_map_mulLeft_normSq_pow (d : ℕ) :
     homogeneousSubmodule σ K d =
       ⨆ k ≤ d / 2,
         (harmonicSubmodule σ K (d - 2 * k)).map (LinearMap.mulLeft K (normSq σ K ^ k)) := by
-  rcases isEmpty_or_nonempty σ with hσ | hσ
+  rcases isEmpty_or_nonempty σ with hσ | _
   · -- With no variables, `r² = 0` and every homogeneous polynomial is harmonic.
     have hH (n : ℕ) : harmonicSubmodule σ K n = homogeneousSubmodule σ K n :=
       inf_eq_left.2 fun p _ ↦ by simp [laplacian_apply]
