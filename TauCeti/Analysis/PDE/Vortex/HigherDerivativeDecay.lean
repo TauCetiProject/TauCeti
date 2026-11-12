@@ -365,7 +365,6 @@ private theorem exists_contDiff_eventuallyEq_log_normSq (hx : ContDiff ℝ ∞ x
   have hsz : 1 / 2 < s z := hR₀ (show R₀ ≤ ‖z‖ by linarith [le_max_left R₀ 0])
   refine ⟨hloc, ?_, hsz⟩
   rw [(laplacian_congr_nhds hloc).eq_of_nhds, laplacian_log_normSq_of_equation_eq_zero
-    ((hcd 0).differentiable (by simp) z) ((hcd 1).differentiable (by simp) z)
     ((hcd 2).contDiffAt.of_le (by norm_cast)) ((hcd 3).contDiffAt.of_le (by norm_cast))
     (by intro h; simp only [s] at hsz; rw [h] at hsz; norm_num at hsz)
     (Eventually.of_forall hsol)]
@@ -384,18 +383,16 @@ private theorem exists_eventually_norm_iteratedFDeriv_le_mul_exp_of_log_normSq
     (n : ℕ) {c : ℝ} (hc : c < 1 / 2) :
     ∃ K, ∀ᶠ z in cocompact ℂ, ‖iteratedFDeriv ℝ n ℓ z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   have hcd (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) := contDiff_euclidean.1 hx i
-  have hb₁ := (hcd 0).differentiable (by simp)
-  have hb₂ := (hcd 1).differentiable (by simp)
   have hp : ContDiff ℝ 2 (fun z ↦ x z 2) := (hcd 2).of_le (by norm_cast)
   have hq : ContDiff ℝ 2 (fun z ↦ x z 3) := (hcd 3).of_le (by norm_cast)
   have hev : ∀ᶠ z in cocompact ℂ, R < ‖z‖ := tendsto_norm_cocompact_atTop.eventually_gt_atTop R
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · -- `|log |α|²| ≤ 2 (1 - |α|²)` where `1 / 2 < |α|² ≤ 1`.
-    obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
+    obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
     refine ⟨2 * K, hev.mono fun z hz ↦ ?_⟩
     set t := 4 * (x z 2 ^ 2 + x z 3 ^ 2)
     have ht := (hR z hz).2.2
-    have ht₁ : t ≤ 1 := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim z
+    have ht₁ : t ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim z
     rw [norm_iteratedFDeriv_zero, (hR z hz).1.eq_of_nhds, Real.norm_eq_abs,
       abs_of_nonpos (Real.log_nonpos (by linarith) ht₁)]
     have hlog : -Real.log t ≤ 2 * (1 - t) := by
@@ -418,8 +415,8 @@ private theorem exists_eventually_norm_iteratedFDeriv_le_mul_exp_of_log_normSq
       exact h.congr' (hev.mono fun z hz ↦ ((hR z hz).1.eq_of_nhds).symm))
     (lt_max_of_lt_right (by norm_num)) hc'
     (by
-      obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hb₁ hb₂ hp hq hsol
-        hlim hc'
+      obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hp hq hsol hlim
+        hc'
       exact ⟨K, (hK.and hev).mono fun z hz ↦ by rw [(hR z hz.2).1.fderiv_eq]; exact hz.1⟩)
     hn
   refine ⟨max K 0, hK.mono fun z hz ↦ hz.trans ?_⟩
