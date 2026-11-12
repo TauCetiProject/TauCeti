@@ -189,7 +189,7 @@ theorem _root_.IsOpen.exists_isOpen_baire_superset_ae_eq {U : Set G} (hU : IsOpe
     measure_saturation_diff_eq_zero μ N hU (TauCeti.baire_le V hV_baire) (fun _ _ => hVN)
       (ae_eq_set.1 hVU).2
   exact ⟨π ⁻¹' (π '' U), hUW, hW_open, hW_baire,
-    ((ae_le_set.2 hW_diff_V).trans hVU.le).antisymm (Eventually.of_forall fun _ h => hUW h)⟩
+    ((ae_subset.2 hW_diff_V).trans hVU.subset).antisymm (Eventually.of_forall fun _ h => hUW h)⟩
 
 namespace MeasureTheory
 
