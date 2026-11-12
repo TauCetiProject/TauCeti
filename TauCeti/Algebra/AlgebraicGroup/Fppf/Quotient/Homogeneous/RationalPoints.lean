@@ -29,8 +29,7 @@ inclusions `P ⊆ Q` of closed subgroups. It also intertwines the actual sheaf t
 by `k`-points with the usual left action on cosets; this is not an internal action morphism
 of sheaves.
 
-In particular every `k`-point of `G/N` lifts to a `k`-point of `G`, and two `k`-points of `G`
-have the same image in `G/N` exactly when they differ by a `k`-point of `N`.
+In particular every `k`-point of `G/N` lifts to a `k`-point of `G`.
 
 ## Main declarations
 

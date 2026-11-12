@@ -300,7 +300,7 @@ instance fppfHomogeneousQuotientProjection_isLocallySurjective :
     (toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I))
 
 /-- The coset presheaf is separated for the fppf topology: two cosets agreeing on an fppf
-covering are equal, because membership in the closed subgroup is fppf local. -/
+covering are equal. -/
 theorem homogeneousQuotientPresheaf_isSeparated :
     Presieve.IsSeparated (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) := by
   intro X S hS x q₁ q₂ h₁ h₂

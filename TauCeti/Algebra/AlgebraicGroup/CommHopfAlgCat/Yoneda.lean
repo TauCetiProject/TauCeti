@@ -41,7 +41,7 @@ shrinking part.
   corepresentability instance.
 * `TauCeti.HopfAlgebra.pointsGroupPresheaf` and `TauCeti.HopfAlgebra.pointsPresheaf`: the
   group- and type-valued points functors as presheaves on opposite commutative algebras.
-* `CommHopfAlgCat.pointsPresheaf_map_op_apply`: restriction in the points presheaf
+* `TauCeti.HopfAlgebra.pointsPresheaf_map_apply`: restriction in the points presheaf
   post-composes with the morphism of value algebras.
 * `CommHopfAlgCat.pointsRightMul`: right multiplication by an `R`-point, as a natural
   endomorphism of the universe-lifted points presheaf.
@@ -222,6 +222,19 @@ theorem pointsPresheaf_obj (H : _root_.CommHopfAlgCat.{v} R)
     (A : ((CommAlgCat.{v} R)ᵒᵖ)ᵒᵖ) :
     (pointsPresheaf H).obj A = WithConv (H →ₐ[R] A.unop.unop) :=
   rfl
+
+/-- The points presheaf restricts a point along a morphism of affine schemes by post-composing
+it with the corresponding morphism of value algebras. -/
+theorem pointsPresheaf_map_apply (H : _root_.CommHopfAlgCat.{v} R)
+    {A B : ((CommAlgCat.{v} R)ᵒᵖ)ᵒᵖ} (χ : A ⟶ B) (g : points (R := R) (H := H) A.unop.unop) :
+    (pointsPresheaf H).map χ g = mapPoints (H := H) χ.unop.unop g :=
+  rfl
+
+/-- Restriction in the points presheaf along the opposite of a morphism of affine schemes. -/
+theorem pointsPresheaf_map_op_apply (H : _root_.CommHopfAlgCat.{v} R)
+    {X Y : (CommAlgCat.{v} R)ᵒᵖ} (f : Y ⟶ X) (g : points (R := R) (H := H) X.unop) :
+    (pointsPresheaf H).map f.op g = mapPoints (H := H) f.unop g :=
+  pointsPresheaf_map_apply H f.op g
 
 -- The two component lemmas below are deliberately not `@[simp]`: their left-hand sides carry
 -- the value type `(pointsFunctor ⋙ forget GrpCat).obj A` of the corepresented functor, which
@@ -707,28 +720,24 @@ namespace CommHopfAlgCat
 
 open TauCeti
 
-universe u
+universe u v
 
-variable {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{u} R)
-
-/-- The points presheaf restricts a point along a morphism of affine schemes by post-composing
-it with the corresponding morphism of value algebras. -/
-theorem pointsPresheaf_map_op_apply {X Y : (CommAlgCat.{u} R)ᵒᵖ} (f : Y ⟶ X)
-    (g : HopfAlgebra.points (R := R) (H := H) X.unop) :
-    (HopfAlgebra.pointsPresheaf H).map f.op g = HopfAlgebra.mapPoints (H := H) f.unop g :=
-  (rfl)
+variable {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{v} R)
 
 /-- Right multiplication by the extension of a ground-ring point `g`, as a natural endomorphism
 of the universe-lifted points presheaf of `H`. -/
-@[expose] noncomputable def pointsRightMul
+noncomputable def pointsRightMul
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
-    HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} where
-  app A := ↾fun x : ULift.{u + 1} (HopfAlgebra.points (R := R) (H := H) A.unop.unop) ↦
+    HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{v + 1, v} ⟶
+      HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{v + 1, v} where
+  app A := ↾fun x : ULift.{v + 1} (HopfAlgebra.points (R := R) (H := H) A.unop.unop) ↦
     ULift.up (x.down * HopfAlgebra.extendPoint H A.unop.unop g)
   naturality {A B} χ := by
     ext ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
-    -- Present both sides of the naturality square as lifted products of points.
+    -- The components are functions on lifted sections `(pointsPresheaf H).obj _`, which `simp`
+    -- cannot match with the points carrying the group structure at reducible transparency, so
+    -- the square is restated as lifted products of points, with restriction computed by
+    -- `HopfAlgebra.pointsPresheaf_map_apply`.
     change ULift.up (HopfAlgebra.mapPoints (H := H) χ.unop.unop x *
         HopfAlgebra.extendPoint H B.unop.unop g) =
       ULift.up (HopfAlgebra.mapPoints (H := H) χ.unop.unop
@@ -737,8 +746,9 @@ of the universe-lifted points presheaf of `H`. -/
 
 /-- Right multiplication by `g` multiplies each point on the right by the extension of `g`. -/
 @[simp]
-theorem pointsRightMul_app (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
-    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+theorem pointsRightMul_app_apply
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{v} R)ᵒᵖ)ᵒᵖ) (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
     dsimp% (pointsRightMul H g).app A (ULift.up x) =
       ULift.up (x * HopfAlgebra.extendPoint H A.unop.unop g) :=
   (rfl)
@@ -747,7 +757,7 @@ theorem pointsRightMul_app (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat
 @[simp]
 theorem pointsRightMul_one : pointsRightMul H 1 = 𝟙 _ := by
   ext A ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
-  exact congrArg ULift.up (by rw [map_one, mul_one])
+  exact (pointsRightMul_app_apply H 1 A x).trans (congrArg ULift.up (by rw [map_one, mul_one]))
 
 /-- Right multiplication by `g` followed by right multiplication by `g'` is right multiplication
 by `g * g'`. -/
@@ -759,6 +769,15 @@ theorem pointsRightMul_comp_pointsRightMul
   have hx : x * HopfAlgebra.extendPoint H A.unop.unop g * HopfAlgebra.extendPoint H A.unop.unop g' =
       x * HopfAlgebra.extendPoint H A.unop.unop (g * g') := by
     rw [map_mul, mul_assoc]
-  exact congrArg ULift.up hx
+  -- Apply the component rule to each factor of the composite, then to `g * g'`.
+  exact (congrArg _ (pointsRightMul_app_apply H g A x)).trans
+    ((pointsRightMul_app_apply H g' A _).trans
+      ((congrArg ULift.up hx).trans (pointsRightMul_app_apply H (g * g') A x).symm))
+
+/-- Right multiplication by a ground-ring point is invertible, with inverse right multiplication
+by the inverse point. -/
+instance pointsRightMul_isIso (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    IsIso (pointsRightMul H g) :=
+  ⟨pointsRightMul H g⁻¹, by simp, by simp⟩
 
 end CommHopfAlgCat
