@@ -236,7 +236,7 @@ private theorem injOn_realChart (p : PSSPlane) :
 /-- Every point of the plane other than the pole is the image of a point of the band. -/
 private theorem mem_image_realChart {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) :
     z ∈ realChart p.cylindricalEndLift '' endStrip p := by
-  have hπ := Real.pi_pos
+  have := Real.pi_pos
   refine ⟨Complex.equivRealProdCLM (p.endCoord (Complex.equivRealProdCLM.symm z)),
     ⟨mem_univ _, ?_⟩, ?_⟩
   · have h₁ := Complex.neg_pi_lt_arg (Complex.equivRealProdCLM.symm z)

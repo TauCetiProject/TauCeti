@@ -189,7 +189,6 @@ private theorem exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli
         x ∉ tsupport ψ ∩ {x | l < W1p.value u x} → W1p.value z x = 0 := by
   set T := tsupport ψ
   set I := ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ T, max (W1p.value u x - k) 0 ^ 2 ∂mu
-  have hT : MeasurableSet T := (isClosed_tsupport ψ).measurableSet
   -- The truncation at the higher level is dominated by the one at the lower level.
   have hwl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega) :=
     W1p.memLp_posPartAbove_of_le u hkl.le hwLp
@@ -571,7 +570,6 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
       (E * 4 ^ α * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) * (4 * 4 ^ α) ^ j * Y j ^ (1 + α) := fun j => by
     refine (setIntegral_ball_max_sub_sq_succ_le hq hS hwLp hA hB hcacc hc hR hball hK hα
       j).trans ?_
-    have hYj : 0 ≤ Y j := integral_nonneg (hnn _)
     gcongr
   have hlim := tendsto_atTop_zero_of_le_mul_pow_mul_rpow (Y := Y)
     (fun j => integral_nonneg (hnn _)) hC hb hα0 (hY0'.trans_le hY0) hrec
@@ -1208,7 +1206,7 @@ private theorem ae_eq_zero_of_forall_ball_le_mul_rpow {e : ℝ} (he : 0 < e) (D 
   rcases le_or_gt R 0 with hR | hR
   · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
   set L := √(∫ x in Metric.ball x₀ R, w x ^ 2 ∂mu)
-  set s : ℕ → ℝ := fun k => R / (2 * ((k : ℝ) + 1)) with hs_def
+  set s : ℕ → ℝ := fun k => R / (2 * ((k : ℝ) + 1))
   have hs0 : ∀ k, 0 < s k := fun k => by positivity
   have hsR : ∀ k, s k ≤ R / 2 := fun k =>
     div_le_div_of_nonneg_left hR.le two_pos (by linarith [Nat.cast_nonneg (α := ℝ) k])

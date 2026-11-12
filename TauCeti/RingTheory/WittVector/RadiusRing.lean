@@ -837,7 +837,7 @@ private theorem exists_lt_one_forall_exists_eq_mul_add {x : RadiusRing p hv hϖ 
   set M := ‖ι (teichmuller p ϖ ^ j) * y‖₊ with hM
   -- Run the division steps down to a Teichmüller sum of length `m`, and divide by the unit
   -- `e = [b] [ϖ]ʲ`.
-  obtain ⟨b, Q, a, hb, hQ, ha, hW⟩ := exists_division p hv hϖ hϖ' hρ (le_max_left _ _) hε1.le hc
+  obtain ⟨b, Q, a, hb, _, ha, hW⟩ := exists_division p hv hϖ hϖ' hρ (le_max_left _ _) hε1.le hc
     ht hXε N _ M a₀ ha₀ hY
   set e := ι (teichmuller p b) * ι (teichmuller p ϖ ^ j) with he_def
   have he : IsUnit e := (isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ hb).mul (by

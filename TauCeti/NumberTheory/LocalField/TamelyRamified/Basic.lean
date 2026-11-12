@@ -181,7 +181,8 @@ theorem IsTotallyRamified.exists_pow_eq_uniformizer_of_isTamelyRamified (h : IsT
   have hϖK0 : (ϖK : K) ≠ 0 := fun h0 ↦ hϖK.ne_zero (Subtype.ext h0)
   have hϖα0 : (ϖα : L) ≠ 0 := fun h0 ↦ hϖα.ne_zero (Subtype.ext h0)
   have hαpow : (ϖα : L) ^ e = algebraMap K L (ϖK : K) := by
-    rw [← coe_algebraMap_integerRing, ← hpow, SubmonoidClass.coe_pow]
+    rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), ← hpow,
+      SubmonoidClass.coe_pow]
   refine ⟨Units.mk0 (ϖK : K) hϖK0, Units.mk0 (ϖα : L) hϖα0,
     (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖK, hϖK, rfl⟩,
     (isUniformizer_iff_exists_irreducible L _).2 ⟨ϖα, hϖα, rfl⟩, hαpow, ?_⟩

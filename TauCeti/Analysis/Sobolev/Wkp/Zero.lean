@@ -45,9 +45,7 @@ Sobolev functions and density results comparing different domains are not proved
 
 ## References
 
-This is the arbitrary-order `C_c^∞(Ω)`-closure part of Lane A.2 in
-`TauCetiRoadmap/PDE/README.md`.  The construction follows L. C. Evans, *Partial Differential
-Equations*, Section 5.2.
+The construction follows L. C. Evans, *Partial Differential Equations*, Section 5.2.
 -/
 
 public section
