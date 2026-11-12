@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
 # Weight spaces by corestriction to a monoid algebra
@@ -233,6 +234,29 @@ theorem endOfPoint_tmul_of_mem_weightSpace (π : C →ₐc[R] MonoidAlgebra R X)
   simp [TensorProduct.smul_tmul']
 
 end Points
+
+section Subcomodule
+
+variable {R : Type*} [CommRing R]
+variable {C : Type*} [AddCommGroup C] [Module R C] [Coalgebra R C] [Module.Flat R C]
+variable {X : Type*}
+variable {V : Type*} [AddCommGroup V] [Module R V] [Comodule R C V]
+variable {π : C →ₗc[R] MonoidAlgebra R X}
+
+/-- A weight vector of `V` lying in a subcomodule is a weight vector of that subcomodule. -/
+theorem mem_weightSpace_of_mem_weightSpace_subcomodule (N : Subcomodule R C V) {x : X}
+    (n : N) (hn : (n : V) ∈ weightSpace V π x) : n ∈ weightSpace N π x := by
+  rw [mem_weightSpace]
+  apply Module.Flat.rTensor_preserves_injective_linearMap (M := MonoidAlgebra R X)
+    (SMulMemClass.subtype N) Subtype.val_injective
+  rw [LinearMap.rTensor_tmul, SMulMemClass.subtype_apply, ← mem_weightSpace.mp hn,
+    ← Subcomodule.subtype_rTensor_coact _ n]
+  generalize Comodule.coact (R := R) (C := C) n = t
+  induction t using TensorProduct.inductionOn with
+  | add y z hy hz => simp only [map_add, hy, hz]
+  | tmul y c => simp
+
+end Subcomodule
 
 section MatrixCoefficient
 
