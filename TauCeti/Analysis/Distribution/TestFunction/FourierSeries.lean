@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
-public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.Fourier.PoissonSummation
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.SmoothSeries
-import TauCeti.Algebra.Module.ZLattice.Scaling
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
@@ -63,9 +60,6 @@ the resulting double series converge.
   smooth function supported in `K` decays rapidly along a lattice.
 * `ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`: the Fourier expansion of a smooth
   function supported in `K`, converging in `𝓓_{K}(E, ℂ)`.
-* `TestFunction.exists_hasSum_fourier_smul_modulate_mul_cutoff`: near the support of a cutoff
-  `φ`, every smooth function times a fixed cutoff is the sum of its Fourier series along a lattice,
-  in the topology of smooth functions supported in a compact set.
 
 ## References
 
@@ -103,7 +97,6 @@ private theorem contDiff_exp_phase (w : E) : ContDiff ℝ ∞ fun x ↦ cexp (ph
 `(2π ‖w‖) ^ k`. -/
 private theorem norm_iteratedFDeriv_exp_phase_le (w x : E) (k : ℕ) :
     ‖iteratedFDeriv ℝ k (fun y ↦ cexp (phase w y)) x‖ ≤ (2 * π * ‖w‖) ^ k := by
-  -- The character of frequency `w` is the Fourier atom of frequency `-w`.
   have h : (fun y ↦ cexp (phase w y)) = TauCeti.fourierAtom (-w) := by
     ext y
     rw [TauCeti.fourierAtom_apply, phase_apply, inner_neg_right]
@@ -196,7 +189,7 @@ theorem seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (w : E) (k : ℕ) :
   calc ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) *
         ‖iteratedFDeriv ℝ i (fun y ↦ cexp (phase w y)) x‖ * ‖iteratedFDeriv ℝ (k - i) χ x‖
       ≤ ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * (2 * π * ‖w‖) ^ i * S := by
-        gcongr with i hi
+        gcongr with i _
         · exact norm_iteratedFDeriv_exp_phase_le w x i
         · exact hχ _ (Nat.sub_le k i)
     _ = S * (1 + 2 * π * ‖w‖) ^ k := by
@@ -353,63 +346,3 @@ theorem hasSum_fourier_smul_modulate (φ χ : 𝓓_{K}(E, ℂ))
     (mod_cast le_top), hφ]
 
 end ContDiffMapSupportedIn
-
-namespace TestFunction
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {Ω : Opens E}
-
-/-- **Fourier expansion near a cutoff.** For a cutoff `φ` there are a compact set `K ⊆ Ω`, a full
-lattice `L`, a smooth function `χ₁` and a smooth function `χ` supported in `K`, both equal to one
-where `φ ≠ 0`, such that for every `g` smooth on `Ω` the product `χ₁ g` is a smooth function `f`
-supported in `K`, and `f` is the sum of its Fourier series along the dual lattice,
-
-`f = ∑ m : L^∨, ((covolume L)⁻¹ 𝓕 f (m)) • χ.modulate m`,
-
-in `𝓓_{K}(E, ℂ)`. -/
-theorem exists_hasSum_fourier_smul_modulate_mul_cutoff (φ : 𝓓(Ω, ℂ)) :
-    ∃ (K : Compacts E) (_ : (K : Set E) ⊆ Ω) (L : Submodule ℤ E) (_ : DiscreteTopology L)
-      (_ : IsZLattice ℝ L) (χ₁ : E → ℝ) (χ : 𝓓_{K}(E, ℂ)), ContDiff ℝ ∞ χ₁ ∧
-      (∀ x, φ x ≠ 0 → χ₁ x = 1) ∧ (∀ x, φ x ≠ 0 → χ x = 1) ∧
-      ∀ g : E → ℂ, ContDiffOn ℝ ∞ g Ω → ∃ f : 𝓓_{K}(E, ℂ), (∀ x, f x = χ₁ x * g x) ∧
-        HasSum (fun m : ZLattice.dual L ↦
-          ((ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (f : E → ℂ) m) • χ.modulate m) f := by
-  -- Nested compact sets `tsupport φ ⊆ K₁ ⊆ K₂ ⊆ Ω` and cutoffs `χ₁, χ₂` adapted to them.
-  obtain ⟨K₁, hK₁, hφK₁, hK₁Ω⟩ :=
-    exists_compact_between φ.hasCompactSupport Ω.isOpen φ.tsupport_subset
-  obtain ⟨K₂, hK₂, hK₁K₂, hK₂Ω⟩ := exists_compact_between hK₁ Ω.isOpen hK₁Ω
-  obtain ⟨χ₁, hχ₁, -, hχ₁1, -, hχ₁s⟩ :=
-    φ.hasCompactSupport.exists_contDiff_cutoff isOpen_interior hφK₁
-  obtain ⟨χ₂, hχ₂, -, hχ₂1, -, hχ₂s⟩ := hK₁.exists_contDiff_cutoff isOpen_interior hK₁K₂
-  let K : Compacts E := ⟨K₂, hK₂⟩
-  have hχ₂K₁ {x : E} (hx : x ∈ K₁) : χ₂ x = 1 := interior_subset (hχ₂1 hx)
-  have hχ₁K₁ : tsupport χ₁ ⊆ K₁ := hχ₁s.trans interior_subset
-  have hχK : support (fun x ↦ (χ₂ x : ℂ)) ⊆ K₂ := fun x hx ↦
-    interior_subset (hχ₂s (subset_tsupport _ (by simpa using hx)))
-  let χ : 𝓓_{K}(E, ℂ) :=
-    ContDiffMapSupportedIn.of_support_subset (ofRealCLM.contDiff.comp hχ₂) hχK
-  have hχv (x : E) : χ x = χ₂ x :=
-    ContDiffMapSupportedIn.coe_of_support_subset (K := K) (ofRealCLM.contDiff.comp hχ₂) hχK x
-  -- A lattice none of whose nonzero translates of `K` meet `K`.
-  obtain ⟨L, _, _, hL⟩ := ZLattice.exists_forall_add_mem_eq_zero_of_isBounded hK₂.isBounded
-  refine ⟨K, hK₂Ω, L, inferInstance, inferInstance, χ₁, χ, hχ₁,
-    fun x hx ↦ interior_subset (hχ₁1 (subset_tsupport _ hx)),
-    fun x hx ↦ by simp [hχv, hχ₂K₁ (hφK₁.trans interior_subset (subset_tsupport _ hx))],
-    fun g hg ↦ ?_⟩
-  -- The function `χ₁ g`, supported in `K`, expanded in the modulations of the cutoff `χ`.
-  have hχ₁g : ContDiff ℝ ∞ fun x ↦ (χ₁ x : ℂ) * g x := by
-    simpa [Complex.real_smul] using
-      hg.contDiff_smul_of_tsupport_subset Ω.isOpen hχ₁.contDiffOn (hχ₁K₁.trans hK₁Ω)
-  have hfK : support (fun x ↦ (χ₁ x : ℂ) * g x) ⊆ K₂ := fun x hx ↦
-    interior_subset (hK₁K₂ (hχ₁K₁ (subset_tsupport _ (by simpa using left_ne_zero_of_mul hx))))
-  let f : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset hχ₁g hfK
-  have hf (x : E) : f x = χ₁ x * g x :=
-    ContDiffMapSupportedIn.coe_of_support_subset (K := K) hχ₁g hfK x
-  have hχ : EqOn χ 1 (support f) := fun x hx ↦ by
-    rw [mem_support, hf] at hx
-    have hx' : χ₁ x ≠ 0 := by exact_mod_cast left_ne_zero_of_mul hx
-    simp [hχv, hχ₂K₁ (hχ₁K₁ (subset_tsupport _ hx'))]
-  exact ⟨f, hf, ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L f χ
-    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.2 h)) hχ⟩
-
-end TestFunction

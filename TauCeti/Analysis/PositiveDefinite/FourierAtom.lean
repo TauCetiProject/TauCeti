@@ -12,15 +12,14 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.SmoothSeries
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # Fourier atoms
 
-This file records the spatial Fourier atom used by the positive-definite and Bochner APIs and by
-Fourier series.
+This file records the spatial Fourier atom used by the positive-definite and Bochner APIs.
 It uses Mathlib's `2π` Fourier convention.
 
 ## Main declarations
@@ -32,10 +31,10 @@ It uses Mathlib's `2π` Fourier convention.
 * `TauCeti.contDiff_fourierAtom`: Fourier atoms are smooth in the spatial variable.
 * `TauCeti.contDiff_uncurry_fourierAtom`: Fourier atoms are jointly smooth in the frequency and
   the spatial variable.
-* `TauCeti.norm_iteratedFDeriv_fourierAtom_le`: the `k`-th derivative of the Fourier atom of
+* `TauCeti.norm_iteratedFDeriv_fourierAtom_le`: the `k`-th derivative of the Fourier atom at
   frequency `q` has norm at most `(2π ‖q‖) ^ k`.
-* `TauCeti.contDiff_tsum_mul_fourierAtom`: a series of Fourier atoms with rapidly decreasing
-  coefficients is smooth.
+* `TauCeti.contDiff_tsum_smul_fourierAtom`: a series of Fourier atoms with coefficients decaying
+  faster than every power of the frequency is smooth.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
   `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
@@ -49,7 +48,7 @@ It uses Mathlib's `2π` Fourier convention.
 public section
 
 open Complex ComplexConjugate
-open scoped ComplexOrder ContDiff
+open scoped ComplexOrder
 
 namespace TauCeti
 
@@ -147,52 +146,52 @@ theorem contDiff_uncurry_fourierAtom : ContDiff ℝ n (Function.uncurry (fourier
 theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) :=
   contDiff_uncurry_fourierAtom.comp (contDiff_const.prodMk contDiff_id)
 
-/-- Every derivative of the Fourier atom of frequency `q` has norm at most `(2π ‖q‖) ^ k`. -/
+/-- The `k`-th derivative of the Fourier atom at frequency `q` has norm at most `(2π ‖q‖) ^ k`. -/
 theorem norm_iteratedFDeriv_fourierAtom_le (q v : W) (k : ℕ) :
     ‖iteratedFDeriv ℝ k (fourierAtom q) v‖ ≤ (2 * Real.pi * ‖q‖) ^ k := by
-  -- The atom is `exp ∘ ℓ` for the real-linear phase `ℓ w = -2πi ⟪q, w⟫`.
+  -- The atom is `exp ∘ ℓ` for the real-linear phase `ℓ y = -2πi ⟪q, y⟫`.
   let ℓ : W →L[ℝ] ℂ := (-(2 * Real.pi * I)) • (ofRealCLM.comp (innerSL ℝ q))
-  have hℓw (w : W) : ℓ w = -(2 * Real.pi * I) * inner ℝ w q := by
-    simp [ℓ, real_inner_comm q w]
-  have hℓ : fourierAtom q = fun w ↦ Complex.exp (ℓ w) := by
-    ext w
-    rw [fourierAtom_apply, hℓw]
-    ring_nf
+  have hℓ (y : W) : ℓ y = -2 * ((Real.pi : ℝ) : ℂ) * I * ((inner ℝ y q : ℝ) : ℂ) := by
+    simp [ℓ, real_inner_comm]
+  have hatom : fourierAtom q = fun y ↦ Complex.exp (ℓ y) := by
+    ext y
+    rw [fourierAtom_apply, hℓ]
   have hnorm : ‖ℓ‖ ≤ 2 * Real.pi * ‖q‖ := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
-    have hπ : ‖-(2 * (Real.pi : ℂ) * I)‖ = 2 * Real.pi := by
+    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y ↦ ?_
+    have h : ‖ℓ y‖ = 2 * Real.pi * |inner ℝ y q| := by
+      rw [hℓ]
       simp [abs_of_pos Real.pi_pos]
-    rw [hℓw, norm_mul, hπ, Complex.norm_real, Real.norm_eq_abs]
-    calc 2 * Real.pi * |inner ℝ w q| ≤ 2 * Real.pi * (‖w‖ * ‖q‖) := by
+    calc ‖ℓ y‖ ≤ 2 * Real.pi * (‖q‖ * ‖y‖) := by
+          rw [h]
           gcongr
-          exact abs_real_inner_le_norm w q
-      _ = 2 * Real.pi * ‖q‖ * ‖w‖ := by ring
-  have hexp : ‖Complex.exp (ℓ v)‖ = 1 := by
-    rw [← norm_fourierAtom q v, hℓ]
-  rw [hℓ]
+          exact abs_real_inner_le_norm y q |>.trans_eq (mul_comm _ _)
+      _ = 2 * Real.pi * ‖q‖ * ‖y‖ := by ring
+  have hv : ‖Complex.exp (ℓ v)‖ = 1 := by
+    rw [← norm_fourierAtom q v, hatom]
+  rw [hatom]
   refine (ℓ.norm_iteratedFDeriv_cexp_comp_le k v).trans ?_
-  rw [hexp, one_mul]
+  rw [hv, one_mul]
   gcongr
 
-/-- A series of Fourier atoms whose coefficients decay faster than every power of the frequency
-defines a smooth function. -/
-theorem contDiff_tsum_mul_fourierAtom {ι : Type*} {q : ι → W} {c : ι → ℂ}
-    (hc : ∀ k : ℕ, Summable fun i ↦ (1 + ‖q i‖) ^ k * ‖c i‖) :
-    ContDiff ℝ ∞ fun v ↦ ∑' i, c i * fourierAtom (q i) v := by
-  refine contDiff_tsum (fun i ↦ contDiff_const.mul (contDiff_fourierAtom _))
-    (v := fun k i ↦ (2 * Real.pi) ^ k * ((1 + ‖q i‖) ^ k * ‖c i‖))
-    (fun k _ ↦ (hc k).mul_left _) fun k i v _ ↦ ?_
-  simp_rw [← smul_eq_mul]
+open scoped ContDiff in
+/-- A series `v ↦ ∑ i, b i • fourierAtom (q i) v` of Fourier atoms is smooth when its coefficients
+decay faster than every power of the frequency: `∑ i, (1 + ‖q i‖) ^ k ‖b i‖ < ∞` for every `k`. -/
+theorem contDiff_tsum_smul_fourierAtom {ι : Type*} {b : ι → ℂ} {q : ι → W}
+    (hb : ∀ k : ℕ, Summable fun i ↦ (1 + ‖q i‖) ^ k * ‖b i‖) :
+    ContDiff ℝ ∞ fun v ↦ ∑' i, b i • fourierAtom (q i) v := by
+  refine contDiff_tsum (fun i ↦ (contDiff_fourierAtom (q i)).const_smul (b i))
+    (v := fun k i ↦ (2 * Real.pi) ^ k * ((1 + ‖q i‖) ^ k * ‖b i‖))
+    (fun k _ ↦ (hb k).mul_left _) fun k i v _ ↦ ?_
   rw [iteratedFDeriv_const_smul_apply' (contDiff_fourierAtom _).contDiffAt, norm_smul]
-  calc ‖c i‖ * ‖iteratedFDeriv ℝ k (fourierAtom (q i)) v‖
-      ≤ ‖c i‖ * (2 * Real.pi * (1 + ‖q i‖)) ^ k := by
+  calc ‖b i‖ * ‖iteratedFDeriv ℝ k (fourierAtom (q i)) v‖
+      ≤ ‖b i‖ * (2 * Real.pi * ‖q i‖) ^ k := by
         gcongr
-        refine (norm_iteratedFDeriv_fourierAtom_le _ _ _).trans ?_
+        exact norm_iteratedFDeriv_fourierAtom_le _ _ _
+    _ ≤ ‖b i‖ * ((2 * Real.pi) ^ k * (1 + ‖q i‖) ^ k) := by
+        rw [mul_pow]
         gcongr
         linarith
-    _ = (2 * Real.pi) ^ k * ((1 + ‖q i‖) ^ k * ‖c i‖) := by
-        rw [mul_pow]
-        ring
+    _ = _ := by ring
 
 end ContDiff
 

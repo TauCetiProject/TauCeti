@@ -595,7 +595,7 @@ private theorem rieszPotential_le_add [Nontrivial E] [FiniteDimensional ℝ E]
       hedbergNearConst μ α * ENNReal.ofReal (R ^ α) * maximalFunction μ f x +
         hedbergFarConst μ α p * ENNReal.ofReal (R ^ (α - finrank ℝ E / p)) * eLpNorm f p μ := by
   set g : ℤ → ℝ≥0∞ := fun k => ENNReal.ofReal ((R * 2 ^ k) ^ (α - finrank ℝ E)) *
-    ∫⁻ y in ball x (2 * (R * 2 ^ k)), ‖f y‖ₑ ∂μ with hg
+    ∫⁻ y in ball x (2 * (R * 2 ^ k)), ‖f y‖ₑ ∂μ
   -- Both halves cross into `ℝ≥0∞` here: `c (R 2ᵏ) ^ s = c R ^ s (2 ^ s) ^ k`.
   have hpow (c s : ℝ) (hc : 0 ≤ c) (k : ℤ) : ENNReal.ofReal (c * (R * 2 ^ k) ^ s) =
       ENNReal.ofReal c * ENNReal.ofReal (R ^ s) * ENNReal.ofReal ((2 ^ s) ^ k) := by
@@ -691,7 +691,7 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
   set θ := α * p / finrank ℝ E with hθ
   have hC : hedbergConst μ α p ≠ 0 := hedbergConst_ne_zero
   set M := maximalFunction μ f x with hM_def
-  set N := eLpNorm f p μ with hN_def
+  set N := eLpNorm f p μ
   -- If `M f (x) = 0`, every ball integral around `x` vanishes.
   rcases eq_or_ne M 0 with hM | hM
   · rw [rieszPotential_eq_zero_of_forall_setLIntegral_ball hαd fun r hr => le_antisymm

@@ -36,7 +36,7 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
 * `ZLattice.summable_one_add_norm_pow_inv`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ (-r)` converges once the
   natural number `r` exceeds the rank of `L`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm_of_decay`: a function decaying faster than every
-  power of `1 + ‖v‖` stays summable over `L` after multiplication by any power of `1 + ‖ℓ‖`.
+  power of `1 + ‖x‖` is summable along `L` against every power of `1 + ‖ℓ‖`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
 * `TauCeti.summable_pi_int_inv_one_add_norm_pow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-(card d + 1))`
   converges.
@@ -105,14 +105,13 @@ theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : Module.finrank ℤ L < r) 
   gcongr
   simp
 
-/-- On a discrete subgroup `L` of a finite-dimensional real normed space, a function `g` that
-decays faster than every power of `1 + ‖v‖` stays summable over `L` after multiplication by any
-power of `1 + ‖ℓ‖`. -/
+/-- A function on `E` decaying faster than every power of `1 + ‖x‖` is summable along a discrete
+subgroup `L` against every power of `1 + ‖ℓ‖`. -/
 theorem summable_one_add_norm_pow_mul_norm_of_decay {F : Type*} [SeminormedAddCommGroup F]
-    {g : E → F} (hg : ∀ N : ℕ, ∃ C, ∀ v, (1 + ‖v‖) ^ N * ‖g v‖ ≤ C) (k : ℕ) :
-    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ k * ‖g ℓ‖ := by
+    {f : E → F} (hf : ∀ N : ℕ, ∃ C, ∀ x, (1 + ‖x‖) ^ N * ‖f x‖ ≤ C) (k : ℕ) :
+    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ k * ‖f ℓ‖ := by
   set r := Module.finrank ℤ L + 1
-  obtain ⟨C, hC⟩ := hg (k + r)
+  obtain ⟨C, hC⟩ := hf (k + r)
   have hsum := summable_one_add_norm_pow_inv L (r := r) (by omega)
   refine (hsum.mul_left C).of_nonneg_of_le (fun ℓ ↦ by positivity) fun ℓ ↦ ?_
   have hpos : 0 < (1 + ‖(ℓ : E)‖) ^ r := by positivity
