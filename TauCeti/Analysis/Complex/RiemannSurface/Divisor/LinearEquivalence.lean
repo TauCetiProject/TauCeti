@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Trivialization
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
 
@@ -40,6 +41,12 @@ isomorphism-invariance statements consumed by Riemann–Roch for `𝒪(K - D)` a
 
 ## Main results
 
+* `TauCeti.RiemannSurface.divisorSheafIsoOfPrincipalDivisorEq_zero`,
+  `TauCeti.RiemannSurface.divisorSheafIsoOfPrincipalDivisorEq_symm` and
+  `TauCeti.RiemannSurface.divisorSheafIsoOfPrincipalDivisorEq_trans`: the isomorphism is the
+  identity for `f = 1`, and is compatible with inverses and products of multipliers.
+* `TauCeti.RiemannSurface.toMeromorphic_divisorSheafIsoOfPrincipalDivisorEq_hom_app_top`: on
+  global sections, viewed as meromorphic functions, the isomorphism is multiplication by `f`.
 * `cechCohomologyZeroIso_hom_comp_divisorCechCohomologyIsoOfPrincipalDivisorEq_hom`: in degree
   `0` the isomorphism is multiplication by `f` on global sections.
 * `TauCeti.RiemannSurface.finrank_divisorCechCohomology_eq_of_linearlyEquivalent` and
@@ -128,6 +135,97 @@ theorem divisorSheafIsoOfPrincipalDivisorEq_inv_app {D E : WeilDivisor X}
           Subtype.val.extend (divisorSheafSectionsEquiv E U s).1 0) y) else 0 :=
   divisorSheafGlobalMulIso_inv_app _ _ _ U s
 
+/-- On a punctured neighbourhood of each point, the inverse of
+`divisorSheafIsoOfPrincipalDivisorEq` sends a section `s` of `𝒪(E)` to `f⁻¹ s`. -/
+theorem divisorSheafIsoOfPrincipalDivisorEq_inv_app_eventuallyEq {D E : WeilDivisor X}
+    (f : Additive (MeromorphicFunction X)ˣ)
+    (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E) (U : Opens X)
+    (s : (divisorSheaf E).obj.obj (op U)) (x : U) :
+    (divisorSheafSectionsEquiv D U
+        ((divisorSheafIsoOfPrincipalDivisorEq f hf).inv.hom.app (op U) s)).1 =ᶠ[𝓝[≠] x]
+      fun y ↦ ((f.toMul : MeromorphicFunction X).finitePart y)⁻¹ *
+        (divisorSheafSectionsEquiv E U s).1 y :=
+  divisorSheafGlobalMulIso_inv_app_eventuallyEq _ _ _ U s x
+
+/-- Multiplication by the constant function `1` is the identity of `𝒪(D)`. -/
+@[simp]
+theorem divisorSheafIsoOfPrincipalDivisorEq_zero {D : WeilDivisor X}
+    (hf : (MeromorphicFunction.orderSystem X).principalDivisor 0 = D - D) :
+    divisorSheafIsoOfPrincipalDivisorEq 0 hf = Iso.refl _ :=
+  divisorSheafGlobalMulIso_eq_refl _ _ fun x ↦ by
+    rw [toMul_zero, Units.val_one, MeromorphicFunction.finitePart_one]
+
+/-- The inverse of multiplication by `f` is multiplication by `f⁻¹`, written `-f` in the
+additive group of nonzero meromorphic functions. -/
+theorem divisorSheafIsoOfPrincipalDivisorEq_symm {D E : WeilDivisor X}
+    (f : Additive (MeromorphicFunction X)ˣ)
+    (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E)
+    (hf' : (MeromorphicFunction.orderSystem X).principalDivisor (-f) = E - D) :
+    (divisorSheafIsoOfPrincipalDivisorEq f hf).symm =
+      divisorSheafIsoOfPrincipalDivisorEq (-f) hf' :=
+  divisorSheafGlobalMulIso_symm _ _ _ _ fun x ↦ by
+    rw [toMul_neg, Units.val_inv_eq_inv_val]
+    exact MeromorphicFunction.finitePart_inv_eventuallyEq _ x
+
+/-- Multiplying by `f` and then by `g` is multiplication by `f g`, written `f + g` in the
+additive group of nonzero meromorphic functions. -/
+theorem divisorSheafIsoOfPrincipalDivisorEq_trans {D E F : WeilDivisor X}
+    (f g : Additive (MeromorphicFunction X)ˣ)
+    (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E)
+    (hg : (MeromorphicFunction.orderSystem X).principalDivisor g = E - F)
+    (hfg : (MeromorphicFunction.orderSystem X).principalDivisor (f + g) = D - F) :
+    divisorSheafIsoOfPrincipalDivisorEq f hf ≪≫ divisorSheafIsoOfPrincipalDivisorEq g hg =
+      divisorSheafIsoOfPrincipalDivisorEq (f + g) hfg :=
+  divisorSheafGlobalMulIso_trans _ _ _ _ _ _ fun x ↦ by
+    rw [toMul_add, Units.val_mul]
+    exact MeromorphicFunction.finitePart_mul_eventuallyEq _ _ x
+
+omit [CompactSpace X] in
+/-- A global section `t` of `𝒪(E)` which agrees with `k s` on punctured neighbourhoods, for a
+global section `s` of `𝒪(D)`, embeds into meromorphic functions as `k` times the image of `s`. -/
+private theorem toMeromorphic_eq_mul_of_eventuallyEq {D E : WeilDivisor X}
+    (k : MeromorphicFunction X) {g : X → ℂ} (hk : ∀ x, k.finitePart =ᶠ[𝓝[≠] x] g)
+    (s : divisorSections D ⊤) (t : divisorSections E ⊤)
+    (ht : ∀ x : (⊤ : Opens X), t.1 =ᶠ[𝓝[≠] x] fun y ↦ g y * s.1 y) :
+    divisorSections.toMeromorphic E t = k * divisorSections.toMeromorphic D s := by
+  refine MeromorphicFunction.eq_of_eventuallyEq_finitePart fun x ↦ ?_
+  have hx : Tendsto (fun y : X ↦ (⟨y, trivial⟩ : (⊤ : Opens X))) (𝓝[≠] x)
+      (𝓝[≠] ⟨x, trivial⟩) :=
+    (continuous_id.subtype_mk _).continuousAt.continuousWithinAt.tendsto_nhdsWithin
+      (fun _ hy hxy ↦ hy (congrArg Subtype.val hxy))
+  filter_upwards [divisorSections.finitePart_toMeromorphic_eventuallyEq t x,
+    MeromorphicFunction.finitePart_mul_eventuallyEq k (divisorSections.toMeromorphic D s) x,
+    hk x, divisorSections.finitePart_toMeromorphic_eventuallyEq s x,
+    hx.eventually (ht ⟨x, trivial⟩)] with y ht' hks hk' hs hts
+  rw [ht', hks, Pi.mul_apply, hk', hs]
+  exact hts
+
+/-- On global sections, `divisorSheafIsoOfPrincipalDivisorEq` is multiplication by `f` in the
+field of meromorphic functions. -/
+theorem toMeromorphic_divisorSheafIsoOfPrincipalDivisorEq_hom_app_top {D E : WeilDivisor X}
+    (f : Additive (MeromorphicFunction X)ˣ)
+    (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E)
+    (s : (divisorSheaf D).obj.obj (op ⊤)) :
+    divisorSections.toMeromorphic E (divisorSheafSectionsEquiv E ⊤
+        ((divisorSheafIsoOfPrincipalDivisorEq f hf).hom.hom.app (op ⊤) s)) =
+      (f.toMul : MeromorphicFunction X) *
+        divisorSections.toMeromorphic D (divisorSheafSectionsEquiv D ⊤ s) :=
+  toMeromorphic_eq_mul_of_eventuallyEq _ (fun _ ↦ EventuallyEq.rfl) _ _
+    (divisorSheafIsoOfPrincipalDivisorEq_hom_app_eventuallyEq f hf ⊤ s)
+
+/-- On global sections, the inverse of `divisorSheafIsoOfPrincipalDivisorEq` is multiplication
+by `f⁻¹` in the field of meromorphic functions. -/
+theorem toMeromorphic_divisorSheafIsoOfPrincipalDivisorEq_inv_app_top {D E : WeilDivisor X}
+    (f : Additive (MeromorphicFunction X)ˣ)
+    (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E)
+    (s : (divisorSheaf E).obj.obj (op ⊤)) :
+    divisorSections.toMeromorphic D (divisorSheafSectionsEquiv D ⊤
+        ((divisorSheafIsoOfPrincipalDivisorEq f hf).inv.hom.app (op ⊤) s)) =
+      (f.toMul : MeromorphicFunction X)⁻¹ *
+        divisorSections.toMeromorphic E (divisorSheafSectionsEquiv E ⊤ s) :=
+  toMeromorphic_eq_mul_of_eventuallyEq _ (MeromorphicFunction.finitePart_inv_eventuallyEq _) _ _
+    (divisorSheafIsoOfPrincipalDivisorEq_inv_app_eventuallyEq f hf ⊤ s)
+
 /-- **`𝒪(D) ≅ 𝒪(D - (f))`.** Multiplication by a nonzero meromorphic function `f` identifies
 the divisor sheaf of `D` with that of `D` minus the principal divisor of `f`. -/
 def divisorSheafIsoSubPrincipalDivisor (D : WeilDivisor X)
@@ -135,6 +233,14 @@ def divisorSheafIsoSubPrincipalDivisor (D : WeilDivisor X)
     divisorSheaf D ≅
       divisorSheaf (D - (MeromorphicFunction.orderSystem X).principalDivisor f) :=
   divisorSheafIsoOfPrincipalDivisorEq f (sub_sub_cancel D _).symm
+
+/-- `divisorSheafIsoSubPrincipalDivisor` is `divisorSheafIsoOfPrincipalDivisorEq` for the
+divisors `D` and `D - (f)`. -/
+theorem divisorSheafIsoSubPrincipalDivisor_def (D : WeilDivisor X)
+    (f : Additive (MeromorphicFunction X)ˣ) :
+    divisorSheafIsoSubPrincipalDivisor D f =
+      divisorSheafIsoOfPrincipalDivisorEq f (sub_sub_cancel D _).symm :=
+  (rfl)
 
 /-- **Linearly equivalent divisors have isomorphic divisor sheaves.** The isomorphism is
 multiplication by a chosen meromorphic function whose principal divisor is `D - E`. -/
@@ -178,7 +284,6 @@ def divisorCechCohomologyIsoOfPrincipalDivisorEq {D E : WeilDivisor X}
     ((sheafToPresheaf _ _).mapIso (divisorSheafIsoOfPrincipalDivisorEq f hf))
 
 /-- The cohomology isomorphism is induced by the multiplication isomorphism of sheaves. -/
-@[simp]
 theorem divisorCechCohomologyIsoOfPrincipalDivisorEq_hom {D E : WeilDivisor X}
     (f : Additive (MeromorphicFunction X)ˣ)
     (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E) (n : ℕ) :
@@ -188,7 +293,6 @@ theorem divisorCechCohomologyIsoOfPrincipalDivisorEq_hom {D E : WeilDivisor X}
   (rfl)
 
 /-- The inverse cohomology isomorphism is induced by the inverse multiplication isomorphism. -/
-@[simp]
 theorem divisorCechCohomologyIsoOfPrincipalDivisorEq_inv {D E : WeilDivisor X}
     (f : Additive (MeromorphicFunction X)ˣ)
     (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E) (n : ℕ) :
@@ -220,7 +324,6 @@ def divisorCechCohomologyIsoOfLinearlyEquivalent {D E : WeilDivisor X}
 
 /-- The cohomology isomorphism of linearly equivalent divisors is induced by the sheaf
 isomorphism. -/
-@[simp]
 theorem divisorCechCohomologyIsoOfLinearlyEquivalent_hom {D E : WeilDivisor X}
     (h : (MeromorphicFunction.orderSystem X).LinearlyEquivalent D E) (n : ℕ) :
     (divisorCechCohomologyIsoOfLinearlyEquivalent h n).hom =
@@ -230,7 +333,6 @@ theorem divisorCechCohomologyIsoOfLinearlyEquivalent_hom {D E : WeilDivisor X}
 
 /-- The inverse cohomology isomorphism of linearly equivalent divisors is induced by the inverse
 sheaf isomorphism. -/
-@[simp]
 theorem divisorCechCohomologyIsoOfLinearlyEquivalent_inv {D E : WeilDivisor X}
     (h : (MeromorphicFunction.orderSystem X).LinearlyEquivalent D E) (n : ℕ) :
     (divisorCechCohomologyIsoOfLinearlyEquivalent h n).inv =
