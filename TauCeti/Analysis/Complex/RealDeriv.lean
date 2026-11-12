@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Complex.RealDeriv
 Complex conjugation is real differentiable (Mathlib's `Complex.differentiable_conj`), but its real
 derivative `conjCLE` is not complex linear: it sends `1` to `1` and `I` to `-I`. Hence conjugation,
 and the reflection `z ↦ -conj z` across the imaginary axis, are complex differentiable at no point.
+The applied form of the real derivative is `Complex.fderiv_conj_apply`.
 -/
 
 public section
@@ -20,6 +21,14 @@ public section
 open scoped ComplexConjugate
 
 namespace Complex
+
+/-- Conjugation is real-linear, so its real derivative applies conjugation. This is the applied
+form of `ContinuousLinearEquiv.fderiv` for `conjCLE`, with the coercion of `conjCLE` to `conj`
+rewritten by `Complex.conjCLE_apply`. -/
+@[simp]
+theorem fderiv_conj_apply (z w : ℂ) : fderiv ℝ conj z w = conj w := by
+  have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm
+  rw [hconj, conjCLE.fderiv, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
 
 /-- Complex conjugation is not complex differentiable at any point. -/
 theorem not_differentiableAt_conj (z : ℂ) : ¬ DifferentiableAt ℂ (fun w : ℂ ↦ conj w) z := by

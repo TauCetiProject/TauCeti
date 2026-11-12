@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Complex.RealDeriv
+import TauCeti.Analysis.Complex.RealDeriv
 import Mathlib.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -134,6 +135,21 @@ theorem mono_exponent (h : IsWeakCauchyRiemannOn p U J η u) (hqp : q ≤ p) :
     IsWeakCauchyRiemannOn q U J η u := by
   obtain ⟨hc, hu, D, hD, hDp, hae⟩ := h
   exact ⟨hc, hu.mono_exponent hqp, D, hD, hDp.mono_exponent hqp, hae⟩
+
+/-- A weak solution stays a weak solution when it is replaced by a map agreeing with it on `U`.
+The predicate only sees values on `U`. -/
+theorem congr_eqOn (h : IsWeakCauchyRiemannOn p U J η u) {v : ℂ → V} (huv : Set.EqOn u v U) :
+    IsWeakCauchyRiemannOn p U J η v := by
+  obtain ⟨hc, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff.1 h
+  have hint : u =ᵐ[volume.restrict (interior U)] v :=
+    (ae_restrict_iff' measurableSet_interior).2
+      (Filter.Eventually.of_forall fun z hz => huv (interior_subset hz))
+  refine isWeakCauchyRiemannOn_iff.2 ⟨hc.congr fun z hz => (huv hz).symm,
+    memLpLoc_iff.2 fun K hK hKc => (memLpLoc_iff.1 hu K hK hKc).ae_eq
+    ((ae_restrict_iff' hKc.measurableSet).2 (Filter.Eventually.of_forall fun z hz => huv (hK hz))),
+    D, hD.congr_ae hint, hDp, ?_⟩
+  filter_upwards [hae, hint] with z hz hzv
+  rwa [← hzv]
 
 end IsWeakCauchyRiemannOn
 
@@ -264,13 +280,6 @@ end IsWeakLinearCauchyRiemannOn
 /-! ### Checks for the standard structure on `ℂ` -/
 
 section Standard
-
-/-- Conjugation is real-linear, so its derivative applies conjugation. This is the applied form
-of `ContinuousLinearEquiv.fderiv` for `conjCLE`, with the coercion of `conjCLE` to `conj`
-bridged by `Complex.conjCLE_apply`. -/
-private theorem fderiv_conj_apply (z w : ℂ) : fderiv ℝ conj z w = conj w := by
-  have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm
-  rw [hconj, conjCLE.fderiv, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
 
 /-- The identity solves the homogeneous equation for `J = i`: its derivative is the identity and
 `1 + i·i = 0`. -/

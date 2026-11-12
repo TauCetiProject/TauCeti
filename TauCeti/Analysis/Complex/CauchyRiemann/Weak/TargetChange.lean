@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Complex.RealDeriv
 import TauCeti.Analysis.Sobolev.Local.ChainRule
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 
@@ -34,8 +35,8 @@ subsets of `U`, every statement applies verbatim to half-discs.
 
 * `TauCeti.IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine`: composition with a `C¹` map
   intertwining `J` with a field `J'`.
-* `TauCeti.transportCauchyRiemannTerm`: the term `Ψ_* η` transported by an open partial
-  homeomorphism; the field `Ψ_* J` is `OpenPartialHomeomorph.pullbackEnd` along `Ψ.symm`.
+* `OpenPartialHomeomorph.transportCauchyRiemannTerm`: the term `Ψ_* η` transported by an open
+  partial homeomorphism; the field `Ψ_* J` is `OpenPartialHomeomorph.pullbackEnd` along `Ψ.symm`.
 * `TauCeti.isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp`: invariance under `C¹`
   diffeomorphisms of the target.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_graph_of_intertwine`: domain-dependent changes of target
@@ -55,27 +56,12 @@ public noncomputable section
 open Complex MeasureTheory Set TopologicalSpace
 open scoped ComplexConjugate Topology
 
-namespace TauCeti
-
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
   [NormedSpace ℝ W] {p : ENNReal} {U : Set ℂ}
   {J : ℂ → V → V →L[ℝ] V} {η : ℂ → V → V} {u : ℂ → V}
   {J' : ℂ → W → W →L[ℝ] W} {η' : ℂ → W → W}
 
-/-- A weak solution stays a weak solution when it is replaced by a map agreeing with it on `U`.
-The predicate only sees values on `U`. -/
-private theorem IsWeakCauchyRiemannOn.congr_eqOn (h : IsWeakCauchyRiemannOn p U J η u)
-    {v : ℂ → V} (huv : EqOn u v U) : IsWeakCauchyRiemannOn p U J η v := by
-  obtain ⟨hc, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff.1 h
-  have hint : u =ᵐ[volume.restrict (interior U)] v :=
-    (ae_restrict_iff' measurableSet_interior).2
-      (Filter.Eventually.of_forall fun z hz => huv (interior_subset hz))
-  refine isWeakCauchyRiemannOn_iff.2 ⟨hc.congr fun z hz => (huv hz).symm,
-    memLpLoc_iff.2 fun K hK hKc => (memLpLoc_iff.1 hu K hK hKc).ae_eq
-    ((ae_restrict_iff' hKc.measurableSet).2 (Filter.Eventually.of_forall fun z hz => huv (hK hz))),
-    D, hD.congr_ae hint, hDp, ?_⟩
-  filter_upwards [hae, hint] with z hz hzv
-  rwa [← hzv]
+namespace TauCeti
 
 /-! ### Composition with `C¹` maps -/
 
@@ -109,21 +95,32 @@ theorem IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine [CompleteSpace W] {�
 
 /-! ### Diffeomorphisms of the target -/
 
-section Diffeomorphism
+end TauCeti
+
+namespace OpenPartialHomeomorph
 
 /-- The inhomogeneous term `Ψ_* η` transported by an open partial homeomorphism `Ψ`:
 `(Ψ_* η)(z, y) = dΨ(Ψ⁻¹ y) (η(z, Ψ⁻¹ y))`. It is meaningful on the target of `Ψ`. The
 transported field of endomorphisms `Ψ_* J = dΨ ∘ J ∘ dΨ⁻¹` is the pullback
-`Ψ.symm.pullbackEnd (J z)` along the inverse, which squares to `-1` wherever `J` does
+`Ψ.symm.pullbackEnd (J z)` along the inverse. At a point `y` of the target where `Ψ.symm` is
+differentiable at `y`, `Ψ` is differentiable at `Ψ⁻¹ y` and `J(z, Ψ⁻¹ y)` squares to `-1`, the
+transported endomorphism squares to `-1` as well
 (`OpenPartialHomeomorph.pullbackEnd_apply_pullbackEnd_apply`). -/
-@[expose] def transportCauchyRiemannTerm (Ψ : OpenPartialHomeomorph V W) (η : ℂ → V → V) :
+def transportCauchyRiemannTerm (Ψ : OpenPartialHomeomorph V W) (η : ℂ → V → V) :
     ℂ → W → W :=
   fun z y => fderiv ℝ Ψ (Ψ.symm y) (η z (Ψ.symm y))
 
+@[simp]
 theorem transportCauchyRiemannTerm_apply (Ψ : OpenPartialHomeomorph V W) (η : ℂ → V → V)
     (z : ℂ) (y : W) :
-    transportCauchyRiemannTerm Ψ η z y = fderiv ℝ Ψ (Ψ.symm y) (η z (Ψ.symm y)) :=
-  rfl
+    Ψ.transportCauchyRiemannTerm η z y = fderiv ℝ Ψ (Ψ.symm y) (η z (Ψ.symm y)) :=
+  (rfl)
+
+end OpenPartialHomeomorph
+
+namespace TauCeti
+
+section Diffeomorphism
 
 variable {Ψ : OpenPartialHomeomorph V W}
 
@@ -134,7 +131,7 @@ theorem IsWeakCauchyRiemannOn.openPartialHomeomorph_comp [CompleteSpace W]
     (h : IsWeakCauchyRiemannOn p U J η u) (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source)
     (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) (huΨ : MapsTo u U Ψ.source) :
     IsWeakCauchyRiemannOn p U (fun z => Ψ.symm.pullbackEnd (J z))
-      (transportCauchyRiemannTerm Ψ η) (fun z => Ψ (u z)) := by
+      (Ψ.transportCauchyRiemannTerm η) (fun z => Ψ (u z)) := by
   refine h.comp_contDiffOn_of_intertwine Ψ.open_source hΨ huΨ ?_ ?_ <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
   · have hx := huΨ (interior_subset hz)
@@ -149,7 +146,7 @@ theorem IsWeakCauchyRiemannOn.openPartialHomeomorph_comp [CompleteSpace W]
     rw [Ψ.left_inv hx] at hl
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
       OpenPartialHomeomorph.pullbackEnd_apply, Ψ.symm_symm, Ψ.left_inv hx, hl]
-  · rw [transportCauchyRiemannTerm_apply, Ψ.left_inv (huΨ (interior_subset hz))]
+  · rw [Ψ.transportCauchyRiemannTerm_apply, Ψ.left_inv (huΨ (interior_subset hz))]
 
 /-- **Invariance under `C¹` diffeomorphisms of the target.** For a `C¹` open partial
 homeomorphism `Ψ` with `C¹` inverse whose source contains `u '' U`, `u` is a weak solution for
@@ -160,7 +157,7 @@ theorem isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp [CompleteSpace V] [
     (huΨ : MapsTo u U Ψ.source) :
     IsWeakCauchyRiemannOn p U J η u ↔
       IsWeakCauchyRiemannOn p U (fun z => Ψ.symm.pullbackEnd (J z))
-        (transportCauchyRiemannTerm Ψ η) (fun z => Ψ (u z)) := by
+        (Ψ.transportCauchyRiemannTerm η) (fun z => Ψ (u z)) := by
   refine ⟨fun h => h.openPartialHomeomorph_comp hΨ hΨs huΨ, fun h => ?_⟩
   have hvΨ : MapsTo (fun z => Ψ (u z)) U Ψ.target := fun z hz => Ψ.map_source (huΨ hz)
   refine (h.comp_contDiffOn_of_intertwine (J' := J) (η' := η) Ψ.open_target hΨs hvΨ ?_
@@ -178,7 +175,7 @@ theorem isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp [CompleteSpace V] [
     exact this.symm
   · have := Ψ.fderiv_symm_apply_fderiv_apply (Ψ.map_source hx) hd hds (η z (u z))
     rw [Ψ.left_inv hx] at this
-    rw [transportCauchyRiemannTerm_apply, Ψ.left_inv hx, this]
+    rw [Ψ.transportCauchyRiemannTerm_apply, Ψ.left_inv hx, this]
 
 end Diffeomorphism
 
@@ -214,21 +211,18 @@ theorem IsWeakCauchyRiemannOn.comp_graph_of_intertwine [CompleteSpace W] {Φ : �
   have hsplit : ∀ w : ℂ, fderiv ℝ Φ (z, u z) (w, D z w) =
       fderiv ℝ Φ (z, u z) (w, 0) + fderiv ℝ Φ (z, u z) (0, D z w) := fun w => by
     rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
+  have hpair : ((0 : ℂ), D z 1 + J z (u z) (D z I)) =
+      ((0 : ℂ), D z 1) + (0, J z (u z) (D z I)) := by
+    rw [Prod.mk_add_mk, add_zero]
   rw [hDz, hηz, ← hz]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
     ContinuousLinearMap.id_apply]
-  rw [hsplit, hsplit, map_add, hJz', show ((0 : ℂ), D z 1 + J z (u z) (D z I)) =
-    ((0 : ℂ), D z 1) + (0, J z (u z) (D z I)) by simp, map_add]
+  rw [hsplit, hsplit, map_add, hJz', hpair, map_add]
   abel
 
 /-! ### Checks -/
 
 section Checks
-
-/-- The derivative of complex conjugation, as a real-linear map, applies conjugation. -/
-private theorem fderiv_conj_apply' (z w : ℂ) : fderiv ℝ conj z w = conj w := by
-  have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm
-  rw [hconj, conjCLE.fderiv, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
 
 /-- **Conjugation reverses the standard structure.** If `u : ℂ → ℂ` solves the homogeneous
 equation for `J = i`, then `conj ∘ u` solves the homogeneous equation for `J = -i`: the
@@ -241,8 +235,8 @@ theorem IsWeakCauchyRiemannOn.conj_comp {u : ℂ → ℂ}
       (fun z => conj (u z)) :=
   h.comp_contDiffOn_of_intertwine isOpen_univ conjCLE.contDiff.contDiffOn (mapsTo_univ _ _)
     (Filter.Eventually.of_forall fun z => ContinuousLinearMap.ext fun v => by
-      simp [fderiv_conj_apply'])
-    (Filter.Eventually.of_forall fun z => by simp [fderiv_conj_apply'])
+      simp)
+    (Filter.Eventually.of_forall fun z => by simp)
 
 -- Conjugation solves the homogeneous equation for `-i` but not for `i`, on any nonempty open set.
 example {Ω : Opens ℂ} (hΩ : (Ω : Set ℂ).Nonempty) :
@@ -284,10 +278,11 @@ example [CompleteSpace V] [CompleteSpace W] (A : V ≃L[ℝ] W) :
     rw [OpenPartialHomeomorph.pullbackEnd_apply, OpenPartialHomeomorph.symm_symm, e1, e2,
       A.fderiv, A.symm.fderiv]
     rfl
-  have hT : transportCauchyRiemannTerm A.toHomeomorph.toOpenPartialHomeomorph η =
+  have hT : A.toHomeomorph.toOpenPartialHomeomorph.transportCauchyRiemannTerm η =
       fun z y => A (η z (A.symm y)) := by
     funext z y
-    rw [transportCauchyRiemannTerm_apply, e1, e2, A.fderiv, ContinuousLinearEquiv.coe_coe]
+    rw [OpenPartialHomeomorph.transportCauchyRiemannTerm_apply, e1, e2, A.fderiv,
+      ContinuousLinearEquiv.coe_coe]
   rwa [hS, hT, e1] at h
 
 end Checks
