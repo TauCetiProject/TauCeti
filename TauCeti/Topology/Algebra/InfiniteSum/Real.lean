@@ -166,7 +166,7 @@ theorem Summable.tsum_Ioi_mul_pow_tsum_Ioi_le (ha : Summable a) (ha0 : ∀ m, 0 
     | zero => simp
     | succ M ih =>
       have hsplit : Ψ (n + M) = Ψ (n + M + 1) + a (n + M + 1) := by
-        rw [← hΨ, ← hΨ, ha.tsum_Ioi_eq_add]
+        rw [← hΨ, ← hΨ, (ha.subtype _).tsum_Ioi_eq_add]
         ring
       -- Bernoulli's inequality `x ^ (k + 1) + (k + 1) x ^ k y ≤ (x + y) ^ (k + 1)`
       have hstep := pow_add_mul_le_add_pow (hΨ0 (n + M + 1))

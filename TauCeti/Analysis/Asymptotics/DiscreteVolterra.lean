@@ -49,6 +49,8 @@ and the unknown `h` in any Banach space over `𝕜`.
 * `TauCeti.existsUnique_discrete_volterra_solution`: exactly one solution is `O(P)` at infinity.
 * `TauCeti.norm_discrete_volterra_solution_le`: every solution that is `O(P)` at infinity
   satisfies the bound `‖h n‖ ≤ P n * Φ n * exp (Ψ n)`.
+* `TauCeti.isBigO_of_norm_le_discrete_volterra_bound`: conversely, every sequence satisfying
+  this bound is `O(P)` at infinity.
 * `TauCeti.summable_norm_discrete_volterra_of_isBigO`: for a sequence that is `O(P)` at
   infinity, every series in the equation converges absolutely.
 * `TauCeti.summable_discrete_volterra_of_isBigO`: hence, in a Banach space, every series in the
@@ -193,8 +195,10 @@ private lemma summable_uncurry_smul_smul_picardTerm (hP : ∀ n, 0 ≤ P n) (hQ 
     (fun m ↦ ha0 m) fun k ↦ by have := hΨ0 n; positivity).mul_left _
 
 omit [NormedSpace 𝕜 E] in
-/-- A sequence with `‖h n‖ ≤ P n * Φ n * exp (Ψ n)` is `O(P)` at infinity. -/
-private lemma isBigO_of_norm_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
+/-- A sequence satisfying the bound `‖h n‖ ≤ P n * Φ n * exp (Ψ n)` of
+`exists_discrete_volterra_solution`, where `Φ n = ∑_{m > n} Q m * ‖J m‖` and
+`Ψ n = ∑_{m > n} P m * Q m * ‖ψ m‖`, is `O(P)` at infinity. -/
+theorem isBigO_of_norm_le_discrete_volterra_bound (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
     (hJ : Summable fun m ↦ Q m * ‖J m‖) (hψ : Summable fun m ↦ P m * Q m * ‖ψ m‖)
     {h : ℕ → E} (hh : ∀ n, ‖h n‖ ≤ P n * (∑' m : Ioi n, Q m * ‖J m‖) *
       Real.exp (∑' m : Ioi n, P m * Q m * ‖ψ m‖)) :
@@ -278,7 +282,7 @@ theorem exists_discrete_volterra_solution (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0
     ((hJ.subtype (· ∈ Ioi n)).mul_left (P n)).of_norm_bounded fun m ↦
       norm_kernel_smul_le hK m.2 (J m)
   have hsum := summable_discrete_volterra_of_isBigO hP hQ hK hJ hψ
-    (isBigO_of_norm_le hP hQ hJ hψ hh) n
+    (isBigO_of_norm_le_discrete_volterra_bound hP hQ hJ hψ hh) n
   simp only [smul_add] at hsum ⊢
   rw [hKJ.tsum_add (by simpa using hsum.sub hKJ)]
   -- expand `h m` as the series of increments and interchange the two sums
@@ -358,7 +362,7 @@ theorem norm_discrete_volterra_solution_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 
     ‖h n‖ ≤ P n * (∑' m : Ioi n, Q m * ‖J m‖) * Real.exp (∑' m : Ioi n, P m * Q m * ‖ψ m‖) := by
   obtain ⟨h₀, h₀_eq, h₀_le⟩ := exists_discrete_volterra_solution hP hQ hK hJ hψ
   rw [discrete_volterra_solution_unique hP hQ hK hJ hψ h_eq h₀_eq h_isBigO
-    (isBigO_of_norm_le hP hQ hJ hψ h₀_le)]
+    (isBigO_of_norm_le_discrete_volterra_bound hP hQ hJ hψ h₀_le)]
   exact h₀_le n
 
 /-- **Volterra summation equations.** Under the hypotheses of
@@ -370,7 +374,7 @@ theorem existsUnique_discrete_volterra_solution (hP : ∀ n, 0 ≤ P n) (hQ : �
     (hψ : Summable fun m ↦ P m * Q m * ‖ψ m‖) :
     ∃! h : ℕ → E, (∀ n, h n = ∑' m : Ioi n, K n m • (J m + ψ m • h m)) ∧ h =O[atTop] P := by
   obtain ⟨h, hh_eq, hh_le⟩ := exists_discrete_volterra_solution hP hQ hK hJ hψ
-  have hh_isBigO := isBigO_of_norm_le hP hQ hJ hψ hh_le
+  have hh_isBigO := isBigO_of_norm_le_discrete_volterra_bound hP hQ hJ hψ hh_le
   exact ⟨h, ⟨hh_eq, hh_isBigO⟩, fun h' ⟨hh'_eq, hh'_isBigO⟩ ↦
     discrete_volterra_solution_unique hP hQ hK hJ hψ hh'_eq hh_eq hh'_isBigO hh_isBigO⟩
 

@@ -27,7 +27,8 @@ consecutive terms.
   their sum.
 * `TauCeti.tsum_Ioi_eq_tsum_nat_add`: the tail `∑_{m > n} f m` is the sum of the family shifted
   by `n + 1`.
-* `Summable.tsum_Ioi_eq_add`: the tail `∑_{m > n} f m` splits off its first term `f (n + 1)`.
+* `Summable.tsum_Ioi_eq_add`: the tail `∑_{m > n} f m` splits off its first term `f (n + 1)`,
+  in any topological monoid.
 * `TauCeti.tsum_int_eq_sum_fin_tsum`: a summable family on `ℤ` sums to the sum over the residues
   `r < M` of its sums over the classes `qM + r`.
 * `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
@@ -101,12 +102,22 @@ theorem tsum_Ioi_eq_tsum_nat_add {α : Type*} [AddCommMonoid α] [TopologicalSpa
 
 end TauCeti
 
-/-- The tail `∑_{m > n} f m` of a summable family splits off its first term `f (n + 1)`. -/
-theorem Summable.tsum_Ioi_eq_add {α : Type*} [AddCommGroup α] [TopologicalSpace α]
-    [IsTopologicalAddGroup α] [T2Space α] {f : ℕ → α} (hf : Summable f) (n : ℕ) :
+/-- The tail `∑_{m > n} f m` splits off its first term `f (n + 1)`, provided the tail
+`∑_{m > n + 1} f m` is summable. -/
+theorem Summable.tsum_Ioi_eq_add {α : Type*} [AddCommMonoid α] [TopologicalSpace α]
+    [ContinuousAdd α] [T2Space α] {f : ℕ → α} {n : ℕ}
+    (hf : Summable fun m : Set.Ioi (n + 1) ↦ f m) :
     ∑' m : Set.Ioi n, f m = f (n + 1) + ∑' m : Set.Ioi (n + 1), f m := by
-  rw [TauCeti.tsum_Ioi_eq_tsum_nat_add, TauCeti.tsum_Ioi_eq_tsum_nat_add,
-    ((summable_nat_add_iff (n + 1)).2 hf).tsum_eq_zero_add]
+  have hrange : Set.range (fun j : ℕ ↦ j + (n + 2)) = Set.Ioi (n + 1) := by
+    ext m
+    simp only [Set.mem_range, Set.mem_Ioi]
+    exact ⟨fun ⟨j, hj⟩ ↦ by omega, fun hm ↦ ⟨m - (n + 2), by omega⟩⟩
+  rw [← hrange] at hf
+  obtain ⟨s, hs⟩ := hf
+  have hs' : Summable fun j ↦ f (j + 1 + (n + 1)) :=
+    (((add_left_injective (n + 2)).hasSum_range_iff.1 hs).summable).congr fun j ↦ by
+      simp only [Function.comp_apply]; congr 1; omega
+  rw [TauCeti.tsum_Ioi_eq_tsum_nat_add, TauCeti.tsum_Ioi_eq_tsum_nat_add, tsum_eq_zero_add' hs']
   simp only [zero_add]
   congr 1
   exact tsum_congr fun j ↦ by congr 1; omega
