@@ -62,7 +62,7 @@ def compTime (hφ : ContDiff ℝ ∞ φ) :
   pos p := G.pos (p.1, φ p.2)
   isVonNBounded p := G.isVonNBounded (p.1, φ p.2)
   contMDiff p₀ := by
-    refine (contMDiffAt_section (F := E × ℝ →L[ℝ] E × ℝ →L[ℝ] ℝ)
+    refine (contMDiffAt_section_iff (F := E × ℝ →L[ℝ] E × ℝ →L[ℝ] ℝ)
       (E := fun p : M × ℝ ↦
         TangentSpace (I.prod 𝓘(ℝ)) p →L[ℝ] TangentSpace (I.prod 𝓘(ℝ)) p →L[ℝ] ℝ)
       (s := fun p ↦ G.inner (p.1, φ p.2)) p₀).2 ?_
@@ -72,7 +72,7 @@ def compTime (hφ : ContDiff ℝ ∞ φ) :
     have hΦ : ContMDiffAt (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) ∞ (Prod.map id φ) p₀ :=
       contMDiffAt_id.prodMap (hφ.contMDiff.contMDiffAt)
     have hG := G.contMDiff (p₀.1, φ p₀.2)
-    rw [contMDiffAt_section] at hG
+    rw [contMDiffAt_section_iff] at hG
     apply (hG.comp p₀ hΦ).congr_of_eventuallyEq
     filter_upwards [(trivializationAt (E × ℝ) (TangentSpace (I.prod 𝓘(ℝ)) : M × ℝ → Type _)
       p₀).open_baseSet.mem_nhds (mem_baseSet_trivializationAt (E × ℝ)
