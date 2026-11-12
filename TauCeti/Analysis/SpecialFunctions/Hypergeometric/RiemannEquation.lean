@@ -92,7 +92,7 @@ theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ 
         ((α - β) * (α - γ) * a₁ * a₂ / (z - α) + (β - α) * (β - γ) * b₁ * b₂ / (z - β) +
           (γ - α) * (γ - β) * c₁ * c₂ / (z - γ)) / ((z - α) * (z - β) * (z - γ)) * w z = 0 := by
   intro w
-  set T : ℂ → ℂ := fun w => (w - α) * (β - γ) / ((w - γ) * (β - α)) with hT
+  set T : ℂ → ℂ := fun w => (w - α) * (β - γ) / ((w - γ) * (β - α))
   set A : ℂ → ℂ := fun w => (w - α) / (w - γ) with hA
   set B : ℂ → ℂ := fun w => (w - β) / (w - γ) with hB
   set P : ℂ → ℂ := fun w => A w ^ a₁ * B w ^ b₁ with hP
