@@ -149,12 +149,12 @@ theorem eventually_measure_closedBall_ne_zero_ne_top_or_forall_hasDensityAt_zero
       ∀ s : Set α, HasDensityAt μ s x 0 := by
   by_cases hnull : ∃ r > 0, μ (closedBall x r) = 0
   · obtain ⟨r₀, hr₀, h₀⟩ := hnull
-    refine Or.inr fun s => tendsto_const_nhds.congr' ?_
+    refine Or.inr fun s => hasDensityAt_iff.2 <| tendsto_const_nhds.congr' ?_
     filter_upwards [Ioo_mem_nhdsGT hr₀] with r hr
     rw [measure_mono_null inter_subset_right
       (measure_mono_null (closedBall_subset_closedBall hr.2.le) h₀), ENNReal.zero_div]
   by_cases htop : ∀ r > 0, μ (closedBall x r) = ∞
-  · refine Or.inr fun s => tendsto_const_nhds.congr' ?_
+  · refine Or.inr fun s => hasDensityAt_iff.2 <| tendsto_const_nhds.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with r hr
     rw [htop r hr, ENNReal.div_top]
   push Not at hnull htop
@@ -318,6 +318,7 @@ exterior. -/
 theorem essentialInterior_compl (hs : NullMeasurableSet s μ) :
     essentialInterior μ sᶜ = essentialExterior μ s := by
   ext x
+  rw [mem_essentialInterior, mem_essentialExterior]
   exact hasDensityAt_compl_one_iff hs (eventually_measure_closedBall_ne_zero_ne_top μ x)
 
 /-- The essential exterior of the complement of a null-measurable set is its essential
