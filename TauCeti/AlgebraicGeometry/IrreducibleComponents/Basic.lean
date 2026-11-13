@@ -38,7 +38,7 @@ theorem bijOn_closure_image_irreducibleComponents_of_openCover
     Set.BijOn (fun Z ↦ closure (f '' Z)) (irreducibleComponents X)
       (irreducibleComponents Y) := by
   apply f.continuous.bijOn_genericPoints_iff.mp
-  apply TauCeti.bijOn_genericPoints_of_openCover
+  apply TauCeti.bijOn_genericPoints_of_isOpenEmbedding
     (j := fun i ↦ pullback.fst f (𝒰.f i)) (k := fun i ↦ 𝒰.f i)
     (g := fun i ↦ pullback.snd f (𝒰.f i))
     (fun i ↦ (pullback.fst f (𝒰.f i)).isOpenEmbedding)
@@ -48,7 +48,7 @@ theorem bijOn_closure_image_irreducibleComponents_of_openCover
   · intro i
     exact Scheme.Pullback.range_fst f (𝒰.f i)
   · intro i x
-    exact congrArg (fun g : pullback f (𝒰.f i) ⟶ Y ↦ g x) pullback.condition
+    simp only [← comp_apply, pullback.condition]
   · intro i
     exact (pullback.snd f (𝒰.f i)).continuous.bijOn_genericPoints_iff.mpr (h i)
 
