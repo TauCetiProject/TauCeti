@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.ContDiff.IsOpen
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -125,13 +126,9 @@ then it is `C^k` on an open set containing that segment. -/
 private theorem exists_isOpen_contDiffOn_segment {k : WithTop ℕ∞} (hk : k ≠ ∞) {x y : ℝ}
     (hF : ∀ t ∈ [[0, y]], ContDiffAt ℝ k F (x, t)) :
     ∃ U : Set (ℝ × ℝ), IsOpen U ∧ ContDiffOn ℝ k F U ∧ {x} ×ˢ [[0, y]] ⊆ U := by
-  -- The points at which `F` is `C^k` form such a set.
-  refine ⟨{q | ContDiffAt ℝ k F q}, isOpen_iff_mem_nhds.2 fun q hq ↦ hq.eventually hk,
-    fun _ hq ↦ hq.contDiffWithinAt, ?_⟩
-  rintro ⟨x', t⟩ ⟨hx, ht⟩
-  rw [mem_singleton_iff] at hx
-  subst hx
-  exact hF t ht
+  obtain ⟨U, hU, hsU, hFU⟩ := exists_isOpen_superset_contDiffOn hk
+    (s := {x} ×ˢ [[0, y]]) fun q ⟨hx, ht⟩ ↦ (mem_singleton_iff.1 hx) ▸ hF q.2 ht
+  exact ⟨U, hU, hFU, hsU⟩
 
 /-- The integrand `Y ∂_u X` along a direction `u` of a map which is `C^(n + 1)` on an open set
 is `C^n` there. -/
