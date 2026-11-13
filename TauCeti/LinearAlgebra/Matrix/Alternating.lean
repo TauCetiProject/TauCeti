@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.LinearAlgebra.Matrix.Trace
@@ -21,9 +20,6 @@ A matrix satisfying `Mᵀ = -M` is determined by its entries above the diagonal,
 is known to vanish: the entries below are the negatives of their mirror images. The diagonal does
 vanish as soon as the value ring has no element that is its own negative apart from zero, which
 covers every ring of odd characteristic.
-
-Alternation of the associated bilinear form is preserved by congruence and implies
-skew-symmetry and zero diagonal without a characteristic assumption.
 
 ## Main results
 
@@ -291,27 +287,5 @@ theorem natCard_transpose_eq_neg [Fintype n] [AddCommGroup S] (I : AddSubgroup S
       right_inv := fun _ => rfl }
   rw [← hpairs, ← Nat.card_fun]
   exact Nat.card_congr (e.trans (skewStrictUpperAddEquiv h2I).toEquiv)
-
-section BilinearAlternation
-
-variable {R I : Type*} [CommRing R] [DecidableEq I] [Fintype I]
-
-/-- Pulling back an alternating form along a matrix preserves alternation. -/
-theorem isAlt_toBilin'_conjugate {Λ : Matrix I I R} (hΛ : Λ.toBilin'.IsAlt)
-    (E : Matrix I I R) : (Eᵀ * Λ * E).toBilin'.IsAlt := by
-  rw [← Matrix.toBilin'_comp]
-  exact fun x ↦ hΛ (E.toLin' x)
-
-/-- Transposing the arguments of an alternating matrix negates its entry. -/
-theorem neg_apply_eq_of_isAlt_toBilin' {Λ : Matrix I I R} (hΛ : Λ.toBilin'.IsAlt) (i j : I) :
-    -Λ i j = Λ j i := by
-  simpa using hΛ.neg_eq (Pi.single i 1) (Pi.single j 1)
-
-/-- Every diagonal entry of an alternating matrix is zero. -/
-theorem apply_self_eq_zero_of_isAlt_toBilin' {Λ : Matrix I I R} (hΛ : Λ.toBilin'.IsAlt) (i : I) :
-    Λ i i = 0 := by
-  simpa using hΛ.self_eq_zero (Pi.single i 1)
-
-end BilinearAlternation
 
 end Matrix
