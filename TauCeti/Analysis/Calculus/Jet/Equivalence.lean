@@ -218,8 +218,28 @@ theorem coordChange {h : E' → E} {a : E' × F → G} {y : E'}
 
 end SameJetAt
 
-/-- Jets of product-valued maps agree exactly when their component jets agree. -/
+/-- Post-composition by a continuous linear equivalence preserves and reflects equality
+of finite jets, without differentiability assumptions. -/
 @[simp]
+theorem _root_.ContinuousLinearEquiv.comp_sameJetAt_iff (e : F ≃L[𝕜] G)
+    {n : ℕ} {x : E} {f f' : E → F} :
+    SameJetAt 𝕜 n x (e ∘ f) (e ∘ f') ↔ SameJetAt 𝕜 n x f f' := by
+  constructor
+  · intro h
+    simpa only [Function.comp_def, e.symm_apply_apply] using
+      h.continuousLinearEquiv_comp e.symm
+  · exact fun h ↦ h.continuousLinearEquiv_comp e
+
+/-- Post-composition by a linear isometry equivalence preserves and reflects equality
+of finite jets, without differentiability assumptions. -/
+@[simp]
+theorem _root_.LinearIsometryEquiv.comp_sameJetAt_iff (e : F ≃ₗᵢ[𝕜] G)
+    {n : ℕ} {x : E} {f f' : E → F} :
+    SameJetAt 𝕜 n x (e ∘ f) (e ∘ f') ↔ SameJetAt 𝕜 n x f f' := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    e.toContinuousLinearEquiv.comp_sameJetAt_iff (n := n) (x := x) (f := f) (f' := f')
+
+/-- Jets of product-valued maps agree exactly when their component jets agree. -/
 theorem sameJetAt_prod_iff {n : ℕ} {a a' : E → F × G} {x : E}
     (hca : ContDiffAt 𝕜 n a x) (hca' : ContDiffAt 𝕜 n a' x) :
     SameJetAt 𝕜 n x a a' ↔
@@ -230,6 +250,21 @@ theorem sameJetAt_prod_iff {n : ℕ} {a a' : E → F × G} {x : E}
     exact ⟨h.fst hca hca', h.snd hca hca'⟩
   · rintro ⟨hf, hg⟩
     exact hf.prodMk hg hca.fst hca'.fst hca.snd hca'.snd
+
+/-- Jets of paired maps agree exactly when the two component jets agree. -/
+@[simp]
+theorem sameJetAt_prodMk_iff {n : ℕ} {f f' : E → F} {a a' : E → G} {x : E}
+    (hcf : ContDiffAt 𝕜 n f x) (hcf' : ContDiffAt 𝕜 n f' x)
+    (hca : ContDiffAt 𝕜 n a x) (hca' : ContDiffAt 𝕜 n a' x) :
+    SameJetAt 𝕜 n x (fun y ↦ (f y, a y)) (fun y ↦ (f' y, a' y)) ↔
+      SameJetAt 𝕜 n x f f' ∧ SameJetAt 𝕜 n x a a' :=
+  sameJetAt_prod_iff (hcf.prodMk hca) (hcf'.prodMk hca')
+
+/-- Constant sections have equal finite jets exactly when their values agree. -/
+@[to_fun (attr := simp)]
+theorem sameJetAt_const_iff {n : ℕ} {c d : F} {x : E} :
+    SameJetAt 𝕜 n x (Function.const E c) (Function.const E d) ↔ c = d :=
+  ⟨SameJetAt.apply_eq, fun h ↦ h ▸ SameJetAt.refl _ _⟩
 
 /-- Equality of finite jets is unchanged by exchanging the two maps. -/
 theorem sameJetAt_comm {n : ℕ} {f g : E → F} {x : E} :
