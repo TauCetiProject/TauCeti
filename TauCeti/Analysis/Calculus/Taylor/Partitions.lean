@@ -162,8 +162,7 @@ theorem tendsto_sub_sum_taylor_two_of_continuousOn {f : ℝ → ℝ}
     (by simpa only [Function.comp_def, NNReal.coe_zero] using
       NNReal.continuous_coe.tendsto 0 |>.comp hD) hQ
   rw [← Real.norm_eq_abs]
-  simpa only [D, coe_nnnorm] using
-    NNReal.coe_le_coe.2 (Finset.le_sup (f := fun i ↦
-      ‖g (t k (i + 1)) - g (t k i)‖₊) (Finset.mem_range.2 hi))
+  exact NNReal.coe_le_coe.2 (Finset.le_sup (f := fun i ↦
+    ‖g (t k (i + 1)) - g (t k i)‖₊) (Finset.mem_range.2 hi))
 
 end TauCeti
