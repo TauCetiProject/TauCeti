@@ -158,7 +158,7 @@ theorem exists_smooth_endpoint_jets (A : ℕ → E) :
     exists_small_endpointJet k (A k) (ε := (1 / 2 : ℝ) ^ k) (by positivity)
   have hgeom : Summable (fun k : ℕ ↦ (1 / 2 : ℝ) ^ k) :=
     summable_geometric_of_lt_one (by norm_num) (by norm_num)
-  choose B hB0 hB using fun m k : ℕ ↦
+  choose B _ hB using fun m k : ℕ ↦
     (hsupp k).exists_bound_iteratedFDeriv (hf k) m
   let C : ℕ → ℕ → ℝ := fun m k ↦ if m < k then (1 / 2 : ℝ) ^ k else B m k
   have hCsummable (m : ℕ) : Summable (C m) := by

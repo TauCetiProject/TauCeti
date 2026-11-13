@@ -144,6 +144,16 @@ theorem clebschGordanVector_zero (m : ℕ) (ε : ℤˣ) (n : ℕ) (δ : ℤˣ) :
     clebschGordanVector q m ε n δ 0 = tmul ℂ (UqSl2 q) (vec q m ε 0) (vec q n δ 0) := by
   simp [clebschGordanVector_def]
 
+/-- The subleading Clebsch–Gordan highest vector `w₁` is
+`v₀ ⊗ v₁ + (-δ q^m [n]_q / [m]_q) v₁ ⊗ v₀`. -/
+theorem clebschGordanVector_one (m : ℕ) (ε : ℤˣ) (n : ℕ) (δ : ℤˣ) :
+    clebschGordanVector q m ε n δ 1 =
+      tmul ℂ (UqSl2 q) (vec q m ε 0) (vec q n δ 1) +
+        (-(δ : ℂ) * q ^ (m : ℤ) * quantumInteger q n / quantumInteger q m) •
+          tmul ℂ (UqSl2 q) (vec q m ε 1) (vec q n δ 0) := by
+  rw [clebschGordanVector_def]
+  simp [Finset.sum_range_succ, clebschGordanCoeff_succ]
+
 /-- Reassociating `w_j ⊗ x` expands it into pure triple tensors `v_i ⊗ (v_(j - i) ⊗ x)`. -/
 theorem assoc_clebschGordanVector_tmul {P : Type*} [AddCommMonoid P] [Module ℂ P]
     [Module (UqSl2 q) P] [IsScalarTower ℂ (UqSl2 q) P] (j : ℕ) (x : P) :
@@ -255,7 +265,7 @@ private theorem clebschGordanCoeff_eq_zero_of_le {j : ℕ} (hj : n < j) {i : ℕ
 theorem clebschGordanVector_eq_zero_of_lt {j : ℕ} (hj : n < j) :
     clebschGordanVector q m ε n δ j = 0 := by
   rw [clebschGordanVector_def]
-  refine Finset.sum_eq_zero fun i hi => ?_
+  refine Finset.sum_eq_zero fun i _ => ?_
   by_cases h : j - n ≤ i
   · rw [clebschGordanCoeff_eq_zero_of_le hj h, zero_smul]
   · rw [vec_eq_zero_of_lt (by omega : (n : ℤ) < j - i)]

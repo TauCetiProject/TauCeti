@@ -38,9 +38,11 @@ coefficient object indexed by the path components other than that of the point
 An identification of the path components with a type `ι` reindexes this coproduct by the elements
 of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoOfEquiv`).
 A morphism out of zeroth homology is determined by its values on the classes of points
-(`TauCeti.singularHomology₀_hom_ext`). The class of a point depends only on its path component
-(`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space it therefore does not
-depend on the point, and with coefficients in a ring it spans zeroth homology
+(`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
+constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
+`TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
+class (`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space the class of a
+point does not depend on the point, and with coefficients in a ring it spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`).
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
 the number of path components other than that of the point
@@ -100,6 +102,12 @@ lemma singularHomology₀ε_singularHomology₀Section {X : TopCat.{w}} [PathCon
   rw [← IsIso.inv_eq_of_inv_hom_id (singularHomology₀Section_singularHomology₀ε R x),
     IsIso.hom_inv_id]
 
+/-- On a path-connected space the class of a point does not depend on the point. -/
+lemma singularHomology₀Section_eq_of_pathConnectedSpace {X : TopCat.{w}} [PathConnectedSpace X]
+    (x y : X) : singularHomology₀Section R x = singularHomology₀Section R y := by
+  rw [← cancel_mono (X.singularHomology₀ε R), singularHomology₀Section_singularHomology₀ε,
+    singularHomology₀Section_singularHomology₀ε]
+
 /-- With coefficients in a ring `k`, the zeroth homology of a path-connected space is spanned by
 the class of any point: every `z ∈ H₀(X; k)` is `ε(z) • [x₀]`. -/
 theorem singularHomology₀_eq_smul_singularHomology₀Section {k : Type w} [Ring k] {X : TopCat.{w}}
@@ -139,19 +147,6 @@ lemma singularHomology₀Section_singularHomology₀Iso_hom {X : TopCat.{w}} (x 
       (sigmaConst.obj R).mapIso TopCat.zerothHomotopyEquiv.toIso.symm).hom = _
   simp [sigmaConst]
 
-/-- The class of a point depends only on its path component: points joined by a path have the same
-class in zeroth singular homology. -/
-lemma singularHomology₀Section_eq_of_joined {X : TopCat.{w}} {x y : X} (h : Joined x y) :
-    singularHomology₀Section R x = singularHomology₀Section R y := by
-  rw [← cancel_mono (X.singularHomology₀Iso R).hom,
-    singularHomology₀Section_singularHomology₀Iso_hom,
-    singularHomology₀Section_singularHomology₀Iso_hom, ZerothHomotopy.sound h.somePath]
-
-/-- On a path-connected space the class of a point does not depend on the point. -/
-lemma singularHomology₀Section_eq_of_pathConnectedSpace {X : TopCat.{w}} [PathConnectedSpace X]
-    (x y : X) : singularHomology₀Section R x = singularHomology₀Section R y :=
-  singularHomology₀Section_eq_of_joined R (PathConnectedSpace.joined x y)
-
 /-- Morphisms out of zeroth singular homology are determined by their values on the classes of
 points: the singular counterpart of `SSet.homology₀_hom_ext`. -/
 lemma singularHomology₀_hom_ext {X : TopCat.{w}} {Y : C}
@@ -162,6 +157,29 @@ lemma singularHomology₀_hom_ext {X : TopCat.{w}} {Y : C}
     have hx := h (TopCat.toSSetObj₀Equiv x)
     rw [singularHomology₀Section_def, Equiv.symm_apply_apply] at hx
     exact hx
+
+/-- Points joined by a path have the same class in zeroth singular homology. -/
+lemma singularHomology₀Section_eq_of_joined {X : TopCat.{w}} {x y : X} (h : Joined x y) :
+    singularHomology₀Section R x = singularHomology₀Section R y := by
+  rw [← cancel_mono (X.singularHomology₀Iso R).hom,
+    singularHomology₀Section_singularHomology₀Iso_hom,
+    singularHomology₀Section_singularHomology₀Iso_hom, ZerothHomotopy.sound h.somePath]
+
+/-- The morphism out of zeroth singular homology with prescribed values `v x` on the classes of
+the points `x`, for values that are constant along paths. It is unique by
+`TauCeti.singularHomology₀_hom_ext`. -/
+def singularHomology₀Desc {X : TopCat.{w}} {Y : C} (v : X → (R ⟶ Y))
+    (hv : ∀ ⦃x y : X⦄, Path x y → v x = v y) :
+    ((singularHomologyFunctor C 0).obj R).obj X ⟶ Y :=
+  (X.singularHomology₀Iso R).hom ≫ Sigma.desc (ZerothHomotopy.lift v hv)
+
+/-- The morphism `TauCeti.singularHomology₀Desc R v hv` takes the value `v x` on the class of the
+point `x`. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀Section_singularHomology₀Desc {X : TopCat.{w}} {Y : C} (v : X → (R ⟶ Y))
+    (hv : ∀ ⦃x y : X⦄, Path x y → v x = v y) (x : X) :
+    singularHomology₀Section R x ≫ singularHomology₀Desc R v hv = v x := by
+  simp [singularHomology₀Desc]
 
 variable [HasKernels C]
 
