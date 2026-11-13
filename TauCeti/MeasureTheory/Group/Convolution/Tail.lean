@@ -21,6 +21,10 @@ both summands are moderately large.
 
 `tendsto_rpow_mul_bind_convolutionPower_real_Ioi` gives the corresponding random-sum formula: a
 finite count moment of order `α + 1` suffices to multiply the tail constant by the mean count.
+For `α < 0` the tail constant is `0` and the statement is degenerate: the count need not have a
+finite mean, and the integral and the real tail mass may vanish by the Bochner and `toReal`
+conventions. Genuine mean-count integrability and finite positive right tails for an infinite
+count measure require `0 ≤ α`.
 
 ## References
 
@@ -265,7 +269,11 @@ theorem rpow_mul_convolutionPower_real_Ioi_le (μ : Measure ℝ) [IsProbabilityM
 
 /-- Mixing convolution powers against a count law with a finite moment of order `α + 1`
 multiplies a power-law tail constant by the mean count. Jumps may have either sign, and
-their left tail is unrestricted. The count measure need not be finite. -/
+their left tail is unrestricted. The count measure need not be finite. For `α < 0` the constant
+`C` is `0` and the result is degenerate: `n ↦ (n : ℝ)` need not be `ρ`-integrable, and the
+integral or the real tail mass may vanish by the Bochner and `toReal` conventions (for
+`α < -1` an infinite `ρ` can give infinite tail mass). Genuine mean-count integrability and
+finite positive right tails for infinite `ρ` require `0 ≤ α`. -/
 theorem tendsto_rpow_mul_bind_convolutionPower_real_Ioi {μ : Measure ℝ}
     [IsProbabilityMeasure μ] {ρ : Measure ℕ} {α C : ℝ}
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))

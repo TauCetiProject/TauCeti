@@ -42,8 +42,9 @@ longer windows linearly in their length, and so makes the measure locally finite
 * `MeasureTheory.Measure.tendsto_measureReal_Icc_neg_mul_atTop`: the real mass of symmetric
   intervals with endpoints `±δx` tends to the total mass of a finite real measure when `δ > 0`.
 * `MeasureTheory.Measure.tendsto_measureReal_Ioi_atTop`,
-  `MeasureTheory.Measure.tendsto_rpow_mul_measureReal_Ioi_of_nonpos`: the right tail of a
-  measure tends to `0`, also after weighting by `x ^ α` for `α ≤ 0`.
+  `MeasureTheory.Measure.tendsto_rpow_mul_measureReal_Ioi_of_nonpos`: the real mass
+  `μ.real (Ioi x)` of the open right tail of a measure tends to `0` (infinite right tails have
+  real mass `0` by convention), also after weighting by `x ^ α` for `α ≤ 0`.
 * `MeasureTheory.Measure.map_neg_real_Ioi`: the right tail of a reflected measure is its left tail.
 * `MeasureTheory.Measure.measure_Iic_eq_measure_Ioi_neg`,
   `MeasureTheory.Measure.measureReal_Iic_eq_measureReal_Ioi_neg`: a negation-invariant measure on
@@ -233,8 +234,9 @@ theorem Measure.tendsto_measureReal_Ioi_atTop {α : Type*} [LinearOrder α] [Top
   · push Not at h
     simpa [measureReal_def, h] using tendsto_const_nhds
 
-/-- For a nonpositive exponent `α`, the weighted right tail `x ^ α * μ (Ioi x)` of a measure
-on `ℝ` tends to `0`. -/
+/-- For a nonpositive exponent `α`, the weighted real mass `x ^ α * μ.real (Ioi x)` of the right
+tail of a measure on `ℝ` tends to `0`. As in `tendsto_measureReal_Ioi_atTop`, infinite right
+tails have real mass `0` by convention. -/
 theorem Measure.tendsto_rpow_mul_measureReal_Ioi_of_nonpos (μ : Measure ℝ)
     {α : ℝ} (hα : α ≤ 0) :
     Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 0) := by
