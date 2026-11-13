@@ -309,7 +309,7 @@ private theorem map_normImage_mul_left {A : Set (normOneSurface K)} (hA : Measur
 private theorem normImage_Icc_one_exp_one {A : Set (normOneSurface K)} (hA : MeasurableSet A) :
     normImage K A (Icc 1 (Real.exp 1)) = surfaceHaar K A := by
   rw [normImage_apply A measurableSet_Icc, surfaceHaar_apply hA]
-  exact measure_congr ((toSurface_preimage_ae_eq A).inter (Filter.EventuallyEq.refl _ _))
+  exact measure_congr ((toSurface_preimage_ae_eq A).inter (Filter.EventuallyEqSet.refl _ _))
 
 /-- For a measurable `A ⊆ S` of finite `d*x`-mass and a measurable set of norms `B`, the
 `dy / y`-mass of the parameters with surface part in `A` and norm in `B` is
@@ -348,7 +348,7 @@ theorem archHaar_surfacePart_preimage_inter {A : Set (normOneSurface K)}
     archHaar K (surfacePart ⁻¹' (Subtype.val '' A) ∩ archNorm ⁻¹' B) =
       surfaceHaar K A * multHaar B := by
   rw [← archHaar_toSurface_preimage_inter hA hB]
-  exact measure_congr ((toSurface_preimage_ae_eq A).symm.inter (Filter.EventuallyEq.refl _ _))
+  exact measure_congr ((toSurface_preimage_ae_eq A).symm.inter (Filter.EventuallyEqSet.refl _ _))
 
 /-- Radial scaling is measurable in the surface point and the radial parameter. -/
 theorem measurable_surfaceScale_prod :
