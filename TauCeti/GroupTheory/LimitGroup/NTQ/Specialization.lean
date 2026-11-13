@@ -16,8 +16,11 @@ the equation `[u, v] = 1` in the variables `u`, `v`, below the quadratic equatio
 `x⁻¹ u x = u` in the variable `x`, whose coefficient `u` is a variable of the lower equation.
 Each equation has a solution over the coordinate group of the equations below it (`x = 1`, and
 `u = v = 1`), so `S` is a nondegenerate triangular quasi-quadratic system in the sense of
-[VAR-II, Definition 8]. Nevertheless, over a nonabelian group the coordinate group of `S` is
-not fully residually free.
+[VAR-II, Definition 8]. In the encoding `TauCeti.LimitGroup.NTQ.System`, the system with lower
+level `[u, v] = 1` of type (3) and upper level `x⁻¹ u x u⁻¹ = 1` has the same solutions as `S`,
+up to renaming the variables, and it is nondegenerate by
+`TauCeti.LimitGroup.NTQ.isNondegenerate_conj_over_commute`. Nevertheless, over a nonabelian
+group the coordinate group of `S` is not fully residually free.
 
 The reason is commutation transitivity. A solution of `S` in a commutative transitive group either
 has `u = 1`, which leaves `v` and `x` free, or makes `u`, `v` and `x` commute pairwise. In the
@@ -40,13 +43,13 @@ Let `ι : G →* H` be the coefficient homomorphism and `S = commutatorPair G`.
   and not commutative.
 * `inr_of_zero_notMem_Rad_commutatorPair`, `commutatorElement_notMem_Rad_commutatorPair`: the
   elements `u` and `[v, x]` do not lie in the radical of `S`.
-* `map_commutatorElement_eq_one_commutatorPair`: every homomorphism from the coordinate group of
+* `map_commutatorElement_commutatorPair_eq_one`: every homomorphism from the coordinate group of
   `S` to a commutative transitive group that does not kill `u` kills `[v, x]`.
 * `not_isCommTransitive_coordGroup_commutatorPair`,
   `not_isFullyResiduallyFree_coordGroup_commutatorPair`: if `H` is not commutative, the
   coordinate group of `S` over `H` is not commutative transitive, hence not fully residually
   free.
-* `not_isDiscriminatedBy_coeff_commutatorPair`: if `H` is moreover commutative transitive, the
+* `not_isDiscriminatedBy_coordGroup_commutatorPair`: if `H` is moreover commutative transitive, the
   coordinate group of `S` is not discriminated by `H`.
 
 All hypotheses on `H` hold for a nonabelian free group, in particular for `H = G = F(a, b)`.
@@ -160,7 +163,7 @@ theorem commutatorElement_notMem_Rad_commutatorPair (hH : ¬IsMulCommutative H) 
 
 /-- A homomorphism from the coordinate group of `[u, v] = 1`, `[u, x] = 1` to a commutative
 transitive group that does not kill `u` kills `[v, x]`. -/
-theorem map_commutatorElement_eq_one_commutatorPair {L : Type*} [Group L] (hL : IsCommTransitive L)
+theorem map_commutatorElement_commutatorPair_eq_one {L : Type*} [Group L] (hL : IsCommTransitive L)
     (φ : CoordGroup ι (commutatorPair G) →* L) (hφ : φ (inr (of 0) : GX G (Fin 3)) ≠ 1) :
     φ (⁅(inr (of 1) : GX G (Fin 3)), inr (of 2)⁆ : GX G (Fin 3)) = 1 := by
   -- The quotient map is a homomorphism, so it commutes with commutators.
@@ -184,7 +187,7 @@ theorem not_isCommTransitive_coordGroup_commutatorPair (hH : ¬IsMulCommutative 
   have : Nontrivial H := not_subsingleton_iff_nontrivial.1 fun _ =>
     hH (.of_comm fun _ _ => Subsingleton.elim _ _)
   exact fun hK => commutatorElement_notMem_Rad_commutatorPair (ι := ι) hH <|
-    (QuotientGroup.eq_one_iff _).1 <| map_commutatorElement_eq_one_commutatorPair hK (.id _)
+    (QuotientGroup.eq_one_iff _).1 <| map_commutatorElement_commutatorPair_eq_one hK (.id _)
       (mt (QuotientGroup.eq_one_iff _).1 inr_of_zero_notMem_Rad_commutatorPair)
 
 /-- Over a group that is not commutative, the coordinate group of `[u, v] = 1`, `[u, x] = 1`
@@ -195,7 +198,7 @@ theorem not_isFullyResiduallyFree_coordGroup_commutatorPair (hH : ¬IsMulCommuta
 
 /-- Over a commutative transitive group `H` that is not commutative, the coordinate group of
 `[u, v] = 1`, `[u, x] = 1` is not discriminated by `H`. -/
-theorem not_isDiscriminatedBy_coeff_commutatorPair (hH : IsCommTransitive H)
+theorem not_isDiscriminatedBy_coordGroup_commutatorPair (hH : IsCommTransitive H)
     (hH' : ¬IsMulCommutative H) :
     ¬IsDiscriminatedBy (CoordGroup.coeff ι (commutatorPair G)) ι := fun h =>
   not_isIrreducible_V_commutatorPair hH hH' (isIrreducible_V_iff_isDiscriminatedBy.2 h)
@@ -210,7 +213,7 @@ example : ¬IsFullyResiduallyFree
 example : ¬IsDiscriminatedBy
     (CoordGroup.coeff (.id (FreeGroup (Fin 2))) (commutatorPair (FreeGroup (Fin 2))))
     (.id (FreeGroup (Fin 2))) :=
-  not_isDiscriminatedBy_coeff_commutatorPair IsFreeGroup.isCommTransitive fun h =>
+  not_isDiscriminatedBy_coordGroup_commutatorPair IsFreeGroup.isCommTransitive fun h =>
     not_subsingleton (Fin 2) (FreeGroup.isMulCommutative_iff_subsingleton.1 h)
 
 example : ¬@IsIrreducible (Fin 3 → FreeGroup (Fin 2)) (zariskiTopology (.id _) (Fin 3))
