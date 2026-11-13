@@ -570,7 +570,7 @@ end SubFlip
 
 section SymmetricAlternatingSup
 
-variable {k G V : Type*} [CommRing k] [Invertible (2 : k)] [Monoid G] [AddCommGroup V]
+variable {k G V : Type*} [CommRing k] [Invertible (2 : k)] [Monoid G] [AddCommMonoid V]
   [Module k V]
 
 /-- **Every invariant form is the sum of a symmetric and an alternating invariant form** when `2` is
