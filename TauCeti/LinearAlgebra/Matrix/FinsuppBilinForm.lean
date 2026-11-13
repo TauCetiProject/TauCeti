@@ -25,6 +25,7 @@ Coxeter system with infinite rank.
 
 ## Main results
 
+* `Matrix.finsuppBilinForm_apply`: the form is `∑ᵢⱼ xᵢ A i j yⱼ`, as a double `Finsupp.sum`.
 * `Matrix.finsuppBilinForm_single_single`: the Gram matrix of `Matrix.finsuppBilinForm A` is `A`.
 * `Matrix.finsuppBilinForm_apply_eq_dotProduct`: for finite `I` the form is `x ⬝ᵥ (A *ᵥ y)`.
 -/
@@ -39,6 +40,18 @@ variable {I R : Type*} [CommSemiring R] (A : Matrix I I R)
 whose Gram matrix in the standard basis is `A`. -/
 noncomputable def finsuppBilinForm : LinearMap.BilinForm R (I →₀ R) :=
   Finsupp.linearCombination R fun i ↦ Finsupp.linearCombination R (A i)
+
+/-- `Matrix.finsuppBilinForm A` pairs `eᵢ` with `y` by the functional `y ↦ ∑ⱼ A i j yⱼ`. -/
+theorem finsuppBilinForm_def :
+    A.finsuppBilinForm = Finsupp.linearCombination R fun i ↦ Finsupp.linearCombination R (A i) :=
+  (rfl)
+
+/-- **Evaluation of the bilinear form of a matrix**: `A.finsuppBilinForm x y = ∑ᵢⱼ xᵢ A i j yⱼ`,
+for an arbitrary index set. -/
+theorem finsuppBilinForm_apply (x y : I →₀ R) :
+    A.finsuppBilinForm x y = x.sum fun i a ↦ y.sum fun j b ↦ a * A i j * b := by
+  simp [finsuppBilinForm, Finsupp.linearCombination_apply, LinearMap.finsupp_sum_apply,
+    Finsupp.mul_sum, mul_comm, mul_left_comm]
 
 /-- Pairing with a basis vector `a • eᵢ` on the left is the functional `y ↦ a * ∑ⱼ A i j yⱼ`. -/
 @[simp]
