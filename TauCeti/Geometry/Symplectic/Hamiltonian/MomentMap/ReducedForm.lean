@@ -278,8 +278,8 @@ theorem existsUnique_isSymplectic_mpullback_prodMap_eq_mpullback_prodMap [J₁.B
     ∃! η : SmoothTwoForm (JQ₁.prod JQ₂) (Q₁ × Q₂),
       η.IsSymplectic ∧ SmoothForm.mpullback (Prod.map p₁ p₂) (hp₁.prodMap hp₂).contMDiff η =
         SmoothForm.mpullback (Prod.map i₁ i₂) (hi₁.prodMap hi₂) (σ₁.prod σ₂) := by
-  have := FiniteDimensional.complete ℝ E₁
-  have := FiniteDimensional.complete ℝ E₂
+  have := FiniteDimensional.completeSpace ℝ E₁
+  have := FiniteDimensional.completeSpace ℝ E₂
   -- `K₁ × K₂` acts on `Z₁ × Z₂` componentwise.
   let _ : SMul (K₁ × K₂) (Z₁ × Z₂) := ⟨fun k z ↦ (k.1 • z.1, k.2 • z.2)⟩
   have hdi₁ z := (hi₁ z).mdifferentiableAt (n := ∞) (by simp)
