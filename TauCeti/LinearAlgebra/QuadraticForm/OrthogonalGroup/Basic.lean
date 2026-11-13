@@ -96,8 +96,9 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
   `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes every vector orthogonal to `v`,
-  `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by an invertible scalar does not change
-  it, and `TauCeti.QuadraticMap.det_reflection` computes its determinant on a finite free module.
+  `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by a scalar keeping the norm invertible
+  does not change it, and `TauCeti.QuadraticMap.det_reflection` computes its determinant on a
+  finite free module.
   These are the factors in the Cartan-Dieudonné theorem
   `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_eq` (a field of characteristic not
   two, a nondegenerate form, finite dimension; none of that is assumed here), and the image of the
@@ -119,9 +120,6 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
 * `QuadraticMap.reflectionTransport`: a specified transport between equal nonzero norm vectors,
   with its one-reflection and two-reflection characteristic equations. No nondegeneracy or
   finite-dimensionality is needed.
-* `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton`: at most
-  two anisotropic reflections supply the one-step fixed-subspace correction used by
-  Cartan--Dieudonne induction.
 * `TauCeti.QuadraticMap.specialOrthogonalGroup_normal`: `SO(Q)` is normal in `O(Q)`, being the
   kernel of the determinant restricted there.
 * `TauCeti.QuadraticMap.orthogonalDet_sq`: if the polar form is left-separating on a finite free
@@ -884,20 +882,11 @@ theorem reflection_apply (y : M) :
     reflection Q v y = y - (⅟(Q v) * polar Q v y) • v := by
   rw [reflection, Module.reflection_apply, reflectionDual_apply]
 
-/-- Rescaling a vector of invertible norm by an invertible scalar does not change its quadratic
-reflection. -/
+/-- Rescaling a vector of invertible norm by a scalar that keeps the norm invertible does not
+change its quadratic reflection. -/
 @[simp]
-theorem reflection_smul_eq (a : R) [Invertible a] :
-    let _ : Invertible (Q (a • v)) := by
-      rw [QuadraticMap.map_smul]
-      let _ : Invertible (a * a) := invertibleMul a a
-      exact invertibleMul (a * a) (Q v)
+theorem reflection_smul_eq (a : R) [Invertible (Q (a • v))] :
     reflection Q (a • v) = reflection Q v := by
-  dsimp only
-  let _ : Invertible (Q (a • v)) := by
-    rw [QuadraticMap.map_smul]
-    let _ : Invertible (a * a) := invertibleMul a a
-    exact invertibleMul (a * a) (Q v)
   have hcoeff : ⅟(Q (a • v)) * a * a = ⅟(Q v) := by
     rw [← mul_right_inj_of_invertible (c := Q v)]
     calc
@@ -983,20 +972,11 @@ theorem coe_reflectionOrthogonal :
     (reflectionOrthogonal Q v : M ≃ₗ[R] M) = reflection Q v := by
   simp only [reflectionOrthogonal]
 
-/-- Rescaling the defining vector by an invertible scalar does not change the bundled orthogonal
-reflection. -/
+/-- Rescaling the defining vector by a scalar that keeps its norm invertible does not change the
+bundled orthogonal reflection. -/
 @[simp]
-theorem reflectionOrthogonal_smul_eq (a : R) [Invertible a] :
-    let _ : Invertible (Q (a • v)) := by
-      rw [QuadraticMap.map_smul]
-      let _ : Invertible (a * a) := invertibleMul a a
-      exact invertibleMul (a * a) (Q v)
+theorem reflectionOrthogonal_smul_eq (a : R) [Invertible (Q (a • v))] :
     reflectionOrthogonal Q (a • v) = reflectionOrthogonal Q v := by
-  dsimp only
-  let _ : Invertible (Q (a • v)) := by
-    rw [QuadraticMap.map_smul]
-    let _ : Invertible (a * a) := invertibleMul a a
-    exact invertibleMul (a * a) (Q v)
   apply Subtype.ext
   simp only [coe_reflectionOrthogonal]
   exact reflection_smul_eq Q v a
@@ -1311,6 +1291,9 @@ theorem reflectionTransport_self (x : V) (hx : Q x ≠ 0) :
     apply Subtype.ext
     apply LinearEquiv.ext
     intro z
+    let : Invertible (Q ((2 : K) • x)) := by
+      rw [two_smul]
+      infer_instance
     have hz := congrArg (fun r : TauCeti.QuadraticMap.orthogonalGroup Q ↦
       (r : V ≃ₗ[K] V) z) (TauCeti.QuadraticMap.reflectionOrthogonal_smul_eq Q x (2 : K))
     simpa only [TauCeti.QuadraticMap.coe_reflectionOrthogonal,
@@ -1329,72 +1312,6 @@ end QuadraticMap
 namespace TauCeti
 
 namespace QuadraticMap
-
-section CartanDieudonneStep
-
-section FixedSubspace
-
-variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-variable (Q : QuadraticForm K V) [NeZero (2 : K)]
-
-/-- If `g` fixes a subspace `W` pointwise and `x` is anisotropic and orthogonal to `W`, a list of
-at most two anisotropic reflections can be multiplied into `g` so that the product fixes
-`W ⊔ K ∙ x` pointwise. -/
-theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
-    (g : QuadraticMap.orthogonalGroup Q) (W : Submodule K V)
-    (hfix : ∀ w ∈ W, ((g : V ≃ₗ[K] V) w) = w)
-    (x : V) [Invertible (Q x)]
-    (hx : ∀ w ∈ W, Q.IsOrtho x w) :
-    ∃ l : List (QuadraticMap.orthogonalGroup Q),
-      (∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
-        QuadraticMap.reflectionOrthogonal Q v = r) ∧
-      l.length ≤ 2 ∧
-      ∀ y ∈ W ⊔ Submodule.span K {x},
-        (((l.prod * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = y := by
-  have hmap : Q ((g : V ≃ₗ[K] V) x) = Q x :=
-    QuadraticMap.map_app_of_mem_orthogonalGroup g.2 x
-  have hgx (w : V) (hw : w ∈ W) : QuadraticMap.polar Q ((g : V ≃ₗ[K] V) x) w = 0 := by
-    rw [← hfix w hw, QuadraticMap.polar_apply_of_mem_orthogonalGroup g.2]
-    exact (hx w hw).polar_eq_zero
-  -- Both cases correct `g` by an `r` that fixes `W` pointwise and sends `g x` back to `x`; then
-  -- `r * g` fixes `W` and `x`, hence `W ⊔ K ∙ x`.
-  have key (r : QuadraticMap.orthogonalGroup Q) (hr : ∀ w ∈ W, (r : V ≃ₗ[K] V) w = w)
-      (hrx : (r : V ≃ₗ[K] V) ((g : V ≃ₗ[K] V) x) = x) :
-      ∀ y ∈ W ⊔ Submodule.span K {x},
-        ((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y = y :=
-    (LinearMap.eqOn_sup_span_singleton_iff
-      (f := (r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap) (g := LinearMap.id)).2
-      ⟨fun w hw => by simp [hfix w hw, hr w hw], by simpa using hrx⟩
-  rcases QuadraticMap.isUnit_sub_or_add_of_map_eq Q _ x hmap
-      (isUnit_of_invertible (Q x)).ne_zero with hsubUnit | haddUnit
-  · -- One reflection, in `g x - x`.
-    let : Invertible (Q ((g : V ≃ₗ[K] V) x - x)) := hsubUnit.invertible
-    refine ⟨[QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - x)],
-      by simpa using ⟨_, inferInstance, rfl⟩, by simp, ?_⟩
-    rw [List.prod_singleton]
-    refine key _ (fun w hw => ?_) ?_ <;> rw [QuadraticMap.coe_reflectionOrthogonal]
-    · exact QuadraticMap.reflection_apply_of_polar_eq_zero Q _ (by
-        rw [QuadraticMap.polar_sub_left, hgx w hw, (hx w hw).polar_eq_zero, sub_self])
-    · exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap
-  · -- Two reflections: in `g x + x`, and then in `x`.
-    let : Invertible (Q ((g : V ≃ₗ[K] V) x + x)) := haddUnit.invertible
-    refine ⟨[QuadraticMap.reflectionOrthogonal Q x,
-      QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x + x)], ?_, by simp, ?_⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> exact ⟨_, inferInstance, rfl⟩
-    · rw [List.prod_cons, List.prod_singleton]
-      refine key _ (fun w hw => ?_) ?_ <;>
-        rw [Subgroup.coe_mul, mul_apply_eq_comp, QuadraticMap.coe_reflectionOrthogonal,
-          QuadraticMap.coe_reflectionOrthogonal]
-      · rw [QuadraticMap.reflection_apply_of_polar_eq_zero Q ((g : V ≃ₗ[K] V) x + x) (by
-            rw [QuadraticMap.polar_add_left, hgx w hw, (hx w hw).polar_eq_zero, add_zero]),
-          QuadraticMap.reflection_apply_of_polar_eq_zero Q x (hx w hw).polar_eq_zero]
-      · rw [QuadraticMap.reflection_add_apply_eq_neg_of_map_eq Q _ x hmap, map_neg,
-          QuadraticMap.reflection_apply_self, neg_neg]
-
-end FixedSubspace
-
-end CartanDieudonneStep
 
 section DetSquare
 
