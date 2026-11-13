@@ -19,7 +19,8 @@ nondegenerate. No positivity, finite dimensionality or field hypothesis is requi
 
 The radical is the largest left ideal (and, being two-sided, the largest two-sided ideal) on
 which `τ` vanishes. Under a surjective trace-preserving algebra map it pulls back exactly;
-without surjectivity only one inclusion is asserted. These facts allow algebraic trace quotients to be compared before any completion.
+without surjectivity only one inclusion is asserted. These facts allow algebraic trace quotients
+to be compared before any completion.
 
 ## References
 
