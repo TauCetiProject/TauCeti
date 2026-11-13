@@ -19,6 +19,8 @@ computable pieces:
   optional function, when that value is present, is computable;
 * `ComputablePred.exists_lt`: a bounded existential quantifier over a computable predicate is
   computable, uniformly in the bound;
+* `ComputablePred.exists_mem_list`: an existential quantifier over the entries of a computably
+  given list preserves computability;
 * `ComputablePred.rePred_exists`: an unbounded existential quantifier over a computable predicate
   is c.e., by unbounded search.
 
@@ -68,6 +70,19 @@ theorem exists_lt {p : α → ℕ → Prop} (hp : ComputablePred fun x : α × �
   induction n with
   | zero => simp
   | succ n ih => simp [ih, Nat.lt_succ_iff_lt_or_eq, or_and_right, exists_or]
+
+/-- An existential quantifier over the entries of a computably given list preserves computability.
+-/
+theorem exists_mem_list {β : Type*} [Primcodable β] {f : α → List β} {p : α → β → Prop}
+    (hf : Computable f) (hp : ComputablePred fun x : α × β => p x.1 x.2) :
+    ComputablePred fun a => ∃ b ∈ f a, p a b := by
+  classical
+  -- search the positions `i < (f a).length` for an entry satisfying `p a`
+  have h := exists_lt (p := fun a i => ∃ b, (f a)[i]? = some b ∧ p a b) (exists_eq_some_and
+    (Computable.list_getElem?.comp (hf.comp .fst) .snd)
+    (hp.decide.comp (.pair (Computable.fst.comp .fst) .snd)).computablePred)
+  exact (h.decide.comp (.pair .id (Computable.list_length.comp hf))).computablePred.of_eq
+    fun a => by simp [List.mem_iff_getElem, List.getElem?_eq_some_iff]
 
 /-- An unbounded existential quantifier over a computable predicate is c.e.: search for a
 witness. -/

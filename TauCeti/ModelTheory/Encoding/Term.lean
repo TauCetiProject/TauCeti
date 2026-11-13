@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Computability.Primrec.List
 public import Mathlib.ModelTheory.Encoding
+public import TauCeti.Computability.Partrec.List
 public import TauCeti.ModelTheory.Encoding.Symbols
+public import TauCeti.ModelTheory.Term.Substitution
 
 /-!
 # Mathlib's encoding of first-order terms is primitive recursive
@@ -27,6 +28,9 @@ are primitively encoded and the arity of a function symbol is primitive recursiv
 * `FirstOrder.Language.Term.primrec_listEncode`, `FirstOrder.Language.Term.primrec_listDecode`:
   spelling a term, and reading a list of symbols as a list of terms with `listDecode`, are
   primitive recursive.
+* `FirstOrder.Language.Term.primrec_listEncode_iff`,
+  `FirstOrder.Language.Term.computable_listEncode_iff`: a function into terms is primitive
+  recursive, respectively computable, exactly when its spelling is.
 * `FirstOrder.Language.Term.primrec_var`, `FirstOrder.Language.Term.primrec_func`: forming a
   variable term and applying a function symbol to a tuple of terms are primitive recursive.
 * `FirstOrder.Language.Term.primrecPred_exists_listEncode_eq`: the lists that spell a term form
@@ -37,20 +41,44 @@ are primitively encoded and the arity of a function symbol is primitive recursiv
   `FirstOrder.Language.Term.exists_listEncode_eq_iff`. For natural-number codes, the set of
   codes of terms is primitive recursive by Mathlib's `Primcodable.mem_range_encode`.
 
+On spellings, relabelling the variables of a term along `g` replaces each variable letter `a` by
+`g a` (`FirstOrder.Language.Term.listEncode_relabel`), and substituting terms for the variables
+replaces each variable letter by the spelling of the substituted term
+(`FirstOrder.Language.Term.listEncode_subst`). Consequently, as relabelling is the substitution of
+variables (`FirstOrder.Language.Term.relabel_eq_subst`):
+
+* `FirstOrder.Language.Term.primrec₂_subst`, `FirstOrder.Language.Term.computable₂_subst`:
+  substitution is primitive recursive, respectively computable, uniformly in a parameter on which
+  the substituted terms depend primitive recursively, respectively computably;
+* `FirstOrder.Language.Term.primrec₂_subst_fin`: substitution of a finite table of terms for the
+  variables `Fin n` is primitive recursive, jointly in the term and the table;
+* `FirstOrder.Language.Term.primrec₂_relabel`, `FirstOrder.Language.Term.primrec_relabel`,
+  `FirstOrder.Language.Term.computable₂_relabel`, `FirstOrder.Language.Term.computable_relabel`:
+  relabelling along a primitive recursive, respectively computable, map is primitive recursive,
+  respectively computable.
+
+Functions on terms defined by structural recursion are primitive recursive when the data of the
+recursion are (`FirstOrder.Language.Term.primrec₂_of_rec`): the value on a variable is given by a
+primitive recursive function, and the value on `func F ts` by a primitive recursive step applied to
+the function symbol and the list of the values on the arguments, in order.
+
+## Implementation notes
+
 The decoder is shown primitive recursive by running it on spellings: a variable pushes its
 one-letter spelling on a stack, and a function symbol of arity `n` replaces the top `n` spellings
-by the symbol followed by their concatenation.
+by the symbol followed by their concatenation. The recursion principle runs a recursion on
+spellings in the same way, with a stack of values in place of spellings.
 -/
 
 public section
 
-universe u v w
+universe u v w w'
 
 namespace FirstOrder.Language.Term
 
 open Encodable
 
-variable {L : Language.{u, v}} {α : Type w}
+variable {L : Language.{u, v}} {α : Type w} {β : Type w'}
 
 /-- The spelling of a term is not empty. -/
 @[simp]
@@ -114,6 +142,46 @@ private theorem map_listEncode_listDecode (l : List (α ⊕ Σ i, L.Functions i)
       · simpa [listDecode, listEncode, decodeStep, ← ih, h, List.map_drop] using
           flatMap_finRange_listEncode_getElem _ h
       · simp [listDecode, decodeStep, ← ih, h]
+
+/-- Relabelling the variables of a term relabels the variable letters of its spelling. -/
+@[simp]
+theorem listEncode_relabel (g : α → β) (t : L.Term α) :
+    (t.relabel g).listEncode = t.listEncode.map (Sum.map g id) := by
+  induction t <;> simp_all [listEncode, List.map_flatMap]
+
+/-- Substituting terms for the variables of a term replaces each variable letter of its spelling
+by the spelling of the substituted term. -/
+@[simp]
+theorem listEncode_subst (t : L.Term α) (tf : α → L.Term β) :
+    (t.subst tf).listEncode =
+      t.listEncode.flatMap (Sum.elim (fun a => (tf a).listEncode) fun F => [Sum.inr F]) := by
+  induction t <;> simp_all [listEncode, List.flatMap_assoc]
+
+/-- One step of a recursion on terms run on spellings from right to left: a variable pushes its
+value on the stack, and a function symbol of arity `n` replaces the top `n` values by the value of
+the step `h`. -/
+private def recStep {σ : Type*} (g : α → σ) (h : (Σ i, L.Functions i) × List σ → σ)
+    (x : α ⊕ Σ i, L.Functions i) (st : List σ) : List σ :=
+  x.elim (fun a => g a :: st) fun F => h (F, st.take F.1) :: st.drop F.1
+
+/-- Running `recStep` over the spelling of a term pushes the value of the term on the stack. -/
+private theorem foldr_recStep {σ : Type*} {f : L.Term α → σ} {g : α → σ}
+    {h : (Σ i, L.Functions i) × List σ → σ} (hvar : ∀ a, f (var a) = g a)
+    (hfunc : ∀ {l} (F : L.Functions l) (ts : Fin l → L.Term α),
+      f (func F ts) = h (⟨l, F⟩, List.ofFn fun i => f (ts i))) (t : L.Term α)
+    (r : List (α ⊕ Σ i, L.Functions i)) (st : List σ) :
+    (t.listEncode ++ r).foldr (recStep g h) st = f t :: r.foldr (recStep g h) st := by
+  induction t generalizing r with
+  | var a => simp [listEncode, recStep, hvar]
+  | @func l F ts ih =>
+    -- the spellings of the arguments leave their values, in order, on top of the stack
+    have key (k : List (Fin l)) (r : List (α ⊕ Σ i, L.Functions i)) :
+        ((k.flatMap fun i => (ts i).listEncode) ++ r).foldr (recStep g h) st =
+          k.map (fun i => f (ts i)) ++ r.foldr (recStep g h) st := by
+      induction k with
+      | nil => simp
+      | cons i k ihk => simp [ih, ihk]
+    simp [listEncode, recStep, key, hfunc, List.ofFn_eq_map]
 
 section Encodable
 
@@ -224,6 +292,13 @@ theorem primrec_listEncode :
     Primrec (listEncode : L.Term α → List (α ⊕ Σ i, L.Functions i)) :=
   primrec_listEncode_iff.2 .id
 
+/-- A function into terms is computable exactly when its spelling is. -/
+theorem computable_listEncode_iff {β : Type*} [Primcodable β] {f : β → L.Term α} :
+    (Computable fun b => (f b).listEncode) ↔ Computable f :=
+  ⟨fun h => Computable.encode_iff.1 <|
+      (Computable.encode.comp h).of_eq fun b => (encode_eq_encode_listEncode (f b)).symm,
+    fun h => primrec_listEncode.to_comp.comp h⟩
+
 /-- Reading a list of variables and function symbols as a list of terms is primitive recursive. -/
 theorem primrec_listDecode :
     Primrec (listDecode : List (α ⊕ Σ i, L.Functions i) → List (L.Term α)) :=
@@ -248,5 +323,90 @@ theorem primrec_func {n : ℕ} (f : L.Functions n) :
     (Primrec.list_flatten.comp <| Primrec.list_ofFn fun i =>
       primrec_listEncode.comp (Primrec.fin_app.comp .id (.const i)))).of_eq fun ts => ?_
   simp [listEncode, List.ofFn_eq_map, List.flatMap_def]
+
+private theorem primrec₂_recStep {γ σ : Type*} [Primcodable γ] [Primcodable σ] {g : γ → α → σ}
+    {h : γ → (Σ i, L.Functions i) × List σ → σ} (hg : Primrec₂ g) (hh : Primrec₂ h) :
+    Primrec₂ fun c (p : (α ⊕ Σ i, L.Functions i) × List σ) => recStep (g c) (h c) p.1 p.2 := by
+  have harity := PrimrecFunctionArity.primrec_fst (L := L)
+  refine (Primrec.sumCasesOn (Primrec.fst.comp .snd)
+    (Primrec.list_cons.comp (hg.comp (Primrec.fst.comp .fst) .snd)
+      (Primrec.snd.comp (Primrec.snd.comp .fst))).to₂
+    (Primrec.list_cons.comp (hh.comp (Primrec.fst.comp .fst) (Primrec.pair .snd
+        (Primrec.list_take.comp (harity.comp .snd) (Primrec.snd.comp (Primrec.snd.comp .fst)))))
+      (Primrec.list_drop.comp (harity.comp .snd)
+        (Primrec.snd.comp (Primrec.snd.comp .fst)))).to₂).of_eq fun p => ?_
+  rcases p with ⟨c, x | F, st⟩ <;> rfl
+
+/-- Primitive recursion on terms: a function on terms, depending on a parameter, given by
+structural recursion with primitive recursive values on variables and a primitive recursive step
+at function symbols, is primitive recursive. The step receives the function symbol and the list of
+the values on its arguments, in order. -/
+theorem primrec₂_of_rec {γ σ : Type*} [Primcodable γ] [Primcodable σ] {f : γ → L.Term α → σ}
+    {g : γ → α → σ} {h : γ → (Σ i, L.Functions i) × List σ → σ} (hg : Primrec₂ g) (hh : Primrec₂ h)
+    (hvar : ∀ c a, f c (var a) = g c a)
+    (hfunc : ∀ c {l} (F : L.Functions l) (ts : Fin l → L.Term α),
+      f c (func F ts) = h c (⟨l, F⟩, List.ofFn fun i => f c (ts i))) : Primrec₂ f := by
+  refine Primrec₂.option_some_iff.1 <| (Primrec.list_head?.comp <| Primrec.list_foldr
+    (primrec_listEncode.comp .snd) (.const [])
+    ((primrec₂_recStep hg hh).comp (Primrec.fst.comp .fst) .snd).to₂).of_eq fun p => ?_
+  simpa using congrArg List.head? (foldr_recStep (hvar p.1) (hfunc p.1) p.2 [] [])
+
+variable [Primcodable β]
+
+/-- Substituting terms for variables is primitive recursive, uniformly in a parameter on which the
+substituted terms depend primitive recursively. -/
+theorem primrec₂_subst {γ : Type*} [Primcodable γ] {tf : γ → α → L.Term β} (htf : Primrec₂ tf) :
+    Primrec₂ fun c (t : L.Term α) => t.subst (tf c) := by
+  have hletter : Primrec₂ fun c (x : α ⊕ Σ i, L.Functions i) =>
+      Sum.elim (fun a => (tf c a).listEncode) (fun F => [Sum.inr F]) x :=
+    (Primrec.sumCasesOn .snd
+      (primrec_listEncode.comp (htf.comp (Primrec.fst.comp .fst) .snd)).to₂
+      (Primrec.list_cons.comp (Primrec.sumInr.comp .snd) (.const [])).to₂).of_eq
+      fun p => by rcases p with ⟨_, _ | _⟩ <;> rfl
+  exact primrec_listEncode_iff.1 <| (Primrec.list_flatMap (primrec_listEncode.comp .snd)
+    (hletter.comp (Primrec.fst.comp .fst) .snd).to₂).of_eq fun _ => by rw [listEncode_subst]
+
+/-- Substituting terms for variables is computable, uniformly in a parameter on which the
+substituted terms depend computably. -/
+theorem computable₂_subst {γ : Type*} [Primcodable γ] {tf : γ → α → L.Term β}
+    (htf : Computable₂ tf) : Computable₂ fun c (t : L.Term α) => t.subst (tf c) := by
+  have hletter : Computable₂ fun c (x : α ⊕ Σ i, L.Functions i) =>
+      Sum.elim (fun a => (tf c a).listEncode) (fun F => [Sum.inr F]) x :=
+    (Computable.sumCasesOn .snd
+      (primrec_listEncode.to_comp.comp (htf.comp (Computable.fst.comp .fst) .snd)).to₂
+      (Computable.list_cons.comp (Computable.sumInr.comp .snd) (.const [])).to₂).of_eq
+      fun p => by rcases p with ⟨_, _ | _⟩ <;> rfl
+  exact computable_listEncode_iff.1 <| (Computable.list_flatMap
+    (primrec_listEncode.to_comp.comp .snd) (hletter.comp (Computable.fst.comp .fst) .snd).to₂).of_eq
+    fun _ => by rw [listEncode_subst]
+
+/-- Relabelling the variables of terms along a map depending primitive recursively on a parameter
+is primitive recursive. -/
+theorem primrec₂_relabel {γ : Type*} [Primcodable γ] {g : γ → α → β} (hg : Primrec₂ g) :
+    Primrec₂ fun c (t : L.Term α) => t.relabel (g c) :=
+  (primrec₂_subst (tf := fun c => var ∘ g c) (primrec_var.comp hg).to₂).of_eq fun c t =>
+    (relabel_eq_subst t (g c)).symm
+
+/-- Relabelling the variables of terms along a primitive recursive map is primitive recursive. -/
+theorem primrec_relabel {g : α → β} (hg : Primrec g) : Primrec (relabel g : L.Term α → L.Term β) :=
+  (primrec₂_relabel (hg.comp .snd).to₂).comp (.const ()) .id
+
+/-- Relabelling the variables of terms along a map depending computably on a parameter is
+computable. -/
+theorem computable₂_relabel {γ : Type*} [Primcodable γ] {g : γ → α → β} (hg : Computable₂ g) :
+    Computable₂ fun c (t : L.Term α) => t.relabel (g c) :=
+  (computable₂_subst (tf := fun c => var ∘ g c) (primrec_var.to_comp.comp hg).to₂).of_eq fun p =>
+    (relabel_eq_subst p.2 (g p.1)).symm
+
+/-- Relabelling the variables of terms along a computable map is computable. -/
+theorem computable_relabel {g : α → β} (hg : Computable g) :
+    Computable (relabel g : L.Term α → L.Term β) :=
+  (computable₂_relabel (hg.comp .snd).to₂).comp (.const ()) .id
+
+/-- Substituting a finite table of terms for the variables `Fin n` is primitive recursive, jointly
+in the term and the table. -/
+theorem primrec₂_subst_fin {n : ℕ} :
+    Primrec₂ (subst : L.Term (Fin n) → (Fin n → L.Term β) → L.Term β) :=
+  (primrec₂_subst (tf := fun tf : Fin n → L.Term β => tf) Primrec.fin_app).swap
 
 end FirstOrder.Language.Term
