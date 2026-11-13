@@ -341,6 +341,19 @@ private theorem sum_sum_sum_update_eq
   rw [← natCast_card_filter, ← natCast_card_filter, hRT, hR, hY, hT, filter_true, ← hc]
   ring
 
+omit [DecidableEq κ] in
+/-- The support of the polyad of a triple `t` has at most as many elements as the product of the
+sizes of the vertex cells at the three vertices of `t`. -/
+private theorem mul_card_support_polyad_le
+    {t : {t : Fin F.k × Fin F.k × Fin F.k // t.1 < t.2.1 ∧ t.2.1 < t.2.2}} {η : ℝ} (hη : 0 ≤ η) :
+    η * #(ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2).support ≤
+      η * (#(φ.vertexCell t.1.1) * #(φ.vertexCell t.1.2.1) * #(φ.vertexCell t.1.2.2)) := by
+  gcongr
+  have := (ψ.polyad t.1.1 t.1.2.1 t.1.2.2 t.2.1 t.2.2).card_support_le
+  simp only [PairColorPlacement3.polyad_c₀, PairColorPlacement3.polyad_c₁,
+    PairColorPlacement3.polyad_c₂] at this
+  exact_mod_cast this
+
 open Classical in
 /-- **One telescoping step.** Testing the deviation of the top-color indicator of a triple `t`
 outside `s` from its relative density against the maps realizing `RouteHolds ψ s` costs at most
@@ -379,23 +392,15 @@ private theorem abs_card_filter_topHolds_sub_le
   have hvol : (∏ m, (#(A m) : ℝ)) =
       #{h ∈ Fintype.piFinset A | h t.1.1 = g₀ t.1.1 ∧ h t.1.2.1 = g₀ t.1.2.1 ∧
         h t.1.2.2 = g₀ t.1.2.2} * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)) := by
-    have := hsplit fun _ ↦ (1 : ℝ)
-    simp only [sum_const, nsmul_eq_mul, mul_one, Fintype.card_piFinset] at this
-    push_cast at this
-    linear_combination this
+    exact_mod_cast Fintype.prod_card_eq_card_filter_mul hij.ne hil.ne hjl.ne A (hg₀' t.1.1)
+      (hg₀' t.1.2.1) (hg₀' t.1.2.2)
   rw [hsplit, hvol]
   refine (abs_sum_le_card_nsmul (B := η * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)))
     fun h _ ↦ ?_).trans_eq (by rw [nsmul_eq_mul]; ring)
   -- Over each fibre, rank-one top regularity bounds the color discrepancy on the slice.
   simp only [G]
   rw [sum_sum_sum_update_eq ht h d, abs_mul, Nat.abs_cast]
-  calc _ ≤ η * #P.support := (hP.abs_relDensityOn_sub_mul_card_le c _)
-    _ ≤ η * (#(A t.1.1) * #(A t.1.2.1) * #(A t.1.2.2)) := by
-      gcongr
-      have := P.card_support_le
-      simp only [P, PairColorPlacement3.polyad_c₀, PairColorPlacement3.polyad_c₁,
-        PairColorPlacement3.polyad_c₂] at this
-      exact_mod_cast this
+  exact (hP.abs_relDensityOn_sub_mul_card_le c _).trans (mul_card_support_polyad_le hη)
 
 omit [DecidableEq κ] [Fintype V] in
 /-- For an injective `g`, giving the increasing pattern triple `t` its pattern color is a

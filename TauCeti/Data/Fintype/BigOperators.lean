@@ -148,6 +148,16 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype
   refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
   rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
 
+/-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`,
+`b ∈ s j` and `c ∈ s l` at three distinct coordinates `i`, `j` and `l`, times the volume of the
+cells at those coordinates. -/
+theorem prod_card_eq_card_filter_mul {ι κ : Type*} [Fintype ι] [DecidableEq ι] [DecidableEq κ]
+    {i j l : ι} (hij : i ≠ j) (hil : i ≠ l) (hjl : j ≠ l) (s : ι → Finset κ) {a b c : κ}
+    (ha : a ∈ s i) (hb : b ∈ s j) (hc : c ∈ s l) :
+    ∏ m, #(s m) = #{h ∈ piFinset s | h i = a ∧ h j = b ∧ h l = c} * (#(s i) * #(s j) * #(s l)) := by
+  have := sum_piFinset_eq_sum_filter_sum_sum_sum_update (M := ℕ) hij hil hjl s ha hb hc fun _ ↦ 1
+  simpa only [sum_const, nsmul_eq_mul, Nat.cast_id, mul_one, card_piFinset, mul_assoc] using this
+
 /-- **Averaging out one coordinate.** If `a` sums to zero and `G` does not depend on the value of
 its argument at `e`, then summing `a (f e) * G f` over all maps `f : ι → α` gives zero. -/
 theorem sum_apply_mul_eq_zero {ι α R : Type*} [Fintype ι] [DecidableEq ι] [Fintype α]
