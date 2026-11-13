@@ -27,11 +27,12 @@ positive end of `D₁` to the negative end of `D₂` along a neck of length `2R`
 tends to `1` at both ends. This file shows that `D_R` is invertible, for every `R`: the kernel of
 `D₁` cancels against the cokernel of `D₂`, so the index `0 = 1 + (-1)` is additive under gluing
 while the kernel and the cokernel separately are not. It also shows that the inverse is not
-uniformly bounded as the neck grows: its norm is at least `exp (2 R) / 2` and at most
-`2 exp (4 |R|)`. These are the two
-phenomena that the stabilized linear gluing theorem for Cauchy–Riemann operators accounts for:
-an obstruction map from `ker D₁ ⊕ ker D₂` to stabilizing cokernel representatives, here a
-nonzero map `ℝ → ℝ`, and inverse bounds that are uniform only after stabilization.
+uniformly bounded as the neck grows: as a map into `W^{1,2}` its norm is at least
+`exp (2 R) / 2`, while its values satisfy the `Lᵖ` bound `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}`,
+which gives the graph-norm bound `‖u‖ ≤ (1 + (1 + ‖a_R‖_{L^∞}) 2 exp (4 |R|)) ‖D_R u‖`. These
+are the two phenomena that the stabilized linear gluing theorem for Cauchy–Riemann operators
+accounts for: an obstruction map from `ker D₁ ⊕ ker D₂` to stabilizing cokernel representatives,
+here a nonzero map `ℝ → ℝ`, and inverse bounds that are uniform only after stabilization.
 
 The equation `v' = a_R v` has the explicit positive solution
 
@@ -84,7 +85,9 @@ are carried by the zero mode alone.
   `TauCeti.WeakDerivStep.bijective_trajectoryOperator_neg_neckCoeff_smul_id`: `D_R` has zero kernel
   and is surjective.
 * `TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id`: the
-  bound `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}`.
+  `Lᵖ` value bound `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}` (not a graph-norm bound; with
+  `TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_scalarGrowth` the graph-norm
+  constant is `1 + (1 + ‖a_R‖_{L^∞}) 2 exp (4 |R|)`).
 * `TauCeti.WeakDerivStep.prev_ae_eq_scalarGreenIntegral_neckSolution_of_trajectoryOperator_ae_eq`:
   the inverse of `D_R` is the integral `-F_R(s) ∫_{t > s} f(t) / F_R(t) dt`.
 * `TauCeti.WeakDerivStep.exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le`: the test path
@@ -534,9 +537,11 @@ theorem exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le (R : ℝ) {e : F
 `‖u‖ ≤ C ‖D_R u‖` for every `u ∈ W^{1,2}(ℝ, F)`, with `F ≠ 0`, then `C ≥ exp (2 R) / 2`. So the
 bounded inverse of `D_R` (which exists by
 `TauCeti.WeakDerivStep.bijective_trajectoryOperator_neg_neckCoeff_smul_id` when `F` is a
-finite-dimensional normed space) blows up exponentially in the length of the neck. It has norm
-at most `2 exp (4 |R|)` by
-`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id`. -/
+finite-dimensional normed space) blows up exponentially in the length of the neck. Its values
+satisfy the `Lᵖ` bound `‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖D_R u‖_{Lᵖ}` by
+`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id`, and
+`TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_scalarGrowth` turns this into the
+graph-norm bound `C = 1 + (1 + ‖AL‖) * 2 exp (4 |R|)`. -/
 theorem exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff
     [Nontrivial F] (R : ℝ) (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
@@ -574,12 +579,14 @@ private theorem neckSolution_growth (R : ℝ) :
     ∀ s t, s ≤ t → neckSolution R s ≤ exp (4 * |R|) * exp (-1 * (t - s)) * neckSolution R t :=
   fun s t _ ↦ by simpa using neckSolution_le_mul_exp_mul_neckSolution R s t
 
-/-- **The inverse of the glued operator has norm at most `2 exp (4 |R|)`.** On a
-finite-dimensional real normed space `E` and for `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝ, E)` satisfies
-`‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖u' - a_R u‖_{Lᵖ}`. Together with the lower bound
+/-- **The `Lᵖ` value bound for the inverse of the glued operator.** On a finite-dimensional real
+normed space `E` and for `1 ≤ p < ∞`, every `u ∈ W^{1,p}(ℝ, E)` satisfies
+`‖u‖_{Lᵖ} ≤ 2 exp (4 |R|) ‖u' - a_R u‖_{Lᵖ}`. This bounds only the `Lᵖ` norm of `u`, not its
+graph norm; `TauCeti.WeakDerivStep.norm_le_mul_norm_trajectoryOperator_of_scalarGrowth` gives the
+graph-norm bound `‖u‖ ≤ (1 + (1 + ‖AL‖) * 2 exp (4 |R|)) ‖u' - a_R u‖_{Lᵖ}`. Together with the
+lower bound
 `TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`,
-the inverse of `D_R` grows exponentially in the length of the neck, at a rate between `2 R` and
-`4 R`. -/
+the inverse of `D_R` grows exponentially in the length of the neck. -/
 theorem norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ) (hp : p ≠ ∞)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
