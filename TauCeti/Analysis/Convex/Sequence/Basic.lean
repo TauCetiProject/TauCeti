@@ -395,18 +395,12 @@ theorem isAdmissible : IsAdmissible h := by
     have hk : h k = ⊤ := not_not.mp (fun hk => hfinite ⟨k, hk⟩)
     simp [hk]
 
-/-- Every real number below a convex height is bounded above by the value of
-some affine minorant there. Infinite heights are recovered by arbitrarily high
-minorants, including outside the finite domain and for the empty sequence. -/
-theorem coe_le_iff_exists_affine_minorant (n : ℕ) (r : ℝ) :
-    (r : WithTop ℝ) ≤ h n ↔
-      ∃ c σ : ℝ, (∀ k : ℕ, ((c + σ * k : ℝ) : WithTop ℝ) ≤ h k) ∧ r ≤ c + σ * n := by
-  refine ⟨fun hr => ?_, fun ⟨c, σ, hline, hr⟩ =>
-    (WithTop.coe_le_coe.mpr hr).trans (hline n)⟩
-  by_cases hn : h n ≠ ⊤
-  · obtain ⟨c, σ, hline, heq⟩ := hh.exists_affine_minorant_eq hn
-    exact ⟨c, σ, hline, heq ▸ (by
-      rwa [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe] at hr)⟩
+/-- At an infinite height of a convex sequence, every real number is bounded above by the value
+of some affine minorant: an arbitrarily high minorant exists, including outside the finite domain
+and for the empty sequence. -/
+theorem exists_affine_minorant_of_eq_top {n : ℕ} (hn : h n = ⊤) (r : ℝ) :
+    ∃ c σ : ℝ, (∀ k : ℕ, ((c + σ * k : ℝ) : WithTop ℝ) ≤ h k) ∧ r ≤ c + σ * n := by
+  replace hn : ¬ h n ≠ ⊤ := not_not.2 hn
   obtain ⟨d, m, hdm⟩ := isAdmissible_iff.mp hh.isAdmissible
   let δ := max 0 (r - (d + m * n))
   have hδ : 0 ≤ δ := le_max_left _ _
@@ -439,6 +433,21 @@ theorem coe_le_iff_exists_affine_minorant (n : ℕ) (r : ℝ) :
     have hnk' : (n : ℝ) + 1 ≤ k := by exact_mod_cast hnk
     refine le_trans (WithTop.coe_le_coe.mpr ?_) (hdm k)
     nlinarith [mul_nonneg hδ (sub_nonneg.mpr hnk')]
+
+
+/-- Every real number below a convex height is bounded above by the value of
+some affine minorant there. Infinite heights are recovered by arbitrarily high
+minorants, including outside the finite domain and for the empty sequence. -/
+theorem coe_le_iff_exists_affine_minorant (n : ℕ) (r : ℝ) :
+    (r : WithTop ℝ) ≤ h n ↔
+      ∃ c σ : ℝ, (∀ k : ℕ, ((c + σ * k : ℝ) : WithTop ℝ) ≤ h k) ∧ r ≤ c + σ * n := by
+  refine ⟨fun hr => ?_, fun ⟨c, σ, hline, hr⟩ =>
+    (WithTop.coe_le_coe.mpr hr).trans (hline n)⟩
+  by_cases hn : h n ≠ ⊤
+  · obtain ⟨c, σ, hline, heq⟩ := hh.exists_affine_minorant_eq hn
+    exact ⟨c, σ, hline, heq ▸ (by
+      rwa [← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_le_coe] at hr)⟩
+  exact hh.exists_affine_minorant_of_eq_top (not_not.1 hn) r
 
 /-- Raising an interior height preserves convexity provided the new height stays
 below the average of its finite neighbors. -/

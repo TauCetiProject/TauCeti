@@ -409,6 +409,22 @@ private theorem exists_pos_weights_toBase_descend (a : ℕ → ℝ) (ha : ∀ n,
     refine (mul_le_mul_of_nonneg_right ?_ (hε _).le).trans (hεB _).le
     exact h.trans (le_add_of_nonneg_left (norm_nonneg _))
 
+/-- If `(‖L‖ + 1) ‖g k‖ ≤ (1 / 2) ^ (k + 1)` for all `k`, then `g` is summable in a Banach space
+and `L` maps its sum to a vector of norm at most `1`. -/
+private theorem summable_and_norm_apply_tsum_le_one {X Y : Type*} [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] [CompleteSpace X] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (L : X →L[𝕜] Y) {g : ℕ → X} (hg : ∀ k, (‖L‖ + 1) * ‖g k‖ ≤ (1 / 2) ^ (k + 1)) :
+    Summable g ∧ ‖L (∑' k, g k)‖ ≤ 1 := by
+  have hgeom : HasSum (fun k : ℕ ↦ ((1 : ℝ) / 2) ^ (k + 1)) 1 := by
+    have := hasSum_geometric_two.mul_right (1 / 2)
+    norm_num [← pow_succ] at this
+    exact this
+  have hgle : ∀ k, ‖g k‖ ≤ (1 / 2) ^ (k + 1) := fun k ↦
+    (le_mul_of_one_le_left (norm_nonneg _) (by linarith [norm_nonneg L])).trans (hg k)
+  have hgs : Summable g := Summable.of_norm_bounded hgeom.summable hgle
+  exact ⟨hgs, (hgs.hasSum.mapL L).norm_le_of_bounded hgeom fun k ↦ (L.le_opNorm _).trans <|
+    (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)).trans (hg k)⟩
+
 variable {R} in
 /-- The gliding-hump estimate at step `n`. Let `L` agree with `N.mkQ ∘ T (n + 1)`, and let the
 summands of `y = ∑ⱼ R 0 ⋯ R (j - 1) (x j)` beyond `n` be small against `‖L‖ + 1`. Then modulo `N`
@@ -430,16 +446,7 @@ private theorem norm_mkQ_apply_le [∀ n, CompleteSpace (E n)] {T : ∀ n, E n �
       _ = (‖L‖ + 1) * ‖descend R (n + 1) k‖ * ε (n + 1 + k) := by ring
       _ ≤ (1 / 2) ^ (n + 1 + k) := hε k
       _ ≤ (1 / 2) ^ (k + 1) := pow_le_pow_of_le_one (by norm_num) (by norm_num) (by omega)
-  have hgeom : HasSum (fun k : ℕ ↦ ((1 : ℝ) / 2) ^ (k + 1)) 1 := by
-    have := hasSum_geometric_two.mul_right (1 / 2)
-    norm_num [← pow_succ] at this
-    exact this
-  have hgle : ∀ k, ‖g k‖ ≤ (1 / 2) ^ (k + 1) := fun k ↦
-    (le_mul_of_one_le_left (norm_nonneg _) (by linarith [norm_nonneg L])).trans (hg k)
-  have hgs : Summable g := Summable.of_norm_bounded hgeom.summable hgle
-  have hLw : ‖L (∑' k, g k)‖ ≤ 1 :=
-    (hgs.hasSum.mapL L).norm_le_of_bounded hgeom fun k ↦ (L.le_opNorm _).trans <|
-      (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)).trans (hg k)
+  obtain ⟨hgs, hLw⟩ := summable_and_norm_apply_tsum_le_one L hg
   set y := ∑' j, toBase R j (x j) with hy
   set s := ∑ j ∈ range n, toBase R j (x j) with hs
   -- Split `y` into the summands before `n`, the `n`-th summand, and the tail through `R n`.
@@ -454,6 +461,22 @@ private theorem norm_mkQ_apply_le [∀ n, CompleteSpace (E n)] {T : ∀ n, E n �
   rw [hQ]
   linarith [norm_sub_le (Q (T 0 y) - Q (T 0 s)) (L (∑' k, g k)),
     norm_sub_le (Q (T 0 y)) (Q (T 0 s))]
+
+variable {R} in
+/-- Choose, by recursion, a sequence `x n : E n` such that each `x n` satisfies a condition `P`
+depending on `n` and the partial sum `∑ j < n, toBase R j (x j)` before it. -/
+private theorem exists_forall_sum_range_toBase {P : ∀ n, E 0 → E n → Prop}
+    (h : ∀ n s, ∃ v, P n s v) :
+    ∃ x : ∀ n, E n, ∀ n, P n (∑ j ∈ range n, toBase R j (x j)) (x n) := by
+  choose v hv using h
+  let s : ℕ → E 0 := fun n ↦
+    Nat.rec (motive := fun _ ↦ E 0) 0 (fun j acc ↦ acc + toBase R j (v j acc)) n
+  have hs : ∀ n, s n = ∑ j ∈ range n, toBase R j (v j (s j)) := by
+    intro n
+    induction n with
+    | zero => simp [s]
+    | succ n ih => rw [sum_range_succ, ← ih]
+  exact ⟨fun n ↦ v n (s n), fun n ↦ by rw [← hs n]; exact hv n (s n)⟩
 
 variable {R} in
 /-- **Sinclair's stability lemma.** Let `E n` and `F` be Banach spaces, let
@@ -484,18 +507,8 @@ theorem eventuallyConst_separatingSpace [CompleteSpace F] [∀ n, CompleteSpace 
       (fun h ↦ hn (le_antisymm (hanti n.le_succ) h)) (hε n) (n + 2 + ‖(S (n + 1)).mkQ (T 0 s)‖)
     exact ⟨v, hv, fun _ ↦ hv'⟩
   -- Choose the summands recursively, each one large compared with the partial sum before it.
-  choose v hv hv' using hchoice
-  let s : ℕ → E 0 := fun n ↦
-    Nat.rec (motive := fun _ ↦ E 0) 0 (fun j acc ↦ acc + toBase R j (v j acc)) n
-  let x : ∀ n, E n := fun n ↦ v n (s n)
-  -- The defining recursion of the partial sums `s`.
-  have hs_succ : ∀ n, s (n + 1) = s n + toBase R n (x n) := fun _ ↦ rfl
-  have hs : ∀ n, s n = ∑ j ∈ range n, toBase R j (x j) := by
-    intro n
-    induction n with
-    | zero => simp [s]
-    | succ n ih => rw [hs_succ, sum_range_succ, ih]
-  have hx : ∀ j, ‖x j‖ ≤ ε j := fun j ↦ hv j (s j)
+  obtain ⟨x, hx'⟩ := exists_forall_sum_range_toBase (R := R) hchoice
+  have hx : ∀ j, ‖x j‖ ≤ ε j := fun j ↦ (hx' j).1
   have hfx : ∀ j, ‖toBase R j (x j)‖ ≤ (1 / 2) ^ j := fun j ↦
     ((toBase R j).le_opNorm _).trans <|
       (mul_le_mul_of_nonneg_left (hx j) (norm_nonneg _)).trans (hεb j)
@@ -505,8 +518,8 @@ theorem eventuallyConst_separatingSpace [CompleteSpace F] [∀ n, CompleteSpace 
   -- Gliding hump: at every strict step `n`, the norm of `T 0 y` is at least `n + 1`.
   have hkey : ∀ n, S (n + 1) ≠ S n → (n : ℝ) + 1 ≤ ‖T 0 y‖ := fun n hn ↦ by
     have h := norm_mkQ_apply_le hT n (K n) (hK n) hx (hεK n) hfs
-    rw [← hs, ← hy] at h
-    linarith [hv' n (s n) hn]
+    rw [← hy] at h
+    linarith [(hx' n).2 hn]
   -- Strict steps are unbounded unless the sequence stabilizes, contradicting `hkey`.
   rw [Filter.eventuallyConst_atTop_nat]
   by_contra! hne

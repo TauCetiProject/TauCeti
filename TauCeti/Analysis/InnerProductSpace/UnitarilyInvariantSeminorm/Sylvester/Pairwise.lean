@@ -274,6 +274,45 @@ theorem mul_map_le_pi_div_two_mul_map_sylvester_apply (N : UnitarilyInvariantSem
   calc δ * N X = π / 2 * (2 * δ / π * N X) := by field_simp
     _ ≤ π / 2 * N (A.sylvester B X) := by gcongr
 
+/-- Replacing a symmetric operator `B` outside an invariant subspace `T` by a scalar does not change
+the Sylvester expression `A X - X B` of an operator `X` which vanishes on `Tᗮ` and takes values in
+an invariant subspace `S` of `A`. -/
+private theorem _root_.ContinuousLinearMap.sylvester_reducedExtension_eq
+    (hB : (B : F →ₗ[𝕜] F).IsSymmetric) {S : Submodule 𝕜 E} {T : Submodule 𝕜 F}
+    (hT : ∀ y ∈ T, B y ∈ T) (r r' : ℝ) {X : F →L[𝕜] E} (hXS : ∀ y, X y ∈ S)
+    (hXT : ∀ y ∈ Tᗮ, X y = 0) :
+    (A.reducedExtension S r).sylvester (B.reducedExtension T r') X = A.sylvester B X := by
+  have hBT : ∀ y ∈ Tᗮ, B y ∈ Tᗮ := fun _ hy ↦
+    hB.orthogonalComplement_mem_invtSubmodule (p := T) (fun z hz ↦ hT z hz) hy
+  ext y
+  -- `X` kills `B P_{Tᗮ} y`, so `X B y = X B P_T y`.
+  have hy : X (B y) = X (B (T.starProjection y)) := by
+    conv_lhs => rw [← T.starProjection_add_starProjection_orthogonal y]
+    rw [map_add, map_add, hXT _ (hBT _ (Tᗮ.starProjection_apply_mem y)), add_zero]
+  simp only [ContinuousLinearMap.sylvester_apply, sub_apply, ContinuousLinearMap.comp_apply,
+    A.reducedExtension_apply_of_mem S r (hXS _), B.reducedExtension_apply, map_add, map_smul,
+    hXT _ (Tᗮ.starProjection_apply_mem y), smul_zero, add_zero, hy]
+
+/-- The extensions of `A` from `S` and of `B` from `T` by the scalars `r` and `-r`, where
+`r = ‖A‖ + ‖B‖ + δ`, have `δ`-separated point spectra whenever `A` on `S` and `B` on `T` do. -/
+private theorem _root_.ContinuousLinearMap.pointSpectraSeparated_reducedExtension
+    {S : Submodule 𝕜 E} {T : Submodule 𝕜 F} (hS : ∀ x ∈ S, A x ∈ S) (hT : ∀ y ∈ T, B y ∈ T)
+    (hδ : 0 ≤ δ) (h : End.PointSpectraSeparated (A : E →ₗ[𝕜] E) S (B : F →ₗ[𝕜] F) T δ) :
+    End.PointSpectraSeparated (A.reducedExtension S (‖A‖ + ‖B‖ + δ) : E →ₗ[𝕜] E) ⊤
+      (B.reducedExtension T (-(‖A‖ + ‖B‖ + δ)) : F →ₗ[𝕜] F) ⊤ δ := by
+  set r := ‖A‖ + ‖B‖ + δ
+  refine End.pointSpectraSeparated_iff.mpr fun μ hμ ν hν ↦ ?_
+  have hA0 := norm_nonneg A
+  have hB0 := norm_nonneg B
+  rcases A.restrictedPointSpectrum_reducedExtension_subset hS r hμ with rfl | hμ <;>
+    rcases B.restrictedPointSpectrum_reducedExtension_subset hT (-r) hν with rfl | hν
+  · exact le_abs.mpr (Or.inl (by linarith))
+  · have := (abs_le.mp (ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum hν)).2
+    exact le_abs.mpr (Or.inl (by linarith))
+  · have := (abs_le.mp (ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum hμ)).1
+    exact le_abs.mpr (Or.inl (by linarith))
+  · exact h.le_abs_sub hμ hν
+
 /-- **The pairwise Sylvester bound on invariant subspaces.** Let `A` and `B` be symmetric operators
 on finite-dimensional inner product spaces, let `S` be invariant under `A` and `T` invariant under
 `B`, and let `X` take values in `S` and vanish on `Tᗮ`. If every eigenvalue of `A` on `S` is at
@@ -291,33 +330,8 @@ theorem mul_map_le_pi_div_two_mul_map_sylvester_apply_of_mem
       (mul_nonneg (by positivity) (apply_nonneg _ _))
   -- Replace `A` on `Sᗮ` and `B` on `Tᗮ` by the scalars `r` and `-r`, far from both spectra.
   set r := ‖A‖ + ‖B‖ + δ
-  have hsyl : (A.reducedExtension S r).sylvester (B.reducedExtension T (-r)) X =
-      A.sylvester B X := by
-    have hBT : ∀ y ∈ Tᗮ, B y ∈ Tᗮ := fun _ hy ↦
-      hB.orthogonalComplement_mem_invtSubmodule (p := T) (fun z hz ↦ hT z hz) hy
-    ext y
-    -- `X` kills `B P_{Tᗮ} y`, so `X B y = X B P_T y`.
-    have hy : X (B y) = X (B (T.starProjection y)) := by
-      conv_lhs => rw [← T.starProjection_add_starProjection_orthogonal y]
-      rw [map_add, map_add, hXT _ (hBT _ (Tᗮ.starProjection_apply_mem y)), add_zero]
-    simp only [ContinuousLinearMap.sylvester_apply, sub_apply, ContinuousLinearMap.comp_apply,
-      A.reducedExtension_apply_of_mem S r (hXS _), B.reducedExtension_apply, map_add, map_smul,
-      hXT _ (Tᗮ.starProjection_apply_mem y), smul_zero, add_zero, hy]
-  -- The eigenvalues of the extensions are those of `A` on `S` and of `B` on `T`, together
-  -- with `r` and `-r`, and `r` exceeds every eigenvalue of `A` and `B` in absolute value by `δ`.
-  have hsep : End.PointSpectraSeparated (A.reducedExtension S r : E →ₗ[𝕜] E) ⊤
-      (B.reducedExtension T (-r) : F →ₗ[𝕜] F) ⊤ δ := by
-    refine End.pointSpectraSeparated_iff.mpr fun μ hμ ν hν ↦ ?_
-    have hA0 := norm_nonneg A
-    have hB0 := norm_nonneg B
-    rcases A.restrictedPointSpectrum_reducedExtension_subset hS r hμ with rfl | hμ <;>
-      rcases B.restrictedPointSpectrum_reducedExtension_subset hT (-r) hν with rfl | hν
-    · exact le_abs.mpr (Or.inl (by linarith))
-    · have := (abs_le.mp (ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum hν)).2
-      exact le_abs.mpr (Or.inl (by linarith))
-    · have := (abs_le.mp (ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum hμ)).1
-      exact le_abs.mpr (Or.inl (by linarith))
-    · exact h.le_abs_sub hμ hν
+  have hsyl := A.sylvester_reducedExtension_eq hB hT r (-r) hXS hXT
+  have hsep := A.pointSpectraSeparated_reducedExtension hS hT hδ h
   simpa only [hsyl] using N.mul_map_le_pi_div_two_mul_map_sylvester_apply
     (A.isSymmetric_reducedExtension hA hS r) (B.isSymmetric_reducedExtension hB hT (-r)) hsep X
 

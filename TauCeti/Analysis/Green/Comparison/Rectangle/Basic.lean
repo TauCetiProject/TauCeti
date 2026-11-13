@@ -135,6 +135,32 @@ theorem integralTopForm_rectangle_faces {a b c d : ℝ} [hab : Fact (a < b)]
     (integral_rectangle_boundary hab.out hcd.out hP hQ).2.2]
   ring
 
+/-- The pullback of the complex area form scaled by `f` along the coordinate identification
+`ℝ × ℝ ≃ ℂ` evaluates to `f` on the standard basis of the tangent space. -/
+private theorem mpullback_equivRealProdCLM_symm_areaForm_apply (f : ℂ → ℝ) (x : ℝ × ℝ) :
+    mpullback 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℂ) Complex.equivRealProdCLM.symm
+      (fun z ↦ f z • manifoldAreaForm z) x (fun i ↦
+        (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm (![(1, 0), (0, 1)] i)) =
+      f ⟨x.1, x.2⟩ := by
+  let L := Complex.equivRealProdCLM.symm
+  rw [mpullback_apply, mfderiv_eq_fderiv]
+  -- Put the model-space tangent fibers in their canonical normed-space coordinates.
+  change (f (L x) • manifoldAreaForm (L x))
+    (fun i ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) (L x)).symm
+      (fderiv ℝ L x (![(1, 0), (0, 1)] i))) = _
+  rw [L.hasFDerivAt.fderiv, ContinuousAlternatingMap.smul_apply,
+    manifoldAreaForm_apply]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, smul_eq_mul]
+  -- The two canonical tangent equivalences cancel; expose the resulting scalar coefficient.
+  change f (L x) * Complex.orientation.volumeFormL
+    (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = _
+  have hv : (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = Complex.basisOneI := by
+    funext i
+    fin_cases i <;> simp [L, Complex.equivRealProdCLM_symm_apply, Complex.coe_basisOneI]
+  rw [hv, Complex.coe_basisOneI,
+    Complex.orientation_volumeFormL_one_I, mul_one]
+  rfl
+
 /-- The actual complex area form on the rectangle manifold integrates against ordinary
 coordinate rectangle area, with integrability retained by the comparison. -/
 theorem integralTopForm_rectangle_areaForm {a b c d : ℝ}
@@ -164,25 +190,7 @@ theorem integralTopForm_rectangle_areaForm {a b c d : ℝ}
     exact mpullback_comp (hι.mdifferentiable one_ne_zero) hL _
   have hη (x : ℝ × ℝ) : η x (fun i ↦
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm (![(1, 0), (0, 1)] i)) =
-        f ⟨x.1, x.2⟩ := by
-    dsimp only [η]
-    rw [mpullback_apply, mfderiv_eq_fderiv]
-    -- Put the model-space tangent fibers in their canonical normed-space coordinates.
-    change (f (L x) • manifoldAreaForm (L x))
-      (fun i ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) (L x)).symm
-        (fderiv ℝ L x (![(1, 0), (0, 1)] i))) = _
-    rw [L.hasFDerivAt.fderiv, ContinuousAlternatingMap.smul_apply,
-      manifoldAreaForm_apply]
-    simp only [ContinuousLinearEquiv.apply_symm_apply, smul_eq_mul]
-    -- The two canonical tangent equivalences cancel; expose the resulting scalar coefficient.
-    change f (L x) * Complex.orientation.volumeFormL
-      (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = _
-    have hv : (fun i : Fin 2 ↦ L (![(1, 0), (0, 1)] i)) = Complex.basisOneI := by
-      funext i
-      fin_cases i <;> simp [L, Complex.equivRealProdCLM_symm_apply, Complex.coe_basisOneI]
-    rw [hv, Complex.coe_basisOneI,
-      Complex.orientation_volumeFormL_one_I, mul_one]
-    rfl
+        f ⟨x.1, x.2⟩ := mpullback_equivRealProdCLM_symm_areaForm_apply f x
   rw [hcomp] at hi ⊢
   have h := integralTopForm_mpullback_rectangle η hi
   simpa only [hη] using h

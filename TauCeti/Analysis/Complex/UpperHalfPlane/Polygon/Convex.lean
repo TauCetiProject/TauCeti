@@ -307,19 +307,24 @@ theorem interiorAngle_nonneg (i : Fin n) : 0 ≤ P.interiorAngle i := by
   rw [interiorAngle_def]
   exact vertexAngle_nonneg _ _ _
 
+/-- The previous vertex lies strictly to the left of the ray from a finite vertex `A` towards the
+next vertex. -/
+private theorem vertex_sub_one_mem_extLeftHalfPlane_rayToward {i : Fin n} {A : ℍ}
+    (hA : P.vertex i = .inl A) :
+    P.vertex (i - 1) ∈ extLeftHalfPlane (rayToward A (P.vertex (i + 1))) := by
+  have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
+    (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i) (add_one_ne_sub_one P.three_le i).symm
+  rw [hA] at hleft
+  have hne := hA ▸ P.vertex_ne_vertex_add_one i
+  rwa [(isGeodesicFromTo_rayToward hne).extLeftHalfPlane_eq (isGeodesicFromTo_geodesicFromTo hne)]
+    at hleft
+
 /-- The interior angle at a finite vertex is positive. -/
 theorem interiorAngle_pos_of_isLeft_vertex {i : Fin n} (hi : (P.vertex i).isLeft) :
     0 < P.interiorAngle i := by
   obtain ⟨A, hA⟩ := Sum.isLeft_iff.mp hi
-  have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
-    (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i)
-    (fun h ↦ add_one_add_one_ne_self P.three_le i (by rw [← h, sub_add_cancel]))
-  rw [hA] at hleft
-  have hg := isGeodesicFromTo_geodesicFromTo (hA ▸ P.vertex_ne_vertex_add_one i)
-  have hray := isGeodesicFromTo_rayToward (hA ▸ P.vertex_ne_vertex_add_one i)
-  rw [hray.extLeftHalfPlane_eq hg] at hleft
   rw [interiorAngle_def, hA, vertexAngle_comm]
-  exact vertexAngle_pos_of_mem_extLeftHalfPlane hleft
+  exact vertexAngle_pos_of_mem_extLeftHalfPlane (P.vertex_sub_one_mem_extLeftHalfPlane_rayToward hA)
 
 /-- The interior angle of a convex polygon vanishes exactly at its ideal vertices. -/
 @[simp]
@@ -343,15 +348,9 @@ theorem ne_zero_of_interiorAngle_eq_pi_div {i : Fin n} (hi : (P.vertex i).isLeft
 /-- Every interior angle of a convex polygon is less than `π`, including ideal vertices. -/
 theorem interiorAngle_lt_pi (i : Fin n) : P.interiorAngle i < π := by
   rcases hA : P.vertex i with A | ξ
-  · have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
-      (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i)
-      (fun h ↦ add_one_add_one_ne_self P.three_le i (by rw [← h, sub_add_cancel]))
-    rw [hA] at hleft
-    have hg := isGeodesicFromTo_geodesicFromTo (hA ▸ P.vertex_ne_vertex_add_one i)
-    have hray := isGeodesicFromTo_rayToward (hA ▸ P.vertex_ne_vertex_add_one i)
-    rw [hray.extLeftHalfPlane_eq hg] at hleft
-    rw [interiorAngle_def, hA, vertexAngle_comm]
-    exact vertexAngle_lt_pi_of_mem_extLeftHalfPlane hleft
+  · rw [interiorAngle_def, hA, vertexAngle_comm]
+    exact vertexAngle_lt_pi_of_mem_extLeftHalfPlane
+      (P.vertex_sub_one_mem_extLeftHalfPlane_rayToward hA)
   · rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hA]
     exact Real.pi_pos
 

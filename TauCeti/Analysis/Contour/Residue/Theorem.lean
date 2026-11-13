@@ -209,6 +209,18 @@ private lemma circleIntegral_eq_residueSum_of_sub {c : ℂ} {R : ℝ} (S : Finse
   rw [hint, hG, hP, hres_add]
   ring
 
+/-- Subtracting the leading Laurent term `g s₀ * (z - s₀) ^ n₀` from a function with germ
+`(z - s₀) ^ n₀ • g z` at `s₀` strictly raises the meromorphic order above `n₀`. -/
+private lemma lt_meromorphicOrderAt_sub_leadingTerm {F g : ℂ → ℂ} {s₀ : ℂ} {n₀ : ℤ}
+    (hg_an : AnalyticAt ℂ g s₀) (hF_germ : F =ᶠ[𝓝[≠] s₀] fun z ↦ (z - s₀) ^ n₀ • g z) :
+    (n₀ : WithTop ℤ) < meromorphicOrderAt (fun z ↦ F z - g s₀ * (z - s₀) ^ n₀) s₀ := by
+  have hG_germ : (fun z ↦ F z - g s₀ * (z - s₀) ^ n₀) =ᶠ[𝓝[≠] s₀]
+      fun z ↦ (z - s₀) ^ n₀ • g z - g s₀ • (z - s₀) ^ n₀ := by
+    filter_upwards [hF_germ] with z hz
+    simp only [hz, smul_eq_mul]
+  rw [meromorphicOrderAt_congr hG_germ]
+  exact meromorphicOrderAt_sub_leadingTerm_gt hg_an
+
 /-- One pole-peeling step of the residue theorem. Given `F` analytic off the finite set `S` with a
 pole at `s₀ ∈ S`, subtracting the leading Laurent term at `s₀` yields `G` that is still analytic off
 `S`, has strictly smaller total pole depth, and whose residue formula implies that of `F`. -/
@@ -245,7 +257,7 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
     exact_mod_cast hs₀_neg
   -- Peel the leading term `P = g s₀ · (· − s₀) ^ n₀`; set `G := F − P`, still analytic off `S`.
   set P : ℂ → ℂ := fun z ↦ g s₀ * (z - s₀) ^ n₀ with hP_def
-  set G : ℂ → ℂ := fun z ↦ F z - P z with hG_def
+  set G : ℂ → ℂ := fun z ↦ F z - P z
   have hP_an_off : ∀ z, z ≠ s₀ → AnalyticAt ℂ P z := fun z hz ↦
     analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).fun_zpow (sub_ne_zero.2 hz))
   have hP_mero : MeromorphicOn P (closedBall c R) := fun z _ ↦ by
@@ -256,12 +268,8 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
     intro z hz hzS
     exact (hF_off z hz hzS).sub (hP_an_off z fun h ↦ hzS (h ▸ hs₀S))
   -- Total pole depth strictly drops: the order at `s₀` rises above `n₀`, and nowhere else falls.
-  have hG_germ : G =ᶠ[𝓝[≠] s₀] fun z ↦ (z - s₀) ^ n₀ • g z - g s₀ • (z - s₀) ^ n₀ := by
-    filter_upwards [hF_germ] with z hz
-    simp only [hG_def, hP_def, hz, smul_eq_mul]
-  have hG_ord_s₀ : (n₀ : WithTop ℤ) < meromorphicOrderAt G s₀ := by
-    rw [meromorphicOrderAt_congr hG_germ]
-    exact meromorphicOrderAt_sub_leadingTerm_gt hg_an
+  have hG_ord_s₀ : (n₀ : WithTop ℤ) < meromorphicOrderAt G s₀ :=
+    lt_meromorphicOrderAt_sub_leadingTerm hg_an hF_germ
   have hdepth_lt : (∑ s ∈ S, (-(meromorphicOrderAt G s).untop₀).toNat)
       < (∑ s ∈ S, (-(meromorphicOrderAt F s).untop₀).toNat) :=
     sum_depthTerm_sub_lt S hF_mero hmem_cb hs₀S hP_an_off hn₀_neg hFs₀ hG_ord_s₀
