@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
 public import TauCeti.Geometry.Manifold.SmoothAmbientIsotopic.Basic
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 
 /-!
 # Smooth isotopies induced by diffeotopies
@@ -16,6 +16,9 @@ Restrict an ambient diffeotopy to a smooth embedding to obtain a smooth isotopy
 through embeddings. The motion is jointly smooth, and every slice is the original
 embedding followed by a diffeomorphism. This connects smooth ambient isotopy to
 the general smooth isotopy type without assuming an isotopy extension theorem.
+Dually, moving the source of an embedding `f` by a diffeotopy `Ψ` of the source gives a smooth
+isotopy `x ↦ f (Ψ (t, x))` from `f` to its reparametrization by `Ψ.final`
+(`TauCeti.SmoothEmbedding.smoothIsotopic_compDiffeomorph_final`).
 
 ## References
 
@@ -67,5 +70,19 @@ theorem SmoothAmbientIsotopic.smoothIsotopic {f g : C^n⟮I, M; J, N⟯}
   obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp h
   rw [← hΦ]
   exact smoothIsotopic_def.mpr ⟨Φ.smoothIsotopy f hf⟩
+
+omit [IsManifold J n N] in
+/-- **Reparametrization along a diffeotopy is an isotopy.** An embedding `f` is smoothly isotopic
+to its reparametrization by the final map of a diffeotopy `Ψ` of the source, through the
+embeddings `x ↦ f (Ψ (t, x))`. -/
+theorem SmoothEmbedding.smoothIsotopic_compDiffeomorph_final [IsManifold I n M]
+    (f : SmoothEmbedding I J n M N) (Ψ : Diffeotopy I n M) :
+    SmoothIsotopic f.toContMDiffMap (f.compDiffeomorph Ψ.final).toContMDiffMap :=
+  smoothIsotopic_def.2 ⟨{
+    toContMDiffMap := ⟨fun p => f (Ψ p), f.contMDiff.comp Ψ.contMDiff⟩
+    map_zero_left := fun x => by simp
+    map_one_left := fun x => by simp
+    isSmoothEmbedding := fun t => by
+      simpa [Function.comp_def] using (f.compDiffeomorph (Ψ.timeSlice t)).isSmoothEmbedding }⟩
 
 end TauCeti

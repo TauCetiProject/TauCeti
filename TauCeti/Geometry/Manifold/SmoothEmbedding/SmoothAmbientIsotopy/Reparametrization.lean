@@ -14,7 +14,8 @@ public import TauCeti.Geometry.Manifold.SmoothIsotopy.Extension
 
 Moving the source of an embedding `f : M → N` by a diffeotopy `Ψ` of `M` moves `f` through the
 embeddings `x ↦ f (Ψ (t, x))`, a smooth isotopy from `f` to its reparametrization
-`f ∘ Ψ.final` (`TauCeti.SmoothEmbedding.smoothIsotopic_compDiffeomorph_final`). For a compact
+`f ∘ Ψ.final` (`TauCeti.SmoothEmbedding.smoothIsotopic_compDiffeomorph_final`, in
+`TauCeti.Geometry.Manifold.SmoothIsotopy.Diffeotopy`). For a compact
 boundaryless source and a finite-dimensional boundaryless target the isotopy extension theorem
 turns this isotopy into an ambient one
 (`TauCeti.SmoothEmbedding.smoothAmbientIsotopic_compDiffeomorph_final`): reparametrizing an
@@ -24,10 +25,9 @@ realized by an ambient isotopy.
 
 ## Main results
 
-* `TauCeti.SmoothEmbedding.smoothIsotopic_compDiffeomorph_final`: an embedding is smoothly
-  isotopic to its reparametrization by the final map of a diffeotopy of the source.
-* `TauCeti.SmoothEmbedding.smoothAmbientIsotopic_compDiffeomorph_final`: for a compact source, it
-  is smoothly ambient isotopic to that reparametrization.
+* `TauCeti.SmoothEmbedding.smoothAmbientIsotopic_compDiffeomorph_final`: an embedding of a
+  compact source is smoothly ambient isotopic to its reparametrization by the final map of a
+  diffeotopy of the source.
 
 ## References
 
@@ -49,19 +49,6 @@ variable {E E' H H' M N : Type*}
   [TopologicalSpace H] [TopologicalSpace H']
   {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'}
   [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
-
-/-- **Reparametrization along a diffeotopy is an isotopy.** An embedding `f` is smoothly isotopic
-to its reparametrization by the final map of a diffeotopy `Ψ` of the source, through the
-embeddings `x ↦ f (Ψ (t, x))`. -/
-theorem smoothIsotopic_compDiffeomorph_final {n : ℕ∞ω} [IsManifold I n M]
-    (f : SmoothEmbedding I J n M N) (Ψ : Diffeotopy I n M) :
-    SmoothIsotopic f.toContMDiffMap (f.compDiffeomorph Ψ.final).toContMDiffMap :=
-  smoothIsotopic_def.2 ⟨{
-    toContMDiffMap := ⟨fun p => f (Ψ p), f.contMDiff.comp Ψ.contMDiff⟩
-    map_zero_left := fun x => by simp
-    map_one_left := fun x => by simp
-    isSmoothEmbedding := fun t => by
-      simpa [Function.comp_def] using (f.compDiffeomorph (Ψ.timeSlice t)).isSmoothEmbedding }⟩
 
 /-- **Reparametrization along a diffeotopy is an ambient isotopy.** A smooth embedding of a compact
 boundaryless manifold into a finite-dimensional boundaryless manifold is smoothly ambient isotopic
