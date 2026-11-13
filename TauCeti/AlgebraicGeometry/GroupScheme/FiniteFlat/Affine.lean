@@ -43,14 +43,14 @@ variable (R : CommRingCat.{u})
 /-- Regard a finite locally free commutative group scheme over an affine base as an object of
 the affine category. Finiteness of its structure morphism supplies affineness of its carrier.
 The object map is exposed so homomorphisms can be identified without dependent transports. -/
-@[expose]
+@[expose, implicit_reducible]
 noncomputable def toAffine :
     FiniteFlatCommGroupScheme (Spec R) ⥤ FiniteLocallyFreeCommAffineGroupSchemeCat R where
   obj G := ⟨⟨Grp.mk G.toOver,
     (affineGroupSchemeProperty_iff _).mpr (isAffine_of_isAffineHom G.structureMap)⟩,
     (finiteLocallyFreeCommAffineGroupSchemeProperty_iff _ _).mpr
       ⟨G.finite, G.flat, G.locallyOfFinitePresentation, G.comm⟩⟩
-  map f := ⟨⟨f⟩⟩
+  map f := ⟨⟨f.hom⟩⟩
 
 /-- Affine rebundling retains the underlying group object. -/
 @[simp]
@@ -58,16 +58,40 @@ theorem toAffine_obj_obj_obj (G : FiniteFlatCommGroupScheme (Spec R)) :
     ((toAffine R).obj G).obj.obj = Grp.mk G.toOver :=
   (rfl)
 
+/-- Affine rebundling retains the structure morphism. -/
+@[simp]
+theorem toAffine_obj_obj_obj_X_hom (G : FiniteFlatCommGroupScheme (Spec R)) :
+    ((toAffine R).obj G).obj.obj.X.hom = G.structureMap :=
+  (rfl)
+
+/-- Affine rebundling retains the unit section. -/
+@[simp]
+theorem toAffine_obj_one (G : FiniteFlatCommGroupScheme (Spec R)) :
+    η[((toAffine R).obj G).obj.obj.X] = η[G.toOver] :=
+  (rfl)
+
+/-- Affine rebundling retains multiplication. -/
+@[simp]
+theorem toAffine_obj_mul (G : FiniteFlatCommGroupScheme (Spec R)) :
+    μ[((toAffine R).obj G).obj.obj.X] = μ[G.toOver] :=
+  (rfl)
+
+/-- Affine rebundling retains inversion. -/
+@[simp]
+theorem toAffine_obj_inv (G : FiniteFlatCommGroupScheme (Spec R)) :
+    ι[((toAffine R).obj G).obj.obj.X] = ι[G.toOver] :=
+  (rfl)
+
 /-- Affine rebundling retains the underlying homomorphism. -/
 @[simp]
 theorem toAffine_map_hom_hom {G H : FiniteFlatCommGroupScheme (Spec R)} (f : G ⟶ H) :
-    ((toAffine R).map f).hom.hom = f :=
+    ((toAffine R).map f).hom.hom = f.hom :=
   (rfl)
 
 /-- Regard a finite locally free commutative affine group scheme as a finite locally free
 commutative group scheme over its base spectrum, retaining its underlying group object.
 The object map is exposed so structure maps and homomorphisms need no dependent transports. -/
-@[expose]
+@[expose, implicit_reducible]
 noncomputable def fromAffine :
     FiniteLocallyFreeCommAffineGroupSchemeCat R ⥤ FiniteFlatCommGroupScheme (Spec R) where
   obj G :=
@@ -78,7 +102,7 @@ noncomputable def fromAffine :
       finite := inferInstance
       flat := inferInstance
       locallyOfFinitePresentation := inferInstance }
-  map f := f.hom.hom
+  map f := homMk f.hom.hom
 
 /-- Forgetting the affine bundling retains the carrier scheme. -/
 @[simp]
@@ -135,23 +159,18 @@ theorem toAffine_obj_fromAffine_obj (G : FiniteLocallyFreeCommAffineGroupSchemeC
 
 /-- Forgetting the affine bundling retains the underlying homomorphism. -/
 @[simp]
-theorem fromAffine_map {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R} (f : G ⟶ H) :
-    (fromAffine R).map f = f.hom.hom :=
-  (rfl)
-
-/-- Affine rebundling recovers an affine homomorphism from its underlying group homomorphism. -/
-@[simp]
-theorem toAffine_map_fromAffine_hom_hom {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R}
-    (f : G ⟶ H) :
-    (toAffine R).map (X := (fromAffine R).obj G) (Y := (fromAffine R).obj H) f.hom.hom = f :=
+theorem fromAffine_map_hom {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R} (f : G ⟶ H) :
+    ((fromAffine R).map f).hom = f.hom.hom :=
   (rfl)
 
 /-- Forgetting after affine rebundling recovers the original homomorphism. -/
+@[simp]
 theorem fromAffine_map_toAffine_map {G H : FiniteFlatCommGroupScheme (Spec R)} (f : G ⟶ H) :
     (fromAffine R).map ((toAffine R).map f) = f :=
   (rfl)
 
 /-- Affine rebundling after forgetting recovers the original affine homomorphism. -/
+@[simp]
 theorem toAffine_map_fromAffine_map {G H : FiniteLocallyFreeCommAffineGroupSchemeCat R}
     (f : G ⟶ H) : (toAffine R).map ((fromAffine R).map f) = f :=
   (rfl)
@@ -196,7 +215,7 @@ theorem fromAffineCompToGrpIso_inv_app (G : FiniteLocallyFreeCommAffineGroupSche
 finite locally free commutative affine group schemes over the same ring. Both directions keep
 the underlying group scheme and every homomorphism unchanged. The directions are exposed so
 unit and counit components can be stated as identities without dependent transports. -/
-@[expose]
+@[expose, implicit_reducible]
 noncomputable def affineEquivalence :
     FiniteFlatCommGroupScheme (Spec R) ≌ FiniteLocallyFreeCommAffineGroupSchemeCat R where
   functor := toAffine R
