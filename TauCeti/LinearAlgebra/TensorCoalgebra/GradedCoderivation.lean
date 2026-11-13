@@ -119,17 +119,23 @@ private noncomputable def ReducedTensorWords.gradedCoderivSummand (G : InternalG
 /-- On a pure tensor word, the graded Taylor summand splices the value of `F` on the collapsed
 block into the tuple whose first `p` letters carry the Koszul twist. -/
 private theorem ReducedTensorWords.gradedCoderivSummand_tprod (G : InternalGrading R M)
-    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n p d : ℕ} (hd : 0 < d) (hpd : p + d ≤ n)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n p d : ℕ}
     (x : Fin n → M) :
     gradedCoderivSummand G F q n p d (PiTensorProduct.tprod R x)
       = splice R (twistedTuple G q x 0 p) 0 n p d (F (subword R x p d)) := by
+  by_cases h : 0 < d ∧ p + d ≤ n
+  swap
+  · rw [gradedCoderivSummand, coderivSummand_eq_zero R F h, LinearMap.zero_comp,
+      LinearMap.zero_apply]
+    exact (splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)).symm
+  obtain ⟨_, hpd⟩ := h
   have hsub : subword R
       (fun i => (if i.val < p then koszulTwist G q else LinearMap.id) (x i)) p d =
       subword R x p d :=
     subword_congr R _ _ (by omega) (by omega) fun j hj ↦ by
       simp [show ¬(p + j < p) from by omega]
   rw [gradedCoderivSummand, LinearMap.coe_comp, Function.comp_apply, gradedTwistFirst,
-    PiTensorProduct.map_tprod, coderivSummand_tprod R F hd hpd, hsub]
+    PiTensorProduct.map_tprod, coderivSummand_tprod R F, hsub]
   refine splice_congr R _ _ _ (by omega) (by omega) fun j hj ↦ ?_
   simp only [twistedTuple_apply, Nat.zero_le, true_and]
   by_cases hj' : j < p <;> simp [hj']
@@ -164,11 +170,7 @@ theorem ReducedTensorWords.gradedCoderiv_of_tprod (G : InternalGrading R M)
           splice R (twistedTuple G q x 0 p) 0 n p d (F (subword R x p d)) := by
   rw [gradedCoderiv_of]
   refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun d _ ↦ ?_
-  by_cases h : 0 < d ∧ p + d ≤ n
-  · rw [gradedCoderivSummand_tprod G F q h.1 h.2 x]
-  · rw [gradedCoderivSummand, coderivSummand_eq_zero R F (by tauto), LinearMap.zero_comp,
-      LinearMap.zero_apply]
-    exact (splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)).symm
+  exact gradedCoderivSummand_tprod G F q x
 
 /-- Splicing a Koszul-twisted prefix of a homogeneous tuple produces the Koszul sign of that
 prefix times the untwisted splice. -/
@@ -563,7 +565,9 @@ theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M
         (((q * ∑ i, degree i).negOnePow : ℤ) : R) =
           ∏ i, (((q * degree i).negOnePow : ℤ) : R) := by
       simp only [← negOnePowCast_eq_intCast, Finset.mul_sum, negOnePowCast_sum]
-    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ, map_smul, ← hD, ← hsign]
+    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ]
+    simp only [RingHom.id_apply]
+    rw [map_smul, ← hD, ← hsign]
   · intro u v _ _ hu hv
     simp only [map_add, hu, hv, smul_add]
   · intro a u _ hu

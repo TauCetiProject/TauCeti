@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sheaf
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
 
 /-!
 # Divisor sections as meromorphic functions
@@ -23,7 +24,9 @@ normalization of representatives.
 If the space of sections has dimension greater than one, its image cannot consist only of
 constants. On a compact connected Riemann surface this produces a finite holomorphic map to
 the sphere, with the prescribed pole bound. This is the linear-algebra step converting a
-lower bound on the dimension of a divisor's section space into an actual finite map.
+lower bound on the dimension of a divisor's section space into an actual finite map. Its
+degree is at most the degree of an effective divisor, so a second section of the divisor of a
+single point gives a map of degree one.
 
 ## References
 
@@ -169,5 +172,19 @@ theorem exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections [CompactSp
   simpa only [FiniteHolomorphicMap.coe_ofMDifferentiable,
     ← MeromorphicFunction.finitePart_def, MeromorphicFunction.order_apply] using
     divisorSections.neg_le_order_toMeromorphic s
+
+/-- **A second section of `𝒪(x)` gives a degree-one map to `ℙ¹`.** If the global sections of the
+divisor of a point `x` on a compact connected Riemann surface have dimension greater than one,
+there is a finite holomorphic map `X → ℙ¹` of degree one. -/
+theorem exists_finiteHolomorphicMap_degree_eq_one_of_one_lt_finrank_divisorSections_ofPoint
+    [CompactSpace X] [T2Space X] {x : X}
+    (hx : 1 < Module.finrank ℂ (divisorSections (WeilDivisor.ofPoint x) ⊤)) :
+    ∃ F : FiniteHolomorphicMap X (OnePoint ℂ), degree F = 1 := by
+  obtain ⟨F, hF⟩ := exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections _ hx
+  refine ⟨F, ?_⟩
+  have hle := F.degree_le_degree_of_neg_le_meromorphicOrderAt (WeilDivisor.ofPoint_nonneg x) hF
+  rw [WeilDivisor.degree_ofPoint] at hle
+  have := degree_pos F
+  omega
 
 end TauCeti.RiemannSurface
