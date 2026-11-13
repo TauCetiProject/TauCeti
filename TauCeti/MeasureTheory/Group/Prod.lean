@@ -26,7 +26,7 @@ When `G` is σ-compact and `μ` is a regular Haar measure, Haar completion regul
 `Φ : X × Y → G` out of a product of σ-compact spaces (`T2Space Y`), `g ∘ Φ` is strongly measurable
 for the product σ-algebra (`Continuous.measurable_baire_prod_of_sigmaCompact`), and `Φ ⁻¹' N` is
 measurable in `X × Y` of product measure zero whenever almost every horizontal slice of `Φ` is
-quasi-measure-preserving into `μ`. In particular, `(x, y) ↦ f (y⁻¹ * x)`, `(y, x) ↦ f (y⁻¹ * x)`,
+quasi-measure-preserving into `μ`. In particular, `(x, y) ↦ f (x⁻¹ * y)`, `(x, y) ↦ f (y⁻¹ * x)`,
 and `(x, y) ↦ f (x * y)` are almost everywhere strongly measurable for product measures without
 `MeasurableMul₂ G`.
 
@@ -36,9 +36,9 @@ and `(x, y) ↦ f (x * y)` are almost everywhere strongly measurable for product
   `AEStronglyMeasurable` for `f ∘ Φ` along continuous slicewise quasi-measure-preserving maps into a
   σ-compact locally compact Hausdorff group.
 * `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_prod`,
-  `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_prod_swap`, and
+  `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_swap_prod`, and
   `MeasureTheory.AEStronglyMeasurable.comp_mul_prod`: product strong measurability of
-  `(x, y) ↦ f (y⁻¹ * x)`, `(y, x) ↦ f (y⁻¹ * x)`, and `(x, y) ↦ f (x * y)`.
+  `(x, y) ↦ f (x⁻¹ * y)`, `(x, y) ↦ f (y⁻¹ * x)`, and `(x, y) ↦ f (x * y)`.
 
 ## References
 
@@ -81,23 +81,23 @@ theorem AEStronglyMeasurable.comp_continuous_prod_of_sigmaCompact {ν : Measure 
     exact hx.preimage_null hN0
   exact ae_iff.2 (measure_mono_null (fun _ hp => hfg (Ne.symm hp)) hM0)
 
+/-- On a σ-compact locally compact Hausdorff group `G` with a regular Haar measure `μ`,
+`(x, y) ↦ f (x⁻¹ * y)` is `(ν.prod μ)`-almost everywhere strongly measurable for any measure `ν` on
+`G` and any `μ`-almost everywhere strongly measurable `f`. -/
+theorem AEStronglyMeasurable.comp_inv_mul_prod {ν : Measure G} {f : G → β}
+    (hf : AEStronglyMeasurable f μ) :
+    AEStronglyMeasurable (fun q : G × G => f (q.1⁻¹ * q.2)) (ν.prod μ) :=
+  hf.comp_continuous_prod_of_sigmaCompact (continuous_fst.inv.mul continuous_snd)
+    (.of_forall fun x => (measurePreserving_mul_left μ x⁻¹).quasiMeasurePreserving)
+
 /-- On a σ-compact locally compact Hausdorff group `G` with a regular Haar measure `μ`, the
 convolution translate `(x, y) ↦ f (y⁻¹ * x)` is `(ν.prod μ)`-almost everywhere strongly measurable
 for any measure `ν` on `G` and any `μ`-almost everywhere strongly measurable `f`. -/
-theorem AEStronglyMeasurable.comp_inv_mul_prod {ν : Measure G} {f : G → β}
+theorem AEStronglyMeasurable.comp_inv_mul_swap_prod {ν : Measure G} {f : G → β}
     (hf : AEStronglyMeasurable f μ) :
     AEStronglyMeasurable (fun q : G × G => f (q.2⁻¹ * q.1)) (ν.prod μ) :=
   hf.comp_continuous_prod_of_sigmaCompact (continuous_snd.inv.mul continuous_fst)
     (.of_forall fun x => Measure.quasiMeasurePreserving_inv_mul_of_regular μ x)
-
-/-- On a σ-compact locally compact Hausdorff group `G` with a regular Haar measure `μ`, the
-swapped convolution translate `(y, x) ↦ f (y⁻¹ * x)` is `(ν.prod μ)`-almost everywhere strongly
-measurable for any measure `ν` on `G` and any `μ`-almost everywhere strongly measurable `f`. -/
-theorem AEStronglyMeasurable.comp_inv_mul_prod_swap {ν : Measure G} {f : G → β}
-    (hf : AEStronglyMeasurable f μ) :
-    AEStronglyMeasurable (fun q : G × G => f (q.1⁻¹ * q.2)) (ν.prod μ) :=
-  hf.comp_continuous_prod_of_sigmaCompact (continuous_fst.inv.mul continuous_snd)
-    (.of_forall fun y => (measurePreserving_mul_left μ y⁻¹).quasiMeasurePreserving)
 
 /-- On a σ-compact locally compact Hausdorff group `G` with a regular Haar measure `μ`,
 `(x, y) ↦ f (x * y)` is `(ν.prod μ)`-almost everywhere strongly measurable for any measure `ν` on

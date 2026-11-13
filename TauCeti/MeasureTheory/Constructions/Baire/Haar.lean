@@ -10,14 +10,13 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.Topology.GDelta.Basic
 public import TauCeti.MeasureTheory.Constructions.Baire.Regular
-import Mathlib.Topology.Algebra.Group.Quotient
 import Mathlib.Topology.CompactOpen
 import Mathlib.Topology.Metrizable.ContinuousMap
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
 import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 import TauCeti.Topology.Algebra.Group.LocallyConstant
-import TauCeti.Topology.Algebra.Group.OpenSubgroup.SigmaCompact
+import TauCeti.Topology.Algebra.Group.SigmaCompact
 import TauCeti.Topology.GDelta.Basic
 
 /-!
@@ -31,15 +30,17 @@ Borel, so it need not pull back to a measurable set in `borel X × borel Y` alon
 `Φ : X × Y → G` out of σ-compact products (such as group multiplication in convolution).
 
 This file proves that a regular Haar measure `μ` on a locally compact Hausdorff group `G` is
-*completion regular*: every `μ`-null set is contained in a `Gδ` Baire `μ`-null set, every
-`μ`-null-measurable set `s` with `[SigmaFinite (μ.restrict s)]` differs from a σ-compact Baire set
-by a subset of a `Gδ` Baire `μ`-null set, and on σ-compact groups every almost everywhere strongly
-measurable function agrees outside a `Gδ` Baire `μ`-null set with a function strongly measurable for
-`TauCeti.baire G`. Enclosing exceptional sets inside Baire `μ`-null sets lets continuous maps into
-`G` pull both the representative and the null error back into the product σ-algebra.
+*completion regular*: every open set `U` with `[SigmaFinite (μ.restrict U)]` has an open Baire
+superset almost everywhere equal to it, every `μ`-null set is contained in a `Gδ` Baire `μ`-null
+set, every `μ`-null-measurable set `s` with `[SigmaFinite (μ.restrict s)]` differs from a σ-compact
+Baire set by a subset of a `Gδ` Baire `μ`-null set, and on σ-compact groups every almost everywhere
+strongly measurable function agrees outside a `Gδ` Baire `μ`-null set with a function strongly
+measurable for `TauCeti.baire G`. Enclosing exceptional sets inside Baire `μ`-null sets lets
+continuous maps into `G` pull both the representative and the null error back into the product
+σ-algebra.
 
-The core step (`IsOpen.exists_isOpen_baire_superset_ae_eq`) constructs an open Baire superset
-almost everywhere equal to an open set `U ⊆ G` when `G` is σ-compact:
+When `G` is σ-compact, an open Baire superset almost everywhere equal to an open set `U ⊆ G` is
+constructed as follows:
 
 1. Choose a Baire set `V =ᵐ[μ] U` (`MeasureTheory.NullMeasurableSet.exists_baire_ae_eq`), written as
    the preimage of a Borel subset of `ℕ → ℝ` under a sequence `f : ℕ → C(G, ℝ)`.
@@ -49,18 +50,17 @@ almost everywhere equal to an open set `U ⊆ G` when `G` is σ-compact:
    `ℕ → C(G, ℝ)`, so `W` is Baire measurable; inner regularity and right quasi-invariance of `μ`
    force `μ (W \ V) = 0`, hence `W =ᵐ[μ] U`.
 
-On an arbitrary (not necessarily σ-compact) locally compact Hausdorff group, every open set of
-finite regular Haar measure has a σ-compact inner core whose generated σ-compact open subgroup `H`
-contains the entire open set (since `U \ H` is open of Haar measure zero). Consequently every set
-`s` with `[SigmaFinite (μ.restrict s)]`—and in particular every `μ`-null set—lies in a single
-σ-compact open subgroup, transferring Baire null envelopes and representatives without ambient
-σ-compactness.
+On an arbitrary (not necessarily σ-compact) locally compact Hausdorff group, every set `s` with
+`[SigmaFinite (μ.restrict s)]`—in particular every finite-measure open set and every `μ`-null
+set—lies in a single σ-compact open subgroup
+(`MeasureTheory.exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict`), transferring open
+Baire hulls, Baire null envelopes, and Baire representatives without ambient σ-compactness.
 
 ## Main results
 
-* `IsOpen.exists_isOpen_baire_superset_ae_eq`: every open set in a σ-compact locally compact
-  Hausdorff group has an open Baire superset almost everywhere equal to it for a regular Haar
-  measure `μ`.
+* `IsOpen.exists_isOpen_baire_superset_ae_eq`: on any locally compact Hausdorff group with a regular
+  Haar measure `μ`, every open set `U` with `[SigmaFinite (μ.restrict U)]` has an open Baire
+  superset almost everywhere equal to it.
 * `MeasureTheory.exists_baire_superset_of_null`: on any locally compact Hausdorff group, every null
   set for a regular Haar measure `μ` is contained in a `Gδ` Baire `μ`-null set.
 * `MeasureTheory.NullMeasurableSet.exists_baire_symmDiff_subset_null`,
@@ -86,7 +86,7 @@ public section
 open Filter Function MeasureTheory Set Topology
 open scoped ENNReal symmDiff
 
-section SigmaCompact
+section SigmaCompactSaturation
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [T2Space G] [SigmaCompactSpace G]
@@ -94,17 +94,13 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 omit [T2Space G] [MeasurableSpace G] [BorelSpace G] in
 /-- Saturating an open set `U` along the joint right-translation stabilizer of a sequence
-`f : ℕ → C(G, ℝ)` produces an open Baire-measurable set, because the quotient embeds continuously
-and injectively into the metrizable space `ℕ → C(G, ℝ)`. -/
-private theorem isOpen_and_measurableSet_baire_saturation (f : ℕ → C(G, ℝ)) {U : Set G}
-    (hU : IsOpen U) :
+`f : ℕ → C(G, ℝ)` produces a Baire-measurable set, because the σ-compact quotient embeds
+continuously and injectively into the metrizable space `ℕ → C(G, ℝ)`. -/
+private theorem measurableSet_baire_saturation (f : ℕ → C(G, ℝ)) {U : Set G} (hU : IsOpen U) :
     let N : Subgroup G := ⨅ k, TauCeti.rightTranslationStabilizer (f k)
     let π : G → G ⧸ N := QuotientGroup.mk
-    IsOpen (π ⁻¹' (π '' U)) ∧ MeasurableSet[TauCeti.baire G] (π ⁻¹' (π '' U)) := by
+    MeasurableSet[TauCeti.baire G] (π ⁻¹' (π '' U)) := by
   intro N π
-  have hW_open : IsOpen (π ⁻¹' (π '' U)) :=
-    (QuotientGroup.isOpenMap_coe (N := N) U hU).preimage QuotientGroup.continuous_mk
-  refine ⟨hW_open, ?_⟩
   let Φ (k : ℕ) : C(G × G, ℝ) :=
     ⟨fun p => f k (p.2 * p.1), (f k).continuous.comp (continuous_snd.mul continuous_fst)⟩
   let Ψ : G → ℕ → C(G, ℝ) := fun g k => (Φ k).curry g
@@ -125,18 +121,12 @@ private theorem isOpen_and_measurableSet_baire_saturation (f : ℕ → C(G, ℝ)
     funext fun x => (Quotient.lift_mk (s := QuotientGroup.leftRel N) Ψ hΨ_rel x).symm
   let F : Set (G ⧸ N) := (π '' U)ᶜ
   have hF_closed : IsClosed F := (QuotientGroup.isOpenMap_coe (N := N) U hU).isClosed_compl
-  have hF_union : F = ⋃ m : ℕ, F ∩ π '' compactCovering G m := by
-    have hsurj : Surjective π := Quotient.mk''_surjective
-    rw [← inter_iUnion, ← image_iUnion, iUnion_compactCovering, image_univ,
-      range_eq_univ.2 hsurj, inter_univ]
+  obtain ⟨K, hKc, hKF⟩ :=
+    (isSigmaCompact_univ.of_isClosed_subset hF_closed (subset_univ F)).image hΨbar_cont
   let _ : MeasurableSpace (ℕ → C(G, ℝ)) := borel (ℕ → C(G, ℝ))
   have _ : BorelSpace (ℕ → C(G, ℝ)) := ⟨rfl⟩
-  have hΨF_borel : MeasurableSet (Ψbar '' F) := by
-    rw [hF_union, image_iUnion]
-    refine MeasurableSet.iUnion fun m => ?_
-    have hKm : IsCompact (F ∩ π '' compactCovering G m) :=
-      ((isCompact_compactCovering G m).image QuotientGroup.continuous_mk).inter_left hF_closed
-    exact (hKm.image hΨbar_cont).isClosed.measurableSet
+  have hΨF_borel : MeasurableSet (Ψbar '' F) :=
+    hKF ▸ MeasurableSet.iUnion fun m => (hKc m).isClosed.measurableSet
   have hΨF_baire : MeasurableSet[TauCeti.baire (ℕ → C(G, ℝ))] (Ψbar '' F) := by
     rwa [TauCeti.baire_eq_borel]
   have hWc : (π ⁻¹' (π '' U))ᶜ = Ψ ⁻¹' (Ψbar '' F) := by
@@ -171,10 +161,7 @@ private theorem measure_saturation_diff_eq_zero (μ : Measure G) [μ.IsHaarMeasu
       (Measure.measure_mul_right_null_of_regular μ ((n : N) : G)).2 hUV)
   exact hKpos.ne' hKzero
 
-/-- **Open Baire hull of an open set.** On a σ-compact locally compact Hausdorff group with a
-regular Haar measure `μ`, every open set `U` is contained in an open Baire-measurable set `W` with
-`W =ᵐ[μ] U`. -/
-theorem _root_.IsOpen.exists_isOpen_baire_superset_ae_eq {U : Set G} (hU : IsOpen U)
+private theorem exists_isOpen_baire_superset_ae_eq_of_sigmaCompact {U : Set G} (hU : IsOpen U)
     (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] :
     ∃ W : Set G, U ⊆ W ∧ IsOpen W ∧ MeasurableSet[TauCeti.baire G] W ∧ W =ᵐ[μ] U := by
   obtain ⟨V, -, hV_baire, hVU⟩ := hU.measurableSet.nullMeasurableSet.exists_baire_ae_eq (μ := μ)
@@ -183,7 +170,10 @@ theorem _root_.IsOpen.exists_isOpen_baire_superset_ae_eq {U : Set G} (hU : IsOpe
   let π : G → G ⧸ N := QuotientGroup.mk
   have hVN {x n : G} (hn : n ∈ N) : x * n ∈ V ↔ x ∈ V := by
     simp [hVt, fun k => TauCeti.mem_rightTranslationStabilizer.1 (Subgroup.mem_iInf.1 hn k) x]
-  obtain ⟨hW_open, hW_baire⟩ := isOpen_and_measurableSet_baire_saturation f hU
+  have hW_open : IsOpen (π ⁻¹' (π '' U)) :=
+    (QuotientGroup.isOpenMap_coe (N := N) U hU).preimage QuotientGroup.continuous_mk
+  have hW_baire : MeasurableSet[TauCeti.baire G] (π ⁻¹' (π '' U)) :=
+    measurableSet_baire_saturation f hU
   have hUW : U ⊆ π ⁻¹' (π '' U) := subset_preimage_image π U
   have hW_diff_V : μ (π ⁻¹' (π '' U) \ V) = 0 :=
     measure_saturation_diff_eq_zero μ N hU (TauCeti.baire_le V hV_baire) (fun _ _ => hVN)
@@ -191,109 +181,7 @@ theorem _root_.IsOpen.exists_isOpen_baire_superset_ae_eq {U : Set G} (hU : IsOpe
   exact ⟨π ⁻¹' (π '' U), hUW, hW_open, hW_baire,
     ((ae_subset.2 hW_diff_V).trans hVU.subset).antisymm (Eventually.of_forall fun _ h => hUW h)⟩
 
-namespace MeasureTheory
-
-variable {μ : Measure G} [μ.IsHaarMeasure] [μ.Regular]
-
-private theorem exists_baire_superset_of_null_of_sigmaCompact {s : Set G} (hs : μ s = 0) :
-    ∃ N : Set G, s ⊆ N ∧ IsGδ N ∧ MeasurableSet[TauCeti.baire G] N ∧ μ N = 0 := by
-  have hopen (k : ℕ) : ∃ U ⊇ s, IsOpen U ∧ μ U < ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ :=
-    s.exists_isOpen_lt_of_lt _ (by simp [hs])
-  choose U hsU hUo hUμ using hopen
-  choose W hUW hWo hWb hWae using fun k => (hUo k).exists_isOpen_baire_superset_ae_eq μ
-  refine ⟨⋂ k, W k, subset_iInter fun k => (hsU k).trans (hUW k), IsGδ.iInter_of_isOpen hWo,
-    MeasurableSet.iInter hWb, ?_⟩
-  have hbound (k : ℕ) : μ (⋂ n, W n) ≤ ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ :=
-    (measure_mono (iInter_subset W k)).trans ((measure_congr (hWae k)).trans_le (hUμ k).le)
-  exact nonpos_iff_eq_zero.1 <| ge_of_tendsto'
-    (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)) hbound
-
-private theorem exists_baire_symmDiff_subset_null_of_sigmaCompact {s : Set G}
-    (hs : NullMeasurableSet s μ) :
-    ∃ B N : Set G, IsSigmaCompact B ∧ MeasurableSet[TauCeti.baire G] B ∧
-      IsGδ N ∧ MeasurableSet[TauCeti.baire G] N ∧ μ N = 0 ∧ s ∆ B ⊆ N := by
-  obtain ⟨B, hB_sc, hB_baire, hBs⟩ := hs.exists_baire_ae_eq
-  obtain ⟨N, hNB, hNg, hNb, hN0⟩ :=
-    exists_baire_superset_of_null_of_sigmaCompact (measure_symmDiff_eq_zero_iff.2 hBs.symm)
-  exact ⟨B, N, hB_sc, hB_baire, hNg, hNb, hN0, hNB⟩
-
-/-- Replace a Borel simple function on `G` almost everywhere by a simple function measurable for
-`TauCeti.baire G`. -/
-private theorem exists_simpleFunc_baire_ae_eq {β : Type*} (s : SimpleFunc G β) (b₀ : β) :
-    ∃ s' : @SimpleFunc G (TauCeti.baire G) β, (s' : G → β) =ᵐ[μ] s := by
-  classical
-  have hfib (y : β) := (s.measurableSet_fiber y).nullMeasurableSet.exists_baire_ae_eq (μ := μ)
-  choose B _ hBb hBae using hfib
-  let build : List β → @SimpleFunc G (TauCeti.baire G) β := fun L =>
-    L.foldr (fun y acc => @SimpleFunc.piecewise G β (TauCeti.baire G) (B y) (hBb y)
-      (@SimpleFunc.const G β (TauCeti.baire G) y) acc)
-      (@SimpleFunc.const G β (TauCeti.baire G) b₀)
-  have hbuild_eq : ∀ (L : List β) (x : G),
-      (∀ y ∈ L, x ∈ B y ↔ s x = y) → s x ∈ L → build L x = s x := by
-    let _ : MeasurableSpace G := TauCeti.baire G
-    intro L
-    induction L with
-    | nil => simp
-    | cons y L ih =>
-      intro x hxB hxL
-      dsimp only [build] at ih ⊢
-      rw [List.foldr_cons, SimpleFunc.piecewise_apply]
-      by_cases hxy : s x = y
-      · have hxBy : x ∈ B y := (hxB y List.mem_cons_self).2 hxy
-        simp [hxBy, hxy]
-      · have hxBy : x ∉ B y := fun hm => hxy ((hxB y List.mem_cons_self).1 hm)
-        have hxL' : s x ∈ L := (List.mem_cons.1 hxL).resolve_left hxy
-        simp only [hxBy, ↓reduceIte]
-        exact ih x (fun z hz => hxB z (List.mem_cons_of_mem y hz)) hxL'
-  refine ⟨build s.range.toList, ?_⟩
-  have hae : ∀ᵐ x ∂μ, ∀ y ∈ (s.range : Set β), x ∈ B y ↔ s x = y := by
-    refine (eventually_all_finite s.range.finite_toSet).2 fun y _ => ?_
-    filter_upwards [hBae y] with x hx
-    simpa [eq_comm] using hx
-  filter_upwards [hae] with x hx
-  exact hbuild_eq s.range.toList x (fun y hy => hx y (Finset.mem_coe.2 (Finset.mem_toList.1 hy)))
-    (Finset.mem_toList.2 (s.mem_range_self x))
-
-/-- **Baire representatives of almost everywhere strongly measurable functions.** On a σ-compact
-locally compact Hausdorff group with a regular Haar measure `μ`, every `μ`-almost everywhere
-strongly measurable function `f : G → β` agrees outside a `Gδ` Baire `μ`-null set `N` with a
-function `g : G → β` that is strongly measurable for `TauCeti.baire G`. -/
-theorem AEStronglyMeasurable.exists_stronglyMeasurable_baire {β : Type*} [TopologicalSpace β]
-    {f : G → β} (hf : AEStronglyMeasurable f μ) :
-    ∃ (g : G → β) (N : Set G), StronglyMeasurable[TauCeti.baire G] g ∧
-      IsGδ N ∧ MeasurableSet[TauCeti.baire G] N ∧ μ N = 0 ∧ {x : G | f x ≠ g x} ⊆ N := by
-  classical
-  let b₀ : β := f 1
-  obtain ⟨fs, hfs⟩ := hf.stronglyMeasurable_mk
-  choose hs hhs using fun n => exists_simpleFunc_baire_ae_eq (μ := μ) (fs n) b₀
-  let S : Set G := {x | f x ≠ hf.mk f x} ∪ ⋃ n, {x | hs n x ≠ fs n x}
-  have hS_null : μ S = 0 :=
-    measure_union_null hf.ae_eq_mk (measure_iUnion_null hhs)
-  obtain ⟨N, hSN, hNg, hNb, hN0⟩ := exists_baire_superset_of_null_of_sigmaCompact hS_null
-  let gs : ℕ → @SimpleFunc G (TauCeti.baire G) β := fun n =>
-    @SimpleFunc.piecewise G β (TauCeti.baire G) N hNb
-      (@SimpleFunc.const G β (TauCeti.baire G) b₀) (hs n)
-  let g : G → β := fun x => if x ∈ N then b₀ else f x
-  have hg_sm : StronglyMeasurable[TauCeti.baire G] g := by
-    let _ : MeasurableSpace G := TauCeti.baire G
-    have hgs_eq (n : ℕ) (x : G) : gs n x = if x ∈ N then b₀ else hs n x := by
-      dsimp only [gs]
-      rw [SimpleFunc.piecewise_apply, SimpleFunc.const_apply]
-    refine ⟨gs, fun x => ?_⟩
-    by_cases hxN : x ∈ N
-    · simpa [g, hxN, hgs_eq] using tendsto_const_nhds
-    · have hxS : x ∉ S := fun hm => hxN (hSN hm)
-      have hfx : f x = hf.mk f x := not_not.1 fun hne => hxS (Or.inl hne)
-      have hhs_eq (n : ℕ) : hs n x = fs n x :=
-        not_not.1 fun hne => hxS (Or.inr (mem_iUnion.2 ⟨n, hne⟩))
-      simpa [g, hxN, hfx, hgs_eq, hhs_eq] using hfs x
-  refine ⟨g, N, hg_sm, hNg, hNb, hN0, fun x hx => ?_⟩
-  by_contra hxN
-  exact hx (by simp [g, hxN])
-
-end MeasureTheory
-
-end SigmaCompact
+end SigmaCompactSaturation
 
 section LocallyCompact
 
@@ -310,63 +198,55 @@ private theorem measurableSet_baire_image_openSubgroup_coe (H : OpenSubgroup G) 
   (@MeasurableEmbedding.measurableSet_image' H G (TauCeti.baire H) (TauCeti.baire G) _
     H.isClopen.measurableEmbedding_baire_subtype_coe) hs
 
-/-- An open set of finite regular Haar measure is contained in a σ-compact open subgroup: its
-σ-compact inner core generates an open subgroup `H`, leaving `V \ H` open of Haar measure zero. -/
-private theorem exists_openSubgroup_isSigmaCompact_of_isOpen_lt_top {V : Set G} (hVo : IsOpen V)
-    (hVμ : μ V < ∞) : ∃ H : OpenSubgroup G, V ⊆ H ∧ IsSigmaCompact (H : Set G) := by
-  have hK (k : ℕ) : ∃ K ⊆ V, IsCompact K ∧ μ (V \ K) < ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ :=
-    hVo.measurableSet.exists_isCompact_sdiff_lt hVμ.ne (by simp)
-  choose K _ hKc hKμ using hK
-  set t : Set G := ⋃ k, K k
-  have ht_null : μ (V \ t) = 0 := by
-    refine nonpos_iff_eq_zero.1 <| ge_of_tendsto'
-      (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)) fun k => ?_
-    exact (measure_mono (sdiff_subset_sdiff_right (subset_iUnion K k))).trans (hKμ k).le
-  obtain ⟨H, htH, hH⟩ := (isSigmaCompact_iUnion_of_isCompact K hKc).exists_openSubgroup
-  have hVH_empty : V \ (H : Set G) = ∅ :=
-    ((hVo.sdiff H.isClosed).measure_eq_zero_iff μ).1
-      (measure_mono_null (sdiff_subset_sdiff_right htH) ht_null)
-  exact ⟨H, sdiff_eq_empty.1 hVH_empty, hH⟩
-
-/-- Every subset `s` of `G` on which a regular Haar measure `μ` has σ-finite restriction is
-contained in a single σ-compact open subgroup. -/
-private theorem exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict (s : Set G)
-    [SigmaFinite (μ.restrict s)] :
-    ∃ H : OpenSubgroup G, s ⊆ H ∧ IsSigmaCompact (H : Set G) := by
-  let E : ℕ → Set G := spanningSets (μ.restrict s)
-  have hEs_lt (n : ℕ) : μ (E n ∩ s) < ∞ := by
-    rw [← Measure.restrict_apply (measurableSet_spanningSets (μ.restrict s) n)]
-    exact measure_spanningSets_lt_top (μ.restrict s) n
-  have hopen (n : ℕ) : ∃ V ⊇ E n ∩ s, IsOpen V ∧ μ V < μ (E n ∩ s) + 1 :=
-    (E n ∩ s).exists_isOpen_lt_of_lt _ (ENNReal.lt_add_right (hEs_lt n).ne one_ne_zero)
-  choose V hEV hVo hVμ using hopen
-  choose H hVH hHsc using fun n => exists_openSubgroup_isSigmaCompact_of_isOpen_lt_top (hVo n)
-    ((hVμ n).trans (ENNReal.add_lt_top.2 ⟨hEs_lt n, ENNReal.one_lt_top⟩))
-  obtain ⟨U, hHU, hUsc⟩ := OpenSubgroup.exists_isSigmaCompact_le hHsc
-  refine ⟨U, fun x hx => ?_, hUsc⟩
-  obtain ⟨n, hn⟩ := mem_iUnion.1 ((iUnion_spanningSets (μ.restrict s)).symm ▸ mem_univ x)
-  exact hHU n (hVH n (hEV n ⟨hn, hx⟩))
+/-- **Open Baire hull of an open set.** On any locally compact Hausdorff group with a regular Haar
+measure `μ`, every open set `U` with `[SigmaFinite (μ.restrict U)]` is contained in an open
+Baire-measurable set `W` with `W =ᵐ[μ] U`. -/
+theorem _root_.IsOpen.exists_isOpen_baire_superset_ae_eq {U : Set G} (hU : IsOpen U)
+    (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] [SigmaFinite (μ.restrict U)] :
+    ∃ W : Set G, U ⊆ W ∧ IsOpen W ∧ MeasurableSet[TauCeti.baire G] W ∧ W =ᵐ[μ] U := by
+  obtain ⟨H, hUH, hH⟩ := exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict (μ := μ) U
+  have _ : SigmaCompactSpace H := isSigmaCompact_iff_sigmaCompactSpace.1 hH
+  have hcoe : MeasurableEmbedding ((↑) : H → G) :=
+    MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
+  let ν : Measure H := μ.comap ((↑) : H → G)
+  let U₀ : Set H := ((↑) : H → G) ⁻¹' U
+  have hU_img : ((↑) : H → G) '' U₀ = U :=
+    image_preimage_eq_iff.2 (hUH.trans Subtype.range_coe.symm.subset)
+  obtain ⟨W₀, hUW₀, hW₀o, hW₀b, hW₀ae⟩ :=
+    exists_isOpen_baire_superset_ae_eq_of_sigmaCompact (hU.preimage continuous_subtype_val) ν
+  refine ⟨((↑) : H → G) '' W₀, hU_img ▸ image_mono hUW₀,
+    H.isOpen.isOpenMap_subtype_val W₀ hW₀o,
+    measurableSet_baire_image_openSubgroup_coe H hW₀b, ?_⟩
+  rw [← measure_symmDiff_eq_zero_iff, ← hU_img, ← image_symmDiff Subtype.coe_injective,
+    ← hcoe.comap_apply, measure_symmDiff_eq_zero_iff]
+  exact hW₀ae
 
 /-- **Haar completion regularity (null sets).** On any locally compact Hausdorff group with a
 regular Haar measure `μ`, every `μ`-null set is contained in a `Gδ` Baire-measurable `μ`-null
 set. -/
 theorem exists_baire_superset_of_null {s : Set G} (hs : μ s = 0) :
     ∃ N : Set G, s ⊆ N ∧ IsGδ N ∧ MeasurableSet[TauCeti.baire G] N ∧ μ N = 0 := by
-  have _ : IsFiniteMeasure (μ.restrict s) := ⟨by simp [hs]⟩
-  obtain ⟨H, hsH, hH⟩ := exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict (μ := μ) s
-  have _ : SigmaCompactSpace H := isSigmaCompact_iff_sigmaCompactSpace.1 hH
-  have hcoe : MeasurableEmbedding ((↑) : H → G) :=
-    MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
-  let ν : Measure H := μ.comap ((↑) : H → G)
-  let s₀ : Set H := ((↑) : H → G) ⁻¹' s
-  have hs_img : ((↑) : H → G) '' s₀ = s :=
-    image_preimage_eq_iff.2 (hsH.trans Subtype.range_coe.symm.subset)
-  have hs₀ : ν s₀ = 0 := by rw [hcoe.comap_apply, hs_img, hs]
-  obtain ⟨N₀, hsN₀, hN₀g, hN₀b, hN₀0⟩ := exists_baire_superset_of_null_of_sigmaCompact hs₀
-  exact ⟨((↑) : H → G) '' N₀, hs_img ▸ image_mono hsN₀,
-    H.isOpen.isOpenEmbedding_subtypeVal.isGδ_image hN₀g,
-    measurableSet_baire_image_openSubgroup_coe H hN₀b,
-    by rw [← hcoe.comap_apply, hN₀0]⟩
+  have hopen (k : ℕ) : ∃ U ⊇ s, IsOpen U ∧ μ U < ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ :=
+    s.exists_isOpen_lt_of_lt _ (by simp [hs])
+  choose U hsU hUo hUμ using hopen
+  have _ (k : ℕ) : IsFiniteMeasure (μ.restrict (U k)) :=
+    isFiniteMeasure_restrict.2 ((hUμ k).trans_le (by simp)).ne
+  choose W hUW hWo hWb hWae using fun k => (hUo k).exists_isOpen_baire_superset_ae_eq μ
+  refine ⟨⋂ k, W k, subset_iInter fun k => (hsU k).trans (hUW k), IsGδ.iInter_of_isOpen hWo,
+    MeasurableSet.iInter hWb, ?_⟩
+  have hbound (k : ℕ) : μ (⋂ n, W n) ≤ ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ :=
+    (measure_mono (iInter_subset W k)).trans ((measure_congr (hWae k)).trans_le (hUμ k).le)
+  exact nonpos_iff_eq_zero.1 <| ge_of_tendsto'
+    (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)) hbound
+
+private theorem exists_baire_symmDiff_subset_null_of_sigmaCompact [SigmaCompactSpace G] {s : Set G}
+    (hs : NullMeasurableSet s μ) :
+    ∃ B N : Set G, IsSigmaCompact B ∧ MeasurableSet[TauCeti.baire G] B ∧
+      IsGδ N ∧ MeasurableSet[TauCeti.baire G] N ∧ μ N = 0 ∧ s ∆ B ⊆ N := by
+  obtain ⟨B, hB_sc, hB_baire, hBs⟩ := hs.exists_baire_ae_eq
+  obtain ⟨N, hNB, hNg, hNb, hN0⟩ :=
+    exists_baire_superset_of_null (measure_symmDiff_eq_zero_iff.2 hBs.symm)
+  exact ⟨B, N, hB_sc, hB_baire, hNg, hNb, hN0, hNB⟩
 
 /-- **Haar completion regularity (null-measurable sets).** On any locally compact Hausdorff group
 with a regular Haar measure `μ`, every `μ`-null-measurable set `s` with
@@ -422,3 +302,90 @@ theorem NullMeasurableSet.exists_baire_symmDiff_subset_null_of_subset_isSigmaCom
 end MeasureTheory
 
 end LocallyCompact
+
+section SigmaCompactFunctions
+
+namespace MeasureTheory
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [T2Space G] [SigmaCompactSpace G]
+  [MeasurableSpace G] [BorelSpace G]
+  {μ : Measure G} [μ.IsHaarMeasure] [μ.Regular]
+
+/-- Replace a Borel simple function on `G` almost everywhere by a simple function measurable for
+`TauCeti.baire G`. -/
+private theorem exists_simpleFunc_baire_ae_eq {β : Type*} (s : SimpleFunc G β) (b₀ : β) :
+    ∃ s' : @SimpleFunc G (TauCeti.baire G) β, (s' : G → β) =ᵐ[μ] s := by
+  classical
+  have hfib (y : β) := (s.measurableSet_fiber y).nullMeasurableSet.exists_baire_ae_eq (μ := μ)
+  choose B _ hBb hBae using hfib
+  let build : List β → @SimpleFunc G (TauCeti.baire G) β := fun L =>
+    L.foldr (fun y acc => @SimpleFunc.piecewise G β (TauCeti.baire G) (B y) (hBb y)
+      (@SimpleFunc.const G β (TauCeti.baire G) y) acc)
+      (@SimpleFunc.const G β (TauCeti.baire G) b₀)
+  have hbuild_eq : ∀ (L : List β) (x : G),
+      (∀ y ∈ L, x ∈ B y ↔ s x = y) → s x ∈ L → build L x = s x := by
+    let _ : MeasurableSpace G := TauCeti.baire G
+    intro L
+    induction L with
+    | nil => simp
+    | cons y L ih =>
+      intro x hxB hxL
+      dsimp only [build] at ih ⊢
+      rw [List.foldr_cons, SimpleFunc.piecewise_apply]
+      by_cases hxy : s x = y
+      · have hxBy : x ∈ B y := (hxB y List.mem_cons_self).2 hxy
+        simp [hxBy, hxy]
+      · have hxBy : x ∉ B y := fun hm => hxy ((hxB y List.mem_cons_self).1 hm)
+        have hxL' : s x ∈ L := (List.mem_cons.1 hxL).resolve_left hxy
+        simp only [hxBy, ↓reduceIte]
+        exact ih x (fun z hz => hxB z (List.mem_cons_of_mem y hz)) hxL'
+  refine ⟨build s.range.toList, ?_⟩
+  have hae : ∀ᵐ x ∂μ, ∀ y ∈ (s.range : Set β), x ∈ B y ↔ s x = y := by
+    refine (eventually_all_finite s.range.finite_toSet).2 fun y _ => ?_
+    filter_upwards [hBae y] with x hx
+    simpa [eq_comm] using hx
+  filter_upwards [hae] with x hx
+  exact hbuild_eq s.range.toList x (fun y hy => hx y (Finset.mem_coe.2 (Finset.mem_toList.1 hy)))
+    (Finset.mem_toList.2 (s.mem_range_self x))
+
+/-- **Baire representatives of almost everywhere strongly measurable functions.** On a σ-compact
+locally compact Hausdorff group with a regular Haar measure `μ`, every `μ`-almost everywhere
+strongly measurable function `f : G → β` agrees outside a `Gδ` Baire `μ`-null set `N` with a
+function `g : G → β` that is strongly measurable for `TauCeti.baire G`. -/
+theorem AEStronglyMeasurable.exists_stronglyMeasurable_baire {β : Type*} [TopologicalSpace β]
+    {f : G → β} (hf : AEStronglyMeasurable f μ) :
+    ∃ (g : G → β) (N : Set G), StronglyMeasurable[TauCeti.baire G] g ∧
+      IsGδ N ∧ MeasurableSet[TauCeti.baire G] N ∧ μ N = 0 ∧ {x : G | f x ≠ g x} ⊆ N := by
+  classical
+  let b₀ : β := f 1
+  obtain ⟨fs, hfs⟩ := hf.stronglyMeasurable_mk
+  choose hs hhs using fun n => exists_simpleFunc_baire_ae_eq (μ := μ) (fs n) b₀
+  let S : Set G := {x | f x ≠ hf.mk f x} ∪ ⋃ n, {x | hs n x ≠ fs n x}
+  have hS_null : μ S = 0 :=
+    measure_union_null hf.ae_eq_mk (measure_iUnion_null hhs)
+  obtain ⟨N, hSN, hNg, hNb, hN0⟩ := exists_baire_superset_of_null hS_null
+  let gs : ℕ → @SimpleFunc G (TauCeti.baire G) β := fun n =>
+    @SimpleFunc.piecewise G β (TauCeti.baire G) N hNb
+      (@SimpleFunc.const G β (TauCeti.baire G) b₀) (hs n)
+  let g : G → β := fun x => if x ∈ N then b₀ else f x
+  have hg_sm : StronglyMeasurable[TauCeti.baire G] g := by
+    let _ : MeasurableSpace G := TauCeti.baire G
+    have hgs_eq (n : ℕ) (x : G) : gs n x = if x ∈ N then b₀ else hs n x := by
+      dsimp only [gs]
+      rw [SimpleFunc.piecewise_apply, SimpleFunc.const_apply]
+    refine ⟨gs, fun x => ?_⟩
+    by_cases hxN : x ∈ N
+    · simpa [g, hxN, hgs_eq] using tendsto_const_nhds
+    · have hxS : x ∉ S := fun hm => hxN (hSN hm)
+      have hfx : f x = hf.mk f x := not_not.1 fun hne => hxS (Or.inl hne)
+      have hhs_eq (n : ℕ) : hs n x = fs n x :=
+        not_not.1 fun hne => hxS (Or.inr (mem_iUnion.2 ⟨n, hne⟩))
+      simpa [g, hxN, hfx, hgs_eq, hhs_eq] using hfs x
+  refine ⟨g, N, hg_sm, hNg, hNb, hN0, fun x hx => ?_⟩
+  by_contra hxN
+  exact hx (by simp [g, hxN])
+
+end MeasureTheory
+
+end SigmaCompactFunctions

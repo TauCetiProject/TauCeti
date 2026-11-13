@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.Lp.GroupConvolution
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.LpSpace.CompleteOfCompleteLp
+import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
@@ -51,8 +52,8 @@ arbitrary locally compact Hausdorff group `G`:
 
 ## Main results
 
-* `MeasureTheory.Integrable.smul_comp_inv_mul_restrict` and
-  `MeasureTheory.Integrable.smul_comp_inv_mul_prod`: product integrability of the convolution
+* `MeasureTheory.Integrable.smul_comp_inv_mul_swap_restrict_prod` and
+  `MeasureTheory.Integrable.smul_comp_inv_mul_swap_prod`: product integrability of the convolution
   integrand on `(μ.restrict s).prod μ` (`μ s < ∞`, `1 ≤ p ≤ ∞`) and on `μ.prod μ` (`p = 1`) on
   σ-compact locally compact Hausdorff groups.
 * `MeasureTheory.Integrable.ae_integrable_smul_comp_inv_mul` and
@@ -63,16 +64,18 @@ arbitrary locally compact Hausdorff group `G`:
   `MeasureTheory.Integrable.convolutionL_toL1_ae_eq`:
   `convolutionL μ p hp h f =ᵐ[μ] fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ` for a regular Haar measure `μ`
   on any locally compact Hausdorff group (`1 ≤ p < ∞`).
-* `MeasureTheory.Integrable.memLp_integral_smul_comp_inv_mul`,
+* `MeasureTheory.Integrable.continuous_integral_smul_comp_inv_mul`,
+  `MeasureTheory.Integrable.memLp_integral_smul_comp_inv_mul`,
   `MeasureTheory.Integrable.integral_smul_comp_inv_mul`, and
-  `MeasureTheory.integral_integral_smul_comp_inv_mul`: `Lᵖ` membership, integrability, and integral
-  product formula for `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ` with respect to a regular Haar measure `μ` on
-  any locally compact Hausdorff group.
+  `MeasureTheory.integral_integral_smul_comp_inv_mul`: continuity for `f ∈ L∞` (without
+  `T2Space G`), and `Lᵖ` membership (`1 ≤ p ≤ ∞`), integrability, and the integral product formula
+  for `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ` with respect to a regular Haar measure `μ` on any locally
+  compact Hausdorff group.
 
 ## Provenance
 
 The finite-measure `Lᵖ → L¹` restriction and `Set.setIntegralLp` Fubini argument in the σ-compact
-case (`MeasureTheory.Integrable.smul_comp_inv_mul_restrict` and the σ-compact step of
+case (`MeasureTheory.Integrable.smul_comp_inv_mul_swap_restrict_prod` and the σ-compact step of
 `MeasureTheory.Lp.convolutionL_ae_eq`) is adapted from the finite-dimensional additive proofs of
 `TauCeti.integrable_convolution_integrand_restrict` and `TauCeti.convolutionLp_ae_eq_convolution` in
 `TauCeti/MeasureTheory/Function/Lp/Convolution.lean`.
@@ -103,24 +106,17 @@ variable {G 𝕜 E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G
   {μ : Measure G} [μ.IsHaarMeasure] [μ.Regular]
   [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
 
-omit [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [T2Space G]
-  [SigmaCompactSpace G] [BorelSpace G] [μ.IsHaarMeasure] [μ.Regular] in
-private theorem integral_norm_smul_le {ν : Measure G} (c : 𝕜) {g : G → E} (hg : Integrable g ν) :
-    ∫ x, ‖c • g x‖ ∂ν ≤ ‖c‖ * ∫ x, ‖g x‖ ∂ν :=
-  (integral_mono (hg.smul c).norm (hg.norm.const_mul ‖c‖) fun _ => norm_smul_le _ _).trans_eq
-    (integral_const_mul _ _)
-
 /-- On a σ-compact locally compact Hausdorff group with a regular Haar measure `μ`, the convolution
 integrand `(x, y) ↦ h y • f (y⁻¹ * x)` of an integrable kernel `h` and `f ∈ Lᵖ(G, μ)` (`1 ≤ p ≤ ∞`)
 is integrable on `(μ.restrict s).prod μ` for every set `s` of finite measure. -/
-theorem Integrable.smul_comp_inv_mul_restrict {p : ℝ≥0∞} [Fact (1 ≤ p)] {h : G → 𝕜}
+theorem Integrable.smul_comp_inv_mul_swap_restrict_prod {p : ℝ≥0∞} [Fact (1 ≤ p)] {h : G → 𝕜}
     (hh : Integrable h μ) {f : G → E} (hf : MemLp f p μ) {s : Set G} (hμs : μ s < ∞) :
     Integrable (fun q : G × G => h q.2 • f (q.2⁻¹ * q.1)) ((μ.restrict s).prod μ) := by
   have _ : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
   have hmeas : AEStronglyMeasurable (fun q : G × G => h q.2 • f (q.2⁻¹ * q.1))
       ((μ.restrict s).prod μ) :=
     (hh.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd).smul
-      hf.aestronglyMeasurable.comp_inv_mul_prod
+      hf.aestronglyMeasurable.comp_inv_mul_swap_prod
   -- Bound `∫ x in s, ‖f (y⁻¹ * x)‖ ∂μ` uniformly in `y` via `Lᵖ → L¹(s)` restriction on `‖f ·‖`.
   let R := Set.LpToL1RestrictCLM (𝕜 := ℝ) (F := ℝ) (p := p) s hμs
   let fn : Lp ℝ p μ := hf.norm.toLp fun x => ‖f x‖
@@ -144,24 +140,29 @@ theorem Integrable.smul_comp_inv_mul_restrict {p : ℝ≥0∞} [Fact (1 ≤ p)] 
   refine (hh.norm.mul_const (‖R‖ * ‖fn‖)).mono' hmeas.prod_swap.norm.integral_prod_right'
     (.of_forall fun y => ?_)
   rw [Real.norm_of_nonneg (integral_nonneg fun _ => norm_nonneg _)]
-  exact (integral_norm_smul_le (h y) (hfy y)).trans
-    (mul_le_mul_of_nonneg_left (hbound y) (norm_nonneg _))
+  exact ((integral_mono ((hfy y).smul (h y)).norm ((hfy y).norm.const_mul ‖h y‖) fun _ =>
+    norm_smul_le _ _).trans_eq (integral_const_mul _ _)).trans
+      (mul_le_mul_of_nonneg_left (hbound y) (norm_nonneg _))
 
 /-- On a σ-compact locally compact Hausdorff group with a regular Haar measure `μ`, the convolution
 integrand `(x, y) ↦ h y • f (y⁻¹ * x)` of two integrable functions is integrable on `μ.prod μ`. -/
-theorem Integrable.smul_comp_inv_mul_prod {h : G → 𝕜} (hh : Integrable h μ) {f : G → E}
+theorem Integrable.smul_comp_inv_mul_swap_prod {h : G → 𝕜} (hh : Integrable h μ) {f : G → E}
     (hf : Integrable f μ) :
     Integrable (fun q : G × G => h q.2 • f (q.2⁻¹ * q.1)) (μ.prod μ) := by
   have hmeas : AEStronglyMeasurable (fun q : G × G => h q.2 • f (q.2⁻¹ * q.1)) (μ.prod μ) :=
     (hh.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd).smul
-      hf.aestronglyMeasurable.comp_inv_mul_prod
-  have hfy_int (y : G) : Integrable (fun x => f (y⁻¹ * x)) μ := hf.comp_mul_left y⁻¹
-  refine (integrable_prod_iff' hmeas).2 ⟨.of_forall fun y => (hfy_int y).smul (h y), ?_⟩
-  refine (hh.norm.mul_const (∫ x, ‖f x‖ ∂μ)).mono' hmeas.prod_swap.norm.integral_prod_right'
-    (.of_forall fun y => ?_)
-  rw [Real.norm_of_nonneg (integral_nonneg fun _ => norm_nonneg _)]
-  exact (integral_norm_smul_le (h y) (hfy_int y)).trans_eq
-    (by rw [integral_mul_left_eq_self (fun x => ‖f x‖) y⁻¹])
+      hf.aestronglyMeasurable.comp_inv_mul_swap_prod
+  refine ⟨hmeas, ?_⟩
+  rw [hasFiniteIntegral_def, lintegral_prod_symm _ hmeas.eNorm]
+  calc ∫⁻ y, ∫⁻ x, ‖h y • f (y⁻¹ * x)‖ₑ ∂μ ∂μ
+      ≤ ∫⁻ y, ∫⁻ x, ‖h y‖ₑ * ‖f (y⁻¹ * x)‖ₑ ∂μ ∂μ := by
+        gcongr with y x
+        exact eNorm_smul_le
+    _ = (∫⁻ y, ‖h y‖ₑ ∂μ) * ∫⁻ x, ‖f x‖ₑ ∂μ := by
+        simp_rw [lintegral_const_mul'' _ (hf.comp_mul_left _).aestronglyMeasurable.eNorm,
+          lintegral_mul_left_eq_self (fun x => ‖f x‖ₑ)]
+        exact lintegral_mul_const'' _ hh.aestronglyMeasurable.eNorm
+    _ < ∞ := ENNReal.mul_lt_top hh.2 hf.2
 
 private theorem ae_integrable_smul_comp_inv_mul_of_sigmaCompact {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : MemLp f p μ) :
@@ -169,7 +170,7 @@ private theorem ae_integrable_smul_comp_inv_mul_of_sigmaCompact {p : ℝ≥0∞}
   have hspan (n : ℕ) : ∀ᵐ x ∂μ, x ∈ spanningSets μ n →
       Integrable (fun y => h y • f (y⁻¹ * x)) μ :=
     (ae_restrict_iff' (measurableSet_spanningSets μ n)).1
-      (hh.smul_comp_inv_mul_restrict hf (measure_spanningSets_lt_top μ n)).prod_right_ae
+      (hh.smul_comp_inv_mul_swap_restrict_prod hf (measure_spanningSets_lt_top μ n)).prod_right_ae
   filter_upwards [ae_all_iff.2 hspan] with x hx
   obtain ⟨n, hn⟩ := mem_iUnion.1 ((iUnion_spanningSets μ).symm ▸ mem_univ x)
   exact hx n hn
@@ -190,7 +191,8 @@ private theorem convolutionL_ae_eq_of_sigmaCompact (hp : p ≠ ∞) (h : Lp 𝕜
     (fun s _ hμs => ?_) (fun s _ hμs => ?_) fun s _ hμs => ?_
   · have _ : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
     exact ((Lp.memLp _).restrict s).integrable Fact.out
-  · exact ((L1.integrable_coeFn h).smul_comp_inv_mul_restrict (Lp.memLp f) hμs).integral_prod_left
+  · exact ((L1.integrable_coeFn h).smul_comp_inv_mul_swap_restrict_prod
+      (Lp.memLp f) hμs).integral_prod_left
   · let S := Set.setIntegralLp (𝕜 := ℝ) (F := E) (p := p) s hμs
     have hint := Lp.integrable_smul_leftTranslation hp (L1.integrable_coeFn h) f
     calc ∫ x in s, Lp.convolutionL μ p hp h f x ∂μ
@@ -206,7 +208,7 @@ private theorem convolutionL_ae_eq_of_sigmaCompact (hp : p ≠ ∞) (h : Lp 𝕜
           rw [hx₁, Pi.smul_apply, hx₂]
       _ = ∫ x in s, (∫ y, h y • f (y⁻¹ * x) ∂μ) ∂μ :=
           (integral_integral_swap
-            ((L1.integrable_coeFn h).smul_comp_inv_mul_restrict (Lp.memLp f) hμs)).symm
+            ((L1.integrable_coeFn h).smul_comp_inv_mul_swap_restrict_prod (Lp.memLp f) hμs)).symm
 
 end SigmaCompactConvolutionL
 
@@ -361,16 +363,99 @@ theorem Integrable.convolutionL_toL1_ae_eq [NontriviallyNormedField 𝕜] [Norme
     Lp.ext <| (MemLp.coeFn_toLp _).trans hf.coeFn_toL1.symm
   exact htoLp ▸ Lp.convolutionL_toLp_ae_eq hh (memLp_one_iff_integrable.2 hf)
 
+omit [T2Space G] in
+/-- On a locally compact group with a regular Haar measure `μ`, the pointwise group convolution
+`x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ` of `h ∈ L¹(G, μ; 𝕜)` and `f ∈ L∞(G, μ; E)` is continuous. -/
+theorem Integrable.continuous_integral_smul_comp_inv_mul [NormedRing 𝕜]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+    {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : MemLp f ∞ μ) :
+    Continuous fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
+  have : Fact ((1 : ℝ≥0∞) ≠ ∞) := ⟨ENNReal.one_ne_top⟩
+  have hfinv : MemLp (fun z => f z⁻¹) ∞ μ :=
+    hf.comp_quasiMeasurePreserving_top (Measure.quasiMeasurePreserving_inv_of_regular μ)
+  have hfbdd : ∀ᵐ z ∂μ, ‖f z⁻¹‖ ≤ lpNorm f ∞ μ :=
+    (Measure.quasiMeasurePreserving_inv_of_regular μ).ae (ae_le_lpNorm_exponent_top hf)
+  have hk_int (k : Lp 𝕜 1 μ) : Integrable (fun z => k z • f z⁻¹) μ :=
+    (L1.integrable_coeFn k).smul_of_top_left hfinv
+  let L : Lp 𝕜 1 μ → E := fun k => ∫ z, k z • f z⁻¹ ∂μ
+  let K : NNReal := ⟨lpNorm f ∞ μ, lpNorm_nonneg⟩
+  have hL_lip : LipschitzWith K L := by
+    refine lipschitzWith_iff_dist_le_mul.2 fun k₁ k₂ => ?_
+    dsimp only [L, K]
+    rw [dist_eq_norm, dist_eq_norm, ← integral_sub (hk_int k₁) (hk_int k₂)]
+    have hnorm : ‖∫ z, (k₁ z • f z⁻¹ - k₂ z • f z⁻¹) ∂μ‖ ≤
+        ∫ z, ‖(k₁ - k₂) z‖ * lpNorm f ∞ μ ∂μ := by
+      refine norm_integral_le_of_norm_le ((L1.integrable_coeFn (k₁ - k₂)).norm.mul_const _) ?_
+      filter_upwards [Lp.coeFn_sub k₁ k₂, hfbdd] with z hz hfz
+      rw [Pi.sub_apply] at hz
+      rw [← sub_smul, ← hz]
+      exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hfz (norm_nonneg _))
+    exact hnorm.trans_eq <| by
+      rw [integral_mul_const, ← L1.norm_eq_integral_norm, mul_comm]
+      rfl
+  have hF_eq : (fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ) = fun x => L (DomMulAct.mk x • hh.toL1 h) := by
+    ext x
+    dsimp only [L]
+    rw [← integral_mul_left_eq_self (fun y => h y • f (y⁻¹ * x)) x]
+    refine integral_congr_ae ?_
+    filter_upwards [DomMulAct.smul_Lp_ae_eq (DomMulAct.mk x) (hh.toL1 h),
+      (measurePreserving_mul_left μ x).quasiMeasurePreserving.ae hh.coeFn_toL1] with z hz₁ hz₂
+    rw [mul_inv_rev, inv_mul_cancel_right, hz₁, Equiv.symm_apply_apply, smul_eq_mul, hz₂]
+  rw [hF_eq]
+  exact hL_lip.continuous.comp (DomMulAct.continuous_mk.smul continuous_const)
+
+omit [T2Space G] in
+private theorem isSeparable_range_integral_smul_comp_inv_mul [NormedRing 𝕜]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [CompleteSpace E]
+    {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : MemLp f ∞ μ) :
+    TopologicalSpace.IsSeparable (range fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ) := by
+  let h₁ := hh.aestronglyMeasurable.mk h
+  let f₁ := hf.aestronglyMeasurable.mk f
+  let S₀ : Set E := (fun p : 𝕜 × E => p.1 • p.2) '' (range h₁ ×ˢ range f₁)
+  have hS₀_sep : TopologicalSpace.IsSeparable S₀ :=
+    (hh.aestronglyMeasurable.stronglyMeasurable_mk.isSeparable_range.prod
+      hf.aestronglyMeasurable.stronglyMeasurable_mk.isSeparable_range).image continuous_smul
+  let V : Submodule ℝ E := (Submodule.span ℝ S₀).topologicalClosure
+  have _ : CompleteSpace V := (Submodule.isClosed_topologicalClosure _).completeSpace_coe
+  refine (hS₀_sep.span (R := ℝ)).closure.mono ?_
+  rintro _ ⟨x, rfl⟩
+  dsimp only
+  rw [← Submodule.topologicalClosure_coe, SetLike.mem_coe]
+  have hcongr : ∫ y, h y • f (y⁻¹ * x) ∂μ = ∫ y, h₁ y • f₁ (y⁻¹ * x) ∂μ := by
+    refine integral_congr_ae ?_
+    filter_upwards [hh.aestronglyMeasurable.ae_eq_mk,
+      (Measure.quasiMeasurePreserving_inv_mul_of_regular μ x).ae
+        hf.aestronglyMeasurable.ae_eq_mk] with y hy₁ hy₂
+    exact congr_arg₂ (· • ·) hy₁ hy₂
+  let φ (y : G) : V := ⟨h₁ y • f₁ (y⁻¹ * x), subset_closure (Submodule.subset_span
+    ⟨(h₁ y, f₁ (y⁻¹ * x)), ⟨mem_range_self y, mem_range_self (y⁻¹ * x)⟩, rfl⟩)⟩
+  have hsub : (fun y => h₁ y • f₁ (y⁻¹ * x)) = fun y => V.subtypeₗᵢ (φ y) := rfl
+  rw [hcongr, hsub, V.subtypeₗᵢ.integral_comp_comm]
+  exact Subtype.prop _
+
 /-- On a locally compact Hausdorff group with a regular Haar measure `μ`, the pointwise group
-convolution `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ` of `h ∈ L¹(G, μ; 𝕜)` and `f ∈ Lᵖ(G, μ; E)` (`1 ≤ p < ∞`)
+convolution `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ` of `h ∈ L¹(G, μ; 𝕜)` and `f ∈ Lᵖ(G, μ; E)` (`1 ≤ p ≤ ∞`)
 belongs to `Lᵖ(G, μ; E)`. -/
 theorem Integrable.memLp_integral_smul_comp_inv_mul [NormedRing 𝕜] [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    [NormedSpace ℝ E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : MemLp f p μ) :
     MemLp (fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ) p μ := by
   by_cases hE : CompleteSpace E
   swap
   · simp [integral_of_not_completeSpace hE]
+  rcases eq_or_ne p ∞ with rfl | hp
+  · have hsm : StronglyMeasurable fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
+      borelize E
+      exact stronglyMeasurable_iff_measurable_separable.2
+        ⟨(hh.continuous_integral_smul_comp_inv_mul hf).measurable,
+          isSeparable_range_integral_smul_comp_inv_mul hh hf⟩
+    refine memLp_top_of_bound hsm.aestronglyMeasurable ((∫ y, ‖h y‖ ∂μ) * lpNorm f ∞ μ)
+      (.of_forall fun x => ?_)
+    rw [← integral_mul_const]
+    refine norm_integral_le_of_norm_le (hh.norm.mul_const _) ?_
+    filter_upwards [(Measure.quasiMeasurePreserving_inv_mul_of_regular μ x).ae
+      (ae_le_lpNorm_exponent_top hf)] with y hy
+    exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hy (norm_nonneg _))
   obtain ⟨H, hH, hh_off, hf_off⟩ := exists_openSubgroup_isSigmaCompact_ae_eq_zero_pair hp hh hf
   have hH_meas : MeasurableSet (H : Set G) := H.isOpen.measurableSet
   have _ : SigmaCompactSpace H := isSigmaCompact_iff_sigmaCompactSpace.1 hH
@@ -383,7 +468,7 @@ theorem Integrable.memLp_integral_smul_comp_inv_mul [NormedRing 𝕜] [NormedAdd
     simp_rw [H.integral_smul_inv_mul_coe_eq_comap hh_off f]
     exact ((hh₀.aestronglyMeasurable.comp_quasiMeasurePreserving
       Measure.quasiMeasurePreserving_snd).smul
-        hf₀.aestronglyMeasurable.comp_inv_mul_prod).integral_prod_right'
+        hf₀.aestronglyMeasurable.comp_inv_mul_swap_prod).integral_prod_right'
   have hmeas : AEStronglyMeasurable (fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ) μ :=
     (aestronglyMeasurable_iff_comap_subtypeVal_of_ae_eq_zero hH_meas
       (H.ae_restrict_compl_integral_smul_inv_mul_eq_zero hh_off hf_off)).2 hmeas_H
@@ -400,8 +485,7 @@ theorem Integrable.integral_smul_comp_inv_mul [NormedRing 𝕜] [NormedAddCommGr
     [NormedSpace ℝ E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
     {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : Integrable f μ) :
     Integrable (fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ) μ :=
-  memLp_one_iff_integrable.1 <| hh.memLp_integral_smul_comp_inv_mul ENNReal.one_ne_top
-    (memLp_one_iff_integrable.2 hf)
+  memLp_one_iff_integrable.1 <| hh.memLp_integral_smul_comp_inv_mul (memLp_one_iff_integrable.2 hf)
 
 /-- **Integral of a pointwise group convolution.** On any locally compact Hausdorff group with a
 regular Haar measure `μ`, `∫ x, (∫ y, h y • f (y⁻¹ * x) ∂μ) ∂μ = (∫ x, h x ∂μ) • ∫ x, f x ∂μ` for
