@@ -47,6 +47,8 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
 * `ContDiffBump.hasSum_littlewoodPaleyPiece`: the pieces sum to `m` away from the origin.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le`: the scale-invariant
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
+* `ContDiffBump.inhomogeneousLittlewoodPaleySchwartz`: the piece `ψⱼ` of the inhomogeneous
+  partition, as a complex Schwartz function.
 * `SchwartzMap.exists_eqOn_annulus_of_contDiffOn`: a symbol smooth away from the origin agrees
   with a Schwartz function on every annulus `1 ≤ ‖ξ‖ ≤ θ`.
 * `SchwartzMap.sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range`: the partial sums of
@@ -223,6 +225,24 @@ theorem exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (N : ℕ) :
     (fun l hl ↦ hmA l (hl.trans hk)) j ξ).trans ?_
   gcongr
   exact Finset.single_le_sum (fun k _ ↦ hc0 k) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
+
+/-- The piece `ψⱼ` of the inhomogeneous Littlewood–Paley partition, smooth and compactly
+supported, as a complex Schwartz function. -/
+noncomputable def inhomogeneousLittlewoodPaleySchwartz (j : ℕ) : 𝓢(E, ℂ) :=
+  ((φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero).toSchwartzMap
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
+
+/-- The values of the Schwartz function `ψⱼ`. -/
+@[simp]
+theorem inhomogeneousLittlewoodPaleySchwartz_apply (j : ℕ) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaleySchwartz j ξ = (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  HasCompactSupport.toSchwartzMap_toFun _ _ ξ
+
+/-- The Schwartz function `ψⱼ`, as a function. -/
+theorem coe_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
+    ⇑(φ.inhomogeneousLittlewoodPaleySchwartz j) =
+      fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  funext (φ.inhomogeneousLittlewoodPaleySchwartz_apply j)
 
 end FiniteDimensional
 
