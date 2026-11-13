@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import TauCeti.Analysis.Calculus.Deriv.Const
-public import TauCeti.Analysis.Calculus.FDeriv.Const
 public import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Compactness.Normed
@@ -25,7 +24,13 @@ jointly continuous, and `C²` when both the first and second are jointly continu
 second derivative is also computed by integration. A general successor step reduces higher
 regularity to the regularity of the integral of the first parameter derivative.
 
-The parameter-derivative integrability lemma also applies to the second derivative.
+The lemmas `integrable_of_hasFDerivAt_of_compact_support` and
+`integrable_of_hasFDerivAt_of_hasFDerivAt_of_compact_support` give integrability of the first
+and second parameter derivatives, including when the support hypothesis holds only on a
+neighbourhood of the parameter. Parallel `HasDerivAt`/`deriv` lemmas provide integrability,
+differentiation, and `C¹`/`C²`/successor regularity for scalar parameters in `𝕜`; in particular,
+`integrable_of_hasDerivAt_of_compact_support` and
+`integrable_of_hasDerivAt_of_hasDerivAt_of_compact_support` give scalar derivative integrability.
 Directional evaluation of the first derivative integral uses `ContinuousLinearMap.integral_apply`;
 the corresponding two-direction formula uses `ContinuousLinearMap.integral_apply_apply`.
 -/
@@ -39,6 +44,14 @@ noncomputable section
 
 namespace TauCeti
 
+private theorem fderiv_eq_zero_of_support {𝕜 H E X : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {U : Set H} {K : Set X}
+    {D : H → X → E} {t₀ : H} {x : X} {f' : H →L[𝕜] E} (hU : U ∈ 𝓝 t₀)
+    (hderiv : HasFDerivAt (D · x) f' t₀)
+    (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) (hx : x ∉ K) : f' = 0 :=
+  hderiv.eq_zero_of_eventually_const (Filter.Eventually.mono hU fun t ht ↦ hsupp t ht x hx)
+
 section Integrability
 
 variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
@@ -47,12 +60,6 @@ variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSp
   {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
   {U : Set H} {K : Set X} {D : H → X → E} {D₁ : X → H →L[𝕜] E}
 
--- Pin the standard extended norm for the iterated operator space used below.
-/-- The standard extended norm on the space of curried continuous bilinear maps. -/
-local instance instContinuousENormBilinear : ContinuousENorm (H →L[𝕜] H →L[𝕜] E) :=
-  (@SeminormedAddGroup.toESeminormedAddMonoid (H →L[𝕜] H →L[𝕜] E)
-    inferInstance).toContinuousENorm
-
 /-- A continuous parameter derivative of a family supported in a fixed compact set near the
 parameter is integrable, without a completeness assumption on the codomain. -/
 theorem integrable_of_hasFDerivAt_of_compact_support {t₀ : H} (hU : U ∈ 𝓝 t₀)
@@ -60,8 +67,8 @@ theorem integrable_of_hasFDerivAt_of_compact_support {t₀ : H} (hU : U ∈ 𝓝
     (hderiv : ∀ x, HasFDerivAt (D · x) (D₁ x) t₀)
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) : Integrable D₁ μ := by
   apply hD₁.integrable_of_support_subset_isCompact hK
-  exact support_subset_iff'.2 fun x hx ↦ (hderiv x).eq_zero_of_eventually_const
-    (Filter.Eventually.mono hU fun t ht ↦ hsupp t ht x hx)
+  exact support_subset_iff'.2 fun x hx ↦
+    fderiv_eq_zero_of_support hU (hderiv x) hsupp hx
 
 /-- A continuous second parameter derivative of a family supported in a fixed compact set
 near the parameter is integrable, without a completeness assumption on the codomain. -/
@@ -73,10 +80,8 @@ theorem integrable_of_hasFDerivAt_of_hasFDerivAt_of_compact_support
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) : Integrable D₂ μ := by
   apply integrable_of_hasFDerivAt_of_compact_support
     (interior_mem_nhds.2 hU) hK hD₂ hderiv₂
-  exact fun t ht x hx ↦
-    (hderiv₁ t (interior_subset ht) x).eq_zero_of_eventually_const
-      (Filter.Eventually.mono (isOpen_interior.mem_nhds ht)
-        fun s hs ↦ hsupp s (interior_subset hs) x hx)
+  exact fun t ht x hx ↦ fderiv_eq_zero_of_support (mem_interior_iff_mem_nhds.1 ht)
+    (hderiv₁ t (interior_subset ht) x) hsupp hx
 
 /-- A continuous scalar parameter derivative of a family supported in a fixed compact set
 near the parameter is integrable, without a completeness assumption on the codomain. -/
@@ -86,8 +91,24 @@ theorem integrable_of_hasDerivAt_of_compact_support
     (hderiv : ∀ x, HasDerivAt (D · x) (D₁ x) t₀)
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) : Integrable D₁ μ := by
   apply hD₁.integrable_of_support_subset_isCompact hK
-  exact support_subset_iff'.2 fun x hx ↦ (hderiv x).eq_zero_of_eventually_const
-    (Filter.Eventually.mono hU fun t ht ↦ hsupp t ht x hx)
+  exact support_subset_iff'.2 fun x hx ↦ by
+    simpa using DFunLike.congr_fun
+      (fderiv_eq_zero_of_support hU (hderiv x).hasFDerivAt hsupp hx) 1
+
+/-- A continuous second scalar parameter derivative of a family supported in a fixed compact
+set near the parameter is integrable, without a completeness assumption on the codomain. -/
+theorem integrable_of_hasDerivAt_of_hasDerivAt_of_compact_support
+    {U : Set 𝕜} {D D₁ : 𝕜 → X → E} {D₂ : X → E} {t₀ : 𝕜} (hU : U ∈ 𝓝 t₀)
+    (hK : IsCompact K) (hD₂ : Continuous D₂)
+    (hderiv₁ : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
+    (hderiv₂ : ∀ x, HasDerivAt (D₁ · x) (D₂ x) t₀)
+    (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) : Integrable D₂ μ := by
+  apply integrable_of_hasDerivAt_of_compact_support
+    (interior_mem_nhds.2 hU) hK hD₂ hderiv₂
+  exact fun t ht x hx ↦ by
+    simpa using DFunLike.congr_fun
+      (fderiv_eq_zero_of_support (mem_interior_iff_mem_nhds.1 ht)
+        (hderiv₁ t (interior_subset ht) x).hasFDerivAt hsupp hx) 1
 
 end Integrability
 
@@ -97,20 +118,6 @@ variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSp
   {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
   {U : Set H} {K : Set X} {D : H → X → E} {D₁ : H → X → H →L[𝕜] E}
   {D₂ : H → X → H →L[𝕜] H →L[𝕜] E}
-
-/-- The integral of a continuous second parameter derivative can be evaluated in two
-directions by integrating its pointwise evaluation, for a family with fixed compact support
-near the parameter. -/
-theorem integral_apply_apply_of_hasFDerivAt_of_compact_support
-    {D₂ : X → H →L[𝕜] H →L[𝕜] E} {t₀ : H} (hU : U ∈ 𝓝 t₀)
-    (hK : IsCompact K) (hD₂ : Continuous D₂)
-    (hderiv₁ : ∀ t ∈ U, ∀ x, HasFDerivAt (D · x) (D₁ t x) t)
-    (hderiv₂ : ∀ x, HasFDerivAt (D₁ · x) (D₂ x) t₀)
-    (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) (v w : H) :
-    (∫ x, D₂ x ∂μ) v w = ∫ x, D₂ x v w ∂μ :=
-  ContinuousLinearMap.integral_apply_apply
-    (integrable_of_hasFDerivAt_of_hasFDerivAt_of_compact_support
-      hU hK hD₂ hderiv₁ hderiv₂ hsupp) v w
 
 /-- **Differentiation under the integral sign with a fixed compact support.** Suppose `D t`
 is continuous and vanishes outside a fixed compact set for parameters in a neighbourhood of
@@ -134,9 +141,8 @@ theorem hasFDerivAt_integral_of_compact_support {t₀ : H} (hU : U ∈ 𝓝 t₀
     filter_upwards [interior_mem_nhds.2 hU, hC] with t ht hCt
     exact ⟨ht, fun x hx ↦ (hCt x hx).2⟩
   have hzero (t : H) (ht : t ∈ interior U) (x : X) (hx : x ∉ K) : D₁ t x = 0 :=
-    (hderiv t (interior_subset ht) x).eq_zero_of_eventually_const
-      (Filter.Eventually.mono (isOpen_interior.mem_nhds ht)
-        fun s hs ↦ hsupp s (interior_subset hs) x hx)
+    fderiv_eq_zero_of_support (mem_interior_iff_mem_nhds.1 ht)
+      (hderiv t (interior_subset ht) x) hsupp hx
   have hmeas : ∀ t ∈ U, StronglyMeasurable (D t) := fun t ht ↦
     (hD t ht).stronglyMeasurable_of_support_subset_isCompact hK
       (support_subset_iff'.2 (hsupp t ht))
@@ -184,9 +190,7 @@ theorem contDiffOn_one_integral_of_compact_support (hU : IsOpen U) (hK : IsCompa
     ContDiffOn 𝕜 1 (fun t ↦ ∫ x, D t x ∂μ) U := by
   apply contDiffOn_succ_integral_of_compact_support (n := 0) hU hK hD hD₁ hderiv hsupp
   refine contDiffOn_zero.2 (continuousOn_integral_of_compact_support hK hD₁ ?_)
-  exact fun t x ht hx ↦
-    (hderiv t ht x).eq_zero_of_eventually_const
-      (Filter.Eventually.mono (hU.mem_nhds ht) fun s hs ↦ hsupp s hs x hx)
+  exact fun t x ht hx ↦ fderiv_eq_zero_of_support (hU.mem_nhds ht) (hderiv t ht x) hsupp hx
 
 /-- **Second differentiation under the integral sign with a fixed compact support.**
 For continuous `D t` with fixed compact support near `t₀`, jointly continuous first and second
@@ -201,9 +205,8 @@ theorem hasFDerivAt_fderiv_integral_of_compact_support {t₀ : H} (hU : U ∈ �
     HasFDerivAt (fderiv 𝕜 fun t ↦ ∫ x, D t x ∂μ) (∫ x, D₂ t₀ x ∂μ) t₀ := by
   have hUi : interior U ∈ 𝓝 t₀ := interior_mem_nhds.2 hU
   have hsupp₁ : ∀ t ∈ interior U, ∀ x ∉ K, D₁ t x = 0 := fun t ht x hx ↦
-    (hderiv₁ t (interior_subset ht) x).eq_zero_of_eventually_const
-      (Filter.Eventually.mono (isOpen_interior.mem_nhds ht)
-        fun s hs ↦ hsupp s (interior_subset hs) x hx)
+    fderiv_eq_zero_of_support (mem_interior_iff_mem_nhds.1 ht)
+      (hderiv₁ t (interior_subset ht) x) hsupp hx
   have h₂ := hasFDerivAt_integral_of_compact_support (μ := μ) hUi hK
     (fun t ht ↦ continuousOn_univ.1 (hD₁.uncurry_left t (interior_subset ht)))
     (hD₂.mono (prod_mono interior_subset (Subset.refl univ)))
@@ -224,8 +227,7 @@ theorem contDiffOn_two_integral_of_compact_support (hU : IsOpen U) (hK : IsCompa
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) :
     ContDiffOn 𝕜 2 (fun t ↦ ∫ x, D t x ∂μ) U := by
   have hsupp₁ : ∀ t ∈ U, ∀ x ∉ K, D₁ t x = 0 := fun t ht x hx ↦
-    (hderiv₁ t ht x).eq_zero_of_eventually_const
-      (Filter.Eventually.mono (hU.mem_nhds ht) fun s hs ↦ hsupp s hs x hx)
+    fderiv_eq_zero_of_support (hU.mem_nhds ht) (hderiv₁ t ht x) hsupp hx
   exact contDiffOn_succ_integral_of_compact_support (n := 1) hU hK hD hD₁ hderiv₁ hsupp
     (contDiffOn_one_integral_of_compact_support hU hK
       (fun t ht ↦ continuousOn_univ.1 (hD₁.uncurry_left t ht)) hD₂ hderiv₂ hsupp₁)

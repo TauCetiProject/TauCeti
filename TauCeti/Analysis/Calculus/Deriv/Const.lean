@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import TauCeti.Analysis.Calculus.FDeriv.Const
 
 /-!
 # Vanishing derivatives of locally constant functions
@@ -30,10 +31,11 @@ open Filter Set Topology
 
 /-- A derivative of a function constant on a neighbourhood of the point is zero. -/
 theorem HasDerivAt.eq_zero_of_eventually_const {𝕜 E : Type*}
-    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NontriviallyNormedField 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    [ContinuousAdd E] [ContinuousSMul 𝕜 E] [T2Space E]
     {f : 𝕜 → E} {f' : E} {t : 𝕜} {c : E} (hf : HasDerivAt f f' t)
-    (h : f =ᶠ[𝓝 t] fun _ ↦ c) : f' = 0 :=
-  hf.unique ((hasDerivAt_const t c).congr_of_eventuallyEq h)
+    (h : f =ᶠ[𝓝 t] fun _ ↦ c) : f' = 0 := by
+  simpa using DFunLike.congr_fun (hf.hasFDerivAt.eq_zero_of_eventually_const h) 1
 
 namespace TauCeti
 

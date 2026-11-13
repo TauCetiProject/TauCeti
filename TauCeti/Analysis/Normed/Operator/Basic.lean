@@ -108,6 +108,15 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
+/-- The extended operator norm is continuous for the operator topology. This instance also
+fixes the standard extended norm when forming integrability statements for iterated operators. -/
+noncomputable instance instContinuousENorm {𝕜 𝕜₂ E F : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+    {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] : ContinuousENorm (E →SL[σ] F) :=
+  (@SeminormedAddGroup.toESeminormedAddMonoid (E →SL[σ] F) inferInstance).toContinuousENorm
+
 section Semilinear
 
 variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
