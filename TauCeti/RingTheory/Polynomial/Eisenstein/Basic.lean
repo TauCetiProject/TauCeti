@@ -45,7 +45,7 @@ theorem isEisensteinAt_X_pow_sub_C {R : Type*} [CommRing R] {𝓟 : Ideal R}
     by_cases hi0 : i = 0
     · subst i
       simpa [Ne.symm hn.ne'] using 𝓟.neg_mem hmem
-    · simp [coeff_sub, coeff_X_pow, coeff_C, hi.ne, hi0]
+    · simp [coeff_X_pow, coeff_C, hi.ne, hi0]
   · simpa [coeff_sub, coeff_X_pow, Ne.symm hn.ne', Ideal.neg_mem_iff] using hnotmem
 
 /-- `X ^ n + C a * X + C ϖ` is Eisenstein at an ideal `𝓟` when `a ∈ 𝓟`, `ϖ ∈ 𝓟` but

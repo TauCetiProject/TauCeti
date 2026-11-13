@@ -15,9 +15,6 @@ This file connects the finite multi-marginal coupling API with the two-marginal 
 A multi-marginal coupling can be projected to any ordered pair of coordinates. Conversely, a
 coupling indexed by `Fin 2` is precisely a two-marginal coupling, transported along
 `MeasurableEquiv.piFinTwo`.
-
-This supplies the reduction to the two-marginal API in Layer 0, item 5 of the optimal-transport
-roadmap.
 -/
 
 public section

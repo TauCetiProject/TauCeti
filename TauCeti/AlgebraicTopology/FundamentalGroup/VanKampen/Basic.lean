@@ -429,10 +429,10 @@ theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
     (rfl : eAB ⟨x', hxA, hxB⟩ = ⟨x, hxA, hxB⟩)).toGrpIso
   refine (isPushout_fundamentalGroup hCover hA' hB' hAB' hxA hxB).of_iso
     iAB iA iB (Iso.refl _) ?_ ?_ ?_ ?_
-  · exact FundamentalGroup.subspace_inclusion_square
-      (inter_subset_left.trans subset_union_left) subset_union_left inter_subset_left x ⟨hxA, hxB⟩
-  · exact FundamentalGroup.subspace_inclusion_square
-      (inter_subset_left.trans subset_union_left) subset_union_right inter_subset_right x ⟨hxA, hxB⟩
+  · exact FundamentalGroup.subspace_inclusion_square subset_union_left inter_subset_left x
+      ⟨hxA, hxB⟩
+  · exact FundamentalGroup.subspace_inclusion_square subset_union_right inter_subset_right x
+      ⟨hxA, hxB⟩
   · exact FundamentalGroup.subspace_subtypeVal_square subset_union_left x hxA
   · exact FundamentalGroup.subspace_subtypeVal_square subset_union_right x hxB
 
