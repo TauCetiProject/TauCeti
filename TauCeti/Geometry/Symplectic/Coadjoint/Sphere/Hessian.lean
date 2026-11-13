@@ -92,12 +92,6 @@ private theorem soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp (r a : ℝ
       (fun t ↦ r * a * t) ∘ sphereHeight Z :=
   funext fun x ↦ soThreeDualEquiv_smul_apply_soThreeEquiv_smul r a Z x
 
-/-- A nonzero tangent vector of `S²`, read in `ℝ³`, has positive squared length. -/
-private theorem inner_mvfderiv_self_pos (x : S²) {v : TangentSpace (𝓡 2) x} (hv : v ≠ 0) :
-    0 < ⟪mvfderiv (𝓡 2) ι x v, mvfderiv (𝓡 2) ι x v⟫_ℝ :=
-  real_inner_self_pos.2 fun h ↦
-    hv (injective_mvfderiv_subtypeVal_sphere x (h.trans (map_zero _).symm))
-
 /-- **The critical points of a height on a coadjoint sphere of `SO(3)`.** For `r a ≠ 0`, the
 height of `X = a Ẑ` on the coadjoint sphere of radius `r` has exactly the two critical points
 `±Z`, which parametrize the points `± r Z` of the orbit. -/
@@ -120,12 +114,8 @@ theorem criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul (r a : ℝ
         (fun y : S² ↦ soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³))))
         x v w =
       -(r * a * sphereHeight Z x) * ⟪mvfderiv (𝓡 2) ι x v, mvfderiv (𝓡 2) ι x w⟫_ℝ := by
-  rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp,
-    criticalHessian_scalar_comp (φ := fun t ↦ r * a * t) (contMDiff_sphereHeight Z x)
-      (contDiff_const.mul contDiff_id).contDiffAt hx]
-  simp only [smul_apply, smul_eq_mul, criticalHessian_sphereHeight hx]
-  rw [show deriv (fun t ↦ r * a * t) (sphereHeight Z x) = r * a by simp]
-  ring
+  rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp]
+  exact criticalHessian_mul_sphereHeight (r * a) hx v w
 
 /-- **The Hessian `-aB/r` at the top of a coadjoint sphere of `SO(3)`.** On the coadjoint sphere of
 radius `r ≠ 0`, at `p = r Z`, the critical Hessian of the height of `X = a Ẑ` is `-(a / r) B` on
@@ -152,36 +142,6 @@ theorem isMorse_soThreeDualEquiv_smul_apply_soThreeEquiv_smul {r a : ℝ} (hra :
   exact (isMorse_sphereHeight Z).scalar_comp (fun _ ↦ (contDiff_const.mul contDiff_id).contDiffAt)
     fun _ ↦ by simpa using hra
 
-/-- At a critical point `x = ±Z`, the Morse index of the height of `X = a Ẑ` is `2` when the
-Hessian `-r a ⟪x, Z⟫ ⟪·, ·⟫` is negative definite and `0` when it is positive definite. -/
-private theorem manifoldMorseIndex_eq_ite {r a : ℝ} (hra : r * a ≠ 0) {Z x : S²}
-    (hx : x ∈ criticalPoints (𝓡 2) (sphereHeight Z)) :
-    manifoldMorseIndex (𝓡 2)
-        (fun y : S² ↦ soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³))))
-        x =
-      if 0 < r * a * sphereHeight Z x then 2 else 0 := by
-  have hh : sphereHeight Z x ≠ 0 := by
-    rw [criticalPoints_sphereHeight, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
-    rcases hx with rfl | rfl <;> simp
-  split_ifs with hpos
-  · have h := (manifoldMorseIndex_eq_finrank_iff (I := 𝓡 2)).2 fun v hv ↦ by
-      rw [criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul r a hx]
-      exact mul_neg_of_neg_of_pos (neg_neg_of_pos hpos) (inner_mvfderiv_self_pos x hv)
-    rwa [finrank_euclideanSpace_fin] at h
-  · have hneg : r * a * sphereHeight Z x < 0 :=
-      lt_of_le_of_ne (not_lt.1 hpos) (mul_ne_zero hra hh)
-    have hcrit : x ∈ criticalPoints (𝓡 2) (fun y : S² ↦
-        soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³)))) := by
-      rw [criticalPoints_soThreeDualEquiv_smul_apply_soThreeEquiv_smul hra]
-      simpa using hx
-    have hnd := (isMorse_soThreeDualEquiv_smul_apply_soThreeEquiv_smul hra Z
-      ).isManifoldNondegenerateCriticalPoint
-        ((mvfderiv_eq_fderiv_comp_extChartAt_symm (I := 𝓡 2)).symm.trans
-          (mem_criticalPoints.1 hcrit))
-    refine hnd.manifoldMorseIndex_eq_zero_iff.2 fun v hv ↦ ?_
-    rw [criticalHessian_soThreeDualEquiv_smul_apply_soThreeEquiv_smul r a hx]
-    exact mul_pos (neg_pos_of_neg hneg) (inner_mvfderiv_self_pos x hv)
-
 /-- The Morse index of the height of `X = a Ẑ` on the coadjoint sphere of radius `r` at `Z` is
 `2` when `r a > 0`, where `Z` is the maximum, and `0` when `r a < 0`, where it is the minimum. -/
 theorem manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self {r a : ℝ}
@@ -190,7 +150,9 @@ theorem manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_self {r
         (fun y : S² ↦ soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³))))
         Z =
       if 0 < r * a then 2 else 0 := by
-  rw [manifoldMorseIndex_eq_ite hra (by simp), sphereHeight_self, mul_one]
+  rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp]
+  exact (manifoldMorseIndex_mul_sphereHeight hra (by simp)).trans
+    (by rw [sphereHeight_self, mul_one])
 
 /-- The Morse index of the height of `X = a Ẑ` on the coadjoint sphere of radius `r` at `-Z` is
 `0` when `r a > 0`, where `-Z` is the minimum, and `2` when `r a < 0`, where it is the maximum. -/
@@ -200,7 +162,9 @@ theorem manifoldMorseIndex_soThreeDualEquiv_smul_apply_soThreeEquiv_smul_neg {r 
         (fun y : S² ↦ soThreeDualEquiv ℝ (r • ofLp (y : ℝ³)) (soThreeEquiv ℝ (a • ofLp (Z : ℝ³))))
         (-Z) =
       if 0 < r * a then 0 else 2 := by
-  rw [manifoldMorseIndex_eq_ite hra (by simp), sphereHeight_neg_self, mul_neg_one]
+  rw [soThreeDualEquiv_smul_apply_soThreeEquiv_smul_eq_comp]
+  refine (manifoldMorseIndex_mul_sphereHeight hra (by simp)).trans ?_
+  rw [sphereHeight_neg_self, mul_neg_one]
   rcases lt_or_gt_of_ne hra with h | h
   · simp [neg_pos.2 h, h.not_gt]
   · simp [(neg_neg_of_pos h).not_gt, h]
