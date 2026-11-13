@@ -369,16 +369,18 @@ theorem HasWeakLineDerivOn.neg (h : HasWeakLineDerivOn μ Ω u u' v) :
 theorem HasWeakFDerivOn.neg {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) :
     HasWeakFDerivOn μ Ω (-u) (-U) := fun v => (h v).neg
 
-/-- Weak differentiation commutes with multiplication by a real scalar. -/
-theorem HasWeakLineDerivOn.const_smul (h : HasWeakLineDerivOn μ Ω u u' v) (c : ℝ) :
+/-- Weak differentiation commutes with multiplication by a scalar. -/
+theorem HasWeakLineDerivOn.const_smul {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F]
+    [IsScalarTower ℝ 𝕜 F] (h : HasWeakLineDerivOn μ Ω u u' v) (c : 𝕜) :
     HasWeakLineDerivOn μ Ω (c • u) (c • u') v := by
   refine ⟨h.completeSpace, h.locallyIntegrableOn.smul c, h.locallyIntegrableOn_deriv.smul c,
     fun φ => ?_⟩
   simp only [Pi.smul_apply, smul_comm _ c, integral_smul,
     h.integral_lineDeriv_smul_eq_neg_integral_smul φ, smul_neg]
 
-/-- Weak Fréchet differentiation commutes with multiplication by a real scalar. -/
-theorem HasWeakFDerivOn.const_smul {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (c : ℝ) :
+/-- Weak Fréchet differentiation commutes with multiplication by a scalar. -/
+theorem HasWeakFDerivOn.const_smul {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F]
+    [IsScalarTower ℝ 𝕜 F] {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (c : 𝕜) :
     HasWeakFDerivOn μ Ω (c • u) (c • U) := fun v => (h v).const_smul c
 
 end Defs

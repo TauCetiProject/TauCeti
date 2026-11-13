@@ -200,11 +200,11 @@ lemma exists_degree_lt_mk_eq [Nontrivial R] {g : R[X]} (hg : g.Monic) (a : Adjoi
 /-- **Two polynomials of degree less than that of a monic relator have the same class in
 `AdjoinRoot` only if they are equal.** Together with `AdjoinRoot.exists_degree_lt_mk_eq` this says
 that the polynomials of degree `< deg g` are a set of unique representatives. -/
-lemma mk_eq_mk_iff_of_degree_lt [Nontrivial R] {g : R[X]} (hg : g.Monic) {p q : R[X]}
+lemma mk_eq_mk_iff_of_degree_lt {g : R[X]} (hg : g.Monic) {p q : R[X]}
     (hp : p.degree < g.degree) (hq : q.degree < g.degree) : mk g p = mk g q ↔ p = q :=
-  ⟨fun h ↦ sub_eq_zero.mp <|
-    ((modByMonic_eq_self_iff hg).mpr <| (degree_sub_le p q).trans_lt (max_lt hp hq)).symm.trans <|
-      (modByMonic_eq_zero_iff_dvd hg).mpr (mk_eq_mk.mp h), fun h ↦ h ▸ rfl⟩
+  ⟨fun h ↦ by_contra fun hne ↦ mk_ne_zero_of_degree_lt hg (sub_ne_zero.mpr hne)
+      ((degree_sub_le p q).trans_lt (max_lt hp hq)) (by rw [map_sub, h, sub_self]),
+    fun h ↦ h ▸ rfl⟩
 
 /-- **An `R`-linear endomorphism of `AdjoinRoot g` commuting with multiplication by the root is
 multiplication by its value at `1`.** It commutes with multiplication by every power of the root,
