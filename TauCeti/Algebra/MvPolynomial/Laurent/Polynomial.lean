@@ -170,29 +170,42 @@ theorem rename_toLaurent (f : K → K') (p : MvPolynomial K R) :
     rename f (toLaurent p) = toLaurent (MvPolynomial.rename f p) :=
   DFunLike.congr_fun (rename_comp_toLaurent f) p
 
-/-- Every Laurent polynomial becomes a polynomial after multiplication by a monomial in the
-variables: a common denominator of its finitely many terms. -/
+/-- Every Laurent polynomial becomes a polynomial after multiplication by a monomial.
+The denominator uses no variable in which all supported exponents are already nonnegative. -/
 theorem exists_mul_toLaurent_monomial (f : LaurentRing R K) :
-    ∃ (n : K →₀ ℕ) (p : MvPolynomial K R), f * toLaurent (monomial n 1) = toLaurent p := by
-  induction f using AddMonoidAlgebra.induction_linear with
-  | zero => exact ⟨0, 0, by simp⟩
-  | add f g hf hg =>
-    obtain ⟨n, p, hp⟩ := hf
-    obtain ⟨k, q, hq⟩ := hg
-    refine ⟨n + k, p * monomial k 1 + q * monomial n 1, ?_⟩
-    have hnk : (monomial (n + k) 1 : MvPolynomial K R) = monomial n 1 * monomial k 1 := by
-      rw [monomial_mul_monomial, one_mul]
-    rw [hnk, map_add, map_mul, map_mul, map_mul, ← hp, ← hq]
-    ring
-  | single m r =>
-    -- Multiply by the monomial whose exponent is the negative part of `m`.
-    refine ⟨(-m).mapRange Int.toNat Int.toNat_zero,
-      monomial (m.mapRange Int.toNat Int.toNat_zero) r, ?_⟩
-    rw [toLaurent_monomial, toLaurent_monomial, single_mul_single, mul_one]
-    congr 1
-    ext i
-    simp only [Finsupp.add_apply, Finsupp.mapRange_apply, Finsupp.neg_apply]
-    omega
+    ∃ (n : K →₀ ℕ) (p : MvPolynomial K R),
+      f * toLaurent (monomial n 1) = toLaurent p ∧
+        ∀ i, (∀ m ∈ f.coeff.support, 0 ≤ m i) → n i = 0 := by
+  classical
+  suffices ∀ s : Finset (K →₀ ℤ), ∃ (n : K →₀ ℕ) (p : MvPolynomial K R),
+      (∑ m ∈ s, single m (f.coeff m)) * toLaurent (monomial n 1) = toLaurent p ∧
+        ∀ i, (∀ m ∈ s, 0 ≤ m i) → n i = 0 by
+    have heq : (∑ m ∈ f.coeff.support, single m (f.coeff m)) = f := by
+      simpa only [Finsupp.sum] using sum_coeff_single f
+    simpa only [heq] using this f.coeff.support
+  intro s
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, 0, by simp, by simp⟩
+  | @insert m s hm ih =>
+    obtain ⟨n, p, hp, hn⟩ := ih
+    let k := (-m).mapRange Int.toNat Int.toNat_zero
+    let q : MvPolynomial K R := monomial (m.mapRange Int.toNat Int.toNat_zero) (f.coeff m)
+    have hq : single m (f.coeff m) * toLaurent (monomial k 1) = toLaurent q := by
+      rw [toLaurent_monomial, toLaurent_monomial, single_mul_single, mul_one]
+      congr 1
+      ext i
+      simp only [k, Finsupp.add_apply, Finsupp.mapRange_apply, Finsupp.neg_apply]
+      omega
+    refine ⟨k + n, q * monomial n 1 + p * monomial k 1, ?_, ?_⟩
+    · have hkn : (monomial (k + n) 1 : MvPolynomial K R) =
+          monomial k 1 * monomial n 1 := by rw [monomial_mul_monomial, one_mul]
+      rw [Finset.sum_insert hm, hkn, map_add, map_mul, map_mul, map_mul, ← hp, ← hq]
+      ring
+    · intro i hi
+      have hk : k i = 0 := by
+        simp only [k, Finsupp.mapRange_apply, Finsupp.neg_apply]
+        exact Int.toNat_eq_zero.mpr (neg_nonpos.mpr (hi m (Finset.mem_insert_self _ _)))
+      simp [hk, hn i (fun a ha ↦ hi a (Finset.mem_insert_of_mem ha))]
 
 /-- A Laurent polynomial that becomes a polynomial after multiplication by the monomial `X^n`
 stays a polynomial after multiplication by `X^(n + k)`. -/
@@ -246,7 +259,7 @@ instance isLocalization :
     | one => simp
     | mul s t _ _ hs ht => simpa using hs.mul ht
   surj f := by
-    obtain ⟨n, p, h⟩ := exists_mul_toLaurent_monomial f
+    obtain ⟨n, p, h, -⟩ := exists_mul_toLaurent_monomial f
     refine ⟨(p, ⟨monomial n 1, ?_⟩), h⟩
     rw [monomial_eq, C_1, one_mul]
     exact Submonoid.prod_mem _ fun i _ ↦ pow_mem (Submonoid.subset_closure (Set.mem_range_self i)) _
