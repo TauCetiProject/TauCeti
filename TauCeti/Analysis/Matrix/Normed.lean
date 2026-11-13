@@ -23,6 +23,8 @@ that equality to the topology selected here.
 
 The operator uniformity also agrees with the complete product uniformity when the entries are
 complete. Its completeness instance is activated by `Matrix.Norms.Operator`, alongside the norm.
+Similarly, the entrywise sup norm makes finite matrices over a proper space a proper space; this
+instance is activated by `Matrix.Norms.Elementwise`, alongside the norm.
 
 ## Main declarations
 
@@ -32,6 +34,7 @@ complete. Its completeness instance is activated by `Matrix.Norms.Operator`, alo
 * `Matrix.linftyOpCompleteSpace`: completeness for the operator uniformity, scoped with the norm.
 * `Matrix.ofContinuousLinearEquiv`: `Matrix.of` as a continuous linear equivalence from entry
   functions to matrices with the topology of the `L∞` operator norm.
+* `Matrix.properSpace`: properness for the entrywise sup norm, scoped with the norm.
 -/
 
 public section
@@ -67,6 +70,17 @@ protected theorem linftyOpCompleteSpace {R p q : Type*} [NormedAddCommGroup R]
 namespace Norms.Operator
 attribute [scoped instance] Matrix.linftyOpCompleteSpace
 end Norms.Operator
+
+/-- Finite matrices over a proper space are a proper space for the entrywise sup norm. -/
+protected theorem properSpace {R p q : Type*} [SeminormedAddCommGroup R] [ProperSpace R]
+    [Fintype p] [Fintype q] :
+    @ProperSpace (Matrix p q R)
+      (Matrix.seminormedAddCommGroup (m := p) (n := q) (α := R)).toPseudoMetricSpace :=
+  inferInstanceAs (ProperSpace (p → q → R))
+
+namespace Norms.Elementwise
+attribute [scoped instance] Matrix.properSpace
+end Norms.Elementwise
 
 section
 

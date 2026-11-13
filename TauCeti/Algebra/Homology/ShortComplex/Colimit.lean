@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
+public import Mathlib.Algebra.Homology.QuasiIso
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Limits
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
@@ -175,5 +177,24 @@ instance homologicalComplexHomologyFunctor_preservesColimitsOfShape :
       (HomologicalComplex.homologyFunctor C c q) := by
   exact preservesColimitsOfShape_of_natIso
     (HomologicalComplex.homologyFunctorIso C c q).symm
+
+section Coproduct
+
+variable {β : Type w} [HasColimitsOfShape (Discrete β) C] [HasExactColimitsOfShape (Discrete β) C]
+  {c q} {K : β → HomologicalComplex C c} {L : HomologicalComplex C c}
+
+/-- **Quasi-isomorphisms out of a coproduct.** When coproducts indexed by `β` are exact, a map out
+of the coproduct of a family of homological complexes is a quasi-isomorphism in degree `q` exactly
+when its restrictions to the summands exhibit the homology of the target in degree `q` as the
+coproduct of the homologies of the summands. -/
+theorem quasiIsoAt_sigmaDesc_iff (f : ∀ b, K b ⟶ L) :
+    QuasiIsoAt (Sigma.desc f) q ↔ Nonempty (IsColimit
+      (Cofan.mk (L.homology q) fun b ↦ HomologicalComplex.homologyMap (f b) q)) := by
+  have h := sigmaComparison_map_desc (HomologicalComplex.homologyFunctor C c q) K L f
+  simp only [HomologicalComplex.homologyFunctor_map] at h
+  rw [quasiIsoAt_iff_isIso_homologyMap, Cofan.nonempty_isColimit_iff_isIso_sigmaDesc]
+  exact (isIso_comp_left_iff (sigmaComparison _ K) _).symm.trans (iff_of_eq (congrArg IsIso h))
+
+end Coproduct
 
 end TauCeti

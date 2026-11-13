@@ -222,7 +222,7 @@ theorem isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight
   have hfix : σ • w = w ↔ σ x = x := by
     rw [← (FaithfulSMul.algebraMap_injective (𝓞 K) K).eq_iff,
       algebraMap_smul_eq_apply, hw]
-    simp only [map_div₀, map_add, map_one, map_ofNat, div_left_inj' (two_ne_zero : (2 : K) ≠ 0),
+    simp only [map_div₀, map_add, map_one, map_ofNat, div_left_inj₀ (two_ne_zero : (2 : K) ≠ 0),
       add_right_inj]
   -- Its conjugates are `w` and `1 - w`, even when the ambient field is larger.
   have hpm : σ • w = w ∨ σ • w = 1 - w := by
