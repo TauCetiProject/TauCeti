@@ -323,7 +323,7 @@ theorem stableNormal_eq_zero_iff {y : M}
     funext z
     simp [q]
   rw [(hslice T).span_mtangentConeAt_eq_comap (by simp) hq
-    φ.stableSubspace.closed_of_finiteDimensional hyq hy, hqf, stableNormal_apply hφ hT,
+    φ.stableSubspace.isClosed_of_finiteDimensional hyq hy, hqf, stableNormal_apply hφ hT,
     smul_eq_zero_iff_right (Real.exp_ne_zero _)]
   -- Membership in the preimage `Submodule.comap` is membership of the image.
   exact φ.mem_stableSubspace_iff_negativeCoord_eq_zero.symm
@@ -485,7 +485,7 @@ theorem range_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {y : M} (hy : y ∈ hX
     funext z
     simp [q, hX.neg_flow hf]
   rw [(hslice T).span_mtangentConeAt_eq_comap (by simp) hq
-    (φ.neg h).stableSubspace.closed_of_finiteDimensional hyq hy, hqf]
+    (φ.neg h).stableSubspace.isClosed_of_finiteDimensional hyq hy, hqf]
   have hinv := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ) hT.1
   ext v
   rw [mem_range]
