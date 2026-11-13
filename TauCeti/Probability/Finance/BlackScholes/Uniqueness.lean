@@ -82,7 +82,7 @@ theorem eq_callValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (fun s hs t ht ↦ by
       -- `|C - callValue| ≤ |C| + callValue ≤ A (1 + s) + s`, since `0 ≤ callValue ≤ s`.
       linarith [abs_sub (C s t) (callValue s r σ K (T - t)), hgrowth hs ht,
-        abs_of_nonneg (callValue_nonneg (K := K) hσ s r (T - t)),
+        abs_of_nonneg (callValue_nonneg hσ s r K (T - t)),
         callValue_le (r := r) (σ := σ) (τ := T - t) hs.le hK.le])
     hcd (fun s hs t ht ↦
       contDiffAt_id.callValue contDiffAt_const hs (sub_pos.2 ht.2) (r := r) (σ := σ) (K := K))

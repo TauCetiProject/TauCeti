@@ -10,10 +10,10 @@ public import TauCeti.Probability.Finance.BlackScholes.Extension
 /-!
 # Classical regularity of Black–Scholes prices
 
-The closed-form call and put prices are jointly smooth wherever spot is nonzero and remaining
-maturity is positive (see `ContDiffAt.callPrice`
-and `ContDiffAt.putPrice`). The continuously extended values have the same regularity where
-spot and remaining maturity are positive, including in calendar time on `s > 0, t < T`.
+The closed-form call and put prices are jointly smooth in spot and remaining maturity wherever
+the spot is nonzero and the remaining maturity is positive (see `ContDiffAt.callPrice` and
+`ContDiffAt.putPrice`). The extended values `callValue` and `putValue` have the same regularity
+where spot and remaining maturity are positive, including in calendar time on `s > 0, t < T`.
 Consequently their spatial and time derivatives have the continuity required of classical
 solutions of the Black–Scholes equation and for applications of Itô's formula.
 
@@ -40,7 +40,7 @@ namespace ContDiffAt
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {f g : E → ℝ} {x : E} {r σ K : ℝ} {n : ℕ∞}
 
-/-- The continuous call value is smooth under composition at every interior pricing point. -/
+/-- The extended call value is smooth under composition at every interior pricing point. -/
 @[fun_prop]
 theorem callValue (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
     (hs : 0 < f x) (hτ : 0 < g x) :
@@ -50,7 +50,7 @@ theorem callValue (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
     hg.continuousAt.eventually (Ioi_mem_nhds hτ)] with y hy hy'
   exact callValue_of_pos hy hy'
 
-/-- The continuous put value is smooth under composition at every interior pricing point. -/
+/-- The extended put value is smooth under composition at every interior pricing point. -/
 @[fun_prop]
 theorem putValue (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
     (hs : 0 < f x) (hτ : 0 < g x) :

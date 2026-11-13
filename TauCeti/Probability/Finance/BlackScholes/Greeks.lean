@@ -37,9 +37,10 @@ In calendar time `t = T - τ` both `V(s, t) = C(s, T - t)` and `V(s, t) = P(s, T
 
 for `s > 0` and `t < T` (`TauCeti.BlackScholes.callPrice_pde`,
 `TauCeti.BlackScholes.putPrice_pde`). The formulas for the derivatives need `σ ≠ 0` and the signs
-of gamma need `σ > 0`; the equation holds for every `σ`, since at `σ = 0` both prices are affine in
-the spot (`TauCeti.BlackScholes.callPrice_of_volatility_zero`,
-`TauCeti.BlackScholes.putPrice_of_volatility_zero`).
+of gamma need `σ > 0`. The equation holds for every `σ`: at `σ = 0` the closed-form formulas
+reduce, through Lean's convention `x / 0 = 0`, to `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`
+(`TauCeti.BlackScholes.callPrice_volatility_zero`, `TauCeti.BlackScholes.putPrice_volatility_zero`),
+which satisfy `∂V/∂t + r (s ∂V/∂s - V) = 0`.
 
 ## Main declarations
 
@@ -309,7 +310,8 @@ theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
       σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => callPrice x r σ K (T - t)) s +
       r * (s * deriv (fun x => callPrice x r σ K (T - t)) s - callPrice s r σ K (T - t)) = 0 := by
   by_cases hσ : σ = 0
-  · -- Without volatility the call is `(s - K e^{-rτ}) / 2`, which is affine in the spot.
+  · -- At `σ = 0` the closed form is `(s - K e^{-rτ}) / 2` (by `x / 0 = 0`), which solves
+    -- `∂C/∂t + r (s ∂C/∂s - C) = 0`.
     subst hσ
     have hu : deriv (fun u => (s - K * exp (-r * (T - u))) / 2) t =
         (0 - K * (exp (-r * (T - t)) * (-r * -1))) / 2 :=
@@ -318,7 +320,7 @@ theorem callPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     have hx : deriv (fun x => (x - K * exp (-r * (T - t))) / 2) = fun _ => 1 / 2 := by
       ext x
       exact (((hasDerivAt_id x).sub_const _).div_const 2).deriv
-    simp only [callPrice_of_volatility_zero]
+    simp only [callPrice_volatility_zero]
     rw [hu, hx, deriv_const]
     ring
   have hτ : 0 < T - t := sub_pos.2 ht
@@ -337,7 +339,8 @@ theorem putPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
       σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => putPrice x r σ K (T - t)) s +
       r * (s * deriv (fun x => putPrice x r σ K (T - t)) s - putPrice s r σ K (T - t)) = 0 := by
   by_cases hσ : σ = 0
-  · -- Without volatility the put is `(K e^{-rτ} - s) / 2`, which is affine in the spot.
+  · -- At `σ = 0` the closed form is `(K e^{-rτ} - s) / 2` (by `x / 0 = 0`), which solves
+    -- `∂P/∂t + r (s ∂P/∂s - P) = 0`.
     subst hσ
     have hu : deriv (fun u => (K * exp (-r * (T - u)) - s) / 2) t =
         K * (exp (-r * (T - t)) * (-r * -1)) / 2 :=
@@ -346,7 +349,7 @@ theorem putPrice_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     have hx : deriv (fun x => (K * exp (-r * (T - t)) - x) / 2) = fun _ => -1 / 2 := by
       ext x
       exact (((hasDerivAt_id x).const_sub _).div_const 2).deriv
-    simp only [putPrice_of_volatility_zero]
+    simp only [putPrice_volatility_zero]
     rw [hu, hx, deriv_const]
     ring
   have hτ : 0 < T - t := sub_pos.2 ht
