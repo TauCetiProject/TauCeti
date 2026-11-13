@@ -36,13 +36,6 @@ zero set, every zero of the function lies on the curve.
 
 ## Main results
 
-* `TauCeti.IsRegularValue.eventually_mem_range`: a `C¹` map into the level, from a manifold of
-  the dimension of the level, with injective differential at an interior point `q₀`, covers the
-  level near `g q₀`.
-* `TauCeti.IsRegularValue.eventually_mem_image_of_curveVelocity_ne_zero`: a `C¹` curve on an
-  open parameter set, with values in a level of dimension one and nonzero velocity at `s₀`,
-  covers the level near its value at `s₀`.
-
 * `TauCeti.IsRegularPoint.eventually_mem_image`: a map with injective differential covers a
   level of a map into any charted target locally under regularity and `C¹` hypotheses only at
   the chosen points.
@@ -192,38 +185,5 @@ theorem IsRegularPoint.eventually_mem_image_of_curveVelocity_ne_zero
   exact smul_left_injective 𝕜 hv
 
 end ChartedTarget
-
-/-- **A map of injective differential into a regular level covers it locally.** Let `c` be a
-regular value of `f : M → F`, with `f` of class `C¹` at the points of the level `f⁻¹(c)`, and let
-`g : P → M` be a `C¹` map with values in the level, from a manifold `P` of the dimension
-`dim E - dim F` of the level. If `q₀` is an interior point of `P` at which the differential of `g`
-is injective, then every point of the level close enough to `g q₀` is a value of `g`. -/
-theorem IsRegularValue.eventually_mem_range (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
-    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x)
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
-    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 G H'}
-    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J 1 P]
-    (hdim : finrank 𝕜 G + finrank 𝕜 F = finrank 𝕜 E)
-    {g : P → M} (hg : ContMDiff J I 1 g) (hgc : ∀ q, f (g q) = c) {q₀ : P}
-    (hinj : Injective (mfderiv J I g q₀)) (hq₀ : J.IsInteriorPoint q₀) :
-    ∀ᶠ x in 𝓝 (g q₀), f x = c → x ∈ range g := by
-  simpa only [image_univ] using
-    (hreg.isRegularPoint (hgc q₀)).eventually_mem_image (hf _ (hgc q₀)) hdim
-      univ_mem (hg q₀) (Eventually.of_forall hgc) hinj hq₀
-
-/-- **A regular curve in a regular level of dimension one covers it locally.** Let `c` be a
-regular value of `f : M → F`, with `f` of class `C¹` at the points of the level `f⁻¹(c)`, which
-has dimension `dim E - dim F = 1`. Let `δ` be a curve which is `C¹` on an open parameter set `S`
-and maps `S` into the level. If the velocity of `δ` at `s₀ ∈ S` is nonzero, then every point of
-the level close enough to `δ s₀` is the value of `δ` at a parameter in `S`. -/
-theorem IsRegularValue.eventually_mem_image_of_curveVelocity_ne_zero
-    (hreg : IsRegularValue I 𝓘(𝕜, F) f c) (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x)
-    (hdim : finrank 𝕜 F + 1 = finrank 𝕜 E) {δ : 𝕜 → M} {S : Set 𝕜} (hS : IsOpen S)
-    (hδ : ContMDiffOn 𝓘(𝕜, 𝕜) I 1 δ S) (hδc : ∀ s ∈ S, f (δ s) = c) {s₀ : 𝕜} (hs₀ : s₀ ∈ S)
-    (hv : Manifold.curveVelocity I δ s₀ ≠ 0) :
-    ∀ᶠ x in 𝓝 (δ s₀), f x = c → x ∈ δ '' S := by
-  exact (hreg.isRegularPoint (hδc s₀ hs₀)).eventually_mem_image_of_curveVelocity_ne_zero
-    (hf _ (hδc s₀ hs₀)) hdim (hS.mem_nhds hs₀) (hδ.contMDiffAt (hS.mem_nhds hs₀))
-    (eventually_mem_set.mpr (hS.mem_nhds hs₀) |>.mono fun s hs ↦ hδc s hs) hv
 
 end TauCeti
