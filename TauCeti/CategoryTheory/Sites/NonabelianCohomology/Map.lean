@@ -289,6 +289,21 @@ lemma map_eq_one_of_forall_app_eq_one {φ : G ⟶ G'}
     -- The action of `G'` on the trivial torsor is multiplication.
     fun U g _ ↦ (by rw [hφ, mul_one] : (1 : G'.obj.obj U) = φ.hom.app U g * 1)
 
+/-- The connecting map is natural in a morphism of group extensions: extending the structure
+group of the torsor of lifts along the map `α` of kernels gives the torsor of lifts of the
+image section. The middle and quotient maps need not be injective or surjective. -/
+theorem map_connecting_of_comp_eq {A B Q A' B' Q' : Sheaf J GrpCat.{w}}
+    {i : A ⟶ B} {π : B ⟶ Q} {i' : A' ⟶ B'} {π' : B' ⟶ Q'}
+    (hE : IsGroupExtension i π) (hE' : IsGroupExtension i' π')
+    (α : A ⟶ A') (β : B ⟶ B') (γ : Q ⟶ Q')
+    (hα : i ≫ β = α ≫ i') (hγ : β ≫ π' = π ≫ γ)
+    (q : (Q.obj ⋙ forget GrpCat).sections) (q' : (Q'.obj ⋙ forget GrpCat).sections)
+    (hq : ∀ U, γ.hom.app U (q.1 U) = q'.1 U) :
+    map α (connecting hE q) = connecting hE' q' := by
+  rw [connecting_def, connecting_def]
+  exact map_mk_eq_mk (hE.liftsMap q hE' β γ hγ q' hq)
+    (hE.liftsMap_smul q hE' β γ hγ q' hq α hα)
+
 /-- For an extension `1 → A → B → Q → 1` of sheaves of groups, the composite
 `Q(C) → H¹(A) → H¹(B)` is trivial: the torsor of lifts of a global section of `Q` maps to the
 trivial `B`-torsor by the inclusion of lifts into `B`. -/
